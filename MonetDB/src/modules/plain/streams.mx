@@ -140,9 +140,9 @@ the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump)
 	proc fflush(Stream s):void 			stream_flush(s);
 	proc fopen(str filename, str mode) : Stream {
 		if (mode.startsWith("r")) {
-			return open_rstream(filename);
+			return open_rastream(filename);
 		} else if (mode.startsWith("w")) {
-			return open_wstream(filename);
+			return open_wastream(filename);
 		} 
 		return Stream(ptr(0));
 	}

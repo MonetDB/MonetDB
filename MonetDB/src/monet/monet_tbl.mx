@@ -1087,9 +1087,6 @@ int TBL_load_script(TBLinstall *inst, Client client, str module, str *initscript
   if ((fullname = MSP_locate_script(module)) != NULL) {
 	*initscript = monet_load_script(fullname, module);
 	mid = TBL_Install_Info( inst, client->user, module);
-  	/*BUNdelHead(TBL_mod_hdl, &mid);
-  	//BUNins(TBL_mod_hdl, &mid, &null);
- 	*/
   	dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
   }
   return mid;
@@ -1325,13 +1322,6 @@ Lets do the things in the right order, see above!
   loaded = (mid != 0);
   
   dlFPRINTF(GDKerr, "  loaded = %d\n", loaded);
-
-  cinstalled = TBL_M_cinstalled(client, mid);
-  if (cinstalled) 
-	used = 1;
-
-  dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
-
   if (!loaded) {
     if (module[0] == '_'){
       mid = TBL_M_load(&inst, client, module); /* generates a mid! */
@@ -1349,6 +1339,11 @@ Lets do the things in the right order, see above!
 
   if (!loaded)
     goto xit;
+
+  cinstalled = TBL_M_cinstalled(client, mid);
+  if (cinstalled) 
+	used = 1;
+  dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
 
   if (loaded && !cinstalled) {
     dlPRINT("TBL_loadmod: loaded but not installed! Installing...\n");

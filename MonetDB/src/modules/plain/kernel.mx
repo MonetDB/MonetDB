@@ -73,10 +73,13 @@ loading and unloading new modules.
  In command-line mode, you can save typing the \" (though this often
  will collide with a MIL keyword)."
 
+.COMMAND mod() : str = CMDmodule_peek;
+"During module loading a module stack is kept. This function returns the top module" 
+
 .COMMAND module_push(str modname) = CMDmodule_push;
 "During module loading a variable module is set to the current module name. The previous module is pushed onto a stack" 
 
-.COMMAND module_pop() : str = CMDmodule_pop;
+.COMMAND module_pop() = CMDmodule_pop;
 "During module loading a variable module is set to the current module name. At the end of a module load the enclosing module is popped from a stack" 
 
 @+ Basic Value Manipulation
@@ -355,30 +358,6 @@ The @%CMDdrop@ command drops a module: functions and types defined
 by that module cease to be known for that user.
 
 @c
-int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
-	str initscript;
-	Client c;
-
-		/* run initscript in the clients lowest stack */
-	/* dummy function as the module statement is allready handled in
-	 * the parser 
-	CNTXTclient(stk, &c);
-        initscript = moduleClient(c, lt, FALSE);
-        if (initscript) {
-                return interpret_str(c->stk, initscript, res);
-	}
- 	 */
-	GDKerror("CMDmodule should not be called !\n");
-        return -1;
-}
- 
-int CMDdrop(Cntxt stk, YYSTREE lt, ValPtr res){
-	Client c;
-	/* TODO maybe run drop also in the lowest stack context ?? */ 
-	CNTXTclient(stk, &c);
-	return dropClient(c, lt);
-}
-
 typedef struct _strstack_t {
 	str buf;
 	struct _strstack_t *up;
@@ -393,15 +372,60 @@ static void m_push(str s) {
 	m_stack = sp;
 }
 
-static char *m_pop(void) {
-	char *r = NULL;
+static void m_pop(void) {
 	strstack *sp = m_stack;
 	if (m_stack) {
-		r = sp->buf;
 		m_stack = sp->up;
+		GDKfree(sp->buf);
 		GDKfree(sp);
 	}
-	return r;
+}
+
+int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
+	int ret = 0;
+	Client c;
+
+	/* run initscript in the clients lowest stack */
+	CNTXTclient(stk, &c);
+        while (lt && ret >= 0) {
+	        int i; 
+                for(i = 0; i < lt->cnt; i++)  {
+		    int ret1 = 0;
+		    ValRecord res1;
+		    str initstr = NULL;
+        	    str mod;
+
+                    if (!lt->yysons[i]) 
+			continue;
+		    ret1 = interpret(c->stk, lt->yysons[i], &res1);
+		    if (ret < 0 || res1.vtype != TYPE_str) {
+			   GDKerror("module: illegal argument.\n");
+			   return GDK_FAIL;
+ 		    }
+		    mod = res1.val.sval; 
+		    initstr = moduleClient( c, mod, (m_stack)?m_stack->buf:NULL );
+	            if (initstr != NULL) {
+                	ret = interpret_str(c->stk, initstr, res);
+			GDKfree(initstr);
+	            }
+                }
+                lt = lt->overflow;
+        }
+	if (ret < 0)
+		return GDK_FAIL;
+        return GDK_SUCCEED;
+}
+ 
+int CMDdrop(Cntxt stk, YYSTREE lt, ValPtr res){
+	Client c;
+	/* TODO maybe run drop also in the lowest stack context ?? */ 
+	CNTXTclient(stk, &c);
+	return dropClient(c, lt);
+}
+
+int CMDmodule_peek( str *mod ){
+	*mod = m_stack?GDKstrdup(m_stack->buf):GDKstrdup("main");
+	return GDK_SUCCEED;
 }
 
 int CMDmodule_push( str mod ){
@@ -409,8 +433,8 @@ int CMDmodule_push( str mod ){
 	return GDK_SUCCEED;
 }
 
-int CMDmodule_pop( str *mod ){
-	*mod = m_pop();
+int CMDmodule_pop( ){
+	m_pop();
 	return GDK_SUCCEED;
 }
 

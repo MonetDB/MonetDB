@@ -408,9 +408,10 @@ provided to make inclusion of new modules a piece of cake.
 {	Variable v = VARnew(0, "@1");
 	v->binding.vtype = TYPE_str;
 	v->binding.val.sval = GDKstrdup(@2);
-	/*VARfreeze(v);
-	VARfixate(v);*/
 }
+/*
+	@:tokenstrvar(mod,"main")@
+*/
 
 @c
 ptr monet_init(void){
@@ -449,7 +450,6 @@ Make constants for important language tokens
 	@:tokenvar(TOK_COMMAND)@
 	@:tokenvar(TOK_ITERATOR)@
 	@:tokenvar(TOK_OBJECT)@
-	@:tokenstrvar(mod,"main")@
 @-
 Install all link-in modules.
 @c
@@ -465,7 +465,7 @@ str monet_load_script(str file, str mod)
 	FILE *fp = NULL;
 	int i = 0, totlen = 8192;
         char *buf = (char *) GDKmalloc(totlen), *p = buf;
-	char *mpop = "mod := module_pop();\n";
+	char *mpop = "module_pop();\n";
 
 @-
 Open the scriptfile.
@@ -478,7 +478,7 @@ Open the scriptfile.
 Read the entire file, realloc if necessary.
 @c
 	if (mod){
-	     i = snprintf(p, totlen, "module_push(mod); mod := \"%s\";\n", mod);
+	     i = snprintf(p, totlen, "module_push(\"%s\");\n", mod);
 	     p += i;
 	}
         while((i+=fread(p, 1, totlen-i, fp)) == totlen ) {

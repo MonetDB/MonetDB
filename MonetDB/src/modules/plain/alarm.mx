@@ -52,6 +52,9 @@ the cpu clock.They return an integer and string, respectively.
 
 .END alarm;
 
+@mil
+module(_alarm);
+
 @{
 @* Implementation
 @+ The Clock Interupt Generator
