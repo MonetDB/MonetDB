@@ -33,8 +33,8 @@
 #
 #l:= mi*2;
 #h:= mx/2;
-#printf("select %d ",l);
-#printf("%d\n",h);
+##printf("select %d ",l);
+##printf("%d\n",h);
 #t0:= alarm.usec();
 #z:= crackers.crack(b,cidx,vrng,l,h);
 #t1:= alarm.usec();
@@ -44,8 +44,8 @@
 #
 #l:= l*2;
 #h:= h/2;
-#printf("select %d ",l);
-#printf("%d\n",h);
+##printf("select %d ",l);
+##printf("%d\n",h);
 #t0:= alarm.usec();
 #y:= crackers.crack(b,cidx,vrng,l,h);
 ##print(vrng);
@@ -55,8 +55,8 @@
 #
 #l:= l*2;
 #h:= h/2;
-#printf("select %d ",l);
-#printf("%d\n",h);
+##printf("select %d ",l);
+##printf("%d\n",h);
 #t0:= alarm.usec();
 #y:= crackers.crack(b,cidx,vrng,l,h);
 ##print(vrng);
@@ -66,8 +66,8 @@
 #
 #l:= l*2;
 #h:= h/2;
-#printf("select %d ",l);
-#printf("%d\n",h);
+##printf("select %d ",l);
+##printf("%d\n",h);
 #t0:= alarm.usec();
 #y:= crackers.crack(b,cidx,vrng,l,h);
 ##print(vrng);
@@ -76,6 +76,47 @@
 #printf("#crack %d\n",d0);
 #print(cidx);
 #print(vrng);
+#
+## Compare cracker with ordinary selection
+#l:= mi*2;
+#h:= mx/2;
+##printf("select %d ",l);
+##printf("%d\n",h);
+#t0:= alarm.usec();
+#c:= select(b,l,h);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+#printf("#select %d\n",d0);
+#
+#l:= l*2;
+#h:= h/2;
+##printf("select %d ",l);
+##printf("%d\n",h);
+#t0:= alarm.usec();
+#c:= select(b,l,h);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+#printf("#select %d\n",d0);
+#
+#l:= l*2;
+#h:= h/2;
+##printf("select %d ",l);
+##printf("%d\n",h);
+#t0:= alarm.usec();
+#c:= select(b,l,h);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+#printf("#select %d\n",d0);
+#
+#l:= l*2;
+#h:= h/2;
+##printf("select %d ",l);
+##printf("%d\n",h);
+#t0:= alarm.usec();
+#c:= select(b,l,h);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+#printf("#select %d\n",d0);
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
@@ -102,54 +143,70 @@ exit v;	# 8  (v:bit)
     io.printf("#crack init %d\n",d0);	# 22 IOprint_formatted_lng ($26:int)<-($27:str)(d0:lng)
     l := calc.*(mi,2);	# 23 CALCbinaryMULintint (l:int)<-(mi:int)($28:int)
     h := calc./(mx,2);	# 24 CALCbinarycheckDIVintint (h:int)<-(mx:int)($28:int)
-    io.printf("select %d ",l);	# 25 IOprint_formatted_int ($30:int)<-($31:str)(l:int)
-    io.printf("%d\n",h);	# 26 IOprint_formatted_int ($32:int)<-($33:str)(h:int)
-    t0 := alarm.usec();	# 27 ALARMusec (t0:lng)
-    z := crackers.crack(b,cidx,vrng,l,h);	# 28 CRKcrackNaive (z:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])(l:int)(h:int)
-    t1 := alarm.usec();	# 29 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 30 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#crack %d\n",d0);	# 31 IOprint_formatted_lng ($35:int)<-($36:str)(d0:lng)
-    l := calc.*(l,2);	# 32 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
-    h := calc./(h,2);	# 33 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
-    io.printf("select %d ",l);	# 34 IOprint_formatted_int ($37:int)<-($31:str)(l:int)
-    io.printf("%d\n",h);	# 35 IOprint_formatted_int ($38:int)<-($33:str)(h:int)
-    t0 := alarm.usec();	# 36 ALARMusec (t0:lng)
-    y := crackers.crack(b,cidx,vrng,l,h);	# 37 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])(l:int)(h:int)
-    t1 := alarm.usec();	# 38 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 39 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#crack %d\n",d0);	# 40 IOprint_formatted_lng ($40:int)<-($36:str)(d0:lng)
-    l := calc.*(l,2);	# 41 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
-    h := calc./(h,2);	# 42 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
-    io.printf("select %d ",l);	# 43 IOprint_formatted_int ($41:int)<-($31:str)(l:int)
-    io.printf("%d\n",h);	# 44 IOprint_formatted_int ($42:int)<-($33:str)(h:int)
-    t0 := alarm.usec();	# 45 ALARMusec (t0:lng)
-    y := crackers.crack(b,cidx,vrng,l,h);	# 46 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])(l:int)(h:int)
-    t1 := alarm.usec();	# 47 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 48 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#crack %d\n",d0);	# 49 IOprint_formatted_lng ($43:int)<-($36:str)(d0:lng)
-    l := calc.*(l,2);	# 50 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
-    h := calc./(h,2);	# 51 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
-    io.printf("select %d ",l);	# 52 IOprint_formatted_int ($44:int)<-($31:str)(l:int)
-    io.printf("%d\n",h);	# 53 IOprint_formatted_int ($45:int)<-($33:str)(h:int)
-    t0 := alarm.usec();	# 54 ALARMusec (t0:lng)
-    y := crackers.crack(b,cidx,vrng,l,h);	# 55 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])(l:int)(h:int)
-    t1 := alarm.usec();	# 56 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 57 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#crack %d\n",d0);	# 58 IOprint_formatted_lng ($46:int)<-($36:str)(d0:lng)
-    io.print(cidx);	# 59 IOprint_val ($47:int)<-(cidx:bat[:int,:int])
-    io.print(vrng);	# 60 IOprint_val ($48:int)<-(vrng:bat[:int,:int])
-end main;	# 61  
+    t0 := alarm.usec();	# 25 ALARMusec (t0:lng)
+    z := crackers.crack(b,cidx,vrng,l,h);	# 26 CRKcrackNaive (z:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 27 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 28 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#crack %d\n",d0);	# 29 IOprint_formatted_lng ($31:int)<-($32:str)(d0:lng)
+    l := calc.*(l,2);	# 30 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 31 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 32 ALARMusec (t0:lng)
+    y := crackers.crack(b,cidx,vrng,l,h);	# 33 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 34 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 35 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#crack %d\n",d0);	# 36 IOprint_formatted_lng ($34:int)<-($32:str)(d0:lng)
+    l := calc.*(l,2);	# 37 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 38 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 39 ALARMusec (t0:lng)
+    y := crackers.crack(b,cidx,vrng,l,h);	# 40 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 41 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 42 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#crack %d\n",d0);	# 43 IOprint_formatted_lng ($35:int)<-($32:str)(d0:lng)
+    l := calc.*(l,2);	# 44 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 45 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 46 ALARMusec (t0:lng)
+    y := crackers.crack(b,cidx,vrng,l,h);	# 47 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 48 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 49 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#crack %d\n",d0);	# 50 IOprint_formatted_lng ($36:int)<-($32:str)(d0:lng)
+    io.print(cidx);	# 51 IOprint_val ($37:int)<-(cidx:bat[:int,:int])
+    io.print(vrng);	# 52 IOprint_val ($38:int)<-(vrng:bat[:int,:int])
+    l := calc.*(mi,2);	# 53 CALCbinaryMULintint (l:int)<-(mi:int)($28:int)
+    h := calc./(mx,2);	# 54 CALCbinarycheckDIVintint (h:int)<-(mx:int)($28:int)
+    t0 := alarm.usec();	# 55 ALARMusec (t0:lng)
+    c := algebra.select(b,l,h);	# 56 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 57 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 58 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#select %d\n",d0);	# 59 IOprint_formatted_lng ($39:int)<-($40:str)(d0:lng)
+    l := calc.*(l,2);	# 60 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 61 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 62 ALARMusec (t0:lng)
+    c := algebra.select(b,l,h);	# 63 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 64 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 65 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#select %d\n",d0);	# 66 IOprint_formatted_lng ($41:int)<-($40:str)(d0:lng)
+    l := calc.*(l,2);	# 67 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 68 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 69 ALARMusec (t0:lng)
+    c := algebra.select(b,l,h);	# 70 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 71 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 72 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#select %d\n",d0);	# 73 IOprint_formatted_lng ($42:int)<-($40:str)(d0:lng)
+    l := calc.*(l,2);	# 74 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 75 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 76 ALARMusec (t0:lng)
+    c := algebra.select(b,l,h);	# 77 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 78 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 79 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#select %d\n",d0);	# 80 IOprint_formatted_lng ($43:int)<-($40:str)(d0:lng)
+end main;	# 81  
 max 2147480021 min 1210
-#copy 25
-#crack init 35505
-select 2420 1073740010
-#crack 72510
-select 4840 536870005
-#crack 36124
-select 9680 268435002
-#crack 17947
-select 19360 134217501
-#crack 8823
+#copy 22
+#crack init 35524
+#crack 65246
+#crack 32456
+#crack 16097
+#crack 7852
 #-------------------------#
 # h	tmp_5		  # name
 # int	int		  # type
@@ -176,4 +233,8 @@ select 19360 134217501
 [ 268435003,	  536870005	  ]
 [ 19360,	  134217501	  ]
 [ 134217502,	  268435002	  ]
+#select 35846
+#select 27556
+#select 24792
+#select 23344
 >

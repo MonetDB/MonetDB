@@ -27,8 +27,8 @@ printf("#crack init %d\n",d0);
 
 l:= mi*2;
 h:= mx/2;
-printf("select %d ",l);
-printf("%d\n",h);
+#printf("select %d ",l);
+#printf("%d\n",h);
 t0:= alarm.usec();
 z:= crackers.crack(b,cidx,vrng,l,h);
 t1:= alarm.usec();
@@ -38,8 +38,8 @@ printf("#crack %d\n",d0);
 
 l:= l*2;
 h:= h/2;
-printf("select %d ",l);
-printf("%d\n",h);
+#printf("select %d ",l);
+#printf("%d\n",h);
 t0:= alarm.usec();
 y:= crackers.crack(b,cidx,vrng,l,h);
 #print(vrng);
@@ -49,8 +49,8 @@ printf("#crack %d\n",d0);
 
 l:= l*2;
 h:= h/2;
-printf("select %d ",l);
-printf("%d\n",h);
+#printf("select %d ",l);
+#printf("%d\n",h);
 t0:= alarm.usec();
 y:= crackers.crack(b,cidx,vrng,l,h);
 #print(vrng);
@@ -60,8 +60,8 @@ printf("#crack %d\n",d0);
 
 l:= l*2;
 h:= h/2;
-printf("select %d ",l);
-printf("%d\n",h);
+#printf("select %d ",l);
+#printf("%d\n",h);
 t0:= alarm.usec();
 y:= crackers.crack(b,cidx,vrng,l,h);
 #print(vrng);
@@ -70,3 +70,55 @@ d0:= t1-t0;
 printf("#crack %d\n",d0);
 print(cidx);
 print(vrng);
+
+# Compare cracker with ordinary selection
+t0:= alarm.usec();
+i:= max(b);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#max %d\n",d0);
+t0:= alarm.usec();
+i:= min(b);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#min %d\n",d0);
+
+l:= mi*2;
+h:= mx/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+c:= select(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#select %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+c:= select(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#select %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+c:= select(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#select %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+c:= select(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#select %d\n",d0);
