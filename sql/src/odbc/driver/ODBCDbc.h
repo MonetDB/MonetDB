@@ -128,7 +128,8 @@ SQLRETURN SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
 SQLRETURN SQLConnect_(ODBCDbc *dbc,
 		      SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		      SQLCHAR *szUID, SQLSMALLINT nUIDLength,
-		      SQLCHAR *szPWD, SQLSMALLINT nPWDLength);
+		      SQLCHAR *szPWD, SQLSMALLINT nPWDLength,
+		      char *host, int port);
 SQLRETURN SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 			     SQLPOINTER ValuePtr, SQLINTEGER BufferLength,
 			     SQLINTEGER *StringLength);
