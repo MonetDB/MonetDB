@@ -1513,13 +1513,22 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     ServerReady = True
     if SERVER in ["MAPI", "SQL"]:
-        PROLOGUE = ""
-        if os.path.isfile(TST+".prologue"):
-            PROLOGUE = " "+TST+".prologue"
+        SrvrOutFile = TST+".server.out"
+        SrvrErrFile = TST+".server.err"
+        SrvrOut = open(SrvrOutFile,"w")
+        SrvrErr = open(SrvrErrFile,"w")
+        ClntOutFile = TST+".client.out"
+        ClntErrFile = TST+".client.err"
+        open(ClntOutFile,"w").close()
+        open(ClntErrFile,"w").close()
 
         CheckSocket2(env, SERVER, SrvrErr)
         if SERVER == "SQL":
             CheckSocket2(env, "MAPI", SrvrErr)
+
+        PROLOGUE = ""
+        if os.path.isfile(TST+".prologue"):
+            PROLOGUE = " "+TST+".prologue"
 
         Srvr = '%s%s %s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], TSTDB)
         if SERVER == "MAPI":
@@ -1533,15 +1542,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         else:
             Srvr = Srvr+' ; echo ; '
         Srvr = Srvr+'echo Over..'
-
-        SrvrOutFile = TST+".server.out"
-        SrvrErrFile = TST+".server.err"
-        SrvrOut = open(SrvrOutFile,"w")
-        SrvrErr = open(SrvrErrFile,"w")
-        ClntOutFile = TST+".client.out"
-        ClntErrFile = TST+".client.err"
-        open(ClntOutFile,"w").close()
-        open(ClntErrFile,"w").close()
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
         ln=""
