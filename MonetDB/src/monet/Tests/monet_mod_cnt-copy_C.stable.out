@@ -149,9 +149,12 @@ Over..
 [ 10663@0,	  3	  ]
 [ 10664@0,	  3	  ]
 [ 10701@0,	  3	  ]
-!WARNING: [copy]: 3 times inserted nil due to errors at tuples "name", "count", "copy.count".
-!WARNING: [copy]: first error was: !ERROR: BATcopy: BAT required.
-!ERROR: CMDcopy: operation failed.
+MAPI  = anonymous@draco:53969
+ACTION= mapi_get_row
+QUERY = b:=x.reverse.mirror.[bat].[copy].[count];
+ERROR = !WARNING: [copy]: 3 times inserted nil due to errors at tuples "name", "count", "copy.count".
+ERROR = !WARNING: [copy]: first error was: !ERROR: BATcopy: BAT required.
+ERROR = !ERROR: CMDcopy: operation failed.
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
