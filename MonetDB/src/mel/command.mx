@@ -81,12 +81,6 @@ class Command : public Symbol {
 #include <stdlib.h>
 
 static int id_rand(void);
-/*
-extern "C" {
-     extern long rand();
-     extern void srand( unsigned seed);
-}
-*/
 
 Command::Command( int t, char *n, char *fcn, int type, Symbol *result, 
 		List *args, char *hlp ) 
@@ -214,7 +208,6 @@ random numbers with history (to avoid doubles)
 
 #define MAX_ID_HIST 10240
 
-//static int id_base = srand(time(NULL));
 static int id_hist[MAX_ID_HIST];
 static int id_size = 0;
 
