@@ -1102,10 +1102,11 @@ int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a)
 	return (ptr*)r;
 @c
 
-ptr *dec_frstr( void *extra, int type, char *s, char *e)
+ptr *dec_frstr( void *extra, int type, char *s, char *e, char quote)
 {
 	/* support dec map to sht, int and lng */
 	(void)e;
+	(void)quote;
 	if (type == TYPE_sht){
 		@:dec_frstr(sht)@
 	} else if (type == TYPE_int){
@@ -1118,11 +1119,11 @@ ptr *dec_frstr( void *extra, int type, char *s, char *e)
 	return NULL;
 }
 
-ptr *_ASCIIadt_frStr( void *extra, int type, char *s, char *e){
+ptr *_ASCIIadt_frStr( void *extra, int type, char *s, char *e, char quote){
         int l = 0;
         ptr *res = NULL;
 	(void) extra;
-	if (strcasecmp(s, "NULL") == 0) {
+	if (!(type == TYPE_str && quote) && strcasecmp(s, "NULL") == 0) {
 		res = (ptr*)ATOMnil(type);
 	} else if (type == TYPE_str) {
 		return ASCIIstrFrStr( s, e );
