@@ -3046,6 +3046,6 @@ gdk_export void	*VALget		(ValPtr v);
 @
 @}
 @T
-\bibliographystyle{plain}
+%\bibliographystyle{plain}
 \bibliography{gdk}
 @}

@@ -64,11 +64,16 @@ def unlink(file):
 
 def runMx(srcdir, base, dstdir, suffix='' ):
     print 'runMx', srcdir, base, dstdir
-    cmd = '%s "-R%s" -H1 -w "%s" 2>&1' % (mx, tmpdir, os.path.join(srcdir, base + '.mx'))
+    cwd = os.getcwd()
+    print cwd, '->', srcdir
+    os.chdir(srcdir)
+    cmd = '%s "-R%s" -H1 -w "%s" 2>&1' % (mx, tmpdir, base + '.mx')
     print cmd
     f = os.popen(cmd, 'r')
     dummy = f.read()                    # discard output
     f.close()
+    print srcdir, '->', cwd
+    os.chdir(cwd)
     srcfile = os.path.join(tmpdir, base + '.body.html')
     if not os.path.exists(srcfile):
         srcfile = os.path.join(tmpdir, base + '.html')
