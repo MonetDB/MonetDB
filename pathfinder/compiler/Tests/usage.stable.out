@@ -50,7 +50,7 @@ Usage: pf [OPTION] [FILE]
         20  after the MIL program has been serialized
 = -p, --print-parse-tree: print internal parse tree
 = -c, --print-core-tree: print internal Core language
-= -a, --print-algebra: stop after algebra tree generation
+= -a, --print-algebra: print internal algebra tree
 = -m, --print-mil-algebra: print internal MIL algebra tree
 
 Enjoy.
