@@ -1748,7 +1748,7 @@ int & ATOMconvert     & (int id, ptr v, int direction);\\
 int & ATOMfix         & (int id, ptr v);\\
 int & ATOMunfix       & (int id, ptr v);\\
 \hline
-int & ATOMheap        & (int id, Heap *hp, size_t cap);\\
+int & ATOMheap        & (int id, Heap *hp, size\_t cap);\\
 void& ATOMheapconvert & (int id, Heap *hp, int direction);\\
 int & ATOMheapcheck   & (int id, Heap *hp, HeapRepair *hr);\\
 int & ATOMput         & (int id, Heap *hp, BUN pos\_dst, ptr val\_src);\\
