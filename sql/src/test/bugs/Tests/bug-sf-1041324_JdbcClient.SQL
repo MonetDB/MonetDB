@@ -21,6 +21,6 @@ LC_CTYPE="en_US.UTF-8"
 export LC_CTYPE
 
 Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/../bug-sf-1041324_weird-char.sql"
-	$MTIMEOUT java -jar  "$JAR"  -p $SQLPORT -f $RELSRCDIR/../bug-sf-1041324_weird-char.sql 
+	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $SQLPORT -f $RELSRCDIR/../bug-sf-1041324_weird-char.sql 
 
 rm -f .monetdb
