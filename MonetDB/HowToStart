@@ -160,6 +160,20 @@ the installed version of MonetDB.
 You need write permissions on part of the installation directory for
 this command: it will create subdirectories var/dbfarm and Tests.
 
+Documentation:
+==============
+
+The documentation starts in $prefixdir/doc/monet.html
+
+NOTE: the current 'make install' does not yet generate this documentation
+      to do this manually, execute *after* successful 'make install':
+
+	 doc/doc.sh $sourcedir $builddir $prefixdir
+
+where: sourcedir = top-level source directory (where HowToStart is)
+       builddir  = directory where you typed 'configure' and 'make install'
+       prefixdir = installation directory (as specified to configure with --prefix)
+
 Troubleshooting:
 ================
 

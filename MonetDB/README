@@ -1,38 +1,45 @@
-The Monet Binary Distribution.
-=============================
+The Monet Database System
+=========================
 
-Monet is a high-performance database kernel developed and
-copyrighted 1993-2001 by the database research group of
-prof. dr. Martin Kersten at CWI.
+The Monet database is developed by the CWI database research 
+group (see http://monetdb.cwi.nl). 
 
-You can also visit the Monet website @ http://www.cwi.nl/~monet
-or http://www.monetsolutions.com
+Via the MonetDB project we have brought the Monet system in open
+source, where it is accessible at http://sourceforge.net/projects/monetdb
 
-Documentation is in HTML format and starts in the file 'doc/index.html'.
-Choose 'Documentation' to obtain a short overview of Monet and 
-installation instructions for the binary distribution, and compilation
-instructions for the source distribution.
+The Monet database system is a high-performance database kernel 
+for query-intensive applications. The Monet kernel works together
+with an SQL frontend that is in a separate CVS module.
 
-Directories in the binary distribution:
-	<arch>/bin/		Monet runnable programs.
-	<arch>/lib/		libraries and compiled modules.
-	<arch>/include/		header files (for extension programmers).
-	scripts/		standard MIL scripts.
-	www/			HTML documentation
-	dbfarm/			database directory (empty)
+If you got a source distribution, please compile and install 
+Monet first, following the instructions in the file 'HowToStart'.
 
-The source distribution lacks any <arch> directories with compiled files,
-but brings the following extra files: 
-	Makefile		The global super-makefile for Monet
-	makefiles/		System specific makefiles.
-	src/			Main source directory with entries 
-				gdk/ monet/ tools/ mel/ and utils/
-	modules/		Standard extension modules 
-				including the odmg layer.
+The documentation starts in doc/monet.html, relative from
+your binary distribution top-level directory, or installation
+directory (once you compiled and installed the source distribution). 
 
-For those without the patience to read the documentation,
-at least make sure that:
-- the Monet tools (located in <arch>/bin/) are in your PATH,
-- the <arch>/lib/ directory is in LD_LIBRARY_PATH
+Copyright Notice
+================
 
-You might try creating the 'gold' demo database, in 'scripts/gold'
+The Monet Database is subject to the MonetDB Public
+License Version 1.0 (the "License"); you may not use this file
+except in compliance with the License. You may obtain a copy of
+the License at
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+
+Software distributed under the License is distributed on an "AS
+IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+implied. See the License for the specific language governing
+rights and limitations under the License.
+
+The Original Code is the Monet Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-2002 CWI.
+All Rights Reserved.
+
+Contributor(s):
+             Martin Kersten <Martin.Kersten@cwi.nl>
+             Peter Boncz <Peter.Boncz@cwi.nl>
+             Niels Nes <Niels.Nes@cwi.nl>
+             Stefan Manegold  <Stefan.Manegold@cwi.nl>
