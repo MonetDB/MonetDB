@@ -2021,14 +2021,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if ln[:6] != 'Ready.':
             ServerReady = False
 
-    	if SERVER in ["MAPI", "SQL"] and ( os.name == "nt" or OS == "CYGWIN" ):
-       	    s = 2
-            if not quiet:
-            	STDOUT.write(" (sleeping %d secs .." % s)
-
-            time.sleep(s)
-            if not quiet:
-           	 STDOUT.write(".. done) ")
 	if ServerReady:
     	    port = int(env[SERVER+'PORT'])
 	    ServerReady = mapi_ping(port)
@@ -2196,14 +2188,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     if TestErr is not None:
         TestErr.write(Prompt('Done.'))
         TestErr.close()
-    if SERVER in ["MAPI", "SQL"] and ( os.name == "nt" or OS == "CYGWIN" ):
-        s = 2
-        if not quiet:
-            STDOUT.write(" (sleeping %d secs .." % s)
-
-        time.sleep(s)
-        if not quiet:
-            STDOUT.write(".. done) ")
 			
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
 
@@ -2913,6 +2897,7 @@ def main(argv) :
 
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:
+        	print "removing " + (os.path.join(env['GDK_DBFARM'],TSTPREF));
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'],TSTPREF))
             except:
                 ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
