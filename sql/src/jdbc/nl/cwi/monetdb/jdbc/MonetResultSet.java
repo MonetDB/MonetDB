@@ -802,7 +802,7 @@ public class MonetResultSet implements ResultSet {
 	 */
 	public ResultSetMetaData getMetaData() {
 		// return inner class which implements the ResultSetMetaData interface 
-		return( new ResultSetMetaData() {
+		return(new ResultSetMetaData() {
 			/**
 			 * Returns the number of columns in this ResultSet object.
 			 *
