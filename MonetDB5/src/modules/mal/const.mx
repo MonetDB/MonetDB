@@ -42,11 +42,16 @@ prohibiting all updates unless issued by the system administrator.
 
 @mal
 module const
-comment "The const module provides a box abstraction store for global constants.
-Between sessions the value of the constants is saved on disk in the form of a
-simple mal program, which is scanned and made available by opening the box.
-A future implementation should provide transaction support over the box, which
-would permit multiple clients to exchange (scalar) information easily.";
+comment "The const module provides a box 
+abstraction store for global constants.
+Between sessions the value of the constants 
+is saved on disk in the form of a simple 
+mal program, which is scanned and made 
+available by opening the box.  A future 
+implementation should provide transaction 
+support over the box, which would permit 
+multiple clients to exchange (scalar) 
+information easily.";
 
 pattern open():void
 address CSTopen

@@ -18,10 +18,16 @@
 @a Martin Kersten
 @v 1.0
 @+ Scalar iterators
-Iterators are also defined for the built-in scalar types.
-They can be used to model ordinary for-loops.
+Iterators are sometimes needed also at the MAL level.
+The barrier and control primitives are often sufficient
+to mimick them directly.
+For the common case:
+@T
+for( i=first; i<last; i+= step)
+@-
+we use a few predefined functions, which reduces the
+number of MAL instructions otherwise needed.
 
-Iterators enumerate elements in a collection defined by a few paramaters,
 e.g. a lower/upper bound, or a bat. An iterator is initialized in the first
 call by recognizing that the control variable lies outside the intended
 collection.
@@ -29,31 +35,39 @@ collection.
 @mal
 module mal;
 
-command nextElement(i:flt,f:flt,l:flt,s:flt):bit 
-address fltForloopStep; 
-command nextElement(i:dbl,f:dbl,l:dbl,s:dbl):bit 
-address dblForloopStep; 
-command nextElement(i:sht,f:sht,l:sht,s:sht):bit 
-address shtForloopStep; 
-command nextElement(i:lng,f:lng,l:lng,s:lng):bit 
-address lngForloopStep; 
-command nextElement(i:int,f:int,l:int,s:int):bit 
-address intForloopStep
-comment "These routine provide an iterator over 
-	a scalar domain. The step size depends 
-	on the underlying type."; 
+command newRang(v:oid)(:bit,:oid)
+address RNGnewRange_oid; 
+command newRange(v:chr)(:bit,:chr)
+address RNGnewRange_chr; 
+command newRange(v:sht)(:bit,:sht)
+address RNGnewRange_sht; 
+command newRange(v:int)(:bit,:int)
+address RNGnewRange_int; 
+command newRange(v:lng)(:bit,:lng)
+address RNGnewRange_lng; 
+command newRange(v:flt)(:bit,:flt)
+address RNGnewRange_flt; 
+command newRange(v:dbl)(:bit,:dbl)
+address RNGnewRange_dbl 
+comment "This routine introduces an iterator
+	over a scalar domain.";
 
-command nextElement(i:chr, f:chr, l:chr ):bit 
-address chrForloop; 
-command nextElement(i:sht, f:sht, l:sht) :bit 
-address shtForloop; 
-command nextElement(i:lng, f:lng, l:lng) :bit 
-address lngForloop; 
-command nextElement(i:int, f:int, l:int) :bit 
-address intForloop
-comment "This routine provides an iterator
-	over a scalar domain. The step size 
-	depends on the underlying type."; 
+command nextElement(step:oid,last:oid)(:bit,:oid)
+address RNGnextElement_oid; 
+command nextElement(step:int,last:chr)(:bit,:chr)
+address RNGnextElement_chr; 
+command nextElement(step:sht,last:sht)(:bit,:sht)
+address RNGnextElement_sht; 
+command nextElement(step:int,last:int)(:bit,:int)
+address RNGnextElement_int; 
+command nextElement(step:lng,last:lng)(:bit,:lng)
+address RNGnextElement_lng; 
+command nextElement(step:flt,last:flt)(:bit,:flt)
+address RNGnextElement_flt; 
+command nextElement(step:dbl,last:dbl)(:bit,:dbl)
+address RNGnextElement_dbl 
+comment "Advances the iterator with a fixed value
+	until it becomes >= last.";
 @-
 Note that the modules located in the kernel directory should not
 rely on the MAL datastructures. That's why we have to deal with
@@ -279,19 +293,13 @@ str CMDsetCwd(str *ret, str *fnme){
 @+ MAL iterator code
 This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few paramaters,
-e.g. a lower/upper bound, or a bat. An iterator is initialized in the first
-call by recognizing that the control variable lies outside the intended
-collection.
+e.g. a lower/upper bound.
 
 Iterators appear as ordinary function calls in the MAL code and
 always return a boolean, to indicate that an element is available for
 consumption. Initialization of the iterator representation depends
 on its kind.
 
-The state of the iterator should be encoded in its arguments, which
-may be modified as a side-effect of calling the iterator.
-[we may need to include R/W information in the typing scheme]
-@+ Foreach iterators
 The most common class of iterators encountered in a programming
 environment is the for-loop. It contains a for-loop variable,
 a starting point and a limit. Changing the for-loop variable
@@ -300,60 +308,41 @@ to simplify data-flow analysis.
 
 We assume that the range boundaries comply with the underlying domain.
 
-@= forloopRange
-str @1Forloop(bit *res, @1 *i, @1 *first, @1 *last){
-        @1 v = *i;
-	if( v >= *first ){
-		*i = ++v;
-		if( v < *last){
-			*res = TRUE;
-			return MAL_SUCCEED;
-		}
-		*res = FALSE;
-		*i= *first;
-		return MAL_SUCCEED;
-	} 
+@= newRange
+str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
 	*res = TRUE;
 	*i= *first;
 	return MAL_SUCCEED;
 }
 
-@= forloopStep
-str @1ForloopStep(bit *res, @1 *i, @1 *first, @1 *last, @1 *step){
+@= nextElement
+str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 	@1 v = *i;
-	if( v >= *first){
-		*i = v + *step;
-		if( *i < *last){
-			*res= 1;
-			return MAL_SUCCEED;
-		}
-		if( v >= *last){
-			*i = *first;
-			*res= 0;
-			return MAL_SUCCEED;
-		} 
-		*res= 0;
-	} else {
-		*i = *first;
-		*res= 1;
-	}
+	v = v + *step;
+	*i = v;
+	*res = v < *last;
 	return MAL_SUCCEED;
 }
 @c
 
-@:forloopRange(lng)@
-@:forloopRange(chr)@
-@:forloopRange(int)@
-@:forloopRange(sht)@
+@:newRange(oid)@
+@:newRange(lng)@
+@:newRange(chr)@
+@:newRange(int)@
+@:newRange(sht)@
+@:newRange(flt)@
+@:newRange(dbl)@
 
-@:forloopStep(lng)@
-@:forloopStep(int)@
-@:forloopStep(sht)@
-@:forloopStep(flt)@
-@:forloopStep(dbl)@
+@:nextElement(oid)@
+@:nextElement(lng)@
+@:nextElement(int)@
+@:nextElement(sht)@
+@:nextElement(chr)@
+@:nextElement(flt)@
+@:nextElement(dbl)@
 
 @-
-There are a few atomairy storage types we have to introduce here:
+There are a few more atomairy storage types we have to introduce here:
 OID, str, void, bit, ptr
 @-
 @}

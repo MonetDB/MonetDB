@@ -15,11 +15,6 @@
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
 @' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f multiplex
 @a Peter Boncz, Martin Kersten
@@ -119,9 +114,9 @@ c tails and stores it in b. This case is detected by operatorModifier();
 #include "multiplex.h"
 #define REALLY_REALLY_BIG	2000000000
 
-/* #define DEBUG_MULTIPLEX*/
-/*#define TRACE_MULTIPLEX*/
-static int multiplexDebug=0;
+/* #define DEBUG_MULTIPLEX */
+/* #define TRACE_MULTIPLEX */
+static int multiplexDebug = 0;
 
 static int batcalcTypeCheck(str operator, int type);
 
@@ -174,7 +169,7 @@ int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	MalBlkPtr m, InstrPtr p)
 {
-	int i, k, t, tpe= TYPE_void, tt;
+	int i, k, t, tpe= TYPE_any, tt;
 	int first = TRUE, firstbat=FALSE, inplace= FALSE;
 	str fcnname;
 	char name[1024];
@@ -227,8 +222,10 @@ join compatability
 			int t2 = getHeadType(t);
 			if( !( (tpe == TYPE_void && t2 == TYPE_oid) ||
 			       (tpe == TYPE_oid && t2 == TYPE_void) ) ){
-				if( t2 != tpe)
-				GDKerror("multiplexType:BAT head types differ in %s[%d]\n",
+				if( t2 != tpe && tpe!= TYPE_any && t2!= TYPE_any)
+				GDKerror("multiplexType:BAT head types %d %d"
+					"differ in %s[%d]\n",
+					t2,tpe,
 					 functionName(pci), getPC(mb,pci));
 			}
 		}
@@ -275,7 +272,9 @@ join compatability
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug && i<0){
 		printf("Type conformance on %d failed\n",tpe);
-		printf("type tt =%d bat[%d,%d]\n",tt, getHeadType(tpe),getTailType(tpe));
+		printf("type tt =%s <> bat[%d,%d]\n",
+			getTypeName(getDestType(mb,pci)),
+			getHeadType(tpe),getTailType(tpe));
 		printInstruction(GDKout,m,p,LIST_MAL_ALL);
 		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 	}
@@ -594,9 +593,9 @@ find the actule arguments at the proper place of the callee.
 	setFunctionId(q, GDKstrdup("newIterator"));
 	q->barrier = BARRIERsymbol;
 	q->argv[0]= mloop= newVariable(m,GDKstrdup("mloop"),TYPE_lng);
-	hvar= q->argv[1] = newVariable(m,GDKstrdup("h"),getHeadType(refType));
+	hvar= q->argv[1] = newVariable(m,GDKstrdup("h"),TYPE_any);
 	sprintf(name,"B%d",rIndex);
-	tvar= q->argv[2] = newVariable(m,GDKstrdup(name),getTailType(refType));
+	tvar= q->argv[2] = newVariable(m,GDKstrdup(name),TYPE_any);
 	q->argv[3] = refBat;
 	q->retc= 3;
 	q->argc= 4;

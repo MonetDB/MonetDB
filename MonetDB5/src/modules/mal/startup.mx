@@ -1,7 +1,8 @@
 @f startup
 @a Martin Kersten
 @* Mal Startup file
-Upon starting the Monet/MAL server we need to initialize the symbol table.
+Upon starting the server the symbol table is initialized
+with the modules for MAL interaction.
 This encompasses loading the signatures of several key modules.
 They are listed below. 
 
@@ -13,22 +14,44 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
-use "mal/tcpip";
-use "mal/threads";
-use "kernel/startup";
-use "mal/chopper";
-use "mal/io";
-use "mal/streams";
-use "mal/ascii_io";
-use "mal/enum";
-use "mal/mal";
-use "mal/profiler";
-use "mal/squeezer"; 
-use "mal/multiplex";
-use "mal/const"; 
-use "mal/bbp";
-use "mal/box"; 
-use "mal/catalog";
+use "tcpip";
+use "threads";
+
+#include "pcl";
+include "unix";
+include "lock";
+include "alarm";
+include "mmath";
+
+include "blob";
+include "str";
+include "url";
+include "mtime";
+
+include "bat";
+#include "mkey";
+include "algebra";
+include "calc";
+include "batcalc";
+include "status";
+include "group";
+include "aggrX3";
+#include "unique";
+include "mapi";
+
+use "chopper";
+use "io";
+use "streams";
+use "ascii_io";
+use "enum";
+use "mal";
+use "profiler";
+use "squeezer"; 
+use "multiplex";
+use "const"; 
+use "bbp";
+use "box"; 
+use "catalog";
 @-
 In practice, we have to introduce different startup for each
 client group or database.

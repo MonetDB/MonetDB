@@ -34,25 +34,22 @@ module clients;
 
 command setListing(flg:int):int
 address CLTsetListing
-comment "Turn on/off echo of MAL instructions";
+comment "Turn on/off echo of MAL instructions:
+	2 - show mal instruction,
+	4 - show type resolutoin, 
+	8 - show binding information";
+
 command setDebug(flg:int):void
 address CLTsetDebug
-comment "Set the flag in the debugging bitset";
-command getScenario():str 
-address CLTgetScenario
-comment "Retrieve current scenario name";
-command setScenario(msg:str):str 
-address CLTsetScenario
-comment "Switch to other scenario handler, 
-	return previous one";
+comment "Set the flag in the debugging bitset.
+	See configuration file and documentation";
+command clearDebug(flg:int):void
+address CLTclearDebug
+comment "Clear the flag in the debugging bitset";
 
 #command setPassword(s:str)
 #address CLTsetPassword
 #comment "Change the password for the client";
-
-command clearDebug(flg:int):void
-address CLTclearDebug
-comment "Clear the flag in the debugging bitset";
 
 command getUsers( ):bat[:int,:str] 
 address CLTusers
@@ -63,6 +60,14 @@ comment "Pseudo bat of client login time";
 command info( ):bat[:int,:str] 
 address CLTInfo
 comment "Pseudo bat with client attributes";
+
+command getScenario():str 
+address CLTgetScenario
+comment "Retrieve current scenario name";
+command setScenario(msg:str):str 
+address CLTsetScenario
+comment "Switch to other scenario handler, 
+	return previous one";
 
 command quit():void
 address CLTquit

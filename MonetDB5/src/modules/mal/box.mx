@@ -62,6 +62,9 @@ comment "Release the BAT from the client pool";
 pattern iterator(nme:str):lng 
 address BOXiterator
 comment "Locates the next element in the box";
+command getBoxNames():bat[:int,:str]
+address BOXgetBoxNames
+comment "Retrieve the names of all boxes";
 @-
 @{
 @+ Dummy code 
@@ -175,6 +178,9 @@ str BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb; (void)stk; /*fool compiler */
 	@:OpenBox(toString)@
 	return MAL_SUCCEED;
+}
+str BOXgetBoxNames(int *bid){
+	return getBoxNames(bid);
 }
 
 str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

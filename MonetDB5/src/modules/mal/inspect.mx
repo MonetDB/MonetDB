@@ -19,7 +19,7 @@
 @a Martin Kersten
 @v 1
 @* Runtime Inspection
-This document introduces a series of bats and commands that provide access
+This module introduces a series of bats and commands that provide access
 to information stored within the interpreter data structures.
 In all cases, the pseudo BAT operation returns a transient BAT that
 should be garbage collected after being used.
@@ -106,10 +106,10 @@ command getAtoms():bat[:int,:str]
 address INSPECTatom_names
 comment "Collect a BAT with the atom names";
 
-@- Display code
+@+ Display code
 A key tool for analysis of the MAL code is being able to dump
 any routine, module. For queries, it is also illustrative to display
-the flow graph.
+the flow graph. [TODO]
 @mal
 pattern showFunction():void 
 address INSPECTshowFunction3
@@ -134,8 +134,7 @@ address INSPECThelp2
 comment "Collect the comments for a given 
 	function pattern";
 @- Manual construction
-The manual operations ease offline inspection of all the Monet function
-definitons.
+The manual operations ease offline inspection of all function definitons.
 It purposely generates an XML organized file, because we expect external
 tools to massage it further for presentation. The envisioned 
 tagging structure becomes
