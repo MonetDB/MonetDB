@@ -100,15 +100,14 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
         h->offset = h->free = 0;
 
 	if (h->filename == NULL || (h->size*4 < GDK_mem_maxsize)) {
-		size_t maxsize = h->size;
         	h->storage = STORE_MEM;
         	h->maxsize = h->size;
 		if (h->size > GDK_mem_bigsize) {
 			/* maxsize is a multiple of 65536, andhas 20% free space */
- 			maxsize = (maxsize * BATMARGIN) - 1;
-			maxsize = (1 + (maxsize >> 16)) << 16;
+ 			h->maxsize = (h->maxsize * BATMARGIN) - 1;
+			h->maxsize = (1 + (h->maxsize >> 16)) << 16;
 		}
-                h->base = (char *) GDKmallocmax(h->size, maxsize);
+                h->base = (char *) GDKmallocmax(h->size, &h->maxsize);
 	}
 	if (h->filename && h->base == NULL) {
 		long_str path;
@@ -116,7 +115,7 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
 		GDKfree(h->filename);
 		h->filename = (str) GDKmalloc(strlen(nme)+strlen(ext)+2);
 		sprintf(h->filename, "%s.%s", nme, ext);
-	        GDKfilepath(path,BATDIR,h->filename,NULL);
+	        GDKfilepath(path, BATDIR, h->filename, NULL);
 		fd = open(path, O_RDWR|O_CREAT, 0644);  
 		if (fd >= 0) {
 			close(fd);
@@ -125,7 +124,7 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
 			HEAPload(h, nme, ext, FALSE);
 		}
 	}
-	return (h->base != NULL);
+	return (h->base == NULL)?-1:0;
 }
 @-
 The routine heap extend can be used to create a larger storage space.
@@ -161,20 +160,62 @@ int HEAPextend(Heap *h, size_t size) {
 		fclose(fp);
 	        GDKfilepath(path,BATDIR,h->filename,NULL);
 		b = GDKmmap(path, MMAP_COPY, (off_t) (h->offset+h->size), totsize, h->base+h->offset+h->size);
-		if ((b == (char*) -1L)) {
-			GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n", h->filename); 
+		if ((b != (char*) -1L)) {
+			h->maxsize = h->size = size;
+			return 0;
 		}
-		h->maxsize = h->size = size;
-		return 1;
+		GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n", h->filename); 
 	} 
 #endif
 	if (h->storage & STORE_MMAP) {
 		/* memory mapped files extend: save and remap */
-		if (HEAPsave(h, nme, ext) < 0) return 0;
+		if (HEAPsave(h, nme, ext) < 0) return -1;
 		HEAPfree(h);
-                if (HEAPload(h, nme, ext, FALSE) < 0) return 0;
+                if (HEAPload(h, nme, ext, FALSE) < 0) return -1;
 	} else {
-		/* malloced: alloc new and copy */
+		Heap bak = *h;
+
+		/* try GDKrealloc if the heap size stays within reasonable limits */
+		if (h->filename == NULL || (size*4 < GDK_mem_maxsize)) {
+        		h->storage = STORE_MEM;
+        		h->maxsize = h->size = size;
+			if (size > GDK_mem_bigsize) {
+				/* maxsize is a multiple of 65536, andhas 20% free space */
+ 				h->maxsize = (h->maxsize * BATMARGIN) - 1;
+				h->maxsize = (1 + (h->maxsize >> 16)) << 16;
+			}
+                	h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize);
+			if (h->base != NULL) return 0;
+		}
+		/* too big: convert it to a disk-based temporary heap */
+		if (h->filename) {
+			long_str path;
+			int fd;
+			h->filename = (str) GDKmalloc(strlen(nme)+strlen(ext)+2);
+			sprintf(h->filename, "%s.%s", nme, ext);
+			GDKfilepath(path, BATDIR, h->filename, NULL);
+			fd = open(path, O_RDWR|O_CREAT, 0644);  
+			if (fd >= 0) {
+				close(fd);
+				/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
+        			h->storage = STORE_MMAP;
+				if (HEAPload(h, nme, ext, FALSE) >= 0) {
+					memcpy(h->base, bak.base, bak.size);
+					HEAPfree(&bak);
+					return 0;
+				}
+			}
+		}
+		*h = bak;
+		
+	}
+	return -1;
+}
+@-
+The routine heap extend can be used to create a larger storage space.
+
+
+
 		Heap nw;
 		nw.filename = h->filename?GDKstrdup(h->filename):NULL;
 		HEAPalloc(&nw, size, 1);
@@ -191,7 +232,7 @@ structures and a dirty destination. Re-use of a heap should be prepared by
 calling HEAPfree.
 @c
 void HEAPcopy(Heap* dst, Heap* src){
-	if (HEAPalloc(dst, src->size, 1)) {
+	if (HEAPalloc(dst, src->size, 1) == 0) {
         	dst->free = src->free;
         	memcpy(dst->base, src->base, src->free);
 	}
