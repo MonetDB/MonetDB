@@ -1028,6 +1028,7 @@ int CMDexport(BAT *b, str fnme) {
 		return GDK_FAIL;
 	}
 	BATprintf(s,b);
+	s->close(s);
 	s->destroy(s);
 	return GDK_SUCCEED;
 }
@@ -1043,7 +1044,7 @@ int CMDimport(BAT **ret, BAT *b, str fnme) {
 	char	*buf = (char *) GDKmalloc(bufsize);
 	ptr	*h = 0, *t = 0;
 	int	lh = 0,	lt = 0;
-	FILE	*fp = fopen(fnme, "r");
+	FILE	*fp = fopen(fnme, "rb");
 
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
