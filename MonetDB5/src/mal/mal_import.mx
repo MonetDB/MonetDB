@@ -136,8 +136,13 @@ malInclude(Client c, str name, str libname, int listing)
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
-	} else if (libname && (s = (str) loadModuleLibrary(libname))) {
-		stream_printf(c->fdout,"%s\n",s);
+	} else if (libname ){
+		s = (str) loadModuleLibrary(libname);
+		if(s) stream_printf(c->fdout,"%s\n",s);
+		else {
+			initClientPrg(c, "main"); /* create new context */
+			runScenario(c);
+		}
     } else {
 		initClientPrg(c, "main"); /* create new context */
     	runScenario(c);

@@ -307,24 +307,33 @@ Scenario findScenario(str nme) {
 Functions may become resolved only after the corresponding module
 has been loaded. This should be announced as part of the module
 prelude code.
+Beware that after the update, we also have to adjust the client records.
+They contain a copy of the functions addresses.
 @= updLine
-		if( scen->@1 && strcmp(scen->@1,nme) == 0)
-			scen->@1Cmd = fcn;
+if( scen->@1 && strcmp(scen->@1,nme) == 0){
+	Client c1;
+	scen->@1Cmd = fcn;
+    for(c1 = mal_clients; c1 < mal_clients+MAL_MAXCLIENTS; c1++) 
+    if(@2 && c1->scenario && strcmp(c1->scenario,scen->name)==0) 
+		c1->phase[@2]= fcn;
+	else
+    if(@2 && c1->oldscenario && strcmp(c1->oldscenario,scen->name)==0) 
+		c1->oldphase[@2]= fcn;
+}
 @c
 void updateScenario(str nme, MALfcn fcn) {
 	int i;
 	Scenario scen= scenarioRec;
-
 	for(i=0;i<MAXSCEN && scen->name; i++, scen++){
-		@:updLine(initSystem)@
-		@:updLine(exitSystem)@
-		@:updLine(initClient)@
-		@:updLine(exitClient)@
-		@:updLine(reader)@
-		@:updLine(parser)@
-		@:updLine(optimizer)@
-		@:updLine(tactics)@
-		@:updLine(engine)@
+		@:updLine(initSystem,0)@
+		@:updLine(exitSystem,0)@
+		@:updLine(initClient,INITCLIENT)@
+		@:updLine(exitClient,EXITCLIENT)@
+		@:updLine(reader,READER)@
+		@:updLine(parser,PARSER)@
+		@:updLine(optimizer,OPTIMIZE)@
+		@:updLine(tactics,SCHEDULER)@
+		@:updLine(engine,ENGINE)@
 	}
 }
 

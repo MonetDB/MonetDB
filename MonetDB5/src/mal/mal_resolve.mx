@@ -368,7 +368,6 @@ It may happen that an argument was still untyped and as a result of
 the polymorphism matching became strongly typed. This should be
 reflected in the symbol table. 
 @c
-    if(moduleId(p) == 0) setModuleScope(p, m);
     s1= returntype[0];  /* for those interested */
     foundbutwrong = 0;
 @-
@@ -395,6 +394,8 @@ We found the proper function. Copy some properties. In particuler,
 determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
 This piece of code may be shared by the separate binder
 @= bindFunction
+    if(moduleId(p) == 0) 
+		setModuleId(p, m->name);
     if( p->token == ASSIGNsymbol){
         switch(getSignature(s)->token){
         case COMMANDsymbol: 
@@ -427,6 +428,7 @@ This piece of code may be shared by the separate binder
         }
         p->blk = s->def;
     }
+@-
 @c
     @:bindFunction@
 @-
