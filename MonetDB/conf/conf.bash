@@ -273,11 +273,9 @@ if [ "${os}" != "Linux" ] ; then
 	libpath="${softpath}/lib:${libpath}"
 	# "our" libs/tools in ${softpath}
 	conf_opts="${conf_opts} --with-readline=${softpath}"
+	conf_opts="${conf_opts} --with-z=${softpath}"
+	conf_opts="${conf_opts} --with-bz2=${softpath}"
 	case ${what} in
-	MONET)
-		conf_opts="${conf_opts} --with-z=${softpath}"
-		conf_opts="${conf_opts} --with-bz2=${softpath}"
-		;;
 	ACOI)
 		conf_opts="${conf_opts} --with-getopt=${softpath}"
 		conf_opts="${conf_opts} --with-tcl=${softpath}"
