@@ -51,11 +51,11 @@ command position(b:bat[any::1,any::2], val:any::1, tval:any::2) : int = CMDposit
 comment "Returns the BAT position e [0.. b.count> of a 'val' in the 
 head column of b.  It gives an error if 'val' does not occur in b. ";
  
+command fetch(b:bat[any,any::1], x:oid) : any::1 = CMDfetchoid;
+command fetch(b:bat[any,any::1], x:lng) : any::1 = CMDfetch;
 command fetch(b:bat[any,any::1], x:int) : any::1 = CMDfetch
 comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count";
 
-command fetch(b:bat[any,any::1], x:oid) : any::1 = CMDfetchoid
-comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count";
 @+ BAT Selections
 @- positional select
 @mal
@@ -385,7 +385,7 @@ These operations examine a BAT, and compute some simple aggregate result
 over it.
 @- BAT size
 @mal
-command count ( b:bat[any,any] ) : int = CMDcount
+command count ( b:bat[any,any] ) : lng = CMDcount
 comment "Return the number of elements currently in a BAT.";
 @- Histogram on Tail 
 @mal

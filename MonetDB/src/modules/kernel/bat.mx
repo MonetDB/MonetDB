@@ -431,23 +431,11 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 @-
 At this stage of the game, we should translate
 the arguments of BATnew into types.
+Beware, a void column type is turned into a virtual oid type immediately
+by setting the sequential base.
 @c
 #include "monet.h"
 
-str CMDnewBat(int *res, int *ht, int *tt){
-	BAT *b;
-
-	if( *ht<0 || *ht >= GDKatomcnt ||
-	    *tt<0 || *tt >= GDKatomcnt){
-		return throwMessage("CMDnewBat:type values out of range");
-	}
-	b = BATnew(*ht,*tt,0);
-	if( b){
-		*res= b->batCacheid;
-		return MAL_SUCCEED;
-	}
-	return  throwMessage("CMDnewBat:GDKerror");
-}
 str CMDnewBat2(int *res, int *ht, int *tt, int *cap){
 	BAT *b;
 
@@ -460,7 +448,11 @@ str CMDnewBat2(int *res, int *ht, int *tt, int *cap){
 		*res= b->batCacheid;
 		return MAL_SUCCEED;
 	}
-	return  throwMessage("CMDnewBat2:GDKerror");
+	return  throwMessage("CMDnewBat:GDKerror");
+}
+str CMDnewBat(int *res, int *ht, int *tt){
+	int cap=0;
+	return CMDnewBat2(res,ht,tt,&cap);
 }
 
 str CMDreverse(int *ret, int *bid){
@@ -523,6 +515,8 @@ may emerge internally as well.
 if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
     *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
 {
+printf("val %d seqbase %d pos %d\n", *(oid*)@1,
+	b->@1seqbase,  BUNgetpos(b, BUNlast(b)) );
       return throwMessage("CMDinsert: insert non-nil values in a void column.");
 }
 @c

@@ -81,14 +81,14 @@ comment "Unary minus over the tail of the bat";
 command ++(b:bat[any::1,@1]):bat[any::1,@1] = CMDunaryPLUSPLUS
 comment "Unary minus over the tail of the bat";
 
-command -(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
-	= CMDunaryAccumMIN comment "Unary - over the tail of the bat";
+#command -(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
+	#= CMDunaryAccumMIN comment "Unary - over the tail of the bat";
 
-command --(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
-	= CMDunaryAccumMINMIN comment "Unary -- over the tail of the bat";
-
-command ++(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
-	= CMDunaryAccumPLUSPLUS comment "Unary ++ over the tail of the bat";
+#command --(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
+	#= CMDunaryAccumMINMIN comment "Unary -- over the tail of the bat";
+#
+#command ++(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
+	#= CMDunaryAccumPLUSPLUS comment "Unary ++ over the tail of the bat";
 @mal
 @:unary(oid)@
 @:unary(int)@
@@ -486,6 +486,9 @@ str CMDbatMODcst(int *ret, int *l, void *cst)
 		else *(@1*)p1= @2 *(@1 *) p2;
 		p1+= s1; p2+= s2; 
 	}
+@-
+Unary accummulators are only indirectly called. They can not
+always be defined without signature clashes, eg. -(batA,batC).
 @= unary_impl
 str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	BAT *b,*dst;
@@ -649,8 +652,7 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 	}
 	dst->hsorted= BAThordered(left);
 	
-	d= dst->batCacheid;
-	return CMDcmpaccum@1cst(ret,&d,l,cst);
+	return CMDcmpaccum@1cst(ret,&dst->batCacheid,l,cst);
 }
 
 @-
