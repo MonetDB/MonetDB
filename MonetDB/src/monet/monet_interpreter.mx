@@ -1279,11 +1279,114 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 	    bn = BATnew(b->htype, tpe, BATcount(b));
 	    if (bn == NULL) return -1;
 
+
 	    /* propagate properties */
-	    bn->hsorted = BAThordered(b);
-	    bn->tsorted = 0;
-	    BATkey(bn, b->hkey);
 	    ALIGNsetH(bn,b);
+	    if (BATcount(b) < 2) {
+	        /* trivial case */
+		bn->tsorted = GDK_SORTED;
+	    } else if ( !(BATtordered(b)&1)
+	    	      || b->ttype >  TYPE_lng || tpe >  TYPE_lng
+	              || b->ttype == TYPE_bit || tpe == TYPE_bit
+	              || b->ttype == TYPE_bat || tpe == TYPE_bat
+	              || b->ttype == TYPE_ptr || tpe == TYPE_ptr ) {
+	        /* cases, where we 
+	         * (1) know that the result will not be sorted
+	         * (2) cannot tell, whether the result will not be sorted
+	         * (3) do not care, whether the result will not be sorted
+	         */
+	        bn->tsorted = 0;
+	    } else if (   (   b->ttype != TYPE_void && b->ttype < tpe 
+	                   && ( b->ttype < TYPE_flt || tpe >= TYPE_flt ) )
+	               || ( b->ttype == TYPE_lng && tpe >= TYPE_flt && tpe <= TYPE_dbl )
+#if SIZEOF_OID == SIZEOF_INT
+	       	       || ( b->ttype == TYPE_void && tpe >= TYPE_int  )
+#else
+	       	       || ( b->ttype == TYPE_void && tpe >= TYPE_oid  )
+#endif
+	       	       || ( b->ttype <= TYPE_oid  && tpe == TYPE_void ) ) {
+	        /* casts with target domain larger than source domain, i.e., 
+	         * no underflows/overflows can occur, and hence sortedness is always maintained */
+	        /* (a bit dirty, since we silently assume that negative integers become "nil"
+	         *  when casted to oid; but since oid_nil < 0@0, sortedness is not violated ...) */
+	        bn->tsorted = GDK_SORTED;
+	    } else if ( ( b->ttype == TYPE_void || b->ttype == TYPE_oid ) /* && tpe < TYPE_int */ ) {
+	        /* oid's are >= 0, hence we only need to check for overflows */
+	        bit overflow = FALSE;
+	        oid max_val = *(oid*)BUNtail(b,BUNlast(b)-BUNsize(b));
+	        switch (tpe) {
+@= interpret_batcast_overflow_case
+	        case TYPE_@1:
+	        	overflow = (max_val > (oid)GDK_@1_max);
+	        	break;
+@c
+		@:interpret_batcast_overflow_case(chr)@
+		@:interpret_batcast_overflow_case(sht)@
+#if SIZEOF_OID != SIZEOF_INT
+		@:interpret_batcast_overflow_case(int)@
+#endif
+	        default:
+	        	assert(0);
+	        }
+	        bn->tsorted = (overflow ? 0 : GDK_SORTED) ;
+	    } else {
+	        /* all remaining cases require checking for both underflows & overflows */
+	        /* (source domain is always larger than target domain) */
+	        bit overflow = FALSE;
+	        assert(b->ttype != TYPE_void && tpe != TYPE_void);
+	        assert(b->ttype != TYPE_oid  && tpe != TYPE_oid );
+	        /* assert(b->ttype > tpe && ... ); */
+@= interpret_batcast_source_switch
+		switch (b->ttype) {
+		@:interpret_batcast_source_case(sht,\
+			@:interpret_batcast_target_case(sht,chr)@)@
+		@:interpret_batcast_source_case(int,\
+			@:interpret_batcast_target_case(int,chr)@\
+			@:interpret_batcast_target_case(int,sht)@)@
+		@:interpret_batcast_source_case(lng,\
+			@:interpret_batcast_target_case(lng,chr)@\
+			@:interpret_batcast_target_case(lng,sht)@\
+			@:interpret_batcast_target_case(lng,int)@)@
+		@:interpret_batcast_source_case(flt,\
+			@:interpret_batcast_target_case(flt,chr)@\
+			@:interpret_batcast_target_case(flt,sht)@\
+			@:interpret_batcast_target_case(flt,int)@\
+			@:interpret_batcast_target_case(flt,lng)@)@
+		@:interpret_batcast_source_case(dbl,\
+			@:interpret_batcast_target_case(dbl,chr)@\
+			@:interpret_batcast_target_case(dbl,sht)@\
+			@:interpret_batcast_target_case(dbl,int)@\
+			@:interpret_batcast_target_case(dbl,lng)@\
+			@:interpret_batcast_target_case(dbl,flt)@)@
+		default:
+			assert(0);
+		}
+@= interpret_batcast_source_case
+		case TYPE_@1: {
+			@1 min_val = *(@1*)BUNtail(b,BUNfirst(b));	
+			@1 max_val = *(@1*)BUNtail(b,BUNlast(b)-BUNsize(b));
+			if ( min_val == @1_nil ) {
+			    overflow = TRUE;
+			} else {
+			    switch (tpe) {
+			    @2
+			    default:
+			    	assert(0);
+			    }
+			}
+			break;
+		}
+@= interpret_batcast_target_case
+		case TYPE_@2: {
+			overflow |= (min_val < (@1)GDK_@2_min);
+			overflow |= (max_val > (@1)GDK_@2_max);
+			break;
+		}
+@c
+		@:interpret_batcast_source_switch@
+                bn->tsorted = (overflow ? 0 : GDK_SORTED) ;
+	    }
+
 
 	    if (BATcount(b)) {
 		int len = ATOMsize(BATttype(b));
@@ -1383,7 +1486,9 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		    }
 		} /* different kind of conversions */
 	    }
-	    if ((!bn->tkey) && (!reduce)) {
+	    if (BATcount(bn) < 2) {
+	        BATkey(BATmirror(bn), TRUE);
+	    } else if ((!bn->tkey) && (!reduce)) {
 		BATkey(BATmirror(bn), b->tkey);
 	    }
 	}
