@@ -26,7 +26,7 @@ color encoding, consisting of the red component in bits 16-23,
 the green component in bits 8-15, and the blue component in bits 0-7.
 
 The module contains a number of color conversion methods to construct
-colors in various colorspaces and extract relevand color channels.
+colors in various colorspaces and extract relevant color channels.
 
 rgb = (byte,byte,byte) colorspace r,g,b=[0..255]
 hsv = (flt,flt,flt) colorspace h=[0..360], s,v=[0..1]
