@@ -87,6 +87,17 @@ MXFLAGS= -notouch
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
+%.mil: %.m %.tmpmil $(MEL)
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+	cat $*.tmpmil >> $@
+
+%.tmpmil: %.mx
+	$(MX) $(MXFLAGS) -l -x mil $<
+	$(MV) $*.mil $*.tmpmil
+
+%.mil: %.m $(MEL)
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
 

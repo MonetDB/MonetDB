@@ -266,8 +266,11 @@ def am_scripts(fd, var, scripts, am):
 			continue
 	except:
 		continue
-        if script not in am['BIN_SCRIPTS']:
-            am['BIN_SCRIPTS'].append("script_" + script)
+	name = "script_" + script
+        if name not in am['BIN_SCRIPTS']:
+            am['BIN_SCRIPTS'].append(name)
+	else:
+	    continue
         fd.write("script_%s: %s\n" % (script, script))
         fd.write("\tchmod a+x $<\n")
         if sd == "$(sysconfdir)":

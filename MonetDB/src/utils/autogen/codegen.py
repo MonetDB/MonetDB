@@ -51,7 +51,7 @@ mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
 
 e_mx = re.compile('^@[^{}]', re.MULTILINE)
 
-code_extract = { 'mx': [ (mx2mil, '.mil'),
+code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
                   (mx2cc, '.cc'),
@@ -94,7 +94,7 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
-code_gen = { 'm':       [ '.proto.h', '.glue.c' ],
+code_gen = { 'm':       [ '.proto.h', '.glue.c', '.mil' ],
             'odl':      [ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
             'y':        [ '.tab.c', '.tab.h' ],
             'tab.c':    [ '.tab.o' ],
@@ -109,6 +109,7 @@ code_gen = { 'm':       [ '.proto.h', '.glue.c' ],
             'i':        [ '_wrap.c' ],
             'glue.c':   [ '.glue.o' ],
 #            'java':     [ '.class' ],
+	    'tmpmil':	[ '.mil' ],
             'mx.in':    [ '.mx' ],
             'tex':      [ '.dvi' ],
             'dvi':      [ '.ps' ],
@@ -163,7 +164,6 @@ def split_filename(f):
     if string.find(f,".") >= 0:
         return string.split(f,".", 1)
     return base,ext
-
 
 def readfile(f):
     src = open(f, 'rb')
@@ -233,8 +233,9 @@ def do_code_gen(targets, deps, code_map):
                     newtarget = base + newext
                     ntargets.append(newtarget)
                     if deps.has_key(newtarget):
-                        deps[newtarget].append(f)
-                    else:
+			if (f not in deps[newtarget]):
+                        	deps[newtarget].append(f)
+		    else:
                         deps[newtarget] = [ f ]
             else:
                 ntargets.append(f)
