@@ -73,8 +73,7 @@ html
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
 #ifndef _MAL_LINKER_H
-#include "mal_instruction.h"
-#include "mal_symbol.h"
+#include "mal_scope.h"
 #include <dlfcn.h>
 
 /* #define DEBUG_MAL_LINKER */

@@ -42,10 +42,9 @@ html
 #ifndef _MAL_STARTUP_H
 #define _MAL_STARTUP_H
 
-#include "mal_symbol.h"
-#include "mal_stack.h"
 #include "mal_function.h"
 #include "mal_client.h"
+#include "mal_stack.h"
 
 #define SRVINIT "startup.mal"
 #define SRVORIGIN "share/Monet/startup.mal"
@@ -165,7 +164,7 @@ void chkClientPrg(Client cntxt,int flag)
 	for(i=0;i<mb->stop;i++) {
 		p= getInstrPtr(mb,i);
 		if(p== NULL) continue;
-		typeChecker2(cntxt->nspace,mb,p, TYPE_FIXED);
+		typeChecker(cntxt->nspace,mb,p, TYPE_FIXED);
 		switch(p->token){
 		case FUNCTIONsymbol: case COMMANDsymbol:
 		case PATTERNsymbol: case HANDLERsymbol:
@@ -262,7 +261,6 @@ but maybe everything beyond a previous defined pont.
 
 void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
         InstrPtr p;
-	VarPtr v;
         int i,j;
 
         for(i=0;i<mb->stop;i++){
@@ -271,8 +269,7 @@ void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
         }
 	if( mb->vtop>MAGIC){
 		for(i=j=MAGIC; i< mb->vtop; ){
-			v= mb->var+i;
-			if(v->name[0]==TMPMARKER ) {
+			if(getVarName(mb,i)[0]==TMPMARKER ) {
 				freeVariable(mb,i);
 				garbageElement(&glb->stk[i]);
 				i++;

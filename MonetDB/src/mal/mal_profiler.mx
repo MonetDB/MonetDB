@@ -50,11 +50,10 @@ html
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
 #ifndef _MAL_PROFILER_H
-#include "mal_instruction.h"
-#include "mal_symbol.h"
+#include "mal_scope.h"
 
 /*#define DEBUG_MAL_PROFILER */
-mal_export void profileReport(Symbol cntxt,int outer, FILE *out);
+mal_export void profileReport(Scope cntxt,int outer, FILE *out);
 
 #endif
 @+ Administration
@@ -76,11 +75,12 @@ The report is dumped on a file at the end of a session.
 It provides a complete list of all commands/functions/patterns
 being called at least once. The information is not sorted.
 @c
-void  profileReport(Symbol cntxt, int outer, FILE *out)
+void  profileReport(Scope cntxt, int outer, FILE *out)
 {
 #ifdef MALprofiler
         int i,j;
-        Symbol s=cntxt,t;
+        Scope s=cntxt;
+	Symbol t;
 	InstrPtr p;
 
         while(s!= NULL){

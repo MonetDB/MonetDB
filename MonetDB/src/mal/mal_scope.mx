@@ -1,4 +1,3 @@
-@f mal_symbol
 @a M. L. Kersten
 
 @* MAL runtime name space
@@ -9,9 +8,8 @@ indexed by the first character of the function name.
 
 A function call mod.fcn(Anme:Type, ..) is resolved as follows. We traverse the
 nested scopes towards the root to locate the MODULE symbol named 'mod'.
-From there we search the subscope 'Anme' and try to resolve the procedure.
-If it fails and 'mod' was not given we continue our search in outer
-scopes.
+From there we search the subscope 'fcn' and try to resolve the procedure.
+If it fails and 'mod' was not given we inspect all subscopes. 
 
 This method provides overloading, which can be enforced from a particular
 level. For example, the user can introduce a module M with the function F,
@@ -32,20 +30,19 @@ and a client layer.
 The core layer contains all pre-compiled and linkable functions.
 The next layer is bound to a particular front-end language, e.g. MIL or SQL
 and contains a scope level for each module imported.
-Such language scopes may be nested, e.g. MAL->MIL->SQL.
+Such language scopes may be nested, e.g. SQL->MIL->MAL->kernel.
 
 The client layer typically contains a collection of private MAL-procedures.
 It contains a procedure 'main' to be executed by default. 
-Moreover, the symbol table and its binding is retained over successive
-calls to provide for a global variable context.
 
 Each user has a separate scope, but the secondary clients have shared
 access to the definitions available to the administrator.
+This is (will) be realized by copying the scope resolution path.
 The global scope and private scopes are separated by an a priori known
 scope name "MAL_scope".
 
 
-Unlike Monet V4, a procedure scope is privately assigned to a single client
+Unlike Monet V4, a MAL function scope is privately assigned to a single client
 thread. Moreover, all dynamically loaded functions remain in existing
 for the duration of the server session. Only the administrator can
 load functions (upon system restart). Therefore, we do not have
@@ -60,8 +57,6 @@ by the number of MAL procedure definitions instead of the runtime
 calling behavior. (See mal_interpreter for details on value stack
 management)
 
-The name and kind information is replicated from the MAL blocks.
-The name is a shared string and need not be garbage collected here.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -83,74 +78,126 @@ html
  * 
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
-#ifndef _MAL_NAMESPACE_H_
-#define _MAL_NAMESPACE_H_
+#ifndef _MAL_SCOPE_H_
+#define _MAL_SCOPE_H_
 #include "mal_instruction.h"
 
 #define MAXSCOPE 256
 
-mal_export Symbol mal_scope;	/* the start of the module list */
+typedef struct SCOPEDEF {
+        struct SCOPEDEF   *outer; /* outer level in the scope tree */
+        str             name;
+        str             help;   /* supportive commentary */
+        str             binding;/* related C-function */
+        struct SYMDEF   **subscope; /* type dispatcher table */
+} *Scope, ScopeDefinition;
 
+
+mal_export Scope	mal_scope;	/* the start of the module list */
+
+mal_export Scope 	newScope(Scope cntxt, str nme);
+mal_export Scope	fixateScope(Scope cntxt, str nme);
+mal_export void         freeScope(Scope cur);
+mal_export void         freeScopeList(Scope cur);
 mal_export void		initScope();
-mal_export Symbol 	newScope(Symbol cntxt, str nme);
-mal_export Symbol	insertSymbol(Symbol cntxt, Symbol prg);
-mal_export Symbol	findScope(Symbol cntxt, str name);
-mal_export Symbol 	findSymbolInScope(Symbol v, str fcn);
 mal_export int		getSubScope(str nme);
-mal_export Symbol	fixateScope(Symbol cntxt, str nme);
+mal_export void		insertSymbol(Scope cntxt, Symbol prg);
+mal_export Scope	findScope(Scope cntxt, str name);
+mal_export Symbol 	findSymbolInScope(Scope v, str fcn);
 mal_export Symbol 	findSymbol(str mod, str fcn);
-mal_export int	 	displaySymbol(FILE *f, str mod, str fcn);
-mal_export int 		showScopeTrail(FILE *fd, Symbol s);
+mal_export int	 	displayScope(FILE *f, str mod, str fcn);
+mal_export int 		showScopeTrail(FILE *fd, Scope s);
 mal_export void 	debugScope(str nme);
 
-mal_export Symbol 	newSymbol(str nme, int kind);
-mal_export void		freeSymbol(Symbol cur);
-mal_export void		freeSymbolList(Symbol cur);
 
-#endif /* _MAL_NAMESPACE_H_ */
+#endif /* _MAL_SCOPE_H_ */
 @+ Scope management
 Upon system restart, the global scope is created. It is called "root" and
 does not contain any symbol definitions. It merely functions as an anchor
 point for the modules to be added later.
 
-@= newsymbol
+@= newscope
 	if( nme == NULL){
 		GDKfatal("@1:unexpected name (=null)\n");
 	}
-        cur = (Symbol) GDKmalloc(sizeof(SymDefinition));
+        cur = (Scope) GDKmalloc(sizeof(SymDefinition));
 	if( cur == NULL){
 		GDKfatal("@1: cannot initialize scope\n");
 	}
 	bzero((str)cur,sizeof(SymDefinition));
 	cur->name = nme;
-	cur->kind = kind;
 	cur->outer = NULL;
-	cur->peer = NULL;
 	cur->help = NULL;
-	cur->def = newMalBlk();
 	cur->subscope = NULL; 
 
 @c
-#include "mal_symbol.h"
+#include "mal_scope.h"
 
-Symbol mal_scope;	/* the root of the tree */
+Scope mal_scope;	/* the root of the tree */
 
-void newSubScope(Symbol cntxt){
-	int len = (MAXSCOPE)*sizeof(Symbol);
+void newSubScope(Scope cntxt){
+	int len = (MAXSCOPE)*sizeof(Scope);
 	cntxt->subscope = (Symbol *) GDKmalloc(len);
 	bzero((char*)cntxt->subscope, len);
 }
-void freeSubScope(Symbol cntxt){
+@-
+Definition of a new module scope may interfere with concurrent
+actions of multiple threads. This calls for a secure update 
+of the scope tree structure. 
+@c
+
+Scope newScope(Scope cntxt, str nme){
+	Scope cur;
+	@:newscope(newScope)@
+	newSubScope(cur);
+	if( cntxt != NULL){
+		cur->outer = cntxt->outer;
+		cntxt->outer= cur;
+	}
+	return cur;
+}
+@-
+Reading a module often calls for opening a scope level
+if it didn't exist.
+@c
+Scope fixateScope(Scope cntxt, str nme){
+	Scope cur;
+	cur = findScope(cntxt,nme);
+	if( cur!= NULL) return cur;
+	return newScope(cntxt, GDKstrdup(nme));
+}
+@-
+The freeScope operation throws away a symbol without
+concerns on it whereabouts in the scope structure.
+This routine therefore assumes care in use.
+The final action of the system is to remove all
+instructions and procedures. This forcefull action
+helps in localization of memory leakages.
+@c
+void freeSubScope(Scope cntxt){
 	if(cntxt->subscope==0) return;
 	GDKfree(cntxt->subscope);
 	cntxt->subscope = 0;
 }
-
+void freeScope(Scope s){
+	if(s==NULL) return;
+	freeSubScope(s);
+	if( s->name) GDKfree(s->name);
+	if( s->help) GDKfree(s->help);
+	GDKfree(s);
+}
+void freeScopeList(Scope s){
+	Scope t=s;
+	while(t){
+		t= t->outer;
+		freeScope(s);
+		s=t;
+	}
+}
 void	initScope()
-{	Symbol cur;
+{	Scope cur;
 	str nme= GDKstrdup("root");
-	int kind= SCOPEsymbol;
-	@:newsymbol(initScope)@
+	@:newscope(initScope)@
 	newSubScope(cur);
 	mal_scope = cur;
 }
@@ -164,7 +211,7 @@ int getSubScope(str nme) {
 	}
 	return *nme;
 }
-Symbol insertSymbol(Symbol cntxt, Symbol prg){
+void insertSymbol(Scope cntxt, Symbol prg){
         InstrPtr sig;
         int t;
 
@@ -177,14 +224,14 @@ Symbol insertSymbol(Symbol cntxt, Symbol prg){
                 prg->peer= cntxt->subscope[t];
                 cntxt->subscope[t] = prg;
         }
-        return prg;
 }
 
-@-
+
+@+ Searching the scope structure.
 Finding a scope is unrestricted. for modules we explicitly look for
 the start of a new module scope.
 @c
-Symbol findScope(Symbol cntxt, str name){
+Scope findScope(Scope cntxt, str name){
 	if( cntxt->name==NULL) return NULL;
 	if( name==NULL) return cntxt;
         while(cntxt != NULL){
@@ -195,45 +242,56 @@ Symbol findScope(Symbol cntxt, str name){
         return cntxt;
 }
 @-
-Every module scope symbol is under the control of a single thread.
-However, definition of a new module scope may interfere with concurrent
-actions of multiple threads. This calls for a secure update 
-of the scope tree structure. 
+The routine @%findSymbol@ starts at a scope level and searches 
+an element amongst the peers. If it fails, it will recursively
+inspect the outer scopes.
 
-Symbol definitions without an explicit scope are allocated to the root.
+In principal, external variables are subject to synchronization actions
+to avoid concurrency conflicts. This also implies, that any parallel
+block introduces a temporary scope.
+
+The variation on this routine is to dump the definition of
+all matching definitions.
 @c
-
-Symbol newSymbol(str nme, int kind){
-	Symbol cur;
-	@:newsymbol(newSymbol)@
-	return cur;
-}
-Symbol newScope(Symbol cntxt, str nme){
-	Symbol cur;
-	int kind= SCOPEsymbol;
-	@:newsymbol(newScope)@
-	newSubScope(cur);
-	if( cntxt != NULL){
-		cur->outer = cntxt->outer;
-		cntxt->outer= cur;
+Symbol findSymbolInScope(Scope v, str fcn){
+	Symbol s;
+	if( v == NULL || fcn == NULL) return NULL;
+	s= v->subscope[*fcn];
+	while(s!=NULL){
+		if( idcmp(s->name,fcn)==0 ) return s;
+		s= s->peer;
 	}
-	return cur;
+	return NULL;
 }
-@-
-Reading a module often calls for opening a scope level
-if it didn't exist.
-@c
-Symbol fixateScope(Symbol cntxt, str nme){
-	Symbol cur;
-	cur = findScope(cntxt,nme);
-	if( cur!= NULL) return cur;
-	return newScope(cntxt, GDKstrdup(nme));
+Symbol findSymbol(str mod, str fcn){
+	Scope v;
+	v= findScope(mal_scope, mod);
+	return findSymbolInScope(v,fcn);
 }
+int displayScope(FILE *f, str mod, str fcn){
+	Scope v;
+	Symbol s;
+	int i,k=0;
 
-void  printScope(Symbol cntxt, int tab, int outer)
+	v= findScope(mal_scope, mod);
+	if( v == NULL || fcn == NULL) return 0;
+	s= v->subscope[*fcn];
+	while(s!=NULL){
+		if( idcmp(s->name,fcn)==0 ) {
+			printFunction(f,s->def);
+			k++;
+		}
+		s= s->peer;
+	}
+	return k;
+}
+@- Utilities
+@c
+void  printScope(Scope cntxt, int tab, int outer)
 {
 	int i,j;
-	Symbol s=cntxt,t;
+	Scope s=cntxt;
+	Symbol t;
 	FILE *fd= GDKout;
 
 	while(s!= NULL){
@@ -252,12 +310,11 @@ void  printScope(Symbol cntxt, int tab, int outer)
 			fprintf(fd,"\n");
 		}
 			fprintf(fd,"\n");
-		s= s->peer;
 	}
 	if(outer && cntxt->outer) printScope(cntxt->outer,tab+1, outer);
 }
 
-int showScopeTrail(FILE *fd, Symbol s)
+int showScopeTrail(FILE *fd, Scope s)
 {
 	printf("Scope trail %s:",s->name);
 	for(; s; s= s->outer) {
@@ -268,7 +325,7 @@ int showScopeTrail(FILE *fd, Symbol s)
 }
 
 void debugScope(str nme){
-	Symbol m;
+	Scope m;
 	FILE *fd= GDKout;
 	if( mal_scope== 0) GDKerror("mal_scope == NULL\n");
 	if( nme==0 || *nme ==0) printScope(mal_scope,0,TRUE);
@@ -280,68 +337,4 @@ void debugScope(str nme){
 		if( m== NULL) fprintf(fd,"Scope name '%s' not found\n",nme);
 		else printScope(m,0,FALSE);
 	}
-}
-@-
-The freeSymbol operation throws away a symbol without
-concerns on it whereabouts in the scope structure.
-This routine therefore assumes care in use.
-The final action of the system is to remove all
-instructions and procedures. This forcefull action
-helps in localization of memory leakages.
-@c
-void freeSymbol(Symbol s){
-	if(s==NULL) return;
-	freeSubScope(s);
-	if( s->name) GDKfree(s->name);
-	if( s->help) GDKfree(s->help);
-	if( s->def) freeMalBlk(s->def);
-	GDKfree(s);
-}
-void freeSymbolList(Symbol s){
-	if(s==NULL) return;
-	if(s->peer != NULL) freeSymbol(s->peer);
-	freeSymbol(s);
-}
-@+ Searching the scope structure.
-The routine @%findSymbol@ starts at a scope level and searches 
-an element amongst the peers. If it fails, it will recursively
-inspect the outer scopes.
-
-In principal, external variables are subject to synchronization actions
-to avoid concurrency conflicts. This also implies, that any parallel
-block introduces a temporary scope.
-
-The variation on this routine is to dump the definition of
-all matching definitions.
-@c
-Symbol findSymbolInScope(Symbol v, str fcn){
-	Symbol s;
-	if( v == NULL || fcn == NULL) return NULL;
-	s= v->subscope[*fcn];
-	while(s!=NULL){
-		if( idcmp(s->name,fcn)==0 ) return s;
-		s= s->peer;
-	}
-	return NULL;
-}
-Symbol findSymbol(str mod, str fcn){
-	Symbol v;
-	v= findScope(mal_scope, mod);
-	return findSymbolInScope(v,fcn);
-}
-int displaySymbol(FILE *f, str mod, str fcn){
-	Symbol v, s;
-	int i,k=0;
-
-	v= findScope(mal_scope, mod);
-	if( v == NULL || fcn == NULL) return 0;
-	s= v->subscope[*fcn];
-	while(s!=NULL){
-		if( idcmp(s->name,fcn)==0 ) {
-			printFunction(f,s->def);
-			k++;
-		}
-		s= s->peer;
-	}
-	return k;
 }

@@ -124,7 +124,7 @@ Each client has a private entry point into the namespace.
 Moreover, the parser needs some administration variables
 to keep track of critical elements.
 @h
-	Symbol		nspace;
+	Scope		nspace;
 	Symbol		curprg;		/* focus of parser */
 } *Client, ClientRec;
 
@@ -346,10 +346,10 @@ void freeClient(Client c)
 	} 
 	/* forked client also */
 
-	if( c->curprg ) freeSymbol(c->curprg);
+	if( c->curprg ) freeScope(c->curprg);
 	c->curprg= 0;
 	if( !isAdministrator(c) && c->nspace){
-		freeSymbol(c->nspace);
+		freeScope(c->nspace);
 		c->nspace=0;
 	}
 	/* causes an ERROR, reuse it 

@@ -60,7 +60,8 @@ str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
 	MalStkPtr stk= NULL;
 	int space = 0,i;
 	ValPtr retval, lhs,rhs,v;
-	InstrPtr pci=0, stop=0;
+	InstrPtr pci=0; 
+	int stop=0;
 	str ret=0;
 	char 	cmd='n';	/* debugger command */
 	ptr argv[MAXARG];
@@ -317,7 +318,7 @@ are determined at compile time.
 
 @= patterncall
 	retval=  &stk->stk[pci->argv[0]];
-	retval->vtype = getGDKtype(mb->var[pci->argv[0]].type);
+	retval->vtype = getGDKtype(getVarType(mb,pci->argv[0]));
 	ret = (str) (*pci->fcn)(mb,stk,pci);
 
 @-
@@ -347,7 +348,7 @@ the bind(namespace,batname,mode) operation.[todo]
 @= evalParameters
 {	int k;
 	retval=  &stk->stk[pci->argv[0]];
-	retval->vtype = getGDKtype(mb->var[pci->argv[0]].type);
+	retval->vtype = getGDKtype(getVarType(mb,pci->argv[0]));
 	for(k=0;k<pci->argc; k++){
 		argv[k] =(ptr) getArgReference(stk,pci,k);
 	} 
@@ -504,7 +505,7 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 	}
 	msg++;
 	/* assure correct variable type */
-	if( (nxt= (str) setDynamicType(mb,stk,mb->var+symid,TYPE_str)) == 0 ){
+	if( (nxt= (str) setDynamicType(mb,stk,getVar(mb,symid),TYPE_str)) == 0 ){
 		v=  &stk->stk[symid];
 		v->vtype = TYPE_str;
 		v->val.pval= GDKstrdup(msg);

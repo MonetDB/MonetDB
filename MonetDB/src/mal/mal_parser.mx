@@ -400,7 +400,7 @@ int parseModule(Client cntxt)
 	str modname=0;
 	int x,y;
 	MalBlkPtr curBlk = 0;
-	Symbol curPrg = 0;
+	Scope s = 0;
 	InstrPtr curInstr=0;
 
 	atomary = keyword(cntxt,"atom",4);
@@ -412,9 +412,9 @@ int parseModule(Client cntxt)
 	@:parsePath@
 
 	if( atomary ) malAtomDef(modname);
-	if( (curPrg= findScope(cntxt->nspace,modname)) != NULL){
+	if( (s= findScope(cntxt->nspace,modname)) != NULL){
 		GDKerror("duplicate module\n");
-		cntxt->curprg = curPrg;
+		cntxt->nspace = s;
 	} else	cntxt->nspace = fixateScope(cntxt->nspace, modname);
 	skipToEnd(cntxt);
 	return 1;
@@ -610,7 +610,7 @@ Most functions are (dynamically) linked with the kernel.
 		int i;
 		i = idLength(cntxt);
 		nme = idCopy(cntxt,i);
-		i= newVariable(curBlk,nme,curBlk->var[0].type);
+		i= newVariable(curBlk,nme,getVarType(curBlk,0));
 		curInstr->argv[0]=i;
 		curInstr->modname = GDKstrdup(cntxt->nspace->name);
 		curInstr->fcn = getAddress(nme);

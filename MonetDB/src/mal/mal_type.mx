@@ -44,6 +44,7 @@ typedef int malType;
 #define malVarType -2
 #define malAnyType 255
 #define malVARG " malVARG"
+#define TMPMARKER '$'
 
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
 #define getHeadType(X)	((X>>8) & 0377 )
@@ -94,12 +95,13 @@ derived from the parser to avoid a loop in the define-structure.
 #define THRDcall	53
 #define PATcall		54	/* pattern call */
 
-mal_export str malTypeName(malType tpe);
+mal_export str	malTypeName(malType tpe);
 mal_export malType coercion(malType t1, malType t2);
-mal_export int getTypeIndex(str nme);
+mal_export int	getTypeIndex(str nme);
 mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
-mal_export int idcmp(str n, str m);
+mal_export int	idcmp(str n, str m);
+mal_export str	newTmpName(int i);
 #endif /* MAL_TYPE_H*/
 @-
 At any point we should be able to construct an ascii representation of
@@ -258,4 +260,9 @@ int idcmp(str n, str m)
 {
 	if( *(short *) n == *(short *) m) return strcmp(n,m);
 	return -1;
+}
+str newTmpName(int i){
+	char buf[128];
+	sprintf(buf,"%c%d",TMPMARKER,i);
+	return GDKstrdup(buf);
 }

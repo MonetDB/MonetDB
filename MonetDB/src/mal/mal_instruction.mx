@@ -5,9 +5,8 @@
 MAL instruction sequences have a simple format.
 The operation is either an assignment "variable := module.fcn(a1..a32)"
 where the actual function arguments are references to variables on the
-runtime variable stack,
-or a MAL control statement, i.e. RAISE, CATCH, RETURN, BARRIER,
-LEAVE,REDO
+runtime variable stack, or reference to a MAL control statement, 
+i.e. RAISE, CATCH, RETURN, BARRIER, LEAVE,REDO
 
 A sequence of instructions is represented by a variable, instruction,
 and program stmt block.
@@ -15,8 +14,7 @@ The variable block is the symbol table associated with the
 instruction sequence.
 Each tuple contain a reference to the argument name ,
 a reference to a lexical value when it denotes a constant,
-its associated Mal type identifier, access mode,
-and the offset into the runtime stack.
+its associated Mal type identifier.
 Upon procedure return, the variable block is inspected to find
 objects eligable for garbage collection (e.g. strings).
 
@@ -29,7 +27,7 @@ Each argument list starts with a reference to the destination variable.
 An array of byte-offsets into the code byt string provides for fast
 access to any statement.
 
-Instruction-, variable- and stmt- block together describe the
+Variable- and stmt- block together describe the
 static part of a MAL procedure. It carries carry enough information to produce
 a listing and to aid symbolic debugging. Ideally, the listing
 of a MAL program is identical to the non-commented source.
@@ -42,9 +40,7 @@ you can prepare only one instruction at a time, because you don't
 know how many arguments may be needed.
 
 A variable binding may become CONSTANT for the duration of its
-life time, or the type can be FROZEN after the first assignment.
-The symbol table structure is defined here, because it is cross-referenced
-from the instruction record.
+life time.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -77,18 +73,14 @@ html
 #define MAXVARS 128
 #define MALBLKSIZE 4096
 #define MAXSTMTS 512
-#define TMPMARKER '$'
 
 typedef struct SYMDEF {
         struct SYMDEF   *peer;  /* where to look next */
-        struct SYMDEF   *outer; /* outer level in the scope tree */
-        /* struct SYMDEF   *scope;  beginning of scope level */
         str             name;
         str             help;   /* supportive commentary */
 	str		binding;/* related C-function */
         int             kind;
         struct MALBLK   *def;    /* the details of the MAL fcn */
-        struct SYMDEF   **subscope; /* type dispatcher table */
 } *Symbol, SymDefinition;
 
 typedef struct{
@@ -97,8 +89,8 @@ typedef struct{
         bit	isaconstant;	/* value cannot change */
 	int	isused;	/* for stack copying scope */
 	short	offset;	/* offset in stack */
-	str	value;	/* initial value -> ValRecord */
-	ValRecord cstvalue;
+	str	literal;/* initial value -> ValRecord */
+	ValRecord value;
 } *VarPtr, VarRecord;
 
 /* type check status is kept around to improve type checking efficiency */
@@ -111,7 +103,6 @@ typedef struct{
 typedef struct {
 	short	token;		/* instruction type */
 	short	barrier;	/* Begin-end of block */
-	/* short	pc;	instruction index in current proc */
 	int	typechk;	/* type check status */
 @-
 For performance analysis we keep track of the number of calls
@@ -162,47 +153,77 @@ Allocation of space assumes a rather exotic number of arguments.
 #define getArgType(M,P,I)  (M)->var[(P)->argv[I]].type
 #define getArgDef(M,P,I)  (M)->var[(P)->argv[I]].def
 #define getArgOffset(M,P,I)  (M)->var[(P)->argv[I]].offset
-#define getArgDefault(M,P,I)  (M)->var[(P)->argv[I]].value
+#define getArgDefault(M,P,I)  (M)->var[(P)->argv[I]].literal
 #define getPrgSize(M)	(M)->stop
+
+#define getVar(M,I)	(M)->var+I
 #define getVarName(M,I)  (M)->var[I].name
 #define getVarType(M,I)  (M)->var[I].type
 #define getVarOffset(M,I)  (M)->var[I].offset
-#define getVarValue(M,I)  (M)->var[I].value
+#define getVarValue(M,I)  (M)->var[I].literal
 #define isVarConstant(M,I) ((M)->var[I].isaconstant)
 #define isVarUsed(M,I) ((M)->var[I].isused)
-#define getVarConstant(M,I)  ((M)->var[I].cstvalue)
+#define getVarConstant(M,I)  ((M)->var[I].value)
 #define getRetType(S)	getDestType(((S).def),0)
 
-mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
-mal_export MalBlkPtr newMalBlk();
-mal_export MalBlkPtr copyMalBlk(MalBlkPtr);
-mal_export void freeInstruction(InstrPtr p);
-mal_export void freeVariable(MalBlkPtr mb, int varid);
-mal_export int findVariable(MalBlkPtr mb, str name);
-mal_export int findVariableLenght(MalBlkPtr mb, str name,int len);
-mal_export malType getType(MalBlkPtr mb, str nme);
-mal_export int newVariable(MalBlkPtr mb, str name,malType type);
-mal_export int newTmpVariable(MalBlkPtr mb, malType type);
-mal_export int newConstant(MalBlkPtr mb, malType type, str val);
-mal_export int isVARG(MalBlkPtr mb, InstrPtr p, int i);
-mal_export str newTmpName(int i);
-mal_export MalBlkPtr copyMalBlk(MalBlkPtr old);
-mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
-mal_export void pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
-mal_export void setReturnArgument(InstrPtr p, int varid);
-mal_export void printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
-mal_export void promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
-mal_export str instruction2str(MalBlkPtr mb,InstrPtr p);
-mal_export void freeMalBlk(MalBlkPtr mb);
-mal_export str raiseException(MalBlkPtr mb, int pc, str name, str msg);
-mal_export str raiseException2(str name, str msg);
-mal_export void showException(MalBlkPtr mb, int pc, str name, str msg);
+mal_export InstrPtr	newInstruction(MalBlkPtr mb, int kind);
+mal_export Symbol	newSymbol(str nme, int kind);
+mal_export void 	freeSymbol(Symbol s);
+mal_export void 	freeSymbolList(Symbol s);
+mal_export MalBlkPtr	newMalBlk();
+mal_export MalBlkPtr	copyMalBlk(MalBlkPtr);
+mal_export void		freeInstruction(InstrPtr p);
+mal_export void		freeVariable(MalBlkPtr mb, int varid);
+mal_export int		findVariable(MalBlkPtr mb, str name);
+mal_export int		findVariableLenght(MalBlkPtr mb, str name,int len);
+mal_export malType	getType(MalBlkPtr mb, str nme);
+mal_export int		newVariable(MalBlkPtr mb, str name,malType type);
+mal_export int		newTmpVariable(MalBlkPtr mb, malType type);
+mal_export int		newConstant(MalBlkPtr mb, malType type, str val);
+mal_export int		isVARG(MalBlkPtr mb, InstrPtr p, int i);
+mal_export MalBlkPtr	copyMalBlk(MalBlkPtr old);
+mal_export void		pushInstruction(MalBlkPtr mb, InstrPtr p);
+mal_export void		pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
+mal_export void		setReturnArgument(InstrPtr p, int varid);
+mal_export void 	printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
+mal_export void		promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
+mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p);
+mal_export void		freeMalBlk(MalBlkPtr mb);
 
 #endif /*  _MAL_INSTR_H*/
 @c
 #include "mal_instruction.h"
 
-
+Symbol newSymbol(str nme, int kind){
+	Symbol cur;
+	if( nme == NULL){
+		GDKfatal("@1:unexpected name (=null)\n");
+	}
+        cur = (Symbol) GDKmalloc(sizeof(SymDefinition));
+	if( cur == NULL){
+		GDKfatal("@1: cannot initialize scope\n");
+	}
+	bzero((str)cur,sizeof(SymDefinition));
+	cur->name = nme;
+	cur->kind = kind;
+	cur->peer = NULL;
+	cur->help = NULL;
+	cur->def = newMalBlk();
+	return cur;
+}
+void freeSymbol(Symbol s){
+        if(s==NULL) return;
+        if( s->name) GDKfree(s->name);
+        if( s->help) GDKfree(s->help);
+        if( s->def) freeMalBlk(s->def);
+        GDKfree(s);
+}
+void freeSymbolList(Symbol s){
+        if(s==NULL) return;
+        if(s->peer != NULL) freeScope(s->peer);
+        freeScope(s);
+}
+ 
 MalBlkPtr newMalBlk(){
 	MalBlkPtr mb;
 	VarPtr v;
@@ -261,8 +282,8 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
 	for(i=0;i<mb->vtop;i++){
 		if( mb->var[i].name)
 			mb->var[i].name = GDKstrdup(mb->var[i].name);
-		if( mb->var[i].value)
-			mb->var[i].value = GDKstrdup(mb->var[i].value);
+		if( mb->var[i].literal)
+			mb->var[i].literal = GDKstrdup(mb->var[i].literal);
 	}
 
 	mb->code = (char *)GDKmalloc( mb->csize = old->csize);
@@ -326,28 +347,6 @@ void freeInstruction(InstrPtr p){
 	p->fcnname= NULL;
 }
 
-str raiseException(MalBlkPtr mb, int pc, str name, str msg){
-        char buf[2048];
-        if( strlen(name)+strlen(msg)+2 <1024)
-                sprintf(buf,"%s:%s.%s[%d]:%s", name, getModName(mb),
-			getFcnName(mb),pc,msg);
-        else    sprintf(buf,"%s:%s.%s[%d]",name, getModName(mb),
-			getFcnName(mb),pc);
-        return GDKstrdup(buf);
-}
-str raiseException2(str name, str msg){
-        char buf[2048];
-        if( strlen(name)+strlen(msg)+2 <1024)
-                sprintf(buf,"%s::%s", name, msg);
-        else    sprintf(buf,"%s::...",name);
-        return GDKstrdup(buf);
-}
-void showException(MalBlkPtr mb, int pc, str name, str msg){
-	str n;
-	n= raiseException(mb,pc,name,msg);
-	GDKerror(n);
-	GDKfree(n);
-}
 
 @-
 Beware that the first signature slot is reserved for the function
@@ -355,12 +354,6 @@ return type , which should be equal to the destination variable type.
 
 VarRecords are allocated on the variable stack.
 Their index is returned for future reference.
-@c
-str newTmpName(int i){
-	char buf[128];
-	sprintf(buf,"%c%d",TMPMARKER,i);
-	return GDKstrdup(buf);
-}
 @-
 Use the information that a variable is at least one character
 wide and terminated by a null-byte.
@@ -462,8 +455,8 @@ void freeVariable(MalBlkPtr mb, int varid){
 	v= mb->var[varid];
 	if( v.name ==0) return;
 	if( v.name) GDKfree(v.name); v.name = 0;
-	if( v.value) GDKfree(v.value); v.value= 0;
-	VALclear(&v.cstvalue);
+	if( v.literal) GDKfree(v.literal); v.literal= 0;
+	VALclear(&v.value);
 }
 @- Constants
 Constants are stored in the symbol table and referenced
@@ -506,9 +499,9 @@ int newConstant(MalBlkPtr mb, malType type, str val){
 	if( k<0) k=0;
 	for(i= mb->vtop-1; i>=k;i--){
 		VarPtr v= mb->var+i;
-		if( v->value &&
+		if( v->literal &&
 		    /* v->type == type &&*/
-		    idcmp(v->value,val)==0 
+		    idcmp(v->literal,val)==0 
 		  ) {
 /* printf("reused a constant variable %s\n",v->name);*/
 			GDKfree(val);

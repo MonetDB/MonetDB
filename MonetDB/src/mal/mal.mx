@@ -57,7 +57,6 @@ mal_export MT_Lock	mal_contextLock;
 #endif /*  _MAL_H*/
 @c
 #include "mal.h"
-#include "mal_symbol.h"
 #include "mal_client.h"
 #include "mal_linker.h"
 #include "mal_startup.h"
@@ -115,6 +114,6 @@ int mal_exit(Client cntxt){
 #ifdef MALprofiler
 	profileReport( cntxt->nspace,1,stdout);
 #endif
-	freeSymbolList(mal_scope);
+	freeScopeList(mal_scope);
 	GDKexit();
 }

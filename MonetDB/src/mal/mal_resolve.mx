@@ -131,8 +131,9 @@ the client layer upward.
 After fixation of the module starting point, the argument type of
 the first parameter is used to isolate a subscope.
 @c
-malType findFunctionType(Symbol scope, MalBlkPtr mb, InstrPtr p){
-	Symbol s,m;
+malType findFunctionType(Scope scope, MalBlkPtr mb, InstrPtr p){
+	Scope m;
+	Symbol s;
 	InstrPtr sig;
 	int i,j,k,l, polymorphic, unmatched = 0, s1;
 	int lev, varargs=0, foundbutwrong=0;
@@ -142,7 +143,7 @@ malType findFunctionType(Symbol scope, MalBlkPtr mb, InstrPtr p){
 Within a module find the subscope to locate the element in its list
 of symbols.
 @c
-	m= s= scope;
+	m= scope;
 	if( m->subscope == NULL){
 		char buf[2048];
 		sprintf(buf,"subscope of %s\n",(scope?scope->name:"scope wrong"));
@@ -300,7 +301,7 @@ in a MAL block. We try to clear the type check flag by looking up the
 functions. Errors are simply ignored at this point of the game,
 because they may be resolved as part of the calling sequence.
 @c
-void typeChecker2(Symbol scope, MalBlkPtr mb, InstrPtr p, int level){
+void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level){
 	int s1, i;
 	char buf[1024];
 @-
@@ -320,7 +321,7 @@ message to the user.
 		s1= findFunctionType(scope,mb,p);
 		if( s1 <0){ 
 			/* continue search into outer scope */
-			Symbol m= findScope(scope,p->modname);
+			Scope m= findScope(scope,p->modname);
 			if(m == scope) m= m->outer;
 			while(s1<0 && m!= NULL){
 				if( tracefcn) 
@@ -389,14 +390,6 @@ procedure call without arguments and no module name.
 	}
 	p->typechk= TYPE_UNKNOWN;
 }
-/*
-void typeChecker(InstrPtr p, int level){
-	Symbol prg= p->sym;
-	Symbol scope = prg->scope;
-	MalBlkPtr mb= prg->def;
-	typeChecker2(scope,mb,p,level);
-}
-*/
 
 @+ Type analysis
 MAL provides for type variables of the form any::N. This feature

@@ -51,7 +51,7 @@ mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export char mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd);
 mal_export char mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd);
 mal_export void mdbHelp(FILE *f);
-mal_export void printStackElm(FILE *f, VarPtr n, ValPtr v);
+mal_export void printStackElm(FILE *f, MalBlkPtr mb,VarPtr n, ValPtr v);
 mal_export void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s);
 
 mal_export void mdbToggle(Client c, int v);
@@ -95,8 +95,8 @@ void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, char cmd)
 {	mdbState mdb= mdbTable + cntxt->idx;
 	mdb->brkBlock[mdb->brkTop] = mb;
 	mdb->brkVar[mdb->brkTop] = p->argv[0];
-	mdb->brkVarName[mdb->brkTop] = mb->var[p->argv[0]].name;
-			mdb->brkCmd[mdb->brkTop] =cmd;
+	mdb->brkVarName[mdb->brkTop] = getVarName(mb,0);
+	mdb->brkCmd[mdb->brkTop] =cmd;
 	if( mdb->brkTop+1< MAXBREAKS) 
 		mdb->brkTop++;
 }
@@ -242,7 +242,7 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 		if( i<0){
 			fprintf(out,"Symbol not found\n");
 		} else{
-			printStackElm(out,mb->var+i,stk->stk+i);
+			printStackElm(out,mb,getVar(mb,i),stk->stk+i);
 		}
 		continue;
 	}
@@ -273,7 +273,8 @@ signatures satisfying the pattern.
 	case 'L': 
 	case 'l': /* list the current code block */
 	{	str modname, fcnname;
-		Symbol fsym,fs;
+		Scope fsym;
+		Symbol fs;
 		int i;
 
 		mal_xlisting= *b=='L';
@@ -301,12 +302,13 @@ signatures satisfying the pattern.
 				fcnname ++;
 			}
 			/* display the overloaded symbol definition */
-			if( displaySymbol(out,modname,fcnname)==0){
+			if( displayScope(out,modname,fcnname)==0){
 				fprintf(out,"Symbol '%s.%s' not found\n",
 					modname,fcnname);
 				continue;
 			} else continue; 
-			printFunction(out,fsym->def);
+			fs= findSymbolInScope(mal_scope,fcnname);
+			if( fs) printFunction(out,fs->def);
 			continue;
 		}
 		printFunction(out,mb);
@@ -364,15 +366,15 @@ void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
 
         fprintf(f,"Stack pc=%d size=%d top=%d\n",s->pc,s->stksize,s->stktop);
         for( ; i<mb->vtop ; i++){
-		printStackElm(f, mb->var+i, s->stk+i);
+		printStackElm(f, mb, mb->var+i, s->stk+i);
         }
 }
 
-void printStackElm(FILE *f, VarPtr n, ValPtr v){
+void printStackElm(FILE *f, MalBlkPtr mb, VarPtr n, ValPtr v){
 	str nme;
 	fprintf(f,"[%d] %s\t= ",n->offset,n->name);
 	if( n->isaconstant) {
-		VALprint(f,&n->cstvalue);
+		VALprint(f,&n->value);
 	} else {
 	 	VALprint(f, v);
 	}

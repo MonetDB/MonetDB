@@ -241,7 +241,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 			setReturnArgument(newstmt, newTmpVariable(m,TYPE_int));
 			pushArgument(m,newstmt, symid);
 			pushInstruction(m,newstmt); /* add to block */
-			typeChecker2(getClient()->nspace,m,newstmt, TYPE_FIXED);
+			typeChecker(getClient()->nspace,m,newstmt, TYPE_FIXED);
 			/*watch out for overflow , to do!*/
 			new[top++]= m->stmt[m->stop-1];
 		}

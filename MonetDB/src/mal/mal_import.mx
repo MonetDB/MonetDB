@@ -31,7 +31,7 @@ html
 #ifndef _MAL_IMPORT_H
 #define _MAL_IMPORT_H
 
-#include "mal_symbol.h"
+#include "mal_scope.h"
 
 mal_export void malImport(str fname,int listing);
 #endif /*  _MAL_IMPORT_H*/
@@ -61,7 +61,7 @@ void malImport(str fname,int listing){
 	Client c= getClient();
 	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
 	int oldlisting = c->listing;
-	Symbol oldscope = c->nspace;
+	Scope oldscope = c->nspace;
 	Symbol oldprg = c->curprg;
 	int limit;
 

@@ -44,11 +44,11 @@ html
 #ifndef _MAL_FCN_H
 #define _MAL_FCN_H
 
-#include "mal_symbol.h"
+#include "mal_scope.h"
 
 /* #define DEBUG_MAL_FCN */
 
-mal_export Symbol	newFunction(Symbol scope, str nme);
+mal_export Symbol	newFunction(Scope scope, str nme);
 mal_export void 	initSymbolTable(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
@@ -62,11 +62,14 @@ mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkEnd(MalBlkPtr mb, InstrPtr pp);
 mal_export void 	chkLabel(MalBlkPtr mb, InstrPtr p);
-mal_export Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
+mal_export Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
+
+mal_export str		raiseException(MalBlkPtr mb, int pc, str name, str msg);
+mal_export str		raiseException2(str name, str msg);
+mal_export void		showException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export void	safeFunction(Symbol proc);
 mal_export void	restoreFunction(Symbol proc);
 mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
-/* mal_export str 	reverseOperator(Symbol scope, MalBlkPtr mb,str nme);*/
 mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
 
 #define SYMBOLFRAME GDKatomcnt
@@ -78,21 +81,19 @@ The MAL functions are constructed incrementally while parsing the source.
 #include "mal_function.h"
 #define MAXINSTR 200
 
-Symbol newFunction(Symbol scope, str nme){
+Symbol newFunction(Scope scope, str nme){
 	Symbol s;
 	InstrPtr c;
 	MalBlkPtr mb;
 	int i,j;
 
 	s = newSymbol(nme,FUNCTIONsymbol);
-	/* s->scope = scope;*/
 	s->def->sym = s;
 	c = newInstruction(s->def, FUNCTIONsymbol);
 	c->fcnname = GDKstrdup(nme);
 	c->argv[0]= newVariable(s->def,GDKstrdup(nme),malAnyType);
 	/* there is always room at the beginning */
 	mb= s->def;
-	/*c->pc= mb->stop;*/
 	mb->stmt[mb->stop] = ((char *) c)-((char*)mb->code);
         mb->stop++;
 	return s;
@@ -374,7 +375,7 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
 	}
 }
 
-Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
+Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	Symbol new;
 	int i;
 	InstrPtr pp;
@@ -408,7 +409,31 @@ Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 #endif
 	return new;
 }
-@-
+@- Exception handling
+@c
+str raiseException(MalBlkPtr mb, int pc, str name, str msg){
+        char buf[2048];
+        if( strlen(name)+strlen(msg)+2 <1024)
+                sprintf(buf,"%s:%s.%s[%d]:%s", name, getModName(mb),
+			getFcnName(mb),pc,msg);
+        else    sprintf(buf,"%s:%s.%s[%d]",name, getModName(mb),
+			getFcnName(mb),pc);
+        return GDKstrdup(buf);
+}
+str raiseException2(str name, str msg){
+        char buf[2048];
+        if( strlen(name)+strlen(msg)+2 <1024)
+                sprintf(buf,"%s::%s", name, msg);
+        else    sprintf(buf,"%s::...",name);
+        return GDKstrdup(buf);
+}
+void showException(MalBlkPtr mb, int pc, str name, str msg){
+	str n;
+	n= raiseException(mb,pc,name,msg);
+	GDKerror(n);
+	GDKfree(n);
+}
+@- utilities
 During the lifetime of a MAL function, it may be subject to
 manipulation by squeezer modules. They inspect the code and
 are allowed to enhance it to improve interpretation. Since the
