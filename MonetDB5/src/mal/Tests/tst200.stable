@@ -35,14 +35,14 @@
 #print(b,b,b);
 #
 function Admin.main():int; #0  (main:int)
-    o := calc.oid(20000000); #1 CALCint_2_oid (o:oid)<-($2:int)
+    o := calc.oid(20000000); #1 CALCint2oid (o:oid)<-($2:int)
     calc.setoid(o); #2 CALCsetoidInc ($3:oid)<-(o:oid)
     b := bbp.new(int,int); #3 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     system.printf("#~BeginVariableOutput~#\n"); #4 SYSprint_str ($6:int)<-($7:str)
     system.printf("#~EndVariableOutput~#\n"); #5 SYSprint_str ($8:int)<-($9:str)
     err := bat.insert(b,1,15); #6 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($11:int)($12:int)
     err := bat.insert(b,2,4); #7 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($13:int)($14:int)
-    n0 := calc.int(nil); #8 CALCnil_2_int (n0:int)<-($16:void)
+    n0 := calc.int(nil); #8 CALCnil2int (n0:int)<-($16:void)
     err := bat.insert(b,3,n0); #9 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($17:int)(n0:int)
     err := bat.insert(b,4,16); #10 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($14:int)($18:int)
     err := bat.insert(b,5,25); #11 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($19:int)($20:int)

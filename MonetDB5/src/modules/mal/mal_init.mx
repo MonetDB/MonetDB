@@ -44,7 +44,7 @@ use "kernel/kernel_init";
 use "mal/clients";
 use "mal/io";
 use "mal/streams";
-use "mal/ascii_io";
+use "mal/bulk_io";
 use "mal/enum";
 use "mal/multiplex";
 use "mal/mal";

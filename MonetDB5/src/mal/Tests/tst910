@@ -24,7 +24,7 @@ x:= multiplex.script("*",b,c);
 print(x);
 y:= multiplex.script("==",b,b);
 print(y);
-y:= multiplex.script("=",b,x);
+y:= multiplex.script("==",b,x);
 print(y);
 z:= multiplex.script("not",y);
 print(z);

@@ -84,7 +84,9 @@ Look at the related ANSI-C/POSIX manual pages to get the needed information.
 This module uses the blob atom.
 @* Module Definition
 @mal
-atom module fstream : ptr;
+atom module fstream : ptr
+comment "Mapping to the FILE descriptor on the Unix platforms.
+Should be replaced by the stream package primitives on NT";
 
 atom module bipipe : lng;
 command popen( ) : bipipe = io_popen 

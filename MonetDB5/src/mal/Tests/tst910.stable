@@ -34,7 +34,7 @@ end inc; #3
 #print(x);
 #y:= multiplex.script("==",b,b);
 #print(y);
-#y:= multiplex.script("=",b,x);
+#y:= multiplex.script("==",b,x);
 #print(y);
 #z:= multiplex.script("not",y);
 #print(z);
@@ -59,10 +59,10 @@ exit v; #6  (v:bit)
     io.print(x); #16 CMDprint_val ($19:int)<-(x:bat[lng,lng])
     y := multiplex.script("==",b,b); #17 CMDmultiplexScript (y:bat[lng,bit])<-($21:str)(b:bat[lng,lng])(b:bat[lng,lng])
     io.print(y); #18 CMDprint_val ($22:int)<-(y:bat[lng,bit])
-    y := multiplex.script("=",b,x); #19 CMDmultiplexScript (y:bat[lng,bit])<-($23:str)(b:bat[lng,lng])(x:bat[lng,lng])
-    io.print(y); #20 CMDprint_val ($24:int)<-(y:bat[lng,bit])
-    z := multiplex.script("not",y); #21 CMDmultiplexScript (z:bat[lng,bit])<-($26:str)(y:bat[lng,bit])
-    io.print(z); #22 CMDprint_val ($27:int)<-(z:bat[lng,bit])
+    y := multiplex.script("==",b,x); #19 CMDmultiplexScript (y:bat[lng,bit])<-($21:str)(b:bat[lng,lng])(x:bat[lng,lng])
+    io.print(y); #20 CMDprint_val ($23:int)<-(y:bat[lng,bit])
+    z := multiplex.script("not",y); #21 CMDmultiplexScript (z:bat[lng,bit])<-($25:str)(y:bat[lng,bit])
+    io.print(z); #22 CMDprint_val ($26:int)<-(z:bat[lng,bit])
 end main; #23  
 #-----------------#
 # BAT:	  tmp_5	  #

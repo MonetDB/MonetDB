@@ -388,10 +388,10 @@
 ##    return int(pow(dbl(base),dbl(raise)));
 #end pow;
 function Admin.pow(base:int,raise:int):int; #0  (pow:int)<-(base:int)(raise:int)
-    mg_a := calc.dbl(base); #1 CALCint_2_dbl (mg_a:dbl)<-(base:int)
-    ng_a := calc.dbl(raise); #2 CALCint_2_dbl (ng_a:dbl)<-(raise:int)
+    mg_a := calc.dbl(base); #1 CALCint2dbl (mg_a:dbl)<-(base:int)
+    ng_a := calc.dbl(raise); #2 CALCint2dbl (ng_a:dbl)<-(raise:int)
     og_a := mmath.pow(mg_a,ng_a); #3 MATHbinary_POWdbl (og_a:dbl)<-(mg_a:dbl)(ng_a:dbl)
-    pg_a := calc.int(og_a); #4 CALCdbl_2_int (pg_a:int)<-(og_a:dbl)
+    pg_a := calc.int(og_a); #4 CALCdbl2int (pg_a:int)<-(og_a:dbl)
     return pg_a; #5  (pow:int)<-(pg_a:int)
 end pow; #6  
 ##}
@@ -595,7 +595,7 @@ end arith_perftest; #68
 ##proc arith_perftest(bat[any::1,decimal] b, decimal div, str s) {
 #print("DECIMAL variant");
 #	t:= alarm.time();
-#	reduce:= decimal.bulkdivide(b,div);
+#	reduce:= decimal.divide(b,div);
 ##  var t := time, reduce := [/](b,div); 
 #	qg_a := printf("[/](%s)",s);
 ##        printf("[/](%s)",s);
@@ -710,7 +710,7 @@ end arith_perftest; #68
 function Admin.arith_perftest(b:bat[any::1,decimal],div:decimal,s:str):void; #0  (arith_perftest:void)<-(b:bat[any::1,decimal])(div:decimal)(s:str)
     io.print("DECIMAL variant"); #1 CMDprint_val ($4:int)<-($5:str)
     t := alarm.time(); #2 CLKtime (t:int)
-    reduce := decimal.bulkdivide(b,div); #3 decimal_bulkdivide_default (reduce:bat[any,decimal])<-(b:bat[any::1,decimal])(div:decimal)
+    reduce := decimal.divide(b,div); #3 decimal_bulkdivide_default (reduce:bat[any,decimal])<-(b:bat[any::1,decimal])(div:decimal)
     qg_a := system.printf("[/](%s)",s); #4 SYSprint_formatted_str (qg_a:int)<-($9:str)(s:str)
     x := alarm.time(); #5 CLKtime (x:int)
     rg_a := calc.-(x,t); #6 CALCbinarySUBintint (rg_a:int)<-(x:int)(t:int)
@@ -3415,45 +3415,45 @@ end main; #233
 [ "nec_huge",	  "dec_huge"	  ]
 [ "nec_huge",	  "nec_huge"	  ]
 #~BeginVariableOutput~#
-[/](int_10K) = 20ms
+[/](int_10K) = 21ms
 join(int_10K=10000) = 4 ms
-group(int_10K=100) = 3 ms
+group(int_10K=100) = 2 ms
 [*](int_10K==10000) = 20 ms
 [-](int_10K=10000) = 24 ms
-[+](int_10K=10000) =  24 ms
-[pow](int_10K=10000) = 48 ms
-sort(int_10K) =  4 ms
+[+](int_10K=10000) =  23 ms
+[pow](int_10K=10000) = 59 ms
+sort(int_10K) =  5 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-[/](int_100K) = 209ms
-join(int_100K=100000) = 32 ms
+[/](int_100K) = 211ms
+join(int_100K=100000) = 30 ms
 group(int_100K=100) = 17 ms
-[*](int_100K==100000) = 204 ms
-[-](int_100K=100000) = 261 ms
-[+](int_100K=100000) =  255 ms
-[pow](int_100K=100000) = 567 ms
+[*](int_100K==100000) = 201 ms
+[-](int_100K=100000) = 265 ms
+[+](int_100K=100000) =  259 ms
+[pow](int_100K=100000) = 716 ms
 sort(int_100K) =  40 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 [ "DECIMAL variant" ]
-[/](dec_10K) = 20ms
+[/](dec_10K) = 19ms
 join(dec_10K=10000) = 9 ms
 group(dec_10K=100) = 4 ms
-[*](dec_10K==10000) = 63 ms
-[-](dec_10K=10000) = 57 ms
-[+](dec_10K=10000) =  57 ms
-[pow](dec_10K=10000) = 354 ms
-sort(dec_10K) =  18 ms
+[*](dec_10K==10000) = 67 ms
+[-](dec_10K=10000) = 61 ms
+[+](dec_10K=10000) =  62 ms
+[pow](dec_10K=10000) = 345 ms
+sort(dec_10K) =  17 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 [ "DECIMAL variant" ]
-[/](dec_100K) = 211ms
+[/](dec_100K) = 207ms
 join(dec_100K=100000) = 206 ms
 group(dec_100K=100) = 35 ms
-[*](dec_100K==100000) = 702 ms
-[-](dec_100K=100000) = 593 ms
-[+](dec_100K=100000) =  602 ms
-[pow](dec_100K=10) = 1162 ms
-sort(dec_100K) =  288 ms
+[*](dec_100K==100000) = 707 ms
+[-](dec_100K=100000) = 621 ms
+[+](dec_100K=100000) =  642 ms
+[pow](dec_100K=10) = 1220 ms
+sort(dec_100K) =  286 ms
 #~EndVariableOutput~#
 >

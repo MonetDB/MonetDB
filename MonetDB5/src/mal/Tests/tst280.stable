@@ -43,7 +43,7 @@ function Admin.tst(A2:bat[void,int],A3:bat[void,int]):bat[void,int]; #0  (tst:ba
     lim := algebra.count(A2); #4 CMDcount (lim:int)<-(A2:bat[void,int])
     system.printf("count %d\n",lim); #5 SYSprint_formatted_int ($10:int)<-($11:str)(lim:int)
     m := -1; #6  (m:lng)<-($13:lng)
-    l := calc.lng(lim); #7 CALCint_2_lng (l:lng)<-(lim:int)
+    l := calc.lng(lim); #7 CALCint2lng (l:lng)<-(lim:int)
 barrier mloop := mal.nextElement(m,0,l,1); #8 lngForloopStep (mloop:bit)<-(m:lng)($16:lng)(l:lng)($17:lng) jump 19
     system.printf("loopindex %d\n",m); #9 SYSprint_formatted_lng ($18:int)<-($19:str)(m:lng)
     B2 := algebra.fetch(A2,m); #10 CMDfetch (B2:int)<-(A2:bat[void,int])(m:lng)

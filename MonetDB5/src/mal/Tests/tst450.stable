@@ -76,7 +76,7 @@ end main; #12
 [ nil,	  "mal"		  ]
 [ nil,	  "multiplex"	  ]
 [ nil,	  "enum"	  ]
-[ nil,	  "ascii_io"	  ]
+[ nil,	  "bulk_io"	  ]
 [ nil,	  "streams"	  ]
 [ nil,	  "fstream"	  ]
 [ nil,	  "bipipe"	  ]
