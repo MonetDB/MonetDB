@@ -110,7 +110,7 @@ AC_FUNC_MEMCMP()
 AC_CHECK_FUNCS(mkdir rmdir getcwd getopt getrlimit vsnprintf snprintf)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtol strerror strcasecmp)
 AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select getpgid)
-AC_CHECK_FUNCS(fstat)
+AC_CHECK_FUNCS(fstat getpwuid getuid)
 
 AC_CHECK_FUNCS(ctime_r)
 ctime_r3=yes

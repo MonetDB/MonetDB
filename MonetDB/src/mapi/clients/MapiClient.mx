@@ -85,7 +85,7 @@ The following options are supported:
 #include <string.h> 
 #include <signal.h> 
 
-#ifdef HAVE_PWD_H
+#if defined(HAVE_PWD_H) && defined(HAVE_GETPWUID) && defined(HAVE_GETUID)
 #include  <pwd.h> 
 #endif
 
@@ -310,7 +310,9 @@ int main(int ac, char **av) {
 	opt 	*set = NULL;
 	int     port = 0, debug = 0, setlen = 0;
 
+#if defined(HAVE_GETPWUID) && defined(HAVE_GETUID)
 	struct passwd *pwd = getpwuid(getuid());
+#endif
 	struct stat st;
 	char 	user[80];
         Msession mid;
@@ -334,7 +336,11 @@ int main(int ac, char **av) {
 	else
 	   is_chrsp = 0;
 
-        strcpy(user, pwd?pwd->pw_name:"guest");
+#if defined(HAVE_GETPWUID) && defined(HAVE_GETUID)
+	strcpy(user, pwd?pwd->pw_name:"guest");
+#else
+	strcpy(user, "guest");
+#endif
  
 	if (!(setlen = mo_builtin_settings(&set)) )
                 usage(prog);

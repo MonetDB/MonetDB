@@ -56,12 +56,14 @@
 # include <config.h>
 #endif
 
+#if 0				/* already taken care of in config.h */
 #if !defined __STDC__ || !__STDC__
 /* This is a separate conditional since some stdc systems
    reject `defined (const)'.  */
 # ifndef const
 #  define const
 # endif
+#endif
 #endif
 
 #include <stdio.h>
@@ -87,7 +89,7 @@
 
 /* This needs to come after some library #include
    to get __GNU_LIBRARY__ defined.  */
-#if defined(__GNU_LIBRARY__) || defined(_MS_VER)
+#if defined(__GNU_LIBRARY__) || defined(_MSC_VER)
 /* Don't include stdlib.h for non-GNU C libraries because some of them
    contain conflicting prototypes for getopt.  */
 # include <stdlib.h>
@@ -233,8 +235,8 @@ static char *posixly_correct;
 /* Avoid depending on library functions or files
    whose names are inconsistent.  */
 
-#if !defined(getenv) && !defined(_MS_VER)
-extern char *getenv ();
+#if !defined(getenv) && !defined(_MSC_VER)
+char *getenv ();
 #endif
 
 static char *

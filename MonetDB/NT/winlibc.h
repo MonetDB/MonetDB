@@ -48,16 +48,13 @@
  * with win_.
  */
 #include <winsock.h>
+#include <process.h>
 #define sleep(s)
 /* first some dummies, later move to pwd.h */
-#define getpwuid(uid) NULL
+#ifndef HAVE_GETUID
 #define getuid() 0
+#endif
 #define cuserid(x) "monet"
-struct passwd {
-  char *pw_name;	/* Username.  */
-  char *pw_passwd;	/* Password.  */
-  int  pw_uid;		/* User ID.  */
-};
 
 /* first dummy, later in sys/wait.h */
 #define waitpid(pid,statusp,sig) 0
