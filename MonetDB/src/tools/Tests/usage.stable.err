@@ -25,7 +25,7 @@ script+
 
 Usage: MapiClient [ options ]
 Options are:
- -d          | --debug=[level]
+ -d          | --debug=[level]  /* set debug level */
  -h hostname | --host=hostname  /* host to connect to */
  -p portnr   | --port=portnr    /* port to connect to */
  -l language | --language=lang  /* {mal,sql,mil} */
@@ -34,6 +34,7 @@ Options are:
  -e          | --error          /* exit on error */
  -s stmt     | --statement=stmt /* run single statement */
  -t          | --trace          /* trace Monet interaction */
+ -?          | --help           /* show this usage message */
 
 # 16:36:12 >  
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient.py -?
