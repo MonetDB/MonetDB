@@ -360,11 +360,12 @@ str mvc_destroy_wrap(int *ret ){
 	return MAL_SUCCEED;
 }
 
-str mvc_update_var_wrap( str *varname ){
+str mvc_update_var_wrap( int *ret, str *varname ){
 	mvc *c;
 	@:getContext(c,mvc)@
-	if ( sql_update_var( c, *varname ) )
+	if ( sql_update_var( c, *varname ) != GDK_SUCCEED)
 		return throwException(MALEXCEPTION,"mvc_update_var","error");
+	*ret = 0;
 	return MAL_SUCCEED;
 }
 

@@ -350,13 +350,12 @@ stmt *sql_symbol2stmt( mvc *c ){
 	return s;
 }
 
-int sqlcleanup( mvc *c, int err, int cache)
+int sqlcleanup( mvc *c, int err )
 {
 	sql_destroy_params(c);
 	sql_destroy_args(c);
 
 	/* some statements dynamically disable caching */
-	c->cache = cache;
 	if (c->sym) {
 		symbol_destroy(c->sym);
 		c->sym = NULL;
@@ -407,13 +406,11 @@ int sqlexecute(backend * be, stream *out )
 	char *query = NULL;
 	lng T0 = 0, Tparse = 0, Tmil = 0, Texec = 0, T1 = 0;
 	mvc *c = be->mvc;
-	int err = 0, cache = 0;
+	int err = 0;
 	enum ex_t explain = ex_none;
 	cq *q = NULL;
 
 	c->type = Q_PARSE;
-
-	cache = c->cache;
 
 	if (!c->trans)
 		mvc_trans(c);
@@ -434,7 +431,7 @@ int sqlexecute(backend * be, stream *out )
 	    (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
 		if (!err)
 			err = mvc_status(c);
-		return sqlcleanup(c, err, cache);
+		return sqlcleanup(c, err);
 	}
 
 	if (explain == ex_performance)
@@ -480,7 +477,7 @@ int sqlexecute(backend * be, stream *out )
 		stmt *s = sql_symbol2stmt(c);
 
 		if (!s && (err = mvc_status(c)) )
-			return sqlcleanup(c, err, cache);
+			return sqlcleanup(c, err);
 		assert(s);
 
 		if (explain == ex_plan) {
@@ -533,7 +530,7 @@ int sqlexecute(backend * be, stream *out )
 	        free(cmd);
 
 		if (err) 
-			return sqlcleanup(c, err, cache);
+			return sqlcleanup(c, err);
 	}
 
 	if (explain == ex_performance) {
@@ -545,7 +542,7 @@ int sqlexecute(backend * be, stream *out )
 
 	if (q && c->mode == m_prepare) {
 		if ( (err = output_prepare( out, q )) ) {
-			return sqlcleanup(c, err, cache);
+			return sqlcleanup(c, err);
 		}
 	} else if (q && !q->code) {
 		/* TODO change to backend_call(c, name, c->args, &err); */
@@ -609,7 +606,7 @@ int sqlexecute(backend * be, stream *out )
 			err = mvc_export_default( c, out ); 
 		}
 	}
-	return sqlcleanup(c, err, cache);
+	return sqlcleanup(c, err);
 }
 
 @-
