@@ -1791,6 +1791,66 @@ PFty_prime (PFty_t t)
     }
 }
 
+/**
+ * Implementation of the "data on" judgement (W3C Formal Semantics 6.2.3)
+ * that describes the special typing rules for the fn:data() function.
+ *
+ *  - data on (none)    = none
+ *  - data on (empty)   = empty
+ *  - data on (t1 , t2) = data on (t1) | data on (t2)
+ *  - data on (t1 | t2) = data on (t1) | data on (t2)
+ *  - data on (t1 & t2) = data on (t1) | data on (t2)
+ *  - data on (t1?)     = data on (t1) | empty
+ *  - data on (t1*)     = data on (t1) | empty
+ *  - data on (t1+)     = data on (t1)
+ *  - data on (t)       = t                  if t <: atomic
+ *  - data on (t)       = xs:string          if t <: comment | processing-instr
+ *  - data on (t)       = xdt:untypedAtomic  if t <: text | elem | attr | doc
+ *  - data on (named n) = none
+ */
+PFty_t
+PFty_data_on (PFty_t t)
+{
+    switch (t.type) {
+
+        case ty_none:
+            return PFty_none ();
+
+        case ty_empty:
+            return PFty_empty ();
+
+        case ty_seq:
+        case ty_choice:
+        case ty_all:
+            {
+                PFty_t c = PFty_choice (PFty_data_on (*(t.child[0])),
+                                        PFty_data_on (*(t.child[1])));
+                return *right_deep (ty_choice, &c);
+            }
+    
+        case ty_opt:
+        case ty_star:
+            return PFty_opt (PFty_data_on (*(t.child[0])));
+
+        case ty_plus:
+            return PFty_data_on (*(t.child[0]));
+
+        case ty_named:
+            /* this must be the occurrence of a recursive type
+             * reference, so nothing new can be learned from
+             * looking at the referenced type
+             */
+            return PFty_none ();
+
+        default:
+            if (PFty_subtype (t, PFty_atomic ()))
+                return t;
+            else if (PFty_subtype (t, PFty_choice (PFty_comm (), PFty_pi ())))
+                return PFty_xs_string ();
+            else
+                return PFty_untypedAtomic ();
+    }
+}
 
 enum quantifier {
     none = 0      /**<  0  */

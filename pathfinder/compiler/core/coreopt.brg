@@ -211,41 +211,42 @@ TagName:            tag                                         =  44 (10);
 TagName:            CoreExpr                                    =  45 (10);
 
 CoreExpr:           apply (FunctionArgs)                        =  46 (10);
+CoreExpr:           apply (arg (Atom, nil))                     =  47 (10);
 
-FunctionArgs:       arg (Atom, FunctionArgs)                    =  47 (10);
-FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  48 (10);
-FunctionArgs:       nil                                         =  49 (10);
+FunctionArgs:       arg (Atom, FunctionArgs)                    =  48 (10);
+FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  49 (10);
+FunctionArgs:       nil                                         =  50 (10);
 
-CoreExpr:           ordered (CoreExpr)                          =  50 (10);
-CoreExpr:           unordered (CoreExpr)                        =  51 (10);
+CoreExpr:           ordered (CoreExpr)                          =  51 (10);
+CoreExpr:           unordered (CoreExpr)                        =  52 (10);
 
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  52 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  53 (10);
 
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  53 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  54 (10);
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =  54 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  55 (10);
 
-Atom:               var                                         =  55 (10);
-Atom:               empty                                       =  56 (10);
-Atom:               LiteralValue                                =  57 (10);
+Atom:               var                                         =  56 (10);
+Atom:               empty                                       =  57 (10);
+Atom:               LiteralValue                                =  58 (10);
 
-LiteralValue:       lit_str                                     =  58 (10);
-LiteralValue:       lit_int                                     =  59 (10);
-LiteralValue:       lit_dec                                     =  60 (10);
-LiteralValue:       lit_dbl                                     =  61 (10);
-LiteralValue:       true_                                       =  62 (10);
-LiteralValue:       false_                                      =  63 (10);
+LiteralValue:       lit_str                                     =  59 (10);
+LiteralValue:       lit_int                                     =  60 (10);
+LiteralValue:       lit_dec                                     =  61 (10);
+LiteralValue:       lit_dbl                                     =  62 (10);
+LiteralValue:       true_                                       =  63 (10);
+LiteralValue:       false_                                      =  64 (10);
 
-FunctionDecls:      nil                                         =  64 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  65 (10);
+FunctionDecls:      nil                                         =  65 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  66 (10);
 
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  66 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  67 (10);
 
-ParamList:          nil                                         =  67 (10);
-ParamList:          params (FunParam, ParamList)                =  68 (10);
+ParamList:          nil                                         =  68 (10);
+ParamList:          params (FunParam, ParamList)                =  69 (10);
 
-FunctionBody:       CoreExpr                                    =  69 (10);
+FunctionBody:       CoreExpr                                    =  70 (10);
 
-FunParam:           param (SequenceType, var)                   =  70 (10);
+FunParam:           param (SequenceType, var)                   =  71 (10);
 
 %%
 
@@ -493,6 +494,54 @@ reduce (PFcnode_t * p, int goalnt)
         case 21:
             *p = *L(p);
             rewritten = true;
+            break;
+
+        /* CoreExpr:           apply (arg (Atom, nil)) */
+        case 47:
+            if (! PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "data"))) {
+                /*
+                 * If the argument is a subtype of atomic*, fn:data()
+                 * returns the argument itself.
+                 */
+                if (PFty_subtype (TY(LL(p)), PFty_star (PFty_atomic ()))) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+                /*
+                 * If the argument is a subtype of
+                 * (comment | processing-instruction)*,
+                 * fn:data() returns the string-value
+                 * of the argument.
+                 */
+                if (PFty_subtype (TY(LL(p)),
+                                  PFty_star (PFty_choice (PFty_comm (),
+                                                          PFty_pi ())))) {
+                    p->sem.fun = function (PFqname (PFns_fn, "string-value"));
+                    rewritten = true;
+                    break;
+                }
+                /*
+                 * If the argument is a subtype of
+                 * (element | attribute | text | document)*,
+                 * fn:data() returns the typed-value
+                 * of the argument.
+                 */
+                if (PFty_subtype (TY(LL(p)),
+                                  PFty_star (
+                                      PFty_choice (
+                                          PFty_xs_anyElement (),
+                                          PFty_choice (
+                                              PFty_xs_anyAttribute (),
+                                              PFty_choice (
+                                                  PFty_text (),
+                                                  PFty_doc (PFty_xs_anyType ()))
+                                              ))))) {
+                    p->sem.fun = function (PFqname (PFns_pf, "typed-value"));
+                    rewritten = true;
+                    break;
+                }
+            }
             break;
 
         default:

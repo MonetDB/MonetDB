@@ -1391,6 +1391,14 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
 PFcnode_t *
 PFcore_fn_data (const PFcnode_t *n)
 {
+    PFvar_t *v = PFcore_new_var (NULL);
+    PFfun_t *fn_data = PFcore_function (PFqname (PFns_fn, "data"));
+
+    return PFcore_let (
+            PFcore_letbind (PFcore_var (v), n),
+            APPLY (fn_data, PFcore_var (v)));
+
+#if 0
     PFvar_t *v1 = PFcore_new_var (NULL);
     PFvar_t *v2 = PFcore_new_var (NULL);
     PFvar_t *v3 = PFcore_new_var (NULL);
@@ -1443,6 +1451,7 @@ PFcore_fn_data (const PFcnode_t *n)
                                                     PFcore_var (v2))),
                                             typed_value)),
                                     PFcore_default (PFcore_empty ()))))))));
+#endif
 }
 
 /**
