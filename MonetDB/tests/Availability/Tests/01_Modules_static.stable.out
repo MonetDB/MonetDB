@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop {
 }
 
 Fnts.count().print();
-[ 670 ]
+[ 671 ]
 Fnts.reverse().sort().reverse()@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 670 ]
+[ 671 ]
 
 var All:=0;
 
@@ -77,8 +77,8 @@ Static_mods@batloop {
 
 Module: ""
 
-[ 60 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 59 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																												  # name
 # str			str		str													str																																																															  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -100,7 +100,6 @@ Module: ""
 [ "htype",	  "PROC:      ",  "htype(any) : int",										  "not available"																																																													  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], lng, str, ..any..) : BAT[any::1,any::3]", "not available"																																																													  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]", "not available"																																																													  ]
-[ "likeselect",	  "PROC:      ",  "likeselect(BAT[any::1,str], str) : BAT[any::1,oid]",				  "not available"																																																													  ]
 [ "load",	  "PROC:      ",  "load(str) : BAT[any,any]",							  "not available"																																																													  ]
 [ "locate",		  "PROC:      ",  "locate(str, str) : int",										  "not available"																																																													  ]
 [ "locate",		  "PROC:      ",  "locate(str, str, int) : int",									  "not available"																																																													  ]
@@ -145,8 +144,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 105 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 107 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -173,6 +172,7 @@ Module: "algebra"
 [ "find",	  "COMMAND:   ",  "find(BAT[any::1,any::2], any::1) : any::2",						  "Returns the tail value 't' for which some [h,t] BUN exists in b.\n If no such BUN exists, an error occurs."																								  ]
 [ "find_higher",  "COMMAND:   ",  "find_higher(BAT[any::1,void], any::1) : oid",					  "find the value equal to or (of not exists) greater than the searched value"																																																																			  ]
 [ "find_lower",	  "COMMAND:   ",  "find_lower(BAT[any::1,void], any::1) : oid",						  "find the value equal to or (of not exists) smaller than the searched value"																																																																			  ]
+[ "find_unescaped_occurrence",	  "PROC:      ",  "find_unescaped_occurrence(str, chr) : int",							  "finds the first occurrence of c that is not escaped by a \\"																																																								  ]
 [ "fragment",	  "COMMAND:   ",  "fragment(BAT[any::1,any::2], any::1, any::1, any::2, any::2) : BAT[any::1,any::2]",	  "Select both on head and tail range."																																	  ]
 [ "group",	  "COMMAND:   ",  "group(BAT[any::1,any], int, int, int) : BAT[any::1,int]",				  "Produces a new BAT with identical head column, and in the tail column groups of equally valued \nintegers within each group. Parameters: a start group value, group number increment, group size."													  ]
 [ "hashsplit",	  "COMMAND:   ",  "hashsplit(BAT[any::1,any::2], int) : BAT[int,BAT]",					  "Split a BAT on tail column according (hash-value MOD buckets).\nReturns a recursive BAT, containing the fragments in the tail,\ntheir bucket number in the head."																	  ]
@@ -185,6 +185,7 @@ Module: "algebra"
 [ "kunion",	  "COMMAND:   ",  "kunion(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Returns the union of two BATs; looking at head-columns only. \n Results in all BUNs of 'left' that are  not in 'right', plus all BUNs \n of 'right'. *no* double-elimination is done. If you want this, do: \n 'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'."		  ]
 [ "kunique",	  "COMMAND:   ",  "kunique(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Select unique tuples from the input BAT. Double elimination is done\n only looking at the head column. Result is a BAT with hkeyed() == true."																			  ]
 [ "like",	  "COMMAND:   ",  "like(BAT[any::1,str], str) : BAT[any::1,str]",					  "Selects all elements from the input BAT that have 'substr'\nas substring in the tail."																										  ]
+[ "likeselect",			  "PROC:      ",  "likeselect(BAT[any::1,str], str) : BAT[any::1,oid]",						  "does SQL LIKE select which supports % and _ (also understands escapes)"																																																						  ]
 [ "mark",	  "COMMAND:   ",  "mark(BAT[any::1,any]) : BAT[any::1,oid]",						  "Produces a new BAT with fresh unique OIDs in the tail."																														  ]
 [ "mark",	  "COMMAND:   ",  "mark(BAT[any::1,any], oid) : BAT[any::1,oid]",					  "Produces a new BAT with fresh unique dense sequense of OIDs in the tail\n that starts at base (i.e. [base,base+1,..base+b.count()-1] )."																				  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any,dbl]) : dbl",								  "Give the highest tail value. Error on empty BATs."																															  ]
@@ -805,7 +806,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 670 ]
+[ 671 ]
 
 quit();
 
