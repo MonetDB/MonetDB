@@ -358,20 +358,27 @@ MalBlkPtr newMalBlk(int maxvars, int maxstmts){
 	mb->alternative= NULL;
 	return mb;
 }
-
+@-
+The freeMalBlk code is quite defensive. It is used to localize an
+illegal re-use of a MAL blk.
+@c
 void freeMalBlk(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
 
 	p= getInstrPtr(mb,0);
-	for(i=0;i<mb->stop; i++)
+	for(i=0;i<mb->stop; i++){
 		freeInstruction(getInstrPtr(mb, i));
+		mb->stmt[i]= NULL;
+	}
+	mb->stop = 0;
 	for(i=0;i<mb->vtop; i++)
 		freeVariable(mb, i);
-	GDKfree(mb->stmt); 
-	GDKfree(mb->var); 
-	if( mb->binding) GDKfree(mb->binding); 
-	if( mb->help) GDKfree(mb->help); 
+	mb->vtop = 0;
+	GDKfree(mb->stmt); mb->stmt= 0;
+	GDKfree(mb->var);  mb->var=0;
+	if( mb->binding) GDKfree(mb->binding);  mb->binding=0;
+	if( mb->help) GDKfree(mb->help); mb->help=0;
 	GDKfree(mb);
 }
 @-
@@ -429,8 +436,7 @@ void trimexpand(MalBlkPtr mb, int varsize, int stmtsize){
 	InstrPtr *stmt;
 	int len;
 
-	if( varsize<0 || stmtsize<0)
-		GDKfatal("trimexpand: illegal arguments\n");
+	assert(varsize>0 && stmtsize>0);
 	len = sizeof(ValPtr)* (mb->vtop+varsize);
 	v= (VarRecord **) GDKmalloc(len);
 	if( v== NULL)
@@ -438,7 +444,7 @@ void trimexpand(MalBlkPtr mb, int varsize, int stmtsize){
 
 	bzero((char*) v, len);
 	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * mb->vtop);
-	GDKfree(mb->var);
+	if(mb->var) GDKfree(mb->var);
 	mb->var = v;
 	mb->vsize = mb->vtop+varsize;
 
@@ -453,8 +459,9 @@ void trimexpand(MalBlkPtr mb, int varsize, int stmtsize){
 	mb->ssize = mb->ssize + stmtsize;
 }
 void expandMalBlk(MalBlkPtr mb, int lines){
-	if(lines*1.1 >mb->stop)
-		trimexpand(mb,lines*1.1,lines);
+	int newlines= (int) (lines *1.1);
+	if(newlines >mb->ssize || newlines>mb->vsize)
+		trimexpand(mb,newlines,newlines);
 }
 void trimMalBlk(MalBlkPtr mb){
  /* printf("safe %d %d\n",mb->vtop, (mb->vsize-mb->vtop)*sizeof(VarPtr));
@@ -467,7 +474,7 @@ repeated extend on the MAL block, which really consumes a lot of memcpy
 resources.
 @c
 void prepareMalBlk(MalBlkPtr mb, str s){
-	int cnt=0;
+	int cnt=1;
 	char *c;
 	for(c=s;*c;c++)if( *c=='\n') cnt++;
 	expandMalBlk(mb,cnt);
@@ -529,6 +536,7 @@ void clrInstruction(InstrPtr p){
 	bzero((char*)p, sizeof(InstrRecord)+ (p->argc-1)*sizeof(int));
 }
 void freeInstruction(InstrPtr p){
+	assert(p!=0);
 	if(moduleId(p)) freeModuleName(p);
 	if(functionId(p)) freeFunctionName(p);
 	GDKfree(p);
@@ -1215,7 +1223,7 @@ str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	int i;
 	str tpe;
 	
-	sprintf(s," #%d %s%s ",
+	sprintf(s,"\t# %d %s%s ",
 		getPC(mb,p), 
 		((p->blk && p->blk->binding)? p->blk->binding:""),
 		typechkName(p->typechk));
@@ -1559,8 +1567,8 @@ void printInstruction(stream *fd, MalBlkPtr mb, InstrPtr p,int flg){
 
 void printSignature(stream *fd, Symbol s, int flg){
 	InstrPtr p;
-	str txt= GDKmalloc(8192);
-	bzero(txt,8192);
+	str txt= GDKmalloc(BLOCK);
+	bzero(txt,BLOCK);
 	p= getSignature(s);
 	(void) fcnDefinition(s->def, p,txt, flg);
 	stream_printf(fd,"%s\n",txt);

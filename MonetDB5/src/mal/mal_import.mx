@@ -100,9 +100,11 @@ str malLoadScript(Client c, str modname){
 	c->limit = c->input + max;
 	*c->nxt=0;
         fd= malOpenSource(modname);
-	if( fd->errnr == OPEN_ERROR)
+	if( fd->errnr == OPEN_ERROR){
+		fd->destroy(fd);
                 return throwException(MALEXCEPTION,"malImport",
 			"could not open file: %s\n", modname);
+	}
 	while(1 ){
 		rd= fd->read(fd, c->nxt, (size_t) 1, (size_t) max);
 		if( rd<=0) { c->input[0]=0; break;}
@@ -121,6 +123,7 @@ str malLoadScript(Client c, str modname){
 	c->nxt= c->input;
 
         fd->close(fd);
+	fd->destroy(fd);
 	return NULL;
 }
 
@@ -235,6 +238,7 @@ void runScript(Client c, str fname, int listing, MalStkPtr glb)
 	c->prompt = oldprompt;
 	c->glb = oldglb;
 	(void) fd->close(fd);
+	(void) fd->destroy(fd);
 }
 void callString(Client c, str s, int listing)
 {	

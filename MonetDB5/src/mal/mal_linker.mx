@@ -80,6 +80,7 @@ html
 #define MONET64 1
 mal_export void *getAddress(str fcnname);
 mal_export str loadModuleLibrary(str modname);
+mal_export void unloadModuleLibraries();
 mal_export void initLibraries();
 mal_export int 	isPreloaded(str nme);
 #endif
@@ -139,6 +140,7 @@ already loaded.
 #define LIBPATH "lib/MonetDB"
 
 static str modulesLoaded[128];
+static void *handles[128];
 
 str loadModuleLibrary(str modname){
 	char buf[MAXPATHLEN];
@@ -148,11 +150,14 @@ str loadModuleLibrary(str modname){
 	str path ="";
 	str library=0;
 	str msg= NULL;
-	int i;
+	int i,idx;
 
-	for(i=0;modulesLoaded[i] && i<128;i++)
+	for(idx=0;modulesLoaded[idx] && idx<128;idx++)
 	if( strcmp(modulesLoaded[i],modname)==0)
 		return 0;
+	if( idx== 128){
+		GDKfatal("too many modules\n");
+	}
 	strncpy(nme,modname,MAXPATHLEN);
 	if( (library=strrchr(nme,DIR_SEP))  != NULL){
 		*library=0;
@@ -175,7 +180,7 @@ str loadModuleLibrary(str modname){
 				access(buf,R_OK)?"failed":"succeeded");
 #endif
 		if( access(buf,R_OK)== 0){
-			handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
+			handles[idx]= handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 			msg =dlerror();
 #ifdef DEBUG_MAL_LINKER
 			stream_printf(GDKout,"load:%s:%s\n",buf,handle==NULL?
@@ -199,7 +204,7 @@ str loadModuleLibrary(str modname){
 				access(buf,R_OK)?"failed":"succeeded");
 #endif
 	if( access(buf,R_OK) == 0) {
-		handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
+		handles[idx]= handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 #ifdef DEBUG_MAL_LINKER
 		stream_printf(GDKout,"attempt to load:%s\n",buf,handle==NULL?"failed":"succeeded");
 #endif
@@ -216,6 +221,15 @@ str loadModuleLibrary(str modname){
 	else	modulesLoaded[i]= GDKstrdup(modname);
         MT_unset_lock(mal_contextLock, "loadModule");
 	return 0;
+}
+@-
+For analysis of memory leaks we should cleanup the libraries before
+we exit the server
+@c
+void unloadModuleLibraries(){
+	int i;
+	for(i=0;i<128;i++)
+	if( handles[i]) dlclose(handles[i]);
 }
 @+ Static pre-loading
 To speedup restart and to simplify debugging, the Monet server can

@@ -228,8 +228,16 @@ int stringLength(Client cntxt){
 	}
 	return l+2;
 }
+@-
+Beware, the idcmp routine uses a short cast to compare multiple bytes
+at once. This may cause problems when the net string length is zero.
+@c
 str strCopy(Client cntxt, int length){
-	str s= GDKmalloc(length-1);
+	str s;
+	int i= length-1;
+	if( i-2 <sizeof(short)) i= sizeof(short);
+	s= GDKmalloc(i);
+	*(short*)s = 0;
 	if( s== 0) GDKfatal("FATAL:strCopy:");
 	strncpy(s,cntxt->nxt+1,length-2);
 	s[length-2] = 0;
@@ -1519,7 +1527,7 @@ int parseError(Client cntxt, str msg)
 	/* produce the position marker*/
 	i = position(cntxt) + strlen(GDKERROR)-1;
         for(; i > 0; i--) {
-                *s++ = (*l++ != '\t')?' ':'\t';
+                *s++ = ((l && *(l+1) && *l++ != '\t'))?' ':'\t';
         }
         *s++ = '^'; 
 	*s = 0;

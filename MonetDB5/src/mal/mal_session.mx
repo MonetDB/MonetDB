@@ -65,7 +65,6 @@ int malStartupAdmin(){
 	char buf[PATHLENGTH];
 	Client c;
 	c= initClient(GDKstrdup("Admin"),NULL,0,0);
-	if(c->nspace) freeScopeList(c->nspace);
 	c->nspace= newScope(NULL, GDKstrdup("Admin"));
 	initLibraries();
 	defaultScenario(c);
@@ -117,7 +116,7 @@ of the client named 'guest' to a session previously started under identity 23.
 The scheduleClient receives a single block from the API.
 The first line should represent a user. The remainder may
 be a request to be handled. This way, a single message
-can be used to issue a short (<8192byte) transaction.
+can be used to issue a short (<8192byte,=BLOCK) transaction.
 @c
 void scheduleClient( str command, int socket, stream *fin, stream *fout)
 {
@@ -148,11 +147,11 @@ void scheduleClient( str command, int socket, stream *fin, stream *fout)
 		GDKfree(c->nspace->name);
 		c->nspace->name= GDKstrdup(user);
 	} else{
-		if(c->nspace) freeScopeList(c->nspace);
 		c->nspace = newScope(NULL, GDKstrdup(user));
 		c->nspace->outer = mal_scope;
 	}
 
+	/* c->nspace= newScope(NULL,GDKstrdup(user));*/
 	c->nspace->outer = mal_scope;
 	c->sessionkey = key;
 	c->socket= socket;
@@ -191,7 +190,7 @@ void 	resetInstructions(MalBlkPtr mb, int start)
 	InstrPtr p;
         for(i=start; i<mb->stop; i++){
                 p= getInstrPtr(mb,i); 
-                freeInstruction(p);
+                if(p) freeInstruction(p);
 		mb->stmt[i] = NULL;
         }
 	

@@ -53,7 +53,7 @@ as well as in user defined module implementations.
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * http://monetdb.cwi.nl/Download/Licensing/MonetPL-1.1.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -73,7 +73,6 @@ as well as in user defined module implementations.
 #ifndef _MAL_H
 #define _MAL_H
 
-#include "monet_options.h"
 #include "gdk.h"
 #include <stream.h>
 
@@ -154,7 +153,7 @@ in a critical section, which was known to be a performance hindrence.
 mal_export int             mal_debug;
 mal_export MT_Lock	mal_contextLock;
 
-mal_export int mal_init(str modpath, str prefix, opt *set, int setlen);
+mal_export int mal_init(str modpath, str prefix);
 
 #define MALprofiler 1		/* activate the profiler */
 /* #undef MALprofiler*/
@@ -218,18 +217,9 @@ void tstAligned()
 		GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
 #endif
 }
-@-
-We should keep track of the command ine arguments for proper
-removal at the end of the session
-@c
-static opt *monet_options;
-static int monet_optionLength;
-
-int mal_init(str modpath, str prefix, opt *set, int setlen){
+int mal_init(str modpath, str prefix){
 	char buf[PATHLENGTH];
 
-	monet_options= set;
-	monet_optionLength= setlen;
 	monet_mod_path= modpath;
 	snprintf(buf,PATHLENGTH,"%s/etc/MonetDB",prefix);
 	monet_mal_path= GDKstrdup(buf);
@@ -250,11 +240,11 @@ int mal_exit(Client cntxt){
 #ifdef MALprofiler
 	profileReport( cntxt->nspace,1, open_wastream("/tmp/Monet.prof"));
 #endif
+	freeScopeList(cntxt->nspace);
 	freeBoxes();
-	cleanupClients();
 	mal_scope = 0;
+	unloadModuleLibraries();
 	TMcommit();
-	/* mo_free_options(monet_options, monet_optionLength); causes errors */
 	GDKexit(1);
 }
 

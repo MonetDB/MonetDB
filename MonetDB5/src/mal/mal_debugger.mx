@@ -149,30 +149,34 @@ void mdbClrBreakpointName(Client cntxt, str name)
 
 str call2str(MalBlkPtr mb, MalStkPtr stk, int pc){
 	InstrPtr p;
-	char buf[8192];
+	char buf[BLOCK];
 	int l,k;
 
 	p= getInstrPtr(mb, pc);
 	if( p != NULL){
-		snprintf(buf,8192,"%s.%s(",moduleName(p),functionName(p));
+		if( p->token== ASSIGNsymbol){
+			strcpy(buf,instruction2str(mb,p,FALSE));
+		} else {
+		snprintf(buf,BLOCK,"%s.%s(",moduleName(p),functionName(p));
 		for(k= p->retc; k<p->argc; k++){
 			str msg=0; 
 			ValPtr v= &stk->stk[p->argv[k]];
 			ATOMformat(v->vtype, VALptr(v), &msg);
 			l= strlen(buf);
-			snprintf(buf+l,8192-l,"%s",msg);
+			snprintf(buf+l,BLOCK-l,"%s",msg);
 			GDKfree(msg);
 			if( k < p->argc-1 ) {
 				l= strlen(buf);
-				snprintf(buf+l,8192-l,",");
+				snprintf(buf+l,BLOCK-l,",");
 			}
 		}
 		l= strlen(buf);
-		snprintf(buf+l,8192-l,")");
+		snprintf(buf+l,BLOCK-l,")");
+		}
 	}
 	p= getInstrPtr(mb,0);
 	l= strlen(buf);
-	snprintf(buf+l,8192-l," at #%d in %s", pc, functionName(p));
+	snprintf(buf+l,BLOCK-l," at #%d in %s", pc, functionName(p));
 	return GDKstrdup(buf);
 }
 void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){

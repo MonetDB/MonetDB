@@ -68,7 +68,6 @@ are located in mal_startup.
 
 #define TIMEOUT		(5*60)	/* seconds */
 #define PROCESSTIMEOUT	2	/* seconds */
-
 @-
 The prompt structure is designed to simplify recognition
 of the language framework for interaction. For direct console
@@ -413,10 +412,11 @@ void freeClient(Client c)
 	} 
 	/* forked client also */
 
-	if( c->curprg ) freeSymbol(c->curprg);
-	c->curprg= 0;
-	/* scope list can not be removed, because the client may recide in a
+	/* scope list and curprg can not be removed, 
+	   because the client may recide in a
 	  quit() command. Therefore the scopelist is re-used.
+	if( c->curprg ) freeSymbol(c->curprg); 
+	c->curprg=0;
 	if( c->nspace) {
 		freeScopeList(c->nspace);
 		c->nspace=0;
