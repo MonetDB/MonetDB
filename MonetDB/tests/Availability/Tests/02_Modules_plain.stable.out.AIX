@@ -301,8 +301,8 @@ Module: "enum"
 
 Module: "io"
 
-[ 24 ]
-[ 24 ]
+[ 25 ]
+[ 25 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help									  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -321,6 +321,7 @@ Module: "io"
 [ "fread",	  "COMMAND: ",	  "fread(fstream, int) : blob",				  "See: man fread"							  ]
 [ "freopen",	  "COMMAND: ",	  "freopen(str, str, fstream) : fstream",		  "See: man freopen. Returns fstream, or fstream(nil) on failure."	  ]
 [ "fseek",	  "COMMAND: ",	  "fseek(fstream, int, int) : int",			  "See: man fseek"							  ]
+[ "fsize",	  "COMMAND: ",	  "fsize(str) : int",					  "Return the filesize, or -1 when there was some error"		  ]
 [ "ftable",	  "COMMAND: ",	  "ftable(fstream, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file."					  ]
 [ "ftable",	  "COMMAND: ",	  "ftable(fstream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
 [ "ftell",	  "COMMAND: ",	  "ftell(fstream) : int",				  "See: man ftell"							  ]
