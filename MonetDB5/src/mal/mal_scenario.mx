@@ -309,7 +309,7 @@ has been loaded. This should be announced as part of the module
 prelude code.
 @= updLine
 		if( scen->@1 && strcmp(scen->@1,nme) == 0)
-				scen->initSystemCmd = fcn;
+			scen->@1Cmd = fcn;
 @c
 void updateScenario(str nme, MALfcn fcn) {
 	int i;
@@ -533,7 +533,6 @@ have to call the scenario exit.
         exitScenario(c);
     }
 }
-
 @+ MAL scenario initialization
 The scenario initialization is currently empty. However, the file should always
 be available. Actually, we should move welcome messages to this script, because
