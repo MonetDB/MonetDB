@@ -23,15 +23,10 @@
 
 SUBDIRS = src conf	# scripts tests 
 
-EXTRA_DIST = rules.mk bootstrap lady.gif configure.ag RunMtest.in RunMtest.bat.in RunMapprove.in RunMapprove.bat.in sysdefs.h.in
+EXTRA_DIST = rules.mk bootstrap configure.ag RunMtest.in RunMtest.bat.in RunMapprove.in RunMapprove.bat.in sysdefs.h.in
 EXTRA_DIST_DIR = NT
 
 EXTRA_HEADERS = monetdb_config.h sysdefs.h
-
-scripts_gif = {
-	DIR = pkgdatadir
-	SOURCES = lady.gif
-}
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

@@ -43,6 +43,8 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+200504 finalized cross-compilation issues on supported platforms
+200504 copied README and HowToStart from 4.3
 210803 (non)-blocked interaction from Mapi and Perl working
 170803 blocked io to clients finished for MAL
 170803 Incremental parsing of unfinished definitions in single-line interface
