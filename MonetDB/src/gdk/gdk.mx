@@ -841,8 +841,8 @@ typedef struct {
 	@:PTR(BATrec*)@	P;		/* cache and sort info */
 	@:PTR(BUNrec*)@	U;		/* cache and sort info */
 	/* void hack fields */
-	int 		void_tid;	/* thread that reads this bat */
-	int 		void_cnt;	/* nr of reads */
+	long 		void_tid;	/* thread that reads this bat */
+	long 		void_cnt;	/* nr of reads */
 	oid		void_seq1;
 	oid 		void_seq2;
 } 

@@ -263,7 +263,7 @@ Get the new information for the server socket and start listening.
 				nmp[mpl+2] = '\0';
 				c = initClient(GDKstrdup(name), nmp, FALSE);
 				if (c == 0) {
-					fprintf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
+					stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 					GDKfree(name);
 					fdout->flush(fdout);
 

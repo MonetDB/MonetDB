@@ -103,10 +103,9 @@ mutils_export void mo_free_options( opt *set, int setlen );
 #include <stdio.h>
 #include <string.h>
 #include "monet_options.h"
-#ifndef HAVE_GETOPT
-#  include "getopt.c"
-#endif
+
 #ifndef HAVE_GETOPT_LONG
+#  include "getopt.c"
 #  include "getopt1.c"
 #endif
 

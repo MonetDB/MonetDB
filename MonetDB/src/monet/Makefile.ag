@@ -35,8 +35,9 @@ lib_monet = {
 		monet_context.mx monet_parse.mx monet_deparse.mx \
 		monet_process.mx searchpath.mx monet.feps
 	HEADERS = h tab.h
-	LIBS = ../common/libmutils ../gdk/libbat \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = ../common/libmutils ../common/libstream ../gdk/libbat \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 
 }
 

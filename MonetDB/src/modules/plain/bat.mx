@@ -1046,13 +1046,13 @@ where the server was started unless an absolute file name was
 presented.
 @c
 int CMDexport(BAT *b, str fnme) {
-	FILE	*f = fopen(fnme, "w");
-	if (f == NULL) {
+	stream	*s = open_wastream(fnme);
+	if (s == NULL || s->errnr) {
 		GDKsyserror("CMDexport: could not open file %s\n",fnme);
 		return GDK_FAIL;
 	}
-	BATprintf(f,b);
-	fclose(f);
+	BATprintf(s,b);
+	s->destroy(s);
 	return GDK_SUCCEED;
 }
 

@@ -47,6 +47,7 @@ the various underlying storage types.
 #include <monet_utils.h>
 
 #include <ctype.h>
+#include <assert.h>
 
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
@@ -184,8 +185,6 @@ stream_export int bs_read_next( stream *s, char *buf, int *last );
 #include <io.h>
 #endif
 
-#include <dummy_gdk_utils.h>
-
 #define convertInt(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
                        ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
 
@@ -212,17 +211,17 @@ static void get_extention( char *file, char *ext)
 }
 
 static void stream_destroy( stream *s){
-	GDKfree(s->name);
-	GDKfree(s);
+	free(s->name);
+	free(s);
 }
 
 static stream *create_stream( char *name ){
-	stream *s = (stream*)GDKmalloc(sizeof(stream));
+	stream *s = (stream*)malloc(sizeof(stream));
 	/*assert(s);*/
 	s->byteorder = 1234;
 	s->access = ST_READ;
 	s->type = ST_ASCII;
-	s->name = GDKstrdup(name); 
+	s->name = strdup(name); 
 	s->stream_data = NULL;
 	s->errnr = NO__ERROR;
 	s->destroy = &stream_destroy;
@@ -234,15 +233,15 @@ static char *stream_error( stream *s ){
 	switch(s->errnr){
 	case OPEN_ERROR:
 		sprintf(buf, "Error could not open file %s\n", s->name );
-		return GDKstrdup(buf);
+		return strdup(buf);
 	case READ_ERROR:
 		sprintf(buf, "Error reading file %s\n", s->name );
-		return GDKstrdup(buf);
+		return strdup(buf);
 	case WRITE_ERROR:
 		sprintf(buf, "Error writing file %s\n", s->name );
-		return GDKstrdup(buf);
+		return strdup(buf);
 	}
-	return GDKstrdup("Unkonwn error");
+	return strdup("Unkonwn error");
 }
 
 static int stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
@@ -721,23 +720,23 @@ stream *file_wastream( FILE *fp, char *name ){
 } 
 
 buffer *buffer_create( int size ){
-	buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
+	buffer *b = (buffer*)malloc(sizeof(buffer));
 	b->pos = 0;
-	b->buf = GDKmalloc(BUFSIZ);
+	b->buf = malloc(BUFSIZ);
 	b->len = BUFSIZ;
 	return b;
 }
 
 char *buffer_get_buf( buffer *b ){
-	char *r = GDKmalloc(b->pos+1);
+	char *r = malloc(b->pos+1);
 	memcpy(r,b->buf,b->pos);
 	r[b->pos] = '\0';
 	return r;
 }
 
 void buffer_destroy( buffer *b ){
-	GDKfree(b->buf);
-	GDKfree(b);
+	free(b->buf);
+	free(b);
 }
 
 buffer *stream_get_buffer( stream *s ){
@@ -762,7 +761,7 @@ static int buffer_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	if (b->pos+size > b->len){
 		int ns = b->len;
 		while(b->pos+size > ns) ns *= 2;
-		b->buf = GDKrealloc(b->buf, ns);
+		b->buf = realloc(b->buf, ns);
 		b->len = ns;
 	}
 	memcpy(b->buf+b->pos, buf, size );
@@ -813,7 +812,7 @@ typedef struct bs {
 static
 bs *bs_create( stream *s ){
 	/* should be a binary stream */
-	bs *ns = (bs*)GDKmalloc(sizeof(bs));
+	bs *ns = (bs*)malloc(sizeof(bs));
 	ns->s = s;
 	ns->inr = 0;
 	ns->itotal = 0;
@@ -946,7 +945,7 @@ static
 void bs_destroy( stream *ss ){
 	bs *s = (bs*)ss->stream_data;
 	s->s->destroy( s->s );
-	GDKfree(s);
+	free(s);
 	stream_destroy(ss);
 }
 
@@ -995,13 +994,16 @@ extern int stream_printf( stream *s, const char *format, ...)
 		s->write(s, buf, i, 1);
 		return i;
 	} else {
-		char *a = GDKmalloc(i+1);
+		char *abuf = malloc(i+1);
+		int j = 0;
 
 		va_start(ap, format); 
-		i = vsnprintf(buf, i-1, format, ap);
+		j = vsnprintf(abuf, i, format, ap);
 		va_end (ap); 
-		s->write(s, buf, i, 1);
-		return i;
+		s->write(s, abuf, i, 1);
+		free(abuf);
+		assert(i==j);
+		return j;
 	}
 }
 

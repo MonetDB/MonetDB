@@ -38,7 +38,9 @@ lib_gdk = {
 		gdk_value.mx gdk_posix.mx \
 		gdk_scanselect.mx bat.feps bat1.feps bat2.feps
 	HEADERS = h
-	LIBS = $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
+	LIBS = ../common/libmutils ../common/libstream \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
 EXTRA_DIST = index.html 
