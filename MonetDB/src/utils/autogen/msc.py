@@ -115,9 +115,25 @@ def msc_translate_ext( f ):
 	n = regsub.gsub("\.o", ".obj", f );
 	return regsub.gsub("\.cc", ".cxx", n );
 
+def msc_find_target(target,msc):
+  tree = msc['TREE']
+  for t in tree.keys(): 
+    if(type(tree.value(t)) == type({}) and tree.value(t).has_key('TARGETS')):
+       targets = tree.value(t)['TARGETS']
+       if (target in targets):
+	 if (t == "BINS" or t[0:4] == "bin_"):
+	   return ("BIN","BIN")
+	 elif (t[0:4] == "lib_"):
+	   return ("LIB", string.upper(t[4:]))
+         elif (t == "LIBS"):
+	   name,ext = string.split(target,".",1)
+	   return ("LIB", string.upper(name))
+  return ("UNKNOWN","UNKNOWN")
+ 
+
 def msc_deps(fd,deps,objext, msc):
-  for t,deplist in deps.items():
-    t = msc_translate_ext(t)
+  for tar,deplist in deps.items():
+    t = msc_translate_ext(tar)
     b,ext = string.split(t,".",1)
     fd.write( t + ":" )
     for d in deplist:
@@ -127,6 +143,16 @@ def msc_deps(fd,deps,objext, msc):
 	fd.write( "\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t,b) );
     if (ext == "proto.h"):
 	fd.write( "\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t,b) );
+    if (ext == "obj" or ext == "glue.obj"):
+	target,name = msc_find_target(tar,msc);
+	if (target == "LIB"):
+	  d,dext = string.split(deplist[0],".",1)
+	  if (dext == "c" or dext == "glue.c"):
+	    fd.write( "\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s -c %s\n" \
+		% (name,msc_translate_ext(deplist[0])) );
+	  elif (dext == "cc"):
+	    fd.write( "\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s -c %s\n" \
+		% (name,msc_translate_ext(deplist[0])) );
 
 def msc_binary(fd, var, binmap, msc ):
 
@@ -437,6 +463,7 @@ CXXEXT = \\\"cxx\\\"
   msc['HDRS'] = []
   msc['INSTALL'] = []
   msc['LIBDIR'] = 'lib'
+  msc['TREE'] = tree
   
   prefix = os.path.commonprefix([cwd,topdir])
   d = cwd[len(prefix):]
@@ -498,15 +525,25 @@ CXXEXT = \\\"cxx\\\"
       fd.write("sys\\socket.h: \n\tif not exist sys $(MKDIR) sys\n\t$(ECHO) #ifndef SOCKET_H > sys\\socket.h\n\t$(ECHO) #define SOCKET_H >> sys\\socket.h\n\t$(ECHO) #include \"winsock.h\" >> sys\\socket.h\n\t$(ECHO) #endif >> sys\\socket.h\n")
 
   fd.write("install-msc: install-exec install-data\n")
-  fd.write("install-exec: all\n")
+  l = []
+  for (x,y) in msc['INSTALL']:
+	l.append(x);		
+  fd.write("install-exec: %s %s %s\n" % ( \
+		msc_list2string(msc['LIBS'], "install_dll_"," "), \
+		msc_list2string(msc['BINS'], "install_bin_"," "), \
+		msc_list2string(l, "install_"," ") \
+		))
   if (len(msc['LIBS']) > 0):
     for v in msc['LIBS']:
+      fd.write("install_dll_%s: lib%s.dll" % (v,v))
       fd.write("\t$(INSTALL) lib%s.dll $(%sdir)\n" % (v,msc['LIBDIR']) )
   if (len(msc['BINS']) > 0):
     for v in msc['BINS']:
+      fd.write("install_bin_%s: %s.exe" % (v,v))
       fd.write("\t$(INSTALL) %s.exe $(bindir)\n" % (v) )
   if (len(msc['INSTALL']) > 0):
     for (dst,src) in msc['INSTALL']:
+      fd.write("install_%s: %s" % (dst,src))
       fd.write("\t$(INSTALL) $(bindir)/%s $(bindir)/%s\n" % (src,dst) )
 
   #fd.write("install-data:")
