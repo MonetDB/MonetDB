@@ -367,15 +367,20 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_bat:
 		case st_ubat:{
 			char *type = (s->type == st_bat) ? "" : "_ubat";
+			char *ctype = s->op1.cval->type->type->base.name;
 			char buf[256];
 			int k;
-			int tt;
+			int ht = TYPE_void, tt;
 
 			@:SQLprelude@
 			snprintf(buf, 256, "bind%s", type);
 			q = newStmt(mb, "sql", buf);
-			tt = getTypeIndex(tail_type(s)->type->base.name, strlen(tail_type(s)->type->base.name), TYPE_any);
-			setVarType(mb, getArg(q, 0), newBatType(TYPE_void, tt));
+			tt = getTypeIndex(ctype, strlen(ctype), TYPE_any);
+/*
+			if (s->type == st_ubat)
+				ht = TYPE_oid;
+*/
+			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushStr(mb, q, s->op1.cval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.cval->t->base.name);
 			q = pushStr(mb, q, s->op1.cval->base.name);
