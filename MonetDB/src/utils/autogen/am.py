@@ -608,22 +608,20 @@ def am_add_srcdir(path,am,prefix =""):
     return prefix+dir
 
 def am_translate_dir(path,am):
+    path = string.replace(path, '/', os.sep)
     dir = path
     rest = ""
-    if (string.find(path,os.sep) >= 0):
-        dir,rest = string.split(path,os.sep, 1)
+    if string.find(path,os.sep) >= 0:
+        dir, rest = string.split(path, os.sep, 1)
         rest = os.sep + rest
 
-    if (dir == "top_srcdir" or dir == "top_builddir" or \
-          dir == "srcdir" or dir == "builddir" or \
-          dir == "pkglibdir" or dir == "libdir" or \
-          dir == "pkgbindir" or dir == "bindir" or \
-          dir == "pkgdatadir" or dir == "datadir" or \
-          dir == "pkglocalstatedir" or dir == "localstatedir" or \
-          dir == "pkgsysconfdir" or dir == "sysconfdir"):
+    if dir in ("top_srcdir", "top_builddir", "srcdir", "builddir",
+               "pkglibdir", "libdir", "pkgbindir", "bindir",
+               "pkgdatadir", "datadir", "pkglocalstatedir", "localstatedir",
+               "pkgsysconfdir", "sysconfdir"):
         dir = "$("+dir+")"
     dir = dir + rest
-    return dir
+    return string.replace(dir, os.sep, '/')
 
 def am_includes(fd, var, values, am):
     incs = "-I$(srcdir)"
