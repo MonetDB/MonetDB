@@ -14,7 +14,7 @@
 #define NEW_ARRAY( type, size ) (type*)malloc((size)*sizeof(type))
 #define RENEW_ARRAY( type,ptr,size) (type*)realloc((void*)ptr,(size)*sizeof(type))
 #define NEWADT( size ) (adt*)malloc(size)
-#define _DELETE( ptr )	free(ptr)
+#define _DELETE( ptr )	{ free(ptr); ptr = NULL; }
 #define _strdup( ptr )	strdup((char*)ptr)
 
 #endif /*_MEM_H_*/

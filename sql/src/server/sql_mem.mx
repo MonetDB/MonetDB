@@ -50,7 +50,7 @@
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
 #define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 #define NEWADT( size ) (adt*)GDKmalloc(size)
-#define _DELETE( ptr )	GDKfree(ptr)
+#define _DELETE( ptr )	{ GDKfree(ptr); ptr = NULL; }
 #define _strdup( ptr )	GDKstrdup((char*)ptr)
 
 typedef struct sql_ref {
@@ -82,6 +82,7 @@ sql_ref *sql_ref_init (sql_ref *r)
 
 int sql_ref_inc(sql_ref *r)
 {
+	assert(r->refcnt > 0);
 	return (++r->refcnt);
 }
 
