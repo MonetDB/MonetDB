@@ -810,8 +810,6 @@ int GDKinit(char *dbname, char *dbfarm) {
 	if (!GDKenvironment(dbname, dbfarm))
 		return 0;
 
-	XPROPDEBUG GDKdebug |= 8; 
-	PROPDEBUG GDKdebug |= 2; 
 	MT_init_posix();
 	THRinit();
 	BATSIGinit(); 
