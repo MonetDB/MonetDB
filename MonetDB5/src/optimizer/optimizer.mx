@@ -31,13 +31,11 @@ information between successive calls.
 The routines below are linked with the kernel by default
 @mal
 
-MODULE optimizer;
+module optimizer;
 
 command prelude()
 address optimizer_prelude
 comment "Initialize the optimizer";
-
-optimizer.prelude();
 
 pattern optimize(mod:any, fcn:any)
 address QOToptimize
@@ -125,6 +123,8 @@ pattern algebra.joinPath(b:bat[:any$1,:any$2],
         c:bat[:any$2,:any$3]...):bat[:any$1,:any$3]
 address QOTjoinPath
 comment "Evaluate a join path.";
+
+optimizer.prelude();
 @{
 @include ../modules/mal/prelude.mx
 @+ Dummy code 

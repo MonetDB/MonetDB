@@ -290,7 +290,8 @@ Impact: medium
 Goal: to release resources as quickly as possible
 Rationale: BATs referenced from a MAL program keep resources locked.
 Approach: In cooperation with a resource scheduler we should identify those
-that can be released quickly.
+that can be released quickly. It requires a forced gargabe collection call
+at the end of the BAT's lifespan.
 Impact: large
 
 @emph{Foreign Key replacements (FKoptimizer)}
@@ -545,7 +546,7 @@ str optimizeMALBlock(MalBlkPtr mb)
     do{
 		setLifespan(mb);
         qot=0;
-        for(pc=0; pc< mb->stop; pc++){
+        for(pc=0; pc< mb->stop; pc++ ){
             p= getInstrPtr(mb,pc);
             if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0){
                 qot++;
@@ -553,13 +554,14 @@ str optimizeMALBlock(MalBlkPtr mb)
 					/* all optimizers should behave like patterns */
 					/* However, we don;t have a stack now */
                     msg= (str) (*p->fcn)(mb,0,p);
+				else msg = throwMessage("optimizer","Implementation missing");
                 if( msg) {
                     GDKerror(msg);
                     showErrors();
                     return msg;
                 }
-                pc--; /* optimizer statement has been removed*/
-            }
+				pc--;
+            } 
         }
     } while(qot && cnt++ < 64);
 #ifdef DEBUG_MAL_OPTIMIZER
