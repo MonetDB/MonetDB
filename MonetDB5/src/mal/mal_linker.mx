@@ -190,7 +190,7 @@ str loadModuleLibrary(str modname){
 		}
 	} 
 	snprintf(buf,MAXPATHLEN, "%s/%s/", 
-			GDKgetenv("dbfarm"), GDKgetenv("dbname"));
+			GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
 	i= strlen(buf);
 	snprintf(buf+i,MAXPATHLEN-i, "%s/", LIBPATH);
 	i= strlen(buf);

@@ -51,7 +51,7 @@ corresponding MAL scenario. How to pass this information around?
 
 str MILreader(Client c){
 	stream *f= NULL;
-	str dbname= GDKgetenv("dbname");
+	str dbname= GDKgetenv("gdk_dbname");
 	char input[PATHLENGTH];
 	char *s;
 
@@ -92,7 +92,7 @@ command. Subsequently it can be readin again into the client buffer for
 processing by with the MALparser.
 @c
 str MILparser(Client c) {
-	str dbname= GDKgetenv("dbname");
+	str dbname= GDKgetenv("gdk_dbname");
 	char input[PATHLENGTH];
 	char output[PATHLENGTH];
 	char cmd[2* PATHLENGTH];

@@ -574,10 +574,12 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 		if(bs== NULL)
 			stream_printf(f,"Failed to take chunk\n");
 		else BATmultiprintf(f,2,&bs,TRUE,0);
+		BBPunfix(b->batCacheid);
 	} else {
 		BAT *b;
 		b= BATdescriptor(v->val.ival);
 		stream_printf(f," count=%d\n",BATcount(b));
+		BBPunfix(b->batCacheid);
 	}
 }
 void printBatInfo(stream *f, VarPtr n, ValPtr v){
@@ -599,6 +601,7 @@ void printBatInfo(stream *f, VarPtr n, ValPtr v){
 				return;
 			}
 			BATmultiprintf(f,2,&b,TRUE,0);
+			BBPunfix(b->batCacheid);
 		}
 	}
 }
@@ -670,6 +673,7 @@ str memProfileVector(int cells){
 		@:heapinfo(taccelerator)@
 		@:hashinfo(hhash)@
 		@:hashinfo(thash)@
+		BBPunfix(b->batCacheid);
 	}
 	return v;
 }

@@ -473,7 +473,7 @@ str boxFileName(Box box, str backup){
 	int i= 0;
 
 	snprintf(boxfile,PATHLENGTH,"%s/%s/box",
-			GDKgetenv("dbfarm"), GDKgetenv("dbname"));
+			GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
 	@:checkDir@
 	i= strlen(boxfile);
 	if(backup) {
@@ -493,6 +493,10 @@ int saveBox(Box box,int flag){
 	boxfile = boxFileName(box,0);
 	boxfilebak = boxFileName(box,"backup");
 
+	if(boxfile==0) {
+		GDKerror("saveBox:can not determine box file\n");
+		return 1;
+	}
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout,"saveBox:%s\n",boxfile);
 #endif
@@ -557,7 +561,7 @@ void loadBox(str name){
 	char boxfile[PATHLENGTH];
 	int i=0;
 	snprintf(boxfile,PATHLENGTH,"%s/%s/box/",
-			GDKgetenv("dbfarm"), GDKgetenv("dbname"));
+			GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
 	i= strlen(boxfile);
 	snprintf(boxfile+i,PATHLENGTH-i,"%s.box",name);
 #ifdef DEBUG_MAL_BOX

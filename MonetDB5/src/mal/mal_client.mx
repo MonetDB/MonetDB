@@ -604,7 +604,7 @@ submission. This avoids a significant number of network interactions.
 			GDKerror(buf);
 			/* mimick end of session */
 			snprintf(s,MAPIBLKSIZE,"quit;","");
-			return -1;
+			return 0;
 		} 
 		for(s=c->input; *s ;s++) {
 			if( *s== 13) *s=' ';
@@ -627,7 +627,7 @@ The common approach is to read just one line from the user
 		}
 		if( i<=0) {
 			/* end of stream reached */
-			return -1;
+			return 0;
 		}
 	}
 @-

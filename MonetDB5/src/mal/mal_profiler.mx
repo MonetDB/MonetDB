@@ -289,7 +289,7 @@ inspect the properties of BATs and their propagation.
 		log0("value=\""); 
 		if( isaBatType(w->type))
 			stream_printf(eventstream,"%s",
-				BATdescriptor(v->val.bval)->batId);
+				BBPdescriptor(v->val.bval)->batId);
 		else  if( w->type == TYPE_str){
 			char *t,*tt;
 			s= GDKmalloc(v->len+1);
@@ -382,6 +382,7 @@ inspect the properties of BATs and their propagation.
 		if (b->thash_heap) { HASHinfoProfile(&b->thash, "thash"); }
 		if (b->hidx_heap) log0("hidx_heap=\"present\"");
 		if (b->tidx_heap) log0("tidx_heap=\"present\"");
+		BBPunfix(b->batCacheid);
 		}
 		}
 		log0("/>\n");
