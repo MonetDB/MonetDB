@@ -201,7 +201,7 @@ if [ "${os}" = "Linux" ] ; then
 	if [ "${hw}" = "ia64" ] ; then
 		if [ "${host%.ins.cwi.nl}" = "titan" ] ; then
 			# specific settings for our Itanium2 "titan" system
-			binpath="/soft/python-2.3/bin:${binpath}"
+			binpath="/soft/python-2.3/bin:/soft/automake-1.5/bin:${binpath}"
 			if [ "${COMP}" = "GNU" ] ; then
 				binpath="/soft/gcc-3.3/bin:${binpath}"
 				libpath="/soft/gcc-3.3/lib:${libpath}"
