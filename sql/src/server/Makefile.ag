@@ -37,7 +37,7 @@ lib_sqlserver = {
 		sql_list.mx \
 		sql_mem.mx
 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra 
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra 
 	LIBS = $(MONET_LIBS)
 }
 
