@@ -187,9 +187,7 @@ static Client Monet_init( opt *set, int setlen )
 
 		strncpy(value, n[i].value, BUFSIZ);
 		mo_substitute(n, nlen, value);
-		if (strcmp(n[i].name,"prefix") !=0 &&
-		    strcmp(n[i].name,"exec_prefix") !=0) 
-			GDKsetenv(n[i].name, value);
+		GDKsetenv(n[i].name, value);
 	}
 	GDKfree(n);
 
