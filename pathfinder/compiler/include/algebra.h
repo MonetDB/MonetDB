@@ -181,56 +181,61 @@ typedef enum PFalg_test_t PFalg_test_t;
 /** algebra operator kinds */
 enum PFalg_op_kind_t {
       aop_lit_tbl        =  1 /**< literal table */
-    , aop_disjunion      =  2 /**< union two relations with same schema */
-    , aop_intersect      =  3 /**< intersect two relations with same schema */
-    , aop_difference     =  4 /**< difference of two relations w/ same schema */
-    , aop_cross          =  5 /**< cross product (Cartesian product) */
-    , aop_eqjoin         =  6 /**< equi-join */
-    , aop_scjoin         =  7 /**< staircase join */
-    , aop_select         =  8 /**< selection of rows where column value != 0 */
-    , aop_type           =  9 /**< selection of rows where a column is of a
+    , aop_empty_tbl      =  2 /**< empty literal table */
+    , aop_disjunion      =  3 /**< union two relations with same schema */
+    , aop_intersect      =  4 /**< intersect two relations with same schema */
+    , aop_difference     =  5 /**< difference of two relations w/ same schema */
+    , aop_cross          =  6 /**< cross product (Cartesian product) */
+    , aop_eqjoin         =  7 /**< equi-join */
+    , aop_scjoin         =  8 /**< staircase join */
+    , aop_select         =  9 /**< selection of rows where column value != 0 */
+    , aop_type           = 10 /**< selection of rows where a column is of a
 			           certain type */
-    , aop_cast           = 10 /**< type cast of an attribute */
-    , aop_project        = 11 /**< algebra projection and renaming operator */
-    , aop_rownum         = 12 /**< consecutive number generation */
-    , aop_serialize      = 13 /**< serialize algebra expression
+    , aop_cast           = 11 /**< type cast of an attribute */
+    , aop_project        = 12 /**< algebra projection and renaming operator */
+    , aop_rownum         = 13 /**< consecutive number generation */
+    , aop_serialize      = 14 /**< serialize algebra expression
                                    (Placed on the very top of the tree.) */
-    , aop_num_add        = 14 /**< arithmetic plus operator */
-    , aop_num_subtract   = 15 /**< arithmetic minus operator */
-    , aop_num_multiply   = 16 /**< arithmetic times operator */
-    , aop_num_divide     = 17 /**< arithmetic divide operator */
-    , aop_num_modulo     = 18 /**< arithmetic modulo operator */
-    , aop_num_eq         = 19 /**< numeric equal operator */
-    , aop_num_gt         = 20 /**< numeric greater-than operator */
-    , aop_num_neg        = 21 /**< numeric negation operator */
-    , aop_bool_and       = 22 /**< boolean AND operator */
-    , aop_bool_or        = 23 /**< boolean OR operator */
-    , aop_bool_not       = 24 /**< boolean NOT operator */
-    , aop_sum            = 25 /**< operator for (partitioned) sum of a column */
-    , aop_count          = 26 /**< (partitioned) row counting operator */
-    , aop_distinct       = 27 /**< duplicate elimination operator */
-    , aop_element        = 28 /**< element-constructing operator */
-    , aop_attribute      = 29 /**< attribute-constructing operator */
-    , aop_textnode       = 30 /**< text node-constructing operator */
-    , aop_docnode        = 31 /**< document node-constructing operator */
-    , aop_comment        = 32 /**< comment-constructing operator */
-    , aop_processi       = 33 /**< processing instruction-constr. operator */
-    , aop_concat         = 34 /**< req. for fs:item-sequence-to-node-sequence
+    , aop_num_add        = 15 /**< arithmetic plus operator */
+    , aop_num_subtract   = 16 /**< arithmetic minus operator */
+    , aop_num_multiply   = 17 /**< arithmetic times operator */
+    , aop_num_divide     = 18 /**< arithmetic divide operator */
+    , aop_num_modulo     = 19 /**< arithmetic modulo operator */
+    , aop_num_eq         = 20 /**< numeric equal operator */
+    , aop_num_gt         = 21 /**< numeric greater-than operator */
+    , aop_num_neg        = 22 /**< numeric negation operator */
+    , aop_bool_and       = 23 /**< boolean AND operator */
+    , aop_bool_or        = 24 /**< boolean OR operator */
+    , aop_bool_not       = 25 /**< boolean NOT operator */
+    , aop_sum            = 26 /**< operator for (partitioned) sum of a column */
+    , aop_count          = 27 /**< (partitioned) row counting operator */
+    , aop_distinct       = 28 /**< duplicate elimination operator */
+    , aop_element        = 29 /**< element-constructing operator */
+    , aop_element_tag    = 30 /**< part of the element-constructing operator;
+			           connecting element tag and content;
+			           due to Burg we use two "wire2" operators
+			           now instead of one "wire3 operator "*/
+    , aop_attribute      = 31 /**< attribute-constructing operator */
+    , aop_textnode       = 32 /**< text node-constructing operator */
+    , aop_docnode        = 33 /**< document node-constructing operator */
+    , aop_comment        = 34 /**< comment-constructing operator */
+    , aop_processi       = 35 /**< processing instruction-constr. operator */
+    , aop_concat         = 36 /**< req. for fs:item-sequence-to-node-sequence
                                    builtin function */
-    , aop_merge_adjacent = 35 /**< operator for pf:merge-adjacent-text-nodes
+    , aop_merge_adjacent = 37 /**< operator for pf:merge-adjacent-text-nodes
                                    builtin function */
-    , aop_seqty1         = 36 /**< test for exactly one type occurrence in one
+    , aop_seqty1         = 38 /**< test for exactly one type occurrence in one
                                    iteration (Pathfinder extension) */
-    , aop_all            = 37 /**< test if all items in an iteration are true */
-    , aop_roots          = 38 /**< algebraic repres. of the roots of newly
+    , aop_all            = 39 /**< test if all items in an iteration are true */
+    , aop_roots          = 40 /**< algebraic repres. of the roots of newly
 			           created xml nodes (e.g. element());
 			           schema: iter | pos | item */
     /* all operators below represent xml node fragments with no schema */
-    , aop_fragment       = 39 /**< representation of a node fragment */
-    , aop_frag_union     = 40 /**< special node type used to form an algebraic
+    , aop_fragment       = 41 /**< representation of a node fragment */
+    , aop_frag_union     = 42 /**< special node type used to form an algebraic
 			        union of fragments */
-    , aop_empty_frag     = 41 /**< representation of an empty fragment */
-    , aop_doc_tbl        = 42 /**< document relation (is also a fragment) */
+    , aop_empty_frag     = 43 /**< representation of an empty fragment */
+    , aop_doc_tbl        = 44 /**< document relation (is also a fragment) */
 };
 /** algebra operator kinds */
 typedef enum PFalg_op_kind_t PFalg_op_kind_t;
@@ -336,7 +341,7 @@ typedef union PFalg_op_sem_t PFalg_op_sem_t;
 
 
 /** maximum number of children of a #PFalg_op_t node */
-#define PFALG_OP_MAXCHILD 3
+#define PFALG_OP_MAXCHILD 2
 
 /** algebra operator node */
 struct PFalg_op_t {
@@ -427,6 +432,13 @@ PFalg_attlist_t PFalg_attlist_ (int count, PFalg_att_t *atts);
                         / sizeof (PFalg_tuple_t)),              \
                     (PFalg_tuple_t []) { __VA_ARGS__ } )
 PFalg_op_t *PFalg_lit_tbl_ (PFalg_attlist_t a, int count, PFalg_tuple_t *tpls);
+
+
+/**
+ * Empty table constructor.  Use this instead of an empty table
+ * without any tuples to facilitate optimization.
+ */
+PFalg_op_t *PFalg_empty_tbl (PFalg_attlist_t a);
 
 
 /**

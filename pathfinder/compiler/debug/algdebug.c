@@ -47,6 +47,7 @@
 /** Node names to print out for all the Algebra tree nodes. */
 char *a_id[]  = {
       [aop_lit_tbl]          = "TBL"
+    , [aop_empty_tbl]        = "EMPTY_TBL"
     , [aop_disjunion]        = "U"
     , [aop_intersect]        = "n"
     , [aop_difference]       = "DIFF"             /* orange */
@@ -78,6 +79,7 @@ char *a_id[]  = {
     , [aop_count]            = "COUNT"
     , [aop_distinct]         = "DISTINCT"         /* indian red */
     , [aop_element]          = "ELEM"             /* lawn green */
+    , [aop_element_tag]      = "ELEM_TAG"         /* lawn green */
     , [aop_attribute]        = "ATTR"             /* lawn green */
     , [aop_textnode]         = "TEXT"             /* lawn green */
     , [aop_docnode]          = "DOC"              /* lawn green */
@@ -133,6 +135,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
 
     static char *color[] = {
           [aop_lit_tbl]        = "grey"
+        , [aop_empty_tbl]      = "grey"
         , [aop_disjunion]      = "grey"
         , [aop_intersect]      = "grey"
         , [aop_difference]     = "orange"
@@ -161,6 +164,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         , [aop_count]          = "grey"
         , [aop_distinct]       = "indianred"
         , [aop_element]        = "lawngreen"
+        , [aop_element_tag]    = "lawngreen"
         , [aop_attribute]      = "lawngreen"
         , [aop_textnode]       = "lawngreen"
         , [aop_docnode]        = "lawngreen"
@@ -235,6 +239,17 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
                 if (n->sem.lit_tbl.count > 1)
                     PFarray_printf (dot, "...");
             }
+            break;
+
+        case aop_empty_tbl:
+            /* list the attributes of this table */
+            PFarray_printf (dot, "%s: <%s", a_id[n->kind],
+                            n->schema.items[0].name);
+
+            for (c = 1; c < n->schema.count;c++)
+                PFarray_printf (dot, " | %s", n->schema.items[c].name);
+
+            PFarray_printf (dot, ">");
             break;
 
         case aop_eqjoin:
@@ -430,6 +445,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_serialize:
         case aop_distinct:
         case aop_element:
+        case aop_element_tag:
         case aop_attribute:
         case aop_textnode:
         case aop_docnode:
@@ -626,6 +642,7 @@ alg_pretty (PFalg_op_t *n)
                                            n->sem.blngroup.part);
             break;
 
+        case aop_empty_tbl:
         case aop_serialize:
         case aop_cross:
         case aop_disjunion:
@@ -651,6 +668,7 @@ alg_pretty (PFalg_op_t *n)
         case aop_count:
         case aop_distinct:
         case aop_element:
+        case aop_element_tag:
         case aop_attribute:
         case aop_textnode:
         case aop_docnode:

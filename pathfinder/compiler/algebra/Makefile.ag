@@ -39,7 +39,7 @@ lib_algebra = {
 		builtins.c \
 		algebra_cse.c \
 		core2alg.mt.sed \
-		algopt.mt
+		algopt.brg
 }
 
-EXTRA_DIST = core2alg_impl.c algopt_impl.h
+EXTRA_DIST = core2alg_impl.c

@@ -1244,8 +1244,7 @@ LiteralValue:    empty_
          * [[ $$ ]] = lit_tbl (attlist ("iter", "pos", "item"));
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .rel = PFalg_lit_tbl_ (attlist ("iter", "pos", "item"),
-                                        0, NULL),
+                 .rel = PFalg_empty_tbl (attlist ("iter", "pos", "item")),
                  .frag = PFalg_empty_set () };
     }
     ;

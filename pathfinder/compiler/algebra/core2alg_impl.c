@@ -530,6 +530,18 @@ PFcore2alg (PFcnode_t *c)
                       "row", sortby("pos"), "item"));
                       */
 
+    /*return serialize (PFalg_set_to_alg (PFalg_empty_set ()),
+                      project (project (lit_tbl (
+                                            attlist ("iter", "pos1", "item"),
+                                            tuple (lit_nat (1),
+                                                   lit_nat (1),
+                                                   lit_int (2))),
+                                   proj ("iter", "iter"),
+                                   proj ("pos1", "pos1"),
+                                   proj ("item", "item")),
+                               proj ("iter", "iter"),
+                               proj ("pos", "pos1"),
+                               proj ("item", "item")));*/
 }
 
 #if 0

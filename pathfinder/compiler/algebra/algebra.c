@@ -347,24 +347,6 @@ alg_op_wire2 (PFalg_op_kind_t kind, PFalg_op_t *n1, PFalg_op_t *n2)
 }
 
 /**
- * Create an algebra operator node with three children.
- * Similar to #alg_op_wire2(), but additionally wires another child.
- * Required for element construction.
- */
-static PFalg_op_t *
-alg_op_wire3 (PFalg_op_kind_t kind, PFalg_op_t *n1, PFalg_op_t *n2,
-	      PFalg_op_t *n3)
-{
-    PFalg_op_t *ret = alg_op_wire2 (kind, n1, n2);
-
-    assert (n3);
-
-    ret->child[2] = n3;
-
-    return ret;
-}
-
-/**
  * Construct an algebra node representing a literal table, given
  * an attribute list and a list of tuples.
  *
@@ -405,6 +387,13 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
     PFalg_op_t     *ret;      /* return value we are building */
     int             i;
     int             j;
+
+    /*
+     * We have a better constructor/node kind for empty tables.
+     * (Facilitates optimization.)
+     */
+    if (count == 0)
+        return PFalg_empty_tbl (attlist);
 
     /* instantiate the new algebra operator node */
     ret = alg_op_leaf (aop_lit_tbl);
@@ -450,6 +439,38 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
 
     return ret;
 }
+
+
+/**
+ * Constructor for an empty table.  Use this constructor (in
+ * preference over a literal table with no tuples) to trigger
+ * optimization rules concerning empty relations.
+ *
+ * @param attlist Attribute list, similar to the literal table
+ *                constructor PFalg_lit_tbl(), see also
+ *                PFalg_attlist().
+ */
+PFalg_op_t *
+PFalg_empty_tbl (PFalg_attlist_t attlist)
+{
+    PFalg_op_t     *ret;      /* return value we are building */
+    unsigned int    i;
+
+    /* instantiate the new algebra operator node */
+    ret = alg_op_leaf (aop_empty_tbl);
+
+    /* set its schema */
+    ret->schema.items
+        = PFmalloc (attlist.count * sizeof (*(ret->schema.items)));
+    for (i = 0; i < (unsigned int) attlist.count; i++) {
+        ret->schema.items[i].name = attlist.atts[i];
+        ret->schema.items[i].type = 0;
+    }
+    ret->schema.count = attlist.count;
+
+    return ret;
+}
+
 
 
 /**
@@ -1745,11 +1766,16 @@ PFalg_op_t * PFalg_distinct (PFalg_op_t *n)
  *
  * @a doc is the current document, @a tag constructs the elements'
  * tag names, and @a cont is the content of the tags.
+ *
+ * Since algebra optimization will be performed using Burg, we must
+ * convert this "wire3" operator into two "wire2" operators.
  */
 PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tag,
 			    PFalg_op_t *cont)
 {
-    PFalg_op_t *ret = alg_op_wire3 (aop_element, doc, tag, cont);
+    PFalg_op_t *ret = alg_op_wire2 (aop_element, doc,
+				    alg_op_wire2 (aop_element_tag,
+						  tag, cont));
 
     /* set result schema */
     ret->schema.count = 0;

@@ -45,6 +45,7 @@ static PFalg_op_t * eliminate_subexp (PFalg_op_t *new);
 static PFalg_op_t * find_subexp (PFalg_op_t *new);
 
 static PFalg_op_t * find_lit_tbl (PFalg_op_t *new);
+static PFalg_op_t * find_empty_tbl (PFalg_op_t *new);
 static PFalg_op_t * find_doc_tbl (PFalg_op_t *new);
 static PFalg_op_t * find_disjunion (PFalg_op_t *new);
 static PFalg_op_t * find_intersect (PFalg_op_t *new);
@@ -231,6 +232,57 @@ find_lit_tbl (PFalg_op_t *new)
 
     return new;
 }
+
+
+/**
+ * Check whether table @ new already exists in the array of
+ * existing operators. It must have the same schema as a table
+ * already in the array.
+ */
+PFalg_op_t *
+find_empty_tbl (PFalg_op_t *new)
+{
+    unsigned int subex_idx;
+    int j;
+
+    assert (new);
+
+    /* search for table in the array of existing operators */
+    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
+
+        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+
+        if (new->kind == old->kind) {
+
+            /* see if we have the same number of arguments */
+            if (new->schema.count != old->schema.count)
+                continue;
+
+            /* see if attribute names match old schema */
+            for (j = 0; j < new->schema.count; j++)
+                if (strcmp(new->schema.items[j].name,
+                           old->schema.items[j].name))
+                    break;
+            if (j != new->schema.count)
+                continue;
+
+            /*
+             * if we came until here, old and new table must be equal;
+             * return the existing one
+             */
+            return old;
+        }
+    }
+
+    /*
+     * the table is a new operator, so add it to the array of
+     * existing subexpressions
+     */
+    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+
+    return new;
+}
+
 
 
 /**
@@ -1131,6 +1183,9 @@ find_subexp (PFalg_op_t *new)
         case aop_lit_tbl:
             return find_lit_tbl (new);
 
+        case aop_empty_tbl:
+            return find_empty_tbl (new);
+
         case aop_doc_tbl:
             return find_doc_tbl (new);
 
@@ -1199,6 +1254,7 @@ find_subexp (PFalg_op_t *new)
 	 * separate instances of the element(s)
 	 */
         case aop_element:
+        case aop_element_tag:
         case aop_attribute:
         case aop_textnode:
         case aop_docnode:

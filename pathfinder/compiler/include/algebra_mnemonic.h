@@ -31,6 +31,9 @@
 /** literal table construction */
 #define lit_tbl(...)    PFalg_lit_tbl (__VA_ARGS__)
 
+/** empty table construction */
+#define empty_tbl(atts) PFalg_empty_tbl (atts)
+
 /** cartesian product */
 #define cross(a,b)      PFalg_cross ((a),(b))
 
