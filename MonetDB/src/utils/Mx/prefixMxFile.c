@@ -1,18 +1,23 @@
-#include <stdio.h>
-#include <string.h>
-#include "disclaimer.h"
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <stdio.h>
+#include <string.h>
+#include "disclaimer.h"
+
 #define END_OF_HEADER_MARKER  "@'EOHMARKER (DO NOT EDIT THIS LINE)"
-#if defined(WIN32) || defined(CYGWIN32)
+#if defined(CYGWIN32)
 extern char     *optarg;
 extern int      optind, opterr, optopt;
 #endif
+
 #ifdef HAVE_GETOPT_H
-#include <getopt.h>
+# include <getopt.h>
+#else
+#ifndef HAVE_GETOPT
+# include <getopt.c>
+#endif
 #endif
 
 char *inputfile,*outputfile,*prefixfile;

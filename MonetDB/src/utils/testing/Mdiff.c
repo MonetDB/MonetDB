@@ -1,8 +1,14 @@
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "difflib.h"
 #include <unistd.h>
+#include <string.h>
+
 #include <string.h>
 
 #ifdef __CYGWIN32__
@@ -10,6 +16,13 @@ char *optarg;
 int optind;
 #endif
 
+#ifdef HAVE_GETOPT_H
+# include <getopt.h>
+#else
+#ifdef HAVE_GETOPT
+# include <getopt.c>
+#endif
+#endif
 
 void showUsage(char *name)
 {
