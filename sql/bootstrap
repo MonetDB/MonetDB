@@ -55,7 +55,7 @@ cat << "EOF" | patch configure
  else
    echo 'void f(){}' > conftest.c
 -if test -z "`${CC-cc} -g -c conftest.c 2>&1`"; then
-+if test -z "`${CC-cc} -g -c conftest.c 2>&1 | grep -v '^conftest.c:$'`"; then
++if test -z "`${CC-cc} -g -c conftest.c 2>&1 | egrep -v '^conftest.c:$|^icc: NOTE: The evaluation period for this product ends on .* UTC.$'`"; then
    ac_cv_prog_cc_g=yes
  else
    ac_cv_prog_cc_g=no
@@ -64,7 +64,7 @@ cat << "EOF" | patch configure
  else
    echo 'void f(){}' > conftest.cc
 -if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
-+if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | grep -v '^conftest.cc:$'`"; then
++if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | egrep -v '^conftest.cc:$|^icc: NOTE: The evaluation period for this product ends on .* UTC.$'`"; then
    ac_cv_prog_cxx_g=yes
  else
    ac_cv_prog_cxx_g=no
