@@ -353,7 +353,8 @@ void interpret_unpin(batrec *r, str s) {
 this macro interprets all parameters of name={operator,function,etc} 'lt'
 placing the parameter count in  'argc' and the result values in 'argv[1..argc]'
 @c
-int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
+int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme)
+{
     ValPtr val_array = params+1;
     unsigned j;
     int argc = 1;
@@ -367,7 +368,7 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 	    YYSTREE tt = *t;
 	    int inc = 1, param_range = 0;
 
-	    if (argc >= (1+MAXPARAMS)) {
+	    if (argc >= MAXPARAMS + 1) {
 		GDKerror("interpret_params: %s parameters out of range: [0,%d]).\n", fcn_nme, MAXPARAMS-1);
 		return -argc;
 	    }
@@ -387,7 +388,11 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 		    return -argc;
 		}
 	    }
-	    if ((inc > 0) && ((argc+inc) < (1+MAXPARAMS))) while(inc--) {
+	    if (inc > 0 && argc + inc > MAXPARAMS + 1) {
+		GDKerror("interpret_params: %s parameters out of range: [0,%d]).\n", fcn_nme, MAXPARAMS-1);
+		return -argc;
+	    }
+	    while (inc-- > 0) {
 	        if (argv->vtype == TYPE_bat) {  
 		    if (BBPcheck(argv->val.bval,"interpret_params") == 0) {
    			GDKerror("interpret_params: %s(param %d): invalid BAT.\n", fcn_nme, j+1);

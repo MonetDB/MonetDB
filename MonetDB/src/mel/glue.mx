@@ -258,6 +258,8 @@ class tpchk_bat_type: public glue {
 };
 
 
+#define MAXPARAMS	32	// also see gdk.mx
+
 // implementation
 int glue::generate_code( ostream &o, Symbol *rootptr ){
 	
@@ -655,7 +657,13 @@ ostream &unpack_call::gen_command( ostream &o, const Command &d ){
 ostream &unpack::gen_command( ostream &o, const Command &d ){
 	o << "int " << d.fcn() << "_unpack" << d.Id();
 	o << "( int argc, ValPtr argv ){\n";
-	o << "   (void)argc;\n";
+	o << "   if (argc > " << MAXPARAMS+1 << ") {\n";
+	o << "      GDKerror(\"%s: too many arguments.\\n\", \"";
+	o << d.Name() << "\");\n";
+	o << "      argv[0].vtype = TYPE_void;\n";
+	o << "      argv[0].val.oval = void_nil;\n";
+	o << "      return -1;\n";
+	o << "   }\n";
 	language *l = new unpack_setresult();
 	d.print( l, o );
 	delete(l);
@@ -665,7 +673,7 @@ ostream &unpack::gen_command( ostream &o, const Command &d ){
 	delete(l);
 
 	o << "      GDKerror(\"%s: operation failed.\\n\", \"";
-	o << d.fcn() <<"\");\n";
+	o << d.Name() <<"\");\n";
 	o << "      argv[0].vtype = TYPE_void;\n";
 	o << "      argv[0].val.oval = void_nil;\n";
 	o << "      return -1;\n";
@@ -916,10 +924,9 @@ ostream &unpack_getresult::gen_any_arg( ostream &o, const AnyArg & ){
       return o;
 }
 
-#define MAXPARAMS	31
 ostream &unpack_call::gen_var_arg( ostream &o, const VarArg &d){
     
-	for(int i = arg_nr; i<MAXPARAMS; i+= 2, arg_nr++ ){
+	for(int i = arg_nr; i<=MAXPARAMS; i++, arg_nr++ ){
 	    if (d.arg()) {
 	        // variable number of known type, eg ...int...
 		o << "\t(argc <= " << arg_nr << ")?0:\n\t";
@@ -928,7 +935,7 @@ ostream &unpack_call::gen_var_arg( ostream &o, const VarArg &d){
 		// variable number of any type, eg ...any...
 	   	gen_unpack_any_arg( o, arg_nr, varargs, 0);
 	    }
-	    if (i+2<MAXPARAMS) o << ", \n";
+	    if (i+1<=MAXPARAMS) o << ", \n";
 	}
 	return o;
 }
