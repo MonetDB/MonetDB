@@ -898,11 +898,18 @@ static void socket_close( stream *s )
 {
 	int fd = s->stream_data.i;
 	if (fd >= 0) {
+		/* Related read/write (in/out, from/to) streams 
+		 * share a single socket which is not dup'ed (anymore)
+		 * as Windows' dup doesn't work on sockets;
+		 * hence, only one of the streams must/may close that 
+		 * socket; we choose to let the write socket do the job.
+		 */
 		if (s->access == ST_READ)
 			shutdown(fd, 0);
-		else
+		else {
 			shutdown(fd, 1);
-		close(fd);
+			close(fd);
+		}
 	}
 	s->stream_data.i = -1;
 }
@@ -1096,11 +1103,18 @@ static void ssl_close(stream *s)
 		}
 #endif
 		sock = SSL_get_fd(ssl_data->ssl);
+		/* Related read/write (in/out, from/to) streams 
+		 * share a single socket which is not dup'ed (anymore)
+		 * as Windows' dup doesn't work on sockets;
+		 * hence, only one of the streams must/may close that 
+		 * socket; we choose to let the write socket do the job.
+		 */
 		if (s->access == ST_READ)
 			shutdown(sock, 0);
-		else
+		else {
 			shutdown(sock, 1);
-		close(sock);
+			close(sock);
+		}
 		if (ssl_data->ssl)
 			SSL_free(ssl_data->ssl);
 		ssl_data->ssl = NULL;

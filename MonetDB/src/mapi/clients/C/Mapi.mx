@@ -1332,15 +1332,19 @@ mapi_lost_connection(Mapi mid)
 	/* TODO: decide what to do with dup'ed entries */
 	mid->connected = 0;
 	/* finish channels */
-	if (mid->to) {
-		stream_close(mid->to);
-		stream_destroy(mid->to);
-		mid->to = 0;
-	}
+	/* Make sure that the read- (from-) stream is closed first,
+	 * as the related write- (to-) stream closes the shared
+	 * socket; see also src/common/stream.mx:socket_close .
+	 */
 	if (mid->from) {
 		stream_close(mid->from);
 		stream_destroy(mid->from);
 		mid->from = 0;
+	}
+	if (mid->to) {
+		stream_close(mid->to);
+		stream_destroy(mid->to);
+		mid->to = 0;
 	}
 }
 

@@ -152,10 +152,8 @@ This module contains a simple interface for internet connections.
 
 #ifdef NATIVE_WIN32
 #define s_close(s)	closesocket(s)
-#define s_dup(s)	(s)	/* dup doesn't work on sockets */
 #else
 #define s_close(s)	close(s)
-#define s_dup(s)	dup(s)
 #endif
 
 #ifdef HAVE_OPENSSL
@@ -304,9 +302,9 @@ Get the new information for the server socket and start listening.
                                 /* printf("mapi:use blocked mode\n");fflush(stdout);*/
                                 *s=0;
                                 fdin= block_stream(stream_rstream(fdin));
-                                fdout= block_stream(socket_wstream(s_dup(msgsock), "Mserver mapi write"));
+                                fdout= block_stream(socket_wstream(msgsock, "Mserver mapi write"));
                         } else
-                                fdout= socket_wastream(s_dup(msgsock),"Mserver mapi write");
+                                fdout= socket_wastream(msgsock,"Mserver mapi write");
 
 			if (fdout == 0){
 				GDKsyserror("CLIENTlisten:fdout problems\n");
@@ -327,11 +325,14 @@ Get the new information for the server socket and start listening.
 				stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
 
-				stream_close(fdout);
-				stream_destroy(fdout);
+				/* Make sure that the read- (in-) stream is closed first,
+				 * as the related write- (out-) stream closes the shared
+				 * socket; see also src/common/stream.mx:socket_close .
+				 */
 				stream_close(fdin);
 				stream_destroy(fdin);
-				s_close(msgsock);
+				stream_close(fdout);
+				stream_destroy(fdout);
 				continue;
 			}
 			GDKfree(name);
@@ -353,7 +354,7 @@ Get the new information for the server socket and start listening.
 			stream *sin, *sout;
 
 			sin = socket_rastream(msgsock, "mapi-r");
-			sout = socket_wastream(s_dup(msgsock), "mapi-w");
+			sout = socket_wastream(msgsock, "mapi-w");
 			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, sin, sout );
 			res.vtype = TYPE_void; 
 			interpret_str( stk, buf, &res);
@@ -541,7 +542,7 @@ int MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
-		GDKsyserror("MAPIlisten:creation of stream socket failed\n");
+		GDKsyserror("MAPIlistenSSL:creation of stream socket failed\n");
 		goto fail;
 	}
 @-
@@ -559,20 +560,20 @@ The port id should be obtained from the Homes file.
 
 	length = (SOCKLEN) sizeof(server);
 	if (bind(sock, (SOCKPTR)&server, length) < 0) {
-		GDKsyserror("MAPIlisten:binding to stream socket (%d) failed\n", port);
+		GDKsyserror("MAPIlistenSSL:binding to stream socket (%d) failed\n", port);
 		goto fail;
 	}
 @-
 Get the new information for the server socket and start listening.
 @c
 	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
-		GDKsyserror("MAPIlisten:getting socket name\n");
+		GDKsyserror("MAPIlistenSSL:getting socket name\n");
 		goto fail;
 	}
 	listen(sock, maxusers); 
 
 	PARDEBUG {
-		THRprintf(GDKerr, "MAPIlisten:Internet started at %d\n", port);
+		THRprintf(GDKerr, "MAPIlistenSSL:Internet started at %d\n", port);
 	}
 	do {
 		int retval;
@@ -591,12 +592,12 @@ Get the new information for the server socket and start listening.
 			continue;
 		}
 		if (retval < 0) {
-			GDKsyserror("MAPIlisten:select failed\n");
+			GDKsyserror("MAPIlistenSSL:select failed\n");
 			goto fail;
 		}
     		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 			if (MT_geterrno() != EINTR) {
-				GDKsyserror("MAPIlisten:accept failed\n");
+				GDKsyserror("MAPIlistenSSL:accept failed\n");
 				goto fail;
 	    		}
 			continue;
@@ -695,11 +696,14 @@ Get the new information for the server socket and start listening.
 				stream_printf(fdout, "MAPIlistenSSL:Failed to init client for user %s\n", name );
 				GDKfree(name);
 
-				stream_close(fdout);
-				stream_destroy(fdout);
+				/* Make sure that the read- (in-) stream is closed first,
+				 * as the related write- (out-) stream closes the shared
+				 * socket; see also src/common/stream.mx:ssl_close .
+				 */
 				stream_close(fdin);
 				stream_destroy(fdin);
-				s_close(msgsock);
+				stream_close(fdout);
+				stream_destroy(fdout);
 				continue;
 			}
 			GDKfree(name);
