@@ -156,7 +156,7 @@ static void cc_destroy( catalog *c ){
 	c->cc = NULL;
 }
 
-catalog *catalog_create_stream( stream *in, context *lc ){
+catalog *catalog_create( context *lc ){
 	cc *CC = NEW(cc);
 	catalog *c = lc->cat;
 	
