@@ -60,7 +60,7 @@ subs = [
     ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
     ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
     ('@PACKAGE@',           "sql"),
-    ('@VERSION@',           "2.0.17"),
+    ('@VERSION@',           "2.0.16"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
     ('@MONET_BUILD@',       build),
@@ -77,7 +77,7 @@ subs = [
     ('@JDBC_MINOR@',        '4'),
     ('@JDBC_VER_SUFFIX@',   'beta release'),
     ('@JDBC_DEF_PORT@',     '45123'),
-    ('@JDBC_DEF_BLOCKMODE@','true'),
+    ('@JDBC_DEF_BLOCKMODE@','false'),
 ]
 
 

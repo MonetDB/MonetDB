@@ -783,52 +783,6 @@ We assume that a new user-context has been set using a proper fork()
 command. This means that the SQL client runs under the authentication of
 the DBA.
 @c
-static int
-sendProperty(stream *out, const char *name, const char *value)
-{
-	if (stream_write(out, "[ \"", 1, 3) != 3)
-		return 0;
-	while (*name) {
-		switch (*name) {
-		case '"':
-			if (stream_write(out, "\\\"", 1, 2) != 2)
-				return 0;
-			break;
-		case '\\':
-			if (stream_write(out, "\\\\", 1, 2) != 2)
-				return 0;
-			break;
-		default:
-			if (stream_write(out, name, 1, 1) != 1)
-				return 0;
-			break;
-		}
-		name++;
-	}
-	if (stream_write(out, "\", \"", 1, 4) != 4)
-		return 0;
-	while (*value) {
-		switch (*value) {
-		case '"':
-			if (stream_write(out, "\\\"", 1, 2) != 2)
-				return 0;
-			break;
-		case '\\':
-			if (stream_write(out, "\\\\", 1, 2) != 2)
-				return 0;
-			break;
-		default:
-			if (stream_write(out, value, 1, 1) != 1)
-				return 0;
-			break;
-		}
-		value++;
-	}
-	if (stream_write(out, "\" ]\n", 1, 4) != 4)
-		return 0;
-	return 1;
-}
-
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	int trace = 0, ret = GDK_SUCCEED;
@@ -935,9 +889,13 @@ These lines should be eaten away into the prompt is encountered.
 		return connect_error(in, out);
 	}
 /* Sent the profile for the client for inspection*/
-	sendProperty(out, "version", "4.3");
-	sendProperty(out, "language", "sql");
-	sendProperty(out, "schema", schema);
+@-
+@= sendProperty
+	if( stream_write(out, @1, 1, strlen(@1))<0)
+		return connect_error(in,out);
+@c
+	@:sendProperty("[ \"version\",	\"4.3\"	]\n")@
+	@:sendProperty("[ \"language\",	\"sql\"	]\n")@
 	stream_flush(out);
 
 	ret = sqlclient2(m, stk, rs, out, trace, 0 );
@@ -975,9 +933,8 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 		mvc_destroy(m);
 		return GDK_FAIL;
 	}
-	sendProperty(out, "version", "4.3");
-	sendProperty(out, "language", "sql");
-	sendProperty(out, "schema", schema);
+	@:sendProperty("[ \"version\",	\"4.3\"	]\n")@
+	@:sendProperty("[ \"language\",	\"sql\"	]\n")@
 	stream_flush(out);
 
 	ret = sqlclient2(m, stk, rs, out, 0, 1 );
