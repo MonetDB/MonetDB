@@ -551,6 +551,9 @@ if test "x$have_hwcounters" != xno; then
     HWCOUNTERS_INCS="-I$withval/include"
   fi
 
+  case "$host_os" in
+    linux*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
+  esac
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $HWCOUNTERS_INCS"
   save_LIBS="$LIBS"
