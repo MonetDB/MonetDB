@@ -21,7 +21,9 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+#ifdef HAVE_STRINGS_H
 #include <strings.h>
+#endif
 
 SQLRETURN
 SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
