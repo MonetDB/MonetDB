@@ -207,6 +207,7 @@ Directive str2dir[]={
     { "p",Prolog,"pl", },
     { "hs",Haskell,"hs", },
     { "m",Monet,"m", },
+    { "mal",MALcode,"mal", },
     { "mil",MILcode,"mil", },
     { "w",HTML,"www", },
     { "java",Java,"java", },
