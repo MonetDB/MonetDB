@@ -464,7 +464,7 @@ in the same context.
 @c
 void sidestepSQL(Cntxt stk, context *sqlc){
 	ValRecord res;
-	fprintf(stderr,"sidestep:%s",sqlc->buf, stream *out);
+	fprintf(stderr,"sidestep:%s",sqlc->buf);
 	res.vtype= TYPE_void;
 	interpret_str(stk, sqlc->buf+6, &res);
 }
@@ -699,7 +699,7 @@ query string with "--mil ", which would be considered comment
 in the standard. 
 @c
 			if(strncmp(sqlc->buf,"--mil ",6)==0){
-				sidestepSQL(stk,sqlc,out);
+				sidestepSQL(stk,sqlc);
 				break;
 			}
 
