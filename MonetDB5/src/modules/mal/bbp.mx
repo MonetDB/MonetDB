@@ -143,14 +143,14 @@ address CMDBATnewDerived;
 Those that rely on knowledge of the runtime environment
 @mal
 command project(b:bat[:any$1,:any]) :bat[:any$1,:void]	
-address CMDprojectNil
+address CMDBBPprojectNil
 comment "Extract the head of a BAT.";
 
 pattern project( b:bat[:any$1,:any], val:any$2) :bat[:any$1,:any$2] 	
-address CMDproject
+address CMDBBPproject
 comment "Fill the tail column with a constant.";
-pattern project( b:bat[:any$1,:any], val:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 	
-address CMDproject
+pattern project(b:bat[:any$1,:any], val:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+address CMDBBPproject
 comment "Fill the tail column with a constant.";
                                                                                 
 @+ BAT buffer pool
@@ -556,7 +556,7 @@ str CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	return (str) BKCnewBATint(res,&ht,&tt,&cap);
 }
 
-str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDBBPproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *result, *bid, tt;
 	ptr *p;
 	BAT *b, *bn;
@@ -580,7 +580,7 @@ str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return throwMessage("mal.project","GDKerror");
 }
 
-str CMDprojectNil(int *ret, int *bid){
+str CMDBBPprojectNil(int *ret, int *bid){
 	BAT *b,*bn;
 	@:getBATdescriptor(ret,bid,b,bbp.project)@
 
