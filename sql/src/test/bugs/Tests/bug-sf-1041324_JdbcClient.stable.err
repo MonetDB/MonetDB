@@ -59,10 +59,9 @@ stderr of test 'bug-sf-1041324_JdbcClient` in directory 'src/test/bugs` itself:
 
 
 # 19:59:40 >  
-# 19:59:40 >  { echo monetdb ; cat ../../../../../../../ufs/manegold/Monet/4.4.0/sql/src/test/bugs/Tests/../bug-sf-1041324_weird-char.sql ; } | Mtimeout -timeout 9 java -jar /var/tmp/_4.4.0_BUILD_SQL_GNU_32_d_--enable-debug_/src/jdbc/MonetDB_JDBC.jar -p 50830 -u monetdb
+# 19:59:40 >  Mtimeout -timeout 9 java -jar /var/tmp/_4.4.0_BUILD_SQL_GNU_32_d_--enable-debug_/src/jdbc/MonetDB_JDBC.jar -p 50830 -f ../../../../../../../ufs/manegold/Monet/4.4.0/sql/src/test/bugs/Tests/../bug-sf-1041324_weird-char.sql
 # 19:59:40 >  
 
-password: 
 
 # 19:59:41 >  
 # 19:59:41 >  Done.

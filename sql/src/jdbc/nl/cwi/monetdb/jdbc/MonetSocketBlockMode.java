@@ -182,6 +182,7 @@ class MonetSocketBlockMode extends MonetSocket {
 					block = bytes;
 				} else {
 					// copy the part of the bytes array that we are going to send here
+					block = new byte[blocksize];
 					System.arraycopy(bytes, len - todo, block, 0, blocksize);
 				}
 				toMonetRaw.write(block);
@@ -285,7 +286,9 @@ class MonetSocketBlockMode extends MonetSocket {
 				// length as the (unicode) string representation, we have to
 				// get rid of unused bytes before converting to a String.
 				if (size < data.length) {
-					System.arraycopy(data, 0, data, 0, size);
+					byte[] tmp = new byte[size];
+					System.arraycopy(data, 0, tmp, 0, size);
+					data = tmp;
 				}
 				// append the stuff to the buffer; let String do the charset
 				// conversion stuff
