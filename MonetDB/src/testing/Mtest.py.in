@@ -2620,6 +2620,8 @@ def main(argv) :
     for v in vars_:
         os.environ[v] = env[v]
         print "%s = %s" % (v, env[v])
+    print "%s = %s" % ('PATH', os.environ['PATH'])
+    print "%s = %s" % ('VERSION', env['VERSION'])
     STDOUT.flush()
 
     ## set/extend PATH & LD_LIBRARY_PATH
