@@ -1,0 +1,9 @@
+t1 := new(void,oid).seqbase(oid(0)).insert(oid(0),oid(10));
+t2 := new(void,int).seqbase(oid(0)).insert(oid(0),1);
+
+printf("LHS:\n");
+t1.reverse.mirror.print;
+printf("RHS:\n");
+t2.print;
+printf("Result (should be empty):\n");
+join(t1.reverse.mirror,t2).print;
