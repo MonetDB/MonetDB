@@ -1,14 +1,14 @@
 stderr of test 'usage` in directory 'src/tools` itself:
 
 
-# 07:40:36 >  
-# 07:40:36 >  Mtimeout -timeout 240 ./usage usage 
-# 07:40:36 >  
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./usage usage 
+# 16:36:12 >  
 
 
-# 07:40:36 >  
-# 07:40:36 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.24796/monet/.GNU_64-d/IRIX646.5/etc/monet.conf -?
-# 07:40:36 >  
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
+# 16:36:12 >  
 
 usage: Mserver
 [--dbname database_name ]
@@ -19,9 +19,9 @@ usage: Mserver
 [-s or --set option=value ]
 script+
 
-# 11:56:27 >  
-# 11:56:27 >  Mtimeout -timeout 60 MapiClient -?
-# 11:56:27 >  
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 MapiClient -?
+# 16:36:12 >  
 
 usage: MapiClient
 [-c or --config config_file ]
@@ -31,9 +31,9 @@ usage: MapiClient
 [      --noheaders ]
 [-? or --help ]
 
-# 11:56:27 >  
-# 11:56:27 >  Mtimeout -timeout 60 MapiClient.py -?
-# 11:56:27 >  
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 MapiClient.py -?
+# 16:36:12 >  
 
 Usage: MapiClient.py [ options ]
 Options are:
@@ -42,15 +42,15 @@ Options are:
 -? or --help
 	print usage message
 -s or --set option=value
-	set a named options
+	set a named option
 --host hostname
 	host to connect to (default: localhost)
 --port port
 	port to connect to (default: 50000)
 
-# 11:56:27 >  
-# 11:56:27 >  Mtimeout -timeout 60 Mshutdown.py -?
-# 11:56:27 >  
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 Mshutdown.py -?
+# 16:36:12 >  
 
 Usage: Mshutdown.py [ options ]
 Options are:
@@ -59,13 +59,13 @@ Options are:
 -? or --help
 	print usage message
 -s or --set option=value
-	set a named options
+	set a named option
 --host hostname
 	host to connect to (default: localhost)
 --port port
 	port to connect to (default: 50000)
 
-# 11:56:28 >  
-# 11:56:28 >  Done.
-# 11:56:28 >  
+# 16:36:12 >  
+# 16:36:12 >  Done.
+# 16:36:12 >  
 
