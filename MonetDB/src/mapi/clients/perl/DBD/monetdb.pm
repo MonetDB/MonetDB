@@ -120,10 +120,8 @@ sub connect {
     $user     ||= 'monetdb';
     $password ||= 'monetdb';
 
-    my $mapi = eval {  # TODO: do we need 'eval'?
-        MapiLib::mapi_connect($host, $port, $user, $password, $lang);
-    };
-    return $drh->set_err(1, $@) if $@;
+    my $mapi = MapiLib::mapi_connect($host, $port, $user, $password, $lang);
+    return $drh->set_err(-1,'Undefined Mapi handle') unless $mapi;
     my $err = MapiLib::mapi_error($mapi);
     return $drh->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
 
