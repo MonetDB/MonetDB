@@ -1,7 +1,7 @@
 EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh mkinstalldirs missing \
-	ltmain.sh ltconfig    \
+	ltmain.sh \
 	stamp-h.in config.h.in
 
 scripts_m4 = {

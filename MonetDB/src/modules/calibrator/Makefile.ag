@@ -6,6 +6,9 @@ MTSAFE
 LIBDIR = pkglib
 
 NO_OPTIMIZE_FILES = calib.mx calibrator.c
+EXTRA_DIST = calib_analyse.c  calib_main.c  calib_print.c  calib_run.c \
+	calib_common.c   calib_plot.c  calib_smp.c
+
 
 LIBS = {
 	SEP = _

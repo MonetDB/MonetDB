@@ -1,4 +1,6 @@
 
+EXTRA_DIST = am.py  autogen.py  codegen.py  msc.py  var.py
+
 scripts_py = {
 	DIR = libdir/autogen
 	SOURCES = am.py  autogen.py  codegen.py  msc.py  var.py
