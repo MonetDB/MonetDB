@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#ifdef HAVE_PWD_H
 #include <pwd.h>
+#endif
 
 #ifdef HAVE_LIMITS_H 
 #include <limits.h>	/* PATH_MAX */

@@ -2,7 +2,7 @@
 INCLUDES = \
 	../include \
 	$(MONET_INCS) \
-	-I$(top_builddir)/ 
+	-I$(top_builddir)
 
 DEFS = @DEFS@
 

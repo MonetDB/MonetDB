@@ -13,7 +13,9 @@
 #define _ODBCINST_H
 
 #include <unistd.h>
+#ifdef HAVE_PWD_H
 #include <pwd.h>
+#endif
 #include <sys/types.h>
 #include <stdio.h>
 
