@@ -180,6 +180,7 @@ Constants passed into the multiplex operator are a special case.
 		i= typeConformance(mb,pci,tpe);
 	}
 #ifdef DEBUG_MULTIPLEX
+	printInstruction(stdout,mb,pci);
 	printInstruction(stdout,m,p);
 #endif
 	return i;
