@@ -565,7 +565,7 @@ Start of MIL prelude.
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  29,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_environment",	  "str",  "str",  28,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_aut",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_dat",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -635,29 +635,29 @@ Start of MIL prelude.
 # client	name	login				tree											  # name
 # int	str	str				str											  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 0,	  "adm",  "Thu Oct  7 18:39:00 2004",	  "clients()"										  ]
-[ 1,	  "adm",  "Thu Oct  7 18:39:00 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
+[ 0,	  "adm",  "Tue Oct 12 07:55:32 2004",	  "clients()"										  ]
+[ 1,	  "adm",  "Tue Oct 12 07:55:32 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  160	  ]
+[ "user",	  190	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  800	  ]
+[ "system",	  960	  ]
 [ "elapsystem",	  0	  ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#-------------------------------------------------------------------------#
-[ "config",		  "/ufs/boncz/MonetDB/Linux/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/conf/MonetDB.conf"																																		  ]
+[ "gdk_arch",		  "32biti686-suse-linux"																																									  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "28118"					  ]
-[ "prefix",		  "/ufs/boncz/MonetDB/Linux"			  ]
-[ "exec_prefix",	  "/ufs/boncz/MonetDB/Linux"			  ]
+[ "monet_pid",		  "2066"																																											  ]
+[ "prefix",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
+[ "exec_prefix",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/dbfarm"																																			  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -665,32 +665,31 @@ Start of MIL prelude.
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_nostalgic",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/boncz/MonetDB/Linux/lib/MonetDB"	  ]
+[ "monet_nostalgic",	  "no"																																												  ]
+[ "monet_mod_path",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/plain/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/contrib/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/calibrator/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "42156"					  ]
+[ "mapi_port",		  "45070"																																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "50521"					  ]
+[ "sql_port",		  "56989"																																											  ]
 [ "sql_debug",		  "0"													  ]
-[ "sql_api",		  "sql(default-schema)"											  ]
 [ "sql_user",		  "monetdb"												  ]
-[ "sql_schema",		  "default-schema"											  ]
-[ "sql_logdir",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/log"	  ]
-[ "monet_cwd",		  "/ufs/boncz/MonetDB/Linux/mTests/src/tools"	  ]
-#-------------------------------------------------------------------------#
+[ "sql_schema",		  "sys"																																												  ]
+[ "sql_logdir",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/log"																																				  ]
+[ "monet_cwd",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/mTests/src/tools"																																		  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#-------------------------------------------------------------------------#
-[ "config",		  "/ufs/boncz/MonetDB/Linux/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/conf/MonetDB.conf"																																		  ]
+[ "gdk_arch",		  "32biti686-suse-linux"																																									  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "28118"					  ]
-[ "prefix",		  "/ufs/boncz/MonetDB/Linux"			  ]
-[ "exec_prefix",	  "/ufs/boncz/MonetDB/Linux"			  ]
+[ "monet_pid",		  "2066"																																											  ]
+[ "prefix",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
+[ "exec_prefix",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/dbfarm"																																			  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -698,27 +697,26 @@ Start of MIL prelude.
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_nostalgic",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/boncz/MonetDB/Linux/lib/MonetDB"	  ]
+[ "monet_nostalgic",	  "no"																																												  ]
+[ "monet_mod_path",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/plain/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/contrib/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/calibrator/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "42156"					  ]
+[ "mapi_port",		  "45070"																																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "50521"					  ]
+[ "sql_port",		  "56989"																																											  ]
 [ "sql_debug",		  "0"													  ]
-[ "sql_api",		  "sql(default-schema)"											  ]
 [ "sql_user",		  "monetdb"												  ]
-[ "sql_schema",		  "default-schema"											  ]
-[ "sql_logdir",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/log"	  ]
-[ "monet_cwd",		  "/ufs/boncz/MonetDB/Linux/mTests/src/tools"	  ]
+[ "sql_schema",		  "sys"																																												  ]
+[ "sql_logdir",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/log"																																				  ]
+[ "monet_cwd",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/mTests/src/tools"																																		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  901	  ]
-[ "majflt",	  691	  ]
+[ "minflt",	  1054	  ]
+[ "majflt",	  986	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -728,16 +726,16 @@ Start of MIL prelude.
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1712128	  ]
-[ "arena",	  1722112	  ]
-[ "ordblks",	  134		  ]
+[ "memincr",	  1720320	  ]
+[ "arena",	  1730608	  ]
+[ "ordblks",	  161		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1655512	  ]
-[ "fordblks",	  66600		  ]
+[ "uordblks",	  1656144	  ]
+[ "fordblks",	  74464		  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -747,8 +745,8 @@ Start of MIL prelude.
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Thu Oct  7 18:39:00 2004"	  ]
-[ 1,	  "Thu Oct  7 18:39:00 2004"	  ]
+[ 0,	  "Tue Oct 12 07:55:32 2004"	  ]
+[ 1,	  "Tue Oct 12 07:55:32 2004"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
@@ -760,22 +758,22 @@ Start of MIL prelude.
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
+[ "user",	  200	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  800	  ]
+[ "system",	  960	  ]
 [ "elapsystem",	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#-------------------------------------------------------------------------#
-[ "config",		  "/ufs/boncz/MonetDB/Linux/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/conf/MonetDB.conf"																																		  ]
+[ "gdk_arch",		  "32biti686-suse-linux"																																									  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "28118"					  ]
-[ "prefix",		  "/ufs/boncz/MonetDB/Linux"			  ]
-[ "exec_prefix",	  "/ufs/boncz/MonetDB/Linux"			  ]
+[ "monet_pid",		  "2066"																																											  ]
+[ "prefix",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
+[ "exec_prefix",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/dbfarm"																																			  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -783,27 +781,26 @@ Start of MIL prelude.
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_nostalgic",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/boncz/MonetDB/Linux/lib/MonetDB"	  ]
+[ "monet_nostalgic",	  "no"																																												  ]
+[ "monet_mod_path",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/plain/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/contrib/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/calibrator/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "42156"					  ]
+[ "mapi_port",		  "45070"																																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "50521"					  ]
+[ "sql_port",		  "56989"																																											  ]
 [ "sql_debug",		  "0"													  ]
-[ "sql_api",		  "sql(default-schema)"											  ]
 [ "sql_user",		  "monetdb"												  ]
-[ "sql_schema",		  "default-schema"											  ]
-[ "sql_logdir",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/log"	  ]
-[ "monet_cwd",		  "/ufs/boncz/MonetDB/Linux/mTests/src/tools"	  ]
+[ "sql_schema",		  "sys"																																												  ]
+[ "sql_logdir",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/log"																																				  ]
+[ "monet_cwd",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/mTests/src/tools"																																		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  901	  ]
-[ "majflt",	  691	  ]
+[ "minflt",	  1054	  ]
+[ "majflt",	  986	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -814,15 +811,15 @@ Start of MIL prelude.
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1722112	  ]
-[ "ordblks",	  133		  ]
+[ "arena",	  1730608	  ]
+[ "ordblks",	  155		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1664328	  ]
-[ "fordblks",	  57784		  ]
+[ "uordblks",	  1664976	  ]
+[ "fordblks",	  65632		  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1409,7 +1406,7 @@ dir();
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  29,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_environment",	  "str",  "str",  28,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_aut",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_dat",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -1489,30 +1486,30 @@ clients();
 # BAT:	  name	| login				| tree		  #
 # (int)	  (str)	| (str)				| (str)		  #
 #-----------------------------------------------------------------#
-[ 0,	  "adm",  "Thu Oct  7 18:39:00 2004",	  "clients()"	  ]
+[ 0,	  "adm",  "Tue Oct 12 07:55:32 2004",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  210	  ]
-[ "elapuser",	  40	  ]
-[ "system",	  800	  ]
+[ "user",	  220	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  960	  ]
 [ "elapsystem",	  0	  ]
 env();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#-------------------------------------------------------------------------#
-[ "config",		  "/ufs/boncz/MonetDB/Linux/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/conf/MonetDB.conf"																																		  ]
+[ "gdk_arch",		  "32biti686-suse-linux"																																									  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "28118"					  ]
-[ "prefix",		  "/ufs/boncz/MonetDB/Linux"			  ]
-[ "exec_prefix",	  "/ufs/boncz/MonetDB/Linux"			  ]
+[ "monet_pid",		  "2066"																																											  ]
+[ "prefix",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
+[ "exec_prefix",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/dbfarm"																																			  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -1520,33 +1517,32 @@ env();
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_nostalgic",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/boncz/MonetDB/Linux/lib/MonetDB"	  ]
+[ "monet_nostalgic",	  "no"																																												  ]
+[ "monet_mod_path",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/plain/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/contrib/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/calibrator/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "42156"					  ]
+[ "mapi_port",		  "45070"																																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "50521"					  ]
+[ "sql_port",		  "56989"																																											  ]
 [ "sql_debug",		  "0"													  ]
-[ "sql_api",		  "sql(default-schema)"											  ]
 [ "sql_user",		  "monetdb"												  ]
-[ "sql_schema",		  "default-schema"											  ]
-[ "sql_logdir",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/log"	  ]
-[ "monet_cwd",		  "/ufs/boncz/MonetDB/Linux/mTests/src/tools"	  ]
+[ "sql_schema",		  "sys"																																												  ]
+[ "sql_logdir",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/log"																																				  ]
+[ "monet_cwd",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/mTests/src/tools"																																		  ]
 environment().print();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#-------------------------------------------------------------------------#
-[ "config",		  "/ufs/boncz/MonetDB/Linux/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/conf/MonetDB.conf"																																		  ]
+[ "gdk_arch",		  "32biti686-suse-linux"																																									  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "28118"					  ]
-[ "prefix",		  "/ufs/boncz/MonetDB/Linux"			  ]
-[ "exec_prefix",	  "/ufs/boncz/MonetDB/Linux"			  ]
+[ "monet_pid",		  "2066"																																											  ]
+[ "prefix",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
+[ "exec_prefix",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/dbfarm"																																			  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -1554,28 +1550,27 @@ environment().print();
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_nostalgic",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/boncz/MonetDB/Linux/lib/MonetDB"	  ]
+[ "monet_nostalgic",	  "no"																																												  ]
+[ "monet_mod_path",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/plain/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/contrib/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/calibrator/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "42156"					  ]
+[ "mapi_port",		  "45070"																																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "50521"					  ]
+[ "sql_port",		  "56989"																																											  ]
 [ "sql_debug",		  "0"													  ]
-[ "sql_api",		  "sql(default-schema)"											  ]
 [ "sql_user",		  "monetdb"												  ]
-[ "sql_schema",		  "default-schema"											  ]
-[ "sql_logdir",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/log"	  ]
-[ "monet_cwd",		  "/ufs/boncz/MonetDB/Linux/mTests/src/tools"	  ]
+[ "sql_schema",		  "sys"																																												  ]
+[ "sql_logdir",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/log"																																				  ]
+[ "monet_cwd",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/mTests/src/tools"																																		  ]
 io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  902	  ]
-[ "majflt",	  692	  ]
+[ "minflt",	  1055	  ]
+[ "majflt",	  986	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -1587,15 +1582,15 @@ memory().print();
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1722112	  ]
-[ "ordblks",	  466		  ]
+[ "arena",	  1730608	  ]
+[ "ordblks",	  487		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1506560	  ]
-[ "fordblks",	  215552	  ]
+[ "uordblks",	  1507216	  ]
+[ "fordblks",	  223392	  ]
 threads();
 #-------------------------#
 # BAT:	  thread	  #
@@ -1607,7 +1602,7 @@ view_client_login().print();
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Thu Oct  7 18:39:00 2004"	  ]
+[ 0,	  "Tue Oct 12 07:55:32 2004"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -1620,23 +1615,23 @@ view_gdk_cpu().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  210	  ]
+[ "user",	  220	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  800	  ]
+[ "system",	  960	  ]
 [ "elapsystem",	  0	  ]
 view_gdk_env().print();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#-------------------------------------------------------------------------#
-[ "config",		  "/ufs/boncz/MonetDB/Linux/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/conf/MonetDB.conf"																																		  ]
+[ "gdk_arch",		  "32biti686-suse-linux"																																									  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "28118"					  ]
-[ "prefix",		  "/ufs/boncz/MonetDB/Linux"			  ]
-[ "exec_prefix",	  "/ufs/boncz/MonetDB/Linux"			  ]
+[ "monet_pid",		  "2066"																																											  ]
+[ "prefix",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
+[ "exec_prefix",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/dbfarm"																																			  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -1644,28 +1639,27 @@ view_gdk_env().print();
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_nostalgic",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/boncz/MonetDB/Linux/lib/MonetDB"	  ]
+[ "monet_nostalgic",	  "no"																																												  ]
+[ "monet_mod_path",	  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/plain/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/contrib/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/modules/calibrator/.libs:/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "42156"					  ]
+[ "mapi_port",		  "45070"																																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "50521"					  ]
+[ "sql_port",		  "56989"																																											  ]
 [ "sql_debug",		  "0"													  ]
-[ "sql_api",		  "sql(default-schema)"											  ]
 [ "sql_user",		  "monetdb"												  ]
-[ "sql_schema",		  "default-schema"											  ]
-[ "sql_logdir",		  "/ufs/boncz/MonetDB/Linux/var/MonetDB/log"	  ]
-[ "monet_cwd",		  "/ufs/boncz/MonetDB/Linux/mTests/src/tools"	  ]
+[ "sql_schema",		  "sys"																																												  ]
+[ "sql_logdir",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/log"																																				  ]
+[ "monet_cwd",		  "/local_tmp/manegold.GNU_32-d.24803/MonetDB/Linux2.4.21-251-smp/mTests/src/tools"																																		  ]
 view_gdk_io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  902	  ]
-[ "majflt",	  692	  ]
+[ "minflt",	  1055	  ]
+[ "majflt",	  986	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -1677,15 +1671,15 @@ view_gdk_memory().print();
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1722112	  ]
-[ "ordblks",	  469		  ]
+[ "arena",	  1730608	  ]
+[ "ordblks",	  490		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1505952	  ]
-[ "fordblks",	  216160	  ]
+[ "uordblks",	  1506608	  ]
+[ "fordblks",	  224000	  ]
 view_gdk_thread().print();
 #-------------------------#
 # BAT:	  thread	  #
