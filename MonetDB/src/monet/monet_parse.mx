@@ -354,6 +354,7 @@ int ll_getstring(char *buf, int max_size)
 {
 	char *start = buf, *end = buf + max_size;
 	char ch;
+	int statement = 0;
 
         if (ll_client == 0) {
                	GDKfatal("no client for lexical.\n");
@@ -365,16 +366,24 @@ int ll_getstring(char *buf, int max_size)
 
 		if (ch == 0)
 			break;
+        	if (statement && !isspace((int)ch)) {
+        		/* quit before non-whitespace after end of statement */
+        		break;
+        	}
 
 		ll_client->cptr++;
 		*buf++ = ch;
 
         	if (ch == '\n') {
+			/* quit after end of line */
                 	ll_client->cline = ll_client->cptr;
 			break;
         	}
-		if (ch == ';')
-			break;
+		if (ch == ';') {
+			/* end of statement (unless quoted);
+			 * don't quit, yet, but read trailing whitespaces */
+			statement = 1;
+		}
 	}
 	if (ll_client->listing &&
 	    (GDKdebug&16384 || !ll_stack)) {
