@@ -185,7 +185,7 @@ void bm_save( bm *bm, FILE *fp )
 	BATloop(b, p, q){
 		BUN z;
 	    	/*
-	     	 * Save all bats using name-version 
+	     	 * Save all bats using name_version 
    	     	 */
 	    	oid id = *(oid*)BUNhead(b,p);
 	    	int version = *(int*)BUNtail(b,p);
@@ -203,7 +203,7 @@ void bm_save( bm *bm, FILE *fp )
 			BAT *o = bat_descriptor(bid);
 	    		BAT *b = BATcopy(o);
 
-	    		snprintf( name_version, BUFSIZ, "%s-%d", name, version); 
+	    		snprintf( name_version, BUFSIZ, "%s_%d", name, version); 
 	    		BATrename(b, name_version);
 	    		BATmode(b, PERSISTENT);
 			BBPunfix(b->batCacheid);
@@ -231,7 +231,7 @@ void bm_cleanup( bm *bm )
 	    			char name_version[BUFSIZ];
 				BAT *ob = NULL;
 
-	    			snprintf( name_version, BUFSIZ, "%s-%d", name, oversion); 
+	    			snprintf( name_version, BUFSIZ, "%s_%d", name, oversion); 
 				ob = bat_descriptor(BBPindex(name_version));
 	    			BATmode(ob, TRANSIENT);
 				BBPunfix(ob->batCacheid);
@@ -254,7 +254,7 @@ void bm_load( bm *bm, FILE *fp )
 
 			*s++ = 0;
 			version = strtol(s,NULL,10);
-			snprintf(nme, BUFSIZ, "%s-%d", line, version );
+			snprintf(nme, BUFSIZ, "%s_%d", line, version );
 			bid = BBPindex(nme);
 			assert(bid);
 			bm_add_bat_intern(bm, bm->lbid++, bid, line, version);
