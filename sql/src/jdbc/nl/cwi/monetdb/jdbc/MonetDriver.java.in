@@ -40,6 +40,9 @@ public class MonetDriver implements Driver {
 	final static String prompt1 = "" + (char)1 + (char)1;
 	final static String prompt2 = "" + (char)1 + (char)2;
 
+	// do we connect with blockmode or not
+	private static boolean blockMode = @JDBC_DEF_BLOCKMODE@;
+
 	// initialize this class: register it at the DriverManager
 	// Chapter 9.2 from Sun JDBC 3.0 specification
 	static {
@@ -114,7 +117,7 @@ public class MonetDriver implements Driver {
 			String pass = info.getProperty("password");
 
 			// finally return the Connection as requested
-			return(new MonetConnection(host, port, db, user, pass));
+			return(new MonetConnection(host, port, blockMode, db, user, pass));
 		} catch (SQLException e) {
 			// This is probably an authentication error
 			throw e;
@@ -259,5 +262,14 @@ public class MonetDriver implements Driver {
 	 */
 	static String getDriverVersion() {
 		return("" + DRIVERMAJOR + "." + DRIVERMINOR + " " + DRIVERVERSIONSUFFIX);
+	}
+
+	/**
+	 * Enables or disables the use of block mode while talking to the server
+	 *
+	 * @param enable true to enable block mode, false to disable it
+	 */
+	static void setBlockMode(boolean enable) {
+		blockMode = enable;
 	}
 }

@@ -66,6 +66,7 @@ public class MonetConnection implements Connection {
 	MonetConnection(
 		String hostname,
 		int port,
+		boolean blockMode,
 		String database,
 		String username,
 		String password)
@@ -90,7 +91,11 @@ public class MonetConnection implements Connection {
 
 		try {
 			// make connection to Monet
-			monet = new MonetSocket(hostname, port);
+			if (blockMode) {
+				monet = new MonetSocketBlockMode(hostname, port);
+			} else {
+				monet = new MonetSocket(hostname, port);
+			}
 
 			// make sure we own the lock on monet during the whole login
 			// procedure
@@ -101,7 +106,16 @@ public class MonetConnection implements Connection {
 						(new java.util.Date()).getTime()+".log");
 
 				// log in
-				monet.writeln(username + ":" + password);
+				if (blockMode) {
+					// mind the newline at the end
+					monet.writeln(username + ":" + password + ":blocked\n");
+					// we can't do anything with byteorder in Java, let's hope
+					// the server is compatible with us
+					// read two bytes, the size of a short
+					((MonetSocketBlockMode)monet).read(1);
+				} else {
+					monet.writeln(username + ":" + password);
+				}
 				// read monet response till prompt
 				String err;
 				if ((err = monet.waitForPrompt()) != null) {

@@ -20,17 +20,17 @@ import java.net.*;
  * "&gt;&gt;".
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.1 (part of MonetDB JDBC beta release)
+ * @version 1.2 (part of MonetDB JDBC beta release)
  */
 class MonetSocket {
-	private Socket con;
 	private BufferedReader fromMonet;
 	private BufferedWriter toMonet;
+	protected Socket con;
 
-	private boolean debug = false;
-	private FileWriter log;
+	protected boolean debug = false;
+	protected FileWriter log;
 
-	private int lineType;
+	protected int lineType;
 
 	/** there is currently no line is represented by EMPTY */
 	final static int EMPTY = 0;
@@ -51,6 +51,10 @@ class MonetSocket {
 			new InputStreamReader(con.getInputStream()));
 		toMonet = new BufferedWriter(
 			new OutputStreamWriter(con.getOutputStream()));
+	}
+
+	protected MonetSocket(Socket con) {
+		this.con = con;
 	}
 
 	/**
@@ -101,7 +105,7 @@ class MonetSocket {
 
 	/**
 	 * writeln puts the given string plus a new line character on the stream
-	 * and flushes the stream afterwards to the data will actually be sent
+	 * and flushes the stream afterwards so the data will actually be sent
 	 *
 	 * @param data the data to write to the stream
 	 * @throws IOException if writing to the stream failed
