@@ -72,7 +72,7 @@ char *conv( char *org, iconv_t cd)
 		char *to = buf;
 		char *from = org;
 
-		if (iconv(cd, &from, &len, &to, &size ) < 0){
+		if (iconv(cd, &from, &len, &to, &size ) == (size_t)-1){
 			perror("conv ");
 			fprintf(stderr, "could not convert string %s\n", from );
 			free(buf);
