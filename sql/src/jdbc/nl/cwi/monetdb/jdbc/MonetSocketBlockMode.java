@@ -44,7 +44,7 @@ import java.net.*;
  * line query, and should be less intensive for the server.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 2.3
+ * @version 2.4
  */
 class MonetSocketBlockMode extends MonetSocket {
 	/** Stream from the Socket for reading */
@@ -233,6 +233,7 @@ class MonetSocketBlockMode extends MonetSocket {
 		}
 	}
 
+	private int readPos = 0;
 	/**
 	 * readLine reads one line terminated by a newline character and returns
 	 * it without the newline character. This operation can be blocking if there
@@ -262,7 +263,7 @@ class MonetSocketBlockMode extends MonetSocket {
 			 * when viewing the debug log as a zero block right after each
 			 * query, since then the next block is fetched.
 			 */
-			while ((nl = readBuffer.indexOf("\n")) == -1) {
+			while ((nl = readBuffer.indexOf("\n", readPos)) == -1) {
 				// not found, fetch us some more data
 				// start reading a new block of data if appropriate
 				if (readState == 0) {
@@ -300,6 +301,11 @@ class MonetSocketBlockMode extends MonetSocket {
 				// update the state
 				readState -= size;
 
+				// clean up the buffer
+				readBuffer.delete(0, readPos);
+				// we can position the cursor at the end, as no newline
+				// was found, it saves some scanning next time
+				readPos = readBuffer.length();
 				// append the stuff to the buffer; let String do the charset
 				// conversion stuff
 				readBuffer.append(new String(data, 0, size, "UTF-8"));
@@ -311,10 +317,10 @@ class MonetSocketBlockMode extends MonetSocket {
 				}
 			}
 			// fill line, excluding newline
-			line = readBuffer.substring(0, nl);
+			line = readBuffer.substring(readPos, nl);
 
-			// remove from the buffer, including newline
-			readBuffer.delete(0, nl + 1);
+			// move the cursor position
+			readPos = nl + 1;
 
 			lineType = getLineType(line);
 
@@ -350,11 +356,13 @@ class MonetSocketBlockMode extends MonetSocket {
 	/**
 	 * Returns whether data can be read from the stream or not.
 	 */
-	public synchronized boolean hasData() {
-		try {
-			return(fromMonetRaw.available() > 0);
-		} catch (IOException e) {
-			return(false);
+	public boolean hasData() {
+		synchronized (fromMonetRaw) {
+			try {
+				return(fromMonetRaw.available() > 0);
+			} catch (IOException e) {
+				return(false);
+			}
 		}
 	}
 
