@@ -2138,7 +2138,7 @@ int mapi_get_row(Mapi mid)
 		case '#':
 			if( !(mid->languageId>= LANG_SQL && reply[1]=='(')){
 				mapi_header(mid,reply);
-				return mapi_get_row(mid);
+				break;
 			}
 		case '!':
 			{
@@ -2156,7 +2156,6 @@ int mapi_get_row(Mapi mid)
 			mid->action = "mapi_get_row";
 			if(mid->errorstr) free(mid->errorstr);
 			mid->errorstr= newerr;
-			return mapi_get_row(mid);
 			}
 			break;
 		default:
@@ -2408,7 +2407,7 @@ int mapi_slice_row(Mapi mid)
 		}
 		unquote(p, &start, &p);
 		mid->cache.anchors[cr][i++] = start;
-		while(*p && *p=='\t' && *p != ']')
+		while (*p == '\t')
 			p++;
 	} while(*p && *p != ']');
 	if (mid->fieldcnt <i)
@@ -2434,13 +2433,15 @@ All rows can be cached first as well.
 @c
 int mapi_fetch_all_rows(Mapi mid)
 {
+	int tuples = 0;
 	mapi_check(mid,"mapi_fetch_all_rows");
 	mid->cache.rowlimit= -1;
-	mid->cache.tuples=0;
-	while( mapi_get_row(mid)== MOK)
+	while( mapi_get_row(mid)== MOK) {
+		tuples++;
 		mapi_slice_row(mid);
+	}
 	mid->cache.reader= -1;
-	return mid->cache.tuples;
+	return tuples;
 }
 
 char *mapi_fetch_field(Mapi mid, int fnr)
