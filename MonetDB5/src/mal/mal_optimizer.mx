@@ -736,7 +736,7 @@ int AMoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
 str AMoptimizer(Client cntxt, MalBlkPtr mb, int pc)
 {   int i;
     Symbol s;
-    s= findSymbol("bat","setWriteMode");
+    s= findMALSymbol("bat","setWriteMode");
     if( s== 0)
         return throwMessage("AMoptimizer","bat.setWriteMode missing\n");
     AMsetWriteMode = getSignature(s)->fcn;

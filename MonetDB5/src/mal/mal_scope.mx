@@ -102,7 +102,7 @@ mal_export void     insertSymbol(Scope scope, Symbol prg);
 mal_export void     deleteSymbol(Scope scope, Symbol prg);
 mal_export Scope    findScope(Scope scope, str name);
 mal_export Symbol   findSymbolInScope(Scope v, str fcn);
-mal_export Symbol   findSymbol(str mod, str fcn);
+mal_export Symbol   findMALSymbol(str mod, str fcn);
 mal_export int      displayScope(stream *f, Scope v, str fcn,int listing);
 mal_export void     showScopes(stream *f, Scope s);
 mal_export void     debugScope(stream *f, Scope v, str nme);
@@ -312,7 +312,7 @@ Scope findScope(Scope scope, str name){
         return scope;
 }
 @-
-The routine @%findSymbol@ starts at a scope level and searches 
+The routine @%findMALSymbol@ starts at the MAL scope level and searches 
 an element amongst the peers. If it fails, it will recursively
 inspect the outer scopes.
 
@@ -333,7 +333,7 @@ Symbol findSymbolInScope(Scope v, str fcn){
     }
     return NULL;
 }
-Symbol findSymbol(str mod, str fcn){
+Symbol findMALSymbol(str mod, str fcn){
     Scope v;
     v= findScope(mal_scope, mod);
     return findSymbolInScope(v,fcn);
@@ -387,6 +387,7 @@ void showScopes(stream *f, Scope s)
 {
     for(; s; s= s->outer) {
         stream_printf(f,"%s",s->name);
+        if( s== mal_scope) stream_printf(f,"(*)");
         if( s->subscope==0) stream_printf(f,"?");
         if(s->outer) stream_printf(f,",");
     }
