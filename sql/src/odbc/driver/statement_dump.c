@@ -482,7 +482,6 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} 	break;
 	case st_exists: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
-		int k = *nr;
 		int r = 1;
 
 		n = s->op2.lval->h;
@@ -490,19 +489,18 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		if (n){
 		  	char *a = (char*)atom_type(n->data)->name;
 			len += snprintf( buf+len, BUFSIZ, 
-				"s%d := new(%s,oid);\n", -s->nr, a );
+				"s%db := new(%s,oid);\n", -s->nr, a );
 		}
-		k++;
 		while(n){
-			len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", k, 
-				atom_dump(n->data) );
+			len += snprintf( buf+len, BUFSIZ, "s%dv := %s;\n", 
+					-s->nr, atom_dump(n->data) );
 			len += snprintf( buf+len, BUFSIZ, 
-				"s%d.insert(s%d, oid(%d));\n", -s->nr, k++, r++);
+				"s%db.insert(s%dv, oid(%d));\n", 
+					-s->nr, -s->nr, r++);
 			n = n->next;
 		}
 		len += snprintf( buf+len, BUFSIZ, 
-				"s%d := s%d.join(s%d);\n", k, l, -s->nr);
-		*nr = k;
+				"s%d := s%d.join(s%db);\n", -s->nr, l, -s->nr);
 	} 	break;
 	case st_atom: {
 		len += snprintf( buf+len, BUFSIZ, 
@@ -564,7 +562,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} break;
 	case st_copyfrom: {
 		len += snprintf( buf+len, BUFSIZ, 
-			"input(myc, \"%s\", \"%s\",\"%s\", \"newline\", -1);\n", 
+			"input(myc, \"%s\", \"%s\",\"%s\", \"newline\", -1);\n",
 				s->op1.tval->name, s->op2.sval, s->op3.sval );
 	} break;
 	case st_insert: {
