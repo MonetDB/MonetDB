@@ -59,10 +59,7 @@ extern "C" {
 #include "monet_queue.h"
 #include "monet_client.h"
 #include "monet_process.h"
-
-#ifdef HAVE_LIBGETOPT 
-#include <getopt.h>
-#endif
+#include "monet_options.h"
 
 extern void		static_module_init(Client c, char buf[]); 
 }
@@ -127,231 +124,15 @@ void Mserver_abort() {
 #endif
 @C
 void usage( char *prog ){
-	fprintf(stderr, "usage\n");
+	fprintf(stderr, "usage: %s\n", prog);
+	fprintf(stderr, "[--dbname database_name ]\n" );
+	fprintf(stderr, "[--dbfarm database_directory ]\n" ); 
+	fprintf(stderr, "[-d or --debug [ debug_level ]]\n" );
+	fprintf(stderr, "[-? or --help\n" );
+	fprintf(stderr, "[-c or --config config_file ]\n" );
+	fprintf(stderr, "[-s or --set option=value ]\n" );
+	fprintf(stderr, "script+\n" );
 	exit(-1);
-}
-
-typedef enum opt_kind
-{
-	opt_builtin,
-	opt_systemconfig,
-	opt_config,
-	opt_cmdline
-} opt_kind;
-
-typedef struct opt 
-{
-	opt_kind  kind; 
-	char *name;
-	char *value;
-} opt;
-
-static void print_options(opt *set, int setlen)
-{
-	int i = 0;
-
-	for( i = 0; i<setlen; i++){
-		switch(set[i].kind){
-		case opt_builtin:
-			fprintf(stderr, 
-				"builtin opt \t%s = %s\n", 
-				set[i].name, set[i].value);
-			break;
-		case opt_systemconfig:
-			fprintf(stderr,
-				"system opt \t%s = %s\n", 
-				set[i].name, set[i].value);
-			break;
-		case opt_config:
-			fprintf(stderr,
-				"config opt \t%s = %s\n", 
-				set[i].name, set[i].value);
-			break;
-		case opt_cmdline:
-			fprintf(stderr,
-				"cmdline opt \t%s = %s\n", 
-				set[i].name, set[i].value);
-			break;
-		default: 
-			fprintf(stderr, "error: unknown kind (%d)\n", 
-				set[i].kind );
-		}
-	}
-}
-
-
-char *options_find( opt *set, int setlen, char *name )
-{
-	opt *o = NULL;
-	int i;
-	for(i=0; i<setlen; i++){
-		if (strcmp(set[i].name,name) == 0)
-			if (!o || o->kind < set[i].kind)
-				o = set+i;
-	}
-	if (o) return o->value;
-	return NULL;
-}
-
-int substitute_prefix( char *val, opt *set, int setlen )
-{
-	char *q = NULL;
-	while( (q = strchr(val, '$')) != NULL ){
-		if ( strncmp(q,"${exec_prefix}",strlen("${exec_prefix}")) == 0){
-			char val2[BUFSIZ];
-			char *p = options_find(set, setlen, "exec_prefix");
-			char *t = strchr(q,'}');
-			if (!t || !p) return -1;
-			*q = '\0';
-			snprintf(val2,BUFSIZ,"%s%s%s", val, p, t+1 );
-			strncpy(val,val2,BUFSIZ);
-		} else if ( strncmp(q,"${prefix}",strlen("${prefix}")) == 0){
-			char val2[BUFSIZ];
-			char *p = options_find(set, setlen, "prefix");
-			char *t = strchr(q,'}');
-			if (!t || !p) return -1;
-			*q = '\0';
-			snprintf(val2,BUFSIZ,"%s%s%s", val, p, t+1 );
-			strncpy(val,val2,BUFSIZ);
-		}
-	}
-	return 0;
-}
-
-static int config_file(char *file, opt_kind kind, opt **Set, int setlen)
-{
-        char buf[BUFSIZ];
-        FILE *fd= NULL;
-	opt *set = *Set;
-
-        fd = fopen(file,"r");
-        while(fd!=NULL && fgets(buf,BUFSIZ,fd) != NULL){
-		char *s, *t, *val;
-
-                for(s=buf; *s && isspace(*s); s++) ;
-                if( *s == '#') continue;  /* commentary */
-                if( *s == 0) continue;   /* empty line */
-                
-                val = strchr(s,'=');
-                if( val == NULL) {
-                        fprintf(stderr, 
-				"config_file: syntax error in %s\n", file);
-			fclose(fd);
-			exit(1);
-                }
-                *val=0;
-
-                for(t=s; *t && !isspace(*t); t++) ;
-                *t =0;
-
-                /* skip any leading blancs in the value part */
-                for(val++; *val && isspace(*val) ;val++) ;
-                /* search first blanc, rest is commentary */
-                for(t=val;*t;t++) if( isspace(*t) || *t=='#') break;
-                *t=0;
-
-		set = (opt*)GDKrealloc(set,(setlen+1)*sizeof(opt));
-		set[setlen].kind = kind;
-		set[setlen].name = GDKstrdup(s);
-		set[setlen].value = GDKstrdup(val);
-		setlen++;
-
-        }
-	if (fd == NULL){
-		fprintf(stderr, "Could not open file %s\n", file );
-	}
-        if( fd != NULL) (void) fclose(fd);
-	*Set = set;
-	return setlen;
-}
-
-static int system_config( opt **Set, int setlen)
-{
-	char config[BUFSIZ];
-
-	snprintf(config,BUFSIZ,"@sysconfdir@%cmonet.conf", DIR_SEP);
-	substitute_prefix(config, *Set, setlen);
-	return config_file(config, opt_systemconfig, Set, setlen);
-}
-	
-
-static int builtin_settings(opt **Set)
-{
-	int i = 0;
-	opt *set = (opt*)GDKmalloc(sizeof(opt)*15);
-
-	if (!set) return 0;
-
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("gdk_arch");
-	set[i].value = (char*)GDKmalloc(BUFSIZ);
-        snprintf(set[i].value,BUFSIZ, "%dbit%s", sizeof(ptr)*8, monet_arch);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("gdk_version");
-	set[i].value = (char*)GDKstrdup(monet_version);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("monet_cwd");
-	set[i].value = (char*)GDKstrdup(monet_cwd);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("monet_pid");
-	set[i].value = (char*)GDKmalloc(BUFSIZ);
-        snprintf(set[i].value,BUFSIZ, "%d", getpid());
-	i++;
-
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("prefix");
-	set[i].value = (char*)GDKmalloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@prefix@", DIR_SEP);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("exec_prefix");
-	set[i].value = (char*)GDKmalloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@exec_prefix@", DIR_SEP);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("gdk_dbname");
-	set[i].value = GDKstrdup("tst");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("gdk_dbfarm");
-	set[i].value = (char*)GDKmalloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@localstatedir@%c@PACKAGE@", DIR_SEP);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("gdk_debug");
-	set[i].value = GDKstrdup("8");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("gdk_mmap");
-	set[i].value = GDKstrdup("32M");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("monet_admin");
-	set[i].value = GDKstrdup("adm");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("monet_prompt");
-	set[i].value = GDKstrdup(">");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("monet_welcome");
-	set[i].value = GDKstrdup("yes");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("monet_mod_path");
-	set[i].value = (char*)GDKmalloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@libdir@%c@PACKAGE@", DIR_SEP);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = GDKstrdup("monet_deamon");
-	set[i].value = GDKstrdup("yes");
-	i++;
-	
-	*Set = set;
-	return i;
 }
 
 static str absolute_path(str s) {
@@ -370,8 +151,8 @@ static Client Monet_init( opt *set, int setlen )
 	int i,j, nlen = 0;
 
 	char dbfarm[BUFSIZ];
-	char *dbname = options_find(set, setlen, "gdk_dbname");
-	char *dbfarmval = options_find(set, setlen, "gdk_dbfarm");
+	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
+	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
 
 	if (!n || !dbname || !dbfarmval){
 		if (n) GDKfree(n);
@@ -379,17 +160,19 @@ static Client Monet_init( opt *set, int setlen )
 	}
 
 	strcpy(dbfarm, dbfarmval );	
-	substitute_prefix(dbfarm, set, setlen);
+	mo_substitute(set, setlen, dbfarm);
 
         /* determine Monet's kernel settings. */
-	GDKinit(dbname, dbfarm);
+	if (!GDKinit(dbname, dbfarm))
+		return NULL;
 
 	for(i=0; i<setlen; i++){
 		int done = 0;
 		for(j=0; j<nlen; j++){
-			if (strcmp(n[j].name, set[i].name) == 0 &&
-			    n[j].kind < set[i].kind){
-				n[j] = set[i];
+			if (strcmp(n[j].name, set[i].name) == 0){ 
+			    	if (n[j].kind < set[i].kind){
+					n[j] = set[i];
+				}
 				done = 1;
 				break;
 			}
@@ -403,7 +186,7 @@ static Client Monet_init( opt *set, int setlen )
 		char value[BUFSIZ];
 
 		strncpy(value, n[i].value, BUFSIZ);
-		substitute_prefix(value, n, nlen);
+		mo_substitute(n, nlen, value);
 		if (strcmp(n[i].name,"prefix") !=0 &&
 		    strcmp(n[i].name,"exec_prefix") !=0) 
 			GDKsetenv(n[i].name, value);
@@ -423,21 +206,11 @@ static Client Monet_init( opt *set, int setlen )
 	return (Client) monet_init();
 }
 
-static void free_options( opt *set, int setlen )
-{
-	int i;
-	for(i=0; i<setlen; i++){
-		GDKfree(set[i].name);
-		GDKfree(set[i].value);
-	}
-	GDKfree(set);
-}
-
 @C
 int main(int ac, char **av)
 {
 	Client c;
-	char buf[BUFSIZ], *prog = *av;
+	char buf[BUFSIZ], *prog = *av, *config = NULL;
 	opt *set = NULL;
 	int i,debug = 0, setlen = 0, status = 1;
 
@@ -490,9 +263,7 @@ A grain size of 128 bytes is used to keep overhead low.
                 GDKfatal("Monet_init: could not determine current directory\n");
         }
 
-	if (!(setlen = builtin_settings(&set)) )
-		usage(prog);
-	if (!(setlen = system_config(&set, setlen)) )
+	if (!(setlen = mo_builtin_settings(&set)) )
 		usage(prog);
 
 	while(1){
@@ -508,38 +279,26 @@ A grain size of 128 bytes is used to keep overhead low.
 		case 0:
 			if (strcmp(long_options[option_index].name, 
 						"dbname") == 0){
-				set = (opt*)
-					GDKrealloc(set,(setlen+1)*sizeof(opt));
-				set[setlen].kind = opt_cmdline;
-				set[setlen].name = GDKstrdup("gdk_dbname");
-				set[setlen].value = GDKstrdup(optarg);
-				setlen++;
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "gdk_dbname", optarg );
 				break;
 			}
 			if (strcmp(long_options[option_index].name, 
 						"dbfarm") == 0){
-				set = (opt*)
-					GDKrealloc(set,(setlen+1)*sizeof(opt));
-				set[setlen].kind = opt_cmdline;
-				set[setlen].name = GDKstrdup("gdk_dbfarm");
-				set[setlen].value = GDKstrdup(optarg);
-				setlen++;
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "gdk_dbfarm", optarg );
 				break;
 			}
 			usage(prog);
 			break;
 		case 'c':
-			setlen = config_file(optarg, opt_config, &set, setlen);
+			config = strdup(optarg);
 			break;
 		case 'd':
 			debug=1;
 			if (optarg){ 
-				set = (opt*)
-					GDKrealloc(set,(setlen+1)*sizeof(opt));
-				set[setlen].kind = opt_cmdline;
-				set[setlen].name = GDKstrdup("gdk_debug");
-				set[setlen].value = GDKstrdup(optarg);
-				setlen++;
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "gdk_debug", optarg );
 			}
 			break;
 		case 'h':
@@ -550,21 +309,29 @@ A grain size of 128 bytes is used to keep overhead low.
 			char *tmp = strchr(optarg, '=');
 
 			if (tmp){
-				set = (opt*)
-					GDKrealloc(set,(setlen+1)*sizeof(opt));
 				*tmp = '\0';
-				set[setlen].kind = opt_cmdline;
-				set[setlen].name = GDKstrdup(optarg);
-				set[setlen].value = GDKstrdup(tmp+1);
-				setlen++;
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, optarg, tmp+1 );
+			} else {
+				fprintf(stderr, "ERROR: wrong format %s\n", 
+					optarg);
 			}
 		 } break;
 		case '?':
 			usage(prog);
 		default:
-			printf( "?? getopt returned character code 0%o ??\n",c);
+			fprintf( stderr, 
+			    "ERROR: getopt returned character code 0%o ??\n",c);
 			usage(prog);
 		}
+	}
+
+	if (config){
+		setlen = mo_config_file(&set, setlen, config );
+		free(config);
+	} else {
+		if (!(setlen = mo_system_config(&set, setlen)) )
+			usage(prog);
 	}
 
 	i = 0;
@@ -579,10 +346,10 @@ A grain size of 128 bytes is used to keep overhead low.
 	}
 
 	if (debug)
-		print_options(set, setlen);
+		mo_print_options(set, setlen);
 
 	c = Monet_init(set, setlen);
-	free_options(set,setlen);
+	mo_free_options(set,setlen);
 
 	if (!c) 
 		usage(prog);

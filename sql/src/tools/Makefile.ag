@@ -63,6 +63,6 @@ CONFLICT_MODS =	\
 EXTRA_DIST = static_modules.mx 
 
 bin_Mserver = {
-	SOURCES = Mserver.mx.in initmodules.mx 
-	LIBS = -L$(MONET_PREFIX)/lib -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONET_LIBS)
+	SOURCES = Mserver.mx initmodules.mx 
+	LIBS = -L$(MONET_PREFIX)/lib -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONET_LIBS) -lmutils
 }
