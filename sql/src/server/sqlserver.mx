@@ -870,7 +870,9 @@ proc server_output( stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void
 proc SQLclient_sql( Output, Input, cmd, debug ) := {
 	var myc := mvc_create(debug);
 
-	mvc_login( myc, "default-schema", "sqladmin", "nopasswd" );
+	schema := string(cmd,4,search(cmd,')') - 4);
+	print(schema);
+	mvc_login( myc, schema, "monetdb", "nopasswd" );
 
 	var buf := buffer_create( 1024 );
 	var LOutput := buffer_wastream( buf, sprintf("SQLserver-%d", sock ));

@@ -1,24 +1,95 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at 
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+@' All Rights Reserved.
+@' 
+@' Contributor(s):
+@' 		Martin Kersten <Martin.Kersten@cwi.nl>
+@' 		Niels Nes <Niels.Nes@cwi.nl>
+
 @f logger
 @t Transactions
 @a N. J. Nes
 @v 1.0
 @T
 @* Introduction
+[Make it a re-useable piece of code if possible, i.e. a module]
 In the philosophy of Monet, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 
-implemented as a module. This module, once loaded, takes care of writing
-the commited changes, to a transaction log. The log may reside on the
-same system and therefor the writes are done to disk but could also
-reside on an other system and then the changes are flushed through
-the network.  
+implemented as a separate module and applications are required to
+obey the transaction policy, e.g. obtaining/releasing locks. 
 
-The main interface to this logging system is the commit call which
-writes all the delta to the log file. Each bat in Monet keeps track 
-of the changes using the delta management. On commit these changes are
+This module is designed to support efficient logging of [SQL?] database.
+Once loaded, the SQL compiler will insert the proper calls at
+transaction commit to include the changes in the log file.
+
+The log format is choosen to simplify reloading it. This means
+that the internal (byte) representation is stored in the log file,
+prepended with a byte length.
+
+[Niels, it does not necessarily work upon recovery, because the ADT
+may require an update of the local access structure, e.g. the
+hash table in the string heap.]
+[The alternative storage structure is an ascii dump, using a slightly
+enhanced Monet dumpfile format.
+ +batname[hv,tv]	insert the bun
+ -batname[hv,tv]	delete the bun
+ *batname[headtype,tailtype]	define a bat
+ =bat timestamp		check/update the bat timestamp
+
+possibly use the tag and batname as a mode switcher to reduce the
+the storage, i.e.
+=mybat[int,int]
++[1,1]
+[2,2]
+[3,3]
+-[2,2]
+=yourbat[int,str]
+*yourbat 16824
+-[3,3]
+
+Alternative, use dbfarm/log/bat-date-version subdirectory
+]
+
+The key decision to be made by the user is the location of the log file.
+Ideally, it should be stored in fail-safe environment, or at least
+the log and databases should be on separate disk volumns.
+
+The current setup assumes that the log directory is a mounted file system. (?)
+This file system may reside on the hardware as the database server
+and therefor the writes are done to the same disk, but could also 
+reside on an other system and then the changes are flushed through the network.  
+The default location to store the database log is ....
+
+The logger works under the assumption that it is called to safeguard
+updates on the database when it has an exclusive lock on
+the latest version. This lock should be guaranteed by calling
+the transaction manager first.
+
+Finding the updates applied to a BAT is relatively easy, because each
+BAT contains a delta structure. On commit these changes are
 writen to the log file and the delta management is reset. Since each 
-commit is writen to the same log file, the beginning and end are 
-marked by a log identifier. A server restart should only (re)process
-blocks which are completely writen to disk. 
+commit is written to the same log file, the beginning and end are 
+marked by a log identifier.
+
+Shouldn;t you dump the BAT version/timestamp? Updates are only
+allowed when the BAT timestamp does not prohibit this.
+
+A server restart should only (re)process blocks which are completely 
+written to disk. 
+Actually, the logger should issue commit statements after each block.
 
 @* Implementation Code 
 @h
@@ -39,7 +110,17 @@ extern void logger_commit();
 #include "logger.h"
 #include "stream.h"
 #include "mem.h"
-
+@-
+The logger uses a local buffering scheme to collect the log records
+before they are stored on file. The advantage is that a single
+buffered write operation is needed, while it remains easy to drop
+the log request altogether.
+[Niels, I question the use of this feature. When the user intend to
+use the logger, it should already have exclusive access, and it expects
+that all the log information should be written to disk any way.
+Furthermore, the stream implementation (to file) will already be
+buffered, so why bother and doing it here again.]
+@c
 /* simple buffer management */
 typedef struct buf_node_t {
 	int size;
@@ -129,6 +210,27 @@ size_t buffer_used(buf_p buf){
 	return l;
 }
 
+@-
+The log record encoding is geared at reduced storage space, but
+at the expense of readability. A user can not easily inspect the
+log a posteriori to check what has happened.
+
+Since the logger uses global variables, you could opt to provide the
+exclusive access as part of the logger implementation. 
+This means that a client should use the following scheme
+
+... update bat B ...
+logger.start()
+logger.safe(B)
+... other BAT updates to be safed.
+logger.commit()
+gdk.commit()	# implied by the logger.commit?
+
+[Niels, why not keeping a log per bat, e.g. mybat.log.230102.1 ?
+this simplifies parallel 
+recovery after a crash. Furthermore, the log time stamp can be
+compared with the BAT to see if you need to consult the log file.]
+@c
 #define LOG_INSERT 	3
 #define LOG_DELETE	4
 #define LOG_CREATE 	5
@@ -321,6 +423,10 @@ int readlog( char *filename ){
 	return 0;
 }
 
+@-
+The log files are incrementally numbered. They are processed in the
+same sequence.
+@c
 int readlogs( FILE *fp, char *filename ){
 	int res = 0;
 	char id[BUFSIZ];
@@ -372,6 +478,11 @@ void logger_exit(){
 	log->destroy(log);
 }
 
+@-
+Changes made to the BAT descriptor should be stored in the log files.
+Actually, we need to save the descriptor file, perhaps we should simply
+introduce a versioning scheme. 
+@c
 void log_bat_persists(BAT *b ){
 	char *ha, *ta, *name = BBPname(b->batCacheid);
 	int len;
@@ -384,12 +495,12 @@ void log_bat_persists(BAT *b ){
 	log->write( log, (char*)&l, sizeof(logformat), 1 );
 	log_write_string(log, name);
 	ha = ATOMname(b->htype);
-	if (BAThdense(b)){
+	if (b->htype == TYPE_void && BAThdense(b)){
 		ha = "vid";
 		havevoid = 1;
 	}
 	ta = ATOMname(b->ttype);
-	if (!havevoid && BATtdense(b)){
+	if (!havevoid && b->ttype == TYPE_void && BATtdense(b)){
 		ta = "vid";
 	}
 	len = snprintf(buf, BUFSIZ,"%s,%s", ha, ta );

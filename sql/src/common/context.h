@@ -29,6 +29,9 @@ typedef struct context {
 	char errstr[ERRSIZE];
 	struct catalog *cat;
 
+	char 	auth;	/* authorization */
+	int 	authid; /* authorization id */
+
 	struct symbol *sym;
 } context;
 

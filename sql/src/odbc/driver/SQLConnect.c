@@ -82,7 +82,7 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 		logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
 		return SQL_ERROR;
 	}
-	SQLGetPrivateProfileString( szDataSource, "USER", "sqladmin", szUSER, sizeof(szUSER), "odbc.ini" );
+	SQLGetPrivateProfileString( szDataSource, "USER", "monetdb", szUSER, sizeof(szUSER), "odbc.ini" );
 	SQLGetPrivateProfileString( szDataSource, "PASSWORD", "", szPASSWD, sizeof(szPASSWD), "odbc.ini" );
 	SQLGetPrivateProfileString( szDataSource, "HOST", "localhost", szHOST, sizeof(szHOST), "odbc.ini" );
 	SQLGetPrivateProfileString( szDataSource, "PORT", "0", szPORT, sizeof(szPORT), "odbc.ini" );
@@ -132,7 +132,7 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 	sql_init_context( lc, ws, debug, default_catalog_create() );
 	catalog_create_stream( hDbc->hDbcExtras->rs, lc );
 
-	lc->cat->cc_getschema( lc->cat, szDATABASE, "default-user" );
+	lc->cat->cc_getschema( lc->cat, szDATABASE, "monetdb" );
 
 	if (hDbc->hDbcExtras->rs->errnr || lc->out->errnr){
 		printf("sockets not opened correctly\n");

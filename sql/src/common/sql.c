@@ -1479,7 +1479,7 @@ static stmt *sql_join_
 	}
 	subset = s;
 	if (subset) {
-		list *l1, *l2;
+		list *l1;
 		table *t = NULL;
 		node *n;
 		stmt *fs1 = find_subset(subset, tv1);
@@ -1542,8 +1542,8 @@ static stmt *sql_join_
 						   (cs, tv2, RDONLY, st_bat), 
 						   cmp_equal));
 		}
-		l2 = create_stmt_list();
 		if (jointype == jt_left || jointype == jt_full) {
+			list *l2 = create_stmt_list();
 			node *m = l1->h;
 			t = tv1->t;
 			for (n = t->columns->h; n;
@@ -1577,6 +1577,7 @@ static stmt *sql_join_
 			l1 = l2;
 		}
 		if (jointype == jt_right || jointype == jt_full) {
+			list *l2 = create_stmt_list();
 			node *m = l1->h;
 			t = tv1->t;
 			for (n = t->columns->h; n;
@@ -2777,8 +2778,10 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn )
 		while (n) {
 			stmt *cs = sql_column_exp(sql, scp, n->data.sym,
 						  grp, subset);
-			if (!cs)
+			if (!cs){
+				scope_dump(scp);
 				return sql_error(sql);
+			}
 
 			/* t1.* */
 			if (cs->type == st_list

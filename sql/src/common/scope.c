@@ -165,6 +165,19 @@ static cvar *bind_column(list * columns, char *cname)
 	return NULL;
 }
 
+static cvar *bind_table_column(list * columns, char *tname, char *cname)
+{
+	node *n = columns->h;
+	for (; n; n = n->next) {
+		cvar *c = n->data;
+		if (	strcmp(c->tname, tname) == 0 &&
+			strcmp(c->cname, cname) == 0) {
+			return c;
+		}
+	}
+	return NULL;
+}
+
 cvar *scope_bind_column(scope * scp, char *tname, char *cname)
 {
 	scope *start = scp;
@@ -184,6 +197,25 @@ cvar *scope_bind_column(scope * scp, char *tname, char *cname)
 		return NULL;
 	}
 
+	/* tname != NULL */
+	for (; scp; scp = scp->p) {
+		node *n = scp->tables->h;
+		for (; n; n = n->next) {
+			tvar *tv = n->data;
+			if (tv->tname && strcmp(tv->tname, tname) == 0 &&
+			   (cv = bind_column(tv->columns, cname)) != NULL) {
+				if (start != scp)
+					scope_lift(start, cv);
+				return cv;
+			} else if (!tv->tname &&
+			   (cv = bind_table_column(tv->columns, 
+						   tname, cname)) != NULL) {
+				if (start != scp)
+					scope_lift(start, cv);
+				return cv;
+			}
+		}
+	}
 	/* tname != NULL */
 	for (; scp; scp = scp->p) {
 		node *n = scp->tables->h;

@@ -49,7 +49,7 @@ extern cvar *scope_bind_column( scope *scp, char *tname, char *cname );
 extern var *scope_bind_alias( scope *scp, char *name ); 
 
 /* 
- * scope_bind finds a colum or alias in the scp the given name 
+ * scope_bind finds a column or alias in the scp the given name 
  * */
 extern stmt *scope_bind( scope *scp, char *tname, char *cname ); 
 
