@@ -415,7 +415,7 @@ rel_projections( sql_rel *rel, char *tname )
 		exps = rel_projections( rel->l, tname );
 		rexps = rel_projections( rel->r, tname );
 		exps = list_merge( exps, rexps, (fdup)&exp_dup);
-		//list_destroy(rexps);
+		/*list_destroy(rexps);*/
 		return exps;
 	case op_project:
 	case op_select:
@@ -1516,7 +1516,7 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection)
 		 * sofar with the table expression, ie t1.* or a subquery 
 		 */
 		exps = list_merge( exps, te, (fdup)&exp_dup);
-		//list_destroy(te);
+		/*list_destroy(te);*/
 	}
 	rel = rel_project(rel, exps);
 	return rel;
@@ -1634,7 +1634,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, int toplevel)
 			 * t1.* or a subquery.
 		 	 */
 			exps = list_merge( exps, te, (fdup)&exp_dup);
-			//list_destroy(te);
+			/*list_destroy(te);*/
 		}
 		rel = rel_project(rel, exps);
 	} else {

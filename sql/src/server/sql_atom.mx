@@ -187,7 +187,7 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res <= 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				//_DELETE(val);
+				/*_DELETE(val);*/
 				_DELETE(a);
 				if (p)
 					GDKfree(p);
@@ -198,7 +198,7 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 
 			if (p && ATOMstorage(a->data.vtype) < TYPE_str)
 				GDKfree(p);
-			//_DELETE(val);
+			/*_DELETE(val);*/
 		}
 	} else if (ATOMstorage(a->data.vtype) < TYPE_str) {
 		p = ATOMnilptr(a->data.vtype);
