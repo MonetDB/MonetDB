@@ -721,13 +721,24 @@ int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
     }
     return mb->stop;
 }
+@-
+When you propagate an alias through the program, the properties
+maintained should also be updated. In particular, the lifespan
+of the alias changes as part of the move.
+@c
 void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 {   InstrPtr p;
+	VarPtr v;
     int k;
+	v =getVar(mb, alias);
     for(; pc<pcl; pc++) {
         p= getInstrPtr(mb,pc);
         for(k= p->retc; k<p->argc; k++)
-        if( p->argv[k]== src ) p->argv[k]= alias;
+        if( p->argv[k]== src ){
+			p->argv[k]= alias;
+			if( pc > v->endLifespan)
+				v->endLifespan =pc;
+		}
     }
 }
 int ARoptimizerStep(MalBlkPtr mb, int pc)
@@ -1793,7 +1804,7 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						mb->errors= olderr;
 						p->argv[0]= oldtarget;
 						typeChecker(scope,mb,p);
-					} else 
+					} else
 						ARreplaceAlias(mb,i+1,mb->stop, oldtarget, a);
 				}
 			}
