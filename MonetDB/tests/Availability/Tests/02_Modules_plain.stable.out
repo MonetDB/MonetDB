@@ -799,29 +799,34 @@ Module: "stats"
 
 Module: "streams"
 
-[ 17 ]
-[ 17 ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature				| help					  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "block_stream",	  "COMMAND:   ",  "block_stream(stream) : stream",	  "open a block based stream"		  ]
-[ "file_rastream",	  "COMMAND:   ",  "file_rastream(fstream, str) : stream", "open ascii file stream for reading"	  ]
-[ "file_rstream",	  "COMMAND:   ",  "file_rstream(fstream, str) : stream",  "open a file stream for reading"	  ]
-[ "file_wastream",	  "COMMAND:   ",  "file_wastream(fstream, str) : stream", "open ascii file stream for writing"	  ]
-[ "file_wstream",	  "COMMAND:   ",  "file_wstream(fstream, str) : stream",  "open a file stream for writing"	  ]
-[ "open_rastream",	  "COMMAND:   ",  "open_rastream(str) : stream",	  "open ascii file stream for reading"	  ]
-[ "open_rstream",	  "COMMAND:   ",  "open_rstream(str) : stream",		  "open a file stream for reading"	  ]
-[ "open_wastream",	  "COMMAND:   ",  "open_wastream(str) : stream",	  "open ascii file stream for writing"	  ]
-[ "open_wstream",	  "COMMAND:   ",  "open_wstream(str) : stream",		  "open a file stream for writing"	  ]
-[ "socket_rastream",	  "COMMAND:   ",  "socket_rastream(int, str) : stream",	  "open ascii socket stream for reading"  ]
-[ "socket_rstream",	  "COMMAND:   ",  "socket_rstream(int, str) : stream",	  "open a socket stream for reading"	  ]
-[ "socket_wastream",	  "COMMAND:   ",  "socket_wastream(int, str) : stream",	  "open ascii socket stream for writing"  ]
-[ "socket_wstream",	  "COMMAND:   ",  "socket_wstream(int, str) : stream",	  "open a socket stream for writing"	  ]
-[ "stream_close",	  "COMMAND:   ",  "stream_close(stream) : void",	  "close and destroy the stream s"	  ]
-[ "stream_flush",	  "COMMAND:   ",  "stream_flush(stream) : void",	  "flush the stream"			  ]
-[ "stream_read",	  "COMMAND:   ",  "stream_read(stream) : str",		  "read data from the stream"		  ]
-[ "stream_write",	  "COMMAND:   ",  "stream_write(stream, str) : void",	  "write data on the stream"		  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
+[ 22 ]
+[ 22 ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature					| help					  #
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ "block_stream",	  "COMMAND:   ",  "block_stream(stream) : stream",		  "open a block based stream"		  ]
+[ "buffer_create",	  "COMMAND:   ",  "buffer_create(int) : buffer",		  "create a buffer of the given size"	  ]
+[ "buffer_destroy",	  "COMMAND:   ",  "buffer_destroy(buffer) : void",		  "destroy buffer"			  ]
+[ "buffer_rastream",	  "COMMAND:   ",  "buffer_rastream(buffer, str) : stream",	  "create a buffer read stream"		  ]
+[ "buffer_wastream",	  "COMMAND:   ",  "buffer_wastream(buffer, str) : stream",	  "create a buffer write stream"	  ]
+[ "file_rastream",	  "COMMAND:   ",  "file_rastream(fstream, str) : stream",	  "open ascii file stream for reading"	  ]
+[ "file_rstream",	  "COMMAND:   ",  "file_rstream(fstream, str) : stream",	  "open a file stream for reading"	  ]
+[ "file_wastream",	  "COMMAND:   ",  "file_wastream(fstream, str) : stream",	  "open ascii file stream for writing"	  ]
+[ "file_wstream",	  "COMMAND:   ",  "file_wstream(fstream, str) : stream",	  "open a file stream for writing"	  ]
+[ "open_rastream",	  "COMMAND:   ",  "open_rastream(str) : stream",		  "open ascii file stream for reading"	  ]
+[ "open_rstream",	  "COMMAND:   ",  "open_rstream(str) : stream",			  "open a file stream for reading"	  ]
+[ "open_wastream",	  "COMMAND:   ",  "open_wastream(str) : stream",		  "open ascii file stream for writing"	  ]
+[ "open_wstream",	  "COMMAND:   ",  "open_wstream(str) : stream",			  "open a file stream for writing"	  ]
+[ "socket_rastream",	  "COMMAND:   ",  "socket_rastream(int, str) : stream",		  "open ascii socket stream for reading"  ]
+[ "socket_rstream",	  "COMMAND:   ",  "socket_rstream(int, str) : stream",		  "open a socket stream for reading"	  ]
+[ "socket_wastream",	  "COMMAND:   ",  "socket_wastream(int, str) : stream",		  "open ascii socket stream for writing"  ]
+[ "socket_wstream",	  "COMMAND:   ",  "socket_wstream(int, str) : stream",		  "open a socket stream for writing"	  ]
+[ "stream_close",	  "COMMAND:   ",  "stream_close(stream) : void",		  "close and destroy the stream s"	  ]
+[ "stream_flush",	  "COMMAND:   ",  "stream_flush(stream) : void",		  "flush the stream"			  ]
+[ "stream_read",	  "COMMAND:   ",  "stream_read(stream) : str",			  "read data from the stream"		  ]
+[ "stream_write",	  "COMMAND:   ",  "stream_write(stream, str) : void",		  "write data on the stream"		  ]
+[ "stream_writeInt",	  "COMMAND:   ",  "stream_writeInt(stream, int) : void",	  "write an integer on the stream"	  ]
+#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
 
 Module: "tcpip"
 
