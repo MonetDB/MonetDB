@@ -450,6 +450,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 			err = sqlexecute(sql, inbuf, out, stk, res);
 
 		if (err){ /* output error */
+			char *ibuf = inbuf;
 			char *buf = GDKerrbuf;
 			stream_writeInt( out, -1 );
 			stream_writeInt( out, err );
@@ -459,8 +460,9 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 			buf[0] = 0; /* reset error buf */
 
 			/* show the buggy query */
-			out->write( out, " in ", 4, 1);
-			out->write( out, inbuf, strlen(inbuf), 1);
+			out->write( out, " in:\n", 5, 1);
+			while (ibuf[0] == '\n') ibuf++;
+			out->write( out, ibuf, strlen(ibuf), 1);
 			out->flush( out );
 		} else if (!(sql->debug&64)){
 			ssize_t status, type;

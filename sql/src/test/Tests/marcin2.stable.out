@@ -94,12 +94,20 @@ SQL  9 Rows affected
 #    20: 0 #this one works, and I think it shouldn't
 #    21: 0 # postgres just sums the first column (result 9)
 #    22: 1 select sum(*) from t3;
-SQL ERROR -1 1: Aggregate: Cannot do a sum(*)
+SQL ERROR -1 2: Aggregate: Cannot do a sum(*) in:
+-- this one works, and I think it shouldn't
+--  postgres just sums the first column (result 9)
+select sum(*) from t3;
+
 #    23: 0 
 #    24: 0 #this one, although wrong, results in core-dump of sql_client :)
 #    25: 0 # postgres just sums the first column of the group (result (3,5)(3,6)(3,nil))
 #    26: 1 select sum(*),val from t3 group by val ;
-SQL ERROR -1 1: Aggregate: Cannot do a sum(*)
+SQL ERROR -1 2: Aggregate: Cannot do a sum(*) in:
+-- this one, although wrong, results in core-dump of sql_client :)
+--  postgres just sums the first column of the group (result (3,5)(3,6)(3,nil))
+select sum(*),val from t3 group by val ;
+
 #    27: 0 
 #    28: 1 drop table t3;
 

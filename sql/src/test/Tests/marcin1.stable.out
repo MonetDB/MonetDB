@@ -155,9 +155,9 @@ SQL  3 Rows affected
 #------------
 #| id | val |
 #------------
-5	5
 3	3
 4	4
+5	5
 SQL  3 Rows affected
 #    39: 1 select * from t1 where id>2 and id<2;
 #------------
