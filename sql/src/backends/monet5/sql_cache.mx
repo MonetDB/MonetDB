@@ -34,7 +34,7 @@ end qry001;
 Unlike the other modules, it is permissible to
 remove elements from this cache at runtime.
 @mal
-module sqlcache;
+module sql_cache;
 
 command remove(nme:str):void
 address SQLCacheRemove
@@ -72,10 +72,10 @@ str SQLCacheExists(bit *res, str *nme){
 	Scope scope;
 	Symbol s;
 
-	scope= findScope(mal_scope,"sqlcache");
+	scope= findScope(mal_scope,"sql_cache");
 	if( scope == NULL)
-		return throwMessage("sqlcache.exists",
-			"internal error, sqlcache missing\n");
+		return throwMessage("sql_cache.exists",
+			"internal error, sql_cache missing\n");
 	s= findSymbolInScope(scope,*nme);
 	*res = s != NULL;
 	return MAL_SUCCEED;
@@ -84,9 +84,9 @@ str SQLCacheGetDefinition(int *ret, str *nme){
 	Symbol s;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
         if(b == 0) 
-	return throwMessage("sqlcache.getDefinition", "failed to create BAT");
+	return throwMessage("sql_cache.getDefinition", "failed to create BAT");
 	
-	s= findSymbol("sqlcache",*nme);
+	s= findSymbol("sql_cache",*nme);
 	if(s){
 		int i;
 		str ps;
@@ -106,14 +106,14 @@ str SQLCacheRemove(int *ret, str *nme){
 	Symbol s;
 
 	(void) ret;
-	scope= findScope(mal_scope,"sqlcache");
+	scope= findScope(mal_scope,"sql_cache");
 	if( scope == NULL)
-		return throwMessage("sqlcache.remove",
-			"internal error, sqlcache missing\n");
+		return throwMessage("sql_cache.remove",
+			"internal error, sql_cache missing\n");
 	s= findSymbolInScope(scope,*nme);
 	if( s == NULL)
-		return throwMessage("sqlcache.remove",
-			"internal error, sqlcache entry missing\n");
+		return throwMessage("sql_cache.remove",
+			"internal error, sql_cache entry missing\n");
         shutdownFactory(s->def);
 	deleteSymbol(scope,s);
 	return MAL_SUCCEED;

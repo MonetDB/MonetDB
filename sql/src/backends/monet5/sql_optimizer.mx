@@ -52,7 +52,7 @@ void addQueryToCache(Client c)
 {
 	backend *be = ((backend*)c->state[PARSER]);
 
-        insertSymbol(findScope(c->nspace,"sqlcache"), c->curprg);
+        insertSymbol(findScope(c->nspace,"sql_cache"), c->curprg);
         trimMalBlk(c->curprg->def);
         c->blkmode =0;
         chkProgram(c->nspace, c->curprg->def);

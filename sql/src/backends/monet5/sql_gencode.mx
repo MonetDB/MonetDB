@@ -1069,7 +1069,7 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 	curPrg = c->curprg;
         curBlk = curPrg->def;
         curInstr = getInstrPtr(curBlk,0);
-	setModuleId(curInstr, "sqlcache");
+	setModuleId(curInstr, "sql_cache");
 
 	if (be->mvc->args){
 		int argc = 0;
@@ -1102,7 +1102,7 @@ backend_call( backend *be, Client c, char *name, list *args )
 	InstrPtr q;
         MalBlkPtr mb = c->curprg->def;
 
-	q= newStmt(mb, "sqlcache", name);
+	q= newStmt(mb, "sql_cache", name);
 	if (args){
 		node *n;
   		for (n=args->h; n; n = n->next){
