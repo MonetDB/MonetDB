@@ -69,7 +69,8 @@
 #define SETRED(f,m)  if(clr[f]!=5-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#ff%s00>",(m?"aa":"00")); clr[f]=5-m; }
 #define SETPINK(f,m) if(clr[f]!=7-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#ff%sff>",(m?"aa":"00")); clr[f]=7-m; }
 
-#define BUFLEN 16384
+#define BUFLEN  16384
+#define BUFLEN2 32768
 
 #if !HAVE_DECL_STRDUP
 #ifdef HAVE_STRDUP
@@ -81,7 +82,7 @@ extern char *strdup(const char *);
 
 char* HTMLsave(char* s)
 {
-  char *p,t[BUFLEN];
+  char *p,t[BUFLEN2];
   while((p=strchr(s,'<'))) { *p='\0'; sprintf(t,"%s&lt;%s"  ,s,p+1); strcpy(s,t); }
   while((p=strchr(s,'>'))) { *p='\0'; sprintf(t,"%s&gt;%s"  ,s,p+1); strcpy(s,t); }
   while((p=strchr(s,'"'))) { *p='\0'; sprintf(t,"%s&quot;%s",s,p+1); strcpy(s,t); }
