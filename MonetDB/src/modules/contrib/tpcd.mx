@@ -670,7 +670,7 @@ DVIbuild(
    int*		param,	/* an extra parameter */
    BAT*		b	/* IN: BAT with head-column. */
 ){
-	BAT *extent = BATdescriptor((int)param);	
+	BAT *extent = BATdescriptor(*(bat*)param);	
 	oid *first, *cur;
 	int xx, yy=0;
 	vectoridx *vi;
@@ -788,7 +788,7 @@ DVbuild(
    int*		param,	/* an extra parameter */
    BAT*		b	/* IN: BAT with head-column. */
 ){
-	BAT *bn, *extent = BATdescriptor((int)param);	
+	BAT *bn, *extent = BATdescriptor(*(bat*)param);	
 	int bunsize, atomsize, xx, yy=0;
 	datavector *v;
 	vectoridx *vi;
@@ -1005,7 +1005,8 @@ to speed up semijoins.
 		ACCdestroy(ACC_vectoridx, r, &r->haccelerator);
 	}
 	if (r->hacctype != ACC_vectoridx) {
-		ACCbuild(ACC_vectoridx, r, &r->haccelerator, (ptr) e->batCacheid);
+		bat id = e->batCacheid;
+		ACCbuild(ACC_vectoridx, r, &r->haccelerator, (ptr)(&id));
 	}
 	if (r->hacctype != ACC_vectoridx) {
 		BBPreclaim(bn);
