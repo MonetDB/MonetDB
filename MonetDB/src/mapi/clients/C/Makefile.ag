@@ -26,10 +26,10 @@ lib_Mapi = {
 	HEADERS = h
 }
 
-doc_Mapi = {
-	DIR = pkgdatadir/docs/mapi/C
-	SOURCES = Mapi.mx 
-}
+#doc_Mapi = {
+#	DIR = pkgdatadir/docs/mapi/C
+#	SOURCES = Mapi.mx 
+#}
 
 bin_MapiClient = {
 	SOURCES = MapiClient.mx ReadlineTools.mx
@@ -38,7 +38,7 @@ bin_MapiClient = {
 		$(ICONV_LIBS)
 }
 
-doc_MapiClient = {
-	DIR = pkgdatadir/docs/tools
-	SOURCES = MapiClient.mx
-}
+#doc_MapiClient = {
+#	DIR = pkgdatadir/docs/tools
+#	SOURCES = MapiClient.mx
+#}

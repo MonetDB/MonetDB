@@ -89,10 +89,10 @@ bin_Mserver = {
 		../common/libmutils ../common/libstream
 }
 
-doc_Mserver = {
-	DIR = pkgdatadir/docs/tools
-	SOURCES = Mserver.mx initmodules.mx 
-}
+#doc_Mserver = {
+	#DIR = pkgdatadir/docs/tools
+	#SOURCES = Mserver.mx initmodules.mx 
+#}
 
 scripts_sh = {
 	EXT = ""

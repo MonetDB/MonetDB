@@ -42,10 +42,10 @@ lib__str = {
 	LIBS	= $(ICONV_LIBS)
 }
 
-doc__str = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = str.mx
-}
+#doc__str = {
+#	DIR = pkgdatadir/docs/plain/
+#	SOURCES = str.mx
+#}
 
 lib__xtables = {
 	DIR = pkglibdir
@@ -59,10 +59,10 @@ lib__xtables = {
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-doc_xtables = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = xtables.mx
-}
+#doc_xtables = {
+#	DIR = pkgdatadir/docs/plain/
+#	SOURCES = xtables.mx
+#}
 
 LIBS = {
 	DIR = pkglibdir
@@ -82,15 +82,15 @@ LIBS = {
 	LDFLAGS = -lm
 }
 
-doc_libs = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = \
-		algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
-		mkey.mx profiler.mx \
-		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
-		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		radix.mx stats.mx tcpip.mx unix.mx url.mx
-}
+#doc_libs = {
+#	DIR = pkgdatadir/docs/plain/
+#	SOURCES = \
+#		algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
+#		mkey.mx profiler.mx \
+#		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
+#		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
+#		radix.mx stats.mx tcpip.mx unix.mx url.mx
+#}
 
 lib__counters = {
 	DIR = pkglibdir
@@ -104,10 +104,10 @@ lib__counters = {
 	LIBS = $(HWCOUNTERS_LIBS)
 }
 
-doc__counters = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = counters.mx
-}
+#doc__counters = {
+#	DIR = pkgdatadir/docs/plain/
+#	SOURCES = counters.mx
+#}
 
 lib__pcl = {
 	DIR = pkglibdir
@@ -121,10 +121,10 @@ lib__pcl = {
 	LIBS = $(PCL_LIBS)
 }
 
-doc__pcl = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = pcl.mx
-}
+#doc__pcl = {
+#	DIR = pkgdatadir/docs/plain/
+#	SOURCES = pcl.mx
+#}
 
 scripts_mil = {
 	DIR = pkglibdir

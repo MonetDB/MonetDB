@@ -47,9 +47,9 @@ scripts_mnetcdf = {
 	SOURCES = mnetcdf.mx 
 }
 
-doc_libs = {
-	DIR = pkgdatadir/docs/mnetcdf/
-	SOURCES = mnetcdf.mx
-}
+#doc_libs = {
+#	DIR = pkgdatadir/docs/mnetcdf/
+#	SOURCES = mnetcdf.mx
+#}
 
 EXTRA_DIST_DIR = Tests

@@ -44,8 +44,8 @@ mx2swig = re.compile("^@swig[ \t\r\n]+", re.MULTILINE)
 mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
 mx2xsl = re.compile("^@xsl[ \t\r\n]+", re.MULTILINE)
 mx2sh = re.compile("^@sh[ \t\r\n]+", re.MULTILINE)
-mx2tex = re.compile("^@T|-|\+|\*[ \t\r\n]+", re.MULTILINE)
-mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
+#mx2tex = re.compile("^@T|-|\+|\*[ \t\r\n]+", re.MULTILINE)
+#mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
 
 e_mx = re.compile('^@[^{}]', re.MULTILINE)
 
@@ -66,11 +66,11 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2swig, '.i'),
                   (mx2java, '.java'),
                   (mx2xsl, '.xsl'),
-                  (mx2sh, ''),
-                  (mx2tex, '.tex'),
-                  (mx2tex, '.bdy.tex'),
-                  (mx2html, '.html'),
-                  (mx2tex, '.bdy.html'), ],
+                  (mx2sh, ''), ],
+                  #(mx2tex, '.tex'),
+                  #(mx2tex, '.bdy.tex'),
+                  #(mx2html, '.html'),
+                  #(mx2tex, '.bdy.html'), ],
                 'mx.in': [ (mx2mil, '.mil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
@@ -88,11 +88,11 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2swig, '.i'),
                   (mx2java, '.java'),
                   (mx2xsl, '.xsl'),
-                  (mx2sh, ''),
-                  (mx2tex, '.tex'),
-                  (mx2tex, '.bdy.tex'),
-                  (mx2html, '.html'),
-                  (mx2tex, '.bdy.html'), ]
+                  (mx2sh, ''), ]
+                  #(mx2tex, '.tex'),
+                  #(mx2tex, '.bdy.tex'),
+                  #(mx2html, '.html'),
+                  #(mx2tex, '.bdy.html'), ]
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
@@ -117,10 +117,10 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
 #            'java':     [ '.class' ],
             'tmpmil':   [ '.mil' ],
             'mx.in':    [ '.mx' ],
-            'tex':      [ '.html', '.dvi', '.pdf' ],
-            'dvi':      [ '.ps' ],
-            'fig':      [ '.eps' ],
-            'feps':     [ '.eps' ],
+            #'tex':      [ '.html', '.dvi', '.pdf' ],
+            #'dvi':      [ '.ps' ],
+            #'fig':      [ '.eps' ],
+            #'feps':     [ '.eps' ],
             'in':       [ '' ],
             'cfg.in':   [ '.cfg' ],
             'java.in':  [ '.java' ],
