@@ -87,6 +87,19 @@ Ommission of the module initiates a search for a possible
 matching definition in a hierarchical ordered module
 sequence. (See modules)
 
+Experience with SQL shows that often the output
+of a query processor based on an algebraic model
+produces a long sequence of MAL instructions.
+They form a condense representation of the flow dependencies
+where all operators are known to be side-effect free.
+
+Only when the algebraic structure is too limited (e.g. updates),
+or the database back-end lacks feasible bulk operators,
+one has to rely on more flow of control primitives.
+But even in that case, the basic blocks to be processed
+by a MAL backend are considered large, e.g. 10s of simple
+bulk assignment instructions.
+
 For implementation reasons the maximum number of parameters is a
 compile time constant. Its choice should be large enough to
 accomodate the functions you have in mind. 
@@ -102,14 +115,14 @@ The primary flow control keywords are:
 {\tt barrier}, {\tt leave}, {\tt redo}, and {\tt exit}.
 The {\tt barrier} and {\tt exit} mark a block
 to be interpreted when the barrier can be taken.
-All four constrol structures should use the same
+All four control structures should use the same
 target variable set.
 
 Builtin barrier controls exists for boolean and integers.
 The barrier is opened when the target variable holds
-true or an integer value $>$=0.
+true or when the integer value $>$=0.
 All target variables form a combined lock on the
-code block.
+code block protected by the barrier.
 
 The {\tt exit} marks the exit for a block. Its assignment
 can be used to re-initialize the barrier control variables
@@ -117,15 +130,19 @@ or wrap-up any related administration.
 
 Once inside the barrier you have an option to prematurely
 leave it or to restart interpretation just after the
-barrier statement. (like 'break' and 'continue'}
-For both the expression is evaluated and the target
-variables are assigned their new value. Then 
+barrier statement. (like 'break' and 'continue')
+In both cases  the variables are assigned their new value. Then 
 barrier control takes over and will move the program
 counter to the beginning or end of the block.
 
-Using multiple targets can be used to model a
+Using multiple target barriers can be used to model a
 variety of strategies to adjust the dataflow
 within a guarded block.
+
+The barrier blocks can be properly nested to form
+a hierarchy of basic blocks.
+The control flow within and between blocks is
+simple enough to deal with during the optimizer stage.
 
 Note that {\tt redo} and {\tt leave} statements mark
 the partial end of a block. Statements within these
@@ -138,7 +155,7 @@ Common guarded blocks in imperative languages are
 the for-loop and if-then-else constructs.
 They can be simulated as follows.
 
-Consider the statement {\em for(i=1;i<10;i++) print(i)}.
+Consider the statement {\em for(i=1;i$<$10;i++) print(i)}.
 The (optimized) MAL block to implement this becomes:
 \begin{verbatim}
      V:= 1;
@@ -149,7 +166,7 @@ redo B:= V<10;
 exit B;
 \end{verbatim}
 
-Translation of the statement {\em if(i<1) print("ok"); else print("wrong");}
+Translation of the statement {\em if(i$<$1) print("ok"); else print("wrong");}
 becomes:
 \begin{verbatim}
     i:=1; b:=i<1;
@@ -161,28 +178,58 @@ barrier b:= not b;
 exit b;
 \end{verbatim}
 
-
-The exception handling keywords are: {\tt catch}, {\tt raise}, {\tt end}
-The {\tt catch} statement marks a point in the dataflow where
+@- Exception control
+@T
+The exception handling keywords are: {\tt catch} and {\tt raise}
+The {\tt catch}  marks a point in the dataflow where
 an exception raised can be dealt with. Any statement between the
 point where it is raised and the catch block is ignored.
+Moreover, the {\tt catch} {\tt done} block is ignored when
+no errors have occurred in the preceeding dataflow structure.
+
+Exceptions are linked with the variables that receive it
+from functions being called. This way exceptions are bound
+to the data flow rather then the statement sequence.
+It provides more opportunities to move code around, while
+still precisely controlling the point where exceptions
+are dealt with.
+
+After an exception block has been dealt with you have
+an option to {\em leave} the block at the normal {\tt exit} or
+attempt to redo the failed instruction call using a {\tt redo}.
+
+The argument to the catch statement is a target list.
+Its variables are considered disjunctive, which means
+that all mentioned can be catched and open up the
+recovery block. The {\tt redo} and {\tt leave}
+statement in this case also interpret the list as
+a disjunction. [todo, more thought needed]
+
+The snippet below illustrates how an exception raised
+in the function X is catched using the receiving variable Y.
+
+\begin{verbatim}
+\end{verbatim}
 
 An exception can be raised explicitly at any time
 using the {\tt raise} control. Its expression is evaluated
 and exception values are created.
-The builtin exception mechanism casts an exception into a string
+The built-in exception mechanism casts an exception into a string
 value, which contains the module, function, and message. [check]
 
 Note that due to code re-shuffling an exception raised in one
 thread of control is invisible to others. 
 
-@- Signatures
+@- MAL signatures
+@T
+The first statement of a MAL block is taken up by a signature
+description. (See functions)
 The interprocess communication keywords are:
-{\tt return}, 
+{\tt return}
 
 @+ Block descriptor
-The datastructures to represent a block of MAL instructions is kept simple.
-Each block descriptor represents a sequence of MAL statements 
+The datastructures to represent a MAL block is kept simple.
+Each descriptor represents a sequence of MAL statements 
 and a local symbol table.
 
 The constants are stored in the symbol table.
@@ -829,30 +876,30 @@ is geared at simple and speed.
 @c
 int isReserved(str nme){
 	switch(*nme){
-	case 'a': if( idcmp("atom",nme)==0) return 1;
-		  if( idcmp("any",nme)==0) return 1;
-		  if( idcmp("any",nme)==0) return 1;
+	case 'A': case 'a': if( idcmp("atom",nme)==0) return 1;
 		  break;
-	case 'b': if( idcmp("barrier",nme)==0) return 1;
+	case 'B': case 'b': if( idcmp("barrier",nme)==0) return 1;
 		  break;
-	case 'c': if( idcmp("command",nme)==0) return 1;
+	case 'D': case 'd': if( idcmp("done",nme)==0) return 1;
 		  break;
-	case 'e': if( idcmp("exit",nme)==0) return 1;
+	case 'C': case 'c': if( idcmp("command",nme)==0) return 1;
+		  break;
+	case 'E': case 'e': if( idcmp("exit",nme)==0) return 1;
 		  if( idcmp("end",nme)==0) return 1;
 		  break;
-	case 'f': if( idcmp("false",nme)==0) return 1;
+	case 'F': case 'f': if( idcmp("false",nme)==0) return 1;
 		  if( idcmp("function",nme)==0) return 1;
 		  break;
-	case 'h': if( idcmp("handler",nme)==0) return 1;
+	case 'H': case 'h': if( idcmp("handler",nme)==0) return 1;
 		  break;
-	case 'm': if( idcmp("module",nme)==0) return 1;
+	case 'M': case 'm': if( idcmp("module",nme)==0) return 1;
 		  break;
-	case 'p': if( idcmp("pattern",nme)==0) return 1;
+	case 'P': case 'p': if( idcmp("pattern",nme)==0) return 1;
 		  break;
-	case 't': if( idcmp("thread",nme)==0) return 1;
+	case 'T': case 't': if( idcmp("thread",nme)==0) return 1;
 		  if( idcmp("true",nme)==0) return 1;
 		  break;
-	case 'u': if( idcmp("use",nme)==0) return 1;
+	case 'U': case 'u': if( idcmp("use",nme)==0) return 1;
 		  break;
 	}
 	return 0;
@@ -1025,15 +1072,17 @@ void freeVariable(MalBlkPtr mb, int varid){
 	GDKfree(v);
 	getVar(mb,varid) = NULL;
 }
-@- Constants
+@}
+@- MAL constants
 Constants are stored in the symbol table and referenced
 by a variable identifier in the MAL sequence.
 This means that per MAL instruction, we may end up with
 MAXARG entries in the symbol table. This may lead to long
 searches for variables.
-An optimization strategy: look around for
-a similar (constant) definition and reuse the name.
-This also avoids an exploding symbol table with a lot
+An optimization strategy deployed in the current
+implementation is to look around for
+a similar (constant) definition and to reuse its name.
+This avoids an exploding symbol table with a lot
 of temporary variables (as in tst400cHuge)
 
 But then the question becomes how far to search?
@@ -1055,6 +1104,7 @@ analysis work properly.
 The final step is to prepare a GDK value record, from which
 the internal representation can be obtained during
 MAL interpretation.
+@{
 @c
 #define MAL_VAR_WINDOW	2*MAXARG
 
@@ -1081,6 +1131,7 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
 	isConstant(mb,k) = 1;
 	isVarUsed(mb,k) = 0;
 	vr = &getVarConstant(mb,k);
+@}
 @-
 The current GDK layer does not perform a value range check.
 Since constants are dealt with only once, it is performed here
@@ -1089,6 +1140,7 @@ Note that we support automatic coercion to a
 coerced type even in the case that a specific type specifier
 has been given at the language level. A Warning is issued
 to make the user aware of this situation.
+@{
 @c
 	tonil= niltst && strcmp(val,"nil")==0;
 	 /*switch( BATatoms[type].storage){*/
@@ -1396,13 +1448,18 @@ void pushEndInstruction(MalBlkPtr mb){
 	p->retc = 0;
 	pushInstruction(mb,p);
 }
+@}
 @+ Reverse programming
-The internal representation should be such that it becomes
-easy to re-produce the original textual input, possibly annotated with
-system debugging information in additional commentary blocks.
-Furthermore, all typing information should be made explicit,
-because we do not keep track where variables are declared.
+Since MAL programs can be created on the fly by linked-in query
+compilers, or transformed by optimizers, it becomes
+mandatory to be able to produce textual correct MAL programs
+from its internal representation.
 
+No guarantee is given to produce the exact input for a reversed
+MAL program, except that the output can be fed back for 
+interpretation. Provided, the code did not produce an error.
+
+@{
 The hiddenInstruction operator assumes a sufficiently large block
 to leave information on the signature behind.
 @c
@@ -1551,6 +1608,7 @@ str operatorName(InstrPtr p){
 	case EXITsymbol:	return "exit";
 	case RETURNsymbol:	return "return";
 	case CATCHsymbol:	return "catch";
+	case DONEsymbol:	return "done";
 	case RAISEsymbol:	return "raise";
 	case ENDsymbol:		return "end";
 	case ENDDEFsymbol:	return "end";
@@ -1640,6 +1698,8 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 					getVarTmp(mb,getDestVar(p)) );
 			else sprintf(t,"end %s",mb->var[getDestVar(p)]->name);
 			break;
+		case DONEsymbol:
+			sprintf(t,"done %s%s",nme,pstring); break;
 		case ENDsymbol:
 			sprintf(t,"end %s%s",nme,pstring); break;
 		case COMMANDsymbol:

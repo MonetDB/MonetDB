@@ -410,6 +410,7 @@ elements in the value stack.
 	case CMDcall: @:commandcall@ stkpc++; break;
 	case STRMcall:
 	case FCNcall: @:functioncall@ stkpc++; break;
+	case DONEsymbol:
 	case EXITsymbol:
 	case ENDsymbol: @:finishChild@
 	case COMMANDsymbol:

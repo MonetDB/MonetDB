@@ -55,7 +55,7 @@ During parallel execution additional layers may be constructed.
 @{
 The routines defined below provide management of the client
 administration. Routines dealing with serviceing requests
-are located in mal_startup.
+are located in mal\_startup.
 @h
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
@@ -396,6 +396,7 @@ output by closing the input-side.
 
 If the father itself is a temporary client, let 
 the new child depend on the grandfather.
+@{
 @c
 Client forkClient(Client father){
         Client son = NULL;

@@ -29,7 +29,7 @@ comes with a gdb-like text-based debugger.
 The debugger can be entered at any time using the call mdb().
 Also if there is no apparent console from which the debugger can be controlled.
 
-@- The debugger instruction set
+@+ The debugger instruction set
 @T
 {\small
 \begin{tabular} {l l}
@@ -37,8 +37,8 @@ next		& Advance to next statement\\
 continue 	& Continue program being debugged\\
 bbp 		& BBP memory layout\\
 break 		& set breakpoint on current instruction\\
-break $<$var$>$ 	& break on assignment to $<$var$>$\\
-delete $<$var$>$ 	& remove break point $<$var$>$\\
+break {\em var} 	& break on assignment to {\em var}\\
+delete {\em var} 	& remove break point {\em var}\\
 step 		& advance to next MAL instruction\\
 module 	& display the module [scopes] \\
 finish 	& finish current call\\
@@ -46,18 +46,18 @@ quit 		& leave debugger\\
 list 		& list current program block\\
 List 		& list with type information\\
 variables 	& print variable bindings\\
-print $<$var$>$ 	& display value of a variable\\
-print $<$var$>$ $<$cnt$>$[$<$first$>$] & display BAT chunk\\
-info $<$var$>$ 	& display bat variable properties\\
+print {\em var} 	& display value of a variable\\
+print {\em var} {\em c}[{\em f}] & display BAT chunk c:(c+f)\\
+info {\em var} 	& display bat variable properties\\
 run 		& restart current procedure\\
 where 		& print stack trace\\
 down  		& go down the stack\\
 up  		& go up the stack\\
-timer 		& produce micro-second response time\\
+timer 		& micro-second response time\\
 help 		& the help message\\
 \end{tabular}
 }
-@- Breakpoint tables
+@+ Breakpoint tables
 A powerful mechanism for debugging a program is to set breakpoints.
 In MAL the breakpoints are designated by the <module>.<variable> name.
 As soon as the variable recieves a new valued the breakpoint effectuated.

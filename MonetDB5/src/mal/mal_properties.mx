@@ -298,11 +298,15 @@ we contrive a small SQL problem. The person table is sorted by name,
 the car table is unsorted.
 @T
 \begin{verbatim}
-create table person(name varchar not null, address varchar);
-create table car(name varchar, model varchar, milage int not null);
+create table person(name varchar not null, 
+		address varchar);
+create table car(name varchar, 
+		model varchar, 
+		milage int not null);
 select distinct name, model, milage
 from person, car
-where car.name= person.name and milage>60000;
+where car.name= person.name 
+  and milage>60000;
 \end{verbatim}
 @+ Implementation rules
 Properties can be associated with variables, MAL blocks, and MAL instructions.
@@ -341,8 +345,7 @@ once and to cache the result for the remainder of the objects life time.
 The MAL language uses a few defaults, recognizable as properties
 @T
 \begin{tabular}{l l}
-unsafe & property is attached to a function when it has side effects
-such as updates to a BAT. Default, unsafe=off\\
+unsafe & function has side effects.Default, unsafe=off\\
 read & data can be read but not updated\\
 append & data can be appended\\
 \end{tabular}

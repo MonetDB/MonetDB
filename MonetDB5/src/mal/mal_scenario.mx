@@ -27,7 +27,7 @@
 @* Session scenarios
 In MonetDB multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
-Such an assemblage of components is called a scenario.
+Such an assemblage of components is called a {\em scenario}.
 The hooks for scenario execution allow for both linked-in
 and external components.
 The languages "currently" supported are SQL, MIL ( a large 
@@ -39,7 +39,7 @@ The prime task of the language specific reader is to prepare a
 MAL block for subsequent processing. It could be as simple
 as parsing the front-end directly into MAL (and rely on
 its internal optimizers) or a complete compilation and
-optimization system, which uses the Monet 5 as the execution
+optimization system, which uses the Monet 5 as its execution
 back-end. 
 
 The MAL code block read are sent through a strategic

@@ -890,12 +890,14 @@ misalignment of the closing statements.
 Any instruction parsed after the function block is considered an
 error.
 @c
-int parseEnd(Client cntxt)
+int parseEndDone(Client cntxt)
 {	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	int l,showit=0;
+	char ch= *cntxt->nxt;
 
-	if( keyword(cntxt,"end",3)){
+	(void) ch;
+	if( keyword(cntxt,"end",3) || keyword(cntxt,"done",4)){
 		curPrg = cntxt->curprg;
 		curBlk = curPrg->def;	
 		l = idLength(cntxt);
@@ -1382,6 +1384,9 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				kind = BARRIERsymbol; 
 			  }
 			  goto allLeft;
+		case 'D': case 'd':
+			  if( parseEndDone(cntxt)) break;
+			  goto allLeft;
 		case 'C': case 'c': 
 			  if( keyword(cntxt,"command",7) ) {
 				parseCommandPattern(cntxt, COMMANDsymbol);
@@ -1396,7 +1401,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				if(cntxt->blkmode>0) cntxt->blkmode--;
 				kind= EXITsymbol;
 			  } else
-			  if( parseEnd(cntxt)) break;
+			  if( parseEndDone(cntxt)) break;
 			  goto allLeft;
 		case 'F': case 'f': 
 			  if( keyword(cntxt,"function",8) ){

@@ -88,6 +88,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define THRDsymbol	43
 #define COMMENTsymbol	35	/* propagation of comments */
 #define ENDsymbol 	36
+#define DONEsymbol 	37
 #define SCOPEsymbol	41
 #define PUSHsymbol	42	/* move constant to stack */
 #define THREADsymbol     46
