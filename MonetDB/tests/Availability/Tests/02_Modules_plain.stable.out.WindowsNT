@@ -291,9 +291,9 @@ Module: "alarm"
 
 Module: "ascii_io"
 
-[ 19 ]
-[ 19 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 20 ]
+[ 20 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help			  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "ascii_io_debug",	  "COMMAND:   ",  "ascii_io_debug(int) : void",							  ""			  ]
@@ -307,6 +307,7 @@ Module: "ascii_io"
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",							  "not available"	  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",							  "not available"	  ]
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",							  "not available"	  ]
+[ "input",		  "COMMAND:   ",  "input(BAT[void,str], BAT[void,str], BAT[void,str], Stream, int) : BAT[str,BAT]",	  ""			  ]
 [ "load",		  "COMMAND:   ",  "load(BAT[void,str], BAT[void,str], BAT[void,str], str, int) : BAT[str,BAT]",	  ""			  ]
 [ "load_data",		  "PROC:      ",  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",				  "not available"	  ]
 [ "load_format",	  "PROC:      ",  "load_format(str) : BAT[str,BAT]",						  "not available"	  ]

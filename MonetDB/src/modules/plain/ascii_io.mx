@@ -71,6 +71,7 @@ to be dumped bats. These bats can be dumped with dump_data.
 .COMMAND ascii_io_debug( int debug ) = init_ascii_io; ""
 
 .COMMAND load( BAT[void,str] names, BAT[void,str] seps, BAT[void,str] types, str datafile, int nr ) : BAT[str,bat] = ascii_io_load; ""
+.COMMAND input( BAT[void,str] names, BAT[void,str] seps, BAT[void,str] types, Stream s, int nr ) : BAT[str,bat] = ascii_io_input; ""
 .COMMAND dump( BAT[void,str] names, BAT[void,str] seps, BAT[void,bat] bats, str datafile, int nr ) = ascii_io_dump; ""
 .COMMAND output( BAT[any,any] order, BAT[void,str] seps, BAT[void,bat] bats, Stream s ) = ascii_io_output; ""
 
@@ -197,19 +198,9 @@ proc dump_data( BAT[str,BAT] fmt, BAT[str,BAT] bats, str data, int cnt) := {
 #include <streams.h>
 #include <ascii_io.proto.h>
 
-extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr );
-ascii_io_export BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, bstream *s, size_t nr );
-ascii_io_export size_t ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s );
-extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr );
 
-#endif
-@c
-
-#include <gdk.h>
-#include "ascii_io.h"
-
-#include <string.h>
-#include <ctype.h>
+typedef ptr *(*frStr)( void *extra, int type, char *s);
+typedef int (*toStr)( void *extra, char **buf, int *len, int type, ptr a);
 
 typedef struct ascii_io_t {
 	char* name;
@@ -219,13 +210,45 @@ typedef struct ascii_io_t {
 	int   adt;
 	BAT*  c;
 	BUN   p;
+	toStr tostr;
+	frStr frstr;
+	void* extra;
 } ascii_io;
 
 typedef struct ascii_load_t {
+	size_t offset;
 	size_t nr;
 	size_t nr_attrs;
 	ascii_io *format;
 } ascii;
+
+extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr );
+ascii_io_export BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, bstream *s, size_t nr );
+ascii_io_export size_t ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s );
+extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr );
+
+@+ low level interface 
+@h
+ascii_io_export int ASCIIcreate_bats( ascii *as );
+ascii_io_export size_t ASCIIassign_BATs( ascii *as, BAT *bats );
+ascii_io_export int ASCIIload_file( ascii *as, bstream *b );
+ascii_io_export BAT *ASCIIcollect_bats( ascii *as );
+ascii_io_export void ASCIIdestroy_format( ascii *as );
+ascii_io_export void ASCIIoutput_file( ascii *as, BAT *order, stream *s );
+
+@+ Default from and to string functions
+@h
+ascii_io_export ptr *ASCIIadt_frStr( void *extra, int type, char *s);
+ascii_io_export int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a);
+
+#endif
+@c
+
+#include <gdk.h>
+#include "ascii_io.h"
+
+#include <string.h>
+#include <ctype.h>
 
 static int ascii_io_debug = 0;
 
@@ -239,22 +262,6 @@ BAT *void_bat_create(int adt, size_t nr) {
 	BAT *b = BATnew(TYPE_void,adt,nr);
 	BATseqbase(b,0);
 	return b;
-}
-
-static
-ptr *ADT_fromStr( int type, char *s){
-        int l = 0;
-        ptr *res = NULL;
-        if (type == TYPE_str)
-                res = (ptr*)GDKstrdup(s);
-        else
-                (void) (*BATatoms[type].atomFromStr)(s, &l, (ptr)&res);
-        return res;
-}
-
-static
-int ADT_toStr( char **buf, int *len, int type, ptr a){
-        return (*BATatoms[type].atomToStr)(buf, len, a);
 }
 
 static char *sep_dup( char *sep ){
@@ -278,6 +285,36 @@ static char *sep_dup( char *sep ){
 	return result;
 }
 
+ptr *ASCIIadt_frStr( void *extra, int type, char *s){
+        int l = 0;
+        ptr *res = NULL;
+        if (type == TYPE_str)
+                res = (ptr*)GDKstrdup(s);
+        else
+                (void) (*BATatoms[type].atomFromStr)(s, &l, (ptr)&res);
+        return res;
+}
+
+int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
+        if (type == TYPE_str){
+		char *dst;
+		int l = strlen(a);
+		if (l+3 > *len){
+			GDKfree(buf);
+			*len = 2*l+3;
+			*buf = GDKmalloc( *len );
+		}
+		dst = *buf;
+		dst[0] = '"';
+		strncpy(dst+1, a, l);
+		dst[l+1] = '"';
+		dst[l+2] = 0;
+		return l+2;
+	} else {
+        	return (*BATatoms[type].atomToStr)(buf, len, a);
+	}
+}
+
 static
 size_t create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 	size_t p;
@@ -285,6 +322,7 @@ size_t create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 	ascii_io *fmt = as->format =  
 		(ascii_io*)GDKmalloc(sizeof(ascii_io) * (nr_attrs + 1) );
 
+	as->offset = 0;
 	as->nr_attrs = nr_attrs;
 	/* assert(as->nr_attrs == nr_attrs); */ /* i.e. it fits */
 	for (p=0; p<nr_attrs; p++){
@@ -293,6 +331,9 @@ size_t create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 		fmt[p].seplen = (int) strlen( fmt[p].sep );
 		fmt[p].type = (char*)bun_tail(types, p);
 		fmt[p].adt = ATOMindex( fmt[p].type );
+		fmt[p].tostr = &ASCIIadt_toStr;
+		fmt[p].frstr = &ASCIIadt_frStr;
+		fmt[p].extra = NULL;
 		if (ascii_io_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name );
 	}
@@ -306,6 +347,7 @@ size_t create_dumpformat( ascii *as, BAT *names, BAT *seps, BAT *bats ){
 	ascii_io *fmt = as->format =  
 		(ascii_io*)GDKmalloc(sizeof(ascii_io) * (nr_attrs + 1) );
 
+	as->offset = 0;
 	as->nr_attrs = nr_attrs;
 	/* assert(as->nr_attrs == nr_attrs); */ /* i.e. it fits */
 	for (p=0; p<nr_attrs; p++){
@@ -320,12 +362,14 @@ size_t create_dumpformat( ascii *as, BAT *names, BAT *seps, BAT *bats ){
 		fmt[p].seplen = (int) strlen( fmt[p].sep );
 		fmt[p].type = ATOMname(b->ttype);
 		fmt[p].adt = (b)->ttype;
+		fmt[p].tostr = &ASCIIadt_toStr;
+		fmt[p].frstr = &ASCIIadt_frStr;
+		fmt[p].extra = NULL;
 	}
 	return as->nr_attrs;
 }
 
-static
-void destroy_format( ascii *as ){
+void ASCIIdestroy_format( ascii *as ){
 	size_t p;
 	ascii_io *fmt = as->format;
 
@@ -337,8 +381,7 @@ void destroy_format( ascii *as ){
 	GDKfree(fmt);
 }
 
-static
-size_t assign_BATs( ascii *as, BAT *bats ){
+size_t ASCIIassign_BATs( ascii *as, BAT *bats ){
 	ascii_io *fmt = as->format;
 	size_t res = as->nr;
 	size_t i;
@@ -362,17 +405,19 @@ oid check_BATs( ascii *as ){
 	if (!BAThdense(fmt[0].c)) return oid_nil;
 
 	for (i=0; i<as->nr_attrs; i++){
-		if (BATcount(fmt[i].c) != cnt ||
-		    fmt[i].c->hseqbase != base)
+		BAT *b = fmt[i].c;
+		int offset = BUNindex(b, BUNfirst(b)) + as->offset;
+
+		if (BATcount(b) != cnt ||
+		    b->hseqbase != base)
 			return oid_nil;
 
-		fmt[i].p = BUNfirst(fmt[i].c);
+		fmt[i].p = BUNptr(b, offset);
 	}
 	return base;
 }
 
-static
-int create_bats( ascii *as ){
+int ASCIIcreate_bats( ascii *as ){
 	ascii_io *fmt = as->format;
 	size_t i;
 
@@ -382,8 +427,7 @@ int create_bats( ascii *as ){
 	return 0;
 }
 
-static
-BAT *collect_bats( ascii *as ){
+BAT *ASCIIcollect_bats( ascii *as ){
 	BAT *bats = BATnew(TYPE_str,TYPE_bat,as->nr_attrs);
 	ascii_io *fmt = as->format;
 	size_t i;
@@ -422,21 +466,19 @@ char *strip( char *s, char *e ){
 
 static INLINE
 int insert_val( ascii_io *fmt, char *s, char *e ){
-	int res = 0;
-	size_t c1, c = BATcount(fmt->c);
 	ptr *adt;
 	oid on = oid_nil;	/* can't use &oid_nil because of the
 				   way it's defined */
-	adt = ADT_fromStr( fmt->adt, strip(s,e) );
+	adt = fmt->frstr( fmt->extra, fmt->adt, strip(s,e) );
 	
-	BUNins(fmt->c,&on,adt);
-	c1 = BATcount(fmt->c);
-	if (c1 != c+1){
-		res = 1;
+	if (!adt){
 		GDKerror("%ld not inserted %s\n", (long)adt, s);
+		return 1;
 	}
+
+	BUNins(fmt->c,&on,adt);
 	GDKfree(adt);
-	return res;
+	return 0;
 }
 
 static char *find_quote(char *str, char quote ){
@@ -562,10 +604,11 @@ static INLINE
 int dump_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, size_t id ){
 	size_t i;
 	for( i = 0; i<nr_attrs; i++){
-		int l =
-		 ADT_toStr(buf, len, fmt[i].adt, (char*)bun_tail(fmt[i].c,id));
+		ascii_io *f = fmt+i;
+		char *p = (char*)bun_tail(f->c,id);
+		int l = f->tostr( f->extra, buf, len, f->adt, p);
 		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
+		(void)fd->write( fd, f->sep, 1, f->seplen );
 	}
 	return 0;
 }
@@ -580,22 +623,11 @@ int output_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attr
 	}
 	if ( i == nr_attrs ){
 	    for( i = 0; i<nr_attrs; i++){
-		if (fmt[i].adt == TYPE_str){
-			char *s = (char*)BUNtail(fmt[i].c, fmt[i].p);
-			(void)fd->write( fd, "\"", 1, 1 );
-			if (GDK_STRNIL(s))
-				(void)fd->write( fd, "nil", 1, 3 );
-			else {
-				size_t l = strlen(s);
-				(void)fd->write( fd, s, 1, l );
-			}
-			(void)fd->write( fd, "\"", 1, 1 );
-		} else {
-			int l = ADT_toStr(buf, len, fmt[i].adt, 
-			(char*)BUNtail(fmt[i].c,fmt[i].p));
-			(void)fd->write( fd, *buf, 1, l );
-		}
-		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
+		ascii_io *f = fmt+i;
+		char *p = BUNtail(f->c, f->p);
+		int l = f->tostr(f->extra, buf, len, f->adt, p);
+		(void)fd->write( fd, *buf, 1, l );
+		(void)fd->write( fd, f->sep, 1, f->seplen );
 	    }
 	}
 	return 0;
@@ -605,22 +637,12 @@ static INLINE
 int output_line_dense( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs ){
 	size_t i;
 	for( i = 0; i<nr_attrs; i++){
-		char *p = BUNtail(fmt[i].c, fmt[i].p);
-		if (fmt[i].adt == TYPE_str){
-			(void)fd->write( fd, "\"", 1, 1 );
-			if (GDK_STRNIL(p))
-				(void)fd->write( fd, "nil", 1, 3 );
-			else {
-				size_t l = strlen(p);
-				(void)fd->write( fd, p, 1, l );
-			}
-			(void)fd->write( fd, "\"", 1, 1 );
-		} else {
-			int l = ADT_toStr(buf, len, fmt[i].adt, p);
-			(void)fd->write( fd, *buf, 1, l );
-		}
-		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
-		fmt[i].p = BUNnext( fmt[i].c, fmt[i].p );
+		ascii_io *f = fmt+i;
+		char *p = BUNtail(f->c, f->p);
+		int l = f->tostr(f->extra, buf, len, f->adt, p);
+		(void)fd->write( fd, *buf, 1, l );
+		(void)fd->write( fd, f->sep, 1, f->seplen );
+		f->p = BUNnext( f->c, f->p );
 	}
 	return 0;
 }
@@ -629,36 +651,24 @@ static INLINE
 int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, size_t id ){
 	size_t i;
 	for( i = 0; i<nr_attrs; i++){
-		char *p = BUNtail(fmt[i].c, BUNptr(fmt[i].c,id+BUNindex(fmt[i].c,BUNfirst(fmt[i].c))));
-		if (fmt[i].adt == TYPE_str){
-			char *s = (char*)p;
-			(void)fd->write( fd, "\"", 1, 1 );
-			if (GDK_STRNIL(s))
-				(void)fd->write( fd, "nil", 1, 3 );
-			else {
-				size_t l = strlen(s);
-				(void)fd->write( fd, s, 1, l );
-			}
-			(void)fd->write( fd, "\"", 1, 1 );
-		} else {
-			int l = ADT_toStr(buf, len, fmt[i].adt, p);
-			(void)fd->write( fd, *buf, 1, l );
-		}
-		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
+		ascii_io *f = fmt+i;
+		char *p = BUNtail(f->c, BUNptr(f->c,id+BUNindex(f->c,BUNfirst(f->c))));
+		int l = f->tostr(f->extra, buf, len, f->adt, p);
+		(void)fd->write( fd, *buf, 1, l );
+		(void)fd->write( fd, f->sep, 1, f->seplen );
 	}
 	return 0;
 }
 
 
-static
-int load_file( ascii *as, bstream *b ){
+int ASCIIload_file( ascii *as, bstream *b ){
 	int res = 0, eof = 0, done = 0;
 	size_t i = 0;
 	char *sep = as->format[as->nr_attrs-1].sep;
         int seplen = as->format[as->nr_attrs-1].seplen;
 
 	if (ascii_io_debug)
-		stream_printf( GDKerr, "load_file\n");
+		stream_printf( GDKerr, "ASCIIload_file\n");
 
 	while(!eof && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
 		char *s, *end;
@@ -712,7 +722,9 @@ int load_file( ascii *as, bstream *b ){
 		}
 	}
 	as->nr = i;
-	return res;
+	if (res < 0)
+		return res;
+	return as->nr;
 }
 
 static
@@ -733,14 +745,16 @@ int dump_file( ascii *as, stream *fd ){
 }
 
 static
-void output_file( ascii *as, BAT *order, stream *fd ){
+void output_file_default( ascii *as, BAT *order, stream *fd ){
 	int len = BUFSIZ; 
 	char *buf = GDKmalloc(len);
 	BUN p,q;
         size_t i = 0;
-	as->nr = BATcount(order);
-	
-	BATloop( order, p, q){
+	size_t offset = BUNindex(order, BUNfirst(order)) + as->offset;
+
+	for(q = BUNptr(order, offset+as->nr), p = BUNptr(order, offset);
+			p < q; p = BUNnext(order, p))
+	{
 		ptr h = BUNhead(order, p);
 		if(output_line( &buf, &len,as->format, fd, as->nr_attrs, h )<0){
 			GDKfree(buf);
@@ -776,8 +790,11 @@ void output_file_ordered( ascii *as, BAT *order, stream *fd, oid base ){
 	char *buf = GDKmalloc(len);
 	BUN p,q;
         size_t i = 0;
-	
-	BATloop( order, p, q){
+	size_t offset = BUNindex(order, BUNfirst(order)) + as->offset;
+
+	for(q = BUNptr(order, offset+as->nr), p = BUNptr(order, offset);
+			p < q; p = BUNnext(order, p))
+	{
 		size_t h = *(oid*)BUNhead(order, p) - base;
 		if(output_line_lookup( &buf, &len, as->format, fd, as->nr_attrs, h )<0){
 			GDKfree(buf);
@@ -813,11 +830,11 @@ BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, bstream *s, size_t nr ){
 	as.nr_attrs = 0;
 	as.nr = nr;
 	if (create_loadformat( &as, names, seps, types) != ~(size_t)0 && 
-	    create_bats( &as ) >= 0){
-		if (load_file( &as, s )>=0)
-			bats = collect_bats( &as );
+	    ASCIIcreate_bats( &as ) >= 0){
+		if (ASCIIload_file( &as, s )>=0)
+			bats = ASCIIcollect_bats( &as );
 	}
-	destroy_format( &as );
+	ASCIIdestroy_format( &as );
 	return bats;
 }
 
@@ -827,7 +844,7 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr ){
 	as.nr_attrs = 0;
 	as.nr = nr;
 	if (create_dumpformat( &as, names, seps, bats) != ~(size_t)0 && 
-	    assign_BATs( &as, bats ) != ~(size_t)0){
+	    ASCIIassign_BATs( &as, bats ) != ~(size_t)0){
 		stream *s = open_wastream( datafile );
 		if (!s->errnr && dump_file( &as, s ) >= 0){
 			stream_printf(GDKerr, "saved in %s\n", datafile );
@@ -839,27 +856,32 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr ){
 		}
 		s->destroy(s);
 	}
-	destroy_format( &as );
+	ASCIIdestroy_format( &as );
 }
+
+void ASCIIoutput_file( ascii *as, BAT *order, stream *s ){
+	oid base = oid_nil;
+	if ((base = check_BATs( as )) != oid_nil ){
+		if (BAThdense(order) && 
+ 		    order->hseqbase == base && BATcount(order) == as->nr)
+			output_file_dense( as, s );
+		else
+			output_file_ordered( as, order, s, base );
+	} else {
+		output_file_default( as, order, s ); 
+	}
+}
+
 size_t ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s ){
 	ascii as;
-	oid base = oid_nil;
 
 	as.nr_attrs = 0;
 	as.nr = ~(size_t)0;
 	if (create_dumpformat( &as, NULL, seps, bats) != ~(size_t)0 && 
-	    assign_BATs( &as, bats ) != ~(size_t)0){
-		if ((base = check_BATs( &as )) != oid_nil ){
-			if (BAThdense(order) && 
- 			    order->hseqbase == base && BATcount(order) == as.nr)
-				output_file_dense( &as, s );
-			else
-				output_file_ordered( &as, order, s, base );
-		} else {
-			output_file( &as, order, s ); 
-		}
+	    ASCIIassign_BATs( &as, bats ) != ~(size_t)0){
+		ASCIIoutput_file(&as, order, s);
 	}
-	destroy_format( &as );
+	ASCIIdestroy_format( &as );
 	return as.nr;
 }
 
@@ -869,6 +891,17 @@ int init_ascii_io(int *debug){
 }
 int ascii_io_load( BAT **bats, BAT *names, BAT* seps, BAT* types, str datafile, int *nr){
 	*bats = ASCIIload( names, seps, types, datafile, *nr );
+	if (*bats) {
+		return GDK_SUCCEED;
+	} else {
+		return GDK_FAIL;
+	}
+}
+int ascii_io_input( BAT **bats, BAT *names, BAT* seps, BAT* types, Stream * s, int *nr){
+	bstream *b = NULL;
+
+	*bats = ASCIIinput( names, seps, types, b=bstream_create(*(stream**)s, SIZE), *nr );
+	bstream_destroy(b);
 	if (*bats) {
 		return GDK_SUCCEED;
 	} else {

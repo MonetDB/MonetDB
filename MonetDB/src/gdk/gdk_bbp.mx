@@ -624,6 +624,7 @@ int BBPdir(void) {
 	  }
 
 	s->close(s);
+	s->destroy(s);
 	IODEBUG THRprintf(GDKerr, "BBPdir end\n");
 	return 0;
 error:	GDKsyserror("BBPdir failed:\n"); 
