@@ -2281,6 +2281,7 @@ CMDxquery(char *mode, char* xquery) {
     char *prologue = NULL, *query = NULL, *epilogue = NULL, *err = NULL;
     int len = 0, ret = GDK_FAIL;
      
+    (void)xquery;
     MT_set_lock(pathfinder_lock, "CMDxquery");
 #ifdef HAVE_GC
     /* only if MonetDB is also compiled with gc (HAVE_GC) we allow server-side xquery */
