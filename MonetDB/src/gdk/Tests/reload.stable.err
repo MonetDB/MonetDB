@@ -1,0 +1,4 @@
+stderr of test 'reload` in directory 'monet/src/gdk` itself:
+
+#> Mtest (17:01:32):	milM reload milM
+#> Mtest (17:01:32):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db monet_src_gdk reload.milM

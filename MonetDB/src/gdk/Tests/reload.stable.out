@@ -1,0 +1,89 @@
+stdout of test 'reload` in directory 'monet/src/gdk` itself:
+
+#> Mtest (17:01:32):	milM reload milM
+#> Mtest (17:01:32):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db monet_src_gdk reload.milM
+# Monet Database Server V4.2
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+#script:reload.milM
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+module(url);
+
+{
+VAR MMO_location := new(oid,url);
+MMO_location.rename("MMO_location");
+MMO_location.persists(true);
+
+MMO_location.insert(oid(0),url("http://www.metacrawler.com/"));
+MMO_location.insert(oid(1),url("http://www.yahoo.com/"));
+MMO_location.insert(oid(2),url("http://www.altavista.com/"));
+MMO_location.insert(oid(3),url("http://www.searchengineshowdown.com/"));
+
+MMO_location.print;
+}
+#-------------------------------------------------#
+# BAT:	  MMO_location				  #
+# (oid)	  (url)					  #
+#-------------------------------------------------#
+[ 0@0,	  http://www.metacrawler.com/		  ]
+[ 1@0,	  http://www.yahoo.com/			  ]
+[ 2@0,	  http://www.altavista.com/		  ]
+[ 3@0,	  http://www.searchengineshowdown.com/	  ]
+
+commit;
+
+{
+MMO_location.delete(oid(0));
+MMO_location.delete(oid(2));
+
+MMO_location.insert(oid(0),url("http://www.metacrawler.com/"));
+MMO_location.insert(oid(2),url("http://www.altavista.com/"));
+
+MMO_location.print;
+}
+#-------------------------------------------------#
+# BAT:	  MMO_location				  #
+# (oid)	  (url)					  #
+#-------------------------------------------------#
+[ 1@0,	  http://www.yahoo.com/			  ]
+[ 3@0,	  http://www.searchengineshowdown.com/	  ]
+[ 0@0,	  http://www.metacrawler.com/		  ]
+[ 2@0,	  http://www.altavista.com/		  ]
+
+commit;
+
+{
+unload("MMO_location").print;
+
+MMO_location.insert(oid(4),url("http://www.ibiblio.org/javafaq/"));
+
+MMO_location.print;
+}
+[ true ]
+#-------------------------------------------------#
+# BAT:	  MMO_location				  #
+# (oid)	  (url)					  #
+#-------------------------------------------------#
+[ 1@0,	  http://www.yahoo.com/			  ]
+[ 3@0,	  http://www.searchengineshowdown.com/	  ]
+[ 0@0,	  http://www.metacrawler.com/		  ]
+[ 2@0,	  http://www.altavista.com/		  ]
+[ 4@0,	  http://www.ibiblio.org/javafaq/	  ]
