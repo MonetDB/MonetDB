@@ -441,8 +441,8 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 				dn->data.sym, grp, subset, f);
 			e2 = sql_value_exp(sql, scp,
 				dn->next->data.sym, grp, subset, f);
-			if (e1 && subset->nrcols && e1->nrcols == 0) 
-				e1 =stmt_const(first_subset(subset),e1);
+			if (e1 && subset && subset->nrcols && e1->nrcols == 0) 
+				e1 = stmt_const(first_subset(subset),e1);
 			if (e1 && e2) {
 				cond = sql_compare(sql, stmt_dup(e1), e2,
 					"=", sql_search);
@@ -1738,7 +1738,6 @@ static stmt *
 sql_and(mvc * sql, scope *scp, stmt * ls, stmt * rs, int f)
 {
 	stmt *res = NULL;
-	(void) sql; /* Stefan: unused!? */
 
 	if (!ls || !rs)
 		return NULL;
@@ -1752,6 +1751,9 @@ sql_and(mvc * sql, scope *scp, stmt * ls, stmt * rs, int f)
 		filter(scp->ptable, rs);
 		return ls;
 	}
+
+	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0)) 
+		return sql_binop_(sql, NULL, "and", ls, rs);
 
 	if (f >= sql_search) 
 		return stmt_semijoin(ls, rs);
@@ -1912,10 +1914,12 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 						 tail_type(rs2)->type->sqlname);
 				}
 				tmp = stmt_binop(rs1, rs2, min);
-				rs2 = stmt_binop(rs1, rs2, max);
+				rs2 = stmt_binop(stmt_dup(rs1), 
+						 stmt_dup(rs2), max);
 				rs1 = tmp;
 			}
-			if ( rs1->nrcols > 0 || rs2->nrcols > 0 ) {
+			if ( rs1->nrcols > 0 || rs2->nrcols > 0 || 
+			     f == sql_sel ) {
 				stmt *j1, *j2;
 
 				if (sc->token == SQL_NOT_BETWEEN) {
@@ -1935,7 +1939,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 			res = stmt_uselect2(ls, rs1, rs2, 3 
 					/* aka rs1 <= ls <= rs2*/);
 			if (sc->token == SQL_NOT_BETWEEN)
-				res = stmt_diff(ls, res);
+				res = stmt_diff(stmt_dup(ls), res);
 			return res;
 		}
 	case SQL_LIKE:
@@ -2438,7 +2442,7 @@ static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * se
 		if (s->type != st_set && s->type != st_sets) {
 			s = stmt_set(s);
 		}
-		subset = s; /*stmt2pivot(scp, s);*/
+		subset = s; 
 	}	
  	rl = create_stmt_list();
 	while (n) {
@@ -2677,10 +2681,8 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 					list_destroy(rl);
 					sql_select_cleanup(sql, s, subset, grp);
 					return sql_error( sql, 02, "single value in column expression");
-				/*} else if (!cs->aggr && nrcols) { */
-
 				/* properly handle select '' from x */
-				} else if (!cs->aggr && !aggr) { 
+				} else if (!cs->aggr && !aggr) {
 					stmt *ss = first_subset(subset);
 					cs = stmt_const(ss,stmt_dup(cs));
 					list_append(rl, cs);

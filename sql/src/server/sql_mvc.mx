@@ -2185,9 +2185,10 @@ void mvc_exit()
 		return ;
 
 	MT_set_lock(mvc_lock, "mvc_commit");
-	logger = NULL;
+	/* busy wait till the logmanager is ready with the cleanup */
 	while (cleanup) 
 		MT_sleep_ms(100); 
+	logger = NULL;
 	logger_exit(l); 
 	logger_destroy(l); 
 
@@ -2202,16 +2203,16 @@ mvc_logmanager()
 {
  	int res = SQL_OK;
 
-	MT_set_lock(mvc_lock, "mvc_commit");
-	if (!logger || log_changes(logger) == 1000) {
+	MT_set_lock(mvc_lock, "mvc_logmanager");
+	if (!logger || log_changes(logger) < 1000) {
 		MT_unset_lock(mvc_lock, "mvc_commit");
 		return;
 	}
 
 	res = logger_restart(logger);
 	cleanup = 1;
-	MT_unset_lock(mvc_lock, "mvc_commit");
-	if (res == SQL_OK)
+	MT_unset_lock(mvc_lock, "mvc_logmanager");
+	if (cleanup && res == SQL_OK)
 		logger_cleanup(logger);
 	cleanup = 0;
 }
@@ -2631,7 +2632,6 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 
                 	oc->base.rtime = cc->base.rtime;
                 	oc->base.wtime = cc->base.wtime;
-
 
 			cur = ins;
 			if (cc->bat.ibid) {

@@ -57,12 +57,19 @@ sql_export void atom_dump(atom *a, stream *s);
 
 static int atom_debug = 0;
 
+atom *atom_create()
+{
+	atom *a = NEW(atom);
+	memset(&a->data, 0, sizeof(a->data));
+	return a;
+}
+
 atom *atom_int(sql_subtype * tpe, lng val)
 {
 	if (tpe->type->localtype == TYPE_dbl || tpe->type->localtype == TYPE_flt){
 		return atom_float( tpe, (double)val);
 	} else {
-		atom *a = NEW(atom);
+		atom *a = atom_create();
 		a->isnull = 0;
 		a->tpe = tpe;
 		a->data.vtype = tpe->type->localtype;
@@ -90,7 +97,7 @@ atom *atom_int(sql_subtype * tpe, lng val)
 
 atom *atom_string(sql_subtype * tpe, char *val)
 {
-	atom *a = NEW(atom);
+	atom *a = atom_create();
 	a->isnull = 1;
 	a->tpe = tpe;
 	a->data.val.sval = NULL;
@@ -109,7 +116,7 @@ atom *atom_string(sql_subtype * tpe, char *val)
 
 atom *atom_float(sql_subtype * tpe, double val)
 {
-	atom *a = NEW(atom);
+	atom *a = atom_create();
 	a->isnull = 0;
 	a->tpe = tpe;
 	a->data.val.dval = val;
@@ -130,7 +137,7 @@ atom *atom_general(sql_subtype * tpe, char *val)
 
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(tpe, val);
-	a = NEW(atom);
+	a = atom_create();
 	a->isnull = 1;
 	a->tpe = tpe;
 	a->data.val.pval = NULL; 
@@ -215,7 +222,7 @@ sql_subtype *atom_type(atom * a)
 
 atom *atom_dup(atom * a)
 {
-	atom *r = NEW(atom);
+	atom *r = atom_create();
 	*r = *a;
 	r->tpe = sql_dup_subtype(a->tpe);
 	if (!a->isnull)
