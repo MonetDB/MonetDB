@@ -972,7 +972,6 @@ void sqltypeinit()
 	*t++ = sql_create_type("SMALLINT", 5, SCALE_FIX, 10, 0,		  "sht");
 	INT = *t++ = sql_create_type("INT", 10, SCALE_FIX, 10, 0,     "int");
 	LNG = *t++ = sql_create_type("BIGINT", 19, SCALE_FIX, 10, 0,  "lng");
-	sql_create_alias(INT->sqlname, "INTEGER");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
