@@ -1,16 +1,12 @@
 
 
 #include "mem.h"
-#include "sqlexecute.h"
 #include <comm.h>
 #include <sys/stat.h>
-#include <catalog.h>
 
 #include <getopt.h>
 
 stream *ws = NULL, *rs = NULL;
-
-extern catalog *catalog_create_stream( stream *s, context *lc );
 
 void usage( char *prog ){
 	fprintf(stderr, "sql_client\n");
@@ -42,35 +38,30 @@ static char *readblock( stream *s ){
 	return buf;
 }
 
-void execute( context *lc, stream *rs, char *cmd ){
-	statement *res =  sqlexecute( lc, cmd );
+void execute( stream *ws, stream *rs, char *cmd ){
+	int nRows = 0;
+	char *buf, *n;
 
-	if (res){
-	    int nr = 1;
-	    statement_dump( res, &nr, lc );
+	ws->write( ws, cmd, strlen(cmd), 1 );
+	ws->flush( ws );
 
-	    lc->out->flush( lc->out );
-	}
-	if (res && res->type == st_output){
-		int nRows = 0;
-		char *buf = readblock( rs ), *n = buf;
+	buf = readblock( rs ); 
+	n = buf;
 		
-		nRows = strtol(n,&n,10);
-		n++;
+	nRows = strtol(n,&n,10);
+	n++;
 
-		printf("%s", n);
-		if (nRows > 1)
-			printf("%d Rows affected\n", nRows );
-		else if (nRows == 1)
-			printf("1 Row affected\n" );
-		else 
-			printf("no Rows affected\n" );
-		_DELETE(buf);
-	}
-	if (res) statement_destroy(res);
+	printf("%s", n);
+	if (nRows > 1)
+		printf("%d Rows affected\n", nRows );
+	else if (nRows == 1)
+		printf("1 Row affected\n" );
+	else 
+		printf("no Rows affected\n" );
+	_DELETE(buf);
 }
 
-void clientAccept( context *lc, stream *rs ){
+void clientAccept( stream *ws, stream *rs ){
 	int	is_chrsp	= 0;
 	char *prompt = "> ";
 	char *line = NULL;
@@ -103,7 +94,7 @@ void clientAccept( context *lc, stream *rs ){
 			printf("quiting\n");
 			exit(1);
 		}
-		execute(lc, rs, line);
+		execute(ws, rs, line);
 	}
 }
 
@@ -126,12 +117,12 @@ main()s just before the final return.
 int
 main(int ac, char **av)
 {
+	char buf[BUFSIZ];
 	char *schema = NULL;
 	char *user = NULL;
 	char *prog = *av, *host = "localhost";
 	int debug = 0, fd = 0, port = 45123;
-	int opt = SQL_FAST_INSERT;
-	context lc;
+	int opt = 1;
 
 	static struct option long_options[] =
              {
@@ -205,18 +196,21 @@ main(int ac, char **av)
 		fprintf(stderr, "sockets not opened correctly\n");
 		exit(1);
 	}
-	sql_init_context( &lc, ws, debug, default_catalog_create() );
-	lc.optimize = opt;
-	catalog_create_stream( rs, &lc );
 	if (!schema) schema = _strdup("default-schema");
 	if (!user) user = _strdup("default-user");
-	lc.cat->cc_getschema( lc.cat, schema, user );
-	clientAccept( &lc, rs );
+	snprintf(buf, BUFSIZ, "module_sql(\"%s\",\"%s\", %d, %d);\n", 
+			schema, user, debug, opt );
+	ws->write( ws, buf, strlen(buf), 1 );
+	ws->flush( ws );
+	clientAccept( ws, rs );
 	if (rs){
 	       	rs->close(rs);
 	       	rs->destroy(rs);
 	}
-	sql_exit_context( &lc );
+	if (ws){
+	       	ws->close(ws);
+	       	ws->destroy(ws);
+	}
 	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux ... */
 	return 0;
 } /* main */

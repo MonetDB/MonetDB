@@ -1,4 +1,5 @@
 module(sqlserver);
+module(sql);
 module(ascii_io);
 module(str);
 module(alarm);
@@ -129,6 +130,22 @@ proc ascii_export_schema(Output, schema):= {
 	stream_flush(Output);
 }
 
+proc SQLclient_module( Output, Input, myc, cmd ) := {
+	# TODO get schema/user/debug/opt from skipped cmd
+	var c := create_context( 0, 1, Output);
+
+	cmd := stream_read( Input );
+	while(cmd != ""){
+		sql(c, cmd );
+		stream_write( Output, "0\n" );
+		stream_flush( Output );
+		cmd := stream_read( Input );
+	}
+	destroy_context( c );
+	#stream_close( Output );
+	stream_close( Input );
+}
+
 proc SQLclient_thread( int sock ):= {
 
 	var Output := block_stream(
@@ -139,6 +156,9 @@ proc SQLclient_thread( int sock ):= {
 	var myc := mvc_create(0);
 
 	var cmd := stream_read( Input );
+	if (cmd.startsWith("module")){
+		return SQLclient_module( Output, Input, myc, cmd );
+	}
 
 	while(cmd != ""){
 		if (cmd.startsWith("0")){

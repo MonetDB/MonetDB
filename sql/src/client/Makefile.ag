@@ -11,7 +11,7 @@ INCLUDES = \
 	$(GETOPT_INCS)
 
 lib__sql = {
-	SOURCES = sql.m sql_module.c catalog_module.c statement_dump.c
+	SOURCES = sql.m sql_module.c catalog_module.c statement_exec.c
 	LIBS = ../common/libsql \
 		-L$(MONET_PREFIX)/lib/Monet 
 }
@@ -21,5 +21,11 @@ bin_sql_client = {
 		  comm.c comm.h gdk.c 
 	LIBS = ../common/libsql \
 		-L$(MONET_PREFIX)/lib/Monet -lstream \
+			$(READLINE_LIBS) $(GETOPT_LIBS)
+}
+
+bin_Msql = {
+	SOURCES = Msql.c comm.c comm.h gdk.c 
+	LIBS = -L$(MONET_PREFIX)/lib/Monet -lstream \
 			$(READLINE_LIBS) $(GETOPT_LIBS)
 }

@@ -24,7 +24,7 @@ static char *readblock( stream *s ){
 	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
 		size += CHUNK;
 		buf = RENEW_ARRAY(char, buf, size); 
-		start+= CHUNK;
+		start = buf + size - CHUNK - 1;
 		*start = '\0';
 	}
 	start += len;
