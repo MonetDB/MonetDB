@@ -198,13 +198,8 @@ void GDKenvironment(str db, str monetrc)
 		sprintf(GDKdirStr,"%s%c%s",GDKdbfarmStr,DIR_SEP,GDKdbnameStr);
 	} else	strcpy(GDKdirStr,GDKdbnameStr);
 	/* handle monetrc */
-	if( GDKmonetrcStr[0]==DIR_SEP) return; /* absolute path */
-#ifdef NATIVE_WIN32
-	/* an absolute path on NATIVE_WIN32 might also start with a drive letter... */
-	if( isalpha((int)GDKmonetrcStr[0]) && \
-	    GDKmonetrcStr[1]==':' && \
-	    GDKmonetrcStr[2]==DIR_SEP) return;
-#endif
+
+	if( MT_path_absolute(GDKmonetrcStr)) return; /* absolute path */
 	/* make relative path absolute */
         if (getcwd(pwd, PATHLENGTH-1)  == NULL ){
                 perror("pwd");
