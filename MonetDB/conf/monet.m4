@@ -555,24 +555,61 @@ AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
 AC_ARG_WITH(python,
 	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	PYTHON="$withval",
-	PYTHON=python)
-if test "x$PYTHON" != xno; then
-  case "$PYTHON" in
-  yes|auto)
-    PYTHON=python;;
-  esac
+	python="$withval",
+	python=auto)
+case "$python" in
+yes|auto)
+  PYTHON=python;;
+no)
+  ;;
+*)
+  PYTHON="$python"
+  python=yes
+  ;;
+esac
+if test "x$python" != xno; then
   case `"$PYTHON" -c 'import sys; print sys.version[[:3]]'` in
   2.*) ;;
-  *) PYTHON=no;;
+  '')
+     case "$python" in
+     auto) ;;
+     *) AC_MSG_ERROR([$PYTHON not found])
+	;;
+     esac
+     python=no;;
+  *) case "$python" in
+     auto) ;;
+     *) AC_MSG_ERROR([Your Python version is too old, at least 2.X required])
+	;;
+     esac
+     python=no;;
   esac
 fi
-if test "x$PYTHON" != xno; then
+if test "x$python" != xno; then
   PYTHONINC=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()'`
-  AC_SUBST(PYTHONINC)
+  if test ! "$PYTHONINC"; then
+    case "$python" in
+    auto)
+      ;;
+    *)
+      AC_MSG_ERROR([No Python include directory found.  Is Python installed properly?])
+      ;;
+    esac
+    python=no
+  elif test ! -f "$PYTHONINC/Python.h"; then
+    case "$python" in
+    auto)
+      ;;
+    *)
+      AC_MSG_ERROR([No Python.h include file found.  Is Python installed properly?])
+      ;;
+    esac
+    python=no
+  fi
 fi
+AC_SUBST(PYTHONINC)
 AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$PYTHON" != xno)
+AM_CONDITIONAL(HAVE_PYTHON, test x"$python" != xno)
 
 AC_ARG_WITH(swig,
 	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
