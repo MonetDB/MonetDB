@@ -176,8 +176,6 @@ dir;
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]

@@ -67,8 +67,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -78,8 +76,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -98,8 +96,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -109,8 +105,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -130,8 +126,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -141,8 +135,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -163,8 +157,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -174,8 +166,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -197,8 +189,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -208,8 +198,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -232,8 +222,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -243,8 +231,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -268,8 +256,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -279,8 +265,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -305,8 +291,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -316,8 +300,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -343,8 +327,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -354,8 +336,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
@@ -382,8 +364,6 @@ while(i < 10) {
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -393,8 +373,8 @@ while(i < 10) {
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "COPY" ]
 
 proc countall {
@@ -432,8 +412,6 @@ dir;
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  496,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  496,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -443,8 +421,8 @@ dir;
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 
 countall(b1,b2,b3,b4);
 [ 1000000 ]
@@ -479,8 +457,6 @@ dir;
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  496,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  496,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -490,7 +466,7 @@ dir;
 [ "monet_mod_load",	  "oid",  "str",  3,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
 
 quit;

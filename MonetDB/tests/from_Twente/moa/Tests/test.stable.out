@@ -2672,13 +2672,13 @@ _MMnilcast_9 := _MMreverse_8.reverse.mark(0@0).reverse;
 _MMnilcast_10 := _MMjoin_4.reverse.mark(0@0).reverse;
 _MMjoin_11 := join(_MMnilcast_10,_MMoper_2);
 _MMnilcast_9.print;
-#-------------------------#
-# BAT:	  tmp_100	  #
-# (void)  (oid)		  #
-#-------------------------#
-[ 0@0,	  0@0		  ]
-[ 1@0,	  1@0		  ]
-[ 2@0,	  2@0		  ]
+#-----------------#
+# BAT:	  tmp_98  #
+# (void)  (oid)	  #
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
 _MMjoin_7.find(0@0).print;
 [ 20 ]
 _MMjoin_11.find(0@0).print;

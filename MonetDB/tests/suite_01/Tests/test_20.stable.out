@@ -56,7 +56,7 @@ printf("#~BeginVariableOutput~#\n"); c; printf("#~EndVariableOutput~#\n");
 [ "elapsed",	  0	  ]
 [ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  60	  ]
+[ "system",	  150	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 
@@ -69,12 +69,12 @@ echo(12,13);
 [ 12 ]
 echo;
 !ERROR: yysubstitute: illegal argument '$1'.
-!ERROR: interpret: unresolved reference.
+!ERROR: interpret: unresolved reference 5.
 !ERROR: print(param 1): evaluation error.
 proc echo:= $3.print;
 echo(1);
 !ERROR: yysubstitute: illegal argument '$3'.
-!ERROR: interpret: unresolved reference.
+!ERROR: interpret: unresolved reference 5.
 !ERROR: print(param 1): evaluation error.
 echo(1,2,3);
 [ 3 ]

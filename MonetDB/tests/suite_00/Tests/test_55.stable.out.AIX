@@ -62,9 +62,9 @@ h.print;
 # BAT:	  tmp_25	  #
 # (int)	  (BAT)		  #
 #-------------------------#
-[ 0,	  <tmp_27>	  ]
-[ 1,	  <tmp_28>	  ]
-[ 2,	  <tmp_29>	  ]
+[ 0,	  <tmp_25>	  ]
+[ 1,	  <tmp_26>	  ]
+[ 2,	  <tmp_27>	  ]
 h.find(0).rename("dummy");
 dir;
 #-------------------------------------------------------------------------------------------------#
@@ -84,8 +84,6 @@ dir;
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcntbl",	  "str",  "oid",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_mem",	  "lng",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_histo_vm",	  "lng",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -95,17 +93,17 @@ dir;
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_28",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 2	  ]
-[ "tmp_29",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 2	  ]
+[ "tmp_23",		  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_24",		  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_26",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 2	  ]
+[ "tmp_27",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 2	  ]
 vars;
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_25>"		  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]

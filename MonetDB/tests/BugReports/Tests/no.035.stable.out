@@ -49,8 +49,6 @@ Try: modules;                - for other modules.
 
 b:= view_bbp_name;
 b@batloop(){ printf("%s\n",$t);}
-monet_histo_mem
-monet_histo_vm
 monet_fcn_fcn
 monet_fcn_imp
 monet_fcn_tpe
