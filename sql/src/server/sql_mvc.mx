@@ -1222,7 +1222,7 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	bat_destroy(cols);
 
 	/* load idx's first as the may be needed by the keys */
-	idxs = BATselect(key_table, (ptr) & t->base.id, (ptr) & t->base.id);
+	idxs = BATselect(idx_table, (ptr) & t->base.id, (ptr) & t->base.id);
 	ccnt = BATcount(idxs);
 	if (t->table && ccnt) {
 		BATloop(idxs,p,q){
