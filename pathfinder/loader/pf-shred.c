@@ -938,6 +938,13 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
     /* build "tgt ins" as a key for the p-i DB */
     pis = snprintf (pi, MONET_STRLEN_MAX * 2 + 1, "%s %s", tgt, ins);
 
+    /*
+     * snprintf returns the number of characters that would actually
+     * have been printed if enough space were available. pis can thus
+     * be larger than the buffer in pi, so we might need to truncate it.
+     */
+    pis = MIN(pis, MONET_STRLEN_MAX * 2 + 1);
+
     /* does this p-i have a duplicate target/instruction pair? */
     dup = duplicate (tgtins_db, pi, pis, &(node.prop));
 
