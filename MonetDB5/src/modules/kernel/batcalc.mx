@@ -1372,7 +1372,7 @@ str CMDconvertvoid_int_oid(int *ret, int *bid){
         return throwMessage("batcalc.convert", "Cannot access descriptor");
     }
 	bn= BATcopy(b);
-	bn->ttype= TYPE_int;
+	bn->ttype= TYPE_oid;
 	/* simply recast the BAT  without doing anything */
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);

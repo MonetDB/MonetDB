@@ -50,6 +50,10 @@ address ARRAYgridBAT
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
 
+command *(b:bat[:void,:int],c:bat[:void,:int]):bat[:void,:int]
+address ARRAYmultiply_int_int
+comment "Calculate the array product";
+
 command project(b:bat[:void,:any],i:int):bat[:void,:int]
 address ARRAYproject
 comment "Fill an array representation with constants ";
@@ -414,6 +418,43 @@ ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize, int *clusters
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+@-
+@= arraymultiply
+str
+ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
+	BAT *bn, *b, *r;
+	BUN p,q, s,t;
+	int x1,x2;
+	@2 val;
+	oid o= oid_nil;
+
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("array.*", "Cannot access descriptor");
+    }
+    if( (r= BATdescriptor(*rid)) == NULL ){
+		BBPunfix(b->batCacheid);
+         return throwMessage("array.*", "Cannot access descriptor");
+    }
+	bn= BATnew(TYPE_void, TYPE_@2, BATcount(b)*BATcount(r));
+	BATseqbase(bn,0);
+
+	BATloopFast(b,p,q,x1){
+		BATloopFast(r,s,t,x2){
+			val = (*(@1*) BUNtail(b,p)) * (*(@1*)BUNtail(r,s));
+			BUNfastins(bn,&o,&val);
+		}
+	}
+	BBPincref( *ret= bn->batCacheid, TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
+@c
+@:arraymultiply(sht,lng)@
+@:arraymultiply(sht,int)@
+@:arraymultiply(int,int)@
+@:arraymultiply(int,lng)@
+@:arraymultiply(lng,lng)@
+
 str
 ARRAYproject(int *ret, int *bid, int *cst){
 	BAT *bn,*b;

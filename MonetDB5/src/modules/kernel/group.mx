@@ -1829,6 +1829,10 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift){
         BUN p, q;
         int xx,i;
 
+		if( *shift <=0){
+			return throwMessage("group.sum", "Illegal shift value");
+		}
+			
 		if( (b= BATdescriptor(*bid)) == NULL ){
 			return throwMessage("group.sum", "Cannot access descriptor");
 		}
