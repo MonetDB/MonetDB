@@ -121,8 +121,8 @@
 	.COMMAND mvc_bind_column( mvc c, sql_table t, str cname ) : sql_column = 
 		mvc_bind_column_wrap; "Bind column, t.cname"
 
-	.COMMAND mvc_bind_key( mvc c, sql_table t, ...str... ) : sql_key = 
-		mvc_bind_key_wrap; "Bind key, t.(cols)"
+	.COMMAND mvc_bind_key( mvc c, sql_table t, str kname ) : sql_key = 
+		mvc_bind_key_wrap; "Bind table key with name, kname"
 
 	.COMMAND mvc_drop_schema( mvc c, str name ) = mvc_drop_schema_wrap;
 		"Drop schema"
@@ -150,11 +150,8 @@
 	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
 		sql_column = mvc_default_wrap; "Set column default value"
 
-	.COMMAND mvc_create_key( mvc m, str sname, str tname, str name, int kt, sql_key fk ) :
+	.COMMAND mvc_create_key( mvc m, str sname, str tname, str name, int kt, BAT[str,int] columns, sql_key fk ) :
 		sql_key = mvc_create_key_wrap; "Create a table key"
-
-	.COMMAND mvc_key_add_column( mvc m, sql_key k, str column ) :
-		sql_key = mvc_key_add_column_wrap; "Key add column"
 
 	.COMMAND mvc_export(Stream s, BAT order, BAT bats, str sep, str rsep) =
 		mvc_export_wrap; "export a table (in order) to stream s with the given tuple and record seperators (sep/rsep)"
@@ -527,12 +524,8 @@ int mvc_bind_column_wrap( sql_column* res, mvc* c, sql_table *t, str col){
 	return GDK_SUCCEED;
 }
 
-int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_table *t, ...){
-	va_list ap;
-
-	va_start(ap,t);
-	*(sql_key**)res = mvc_bind_key( *(mvc**)c, *(sql_table**)t, ap);
-	va_end(ap);
+int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_table *t, str name ){
+	*(sql_key**)res = mvc_bind_key( *(mvc**)c, *(sql_table**)t, name);
 	return GDK_SUCCEED;
 }
 
@@ -585,19 +578,12 @@ int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val){
 	return GDK_SUCCEED;
 }
 
-int mvc_create_key_wrap( sql_key* res, mvc* c, str sname, str tname, str name, int *kt, sql_key *fk){
+int mvc_create_key_wrap( sql_key* res, mvc* c, str sname, str tname, str name, int *kt, BAT *columns, sql_key *fk){
 	if (*(ptr*)fk == ptr_nil){
-		*(sql_key**)res = mvc_create_key( *(mvc**)c, sname, tname, name, *kt, NULL);
+		*(sql_key**)res = mvc_create_key( *(mvc**)c, sname, tname, name, *kt, columns, NULL);
 	} else {
-		*(sql_key**)res = mvc_create_key( *(mvc**)c, sname, tname, name, *kt, *(sql_key**)fk);
+		*(sql_key**)res = mvc_create_key( *(mvc**)c, sname, tname, name, *kt, columns, *(sql_key**)fk);
 	}
-	return GDK_SUCCEED;
-}
-
-int mvc_key_add_column_wrap( sql_key* res, mvc* m, sql_key* key, str cname){
-	sql_key *k = *(sql_key**)key;
-	sql_column *c = mvc_bind_column( *(mvc**)m, k->t, cname );
-	*(sql_key**)res = mvc_key_add_column( *(mvc**)m, k, c);
 	return GDK_SUCCEED;
 }
 

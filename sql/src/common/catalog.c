@@ -8,6 +8,11 @@
 
 static int cat_debug = 0;
 
+static void kc_destroy(kc *k)
+{
+	_DELETE(k);
+}
+
 static void key_destroy(key *k)
 {
 	if (k->columns)
@@ -91,21 +96,26 @@ key *cat_table_add_key(table *t, key_type kt, char *name, key *fk)
 	k->id = 0;
 	k->type = kt;
 	k->t = t;
-	k->name = (name) ? _strdup(name) : NULL;
+	assert(name);
+	k->name = _strdup(name);
 	if (!t->keys)
 		t->keys = list_create((fdestroy)&key_destroy);
 	list_append(t->keys, k);
 	if (kt == pkey)
 		t->pkey = k;
-	k->columns = list_create(NULL); 
+	k->columns = list_create((fdestroy)&kc_destroy); 
 	if (fk){
 		k->rkey = fk;
 	}
 	return k;
 }
 
-key *cat_key_add_column( key *k, column *c ){
-	list_append(k->columns, c);
+key *cat_key_add_column( key *k, column *c, int trunc ){
+	kc *nkc = NEW(kc);
+	assert(c);
+	nkc->c = c;
+	nkc->trunc = trunc;
+	list_append(k->columns, nkc);
 	return k;
 }
 
@@ -127,9 +137,9 @@ key *cat_table_bind_ukey( table *t, list *colnames )
 			res = k;
 		   	for ( cc = k->columns->h, cn = colnames->h; 
 				cc && cn; cc = cc -> next, cn = cn -> next ){
-				column *c = cc->data;
+				kc *c = cc->data;
 				char *n = cn->data;
-				if (strcmp(c->name, n) != 0){
+				if (strcmp(c->c->name, n) != 0){
 					res = NULL;
 					break;
 				}
@@ -148,8 +158,8 @@ key *cat_table_bind_sukey( table *t, char *cname)
 	if (t->keys) for ( cur = t->keys->h; cur; cur = cur -> next ){ 
 		key *k = cur->data;
 		if (uniqueKey(k) && list_length(k->columns) == 1){
-			column *c = k->columns->h->data;
-			if (strcmp(c->name, cname) == 0){
+			kc *c = k->columns->h->data;
+			if (strcmp(c->c->name, cname) == 0){
 				return k;
 			}
 		}

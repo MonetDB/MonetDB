@@ -65,11 +65,11 @@ static void getschemas( catalog *c, char *schema, char *user ){
 				}
 				nk->id = k->id;
 				for (o = k->columns->h; o; o = o->next){
-					sql_column *col = o->data;
-					column *ncol = NULL;
-					ncol =cat_bind_column(c, t, col->name);
-					assert(ncol);
-					cat_key_add_column( nk, ncol);
+					sql_kc *kc = o->data;
+					column *nc = NULL;
+					nc = cat_bind_column(c, t, kc->c->name);
+					assert(nc);
+					cat_key_add_column( nk, nc, kc->trunc);
 				}
 			}
 		} else {

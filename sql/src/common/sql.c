@@ -2780,7 +2780,7 @@ static stmt *column_constraint_type(context * sql, char *name, symbol * s, stmt 
 	case SQL_UNIQUE: 
 	{
 		key *k = cat_table_add_key(c->table, ukey, name, NULL);
-		cat_key_add_column(k, c);
+		cat_key_add_column(k, c, 0);
 		res = stmt_key(k, NULL);
 		stmt_destroy(cs);
 		stmt_destroy(ss);
@@ -2789,7 +2789,7 @@ static stmt *column_constraint_type(context * sql, char *name, symbol * s, stmt 
 	case SQL_PRIMARY_KEY: 
 	{
 		key *k = cat_table_add_key(c->table, pkey, name, NULL);
-		cat_key_add_column(k, c);
+		cat_key_add_column(k, c, 0);
 		res = stmt_key(k, NULL);
 		stmt_destroy(cs);
 		stmt_destroy(ss);
@@ -2811,7 +2811,7 @@ static stmt *column_constraint_type(context * sql, char *name, symbol * s, stmt 
 			key *k = cat_table_add_key(c->table, fkey, name, rk);
 			stmt *fts = stmt_bind_table(ss, ft);
 			stmt *rks = stmt_bind_key(stmt_dup(ss), rk);
-			cat_key_add_column(k, c);
+			cat_key_add_column(k, c, 0);
 			res = stmt_key(k, rks);
 			stmt_destroy(cs);
 			stmt_destroy(ts);
@@ -2836,6 +2836,15 @@ static stmt *column_constraint_type(context * sql, char *name, symbol * s, stmt 
 /* 
 column_option: default | column_constraint ;
 */
+static char *table_constraint_name( table *t )
+{
+	static char buf[BUFSIZ];
+	int len = 1;
+	if (t->keys) len += list_length(t->keys);
+	snprintf(buf, BUFSIZ, "c%d", len );
+	return buf;
+}
+
 
 static stmt *column_option(context * sql, symbol * s, stmt * ss, stmt * ts, stmt * cs, column *c)
 {
@@ -2847,6 +2856,8 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss, stmt * ts, stmt
 			dlist *l = s->data.lval;
 			char *opt_name = l->h->data.sval;  
 			symbol *sym = l->h->next->data.sym;
+			if (!opt_name) 
+				opt_name = table_constraint_name(c->table);
 			res = column_constraint_type(sql, opt_name, sym, ss, ts, cs, c);
 		}
 		break;
@@ -2945,7 +2956,7 @@ static stmt *table_foreign_key( context * sql, char *name, symbol * s, stmt * ss
 				if (res) stmt_destroy(res);
 				return sql_error(sql, 02, "Table %s has no column %s\n", t->name, nm);
 			}
-			cat_key_add_column(k, c );
+			cat_key_add_column(k, c, 0);
 		}
 		if (nms || fnms){
 			if (res) stmt_destroy(res);
@@ -2975,7 +2986,7 @@ static stmt *table_constraint_type( context * sql, char *name, symbol * s, stmt 
 				if (!c){
 					return sql_error(sql, 02, "Table %s has no column %s\n", t->name, nm);
 				}
-				cat_key_add_column(k, c);
+				cat_key_add_column(k, c, 0);
 			}
 			res = ks;
 		} break;
@@ -2999,6 +3010,8 @@ static stmt *table_constraint( context * sql, symbol * s, stmt *ss, stmt * ts, t
 		dlist *l = s->data.lval;
 		char *opt_name = l->h->data.sval; 
 		symbol *sym = l->h->next->data.sym;
+		if (!opt_name) 
+			opt_name = table_constraint_name(table);
 		res = table_constraint_type(sql, opt_name, sym, ss, ts, table );
 	}
 

@@ -236,13 +236,17 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 			k->id = id;
 			for(ci = 0; ci<cnr; ci++){
 				char *colname;
+				int trunc;
 				column *col;
-		    		n = strchr(start = n+1, '\n'); *n = '\0';
+		    		n = strchr(start = n+1, ','); *n = '\0';
 	    			colname = start;
 				
+		    		n = strchr(start = n+1, '\n'); *n = '\0';
+	    			trunc = atoi(start);
+
 				col = cat_bind_column(c, t, colname);
 				assert(col);
-				cat_key_add_column( k, col);
+				cat_key_add_column( k, col, trunc);
 			}
 		    }
 	        }

@@ -2,24 +2,24 @@
  * The contents of this file are subject to the MonetDB Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * The Original Code is the Monet Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
  * All Rights Reserved.
- * 
+ *
  * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
@@ -86,7 +86,6 @@ void gettypes( catalog *c ){
 
 	    sql_create_type( sqlname, name );
 	}
-	/* TODO load proper type cast table */
 
 	tcnt = strtol(n+1,&n,10); 
 	for(i=0;i<tcnt;i++){
@@ -145,7 +144,7 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 	for(i=0;i<tcnt;i++){
 	    long id;
 	    char *tname;
-	    int cnr, knr;
+	    int cnr, knr, type;
 	    char *query;
 
 	    n = strchr(start = n+1, ','); *n = '\0';
@@ -158,15 +157,17 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 	    cnr = atoi(start);
 
 	    n = strchr(start = n+1, ','); *n = '\0';
+	    type = atoi(start);
+
+	    n = strchr(start = n+1, ','); *n = '\0';
 	    query = start;
 
 	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    knr = atoi(start);
 
-	    if (cnr){
+	    if (type != tt_view){
 		int j;
-	    	table *t = 
-		       cat_create_table( c, id, schema, tname, 0, NULL);
+	    	table *t = cat_create_table( c, id, schema, tname, type, NULL);
 
 		for(j=0;j<cnr;j++){
             		long id = 0;
@@ -235,19 +236,24 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 			k->id = id;
 			for(ci = 0; ci<cnr; ci++){
 				char *colname;
+				int trunc;
 				column *col;
-		    		n = strchr(start = n+1, '\n'); *n = '\0';
+		    		n = strchr(start = n+1, ','); *n = '\0';
 	    			colname = start;
 				
+		    		n = strchr(start = n+1, '\n'); *n = '\0';
+	    			trunc = atoi(start);
+
 				col = cat_bind_column(c, t, colname);
 				assert(col);
-				cat_key_add_column( k, col);
+				cat_key_add_column( k, col, trunc);
 			}
 		    }
 	        }
 
 	    } else {
-	    	sqlexecute(lc, query );
+	    	stmt *s = sqlexecute(lc, query );
+		stmt_destroy(s);
 	    }
 	}
 	list_destroy(keys);

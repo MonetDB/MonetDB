@@ -27,15 +27,23 @@
  * server, which communicates using shmem or pipes. 
  */
 
+typedef struct sql_kc {
+	struct sql_column *c;
+	int trunc; /* 0 not truncated, >0 colum is truncated */
+} sql_kc;
+
 /* fkey consists of two of these */
 typedef struct sql_key { /* pkey, ukey, fkey */
 	oid id;
 	char *name; 	/* constraint name */
 	key_type type; /* pkey, ukey, fkey */
-	struct list *columns; 
+	struct list *columns; /* list of sql_kc */
 	struct sql_table *t;
 
 	oid bid; /* bid for index(void,oid) or hash (void,int) */
+	int wtime; 
+	int rtime; 
+	int flag;
 } sql_key;
 
 typedef struct sql_ukey { /* pkey, ukey */
@@ -163,7 +171,7 @@ extern BAT *mvc_bind_dbat( mvc *c, char *sname, char *tname, int access );
 extern sql_schema *mvc_bind_schema( mvc *c, char *sname );
 extern sql_table *mvc_bind_table( mvc *c, sql_schema *s, char *tname );
 extern sql_column *mvc_bind_column( mvc *c, sql_table *t, char *cname );
-extern sql_key *mvc_bind_key( mvc *c, sql_table *t, va_list ap );
+extern sql_key *mvc_bind_key( mvc *c, sql_table *t, char *kname );
 
 extern void mvc_drop_schema( mvc *c, char *name );
 extern sql_schema *mvc_create_schema( mvc *c, char *name, char *auth);
@@ -176,8 +184,9 @@ extern sql_column *mvc_not_null( mvc *c, sql_column *col );
 extern sql_column *mvc_default( mvc *c, sql_column *col, char *val );
 
 extern sql_key *mvc_create_key( mvc *m, char *sname, 
-			char *tname, char *kname, int kt, sql_key *fk );
-extern sql_key *mvc_key_add_column( mvc *m, sql_key *k, sql_column *c );
+			char *tname, char *kname, int kt, 
+			BAT *columns, sql_key *fk );
+extern void mvc_drop_key( mvc *c, sql_table *t, char *kname );
 
 extern void mvc_export(stream *s, BAT *order, BAT *bats, char *sep, char *rsep);
 extern void mvc_export_schemas( mvc *c, stream *s );
@@ -211,29 +220,10 @@ extern int mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rs
 #define TR_OLD 0
 #define TR_NEW 1
 
-static int mvc_debug = 0;
-
-static struct logger *logger = NULL;
-
-static BAT *sql_table_id, *sql_table_name, *sql_table_schema, *sql_table_query, *sql_table_type;
-static BAT *U_table_id, *U_table_name, *U_table_schema, *U_table_query, *U_table_type;
-static BAT *D_sql_table, *O_sql_table;
-
-static BAT *sql_column_id, *sql_column_name, *sql_column_type, *sql_column_type_size, *sql_column_type_digits, *sql_column_table, *sql_column_default, *sql_column_null, *sql_column_number;
-static BAT *U_column_id, *U_column_name, *U_column_type, *U_column_type_size, *U_column_type_digits, *U_column_table, *U_column_default, *U_column_null, *U_column_number;
-static BAT *D_sql_column, *O_sql_column;
-
-static BAT *key_id, *key_table, *key_tpe, *key_name, *key_rkey;
-static BAT *U_key_id, *U_key_table, *U_key_tpe, *U_key_name, *U_key_rkey;
-static BAT *D_key, *O_key;
-
-static BAT *kc_id, *kc_col, *kc_nr; 
-static BAT *U_kc_id, *U_kc_col, *U_kc_nr; 
-static BAT *D_kc, *O_kc;
-
-static sql_trans *gtrans;
-
-static MT_Lock mvc_lock;
+static int 		mvc_debug = 0;
+static MT_Lock 	  	mvc_lock = NULL;
+static struct logger 	*logger = NULL;
+static sql_trans 	*gtrans = NULL;
 
 static sql_schema *bootstrap_create_schema(mvc * m, char *name, char *auth);
 static sql_table *bootstrap_create_table(mvc * m, sql_schema *s, char *name, int type);
@@ -252,13 +242,6 @@ static int timestamp()
 	return stamp++;
 }
 
-static int ky_id = 1;
-
-static int key_new_id()
-{
-	return ky_id++;
-}
-
 static int key_cmp(sql_key *k, oid *id)
 {
 	if (k && id && k->id == *id)
@@ -271,6 +254,60 @@ static ptr bun_find(BAT *b, ptr v){
 	if (p)
 		return BUNtail(b,p);
 	return NULL;
+}
+
+static void bun_inplace(BAT *b, oid id, ptr val )
+{
+	BUN p = NULL;
+	BUN oldInserted = b->batInserted;
+
+	assert(b->htype == TYPE_void && b->hseqbase == 0 && BATcount(b) > id );
+
+	b->batInserted = NULL;
+	BUNfndVOID(p, b, (ptr)&id);
+	(void) BUNinplace(b, p, (ptr)&id, val);
+	b->batInserted = oldInserted;
+}
+
+static int void_delete_bat( BAT *b, BAT *d){
+	int nr = 0;
+	BUN r,s;
+	ptr nil = ATOMnilptr(b->ttype);
+
+	BATloop(d, r, s){
+		oid delid = *(oid*)BUNtail(d,r);
+		bun_inplace(b,  delid, nil);
+		nr++;
+	}
+	return nr;
+}
+
+static int void_replace_bat( BAT *b, BAT *u){
+	int nr = 0;
+	BUN r,s;
+
+	BATloop(u, r, s){
+		oid updid = *(oid*)BUNhead(u,r);
+		ptr val = BUNtail(u,r);
+		bun_inplace(b,  updid, val);
+		nr++;
+	}
+	return nr;
+}
+
+
+static int void_insert_bat( BAT *b, BAT *u){
+	int nr = 0;
+	BUN r,s;
+        int sz = BUNsize(u);
+	oid nil = oid_nil;
+
+	BATloop(u, r, s){
+		oid rid = *(oid*)BUNhead(u,r);
+		BUNins(b,  (ptr)&nil, BUNtail(u,r));
+		nr++;
+	}
+	return nr;
 }
 
 static BAT *bat_descriptor(bat bid)
@@ -342,6 +379,11 @@ static BAT *bind_dbat( sql_trans *tr, sql_table *t, int access )
 }
 
 
+static void kc_destroy(sql_kc * kc)
+{
+	_DELETE(kc);
+}
+
 static void key_destroy(sql_key * k)
 {
 	if (k->name) _DELETE(k->name);
@@ -401,6 +443,26 @@ static sql_trans *trans_destroy(sql_trans *t)
 	bm_destroy(t->bm);
 	_DELETE(t);
 	return res;
+}
+
+static node *find_key_node(sql_table * t, char *kname)
+{
+	node *n;
+	if (t->keys) for (n = t->keys->h; n; n = n->next) {
+		sql_key *k = n->data;
+		/* check if names match */
+		if (strcmp(kname, k->name) == 0) {
+			return n;
+		}
+	}
+	return NULL;
+}
+
+static sql_key *find_key(sql_table * t, char *kname)
+{
+	node *n = find_key_node(t, kname );
+	if (n) return n->data;
+	return NULL;
 }
 
 static node *find_column_node(sql_table * t, char *cname)
@@ -463,32 +525,63 @@ sql_schema *find_schema(sql_trans *t, char *sname)
 	return NULL;
 }
 
-/* todo: add 'truncation` */
-static void load_add_column(BAT * columns, BUN j, sql_key *k )
+static void update_table_bat( BAT *b, BAT *ub, BAT *db)
 {
+	if (BATcount(ub)){
+		void_replace_bat(b, ub);
+	}
+	if (BATcount(db)){
+		void_delete_bat(b, db);
+	}
+}
+
+static void load_keycolumn(sql_trans *tr, BAT * columns, BUN j, sql_key *k )
+{
+	sql_kc *kc = NEW(sql_kc);
+	BAT *kc_col = sys_bat(tr->bm, "keycolumns_column");
+	BAT *kc_trunc = sys_bat(tr->bm, "keycolumns_trunc");
 	ptr lid = BUNhead(columns, j);
 	char *name = bun_find(kc_col, lid);
+	int trunc = *(int*)bun_find(kc_trunc, lid);
 	sql_column *c = find_column(k->t, name);
+	assert(c);
 
-	list_append(k->columns,c);
+	kc->c = c;
+	kc->trunc = trunc;
+	list_append(k->columns,kc);
+
+	bat_destroy(kc_col);
+	bat_destroy(kc_trunc);
 }
 
 static sql_key *load_key(sql_trans *tr, BAT * keys, BUN j, sql_table *t)
 {
+	char bname[BUFSIZ];
 	int ccnt;
 	BAT *cols, *rcols;
+	BAT *key_id = sys_bat(tr->bm, "keys_id");
+	BAT *key_tpe = sys_bat(tr->bm, "keys_type");
+	BAT *key_name = sys_bat(tr->bm, "keys_name");
+	BAT *key_rkey = sys_bat(tr->bm, "keys_rkey");
+	BAT *kc_id = sys_bat(tr->bm, "keycolumns_id");
+	BAT *kc_nr = sys_bat(tr->bm, "keycolumns_nr");
 	ptr lid = BUNhead(keys, j);
 	int ktype = *(int*) bun_find(key_tpe, lid);
 	char *name = (char*) bun_find(key_name, lid);
 	sql_key *nk = (ktype!=fkey)?(sql_key*)NEW(sql_ukey)
 				:(sql_key*)NEW(sql_fkey);
+	char keychar = (ktype==fkey)?'F':'K';
 	BUN p,q;
 
 	nk->id = *(oid *) bun_find(key_id, lid);
 	nk->type = ktype;
-	nk->name = (name)?_strdup(name):NULL;
-	nk->columns = list_create(NULL);
+	nk->name = _strdup(name);
+	nk->columns = list_create((fdestroy)&kc_destroy);
 	nk->t = t;
+	nk->rtime = nk->wtime = 0;
+	nk->flag = TR_OLD;
+	snprintf(bname, BUFSIZ, "%c_%s_%s", keychar, t->name, nk->name );
+	nk->bid = bm_find_bat(tr->bm, bname);
 
 	if (ktype == ukey || ktype == pkey){
 		sql_ukey *uk = (sql_ukey*)nk;
@@ -512,7 +605,7 @@ static sql_key *load_key(sql_trans *tr, BAT * keys, BUN j, sql_table *t)
 	ccnt = BATcount(cols);
 	if (ccnt) {
 		BATloop(cols,p,q)
-			load_add_column(cols, p, nk);
+			load_keycolumn(tr, cols, p, nk);
 	}
 	bat_destroy(cols);
 
@@ -520,6 +613,8 @@ static sql_key *load_key(sql_trans *tr, BAT * keys, BUN j, sql_table *t)
 		sql_fkey *fk = (sql_fkey*)nk;
 		oid rkey = *(oid *) bun_find(key_rkey, lid);
 		node *n = list_find(tr->keys, &rkey, (fcmp)&key_cmp);
+
+		assert(n);
 		if (n){
 			sql_ukey *uk = n->data;
 			fk->rkey = uk;
@@ -531,6 +626,7 @@ static sql_key *load_key(sql_trans *tr, BAT * keys, BUN j, sql_table *t)
 	} else { /* could be a set of rkeys */
 		sql_ukey *uk = (sql_ukey*)nk;
 		BAT *keys = BATselect(key_rkey, (ptr) & nk->id, (ptr) & nk->id);
+
 		BATloop(keys,p,q){
 			oid fkey = *(oid *) BUNhead(keys, p);
 			node *n = list_find(tr->keys, &fkey, (fcmp)&key_cmp);
@@ -544,17 +640,13 @@ static sql_key *load_key(sql_trans *tr, BAT * keys, BUN j, sql_table *t)
 		list_append(tr->keys, nk);
 		BBPreclaim(keys);
 	}
+	bat_destroy(key_id);
+	bat_destroy(key_tpe);
+	bat_destroy(key_name);
+	bat_destroy(key_rkey);
+	bat_destroy(kc_id);
+	bat_destroy(kc_nr);
 	return nk;
-}
-
-static void update_table_bat( BAT *b, BAT *ub, BAT *db)
-{
-	if (BATcount(ub)){
-		void_replace_bat(b, ub);
-	}
-	if (BATcount(db)){
-		void_delete_bat(b, db);
-	}
 }
 
 static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j)
@@ -564,16 +656,24 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	ptr lid = BUNhead(columns, j);
 	BUN p,q;
 	int sz,d;
+	BAT *column_id = sys_bat(tr->bm, "columns_id");
+	BAT *column_name = sys_bat(tr->bm, "columns_name");
+	BAT *column_type = sys_bat(tr->bm, "columns_type");
+	BAT *column_type_size = sys_bat(tr->bm, "columns_type_size");
+	BAT *column_type_digits = sys_bat(tr->bm, "columns_type_digits");
+	BAT *column_default = sys_bat(tr->bm, "columns_default");
+	BAT *column_null = sys_bat(tr->bm, "columns_null");
+	BAT *column_number = sys_bat(tr->bm, "columns_number");
 
-	c->id = *(oid *) bun_find(sql_column_id, lid);
-	c->name = _strdup((char *) bun_find(sql_column_name, lid));
-	tpe = (char *) bun_find(sql_column_type, lid);
-	sz = *(int*)bun_find(sql_column_type_size, lid);
-	d =  *(int*)bun_find(sql_column_type_digits, lid);
+	c->id = *(oid *) bun_find(column_id, lid);
+	c->name = _strdup((char *) bun_find(column_name, lid));
+	tpe = (char *) bun_find(column_type, lid);
+	sz = *(int*)bun_find(column_type_size, lid);
+	d =  *(int*)bun_find(column_type_digits, lid);
 	c->type = new_subtype(tpe,sz,d);
-	c->def = _strdup((char *) bun_find(sql_column_default, lid));
-	c->null = *(bit *) bun_find(sql_column_null, lid);
-	c->colnr = *(int *) bun_find(sql_column_number, lid);
+	c->def = _strdup((char *) bun_find(column_default, lid));
+	c->null = *(bit *) bun_find(column_null, lid);
+	c->colnr = *(int *) bun_find(column_number, lid);
 	c->t = t;
 	c->wtime = c->rtime = 0;
 	c->flag = TR_OLD;
@@ -596,6 +696,14 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 		bat_destroy(db);
 	}
 
+	bat_destroy(column_id);
+	bat_destroy(column_name);
+	bat_destroy(column_type);
+	bat_destroy(column_type_size);
+	bat_destroy(column_type_digits);
+	bat_destroy(column_default);
+	bat_destroy(column_null);
+	bat_destroy(column_number);
 	return c;
 }
 
@@ -607,11 +715,18 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	BAT *cols, *rcols, *keys;
 	BUN p,q;
 	int ccnt;
+	BAT *column_table = sys_bat(tr->bm, "columns_table_id");
+	BAT *column_number = sys_bat(tr->bm, "columns_number");
+	BAT *key_table = sys_bat(tr->bm, "keys_table_id");
+	BAT *table_id = sys_bat(tr->bm, "tables_id");
+	BAT *table_names = sys_bat(tr->bm, "tables_name");
+	BAT *table_queries = sys_bat(tr->bm, "tables_query");
+	BAT *table_types = sys_bat(tr->bm, "tables_type");
 
-	t->id = *(oid *) bun_find(sql_table_id, lid);
-	t->name = _strdup(bun_find(sql_table_name, lid));
-	t->query = _strdup(bun_find(sql_table_query, lid));
-	t->type = *(int*) bun_find(sql_table_type, lid);
+	t->id = *(oid *) bun_find(table_id, lid);
+	t->name = _strdup(bun_find(table_names, lid));
+	t->query = _strdup(bun_find(table_queries, lid));
+	t->type = *(int*) bun_find(table_types, lid);
 	t->wtime = t->rtime = 0;
 	t->flag = TR_OLD;
 	t->pkey = NULL;
@@ -630,8 +745,8 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	t->dcolumns = NULL;
 	t->ncolumn = NULL;
 
-	cols = BATselect(sql_column_table, (ptr) & t->id, (ptr) & t->id);
-	rcols = BATsemijoin(sql_column_number, cols);
+	cols = BATselect(column_table, (ptr) & t->id, (ptr) & t->id);
+	rcols = BATsemijoin(column_number, cols);
 	bat_destroy(cols);
 	cols = BATmirror(rcols);
 	rcols = BATsort(cols);
@@ -652,6 +767,13 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 			list_append(t->keys, load_key(tr, keys, p, t));
 	}
 	bat_destroy(keys);
+	bat_destroy(key_table);
+	bat_destroy(column_table);
+	bat_destroy(column_number);
+	bat_destroy(table_id);
+	bat_destroy(table_names);
+	bat_destroy(table_queries);
+	bat_destroy(table_types);
 	return t;
 }
 
@@ -663,6 +785,7 @@ static sql_schema *load_schema(sql_trans *tr, BAT * schemas, BUN j)
 	BUN p,q;
 	BAT *schema_names = sys_bat(tr->bm, "schemas_name");
 	BAT *schema_auths = sys_bat(tr->bm, "schemas_authorization");
+	BAT *table_schema = sys_bat(tr->bm, "tables_schema_id");
 
 	s->id = *(oid *) bun_find(schemas, lid);
 	s->name = _strdup(bun_find(schema_names, lid));
@@ -673,13 +796,14 @@ static sql_schema *load_schema(sql_trans *tr, BAT * schemas, BUN j)
 	s->wtime = s->rtime = 0;
 	s->flag = TR_OLD;
 
-	tables = BATselect(sql_table_schema, (ptr) & s->id, (ptr) & s->id);
+	tables = BATselect(table_schema, (ptr) & s->id, (ptr) & s->id);
 	BATloop(tables,p,q)
 		list_append(s->tables, load_table(tr, s, tables, p));
 
 	bat_destroy(tables);
-	bat_destroy(schema_names);
+	bat_destroy(table_schema);
 	bat_destroy(schema_auths);
+	bat_destroy(schema_names);
 	return s;
 }
 
@@ -713,6 +837,16 @@ static sql_trans *load_trans(struct bm *bm)
 	return t;
 }
 
+static sql_kc *kc_dup(sql_trans *tr, sql_table *t, sql_kc *kc)
+{
+	sql_kc *nkc = NEW(sql_kc);
+	sql_column *c = find_column(t,kc->c->name); 
+	assert(c);
+	nkc->c = c;
+	nkc->trunc = kc->trunc;
+	return nkc;
+}
+
 static sql_key *key_dup(sql_trans *tr, sql_key *k, sql_table *t)
 {
 	sql_key *nk = (k->type!=fkey)?(sql_key*)NEW(sql_ukey)
@@ -721,9 +855,12 @@ static sql_key *key_dup(sql_trans *tr, sql_key *k, sql_table *t)
 
 	nk->id = k->id;
 	nk->type = k->type;
-	nk->name = (k->name)?_strdup(k->name):NULL;
-	nk->columns = list_create(NULL);
+	nk->name = _strdup(k->name);
+	nk->columns = list_create((fdestroy)&kc_destroy);
 	nk->t = t;
+	nk->rtime = nk->wtime = 0;
+	nk->flag = TR_OLD;
+	nk->bid = k->bid;
 
 	if (nk->type != fkey){
 		sql_ukey *tk = (sql_ukey*)nk;
@@ -737,10 +874,8 @@ static sql_key *key_dup(sql_trans *tr, sql_key *k, sql_table *t)
 	}
 
 	for(n = k->columns->h; n; n = n->next){
-		sql_column *oc = n->data;
-		sql_column *c = find_column(t,oc->name); 
-		assert(c);
-		list_append(nk->columns,c);
+		sql_kc *okc = n->data;
+		list_append(nk->columns, kc_dup(tr, t, okc));
 	}
 
 	if (nk->type == fkey){
@@ -924,6 +1059,163 @@ static void mvc_init_schema( struct bm *bm )
 	bat_destroy(O_sql_schema);
 }
 
+static void mvc_init_table( struct bm *bm )
+{
+	BAT *sql_table_id = mvc_bat(bm, "tables_id", TYPE_int);
+	BAT *sql_table_name = mvc_bat(bm, "tables_name", TYPE_str);
+	BAT *sql_table_schema = mvc_bat(bm, "tables_schema_id", TYPE_int);
+	BAT *sql_table_query = mvc_bat(bm, "tables_query", TYPE_str);
+	BAT *sql_table_type = mvc_bat(bm, "tables_type", TYPE_int);
+	BAT *U_table_id = mvc_bat(bm, "U_tables_id", TYPE_int);
+	BAT *U_table_name = mvc_bat(bm, "U_tables_name", TYPE_str);
+	BAT *U_table_schema = mvc_bat(bm, "U_tables_schema_id", TYPE_int);
+	BAT *U_table_query = mvc_bat(bm, "U_tables_query", TYPE_str);
+	BAT *U_table_type = mvc_bat(bm, "U_tables_type", TYPE_int);
+	BAT *D_sql_table = mvc_bat(bm, "D_tables", TYPE_oid);
+	BAT *O_sql_table = mvc_bat(bm, "O_tables", TYPE_oid);
+
+	update_table_bat(sql_table_id, U_table_id, D_sql_table);
+	update_table_bat(sql_table_name, U_table_name, D_sql_table);
+	update_table_bat(sql_table_schema, U_table_schema, D_sql_table);
+	update_table_bat(sql_table_query, U_table_query, D_sql_table);
+	update_table_bat(sql_table_type, U_table_type, D_sql_table);
+
+	bat_destroy(sql_table_id);
+	bat_destroy(sql_table_name);
+	bat_destroy(sql_table_schema);
+	bat_destroy(sql_table_query);
+	bat_destroy(sql_table_type);
+	bat_destroy(U_table_id);
+	bat_destroy(U_table_name);
+	bat_destroy(U_table_schema);
+	bat_destroy(U_table_query);
+	bat_destroy(U_table_type);
+	bat_destroy(D_sql_table);
+	bat_destroy(O_sql_table);
+}
+
+static void mvc_init_column( struct bm *bm )
+{
+	BAT *sql_column_id = mvc_bat(bm, "columns_id", TYPE_int);
+	BAT *sql_column_name = mvc_bat(bm, "columns_name", TYPE_str);
+	BAT *sql_column_type = mvc_bat(bm, "columns_type", TYPE_str);
+	BAT *sql_column_type_size = mvc_bat(bm, "columns_type_size", TYPE_int);
+	BAT *sql_column_type_digits = mvc_bat(bm, "columns_type_digits", TYPE_int);
+	BAT *sql_column_table = mvc_bat(bm, "columns_table_id", TYPE_int);
+	BAT *sql_column_default = mvc_bat(bm, "columns_default", TYPE_str);
+	BAT *sql_column_null = mvc_bat(bm, "columns_null", TYPE_bit);
+	BAT *sql_column_number = mvc_bat(bm, "columns_number", TYPE_int);
+	BAT *U_column_id = mvc_bat(bm, "U_columns_id", TYPE_int);
+	BAT *U_column_name = mvc_bat(bm, "U_columns_name", TYPE_str);
+	BAT *U_column_type = mvc_bat(bm, "U_columns_type", TYPE_str);
+	BAT *U_column_type_size = mvc_bat(bm, "U_columns_type_size", TYPE_int);
+	BAT *U_column_type_digits = mvc_bat(bm, "U_columns_type_digits", TYPE_int);
+	BAT *U_column_table = mvc_bat(bm, "U_columns_table_id", TYPE_int);
+	BAT *U_column_default = mvc_bat(bm, "U_columns_default", TYPE_str);
+	BAT *U_column_null = mvc_bat(bm, "U_columns_null", TYPE_bit);
+	BAT *U_column_number = mvc_bat(bm, "U_columns_number", TYPE_int);
+	BAT *D_sql_column = mvc_bat(bm, "D_columns", TYPE_oid);
+	BAT *O_sql_column = mvc_bat(bm, "O_columns", TYPE_oid);
+
+	update_table_bat(sql_column_id, U_column_id, D_sql_column);
+	update_table_bat(sql_column_name, U_column_name, D_sql_column);
+	update_table_bat(sql_column_type, U_column_type, D_sql_column);
+	update_table_bat(sql_column_type_size, U_column_type_size, D_sql_column);
+	update_table_bat(sql_column_type_digits, U_column_type_digits, D_sql_column);
+	update_table_bat(sql_column_table, U_column_table, D_sql_column);
+	update_table_bat(sql_column_default, U_column_default, D_sql_column);
+	update_table_bat(sql_column_null, U_column_null, D_sql_column);
+	update_table_bat(sql_column_number, U_column_number, D_sql_column);
+
+	bat_destroy(sql_column_id);
+	bat_destroy(sql_column_name);
+	bat_destroy(sql_column_type);
+	bat_destroy(sql_column_type_size);
+	bat_destroy(sql_column_type_digits);
+	bat_destroy(sql_column_table);
+	bat_destroy(sql_column_default);
+	bat_destroy(sql_column_null);
+	bat_destroy(sql_column_number);
+	bat_destroy(U_column_id);
+	bat_destroy(U_column_name);
+	bat_destroy(U_column_type);
+	bat_destroy(U_column_type_size);
+	bat_destroy(U_column_type_digits);
+	bat_destroy(U_column_table);
+	bat_destroy(U_column_default);
+	bat_destroy(U_column_null);
+	bat_destroy(U_column_number);
+	bat_destroy(D_sql_column);
+	bat_destroy(O_sql_column);
+
+}
+
+
+static void mvc_init_key( struct bm *bm )
+{
+	BAT *key_id = mvc_bat(bm, "keys_id", TYPE_int);
+	BAT *key_table = mvc_bat(bm, "keys_table_id", TYPE_int);
+	BAT *key_tpe = mvc_bat(bm, "keys_type", TYPE_int);
+	BAT *key_name = mvc_bat(bm, "keys_name", TYPE_str);
+	BAT *key_rkey = mvc_bat(bm, "keys_rkey", TYPE_int);
+	BAT *U_key_id = mvc_bat(bm, "U_keys_id", TYPE_int);
+	BAT *U_key_table = mvc_bat(bm, "U_keys_table_id", TYPE_int);
+	BAT *U_key_tpe = mvc_bat(bm, "U_keys_type", TYPE_str);
+	BAT *U_key_name = mvc_bat(bm, "U_keys_name", TYPE_int);
+	BAT *U_key_rkey = mvc_bat(bm, "U_keys_rkey", TYPE_int);
+	BAT *D_key = mvc_bat(bm, "D_keys", TYPE_oid);
+	BAT *O_key = mvc_bat(bm, "O_keys", TYPE_oid);
+
+	BAT *kc_id = mvc_bat(bm, "keycolumns_id", TYPE_int);
+	BAT *kc_col = mvc_bat(bm, "keycolumns_column", TYPE_str);
+	BAT *kc_trunc = mvc_bat(bm, "keycolumns_trunc", TYPE_int);
+	BAT *kc_nr = mvc_bat(bm, "keycolumns_nr", TYPE_int);
+	BAT *U_kc_id = mvc_bat(bm, "U_keycolumns_id", TYPE_int);
+	BAT *U_kc_col = mvc_bat(bm, "U_keycolumns_column", TYPE_str);
+	BAT *U_kc_trunc = mvc_bat(bm, "U_keycolumns_trunc", TYPE_int);
+	BAT *U_kc_nr = mvc_bat(bm, "U_keycolumns_nr", TYPE_int);
+	BAT *D_kc = mvc_bat(bm, "D_keycolumns", TYPE_oid);
+	BAT *O_kc = mvc_bat(bm, "O_keycolumns", TYPE_oid);
+
+	update_table_bat(key_id, U_key_id, D_key);
+	update_table_bat(key_table, U_key_table, D_key);
+	update_table_bat(key_tpe, U_key_tpe, D_key);
+	update_table_bat(key_name, U_key_name, D_key);
+	update_table_bat(key_rkey, U_key_rkey, D_key);
+	/* key_updaterule = mvc_bat(bm, "keys_updaterule", TYPE_int); */
+	/* key_deleterule = mvc_bat(bm, "keys_deleterule", TYPE_int); */
+	/* key_deferrability = mvc_bat(bm, "keys_deferrability", TYPE_int); */
+
+	update_table_bat(kc_id, U_kc_id, D_kc);
+	update_table_bat(kc_col, U_kc_col, D_kc);
+	update_table_bat(kc_trunc, U_kc_trunc, D_kc);
+	update_table_bat(kc_nr, U_kc_nr, D_kc);
+
+	bat_destroy(key_id);
+	bat_destroy(key_table);
+	bat_destroy(key_tpe);
+	bat_destroy(key_name);
+	bat_destroy(key_rkey);
+	bat_destroy(U_key_id);
+	bat_destroy(U_key_table);
+	bat_destroy(U_key_tpe);
+	bat_destroy(U_key_name);
+	bat_destroy(U_key_rkey);
+	bat_destroy(D_key);
+	bat_destroy(O_key);
+
+	bat_destroy(kc_id);
+	bat_destroy(kc_col);
+	bat_destroy(kc_trunc);
+	bat_destroy(kc_nr);
+	bat_destroy(U_kc_id);
+	bat_destroy(U_kc_col);
+	bat_destroy(U_kc_trunc);
+	bat_destroy(U_kc_nr);
+	bat_destroy(D_kc);
+	bat_destroy(O_kc);
+}
+
 void mvc_init(int debug, char *dirname)
 {
 	struct bm *bm = NULL;
@@ -935,86 +1227,10 @@ void mvc_init(int debug, char *dirname)
 	bm = bm_create();
 	logger = logger_create(mvc_debug, dirname, bm);
 
-	sql_table_id = mvc_bat(bm, "tables_id", TYPE_int);
-	sql_table_name = mvc_bat(bm, "tables_name", TYPE_str);
-	sql_table_schema = mvc_bat(bm, "tables_schema_id", TYPE_int);
-	sql_table_query = mvc_bat(bm, "tables_query", TYPE_str);
-	sql_table_type = mvc_bat(bm, "tables_type", TYPE_int);
-	U_table_id = mvc_bat(bm, "U_tables_id", TYPE_int);
-	U_table_name = mvc_bat(bm, "U_tables_name", TYPE_str);
-	U_table_schema = mvc_bat(bm, "U_tables_schema_id", TYPE_int);
-	U_table_query = mvc_bat(bm, "U_tables_query", TYPE_str);
-	U_table_type = mvc_bat(bm, "U_tables_type", TYPE_int);
-	D_sql_table = mvc_bat(bm, "D_tables", TYPE_oid);
-	O_sql_table = mvc_bat(bm, "O_tables", TYPE_oid);
-	update_table_bat(sql_table_id, U_table_id, D_sql_table);
-	update_table_bat(sql_table_name, U_table_name, D_sql_table);
-	update_table_bat(sql_table_schema, U_table_schema, D_sql_table);
-	update_table_bat(sql_table_query, U_table_query, D_sql_table);
-	update_table_bat(sql_table_type, U_table_type, D_sql_table);
-
-	sql_column_id = mvc_bat(bm, "columns_id", TYPE_int);
-	sql_column_name = mvc_bat(bm, "columns_name", TYPE_str);
-	sql_column_type = mvc_bat(bm, "columns_type", TYPE_str);
-	sql_column_type_size = mvc_bat(bm, "columns_type_size", TYPE_int);
-	sql_column_type_digits = mvc_bat(bm, "columns_type_digits", TYPE_int);
-	sql_column_table = mvc_bat(bm, "columns_table_id", TYPE_int);
-	sql_column_default = mvc_bat(bm, "columns_default", TYPE_str);
-	sql_column_null = mvc_bat(bm, "columns_null", TYPE_bit);
-	sql_column_number = mvc_bat(bm, "columns_number", TYPE_int);
-	U_column_id = mvc_bat(bm, "U_columns_id", TYPE_int);
-	U_column_name = mvc_bat(bm, "U_columns_name", TYPE_str);
-	U_column_type = mvc_bat(bm, "U_columns_type", TYPE_str);
-	U_column_type_size = mvc_bat(bm, "U_columns_type_size", TYPE_int);
-	U_column_type_digits = mvc_bat(bm, "U_columns_type_digits", TYPE_int);
-	U_column_table = mvc_bat(bm, "U_columns_table_id", TYPE_int);
-	U_column_default = mvc_bat(bm, "U_columns_default", TYPE_str);
-	U_column_null = mvc_bat(bm, "U_columns_null", TYPE_bit);
-	U_column_number = mvc_bat(bm, "U_columns_number", TYPE_int);
-	D_sql_column = mvc_bat(bm, "D_columns", TYPE_oid);
-	O_sql_column = mvc_bat(bm, "O_columns", TYPE_oid);
-	update_table_bat(sql_column_id, U_column_id, D_sql_column);
-	update_table_bat(sql_column_name, U_column_name, D_sql_column);
-	update_table_bat(sql_column_type, U_column_type, D_sql_column);
-	update_table_bat(sql_column_type_size, U_column_type_size, D_sql_column);
-	update_table_bat(sql_column_type_digits, U_column_type_digits, D_sql_column);
-	update_table_bat(sql_column_table, U_column_table, D_sql_column);
-	update_table_bat(sql_column_default, U_column_default, D_sql_column);
-	update_table_bat(sql_column_null, U_column_null, D_sql_column);
-	update_table_bat(sql_column_number, U_column_number, D_sql_column);
-
-	key_id = mvc_bat(bm, "keys_id", TYPE_int);
-	key_table = mvc_bat(bm, "keys_table_id", TYPE_int);
-	key_tpe = mvc_bat(bm, "keys_type", TYPE_int);
-	key_name = mvc_bat(bm, "keys_name", TYPE_str);
-	key_rkey = mvc_bat(bm, "keys_rkey", TYPE_int);
-	U_key_id = mvc_bat(bm, "U_keys_id", TYPE_int);
-	U_key_table = mvc_bat(bm, "U_keys_table_id", TYPE_int);
-	U_key_tpe = mvc_bat(bm, "U_keys_type", TYPE_str);
-	U_key_name = mvc_bat(bm, "U_keys_name", TYPE_int);
-	U_key_rkey = mvc_bat(bm, "U_keys_rkey", TYPE_int);
-	D_key = mvc_bat(bm, "D_keys", TYPE_oid);
-	O_key = mvc_bat(bm, "O_keys", TYPE_oid);
-	update_table_bat(key_id, U_key_id, D_key);
-	update_table_bat(key_table, U_key_table, D_key);
-	update_table_bat(key_tpe, U_key_tpe, D_key);
-	update_table_bat(key_name, U_key_name, D_key);
-	update_table_bat(key_rkey, U_key_rkey, D_key);
-	/* key_updaterule = mvc_bat(bm, "keys_updaterule", TYPE_int); */
-	/* key_deleterule = mvc_bat(bm, "keys_deleterule", TYPE_int); */
-	/* key_deferrability = mvc_bat(bm, "keys_deferrability", TYPE_int); */
-
-	kc_id = mvc_bat(bm, "keycolumns_id", TYPE_int);
-	kc_col = mvc_bat(bm, "keycolumns_column", TYPE_str);
-	kc_nr = mvc_bat(bm, "keycolumns_nr", TYPE_int);
-	U_kc_id = mvc_bat(bm, "U_keycolumns_id", TYPE_int);
-	U_kc_col = mvc_bat(bm, "U_keycolumns_column", TYPE_str);
-	U_kc_nr = mvc_bat(bm, "U_keycolumns_nr", TYPE_int);
-	D_kc = mvc_bat(bm, "D_keycolumns", TYPE_oid);
-	O_kc = mvc_bat(bm, "O_keycolumns", TYPE_oid);
-	update_table_bat(kc_id, U_kc_id, D_kc);
-	update_table_bat(kc_col, U_kc_col, D_kc);
-	update_table_bat(kc_nr, U_kc_nr, D_kc);
+	mvc_init_schema(bm);
+	mvc_init_table(bm);
+	mvc_init_column(bm);
+	mvc_init_key(bm);
 
 	mvc_lock = MT_create_lock();
 
@@ -1032,24 +1248,24 @@ void mvc_init(int debug, char *dirname)
 
 		s = bootstrap_create_schema(m, "sys", "sqladmin");
 		t = bootstrap_create_table (m, s, "schemas", FALSE);
-		bootstrap_create_column(m, t, "id", "INTEGER",0,0, 0 );
-		bootstrap_create_column(m, t, "name", "VARCHAR",0,0, 1 );
-		bootstrap_create_column(m, t, "authorization", "VARCHAR",0,0, 2 );
+		bootstrap_create_column(m, t, "id", "INTEGER",0,0,0);
+		bootstrap_create_column(m, t, "name", "VARCHAR",0,0,1);
+		bootstrap_create_column(m, t, "authorization", "VARCHAR",0,0,2);
 
 		t = bootstrap_create_table(m, s, "tables", FALSE);
-		bootstrap_create_column(m, t, "id", "INTEGER",0,0, 0);
-		bootstrap_create_column(m, t, "name", "VARCHAR",0,0, 1);
-		bootstrap_create_column(m, t, "schema_id", "INTEGER",0,0, 2);
-		bootstrap_create_column(m, t, "query", "VARCHAR",0,0, 3);
-		bootstrap_create_column(m, t, "type", "INTEGER",0,0, 4);
+		bootstrap_create_column(m, t, "id", "INTEGER",0,0,0);
+		bootstrap_create_column(m, t, "name", "VARCHAR",0,0,1);
+		bootstrap_create_column(m, t, "schema_id", "INTEGER",0,0,2);
+		bootstrap_create_column(m, t, "query", "VARCHAR",0,0,3);
+		bootstrap_create_column(m, t, "type", "INTEGER",0,0,4);
 
-		t = bootstrap_create_table(m, s, "columns", FALSE );
+		t = bootstrap_create_table(m, s, "columns", FALSE);
 		bootstrap_create_column(m, t, "id", "INTEGER", 0, 0, 0);
 		bootstrap_create_column(m, t, "name", "VARCHAR", 0, 0, 1);
 		bootstrap_create_column(m, t, "type", "VARCHAR", 0, 0, 2);
 		bootstrap_create_column(m, t, "type_size", "INTEGER", 0, 0, 3);
-		bootstrap_create_column(m, t, "type_digits", "INTEGER", 0, 0, 4);
-		bootstrap_create_column(m, t, "table_id", "INTEGER", 0, 0, 5);
+		bootstrap_create_column(m, t, "type_digits", "INTEGER", 0, 0,4);
+		bootstrap_create_column(m, t, "table_id", "INTEGER", 0, 0,5);
 		bootstrap_create_column(m, t, "default", "VARCHAR", 0, 0, 6);
 		bootstrap_create_column(m, t, "null", "BOOL", 0, 0, 7);
 		bootstrap_create_column(m, t, "number", "INTEGER", 0, 0, 8);
@@ -1064,7 +1280,8 @@ void mvc_init(int debug, char *dirname)
 		t = bootstrap_create_table(m, s, "keycolumns", FALSE);
 		bootstrap_create_column(m, t, "id", "INTEGER",0,0, 0);
 		bootstrap_create_column(m, t, "column", "VARCHAR",0,0, 1);
-		bootstrap_create_column(m, t, "nr", "INTEGER",0,0, 2);
+		bootstrap_create_column(m, t, "trunc", "INTEGER",0,0, 2);
+		bootstrap_create_column(m, t, "nr", "INTEGER",0,0, 3);
 
 		/* now the authorisation related tables */
 		t = mvc_create_table(m, s, "users", FALSE );
@@ -1168,62 +1385,6 @@ void mvc_exit()
 	logger_destroy(logger); 
 	types_exit();
 
-	bat_destroy(sql_table_id);
-	bat_destroy(sql_table_name);
-	bat_destroy(sql_table_schema);
-	bat_destroy(sql_table_query);
-	bat_destroy(sql_table_type);
-	bat_destroy(U_table_id);
-	bat_destroy(U_table_name);
-	bat_destroy(U_table_schema);
-	bat_destroy(U_table_query);
-	bat_destroy(U_table_type);
-	bat_destroy(D_sql_table);
-	bat_destroy(O_sql_table);
-
-	BBPunfix(sql_column_id->batCacheid);
-	BBPunfix(sql_column_name->batCacheid);
-	BBPunfix(sql_column_type->batCacheid);
-	BBPunfix(sql_column_type_size->batCacheid);
-	BBPunfix(sql_column_type_digits->batCacheid);
-	BBPunfix(sql_column_table->batCacheid);
-	BBPunfix(sql_column_default->batCacheid);
-	BBPunfix(sql_column_null->batCacheid);
-	BBPunfix(sql_column_number->batCacheid);
-	BBPunfix(U_column_id->batCacheid);
-	BBPunfix(U_column_name->batCacheid);
-	BBPunfix(U_column_type->batCacheid);
-	BBPunfix(U_column_type_size->batCacheid);
-	BBPunfix(U_column_type_digits->batCacheid);
-	BBPunfix(U_column_table->batCacheid);
-	BBPunfix(U_column_default->batCacheid);
-	BBPunfix(U_column_null->batCacheid);
-	BBPunfix(U_column_number->batCacheid);
-	BBPunfix(D_sql_column->batCacheid);
-	BBPunfix(O_sql_column->batCacheid);
-
-	BBPunfix(key_id->batCacheid);
-	BBPunfix(key_table->batCacheid);
-	BBPunfix(key_tpe->batCacheid);
-	BBPunfix(key_name->batCacheid);
-	BBPunfix(key_rkey->batCacheid);
-	BBPunfix(U_key_id->batCacheid);
-	BBPunfix(U_key_table->batCacheid);
-	BBPunfix(U_key_tpe->batCacheid);
-	BBPunfix(U_key_name->batCacheid);
-	BBPunfix(U_key_rkey->batCacheid);
-	BBPunfix(D_key->batCacheid);
-	BBPunfix(O_key->batCacheid);
-
-	BBPunfix(kc_id->batCacheid);
-	BBPunfix(kc_col->batCacheid);
-	BBPunfix(kc_nr->batCacheid);
-	BBPunfix(U_kc_id->batCacheid);
-	BBPunfix(U_kc_col->batCacheid);
-	BBPunfix(U_kc_nr->batCacheid);
-	BBPunfix(D_kc->batCacheid);
-	BBPunfix(O_kc->batCacheid);
-
 	trans_destroy(gtrans);
 }
 
@@ -1260,105 +1421,32 @@ int mvc_type( mvc *c ){
 	return res;
 }
 
-static void bun_inplace(BAT *b, oid id, ptr val )
+static void create_key(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_key *gk )
 {
-	BUN p = NULL;
-	BUN oldInserted = b->batInserted;
+	char keychar = (gk->type==fkey)?'F':'K';
+	char bname[BUFSIZ];
+	BAT *b = bm_lbid2bat( ctr->bm, gk->bid );
 
-	assert(b->htype == TYPE_void && b->hseqbase == 0 && BATcount(b) > id );
-
-	b->batInserted = NULL;
-	BUNfndVOID(p, b, (ptr)&id);
-	(void) BUNinplace(b, p, (ptr)&id, val);
-	b->batInserted = oldInserted;
-}
-
-int void_delete_bat( BAT *b, BAT *d){
-	int nr = 0;
-	BUN r,s;
-	ptr nil = ATOMnilptr(b->ttype);
-
-	BATloop(d, r, s){
-		oid delid = *(oid*)BUNtail(d,r);
-		bun_inplace(b,  delid, nil);
-		nr++;
-	}
-	return nr;
-}
-
-int void_replace_bat( BAT *b, BAT *u){
-	int nr = 0;
-	BUN r,s;
-
-	BATloop(u, r, s){
-		oid updid = *(oid*)BUNhead(u,r);
-		ptr val = BUNtail(u,r);
-		bun_inplace(b,  updid, val);
-		nr++;
-	}
-	return nr;
-}
-
-
-int void_insert_bat( BAT *b, BAT *u){
-	int nr = 0;
-	BUN r,s;
-        int sz = BUNsize(u);
-	oid nil = oid_nil;
-
-	BATloop(u, r, s){
-		oid rid = *(oid*)BUNhead(u,r);
-		BUNins(b,  (ptr)&nil, BUNtail(u,r));
-		nr++;
-	}
-	return nr;
-}
-
-static void create_key(sql_trans * tr, sql_schema * gs, sql_table *gt, sql_key *gk )
-{
-	node *n;
-	int ki = BATcount(key_id);
-	int kc = BATcount(kc_id);
-	int neg = -1;
-	int nr = 0;
-
-	assert (gk->t == gt);
-
-	BUNins(key_id, (ptr) & ki, (ptr) & gk->id);
-	BUNins(key_table, (ptr) & ki, (ptr) & gt->id);
-	BUNins(key_tpe, (ptr) & ki, (ptr) & gk->type);
-	BUNins(key_name, (ptr) & ki, (ptr) gk->name);
-	if (gk->type == fkey){
-		int rkey;
-		assert( ((sql_fkey*)gk)->rkey );
-		rkey = ((sql_fkey*)gk)->rkey->k.id;
-		BUNins(key_rkey, (ptr) & ki, (ptr) & rkey);
-	} else {
-		BUNins(key_rkey, (ptr) & ki, (ptr) & neg);
-	}
-	for (n = gk->columns->h; n; n = n->next, nr++, kc++){
-		sql_column *c = n->data;
-		BUNins(kc_id, (ptr)&kc, (ptr)&gk->id);
-		BUNins(kc_col, (ptr)&kc, (ptr)c->name);
-		BUNins(kc_nr, (ptr)&kc, (ptr)&nr);
-	}
+	snprintf(bname, BUFSIZ, "%c_%s_%s", keychar, gt->name, gk->name );
+	gk->bid = log_bat_persists(logger, b, bname); 
+	BBPunfix(b->batCacheid);
 }
 
 static void create_column(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_column *gc )
 {
-	char name[BUFSIZ];
+	char bname[BUFSIZ];
 	BAT *b = bm_lbid2bat( ctr->bm, gc->bid);
 	BAT *u = bm_lbid2bat( ctr->bm, gc->ubid);
 
 	gc->rtime = gs->rtime;
 	gc->wtime = gs->wtime;
 
-	snprintf(name, BUFSIZ, "%s_%s", gt->name, gc->name );
-	gc->bid = log_bat_persists(logger, b, name); 
+	snprintf(bname, BUFSIZ, "%s_%s", gt->name, gc->name );
+	gc->bid = log_bat_persists(logger, b, bname); 
 	BBPunfix(b->batCacheid);
 
-	snprintf(name, BUFSIZ, "U_%s_%s", gt->name, gc->name );
-	gc->ubid = log_bat_persists(logger, u, name); 
+	snprintf(bname, BUFSIZ, "U_%s_%s", gt->name, gc->name );
+	gc->ubid = log_bat_persists(logger, u, bname); 
 	BBPunfix(u->batCacheid);
 }
 
@@ -1516,23 +1604,10 @@ static void drop_keys(sql_trans * tr, sql_table * t)
 
 	if (t->keys) for (n = t->keys->h; n; n = n->next) {
 		sql_key *k = n->data;
-		BAT *b = BATselect(kc_id, (ptr) & k->id, (ptr) & k->id );
-		BUN p,q;
 
-		BUNdelHead(key_id, (ptr) & k->id);
-		BUNdelHead(key_table, (ptr) & k->id);
-		BUNdelHead(key_tpe, (ptr) & k->id);
-		BUNdelHead(key_name, (ptr) & k->id);
-		BUNdelHead(key_rkey, (ptr) & k->id);
-
-		BATloop(b,p,q){
-			oid id = *(oid*)BUNhead(kc_id, p);
-
-			BUNdelHead(kc_id, (ptr) & id);
-			BUNdelHead(kc_col, (ptr) & id);
-			BUNdelHead(kc_nr, (ptr) & id);
+		if (k->bid){
+			log_bat_transient(logger, k->bid); 
 		}
-		BBPunfix(b->batCacheid);
 	}
 }
 
@@ -1561,11 +1636,11 @@ static void mvc_forward_create_table(sql_trans * tr, sql_schema * ns,
 
 		snprintf(name, BUFSIZ, "O_%s", nt->name );
 		nt->obid = log_bat_persists(logger, o, name); 
-		BBPunfix(o->batCacheid);
+		bat_destroy(o);
 
 		snprintf(name, BUFSIZ, "D_%s", nt->name );
 		nt->dbid = log_bat_persists(logger, d, name); 
-		BBPunfix(d->batCacheid);
+		bat_destroy(d);
 
 		create_columns(tr, ns, nt);
 		create_keys(tr, ns, nt);
@@ -1959,46 +2034,66 @@ sql_column *mvc_bind_column(mvc * m, sql_table * t, char *cname )
 }
 
 
-sql_key *mvc_bind_key(mvc * m, sql_table * t, va_list ap )
+sql_key *mvc_bind_key(mvc * m, sql_table * t, char *kname )
 {
-	sql_key *k = NULL;
-	list *l;
-	char *p;
-	node *kn, *nn;
-	int len;
-
-	if (!t->keys)
+	sql_key *k = find_key(t, kname);
+	if (!k)
 		return NULL;
-
- 	l = list_create(NULL);
-	while(p = va_arg(ap,char*)){
-		list_append(l,p);
-	}
-	len = list_length(l);
-	
-	for(kn = t->keys->h; !k && kn; kn = kn -> next){
-		k = kn->data;
-		if (list_length(k->columns) == len){
-			node *cc;
-			for(cc = k->columns->h, nn = l->h; cc && nn; 
-				cc = cc -> next, nn = nn -> next){
-				sql_column *c = cc->data;
-				if (strcmp(c->name, nn->data) != 0){
-					k = NULL;
-					break;
-				}
-			}
-		} else {
-			k = NULL;
-		}
-	}
-	list_destroy(l);
+	k->rtime = t->rtime;
 
 	if (m->debug)
-		fprintf(stderr, "mvc_bind_key %s.(%s..)\n", t->name, 
-		 	((sql_column*)k->columns->h->data)->name );
+		fprintf(stderr, "mvc_bind_key %s.%s\n", t->name, kname );
 
 	return k;
+}
+
+static void sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc ){
+	sql_table *syskc = find_table(find_schema(tr, "keycolumns"), "keys");
+	BAT *b, *r;
+	oid rid = 0;
+
+	/* drop from sys keys */
+	b = bind_bat(tr, find_column(syskc, "id"), 1);
+	r = BATmirror(b);
+	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & k->id ));
+	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
+	b = bind_bat(tr, find_column(syskc, "column"), 1);
+	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
+	b = bind_bat(tr, find_column(syskc, "trunc"), 1);
+	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
+	b = bind_bat(tr, find_column(syskc, "nr"), 1);
+	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
+	b = bind_dbat(tr, syskc, 1);
+	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); BBPunfix(b->batCacheid);
+
+	syskc->wtime = tr->stime;
+}
+
+static void sys_drop_key(sql_trans *tr, sql_key *k ){
+	node *n;
+	sql_table *syskey = find_table(find_schema(tr, "sys"), "keys");
+	BAT *b, *r;
+	oid rid = 0;
+
+	/* drop from sys keys */
+	b = bind_bat(tr, find_column(syskey, "id"), 1);
+	r = BATmirror(b);
+	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & k->id ));
+	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
+	b = bind_bat(tr, find_column(syskey, "table_id"), 1);
+	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
+	b = bind_bat(tr, find_column(syskey, "name"), 1);
+	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
+	b = bind_bat(tr, find_column(syskey, "rkey"), 1);
+	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
+	b = bind_dbat(tr, syskey, 1);
+	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); BBPunfix(b->batCacheid);
+
+	for (n = k->columns->h; n; n = n->next) {
+		sql_kc *kc = n->data;
+		sys_drop_kc(tr, k, kc);
+	}
+	syskey->wtime = tr->stime;
 }
 
 static void sys_drop_column(sql_trans *tr, sql_column *col ){
@@ -2033,13 +2128,21 @@ static void sys_drop_column(sql_trans *tr, sql_column *col ){
 	syscolumn->wtime = tr->stime;
 }
 
+static void sys_drop_keys(sql_trans * tr, sql_table * t)
+{
+	node *n;
+
+	if (t->keys) for (n = t->keys->h; n; n = n->next) {
+		sql_key *k = n->data;
+		sys_drop_key(tr, k);
+	}
+}
 static void sys_drop_columns(sql_trans * tr, sql_table * t)
 {
 	node *n;
 
 	for (n = t->columns->h; n; n = n->next) {
 		sql_column *c = n->data;
-
 		sys_drop_column(tr, c);
 	}
 }
@@ -2065,6 +2168,8 @@ static void sys_drop_table(sql_trans * tr, sql_table *t)
 	bun_inplace(b, rid, ATOMnilptr(b->ttype)); BBPunfix(b->batCacheid);
 	b = bind_dbat(tr, systable, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); BBPunfix(b->batCacheid);
+
+	sys_drop_keys(tr, t);
 	if (t->type != tt_view)
 		sys_drop_columns(tr, t);
 
@@ -2216,24 +2321,43 @@ static sql_table *create_table_intern( mvc *m, char *name, int type)
 	return t;
 }
 
-sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, sql_key *rkey )
+sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, BAT *columns, sql_key *rkey )
 { 
-	int cnt = BUFSIZ;
+	char bname[BUFSIZ];
+	BUN p,q;
+	int nr, cnt = BUFSIZ, neg = -1;
 	sql_trans *tr = m->trans;
 	sql_schema *s = find_schema(tr, sname);
 	sql_table *t = find_table(s, tname);
 	sql_key *nk = (kt!=fkey)?(sql_key*)NEW(sql_ukey)
 				:(sql_key*)NEW(sql_fkey);
+	sql_table *syskey = find_table(find_schema(tr, "sys"), "keys");
+	sql_table *syskc = find_table(find_schema(tr, "sys"), "keycolumns");
+	BAT *b;
+	oid rid = 0;
+	node *n;
 
 	if (m->debug)
 		fprintf(stderr, "mvc_create_key %s %d %d\n",
 		 t->name, kt, (int)rkey);
 
-	nk->id = key_new_id();
+	nk->id = OIDnew(1);
 	nk->type = kt;
-	nk->name = (name)?_strdup(name):NULL;
-	nk->columns = list_create(NULL);
+	assert(name);
+	nk->name = _strdup(name);
+	nk->columns = list_create((fdestroy)&kc_destroy);
 	nk->t = t;
+
+	BATloop(columns, p, q){
+		char *name = BUNhead(columns,p);
+		int trunc = *(int*)BUNtail(columns,p);
+		sql_kc *kc = NEW(sql_kc);
+		sql_column *c = find_column(t,name);
+		assert(c);
+		kc->c = c;
+		kc->trunc = trunc;
+		list_append(nk->columns, kc);
+	}
 
 	if (nk->type != fkey){
 		/* create void,int bat to keep the hash values */
@@ -2242,12 +2366,9 @@ sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, 
 		uk -> keys = NULL;
 
 		BATseqbase(b,0);
-		nk->bid = b->batCacheid;
-		BBPpersistent(b->batCacheid, FALSE);
-/*
-		snprintf(name, BUFSIZ, "K_%s_%s", nk->t->name, nk->name );
-*/
-		BBPunfix(b->batCacheid);
+		snprintf(bname, BUFSIZ, "K_%s_%s", nk->t->name, nk->name );
+		nk->bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
+		bat_destroy(b);
 
 		if (nk->type == pkey)
 			t->pkey = uk;
@@ -2257,12 +2378,9 @@ sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, 
 		sql_ukey *uk = (sql_ukey*)rkey;
 
 		BATseqbase(b,0);
-		nk->bid = b->batCacheid;
-		BBPpersistent(b->batCacheid, FALSE);
-/*
-		snprintf(name, BUFSIZ, "F_%s_%s", nk->t->name, nk->name );
-*/
-		BBPunfix(b->batCacheid);
+		snprintf(bname, BUFSIZ, "F_%s_%s", nk->t->name, nk->name );
+		nk->bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
+		bat_destroy(b);
 
 		fk -> rkey = uk;
 		if (!uk->keys) uk->keys = list_create(NULL);
@@ -2274,16 +2392,65 @@ sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, 
 		t->keys = list_create((fdestroy)&key_destroy);
 	list_append(t->keys, nk);
 
+	b = bind_bat(tr, find_column(syskey, "id"), 1);
+	rid = BATcount(b);
+	BUNins(b, (ptr) & rid, (ptr) & nk->id); bat_destroy(b);
+	b = bind_bat(tr, find_column(syskey, "table_id"), 1);
+	BUNins(b, (ptr) & rid, (ptr) & t->id); bat_destroy(b);
+	b = bind_bat(tr, find_column(syskey, "name"), 1);
+	BUNins(b, (ptr) & rid, (ptr) nk->name); bat_destroy(b);
+	b = bind_bat(tr, find_column(syskey, "type"), 1);
+	BUNins(b, (ptr) & rid, (ptr) & nk->type); bat_destroy(b);
+	b = bind_bat(tr, find_column(syskey, "rkey"), 1);
+	if (nk->type == fkey)
+		BUNins(b, (ptr) & rid, (ptr) & ((sql_fkey*)nk)->rkey->k.id); 
+	else
+		BUNins(b, (ptr) & rid, (ptr) & neg); 
+	bat_destroy(b);
+	for (nr = 0, n=nk->columns->h; n; n = n->next, nr++){
+		sql_kc *kc = n->data;
+		
+		b = bind_bat(tr, find_column(syskc, "id"), 1);
+		rid = BATcount(b);
+		BUNins(b, (ptr) & rid, (ptr) & nk->id); bat_destroy(b);
+		b = bind_bat(tr, find_column(syskc, "column"), 1);
+		BUNins(b, (ptr) & rid, (ptr) kc->c->name); bat_destroy(b);
+		b = bind_bat(tr, find_column(syskc, "trunc"), 1);
+		BUNins(b, (ptr) & rid, (ptr) & kc->trunc); bat_destroy(b);
+		b = bind_bat(tr, find_column(syskc, "nr"), 1);
+		BUNins(b, (ptr) & rid, (ptr) & nr); bat_destroy(b);
+	}
+
+	syskey->wtime = syskc->wtime = tr->stime;
 	return nk;
 }
 
-/* todo: add 'truncation` */
-sql_key *mvc_key_add_column( mvc * m, sql_key *k, sql_column *c/*, int length */ ){
+void mvc_drop_key(mvc * m, sql_table *t, char *name)
+{
+	sql_trans *tr = m->trans;
+	node *n = find_key_node(t, name);
+	sql_key *k = n->data;
 
 	if (m->debug)
-		fprintf(stderr, "mvc_key_add_column %s\n", c->name);
-	list_append(k->columns, c);
-	return k;
+		fprintf(stderr, "mvc_drop_key %s %s\n", t->name, name);
+
+	sys_drop_key(tr, k);
+	if (k->flag == TR_NEW) {
+		if (t->nkey == k){
+			if (n->next)
+				t->nkey = n->next->data;
+			else
+				t->nkey = NULL;
+		}
+		list_remove_data(t->keys, k);
+		key_destroy(k);
+	} else {
+		if (!t->dkeys) 
+			t->dkeys = list_create((fdestroy)&key_destroy);
+		list_move_data(t->keys, t->dkeys, k);
+	}
+
+	k->wtime = t->wtime = tr->wtime = tr->stime;
 }
 
 static sql_table *bootstrap_create_table(mvc * m, sql_schema *s, char *name, int type)
@@ -2347,11 +2514,10 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, int type)
 
 	snprintf(bname, BUFSIZ, "O_%s", t->name );
 	t->obid = bm_add_bat(tr->bm, o->batCacheid, bname, 0);
+	bat_destroy(o);
 	snprintf(bname, BUFSIZ, "D_%s", t->name );
 	t->dbid = bm_add_bat(tr->bm, d->batCacheid, bname, 0);
-
-	BBPunfix(o->batCacheid);
-	BBPunfix(d->batCacheid);
+	bat_destroy(d);
 
 	b = bind_bat(tr, find_column(systable, "id"), 1);
 	rid = BATcount(b);
@@ -2557,8 +2723,8 @@ sql_column *mvc_create_column(mvc * m, sql_table *t, char *name,
 
 	BATseqbase(b,0);
 	res = mvc_create_column_bat(m, t, name, sqltype, type_size, type_digits, seqnr, b, u);
-	BBPunfix(b->batCacheid);
-	BBPunfix(u->batCacheid);
+	bat_destroy(b);
+	bat_destroy(u);
 
 	return res;
 }
@@ -2706,9 +2872,10 @@ void mvc_export_schema(mvc * c, stream * s, sql_schema *schema )
 
 				s->write(s, buf, i, 1);
 				for (l = k->columns->h; l; l = l->next){
-					sql_column *col = l->data;
+					sql_kc *kc = l->data;
 					i = snprintf(buf, BUFSIZ, 
-						"%s\n", col->name); 
+						"%s, %d\n", 
+						kc->c->name, kc->trunc); 
 					s->write(s, buf, i, 1);
 				}
 			}

@@ -160,20 +160,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_key: {
 		int t = stmt_dump( s->op1.stval, nr, sql );
 		key *k = s->op2.kval;
-		node *cc;
-
-		write_head(sql,-s->nr);
 		len = snprintf( buf, BUFSIZ, 
-			"s%d := mvc_bind_key(myc, s%d", -s->nr, t);
-		write_part(sql,buf,len);
-		for (cc = k->columns->h; cc; cc = cc->next){
-			column *c = cc->data;
-		  	len = snprintf( buf, BUFSIZ, ", \"%s\"", c->name );
-			write_part(sql,buf,len);
-		}
-		len = snprintf( buf, BUFSIZ, ");\n"); 
-		write_part(sql,buf,len);
-		write_tail(sql,-s->nr);
+			"s%d := mvc_bind_key(myc, s%d, \"%s\");\n", 
+			-s->nr, t, k->name);
+		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_create_schema: {
 		schema *schema = s->op1.schema;
@@ -235,24 +225,27 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_create_key: {
 		node *n;
 		key *k = s->op1.kval;
+		
 		write_head(sql,-s->nr);
+		len = snprintf( buf, BUFSIZ, "b%d := new(str,int);\n", -s->nr);
+		write_part(sql,buf,len);
+		for(n=k->columns->h;n; n = n->next){
+			kc *kc = n->data;
+			len = snprintf( buf, BUFSIZ, 
+		    	"b%d.insert(\"%s\", %d);\n", -s->nr, kc->c->name, kc->trunc);
+			write_part(sql,buf,len);
+		}
 		if (s->flag == fkey){
 			int ft = stmt_dump( s->op2.stval, nr, sql );
 			len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, s%d );\n",
-			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type, ft );
+		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, b%d, s%d );\n",
+			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type, -s->nr, ft );
 		} else {
 			len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, sql_key(nil));\n",
-			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type );
+		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, b%d, sql_key(nil));\n",
+			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type, -s->nr );
 		}
 		write_part(sql,buf,len);
-		for(n=k->columns->h;n; n = n->next){
-			column *c = n->data;
-			len = snprintf( buf, BUFSIZ, 
-		    	"mvc_key_add_column(myc, s%d, \"%s\");\n", -s->nr, c->name);
-			write_part(sql,buf,len);
-		}
 		write_tail(sql,-s->nr);
 	} break;
 	case st_create_role: {

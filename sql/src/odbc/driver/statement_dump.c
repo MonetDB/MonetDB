@@ -27,22 +27,24 @@
 #include "statement.h"
 
 
-static void atom_dump( atom *a, stream *s){
+static void atom_dump( atom *a, context *sql){
+	stream *s = sql->out;
 	int i = 0;
 	char buf[BUFSIZ];
 
 	switch (a->type){
-	case int_value: i=snprintf(buf, BUFSIZ, "%d", a->data.ival); 
-			s->write(s, buf, 1, i);
+	case int_value: 
+			i=snprintf(buf, BUFSIZ, "%d", a->data.ival); 
 			break;
 	case string_value: 
-			s->write(s, "\"", 1, 1);
-			s->write(s, a->data.sval, 1, strlen(a->data.sval));
-			s->write(s, "\"", 1, 1);
+			buf[0] = '"';
+			i=snprintf(buf+1, BUFSIZ-2, "%s", a->data.sval); 
+			i++;
+			buf[i] = '"';
+			i++;
 			break;
 	case float_value: 
 			i=snprintf(buf, BUFSIZ, "%f", a->data.dval); 
-			s->write(s, buf, 1, i);
 			break;
 	case general_value:
 			if (a->data.sval)
@@ -51,11 +53,14 @@ static void atom_dump( atom *a, stream *s){
 			else 
 			  i=snprintf(buf, BUFSIZ, "%s(nil)", 
 				a->tpe.type->name );
-			s->write(s, buf, 1, i);
 			break;
 	default:
 			break;
 	}
+	s->write(s, buf, 1, i);
+
+	if (sql->debug&8)
+		fwrite( buf, 1, i, stderr);
 }
 
 static void write_head( context *sql, int nr )
@@ -155,20 +160,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_key: {
 		int t = stmt_dump( s->op1.stval, nr, sql );
 		key *k = s->op2.kval;
-		node *cc;
-
-		write_head(sql,-s->nr);
 		len = snprintf( buf, BUFSIZ, 
-			"s%d := mvc_bind_key(myc, s%d", -s->nr, t);
-		write_part(sql,buf,len);
-		for (cc = k->columns->h; cc; cc = cc->next){
-			column *c = cc->data;
-		  	len = snprintf( buf, BUFSIZ, ", \"%s\"", c->name );
-			write_part(sql,buf,len);
-		}
-		len = snprintf( buf, BUFSIZ, ");\n"); 
-		write_part(sql,buf,len);
-		write_tail(sql,-s->nr);
+			"s%d := mvc_bind_key(myc, s%d, \"%s\");\n", 
+			-s->nr, t, k->name);
+		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_create_schema: {
 		schema *schema = s->op1.schema;
@@ -228,18 +223,30 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_create_key: {
+		node *n;
 		key *k = s->op1.kval;
+		
+		write_head(sql,-s->nr);
+		len = snprintf( buf, BUFSIZ, "b%d := new(str,int);\n", -s->nr);
+		write_part(sql,buf,len);
+		for(n=k->columns->h;n; n = n->next){
+			kc *kc = n->data;
+			len = snprintf( buf, BUFSIZ, 
+		    	"b%d.insert(\"%s\", %d);\n", -s->nr, kc->c->name, kc->trunc);
+			write_part(sql,buf,len);
+		}
 		if (s->flag == fkey){
 			int ft = stmt_dump( s->op2.stval, nr, sql );
 			len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, s%d );\n", 
-			-s->nr, k->t->schema->name, k->t->name, k->name, k->type, ft );
+		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, b%d, s%d );\n",
+			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type, -s->nr, ft );
 		} else {
 			len = snprintf( buf, BUFSIZ, 
 		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, sql_key(nil));\n",
-			-s->nr, k->t->schema->name, k->t->name, k->name, k->type );
+			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type, -s->nr );
 		}
-		dump(sql,buf,len,-s->nr);
+		write_part(sql,buf,len);
+		write_tail(sql,-s->nr);
 	} break;
 	case st_create_role: {
 		len = snprintf( buf, BUFSIZ, 
@@ -677,7 +684,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		while(n){
 			len = snprintf( buf, BUFSIZ, "s%dv := ", -s->nr);
 			write_part(sql,buf,len);
-			atom_dump(n->data, sql->out);
+			atom_dump(n->data, sql);
 			len = snprintf( buf, BUFSIZ, 
 				";\ns%db.insert(s%dv, oid(%d));\n", 
 					-s->nr, -s->nr, r++);
@@ -693,7 +700,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		write_head(sql,-s->nr);
 		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
 		write_part(sql,buf,len);
-		atom_dump(s->op1.aval, sql->out);
+		atom_dump(s->op1.aval, sql);
 		len = snprintf( buf, BUFSIZ, ";\n");
 		write_part(sql,buf,len);
 		write_tail(sql,-s->nr);
@@ -701,7 +708,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_insert: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
-		if (s->op2.stval->nrcols){
+		if (s->flag){ 
+			len = snprintf( buf, BUFSIZ, 
+		  	"s%d := oid_insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+		} else if (s->op2.stval->nrcols){
 			len = snprintf( buf, BUFSIZ, 
 		  	"s%d := insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		} else {
@@ -756,12 +766,23 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} break;
 	case st_copyfrom: {
 		node *m = s->op2.lval->h;
-		char *file = m->data;
-		char *tsep = m->next->data;
-		char *rsep = m->next->next->data;
+		char *tsep = m->data;
+		char *rsep = m->next->data;
+		
 		len += snprintf( buf+len, BUFSIZ-len, 
-		    "input(myc, Input, \"%s\", \"%s\",\"%s\", \"%s\", %d);\n",
-			s->op1.tval->name, file, tsep, rsep, s->flag);
+			"Bs%d := new(void,str);\n", -s->nr);
+		if (s->op3.lval){
+			node *n;
+			for(n = s->op3.lval->h; n; n = n->next){
+				char *file = n->data;
+				len += snprintf( buf+len, BUFSIZ-len, 
+				  	"Bs%d.insert(oid(nil),\"%s\");\n" , 
+				  	-s->nr, file );
+			}
+		}
+		len += snprintf( buf+len, BUFSIZ-len, 
+		    "input(myc, Input, \"%s\", Bs%d,\"%s\", \"%s\", %d);\n",
+			s->op1.tval->name, -s->nr, tsep, rsep, s->flag);
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_ordered: {

@@ -1,8 +1,4 @@
 %{
-/* todo 
- * use table/column constrains (such as not null)
- * use primary/foreign keys
- */
 #include <unistd.h>
 #include "sql.h"
 #include "sqlexecute.h"
