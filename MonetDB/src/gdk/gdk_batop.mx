@@ -734,17 +734,17 @@ Examine type, and values for lower- and higher-bound.
         size = b->batBuns->size + (b->hheap.base?b->hheap.size:0) +
 				  (b->theap.base?b->theap.size:0);
 
-        if (hval && (ATOMcmp(t, tl,th) > 0)) {
-            GDKerror("BATselect: illegal range.\n");
-	    return NULL;
-	}
-
 	/* preliminarily determine result types */
 	ht = BAThtype(b);
 	tt = tail?BATttype(b):TYPE_void;
 	if (ht == TYPE_void && tt == TYPE_void) {
 	    ht = TYPE_oid; 
 	}
+
+        if (hval && (ATOMcmp(t, tl,th) > 0)) {
+            /* empty range */
+            return BATnew(ht, tt, 10);
+        }
 
 @- Slice Implementations
 When the result is a dense slice of the BAT, we can optimize.

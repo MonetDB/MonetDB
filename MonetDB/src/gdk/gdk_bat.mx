@@ -120,7 +120,7 @@ Dimension info needs to be filled in.
 @- 
 A heap comes with integer offsets to address elements. This way
 we do not encounter unexpected results when we use mmap to (un)load
-the store.
+the store. 
 @c
 	HEAPalloc(bn->batBuns, cap+3, bn->dims.bunwidth);	
 	ATOMheap(ht,&bn->hheap, cap);

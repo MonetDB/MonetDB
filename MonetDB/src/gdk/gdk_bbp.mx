@@ -1928,9 +1928,6 @@ lng BBPdiskscan(str parent) {
 			continue;
 		} else { 
 			/* record the real disk occupancy; not just the bytesize */
-/* windows has no st_blocks
-			filesize = st.st_blocks * 512;
-*/
 			filesize = st.st_size;
 		}
 

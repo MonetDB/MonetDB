@@ -1765,7 +1765,6 @@ int decimal_divide(decimal **ret, decimal *num, decimal *div, int *precision) {
 	DECIMAL_DEBUG(num, "decimal_divide() num", 1);
 	DECIMAL_DEBUG(div, "decimal_divide() div", 1);
 
-
 	/* check special cases */
 	if (ISNIL(num) || ISNIL(div) || ISZERO(div)) {
 		*ret = decimal_copy(decimal_nil,1);
@@ -1856,7 +1855,7 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 	bn->ttype = bm->htype = TYPE_decimal;
 	bn->tvarsized = bm->hvarsized = 1;
 	bn->theap = hp;
-	strcpy(b->tatom, "decimal");
+	strcpy(bn->tatom, "decimal");
 	ALIGNsetH(bn, b);
 
 	/* cleanup */

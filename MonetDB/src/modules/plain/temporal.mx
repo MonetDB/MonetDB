@@ -197,7 +197,7 @@ struct MonetTime {
 
 #define MAXYEAR		0xfff
 #define MAXMONTH	0xf
-#define MAXDAY		0x1f
+#define MAXDAY		0x2f
 #define MAXHOUR		0x1f
 #define MAXMIN		0x3f
 

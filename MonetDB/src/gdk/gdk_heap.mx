@@ -68,9 +68,20 @@ used in practice.
 #include "gdk_heap.h"
 #include "gdk_posix.h"
 
+@c
+#define roundup_8(x)	(((((x)-1)>>3)+1)<<3)
+#define roundup_4(x)	(((((x)-1)>>2)+1)<<2)
+#define blocksize(h,p)	((h)->sizefcn?(*(h)->sizefcn)(p):(p)->size)
+
+static INLINE int roundup_num(int number, int alignment) {
+   int rval = number + alignment -1;
+   rval -= (rval % alignment);
+   return(rval);
+}
+
 int HEAPalloc(Heap *h, int nitems, int itemsize) {
         h->base = NULL;
-        h->size = MAX(1,nitems)*itemsize;
+        h->size = roundup_8(MAX(1,nitems)*itemsize);
         h->offset = h->free = 0;
 	h->base = h->filename = NULL;
 	if (h->size > GDKmem_bigsize()) {
@@ -429,17 +440,6 @@ typedef struct hfblock
    int size;		/* Size of this block in freelist	*/
    int next;		/* index of next block 			*/
 } CHUNK;
-@c
-#define roundup_8(x)	(((((x)-1)>>3)+1)<<3)
-#define roundup_4(x)	(((((x)-1)>>2)+1)<<2)
-#define blocksize(h,p)	((h)->sizefcn?(*(h)->sizefcn)(p):(p)->size)
-
-static INLINE int roundup_num(int number, int alignment) {
-   int rval = number + alignment -1;
-   rval -= (rval % alignment);
-   return(rval);
-}
-
 @h
 /*
 // Return the index of the private heap part. This private part is always 8

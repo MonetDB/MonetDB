@@ -430,7 +430,7 @@ int strRtrim(str *res, str s) {
 	int len = strlen(s);
 
 	RETURN_NIL_IF(strNil(s), TYPE_str);
-	while(len-- > 0 && GDKisspace(s[len]));
+        while(len > 0 && GDKisspace(s[len-1])) len--;
 	*res = GDKmalloc(len+1);
   	memcpy(*res, s, len);
   	(*res)[len] = '\0';

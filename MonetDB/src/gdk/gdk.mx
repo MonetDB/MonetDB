@@ -1566,10 +1566,8 @@ gdk_export void GDKqsort (void *a, void* base, int n, int width, int tpe, int lo
 
 #define BAThordered(b)	(((b)->htype == TYPE_void)?GDK_SORTED:(b)->hsorted)
 #define BATtordered(b)	(((b)->ttype == TYPE_void)?GDK_SORTED:(b)->tsorted)
-#define BAThdense(b)	(((b)->htype == TYPE_void)?((b)->hseqbase != oid_nil):\
-				((b)->hdense&(b)->hsorted&1))
-#define BATtdense(b)	(((b)->ttype == TYPE_void)?((b)->tseqbase != oid_nil):\
-				((b)->tdense&(b)->tsorted&1))
+#define BAThdense(b)    (BAThvoid(b) && (b)->hseqbase != oid_nil)
+#define BATtdense(b)    (BATtvoid(b) && (b)->tseqbase != oid_nil)
 #define BAThvoid(b)	(((b)->hdense&(b)->hsorted&1) || (b)->htype==TYPE_void)
 #define BATtvoid(b)	(((b)->tdense&(b)->tsorted&1) || (b)->ttype==TYPE_void)
 @
