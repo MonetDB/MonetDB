@@ -571,7 +571,7 @@ PHP_FUNCTION(monetdb_field_name)
 	
 	if (index >= mapi_get_field_count(handle)) {
 		php_error_docref("function.monetdb_field_name" TSRMLS_CC, E_ERROR, 
-			"Accessing field number #%d, which is out of range", index);
+			"Accessing field number #%ld, which is out of range", index);
 		RETURN_FALSE ;
 	}
 	
@@ -622,7 +622,7 @@ PHP_FUNCTION(monetdb_field_type)
 	
 	if (index >= mapi_get_field_count(handle)) {
 		php_error_docref("function.monetdb_field_type" TSRMLS_CC, E_ERROR, 
-			"Accessing field number #%d, which is out of range", index);
+			"Accessing field number #%ld, which is out of range", index);
 		RETURN_FALSE ;
 	}
 	
