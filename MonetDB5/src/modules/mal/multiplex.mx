@@ -192,6 +192,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	setFunctionId(p, GDKstrdup(name));
 	k = newVariable(m, newTmpName('M',0),TYPE_any);
 	p->argv[0]= k;
+#define DEBUG_MULTIPLEX
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug) 
 	printf("multiplex against operator %s (original %s)\n",
@@ -200,6 +201,8 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 @+ Analysis Of The BAT Parameters
 Do basic check on parameters. Look at the tail types in order to derive
 a function signature in 'p'. Check that all head types correspond. 
+Beware that the operand may refer to a polymorphic type, which can
+not be resolved before cloneing.
 Constants passed into the multiplex operator are a special case.
 @c
 	for(i=2; i < pci->argc; i++) {
@@ -208,6 +211,13 @@ Constants passed into the multiplex operator are a special case.
 		tt = getTailType(t);
 		if (first){
 			firstbat= TRUE;
+			if( isPolyType(t)){
+#ifdef DEBUG_MULTIPLEX
+			if( multiplexDebug) 
+				printf("multiplex against polymorphic type error\n");
+#endif
+				return -1;
+			}
 			if( getHeadType(t) != TYPE_any) {
 				first= FALSE;
 				tpe= getHeadType(t);
@@ -553,6 +563,29 @@ find the actual arguments at the proper place of the callee.
 	pushArgument(m,q,i);
 	pushInstruction(m,q);
 	
+/* catch   MALexception and propagate it */
+	q= newInstruction(ASSIGNsymbol);
+	q->barrier = CATCHsymbol;
+	k= q->argv[0]= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
+	pushInstruction(m,q);
+/* propagate exception */
+	q= newInstruction(ASSIGNsymbol);
+	q->barrier = RAISEsymbol;
+	q->argv[0]=k;
+	q->argv[1]= newConstant(m,TYPE_str,GDKstrdup("Failed to create bat"),TRUE);
+	q->argc=2;
+	pushInstruction(m,q);
+/* early exit */
+	q= newInstruction(ASSIGNsymbol);
+	q->barrier= RETURNsymbol;
+	q->argv[0]= getInstrPtr(mb,0)->argv[0];
+	q->argv[1]= resB ;
+	q->argc=2;
+	q->retc=1;
+	pushInstruction(m,q);
+/* return to caller */
+	@:malInstr(EXIT,k)@	
+
 	/* create nil constant for void-columns */
 	if( getHeadType(refType) == TYPE_void){
 		q= newInstruction(ASSIGNsymbol);
@@ -733,7 +766,7 @@ find the actual arguments at the proper place of the callee.
 
 	q= newInstruction(ASSIGNsymbol);
 	q->barrier= RETURNsymbol;
-	q->argv[0]= resB ;
+	q->argv[0]= getInstrPtr(mb,0)->argv[0];
 	q->argv[1]= resB ;
 	q->argc=2;
 	q->retc=1;
