@@ -44,22 +44,17 @@ stderr of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 # cmdline opt 	gdk_dbname = Tests_src_monet
 # cmdline opt 	mapi_port = 56955
 
-# 09:48:00 >  
-# 09:48:00 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=56955 < monet_mod_cnt-copy_C.milC
-# 09:48:00 >  
-
-MAPI  = monetdb@orion:49165
-QUERY = var b:=x.reverse().mirror().[bat]().[copy]().[count]();
-ERROR = !WARNING: [copy]: 1 times inserted nil due to errors at tuples "copy.count".
-        !WARNING: [copy]: first error was: !ERROR: BATcopy: BAT required.
-        !ERROR: CMDcopy: operation failed.
-
-# 09:48:00 >  
-# 09:48:00 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=56955
-# 09:48:00 >  
+# 14:24:43 >  
+# 14:24:43 >  Mtimeout -timeout 60 MapiClient -u monetdb -P monetdb "--config=/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d_--enable-debug_/etc/MonetDB.conf" --host=draco --port=46067 < monet_mod_cnt-copy_C.milC
+# 14:24:43 >  
 
 
-# 09:48:00 >  
-# 09:48:00 >  Done.
-# 09:48:00 >  
+# 14:24:44 >  
+# 14:24:44 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d_--enable-debug_/etc/MonetDB.conf" --host=draco --port=46067
+# 14:24:44 >  
+
+
+# 14:24:45 >  
+# 14:24:45 >  Done.
+# 14:24:45 >  
 
