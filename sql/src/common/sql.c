@@ -823,6 +823,7 @@ static statement *sql_join
 			ld = statement_diff( 
 				statement_column(cs,tv1), 
 				   statement_reverse(subset) );
+			ld = statement_mark(statement_reverse(ld), -1);
 		}
 		t = tv2->data.tval;
 		if (jointype == jt_right || jointype == jt_full){
@@ -831,6 +832,7 @@ static statement *sql_join
 			rd = statement_diff( 
 				statement_column(cs,tv2), 
 				   statement_reverse(subset) );
+			rd = statement_mark(statement_reverse(rd), -1);
 		}
 		l1 = list_create();
 		t = tv1->data.tval;
