@@ -90,13 +90,13 @@ Getting the Software:
 This command should be done once.  It records a password on the local
 machine to be used for all subsequent CVS accesses with this server.
 
- cvs -d:pserver:anonymous@cvs.monetdb.sourceforge.net:/cvsroot/monetdb login
+ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
 
 Just type RETURN when asked for the password. The actual steps depend on
 your CVS tool, e.g. in WinCVS you have to set the Admin preferences.
 Then get the software by using the command:
 
- cvs -d:pserver:anonymous@cvs.monetdb.sourceforge.net:/cvsroot/monetdb checkout sql
+ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout sql
 
 This will create a directory 'sql' in your current working directory.
 
