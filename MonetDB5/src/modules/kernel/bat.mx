@@ -1447,9 +1447,12 @@ str BKCreverse(int *ret, int *bid){
 	BAT *b, *bn= NULL;
 	@:getBATdescriptor(ret,bid,b,reverse)@
 	CMDreverse(&bn,b);
-	*ret= bn->batCacheid;
-	BBPunfix(bn->batCacheid);
-	return MAL_SUCCEED;
+	if( bn) {
+		*ret= bn->batCacheid;
+		BBPunfix(bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("bat.reverse", "GDKerror");
 }
 
 str BKCmirror(int *ret, int *bid){
