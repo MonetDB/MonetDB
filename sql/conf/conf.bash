@@ -36,19 +36,19 @@ if [ ! -x bootstrap ] ; then
 	binpath=""
 	libpath=""
 
-	# check for not or incorrectly set variables (BUILD, PREFIX, COMP, BITS, LINK)
+	# check for not or incorrectly set variables (SQL_BUILD, PREFIX, COMP, BITS, LINK)
 
-	if [ ! "${BUILD}" ] ; then
+	if [ ! "${SQL_BUILD}" ] ; then
 		echo ''
-		echo 'BUILD not set to specify desired compilation directory.'
-		echo 'Using BUILD="'${base}/${os}'" (default).'
-		BUILD="${base}/${os}"
+		echo 'SQL_BUILD not set to specify desired compilation directory.'
+		echo 'Using SQL_BUILD="'${base}/${os}'" (default).'
+		SQL_BUILD="${base}/${os}"
 	fi
 	if [ ! "${PREFIX}" ] ; then
 		echo ''
 		echo 'PREFIX not set to specify desired target directory.'
-		echo 'Using PREFIX="'${BUILD}'" (default).'
-		PREFIX="${BUILD}"
+		echo 'Using PREFIX="'${SQL_BUILD}'" (default).'
+		PREFIX="${SQL_BUILD}"
 	fi
 
 	if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
@@ -246,12 +246,12 @@ if [ ! -x bootstrap ] ; then
 	export CONFIGURE="${base}/configure ${conf_opts} --with-monet=`monet-config --prefix` --prefix=${PREFIX}"
 	echo " CONFIGURE=${CONFIGURE}"
 
-	mkdir -p ${BUILD}
+	mkdir -p ${SQL_BUILD}
 
 	echo ""
 	echo "To compile SQL, just execute:"
 	echo -e "\t./bootstrap"
-	echo -e "\tcd ${BUILD}"
+	echo -e "\tcd ${SQL_BUILD}"
 	echo -e "\t${CONFIGURE}"
 	echo -e "\tmake"
 	echo -e "\tmake install"
