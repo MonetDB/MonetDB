@@ -129,15 +129,19 @@ def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
     else:
         add = name + " ="
     for l in list:
-        if (l[0] in  ("-", "$")):
+	if (l == "@LIBOBJS@"):
+            add = add + " $LIBOBJS"
+        elif (l[0] in  ("-", "$", "@")):
             add = add + " " + l
-        elif (l[0] != "@"  and  l[-1] != "@"):
+	else:
             add = add + " " + msc_translate_dir(l,msc) + ".lib"
             deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
     for l in dlibs:
-        if (l[0] in  ("-", "$")):
+	if (l == "@LIBOBJS@"):
+            add = add + " $LIBOBJS"
+        elif (l[0] in  ("-", "$", "@")):
             add = add + " " + l
-        elif (l[0] != "@"  and  l[-1] != "@"):
+	else:
             add = add + " " + msc_translate_dir(l,msc) + ".lib"
             deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
     if (type != "MOD"):
@@ -452,20 +456,23 @@ def msc_library(fd, var, libmap, msc ):
 
     srcs = "lib" + sep + libname + "_OBJS ="
     for target in libmap['TARGETS']:
-        t,ext = split_filename(target)
-        if (ext == "o"):
-            srcs = srcs + " " + t + ".obj"
-        elif (ext == "glue.o"):
-            srcs = srcs + " " + t + ".glue.obj"
-        elif (ext == "tab.o"):
-            srcs = srcs + " " + t + ".tab.obj"
-        elif (ext == "yy.o"):
-            srcs = srcs + " " + t + ".yy.obj"
-        elif (ext in hdrs_ext):
-            HDRS.append(target)
-        elif (ext in scripts_ext):
-            if (target not in SCRIPTS):
-                SCRIPTS.append(target)
+	if (target == "@LIBOBJS@"):
+		srcs = srcs + " $LIBOBJS"
+	else:
+        	t,ext = split_filename(target)
+        	if (ext == "o"):
+            		srcs = srcs + " " + t + ".obj"
+        	elif (ext == "glue.o"):
+            		srcs = srcs + " " + t + ".glue.obj"
+        	elif (ext == "tab.o"):
+            		srcs = srcs + " " + t + ".tab.obj"
+        	elif (ext == "yy.o"):
+            		srcs = srcs + " " + t + ".yy.obj"
+        	elif (ext in hdrs_ext):
+            		HDRS.append(target)
+        	elif (ext in scripts_ext):
+            		if (target not in SCRIPTS):
+                		SCRIPTS.append(target)
     fd.write(srcs + "\n")
     ln = "lib" + sep + libname
     fd.write( ln + ".lib: " + ln + ".dll\n" )
@@ -598,7 +605,6 @@ LDFLAGS = /link
 INSTALL = copy
 # TODO
 # replace this hack by something like configure ...
-CONFIGURE = $(TOPDIR)/NT/configure.py
 MKDIR = mkdir
 ECHO = echo
 CD = cd
