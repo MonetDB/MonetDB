@@ -64,6 +64,21 @@ axis step evaluation on the @1 axis from the given context."
 @:scj_cmd(anc,ancestor)@
 
 @= scj_cmd
+
+#############################################
+# The NEW XML print functions
+#
+# - print_doc(str mode, BAT[void,bat] ws, str name)
+# - print_result(str mode, BAT[void,bat] ws, BAT[void,oid] item,
+#			BAT[void,int] kind, .... the value BATs)
+#
+.COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
+ "C interface to Workset print routine"
+.COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
+ "C interface to Workset result print routine"
+.COMMAND dump_doc(BAT[void,bat], str) : void = xquery_dump_doc_main;
+ "C interface to Workset print routine"
+
 .COMMAND scj_@1(BAT[void,int] pre_size,
                 BAT[oid,any] ctx,
                 int height,

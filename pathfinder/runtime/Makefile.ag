@@ -30,7 +30,8 @@ lib__pathfinder = {
 		pathfinder.mx \
 		staircasejoin.mx \
 		prec_foll.mx \
-		levelsteps.mx
+		levelsteps.mx \ 
+		xquery.mx
 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
 	LIBS = $(MONETDB_LIBS)
