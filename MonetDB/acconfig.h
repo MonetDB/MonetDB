@@ -24,6 +24,7 @@
  */
 
 #include "sysdefs.h"
+@TOP@
 
 /* Define this if the compiler has bool type defined */
 #undef HAVE_BOOL
