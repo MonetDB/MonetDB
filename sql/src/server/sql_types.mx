@@ -24,7 +24,14 @@
 @f sql_types
 @a N.J. Nes
 @* 
+The typing scheme of SQL is quite elaborate. The standard introduces
+several basic typs with a plethora of functions. 
+As long as we haven;t implemented a scheme to accept the
+function type signature and relate it to a C-function linked
+with the system, we have to patch the code below.
 
+Given the large number of examplex, it should be relatively
+easy to find something akin you intend to enter.
 @h
 #ifndef SQL_TYPES_H
 #define SQL_TYPES_H
@@ -739,7 +746,10 @@ static char *local_result(char *s){
 	}
 	return NULL;
 }
-
+@-
+The current implementation uses a hardwired type and function table.
+This routine is called once upon restart of the system.
+@c
 void sqltypeinit()
 {	
 	int i;
@@ -960,7 +970,11 @@ void sqltypeinit()
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX);
 	  }
 	}
-
+	/* Add the ABS for all numericals and floats */
+	for(t=numerical; t < dates; t++){
+		sql_create_func( "abs", "abs", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func("mod","%", *t, *t, *t, SCALE_FIX);
+	}
 	for(t=floats; t < dates; t++){
 		sql_create_func( "floor", "floor", *t, NULL, *t, SCALE_FIX ); 
 		sql_create_func( "ceil", "ceil", *t, NULL, *t, SCALE_FIX ); 
@@ -1001,11 +1015,19 @@ void sqltypeinit()
 	 	  sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))),
  		sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), 
 	    sql_create_subtype(*t, 0, 0));
+	  sql_create_func_( "substring", "string", 
+	 	  list_append( 
+	  	    list_append(list_create((fdestroy)&arg_destroy),
+	  	    sql_create_arg(NULL, sql_create_subtype(*t, 0, 0))),
+	 	  sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))),
+	    sql_create_subtype(*t, 0, 0));
 
 	  sql_create_func( "trunc", "trunc", *t, INT, *t, SCALE_SUB);
 	  sql_create_func( "strconcat", "+", *t, *t, *t, SCALE_ADD);
 	  sql_create_func( "upper", "toUpper", *t, NULL, *t, SCALE_FIX);
 	  sql_create_func( "lower", "toLower", *t, NULL, *t, SCALE_FIX);
+	  sql_create_func( "char_length", "length", *t, NULL, INT, SCALE_FIX);
+	  sql_create_func( "character_length", "length", *t, NULL, INT, SCALE_FIX);
 	}
 }
 

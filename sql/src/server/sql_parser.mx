@@ -1957,6 +1957,19 @@ string_funcs:
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_list(l, ops);
 		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
+  | SUBSTRING '(' scalar_exp FROM nonzero ')' 
+				{ dlist *l = dlist_create();
+				  dlist *ops = dlist_create();
+				  sql_subtype *t = 
+					sql_bind_subtype("MEDIUMINT", 0, 0);
+
+				  dlist_append_symbol(ops, $3);
+  		  		  dlist_append_symbol(ops, _newAtomNode(
+					atom_int(t, $5 -1 )));
+
+  		  		  dlist_append_string(l, _strdup("substring"));
+  		  		  dlist_append_list(l, ops);
+		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("strconcat"));
