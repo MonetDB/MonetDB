@@ -1,3 +1,0 @@
-
-SUBDIRS = server backends odbc LINK_STATIC?tools
-

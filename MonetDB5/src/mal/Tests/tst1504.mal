@@ -1,9 +1,0 @@
-	x := new(:oid,:chr);
-	de_a := insert(x,1@0,'a');
-	ee_a := insert(x,2@0,'a');
-	y:= new(:chr,:oid);
-	xr:= reverse(x);
-	print(xr);
-	insert(y,xr);
-print("result?");
-	print(y);
