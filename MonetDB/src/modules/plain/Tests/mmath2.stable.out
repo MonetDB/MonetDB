@@ -59,6 +59,7 @@ expect.insert("asin(sin(M_PI))",		dbl(0));
 expect.insert("acos(cos(M_PI))",		M_PI);
 expect.insert("atan(tan(M_PI_2))",		M_PI_2);
 expect.insert("atan(tan(M_PI_4))",		M_PI_4);
+expect.insert("tan(atan2(dbl(0.1),dbl(1.0)))",	dbl(0.1));
 expect.insert("sqrt(pow(dbl(2),dbl(2)))",	dbl(2));
 expect.insert("log(exp(dbl(10)))",		dbl(10));
 expect.insert("exp(log(dbl(10)))",		dbl(10));

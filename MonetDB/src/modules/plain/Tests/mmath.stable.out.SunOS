@@ -10,19 +10,6 @@ stdout of test 'mmath` in directory 'src/modules/plain` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("mmath");
 test_mmath();
-[ 1.2246467991473532e-16 ]
-[ 3.1415926535897931 ]
-[ 1.5707963267948966 ]
-[ 0.78539816339744828 ]
-[ 0.10000000149011612 ]
-[ 2 ]
-[ 22026.465794806718 ]
-[ 2.3025850929940459 ]
-[ 1 ]
-[ 2 ]
-[ 1.2000000476837158 ]
-[ 1 ]
-[ 0.19999980926513672 ]
 [ Infinity ]
 [ 1 ]
 [ -Infinity ]
