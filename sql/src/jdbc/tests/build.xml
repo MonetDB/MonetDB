@@ -42,7 +42,7 @@
   </path>
   <target
     name="test"
-	depends="compile,Cautocommit,Csavepoints,PStimedate,PStimezone,Rbooleans,Rpositioning,Rtimedate,Sbatching"
+	depends="compile,Cautocommit,Csavepoints,PStimedate,PStimezone,Rbooleans,Rpositioning,Rtimedate,Sbatching,Rmetadata"
   />
   <target name="Cautocommit">
     <java classname="Test_Cautocommit" classpathref="test_path" failonerror="true">
@@ -81,6 +81,11 @@
   </target>
   <target name="Sbatching">
     <java classname="Test_Sbatching" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
+  <target name="Rmetadata">
+    <java classname="Test_Rmetadata" classpathref="test_path" failonerror="true">
 	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
 	</java>
   </target>
