@@ -242,7 +242,7 @@ The big code generation switch. The sections are aligned to the
 Monet version4 code generation block for eas of comparison.
 @c
 int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
-    InstrPtr q;
+    InstrPtr q = NULL;
     node *n;
 
     if (s){
