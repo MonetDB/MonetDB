@@ -2311,7 +2311,6 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 MapiHdl
 mapi_query_prep(Mapi mid) 
 {
-	int ret = MERROR;
 	MapiHdl hdl;
 
 	if (mid->languageId == LANG_SQL) {
@@ -2319,7 +2318,6 @@ mapi_query_prep(Mapi mid)
 		stream_write(mid->to, "S", 1, 1);
 	}
 	hdl = prepareQuery(mapi_new_handle(mid), "large query");
-	ret = mid->error;
 	return hdl;
 }
 
