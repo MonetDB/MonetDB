@@ -253,8 +253,6 @@ void KillLines(FILE *fp, char* pattern, int killprev){
 	
 void UpdateFiles()
 {
-    char *new, *old;
-    char cmp[1024];
     File *f;
     int status;
     

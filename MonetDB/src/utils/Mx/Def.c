@@ -102,9 +102,9 @@ char *	name;
 {
     Def 	*d;
     CmdCode	dir;
-    char 	*line, *str, *cmd, *blk;
+    char 	*line, *cmd, *blk;
     extern int	pr_hide;
-    int		i, mod= 0, sec= 0, lino;
+    int		mod= 0, sec= 0, lino;
     CmdCode 	lastdir = Continue;
 
     IoReadFile(name);
@@ -416,7 +416,7 @@ char *line;
 char *substr(s,sep)
     char *s,*sep;
 {
-    int loc;
+    size_t loc;
     
     loc = strcspn(s,sep);
     if (loc==strlen(s)) return NULL; else return s+loc;

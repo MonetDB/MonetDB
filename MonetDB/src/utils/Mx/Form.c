@@ -57,10 +57,8 @@ void    PrCodeDisplay(Def *,char*);
 void	GenForm()
 {
     Def *	d;
-    File * 	f;
     CmdCode	dirbak=Nop;
     int         env;
-    long	clock;
     char*	getlogin();
     char*	dstbak = NULL;
     extern char bibtexfile[256];

@@ -276,7 +276,9 @@ int	nit;
 {
 Itable *it;
 Ientry *ie;
+/*
 int first;
+*/
 
 	it= itable + nit;
 	if( it->it_nentry == 0)

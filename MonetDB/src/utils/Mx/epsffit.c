@@ -44,8 +44,12 @@
 #include <ctype.h>
 /* #include "patchlev.h" */
 
+#ifndef min
 #define min(x,y) ((x) > (y) ? (y) : (x))
+#endif
+#ifndef max
 #define max(x,y) ((x) > (y) ? (x) : (y))
+#endif
 
 static char *prog;
 

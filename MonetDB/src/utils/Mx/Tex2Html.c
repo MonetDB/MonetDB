@@ -485,13 +485,14 @@ char **stack;
 char *nextstack;
 {
     char c, str[256], *opt_start, *opt_end, *p;
-    int i, k, len;
+    int i, k;
+    size_t len;
     nextstack[0] = 0;
 
     while(p1 < p2) {
 	/* FIRST: table hack!! */
 	if (table && (printed_column <= table_column)) { 
-		char *p3, *p4 = p2+1, *p5 = table_columns[table_column];
+		char *p4 = p2+1, *p5 = table_columns[table_column];
 		int width = 1;
 		/* just bypass the whole philosophy of this program now */
 		if (strstr(p1,"\\multicolumn")) {
@@ -585,9 +586,10 @@ mathon:				math=1; ofile_puts("<i>");
 		if ((len==1) || !isalnum(c))  {
 			p1 = p+1; PrChr(*p); /* some escaped character */
 		} else if (math) {
+			size_t j;
 			/* in mathmode, we treat it as a predicate */
 			ofile_puts(" <font size=\"-1\"><i>");
-			for(i=0; i<len; i++) PrChr(p[i]);
+			for(j=0; j<len; j++) PrChr(p[j]);
 			ofile_puts("</i></font> ");
 		} else {
 			/* scientific approach: ignore unexplicable phenomena */
