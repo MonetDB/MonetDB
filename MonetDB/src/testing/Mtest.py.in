@@ -1753,7 +1753,6 @@ def CheckSocket2(env,SERVER,SrvrErr) :
         env['exe']['X100_Client']   = env['exe']['X100_Client'][0]   , env['exe']['X100_Client'][1].replace(op, np)
         env['exe']['XQuery_Client'] = env['exe']['XQuery_Client'][0] , env['exe']['XQuery_Client'][1].replace(op, np)
         os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
-        os.environ['MSHUTDOWN']     = os.environ['MSHUTDOWN'].replace(op, np)
         os.environ['MAPI_CLIENT']   = os.environ['MAPI_CLIENT'].replace(op, np)
         os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
         os.environ['X100_CLIENT']   = os.environ['X100_CLIENT'].replace(op, np)
