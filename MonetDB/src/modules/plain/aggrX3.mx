@@ -1113,7 +1113,7 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13_@3_@4: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return CMDaggrX3_@1_@3_@4(ret, BATjoin(BATmirror(g),b), e);
+		return aggrX3_@1_@3_@4(ret, BATjoin(BATmirror(g),b), e);
 	}
 
       	/* init: prepare the result bat; 
