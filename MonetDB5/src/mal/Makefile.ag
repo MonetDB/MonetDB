@@ -29,6 +29,6 @@ doc_mal = {
 	mal_namespace.mx mal_properties.mx mal_optimizer.mx scenario_init.mx
 }
 scripts_mal = {
-	DIR = pkglibdir/mal
+	DIR = pkglibdir
 	SOURCES = mal_scenario.mal
 }

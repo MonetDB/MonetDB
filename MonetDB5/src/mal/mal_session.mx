@@ -67,7 +67,7 @@ int malStartupAdmin(){
 	c->nspace= newScope(NULL, GDKstrdup("Admin"));
 	initLibraries();
 	defaultScenario(c);
-	malImport(c,"mal/mal_init",0,0);
+	malImport(c,"mal_init",0,0);
 	mal_scope = c->nspace->outer;
 	showErrors();
 	return 1;
