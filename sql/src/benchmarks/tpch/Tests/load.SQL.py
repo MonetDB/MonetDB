@@ -37,7 +37,7 @@ for i in fileinput.input(os.path.join(SRCDIR,"load.sql")):
     if len(x) == 2:
         f.write(x[0]+DATADIR+os.sep+x[1])
     if len(x) == 1:
-    	f.write(x[0])
+        f.write(x[0])
 f.close()
 
 CALL = SQL_CLIENT+" < load.sql"

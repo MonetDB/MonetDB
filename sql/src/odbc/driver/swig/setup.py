@@ -15,5 +15,5 @@ setup(name="_odbc",
       py_modules=['odbc'],
       ext_modules=[Extension("_odbc", ['odbc_wrap.c'],
                              define_macros = [('SWIG_COBJECT_TYPES', None)],
-			     libraries = ['MonetODBC'],
-			     library_dirs = ['/ufs/sjoerd/Monet/lib'])])
+                             libraries = ['MonetODBC'],
+                             library_dirs = ['/ufs/sjoerd/Monet/lib'])])
