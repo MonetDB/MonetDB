@@ -73,6 +73,6 @@ int hello( str *res, str src ){
 }
 
 @mil
-if (mod = "main"){
+if (mod() = "main"){
 	print(hello("world"));
 }

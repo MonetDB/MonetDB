@@ -11,7 +11,7 @@ stdout of test 'sigs` in directory 'src` itself:
 var mods := new(void,str);
 mods.insert(nil,"example");
 
-mods@batloop{
+mods@batloop(){
 	printf("module '%s'\n",$t);
 	module($t);
 	sigs($t);
@@ -23,7 +23,7 @@ module 'example'
 #-------------------------#
 [ "hello(str) : str"	  ]
 
-quit;
+quit();
 
 # 20:09:25 >  
 # 20:09:25 >  Done.
