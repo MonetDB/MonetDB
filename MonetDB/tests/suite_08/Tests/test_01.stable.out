@@ -277,14 +277,15 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#---------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-redhat-linux-gnu"							  ]
-[ "gdk_version",	  "4.3.19"									  ]
-[ "monet_pid",		  "12510"									  ]
-[ "prefix",		  "/ufs/niels/data/Linux-i686"							  ]
-[ "exec_prefix",	  "/ufs/niels/data/Linux-i686"							  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/local_tmp/manegold.GNU_32-d.5973/MonetDB/Linux2.4.21-251-smp/conf/MonetDB.conf"																																		  ]
+[ "gdk_arch",		  "32biti686-suse-linux"																																									  ]
+[ "gdk_version",	  "4.4.0"																																											  ]
+[ "monet_pid",		  "17484"																																											  ]
+[ "prefix",		  "/local_tmp/manegold.GNU_32-d.5973/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
+[ "exec_prefix",	  "/local_tmp/manegold.GNU_32-d.5973/MonetDB/.GNU_32-d/Linux2.4.21-251-smp"																																			  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm"				  ]
+[ "gdk_dbfarm",		  "/local_tmp/manegold.GNU_32-d.5973/MonetDB/Linux2.4.21-251-smp/dbfarm"																																			  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -292,20 +293,18 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/ufs/niels/data/Linux-i686/lib/MonetDB"					  ]
+[ "monet_mod_path",	  "/local_tmp/manegold.GNU_32-d.5973/MonetDB/Linux2.4.21-251-smp/src/modules/plain/.libs:/local_tmp/manegold.GNU_32-d.5973/MonetDB/Linux2.4.21-251-smp/src/modules/contrib/.libs:/local_tmp/manegold.GNU_32-d.5973/MonetDB/Linux2.4.21-251-smp/src/modules/calibrator/.libs:/local_tmp/manegold.GNU_32-d.5973/MonetDB/Linux2.4.21-251-smp/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "44678"									  ]
+[ "mapi_port",		  "41323"																																											  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "51491"									  ]
+[ "sql_port",		  "50613"																																											  ]
 [ "sql_debug",		  "0"							  ]
-[ "sql_api",		  "sql(default-schema)"					  ]
 [ "sql_user",		  "monetdb"						  ]
-[ "sql_schema",		  "default-schema"					  ]
-[ "sql_logdir",		  "/ufs/niels/data/Linux-i686/var/MonetDB/log"					  ]
-[ "gdk_config",		  "/ufs/niels/data/Linux-i686/etc/monet.conf"					  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/mTests/tests/suite_08"	  ]
+[ "sql_schema",		  "sys"																																												  ]
+[ "sql_logdir",		  "/local_tmp/manegold.GNU_32-d.5973/MonetDB/Linux2.4.21-251-smp/log"																																				  ]
+[ "monet_cwd",		  "/local_tmp/manegold.GNU_32-d.5973/MonetDB/Linux2.4.21-251-smp/mTests/tests/suite_08"																																		  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -335,7 +334,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Aug 20 14:40:51 2004"	  ]
+[ 0,	  "Mon Oct 11 00:49:33 2004"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree
