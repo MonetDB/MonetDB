@@ -426,8 +426,8 @@ main(int ac, char **av)
 	}
 
 	if (strlen(schema) > 0){
-		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
 		struct stat st;
+		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
 		fstat(fileno(stdin),&st);
 		if (S_ISCHR(st.st_mode))
 	   		is_chrsp = 1;
