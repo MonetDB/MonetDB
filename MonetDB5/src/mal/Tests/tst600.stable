@@ -30,6 +30,6 @@ function Admin.main():int; #0  (main:int)
     box.discard("chest","pi"); #9 BOXdiscard ($12:void)<-($2:str)($4:str)
     box.close("chest"); #10 BOXclose ($13:void)<-($2:str)
 end main; #11  
-[ 3.417 ]
-[ 3.417 ]
+[ 3.41700006 ]
+[ 3.41700006 ]
 >

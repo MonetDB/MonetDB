@@ -1,0 +1,28 @@
+# An extensive test for the new table_io layout
+mdb('T');
+table_io.print(2,"strong");
+table_io.print(2,"strong",true);
+first:=1;
+last:= 2;
+table_io.print(first,last);
+
+table_io.setProperties("name,type");
+#table_io.setRowBracket("|","|");
+table_io.header(first,last);
+
+b1:= new(void,int);
+insert(b1,42);
+b2:= new(void,str);
+insert(b2,"hello world");
+
+table_io.setProperties("name,type,dense,sorted,key");
+table_io.print(b1,b2);
+
+#leftover typeing
+#function someone(i:any...);
+#print("good");
+#end someone;
+#someone(2,"strong");
+#someone(2,"strong",true);
+#someone(1,2);
+#b:= new(void,int);

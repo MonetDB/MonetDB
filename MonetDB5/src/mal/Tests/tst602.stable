@@ -27,7 +27,7 @@ barrier v := const.iterator(nme); #4 CONSTiterator (v:lng)<-(nme:str) jump 7
 exit v; #7  (v:lng)
     const.close(); #8 CONSTclose ($8:void)
 end main; #9  
-[ 3.147 ]
+[ 3.14700007 ]
 [ "user" ]
 [ "dbname" ]
 [ "dbfarm" ]
