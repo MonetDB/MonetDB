@@ -163,7 +163,7 @@ have the first character of their named replaced by 't' ({\tt sorted}, {\tt tden
 [ "hindex",          "absent"     ] # name of built-in accelerator: hash or index (T-tree) 
 \end{verbatim}
 
-As described in the @[<a href="www/gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
+As described in the @[<a href="../gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
 BATs store their data in one to five heaps, of which at least one called {\tt batBuns}
 is present always. For each column type that is {\em variable-sized} - like {\tt str} - another 
 heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search 
@@ -425,7 +425,7 @@ a list of all currently known accelarator types.
 \end{verbatim}
 @
 More info on how to write new search accelerators can be found in the
-@[<a href="../mel.html">MEL documentation</a>@.
+@[<a href="../../mel.html">MEL documentation</a>@.
 @m
 .COMMAND accbuild(BAT[any,any] b, int acctype) = CMDaccbuild_std;
 "Build an accelerator on the head column of b. The builtin accelerator
