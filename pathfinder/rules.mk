@@ -170,6 +170,20 @@ MXFLAGS= -n
 	$(M4) $< >$@
 	chmod =r $@
 
+# Some files need to be preprocessed with the stream editor `sed'.
+# The required sed expressions are contained in the source files
+# themselves; they carry a special marker that we use during the
+# build.
+# We first ``grep'' for all lines in the source file that contain
+# the marker. We translate this marker into an sed expression
+# (using sed; we map `*!sed 'pattern'' to `-e 'pattern'', as it
+# can be passed to sed on the command line). The resulting sed
+# expression is the used as the sed command line argument when
+# we feed the source file through sed.
+% :: %.sed
+	sed `grep '\*!sed' $< | \
+	  sed 's/\*!sed *'\''\(.*\)'\''/\-e \1/g'` $< > $@
+
 $(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
 	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
 
