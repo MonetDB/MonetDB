@@ -22,7 +22,7 @@
 @+ Scalar iterators
 Iterators are sometimes needed also at the MAL level.
 The barrier and control primitives are often sufficient
-to mimick them directly.
+to mimic them directly.
 For the common case:
 @example
 for( i=first; i<last; i+= step)
@@ -37,7 +37,7 @@ collection.
 @mal
 module mal;
 
-command newRang(v:oid)(:bit,:oid)
+command newRange(v:oid)(:bit,:oid)
 address RNGnewRange_oid; 
 command newRange(v:sht)(:bit,:sht)
 address RNGnewRange_sht; 
@@ -75,7 +75,7 @@ The routines below are linked with the kernel by default
 @mal
 command raise(msg:str) :str 
 address CMDraise
-comment "Raise an exception labelled 
+comment "Raise an exception labeled 
 	with a specific message.";
 @+ Macro expansion
 Running a script stored in a file is interpreted as
@@ -284,7 +284,7 @@ str CMDsetCwd(str *ret, str *fnme){
 @}
 @+ MAL iterator code
 This module contains the framework for the construction of iterators.
-Iterators enumerate elements in a collection defined by a few paramaters,
+Iterators enumerate elements in a collection defined by a few parameters,
 e.g. a lower/upper bound.
 
 Iterators appear as ordinary function calls in the MAL code and
@@ -332,7 +332,7 @@ str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 @:nextElement(dbl)@
 
 @-
-There are a few more atomairy storage types we have to introduce here:
+There are a few more atom-airy storage types we have to introduce here:
 OID, str, void, bit, ptr
 @-
 @}

@@ -18,7 +18,7 @@
 @f tablet
 @a Niels Nes, Martin Kersten
 @d 29/07/2003
-@* The tablet io module
+@* The tablet module
 
 A database cannot live without ASCII tabular print/dump/load operations. 
 It is needed to produce reasonable listings, to exchange answers
@@ -38,11 +38,11 @@ BATS.
 @end verbatim
 @-
 The lines contain the representation of a list in Monet tuple format.
-This format has been choosen to ease parsing by any front-end. The scalar values
+This format has been chosen to ease parsing by any front-end. The scalar values
 are represented according to their type. For visual display, the columns
 are aligned by placing enough tabs between columns based on sampling the
 underlying bat to determine a maximal column width.
-(Note,actual commas are superflous)
+(Note,actual commas are superfluous)
 
 The arguments to the command can be any sequence of BATs, but which are
 assumed to be aligned. That is, they all should have the same number of
@@ -50,7 +50,7 @@ tuples and the j-th tuple tail of Bi is printed along-side the j-th tuple
 tail of Bi+1. 
 
 Printing both columns of a single bat is handled by tablet as a
-print of two columns. This slight inconvenience is catched by
+print of two columns. This slight inconvenience is catch-ed by
 the io.print(b) command, which resolves most back-ward compatibility issues.
 @-
 In many cases this output would suffice for communication with a front-end.
@@ -99,7 +99,7 @@ structure. This structure is initialized using either
 tablet.setFormat(B1,...,Bn) or tablet.setFormat(S1,...,Sn) (Bi is a BAT, Si a scalar).
 Subsequently, some additional properties can be set/modified, 
 column width and brackets. 
-After printing/paging the BAT resources should be freeed using
+After printing/paging the BAT resources should be freed using
 the command tablet.finish().
 
 Any access outside the page-range leads to removal of the report structure.
@@ -126,7 +126,7 @@ the SQL compiler
 This table is printed with tab separator(s) between elements
 and the bar (|) to mark begin and end of the string.
 The column parameters give a new title, 
-a null replacement value, and the perferred column width.
+a null replacement value, and the preferred column width.
 Each column value is optionally surrounded by brackets.
 Note, scale and precision can be applied to integer values only.
 A negative scale leads to a right adjusted value.
@@ -193,8 +193,8 @@ tablet.setStream(stream);
 tablet.setProperties("name,type,dense,sorted,key,min,max");
 tablet.header(B1,..,Bn); tablet.page(B1,..,Bn). 
 The result can be read by tablet.load(stream,B1,..,Bn) command. 
-If loading is succesful, e.g. no parsing
-errors occured, the tuples are appended to the corresponding BATs.
+If loading is successful, e.g. no parsing
+errors occurred, the tuples are appended to the corresponding BATs.
 
 @+ Front-end extension
 A general bulk loading of foreign tables, e.g. CSV-files and fixed position 
@@ -218,7 +218,7 @@ With the nr argument the dump can be limited (-1 for unlimited).
 
 The output operation is for ordered output. A bat (possibly form the collection)
 gives the order. For each element in the order bat the values in the bats are
-searched, if all are found they are outputed in the datafile, with the given
+searched, if all are found they are output in the datafile, with the given
 separators.
 
 The scripts from the LOAD part are all there too for backward compatibility
@@ -236,7 +236,7 @@ merge with existing bats with the merge_data script.
 The dump_format scripts dump a format file for a given set of 
 to be dumped bats. These bats can be dumped with dump_data.
 @mal
-# the major tablet shuffling routiens
+# the major tablet shuffling routines
 module tablet;
 
 command load( names:bat[:void,:str], seps:bat[:void,:str], 
@@ -467,7 +467,7 @@ static int setTabwidth(Column *c);
 The table formatting information is stored in a system wide table.
 Access is granted to a single client thread only.
 The table structure depends on the columns to be printed,
-it will be dynamically extended to accomodate the space.
+it will be dynamically extended to accommodate the space.
 @c
 static int tablet_debug = 0;
 static Table *tableReports[MAL_MAXCLIENTS];

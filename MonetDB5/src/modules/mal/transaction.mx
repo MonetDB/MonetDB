@@ -21,7 +21,7 @@
 In the philosophy of Monet, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 
 implemented as a module.
-This code base is largely obsolute and should be re-considered when
+This code base is largely absolute and should be re-considered when
 serious OLTP is being supported.
 Note, however, the SQL front-end obeys transaction semantics.
 

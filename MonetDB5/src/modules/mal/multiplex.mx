@@ -216,7 +216,7 @@ Constants passed into the multiplex operator are a special case.
 @-
 Beware, the BAT header types in this case could be a mix of oid and void.
 They are conformable in the current implementation with respect to
-join compatability.
+join compatibility.
 A polymorphic type is not allowed anymore at this stage,
 @c
 			int t2 = getHeadType(t);
@@ -530,7 +530,7 @@ in the new mal block.
 @-
 Beware, the operator constant (arg=1) is passed along as well,
 because in the end we issue a recursive function call that should
-find the actule arguments at the proper place of the callee.
+find the actual arguments at the proper place of the callee.
 @c
 	for(i=1;i<pci->argc;i++){
 		sprintf(name,"A%d",i);

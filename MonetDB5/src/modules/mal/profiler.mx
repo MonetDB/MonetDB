@@ -59,7 +59,7 @@ profiler.activate("statement");
 @-
 The profiler event can be handled in several ways.
 The default strategy is to ship the event record immediately over a stream
-to a performance monitor, eg. Mcockpit.
+to a performance monitor, eg. Mknife.
 An alternative strategy is preparation of off-line performance analysis.
 For this case the event record is turned into a XML structure and
 sent over the stream (most likely linked with a file)
@@ -157,7 +157,7 @@ its generates a noticable overhead.
 #include "mal_profiler.h"
 
 @-
-Using the Monet Performance Profiler is contrainted by the mal_profiler.
+Using the Monet Performance Profiler is constrained by the mal_profiler.
 @= checkProfiler
 #ifndef MALprofiler
 	return throwMessage("profiler.@1:Monet not compiled for performance monitoring");

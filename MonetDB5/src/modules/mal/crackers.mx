@@ -116,7 +116,7 @@ address CRKselectPieces
 comment "Retrieve identities of all pieces that qualify the selection criterion.";
 @-
 The relational select is overloaded. It collects the pieces
-into a single BAT. Preferrable using a BATview, otherwise
+into a single BAT. Preferably using a BATview, otherwise
 the pieces are combined to form a new BAT.
 @mal
 command select(b:bat[:int,:int],l:int,h:int,li:bit,hi:bit):bat[:int,:int]
@@ -174,7 +174,7 @@ shuffle the data around to have a first assessment of
 the value ranges supported.
 
 Note, this implementation does not protect the crackMap
-administration. This is necesary in a concurrent version.
+administration. This is necessary in a concurrent version.
 The granularity can be used to limit the number of pieces.
 @c
 #include "mal.h"
@@ -327,7 +327,7 @@ str CRKinfo(int *k, int *bid)
 The key operation for the cracker infrastructure is to process a scan
 efficiently and re-shuffle the tuples in the BAT such that a simple
 BATview can be used to denote the subrange of interest to upper layers.
-Assume the rane (low,hgh), both inclusive, is needed then all tuples
+Assume the range (low,hgh), both inclusive, is needed then all tuples
 not qualifying this range should be moved out of the way by effectively
 splitting the BAT into three segments.
 
@@ -415,7 +415,7 @@ Inspect the value range table to only further crack qualifying fragments.
 					vm= (ptr)((char*)vm-xx);
 					p= (ptr)((char*)p-xx);
 @-
-The choosen element could also be less then 'low' and an 
+The chosen element could also be less then 'low' and an 
 exchange operation could be saved. It turned out that
 this optimization was not effective when a BUNtail
 test was performed. A similar remark holds for having
@@ -718,7 +718,7 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	*vid=  view->batCacheid;
 
 @-
-Select an interval with a desirable value to start the glueing process
+Select an interval with a desirable value to start the gluing process
 @c
 	for(i=0; i<crackMap[m].freepiece; i++)
 	if( crackMap[m].pieces[i].kind == LEAF && /* NOT NEEDED */
@@ -746,7 +746,7 @@ Select an interval with a desirable value to start the glueing process
 		    crackMap[m].pieces[i].rng_min>= *(int*) low &&
 		    crackMap[m].pieces[i].rng_max<= *(int*) high
 		) {
-/* no little speedup, disgarded
+/* no little speedup, discarded
 			if( crackMap[m].pieces[i].idx_first < idxlow &&
 			    crackMap[m].pieces[i].idx_last > idxhgh){
 				VIEWbounds(view,
@@ -809,7 +809,7 @@ str CRKselectPieces(int *result, int *bid, int *low, int *hgh)
 	return MAL_SUCCEED;
 }
 @-
-The GDK kernel contains an error wrt garbage collection
+The GDK kernel contains an error about garbage collection
 of BATview objects. They have to be freed explicitly
 too.
 @c
@@ -833,5 +833,5 @@ str CRKdropView(int *newpid, int *bid){
 	return MAL_SUCCEED;
 } 
 @-
-Test cases for this experiment are stored under the sequente tst5000
+Test cases for this experiment are stored under the sequence tst5000
 @}

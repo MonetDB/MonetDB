@@ -20,13 +20,13 @@
 @d 01/07/1996, 31/01/2002
 
 @* The IO module
-The IO module provides simple ascii-io rendering options.
+The IO module provides simple ASCII-io rendering options.
 It is modeled after the version 4 tuple formats, but does not
 attempt to outline the results. Instead, it is geared at speed,
-which also means that some functionality regarding the builtin
+which also means that some functionality regarding the built-in
 types is duplicated from the atoms definitions.
 
-A functional limited form of formatted printinf is also provided.
+A functional limited form of formatted printf is also provided.
 It accepts at most one variable though.
 
 A more complete approach is the tablet module.
@@ -46,7 +46,7 @@ comment "BATs are printed with '#' for legend
 	comma separated values (head and tail). 
 	If multiple BATs are passed for printing, 
 	print() performs an implicit natural 
-	join, producing a multiattribute table.";
+	join, producing a multi attribute table.";
 
 pattern ftable( filep:stream, 
 		b1:bat[:any$1,:any],
@@ -500,7 +500,7 @@ The conversion routine assumes space in the buffer for storing the result.
 @include prelude.mx
 @-
 A BAT can be saved in Monet format using the export command.
-It is of particular use in preparing an ascii version for migration.
+It is of particular use in preparing an ASCII version for migration.
 The exported file is saved in the context of the directory
 where the server was started unless an absolute file name was
 presented.
@@ -522,7 +522,7 @@ str IOexport(int *ret, int *bid, str *fnme) {
 }
 
 @-
-The import command reads a single BAT from an ascii file. It assumes
+The import command reads a single BAT from an ASCII file. It assumes
 a layout compatible with that produced by print or export.
 @c
 str IOimport(int *ret, int *bid, str *fnme) {

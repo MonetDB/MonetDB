@@ -1,4 +1,4 @@
-@' The contents of this file are subject to the MonetDB Public
+@ The contents of this file are subject to the MonetDB Public
 @' License Version 1.0 (the "License"); you may not use this file
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
@@ -109,24 +109,24 @@ comment "Collect a BAT with the atom sizes";
 
 @+ Exception message
 The exception message produced by the modules
-adhire to the structure:
+adhere to the structure:
 <variable>:<context>:<reason>
 These components can be extracted for
 analysis.
 @mal
 command getExceptionVariable(s:str):str
 address INSPECTgetExceptionVariable
-comment "extrace the variable name from
+comment "extract the variable name from
 	the exception message";
 
 command getExceptionReason(s:str):str
 address INSPECTgetExceptionReason
-comment "extrace the reason from
+comment "extract the reason from
 	the exception message";
 
 command getExceptionContext(s:str):str
 address INSPECTgetExceptionContext
-comment "extrace the context string from
+comment "extract the context string from
 	the exception message";
 
 @+ Display code
@@ -157,7 +157,7 @@ address INSPECThelp2
 comment "Collect the comments for a given 
 	function pattern";
 @- Manual construction
-The manual operations ease offline inspection of all function definitons.
+The manual operations ease offline inspection of all function definitions.
 It purposely generates an XML organized file, because we expect external
 tools to massage it further for presentation. The envisioned 
 tagging structure becomes

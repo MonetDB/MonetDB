@@ -67,7 +67,6 @@ pattern heap(nme:str):int
 address atomsHeap;
 @-
 @{
-@c
 @+ The Module implementation
 @h
 

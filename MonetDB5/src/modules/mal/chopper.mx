@@ -19,7 +19,7 @@
 @v 2.0
 @a M.L.Kersten
 @* BAT chopper
-In many low level algorithms an iterator is foten used to break a
+In many low level algorithms an iterator is often used to break a
 collection into smaller pieces. Each piece is subsequently processed
 by a block.
 
@@ -146,7 +146,7 @@ str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule){
 }
 @-
 The hasMoreElements version advances the chunk reader,
-which also means that the view descriptor is alread available.
+which also means that the view descriptor is already available.
 The granule size may differ in each call.
 @c
 str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule){

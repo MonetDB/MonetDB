@@ -17,7 +17,7 @@
 
 @f streams
 @a Niels Nes
-@* An simple interface to streams
+@* A simple interface to streams
 All file IO is funneled through the stream library, which
 guarantees cross-platform capabilities.
 Several protocols are provided, e.g. it can be used to 

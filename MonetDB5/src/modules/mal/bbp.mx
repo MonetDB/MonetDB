@@ -48,7 +48,7 @@ to a directory on the local file system.
 The bbp module implements the box 
 abstraction over the Bat buffer pool. It should 
 (future) provide an adequate transaction 
-and versioning support.  It provides a collection 
+and version support.  It provides a collection 
 of views to inspect the buffer pool status.;
 @mal
 module bbp;
@@ -254,7 +254,7 @@ to a named box.
 	if( box ==0) 
 	return throwMessage("bbp.@1","box is not open");
 @-
-Beware that onces you deposit a BAT into a box, it should
+Beware that once you deposit a BAT into a box, it should
 increment the reference count to assure it is not
 garbage collected. Moreover, it should be done so only once.
 @c
@@ -587,9 +587,9 @@ The BAT buffer pool datastructures describe the memory resident information
 on the whereabouts of the BATs. The three predominant tables are made accessible
 for inspection. 
 
-The most interesting sysbat for end-users is the BID-> NAME mapping,
+The most interesting system bat for end-users is the BID-> NAME mapping,
 because it provides access to the system guaranteed persistent BAT identifier.
-It may be the case that the user alread introduced a BAT with this name,
+It may be the case that the user already introduced a BAT with this name,
 it is simply removed first
 @= Pseudo2
 	if (BBPindex("@1_@2") > 0) 

@@ -22,7 +22,7 @@
 
 This module contains the primitives to inspect and adjust
 the client records maintained during a Mserver session.
-A rudimentatry authorization scheme should be provided[todo].
+A rudimentary authorization scheme should be provided[todo].
 @mal
 module clients;
 
