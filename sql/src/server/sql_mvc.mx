@@ -1984,9 +1984,32 @@ rollforward_changeset_creates( sql_trans *tr, changeset *cs, rfcfunc rf )
 static void
 rollforward_changeset_deletes( sql_trans *tr, changeset *cs, rfdfunc rf )
 {
+	if (!cs) 
+		return;
 	if (cs->dset){
 		node *n;
 		for (n = cs->dset->h; n; n = n->next){
+			sql_base *b = n->data;
+
+			rf(tr, b);
+		}
+	}
+	if (cs->set){
+		node *n;
+		for (n = cs->set->h; n; n = n->next){
+			sql_base *b = n->data;
+
+			rf(tr, b);
+		}
+	}
+}
+
+static void
+rollforward_changeset_map( sql_trans *tr, changeset *cs, rfdfunc rf )
+{
+	if (cs->set){
+		node *n;
+		for (n = cs->set->h; n; n = n->next){
 			sql_base *b = n->data;
 
 			rf(tr, b);
@@ -2075,13 +2098,15 @@ rollforward_drop_idx( sql_trans *tr, sql_idx *i )
 		log_bat_transient(logger, i->bat.bid); 
 		log_bat_transient(logger, i->bat.ubid); 
 	}
+	list_remove_data(i->t->s->idxs, i);
 }
 
 static void
 rollforward_drop_key( sql_trans *tr, sql_key *k )
 {
 	(void) tr; /* unused! */
-	(void) k; /* unused! */
+	list_remove_data(k->t->s->keys, k);
+
 }
 
 static void 
@@ -2754,6 +2779,7 @@ sys_drop_key(sql_trans *tr, sql_key *k ){
 		sys_drop_kc(tr, k, kc);
 	}
 	syskey->base.wtime = tr->wtime = tr->stime;
+	list_remove_data( k->t->s->keys, k);
 }
 
 static void 
@@ -2804,6 +2830,7 @@ sys_drop_idx(sql_trans *tr, sql_idx *i ){
 		sys_drop_ic(tr, i, ic);
 	}
 	sysidx->base.wtime = tr->wtime = tr->stime;
+	list_remove_data( i->t->s->idxs, i);
 }
 
 static void 
@@ -3135,7 +3162,6 @@ void mvc_drop_key(mvc * m, sql_schema *s, char *name)
 
 	k->base.wtime = k->t->base.wtime = tr->wtime = tr->stime;
 	cs_del( &k->t->keys, n, k->base.flag);
-	list_remove_data( k->t->s->keys, k);
 }
 
 sql_idx *
@@ -3259,7 +3285,6 @@ void mvc_drop_idx(mvc * m, sql_schema *s, char *name)
 
 	i->base.wtime = i->t->base.wtime = tr->wtime = tr->stime;
 	cs_del( &i->t->idxs, n, i->base.flag);
-	list_remove_data( i->t->s->idxs, i);
 }
 
 static sql_table *bootstrap_create_table(mvc * m, sql_schema *s, char *name, table_type type)
@@ -3463,6 +3488,8 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	col->colnr = cs_size( &t->columns );
 	col->t = t;
 	col->st = NULL;
+	col->bat.bid = 0;
+	col->bat.ubid = 0;
 	cs_add( &t->columns, col, TR_NEW);
 
 	if (bb){
