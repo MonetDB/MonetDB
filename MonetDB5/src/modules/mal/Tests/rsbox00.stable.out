@@ -1,0 +1,130 @@
+stdout of test 'rsbox00` in directory 'src/modules/mal` itself:
+
+
+# 11:59:39 >  
+# 11:59:39 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet5/program/lib/MonetDB5" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet5/program/var/MonetDB5/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet5/program/var/MonetDB5/log" --set mapi_port=46836 --set sql_port=58031 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox00.mal </dev/null
+# 11:59:39 >  
+
+
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf
+# dbfarm:/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet5/program/var/MonetDB5/dbfarm
+# dbname:mTests_src_modules_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+#include rsbox;
+#
+#rs := rsbox.create("lost", 1, 7);
+#rs := rsbox.create("myid", 2, 3);
+#
+#resultset.setProperty(rs, 1, "table", "table1");
+#resultset.setProperty(rs, 1, "schema", "sys");
+#
+#resultset.setProperty(rs, 2, "width", 1);
+#resultset.setProperty(rs, 2, "table", "table2");
+#resultset.setProperty(rs, 2, "schema", "sys");
+#
+#b1 := bbp.new(:void, :str);
+#bat.insert(b1, nil, "test1");
+#bat.insert(b1, nil, "test2");
+#bat.insert(b1, nil, nil:str);
+#
+#b2 := bbp.new(:void, :int);
+#bat.insert(b2, nil, 2);
+#bat.insert(b2, nil, nil:int);
+#bat.insert(b2, nil, 5);
+#
+#resultset.populateColumn(rs, 1, b1);
+#resultset.populateColumn(rs, 2, b2);
+#
+#resultset.writeNextPart(rs);
+#
+#io.print("Before any cleanup:");
+#barrier (v,res) := rsbox.newIterator();
+#	io.print(res);
+#redo (v,res) := rsbox.hasMoreElements();
+#exit v;
+#
+#rsbox.release(rs);
+#
+#io.print("After release of 'myid':");
+#barrier (v,res) := rsbox.newIterator();
+#	io.print(res);
+#redo (v,res) := rsbox.hasMoreElements();
+#exit v;
+#
+#rsbox.releaseAll();
+#
+#io.print("After a releaseAll:");
+#barrier (v,res) := rsbox.newIterator();
+#	io.print(res);
+#redo (v,res) := rsbox.hasMoreElements();
+#exit v;
+#
+## we did not open, it so why close it?
+##rsbox.close();
+#
+function Admin.main():int;	# 0  (main:int)
+    rs := rsbox.create("lost",1,7);	# 1 RSBcreate (rs:resultset)<-($2:str)($3:int)($4:int)
+    rs := rsbox.create("myid",2,3);	# 2 RSBcreate (rs:resultset)<-($5:str)($6:int)($7:int)
+    resultset.setProperty(rs,1,"table","table1");	# 3 RSsetPropertyStr ($8:resultset)<-(rs:resultset)($3:int)($9:str)($10:str)
+    resultset.setProperty(rs,1,"schema","sys");	# 4 RSsetPropertyStr ($11:resultset)<-(rs:resultset)($3:int)($12:str)($13:str)
+    resultset.setProperty(rs,2,"width",1);	# 5 RSsetPropertyInt ($14:resultset)<-(rs:resultset)($6:int)($15:str)($3:int)
+    resultset.setProperty(rs,2,"table","table2");	# 6 RSsetPropertyStr ($16:resultset)<-(rs:resultset)($6:int)($9:str)($17:str)
+    resultset.setProperty(rs,2,"schema","sys");	# 7 RSsetPropertyStr ($18:resultset)<-(rs:resultset)($6:int)($12:str)($13:str)
+    b1 := bbp.new(:void,:str);	# 8 CMDBATnew (b1:bat[:void,:str])<-($20:void)($21:str)
+    bat.insert(b1,nil,"test1");	# 9 BKCinsert_bun ($22:bat[:void,:str])<-(b1:bat[:void,:str])($23:void)($24:str)
+    bat.insert(b1,nil,"test2");	# 10 BKCinsert_bun ($25:bat[:void,:str])<-(b1:bat[:void,:str])($23:void)($26:str)
+    bat.insert(b1,nil,"nil:str");	# 11 BKCinsert_bun ($27:bat[:void,:str])<-(b1:bat[:void,:str])($23:void)($28:str)
+    b2 := bbp.new(:void,:int);	# 12 CMDBATnew (b2:bat[:void,:int])<-($30:void)($31:int)
+    bat.insert(b2,nil,2);	# 13 BKCinsert_bun ($32:bat[:void,:int])<-(b2:bat[:void,:int])($23:void)($6:int)
+    bat.insert(b2,nil,nil:int);	# 14 BKCinsert_bun ($33:bat[:void,:int])<-(b2:bat[:void,:int])($23:void)($34:int)
+    bat.insert(b2,nil,5);	# 15 BKCinsert_bun ($35:bat[:void,:int])<-(b2:bat[:void,:int])($23:void)($36:int)
+    resultset.populateColumn(rs,1,b1);	# 16 RSpopulateColumn ($37:resultset)<-(rs:resultset)($38:int)(b1:bat[:void,:str])
+    resultset.populateColumn(rs,2,b2);	# 17 RSpopulateColumn ($39:resultset)<-(rs:resultset)($40:int)(b2:bat[:void,:int])
+    resultset.writeNextPart(rs);	# 18 RSwriteNextPart ($41:int)<-(rs:resultset)
+    io.print("Before any cleanup:");	# 19 IOprint_val ($42:int)<-($43:str)
+barrier (v,res):= rsbox.newIterator();	# 20 RSBiterator (v:lng)(res:resultset) jump 23
+    io.print(res);	# 21 IOprint_val ($46:int)<-(res:resultset)
+    redo (v,res):= rsbox.hasMoreElements();	# 22 RSBhasMoreElements (v:lng)(res:resultset) jump 21
+exit v;	# 23  (v:lng)
+    rsbox.release(rs);	# 24 RSBdelete ($47:void)<-(rs:resultset)
+    io.print("After release of 'myid':");	# 25 IOprint_val ($48:int)<-($49:str)
+barrier (v,res):= rsbox.newIterator();	# 26 RSBiterator (v:lng)(res:resultset) jump 29
+    io.print(res);	# 27 IOprint_val ($50:int)<-(res:resultset)
+    redo (v,res):= rsbox.hasMoreElements();	# 28 RSBhasMoreElements (v:lng)(res:resultset) jump 27
+exit v;	# 29  (v:lng)
+    rsbox.releaseAll();	# 30 RSBreleaseAll ($51:void)
+    io.print("After a releaseAll:");	# 31 IOprint_val ($52:int)<-($53:str)
+barrier (v,res):= rsbox.newIterator();	# 32 RSBiterator (v:lng)(res:resultset) jump 35
+    io.print(res);	# 33 IOprint_val ($54:int)<-(res:resultset)
+    redo (v,res):= rsbox.hasMoreElements();	# 34 RSBhasMoreElements (v:lng)(res:resultset) jump 33
+exit v;	# 35  (v:lng)
+end main;	# 36  
+&0
+$querytype 3
+$id myid
+$tuplecount 3
+%name column_1	column_2
+%table table1	table2
+%schema sys	sys
+%type varchar	int
+%digits 	
+%scale 	
+%width 5	1
+[s5:test1	d2
+[s5:test2	NULL
+[NULL	d5
+[ "Before any cleanup:" ]
+[ ResultSet 'lost' ]
+[ ResultSet 'myid' ]
+[ "After release of 'myid':" ]
+[ ResultSet 'lost' ]
+[ "After a releaseAll:" ]
+
+# 11:59:39 >  
+# 11:59:39 >  Done.
+# 11:59:39 >  
+
