@@ -109,7 +109,7 @@ void MAPIlistenThread(int sock)
 		} else if (msgsock > 0) {
 			int i;
 			stream *fdin= block_stream(socket_rstream(msgsock,"Mserver mapi read"));
-			stream *fdout= socket_wastream(msgsock,"Mserver mapi write");
+			stream *fdout= block_stream(socket_wstream(msgsock,"Mserver mapi write"));
 			char *command= (char*) GDKmalloc(BLOCK),*s;
 			char *user = command, *passwd= NULL;
 			int skey=0;
