@@ -129,6 +129,7 @@ int GDKhomeScan(str usr, str db, str home) {
 	fp = fopen(home, @2);
 	if (fp == NULL) {
 	    fprintf(stderr, "@1: could not open 'homes' file '%s'.\n", home);
+	    fprintf(stderr, "%s\n", strerror(errno));
 	    exit(1);
 	}
 @-

@@ -212,10 +212,16 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 
 AC_OUTPUT(src/Makefile
-src/utils/Makefile src/utils/Mx/Makefile 
-src/utils/rewrite/Makefile src/utils/testing/Makefile 
-src/mil/Makefile src/mel/Makefile src/mal/Makefile
-src/gdk/Makefile src/monet/Makefile
+src/utils/Makefile 
+src/utils/Mx/Makefile 
+src/utils/rewrite/Makefile 
+src/utils/testing/Makefile 
+src/utils/autogen/Makefile
+src/mil/Makefile 
+src/mel/Makefile 
+src/mal/Makefile
+src/gdk/Makefile 
+src/monet/Makefile
 src/modules/Makefile 
 src/modules/plain/Makefile
 src/tools/Makefile
@@ -223,6 +229,9 @@ src/tools/monet-config.mx
 conf/Makefile
 doc/Makefile
 scripts/Makefile
+scripts/adm/Makefile
+scripts/user/Makefile
+scripts/guest/Makefile
 tests/Makefile
 Makefile
 src/utils/testing/Mlog

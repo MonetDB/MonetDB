@@ -1,5 +1,5 @@
 
 scripts_mil = {
-	DIR = pkgdatadir/user
+	DIR = pkgdatadir/guest
 	SOURCES = epilogue.mil  prelude.mil
 }

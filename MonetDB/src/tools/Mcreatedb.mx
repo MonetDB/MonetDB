@@ -279,8 +279,8 @@ void copyfile( char *src, char *dst ){
 void cp_script_user( char *user, char *file ){
 	char src[MAXPATHLEN];
 	char dst[MAXPATHLEN];
-	sprintf(src, "%s%cscripts%c%s", 
-		dist, DIR_SEP, DIR_SEP, file);
+	sprintf(src, "%s%cshare%cMonet%c%s", 
+		dist, DIR_SEP, DIR_SEP, DIR_SEP, file);
 	sprintf(dst, "%s%cusers%c%s%c%s", 
 		dbhome, DIR_SEP, DIR_SEP, user, DIR_SEP, file);
 	copyfile(src,dst);
@@ -289,8 +289,8 @@ void cp_script_user( char *user, char *file ){
 void cp_user( char *script_user, char *user, char *file ){
 	char src[MAXPATHLEN];
 	char dst[MAXPATHLEN];
-	sprintf(src, "%s%cscripts%c%s%c%s", 
-		dist, DIR_SEP, DIR_SEP, script_user, DIR_SEP, file);
+	sprintf(src, "%s%cshare%cMonet%c%s%c%s", 
+		dist, DIR_SEP, DIR_SEP, DIR_SEP, script_user, DIR_SEP, file);
 	sprintf(dst, "%s%cusers%c%s%c%s", 
 		dbhome, DIR_SEP, DIR_SEP, user, DIR_SEP, file);
 	copyfile(src,dst);
@@ -352,8 +352,8 @@ void initDB(char *home, char *db) {
         char buffer[2048];
         int ret;
         printf("Mcreatedb: calling 'Mserver -db %s' for the first time..\n",db);
-        sprintf(buffer,"Mserver -single -home %s -db %s %s%cscripts%cinit.mil 2>.Merr 1>.Mout\n", 
-			farm, db, dist, DIR_SEP, DIR_SEP);
+        sprintf(buffer,"Mserver -single -home %s -db %s %s%cshare%cMonet%cinit.mil 2>.Merr 1>.Mout\n", 
+			farm, db, dist, DIR_SEP, DIR_SEP, DIR_SEP);
         ret = system(buffer);
 #ifndef WIN32
         if (ret)
