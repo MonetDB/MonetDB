@@ -347,7 +347,7 @@ void interpret_unpin(batrec *r, str s) {
 				s, b->batCacheid, _b->void_cnt, _b->void_tid);
 			_b->void_tid = 0;
 		} else {
-			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) => %d[%d,%d]\n", 
+			BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[%d,%d]\n", 
 				s, b->batCacheid, _b->void_cnt, _b->void_tid);
 		}
 		MT_unset_lock(monet_voidLock, "unpin");
@@ -390,8 +390,7 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 	    }
 	    if ((inc > 0) && ((argc+inc) < MAXPARAMS)) while(inc--) {
 	        if (argv->vtype == TYPE_bat) {  
-		    BAT *b = interpret_pin(&argv->val.br, fcn_nme);
-		    if (b == NULL) {
+		    if (BBPcheck(argv->val.bval,"interpret_params") == 0) {
    			GDKerror("%s(param %d): invalid BAT.\n", fcn_nme, j+1);
 		        return -argc;
 		    }
@@ -413,15 +412,21 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
     return argc;
 }
 
-int interpret_return(int argc, ValPtr argv, str op_name) {
+void interpret_params_pin(int argc, ValPtr argv, str op_name) {
+   int i = 0;
+   while(++i < argc) 
+   if (argv[i].vtype == TYPE_bat) {
+	interpret_pin(&argv[i].val.br,op_name);
+   }
+}
+
+void interpret_params_unpin(int argc, ValPtr argv, str op_name) {
    int i = 0;
    while(++i < argc) 
    if (argv[i].vtype == TYPE_bat) {
 	interpret_unpin(&argv[i].val.br,op_name);
    }
-   return -1;
 }
-
 
 /* the guts of MIL interpretation */
 int interpret(Cntxt stk, YYSTREE lt, ValPtr res) {
@@ -528,6 +533,7 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 		if (lt->yysons[0]) {
        		    i = interpret(stk, arg(lt, 0), res);
 		    if (i < 0) return i;
+/*
 		    if (res->vtype == TYPE_bat) {
 			BAT *b = BBP_cache(res->val.bval);
 			if (b) {
@@ -538,6 +544,8 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 		    } else {
 			ATOMfix(res->vtype, VALptr(res));
 		    }
+*/
+			ATOMfix(res->vtype, VALptr(res));
 		    VALcopy(res,res);
 		}
 		return -TOK_RETURN;
@@ -676,7 +684,7 @@ phase 2: interpret the actual params
 	}
 	argv = opcache->yyval.val.pval; 
 	argc = interpret_params(stk, lt->yysons[0], argv, fcn_nme);
-	if (argc < 0) return interpret_return(-argc, argv, fcn_nme);
+	if (argc < 0) return -1;
 	res->vtype = TYPE_void;
     	res->val.oval = void_nil;
 @- 
@@ -756,7 +764,7 @@ For now we just give up.
 			}
 			monet_sigerror("MIL operator", fcn_nme,  
 					signatures, argc, argv);
-			return interpret_return(argc, argv, fcn_nme);
+			return -1;
 		}
 	}
 
@@ -809,12 +817,7 @@ add it to the expansion cache.
 Comes down to 3 cases: normal, proc, or {X}/[X] execution
 @c
 exec:	stamp = BBPcurstamp();	
-	if (sig->token == TOK_COMMAND) {
-		i = (*sig->pack_fcn)(argc, argv);
-		*res = argv[0];
-		CATCHVAL(stk,opcache,res,TRUE);
-		CATCHERR(stk,opcache,res,i,((YYSTREE) sig->pack_fcn)); 
-	} else if (sig->token == TOK_PROC) {
+	if (sig->token == TOK_PROC) {
 		YYSTREE proc = (YYSTREE) sig->pack_fcn;
         	i = interpret(stk, op, res);
         	CATCHRET(stk,opcache,res,i);
@@ -823,6 +826,15 @@ exec:	stamp = BBPcurstamp();
                 	GDKerror("interpret: %s returned unexpected type.\n",
                                  proc->yyval.val.sval); i = -1;
         	}
+		return i;
+	}
+	interpret_params_pin(argc,argv,fcn_nme);
+
+	if (sig->token == TOK_COMMAND) {
+		i = (*sig->pack_fcn)(argc, argv);
+		*res = argv[0];
+		CATCHVAL(stk,opcache,res,TRUE);
+		CATCHERR(stk,opcache,res,i,((YYSTREE) sig->pack_fcn)); 
 	} else if (sig->token == TOK_CAST) {
 		i = interpret_cast(sig->fcn_nme,argc,argv+1,res);
 		CATCHVAL(stk,opcache,res,TRUE);
@@ -849,7 +861,7 @@ exec:	stamp = BBPcurstamp();
 			CNTXTfree1(stk);
         	}
 	}
-	interpret_return(argc,argv,fcn_nme);
+	interpret_params_unpin(argc,argv,fcn_nme);
     }
     return i;
 }
@@ -928,7 +940,7 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 	/* resolve only once: CONSTANT */
         lt->token = TOK_CONSTANT; 
 	i = BBPindex(lt->yyval.val.sval);
-	if (i) BBPfix(i);
+	if (i) BBPpersistent(i, FALSE);
 	if (i == 0 || (b=BATdescriptor(i)) == NULL) {
 		lt->yyval.vtype = TYPE_str;
 		lt->yyval.len = 1+strlen(lt->yyval.val.sval);
@@ -1060,10 +1072,12 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 			return -1;
 		}
 	}
-	ATOMfix(res->vtype, VALptr(res));
 	if (res->vtype == TYPE_bat) {
 		/* subsequent garbage collection assumes a BAT* image present */
+		BBPfix(res->val.bval);
 		(void) BATdescriptor(res->val.bval); /* make sure it gets loaded */
+	} else {
+		ATOMfix(res->vtype, VALptr(res));
 	}
 	return 0;
 }
@@ -1525,6 +1539,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 	/* Evaluate the command line parameters.
 	 */
 	argc = interpret_params(stk, params, argv+1, "batloop");
+	interpret_params_pin(argc, argv+1, "batloop");
 	argv[1] = argv[2];
 	if (argc <= 1 || argv[1].vtype != TYPE_bat) {
 		GDKerror("interpret_iterator: iterator should work on a BAT.\n");
@@ -1625,7 +1640,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
          */
 xit:	argv[2] = argv[1];
 	argc = ABS(argc); 
-	interpret_return(ABS(argc), argv+1, "batloop");
+	interpret_params_unpin(ABS(argc), argv+1, "batloop");
 	CLEANUP(lt->yysons[1]);
         if (reuse < 0) {
                 monet_cntxt[stk].reuse = reuse;

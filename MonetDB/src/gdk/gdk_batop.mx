@@ -1245,7 +1245,6 @@ memory advice for sequental access (sequential inserts).
         	bn->batBuns->free = BUNsize(bn);
 	        b->batDirtydesc = TRUE;
         	BATmadvise(bn, BUF_SEQUENTIAL, -1, -1, -1, -1);
-		BBP_refs(bid)--;
 	    }
 @c
 	}
@@ -1280,6 +1279,7 @@ BAT *BAThashsplit(BAT *b, int n, int unary) {
 			return NULL;
 		}
 		BUNins(metabat, &i, &bf->batCacheid); 
+		BBPunfix(bf->batCacheid);
 	    }
 	    @:updateloop(metabat,b,BUNhash)@
 	}
@@ -1412,6 +1412,7 @@ achieve totally sorted chunks at the same time.
 			IDXloop(m, p, q) {
 				BUNfastins(bf, BUNhead(b, *p), BUNtail(b, *p));
 			}
+			BBPunfix(bf->batCacheid);
 			p = q + 1;
 		}
 
@@ -1473,6 +1474,8 @@ BATloopFast(b, r, s, xx) {
                     }
         
 	    }
+	    for(yy=0; yy<n; yy++)
+		BBPunfix(bats[yy]->batCacheid);
             GDKfree(bats);
 	}
 	for(yy=0; yy<(n-1); yy++)

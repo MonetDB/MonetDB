@@ -490,7 +490,7 @@ if (x->dealloc) {\
 		GDKerror("yyclean: BAT %d OVERWRITTEN (stamp %d != %d)\n", x->free.batref.id,\
 			BATdescriptor(x->free.batref.id)->batStamp, x->free.batref.stamp);\
 	} else {\
-		BBPunfix(_b->batCacheid);\
+		ATOMunfix(x->dealloc, &x->free.batref.id);\
 	}\
     } else {\
 	ATOMunfix(x->dealloc, x->free.atmref);\
@@ -498,6 +498,9 @@ if (x->dealloc) {\
     }\
     x->dealloc = 0;\
 }
+/*
+		BBPunfix(_b->batCacheid);\
+*/
 
 #define CLEANUP(x)	switch(((YYSTREE) x)->token) {\
 	case TOK_SEQ:        break;\
@@ -545,6 +548,8 @@ if (x->dealloc) {\
 					 _b->batCacheid, _b->batStamp);\
 			}\
 		}\
+		BBPpersistent(res->val.bval, FALSE); \
+		BBPunfix(res->val.bval); \
 	}
 #define CATCHRET(stk,lt,res,x)\
 	if (x == -TOK_RETURN) {\

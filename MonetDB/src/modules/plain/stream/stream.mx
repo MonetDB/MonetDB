@@ -19,6 +19,7 @@ data files.
  * contains some stream info (for now only byteorder). This is 
  * required for proper conversion on different byte order platforms.
  */
+
 #ifdef HAVE_CONFIG_H 
 #include <config.h>
 #endif

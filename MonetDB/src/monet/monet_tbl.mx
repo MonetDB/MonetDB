@@ -679,14 +679,18 @@ void TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv) {
 	for(i=1; i<argc; i++) {
 		pt->tps[i] = ATOMname(argv[i].vtype);
 
-		if (argv[i].vtype != TYPE_bat || 
-		    (b=BATdescriptor(argv[i].val.bval)) == NULL) 
-		{ 
-			pt->htps[i] = pt->ttps[i] = NULL;
-			continue;
+		pt->htps[i] = pt->ttps[i] = NULL;
+
+		if (argv[i].vtype == TYPE_bat) { 
+			BBPfix(argv[i].val.bval);
+
+		     	b = BBPquickdesc(argv[i].val.bval,FALSE); 
+			if(b) {
+				pt->htps[i] = ATOMname(b->htype);
+				pt->ttps[i] = ATOMname(b->ttype);
+			}
+			BBPunfix(argv[i].val.bval);
 		}
-		pt->htps[i] = ATOMname(b->htype);
-		pt->ttps[i] = ATOMname(b->ttype);
 	} 
 }
 
@@ -935,7 +939,7 @@ BAT *TBL_lookup( Client client, str nme ){
 	if (v){ /* dirty replacement of the client bats */
 		BAT *o = BATdescriptor(v->binding.val.bval);
 		b = BATcopy(o);
-		BBPunfix(o->batCacheid);
+		BBPtransient(o->batCacheid, FALSE);
    		v->binding.val.bval = b->batCacheid;
 	} else {
 		GDKerror("variable %s not found\n",  buf );

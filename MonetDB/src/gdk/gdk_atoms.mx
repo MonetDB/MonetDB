@@ -146,8 +146,8 @@ unsigned int lngHash(lng *v) { return mix_int(((unsigned int*) v)[0]^((unsigned 
 INLINE void shtConvert(sht* s) { *s = short_int_SWAP(*s); }
 INLINE void intConvert(int* s) { *s = normal_int_SWAP(*s); }
 INLINE void lngConvert(lng* s) { *s = long_long_SWAP(*s); }
-INLINE int  batFix(bat* b)     { return BBPfix(*b); }
-INLINE int  batUnfix(bat* b)   { return BBPunfix(*b); }
+INLINE int  batFix(bat* b)     { return BBPpersistent(*b,FALSE); }
+INLINE int  batUnfix(bat* b)   { return BBPtransient(*b,FALSE); }
 
 atomDesc BATatoms[MAXATOMS] = {
   { "void",  	TYPE_void, 1, 0, /* sizeof(@`void@7) */ 0, 1, (ptr) &int_nil, 

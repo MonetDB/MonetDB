@@ -96,8 +96,8 @@ gdk_export lng  BBPdiskscan  (str dir);
 gdk_export int  BBPsync      (int commit);
 gdk_export int  BBPfix       (bat b);
 gdk_export int  BBPunfix     (bat b);
-gdk_export void BBPpersistent(bat b, int pers); 
-gdk_export void BBPtransient (bat b, int trans);
+gdk_export int BBPpersistent(bat b, int pers); 
+gdk_export int BBPtransient (bat b, int trans);
 gdk_export void BATpersistent(void *dummy, int *d2, bat *b);
 gdk_export void BATtransient (void *dummy, bat *b);
 
@@ -687,11 +687,13 @@ int BBPentry(str dirname, str batname, int mode) {
 	return i;
 }
 
-void BBPpersistent(bat i, int pers) {
+int BBPpersistent(bat i, int pers) {
+	int plevel = 0;
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPpersistent")) {
 		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPpersistent"); 
 		BBP_plevel(i)++;
+		plevel = BBP_plevel(i);
 		if (pers){
 			if (!(BBP_status(i)&BBPDELETED))
 				BBP_status_on(i, BBPNEW, "BBPpersistent");
@@ -699,13 +701,16 @@ void BBPpersistent(bat i, int pers) {
 		}
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPpersistent"); 
 	}
+	return plevel;
 }
 
-void BBPtransient(bat i, int trans) {
+int BBPtransient(bat i, int trans) {
+	int plevel = 0;
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPtransient")) {
 	    	MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPtransient"); 
 		if (BBP_plevel(i) > 0) BBP_plevel(i)--;
+		plevel = BBP_plevel(i);
 		if (trans){
 			if (!(BBP_status(i)&BBPNEW))
 				BBP_status_on(i, BBPDELETED, "BBPtransient");
@@ -718,6 +723,7 @@ void BBPtransient(bat i, int trans) {
 			if (b) BBPfree(b);
 		}
 	}
+	return plevel;
 }
 void BATpersistent(void *dummy, int *d2, bat *i) {
 	BBPpersistent(*i,FALSE);
@@ -1625,7 +1631,7 @@ static BAT *dirty_bat(int i) {
 		BBPspin(i, "dirty_bat", BBPSAVING);
 		b = BBP_cache(i);
 		if (b != NULL) {
-			if ((BBP_plevel(i)) && BATdirty(b)) {
+			if ((BBP_status(i)&BBPPERSISTENT) && BATdirty(b)) {
 				return b; /* the bat is loaded, persistent and dirty */
 			}
 		} else if (BBP_status(i)&BBPSWAPPED) { 
