@@ -27,8 +27,24 @@
 #define DIR_SEP_STR "@QDIRSEP@"
 #define PATH_SEP ':'
 #define PATH_SEP_STR ":"
-#ifdef _AIX
+#if defined(_AIX)
 #define SO_EXT ".a"
+#elif defined(__MACH__)
+#define SO_EXT ".dylib"
 #else
 #define SO_EXT ".so"
+#endif
+
+
+#if (!defined __GNUC__) && defined __INTEL_COMPILER && __INTEL_COMPILER == 800
+/*
+ * With "-no-gcc", icc 8.0 does not predefine __GNUC__, and hence __REDIRECT
+ * is not defined in /usr/include/sys/cdefs.h; which in turn causes readdir to
+ * be defined as readdir64 in /usr/include/dirent.h .
+ * To prevent the latter, we ensure here that __REDIRECT is defined also for 
+ * icc 8.0 with "-no-gcc".
+ */
+# define __REDIRECT(name, proto, alias) name proto __asm__ (__ASMNAME (#alias))
+# define __ASMNAME(cname)  __ASMNAME2 (__USER_LABEL_PREFIX__, cname)
+# define __ASMNAME2(prefix, cname) __STRING (prefix) cname
 #endif
