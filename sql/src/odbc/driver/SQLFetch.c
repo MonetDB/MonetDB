@@ -330,6 +330,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	TIME_STRUCT tval;
 	TIMESTAMP_STRUCT tsval;
 	double fval = 0;
+	ODBCDescRec *rec;
+
+	if (col == 0 || col > stmt->ImplRowDescr->sql_desc_count) {
+		/* 07009: Invalid descriptor index */
+		addStmtError(stmt, "07009", NULL, 0);
+		return SQL_ERROR;
+	}
+	rec = &stmt->ImplRowDescr->descRec[col];
+	sql_type = rec->sql_desc_concise_type;
 
 	if (ptr && offset)
 		ptr = (SQLPOINTER) ((char *) ptr + offset);
@@ -338,10 +347,111 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	if (nullp && offset)
 		nullp = (SQLINTEGER *) ((char *) nullp + offset);
 
+	/* translate default type */
+	/* note, type can't be SQL_ARD_TYPE since when this function
+	   is called from SQLFetch, type is already the ARD concise
+	   type, and when it is called from SQLGetData, it has already
+	   been translated */
+
+	if (type == SQL_C_DEFAULT) {
+		switch (sql_type) {
+		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_LONGVARCHAR:
+		case SQL_DECIMAL:
+		case SQL_NUMERIC:
+			type = SQL_C_CHAR;
+			break;
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
+		case SQL_WLONGVARCHAR:
+			type = SQL_C_WCHAR;
+			break;
+		case SQL_BIT:
+			type = SQL_C_BIT;
+			break;
+		case SQL_TINYINT:
+			type = rec->sql_desc_unsigned ? SQL_C_UTINYINT : SQL_C_STINYINT;
+			break;
+		case SQL_SMALLINT:
+			type = rec->sql_desc_unsigned ? SQL_C_USHORT : SQL_C_SSHORT;
+			break;
+		case SQL_INTEGER:
+			type = rec->sql_desc_unsigned ? SQL_C_ULONG : SQL_C_SLONG;
+			break;
+		case SQL_BIGINT:
+			type = rec->sql_desc_unsigned ? SQL_C_UBIGINT : SQL_C_SBIGINT;
+			break;
+		case SQL_REAL:
+			type = SQL_C_FLOAT;
+			break;
+		case SQL_FLOAT:
+		case SQL_DOUBLE:
+			type = SQL_C_DOUBLE;
+			break;
+		case SQL_BINARY:
+		case SQL_VARBINARY:
+		case SQL_LONGVARBINARY:
+			type = SQL_C_BINARY;
+			break;
+		case SQL_TYPE_DATE:
+			type = SQL_C_TYPE_DATE;
+			break;
+		case SQL_TYPE_TIME:
+			type = SQL_C_TYPE_TIME;
+			break;
+		case SQL_TYPE_TIMESTAMP:
+			type = SQL_C_TYPE_TIMESTAMP;
+			break;
+		case SQL_INTERVAL_YEAR:
+			type = SQL_C_INTERVAL_YEAR;
+			break;
+		case SQL_INTERVAL_MONTH:
+			type = SQL_C_INTERVAL_MONTH;
+			break;
+		case SQL_INTERVAL_YEAR_TO_MONTH:
+			type = SQL_C_INTERVAL_YEAR_TO_MONTH;
+			break;
+		case SQL_INTERVAL_DAY:
+			type = SQL_C_INTERVAL_DAY;
+			break;
+		case SQL_INTERVAL_HOUR:
+			type = SQL_C_INTERVAL_HOUR;
+			break;
+		case SQL_INTERVAL_MINUTE:
+			type = SQL_C_INTERVAL_MINUTE;
+			break;
+		case SQL_INTERVAL_SECOND:
+			type = SQL_C_INTERVAL_SECOND;
+			break;
+		case SQL_INTERVAL_DAY_TO_HOUR:
+			type = SQL_C_INTERVAL_DAY_TO_HOUR;
+			break;
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+			type = SQL_C_INTERVAL_DAY_TO_MINUTE;
+			break;
+		case SQL_INTERVAL_DAY_TO_SECOND:
+			type = SQL_C_INTERVAL_DAY_TO_SECOND;
+			break;
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+			type = SQL_C_INTERVAL_HOUR_TO_MINUTE;
+			break;
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+			type = SQL_C_INTERVAL_HOUR_TO_SECOND;
+			break;
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
+			type = SQL_C_INTERVAL_MINUTE_TO_SECOND;
+			break;
+		case SQL_GUID:
+			type = SQL_C_GUID;
+			break;
+		}
+	}
+
 	if (precision == UNAFFECTED || scale == UNAFFECTED ||
 	    datetime_interval_precision == UNAFFECTED) {
 		if (col <= stmt->ApplRowDescr->sql_desc_count) {
-			ODBCDescRec *rec = &stmt->ApplRowDescr->descRec[col];
+			rec = &stmt->ApplRowDescr->descRec[col];
 
 			if (precision == UNAFFECTED)
 				precision = rec->sql_desc_precision;
@@ -362,8 +472,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	datetime_interval_precision = 1;
 	while (i-- > 0)
 		datetime_interval_precision *= 10;
-
-	sql_type = stmt->ImplRowDescr->descRec[col].sql_desc_concise_type;
 
 	data = mapi_fetch_field(stmt->hdl, col - 1);
 	if (mapi_error(stmt->Dbc->mid)) {
@@ -1236,6 +1344,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		}
 #define p ((SQL_INTERVAL_STRUCT *) ptr)	/* abbrev. */
 		p->interval_sign = ival.interval_sign;
+		p->intval.year_month.year = 0;
+		p->intval.year_month.month = 0;
 		switch (type) {
 		case SQL_C_INTERVAL_YEAR:
 			p->interval_type = SQL_IS_YEAR;
@@ -1483,6 +1593,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (lenp)
 			*lenp = sizeof(SQL_INTERVAL_STRUCT);
 		break;
+	default:
+		/* HY003: Invalid application buffer type */
+		addStmtError(stmt, "HY003", NULL, 0);
+		return SQL_ERROR;
 	}
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
