@@ -1418,10 +1418,12 @@ simple_select:
 	  	NULL, NULL, -1);
 	  dlist_destroy_keep_data($5);
 	}
+    ;
 
 select_no_parens:
     simple_select
  |  set_select
+ ;
 
 complex_select:
     select_no_parens
@@ -2246,6 +2248,7 @@ nonzero:
 			yyerror("Positive value expected");
 		  }
 		}
+	;
 
 data_type:
     CHARACTER opt_var	{ $$ = sql_bind_subtype("CHARACTER", 0, 0); }
