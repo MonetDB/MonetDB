@@ -921,7 +921,7 @@ static int mapi_setError(Mapi mid, char *msg, char *action)
 {
 	char *c;
 	assert(msg);
-	c= (char*) malloc(strlen(msg)+1);
+	c= malloc(strlen(msg)+1);
 	strcpy(c,msg);
 	if( mid->errorstr)
 		free(mid->errorstr);
@@ -935,7 +935,7 @@ static int mapi_setError(Mapi mid, char *msg, char *action)
 static Mapi mapi_new(void)
 {
 	Mapi m;
-	m = (Mapi) malloc(sizeof(MapiStruct));
+	m = malloc(sizeof(MapiStruct));
 	if (m == NULL)
 		return NULL;
 	assert(m);
@@ -964,11 +964,11 @@ static Mapi mapi_new(void)
 	strcpy(m->prompt,">");
 
 	m->maxfields = 64;
-	m->fields = (MapiField *) malloc( m->maxfields * sizeof(MapiField));
+	m->fields = malloc( m->maxfields * sizeof(MapiField));
 	assert(m->fields);
 	memset(m->fields, 0, m->maxfields * sizeof(MapiField));
 	m->maxbindings = 64;
-	m->bindings = (MapiBinding *) malloc(m->maxbindings * sizeof(MapiBinding));
+	m->bindings = malloc(m->maxbindings * sizeof(MapiBinding));
 	assert(m->bindings);
 	memset(m->bindings, 0, m->maxbindings * sizeof(MapiBinding));
 	m->cache.rowlimit= 10000;
@@ -984,7 +984,7 @@ static Mapi mapi_new(void)
 	m->cache.fldcnt= NULL;
 	m->tracelog= NULL;
 	m->blk.eos=0;
-	m->blk.buf= (char *) malloc(BLOCK + 1);
+	m->blk.buf= malloc(BLOCK + 1);
 	m->blk.buf[BLOCK]=0;
 	m->blk.buf[0]=0;
 	m->blk.nxt=0;
@@ -1590,26 +1590,8 @@ MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr)
 	return MOK;
 }
 @-
-The routine mapi_check_query appends the semicolon and new line if needed.
-Furthermore, it ensures that no 'false' newlines are sent to the server,
+The routine mapi_check ensures that no 'false' newlines are sent to the server,
 because this may lead to a synchronization error easily.
-@c
-#define expandQry(c)						\
-	do {							\
-		char *new= (char*)malloc(i+3);			\
-		strcpy(new,mid->query);				\
-		new[i+1]=(c);					\
-		new[i+2]=0;					\
-		free(mid->query);				\
-		mid->query= new;				\
-		if( mid->template){				\
-			free(mid->template);			\
-			mid->template= (char*) malloc( i+3);	\
-			assert(mid->template);			\
-			strcpy(mid->template,new);		\
-		}						\
-		i++;						\
-	} while (0)
 @-
 The query string could contain commentary lines, marked as starting
 with a '#'. They should be silently removed.
@@ -1618,11 +1600,9 @@ part of a string literal.
 @c
 static void mapi_check_query(Mapi mid)
 {
-	size_t i;
 	char *c, bracket=0, *comm = 0;
 
 	assert(mid->query);
-	i= strlen(mid->query)-1;
 	for(c=mid->query;*c; c++){
 		if( *c=='\'' || *c=='"') {
 			if( bracket== *c )
@@ -1701,29 +1681,29 @@ It sends a complete Monet statement for execution
 Interaction with the server is sped up using block based interaction.
 The query is retained in the Mapi structure to repeat shipping.
 @c
-#define prepareQuery()							\
-	do {								\
-		if( cmd==0){						\
-			/* re-use the previous query */			\
-		} else {						\
-			size_t len= strlen(cmd);			\
-			if( mid->template){				\
-				free(mid->template);			\
-				mid->template=0;			\
-			}						\
-			if( mid->query)					\
-				free(mid->query);			\
-			mid->query= (char*) malloc( len+1);		\
-			assert(mid->query);				\
-			strcpy(mid->query,cmd);				\
-			if( strchr(cmd,PLACEHOLDER)){			\
-				mid->template= (char*) malloc( len+1);	\
-				assert(mid->template);			\
-				strcpy(mid->template,cmd);		\
-			}						\
-		}							\
-		mapi_check_query(mid);					\
-		ret= mid->error;					\
+#define prepareQuery()						\
+	do {							\
+		if( cmd==0){					\
+			/* re-use the previous query */		\
+		} else {					\
+			size_t len= strlen(cmd);		\
+			if( mid->template){			\
+				free(mid->template);		\
+				mid->template=0;		\
+			}					\
+			if( mid->query)				\
+				free(mid->query);		\
+			mid->query= malloc( len+1);		\
+			assert(mid->query);			\
+			strcpy(mid->query,cmd);			\
+			if( strchr(cmd,PLACEHOLDER)){		\
+				mid->template= malloc( len+1);	\
+				assert(mid->template);		\
+				strcpy(mid->template,cmd);	\
+			}					\
+		}						\
+		mapi_check_query(mid);				\
+		ret= mid->error;				\
 	} while (0)
 
 MapiMsg mapi_prepare(Mapi mid, char *cmd)
@@ -1761,14 +1741,14 @@ MapiMsg mapi_prepare_array(Mapi mid, char *cmd, char **val)
 Building the query string using replacement of values require
 some care not overfloating the space allocated.
 @c
-#define checkSpace(len)							\
-	do {								\
-		/* note: k==strlen(mid->query) */			\
-		if( k+len >= lim){					\
-			lim = k + len + MAPIBLKSIZE;			\
-			mid->query= (char *) realloc(mid->query, lim);	\
-			assert(mid->query);				\
-		}							\
+#define checkSpace(len)						\
+	do {							\
+		/* note: k==strlen(mid->query) */		\
+		if( k+len >= lim){				\
+			lim = k + len + MAPIBLKSIZE;		\
+			mid->query= realloc(mid->query, lim);	\
+			assert(mid->query);			\
+		}						\
 	} while (0)
 
 static void mapi_param_store(Mapi mid)
@@ -1785,7 +1765,7 @@ static void mapi_param_store(Mapi mid)
 		free(mid->query);
 
 	lim= strlen(mid->template)+MAPIBLKSIZE;
-	mid->query= (char*) malloc(lim);
+	mid->query= malloc(lim);
 	assert(mid->query);
 	mid->query[0]=0;
 	k = 0;
@@ -2143,10 +2123,10 @@ void  mapi_extend_cache(Mapi mid)
 	if( newsize >mid->cache.rowlimit && mid->cache.rowlimit>0)
 		newsize = mid->cache.rowlimit;
 
-	newrows = (char **) malloc(newsize * sizeof(char**));
+	newrows = malloc(newsize * sizeof(char**));
 	assert(newrows);
 	memset(newrows,0, newsize * sizeof(char **));
-	newtupleindex = (int *) malloc(newsize * sizeof(int));
+	newtupleindex = malloc(newsize * sizeof(int));
 	assert(newtupleindex);
 	for(i=0;i<newsize; i++) newtupleindex[i]= -1;
 	if( mid->cache.rows){
@@ -2158,7 +2138,7 @@ void  mapi_extend_cache(Mapi mid)
 	mid->cache.rows= newrows;
 	mid->cache.tupleindex= newtupleindex;
 
-	anchors = (char ***) malloc(newsize * sizeof (char **));
+	anchors = malloc(newsize * sizeof (char **));
 	assert(anchors);
 	memset(anchors, 0, newsize * sizeof( char **));
 	if( mid->cache.anchors) {
@@ -2166,7 +2146,7 @@ void  mapi_extend_cache(Mapi mid)
 		if(mid->cache.anchors) free(mid->cache.anchors);
 	}
 	mid->cache.anchors= anchors;
-	fldcnt= (int *) malloc( newsize * sizeof(int));
+	fldcnt= malloc( newsize * sizeof(int));
 	assert(fldcnt);
 	memset(fldcnt,0, newsize * sizeof(int));
 	if( mid->cache.fldcnt){
@@ -2286,7 +2266,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 			rest= n-mid->blk.nxt;
 			if( mid->blk.nxt> BLOCK){
 				/* simply shuffle */
-				newbuf= (char *)malloc(mid->blk.lim +1);
+				newbuf= malloc(mid->blk.lim +1);
 				memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest+1);
 				if( mid->blk.buf)
 					free(mid->blk.buf);
@@ -2296,7 +2276,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 			} else{
 				/* extend space */
 				int len= mid->blk.lim+BLOCK;
-				newbuf= (char *)malloc(len +1);
+				newbuf= malloc(len +1);
 				memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest+1);
 				if( mid->blk.buf)
 					free(mid->blk.buf);
@@ -2353,9 +2333,9 @@ char * mapi_fetch_line_internal(Mapi mid)
 	/* we have a complete line in the buffer */
 	s= strchr(mid->blk.buf + mid->blk.nxt,'\n');
 	assert(s);
-	*s=0;
-	k= strlen(mid->blk.buf+mid->blk.nxt)+1;
-	reply = (char *) malloc(k);
+	*s++ = 0;
+	k = s - (mid->blk.buf + mid->blk.nxt); /* strlen(mid->blk.buf + mid->blk.nxt) + 1 */
+	reply = malloc(k);
 	assert(reply);
 	strcpy(reply, mid->blk.buf+mid->blk.nxt);
 	mid->blk.nxt += k;
@@ -2586,7 +2566,7 @@ int mapi_get_row(Mapi mid)
 			char *olderr= mid->errorstr;
 			char *newerr;
 			size_t size= olderr?strlen(olderr):0;
-			newerr= (char*) malloc(size+strlen(reply)+2);
+			newerr= malloc(size+strlen(reply)+2);
 			assert(newerr);
 			newerr[0]=0;
 			if(olderr) strcpy(newerr,olderr);
@@ -2706,7 +2686,7 @@ char *mapi_unquote(char *msg)
 	size_t size;
 	unquote(msg, &start,&next);
 	size= strlen(start);
-	next= (char*) malloc(size+1);
+	next= malloc(size+1);
 	strcpy(next,start);
 	return next;
 }
@@ -2769,7 +2749,7 @@ int mapi_extend_@1(Mapi mid, int min@1)
 	int nm = mid->max@1 + 32;
 	if (nm <= min@1)
 		 nm = min@1 + 32;
-	mid->@1 = (@2 *) realloc(mid->@1, nm * sizeof(@2));
+	mid->@1 = realloc(mid->@1, nm * sizeof(@2));
 	/* clear new entries */
 	memset(mid->@1 + mid->max@1, 0,
 	       (nm - mid->max@1) * sizeof(@2));
@@ -2786,7 +2766,7 @@ void mapi_extend_anchor(Mapi mid)
 	int cr= mid->cache.reader;
 	char **ac= mid->cache.anchors[cr], **acnew=0;
 	if( ac == 0 || mid->maxfields> mid->cache.fldcnt[cr]){
-		acnew= (char **)malloc(sizeof(char*)* mid->maxfields);
+		acnew= malloc(sizeof(char*)* mid->maxfields);
 		assert(acnew);
 		memset(acnew, 0, sizeof(char*) * mid->maxfields);
 		mid->cache.anchors[cr]= acnew;
