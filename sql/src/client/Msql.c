@@ -13,11 +13,45 @@
 #include <readline/history.h>
 #endif
 
+#include <string.h>
+#include <list.h>
+
+#include <langinfo.h>
+#include <iconv.h>
+#include <locale.h>
+
 #define SQL_DUMP 1
 #define MIL_DUMP 2
 
 stream *ws = NULL, *rs = NULL;
 int is_chrsp = 0;
+
+iconv_t to_utf = NULL;
+iconv_t from_utf = NULL;
+
+unsigned char *conv( unsigned char *org, iconv_t cd)
+{
+	if (cd){
+		int len = strlen(org);
+		int size = len * 4;
+		char *buf = malloc(size);
+		char *to = buf;
+		char *from = org;
+
+		if (iconv(cd, &from, &len, &to, &size ) < 0){
+			perror("conv ");
+			fprintf(stderr, "could not convert string %s\n", from );
+			free(buf);
+			exit(1);
+		}
+		printf("%d %d\n", len, to - buf );
+		*to = 0;
+		return buf;
+	} else {
+		return _strdup(org);
+	}
+}
+
 
 void usage( char *prog ){
 	fprintf(stderr, "Msql\n");
@@ -27,6 +61,7 @@ void usage( char *prog ){
 	fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
 	fprintf(stderr, "\t\t -P passwd   | --passwd=passwd  /* password */\n");
+	fprintf(stderr, "\t\t               --dump=[mil]     /* dump sql or mil */\n");
 	exit(-1);
 }
 
@@ -101,6 +136,7 @@ static int column_info( char *buf, int len, Msql_col *cols, int cur ){
 	char *end = buf + len;
 
 	while(buf<end){
+		int size = 0;
 		char *s = buf;
 		while(buf<end && *buf != ','){
 			buf++;
@@ -108,7 +144,7 @@ static int column_info( char *buf, int len, Msql_col *cols, int cur ){
 		if (buf>=end) 
 			return cur;
 		*buf = 0;
-		cols[cur].name = strdup(s);
+		cols[cur].name = conv(s, from_utf);
 		s = buf++;
 		while(buf<end && *buf != '\n'){
 			buf++;
@@ -116,7 +152,7 @@ static int column_info( char *buf, int len, Msql_col *cols, int cur ){
 		if (buf>=end) 
 			return cur;
 		*buf = 0;
-		cols[cur].type = strdup(s);
+		cols[cur].type = _strdup(s);
 		buf++;
 
 		cur++;
@@ -180,23 +216,39 @@ void receive( stream *rs, stream *out, int debug ){
 		stream_readInt(rs, &type);
 		stream_readInt(rs, &status);
 		if (status < 0){ /* output error */
-			int nr = bs_read_next(rs,buf,&last);
+			int size, nr = bs_read_next(rs,buf,&last);
+			char *s;
+
 			fprintf( stdout, "SQL ERROR %d: ", status );
-			fwrite( n, nr, 1, stdout );
+
+			buf[nr] = 0;
+			s = conv(buf, from_utf);
+			fwrite( s, strlen(s), 1, stdout );
+			free(s);
 			while(!last){
 				int nr = bs_read_next(rs,buf,&last);
-				fwrite( buf, nr, 1, stdout );
+				buf[nr] = 0;
+				s = conv(buf, from_utf);
+				fwrite( s, strlen(s), 1, stdout );
+				free(s);
 			}
 			fprintf( stdout, "\n");
 		}
 		nRows = status;
 		if ((type == QTABLE || type == QDEBUG) && nRows > 0){
-			int nr = bs_read_next(rs,buf,&last);
+			int size, nr = bs_read_next(rs,buf,&last);
+			char *s;
 	
-			fwrite( buf, nr, 1, stdout );
+			buf[nr] = 0;
+			s = conv(buf, from_utf);
+			fwrite( s, strlen(s), 1, stdout );
+			free(s);
 			while(!last){
 				int nr = bs_read_next(rs,buf,&last);
-				fwrite( buf, nr, 1, stdout );
+				buf[nr] = 0;
+				s = conv(buf, from_utf);
+				fwrite( s, strlen(s), 1, stdout );
+				free(s);
 			}
 		}
 		if (type == QHEADER) {
@@ -218,7 +270,7 @@ void receive( stream *rs, stream *out, int debug ){
 	fflush(stdout);
 }
 
-int parse_line( const char *line )
+int parse_line( const unsigned char *line )
 {
 	int ins = 0;
 	int esc = 0;
@@ -241,6 +293,13 @@ int parse_line( const char *line )
 			ins = 1;
 		} else if (!ins && *line == ';'){
 			cnt++;
+		/* next checks are to skip long utf8 charachters */
+		} else if (*line >= 0xF0){
+			line += 3;
+		} else if (*line >= 0xE0){
+			line += 2;
+		} else if (*line >= 0xC0){
+			line += 1;
 		}
 	}
 	return cnt;
@@ -250,7 +309,6 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug ){
 	int  i;
 	char *line = NULL;
 	char buf[BUFSIZ];
-
 
 	while(!feof(stdin)){
 		int cmdcnt = 0;
@@ -262,7 +320,13 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug ){
 		cmdcnt = parse_line(line);
 		if (debug)
 			printf("%d %s\n", cmdcnt, line);
-		ws->write( ws, line, strlen(line), 1 );
+		if (to_utf){
+			unsigned char *converted = conv(line, to_utf);
+			ws->write( ws, converted, strlen(converted), 1 );
+			free(converted);
+		} else {
+			ws->write( ws, line, strlen(line), 1 );
+		}
 		ws->write( ws, "\n", 1, 1 );
 		if (cmdcnt)
 			ws->flush( ws );
@@ -292,9 +356,9 @@ void skip_block(stream *rs){
 	}
 }
 
-typedef int (*fptr)(stream *ws, stream *rs, char **lines, int cnt, int rlen, int dump );
+typedef int (*fptr)(stream *ws, stream *rs, char **lines, int cnt, int rlen, int dump, FILE *out );
 
-int handle_result( stream *ws, stream *rs, int cnt, fptr f, int rlen, int dump){
+int handle_result( stream *ws, stream *rs, int cnt, fptr f, int rlen, int dump, FILE *out){
 	int i, res = 0, eof = 0, cur = 0;
 	char *sc, *ec;
 	bstream *bs = bstream_create(rs, BLOCK);
@@ -344,17 +408,17 @@ int handle_result( stream *ws, stream *rs, int cnt, fptr f, int rlen, int dump){
 		sc++;
 	}
 	bstream_destroy(bs);
-	res = f(ws, rs, lines, cnt, rlen, dump);
+	res = f(ws, rs, lines, cnt, rlen, dump, out);
 	for(i=0; i<(cnt*rlen); i++)
 		_DELETE(lines[i]);
 	return res;
 }
 
-static int execute( stream *ws, stream *rs, char *query)
+static int execute( stream *ws, stream *rs, const char *query)
 {
 	int flag, type, status;
 
-	ws->write(ws, query, strlen(query), 1);
+	ws->write(ws, (char*)query, strlen(query), 1);
 	ws->flush(ws);
 
 	if (!stream_readInt(rs, &flag) || flag == COMM_DONE) {
@@ -409,6 +473,92 @@ static void dump_data( stream *rs, int nRows, char *table, int dump ){
 		fclose(out);
 }
 
+typedef struct sql_type {
+	char *sqlname;
+	int digits;
+	int scale;
+	char *name;
+	struct sql_type *next;
+} sql_type;
+
+static sql_type *create_type(char *sname, char *digits, char *scale, char *name)
+{
+	sql_type *t = NEW(sql_type);
+	t->sqlname = _strdup(sname);
+	t->digits = strtol(digits,NULL,10);
+	t->scale = strtol(scale,NULL,10);
+	t->name = _strdup(name);
+	t->next = NULL;
+	return t;
+}
+
+static void destroy_type(sql_type *t)
+{
+	_DELETE(t->sqlname);
+	_DELETE(t->name);
+	_DELETE(t);
+}
+
+static sql_type *types = NULL;
+
+static char *find_type(char *name, char *Digits, char *Scale)
+{
+	int digits = strtol(Digits,NULL,10);
+	int scale = strtol(Scale,NULL,10);
+	sql_type *m, *n;
+
+	/* assumes the types are ordered on name,digits,scale where is always
+	 * 0 > n
+	 */
+	for ( n = types; n; n = n->next ) {
+		if (strcasecmp(n->sqlname, name) == 0){
+			if ((digits && n->digits >= digits) || 
+					(digits == n->digits)){
+				return n->name;
+			}
+			for (m = n; m; m = m->next ) {
+				if (strcasecmp(m->sqlname, name) != 0){
+					break;
+				}
+				n = m;
+				if ((digits && m->digits >= digits) || 
+					(digits == m->digits)){
+					return m->name;
+				}
+			}
+			return n->name;
+		}
+	}
+	assert(0);
+	return NULL;
+}
+
+static const char *types_format = "select sqlname,digits,scale,systemname from types;\n"; 
+#define T_SQLNAME 0
+#define T_DIGITS 1
+#define T_SCALE 2
+#define T_SYSTEMNAME 3
+
+/* TODO nullable/default */
+static int dump_type( stream *ws, stream *rs, char **ctypes, int cnt, int rlen, int dump, FILE *out )
+{
+	sql_type *prev = types;
+	int i,j;
+
+	for(i=0,j=0; i<cnt; i++, j+=rlen){
+		sql_type *t = create_type( ctypes[j+T_SQLNAME], 
+				    ctypes[j+T_DIGITS],
+				    ctypes[j+T_SCALE],
+				    ctypes[j+T_SYSTEMNAME]);
+		if (prev) 
+			prev -> next = t;
+		if (!types)
+			types = t;
+		prev = t;
+	}
+	return 0;
+}
+
 static const char *column_format = "select name,type,type_digits,type_scale,null,default from columns c,tables t where c.table_id = t.id and '%s' = t.name order by c.number;\n"; 
 #define COLUMN 6
 #define C_NAME 0
@@ -417,10 +567,11 @@ static const char *column_format = "select name,type,type_digits,type_scale,null
 #define C_TYPE_SCALE 3
 
 /* TODO nullable/default */
-static int dump_column( stream *ws, stream *rs, char **columns, int cnt, int rlen, int dump )
+static int dump_column( stream *ws, stream *rs, char **columns, int cnt, int rlen, int dump, FILE *out )
 {
 	int i,j;
 	for(i=0,j=0; i<cnt; i++, j+=rlen){
+	    if (dump == SQL_DUMP){
 		if (strcmp(columns[j+C_TYPE_DIGITS], "0") == 0){
 			printf("\t%s %s", 
 					columns[j+C_NAME], columns[j+C_TYPE]);
@@ -437,26 +588,47 @@ static int dump_column( stream *ws, stream *rs, char **columns, int cnt, int rle
 		if (i < cnt-1)
 			printf(",");
 		printf("\n");
+	    } else {
+		fprintf(out, "%s,\"\\%c\",%s\n", columns[j+C_NAME], 
+					     (i==(cnt-1))?'n':'t',
+					     find_type(columns[j+C_TYPE],
+					     columns[j+C_TYPE_DIGITS],
+					     columns[j+C_TYPE_SCALE])
+					     );
+	    }
 	}
 	return 0;
 }
 
-static int dump_table( stream *ws, stream *rs, char **tables, int cnt, int rlen, int dump)
+static int dump_table( stream *ws, stream *rs, char **tables, int cnt, int rlen, int dump, FILE *out)
 {
 	int i;
 	for(i=0; i<cnt; i++){
 		int ccnt, res = 0;
 		char query[BUFSIZ], *s = tables[i];
 
-		if (dump == SQL_DUMP){
-			snprintf(query, BUFSIZ, column_format, s);
-			ccnt = execute(ws, rs, query);
-			if (ccnt > 0){
+		snprintf(query, BUFSIZ, column_format, s);
+		ccnt = execute(ws, rs, query);
+		if (ccnt > 0){
+			FILE * out = stdout;
 
+
+			if (dump == SQL_DUMP){
 				printf("CREATE TABLE %s (\n", s );
-				res = handle_result(ws, rs, ccnt, &dump_column, COLUMN, dump);
-				printf(");\n" );
+			} else {
+				char buf[BUFSIZ];
+				snprintf(buf, BLOCK, "%s.fmt", s );
+				out = fopen( buf, "w+");
+				if (!out){
+					printf( "Could not open %s for writing\n", s);
+					return -1;
+				}
 			}
+			res = handle_result(ws, rs, ccnt, &dump_column, COLUMN, dump, out);
+			if (dump == SQL_DUMP)
+				printf(");\n" );
+			else
+				fclose(out);
 		}
 		if (res == 0){
 			char *select_format = "select * from %s;\n";
@@ -471,7 +643,7 @@ static int dump_table( stream *ws, stream *rs, char **tables, int cnt, int rlen,
 	return 0;
 }
 
-static int dump_view( stream *ws, stream *rs, char **views, int cnt, int rlen, int dump)
+static int dump_view( stream *ws, stream *rs, char **views, int cnt, int rlen, int dump, FILE *out)
 {
 	int i,j;
 	for(i=0, j=0; i<cnt; i++, j+=rlen)
@@ -484,16 +656,23 @@ static int dump_tables( stream *ws, stream *rs, int dump )
 	char *tables = "select name from tables where type=0;\n"; 
 	char *views = "select name,query from tables where type=2;\n";
 
+	cnt = execute( ws, rs, types_format);
+	if (cnt > 0){
+		int res = handle_result(ws, rs, cnt, &dump_type, 4, dump, stdout);
+		if (res != 0) 
+			return res;
+	}
+
 	cnt = execute( ws, rs, tables);
 	if (cnt > 0){
-		int res = handle_result(ws, rs, cnt, &dump_table, 1, dump);
+		int res = handle_result(ws, rs, cnt, &dump_table, 1, dump, stdout);
 		if (res != 0) 
 			return res;
 	}
 	if (dump == SQL_DUMP){
 		cnt = execute( ws, rs, views);
 		if (cnt > 0){
-			int res = handle_result(ws, rs, cnt, &dump_view, 2, dump);
+			int res = handle_result(ws, rs, cnt, &dump_view, 2, dump, stdout);
 			if (res != 0) 
 				return res;
 		}
@@ -547,7 +726,7 @@ main(int ac, char **av)
 			usage(prog);
 			break;
 		case 'c':
-			config = strdup(optarg);
+			config = _strdup(optarg);
 			break;
 		case 'd':
 			if (optarg){ 
@@ -574,10 +753,10 @@ main(int ac, char **av)
 					opt_cmdline, "sql_port", optarg );
 			break;
 		case 'P':
-			passwd=strdup(optarg);
+			passwd = _strdup(optarg);
 			break;
 		case 'u':
-			user=strdup(optarg);
+			user = _strdup(optarg);
 			break;
 		case '?':
 			usage(prog);
@@ -595,6 +774,19 @@ main(int ac, char **av)
 		usage(prog);
 	}
 
+	if (setlocale(LC_CTYPE, "") == NULL){ /* why is this needed ? */
+		fprintf(stderr, "WARN: cannot set locale\n");
+	} else {
+		char *codeset = NULL;
+		if ((codeset = nl_langinfo(CODESET)) == NULL){
+			fprintf(stderr, "WARN: cannot get codeset\n");
+		} else {
+			to_utf = iconv_open("UTF-8", codeset);
+			from_utf = iconv_open(codeset, "UTF-8" );
+		}
+	}
+
+
 	if (config){
 		setlen = mo_config_file(&set, setlen, config );
 		free(config);
@@ -611,7 +803,7 @@ main(int ac, char **av)
 		return fd;
 
 	prompt = mo_find_option(set, setlen, "sql_prompt");
-	if (!prompt) prompt = strdup("Msql> ");
+	if (!prompt) prompt = _strdup("Msql> ");
 
 	rs = block_stream(socket_rstream( fd, "client read"));
 	ws = block_stream(socket_wstream( fd, "client write"));
@@ -682,6 +874,9 @@ main(int ac, char **av)
 	}
 	ws->close(ws);
 	ws->destroy(ws);
+
+	if (to_utf) iconv_close(to_utf);
+	if (from_utf) iconv_close(from_utf);
 
 	mo_free_options(set,setlen);
 	return 0;

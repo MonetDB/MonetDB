@@ -1,13 +1,12 @@
 #!/bin/sh
 PWD=`pwd`
-SQL="sql_client -u monetdb -P monetdb"
+SQL="Msql -u monetdb -P monetdb"
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
 
 echo "creating"
 $SQL < create_tables.int.isql
-exit
 echo "insert BONDs"
 $SQL < insert_BOND.int.sql   
 echo $?
@@ -17,7 +16,6 @@ echo $?
 echo "insert MODELs"
 $SQL < insert_MODEL.int.sql
 echo $?
-exit
 echo "check0"
 $SQL < check0.sql
 echo "queries"

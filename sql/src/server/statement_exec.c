@@ -34,25 +34,24 @@ static void atom_dump( atom *a, context *sql){
 
 	switch (a->type){
 	case int_value: 
-			i=snprintf(buf, BUFSIZ, "%d", a->data.ival); 
+			i=snprintf(buf, BUFSIZ, "%s(%d)", 
+					a->tpe->type->name, a->data.ival); 
 			break;
 	case string_value: 
-			buf[0] = '"';
-			i=snprintf(buf+1, BUFSIZ-2, "%s", a->data.sval); 
-			i++;
-			buf[i] = '"';
-			i++;
-			break;
+			i=snprintf(buf, BUFSIZ-2, "%s(\"%s\")", 
+					a->tpe->type->name, a->data.sval); 
+ 			break;
 	case float_value: 
-			i=snprintf(buf, BUFSIZ, "%f", a->data.dval); 
+			i=snprintf(buf, BUFSIZ, "%s(%f)", 
+					a->tpe->type->name, a->data.dval); 
 			break;
 	case general_value:
 			if (a->data.sval)
 			  i=snprintf(buf, BUFSIZ, "%s(\"%s\")", 
-				a->tpe.type->name, a->data.sval );
+				a->tpe->type->name, a->data.sval );
 			else 
 			  i=snprintf(buf, BUFSIZ, "%s(nil)", 
-				a->tpe.type->name );
+				a->tpe->type->name );
 			break;
 	default:
 			break;
@@ -740,7 +739,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		  	"s%d := oid_insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		} else if (s->op2.stval->nrcols){
 			len = snprintf( buf, BUFSIZ, 
-		  	"s%d := append(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+		  	"s%d := insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		} else {
 			len = snprintf( buf, BUFSIZ, 
 		  	"s%d := insert(s%d,oid(nil),s%d);\n", -s->nr, l, r);

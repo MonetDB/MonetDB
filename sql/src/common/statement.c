@@ -661,7 +661,6 @@ stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype)
 	s->type = st_select;
 	s->op1.stval = op1;
 	s->op2.stval = op2;
-	assert(cmptype >= cmp_equal && cmptype <= cmp_gte);
 	s->flag = cmptype;
 	s->nrcols = 1;
 	s->h = stmt_dup(s->op1.stval->h);
@@ -1156,15 +1155,15 @@ sql_subtype *tail_type(stmt * st)
 		return head_type(st->op1.stval);
 
 	case st_aggr:
-		return st->op2.aggrval->res;
+		return sql_bind_localtype(st->op2.aggrval->res);
 	case st_op:
-		return st->op1.funcval->res;
+		return sql_bind_localtype(st->op1.funcval->res);
 	case st_unop:
-		return st->op2.funcval->res;
+		return sql_bind_localtype(st->op2.funcval->res);
 	case st_binop:
-		return st->op3.funcval->res;
+		return sql_bind_localtype(st->op3.funcval->res);
 	case st_triop:
-		return st->op2.funcval->res;
+		return sql_bind_localtype(st->op2.funcval->res);
 	case st_atom:
 		return atom_type(st->op1.aval);
 

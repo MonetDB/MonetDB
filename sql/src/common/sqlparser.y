@@ -633,9 +633,8 @@ default_value:
     literal 
 
  |  USER     
-		{  sql_subtype t; t.digits = t.scale = 0;
-		   t.type = sql_bind_type("VARCHAR" ); 
-		   $$ = _newAtomNode( atom_string(&t, $1)); }
+		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0);
+		   $$ = _newAtomNode( atom_string(t, $1)); }
  |  NULLX 	
 		{ $$ = _newAtomNode( NULL);  }
  ;
@@ -1493,14 +1492,14 @@ datetime_funcs:
 string_funcs:
     SUBSTRING '(' scalar_exp FROM intval FOR intval ')' 
 				{ dlist *l = dlist_create();
-				  sql_subtype t; t.digits = t.scale = 0;
-				  t.type = sql_bind_type("MEDIUMINT");
+				  sql_subtype *t = 
+					sql_bind_subtype("MEDIUMINT", 0, 0);
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, _newAtomNode(
-					atom_int(&t, $5 -1 )));
+					atom_int(t, $5 -1 )));
   		  		  dlist_append_symbol(l, _newAtomNode(
-					atom_int(&t, $7 )));
+					atom_int(sql_dup_subtype(t), $7 )));
 		  		  $$ = _symbol_create_list( SQL_TRIOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
@@ -1537,9 +1536,8 @@ atom:
     literal 	
 
  |  USER     
-		{  sql_subtype t; t.digits = t.scale = 0;
-		   t.type = sql_bind_type("VARCHAR" ); 
-		   $$ = _newAtomNode( atom_string(&t, $1)); }
+		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0); 
+		   $$ = _newAtomNode( atom_string(t, $1)); }
  ;
 
 
@@ -1588,9 +1586,9 @@ time_persision:
  ;
 
 datetime_type:
-    DATE			{ $$ = new_subtype("DATE", 0, 0); }
- |  TIME time_persision tz 	{ $$ = new_subtype("TIME", $2, $3); }
- |  TIMESTAMP time_persision tz { $$ = new_subtype("TIMESTAMP", $2, $3); }
+    DATE			{ $$ = sql_bind_subtype("DATE", 0, 0); }
+ |  TIME time_persision tz 	{ $$ = sql_bind_subtype("TIME", $2, $3); }
+ |  TIMESTAMP time_persision tz { $$ = sql_bind_subtype("TIMESTAMP", $2, $3); }
  ;
 
 non_second_datetime_field:
@@ -1643,38 +1641,31 @@ interval_type:
 		/* TODO: 
 		   usual trick is to have a INTERVAL type per range (YEAR-DAY
 		 * etc, and store the precisions in digits/scale */
-		$$ = new_subtype("INTERVAL", 0, 0); }
+		$$ = sql_bind_subtype("INTERVAL", 0, 0); }
  ;
 
 literal:
     STRING   
-		{  sql_subtype t; t.digits = t.scale = 0;
-		   t.type = sql_bind_type("VARCHAR" ); 
-		   $$ = _newAtomNode( atom_string(&t, $1)); }
+		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0 ); 
+		   $$ = _newAtomNode( atom_string(t, $1)); }
  |  intval   
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type("MEDIUMINT" );
-		  $$ = _newAtomNode( atom_int(&t, $1)); }
+		{ sql_subtype *t = sql_bind_subtype("MEDIUMINT", 0, 0 );
+		  $$ = _newAtomNode( atom_int(t, $1)); }
  |  INTNUM   
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type("FLOAT" );
-		  $$ = _newAtomNode( atom_float(&t, strtod($1,&$1))); }
+		{ sql_subtype *t = sql_bind_subtype("FLOAT", 23, 0 );
+		  $$ = _newAtomNode( atom_float(t, strtod($1,&$1))); }
  |  APPROXNUM
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type("DOUBLE" );
-		  $$ = _newAtomNode( atom_float(&t, strtod($1,&$1))); }
+		{ sql_subtype *t = sql_bind_subtype("DOUBLE", 51, 0 );
+		  $$ = _newAtomNode( atom_float(t, strtod($1,&$1))); }
  |  DATE STRING 
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type("DATE" );
-		  $$ = _newAtomNode( atom_general(&t, $2)); }
+		{ sql_subtype *t = sql_bind_subtype("DATE", 0, 0 );
+		  $$ = _newAtomNode( atom_general(t, $2)); }
  |  TIME STRING 
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type("TIME" );
-		  $$ = _newAtomNode( atom_general(&t, $2)); }
+		{ sql_subtype *t = sql_bind_subtype("TIME", 0, 0 );
+		  $$ = _newAtomNode( atom_general(t, $2)); }
  |  TIMESTAMP STRING 
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type("TIMESTAMP" );
-		  $$ = _newAtomNode( atom_general(&t, $2)); }
+		{ sql_subtype *t = sql_bind_subtype("TIMESTAMP", 0, 0 );
+		  $$ = _newAtomNode( atom_general(t, $2)); }
  |  INTERVAL opt_sign STRING interval_qualifier
 		{ context *lc = (context*)parm;
 	  	  int i,tpe;
@@ -1682,28 +1673,25 @@ literal:
 			yyerror("incorrect interval");
 			$$ = NULL;
 	  	  } else {
-			sql_subtype t; t.digits = t.scale = 0; 
+			sql_subtype *t; 
 			if (tpe == 0){
-				t.type = sql_bind_type("MONTH_INTERVAL");
+				t = sql_bind_subtype("MONTH_INTERVAL", 0, 0);
 			} else {
-				t.type = sql_bind_type("SEC_INTERVAL");
+				t = sql_bind_subtype("SEC_INTERVAL", 0, 0);
 			}
-	  		$$ = _newAtomNode( atom_int(&t,i));
+	  		$$ = _newAtomNode( atom_int(t,i));
 	  	  }
 		}
  |  TYPE STRING 
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type($1);
-		  $$ = _newAtomNode( atom_general(&t, $2)); 
+		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
+		  $$ = _newAtomNode( atom_general(t, $2)); 
 	  	  _DELETE($1); }
  |  BOOL_FALSE  
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type("BOOL" );
-		  $$ = _newAtomNode( atom_general(&t, "false")); }
+		{ sql_subtype *t = sql_bind_subtype("BOOL", 0, 0 );
+		  $$ = _newAtomNode( atom_general(t, "false")); }
  |  BOOL_TRUE  
-		{ sql_subtype t; t.digits = t.scale = 0;
-		  t.type = sql_bind_type("BOOL" );
-		  $$ = _newAtomNode( atom_general(&t, "true")); }
+		{ sql_subtype *t = sql_bind_subtype("BOOL", 0, 0 );
+		  $$ = _newAtomNode( atom_general(t, "true")); }
  ;
 
 	/* miscellaneous */
@@ -1802,29 +1790,29 @@ opt_else:
 		/* data types, more types to come */
 
 data_type:
-    CHARACTER			{ $$ = new_subtype("CHARACTER", 0, 0); }
- |  CHARACTER '(' intval ')'	{ $$ = new_subtype("CHARACTER", $3, 0); }
- |  NUMERIC			{ $$ = new_subtype("NUMERIC", 0, 0); }
- |  NUMERIC '(' intval ')'	{ $$ = new_subtype("NUMERIC", $3, 0); }
+    CHARACTER			{ $$ = sql_bind_subtype("CHARACTER", 0, 0); }
+ |  CHARACTER '(' intval ')'	{ $$ = sql_bind_subtype("CHARACTER", $3, 0); }
+ |  NUMERIC			{ $$ = sql_bind_subtype("NUMERIC", 0, 0); }
+ |  NUMERIC '(' intval ')'	{ $$ = sql_bind_subtype("NUMERIC", $3, 0); }
  |  NUMERIC '(' intval ',' intval ')' 
-				{ $$ = new_subtype("NUMERIC", $3, $5); }
- |  DECIMAL			{ $$ = new_subtype("DECIMAL", 0, 0); }
- |  DECIMAL '(' intval ')'	{ $$ = new_subtype("DECIMAL", $3, 0); }
+				{ $$ = sql_bind_subtype("NUMERIC", $3, $5); }
+ |  DECIMAL			{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
+ |  DECIMAL '(' intval ')'	{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
  |  DECIMAL '(' intval ',' intval ')' 
-				{ $$ = new_subtype("DECIMAL", $3, $5); }
- |  FLOAT			{ $$ = new_subtype("FLOAT", 0, 0); }
- |  FLOAT '(' intval ')'	{ $$ = new_subtype("FLOAT", $3, 0); }
+				{ $$ = sql_bind_subtype("DECIMAL", $3, $5); }
+ |  FLOAT			{ $$ = sql_bind_subtype("FLOAT", 0, 0); }
+ |  FLOAT '(' intval ')'	{ $$ = sql_bind_subtype("FLOAT", $3, 0); }
  |  FLOAT '(' intval ',' intval ')'	
-				{ $$ = new_subtype("FLOAT", $3, $5); }
- |  REAL			{ $$ = new_subtype("REAL", 0, 0); }
- |  DOUBLE 			{ $$ = new_subtype("DOUBLE", 0, 0); }
+				{ $$ = sql_bind_subtype("FLOAT", $3, $5); }
+ |  REAL			{ $$ = sql_bind_subtype("REAL", 0, 0); }
+ |  DOUBLE 			{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  |  DOUBLE '(' intval ',' intval ')' 	
-				{ $$ = new_subtype("DOUBLE", $3, $5); }
- |  DOUBLE PRECISION		{ $$ = new_subtype("DOUBLE", 0, 0); }
+				{ $$ = sql_bind_subtype("DOUBLE", $3, $5); }
+ |  DOUBLE PRECISION		{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  | datetime_type
  | interval_type		
- | TYPE				{ $$ = new_subtype($1, 0, 0); _DELETE($1); }
- | TYPE '(' intval ')'		{ $$ = new_subtype($1, $3, 0); _DELETE($1); }
+ | TYPE				{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
+ | TYPE '(' intval ')'		{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
  ;
 
 column:	ident ;

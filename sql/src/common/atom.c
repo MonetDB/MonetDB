@@ -10,7 +10,7 @@ static int atom_debug = 0;
 atom *atom_int(sql_subtype * tpe, int val)
 {
 	atom *a = NEW(atom);
-	a->tpe = *tpe;
+	a->tpe = tpe;
 	a->data.ival = val;
 	a->type = int_value;
 	if (atom_debug)
@@ -21,7 +21,7 @@ atom *atom_int(sql_subtype * tpe, int val)
 atom *atom_string(sql_subtype * tpe, char *val)
 {
 	atom *a = NEW(atom);
-	a->tpe = *tpe;
+	a->tpe = tpe;
 	a->data.sval = val;
 	a->type = string_value;
 	if (atom_debug)
@@ -32,7 +32,7 @@ atom *atom_string(sql_subtype * tpe, char *val)
 atom *atom_float(sql_subtype * tpe, double val)
 {
 	atom *a = NEW(atom);
-	a->tpe = *tpe;
+	a->tpe = tpe;
 	a->data.dval = val;
 	a->type = float_value;
 	if (atom_debug)
@@ -43,7 +43,7 @@ atom *atom_float(sql_subtype * tpe, double val)
 atom *atom_general(sql_subtype * tpe, char *val)
 {
 	atom *a = NEW(atom);
-	a->tpe = *tpe;
+	a->tpe = tpe;
 	a->data.sval = val;
 	a->type = general_value;
 	if (atom_debug)
@@ -55,6 +55,8 @@ void atom_destroy(atom * a)
 {
 	if (a->type == string_value || a->type == general_value)
 		_DELETE(a->data.sval);
+	if (a->tpe) 
+		sql_subtype_destroy(a->tpe);
 	_DELETE(a);
 }
 
@@ -72,7 +74,7 @@ char *atom2string(atom * a)
 		break;
 	case general_value:
 		if (a->data.sval)
-			sprintf(buf, "%s \'%s\'", a->tpe.type->name,
+			sprintf(buf, "%s \'%s\'", a->tpe->type->name,
 				a->data.sval);
 		else
 			sprintf(buf, "NULL");
@@ -83,13 +85,14 @@ char *atom2string(atom * a)
 
 sql_subtype *atom_type(atom * a)
 {
-	return &(a->tpe);
+	return a->tpe;
 }
 
 atom *atom_dup(atom * a)
 {
 	atom *r = NEW(atom);
 	*r = *a;
+	r->tpe = sql_dup_subtype(a->tpe);
 	if (a->type == string_value || a->type == general_value)
 		r->data.sval = _strdup(a->data.sval);
 	return r;

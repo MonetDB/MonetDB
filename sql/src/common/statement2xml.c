@@ -15,9 +15,9 @@ char *atom2xml( atom *a){
 	case general_value:
 			if (a->data.sval)
 			  snprintf(buf, BUFSIZ, "%s(\"%s\")", 
-				a->tpe.type->name, a->data.sval );
+				a->tpe->type->name, a->data.sval );
 			else 
-			  snprintf(buf, BUFSIZ, "%s(nil)", a->tpe.type->name );
+			  snprintf(buf, BUFSIZ, "%s(nil)", a->tpe->type->name );
 			break;
 	}
 	return _strdup(buf);
@@ -607,7 +607,7 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 				s->nr, l, s->op2.aggrval->imp );
 			len += snprintf( buf+len, BUFSIZ, 
 				"s%d := new(oid,%s);\n"
-				, *nr+1, s->op2.aggrval->res->type->name );
+				, *nr+1, s->op2.aggrval->res );
 			len += snprintf( buf+len, BUFSIZ, 
 				"s%d.insert(oid(0),s%d);\n"
 				, *nr+1, s->nr );

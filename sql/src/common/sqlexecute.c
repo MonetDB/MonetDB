@@ -16,8 +16,6 @@ extern int sqlparse(void *);
 
 void sql_init_context(context * lc, stream * out, int debug, catalog * cat)
 {
-	init_keywords();
-
 	memset(lc, 0, sizeof(context));
 	lc->cur = ' ';
 	lc->filename = NULL;
@@ -41,6 +39,7 @@ void sql_init_context(context * lc, stream * out, int debug, catalog * cat)
 		_DELETE(lc->sql);
 	lc->sql = NEW_ARRAY(char, BUFSIZ);
 	lc->sqlsize = BUFSIZ;
+	lc->sql[0] = '\0';
 
 	sql_statement_init(lc);
 }
@@ -51,7 +50,6 @@ void sql_exit_context(context * lc)
 	lc->out->destroy(lc->out);
 	catalog_destroy(lc->cat);
 	lc->cat = NULL;
-	exit_keywords();
 
 	if (lc->sql != NULL)
 		_DELETE(lc->sql);

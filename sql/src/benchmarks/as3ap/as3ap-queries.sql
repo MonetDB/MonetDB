@@ -1,18 +1,5 @@
-/*database as3ap;*/
-/*
-create table uniques(k integer  not null, i integer  not null, si integer , f float not null,d double not null, decim integer  not null, date date  not null, code char(10)  not null, name char(20)  not null, address string not null, fill char(6)  not null);
-create table hundred(k integer  not null, i integer  not null, si integer , f float  not null, d double  not null, decim integer  not null, date date  not null, code char(10)  not null, name char(20)  not null, address string not null, fill char(6)  not null);
-create table tenpct(k integer  not null, i integer  not null, si integer , f float  not null, d double  not null, decim integer  not null, date date  not null, code char(10)  not null, name char(20)  not null, address string not null, fill char(6)  not null);
-create table updates(k integer  not null, i integer  not null, si integer , f float  not null, d double  not null, decim integer  not null, date date  not null, code char(10)  not null, name char(20)  not null, address string not null, fill char(6)  not null);
-
-*/
-/*copy table uniques(k=c0, i=c0, si=c0, f=c0, d=c0, decim=c0, date=c0, code=c0, name=c0, address=c0, fill=c0)from 'uniques';*/
-/*copy table hundred(k=c0, i=c0, si=c0, f=c0, d=c0, decim=c0, date=c0, code=c0, name=c0, address=c0, fill=c0)from 'hundred';*/
-/*copy table tenpct(k=c0, i=c0, si=c0, f=c0, d=c0, decim=c0, date=c0, code=c0, name=c0, address=c0, fill=c0)from 'tenpct';*/
-/*copy table updates(k=c0, i=c0, si=c0, f=c0, d=c0, decim=c0, date=c0, code=c0, name=c0, address=c0, fill=c0)from 'updates';*/
 create table tiny(k integer  not null);
 insert into tiny(k)values(0);
-/*copy table updates(k=c0, i=c0, si=c0, f=c0, d=c0, decim=c0, date=c0, code=c0, name=c0, address=c0, fill=c0)into 'updates.bu';*/
 create view _AS3AP_o_mode_tiny as select * from tiny;
 create view _AS3AP_sel_1_cl as select k, i, si, code, d, name from updates where k=1000;
 create view _AS3AP_o_mode_1k as select * from updates where k<=10;
@@ -74,4 +61,3 @@ update updates set i=500015 where k=5005;
 delete from updates where k= -5000;
 insert into updates select * from saveupdates;
 delete from updates where k<0;
-/*quit;*/

@@ -94,7 +94,6 @@ void init_keywords()
 	keywords_insert("ASYMMETRIC", ASYMMETRIC);
 	keywords_insert("BY", BY);
 	keywords_insert("CAST", CAST);
-	keywords_insert("CHAR", CHARACTER);
 	keywords_insert("CHARACTER", CHARACTER);
 	keywords_insert("CHECK", CHECK);
 	/*
@@ -285,7 +284,7 @@ void exit_keywords()
 	}
 }
 
-keyword *find_keyword(char *yytext)
+static keyword *find_keyword(char *yytext)
 {
 	int len = 0;
 	int bucket = keyword_key(mkLower(yytext), &len) & HASH_MASK;
@@ -308,17 +307,102 @@ keyword *find_keyword(char *yytext)
 	return NULL;
 }
 
+int keyword_exists(char *yytext)
+{
+	if (find_keyword(yytext)){
+		return 1;
+	}
+	return 0;
+}
+
+static int utf8_getchar(unsigned char *ch)
+{
+	int res = 0;
+        if (*ch >= 0xF0) {
+                (res)  = (*(ch)++ - 0xF0) << 18;
+                (res) |= (*(ch)++ & 0x3F) << 12;
+                (res) |= (*(ch)++ & 0x3F) << 6;
+                (res) |= (*(ch)++ & 0x3F);
+        } else if (*(ch) >= 0xE0) {
+                (res)  = (*(ch)++ - 0xE0) << 12;
+                (res) |= (*(ch)++ & 0x3F) << 6;
+                (res) |= (*(ch)++ & 0x3F);
+        } else if (*(ch) >= 0xC0) {
+                (res)  = (*(ch)++ - 0xC0) << 6;
+                (res) |= (*(ch)++ & 0x3F);
+        } else {
+                (res) = *(ch)++;
+        }
+	return res;
+}
+
+static void utf8_putchar(int ch, unsigned char *buf)
+{
+        if ((ch) < 0x80) {
+                *(buf)++ = (ch);
+        } else if ((ch) < 0x800) {
+                *(buf)++ = 0xC0 | ((ch) >> 6);
+                *(buf)++ = 0x80 | ((ch) & 0x3F);
+        } else if ((ch) < 0x10000) {
+                *(buf)++ = 0xE0 | ((ch) >> 12);
+                *(buf)++ = 0x80 | (((ch) >> 6) & 0x3F);
+                *(buf)++ = 0x80 | ((ch) & 0x3F);
+        } else {
+                *(buf)++ = 0xF0 | ((ch) >> 18);
+                *(buf)++ = 0x80 | (((ch) >> 12) & 0x3F);
+                *(buf)++ = 0x80 | (((ch) >> 6) & 0x3F);
+                *(buf)++ = 0x80 | ((ch) & 0x3F);
+        }
+	buf = 0;
+}
+
+/* given the first char return how many char's fill a single utf8 char */
+static int utf8_charlen(unsigned char ch)
+{
+	int res = 1;
+        if (ch >= 0xF0) {
+		res += 3;
+        } else if (ch >= 0xE0) {
+		res += 2;
+        } else if (ch >= 0xC0) {
+		res += 1;
+	}
+	return res;
+}
+
+static int utf8_intlen(int ch)
+{
+        if ((ch) < 0x80) {
+		return 1;
+        } else if ((ch) < 0x800) {
+		return 2;
+        } else if ((ch) < 0x10000) {
+		return 3;
+        } else {
+		return 4;
+        }
+}
+
 /* TODO change to block reads !*/
 static int lex_getc(context * lc)
 {
-	char ch;
+	int len = 0;
+	unsigned char ch[5];
 	int c = EOF;
+	ch[4] = 0;
 	if (lc->in) {
-		if (lc->in->read(lc->in, &ch, 1, 1) == 1) {
-			c = (int) ch;
+		*(int*)ch = 0;
+		if (lc->in->read(lc->in, ch, 1, 1) == 1) {
+			len = utf8_charlen(ch[0]) - 1;
+			if (len && lc->in->read(lc->in, ch+1, len, 1) != 1) {
+				fprintf(stderr, "couldn't read len %d\n", len);
+			}
+			c = utf8_getchar(ch);
 		}
 	} else if (lc->buf && *lc->buf) {
-		c = *lc->buf++;
+		len = utf8_charlen(lc->buf[0]);
+		c = utf8_getchar(lc->buf);
+		lc->buf += len;
 	}
 	if (c == '\n')
 		lc->lineno++;
@@ -327,59 +411,46 @@ static int lex_getc(context * lc)
 	return c;
 }
 
+void lex_append(context *lc, int ch)
+{
+	int len = utf8_intlen(ch);
+
+	if (lc->yylen+len >= lc->yysize) { /* keep space for EOS */
+		lc->yytext = realloc(lc->yytext, lc->yysize << 1);
+		lc->yysize = lc->yysize << 1;
+	}
+	utf8_putchar(ch, lc->yytext+lc->yylen);
+	lc->yylen += len;
+	lc->yytext[lc->yylen] = 0;
+}
+
 int keyword_or_ident(context * lc)
 {
 	keyword *k = NULL;
-	char *yytext = lc->yytext;
 	int cur = 0;
-	int yylen = 1;
-	int yysz = lc->yysize;
+	
+	assert(lc->yylen == 0);
 
-	yytext[0] = lc->cur;
-
+	lex_append(lc, lc->cur);
 	while ((cur = lex_getc(lc)) != EOF) {
-		if (!isalnum(cur) && cur != '_') {
-			if (yylen == yysz) {
-				yytext = realloc(yytext, yysz << 1);
-				yysz = yysz << 1;
-			}
-			yytext[yylen] = 0;
-			k = find_keyword(yytext);
+		if ((isascii(cur) && !isalnum(cur)) && cur != '_') {
+			k = find_keyword(lc->yytext);
 			if (k) {
 				lc->yyval = k->token;
-			} else if (sql_bind_type(yytext) != NULL) {
-				lc->yyval = TYPE;
 			} else {
 				lc->yyval = IDENT;
 			}
-			lc->yytext = yytext;
-			lc->yylen = yylen;
-			lc->yysize = yysz;
 			lc->cur = cur;
 			return lc->yyval;
 		}
-		if (yylen == yysz) {
-			yytext = realloc(yytext, yysz << 1);
-			yysz = yysz << 1;
-		}
-		yytext[yylen++] = (char) cur;
+		lex_append(lc, cur);
 	}
-	if (yylen == yysz) {
-		yytext = realloc(yytext, yysz << 1);
-		yysz = yysz << 1;
-	}
-	yytext[yylen] = 0;
-	k = find_keyword(yytext);
+	k = find_keyword(lc->yytext);
 	if (k) {
 		lc->yyval = k->token;
-	} else if (sql_bind_type(yytext) != NULL) {
-		lc->yyval = TYPE;
 	} else {
 		lc->yyval = IDENT;
 	}
-	lc->yytext = yytext;
-	lc->yylen = yylen;
-	lc->yysize = yysz;
 	lc->cur = cur;
 	return lc->yyval;
 }
@@ -452,35 +523,19 @@ int context_comparison(context * lc, char *yychar)
 	return lc->yyval;
 }
 
-int sql_string(context * lc, int quote)
+int lex_string(context * lc, int quote)
 {
-	char *yytext = lc->yytext;
 	int cur = 0;
-	int yylen = 0;
-	int yysz = lc->yysize;
 	int escape = 0;
 
 	while ((cur = lex_getc(lc)) != EOF && (cur != quote || escape)) {
-		if (yylen == yysz) {
-			yytext = realloc(yytext, yysz << 1);
-			yysz = yysz << 1;
-		}
 		if (!escape && cur == '\\')
 			escape = 1;
 		else
 			escape = 0;
-		yytext[yylen++] = (char) cur;
+		lex_append(lc, cur);
 	}
-	if (yylen == yysz) {
-		yytext = realloc(yytext, yysz << 1);
-		yysz = yysz << 1;
-	}
-	yytext[yylen] = 0;
 	lc->yyval = STRING;
-	lc->yytext = yytext;
-	lc->yylen = yylen;
-	lc->yysize = yysz;
-
 	lc->cur = lex_getc(lc);
 	return lc->yyval;
 }
@@ -591,22 +646,6 @@ int lex_symbol(context * lc)
 			lc->cur = next;
 			return context_yychar(lc, cur);
 		}
-		/*
-	} else if (cur == '-') {
-		next = lex_getc(lc);
-		if (isdigit(next)) {
-			lc->yytext[0] = '-';
-			lc->cur = next;
-			return number(lc, 2);
-		} else if (next == '-') {
-			if (skip_sql_comment(lc) == EOF)
-				return lc->cur;
-			return tokenize(lc);
-		} else {
-			lc->cur = next;
-			return context_yychar(lc, cur);
-		}
-		*/
 	} else if (isdigit(cur)) {
 		lc->cur = cur;
 		return number(lc, 1);
@@ -615,7 +654,7 @@ int lex_symbol(context * lc)
 			return lc->cur;
 		return tokenize(lc);
 	} else if (cur == '\'' || cur == '"') {
-		return sql_string(lc, cur);
+		return lex_string(lc, cur);
 	}
 	switch (cur) {
 	case '-':
@@ -692,7 +731,9 @@ int sqllex(YYSTYPE * yylval, void *parm)
 	int token = lc->prev;
 
 	lc->prev = 0;
+
 	if (!token) {
+		lc->yylen = 0;
 		token = tokenize(lc);
 		yylval->sval = lc->yytext;
 

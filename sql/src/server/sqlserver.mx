@@ -44,16 +44,13 @@
 		sqlclient;
 		"parse the next sql command and convert this to mil code"
 
-	.COMMAND types_init( int debug ) = types_init_wrap; 
-		"create the types/functions/aggrs"
+	.COMMAND parser_init( int debug ) = parser_init_wrap; 
+		"initialize the global structures for the sql parser such as keywords/types/functions/aggrs"
 
-	.COMMAND types_exit() = types_exit_wrap; 
-		"cleanup the types/funcs/aggrs"
+	.COMMAND parser_exit() = parser_exit_wrap; 
+		"cleanup the global structures"
 
-	.COMMAND sql_alias(str org, str alias ) = 
-		sql_alias_wrap; "Add a new sql alias mapping"
-
-	.COMMAND sql_type(str sqlname, str name ) = 
+	.COMMAND sql_type(str sqlname, int digits, int scale, str name ) = 
 		sql_type_wrap; "Add a new sql type"
 
 	.COMMAND sql_aggr(str name, str imp, str atp, str rtp) = 
@@ -166,9 +163,11 @@
 	.COMMAND renumber( BAT[oid,any::1] b1, oid o ) : BAT[oid,any::1] = bat_renumber;
 		"renumber the bat using the offset o"
 
- 	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
+ 	.COMMAND insert( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
 
- 	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
+ 	.COMMAND insert( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
+
+	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
 	.LOAD
 		# dirty hack for comments ask menzo
@@ -199,6 +198,7 @@
 #include <statement.h>
 #include <sqlexecute.h>
 #include "mem.h"
+#include <kernel.h>
 
 #include  <sys/types.h> 
 #include  <sys/socket.h> 
@@ -252,6 +252,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	int err = 0;
 	stmt *s = NULL;
 	char *cmd = NULL;
+	char *errbuf = GDKmalloc(GDKMAXERRLEN);
 
 	mvc **M, *m;
 	context **C, *lc;
@@ -268,6 +269,9 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	in = *In;
   	@:builtin_operand(3,*local_TYPE_Stream,Out)@
 	out = *Out;
+
+
+	GDKsetbuf(errbuf);
 
 	while(lc->cur != EOF ){
 		s = sqlnext(lc, in, &err);
@@ -303,7 +307,8 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 			    }
 			
 			    {
-				int i, status;
+				int i;
+				ssize_t status;
 				ValRecord res;
 				ptr val = &res.val.ival;
         			res.vtype = TYPE_void; 
@@ -312,10 +317,13 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 
 				if (i < 0){
 					char *errstr = "Mil error";
+					char *buf = GDKerrbuf;
 					stream_writeInt( out, 0 );
 					stream_writeInt( out, mvc_type(m) );
 					stream_writeInt( out, i );
 					out->write( out, errstr, strlen(errstr), 1 );
+					out->write( out, buf, strlen(buf), 1 );
+					buf[0] = 0; /* reset error buf */
 					out->flush( out );
 				} else if ((status=mvc_status(m)) < 0){
 					char *errstr = "Error in result";
@@ -351,28 +359,24 @@ int mvc_exit_wrap( ){
 	return GDK_SUCCEED;
 }
 
-int types_init_wrap( int* debug){
-	types_init(*debug );
+int parser_init_wrap( int* debug){
+	parser_init(*debug );
 	return GDK_SUCCEED;
 }
-int types_exit_wrap( ){
-	types_exit();
+int parser_exit_wrap( ){
+	parser_exit();
 	return GDK_SUCCEED;
 }
-int sql_alias_wrap( str org, str alias ){
-	sql_create_alias( org, alias );
-	return GDK_SUCCEED;
-}
-int sql_type_wrap( str sqlname, str name ){
-	sql_new_type( sqlname, name );
+int sql_type_wrap( str sqlname, int *digits, int *scale, str name ){
+	(void)sql_create_type( sqlname, *digits, *scale, name );
 	return GDK_SUCCEED;
 }
 int sql_aggr_wrap( str name, str imp, str atp, str rtp){
-	sql_new_aggr( name, imp, atp, rtp );
+	(void)sql_create_aggr( name, imp, atp, rtp );
 	return GDK_SUCCEED;
 }
 int sql_func_wrap( str name, str imp, str tp1, str tp2, str tp3, str rtp){
-	sql_new_func( name, imp, tp1, tp2, tp3, rtp );
+	(void)sql_create_func( name, imp, tp1, tp2, tp3, rtp );
 	return GDK_SUCCEED;
 }
 
@@ -423,7 +427,7 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 
   while (monet_running && server_run) {
     int retval;
-    int client_len = sizeof (client);
+    socklen_t client_len = sizeof (client);
     struct timeval tv;
     fd_set fds;
 
@@ -645,6 +649,8 @@ int mvc_export_wrap( Stream *s, BAT *order, BAT *bats, str sep, str rsep ){
 
 int mvc_import_table_wrap( int *res, mvc *c, Stream *s, str tname , str sep, str rsep, int *sz ){
 	*res = mvc_import_table( *(mvc**)c, *(stream**)s, tname, sep, rsep, *sz );
+	if (*res < 0)
+		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
@@ -680,6 +686,14 @@ int bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 	return GDK_SUCCEED;
 }
 
+int bat_replace_oid_bat_wrap( BAT **res, BAT *o, BAT *d )
+{
+	*res = o;
+	void_replace_bat( o, d );
+	BBPfix(o->batCacheid);
+	return GDK_SUCCEED;
+}
+
 
 @mil
 
@@ -695,46 +709,40 @@ module(decimal);
 
 var sql_debug := int(monet_environment.find("sql_debug"));
 
-types_init(sql_debug);
+parser_init(sql_debug);
 
-sql_alias("BOOLEAN", 	"BOOL");
+sql_type("OID", 0, 0, 	  	"oid");
+sql_type("BOOL", 0, 0,	  	"bit");
+sql_type("BOOLEAN", 0, 0,	"bit");
 
-#sql_alias("CHARACTER", 	"CHAR");
-sql_alias("CHARACTER", 	"VARCHAR");
-sql_alias("CHAR", 	"VARCHAR");
-sql_alias("TEXT", 	"VARCHAR");
-sql_alias("TINYTEXT", 	"VARCHAR");
-sql_alias("STRING", 	"VARCHAR");
+# cannot map char(1) to chr as utf8 may use up to 4 chr's per char(1)
+#sql_type("CHAR", 1, 0, 	  	"chr");
+sql_type("CHAR", 0, 0,  	"str"); # defined as a fixed length string 
+sql_type("CHARACTER", 0, 0, 	"str");
+#sql_type("VARCHAR", 1, 0, 	"chr");
+sql_type("VARCHAR", 0, 0, 	"str");
 
-sql_alias("UBYTE", 	"TINYINT");
-sql_alias("INT", 	"MEDIUMINT");
-sql_alias("INTEGER", 	"MEDIUMINT");
-sql_alias("NUMBER", 	"MEDIUMINT");
-sql_alias("NUMERIC", 	"DECIMAL");
-
-sql_alias("REAL", 	"DOUBLE");
-
-sql_type("OID", 	"oid");
-sql_type("BOOL", 	"bit");
-
-# sql_type("CHAR", 1, "chr");
-# sql_type("CHAR", 	"str"); 	# defined as a fixed length string 
-sql_type("VARCHAR", 	"str");
+sql_type("TEXT", 0, 0, 		"str");
+sql_type("TINYTEXT", 0, 0, 	"str");
+sql_type("STRING", 0, 0, 	"str");
 
 # *INT(n) n <= 2 -> TINYINT
 #	  n <= 5 -> SMALLINT
 #	  n <= 9 -> MEDIUMINT
 #	  n <= 19 -> BIGINT
 
-sql_type("TINYINT", 	"uchr"); 
-sql_type("SMALLINT", 	"sht");
-sql_type("MEDIUMINT", 	"int");
-sql_type("BIGINT", 	"lng");
+sql_type("UBYTE", 2, 0,		"uchr");
+sql_type("TINYINT", 2, 0, 	"sht"); # sht as sum(uchr) isn't implemented 
+sql_type("SMALLINT", 5, 0,	"sht");
+sql_type("MEDIUMINT", 9, 0,	"int");
+sql_type("INTEGER", 9, 0,	"int");
+sql_type("NUMBER", 9, 0,	"int");
+sql_type("BIGINT", 19, 0,	"lng");
 
-# decimal(d,s) (d indicates nr digits, s scale indicates nr of digits after the dot .)
-#sql_type("DECIMAL", "decimal");		# (fixed precision) requires decimal module
-sql_type("DECIMAL", "dbl");			# decimal misses the atom 
-						# read/write functions 
+#sql_type("INT", 2, 0, 		"uchr"); 
+sql_type("INT", 5, 0,		"sht");
+sql_type("INT", 9, 0,		"int");
+sql_type("INT", 19, 0,		"lng");
 
 # float(n) (n indicates precision of atleast n digits)
 # ie n <= 23 -> flt
@@ -742,31 +750,56 @@ sql_type("DECIMAL", "dbl");			# decimal misses the atom
 #    n <= 62 -> long long dbl (with -ieee) (not supported)
 # this requires a type definition
 
-# sql_type("FLOAT", 23, "flt");
-# sql_type("FLOAT", 51, "dbl");
+sql_type("FLOAT", 23, 0, 	"flt");
+sql_type("FLOAT", 51, 0, 	"dbl");
 
-sql_type("FLOAT", 	"flt");		
-sql_type("DOUBLE", 	"dbl");
+sql_type("DOUBLE", 51, 0, 	"dbl");
+sql_type("REAL", 51, 0, 	"dbl");
 
-sql_type("MONTH_INTERVAL", "int");
-sql_type("SEC_INTERVAL", "int");
-sql_type("DATE", "date");
-sql_type("TIME", "str");
-sql_type("DATETIME", "str");
-sql_type("TIMESTAMP", "str");
+# decimal(n) == int(n)
+
+#sql_type("DECIMAL", 2, 0, 		"uchr"); 
+sql_type("DECIMAL", 5, 0,		"sht");
+sql_type("DECIMAL", 9, 0,		"int");
+sql_type("DECIMAL", 19, 0,		"lng");
+
+# decimal(d,s) (d indicates nr digits, s scale indicates nr of digits after the dot .)
+#sql_type("DECIMAL", 51, 50, "decimal");		# (fixed precision) requires decimal module
+
+sql_type("DECIMAL", 23, 22,		"flt");
+sql_type("DECIMAL", 51, 50,		"dbl");
+
+#sql_type("NUMERIC", 2, 0, 		"uchr"); 
+sql_type("NUMERIC", 5, 0,		"sht");
+sql_type("NUMERIC", 9, 0,		"int");
+sql_type("NUMERIC", 19, 0,		"lng");
+
+sql_type("NUMERIC", 23, 22,		"flt");
+sql_type("NUMERIC", 51, 50,		"dbl");
+
+
+# Date etc
+
+sql_type("MONTH_INTERVAL", 0, 0, 	"int");
+sql_type("SEC_INTERVAL", 0, 0, 		"int");
+sql_type("DATE", 0, 0, 			"date");
+sql_type("TIME", 0, 0, 			"time");
+sql_type("DATETIME", 0, 0, 		"datetime");
+sql_type("TIMESTAMP", 0, 0, 		"timestamp");
 
 var strings := new(str,str);
+strings.insert("CHAR", 		"chr");
 strings.insert("VARCHAR", 	"str");
 
 var numerical := new(str,str);
-numerical.insert("TINYINT", 	"uchr");
+numerical.insert("TINYINT", 	"uchr"); 
 numerical.insert("SMALLINT", 	"sht");
 numerical.insert("MEDIUMINT", 	"int");
 numerical.insert("BIGINT", 	"lng");
 numerical.insert("DECIMAL", 	"dbl");
 
 var floats := new(str,str);
-floats.insert("FLOAT", 	"flt");
+floats.insert("FLOAT", 		"flt");
 floats.insert("DOUBLE", 	"dbl");
 numerical.insert(floats);
 
@@ -774,89 +807,89 @@ var dates := new(str,str);
 dates.insert("MONTH_INTERVAL", "int");
 dates.insert("SEC_INTERVAL", "int");
 dates.insert("DATE", "date");
-dates.insert("TIME", "str");
-dates.insert("TIMESTAMP", "str");
+dates.insert("TIME", "time");
+dates.insert("TIMESTAMP", "timestamp");
 
 var type_sql := bat(str,str);
-type_sql.insert(strings.reverse());
-type_sql.insert(numerical.reverse());
-type_sql.insert(dates.reverse());
+type_sql.insert(strings);
+type_sql.insert(numerical);
+type_sql.insert(dates);
 
 type_sql@batloop(){ sql_aggr( "min", "min", $t, $t ); }
 type_sql@batloop(){ sql_aggr( "max", "max", $t, $t ); }
-numerical@batloop(){ sql_aggr( "sum", "sum", $h, $h ); }
-numerical@batloop(){ sql_aggr( "avg", "avg", $h, $h ); }
-sql_aggr( "count", "count", "", "MEDIUMINT" ); 
+numerical@batloop(){ sql_aggr( "sum", "sum", $t, $t ); }
+numerical@batloop(){ sql_aggr( "avg", "avg", $t, $t ); }
+sql_aggr( "count", "count", "", "int" ); 
 
-numerical@batloop(){ sql_func( "sql_sub", "-", $h, $h, "", $h ); }
-numerical@batloop(){ sql_func( "sql_add", "+", $h, $h, "", $h ); }
-numerical@batloop(){ sql_func( "sql_mul", "*", $h, $h, "", $h ); }
-numerical@batloop(){ sql_func( "sql_div", "/", $h, $h, "", $h ); }
-numerical@batloop(){ sql_func( "sql_max", "max", $h, $h, "", $h ); }
-numerical@batloop(){ sql_func( "sql_min", "min", $h, $h, "", $h ); }
-numerical@batloop(){ sql_func( "sql_neg", "-", $h, "", "", $h ); }
+numerical@batloop(){ sql_func( "sql_sub", "-", $t, $t, "", $t ); }
+numerical@batloop(){ sql_func( "sql_add", "+", $t, $t, "", $t ); }
+numerical@batloop(){ sql_func( "sql_mul", "*", $t, $t, "", $t ); }
+numerical@batloop(){ sql_func( "sql_div", "/", $t, $t, "", $t ); }
+numerical@batloop(){ sql_func( "sql_max", "max", $t, $t, "", $t ); }
+numerical@batloop(){ sql_func( "sql_min", "min", $t, $t, "", $t ); }
+numerical@batloop(){ sql_func( "sql_neg", "-", $t, "", "", $t ); }
 
 numerical@batloop(){ 
-	var hd := $h; 
+	var hd := $t; 
 	numerical@batloop(){ 
-		if ($h != hd){
-		    sql_func( "convert", $t, hd, "", "", $h );
+		if ($t != hd){
+		    sql_func( "convert", $t, hd, "", "", $t );
 		}
 	}
 }
 
 strings@batloop(){ 
-	var hd := $h; 
+	var hd := $t; 
 	strings@batloop(){ 
-		if ($h != hd){
-		    sql_func( "convert", $t, hd, "", "", $h );
+		if ($t != hd){
+		    sql_func( "convert", $t, hd, "", "", $t );
 		}
 	}
 }
 
 strings@batloop(){ 
-	var hd := $h; 
+	var hd := $t; 
 	numerical@batloop(){ 
-		sql_func( "convert", $t, hd, "", "", $h );
+		sql_func( "convert", $t, hd, "", "", $t );
 	}
 }
 
 floats@batloop(){ 
-	sql_func( "floor", "floor", $h, "", "", $h ); 
-	sql_func( "ceil", "ceil", $h, "", "", $h ); 
-	sql_func( "sin", "sin", $h, "", "", $h ); 
-	sql_func( "cos", "cos", $h, "", "", $h ); 
-	sql_func( "tan", "tan", $h, "", "", $h ); 
-	sql_func( "asin", "asin", $h, "", "", $h ); 
-	sql_func( "acos", "acos", $h, "", "", $h ); 
-	sql_func( "atan", "atan", $h, "", "", $h ); 
-	sql_func( "sinh", "sinh", $h, "", "", $h ); 
-	sql_func( "cosh", "cosh", $h, "", "", $h ); 
-	sql_func( "tanh", "tanh", $h, "", "", $h ); 
-	sql_func( "sqrt", "sqrt", $h, "", "", $h ); 
-	sql_func( "exp", "exp", $h, "", "", $h ); 
-	sql_func( "log", "log", $h, "", "", $h ); 
-	sql_func( "log10", "log10", $h, "", "", $h ); 
+	sql_func( "floor", "floor", $t, "", "", $t ); 
+	sql_func( "ceil", "ceil", $t, "", "", $t ); 
+	sql_func( "sin", "sin", $t, "", "", $t ); 
+	sql_func( "cos", "cos", $t, "", "", $t ); 
+	sql_func( "tan", "tan", $t, "", "", $t ); 
+	sql_func( "asin", "asin", $t, "", "", $t ); 
+	sql_func( "acos", "acos", $t, "", "", $t ); 
+	sql_func( "atan", "atan", $t, "", "", $t ); 
+	sql_func( "sinh", "sinh", $t, "", "", $t ); 
+	sql_func( "cosh", "cosh", $t, "", "", $t ); 
+	sql_func( "tanh", "tanh", $t, "", "", $t ); 
+	sql_func( "sqrt", "sqrt", $t, "", "", $t ); 
+	sql_func( "exp", "exp", $t, "", "", $t ); 
+	sql_func( "log", "log", $t, "", "", $t ); 
+	sql_func( "log10", "log10", $t, "", "", $t ); 
 }
 
-sql_func( "current_date", "current_date", "", "", "" , "DATE" );
-sql_func( "current_time", "current_time", "", "", "" , "TIME" );
-sql_func( "current_timestamp", "current_timestamp", "", "", "" , "TIMESTAMP" );
+sql_func( "current_date", "current_date", "", "", "" , "date" );
+sql_func( "current_time", "current_time", "", "", "" , "time" );
+sql_func( "current_timestamp", "current_timestamp", "", "", "" , "timestamp" );
 
-sql_func( "sql_sub", "date_sub_sec_interval", "DATE", "SEC_INTERVAL", "", "DATE");
-sql_func( "sql_sub", "date_sub_month_interval", "DATE", "MONTH_INTERVAL", "", "DATE");
+sql_func( "sql_sub", "date_sub_sec_interval", "date", "int", "", "date");
+sql_func( "sql_sub", "date_sub_month_interval", "date", "int", "", "date");
 
-sql_func( "sql_add", "date_add_sec_interval", "DATE", "SEC_INTERVAL", "", "DATE");
-sql_func( "sql_add", "addmonths", "DATE", "MONTH_INTERVAL", "", "DATE");
+sql_func( "sql_add", "date_add_sec_interval", "date", "int", "", "date");
+sql_func( "sql_add", "addmonths", "date", "int", "", "date");
 
-sql_func( ">", ">", "DATE", "DATE", "", "BOOL");
-sql_func( "<", "<", "DATE", "DATE", "", "BOOL");
+sql_func( ">", ">", "date", "date", "", "bit");
+sql_func( "<", "<", "date", "date", "", "bit");
 
-sql_func( "year", "year", "DATE", "", "", "MEDIUMINT");
-sql_func( "month", "month", "DATE", "", "", "MEDIUMINT");
+sql_func( "year", "year", "date", "", "", "int");
+sql_func( "month", "month", "date", "", "", "int");
 
-sql_func( "substring", "string", "VARCHAR", "MEDIUMINT", "MEDIUMINT", "VARCHAR");
-sql_func( "strconcat", "+", "VARCHAR", "VARCHAR", "", "VARCHAR");
+sql_func( "substring", "string", "str", "int", "int", "str");
+sql_func( "strconcat", "+", "str", "str", "", "str");
 
 proc sql_add(x, y):= return x + y;
 proc sql_sub(x, y):= return x - y;
@@ -993,8 +1026,8 @@ proc mvc_revoke_role( m, grantee, auth ) {
 		return;
 	id := logins.reverse.find(grantee_id);
 	#print(id);
-	login_id.replace(nil,int(nil));
-	role_id.replace(nil,int(nil));
+	login_id.replace(id,int(nil));
+	role_id.replace(id,int(nil));
 	D_user_role.insert(nil,id);
 } 
 
@@ -1041,6 +1074,7 @@ proc mvc_drop_user( m, user) {
 }
 
 proc initialize(int debug) {
+	# change to sql statements !!
 	var myc := mvc_create(debug);
 	var schema := mvc_admin_login(myc);
 	
@@ -1126,7 +1160,9 @@ proc input( mvc myc, Stream Input, str tname, BAT fnames, str Sep, str rSep, int
 	var s := Input;
 	if (fnames.count() > 0){
 		fnames@batloop(){
-			s := open_rastream( $t );
+			f := iconv($t, "UTF-8", codeset());
+			s := open_rastream(f);
+			
 			mvc_import_table( myc, s, tname, Sep, rSep, sz );
 			stream_close(s);
 		}
@@ -1164,9 +1200,14 @@ proc server_output( Stream Output, any Order, any val, ..any.. ) : void := {
 
 	cnt := $0;
 	var p := str(val);
+	if (type(val) = str)
+		p := "\"" + val + "\"";
 	var id := 3;
 	while(id < cnt ){
- 		p := p + "\t" + str($(id+1));
+		if (type($(id+1)) != str)
+ 			p := p + "\t" + str($(id+1));
+		else
+ 			p := p + "\t\"" + str($(id+1)) + "\"";
 		id :+= 1;
 	}
  	p := p + "\n"; 

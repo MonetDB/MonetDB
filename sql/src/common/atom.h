@@ -11,7 +11,7 @@ typedef enum atomtype {
 } atomtype;
 
 typedef struct atom {
-	sql_subtype tpe;
+	sql_subtype *tpe;
 	atomtype type;
 	union {
 		int ival;

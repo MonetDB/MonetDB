@@ -10,5 +10,7 @@
 
 extern void init_keywords();
 extern void exit_keywords();
+extern void keywords_insert(char *k, int token);
+extern int  keyword_exists(char *yytext);
 
 #endif	/* _SQLSCAN_H_ */
