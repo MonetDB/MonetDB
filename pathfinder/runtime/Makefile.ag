@@ -22,7 +22,7 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
+INCLUDES = $(MONETDB_INCS) $(LIBGC_CFLAGS) $(LIBXML2_CFLAGS) ../compiler/include
 PF_LIBS = $(LIBGC_LDADD) $(LIBXML2_LDADD)
 
 lib__pathfinder = {
