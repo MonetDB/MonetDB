@@ -139,13 +139,19 @@ in_background:
      * ignore any signals sent because of dying childs 
      * (prevents zombies)
      */
+#ifdef SIGCLD
     signal (SIGCLD, SIG_IGN);
+#endif
 
     /* ignore signals sent when writing to unconnected sockets */
+#ifdef SIGPIPE
     signal (SIGPIPE, SIG_IGN);
+#endif
 
     /* trap forced termination */
+#ifdef SIGTERM
     signal (SIGTERM, terminate);
+#endif
 }
 
 
