@@ -49,21 +49,32 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 @m
 .MODULE aggrX3;
 
-@= sum_avg_signatures
-.COMMAND {sum}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum_@1_@2; 
+@= sum_signatures
+.COMMAND {sum_@2}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum_@1_@2; 
 	"grouped tail sum on @1"
+.COMMAND {sum_@2}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum3_@1_@2; 
+	"grouped tail sum on @1"
+@m
+@:sum_signatures(sht,sht)@
+@:sum_signatures(sht,int)@
+@:sum_signatures(int,int)@
+@:sum_signatures(int,lng)@
+@:sum_signatures(lng,lng)@
+@:sum_signatures(flt,flt)@
+@:sum_signatures(flt,dbl)@
+@:sum_signatures(dbl,dbl)@
+
+@= avg_signatures
 .COMMAND {avg}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggrX3_avg_@1; 
 	"grouped tail average on @1"
-.COMMAND {sum}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum3_@1_@2; 
-	"grouped tail sum on @1"
 .COMMAND {avg}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggrX3_avg3_@1; 
 	"grouped tail average on @1"
 @m
-@:sum_avg_signatures(sht,int)@
-@:sum_avg_signatures(int,lng)@
-@:sum_avg_signatures(lng,lng)@
-@:sum_avg_signatures(flt,dbl)@
-@:sum_avg_signatures(dbl,dbl)@
+@:avg_signatures(sht)@
+@:avg_signatures(int)@
+@:avg_signatures(lng)@
+@:avg_signatures(flt)@
+@:avg_signatures(dbl)@
 
 .COMMAND {min}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_min; 
 	"grouped tail minimum"
@@ -89,6 +100,37 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 	if (h.exist(true)) 
 	    return h.find(true);
 	return 0;
+    }
+
+    proc {sum}(BAT[oid, sht] b, bat[oid,any] e ) : BAT[oid,int] {
+		return	 {sum_int}(b,e);
+    }
+    proc {sum}(BAT[oid, sht] b, bat[oid,oid] g, bat[oid,any] e ) :BAT[oid,int] {
+		return	 {sum_int}(b,g,e);
+    }
+    proc {sum}(BAT[oid, int] b, bat[oid,any] e ) : BAT[oid,lng] {
+		return	 {sum_lng}(b,e);
+    }
+    proc {sum}(BAT[oid, int] b, bat[oid,oid] g, bat[oid,any] e ) :BAT[oid,lng] {
+		return	 {sum_lng}(b,g,e);
+    }
+    proc {sum}(BAT[oid, lng] b, bat[oid,any] e ) : BAT[oid,lng] {
+		return	 {sum_lng}(b,e);
+    }
+    proc {sum}(BAT[oid, lng] b, bat[oid,oid] g, bat[oid,any] e ) :BAT[oid,lng] {
+		return	 {sum_lng}(b,g,e);
+    }
+    proc {sum}(BAT[oid, flt] b, bat[oid,any] e ) : BAT[oid,dbl] {
+		return	 {sum_dbl}(b,e);
+    }
+    proc {sum}(BAT[oid, flt] b, bat[oid,oid] g, bat[oid,any] e ) :BAT[oid,dbl] {
+		return	 {sum_dbl}(b,g,e);
+    }
+    proc {sum}(BAT[oid, dbl] b, bat[oid,any] e ) : BAT[oid,dbl] {
+		return	 {sum_dbl}(b,e);
+    }
+    proc {sum}(BAT[oid, dbl] b, bat[oid,oid] g, bat[oid,any] e ) :BAT[oid,dbl] {
+		return	 {sum_dbl}(b,g,e);
     }
 
     proc avg(BAT[any, any::1] b) : any::1 {
@@ -377,7 +419,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 	@7:	"loc" for fixsized b/bn-tail-type, 	b/bn-tail-access
 		"var" for varsized b/bn-tail-type	(only loc used currently)
 */
-@= arithpump
+@= arithsum
 int CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	@3 zero = (@3) 0, *sums;
@@ -420,7 +462,17 @@ int CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	*ret = bn;
 	return GDK_SUCCEED;
 }
+@c
+@:arithsum(sht,loc,sht)@
+@:arithsum(sht,loc,int)@
+@:arithsum(int,loc,int)@
+@:arithsum(int,loc,lng)@
+@:arithsum(lng,loc,lng)@
+@:arithsum(flt,loc,flt)@
+@:arithsum(flt,loc,dbl)@
+@:arithsum(dbl,loc,dbl)@
 
+@= arithavg
 int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int xx;
@@ -469,11 +521,11 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:arithpump(sht,loc,int)@
-@:arithpump(int,loc,lng)@
-@:arithpump(lng,loc,lng)@
-@:arithpump(flt,loc,dbl)@
-@:arithpump(dbl,loc,dbl)@
+@:arithavg(sht,loc)@
+@:arithavg(int,loc)@
+@:arithavg(lng,loc)@
+@:arithavg(flt,loc)@
+@:arithavg(dbl,loc)@
 
 @- "Extremes" (Min & Max)
 @c
