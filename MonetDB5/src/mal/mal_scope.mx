@@ -101,7 +101,6 @@ mal_export void         freeScopeList(Scope cur);
 mal_export void     insertSymbol(Scope scope, Symbol prg);
 mal_export void     deleteSymbol(Scope scope, Symbol prg);
 mal_export Scope    findScope(Scope scope, str name);
-mal_export Scope    findScopeL(Scope scope, str name, int l);
 mal_export Symbol   findSymbolInScope(Scope v, str fcn);
 mal_export Symbol   findSymbol(str mod, str fcn);
 mal_export int      displayScope(stream *f, Scope v, str fcn,int listing);
@@ -307,17 +306,6 @@ Scope findScope(Scope scope, str name){
     if( scopeJump[(int)(*name)][(int)(*(name+1))]) scope= scopeJump[(int)(*name)][(int)(*(name+1))];
         while(scope != NULL){
                 if( idcmp(name,scope->name)== 0 )
-                        break;
-                scope= scope->outer;
-        }
-        return scope;
-}
-Scope findScopeL(Scope scope, str name, int len){
-    if( scope->name==NULL) return NULL;
-    if( name==NULL) return scope;
-    if( scopeJump[(int)(*name)][(int)(*(name+1))]) scope= scopeJump[(int)(*name)][(int)(*(name+1))];
-        while(scope != NULL){
-                if( strncmp(name,scope->name,len)== 0 )
                         break;
                 scope= scope->outer;
         }

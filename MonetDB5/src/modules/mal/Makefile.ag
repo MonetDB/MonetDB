@@ -19,15 +19,15 @@ LIBS = {
 	SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) 
 }
-doc_mal = {
-	DIR = pkgdatadir/docs/modules/mal
-	SOURCES = \
-		startup.mx mal_init.mx language.mx box.mx multiplex.mx  \
-		atoms.mx profiler.mx const.mx mil.mx bbp.mx io.mx \
-		enum.mx streams.mx inspect.mx crackers.mx \
-		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
-		transaction.mx factory.mx
-}
+#doc_mal = {
+#	DIR = pkgdatadir/docs/modules/mal
+#	SOURCES = \
+#		startup.mx mal_init.mx language.mx box.mx multiplex.mx  \
+#		atoms.mx profiler.mx const.mx mil.mx bbp.mx io.mx \
+#		enum.mx streams.mx inspect.mx crackers.mx \
+#		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
+#		transaction.mx factory.mx
+#}
 
 scripts_mal = {
 	DIR = pkglibdir
