@@ -8,3 +8,6 @@ if [ $? -eq 0 ]; then
 	rm -f manual.aux manual.log manual.idx
 	rm -f manual.toc manual.ilg manual.idn
 fi
+# dvips manual.dvi -o x.ps
+# cat x.ps|psnup -2 >manual.ps
+# rm x.ps
