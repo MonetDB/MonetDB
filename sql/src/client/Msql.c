@@ -278,7 +278,7 @@ static void header_data( stream *rs, stream *out, int nCols, int trace ){
 	free(cols);
 }
 
-/* with new protocol and new table_print this should be come simpler
+/* with new protocol and new table_print this should become simpler
  * ie just dump until end of block and transform status+count into
 	printf("SQL  %d Rows affected\n", nRows );
  * Requires the client selects a special table_print at the start, ie.
@@ -337,7 +337,7 @@ int receive( stream *rs, stream *out, int trace ){
 				return receive(rs, out, trace);
 		}
 		if (type == Q_RESULT) {
-			int i, id, res = 0;
+			int i, id;
 			stream_readInt(rs, &id);
 			header_data(rs, out, nRows, trace);
 			nRows = receive(rs, out, trace);
