@@ -96,7 +96,11 @@ if [ ! -x bootstrap ] ; then
 
 	if [ "${os}" = "IRIX64" ] ; then
 		binpath=":/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
+		if [ "${COMP}${BITS}" = "GNU32" ] ; then
+			libpath=":/soft/local/lib${libpath}"
+		fi
 		if [ "${COMP}${BITS}" = "GNU64" ] ; then
+			libpath=":/soft/local/lib/mabi=64${libpath}"
 			cc="${cc} -mabi=64"
 			cxx="${cxx} -mabi=64"
 		fi
@@ -110,7 +114,13 @@ if [ ! -x bootstrap ] ; then
 	export CC="${cc}"
 	export CXX="${cxx}"
 	export PATH="${PREFIX}/bin${binpath}"
-#	export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet${libpath}"
+	if [ "${libpath}" ] ; then
+		export LD_LIBRARY_PATH="${libpath}"
+	fi
+#	if [ "${LD_LIBRARY_PATH}" ] ; then
+#		export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
+#	  else	export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet"
+#	fi
 
 #	export MONETDIST="${PREFIX}"
 #	export MONET_MOD_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet"

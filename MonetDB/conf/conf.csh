@@ -110,7 +110,11 @@ if ( ! -x bootstrap ) then
 
 	if ( "${os}" == "IRIX64" ) then
 		set binpath = ":/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
+		if ( "${COMP}${BITS}" == "GNU32" ) then
+			set libpath = ":/soft/local/lib${libpath}"
+		endif
 		if ( "${COMP}${BITS}" == "GNU64" ) then
+			set libpath = ":/soft/local/lib/mabi=64${libpath}"
 			set cc = "${cc} -mabi=64"
 			set cxx = "${cxx} -mabi=64"
 		endif
@@ -124,7 +128,13 @@ if ( ! -x bootstrap ) then
 	setenv CC "${cc}"
 	setenv CXX "${cxx}"
 	setenv PATH "${PREFIX}/bin${binpath}"
-#	setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet${libpath}"
+	if ( ${?libpath} ) then
+		setenv LD_LIBRARY_PATH "${libpath}"
+	endif
+#	if ( ${?LD_LIBRARY_PATH} ) then
+#		setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
+#	  else	setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
+#	endif
 
 #	setenv MONETDIST "${PREFIX}"
 #	setenv MONET_MOD_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
