@@ -1861,6 +1861,7 @@ str BKCbat_append_void_bat_wrap( int *r, int *bid, int *uid )
 	BAT *i, *u;
 	@:getBATdescriptor(r,bid,i,append)@
 	@:getBATdescriptor(r,uid,u,append)@
+        i= BATsetaccess(i,0);
 	void_append_bat( i, u );
 	*r = i->batCacheid;
 	BBPfix(i->batCacheid);
@@ -1872,6 +1873,7 @@ str BKCbat_append_oid_bat_wrap( int *r, int *bid, int *uid )
 	BAT *i, *u;
 	@:getBATdescriptor(r,bid,i,append)@
 	@:getBATdescriptor(r,uid,u,append)@
+        i= BATsetaccess(i,0);
 	void_insert_bat( i, u );
 	*r = i->batCacheid;
 	BBPfix(i->batCacheid);
@@ -1883,6 +1885,7 @@ str BKCbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 	BAT *i, *u;
 	@:getBATdescriptor(r,bid,i,append)@
 	@:getBATdescriptor(r,uid,u,append)@
+        i= BATsetaccess(i,0);
 	void_insert_bat( i, u );
 	*r = i->batCacheid;
 	BBPfix(i->batCacheid);
@@ -1921,6 +1924,7 @@ str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
         assert(i->htype == TYPE_oid &&
                 (BATcount(u) == 0 || u->htype == TYPE_oid));
 
+        i= BATsetaccess(i,0);
         o = oid_max(i);
         o++;
         BATloop(u, r, s){
@@ -1931,7 +1935,10 @@ str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 	BBPfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
-
+@-
+For BUN inserts we do not call for change in access mode.
+This would be too costly
+@c
 str BKCoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 {
         oid o;
@@ -1956,6 +1963,7 @@ str BKCbat_append_val_wrap( int *r, int *bid, ptr u)
 	@:getBATdescriptor(r,bid,i,append)@
 	h = i->hseqbase + BATcount(i);
 	@:derefStr(i,t,u)@
+        i= BATsetaccess(i,0);
 	BUNins( i, (ptr) & h, u );
 	*r = i->batCacheid;
 	BBPfix(i->batCacheid);
@@ -1967,6 +1975,7 @@ str BKCbat_replace_oid_bat_wrap( int *r, int *bod, int *did )
 	BAT *o, *d;
 	@:getBATdescriptor(r,bod,o,replace)@
 	@:getBATdescriptor(r,did,d,replace)@
+        o= BATsetaccess(o,0);
 	void_replace_bat( o, d );
 	*r = o->batCacheid;
 	BBPfix(o->batCacheid);

@@ -1625,7 +1625,7 @@ str ALGselect1(int *result, int *bid, ptr value) {
 	@:derefStr(b,t,value)@
 	CMDselect1(&bn,b,value);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1638,7 +1638,7 @@ str ALGuselect1(int *result, int *bid, ptr value) {
 	@:derefStr(b,t,value)@
 	CMDuselect1(&bn,b,value);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1652,7 +1652,7 @@ str ALGselect(int *result, int *bid, ptr low, ptr high) {
 	@:derefStr(b,t,high)@
 	CMDselect(&bn,b,low,high);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1665,7 +1665,7 @@ str ALGuselect(int *result, int *bid, ptr low, ptr high) {
 	@:derefStr(b,t,high);@
 	CMDuselect(&bn,b,low,high);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1678,7 +1678,7 @@ str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 	@:derefStr(b,t,high)@
 	CMDselect_(&bn,b,low,high,lin,rin);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1691,7 +1691,7 @@ str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit 
 	@:derefStr(b,t,high);@
 	CMDuselect_(&bn,b,low,high,lin,rin);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1709,7 +1709,7 @@ str ALGfragment(int *result, int *bid,
 	@:derefStr(b,t,thigh);@
 	CMDfragment(&bn,b,hlow,hhigh,tlow,thigh);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1731,7 +1731,7 @@ str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc,lng *estimate
 	@:getBATdescriptor(result,rid,right,thetajoin)@
 	CMDthetajoin(&bn,left,right,opc,estimate);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1758,7 +1758,7 @@ str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
 	@:getBATdescriptor(result,rid,right,bandjoin)@
 	CMDbandjoin(&bn, left, right, minus, plus);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1774,7 +1774,7 @@ str ALG@1(int *result, int *bid) {
 	*result = 0;
 	CMD@1(&bn,b);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1787,7 +1787,7 @@ str ALG@1(int *result, int *bid) {
 	@:getBATdescriptor(result,bid,b,@1)@
 	CMD@1(&bn,b);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1801,7 +1801,7 @@ str ALG@1(int *result, int *lid, int *rid) {
 	@:getBATdescriptor(result,rid,right,@1)@
 	 CMD@1(&bn,left, right);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1814,7 +1814,7 @@ str ALG@1(int *result, int* bid, int *param) {
 	@:getBATdescriptor(result,bid,b,@1)@
 	CMD@1(&bn,b, param);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1828,7 +1828,7 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	@:getBATdescriptor(result,rid,right,@1)@
 	CMD@1(&bn,left, right, estimate);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1879,7 +1879,7 @@ str ALGmark(int *result, int *bid, oid *base) {
 	BAT *b,  *bn= NULL;
 	@:getBATdescriptor(result,bid,b,mark)@
 	if( CMDmark(&bn,b,base)== GDK_SUCCEED){
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1895,7 +1895,7 @@ str ALGmark_default(int *result, int *bid) {
 	BAT *b,  *bn= NULL;
 	@:getBATdescriptor(result,bid,b,mark)@
 	if( CMDmark_default(&bn,b)== GDK_SUCCEED){
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1907,7 +1907,7 @@ str ALGhashsplit(int *result, int *bid, int *nfrag){
 	@:getBATdescriptor(result,bid,b,hashsplit)@
 	CMDhashsplit(&bn,b,nfrag);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1918,7 +1918,7 @@ str ALGuhashsplit(int *result, int *bid, int *nfrag){
 	@:getBATdescriptor(result,bid,b,uhashsplit)@
 	CMDuhashsplit(&bn, b, nfrag);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1929,7 +1929,7 @@ str ALGrangesplit(int *result, int *bid, int *nfrag){
 	@:getBATdescriptor(result,bid,b,rangesplit)@
 	CMDrangesplit(&bn, b, nfrag);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1940,7 +1940,7 @@ str ALGurangesplit(int *result, int *bid, int *nfrag){
 	@:getBATdescriptor(result,bid,b,urangesplit)@
 	CMDurangesplit(&bn, b, nfrag);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1951,7 +1951,7 @@ str ALGhistogram_rev(int *result, int *bid) {
 	@:getBATdescriptor(result,bid,b,histogram)@
 	CMDhistogram(&bn,b);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1963,7 +1963,7 @@ str ALGlike(int *ret, int *bid, str *k) {
 	@:getBATdescriptor(ret,bid,b,like)@
 	CMDlike(&bn, b,*k);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*ret = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1975,7 +1975,7 @@ str ALGslice(int *ret, bat *bid, int *start, int *end){
 	@:getBATdescriptor(ret,bid,b,slice)@
 	CMDslice(&bn,b,start,end);
 	if( bn != NULL){
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*ret= bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -2064,7 +2064,7 @@ str ALGfetchbat(int * ret, int *bid, int *sid){
                                                                                 
         bn= BATfetch(b, s);
         if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
                 *ret = bn->batCacheid;
                 return MAL_SUCCEED;
         }
@@ -2120,7 +2120,7 @@ str ALGfetchjoin(int *result, int *lid, int *rid) {
                 bn= BATmirror(BATfetchjoin(BATmirror(right), BATmirror(left),lng_nil));
                                                                                 
         if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
                 *result = bn->batCacheid;
                 return MAL_SUCCEED;
         }
@@ -2143,7 +2143,7 @@ str ALGhashjoin(int *result, int *lid, int *rid) {
 	else	bn= BAThashjoin(left, right,lng_nil);
 
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -2164,7 +2164,7 @@ str ALGmergejoin(int *result, int *lid, int *rid) {
 			"Cannot perform mergejoin on void fields.\n" );
 	bn= BATmergejoin(left,right,lng_nil);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -2179,7 +2179,7 @@ str ALGindexjoin(int *result, int *lid, int *rid) {
 
 	bn= BATthetajoin(left,right, JOIN_EQ, lng_nil);
 	if( bn ) {
-                BATsetaccess(bn,1);
+                bn= BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
