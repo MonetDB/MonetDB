@@ -5406,6 +5406,79 @@ fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     deleteResult_ (f, counter, STR);
 }
 
+static void
+fn_substring (opt_t *f, int code, int cur_level, int counter, 
+              PFfun_t *fun, PFcnode_t *c)
+{
+    char *item_ext, *dbl_ext;
+    int str_counter, rc;
+    bool three_args = (fun->arity == 3)?true:false;
+
+    item_ext = kind_str(STR);
+    dbl_ext = kind_str(DBL);
+
+    rc = translate2MIL (f, VALUES, cur_level, counter, L(c));
+    if (!rc)
+        milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+    add_empty_strings (f, STR, cur_level);
+    counter++;
+    str_counter = counter;
+    saveResult_ (f, str_counter, STR);
+
+    rc = translate2MIL (f, VALUES, cur_level, counter, RL(c));
+    if (!rc)
+        milprintf(f, "item%s := item.leftfetchjoin(dbl_values);\n", dbl_ext);
+    counter++;
+    saveResult_ (f, counter, DBL);
+
+    if (three_args)
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, RRL(c));
+        if (!rc)
+            milprintf(f, "item%s := item.leftfetchjoin(dbl_values);\n", dbl_ext);
+        milprintf(f,
+                "{ # fn:substring\n"
+                "var start := item%s%03u.[round_up]().[int]().[-](1);\n"
+                "var end := start.[+](item%s.[round_up]().[int]());\n"
+                "start := start.[max](0);\n"
+                "end := end.[-](start);\n"
+                "var res := [string](item%s%03u, start, end);\n"
+                "start := nil_oid_dbl;\n"
+                "end := nil_oid_dbl;\n",
+                dbl_ext, counter,
+                dbl_ext,
+                item_ext, str_counter);
+    }
+    else
+    {
+        milprintf(f,
+                "{ # fn:substring\n"
+                "var start := item%s%03u.[round_up]().[int]();\n"
+                "var res := [substring](item%s%03u, start);\n"
+                "start := nil_oid_dbl;\n",
+                dbl_ext, counter,
+                item_ext, str_counter);
+    }
+
+    if (code)
+        milprintf(f, "item%s := res;\n", item_ext);
+    else
+        addValues (f, str_container(), "res", "item");
+
+    item_ext = (code)?item_ext:"";
+    milprintf(f,
+            "iter := loop%03u;\n"
+            "item%s := item%s.reverse().mark(0@0).reverse();\n"
+            "pos := iter.project(1@0);\n"
+            "kind := iter.project(STR);\n"
+            "} # end of fn:substring\n",
+            cur_level,
+            item_ext, item_ext);
+
+    deleteResult_ (f, counter, DBL);
+    deleteResult_ (f, str_counter, STR);
+}
+
 /**
  * eval_join_helper prepares the input arguments for the join
  * and therefore gets the values from its containers or casts 
@@ -6572,6 +6645,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         fn_starts_with (f, "ends", cur_level, counter, args);
         return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"substring")))
+    {
+        fn_substring (f, code, cur_level, counter, fun, args);
+        return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"normalize-space")))
     {

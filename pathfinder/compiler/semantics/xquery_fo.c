@@ -1015,6 +1015,17 @@
   { .ns = PFns_fn, .loc = "normalize-space",                             \
     .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_string () }                                           \
+, /* fn:substring (string?, double) as string */                         \
+  { .ns = PFns_fn, .loc = "substring",                                   \
+    .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_double () },                            \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:substring (string?, double, double) as string */                 \
+  { .ns = PFns_fn, .loc = "substring",                                   \
+    .arity = 3, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_double (),                              \
+                            PFty_double () },                            \
+    .ret_ty = PFty_string () }                                           \
 , /* fn:string-length () as integer */                                   \
   { .ns = PFns_fn, .loc = "string-length",                               \
     .arity = 0,                                                          \
