@@ -274,12 +274,21 @@ public void traceLog(PrintStream f){
 }
 /**
  * This method can be used to test for the lifelyness of the database server.
- * The ping query depends on the language scenario set by the user.
+ * it creates a new connection and leaves it immediately
+ * This call is relatively expensive.
  * @return the boolean indicating success of failure
 */
 public boolean ping(){
 	//if( language.equals("mal")) query("print(1);");
 	check("ping");
+	try{
+		Mapi m= new Mapi(this);
+		if(m.gotError())
+			return false;
+		m.disconnect();
+	} catch(MapiException e2){
+		return false;
+	}
 	return true;
 }
 
@@ -1755,7 +1764,7 @@ private void sortDblColumn(int col){
 	double val[]= new double[lim];
 	for(int i=0; i<lim; i++){
 		try{
-			val[i]= Integer.parseInt(fields[tuples[i]][col]);
+			val[i]= Double.parseDouble(fields[tuples[i]][col]);
 		} catch(NumberFormatException e){
 			val[i]= Integer.MIN_VALUE;}
 	}
