@@ -260,8 +260,17 @@ old stuff
 Inclusion of the xtables requires some preliminary definitions
 and als renaming :group by something else, because Mx can;t handle
 macros identical to file names.
-@c
+@h
+#ifndef _GROUP_H_
+#define _GROUP_H_
 #include "gdk.h"
+
+extern int CTderive(BAT** retval, BAT* ct, BAT* b);
+extern int CTgroup( BAT** retval, BAT** hbat, BAT* b );
+
+#endif /* _GROUP_H_ */
+@c
+#include "group.h"
 #include "algebra.h"
 static int TYPE_mapentry;
 static int TYPE_idxentry;

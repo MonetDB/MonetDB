@@ -24,6 +24,7 @@ use "kernel/batcalc";
 use "kernel/status";
 use "kernel/group";
 use "kernel/aggrX3";
+#use "kernel/unique";
 use "kernel/mapi";
 @-
 @{
