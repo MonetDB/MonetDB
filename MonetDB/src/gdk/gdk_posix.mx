@@ -214,13 +214,6 @@ gdk_export int closedir (DIR *dir);
 
 #define GDK_MEM_QUERYSIZE(p) _msize(p)
 
-#else /* UNIX (or CYGWIN) */
-
-#ifdef WIN32 /* but not native, hence CYGWIN specific defines */
-
-#define GDK_MEM_QUERYSIZE(p)	((unsigned int*) (p))[-1]
-
-#endif 
 #endif 
 
 #endif /* GDK_POSIX_H */
