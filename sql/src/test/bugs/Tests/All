@@ -1,5 +1,5 @@
 bug-00001
-bug-sf-854312
+foreignkey_leftjoin-bug-sf-854312
 create_insert_select-bug-sf-900198
 insert_update_arith-bug-sf-900206
 insert_delete-bug-sf-904025
