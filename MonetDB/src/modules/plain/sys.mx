@@ -1013,8 +1013,12 @@ int view_gdk_cpu(BAT **retval) {
 
 	state = newst; 
 #else
-	i = -1;
-	b = BUNins(b, "no CPU info on Win32 (yet?)", &i);
+	i = int_nil;
+	b = BUNins(b, "elapsed", &i);
+	b = BUNins(b, "user", &i);
+	b = BUNins(b, "elapuser", &i);
+	b = BUNins(b, "system", &i);
+	b = BUNins(b, "elapsystem", &i);
 #endif
 	@:Pseudo(gdk,cpu)@
 	return GDK_SUCCEED;
@@ -1281,7 +1285,15 @@ int view_gdk_io(BAT **retval) {
 	i = ru.ru_nvcsw; BUNins(b, "nvcsw", &i);
 	i = ru.ru_nivcsw; BUNins(b, "ninvcsw", &i);
 #else
-	i = -1;	BUNins(b, "no I/O info on Win32 (yet?)", &i);
+	i = int_nil;
+	BUNins(b, "maxrss", &i); 
+	BUNins(b, "minflt", &i);
+	BUNins(b, "majflt", &i);
+	BUNins(b, "nswap", &i);
+	BUNins(b, "inblock", &i);
+	BUNins(b, "oublock", &i);
+	BUNins(b, "nvcsw", &i);
+	BUNins(b, "ninvcsw", &i);
 #endif 
 
 	@:Pseudo(gdk,io)@
