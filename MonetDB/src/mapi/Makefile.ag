@@ -46,4 +46,10 @@ scripts_mil = {
 	SOURCES = mapi.mx
 }
 
+scripts_mapi = {
+	EXT = mil
+	DIR = pkgdatadir
+	SOURCES = mapiserver.mil
+}
+
 EXTRA_DIST_DIR = Tests

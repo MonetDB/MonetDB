@@ -386,6 +386,7 @@ proc mapi_server(int port, int nr) := {
 	quit;
 }
 
-if (mod = "main"){
-	fork(mapi_server(get_mapi_port(),5));
-}
+@f mapiserver
+@mil
+module("mapi");
+fork(mapi_server(get_mapi_port(),5));
