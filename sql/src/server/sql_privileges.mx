@@ -124,7 +124,7 @@ int sql_column_privileges( int authid, int columnid, int tprivs ){
 	return tprivs | res;
 }
 @-
-The remainder has been taken over from the sqlserver mil document.
+The remainder has been taken over from the sql_server mil document.
 The code below provides abstractions to manage the priviliges.
 @= accessRight
 	p = BUNfnd(BATmirror(auth_name), @1);

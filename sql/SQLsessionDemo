@@ -30,7 +30,7 @@ $ Mserver --dbname=VOC
 # Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-monet>module(sqlserver);
+monet>module(sql_server);
 monet>
 
 Here $PREFIX denotes the path where Monet has been installed.

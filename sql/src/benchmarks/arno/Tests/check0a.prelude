@@ -1,2 +1,2 @@
 module("unix");
-module("sqlserver");
+module("sql_server");

@@ -78,7 +78,6 @@ rm -fr $RPM_BUILD_ROOT
 %files client
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/sql_dump 
-%{prefix}/bin/sql_client 
 %{prefix}/bin/Msql 
 %{prefix}/lib/libsql.*
 %{prefix}/lib/libgdk_wrap.* 
@@ -86,7 +85,7 @@ rm -fr $RPM_BUILD_ROOT
 
 %files server
 %defattr(-,monetdb,monetdb) 
-%{prefix}/lib/MonetDB/lib_sqlserver*
+%{prefix}/lib/MonetDB/lib_sql_server*
 %{prefix}/share/MonetDB/*
 
 %files devel
