@@ -1525,7 +1525,14 @@ if test "x$have_pcl" != xno; then
   	save_LDFLAGS="$LDFLAGS"
   	LDFLAGS="$LDFLAGS $PCL_LIBS"
   	AC_CHECK_LIB(pcl, PCLinit, PCL_LIBS="$PCL_LIBS -lpcl"
-        	AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes, have_pcl=no)
+        	AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes, 
+ 	if test "x$have_pcl" = xyes; then
+  		save_LDFLAGS="$LDFLAGS"
+  		LDFLAGS="$LDFLAGS $PCL_LIBS"
+  		AC_CHECK_LIB(pcl, PCLexit, PCL_LIBS="$PCL_LIBS -lpcl -lperfctr"
+        		AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes, have_pcl=no, "-lperfctr")
+  		fi
+	)
   	LDFLAGS="$save_LDFLAGS"
   fi
 
