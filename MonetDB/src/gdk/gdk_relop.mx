@@ -61,6 +61,7 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 if (@3 == (size_t) oid_nil) {
 	size_t _lcount = BATcount(l);
 	size_t _rcount = BATcount(r);
+	size_t _slices = 0; 
 
 	/* limit estimate with simple bounds first; only spend effort if the join result might be big */
 	if (@1 == JOIN_EQ) {
@@ -72,25 +73,26 @@ if (@3 == (size_t) oid_nil) {
 		if (_heuristic <= (1 << SAMPLE_TRESHOLD_LOG)) @3 = _heuristic;
 	} 
 	if (@3 == oid_nil) {
-                 /* use cheapo sampling by taking a number of slices and joining those with the algo */
-		size_t _tot=0, _slices = -SAMPLE_TRESHOLD_LOG, _step, _lo, _idx, _avg, _sample, *_cnt;
-		BAT *_tmp1 = l, *_tmp2, *_tmp3; 
+		size_t _idx;
 		for(_idx=_lcount; _idx > 0; _idx >>= 1) _slices++;
-		_step = _lcount / _slices;
+	}
+	if (_slices > SAMPLE_TRESHOLD_LOG) {
+                 /* use cheapo sampling by taking a number of slices and joining those with the algo */
+		size_t _idx = 0, _tot=0, _step, _lo, _avg, _sample, *_cnt;
+		BAT *_tmp1 = l, *_tmp2, *_tmp3; 
+		_step = _lcount / (_slices -= SAMPLE_TRESHOLD_LOG);
 		_sample = _slices * SAMPLE_SLICE_SIZE;
 		_cnt = (size_t*) alloca(_slices*sizeof(size_t));
 		for(_lo=0; _idx < _slices; _lo += _step) {
-		  	size_t _hi = _lo + SAMPLE_SLICE_SIZE; 
+			size_t _size = 0, _hi = _lo + SAMPLE_SLICE_SIZE; 
 			l = BATslice(_tmp1, _lo, _hi); /* slice keeps all parent properties */ 
-			if (l) {
-				size_t _size = 0;
-				_tmp2 = @2; /* @2 = e.g. BATXjoin(l,r) */
-				if (_tmp2) {
-					_size = BATcount(_tmp2); 
-					BBPreclaim(_tmp2);
-				}
-				_tot += (_cnt[_idx++] = _size);
-			}		
+			assert(l);
+			_tmp2 = @2; /* @2 = e.g. BATXjoin(l,r) */
+			if (_tmp2) {
+				_size = BATcount(_tmp2); 
+				BBPreclaim(_tmp2);
+			}
+			_tot += (_cnt[_idx++] = _size);
 			BBPreclaim(l); 
 		}
 		/* do outlier detection on sampling results; this guards against skew */
