@@ -9,4 +9,4 @@
 @set PATH=%MONETDB%\bin;%MONETDB%\lib;%PATH%
 
 @rem start the real client
-@"%MONETDB%\bin\MapiClient.exe" %*
+@"%MONETDB%\bin\MapiClient.exe"  --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %*
