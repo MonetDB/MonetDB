@@ -633,31 +633,56 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
          bat[void,any::1] = radix_decluster2; ""
 
 .COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate) : 
-	bat[any::1,any::3] = radix_join;
+	bat[any,any] = radix_join;
 "nested-loop join on radix clustered inputs"
 
 .COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) :
-	bat[any::1,any::3] = phash_join;
+	bat[any,any] = phash_join;
 "partitioned hash-join on radix clustered inputs"
 
+
 @= integer
-.ATOM @1[@2,4]; 
-      .COMP    = @1Cmp;
-      .TOSTR   = @1ToStr;
-      .FROMSTR = @1FromStr;
-      .HASH    = @1Hash;
-      .NULL    = @1Null;
+.ATOM integer@1[@2,4]; 
+      .COMP    = integer@1Cmp;
+      .TOSTR   = integer@1ToStr;
+      .FROMSTR = integer@1FromStr;
+      .HASH    = integer@1Hash;
+      .NULL    = integer@1Null;
 .END;
+
+.ATOM pax@1 = integer@1;
+.END;
+
+.COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,integer@1] = posjoin_tuple;
+"positional join with built-in NSM projection" 
+
+.COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,integer@1] = posjoin_tuple;
+"positional join with built-in PAX projection" 
+
+.COMMAND [pax](BAT[any::1,integer@1] b) : BAT[any::1,pax@1] = BATpax;
+"convert an integer@1 to pax@1"
+
+.COMMAND [integer](BAT[any::1,integer@1] b, int width) : BAT[any::1,any] = BATinteger;
+"create a view that makes tail column appear as an integerX column for some width=X"
+
+.COMMAND radix_cluster(bat[pax@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
+		bat[integer@1,any::2] = radix_cluster;
+"do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters.
+ partial radix cluster (i.e. skipping lower significant bits) can be indicated
+ by pasing a negative number of bits as last parameter. "
+
 @m
-@:integer(integer1,4)@
-@:integer(integer2,8)@
-@:integer(integer4,16)@
-@:integer(integer8,32)@
-@:integer(integer16,64)@
-@:integer(integer32,128)@
-@:integer(integer64,256)@
-@:integer(integer128,512)@
-@:integer(integer256,1024)@
+@:integer(1,4)@
+@:integer(2,8)@
+@:integer(4,16)@
+@:integer(8,32)@
+@:integer(16,64)@
+@:integer(32,128)@
+@:integer(64,256)@
+@:integer(128,512)@
+@:integer(256,1024)@
+
+.COMMAND pax_blocksize(int) : int = pax_blocksize; "get/set the pax blocksize"
 
 .COMMAND uniform(oid base, int size, int domain) : bat[oid,int] = BATuniform;
 "create a random bat of certain size, head values unique, tail values
@@ -668,7 +693,7 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
  from a normal distribution between [0..domain].
  default values: base = 0@0, mean = size/2, stddev = size/10, domain=size." 
 
-.COMMAND [integer](BAT[any::1,any] b, int width) : BAT[any::1,any] = BATinteger;
+.COMMAND [integer](BAT[any::1,int] b, int width) : BAT[any::1,any] = BATinteger;
 "create a view that makes tail column appear as an integerX column for some width=X"
 
 .LOAD
@@ -697,10 +722,67 @@ proc radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt) : bat[void,any::
 	return radix_decluster(b,radix_cnt,4);
 proc "[integer]"(bat[any::1,int] b) : bat[any::1,integer1]
         return [integer](b, 1);
+proc pax_blocksize() : int 
+	return pax_blocksize(int(nil));
 
 proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int nbits) : bat[any::1,any::3] return phash_join_new(l,r,nbits,1,false);
 
 proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) : bat[any::1,any::3] return phash_join(l, r, radix, hitrate, cutoff);
+
+var CACHE_SIZE := 256*1024;
+proc CACHE_LINES() : int { return CACHE_SIZE/32; }
+
+proc log2(int i) : int {
+  var n := 0;
+  while(i > 1)  {
+     i >>= 1;
+     n :+= 1;
+  }
+  return n; 
+}
+
+proc radix_cluster2(BAT[void,oid] b, int npasses, int nbits, int nignore) : BAT[oid,oid] {
+  var maxpasses := min(4, nbits);
+  if (npasses > maxpasses) npasses := maxpasses;
+  var quota := nbits / npasses; 
+  var rest := nbits - (quota * (npasses - 1)); 
+  if (nignore = 0) {
+    nignore := rest;
+    rest := quota;
+  } else {
+    nignore := -(nignore);
+    npasses :+= 1;
+  }
+  if (npasses = 5) {
+      return radix_cluster(b, nignore, rest, quota, quota, quota); 
+  } else if (npasses = 4) {
+      return radix_cluster(b, nignore, rest, quota, quota); 
+  } else if (npasses = 3) {
+      return radix_cluster(b, nignore, rest, quota); 
+  } else if (npasses = 2) {
+      return radix_cluster(b, nignore, rest); 
+  }
+  return radix_cluster(b, nignore); 
+}
+
+proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
+  var right_batsize := right.batsize();
+
+  if (not(left.reverse.ordered) and right_batsize > CACHE_SIZE) {
+    var nbits := 1 + log2(right_batsize/CACHE_SIZE);
+    var nignore := max(0, (1 + log2(right.count)) - nbits);
+    var npasses := 1 + (nbits + 1) / log2(CACHE_LINES);
+
+    var cluster := left.radix_cluster2(npasses, nbits, nignore); 
+    var borders := cluster.radix_count(nignore, nbits); 
+    var cluster_values := cluster.reverse.mark(0@0).reverse;
+    var cluster_ids := cluster.mark(0@0).reverse;
+    cluster_values := cluster_values.join(right); 
+    var ret := radix_decluster2(cluster_ids, cluster_values, borders, 8);
+    return ret;
+  }
+  return join(left, right);
+}
  
 .END;
 
@@ -1005,14 +1087,35 @@ atom_t atomtbl[8] = /* a simulated ADT lookup table */
 	  (GDKfcn) integer16Copy, integer16Dummy, 4, 2, (GDKfcn) integer32Copy, integer32Dummy, 4, 6, 
 	  (GDKfcn) integer64Copy, integer64Dummy, 4, 3, (GDKfcn) integer128Copy, integer128Dummy, 4, 7 };
 
-void integerCopy(int *dst, int *src, int width, int distance ) {
-	while(width-- > 0) {
-		int tpe = atomtbl[width&7].tpe;
-		src += distance; dst++;
-		atomtbl[tpe].cpy(dst, src, atomtbl[tpe].size);
-	}
-} 
+int PAX_INT_PER_BLOCK=1024;
 
+void integerCopy(int *dst, BAT *b, BUN p, int width, int distance) {
+	int *src = (int*) BUNhloc(b,p);
+	if (b->hatom[0] == 'p' && b->hatom[1] == 'a' && b->hatom[2] == 'x') {
+		/* PAX */
+		int idx = BUNindex(b,p) - BUNindex(b, BUNfirst(b));
+		int block_ntuples = PAX_INT_PER_BLOCK/width;
+		int block_idx = idx/block_ntuples;
+		int tuple_idx = idx%block_ntuples;
+ 		src += block_idx*PAX_INT_PER_BLOCK + tuple_idx;
+
+		while(width-- > 0) {
+			int tpe = atomtbl[width&7].tpe;
+			if ((BUN) src >= BUNlast(b)) src = (int*) BUNfirst(b);
+			atomtbl[tpe].cpy(dst, src, atomtbl[tpe].size);
+			src += distance*block_ntuples; 
+			dst++;
+		}
+	} else {
+		/* NSM */
+		while(width-- > 0) {
+			int tpe = atomtbl[width&7].tpe;
+			atomtbl[tpe].cpy(dst, src, atomtbl[tpe].size);
+			src += distance; 
+			dst++;
+		}
+	}
+}
 
 int BATinteger(BAT **ret, BAT* b, int *width) {
  	BAT *bn, *m;
@@ -1028,12 +1131,7 @@ int BATinteger(BAT **ret, BAT* b, int *width) {
 		GDKerror("BATinteger: unknown width %d\n", *width);
 		return GDK_FAIL;
 	}
-	tpe = TYPE_integer1 + log; 
-	if (ATOMstorage(b->ttype) != TYPE_int && b->ttype < TYPE_integer1 && b->ttype > TYPE_integer256) {
-		GDKerror("BATinteger: impossible to take %s view of %s column.\n", 
-			ATOMname(tpe), ATOMname(b->ttype));
-		return GDK_FAIL;
-	}
+	tpe = TYPE_integer1 + log*2; 
 	if (ATOMsize(tpe) <= ATOMsize(b->ttype)) {
 		/* view implementation */
 		bn = VIEWcreate(b);
@@ -1061,7 +1159,21 @@ int BATinteger(BAT **ret, BAT* b, int *width) {
 	}
 	*ret = bn;
        	return GDK_SUCCEED;
-	
+}
+
+int BATpax(BAT **ret, BAT* b) {
+	BAT *bn = *ret = VIEWcreate(b);
+	ACCremoveall(bn);
+	bn->ttype = BATmirror(bn)->htype = bn->ttype + 1;
+	strcpy(bn->tatom, ATOMname(bn->ttype));
+	bn->batDirty = 1;
+	return GDK_SUCCEED;
+}
+
+int pax_blocksize(int *ret, int* size) {
+	if (*size != int_nil) PAX_INT_PER_BLOCK = *size;
+	*ret = PAX_INT_PER_BLOCK;
+	return GDK_SUCCEED;
 }
 
 @+ Radix Cluster
@@ -1118,9 +1230,11 @@ typedef struct {
 	int size; /* size of chunk (in bytes) */
 } move_t;
 
+#define HTYPE(b) ((b->hatom[0] == 'p' && b->hatom[1] == 'a' && b->hatom[2] == 'x') ? b->htype - 1 : BAThtype(b))
+#define TTYPE(b) HTYPE(BATmirror(b))
 
 BAT* quickbat(BAT *b, int cap) {
-    BAT *bn = BATnew(BAThtype(b), BATttype(b), cap);
+    BAT *bn = BATnew(HTYPE(b), BATttype(b), cap);
     bn->hsorted = bn->tsorted = 0;
     if (b->hkey) BATkey(bn,TRUE);
     if (b->tkey) BATkey(BATmirror(bn),TRUE);
@@ -1287,21 +1401,21 @@ BUN radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base,
 {
     int dst_bunsize = BUNsize(bn);
     int src_bunsize = BUNsize(b); 
-    int htpe = bn->htype;
+    int htpe = ABS(bn->htype);
     int ttpe = bn->ttype;
     int any = ttpe; 
 
 /* PETER start experimentation hack; must emulate relational projection cost  */
-if (htpe >= TYPE_integer1 && htpe <= TYPE_integer256) {
+if (htpe >= TYPE_integer1 && htpe <= TYPE_pax256) {
     BAT *p = VIEWparent(b)?BBP_cache(VIEWparent(b)):b;
     int width = ATOMsize(b->htype) >> 2;
-    int distance = 1 << (p->htype - htpe);
-
+    int distance = 1 << ((p->htype - htpe) >> 1);
+    
     while(src < end) {
     	int x = any_RADIX(BUNtail(b,src),mask) >> shift;
 	BUN p = base + dst[x];
     	if (dst[x] == lim[x]) break;
-	integerCopy((int*) BUNhloc(bn,p), (int*) BUNhloc(b,src), width, distance);
+	integerCopy((int*) BUNhloc(bn,p), b, src, width, distance);
         ATOMput(ttpe, &bn->theap, (int*) BUNtloc(bn,p), BUNtail(b,src));
 	dst[x] += dst_bunsize; src += src_bunsize;
     }
@@ -1597,9 +1711,10 @@ as the mask and link list for all phash invocations.
 #define hash_atom(x)  ((x)%h->mask)
 #define hash_simple(x)(x)
 
-#define intfastins(b,h,t) {\
+#define bunfastINSERT(b,h,t,dummy1,dummy2,dummy3,dummy4) bunfastins(b,h,t)
+#define intfastINSERT(b,h,t,dummy1,dummy2,dummy3,dummy4) {\
             if (_dst >= _end) {\
-		ALGODEBUG THRprintf(GDKout, "phash_join: intfastins: BATextend!\n");\
+		ALGODEBUG THRprintf(GDKout, "phash_join: intfastINSERT: BATextend!\n");\
 		b->batBuns->free = ((BUN) _dst) - b->batBuns->base;\
                 BATextend((b), BATgrows(b));\
                 _dst = (int*) (b->batBuns->base + b->batBuns->free);\
@@ -1610,7 +1725,7 @@ as the mask and link list for all phash invocations.
 	    _dst += 2;\
 }
 
-#define NOTSOfastins(b, h, t) { \
+#define NOTSOfastINSERT(b, dummy1, dummy2, hb, hp, tb, tp) { \
             REGISTER BUN _p = BUNlast(b);\
             REGISTER int _bunsize = BUNsize(b);\
             if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) {\
@@ -1618,8 +1733,8 @@ as the mask and link list for all phash invocations.
                 _p = BUNlast(b);\
             }\
             (b)->batBuns->free += _bunsize;\
-	    integerCopy((int*) BUNhloc(b,_p), (int*) h, width1, distance1);\
-	    integerCopy((int*) BUNtloc(b,_p), (int*) t, width2, distance2);\
+	    integerCopy((int*) BUNhloc(b,_p), hb, hp, width1, distance1);\
+	    integerCopy((int*) BUNtloc(b,_p), BATmirror(tb), tp, width2, distance2);\
         }
 
 void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, 
@@ -1637,15 +1752,15 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
     memset(h->hash, -1, (h->mask+1)*sizeof(int));
 
 /* PETER start experimentation hack */
-    if (l->htype >= TYPE_integer1 && l->htype <= TYPE_integer256 &&
-        r->ttype >= TYPE_integer1 && r->ttype <= TYPE_integer256) 
+    if (l->htype >= TYPE_integer1 && l->htype <= TYPE_pax256 &&
+        r->ttype >= TYPE_integer1 && r->ttype <= TYPE_pax256) 
     {
 	BAT *p1 = VIEWparent(l)?BBP_cache(VIEWparent(l)):l;
 	BAT *p2 = VIEWparent(r)?BBP_cache(VIEWparent(r)):r;
         int width1 = ATOMsize(l->htype) >> 2;
-        int distance1 = 1 << (p1->htype - l->htype);
+        int distance1 = 1 << ((p1->htype - l->htype) >> 1);
         int width2 = ATOMsize(r->ttype) >> 2;
-        int distance2 = 1 << (p2->ttype - r->ttype);
+        int distance2 = 1 << ((p2->ttype - r->ttype) >> 1);
 	int any  = ATOMstorage(r->htype);
 	int mask = -1;
 	if (cutoff) {
@@ -1662,9 +1777,9 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
 	int any  = ATOMstorage(r->htype);
 	int mask = -1;
 	if (cutoff) {
-	    @:hash_join(any,head,tail,atom,BUN,head,tail,break;)@
+	    @:hash_join(any,head,tail,atom,bun,head,tail,break;)@
 	} else {
-	    @:hash_join(any,head,tail,atom,BUN,head,tail)@
+	    @:hash_join(any,head,tail,atom,bun,head,tail)@
 	}
     } else {
         int *_dst = (int*) (bn->batBuns->base + bn->batBuns->free);
@@ -1710,7 +1825,7 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
         for(yy=h->hash[hash_@4(@1_RADIX(v,mask)>>rd)]; yy>=0; yy=h->link[yy]) {
             rlo = BUNptr(r,yy+zz);
             if (@4_EQ(BUN@2(r,rlo),v,@1)) {
-		@5fastins(bn, BUN@6(l,llo), BUN@7(r,rlo)); @8
+		@5fastINSERT(bn, BUN@6(l,llo), BUN@7(r,rlo), l, llo, r, rlo); @8
 	    }
 	}
     } 
@@ -1729,7 +1844,7 @@ int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff)
     }
 {   int k, m, rd = (1 << *radix) - 1; 
     int estimate = MIN(BATcount(r),BATcount(l))*(*hitrate);
-    BAT *bn = BATnew(BAThtype(l), BATttype(r), estimate);
+    BAT *bn = BATnew(HTYPE(l), TTYPE(r), estimate);
     BUN r_end, l_cur = BUNfirst(l), l_last = BUNlast(l);
     BUN l_end, r_cur = BUNfirst(r), r_last = BUNlast(r);
     int xx = BUNsize(l), yy= BUNsize(r);
@@ -1835,7 +1950,7 @@ int radix_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate) {
     }
 
     /* set properties on result bat; so we can return in any moment */
-    bn = *res = BATnew(BAThtype(l), BATttype(r), estimate);
+    bn = *res = BATnew(HTYPE(l), TTYPE(r), estimate);
     bn->hsorted = BAThordered(l);
     bn->tsorted = 0;
     if (l->hkey && r->hkey) BATkey(bn, TRUE);
@@ -1844,15 +1959,15 @@ int radix_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate) {
     if (BATcount(r) == 0) return GDK_SUCCEED;	   
     
 /* PETER start experimentation hack */
-    if (l->htype >= TYPE_integer1 && l->htype <= TYPE_integer256 &&
-        r->ttype >= TYPE_integer1 && r->ttype <= TYPE_integer256) 
+    if (l->htype >= TYPE_integer1 && l->htype <= TYPE_pax256 &&
+        r->ttype >= TYPE_integer1 && r->ttype <= TYPE_pax256) 
     {
 	BAT *p1 = VIEWparent(l)?BBP_cache(VIEWparent(l)):l;
 	BAT *p2 = VIEWparent(r)?BBP_cache(VIEWparent(r)):r;
         int width1 = ATOMsize(l->htype) >> 2;
-        int distance1 = 1 << (p1->htype - l->htype);
+        int distance1 = 1 << ((p1->htype - l->htype) >> 1);
         int width2 = ATOMsize(r->ttype) >> 2;
-        int distance2 = 1 << (p2->ttype - r->ttype);
+        int distance2 = 1 << ((p2->ttype - r->ttype) >> 1);
 
 	@:radix_join(any,tail,head,atom,NOTSO,hloc,tloc)@
     } else
@@ -1916,7 +2031,7 @@ int radix_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate) {
 		ptr p = BUN@2(l,l_cur);
                 if (!@4_EQ(p, nil, @1)) while(r_var < r_end) {
 		    if (@4_EQ(p, BUN@3(r,r_var), @1)) {
-		 	@5fastins(bn, BUN@6(l,l_cur),BUN@7(r,r_var));
+		 	@5fastINSERT(bn, BUN@6(l,l_cur), BUN@7(r,r_var), l, l_cur, r, r_var);
 		    } r_var += yy;
 	        } l_cur += xx;
 	    } r_cur = r_end;
@@ -2199,4 +2314,34 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     GDKfree(cnk);
 	
     return GDK_SUCCEED;
+}
+
+int posjoin_tuple(BAT **res, BAT *proj, BAT *attr) {
+	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
+	int tt = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
+	BAT *bn = BATnew(TYPE_void, tt, BATcount(proj));
+        int width = ATOMsize(attr->ttype) >> 2;
+        int distance = 1 << ((parent->ttype - attr->ttype) >> 1);
+	BUN p, q, r;
+	int xx;
+
+	if (bn == NULL) {
+		GDKerror("posjoin_nsm: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
+		return GDK_FAIL;
+	}
+	BATloopFast(proj, p, q, xx) {
+		r = BUNfnd(attr, BUNtail(proj, p));
+		if (r == NULL) {
+			GDKerror("posjoin_nsm: did not find value %d in %s.\n", *(oid*) BUNtail(proj,p), attr->batId);
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		integerCopy((int*) BUNhloc(bn,BUNlast(bn)), BATmirror(attr), r, width, distance);
+		bn->batBuns->free += BUNsize(bn);
+	}
+	BATseqbase(bn, proj->hseqbase);
+	ALIGNsetH(bn, proj);
+	bn->tsorted = BATtordered(proj)&BATtordered(attr);
+	*res = bn;
+	return GDK_SUCCEED;
 }
