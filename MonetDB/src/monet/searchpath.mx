@@ -110,9 +110,9 @@ void insert_moddir_recursively(char *name) {
 static 
 void parse_mod_path() {
     char *mod_path = getenv(MONET_MSP);
-    char *default_path = alloca(strlen(MONET_PREFIX)+32);
+    char *default_path = alloca(strlen(GDKdistrStr)+32);
     
-    sprintf(default_path, "%s%clib%cMonet", MONET_PREFIX, DIR_SEP, DIR_SEP);
+    sprintf(default_path, "%s%clib%cMonet", GDKdistrStr, DIR_SEP, DIR_SEP);
 /*
     if (!mod_path) mod_path = getenv("LD_LIBRARY_PATH");
 */

@@ -102,7 +102,6 @@ found in the same directory.
 
 static int error, fatal;
 static char dbhome[PATHLENGTH] = {0};
-static char dist[PATHLENGTH]= {0};
 static char farm[PATHLENGTH]= {0};
 static str  prog, user[64] = { 0 };
 static char dir=0;
@@ -223,15 +222,17 @@ void createDB(char *home) {
 }
 #ifdef WIN32
 #define RM "del"
+#define QUIT "echo quit;"
 #else
 #define RM "rm -f"
+#define QUIT "echo 'quit;'"
 #endif
 void initDB(char *db) {	
         char buffer[2048];
         int ret;
-        printf("Mcreatedb: calling 'Mserver -db %s' for the first time..\n",db);
-        sprintf(buffer,"Mserver -db %s %s%cshare%cMonet%cinit.mil 2>.Merr 1>.Mout\n", 
-			db, dist, DIR_SEP, DIR_SEP, DIR_SEP);
+        printf("Mcreatedb: calling 'Mserver -db %s -monetrc %s' for the first time..\n",db,GDKmonetrcStr);
+        sprintf(buffer,"%s | Mserver -db %s -monetrc %s 2>.Merr 1>.Mout\n", 
+			QUIT, db, GDKmonetrcStr);
         ret = system(buffer);
 #ifndef WIN32
         if (ret)
@@ -264,13 +265,6 @@ void dbargs(int argc,char **argv) {
 	s = strrchr(prog,DIR_SEP); if( s ){ prog = s+1;}
 	s = strrchr(prog,'\\'); if( s ){ prog = s+1;}
 
-	/* use the compiled-in prefix as a start */
-	strcpy(dist, MONET_PREFIX);
-        if(dist == 0) {
-                fprintf(stderr, "%s: MONET_PREFIX missing\n",prog);
-		exit(0);
-        }
-
 	if(argc<3) usage();
 	for(i=1;i<argc;i++) {
 		if( strcmp(argv[i],"-monetrc")==0){
@@ -293,7 +287,7 @@ void dbargs(int argc,char **argv) {
 	printf("# dbfarm=%s\n",GDKdbfarmStr);
 	printf("# dbname=%s\n",GDKdbnameStr);
 	printf("# dbdir=%s\n",GDKdirStr);
-	printf("# distr=%s\n",dist);
+	printf("# distr=%s\n",GDKdistrStr);
 	strcpy(dbhome,GDKdirStr);
 	if( GDKdirStr == NULL){
 		fprintf(stderr,"Database directory name missing\n");

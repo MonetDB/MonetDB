@@ -448,7 +448,7 @@ void MILenvironment()
 		if( strcmp(s,"monet_general")==0){
 		    SLASH_2_DIR_SEP(val);
 		    if( strncmp("...",val,3)==0 && val[3]==DIR_SEP){
-		        sprintf(path,"%s%s",MONET_PREFIX,val+3);
+		        sprintf(path,"%s%s",GDKdistrStr,val+3);
 		        monet_general=GDKstrdup(path);
 		    }else
                         monet_general=GDKstrdup(val);

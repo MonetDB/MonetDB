@@ -42,6 +42,7 @@ gdk_export int  GDKsec       ();
 char	GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 char	GDKdbnameStr[PATHLENGTH] = { 0 };
 char	GDKdirStr[PATHLENGTH] = { 0 };
+/* TODO: use monet-config instead of MONET_PREFIX to set GDKdistrStr */
 char	GDKdistrStr[PATHLENGTH] = MONET_PREFIX;
 char	GDKmonetrcStr[PATHLENGTH] = { 0 };
 
@@ -102,7 +103,7 @@ str expandFile(str fname){
 
 	SLASH_2_DIR_SEP(fname);
 	if( strncmp("...",fname,3)==0 && fname[3]==DIR_SEP ) {
-		sprintf(name,"%s%s",MONET_PREFIX,fname+3);
+		sprintf(name,"%s%s",GDKdistrStr,fname+3);
 		return GDKstrdup(name);
 	} else return fname;
 }
