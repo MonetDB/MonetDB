@@ -254,6 +254,9 @@ resetParenStateOrSwitch (int s)
 
 %}
 
+/* no wrapping after EOF; hence, no libfl (-lfl) needed */
+%option noyywrap
+
 /* provide token line number to the parser */
 %option yylineno
 
