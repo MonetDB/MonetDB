@@ -1,7 +1,7 @@
 var Y := new(str,int);
-Y.insert("adm_acctbl",adm_acctbl.count());
-Y.insert("adm_atomtbl",adm_atomtbl.count());
-Y.insert("adm_fcntbl",adm_fcntbl.count());
+Y.insert("adm_acctbl",bat("adm_acctbl").count());
+Y.insert("adm_atomtbl",bat("adm_atomtbl").count());
+Y.insert("adm_fcntbl",bat("adm_fcntbl").count());
 Y.insert("monet_acctbl",monet_acctbl.count());
 Y.insert("monet_atomtbl",monet_atomtbl.count());
 Y.insert("monet_fcn_aut",monet_fcn_aut.count());
@@ -26,12 +26,12 @@ Y.insert("monet_mod_nme",monet_mod_nme.count());
 Y.insert("monet_mod_use",monet_mod_use.count());
 {
 printf("\nMapiClient: This is what MapiClient says.\n");
-Y.print;
-adm_acctbl.print;
-adm_atomtbl.print;
-adm_fcntbl.mark(nil).sort.print;
-monet_acctbl.print;
-monet_atomtbl.print;
-monet_fcntbl.mark(nil).sort.print; 
+Y.print();
+bat("adm_acctbl").print();
+bat("adm_atomtbl").print();
+bat("adm_fcntbl").mark(nil).sort().print();
+monet_acctbl.print();
+monet_atomtbl.print();
+monet_fcntbl.mark(nil).sort().print(); 
 }
 Y := nil;

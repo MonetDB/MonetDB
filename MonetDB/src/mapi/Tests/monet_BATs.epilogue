@@ -1,7 +1,7 @@
 var Z := new(str,int);
-Z.insert("adm_acctbl",adm_acctbl.count());
-Z.insert("adm_atomtbl",adm_atomtbl.count());
-Z.insert("adm_fcntbl",adm_fcntbl.count());
+Z.insert("adm_acctbl",bat("adm_acctbl").count());
+Z.insert("adm_atomtbl",bat("adm_atomtbl").count());
+Z.insert("adm_fcntbl",bat("adm_fcntbl").count());
 Z.insert("monet_acctbl",monet_acctbl.count());
 Z.insert("monet_atomtbl",monet_atomtbl.count());
 Z.insert("monet_fcn_aut",monet_fcn_aut.count());
@@ -26,12 +26,12 @@ Z.insert("monet_mod_nme",monet_mod_nme.count());
 Z.insert("monet_mod_use",monet_mod_use.count());
 {
 printf("\nMserver epilogue: This is what Mserver says after MapiClient has disconnected.\n");
-Z.print;
-adm_acctbl.print;
-adm_atomtbl.print;
-adm_fcntbl.mark(nil).sort.print;
-monet_acctbl.print;
-monet_atomtbl.print;
-monet_fcntbl.mark(nil).sort.print; 
+Z.print();
+bat("adm_acctbl").print();
+bat("adm_atomtbl").print();
+bat("adm_fcntbl").mark(nil).sort().print();
+monet_acctbl.print();
+monet_atomtbl.print();
+monet_fcntbl.mark(nil).sort().print(); 
 }
 Z := nil;

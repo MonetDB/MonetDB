@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL)
 			die(dbh);
 	} else {
-		if ((hdl = mapi_query(dbh, "emp:= new(str,int);")) == NULL)
+		if ((hdl = mapi_query(dbh, "var emp:= new(str,int);")) == NULL)
 			die(dbh);
 		mapi_close_handle(hdl);
 		if ((hdl = mapi_query(dbh, "emp.insert(\"John\",23);")) == NULL)

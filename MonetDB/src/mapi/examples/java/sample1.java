@@ -60,7 +60,7 @@ class sample1
 		if( mapi.query("select * from emp") != mapi.MOK)
 			die(mapi);
 	} else {
-		if( mapi.query("emp:= new(str,int);") != mapi.MOK) die(mapi);
+		if( mapi.query("var emp:= new(str,int);") != mapi.MOK) die(mapi);
 		if( mapi.query("emp.insert(\"John\",23);") != mapi.MOK) die(mapi);
 		if( mapi.query("emp.insert(\"Mary\",23);") != mapi.MOK) die(mapi);
 		if( mapi.query("print(emp);") != mapi.MOK)
