@@ -199,9 +199,6 @@ gdk_export int win_mkdir(const char*, const int mode);
 #define PATH_SEP_STR ":"
 #define SO_EXT ".so"
 
-#define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
-#define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
-
 #ifdef WIN32 /* but not native, hence CYGWIN specific defines */
 
 #define GDK_MEM_QUERYSIZE(p)	((unsigned int*) (p))[-1]
@@ -213,6 +210,10 @@ gdk_export int win_mkdir(const char*, const int mode);
 
 #endif 
 #endif 
+
+#define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
+#define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
+
 #endif /* GDK_POSIX_H */
 @c
 #include "gdk_posix.h"
