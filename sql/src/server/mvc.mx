@@ -426,7 +426,7 @@ static sql_column *load_column(BAT * columns, BUN j)
 	c->name = _strdup((char *) bun_find(sql_column_name, lid));
 	c->type = _strdup((char *) bun_find(sql_column_type, lid));
 	c->def = _strdup((char *) bun_find(sql_column_default, lid));
-	c->null = *(int *) bun_find(sql_column_null, lid);
+	c->null = *(bit *) bun_find(sql_column_null, lid);
 	c->colnr = *(int *) bun_find(sql_column_number, lid);
 	c->bid = *(bat *) bun_find(sql_column_bat, lid);
 	BBPpersistent(c->bid, FALSE);
