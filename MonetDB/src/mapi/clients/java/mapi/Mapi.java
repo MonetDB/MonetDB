@@ -835,7 +835,7 @@ private void checkQuery(){
 	query.replace('\n',' ');
 	// trim white space
 	int j= query.length()-1;
-	while(j>0 && ( query.charAt(j)==' ') || query.charAt(j)=='\t') j--;
+	while(j>0 && (query.charAt(j)==' ' || query.charAt(j)=='\t')) j--;
 	if( j != query.length()-1) query= query.substring(0,j);
 	if( language.equals("sql")){
 		i= query.lastIndexOf(';');
