@@ -15,7 +15,7 @@ lib_Mapi = {
 }
 
 BINS = {
-#	SOURCES = Mshutdown.mx MapiClient.mx
+#	SOURCES = MapiClient.mx
 	SOURCES = Mclient.mx 
 	#LIBS = libMapi ../gdk/libbat $(MAPI_LIBS) $(Z_LIBS) 
 	LIBS = libMapi $(MAPI_LIBS) $(Z_LIBS) \
