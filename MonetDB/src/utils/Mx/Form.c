@@ -114,9 +114,10 @@ again:  switch( d->d_dir ){
                     Newline;
                   seems incorrect, as @[ @$ and the like still should be processed 
                 */
+	        env = pr_env;
 	    	PrEnv(E_CMD);
                 FormBlk(d);
-	    	PrEnv(E_TEXT);
+	    	PrEnv(env);
 	    }
 	    break;
 	case Mxmacro:

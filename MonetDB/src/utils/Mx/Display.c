@@ -5,6 +5,8 @@
 #include "MxFcnDef.h"
 #include "disclaimer.h"
 
+extern int pr_env;
+
 #define TEXMODE (textmode==M_TEX)
 #define WWWMODE (textmode==M_WWW)
 /* Printing modes
@@ -17,6 +19,7 @@ extern	int	Hide();
 
 void	PrFontStr(char *s, char c)
 {
+        int env = pr_env;
 	if( Hide() ) return;
 
 	switch( c ){
@@ -36,11 +39,12 @@ void	PrFontStr(char *s, char c)
 		PrCmd(TEXMODE? "}" : WWWMODE? "</TT>" : "\\fP");
 		break;
 	}
-	PrEnv(E_TEXT);
+	PrEnv(env);
 }
 
 void	PrModeStr(char *s, char c)
 {
+        int env = pr_env;
 	if( Hide() ) return;
 
 	switch( c ){
@@ -51,7 +55,8 @@ void	PrModeStr(char *s, char c)
 		PrCmd(s);
 		break;
 	}
-	PrEnv(E_TEXT);
+        /* PrEnv(E_TEXT); */
+        PrEnv(env);
 }
 
 void	PrCmd(s)
