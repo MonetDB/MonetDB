@@ -675,23 +675,11 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .ATOM pax@1 = integer@1;
 .END;
 
-.COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,integer@1] = posjoin_tuple;
-"positional join with built-in NSM projection" 
-
-.COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,integer@1] = posjoin_tuple;
-"positional join with built-in PAX projection" 
-
 .COMMAND [pax](BAT[any::1,integer@1] b) : BAT[any::1,pax@1] = BATpax;
 "convert an integer@1 to pax@1"
 
 .COMMAND [integer](BAT[any::1,integer@1] b, int width) : BAT[any::1,any] = BATinteger;
 "create a view that makes tail column appear as an integerX column for some width=X"
-
-.COMMAND radix_cluster(bat[pax@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-		bat[integer@1,any::2] = radix_cluster;
-"do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters.
- partial radix cluster (i.e. skipping lower significant bits) can be indicated
- by pasing a negative number of bits as last parameter. "
 
 @= int
 .ATOM int@1 = integer@1;
@@ -699,6 +687,17 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 
 .COMMAND [intX](BAT[any::1,integer@1] b) : BAT[any::1,int@1] = BATintX;
 "convert an integer@1 to int@1"
+
+.COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,int@1] = posjoin_tuple;
+"positional join with built-in NSM projection" 
+
+.COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,int@1] = posjoin_tuple;
+"positional join with built-in PAX projection" 
+
+.COMMAND radix_cluster(bat[integer@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
+		bat[int@1,any::2] = radix_cluster; ""
+.COMMAND radix_cluster(bat[pax@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
+		bat[int@1,any::2] = radix_cluster; ""
 @= tpe
 @:@1(1,4)@
 @:@1(2,8)@
@@ -1127,8 +1126,8 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 @= integerdef
 #define integer@1 int
 int integer@1Copy(char *dst, char *src, int size){
-	while(size-- > 0) *dst++ = *src++;
-	return size;
+	*(int*) dst = *(int*) src;
+	return sizeof(int);
 }
 int* integer@1Null() { integer_nil[0] = int_nil; return integer_nil; }
 int  integer@1Hash(int*i) { return int_HUSSLE(*i); }
@@ -1248,11 +1247,10 @@ int BATpax(BAT **ret, BAT* b) {
 
 int BATintX(BAT **ret, BAT* b) {
 	BAT *bn = *ret = VIEWcreate(b);
-	char tpe[32];
-	sprintf(tpe, "int%s", ATOMname(b->ttype)+7);
+	int tpe = int_type(ATOMname(b->ttype));
 	ACCremoveall(bn);
-	bn->ttype = BATmirror(bn)->htype = ATOMindex(tpe);
-	strcpy(bn->tatom, tpe);
+	bn->ttype = BATmirror(bn)->htype = tpe;
+	strcpy(bn->tatom, ATOMname(tpe));
 	bn->batDirty = 1;
 	return GDK_SUCCEED;
 }
@@ -1317,7 +1315,14 @@ typedef struct {
 	int size; /* size of chunk (in bytes) */
 } move_t;
 
-#define HTYPE(b) ((b->hatom[0] == 'p' && b->hatom[1] == 'a' && b->hatom[2] == 'x') ? b->htype - 1 : BAThtype(b))
+int int_type(char *src) {
+	char dst[32];
+	while(*src && (*src < '0' || *src > '9')) src++;
+	sprintf(dst, "int%s", src);
+	return ATOMindex(dst);
+}
+
+#define HTYPE(b) ((b->htype >= TYPE_integer1 && b->htype <= TYPE_pax256)?int_type(b->hatom):BAThtype(b))
 #define TTYPE(b) HTYPE(BATmirror(b))
 
 BAT* quickbat(BAT *b, int cap) {
@@ -1488,8 +1493,8 @@ BUN radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base,
 {
     int dst_bunsize = BUNsize(bn);
     int src_bunsize = BUNsize(b); 
-    int htpe = ABS(bn->htype);
-    int ttpe = bn->ttype;
+    int htpe = BAThtype(b);
+    int ttpe = BATttype(b);
     int any = ttpe; 
 
 /* PETER start experimentation hack; must emulate relational projection cost  */
