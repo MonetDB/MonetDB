@@ -123,6 +123,10 @@ addQueryToCache(Client c)
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	chkProgram(c->nspace, c->curprg->def);
+#ifdef _SQL_OPTIMIZER_DEBUG
+	printf("ADD QUERY TO CACHE\n");
+	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
+#endif
 @-
 An error in the compilation should be reported to the user.
 @c
@@ -176,6 +180,8 @@ optimizeQueryInCache(Client c)
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "First call to SQL optimizer\n");
+	printf("ABOUT TO CHANGE\n");
+	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
 #endif
 @-
 Reduce the program before other optimizations take place
@@ -337,6 +343,7 @@ the cache when the underlying table is changed.
 	CXoptimizer(c->curprg->def, 0, 0);
 
 #ifdef _SQL_OPTIMIZER_DEBUG
+	printf("DONE CHANGES\n");
 	printFunction(c->fdout, c->curprg->def, LIST_MAL_INSTR);
 #endif
 }

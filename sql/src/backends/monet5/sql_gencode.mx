@@ -403,10 +403,6 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			snprintf(buf, 256, "bind%s", type);
 			q = newStmt(mb, "sql", buf);
 			tt = getTypeIndex(ctype, strlen(ctype), TYPE_any);
-/*
-			if (s->type == st_ubat)
-				ht = TYPE_oid;
-*/
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushStr(mb, q, s->op1.cval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.cval->t->base.name);
@@ -431,8 +427,9 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 /*
 			tt= getTypeIndex(tail_type(s)->type->base.name,
 			    strlen(tail_type(s)->type->base.name), TYPE_any);
-			setVarType(mb,getArg(q,0),newBatType(TYPE_void,tt));
 */
+			setVarType(mb,getArg(q,0),newBatType(TYPE_void,TYPE_oid));
+
 			q = pushStr(mb, q, s->op1.tval->s->base.name);
 			q = pushStr(mb, q, s->op1.tval->base.name);
 			q = pushInt(mb, q, s->flag);
@@ -451,7 +448,8 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			q = newStmt(mb, "sql", "bind_idxbat");
-			tt = getTypeIndex(tail_type(s)->type->base.name, strlen(tail_type(s)->type->base.name), TYPE_any);
+			tt = getTypeIndex(tail_type(s)->type->base.name, 
+					strlen(tail_type(s)->type->base.name), TYPE_any);
 			setVarType(mb, getArg(q, 0), newBatType(TYPE_void, tt));
 			q = pushStr(mb, q, s->op1.idxval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.idxval->t->base.name);
@@ -472,7 +470,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_mark:{
-			dump_2(sql, mb, s, "algebra", "tmark");
+			dump_2(sql, mb, s, "algebra", "martkT");
 		}
 			break;
 		case st_reverse:{
@@ -537,7 +535,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt(mb, "bat", "reverse");
 			q = pushArgument(mb, q, l);
 			l = getDestVar(q);
-			q = newStmt(mb, "algebra", (s->flag ? "sort" : "sort_reverse"));
+			q = newStmt(mb, "algebra", (s->flag ? "sortH" : "sort_reverseH"));
 			q = pushArgument(mb, q, l);
 			l = getDestVar(q);
 			q = newStmt(mb, "bat", "reverse");

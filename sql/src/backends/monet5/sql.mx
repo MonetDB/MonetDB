@@ -61,7 +61,9 @@ comment "Generate an exception when b!=0";
 
 pattern output(order:int, a:any...)
 address SQLoutput;
-pattern output(order:int, a:bat[:any,:any]...)
+pattern output(order:int,a:bat[:any,:any]...)
+address SQLoutputBats;
+pattern output(order:int,r:bat[:void,:any], a:bat[:any,:any]...)
 address SQLoutputBats
 comment "Overloading of the core print routines to obtain proper layout";
 
@@ -91,20 +93,17 @@ address mvc_update_var_wrap
 comment "Update a session variable";
 
 command bind_ubat(sname:str, tname:str, 
-		cname:str, access:int ) 
-	:bat[:any$1,:any$2] 
+		cname:str, access:int ) :any
 address mvc_bind_ubat_wrap
 comment "Bind bat with the updates to tname.cname 
 	with specific access mode";
 
-command bind_dbat(sname:str, tname:str, access:int)
-		:bat[:any$1,:any$2] 
+command bind_dbat(sname:str, tname:str, access:int):any
 address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
 	with specific access modes";
 
-command bind_idxbat(sname:str, tname:str, iname:str, access:int)
-		:bat[:any$1,:any$2] 
+command bind_idxbat(sname:str, tname:str, iname:str, access:int):any
 address mvc_bind_idxbat_wrap
 comment "Bind the idx bat, tname.idx
 	with specific accsess modes";
@@ -114,14 +113,12 @@ command clear_table(sname:str, tname:str)
 address mvc_clear_table_wrap
 comment "Clear table";
 
-command bind(sname:str, tname:str, 
-		cname:str, access:int )
-	:bat[:any$1,:any$2] 
+command bind(sname:str, tname:str, cname:str, access:int ):any
 address mvc_bind_wrap
 comment "Bind the bat tname.cname into the 
 	focus with specific access mode";
 
-command columnBind(b:bat[:str,:bat], nme:str) :bat[:any,:any] 
+command columnBind(b:bat[:str,:bat], nme:str) :any
 address mvc_bind_single_wrap
 comment "Bind the column bat into the focus ";
 

@@ -185,7 +185,7 @@ mvc_init(int debug, backend_stack stk)
 	scanner_init_keywords();
 
 	if ((first = store_init(debug, logdir, dbname, stk)) < 0) {
-		fprintf(stderr, "mvc_init: unable to create system tables\n");
+		fprintf(stderr, "!ERROR:mvc_init: unable to create system tables\n");
 		return -1;
 	}
 	if (first) {
@@ -246,7 +246,7 @@ mvc_init(int debug, backend_stack stk)
 
 		m->trans->schema = s;
 		if (mvc_commit(m, 0, NULL) < 0) {
-			fprintf(stderr, "mvc_init: unable to create system tables\n");
+			fprintf(stderr, "!ERROR:mvc_init: unable to commit system tables\n");
 			return -1;
 		}
 
