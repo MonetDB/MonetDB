@@ -874,7 +874,7 @@ int GDKinit(char *dbname, char *dbfarm) {
 	BATmode(GDKenv, TRANSIENT);
 	BBPfix(BBPcacheid(GDKenv));
 
-	return 0;
+	return 1;
 }
 
 @- 
