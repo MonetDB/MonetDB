@@ -1,0 +1,19 @@
+[lib\MonetDB\Tests]
+file0=C:\Documents and Settings\sjoerd\My Documents\src\devel\sql\NT\src\odbc\samples\odbcsample1.exe
+fulldirectory=
+
+[lib\MonetDB]
+SubDir0=lib\MonetDB\Tests
+fulldirectory=
+
+[TopDir]
+SubDir0=lib
+
+[General]
+Type=FILELIST
+Version=1.00.000
+
+[lib]
+SubDir0=lib\MonetDB
+fulldirectory=
+

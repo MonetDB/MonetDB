@@ -1,0 +1,20 @@
+[lib\MonetDB]
+file0=C:\Documents and Settings\sjoerd\My Documents\src\devel\sql\NT\src\backends\monet4\sql_server.mil
+file1=C:\Documents and Settings\sjoerd\My Documents\src\devel\sql\NT\src\backends\monet4\lib_sql_server.dll
+fulldirectory=
+
+[TopDir]
+file0=C:\Documents and Settings\sjoerd\My Documents\src\devel\sql\NT\MSQLserver.bat
+SubDir0=lib
+
+[General]
+Type=FILELIST
+Version=1.00.000
+
+[lib]
+file0=C:\Documents and Settings\sjoerd\My Documents\src\devel\sql\NT\src\server\libsqlserver.dll
+file1=C:\Documents and Settings\sjoerd\My Documents\src\devel\sql\NT\src\odbc\driver\libMonetODBC.dll
+file2=C:\Documents and Settings\sjoerd\My Documents\src\devel\sql\NT\src\odbc\winsetup\libMonetODBCs.dll
+SubDir0=lib\MonetDB
+fulldirectory=
+

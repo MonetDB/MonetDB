@@ -1,0 +1,50 @@
+[Shortcut0]
+Target=<TARGETDIR>\MSQLserver.bat
+Parameters=
+ShortcutKey=
+SeparateMemorySpace=No
+Run=Normal Window
+IconIndex=
+Replace=Yes
+FileGroup=SQL Program Files
+StartIn=
+IconFile=
+InternetShortcut=No
+DisplayText=MonetDB SQL Server
+Comments=
+
+[Shortcut1]
+Target=<TARGETDIR>\MapiClient.bat
+Parameters=-lsql -umonetdb -Pmonetdb
+ShortcutKey=
+SeparateMemorySpace=No
+Run=Normal Window
+IconIndex=
+Replace=Yes
+FileGroup=SQL Program Files
+StartIn=
+IconFile=
+InternetShortcut=No
+DisplayText=MonetDB SQL Client
+Comments=
+
+[Folder4]
+Type=Common
+Comments=
+DisplayText=
+
+[Data]
+Shortcut0=Folder4\MonetDB SQL Server
+Folder3=<FOLDER_STARTUP>
+Shortcut1=Folder4\MonetDB SQL Client
+Folder4=Folder2\MonetDB
+Group0=Main
+Group1=Startup
+Folder0=<FOLDER_DESKTOP>
+Folder1=<FOLDER_STARTMENU>
+Folder2=<FOLDER_PROGRAMS>
+
+[Info]
+Type=ShellObject
+Version=1.00.000
+
