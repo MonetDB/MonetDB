@@ -312,7 +312,7 @@ comment "inplace replace values on the given locations";
 #end SQL enhancement
 
 command destroy(b:bat):void = CMDdestroy_bat
-comment "Schedule bat for removal upon session commit\n";
+comment "Schedule bat for removal upon session commit";
 
 command delete(b:bat[any::1, any::2], h:any::1, t:any::2) 
 				: bat[any::1,any::2] = CMDdelete_bun
