@@ -468,6 +468,10 @@ static int MT_fadvise(void* base, size_t len, int advice) {
 		}
 	}
 	(void)pthread_mutex_unlock(&MT_mmap_lock);
+#else
+	(void)base;
+	(void)len;
+	(void)advice;
 #endif
 	return ret;
 }
