@@ -992,7 +992,11 @@ int MT_lockf(char *filename, int mode, size_t off, int len) {
 	GetVersionEx(&os);
 	memset(&ov, 0, sizeof(ov));
 	ov.Offset = (unsigned int) off;
+#if 0
 	ov.OffsetHigh = off >> 32;
+#else
+	ov.OffsetHigh = 0;	/* sizeof(off) == 4, i.e. off >> 32 is not possible */
+#endif
 
 	if (fh == NULL) {
 	    return -1;
