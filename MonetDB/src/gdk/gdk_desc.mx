@@ -267,6 +267,7 @@ BATloaddesc(str nme)
 	b->P = &dst->P;
 	b->U = &dst->U;
 	b->batBuns = &b->U->buns;
+	b->batBuns->base = NULL;
 	b->batId = dst->fullid;
 	b->batCopiedtodisk = 1;
 	b->batElmshift = BATelmshift(b);
