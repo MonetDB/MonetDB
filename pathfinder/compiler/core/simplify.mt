@@ -175,7 +175,7 @@ BindingExpr:     for_ (var_, OptVar, LiteralValue, CoreExpr)
         return PFcore_let($1$, 
                           $3$,
                           PFcore_let($2$, 
-                                     PFcore_num (0),
+                                     PFcore_num (1),
                                      $4$));
     }
     ;
