@@ -16,46 +16,35 @@
 @' All Rights Reserved.
 
 @f enum
-@a Peter Boncz
-@v 1.0
-@* Enumeration Datatypes
+@a Peter Boncz, Martin Kersten
+@v 2.0
+@* Encoding/Decoding
 When large sets of data are stored and memory is short, one 
 seeks for memory occupation optimizations.
-
 One way to do this when the cardinality is low, is to substitute
 the datatype to a smaller ordinal datatype. For instance, when 
 less than 256 different string values occur in an attribute, one 
 could store them as a byte. 
-
-This remapping can be encapsulated nicely by introducing an 'enum'
-atomic type, that appears to be the original type, but is in fact
-stored as something smaller. Encode and decode commands, as well 
-as 'tostr' and 'fromstr' ADT functions, can be generated beforehand
-and use a mapping table to translate between the two representations. 
-
 Further space optimizations into values smaller than a byte are
-impossible in Monet, since all values need to have a unique memory address.
+impossible in MonetDB, since all values need to have a unique memory address.
+@{
 Though it may by a problem to waste memory, one should also realize that 
 main-memory databases suffer increasingly when the data representation gets 
 more complex. This is obviously true for complex compression schemes, but 
 even loading a single byte value is considerably slower on custom CPUs
 than loading an entire 32-bit integer. On 64-bits architectures, this 
 will even be the case for long 64-bit integers. 
-
-This module implements encodings using 'chr' (1-byte encoding),
-and 'sht' (2-byte encoding).
+@}
 
 The prototypical use of the enum facility runs as follows.
-The user starts with collecting the values of interest in a BAT, say B.
-Subsequently, the command enum.create(:NME,B) creates a new type NME,
-whose value is taken from the elements stored in B.
-By default its underlying indexing type is then set to 'int'.
-As soon as a bat of values is associated with the type, its
-underlying type changes based on the storage space needed.
-The create command will inspect the content of B and creates a 
-BAT in the database to represent the values. 
+The user starts with collecting the values of interest in 
+a persistent BAT.  Subsequently, the command 
+enum.encode(NME:str, B:bat[:void,:any]) adds a subtype
+to the MAL type table, which is large enough to hold
+the encoded value.
+It also returns a enum variable set to the maximum encoding value encountered.
 
-To enable the type checker to analyse the programs upfront, 
+To enable the type checker to analyse programs upfront, 
 the MAL program should 'pre-define' existence of the type
 using the instruction 'atom NME:enum'.
 
@@ -65,6 +54,9 @@ Destroying an enumerated type removes its encoding bat and the
 information from the GDK atom library, but does not affect the
 MAL programs. This implies a runtime error as soon as you
 try to encode/decode a value.
+
+This module supports encodings using 'chr' (1-byte encoding),
+and 'sht' (2-byte encoding).
 
 @mal
 atom enum:int;
