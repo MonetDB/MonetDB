@@ -270,9 +270,12 @@ public boolean ping(){
 	check("ping");
 	try{
 		Mapi m= new Mapi(this);
-		if(m.gotError())
+		if(m.gotError()){
+			System.out.println("Ping to:"+host+":"+port);
+			m.explain();
+			System.out.println("Ping request failed");
 			return false;
-		m.disconnect();
+		} else m.disconnect();
 	} catch(MapiException e2){
 		return false;
 	}
@@ -356,6 +359,10 @@ in the sense that non-initialized paramaters are filled by the server.
 Moreover, the user and language parameters should match the value returned.
 The language property returned should match the required language interaction.
 */
+	if( trace){
+		traceLog.println("Response from first request");
+		traceLog.println("active:"+active+" error:"+gotError());
+	}
 	while( !gotError() && active && fetchRow()>0){
 		if( cache.fldcnt[cache.reader]== 0){
 			System.out.println("Unexpected reply:"
@@ -364,20 +371,27 @@ The language property returned should match the required language interaction.
 		}
 		String property= fetchField(0);
 		String value= fetchField(1);
-		//System.out.println("fields:"+property+","+value);
+		if(trace) traceLog.println("fields:"+property+","+value);
 		if( property.equals("language") && !lang.equals("") &&
 		   !value.equals(lang)){
 			setError("Incompatible language requirement","connect");
-			System.out.println("exepcted:"+lang);
+			System.out.println("expected:"+lang);
 		} else language= lang;
 		if( property.equals("version")) version= value;
 		if( property.equals("dbname")) dbname= value;
-			
+		if( trace){
+			traceLog.println("version:"+version+
+				" dbname:"+dbname+
+				" language:"+lang);
+		}
 	}
 	if( gotError()) {
+		if(trace) {
+			traceLog.println(getExplanation());
+			traceLog.println("Error occurred in initialization");
+		}
 		connected = false;
 		active= false;
-		if(trace) traceLog.println("Error occurred in initialization");
 		return this;
 	}
 	if(trace) traceLog.println("Connection established");
@@ -1520,8 +1534,8 @@ private void headerDecoder() {
 private int getRow(){
         String reply= "";
 
-	//if( trace) traceLog.println("getRow:active:"+active+
-		//" reader:"+(cache.reader+1)+" writer:"+cache.writer);
+	if( trace) traceLog.println("getRow:active:"+active+
+		" reader:"+(cache.reader+1)+" writer:"+cache.writer);
         while( active ||cache.reader+1< cache.writer){
 		if( active){
 			try{  
@@ -1550,6 +1564,7 @@ private int getRow(){
 			return MOK;
 		}
         }
+	if(trace) traceLog.println("getRow: Default error exit");
         return MERROR;
 }
 // ------------------------------- Utilities
