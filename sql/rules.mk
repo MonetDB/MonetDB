@@ -72,10 +72,10 @@ MXFLAGS= -notouch
 	chmod a+x $@
 
 %.proto.h: %.m
-	$(MEL) $(INCLUDES) -o $@ -proto $<
+	$(MEL) $(INCLUDES) -proto $< > $@
 
 %.glue.c: %.m
-	$(MEL) $(INCLUDES) -o $@ -glue $<
+	$(MEL) $(INCLUDES) -glue $< > $@
 
 %.tex: %.mx
 	cat $< > /tmp/doc.mx
