@@ -152,7 +152,7 @@ static void fatal_err(XqueryCtx* ctx, const char *msg, ...) {
     vsnprintf (errmsg, 1024, msg, msgs);
     va_end (msgs);
     /* */
-    stream_printf(GDKerr,"!ERROR: XML Generation: %s\n",errmsg);
+    stream_printf(GDKerr,"\n!ERROR: XML Generation: %s\n",errmsg);
     /* */
     longjmp(ctx->exitPoint,1);
 }
