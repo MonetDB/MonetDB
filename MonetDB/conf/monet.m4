@@ -331,7 +331,8 @@ AC_ARG_ENABLE(warning,
   enable_warning=$enableval, enable_warning=no)
 if test "x$enable_warning" = xyes; then
   if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -ansi -pedantic"
+    CFLAGS="$CFLAGS -Wall -std=c99"
+    CPPFLAGS="$CPPFLAGS -Wall -std=c99"
   fi
 fi
 
@@ -635,6 +636,39 @@ if test "x$have_hwcounters" != xno; then
 fi
 AC_SUBST(HWCOUNTERS_LIBS)
 AC_SUBST(HWCOUNTERS_INCS)
+
+dnl check for the performance counters library 
+have_pcl=auto
+PCL_CFLAGS=""
+PCL_LIBS=""
+AC_ARG_WITH(pcl,
+[  --with-pcl=DIR     pcl library is installed in DIR], have_pcl="$withval")
+if test "x$have_pcl" != xno; then
+  if test "x$have_pcl" != xauto; then
+    PCL_CFLAGS="-I$withval/include"
+    PCL_LIBS="-L$withval/lib"
+  fi
+
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $PCL_CFLAGS"
+  AC_CHECK_HEADER(pcl.h, have_pcl=yes, have_pcl=no)
+  CPPFLAGS="$save_CPPFLAGS"
+
+  if test "x$have_pcl" = xyes; then
+  	save_LDFLAGS="$LDFLAGS"
+  	LDFLAGS="$LDFLAGS $PCL_LIBS"
+  	AC_CHECK_LIB(pcl, PCLinit, PCL_LIBS="$PCL_LIBS -lpcl"
+        	AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes, have_pcl=no)
+  	LDFLAGS="$save_LDFLAGS"
+  fi
+
+  if test "x$have_pcl" != xyes; then
+    PCL_CFLAGS=""
+    PCL_LIBS=""
+  fi
+fi
+AC_SUBST(PCL_CFLAGS)
+AC_SUBST(PCL_LIBS)
 
 AC_CHECK_PROG(LATEX,latex,latex)
 AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
