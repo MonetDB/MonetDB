@@ -1,4 +1,5 @@
-(select p7.tail as location, p13.tail as name 
+select * from (
+select p7.tail as location, p13.tail as name 
 from   hidx p5, hidx p6, attx p7,
        hidx p11, hidx p12, attx p13
 where  p5.tblid = 5
@@ -11,7 +12,7 @@ and    p5.head = p11.head
 and    p5.tail = p6.head
 and    p6.tail = p7.head
 and    p11.tail = p12.head
-and    p12.tail = p13.head)
+and    p12.tail = p13.head
 union all
 (select p164.tail as location, p170.tail as name
 from   hidx p162, hidx p163, attx p164,
@@ -87,5 +88,5 @@ and    p790.tail = p791.head
 and    p791.tail = p792.head
 and    p796.tail = p797.head
 and    p797.tail = p798.head)
+) as names
 order by name;
-
