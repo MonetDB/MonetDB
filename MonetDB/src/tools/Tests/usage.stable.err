@@ -32,10 +32,28 @@ usage: MapiClient
 [-? or --help ]
 
 # 11:56:27 >  
-# 11:56:27 >  Mtimeout -timeout 60 Mshutdown -?
+# 11:56:27 >  Mtimeout -timeout 60 MapiClient.py -?
 # 11:56:27 >  
 
-unknown argument:-?
+usage: MapiClient.py
+[-c or --config config_file ]
+[-h or --host hostname ]
+[-p or --port portnr ]
+[-d or --debug [debug_level] ]
+[      --noheaders ]
+[-? or --help ]
+
+# 11:56:27 >  
+# 11:56:27 >  Mtimeout -timeout 60 Mshutdown.py -?
+# 11:56:27 >  
+
+usage: Mshutdown.py
+[-c or --config config_file ]
+[-h or --host hostname ]
+[-p or --port portnr ]
+[-d or --debug [debug_level] ]
+[      --noheaders ]
+[-? or --help ]
 
 # 11:56:28 >  
 # 11:56:28 >  Done.

@@ -17,10 +17,14 @@ stdout of test 'usage` in directory 'src/tools` itself:
 
 
 # 16:15:06 >  
-# 16:15:06 >  Mtimeout -timeout 210 Mshutdown -?
+# 16:15:06 >  Mtimeout -timeout 210 MapiClient.py -?
 # 16:15:06 >  
 
-usage: Mshutdown [-d<debug level>] [-port <host:port>]
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mshutdown.py -?
+# 16:15:06 >  
+
 
 # 16:15:06 >  
 # 16:15:06 >  Done.

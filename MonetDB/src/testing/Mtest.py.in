@@ -1822,11 +1822,11 @@ def main(argv) :
     # check for executables, set their standard options and export them
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
-        exe['Mtimeout']    = CheckExec('Mtimeout')   , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
-        exe['Mserver']     = CheckExec('Mserver')    , 'Mserver --config='+env['MONET_CONF']+' --debug='+env['GDK_DEBUG']+' --set monet_prompt='
-        exe['Mshutdown']   = CheckExec('Mshutdown')  , 'Mshutdown -port :'+env['MAPIPORT']
-        exe['Mdiff']       = CheckExec('Mdiff')      , 'Mdiff'
-        exe['python']      = CheckExec('python')     , 'python'
+        exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver --config='+env['MONET_CONF']+' --debug='+env['GDK_DEBUG']+' --set monet_prompt='
+        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py --set mapi_port='+env['MAPIPORT']
+        exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
+        exe['python']      = CheckExec('python')       , 'python'
         exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), env['MAPICLIENT']
         exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , env['SQLCLIENT']
         if not exe['Mtimeout'][0]:
