@@ -79,7 +79,7 @@ test = (
                  ,  re.MULTILINE),
         re.compile( r"^!ERROR: module\(.*\): load error.$"
                  ,  re.MULTILINE),
-        # differences due to property-checking, which we what to treat as "minor differences"
+        # differences due to property-checking, which we want to treat as "minor differences"
         re.compile( r'^synced\(x,[yz]\) := (true|false)$'
                 #dir(): # name                 htype          ttype          count       heat        dirty                      status             kind               refcnt      lrefcnt     plevel      #
                 "|" r'^\[ "[A-Za-z0-9_]+",\t* +"[a-z_]+",\t* +"[a-z_]+",\t* +[0-9]+,\t* +[0-9]+,\t* +"(dirty|clean|diffs)",\t* +"(load|disk)",\t* +"(tran|pers)",\t* +[0-9]+,\t* +[0-9]+,\t* +[0-9]+\t* +\]$'
@@ -173,7 +173,7 @@ def mFilter (FILE, IGNORE) :
             # potential differences, which we what to ignore; see above
             oline = "#~ " + iline
         elif test[4].match(iline):
-            # differences due to property-checking, which we what to treat as "minor differences"; see above
+            # differences due to property-checking, which we want to treat as "minor differences"; see above
             oline = "=" + iline
         elif len(ftmp) > 2              and \
              test[3].match(iline)       and \
