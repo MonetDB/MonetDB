@@ -1,6 +1,0 @@
-PROC crash()
-{
-	print($t);
-}
-
-crash();

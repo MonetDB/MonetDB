@@ -60,7 +60,7 @@ subs = [
     ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
     ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
     ('@PACKAGE@',           "sql"),
-    ('@VERSION@',           "2.0.17"),
+    ('@VERSION@',           "2.0.19"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
     ('@MONET_BUILD@',       build),
