@@ -101,6 +101,14 @@ char *c_id[]  = {
 
   , [c_namet]               "namet"
 
+  , [c_elem]                "elem"
+  , [c_attr]                "attr" 
+  , [c_text]                "text"
+  , [c_doc]                 "doc" 
+  , [c_comment]             "comment" 
+  , [c_pi]                  "pi"  
+  , [c_tag]                 "tag"
+
   , [c_true]                "true"
   , [c_false]               "false"
   , [c_error]               "error"
@@ -161,6 +169,9 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
         break;
     case c_apply:     
         L2 (c_id[n->kind], PFqname_str (n->sem.fun->qname));
+        break;
+    case c_tag:
+        L2 (c_id[n->kind], PFqname_str (n->sem.qname));
         break;
     case c_seqtype:      
         L2 (c_id[n->kind], PFty_str (n->sem.type));
@@ -250,6 +261,9 @@ core_pretty (PFcnode_t *n)
         break;
     case c_seqtype:        
         PFprettyprintf ("%s", PFty_str (n->sem.type));
+        break;
+    case c_tag:       
+        PFprettyprintf ("%s", PFqname_str (n->sem.qname));
         break;
     case c_error:       
         PFprettyprintf ("\"%s\"", n->sem.str);
