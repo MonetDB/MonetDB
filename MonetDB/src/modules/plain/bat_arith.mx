@@ -134,6 +134,33 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 			}
 		}
 	        GDKfree(lbuf);
+	} if ((BUNsize(l)==BUNsize(r))) {
+		REGISTER chr *lp, *lq, *rp;
+		REGISTER int bs = BUNsize(l);
+		REGISTER int sze = (4096/bs)*bs;
+		chr* lbuf = GDKmalloc(2*sze);
+		chr* rbuf = lbuf+sze;
+
+		lq = (chr*)BUNtloc(l,BUNlast(l));
+		lp = (chr*)BUNtloc(l,BUNfirst(l));
+		rp = (chr*)BUNtloc(r,BUNfirst(r));
+		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+		for (; lp < lq; lp+=sze, rp+=sze) {
+			/* 0 <= sze <= 4096, so cast to int is safe */
+			REGISTER int z = (int) (lq - lp < sze ? lq - lp : sze);
+			REGISTER chr *lbp=lbuf, *lbq=lbuf+z, *rbp=rbuf;
+			memcpy(lbuf,lp,z);
+			memcpy(rbuf,rp,z);
+			for (; lbp < lbq; lbp+=bs, rbp+=bs) {
+				if ((*(@1*)lbp != @1_nil) && (*(@1*)rbp != @1_nil)) {
+					*bnp = *(@1*)lbp @2 *(@1*)rbp;
+				} else {
+					*bnp = @1_nil;
+				}
+				bnp++;
+			}
+		}
+	        GDKfree(lbuf);
 	} else {
 		REGISTER chr *lp, *lq, *rp;
 		REGISTER int ls = BUNsize(l);

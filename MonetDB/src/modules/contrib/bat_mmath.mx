@@ -83,22 +83,24 @@ Only the dbl type is supported.
 */
 @= unaryimplementations
 int bat_@1_@2(BAT **ret, BAT *b) {
-	REGISTER @1 *bp, *bq, *bnp;
+	REGISTER chr *bp, *bq;
+	REGISTER @1 *bnp;
+	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "bat_@1_@2(b=%s);\n",b->batId);
- 	ERRORcheck((b->htype!=TYPE_void)||(BUNsize(b)!=sizeof(@1)),
- 	           "valbat_@1_@2: BAT b must be void-headed.\n");
+ 	ERRORcheck((b->htype!=TYPE_void),
+ 	           "bat_@1_@2: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (@1*)BUNtloc(b,BUNlast(b));
-	bp = (@1*)BUNtloc(b,BUNfirst(b));
+	bq = (chr*)BUNtloc(b,BUNlast(b));
+	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-	for (; bp < bq; bp++) {
-		REGISTER @1 bv = *bp;
+	for (; bp < bq; bp+=bs) {
+		REGISTER @1 bv = *(@1*)bp;
 		if (bv != @1_nil) {
 			bv = @2(bv);
 		}
@@ -114,65 +116,117 @@ int bat_@1_@2(BAT **ret, BAT *b) {
 
 @= binaryimplementations
 int batbat_@1_@2(BAT **ret, BAT *l, BAT *r) {
-	REGISTER @1 *lp, *lq, *rp, *bnp;
-	REGISTER int cnt = 4096/(int)sizeof(@1);
-	@1* lbuf = GDKmalloc(2*cnt*sizeof(@1));
-	@1* rbuf = lbuf+cnt;
+	REGISTER @1 *bnp;
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batbat_@1_@2(l=%s,r=%s);\n",l->batId,r->batId);
- 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(BUNsize(l)!=sizeof(@1))||(BUNsize(r)!=sizeof(@1))||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
+ 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
  	           "batbat_@1_@2: BATs l & r must be void-headed and head-aligned.\n");
 
 	bn = BATnew(TYPE_void, l->ttype, BATcount(l));
 	BATseqbase(bn,l->hseqbase);
 	bn->tsorted = 0;
-	lq = (@1*)BUNtloc(l,BUNlast(l));
-	lp = (@1*)BUNtloc(l,BUNfirst(l));
-	rp = (@1*)BUNtloc(r,BUNfirst(r));
-	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-	for (; lp < lq; lp+=cnt, rp+=cnt) {
-		/* 0 <= cnt <= 4096, so cast to int is safe */
-		REGISTER int x = (int) (lq - lp < cnt ? lq - lp : cnt);
-		REGISTER int y = x*(int)sizeof(@1);
-		REGISTER int i;
-		memcpy(lbuf,lp,y);
-		memcpy(rbuf,rp,y);
-		for (i=0; i<x; i++) {
-			if ((lbuf[i] != @1_nil) && (rbuf[i] != @1_nil)) {
-				*bnp = @2(lbuf[i], rbuf[i]);
+
+	if ((BUNsize(l)==sizeof(@1))&&(BUNsize(r)==sizeof(@1))) {
+		REGISTER @1 *lp, *lq, *rp;
+		REGISTER int cnt = 4096/(int)sizeof(@1);
+		@1* lbuf = GDKmalloc(2*cnt*sizeof(@1));
+		@1* rbuf = lbuf+cnt;
+
+		lq = (@1*)BUNtloc(l,BUNlast(l));
+		lp = (@1*)BUNtloc(l,BUNfirst(l));
+		rp = (@1*)BUNtloc(r,BUNfirst(r));
+		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+		for (; lp < lq; lp+=cnt, rp+=cnt) {
+			/* 0 <= cnt <= 4096, so cast to int is safe */
+			REGISTER int x = (int) (lq - lp < cnt ? lq - lp : cnt);
+			REGISTER int y = x*(int)sizeof(@1);
+			REGISTER int i;
+			memcpy(lbuf,lp,y);
+			memcpy(rbuf,rp,y);
+			for (i=0; i<x; i++) {
+				if ((lbuf[i] != @1_nil) && (rbuf[i] != @1_nil)) {
+					*bnp = @2(lbuf[i], rbuf[i]);
+				} else {
+					*bnp = @1_nil;
+				}
+				bnp++;
+			}
+		}
+	        GDKfree(lbuf);
+	} if ((BUNsize(l)==BUNsize(r))) {
+		REGISTER chr *lp, *lq, *rp;
+		REGISTER int bs = BUNsize(l);
+		REGISTER int sze = (4096/bs)*bs;
+		chr* lbuf = GDKmalloc(2*sze);
+		chr* rbuf = lbuf+sze;
+
+		lq = (chr*)BUNtloc(l,BUNlast(l));
+		lp = (chr*)BUNtloc(l,BUNfirst(l));
+		rp = (chr*)BUNtloc(r,BUNfirst(r));
+		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+		for (; lp < lq; lp+=sze, rp+=sze) {
+			/* 0 <= sze <= 4096, so cast to int is safe */
+			REGISTER int z = (int) (lq - lp < sze ? lq - lp : sze);
+			REGISTER chr *lbp=lbuf, *lbq=lbuf+z, *rbp=rbuf;
+			memcpy(lbuf,lp,z);
+			memcpy(rbuf,rp,z);
+			for (; lbp < lbq; lbp+=bs, rbp+=bs) {
+				if ((*(@1*)lbp != @1_nil) && (*(@1*)rbp != @1_nil)) {
+					*bnp = @2(*(@1*)lbp, *(@1*)rbp);
+				} else {
+					*bnp = @1_nil;
+				}
+				bnp++;
+			}
+		}
+	        GDKfree(lbuf);
+	} else {
+		REGISTER chr *lp, *lq, *rp;
+		REGISTER int ls = BUNsize(l);
+		REGISTER int rs = BUNsize(r);
+
+		lq = (chr*)BUNtloc(l,BUNlast(l));
+		lp = (chr*)BUNtloc(l,BUNfirst(l));
+		rp = (chr*)BUNtloc(r,BUNfirst(r));
+		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+		for (; lp < lq; lp+=ls, rp+=rs) {
+			if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
+				*bnp = @2(*(@1*)lp, *(@1*)rp);
 			} else {
 				*bnp = @1_nil;
 			}
 			bnp++;
 		}
 	}
+
         bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
         if (!bn->batDirty) bn->batDirty = TRUE;
-        GDKfree(lbuf);
 
         *ret = bn;
         return GDK_SUCCEED;
 }
 int valbat_@1_@2(BAT **ret, @1 *v, BAT *b) {
-	REGISTER @1 *bp, *bq, *bnp;
+	REGISTER chr *bp, *bq;
+	REGISTER @1 *bnp;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "valbat_@1_@2(v,b=%s);\n",b->batId);
- 	ERRORcheck((b->htype!=TYPE_void)||(BUNsize(b)!=sizeof(@1)),
+ 	ERRORcheck((b->htype!=TYPE_void),
  	           "valbat_@1_@2: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (@1*)BUNtloc(b,BUNlast(b));
-	bp = (@1*)BUNtloc(b,BUNfirst(b));
+	bq = (chr*)BUNtloc(b,BUNlast(b));
+	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 	if (vv != @1_nil) {
-		for (; bp < bq; bp++) {
-			REGISTER @1 bv = *bp;
+		for (; bp < bq; bp+=bs) {
+			REGISTER @1 bv = *(@1*)bp;
 			if (bv != @1_nil) {
 				bv = @2(vv,bv);
 			}
@@ -180,7 +234,7 @@ int valbat_@1_@2(BAT **ret, @1 *v, BAT *b) {
 			bnp++;
 		}
 	} else {
-		for (; bp < bq; bp++) {
+		for (; bp < bq; bp+=bs) {
 			*bnp = vv;
 			bnp++;
 		}
@@ -192,23 +246,25 @@ int valbat_@1_@2(BAT **ret, @1 *v, BAT *b) {
         return GDK_SUCCEED;
 }
 int batval_@1_@2(BAT **ret, BAT *b, @1 *v) {
-	REGISTER @1 *bp, *bq, *bnp;
+	REGISTER chr *bp, *bq;
+	REGISTER @1 *bnp;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batval_@1_@2(v,b=%s);\n",b->batId);
- 	ERRORcheck((b->htype!=TYPE_void)||(BUNsize(b)!=sizeof(@1)),
+ 	ERRORcheck((b->htype!=TYPE_void),
  	           "batval_@1_@2: BAT b must be void-headed.\n");
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (@1*)BUNtloc(b,BUNlast(b));
-	bp = (@1*)BUNtloc(b,BUNfirst(b));
+	bq = (chr*)BUNtloc(b,BUNlast(b));
+	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 	if (vv != @1_nil) {
-		for (; bp < bq; bp++) {
-			REGISTER @1 bv = *bp;
+		for (; bp < bq; bp+=bs) {
+			REGISTER @1 bv = *(@1*)bp;
 			if (bv != @1_nil) {
 				bv = @2(bv,vv);
 			}
@@ -216,7 +272,7 @@ int batval_@1_@2(BAT **ret, BAT *b, @1 *v) {
 			bnp++;
 		}
 	} else {
-		for (; bp < bq; bp++) {
+		for (; bp < bq; bp+=bs) {
 			*bnp = vv;
 			bnp++;
 		}

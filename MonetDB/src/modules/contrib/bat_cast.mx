@@ -61,22 +61,23 @@ cast functions ([dbl],[oid],...) on void-headed BATs.
 @c
 @= implementation
 int batcast_@1_@2(BAT **ret, BAT *b) {
-	REGISTER @1 *bp, *bq;
-        REGISTER @2 *bnp;
+	REGISTER chr *bp, *bq;
+	REGISTER @2 *bnp;
+	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batcast_@1_@2(b=%s);\n",b->batId);
- 	ERRORcheck((b->htype!=TYPE_void)||(BUNsize(b)!=sizeof(@1)),
+ 	ERRORcheck((b->htype!=TYPE_void),
  	           "batcast_@1_@2: BAT b must be void-headed.\n");
 
 	bn = BATnew(TYPE_void, TYPE_@2, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (@1*)BUNtloc(b,BUNlast(b));
-	bp = (@1*)BUNtloc(b,BUNfirst(b));
+	bq = (chr*)BUNtloc(b,BUNlast(b));
+	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	bnp = (@2*)BUNtloc(bn,BUNlast(bn));
-	for (; bp < bq; bp++) {
-		REGISTER @1 bv = *bp;
+	for (; bp < bq; bp+=bs) {
+		REGISTER @1 bv = *(@1*)bp;
 		*bnp = (bv != @1_nil) ? (@2)bv : @2_nil;
 		bnp++;
 	}
