@@ -96,9 +96,6 @@ comment "Return the string length in bytes.";
 command chrAt( s:str, index:int) :chr 
 address STRChrAt
 comment "String array lookup operation.";
-command match(s:str, pat:str):bit 
-address STRMatch
-comment "POSIX pattern matching against a string";
 command unicodeAt(s:str, index:int) :int 
 address STRWChrAt
 comment "get a unicode character 
@@ -287,7 +284,6 @@ quit;
 #include "ctype.h"
 #include "str.h"
 #include <string.h>
-#include <regex.h>
 
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
@@ -1189,16 +1185,6 @@ Here you find the wrappers around the version 4 library code
 @c
 #include "mal_exception.h"
 
-str strMatch(bit  *ret, str *val, str *pat){
-	regex_t prg;
-	int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
-	if( error<0)
-		return throwMessage("str.match","Compilation of regular expression failed");
-	error= regexec(&prg,*val,0,0,0);
-	*ret= (error == 0);
-	return MAL_SUCCEED;
-}
-
 str STRtostr(str *res, str *src){
 	*res = GDKstrdup(*src);
 	return MAL_SUCCEED;
@@ -1244,10 +1230,6 @@ str STRIconv( str *res, str *o, str *fp, str *tp){
 }
 str STRChrAt( chr *res, str *arg1, int *at ){
 	strChrAt(res,*arg1,at);
-	return MAL_SUCCEED;
-}
-str STRMatch(bit  *ret, str *val, str *pat){
-	strMatch(ret,val,pat);
 	return MAL_SUCCEED;
 }
 str STRPrefix( bit *res, str *arg1, str *arg2 ){
