@@ -54,6 +54,8 @@ Set server port and allow internet connections from any workstation.
 Bind the socket to the server port.
 The port id should be obtained from the Homes file.
 @c
+	if (*port == 0)
+		*port = MAPIPORT;
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = htons((unsigned short)((*port)&0xFFFF));
@@ -141,4 +143,12 @@ int MAPIlisten_default(){
 }
 
 
-	
+@mil
+module(unix,str,mapi);
+var monet_port := getenv("MONETPORT");
+var port := 0;
+var p := search( monet_port, ":" );
+if (p >= 0){
+	port := int(string(monet_port, p+1));
+}
+listen(port,5);
