@@ -43,7 +43,12 @@ and we have to de-reference them before entering the gdk library.
 This calls for knowlegde on the underlying BAT typs`s
 @{
 @= derefStr
-if( @1->@2type== TYPE_str) @3 = *(str *)@3;
+{int _tpe= ATOMstorage(@1->@2type);
+ if( _tpe == TYPE_str || _tpe > TYPE_str )
+ { if(@3== 0 || *(str*)@3==0) @3= str_nil;
+   else @3 = *(str *)@3;
+}}
+
 @
 @}
 We split between selections that return one value, and selections
