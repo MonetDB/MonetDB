@@ -32,8 +32,6 @@ public class MonetStatement implements Statement {
 	/** the default value of maxRows, 0 indicates unlimited */
 	static final int DEF_MAXROWS = 0;
 
-	/** A socket connection to Mserver */
-	private MonetSocket monet;
 	/** The parental Connection object */
 	private MonetConnection connection;
 	/** The last HeaderList object this Statement produced */
@@ -76,7 +74,6 @@ public class MonetStatement implements Statement {
 	 * to set up a socket to MonetDB and attempts to login.
 	 * This constructor is only accessible to classes from the jdbc package.
 	 *
-	 * @param monet the connection to Mserver to use
 	 * @param connection the connection that created this Statement
 	 * @param resultSetType type of ResultSet to produce
 	 * @param resultSetConcurrency concurrency of ResultSet to produce
@@ -84,7 +81,6 @@ public class MonetStatement implements Statement {
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
 	MonetStatement(
-		MonetSocket monet,
 		MonetConnection connection,
 		int resultSetType,
 		int resultSetConcurrency)
@@ -92,10 +88,7 @@ public class MonetStatement implements Statement {
 	{
 		if (connection == null) throw
 			new IllegalArgumentException("No Connection given!");
-		if (monet == null) throw
-			new IllegalArgumentException("No connection with the server given!");
 
-		this.monet = monet;
 		this.connection = connection;
 		this.resultSetType = resultSetType;
 		this.resultSetConcurrency = resultSetConcurrency;

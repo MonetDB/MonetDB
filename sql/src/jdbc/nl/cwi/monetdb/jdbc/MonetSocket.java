@@ -20,7 +20,7 @@ import java.net.*;
  * "&gt;&gt;".
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.3
+ * @version 1.4
  */
 class MonetSocket {
 	/** Reader from the Socket */
@@ -98,16 +98,18 @@ class MonetSocket {
 	 * @see #flush()
 	 * @see #writeln(String data)
 	 */
-	public synchronized void write(String data) throws IOException {
-		toMonet.write(data);
-		// reset the lineType variable, since we've sent data now and the last
-		// line isn't valid anymore
-		lineType = UNKNOWN;
+	public void write(String data) throws IOException {
+		synchronized (toMonet) {
+			toMonet.write(data);
+			// reset the lineType variable, since we've sent data now and the last
+			// line isn't valid anymore
+			lineType = UNKNOWN;
 
-		// it's a bit nasty if an exception is thrown from the log,
-		// but ignoring it can be nasty as well, so it is decided to
-		// let it go so there is feedback about something going wrong
-		if (debug) log.write("<< " + data);
+			// it's a bit nasty if an exception is thrown from the log,
+			// but ignoring it can be nasty as well, so it is decided to
+			// let it go so there is feedback about something going wrong
+			if (debug) log.write("<< " + data);
+		}
 	}
 
 	/**
@@ -116,12 +118,14 @@ class MonetSocket {
 	 *
 	 * @throws IOException if writing to the stream failed
 	 */
-	public synchronized void flush() throws IOException {
-		toMonet.flush();
-		// it's a bit nasty if an exception is thrown from the log,
-		// but ignoring it can be nasty as well, so it is decided to
-		// let it go so there is feedback about something going wrong
-		if (debug) log.flush();
+	public void flush() throws IOException {
+		synchronized (toMonet) {
+			toMonet.flush();
+			// it's a bit nasty if an exception is thrown from the log,
+			// but ignoring it can be nasty as well, so it is decided to
+			// let it go so there is feedback about something going wrong
+			if (debug) log.flush();
+		}
 	}
 
 	/**
@@ -131,7 +135,7 @@ class MonetSocket {
 	 * @param data the data to write to the stream
 	 * @throws IOException if writing to the stream failed
 	 */
-	public synchronized void writeln(String data) throws IOException {
+	public void writeln(String data) throws IOException {
 		write(data + "\n");
 		flush();
 	}
@@ -144,24 +148,26 @@ class MonetSocket {
 	 * @return a string representing the next line from the stream
 	 * @throws IOException if reading from the stream fails
 	 */
-	public synchronized String readLine() throws IOException {
-		String line = fromMonet.readLine();
+	public String readLine() throws IOException {
+		synchronized (fromMonet) {
+			String line = fromMonet.readLine();
 
-		// it's a bit nasty if an exception is thrown from the log,
-		// but ignoring it can be nasty as well, so it is decided to
-		// let it go so there is feedback about something going wrong
-		if (debug) {
-			log.write(">> " + line + "\n");
-			log.flush();
+			// it's a bit nasty if an exception is thrown from the log,
+			// but ignoring it can be nasty as well, so it is decided to
+			// let it go so there is feedback about something going wrong
+			if (debug) {
+				log.write(">> " + line + "\n");
+				log.flush();
+			}
+
+			if (line != null) {
+				lineType = getLineType(line);
+			} else {
+				throw new IOException("End of stream reached");
+			}
+
+			return(line);
 		}
-
-		if (line != null) {
-			lineType = getLineType(line);
-		} else {
-			throw new IOException("End of stream reached");
-		}
-
-		return(line);
 	}
 
 	/**

@@ -31,7 +31,7 @@ import java.util.regex.*;
  * independent from what the client requests (pre-fetching strategy).
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.7
+ * @version 0.8
  */
 public class MonetConnection extends Thread implements Connection {
 	/** The hostname to connect to */
@@ -67,6 +67,9 @@ public class MonetConnection extends Thread implements Connection {
 	/** Format of a timestamp used by Mserver */
 	final static SimpleDateFormat mTimestamp =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	/** Format of a timestamp with RFC822 timezone */
+	final static SimpleDateFormat mTimestampZ =
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
 	/** Format of a time used by Mserver */
 	final static SimpleDateFormat mTime =
 		new SimpleDateFormat("HH:mm:ss.SSS");
@@ -147,85 +150,84 @@ public class MonetConnection extends Thread implements Connection {
 				monet = new MonetSocket(hostname, port);
 			}
 
-			// make sure we own the lock on monet during the whole login
-			// procedure
-			synchronized (monet) {
-				// we're debugging here... uhm, should be off in real life
-				if (debug) {
-					String fname = props.getProperty("logfile", "monet_" +
-						(new java.util.Date()).getTime() + ".log");
-					File f = new File(fname);
-					int ext = fname.lastIndexOf(".");
-					if (ext < 0) ext = fname.length();
-					String pre = fname.substring(0, ext);
-					String suf = fname.substring(ext);
+			/**
+			 * There is no need for a lock on the monet object here.  Since we just
+			 * created the object, and the reference to this object has not yet been
+			 * returned to the caller, noone can (in a legal way) know about the
+			 * object.
+			 */
 
-					for (int i = 1; f.exists(); i++) {
-						f = new File(pre + "-" + i + suf);
-					}
+			// we're debugging here... uhm, should be off in real life
+			if (debug) {
+				String fname = props.getProperty("logfile", "monet_" +
+					(new java.util.Date()).getTime() + ".log");
+				File f = new File(fname);
+				int ext = fname.lastIndexOf(".");
+				if (ext < 0) ext = fname.length();
+				String pre = fname.substring(0, ext);
+				String suf = fname.substring(ext);
 
-					monet.debug(f.getAbsolutePath());
+				for (int i = 1; f.exists(); i++) {
+					f = new File(pre + "-" + i + suf);
 				}
 
-				// log in
-				if (blockMode) {
-					//-- \begin{reverse engineered mode}
-
-					// convenience cast shortcut
-					MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
-
-					// mind the newline at the end
-					blkmon.write(username + ":" + password + ":blocked\n");
-					// We need to send the server our byte order.  Java by itself
-					// uses network order.
-					// A short with value 1234 will be sent to indicate our
-					// byte-order.
-					/*
-					short x = 1234;
-					byte high = (byte)(x >>> 8);	// = 0x04
-					byte low = (byte)x;				// = 0xD2
-					*/
-					final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
-					blkmon.write(bigEndian);
-					blkmon.flush();
-
-					// now read the byte-order of the server
-					byte[] byteorder = new byte[2];
-					if (blkmon.read(byteorder) != 2)
-						throw new SQLException("The server sent an incomplete byte-order sequence");
-					if (byteorder[0] == (byte)0x04) {
-						// set our connection to big-endian mode
-						blkmon.setByteOrder(ByteOrder.BIG_ENDIAN);
-					} else if (byteorder[0] == (byte)0xD2) {
-						// set our connection to litte-endian mode
-						blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
-					}
-
-					//-- \end
-				} else {
-					monet.writeln(username + ":" + password);
-				}
-				// read monet response till prompt
-				String err;
-				if ((err = monet.waitForPrompt()) != null) {
-					monet.disconnect();
-					throw new SQLException(err);
-				}
-
-				// we're logged in and ready for commands!
+				monet.debug(f.getAbsolutePath());
 			}
+
+			// log in
+			if (blockMode) {
+				// convenience cast shortcut
+				MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
+
+				// mind the newline at the end
+				blkmon.write(username + ":" + password + ":blocked\n");
+				// We need to send the server our byte order.  Java by itself
+				// uses network order.
+				// A short with value 1234 will be sent to indicate our
+				// byte-order.
+				/*
+				short x = 1234;
+				byte high = (byte)(x >>> 8);	// = 0x04
+				byte low = (byte)x;				// = 0xD2
+				*/
+				final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
+				blkmon.write(bigEndian);
+				blkmon.flush();
+
+				// now read the byte-order of the server
+				byte[] byteorder = new byte[2];
+				if (blkmon.read(byteorder) != 2)
+					throw new SQLException("The server sent an incomplete byte-order sequence");
+				if (byteorder[0] == (byte)0x04) {
+					// set our connection to big-endian mode
+					blkmon.setByteOrder(ByteOrder.BIG_ENDIAN);
+				} else if (byteorder[0] == (byte)0xD2) {
+					// set our connection to litte-endian mode
+					blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+				}
+			} else {
+				monet.writeln(username + ":" + password);
+			}
+			// read monet response till prompt
+			String err;
+			if ((err = monet.waitForPrompt()) != null) {
+				monet.disconnect();
+				throw new SQLException(err);
+			}
+
+			// we're logged in and ready for commands!
 		} catch (IOException e) {
 			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage());
 		}
-
-		setAutoCommit(true);
-		closed = false;
 
 		// make ourselves a little more important
 		setPriority(getPriority() + 1);
 		// quit the VM if it's waiting for this thread to end
 		setDaemon(true);
 		start();
+
+		setAutoCommit(true);
+		closed = false;
 	}
 
 	//== methods of interface Connection
@@ -274,7 +276,8 @@ public class MonetConnection extends Thread implements Connection {
 	 * @see #setAutoCommit(boolean)
 	 */
 	public void commit() throws SQLException {
-		sendCommit();
+		// send commit to the server (note the s in front is a protocol issue)
+		sendIndependantCommand("sCOMMIT;");
 	}
 
 	/**
@@ -320,7 +323,7 @@ public class MonetConnection extends Thread implements Connection {
 		try {
 			Statement ret =
 				new MonetStatement(
-					monet, this, resultSetType, resultSetConcurrency
+					this, resultSetType, resultSetConcurrency
 				);
 			// store it in the map for when we close...
 			statements.put(ret, null);
@@ -517,7 +520,7 @@ public class MonetConnection extends Thread implements Connection {
 		try {
 			PreparedStatement ret =
 				new MonetPreparedStatement(
-					monet, this, resultSetType, resultSetConcurrency, sql
+					this, resultSetType, resultSetConcurrency, sql
 				);
 			// store it in the map for when we close...
 			statements.put(ret, null);
@@ -551,9 +554,7 @@ public class MonetConnection extends Thread implements Connection {
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 
 		// send the appropriate query string to the database
-		String error =
-			sendIndependantCommand("sRELEASE SAVEPOINT " + sp.getName() + ";");
-		if (error != null) throw new SQLException(error);
+		sendIndependantCommand("sRELEASE SAVEPOINT " + sp.getName() + ";");
 	}
 
 	/**
@@ -566,7 +567,8 @@ public class MonetConnection extends Thread implements Connection {
 	 * @see #setAutoCommit(boolean)
 	 */
 	public void rollback() throws SQLException {
-		sendRollback();
+		// send commit to the server (note the s in front is a protocol issue)
+		sendIndependantCommand("sROLLBACK;");
 	}
 
 	/**
@@ -586,9 +588,7 @@ public class MonetConnection extends Thread implements Connection {
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 
 		// send the appropriate query string to the database
-		String error =
-			sendIndependantCommand("sROLLBACK TO SAVEPOINT " + sp.getName() + ";");
-		if (error != null) throw new SQLException(error);
+		sendIndependantCommand("sROLLBACK TO SAVEPOINT " + sp.getName() + ";");
 	}
 
 	/**
@@ -615,9 +615,7 @@ public class MonetConnection extends Thread implements Connection {
 	 * @see #getAutoCommit()
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		String error =
-			sendIndependantCommand("SSET auto_commit = " + autoCommit + ";");
-		if (error != null) throw new SQLException(error);
+		sendIndependantCommand("SSET auto_commit = " + autoCommit + ";");
 	}
 
 	public void setCatalog(String catalog) {}
@@ -636,9 +634,7 @@ public class MonetConnection extends Thread implements Connection {
 		// create a new Savepoint object
 		MonetSavepoint sp = new MonetSavepoint();
 		// send the appropriate query string to the database
-		String error =
-			sendIndependantCommand("sSAVEPOINT " + sp.getName() + ";");
-		if (error != null) throw new SQLException(error);
+		sendIndependantCommand("sSAVEPOINT " + sp.getName() + ";");
 
 		return(sp);
 	}
@@ -661,9 +657,7 @@ public class MonetConnection extends Thread implements Connection {
 			throw new SQLException(e.getMessage());
 		}
 		// send the appropriate query string to the database
-		String error =
-			sendIndependantCommand("sSAVEPOINT " + sp.getName() + ";");
-		if (error != null) throw new SQLException(error);
+		sendIndependantCommand("sSAVEPOINT " + sp.getName() + ";");
 
 		return(sp);
 	}
@@ -700,58 +694,6 @@ public class MonetConnection extends Thread implements Connection {
 	//== end methods of interface Connection
 
 	/**
-	 * Changes the reply size of the server to the given value. If the given
-	 * value is the same as the current value, the call is ignored and this
-	 * method will immediately return.
-	 *
-	 * @param size the new reply size to use
-	 * @throws SQLException if a database (access) error occurs
-	 */
-	void setReplySize(int size) throws SQLException {
-		synchronized(monet) {
-			// don't do work if it's not needed
-			if (size == curReplySize) return;
-
-			String error =
-				sendIndependantCommand("SSET reply_size = " + size + ";");
-			if (error != null) throw new SQLException(error);
-
-			// store the reply size after a successful change
-			curReplySize = size;
-		}
-	}
-
-	/**
-	 * Makes all changes made since the previous commit/rollback permanent and
-	 * releases any database locks currently held by this Connection object.
-	 * This method sends the actual command to the server to make it effective.
-	 *
-	 * @throws SQLException if a database access error occurs
-	 */
-	void sendCommit() throws SQLException {
-		// send commit to the server (note the s in front is a protocol issue)
-		String error = sendIndependantCommand("sCOMMIT;");
-		// I don't know why and how an error could be produced, but you never
-		// know with MonetDB
-		if (error != null) throw new SQLException(error);
-	}
-
-	/**
-	 * Undoes all changes made in the current transaction and releases any
-	 * database locks currently held by this Connection object. This method
-	 * sends the actual command to the server to make it effective.
-	 *
-	 * @throws SQLException if a database access error occurs
-	 */
-	void sendRollback() throws SQLException {
-		// send commit to the server (note the s in front is a protocol issue)
-		String error = sendIndependantCommand("sROLLBACK;");
-		// I don't know why and how an error could be produced, but you never
-		// know with MonetDB
-		if (error != null) throw new SQLException(error);
-	}
-
-	/**
 	 * Sends the given string to MonetDB, making sure there is a prompt before
 	 * and after the command has sent. All possible returned information is
 	 * discarded.
@@ -759,24 +701,14 @@ public class MonetConnection extends Thread implements Connection {
 	 * @param command the exact string to send to MonetDB
 	 * @return a string containing errors that occurred after the command was
 	 *         executed, or null if no errors occurred
-	 * @throws SQLException if an IO exception occurs
+	 * @throws SQLException if an IO exception or a database error occurs
 	 */
-	String sendIndependantCommand(String command) throws SQLException {
+	void sendIndependantCommand(String command) throws SQLException {
 		String error;
-		// get lock on MonetDB
-		synchronized(monet) {
-			try {
-				// make sure we have the prompt
-				monet.waitForPrompt();
-				// send the command
-				monet.writeln(command);
-				// wait for the prompt again
-				error = monet.waitForPrompt();
-			} catch (IOException e) {
-				throw new SQLException(e.toString());
-			}
-		}
-		return(error);
+		HeaderList hdrl =
+			addQuery(command, 20, 0, 0, 0);
+		
+		while (hdrl.getNextHeader() != null);
 	}
 
 	/**
@@ -950,99 +882,137 @@ public class MonetConnection extends Thread implements Connection {
 	/**
 	 * Executes the query contained in the given HeaderList, and stores the
 	 * Headers resulting from this query in the HeaderList.
+	 * There is no need for an exclusive lock on the monet object here.
+	 * Since there is a queue system, queries are executed only by on
+	 * specialised thread.  The monet object is not accessible for any
+	 * other object (ok, not entirely true) so this specialised thread
+	 * is the only one accessing it.
 	 *
 	 * @param hdrl a HeaderList which contains the query to execute
 	 */
 	private void processQuery(HeaderList hdrl) {
+		SendThread sendThread = null;
+		
+		try {
+			// make sure we're ready to send query; read data till we have the
+			// prompt it is possible (and most likely) that we already have
+			// the prompt and do not have to skip any lines.  Ignore errors from
+			// previous result sets.
+			monet.waitForPrompt();
 
-		synchronized (monet) {
+			// set the reply size for this query.  If it is set to 0 we get a
+			// prompt after the server sent it's header
 			try {
-				// make sure we're ready to send query; read data till we have the
-				// prompt it is possible (and most likely) that we already have
-				// the prompt and do not have to skip any lines.  Ignore errors from
-				// previous result sets.
-				monet.waitForPrompt();
+				/**
+				 * Change the reply size of the server. If the given
+				 * value is the same as the current value known to use,
+				 * then ignore this call.
+				 */
+				int size =
+					hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, hdrl.cachesize) : hdrl.cachesize;
+				// don't do work if it's not needed
+				if (size != curReplySize) {
+					monet.writeln("SSET reply_size = " + size + ";");
 
-				// set the reply size for this query.  If it is set to 0 we get a
-				// prompt after the server sent it's header
-				try {
-					setReplySize(
-						hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, hdrl.cachesize) : hdrl.cachesize);
-				} catch (SQLException e) {
-					hdrl.addError(e.getMessage());
-					hdrl.setComplete();
-					return;
-				}
-
-				// send the query
-				monet.writeln(hdrl.query);
-
-				// go for new results
-				String tmpLine;
-				Header hdr = null;
-				RawResults rawr = null;
-				int lastState = MonetSocket.UNKNOWN;
-				do {
-					tmpLine = monet.readLine();
-					if (monet.getLineType() == MonetSocket.ERROR) {
-						// store the error message in the Header object
-						hdrl.addError(tmpLine.substring(1));
-					} else if (monet.getLineType() == MonetSocket.SOHEADER) {
-						// close previous if set
-						if (hdr != null) {
-							hdr.complete();
-							hdrl.addHeader(hdr);
-						}
-
-						// create new header
-						hdr = new Header(
-							this,
-							hdrl.cachesize,
-							hdrl.maxrows,
-							hdrl.rstype,
-							hdrl.rsconcur
-						);
-						rawr = null;
-					} else if (monet.getLineType() == MonetSocket.HEADER) {
-						if (hdr == null) throw new SQLException("Protocol violation: header sent before start of header was issued!");
-						hdr.addHeader(tmpLine);
-					} else if (monet.getLineType() == MonetSocket.RESULT) {
-						// complete the header info and add to list
-						if (lastState == MonetSocket.HEADER) {
-							hdr.complete();
-							rawr = new RawResults(Math.min(hdrl.cachesize, hdr.getTupleCount()), null);
-							hdr.addRawResults(0, rawr);
-							// a RawResults must be in hdr at this point!!!
-							hdrl.addHeader(hdr);
-							hdr = null;
-						}
-						rawr.addRow(tmpLine);
-					} else if (monet.getLineType() == MonetSocket.UNKNOWN) {
-						// unknown, will mean a protocol violation
-						hdrl.addError("Protocol violation: unknown linetype for line: " + tmpLine);
-					}
-				} while ((lastState = monet.getLineType()) != MonetSocket.PROMPT1);
-				// catch resultless headers
-				if (hdr != null) {
-					hdr.complete();
-					hdrl.addHeader(hdr);
+					String error = monet.waitForPrompt();
+					if (error != null) throw new SQLException(error);
+					
+					// store the reply size after a successful change
+					curReplySize = size;
 				}
 			} catch (SQLException e) {
 				hdrl.addError(e.getMessage());
-				// if MonetDB sent us an incomplete or malformed header, we have
-				// big problems, thus discard the whole bunch and quit processing
-				// this one
-				try {
-					monet.waitForPrompt();
-				} catch (IOException ioe) {
-					hdrl.addError(e.toString());
-				}
-			} catch (IOException e) {
-				hdrl.addError(e.getMessage() + " (Mserver still alive?)");
+				hdrl.setComplete();
+				return;
 			}
-			// close the header list, no more headers will follow
-			hdrl.setComplete();
+
+			// send the query
+			// If the query is large (> 8192 chars) use a special send thread
+			// to avoid deadlock with the server in the case the TCP buffers
+			// overflow.  In case a large query is sent, the TCP stack can
+			// overflow, which will make a normal write call block.  However,
+			// the server is writing results back to us, which will block as
+			// as well in the end, resulting in a state where both client and
+			// server want to write, but block.
+			if (hdrl.query.length() > 8192) {
+				// get a reference to the send thread
+				sendThread = SendThread.getInstance();
+				// tell it to do some work!
+				sendThread.runQuery(hdrl.query, monet);
+			} else {
+				// this is a simple call, which is a lot cheaper for and will
+				// always succeed for small queries
+				monet.writeln(hdrl.query);
+			}
+
+			// go for new results
+			String tmpLine;
+			Header hdr = null;
+			RawResults rawr = null;
+			int lastState = MonetSocket.UNKNOWN;
+			do {
+				tmpLine = monet.readLine();
+				if (monet.getLineType() == MonetSocket.ERROR) {
+					// store the error message in the Header object
+					hdrl.addError(tmpLine.substring(1));
+				} else if (monet.getLineType() == MonetSocket.SOHEADER) {
+					// close previous if set
+					if (hdr != null) {
+						hdr.complete();
+						hdrl.addHeader(hdr);
+					}
+
+					// create new header
+					hdr = new Header(
+						this,
+						hdrl.cachesize,
+						hdrl.maxrows,
+						hdrl.rstype,
+						hdrl.rsconcur
+					);
+					rawr = null;
+				} else if (monet.getLineType() == MonetSocket.HEADER) {
+					if (hdr == null) throw
+						new SQLException("Protocol violation: header sent before start of header was issued!");
+					hdr.addHeader(tmpLine);
+				} else if (monet.getLineType() == MonetSocket.RESULT) {
+					// complete the header info and add to list
+					if (lastState == MonetSocket.HEADER) {
+						hdr.complete();
+						rawr = new RawResults(Math.min(hdrl.cachesize, hdr.getTupleCount()), null);
+						hdr.addRawResults(0, rawr);
+						// a RawResults must be in hdr at this point!!!
+						hdrl.addHeader(hdr);
+						hdr = null;
+					}
+					rawr.addRow(tmpLine);
+				} else if (monet.getLineType() == MonetSocket.UNKNOWN) {
+					// unknown, will mean a protocol violation
+					hdrl.addError("Protocol violation: unknown linetype for line: " + tmpLine);
+				}
+			} while ((lastState = monet.getLineType()) != MonetSocket.PROMPT1);
+			// catch resultless headers
+			if (hdr != null) {
+				hdr.complete();
+				hdrl.addHeader(hdr);
+			}
+			// if we used the sendThread, make sure it has finished
+			if (sendThread != null) sendThread.throwErrors();
+		} catch (SQLException e) {
+			hdrl.addError(e.getMessage());
+			// if MonetDB sent us an incomplete or malformed header, we have
+			// big problems, thus discard the whole bunch and quit processing
+			// this one
+			try {
+				monet.waitForPrompt();
+			} catch (IOException ioe) {
+				hdrl.addError(e.toString());
+			}
+		} catch (IOException e) {
+			hdrl.addError(e.getMessage() + " (Mserver still alive?)");
 		}
+		// close the header list, no more headers will follow
+		hdrl.setComplete();
 	}
 
 	/**
@@ -1773,7 +1743,7 @@ public class MonetConnection extends Thread implements Connection {
 				// header is obviously completed so, there are no more headers
 				return(null);
 			} else {
-				// return this header, and increment the counter
+				// return this header
 				return(getHeader(curHeader));
 			}
 		}
@@ -1825,5 +1795,56 @@ public class MonetConnection extends Thread implements Connection {
 			close();
 			super.finalize();
 		}
+	}
+}
+
+class SendThread extends Thread {
+	private static SendThread myself;
+	private String query;
+	private MonetSocket conn;
+	private String error;
+
+	private SendThread() {
+		super("SendThread");
+		setDaemon(true);
+		start();
+	}
+
+	public static synchronized SendThread getInstance() {
+		if (myself == null) myself = new SendThread();
+		return(myself);
+	}
+
+	public synchronized void run() {
+		while (true) {
+			while (query == null) {
+				try {
+					this.wait();
+				} catch (InterruptedException e) {
+					// woken up, eh?
+				}
+			}
+
+			try {
+				conn.writeln(query);
+			} catch (IOException e) {
+				error = e.getMessage();
+			}
+			
+			conn = null;
+			query = null;
+		}
+	}
+
+	public synchronized void runQuery(String query, MonetSocket monet) {
+		this.query = query;
+		conn = monet;
+	
+		this.notify();
+	}
+
+	public void throwErrors() throws SQLException {
+		if (query != null) throw new AssertionError("Aaaiiiiiiii!!! SendThread not finished :(");
+		if (error != null) throw new SQLException(error);
 	}
 }
