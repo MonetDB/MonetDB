@@ -188,8 +188,8 @@ support for this), you can then make vertical slices.
 Use @%VIEWhead@ for this. 
 @
 It is possible to create a view on a writeable BAT. Updates
-in the parent are then automatically reflected in the VIE.
-Not ethat the VIEW bat itself can never be modified.
+in the parent are then automatically reflected in the VIEW.
+Note that the VIEW bat itself can never be modified.
 @
 Horizontal views should only be given out on a view BAT, but
 only if it is dead sure the parent BAT is read-only.
