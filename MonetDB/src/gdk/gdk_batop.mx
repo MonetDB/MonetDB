@@ -1980,8 +1980,9 @@ bunins_failed:
 		strcpy(bn->hatom, ATOMname(b->ttype));
 	}
 	BATkey(bn,TRUE);
-	bn->hsorted = BATtordered(b);
-	bn->tsorted = FALSE;
+	BATkey(BATmirror(bn),BATcount(bn)<2);
+	bn->hsorted = (BATcount(bn)<2 ? GDK_SORTED : BATtordered(b));
+	bn->tsorted = (BATcount(bn)<2 ? GDK_SORTED : FALSE);
         bn->halign = NOID_AGGR(b->talign); 
         if (BATcount(bn) == BATcount(b)) {
 		BAT *bm = BATmirror(b);
