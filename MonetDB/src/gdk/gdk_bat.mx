@@ -61,7 +61,6 @@ called atomHeap.
 #include "gdk.h"
 
 gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
-gdk_export size_t BATtopN(BAT *b, size_t topN);		/* used in monet5/src/modules/kernel/algebra.mx */
 
 #endif /* _GDK_BAT_H_ */
 @c
@@ -1140,31 +1139,6 @@ size_t BATcount (BAT *b) {
 	return (l - f);
 }
 @-
-The top-N elements can be easily obtained by trimming the
-space. The auxillary index structures are removed.
-For non-variable size BATs it merely requires
-adjustment of the free space labels. Other BATs require
-a loop through the tuples to be deleted. [todo]
-@c
-size_t BATtopN(BAT *b, size_t topN){
-	BATcheck(b,"BATtopN");
-	if( topN > BATcount(b)) {
-		GDKerror("BATtrim not enough tuples in target\n");
-	} else
-	if( topN * BUNsize(b) > b->batBuns->size) {
-		GDKerror("BATtrim not enough capacity\n");
-	} else
-	if( b->dims.headvarsized || b->dims.tailvarsized ){
-		HASHremove(b);
-		while( BATcount(b)> topN)
-			BUNdelete(b,BUNlast(b));
-	} else { 
-		HASHremove(b);
-		b->batBuns->free= BUNptr(b,topN+1)- Bunbase(b);
-	}
-	return 0;
-}
-@-
 The alternative routine is @%BATbuncount@, which calculates the
 total buns in use.
 @c
@@ -1253,18 +1227,217 @@ BAT *BATset(BAT *b, int flag) {
 	return b; 
 }
 
-@- BATsetaccess
-@T
-Changes the access permission mode. It may seem simple, but this has become very tricky 
-when memory-mapped files are involved.
+BAT *BATseqbase(BAT *b, oid o) {
+	BATcheck(b, "BATseqbase"); 
+	if (ATOMtype(b->htype) == TYPE_oid) {
+		BAT* m = BATmirror(b);
+        	if (b->hseqbase != o) {
+        		b->batDirtydesc = TRUE;
+			/* zap alignment if column is changed by new seqbase */
+			if (b->htype == TYPE_void) b->halign = m->talign = 0; 
+		}
+        	m->tseqbase = b->hseqbase = o;
 
-Let us recall the two main memory mapped file modes:
+		/* adapt keyness */
+		if (BAThvoid(b)) {
+        	    if (o == oid_nil) {
+               		if (b->hkey) m->tkey = b->hkey = FALSE;
+        	    } else {
+               		if (!b->hkey) m->tkey = b->hkey = TRUE;
+		    }
+		}
+	}
+	return b;
+}
+
+@- 
+BATs have a logical name that is indepent of their 
+location in the file system (this depends on batCacheid).
+The dimensions of the BAT can be given a separate name.
+It helps front-ends in identifying the column of interest.
+The new name should be recognizable as an identifier.
+Otherwise interaction through the front-ends becomes
+complicated.
+@c
+int BATname(BAT *b, str nme) {
+	BATcheck(b, "BATname"); 
+	return BBPrename(b->batCacheid, nme); 
+}
+
+str BATrename(BAT *b, str nme) {
+	int ret = BATname(b, nme); 
+
+	if (ret == 1) {
+		GDKerror("BATrename: identifier expected: %s\n",nme);
+	} else if (ret == BBPRENAME_ALREADY) {
+		GDKerror("BATrename: name is in use: '%s'.\n", nme); 
+	} else if (ret == BBPRENAME_ILLEGAL) {
+		GDKerror("BATrename: illegal temporary name: '%s'\n", nme); 
+	} else if (ret == BBPRENAME_LONG) {
+		GDKerror("BATrename: name too long: '%s'\n", nme); 
+	}
+	return BBPname(b->batCacheid); 
+}
+
+
+BAT *BATroles(BAT *b, str hnme,str tnme) {
+	size_t i;
+
+	BATcheck(b,"BATroles");
+	if( (i = strlen(hnme)) >= IDLENGTH - 1) {
+		GDKerror("BATroles:head name too long\n");
+		hnme[IDLENGTH-1] = 0;
+		i = IDLENGTH-1;
+	}
+	memcpy(b->hident,hnme,i+1);
+	if( (i = strlen(tnme)) >= IDLENGTH - 1) {
+		GDKerror("BATroles:tail name too long\n");
+		tnme[IDLENGTH-1] = 0;
+		i = IDLENGTH-1;
+	}
+	memcpy(b->tident,tnme,i+1);
+	return b;
+}
+
+
+@+ BAT permissions, persistency and memory mapped heaps
+@T
+The way large heaps are memory mapped is dependent both on the BAT persistency status (persistent or not)
+as well as their update permissions (readonly,append-only,writable).
+
+Let us recall the two main memory mapped file modes used to store heaps:
 \begin{itemize}
 \item STORE_MMAP files must be readonly, because you never know the exact saved status. 
       HEAPsave consists of the rather efficient msync(X).
 \item STORE_PRIV files modify pages in swap area, and can be writable. 
       HEAPsave actually does a full write(X), while the mapped file stays in X.priv
 \end{itemize}
+Notice that PRIV storage is only required for persistent BATs that are already committed 
+on disk. The crash-consistent state of transient BATs is irrelevant as they disappear
+after a crash. Even the crash-consistency of persistent BATs that did not make their first
+commit is not relevant as they also will disappear.
+
+Also, some heaps may be in use with STORE_MMAP even if they are appendable, as we suppose our
+code is bug-free (:-) and we know we won't modify the already committed parts of the mapped
+file pages. For string-heaps append-bats may mmap the heap if doubles are not  being eliminated
+anymore (i.e. when the contents of the builtin hash table at the start of the string heap
+are not crucial anymore).
+@c
+#define ATOMappendpriv(t,h) ((BATatoms[t].atomHeapCheck != HEAP_check || !HEAP_mmappable(h)) && \
+			     (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h)))
+
+@- BATmmap
+@T
+Changing the storage status of heaps in a BAT is done in @:BATmmap@. 
+The new semantics is to do nothing: the new mapping only takes effect the next time the bat is loaded. 
+
+Thus we cannot modify the hp->storage fields, but rather store the new modes in special
+batMap fields that are used when the BAT descriptor is saved.
+
+This makes the BATmmap safer \& simpler as it is now
+incorporated in the normal bat loading and saving mechanism.
+
+It also makes the mmap faster as when through caching you
+are finished with the BAT before it is ever swapped to disk
+it will never have been written, whereas the old mmap obliged you to 
+save a BAT directly.
+@c
+int BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc){
+        BATcheck(b, "BATmmap");
+       	IODEBUG {
+		THRprintf(GDKerr, "BATmmap(%s,%d,%d,%d,%d,%d)\n", b->batId,bns,hhp,thp,hacc,tacc); 
+	}
+	/* Reverse back if required, as this determines which heap is saved in the 
+	 * "hheap" file and which in the "theap" file (and haccelerator/taccelerator).
+       	 */
+	if (b->batCacheid < 0) {
+		int swap=hhp; hhp=thp; thp=swap;
+		swap=hacc; hacc=tacc; tacc=swap;
+		b = BATmirror(b);
+	}
+	b->batMapdirty = TRUE;
+	b->batMapbuns = bns;
+	b->batMaphheap = hhp;
+	b->batMaptheap = thp;
+	b->batMaphacc = hacc;
+	b->batMaptacc = tacc;
+
+	b->batDirtydesc = 1;
+	return 0;
+}
+
+@- BATmadvise
+@= madvise
+	if ((@1 >=0) && (@2)->base && ((@2)->storage==STORE_MMAP)) {
+	    if (MT_madvise((@2)->base, (@2)->free, @1)) {
+		GDKsyserror("madvise on @2 @1 failed.\n");
+		return -1;
+	    }
+	}
+@c
+int BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc) {
+	@:madvise(bns, b->batBuns)@
+	@:madvise(hhp, &b->hheap)@
+	@:madvise(thp, &b->theap)@
+	@:madvise(hacc, &b->haccelerator)@
+	@:madvise(tacc, &b->taccelerator)@
+	return 0;
+}
+
+@- BATcheckmodes
+
+Checks legal heap modes. This is done at BATsave time on a temporary copy of the BAT descriptor
+(DESCsetmodes). It now is also used from TMcommit, as one of the cirteria for whether a heap
+needs priv storage is whether the BAT has been committed ever (see also dirty_bat() in gdk_bbp.mx).
+@c
+static int HEAPcheckmode(Heap *h, int persistent, int unloadable, int writeable) {
+	/* user may have requested illegal or system-wise unwanted mmap modes. correct this */
+	if (h->size > 0 && h->storage == STORE_MMAP && persistent && writeable) {
+		/* in a commit, we are sometimes forced to start treating MMAP heaps as PRIV */
+		if (!unloadable) h->storage = STORE_PRIV; 
+		return 1;
+	}
+	return 0;
+}
+
+int BATcheckmodes(BAT *b, int persistent, int unloadable) {
+	int dirty = 0;
+	if (HEAPcheckmode(b->batBuns, persistent, unloadable, b->batRestricted == BAT_WRITE)) {
+		b->batMapbuns = STORE_PRIV;
+		dirty = b->batMapdirty = TRUE;
+	}
+	if (HEAPcheckmode(&b->hheap, persistent, unloadable, b->batRestricted == BAT_WRITE ||
+		(b->batRestricted == BAT_APPEND && ATOMappendpriv(b->htype, &b->hheap))))
+	{
+		b->batMaphheap = STORE_PRIV;
+		dirty = TRUE;
+	}
+	if (HEAPcheckmode(&b->theap, persistent, unloadable, b->batRestricted == BAT_WRITE ||
+		(b->batRestricted == BAT_APPEND && ATOMappendpriv(b->ttype, &b->theap))))
+	{
+		b->batMaptheap = STORE_PRIV;
+		dirty = TRUE;
+	}
+	if (HEAPcheckmode(&b->haccelerator, persistent, unloadable, b->batRestricted != BAT_READ)) {
+		b->batMaphacc = STORE_PRIV;
+		dirty = TRUE;
+	}
+	if (HEAPcheckmode(&b->taccelerator, persistent, unloadable, b->batRestricted != BAT_READ)) {
+		b->batMaptacc = STORE_PRIV;
+		dirty = TRUE;
+	}
+	b->batMapdirty |= dirty;
+	b->batDirtydesc |= dirty;
+	return dirty;
+}
+
+
+@- Change the BAT access permissions (read, append,write)
+@T
+BATsetaccess() may seem simple, but this has become very tricky when memory-mapped files 
+are involved.
+@-
+@T
 In case of a change from writable->readonly (PRIV->MMAP), nothing needs to be done immediately.
 The mapped BAT is saved in the old mode (in X, not X.priv), and made un-modifyable.
 As there are no updates, we need not worry about saving either.
@@ -1325,7 +1498,7 @@ first time, as its file will be ignored if [ht]accCopiedtodisc in the .desc
 is not set (only happens after fully succesful heap write).
 @c
 /* transition heap from readonly to writable (or appendable) */
-static int make_writable(Heap *hp, int committed, int *remap, int *reload) {
+static int HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload) {
 	str p;
 	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL) {
 		return hp->storage;
@@ -1350,7 +1523,7 @@ static int make_writable(Heap *hp, int committed, int *remap, int *reload) {
 	 
 		/* rename X->X.priv is crucial. If X becomes persistent later, we must be able to save to X */
 		ret = rename(src, dst);
-	 	IODEBUG THRprintf(GDKerr, "BATsetaccess(make_writable): rename(%s,%s) = %d\n", src, dst, ret);
+	 	IODEBUG THRprintf(GDKerr, "BATsetaccess(HEAPsetpriv): rename(%s,%s) = %d\n", src, dst, ret);
 		if (ret >= 0) {
 			GDKfree(hp->filename);
 			hp->filename = GDKstrdup(nme); 
@@ -1363,7 +1536,7 @@ static int make_writable(Heap *hp, int committed, int *remap, int *reload) {
 }
 
 /* transition heap from writable (or appendable) to readonly */
-static int make_readonly(Heap *hp, int *remap) {
+static int HEAPsetmmap(Heap *hp, int *remap) {
 	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL) {
 		return hp->storage;
 	}
@@ -1382,7 +1555,7 @@ static int make_readonly(Heap *hp, int *remap) {
 
 		/* rename X.priv->X is not crucial for this to work (X.priv is not in the way) */
 	 	ret = rename(src, dst);
-	 	IODEBUG THRprintf(GDKerr, "BATsetaccess(make_readonly) rename(%s,%s) = %d\n", src, dst, ret);
+	 	IODEBUG THRprintf(GDKerr, "BATsetaccess(HEAPsetmmap) rename(%s,%s) = %d\n", src, dst, ret);
 	} else {
 		/* state(1), goto state (4) */
 		hp->storage = STORE_MMAP; /* direct change! */
@@ -1413,18 +1586,30 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	        b = BATsetaccess(batcopy(b,b->htype,b->ttype,TRUE),mode); 
 		if (b->batStamp > 0) b->batStamp = -b->batStamp; /* prevent MIL setaccess */
 	    } else {
-		if (mode == BAT_READ) {
-		    m1 = make_readonly(b->batBuns, &remap);
-		    m2 = make_readonly(&b->hheap, &remap);
-		    m3 = make_readonly(&b->theap, &remap);
-		    m4 = make_readonly(&b->haccelerator, &remap);
-		    m5 = make_readonly(&b->taccelerator, &remap);
+		if (mode == BAT_WRITE) {
+		    m1 = HEAPsetpriv(b->batBuns, committed, &remap, &reload);
+		} else {
+		    m1 = HEAPsetmmap(b->batBuns, &remap);
+		}
+		if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->htype, &b->hheap))) {
+		    m2 = HEAPsetpriv(&b->hheap, committed, &remap, &reload);
+		} else {
+		    m2 = HEAPsetmmap(&b->hheap, &remap);
+		}
+		if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->ttype, &b->theap))) {
+		    m3 = HEAPsetpriv(&b->theap, committed, &remap, &reload);
+		} else {
+		    m3 = HEAPsetmmap(&b->theap, &remap);
+		}
+		if (mode != BAT_READ) {
+		    m4 = HEAPsetpriv(&b->haccelerator, committed, &remap, &reload);
+		} else {
+		    m4 = HEAPsetmmap(&b->haccelerator, &remap);
+		}
+		if (mode != BAT_READ) {
+		    m5 = HEAPsetpriv(&b->taccelerator, committed, &remap, &reload);
 	 	} else { /* BAT_APPEND || BAT_WRITE */
-		    m1 = make_writable(b->batBuns, committed, &remap, &reload);
-		    m2 = make_writable(&b->hheap, committed, &remap, &reload);
-		    m3 = make_writable(&b->theap, committed, &remap, &reload);
-		    m4 = make_writable(&b->haccelerator, committed, &remap, &reload);
-		    m5 = make_writable(&b->taccelerator, committed, &remap, &reload);
+		    m5 = HEAPsetmmap(&b->taccelerator, &remap);
 		}
 	    }
 	    if (remap && b->batCopiedtodisk && dirty) {
@@ -1470,112 +1655,7 @@ int BATgetaccess(BAT *b) {
 	return b->batRestricted;
 }
 
-@- check legal heap modes
-
-Some heaps may be in use with STORE_MMAP even if they are appendable, as we suppose our
-code is bug-free (:-) and we know we won't modify the already committed parts of the mapped
-file pages. For string-heaps append-bats may mmap the heap if doubles are not  being eliminated
-anymore (i.e. when the contents of the builtin hash table at the start of the string heap
-are not crucial anymore).
-
-Se the comment at dirty_bat() in gdk_bbp.mx to understand why we won't correct (just report) 
-the heap storage modes if unloadable is set.
-@c
-static int HEAPcheckmode(Heap *h, int persistent, int unloadable, int writeable) {
-	/* user may have requested illegal or system-wise unwanted mmap modes. correct this */
-	if (h->size > 0 && h->storage == STORE_MMAP && persistent && writeable) {
-		if (!unloadable) h->storage = STORE_PRIV; /* writable mmap needs copy-on-write */
-		return 1;
-	}
-	return 0;
-}
-
-int BATcheckmodes(BAT *b, int persistent, int unloadable) {
-	int dirty = 0;
-	if (HEAPcheckmode(b->batBuns, persistent, unloadable, b->batRestricted == BAT_WRITE)) {
-		b->batMapbuns = STORE_PRIV;
-		dirty = b->batMapdirty = TRUE;
-	}
-	if (HEAPcheckmode(&b->hheap, persistent, unloadable, b->batRestricted == BAT_WRITE ||
-		(b->batRestricted == BAT_APPEND && 
-	  	(BATatoms[b->htype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&b->hheap)) && 
-		(ATOMstorage(b->htype) != TYPE_str || GDK_ELIMDOUBLES((&b->hheap)))))) 
-	{
-		b->batMaphheap = STORE_PRIV;
-		dirty = TRUE;
-	}
-	if (HEAPcheckmode(&b->theap, persistent, unloadable, b->batRestricted == BAT_WRITE ||
-		(b->batRestricted == BAT_APPEND && 
-	  	(BATatoms[b->ttype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&b->theap)) && 
-		(ATOMstorage(b->ttype) != TYPE_str || GDK_ELIMDOUBLES((&b->theap))))))
-	{
-		b->batMaptheap = STORE_PRIV;
-		dirty = TRUE;
-	}
-	if (HEAPcheckmode(&b->haccelerator, persistent, unloadable, b->batRestricted != BAT_READ)) {
-		b->batMaphacc = STORE_PRIV;
-		dirty = TRUE;
-	}
-	if (HEAPcheckmode(&b->taccelerator, persistent, unloadable, b->batRestricted != BAT_READ)) {
-		b->batMaptacc = STORE_PRIV;
-		dirty = TRUE;
-	}
-	b->batMapdirty |= dirty;
-	b->batDirtydesc |= dirty;
-	return dirty;
-}
-
-@- 
-BATs have a logical name that is indepent of their 
-location in the file system (this depends on batCacheid).
-The dimensions of the BAT can be given a separate name.
-It helps front-ends in identifying the column of interest.
-The new name should be recognizable as an identifier.
-Otherwise interaction through the front-ends becomes
-complicated.
-@c
-int BATname(BAT *b, str nme) {
-	BATcheck(b, "BATname"); 
-	return BBPrename(b->batCacheid, nme); 
-}
-
-str BATrename(BAT *b, str nme) {
-	int ret = BATname(b, nme); 
-
-	if (ret == 1) {
-		GDKerror("BATrename: identifier expected: %s\n",nme);
-	} else if (ret == BBPRENAME_ALREADY) {
-		GDKerror("BATrename: name is in use: '%s'.\n", nme); 
-	} else if (ret == BBPRENAME_ILLEGAL) {
-		GDKerror("BATrename: illegal temporary name: '%s'\n", nme); 
-	} else if (ret == BBPRENAME_LONG) {
-		GDKerror("BATrename: name too long: '%s'\n", nme); 
-	}
-	return BBPname(b->batCacheid); 
-}
-
-
-
-BAT *BATroles(BAT *b, str hnme,str tnme) {
-	size_t i;
-
-	BATcheck(b,"BATroles");
-	if( (i = strlen(hnme)) >= IDLENGTH - 1) {
-		GDKerror("BATroles:head name too long\n");
-		hnme[IDLENGTH-1] = 0;
-		i = IDLENGTH-1;
-	}
-	memcpy(b->hident,hnme,i+1);
-	if( (i = strlen(tnme)) >= IDLENGTH - 1) {
-		GDKerror("BATroles:tail name too long\n");
-		tnme[IDLENGTH-1] = 0;
-		i = IDLENGTH-1;
-	}
-	memcpy(b->tident,tnme,i+1);
-	return b;
-}
-
-@- change bat mode (persistent,session,transient)
+@- change BAT persistency (persistent,session,transient)
 @T
 In the past, we prevented BATS with certain types from being saved at all:
 - BATs of BATs, as having recursive bats creates cascading complexities in commits/aborts. 
@@ -1586,7 +1666,12 @@ However, nowadays we do allow such saves, as the BBP swapping mechanism was alte
 to be able to save transient bats temporarily to disk in order to make room.
 Thus, we must be able to save any transient BAT to disk. 
 
-What we don't allow is to make such bats persistent.
+What we don't allow is to make such bats persistent. 
+
+Allthough the persistent state does influence the allowed mmap modes, this only
+goes for the *real* committed persistent state. Making the bat persistent with BATmode 
+does not matter for the heap modes until the commit point is reached. So we do not
+need to do anything with heap modes yet at this point.
 
 @= check_type
         if (ATOMisdescendant(@1, TYPE_ptr) || ATOMisdescendant(@1, TYPE_bat) ||	
@@ -1650,43 +1735,9 @@ BAT *BATmode(BAT *b, int mode) {
         return b;
 }
 
-int BATkeytst(BAT *b, ptr h, ptr t) {
-	BUN p = NULL; 
 
-	BATcheck(b, "BATkeytst"); 
-	if (b->hkey && b->htype && h) {
-		p = BUNfnd(b, h); 
-	}
-	if (b->tkey && b->ttype && t) {
-		p = BUNfnd(BATmirror(b), t); 
-	}
-	return (p != NULL); 
-}
 
-BAT *BATseqbase(BAT *b, oid o) {
-	BATcheck(b, "BATseqbase"); 
-	if (ATOMtype(b->htype) == TYPE_oid) {
-		BAT* m = BATmirror(b);
-        	if (b->hseqbase != o) {
-        		b->batDirtydesc = TRUE;
-			/* zap alignment if column is changed by new seqbase */
-			if (b->htype == TYPE_void) b->halign = m->talign = 0; 
-		}
-        	m->tseqbase = b->hseqbase = o;
-
-		/* adapt keyness */
-		if (BAThvoid(b)) {
-        	    if (o == oid_nil) {
-               		if (b->hkey) m->tkey = b->hkey = FALSE;
-        	    } else {
-               		if (!b->hkey) m->tkey = b->hkey = TRUE;
-		    }
-		}
-	}
-	return b;
-}
-
-@- BATpropcheck
+@+ BATpropcheck
 
 This is a low-cost routine that smartly tries to deduce as 
 much properties possible on the head column of its BAT parameter.

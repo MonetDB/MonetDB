@@ -2784,10 +2784,6 @@ position after the  last occurence of that value.
 #define SORTloop_oid(b,p,q,tl,th,s) SORTloop_lng(b,p,q,tl,th,s) 
 #endif
 #define SORTloop_bit(b,p,q,tl,th,s) SORTloop_chr(b,p,q,tl,th,s) 
-@T
-We should not forget to mention the use of the 
-{\tt ~monet/src/utils/rewrite.c} utility to post-compile (C to C) programs
-containing these macros to even faster code.
 @
 @}
 
@@ -2821,6 +2817,8 @@ gdk_export int		BATgetaggr   (BAT *b, int idx);
 gdk_export int		BATsetaggr   (BAT *b, int idx, int val);
 gdk_export BAT*		BATsample    (BAT *b, size_t n);
 gdk_export BAT*		BAThistogram (BAT *b); 
+gdk_export size_t 	BATtopN(BAT *b, size_t topN);         /* used in monet5/src/modules/kernel/algebra.mx */
+ 
 @}
 @- alignment-id transformations
 @T

@@ -706,62 +706,6 @@ BAT *BATload(str nme) {
 }
 
 
-@+ Memory Mapped Storage
-@T
-Changing the storage status of heaps in a BAT is done in @:BATmmap@. 
-The new semantics is that the mapping only takes effect the next time 
-the bat is loaded. 
-
-This makes the BATmmap safer \& simpler as it is now
-incorporated in the normal bat loading and saving mechanism.
-
-It also makes the mmap faster as when through caching you
-are finished with the BAT before it is ever swapped to disk
-it will never have been written, whereas the old mmap obliged you to 
-save a BAT directly.
-@c
-int BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc){
-        BATcheck(b, "BATmmap");
-       	IODEBUG {
-		THRprintf(GDKerr, "BATmmap(%s,%d,%d,%d,%d,%d)\n", b->batId,bns,hhp,thp,hacc,tacc); 
-	}
-	/* Reverse back if required, as this determines which heap is saved in the 
-	 * "hheap" file and which in the "theap" file (and haccelerator/taccelerator).
-       	 */
-	if (b->batCacheid < 0) {
-		int swap=hhp; hhp=thp; thp=swap;
-		swap=hacc; hacc=tacc; tacc=swap;
-		b = BATmirror(b);
-	}
-	b->batMapdirty = TRUE;
-	b->batMapbuns = bns;
-	b->batMaphheap = hhp;
-	b->batMaptheap = thp;
-	b->batMaphacc = hacc;
-	b->batMaptacc = tacc;
-
-	b->batDirtydesc = 1;
-	return 0;
-}
-
-@= madvise
-	if ((@1 >=0) && (@2)->base && ((@2)->storage==STORE_MMAP)) {
-	    if (MT_madvise((@2)->base, (@2)->free, @1)) {
-		GDKsyserror("madvise on @2 @1 failed.\n");
-		return -1;
-	    }
-	}
-@c
-int BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc) {
-	@:madvise(bns, b->batBuns)@
-	@:madvise(hhp, &b->hheap)@
-	@:madvise(thp, &b->theap)@
-	@:madvise(hacc, &b->haccelerator)@
-	@:madvise(tacc, &b->taccelerator)@
-	return 0;
-}
-
-
 @- BATdelete
 new behavior is to let the routine produce warnings but always succeed.
 rationale: on a delete, we must get rid of *all* the files. We do not have to care
