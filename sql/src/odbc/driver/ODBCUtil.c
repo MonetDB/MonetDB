@@ -171,7 +171,7 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
 		return NULL;
 	}
 	if (length == SQL_NTS)
-		length = strlen(s);
+		length = strlen((const char *) s);
 	else if (length < 0)
 		return "Invalid length parameter";
 
