@@ -2,8 +2,8 @@
 @prompt # $t $g  
 
 Mserver -?
-MapiClient -help
+REM	MapiClient -help
 Mcreatedb -?
 Mdestroydb -?
-Mshutdown -?
+REM	Mshutdown -?
 

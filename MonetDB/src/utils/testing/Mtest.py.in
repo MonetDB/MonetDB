@@ -465,15 +465,25 @@ printf("\\n");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.kunique@bat
 ''')
 	pIn.close()
 	qOut = pOut.readlines()
+	qErr = pErr.readlines()
 	pOut.close()
 	pErr.close()
 	test = re.compile("^# compiled for .*/([63][42]bit)")
-	for l in qOut:
-		m = test.match(l)
-		if m:
-			env['TST_BITS'] = m.group(1)
-			os.environ['TST_BITS'] = env['TST_BITS']
-	env['TST_MODS'] = eval(qOut[-1])
+	if qOut:
+		for l in qOut:
+			m = test.match(l)
+			if m:
+				env['TST_BITS'] = m.group(1)
+				os.environ['TST_BITS'] = env['TST_BITS']
+		env['TST_MODS'] = eval(qOut[-1])
+	else:
+		Warn("No output from Mserver when checking for Bits & Modules!?")
+		if qErr:
+			STDERR.writelines(qErr)
+			STDERR.write("\n")
+			STDERR.flush()
+		env['TST_BITS'] = ""
+		env['TST_MODS'] = []
 	os.environ['TST_MODS'] = str(env['TST_MODS'])
 	return env['TST_BITS'], env['TST_MODS']
 
@@ -497,9 +507,18 @@ printf("\\n");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("
 ''')
 	pIn.close()
 	qOut = pOut.readlines()
+	qErr = pErr.readlines()
 	pOut.close()
 	pErr.close()
-	TST_BATS = eval(qOut[-1])
+	if qOut:
+		TST_BATS = eval(qOut[-1])
+	else:
+		Warn("No output from Mserver when checking for Bats!?")
+		if qErr:
+			STDERR.writelines(qErr)
+			STDERR.write("\n")
+			STDERR.flush()
+		TST_BATS = []
 
 	missing = []
 	if os.path.isfile(TST+".BATs"):
@@ -847,10 +866,10 @@ def Check(command, input) :
 				rOutErr = 1
 	if rOutErr:
 		ErrMsg("'"+command+"` failed:")
-		if qOut[-1][:8] == "! Exit 1":
+		if qOut  and  len(qOut[-1]) >= 8  and  qOut[-1][:8] == "! Exit 1":
 			qErr.append(qOut.pop())
-		for l in qOut+qErr:
-			STDERR.write(l)
+		STDERR.writelines(qOut)
+		STDERR.writelines(qErr)
 		STDERR.write("\n")
 		STDERR.flush()
 		#sys.exit(1)

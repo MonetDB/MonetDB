@@ -50,7 +50,7 @@ using the {\bf Mclient} utility, are 'normal' users. A separate
 authorization module is required to guard against malicious
 users.
 
-On session init, for every user the script {\em monet_prelude} is executed.
+On session init, for every user the script {\em monet_general} is executed.
 This script typically contains instructions to load kernel modules of
 general use.
 

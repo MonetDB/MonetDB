@@ -76,6 +76,9 @@ typedef struct mallinfo mallinfo_t;
 #define SO_EXT ".so"
 #endif 
 
+#define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
+#define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
+
 /* the new mmap modes, mimick default MADV_* madvise POSIX constants */
 #define MMAP_NORMAL     	0               /* no further special treatment */
 #define MMAP_RANDOM     	1               /* expect random page references */

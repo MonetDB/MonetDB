@@ -100,13 +100,13 @@ to keep the absolute path to the .monet.conf file for top-levels
 to access its information.
 @c
 #define MONETRC  ".monet.conf"
-#define DIRSEP '/'
 
 str expandFile(str fname){
-static char name[PATHLENGTH];
+	static char name[PATHLENGTH];
 
-	if( strncmp(".../",fname,4)==0) {
-		sprintf(name,"%s/%s",MONET_PREFIX,fname+4);
+	SLASH_2_DIR_SEP(fname);
+	if( strncmp("...",fname,3)==0 && fname[3]==DIR_SEP ) {
+		sprintf(name,"%s%s",MONET_PREFIX,fname+3);
 		return GDKstrdup(name);
 	} else return fname;
 }
@@ -125,7 +125,7 @@ void GDKenvironment(str db, str monetrc)
 	char pwd[PATHLENGTH];
 	FILE *fd= NULL;
 
-	if( db != NULL && strchr(db,DIRSEP) ) {
+	if( db != NULL && strchr(db,DIR_SEP) ) {
 		strcpy(GDKdbnameStr,db);
 		strcpy(GDKdirStr,db);
 		return;
@@ -142,7 +142,7 @@ void GDKenvironment(str db, str monetrc)
 	if( fd == NULL){
 		str home= getenv("HOME");
 		if( home != NULL){
-			sprintf(buf,"%s/%s",home, MONETRC);
+			sprintf(buf,"%s%c%s",home, DIR_SEP, MONETRC);
 			fd= fopen(buf,"r");
 			if(fd!=NULL) strcpy(GDKmonetrcStr,buf);
 		}
@@ -195,15 +195,22 @@ void GDKenvironment(str db, str monetrc)
 	if( db != NULL) strcpy(GDKdbnameStr,db);
 
 	if( GDKdbfarmStr[0]){
-		sprintf(GDKdirStr,"%s/%s",GDKdbfarmStr,GDKdbnameStr);
+		sprintf(GDKdirStr,"%s%c%s",GDKdbfarmStr,DIR_SEP,GDKdbnameStr);
 	} else	strcpy(GDKdirStr,GDKdbnameStr);
 	/* handle monetrc */
-	if( GDKmonetrcStr[0]==DIRSEP) return;
+	if( GDKmonetrcStr[0]==DIR_SEP) return; /* absolute path */
+#ifdef NATIVE_WIN32
+	/* an absolute path on NATIVE_WIN32 might also start with a drive letter... */
+	if( isalpha((int)GDKmonetrcStr[0]) && \
+	    GDKmonetrcStr[1]==':' && \
+	    GDKmonetrcStr[2]==DIR_SEP) return;
+#endif
+	/* make relative path absolute */
         if (getcwd(pwd, PATHLENGTH-1)  == NULL ){
                 perror("pwd");
                 GDKfatal("GDKenvironment: could not determine current directory\n");
         }
-	sprintf(buf,"%s/%s",pwd,GDKmonetrcStr);
+	sprintf(buf,"%s%c%s",pwd,DIR_SEP,GDKmonetrcStr);
 	if( strlen(buf) >PATHLENGTH-1){
 		GDKfatal("GDKenvironment: path to monetrc file too long\n");
 	}
