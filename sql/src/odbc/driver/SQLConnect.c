@@ -28,14 +28,13 @@
 SQLRETURN
 SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	    SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
-	    SQLSMALLINT nPWDLength)
+	    SQLSMALLINT nPWDLength, char *host, int port)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
 	char *uid = NULL;
 	char *pwd = NULL;
 	char *schema = NULL;
-	int port = 0;
 	char *s;
 	Mapi mid;
 	static int setlen;
@@ -97,7 +96,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		pwd = dupODBCstring(szPWD, (size_t) nPWDLength);
 	}
 
-	if ((s = getenv("SQLPORT")) != NULL)
+	if (port == 0 && (s = getenv("SQLPORT")) != NULL)
 		port = atoi(s);
 	if (port == 0) {
 		s = mo_find_option(set, setlen, "sql_port");
@@ -108,16 +107,16 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 
 	/* Retrieved and checked the arguments.
 	   Now try to open a connection with the server */
-	/* temporarily hold hostname in s */
-	s = mo_find_option(set, setlen, "host");
+	if (host == NULL || *host == 0)
+		host = mo_find_option(set, setlen, "host");
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s port=%d\n",
-		dsn, uid, pwd, port);
+	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d\n",
+		dsn, uid, pwd, host, port);
 #endif
 
 	/* connect to a server on host via port */
-	mid = mapi_connect(s, port, uid, pwd, "sql");
+	mid = mapi_connect(host, port, uid, pwd, "sql");
 	if (mid == NULL || mapi_error(mid)) {
 		/* Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
@@ -168,7 +167,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	clearDbcErrors((ODBCDbc *) hDbc);
 
 	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength,
-			   szUID, nUIDLength, szPWD, nPWDLength);
+			   szUID, nUIDLength, szPWD, nPWDLength, NULL, 0);
 }
 
 #ifdef WITH_WCHAR
@@ -204,7 +203,7 @@ SQLConnectW(SQLHDBC hDbc,
 	fixWcharIn(szUID, nUIDLength, uid, addDbcError, dbc, goto exit);
 	fixWcharIn(szPWD, nPWDLength, pwd, addDbcError, dbc, goto exit);
 
-	rc = SQLConnect_(dbc, ds, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
+	rc = SQLConnect_(dbc, ds, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS, NULL, 0);
 
   exit:
 	if (ds)

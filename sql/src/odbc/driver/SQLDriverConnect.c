@@ -90,7 +90,8 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		  SQLUSMALLINT nDriverCompletion)
 {
 	char *key, *attr;
-	char *dsn = 0, *uid = 0, *pwd = 0;
+	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0;
+	int port = 0;
 	SQLRETURN rc;
 
 	(void) hWnd;		/* Stefan: unused!? */
@@ -123,12 +124,16 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 	}
 
 	while (get_key_attr(&szConnStrIn, &nConnStrIn, &key, &attr)) {
-		if (strcasecmp(key, "DSN") == 0 && dsn == NULL)
+		if (strcasecmp(key, "dsn") == 0 && dsn == NULL)
 			dsn = attr;
-		else if (strcasecmp(key, "UID") == 0 && uid == NULL)
+		else if (strcasecmp(key, "uid") == 0 && uid == NULL)
 			uid = attr;
-		else if (strcasecmp(key, "PWD") == 0 && pwd == NULL)
+		else if (strcasecmp(key, "pwd") == 0 && pwd == NULL)
 			pwd = attr;
+		else if (strcasecmp(key, "host") == 0 && pwd == NULL)
+			host = attr;
+		else if (strcasecmp(key, "port") == 0 && pwd == NULL)
+			port = atoi(attr);
 		else
 			free(attr);
 		free(key);
@@ -141,7 +146,8 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 	} else {
 		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS,
 				 (SQLCHAR *) uid, SQL_NTS,
-				 (SQLCHAR *) pwd, SQL_NTS);
+				 (SQLCHAR *) pwd, SQL_NTS,
+				 host, port);
 	}
 
 	if (SQL_SUCCEEDED(rc)) {
