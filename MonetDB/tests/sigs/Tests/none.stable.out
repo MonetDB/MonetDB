@@ -50,7 +50,7 @@ loaded;
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
-[~view_modules].reverse.sort.print;
+[~view_modules].reverse.kunique.sort.print;
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (void)  #
@@ -141,8 +141,8 @@ fix:=monet_mod_nme.reverse.copy;
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
 
-mprof:=view_modules.select("mprof").reverse;
-others:=kdiff(view_modules.reverse,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
+mprof:=view_modules.select("mprof").reverse.kunique;
+others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
 [others~].print;
 #-------------------------#
 # BAT:		  tmp_76  #

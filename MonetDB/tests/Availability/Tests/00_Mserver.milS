@@ -6,7 +6,7 @@ dir;
 
 table(monet_mod_nme.reverse.sort.reverse.col_name("static modules"));
 
-table(kdiff(view_modules.reverse,monet_mod_nme.reverse).sort.reverse.col_name("dynamic modules"));
+table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col_name("dynamic modules"));
 
 commit;
 

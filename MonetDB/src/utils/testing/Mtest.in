@@ -127,6 +127,10 @@ function InitMaster () {
 	  then	export OSVER=$OS`uname -v`.`uname -r` ; DEBUG OSVER=$OSVER
 	  else	export OSVER=$OS`uname -r`       ; DEBUG OSVER=$OSVER
 	fi
+	if [ "$COMPILER" ]
+	  then	export xPREFIX=.$COMPILER/       ; DEBUG xPREFIX=$xPREFIX
+	  else	export xPREFIX=""                ; DEBUG xPREFIX=$xPREFIX
+	fi
 	export MPORT=$[10000+($$%(65536-10000))] ; DEBUG MPORT=$MPORT
 	export JPORT=$[65535-($$%(65536-10000))] ; DEBUG JPORT=$JPORT
 ##	export MPORT=55555                       ; DEBUG MPORT=$MPORT
@@ -136,14 +140,14 @@ function InitMaster () {
 	if [ ! "$MONETHOME"     ] ; then  export MONETHOME=$MONETDIST ; fi          ; fLOG1 MONETHOME=$MONETHOME
 	if [ ! -d "$MONETDIST"  ] ; then  ErrXit "MONETDIST directory missing: $MONETDIST" ; fi
 	if [ ! -d "$MONETHOME"  ] ; then  ErrXit "MONETHOME directory missing: $MONETHOME" ; fi
-	if [ -d "$MONETDIST/$OSVER"  -o  ! -d "$MONETDIST/$OS" ]
-	  then	export MONETDISTPREFIX=$MONETDIST/$OSVER
-	  else  export MONETDISTPREFIX=$MONETDIST/$OS
+	if [ -d "$MONETDIST/$xPREFIX$OSVER"  -o  ! -d "$MONETDIST/$xPREFIX$OS" ]
+	  then	export MONETDISTPREFIX=$MONETDIST/$xPREFIX$OSVER
+	  else  export MONETDISTPREFIX=$MONETDIST/$xPREFIX$OS
 	fi
 	fLOG1 MONETDISTPREFIX=$MONETDISTPREFIX
-	if [ -d "$MONETHOME/$OSVER"  -o  ! -d "$MONETHOME/$OS" ]
-	  then	export MONETHOMEPREFIX=$MONETHOME/$OSVER
-	  else  export MONETHOMEPREFIX=$MONETHOME/$OS
+	if [ -d "$MONETHOME/$xPREFIX$OSVER"  -o  ! -d "$MONETHOME/$xPREFIX$OS" ]
+	  then	export MONETHOMEPREFIX=$MONETHOME/$xPREFIX$OSVER
+	  else  export MONETHOMEPREFIX=$MONETHOME/$xPREFIX$OS
 	fi
 	fLOG1 MONETHOMEPREFIX=$MONETHOMEPREFIX
 	if [ ! "$TSTSRCBASE"    ] ; then  export TSTSRCBASE=$MONETHOME ; fi         ; fLOG1 TSTSRCBASE=$TSTSRCBASE

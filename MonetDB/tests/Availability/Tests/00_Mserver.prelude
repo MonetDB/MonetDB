@@ -2,11 +2,12 @@ setoid(oid(10000000));
 
 MODULES:=new(str,str);
 MODULES.rename("MODULES");
+MODULES.set(TRUE);
 MODULES.persists(TRUE);
 MODULES.save;
 MODULES.commit;
 
-view_modules.reverse.sort@batloop { MODULES.insert($h,"UNKNOWN"); }
+view_modules.reverse.kunique.sort@batloop { MODULES.insert($h,"UNKNOWN"); }
 
 MODULES.replace("aggr",      "plain");
 MODULES.replace("alarm",     "plain");
