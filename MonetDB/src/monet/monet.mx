@@ -452,9 +452,12 @@ Install all link-in modules.
 str monet_load_script(str file, str mod)
 {
 	FILE *fp = NULL;
-	int i = 0, totlen = 8192;
-        char *buf = (char *) GDKmalloc(totlen), *p = buf;
+	size_t i = 0, totlen = 8192;
+        char *buf, *p;
 	char *mpop = "module_pop();\n";
+#ifdef HAVE_FSTAT
+	struct stat statb;
+#endif
 
 @-
 Open the scriptfile.
@@ -466,31 +469,51 @@ Open the scriptfile.
 @-
 Read the entire file, realloc if necessary.
 @c
-	if (mod){
-	     i = snprintf(p, totlen, "module_push(\"%s\");\n", mod);
-	     p += i;
+#ifdef HAVE_FSTAT
+	/* figure out how much space we need to allocate */
+	if (fstat(fileno(fp), &statb) == 0 && statb.st_size > 0) {
+		totlen = statb.st_size + 1;
+		/* add space for module_push and module_pop commands */
+		if (mod)
+			totlen += strlen(mod) + 31;
 	}
-        while((i+=fread(p, 1, totlen-i, fp)) == totlen ) {
-                int len = totlen; totlen *= 2;
-                p = GDKmalloc(totlen);
-                memcpy(p, buf, len);
-                GDKfree(buf);
-                buf = p; p += len;
+#endif
+	p = buf = GDKmalloc(totlen);
+
+	if (mod){
+		i = snprintf(p, totlen, "module_push(\"%s\");\n", mod);
+		p += i;
+	}
+	/* if the fstat call above worked, we should not need to enter
+	   the loop */
+        while ((i+=fread(p, 1, totlen-i, fp)) == totlen) {
+		size_t len = totlen;
+		totlen += 8192;
+		p = GDKrealloc(buf, totlen);
+		buf = p;
+		p += len;
         }
         fclose(fp);
+	/* normalize line endings: replace CR-LF by space LF,
+	   replace bare CR by LF */
+	for (p = strchr(buf, '\r'); p; p = strchr(p, '\r')) {
+		if (p[1] == '\n') /* LF follows the CR */
+			*p = ' ';
+		else
+			*p = '\n';
+	}
 	p = buf + i;
 
 	if (mod){
-	     int l = (int) strlen(mpop);
-	     if ((i + l + 1) > totlen){
-                p = GDKmalloc(i + l + 1);
-                memcpy(p, buf, i);
-                GDKfree(buf);
-                buf = p; p += i;
-	     }
-		
-	     strncpy(p, mpop, l);
-	     i += l;
+		size_t l = strlen(mpop);
+		if ((i + l + 1) > totlen){
+			p = GDKrealloc(buf, i + l + 1);
+			buf = p;
+			p += i;
+		}
+
+		strncpy(p, mpop, l);
+		i += l;
 	}
 
         buf[i] = 0;
