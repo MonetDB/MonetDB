@@ -1705,7 +1705,7 @@ at the end of the optimization attempt.
 	
 	optimizerCheck(mb,"expressionAccumulation");
     for(i=1; i<mb->stop; i++){
-        VarPtr v,v0;
+        VarPtr v;
         p= getInstrPtr(mb,i);
 		if( moduleName(p)== 0) 
 			continue;
@@ -1719,13 +1719,15 @@ at the end of the optimization attempt.
 		if( p->argc == 3) {
 			/* binary/unary operation, check first argument */
 			v= getVar(mb, a =getArg(p,1));
-			v0= getVar(mb, b =getArg(p,0));
+			b= getArg(p,0);
 
 #ifdef DEBUG_MAL_OPTIMIZER
 					stream_printf(GDKout,"Found binary OR candidate \n");
 					stream_printf(GDKout,"pc=%d valid=%d \n",
 							i, ORvalidSource(mb,a,i,v->beginLifespan));
-					stream_printf(GDKout,"target %d %d-%d\n", b,v0->beginLifespan, v0->endLifespan);
+					stream_printf(GDKout,"target %d %d-%d\n", b,
+						getVar(mb, b =getArg(p,0))->beginLifespan, 
+						getVar(mb, b =getArg(p,0))->endLifespan,);
 					stream_printf(GDKout,"arg 1 %d %d-%d\n", a,v->beginLifespan, v->endLifespan);
 					stream_printf(GDKout,"arg 2 %d %d-%d\n", getArg(p,2),
 						getVar(mb,getArg(p,2))->beginLifespan, 

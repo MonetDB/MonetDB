@@ -70,7 +70,7 @@ str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	VarPtr v;
 	Client cntxt= getClient();
 	Scope s = cntxt->nspace;
-	int blks[MAXDEPTH], top=0, blk=1;
+	int  top=0, blk=1;
 
     (void) pci; (void) stk;  /* to fool compilers */
 
@@ -100,13 +100,6 @@ str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( blockStart(p)){
 			blk++;
             if( top <MAXDEPTH-2){
-                blks[top]= blk;
-                blks[++top]= 0;
-/*
-    printf("enter block [");
-    for(z=0;z<top; z++) printf(" %d",blks[z]);
-    printf("]\n");
-*/
             } else {
                 mb->errors++;
                 return throwMessage("optimizer.garbageCollector",
@@ -116,7 +109,6 @@ str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         if( blockExit(p))
             if( top > 0) {
                 top--;
-                blks[top]= 0;
 		}
 
     }
