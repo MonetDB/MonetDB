@@ -38,15 +38,17 @@ users. It is more comfortable than the console, since it provides
 a command history and automatic file name completion.
 
 \begin{verbatim}
-MapiClient [-h HOST] [-p PORT] [-d] [-e] [-u username] [-P password] [-c single-command]
+MapiClient [-h HOST] [-p PORT] [-d] [-e] [-u username] [-P password] 
 \end{verbatim}
 
 The following options are supported:
 \begin{itemize}
 \item {\em -h -p} Connect to Mserver on machine HOST with tcp port PORT.
 \item {\em -d} Debug internal working.
-\item {\em -c} just execute a one-line command (non-interactive mode).
+\item {\em -c} Use a different configuration script
+\item {\em -s} Execute a single statement
 \item {\em -u -P} Replace interactive authorization by command line.
+\item{\em -blocked=true} run in (non-)blocked mode
 \item{\em -h} A synopsis of the command line options
 Can be used in scripts, but is insecure.
 \end{itemize}
@@ -91,6 +93,9 @@ stream *ws = NULL, *rs = NULL;
 int is_chrsp = 0;
 int exit_on_error =0;
 int blocked= 1;
+int sql_session= 0;
+char *sql_continue= "---> ";
+char *sql_prompt= "sql> ";
 
 #ifdef HAVE_ICONV
 iconv_t to_utf = NULL;
@@ -240,7 +245,11 @@ int doRequest(Mapi mid, char *buf )
 The input for the Monet server is stored in a buffer until
 the forward command is issued.
 In LINEMODE each line is sent and the monitor awaits the prompt
-of the server before continuing
+of the server before continuing.
+For SQL sessions we need to be a little more carefull, because
+the statements easily expand multiple lines. In this case we
+look for the closing ';\n' before sending the request to the server.
+Continuation is indicated with a special prompt '--->'
 @c
 #define CHUNK_SIZE	1024
 
@@ -271,6 +280,9 @@ of the server before continuing
 	}							\
 }
 
+@-
+The built-in commands are kept to a minimum
+@c
 void showCommands(void)
 {
 	fprintf(toConsole,"?\t - this message\n");
@@ -291,11 +303,12 @@ void terminalInput( Mapi mid, char *prompt)
 	char 	*line=0, *start_cmd, *end_cmd;
 	int	n, m_size=CHUNK_SIZE, m_index=0;
 	char	cmd = 0;
+	char	*moreSQL=0;
 
 	message = (char *) malloc(CHUNK_SIZE);
 
 	while(cmd != 'q') {
-		if (line) {
+		if (line && !moreSQL) {
 			free(line);
 		}
 #ifdef HAVE_LIBREADLINE
@@ -343,8 +356,7 @@ redirection of output to a separate file.
 		case '\\':
 			switch(*(start_cmd+1)) {
 			case 'r':
-				SEND_MESSAGE(mid);
-				continue;
+				goto handle_message;
 			case 'q':
 				cmd = 'q';
 				continue;
@@ -434,7 +446,16 @@ using its help operator '?'.
 		GROW_MESSAGE(n);
 
 		if (mode == LINEMODE) {
-			SEND_MESSAGE(mid);
+handle_message:
+			if( sql_session){
+				char semicolon= start_cmd[strlen(start_cmd)-1];
+				if( semicolon!=';'){
+					prompt= sql_continue;
+					continue;
+				}
+				SEND_MESSAGE(mid);
+				prompt= sql_prompt;
+			} else SEND_MESSAGE(mid);
 		}
 	}
 }
@@ -454,6 +475,7 @@ void usage( char *prog )
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
 	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
+	fprintf(stderr, "             | --blocked=true   /* run in (non-)blocked mode */\n");
 	exit(-1);
 }
 
@@ -544,9 +566,10 @@ int main(int ac, char **av)
 					opt_cmdline, "host", optarg );
 			break;
 		case 'l':
-			if (optarg)
-			language= _strdup(optarg);
-			else printf("language argument missing\n");
+			if (optarg){ 
+				language= _strdup(optarg);
+				sql_session= strcmp(language,"sql")==0;
+			} else printf("language argument missing\n");
 			break;
 		case 'p':
 			{char *m= _strdup(optarg);
