@@ -1,4 +1,3 @@
-@node About this manual, Installation and overview, TOC , TOC
 @chapter About this manual
 This is the MonetDB reference manual, which serves as the primary entry
 point to locate information on its functionality,
@@ -48,7 +47,7 @@ product suite are advised to read the following sections:
 @iftex
 @end iftex
 @menu
-* Installation and overview::
+* Installation ::
 * The application interfaces::
 @end menu
 

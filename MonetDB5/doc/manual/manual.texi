@@ -52,22 +52,21 @@ Table of contents
 * Conventions and notation::
 @end menu
 
-* Installation and overview::
+* Installation ::
 
-* The main features of MonetDB ::
+* MonetDB overview ::
 @menu
 * The history of MonetDB::
 * Architecture overview:: 
 * Design considerations:: 
 * Backward compatibility:: 
 * MAL synopsis:: 
-@end menu
-
 * Session management::
 @menu
 * Client administration::
 * Session scenarios::
 * MAL execution:: 
+@end menu
 @end menu
 
 
@@ -113,21 +112,23 @@ Table of contents
 
 @end ifnottex
 
+@node About this manual, Installation , TOC , TOC
 @include Assets/About_this_manual
-@include Assets/History
-@include Assets/Features
 
-@node Installation and overview, MonetDB Assembler Language, About this manual , TOC
+@node Installation , MonetDB overview, About this manual , TOC
+@include Assets/Features
+@node MonetDB overview, MonetDB Assembler Language, Installation, TOC
 @include mal.bdy.texi
 @include mal_scenario.bdy.texi
 @include mal_client.bdy.texi
 @include mal_session.bdy.texi
+@include Assets/History
 
-@node MonetDB Assembler Language , Function definitions, Installation and overview, TOC
+@node MonetDB Assembler Language , XML interface, MonetDB overview , TOC
 @include mal_instruction.bdy.texi
 @include mal_parser.bdy.texi
 
-@node Function definitions, Factory definitions , MonetDB Assembler Language, TOC
+@node Function definitions, Factory definitions , , TOC
 @include mal_function.bdy.texi
 
 @node Factory definitions, Bootstrap , Function definitions, TOC
@@ -159,11 +160,11 @@ Table of contents
 @node Property management, Name space management , Optimizer framework, TOC
 @include mal_properties.bdy.texi
 
-@node Name space management, XML interface , Property management, TOC
+@node Name space management, , Property management, TOC
 @include mal_namespace.bdy.texi
 @include mal_scope.bdy.texi
 
-@node XML interface, The MAL debugger, Name space management, TOC
+@node XML interface, The MAL debugger, MonetDB Assembler Language, TOC
 @include mal_xml.bdy.texi
 
 @node The MAL debugger, The MAL profiler , XML interface, TOC

@@ -1,3 +1,11 @@
-@node The history of MonetDB ,,, TOC
+@node The history of MonetDB , Architecture overview, , MonetDB overview
 @section The history of MonetDB
 [TOBEFILLED]
+@menu
+* The history of MonetDB::
+* Architecture overview::
+* Design considerations::
+* Backward compatibility::
+* MAL synopsis::
+* Session management::
+@end menu
