@@ -704,6 +704,9 @@ query string with "M".
 			break;
 		}
 
+		/* indicate to client that a new SQL command starts here */
+		stream_write(out, "#-\n", 3, 1);
+
 		if (m->trans)
 			pstatus = m->status;
 
@@ -990,7 +993,7 @@ These lines should be eaten away into the prompt is encountered.
 		mvc_destroy(m);
 		return connect_error(in, out);
 	}
-/* Sent the profile for the client for inspection*/
+/* Send the profile to the client for inspection*/
 	sendProperty(out, "version", "4.3");
 	sendProperty(out, "language", "sql");
 	sendProperty(out, "schema", schema);
@@ -1306,7 +1309,6 @@ to work with it.
 @c
 int mvc_export_default( mvc *m, stream *s ) 
 {
-	stream_write(s, "#-\n", 3, 1);
 	stream_printf(s, "# " SZFMT, m->type);
 	stream_write(s, " # querytype\n", 13, 1);
 	return 0;
@@ -1318,7 +1320,6 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	res_table *t = find_export_table(m, res_id);
 
 
-	stream_write(s, "#-\n", 3, 1);
 	stream_printf(s, "# " SZFMT, t->query_type);
 	stream_write(s, " # querytype\n", 13, 1);
 
