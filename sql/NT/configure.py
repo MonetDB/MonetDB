@@ -70,7 +70,7 @@ subs = [
 # keep in sync with src/jdbc/build.properties and configure.ag !
     ('@JDBC_MAJOR@',        '1'),
     ('@JDBC_MINOR@',        '1'),
-    ('@JDBC_VER_SUFFIX@',   'Rise+'),
+    ('@JDBC_VER_SUFFIX@',   'Rise-SR1'),
     ('@JDBC_DEF_PORT@',     '45123'),
     ('@JDBC_DEF_BLOCKMODE@','true'),
 ]
