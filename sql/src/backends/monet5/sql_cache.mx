@@ -71,8 +71,9 @@ if( @3 == NULL) { *@1 = 0;
 str SQLCacheExists(bit *res, str *nme){
 	Scope scope;
 	Symbol s;
+        Client c = getClient();
 
-	scope= findScope(mal_scope,"sql_cache");
+	scope= findScope(c->nspace,"sql_cache");
 	if( scope == NULL)
 		return throwMessage("sql_cache.exists",
 			"internal error, sql_cache missing\n");
@@ -81,12 +82,19 @@ str SQLCacheExists(bit *res, str *nme){
 	return MAL_SUCCEED;
 }
 str SQLCacheGetDefinition(int *ret, str *nme){
+        Scope scope;
 	Symbol s;
+        Client c= getClient();
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
         if(b == 0) 
 	return throwMessage("sql_cache.getDefinition", "failed to create BAT");
 	
-	s= findSymbol("sql_cache",*nme);
+        scope= findScope(c->nspace,"sql_cache");
+        if( scope == NULL)
+                return throwMessage("sql_cache.getDefinition",
+                        "internal error, sql_cache missing\n");
+        s= findSymbolInScope(scope,*nme);
+
 	if(s){
 		int i;
 		str ps;
@@ -104,9 +112,10 @@ str SQLCacheGetDefinition(int *ret, str *nme){
 str SQLCacheRemove(int *ret, str *nme){
 	Scope scope;
 	Symbol s;
+        Client c = getClient();
 
 	(void) ret;
-	scope= findScope(mal_scope,"sql_cache");
+	scope= findScope(c->nspace,"sql_cache");
 	if( scope == NULL)
 		return throwMessage("sql_cache.remove",
 			"internal error, sql_cache missing\n");

@@ -232,7 +232,7 @@ Continue processing any left-over input from the previous round.
 		c->mode= FINISHING;
 		return throwMessage("SQLreader","end of SQL input\n");
 	}
-	be->Tread= GDKusec()-T0;
+	if(be) be->Tread= GDKusec()-T0;
 	return 0;
 }
 @-
