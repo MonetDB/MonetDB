@@ -43,5 +43,5 @@ $(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures
 	(cd $(prefix)/doc/SQLfeatures; latex SQLfeatures.tex; latex SQLfeatures.tex)
 
 html:	$(prefix)/doc/SQLsessionDemo.html $(prefix)/doc/SQLfeatures/SQLfeatures.aux
-	(cd $(prefix); latex2html -ascii_mode -no_timing -no_address -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex)
+	(cd $(prefix); latex2html -ascii_mode -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex)
 
