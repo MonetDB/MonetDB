@@ -35,7 +35,6 @@ buffer, which is not reused until end-of-block. It can not be used,
 because parse trees may be kept around for re-use]
 
 @l
-
 D	[0-9]
 O	[0-7]
 L	[_a-zA-Z]
@@ -115,12 +114,13 @@ void ll_flushbuffer(void) {
 #endif
 }
 
-#define TBLSEARCH(r,s,token,cur_is_ident,guess_if_notfound,no_command) \
-	{ int offend = ' '; \
-	  while(GDKisspace(offend)) offend = input(); \
-	  if (offend > 0) unput(offend);\
-	  r = TBL_search(s, token, guess_if_notfound, cur_is_ident, no_command&&ll_nocommand[offend], \
-			 (offend >= 'a' && offend <= 'z') | (offend >= 'A' && offend <= 'Z')); }
+#define TBLSEARCH(r,s,token,cur_is_ident,guess_if_notfound,no_command) {\
+        int spaces = 0, offend;\
+        do  { offend = input(); } while(GDKisspace(offend));\
+	if (offend) unput(offend);\
+	while(spaces-- > 0) unput(' ');\
+        r = TBL_search(s, token, guess_if_notfound, cur_is_ident, no_command&&ll_nocommand[offend],\
+                         (offend >= 'a' && offend <= 'z') | (offend >= 'A' && offend <= 'Z')); }
 
 static int ll_skipcomment(void);
 %}
@@ -163,17 +163,16 @@ static int ll_skipcomment(void);
 ({C}*"=")	      { int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
 			strcpy(t,yytext); /* copy yytext before unput */
-			if ((!t[1]) && (*t=='~' || *t=='?' || *t==':')) {
-				Symbol(*t);
-			} else {
+			if (l > 1 || (*t != '~' && *t != '?' && *t != ':')) {
 				if (ll_resolution) {
 					TBLSEARCH(s, t, &i, FALSE, TRUE, FALSE);
 					if (s != NULL) {
 						Function(i,s);
 					}
 				}
-				REJECT
-			}						     }
+			}
+			while(--l > 0) unput(t[l]);
+			Symbol(*t);					     }
 (":"{L}({L}|{D})*"=") |
 ({L}({L}|{D})*)	 {
 command:	     {	int i, l = (int) strlen(yytext);
@@ -367,17 +366,14 @@ ll_pop(void)
 
 	if (ll_stack) {
 		ll_insert = NULL;
-		if (ll_insert) {
-		}
 		ll_stack = sp->up;
 		if (ll_mod)
 			GDKfree(ll_mod);
 		ll_mod = sp->mod;
-		if (ll_client->cleanup)
-			GDKfree(ll_client->cleanup);
+		if (sp->cleanup)
+			GDKfree(sp->cleanup);
 		ll_client->cptr = sp->cptr;
 		ll_client->cline = sp->cline;
-		ll_client->cleanup = sp->cleanup;
 		GDKfree(sp);
 		return 1;
 	}
@@ -750,7 +746,7 @@ session:
 					mod = res.val.sval;
 				}
 				initstr = moduleClient( ll_client, mod, parmod );
-		    if (initstr != NULL) {
+				if (initstr != NULL) {
 					ll_push(initstr,mod);
 				}
 			}
@@ -1535,6 +1531,7 @@ ll_idconflict(str s)
 		GDKerror("potential // conflicts\n");
 	}
 }
+
 
 @-
 All variables mentioned in the constant list become constant.

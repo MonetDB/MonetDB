@@ -177,6 +177,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_3539FF3D10FE4CF1B765EB1FBC088836"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_36227E94684F476B91DA9422B5B1AEFB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -442,6 +448,12 @@
         "Entry"
         {
         "MsmKey" = "8:_86489E3BF5D248AB9A8C17FE708608A8"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_892FBB79809042DBA24DF01DF4A96B9A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1461,6 +1473,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_3539FF3D10FE4CF1B765EB1FBC088836"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_pcre.dll"
+            "TargetName" = "8:lib_pcre.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_36227E94684F476B91DA9422B5B1AEFB"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat_arith.dll"
@@ -2345,6 +2377,26 @@
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_trans.dll"
             "TargetName" = "8:lib_trans.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_892FBB79809042DBA24DF01DF4A96B9A"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\pcre.mil"
+            "TargetName" = "8:pcre.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3818,7 +3870,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB"
         "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{627CA34F-12A7-40AE-A102-8E63410826EF}"
+        "PackageCode" = "8:{4A96BE77-C42E-457E-86F5-4ADF6641E9B5}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"

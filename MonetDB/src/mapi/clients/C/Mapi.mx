@@ -2707,7 +2707,9 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	} else if (strcmp(tag, "querytype") == 0) {
 		if (anchors[0]) {
 			result->querytype = atoi(anchors[0]);
-			if (result->querytype == 4) {	/* Q_UPDATE */
+			if (result->querytype == 4 ||	/* Q_UPDATE */
+				result->querytype == 7)		/* Q_TRANS */
+			{
 				result->fieldcnt = 1;
 				result->row_count = 1;
 			}
