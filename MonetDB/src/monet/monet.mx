@@ -172,8 +172,8 @@ typedef struct YYS {
                 batrec  batref;
 		oid	yyid;
         } free;
-	unsigned short  cnt:6, token:10;     
-	unsigned short  dealloc;
+	unsigned int  cnt:6, token:10;     
+	unsigned int  dealloc:16;
 	struct YYS *nfree;
 } yystree, *YYSTREE;
 

@@ -110,11 +110,15 @@ throw()
         GDKfree( ptr );
 }
 #if defined(__GNUC__) && defined(__cplusplus)
-void *operator new[]( size_t size ) {
+void *operator new[]( size_t size ) 
+throw (std::bad_alloc)
+{
         void *ptr = GDKmalloc( size );
         return(ptr);
 }
-void operator delete[]( void *ptr ) {
+void operator delete[]( void *ptr ) 
+throw()
+{
         GDKfree( ptr );
 }
 #endif
