@@ -259,13 +259,15 @@ a need for position information as well.
 @c
 str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
     InstrPtr p;
-    char buf[BLOCK];
+    char target[BLOCK],buf[BLOCK];
     int l,k;
 
     p= getInstrPtr(mb, pc);
     if( p != NULL){
+		target[0]=0;
+		fillTarget(mb,p,target);
         if( moduleId(p) && functionId(p)){
-            snprintf(buf,BLOCK,"%s.%s(",
+            snprintf(buf,BLOCK,"%s%s.%s(", target,
                 moduleName(p),functionName(p));
             for(k= p->retc; k<p->argc; k++){
                 str msg=0; 
@@ -911,7 +913,6 @@ Some utilities for the debugger
 void mdbHelp(stream *f){
     stream_printf(f,"next       -- Advance to next statement\n");
     stream_printf(f,"continue   -- Continue program being debugged\n");
-    stream_printf(f,"bbp        -- BBP memory layout\n");
     stream_printf(f,"break      -- set breakpoint on current instruction\n");
     stream_printf(f,"break <var>    -- break on assignment to <var>\n");
     stream_printf(f,"delete <var>   -- remove break point <var>\n");

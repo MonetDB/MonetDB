@@ -555,6 +555,7 @@ mal_export str      fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg );
 mal_export void     printInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
 mal_export void     promptInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
 mal_export void     printSignature(stream *fd, Symbol s, int flg);
+mal_export char 	*fillTarget(MalBlkPtr mb, InstrPtr p, char *t);
 mal_export str      instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 mal_export str      function2str(MalBlkPtr mb,int flg);
 mal_export void     pushEndInstruction(MalBlkPtr mb);   /* used in src/mal/mal_parser.c */
@@ -1782,6 +1783,45 @@ str operatorName(int i){
     }
     return "Undefined";
 }
+char *fillTarget(MalBlkPtr mb, InstrPtr p, char *t){
+	str pstring=0, nme;
+	char nmebuf[PATHLENGTH];
+    PropertySet ps=0;
+	int i;
+    if( isTmpVar(mb, getArg(p,0)) ) {
+        snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
+            getVarTmp(mb, getArg(p,0)));
+        nme= nmebuf;
+    } else  nme = getArgName(mb,p,0);
+	if( p->retc == 1){
+		sprintf(t,"%s%s ",nme,(pstring?pstring:"")); 
+		advance(t);
+		if( p->argc > p->retc || functionId(p))
+		{ 
+			sprintf(t,":= ");t+=3;
+		}
+		return t;
+	} 
+	/* display multi-assignment */
+	*t++ = '(';
+	for(i=0;i<p->retc;i++){
+		ps= getVar(mb,getArg(p,i))->props;
+		pstring= propertySet2str(ps);
+		sprintf(t,"%s%s",getArgName(mb,p,i),
+			(pstring?pstring:""));
+		if(pstring){GDKfree(pstring);pstring=0;}
+		advance(t);
+		if( i<p->retc-1) 
+			*t++= ',';
+	}
+	sprintf(t,")");t++;
+	if( p->argc > p->retc || functionId(p))
+	{ 
+		sprintf(t,":= ");t+=3;
+	}
+	return t;
+
+}
 str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
     int i,len=0,tab=4;
     str def,s,t,nme;
@@ -1796,8 +1836,10 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
     else { s[0]='!'; s[1]=0; t= s+1; }
     /* @:performanceData@ */
     if( isTmpVar(mb, getArg(p,0)) ) {
-        snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
-            getVarTmp(mb, getArg(p,0)));
+		if( isVarUsed(mb,getDestVar(p)) ){
+			snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
+				getVarTmp(mb, getArg(p,0)));
+		} else nmebuf[0]=0;
         nme= nmebuf;
     } else  nme = getArgName(mb,p,0);
     ps= getVar(mb,getArg(p,0))->props;

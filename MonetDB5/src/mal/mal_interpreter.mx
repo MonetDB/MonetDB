@@ -1374,7 +1374,8 @@ we have to keep track of essential system counter information.
         newclk= GDKusec();
         pci->counter++;
         pci->ticks += newclk - pci->clk;
-        profilerEvent(cntxt->nspace,mb,stk,pci);
+		if( pci->clk)
+			profilerEvent(cntxt->nspace,mb,stk,pci);
     }
 #endif
 @}

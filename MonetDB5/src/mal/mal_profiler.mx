@@ -15,13 +15,6 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@' 
-@' Contributor(s):
-@'      Martin Kersten <Martin.Kersten@cwi.nl>
-@'      Peter Boncz <Peter.Boncz@cwi.nl>
-@'      Niels Nes <Niels.Nes@cwi.nl>
-@'      Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 @a M. Kersten
 @v 0.0
 @* MAL dynamic profiler
@@ -58,18 +51,17 @@ call has a global effect,
 all concurrent users are affected by the performance overhead.
 Therefore, it is of primary interest to single user sessions.
 
-@+ The profiler event cache.
-The events can be cached in a dynamic structure under exclusive control
-of the profiler. The alternative, storing everyting into BATs leads
-to a loophole in performance measuring using e.g. kcachegrind.
-The content of this event cache can
-be obtained for post-processing by front-end, such as Mcockpit,
-or transformed into BATs for analysis within the kernel itself.
-The profile cache is unlimited.
+@+ The event trace
+Aside from shipping events to a separate process, the profiler
+can also keep the events in a local BAT group. Ofcourse,
+such a measurement scheme does not come for free and may
+even obscure performance measurements obtained throug e.g. kcachegrind.
 
+@+ Profile activation
 The profiler is activated by defining MALprofiler in mal.mx.
 This leads to securing space for the counters and for code
 in the interpreter to collect the information.
+
 @{
 @h
 #ifndef _MAL_PROFILER_H
@@ -115,6 +107,12 @@ mal_export void profileReport(Scope cntxt,int outer, stream *out);
 mal_export void resetProfiler(stream *fdout);
 
 mal_export int malProfileMode;
+
+mal_export void startTrace();
+mal_export void stopTrace();
+mal_export void resetTrace();
+mal_export BAT *getTrace(str ev);
+
 #define DEBUG_MAL_PROFILER
 
 #endif
@@ -153,6 +151,7 @@ static int cachedProfiling = FALSE;
 
 static void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 static void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+static void cachedProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 int malProfileMode=0;   /* global flag to indicate profiling mode */
 static int profileAll=0;/* all instructions should be profiled */
@@ -170,7 +169,7 @@ static struct{
     str name;   /* which logical counter is needed */
     int status; /* trace it or not */
 } profileCounter[]={
-    /*  0 */ {"tick",1},
+    /*  0 */ {"ticks",1},
     /*  1 */ {"cpu",1},
     /*  2 */ {"memory",1},
     /*  3 */ {"io",1},
@@ -178,6 +177,7 @@ static struct{
     /*  5 */ {"statement",1},
     /*  6 */ {0,0}
 };
+
 @-
 The counters can be set individually. The XML output uses the order of their
 definition.
@@ -216,7 +216,7 @@ void profilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef MALprofiler
     if( onlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
     if( offlineProfiling) offlineProfilerEvent(cntxt,mb,stk,pci);
-    if( cachedProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
+    if( cachedProfiling) cachedProfilerEvent(cntxt,mb,stk,pci);
 #endif
 }
 
@@ -361,7 +361,6 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     mal_unset_lock(profileLock,"profileLock");
 }
 #endif
-@+ Cached processing
 @+ Postprocessing events
 The offlineProfilerEvent below illustrates information that could be
 saved in XML format for post-processing. Compared to the
@@ -799,6 +798,166 @@ void resetFilter(Scope cntxt, str mod, str fcn){
 #else
     stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
+}
+@+ Tracing
+The events being captured are stored in separate bats.
+They are made persistent to accumate information over
+multiple sessions. This means it has to be explicitly reset
+to avoid disc overflow.
+@c
+BAT *TRACE_id_ticks;
+BAT *TRACE_id_pc;
+BAT *TRACE_id_modfcn;
+BAT *TRACE_id_stmt;
+
+static BAT *
+TRACEcreate(str hnme, str tnme, int ht, int tt)
+{
+    BAT *b;
+    char buf[128];
+                                                                                
+    snprintf(buf,128, "trace_%s_%s", hnme,tnme);
+    b= BATdescriptor(BBPindex(buf));
+    if( b ) return b;
+                                                                                
+    b = BATnew(ht, tt, 256);
+    if (b == NULL)
+        GDKfatal("STAT_create: could not allocate.");
+                                                                                
+    BATkey(b, TRUE);
+    BBPrename(b->batCacheid, buf);
+    BATmode(b, PERSISTENT);
+    BATcommit(b);
+    return b;
+}
+
+void
+initTrace(){
+	if( TRACE_id_ticks) return; /* already initialized */
+    mal_set_lock(mal_contextLock, "trace");
+    TRACE_id_ticks= TRACEcreate("id","ticks",TYPE_int,TYPE_int);
+    TRACE_id_pc= TRACEcreate("id","pc",TYPE_int,TYPE_str);
+    TRACE_id_modfcn= TRACEcreate("id","modfcn",TYPE_int,TYPE_str);
+    TRACE_id_stmt= TRACEcreate("id","statement",TYPE_int,TYPE_str);
+    mal_unset_lock(mal_contextLock, "trace");
+}
+void
+startTrace(){
+	initTrace();
+    malProfileMode = TRUE;
+	cachedProfiling= TRUE;
+    delayswitch=1;  /* avoid an incomplete initial profile event */
+}
+void
+stopTrace(){
+	initTrace();
+    malProfileMode = FALSE;
+	cachedProfiling= FALSE;
+}
+void
+resetTrace(){
+	initTrace();
+	/* drop all trace tables */
+	BBPreclaim(TRACE_id_ticks); TRACE_id_ticks= 0;
+	BBPreclaim(TRACE_id_pc); TRACE_id_pc= 0;
+	BBPreclaim(TRACE_id_modfcn); TRACE_id_modfcn= 0;
+	BBPreclaim(TRACE_id_stmt); TRACE_id_stmt= 0;
+}
+BAT *
+getTrace(str nme){
+	if( strcmp(nme,"ticks")==0) return TRACE_id_ticks;
+	if( strcmp(nme,"pc")==0) return TRACE_id_pc;
+	if( strcmp(nme,"modfcn")==0) return TRACE_id_modfcn;
+	if( strcmp(nme,"statement")==0) return TRACE_id_stmt;
+	return NULL;
+}
+
+void cachedProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+    /* static struct mallinfo prevMalloc;*/
+    /* static struct rusage   prevUsage;*/
+    static int eventcounter;
+    struct tms newTms;
+	struct mallinfo infoMalloc;
+	struct rusage   infoUsage;
+    str stmt,c;
+	int evnt;
+
+    (void) cntxt; (void) stk; /* still unused */
+
+    if(!profileAll && pci->trace== FALSE) return;
+	if( TRACE_id_ticks == 0) return;
+    if( delayswitch >0){
+        /* first call to profiled */
+        delayswitch--;
+        return;
+    }
+    if( delayswitch==0){
+        delayswitch= -1;
+    } 
+    times(&newTms);
+    infoMalloc = MT_mallinfo();
+    getrusage(RUSAGE_SELF,&infoUsage);
+    mal_set_lock(profileLock,"profileLock");
+	evnt= (int) BATcount(TRACE_id_ticks);
+
+    /* update the Trace tables */
+    if( profileCounter[PROFpc].status ){
+        str nme= ""; char buf[1024];
+        if( stk->blk) nme= functionName(getInstrPtr(stk->blk,0)); 
+		snprintf(buf,1024,"%s.%s[%d]", 
+			moduleName(getInstrPtr(mb,0)), functionName(getInstrPtr(mb,0)),
+			getPC(mb,pci));
+		BUNins(TRACE_id_pc,&evnt,buf);
+        if( moduleId(pci) && functionId(pci)){
+			snprintf(buf,1024, "%s.%s", moduleName(pci),functionName(pci));
+        } else {
+			snprintf(buf,1024, "%s",operatorName(pci->token));
+        }
+		BUNins(TRACE_id_modfcn,&evnt,buf);
+    }
+    if( profileCounter[PROFlabel].status ){
+		BUNins(TRACE_id_ticks, &evnt,&pci->ticks);
+        /* log("%d,\t", pci->clk);*/
+    }
+    if( profileCounter[PROFstmt].status ){
+        /* generate actual call statement */
+        stmt= call2str(mb,stk,getPC(mb,pci),FALSE);
+        c= stmt;
+        while(c && *c && (isspace((int)*c) || *c == '!') ) c++;
+		BUNins(TRACE_id_stmt, &evnt,c);
+    }
+/*
+    if( profileCounter[PROFcpu].status ){
+        log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
+        log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
+        log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
+        log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
+    }
+
+    if( profileCounter[PROFmemory].status ){
+        log("%d,\t",infoUsage.ru_maxrss);
+        log("%d,\t", infoMalloc.arena-prevMalloc.arena);
+        log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
+        log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
+        log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
+        log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
+        log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
+        log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
+        prevMalloc = infoMalloc;
+    }
+    if( profileCounter[PROFio].status ){
+        log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
+        log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
+        log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
+        log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
+        log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
+        log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
+        log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
+        prevUsage = infoUsage;
+    }
+*/
+    eventcounter++;
+    mal_unset_lock(profileLock,"profileLock");
 }
 @+ Reporting
 The performance information is collected on an instruction basis,
