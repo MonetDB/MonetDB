@@ -1607,7 +1607,7 @@ static stmt *sql_compare(context * sql, stmt * ls,
 			return NULL;
 		}
 		if (ls->h && rs->h && ls->h == rs->h) {
-			return stmt_select(ls, rs, type);
+			return stmt_uselect(ls, rs, type);
 		}
 		rs = stmt_reverse(rs);
 		return stmt_join(ls, rs, type);
@@ -1622,7 +1622,7 @@ static stmt *sql_compare(context * sql, stmt * ls,
 			if (rs) stmt_destroy(rs);
 			return NULL;
 		}
-		return stmt_select(ls, rs, type);
+		return stmt_uselect(ls, rs, type);
 	}
 }
 
@@ -1828,7 +1828,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 				rs2 = stmt_binop(rs1, rs2, max);
 				rs1 = tmp;
 			}
-			res = stmt_select2(ls, rs1, rs2, 3 
+			res = stmt_uselect2(ls, rs1, rs2, 3 
 					/* aka rs1 <= ls <= rs2*/);
 			if (sc->token == SQL_NOT_BETWEEN)
 				res = stmt_diff(ls, res);
@@ -2008,9 +2008,9 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 				stmt *a = stmt_atom(atom_general(tpe, NULL));
 
 				if (sc->token == SQL_NULL) {
-					res = stmt_select(res, a, cmp_equal);
+					res = stmt_uselect(res, a, cmp_equal);
 				} else {
-					res = stmt_select(res, a,
+					res = stmt_uselect(res, a,
 							cmp_notequal);
 				}
 			}
@@ -3201,14 +3201,14 @@ static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int 
 				if (inserts[0]->op2.stval->key){
 					s = stmt_relselect_init();
 					stmt_relselect_fill( s, 
-					    stmt_select(
+					    stmt_uselect(
 						stmt_kbat(k,0), 
 						stmt_dup(h), cmp_equal)); 
 			    		for(m = k->columns->h; m; m = m->next)
 					{
 						sql_kc *c = m->data;
 						stmt_relselect_fill( s,
-						    stmt_select(
+						    stmt_uselect(
 							stmt_dup(inserts[c->c->colnr]->op1.stval), 
 							stmt_dup(inserts[c->c->colnr]->op2.stval),
 							cmp_equal));
@@ -3253,7 +3253,7 @@ static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int 
 			} else { /* single column key */
 				sql_kc *c = k->columns->h->data;
 				h = stmt_dup(inserts[c->c->colnr]->op2.stval);	
-				s = stmt_select( stmt_dup(inserts[c->c->colnr]->op1.stval), h, cmp_equal);
+				s = stmt_uselect( stmt_dup(inserts[c->c->colnr]->op1.stval), h, cmp_equal);
 				/* s should be empty */
 				snprintf(buf, BUFSIZ, 
 					"key constraint %s.%s failed", k->t->name, k->name ); 
@@ -3275,7 +3275,7 @@ static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int 
 					sql_kc *c = m->data;
 					sql_kc *rc = o->data;
 					stmt_relselect_fill( s,
-					    stmt_select(
+					    stmt_uselect(
 						stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat)), 
 						stmt_dup(inserts[c->c->colnr]->op2.stval),
 						cmp_equal));

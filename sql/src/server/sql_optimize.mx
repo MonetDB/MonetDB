@@ -135,8 +135,8 @@ static int select_count( stmt *s )
 			}
 			return sc;
 		}
-		case st_select2:
-		case st_select: return 1;
+		case st_select2: case st_uselect2:
+		case st_select: case st_uselect: return 1;
 		default: return 0;
 	}
 }
@@ -221,6 +221,17 @@ static stmt *stmt_push_down_head(stmt * join, stmt * select){
 		if (join->op2.stval->nrcols >= 1){
 		    select = stmt_dup(select);
 		    res = stmt_select(
+			stmt_push_down_head( stmt_dup(join->op1.stval), select),
+			stmt_push_down_head( stmt_dup(join->op2.stval), select),
+			(comp_type)join->flag);
+		    stmt_destroy(join);
+		    return res;
+		}
+	} else if (join->type == st_uselect){
+		/* nr cols == 2 ie push through op1 and op2 */
+		if (join->op2.stval->nrcols >= 1){
+		    select = stmt_dup(select);
+		    res = stmt_uselect(
 			stmt_push_down_head( stmt_dup(join->op1.stval), select),
 			stmt_push_down_head( stmt_dup(join->op2.stval), select),
 			(comp_type)join->flag);
@@ -366,6 +377,15 @@ static stmt *stmt_push_join_head(stmt * s, stmt * join){
 			stmt_destroy(s);
 			return res;
 		}
+	} else if (s->type == st_uselect){
+		if (s->op2.stval->nrcols >= 1){
+			stmt *jn = stmt_dup(join);
+			stmt *op1 = stmt_push_join_head( stmt_dup(s->op1.stval), jn);
+			stmt *op2 = stmt_push_join_head( stmt_dup(s->op2.stval), jn);
+			stmt *res = stmt_uselect( op1, op2, (comp_type)s->flag );
+			stmt_destroy(s);
+			return res;
+		}
 	} else if (s->type == st_relselect){
 		list *l = create_stmt_list();
 		node *n;
@@ -425,7 +445,7 @@ static stmt *stmt_push_join_tail(stmt * s, stmt * join){
 static stmt *stmt_join2select(stmt * j){
 
 	if (j->type == st_join){
-		stmt *res = stmt_select(stmt_dup(j->op1.stval), 
+		stmt *res = stmt_uselect(stmt_dup(j->op1.stval), 
 				stmt_reverse(stmt_dup(j->op2.stval)), 
 					(comp_type)j->flag);
 		stmt_destroy(j);
@@ -894,7 +914,9 @@ stmt *optimize( context *c, stmt *s ){
 
 	case st_temp:
 	case st_filter: 
-	case st_select: case st_select2: case st_semijoin: 
+	case st_select: case st_select2: 
+	case st_uselect: case st_uselect2: 
+	case st_semijoin: 
 	case st_diff: case st_intersect: case st_union: case st_outerjoin:
 	case st_join: 
 	case st_mirror: case st_reverse: case st_const: case st_mark: 

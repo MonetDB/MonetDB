@@ -444,7 +444,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 
-	case st_select: {
+	case st_select: 
+	case st_uselect: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
 		if (s->op2.stval->nrcols >= 1){
@@ -464,6 +465,11 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 				"s%d := [%s](s%d,s%d).uselect(TRUE);\n", 
 				-s->nr, op, l, r ); 
 		} else {
+		char *cmd;
+		if (s->type == st_select)
+			cmd="select";
+		else
+			cmd="uselect";
 		switch(s->flag){
 		case cmp_like:
 			len = snprintf( buf, BUFSIZ, 
@@ -471,7 +477,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			break;
 		case cmp_equal:
 			len = snprintf( buf, BUFSIZ, 
-				"s%d := s%d.uselect(s%d);\n", -s->nr, l, r ); 
+				"s%d := s%d.%s(s%d);\n", -s->nr, l, cmd, r ); 
 			break;
 		case cmp_notequal:
 			(void)(*nr)++; 
@@ -482,23 +488,23 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			break;
 		case cmp_lt:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(%s(nil), s%d, FALSE, FALSE);\n", 
-			  -s->nr, l, tail_type(s)->type->name, r ); 
+			  "s%d := s%d.%s(%s(nil), s%d, FALSE, FALSE);\n", 
+			  -s->nr, l, cmd, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_lte:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(%s(nil), s%d);\n", 
-			  -s->nr, l, tail_type(s)->type->name, r ); 
+			  "s%d := s%d.%s(%s(nil), s%d);\n", 
+			  -s->nr, l, cmd, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_gt:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(s%d, %s(nil), FALSE, FALSE);\n", 
-			  -s->nr, l, r, tail_type(s)->type->name ); 
+			  "s%d := s%d.%s(s%d, %s(nil), FALSE, FALSE);\n", 
+			  -s->nr, l, cmd, r, tail_type(s)->type->name ); 
 			break;
 		case cmp_gte: 
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(s%d, %s(nil));\n", 
-			  -s->nr, l, r, tail_type(s)->type->name ); 
+			  "s%d := s%d.%s(s%d, %s(nil));\n", 
+			  -s->nr, l, cmd, r, tail_type(s)->type->name ); 
 			break;
 		default:
 			len = snprintf( buf, BUFSIZ, 
@@ -507,11 +513,17 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
-	case st_select2: {
+	case st_select2: 
+	case st_uselect2: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r1 = stmt_dump( s->op2.stval, nr, sql );
 		int r2 = stmt_dump( s->op3.stval, nr, sql );
 		char *bits = NULL;
+		char *cmd;
+		if (s->type == st_select2)
+			cmd="select";
+		else
+			cmd="uselect";
 		switch(s->flag){
 		case 0: 
 			bits = ", FALSE, FALSE";
@@ -527,8 +539,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			break;
 		}
 		len = snprintf( buf, BUFSIZ, 
-		  "s%d := s%d.uselect(s%d, s%d%s);\n", 
-		  -s->nr, l, r1, r2, bits ); 
+		  "s%d := s%d.%s(s%d, s%d%s);\n", 
+		  -s->nr, l, cmd, r1, r2, bits ); 
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_semijoin: 

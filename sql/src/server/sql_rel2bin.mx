@@ -43,9 +43,9 @@ extern stmt *rel2bin( context *c, stmt *s );
 #include "sql_rel2bin.h"
 #include <stdio.h>
 
-static int cmp_sel_st_type( stmt *sel, st_type *tpe )
+static int cmp_sel2( stmt *sel, st_type *tpe )
 {
-	if (sel->type == *tpe){
+	if (sel->type == st_select2 || sel->type == st_uselect2){
 		return 0;
 	}
 	return -1;
@@ -87,7 +87,7 @@ static int cmp_sel_val( stmt *sel, stmt *key )
 
 static int cmp_sel_comp_type( stmt *sel, comp_type *flg )
 {
-	if (sel->type == st_select && sel->flag == *flg){
+	if ((sel->type == st_select || sel->type == st_uselect) && sel->flag == *flg){
 		return 0;
 	}
 	return -1;
@@ -216,7 +216,6 @@ list *shrink_select_ranges(list *oldsels)
 			list *l1, *l2, *sels2, *sels1[cmp_all];
 			stmt *bound[4] = {NULL, NULL, NULL, NULL};
 			stmt *col[4] = {NULL, NULL, NULL, NULL};
-			st_type ST_select2 = st_select2;
 			comp_type ct;
 			node *n;
 			int flg, len = 0;
@@ -230,7 +229,7 @@ list *shrink_select_ranges(list *oldsels)
 				list_destroy(l1);
 			}
 			/* separate all double-sided range selects */
-			sels2 = list_select( colsels, (void*)&ST_select2, (fcmp)&cmp_sel_st_type, (fdup)&stmt_dup );
+			sels2 = list_select( colsels, (void*)1, (fcmp)&cmp_sel2, (fdup)&stmt_dup );
 			len += list_length(sels2);
 
 			/* make sure we didn't miss anything */
@@ -248,8 +247,8 @@ list *shrink_select_ranges(list *oldsels)
 				case 2: cl=cmp_gte; cr=cmp_lt;  break;
 				case 3: cl=cmp_gte; cr=cmp_lte; break;
 				}
-				sl = stmt_select(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cl);
-				sr = stmt_select(stmt_dup(s->op1.stval), stmt_dup(s->op3.stval), cr);
+				sl = stmt_uselect(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cl);
+				sr = stmt_uselect(stmt_dup(s->op1.stval), stmt_dup(s->op3.stval), cr);
 				list_append( sels1[cl], sl );
 				list_append( sels1[cr], sr );
 			}
@@ -280,8 +279,8 @@ list *shrink_select_ranges(list *oldsels)
 			for ( n = sels1[cmp_equal]->h; n; n = n->next ){
 				stmt *sl, *sr, *s = n->data;
 
-				sl = stmt_select(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cmp_gte);
-				sr = stmt_select(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cmp_lte);
+				sl = stmt_uselect(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cmp_gte);
+				sr = stmt_uselect(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cmp_lte);
 				list_append( sels1[cmp_gte], sl );
 				list_append( sels1[cmp_lte], sr );
 			}
@@ -341,7 +340,7 @@ list *shrink_select_ranges(list *oldsels)
 				case 3: cl=cmp_gte; cr=cmp_lte; break;
 				}
 				if (bound[cl] && bound[cr]) {
-					list_append( newsels, stmt_select2( stmt_dup(col[cl]), bound[cl], bound[cr], flg ) );
+					list_append( newsels, stmt_uselect2( stmt_dup(col[cl]), bound[cl], bound[cr], flg ) );
 					bound[cl] = bound[cr] = NULL;
 				}
 			}
@@ -349,7 +348,7 @@ list *shrink_select_ranges(list *oldsels)
 			/* collect remaining single-sided range selects that haven't found a partner */
 			for ( ct = cmp_gt; ct <= cmp_lt; ct++ ){
 				if (bound[ct]) {
-					list_append( newsels, stmt_select( stmt_dup(col[ct]), bound[ct], ct ) );
+					list_append( newsels, stmt_uselect( stmt_dup(col[ct]), bound[ct], ct ) );
 				}
 			}	
 
@@ -456,7 +455,9 @@ stmt *rel2bin( context *c, stmt *s )
 
 	case st_temp:
 	case st_filter: 
-	case st_select: case st_select2: case st_semijoin:
+	case st_select: case st_select2: 
+	case st_uselect: case st_uselect2: 
+	case st_semijoin:
 	case st_diff: case st_intersect: case st_union: case st_outerjoin:
 	case st_join: 
 	case st_mirror: case st_reverse: case st_const: case st_mark: 

@@ -92,6 +92,8 @@ typedef enum stmt_type {
 	st_filter,
 	st_select,
 	st_select2,
+	st_uselect,
+	st_uselect2,
 	st_semijoin,
 
 	st_reljoin,
@@ -242,6 +244,7 @@ extern stmt *stmt_temp(sql_subtype * t );
 extern stmt *stmt_atom(atom * op1);
 extern stmt *stmt_filter(stmt * sel);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
+extern stmt *stmt_uselect(stmt * op1, stmt * op2, comp_type cmptype);
 /* cmp 
        0 ==   l <  x <  h 	
        1 ==   l <  x <= h 
@@ -249,6 +252,7 @@ extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
        3 ==   l <= x <= h
        */
 extern stmt *stmt_select2(stmt * op1, stmt * op2, stmt * op3, int cmp);
+extern stmt *stmt_uselect2(stmt * op1, stmt * op2, stmt * op3, int cmp);
 extern stmt *stmt_semijoin(stmt * op1, stmt * op2);
 
 extern stmt *stmt_relselect_init();
@@ -388,6 +392,8 @@ const char * st_type2string(st_type type) {
 	case st_relselect:	return "st_relselect";
 	case st_select:	return "st_select";
 	case st_select2:	return "st_select2";
+	case st_uselect:	return "st_uselect";
+	case st_uselect2:	return "st_uselect2";
 	case st_bulkinsert:	return "st_bulkinsert";
 	case st_export:	return "st_export";
 	case st_append:	return "st_append";
@@ -628,7 +634,9 @@ void stmt_destroy(stmt * s)
 		case st_ibat:
 		case st_group: case st_group_ext:
 
-		case st_filter: case st_select: case st_select2:
+		case st_filter:
+		case st_select: case st_select2:
+		case st_uselect: case st_uselect2:
 		case st_semijoin:
 
 		case st_bulkinsert:
@@ -1041,12 +1049,38 @@ stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype)
 	s->flag = cmptype;
 	s->nrcols = 1;
 	s->h = stmt_dup(s->op1.stval->h);
+	s->t = stmt_dup(s->op1.stval->t);
 	return s;
 }
 
 stmt *stmt_select2(stmt * op1, stmt * op2, stmt * op3, int cmp)
 {
 	stmt *s = stmt_create(st_select2);
+	s->op1.stval = op1;
+	s->op2.stval = op2;
+	s->op3.stval = op3;
+	s->flag = cmp;
+	s->nrcols = 1;
+	s->h = stmt_dup(s->op1.stval->h);
+	s->t = stmt_dup(s->op1.stval->t);
+	return s;
+}
+
+stmt *stmt_uselect(stmt * op1, stmt * op2, comp_type cmptype)
+{
+	stmt *s = stmt_create(st_uselect);
+	assert(cmptype != cmp_like);
+	s->op1.stval = op1;
+	s->op2.stval = op2;
+	s->flag = cmptype;
+	s->nrcols = 1;
+	s->h = stmt_dup(s->op1.stval->h);
+	return s;
+}
+
+stmt *stmt_uselect2(stmt * op1, stmt * op2, stmt * op3, int cmp)
+{
+	stmt *s = stmt_create(st_uselect2);
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->op3.stval = op3;
@@ -1228,7 +1262,7 @@ printf("= TODO stmt_intersect (2)\n");
 				stmt_dup(op2->op1.stval), cmp_equal ); 
 			stmt *r = stmt_join(stmt_dup(mr), 
 				stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-			stmt *v = stmt_select( l, r, (comp_type)op2->flag);
+			stmt *v = stmt_uselect( l, r, (comp_type)op2->flag);
 			res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
 		} else { /* reverse */
 			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
@@ -1237,15 +1271,15 @@ printf("= TODO stmt_intersect (2)\n");
 				stmt_dup(op2->op1.stval), cmp_equal ); 
 			stmt *r = stmt_join(stmt_dup(ml), 
 				stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-			stmt *v = stmt_select( l, r, (comp_type)op2->flag);
+			stmt *v = stmt_uselect( l, r, (comp_type)op2->flag);
 			res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
 		}
 
 /*
 		if (!reverse){
-	 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal ), stmt_dup(op2->op1.stval), (comp_type)op2->flag));
+	 		res = stmt_semijoin( stmt_dup(op1), stmt_uselect( stmt_join(op1, stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal ), stmt_dup(op2->op1.stval), (comp_type)op2->flag));
 		} else {
-	 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_dup(op2->op1.stval), cmp_equal ), stmt_reverse(stmt_dup(op2->op2.stval)), (comp_type)op2->flag));
+	 		res = stmt_semijoin( stmt_dup(op1), stmt_uselect( stmt_join(op1, stmt_dup(op2->op1.stval), cmp_equal ), stmt_reverse(stmt_dup(op2->op2.stval)), (comp_type)op2->flag));
 		}
 		stmt_destroy(op2);
 */
@@ -1563,6 +1597,8 @@ sql_subtype *tail_type(stmt * st)
 	case st_filter:
 	case st_select:
 	case st_select2:
+	case st_uselect:
+	case st_uselect2:
 	case st_unique:
 	case st_union:
 	case st_append:
@@ -1622,6 +1658,8 @@ sql_subtype *head_type(stmt * st)
 	case st_filter:
 	case st_select:
 	case st_select2:
+	case st_uselect:
+	case st_uselect2:
 	case st_ibat:
 	case st_append:
 	case st_insert:
@@ -1671,6 +1709,8 @@ stmt *tail_column(stmt * st)
 	case st_filter:
 	case st_select:
 	case st_select2:
+	case st_uselect:
+	case st_uselect2:
 	case st_semijoin:
 	case st_atom:
 	case st_alias:
@@ -1726,6 +1766,8 @@ stmt *head_column(stmt * st)
 	case st_filter:
 	case st_select:
 	case st_select2:
+	case st_uselect:
+	case st_uselect2:
 	case st_append:
 	case st_insert:
 	case st_replace:
@@ -1792,6 +1834,8 @@ char *column_name(stmt * st)
 	case st_filter:
 	case st_select:
 	case st_select2:
+	case st_uselect:
+	case st_uselect2:
 	case st_diff:
 	case st_unique:
 	case st_partial_pivot: case st_pivot:
@@ -1845,6 +1889,8 @@ char *table_name(stmt * st)
 	case st_filter:
 	case st_select:
 	case st_select2:
+	case st_uselect:
+	case st_uselect2:
 	case st_diff:
 	case st_aggr:
 	case st_unique:
