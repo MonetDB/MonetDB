@@ -596,8 +596,15 @@ void BBPexit(void)
 			BAT *b = BBP_cache(i);
 			if (b) BATfree(b);
 			BBPuncacheit(i,TRUE);
+			GDKfree(BBP_logical(i));
+		}
+		if( BBP_physical(i)){
+			GDKfree(BBP_physical(i));
+			BBP_physical(i)=0;
 		}
 	}
+	GDKfree(BBP_hash);
+	BBP_hash= 0;
 }
 
 @-
