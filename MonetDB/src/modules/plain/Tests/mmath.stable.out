@@ -31,7 +31,7 @@ Try: modules;                - for other modules.
 
 setoid(oid(20000000));
 asin(sin(M_PI)).print;
-[ 1.22461e-16 ]
+[ 1.22465e-16 ]
 acos(cos(M_PI)).print;
 [ 3.14159 ]
 atan(tan(M_PI_2)).print;

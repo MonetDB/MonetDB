@@ -1,11 +1,12 @@
-stdout of test 'client` in directory 'src/tools` itself:
+stdout of test 'server` in directory 'src/tools` itself:
 
-#> Mtest (21:13:12):	milC client milC -prelude client.prelude
-#> Mtest (21:13:12):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_tools -prelude /home/niels/new/monet/Linux/src/modules/plain/mapi.mil &
+#> Mtest (21:13:10):	milM server milM -prelude server.prelude
+#> Mtest (21:13:10):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_tools -prelude server.prelude server.milM
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
-#prelude:/home/niels/new/monet/Linux/src/modules/plain/mapi.mil
+#script:server.milM
+#prelude:server.prelude
 
 loaded;
 #---------------------------------#
@@ -25,25 +26,32 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-#> Mtest (21:13:12):	sleep 9
-#> Mtest (21:13:21):	Mtimeout -timeout 600 Mclient -prelude client.prelude < client.milC
-# start session on src_tools:50072
+setoid(oid(10000000));
+
+printf("Start of MIL prelude.\n");
 Start of MIL prelude.
-[ 1 ]
+
+clientid().print();
+[ 0 ]
+debugmask().print();
 [ 10 ]
+qstat();
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
+
+bbp.print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  26	  ]
-[ "tmpbats",	  26	  ]
+[ "bats",	  23	  ]
+[ "tmpbats",	  23	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -51,42 +59,81 @@ Start of MIL prelude.
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
-[ "mapi",	  1		  ]
-[ "str",	  2		  ]
+[ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "unix",	  1		  ]
-#-----------------#
-# MIL Procedure	  #
-#-----------------#
+procs();
+#-----------------------------------------------------------------------------------------#
+# MIL Procedure										  #
+#-----------------------------------------------------------------------------------------#
+[ "ADDHELP(str, str, str, str, str) : void"						  ]
+[ "bbp() : BAT[str,int]"								  ]
+[ "capacity(BAT[any,any]) : int"							  ]
+[ "clear(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "clients() : void"									  ]
+[ "col_name(BAT[any::1,any::2], str) : BAT[any::1,any::2]"				  ]
+[ "cold(BAT[any::1,any::2]) : void"							  ]
+[ "cpu() : BAT[str,int]"								  ]
+[ "destroy(BAT[any,any]) : any"								  ]
+[ "destroy(str) : any"									  ]
+[ "diff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
+[ "dir() : void"									  ]
+[ "dir(BAT[int,str]) : any"								  ]
+[ "dir(str) : void"									  ]
+[ "dir_leaks() : any"									  ]
+[ "env() : void"									  ]
+[ "environment() : BAT[str,str]"							  ]
+[ "exit() : void"									  ]
+[ "head(BAT[any,any]) : int"								  ]
+[ "help() : <predefinition>"								  ]
+[ "help(str) : void"									  ]
+[ "help_sig(oid) : void"								  ]
+[ "help_tpe(int) : str"									  ]
+[ "hot(BAT[any::1,any::2]) : void"							  ]
+[ "htype(BAT[any,any]) : int"								  ]
+[ "intersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"		  ]
+[ "io() : BAT[str,int]"									  ]
+[ "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]"	  ]
+[ "likeselect(BAT[any::1,str], str) : BAT[any::1,oid]"					  ]
+[ "load(str) : BAT[any,any]"								  ]
+[ "loaded() : void"									  ]
+[ "ls() : void"										  ]
+[ "ls(str) : void"									  ]
+[ "madvise(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "mem_usage() : BAT[str,lng]"								  ]
+[ "mem_usage(int) : BAT[str,lng]"							  ]
+[ "memory() : BAT[str,int]"								  ]
+[ "mil_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"			  ]
+[ "mil_select(BAT[any::1,any::2], str, any::2, any::2) : BAT[any::1,any::2]"		  ]
+[ "mmap(BAT[any::1,any::2], int) : BAT[any::1,any::2]"					  ]
+[ "modules() : void"									  ]
+[ "neg_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"			  ]
+[ "new(int, int) : BAT[any,any]"							  ]
+[ "new(int, int, int) : BAT[any,any]"							  ]
+[ "procs() : void"									  ]
+[ "project(BAT[any::1,any]) : BAT[any::1,void]"						  ]
+[ "readonly(BAT[any::1,any::2]) : int"							  ]
+[ "readonly(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "rename(BAT[any::1,any::2], str) : BAT[any::1,any::2]"				  ]
+[ "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]"			  ]
+[ "save(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "semijoin(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]"			  ]
+[ "sigs(str) : void"									  ]
+[ "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "tail(BAT[any,any]) : int"								  ]
+[ "threads() : void"									  ]
+[ "ttype(BAT[any,any]) : int"								  ]
+[ "tunique(BAT[any,any::1]) : BAT[any::1,void]"						  ]
+[ "union(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
+[ "unique(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "vars() : void"									  ]
+[ "vm_usage() : BAT[str,lng]"								  ]
+[ "vm_usage(int) : BAT[str,lng]"							  ]
+vars();
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -103,39 +150,18 @@ Start of MIL prelude.
 [ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "287"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "284"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "278"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -155,6 +181,7 @@ Start of MIL prelude.
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+view_bbp_kind().print();
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -181,9 +208,7 @@ Start of MIL prelude.
 [ 20,	  "tran"  ]
 [ 21,	  "tran"  ]
 [ 22,	  "tran"  ]
-[ 23,	  "tran"  ]
-[ 24,	  "tran"  ]
-[ 25,	  "tran"  ]
+view_bbp_location().print();
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -210,9 +235,7 @@ Start of MIL prelude.
 [ 20,	  "20"		  ]
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
-[ 23,	  "23"		  ]
-[ 24,	  "24"		  ]
-[ 25,	  "25"		  ]
+view_bbp_name().print();
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -239,9 +262,7 @@ Start of MIL prelude.
 [ 20,	  "monet_fcntbl"	  ]
 [ 21,	  "monet_acctbl"	  ]
 [ 22,	  "monet_atomtbl"	  ]
-[ 23,	  "tmp_23"		  ]
-[ 24,	  "tmp_24"		  ]
-[ 25,	  "tmp_25"		  ]
+view_bbp_refcnt().print();
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -268,9 +289,7 @@ Start of MIL prelude.
 [ 20,	  1	  ]
 [ 21,	  1	  ]
 [ 22,	  1	  ]
-[ 23,	  1	  ]
-[ 24,	  1	  ]
-[ 25,	  1	  ]
+view_bbp_status().print();
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -297,32 +316,28 @@ Start of MIL prelude.
 [ 20,	  "load"  ]
 [ 21,	  "load"  ]
 [ 22,	  "load"  ]
-[ 23,	  "load"  ]
-[ 24,	  "load"  ]
-[ 25,	  "load"  ]
+view_client_tree().print();
 #-----------------------------------------#
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "listen(get_monet_port(),5)"	  ]
-[ 1,	  "print(view_client_tree())"	  ]
+[ 0,	  "print(view_client_tree())"	  ]
+view_gdk_bbp().print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  26	  ]
-[ "tmpbats",	  26	  ]
+[ "bats",	  23	  ]
+[ "tmpbats",	  23	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
+view_var_constant().print();
 #-----------------------------------------#
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "constant"	  ]
-[ "monet_acctbl",	  "constant"	  ]
-[ "monet_fcntbl",	  "constant"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -370,13 +385,11 @@ Start of MIL prelude.
 [ "monet_fcn_tpe",	  "constant"	  ]
 [ "monet_fcn_imp",	  "constant"	  ]
 [ "monet_fcn_fcn",	  "constant"	  ]
+view_var_kind().print();
 #-----------------------------------------#
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "frozen"	  ]
-[ "monet_acctbl",	  "frozen"	  ]
-[ "monet_fcntbl",	  "frozen"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -424,13 +437,11 @@ Start of MIL prelude.
 [ "monet_fcn_tpe",	  "frozen"	  ]
 [ "monet_fcn_imp",	  "frozen"	  ]
 [ "monet_fcn_fcn",	  "frozen"	  ]
+view_var_type().print();
 #---------------------------------#
 # BAT:			  type	  #
 # (str)			  (str)	  #
 #---------------------------------#
-[ "monet_atomtbl",	  "BAT"	  ]
-[ "monet_acctbl",	  "BAT"	  ]
-[ "monet_fcntbl",	  "BAT"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -478,37 +489,38 @@ Start of MIL prelude.
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
+
+dir();
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  437,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1233,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  432,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1221,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  "str",  "oid",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_dep",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  "oid",  "str",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_24",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
+ls();
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------#
+view_bbp_heat().print();
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -535,176 +547,199 @@ Start of MIL prelude.
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
-[ 23,	  0	  ]
-[ 24,	  0	  ]
-[ 25,	  0	  ]
+
+printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
+
+queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      7,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
-unknown(0)#"                   ]
-#[      8,         1,   running,         7, "listen(get_monet_port(),5#"    ]
-#[     57,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
-unknown(1)#"                   ]
-#[     58,         2,   running,        57, "queue()#"                      ]
-[ 2 ]
-#---------------------------------------------------------------------------------#
-# name		| login				| mil				  #
-#---------------------------------------------------------------------------------#
-[ "adm",	  "Wed Oct  4 10:53:19 2000",	  "listen(get_monet_port(),5)"	  ]
-[ "monet",	  "Wed Oct  4 10:53:29 2000",	  "clients()"			  ]
+#[     49,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
+unknown(0)#"                            ]
+#[     50,         1,   running,        49, "queue()#"                            ]
+threadid().print();
+[ 1 ]
+
+clients();
+#---------------------------------------------------------#
+# name	| login				| mil		  #
+#---------------------------------------------------------#
+[ "adm",  "Mon Sep 11 21:13:10 2000",	  "clients()"	  ]
+cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  240	  ]
+[ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  110	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
+env();
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
+environment().print();
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
+io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4736	  ]
-[ "minflt",	  166	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  346	  ]
+[ "majflt",	  469	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  2	  ]
+[ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  116	  ]
-[ "ninvcsw",	  93	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1277952	  ]
-[ "arena",	  1327088	  ]
-[ "ordblks",	  3337		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  25208		  ]
-[ "fsmblks",	  17992		  ]
-[ "uordblks",	  833296	  ]
-[ "fordblks",	  449952	  ]
+[ "memincr",	  1150976	  ]
+[ "arena",	  1166916	  ]
+[ "ordblks",	  595		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  688012	  ]
+[ "fordblks",	  478904	  ]
+threads();
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
+view_client_login().print();
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Wed Oct  4 10:53:19 2000"	  ]
-[ 1,	  "Wed Oct  4 10:53:29 2000"	  ]
-#-------------------------#
-# BAT:	  name		  #
-# (int)	  (str)		  #
-#-------------------------#
-[ 0,	  "adm"		  ]
-[ 1,	  "monet"	  ]
+[ 0,	  "Mon Sep 11 21:13:10 2000"	  ]
+view_client_name().print();
+#-----------------#
+# BAT:	  name	  #
+# (int)	  (str)	  #
+#-----------------#
+[ 0,	  "adm"	  ]
+view_gdk_cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  2	  ]
-[ "user",	  260	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  110	  ]
+[ "elapsed",	  0	  ]
+[ "user",	  140	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
+view_gdk_env().print();
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
+view_gdk_io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4736	  ]
-[ "minflt",	  166	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  346	  ]
+[ "majflt",	  470	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  2	  ]
+[ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  123	  ]
-[ "ninvcsw",	  97	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+view_gdk_memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1327088	  ]
-[ "ordblks",	  3329		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  25184		  ]
-[ "fsmblks",	  18016		  ]
-[ "uordblks",	  832216	  ]
-[ "fordblks",	  451032	  ]
+[ "arena",	  1166916	  ]
+[ "ordblks",	  603		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  687260	  ]
+[ "fordblks",	  479656	  ]
+view_gdk_thread().print();
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
+
+printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
+
+printf("End of MIL prelude.\n");
 End of MIL prelude.
+setoid(oid(20000000));
+
+printf("Start of MIL script.\n");
 Start of MIL script.
-[ 1 ]
+
+clientid().print();
+[ 0 ]
+debugmask().print();
 [ 10 ]
+qstat();
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
+
+bbp.print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  26	  ]
-[ "tmpbats",	  26	  ]
+[ "bats",	  23	  ]
+[ "tmpbats",	  23	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -712,42 +747,81 @@ Start of MIL script.
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
-[ "mapi",	  1		  ]
-[ "str",	  2		  ]
+[ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "unix",	  1		  ]
-#-----------------#
-# MIL Procedure	  #
-#-----------------#
+procs();
+#-----------------------------------------------------------------------------------------#
+# MIL Procedure										  #
+#-----------------------------------------------------------------------------------------#
+[ "ADDHELP(str, str, str, str, str) : void"						  ]
+[ "bbp() : BAT[str,int]"								  ]
+[ "capacity(BAT[any,any]) : int"							  ]
+[ "clear(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "clients() : void"									  ]
+[ "col_name(BAT[any::1,any::2], str) : BAT[any::1,any::2]"				  ]
+[ "cold(BAT[any::1,any::2]) : void"							  ]
+[ "cpu() : BAT[str,int]"								  ]
+[ "destroy(BAT[any,any]) : any"								  ]
+[ "destroy(str) : any"									  ]
+[ "diff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
+[ "dir() : void"									  ]
+[ "dir(BAT[int,str]) : any"								  ]
+[ "dir(str) : void"									  ]
+[ "dir_leaks() : any"									  ]
+[ "env() : void"									  ]
+[ "environment() : BAT[str,str]"							  ]
+[ "exit() : void"									  ]
+[ "head(BAT[any,any]) : int"								  ]
+[ "help() : <predefinition>"								  ]
+[ "help(str) : void"									  ]
+[ "help_sig(oid) : void"								  ]
+[ "help_tpe(int) : str"									  ]
+[ "hot(BAT[any::1,any::2]) : void"							  ]
+[ "htype(BAT[any,any]) : int"								  ]
+[ "intersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"		  ]
+[ "io() : BAT[str,int]"									  ]
+[ "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]"	  ]
+[ "likeselect(BAT[any::1,str], str) : BAT[any::1,oid]"					  ]
+[ "load(str) : BAT[any,any]"								  ]
+[ "loaded() : void"									  ]
+[ "ls() : void"										  ]
+[ "ls(str) : void"									  ]
+[ "madvise(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "mem_usage() : BAT[str,lng]"								  ]
+[ "mem_usage(int) : BAT[str,lng]"							  ]
+[ "memory() : BAT[str,int]"								  ]
+[ "mil_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"			  ]
+[ "mil_select(BAT[any::1,any::2], str, any::2, any::2) : BAT[any::1,any::2]"		  ]
+[ "mmap(BAT[any::1,any::2], int) : BAT[any::1,any::2]"					  ]
+[ "modules() : void"									  ]
+[ "neg_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"			  ]
+[ "new(int, int) : BAT[any,any]"							  ]
+[ "new(int, int, int) : BAT[any,any]"							  ]
+[ "procs() : void"									  ]
+[ "project(BAT[any::1,any]) : BAT[any::1,void]"						  ]
+[ "readonly(BAT[any::1,any::2]) : int"							  ]
+[ "readonly(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "rename(BAT[any::1,any::2], str) : BAT[any::1,any::2]"				  ]
+[ "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]"			  ]
+[ "save(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "semijoin(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]"			  ]
+[ "sigs(str) : void"									  ]
+[ "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "tail(BAT[any,any]) : int"								  ]
+[ "threads() : void"									  ]
+[ "ttype(BAT[any,any]) : int"								  ]
+[ "tunique(BAT[any,any::1]) : BAT[any::1,void]"						  ]
+[ "union(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
+[ "unique(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "vars() : void"									  ]
+[ "vm_usage() : BAT[str,lng]"								  ]
+[ "vm_usage(int) : BAT[str,lng]"							  ]
+vars();
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -772,31 +846,10 @@ Start of MIL script.
 [ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -816,6 +869,7 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+view_bbp_kind().print();
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -842,9 +896,7 @@ Start of MIL script.
 [ 20,	  "tran"  ]
 [ 21,	  "tran"  ]
 [ 22,	  "tran"  ]
-[ 23,	  "tran"  ]
-[ 24,	  "tran"  ]
-[ 25,	  "tran"  ]
+view_bbp_location().print();
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -871,9 +923,7 @@ Start of MIL script.
 [ 20,	  "20"		  ]
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
-[ 23,	  "23"		  ]
-[ 24,	  "24"		  ]
-[ 25,	  "25"		  ]
+view_bbp_name().print();
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -900,9 +950,7 @@ Start of MIL script.
 [ 20,	  "monet_fcntbl"	  ]
 [ 21,	  "monet_acctbl"	  ]
 [ 22,	  "monet_atomtbl"	  ]
-[ 23,	  "tmp_23"		  ]
-[ 24,	  "tmp_24"		  ]
-[ 25,	  "tmp_25"		  ]
+view_bbp_refcnt().print();
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -929,9 +977,7 @@ Start of MIL script.
 [ 20,	  1	  ]
 [ 21,	  1	  ]
 [ 22,	  1	  ]
-[ 23,	  1	  ]
-[ 24,	  1	  ]
-[ 25,	  1	  ]
+view_bbp_status().print();
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -958,32 +1004,28 @@ Start of MIL script.
 [ 20,	  "load"  ]
 [ 21,	  "load"  ]
 [ 22,	  "load"  ]
-[ 23,	  "load"  ]
-[ 24,	  "load"  ]
-[ 25,	  "load"  ]
+view_client_tree().print();
 #-----------------------------------------#
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "listen(get_monet_port(),5)"	  ]
-[ 1,	  "print(view_client_tree())"	  ]
+[ 0,	  "print(view_client_tree())"	  ]
+view_gdk_bbp().print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  26	  ]
-[ "tmpbats",	  26	  ]
+[ "bats",	  23	  ]
+[ "tmpbats",	  23	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
+view_var_constant().print();
 #-----------------------------------------#
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "constant"	  ]
-[ "monet_acctbl",	  "constant"	  ]
-[ "monet_fcntbl",	  "constant"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -1031,13 +1073,11 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "constant"	  ]
 [ "monet_fcn_imp",	  "constant"	  ]
 [ "monet_fcn_fcn",	  "constant"	  ]
+view_var_kind().print();
 #-----------------------------------------#
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "frozen"	  ]
-[ "monet_acctbl",	  "frozen"	  ]
-[ "monet_fcntbl",	  "frozen"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -1085,13 +1125,11 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "frozen"	  ]
 [ "monet_fcn_imp",	  "frozen"	  ]
 [ "monet_fcn_fcn",	  "frozen"	  ]
+view_var_type().print();
 #---------------------------------#
 # BAT:			  type	  #
 # (str)			  (str)	  #
 #---------------------------------#
-[ "monet_atomtbl",	  "BAT"	  ]
-[ "monet_acctbl",	  "BAT"	  ]
-[ "monet_fcntbl",	  "BAT"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -1139,37 +1177,38 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
+
+dir();
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  437,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1233,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  432,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1221,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  "str",  "oid",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_dep",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  "oid",  "str",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_24",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
+ls();
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------#
+view_bbp_heat().print();
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -1196,168 +1235,172 @@ Start of MIL script.
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
-[ 23,	  0	  ]
-[ 24,	  0	  ]
-[ 25,	  0	  ]
+
+printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
+
+queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      7,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
-unknown(0)#"                   ]
-#[      8,         1,   running,         7, "listen(get_monet_port(),5#"    ]
-#[    141,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
-unknown(1)#"                   ]
-#[    142,         2,   running,       141, "queue()#"                      ]
-[ 2 ]
-#---------------------------------------------------------------------------------#
-# name		| login				| mil				  #
-#---------------------------------------------------------------------------------#
-[ "adm",	  "Wed Oct  4 10:53:19 2000",	  "listen(get_monet_port(),5)"	  ]
-[ "monet",	  "Wed Oct  4 10:53:29 2000",	  "clients()"			  ]
+#[    132,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
+unknown(0)#"                            ]
+#[    133,         1,   running,       132, "queue()#"                            ]
+threadid().print();
+[ 1 ]
+
+clients();
+#---------------------------------------------------------#
+# name	| login				| mil		  #
+#---------------------------------------------------------#
+[ "adm",  "Mon Sep 11 21:13:10 2000",	  "clients()"	  ]
+cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  8	  ]
-[ "user",	  350	  ]
-[ "elapuser",	  90	  ]
-[ "system",	  120	  ]
-[ "elapsystem",	  10	  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
+[ "elapsed",	  0	  ]
+[ "user",	  170	  ]
+[ "elapuser",	  30	  ]
+[ "system",	  20	  ]
+[ "elapsystem",	  0	  ]
+env();
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
+environment().print();
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
+io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4864	  ]
-[ "minflt",	  166	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  347	  ]
+[ "majflt",	  471	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  2	  ]
+[ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  161	  ]
-[ "ninvcsw",	  203	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  8192		  ]
-[ "arena",	  1335280	  ]
-[ "ordblks",	  3336		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  25208		  ]
-[ "fsmblks",	  17992		  ]
-[ "uordblks",	  833336	  ]
-[ "fordblks",	  458104	  ]
-#-------------------------#
-# BAT:	  thread	  #
-# (int)	  (str)		  #
-#-------------------------#
-[ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
-#-----------------------------------------#
-# BAT:	  login				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  "Wed Oct  4 10:53:19 2000"	  ]
-[ 1,	  "Wed Oct  4 10:53:29 2000"	  ]
-#-------------------------#
-# BAT:	  name		  #
-# (int)	  (str)		  #
-#-------------------------#
-[ 0,	  "adm"		  ]
-[ 1,	  "monet"	  ]
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  10	  ]
-[ "user",	  370	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  130	  ]
-[ "elapsystem",	  10	  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  4864	  ]
-[ "minflt",	  166	  ]
-[ "majflt",	  0	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  2	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  168	  ]
-[ "ninvcsw",	  215	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1335280	  ]
-[ "ordblks",	  3333		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  25184		  ]
-[ "fsmblks",	  18016		  ]
-[ "uordblks",	  832248	  ]
-[ "fordblks",	  459192	  ]
+[ "arena",	  1166916	  ]
+[ "ordblks",	  607		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  691028	  ]
+[ "fordblks",	  475888	  ]
+threads();
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
-#~EndVariableOutput~#
-End of MIL script.
-! Terminating connection
-! Connection broken
-#> Mtest (10:53:46):	Mtimeout -timeout 210 Mshutdown
-connection= medusa:29215
-template= shutdown;
-query= shutdown;
-Error text= !terminating connection
+view_client_login().print();
+#-----------------------------------------#
+# BAT:	  login				  #
+# (int)	  (str)				  #
+#-----------------------------------------#
+[ 0,	  "Mon Sep 11 21:13:10 2000"	  ]
+view_client_name().print();
+#-----------------#
+# BAT:	  name	  #
+# (int)	  (str)	  #
+#-----------------#
+[ 0,	  "adm"	  ]
+view_gdk_cpu().print();
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  180	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  20	  ]
+[ "elapsystem",	  0	  ]
+view_gdk_env().print();
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
+view_gdk_io().print();
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  347	  ]
+[ "majflt",	  471	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+view_gdk_memory().print();
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1166916	  ]
+[ "ordblks",	  614		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  690276	  ]
+[ "fordblks",	  476640	  ]
+view_gdk_thread().print();
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
 
-Reply= 
-# shutdown finished
-#> Mtest (21:13:22):	sleep 9
+printf("#~EndVariableOutput~#\n");
+#~EndVariableOutput~#
+
+printf("End of MIL script.\n");
+End of MIL script.
+
+quit();

@@ -54,7 +54,9 @@ MODULES.replace("io",        "plain");
 MODULES.replace("iterator",  "plain");
 MODULES.replace("kernel",    "plain");
 MODULES.replace("lock",      "plain");
+MODULES.replace("logger",    "plain");
 MODULES.replace("malalgebra","plain");
+MODULES.replace("mapi",      "plain");
 MODULES.replace("mmath",     "plain");
 MODULES.replace("monettime", "plain");
 MODULES.replace("mprof",     "plain");
@@ -126,8 +128,9 @@ MODULES.sort.print;
 [ "iterator",	  "plain"	  ]
 [ "kernel",	  "static"	  ]
 [ "lock",	  "plain"	  ]
+[ "logger",	  "plain"	  ]
 [ "malalgebra",	  "plain"	  ]
-[ "mapi",	  "UNKNOWN"	  ]
+[ "mapi",	  "plain"	  ]
 [ "mmath",	  "plain"	  ]
 [ "monettime",	  "plain"	  ]
 [ "mprof",	  "plain"	  ]
@@ -157,13 +160,13 @@ ls;
 #-----------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-----------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  40,	  0,	  "clean",	  "load", "pers", 1	  ]
+[ "MODULES",	  "str",  "str",  41,	  0,	  "clean",	  "load", "pers", 1	  ]
 
 dir;
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  40,	  0,	  "clean",	  "load", "pers", 1	  ]
+[ "MODULES",		  "str",  "str",  41,	  0,	  "clean",	  "load", "pers", 1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -216,6 +219,7 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "io"			  ]
 [ "iterator"		  ]
 [ "lock"		  ]
+[ "logger"		  ]
 [ "malalgebra"		  ]
 [ "mapi"		  ]
 [ "mmath"		  ]

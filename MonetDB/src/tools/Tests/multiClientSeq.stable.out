@@ -87,9 +87,6 @@ Start of MIL script.
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "p",			  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "50072"		  ]
-[ "monet_port",		  "str",  "liquid",	  "changeable",	  "\":50072\""		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -307,7 +304,7 @@ Start of MIL script.
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "listen(<VAR>,5)"		  ]
+[ 0,	  "listen(get_monet_port(),5)"	  ]
 [ 1,	  "print(view_client_tree())"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
@@ -326,9 +323,6 @@ Start of MIL script.
 [ "monet_atomtbl",	  "constant"	  ]
 [ "monet_acctbl",	  "constant"	  ]
 [ "monet_fcntbl",	  "constant"	  ]
-[ "p",			  "changeable"	  ]
-[ "port",		  "changeable"	  ]
-[ "monet_port",		  "changeable"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -383,9 +377,6 @@ Start of MIL script.
 [ "monet_atomtbl",	  "frozen"	  ]
 [ "monet_acctbl",	  "frozen"	  ]
 [ "monet_fcntbl",	  "frozen"	  ]
-[ "p",			  "liquid"	  ]
-[ "port",		  "liquid"	  ]
-[ "monet_port",		  "liquid"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -440,9 +431,6 @@ Start of MIL script.
 [ "monet_atomtbl",	  "BAT"	  ]
 [ "monet_acctbl",	  "BAT"	  ]
 [ "monet_fcntbl",	  "BAT"	  ]
-[ "p",			  "int"	  ]
-[ "port",		  "int"	  ]
-[ "monet_port",		  "str"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -499,13 +487,13 @@ Start of MIL script.
 [ "monet_fcn_dat",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_dsc",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  437,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  500,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_mid",	  "oid",  "oid",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  500,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1232,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1233,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  500,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  500,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  "str",  "oid",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -554,79 +542,79 @@ Start of MIL script.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[     13,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
-unknown(0)#"                            ]
-#[     14,         1,   running,        13, "listen(<VAR>,5)#"                            ]
-#[     63,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
-unknown(1)#"                            ]
-#[     64,         2,   running,        63, "queue()#"                            ]
+#[      7,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
+unknown(0)#"                   ]
+#[      8,         1,   running,         7, "listen(get_monet_port(),5#"    ]
+#[     57,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
+unknown(1)#"                   ]
+#[     58,         2,   running,        57, "queue()#"                      ]
 [ 2 ]
-#-------------------------------------------------------------------------#
-# name		| login				| mil			  #
-#-------------------------------------------------------------------------#
-[ "adm",	  "Mon Sep 11 21:13:33 2000",	  "listen(<VAR>,5)"	  ]
-[ "niels",	  "Mon Sep 11 21:13:42 2000",	  "clients()"		  ]
+#---------------------------------------------------------------------------------#
+# name		| login				| mil				  #
+#---------------------------------------------------------------------------------#
+[ "adm",	  "Wed Oct  4 10:54:00 2000",	  "listen(get_monet_port(),5)"	  ]
+[ "monet",	  "Wed Oct  4 10:54:09 2000",	  "clients()"			  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  10	  ]
+[ "user",	  230	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  0	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
-#-----------------------------------------------------------------#
-# BAT:		  env						  #
-# (str)		  (str)						  #
-#-----------------------------------------------------------------#
-[ "dbname",	  "src_tools"					  ]
-[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
-[ "port",	  "50072"					  ]
-[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
-[ "owner",	  "niels"					  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
-[ "processid",	  "28185"					  ]
-[ "home",	  "/home/niels/new/monet/Linux"			  ]
-[ "version",	  "4.2"						  ]
-#-----------------------------------------------------------------#
-# BAT:		  env						  #
-# (str)		  (str)						  #
-#-----------------------------------------------------------------#
-[ "dbname",	  "src_tools"					  ]
-[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
-[ "port",	  "50072"					  ]
-[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
-[ "owner",	  "niels"					  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
-[ "processid",	  "28185"					  ]
-[ "home",	  "/home/niels/new/monet/Linux"			  ]
-[ "version",	  "4.2"						  ]
+#-----------------------------------------------------------------------------------------#
+# BAT:		  env									  #
+# (str)		  (str)									  #
+#-----------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"								  ]
+[ "server",	  "medusa"								  ]
+[ "port",	  "29215"								  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "monet"								  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
+[ "processid",	  "2671998"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"									  ]
+#-----------------------------------------------------------------------------------------#
+# BAT:		  env									  #
+# (str)		  (str)									  #
+#-----------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"								  ]
+[ "server",	  "medusa"								  ]
+[ "port",	  "29215"								  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "monet"								  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
+[ "processid",	  "2671998"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"									  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  7	  ]
-[ "majflt",	  43	  ]
+[ "maxrss",	  4720	  ]
+[ "minflt",	  166	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  112	  ]
+[ "ninvcsw",	  107	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1191936	  ]
-[ "arena",	  1207876	  ]
-[ "ordblks",	  550		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  0		  ]
-[ "hblks",	  0		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  788908	  ]
-[ "fordblks",	  418968	  ]
+[ "memincr",	  1277952	  ]
+[ "arena",	  1327088	  ]
+[ "ordblks",	  3337		  ]
+[ "smblks",	  2000		  ]
+[ "hblkhd",	  640		  ]
+[ "hblks",	  20		  ]
+[ "usmblks",	  25208		  ]
+[ "fsmblks",	  17992		  ]
+[ "uordblks",	  833296	  ]
+[ "fordblks",	  449952	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -637,62 +625,62 @@ unknown(1)#"                            ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Mon Sep 11 21:13:33 2000"	  ]
-[ 1,	  "Mon Sep 11 21:13:42 2000"	  ]
+[ 0,	  "Wed Oct  4 10:54:00 2000"	  ]
+[ 1,	  "Wed Oct  4 10:54:09 2000"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "adm"		  ]
-[ 1,	  "niels"	  ]
+[ 1,	  "monet"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  10	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  0	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  250	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
-#-----------------------------------------------------------------#
-# BAT:		  env						  #
-# (str)		  (str)						  #
-#-----------------------------------------------------------------#
-[ "dbname",	  "src_tools"					  ]
-[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
-[ "port",	  "50072"					  ]
-[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
-[ "owner",	  "niels"					  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
-[ "processid",	  "28185"					  ]
-[ "home",	  "/home/niels/new/monet/Linux"			  ]
-[ "version",	  "4.2"						  ]
+#-----------------------------------------------------------------------------------------#
+# BAT:		  env									  #
+# (str)		  (str)									  #
+#-----------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"								  ]
+[ "server",	  "medusa"								  ]
+[ "port",	  "29215"								  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "monet"								  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
+[ "processid",	  "2671998"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"									  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  7	  ]
-[ "majflt",	  44	  ]
+[ "maxrss",	  4720	  ]
+[ "minflt",	  166	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  119	  ]
+[ "ninvcsw",	  124	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1207876	  ]
-[ "ordblks",	  557		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  0		  ]
-[ "hblks",	  0		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  788164	  ]
-[ "fordblks",	  419712	  ]
+[ "arena",	  1327088	  ]
+[ "ordblks",	  3329		  ]
+[ "smblks",	  2000		  ]
+[ "hblkhd",	  640		  ]
+[ "hblks",	  20		  ]
+[ "usmblks",	  25184		  ]
+[ "fsmblks",	  18016		  ]
+[ "uordblks",	  832216	  ]
+[ "fordblks",	  451032	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -902,9 +890,6 @@ Start of MIL script.
 [ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
 [ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "24"			  ]
 [ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "p",			  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "50072"		  ]
-[ "monet_port",		  "str",  "liquid",	  "changeable",	  "\":50072\""		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -1179,7 +1164,7 @@ Start of MIL script.
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "listen(<VAR>,5)"		  ]
+[ 0,	  "listen(get_monet_port(),5)"	  ]
 [ 1,	  "print(view_client_tree())"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
@@ -1201,9 +1186,6 @@ Start of MIL script.
 [ "monet_atomtbl",	  "constant"	  ]
 [ "monet_acctbl",	  "constant"	  ]
 [ "monet_fcntbl",	  "constant"	  ]
-[ "p",			  "changeable"	  ]
-[ "port",		  "changeable"	  ]
-[ "monet_port",		  "changeable"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -1261,9 +1243,6 @@ Start of MIL script.
 [ "monet_atomtbl",	  "frozen"	  ]
 [ "monet_acctbl",	  "frozen"	  ]
 [ "monet_fcntbl",	  "frozen"	  ]
-[ "p",			  "liquid"	  ]
-[ "port",		  "liquid"	  ]
-[ "monet_port",		  "liquid"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -1321,9 +1300,6 @@ Start of MIL script.
 [ "monet_atomtbl",	  "int"	  ]
 [ "monet_acctbl",	  "int"	  ]
 [ "monet_fcntbl",	  "int"	  ]
-[ "p",			  "int"	  ]
-[ "port",		  "int"	  ]
-[ "monet_port",		  "str"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -1380,13 +1356,13 @@ Start of MIL script.
 [ "monet_fcn_dat",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_dsc",	  "oid",  "str",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  437,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  500,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_mid",	  "oid",  "oid",  470,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  500,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1232,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1233,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  500,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  500,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  "str",  "oid",  501,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -1435,81 +1411,81 @@ Start of MIL script.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[     13,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
-unknown(0)#"                            ]
-#[     14,         1,   running,        13, "listen(<VAR>,5)#"                            ]
-#[     99,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
-unknown(1)#"                            ]
-#[    150,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
-unknown(1)#"                            ]
-#[    151,         2,   running,       150, "queue()#"                            ]
+#[      7,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
+unknown(0)#"                   ]
+#[      8,         1,   running,         7, "listen(get_monet_port(),5#"    ]
+#[     93,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
+unknown(1)#"                   ]
+#[    144,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
+unknown(1)#"                   ]
+#[    145,         2,   running,       144, "queue()#"                      ]
 [ 2 ]
-#-------------------------------------------------------------------------#
-# name		| login				| mil			  #
-#-------------------------------------------------------------------------#
-[ "adm",	  "Mon Sep 11 21:13:33 2000",	  "listen(<VAR>,5)"	  ]
-[ "niels",	  "Mon Sep 11 21:13:42 2000",	  "clients()"		  ]
+#---------------------------------------------------------------------------------#
+# name		| login				| mil				  #
+#---------------------------------------------------------------------------------#
+[ "adm",	  "Wed Oct  4 10:54:00 2000",	  "listen(get_monet_port(),5)"	  ]
+[ "monet",	  "Wed Oct  4 10:54:16 2000",	  "clients()"			  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  10	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  0	  ]
-[ "elapsystem",	  0	  ]
-#-----------------------------------------------------------------#
-# BAT:		  env						  #
-# (str)		  (str)						  #
-#-----------------------------------------------------------------#
-[ "dbname",	  "src_tools"					  ]
-[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
-[ "port",	  "50072"					  ]
-[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
-[ "owner",	  "niels"					  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
-[ "processid",	  "28192"					  ]
-[ "home",	  "/home/niels/new/monet/Linux"			  ]
-[ "version",	  "4.2"						  ]
-#-----------------------------------------------------------------#
-# BAT:		  env						  #
-# (str)		  (str)						  #
-#-----------------------------------------------------------------#
-[ "dbname",	  "src_tools"					  ]
-[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
-[ "port",	  "50072"					  ]
-[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
-[ "owner",	  "niels"					  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
-[ "processid",	  "28192"					  ]
-[ "home",	  "/home/niels/new/monet/Linux"			  ]
-[ "version",	  "4.2"						  ]
+[ "elapsed",	  7	  ]
+[ "user",	  340	  ]
+[ "elapuser",	  90	  ]
+[ "system",	  130	  ]
+[ "elapsystem",	  20	  ]
+#-----------------------------------------------------------------------------------------#
+# BAT:		  env									  #
+# (str)		  (str)									  #
+#-----------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"								  ]
+[ "server",	  "medusa"								  ]
+[ "port",	  "29215"								  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "monet"								  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
+[ "processid",	  "2671998"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"									  ]
+#-----------------------------------------------------------------------------------------#
+# BAT:		  env									  #
+# (str)		  (str)									  #
+#-----------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"								  ]
+[ "server",	  "medusa"								  ]
+[ "port",	  "29215"								  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "monet"								  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
+[ "processid",	  "2671998"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"									  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  7	  ]
+[ "maxrss",	  4864	  ]
+[ "minflt",	  166	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "oublock",	  2	  ]
+[ "nvcsw",	  157	  ]
+[ "ninvcsw",	  295	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1207876	  ]
-[ "ordblks",	  546		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  0		  ]
-[ "hblks",	  0		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  792292	  ]
-[ "fordblks",	  415584	  ]
+[ "memincr",	  8192		  ]
+[ "arena",	  1335280	  ]
+[ "ordblks",	  3345		  ]
+[ "smblks",	  2000		  ]
+[ "hblkhd",	  640		  ]
+[ "hblks",	  20		  ]
+[ "usmblks",	  25208		  ]
+[ "fsmblks",	  17992		  ]
+[ "uordblks",	  833648	  ]
+[ "fordblks",	  457792	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1520,62 +1496,62 @@ unknown(1)#"                            ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Mon Sep 11 21:13:33 2000"	  ]
-[ 1,	  "Mon Sep 11 21:13:42 2000"	  ]
+[ 0,	  "Wed Oct  4 10:54:00 2000"	  ]
+[ 1,	  "Wed Oct  4 10:54:16 2000"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "adm"		  ]
-[ 1,	  "niels"	  ]
+[ 1,	  "monet"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  10	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  0	  ]
-[ "elapsystem",	  0	  ]
-#-----------------------------------------------------------------#
-# BAT:		  env						  #
-# (str)		  (str)						  #
-#-----------------------------------------------------------------#
-[ "dbname",	  "src_tools"					  ]
-[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
-[ "port",	  "50072"					  ]
-[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
-[ "owner",	  "niels"					  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
-[ "processid",	  "28192"					  ]
-[ "home",	  "/home/niels/new/monet/Linux"			  ]
-[ "version",	  "4.2"						  ]
+[ "elapsed",	  8	  ]
+[ "user",	  360	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  140	  ]
+[ "elapsystem",	  10	  ]
+#-----------------------------------------------------------------------------------------#
+# BAT:		  env									  #
+# (str)		  (str)									  #
+#-----------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"								  ]
+[ "server",	  "medusa"								  ]
+[ "port",	  "29215"								  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "monet"								  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
+[ "processid",	  "2671998"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"									  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  7	  ]
+[ "maxrss",	  4864	  ]
+[ "minflt",	  166	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "oublock",	  2	  ]
+[ "nvcsw",	  164	  ]
+[ "ninvcsw",	  311	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1207876	  ]
-[ "ordblks",	  553		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  0		  ]
-[ "hblks",	  0		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  791540	  ]
-[ "fordblks",	  416336	  ]
+[ "arena",	  1335280	  ]
+[ "ordblks",	  3341		  ]
+[ "smblks",	  2000		  ]
+[ "hblkhd",	  640		  ]
+[ "hblks",	  20		  ]
+[ "usmblks",	  25184		  ]
+[ "fsmblks",	  18016		  ]
+[ "uordblks",	  832560	  ]
+[ "fordblks",	  458880	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1586,8 +1562,8 @@ unknown(1)#"                            ]
 End of MIL script.
 ! Terminating connection
 ! Connection broken
-#> Mtest (21:13:43):	Mtimeout -timeout 600 Mshutdown
-connection= localhost:50072
+#> Mtest (10:54:22):	Mtimeout -timeout 210 Mshutdown
+connection= medusa:29215
 template= shutdown;
 query= shutdown;
 Error text= !terminating connection

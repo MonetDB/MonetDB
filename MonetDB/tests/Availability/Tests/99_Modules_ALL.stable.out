@@ -64,6 +64,7 @@ monettime: loading... done.
     mmath: loaded.
      mapi: loading... done.
 malalgebra: loading... done.
+   logger: loading... done.
      lock: loading... done.
    kernel: loaded.
  iterator: loading... done.
@@ -103,6 +104,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "iterator"	  ]
 [ "kernel"	  ]
 [ "lock"	  ]
+[ "logger"	  ]
 [ "malalgebra"	  ]
 [ "mapi"	  ]
 [ "mmath"	  ]

@@ -56,7 +56,9 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "io"		  ]
 [ "iterator"	  ]
 [ "lock"	  ]
+[ "logger"	  ]
 [ "malalgebra"	  ]
+[ "mapi"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "oo7"		  ]
@@ -428,6 +430,20 @@ Module: "lock"
 [ "sema_try",	  "COMMAND: ",	  "sema_try(sema) : int",	  "try the semaphpore"					  ]
 [ "sema_up",	  "COMMAND: ",	  "sema_up(sema) : void",	  "increase the semaphore"				  ]
 
+Module: "logger"
+
+[ 6 ]
+[ 6 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature			| help										  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "backupfile",		  "COMMAND: ",	  "backupfile(str) : void",	  "Backup to the file log and write the log identifier to the file logid"	  ]
+[ "backuphost",		  "COMMAND: ",	  "backuphost(str, int) : void",  "Use the host,port to backup changes to"					  ]
+[ "commit",		  "COMMAND: ",	  "commit() : void",		  "commit on all BATs to the log"						  ]
+[ "logger_debug",	  "COMMAND: ",	  "logger_debug(int) : void",	  "Set the level of debuging"							  ]
+[ "logger_listen",	  "COMMAND: ",	  "logger_listen(int) : void",	  "listens for a client willing to backup to this port"				  ]
+[ "update",		  "COMMAND: ",	  "update() : void",		  "update the all BATs using the log, TODO only needed at initialisation"	  ]
+
 Module: "malalgebra"
 
 [ 14 ]
@@ -449,6 +465,16 @@ Module: "malalgebra"
 [ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "not available"						  ]
 [ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "not available"						  ]
 [ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "not available"						  ]
+
+Module: "mapi"
+
+[ 2 ]
+[ 2 ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help							  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "listen",	  "COMMAND: ",	  "listen() : void",		  "start a Mapi server with the default port number."	  ]
+[ "listen",	  "COMMAND: ",	  "listen(int, int) : void",	  "start a Mapi server."				  ]
 
 Module: "mmath"
 

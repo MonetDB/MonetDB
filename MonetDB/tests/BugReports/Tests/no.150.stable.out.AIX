@@ -53,8 +53,6 @@ Try: modules;                - for other modules.
 # does not exist
 
 setoid(oid(20000000));
-!ERROR: DL_open: library not found (STATIC).
-!ERROR: TBL_loadmod: module load jabberwocky cancelled.
 !ERROR: module(jabberwocky): load error.
 module("jabberwocky");
 quit;

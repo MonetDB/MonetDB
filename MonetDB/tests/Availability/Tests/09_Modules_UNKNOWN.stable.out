@@ -40,9 +40,8 @@ Fnts:=new(oid,str);
 Unknown_mods:=MODULES.select("UNKNOWN").sort.copy;
 table(Unknown_mods.reverse.col_name(sprintf("%i modules",Unknown_mods.count)));
 #-----------------#
-# 1 modules	  #
+# 0 modules	  #
 #-----------------#
-[ "mapi"	  ]
 Unknown_mods@batloop {
 	The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
@@ -92,15 +91,5 @@ Unknown_mods@batloop {
 	Fhelp.delete;
 	Fnts.delete;
 }
-
-Module: "mapi"
-
-[ 2 ]
-[ 2 ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help							  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "listen",	  "COMMAND: ",	  "listen() : void",		  "start a Mapi server with the default port number."	  ]
-[ "listen",	  "COMMAND: ",	  "listen(int, int) : void",	  "start a Mapi server."				  ]
 
 quit;

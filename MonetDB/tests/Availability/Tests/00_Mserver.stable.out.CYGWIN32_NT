@@ -54,7 +54,9 @@ MODULES.replace("io",        "plain");
 MODULES.replace("iterator",  "plain");
 MODULES.replace("kernel",    "plain");
 MODULES.replace("lock",      "plain");
+MODULES.replace("logger",    "plain");
 MODULES.replace("malalgebra","plain");
+MODULES.replace("mapi",      "plain");
 MODULES.replace("mmath",     "plain");
 MODULES.replace("monettime", "plain");
 MODULES.replace("mprof",     "plain");
@@ -132,7 +134,9 @@ MODULES.sort.print;
 [ "jOdmg",	  "odmg"	  ]
 [ "kernel",	  "static"	  ]
 [ "lock",	  "plain"	  ]
+[ "logger",	  "plain"	  ]
 [ "malalgebra",	  "plain"	  ]
+[ "mapi",	  "plain"	  ]
 [ "mmath",	  "plain"	  ]
 [ "monettime",	  "plain"	  ]
 [ "mprof",	  "plain"	  ]
@@ -226,7 +230,9 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "io"			  ]
 [ "jOdmg"		  ]
 [ "lock"		  ]
+[ "logger"		  ]
 [ "malalgebra"		  ]
+[ "mapi"		  ]
 [ "mmath"		  ]
 [ "monettime"		  ]
 [ "mprof"		  ]
