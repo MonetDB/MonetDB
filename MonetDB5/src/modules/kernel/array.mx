@@ -50,6 +50,10 @@ address ARRAYgridBAT
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
 
+command project(b:bat[:void,:any],i:int):bat[:void,:int]
+address ARRAYproject
+comment "Fill an array representation with constants ";
+
 pattern print(a:bat[:any$1,:any],b:bat[:any$1,:int]...) :void 
 address ARRAYprint
 comment "Prints an array, using 1 value bat and N aligned index bats";
@@ -107,13 +111,13 @@ fillgrid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, 
 
 	ptr = get_int_ptr(*out);
 
-	while (i--) {
+	while (i-- > 0) {
 		register int ni = o;
 
 		while (ni < n) {
 			register int ri = r;
 
-			while (ri--)
+			while (ri-- > 0)
 				(*(ptr ++)) = ni * s;
 			ni++;
 		}
@@ -406,6 +410,24 @@ ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize, int *clusters
     }
 	if( fillgrid(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
 		return throwMessage("array.grid","Failed to create the grid\n");
+	BBPincref( *ret= bn->batCacheid, TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
+str
+ARRAYproject(int *ret, int *bid, int *cst){
+	BAT *bn,*b;
+	int *ptr,i;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("array.project", "Cannot access descriptor");
+    }
+	new_int_bat(bn, BATcount(b));
+	if( bn==0 ) 
+		return throwMessage("array.project","failed to create array\n");
+	add_ints(bn, i=  BATcount(b));
+	ptr = get_int_ptr(bn);
+	while (i-- >0) 
+				(*(ptr ++)) = * cst;
 	BBPincref( *ret= bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
