@@ -38,8 +38,8 @@ public class MapiClient
 		String s;
 		System.out.print(">");
 		while((s=input.readLine()) != null){
-			if (s == "quit;") break;
-			System.out.println( M.query(s + "\n") );
+			if (s.equals("quit;")) break;
+			System.out.println(M.query(s));
 			System.out.print(">");
 		}
 	} catch (MapiException e){
