@@ -369,7 +369,7 @@ finalize:
 #endif
 	stream_flush(c->fdout);
 @-
-Gather the statistics for post analysis. It should preferable
+Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
 @c
         if (explainSQL()){
