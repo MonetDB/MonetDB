@@ -124,13 +124,16 @@ int io_stdout(Stream *ret) { *(stream**)ret = GDKout; return GDK_SUCCEED; }
 int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
 
 @= open_stream
-int stream_open_@1( Stream *S, str filename ){
+int
+stream_open_@1(Stream *S, str filename)
+{
 	stream *s;
 
-	if ((s = open_@1( filename )) == NULL || stream_errnr(s)){
-		if (s) stream_destroy(s);
-		GDKerror("stream_open: could not open file %s\n", filename );
-		return GDK_FAIL; 
+	if ((s = open_@1( filename )) == NULL || stream_errnr(s)) {
+		if (s)
+			stream_destroy(s);
+		GDKerror("stream_open: could not open file %s\n", filename);
+		return GDK_FAIL;
 	} else {
 		*(stream**)S = s;
 		return GDK_SUCCEED;
@@ -141,9 +144,10 @@ int stream_open_@1( Stream *S, str filename ){
 @:open_stream(wstream)@
 @:open_stream(rastream)@
 @:open_stream(wastream)@
-@-
+
 @= stream_stream
-int stream_stream_@1(Stream *Sout, Stream *Sin)
+int
+stream_stream_@1(Stream *Sout, Stream *Sin)
 {
 	*(stream**)Sout = stream_@1(*(stream**)Sin);
 	return GDK_SUCCEED;
@@ -153,13 +157,16 @@ int stream_stream_@1(Stream *Sout, Stream *Sin)
 @:stream_stream(wstream)@
 
 @= open_socket
-int stream_socket_@1( Stream *S, int *socket, str name ){
+int
+stream_socket_@1(Stream *S, int *socket, str name)
+{
 	stream *s;
 
-	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)){
-		if (s) stream_destroy(s);
+	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)) {
+		if (s)
+			stream_destroy(s);
 		GDKerror("Could not open socket %s\n", name );
-		return GDK_FAIL; 
+		return GDK_FAIL;
 	} else {
 		*(stream**)S = s;
 		return GDK_SUCCEED;
@@ -172,32 +179,44 @@ int stream_socket_@1( Stream *S, int *socket, str name ){
 @:open_socket(wastream)@
 
 @c
-int stream_write_string( Stream *S, str data ){
-	stream *s = *(stream**)S;
-	return stream_write( s, data, 1, strlen(data)) < 0 ? GDK_FAIL : GDK_SUCCEED;
+int
+stream_write_string(Stream *S, str data)
+{
+	stream *s = *(stream **) S;
+
+	return stream_write(s, data, 1, strlen(data)) < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
-int stream_writeInt_wrap( Stream *S, int *data ){
-	stream *s = *(stream**)S;
-	return stream_writeInt( s, *data) ? GDK_SUCCEED : GDK_FAIL;
+int
+stream_writeInt_wrap(Stream *S, int *data)
+{
+	stream *s = *(stream **) S;
+
+	return stream_writeInt(s, *data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int stream_readInt_wrap( int *data, Stream *S ){
-	stream *s = *(stream**)S;
-	return stream_readInt( s, data) ? GDK_SUCCEED : GDK_FAIL;
+int
+stream_readInt_wrap(int *data, Stream *S)
+{
+	stream *s = *(stream **) S;
+
+	return stream_readInt(s, data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 #define CHUNK (64*1024)
-int stream_read_string( str *res, Stream *S ){
-	stream *s = *(stream**)S;
+int
+stream_read_string(str *res, Stream *S)
+{
+	stream *s = *(stream **) S;
 	ssize_t len = 0;
-	size_t size = CHUNK + 1;
+	size_t size = CHUNK +1;
 	char *buf = GDKmalloc(size), *start = buf;
 
-	while ((len = stream_read(s, start, 1, CHUNK)) > 0){
+	while ((len = stream_read(s, start, 1, CHUNK)) > 0) {
 		size += len;
-		buf = GDKrealloc(buf, size); 
-		start = buf + size - CHUNK - 1;
+		buf = GDKrealloc(buf, size);
+		start = buf + size - CHUNK -1;
+
 		*start = '\0';
 	}
 	if (len < 0)
@@ -208,41 +227,54 @@ int stream_read_string( str *res, Stream *S ){
 	return GDK_SUCCEED;
 }
 
-int stream_flush_stream( Stream *S ){
-	stream *s = *(stream**)S;
-	if (stream_flush( s ))
+int
+stream_flush_stream(Stream *S)
+{
+	stream *s = *(stream **) S;
+
+	if (stream_flush(s))
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
-int stream_close_stream( Stream *S ){
-	close_stream(*(stream**)S);
+int
+stream_close_stream(Stream *S)
+{
+	close_stream(*(stream **) S);
 	return GDK_SUCCEED;
 }
 
-int open_block_stream( Stream *S, Stream *is ){
-	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
-		return GDK_FAIL; 
+int
+open_block_stream(Stream *S, Stream *is)
+{
+	if ((*(stream **) S = block_stream(*(stream **) is)) == NULL) {
+		return GDK_FAIL;
 	} else {
 		return GDK_SUCCEED;
 	}
 }
 
-int bstream_create_wrap( Bstream *BS, Stream *S, int *bufsize ){
-	if ((*(bstream**)BS = bstream_create( *(stream**)S, (size_t) *bufsize )) == NULL){
-		return GDK_FAIL; 
+int
+bstream_create_wrap(Bstream *BS, Stream *S, int *bufsize)
+{
+	if ((*(bstream **) BS = bstream_create(*(stream **) S, (size_t) * bufsize)) == NULL) {
+		return GDK_FAIL;
 	} else {
 		return GDK_SUCCEED;
 	}
 }
 
-int bstream_destroy_wrap( Bstream *BS ){
-	bstream_destroy( *(bstream**)BS );
+int
+bstream_destroy_wrap(Bstream *BS)
+{
+	bstream_destroy(*(bstream **) BS);
 	return GDK_SUCCEED;
 }
 
-int bstream_read_wrap( int *res, Bstream *BS, int *size ){
-	*res = (int) bstream_read( *(bstream**)BS, (size_t) *size ); 
+int
+bstream_read_wrap(int *res, Bstream *BS, int *size)
+{
+	*res = (int) bstream_read(*(bstream **) BS, (size_t) * size);
 	return GDK_SUCCEED;
 }
 @- Wrapper

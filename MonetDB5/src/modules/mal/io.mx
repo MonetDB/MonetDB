@@ -186,10 +186,26 @@ Beware, the types of the objects to be printed should be
 obtained from the stack, because the symbol table may actually
 allow for any type to be assigned.
 @c
-str io_stdin (stream *ret) { *(stream**)ret = GDKin;  return MAL_SUCCEED; }
-str io_stdout(stream *ret) { *(stream**)ret = GDKout; return MAL_SUCCEED; }
-str io_stderr(stream *ret) { *(stream**)ret = GDKerr; return MAL_SUCCEED; }
+str
+io_stdin(stream *ret)
+{
+    *(stream **) ret = GDKin;
+    return MAL_SUCCEED;
+}
 
+str
+io_stdout(stream *ret)
+{
+    *(stream **) ret = GDKout;
+    return MAL_SUCCEED;
+}
+
+str
+io_stderr(stream *ret)
+{
+    *(stream **) ret = GDKerr;
+    return MAL_SUCCEED;
+}
 str IOprintBoth(
 	MalBlkPtr mb,
 	MalStkPtr stk,
