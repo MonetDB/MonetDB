@@ -105,7 +105,7 @@ AC_ARG_WITH(gcc,
 		linux*-i?86*)	CC=icc	CXX=icpc;;
 		linux*-x86_64*)	CC=icc	CXX=icpc;;
 		linux*-ia64*)	CC=ecc	CXX=ecpc;;
-		aix*)		CC=xlc	CXX=xlC;;
+		aix*)		CC=xlc_r	CXX=xlC_r;;
 		*)		CC=cc	CXX=CC;;
 		esac
 		;;
@@ -275,10 +275,14 @@ yes-irix*-64)
 yes-aix*-64)
 	CC="$CC -maix$bits"
 	CXX="$CXX -maix$bits"
+	AR="ar -X64"
+	NM="nm -X64 -B"
 	;;
 -aix*-64)
 	CC="$CC -q$bits"
 	CXX="$CXX -q$bits"
+	AR="ar -X64"
+	NM="nm -X64 -B"
 	;;
 yes-linux*-x86_64*-64)
 	CC="$CC -m$bits"
@@ -571,6 +575,10 @@ if [ "$enable_static" = "yes" ]; then
 			SHARED_LIBS="$SHARED_LIBS -lm"
 		fi
 		;;
+	esac
+else
+	case "$host_os" in
+	aix*)	LDFLAGS="$LDFLAGS -Wl,-brtl";;
 	esac
 fi
 ]

@@ -60,7 +60,7 @@ char *MSP_next_module(char *);
 #include <sys/param.h>
 #endif
 
-static size_t SO_EXT_LEN;	/* length of SO_EXT string, will be
+static size_t SO_EXT_LEN = 0;	/* length of SO_EXT string, will be
 				   filled in before use */
 
 struct moddir {
@@ -235,8 +235,13 @@ char *MSP_locate_module(char *mod_name) {
                 {
 		    if (!SO_EXT_LEN)
 			SO_EXT_LEN = strlen(SO_EXT);
+#ifdef _AIX
+                    fullname=(char *)GDKmalloc(fulllen+SO_EXT_LEN+1+len+7);
+		    sprintf(fullname,"%s%s(%s.so.0)",next_module, SO_EXT, name);
+#else
                     fullname=(char *)GDKmalloc(fulllen+SO_EXT_LEN+1);
                     sprintf(fullname,"%s%s",next_module, SO_EXT);
+#endif
                     GDKfree(next_module);
                     GDKfree(name);
                     return fullname;

@@ -434,6 +434,9 @@ void* DL_open(char* nme, int mode) {
 	DL_errno = 0;
 #ifndef STATIC
 	DL_errmsg = NULL;
+#ifdef _AIX
+        mode |= RTLD_MEMBER;
+#endif
 #endif
 	for(i=0; i<DL_TABLE_MAXLIBS; i++) 
 		if (DL_mod[i] && strcmp(DL_mod[i], nme) == 0) {
@@ -447,8 +450,11 @@ void* DL_open(char* nme, int mode) {
 			void *hdl;
 			if ((hdl = dlopen(fullname, mode)) != NULL) {
 				tbl = (dltable*) DL_reglib(nme, hdl, 0);
-			} else
+			} else {
+				int en = errno;
+    				GDKerror("DL_open: dlopen(%s,%d) -> Error #%d: %s.\n", fullname, mode, en, strerror(en));
 				DL_errmsg = dlerror();
+			}
 			GDKfree(fullname);
 		} else
 			DL_errmsg = "library not found";
