@@ -518,14 +518,15 @@ Module: "logger"
 
 Module: "malalgebra"
 
-[ 14 ]
-[ 14 ]
+[ 15 ]
+[ 15 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature									| help								  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "fetchjoin",	  "COMMAND:   ",  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the fetch implementation of the join."	  ]
 [ "hashjoin",	  "COMMAND:   ",  "hashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the hash implementation of the join."	  ]
 [ "indexjoin",	  "COMMAND:   ",  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the index implementation of the join."	  ]
+[ "lrhashjoin",	  "COMMAND:   ",  "lrhashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the lrhash implementation of the join."	  ]
 [ "mergejoin",	  "COMMAND:   ",  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the merge implementation of the join."	  ]
 [ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
 [ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]
