@@ -86,7 +86,7 @@ $MONETFARM/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 
 #include "Mapi.h"
 
-#include <stdio.h> 
+#include <monet_options.h>
 #include <stdlib.h> 
 #include <ctype.h> 
 #include <sys/types.h> 
@@ -94,12 +94,157 @@ $MONETFARM/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 #include <sys/stat.h>
 #include <errno.h> 
 #include <string.h> 
-#include <signal.h> 
+/* #include <signal.h> */
 
-#ifdef HAVE_PWD_H
-#include  <pwd.h> 
+#define _strdup( ptr )    strdup((char*)ptr)
+
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
+#endif
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
 #endif
 
+#if !defined(HAVE_SETLOCALE) || \
+    !defined(HAVE_ICONV) || \
+    !defined(HAVE_NL_LANGINFO)
+#	define	NO_LOCALE
+#endif
+
+stream *ws = NULL, *rs = NULL;
+int is_chrsp = 0;
+
+#ifdef HAVE_ICONV
+iconv_t to_utf = NULL;
+iconv_t from_utf = NULL;
+
+char *conv( char *org, iconv_t cd)
+{
+	if (cd){
+		size_t len = strlen(org);
+		size_t size = len * 4;
+		char *buf = malloc(size);
+		char *to = buf;
+		char *from = org;
+
+		if (iconv(cd, &from, &len, &to, &size ) < 0){
+			perror("conv ");
+			fprintf(stderr, "could not convert string %s\n", from );
+			free(buf);
+			exit(1);
+		}
+		*to = 0;
+		return buf;
+	} else {
+		return _strdup(org);
+	}
+}
+#else
+#define conv( org, dummy) _strdup(org)
+#endif
+
+@-
+The login procedure has been improved based on the Msql version in 4.3
+@c
+#ifdef _MSC_VER
+#include <sql_config.h>
+#endif
+
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+
+char *
+simple_prompt(const char *prompt, int maxlen, int echo)
+{
+        int        length = 0;
+        char       *destination = NULL;
+        FILE       *termin = NULL, *termout = NULL;
+
+#ifdef HAVE_TERMIOS_H
+        struct termios t_orig, t;
+#endif
+
+        destination = (char *) malloc(maxlen + 2);
+        if (!destination)
+                return NULL;
+
+	termin = fopen("/dev/tty", "r");
+	termout = fopen("/dev/tty", "w");
+
+	if (termin == NULL || termout == NULL){
+		termin = stdin;
+		termout = stderr;
+	}
+
+        if (prompt)
+        {
+                fputs( prompt, termout);
+                fflush(termout);
+        }
+
+#ifdef HAVE_TERMIOS_H
+        if (!echo)
+        {
+                tcgetattr(fileno(termin), &t);
+                t_orig = t;
+                t.c_lflag &= ~ECHO;
+                tcsetattr(fileno(termin), TCSAFLUSH, &t);
+        }
+#endif
+
+        if (fgets(destination, maxlen, termin) == NULL)
+                destination[0] = '\0';
+
+        length = strlen(destination);
+        if (length > 0 && destination[length - 1] != '\n')
+        {
+                char	buf[128];
+                int	buflen;
+
+                do
+                {
+                        if (fgets(buf, sizeof(buf), termin) == NULL)
+                                break;
+                        buflen = strlen(buf);
+                } while (buflen > 0 && buf[buflen - 1] != '\n');
+        }
+
+        if (length > 0 && destination[length - 1] == '\n')
+                destination[length - 1] = '\0';
+
+#ifdef HAVE_TERMIOS_H
+        if (!echo)
+        {
+                tcsetattr(fileno(termin), TCSAFLUSH, &t_orig);
+                fputs("\n", termout);
+                fflush(termout);
+        }
+	if (termin != stdin)
+		fclose(termin);
+
+	if (termout != stdout)
+		fclose(termout);
+#endif
+
+        return destination;
+}
+
+
+/*
+main()
+{
+	char *user = simple_prompt("Username:", 100, 1);
+	char *passwd = simple_prompt("Password:", 100, 0);
+	printf("user %s\npassword secret\n", user);
+
+	free(user);
+	free(passwd);
+}
+*/
 extern int errno;                       /* pass errors  */
 char *program;                          /* my name */
 
@@ -111,7 +256,6 @@ FILE	*toConsole;
 char 	*message	= 0;
 int 	mode		= LINEMODE;
 char*	sentinel 	= "Mclient~sentinel"; 
-int	is_chrsp	= 0;
 
 
 int doRequest(Msession mid, char *buf ){
@@ -140,8 +284,11 @@ of the server before continuing
 #define CHUNK_SIZE	1024
 
 #ifdef HAVE_LIBREADLINE
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #define SEND_MESSAGE(mid)	{					\
-	message[m_index++] = '\n';				\
 	message[m_index] = 0;					\
 	cmd = doRequest(mid, message );				\
 	add_history(start_cmd);					\
@@ -149,7 +296,6 @@ of the server before continuing
 }
 #else
 #define SEND_MESSAGE(mid)	{				\
-	message[m_index++] = '\n';				\
 	message[m_index] = 0;					\
 	cmd = doRequest(mid, message );				\
         *message = 0; m_index = 0;				\
@@ -164,7 +310,7 @@ of the server before continuing
 	}							\
 }
 
-void clientAccept( Msession mid) {
+void terminalInput( Msession mid) {
 	FILE	*fp;
 	char 	*line=0, *start_cmd, *end_cmd;
 	int	n, m_size=CHUNK_SIZE, m_index=0;
@@ -311,97 +457,202 @@ using its help operator '?'.
         } 
 }
 
-void usage() {
-	fprintf(stderr, "Usage: %s [-port host:port] ", program);
-	fprintf(stderr, "[-session key] ");
- 	fprintf(stderr, "[-prelude  pfile ]\n");
- 	fprintf(stderr, "[-c command] ");
- 	fprintf(stderr, "[-help ] \n");
- 	EXIT(1);
+void usage( char *prog ){
+        fprintf(stderr, "Mclient\n");
+        fprintf(stderr, "\toptions:\n");
+        fprintf(stderr, "\t\t -d          | --debug=[level]\n");
+        fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
+        fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
+        fprintf(stderr, "\t\t -l language   | --language=lang    /* {mal,sql,mil} */\n");
+        fprintf(stderr, "\t\t -S sessionkey   | --session=sessionkey    /* reconnect to session */\n");
+        fprintf(stderr, "\t\t -s sname   | --scenario=sname    /* applicable scenario */\n");
+        fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
+        fprintf(stderr, "\t\t -P passwd   | --passwd=passwd  /* password */\n");
+        fprintf(stderr, "\t\t -e stmt     | --execute=stmt  /* run single statement */\n");
+        exit(-1);
 }
 
-int main(int argc, char **argv) {
-	struct passwd *pwd = getpwuid(getuid());
-	char	*command = 0;
- 	char	*prelude  = 0;  
-	char	*s = NULL, *port = (char *) getenv("MAPIPORT");
-	int	debug = 0;
-	int	i;
-	struct stat st;
-	char 	user[80];
-	char 	address[80]	= ":50000"; 
-        Msession mid;
-	int	sessionkey	= 0;
-
-	toConsole = stdout;
-	fstat(fileno(stdin),&st);
-
-	if (S_ISCHR(st.st_mode))
-	   is_chrsp = 1;
-	else
-	   is_chrsp = 0;
-
-	program = argv[0];
-        strcpy(user, pwd?pwd->pw_name:"guest");
-	if (!port) port = (char *) getenv("MONETPORT");
-	if (port) strcpy(address, port);
+int main(int ac, char **av) {
+	char *prompt= NULL;
+        char buf[BUFSIZ];
+        char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
+        char *login = NULL, *db = NULL, *schema= NULL, *host=NULL;
+	char *scenario = NULL, *language = _strdup("mal");
+	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, trace = 0, skey=0;
+	opt	*set= NULL;
  
-	if (argc == 0) {
-		usage();
-	}
-	for(i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch(argv[i][1]) {
-			case 'd':
-				debug++;
+	char	*command = NULL;
+ 	char	*prelude  = NULL;  
+
+        struct stat st;
+        Msession mid;
+
+        static struct option long_options[] =
+             {
+               {"debug", 2, 0, 'd'},
+               {"config", 1, 0, 'c'},
+               {"host", 1, 0, 'h'},
+               {"port", 1, 0, 'p'},
+               {"passwd", 1, 0, 'P'},
+               {"user", 1, 0, 'u'},
+               {"scenario", 1, 0, 's'},
+               {"language", 1, 0, 'l'},
+               {"session", 1, 0, 'S'},
+               {"execute", 1, 0, 'e'},
+               {"trace",0, 0, 0},
+               {0, 0, 0, 0}
+             };
+
+        if (!(setlen = mo_builtin_settings(&set)) )
+                usage(av[0]);
+
+	while(1){
+		int option_index = 0;
+
+		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:", 
+				long_options, &option_index);
+
+		if (c == -1)
+			break;
+
+		switch (c){
+		case 0:
+			if (strcmp(long_options[option_index].name,
+						"trace") == 0) {
+				trace = 1;
 				break;
-			case 'p':
-				if (strcmp(argv[i], "-port") == 0) {
-					strcpy(address, argv[++i]);
-				} else if (strcmp(argv[i], "-prelude") == 0) {
-					prelude = argv[++i];
-				}
-				break;
-			case 'h':
-				if (strcmp(argv[i], "-help") == 0) {
-					usage();
-					EXIT(0);
-				}
-				break;
-                       case 's':
-                                if (strcmp(argv[i],"-session") == 0) {
-                                        i++;
-                                        sessionkey= atoi(argv[i]);
-                                }
-                                break;
-       			case 'c':
-		        	command = argv[i];
-				break;
-			default:
-				fprintf(stderr, "unknown argument:%s\n", 
-						argv[i]);
-				usage();
 			}
+			/* all other long options are mapped on their short version */
+			printf("option %s", long_options[option_index].name);
+			if (optarg)
+				printf( " with arg %s", optarg );
+			printf("\n");
+			usage(prog);
+			break;
+		case 'c':
+			config = _strdup(optarg);
+			break;
+		case 'd':
+			if (optarg){ 
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "debug", optarg );
+			} else {
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "debug", "2" );
+			}
+			break;
+		case 'e':
+			command= _strdup(optarg);
+			break;
+		case 'h':
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "host", optarg );
+			break;
+		case 'l':
+			if (optarg)
+			language= _strdup(optarg);
+			else printf("language argument missing\n");
+			break;
+		case 'p':
+			{char *m= _strdup(optarg);
+			port= strtol(m,NULL,10);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "port", m );
+			}
+			break;
+		case 'P':
+			passwd = _strdup(optarg);
+			break;
+		case 's': scenario= _strdup(optarg);
+			break;
+		case 'S': skey= strtol(optarg,NULL,10);
+			break;
+		case 'u':
+			user = _strdup(optarg);
+			break;
+		case '?':
+			usage(prog);
+		default:
+			printf( "?? getopt returned character code 0%o ??\n",c);
+			usage(prog);
 		}
 	}
-	MT_init_posix();
-	s = (char *) strchr(address,':');
-	if( s == 0 && !isdigit(*address) ){
-		fprintf(toConsole, "address syntax error: %s\n", address);
-		exit(1);
+
+	if (optind < ac){
+		printf("some arguments are not parsed by getopt\n");
+		while(optind < ac)
+			printf("%s ", av[optind++]);
+		printf("\n");
+		usage(prog);
 	}
-	*s = 0;
-	if(s==0) i= atoi(s+1); else i = atoi(s+1);
-	if (address[0] == '\0'){
-		strcpy(address,"localhost");
+#ifndef NO_LOCALE
+        if (setlocale(LC_CTYPE, "") == NULL){ /* why is this needed ? */
+                fprintf(stderr, "WARN: cannot set locale\n");
+        } else {
+                char *codeset = NULL;
+                if ((codeset = nl_langinfo(CODESET)) == NULL){
+                        fprintf(stderr, "WARN: cannot get codeset\n");
+                } else {
+                        to_utf = iconv_open("UTF-8", codeset);
+                        from_utf = iconv_open(codeset, "UTF-8" );
+                }
+        }
+#endif
+
+        if (config){
+                setlen = mo_config_file(&set, setlen, config );
+                free(config);
+        } else {
+                if (!(setlen = mo_system_config(&set, setlen)) )
+                        usage(prog);
+        }
+
+        stream_init();
+	if(debug==0){
+		snprintf(buf,BUFSIZ,"%s_debug",language);
+		str nme=mo_find_option(set, setlen, buf);
+		if(nme) debug= strtol(nme, NULL, 10);
+	}
+	if(port==0){
+		snprintf(buf,BUFSIZ,"%s_port",language);
+		str nme=mo_find_option(set, setlen, buf);
+		if(nme) port= strtol(nme, NULL, 10);
 	}
 
-	mid = Mconnect(address,i,user,NULL);
-	fprintf(toConsole,"#connect to %s %d %s\n",address,i,user);
-	mid->trace = debug;
-	if( sessionkey) {
-		sprintf(user,"%s:%d\n",user,sessionkey);
+	host= mo_find_option(set, setlen, "host");
+	if (host == NULL) strcpy(host,"localhost");
+
+        if (!scenario) {
+		scenario = mo_find_option(set, setlen, "scenario");
+		if( scenario==0) scenario= _strdup(language);
 	}
+
+        prompt = mo_find_option(set, setlen, "prompt");
+        if (!prompt) {
+		if(strcmp(language,"mal")) {
+			char buf[256];
+			snprintf(buf,256,"%s> ",language);
+			prompt = _strdup(buf);
+		} else 	prompt = _strdup(">");
+	}
+	if (host == NULL) strcpy(host,"localhost");
+
+	fstat(fileno(stdin),&st);
+#ifdef HAVE_LIBREADLINE
+	if (S_ISCHR(st.st_mode))
+	   is_chrsp = 1;
+#endif
+	if (!user)
+		user = simple_prompt("User: ", BUFSIZ, 1 );
+	if (!passwd)
+		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
+
+	toConsole = stdout;
+	mid = Mconnect(host,port, user, passwd,scenario);
+	/* fprintf(toConsole,"#connect %s:%d %s:%s:%d\n",
+			host,port,user,scenario,skey);
+	*/
+	mid->trace = debug;
 	if (Merror(mid)) {
 		Mexplain(mid,toConsole);
 		EXIT(2);
@@ -454,11 +705,10 @@ Check basic working of Monet interaction.
 		}
 	}
 
-	/* sent a single command to the server */
 	if (command) { 
 		doRequest(mid, command );
 	} else {
-		clientAccept(mid);
+		terminalInput(mid);
 	}
 	return 0;
 }

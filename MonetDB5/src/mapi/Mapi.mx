@@ -33,7 +33,8 @@ The application is build around the following routines.
 @T
 \begin{description}
 
-\item[Msession Mconnect(char *host, int port, char *username, char *password)]:
+\item[Msession Mconnect(char *host, int port, char *username, char *password,
+char *scenario)]:
 Setup a connection with a Monet server at a {\em host}:{\em port} and
 login with {\em username} and {\em password}. If host == NULL, the
 local host is accessed. If username == NULL, the username of the
@@ -194,7 +195,7 @@ MMONETERR & Monet error.\\
 
 #define NAMELEN	256
 #define ERRLEN	1024
-#define MAPIBLKSIZE 1024	/* minimum buffer shipped */
+#define MAPIBLKSIZE 256	/* minimum buffer shipped */
 #define REPLYBUFFER MAPIBLKSIZE*1024*32	/* seems large enough */
 #define QRYLEN	32*MAPIBLKSIZE 
 				
@@ -209,7 +210,8 @@ MMONETERR & Monet error.\\
 #define COUNT(M,X)	(M)->counts[X]++;
 #define MAXVARS		32
 #define MAXBIND		16
-#define PROMPT		'\001'	/* prompt bracket */
+#define PROMPTBEG		'\001'	/* start prompt bracket */
+#define PROMPTEND		'\002'	/* end prompt bracket */
 
 typedef struct {
 	int  field;
@@ -268,7 +270,7 @@ mapi_export void Mtail(Msession mid, char *qry);
 mapi_export int Mbind(Msession mid, void *ptr);
 mapi_export char *Mgetreply(Msession mid);
 mapi_export int Mdorequest(Msession mid,char *cmd);
-mapi_export Msession Mconnect(char *host, int port, char *username, char *password);
+mapi_export Msession Mconnect(char *host, int port, char *username, char *password, char *scenario);
 mapi_export Msession Mdup(Msession mid);
 mapi_export Msession Mnewstruct(Msession mid);
 mapi_export void Mdisconnect(Msession mid);
@@ -286,7 +288,6 @@ mapi_export int Mslice(char *tuple,int fnr, void *ptr, int typ);
 mapi_export int MsliceText(char *tuple, char **ptrs, int max);
 mapi_export int Msync(Msession mid);
 mapi_export int Mtimeout(Msession mid, int time);
-mapi_export void promptMonet(Msession mid);
 
 #ifdef __cplusplus
 }
@@ -384,7 +385,7 @@ Msession Mnewstruct(Msession mid) {
                 printf("Could not allocate buffer space\n");
                 exit(1);
         }
-	m -> trace = 1;
+	m -> trace = 0;
 	m -> everything = 1;
 
 	m->vars[0].ptr=0;
@@ -411,7 +412,7 @@ Msession Mdup(Msession mid) {
 	}
 	return m;
 }
-Msession Mconnect(char *host, int port, char *username, char *password) {
+Msession Mconnect(char *host, int port, char *username, char *password, char *scenario) {
 	struct hostent *hp;
 	struct sockaddr_in server;
 	int s;
@@ -481,13 +482,13 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	    return(mid);
 	}
 
-	strcpy(mid -> prompt,"\001>\001");
+	/* default prompt */
+	strcpy(mid -> prompt,">");
 	
 	{ char buf[MAPIBLKSIZE];
-	  char c;
+	  char c= EOF;
 	  int ret;
-	  strcpy(buf,mid->username);
-	  strcat(buf,"\n");
+	  snprintf(buf, MAPIBLKSIZE,"%s\n",mid->username);
 	  /* fprintf(mid->to,buf);*/
 	  if(mid->trace){
 			printf("sending first request [%d]:%s",MAPIBLKSIZE,buf);
@@ -500,10 +501,10 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	    sprintf(mid->errortext,"Could not send initial bytes %d.",c);
 	    return(mid);
 	  }
-          printf("awaiting response from server\n");
-	  fflush(stdout); 
-	  while( !((mid->from->read(mid->from,(char*)&c,1,1)==1 && c == PROMPT) || (c == EOF)) ) 
+	  while( !((mid->from->read(mid->from,(char*)&c,1,1)==1 && c == PROMPTBEG) || (c == EOF)) ) { 
 		if(mid->trace) printf("got char %d=%c\n",(int)c,c);
+		if(mid->from->errnr) {c= EOF; break;}
+	  }
 	  if (c == EOF) {
 	    /* perror("! Mapi.Mconnect.connect: "); */
 	    mid->error = MMAPIERR;
@@ -537,10 +538,9 @@ void promptMonet(Msession mid) {
 	checkMid(mid,"promptMonet");
 	if( mid->trace) fprintf(stderr,"promptMonet.");
         for(i=0; mid->reply[i]; i++);
-        for( ;i<mid->replylength-2 && 
+        for( ;i<mid->replylength-1 && 
 	      mid->from->read(mid->from,(char*)&c,1,1) == 1; i++) 
-		if(c==PROMPT) break; else mid->reply[i]=c;
-        mid->reply[i++] = ' ';
+		if(c==PROMPTEND) break; else mid->reply[i]=c;
         mid->reply[i] = '\0';
 	strcpy(mid->prompt,mid->reply);
 	mid->reply[0]=0;
@@ -998,7 +998,7 @@ The routine Mgetreply returns with 0 upon encountering the prompt
 the largest message received, topped by a strong limit.
 @c
 char *Mgetreply(Msession mid) {
-	char ch,*newbuf;
+	char ch= EOF,*newbuf;
 	int n=0;        
 
 	COUNT(mid,19);
@@ -1006,8 +1006,13 @@ char *Mgetreply(Msession mid) {
 	mid->reply[0]=0;
 
         while ( mid->from->read(mid->from,(char*)&ch,1,1) == 1) {
-		if(ch== PROMPT) break;
-                if (mid->from->errnr) break;
+		if(ch== PROMPTBEG) break;
+		if( ch == -1) mid->from->errnr= EOF;
+                if (mid->from->errnr) {
+                        sprintf(mid->errortext, "!terminated connection\n");
+			mid->error= MMONETERR;
+                        return 0;
+		}
 		if( ch == '\n') break;
                 if (!isprint(ch) && !isspace(ch)) {
                         sprintf(mid->errortext, "!terminating connection\n");
@@ -1027,7 +1032,13 @@ char *Mgetreply(Msession mid) {
 			mid->reply = newbuf;
                 }
 		mid->reply[n++] = ch;
+		ch = EOF;
         }
+	if( ch == -1){
+                sprintf(mid->errortext, "!connection broken\n");
+		mid->error= MMONETERR;
+                return 0;
+	}
         mid->reply[n]=0;
         mid->error = (mid->reply[0]=='!');
 
@@ -1041,7 +1052,7 @@ char *Mgetreply(Msession mid) {
 		mid->error= MMONETERR;
                 return 0;
         }
-	if( ch == 1){
+	if( ch == PROMPTBEG){
 		/* eat rest of prompt string away */
 		promptMonet(mid);
 		return 0;
