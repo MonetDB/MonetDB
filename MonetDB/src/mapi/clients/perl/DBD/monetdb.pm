@@ -363,7 +363,6 @@ sub execute {
     my $statement = $sth->{Statement};
     my $dbh = $sth->{Database};
     my $mapi = $dbh->FETCH('monetdb_connection');
-    my $hdl;
 
     my $mparams = $sth->FETCH('monetdb_params');
     my $params = (@bind_values) ?  \@bind_values : $mparams;
@@ -376,84 +375,58 @@ sub execute {
 	my $quoted_param = $dbh->quote($params->[$i]);
 	$statement =~ s/\?/$quoted_param/;
     }
+    my $hdl = MapiLib::mapi_query($mapi, $statement);
+    my $err = MapiLib::mapi_error($mapi);
+    return $sth->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
+    my $result_error = MapiLib::mapi_result_error($hdl);
+    return $sth->set_err(-1, $result_error) if $result_error;
 
-    my $rows;
-    my @data = ();
+    $sth->{monetdb_hdl} = $hdl;
 
-    my $result = eval {
+    my $rows = MapiLib::mapi_rows_affected($hdl);
 
-	$hdl = MapiLib::mapi_query($mapi, $statement);
-
-	$sth->STORE(monetdb_hdl => $hdl);
-	$sth->STORE(monetdb_errstr => MapiLib::mapi_result_error($hdl));
-	$sth->STORE(monetdb_err => MapiLib::mapi_result_error($hdl)?1:0);
-	$rows = MapiLib::mapi_rows_affected($hdl);
-	my $querytype = MapiLib::mapi_get_querytype($hdl);
-
-	if ($sth->FETCH('monetdb_err') == 0) {
-	    my $first = 1;
-	    my @names = ();
-	    my @types = (); my @precisions = (); my @nullables = ();
-
-	    my $numfields;
-
-	    while (MapiLib::mapi_fetch_row($hdl)) {
-		$numfields =  MapiLib::mapi_get_field_count($hdl) if !defined($numfields);
-		my @row = ();
-		for (my $i=0; $i<$numfields; $i++) {
-		    push @row, MapiLib::mapi_fetch_field($hdl, $i);
-		    if ($first) {
-			push @names, MapiLib::mapi_get_name($hdl, $i);
-			push @types, MapiLib::mapi_get_type($hdl, $i);
-			push @precisions, MapiLib::mapi_get_len($hdl, $i);
-			push @nullables, 0;
-		    }
-		}
-		$first = 0;
-		push @data, \@row;
-	    }
-
-	    $sth->{monetdb_data} = \@data;
-	    $sth->{monetdb_rows} = ( $querytype == 3 ) ? 0 : $rows;
-	    $sth->STORE(NUM_OF_FIELDS => $numfields) if defined $numfields && !$sth->FETCH('NUM_OF_FIELDS');
-	    $sth->STORE(NAME => \@names);
-
-	    # FIXME: conversion from monet types to DBD sqltypes!
-	    # $sth->STORE(TYPE => \@types);
-	    # $sth->STORE(PRECISION => \@precisions);
-	    # $sth->STORE(NULLABLE => \@nullables);
-	}
-    };
-
-    if ($@ or $sth->FETCH('monetdb_err')) {
-	$sth->DBI::set_err($sth->{monetdb_err}, $sth->{monetdb_errstr});
-	return undef;
+    if ( MapiLib::mapi_get_querytype($hdl) != 3 ) {
+        $sth->{monetdb_rows} = $rows;
+        return $rows || '0E0';
     }
+    my ( @names, @types, @precisions, @nullables );
+    my $field_count = MapiLib::mapi_get_field_count($hdl);
+    for ( 0 .. $field_count-1 ) {
+        push @names     , MapiLib::mapi_get_name($hdl, $_);
+        push @types     , MapiLib::mapi_get_type($hdl, $_);
+        push @precisions, MapiLib::mapi_get_len ($hdl, $_);
+        push @nullables , 0;  # TODO
+    }
+    $sth->STORE('NUM_OF_FIELDS', $field_count) unless $sth->FETCH('NUM_OF_FIELDS');
+    $sth->STORE('NAME'         , \@names     );
+#   $sth->STORE('TYPE'         , \@types     );  # TODO: monetdb2dbi
+#   $sth->STORE('PRECISION'    , \@precisions);  # TODO
+#   $sth->STORE('NULLABLE'     , \@nullables );  # TODO
 
-    $rows || '0E0';
+    $sth->{monetdb_rows} = 0;
+
+    return $rows || '0E0';
 }
 
 
-
-
-sub fetchrow_arrayref  {
-
-    my $sth = shift;
-    my $data = $sth->FETCH('monetdb_data');
-    my $row = shift @$data;
-
-    if (!$row) {
-	return undef;
+sub fetch {
+    my ($sth) = @_;
+    my $hdl = $sth->{monetdb_hdl};
+    my $field_count = MapiLib::mapi_fetch_row($hdl);
+    unless ( $field_count ) {
+        my $mapi = $sth->{Database}{monetdb_connection};
+        my $err = MapiLib::mapi_error($mapi);
+        $sth->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
+        return;
     }
+    my @row = map MapiLib::mapi_fetch_field($hdl, $_), 0 .. $field_count-1;
+    map { s/\s+$// } @row if $sth->FETCH('ChopBlanks');
 
-    if ($sth->FETCH('ChopBlanks')) {
-	map { $_ =~ s/\s+$//; } @$row;
-    }
     $sth->{monetdb_rows}++;
-    return $sth->_set_fbav($row);
+    return $sth->_set_fbav(\@row);
 }
 
-*fetch = \&fetchrow_arrayref;
+*fetchrow_arrayref = \&fetch;
 
 sub rows {
     my $sth = shift;
