@@ -573,7 +573,8 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 	if( n->isaconstant) {
 		ATOMprint(v->vtype,VALptr(&n->value),f);
 	} else {
-		ATOMprint(v->vtype,VALptr(v),f);
+		if( !(v->vtype== TYPE_str && v->len==0) )
+			ATOMprint(v->vtype,VALptr(v),f);
 	}
 	nme= getTypeName(n->type);
 	nmeOnStk= getTypeName(v->vtype);

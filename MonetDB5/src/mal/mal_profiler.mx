@@ -8,20 +8,26 @@ can be obtained using different tools and at different levels of
 abstraction.
 
 A coarse grain insight for a particular application can be obtained
-using the mprof module and inject the necessary performance
+using injection of the necessary performance
 capturing statements in the instruction sequence of the application.
 
 Fine-grain, platform specific information can be obtained using
-existing profilers, like gprof, or even hardware counters.
+existing profilers, like valgrind, or even hardware counters
+as available in the module 'pcl'.
 
-The profiler described in this module is focussed on extracting
-MAL related performance information. For the time being, this involves
-keeping a count on the instructions being executed and the
-average cpu time spent.
+The dynamic profiler is a hook into the MAL interpreter.
+It collects performance counters and send it as a Monet tuple or XML document
+over the stream 'sysmon'.
+
+The profiler supports selective retrieval of such information by
+tagging the instructions of interest. This means that the profiler
+call has a global effect, i.e. it is of primary interest to single user
+sessions.
 
 The profiler is activated by defining MALprofiler in mal.mx.
 This leads to securing space for the counters and for code
 in the interpreter to collect the information.
+
 
 Upon exit of the session, the profiler information is saved
 in a file MALprofilerReport for offline inspection.
@@ -32,7 +38,7 @@ affected by the performance overhead.[estimate]
  * The contents of this file are subject to the Monet Public
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+ * the License at http://monetdb.cwi.nl/Legal/MonetPL-1.1.
 html
  * 
  * Software distributed under the License is distributed on an "AS
@@ -136,7 +142,7 @@ static struct{
 } profileCounter[]={
 	/*  0 */ {"cpu",1},
 	/*  1 */ {"mal",1},
-	/*  2 */ {"prop",1},
+	/*  2 */ {"properties",1},
 	/*  3 */ {"mallinfo",1},
 	/*  4 */ {"rusage",1},
 	/*  5 */ {"time",1},
