@@ -616,7 +616,7 @@ def msc_library(fd, var, libmap, msc):
 
     name = var[4:]
     sep = ""
-    pref = ''
+    pref = 'lib'
     dll = '.dll'
     if (libmap.has_key("NAME")):
         libname = libmap['NAME'][0]
