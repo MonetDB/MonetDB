@@ -198,9 +198,9 @@ proc dump_data( BAT[str,BAT] fmt, BAT[str,BAT] bats, str data, int cnt) := {
 #include <ascii_io.proto.h>
 
 extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr );
-extern BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, bstream *s, size_t nr );
+ascii_io_export BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, bstream *s, size_t nr );
+ascii_io_export size_t ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s );
 extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr );
-extern size_t ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s );
 
 #endif
 @c
