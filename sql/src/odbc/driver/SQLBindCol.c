@@ -134,7 +134,7 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 			setODBCDescRecCount(desc, nCol);
 		rc = SQLSetDescField_(desc, nCol, SQL_DESC_CONCISE_TYPE,
 				      (SQLPOINTER) (ssize_t) nTargetType, 0);
-		if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+		if (!SQL_SUCCEEDED(rc))
 			return rc;
 		rec = &desc->descRec[nCol];
 		rec->sql_desc_octet_length = nTargetValueMax;

@@ -114,7 +114,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 
 	/* construct a statement object and excute a SQL COMMIT or ROLLBACK */
 	rc = SQLAllocStmt_(dbc, &hStmt);
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		ODBCStmt *stmt = (ODBCStmt *) hStmt;
 		rc = SQLExecDirect_(stmt,
 				    nCompletionType == SQL_COMMIT ?

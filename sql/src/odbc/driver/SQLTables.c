@@ -242,8 +242,8 @@ SQLTablesW(SQLHSTMT hStmt,
 	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
 	fixWcharIn(szTableType, nTableTypeLength, type, addStmtError, stmt, goto exit);
 
-	return SQLTables_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
-			  table, SQL_NTS, type, SQL_NTS);
+	rc = SQLTables_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
+			table, SQL_NTS, type, SQL_NTS);
 
   exit:
 	if (catalog)

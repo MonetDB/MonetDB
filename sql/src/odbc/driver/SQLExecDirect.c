@@ -28,7 +28,7 @@ SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 
 	/* prepare SQL command */
 	rc = SQLPrepare_(stmt, szSqlStr, nSqlStr);
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		/* execute prepared statement */
 		rc = SQLExecute_(stmt);
 		if (rc == SQL_SUCCESS && stmt->Error)

@@ -21,8 +21,8 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLINTEGER nOffset,
-		 SQLUINTEGER *pnRowCount, SQLUSMALLINT *pRowStatusArray)
+SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLLEN nOffset,
+		 SQLULEN *pnRowCount, SQLUSMALLINT *pRowStatusArray)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLUSMALLINT *array_status_ptr;
@@ -50,7 +50,7 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLINTEGER nOffset,
 	rc = SQLFetchScroll_(stmt, nOrientation, nOffset);
 
 	stmt->ApplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
-	if (pnRowCount && (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO))
+	if (pnRowCount && SQL_SUCCEEDED(rc))
 		*pnRowCount = stmt->rowSetSize;
 
 	return rc;

@@ -193,12 +193,12 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	rc = SQLSetDescField_(apd, ParameterNumber,
 			      SQL_DESC_CONCISE_TYPE,
 			      (SQLPOINTER) (ssize_t) ValueType, 0);
-	if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	rc = SQLSetDescField_(ipd, ParameterNumber,
 			      SQL_DESC_CONCISE_TYPE,
 			      (SQLPOINTER) (ssize_t) ParameterType, 0);
-	if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	ipdrec->sql_desc_parameter_type = InputOutputType;
 	apdrec->sql_desc_data_ptr = ParameterValuePtr;

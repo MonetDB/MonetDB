@@ -20,11 +20,12 @@
 extern "C" {
 #endif
 
-/****************************
- * some ret values
- ***************************/
+/* special length/indicator values */
 #define SQL_NULL_DATA             (-1)
 #define SQL_DATA_AT_EXEC          (-2)
+
+
+/* return values from functions */
 #define SQL_SUCCESS                0
 #define SQL_SUCCESS_WITH_INFO      1
 #if (ODBCVER >= 0x0300)
@@ -32,13 +33,14 @@ extern "C" {
 #endif
 #define SQL_ERROR                 (-1)
 #define SQL_INVALID_HANDLE        (-2)
+
 #define SQL_STILL_EXECUTING        2
 #define SQL_NEED_DATA             99
+
+/* test for SQL_SUCCESS or SQL_SUCCESS_WITH_INFO */
 #define SQL_SUCCEEDED(rc) (((rc)&(~1))==0)
 
-/****************************
- * use these to indicate string termination to some function
- ***************************/
+/* flags for null-terminated string */
 #define SQL_NTS                   (-3)
 #define SQL_NTSL                  (-3L)
 
@@ -651,7 +653,7 @@ odbc_export SQLRETURN SQL_API SQLFetch(SQLHSTMT StatementHandle);
 
 #if (ODBCVER >= 0x0300)
 odbc_export SQLRETURN SQL_API SQLFetchScroll(SQLHSTMT StatementHandle,
-           SQLSMALLINT FetchOrientation, SQLROWOFFSET FetchOffset);
+           SQLSMALLINT FetchOrientation, SQLLEN FetchOffset);
 #endif
 
 odbc_export SQLRETURN SQL_API SQLFreeConnect(SQLHDBC ConnectionHandle);
@@ -787,7 +789,7 @@ odbc_export SQLRETURN SQL_API SQLSetStmtAttr(SQLHSTMT StatementHandle,
 #endif
 
 odbc_export SQLRETURN SQL_API SQLSetStmtOption(SQLHSTMT StatementHandle,
-           SQLUSMALLINT Option, SQLROWCOUNT Value);
+           SQLUSMALLINT Option, SQLULEN Value);
 
 odbc_export SQLRETURN SQL_API SQLSpecialColumns(SQLHSTMT StatementHandle,
            SQLUSMALLINT IdentifierType, SQLCHAR *CatalogName,

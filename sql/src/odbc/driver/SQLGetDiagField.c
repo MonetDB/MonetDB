@@ -177,7 +177,7 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle,
 			      ptr, n, &n);
 
 	if (ptr != DiagInfo) {
-		if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+		if (SQL_SUCCEEDED(rc)) {
 			char *e = ODBCutf82wchar(ptr, n, DiagInfo, BufferLength, &n);
 			if (e)
 				rc = SQL_ERROR;

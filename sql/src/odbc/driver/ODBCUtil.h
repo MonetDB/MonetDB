@@ -102,7 +102,7 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
 #define prepWcharOut(s, wsl)	 (s) = malloc((wsl) * 4)
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, errfunc, hdl)		\
 	do {								\
-		if ((r) == SQL_SUCCESS || (r) == SQL_SUCCESS_WITH_INFO) { \
+		if (SQL_SUCCEEDED(r)) { \
 			char *e = ODBCutf82wchar((s), (sl), (ws), (wsl), &(sl)); \
 			if (e) {					\
 				errfunc((hdl), "HY000", e, 0);	\

@@ -171,13 +171,13 @@ SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle,
 	rc = SQLGetDiagRec_(handleType, handle, recNumber, state,
 			    nativeErrorPtr, msg, bufferLength * 4, &n);
 
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(state, 5, sqlState, 6, NULL);
 		if (e)
 			rc = SQL_ERROR;
 	}
 
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(msg, n, messageText, bufferLength, &n);
 		if (e)
 			rc = SQL_ERROR;

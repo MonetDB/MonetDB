@@ -25,7 +25,7 @@
 
 SQLRETURN
 SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
-		SQLINTEGER FetchOffset)
+		SQLLEN FetchOffset)
 {
 	int LastResultRow;
 
@@ -143,7 +143,7 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 
 SQLRETURN SQL_API
 SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT FetchOrientation,
-	       SQLINTEGER FetchOffset)
+	       SQLLEN FetchOffset)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFetchScroll\n");

@@ -144,7 +144,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 				 (SQLCHAR *) pwd, SQL_NTS);
 	}
 
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		int n;
 
 		if (szConnStrOut == NULL)

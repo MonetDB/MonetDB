@@ -115,7 +115,7 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	rc = SQLGetDescRec_(desc, RecordNumber, name, BufferLength, &n, Type,
 			    SubType, Length, Precision, Scale, Nullable);
 
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(name, n, Name, BufferLength, &n);
 		if (e)
 			rc = SQL_ERROR;

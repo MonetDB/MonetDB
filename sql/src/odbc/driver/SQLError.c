@@ -70,13 +70,13 @@ SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR *szSqlState,
 			    state, pfNativeError, errmsg,
 			    nErrorMsgMax * 4, &n);
 
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(state, 5, szSqlState, 6, NULL);
 		if (e)
 			rc = SQL_ERROR;
 	}
 
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(errmsg, n, szErrorMsg, nErrorMsgMax, &n);
 		if (e)
 			rc = SQL_ERROR;

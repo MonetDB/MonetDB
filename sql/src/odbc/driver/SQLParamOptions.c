@@ -29,7 +29,7 @@ SQLParamOptions(SQLHSTMT hStmt, SQLUINTEGER nRow, SQLUINTEGER *pnRow)
 
 	/* use mapping as described in ODBC 3 SDK Help file */
 	rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMSET_SIZE, &nRow, 0);
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (SQL_SUCCEEDED(rc)) {
 		rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR,
 				     pnRow, 0);
 	}
