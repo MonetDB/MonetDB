@@ -814,6 +814,7 @@ dump_table(Mapi mid, char *tname)
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		char *c_column = mapi_fetch_field(hdl, 0);
+		char *kc_nr = mapi_fetch_field(hdl, 1);
 		char *k_name = mapi_fetch_field(hdl, 2);
 
 		if (mapi_error(mid)) {
@@ -822,7 +823,9 @@ dump_table(Mapi mid, char *tname)
 			free(query);
 			return 1;
 		}
-		if (cnt == 0) {
+		if (strcmp(kc_nr, "0") == 0) {
+			if (cnt)
+				putc(')', toConsole);
 			fprintf(toConsole, ",\n\t");
 			if (k_name) {
 				fprintf(toConsole, "CONSTRAINT ",
@@ -831,13 +834,13 @@ dump_table(Mapi mid, char *tname)
 				putc(' ', toConsole);
 			}
 			fprintf(toConsole, "UNIQUE (");
+			cnt = 1;
 		} else
 			fprintf(toConsole, ", ");
 		quoted_print(toConsole, c_column);
-		cnt++;
 	}
 	if (cnt)
-		fprintf(toConsole, ")");
+		putc(')', toConsole);
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
@@ -858,12 +861,12 @@ dump_table(Mapi mid, char *tname)
 		      "\"tables\" \"pkt\","
 		      "\"keycolumns\" \"pkkc\","
 		      "\"keys\" \"pkk\""
-		 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" and"
-		       "\"pkt\".\"id\" = \"pkk\".\"table_id\" and"
-		       "\"fkk\".\"id\" = \"fkkc\".\"id\" and"
-		       "\"pkk\".\"id\" = \"pkkc\".\"id\" and"
-		       "\"fkk\".\"rkey\" = \"pkk\".\"id\" and"
-		       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" and"
+		 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" and "
+		       "\"pkt\".\"id\" = \"pkk\".\"table_id\" and "
+		       "\"fkk\".\"id\" = \"fkkc\".\"id\" and "
+		       "\"pkk\".\"id\" = \"pkkc\".\"id\" and "
+		       "\"fkk\".\"rkey\" = \"pkk\".\"id\" and "
+		       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" and "
 		       "\"fkt\".\"name\" = '%s'"
 		 "ORDER BY \"fkk\".\"name\", \"nr\"",
 		 tname);
@@ -942,6 +945,74 @@ dump_table(Mapi mid, char *tname)
 	fprintf(toConsole, "\n");
 
 	fprintf(toConsole, ");\n");
+
+	snprintf(query, maxquerylen,
+		 "SELECT \"i\".\"name\", "		/* 0 */
+			"\"k\".\"name\", "		/* 1 */
+			"\"kc\".\"nr\", "		/* 2 */
+			"\"c\".\"name\" "		/* 3 */
+		 "FROM \"idxs\" AS \"i\" LEFT JOIN \"keys\" AS \"k\" "
+		      "ON \"i\".\"name\" = \"k\".\"name\", "
+		      "\"keycolumns\" AS \"kc\", "
+		      "\"columns\" AS \"c\", "
+		      "\"tables\" AS \"t\" "
+		 "WHERE \"i\".\"table_id\" = \"t\".\"id\" AND "
+		       "\"i\".\"id\" = \"kc\".\"id\" AND "
+		       "\"t\".\"id\" = \"c\".\"table_id\" AND "
+		       "\"kc\".\"column\" = \"c\".\"name\" AND "
+		       "(\"k\".\"type\" IS NULL OR \"k\".\"type\" = 1) AND "
+		       "\"t\".\"name\" = '%s' "
+		 "ORDER BY \"i\".\"name\", \"kc\".\"nr\"",
+		 tname);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		free(query);
+		return 1;
+	}
+	cnt = 0;
+	while (mapi_fetch_row(hdl) != 0) {
+		char *i_name = mapi_fetch_field(hdl, 0);
+		char *k_name = mapi_fetch_field(hdl, 1);
+		char *kc_nr = mapi_fetch_field(hdl, 2);
+		char *c_name = mapi_fetch_field(hdl, 3);
+
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			free(query);
+			return 1;
+		}
+		if (k_name != NULL) {
+			/* unique key, already handled */
+			continue;
+		}
+
+		if (strcmp(kc_nr, "0") == 0) {
+			if (cnt)
+				fprintf(toConsole, ");\n");
+			fprintf(toConsole, "CREATE INDEX ");
+			quoted_print(toConsole, i_name);
+			fprintf(toConsole, " ON ");
+			quoted_print(toConsole, tname);
+			fprintf(toConsole, " (");
+			cnt = 1;
+		} else
+			fprintf(toConsole, ", ");
+		quoted_print(toConsole, c_name);
+	}
+	if (cnt)
+		fprintf(toConsole, ");\n");
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		free(query);
+		return 1;
+	}
+	mapi_close_handle(hdl);
 
 	snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
