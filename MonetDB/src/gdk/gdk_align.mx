@@ -171,18 +171,18 @@ with the parent, as they need a modified version.
 @c
 BAT *VIEWcreate_(BAT* b, int stable) {
         BAT *bn = BATcreatedesc(b->htype, b->ttype);
-	int parent = VIEWparent(b);
+	int parent = VIEWparent(b), fix = 0;
 	
 	if (parent == 0) {
 	    parent = b->batCacheid;
 	}
 	bn->batParentid = parent;
 	if (parent < 0) parent = -parent;
+
         MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWcreate");
-        if (++BBP_cache(parent)->batSharecnt == 1) {
-		BBPfix(parent);
-	}
+        if (++BBP_cache(parent)->batSharecnt == 1) fix = 1;
         MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWcreate");
+	if (fix) BBPfix(parent);
 @-
 the H and T column descriptors are fully copied. We need copies
 because in case of a mark, we are going to override a column with 
@@ -279,6 +279,7 @@ The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
 destroy sequence.
 @c 
 void VIEWunlink(BAT *v) {
+	int unfix = 0;
 	BAT *b = BATreset(v);
 	BAT *m = BATmirror(b);
 	BATstore *bs = (BATstore*) b;
@@ -300,10 +301,9 @@ void VIEWunlink(BAT *v) {
 	}		      
 
 	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWunlink");
-	if (--bp->batSharecnt == 0){
-		BBPunfix(parent);
-	}
+	if (--bp->batSharecnt == 0) unfix = 1;
 	MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWunlink");
+	if (unfix) BBPunfix(parent);
 }
 
 @-
