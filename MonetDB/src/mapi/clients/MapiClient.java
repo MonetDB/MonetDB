@@ -1,6 +1,6 @@
 
 import java.io.*;
-import Mapi.*;
+import mapi.*;
 
 
 public class MapiClient 

@@ -11,7 +11,7 @@ EXTRA_DIST = \
 	MapiClient.py    Mapi.py \
 	MapiClient.tcl   Mapi.tcl \
 
-EXTRA_DIST_DIR = Mapi
+EXTRA_DIST_DIR = mapi
 
 
 lib_Mapi = {
