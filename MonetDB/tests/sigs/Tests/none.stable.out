@@ -65,6 +65,7 @@ loaded;
 [ "ddbench",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "enum",	  nil	  ]
+[ "image",	  nil	  ]
 [ "iterator",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
@@ -177,6 +178,7 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "malalgebra",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
+[ "image",	  nil	  ]
 [ "enum",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "ddbench",	  nil	  ]
@@ -1128,7 +1130,50 @@ others@batloop{
 	dropping iterator
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading image
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "image",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+[ "url",	  1		  ]
+#-------------------------#
+# h		tmp_44	  # name
+# str		void	  # type
+#-------------------------#
+[ "image",	  nil	  ]
+[ "url",	  nil	  ]
+
+	dropping image
+
+
+	dropping url
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
