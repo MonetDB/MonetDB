@@ -1,46 +1,40 @@
 stderr of test 'usage` in directory 'src/tools` itself:
 
 
-# 13:33:19 >  
-# 13:33:19 >  Mtimeout -timeout 432 ./usage usage 
-# 13:33:19 >  
+# 16:15:05 >  
+# 16:15:05 >  Mtimeout -timeout 1320 ./usage usage 
+# 16:15:05 >  
 
 
-# 13:33:19 >  
-# 13:33:19 >  Mserver -?
-# 13:33:19 >  
+# 16:15:05 >  
+# 16:15:05 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.19480/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -?
+# 16:15:05 >  
 
-ERROR:database name missing
-usage: <program> [-db <db_name>] [-monetrc <file>]
-<program>	program using the GDK library
-<db-name>	database to open
-<file>		system variable settings
-		default: .monet.conf in current/home directory
-Other arguments are dealt with in the application startup routine
 
-# 13:33:19 >  
-# 13:33:19 >  MapiClient -help
-# 13:33:19 >  
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 MapiClient -?
+# 16:15:06 >  
 
+unknown argument:-?
 Usage: MapiClient [-port host:port] [-session key] [-prelude  pfile ] [-c command] [-everything] [-debug] [-help ] 
 
-# 13:33:19 >  
-# 13:33:19 >  Mcreatedb -?
-# 13:33:19 >  
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mcreatedb -?
+# 16:15:06 >  
 
 
-# 13:33:19 >  
-# 13:33:19 >  Mdestroydb -?
-# 13:33:19 >  
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mdestroydb -?
+# 16:15:06 >  
 
 
-# 13:33:19 >  
-# 13:33:19 >  Mshutdown -?
-# 13:33:19 >  
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mshutdown -?
+# 16:15:06 >  
 
 unknown argument:-?
 
-# 13:33:19 >  
-# 13:33:19 >  Done.
-# 13:33:19 >  
+# 16:15:06 >  
+# 16:15:06 >  Done.
+# 16:15:06 >  
 
