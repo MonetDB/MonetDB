@@ -645,22 +645,29 @@ def ApproveOutput (env, TST) :
     TSTTRGDIR = env['TSTTRGDIR']
     os.chdir(TSTSRCDIR)
     EXTENSIONS = par['EXTENSION']
-    SYSTEM = par['SYSTEM']
     FORCE = par['FORCE']
 
 #       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
 #                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
 
     for WHAT in EXTENSIONS:
-        testOUTPUT   = os.path.join(TSTTRGDIR,TST+".test."+WHAT)
-        stableOUTPUT = os.path.join(TSTSRCDIR,TST+".stable."+WHAT+SYSTEM)
+        testOUTPUT = os.path.join(TSTTRGDIR,TST+".test."+WHAT)
+        TSTSRCDIRTST = os.path.join(TSTSRCDIR,TST)
+        stableOUT  = TSTSRCDIRTST+".stable."+WHAT
+        if par['SYSTEM']:
+            SYSTEM = par['SYSTEM']
+            stableOUTPUT = stableOUT+SYSTEM
+        else:
+            stableOUTPUT = TSTSRCDIRTST+StableOutErr(env,par,TSTSRCDIRTST,OS,RELEASE)[0]
+            SYSTEM = string.split(stableOUTPUT, WHAT)[-1]
+
         if os.path.isfile(testOUTPUT):
 #                       print "Approving "+testOUTPUT+" -> "+stableOUTPUT
             if os.path.isfile(stableOUTPUT):
                 oc = 'overwriting old'
             else:
                 oc = 'creating new'
-            print "Approving %s -> stable.%s%s  (%s file)" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM, oc)
+            print "Approving  %s  ->  stable.%s%s   (%s file)" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM, oc)
             f = open(stableOUTPUT, "w")
             for l in fileinput.input(testOUTPUT):
                 if len(l) == 0  or  l[0] != '!':        # or  filter.match(ln):
@@ -675,6 +682,16 @@ def ApproveOutput (env, TST) :
                     sem = 1
             f.flush()
             f.close()
+            
+            thefile = os.path.split(stableOUTPUT)[1]
+            dir,file = os.path.split(stableOUT)
+            test = re.compile('^%s.*$' % re.escape(file))
+            list = []
+            for f in os.listdir(dir or os.curdir):
+                if f != thefile and test.match(f):
+                    list.append(f)
+            if len(list) > 1:
+                Warn('There are other (specific) stable outputs for test %s:\n %s' % (os.path.join(TSTDIR,TST), str(list)))
         else:
             Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
     return sem
@@ -843,6 +860,35 @@ def StopAt(ATJOB,ME) :
     #LOG1x at -l >&2
 ### StopAt(ATJOB,ME) #
 
+def StableOutErr(env,par,TST,OS,RELEASE) :
+    BITS = env['TST_BITS']
+    if env['TST_STATIC']:
+        STATIC = "(\.STATIC)?"
+    else:
+        STATIC = ""
+    dir,file = os.path.split(TST)
+    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.%s(%s)?)?(\.%s)?%s$' % (re.escape(OS), re.escape(RELEASE), BITS, STATIC))
+    bestout = besterr = ''
+    for f in os.listdir(dir or os.curdir):
+        res = outre.match(f)
+        if res is not None:
+            if res.group('tp') == 'out':
+                if len(bestout) < len(f):
+                    bestout = f
+            else:                   # res.group('tp') == 'err'
+                if len(besterr) < len(f):
+                    besterr = f
+    if bestout:
+        STABLEout = os.path.join(dir, bestout)[len(TST):]
+    else:
+        STABLEout = '.stable.out'
+    if besterr:
+        STABLEerr = os.path.join(dir, besterr)[len(TST):]
+    else:
+        STABLEerr = '.stable.err'
+    return STABLEout, STABLEerr
+### StableOutErr(env,par,TST,OS,RELEASE) #
+
 def RunTest(env, TST, BusyPorts) :
     Failed = -1
     TSTDB = env['TSTDB']
@@ -993,33 +1039,9 @@ def RunTest(env, TST, BusyPorts) :
                     os.rename("prof_"+f,f)
                     os.system('%s -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
 
-        BITS = env['TST_BITS']
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
-        if env['TST_STATIC']:
-            STATIC = "(\.STATIC)?"
-        else:
-            STATIC = ""
-        dir,file = os.path.split(TST)
-        outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.%s(%s)?)?(\.%s)?%s$' % (re.escape(OS), re.escape(RELEASE), BITS, STATIC))
-        bestout = besterr = ''
-        for f in os.listdir(dir or os.curdir):
-            res = outre.match(f)
-            if res is not None:
-                if res.group('tp') == 'out':
-                    if len(bestout) < len(f):
-                        bestout = f
-                else:                   # res.group('tp') == 'err'
-                    if len(besterr) < len(f):
-                        besterr = f
-        if bestout:
-            STABLEout = os.path.join(dir, bestout)[len(TST):]
-        else:
-            STABLEout = '.stable.out'
-        if besterr:
-            STABLEerr = os.path.join(dir, besterr)[len(TST):]
-        else:
-            STABLEerr = '.stable.err'
+        STABLEout,STABLEerr = StableOutErr(env,par,TST,OS,RELEASE)
         if not os.path.isfile(TST+STABLEout):
             open(TST+STABLEout,"w").close()
             ACCURACYout = 0
@@ -1670,6 +1692,21 @@ def SetExecEnv(exe,verbose) :
         STDOUT.flush()
 ### SetExecEnv(exe,verbose) #
 
+def ReadMapproveRc(f) :
+    v = {}
+    v['OS'] = OS
+    v['RELEASE'] = RELEASE
+    v['BITS'] = ''
+    v['STATIC'] = ''
+    if os.path.isfile(f):
+        r = re.compile('^([A-Z]+) = (.*)$')
+        for l in fileinput.input(f):
+            m = r.match(l)
+            if m:
+                v[m.group(1)] = m.group(2)
+    return v
+### ReadMapproveRc(f) #
+
 #############################################################################
 #       MAIN
 
@@ -1679,7 +1716,7 @@ if THISFILE == "Mprofile.py":
     dftTSTPREF = "mProfiles"
     TSTDBG = str(0)
     dftIGNORE = '^[#~]'
-else:
+else: # THISFILE in ["Mtest.py", "Mapprove.py"]
     dftIGNORE = '^#'
     TSTDBG = str(2+8)
     dftTSTPREF = "mTests"
@@ -1707,6 +1744,7 @@ else:
 OSVER = OS+RELEASE
 os.environ['OS'] = OS
 os.environ['OSVER'] = OSVER
+os.environ['RELEASE'] = RELEASE
 
 if os.environ.has_key('COMPILER'):
     COMPILER = os.environ['COMPILER']
@@ -1871,15 +1909,20 @@ def main(argv) :
              ),
             ]
     elif THISFILE == 'Mapprove.py':
+        f = os.path.join(GetMonetConfig('--prefix'),dftTSTPREF,'.Mapprove.rc')
+        v = ReadMapproveRc(f)
+        for i in 'BITS', 'STATIC':
+            if v[i]:
+                v[i] = '[.%s]' % v[i]
         options = cmd_options + [
             (None, 'x', 'ext', '<ext>',
-             "consider only output files *.<ext><sys> (<ext> = 'out' or 'err')\n"
+             "approve only output files *.<ext><sys> (<ext> = 'out' or 'err')\n"
              "(default: <ext> = 'out' & 'err')"),
-            (None, 's', 'sys', '<sys>',
-             "consider only output files *.<ext><sys>\n"
-             "(<sys> = '', '.%s', '.%s', '.%s.(32|64)bit,'\n"
-             "\tor any of these plus suffix '.STATIC')\n"
-             "(default: <sys> = '')" % (OS, OSVER, OSVER)),
+            (None, 'S', 'sys', '<sys>',
+             "approve specific output *.<ext><sys>\n"
+             "(<sys> = '[.<OS>[<RELEASE>]][.(32|64)bit][.STATIC]',\n"
+             "(default: longest match for <sys> = '[.%s[%s]]%s%s')"
+              % (v['OS'], v['RELEASE'], v['BITS'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ]
@@ -1923,17 +1966,11 @@ def main(argv) :
         else:
             ErrXit("Extension (-x) must be one of: 'out', 'err' !")
         par['FORCE'] = opts.get('force', False)
-        XTS = []
-        for xts in ('', '.'+OS, '.'+OSVER, '.'+OSVER+'.32bit', '.'+OSVER+'.64bit'):
-            XTS.append(xts)
-            XTS.append(xts+'.STATIC')
         a = opts.get('sys')
         if a is None:
             par['SYSTEM'] = ''
-        elif a in XTS:
-            par['SYSTEM'] = a
         else:
-            ErrXit("System (-s) must be one of: "+str(XTS)[1:-1]+" !")
+            par['SYSTEM'] = a
     for v in vars:
         a = opts.get(v)
         if a is not None:
@@ -2029,6 +2066,32 @@ def main(argv) :
     else:
         env['TSTPREF'] = dftTSTPREF
     TSTPREF = env['TSTPREF']
+
+    # read '.Mapprove.rc'
+    if THISFILE == 'Mapprove.py':
+        f = os.path.join(GetMonetConfig('--prefix'),TSTPREF,'.Mapprove.rc')
+        v = ReadMapproveRc(f)
+        OS = v['OS']
+        RELEASE = v['RELEASE']
+        OSVER = OS+RELEASE
+        os.environ['OS'] = OS
+        os.environ['OSVER'] = OSVER
+        os.environ['RELEASE'] = RELEASE
+        w = {}
+        for i in 'OS', 'RELEASE', 'BITS', 'STATIC':
+            w[i] = re.escape(v[i])
+        for i in 'BITS', 'STATIC':
+            j = 'TST_'+i
+            env[j] = v[i]
+            os.environ[j] = v[i]
+            if v[i]:
+                v[i] = '(.%s)?' % v[i]
+                w[i] = '(\.%s)?' % w[i]
+        sv = '^(.%s(%s)?)?%s%s$' % (v['OS'], v['RELEASE'], v['BITS'], v['STATIC'])
+        sw = '^(\.%s(%s)?)?%s%s$' % (w['OS'], w['RELEASE'], w['BITS'], w['STATIC'])
+        r = re.compile(sw)
+        if not r.match(par['SYSTEM']):
+            ErrXit("System (-S) must match '"+sv+"' !")
 
     # some relative path's for relocatable HTML output
     if env['TSTSRCBASE'] == env['TSTBLDBASE']  and  env['TSTBLDBASE'] == env['TSTTRGBASE']:
@@ -2255,6 +2318,16 @@ def main(argv) :
         if 'SQL' not in BusyPorts  and  'MAPI' in BusyPorts:
             Warn("Skipping SQL tests as MAPIPORT=%s is not available!" % env['MAPIPORT'])
             BusyPorts.append('SQL')
+
+        # create '.Mapprove.rc'
+        env['OS'] = os.environ['OS']
+        env['RELEASE'] = os.environ['RELEASE']
+        n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
+        f = open(n, 'w')
+        for v in 'OS', 'RELEASE', 'TST_BITS', 'TST_STATIC':
+            w = string.replace(v,'TST_','')
+            f.write('%s = %s\n' % (w, env[v]))
+        f.close()
 
     STDERR.flush()
     t_ = 0
