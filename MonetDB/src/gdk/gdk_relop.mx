@@ -315,6 +315,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 
         if (!BAThdense(r)) {
                 ERRORcheck(!BATtdense(l), "BATfetchjoin: one join column must be dense");
+		JOINDEBUG THRprintf(GDKout, "BATfetchjoin: BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));\n");
                 return BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));
         }
         if (BATtordered(l)&1) {
@@ -447,8 +448,10 @@ In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
 @c
 	if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
+		JOINDEBUG THRprintf(GDKout, "BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l)));\n");
 		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l)));
 	} else if (rfetch) {
+		JOINDEBUG THRprintf(GDKout, "BATjoin: BATfetchjoin(l, r);\n");
 		return BATfetchjoin(l, r);
 	}
 @-
@@ -460,6 +463,7 @@ loop binary search (both implemented by BATmergejoin).
 		  (((BATtordered(l)&1) && (BATcount(l) > logl*BATcount(r))) ||
 		   ((BAThordered(r)&1) && (BATcount(r) > logr*BATcount(l))))))
 	{ 
+		JOINDEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r);\n");
 		return BATmergejoin(l,r);
 	}
 @-
@@ -467,14 +471,17 @@ if hash join is not right away possible and we have a binary tree index,
 we do nested loop index lookup join.
 @c
 	if (must_hash && (l->tidx_heap || r->hidx_heap)) {
+		JOINDEBUG THRprintf(GDKout, "BATjoin: BATthetajoin(l,r,JOIN_EQ);\n");
 		return BATthetajoin(l,r,JOIN_EQ);
 	}
 @-
 hash join: the bread&butter join of monet
 @c
 	if (rsize < lsize) { /* assume largest fits memory */
+		JOINDEBUG THRprintf(GDKout, "BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)));\n");
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)));
         }
+	JOINDEBUG THRprintf(GDKout, "BATjoin: BAThashjoin(l,r);\n");
 	return BAThashjoin(l,r);
 }
 @
@@ -666,6 +673,7 @@ BAT *BATthetajoin(BAT *l, BAT *r, int op) {
 	@:joincheck(BATthetajoin, l->ttype, r->htype)@
 	if ((op == JOIN_EQ) && (r->hhash_heap || !r->hidx_heap)) { 
 		/* go for the hash solution */
+		JOINDEBUG THRprintf(GDKout, "BATthetajoin: BAThashjoin(l, r);\n");
 		return BAThashjoin(l, r);
 	}
 	@:joinbat(op, BATthetajoin(l,r,op))@
@@ -1040,35 +1048,45 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 	reverse2 = countr*logl < countl && (BAThkey(r) || countr*(logl+8) < countl);
 
         if (ALIGNsynced(l,r)) {
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATrcopy(l);\n");
 		bn = BATrcopy(l);	
 	} else if ((BAThordered(l)&1) && BAThdense(r)) {
 		int lo = r->hseqbase;
                 int hi = r->hseqbase + countr - 1;
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATmirror(BATselect(BATmirror(l), &lo, &hi));\n");
 		bn = BATmirror(BATselect(BATmirror(l), &lo, &hi)); 
 	} else if (BAThdense(r)) {
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATfetchsemijoin(l, r, l);\n");
 		bn = BATfetchsemijoin(l, r, l);
 	} else if (BAThdense(l) && reverse1) {
 		if (!BAThkey(r)) {
 			BAT *v = VIEWhead_(r,BAT_WRITE); tmp = r = BATkunique(v); BBPreclaim(v);
 		}
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATfetchsemijoin(r, l, l);\n");
 		bn = BATfetchsemijoin(r, l, l);
 	} else if (l->hhash_heap && reverse1) {
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATrevsemijoin(l,r);\n");
 		bn = BATrevsemijoin(l,r); 
 	} else if ((BAThordered(r)&1) && countl*logr < countr) {
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATbinsemijoin(l, r, l);\n");
 	        bn = BATbinsemijoin(l, r, l);
 	} else if ((BAThordered(l)&1) & reverse2) {
 		if (!BAThkey(r)) {
 			BAT *v = VIEWhead_(r,BAT_WRITE); tmp = r = BATkunique(v); BBPreclaim(v);
 		}
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATbinsemijoin(r, l, l);\n");
 		bn = BATbinsemijoin(r, l, l);
 	} else if (r->hidx_heap && countl*logr < countr) {
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATidxsemijoin(l, r, l);\n");
 	        bn = BATidxsemijoin(l, r, l);
 	} else if (l->hidx_heap && reverse2) {
 		if (!BAThkey(r)) {
 			BAT *v = VIEWhead_(r,BAT_WRITE); tmp = r = BATkunique(v); BBPreclaim(v);
 		}
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATidxsemijoin(r, l, l);\n");
 		bn = BATidxsemijoin(r, l, l);
 	} else {
+		JOINDEBUG THRprintf(GDKout, "BATsemijoin: BATkintersect(l, r);\n");
 	        bn = BATkintersect(l, r); /* merge-semijoin or nested hashlookup in r */
 	}
 	if (tmp) {

@@ -2259,6 +2259,14 @@ gdk_export MT_Lock		GDKtmLock;
 #define DELTADEBUG	if (GDKdebug&8192)
 #define LOADDEBUG	if (GDKdebug&16384)
 #define YACCDEBUG	if (GDKdebug&32768)
+/*
+#define ?tcpip?		if (GDKdebug&65536)
+#define ?monet_multiplex?	if (GDKdebug&131072)
+#define ?ddbench?	if (GDKdebug&262144)
+#define ?ddbench?	if (GDKdebug&524288)
+#define ?ddbench?	if (GDKdebug&1048576)
+*/
+#define JOINDEBUG	if (GDKdebug&2097152)
 
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 
