@@ -88,9 +88,7 @@ proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] := {
 proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 	var names := fmt.find("names");
 	var seps := fmt.find("seps");
-	print(names,seps);
 	var bats := [load](names);
-	print(bats);
 	dump( names, seps, bats, data, cnt );
 }
 
