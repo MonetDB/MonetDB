@@ -15,4 +15,7 @@
     .COMMAND sql( context c, str cmd ) = 
 	sqlline; "interpret the sql command"
 
+    .COMMAND sql( context c, stream i) = 
+	sqlfile; "interpret the sql file"
+
 .END sql;

@@ -43,3 +43,22 @@ int sqlline( context **Lc, char *line ){
 	}
 	return GDK_SUCCEED;
 }
+
+int sqlfile( context **Lc, stream **i ){
+	context *lc = *Lc;
+	statement *res = NULL;
+	int err = 0;
+
+	while(lc->cur != EOF ){
+		res = sqlnext( lc, *i, &err );
+		if (err) break;
+		if (res){
+	    		int nr = 1;
+	    		statement_dump( res, &nr, lc );
+
+	    		lc->out->flush( lc->out );
+		}
+		if (res) statement_destroy(res);
+	}
+	return GDK_SUCCEED;
+}

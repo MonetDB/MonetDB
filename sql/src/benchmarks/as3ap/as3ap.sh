@@ -1,16 +1,20 @@
 #!/bin/sh
 PWD=`pwd`
 
-rm -rf /ufs/niels/data/dbfarm/sql 
+Mdestroydb -db sql
 Mcreatedb -db sql
-Mserver -db sql ../../catalog.mil ../../sql.mil <<EOF 
-sql( "$PWD/as3ap-schema.sql", "$PWD/as3ap-schema.mil", 0);
+Mserver -db sql $SQL_PREFIX/share/sql/catalog.mil $SQL_PREFIX/share/sql/sqlserver.mil <<EOF 
+sql_file( "$PWD/as3ap-schema.sql", "$PWD/as3ap-schema.t" );
 quit;
 EOF
+echo "myc := mvc_create(0);" > as3ap-schema.mil
+echo "Output := Stdout;" >> as3ap-schema.mil
+cat as3ap-schema.t >> as3ap-schema.mil
+rm as3ap-schema.t
 echo "commit();quit;" >> as3ap-schema.mil
-Mserver -db sql ../../sql.mil as3ap-schema.mil
+Mserver -db sql $SQL_PREFIX/share/sql/catalog.mil $SQL_PREFIX/share/sql/sqlserver.mil as3ap-schema.mil
 
-Mserver -db sql <<EOF
+Mserver -db sql $SQL_PREFIX/share/sql/sqlserver.mil <<EOF
 module(ascii_io);
 
 proc merge( BAT[str,BAT] bats, str name ) := {
@@ -20,18 +24,22 @@ proc merge( BAT[str,BAT] bats, str name ) := {
 	x@batloop(){ \$h.insert(\$t); }
 }
 
-merge(load_data( load_format("$PWD/uniques.fmt"), "$PWD/uniques.dat", 100000 ), "uniques");
-merge(load_data( load_format("$PWD/hundred.fmt"), "$PWD/hundred.dat", 100000), "hundred");
-merge(load_data( load_format("$PWD/tenpct.fmt"), "$PWD/tenpct.dat", 100000), "tenpct");
-merge(load_data( load_format("$PWD/updates.fmt"), "$PWD/updates.dat", 100000 ), "updates");
+bulkload( "uniques", "$PWD/uniques.dat", ",", "\n", 100000 );
+bulkload( "hundred", "$PWD/hundred.dat", ",", "\n", 100000 );
+bulkload( "tenpct", "$PWD/tenpct.dat", ",", "\n", 100000 );
+bulkload( "updates", "$PWD/updates.dat", ",", "\n", 100000 );
 
 commit();
 quit;
 EOF
 
-Mserver -db sql ../../sql.mil <<EOF
-sql( "$PWD/as3ap-queries.sql", "$PWD/as3ap-queries.mil", 0);
+Mserver -db sql $SQL_PREFIX/share/sql/catalog.mil $SQL_PREFIX/share/sql/sqlserver.mil <<EOF 
+sql_file( "$PWD/as3ap-queries.sql", "$PWD/as3ap-queries.t");
 quit;
 EOF
+echo "myc := mvc_create(0);" > as3ap-queries.mil
+echo "Output := Stdout;" >> as3ap-queries.mil
+cat as3ap-queries.t >> as3ap-queries.mil
+rm as3ap-queries.t
 echo "commit();quit;" >> as3ap-queries.mil
-Mserver -db sql ../../catalog.mil ../../sql.mil < as3ap-queries.mil
+Mserver -db sql $SQL_PREFIX/share/sql/catalog.mil $SQL_PREFIX/share/sql/sqlserver.mil as3ap-queries.mil

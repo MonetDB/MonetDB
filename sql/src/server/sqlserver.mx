@@ -83,8 +83,8 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
     FD_ZERO(&fds);
     FD_SET(sock, &fds);
     /* Wait up to five seconds. */
-    tv.tv_sec = 5;
-    tv.tv_usec = 0;
+    tv.tv_sec = 0;
+    tv.tv_usec = 500;
 
     retval = select(sock+1, &fds, &fds, &fds, &tv);
     /* Don't rely on the value of tv now! */
@@ -189,7 +189,7 @@ proc sep():= {
 	return "\t";
 }
 
-proc load_seps( BAT[void,BAT] bats, str Sep ) : BAT[void,str] := {
+proc load_seps( BAT[void,BAT] bats, str Sep, str Rsep ) : BAT[void,str] := {
 	var seps := new(void,str); seps.seqbase(oid(0));
 	var id := 0;
 	var cnt := bats.count - 1;
@@ -197,7 +197,7 @@ proc load_seps( BAT[void,BAT] bats, str Sep ) : BAT[void,str] := {
 		if (id != cnt) {
 			seps.insert(nil,Sep);
 		} else {
-			seps.insert(nil,(Sep + "\n"));
+			seps.insert(nil,Rsep);
 		}
 		id += 1;
 	}
@@ -207,7 +207,7 @@ proc load_seps( BAT[void,BAT] bats, str Sep ) : BAT[void,str] := {
 proc bat_name(b):= return str(b);
 proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
 
-proc bulkload( tab, file, Sep, sze ):= {
+proc bulkload( tab, file, Sep, Rsep, sze ):= {
 	var lid := table_name.reverse().find( tab );
 	var tid := table_id.find( lid );
         var columns := column_name.semijoin(column_table.select(tid));
@@ -217,7 +217,7 @@ proc bulkload( tab, file, Sep, sze ):= {
 	
 	var names := [bat_name](bats);
 	var types := [bat_type](bats);
-	var seps := load_seps(bats,Sep);
+	var seps := load_seps(bats,Sep,Rsep);
 	var res := load(names, seps, types, file, sze);
 	# merge result
 	var t := names.join(res);
@@ -303,6 +303,20 @@ proc ascii_export_schema(Output, schema):= {
 	stream_flush(Output);
 }
 
+proc sql_file( infile, outfile ) := {
+	var Input := open_rastream( infile );
+	var Output := open_wastream( outfile );
+	var c := create_context( 0, 1, Output);
+
+	sql(c, Input);
+	#stream_write( Output, "0\n" );
+	stream_flush( Output );
+
+	destroy_context( c );
+	#stream_close( Output );
+	stream_close( Input );
+}
+
 proc SQLclient_module( Output, Input, myc, cmd ) := {
 	# TODO get schema/user/debug/opt from skipped cmd
 	var c := create_context( 0, 1, Output);
@@ -343,12 +357,6 @@ proc SQLclient_thread( int sock ):= {
 	}
 	stream_close( Output );
 	stream_close( Input );
-}
-
-proc hjoin( b1, b2 ) := {
-	b1.reverse().accbuild(hash);
-	b2.accbuild(hash);
-	return b1.join(b2);
 }
 
 proc sqlexecute( str cmd, stream Output ):= {
