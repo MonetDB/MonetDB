@@ -83,6 +83,7 @@ test = (
                  ,  re.MULTILINE),
         # differences due to property-checking, which we want to treat as "minor differences"
         re.compile( r'^synced\(x,[yz]\) := (true|false)$'
+                "|" r"^SQL  .* affected$"
                 #dir(): # name                 htype          ttype          count       heat        dirty                      status             kind               refcnt      lrefcnt     #
                 "|" r'^\[ "[A-Za-z0-9_]+",\t* +"[a-z_]+",\t* +"[a-z_]+",\t* +[0-9]+,\t* +[0-9]+,\t* +"(dirty|clean|diffs)",\t* +"(load|disk)",\t* +"(tran|pers)",\t* +[0-9]+,\t* +[0-9]+\t* +\]$'
                 "|" r'^\[ ".+",\t* +0,\t* +"(load|disk)",\t* +"(tran|pers)",\t* +0\t* +\]$'
@@ -173,6 +174,8 @@ test = (
                 # src/tools/{client,multiClientSeq}
                 "|" r'^ERROR = (Connection terminated|Lost connection with server)$'
                 "|" r'^ERROR = (communication line broken|Connection lost)$'
+                # sql/src/benchmarks/arno_flt/Tests/init:
+                "|" r'\t2.7445021260064(099|1)e\-06\t'
                 # pathfinder: loader/usage (without BerkeleyDB):
                 "|" r'^     -c: compress node properties (40% encoding speed)$'
                 # Mtest warnings:
