@@ -212,7 +212,7 @@ int blob_tostr(str* tostr,int* l,blob* p)
 	if (p->nitems == ~(size_t)0)
 		expectedlen = 4;
 	else
-		expectedlen = 24 + (p->nitems * 4);
+		expectedlen = 24 + (p->nitems * 3);
 	if (*l < expectedlen) {
 		if (*tostr != NULL)
 			GDKfree(*tostr);
