@@ -244,7 +244,6 @@ typedef struct {
 	pthread_cond_t cond;
 } pthread_sema_t;
 #else
-#error "no AIX"
 #define pthread_sema_t sem_t;
 #endif
 
@@ -471,7 +470,6 @@ static void pthread_sema_wait( pthread_sema_t *s )
         status = pthread_mutex_unlock(&(s->mutex));
 }
 #else
-#error "NOT AIX"
 #define pthread_sema_post	sem_post
 #define pthread_sema_wait	sem_wait
 #define pthread_sema_init	sem_init
