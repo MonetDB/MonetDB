@@ -589,10 +589,13 @@ open_stream(const char *filename, const char *flags)
 static ssize_t
 stream_gzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
+	gzFile *fp = (gzFile *) s->stream_data.p;
 	int size = (int) (elmsize * cnt);
-	size = gzread((gzFile *) s->stream_data.p, buf, size);
-	if (size)
-		return size / elmsize;
+	if (!gzeof(fp)) {
+		size = gzread(fp, buf, size);
+		if (size)
+			return size / elmsize;
+	}
 	return 0;
 }
 
