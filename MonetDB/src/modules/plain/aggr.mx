@@ -213,7 +213,7 @@ proc toset(bat[any,any] b) : str {
         return res + "}";
 }
 
-proc aggrtst(int num, int fanout, str agg, ..str..) {
+proc aggrtst(int num, int fanout, str agg, ..str..) : void {
 	var gagg := sprintf("{%s}",agg);
 	var p := 3;
 	while((p :+= 1) <= $0) {

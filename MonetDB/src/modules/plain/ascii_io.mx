@@ -150,7 +150,7 @@ proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] {
 	return seps;
 }
 
-proc bat_ttype( bat b ) : str := {
+proc bat_ttype( bat b ) : str {
 	return monet_atomtbl.reverse.find(b.ttype);
 }
 

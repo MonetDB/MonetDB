@@ -191,7 +191,7 @@ for quick re-use. They are attached to the CT by means of a histolink.
      PROC {count}(BAT[void,bit] sel, BAT[void,oid] ct, BAT[oid,int] dom) : BAT[oid,int] 
 		return CTsubhisto(sel, ct, dom);
 
-     proc orderby_table(str fcn, str spec, ..bat[any::1,any]..) {
+     proc orderby_table(str fcn, str spec, ..bat[any::1,any]..) : void {
              var meta := new(str,str,$0);
              var first := int(spec) + 2;
              var b := $(first);
@@ -216,11 +216,11 @@ for quick re-use. They are attached to the CT by means of a histolink.
              call(fcn, meta);
      }
      
-     proc table(str spec, bat[any::1,any] b, ..bat[any::1,any]..) {
+     proc table(str spec, bat[any::1,any] b, ..bat[any::1,any]..) : void {
              orderby_table("table", $(1..));
      }
      
-     proc print(str spec, bat[any::1,any] b, ..bat[any::1,any]..) {
+     proc print(str spec, bat[any::1,any] b, ..bat[any::1,any]..) : void {
              orderby_table("print", $(1..));
      }
 
@@ -264,7 +264,7 @@ proc xtable_histo_remap(..any..) : void {
     map.join($2.histogram).xtable_print($(1..), map.col_name("gid"));
 }
 
-proc xtable_realloc(bat b[any,any], int cap) : bat[any,any] {
+proc xtable_realloc(bat[any::1,any::2] b, int cap) : bat[any::1,any::2] {
     var inf := b.info;
     var ht := monet_atomtbl.find(inf.find("head"));
     var tt := monet_atomtbl.find(inf.find("tail"));
