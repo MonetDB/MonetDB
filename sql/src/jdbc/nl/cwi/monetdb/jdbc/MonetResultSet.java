@@ -189,7 +189,7 @@ public class MonetResultSet implements ResultSet {
 		int cursor = 0, column = 0, i = 0;
 		for (; i < tmpLine.length(); i++) {
 			switch(tmpLine.charAt(i)) {
-				case '\'':
+				case '\\':
 					escaped = !escaped;
 				break;
 				default:
