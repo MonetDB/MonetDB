@@ -138,8 +138,8 @@ def am_libdir(fd, var, values, am):
     am['LIBDIR'] = values[0]
 
 def am_mtsafe(fd, var, values, am):
-    fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
-    fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
+    fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
+    fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
 def am_list2string(l, pre, post):
     res = ""
@@ -386,8 +386,8 @@ def am_binary(fd, var, binmap, am):
     	am['BINS'].append(binname)
 
     if binmap.has_key('MTSAFE'):
-        fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
+        fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
+        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if binmap.has_key("LIBS"):
         fd.write(am_additional_libs(binname, "", "BIN", binmap["LIBS"], am))
@@ -428,8 +428,8 @@ def am_bins(fd, var, binsmap, am):
     if binsmap.has_key("NAME"):
         name = binsmap["NAME"][0] # use first name given
     if binsmap.has_key('MTSAFE'):
-        fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
+        fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
+        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
     for binsrc in binsmap['SOURCES']:
         SCRIPTS = []
         bin, ext = split_filename(binsrc)
@@ -511,8 +511,8 @@ def am_library(fd, var, libmap, am):
     am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libmap.has_key('MTSAFE'):
-        fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
+        fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
+        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if libmap.has_key("LIBS"):
         fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am))
@@ -561,8 +561,8 @@ def am_libs(fd, var, libsmap, am):
         scripts_ext = libsmap['SCRIPTS']
 
     if libsmap.has_key('MTSAFE'):
-        fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
+        fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
+        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     libnames = []
     for libsrc in libsmap['SOURCES']:
@@ -730,8 +730,8 @@ output_funcs = {'SUBDIRS': am_subdirs,
 
 def output(tree, cwd, topdir, automake):
     global am_assign
-    if int(automake) >= 1005000 and int(automake) < 1006000:
-        am_assign = "="
+    #if int(automake) >= 1005000 and int(automake) < 1006000:
+    #    am_assign = "="
 
     # use binary mode since automake on Cygwin can't deal with \r\n
     # line endings

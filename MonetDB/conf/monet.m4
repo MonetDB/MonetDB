@@ -141,13 +141,14 @@ X_CFLAGS=''
 X_CXXFLAGS=''
 case $CC-$CXX in
 *gcc-*g++)
+	gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)[[^0-9]].*$|\1|'`"
 	dnl  We need more features than the C89 standard offers, but not all
 	dnl  (if any at all) C/C++ compilers implements the complete C99
 	dnl  standard.  Moreover, there seems to be no standard for the
 	dnl  defines that enable the features beyond C89 in the various
 	dnl  platforms.  Here's what we found working so far...
 	case "$CC-$host_os" in
-	gcc-irix*|gcc-cygwin*|gcc-darwin*|arm-linux-gcc*)
+	gcc-irix*|gcc-cygwin*|gcc-darwin*|gcc-aix*|arm-linux-gcc*)
 		;;
 	gcc-solaris*)
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"
@@ -164,20 +165,22 @@ case $CC-$CXX in
 	dnl  Be rigid; "MonetDB code is supposed to adhere to this... ;-)
 	X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
 	dnl X_CXXFLAGS="$X_CXXFLAGS -Werror-implicit-function-declaration"
-	if test "$CC-$CXX" = "gcc-g++"; then
-		dnl  Doesn't work (yet?) for arm-linux-gcc v2.95.2, due to 
-		dnl  "warning: value computed is not used" 
+	case "$gcc_ver" in
+	3.*)	dnl  Doesn't work (yet?) for gcc < 3.0, 
+		dnl  due to defined but not used functions and the missing
+		dnl  "-Wno-unused-function" (see below), 
+		dnl  and due to "warning: value computed is not used" 
 		dnl  in src/monet/monet_context.mx:
 		dnl  #define VARfixate(X)   ((X) && ((X)->constant=(X)->frozen=TRUE)==TRUE)
 		X_CFLAGS="$X_CFLAGS -Werror"
 		X_CXXFLAGS="$X_CXXFLAGS -Werror"
-	fi
+	esac
 	dnl  ... however, some things aren't solved, yet ...
-	if test "$CC-$CXX" = "gcc-g++"; then
-		dnl  Doesn't exist (yet?) for arm-linux-gcc v2.95.2.
+	case "$gcc_ver" in
+	3.*)	dnl  Doesn't exist for gcc < 3.0 ?
 		X_CFLAGS="$X_CFLAGS -Wno-unused-function"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function"
-	fi
+	esac
 	X_CFLAGS="$X_CFLAGS -Wno-format -Wno-sign-compare"
 	X_CXXFLAGS="$X_CXXFLAGS -Wno-format -Wno-sign-compare"
 	dnl  ... and some are beyond our control:
@@ -277,17 +280,17 @@ esac
 dnl some dirty hacks
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
-thread_safe_flag_spec="-D_REENTRANT"
+THREAD_SAVE_FLAGS="\$(thread_safe_flag_spec) -D_REENTRANT"
 # only needed in monet
 MEL_LIBS=""
 case "$host_os" in
 solaris*)
-    case "$CC" in
-      cc*) 
-	echo "$CC=cc"
+    case "$GCC" in
+      yes) ;;
+      *) 
 	MEL_LIBS="-z muldefs"
-        thread_safe_flag_spec="-mt" ;;
-      *) ;;
+        THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -mt"
+        ;;
     esac
     LEXLIB=-ll
     ;;
@@ -295,11 +298,21 @@ irix*)
     LEXLIB=-ll
     ;;
 aix*)
-    thread_safe_flag_spec="-D_THREAD_SAFE $thread_safe_flag_spec"
+    THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -D_THREAD_SAFE"
+    case "$GCC" in
+      yes)
+        THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -mthreads"
+        MEL_LIBS="-qstaticinline"
+        ;;
+      *)
+        THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -qthreaded"
+        ;;
+    esac
     ;;
 esac
 AC_SUBST(MEL_LIBS)
 AC_SUBST(thread_safe_flag_spec)
+AC_SUBST(THREAD_SAVE_FLAGS)
 
 have_java=auto
 JAVAC="javac"
@@ -307,7 +320,10 @@ JAR="jar"
 AC_ARG_WITH(java,
 [  --with-java=DIR     javac and jar are installed in DIR/bin], have_java="$withval")
 if test "x$have_java" != xno; then
-  JPATH="$withval/bin:$PATH"
+  JPATH=$PATH
+  if test "x$have_java" != xauto; then
+     JPATH="$withval/bin:$JPATH"
+  fi
   AC_PATH_PROG(JAVAC,javac,,$JPATH)
   AC_PATH_PROG(JAR,jar,,$JPATH)
   if test "x$JAVAC" = "x"; then

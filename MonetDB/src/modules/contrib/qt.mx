@@ -102,8 +102,8 @@ in the head of the resulting table; the tail contains the matching IDs.
 @{
 @* Implementation
 @c
-#include <math.h>
 #include <gdk.h>
+#include <math.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif

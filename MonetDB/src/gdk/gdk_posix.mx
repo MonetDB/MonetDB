@@ -817,16 +817,20 @@ int *win_errno(void){
 
 #define MT_PAGESIZE(s)		((((s-1)/MT_pagesize())+1)*MT_pagesize())
 
-#ifdef __MACH__
-#define MMAP_FLAGS MAP_ANON|MAP_PRIVATE
-#define MMAP_FD    -1
+#if ( defined(__MACH__) || defined(_AIX) )
+#define MMAP_FLAGS(f)		f|MAP_ANON
+#define MMAP_FD			-1
+#define MMAP_OPEN_DEV_ZERO	int fd = 1
+#define MMAP_CLOSE_DEV_ZERO	(void)fd
 #else
-#define MMAP_FLAGS MAP_PRIVATE
-#define MMAP_FD    fd
+#define MMAP_FLAGS(f)		f
+#define MMAP_FD			fd
+#define MMAP_OPEN_DEV_ZERO	int fd = open("/dev/zero", O_RDWR, 0666)
+#define MMAP_CLOSE_DEV_ZERO	close(fd)
 #endif
 
 void *MT_vmalloc(size_t size, size_t *maxsize) {
-        int fd = open("/dev/zero", O_RDWR, 0666);
+        MMAP_OPEN_DEV_ZERO;
         char *q, *r = (char*) -1L;
 
         if (fd < 0) {
@@ -836,17 +840,17 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
         *maxsize = MT_PAGESIZE(*maxsize);
         if (*maxsize > size) {
                 r = (char*) mmap(NULL, *maxsize, PROT_NONE, 
-				MMAP_FLAGS|MAP_NORESERVE, MMAP_FD, 0);
+				MMAP_FLAGS(MAP_PRIVATE|MAP_NORESERVE), MMAP_FD, 0);
         }
         if (r == (char*) -1L) {
                 *maxsize = size;
                 q = (char*) mmap(NULL, size, PROT_READ|PROT_WRITE, 
-				MMAP_FLAGS, MMAP_FD, 0);
+				MMAP_FLAGS(MAP_PRIVATE), MMAP_FD, 0);
         } else {
                 q = (char*) mmap(r, size, PROT_READ|PROT_WRITE, 
-				MMAP_FLAGS|MAP_FIXED, MMAP_FD, 0);
+				MMAP_FLAGS(MAP_PRIVATE|MAP_FIXED), MMAP_FD, 0);
         }
-        close(fd);
+        MMAP_CLOSE_DEV_ZERO;
         return (void*) ((q == (char*) -1L)?NULL:q);
 }
 
@@ -870,12 +874,12 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
                 return p;
         }
         if (newsize < *maxsize) {
-                int fd = open("/dev/zero", O_RDWR, 0666);
+                MMAP_OPEN_DEV_ZERO;
                 if (fd >= 0) {
                         q = (char*) mmap(p+oldsize, newsize-oldsize,
                                 PROT_READ|PROT_WRITE,
-                                MMAP_FLAGS|MAP_FIXED, MMAP_FD, (off_t)oldsize);
-                        close(fd);
+                                MMAP_FLAGS(MAP_PRIVATE|MAP_FIXED), MMAP_FD, (off_t)oldsize);
+                        MMAP_CLOSE_DEV_ZERO;
                 }
         }
         if (q == (char*) -1L) {
@@ -915,7 +919,7 @@ int MT_lockf(char *filename, int mode, off_t off, off_t len){
 	int ret, fd = open(filename, O_CREAT|O_RDWR, 0662);
 	if (fd < 0) return fd;
 	ret = lseek(fd, off, SEEK_SET) || lockf(fd, mode, len);
-	close(fd);
+	MMAP_CLOSE_DEV_ZERO;
 	return ret;
 }
 
@@ -1181,13 +1185,9 @@ static void MT_alloc_init(void) {
                         VirtualFree(p, 0, MEM_RELEASE);
                 }
 #else
-		int fd = open("/dev/zero", O_RDWR, 0666);
-#ifdef __MACH__
-                void *q = (char*) mmap(p, MT_VMUNITSIZE, PROT_NONE, MAP_NORESERVE|MAP_ANON, -1, 0);
-#else
-                void *q = (char*) mmap(p, MT_VMUNITSIZE, PROT_NONE, MAP_NORESERVE, fd, 0);
-#endif
-		close(fd);
+		MMAP_OPEN_DEV_ZERO;
+                void *q = (char*) mmap(p, MT_VMUNITSIZE, PROT_NONE, MMAP_FLAGS(MAP_NORESERVE), MMAP_FD, 0);
+		MMAP_CLOSE_DEV_ZERO;
 		if (q != p) mode |= 128;
 		if (q != (char*) -1L) munmap(q, MT_VMUNITSIZE);
 #endif

@@ -688,34 +688,34 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 "create a view that makes tail column appear as an integerX column for some width=X"
 
 @= int
-.ATOM int@1 = integer@1;
+.ATOM Int@1 = integer@1;
 .END;
 
-.COMMAND [intX](BAT[any::1,integer@1] b) : BAT[any::1,int@1] = BATintX;
-"convert an integer@1 to int@1"
+.COMMAND [IntX](BAT[any::1,integer@1] b) : BAT[any::1,Int@1] = BATintX;
+"convert an integer@1 to Int@1"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,int@1] = jivejoin1; 
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = jivejoin1; 
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,pax@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,int@1] = jivejoin1; 
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,pax@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = jivejoin1; 
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,int@1] = jivejoin2; 
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = jivejoin2; 
 "positional join that creates a void head by inserting the join result positionally"
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,pax@1] attr) : BAT[void,int@1] = jivejoin2; 
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = jivejoin2; 
 "positional join that creates a void head by inserting the join result positionally"
 
-.COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,int@1] = posjoin_tuple;
+.COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = posjoin_tuple;
 "positional join with built-in NSM projection" 
 
-.COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,int@1] = posjoin_tuple;
+.COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = posjoin_tuple;
 "positional join with built-in PAX projection" 
 
 .COMMAND radix_cluster(bat[integer@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-		bat[int@1,any::2] = radix_cluster; ""
+		bat[Int@1,any::2] = radix_cluster; ""
 .COMMAND radix_cluster(bat[pax@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-		bat[int@1,any::2] = radix_cluster; ""
+		bat[Int@1,any::2] = radix_cluster; ""
 @= tpe
 @:@1(1,4)@
 @:@1(2,8)@
@@ -1050,7 +1050,7 @@ proc jivetest(BAT[oid,oid] proj, BAT[void,any] attr, int nbits) {
 
 var proj := [oid](smaller_aY).reverse.mirror.copy;
 var attr_integer16 := [integer](smaller_aY,16);
-var attr_int16 := [intX](attr_integer16);
+var attr_int16 := [IntX](attr_integer16);
 var attr_int := smaller_aY;
 
 jivetest(proj, attr_integer16, 12);
@@ -1070,8 +1070,8 @@ radix_cluster(attr_int,
 @f radix
 @* Implementation
 @c
-#include<math.h>
 #include "monet.h"
+#include <math.h>
 
 #define integer1 int
 #define integer2 int
