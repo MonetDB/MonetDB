@@ -228,8 +228,13 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_asc_desc
 	tz
 
+/*- bison 1.75-1 under CYGWIN doesn't like re-definition of tokens
+    and other bisons seem to do fine without them, hence I uncommented them;
+    (might also be removed completely).		Stefan.Manegold@cwi.nl
+-*/
+
 %token <sval> 
-	IDENT TYPE STRING AMMSC INT INTNUM APPROXNUM USER USING
+	IDENT TYPE STRING /*-AMMSC-*/ INT INTNUM APPROXNUM USER USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
 	DOUBLE PRECISION VARCHAR PARTIAL SIMPLE ACTION CASCADE RESTRICT
@@ -243,7 +248,9 @@ OPEN CLOSE FETCH
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER UNIONJOIN
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO
 	
+/*-
 %token <operation> '+' '-' '*' '/'
+-*/
 %token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> IN EXISTS ESCAPE HAVING GROUP NULLX 
 %token <operation> FROM FOR MATCH
@@ -251,7 +258,9 @@ OPEN CLOSE FETCH
 /* datetime operations */
 %token <operation> EXTRACT
 /* string operations */
+/*-
 %token <operation> SUBSTRING CONCATSTRING
+-*/
 
 	/* operators */
 
