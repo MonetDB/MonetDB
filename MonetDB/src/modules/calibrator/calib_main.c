@@ -2,7 +2,14 @@
 *              MAIN  TESTING  PROCEDURE                                     *
 \***************************************************************************/
 
+#ifdef CALIBRATOR_CHECK_SMP
+#include "calib_smp.c"
+#endif
+
 struct fullInfo {
+#ifdef CALIBRATOR_CHECK_SMP
+	SMPinfo smp;
+#endif
 	caliblng delayC;
 	cacheInfo *cache;
 	TLBinfo *TLB;
@@ -233,6 +240,9 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 	calibratorInfo->cache=cache;
 	calibratorInfo->Asso=Asso;
 	calibratorInfo->TLB=TLB;
+#ifdef CALIBRATOR_CHECK_SMP
+	checkSMP(&(calibratorInfo->smp));
+#endif
 	return(calibratorInfo);
 
 }

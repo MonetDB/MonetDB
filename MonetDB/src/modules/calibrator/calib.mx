@@ -47,6 +47,8 @@ Calibrator as a Monet module
 #undef CALIBRATOR_CREATE_PLOTS
 /* #define CALIBRATOR_PRINT_OUTPUT */
 #undef CALIBRATOR_PRINT_OUTPUT
+/* #undef CALIBRATOR_CHECK_SMP */
+#define CALIBRATOR_CHECK_SMP
 
 #include "calib_common.c"
 caliblng MINTIME = 10000;
@@ -94,6 +96,11 @@ int CMDcalib_info(BAT **retval)
 	b=BUNins(b, "MHz", &val);
 	val=maxrange;
 	b=BUNins(b, "maxrange", &val);
+#ifdef CALIBRATOR_CHECK_SMP
+/* SMP info */
+	val=calibInfo->smp.nrCpus;
+	b=BUNins(b, "nrCpus", &val);
+#endif
 /* cpu info */
 	val=NSperIt(calibInfo->cache->latency1[0]);
 	b=BUNins(b, "cpuloop ns", &val);

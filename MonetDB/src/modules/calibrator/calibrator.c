@@ -64,6 +64,8 @@
 /* #undef CALIBRATOR_CREATE_PLOTS */
 #define CALIBRATOR_PRINT_OUTPUT
 /* #undef CALIBRATOR_PRINT_OUTPUT */
+#define CALIBRATOR_CHECK_SMP
+/* #undef CALIBRATOR_CHECK_SMP */
 
 #include "calib_common.c"
 caliblng MINTIME = 10000;
@@ -95,6 +97,10 @@ int main(int ac, char **av)
 	printCPU(caliInfo->cache, MHz, caliInfo->delayC);
 	printCache(caliInfo->cache, caliInfo->Asso, MHz);
 	printTLB(caliInfo->TLB, MHz);
+	
+#ifdef CALIBRATOR_CHECK_SMP
+	printf("SMP: CPUs found: %d\n", caliInfo->smp.nrCpus);
+#endif
 	
 	freeFullInfo(caliInfo);
 
