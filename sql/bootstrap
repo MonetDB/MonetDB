@@ -56,9 +56,9 @@ _AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 10
 _REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _NEW_AM_VERSION=`echo $NEW_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
-if [ $_AM_VERSION -ge $_REQ_AM_VERSION ]; then
+if [ "$_AM_VERSION" -ge "$_REQ_AM_VERSION" ]; then
 	echo "automake $AM_VERSION is $REQ_AM_VERSION or newer. Good."
-elif [ $_AM_VERSION -lt $_REQ_AM_VERSION ]; then
+elif [ "$_AM_VERSION" -lt "$_REQ_AM_VERSION" ]; then
 	echo "automake $AM_VERSION is older than $REQ_AM_VERSION."
 	echo "We require (at least) automake $REQ_AM_VERSION."
 	echo "Please get a newer version (cf. http://www.gnu.org/software/automake/)."
@@ -71,9 +71,9 @@ AC_VERSION=`autoconf --version 2>/dev/null | sed -n -e '/^[Aa]utoconf/{s/.* //g;
 _AC_VERSION=`echo $AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_AC_VERSION=`echo $REQ_AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
-if [ $_AC_VERSION -ge $_REQ_AC_VERSION ]; then
+if [ "$_AC_VERSION" -ge "$_REQ_AC_VERSION" ]; then
 	echo "autoconf $AC_VERSION is $REQ_AC_VERSION or newer. Good."
-elif [ $_AC_VERSION -lt $_REQ_AC_VERSION ]; then
+elif [ "$_AC_VERSION" -lt "$_REQ_AC_VERSION" ]; then
 	echo "autoconf $AC_VERSION is older than $REQ_AC_VERSION."
 	echo "We require (at least) autoconf $REQ_AC_VERSION."
 	echo "Please get a newer version (cf. http://www.gnu.org/software/autoconf/)."
@@ -86,14 +86,29 @@ LT_VERSION=`$LIBTOOL --version 2>/dev/null | sed -n '/^ltmain\.sh/{s/([^)]*)//g;
 _LT_VERSION=`echo $LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_LT_VERSION=`echo $REQ_LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
-if [ $_LT_VERSION -ge $_REQ_LT_VERSION ]; then
+if [ "$_LT_VERSION" -ge "$_REQ_LT_VERSION" ]; then
 	echo "libtool $LT_VERSION is $REQ_LT_VERSION or newer. Good."
-elif [ $_LT_VERSION -lt $_REQ_LT_VERSION ]; then
+elif [ "$_LT_VERSION" -lt "$_REQ_LT_VERSION" ]; then
 	echo "libtool $LT_VERSION is older than $REQ_LT_VERSION"
 	echo "using conf/*.1.4"
 	for i in ltmain.sh ltconfig config.guess config.sub ; do
 		cp conf/$i.1.4 conf/$i
 	done
+fi
+
+
+REQ_PY_VERSION="2.0.0"
+PY_VERSION=`/usr/local/bin/python -V 2>&1 | sed -n -e '/^[Pp]ython/{s/.* //g;s/-.*//g;p;q;}'`
+_PY_VERSION=`echo $PY_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+_REQ_PY_VERSION=`echo $REQ_PY_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+
+if [ "$_PY_VERSION" -ge "$_REQ_PY_VERSION" ]; then
+	echo "Python $PY_VERSION is $REQ_PY_VERSION or newer. Good."
+elif [ "$_PY_VERSION" -lt "$_REQ_PY_VERSION" ]; then
+	echo "Python $PY_VERSION is older than $REQ_PY_VERSION."
+	echo "We require (at least) Python $REQ_PY_VERSION."
+	echo "Please get a newer version (cf. http://www.python.org/)."
+	exit 1
 fi
 
 
@@ -123,7 +138,7 @@ perl -i -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
 
 # older versions of automake/aclocal don't know about the
 # Intel compiler on Linux (icc/ecc), yet...
-if [ $_AM_VERSION -lt $_NEW_AM_VERSION ]; then
+if [ "$_AM_VERSION" -lt "$_NEW_AM_VERSION" ]; then
 
 echo "automake/aclocal $AM_VERSION is older than $NEW_AM_VERSION."
 echo "Patching aclocal.m4 for Intel compiler on Linux (icc/ecc)."
@@ -193,7 +208,7 @@ cat << "EOF" | patch aclocal.m4
        output_objdir=.
 EOF
 
-fi # [ $_AM_VERSION -lt $_NEW_AM_VERSION ]
+fi # [ "$_AM_VERSION" -lt "$_NEW_AM_VERSION" ]
 
 
 autoheader

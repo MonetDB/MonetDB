@@ -54,6 +54,8 @@
 #	BITS="32"	or	BITS="64"
 #	LINK="dynamic"	or	LINK="static"
 #	DEBUG="somevalue" 	or not set
+#	WARNING="somevalue" 	or not set
+#	PROFILE="somevalue"	or not set
 #	OPTIMIZE="somevalue"	or not set
 #	INSTRUMENT="somevalue"	or not set
 #
@@ -163,16 +165,8 @@ fi
 
 # set default compilers, configure options & paths
 
-if [ "${COMP}" = "GNU" ] ; then
-	# standard GNU compilers are gcc/g++
-	cc="gcc"
-	cxx="g++"
-fi
-if [ "${COMP}" = "ntv" ] ; then
-	# standard native compilers are cc/CC
-	cc="cc"
-	cxx="CC"
-fi
+cc=''
+cxx=''
 if [ "${LINK}" = "d"   ] ; then
 	# dynamic/shared linking
 	conf_opts="${conf_opts} --enable-shared --disable-static"
@@ -196,13 +190,6 @@ fi
 
 if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv" ] ; then
-		if [ "${hw}" = "ia64" ] ; then
-			cc="ecc"
-			cxx="ecpc"
-		  else
-			cc="icc"
-			cxx="icpc"
-		fi
 		if [ "${what}" = "MONET" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 			conf_opts="${conf_opts} --with-pcl=${softpath}"
@@ -259,7 +246,7 @@ if [ "${os}" = "SunOS" ] ; then
 	fi
 	if [ "${what}" = "SQL"  -a  "${COMP}" = "ntv" ] ; then
 		# to find ltdl.h included by src/odbc/setup/drvcfg.c via odbcinstext.h
-		cc="${cc} -I/usr/local/include"
+		cc="cc -I/usr/local/include"
 	fi
 fi
 
@@ -328,10 +315,12 @@ if [ -f conf/local.bash ]; then
 fi
 
 # tell configure about chosen compiler and bits
-if [ "${cc}" != "gcc" ] ; then
+if [ "${cc}" ] ; then
 	conf_opts="${conf_opts} --with-gcc='${cc}'"
+elif [ "${COMP}" = "ntv" ] ; then
+	conf_opts="${conf_opts} --with-gcc=no"
 fi
-if [ "${cxx}" != "g++" ] ; then
+if [ "${cxx}" ] ; then
 	conf_opts="${conf_opts} --with-gxx='${cxx}'"
 fi
 if [ "${BITS}" = "64" ] ; then
@@ -340,6 +329,14 @@ fi
 
 if [ "${DEBUG}" ] ; then
 	conf_opts="${conf_opts} --enable-debug"
+fi
+
+if [ "${WARNING}" ] ; then
+	conf_opts="${conf_opts} --enable-warning"
+fi
+
+if [ "${PROFILE}" ] ; then
+	conf_opts="${conf_opts} --enable-profile"
 fi
 
 if [ "${OPTIMIZE}" ] ; then
