@@ -1018,7 +1018,7 @@ function GetModules () {
 function M_Master () {
 	if [ $THISFILE = Mtest ] ; then
 		CHECK $MCREATEDB -db Tests
-		MERROR=`echo 'quit;' | ( $MSERVER -db Tests || echo '!Exit 1' ) | grep '^!'`
+		MERROR=`echo '' | ( $MSERVER -db Tests || echo -e '\n!Exit 1' ) | grep '^!'`
 		if [ "$MERROR" ] ; then  ErrXit "'$MSERVER -db Tests\` fails with:\n$MERROR" ; fi
 		export TSTMODS="`GetModules`" ; LOG1 $TSTMODS
 	fi
