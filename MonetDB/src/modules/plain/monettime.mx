@@ -1378,11 +1378,14 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 	if (s <= buf || (*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
 		**ret = ts_nil;
 	} else {
-	    lng offset;
+	    lng offset, sign = -1;
 
 	    while(GDKisspace(*s)) s++;
-	    if (fleximatch(s, "gmt", 0) == 3)
+	    /* incase of gmt we need to add the time zone */
+	    if (fleximatch(s, "gmt", 0) == 3) {
 		s += 3;
+		sign = 1;
+	    }
 	    if ((s[0] == '-' || s[0] == '+') &&
 		   GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos=4]) &&
 		   ((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos=3])))
@@ -1400,6 +1403,7 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 			**ret = tmp; 
 		}
 	    }
+	    offset *= sign;
 	    timestamp_add(*ret, *ret, &offset); 
 	}
 	return (int) (s-buf);
