@@ -27,7 +27,7 @@
 #include "sql_mvc.h"
 #include "sql_statement.h"
 
-sql_export stmt *optimize(mvc *c, stmt *s);
+extern stmt *optimize(mvc *c, stmt *s);
 
 #endif /* _SQL_OPTIMIZE_H */
 

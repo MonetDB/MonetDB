@@ -29,7 +29,7 @@
 #include "sql_symbol.h"
 #include "sql_statement.h"
 
-sql_export stmt *schemas(mvc *sql, symbol *sym);
+extern stmt *schemas(mvc *sql, symbol *sym);
 
 #endif /*_SQL_SCHEMA_H_*/
 
@@ -1239,7 +1239,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, dlist *columns, i
 	char *name = qname_table(qname);
 
 	if (mvc_bind_table(sql, ss, name)) {
-		return sql_error(sql, 02, "Create Table name %s already in use", name);
+		return sql_error(sql, 02, "CREATE TABLE: name %s already in use", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
 		return sql_error(sql, 02, "User/Role is not allowed to create tables in schema %s", ss->base.name);
 	} else {

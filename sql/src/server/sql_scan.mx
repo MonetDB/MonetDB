@@ -48,11 +48,11 @@ struct scanner {
 
 #define QUERY(scanner) ((scanner.rs)?(scanner.rs->buf+scanner.rs->pos):scanner.buf)
 
-sql_export void scanner_init(struct scanner *s, bstream *rs, stream *ws);
-sql_export void scanner_reset(struct scanner *s, char *buf);
-sql_export void scanner_query_processed(struct scanner *s);
+extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
+extern void scanner_reset(struct scanner *s, char *buf);
+extern void scanner_query_processed(struct scanner *s);
 
-sql_export void scanner_init_keywords();
+extern void scanner_init_keywords();
 #endif /* _SQL_SCAN_H_ */
 
 @c
@@ -571,7 +571,7 @@ scanner_string_bs(mvc *c, int quote)
 				escape = !escape;
 		}
 		lc->yycur = pos - rs->pos;
-		/* check for quote escaped quote: Obsuce SQL Rule */
+		/* check for quote escaped quote: Obscure SQL Rule */
 		if (cur == quote && rs->buf[pos] == quote) {
 			rs->buf[pos - 1] = '\\';
 			lc->yycur++;
@@ -589,7 +589,7 @@ scanner_string_bs(mvc *c, int quote)
 			cur = scanner_getc_bs(lc);
 		}
 	}
-	(void) sql_error(c, 2, "Unexpected end of input");
+	(void) sql_error(c, 2, "unexpected end of input");
 	return LEX_ERROR;
 }
 
@@ -607,7 +607,7 @@ scanner_string_s(mvc *c, int quote)
 			else
 				escape = 0;
 		}
-		/* check for quote escaped quote: Obsuce SQL Rule */
+		/* check for quote escaped quote: Obscure SQL Rule */
 		if (cur == quote && lc->buf[lc->yycur] == quote) {
 			lc->yycur++;
 			continue;
@@ -616,7 +616,7 @@ scanner_string_s(mvc *c, int quote)
 			return scanner_token_s(lc, STRING);
 	}
 	if (cur == EOF) {
-		(void) sql_error(c, 2, "Unexpected end of input");
+		(void) sql_error(c, 2, "unexpected end of input");
 	}
 	return LEX_ERROR;
 }

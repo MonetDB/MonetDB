@@ -68,13 +68,13 @@ typedef struct qc {
 	cq *q;
 } qc;
 
-sql_export qc *qc_create();
-sql_export void qc_destroy(qc *cache);
-sql_export cq *qc_find(qc *cache, int id);
-sql_export cq *qc_match(qc *cache, symbol *s, list *params, int key);
-sql_export cq *qc_insert(qc *cache, symbol *s, list *params, int key, int type, char *codedstr);
-sql_export void qc_delete(qc *cache, cq *q);
-sql_export int qc_size(qc *cache);
+extern qc *qc_create();
+extern void qc_destroy(qc *cache);
+extern cq *qc_find(qc *cache, int id);
+extern cq *qc_match(qc *cache, symbol *s, list *params, int key);
+extern cq *qc_insert(qc *cache, symbol *s, list *params, int key, int type, char *codedstr);
+extern void qc_delete(qc *cache, cq *q);
+extern int qc_size(qc *cache);
 
 #endif /*_SQL_QC_H_*/
 

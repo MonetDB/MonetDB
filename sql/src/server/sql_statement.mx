@@ -147,7 +147,7 @@ typedef struct group {
 	list *cols;		/* list of group by columns */
 } group;
 
-sql_export const char *st_type2string(st_type type);
+extern const char *st_type2string(st_type type);
 
 extern int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp);
 
@@ -245,15 +245,15 @@ extern stmt *stmt_ordered(stmt *order, stmt *res);
 extern stmt *stmt_output(stmt *l);
 
 extern sql_subtype *head_type(stmt *st);
-sql_export sql_subtype *tail_type(stmt *st);
+extern sql_subtype *tail_type(stmt *st);
 
 /* return max(s1.nrcols, .. , sn.nrcols where si in l ) */
 extern int stmt_list_nrcols(list *l);
 
-sql_export char *column_name(stmt *st);
-sql_export char *table_name(stmt *st);
+extern char *column_name(stmt *st);
+extern char *table_name(stmt *st);
 
-sql_export void stmt_destroy(stmt *s);
+extern void stmt_destroy(stmt *s);
 extern stmt *stmt_dup(stmt *s);
 
 extern group *grp_create(stmt *s, group *og, stmt *col);

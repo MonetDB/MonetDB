@@ -152,10 +152,10 @@ typedef enum jt {
 	jt_union = 4
 } jt;
 
-sql_export char *token2string(int token);
-sql_export void *sql_error(mvc *sql, int error_code, char *format, ...);
-sql_export int parse_error(mvc *sql, char *s);
-sql_export int sqlparse(void *);
+extern char *token2string(int token);
+extern void *sql_error(mvc *sql, int error_code, char *format, ...);
+extern int parse_error(mvc *sql, char *s);
+extern int sqlparse(void *);
 
 #endif /*_SQL_PARSER_H_*/
 
@@ -836,7 +836,7 @@ opt_passwd:
 
 opt_schema:
 	/* empty */		{ $$ = NULL; }
-  |	SCHEMA ident		{ $$ = $2; }
+  |	SET SCHEMA ident		{ $$ = $2; }
   ;
 
 alter_table_element:
@@ -1045,6 +1045,12 @@ default:
 default_value:
     literal
 
+ |  BOOL_FALSE
+               { sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
+                 $$ = _newAtomNode( atom_general(t, _strdup("false"))); }
+ |  BOOL_TRUE
+               { sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
+                 $$ = _newAtomNode( atom_general(t, _strdup("true"))); }
  |  NULLX
 		{ $$ = _newAtomNode( NULL);  }
  ;
@@ -2865,6 +2871,7 @@ non_reserved_word:
   CHARACTER { $$ = _strdup("character"); }
 | OBJECT	{ $$ = _strdup("object"); }
 | LARGE		{ $$ = _strdup("large"); }
+| PASSWORD	{ $$ = _strdup("password"); }
 | sqlDECIMAL{ $$ = _strdup("decimal"); }
 | sqlFLOAT 	{ $$ = _strdup("float"); }
 | sqlDOUBLE { $$ = _strdup("double"); }

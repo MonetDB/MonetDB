@@ -43,11 +43,11 @@ extern atom *atom_general(sql_subtype *tpe, char *val);
 extern atom *atom_dup(atom *a);
 
 extern char *atom2string(atom *a);
-sql_export sql_subtype *atom_type(atom *a);
+extern sql_subtype *atom_type(atom *a);
 
 extern void atom_destroy(atom *a);
 
-sql_export void atom_dump(atom *a, stream *s);
+extern void atom_dump(atom *a, stream *s);
 #endif /* _SQL_ATOM_H_ */
 
 @c

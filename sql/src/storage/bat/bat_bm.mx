@@ -36,7 +36,7 @@ extern void bat_destroy(BAT *b);
 extern BAT *bat_descriptor(bat bid, char *func);
 extern BAT *bat_copy(BAT *b, char *func);
 extern BAT *bat_new(int ht, int tt, size_t size, char *func);
-sqlbat_export void bat_incref(bat bid, bit flag, char *func);
+extern void bat_incref(bat bid, bit flag, char *func);
 extern void bat_decref(bat bid, bit flag);
 
 extern ptr bun_find(BAT *b, ptr v);

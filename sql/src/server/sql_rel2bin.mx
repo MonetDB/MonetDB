@@ -27,7 +27,7 @@
 #include "sql_statement.h"
 #include "sql_types.h"
 
-sql_export stmt *rel2bin(mvc *c, stmt *s);
+extern stmt *rel2bin(mvc *c, stmt *s);
 
 #endif /* _SQL_REL2BIN_H */
 

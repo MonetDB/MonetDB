@@ -36,17 +36,17 @@
 #define sql_search 2
 #define sql_sel   3
 
-sql_export stmt *selects(mvc *sql, symbol *sym);
+extern stmt *selects(mvc *sql, symbol *sym);
 
-sql_export stmt *sql_subquery(mvc *sql, scope *scp, symbol *sq, int toplevel);
-sql_export stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq);
-sql_export stmt *flat_subquery(mvc *sql, symbol *sq);
+extern stmt *sql_subquery(mvc *sql, scope *scp, symbol *sq, int toplevel);
+extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq);
+extern stmt *flat_subquery(mvc *sql, symbol *sq);
 
-sql_export stmt *sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f);
-sql_export stmt *sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f);
-sql_export stmt *stmt2pivot(scope *scp, stmt *s);
+extern stmt *sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f);
+extern stmt *sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f);
+extern stmt *stmt2pivot(scope *scp, stmt *s);
 
-sql_export stmt *sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f);
+extern stmt *sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f);
 #endif /*_SQL_SELECT_H_*/
 @c
 
