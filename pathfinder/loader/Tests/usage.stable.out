@@ -1,0 +1,17 @@
+stdout of test 'usage` in directory 'loader` itself:
+
+
+# 15:32:19 >  
+# 15:32:19 >  Mtimeout -timeout 120 ./usage usage 
+# 15:32:19 >  
+
+
+# 15:32:19 >  
+# 15:32:19 >  Mtimeout -timeout 60 pf -h
+# 15:32:19 >  
+
+
+# 15:35:05 >  
+# 15:35:05 >  Done.
+# 15:35:05 >  
+

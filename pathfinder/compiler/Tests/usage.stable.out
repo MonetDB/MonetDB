@@ -1,0 +1,42 @@
+stdout of test 'usage` in directory 'compiler` itself:
+
+
+# 15:32:19 >  
+# 15:32:19 >  Mtimeout -timeout 120 ./usage usage 
+# 15:32:19 >  
+
+
+# 15:32:19 >  
+# 15:32:19 >  Mtimeout -timeout 60 pf -h
+# 15:32:19 >  
+
+Pathfinder XQuery Compiler ($Revision$, $Date$)
+(c) University of Konstanz, DBIS group
+
+Usage: pf [OPTION] [FILE]
+
+  Reads from standard input if FILE is omitted.
+
+  -h, --help: print this help message
+  -q, --quiet: do not print informational messages to log file
+  -l file, --log file: specify log file name (default stderr)
+  -d port, --daemon port: act as dæmon listening on specified TCP port
+  -o monet|xterm|html, --output-type monet|xterm|html: specify output markup
+     (default: monet)
+  -P, --print-human-readable: print internal tree structure human-readable
+  -D, --print-att-dot: print internal tree structure in AT&T dot notation
+  -T, --timing: print elapsed times for compiler phases
+  -O, --optimize: enable (expensive) optimizations
+  -t, --typing: print static types (in {...}) for core (implies -P)
+  -p, --stop-after-parsing: stop processing after parsing
+  -s, --stop-after-semantics: stop after semantical analysis
+  -n, --stop-after-normalizing: stop after core tree normalization
+  -c, --stop-after-core-compilation: stop after core language generation
+  -m, --stop-after-mil-generation: stop after MIL code generation
+
+Enjoy.
+
+# 15:32:19 >  
+# 15:32:19 >  Done.
+# 15:32:19 >  
+
