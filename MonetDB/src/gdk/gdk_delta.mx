@@ -161,9 +161,11 @@ BAT *BATcommit(BAT *b) {
 	if (DELTAdirty(b)) {
 		b->batDirtydesc = 1;
 	}
+	b->batDeleted = b->batHole; 
 	if (b->batBuns->base){
-		b->batDeleted = b->batHole; 
 		b->batInserted = BUNlast(b); 
+	} else {
+		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
 	}
 	DELTAprintf("BATcommit2 %s free %d ins %d del %d hole %d base %d\n", 
 	  (b)->batId, (int)(b)->batBuns->free, (int)(b)->batInserted, 

@@ -1119,10 +1119,6 @@ void pmBat(BAT **keep, str name, int typ1, int typ2){
 		BBPfix(i);
 		b = BATload(name);
 		if( b == 0) return;
-@ifdef STATIC
-@else
-		BATclear(b);
-@endif
 	}
 	Mprof_init++;
 	*keep = b;
