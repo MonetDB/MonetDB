@@ -1215,7 +1215,7 @@ function_ref:
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AMMSC '(' scalar_exp ')'
+ |  AMMSC '(' scalar_exp ')' 
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, toLower($1));
   		  dlist_append_int(l, FALSE);
@@ -1465,7 +1465,7 @@ data_type:
 
 	/* the various things you can name */
 ident: name	
- |  non_reserved_word	{ $$ = _strdup($1); }
+ |  non_reserved_word
  ;
 
 column:	ident ;
@@ -1478,8 +1478,21 @@ name:
   ;
 
 
-non_reserved_word: CHARACTER | NUMERIC | DECIMAL | INTEGER | SMALLINT	
- | FLOAT | REAL | DOUBLE | PRECISION | VARCHAR | DATE | TIME | TIMESTAMP;
+non_reserved_word: 
+  CHARACTER 	{ $$ = _strdup("character"); }
+| NUMERIC 	{ $$ = _strdup("numeric"); }
+| DECIMAL 	{ $$ = _strdup("decimal"); }
+| INTEGER 	{ $$ = _strdup("integer"); }
+| SMALLINT 	{ $$ = _strdup("smallint"); }
+| FLOAT 	{ $$ = _strdup("float"); }
+| REAL 		{ $$ = _strdup("real"); }
+| DOUBLE 	{ $$ = _strdup("double"); }
+| PRECISION 	{ $$ = _strdup("precision"); }
+| VARCHAR 	{ $$ = _strdup("varchar"); }
+| DATE 		{ $$ = _strdup("date"); }
+| TIME 		{ $$ = _strdup("time"); }
+| TIMESTAMP	{ $$ = _strdup("timestamp"); }
+;
 
 name_commalist:
     ident			{ $$ = dlist_append_string(dlist_create(), $1); }

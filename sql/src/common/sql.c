@@ -2495,13 +2495,17 @@ statement *update_set( context *sql, dlist *qname,
 				  	tname, assignment->h->data.sval);
 				return NULL;
 			} else {
+				statement *ts = s;
 				statement *scl = statement_column(cl, NULL);
 				symbol *a = assignment->h->next->data.sym;
-				statement *sc = 
+				statement *v = 
+                                    scalar_exp(sql, scp, a, NULL, NULL);
+
+				if (!v) return NULL;
+					v = check_types( sql, cl->tpe, v );
+				/*
 					column_exp( sql, scp, a, NULL, s);
 
-				sc = check_types( sql, cl->tpe, sc );
-				/*
                                 statement *sc =
                                     scalar_exp(sql, scp, a, NULL, NULL);
 
@@ -2517,11 +2521,13 @@ statement *update_set( context *sql, dlist *qname,
                                         sc = statement_const( s, sc);
                                 }
 				*/
-                                if (sc->nrcols <= 0)
-                                        sc = statement_const( scl, sc);
+				if (!ts) ts = scl;
+
+                                if (v->nrcols <= 0)
+                                        v = statement_const( ts, v);
 
                                 list_append_statement( l,
-                                        statement_update( scl, sc ));
+                                        statement_update( scl, v ));
 			}
 			n = n->next;
 		}
@@ -2651,7 +2657,7 @@ statement *semantic( context *s,  symbol *sym ){
         statement *res = NULL;
 
 	if (sym && (res = sql_statement( s, sym)) == NULL){
-                fprintf(stderr, "Semanic error: %s\n", s->errstr);
+                fprintf(stderr, "Semantic error: %s\n", s->errstr);
                 fprintf(stderr, "in %s line %d: %s\n",
                   	sym->filename, sym->lineno, sym->sql );
         }
