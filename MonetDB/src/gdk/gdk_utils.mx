@@ -1389,26 +1389,47 @@ static char THRprintbuf[BUFSIZ];
 
 /*VARARGS*/
 int THRprintf(stream *s, char *format, ...) {
-	str p = THRprintbuf; 
+	str bf = THRprintbuf, p = 0;
+	int bfsz = BUFSIZ, n = 0, m = 0;
+	char c;
         va_list ap;
-	*p = 0;
+
 	if (MT_system_lock) {
 		MT_set_lock(MT_system_lock, "THRprintf");
 	}
 	if (*format != '!') {
-	        *p++ = '#';
+	        c = '#';
 	} else {
-	        *p++ = '!'; format++;
+	        c = '!'; format++;
 	}
+
+@= THRprintf_va_vsnprintf
+	p = bf;
+	*p++ = c;
 	if (GDKdebug&1) {
 		sprintf(p, "%02d ", (int) (long) THRgettid());
 		while(*p) p++;
 	}
+	m = p-bf;
         va_start (ap,format);
-               p += vsnprintf (p, BUFSIZ-(p-THRprintbuf), format, ap);
+        n = vsnprintf (p, bfsz-m, format, ap);
         va_end (ap);
-	s->write(s, THRprintbuf, p-THRprintbuf, 1 );
+@c
+	@:THRprintf_va_vsnprintf@
+	while ((n < 0) || (n >= bfsz-m)) {
+		if (n >= 0)		/* glibc 2.1 */
+			bfsz = m+n+1;	/* precisely what is needed */
+		else			/* glibc 2.0 */
+			bfsz *= 2;	/* twice the old size */
+		if (bf != THRprintbuf) free(bf);
+		assert(bf = (str) malloc (bfsz));
+		@:THRprintf_va_vsnprintf@
+	}
+	p += n;
+	
+	s->write(s, bf, p-bf, 1 );
 	s->flush(s);
+	if (bf != THRprintbuf) free(bf);
 	if (MT_system_lock) {
 		MT_unset_lock(MT_system_lock, "THRprintf");
 	}

@@ -554,8 +554,8 @@ for using vfsprintf proved to be too compiler-dependent (OLD approach).
 	sprintf(add, meta, @1);
 #else
 	n = snprintf( add, adds, meta, @1 );
-	while ((n==-1) || (n >= adds)) {
-          if (n > -1)    /* glibc 2.1 */
+	while ((n < 0) || (n >= adds)) {
+          if (n >= 0)    /* glibc 2.1 */
              adds = n+1; /* precisely what is needed */
           else           /* glibc 2.0 */
              adds *= 2;  /* twice the old size */

@@ -1002,28 +1002,27 @@ extern int stream_writeInt( stream *s, const int val ){
 
 extern int stream_printf( stream *s, const char *format, ...)
 {
-	char buf[BUFSIZ];
-	int i = 0;
+	char buf[BUFSIZ], *bf = buf;
+	int i = 0, bfsz = BUFSIZ;
 	va_list ap; 
 
+@= stream_printf_va_vsnprintf
 	va_start(ap, format); 
-	i = vsnprintf(buf, BUFSIZ-1, format, ap);
-	va_end (ap); 
-
-	if (i < BUFSIZ){
-		s->write(s, buf, i, 1);
-		return i;
-	} else {
-		char *abuf = malloc(i+1);
-		int j = 0;
-
-		va_start(ap, format); 
-		j = vsnprintf(abuf, i, format, ap);
-		va_end (ap); 
-		s->write(s, abuf, i, 1);
-		free(abuf);
-		assert(i==j);
-		return j;
+	i = vsnprintf(bf, bfsz, format, ap);
+	va_end (ap);
+@c
+	@:stream_printf_va_vsnprintf@
+	while ((i < 0) || (i >= bfsz)) {
+		if (i >= 0)		/* glibc 2.1 */
+			bfsz = i+1;	/* precisely what is needed */
+		else			/* glibc 2.0 */
+			bfsz *= 2;	/* twice the old size */
+		if (bf != buf) free(bf);
+		assert(bf = (char*) malloc (bfsz));
+		@:stream_printf_va_vsnprintf@
 	}
+	s->write(s, bf, i, 1);
+	if (bf != buf) free(bf);
+	return i;
 }
 
