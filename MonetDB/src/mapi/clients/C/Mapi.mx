@@ -153,14 +153,14 @@ mapi_fetch_field_array()	& Fetch all fields from the current row\\
 mapi_fetch_line()	&	Retrieve the next line\\
 mapi_fetch_reset()	&	Set the cache reader to the begining\\
 mapi_fetch_row()	&	Fetch row of values\\
-mapi_fetch_all()	&	Fetch all answers from server into cache\\
+mapi_fetch_all_rows()	&	Fetch all answers from server into cache\\
 mapi_finish()	&	Terminate the current query\\
 mapi_get_host()	&	Host name of server\\
 mapi_get_language()	& Query language name\\
 mapi_get_version()	& Monet version identifier\\
 mapi_get_user()	&	Current user name\\
-mapi_num_fields()	& Number of fields in current row\\
-mapi_num_rows()	&	Number of rows in cache or -1\\
+mapi_get_field_count()	& Number of fields in current row\\
+mapi_get_row_count()	&	Number of rows in cache or -1\\
 mapi_ping()	&	Test server for accessibility\\
 mapi_prepare()	&	Prepare a query for execution\\
 mapi_prepare_array()	&	Prepare a query for execution using arguments\\
@@ -170,7 +170,7 @@ mapi_quick_query()	&	Send a query for execution\\
 mapi_quick_query_array()	& Send a query for execution with arguments\\
 mapi_quote()	& Escape characters\\
 mapi_rows_affected()	& Obtain number of rows changed\\
-mapi_response()	&	Quick pass response to stream\\
+mapi_quick_response()	&	Quick pass response to stream\\
 mapi_seek_row()	&	Move row reader to specific location in cache\\
 mapi_table()	&	Get current table name\\
 mapi_timeout()	&	Set timeout for long-running queries[TODO]\\
@@ -262,13 +262,13 @@ It returns the number of fields recognized.
 A zero is returned upon encountering end of sequence
 or error. This can be analysed in using mapi_error().
 
-\item[int mapi_fetch_all(Mapi mid)]:
+\item[int mapi_fetch_all_rows(Mapi mid)]:
 All rows are cached at the client side first. Subsequent calls
 to either mapi_fetch_row() will take
 the row from the cache. The number or rows cached
 is returned.
 
-\item[int mapi_response(Mapi mid, stream s)]:
+\item[int mapi_quick_response(Mapi mid, stream s)]:
 Read the answer to a query and pass the results verbatim
 to a stream. The result is not analysed, nor cached.
 
@@ -542,6 +542,7 @@ typedef struct {
 	char username[NAMELEN];
 	char password[NAMELEN];
 	char language[NAMELEN];
+	char database[NAMELEN];
 	int languageId;
 	char prompt[NAMELEN];
 
@@ -608,7 +609,7 @@ mapi_export MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd);
 mapi_export MapiMsg mapi_query_array(Mapi mid,char *cmd, char **val);
 mapi_export MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit);
-mapi_export MapiMsg mapi_response(Mapi mid, FILE *fd);
+mapi_export MapiMsg mapi_quick_response(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_stat(Mapi mid);
 mapi_export MapiMsg mapi_seek_row(Mapi mid, int rowne);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
@@ -616,8 +617,8 @@ mapi_export MapiMsg mapi_trace_log(Mapi mid, char *nme);
 
 mapi_export int mapi_timeout(Mapi mid, int time);
 mapi_export int mapi_fetch_row(Mapi mid);
-mapi_export int mapi_num_fields(Mapi mid);
-mapi_export int mapi_num_rows(Mapi mid);
+mapi_export int mapi_get_field_count(Mapi mid);
+mapi_export int mapi_get_row_count(Mapi mid);
 mapi_export int mapi_rows_affected(Mapi mid);
 
 mapi_export char *mapi_fetch_field(Mapi mid, int fnr);
@@ -1374,7 +1375,7 @@ MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd)
 	@:prepareQuery@
 	if(ret == MOK) ret= mapi_execute(mid);
 	if(ret==MOK) {
-		mapi_response(mid,fd);
+		mapi_quick_response(mid,fd);
 		ret= mid->error;
 	}
 	if(mid->trace)
@@ -1390,7 +1391,7 @@ MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd)
 		ret= mapi_execute(mid);
 	if(ret==MOK) {
 		/* look ahead to detect errors */
-		mapi_response(mid,fd);
+		mapi_quick_response(mid,fd);
 		ret= mid->error;
 	}
 	if(mid->trace)
@@ -1635,7 +1636,7 @@ char * mapi_fetch_line(Mapi mid)
 }
 @-
 If the answer to a query should be simply passed on towards a client,
-i.e. a stream, it pays to use the mapi_response() routine.
+i.e. a stream, it pays to use the mapi_quick_response() routine.
 The stream is only checked for occurrence of an error indicator
 and the prompt.
 The best way to use this shortcut execution is calling
@@ -1657,7 +1658,7 @@ empy the row cache.
 	if(ferror(fd))
 		return mapi_setError(mid,"Error writing file","mapi.response");
 @c
-MapiMsg mapi_response(Mapi mid, FILE *fd)
+MapiMsg mapi_quick_response(Mapi mid, FILE *fd)
 {
 	char *s;
 	int i;
@@ -2057,10 +2058,10 @@ int mapi_fetch_row(Mapi mid)
 @-
 All rows can be cached first as well.
 @c
-int mapi_fetch_all(Mapi mid)
+int mapi_fetch_all_rows(Mapi mid)
 {
 	assert(mid);
-	mapi_check(mid,0,"mapi_fetch_all");
+	mapi_check(mid,0,"mapi_fetch_all_rows");
 	mapi_cache_limit(mid,-1);
 	mid->cache.tuples=0;
 	while( mapi_get_row(mid)== MOK)
@@ -2098,17 +2099,17 @@ char **mapi_fetch_field_array(Mapi mid)
 	return mid->cache.anchors[cr];
 }
 
-int mapi_num_fields(Mapi mid)
+int mapi_get_field_count(Mapi mid)
 {
 	assert(mid);
-	mapi_check(mid,0,"mapi_num_fields");
+	mapi_check(mid,0,"mapi_get_field_count");
 	return mid->fieldcnt;
 }
 
-int mapi_num_rows(Mapi mid)
+int mapi_get_row_count(Mapi mid)
 {
 	assert(mid);
-	mapi_check(mid,0,"mapi_num_rows");
+	mapi_check(mid,0,"mapi_get_row_count");
 	return mid->rows_affected;
 }
 

@@ -22,9 +22,20 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 MTSAFE
+INCLUDES = ../../../common $(READLINE_INCS)
 
-scripts_perl = {
-	EXT = pl pm
-	DIR = pkgdatadir/perl
-	SOURCES = Mapi.pm 
+MAPI_LIBS = $(SOCKET_LIBS) 
+
+lib_Mapi = {
+	SOURCES = Mapi.mx 
+	LIBS = $(MAPI_LIBS) ../../../common/libmutils ../../../common/libstream
+	HEADERS = h
+}
+
+
+BINS = {
+	SOURCES = MapiClient.mx
+	MapiClient_LIBS = libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
+		../../../common/libmutils ../../../common/libstream \
+		$(ICONV_LIBS)
 }
