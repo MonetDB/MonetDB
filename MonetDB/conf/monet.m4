@@ -452,15 +452,8 @@ if test "x$have_java" != xno; then
   fi
   AC_PATH_PROG(JAVA,java,,$JPATH)
   if test "x$JAVA" != "x"; then
-    AC_MSG_CHECKING(for Java >= 1.2)
-    JAVA_VERSION=[`$JAVA -version 2>&1 | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
-    if test MONET_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONET_VERSION_TO_NUMBER(echo "1.2"); then
-      have_java_1_2=yes
-    else
-      have_java_1_2=no
-    fi
-    AC_MSG_RESULT($have_java_1_2 -> $JAVA_VERSION found)
     AC_MSG_CHECKING(for Java >= 1.4)
+    JAVA_VERSION=[`$JAVA -version 2>&1 | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
     if test MONET_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONET_VERSION_TO_NUMBER(echo "1.4"); then
       have_java_1_4=yes
     else
@@ -468,12 +461,12 @@ if test "x$have_java" != xno; then
     fi
     AC_MSG_RESULT($have_java_1_4 -> $JAVA_VERSION found)
   fi
-  AM_CONDITIONAL(HAVE_JAVA_1_2,test x$have_java_1_2 = xyes)
-  AM_CONDITIONAL(HAVE_JAVA_1_4,test x$have_java_1_4 = xyes)
 
   AC_PATH_PROG(JAVAC,javac,,$JPATH)
   AC_PATH_PROG(JAR,jar,,$JPATH)
-  if test "x$JAVAC" = "x"; then
+  if test x$have_java_1_4 != xyes; then
+     have_java=no
+  elif test "x$JAVAC" = "x"; then
      have_java=no
   elif test "x$JAR" = "x"; then
      have_java=no
