@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-# ! this file should be kept identical in                                  !
-# ! monet, sql, xml, acoi, gis, template, playpen, misq, times100, pruning !
+#
+# ! this file should be kept identical in                                            !
+# ! MonetDB, monet5, sql, xml, acoi, gis, template, playpen, misq, times100, pruning !
+#
 
 # helps bootstrapping Monet, when checked out from CVS
 # requires GNU autoconf, automake and libtool
