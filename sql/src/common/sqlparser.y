@@ -1766,7 +1766,7 @@ literal:
 		  char *dot = strchr(s, '.');
 		  int digits = strlen(s) - 1;
 		  int scale = digits - (dot-s);
-		  lng value = decimal_fromstr(s);
+		  lng value = decimal_from_str(s);
 		  sql_subtype *t = sql_bind_subtype("DECIMAL", digits, scale );
 		  $$ = _newAtomNode( atom_int(t, value)); }
  |  APPROXNUM

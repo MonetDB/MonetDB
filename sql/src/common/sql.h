@@ -121,5 +121,5 @@ extern const char *token2string(int token);
 extern stmt *semantic( context * sql, symbol * sym);
 extern stmt *sql_error( context * sql, int error_code, char *format, ... );
 
-extern lng decimal_fromstr( char *dec );
+extern lng decimal_from_str( char *dec );
 #endif /*_SQL_H_*/

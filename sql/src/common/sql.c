@@ -176,7 +176,7 @@ const char *token2string(int token)
 	}
 }
 
-lng decimal_fromstr( char *dec ){
+lng decimal_from_str( char *dec ){
 	lng res = 0;
 	int neg = 0;
 	if (*dec == '-'){
@@ -1848,8 +1848,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 			stmt *res = NULL;
 			symbol *lo = sc->data.lval->h->data.sym;
 			symbol *ro = sc->data.lval->h->next->data.sym;
-			stmt *ls =
-			    sql_value_exp(sql, scp, lo, grp, subset);
+			stmt *ls = sql_value_exp(sql, scp, lo, grp, subset);
 			atom *a = NULL, *e = NULL;
 			if (!ls)
 				return NULL;
@@ -1876,6 +1875,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 			return res;
 		}
 	case SQL_IN:
+	case SQL_NOT_IN:
 		/*
          <in predicate> ::=
               <row value constructor>
@@ -1891,8 +1891,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 		{
 			dlist *l = sc->data.lval;
 			symbol *lo = l->h->data.sym;
-			stmt *ls =
-			    sql_value_exp(sql, scp, lo, grp, subset);
+			stmt *ls = sql_value_exp(sql, scp, lo, grp, subset);
 			if (!ls)
 				return NULL;
 			if (l->h->next->type == type_list) {
@@ -1906,107 +1905,49 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 						check_types(sql, ct,
 						stmt_atom( atom_dup(an->a))));
 				}
-				return stmt_reverse(
-					stmt_semijoin(
-						stmt_reverse(ls), 
-						stmt_reverse(temp)));
+				if (sc->token == SQL_IN){
+					return stmt_reverse(
+						stmt_semijoin(
+						 stmt_reverse(ls), 
+						 stmt_reverse(temp)));
+				} else { /* SQL_NOT_IN */
+					return stmt_diff(
+						stmt_dup(ls), stmt_join(
+						 ls, 
+					         stmt_reverse(temp), 
+						 cmp_equal));
+				}
 			} else if (l->h->next->type == type_symbol) {
 				symbol *ro = l->h->next->data.sym;
 				stmt *sq = scope_subquery(sql, scp, ro);
 
 				if (!sq)
 					return NULL;
+
 				if (sq->type != st_list
 				    || list_length(sq->op1.lval) == 0) {
+					stmt_destroy(sq);
 					return sql_error(sql, 02, "Subquery result wrong");
 				}
 				if (list_length(sq->op1.lval) == 1) {
-					stmt *rs = sq->op1.lval->h->data;
-					return
+					stmt *rs = stmt_dup(sq->op1.lval->h->data);
+					stmt_destroy(sq);
+					if (sc->token == SQL_IN){
+					  return
 					    stmt_reverse
 					    (stmt_semijoin
 					     (stmt_reverse(ls),
 					      stmt_reverse(rs)));
-				} else {	/* >= 2, ie match full rows */
-					/* TODO fix this broken impl ! */
-					node *o = sq->op1.lval->h;
-					stmt *j = stmt_join(ls,
-					stmt_reverse (o->data),
-							cmp_equal);
-					stmt *sd = stmt_set(
-						stmt_join(j, o->next->data,
-							cmp_equal));
-					o = o->next;
-					o = o->next;
-					for (; o; o = o->next) {
-						list_append(sd->op1.lval,
-							stmt_join (j, o->data,
-								cmp_equal));
-					}
-					return sd;
-				}
-				return NULL;
-			} else {
-				return sql_error(sql, 02, "In missing inner query");
-			}
-		}
-		break;
-	case SQL_NOT_IN:
-		{
-			dlist *l = sc->data.lval;
-			symbol *lo = l->h->data.sym;
-			stmt *ls =
-			    sql_value_exp(sql, scp, lo, grp, subset);
-			if (!ls)
-				return NULL;
-			if (l->h->next->type == type_list) {
-				dnode *n = l->h->next->data.lval->h;
-				sql_subtype *ct = tail_type(ls);
-				stmt *temp = stmt_temp(ct);
-
-				for (; n; n = n->next) {
-					AtomNode *an = n->data.symv;
-					temp = stmt_append(temp, 
-						check_types(sql, ct,
-						stmt_atom( atom_dup(an->a))));
-				}
-				return stmt_diff(ls, stmt_join(ls, 
-					stmt_reverse(temp), cmp_equal));
-			} else if (l->h->next->type == type_symbol) {
-				symbol *ro = l->h->next->data.sym;
-				stmt *sq = scope_subquery(sql, scp, ro);
-
-				if (!sq)
-					return NULL;
-
-				if (sq->type != st_list
-				    || list_length(sq->op1.lval) == 0) {
-					return sql_error(sql, 02, "Subquery result wrong");
-				}
-				if (list_length(sq->op1.lval) == 1) {
-					stmt *rs = sq->op1.lval->h->data;
-					return
+					} else { /* SQL_NOT_IN */
+					  return
 					    stmt_reverse
 					    (stmt_diff
 					     (stmt_reverse(ls),
 					      stmt_reverse(rs)));
-				} else {	/* >= 2, ie match full rows */
-					/* TODO fix this broken impl ! */
-					node *o = sq->op1.lval->h;
-					stmt *j = stmt_join(ls,
-						stmt_reverse (o->data),
-							cmp_equal);
-					stmt *sd = stmt_set(
-						stmt_join(j, o->next->data,
-							cmp_equal));
-					o = o->next;
-					o = o->next;
-					for (; o; o = o->next) {
-						list_append(sd->op1.lval,
-							stmt_join (j, o->data,
-								cmp_equal));
 					}
-					return sd;
+				} else {	
+					/* TODO fix this broken impl ! */
+					return sql_error(sql, 03, "time to implement (NOT) IN with outer refs\n");
 				}
 				return NULL;
 			} else {
@@ -3160,7 +3101,7 @@ static void cleanup_inserts(stmt **inserts, int cnt){
 				s = stmt_binop( stmt_aggr(stmt_dup(h), NULL, cnt), stmt_aggr(s, NULL, cnt) , ne);
 				 * */
 
-static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int len)
+static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int len, list *key_inserts)
 {
 	char buf[BUFSIZ];
 	/* int insert = 1;
@@ -3191,22 +3132,27 @@ static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int 
 
 			if (list_length(k->columns) > 1){
 				/* hash solution seems very slow */
+				int bits = 0;
 				sql_subaggr *cnt, *sum;
 				sql_subtype *bt = sql_bind_localtype( "bit" );
 				sql_subfunc *ne = sql_bind_func_result("<>", it, it, bt);
 
-			    	for(m = k->columns->h; m; m = m->next){
+			    	for(m = k->columns->h; m; m = m->next, bits += 8){
 					kc *c = m->data;
-					sql_subfunc *hf = sql_bind_func_result("hash", c->c->tpe, NULL, it);
+					sql_subfunc *hf = sql_bind_func_result("hash", c->c->tpe, it, it);
 					if (h){
 						sql_subfunc *xor = sql_bind_func_result("xor", it, it, it);
 						h = stmt_binop(h, 
-						 stmt_unop(stmt_dup(inserts[c->c->colnr]->op2.stval), hf), xor);
+						 stmt_binop(stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_atom(atom_int(it, bits)), hf), xor);
 					} else {
-						h = stmt_unop(stmt_dup(inserts[c->c->colnr]->op2.stval), hf);
+						h = stmt_binop(stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_atom(atom_int(it, bits)), hf);
 					}
 			    	}
+				list_append( key_inserts, stmt_append(stmt_kbat(k,1), h));
 				s = stmt_select( stmt_kbat(k,0), h, cmp_equal);
+				g = grp_create(stmt_append(
+				    stmt_semijoin( stmt_kbat(k,0), stmt_dup(s)),
+				    stmt_dup(h)), g);
 			    	for(m = k->columns->h; m; m = m->next){
 					kc *c = m->data;
 					g = grp_create(
@@ -3218,8 +3164,9 @@ static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int 
 				cnt = sql_bind_aggr("count", NULL);
 				s = stmt_aggr(stmt_dup(g->grp), grp_dup(g), cnt);
 
-				/* find new oids as generated by append */
+				/* find new oids as generated by append 
 				s = stmt_diff(s, stmt_dup(inserts[0]->op1.stval));
+*/
 				/* (count(s) <> sum(s)) */
 				sum = sql_bind_aggr("sum", tail_type(s));
 				s = stmt_binop( stmt_aggr(stmt_dup(s), NULL, cnt), check_types(sql, it, stmt_aggr(s, NULL, sum)) , ne);
@@ -3246,10 +3193,11 @@ static stmt *sql_insert(context * sql, tvar *tv, stmt **inserts, int len)
 	int i; 
 	list *l = create_stmt_list();
 
-	stmt *ckeys = sql_insert_check_keys(sql, tv, inserts, len);
+	stmt *ckeys = NULL;
 
-	if (ckeys) /* first check all the keys */
-		list_append(l, ckeys);
+	/* first check all the keys */
+	if ((ckeys = sql_insert_check_keys(sql, tv, inserts, len, l)) != NULL)
+		list_prepend(l, ckeys);
 
 	for (i = 0; i < len; i++) {
 		if (!inserts[i])
