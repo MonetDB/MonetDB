@@ -233,11 +233,11 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			int ft = stmt_dump( s->op2.stval, nr, sql );
 			len = snprintf( buf, BUFSIZ, 
 		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, s%d );\n", 
-			-s->nr, k->t->schema->name, k->t->name, k->name, k->type, ft );
+			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type, ft );
 		} else {
 			len = snprintf( buf, BUFSIZ, 
 		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, sql_key(nil));\n",
-			-s->nr, k->t->schema->name, k->t->name, k->name, k->type );
+			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type );
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
