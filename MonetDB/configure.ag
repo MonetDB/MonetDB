@@ -31,7 +31,7 @@ AC_CANONICAL_TARGET
 AH_TOP([#include "sysdefs.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("MonetDB", 4.3.7)
+AM_INIT_AUTOMAKE("MonetDB", 4.3.9)
 AM_CONFIG_HEADER(config.h:conf/config.h.in)
 
 HOST=[$target]
