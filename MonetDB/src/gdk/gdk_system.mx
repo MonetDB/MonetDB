@@ -237,10 +237,21 @@ gdk_export size_t _MT_pagesize;
 # include <sys/resource.h>
 #endif
 
+#ifdef _AIX
+typedef struct {
+	int cnt;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+} pthread_sema_t;
+#else
+#error "no AIX"
+#define pthread_sema_t sem_t;
+#endif
+
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 
 pthread_mutex_t	MT_firstlock[MAXLOCKS];
-sem_t		MT_firstsema[MAXSEMAS];
+pthread_sema_t	MT_firstsema[MAXSEMAS];
 
 int MT_curlock=0, MT_nextlock[MAXLOCKS];
 ptrdiff_t MT_cursema=0, MT_nextsema[MAXSEMAS];
@@ -424,8 +435,51 @@ void MT_dump_lock (MT_Lock l, FILE *fp, char* name) {
 	fprintf(fp, "%s: MT_dump_lock() not implemented.\n", name);
 }
 
+#ifdef _AIX
+static void 
+pthread_sema_init( pthread_sema_t *s, int flag, int nresources ) 
+{
+	(void)flag;
+        s->cnt = nresources;
+        pthread_mutex_init(&(s->mutex),0);
+        pthread_cond_init(&(s->cond),0);
+}
+
+static void pthread_sema_destroy( pthread_sema_t *s ) 
+{
+        pthread_mutex_destroy(&(s->mutex));
+        pthread_cond_destroy(&(s->cond));
+}
+
+static void pthread_sema_post( pthread_sema_t *s ) 
+{
+        int status = pthread_mutex_lock(&(s->mutex));
+        if (s->cnt++ < 0){
+                /* wackup sleeping thread */
+                status = pthread_cond_signal(&(s->cond));
+        }
+        status = pthread_mutex_unlock(&(s->mutex));
+}
+
+static void pthread_sema_wait( pthread_sema_t *s ) 
+{
+        int status = pthread_mutex_lock(&(s->mutex));
+        if (--s->cnt < 0){
+                /* thread goes to sleep */
+                status = pthread_cond_wait(&(s->cond), &(s->mutex));
+        }
+        status = pthread_mutex_unlock(&(s->mutex));
+}
+#else
+#error "NOT AIX"
+#define pthread_sema_post	sem_post
+#define pthread_sema_wait	sem_wait
+#define pthread_sema_init	sem_init
+#define pthread_sema_destroy	sem_destroy
+#endif
+
 void MT_up_sema(MT_Sema s, char *name){
-	(void)sem_post((sem_t*)s);
+	(void)pthread_sema_post((pthread_sema_t*)s);
     	if (MT_debug &  1024) {
         	fprintf(MT_out,"MT_up_sema(" SZFMT "\@%s) " PTRFMT "\n", 
 			(size_t)MT_getpid(), name, PTRFMTCAST (void *)s);
@@ -434,7 +488,7 @@ void MT_up_sema(MT_Sema s, char *name){
 }
  
 void MT_down_sema(MT_Sema s, char *name){
-	(void)sem_wait((sem_t*)s);
+	(void)pthread_sema_wait((pthread_sema_t*)s);
     	if (MT_debug &  1024) {
         	fprintf(MT_out,"MT_down_sema(" SZFMT "\@%s) " PTRFMT "\n", 
 			(size_t)MT_getpid(), name, PTRFMTCAST (void *)s);
@@ -442,19 +496,8 @@ void MT_down_sema(MT_Sema s, char *name){
 	}   
 }
 
-int MT_try_sema (MT_Sema s){
-	if (MT_debug & 1024) {
-		fprintf(MT_out,"MT_try_sema:" SZFMT " " PTRFMT "\n", 
-			(size_t) MT_getpid(), PTRFMTCAST (void *) s);
-		fflush(MT_out);
-	}
-	if (s == NULL) return 0;
-	return (sem_trywait((sem_t*)s));
-}
-
-
 MT_Sema	MT_create_sema (int nresources) {
-	sem_t *new_sema;
+	pthread_sema_t *new_sema;
 
 	MT_set_lock(MT_system_lock, "MT_create_sema");
 	if (MT_cursema == -1) {
@@ -465,16 +508,16 @@ MT_Sema	MT_create_sema (int nresources) {
 	MT_cursema = MT_nextsema[MT_cursema];
 	MT_unset_lock(MT_system_lock, "MT_create_sema");
 
-	(void)sem_init( new_sema, 0, nresources );
+	(void)pthread_sema_init( new_sema, 0, nresources );
 	return (MT_Sema) new_sema;
 }
 
 
 void	MT_destroy_sema (MT_Sema s) {
-	ptrdiff_t idx = ((sem_t*) s) - MT_firstsema;
+	ptrdiff_t idx = ((pthread_sema_t*) s) - MT_firstsema;
 
 	if (s == NULL) return;
-	(void)sem_destroy( s );
+	(void)pthread_sema_destroy( s );
 
 	MT_set_lock(MT_system_lock, "MT_destroy_sema");
 	MT_nextsema[idx] = MT_cursema;
