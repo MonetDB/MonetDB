@@ -1,0 +1,3 @@
+module("aggr");
+test_aggr_uchr();
+quit;

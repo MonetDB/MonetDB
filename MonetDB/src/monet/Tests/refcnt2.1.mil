@@ -1,0 +1,24 @@
+# Inserting a transient BAT into another transient BAT increases the first
+# (i.e., inserted) one's plevel.
+# Removing all references to the "host"-BAT by hand correctly decreases the
+# inserted BAT's plevel, again.
+# However, removing all references to the "host"-BAT by quitting the Mserver
+# does not decreases the inserted BAT's plevel, and hence leaves a
+# persistent "orphan"-BAT behind...
+
+b:=new(int,int);
+b.rename("b");
+a:=new(int,bat);
+a.rename("a");
+a.insert(1,b);
+d:=new(int,int);
+d.rename("d");
+c:=new(int,bat);
+c.rename("c");
+c.insert(1,d);
+dir;
+ls;
+c:=nil;
+dir;
+ls;
+quit;   
