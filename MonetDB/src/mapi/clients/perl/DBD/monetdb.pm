@@ -557,7 +557,9 @@ sub STORE {
 
 
 sub DESTROY {
-    my $sth = shift;
+    my ($sth) = @_;
+    $sth->STORE('Active', 0 );  # we don't need to call $sth->finish because
+                                # mapi_close_handle() calls finish_handle()
     MapiLib::mapi_close_handle($sth->{monetdb_hdl}) if $sth->{monetdb_hdl};
 }
 
