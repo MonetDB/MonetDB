@@ -1,3 +1,4 @@
+module(xtables);
 setoid(oid(20000000));
 
 #split w in twee tabellen

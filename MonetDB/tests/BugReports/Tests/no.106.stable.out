@@ -1,10 +1,10 @@
 stdout of test 'no.106` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.106 milS -prelude no.106.prelude
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single -prelude no.106.prelude no.106.milS
-# Monet Database Server V4.1
+#> Mtest (13:34:55):	milS no.106 milS -prelude no.106.prelude
+#> Mtest (13:34:55):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single -prelude no.106.prelude no.106.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:no.106.milS
 #prelude:no.106.prelude
 
@@ -97,7 +97,7 @@ w := new( oid, str );
 w.import( sprintf("%s/no.106.w.bat",getenv("TSTTRGDIR")) );
 w.print;
 #---------------------------------#
-# BAT:	  tmp_27		  #
+# BAT:	  tmp_26		  #
 # (oid)	  (str)			  #
 #---------------------------------#
 [ 0@0,	  "test"		  ]
@@ -115,6 +115,7 @@ w.print;
 [ 2@0,	  "test"		  ]
 [ 2@0,	  "this"		  ]
 [ 2@0,	  "database"		  ]
+
 setoid(oid(20000000));
 
 #split w in twee tabellen
@@ -123,7 +124,7 @@ tid := new( void, str );
 docid := [w~].reverse;
 docid.print;
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_28  #
 # (void)  (oid)	  #
 #-----------------#
 [ nil,	  0@0	  ]
@@ -144,7 +145,7 @@ docid.print;
 tid := [~w];
 tid.print;
 #---------------------------------#
-# BAT:	  tmp_28		  #
+# BAT:	  tmp_23		  #
 # (void)  (str)			  #
 #---------------------------------#
 [ nil,	  "test"		  ]
@@ -165,7 +166,7 @@ tid.print;
 docid.seqbase( 1000@0 );
 docid.print;
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_28  #
 # (void)  (oid)	  #
 #-----------------#
 [ 1000@0, 0@0	  ]
@@ -186,7 +187,7 @@ docid.print;
 tid.seqbase( 1000@0 );
 tid.print;
 #---------------------------------#
-# BAT:	  tmp_28		  #
+# BAT:	  tmp_23		  #
 # (void)  (str)			  #
 #---------------------------------#
 [ 1000@0, "test"		  ]
@@ -204,10 +205,10 @@ tid.print;
 [ 1012@0, "test"		  ]
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
-
+module("xtables");
 CTgroup( docid, tid ).print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_27  #
 # (void)  (oid)	  #
 #-----------------#
 [ 1000@0, 1000@0  ]
