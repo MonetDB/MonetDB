@@ -62,6 +62,7 @@ test = (
                     r"^Mcreatedb: using default dbdir "                              "|"
                     r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$"   "|"
                     r"^Mcreatedb: database .* has been initialized succesfully!$"    "|"
+                    r"^usage: (lt-)?M(server|apiClient)$"                            "|"
                     r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$" "|"
                     r"^!WARNING: BBPdir: initializing BBP.$"                         "|"
                     r"^connection= .*:[0-9]*$"                                       "|"
