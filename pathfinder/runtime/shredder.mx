@@ -100,7 +100,130 @@ static char emptyString[1] = "";
 
 #include <strings.h>
 
+/* SAX parser interface (libxml2) */
+#include "libxml/parser.h"
+#include "libxml/parserInternals.h"
+
 #include "pathfinder.h"
+
+/*********
+ *
+ * Attribute database definition section
+ */
+
+/* #define ADB_DEBUG */
+/* #define ADB_USE_NAMES */
+
+#define ADB_STARTSIZE	4
+
+typedef struct specAttrStr {
+	char*	ownerTag;
+	char*	attrTag;
+	int	type; /* XML_ATTRIBUTE_[ID|IDREF|IDREFS] */
+} specAttrStr;
+
+typedef struct specAttrDbStr {
+	int doCheck;  /* boolean to signal if the attr db is in use */
+	int n_specAttr;
+	int max_specAttr;
+	specAttrStr* specAttr;
+} specAttrDbStr;
+
+static int initAttrDB(specAttrDbStr* adb) {
+#ifdef ADB_DEBUG
+	stream_printf(GDKout,"[ADB] initialize database\n");
+#endif
+	adb->n_specAttr = adb->max_specAttr = 0;
+	adb->specAttr   = 0;
+#ifdef ADB_USE_NAMES
+	/* in this case even when no attributes are encountered the db is in use. */
+	adb->doCheck    = 1;
+#else
+	adb->doCheck    = 0;
+#endif
+	return 1;
+}
+
+static specAttrStr* findAttrDB(specAttrDbStr* adb, char* oTag, char* aTag) {
+	int i;
+
+	for(i=0; i<adb->n_specAttr; i++) {
+		specAttrStr* sas = &adb->specAttr[i];
+		if ( (strcmp(oTag, sas->ownerTag) == 0) &&
+		     (strcmp(aTag, sas->attrTag) == 0) ) {
+#ifdef ADB_DEBUG
+			/* stream_printf(GDKout,"[ADB] found(%s,%s,%d)\n",sas->ownerTag,sas->attrTag,sas->type); */
+#endif
+			return sas;
+		};
+	}
+	return 0;
+}
+
+static int specialAttrType(specAttrDbStr* adb, char* oTag, char* aTag) {
+	if ( adb->doCheck ) { /* check if db is in use */
+	    specAttrStr* sas;
+	    if ( (sas = findAttrDB(adb,oTag,aTag)) )
+		return sas->type;
+	    else {
+#ifdef ADB_USE_NAMES
+		if ( (strcmp(aTag,"id")==0) || (strcmp(aTag,"ID")==0) )
+		     return XML_ATTRIBUTE_ID;
+		else if ( (strcmp(aTag,"idref")==0) || (strcmp(aTag,"IDREF")==0) )
+		     return XML_ATTRIBUTE_IDREF;
+		else if ( (strcmp(aTag,"idrefs")==0) || (strcmp(aTag,"IDREFS")==0) )
+		     return XML_ATTRIBUTE_IDREFS;
+#endif
+	    }
+	}
+	return 0;
+}
+
+static int insertAttrDB(specAttrDbStr* adb, char* oTag, char* aTag, int type) {
+        adb->doCheck = 1; /* signal database is in use */
+	if ( findAttrDB(adb,oTag,aTag) ) {
+		stream_printf(GDKerr,"specAttrDb(%s,%s,%d) is duplicate.\n",oTag, aTag, type);
+		return 0;
+	}
+	if ( ++adb->n_specAttr > adb->max_specAttr ) {
+		int newsz = (adb->max_specAttr?(adb->max_specAttr*2):ADB_STARTSIZE);
+
+		specAttrStr* newb = (specAttrStr*)malloc(newsz*sizeof(specAttrStr));
+		if ( adb->specAttr ) {
+			memcpy(newb,adb->specAttr,adb->max_specAttr*sizeof(specAttrStr));
+			free(adb->specAttr);
+		}
+		adb->specAttr     = newb;
+		adb->max_specAttr = newsz;
+	}
+	specAttrStr* sas = &adb->specAttr[adb->n_specAttr - 1];
+	sas->type     = type;
+	sas->ownerTag = strdup(oTag);
+	sas->attrTag  = strdup(aTag);
+#ifdef ADB_DEBUG
+	stream_printf(GDKout,"[ADB] inserted(%s,%s,%d)\n",oTag,aTag,type);
+#endif
+	return 1;
+}
+
+static int disposeAttrDB(specAttrDbStr* adb) {
+	int i;
+
+	for(i=0; i<adb->n_specAttr; i++) {
+		specAttrStr* sas = &adb->specAttr[i];
+		free(sas->ownerTag);
+		free(sas->attrTag);
+	}
+	if ( adb->specAttr )
+		free(adb->specAttr);
+	adb->n_specAttr = adb->max_specAttr = 0;
+	adb->specAttr   = 0;
+	adb->doCheck	= 0;
+#ifdef ADB_DEBUG
+	stream_printf(GDKout,"[ADB] disposed database\n");
+#endif
+	return 1;
+}
 
 /* define the number of BATs in the requuired result set */
 #define SHRED_BATS (PROP_VAL + 1)
@@ -128,6 +251,8 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
         { PROP_COM, "PROP_COM", TYPE_void, TYPE_str, 0.0, 1},
         { PROP_INS, "PROP_INS", TYPE_void, TYPE_str, 0.0, 0},
         { PROP_TGT, "PROP_TGT", TYPE_void, TYPE_str, 0.0, 0},
+        { ID_PRE,   "ID_PRE",   TYPE_str,  TYPE_oid, 0.0, 0},
+        { IDREF_PRE,"IDREF_PRE",TYPE_str,  TYPE_oid, 0.0, 0},
         { ATTR_OWN, "ATTR_OWN", TYPE_void, TYPE_oid, 0.5, 0},
         { ATTR_QN,  "ATTR_QN",  TYPE_void, TYPE_oid, 0.5, 0},
         { ATTR_PROP,"ATTR_PROP",TYPE_void, TYPE_oid, 0.5, 0},
@@ -198,6 +323,9 @@ typedef struct shredCtxStruct {
                                          * this is something the Tijah 
                                          * people were asking for
                                          */
+	specAttrDbStr	specAttrDb;	/* the database containing the 
+					 * ID|IDREF|IDREFS attributes
+					 */
 } shredCtxStruct;
 
 /* the minimal incremental size of a BAT during estimation process */
@@ -220,7 +348,7 @@ static shredCtxStruct *createShredCtx(char* name, off_t  fileSize) {
                         return NULL;
                 }
                 sb->cnt  = sb->dupl = 0;
-                if ( sb->def->tailType == TYPE_str )
+                if ( sb->def->headType == TYPE_str || sb->def->tailType == TYPE_str || sb->def->headType == TYPE_str)
                         sb->size = MINCHUNK; /* let Monet do the resize self */
                 else 
                         sb->size = (int)(sb->def->sizeFact * res->estSize);
@@ -253,6 +381,8 @@ static shredCtxStruct *createShredCtx(char* name, off_t  fileSize) {
         res->nslocDUPL= 0;
 #endif
         res->shredWords = 0; /* do not shred words by default */
+	/* and finally init the special attribute database */
+	initAttrDB(&res->specAttrDb);
         return res;
 }
 
@@ -333,7 +463,10 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         setBATcapacity(shredCtx,ATTR_QN,  shredCtx->nnode_attr);
         setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr);
 
-        /* BATprintf(GDKout,shredCtx->dstBAT[PROP_TEXT].bat); */
+	/* 
+         * BATprintf(GDKout,shredCtx->dstBAT[ID_PRE].bat);
+         * BATprintf(GDKout,shredCtx->dstBAT[IDREF_PRE].bat);
+	 */
 
         for(i=0; i<SHRED_BATS; i++) {
                 shredBAT* sb = &shredCtx->dstBAT[i];
@@ -343,7 +476,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
                         ACCremoveall(sb->bat);
                 }
 #endif
-                if ( !BAThdense(sb->bat) )
+                if ( sb->def->headType==TYPE_void && !BAThdense(sb->bat) )
                         stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
                 sb->bat = BATsetaccess( sb->bat, BAT_READ );
                 bat bbb = BBPcacheid( sb->bat );
@@ -358,6 +491,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 #ifdef USE_COMPRESSION
         BBPunfix( BBPcacheid( shredCtx->nslocBAT ) );
 #endif
+	disposeAttrDB(&shredCtx->specAttrDb);
         free( shredCtx );
         return BATsetaccess( res, BAT_READ );
 }
@@ -507,6 +641,17 @@ static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
         return sb->cnt++;
 }
 
+static INLINE nat append_str_oid2bat(shredCtxStruct* shredCtx, int idx, str s, oid o) {
+        shredBAT* sb = & shredCtx->dstBAT[idx];
+#ifdef VERBOSE
+        stream_printf(GDKerr,"APPEND-STR-OID[%s](%s,%d)\n",sb->def->name,s,o);
+#endif
+        if ( !BUNins(sb->bat,(ptr)s,(ptr)&o) ) {
+            return NIL;
+        }
+        return sb->cnt++;
+}
+
 /*******
  *
  */
@@ -519,10 +664,6 @@ static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
 #define COMMENT   2
 #define PI        3
 #define DOCUMENT  4
-
-/* SAX parser interface (libxml2) */
-#include "libxml/parser.h"
-#include "libxml/parserInternals.h"
 
 /**
  * maximum length of a string
@@ -728,6 +869,37 @@ static nat store_NsLoc(shredCtxStruct* shredCtx, char* nsloc) {
         return res;
 }
 
+int 
+handleID_IDREF( shredCtxStruct *shredCtx, 
+		char* ownerTag,
+		oid   pre,
+		str   attrTag,
+		str   attrVal,
+		int   attrType)
+{
+#ifdef ADB_DEBUG
+	stream_printf(GDKout,"handleID_IDREF(own=%s,pre=%d,nsloc=%s,v=\"%s\") = %d\n",ownerTag,pre,attrTag,attrVal,attrType);
+#endif
+	int batIdx = 0;
+
+	switch( attrType ) {
+	 case XML_ATTRIBUTE_ID:
+		batIdx = ID_PRE;
+	 	break;
+	 case XML_ATTRIBUTE_IDREF:
+		batIdx = IDREF_PRE;
+	 	break;
+	 case XML_ATTRIBUTE_IDREFS:
+		stream_printf(GDKerr,"handleID_IDREF: unable to handle IDREFS yet\n");
+	 	return 0;
+	}
+	if ( append_str_oid2bat(shredCtx,batIdx,attrVal,pre) == NIL ) {
+		stream_printf(GDKerr,"append() for handleID_IDREF(own=%s,pre=%d,nsloc=%s,v=\"%s\") = %d FAILED\n",ownerTag,pre,attrTag,attrVal,attrType);
+		return 0;
+	}
+	return 1;
+}
+
 /**
  * SAX callback, invoked whenever `<t ...>' is seen
  */
@@ -781,9 +953,16 @@ shred_start_element (void *xmlCtx,
                 xmlStopParser(xmlCtx);
                 return;
             }
-            shredCtx->nnode_attr++;
+	    int attrType;
 
+	    if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)t,(char*)*atts)) ) {
+	        if ( !handleID_IDREF(shredCtx,(char*)t,node.pre,(char*)*atts,(char*)*(atts + 1),attrType) ) {
+                	xmlStopParser(xmlCtx);
+                	return;
+		}
+	    }
             /* process next attribute */
+            shredCtx->nnode_attr++;
             atts += 2;
         }
 }
@@ -927,6 +1106,32 @@ PFXMLerror (void *xmlCtx, const char *msg, ...)
     xmlParserError (xmlCtx, errmsg);
 }
 
+/** 
+ * The catchAttributeDef() handles the DTD attribute definition callbacks
+ * in the from the header of the XML file. This is used for the ID/IDREF
+ * handeling of the shredder.
+ */
+void catchAttributeDef(	void *ctx,
+		const xmlChar *elem,
+		const xmlChar *fullname,
+		int type,
+		int def,
+		const xmlChar *defaultValue,
+		xmlEnumerationPtr tree) {
+	(void)ctx;
+	(void)def; /* XML_ATTRIBUTE_(NONE|REQUIRED:IMPLIED) */
+	(void)*defaultValue;
+	(void)tree;
+	specAttrDbStr* adb = &SHREDCTX(ctx)->specAttrDb;
+
+	switch(type) {
+	 case XML_ATTRIBUTE_ID:
+	 case XML_ATTRIBUTE_IDREF:
+	 case XML_ATTRIBUTE_IDREFS:
+	 	insertAttrDB(adb,(char*)elem,(char*)fullname,type); break;
+	}
+}
+
 /**
  * SAX callback table.
  */
@@ -948,7 +1153,8 @@ xmlSAXHandler shredder = {
   , .getEntity             = 0
   , .entityDecl            = 0
   , .notationDecl          = 0
-  , .attributeDecl         = 0
+  /*, .attributeDecl         = 0 */
+  , .attributeDecl         = catchAttributeDef
   , .elementDecl           = 0
   , .unparsedEntityDecl    = 0
   , .setDocumentLocator    = 0

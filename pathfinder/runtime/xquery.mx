@@ -63,7 +63,7 @@ static bit is_fake_project (BAT* b)
 
 #define MAXTAGDEPTH        1024
 
-#define WS_BATS     19
+#define WS_BATS     PRINT_WS_SZ
 
 /**
  *

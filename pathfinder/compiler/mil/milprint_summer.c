@@ -353,15 +353,16 @@ init (opt_t *f)
             "module(\"xtables\");\n"
             "module(\"malalgebra\");\n"
 
-            "# the tunique() function needs a little bit help :)\n"
-            "PROC tunique_ (bat[any::1,any::2] input) : bat[any::2,void] {\n"
-            "input := input.reverse().mark(nil).reverse();\n"
-            "if (input.tail() = \"string\") {\n"
-            "    return bat(str,void).key(true)"
-                                    ".insert(input.reverse())"
-                                    ".reverse().access(BAT_READ);\n"
-            "} else { return tunique(input); }\n"
-            "}\n"
+	/*  The tunique_ function is replaced by tuniqueALT in pf_support.mx JF */
+        /*  "# the tunique() function needs a little bit help :)\n" */
+        /*  "PROC tunique_ (bat[any::1,any::2] input) : bat[any::2,void] {\n" */
+        /*  "input := input.reverse().mark(nil).reverse();\n" */
+        /*  "if (input.tail() = \"string\") {\n" */
+        /*  "    return bat(str,void).key(true)" */
+        /*                          ".insert(input.reverse())" */
+        /*                          ".reverse().access(BAT_READ);\n" */
+        /*  "} else { return tunique(input); }\n" */
+        /*  "}\n" */
             /* a new working set is created */
             "var ws := create_ws();\n"
             /* the first loop is initialized */
@@ -2222,7 +2223,7 @@ castQName (opt_t *f, int rc)
             "strings := nil_oid_oid;\n"
             "var oid_item := oid_oid.leftfetchjoin(item%s);\n"
             /* get all the unique strings */
-            "strings := oid_item.tunique_().mark(0@0).reverse();\n"
+            "strings := oid_item.tuniqueALT().mark(0@0).reverse();\n"
             "var oid_str := strings%s;\n"
             "strings := nil_oid_oid;\n",
             item_ext, (rc)?"":val_join(STR));
@@ -2998,7 +2999,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             "var ws_prop_val := ws.fetch(PROP_VAL).fetch(WS);\n"
             /* add strings to PROP_VAL table (but keep the tail of PROP_VAL
                unique) */
-            "var unq := item%s.tunique_().mark(0@0).reverse();\n"
+            "var unq := item%s.tuniqueALT().mark(0@0).reverse();\n"
             "var unq_str := unq%s;\n"
             "unq := nil_oid_oid;\n"
             "var str_unq := unq_str.reverse().kdiff(ws_prop_val.reverse());\n"
@@ -4374,7 +4375,7 @@ typed_value (opt_t *f, int code, bool tv)
                 "var iter_item := pruned_input.leftfetchjoin(item_str).chk_order();\n"
                 "item_str := nil_oid_str;\n");
     if (!tv)
-        milprintf(f,"iter_item := iter_item.string_join(iter_item.reverse().tunique_().project(\"\"));\n");
+        milprintf(f,"iter_item := iter_item.string_join(iter_item.reverse().tuniqueALT().project(\"\"));\n");
 
     milprintf(f,
                 "pruned_input := nil_oid_oid;\n"
@@ -4459,7 +4460,7 @@ typed_value (opt_t *f, int code, bool tv)
                     "iter := nil_oid_oid;\n"
                     "item_str := nil_oid_str;\n");
     if (!tv)
-        milprintf(f,  "iter_item := iter_item.string_join(iter_item.reverse().tunique_().project(\"\"));\n");
+        milprintf(f,  "iter_item := iter_item.string_join(iter_item.reverse().tuniqueALT().project(\"\"));\n");
 
     milprintf(f,
                     "iter := iter_item.mark(0@0).reverse();\n"
@@ -5639,7 +5640,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* expects strings otherwise something stupid happens */
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
-                "var docs := item%s.tunique_().mark(0@0).reverse();\n"
+                "var docs := item%s.tuniqueALT().mark(0@0).reverse();\n"
                 "var doc_str := docs%s;\n"
                 "docs := nil_oid_oid;\n"
                 "doc_str := doc_str.reverse().kdiff(ws.fetch(DOC_LOADED).reverse())"
@@ -5676,7 +5677,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
                 /*
                 "var temp_ddo := CTgroup(iter).CTgroup(kind).CTgroup(item);\n"
-                "temp_ddo := temp_ddo.tunique_().mark(0@0).reverse();\n"
+                "temp_ddo := temp_ddo.tuniqueALT().mark(0@0).reverse();\n"
                 
                 "iter := temp_ddo.leftfetchjoin(iter);\n"
                 "item := temp_ddo.leftfetchjoin(item);\n"

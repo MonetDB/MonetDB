@@ -113,6 +113,15 @@ and the head values from the batlist"
 .END pf_support;
 
 @mil
+PROC tuniqueALT (bat[any::1,any::2] input) : bat[any::2,void] {
+	input := input.reverse().mark(nil).reverse();
+	if (input.tail() = "string") {
+    		return bat(str,void).key(true).insert(input.reverse()).reverse().access(BAT_READ);
+    	} else { 
+		return tunique(input);
+	}
+}
+
 PROC chk_order( BAT[any::1,any::2] b ) : bat[any::1,any::2] 
 {
         VAR h1 := b.ordered();

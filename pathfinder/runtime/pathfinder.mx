@@ -367,24 +367,27 @@ const PROP_TEXT  :=  7;
 const PROP_COM   :=  8;
 const PROP_INS   :=  9;
 const PROP_TGT   := 10;
-const ATTR_OWN   := 11;
-const ATTR_QN    := 12;
-const ATTR_PROP  := 13;
-const ATTR_FRAG  := 14;
-const PROP_VAL   := 15;
-const DOC_LOADED := 16;
-const FRAG       := 17;
-const WS_FRAG    := 18;
-const HEIGHT     := 19;
-const KIND_PRE   := 20;
-const KIND_PRE_EL := 20;
-const KIND_PRE_TE := 21;
-const KIND_PRE_CO := 22;
-const KIND_PRE_PI := 23;
-const KIND_PRE_DO := 24;
-const PROP_PRE   := 25;
-const PROP_PRE_EL := 25;
-const WS_SIZE    := 26; # must be last!
+const ID_PRE     := 11;
+const IDREF_PRE  := 12;
+const ATTR_OWN   := 13;
+const ATTR_QN    := 14;
+const ATTR_PROP  := 15;
+const ATTR_FRAG  := 16;
+const PROP_VAL   := 17;
+const DOC_LOADED := 18;
+const FRAG       := 19;
+const WS_FRAG    := 20;
+const HEIGHT     := 21;
+const PRINT_WS_SZ:= 21;
+const KIND_PRE   := 22;
+const KIND_PRE_EL := 22;
+const KIND_PRE_TE := 23;
+const KIND_PRE_CO := 24;
+const KIND_PRE_PI := 25;
+const KIND_PRE_DO := 26;
+const PROP_PRE    := 27;
+const PROP_PRE_EL := 27;
+const WS_SIZE     := 28; # must be last!
 @= define_ws_constants
 #define PRE_SIZE     0
 #define PRE_LEVEL    1
@@ -397,24 +400,27 @@ const WS_SIZE    := 26; # must be last!
 #define PROP_COM     8
 #define PROP_INS     9
 #define PROP_TGT    10
-#define ATTR_OWN    11
-#define ATTR_QN     12
-#define ATTR_PROP   13
-#define ATTR_FRAG   14
-#define PROP_VAL    15
-#define DOC_LOADED  16
-#define FRAG        17
-#define WS_FRAG     18
-#define HEIGHT      19
-#define KIND_PRE    20
-#define KIND_PRE_EL 20
-#define KIND_PRE_TE 21
-#define KIND_PRE_CO 22
-#define KIND_PRE_PI 23
-#define KIND_PRE_DO 24
-#define PROP_PRE    25
-#define PROP_PRE_EL 25
-#define WS_SIZE     26 /* must be last! */
+#define ID_PRE	    11
+#define IDREF_PRE   12
+#define ATTR_OWN    13
+#define ATTR_QN     14
+#define ATTR_PROP   15
+#define ATTR_FRAG   16
+#define PROP_VAL    17
+#define DOC_LOADED  18
+#define FRAG        19
+#define WS_FRAG     20
+#define HEIGHT      21
+#define PRINT_WS_SZ 21
+#define KIND_PRE    22
+#define KIND_PRE_EL 22
+#define KIND_PRE_TE 23
+#define KIND_PRE_CO 24
+#define KIND_PRE_PI 25
+#define KIND_PRE_DO 26
+#define PROP_PRE    27
+#define PROP_PRE_EL 27
+#define WS_SIZE     28 /* must be last! */
 @mil
 
 PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
@@ -439,6 +445,8 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 	ws.fetch(PROP_COM).insert(nil,bat("prop_com" + docid));
 	ws.fetch(PROP_INS).insert(nil,bat("prop_ins" + docid));
 	ws.fetch(PROP_TGT).insert(nil,bat("prop_tgt" + docid));
+	ws.fetch(ID_PRE).insert(nil,bat("id_pre" + docid));
+	ws.fetch(IDREF_PRE).insert(nil,bat("idref_pre" + docid));
 	ws.fetch(ATTR_OWN).insert(nil,bat("attr_own" + docid));
 	ws.fetch(ATTR_QN).insert(nil,bat("attr_qn" + docid));
 	ws.fetch(ATTR_PROP).insert(nil,bat("attr_prop" + docid));
@@ -493,6 +501,8 @@ PROC create_ws () : BAT[void,bat]
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_COM
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_INS
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_TGT
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ID_PRE
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # IDREF_PRE
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_OWN
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_QN
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_PROP
@@ -524,6 +534,8 @@ PROC create_ws () : BAT[void,bat]
     ws.fetch(PROP_COM).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_COM
     ws.fetch(PROP_INS).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_INS
     ws.fetch(PROP_TGT).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_TGT
+    ws.fetch(ID_PRE).insert(nil, bat(str,oid));                      # ID_PRE
+    ws.fetch(IDREF_PRE).insert(nil, bat(str,oid));                   # IDREF_PRE
     ws.fetch(ATTR_OWN).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_OWN
     ws.fetch(ATTR_QN).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_QN
     ws.fetch(ATTR_PROP).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_PROP
@@ -869,8 +881,12 @@ PROC import_doc(str flnm, str name) : void
 
     # load table prop|tgt|ins
     tmp := load(pi, seps2, pi_ty, flnm + ".pi", -1);
-    tmp.find("tgt").persists(true).bbpname("prop_tgt" + docid);
     tmp.find("ins").persists(true).bbpname("prop_ins" + docid);
+    tmp.find("tgt").persists(true).bbpname("prop_tgt" + docid);
+
+    # INCOMPLETE, create dummy ID_PRE AND IDREF_PRE bats
+    var id_bat    := new(str,oid).persists(true).bbpname("id_pre" + docid);
+    var idref_bat := new(str,oid).persists(true).bbpname("idref_pre" + docid);
 
     # load table att|own|qn|prop
     tmp := load(att, seps3, att_ty, flnm + ".@", -1);
@@ -939,8 +955,10 @@ PROC shred_doc_base(str flnm, str name, bit persistent,str opt) : void
     shredRES.fetch(QN_LOC).mmap(STORE_MMAP).persists(persistent).bbpname("qn_loc" + docid);
     shredRES.fetch(PROP_TEXT).mmap(STORE_MMAP).persists(persistent).bbpname("prop_text" + docid);
     shredRES.fetch(PROP_COM).mmap(STORE_MMAP).persists(persistent).bbpname("prop_com" + docid);
-    shredRES.fetch(PROP_TGT).mmap(STORE_MMAP).persists(persistent).bbpname("prop_tgt" + docid);
     shredRES.fetch(PROP_INS).mmap(STORE_MMAP).persists(persistent).bbpname("prop_ins" + docid);
+    shredRES.fetch(PROP_TGT).mmap(STORE_MMAP).persists(persistent).bbpname("prop_tgt" + docid);
+    shredRES.fetch(ID_PRE).mmap(STORE_MMAP).persists(persistent).bbpname("id_pre" + docid);
+    shredRES.fetch(IDREF_PRE).mmap(STORE_MMAP).persists(persistent).bbpname("idref_pre" + docid);
     shredRES.fetch(ATTR_OWN).mmap(STORE_MMAP).persists(persistent).bbpname("attr_own" + docid);
     shredRES.fetch(ATTR_QN).mmap(STORE_MMAP).persists(persistent).bbpname("attr_qn" + docid);
     shredRES.fetch(ATTR_PROP).mmap(STORE_MMAP).persists(persistent).bbpname("attr_prop" + docid);

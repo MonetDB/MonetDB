@@ -500,6 +500,8 @@ pf_compile_interface (FILE *pfin, FILE *pfout, char* mode)
                 status->genType = PF_GEN_DM;
         } else if ( strcmp(mode,"sax") == 0 ) {
                 status->genType = PF_GEN_SAX;
+        } else if ( strcmp(mode,"org") == 0 ) {
+                status->genType = PF_GEN_ORG;
         } else {
                 /* incomplete */
                 fprintf(stderr,"pf_compile_interface: unkown output mode \"%s\", using \"xml\".\n",mode);
