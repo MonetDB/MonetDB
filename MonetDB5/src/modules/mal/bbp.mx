@@ -344,7 +344,7 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 str CMDbbpbindindex(int *ret, int *bid){
 	BAT *b;
-	b= (BAT*) BBPgetdesc(*bid);
+	b= (BAT*) BBPdescriptor(*bid);
 	if( b == 0 ) 
 		return throwMessage("bbp.bind","can not access descriptor");
 	*ret= *bid;
