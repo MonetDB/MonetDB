@@ -558,6 +558,7 @@ static BAT *col_bind( sql_trans * tr, oid lbid, sql_column *c, int access )
 			hseq = b->hseqbase;
 			b = bat_lcopy(b, "col_bind");
 			assert(b->hseqbase == hseq);
+			(void) hseq; /* pacify compiler in case assertions are off */
 			c->base.wtime = c->t->base.wtime = 
 				c->t->s->base.wtime = tr->wtime = tr->stime;
 			bm_new_bat(tr->bm, lbid, b);
@@ -632,6 +633,7 @@ static BAT *tab_bind( sql_trans * tr, oid lbid, sql_table *t, int access )
 			hseq = b->hseqbase;
 			b = bat_lcopy(b, "tab_bind");
 			assert(b->hseqbase == hseq);
+			(void) hseq; /* pacify compiler in case assertions are off */
 			t->base.wtime = t->s->base.wtime = 
 				tr->wtime = tr->stime;
 			bm_new_bat(tr->bm, lbid, b);
