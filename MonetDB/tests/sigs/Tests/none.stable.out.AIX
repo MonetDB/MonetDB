@@ -1,11 +1,16 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
-#> Mtest:	milS none milS
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_sigs -single none.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for CYGWIN32_NT4.0/32bit on Thu Feb 24 03:32:02  2000.
-#script:none.milS
+
+# 05:57:54 >  
+# 05:57:54 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
+# 05:57:54 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm
+# dbname:Tests_tests_sigs
+# dbdir:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_tests_sigs
 
 loaded;
 #---------------------------------#
@@ -23,14 +28,79 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_24  #
+# (str)		  (void)  #
+#-------------------------#
+[ "algebra",	  nil	  ]
+[ "arith",	  nil	  ]
+[ "bat",	  nil	  ]
+[ "kernel",	  nil	  ]
+[ "str",	  nil	  ]
+[ "sys",	  nil	  ]
+[ "trans",	  nil	  ]
+#-------------------------#
+# BAT:		  tmp_26  #
+# (str)		  (void)  #
+#-------------------------#
+[ "aggr",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "algebra",	  nil	  ]
+[ "arith",	  nil	  ]
+[ "ascii_io",	  nil	  ]
+[ "bat",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "bitset",	  nil	  ]
+[ "bitvector",	  nil	  ]
+[ "blob",	  nil	  ]
+[ "calib",	  nil	  ]
+[ "cluster",	  nil	  ]
+[ "ddbench",	  nil	  ]
+[ "decimal",	  nil	  ]
+[ "enum",	  nil	  ]
+[ "io",		  nil	  ]
+[ "kernel",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "malalgebra",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "mprof",	  nil	  ]
+[ "oo7",	  nil	  ]
+[ "qt",		  nil	  ]
+[ "radix",	  nil	  ]
+[ "salgebra",	  nil	  ]
+[ "stats",	  nil	  ]
+[ "str",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "sys",	  nil	  ]
+[ "tcpip",	  nil	  ]
+[ "tpcd",	  nil	  ]
+[ "trans",	  nil	  ]
+[ "uchr",	  nil	  ]
+[ "unix",	  nil	  ]
+[ "url",	  nil	  ]
+[ "wisc",	  nil	  ]
+[ "xtables",	  nil	  ]
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -42,140 +112,25 @@ Try: modules;                - for other modules.
 [ "algebra",	  nil	  ]
 [ "arith",	  nil	  ]
 [ "bat",	  nil	  ]
+[ "cluster",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
+#-------------------------#
+# BAT:		  tmp_25  #
+# (str)		  (void)  #
+#-------------------------#
+[ "kernel",	  nil	  ]
+[ "arith",	  nil	  ]
+[ "str",	  nil	  ]
+[ "bat",	  nil	  ]
+[ "algebra",	  nil	  ]
+[ "sys",	  nil	  ]
+[ "trans",	  nil	  ]
+[ "cluster",	  nil	  ]
 #-------------------------#
 # BAT:		  tmp_27  #
-# (str)		  (void)  #
-#-------------------------#
-[ "BasicOdmg",	  nil	  ]
-[ "CC_Test",	  nil	  ]
-[ "CC_odmg",	  nil	  ]
-[ "Meta",	  nil	  ]
-[ "Test7",	  nil	  ]
-[ "TransTest",	  nil	  ]
-[ "aggr",	  nil	  ]
-[ "alarm",	  nil	  ]
-[ "algebra",	  nil	  ]
-[ "arith",	  nil	  ]
-[ "bat",	  nil	  ]
-[ "bitset",	  nil	  ]
-[ "bitvector",	  nil	  ]
-[ "blob",	  nil	  ]
-[ "cluster",	  nil	  ]
-[ "counters",	  nil	  ]
-[ "ddbench",	  nil	  ]
-[ "decimal",	  nil	  ]
-[ "enum",	  nil	  ]
-[ "io",		  nil	  ]
-[ "jOdmg",	  nil	  ]
-[ "kernel",	  nil	  ]
-[ "lock",	  nil	  ]
-[ "malalgebra",	  nil	  ]
-[ "mmath",	  nil	  ]
-[ "monettime",	  nil	  ]
-[ "mprof",	  nil	  ]
-[ "odmg",	  nil	  ]
-[ "oo7",	  nil	  ]
-[ "radix",	  nil	  ]
-[ "salgebra",	  nil	  ]
-[ "signature",	  nil	  ]
-[ "stats",	  nil	  ]
-[ "str",	  nil	  ]
-[ "sys",	  nil	  ]
-[ "tcpip",	  nil	  ]
-[ "temporal",	  nil	  ]
-[ "tpcd",	  nil	  ]
-[ "trans",	  nil	  ]
-[ "uchr",	  nil	  ]
-[ "unix",	  nil	  ]
-[ "url",	  nil	  ]
-[ "wisc",	  nil	  ]
-[ "xtables",	  nil	  ]
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (void)  #
-#-------------------------#
-[ "algebra",	  nil	  ]
-[ "arith",	  nil	  ]
-[ "bat",	  nil	  ]
-[ "cluster",	  nil	  ]
-[ "kernel",	  nil	  ]
-[ "str",	  nil	  ]
-[ "sys",	  nil	  ]
-[ "trans",	  nil	  ]
-
-
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[~monet_mod_nme].reverse.sort.print;
-#-------------------------#
-# BAT:		  tmp_73  #
-# (str)		  (void)  #
-#-------------------------#
-[ "CC_odmg",	  nil	  ]
-[ "Meta",	  nil	  ]
-[ "algebra",	  nil	  ]
-[ "arith",	  nil	  ]
-[ "bat",	  nil	  ]
-[ "bitset",	  nil	  ]
-[ "cluster",	  nil	  ]
-[ "kernel",	  nil	  ]
-[ "odmg",	  nil	  ]
-[ "signature",	  nil	  ]
-[ "str",	  nil	  ]
-[ "sys",	  nil	  ]
-[ "trans",	  nil	  ]
-
-fix:=monet_mod_nme.reverse.copy;
-[fix~].print;
-#-------------------------#
-# BAT:		  tmp_74  #
-# (str)		  (void)  #
-#-------------------------#
-[ "kernel",	  nil	  ]
-[ "arith",	  nil	  ]
-[ "str",	  nil	  ]
-[ "bat",	  nil	  ]
-[ "algebra",	  nil	  ]
-[ "sys",	  nil	  ]
-[ "trans",	  nil	  ]
-[ "cluster",	  nil	  ]
-[ "Meta",	  nil	  ]
-[ "CC_odmg",	  nil	  ]
-[ "odmg",	  nil	  ]
-[ "signature",	  nil	  ]
-[ "bitset",	  nil	  ]
-#-------------------------#
-# BAT:		  tmp_76  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -184,30 +139,31 @@ fix:=monet_mod_nme.reverse.copy;
 [ "unix",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
-[ "temporal",	  nil	  ]
 [ "tcpip",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
+[ "qt",		  nil	  ]
 [ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
+[ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
+[ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
-[ "jOdmg",	  nil	  ]
 [ "io",		  nil	  ]
 [ "enum",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "ddbench",	  nil	  ]
-[ "counters",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "bitvector",	  nil	  ]
+[ "bitset",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "ascii_io",	  nil	  ]
 [ "alarm",	  nil	  ]
+[ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
-[ "TransTest",	  nil	  ]
-[ "Test7",	  nil	  ]
-[ "CC_Test",	  nil	  ]
-[ "BasicOdmg",	  nil	  ]
 [ "mprof",	  nil	  ]
 
 	loading xtables
@@ -215,22 +171,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_76  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -240,16 +191,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -259,22 +205,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "wisc",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "wisc", nil	  ]
@@ -284,16 +225,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -303,22 +239,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "url",	  1		  ]
 #-----------------#
-# BAT:	  tmp_76  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "url",  nil	  ]
@@ -328,16 +259,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -347,41 +273,36 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_29  #
 # (str)	  (void)  #
 #-----------------#
 [ "unix", nil	  ]
+[ "blob", nil	  ]
 
 	dropping unix
+
+
+	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -391,22 +312,18 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "uchr", nil	  ]
@@ -416,16 +333,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -435,22 +347,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  2		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "tpcd", nil	  ]
@@ -460,60 +367,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading temporal
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "temporal",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_76  #
-# (str)		  (void)  #
-#-------------------------#
-[ "temporal",	  nil	  ]
-
-	dropping temporal
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -523,22 +381,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "tcpip",	  nil	  ]
@@ -548,16 +401,55 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading streams
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (void)  #
+#-------------------------#
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -567,22 +459,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "stats",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_74  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "stats",	  nil	  ]
@@ -592,16 +479,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -611,22 +493,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  2		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
 [ "salgebra",	  1		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_79  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "salgebra",	  nil	  ]
@@ -636,16 +513,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -655,22 +527,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
 [ "radix",	  1		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_76  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "radix",	  nil	  ]
@@ -680,16 +547,70 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading qt
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitvector",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "qt",		  1		  ]
+[ "stats",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_29  #
+# (str)		  (void)  #
+#-------------------------#
+[ "qt",		  nil	  ]
+[ "uchr",	  nil	  ]
+[ "bitvector",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+[ "stats",	  nil	  ]
+
+	dropping qt
+
+
+	dropping uchr
+
+
+	dropping bitvector
+
+
+	dropping io
+
+
+	dropping blob
+
+
+	dropping stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -699,22 +620,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
 [ "oo7",	  1		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "oo7",  nil	  ]
@@ -724,16 +640,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -743,22 +654,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "monettime",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_74  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
@@ -768,16 +674,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -787,22 +688,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "mmath",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mmath",	  nil	  ]
@@ -812,16 +708,60 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading mapi
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "mapi",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -831,22 +771,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "malalgebra",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "malalgebra",	  nil	  ]
@@ -856,16 +791,45 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading logger
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "logger",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (void)  #
+#-------------------------#
+[ "logger",	  nil	  ]
+
+	dropping logger
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -875,22 +839,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "lock", nil	  ]
@@ -900,75 +859,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading jOdmg
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "blob",	  2		  ]
-[ "cluster",	  1		  ]
-[ "io",		  1		  ]
-[ "jOdmg",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  3		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "tcpip",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_74  #
-# (str)		  (void)  #
-#-------------------------#
-[ "jOdmg",	  nil	  ]
-[ "blob",	  nil	  ]
-[ "tcpip",	  nil	  ]
-[ "io",		  nil	  ]
-
-	dropping jOdmg
-
-
-	dropping blob
-
-
-	dropping tcpip
-
-
-	dropping io
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -978,23 +873,18 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "io",		  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "io",	  nil	  ]
@@ -1008,16 +898,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1027,24 +912,19 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "enum",	  1		  ]
 [ "io",		  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_80  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "enum", nil	  ]
@@ -1062,16 +942,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1081,22 +956,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "decimal",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_79  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "decimal",	  nil	  ]
@@ -1106,16 +976,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1125,26 +990,21 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "ddbench",	  1		  ]
 [ "enum",	  1		  ]
 [ "io",		  2		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ddbench",	  nil	  ]
@@ -1170,60 +1030,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading counters
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "counters",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_78  #
-# (str)		  (void)  #
-#-------------------------#
-[ "counters",	  nil	  ]
-
-	dropping counters
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1233,22 +1044,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_31  #
 # (str)	  (void)  #
 #-----------------#
 [ "blob", nil	  ]
@@ -1258,16 +1064,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1277,24 +1078,19 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "bitvector",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "io",		  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_80  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
@@ -1312,16 +1108,129 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading bitset
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "bitset",	  nil	  ]
+
+	dropping bitset
+
+#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading bat_arith
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "bat_arith",	  nil	  ]
+
+	dropping bat_arith
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading ascii_io
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_31  #
+# (str)		  (void)  #
+#-------------------------#
+[ "ascii_io",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping ascii_io
+
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1331,22 +1240,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_80  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
@@ -1356,16 +1260,45 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading aggrX3
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "aggrX3",	  nil	  ]
+
+	dropping aggrX3
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1375,22 +1308,17 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "aggr",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_79  #
+# BAT:	  tmp_31  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1400,197 +1328,11 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading TransTest
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  2		  ]
-[ "Meta",	  2		  ]
-[ "TransTest",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_78  #
-# (str)		  (void)  #
-#-------------------------#
-[ "TransTest",	  nil	  ]
-
-	dropping TransTest
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading Test7
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "BasicOdmg",	  1		  ]
-[ "CC_odmg",	  3		  ]
-[ "Meta",	  3		  ]
-[ "Test7",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_150	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "Test7",	  nil		  ]
-[ "BasicOdmg",	  nil		  ]
-
-	dropping Test7
-
-
-	dropping BasicOdmg
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading CC_Test
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_Test",	  1		  ]
-[ "CC_odmg",	  2		  ]
-[ "Meta",	  2		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_195	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "CC_Test",	  nil		  ]
-
-	dropping CC_Test
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading BasicOdmg
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "BasicOdmg",	  1		  ]
-[ "CC_odmg",	  2		  ]
-[ "Meta",	  2		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_205	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "BasicOdmg",	  nil		  ]
-
-	dropping BasicOdmg
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1600,41 +1342,36 @@ fix:=monet_mod_nme.reverse.copy;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "mprof",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_223	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "mprof",	  nil		  ]
+#-------------------------#
+# BAT:		  tmp_41  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mprof",	  nil	  ]
 
 	dropping mprof
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+
+# 05:57:57 >  
+# 05:57:57 >  Done.
+# 05:57:57 >  
+

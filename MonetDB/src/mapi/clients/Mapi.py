@@ -1,117 +1,124 @@
-import string 
+import string
 from socket import *
 from os import *
 
-trace=		0
-interactive=	0
+trace=          0
+interactive=    0
 
 class server:
-	def cmd_intern( self, cmd ):
-		try:
-			self.socket.send(cmd)
-			if (trace>0):
-				print 'cmd ', cmd
-		except IOError:
-			print 'IO error '
-	
-	def result(self):
-		result  = ''
-		c = self.getchar()
-		try:
-			while ( c != '\1'):
-				result = result + c
-				c = self.getchar()
-			self.getprompt()
-			if (trace>0):
-				print result
-		except EOFError:
-			print 'end of file'
-		except error:
-			print 'end of file'
-			sys.exit(1)
-		return result
-	
-	def getchar(self):
-		try:
-			c = self.socket.recv(1)
-			if (trace>1):
-				print c
-			return c
-		except IOError:
-			print 'IO error '
-		except error:
-			print 'end of file'
-			sys.exit(1)
-		return ''
+    def cmd_intern( self, cmd ):
+        try:
+            self.socket.send(cmd)
+            if (trace>0):
+                print 'cmd ', cmd
+        except IOError:
+            print 'IO error '
 
-	def getprompt(self):
-		self.prompt = ''
-		c = self.getchar()
-		try:
-			while ( c != '\1'):
-				self.prompt = self.prompt + c
-				c = self.getchar()
-		except EOFError:
-			print 'end of file'
-		if (interactive==1):
-			print self.prompt
-	
-	def __init__ ( self, server, port, user ):
-		try:
-			self.socket = socket(AF_INET, SOCK_STREAM)
-			self.socket.connect(server, port)
-			self.prompt = ''
-		except IOError:
-			print 'server refuses access'
-	
-		self.cmd_intern(user)
-		self.result()
-		if (trace>0):
-			print 'connected ', self.socket
+    def result(self):
+        result = self.getstring()
+        self.getprompt()
+        if (trace>0):
+            print result
+        return result
 
-	def disconnect( self ):
-		self.result = self.cmd_intern( 'quit;\n' )
-		self.socket.close()
-		self.socket = 0;
+    def getstring(self):
+        try:
+            idx = string.find( self.buffer, "\1" )
+            if (trace>1):
+                self.buffer;
+            str = ""
+            while (idx < 0):
+                if (trace>1):
+                    print self.buffer
+                str = str + self.buffer
+                self.buffer = self.socket.recv(8096)
+                idx = string.find( self.buffer, "\1" )
 
-	def cmd( self, cmd ):
-		self.cmd_intern(cmd)
-		return self.result()
+            str = str + self.buffer[0:idx]
+            self.buffer = self.buffer[idx+1:]
+            if (trace>1):
+                print str
+            return str
+        except IOError:
+            print 'IO error '
+        except error:
+            print 'end of file'
+            sys.exit(1)
+        return ''
+
+    def getprompt(self):
+        self.prompt = self.getstring()
+        if (interactive==1):
+            print self.prompt
+
+    def __init__ ( self, server, port, user ):
+        try:
+            self.socket = socket(AF_INET, SOCK_STREAM)
+            self.socket.connect((server, port))
+            self.prompt = ''
+            self.buffer = ''
+        except IOError:
+            print 'server refuses access'
+
+        self.cmd_intern(user+'\n')
+        self.result()
+        if (trace>0):
+            print 'connected ', self.socket
+
+    def disconnect( self ):
+        self.result = self.cmd_intern( 'quit;\n' )
+        self.socket.close()
+        self.socket = 0;
+
+    def cmd( self, cmd ):
+        self.cmd_intern(cmd)
+        return self.result()
 
 def hostname():
-	try: 
-		p = environ['MAPIPORT']
-	except:
-		p = ''
-	if (p != ''):
-		p = string.splitfields(p,':')[0]
-	else:
-		p = 'localhost'
-	return p
+    try:
+        p = environ['MAPIPORT']
+    except:
+        p = ''
+    if (p != ''):
+        p = string.splitfields(p,':')[0]
+    else:
+        p = 'localhost'
+    return p
 
 def portnr():
-	try: 
-		p = environ['MAPIPORT']
-	except:
-		p = ''
+    try:
+        p = environ['MAPIPORT']
+    except:
+        p = ''
 
-	if (p != ''):
-		p = int(string.splitfields(p,':')[1])
-	else:
-		p = 50000
-	return p
+    if (p != ''):
+        p = int(string.splitfields(p,':')[1])
+    else:
+        p = 50000
+    return p
+
+def user():
+    try:
+        p = environ['USER']
+    except:
+        try:
+            p = environ['USERNAME']
+        except:
+            p = ''
+
+    return p
 
 
 if __name__ == '__main__':
-	import fileinput;
+    import fileinput;
 
-	s = server( 'localhost', 50000, 'niels\n')
-	fi = fileinput.FileInput()
-	sys.stdout.write( s.prompt )
-	line= fi.readline()
-	while( line != "quit;\n" ):
-		res = s.cmd( line )
-		print(res);
-		sys.stdout.write( s.prompt )
-		line = fi.readline() 
-	s.disconnect()
+    s = server( hostname(), portnr(), user())
+    fi = fileinput.FileInput()
+    sys.stdout.write( s.prompt )
+    line= fi.readline()
+    while( line != "quit;\n" ):
+        res = s.cmd( line )
+        print(res);
+        sys.stdout.write( s.prompt )
+        line = fi.readline()
+    s.disconnect()

@@ -1,29 +1,114 @@
-#! /bin/sh
+#!/usr/bin/env bash
 
 # helps bootstrapping Monet, when checked out from CVS
 # requires GNU autoconf, automake and libtool
 # this is not meant to go into the distributions
 
-find . -name .cache* \-exec rm {} \;
-src/utils/autogen/autogen.py
-test -f conf/ltmain.sh || libtoolize -c -f; 
-#if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
-#  perl -i -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
+REQ_AM_VERSION="1.4"
+AM_VERSION=`automake --version | grep '^automake' | sed -e 's|.*)||g' -e 's| ||g' -e 's|-.*||g'`
+_REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+_AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
+if [ $_AM_VERSION -gt $_REQ_AM_VERSION ]; then
+	echo "automake $AM_VERSION is newer then $REQ_AM_VERSION"
+elif [ $_AM_VERSION -lt $_REQ_AM_VERSION ]; then
+	echo "automake $AM_VERSION is older then $REQ_AM_VERSION"
+fi
+
+find . -name .cache\* \-exec rm {} \;
+src/utils/autogen/autogen.py `pwd` $_AM_VERSION
+cat configure.ag > configure.in
+echo "AC_OUTPUT(" >> configure.in
+cat acout.in  >> configure.in
+echo ")" >> configure.in
+
+test -f conf/ltmain.sh || libtoolize -c -f; 
+
+#if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
+#  perl -i.bak -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
 #fi
+
 # default deplibs_check_method (pass all libs)
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
-perl -i -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
-aclocal -I .
+test -f conf/ltconfig && perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
+
+# patch conf/config.guess for Intel compiler on Linux (icc) 
+grep 'ifdef __INTEL_COMPILER' conf/config.guess >/dev/null || cat << "EOF" | patch conf/config.guess
+--- conf/config.guess~	Sun Feb 10 14:13:07 2002
++++ conf/config.guess	Wed Jan 30 15:14:03 2002
+@@ -936,7 +936,10 @@
+    printf ("%s-${VENDOR}-linux-gnulibc1\n", argv[1]);
+ # endif
+ #else
+-  printf ("%s-${VENDOR}-linux-gnuaout\n", argv[1]);
++# ifdef __INTEL_COMPILER
++   printf ("%s-${VENDOR}-linux-Intel\n", argv[1]);
++# else
++   printf ("%s-${VENDOR}-linux-gnuaout\n", argv[1]);
+ #endif
+   return 0;
+ }
+EOF
+
+aclocal -I . -I conf
+
+# patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
+# (just adding -IPA to LDFLAGS somehow doesn't help ...)
+perl -i.bak -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
+
+# patch aclocal.m4: 
+# correct switch for Intel compiler on Linux (icc)
+# to pass options to the linker (ld) is -Qoption,ld,
+cat << "EOF" | patch aclocal.m4
+--- aclocal.m4~	Wed Jan 16 20:34:17 2002
++++ aclocal.m4	Wed Jan 16 20:37:55 2002
+@@ -1036,6 +1036,12 @@
+       fi
+       ;;
+ 
++    linux*)
++      lt_cv_prog_cc_pic='-Kpic'
++      lt_cv_prog_cc_static='-static'
++      lt_cv_prog_cc_wl='-Qoption,ld,'
++      ;;
++
+     *)
+       lt_cv_prog_cc_can_build_shared=no
+       ;;
+EOF
+
 autoheader
 automake -a -c
 
 # dirty hack, needed because automake 1.4 generates the wrong dependency
 #echo "mel_tab.h: mel_tab.cc" >> src/mel/Makefile.in
-perl -i -p -e  's/tab\.hh/tab.h/g' src/mel/Makefile.in
+perl -i.bak -p -e  's/tab\.hh/tab.h/g' src/mel/Makefile.in
 
 #autoupdate
 autoconf
 
-exit 0
+# patch configure to cope with Intel's C/C++ compiler for Linux ("icc")
+cat << "EOF" | patch configure
+--- configure~	Wed May 23 20:46:51 2001
++++ configure	Wed May 23 20:49:57 2001
+@@ -1075,7 +1075,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.c
+-if test -z "`${CC-cc} -g -c conftest.c 2>&1`"; then
++if test -z "`${CC-cc} -g -c conftest.c 2>&1 | egrep -v '^conftest.c:$|^icc: NOTE: The evaluation period for this product ends on .* UTC.$'`"; then
+   ac_cv_prog_cc_g=yes
+ else
+   ac_cv_prog_cc_g=no
+@@ -1218,7 +1218,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.cc
+-if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
++if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | egrep -v '^conftest.cc:$|^icc: NOTE: The evaluation period for this product ends on .* UTC.$'`"; then
+   ac_cv_prog_cxx_g=yes
+ else
+   ac_cv_prog_cxx_g=no
+EOF
 
+exit 0

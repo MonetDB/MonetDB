@@ -110,11 +110,11 @@ module bitset {
 Create a BitSet from a string
 
 allowed strings are:
-\begin{enumeration}
+\begin{itemize}
 	\item an integer in decimal form;
 	\item an integer in octal form (prefixed by 0);
 	\item an integer in hexadecimal form (prefixed by 0x).
-\end{enumeration}
+\end{itemize}
 @-
 @c
 
@@ -232,7 +232,7 @@ int newBitset2( bitset* res ) {
 @c
 
 @T
-{\bf{\tt bitset_clearBit(bitset,int):bitset}}
+{\bf{\tt bitset\_clearBit(bitset,int):bitset}}
 
 Clear the specified bit in this BitSet.
 @-
@@ -253,7 +253,7 @@ extern int bitset_clearBit( bitset* res, bitset* theBitSet, int* theBit ) {
 
 
 @T
-{\bf{\tt bitset_flipBit(bitset,int)}}
+{\bf{\tt bitset\_flipBit(bitset,int)}}
 
 Flip the specified bit in this BitSet.
 @-
@@ -273,7 +273,7 @@ extern int bitset_flipBit( bitset* res, bitset* theBitSet, int* theBit ) {
 }
 
 @T
-{\bf{\tt bitset_getBit(bitset,int):bit}}
+{\bf{\tt bitset\_getBit(bitset,int):bit}}
 
 Get the specified bit from this BitSet.
 @-
@@ -295,7 +295,7 @@ fprintf(GDKout,"bitset_getBit(%d,%d) result: %d %s\n",*theBitSet,*theBit,*res,*r
 }
 
 @T
-{\bf{\tt bitset_setBit(bitset,int)}}
+{\bf{\tt bitset\_setBit(bitset,int)}}
 
 Set the specified bit from this BitSet.
 @-
@@ -315,7 +315,7 @@ extern int bitset_setBit( bitset* res, bitset* theBitSet, int* theBit ) {
 }
 
 @T
-{\bf{\tt bitset_and(bitset,bitset):bitset}}
+{\bf{\tt bitset\_and(bitset,bitset):bitset}}
 
 AND this BitSet with an other BitSet.
 @-
@@ -330,7 +330,7 @@ extern int bitset_and( bitset* res, bitset* theBitSet, bitset* otherBitSet ) {
 }
 
 @T
-{\bf{\tt bitset_or(bitset,bitset):bitset}}
+{\bf{\tt bitset\_or(bitset,bitset):bitset}}
 
 OR this BitSet with an other BitSet.
 @-
@@ -345,7 +345,7 @@ extern int bitset_or( bitset* res, bitset* theBitSet, bitset* otherBitSet ) {
 }
 
 @T
-{\bf{\tt bitset_xor(bitset,bitset):bitset}}
+{\bf{\tt bitset\_xor(bitset,bitset):bitset}}
 
 XOR this BitSet with an other BitSet.
 @-
@@ -360,7 +360,7 @@ extern int bitset_xor( bitset* res, bitset* theBitSet, bitset* otherBitSet ) {
 }
 
 @T
-{\bf{\tt bitset_not(bitset):bitset}}
+{\bf{\tt bitset\_not(bitset):bitset}}
 
 NOT this BitSet.
 @-
@@ -375,7 +375,7 @@ extern int bitset_not( bitset* res, bitset* theBitSet ) {
 }
 
 @T
-{\bf{\tt bitset_toInt(bitset):int}}
+{\bf{\tt bitset\_toInt(bitset):int}}
 
 Convert this BitSet to an integer.
 @-

@@ -58,7 +58,6 @@ public:
    double length() const;
    double direction() const;
    segment reverse() const;
-   void plot(const char* color) const;
    class multipoint* boundary() const;
 
    const point& startPoint() const;
@@ -330,12 +329,6 @@ int segment::operator==(const segment& s) const
    return(rval);
 }
 
-void segment::plot(const char* color) const
-{
-   GDKwarning("line %f %f %f %f %s\n",
-      source.x,source.y,dest.x,dest.y,color);
-
-}
 void segment::set(const point& src,const point& dst)
 {
    source = src;

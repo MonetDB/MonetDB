@@ -1,5 +1,6 @@
 
 YFLAGS = -d
+LDFLAGS = -all-static
 
 bin_mel = {
 	SOURCES = \

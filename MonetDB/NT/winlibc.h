@@ -57,6 +57,9 @@ struct passwd {
 #define pthread_sigmask(v,mnew,morg) 0
 #define pthread_kill(tid,sig) 0
 
+/* to get module unix compiled */
+#define fork() -1
+
 #define __getpgid(pid) getpid()
 
 #define setbuffer(x,y,z)	setbuf(x,y)
@@ -150,6 +153,7 @@ struct tms
 #    define getcwd		_getcwd
 #    define getpid		_getpid
 #    define access		_access
+#	 define W_OK		1
 #	 define R_OK		1
 #	 define F_OK		0
 #    define open		_open
@@ -243,6 +247,8 @@ struct tms
 #define ESTALE 133
 #define ENOTSUP 134
 
+/* fcntl */
+#define O_NONBLOCK 1
 
 #ifdef  __cplusplus
 extern "C" {

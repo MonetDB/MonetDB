@@ -1,0 +1,12 @@
+
+INCLUDES = -I../../../gdk -I../../../monet \
+	$(Z_CFLAGS) $(BZ_CFLAGS)
+MTSAFE
+
+lib_stream  =  {
+	SOURCES = stream.mx
+	HEADERS = h
+	LIBS = ../../../gdk/libbat \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) 
+}
+

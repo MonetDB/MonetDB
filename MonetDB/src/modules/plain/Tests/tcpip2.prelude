@@ -1,0 +1,9 @@
+module("tcpip", "alarm");
+module("unix");
+
+fork(listen(50000));
+sleep(2);
+VAR c := open("localhost:50000");
+
+VAR TSTTRGDIR := getenv("TSTTRGDIR");
+

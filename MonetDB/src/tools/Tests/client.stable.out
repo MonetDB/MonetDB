@@ -1,11 +1,16 @@
 stdout of test 'client` in directory 'src/tools` itself:
 
-#> Mtest (21:13:12):	milC client milC -prelude client.prelude
-#> Mtest (21:13:12):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_tools -prelude /home/niels/new/monet/Linux/src/modules/plain/mapi.mil &
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#prelude:/home/niels/new/monet/Linux/src/modules/plain/mapi.mil
+
+# 15:15:17 >  
+# 15:15:17 >  Mtimeout -timeout 1260 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_src_tools /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/mapi.mil
+# 15:15:17 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
+# dbname:Tests_src_tools
+# dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools
 
 loaded;
 #---------------------------------#
@@ -18,7 +23,21 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-# start session on src_tools
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+printf("\nReady.\n");
+
+Ready.
+
+Over..
+
+# 15:15:26 >  
+# 15:15:26 >  Mtimeout -timeout 600 MapiClient -everything -prelude client.prelude < client.milC
+# 15:15:26 >  
+
 Start of MIL server prelude.
 [ 1 ]
 [ 10 ]
@@ -29,8 +48,8 @@ Start of MIL server prelude.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  26	  ]
-[ "tmpbats",	  26	  ]
+[ "bats",	  29	  ]
+[ "tmpbats",	  29	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -41,43 +60,102 @@ Start of MIL server prelude.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  2		  ]
+[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  2		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
-#-----------------#
-# MIL Procedure	  #
-#-----------------#
+#-----------------------------------------------------------------------------------------#
+# MIL Procedure										  #
+#-----------------------------------------------------------------------------------------#
+[ "ADDHELP(str, str, str, str, str) : void"						  ]
+[ "bbp() : BAT[str,int]"								  ]
+[ "capacity(BAT[any,any]) : int"							  ]
+[ "clear(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "clients() : void"									  ]
+[ "col_name(BAT[any::1,any::2], str) : BAT[any::1,any::2]"				  ]
+[ "cold(BAT[any::1,any::2]) : void"							  ]
+[ "cpu() : BAT[str,int]"								  ]
+[ "destroy(BAT[any,any]) : any"								  ]
+[ "destroy(str) : any"									  ]
+[ "diff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
+[ "dir() : void"									  ]
+[ "dir(BAT[int,str]) : any"								  ]
+[ "dir(str) : void"									  ]
+[ "dir_leaks() : any"									  ]
+[ "env() : void"									  ]
+[ "environment() : BAT[str,str]"							  ]
+[ "exit() : void"									  ]
+[ "get_mapi_port() : any"								  ]
+[ "head(BAT[any,any]) : int"								  ]
+[ "help() : <predefinition>"								  ]
+[ "help(str) : void"									  ]
+[ "help_sig(oid) : void"								  ]
+[ "help_tpe(int) : str"									  ]
+[ "hot(BAT[any::1,any::2]) : void"							  ]
+[ "htype(BAT[any,any]) : int"								  ]
+[ "intersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"		  ]
+[ "io() : BAT[str,int]"									  ]
+[ "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]"	  ]
+[ "likeselect(BAT[any::1,str], str) : BAT[any::1,oid]"					  ]
+[ "listen() : any"									  ]
+[ "listen(int) : any"									  ]
+[ "listen(int, int) : any"								  ]
+[ "listen(int, int, str) : any"								  ]
+[ "listen(int, str) : any"								  ]
+[ "listen(str) : any"									  ]
+[ "load(str) : BAT[any,any]"								  ]
+[ "loaded() : void"									  ]
+[ "ls() : void"										  ]
+[ "ls(str) : void"									  ]
+[ "madvise(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "mapi_server(int, int) : any"								  ]
+[ "mem_usage() : BAT[str,lng]"								  ]
+[ "mem_usage(int) : BAT[str,lng]"							  ]
+[ "memory() : BAT[str,int]"								  ]
+[ "mil_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"			  ]
+[ "mil_select(BAT[any::1,any::2], str, any::2, any::2) : BAT[any::1,any::2]"		  ]
+[ "mmap(BAT[any::1,any::2], int) : BAT[any::1,any::2]"					  ]
+[ "modules() : void"									  ]
+[ "neg_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"			  ]
+[ "new(int, int) : BAT[any,any]"							  ]
+[ "new(int, int, int) : BAT[any,any]"							  ]
+[ "procs() : void"									  ]
+[ "project(BAT[any::1,any]) : BAT[any::1,void]"						  ]
+[ "readonly(BAT[any::1,any::2]) : int"							  ]
+[ "readonly(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "rename(BAT[any::1,any::2], str) : BAT[any::1,any::2]"				  ]
+[ "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]"			  ]
+[ "save(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "semijoin(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]"			  ]
+[ "sigs(str) : void"									  ]
+[ "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "stream_line(stream) : str"								  ]
+[ "stream_read(stream) : str"								  ]
+[ "stream_strip(stream, str) : str"							  ]
+[ "tail(BAT[any,any]) : int"								  ]
+[ "threads() : void"									  ]
+[ "ttype(BAT[any,any]) : int"								  ]
+[ "tunique(BAT[any,any::1]) : BAT[any::1,void]"						  ]
+[ "union(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
+[ "unique(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "vars() : void"									  ]
+[ "vm_usage() : BAT[str,lng]"								  ]
+[ "vm_usage(int) : BAT[str,lng]"							  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
+[ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
+[ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
+[ "SEEK_END",		  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "SEEK_CUR",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "SEEK_SET",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "EOF",		  "int",  "liquid",	  "constant",	  "-1"			  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -94,6 +172,15 @@ Start of MIL server prelude.
 [ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -101,32 +188,11 @@ Start of MIL server prelude.
 [ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
 [ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_28>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_27>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -136,6 +202,7 @@ Start of MIL server prelude.
 [ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
 [ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
 [ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
 [ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
 [ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
 [ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
@@ -175,6 +242,9 @@ Start of MIL server prelude.
 [ 23,	  "tran"  ]
 [ 24,	  "tran"  ]
 [ 25,	  "tran"  ]
+[ 26,	  "tran"  ]
+[ 27,	  "tran"  ]
+[ 28,	  "tran"  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -204,64 +274,73 @@ Start of MIL server prelude.
 [ 23,	  "23"		  ]
 [ 24,	  "24"		  ]
 [ 25,	  "25"		  ]
+[ 26,	  "26"		  ]
+[ 27,	  "27"		  ]
+[ 28,	  "28"		  ]
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
 #---------------------------------#
-[ 1,	  "monet_fcn_fcn"	  ]
-[ 2,	  "monet_fcn_imp"	  ]
-[ 3,	  "monet_fcn_tpe"	  ]
-[ 4,	  "monet_fcn_mid"	  ]
-[ 5,	  "monet_fcn_sig"	  ]
-[ 6,	  "monet_fcn_dsc"	  ]
-[ 7,	  "monet_fcn_aut"	  ]
-[ 8,	  "monet_fcn_dat"	  ]
-[ 9,	  "monet_fcn_nme"	  ]
-[ 10,	  "monet_fcn_pro"	  ]
-[ 11,	  "monet_mod_nme"	  ]
-[ 12,	  "monet_mod_cnt"	  ]
-[ 13,	  "monet_mod_atm"	  ]
-[ 14,	  "monet_mod_acc"	  ]
-[ 15,	  "monet_mod_hdl"	  ]
-[ 16,	  "monet_mod_dep"	  ]
-[ 17,	  "monet_mod_use"	  ]
-[ 18,	  "monet_mod_load"	  ]
-[ 19,	  "monet_mod_drop"	  ]
-[ 20,	  "monet_fcntbl"	  ]
-[ 21,	  "monet_acctbl"	  ]
-[ 22,	  "monet_atomtbl"	  ]
-[ 23,	  "tmp_23"		  ]
-[ 24,	  "tmp_24"		  ]
+[ 1,	  "monet_envirenment"	  ]
+[ 2,	  "monet_fcn_fcn"	  ]
+[ 3,	  "monet_fcn_imp"	  ]
+[ 4,	  "monet_fcn_tpe"	  ]
+[ 5,	  "monet_fcn_mid"	  ]
+[ 6,	  "monet_fcn_sig"	  ]
+[ 7,	  "monet_fcn_dsc"	  ]
+[ 8,	  "monet_fcn_aut"	  ]
+[ 9,	  "monet_fcn_dat"	  ]
+[ 10,	  "monet_fcn_nme"	  ]
+[ 11,	  "monet_fcn_pro"	  ]
+[ 12,	  "monet_fcn_cnt"	  ]
+[ 13,	  "monet_mod_nme"	  ]
+[ 14,	  "monet_mod_cnt"	  ]
+[ 15,	  "monet_mod_atm"	  ]
+[ 16,	  "monet_mod_acc"	  ]
+[ 17,	  "monet_mod_hdl"	  ]
+[ 18,	  "monet_mod_dep"	  ]
+[ 19,	  "monet_mod_use"	  ]
+[ 20,	  "monet_mod_load"	  ]
+[ 21,	  "monet_mod_drop"	  ]
+[ 22,	  "monet_fcntbl"	  ]
+[ 23,	  "monet_acctbl"	  ]
+[ 24,	  "monet_atomtbl"	  ]
 [ 25,	  "tmp_25"		  ]
+[ 26,	  "mapi_params"		  ]
+[ 27,	  "tmp_27"		  ]
+[ 28,	  "tmp_28"		  ]
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-[ 2,	  1	  ]
-[ 3,	  1	  ]
-[ 4,	  1	  ]
-[ 5,	  1	  ]
-[ 6,	  1	  ]
-[ 7,	  1	  ]
-[ 8,	  1	  ]
-[ 9,	  1	  ]
-[ 10,	  1	  ]
-[ 11,	  1	  ]
-[ 12,	  1	  ]
-[ 13,	  1	  ]
-[ 14,	  1	  ]
-[ 15,	  1	  ]
-[ 16,	  1	  ]
-[ 17,	  1	  ]
-[ 18,	  1	  ]
-[ 19,	  1	  ]
-[ 20,	  1	  ]
-[ 21,	  1	  ]
-[ 22,	  1	  ]
-[ 23,	  1	  ]
-[ 24,	  1	  ]
+[ 2,	  3	  ]
+[ 3,	  3	  ]
+[ 4,	  3	  ]
+[ 5,	  3	  ]
+[ 6,	  3	  ]
+[ 7,	  3	  ]
+[ 8,	  3	  ]
+[ 9,	  3	  ]
+[ 10,	  3	  ]
+[ 11,	  3	  ]
+[ 12,	  3	  ]
+[ 13,	  3	  ]
+[ 14,	  3	  ]
+[ 15,	  3	  ]
+[ 16,	  3	  ]
+[ 17,	  3	  ]
+[ 18,	  3	  ]
+[ 19,	  3	  ]
+[ 20,	  3	  ]
+[ 21,	  3	  ]
+[ 22,	  4	  ]
+[ 23,	  4	  ]
+[ 24,	  4	  ]
 [ 25,	  1	  ]
+[ 26,	  6	  ]
+[ 27,	  1	  ]
+[ 28,	  1	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -291,19 +370,22 @@ Start of MIL server prelude.
 [ 23,	  "load"  ]
 [ 24,	  "load"  ]
 [ 25,	  "load"  ]
-#-----------------------------------------#
-# BAT:	  tree				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  ""				  ]
-[ 1,	  "print(view_client_tree())"	  ]
-[ 2,	  "listen(get_mapi_port(),5)"	  ]
+[ 26,	  "load"  ]
+[ 27,	  "load"  ]
+[ 28,	  "load"  ]
+#-------------------------------------------------#
+# BAT:	  tree					  #
+# (int)	  (str)					  #
+#-------------------------------------------------#
+[ 0,	  "printf(\"\\nReady.\\n\")"		  ]
+[ 1,	  "print(view_client_tree())"		  ]
+[ 2,	  "mapi_server(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  26	  ]
-[ "tmpbats",	  26	  ]
+[ "bats",	  29	  ]
+[ "tmpbats",	  29	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -312,9 +394,12 @@ Start of MIL server prelude.
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "constant"	  ]
-[ "monet_acctbl",	  "constant"	  ]
-[ "monet_fcntbl",	  "constant"	  ]
+[ "mapi_params",	  "changeable"	  ]
+[ "_params",		  "changeable"	  ]
+[ "SEEK_END",		  "constant"	  ]
+[ "SEEK_CUR",		  "constant"	  ]
+[ "SEEK_SET",		  "constant"	  ]
+[ "EOF",		  "constant"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -331,6 +416,15 @@ Start of MIL server prelude.
 [ "STORE_COMPR",	  "constant"	  ]
 [ "STORE_MMAP",		  "constant"	  ]
 [ "STORE_MEM",		  "constant"	  ]
+[ "LNG_MIN",		  "constant"	  ]
+[ "LNG_MAX",		  "constant"	  ]
+[ "INT_MIN",		  "constant"	  ]
+[ "INT_MAX",		  "constant"	  ]
+[ "SHT_MIN",		  "constant"	  ]
+[ "SHT_MAX",		  "constant"	  ]
+[ "CHR_MIN",		  "constant"	  ]
+[ "CHR_MAX",		  "constant"	  ]
+[ "RAND_MAX",		  "constant"	  ]
 [ "TOK_OBJECT",		  "constant"	  ]
 [ "TOK_ITERATOR",	  "constant"	  ]
 [ "TOK_COMMAND",	  "constant"	  ]
@@ -352,6 +446,7 @@ Start of MIL server prelude.
 [ "monet_mod_atm",	  "constant"	  ]
 [ "monet_mod_cnt",	  "constant"	  ]
 [ "monet_mod_nme",	  "constant"	  ]
+[ "monet_fcn_cnt",	  "constant"	  ]
 [ "monet_fcn_pro",	  "constant"	  ]
 [ "monet_fcn_nme",	  "constant"	  ]
 [ "monet_fcn_dat",	  "constant"	  ]
@@ -366,9 +461,12 @@ Start of MIL server prelude.
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "frozen"	  ]
-[ "monet_acctbl",	  "frozen"	  ]
-[ "monet_fcntbl",	  "frozen"	  ]
+[ "mapi_params",	  "liquid"	  ]
+[ "_params",		  "liquid"	  ]
+[ "SEEK_END",		  "liquid"	  ]
+[ "SEEK_CUR",		  "liquid"	  ]
+[ "SEEK_SET",		  "liquid"	  ]
+[ "EOF",		  "liquid"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -385,6 +483,15 @@ Start of MIL server prelude.
 [ "STORE_COMPR",	  "liquid"	  ]
 [ "STORE_MMAP",		  "liquid"	  ]
 [ "STORE_MEM",		  "liquid"	  ]
+[ "LNG_MIN",		  "liquid"	  ]
+[ "LNG_MAX",		  "liquid"	  ]
+[ "INT_MIN",		  "liquid"	  ]
+[ "INT_MAX",		  "liquid"	  ]
+[ "SHT_MIN",		  "liquid"	  ]
+[ "SHT_MAX",		  "liquid"	  ]
+[ "CHR_MIN",		  "liquid"	  ]
+[ "CHR_MAX",		  "liquid"	  ]
+[ "RAND_MAX",		  "liquid"	  ]
 [ "TOK_OBJECT",		  "frozen"	  ]
 [ "TOK_ITERATOR",	  "frozen"	  ]
 [ "TOK_COMMAND",	  "frozen"	  ]
@@ -406,6 +513,7 @@ Start of MIL server prelude.
 [ "monet_mod_atm",	  "frozen"	  ]
 [ "monet_mod_cnt",	  "frozen"	  ]
 [ "monet_mod_nme",	  "frozen"	  ]
+[ "monet_fcn_cnt",	  "frozen"	  ]
 [ "monet_fcn_pro",	  "frozen"	  ]
 [ "monet_fcn_nme",	  "frozen"	  ]
 [ "monet_fcn_dat",	  "frozen"	  ]
@@ -420,9 +528,12 @@ Start of MIL server prelude.
 # BAT:			  type	  #
 # (str)			  (str)	  #
 #---------------------------------#
-[ "monet_atomtbl",	  "BAT"	  ]
-[ "monet_acctbl",	  "BAT"	  ]
-[ "monet_fcntbl",	  "BAT"	  ]
+[ "mapi_params",	  "BAT"	  ]
+[ "_params",		  "BAT"	  ]
+[ "SEEK_END",		  "int"	  ]
+[ "SEEK_CUR",		  "int"	  ]
+[ "SEEK_SET",		  "int"	  ]
+[ "EOF",		  "int"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -439,6 +550,15 @@ Start of MIL server prelude.
 [ "STORE_COMPR",	  "int"	  ]
 [ "STORE_MMAP",		  "int"	  ]
 [ "STORE_MEM",		  "int"	  ]
+[ "LNG_MIN",		  "lng"	  ]
+[ "LNG_MAX",		  "lng"	  ]
+[ "INT_MIN",		  "int"	  ]
+[ "INT_MAX",		  "int"	  ]
+[ "SHT_MIN",		  "sht"	  ]
+[ "SHT_MAX",		  "sht"	  ]
+[ "CHR_MIN",		  "chr"	  ]
+[ "CHR_MAX",		  "chr"	  ]
+[ "RAND_MAX",		  "int"	  ]
 [ "TOK_OBJECT",		  "int"	  ]
 [ "TOK_ITERATOR",	  "int"	  ]
 [ "TOK_COMMAND",	  "int"	  ]
@@ -460,6 +580,7 @@ Start of MIL server prelude.
 [ "monet_mod_atm",	  "BAT"	  ]
 [ "monet_mod_cnt",	  "BAT"	  ]
 [ "monet_mod_nme",	  "BAT"	  ]
+[ "monet_fcn_cnt",	  "BAT"	  ]
 [ "monet_fcn_pro",	  "BAT"	  ]
 [ "monet_fcn_nme",	  "BAT"	  ]
 [ "monet_fcn_dat",	  "BAT"	  ]
@@ -470,37 +591,40 @@ Start of MIL server prelude.
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
-#-------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#-------------------------------------------------------------------------------------------------#
-[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  472,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  472,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  472,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  439,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  503,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  472,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  503,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1236,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  503,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  503,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  "oid",  "str",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_24",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-#---------------------------------------------------------------------------------#
-# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#---------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------#
+# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#---------------------------------------------------------------------------------------------------------#
+[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 6,	  0	  ]
+[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_atomtbl",	  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_envirenment",	  "str",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  608,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  638,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  608,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  608,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  564,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  638,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  608,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  638,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1597,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  638,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  638,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_atm",	  "oid",  "str",  5,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "tmp_25",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_27",		  "str",  "oid",  638,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_28",		  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+#-----------------------------------------------------------------------------------------#
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#-----------------------------------------------------------------------------------------#
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -530,78 +654,93 @@ Start of MIL server prelude.
 [ 23,	  0	  ]
 [ 24,	  0	  ]
 [ 25,	  0	  ]
+[ 26,	  0	  ]
+[ 27,	  0	  ]
+[ 28,	  0	  ]
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      4,         1,   running,         0, "listen(get_mapi_port(),5#"    ]
-#[     53,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff97720.
-unknown(1)#"                   ]
-#[     58,         2,   running,        57, "queue()#"                      ]
-[ 2 ]
+#[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
+unknown(0)#"                            ]
+#[      3,         2,   running,         0, "listen(get_mapi_port(),5)#"                            ]
+#[     51,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
+unknown(1)#"                            ]
+#[     52,         3,   running,        51, "queue()#"                            ]
+[ 3 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
-[ "adm",	  "Mon Jan 22 05:37:52 2001",	  ""				  ]
-[ "monet",	  "Mon Jan 22 05:37:59 2001",	  "clients()"			  ]
-[ "adm",	  "Mon Jan 22 05:37:52 2001",	  "listen(get_mapi_port(),5)"	  ]
+[ "adm",	  "Mon Jun 25 15:15:23 2001",	  ""				  ]
+[ "windhouw",	  "Mon Jun 25 15:15:31 2001",	  "clients()"			  ]
+[ "adm",	  "Mon Jun 25 15:15:23 2001",	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  1080	  ]
+[ "user",	  30	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  15430	  ]
+[ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "17925804"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "17925804"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4704	  ]
-[ "minflt",	  169	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  7	  ]
+[ "majflt",	  34	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  1	  ]
-[ "nvcsw",	  21244	  ]
-[ "ninvcsw",	  71	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1327104	  ]
-[ "arena",	  1368048	  ]
-[ "ordblks",	  3385		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  25072		  ]
-[ "fsmblks",	  18128		  ]
-[ "uordblks",	  799488	  ]
-[ "fordblks",	  524720	  ]
+[ "memincr",	  1085440	  ]
+[ "arena",	  1089480	  ]
+[ "ordblks",	  397		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  826416	  ]
+[ "fordblks",	  263064	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -613,62 +752,67 @@ unknown(1)#"                   ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Mon Jan 22 05:37:52 2001"	  ]
-[ 1,	  "Mon Jan 22 05:37:59 2001"	  ]
-[ 2,	  "Mon Jan 22 05:37:52 2001"	  ]
+[ 0,	  "Mon Jun 25 15:15:23 2001"	  ]
+[ 1,	  "Mon Jun 25 15:15:31 2001"	  ]
+[ 2,	  "Mon Jun 25 15:15:23 2001"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "adm"		  ]
-[ 1,	  "monet"	  ]
+[ 1,	  "windhouw"	  ]
 [ 2,	  "adm"		  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  1	  ]
-[ "user",	  1090	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  15440	  ]
-[ "elapsystem",	  10	  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "17925804"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
+[ "elapsed",	  0	  ]
+[ "user",	  30	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  0	  ]
+[ "elapsystem",	  0	  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4704	  ]
-[ "minflt",	  169	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  7	  ]
+[ "majflt",	  34	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  1	  ]
-[ "nvcsw",	  21247	  ]
-[ "ninvcsw",	  77	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1368048	  ]
-[ "ordblks",	  3382		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  25048		  ]
-[ "fsmblks",	  18152		  ]
-[ "uordblks",	  798400	  ]
-[ "fordblks",	  525808	  ]
+[ "arena",	  1089480	  ]
+[ "ordblks",	  404		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  825352	  ]
+[ "fordblks",	  264128	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -688,8 +832,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  26	  ]
-[ "tmpbats",	  26	  ]
+[ "bats",	  29	  ]
+[ "tmpbats",	  29	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -700,43 +844,102 @@ Start of MIL script.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  2		  ]
+[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  2		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
-#-----------------#
-# MIL Procedure	  #
-#-----------------#
+#-----------------------------------------------------------------------------------------#
+# MIL Procedure										  #
+#-----------------------------------------------------------------------------------------#
+[ "ADDHELP(str, str, str, str, str) : void"						  ]
+[ "bbp() : BAT[str,int]"								  ]
+[ "capacity(BAT[any,any]) : int"							  ]
+[ "clear(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "clients() : void"									  ]
+[ "col_name(BAT[any::1,any::2], str) : BAT[any::1,any::2]"				  ]
+[ "cold(BAT[any::1,any::2]) : void"							  ]
+[ "cpu() : BAT[str,int]"								  ]
+[ "destroy(BAT[any,any]) : any"								  ]
+[ "destroy(str) : any"									  ]
+[ "diff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
+[ "dir() : void"									  ]
+[ "dir(BAT[int,str]) : any"								  ]
+[ "dir(str) : void"									  ]
+[ "dir_leaks() : any"									  ]
+[ "env() : void"									  ]
+[ "environment() : BAT[str,str]"							  ]
+[ "exit() : void"									  ]
+[ "get_mapi_port() : any"								  ]
+[ "head(BAT[any,any]) : int"								  ]
+[ "help() : <predefinition>"								  ]
+[ "help(str) : void"									  ]
+[ "help_sig(oid) : void"								  ]
+[ "help_tpe(int) : str"									  ]
+[ "hot(BAT[any::1,any::2]) : void"							  ]
+[ "htype(BAT[any,any]) : int"								  ]
+[ "intersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"		  ]
+[ "io() : BAT[str,int]"									  ]
+[ "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]"	  ]
+[ "likeselect(BAT[any::1,str], str) : BAT[any::1,oid]"					  ]
+[ "listen() : any"									  ]
+[ "listen(int) : any"									  ]
+[ "listen(int, int) : any"								  ]
+[ "listen(int, int, str) : any"								  ]
+[ "listen(int, str) : any"								  ]
+[ "listen(str) : any"									  ]
+[ "load(str) : BAT[any,any]"								  ]
+[ "loaded() : void"									  ]
+[ "ls() : void"										  ]
+[ "ls(str) : void"									  ]
+[ "madvise(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "mapi_server(int, int) : any"								  ]
+[ "mem_usage() : BAT[str,lng]"								  ]
+[ "mem_usage(int) : BAT[str,lng]"							  ]
+[ "memory() : BAT[str,int]"								  ]
+[ "mil_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"			  ]
+[ "mil_select(BAT[any::1,any::2], str, any::2, any::2) : BAT[any::1,any::2]"		  ]
+[ "mmap(BAT[any::1,any::2], int) : BAT[any::1,any::2]"					  ]
+[ "modules() : void"									  ]
+[ "neg_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"			  ]
+[ "new(int, int) : BAT[any,any]"							  ]
+[ "new(int, int, int) : BAT[any,any]"							  ]
+[ "procs() : void"									  ]
+[ "project(BAT[any::1,any]) : BAT[any::1,void]"						  ]
+[ "readonly(BAT[any::1,any::2]) : int"							  ]
+[ "readonly(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "rename(BAT[any::1,any::2], str) : BAT[any::1,any::2]"				  ]
+[ "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]"			  ]
+[ "save(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "semijoin(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]"			  ]
+[ "sigs(str) : void"									  ]
+[ "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "stream_line(stream) : str"								  ]
+[ "stream_read(stream) : str"								  ]
+[ "stream_strip(stream, str) : str"							  ]
+[ "tail(BAT[any,any]) : int"								  ]
+[ "threads() : void"									  ]
+[ "ttype(BAT[any,any]) : int"								  ]
+[ "tunique(BAT[any,any::1]) : BAT[any::1,void]"						  ]
+[ "union(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
+[ "unique(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
+[ "vars() : void"									  ]
+[ "vm_usage() : BAT[str,lng]"								  ]
+[ "vm_usage(int) : BAT[str,lng]"							  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
+[ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
+[ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
+[ "SEEK_END",		  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "SEEK_CUR",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "SEEK_SET",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "EOF",		  "int",  "liquid",	  "constant",	  "-1"			  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -753,6 +956,15 @@ Start of MIL script.
 [ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -760,32 +972,11 @@ Start of MIL script.
 [ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
 [ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_28>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_27>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -795,6 +986,7 @@ Start of MIL script.
 [ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
 [ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
 [ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
 [ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
 [ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
 [ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
@@ -834,6 +1026,9 @@ Start of MIL script.
 [ 23,	  "tran"  ]
 [ 24,	  "tran"  ]
 [ 25,	  "tran"  ]
+[ 26,	  "tran"  ]
+[ 27,	  "tran"  ]
+[ 28,	  "tran"  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -863,64 +1058,73 @@ Start of MIL script.
 [ 23,	  "23"		  ]
 [ 24,	  "24"		  ]
 [ 25,	  "25"		  ]
+[ 26,	  "26"		  ]
+[ 27,	  "27"		  ]
+[ 28,	  "28"		  ]
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
 #---------------------------------#
-[ 1,	  "monet_fcn_fcn"	  ]
-[ 2,	  "monet_fcn_imp"	  ]
-[ 3,	  "monet_fcn_tpe"	  ]
-[ 4,	  "monet_fcn_mid"	  ]
-[ 5,	  "monet_fcn_sig"	  ]
-[ 6,	  "monet_fcn_dsc"	  ]
-[ 7,	  "monet_fcn_aut"	  ]
-[ 8,	  "monet_fcn_dat"	  ]
-[ 9,	  "monet_fcn_nme"	  ]
-[ 10,	  "monet_fcn_pro"	  ]
-[ 11,	  "monet_mod_nme"	  ]
-[ 12,	  "monet_mod_cnt"	  ]
-[ 13,	  "monet_mod_atm"	  ]
-[ 14,	  "monet_mod_acc"	  ]
-[ 15,	  "monet_mod_hdl"	  ]
-[ 16,	  "monet_mod_dep"	  ]
-[ 17,	  "monet_mod_use"	  ]
-[ 18,	  "monet_mod_load"	  ]
-[ 19,	  "monet_mod_drop"	  ]
-[ 20,	  "monet_fcntbl"	  ]
-[ 21,	  "monet_acctbl"	  ]
-[ 22,	  "monet_atomtbl"	  ]
-[ 23,	  "tmp_23"		  ]
-[ 24,	  "tmp_24"		  ]
+[ 1,	  "monet_envirenment"	  ]
+[ 2,	  "monet_fcn_fcn"	  ]
+[ 3,	  "monet_fcn_imp"	  ]
+[ 4,	  "monet_fcn_tpe"	  ]
+[ 5,	  "monet_fcn_mid"	  ]
+[ 6,	  "monet_fcn_sig"	  ]
+[ 7,	  "monet_fcn_dsc"	  ]
+[ 8,	  "monet_fcn_aut"	  ]
+[ 9,	  "monet_fcn_dat"	  ]
+[ 10,	  "monet_fcn_nme"	  ]
+[ 11,	  "monet_fcn_pro"	  ]
+[ 12,	  "monet_fcn_cnt"	  ]
+[ 13,	  "monet_mod_nme"	  ]
+[ 14,	  "monet_mod_cnt"	  ]
+[ 15,	  "monet_mod_atm"	  ]
+[ 16,	  "monet_mod_acc"	  ]
+[ 17,	  "monet_mod_hdl"	  ]
+[ 18,	  "monet_mod_dep"	  ]
+[ 19,	  "monet_mod_use"	  ]
+[ 20,	  "monet_mod_load"	  ]
+[ 21,	  "monet_mod_drop"	  ]
+[ 22,	  "monet_fcntbl"	  ]
+[ 23,	  "monet_acctbl"	  ]
+[ 24,	  "monet_atomtbl"	  ]
 [ 25,	  "tmp_25"		  ]
+[ 26,	  "mapi_params"		  ]
+[ 27,	  "tmp_27"		  ]
+[ 28,	  "tmp_28"		  ]
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-[ 2,	  1	  ]
-[ 3,	  1	  ]
-[ 4,	  1	  ]
-[ 5,	  1	  ]
-[ 6,	  1	  ]
-[ 7,	  1	  ]
-[ 8,	  1	  ]
-[ 9,	  1	  ]
-[ 10,	  1	  ]
-[ 11,	  1	  ]
-[ 12,	  1	  ]
-[ 13,	  1	  ]
-[ 14,	  1	  ]
-[ 15,	  1	  ]
-[ 16,	  1	  ]
-[ 17,	  1	  ]
-[ 18,	  1	  ]
-[ 19,	  1	  ]
-[ 20,	  1	  ]
-[ 21,	  1	  ]
-[ 22,	  1	  ]
-[ 23,	  1	  ]
-[ 24,	  1	  ]
+[ 2,	  3	  ]
+[ 3,	  3	  ]
+[ 4,	  3	  ]
+[ 5,	  3	  ]
+[ 6,	  3	  ]
+[ 7,	  3	  ]
+[ 8,	  3	  ]
+[ 9,	  3	  ]
+[ 10,	  3	  ]
+[ 11,	  3	  ]
+[ 12,	  3	  ]
+[ 13,	  3	  ]
+[ 14,	  3	  ]
+[ 15,	  3	  ]
+[ 16,	  3	  ]
+[ 17,	  3	  ]
+[ 18,	  3	  ]
+[ 19,	  3	  ]
+[ 20,	  3	  ]
+[ 21,	  3	  ]
+[ 22,	  4	  ]
+[ 23,	  4	  ]
+[ 24,	  4	  ]
 [ 25,	  1	  ]
+[ 26,	  6	  ]
+[ 27,	  1	  ]
+[ 28,	  1	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -950,19 +1154,22 @@ Start of MIL script.
 [ 23,	  "load"  ]
 [ 24,	  "load"  ]
 [ 25,	  "load"  ]
-#-----------------------------------------#
-# BAT:	  tree				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  ""				  ]
-[ 1,	  "print(view_client_tree())"	  ]
-[ 2,	  "listen(get_mapi_port(),5)"	  ]
+[ 26,	  "load"  ]
+[ 27,	  "load"  ]
+[ 28,	  "load"  ]
+#-------------------------------------------------#
+# BAT:	  tree					  #
+# (int)	  (str)					  #
+#-------------------------------------------------#
+[ 0,	  "printf(\"\\nReady.\\n\")"		  ]
+[ 1,	  "print(view_client_tree())"		  ]
+[ 2,	  "mapi_server(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  26	  ]
-[ "tmpbats",	  26	  ]
+[ "bats",	  29	  ]
+[ "tmpbats",	  29	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -971,9 +1178,12 @@ Start of MIL script.
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "constant"	  ]
-[ "monet_acctbl",	  "constant"	  ]
-[ "monet_fcntbl",	  "constant"	  ]
+[ "mapi_params",	  "changeable"	  ]
+[ "_params",		  "changeable"	  ]
+[ "SEEK_END",		  "constant"	  ]
+[ "SEEK_CUR",		  "constant"	  ]
+[ "SEEK_SET",		  "constant"	  ]
+[ "EOF",		  "constant"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -990,6 +1200,15 @@ Start of MIL script.
 [ "STORE_COMPR",	  "constant"	  ]
 [ "STORE_MMAP",		  "constant"	  ]
 [ "STORE_MEM",		  "constant"	  ]
+[ "LNG_MIN",		  "constant"	  ]
+[ "LNG_MAX",		  "constant"	  ]
+[ "INT_MIN",		  "constant"	  ]
+[ "INT_MAX",		  "constant"	  ]
+[ "SHT_MIN",		  "constant"	  ]
+[ "SHT_MAX",		  "constant"	  ]
+[ "CHR_MIN",		  "constant"	  ]
+[ "CHR_MAX",		  "constant"	  ]
+[ "RAND_MAX",		  "constant"	  ]
 [ "TOK_OBJECT",		  "constant"	  ]
 [ "TOK_ITERATOR",	  "constant"	  ]
 [ "TOK_COMMAND",	  "constant"	  ]
@@ -1011,6 +1230,7 @@ Start of MIL script.
 [ "monet_mod_atm",	  "constant"	  ]
 [ "monet_mod_cnt",	  "constant"	  ]
 [ "monet_mod_nme",	  "constant"	  ]
+[ "monet_fcn_cnt",	  "constant"	  ]
 [ "monet_fcn_pro",	  "constant"	  ]
 [ "monet_fcn_nme",	  "constant"	  ]
 [ "monet_fcn_dat",	  "constant"	  ]
@@ -1025,9 +1245,12 @@ Start of MIL script.
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "frozen"	  ]
-[ "monet_acctbl",	  "frozen"	  ]
-[ "monet_fcntbl",	  "frozen"	  ]
+[ "mapi_params",	  "liquid"	  ]
+[ "_params",		  "liquid"	  ]
+[ "SEEK_END",		  "liquid"	  ]
+[ "SEEK_CUR",		  "liquid"	  ]
+[ "SEEK_SET",		  "liquid"	  ]
+[ "EOF",		  "liquid"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -1044,6 +1267,15 @@ Start of MIL script.
 [ "STORE_COMPR",	  "liquid"	  ]
 [ "STORE_MMAP",		  "liquid"	  ]
 [ "STORE_MEM",		  "liquid"	  ]
+[ "LNG_MIN",		  "liquid"	  ]
+[ "LNG_MAX",		  "liquid"	  ]
+[ "INT_MIN",		  "liquid"	  ]
+[ "INT_MAX",		  "liquid"	  ]
+[ "SHT_MIN",		  "liquid"	  ]
+[ "SHT_MAX",		  "liquid"	  ]
+[ "CHR_MIN",		  "liquid"	  ]
+[ "CHR_MAX",		  "liquid"	  ]
+[ "RAND_MAX",		  "liquid"	  ]
 [ "TOK_OBJECT",		  "frozen"	  ]
 [ "TOK_ITERATOR",	  "frozen"	  ]
 [ "TOK_COMMAND",	  "frozen"	  ]
@@ -1065,6 +1297,7 @@ Start of MIL script.
 [ "monet_mod_atm",	  "frozen"	  ]
 [ "monet_mod_cnt",	  "frozen"	  ]
 [ "monet_mod_nme",	  "frozen"	  ]
+[ "monet_fcn_cnt",	  "frozen"	  ]
 [ "monet_fcn_pro",	  "frozen"	  ]
 [ "monet_fcn_nme",	  "frozen"	  ]
 [ "monet_fcn_dat",	  "frozen"	  ]
@@ -1079,9 +1312,12 @@ Start of MIL script.
 # BAT:			  type	  #
 # (str)			  (str)	  #
 #---------------------------------#
-[ "monet_atomtbl",	  "BAT"	  ]
-[ "monet_acctbl",	  "BAT"	  ]
-[ "monet_fcntbl",	  "BAT"	  ]
+[ "mapi_params",	  "BAT"	  ]
+[ "_params",		  "BAT"	  ]
+[ "SEEK_END",		  "int"	  ]
+[ "SEEK_CUR",		  "int"	  ]
+[ "SEEK_SET",		  "int"	  ]
+[ "EOF",		  "int"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -1098,6 +1334,15 @@ Start of MIL script.
 [ "STORE_COMPR",	  "int"	  ]
 [ "STORE_MMAP",		  "int"	  ]
 [ "STORE_MEM",		  "int"	  ]
+[ "LNG_MIN",		  "lng"	  ]
+[ "LNG_MAX",		  "lng"	  ]
+[ "INT_MIN",		  "int"	  ]
+[ "INT_MAX",		  "int"	  ]
+[ "SHT_MIN",		  "sht"	  ]
+[ "SHT_MAX",		  "sht"	  ]
+[ "CHR_MIN",		  "chr"	  ]
+[ "CHR_MAX",		  "chr"	  ]
+[ "RAND_MAX",		  "int"	  ]
 [ "TOK_OBJECT",		  "int"	  ]
 [ "TOK_ITERATOR",	  "int"	  ]
 [ "TOK_COMMAND",	  "int"	  ]
@@ -1119,6 +1364,7 @@ Start of MIL script.
 [ "monet_mod_atm",	  "BAT"	  ]
 [ "monet_mod_cnt",	  "BAT"	  ]
 [ "monet_mod_nme",	  "BAT"	  ]
+[ "monet_fcn_cnt",	  "BAT"	  ]
 [ "monet_fcn_pro",	  "BAT"	  ]
 [ "monet_fcn_nme",	  "BAT"	  ]
 [ "monet_fcn_dat",	  "BAT"	  ]
@@ -1129,37 +1375,40 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
-#-------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#-------------------------------------------------------------------------------------------------#
-[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  472,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  472,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  472,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  439,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  503,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  472,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  503,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1236,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  503,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  503,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  "oid",  "str",  9,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_24",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-#---------------------------------------------------------------------------------#
-# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#---------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------#
+# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#---------------------------------------------------------------------------------------------------------#
+[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 6,	  0	  ]
+[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_atomtbl",	  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_envirenment",	  "str",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  608,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  638,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  608,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  608,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  564,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  638,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  608,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  638,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1597,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  638,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  638,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_atm",	  "oid",  "str",  5,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "tmp_25",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_27",		  "str",  "oid",  638,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_28",		  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+#-----------------------------------------------------------------------------------------#
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#-----------------------------------------------------------------------------------------#
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -1189,78 +1438,93 @@ Start of MIL script.
 [ 23,	  0	  ]
 [ 24,	  0	  ]
 [ 25,	  0	  ]
+[ 26,	  0	  ]
+[ 27,	  0	  ]
+[ 28,	  0	  ]
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      4,         1,   running,         0, "listen(get_mapi_port(),5#"    ]
-#[    137,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff97720.
-unknown(1)#"                   ]
-#[    142,         2,   running,       141, "queue()#"                      ]
-[ 2 ]
+#[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
+unknown(0)#"                            ]
+#[      3,         2,   running,         0, "listen(get_mapi_port(),5)#"                            ]
+#[    135,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
+unknown(1)#"                            ]
+#[    136,         3,   running,       135, "queue()#"                            ]
+[ 3 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
-[ "adm",	  "Mon Jan 22 05:37:52 2001",	  ""				  ]
-[ "monet",	  "Mon Jan 22 05:37:59 2001",	  "clients()"			  ]
-[ "adm",	  "Mon Jan 22 05:37:52 2001",	  "listen(get_mapi_port(),5)"	  ]
+[ "adm",	  "Mon Jun 25 15:15:23 2001",	  ""				  ]
+[ "windhouw",	  "Mon Jun 25 15:15:31 2001",	  "clients()"			  ]
+[ "adm",	  "Mon Jun 25 15:15:23 2001",	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  5	  ]
-[ "user",	  1160	  ]
-[ "elapuser",	  70	  ]
-[ "system",	  15450	  ]
-[ "elapsystem",	  10	  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "17925804"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "17925804"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
+[ "elapsed",	  1	  ]
+[ "user",	  50	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  0	  ]
+[ "elapsystem",	  0	  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4720	  ]
-[ "minflt",	  169	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  7	  ]
+[ "majflt",	  34	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  1	  ]
-[ "nvcsw",	  21282	  ]
-[ "ninvcsw",	  113	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  16384		  ]
-[ "arena",	  1384432	  ]
-[ "ordblks",	  3387		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  25072		  ]
-[ "fsmblks",	  18128		  ]
-[ "uordblks",	  799528	  ]
-[ "fordblks",	  541064	  ]
+[ "memincr",	  0		  ]
+[ "arena",	  1089480	  ]
+[ "ordblks",	  398		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  826464	  ]
+[ "fordblks",	  263016	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1272,62 +1536,67 @@ unknown(1)#"                   ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Mon Jan 22 05:37:52 2001"	  ]
-[ 1,	  "Mon Jan 22 05:37:59 2001"	  ]
-[ 2,	  "Mon Jan 22 05:37:52 2001"	  ]
+[ 0,	  "Mon Jun 25 15:15:23 2001"	  ]
+[ 1,	  "Mon Jun 25 15:15:31 2001"	  ]
+[ 2,	  "Mon Jun 25 15:15:23 2001"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "adm"		  ]
-[ 1,	  "monet"	  ]
+[ 1,	  "windhouw"	  ]
 [ 2,	  "adm"		  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  7	  ]
-[ "user",	  1170	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  15450	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  50	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
-#-----------------------------------------------------------------------------------------#
-# BAT:		  env									  #
-# (str)		  (str)									  #
-#-----------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"								  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "17925804"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"									  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4720	  ]
-[ "minflt",	  169	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  7	  ]
+[ "majflt",	  34	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  1	  ]
-[ "nvcsw",	  21289	  ]
-[ "ninvcsw",	  121	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1384432	  ]
-[ "ordblks",	  3385		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  25048		  ]
-[ "fsmblks",	  18152		  ]
-[ "uordblks",	  798440	  ]
-[ "fordblks",	  542152	  ]
+[ "arena",	  1089480	  ]
+[ "ordblks",	  405		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  825384	  ]
+[ "fordblks",	  264096	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1337,22 +1606,20 @@ unknown(1)#"                   ]
 [ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL script.
-! Terminating connection
-! Connection broken
-#> Mtest (05:38:08):	Mtimeout -timeout 210 Mshutdown
-Shutdown of server in progress
-connection= medusa:26670
+
+# 15:15:34 >  
+# 15:15:34 >  Mtimeout -timeout 600 Mshutdown
+# 15:15:34 >  
+
+connection= landvast:53714
 template= shutdown;
 query= shutdown;
 Error text= !terminating connection
 
 Reply= 
 # shutdown finished
-#> Mtest (05:38:09):	sleep 9
 
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
+# 15:15:34 >  
+# 15:15:34 >  Done.
+# 15:15:34 >  
 
-#You are system administrator (adm)!

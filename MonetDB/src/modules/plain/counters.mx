@@ -2,44 +2,43 @@
 @a S. Manegold, P. Boncz
 @t Performance Counters
 @T
-This is a memory/cpu performance measurement tool for MIPS R10000 (IP27),
-Sun UltraSparc (sun4u), and Intel Pentium (i586), PentiumPro/PentiumII
-(i686) processors. It uses libperfex (IRIX) for R10000, libperfmon (Solaris,
-by Richard Enbody, http://www.cse.msu.edu/~enbody/perfmon.html), and
-libpperf (Linux, by M. Patrick Goda and Michael S. Warren,
-http://qso.lanl.gov/~mpg/pperf.html) for Pentiums. Module counters provides
-similar interface and facilities as Peter's R10000 perfex module, but it
-offers no multiplexing of several events; only two events can be monitored
-at a time. On non-Linux/Pentium, non-Solaris/UltraSparc, and non-IRIX/R10000
-systems, only the elapsed time in microseconds is measured.
+
+This is a memory/cpu performance measurement tool for 
+MIPS R10000/R12000 (IP27), 
+Sun UltraSparcI/II (sun4u), 
+Intel Pentium (i586/P5), 
+Intel PentiumPro/PentiumII/PentiumIII/Celeron (i686/P6), and 
+AMD Athlon (i686/K7) 
+processors.
+
+It uses 
+libperfex (IRIX) for R10000/R12000, 
+libperfmon (Solaris <= 7, by Richard Enbody, http://www.cse.msu.edu/~enbody/perfmon.html) respectively 
+libcpc (Solaris >= 8) for UltraSparcI/II, and 
+libpperf (Linux <= 2.2, by M. Patrick Goda and Michael S. Warren, http://qso.lanl.gov/~mpg/pperf.html) respectively
+libperfctr (Linux >= 2.4, by M. Pettersson, http://www.csd.uu.se/~mikpe/linux/perfctr/ for Pentiums & Athlons.
+
+Module counters provides similar interface and facilities as Peter's
+R10000 perfex module, but it offers no multiplexing of several events;
+only two events can be monitored at a time. 
+On non-Linux/x86, non-Solaris/UltraSparc, and non-IRIX/R1x000 systems,
+only the elapsed time in microseconds is measured.
 
 @+ Module Definition
 @m
 .MODULE counters;
 
-.ATOM fill32[28,4]; .END;
-.ATOM fill64[60,4]; .END;
-.ATOM fill128[124,4]; .END;
-.ATOM fill256[252,4]; .END;
-.ATOM fill512[508,4]; .END;
-.ATOM fill384[380,4]; .END;
-.ATOM fill640[636,4]; .END;
-.ATOM fill1024[1020,4]; .END;
-
 .ATOM counter[64,8]; 
 .COMP = compare_counter; 
 .END;
 
-.COMMAND create_counter(int event0, int event1) : counter = create_counter_number;
+.COMMAND start_count(int event0, int event1) : counter = start_count;
  "start counters for two events specified by number"
 
-.COMMAND create_counter(str event0, str event1) : counter = create_counter_name;
- "start counters for two events specified by name"
-
-.COMMAND get_counter(counter c) : counter = get_counter;
+.COMMAND stop_count(counter c) : counter = stop_count;
  "stop the counting and retrieve the results"
 
-.COMMAND read_counter(counter c) : BAT[str,lng] = read_counter;
+.COMMAND counter2bat(counter c) : BAT[str,lng] = counter2bat;
  "store the retrieved results in a BAT"
 
 .COMMAND show_native_events() : BAT[int,str] = show_native_events;
@@ -48,16 +47,91 @@ systems, only the elapsed time in microseconds is measured.
 .COMMAND show_unified_events() : BAT[int,str] = show_unified_events;
  "all unified event names"
 
-.COMMAND check_cpu() = check_cpu;
- "on Linux systems: check, whether CPU is P5, P6, or K7
+.COMMAND init_counters() = init_counters;
+ "initialize counters module
   (to be used in .LOAD sequence, only)"
 
 .LOAD
 
-check_cpu();
+init_counters();
 
 const native_events := show_native_events();
 const unified_events := show_unified_events();
+
+PROC event_number(int evt_num) : int := { return evt_num; }
+PROC event_number(str evt_nme) : int := {
+	if (native_events.reverse.exist(evt_nme)) {
+		return native_events.reverse.find(evt_nme);
+	} else if (unified_events.reverse.exist(evt_nme)) {
+		return unified_events.reverse.find(evt_nme);
+	} else {
+		return int(nil);
+	}
+}
+ADDHELP("event_number", "manegold", "Mar 16 2002",
+	"return the number of an event given by name",
+	"counters");
+
+PROC event_name(int evt_num) : str := {
+	if (native_events.exist(evt_num)) {
+		return native_events.find(evt_num);
+	} else {
+		return str(nil);
+	}
+}
+ADDHELP("event_name", "manegold", "Mar 16 2002",
+	"return the (native) name of an event given by number",
+	"counters");
+
+PROC start_count (int event0, str event1) : counter := {
+	return start_count(event0, event_number(event1));
+}
+ADDHELP("start_count", "manegold", "Mar 16 2002",
+	"start counters for two events, first specified by number, second specified by name",
+	"counters");
+
+PROC start_count (str event0, int event1) : counter := {
+	return start_count(event_number(event0), event1);
+}
+ADDHELP("start_count", "manegold", "Mar 16 2002",
+	"start counters for two events, first specified by name, second specified by number",
+	"counters");
+
+PROC start_count (str event0, str event1) : counter := {
+	return start_count(event_number(event0), event_number(event1));
+}
+ADDHELP("start_count", "manegold", "Mar 16 2002",
+	"start counters for two events specified by name",
+	"counters");
+
+PROC profile (str cmd, event0, event1) : counter := {
+	VAR cntr0, cntr1;
+	VAR e0 := str(event_number(event0));
+	VAR e1 := str(event_number(event1));
+	VAR task := "cntr0 := start_count("+e0+","+e1+"); "+cmd+" cntr1 := stop_count(cntr0);";
+	eval(task);
+	return cntr1;
+}
+ADDHELP("profile", "manegold", "Mar 16 2002",
+	"Count events event0 & event1 while executing cmd; return the results as counter.",
+	"counters");
+
+PROC counter2str(counter c) : str := {
+	var b := counter2bat(c);
+	if (b.count() < 8) {
+		return sprintf("%10lld us %10lld cy",
+				b.fetch(2),b.fetch(4));
+	} else {
+		return sprintf("%10lld us %10lld cy %10lld e%02d %10lld e%02d %10lld eX",
+				b.fetch(2),b.fetch(4),
+				b.fetch(5),event_number(b.reverse.fetch(5)),
+				b.fetch(6),event_number(b.reverse.fetch(6)),
+				b.fetch(7));
+	}
+}
+ADDHELP("counter2str", "manegold", "Mar 16 2002",
+	"cast counter to string.",
+	"counters");
 
 .END;
 
@@ -69,9 +143,11 @@ const unified_events := show_unified_events();
 
 typedef struct {
 	lng status;	/* counter status */
-	lng generation;	/* counter id (IRIX) */
+	lng generation;	/* IRIX           : counter id
+			   SunOS + Perfmon: file descriptor
+			   Linux + Perfctr: struct vperfctr* */
 	lng usec;	/* microseconds of elapsed time */
-	lng clocks;	/* elapsed clock ticks (Linux) */
+	lng clocks;	/* elapsed clock ticks */
 	lng event0;	/* event counters */
 	lng count0;
 	lng event1;
@@ -86,212 +162,294 @@ int NumEvents = 0, NoEvent = 0;
 
 #if defined(HWCOUNTERS)
 
+ #if defined(HW_SunOS)
+  #if   defined(HAVE_LIBPERFMON) /* libperfmon (on Solaris <= 7) */
+   #define LIB_SunOS(a,b) a
+  #elif defined(HAVE_LIBCPC)     /* libcpc     (on Solaris >= 8) */
+   #define LIB_SunOS(a,b) b
+  #endif
+ #endif
+
  typedef struct {
  	int id0;	/* event id for counter 0 */
  	int id1;	/* event id for counter 1 */
  	str unified;	/* unified event name */
  	str native;	/* native event name */
- #if ( defined(SOLARIS) && defined(CPU_sun4u) )
- 	int bits;	/* event code */
+ #if defined(HW_Linux)
+ 	int code;	/* event code */
+ 	int mask;	/* unit mask for "fine-tuning" of some events */
+ #endif
+ #if defined(HW_SunOS)
+  LIB_SunOS(
+   	int bits;	/* event code for perfmon on Solaris <= 7 */
+   ,	char *spec;	/* event spec for libcpc  on Solaris >= 8 */
+  )
  #endif
  } event_t;
 
  event_t NO_event[1] = { { 00 , 00 , (str) &chr_nil , (str) &chr_nil } };
  event_t *event = NO_event;
 
- #if ( defined(LINUX) && ( defined(CPU_i568) || defined(CPU_i686) ) )
+ #if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) ) )
 
-  #include <libpperf.h>
-  #define CPL 2
+  #if defined(HAVE_LIBPPERF)
+   #include <sys/utsname.h>
+   #include <libpperf.h>
+   /* count in user mode, only */
+   /* libpperf takes care of swapping bits for P6 & K7 */
+   #define CPL 2
+  #elif defined(HAVE_LIBPERFCTR)
+   #include <libperfctr.h>
+   struct perfctr_info Info;
+  #endif
 
   #define X_NUMEVENTS 0
   event_t *X_event=NO_event;
 
   /* P5 (i586) Pentium */
 
+   #if defined(HAVE_LIBPERFCTR)
+    /* sub-fields in the Control and Event Select Register (CESR)
+     *  CC0, CC1: CPL Level to Monitor, possibilities are
+     *	000 = Count Nothing
+     *	001 = Count Event while CPL = 0,1,2
+     *	010 = Count Event while CPL = 3
+     *	011 = Count Event while CPL = 0,1,2,3
+     *	100 = Count Nothing
+     *	101 = Count Clocks while CPL = 0,1,2
+     *	110 = Count Clocks while CPL = 3
+     *	111 = Count Clocks while CPL = 0,1,2,3 
+     *	Here we only use 000, 001, 010 and 011.
+     */  
+    typedef union {
+      unsigned int word;	/* to initialize in one assignment */
+      struct p5_cesr {
+  	unsigned int es0:6;	/* event select counter 0 */
+  	unsigned int cc0:3;	/* counter control 0 (see above) */
+  	unsigned int pc0:1;	/* pin control bit 0
+  				   0=event increment, 1=event overflow */
+  	unsigned int re0:6;	/* reserved */
+  	unsigned int es1:6;	/* event select counter 1 */
+  	unsigned int cc1:3;	/* counter control 1 (see cc0) */
+  	unsigned int pc1:1;	/* pin control bit 1 */
+  	unsigned int re1:6;	/* reserved */
+      } cesr;
+    } P5_cesr_t;
+    /* defaults:
+     * P5_cesr.cesr.cc0 = P5_cesr.cesr.cc1 = 2; (count in user mode, only)
+     */
+    P5_cesr_t P5_cesr = {(2<<6) | (2<<22)};
+   #endif
+
    #define P5_NUMEVENTS 40
    event_t P5_event[P5_NUMEVENTS+1] = {
-    {  0 ,  0 , (str) &chr_nil   , "data_read_hits" } ,
-    {  1 ,  1 , (str) &chr_nil   , "data_write_hits" } ,
-    {  2 ,  2 , "TLB_misses"     , "data_TLB_misses" } ,
-    {  3 ,  3 , (str) &chr_nil   , "data_read_misses" } ,
-    {  4 ,  4 , (str) &chr_nil   , "data_write_misses" } ,
-    {  5 ,  5 , (str) &chr_nil   , "writes_(hits)_to_M/E" } ,
-    {  6 ,  6 , (str) &chr_nil   , "data_cache_lines_written_back" } ,
-    {  7 ,  7 , (str) &chr_nil   , "external_snoops" } ,
-    {  8 ,  8 , (str) &chr_nil   , "data_cache_snoop_hits" } ,
-    {  9 ,  9 , (str) &chr_nil   , "memory_accesses_in_both_pipes" } ,
-    { 10 , 10 , (str) &chr_nil   , "bank_conflicts" } ,
-    { 11 , 11 , (str) &chr_nil   , "misaligned_data_memory_references" } ,
-    { 12 , 12 , (str) &chr_nil   , "code_reads" } ,
-    { 13 , 13 , (str) &chr_nil   , "code_TLB_misses" } ,
-    { 14 , 14 , (str) &chr_nil   , "code_cache_misses" } ,
-    { 15 , 15 , (str) &chr_nil   , "segment_register_loaded" } ,
-    { 16 , 16 , (str) &chr_nil   , "segment_descriptor_cache_accesses" } ,
-    { 17 , 17 , (str) &chr_nil   , "segment_descriptor_cache_hits" } ,
-    { 18 , 18 , (str) &chr_nil   , "branches" } ,
-    { 19 , 19 , (str) &chr_nil   , "BTB_hits" } ,
-    { 20 , 20 , (str) &chr_nil   , "taken_branches_or_BTB_hits" } ,
-    { 21 , 21 , (str) &chr_nil   , "pipeline_flushes" } ,
-    { 22 , 22 , (str) &chr_nil   , "instructions_executed_in_both_pipes" } ,
-    { 23 , 23 , (str) &chr_nil   , "instructions_executed_in_V-pipe" } ,
-    { 24 , 24 , (str) &chr_nil   , "clocks_while_bus_cycle_in_progress" } ,
-    { 25 , 25 , (str) &chr_nil   , "pipe_stalled_by_full_write_buffers" } ,
-    { 26 , 26 , (str) &chr_nil   , "pipe_stalled_by_waiting_for_data_reads" } ,
-    { 27 , 27 , (str) &chr_nil   , "pipe_stalled_by_writes_to_M/E" } ,
-    { 28 , 28 , (str) &chr_nil   , "locked_bus_cycles" } ,
-    { 29 , 29 , (str) &chr_nil   , "I/O_read_or_write_cycles" } ,
-    { 30 , 30 , (str) &chr_nil   , "non-cacheable_memory_references" } ,
-    { 31 , 31 , (str) &chr_nil   , "pipeline_stalled_by_AGI" } ,
-    { 32 , 32 , (str) &chr_nil   , "floating-point_operations" } ,
-    { 33 , 33 , (str) &chr_nil   , "breakpoint_matches_on_DR0" } ,
-    { 34 , 34 , (str) &chr_nil   , "breakpoint_matches_on_DR1" } ,
-    { 35 , 35 , (str) &chr_nil   , "breakpoint_matches_on_DR2" } ,
-    { 36 , 36 , (str) &chr_nil   , "breakpoint_matches_on_DR3" } ,
-    { 37 , 37 , (str) &chr_nil   , "hardware_interrupts" } ,
-    { 38 , 38 , (str) &chr_nil   , "data_reads_or_writes" } ,
-    { 39 , 39 , "L1_data_misses" , "data_read/write_misses" } ,
-    { 00 , 39 , (str) &chr_nil   , (str) &chr_nil } };
+    {  0 ,  0 , (str) &chr_nil   , "data_read_hits"                         , 0x00 , 0 } , /* P5_MEM_DATA_READ         , "mem_data_read"         ,  0 ,  0 , P5_DATA_READ                                   , */
+    {  1 ,  1 , (str) &chr_nil   , "data_write_hits"                        , 0x01 , 0 } , /* P5_MEM_DATA_WRITE        , "mem_data_write"        ,  1 ,  1 , P5_DATA_WRITE                                  , */
+    {  2 ,  2 , "TLB_misses"     , "data_TLB_misses"                        , 0x02 , 0 } , /* P5_TLB_MISS              , "tlb_miss"              ,  2 ,  2 , P5_DATA_TLB_MISS                               , */
+    {  3 ,  3 , (str) &chr_nil   , "data_read_misses"                       , 0x03 , 0 } , /* P5_MEM_DATA_RM           , "mem_data_rm"           ,  3 ,  3 , P5_DATA_READ_MISS                              , */
+    {  4 ,  4 , (str) &chr_nil   , "data_write_misses"                      , 0x04 , 0 } , /* P5_MEM_DATA_WM           , "mem_data_wm"           ,  4 ,  4 , P5_DATA_WRITE_MISS                             , */
+    {  5 ,  5 , (str) &chr_nil   , "writes_(hits)_to_M/E"                   , 0x05 , 0 } , /* P5_WRITE_HIT_ME          , "write_hit_me"          ,  5 ,  5 , P5_WRITE_HIT_TO_M_OR_E_STATE_LINES             , */
+    {  6 ,  6 , (str) &chr_nil   , "data_cache_lines_written_back"          , 0x06 , 0 } , /* P5_DATA_CACHE_WB         , "data_cache_wb"         ,  6 ,  6 , P5_DATA_CACHE_LINES_WRITTEN_BACK               , */
+    {  7 ,  7 , (str) &chr_nil   , "external_snoops"                        , 0x07 , 0 } , /* P5_EXT_SNOOPS            , "ext_snoops"            ,  7 ,  7 , P5_EXTERNAL_SNOOPS                             , */
+    {  8 ,  8 , (str) &chr_nil   , "data_cache_snoop_hits"                  , 0x08 , 0 } , /* P5_DATA_CACHE_SNOOP_HITS , "data_cache_snoop_hits" ,  8 ,  8 , P5_EXTERNAL_DATA_CACHE_SNOOP_HITS              , */
+    {  9 ,  9 , (str) &chr_nil   , "memory_accesses_in_both_pipes"          , 0x09 , 0 } , /* P5_MEM_ACCS_BOTH_PIPES   , "mem_accs_both_pipes"   ,  9 ,  9 , P5_MEMORY_ACCESSES_IN_BOTH_PIPES               , */
+    { 10 , 10 , (str) &chr_nil   , "bank_conflicts"                         , 0x0A , 0 } , /* P5_BANK_CONFLICTS        , "bank_conflicts"        , 10 , 10 , P5_BANK_CONFLICTS                              , */
+    { 11 , 11 , (str) &chr_nil   , "misaligned_data_memory_references"      , 0x0B , 0 } , /* P5_MISAL_MEM_REF         , "misal_mem_ref"         , 11 , 11 , P5_MISALIGNED_DATA_MEMORY_OR_IO_REFERENCES     , */
+    { 12 , 12 , (str) &chr_nil   , "code_reads"                             , 0x0C , 0 } , /* P5_CODE_READ             , "code_read"             , 12 , 12 , P5_CODE_READ                                   , */
+    { 13 , 13 , (str) &chr_nil   , "code_TLB_misses"                        , 0x0D , 0 } , /* P5_CODE_TLB_MISS         , "code_tlb_miss"         , 13 , 13 , P5_CODE_TLB_MISS                               , */
+    { 14 , 14 , (str) &chr_nil   , "code_cache_misses"                      , 0x0E , 0 } , /* P5_CODE_CACHE_MISS       , "code_cache_miss"       , 14 , 14 , P5_CODE_CACHE_MISS                             , */
+    { 15 , 15 , (str) &chr_nil   , "segment_register_loaded"                , 0x0F , 0 } , /* P5_SEG_REG_LOAD          , "seg_reg_load"          , 15 , 15 , P5_ANY_SEGMENT_REGISTER_LOADED                 , */
+    { 16 , 16 , (str) &chr_nil   , "segment_descriptor_cache_accesses"      , 0x10 , 0 } , /* P5_SEG_DESC_CACHE_ACCS   , "seg_desc_cache_accs"   , 16 , -1 , 0                                              , */
+    { 17 , 17 , (str) &chr_nil   , "segment_descriptor_cache_hits"          , 0x11 , 0 } , /* P5_SEG_DESC_CACHE_HIT    , "seg_desc_cache_hit"    , 17 , -1 , 0                                              , */
+    { 18 , 18 , (str) &chr_nil   , "branches"                               , 0x12 , 0 } , /* P5_BRANCHES              , "branches"              , 18 , 16 , P5_BRANCHES                                    , */
+    { 19 , 19 , (str) &chr_nil   , "BTB_hits"                               , 0x13 , 0 } , /* P5_BTB_HITS              , "btb_hits"              , 19 , 17 , P5_BTB_HITS                                    , */
+    { 20 , 20 , (str) &chr_nil   , "taken_branches_or_BTB_hits"             , 0x14 , 0 } , /* P5_BRANCH_OR_BTB_HIT     , "branch_or_btb_hit"     , 20 , 18 , P5_TAKEN_BRANCH_OR_BTB_HIT                     , */
+    { 21 , 21 , (str) &chr_nil   , "pipeline_flushes"                       , 0x15 , 0 } , /* P5_PIPELINE_FLUSH        , "pipeline_flush"        , 21 , 19 , P5_PIPELINE_FLUSHES                            , */
+    { 22 , 22 , (str) &chr_nil   , "instructions_executed_in_both_pipes"    , 0x16 , 0 } , /* P5_INS_EXE_B_PIPES       , "ins_exe_b_pipes"       , 22 , 20 , P5_INSTRUCTIONS_EXECUTED                       , */
+    { 23 , 23 , (str) &chr_nil   , "instructions_executed_in_V-pipe"        , 0x17 , 0 } , /* P5_INS_EXE_V_PIPE        , "ins_exe_v_pipe"        , 23 , 21 , P5_INSTRUCTIONS_EXECUTED_IN_V_PIPE             , */
+    { 24 , 24 , (str) &chr_nil   , "clocks_while_bus_cycle_in_progress"     , 0x18 , 0 } , /* P5_CLKS_BUS_CYCLE        , "clks_bus_cycle"        , 24 , 22 , P5_BUS_CYCLE_DURATION                          , */
+    { 25 , 25 , (str) &chr_nil   , "pipe_stalled_by_full_write_buffers"     , 0x19 , 0 } , /* P5_PIPE_STL_FWB          , "pipe_stl_fwb"          , 25 , 23 , P5_WRITE_BUFFER_FULL_STALL_DURATION            , */
+    { 26 , 26 , (str) &chr_nil   , "pipe_stalled_by_waiting_for_data_reads" , 0x1A , 0 } , /* P5_PIPE_STL_WDR          , "pipe_stl_wdr"          , 26 , 24 , P5_WAITING_FOR_DATA_MEMORY_READ_STALL_DURATION , */
+    { 27 , 27 , (str) &chr_nil   , "pipe_stalled_by_writes_to_M/E"          , 0x1B , 0 } , /* P5_PIPE_STL_WME          , "pipe_stl_wme"          , 27 , 25 , P5_STALL_ON_WRITE_TO_AN_E_OR_M_STATE_LINE      , */
+    { 28 , 28 , (str) &chr_nil   , "locked_bus_cycles"                      , 0x1C , 0 } , /* P5_LOCKED_BUS            , "locked_bus"            , 28 , 26 , P5_LOCKED_BUS_CYCLE                            , */
+    { 29 , 29 , (str) &chr_nil   , "I/O_read_or_write_cycles"               , 0x1D , 0 } , /* P5_IO_READ_WRITE         , "io_read_write"         , 29 , 27 , P5_IO_READ_OR_WRITE_CYCLE                      , */
+    { 30 , 30 , (str) &chr_nil   , "non-cacheable_memory_references"        , 0x1E , 0 } , /* P5_NON_CACHE_MEM_REF     , "non-cache_mem_ref"     , 30 , 28 , P5_NONCACHEABLE_MEMORY_READS                   , */
+    { 31 , 31 , (str) &chr_nil   , "pipeline_stalled_by_AGI"                , 0x1F , 0 } , /* P5_PIPE_STL_AGI          , "pipe_stl_agi"          , 31 , 29 , P5_PIPELINE_AGI_STALLS                         , */
+    { 32 , 32 , (str) &chr_nil   , "floating-point_operations"              , 0x22 , 0 } , /* P5_FLOPS                 , "flops"                 , 32 , 30 , P5_FLOPS                                       , */
+    { 33 , 33 , (str) &chr_nil   , "breakpoint_matches_on_DR0"              , 0x23 , 0 } , /* P5_BRK_DR0               , "brk_dr0"               , 33 , 31 , P5_BREAKPOINT_MATCH_ON_DR0_REGISTER            , */
+    { 34 , 34 , (str) &chr_nil   , "breakpoint_matches_on_DR1"              , 0x24 , 0 } , /* P5_BRK_DR1               , "brk_dr1"               , 34 , 32 , P5_BREAKPOINT_MATCH_ON_DR1_REGISTER            , */
+    { 35 , 35 , (str) &chr_nil   , "breakpoint_matches_on_DR2"              , 0x25 , 0 } , /* P5_BRK_DR2               , "brk_dr2"               , 35 , 33 , P5_BREAKPOINT_MATCH_ON_DR2_REGISTER            , */
+    { 36 , 36 , (str) &chr_nil   , "breakpoint_matches_on_DR3"              , 0x26 , 0 } , /* P5_BRK_DR3               , "brk_dr3"               , 36 , 34 , P5_BREAKPOINT_MATCH_ON_DR3_REGISTER            , */
+    { 37 , 37 , (str) &chr_nil   , "hardware_interrupts"                    , 0x27 , 0 } , /* P5_HDW_INT               , "hdw_int"               , 37 , 35 , P5_HARDWARE_INTERRUPTS                         , */
+    { 38 , 38 , (str) &chr_nil   , "data_reads_or_writes"                   , 0x28 , 0 } , /* P5_MEM_READ_WRITE_HIT    , "mem_read_write_hit"    , 38 , 36 , P5_DATA_READ_OR_WRITE                          , */
+    { 39 , 39 , "L1_data_misses" , "data_read/write_misses"                 , 0x29 , 0 } , /* P5_MEM_READ_WRITE_MISS   , "mem_read_write_miss"   , 39 , 37 , P5_DATA_READ_MISS_OR_WRITE_MISS                , */
+    { 22 , 22 , (str) &chr_nil   , (str) &chr_nil                           , 0x16 , 0 } };
 
   /* P6 (i686) PentiumPro/PentiumII/PentiumIII/Celeron */
 
+   #if defined(HAVE_LIBPERFCTR)
+    typedef union {
+      unsigned int word;	/* to initialize in one assignment */
+      struct p6_k7_cesr {
+  	unsigned int evsel:8;	/* event select */
+  	unsigned int umask:8;	/* further qualifies event (MESI) */
+  	unsigned int usr:1;	/* count in user mode (CPL=1,2,3) */
+  	unsigned int os:1;	/* count in os mode (CPL=0) */
+  	unsigned int e:1;	/* edge detect */
+  	unsigned int pc:1;	/* pin control */
+  	unsigned int aint:1;   	/* local APIC interrupt enable on overflow */
+  	unsigned int res:1;	/* reserved */
+  	unsigned int en:1;	/* enable counters (P6: sel0 only!) */
+  	unsigned int inv:1;	/* invert counter mask */
+  	unsigned int cmask:8;	/* if!0, compare with events */
+      } cesr;
+    } P6_K7_cesr_t;
+    /* defaults:
+     * P6_K7_cesr0.cesr.usr = P6_K7_cesr1.cesr.usr = 1; (count in user mode, only)
+     * P6_K7_cesr0.cesr.en  = P6_K7_cesr1.cesr.en  = 1;
+     */
+    P6_K7_cesr_t P6_K7_cesr0 = {((1<<16) | (1<<22))}, P6_K7_cesr1 = {((1<<16) | (1<<22))};
+   #endif
+
    #define P6_NUMEVENTS 68
    event_t P6_event[P6_NUMEVENTS+1] = {
-    {  0 ,  0 , (str) &chr_nil   , "all_memory_references,_cachable_and_non" } ,
-    {  1 ,  1 , "L1_data_misses" , "total_lines_allocated_in_the_DCU" } ,
-    {  2 ,  2 , (str) &chr_nil   , "number_of_M_state_lines_allocated_in_DCU" } ,
-    {  3 ,  3 , (str) &chr_nil   , "number_of_M_lines_evicted_from_the_DCU" } ,
-    {  4 ,  4 , (str) &chr_nil   , "number_of_cycles_while_DCU_miss_outstanding" } ,
-    {  5 ,  5 , (str) &chr_nil   , "number_of_non/cachable_instruction_fetches" } ,
-    {  6 ,  6 , (str) &chr_nil   , "number_of_instruction_fetch_misses" } ,
-    {  7 ,  7 , (str) &chr_nil   , "number_of_ITLB_misses" } ,
-    {  8 ,  8 , (str) &chr_nil   , "cycles_instruction_fetch_pipe_is_stalled" } ,
-    {  9 ,  9 , (str) &chr_nil   , "cycles_instruction_length_decoder_is_stalled" } ,
-    { 10 , 10 , (str) &chr_nil   , "number_of_L2_instruction_fetches" } ,
-    { 11 , 11 , (str) &chr_nil   , "number_of_L2_data_loads" } ,
-    { 12 , 12 , (str) &chr_nil   , "number_of_L2_data_stores" } ,
-    { 13 , 13 , "L2_data_misses" , "number_of_allocated_lines_in_L2" } ,
-    { 14 , 14 , (str) &chr_nil   , "number_of_recovered_lines_from_L2" } ,
-    { 15 , 15 , (str) &chr_nil   , "number_of_modified_lines_allocated_in_L2" } ,
-    { 16 , 16 , (str) &chr_nil   , "number_of_modified_lines_removed_from_L2" } ,
-    { 17 , 17 , (str) &chr_nil   , "number_of_L2_requests" } ,
-    { 18 , 18 , (str) &chr_nil   , "number_of_L2_address_strobes" } ,
-    { 19 , 19 , (str) &chr_nil   , "number_of_cycles_data_bus_was_busy" } ,
-    { 20 , 20 , (str) &chr_nil   , "cycles_data_bus_was_busy_in_xfer_from_L2_to_CPU" } ,
-    { 21 , 21 , (str) &chr_nil   , "number_of_clocks_DRDY_is_asserted" } ,
-    { 22 , 22 , (str) &chr_nil   , "number_of_clocks_LOCK_is_asserted" } ,
-    { 23 , 23 , (str) &chr_nil   , "number_of_outstanding_bus_requests" } ,
-    { 24 , 24 , (str) &chr_nil   , "number_of_burst_read_transactions" } ,
-    { 25 , 25 , (str) &chr_nil   , "number_of_read_for_ownership_transactions" } ,
-    { 26 , 26 , (str) &chr_nil   , "number_of_write_back_transactions" } ,
-    { 27 , 27 , (str) &chr_nil   , "number_of_instruction_fetch_transactions" } ,
-    { 28 , 28 , (str) &chr_nil   , "number_of_invalidate_transactions" } ,
-    { 29 , 29 , (str) &chr_nil   , "number_of_partial_write_transactions" } ,
-    { 30 , 30 , (str) &chr_nil   , "number_of_partial_transactions" } ,
-    { 31 , 31 , (str) &chr_nil   , "number_of_I/O_transactions" } ,
-    { 32 , 32 , (str) &chr_nil   , "number_of_deferred_transactions" } ,
-    { 33 , 33 , (str) &chr_nil   , "number_of_burst_transactions" } ,
-    { 34 , 34 , (str) &chr_nil   , "number_of_all_transactions" } ,
-    { 35 , 35 , (str) &chr_nil   , "number_of_memory_transactions" } ,
-    { 36 , 36 , (str) &chr_nil   , "bus_cycles_this_processor_is_receiving_data" } ,
-    { 37 , 37 , (str) &chr_nil   , "bus_cycles_this_processor_is_driving_BNR_pin" } ,
-    { 38 , 38 , (str) &chr_nil   , "bus_cycles_this_processor_is_driving_HIT_pin" } ,
-    { 39 , 39 , (str) &chr_nil   , "bus_cycles_this_processor_is_driving_HITM_pin" } ,
-    { 40 , 40 , (str) &chr_nil   , "cycles_during_bus_snoop_stall" } ,
-    { 41 , -1 , (str) &chr_nil   , "number_of_computational_FP_operations_retired" } ,
-    { 42 , -1 , (str) &chr_nil   , "number_of_computational_FP_operations_executed" } ,
-    { -1 , 43 , (str) &chr_nil   , "number_of_FP_execptions_handled_by_microcode" } ,
-    { -1 , 44 , (str) &chr_nil   , "number_of_multiplies" } ,
-    { -1 , 45 , (str) &chr_nil   , "number_of_divides" } ,
-    { 46 , -1 , (str) &chr_nil   , "cycles_divider_is_busy" } ,
-    { 47 , 47 , (str) &chr_nil   , "number_of_store_buffer_blocks" } ,
-    { 48 , 48 , (str) &chr_nil   , "number_of_store_buffer_drain_cycles" } ,
-    { 49 , 49 , (str) &chr_nil   , "number_of_misaligned_data_memory_references" } ,
-    { 50 , 50 , (str) &chr_nil   , "number_of_instructions_retired" } ,
-    { 51 , 51 , (str) &chr_nil   , "number_of_UOPs_retired" } ,
-    { 52 , 52 , (str) &chr_nil   , "number_of_instructions_decoded" } ,
-    { 53 , 53 , (str) &chr_nil   , "number_of_hardware_interrupts_received" } ,
-    { 54 , 54 , (str) &chr_nil   , "cycles_interrupts_are_disabled" } ,
-    { 55 , 55 , (str) &chr_nil   , "cycles_interrupts_are_disabled_with_pending_interrupts" } ,
-    { 56 , 56 , (str) &chr_nil   , "number_of_branch_instructions_retired" } ,
-    { 57 , 57 , (str) &chr_nil   , "number_of_mispredicted_bracnhes_retired" } ,
-    { 58 , 58 , (str) &chr_nil   , "number_of_taken_branches_retired" } ,
-    { 59 , 59 , (str) &chr_nil   , "number_of_taken_mispredictions_branches_retired" } ,
-    { 60 , 60 , (str) &chr_nil   , "number_of_branch_instructions_decoded" } ,
-    { 61 , 61 , (str) &chr_nil   , "number_of_branches_that_miss_the_BTB" } ,
-    { 62 , 62 , (str) &chr_nil   , "number_of_bogus_branches" } ,
-    { 63 , 63 , (str) &chr_nil   , "number_of_times_BACLEAR_is_asserted" } ,
-    { 64 , 64 , (str) &chr_nil   , "cycles_during_resource_related_stalls" } ,
-    { 65 , 65 , (str) &chr_nil   , "cycles_or_events_for_partial_stalls" } ,
-    { 66 , 66 , (str) &chr_nil   , "number_of_segment_register_loads" } ,
-    { 67 , 67 , "cycles"         , "clocks_processor_is_not_halted" } ,
-    { 00 , 67 , (str) &chr_nil   , (str) &chr_nil } };
+    {  0 ,  0 , (str) &chr_nil   , "all_memory_references,_cachable_and_non"                , 0x43 , 0   } , /* P6_DATA_MEM_REFS                 , "data_mem_refs"                 , P6_DATA_MEM_REFS                 , */
+    {  1 ,  1 , "L1_data_misses" , "total_lines_allocated_in_the_DCU"                       , 0x45 , 0   } , /* P6_DCU_LINES_IN                  , "dcu_lines_in"                  , P6_DCU_LINES_IN                  , */
+    {  2 ,  2 , (str) &chr_nil   , "number_of_M_state_lines_allocated_in_DCU"               , 0x46 , 0   } , /* P6_DCU_M_LINES_IN                , "dcu_m_lines_in"                , P6_DCU_M_LINES_IN                , */
+    {  3 ,  3 , (str) &chr_nil   , "number_of_M_lines_evicted_from_the_DCU"                 , 0x47 , 0   } , /* P6_DCU_M_LINES_OUT               , "dcu_m_lines_out"               , P6_DCU_M_LINES_OUT               , */
+    {  4 ,  4 , (str) &chr_nil   , "number_of_cycles_while_DCU_miss_outstanding"            , 0x48 , 0   } , /* P6_DCU_MISS_OUTSTANDING          , "dcu_miss_outstanding"          , P6_DCU_MISS_OUTSTANDING          , */
+    {  5 ,  5 , (str) &chr_nil   , "number_of_non/cachable_instruction_fetches"             , 0x80 , 0   } , /* P6_IFU_IFETCH                    , "ifu_ifetch"                    , P6_IFU_FETCH                     , */
+    {  6 ,  6 , (str) &chr_nil   , "number_of_instruction_fetch_misses"                     , 0x81 , 0   } , /* P6_IFU_IFETCH_MISS               , "ifu_ifetch_miss"               , P6_IFU_FETCH_MISS                , */
+    {  7 ,  7 , (str) &chr_nil   , "number_of_ITLB_misses"                                  , 0x85 , 0   } , /* P6_ITLB_MISS                     , "itlb_miss"                     , P6_ITLB_MISS                     , */
+    {  8 ,  8 , (str) &chr_nil   , "cycles_instruction_fetch_pipe_is_stalled"               , 0x86 , 0   } , /* P6_IFU_MEM_STALL                 , "ifu_mem_stall"                 , P6_IFU_MEM_STALL                 , */
+    {  9 ,  9 , (str) &chr_nil   , "cycles_instruction_length_decoder_is_stalled"           , 0x87 , 0   } , /* P6_ILD_STALL                     , "ild_stall"                     , P6_ILD_STALL                     , */
+    { 10 , 10 , (str) &chr_nil   , "number_of_L2_instruction_fetches"                       , 0x28 , 0xF } , /* P6_L2_IFETCH                     , "l2_ifetch"                     , P6_L2_IFETCH                     , */
+    { 11 , 11 , (str) &chr_nil   , "number_of_L2_data_loads"                                , 0x29 , 0xF } , /* P6_L2_LD                         , "l2_ld"                         , P6_L2_LD                         , */
+    { 12 , 12 , (str) &chr_nil   , "number_of_L2_data_stores"                               , 0x2a , 0xF } , /* P6_L2_ST                         , "l2_st"                         , P6_L2_ST                         , */
+    { 13 , 13 , "L2_data_misses" , "number_of_allocated_lines_in_L2"                        , 0x24 , 0   } , /* P6_L2_LINES_IN                   , "l2_lines_in"                   , P6_L2_LINES_IN                   , */
+    { 14 , 14 , (str) &chr_nil   , "number_of_recovered_lines_from_L2"                      , 0x26 , 0   } , /* P6_L2_LINES_OUT                  , "l2_lines_out"                  , P6_L2_LINES_OUT                  , */
+    { 15 , 15 , (str) &chr_nil   , "number_of_modified_lines_allocated_in_L2"               , 0x25 , 0   } , /* P6_L2_M_LINES_INM                , "l2_m_lines_inm"                , P6_L2_M_LINES_INM                , */
+    { 16 , 16 , (str) &chr_nil   , "number_of_modified_lines_removed_from_L2"               , 0x27 , 0   } , /* P6_L2_M_LINES_OUTM               , "l2_m_lines_outm"               , P6_L2_M_LINES_OUTM               , */
+    { 17 , 17 , (str) &chr_nil   , "number_of_L2_requests"                                  , 0x2e , 0xF } , /* P6_L2_RQSTS                      , "l2_rqsts"                      , P6_L2_RQSTS                      , */
+    { 18 , 18 , (str) &chr_nil   , "number_of_L2_address_strobes"                           , 0x21 , 0   } , /* P6_L2_ADS                        , "l2_ads"                        , P6_L2_ADS                        , */
+    { 19 , 19 , (str) &chr_nil   , "number_of_cycles_data_bus_was_busy"                     , 0x22 , 0   } , /* P6_L2_DBUS_BUSY                  , "l2_dbus_busy"                  , P6_L2_DBUS_BUSY                  , */
+    { 20 , 20 , (str) &chr_nil   , "cycles_data_bus_was_busy_in_xfer_from_L2_to_CPU"        , 0x23 , 0   } , /* P6_L2_DMUS_BUSY_RD               , "l2_dmus_busy_rd"               , P6_L2_DBUS_BUSY_RD               , */
+    { 21 , 21 , (str) &chr_nil   , "number_of_clocks_DRDY_is_asserted"                      , 0x62 , 0   } , /* P6_BUS_DRDY_CLOCKS               , "bus_drdy_clocks"               , P6_BUS_DRDY_CLOCKS               , */
+    { 22 , 22 , (str) &chr_nil   , "number_of_clocks_LOCK_is_asserted"                      , 0x63 , 0   } , /* P6_BUS_LOCK_CLOCKS               , "bus_lock_clocks"               , P6_BUS_LOCK_CLOCKS               , */
+    { 23 , 23 , (str) &chr_nil   , "number_of_outstanding_bus_requests"                     , 0x60 , 0   } , /* P6_BUS_REQ_OUTSTANDING           , "bus_req_outstanding"           , P6_BUS_REQ_OUTSTANDING           , */
+    { 24 , 24 , (str) &chr_nil   , "number_of_burst_read_transactions"                      , 0x65 , 0   } , /* P6_BUS_TRAN_BRD                  , "bus_tran_brd"                  , P6_BUS_TRAN_BRD                  , */
+    { 25 , 25 , (str) &chr_nil   , "number_of_read_for_ownership_transactions"              , 0x66 , 0   } , /* P6_BUS_TRAN_RFO                  , "bus_tran_rfo"                  , P6_BUS_TRAN_RFO                  , */
+    { 26 , 26 , (str) &chr_nil   , "number_of_write_back_transactions"                      , 0x67 , 0   } , /* P6_BUS_TRANS_WB                  , "bus_trans_wb"                  , P6_BUS_TRANS_WB                  , */
+    { 27 , 27 , (str) &chr_nil   , "number_of_instruction_fetch_transactions"               , 0x68 , 0   } , /* P6_BUS_TRAN_IFETCH               , "bus_tran_ifetch"               , P6_BUS_TRAN_IFETCH               , */
+    { 28 , 28 , (str) &chr_nil   , "number_of_invalidate_transactions"                      , 0x69 , 0   } , /* P6_BUS_TRAN_INVAL                , "bus_tran_inval"                , P6_BUS_TRAN_INVAL                , */
+    { 29 , 29 , (str) &chr_nil   , "number_of_partial_write_transactions"                   , 0x6a , 0   } , /* P6_BUS_TRAN_PWR                  , "bus_tran_pwr"                  , P6_BUS_TRAN_PWR                  , */
+    { 30 , 30 , (str) &chr_nil   , "number_of_partial_transactions"                         , 0x6b , 0   } , /* P6_BUS_TRANS_P                   , "bus_trans_p"                   , P6_BUS_TRANS_P                   , */
+    { 31 , 31 , (str) &chr_nil   , "number_of_I/O_transactions"                             , 0x6c , 0   } , /* P6_BUS_TRANS_IO                  , "bus_trans_io"                  , P6_BUS_TRANS_IO                  , */
+    { 32 , 32 , (str) &chr_nil   , "number_of_deferred_transactions"                        , 0x6d , 0   } , /* P6_BUS_TRANS_DEF                 , "bus_trans_def"                 , P6_BUS_TRAN_DEF                  , */
+    { 33 , 33 , (str) &chr_nil   , "number_of_burst_transactions"                           , 0x6e , 0   } , /* P6_BUS_TRAN_BURST                , "bus_tran_burst"                , P6_BUS_TRAN_BURST                , */
+    { 34 , 34 , (str) &chr_nil   , "number_of_all_transactions"                             , 0x70 , 0   } , /* P6_BUS_TRAN_ANY                  , "bus_tran_any"                  , P6_BUS_TRAN_ANY                  , */
+    { 35 , 35 , (str) &chr_nil   , "number_of_memory_transactions"                          , 0x6f , 0   } , /* P6_BUS_TRAN_MEM                  , "bus_tran_mem"                  , P6_BUS_TRAN_MEM                  , */
+    { 36 , 36 , (str) &chr_nil   , "bus_cycles_this_processor_is_receiving_data"            , 0x64 , 0   } , /* P6_BUS_DATA_RCV                  , "bus_data_rcv"                  , P6_BUS_DATA_RCV                  , */
+    { 37 , 37 , (str) &chr_nil   , "bus_cycles_this_processor_is_driving_BNR_pin"           , 0x61 , 0   } , /* P6_BUS_BNR_DRV                   , "bus_bnr_drv"                   , P6_BUS_BNR_DRV                   , */
+    { 38 , 38 , (str) &chr_nil   , "bus_cycles_this_processor_is_driving_HIT_pin"           , 0x7a , 0   } , /* P6_BUS_HIT_DRV                   , "bus_hit_drv"                   , P6_BUS_HIT_DRV                   , */
+    { 39 , 39 , (str) &chr_nil   , "bus_cycles_this_processor_is_driving_HITM_pin"          , 0x7b , 0   } , /* P6_BUS_HITM_DRV                  , "bus_hitm_drv"                  , P6_BUS_HITM_DRV                  , */
+    { 40 , 40 , (str) &chr_nil   , "cycles_during_bus_snoop_stall"                          , 0x7e , 0   } , /* P6_BUS_SNOOP_STALL               , "bus_snoop_stall"               , P6_BUS_SNOOP_STALL               , */
+    { 41 , -1 , (str) &chr_nil   , "number_of_computational_FP_operations_retired"          , 0xc1 , 0   } , /* P6_COMP_FLOP_RET                 , "comp_flop_ret"                 , P6_FLOPS                         , */
+    { 42 , -1 , (str) &chr_nil   , "number_of_computational_FP_operations_executed"         , 0x10 , 0   } , /* P6_FLOPS                         , "flops"                         , P6_FP_COMP_OPS_EXE               , */
+    { -1 , 43 , (str) &chr_nil   , "number_of_FP_execptions_handled_by_microcode"           , 0x11 , 0   } , /* P6_FP_ASSIST                     , "fp_assist"                     , P6_FP_ASSIST                     , */
+    { -1 , 44 , (str) &chr_nil   , "number_of_multiplies"                                   , 0x12 , 0   } , /* P6_MUL                           , "mul"                           , P6_MUL                           , */
+    { -1 , 45 , (str) &chr_nil   , "number_of_divides"                                      , 0x13 , 0   } , /* P6_DIV                           , "div"                           , P6_DIV                           , */
+    { 46 , -1 , (str) &chr_nil   , "cycles_divider_is_busy"                                 , 0x14 , 0   } , /* P6_CYCLES_DIV_BUSY               , "cycles_div_busy"               , P6_CYCLES_DIV_BUSY               , */
+    { 47 , 47 , (str) &chr_nil   , "number_of_store_buffer_blocks"                          , 0x03 , 0   } , /* P6_LD_BLOCKS                     , "ld_blocks"                     , P6_LD_BLOCKS                     , */
+    { 48 , 48 , (str) &chr_nil   , "number_of_store_buffer_drain_cycles"                    , 0x04 , 0   } , /* P6_SB_DRAINS                     , "sb_drains"                     , P6_SB_DRAINS                     , */
+    { 49 , 49 , (str) &chr_nil   , "number_of_misaligned_data_memory_references"            , 0x05 , 0   } , /* P6_MISALIGN_MEM_REF              , "misalign_mem_ref"              , P6_MISALIGN_MEM_REF              , */
+    { 50 , 50 , (str) &chr_nil   , "number_of_instructions_retired"                         , 0xc0 , 0   } , /* P6_INST_RETIRED                  , "inst_retired"                  , P6_INST_RETIRED                  , */
+    { 51 , 51 , (str) &chr_nil   , "number_of_UOPs_retired"                                 , 0xc2 , 0   } , /* P6_UOPS_RETIRED                  , "uops_retired"                  , P6_UOPS_RETIRED                  , */
+    { 52 , 52 , (str) &chr_nil   , "number_of_instructions_decoded"                         , 0xd0 , 0   } , /* P6_INST_DECODER                  , "inst_decoder"                  , P6_INST_DECODED                  , */
+    { 53 , 53 , (str) &chr_nil   , "number_of_hardware_interrupts_received"                 , 0xc8 , 0   } , /* P6_HW_INT_RX                     , "hw_int_rx"                     , P6_HW_INT_RX                     , */
+    { 54 , 54 , (str) &chr_nil   , "cycles_interrupts_are_disabled"                         , 0xc6 , 0   } , /* P6_CYCLES_INT_MASKED             , "cycles_int_masked"             , P6_CYCLES_INT_MASKED             , */
+    { 55 , 55 , (str) &chr_nil   , "cycles_interrupts_are_disabled_with_pending_interrupts" , 0xc7 , 0   } , /* P6_CYCLES_INT_PENDING_AND_MASKED , "cycles_int_pending_and_masked" , P6_CYCLES_INT_PENDING_AND_MASKED , */
+    { 56 , 56 , (str) &chr_nil   , "number_of_branch_instructions_retired"                  , 0xc4 , 0   } , /* P6_BR_INST_RETIRED               , "br_inst_retired"               , P6_BR_INST_RETIRED               , */
+    { 57 , 57 , (str) &chr_nil   , "number_of_mispredicted_bracnhes_retired"                , 0xc5 , 0   } , /* P6_BR_MISS_PRED_RETIRED          , "br_miss_pred_retired"          , P6_BR_MISS_PRED_RETIRED          , */
+    { 58 , 58 , (str) &chr_nil   , "number_of_taken_branches_retired"                       , 0xc9 , 0   } , /* P6_BR_TAKEN_RETIRED              , "br_taken_retired"              , P6_BR_TAKEN_RETIRED              , */
+    { 59 , 59 , (str) &chr_nil   , "number_of_taken_mispredictions_branches_retired"        , 0xca , 0   } , /* P6_BR_MISS_PRED_TAKEN_RET        , "br_miss_pred_taken_ret"        , P6_BR_MISS_PRED_TAKEN_RET        , */
+    { 60 , 60 , (str) &chr_nil   , "number_of_branch_instructions_decoded"                  , 0xe0 , 0   } , /* P6_BR_INST_DECODED               , "br_inst_decoded"               , P6_BR_INST_DECODED               , */
+    { 61 , 61 , (str) &chr_nil   , "number_of_branches_that_miss_the_BTB"                   , 0xe2 , 0   } , /* P6_BTB_MISSES                    , "btb_misses"                    , P6_BTB_MISSES                    , */
+    { 62 , 62 , (str) &chr_nil   , "number_of_bogus_branches"                               , 0xe4 , 0   } , /* P6_BR_BOGUS                      , "br_bogus"                      , P6_BR_BOGUS                      , */
+    { 63 , 63 , (str) &chr_nil   , "number_of_times_BACLEAR_is_asserted"                    , 0xe6 , 0   } , /* P6_BACLEARS                      , "baclears"                      , P6_BACLEARS                      , */
+    { 64 , 64 , (str) &chr_nil   , "cycles_during_resource_related_stalls"                  , 0xa2 , 0   } , /* P6_RESOURCE_STALLS               , "resource_stalls"               , P6_RESOURCE_STALLS               , */
+    { 65 , 65 , (str) &chr_nil   , "cycles_or_events_for_partial_stalls"                    , 0xd2 , 0   } , /* P6_PARTIAL_RAT_STALLS            , "partial_rat_stalls"            , P6_PARTIAL_RAT_STALLS            , */
+    { 66 , 66 , (str) &chr_nil   , "number_of_segment_register_loads"                       , 0x06 , 0   } , /* P6_SEGMENT_REG_LOADS             , "segment_reg_loads"             , P6_SEGMENT_REG_LOADS             , */
+    { 67 , 67 , "cycles"         , "clocks_processor_is_not_halted"                         , 0x79 , 0   } , /* P6_CPU_CLK_UNHALTED              , "cpu_clk_unhalted"              , P6_CPU_CLK_UNHALTED              , */
+    { 67 , 67 , (str) &chr_nil   , (str) &chr_nil                                           , 0x79 , 0   } };
 
   /* K7 (i686) Athlon */
 
-   #define K7_NUMEVENTS 55
+   #define K7_NUMEVENTS 57
    event_t K7_event[K7_NUMEVENTS+1] = {
-    {  0 ,  0 , (str) &chr_nil   , "data_mem_refs" } ,
-    {  1 ,  1 , (str) &chr_nil   , "dcu_lines_in" } ,
-    {  2 ,  2 , "L1_data_misses" , "L1_misses" } ,
-    {  3 ,  3 , "L2_data_misses" , "L2_misses" } ,
-    {  4 ,  4 , (str) &chr_nil   , "dcu_writebacks" } ,
-    {  5 ,  5 , "TLB_misses"     , "TLB1_misses_proper" } ,
-    {  6 ,  6 , (str) &chr_nil   , "TLB2_misses" } ,
-    {  7 ,  7 , (str) &chr_nil   , "misalign_mem_ref" } ,
-    {  8 ,  8 , (str) &chr_nil   , "ifu_ifetch" } ,
-    {  9 ,  9 , (str) &chr_nil   , "ifu_ifetch_miss" } ,
-    { 10 , 10 , (str) &chr_nil   , "ITLB1_misses_proper" } ,
-    { 11 , 11 , (str) &chr_nil   , "ITLB2_misses" } ,
-    { 12 , 12 , (str) &chr_nil   , "inst_retired" } ,
-    { 13 , 13 , (str) &chr_nil   , "uops_retired" } ,
-    { 14 , 14 , (str) &chr_nil   , "br_inst_retired" } ,
-    { 15 , 15 , (str) &chr_nil   , "br_miss_pred_retired" } ,
-    { 16 , 16 , (str) &chr_nil   , "br_taken_retired" } ,
-    { 17 , 17 , (str) &chr_nil   , "br_miss_pred_taken_ret" } ,
-    { 18 , 18 , (str) &chr_nil   , "far_ctrtf_retired" } ,
-    { 19 , 19 , (str) &chr_nil   , "br_resync_retired" } ,
-    { 20 , 20 , (str) &chr_nil   , "cycles_int_masked" } ,
-    { 21 , 21 , (str) &chr_nil   , "hw_int_rx" } ,
-    { 22 , 22 , (str) &chr_nil   , "seg_reg_loads" } ,
-    { 23 , 23 , (str) &chr_nil   , "store_to_act_instr_stream" } ,
-    { 24 , 24 , (str) &chr_nil   , "dram_sys_req" } ,
-    { 25 , 25 , (str) &chr_nil   , "sys_req_type" } ,
-    { 26 , 26 , (str) &chr_nil   , "snoop_hits" } ,
-    { 27 , 27 , (str) &chr_nil   , "ecc_errors" } ,
-    { 28 , 28 , (str) &chr_nil   , "cache_line_invalid" } ,
-    { 29 , 29 , "cycles"         , "cyc_cpu_running" } ,
-    { 30 , 30 , (str) &chr_nil   , "L2_requests" } ,
-    { 31 , 31 , (str) &chr_nil   , "cyc_fill_stall" } ,
-    { 32 , 32 , (str) &chr_nil   , "snoop_resyncs" } ,
-    { 33 , 33 , (str) &chr_nil   , "instr_fetch_stall" } ,
-    { 34 , 34 , (str) &chr_nil   , "rtrn_stack_hits" } ,
-    { 35 , 35 , (str) &chr_nil   , "rtrn_stack_overflow" } ,
-    { 36 , 36 , (str) &chr_nil   , "near_rtrn_retired" } ,
-    { 37 , 37 , (str) &chr_nil   , "near_rtrn_miss_pred_retired" } ,
-    { 38 , 38 , (str) &chr_nil   , "ind_br_target_miss_pred_retired" } ,
-    { 39 , 39 , (str) &chr_nil   , "cyc_int_masked_pending" } ,
-    { 40 , 40 , (str) &chr_nil   , "instr_dec_empty" } ,
-    { 41 , 41 , (str) &chr_nil   , "dispatch_stall" } ,
-    { 42 , 42 , (str) &chr_nil   , "br_aborts_retire" } ,
-    { 43 , 43 , (str) &chr_nil   , "serialize" } ,
-    { 44 , 44 , (str) &chr_nil   , "seg_load_stall" } ,
-    { 45 , 45 , (str) &chr_nil   , "ICU_full" } ,
-    { 46 , 46 , (str) &chr_nil   , "res_stations_full" } ,
-    { 47 , 47 , (str) &chr_nil   , "FPU_full" } ,
-    { 48 , 48 , (str) &chr_nil   , "LS_full" } ,
-    { 49 , 49 , (str) &chr_nil   , "all_quiet_stall" } ,
-    { 50 , 50 , (str) &chr_nil   , "far_tf_rs_br_pending" } ,
-    { 51 , 51 , (str) &chr_nil   , "brk_pnt_DR0" } ,
-    { 52 , 52 , (str) &chr_nil   , "brk_pnt_DR1" } ,
-    { 53 , 53 , (str) &chr_nil   , "brk_pnt_DR2" } ,
-    { 54 , 54 , (str) &chr_nil   , "brk_pnt_DR3" } ,
-    { 00 , 54 , (str) &chr_nil   , (str) &chr_nil } };
+    {  0 ,  0 , (str) &chr_nil   , "Data cache accesses"                                                   , 0x40 , 0    } , /* K7_DATA_MEM_REFS                   , "data_mem_refs"                   ,  0 ,  2 , K7_DATA_CACHE_ACCESSES                                        , */
+    {  1 ,  1 , (str) &chr_nil   , "Data cache misses"                                                     , 0x41 , 0    } , /* K7_DCU_LINES_IN                    , "dcu_lines_in"                    ,  1 ,  3 , K7_DATA_CACHE_MISSES                                          , */
+    {  2 ,  2 , "L1_data_misses" , "Data cache refills from L2"                                            , 0x42 , 0x1F } , /* K7_L1_MISSES                       , "L1_misses"                       ,  2 ,  4 , K7_DATA_CACHE_REFILLS                                         , */
+    {  3 ,  3 , "L2_data_misses" , "Data cache refills from system"                                        , 0x43 , 0x1F } , /* K7_L2_MISSES                       , "L2_misses"                       ,  3 ,  5 , K7_DATA_CACHE_REFILLS_FROM_SYSTEM                             , */
+    {  4 ,  4 , (str) &chr_nil   , "Data cache writebacks"                                                 , 0x44 , 0x1F } , /* K7_DCU_WRITEBACKS                  , "dcu_writebacks"                  ,  4 ,  6 , K7_DATA_CACHE_WRITEBACKS                                      , */
+    {  5 ,  5 , "TLB_misses"     , "L1 DTLB misses and L2 DTLB hits"                                       , 0x45 , 0    } , /* K7_TLB1_MISSES_PROPER              , "TLB1_misses_proper"              ,  5 ,  7 , K7_L1_DTLB_MISSES_AND_L2_DTLB_HITS                            , */
+    {  6 ,  6 , (str) &chr_nil   , "L1 and L2 DTLB misses"                                                 , 0x46 , 0    } , /* K7_TLB2_MISSES                     , "TLB2_misses"                     ,  6 ,  8 , K7_L1_AND_L2_DTLB_MISSES                                      , */
+    {  7 ,  7 , (str) &chr_nil   , "Misaligned data references"                                            , 0x47 , 0    } , /* K7_MISALIGN_MEM_REF                , "misalign_mem_ref"                ,  7 ,  9 , K7_MISALIGNED_DATA_REFERENCES                                 , */
+    {  8 ,  8 , (str) &chr_nil   , "Instruction cache fetches"                                             , 0x80 , 0    } , /* K7_IFU_IFETCH                      , "ifu_ifetch"                      ,  8 , 18 , K7_INSTRUCTION_CACHE_FETCHES                                  , */
+    {  9 ,  9 , (str) &chr_nil   , "Instruction cache misses"                                              , 0x81 , 0    } , /* K7_IFU_IFETCH_MISS                 , "ifu_ifetch_miss"                 ,  9 , 19 , K7_INSTRUCTION_CACHE_MISSES                                   , */
+    { 10 , 10 , (str) &chr_nil   , "L1 ITLB misses (and L2 ITLB hits)"                                     , 0x84 , 0    } , /* K7_ITLB1_MISSES_PROPER             , "ITLB1_misses_proper"             , 10 , 22 , K7_L1_ITLB_MISSES                                             , */
+    { 11 , 11 , (str) &chr_nil   , "(L1 and) L2 ITLB misses"                                               , 0x85 , 0    } , /* K7_ITLB2_MISSES                    , "ITLB2_misses"                    , 11 , 23 , K7_L2_ITLB_MISSES                                             , */
+    { 12 , 12 , (str) &chr_nil   , "Retired instructions (includes exceptions, interrupts, resyncs)"       , 0xC0 , 0    } , /* K7_INST_RETIRED                    , "inst_retired"                    , 12 , 28 , K7_RETIRED_INSTRUCTIONS                                       , */
+    { 13 , 13 , (str) &chr_nil   , "Retired Ops"                                                           , 0xC1 , 0    } , /* K7_UOPS_RETIRED                    , "uops_retired"                    , 13 , 29 , K7_RETIRED_OPS                                                , */
+    { 14 , 14 , (str) &chr_nil   , "Retired branches (conditional, unconditional, exceptions, interrupts)" , 0xC2 , 0    } , /* K7_BR_INST_RETIRED                 , "br_inst_retired"                 , 14 , 30 , K7_RETIRED_BRANCHES                                           , */
+    { 15 , 15 , (str) &chr_nil   , "Retired branches mispredicted"                                         , 0xC3 , 0    } , /* K7_BR_MISS_PRED_RETIRED            , "br_miss_pred_retired"            , 15 , 31 , K7_RETIRED_BRANCHES_MISPREDICTED                              , */
+    { 16 , 16 , (str) &chr_nil   , "Retired taken branches"                                                , 0xC4 , 0    } , /* K7_BR_TAKEN_RETIRED                , "br_taken_retired"                , 16 , 32 , K7_RETIRED_TAKEN_BRANCHES                                     , */
+    { 17 , 17 , (str) &chr_nil   , "Retired taken branches mispredicted"                                   , 0xC5 , 0    } , /* K7_BR_MISS_PRED_TAKEN_RET          , "br_miss_pred_taken_ret"          , 17 , 33 , K7_RETIRED_TAKEN_BRANCHES_MISPREDICTED                        , */
+    { 18 , 18 , (str) &chr_nil   , "Retired far control transfers"                                         , 0xC6 , 0    } , /* K7_FAR_CTRTF_RETIRED               , "far_ctrtf_retired"               , 18 , 34 , K7_RETIRED_FAR_CONTROL_TRANSFERS                              , */
+    { 19 , 19 , (str) &chr_nil   , "Retired resync branches (only non-control transfer branches counted)"  , 0xC7 , 0    } , /* K7_BR_RESYNC_RETIRED               , "br_resync_retired"               , 19 , 35 , K7_RETIRED_RESYNC_BRANCHES                                    , */
+    { 20 , 20 , (str) &chr_nil   , "Interrupts masked cycles (IF=0)"                                       , 0xCD , 0    } , /* K7_CYCLES_INT_MASKED               , "cycles_int_masked"               , 20 , 39 , K7_INTERRUPTS_MASKED_CYCLES                                   , */
+    { 21 , 21 , (str) &chr_nil   , "Number of taken hardware interrupts"                                   , 0xCF , 0    } , /* K7_HW_INT_RX                       , "hw_int_rx"                       , 21 , 41 , K7_NUMBER_OF_TAKEN_HARDWARE_INTERRUPTS                        , */
+    { 22 , 22 , (str) &chr_nil   , "Segment register loads"                                                , 0x20 , 0x3F } , /* K7_seg_reg_loads                   , "seg_reg_loads"                   , 22 ,  0 , K7_SEGMENT_REGISTER_LOADS                                     , */
+    { 23 , 23 , (str) &chr_nil   , "Stores to active instruction stream"                                   , 0x21 , 0    } , /* K7_store_to_act_instr_stream       , "store_to_act_instr_stream"       , 23 ,  1 , K7_STORES_TO_ACTIVE_INSTRUCTION_STREAM                        , */
+    { 24 , 24 , (str) &chr_nil   , "DRAM system requests"                                                  , 0x64 , 0    } , /* K7_dram_sys_req                    , "dram_sys_req"                    , 24 , 10 , K7_DRAM_SYSTEM_REQUESTS                                       , */
+    { 25 , 25 , (str) &chr_nil   , "System requests with the selected type"                                , 0x65 , 0x73 } , /* K7_sys_req_type                    , "sys_req_type"                    , 25 , 11 , K7_SYSTEM_REQUESTS_WITH_THE_SELECTED_TYPE                     , */
+    { 26 , 26 , (str) &chr_nil   , "Snoop hits"                                                            , 0x73 , 0x7  } , /* K7_snoop_hits                      , "snoop_hits"                      , 26 , 12 , K7_SNOOP_HITS                                                 , */
+    { 27 , 27 , (str) &chr_nil   , "Single bit ECC errors detected or corrected"                           , 0x74 , 0x3  } , /* K7_ecc_errors                      , "ecc_errors"                      , 27 , 13 , K7_SINGLE_BIT_ECC_ERRORS_DETECTED_OR_CORRECTED                , */
+    { 28 , 28 , (str) &chr_nil   , "Internal cache line invalidates"                                       , 0x75 , 0xF  } , /* K7_cache_line_invalid              , "cache_line_invalid"              , 28 , 14 , K7_INTERNAL_CACHE_LINE_INVALIDATES                            , */
+    { 29 , 29 , "cycles"         , "Cycles processor is running"                                           , 0x76 , 0    } , /* K7_cyc_cpu_running                 , "cyc_cpu_running"                 , 29 , 15 , K7_CYCLES_PROCESSOR_IS_RUNNING                                , */
+    { 30 , 30 , (str) &chr_nil   , "L2 requests"                                                           , 0x79 , 0xFF } , /* K7_L2_requests                     , "L2_requests"                     , 30 , 16 , K7_L2_REQUESTS                                                , */
+    { 31 , 31 , (str) &chr_nil   , "Cycles that at least one fill request waited to use the L2"            , 0x7A , 0    } , /* K7_cyc_fill_stall                  , "cyc_fill_stall"                  , 31 , 17 , K7_CYCLES_THAT_AT_LEAST_ONE_FILL_REQUEST_WAITED_TO_USE_THE_L2 , */
+    { 32 , 32 , (str) &chr_nil   , "Snoop resyncs"                                                         , 0x86 , 0    } , /* K7_snoop_resyncs                   , "snoop_resyncs"                   , 32 , 24 , K7_SNOOP_RESYNCS                                              , */
+    { 33 , 33 , (str) &chr_nil   , "Instruction fetch stall cycles"                                        , 0x87 , 0    } , /* K7_instr_fetch_stall               , "instr_fetch_stall"               , 33 , 25 , K7_INSTRUCTION_FETCH_STALL_CYCLES                             , */
+    { 34 , 34 , (str) &chr_nil   , "Return stack hits"                                                     , 0x88 , 0    } , /* K7_rtrn_stack_hits                 , "rtrn_stack_hits"                 , 34 , 26 , K7_RETURN_STACK_HITS                                          , */
+    { 35 , 35 , (str) &chr_nil   , "Return stack overflow"                                                 , 0x89 , 0    } , /* K7_rtrn_stack_overflow             , "rtrn_stack_overflow"             , 35 , 27 , K7_RETURN_STACK_OVERFLOW                                      , */
+    { 36 , 36 , (str) &chr_nil   , "Retired near returns"                                                  , 0xC8 , 0    } , /* K7_near_rtrn_retired               , "near_rtrn_retired"               , 36 , 36 , K7_RETIRED_NEAR_RETURNS                                       , */
+    { 37 , 37 , (str) &chr_nil   , "Retired near returns mispredicted"                                     , 0xC9 , 0    } , /* K7_near_rtrn_miss_pred_retired     , "near_rtrn_miss_pred_retired"     , 37 , 37 , K7_RETIRED_NEAR_RETURNS_MISPREDICTED                          , */
+    { 38 , 38 , (str) &chr_nil   , "Retired indirect branches with target mispredicted"                    , 0xCA , 0    } , /* K7_ind_br_target_miss_pred_retired , "ind_br_target_miss_pred_retired" , 38 , 38 , K7_RETIRED_INDIRECT_BRANCHES_WITH_TARGET_MISPREDICTED         , */
+    { 39 , 39 , (str) &chr_nil   , "Interrupts asked while pending cycles"                                 , 0xCE , 0    } , /* K7_cyc_int_masked_pending          , "cyc_int_masked_pending"          , 39 , 40 , K7_INTERRUPTS_MASKED_WHILE_PENDING_CYCLES                     , */
+    { 40 , 40 , (str) &chr_nil   , "Instruction decoder empty"                                             , 0xD0 , 0    } , /* K7_instr_dec_empty                 , "instr_dec_empty"                 , 40 , 42 , K7_INSTRUCTION_DECODER_EMPTY                                  , */
+    { 41 , 41 , (str) &chr_nil   , "Dispatch stalls"                                                       , 0xD1 , 0    } , /* K7_dispatch_stall                  , "dispatch_stall"                  , 41 , 43 , K7_DISPATCH_STALLS                                            , */
+    { 42 , 42 , (str) &chr_nil   , "Branch aborts to retire"                                               , 0xD2 , 0    } , /* K7_br_aborts_retire                , "br_aborts_retire"                , 42 , 44 , K7_BRANCH_ABORTS_TO_RETIRE                                    , */
+    { 43 , 43 , (str) &chr_nil   , "Serialize"                                                             , 0xD3 , 0    } , /* K7_serialize                       , "serialize"                       , 43 , 45 , K7_SERIALIZE                                                  , */
+    { 44 , 44 , (str) &chr_nil   , "Segment load stall"                                                    , 0xD4 , 0    } , /* K7_seg_load_stall                  , "seg_load_stall"                  , 44 , 46 , K7_SEGMENT_LOAD_STALL                                         , */
+    { 45 , 45 , (str) &chr_nil   , "ICU full"                                                              , 0xD5 , 0    } , /* K7_ICU_full                        , "ICU_full"                        , 45 , 47 , K7_ICU_FULL                                                   , */
+    { 46 , 46 , (str) &chr_nil   , "Reservation stations full"                                             , 0xD6 , 0    } , /* K7_res_stations_full               , "res_stations_full"               , 46 , 48 , K7_RESERVATION_STATIONS_FULL                                  , */
+    { 47 , 47 , (str) &chr_nil   , "FPU full"                                                              , 0xD7 , 0    } , /* K7_FPU_full                        , "FPU_full"                        , 47 , 49 , K7_FPU_FULL                                                   , */
+    { 48 , 48 , (str) &chr_nil   , "LS full"                                                               , 0xD8 , 0    } , /* K7_LS_full                         , "LS_full"                         , 48 , 50 , K7_LS_FULL                                                    , */
+    { 49 , 49 , (str) &chr_nil   , "All quiet stall"                                                       , 0xD9 , 0    } , /* K7_all_quiet_stall                 , "all_quiet_stall"                 , 49 , 51 , K7_ALL_QUIET_STALL                                            , */
+    { 50 , 50 , (str) &chr_nil   , "Far transfer or resync branch pending"                                 , 0xDA , 0    } , /* K7_far_tf_rs_br_pending            , "far_tf_rs_br_pending"            , 50 , 52 , K7_FAR_TRANSFER_OR_RESYNC_BRANCH_PENDING                      , */
+    { 51 , 51 , (str) &chr_nil   , "Breakpoint matches for DR0"                                            , 0xDC , 0    } , /* K7_brk_pnt_DR0                     , "brk_pnt_DR0"                     , 51 , 53 , K7_BREAKPOINT_MATCHES_FOR_DR0                                 , */
+    { 52 , 52 , (str) &chr_nil   , "Breakpoint matches for DR1"                                            , 0xDD , 0    } , /* K7_brk_pnt_DR1                     , "brk_pnt_DR1"                     , 52 , 54 , K7_BREAKPOINT_MATCHES_FOR_DR1                                 , */
+    { 53 , 53 , (str) &chr_nil   , "Breakpoint matches for DR2"                                            , 0xDE , 0    } , /* K7_brk_pnt_DR2                     , "brk_pnt_DR2"                     , 53 , 55 , K7_BREAKPOINT_MATCHES_FOR_DR2                                 , */
+    { 54 , 54 , (str) &chr_nil   , "Breakpoint matches for DR3"                                            , 0xDF , 0    } , /* K7_brk_pnt_DR3                     , "brk_pnt_DR3"                     , 54 , 56 , K7_BREAKPOINT_MATCHES_FOR_DR3                                 , */
+    { 55 , 55 , (str) &chr_nil   , "Instruction cache refills from L2"                                     , 0x82 , 0    } , /* 0                                  , "IC_REFILLS_FROM_L2"              , -1 , 20 , K7_INSTRUCTION_CACHE_REFILLS_FROM_L2                          , */
+    { 56 , 56 , (str) &chr_nil   , "Instruction cache refills from System"                                 , 0x83 , 0    } , /* 0                                  , "IC_REFILLS_FROM_SYSTEM"          , -1 , 21 , K7_INSTRUCTION_CACHE_REFILLS_FROM_SYSTEM                      , */
+    { 29 , 29 , (str) &chr_nil   , (str) &chr_nil                                                          , 0x76 , 0    } };
 
- #elif ( defined(IRIX) && defined(CPU_IP27) ) /* R10k, R12k */
-
-  #define X_NUMEVENTS 32
-  event_t X_event[X_NUMEVENTS+1] = {
+ #elif ( defined(HW_IRIX64) && defined(HW_IP27) ) /* R10k, R12k */      
+                                                                        
+  #define X_NUMEVENTS 32                                                
+  event_t X_event[X_NUMEVENTS+1] = {                                    
    {  0 , 16 , "cycles"         , "cycles" } ,
    {  1 , -1 , (str) &chr_nil   , "instructions" } ,
    {  2 , -1 , (str) &chr_nil   , "loads" } ,
@@ -324,41 +482,47 @@ int NumEvents = 0, NoEvent = 0;
    { -1 , 29 , (str) &chr_nil   , "invalidation_hits" } ,
    { -1 , 30 , (str) &chr_nil   , "L2_clean_excl" } ,
    { -1 , 31 , (str) &chr_nil   , "L2_shared_excl" } ,
-   { 00 , 31 , (str) &chr_nil   , (str) &chr_nil } };
+   { 00 , 16 , (str) &chr_nil   , (str) &chr_nil } };
 
- #elif ( defined(SOLARIS) && defined(CPU_sun4u) ) /* UltraSparc */
+ #elif ( defined(HW_SunOS) && defined(HW_sun4u) ) /* UltraSparc I&II */
 
-  #include <sys/types.h>
-  #include <sys/processor.h>
-  #include <sys/procset.h>
-  #include <perfmon.h>
+  #if   defined(HAVE_LIBPERFMON) /* Solaris <= 7 */
+   #include <sys/types.h>
+   #include <sys/processor.h>
+   #include <sys/procset.h>
+   #include <perfmon.h>
+  #elif defined(HAVE_LIBCPC)     /* Solaris >= 8 */
+   int CPUver = -1;
+   #include <libcpc.h>
+  #endif
+
   #define X_NUMEVENTS 24
   event_t X_event[X_NUMEVENTS+1] = {
-   {  0 , 12 , "cycles"         , "CYCLE_CNT"        , PCR_S0_CYCLE_CNT } ,
-   {  1 , 13 , (str) &chr_nil   , "INSTR_CNT"        , PCR_S0_INSTR_CNT } ,
-   {  2 , -1 , (str) &chr_nil   , "STALL_IC_MISS"    , PCR_S0_STALL_IC_MISS } ,
-   {  3 , -1 , (str) &chr_nil   , "STALL_STORBUF"    , PCR_S0_STALL_STORBUF } ,
-   {  4 , -1 , (str) &chr_nil   , "IC_REF"           , PCR_S0_IC_REF } ,
-   {  5 , -1 , (str) &chr_nil   , "DC_READ"          , PCR_S0_DC_READ } ,
-   {  6 , -1 , (str) &chr_nil   , "DC_WRITE"         , PCR_S0_DC_WRITE } ,
-   {  7 , -1 , (str) &chr_nil   , "STALL_LOAD"       , PCR_S0_STALL_LOAD } ,
-   {  8 , -1 , (str) &chr_nil   , "EC_REF"           , PCR_S0_EC_REF } ,
-   {  9 , -1 , (str) &chr_nil   , "EC_WRITE_RO"      , PCR_S0_EC_WRITE_RO } ,
-   { 10 , -1 , (str) &chr_nil   , "EC_SNOOP_INV"     , PCR_S0_EC_SNOOP_INV } ,
-   { 11 , -1 , "L1_data_misses" , "EC_READ_HIT"      , PCR_S0_EC_READ_HIT } ,
-   {  0 , 12 , "cycles"         , "CYCLE_CNT"        , PCR_S1_CYCLE_CNT } ,
-   {  1 , 13 , (str) &chr_nil   , "INSTR_CNT"        , PCR_S1_INSTR_CNT } ,
-   { -1 , 14 , (str) &chr_nil   , "STALL_MISPRED"    , PCR_S1_STALL_MISPRED } ,
-   { -1 , 15 , (str) &chr_nil   , "STALL_FPDEP"      , PCR_S1_STALL_FPDEP } ,
-   { -1 , 16 , (str) &chr_nil   , "IC_HIT"           , PCR_S1_IC_HIT } ,
-   { -1 , 17 , (str) &chr_nil   , "DC_READ_HIT"      , PCR_S1_DC_READ_HIT } ,
-   { -1 , 18 , (str) &chr_nil   , "DC_WRITE_HIT"     , PCR_S1_DC_WRITE_HIT } ,
-   { -1 , 19 , (str) &chr_nil   , "LOAD_STALL_RAW"   , PCR_S1_LOAD_STALL_RAW } ,
-   { -1 , 20 , (str) &chr_nil   , "EC_HIT"           , PCR_S1_EC_HIT } ,
-   { -1 , 21 , "L2_data_misses" , "EC_WRITEBACK"     , PCR_S1_EC_WRITEBACK } ,
-   { -1 , 22 , (str) &chr_nil   , "EC_SNOOP_COPYBCK" , PCR_S1_EC_SNOOP_COPYBCK } ,
-   { -1 , 23 , (str) &chr_nil   , "EC_IC_HIT"        , PCR_S1_EC_IC_HIT } ,
-   { 00 , 23 , (str) &chr_nil   , (str) &chr_nil     , PCR_S0_CYCLE_CNT | PCR_S1_EC_IC_HIT } };
+   {  0 , 12 , "cycles"         , "CYCLE_CNT"        , LIB_SunOS( PCR_S0_CYCLE_CNT                    , "Cycle_cnt"          ) } ,
+   {  1 , 13 , (str) &chr_nil   , "INSTR_CNT"        , LIB_SunOS( PCR_S0_INSTR_CNT                    , "Instr_cnt"          ) } ,
+   {  2 , -1 , (str) &chr_nil   , "STALL_IC_MISS"    , LIB_SunOS( PCR_S0_STALL_IC_MISS                , "Dispatch0_IC_miss"  ) } ,
+   {  3 , -1 , (str) &chr_nil   , "STALL_STORBUF"    , LIB_SunOS( PCR_S0_STALL_STORBUF                , "Dispatch0_storeBuf" ) } ,
+   {  4 , 16 , (str) &chr_nil   , "IC_REF"           , LIB_SunOS( PCR_S0_IC_REF                       , "IC_ref"             ) } ,
+   {  5 , 17 , "L1_data_misses" , "DC_READ"          , LIB_SunOS( PCR_S0_DC_READ                      , "DC_rd"              ) } ,
+   {  6 , 18 , (str) &chr_nil   , "DC_WRITE"         , LIB_SunOS( PCR_S0_DC_WRITE                     , "DC_wr"              ) } ,
+   {  7 , -1 , (str) &chr_nil   , "STALL_LOAD"       , LIB_SunOS( PCR_S0_STALL_LOAD                   , "Load_use"           ) } ,
+   {  8 , 20 , "L2_data_misses" , "EC_REF"           , LIB_SunOS( PCR_S0_EC_REF                       , "EC_ref"             ) } ,
+   {  9 , -1 , (str) &chr_nil   , "EC_WRITE_RO"      , LIB_SunOS( PCR_S0_EC_WRITE_RO                  , "EC_write_hit_RDO"   ) } ,
+   { 10 , -1 , (str) &chr_nil   , "EC_SNOOP_INV"     , LIB_SunOS( PCR_S0_EC_SNOOP_INV                 , "EC_snoop_inv"       ) } ,
+   { 11 , -1 , (str) &chr_nil   , "EC_READ_HIT"      , LIB_SunOS( PCR_S0_EC_READ_HIT                  , "EC_rd_hit"          ) } ,
+   {  0 , 12 , "cycles"         , "CYCLE_CNT"        , LIB_SunOS( PCR_S1_CYCLE_CNT                    , "Cycle_cnt"          ) } ,
+   {  1 , 13 , (str) &chr_nil   , "INSTR_CNT"        , LIB_SunOS( PCR_S1_INSTR_CNT                    , "Instr_cnt"          ) } ,
+   { -1 , 14 , (str) &chr_nil   , "STALL_MISPRED"    , LIB_SunOS( PCR_S1_STALL_MISPRED                , "Dispatch0_mispred"  ) } ,
+   { -1 , 15 , (str) &chr_nil   , "STALL_FPDEP"      , LIB_SunOS( PCR_S1_STALL_FPDEP                  , "Dispatch0_FP_use"   ) } ,
+   {  4 , 16 , (str) &chr_nil   , "IC_HIT"           , LIB_SunOS( PCR_S1_IC_HIT                       , "IC_hit"             ) } ,
+   {  5 , 17 , "L1_data_misses" , "DC_READ_HIT"      , LIB_SunOS( PCR_S1_DC_READ_HIT                  , "DC_rd_hit"          ) } ,
+   {  6 , 18 , (str) &chr_nil   , "DC_WRITE_HIT"     , LIB_SunOS( PCR_S1_DC_WRITE_HIT                 , "DC_wr_hit"          ) } ,
+   { -1 , 19 , (str) &chr_nil   , "LOAD_STALL_RAW"   , LIB_SunOS( PCR_S1_LOAD_STALL_RAW               , "Load_use_RAW"       ) } ,
+   {  8 , 20 , "L2_data_misses" , "EC_HIT"           , LIB_SunOS( PCR_S1_EC_HIT                       , "EC_hit"             ) } ,
+   { -1 , 21 , (str) &chr_nil   , "EC_WRITEBACK"     , LIB_SunOS( PCR_S1_EC_WRITEBACK                 , "EC_wb"              ) } ,
+   { -1 , 22 , (str) &chr_nil   , "EC_SNOOP_COPYBCK" , LIB_SunOS( PCR_S1_EC_SNOOP_COPYBCK             , "EC_snoop_cb"        ) } ,
+   { -1 , 23 , (str) &chr_nil   , "EC_IC_HIT"        , LIB_SunOS( PCR_S1_EC_IC_HIT                    , "EC_ic_hit"          ) } ,
+   { 00 , 12 , (str) &chr_nil   , (str) &chr_nil     , LIB_SunOS( PCR_S0_CYCLE_CNT | PCR_S1_CYCLE_CNT , "Cycle_cnt"          ) } };
 
  #else /* other OSs or CPUs */
 
@@ -374,83 +538,141 @@ int NumEvents = 0, NoEvent = 0;
 
 #endif
 
-extern int monet_modulesilent;
 
-int check_cpu() {
+#define monet_modulesilent (!(GDKdebug&16384))
+
+
+int init_counters() {
+#if   ( defined(HWCOUNTERS) && defined(HW_Linux) && defined(HAVE_LIBPPERF) )
     FILE *fp = NULL;
+    struct utsname uts;
+#elif ( defined(HW_Linux) && defined(HAVE_LIBPERFCTR) )
+   struct vperfctr *Self;
+#endif
 
     NumEvents = NoEvent = 0;
 #if ( defined(HWCOUNTERS) )
     event = NO_event;
- #if ( defined(LINUX) )
-  #if ( defined(CPU_i586) )
-    NumEvents = NoEvent = P5_NUMEVENTS;
-    event = P5_event;
-  #elif ( defined(CPU_i686) )
-    if ( (fp = fopen("/proc/cpuinfo","r")) == NULL ) {
-        if (!monet_modulesilent)
-            GDKwarning("check_cpu: Cannot open /proc/cpuinfo to determine CPU.\n");
-    } else {
-        char buf[256];
-        char *p1, *p2;
-        int found = 0;
-        while ( fgets(buf,sizeof(buf),fp) != NULL ) {
-            /* Break the line up at ':' into two parts. */
-            p1 = strtok(buf,":");
-            p2 = strtok(NULL,":");
-            /* Get rid of [TAB] in /proc/cpuinfo if it's there */
-            p1 = strtok(p1,"\t");
-            p2 = strtok(p2," ");
-            p2 = strtok(p2,"\n");
-            if (strcmp(p1,"vendor_id") == 0) {
-                found++;
-                if (!strcmp(p2,"GenuineIntel")) {
-                    NumEvents = NoEvent = P6_NUMEVENTS;
-                    event = P6_event;
-                } else if (!strcmp(p2,"AuthenticAMD")) {
-                    NumEvents = NoEvent = K7_NUMEVENTS;
-                    event = K7_event;
-                } else {
-                    if (!monet_modulesilent)
-                        GDKwarning("check_cpu: Unknown vendor_id '%s` in /proc/cpuinfo.\n",p2);
+ #if ( defined(HW_Linux) && defined(HAVE_LIBPPERF) ) 
+    uname(&uts);
+    if (!strcmp(uts.machine,"i586")) {
+        NumEvents = NoEvent = P5_NUMEVENTS;
+        event = P5_event;
+    } else if (!strcmp(uts.machine,"i686")) {
+        if ( (fp = fopen("/proc/cpuinfo","r")) == NULL ) {
+            if (!monet_modulesilent)
+                GDKwarning("init_counters: Cannot open /proc/cpuinfo to determine CPU: %s.\n",strerror(errno));
+        } else {
+            char buf[256];
+            char *p1, *p2;
+            int found = 0;
+            while ( fgets(buf,sizeof(buf),fp) != NULL ) {
+                /* Break the line up at ':' into two parts. */
+                p1 = strtok(buf,":");
+                p2 = strtok(NULL,":");
+                /* Get rid of [TAB] in /proc/cpuinfo if it's there */
+                p1 = strtok(p1,"\t");
+                p2 = strtok(p2," ");
+                p2 = strtok(p2,"\n");
+                if (strcmp(p1,"vendor_id") == 0) {
+                    found++;
+                    if (!strcmp(p2,"GenuineIntel")) {
+                        NumEvents = NoEvent = P6_NUMEVENTS;
+                        event = P6_event;
+                    } else if (!strcmp(p2,"AuthenticAMD")) {
+                        NumEvents = NoEvent = K7_NUMEVENTS;
+                        event = K7_event;
+                    } else {
+                        if (!monet_modulesilent)
+                            GDKwarning("init_counters: Unknown vendor_id '%s` in /proc/cpuinfo.\n",p2);
+                    }
                 }
-      	    }
+            }
+            if ( (!found) && (!monet_modulesilent) )
+                GDKwarning("init_counters: No 'vendor_id` found in /proc/cpuinfo.\n");
+            if (found > 1) {
+                if (!monet_modulesilent)
+                    GDKwarning("init_counters: Currently, there's no hardware counter support for Linux SMP machines.\n");
+                NumEvents = NoEvent = 0;
+                event = NO_event;
+            }
+            fclose(fp);
         }
-        if ( (!found) && (!monet_modulesilent) )
-            GDKwarning("check_cpu: No 'vendor_id` found in /proc/cpuinfo.\n");
-	if (found > 1) {
-	    if (!monet_modulesilent)
-	        GDKwarning("check_cpu: Currently, there's no hardware counter support for Linux SMP machines.\n");
-	    NumEvents = NoEvent = 0;
-	    event = NO_event;
-	}
-        fclose(fp);
+    } else {
+        if (!monet_modulesilent)
+            GDKwarning("init_counters: Architecture '%s' is not supported.\n",uts.machine);
     }
-    if ( (!NumEvents) && (!monet_modulesilent) )
-        GDKwarning("check_cpu: Hardware counters will not be available.\n");
-  #endif
- #else /* no Linux-PC */
+ #elif ( defined(HW_Linux) && defined(HAVE_LIBPERFCTR) ) 
+    if (!(Self = vperfctr_open())) {
+        if (!monet_modulesilent)
+            GDKwarning("init_counters: vperfctr_open failed: %s.\n",strerror(errno));
+    } else {
+        if (vperfctr_info(Self,&Info) < 0) {
+            if (!monet_modulesilent)
+                GDKwarning("init_counters: vperfctr_info failed: %s.\n",strerror(errno));
+        } else {
+            switch (Info.cpu_type) {
+              case PERFCTR_X86_INTEL_P5:
+              case PERFCTR_X86_INTEL_P5MMX:
+              case PERFCTR_X86_CYRIX_MII:
+                NumEvents = NoEvent = P5_NUMEVENTS;
+                event = P5_event;
+                break;
+              case PERFCTR_X86_INTEL_P6:
+              case PERFCTR_X86_INTEL_PII:
+              case PERFCTR_X86_INTEL_PIII:
+                NumEvents = NoEvent = P6_NUMEVENTS;
+                event = P6_event;
+                P6_K7_cesr1.cesr.en = 0;
+                break;
+              case PERFCTR_X86_AMD_K7:
+                NumEvents = NoEvent = K7_NUMEVENTS;
+                event = K7_event;
+                break;
+            }
+        }
+        if (vperfctr_unlink(Self) < 0) {
+            if (!monet_modulesilent)
+                GDKwarning("init_counters: vperfctr_unlink failed: %s.\n",strerror(errno));
+        }
+        vperfctr_close(Self);
+    }
+ #elif ( defined(HW_SunOS) && defined(HAVE_LIBCPC) )
+    if ((cpc_version(CPC_VER_CURRENT) != CPC_VER_CURRENT) || (cpc_version(CPC_VER_CURRENT) == CPC_VER_NONE)) {
+        if (!monet_modulesilent)
+            GDKwarning("init_counters: library cpc version mismatch!\n");
+    } else if ((CPUver = cpc_getcpuver()) == -1) {
+        if (!monet_modulesilent)
+            GDKwarning("init_counters: no performance counter hardware!");
+    } else if (cpc_access() == -1) {
+        if (!monet_modulesilent)
+            GDKwarning("init_counters: can't access perf counters: %s.",strerror(errno));
+    } else {
+        NumEvents = NoEvent = X_NUMEVENTS;
+        event = X_event;
+    }
+ #else /* no Linux-PC & no Solaris8-Sun */
     NumEvents = NoEvent = X_NUMEVENTS;
     event = X_event;
  #endif
 #endif
+    if ( (!NumEvents) && (!monet_modulesilent) )
+        GDKwarning("init_counters: Hardware counters will not be available.\n");
     return GDK_SUCCEED;
 }
+
 
 int compare_counter(counter *c1, counter* c2) {
 	return c1->usec - c2->usec; /* compare on time in usecs */
 }
 
 
-int create_counter_number(counter *retval, int *event0, int *event1) {
-    int generation = -1, e0 = *event0, e1 = *event1, ee = NoEvent;
-#if ( defined(HWCOUNTERS) && defined(SOLARIS) )
-    int rtrn = -1;
-    unsigned long long set = 0, val = 0;
-#endif
+int start_count(counter *retval, int *event0, int *event1) {
+    int rtrn, e0 = *event0, e1 = *event1, ee = NoEvent;
 
     /* create the resulting counter object */
     memset(retval, 0, sizeof(counter));
+    retval->generation = -1;
 #if defined(HWCOUNTERS)
     if (e0 < 0 || e0 >= NumEvents)  e0 = NoEvent;
     if (e1 < 0 || e1 >= NumEvents)  e1 = NoEvent;
@@ -462,140 +684,225 @@ int create_counter_number(counter *retval, int *event0, int *event1) {
     }
     if (event[e0].id0 < 0)  e0 = NoEvent; 
     if (event[e1].id1 < 0)  e1 = NoEvent;
+    if (e0 != NoEvent) e0 = event[e0].id0;
+    if (e1 != NoEvent) e1 = event[e1].id1;
+    retval->event0 = (lng)(e0);
+    retval->event1 = (lng)(e1);
     if ((e0 != NoEvent) || (e1 != NoEvent)) {
- #if defined(LINUX)
-        if ((generation = start_counters(event[e0].id0,CPL,event[e1].id1,CPL)) != 0) {
-            GDKerror("create_counter: start_counters failed with return value %d, errno %d.\n", 
-                     generation,errno);
-            fprintf(stderr,"! create_counter/start_counters: "); pstatus(generation);
-            perror("! create_counter/start_counters");
+ #if ( defined(HW_Linux) && defined(HAVE_LIBPPERF) )
+        if ((rtrn = start_counters(event[e0].id0,CPL,event[e1].id1,CPL)) != 0) {
+            GDKerror("start_count: start_counters failed with return value %d, errno %d.\n", 
+                     rtrn,errno);
+            fprintf(stderr,"! start_count/start_counters: "); pstatus(rtrn);
+            perror("! start_count/start_counters");
             return GDK_FAIL;
         }
- #elif defined(IRIX)
-        if ((generation = start_counters(event[e0].id0,event[e1].id1)) < 0) {
-            GDKerror("create_counter: start_counters failed with return value %d, errno %d\n", 
-                     generation,errno);
-            perror("! create_counter/start_counters");
+        retval->clocks = rdtsc();
+ #elif ( defined(HW_Linux) && defined(HAVE_LIBPERFCTR) )
+        struct perfctr_sum_ctrs before;
+ 	struct vperfctr_control control;
+        struct vperfctr *Self;
+        if (!(Self = vperfctr_open())) {
+            GDKerror("start_count: vperfctr_open failed with return value %d, error %d.\n",
+                     (int)Self,errno);
+            perror("! start_count/vperfctr_open");
             return GDK_FAIL;
-        }    
- #elif defined(SOLARIS)
+        }
+        retval->generation = (lng)Self;
+        memset(&control,0,sizeof(control));
+        control.cpu_control.tsc_on = 1;
+        control.cpu_control.nractrs = 2;
+        control.cpu_control.pmc_map[0] = 0;
+        control.cpu_control.pmc_map[1] = 1;
+        switch (Info.cpu_type) {
+          case PERFCTR_X86_INTEL_P5:
+          case PERFCTR_X86_INTEL_P5MMX:
+          case PERFCTR_X86_CYRIX_MII:
+            P5_cesr.cesr.es0 = event[e0].code;
+            P5_cesr.cesr.es1 = event[e1].code;
+            control.cpu_control.evntsel[0] = P5_cesr.word;
+            break;
+          case PERFCTR_X86_INTEL_P6:
+          case PERFCTR_X86_INTEL_PII:
+          case PERFCTR_X86_INTEL_PIII:
+          case PERFCTR_X86_AMD_K7:
+            P6_K7_cesr0.cesr.evsel = event[e0].code;
+            P6_K7_cesr1.cesr.evsel = event[e1].code;
+            P6_K7_cesr0.cesr.umask = event[e0].mask;
+            P6_K7_cesr1.cesr.umask = event[e1].mask;
+            control.cpu_control.evntsel[0] = P6_K7_cesr0.word;
+            control.cpu_control.evntsel[1] = P6_K7_cesr1.word;
+            break;
+        }
+        if ((rtrn = vperfctr_control(Self, &control)) < 0) {
+            GDKerror("start_count: vperfctr_control failed with return value %d, errno %d.\n", 
+                     rtrn,errno);
+            perror("! start_count/vperfctr_control");
+            return GDK_FAIL;
+        }
+        vperfctr_read_ctrs(Self,&before);
+        retval->count0 = (lng)before.pmc[0];
+        retval->count1 = (lng)before.pmc[1];
+        retval->clocks = (lng)before.tsc;
+ #elif defined(HW_IRIX64)
+        if ((rtrn = start_counters(event[e0].id0,event[e1].id1)) < 0) {
+            GDKerror("start_count: start_counters failed with return value %d, errno %d\n", 
+                     rtrn,errno);
+            perror("! start_count/start_counters");
+            return GDK_FAIL;
+        }
+        retval->generation = (lng)rtrn;
+ #elif ( defined(HW_SunOS) && defined(HAVE_LIBPERFMON) )
+        unsigned long long set = 0, val = 0;
         if ((rtrn = processor_bind(P_PID, P_MYID, 0, NULL)) < 0) {
-            GDKerror("create_counter: processor_bind failed with return value %d, errno %d\n", 
+            GDKerror("start_count: processor_bind failed with return value %d, errno %d\n", 
                      rtrn,errno);
-            perror("! create_counter/processor_bind");
+            perror("! start_count/processor_bind");
             return GDK_FAIL;
         }
-        if ((generation = open("/dev/perfmon", O_RDONLY)) < 0) {
-            GDKerror("create_counter: open(/dev/perfmon,O_RDONLY) failed with return value %d, errno %d\n", 
-                     generation,errno);
-            perror("! create_counter/open");
+        if ((rtrn = open("/dev/perfmon", O_RDONLY)) < 0) {
+            GDKerror("start_count: open(/dev/perfmon,O_RDONLY) failed with return value %d, errno %d\n", 
+                     rtrn,errno);
+            perror("! start_count/open");
             return GDK_FAIL;
         }
+        retval->generation = (lng)rtrn;
         set = ( PCR_USER_TRACE | event[e0].bits | event[e1].bits );
-        if ((rtrn = ioctl(generation, PERFMON_SETPCR, &set)) < 0) {
-            GDKerror("create_counter: ioctl(generation, PERFMON_SETPCR, &set) failed with return value %d, errno %d\n", 
+        if ((rtrn = ioctl((int)retval->generation, PERFMON_SETPCR, &set)) < 0) {
+            GDKerror("start_count: ioctl((int)retval->generation, PERFMON_SETPCR, &set) failed with return value %d, errno %d\n", 
                      rtrn,errno);
-            perror("! create_counter/ioctl");
-            close(generation);
+            perror("! start_count/ioctl");
+            close((int)retval->generation);
             return GDK_FAIL;
         }
         clr_pic();
         cpu_sync();
         val = get_pic();
+        retval->count0 = (lng)(val & 0xffffffff);
+        retval->count1 = (lng)(val >> 32);
+        retval->clocks = (lng)get_tick();
+ #elif ( defined(HW_SunOS) && defined(HAVE_LIBCPC) )
+        cpc_event_t evnt;
+        char spec[100];
+ 	sprintf(spec,"pic0=%s,pic1=%s",event[e0].spec,event[e1].spec);
+        if ((rtrn = cpc_strtoevent(CPUver,spec,&evnt)) != 0) {
+            GDKerror("start_count: cpc_strtoevent failed with return value %d, errno %d\n", 
+                     rtrn,errno);
+            perror("! start_count/cpc_strtoevent");
+            return GDK_FAIL;
+        }
+        if ((rtrn = cpc_bind_event(&evnt,0)) != 0) {
+            GDKerror("start_count: cpc_bind_event failed with return value %d, errno %d\n",
+                     rtrn,errno);
+            perror("! start_count/cpc_bind_event");
+            return GDK_FAIL;
+        }
+        if ((rtrn = cpc_take_sample(&evnt)) != 0) {
+            GDKerror("start_count: cpc_take_sample failed with return value %d, errno %d\n",
+                     rtrn,errno);
+            perror("! start_count/cpc_take_sample");
+            return GDK_FAIL;
+        }
+        retval->count0 = (lng)evnt.ce_pic[0];
+        retval->count1 = (lng)evnt.ce_pic[1];
+        retval->clocks = (lng)evnt.ce_tick;
  #endif
     }
 #endif
-    retval->status = 1;
-    retval->generation = (lng)generation;
-    retval->event0 = (lng)(e0);
-    retval->event1 = (lng)(e1);
     retval->usec = GDKusec();
-#if ( defined(HWCOUNTERS) && defined(SOLARIS) )
-    retval->count0 = (lng)(val & 0xffffffff);
-    retval->count1 = (lng)(val >> 32);
-    retval->clocks = (lng)get_tick();
-#endif
-#if ( defined(HWCOUNTERS) && defined(LINUX) )
-    retval->clocks = rdtsc();
-#endif
+    retval->status = 1;
     return GDK_SUCCEED;
 }
 
 
-int create_counter_name(counter *retval, str event0, str event1) {
-    int e0 = NoEvent, e1 = NoEvent, found = 0;
-    
-#if defined(HWCOUNTERS)
-    for (e0 = 0; e0 < NumEvents; e0++)
-        if (found = (!strcmp(event0, event[e0].unified) ||
-                     !strcmp(event0, event[e0].native)))
-            break;
-    if (!found)  e0 = NoEvent;
-    for (e1 = NumEvents-1; e1 >= 0; e1--)
-        if (found = (!strcmp(event1, event[e1].unified) ||
-                     !strcmp(event1, event[e1].native)))
-            break;
-    if (!found)  e1 = NoEvent;
-#endif
-    return create_counter_number(retval, &e0, &e1);
-}
-
-
-int get_counter(counter *retval, counter *c) {
-#if ( defined(HWCOUNTERS) && defined(LINUX) )
-    lng clocks = rdtsc() - c->clocks;
-#elif ( defined(HWCOUNTERS) && defined(SOLARIS) )
-    lng clocks = (lng)get_tick() - c->clocks;
-    unsigned long long val = 0;
-#else
-    lng clocks = -1;
-#endif
+int stop_count(counter *retval, counter *c) {
     lng usec = GDKusec() - c->usec;
-    int generation = -1;
-    lng count0 = -1, count1 = -1, noclocks = -1;
+    lng count0 = -1, count1 = -1, clocks = -1, noclocks = -1;
     dbl notimer = -1.0;
+    int rtrn;
 
     if (c->status != 1) {
-        GDKerror("get_counter: counter not started or already stopped.\n");
+        GDKerror("stop_count: counter not started or already stopped.\n");
         return GDK_FAIL;
     }
 #if defined(HWCOUNTERS)
     if ((c->event0 != NoEvent) || (c->event1 != NoEvent)) {
- #if defined(LINUX)
-        if ((generation = read_counters(&count0,&count1,&notimer,&noclocks)) != 0) {
-            GDKerror("get_counter: read_counters failed with return value %d, errno %d.\n", 
-                     generation,errno);
-            fprintf(stderr,"! get_counter/read_counters: "); pstatus(generation);
-            perror("! get_counter/read_counters");
+ #if ( defined(HW_Linux) && defined(HAVE_LIBPPERF) )
+        clocks = rdtsc() - c->clocks;
+        if ((rtrn = read_counters(&count0,&count1,&notimer,&noclocks)) != 0) {
+            GDKerror("stop_count: read_counters failed with return value %d, errno %d.\n", 
+                     rtrn,errno);
+            fprintf(stderr,"! stop_count/read_counters: "); pstatus(rtrn);
+            perror("! stop_count/read_counters");
             return GDK_FAIL;
         }
- #elif defined(IRIX)
-        if ((generation = read_counters((int)(event[c->event0].id0),&count0,
-                                        (int)(event[c->event1].id1),&count1)) < 0) {
-            GDKerror("get_counter: read_counters failed with return value %d, errno %d\n", 
-                     generation,errno);
-            perror("! get_counter/read_counters");
+ #elif ( defined(HW_Linux) && defined(HAVE_LIBPERFCTR) )
+        struct perfctr_sum_ctrs after;
+        struct vperfctr *Self = (struct vperfctr *)c->generation;
+        vperfctr_read_ctrs(Self,&after);
+        count0 = (lng)after.pmc[0] - c->count0;
+        count1 = (lng)after.pmc[1] - c->count1;
+        clocks = (lng)after.tsc    - c->clocks;
+        if ((rtrn = vperfctr_stop(Self)) < 0) {
+            GDKerror("start_count: vperfctr_stop failed with return value %d, errno %d.\n", 
+                     rtrn,errno);
+            perror("! start_count/vperfctr_stop");
+            return GDK_FAIL;
+        }
+        if ((rtrn = vperfctr_unlink(Self)) < 0) {
+            GDKerror("start_count: vperfctr_unlink failed with return value %d, errno %d.\n", 
+                     rtrn,errno);
+            perror("! start_count/vperfctr_unlink");
+            return GDK_FAIL;
+        }
+        vperfctr_close(Self);
+ #elif defined(HW_IRIX64)
+        if ((rtrn = read_counters((int)(event[c->event0].id0),&count0,
+                                  (int)(event[c->event1].id1),&count1)) < 0) {
+            GDKerror("stop_count: read_counters failed with return value %d, errno %d\n", 
+                     rtrn,errno);
+            perror("! stop_count/read_counters");
             return GDK_FAIL;
         }    
-        if ((lng)generation != c->generation) {
-            GDKerror("get_counter: lost event counter.\n");
+        if ((lng)rtrn != c->generation) {
+            GDKerror("stop_count: lost event counter.\n");
             return GDK_FAIL;
         }
         if (event[c->event0].id0 ==  0)  clocks = count0;
         if (event[c->event1].id1 == 16)  clocks = count1;
- #elif defined(SOLARIS)
+ #elif ( defined(HW_SunOS) && defined(HAVE_LIBPERFMON) )
+        unsigned long long val = 0;
+        clocks = (lng)get_tick() - c->clocks;
         cpu_sync();
         val = get_pic();
         count0 = (lng)(val & 0xffffffff) - c->count0;
         count1 = (lng)(val >> 32) - c->count1;
-        close(c->generation);
+        close((int)c->generation);
+ #elif ( defined(HW_SunOS) && defined(HAVE_LIBCPC) )
+        cpc_event_t evnt;
+        if ((rtrn = cpc_take_sample(&evnt)) != 0) {
+            GDKerror("start_count: cpc_take_sample failed with return value %d, errno %d\n",
+                     rtrn,errno);
+            perror("! start_count/cpc_take_sample");
+            return GDK_FAIL;
+        }
+        if ((rtrn = cpc_rele()) != 0) {
+            GDKerror("start_count: cpc_rele failed with return value %d, errno %d\n",
+                     rtrn,errno);
+            perror("! start_count/cpc_rele");
+            return GDK_FAIL;
+        }
+        count0 = (lng)evnt.ce_pic[0] - c->count0;
+        count1 = (lng)evnt.ce_pic[1] - c->count1;
+        clocks = (lng)evnt.ce_tick   - c->clocks;
  #endif
     }
 #endif
     /* get the values */
     retval->status = 2;
-    retval->usec = usec;
     retval->generation = c->generation;
+    retval->usec = usec;
+    retval->clocks = clocks;
     retval->event0 = c->event0;
     if (c->event0 == NoEvent)
         retval->count0 = lng_nil;
@@ -606,19 +913,21 @@ int get_counter(counter *retval, counter *c) {
         retval->count1 = lng_nil;
     else
         retval->count1 = count1;
-    retval->clocks = clocks;
     return GDK_SUCCEED;
 }
 
 
-int read_counter(BAT **ret, counter *c) {
+int counter2bat(BAT **ret, counter *c) {
     lng ms;
+#if ( defined(HWCOUNTERS) && defined(HW_SunOS) )
+    lng diff;
+#endif
     if (c->status != 2) {
-        GDKerror("read_counter: counter not stopped.\n");
+        GDKerror("counter2bat: counter not stopped.\n");
         return GDK_FAIL;
     }
     ms=c->usec/1000;
-    *ret = BATnew(TYPE_str, TYPE_lng, 6);
+    *ret = BATnew(TYPE_str, TYPE_lng, 8);
     BUNins(*ret, "status", &c->status);
     BUNins(*ret, "generation", &c->generation);
     BUNins(*ret, "microsecs", &c->usec);
@@ -627,6 +936,25 @@ int read_counter(BAT **ret, counter *c) {
 #if defined(HWCOUNTERS)
     BUNins(*ret, event[(int)(c->event0)].native, &c->count0);
     BUNins(*ret, event[(int)(c->event1)].native, &c->count1);
+ #if defined(HW_SunOS)
+    diff = c->count0 - c->count1;
+    if ((event[c->event0].id0 == 4) && (event[c->event1].id1 == 16)) {
+        BUNins(*ret, "L1_inst_misses = IC_REF - IC_HIT", &diff);
+    } else
+    if ((event[c->event0].id0 == 5) && (event[c->event1].id1 == 17)) {
+        BUNins(*ret, "L1_read_misses = DC_READ - DC_READ_HIT", &diff);
+    } else
+    if ((event[c->event0].id0 == 6) && (event[c->event1].id1 == 18)) {
+        BUNins(*ret, "L1_write_misses = DC_WRITE - DC_WRITE_HIT", &diff);
+    } else
+    if ((event[c->event0].id0 == 8) && (event[c->event1].id1 == 20)) {
+        BUNins(*ret, "L2_data_misses = EC_REF - EC_HIT", &diff);
+    } else {
+        BUNins(*ret, (str) &chr_nil, &lng_nil);
+    }
+ #else
+    BUNins(*ret, (str) &chr_nil, &lng_nil);
+ #endif
 #endif
 /*
     (*ret)->halign = 3928437;
@@ -635,6 +963,7 @@ int read_counter(BAT **ret, counter *c) {
     BATname(*ret, "counter");
     return GDK_SUCCEED;
 }
+
 
 int show_native_events(BAT **ret) {
     int i = 0;
@@ -648,6 +977,7 @@ int show_native_events(BAT **ret) {
     BATname(*ret, "native_events");
     return GDK_SUCCEED;
 }
+
 
 int show_unified_events(BAT **ret) {
     int i = 0;
@@ -666,11 +996,12 @@ int show_unified_events(BAT **ret) {
 
 @+ Test Script	
 @mil
+module("alarm");
 module("counters");
 
 sigs("counters");
 
-var eu, en, ne, ne2, e0, e1, n0, n1;
+var eu, en, ne, ne2, e0, e1, n0, n1, c;
 
 en := native_events;
 ne := count(en);
@@ -688,10 +1019,14 @@ en@batloop {
 	}
 	n0 := en.find(e0);
 	n1 := en.find(e1);
-	create_counter(e0,e1).get_counter.read_counter.col_name(sprintf("counters %d & %d",e0,e1)).print;
-	create_counter(n0,n1).get_counter.read_counter.col_name(sprintf("counters %d & %d",e0,e1)).print;
-	create_counter(e0,e0).get_counter.read_counter.col_name(sprintf("counters %d & %d",e0,e0)).print;
-	create_counter(n1,n1).get_counter.read_counter.col_name(sprintf("counters %d & %d",e0,e0)).print;
+	start_count(e0,e1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
+	profile(";",e0,e1).counter2str.print;
+	profile(";",n0,n1).counter2str.print;
+	start_count(n0,n1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
+	start_count(e0,n0).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e0)).print;
+	profile(";",e0,n0).counter2str.print;
+	profile(";",n1,e1).counter2str.print;
+	start_count(n1,e1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e1,e1)).print;
 }
 
 eu := unified_events;
@@ -704,8 +1039,10 @@ eu@batloop {
 	e1 := $h;
 	n0 := eu.find(e0);
 	n1 := eu.find(e1);
-	create_counter(e0,e1).get_counter.read_counter.col_name(sprintf("counters %d & %d",e0,e1)).print;
-	create_counter(n0,n1).get_counter.read_counter.col_name(sprintf("counters %d & %d",e0,e1)).print;
+	c := start_count(e0,n1);         c.stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
+	profile(";"        ,e0,e1).counter2str.print;
+	profile("sleep(1);",n0,n1).counter2str.print;
+	c := start_count(n0,e1);sleep(1);c.stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
 }
 
 quit;

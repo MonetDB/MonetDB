@@ -1,22 +1,35 @@
 stdout of test 'tstvoid` in directory 'scripts/gold` itself:
 
-#> Mtest (15:06:20):	other tstvoid 1470
-#> Mtest (15:06:20):	Mtimeout -timeout 1470 ./tstvoid tstvoid
-#> Mlog (15:06:20):	Mtimeout -timeout 210 Mcreatedb -user manegold -db scripts_gold_tstvoid
-Mcreatedb: processing database 'scripts_gold_tstvoid' in /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tstvoid.
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tstvoid 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tstvoid/bat 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tstvoid/users 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tstvoid/users/adm 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tstvoid/users/guest 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tstvoid/users/manegold 
-Mcreatedb: calling 'Mserver -db scripts_gold_tstvoid' for the first time..
-Mcreatedb: database 'scripts_gold_tstvoid' has been initialized succesfully!
-#> Mlog (13:50:08):	Mtimeout -timeout 210 Mload test100k -db scripts_gold_tstvoid -oid 30000000 -s 100000 -f format
-#> Mlog (13:50:09):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db scripts_gold_tstvoid init.mil
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for mips-sgi-irix6.5/32bit.
+
+# 01:15:41 >  
+# 01:15:41 >  Mtimeout -timeout 4812 ./tstvoid tstvoid 
+# 01:15:41 >  
+
+
+# 01:15:41 >  
+# 01:15:41 >  Mtimeout -timeout 432 Mcreatedb -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_scripts_gold_tstvoid
+# 01:15:41 >  
+
+# monetrc=/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf
+# dbfarm=/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname=Tests_scripts_gold_tstvoid
+# dbdir=/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid
+# distr=/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp
+# /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid 
+# /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid/bat 
+Mcreatedb: calling 'Mserver -initonly -db /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf' for the first time..
+Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid' has been initialized succesfully!
+
+# 01:15:42 >  
+# 01:15:42 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_scripts_gold_tstvoid < load.mil
+# 01:15:42 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_scripts_gold_tstvoid
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid
 
 loaded;
 #---------------------------------#
@@ -35,11 +48,16 @@ Try: modules;                - for other modules.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
 
-#You are system administrator (adm)!
-#> Mlog (12:09:05):	Mtimeout -timeout 210 Mserver -p -modulesilent -yaccsilent -d8 -db scripts_gold_tstvoid
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for mips-sgi-irix6.5/32bit.
+# 01:15:45 >  
+# 01:15:45 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_scripts_gold_tstvoid < init.mil
+# 01:15:45 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_scripts_gold_tstvoid
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid
 
 loaded;
 #---------------------------------#
@@ -57,8 +75,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 [ 50000 ]
 #~BeginVariableOutput~#
 #---------------------------------#
@@ -77,11 +93,17 @@ Try: modules;                - for other modules.
 [ 30060113@0,	  "no damage"	  ]
 [ 30077628@0,	  "no damage"	  ]
 #~EndVariableOutput~#
-#> Mlog (15:06:50):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db scripts_gold_tstvoid void.mil
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:void.mil
+
+# 01:15:46 >  
+# 01:15:46 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_scripts_gold_tstvoid < void.mil
+# 01:15:46 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_scripts_gold_tstvoid
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid
 
 loaded;
 #---------------------------------#
@@ -99,37 +121,41 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
+#-----------------------------------------------------------------------------------------------------------------#
+# name			| htype	| ttype		| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "age_t",		  "int",  "int",	  46,	  0,	  "dirty",	  "load", "pers", 1,	  1	  ]
+[ "car_age",		  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "car_carprice",	  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "car_category",	  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "car_class",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "car_gender",		  "oid",  "chr",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "car_neg",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "car_pos",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "car_town",		  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "carprice_t",		  "int",  "int",	  9,	  0,	  "dirty",	  "load", "pers", 1,	  1	  ]
+[ "category_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1	  ]
+[ "class_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1	  ]
+[ "town_t",		  "str",  "int",	  10,	  0,	  "dirty",	  "load", "pers", 1,	  1	  ]
+[ "void_age",		  "oid",  "age_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "void_carprice",	  "oid",  "carprice_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "void_category",	  "oid",  "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "void_class",		  "oid",  "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "void_gender",	  "oid",  "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "void_neg",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "void_pos",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+[ "void_town",		  "oid",  "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1	  ]
 
-#You are system administrator (adm)!
-#---------------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype		| count	| heat	| dirty		| status| kind	| refcnt  #
-#---------------------------------------------------------------------------------------------------------#
-[ "age_t",		  "int",  "int",	  46,	  0,	  "dirty",	  "load", "pers", 1	  ]
-[ "car_age",		  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
-[ "car_carprice",	  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
-[ "car_category",	  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
-[ "car_class",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "car_gender",		  "oid",  "chr",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
-[ "car_neg",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
-[ "car_pos",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
-[ "car_town",		  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
-[ "carprice_t",		  "int",  "int",	  9,	  0,	  "dirty",	  "load", "pers", 1	  ]
-[ "category_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1	  ]
-[ "class_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1	  ]
-[ "town_t",		  "str",  "int",	  10,	  0,	  "dirty",	  "load", "pers", 1	  ]
-[ "void_age",		  "oid",  "age_t",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_carprice",	  "oid",  "carprice_t",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_category",	  "oid",  "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_class",		  "oid",  "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_gender",	  "oid",  "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_neg",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_pos",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_town",		  "oid",  "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-#> Mlog (15:07:00):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db scripts_gold_tstvoid tstvoid.mil
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:tstvoid.mil
+# 01:15:48 >  
+# 01:15:48 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_scripts_gold_tstvoid < tstvoid.mil | tee output
+# 01:15:48 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_scripts_gold_tstvoid
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid
 
 loaded;
 #---------------------------------#
@@ -147,8 +173,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -1147,3 +1171,8 @@ Try: modules;                - for other modules.
 --------- --------- --------- --------- --------- --------- ---------
 1100	  200	    0	      174	0	  4598	    21
 #~EndVariableOutput~#
+
+# 01:15:50 >  
+# 01:15:50 >  Done.
+# 01:15:50 >  
+

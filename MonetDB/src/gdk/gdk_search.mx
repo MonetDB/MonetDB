@@ -772,6 +772,8 @@ BUN *IDXfnd@1(BAT *b, ptr v){
 	FATALcheck(b->hidx_heap == NULL, "IDXfnd@1: tree expected"); 
 	FATALcheck(v == NULL, "IDXfnd@1: value expected"); 
 
+	if (BATcount(b) <= 0) return b->H->idx.first;
+
 	switch(ATOMstorage(b->htype)) {
 	case TYPE_chr:	return IDXfnd@1_chr(b,v);
 	case TYPE_sht:	return IDXfnd@1_sht(b,v);

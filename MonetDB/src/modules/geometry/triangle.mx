@@ -46,7 +46,6 @@ public:
    point& pnt(int index);
    box bbox() const;
    int dimension() const;
-   void plot() const;
    double area() const;
    bool clockwise() const;
    triangle* copy() const;
@@ -114,12 +113,6 @@ void triangle::set(const point& pnt1,const point& pnt2,const point& pnt3)
 triangle* triangle::create()
 {
    return new triangle;
-}
-
-void triangle::plot() const
-{
-   GDKwarning("triangle %f %f %f %f %f %f\n",
-      p1.x,p1.y,p2.x,p2.y,p3.x,p3.y);
 }
 
 void triangle::doreverse()

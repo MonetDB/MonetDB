@@ -42,3 +42,4 @@ b.persists(false);
 
 commit;
 
+quit;

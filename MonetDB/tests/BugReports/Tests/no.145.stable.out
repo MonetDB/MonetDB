@@ -29,15 +29,29 @@ Try: modules;                - for other modules.
 [ 10000 ]
 [ 10000 ]
 [ 100000 ]
+setoid(oid(2000000));
+#test correct decisions in the join operation.
+t:= k100_unique1.select(10,10);
+t.count.print; k100_unique1.count.print;
 [ 1 ]
 [ 100000 ]
+u:= t.copy;
+#cpu.print;
+
+z:= t.reverse.join(k100_unique1);
+z.print;
 #-----------------#
 # BAT:	  tmp_32  #
 # (int)	  (int)	  #
 #-----------------#
 [ 10,	  10	  ]
+#cpu.print;
+z:= k100_unique1.reverse.join(u);
+#cpu.print;
+z.print;
 #-----------------#
 # BAT:	  tmp_33  #
 # (int)	  (int)	  #
 #-----------------#
 [ 10,	  10	  ]
+quit;

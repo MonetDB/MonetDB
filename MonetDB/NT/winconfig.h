@@ -165,6 +165,8 @@
 
 /* Define if you have the <fcntl.h> header file.  */
 #define HAVE_FCNTL_H 1
+#define HAVE_FCNTL  1
+#define HAVE_SETSOCKOPT 0
 
 /* Define if you have the <dlfcn.h> header file.  */
 #undef HAVE_DLFCN_H 
@@ -186,6 +188,9 @@
 
 /* Define if you have the <pthread.h> header file.  */
 #define HAVE_PTHREAD_H 1
+
+/* Define if you have the <semaphore.h> header file.  */
+#define HAVE_SEMAPHORE_H 1
 
 /* Define if you have the <rlimit.h> header file.  */
 /* #undef HAVE_RLIMIT_H */
@@ -233,7 +238,7 @@
 #define PACKAGE "Monet"
 
 /* Version number of package */
-#define VERSION "4.2"
+#define VERSION "4.3.4"
 
 /* Host identifier */
 #define HOST "i686-pc-win32"

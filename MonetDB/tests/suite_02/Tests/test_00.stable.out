@@ -29,7 +29,13 @@ Try: modules;                - for other modules.
 [ 10000 ]
 [ 10000 ]
 [ 100000 ]
+setoid(oid(2000000));
+# make a wisconsin-like database
+# it uses the predefined wisconsin generator
+module("wisc");
+wisc("W10k",10000);
 WISC generator active on "W10k" with 10000 tuples
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -41,6 +47,7 @@ WISC generator active on "W10k" with 10000 tuples
 [ "system",	  380	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
@@ -57,6 +64,7 @@ WISC generator active on "W10k" with 10000 tuples
 [ "uordblks",	  1902432	  ]
 [ "fordblks",	  145096	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
@@ -71,6 +79,8 @@ WISC generator active on "W10k" with 10000 tuples
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+commit;
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
@@ -85,6 +95,7 @@ WISC generator active on "W10k" with 10000 tuples
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -96,7 +107,9 @@ WISC generator active on "W10k" with 10000 tuples
 [ "system",	  390	  ]
 [ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
+wisc("W100k",100000);
 WISC generator active on "W100k" with 100000 tuples
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -108,6 +121,7 @@ WISC generator active on "W100k" with 100000 tuples
 [ "system",	  420	  ]
 [ "elapsystem",	  30	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
@@ -124,6 +138,7 @@ WISC generator active on "W100k" with 100000 tuples
 [ "uordblks",	  1917184	  ]
 [ "fordblks",	  130344	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
@@ -138,6 +153,8 @@ WISC generator active on "W100k" with 100000 tuples
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+commit;
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
@@ -152,6 +169,7 @@ WISC generator active on "W100k" with 100000 tuples
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -163,3 +181,4 @@ WISC generator active on "W100k" with 100000 tuples
 [ "system",	  490	  ]
 [ "elapsystem",	  70	  ]
 #~EndVariableOutput~#
+quit;

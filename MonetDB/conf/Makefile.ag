@@ -1,6 +1,11 @@
 EXTRA_DIST = \
-	conf-medusa conf-apps conf-aix conf-linux \
 	config.guess config.sub \
-	install-sh mkinstalldirs missing depcomp \
-	ltmain.sh ltconfig    \
-	stamp-h.in config.h.in
+	install-sh mkinstalldirs missing \
+	ltmain.sh stamp-h.in config.h.in \
+	monet.m4 conf.bash conf.csh
+
+scripts_m4 = {
+	DIR = pkgdatadir/conf
+	SOURCES = monet.m4 conf.bash conf.csh
+}
+

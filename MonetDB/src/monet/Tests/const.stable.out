@@ -1,0 +1,50 @@
+stdout of test 'const` in directory 'src/monet` itself:
+
+
+# 13:33:17 >  
+# 13:33:17 >  Mtimeout -timeout 432 Mserver -p -modulesilent -yaccsilent -d8 -db Tests_src_monet  < const.milM
+# 13:33:17 >  
+
+# Monet Database Server V4.3
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+#-------------------------#
+# BAT:	  tmp_25	  #
+# (void)  (BAT)		  #
+#-------------------------#
+[ nil,	  <tmp_27>	  ]
+[ nil,	  <tmp_29>	  ]
+#-------------------------#
+# BAT:	  tmp_28	  #
+# (void)  (BAT)		  #
+#-------------------------#
+[ 0@0,	  <tmp_31>	  ]
+[ 1@0,	  <tmp_32>	  ]
+#-------------------------#
+# BAT:	  tmp_30	  #
+# (oid)	  (BAT)		  #
+#-------------------------#
+[ 0@0,	  <tmp_31>	  ]
+[ 1@0,	  <tmp_33>	  ]
+
+# 13:33:17 >  
+# 13:33:17 >  Done.
+# 13:33:17 >  
+

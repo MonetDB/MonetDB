@@ -1,5 +1,7 @@
 
-INCLUDES = top_builddir/src/gdk top_builddir/src/monet 
+INCLUDES = -I../gdk -I../monet -I../modules/plain -I../modules/plain/stream 
+
+SUBDIRS = clients
 
 MTSAFE
 
@@ -10,7 +12,8 @@ lib__mapi = {
 	SOURCES = mapi.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet \
+	LIBS = ../gdk/libbat ../monet/libmonet \
+		../modules/plain/lib_kernel \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 

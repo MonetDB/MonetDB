@@ -144,8 +144,14 @@ can be found in this module.
 .COMMAND access( BAT[any::1,any::2] b) : int = CMDgetaccess; 
 "Return the update access privilige of a BAT."
 
+.COMMAND seqbase( BAT[oid,any::1] b ) : oid = CMDget_seqbase;
+"Get the sequence base for the void vcolumn of a BAT."
+
+.COMMAND seqbase( BAT[void,any::1] b ) : oid = CMDget_seqbase;
+"Get the sequence base for the void vcolumn of a BAT."
+
 .COMMAND seqbase( BAT[void,any::1] b, oid seqbase) 
-				: BAT[void,any::1] = CMDseqbase;
+				: BAT[void,any::1] = CMDset_seqbase;
 "Set the sequence base for the void vcolumn of a BAT.
  Returns the BAT itself." 
 
@@ -1206,7 +1212,12 @@ int CMDbatloop_std(BAT *b, ptr *h) {
 	return CMDbatloop(b, h, &low, &high);
 }
 
-int CMDseqbase(BAT **r, BAT *b, oid* o){
+int CMDget_seqbase(oid *o, BAT *b){
+	*o = b->hseqbase;
+	return GDK_SUCCEED;
+}
+
+int CMDset_seqbase(BAT **r, BAT *b, oid* o){
 	BATseqbase(*r = b, *o);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;

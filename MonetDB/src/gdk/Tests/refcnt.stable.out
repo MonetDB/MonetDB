@@ -1,11 +1,16 @@
 stdout of test 'refcnt` in directory 'src/gdk` itself:
 
-#> Mtest (13:50:13):	milM refcnt milM
-#> Mtest (13:50:13):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_gdk refcnt.milM
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:refcnt.milM
+
+# 06:00:25 >  
+# 06:00:25 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_src_gdk  < refcnt.milM
+# 06:00:25 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_src_gdk
+# dbdir:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_src_gdk
 
 loaded;
 #---------------------------------#
@@ -23,141 +28,154 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
+#---------------------------------------------------------#
+# name			| heat	| status| kind	| group	  #
+#---------------------------------------------------------#
+[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+#---------------------------------------------------------#
+# name			| heat	| status| kind	| group	  #
+#---------------------------------------------------------#
+[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "two",		  0,	  "load", "tran", 0	  ]
+[ "one",		  0,	  "load", "tran", 0	  ]
+[ "top",		  0,	  "load", "tran", 1	  ]
+#---------------------------------------------------------#
+# name			| heat	| status| kind	| group	  #
+#---------------------------------------------------------#
+[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "two",		  0,	  "load", "tran", 0	  ]
+[ "top",		  0,	  "load", "tran", 1	  ]
+#---------------------------------------------------------#
+# name			| heat	| status| kind	| group	  #
+#---------------------------------------------------------#
+[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "two",		  0,	  "load", "tran", 0	  ]
+[ "ten",		  0,	  "load", "tran", 0	  ]
+[ "tmp_27",		  0,	  "load", "tran", 1	  ]
+[ "top",		  0,	  "load", "tran", 1	  ]
+[ "tmp_30",		  0,	  "load", "tran", 1	  ]
+[ "twenty",		  0,	  "load", "tran", 0	  ]
+#---------------------------------------------------------#
+# name			| heat	| status| kind	| group	  #
+#---------------------------------------------------------#
+[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
 
-#You are system administrator (adm)!
-#---------------------------------------------------------#
-# name			| heat	| status| kind	| group	  #
-#---------------------------------------------------------#
-[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
-#---------------------------------------------------------#
-# name			| heat	| status| kind	| group	  #
-#---------------------------------------------------------#
-[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
-[ "two",		  0,	  "load", "tran", 1	  ]
-[ "one",		  0,	  "load", "tran", 1	  ]
-[ "top",		  0,	  "load", "tran", 1	  ]
-#---------------------------------------------------------#
-# name			| heat	| status| kind	| group	  #
-#---------------------------------------------------------#
-[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
-[ "two",		  0,	  "load", "tran", 1	  ]
-[ "top",		  0,	  "load", "tran", 1	  ]
-#---------------------------------------------------------#
-# name			| heat	| status| kind	| group	  #
-#---------------------------------------------------------#
-[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
-[ "ten",		  0,	  "load", "tran", 1	  ]
-[ "two",		  0,	  "load", "tran", 1	  ]
-[ "tmp_25",		  0,	  "load", "tran", 1	  ]
-[ "top",		  0,	  "load", "tran", 1	  ]
-[ "tmp_28",		  0,	  "load", "tran", 1	  ]
-[ "twenty",		  0,	  "load", "tran", 1	  ]
-#---------------------------------------------------------#
-# name			| heat	| status| kind	| group	  #
-#---------------------------------------------------------#
-[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+# 06:00:26 >  
+# 06:00:26 >  Done.
+# 06:00:26 >  
+

@@ -41,6 +41,7 @@ oct_leaf* octree_getleaf(Heap* tree,int index);
 #endif /* __OCTREE_H__ */
 @C
 #include "gis.h"
+#include "opengis.h"
 #include "gisbulk.proto.h"
 #include "octree.h"
 

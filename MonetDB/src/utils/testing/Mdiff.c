@@ -40,9 +40,9 @@ void showUsage(char *name)
 
 int main(int argc, char** argv)
 {
-  char EMPTY[]="\0";
-  char DEFAULT[]="'-I^#'\0";
-  char ignoreWHITE[]=" -b -B\0";
+  char EMPTY[]="";
+  char DEFAULT[]="-I'^#'";
+  char ignoreWHITE[]=" -b -B";
   char *old_fn,*new_fn,*html_fn,*caption=EMPTY,*revision=EMPTY,*ignoreEXP=DEFAULT,*ignore;
   int LWC=1,context=1,option;
 
@@ -52,9 +52,15 @@ int main(int argc, char** argv)
        case 'a': LWC=atoi(optarg); break;
        case 'c': context=atoi(optarg); break;
        case 'I': ignoreEXP=(char*)malloc(strlen(optarg)+6);
-		 strcpy(ignoreEXP,"'-I\0");
+#ifdef NATIVE_WIN32
+		 strcpy(ignoreEXP,"-I");
+#else
+		 strcpy(ignoreEXP,"'-I");
+#endif
 		 strcat(ignoreEXP,optarg);
-		 strcat(ignoreEXP,"'\0");
+#ifndef NATIVE_WIN32
+		 strcat(ignoreEXP,"'");
+#endif
 		 break;
        case 'C': caption=optarg; break;
        case 'r': revision=optarg; break;
@@ -71,15 +77,15 @@ int main(int argc, char** argv)
   new_fn=((argc>(++optind))?argv[optind]:"-");
   html_fn=((argc>(++optind))?argv[optind]:"-");
 
-  TRACE(fprintf(stderr,"%s -a %i -c %i %s -C %s -r %s  %s %s %s\n",
+  TRACE(fprintf(STDERR,"%s -a %i -c %i %s -C %s -r %s  %s %s %s\n",
                  argv[0],LWC,context,ignore,caption,revision,old_fn,new_fn,html_fn));
 
   if ( oldnew2html (LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision) )
-      fprintf(stderr,"%s and %s differ!\n",old_fn,new_fn);
+      fprintf(STDERR,"%s and %s do differ!\n",old_fn,new_fn);
     else
-      fprintf(stderr,"%s and %s don't differ.\n",old_fn,new_fn);
+      fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn);
 
-  TRACE(fprintf(stderr,"done.\n"));
+  TRACE(fprintf(STDERR,"done.\n"));
   return 0;
 }
 

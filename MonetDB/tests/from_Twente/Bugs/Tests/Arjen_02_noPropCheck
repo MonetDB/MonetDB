@@ -1,7 +1,9 @@
 #!/bin/sh
 
 NAME="$1"
-PRELUDE="$2"
+PRELUDE="$2 $3"
 
-mserver="`echo $MSERVER' ' | sed 's| -d8 | |g'`"
-Mlog -x $mserver -db $TSTDB < Arjen_02.milM
+Mlog   "echo 'debugmask(2);' > d2.mil"
+        echo 'debugmask(2);' > d2.mil
+Mlog   "$MSERVER -db $TSTDB d2.mil Arjen_02.milM"
+        $MSERVER -db $TSTDB d2.mil Arjen_02.milM

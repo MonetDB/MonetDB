@@ -1,11 +1,16 @@
 stdout of test 'test_01` in directory 'tests/suite_08` itself:
 
-#> Mtest (16:27:22):	milM test_01 milM
-#> Mtest (16:27:22):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_08 test_01.milM
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_01.milM
+
+# 01:26:55 >  
+# 01:26:55 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_suite_08  < test_01.milM
+# 01:26:55 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_tests_suite_08
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_tests_suite_08
 
 loaded;
 #---------------------------------#
@@ -23,34 +28,34 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
 #---------------------------------#
-[ 1,	  "monet_fcn_fcn"	  ]
-[ 2,	  "monet_fcn_imp"	  ]
-[ 3,	  "monet_fcn_tpe"	  ]
-[ 4,	  "monet_fcn_mid"	  ]
-[ 5,	  "monet_fcn_sig"	  ]
-[ 6,	  "monet_fcn_dsc"	  ]
-[ 7,	  "monet_fcn_aut"	  ]
-[ 8,	  "monet_fcn_dat"	  ]
-[ 9,	  "monet_fcn_nme"	  ]
-[ 10,	  "monet_fcn_pro"	  ]
-[ 11,	  "monet_mod_nme"	  ]
-[ 12,	  "monet_mod_cnt"	  ]
-[ 13,	  "monet_mod_atm"	  ]
-[ 14,	  "monet_mod_acc"	  ]
-[ 15,	  "monet_mod_hdl"	  ]
-[ 16,	  "monet_mod_dep"	  ]
-[ 17,	  "monet_mod_use"	  ]
-[ 18,	  "monet_mod_load"	  ]
-[ 19,	  "monet_mod_drop"	  ]
-[ 20,	  "monet_fcntbl"	  ]
-[ 21,	  "monet_acctbl"	  ]
-[ 22,	  "monet_atomtbl"	  ]
+[ 1,	  "monet_envirenment"	  ]
+[ 2,	  "monet_fcn_fcn"	  ]
+[ 3,	  "monet_fcn_imp"	  ]
+[ 4,	  "monet_fcn_tpe"	  ]
+[ 5,	  "monet_fcn_mid"	  ]
+[ 6,	  "monet_fcn_sig"	  ]
+[ 7,	  "monet_fcn_dsc"	  ]
+[ 8,	  "monet_fcn_aut"	  ]
+[ 9,	  "monet_fcn_dat"	  ]
+[ 10,	  "monet_fcn_nme"	  ]
+[ 11,	  "monet_fcn_pro"	  ]
+[ 12,	  "monet_fcn_cnt"	  ]
+[ 13,	  "monet_mod_nme"	  ]
+[ 14,	  "monet_mod_cnt"	  ]
+[ 15,	  "monet_mod_atm"	  ]
+[ 16,	  "monet_mod_acc"	  ]
+[ 17,	  "monet_mod_hdl"	  ]
+[ 18,	  "monet_mod_dep"	  ]
+[ 19,	  "monet_mod_use"	  ]
+[ 20,	  "monet_mod_load"	  ]
+[ 21,	  "monet_mod_drop"	  ]
+[ 22,	  "monet_fcntbl"	  ]
+[ 23,	  "monet_acctbl"	  ]
+[ 24,	  "monet_atomtbl"	  ]
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -77,6 +82,8 @@ Try: modules;                - for other modules.
 [ 20,	  1	  ]
 [ 21,	  1	  ]
 [ 22,	  1	  ]
+[ 23,	  1	  ]
+[ 24,	  1	  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -103,6 +110,8 @@ Try: modules;                - for other modules.
 [ 20,	  "20"		  ]
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
+[ 23,	  "23"		  ]
+[ 24,	  "24"		  ]
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -129,6 +138,8 @@ Try: modules;                - for other modules.
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
+[ 23,	  0	  ]
+[ 24,	  0	  ]
 #-------------------------#
 # BAT:	  status	  #
 # (int)	  (str)		  #
@@ -155,6 +166,8 @@ Try: modules;                - for other modules.
 [ 20,	  "dirty"	  ]
 [ 21,	  "dirty"	  ]
 [ 22,	  "dirty"	  ]
+[ 23,	  "dirty"	  ]
+[ 24,	  "dirty"	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -181,6 +194,8 @@ Try: modules;                - for other modules.
 [ 20,	  "load"  ]
 [ 21,	  "load"  ]
 [ 22,	  "load"  ]
+[ 23,	  "load"  ]
+[ 24,	  "load"  ]
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -207,21 +222,28 @@ Try: modules;                - for other modules.
 [ 20,	  "tran"  ]
 [ 21,	  "tran"  ]
 [ 22,	  "tran"  ]
+[ 23,	  "tran"  ]
+[ 24,	  "tran"  ]
 [ "view_bbp_info" ]
 [ "view_atom_name" ]
 [ "view_gdk_env" ]
 #~BeginVariableOutput~#
-#---------------------------------------------------------------------------------------------------------#
-# BAT:		  env											  #
-# (str)		  (str)											  #
-#---------------------------------------------------------------------------------------------------------#
-[ "dbname",	  "tests_suite_08"									  ]
-[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/tests_suite_08"  ]
-[ "owner",	  "manegold"										  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"								  ]
-[ "processid",	  "18118"										  ]
-[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/Linux2.2.14-12smp"			  ]
-[ "version",	  "4.2"											  ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  env												  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
+[ "gdk_dbname",		  "Tests_tests_suite_08"									  ]
+[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
+[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_tests_suite_08"	  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3"												  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/tests/suite_08"		  ]
+[ "monet_pid",		  "21628"											  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_deamon",	  "yes"												  ]
+[ "monet_prompt",	  "\001\001"											  ]
 #~EndVariableOutput~#
 [ "view_gdk_thread" ]
 #~BeginVariableOutput~#
@@ -248,3 +270,8 @@ Try: modules;                - for other modules.
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 0,	  "print(view_client_tree())"	  ]
+
+# 01:26:56 >  
+# 01:26:56 >  Done.
+# 01:26:56 >  
+

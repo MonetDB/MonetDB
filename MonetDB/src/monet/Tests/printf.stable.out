@@ -1,11 +1,16 @@
 stdout of test 'printf` in directory 'src/monet` itself:
 
-#> Mtest (13:52:00):	milM printf milM
-#> Mtest (13:52:00):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_monet printf.milM
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:printf.milM
+
+# 01:07:05 >  
+# 01:07:05 >  Mtimeout -timeout 600 Mserver -monetrc /net/peddel/export/scratch1/arjen/monet/monet/Linux/share/Monet/monet.Mtest.conf -db Tests_src_monet  < printf.milM
+# 01:07:05 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/net/peddel/export/scratch1/arjen/monet/monet/Linux/dbfarm
+# dbname:Tests_src_monet
+# dbdir:/net/peddel/export/scratch1/arjen/monet/monet/Linux/dbfarm/Tests_src_monet
 
 loaded;
 #---------------------------------#
@@ -23,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 X AX
 XABX
 XABCX
@@ -41,3 +44,8 @@ XA  X
 XAB X
 XAB X
 XAB X
+
+# 01:07:07 >  
+# 01:07:07 >  Done.
+# 01:07:07 >  
+

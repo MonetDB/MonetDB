@@ -43,6 +43,14 @@ functions.
 # include <sys/signal.h>
 #endif
 
+#ifdef HAVE_PTHREAD_H
+# include <pthread.h>
+#endif
+
+#ifdef HAVE_SEMAPHORE_H
+# include <semaphore.h>
+#endif
+
 typedef void    *MT_Lock;
 typedef void    *MT_Sema;
 typedef void    *MT_Id;
@@ -204,11 +212,7 @@ gdk_export int _MT_pagesize;
 @c
 #include "gdk_system.h"
 
-#ifdef HAVE_PTHREAD_H
-# include <pthread.h>
-# include <semaphore.h>
-#endif
-
+#include "gdk_posix.h"
 #include <errno.h>
 
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
@@ -273,7 +277,9 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
         (void)sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);
 	pthread_attr_init(&attr);
+#ifdef PTHREAD_CREATE_DETACHED
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+#endif
         pthread_attr_setstacksize(&attr, 1024*1024);
 	ret = pthread_create((pthread_t*)t, &attr, (void*(*)(void*))f, arg);
         if (ret == 0) (*(int*)t)++; /* use pthread-id + 1 */
@@ -283,7 +289,7 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 
 void MT_global_exit(int s) {
 #if 0
-	(void) kill(0, SIGHUP);
+	/*(void) kill(0, SIGHUP);*/
 	pthread_kill_other_threads_np();
 #endif
 	exit(s);
@@ -297,7 +303,7 @@ void MT_exit_thread(int s) {
 
 
 int MT_kill_thread (MT_Id t) {
-	int id = (int)t-1;
+	long id = (long)t-1;
 	return pthread_kill((pthread_t)id, SIGHUP);
 }
 
@@ -329,12 +335,13 @@ void MT_destroy_lock (MT_Lock l) {
 }
 
 void MT_set_lock(MT_Lock l, char *name){
-    	int t = pthread_mutex_lock((pthread_mutex_t*)l);
+    	int t = 0;
     	if (MT_debug & 1024) {
         	fprintf(MT_out,"MT_set_lock(%lu\@%s) %ld %d\n", 
 			(long)MT_getpid(), name, (long)l, t);
         	fflush(MT_out);
     	}
+	(void)pthread_mutex_lock((pthread_mutex_t*)l);
 }
 
 void MT_unset_lock(MT_Lock l, char *name)	{
@@ -387,7 +394,7 @@ int MT_try_sema (MT_Sema s){
 		fflush(MT_out);
 	}
 	if (s == NULL) return 0;
-	return (sem_wait(s));
+	return (sem_trywait(s));
 }
 
 
@@ -425,7 +432,7 @@ void 	MT_dump_sema (MT_Sema s, FILE *fp, char *name) {
 }
 
 MT_Id MT_getpid(){
-	return (MT_Id)((int)pthread_self()+1);
+	return (MT_Id)((long)pthread_self()+1);
 }
 
 int MT_alive(int pid) {

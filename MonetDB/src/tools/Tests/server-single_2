@@ -1,6 +1,7 @@
 #!/bin/sh
 
 NAME="$1"
-PRELUDE="$2"
+PRELUDE="$2 $3"
 
-Mlog -x $MSERVER -db $TSTDB -single $PRELUDE < $NAME.mil
+Mlog   "$MSERVER -db $TSTDB $PRELUDE < $NAME.mil"
+        $MSERVER -db $TSTDB $PRELUDE < $NAME.mil

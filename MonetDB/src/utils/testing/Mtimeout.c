@@ -26,7 +26,7 @@ static int exec_timeout = 0;
 static void
 invocation(FILE *fp, char *prefix, char **argv)
 {
-    fprintf(fp, "\n! %s", prefix);
+    fprintf(fp, "\n!%s: %s", progname, prefix);
     while(*argv) {
 	fprintf(fp, "%s ", *argv);
 	argv++;

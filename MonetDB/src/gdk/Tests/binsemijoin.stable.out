@@ -1,0 +1,155 @@
+stdout of test 'binsemijoin` in directory 'src/gdk` itself:
+
+
+# 11:19:39 >  
+# 11:19:39 >  Mtimeout -timeout 60 Mserver -monetrc /ufs/manegold/_/draco/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/share/Monet/monet.Mtest.conf -db Tests_src_gdk  < binsemijoin.milM
+# 11:19:39 >  
+
+# Monet Database Server V4.3.4
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/ufs/manegold/_/draco/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/dbfarm
+# dbname:Tests_src_gdk
+# dbdir:/ufs/manegold/_/draco/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/dbfarm/Tests_src_gdk
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+#-----------------#
+# BAT:	  tmp_25  #
+# (void)  (int)	  #
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (void)  #
+#-----------------#
+[ 0,	  0@0	  ]
+[ 1,	  1@0	  ]
+#-----------------#
+# BAT:	  tmp_26  #
+# (int)	  (int)	  #
+#-----------------#
+[ 0,	  0	  ]
+[ 0,	  1	  ]
+[ 0,	  2	  ]
+[ 0,	  3	  ]
+[ 0,	  4	  ]
+[ 0,	  5	  ]
+[ 0,	  6	  ]
+[ 0,	  7	  ]
+[ 0,	  8	  ]
+[ 0,	  9	  ]
+[ 1,	  0	  ]
+[ 1,	  1	  ]
+[ 1,	  2	  ]
+[ 1,	  3	  ]
+[ 1,	  4	  ]
+[ 1,	  5	  ]
+[ 1,	  6	  ]
+[ 1,	  7	  ]
+[ 1,	  8	  ]
+[ 1,	  9	  ]
+#-----------------#
+# BAT:	  tmp_27  #
+# (oid)	  (int)	  #
+#-----------------#
+[ 0@0,	  0	  ]
+[ 0@0,	  1	  ]
+[ 0@0,	  2	  ]
+[ 0@0,	  3	  ]
+[ 0@0,	  4	  ]
+[ 0@0,	  5	  ]
+[ 0@0,	  6	  ]
+[ 0@0,	  7	  ]
+[ 0@0,	  8	  ]
+[ 0@0,	  9	  ]
+[ 1@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 1@0,	  3	  ]
+[ 1@0,	  4	  ]
+[ 1@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 1@0,	  7	  ]
+[ 1@0,	  8	  ]
+[ 1@0,	  9	  ]
+#-----------------#
+# BAT:	  tmp_28  #
+# (int)	  (int)	  #
+#-----------------#
+[ 0,	  0	  ]
+[ 0,	  1	  ]
+[ 0,	  2	  ]
+[ 0,	  3	  ]
+[ 0,	  4	  ]
+[ 0,	  5	  ]
+[ 0,	  6	  ]
+[ 0,	  7	  ]
+[ 0,	  8	  ]
+[ 0,	  9	  ]
+[ 1,	  0	  ]
+[ 1,	  1	  ]
+[ 1,	  2	  ]
+[ 1,	  3	  ]
+[ 1,	  4	  ]
+[ 1,	  5	  ]
+[ 1,	  6	  ]
+[ 1,	  7	  ]
+[ 1,	  8	  ]
+[ 1,	  9	  ]
+#-----------------#
+# BAT:	  tmp_28  #
+# (int)	  (oid)	  #
+#-----------------#
+[ 0,	  0@0	  ]
+[ 1,	  1@0	  ]
+#-----------------#
+# BAT:	  tmp_28  #
+# (oid)	  (int)	  #
+#-----------------#
+[ 0@0,	  0	  ]
+[ 0@0,	  1	  ]
+[ 0@0,	  2	  ]
+[ 0@0,	  3	  ]
+[ 0@0,	  4	  ]
+[ 0@0,	  5	  ]
+[ 0@0,	  6	  ]
+[ 0@0,	  7	  ]
+[ 0@0,	  8	  ]
+[ 0@0,	  9	  ]
+[ 1@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 1@0,	  3	  ]
+[ 1@0,	  4	  ]
+[ 1@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 1@0,	  7	  ]
+[ 1@0,	  8	  ]
+[ 1@0,	  9	  ]
+#-----------------#
+# BAT:	  tmp_28  #
+# (oid)	  (int)	  #
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+
+# 11:19:39 >  
+# 11:19:39 >  Done.
+# 11:19:39 >  
+

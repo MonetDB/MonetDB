@@ -224,3 +224,5 @@ IF( not( isnil(@1result_@2) ) ) {
 @:compresults(index,void)@
 
 printf( "RESULT: %d tests failed.\n", Ntestfailed );
+
+quit;

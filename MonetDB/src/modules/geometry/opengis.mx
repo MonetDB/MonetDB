@@ -215,7 +215,6 @@
 
    .COMMAND relreverse(str) :str = rel_reverse; ""
 
-   .COMMAND mrcompare(polyline p1,polyline p2) = mr_compare; ""
 .END opengis;
 @h
 #ifndef __OPENGIS_H__
@@ -1068,26 +1067,6 @@ int segment_split(
 // Temporary stuff.
 //=================
 //
-int mr_compare(polyline* p1,polyline* p2)
-{
-   MultiPoint* p1b = p1->boundary();
-   MultiPoint* p2b = p2->boundary();
-
-   minirealm m(p1b,p2b);
-
-   for(int i=0;i<p1->nsegments();++i)
-   {
-      m.add(p1->sgmt(i),true,false);
-   }
-   for(int j=0;j<p2->nsegments();++j)
-   {
-      m.add(p2->sgmt(j),false,true);
-   }
-   m.dump();
-
-   return(GDK_SUCCEED);
-}
-
 int LineString_hasminitree(bit* rval,LineString* l)
 {
    *rval = ((polyline* )l)->hasminitree();

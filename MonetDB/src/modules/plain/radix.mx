@@ -333,7 +333,7 @@ from the end of the BAT backward, until both meet in the middle). Quicksort is b
 therefore takes log2(ntuples) recursion levels to sort a BAT, hence its total memory access consists of log2(ntuples) 
 sequental scans.  However, since quicksort zooms into ever smaller sub-chunks of the BAT, there will 
 be cache re-use in the deeper recursion levels as soon as such a chunk fits the memory cache, which 
-happens when sizeof(chunk) = sizeof(BAT)/(2^level) <= sizeof(cache).  Hence, the total memory cost of 
+happens when sizeof(chunk) = sizeof(BAT)/(2\^level) <= sizeof(cache).  Hence, the total memory cost of 
 quicksort is log2(ntuples)-log2(sizeof(cache)/sizeof(tuple)) sequential scans.  
 
 In all, the Monet quicksort implementation behaves quite good both concerning CPU efficiency and 
@@ -391,7 +391,7 @@ in l passes, and smaller\_key in s passes, such that H = L1+..+Ll = S1+..+Ss:
 03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H);
 ..
 \end{verbatim}
-Line 03 above uses phash_join, but could alternatively use radix-join:
+Line 03 above uses phash\_join, but could alternatively use radix-join:
 \begin{verbatim}
 ..
 03  res_join := radix_join(cluster_larger, cluster_smaller.reverse, H);
@@ -400,7 +400,7 @@ Line 03 above uses phash_join, but could alternatively use radix-join:
 
 From this point on, the same code as in the previous MIL script could be applied to fetch the column 
 values for columns a1..aY from "smaller" and b1..bZ from "larger". The remaining problem here is that both
-the larger\_bX *and* the smaller_aX BATs will tend to be bigger than the smallest memory cache (though this 
+the larger\_bX *and* the smaller\_aX BATs will tend to be bigger than the smallest memory cache (though this 
 also depends on the join hit-ratio, but let use suppose it is >= 1). 
 
 To improve this, we can sort on the OIDs from the "larger" table, like described in the previous section.
@@ -447,7 +447,7 @@ size of the corresponding chunk in R (remember R is a BAT[void,T] and has all OI
 the memory cache.
 \item[positional join]
 The purpose of the radix-clustering in the previous phase L is to accelerate the positional join between L and R
-(i.e. res\_smaller and smaller_aX).  Because the OIDs in the tail of L are now partially sorted, each chunk in L 
+(i.e. res\_smaller and smaller\_aX).  Because the OIDs in the tail of L are now partially sorted, each chunk in L 
 will only randomly access data from one chunk in R.  Therfore, during positional join, these chunks in R stay 
 memory resident, accelerating performance wrt to doing the same with a non-clustered L (where each access to
 R would be a cache miss). 
@@ -574,7 +574,7 @@ a 5-fold performance improvement.
 
 Therfore, it might even be that the increased cost of radix-cluster will make simple
 hash-join faster than partitioned hash-join:
-\end{verbatim}
+\begin{verbatim}
 05  res_join := join(larger_view, smaller_view.reverse);
 \end{verbatim}
 In either way, we expect a relational performance to be a factor 10 slower than Monet
@@ -2044,7 +2044,7 @@ intends to improve performance by using a cheaper positional join:
 iso 
 	join(bat[oid,oid], bat[void,T])
 
-price paid are two parameters to radix_decluster.
+price paid are two parameters to radix\_decluster.
 
 @= radix_decluster2
 {   @1 *dst = (@1*) BUNfirst(bn);

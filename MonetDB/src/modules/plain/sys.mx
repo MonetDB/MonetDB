@@ -59,6 +59,8 @@ that you might well find very useful.
 	"Pseudo bat to map a BAT id into its name"
 .COMMAND view_bbp_refcnt(): BAT[int,int] = view_bbp_refcnt; 
 	"Pseudo bat to map a BAT id into its reference count"
+.COMMAND view_bbp_persistlevel(): BAT[int,int] = view_bbp_persistlevel; 
+	"Pseudo bat to map a BAT id into its persistency level"
 .COMMAND view_bbp_location(): BAT[int,str] = view_bbp_location; 
 	"Pseudo bat to map a BAT id into its disk location"
 .COMMAND view_bbp_heat(): BAT[int,int] = view_bbp_heat; 
@@ -174,7 +176,7 @@ that you might well find very useful.
  
     PROC help; # forward decl
     PROC help(str fcn) : void := {
-	IF (monet_fcntbl.exist(fcn)) monet_fcntbl@hashloop(fcn) {
+	IF (monet_fcn_nme.reverse.exist(fcn)) monet_fcn_nme.reverse@hashloop(fcn) {
 	    help_sig($t); printf("\n");
 	} ELSE {
 	    printf("no help available\n");
@@ -236,7 +238,8 @@ that you might well find very useful.
 		view_bbp_dirty.col_name("dirty"),
 		view_bbp_status.col_name("status"),
 		view_bbp_kind.col_name("kind"), 
-		view_bbp_refcnt.col_name("refcnt"));
+		view_bbp_refcnt.col_name("refcnt"),
+		view_bbp_persistlevel.col_name("plevel"));
     }
 
     PROC dir() : void := {
@@ -272,14 +275,18 @@ that you might well find very useful.
 	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
 	dir(prs.access(BAT_WRITE).col_name("name").replace(rev));
     }
-    PROC ls(str substr) : void := {
-        var nme := view_bbp_name.like(substr);
-	var prs := nme.semijoin(view_bbp_kind.select("pers"));
-	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-	dir(prs.access(BAT_WRITE).col_name("name").replace(rev));
-    }
     ADDHELP("ls", "boncz", "Feb  6 1996", 
 	"list all data bats. Optionally filter on name with a certain substring", "sys"); 
+
+    PROC ls(str substr) : void := {
+        var nme := view_bbp_name;
+	var prs := nme.semijoin(view_bbp_kind.select("pers"));
+	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	prs.access(BAT_WRITE).col_name("name").replace(rev);
+	dir(prs.like(substr));
+    }
+    ADDHELP("ls", "arjen", "Jun 12 2001", 
+	"list all data bats filtered on name with some substring", "sys"); 
 
     PROC exit() : void := {
 	quit;
@@ -462,6 +469,9 @@ view_bbp_location(
         return GDK_SUCCEED;
 }
 
+
+#define monet_modulesilent (!(GDKdebug&16384))
+
 int
 view_bbp_heat(
    BAT**        retval  /* put pointer to BAT[int,int] record here. */
@@ -515,7 +525,7 @@ view_bbp_dirty(
 					"clean");
 	}}
 	BBPunlock("view_bbp_dirty");
-	@:Pseudo(bbp,status)@
+	@:Pseudo(bbp,dirty)@
         return GDK_SUCCEED;
 }
 
@@ -586,7 +596,29 @@ view_bbp_refcnt(
 		BUNins(b, &i, &refs);
 	}}
 	BBPunlock("view_bbp_refcnt");
-	@:Pseudo(bbp,group)@
+	@:Pseudo(bbp,refcnt)@
+        return GDK_SUCCEED;
+}
+
+
+int
+view_bbp_persistlevel(
+   BAT**        retval  /* put pointer to BAT[int,str] record here. */
+){       
+	BAT	 *b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_int,BBPsize);
+        if (b == 0) return GDK_FAIL;
+
+	BBPlock("view_bbp_persistlevel");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+	if (BBP_logical(i)) {
+		int plevel = BBP_plevel(i);
+		BUNins(b, &i, &plevel);
+	}}
+	BBPunlock("view_bbp_persistlevel");
+	@:Pseudo(bbp,plevel)@
         return GDK_SUCCEED;
 }
 
@@ -616,18 +648,25 @@ int view_gdk_env(
 ){
 	BAT *b = *retval = BATnew(TYPE_str, TYPE_str, 12);
 	char prefix[128];
-	int  i;
 	if (b == 0) return GDK_FAIL;
-	for (i = 0; i < GDKPROP; i++) 
-		if (GDKenvironName[i]) {
-			BUNins(*retval, GDKenvironName[i], (str) 
-				(GDKenviron[i]?GDKenviron[i]:"\"nil\""));
-		}
+	if( GDKdbfarmStr[0])
+		BUNins(b, "gdk_dbfarm", GDKdbfarmStr);
+	if( GDKdbnameStr[0])
+		BUNins(b, "gdk_dbname", GDKdbnameStr);
+	if( GDKdistrStr[0])
+		BUNins(b, "gdk_distr", GDKdistrStr);
+	if( GDKmonetrcStr[0])
+		BUNins(b, "gdk_monetrc", GDKmonetrcStr);
+	BUNins(b, "gdk_dir", GDKdirStr);
         sprintf(prefix, "%dbit%s", sizeof(ptr)*8, monet_arch);
-	BUNins(b, "prefix", prefix); 
-	BUNins(b, "processid", local_itoa(getpid()));
-	BUNins(b, "home", monet_dir);
-	BUNins(b, "version", monet_version);
+	BUNins(b, "gdk_arch", prefix); 
+	BUNins(b, "gdk_version", monet_version);
+	BUNins(b, "monet_cwd", monet_cwd);
+	/* BUNins(b, "monet_general", monet_general);*/
+	BUNins(b, "monet_pid", local_itoa(getpid()));
+	BUNins(b, "monet_welcome", (monet_welcome?"yes":"no"));
+	BUNins(b, "monet_deamon", (monet_deamon?"yes":"no"));
+	BUNins(b, "monet_prompt", monet_prompt);
 	@:Pseudo(gdk,env)@
 	return GDK_SUCCEED;
 }
@@ -1042,7 +1081,10 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	if (tot) BUNins(bn, "_tot/found", &tot);
 	sz = GDKmem_heapsize();
 	if (sz) BUNins(bn, "_tot/sbrk", &sz);
+/*	compilation errors !
 	if (GDK_mem_cursize) BUNins(bn, "_tot/valloc", &GDK_mem_cursize);
+
+*/
 	sz = GDKmem_heapinuse();
 	if (sz) BUNins(bn, "_tot/malloc", &sz);
 	sz = sz + GDK_mem_cursize - tot;
@@ -1307,7 +1349,7 @@ int print_table_default(BAT *b, ...) {
 }
 
 int format_fcn_sig(str *sig, oid *fid){
-	if (TBL_formatsig(*sig = (str) GDKmalloc(256), *fid)) {
+	if (TBL_formatsig(*sig = (str) GDKmalloc(1024), *fid)) {
 		return GDK_SUCCEED;
 	}
 	GDKfree(*sig);

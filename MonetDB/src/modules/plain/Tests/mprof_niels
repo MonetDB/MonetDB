@@ -4,4 +4,4 @@ NAME="$1"
 PRELUDE="$2"
 
 ln -s $RELTRGDIR/niels.mil .
-Mlog -x $MSERVER -db $TSTDB -single niels.mil
+Mlog -x $MSERVER -db $TSTDB niels.mil

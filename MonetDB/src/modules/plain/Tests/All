@@ -1,5 +1,6 @@
 algebra_PROCs
 arith
+ascii_io
 bat
 blob
 io
@@ -11,9 +12,11 @@ str
 url
 xtables
 date
-temporal
+#temporal
 bitset
 decimal
 monettime
 malalgebra
 salgebra
+tcpip1
+tcpip2

@@ -1407,6 +1407,7 @@ join(b,c).print;
 # h                   | t                #
 #----------------------------------------#
 #[ 1,                    "hello"          ]
+\end{verbatim}
 
 @mil
 # A test for the performance analysis
@@ -1426,7 +1427,6 @@ printf("#~BeginVariableOutput~#\n"); pmSummary; printf("#~EndVariableOutput~#\n"
 drop("mprof");
 quit;
 @T
-\end{verbatim}
 
 A sample output of the pmSummary routine is shown below
 (for the example above)

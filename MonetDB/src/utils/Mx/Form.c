@@ -109,9 +109,15 @@ again:  switch( d->d_dir ){
 	    	if (!Hide()) 
 		latex2html(d->d_blk, dirbak!=Qtex, d[1].d_dir!=Qtex);
 	    } else { 
-		PrCmd(d->d_blk);
-	    	Newline;
-	    	PrEnv(E_TEXT);
+               /* was: 
+                    PrCmd(d->d_blk);
+                    Newline;
+                  seems incorrect, as @[ @$ and the like still should be processed 
+                */
+	        env = pr_env;
+	    	PrEnv(E_CMD);
+                FormBlk(d);
+	    	PrEnv(env);
 	    }
 	    break;
 	case Mxmacro:
@@ -156,6 +162,8 @@ again:  switch( d->d_dir ){
 	    	d->d_dir = dirbak; /* dirbak=0; */
 		goto again;
 	    } break;
+	case Comment:
+	    break;
 	default:
 	    if (dirbak==d->d_dir && dstbak && (dstbak == d->d_file))
 	    	PrCodeDisplay(d, 0);
@@ -172,6 +180,7 @@ again:  switch( d->d_dir ){
 		case OQLspec:	PrCodeDisplay(d,"oql"); break;
 		case ODLspec:	PrCodeDisplay(d,"odl"); break;
 		case Prolog:	PrCodeDisplay(d,"plg"); break;
+		case Haskell:	PrCodeDisplay(d,"hs"); break;
 		case SQL:       PrCodeDisplay(d,"sql"); break;
 		case Qnap:	PrCodeDisplay(d,"qnp"); break;
 		case Tcl:	PrCodeDisplay(d,"tcl"); break;
@@ -189,6 +198,10 @@ again:  switch( d->d_dir ){
                 case Swig:      PrCodeDisplay(d,"i"); break; 
                 case CCyacc:    PrCodeDisplay(d,"yy"); break; 
                 case CClex:     PrCodeDisplay(d,"ll"); break; 
+                case BibTeX:    /* writes out a .bib file;
+				   NOTE: this is unrelated to the magic *bibtexfile that seems
+					 only of importance in Tex2Html -- CHECK!!!
+				 */ break; 
 		default:
 	    		Fatal("GenForm", "Non directive:%s [%s:%d]",
 		  		dir2str(d->d_dir), d->d_file, d->d_line);
@@ -250,6 +263,7 @@ int	i;
 		case T_CODE:
 			PrFontStr(t->t_str, t->t_dir);
 			break;
+		case T_POSCOND:
 		case T_TEX:
 			PrModeStr(t->t_str, t->t_dir);
 			break;

@@ -54,7 +54,7 @@ may be identified:
       ov (inverted) oid-lists.  As the selection percentages are high, 
       oid BATs used to express selections can be very large and may even be 
      larger than the data-BATs
-(e.g. gender_0 has BAT-width of 1 byte, so it takes 1MB, but the selection
+(e.g. gender\_0 has BAT-width of 1 byte, so it takes 1MB, but the selection
       BAT of all males (50\%) has BAT-width 4 bytes, so takes 2MB).
 In case where the selection percentage is over 12\%, we can better store the
 selection as a bitmask, which is done by the {\small\tt val\_bitselect()} and
@@ -183,7 +183,7 @@ in the DD benchmark we have the following attributes
 reliable & bool  & 2    & \{ true, false \}\\
 marital  & string& 4    & \{single,married,divorced,widow\}\\
 town     & string& 15   & 15 Dutch city names\\
-age      & int   & 80   & \[18-98\]\\
+age      & int   & 80   & [18-98]\\
 spendings& float & 100  & \ \\
 zipcode  & int   & 7000 & 2000-9000\\
 \end{tabular}
@@ -210,12 +210,12 @@ In our initial experiments, we just cache the 1-dimensional cubes:
 \begin{tabular}{r|r|r}
  & \multicolumn{2}{l}{\bf cached cubes: standard strategy}\\
 \hline\\
-cube1 & \[ spendings, reliable \] &   200 values\\
-cube2 &   \[ zipcode, reliable \] & 14000 values\\
-cube3 &       \[ age, reliable \] &   160 values\\
-cube4 &      \[ town, reliable \] &    30 values\\
-cube5 &    \[ gender, reliable \] &     4 values\\
-cube6 &   \[ marital, reliable \] &     8 values\\
+cube1 & [ spendings, reliable ] &   200 values\\
+cube2 &   [ zipcode, reliable ] & 14000 values\\
+cube3 &       [ age, reliable ] &   160 values\\
+cube4 &      [ town, reliable ] &    30 values\\
+cube5 &    [ gender, reliable ] &     4 values\\
+cube6 &   [ marital, reliable ] &     8 values\\
 \end{tabular}
 
 Now, we could use a simple strategy that simply adds attributes to each
@@ -227,12 +227,12 @@ following cubes to cache:
 \begin{tabular}{r|r|r}
  & \multicolumn{2}{l}{\bf cached cubes: {\em limit=1000}}\\
 \hline\\
-cube1 &   \[ spendings, gender, reliable \] & 400 values\\
-cube2 &  \[ spendings, marital, reliable \] & 800 values\\
-cube3 &             \[ zipcode, reliable \] & 14000 values\\
-cube4 &         \[ age, gender, reliable \] & 320 values\\
-cube5 &        \[ age, marital, reliable \] & 640 values\\
-cube6 &\[town, marital, gender, reliable \] & 240 values\\
+cube1 &    [ spendings, gender, reliable ] & 400 values\\
+cube2 &   [ spendings, marital, reliable ] & 800 values\\
+cube3 &              [ zipcode, reliable ] & 14000 values\\
+cube4 &          [ age, gender, reliable ] & 320 values\\
+cube5 &         [ age, marital, reliable ] & 640 values\\
+cube6 & [town, marital, gender, reliable ] & 240 values\\
 \end{tabular}
 
 These should not be much more expensive to compute by choosing
@@ -312,10 +312,10 @@ So we could consider using a larger limit, e.g. {\em limit=2000}:
 \begin{tabular}{r|r|r}
  & \multicolumn{2}{l}{\bf cached cubes: {\em limit=2000}}\\
 \hline\\
-cube1 & \[ spendings, gender, marital, reliable \] & 1600 values\\
-cube2 &                    \[ zipcode, reliable \] & 14000 values\\
-cube3 &       \[ age, gender, marital, reliable \] & 1280 values\\
-cube4 &       \[town, marital, gender, reliable \] & 240 values\\
+cube1 & [ spendings, gender, marital, reliable ] & 1600 values\\
+cube2 &                    [ zipcode, reliable ] & 14000 values\\
+cube3 &       [ age, gender, marital, reliable ] & 1280 values\\
+cube4 &       [town, marital, gender, reliable ] & 240 values\\
 \end{tabular}
 
 or {\em limit=30000}:
@@ -323,9 +323,9 @@ or {\em limit=30000}:
 \begin{tabular}{r|r|r}
  & \multicolumn{2}{l}{\bf cached cubes: {\em limit=30000}}\\
 \hline\\
-cube1 & \[ spendings, town, gender, marital, reliable \] & 24000 values\\
-cube2 &       \[ age, town, gender, marital, reliable \] & 19200 values\\
-cube3 &                  \[ zipcode, gender, reliable \] & 28000 values\\
+cube1 & [ spendings, town, gender, marital, reliable ] & 24000 values\\
+cube2 &       [ age, town, gender, marital, reliable ] & 19200 values\\
+cube3 &                  [ zipcode, gender, reliable ] & 28000 values\\
 \end{tabular}
 
 The below table summarizes the 'coverage' in batch 3 of all three caching strategies:
@@ -1690,7 +1690,7 @@ int rngs_oidselect( BAT** res, BAT* b, ...){
 	@2 {
 		bn@3->batBuns->free = ((char*) dst@3) - bn@3->batBuns->base;
 		bn@3->hkey = BATmirror(bn@3)->tkey = b->hkey;
-		bn@3->hsorted = BAThordered(b) && ((GDKdebug&49152)==0);
+		bn@3->hsorted = BAThordered(b) && ((GDKdebug&786432)==0);
 		bn@3->batDirty = 1;
 	}
 
@@ -1704,8 +1704,8 @@ int rngs_oidselect( BAT** res, BAT* b, ...){
 	}
 @= prefetchmultiplex
 @= prefetch
-if (@3 < 128 && GDKdebug&65536)
-if ((GDKdebug&49152)==16384) {
+if (@3 < 128 && GDKdebug&1048576)
+if ((GDKdebug&786432)==262144) {
 	int d0 = @3*32;
 	BUN endK = end - 2*d0;
 	while(cur < endK) {
@@ -1722,7 +1722,7 @@ if ((GDKdebug&49152)==16384) {
 	    }
 	    cur += d0; o += 32;
 	}
-} else if ((GDKdebug&49152)==32768) {
+} else if ((GDKdebug&786432)==524288) {
 	int d0 = @3*32, d1=d0+d0, d2=d1+d0;
 	BUN endK = end - 4*d0;
 	while(cur < endK) {
@@ -1745,7 +1745,7 @@ if ((GDKdebug&49152)==16384) {
 	    }
 	    cur += d2; o += 128;
 	}
-} else if ((GDKdebug&49152)==49152) {
+} else if ((GDKdebug&786432)==786432) {
 	int d0 = @3*32, d1=d0+d0, d2=d1+d0, d3=d2+d0, d4=d3+d0;
 	BUN endK = end - 6*d0;
 	while(cur < endK) {

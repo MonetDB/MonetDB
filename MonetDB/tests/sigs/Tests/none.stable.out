@@ -1,11 +1,16 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
-#> Mtest (20:56:27):	milS none milS
-#> Mtest (20:56:27):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_sigs -single none.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:none.milS
+
+# 15:26:01 >  
+# 15:26:01 >  Mtimeout -timeout 600 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
+# 15:26:01 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
+# dbname:Tests_tests_sigs
+# dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_tests_sigs
 
 loaded;
 #---------------------------------#
@@ -23,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -36,7 +39,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_24  #
+# BAT:		  tmp_23  #
 # (str)		  (void)  #
 #-------------------------#
 [ "algebra",	  nil	  ]
@@ -51,14 +54,17 @@ Try: modules;                - for other modules.
 # (str)		  (void)  #
 #-------------------------#
 [ "aggr",	  nil	  ]
+[ "aggrX3",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "algebra",	  nil	  ]
 [ "arith",	  nil	  ]
 [ "ascii_io",	  nil	  ]
 [ "bat",	  nil	  ]
+[ "bat_arith",	  nil	  ]
 [ "bitset",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
+[ "calib",	  nil	  ]
 [ "cluster",	  nil	  ]
 [ "counters",	  nil	  ]
 [ "ddbench",	  nil	  ]
@@ -71,6 +77,7 @@ Try: modules;                - for other modules.
 [ "logger",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "mapi",	  nil	  ]
+[ "mel",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mprof",	  nil	  ]
@@ -81,9 +88,9 @@ Try: modules;                - for other modules.
 [ "salgebra",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "str",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "tcpip",	  nil	  ]
-[ "temporal",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "uchr",	  nil	  ]
@@ -138,8 +145,8 @@ Try: modules;                - for other modules.
 [ "unix",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
-[ "temporal",	  nil	  ]
 [ "tcpip",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
@@ -148,6 +155,7 @@ Try: modules;                - for other modules.
 [ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
+[ "mel",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "logger",	  nil	  ]
@@ -158,11 +166,14 @@ Try: modules;                - for other modules.
 [ "decimal",	  nil	  ]
 [ "ddbench",	  nil	  ]
 [ "counters",	  nil	  ]
+[ "calib",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "bitset",	  nil	  ]
+[ "bat_arith",	  nil	  ]
 [ "ascii_io",	  nil	  ]
 [ "alarm",	  nil	  ]
+[ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
 [ "mprof",	  nil	  ]
 
@@ -315,6 +326,7 @@ Try: modules;                - for other modules.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
@@ -326,8 +338,12 @@ Try: modules;                - for other modules.
 # (str)	  (void)  #
 #-----------------#
 [ "unix", nil	  ]
+[ "blob", nil	  ]
 
 	dropping unix
+
+
+	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -390,46 +406,12 @@ Try: modules;                - for other modules.
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "tpcd", nil	  ]
 
 	dropping tpcd
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading temporal
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "temporal",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_25  #
-# (str)		  (void)  #
-#-------------------------#
-[ "temporal",	  nil	  ]
-
-	dropping temporal
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -458,7 +440,7 @@ Try: modules;                - for other modules.
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "tcpip",	  nil	  ]
@@ -466,6 +448,50 @@ Try: modules;                - for other modules.
 	dropping tcpip
 
 !WARNING: TCPepilogue: terminate 0 listeners
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading streams
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_24  #
+# (str)		  (void)  #
+#-------------------------#
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
+
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -493,7 +519,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "stats",	  nil	  ]
@@ -527,7 +553,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "salgebra",	  nil	  ]
@@ -600,7 +626,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "qt",		  nil	  ]
@@ -654,7 +680,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "perfex",	  nil	  ]
@@ -688,7 +714,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "oo7",  nil	  ]
@@ -722,7 +748,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
@@ -756,13 +782,48 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mmath",	  nil	  ]
 
 	dropping mmath
 
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading mel
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "mel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_30  #
+# (str)	  (void)  #
+#-----------------#
+[ "mel",  nil	  ]
+
+	dropping mel
+
+#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -783,19 +844,34 @@ Try: modules;                - for other modules.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
+[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_30  #
-# (str)	  (void)  #
-#-----------------#
-[ "mapi", nil	  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
 
 	dropping mapi
+
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -824,7 +900,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "malalgebra",	  nil	  ]
@@ -858,7 +934,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "logger",	  nil	  ]
@@ -892,7 +968,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_31  #
 # (str)	  (void)  #
 #-----------------#
 [ "lock", nil	  ]
@@ -926,7 +1002,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "iterator",	  nil	  ]
@@ -1001,7 +1077,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_29  #
 # (str)	  (void)  #
 #-----------------#
 [ "enum", nil	  ]
@@ -1043,7 +1119,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "decimal",	  nil	  ]
@@ -1081,7 +1157,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ddbench",	  nil	  ]
@@ -1131,12 +1207,47 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "counters",	  nil	  ]
 
 	dropping counters
+
+#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading calib
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "calib",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "calib",	  nil	  ]
+
+	dropping calib
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1165,7 +1276,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "blob", nil	  ]
@@ -1201,7 +1312,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
@@ -1243,12 +1354,47 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitset",	  nil	  ]
 
 	dropping bitset
+
+#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading bat_arith
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "bat_arith",	  nil	  ]
+
+	dropping bat_arith
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1271,18 +1417,33 @@ Try: modules;                - for other modules.
 [ "arith",	  1		  ]
 [ "ascii_io",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
+[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ascii_io",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
 
 	dropping ascii_io
+
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1311,12 +1472,46 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
 
 	dropping alarm
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading aggrX3
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "aggrX3",	  nil	  ]
+
+	dropping aggrX3
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1345,7 +1540,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_31  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1397,3 +1592,8 @@ Try: modules;                - for other modules.
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+
+# 15:26:05 >  
+# 15:26:05 >  Done.
+# 15:26:05 >  
+

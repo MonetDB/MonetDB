@@ -1,58 +1,51 @@
 stdout of test 'usage` in directory 'src/tools` itself:
 
-#> Mtest:	other usage
-#> Mtest:	Mtimeout -timeout 210 ./usage usage
-#> Mlog:	Mserver -?
-# Monet Database Server V4.0
-# Copyright (c) 1993-1998, CWI & SION. All rights reserved.
-# compiled for IRIX646.2/32bit on Tue Jul 20 00:58:19 MET DST 1999.
+
+# 16:15:05 >  
+# 16:15:05 >  Mtimeout -timeout 1320 ./usage usage 
+# 16:15:05 >  
+
+
+# 16:15:05 >  
+# 16:15:05 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.19480/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -?
+# 16:15:05 >  
+
 usage: Mserver { option }
 option:	-db <db-name>		database to open
-	-prelude <input>	execute MIL file first
-	<script>		execute MIL file and exit
-	-single			singlethreaded (no Mclient+fork)
-	-noclients			no Mclient listener
-	-background		no console (only Mclient)
-	-home <dir>		use alternative MONETHOME
-	-version <ver>		create BATs in old formats
-	-id <num>		generate oid@id (default=0 <= id <= 3)
-	-p <prompt-str>		change the MIL prompt
-	-yaccsilent		no yacc-specific error msgs
-	-modulesilent		no module lines output
-	-mmap <size>		alloc blocks > sizeKB from VM
-	-d <debugmask>	    1 = thread-specific debug output
-			    2 = property enforcing on new BATs
-			    4 = memory allocation
-			    8 = property checking on all values
-			   16 = major IO activity
-			   32 = BAT handling
-			   64 = MIL parser debugging
-			  128 = Thread management
-			  256 = Event management 
-			  512 = Transaction management
-			 1024 = Triggers
-			 2048 = Dynamic loading
-#> Mlog:	Mclient -help
-#> Mlog:	Mcreatedb -?
+	-monetrc <file>		system variable settings
+	<script(s)>		execute MIL files first 
+		default is .monet.conf in current/home directory
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 MapiClient -?
+# 16:15:06 >  
+
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mcreatedb -?
+# 16:15:06 >  
+
 usage:
-Mdestroydb [-home <file>] -db <name> {-user <usr>}
-	the special file 'homes' is expected in $MONETHOME
-Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>]
-	the default users are 'adm' and 'guest'
-	the default database directory is $MONETHOME/dbfarm/
-#> Mlog (18:04:51):	Mdestroydb -?
+Mcreatedb -db <name> [-monetrc <environment>]
+	the default database location is ./dbfarm/
+	the environment variables as stored in '.monet.conf'
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mdestroydb -?
+# 16:15:06 >  
+
 usage:
-Mdestroydb [-home <file>] -db <name> {-user <usr>}
-	the special file 'homes' is expected in $MONETHOME
-Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>]
-	the default users are 'adm' and 'guest'
-	the default database directory is $MONETHOME/dbfarm/
-#> Mlog (18:04:51):	Mload -?
-Mload: <ascii_file> { -db <db> | -id <stamp> | -home <home> | -version <ver>}
-	[-oid <seqbase>] [-s <size>] [-f <specfile>] {-mod <module>}
-	{ [[~|*|+]<batname>],("<sep>"|<len>),<type>[::<fcn>][,<nil>] } }
-#> Mlog:	Mdump -?
-usage: Mdump [-port <portid>] [-nonpersistent] <backupdirectory>
-#> Mlog:	Mrecover -?
-usage: Mrecover [-home <home>] -db <dbname> 
-database name missing
+Mdestroydb -db <name> [-monetrc <environment>]
+	the default database location is ./dbfarm/
+	the environment variables as stored in '.monet.conf'
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mshutdown -?
+# 16:15:06 >  
+
+usage: Mshutdown [-d<debug level>] [-port <host:port>]
+
+# 16:15:06 >  
+# 16:15:06 >  Done.
+# 16:15:06 >  
+

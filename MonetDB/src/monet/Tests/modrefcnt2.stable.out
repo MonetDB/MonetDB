@@ -1,0 +1,125 @@
+stdout of test 'modrefcnt2` in directory 'src/monet` itself:
+
+
+# 15:14:02 >  
+# 15:14:02 >  Mtimeout -timeout 1860 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_src_monet /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/mapi.mil modrefcnt2.prologue
+# 15:14:02 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
+# dbname:Tests_src_monet
+# dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_monet
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  2		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "lock",	  1		  ]
+[ "mapi",	  1		  ]
+[ "str",	  2		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "unix",	  1		  ]
+#-----------------#
+# BAT:	  test	  #
+# (int)	  (lock)  #
+#-----------------#
+[ 0 ]
+printf("\nReady.\n");
+
+Ready.
+
+Over..
+
+# 15:14:11 >  
+# 15:14:11 >  Mtimeout -timeout 600 MapiClient -everything  < modrefcnt2_s00.milC
+# 15:14:11 >  
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  2		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "lock",	  2		  ]
+[ "mapi",	  1		  ]
+[ "str",	  2		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "unix",	  1		  ]
+#-----------------#
+# BAT:	  test	  #
+# (int)	  (lock)  #
+#-----------------#
+[ 0 ]
+
+# 15:14:13 >  
+# 15:14:13 >  Mtimeout -timeout 600 MapiClient -everything  < modrefcnt2_s01.milC
+# 15:14:13 >  
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  2		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "lock",	  1		  ]
+[ "mapi",	  1		  ]
+[ "str",	  2		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "unix",	  1		  ]
+#-----------------#
+# BAT:	  test	  #
+# (int)	  (lock)  #
+#-----------------#
+[ 0 ]
+
+# 15:14:16 >  
+# 15:14:16 >  Mtimeout -timeout 600 Mshutdown
+# 15:14:16 >  
+
+connection= landvast:53714
+template= shutdown;
+query= shutdown;
+Error text= !terminating connection
+
+Reply= 
+# shutdown finished
+
+# 15:14:16 >  
+# 15:14:16 >  Done.
+# 15:14:16 >  
+

@@ -21,6 +21,7 @@ extern BAT* select_dist_box_box(BAT* rectlist,const box& b,double* min,double* m
 @+ Code for rtree accelerator.
 @C
 #include "gis.h"
+#include "opengis.h"
 #include "gisbulk.proto.h"
 #include "rtree.h"
 #include "rtree_box.h"

@@ -1,0 +1,6 @@
+module("tcpip", "alarm");
+
+fork(listen(50000));
+sleep(2);
+VAR c := open("localhost:50000");
+

@@ -304,6 +304,10 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 "Produces a new BAT with identical head column, and consecutively
 increasing integers (starting with 0) in the tail column."
 
+.COMMAND group(BAT[any::1, any] b, int start, int incr, int grpsize) : BAT[any::1, int] = CMDgroup;
+"Produces a new BAT with identical head column, and in the tail column groups of equally valued 
+integers within each group. Parameters: a start group value, group number increment, group size."
+
 @+ BAT fragmentation commands
 Various operations for splitting BATs into useful fragments.
 
@@ -403,7 +407,9 @@ CONST GT := 1;
 CONST GE := 2;
 
     PROC ADDHELP(str cmd, str aut, str dat, str hlp, str mod) : void {
-        VAR fid := monet_fcn_nme.reverse.find(cmd);
+        #VAR fid := monet_fcn_nme.reverse.find(cmd);
+        #VAR fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.find(cmd);
+        VAR fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.min;
         monet_fcn_dsc.insert(fid, hlp);
         monet_fcn_aut.insert(fid, aut);
         monet_fcn_dat.insert(fid, dat);
@@ -533,14 +539,26 @@ that for the moment are defined as procs.
                 } else if (fcn = "<=") {
                     return b.select(nilval, val);
                 } else if (fcn = "<") {
-                    var bn := b.select(nilval, val).access(BAT_WRITE);
+                    var bn := b.select(nilval, val);
+                    var bn_access := bn.access();
+                    bn.access(BAT_WRITE);
+		    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+			bn := [oid](bn.reverse).reverse();
+		    }
                     bn.reverse.delete(val);
+                    bn.access(bn_access);
                     return bn;
                 } else if (fcn = ">=") {
                     return b.select(val, nilval);
                 } else if (fcn = ">") {
-                    var bn := b.select(val, nilval).access(BAT_WRITE);
+                    var bn := b.select(val, nilval);
+                    var bn_access := bn.access();
+                    bn.access(BAT_WRITE);
+		    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+			bn := [oid](bn.reverse).reverse();
+		    }
                     bn.reverse.delete(val);
+                    bn.access(bn_access);
                     return bn;
                 } else if (fcn = "like") {
                     var bn := likeselect(b, val);
@@ -557,17 +575,35 @@ that for the moment are defined as procs.
         if (or((fcn = "between"),(fcn = "[in]"))) {
             return b.select(lo,hi);
         } else if (fcn = "<in]") {
-            var bn := b.select(lo,hi).access(BAT_WRITE);
+            var bn := b.select(lo,hi);
+            var bn_access := bn.access();
+            bn.access(BAT_WRITE);
+	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+		bn := [oid](bn.reverse).reverse();
+	    }
             bn.reverse.delete(lo);
+            bn.access(bn_access);
             return bn;
         } else if (fcn = "[in>") {
-            var bn := b.select(lo,hi).access(BAT_WRITE);
+            var bn := b.select(lo,hi);
+            var bn_access := bn.access();
+            bn.access(BAT_WRITE);
+	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+		bn := [oid](bn.reverse).reverse();
+	    }
             bn.reverse.delete(hi);
+            bn.access(bn_access);
             return bn;
         } else if (fcn = "<in>") {
-            var bn := b.select(lo,hi).access(BAT_WRITE);
+            var bn := b.select(lo,hi);
+            var bn_access := bn.access();
+            bn.access(BAT_WRITE);
+	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+		bn := [oid](bn.reverse).reverse();
+	    }
             bn.reverse.delete(lo);
             bn.reverse.delete(hi);
+            bn.access(bn_access);
             return bn;
         }
         var bitvector := [*fcn](b,lo,hi);
@@ -800,7 +836,7 @@ this table-name, and need not give a domain size (the cost model infers
 this from the extent).
 
 \item 
-{\small select_est(Result, tries, domain)}\\
+{\small select\_est(Result, tries, domain)}\\
 This clause yields a result in the first parameter. It computes
 the expected number of different colors if you select $tries$ time
 from the same set of $domain$ different values.
@@ -974,6 +1010,10 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:binary(sdiff, BATsdiff)@
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
+
+int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
+        return (*result = (BAT *) BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;
+}
 
 int CMDproject(BAT** res, BAT *b, ptr p, int t) {
 	return (*res=BATconst(b, t, p))?GDK_SUCCEED:GDK_FAIL;

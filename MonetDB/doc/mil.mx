@@ -507,7 +507,7 @@ These sets of BATs, and possibly their derivates (sub-sets, used
 during query processing) semantically describe {\em different} parts of the 
 {\em same} database objects. Their OID columns make them correspond.\\
 
-@- Support For Corresponding BATs 
+@+ Support For Corresponding BATs 
 @T
 Since this situation is very common, Monet provides special support
 for corresponding BATs, typically resulting in the following 

@@ -1,0 +1,37 @@
+@echo off
+
+	set prefix=%~dp0
+	set prefix=%prefix:~0,-4%
+	set build=
+	set source=
+REM	set prefix=@MONET_SOURCE@
+REM	set prefix=@MONET_BUILD@
+REM	set prefix=@prefix@
+
+if "%1" == "--prefix"	goto prefix
+if "%1" == "--build"	goto build
+if "%1" == "--source"	goto source
+
+:usage
+	echo.
+	echo Usage: monet-config [OPTION]
+	echo.
+	echo Known values for OPTION are:
+	echo.
+	echo.  --prefix		print monet prefix
+	echo.  --build		print monet build directory
+	echo.  --source		print monet source directory
+	echo.
+	goto :EOF
+
+:prefix
+	echo %prefix%
+	goto :EOF
+
+:build
+	echo %build%
+	goto :EOF
+
+:source
+	echo %source%
+	goto :EOF

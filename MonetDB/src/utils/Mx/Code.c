@@ -46,6 +46,7 @@ again:  switch( d->d_dir ){
 	case Clex:
 	case Cyacc:
 	case Prolog:
+	case Haskell:
 	case OQLspec:
 	case ODLspec:
 	case Monet:
@@ -68,6 +69,7 @@ again:  switch( d->d_dir ){
 	case Swig:
 	case CCyacc:
 	case CClex:
+	case BibTeX:
             if(!extract(d->d_dir)) break;
 	    IoWriteFile(fname, d->d_dir);
 	    mode=d->d_dir;
@@ -98,6 +100,8 @@ again:  switch( d->d_dir ){
                 d->d_dir = bak;
                 goto again;
             } break;
+	case Comment:
+	    break;
 	default:
 	    Fatal("GenCode", "Unknown directive:%c", d->d_dir);
 	}
@@ -288,6 +292,7 @@ char *	ref;
 
 void	CodeLine()
 {
+    char *s;
     if (!noline){
 	switch( mode ){
 	case Macro:
@@ -297,15 +302,20 @@ void	CodeLine()
 	case DTD:
 	case XSL:
 	case Swig:
-            break;
-            
-	case Prolog:
+	case BibTeX:
 	case Cyacc:
 	case Clex:
-	case Java:
-	case fGrammar:
 	case CCyacc:
 	case CClex:
+            break;
+            
+	case Haskell:
+		ofile_printf("\n-- %s:%d \n", mx_file, mx_line);
+		break;
+
+	case Prolog:
+	case Java:
+	case fGrammar:
 		ofile_printf("\n/* %s:%d */\n", mx_file, mx_line);
 		break;
 	case Tcl:
@@ -313,7 +323,15 @@ void	CodeLine()
 		ofile_printf("\n# %s:%d \n", mx_file, mx_line);
 		break;
 	default:
-		ofile_printf("\n#line %d \"%s\"\n", mx_line, mx_file);
+		ofile_printf("\n#line %d \"", mx_line);
+		for(s=mx_file; s[0]; s++) {
+			ofile_putc(s[0]);
+#ifdef NATIVE_WIN32
+			if (s[0] == '\\' && s[1] != ' ') ofile_putc('\\');
+#endif
+		}
+		ofile_putc('"');
+		ofile_putc('\n');
 		break;
 	}
     } else {

@@ -1,11 +1,16 @@
 stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
-#> Mtest (22:25:08):	milM Arjen_01 milM
-#> Mtest (22:25:08):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_from_Twente_Bugs Arjen_01.milM
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:Arjen_01.milM
+
+# 06:08:02 >  
+# 06:08:02 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_from_Twente_Bugs  < Arjen_01.milM
+# 06:08:02 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_tests_from_Twente_Bugs
+# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_from_Twente_Bugs
 
 loaded;
 #---------------------------------#
@@ -23,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #-----------------#
 # BAT:	  tmp_24  #
 # (void)  (oid)	  #
@@ -106,9 +109,9 @@ Try: modules;                - for other modules.
 # (str)				  (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_24",	  "tmp_23",	  "tmp_25",	  "tmp_26",	  "tmp_27",	  "tmp_29",	  "tmp_30",	  "tmp_31",	  "tmp_33",	  "tmp_31",	  "tmp_35"	  ]
-[ "batCacheid",			  "24",		  "23",		  "25",		  "26",		  "27",		  "29",		  "-30",	  "31",		  "-33",	  "-31",	  "35"		  ]
-[ "batParentid",		  "0",		  "0",		  "0",		  "25",		  "0",		  "28",		  "-25",	  "25",		  "0",		  "25",		  "0"		  ]
+[ "batId",			  "tmp_25",	  "tmp_26",	  "tmp_27",	  "tmp_28",	  "tmp_29",	  "tmp_31",	  "tmp_32",	  "tmp_33",	  "tmp_35",	  "tmp_33",	  "tmp_36"	  ]
+[ "batCacheid",			  "25",		  "26",		  "27",		  "28",		  "29",		  "31",		  "-32",	  "33",		  "-35",	  "-33",	  "36"		  ]
+[ "batParentid",		  "0",		  "0",		  "0",		  "27",		  "0",		  "30",		  "-27",	  "27",		  "0",		  "27",		  "0"		  ]
 [ "batSharecnt",		  "0",		  "0",		  "3",		  "1",		  "0",		  "1",		  "1",		  "1",		  "0",		  "1",		  "0"		  ]
 [ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",	  "void",	  "void"	  ]
 [ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
@@ -141,8 +144,8 @@ Try: modules;                - for other modules.
 [ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "top",			  "5",		  "5",		  "8",		  "4",		  "8",		  "4",		  "3",		  "3",		  "3",		  "3",		  "3"		  ]
-[ "batStamp",			  "-73",	  "-74",	  "-75",	  "-78",	  "-79",	  "-81",	  "-82",	  "-83",	  "-85",	  "-83",	  "-87"		  ]
-[ "curStamp",			  "88",		  "95",		  "98",		  "101",	  "104",	  "107",	  "110",	  "113",	  "116",	  "119",	  "122"		  ]
+[ "batStamp",			  "-145",	  "-146",	  "-147",	  "-150",	  "-151",	  "-153",	  "-154",	  "-155",	  "-157",	  "-155",	  "-159"	  ]
+[ "curStamp",			  "160",	  "167",	  "170",	  "173",	  "176",	  "179",	  "182",	  "185",	  "188",	  "191",	  "194"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
@@ -184,3 +187,8 @@ Try: modules;                - for other modules.
 [ "taccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "taccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "taccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+
+# 06:08:02 >  
+# 06:08:02 >  Done.
+# 06:08:02 >  
+

@@ -1,5 +1,5 @@
 
-INCLUDES = top_builddir/src/gdk
+INCLUDES = -I../gdk
 
 YFLAGS = -d
 
@@ -10,12 +10,12 @@ lib_monet = {
 		monet.mx monet_interpreter.mx monet_queue.mx yytree.mx \
 		monet_client.mx monet_multiplex.mx monet_tbl.mx \
 		monet_context.mx monet_parse.mx monet_deparse.mx \
-		monet_process.mx searchpath.mx
+		monet_process.mx searchpath.mx monet.feps
 	HEADERS = h tab.h
 	LIBS = ../gdk/libbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 
 }
 
-EXTRA_DIST = libmonet.def monet_tem.mx monet.eps
+EXTRA_DIST = monet_tem.mx 
 EXTRA_DIST_DIR = Tests

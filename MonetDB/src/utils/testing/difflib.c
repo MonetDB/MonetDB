@@ -9,7 +9,22 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <time.h>
 
+#ifndef DIR_SEP
+# define DIR_SEP '/'
+#endif
+
+#ifdef NATIVE_WIN32
+#define DIFF	"diff"		/* --binary */
+#define COPY	"copy /y"	/* "cp -f" */
+#else
+#define DIFF	"diff"
+#endif
+
+#define SYSTEM(cmd)	{ TRACE(fprintf(STDERR,"%s => \n",cmd));	\
+			  r = system(cmd);				\
+			  TRACE(fprintf(STDERR,"\t => %i\n",r));	  }
 
 #ifdef DEBUG
 #define UNLINK(x)
@@ -46,12 +61,58 @@ int oldnew2u_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
 {
   char command[BUFLEN];
   int r;
+  struct stat old_fstat, new_fstat;
+  FILE *u_diff_fp,*oldnew_fp;
+  char c,line[BUFLEN];
 
-  TRACE(fprintf(stderr,"oldnew2u_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,u_diff_fn));
+  TRACE(fprintf(STDERR,"oldnew2u_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,u_diff_fn));
 
-  sprintf(command,"diff %s -d -u -%i %s %s > %s",ignore,context,old_fn,new_fn,u_diff_fn);
-  r=system(command);
-  TRACE(fprintf(stderr,"%s => %i\n",command,r));
+  stat(old_fn,&old_fstat);
+  stat(new_fn,&new_fstat);
+
+  if ((old_fstat.st_size != 0) && (new_fstat.st_size != 0)) {
+    #ifdef NATIVE_WIN32
+      sprintf(command,"%s %s %s.cp > nul",COPY,old_fn,old_fn);
+      SYSTEM(command);
+      sleep(1);
+      sprintf(command,"%s %s %s.cp > nul",COPY,new_fn,new_fn);
+      SYSTEM(command);
+      sleep(1);
+
+      sprintf(command,"%s %s -d -u%i %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+    #else
+      sprintf(command,"%s %s -d -u%i %s %s > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+    #endif
+
+      SYSTEM(command);
+
+    #ifdef NATIVE_WIN32
+      #ifdef DEBUG
+        sprintf(command,"dir %s* %s* %s*",old_fn,new_fn,u_diff_fn);
+        SYSTEM(command);
+      #endif
+      sprintf(command,"del %s.cp %s.cp",old_fn,new_fn);
+      SYSTEM(command);
+    #endif
+  } else {
+    u_diff_fp=Wfopen(u_diff_fn);
+    fprintf(u_diff_fp,"--- %s\t%s",old_fn,ctime(&old_fstat.st_mtime));
+    fprintf(u_diff_fp,"+++ %s\t%s",new_fn,ctime(&new_fstat.st_mtime));
+    if (old_fstat.st_size == 0) {
+      c='+';
+      fprintf(u_diff_fp,"@@ -0,0 +1,0 @@\n");
+      oldnew_fp=Rfopen(new_fn);
+    } else {
+      c='-';
+      fprintf(u_diff_fp,"@@ -1,0 +0,0 @@\n");
+      oldnew_fp=Rfopen(old_fn);
+    }
+    while(fgets(line,BUFLEN,oldnew_fp)) {
+      fprintf(u_diff_fp,"%c%s",c,line);
+    }
+    fclose(oldnew_fp);
+    fflush(u_diff_fp); fclose(u_diff_fp);
+  }
 
   return 1;
 }
@@ -63,7 +124,7 @@ int u_diff2l_diff (char *u_diff_fn, char *l_diff_fn)
   FILE *u_diff_fp,*l_diff_fp;
   char *ok,line[BUFLEN];
 
-  TRACE(fprintf(stderr,"u_diff2l_diff(%s,%s)\n",u_diff_fn,l_diff_fn));
+  TRACE(fprintf(STDERR,"u_diff2l_diff(%s,%s)\n",u_diff_fn,l_diff_fn));
 
   u_diff_fp=Rfopen(u_diff_fn);
   if(!(ok=fgets(line,BUFLEN,u_diff_fp)))
@@ -80,7 +141,7 @@ int u_diff2l_diff (char *u_diff_fn, char *l_diff_fn)
           fprintf(l_diff_fp,"%s%c\1\n",line,line[0]);
         }
     }
-  fclose(l_diff_fp); fflush(l_diff_fp);
+  fflush(l_diff_fp); fclose(l_diff_fp);
 
   fclose(u_diff_fp); return 1;
 }
@@ -89,31 +150,33 @@ int u_diff2l_diff (char *u_diff_fn, char *l_diff_fn)
 
 int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
 {
-  FILE *lw_diff_fp,*wc_diff_fp,*fp[2];
-  char line[BUFLEN],command[BUFLEN];
+  FILE *lw_diff_fp,*wc_diff_fp,*fp[2],*pipe_fp;
+  char line[BUFLEN],command[BUFLEN],pipe_ln[BUFLEN],pipe_fn[1024];
   char *ok,*fn[2];
   int i,j,r;
   int space,alpha_,digit,l[2],k[2];
   char wc_old_fn[BUFLEN],wc_new_fn[BUFLEN];
 
-  TRACE(fprintf(stderr,"lw_diff2wc_diff(%i,%s,%s)\n",doChar,lw_diff_fn,wc_diff_fn));
+  TRACE(fprintf(STDERR,"lw_diff2wc_diff(%i,%s,%s)\n",doChar,lw_diff_fn,wc_diff_fn));
+
+  sprintf(pipe_fn,"%s-pipe",wc_diff_fn);
 
   lw_diff_fp=Rfopen(lw_diff_fn);
   if(!(ok=fgets(line,BUFLEN,lw_diff_fp)))
     { fclose(lw_diff_fp); ERRHNDL(0,"empty file in lw_diff2wc_diff:",lw_diff_fn,1); }
   
-  sprintf(wc_old_fn,"%s/.difflib.%ld.lw_diff2wc_diff.old",tmpdir(),getpid()); fn[0]=wc_old_fn;
-  sprintf(wc_new_fn,"%s/.difflib.%ld.lw_diff2wc_diff.new",tmpdir(),getpid()); fn[1]=wc_new_fn;
+  sprintf(wc_old_fn,"%s%c.difflib-%ld-lw_diff2wc_diff-old",tmpdir(),DIR_SEP,getpid()); fn[0]=wc_old_fn;
+  sprintf(wc_new_fn,"%s%c.difflib-%ld-lw_diff2wc_diff-new",tmpdir(),DIR_SEP,getpid()); fn[1]=wc_new_fn;
   
   wc_diff_fp=Wfopen(wc_diff_fn);
   while(ok&&strncmp(line,"@@ -",4)) { fprintf(wc_diff_fp,"%s",line); ok=fgets(line,BUFLEN,lw_diff_fp); }
-  fclose(wc_diff_fp); fflush(wc_diff_fp);
+  fflush(wc_diff_fp); fclose(wc_diff_fp);
 
   while(ok)
     {
       wc_diff_fp=Afopen(wc_diff_fn);
       fprintf(wc_diff_fp,"%s",line);
-      fclose(wc_diff_fp); fflush(wc_diff_fp);
+      fflush(wc_diff_fp); fclose(wc_diff_fp);
 
       l[0]=l[1]=k[0]=k[1]=0;
       for(j=0;j<2;j++) fp[j]=Wfopen(fn[j]);
@@ -149,13 +212,59 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
                 }
             }
         }
-      for(j=0;j<2;j++) { fclose(fp[j]); fflush(fp[j]); }
+      for(j=0;j<2;j++) { fflush(fp[j]); fclose(fp[j]); }
+
+/*
+      sprintf(command,
+              "%s -d -u%i %s %s | egrep -v '^(@@ \\-|\\+\\+\\+ |\\-\\-\\- |[ \\+\\-]@\\+\\-)' >> %s",
+              DIFF,MAX(l[0],l[1]),fn[0],fn[1],wc_diff_fn);
+      r=system(command);
+      TRACE(fprintf(STDERR,"%s => %i\n",command,r));
+*/
+
+#ifdef NATIVE_WIN32
+      sprintf(command,"%s %s %s.cp > nul",COPY,fn[0],fn[0]);
+      SYSTEM(command);
+      sleep(1);
+      sprintf(command,"%s %s %s.cp > nul",COPY,fn[1],fn[1]);
+      SYSTEM(command);
+      sleep(1);
 
       sprintf(command,
-              "diff -d -u -%i %s %s | egrep -v '^(@@ \\-|\\+\\+\\+ |\\-\\-\\- |[ \\+\\-]@\\+\\-)' >> %s",
-              MAX(l[0],l[1]),fn[0],fn[1],wc_diff_fn);
-      r=system(command);
-      TRACE(fprintf(stderr,"%s => %i\n",command,r));
+              "%s -d -u%i %s.cp %s.cp > %s",
+              DIFF,MAX(l[0],l[1]),fn[0],fn[1],pipe_fn);
+#else
+      sprintf(command,
+              "%s -d -u%i %s %s > %s",
+              DIFF,MAX(l[0],l[1]),fn[0],fn[1],pipe_fn);
+#endif
+
+      SYSTEM(command);
+
+#ifdef NATIVE_WIN32
+#ifdef DEBUG
+      sprintf(command,"dir %s* %s* %s*",fn[0],fn[1],pipe_fn);
+      SYSTEM(command);
+#endif
+      sprintf(command,"del %s.cp %s.cp",fn[0],fn[1]);
+      SYSTEM(command);
+#endif
+
+      pipe_fp=Rfopen(pipe_fn);
+      wc_diff_fp=Afopen(wc_diff_fn);
+      while(fgets(pipe_ln,BUFLEN,pipe_fp)) {
+          if ( strncmp(pipe_ln,"@@ -",4) && \
+               strncmp(pipe_ln,"+++ ",4) && \
+               strncmp(pipe_ln,"--- ",4) && \
+               strncmp(pipe_ln," @+-",4) && \
+               strncmp(pipe_ln,"+@+-",4) && \
+               strncmp(pipe_ln,"-@+-",4)     ) {
+              fprintf(wc_diff_fp,pipe_ln);
+          }
+      }
+      fflush(wc_diff_fp); fclose(wc_diff_fp);
+      fclose(pipe_fp);
+      UNLINK(pipe_fn);
     }
   UNLINK(wc_old_fn); UNLINK(wc_new_fn);
 
@@ -166,7 +275,7 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
 
 int l_diff2w_diff (char *l_diff_fn, char *w_diff_fn)
 {
-  TRACE(fprintf(stderr,"l_diff2w_diff(%s,%s)\n",l_diff_fn,w_diff_fn));
+  TRACE(fprintf(STDERR,"l_diff2w_diff(%s,%s)\n",l_diff_fn,w_diff_fn));
 
   return lw_diff2wc_diff(0,l_diff_fn,w_diff_fn);
 }
@@ -175,7 +284,7 @@ int l_diff2w_diff (char *l_diff_fn, char *w_diff_fn)
 
 int w_diff2c_diff (char *w_diff_fn, char *c_diff_fn)
 {
-  TRACE(fprintf(stderr,"w_diff2c_diff(%s,%s)\n",w_diff_fn,c_diff_fn));
+  TRACE(fprintf(STDERR,"w_diff2c_diff(%s,%s)\n",w_diff_fn,c_diff_fn));
 
   return lw_diff2wc_diff(1,w_diff_fn,c_diff_fn);
 }
@@ -188,9 +297,9 @@ int l_diff2c_diff (char *l_diff_fn, char *c_diff_fn)
   char w_diff_fn[BUFLEN];
   int rtrn=0;
 
-  TRACE(fprintf(stderr,"l_diff2c_diff(%s,%s)\n",l_diff_fn,c_diff_fn));
+  TRACE(fprintf(STDERR,"l_diff2c_diff(%s,%s)\n",l_diff_fn,c_diff_fn));
 
-  sprintf(w_diff_fn,"%s/.difflib.%ld.l_diff2c_diff.w_diff",tmpdir(),getpid());
+  sprintf(w_diff_fn,"%s%c.difflib-%ld-l_diff2c_diff-w_diff",tmpdir(),DIR_SEP,getpid());
 
   if(!l_diff2w_diff(l_diff_fn,w_diff_fn))
     { UNLINK(w_diff_fn); ERRHNDL(0,"l_diff2w_diff returns 0 in l_diff2c_diff","",1); }
@@ -207,9 +316,9 @@ int u_diff2w_diff (char *u_diff_fn, char *w_diff_fn)
   char l_diff_fn[BUFLEN];
   int rtrn=0;
 
-  TRACE(fprintf(stderr,"u_diff2w_diff(%s,%s)\n",u_diff_fn,w_diff_fn));
+  TRACE(fprintf(STDERR,"u_diff2w_diff(%s,%s)\n",u_diff_fn,w_diff_fn));
 
-  sprintf(l_diff_fn,"%s/.difflib.%ld.u_diff2w_diff.l_diff",tmpdir(),getpid());
+  sprintf(l_diff_fn,"%s%c.difflib-%ld-u_diff2w_diff-l_diff",tmpdir(),DIR_SEP,getpid());
 
   if(!u_diff2l_diff(u_diff_fn,l_diff_fn))
     { UNLINK(l_diff_fn); ERRHNDL(0,"u_diff2l_diff returns 0 in u_diff2w_diff","",1); }
@@ -226,9 +335,9 @@ int u_diff2c_diff (char *u_diff_fn, char *c_diff_fn)
   char w_diff_fn[BUFLEN];
   int rtrn=0;
 
-  TRACE(fprintf(stderr,"u_diff2c_diff(%s,%s)\n",u_diff_fn,c_diff_fn));
+  TRACE(fprintf(STDERR,"u_diff2c_diff(%s,%s)\n",u_diff_fn,c_diff_fn));
 
-  sprintf(w_diff_fn,"%s/.difflib.%ld.u_diff2c_diff.w_diff",tmpdir(),getpid());
+  sprintf(w_diff_fn,"%s%c.difflib-%ld-u_diff2c_diff-w_diff",tmpdir(),DIR_SEP,getpid());
 
   if(!u_diff2w_diff(u_diff_fn,w_diff_fn))
     { UNLINK(w_diff_fn); ERRHNDL(0,"u_diff2w_diff returns 0 in u_diff2c_diff","",1); }
@@ -242,7 +351,7 @@ int u_diff2c_diff (char *u_diff_fn, char *c_diff_fn)
 
 int u_diff2lwc_diff (int LWC, char *u_diff_fn, char *lwc_diff_fn)
 {
-  TRACE(fprintf(stderr,"u_diff2lwc_diff(%i,%s,%s)\n",LWC,u_diff_fn,lwc_diff_fn));
+  TRACE(fprintf(STDERR,"u_diff2lwc_diff(%i,%s,%s)\n",LWC,u_diff_fn,lwc_diff_fn));
 
   switch(LWC)
     {
@@ -261,9 +370,9 @@ int oldnew2l_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
   char u_diff_fn[BUFLEN];
   int rtrn=0;
 
-  TRACE(fprintf(stderr,"oldnew2l_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,l_diff_fn));
+  TRACE(fprintf(STDERR,"oldnew2l_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,l_diff_fn));
 
-  sprintf(u_diff_fn,"%s/.difflib.%ld.oldnew2l_diff.u_diff",tmpdir(),getpid());
+  sprintf(u_diff_fn,"%s%c.difflib-%ld-oldnew2l_diff-u_diff",tmpdir(),DIR_SEP,getpid());
 
   if(!oldnew2u_diff(context,ignore,old_fn,new_fn,u_diff_fn))
     { UNLINK(u_diff_fn); ERRHNDL(0,"oldnew2u_diff returns 0 in oldnew2l_diff","",1); }
@@ -280,9 +389,9 @@ int oldnew2w_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
   char l_diff_fn[BUFLEN];
   int rtrn=0;
 
-  TRACE(fprintf(stderr,"oldnew2w_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,w_diff_fn));
+  TRACE(fprintf(STDERR,"oldnew2w_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,w_diff_fn));
 
-  sprintf(l_diff_fn,"%s/.difflib.%ld.oldnew2w_diff.l_diff",tmpdir(),getpid());
+  sprintf(l_diff_fn,"%s%c.difflib-%ld-oldnew2w_diff-l_diff",tmpdir(),DIR_SEP,getpid());
 
   if(!oldnew2l_diff(context,ignore,old_fn,new_fn,l_diff_fn))
     { UNLINK(l_diff_fn); ERRHNDL(0,"oldnew2l_diff returns 0 in oldnew2w_diff","",1); }
@@ -299,9 +408,9 @@ int oldnew2c_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
   char w_diff_fn[BUFLEN];
   int rtrn=0;
 
-  TRACE(fprintf(stderr,"oldnew2c_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,c_diff_fn));
+  TRACE(fprintf(STDERR,"oldnew2c_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,c_diff_fn));
 
-  sprintf(w_diff_fn,"%s/.difflib.%ld.oldnew2c_diff.w_diff",tmpdir(),getpid());
+  sprintf(w_diff_fn,"%s%c.difflib-%ld-oldnew2c_diff-w_diff",tmpdir(),DIR_SEP,getpid());
 
   if(!oldnew2w_diff(context,ignore,old_fn,new_fn,w_diff_fn))
     { UNLINK(w_diff_fn); ERRHNDL(0,"oldnew2w_diff returns 0 in oldnew2c_diff","",1); }
@@ -315,7 +424,7 @@ int oldnew2c_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
 
 int oldnew2lwc_diff (int LWC, int context, char *ignore, char *old_fn, char *new_fn, char *lwc_diff_fn)
 {
-  TRACE(fprintf(stderr,"oldnew2lwc_diff(%i,%i,%s,%s,%s,%s)\n",LWC,context,ignore,old_fn,new_fn,lwc_diff_fn));
+  TRACE(fprintf(STDERR,"oldnew2lwc_diff(%i,%i,%s,%s,%s,%s)\n",LWC,context,ignore,old_fn,new_fn,lwc_diff_fn));
 
   switch(LWC)
     {
@@ -339,7 +448,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   char *old,*new,*old_time,*new_time,olns[24],nlns[24];
   int oln,nln,orn,nrn,i,clr[5],newline;
 
-  TRACE(fprintf(stderr,"lwc_diff2html(%s,%s,%s,%s)\n",lwc_diff_fn,html_fn,caption,revision));
+  TRACE(fprintf(STDERR,"lwc_diff2html(%s,%s,%s,%s)\n",lwc_diff_fn,html_fn,caption,revision));
 
   lwc_diff_fp=Rfopen(lwc_diff_fn);
 
@@ -367,11 +476,11 @@ int lwc_diff2html (char *old_fn, char *new_fn,
       fprintf(html_fp,"</TABLE></CENTER>\n");
       fprintf(html_fp,"<HR>\n");
       fprintf(html_fp,"</BODY>\n</HTML>\n");
-      fclose(html_fp); fflush(html_fp);
+      fflush(html_fp); fclose(html_fp);
       return 0;      
     }
 
-  sprintf(fn_clmn,"%s/.difflib.%ld.lwc_diff2html.clmn.0.0",tmpdir(),getpid());
+  sprintf(fn_clmn,"%s%c.difflib-%ld-lwc_diff2html-clmn-0-0",tmpdir(),DIR_SEP,getpid());
   for(i=0;i<5;i++) 
     { clmn_fn[i]=strdup(fn_clmn); clmn_fn[i][strlen(clmn_fn[i])-3]+=i; }
 
@@ -393,11 +502,15 @@ int lwc_diff2html (char *old_fn, char *new_fn,
     }
   old_time=strchr(old,'\t')+1; *strchr(old,'\t')='\0';
   new_time=strchr(new,'\t')+1; *strchr(new,'\t')='\0';
+#ifdef NATIVE_WIN32
+  if (!strcmp(strrchr(old,'.'),".cp"))	*strrchr(old,'.')='\0';
+  if (!strcmp(strrchr(new,'.'),".cp"))	*strrchr(new,'.')='\0';
+#endif
   fprintf(html_fp,"<TR><TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A>\t%s</TH>"
-                 ,filename(old),filename(old),revision,old_time);
+                 ,filename(old),filename(old_fn),revision,old_time);
   fprintf(html_fp,"<TH>&nbsp;</TH>");
   fprintf(html_fp,"<TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A>\t%s</TH></TR>\n"
-                 ,new,new,new_time);
+                 ,new,new_fn,new_time);
   free(old); free(new);
   while(ok)
     {
@@ -507,7 +620,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
             }
         }
 
-      for(i=0;i<5;i++) { fclose(clmn_fp[i]); fflush(clmn_fp[i]); }
+      for(i=0;i<5;i++) { fflush(clmn_fp[i]); fclose(clmn_fp[i]); }
       
       fprintf(html_fp,"<TR>");
       i=1;
@@ -560,7 +673,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   fprintf(html_fp,"</TABLE></CENTER>\n");
   fprintf(html_fp,"<HR>\n");
   fprintf(html_fp,"</BODY>\n</HTML>\n");
-  fclose(html_fp); fflush(html_fp);
+  fflush(html_fp); fclose(html_fp);
 
   for(i=0;i<5;i++) { UNLINK(clmn_fn[i]); free(clmn_fn[i]); }
 
@@ -575,9 +688,9 @@ int u_diff2html (int LWC, char *u_diff_fn, char *html_fn,
   char lwc_diff_fn[BUFLEN];
   int rtrn;
 
-  TRACE(fprintf(stderr,"u_diff2html(%i,%s,%s,%s,%s)\n",LWC,u_diff_fn,html_fn,caption,revision));
+  TRACE(fprintf(STDERR,"u_diff2html(%i,%s,%s,%s,%s)\n",LWC,u_diff_fn,html_fn,caption,revision));
 
-  sprintf(lwc_diff_fn,"%s/.difflib.%ld.u_diff2html.lwc_diff",tmpdir(),getpid());
+  sprintf(lwc_diff_fn,"%s%c.difflib-%ld-u_diff2html-lwc_diff",tmpdir(),DIR_SEP,getpid());
 
   if(!u_diff2lwc_diff(LWC,u_diff_fn,lwc_diff_fn))
     /* { UNLINK(lwc_diff_fn); ERRHNDL(0,"u_diff2lwc_diff returns 0 in u_diff2html","",1); } */
@@ -596,9 +709,9 @@ int oldnew2html (int LWC, int context, char *ignore, char *old_fn, char *new_fn,
   char lwc_diff_fn[BUFLEN];
   int rtrn;
 
-  TRACE(fprintf(stderr,"oldnew2html(%i,%i,%s,%s,%s,%s,%s,%s)\n",LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision));
+  TRACE(fprintf(STDERR,"oldnew2html(%i,%i,%s,%s,%s,%s,%s,%s)\n",LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision));
 
-  sprintf(lwc_diff_fn,"%s/.difflib.%ld.oldnew2html.lwc_diff",tmpdir(),getpid());
+  sprintf(lwc_diff_fn,"%s%c.difflib-%ld-oldnew2html-lwc_diff",tmpdir(),DIR_SEP,getpid());
 
   if(!oldnew2lwc_diff(LWC,context,ignore,old_fn,new_fn,lwc_diff_fn))
     /* { UNLINK(lwc_diff_fn); ERRHNDL(0,"oldnew2lwc_diff returns 0 in oldnew2html","",1); } */

@@ -265,6 +265,7 @@ char *	name;
 	case Cyacc:
 	case Clex:
 	case Prolog:
+	case Haskell:
 	case Monet:
 	case MILcode:
 	case HTML:
@@ -285,6 +286,7 @@ char *	name;
 	case Swig:
 	case CCyacc:
 	case CClex:
+	case BibTeX:
 	    if (allTrue()){
 		d= NwDef(dir, mod, sec, lino);
 		d->d_cmd = cmd;
@@ -316,6 +318,17 @@ char *	name;
 	    d->d_cmd = cmd;
 	    d->d_blk = blk;
 	    HideOff();
+	    break;
+ /*
+  * Comment statement
+  * Syntax:@/<blk>\n...
+  */
+	case Comment:
+	    if (allTrue()){
+		d = NwDef(lastdir, mod, sec, lino);
+		d->d_cmd = NULL;
+		d->d_blk = blk;
+	    }
 	    break;
 	default:
 	    Fatal("MakeDefs", "Unknown directive:%c%c", MARK, dir);

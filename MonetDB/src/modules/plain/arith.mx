@@ -1,5 +1,5 @@
 @f arith
-@a N.J. Nes, P. Boncz
+@a N.J. Nes, P. Boncz, Arjen P. de Vries
 @t The Arithmetics Module
 @* Introduction
 @T
@@ -35,7 +35,7 @@ The {\tt inv} unary operation calculates the inverse of the input value.
 An error message is given when the input value is zero.
 
 \item[bitwise operators]
-For integers there are some additional operations. The {\tt $%$} operator
+For integers there are some additional operations. The {\tt $\%$} operator
 implements the congruent modulo operation. The {\tt $<<$} and {\tt $>>$} 
 are the left and right bit shift. The {\tt or}, {\tt and}, {\tt xor} and 
 {\tt not} for integers are implemented as bitwise boolean operations. 
@@ -50,6 +50,11 @@ This module also contains the rand and srand functions. The {\tt srand}()
 function initializes the random number generator using a seed value. The 
 subsequent calls to {\tt rand}() are pseudo random numbers (with the same 
 seed the sequence can be repeated).
+
+\item[constants]
+The module also provides access to constants {\tt RAND\_MAX}, and the maximum
+and minimum of the domains of numeric types {\tt chr, sht, int, lng}
+(excluding nil).
 \end{description}
 
 {\bf The general interpretation for the NIL value is "unknown".
@@ -135,23 +140,39 @@ atomic types and a result type.
 	@:mel_arith_ops(chr,chr,chr)@
 	@:mel_arith_ops(chr,sht,sht)@
 	@:mel_arith_ops(chr,int,int)@
+	@:mel_arith_ops(chr,lng,lng)@
+	@:mel_arith_ops(chr,flt,flt)@
+	@:mel_arith_ops(chr,dbl,dbl)@
 	@:mel_arith_ops(sht,chr,sht)@
 	@:mel_arith_ops(sht,sht,sht)@
 	@:mel_arith_ops(sht,int,int)@
+	@:mel_arith_ops(sht,lng,lng)@
+	@:mel_arith_ops(sht,flt,flt)@
+	@:mel_arith_ops(sht,dbl,dbl)@
 	@:mel_arith_ops(int,chr,int)@
 	@:mel_arith_ops(int,sht,int)@
 	@:mel_arith_ops(int,int,int)@
+	@:mel_arith_ops(int,lng,lng)@
 	@:mel_arith_ops(int,flt,flt)@
 	@:mel_arith_ops(int,dbl,dbl)@
-	@:mel_arith_ops(int,lng,lng)@
+	@:mel_arith_ops(flt,chr,flt)@
+	@:mel_arith_ops(flt,sht,flt)@
 	@:mel_arith_ops(flt,int,flt)@
+	@:mel_arith_ops(flt,lng,flt)@
 	@:mel_arith_ops(flt,flt,flt)@
 	@:mel_arith_ops(flt,dbl,dbl)@
-	@:mel_arith_ops(dbl,dbl,dbl)@
+	@:mel_arith_ops(dbl,chr,dbl)@
+	@:mel_arith_ops(dbl,sht,dbl)@
 	@:mel_arith_ops(dbl,int,dbl)@
+	@:mel_arith_ops(dbl,lng,dbl)@
 	@:mel_arith_ops(dbl,flt,dbl)@
-	@:mel_arith_ops(lng,lng,lng)@
+	@:mel_arith_ops(dbl,dbl,dbl)@
+	@:mel_arith_ops(lng,chr,lng)@
+	@:mel_arith_ops(lng,sht,lng)@
 	@:mel_arith_ops(lng,int,lng)@
+	@:mel_arith_ops(lng,lng,lng)@
+	@:mel_arith_ops(lng,flt,dbl)@
+	@:mel_arith_ops(lng,dbl,dbl)@
 
 @- binary  operations { max, min, }
 @= mel_binary_ops
@@ -167,10 +188,9 @@ atomic types and a result type.
 	@:mel_binary_ops(lng,lng)@
 	@:mel_binary_ops(dbl,dbl)@
 
-@- unary operations { abs, inv }
+@- unary operations { abs, - }
 @= mel_unary_ops
    	.COMMAND abs(@1) : @1 = @1_unary_ABS; "absolute value"
-   	.COMMAND inv(@1 x) : @1 = @1_unary_INV; "inverse value (1/x)"
    	.OPERATOR "-" (@1) : @1 = @1_unary_NEG; "negative value"
 @m
 	@:mel_unary_ops(chr)@
@@ -179,6 +199,15 @@ atomic types and a result type.
 	@:mel_unary_ops(flt)@
 	@:mel_unary_ops(lng)@
 	@:mel_unary_ops(dbl)@
+
+@- inverse { inv }
+Inverse on @#chr..lng@ is not very useful, since it is only nonzero for 1;
+hence, these are not provided. 
+@= mel_unary_inv
+   	.COMMAND inv(@1 x) : @1 = @1_unary_INV; "inverse value (1/x)"
+@m
+	@:mel_unary_inv(flt)@
+	@:mel_unary_inv(dbl)@
 
 @- boolean { or, xor, and, not }
 @m
@@ -211,6 +240,32 @@ array. Specific operations work with this interpretation.
 		"return a random number"
 	.COMMAND srand(int seed) : void = int_srand; 
 		"initialize the rand() function with a seed"
+
+@- constants
+@m
+.COMMAND getRAND_MAX (): int = CMDgetRAND_MAX; "Maximum value returned by rand()"
+@:limit_definition(CHR,chr)@
+@:limit_definition(SHT,sht)@
+@:limit_definition(INT,int)@
+@:limit_definition(LNG,lng)@
+@= limit_definition
+.COMMAND get@1_MAX (): @2 = CMDget@1_MAX; "Get maximum value of ordered type @2"
+.COMMAND get@1_MIN (): @2 = CMDget@1_MIN; "Get minimum value of ordered type @2"
+@
+The constants defined in limit.h are defined using autoloaded mil code.
+@m
+.LOAD
+        const RAND_MAX   := getRAND_MAX();
+@:limit_milconst(CHR)@
+@:limit_milconst(SHT)@
+@:limit_milconst(INT)@
+@:limit_milconst(LNG)@
+@= limit_milconst
+        const @1_MAX   := get@1_MAX();
+        const @1_MIN   := get@1_MIN();
+@m
+.END;
+
 .END arith;
 
 @+ Example script 
@@ -292,11 +347,8 @@ min(lng1,lng2).print;
 max(oid1,oid2).print;
 min(oid1,oid2).print;
 
-inv(sht2).print;
-inv(int2).print;
 inv(flt2).print;
 inv(dbl2).print;
-inv(lng2).print;
 
 (int1% int2).print;
 (int1<<int2).print;
@@ -370,23 +422,39 @@ operations.  It gets two parameters which are the operants for the operations.
 @:c_arith_ops(chr,chr,chr)@
 @:c_arith_ops(chr,sht,sht)@
 @:c_arith_ops(chr,int,int)@
+@:c_arith_ops(chr,lng,lng)@
+@:c_arith_ops(chr,flt,flt)@
+@:c_arith_ops(chr,dbl,dbl)@
 @:c_arith_ops(sht,chr,sht)@
 @:c_arith_ops(sht,sht,sht)@
 @:c_arith_ops(sht,int,int)@
+@:c_arith_ops(sht,lng,lng)@
+@:c_arith_ops(sht,flt,flt)@
+@:c_arith_ops(sht,dbl,dbl)@
 @:c_arith_ops(int,chr,int)@
 @:c_arith_ops(int,sht,int)@
 @:c_arith_ops(int,int,int)@
+@:c_arith_ops(int,lng,lng)@
 @:c_arith_ops(int,flt,flt)@
 @:c_arith_ops(int,dbl,dbl)@
-@:c_arith_ops(int,lng,lng)@
+@:c_arith_ops(flt,chr,flt)@
+@:c_arith_ops(flt,sht,flt)@
 @:c_arith_ops(flt,int,flt)@
+@:c_arith_ops(flt,lng,flt)@
 @:c_arith_ops(flt,flt,flt)@
 @:c_arith_ops(flt,dbl,dbl)@
+@:c_arith_ops(dbl,chr,dbl)@
+@:c_arith_ops(dbl,sht,dbl)@
 @:c_arith_ops(dbl,int,dbl)@
+@:c_arith_ops(dbl,lng,dbl)@
 @:c_arith_ops(dbl,flt,dbl)@
 @:c_arith_ops(dbl,dbl,dbl)@
+@:c_arith_ops(lng,chr,lng)@
+@:c_arith_ops(lng,sht,lng)@
 @:c_arith_ops(lng,int,lng)@
 @:c_arith_ops(lng,lng,lng)@
+@:c_arith_ops(lng,flt,dbl)@
+@:c_arith_ops(lng,dbl,dbl)@
 
 #define arith_abs(s) ((s)>0)?(s):-(s)
 @:arith_unop(_ABS,arith_abs,chr)@
@@ -397,12 +465,8 @@ operations.  It gets two parameters which are the operants for the operations.
 @:arith_unop(_ABS,arith_abs,lng)@
 
 #define arith_inv(s) (1/(s))
-@:check_unop(_INV,arith_inv,chr)@
-@:check_unop(_INV,arith_inv,sht)@
-@:check_unop(_INV,arith_inv,int)@
 @:check_unop(_INV,arith_inv,flt)@
 @:check_unop(_INV,arith_inv,dbl)@
-@:check_unop(_INV,arith_inv,lng)@
 
 #define arith_neg(s) (-(s))
 @:arith_unop(_NEG,arith_neg,chr)@
@@ -531,7 +595,7 @@ int int_srand( int *seed ){
 }
 
 @T
-The {\tt c\_comp} and {\tt c\_comp_ops} macros implement the mil comparison 
+The {\tt c\_comp} and {\tt c\_comp\_ops} macros implement the mil comparison 
 operations.
 
 @= any_binary_minmax
@@ -736,7 +800,6 @@ int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b ) {
 }
 @
 
-
 @= c_bitwise_ops
 @:arith_binop(_OR,|,@1,@1,@1)@
 @:arith_binop(_AND,&,@1,@1,@1)@
@@ -760,4 +823,27 @@ int @3_binary@1(@3 *res , @3 *a, @3 *b ) {
    return(GDK_SUCCEED);
 }
 @
+
+@= limit_implementation
+int CMDget@1_MAX(@2* maxval) {
+  *maxval = GDK_@2_max;
+  return GDK_SUCCEED;
+}
+int CMDget@1_MIN(@2* minval) {
+  /* the real minimum is used as `nil' value */
+  *minval = GDK_@2_min + 1;
+  return GDK_SUCCEED;
+}
+@
+@c
+@:limit_implementation(CHR,chr)@
+@:limit_implementation(SHT,sht)@
+@:limit_implementation(INT,int)@
+@:limit_implementation(LNG,lng)@
+
+int CMDgetRAND_MAX(int* randmaxval) {
+  *randmaxval = RAND_MAX;
+  return GDK_SUCCEED;
+}
+
 @}

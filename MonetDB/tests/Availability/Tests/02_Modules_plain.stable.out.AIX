@@ -1,11 +1,16 @@
 stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
-#> Mtest:	milS 02_Modules_plain milS
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 02_Modules_plain.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for CYGWIN32_NT4.0/32bit on Wed Apr 26 03:14:02  2000.
-#script:02_Modules_plain.milS
+
+# 05:52:33 >  
+# 05:52:33 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 02_Modules_plain.milS
+# 05:52:33 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm
+# dbname:Tests_tests_Availability
+# dbdir:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_tests_Availability
 
 loaded;
 #---------------------------------#
@@ -23,19 +28,19 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #-----------------#
-# 24 modules	  #
+# 31 modules	  #
 #-----------------#
 [ "aggr"	  ]
+[ "aggrX3"	  ]
 [ "alarm"	  ]
 [ "ascii_io"	  ]
+[ "bat_arith"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
+[ "calib"	  ]
 [ "cluster"	  ]
-[ "counters"	  ]
 [ "ddbench"	  ]
 [ "decimal"	  ]
 [ "enum"	  ]
@@ -47,11 +52,12 @@ Try: modules;                - for other modules.
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "oo7"		  ]
+[ "qt"		  ]
 [ "radix"	  ]
 [ "salgebra"	  ]
 [ "stats"	  ]
+[ "streams"	  ]
 [ "tcpip"	  ]
-[ "temporal"	  ]
 [ "tpcd"	  ]
 [ "uchr"	  ]
 [ "unix"	  ]
@@ -70,7 +76,7 @@ Module: "aggr"
 [ "avg",	  "PROC: ",	  "avg(BAT[any,any::1]) : any::1",				  "not available"		  ]
 [ "card",	  "PROC: ",	  "card(BAT[any,any]) : int",					  "not available"		  ]
 [ "size",	  "PROC: ",	  "size(BAT[any,bit]) : int",					  "not available"		  ]
-[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[int,dbl], BAT[int,any]) : BAT[int,dbl]",		  "grouped tail average"	  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail average"	  ]
@@ -85,6 +91,45 @@ Module: "aggr"
 [ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",		  "grouped tail sum"		  ]
 [ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail sum"		  ]
 [ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",		  "grouped tail sum"		  ]
+
+Module: "aggrX3"
+
+[ 31 ]
+[ 31 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature								| help				  #
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+[ "avg",	  "PROC:      ",  "avg(BAT[any,any::1]) : any::1",					  "not available"		  ]
+[ "card",	  "PROC:      ",  "card(BAT[any,any]) : int",						  "not available"		  ]
+[ "size",	  "PROC:      ",  "size(BAT[any,bit]) : int",						  "not available"		  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",			  "grouped tail average on dbl"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,dbl], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "grouped tail average on dbl"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",			  "grouped tail average on flt"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,flt], BAT[oid,oid], BAT[oid,any]) : BAT[oid,flt]",	  "grouped tail average on flt"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",			  "grouped tail average on int"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "grouped tail average on int"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",			  "grouped tail average on lng"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",	  "grouped tail average on lng"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",			  "grouped tail average on sht"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,sht]",	  "grouped tail average on sht"	  ]
+[ "{card}",	  "PROC:      ",  "{card}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",			  "not available"		  ]
+[ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",			  "grouped count"		  ]
+[ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "grouped count"		  ]
+[ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",		  "grouped tail maximum"	  ]
+[ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,any::1], BAT[oid,oid], BAT[oid,any]) : BAT[oid,any::1]", "grouped tail maximum"	  ]
+[ "{min}",	  "COMMAND:   ",  "{min}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",		  "grouped tail minimum"	  ]
+[ "{min}",	  "COMMAND:   ",  "{min}(BAT[oid,any::1], BAT[oid,oid], BAT[oid,any]) : BAT[oid,any::1]", "grouped tail minimum"	  ]
+[ "{size}",	  "COMMAND:   ",  "{size}(BAT[oid,bit], BAT[oid,any]) : BAT[oid,int]",			  "grouped count of true values"  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",			  "grouped tail sum on dbl"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,dbl], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "grouped tail sum on dbl"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",			  "grouped tail sum on flt"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,flt], BAT[oid,oid], BAT[oid,any]) : BAT[oid,flt]",	  "grouped tail sum on flt"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",			  "grouped tail sum on int"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "grouped tail sum on int"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",			  "grouped tail sum on lng"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",	  "grouped tail sum on lng"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",			  "grouped tail sum on sht"	  ]
+[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,sht]",	  "grouped tail sum on sht"	  ]
 
 Module: "alarm"
 
@@ -102,13 +147,90 @@ Module: "alarm"
 
 Module: "ascii_io"
 
-[ 2 ]
-[ 2 ]
-#-------------------------------------------------------------------------#
-# function	| type		| signature			| help	  #
-#-------------------------------------------------------------------------#
-[ "dump",	  "COMMAND: ",	  "dump(str, str, int) : void",	  ""	  ]
-[ "load",	  "COMMAND: ",	  "load(str, str, int) : void",	  ""	  ]
+[ 12 ]
+[ 12 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature									| help			  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "ascii_io_debug",	  "COMMAND: ",	  "ascii_io_debug(int) : void",							  ""			  ]
+[ "bat_ttype",		  "PROC: ",	  "bat_ttype(BAT[any,any]) : str",						  "not available"	  ]
+[ "dump",		  "COMMAND: ",	  "dump(BAT[void,str], BAT[void,str], BAT[void,BAT], str, int) : void",		  ""			  ]
+[ "dump_data",		  "PROC: ",	  "dump_data(BAT[str,BAT], str, int) : any",					  "not available"	  ]
+[ "dump_format",	  "PROC: ",	  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",				  "not available"	  ]
+[ "dump_seps",		  "PROC: ",	  "dump_seps(BAT[void,BAT]) : BAT[void,str]",					  "not available"	  ]
+[ "load",		  "COMMAND: ",	  "load(BAT[void,str], BAT[void,str], BAT[void,str], str, int) : BAT[str,BAT]",	  ""			  ]
+[ "load_data",		  "PROC: ",	  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",				  "not available"	  ]
+[ "load_format",	  "PROC: ",	  "load_format(str) : BAT[str,BAT]",						  "not available"	  ]
+[ "make_persistent",	  "PROC: ",	  "make_persistent(BAT[str,BAT]) : any",					  "not available"	  ]
+[ "output",		  "COMMAND: ",	  "output(BAT[any,any], BAT[void,str], BAT[void,BAT], stream) : void",		  ""			  ]
+
+Module: "bat_arith"
+
+[ 60 ]
+[ 60 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature						| help									  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",	  "optimized multiplexed mul ('*') on head-aligned [void,dbl] BATs"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar mul ('*') on [void,dbl] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,flt], BAT[void,flt]) : BAT[void,flt]",	  "optimized multiplexed mul ('*') on head-aligned [void,flt] BATs"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,flt], flt) : BAT[void,flt]",		  "optimized multiplexed right-scalar mul ('*') on [void,flt] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,int], BAT[void,int]) : BAT[void,int]",	  "optimized multiplexed mul ('*') on head-aligned [void,int] BATs"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar mul ('*') on [void,int] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "optimized multiplexed mul ('*') on head-aligned [void,lng] BATs"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,lng], lng) : BAT[void,lng]",		  "optimized multiplexed right-scalar mul ('*') on [void,lng] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,sht], BAT[void,sht]) : BAT[void,sht]",	  "optimized multiplexed mul ('*') on head-aligned [void,sht] BATs"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](BAT[void,sht], sht) : BAT[void,sht]",		  "optimized multiplexed right-scalar mul ('*') on [void,sht] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar mul ('*') on [void,dbl] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](flt, BAT[void,flt]) : BAT[void,flt]",		  "optimized multiplexed left-scalar mul ('*') on [void,flt] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar mul ('*') on [void,int] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar mul ('*') on [void,lng] BAT"	  ]
+[ "[*]",	  "OPERATOR:  ",  "[*](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar mul ('*') on [void,sht] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",	  "optimized multiplexed add ('+') on head-aligned [void,dbl] BATs"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar add ('+') on [void,dbl] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,flt], BAT[void,flt]) : BAT[void,flt]",	  "optimized multiplexed add ('+') on head-aligned [void,flt] BATs"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,flt], flt) : BAT[void,flt]",		  "optimized multiplexed right-scalar add ('+') on [void,flt] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,int], BAT[void,int]) : BAT[void,int]",	  "optimized multiplexed add ('+') on head-aligned [void,int] BATs"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar add ('+') on [void,int] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "optimized multiplexed add ('+') on head-aligned [void,lng] BATs"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,lng], lng) : BAT[void,lng]",		  "optimized multiplexed right-scalar add ('+') on [void,lng] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,sht], BAT[void,sht]) : BAT[void,sht]",	  "optimized multiplexed add ('+') on head-aligned [void,sht] BATs"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](BAT[void,sht], sht) : BAT[void,sht]",		  "optimized multiplexed right-scalar add ('+') on [void,sht] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar add ('+') on [void,dbl] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](flt, BAT[void,flt]) : BAT[void,flt]",		  "optimized multiplexed left-scalar add ('+') on [void,flt] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar add ('+') on [void,int] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar add ('+') on [void,lng] BAT"	  ]
+[ "[+]",	  "OPERATOR:  ",  "[+](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar add ('+') on [void,sht] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",	  "optimized multiplexed sub ('-') on head-aligned [void,dbl] BATs"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar sub ('-') on [void,dbl] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,flt], BAT[void,flt]) : BAT[void,flt]",	  "optimized multiplexed sub ('-') on head-aligned [void,flt] BATs"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,flt], flt) : BAT[void,flt]",		  "optimized multiplexed right-scalar sub ('-') on [void,flt] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,int], BAT[void,int]) : BAT[void,int]",	  "optimized multiplexed sub ('-') on head-aligned [void,int] BATs"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar sub ('-') on [void,int] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "optimized multiplexed sub ('-') on head-aligned [void,lng] BATs"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,lng], lng) : BAT[void,lng]",		  "optimized multiplexed right-scalar sub ('-') on [void,lng] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,sht], BAT[void,sht]) : BAT[void,sht]",	  "optimized multiplexed sub ('-') on head-aligned [void,sht] BATs"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](BAT[void,sht], sht) : BAT[void,sht]",		  "optimized multiplexed right-scalar sub ('-') on [void,sht] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar sub ('-') on [void,dbl] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](flt, BAT[void,flt]) : BAT[void,flt]",		  "optimized multiplexed left-scalar sub ('-') on [void,flt] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar sub ('-') on [void,int] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar sub ('-') on [void,lng] BAT"	  ]
+[ "[-]",	  "OPERATOR:  ",  "[-](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar sub ('-') on [void,sht] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",	  "optimized multiplexed div ('/') on head-aligned [void,dbl] BATs"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar div ('/') on [void,dbl] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,flt], BAT[void,flt]) : BAT[void,flt]",	  "optimized multiplexed div ('/') on head-aligned [void,flt] BATs"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,flt], flt) : BAT[void,flt]",		  "optimized multiplexed right-scalar div ('/') on [void,flt] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,int], BAT[void,int]) : BAT[void,int]",	  "optimized multiplexed div ('/') on head-aligned [void,int] BATs"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar div ('/') on [void,int] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "optimized multiplexed div ('/') on head-aligned [void,lng] BATs"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,lng], lng) : BAT[void,lng]",		  "optimized multiplexed right-scalar div ('/') on [void,lng] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,sht], BAT[void,sht]) : BAT[void,sht]",	  "optimized multiplexed div ('/') on head-aligned [void,sht] BATs"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](BAT[void,sht], sht) : BAT[void,sht]",		  "optimized multiplexed right-scalar div ('/') on [void,sht] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar div ('/') on [void,dbl] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](flt, BAT[void,flt]) : BAT[void,flt]",		  "optimized multiplexed left-scalar div ('/') on [void,flt] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar div ('/') on [void,int] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar div ('/') on [void,lng] BAT"	  ]
+[ "[/]",	  "OPERATOR:  ",  "[/](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar div ('/') on [void,sht] BAT"	  ]
 
 Module: "bitset"
 
@@ -151,14 +273,26 @@ Module: "bitvector"
 
 Module: "blob"
 
-[ 3 ]
-[ 3 ]
+[ 4 ]
+[ 4 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help																  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "nitems",	  "COMMAND: ",	  "nitems(blob) : int",		  "get the number of bytes stored in this blob."										  ]
 [ "toblob",	  "COMMAND: ",	  "toblob(str) : blob",		  "store a string as a blob."													  ]
 [ "tostr",	  "COMMAND: ",	  "tostr(blob) : str",		  "get the bytes from blob as a string, till the first 0 byte\n         or the end of the blob"					  ]
 [ "tostr",	  "COMMAND: ",	  "tostr(blob, int) : str",	  "get the bytes from blob as a string, starting at byte 'index'\n         till the first 0 byte or the end of the blob."	  ]
+
+Module: "calib"
+
+[ 3 ]
+[ 3 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help														  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "calib_free",	  "COMMAND:   ",  "calib_free() : void",	  "Frees calibrator allocated resources"									  ]
+[ "calib_info",	  "COMMAND:   ",  "calib_info() : BAT[str,dbl]",  "Gives results of calibrator tests as BAT. \n  First row 'ready' indicates if the tests have been performed "	  ]
+[ "calib_init",	  "COMMAND:   ",  "calib_init(lng, lng) : void",  "Runs calibrator tests with given CPU clock frequency and max memory range"					  ]
 
 Module: "cluster"
 
@@ -170,21 +304,6 @@ Module: "cluster"
 [ "acccluster",		  "COMMAND: ",	  "acccluster(BAT[any,any], int) : void",		  "Call the accelerator-specific cluster function to rearrange the\n cause less page faults."																																																																					  ]
 [ "heapclustercopy",	  "COMMAND: ",	  "heapclustercopy(BAT[any,any], BAT[any,any]) : void",	  "Rearrange the *tail* atoms -- that are supposed to of a variable sized\n typle like 'str' -- in the tail heap of the first BAT. They are put in\n order of appearance of the head elements of the second BAT. That is,\n for each head element from the second BAT we look up the appearance of\n this head element in the first BAT, and re-insert the corresponding tail\n element.\n WARNING: the second BAT *must* be a superset of the first, otherwise\n tuples will be lost!\n WARNING: you better work with head-unique BAts for this, otherwise\n the semantics are very vague.\n NOTE: the two BATs may be equal, in which case lookup is trivial."  ]
 [ "order",		  "COMMAND: ",	  "order(BAT[any::1,any::2], int) : BAT[any::1,any::2]",  "Fast order() on BATs that exceed main-memory, using partitioning. Returns b."																																																																						  ]
-
-Module: "counters"
-
-[ 7 ]
-[ 7 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature				| help													  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "check_cpu",		  "COMMAND: ",	  "check_cpu() : void",			  "on Linux systems: check, whether CPU is P5, P6, or K7\n  (to be used in .LOAD sequence, only)"	  ]
-[ "create_counter",	  "COMMAND: ",	  "create_counter(int, int) : counter",	  "start counters for two events specified by number"							  ]
-[ "create_counter",	  "COMMAND: ",	  "create_counter(str, str) : counter",	  "start counters for two events specified by name"							  ]
-[ "get_counter",	  "COMMAND: ",	  "get_counter(counter) : counter",	  "stop the counting and retrieve the results"								  ]
-[ "read_counter",	  "COMMAND: ",	  "read_counter(counter) : BAT[str,lng]", "store the retrieved results in a BAT"								  ]
-[ "show_native_events",	  "COMMAND: ",	  "show_native_events() : BAT[int,str]",  "all available events"										  ]
-[ "show_unified_events",  "COMMAND: ",	  "show_unified_events() : BAT[int,str]", "all unified event names"										  ]
 
 Module: "ddbench"
 
@@ -292,8 +411,8 @@ Module: "enum"
 [ "enum_ishisto",	  "COMMAND: ",	  "enum_ishisto(int, BAT[any,any]) : bit",				  "returns whether enum_table(tpe) is a histogram on b's head column"		  ]
 [ "enum_load",		  "COMMAND: ",	  "enum_load(BAT[any,int]) : int",					  "load/activate a previously created enumeration type."			  ]
 [ "enum_load",		  "PROC: ",	  "enum_load(str) : any",						  "activate an enumeration type from a histogram bat."				  ]
-[ "enum_print",		  "COMMAND: ",	  "enum_print(stream, BAT[any,int], BAT[any,any]) : void",		  "quick file print of 2 synced bats, an int and enumerated string tail"	  ]
-[ "enum_print",		  "COMMAND: ",	  "enum_print(stream, BAT[any,int], BAT[any,any], BAT[any,any]) : void",  "quick file print of 3 synced bats, and int tail and two enumerated strings"	  ]
+[ "enum_print",		  "COMMAND: ",	  "enum_print(fstream, BAT[any,int], BAT[any,any]) : void",		  "quick file print of 2 synced bats, an int and enumerated string tail"	  ]
+[ "enum_print",		  "COMMAND: ",	  "enum_print(fstream, BAT[any,int], BAT[any,any], BAT[any,any]) : void", "quick file print of 3 synced bats, and int tail and two enumerated strings"	  ]
 [ "enum_sethisto",	  "COMMAND: ",	  "enum_sethisto(int, BAT[any,any]) : void",				  "registers the fact that enum_table(tpe) is a histogram on b's head column"	  ]
 [ "enum_table",		  "COMMAND: ",	  "enum_table(int) : BAT[any,any]",					  "return the enumeration BAT of an enum type"					  ]
 [ "enum_trick",		  "PROC: ",	  "enum_trick(BAT[oid,any], BAT[any,int]) : BAT[oid,any]",		  "create a view on a BAT with a diffrent enum map."				  ]
@@ -303,34 +422,36 @@ Module: "enum"
 
 Module: "io"
 
-[ 23 ]
-[ 23 ]
+[ 25 ]
+[ 25 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help									  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "fclose",	  "COMMAND: ",	  "fclose(stream) : void",				  "See: man fclose"							  ]
-[ "fdpipe",	  "COMMAND: ",	  "fdpipe(bipipe, bit, str) : stream",			  "Open a stream in one direction through a pipe."			  ]
-[ "feof",	  "COMMAND: ",	  "feof(stream) : bit",					  "See: man feof"							  ]
+[ "fclose",	  "COMMAND: ",	  "fclose(fstream) : void",				  "See: man fclose"							  ]
+[ "fdpipe",	  "COMMAND: ",	  "fdpipe(bipipe, bit, str) : fstream",			  "Open a fstream in one direction through a pipe."			  ]
+[ "feof",	  "COMMAND: ",	  "feof(fstream) : bit",				  "See: man feof"							  ]
 [ "ferror",	  "COMMAND: ",	  "ferror() : str",					  "returns last error message. str(nil) if none. "			  ]
-[ "fflush",	  "COMMAND: ",	  "fflush(stream) : void",				  "See: man fflush"							  ]
-[ "fgetc",	  "COMMAND: ",	  "fgetc(stream) : chr",				  "See: man fgetc"							  ]
-[ "fgets",	  "COMMAND: ",	  "fgets(stream) : str",				  "See: man fgets"							  ]
-[ "fopen",	  "COMMAND: ",	  "fopen(str, str) : stream",				  "See: man fopen. Returns stream, or stream(nil) on failure."		  ]
-[ "fprint",	  "COMMAND: ",	  "fprint(stream, ..any..) : void",			  "Print a (comma seperated) list of arguments"				  ]
-[ "fprintf",	  "COMMAND: ",	  "fprintf(stream, str, ..any..) : void",		  "See: man fprintf"							  ]
-[ "fputc",	  "COMMAND: ",	  "fputc(int, stream) : void",				  "See: man fputs"							  ]
-[ "fputs",	  "COMMAND: ",	  "fputs(str, stream) : void",				  "See: man fputs"							  ]
-[ "fread",	  "COMMAND: ",	  "fread(stream, int) : blob",				  "See: man fread"							  ]
-[ "freopen",	  "COMMAND: ",	  "freopen(str, str, stream) : stream",			  "See: man freopen. Returns stream, or stream(nil) on failure."	  ]
-[ "fseek",	  "COMMAND: ",	  "fseek(stream, int, int) : int",			  "See: man fseek"							  ]
-[ "ftable",	  "COMMAND: ",	  "ftable(stream, ..BAT[any::1,any]..) : void",		  "Print an n-ary table to a file."					  ]
-[ "ftable",	  "COMMAND: ",	  "ftable(stream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
-[ "fwrite",	  "COMMAND: ",	  "fwrite(stream, blob, int) : void",			  "See: man fwrite"							  ]
-[ "fwrite",	  "COMMAND: ",	  "fwrite(stream, str, int) : void",			  "See: man fwrite"							  ]
+[ "fflush",	  "COMMAND: ",	  "fflush(fstream) : void",				  "See: man fflush"							  ]
+[ "fgetc",	  "COMMAND: ",	  "fgetc(fstream) : chr",				  "See: man fgetc"							  ]
+[ "fgets",	  "COMMAND: ",	  "fgets(fstream) : str",				  "See: man fgets"							  ]
+[ "fopen",	  "COMMAND: ",	  "fopen(str, str) : fstream",				  "See: man fopen. Returns fstream, or fstream(nil) on failure."	  ]
+[ "fprint",	  "COMMAND: ",	  "fprint(fstream, ..any..) : void",			  "Print a (comma seperated) list of arguments"				  ]
+[ "fprintf",	  "COMMAND: ",	  "fprintf(fstream, str, ..any..) : void",		  "See: man fprintf"							  ]
+[ "fputc",	  "COMMAND: ",	  "fputc(int, fstream) : void",				  "See: man fputs"							  ]
+[ "fputs",	  "COMMAND: ",	  "fputs(str, fstream) : void",				  "See: man fputs"							  ]
+[ "fread",	  "COMMAND: ",	  "fread(fstream, int) : blob",				  "See: man fread"							  ]
+[ "freopen",	  "COMMAND: ",	  "freopen(str, str, fstream) : fstream",		  "See: man freopen. Returns fstream, or fstream(nil) on failure."	  ]
+[ "fseek",	  "COMMAND: ",	  "fseek(fstream, int, int) : int",			  "See: man fseek"							  ]
+[ "fsize",	  "COMMAND: ",	  "fsize(str) : int",					  "Return the filesize, or -1 when there was some error"		  ]
+[ "ftable",	  "COMMAND: ",	  "ftable(fstream, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file."					  ]
+[ "ftable",	  "COMMAND: ",	  "ftable(fstream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
+[ "ftell",	  "COMMAND: ",	  "ftell(fstream) : int",				  "See: man ftell"							  ]
+[ "fwrite",	  "COMMAND: ",	  "fwrite(fstream, blob, int) : void",			  "See: man fwrite"							  ]
+[ "fwrite",	  "COMMAND: ",	  "fwrite(fstream, str, int) : void",			  "See: man fwrite"							  ]
 [ "popen",	  "COMMAND: ",	  "popen() : bipipe",					  "Open a bidirectional pipe. See: man pipe"				  ]
-[ "stderr",	  "COMMAND: ",	  "stderr() : stream",					  "return the error stream for the database console"			  ]
-[ "stdin",	  "COMMAND: ",	  "stdin() : stream",					  "return the input stream to the database client"			  ]
-[ "stdout",	  "COMMAND: ",	  "stdout() : stream",					  "return the output stream for the database client"			  ]
+[ "stderr",	  "COMMAND: ",	  "stderr() : fstream",					  "return the error fstream for the database console"			  ]
+[ "stdin",	  "COMMAND: ",	  "stdin() : fstream",					  "return the input fstream to the database client"			  ]
+[ "stdout",	  "COMMAND: ",	  "stdout() : fstream",					  "return the output fstream for the database client"			  ]
 
 Module: "lock"
 
@@ -381,20 +502,29 @@ Module: "malalgebra"
 [ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "grouped tail sum"						  ]
 [ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "grouped tail sum"						  ]
 [ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "Choose a different implementation if b is sorted on head."	  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "Choose a different implementation if b is sorted on head."	  ]
 
 Module: "mapi"
 
-[ 2 ]
-[ 2 ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help							  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "listen",	  "COMMAND: ",	  "listen() : void",		  "start a Mapi server with the default port number."	  ]
-[ "listen",	  "COMMAND: ",	  "listen(int, int) : void",	  "start a Mapi server."				  ]
+[ 11 ]
+[ 11 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature						| help																							  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "listen",	  "PROC: ",	  "listen() : any",					  "Start the Mapi listener on 50000."																			  ]
+[ "listen",	  "PROC: ",	  "listen(int) : any",					  "Start the Mapi listener on <port>."																			  ]
+[ "listen",	  "PROC: ",	  "listen(int, int) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
+[ "listen",	  "PROC: ",	  "listen(int, int, str) : any",			  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "listen",	  "PROC: ",	  "listen(int, str) : any",				  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "listen",	  "PROC: ",	  "listen(str) : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "mapi_listen",  "BUILTIN: ",	  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "stream_line",  "PROC: ",	  "stream_line(stream) : str",				  "Read a string from <S> until a newline."																		  ]
+[ "stream_read",  "PROC: ",	  "stream_read(stream) : str",				  "Read a string from <S> until a '1' character."																	  ]
+[ "stream_strip", "PROC: ",	  "stream_strip(stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
+[ "stream_until", "COMMAND: ",	  "stream_until(stream, str) : str",			  "read a string from <S> until the <stop> word"																	  ]
 
 Module: "mmath"
 
@@ -511,6 +641,22 @@ Module: "oo7"
 [ "subgraph",	  "COMMAND: ",	  "subgraph(BAT[any::2,any::1], BAT[any::1,any::1]) : BAT[any::1,any::1]",	  "Uses the tail values from 'in' as starting points, and\ndetermines by recursive traversal which subgraph of 'edges'\ncan be reached from there. This subgraph is returned.\n\nTraversal order is currently breadth-first.\n\nWorks only on ANY::1 e {int,oid,flt,bat,ptr}. "	  ]
 [ "traverse",	  "COMMAND: ",	  "traverse(BAT[any::2,any::1], BAT[any::1,any::1]) : BAT[any::1,any::1]",	  "From the starting points in 'in' (tail), compute all\nreachable points by (dag!) 'edges'."																							  ]
 
+Module: "qt"
+
+[ 8 ]
+[ 8 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			| type		| signature																					| help																																																															  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[qt_cross_pre_select]",	  "COMMAND: ",	  "[qt_cross_pre_select](int, int, int) : BAT[oid,oid]",															  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
+[ "[qt_debug]",			  "COMMAND: ",	  "[qt_debug](int) : void",																			  "Set debuging on/off"																																																													  ]
+[ "[qt_delcross]",		  "COMMAND: ",	  "[qt_delcross](int) : void",																			  "Delete a cross."																																																													  ]
+[ "[qt_ir_cluster]",		  "COMMAND: ",	  "[qt_ir_cluster](BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,uchr], BAT[void,uchr], BAT[void,uchr], int) : void",							  "Cluster all images in a set of bit vectors with 3 color transitions in\n  the Itten-Runge color space.  The clusters themselves are named \n  IR_[N|W]_C0_C1_C2"																																											  ]
+[ "[qt_makecross]",		  "COMMAND: ",	  "[qt_makecross](BAT[int,uchr], BAT[int,uchr], BAT[int,uchr], int) : int",													  "Construct a cross from a spot quad tree.  When IR space is set, the \n  cross is stored in IR color space."																																																		  ]
+[ "[qt_match]",			  "COMMAND: ",	  "[qt_match](int, oid, BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,uchr], BAT[void,uchr], BAT[void,uchr], BAT[oid,oid], BAT[oid,int], BAT[oid,int], int, flt) : void", "Look for a matching color cross, which is described by the cross \n  referenced by crossid, in the ID, H, S, and V table.  The requested quad\n  tree is presented in the tables qt_ioffs and qt_inum (offset and number\n  of features, respectively) at entry image_oid.  Fill in the r_* BATS\n  with matching images, number of colors and the IDs of the matched\n  features, respectively if more than or equal to the number of different\n  colors from the spot time the fraction match in the image."	  ]
+[ "[qt_pre_select]",		  "COMMAND: ",	  "[qt_pre_select](int, int, int) : BAT[oid,oid]",																  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
+[ "[qt_stats]",			  "COMMAND: ",	  "[qt_stats](int, str) : void",																		  "Control statistics output"																																																												  ]
+
 Module: "radix"
 
 [ 28 ]
@@ -580,13 +726,39 @@ Module: "stats"
 [ "[stats_new]",		  "COMMAND: ",	  "[stats_new](str) : ptr",				  "Construct a new statistics object."	  ]
 [ "[stats_report]",		  "COMMAND: ",	  "[stats_report](ptr, str) : void",			  "Generate results."			  ]
 
+Module: "streams"
+
+[ 17 ]
+[ 17 ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature				| help					  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "block_stream",	  "COMMAND: ",	  "block_stream(stream) : stream",	  "open a block based stream"		  ]
+[ "file_rastream",	  "COMMAND: ",	  "file_rastream(fstream, str) : stream", "open ascii file stream for reading"	  ]
+[ "file_rstream",	  "COMMAND: ",	  "file_rstream(fstream, str) : stream",  "open a file stream for reading"	  ]
+[ "file_wastream",	  "COMMAND: ",	  "file_wastream(fstream, str) : stream", "open ascii file stream for writing"	  ]
+[ "file_wstream",	  "COMMAND: ",	  "file_wstream(fstream, str) : stream",  "open a file stream for writing"	  ]
+[ "open_rastream",	  "COMMAND: ",	  "open_rastream(str) : stream",	  "open ascii file stream for reading"	  ]
+[ "open_rstream",	  "COMMAND: ",	  "open_rstream(str) : stream",		  "open a file stream for reading"	  ]
+[ "open_wastream",	  "COMMAND: ",	  "open_wastream(str) : stream",	  "open ascii file stream for writing"	  ]
+[ "open_wstream",	  "COMMAND: ",	  "open_wstream(str) : stream",		  "open a file stream for writing"	  ]
+[ "socket_rastream",	  "COMMAND: ",	  "socket_rastream(int, str) : stream",	  "open ascii socket stream for reading"  ]
+[ "socket_rstream",	  "COMMAND: ",	  "socket_rstream(int, str) : stream",	  "open a socket stream for reading"	  ]
+[ "socket_wastream",	  "COMMAND: ",	  "socket_wastream(int, str) : stream",	  "open ascii socket stream for writing"  ]
+[ "socket_wstream",	  "COMMAND: ",	  "socket_wstream(int, str) : stream",	  "open a socket stream for writing"	  ]
+[ "stream_close",	  "COMMAND: ",	  "stream_close(stream) : void",	  "close and destroy the stream s"	  ]
+[ "stream_flush",	  "COMMAND: ",	  "stream_flush(stream) : void",	  "flush the stream"			  ]
+[ "stream_write",	  "COMMAND: ",	  "stream_write(stream, str) : void",	  "write data on the stream"		  ]
+
 Module: "tcpip"
 
-[ 19 ]
-[ 19 ]
+[ 21 ]
+[ 21 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature				| help																							  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "TCPIP_listen", "COMMAND: ",	  "TCPIP_listen() : void",		  "start a TCP/IP server with the default port number."																	  ]
+[ "TCPIP_listen", "COMMAND: ",	  "TCPIP_listen(int) : void",		  "start a TCP/IP server"																				  ]
 [ "arpc",	  "PROC: ",	  "arpc(..any..) : any",		  "not available"																					  ]
 [ "cache",	  "COMMAND: ",	  "cache() : BAT[str,str]",		  "a copy of the list of BATs cached via the network"																	  ]
 [ "close",	  "COMMAND: ",	  "close() : void",			  "close all connections"																				  ]
@@ -606,48 +778,6 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND: ",	  "terminate() : void",			  "stop a TCP/IP server"																				  ]
 [ "terminate",	  "COMMAND: ",	  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND: ",	  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
-
-Module: "temporal"
-
-[ 34 ]
-[ 34 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature					| help									  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "*",			  "OPERATOR: ",	  "*(duration, flt) : duration",		  "produce a new duration with length a multiple from the original"	  ]
-[ "*",			  "OPERATOR: ",	  "*(interval, flt) : interval",		  "produce a new interval with length a multiple from the original"	  ]
-[ "+",			  "OPERATOR: ",	  "+(instant, duration) : instant",		  "add a duration to an instant to produce a new instant"		  ]
-[ "+",			  "OPERATOR: ",	  "+(interval, duration) : interval",		  "add a duration to the length of an interval"				  ]
-[ "-",			  "OPERATOR: ",	  "-(instant, duration) : instant",		  "substract a duration to an instant to produce a new instant"		  ]
-[ "-",			  "OPERATOR: ",	  "-(instant, instant) : duration",		  "substract two instants to get a duration"				  ]
-[ "-",			  "OPERATOR: ",	  "-(interval, duration) : interval",		  "substract a duration from the length of an interval"			  ]
-[ "<",			  "OPERATOR: ",	  "<(instant, interval) : bit",			  "test whether a time insant lies before a time interval"		  ]
-[ "<",			  "OPERATOR: ",	  "<(interval, interval) : bit",		  "test whether one time interval precedes another entirely"		  ]
-[ ">",			  "OPERATOR: ",	  ">(instant, interval) : bit",			  "test whether a time insant lies after a time interval"		  ]
-[ ">",			  "OPERATOR: ",	  ">(interval, interval) : bit",		  "test whether one time intervals entirely succeeds another"		  ]
-[ "date",		  "COMMAND: ",	  "date(str) : instant",			  "creates an instant from a string field (e.g., YYYY-MM-DD)"		  ]
-[ "day",		  "COMMAND: ",	  "day(duration) : int",			  "returns the integer day value from a duration"			  ]
-[ "day",		  "COMMAND: ",	  "day(instant) : int",				  "returns the integer day value from an instant"			  ]
-[ "end_interval",	  "COMMAND: ",	  "end_interval(interval) : instant",		  "gets the ending instant of an interval"				  ]
-[ "epoch",		  "COMMAND: ",	  "epoch(instant) : lng",			  "creates a number of seconds since 1970 from an instant"		  ]
-[ "epoch",		  "COMMAND: ",	  "epoch(lng) : instant",			  "creates an instant from a number of seconds since 1970"		  ]
-[ "fromday",		  "COMMAND: ",	  "fromday(int, int, int) : instant",		  "creates an instant from a (year, month, day) specification"		  ]
-[ "fromtime",		  "COMMAND: ",	  "fromtime(int, int, int, int, int) : instant",  "creates an instant from (year, month, day, hours, week)"		  ]
-[ "hours",		  "COMMAND: ",	  "hours(duration) : int",			  "returns the integer hour value from a duration"			  ]
-[ "hours",		  "COMMAND: ",	  "hours(instant) : int",			  "returns the integer hour value from an instant"			  ]
-[ "in",			  "COMMAND: ",	  "in(instant, interval) : bit",		  "tests whether an instant lies in an interval"			  ]
-[ "include",		  "COMMAND: ",	  "include(interval, interval) : bit",		  "test whether the first interval totally includes the second"		  ]
-[ "included",		  "COMMAND: ",	  "included(interval, interval) : bit",		  "test whether the first interval is totally included by the second"	  ]
-[ "intersect",		  "COMMAND: ",	  "intersect(interval, interval) : interval",	  "get the intersection of two intervals"				  ]
-[ "minutes",		  "COMMAND: ",	  "minutes(duration) : int",			  "returns the integer minute value from a duration"			  ]
-[ "minutes",		  "COMMAND: ",	  "minutes(instant) : int",			  "returns the integer minute value from an instant"			  ]
-[ "month",		  "COMMAND: ",	  "month(duration) : int",			  "returns the integer month value {jan=1,..dec=12} from a duration"	  ]
-[ "month",		  "COMMAND: ",	  "month(instant) : int",			  "returns the integer month value {jan=1,..dec=12} from an instant"	  ]
-[ "new_interval",	  "COMMAND: ",	  "new_interval(instant, instant) : interval",	  "build an interval from two instants (starting and ending)"		  ]
-[ "overlap",		  "COMMAND: ",	  "overlap(interval, interval) : bit",		  "test whether to intervals overlap"					  ]
-[ "start_interval",	  "COMMAND: ",	  "start_interval(interval) : instant",		  "gets the starting instant of an interval"				  ]
-[ "year",		  "COMMAND: ",	  "year(duration) : int",			  "returns the integer year value from a duration"			  ]
-[ "year",		  "COMMAND: ",	  "year(instant) : int",			  "returns the integer year value from an instant"			  ]
 
 Module: "tpcd"
 
@@ -701,14 +831,15 @@ Module: "uchr"
 
 Module: "unix"
 
-[ 3 ]
-[ 3 ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help							  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "getenv",	  "COMMAND: ",	  "getenv(str) : str",		  "Get the environment variable string."		  ]
-[ "setenv",	  "COMMAND: ",	  "setenv(str, str) : bit",	  "Set the environment variable string."		  ]
-[ "system",	  "COMMAND: ",	  "system(str) : int",		  "execute a command and give back the return value"	  ]
+[ 4 ]
+[ 4 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature				| help																									  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "getenv",	  "COMMAND: ",	  "getenv(str) : str",			  "Get the environment variable string."																				  ]
+[ "run",	  "COMMAND: ",	  "run(blob, str, ..str..) : blob",	  "Execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caught and returned as a blob."  ]
+[ "setenv",	  "COMMAND: ",	  "setenv(str, str) : bit",		  "Set the environment variable string."																				  ]
+[ "system",	  "COMMAND: ",	  "system(str) : int",			  "Execute a command and give back the return value"																			  ]
 
 Module: "url"
 
@@ -748,8 +879,8 @@ Module: "wisc"
 
 Module: "xtables"
 
-[ 19 ]
-[ 19 ]
+[ 20 ]
+[ 20 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help																																						  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -765,6 +896,7 @@ Module: "xtables"
 [ "CTregroup",		  "COMMAND: ",	  "CTregroup(BAT[oid,oid], BAT[oid,any]) : BAT[oid,oid]",			  "modifies ct and returns it doing a group"																																	  ]
 [ "CTsubgroup",		  "PROC: ",	  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",	  "not available"																																				  ]
 [ "CTsubhisto",		  "COMMAND: ",	  "CTsubhisto(BAT[void,bit], BAT[void,oid], BAT[oid,any]) : BAT[oid,int]",	  "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] \n         bats on a previously known domain "																								  ]
+[ "_CTgroup",		  "COMMAND: ",	  "_CTgroup(BAT[oid,any], int, int) : BAT[oid,oid]",				  "Cross tabulation group initialization like CTgroup, but with user\n         provided #bits in hashmask and #distinct values in range."																					  ]
 [ "histogram",		  "COMMAND: ",	  "histogram(BAT[oid,any::1]) : BAT[any::1,int]",				  "compute a histogram on the tail. Optimized for retrieving the\n         already present histogram on a cross-table computed by CTgroup."																					  ]
 [ "orderby_table",	  "PROC: ",	  "orderby_table(str, str, ..BAT[any::1,any]..) : any",				  "not available"																																				  ]
 [ "print",		  "PROC: ",	  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
@@ -807,8 +939,14 @@ Module: "mprof"
 [ "pmB",		  "COMMAND: ",	  "pmB(str) : int",				  "Start a new labelled timing period"			  ]
 [ "pmClear",		  "COMMAND: ",	  "pmClear() : void",				  "Clear the performance bats"				  ]
 [ "pmE",		  "COMMAND: ",	  "pmE(str) : int",				  "End a labelled timing period"			  ]
+[ "_CTgroup",		  "COMMAND: ",	  "_CTgroup(BAT[oid,any], int, int) : BAT[oid,oid]",				  "Cross tabulation group initialization like CTgroup, but with user\n         provided #bits in hashmask and #distinct values in range."																					  ]
 [ "pmExit",		  "COMMAND: ",	  "pmExit() : void",				  "Removes the Mprof bats"				  ]
 [ "pmPrint",		  "PROC: ",	  "pmPrint(..any..) : any",			  "not available"					  ]
 [ "pmStart",		  "COMMAND: ",	  "pmStart() : void",				  "Initializes the mprof bats"				  ]
 [ "pmSummary",		  "PROC: ",	  "pmSummary(..any..) : any",			  "not available"					  ]
 [ "pmTag",		  "COMMAND: ",	  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]
+
+# 05:52:36 >  
+# 05:52:36 >  Done.
+# 05:52:36 >  
+

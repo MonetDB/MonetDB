@@ -1,14 +1,40 @@
 stderr of test 'usage` in directory 'src/tools` itself:
 
-#> Mtest (05:10:34):	other usage 210
-#> Mtest (05:10:34):	Mtimeout -timeout 210 ./usage usage
-#> Mlog (05:10:34):	Mserver -?
-#> Mlog (05:10:34):	Mclient -help
-Usage: Mclient [-port host:port] [-session key] [-prelude  pfile ]
-[-c command] [-help ] 
-#> Mlog:	Mcreatedb -?
-#> Mlog:	Mdestroydb -?
-#> Mlog:	Mload -?
-#> Mlog:	Mdump -?
+
+# 16:15:05 >  
+# 16:15:05 >  Mtimeout -timeout 1320 ./usage usage 
+# 16:15:05 >  
+
+
+# 16:15:05 >  
+# 16:15:05 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.19480/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -?
+# 16:15:05 >  
+
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 MapiClient -?
+# 16:15:06 >  
+
 unknown argument:-?
-#> Mlog:	Mrecover -?
+Usage: MapiClient [-port host:port] [-session key] [-prelude  pfile ] [-c command] [-everything] [-debug] [-help ] 
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mcreatedb -?
+# 16:15:06 >  
+
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mdestroydb -?
+# 16:15:06 >  
+
+
+# 16:15:06 >  
+# 16:15:06 >  Mtimeout -timeout 210 Mshutdown -?
+# 16:15:06 >  
+
+unknown argument:-?
+
+# 16:15:06 >  
+# 16:15:06 >  Done.
+# 16:15:06 >  
+

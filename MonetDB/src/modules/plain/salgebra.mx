@@ -15,13 +15,14 @@ pattern -- common for IR and multimedia query processing:
   \item a grouped aggregate to compute per-object rank.
 \end{enumerate}
 
+\begin{verbatim}
 Since the aggregate is grouped per document, it makes sense to keep the data
 in the statistics tables in object order. This can be done easily by chosing specific
 order-preserving implementations of algebraic operators. 
 
 Knowing the order can also be exploited to speed up specific operations like
 select and (semi-)join; this goal is supported with specialized
-hash-structures called the \nadruk{cluster-hash}. The 
+hash-structures called the \em{cluster-hash}. The 
 
 NOTE: maybe the clusterhash is sometimes also handy even when you do not
 require order propagation. This may be the case for workbenches with a small
@@ -144,6 +145,8 @@ Meer notities:
   waarbij de order dus weer een belangrijke rol speelt.
   Wordt het soms tijd voor een "ordered_bat" of "ordered_column" primitieve???
 
+\end{verbatim}
+
 @+ Running example
 @T
 
@@ -156,12 +159,14 @@ associated frequency statistics.
 A cluster-hash on {\tt ti} allows efficient processing of (semi-)joins with
 query BATs.
 
+\begin{verbatim}
 TODO: 
   * loading module in both server and client does not work
       it can hang in BBPtrim if you access 
         ch_cache.info.find("batCacheid").print;
       in client and server and load module in both
   * use of local_itoa implementation causes memory leak in info
+\end{verbatim}
   
 @+ Building the cluster-hash
 @T
@@ -285,7 +290,7 @@ to be explained
 
 Not extremely interesting utility stuff.
 We maintain a cache of known clusterhashes, protected by a lock,
-and implemented as a simple BAT[int,clusterhash_t], with a lookup
+and implemented as a simple BAT[int,clusterhash\_t], with a lookup
 table BAT[str,int].
 
 Note that we really need two locks, because when we insert the clusterhash,

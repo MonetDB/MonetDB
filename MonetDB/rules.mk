@@ -14,11 +14,6 @@ MXFLAGS= -notouch
 %.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
 
-%.tab.c %.tab.h: %.y
-	$(YACC) $(YFLAGS) $*.y
-	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
-	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-
 %.l: %.mx
 	$(MX) $(MXFLAGS) -x l $< 
 
@@ -33,10 +28,30 @@ MXFLAGS= -notouch
 %.yy: %.mx
 	$(MX) $(MXFLAGS) -x Y $< 
 
-%.tab.cc %.tab.h: %.yy
+%.tab.cc: %.yy
+	$(LOCKFILE) waiting
 	$(YACC) $(YFLAGS) $*.yy
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
+	rm -f waiting
+
+%.tab.h: %.yy
+	$(LOCKFILE) waiting
+	$(YACC) $(YFLAGS) $*.yy
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+	rm -f waiting
+
+%.tab.c: %.y
+	$(LOCKFILE) waiting
+	$(YACC) $(YFLAGS) $*.y
+	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
+	rm -f waiting
+
+%.tab.h: %.y
+	$(LOCKFILE) waiting
+	$(YACC) $(YFLAGS) $*.y
+	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+	rm -f waiting
+
 
 %.ll: %.mx
 	$(MX) $(MXFLAGS) -x L $<
@@ -64,6 +79,7 @@ MXFLAGS= -notouch
 	cat $< > /tmp/doc.mx
 	$(MX) -1 -H$(HIDE) -t /tmp/doc.mx 
 	$(MV) doc.tex $@
+	$(RM) /tmp/doc.mx
 
 %.pdf: %.tex
 	$(PDFLATEX) $< 
@@ -75,9 +91,18 @@ MXFLAGS= -notouch
 	$(DVIPS) $< -o $@
 
 %.eps: %.fig
-	$(FIG2DEV) -Leps -e $< > $@
+	$(FIG2DEV) -L$(FIG2DEV_EPS) -e $< > $@
 
 %.eps: %.feps
 	$(CP) $< $@
+
+$(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
+	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
+
+$(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
+	$(LIBTOOL) --mode=compile $(COMPILE) -O0 -c $<
+
+$(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
+	$(COMPILE) -O0 -c $<
 
 SUFFIXES-local: $(BUILT_SOURCES)

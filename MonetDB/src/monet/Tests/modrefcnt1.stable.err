@@ -1,0 +1,12 @@
+stderr of test 'modrefcnt1` in directory 'src/monet` itself:
+
+
+# 15:35:24 >  
+# 15:35:24 >  Mtimeout -timeout 600 Mserver -monetrc /var/tmp/StM/.monet.Mtest.conf -db Tests_src_monet  < modrefcnt1.milM
+# 15:35:24 >  
+
+
+# 15:35:25 >  
+# 15:35:25 >  Done.
+# 15:35:25 >  
+

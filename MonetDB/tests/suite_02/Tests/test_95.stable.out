@@ -142,17 +142,22 @@ Try: modules;                - for other modules.
 [ 5,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-#---------------------------------------------------------------------------------------------------------#
-# BAT:		  env											  #
-# (str)		  (str)											  #
-#---------------------------------------------------------------------------------------------------------#
-[ "dbname",	  "tests_suite_02"									  ]
-[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/tests_suite_02"  ]
-[ "owner",	  "manegold"										  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"								  ]
-[ "processid",	  "17197"										  ]
-[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/Linux2.2.14-12smp"			  ]
-[ "version",	  "4.2"											  ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  env												  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
+[ "gdk_dbname",		  "Tests_tests_suite_02"									  ]
+[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
+[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_tests_suite_02"	  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3"												  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/tests/suite_02"		  ]
+[ "monet_pid",		  "21543"											  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_deamon",	  "yes"												  ]
+[ "monet_prompt",	  "\001\001"											  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#

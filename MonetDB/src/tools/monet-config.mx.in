@@ -2,6 +2,8 @@
 @sh
 #!@BASH@
 
+source=@MONET_SOURCE@
+build=@MONET_BUILD@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 includedir=@includedir@
@@ -14,13 +16,16 @@ Usage: monet-config [OPTION]
 
 Known values for OPTION are:
 
-  --prefix=DIR		change monet prefix [default $prefix]
+  --prefix[=DIR]	print/change monet prefix [default $prefix]
+  --build		print monet build directory
+  --source		print monet source directory
   --libs		print Mapi library linking information
   --cflags		print Mapi pre-processor and compiler flags
   --gdklibs		print gdk linking information
   --gdkcflags		print gdk pre-processor and compiler flags
   --help		display this help and exit
   --version		output version information
+  --streamlibs		print libraries needed by the stream module
 
 NOTE: --gdklibs and --gdkcflags are not to link the gdk library into
       your application, but are internally used
@@ -51,6 +56,14 @@ while test $# -gt 0; do
 	echo $prefix
 	;;
 
+    --build)
+	echo $build
+	;;
+
+    --source)
+	echo $source
+	;;
+
     --version)
 	echo @VERSION@
 	exit 0
@@ -74,6 +87,10 @@ while test $# -gt 0; do
 
     --gdklibs)
        	echo @SOCKET_LIBS@ @MALLOC_LIBS@ @PTHREAD_LIBS@
+       	;;
+
+    --streamlibs)
+       	echo @SOCKET_LIBS@ @BZ_LIBS@ @Z_LIBS@ 
        	;;
 
     *)

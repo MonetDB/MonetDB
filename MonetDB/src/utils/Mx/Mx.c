@@ -179,6 +179,7 @@ Directive str2dir[]={
     "oql",OQLspec,"oql",
     "sql",SQL,"sql",
     "p",Prolog,"pl",
+    "hs",Haskell,"hs",
     "m",Monet,"m",
     "mil",MILcode,"mil",
     "w",HTML,"www",
@@ -196,8 +197,10 @@ Directive str2dir[]={
     "swig",Swig,"i",
     "Y",CCyacc,"yy",
     "L",CClex,"ll",
+    "bib",BibTeX,"bib",
     "{",InHide,"",
     "}",OutHide,"",
+    "/",Comment,"",
     NULL,Nop,NULL};
 
 #define NUMEXTENS (sizeof(str2dir)/sizeof(Directive))

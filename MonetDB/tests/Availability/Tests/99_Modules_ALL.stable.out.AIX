@@ -1,10 +1,13 @@
 stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 
-#> Mtest:	milS 99_Modules_ALL milS
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 99_Modules_ALL.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue Apr 11 05:46:23 MET DST 2000.
+
+# 15:55:37 >  
+# 15:55:37 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.18284/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 99_Modules_ALL.milS
+# 15:55:37 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:99_Modules_ALL.milS
 
 loaded;
@@ -23,24 +26,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
-setoid(oid(20000000));
-
-#All_mods:=MODULES.sort.copy;
-module("cluster");
-
-All_mods:=MODULES.sort.copy.access(BAT_WRITE).revert;
-All_mods@batloop {
-	printf("%9s: ",$h);
-	if (not(monet_mod_nme.reverse.exist($h))) {
-		printf("loading... ");
-		module($h);
-		printf("done.\n");
-	} else {
-		printf("loaded.\n");
-	}
-}
   xtables: loading... done.
      wisc: loading... done.
       url: loading... done.
@@ -48,83 +33,77 @@ All_mods@batloop {
      uchr: loading... done.
     trans: loaded.
      tpcd: loading... done.
- temporal: loading... done.
     tcpip: loading... done.
       sys: loaded.
+  streams: loading... done.
       str: loaded.
     stats: loading... done.
-signature: loaded.
  salgebra: loading... done.
     radix: loading... done.
+       qt: loading... done.
       oo7: loading... done.
-     odmg: loaded.
     mprof: loading... done.
 monettime: loading... done.
     mmath: loading... done.
+     mapi: loading... done.
 malalgebra: loading... done.
+   logger: loading... done.
      lock: loading... done.
    kernel: loaded.
-    jOdmg: loading... done.
        io: loaded.
      enum: loading... done.
   decimal: loading... done.
   ddbench: loading... done.
- counters: loading... done.
   cluster: loaded.
+    calib: loading... done.
      blob: loaded.
-bitvector: loading... done.
-   bitset: loaded.
+bitvector: loaded.
+   bitset: loading... done.
+bat_arith: loading... done.
       bat: loaded.
+ ascii_io: loading... done.
     arith: loaded.
   algebra: loaded.
     alarm: loading... done.
+   aggrX3: loading... done.
      aggr: loading... done.
-TransTest: loading... done.
-    Test7: loading... done.
-     Meta: loaded.
-  CC_odmg: loaded.
-  CC_Test: loading... done.
-BasicOdmg: loaded.
 #-----------------#
-# 38 modules	  #
+# 40 modules	  #
 #-----------------#
-[ "BasicOdmg"	  ]
-[ "CC_Test"	  ]
-[ "CC_odmg"	  ]
-[ "Meta"	  ]
-[ "Test7"	  ]
-[ "TransTest"	  ]
 [ "aggr"	  ]
+[ "aggrX3"	  ]
 [ "alarm"	  ]
 [ "algebra"	  ]
 [ "arith"	  ]
+[ "ascii_io"	  ]
 [ "bat"		  ]
+[ "bat_arith"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
+[ "calib"	  ]
 [ "cluster"	  ]
-[ "counters"	  ]
 [ "ddbench"	  ]
 [ "decimal"	  ]
 [ "enum"	  ]
 [ "io"		  ]
-[ "jOdmg"	  ]
 [ "kernel"	  ]
 [ "lock"	  ]
+[ "logger"	  ]
 [ "malalgebra"	  ]
+[ "mapi"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "mprof"	  ]
-[ "odmg"	  ]
 [ "oo7"		  ]
+[ "qt"		  ]
 [ "radix"	  ]
 [ "salgebra"	  ]
-[ "signature"	  ]
 [ "stats"	  ]
 [ "str"		  ]
+[ "streams"	  ]
 [ "sys"		  ]
 [ "tcpip"	  ]
-[ "temporal"	  ]
 [ "tpcd"	  ]
 [ "trans"	  ]
 [ "uchr"	  ]
@@ -132,3 +111,8 @@ BasicOdmg: loaded.
 [ "url"		  ]
 [ "wisc"	  ]
 [ "xtables"	  ]
+
+# 15:55:38 >  
+# 15:55:38 >  Done.
+# 15:55:38 >  
+

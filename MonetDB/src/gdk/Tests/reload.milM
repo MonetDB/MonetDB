@@ -33,3 +33,4 @@ MMO_location.insert(oid(4),"http://www.ibiblio.org/javafaq/");
 MMO_location.print;
 }
 
+quit;

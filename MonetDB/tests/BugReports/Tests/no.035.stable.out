@@ -1,11 +1,16 @@
 stdout of test 'no.035` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.035 milS
-#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.035.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Wed Jan 19 11:06:12 MET 2000.
-#script:no.035.milS
+
+# 01:21:27 >  
+# 01:21:27 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_BugReports  < no.035.milS
+# 01:21:27 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_tests_BugReports
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_tests_BugReports
 
 loaded;
 #---------------------------------#
@@ -23,8 +28,7 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
+monet_envirenment
 monet_fcn_fcn
 monet_fcn_imp
 monet_fcn_tpe
@@ -35,6 +39,7 @@ monet_fcn_aut
 monet_fcn_dat
 monet_fcn_nme
 monet_fcn_pro
+monet_fcn_cnt
 monet_mod_nme
 monet_mod_cnt
 monet_mod_atm
@@ -47,3 +52,8 @@ monet_mod_drop
 monet_fcntbl
 monet_acctbl
 monet_atomtbl
+
+# 01:21:28 >  
+# 01:21:28 >  Done.
+# 01:21:28 >  
+

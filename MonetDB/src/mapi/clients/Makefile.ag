@@ -1,0 +1,39 @@
+
+MTSAFE
+INCLUDES = ../../gdk ../../monet $(PTHREAD_INCS) 
+
+GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
+MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
+MAPI_LIBS = $(SOCKET_LIBS) $(GDK_LIBS)
+
+EXTRA_DIST = \
+	MapiClient.java  Mapi.hs \
+	MapiClient.php   Mapi.php \
+	MapiClient.pl    Mapi.pm \
+	MapiClient.py    Mapi.py \
+	MapiClient.tcl   Mapi.tcl \
+
+EXTRA_DIST_DIR = Mapi
+
+
+lib_Mapi = {
+	SOURCES = Mapi.mx 
+	LIBS = $(MAPI_LIBS) ../../gdk/libbat
+	HEADERS = h
+}
+
+BINS = {
+	SOURCES = Mshutdown.mx MapiClient.mx
+	LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS)
+	MapiClient_LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS)
+}
+
+scripts_pl = {
+	DIR = pkgdatadir/site_perl
+	SOURCES = Mapi.pm MapiClient.pl
+}
+
+scripts_py = {
+	DIR = pkgdatadir/python
+	SOURCES = Mapi.py
+}

@@ -3,14 +3,19 @@
 
 #include <config.h>
 
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 # include <io.h>
 # include <direct.h>
 # define mkdir(path,op) _mkdir(path)
+# define DIR_SEP '\\'
+#else
+# define DIR_SEP '/'
 #endif
 
-#ifndef DIR_SEP
-#define DIR_SEP '/'
+#include 	<stdio.h>
+
+#ifdef HAVE_STRING_H
+#include	<string.h>
 #endif
 
 #define	DB_DEF	0x10
@@ -32,12 +37,12 @@ typedef enum {
     Nop =0,
     Index0,Index1,Index2,Index3,Index4,Index5,Index6,Index7,Index8,Index9,
     Bfile, Efile, Ofile, Mxmacro, Ifdef, Ifndef, Endif,
-    Title, Author, Version, Date, InHide, OutHide, 
+    Title, Author, Version, Date, InHide, OutHide, Comment, 
     Module, Section, Subsection, Paragraph, Qtex, Qcode, Continue,
     Pspec, Pimpl, Cdef, Csrc, CCsrc, ODLspec, SQL,
-    OQLspec, Cyacc, Clex, Prolog, Monet, MILcode, Qnap, HTML, Java,
+    OQLspec, Cyacc, Clex, Prolog, Haskell, Monet, MILcode, Qnap, HTML, Java,
     Tcl, ProC, Shell, fGrammar, Macro, XML, DTD, XSL, Config, Swig,
-    CCyacc, CClex } CmdCode;
+    CCyacc, CClex, BibTeX } CmdCode;
 
 
 typedef struct {

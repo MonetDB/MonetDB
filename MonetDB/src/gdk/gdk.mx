@@ -269,6 +269,8 @@ extern "C" {
 #include <stdio.h>      /* NULL, printf etc. */
 #include <stdlib.h>     
 
+
+
 /* AIX requires this to be the first thing in the file.  */
 #ifndef __GNUC__
 # if HAVE_ALLOCA_H
@@ -282,6 +284,22 @@ char *alloca ();
 #   endif
 #  endif
 # endif
+#endif
+
+@T
+When using alloca(3) in a shared library, Intel's "C++ Compiler for 32-bit
+applications, Version 5.0.1 Beta Build 010528D0" seems to require another
+reference to alloca(3) in the file that contains the main(), otherwise it
+complains about an "undefined reference to `\_alloca\_probe'" when linking
+the shared library to the executable.
+Hence, we define this FAKE\_ALLOCA\_CALL and call it in the respective
+main()s just before the final return.
+@h
+#if ( defined(__INTEL_COMPILER) && (!defined(STATIC)) )
+# include <alloca.h>
+# define FAKE_ALLOCA_CALL (void)alloca(0);
+#else
+# define FAKE_ALLOCA_CALL ;
 #endif
 
 #include <ctype.h>      /* isspace etc. */
@@ -357,7 +375,7 @@ extern int setenv(char *name, char *value, int overwrite);
 
 #define GDKPROP		6	/*	use one spare! */
 #define MONETHOME	"MONETHOME"
-#ifndef WIN32
+#ifndef NATIVE_WIN32
 #define BATDIR          "bat/"
 #define DELDIR          "bat/DELETE_ME/"
 #define BAKDIR          "bat/BACKUP/"
@@ -369,13 +387,21 @@ extern int setenv(char *name, char *value, int overwrite);
 #define LEFTDIR         "bat\\LEFTOVERS\\"
 #endif
 #define DBLOGFILE	"MonetLog"
-#define dbhome		GDKenviron[GDKdir]
-#define GDKdbname	0
-#define GDKdir		1
-#define GDKowner	2
 
-gdk_export char 		*GDKenviron[GDKPROP]; 
-gdk_export char 		*GDKenvironName[GDKPROP]; 
+#define PATHLENGTH	128		/* maximum file pathnamde length */ 
+#define MONETRC  ".monet.conf"
+
+gdk_export char 	GDKdbnameStr[PATHLENGTH];
+gdk_export char 	GDKdbfarmStr[PATHLENGTH];
+gdk_export char 	GDKdirStr[PATHLENGTH];
+gdk_export char 	GDKdistrStr[PATHLENGTH];
+gdk_export char 	GDKmonetrcStr[PATHLENGTH];
+@-
+Was Mserver called with -initonly, 
+i.e., by Mcreatedb just to initialize the database?
+@h
+gdk_export int		GDKinitonly;
+
 @
 @}
 
@@ -421,7 +447,6 @@ below.  The global variables should not be modified directly.
 
 #define IDLENGTH	64		/* maximum BAT id length */
 #define OLDLENGTH	32		/* old max  BAT id length */
-#define PATHLENGTH	128		/* maximum file pathnamde length */ 
 #define BATMARGIN	1.2		/* extra free margin for new heaps */ 
 #define BATTINY		50		/* extra fixed margin for BATS */
 
@@ -437,6 +462,7 @@ below.  The global variables should not be modified directly.
 #define TYPE_dbl	9		
 #define TYPE_lng	10		
 #define TYPE_str	11		
+#define TYPE_any	255		/* limit types to <255! */
 
 typedef signed char	bit; 		
 typedef signed char	chr; 		
@@ -1249,8 +1275,8 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 
 #define BUNhloc(b,p)	((BUN) (((char*) p) + (b)->hloc))
 #define BUNtloc(b,p)	((BUN) (((char*) p) + (b)->tloc))
-#define BUNhvar(b,p)	((b)->htype?(Hbase(b)+*(int*)BUNhloc(b,p)):BUNhpos(b,p))
-#define BUNtvar(b,p)	((b)->ttype?(Tbase(b)+*(int*)BUNtloc(b,p)):BUNtpos(b,p))
+#define BUNhvar(b,p)	((b)->htype?(Hbase(b)+*(int*)BUNhloc(b,p)):(BUN)BUNhpos(b,p))
+#define BUNtvar(b,p)	((b)->ttype?(Tbase(b)+*(int*)BUNtloc(b,p)):(BUN)BUNtpos(b,p))
 
 #define BUNfirst(b)	(((char*) (b)->batHole) + BUNsize(b))
 #define BUNlast(b)	(Bunbase(b)+ (b)->batBuns->free)
@@ -1408,6 +1434,7 @@ gdk_export BAT* 		BATcopy   (BAT *b);
 gdk_export BAT* 		BATrcopy  (BAT *b); 
 gdk_export BAT*		BATmark   (BAT *b, oid base); 
 gdk_export BAT*		BATnumber (BAT *b); 
+gdk_export BAT*		BATgroup (BAT *b, int start, int incr, int grpsize); 
 @-
 Retain old-style source-level funcionality where the BAT reversal 
 induced a state change of the BAT parameter to it.
@@ -1441,7 +1468,7 @@ returns the BAT pointer.
 @
 The @%BATconvert@ converts a BAT that contains data saved on
 hardware with a different byte order (litte endian vs big endian),
-into the correct format. Direction is eigther CONV_NTOH or CONV_HTON,
+into the correct format. Direction is eigther CONV\_NTOH or CONV\_HTON,
 indication convertion from network to host or host to network format.
 
 @- Heap Storage Modes
@@ -1622,6 +1649,7 @@ typedef struct {
         BATstore *cache;	/* cached header info */
         str     path;		/* dir + basename for storage */ 
         int     refs;		/* number of batrefs */
+	int	plevel;		/* number of times the bat is made persistent */
         volatile int status;	/* always available bat info */
 } BBPrec;
 
@@ -1639,6 +1667,7 @@ gdk_export BBPrec*       	BBP;
 #define BBP_physical(i) BBP[ABS(i)].path
 #define BBP_desc(i)	BBP[ABS(i)].cache
 #define BBP_refs(i)     BBP[ABS(i)].refs
+#define BBP_plevel(i)   BBP[ABS(i)].plevel
 #define BBP_status(i)   BBP[ABS(i)].status
 
 /* macros that nicely check parameters */
@@ -1663,9 +1692,6 @@ gdk_export int  BBPfix        (bat b);
 gdk_export int  BBPunfix      (bat b);
 gdk_export void BBPhot        (bat b);
 gdk_export void BBPcold       (bat b);
-/*
-gdk_export int  BBPrefcnt     (bat b);
-*/
 gdk_export void BBPtrim       (lng memdelta, lng vmdelta);
 gdk_export void BBPunlock     (str s);
 gdk_export int  BBPfree       (BAT *b);
@@ -2218,6 +2244,7 @@ gdk_export MT_Lock		GDKidxLock[BBPLOCKMASK+1];
 gdk_export MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
 gdk_export MT_Lock		GDKcacheLock; 
 gdk_export MT_Lock		GDKtrimLock; 
+gdk_export MT_Lock		GDKtmLock; 
 
 #define CHECKDEBUG      if (GDKdebug&2)
 #define MEMDEBUG        if (GDKdebug&4)
@@ -2232,6 +2259,18 @@ gdk_export MT_Lock		GDKtrimLock;
 #define DLDEBUG	        if (GDKdebug&2048)
 #define PERFDEBUG	if (GDKdebug&4096)
 #define DELTADEBUG	if (GDKdebug&8192)
+#define LOADDEBUG	if (GDKdebug&16384)
+#define YACCDEBUG	if (GDKdebug&32768)
+/*
+#define ?tcpip?		if (GDKdebug&65536)
+#define ?monet_multiplex?	if (GDKdebug&131072)
+#define ?ddbench?	if (GDKdebug&262144)
+#define ?ddbench?	if (GDKdebug&524288)
+#define ?ddbench?	if (GDKdebug&1048576)
+*/
+#define ALGODEBUG	if (GDKdebug&2097152)
+#define ESTIDEBUG	if (GDKdebug&4194304)
+#define XPROPDEBUG      if (GDKdebug&8388608)
 
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 
@@ -2808,6 +2847,18 @@ the fetch.
 #define NOID_AGGR(x)	NOID_MULT(AGGR_MAGIC,x)
 #define NOID_MULT(x,y)	NOID(((lng) (OIDnumber&(y))) * ((lng) (OIDnumber&(x))))
 @
+@- BAT inline routines
+The following inline routines are (were) used  heavily in the
+dictionary code base for loaded functions. They may be of general
+use.
+@h
+#define BUNtailfnd(tp,  bt, bn, vl)                              \
+                  ((bn=BUNfnd(bt, vl))?(tp *) BUNtail(bt,bn):0)
+#define BUNtailptr(tp,  bt, bn, id)                              \
+                  ((tp *) BUNtail(bt, (bn=BUNptr(bt, id))))
+#define BUNheadptr(tp,  bt, bn, id)                              \
+                  ((tp *) BUNhead(bt, (bn=BUNptr(bt, id))))
+
 @}
 
 
@@ -2871,6 +2922,7 @@ look at the head column:@%BATkunion@, @%BATkdiff@, and
 #define JOIN_LE	-2
 #define JOIN_GT	1
 #define JOIN_GE	2
+#define JOIN_BAND 3
 
 gdk_export BAT*	BATfragment  (BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
 gdk_export BAT*	BATselect    (BAT *b, ptr tl, ptr th); 
@@ -2921,10 +2973,58 @@ gdk_export int	BATmultijoin (int argc, BAT *argv[], RowFcn tuple_fcn,
 #ifdef __cplusplus
 }
 #endif
-#endif /* BAT32IMAGE */
-#endif /* _GDK_H_ */
 @
-@}
+@- GDK variant record type
+When manipulating values, Monet puts them into value records.
+The built-in types have a direct entry in the union. Others should 
+be represented as a pointer of memory in pval or as a string, which
+is basically the same. In such cases the @%len@ field indicates
+the size of this piece of memory.
+
+@h
+typedef struct {
+	bat	id;
+	int	stamp;
+} batrec;
+
+typedef struct {
+	union {                 /* storage is first in the record */
+		int	ival;
+		oid	oval;
+		sht	shval;
+		chr	cval[4];
+		flt	fval;
+		ptr	pval;
+		bat	bval;
+		batrec	br;	/* bval + stamp */
+		str    	sval;
+		dbl	dval;
+		lng	lval;
+	} val;
+	int 		vtype;
+	int 	       	len;
+} *ValPtr, ValRecord;
+
+#endif /* BAT32IMAGE */
+
+#define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
+#define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
+
+/* interface definitions */
+gdk_export ValPtr	VALnew		();
+gdk_export ptr	VALconvert	(int typ, ValPtr t, int silent);
+gdk_export int	VALformat	(char **buf, ValPtr res);
+gdk_export int	VALprint	(FILE *fd, ValPtr res);
+gdk_export ValPtr	VALcopy		(ValPtr dst, ValPtr src);
+gdk_export void	VALempty	(ValPtr v);
+gdk_export void	VALclear	(ValPtr v);
+gdk_export ValPtr	VALset		(ValPtr v, int t, ptr p);
+gdk_export void	*VALget		(ValPtr v);
+
+#define ILLEGALVALUE	((ptr)-1)
+#define MAXPARAMS	32
+
+#endif /* _GDK_H_ */
 @
 @}
 @T

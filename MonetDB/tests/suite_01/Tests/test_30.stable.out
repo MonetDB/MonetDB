@@ -1,11 +1,16 @@
 stdout of test 'test_30` in directory 'tests/suite_01` itself:
 
-#> Mtest:	milS test_30 milS
-#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_01 -single test_30.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Wed Jan 19 11:06:12 MET 2000.
-#script:test_30.milS
+
+# 00:40:50 >  
+# 00:40:50 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/manegold.GNU_32-d.11786/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_suite_01  < test_30.milS
+# 00:40:50 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/var/tmp/manegold.GNU_32-d.11786/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_tests_suite_01
+# dbdir:/var/tmp/manegold.GNU_32-d.11786/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_tests_suite_01
 
 loaded;
 #---------------------------------#
@@ -23,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 !ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 !WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
@@ -50,6 +53,15 @@ Try: modules;                - for other modules.
 [ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -71,6 +83,7 @@ Try: modules;                - for other modules.
 [ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
 [ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
 [ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
 [ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
 [ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
 [ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
@@ -103,6 +116,15 @@ Try: modules;                - for other modules.
 [ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -124,6 +146,7 @@ Try: modules;                - for other modules.
 [ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
 [ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
 [ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
 [ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
 [ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
 [ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
@@ -154,6 +177,15 @@ Try: modules;                - for other modules.
 [ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -175,6 +207,7 @@ Try: modules;                - for other modules.
 [ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
 [ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
 [ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
 [ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
 [ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
 [ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
@@ -185,3 +218,8 @@ Try: modules;                - for other modules.
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+
+# 00:40:51 >  
+# 00:40:51 >  Done.
+# 00:40:51 >  
+

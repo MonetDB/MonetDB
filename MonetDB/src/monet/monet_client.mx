@@ -118,13 +118,6 @@ Client initClient(str nme, str prompt, int thread){
 @-
 Find an empty client slot.  The console entry is reserved.
 @c
-	char path[MAXPATHLEN];
-	DIR *dirp;
-
-	sprintf(path,"users%c%s", DIR_SEP, nme);
-        if( (dirp=opendir(path))==0) return 0;
-	closedir(dirp);
-
 	MT_set_lock(monet_contextLock, "initClient");
 	for(c = monet_clients; c < monet_clients+MAXCLIENTS; c++) {
 		if (c->mode == FINISHED) {
@@ -180,7 +173,7 @@ Execution of the prelude file is scheduled as a separate action.
 The first time a client needs input (or when the last input contained
 errors) its read request is entered into the queue.
 @c
-static YYSTREE mil_general=NULL, mil_prelude=NULL, mil_epilogue=NULL;
+static YYSTREE mil_general=NULL;
 
 static YYSTREE scheduleFile(str filename) {
         YYSTREE r = yynode(TOK_BUILTIN, TYPE_ptr);
@@ -208,6 +201,7 @@ static YYSTREE scheduleFile(str filename) {
 void scheduleClient(Client c){	
 	Request req = NULL;
 	YYSTREE t;
+	int k;
 
 	if (c->mil_accept == NULL) {
         	yyexpand(c->mil_accept = yynode(TOK_BUILTIN, TYPE_int),
@@ -215,27 +209,22 @@ void scheduleClient(Client c){
 		c->mil_accept->yyval.val.pval = (ptr) serveClient;
 		t->yyval.val.ival = c-monet_clients;
 	}
-	if (mil_general == NULL) {
-                mil_general = scheduleFile("general.mil");
-                mil_prelude = scheduleFile("prelude.mil");
-                mil_epilogue = scheduleFile("epilogue.mil");
-
+	if( mil_general == NULL) {
+		char buf[PATHLENGTH];
+		if( monet_general)
+		sprintf(buf,monet_general);
+		else
+		sprintf(buf,"%s/share/Monet/general.mil",GDKdistrStr);
+		SLASH_2_DIR_SEP(buf);
+		mil_general = scheduleFile(buf);
 		QMADD(req, 0, mil_general, "source(general.mil);");
-		QMADD(req, 0, mil_prelude, "source(prelude.mil);");
 
-                if (monet_prelude) {
-			QMADD(req, 0, scheduleFile(monet_prelude), "source(<user prelude>);");
-                }
-                if (monet_script) {
-			QMADD(req, 0, scheduleFile(monet_script), "source(<user script>);");
-			QMADD(req, 0, t = yynode(TOK_BUILTIN, TYPE_ptr), "quit;");
-			t->yyval.val.pval = (ptr) MT_global_exit;
-			t->dealloc = 0;
-                }
-	} else {
-		QMADD(req, c->stk, mil_prelude, "source(prelude.mil);");
+		for(k=0;monet_script[k]; k++){
+			QMADD(req, 0, scheduleFile(monet_script[k]), 
+				"source(<user script>);");
+		}
 	}
-	if (c != monet_clients || monet_background != 1) {
+	if (c != monet_clients || monet_deamon != 1) {
 		QMADD(req, c->stk, c->mil_accept, "readCmd;");
         }
         putRequest(req);
@@ -272,8 +261,13 @@ Client forkClient(Cntxt stk, int thread){
         	son->events = father->events;
         	son->login = father->login;
         	son->father = father->stk;
-        	monet_cntxt[son->stk].outer = stk;
-        	monet_cntxt[son->stk].shadow = 1;
+		/* also reuse father's stack */
+		if (thread){
+			CNTXTcopy( son->stk, stk );
+		} else {
+        		monet_cntxt[son->stk].outer = stk;
+        		monet_cntxt[son->stk].shadow = 1;
+		}
 		MT_set_lock(monet_contextLock, "forkClient");
 		father->children++;
 		MT_unset_lock(monet_contextLock, "forkClient");
@@ -308,9 +302,6 @@ void freeClient(Client c) {
 		FILE *bkin = t->data[1], *bkout = t->data[0];
 		ValRecord res;
 
-		monetSetChannel(t, c->fdin, c->fdout);
-		interpret_file(c->stk, mil_epilogue, &res);
-		if (c->stk) shutdown(c->socket, 2);
 		monetSetChannel(t, bkin, bkout);
        		TBL_exitclient(c);
 		GDKlog("Mserver: %s session ends", c->user);	
@@ -318,6 +309,8 @@ void freeClient(Client c) {
 		if (fileno(c->fdin) != 0){
         		(void) fclose(c->fdin);
         		(void) fclose(c->fdout);
+			if (c->stk) shutdown(c->socket, 2);
+			(void) close(c->socket);
 		}
 		GDKfree(c->user); 
 		GDKfree(c->prompt); 
@@ -326,6 +319,16 @@ void freeClient(Client c) {
 	}
 
 	/* destroy all bindings */
+
+	if (c->tree) {
+		yyfree(c->tree);
+		c->tree = NULL;
+		CNTXTfree2(c->stk, c);
+	}
+	if (c == monet_clients){ /* admin context */
+		yyfree(mil_general);
+	}
+
 	CNTXTclear(c->stk);
 	CNTXTfree2(c->stk, c); 
 	CNTXTdelete(c->stk); 
@@ -737,22 +740,3 @@ int dropClient(Client c, YYSTREE lt) {
 }
 @
 @}
-@+ Client Authorization
-Access authorization should be in place when the system is
-used in a real application environment.
-The first rule applied is to make sure that the server process runs
-under the priviliges identified by the database owner.
-This is guaranteed by running the server under a separate
-user identity.
-
-The second rule assures that gaining access through a client monitor
-satisfies the information maintained in the database user file.
-
-The authorization policy currently assumes two special users:adm and
-guest. The former is the Monet root alias and assigned to the 
-server console. The latter is the default entry for users not
-explicitly granted access to the system.
-
-For each user the database owner should install a directory <db>/users/<usr>.
-It contains an optional prelude file (monet.prelude), which contains both
-module inclusions, variable initializations and procedures.

@@ -230,7 +230,7 @@ in the Monet Command implementations. Since there are two types of commands:
   records as parameters.
 
 @c
-int handle_argerror(ValPtr res, int actual, int correct) {
+kernel_export int handle_argerror(ValPtr res, int actual, int correct) {
 	str s = GDKmalloc(80);	
 	VALclear(res);
 	res->val.sval = s; 
@@ -239,7 +239,7 @@ int handle_argerror(ValPtr res, int actual, int correct) {
 	return -1;
 }  
 
-int handle_paramerror(ValPtr res, int param, int actual, int correct) {
+kernel_export int handle_paramerror(ValPtr res, int param, int actual, int correct) {
 	str s = GDKmalloc(80);	  
 	VALclear(res);
 	res->val.sval = s; 
@@ -731,10 +731,15 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 	OIDflushdelta = 0;
 	TMcommit();
 	if (c == monet_clients) {
-		int status = 0, *statusp = &status;
+		int i,status = 0, *statusp = &status;
         	if (lt->cnt > 0) { 
 			@:builtin_operand(0, TYPE_int, statusp)@
         	}
+		monet_running = 0;
+		/*
+		freeClient(c);
+		monet_exit();
+		*/
 		fflush(GDKout);
 		MT_global_exit(*statusp);
 	}
@@ -759,23 +764,25 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
 	CNTXTclient(stk, &c);
    
-	if (strcmp(c->user, MONET_ADMIN)  && 
-	    strcmp(c->user, GDKenviron[GDKowner]))
+	if (strcmp(c->user, MONET_ADMIN)  )
 	{
 		fprintf(GDKout,"No permission for shutdown; quit.\n");
 		fflush(GDKout);
-	} else if (monet_background == 1) {
+	} else if (monet_deamon == 1) {
 		fprintf(GDKout,"Shutdown of server in progress\n");
 		fflush(GDKout);
+		monet_running = 0;
 		CMDquit(stk, lt, res);
 		closeClient(monet_clients, TRUE);
 		return 0;
 	} else {
 		int status = 1, *statusp = &status;
+		monet_running = 0;
         	if (lt->cnt > 0) { 
             	    @:builtin_operand(0, TYPE_int, statusp)@
         	}
 		fflush(GDKout);
+		fclose(GDKout);
 		MT_global_exit(*statusp);
 	}
 	return CMDquit(stk, lt, res);

@@ -101,7 +101,7 @@ char old_c=0;
 }
 
 /* hack for bug (another one..) in SGI stdio */
-#define FEOF(fp) (feof(fp)||(old_c==255))
+#define FEOF(fp) (feof(fp)||(old_c=='\377'))
 
 #define DEBUG(name) /* {						\
     char buf[200];							\

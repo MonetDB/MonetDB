@@ -30,7 +30,7 @@ m_export void  TBL_exitclient(Client c);
             
 m_export void  TBL_newproc(Client c, str nme, 
 			 YYSTREE body, YYSTREE sig, YYSTREE ret);
-m_export void  TBL_delproc(Client client, str nme, int lock);
+m_export void  TBL_delproc(Client client, str nme, int pid, int lock);
 
 
 /* old info functions */
@@ -57,6 +57,7 @@ m_export BAT *TBL_fcn_dsc;
 m_export BAT *TBL_fcn_aut;
 m_export BAT *TBL_fcn_dat;
 m_export BAT *TBL_fcn_pro;
+m_export BAT *TBL_fcn_cnt;
 m_export BAT *TBL_mod_nme;
 m_export BAT *TBL_mod_cnt;
 m_export BAT *TBL_mod_hdl;
@@ -207,6 +208,7 @@ BAT *TBL_fcn_dsc = NULL;  /* BAT(oid, str): (FID, fcn description text). */
 BAT *TBL_fcn_aut = NULL;  /* BAT(oid, str): (FID, fcn author name). */
 BAT *TBL_fcn_dat = NULL;  /* BAT(oid, str): (FID, fcn creation date). */
 BAT *TBL_fcn_pro = NULL;  /* BAT(oid, str): (FID, type sequence). */
+BAT *TBL_fcn_cnt = NULL;  /* BAT(oid, int): (FID, reference count (procs)). */
 BAT *TBL_mod_nme = NULL;  /* BAT(oid, str): (MID, module name).	*/
 BAT *TBL_mod_cnt = NULL;  /* BAT(oid, int): (MID, reference count). */
 BAT *TBL_mod_hdl = NULL;  /* BAT(oid, ptr): (MID, OS dynlink handle). */
@@ -511,6 +513,7 @@ int TBL_M_lock(Client c) {
   BATfakeAbort(TBL_fcn_aut);
   BATfakeAbort(TBL_fcn_dat);
   BATfakeAbort(TBL_fcn_pro);
+  BATfakeAbort(TBL_fcn_cnt);
   BATfakeAbort(TBL_mod_nme);
   BATfakeAbort(TBL_mod_cnt);
   BATfakeAbort(TBL_mod_hdl);
@@ -540,6 +543,7 @@ int TBL_M_unlock(Client c) {
   BATfakeCommit(TBL_fcn_aut);
   BATfakeCommit(TBL_fcn_dat);
   BATfakeCommit(TBL_fcn_pro);
+  BATfakeCommit(TBL_fcn_cnt);
   BATfakeCommit(TBL_mod_nme);
   BATfakeCommit(TBL_mod_cnt);
   BATfakeCommit(TBL_mod_hdl);
@@ -916,7 +920,25 @@ BAT *TBL_create(Client client, str nme, BAT *b) {
 	@:VAR_create("monet")@
 	BBPrename(b->batCacheid, buf);
 	if (client == monet_clients && strchr(nme,'_') == NULL) {
-	    @:VAR_create("adm")@
+		@:VAR_create("adm")@
+	}
+	return b;
+}
+
+BAT *TBL_lookup( Client client, str nme ){
+	char buf[128];
+	Variable v;
+	BAT *b = NULL;
+
+   	sprintf(buf, "monet_%s", nme);
+	v = VARfind(&monet_cntxt[client->stk].outer, buf);
+	if (v){ /* dirty replacement of the client bats */
+		BAT *o = BATdescriptor(v->binding.val.bval);
+		b = BATcopy(o);
+		BBPunfix(o->batCacheid);
+   		v->binding.val.bval = b->batCacheid;
+	} else {
+		GDKerror("variable %s not found\n",  buf );
 	}
 	return b;
 }
@@ -948,6 +970,7 @@ Since the BBP will no longer store these tables only creation is needed
  	@:TBL_create(fcn,dat,oid,str,500,BOUND2BTRUE,FALSE)@	
  	@:TBL_create(fcn,nme,oid,str,600,BOUND2BTRUE,FALSE)@	
  	@:TBL_create(fcn,pro,oid,str,2400,FALSE,FALSE)@	
+ 	@:TBL_create(fcn,cnt,oid,int,600,BOUND2BTRUE,FALSE)@	
 	
 @- Look up the module table.  
 @c
@@ -1179,14 +1202,14 @@ loaded	byuser	level	ACTION (in order!)
 1	1	>0	                                 incref
 \end{verbatim}
 \begin{description}
-\item[lock]	lock(tbl_writelock)
-\item[unlock]	unlock(tbl_writelock)
-\item[load]	openmod/mod_inst
-\item[unload]	TBL_unload (includes decref,cunstall)
-\item[cinstall]	copy TBL_ to client->
-\item[mod_inst]	dlsym/<name>_Module_Install (that calls TBL_Inst_Depend)
+\item[lock]	lock(tbl\_writelock)
+\item[unlock]	unlock(tbl\_writelock)
+\item[load]	openmod/mod\_inst
+\item[unload]	TBL\_unload (includes decref,cunstall)
+\item[cinstall]	copy TBL\_ to client->
+\item[mod\_inst]	dlsym/<name>\_Module\_Install (that calls TBL\_Inst\_Depend)
 \item[cinstall]	copies to client->xx tables and returns MIL init script.
-\begin{description}
+\end{description}
 @
 @c
 
@@ -1274,7 +1297,7 @@ static void purge_dependent_bats(int ntpes, int *tpes, int naccs, int *accs) {
                     if ((b->tacctype == accs[i]) || (b->hacctype == accs[i]))
                         goto doswap;
                 continue;
-doswap:         if (b->batPersistence&PERSISTENT) {
+doswap:         if (BBP_plevel(b->batCacheid)) {
                         BBPfree(b);
                 } else {
 			bats[nbats++] = ABS(b->batCacheid);
@@ -1302,7 +1325,7 @@ int TBL_unloadmod(Client client, str module, int level) {
   	/* identify as father
          */
 	while (father->father != -1) {
-		father = monet_clients + client->father; 
+		father = monet_clients + father->father; 
   	}
 
 	if (level==0) TBL_M_lock(father);
@@ -1328,21 +1351,9 @@ Check if it is in use already.
 			goto xit;
 		}
 	}
-	/* it is legal to drop this module 
-         */
-	refcnt = TBL_M_decref(father, mid);
-	if (BUNlocate(TBL_mod_use, &mid, &father) != NULL) 
+	if ((refcnt = TBL_M_decref(father, mid)) > 0 )
 		goto xit;
 
-	/* Go ahead with module drop: first execute the MIL exit script
-         */
-	BUNfndOID(p,TBL_mod_drop, &mid);
-	if (p != NULL) {
-		ValRecord v;
-	   	TBL_M_unlock(father);
-		interpret_str(client->maxstk, BUNtvar(TBL_mod_drop,p), &v);
-	   	TBL_M_lock(father);
-	}
 @-
 Delete all the modules's functions from user table.
 @c
@@ -1436,6 +1447,21 @@ xit:	if (level==0) {
 	return ret;
 }
 
+void TBL_drop(Client client, str module, int level) {
+	Client father = client;
+	char *p;
+	oid mid;
+
+	/* Go ahead with module drop: first execute the MIL exit script
+         */
+	BUNfndOID(p,TBL_mod_drop, &mid);
+	if (p != NULL) {
+		ValRecord v;
+	   	TBL_M_unlock(father);
+		interpret_str(client->maxstk, BUNtvar(TBL_mod_drop,p), &v);
+	   	TBL_M_lock(father);
+	}
+}
 
 @+ Function Resolution
 @- TBL_search
@@ -1704,7 +1730,7 @@ The last condition can only be checked at run-time. It actually splits the
 optimizations in two classes: namely array-lookup or merge-lookup.
 Both have differnt run-time constraints. we compute now whether
 our other criteria allow for execution of thexe optimizations, 
-and store the results in resp. sig->array_opt and sig->merge_opt.
+and store the results in resp. sig->array\_opt and sig->merge\_opt.
 @c
 	if (sig->special) {
 		optimize = optimize_true;
@@ -1945,6 +1971,7 @@ int format_type(YYSTREE t, str *p) {
 void TBL_newproc(Client client, str nme, YYSTREE body, YYSTREE sig, YYSTREE ret) {
 	int i, j, tpe = TOK_PROC;
 	oid pid = TBL_oid++;
+        int zero = 1;
 
 	TBL_M_lock(NULL);
 	TBL_fcn_pro_size++;
@@ -2045,6 +2072,7 @@ void TBL_newproc(Client client, str nme, YYSTREE body, YYSTREE sig, YYSTREE ret)
 	BUNins(TBL_fcn_nme, &pid, nme);
 	BUNins(TBL_fcn_imp, &pid, &body);
 	BUNins(TBL_fcn_tpe, &pid, &tpe);
+	BUNins(TBL_fcn_cnt, &pid, &zero);
 
 	/* use this space only once, so disguise name str as a ptr */
 	body->yyval.vtype = TYPE_ptr; 
@@ -2053,10 +2081,34 @@ void TBL_newproc(Client client, str nme, YYSTREE body, YYSTREE sig, YYSTREE ret)
 	TBL_M_unlock(client);
 }
 
+void TBL_incproc(Client client) {
+   	int xx, yy = TOK_PROC;
+        BAT *tb, *bb, *cb = BATmirror(client->fcntbl);
+	BUN p,q;
+
+	TBL_M_lock(client);
+	/* first select procs from function table */
+        tb = BATsemijoin(TBL_fcn_tpe, cb);
+        bb = BATuselect(tb, &yy, &yy);
+	BBPreclaim(tb);
+
+	BATloopFast(bb, p, q, xx) {
+	    	oid pid = *(oid*) BUNhloc(bb, p);
+	    	int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
+
+		cnt++;
+  		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
+	}
+	BBPreclaim(bb);
+
+	TBL_M_unlock(client);
+}
+
 @- TBL_delproc
-deletes a MIL procedure.
+deletes a MIL procedure. If pid is less than 0 all procs with the 
+given name are deleted.
 @c
-void TBL_delproc(Client client, str nme, int lock) {
+void TBL_delproc(Client client, str nme, int pid, int lock) {
    	int xx, yy = TOK_PROC;
         BAT *sb, *tb, *bb, *cb = BATmirror(client->fcntbl);
 	BUN p,q,r;
@@ -2069,22 +2121,47 @@ void TBL_delproc(Client client, str nme, int lock) {
         bb = BATuselect(tb, &yy, &yy);
 	BBPreclaim(tb);
 
-	BATloopFast(bb, p, q, xx) {
+	if (pid < 0){
+	  BATloopFast(bb, p, q, xx) {
 	    oid pid = *(oid*) BUNhloc(bb, p);
 	    BUN s = BUNfnd(cb, &pid);
+	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
 
-	    (void) BATprepareHash(TBL_fcn_imp);
-	    HASHloop_oid(TBL_fcn_imp, TBL_fcn_imp->hhash, yy, &pid, r) {
-		YYSTREE t=*(YYSTREE*)BUNtloc(TBL_fcn_imp,r);
-		if (t) {
-		    /* free disguised name */
-		    GDKfree(t->yyval.val.pval); 
-		    yyfree(t);
+	    if (cnt == 1){
+		YYSTREE *x = (YYSTREE*)
+			BUNtloc(TBL_fcn_imp,BUNfnd(TBL_fcn_imp,&pid));
+
+		if (x && *x) {
+	    		/* free disguised name */
+	    		GDKfree((*x)->yyval.val.pval); 
+	    		yyfree((*x));
 		}
-		break;
-	    }	
-	    BUNdelete(cb, s);
-	    TBL_Deinstall_Function(pid);
+	    	BUNdelete(cb, BUNfnd(cb, &pid));
+	    	TBL_Deinstall_Function(pid);
+	    } else {
+		cnt--;
+  		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
+	    }
+ 	  }
+	} else {
+	  if (BUNfnd(bb, &pid)){
+	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
+	    if (cnt == 1){
+		YYSTREE *x = (YYSTREE*)
+			BUNtloc(TBL_fcn_imp,BUNfnd(TBL_fcn_imp,&pid));
+
+		if (x && *x) {
+	    		/* free disguised name */
+	    		GDKfree((*x)->yyval.val.pval); 
+	    		yyfree((*x));
+		}
+	    	BUNdelete(cb, BUNfnd(cb, &pid));
+	    	TBL_Deinstall_Function(pid);
+	    } else {
+		cnt--;
+  		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
+	    }
+	  }
 	}
 	BBPreclaim(bb);
 	if (lock) TBL_M_unlock(client);
@@ -2166,36 +2243,42 @@ Both tables are session and user specific.
 void TBL_initclient(Client client) {
 	int	i;
 
-	client->fcntbl = TBL_create(client, "fcntbl", 
+	if (monet_clients != client){
+		client->fcntbl = TBL_lookup(client, "fcntbl");
+		client->acctbl = TBL_lookup(client, "acctbl"); 
+		client->atomtbl = TBL_lookup(client, "atomtbl"); 
+		TBL_incproc(client); /* inc reference counts to functions */
+	} else {
+		client->fcntbl = TBL_create(client, "fcntbl", 
 				    BATnew(TYPE_str, TYPE_oid, TBL_SIZE));
 
-	/* Create the client acc-table, and fill it 
-	 * with the standard types.
-	 */
-	client->acctbl = TBL_create(client, "acctbl", 
+		/* Create the client acc-table, and fill it 
+	 	 * with the standard types.
+	 	 */
+		client->acctbl = TBL_create(client, "acctbl", 
 			     	    BATnew(TYPE_str, TYPE_int, TBL_SIZE));
-	i = ACC_hash; BUNins(client->acctbl, "hash", &i);
-	i = ACC_index;BUNins(client->acctbl, "index", &i);
+		i = ACC_hash; BUNins(client->acctbl, "hash", &i);
+		i = ACC_index;BUNins(client->acctbl, "index", &i);
 
-	/* Create the client atom-table, and fill it 
-	 * with the standard types.
-	 */
-	client->atomtbl = TBL_create(client, "atomtbl", 
+		/* Create the client atom-table, and fill it 
+	 	 * with the standard types.
+	 	 */
+		client->atomtbl = TBL_create(client, "atomtbl", 
 				     BATnew(TYPE_str, TYPE_int, TBL_SIZE));
-
-	i = TYPE_void;BUNins(client->atomtbl, "void", &i);
-	i = TYPE_bit; BUNins(client->atomtbl, "bit", &i);
-	i = TYPE_chr; BUNins(client->atomtbl, "chr", &i);
-	i = TYPE_sht; BUNins(client->atomtbl, "sht", &i);
-	i = TYPE_bat; BUNins(client->atomtbl, "bat", &i);
-		      BUNins(client->atomtbl, "BAT", &i);
-	i = TYPE_int; BUNins(client->atomtbl, "int", &i);
-	i = TYPE_oid; BUNins(client->atomtbl, "oid", &i);
-	i = TYPE_ptr; BUNins(client->atomtbl, "ptr", &i);
-	i = TYPE_flt; BUNins(client->atomtbl, "flt", &i);
-	i = TYPE_dbl; BUNins(client->atomtbl, "dbl", &i);
-	i = TYPE_lng; BUNins(client->atomtbl, "lng", &i);
-	i = TYPE_str; BUNins(client->atomtbl, "str", &i);
+		i = TYPE_void;BUNins(client->atomtbl, "void", &i);
+		i = TYPE_bit; BUNins(client->atomtbl, "bit", &i);
+		i = TYPE_chr; BUNins(client->atomtbl, "chr", &i);
+		i = TYPE_sht; BUNins(client->atomtbl, "sht", &i);
+		i = TYPE_bat; BUNins(client->atomtbl, "bat", &i);
+		      	BUNins(client->atomtbl, "BAT", &i);
+		i = TYPE_int; BUNins(client->atomtbl, "int", &i);
+		i = TYPE_oid; BUNins(client->atomtbl, "oid", &i);
+		i = TYPE_ptr; BUNins(client->atomtbl, "ptr", &i);
+		i = TYPE_flt; BUNins(client->atomtbl, "flt", &i);
+		i = TYPE_dbl; BUNins(client->atomtbl, "dbl", &i);
+		i = TYPE_lng; BUNins(client->atomtbl, "lng", &i);
+		i = TYPE_str; BUNins(client->atomtbl, "str", &i);
+	}
 
 #ifdef MKMODS
 	TEM_initclient(client);
@@ -2209,7 +2292,7 @@ operation cheap.
 The space occupied by user defined functions should be reclaimed.
 @c
 void TBL_exitclient(Client client) {
-	BAT	*b, *bn;
+	BAT	*b, *bn, *procs, *fcns;
 	BUN 	p, q, r;
 	int	xx, proc=TOK_PROC;
 
@@ -2218,10 +2301,31 @@ void TBL_exitclient(Client client) {
 #endif
 	TBL_M_lock(client);
 
-	/* Unload all loaded modules in reverse loading order. */
+	/* run the drop scripts. */
 	bn = BATselect(TBL_mod_use, &client, &client);
 	b = BATsort(bn); 
-	b = BATrevert(BATsetaccess(b, BAT_WRITE));
+	b = BATrevert(procs=BATsetaccess(b, BAT_WRITE));
+	BATloopFast(b, p, q, xx) { 
+	    oid mid = *(oid*) BUNhloc(b,p); 
+	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &client)) {
+	   	str module = BUNtailfnd(char,TBL_mod_nme,r,&mid);
+	    	if (TBL_M_directloaded(client, mid, module))
+		    TBL_drop(client, module, 1);
+	    }
+	}
+
+	/* Check for procs in your fcn table.  */
+	procs = BAT_select(TBL_fcn_tpe, &proc, &proc, FALSE);
+	fcns = BATsemijoin(BATmirror(client->fcntbl), procs);
+
+	BATloopFast(fcns, p, q, xx) {
+		TBL_delproc(client, (str) BUNtvar(fcns, p), 
+			*(oid*) BUNhloc(fcns, p), FALSE);
+	}
+	BBPreclaim(procs);
+	BBPreclaim(fcns);
+
+	/* Unload all loaded modules in reverse loading order. */
 	BATloopFast(b, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(b,p); 
 	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &client)) {
@@ -2229,15 +2333,6 @@ void TBL_exitclient(Client client) {
 	    	if (TBL_M_directloaded(client, mid, module))
 		    TBL_unloadmod(client, module, 1);
 	    }
-	}
-	BBPreclaim(b);
-	BBPreclaim(bn);
-
-	/* Check for procs in your fcn table. */
-	bn = BATjoin(client->fcntbl, TBL_fcn_tpe);
-	b = BAT_select(bn, &proc, &proc, FALSE);
-	BATloopFast(b, p, q, xx) {
-		TBL_delproc(client, (str) BUNhvar(b, p), FALSE);
 	}
 	BBPreclaim(b);
 	BBPreclaim(bn);
@@ -2329,6 +2424,7 @@ TBL_Install_Function(
   str author,
   str date)
 {
+  int zero = 0;
   oid fid = TBL_oid++;
 
   dlFPRINTF(GDKerr, "  TBL_Install_Function(%d,%s) = %d\n", mid, name, fid);
@@ -2343,6 +2439,7 @@ TBL_Install_Function(
   BUNins(TBL_fcn_dsc, &fid, help);
   BUNins(TBL_fcn_aut, &fid, author);
   BUNins(TBL_fcn_dat, &fid, date);
+  BUNins(TBL_fcn_cnt, &fid, &zero);
 @-
 We want to save pointer to the real function
 for example use in a different interpreter 
@@ -2366,6 +2463,7 @@ void TBL_Deinstall_Function(oid pid) {
   BUNdelHead(TBL_fcn_dsc, &pid);
   BUNdelHead(TBL_fcn_aut, &pid);
   BUNdelHead(TBL_fcn_dat, &pid);
+  BUNdelHead(TBL_fcn_cnt, &pid);
 
   /* periodically clean up TBL_fcn_pro */
   if (BATcount(TBL_fcn_nme)+100 < TBL_fcn_pro_size) {

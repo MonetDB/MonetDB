@@ -187,7 +187,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(int  (*)()) intCmp, 		
  		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,
 		(int  (*)()) batFix,		(int  (*)()) batUnfix,
- 		(void (*)()) 0,			(void (*)()) 0,
+ 		(void (*)()) BATpersistent,	(void (*)()) BATtransient,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
   { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, 
@@ -500,7 +500,7 @@ a zero char).
 In contrast, the types \{ bit, ptr, bat, oid\} are derived types. They 
 do not occur in the switches. The @%ATOMstorage@ macro maps them respectively
 onto a {\tt chr}, {\tt int} (pointers are 32-bit), {\tt int}, and
-{\tt int} (OIDs are 32-bit}.
+{\tt int} {OIDs are 32-bit}.
 \\
 This approach makes it tractable to switch to 64-bits OIDs,
 or to a fully 64-bits OS easily. One only has to map the {\tt oid}
@@ -558,7 +558,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPfix(*(bat*) (P4));			\
+		BBPpersistent(*(bat*) (P4),FALSE);	\
 		*(int *) (P3) = * (int *) (P4); 	\
 	}						\
 } else {						\
@@ -569,12 +569,11 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_str) {			\
 		(void) strPut(P2, (int*) (P3), (str) (P4));\
 	} else {                                        \
-	    if (ATOMvarsized(t_)) {			\
+	    if (BATatoms[t_].atomPut) {			\
 		(*BATatoms[t_].atomPut)(P2, P3, P4);	\
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
-	    ATOMfix(t_, P4); 				\
 } }    }
 
 #define ATOMreplace(P1,	P2, P3, P4)			\
@@ -588,8 +587,8 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPunfix(*(bat*) (P3));			\
-		BBPfix(*(bat*) (P4));			\
+		BBPtransient(*(bat*) (P3),FALSE);	\
+		BBPpersistent(*(bat*) (P4), FALSE);	\
 		*(int *) (P3) = *(int *) (P4); 		\
 	}						\
   } else {						\
@@ -600,14 +599,14 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_str) {			\
 		(void) strPut(P2, (int*) (P3), (str) (P4));\
 	} else {					\
-	    ATOMunfix(t_, P3);				\
-	    if (ATOMvarsized(t_)) {			\
+	    if (BATatoms[t_].atomDel) {		\
 		ATOMdel(t_, P2,(int*) P3);		\
+	    } 						\
+	    if (BATatoms[t_].atomPut) {		\
 		(*BATatoms[t_].atomPut) (P2, (int*) (P3), P4);\
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
-	    ATOMfix(t_, P4);				\
 } }     }
 
 #define GDK_STRHASHTABLE	(1<<10)
@@ -1011,10 +1010,10 @@ However, in many other situations the cardinality of string columns is large,
 or the string values might even be unique. In this case, our fixed-size hash 
 table will start to overflow quickly. Therefore, after the hash table is full
 (this is measured very simplisticly by looking whether the string heap exceeds a 
-heap size = GDK_ELIMLIMIT -- done this way to keep compatability with old bat images) 
+heap size = GDK\_ELIMLIMIT -- done this way to keep compatability with old bat images) 
 we flush the hash table. If one views the string heaps as consequent chunks
-of size GDK_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
-There is a macro GDK_ELIMBASE(offset) that computes the base of the chunk in which
+of size GDK\_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
+There is a macro GDK\_ELIMBASE(offset) that computes the base of the chunk in which
 a certain byte-offset falls.
 @
 @  
@@ -1036,21 +1035,23 @@ by simply loading or mmap()ping slices of the BAT files on disk into memory.
 This is relevant in order to process a very large BAT iteratively by taking slices
 in order top reduce memory consumption. Notice that if there are few different string 
 values, the hash table has not overflowed, and the string heap size will be small 
-(ie < GDK_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
+(ie $<$ GDK\_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
 If the hash table *has* overflowed, we want to be able to only map a slice of the 
 string heap as well. Now, given that the first string in the BAT-slice is called F1 
 and its heap offset is O1 and the last string in the slice is F2 and its 
 offset is O2, then the slice we should take from the string heap is: 
 @
 @
-[ GDK_ELIMBASE(F1) .. MAX(GDK_ELIMBASE(F2)+GDK_ELIMLIMIT), O2+strlen(F2)) ]
+\begin{verbatim}
+GDK_ELIMBASE(F1) .. MAX(GDK_ELIMBASE(F2)+GDK_ELIMLIMIT), O2+strlen(F2))
+\end{verbatim}
 @
 @
 The below routine strElimDoubles() can be used to check whether all 
 strings are still being double-eliminated in the original hash-table.
 Only then, we know that unequal offset-integers in the BUN array means
 guarantee different strings in the heap. This optimization is made at some 
-points in the GDK. Make sure you check GDK_ELIMDOUBLES before assuming this!
+points in the GDK. Make sure you check GDK\_ELIMDOUBLES before assuming this!
 @c
 int strElimDoubles(Heap *h) {
 	return GDK_ELIMDOUBLES(h);
@@ -1278,11 +1279,14 @@ int strFromStr(char *src, int *len, char** dst) {
 				*p++ = '\n';
 			} else if (*cur == 't') { 
 				*p++ = '\t';
-			} else if ((cur[0] >= '0' && cur[0] <= '9') &&
-				   (cur[1] >= '0' && cur[1] <= '9') &&
-				   (cur[2] >= '0' && cur[2] <= '9'))
+			} else if ((cur[0] >= '0' && cur[0] <= '7') &&
+				   (cur[1] >= '0' && cur[1] <= '7') &&
+				   (cur[2] >= '0' && cur[2] <= '7'))
 			{
-				*p++ = (cur[2] + (cur[1]<<3) + (cur[0]<<6));
+				*p++ =  (cur[2] & 7 	  | 
+				       ((cur[1] & 7) <<3) | 
+				       ((cur[0] & 7) <<6));
+				cur += 2;
 			} else {
 			        *p++ = *cur;
 			}

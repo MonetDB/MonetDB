@@ -12,6 +12,7 @@ extern BAT* select_overlap_polyline_polyline(BAT* left,const polyline& p);
 #endif /* __RTREE_POLYLINE_H__ */
 @C
 #include "gis.h"
+#include "opengis.h"
 #include "gisbulk.proto.h"
 #include "rtree.h"
 #include "rtree_polyline.h"

@@ -7,7 +7,9 @@ Loading the database:
 =====================
 
 $ Mcreatedb -db gold -user $USER
-$ Mload test100k -db gold -s 100000 -f format
+$ #Mload test100k -db gold -s 100000 -f format
+$ export TSTTRGDIR=`pwd`
+$ Mserver -db gold < load.mil
 $ 
 
 Create the two supportive tables:

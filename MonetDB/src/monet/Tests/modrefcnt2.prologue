@@ -1,0 +1,8 @@
+module("lock");
+
+VAR test := new(int,lock);
+test.rename("test");
+
+loaded;
+test.print;
+test.count.print;

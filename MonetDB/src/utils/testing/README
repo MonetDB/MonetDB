@@ -3,217 +3,359 @@ Hi all Monet and DS hackers,
 here comes the new version of the testing environment. Only a few details
 have changed since my proposal.
 
+
 - The testing environment consists of the following tools:
-  + Mtest	a bash script to run tests
-  + Mfilter	a bash script to filter the test output before running Mdiff 
+  + Mtest.py	a python script to run tests
+  + Mprofile.py	a python script to run tests and collect profiling information
+		(see below)
+  + Mfilter.py	a python script to filter the test output before running Mdiff 
 		(see below)
   + Mdiff	a C program to show the differences of two files as HTML document
-  + Mapprove	a bash script to approve recent test output (see below)
+  + Mapprove.py	a python script to approve recent test output (see below)
   + Mtimeout	a C program to limit the resouces of a program
 		(thanks to Tim Ruhl, tim@ddi.nl)
   + MkillUsers	a bash script to kill test processes that are orphaned
 		(used "fuser" to detect such processes)
+  (Mtimeout and MkillUsers are currently available on Unix, only)
+
 
 - In each directory of the current Monet and/or DS source tree tests may be
   provided in a subdirectory called "Tests". Of course, the tests should
   deal with the part/modules where they are located and they should be
   provided and maintained by the respective developer (see also below).
 
+
 - Each "Tests" directory must contain a file "All" that contains the names
   of all tests in that directory (one name per line).
 
+
 - Each test named TST consists of
   + a test script which is ONE of the following:
-    * an arbitrary executable (e.g. a shell script)        (TST)
+    * an arbitrary executable (e.g., a shell script)       (TST)           (~,^)
+       on Windows, executables must be ".(exe|com)"        (TST.(exe|com)) (~,^)
+                   and scripts must be ".(bat|cmd)"        (TST.(bat|cmd)) (~,^)
+    * a Python script                                      (TST.py)        (~,^)
     * a MIL script to be executed by Mserver               (TST.milM) (',^)
     * a MIL script to be executed by Mserver -single       (TST.milS) (',^)
-    * a MIL script to be executed by Mclient               (TST.milC) (",^)
-    * a JAVA program to be compiled & executed by java -cs (TST.java) (")
-    * some ODMG stuff ?                                    (TST.odmg?)
+       (-single has been removed, so .milM & .milS are
+        treated equally, now)
+    * a MIL script to be executed by MapiClient            (TST.milC) (",^)
+      (MapiClient is currently not supported on Windows)
+    * a SQL script to be executed by sql_client            (TST.sql)  (",^)
+      (each SQL statments must be given in a single line)
+   (~) In case the name of an arbitrary executable or Python script is
+        suffixed with ".MAPI" (i.e., TST.MAPI[.(exe|com|bat|cmd|py)]),
+        Mtest.py starts an Mserver with a MAPI-listerner on MAPIPORT
+        in the background before executing the test. The test can then
+        connect via MAPI (on MAPIPORT) to that Mserver.
+       Similar, with suffix ".SQL", an Mserver with an SQL-listener on
+        SQLPORT is started.
+       In both cases, Mtest.py stops the Mserver again, once the test has
+        finished.
    (') For Mserver, if several files are present named
         TST_sXX.mil(M|S) (XX={00,01,...,99})
         these are executed by subsequently calling Mserver
-   (") For Mclient & java, if several files are present named
-        (1) TST_sXX.(milC|java) (XX={00,01,...,99})
+   (") For MapiClient & sql_client, if several files are present named
+        (1) TST_sXX.(milC|sql) (XX={00,01,...,99})
             these are executed subsequently using the same Mserver
-        (2) TST_pXX.(milC|java) (XX={00,01,...,99})
+        (2) TST_pXX.(milC|sql) (XX={00,01,...,99})
             these are executed cuncurrently using the same Mserver
-   (^) For single-script Mserver- & Mclient- tests, if a file called
-	TST.mil(M|C|S).src  exists instead of a  TST.mil(M|S|C),
-	TST.mil(M|C|S).src  is expected to contain a single line
-	giving the original location of the MIL script to be used.
+   (^) For each test file TST[.*] involved,
+        if a file called
+	TST[.*].src  exists instead of  TST[.*],
+	TST[.*].src  is expected to contain a single line
+	giving the original location of the test file to be used.
 	E.g.,  src/modules/plain/Tests/arith.milM.src  contains
-		$RELTRGDIR/arith.mil
+		$TSTBLDDIR/arith.mil
 	in order to use the MIL script extracted from
 	src/modules/plain/arith.mx  as test script.
-  + a MIL script to be used as prelude for Mserver/Mclient
-     (optional)                                            (TST.prelude)
+  + a MIL script to be used as prelude for Mserver/MapiClient
+     (optional)                                            (TST.prelude)  (^)
+  + for MapiClient- & sql_client- tests, a MIL script to be used as
+     prologue for Mserver, i.e., a script that is executed by Mserver after
+     mapi.mil/catalog.mil+sqlserver.mil, but before (the first)
+     MapiClient/sql_client connects to Mserver
+     (optional)                                            (TST.prologue) (^)
+  + for MapiClient- & sql_client- tests, a MIL script to be used as
+     epilogue for Mserver, i.e., a script that is executed by Mserver after
+     (all) MapiClient/sql_client(s) have finished
+     (optional)                                            (TST.epilogue) (^)
   + a file that contains a list of modules (one per line)
-     required by the test  (optional)                      (TST.modules)
+     required by the test  (optional)                      (TST.modules)  (^)
   + a file that contains a list of BATs (one per line)
      (created by previous tests within the same directory)
-     required by the test  (optional)                      (TST.BATs)
+     required by the test  (optional)                      (TST.BATs)     (^)
   + a set of files used by the arbitrary executable
-     (optinal)                                             (TST.*)
+     (optinal)                                             (TST.*)        (^)
   + stable (i.e. correct) versions of stdout and stderr
      of the test                                           (TST.stable.{out,err})
     operating system (OS) specific stable output can be 
     provided by adding the suffix ".<OSname>" (".`uname`"),
     ".<OSname><OSversion>" (".`uanme``uname -r`"), or
     ".<OSname><OSversion>.(64|32)bit" 
-    to the respective filename.
+    to the respective filename
+  + a file that contains a single integer number which is used as a factor
+    to extend the default TIMEOUT for this test, only.     (TST.timeout)
 
   Using this naming conventions, the test environment can automatically
-  decide what to do when called as "Mtest TST" (see below), i.e. execute one
-  of the following:
-  * TST [-prelude TST.prelude]
-  * Mserver -db TSTDB [-prelude TST.prelude] TST.milM
-  * Mserver -db TSTDB -single [-prelude TST.prelude] TST.milS
-  * Mserver -db TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &
-    Mclient [-prelude TST.prelude] TST[_(s|p)XX].milC
+  decide what to do when called as "Mtest.py TST" (see below), i.e. execute
+  one of the following:
+  * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
+  * python TST.py [TST.prelude]
+  * Mserver -db TSTDB [TST.prelude] < TST.mil(M|S)
+  * Mserver -db TSTDB $MONET_PREFIX/share/Monet/mapi.mil [TST.prologue] -background &
+         MapiClient [-prelude TST.prelude] < TST[_(s|p)XX].milC
+     or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
+     or  python TST.py [TST.prelude]
     Mshutdown
-  * Mserver -db TSTDB -prelude TST.prelude &
-    java -cs TST[_(s|p)XX]
-    Mshutdown
-  (All M<tool>'s are started with "Mtimeout -timeout TIMEOUT M<tool> ..." to
-   kill (probably) hanging M<tool>'s after a certain timeout. The default
-   TIMEOUT value is 600 seconds, i.e. 10 minutes. Additionally, MkillUsers
-   is scheduled as at-job to kill orphaned processes that Mtimeout cannot
-   reach any more.)
-  (Mserver is called with "-modulesilent" & "-yaccsilent". See "Mserver -?"
-   for details.)
+  * Mserver -db TSTDB $SQL_PREFIX/share/sql/catalog.mil $SQL_PREFIX/share/sql/sqlserver.mil [TST.prologue] -background &
+         sql_client < TST[_(s|p)XX].sql
+     or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
+     or  python TST.py [TST.prelude]
 
-  Some notes about java:
-  + The CLASSPATH variable is extended by the paths given in the
-    TST[_(s|p)XX].java file(s) as follows:
-        /*CLASSPATH
-         MONETDIST/directory/x.jar
-         MONETHOME/directory
-        */
-    During testing, MONETHOME and MONETDIST are replaced by the values of
-    $MONETHOME & $MONETDIST, respectively.
-  + An Mserver is started in the background, executing a TST.prelude MIL
-    script. This script should (at least) load the required modules and fork
-    a thread listening on an tcpip port, e.g.
-        module(OdmgTest, jOdmg, tcpip);
-        fork(listen(JAVAPORT));
-  + During testing, any occurance of 'JAVAPORT' in TST[_(s|p)XX].java and
-    TST.prelude is replaced by the appropriate port number.
+  (On Unix, all M<tool>'s are started with "Mtimeout -timeout TIMEOUT
+   M<tool> ..." to kill (probably) hanging M<tool>'s after a certain
+   timeout. The default TIMEOUT value is 60 seconds, i.e. 1 minute.
+   The TIMEOUT can be changed globally using Mtest.py's "-t" option.
+   The TIMEOUT for a single test can be extended be a factor provided
+   in a file TST.timeout (see above).
+   Additionally, MkillUsers is scheduled as at-job to kill orphaned
+   processes that Mtimeout cannot reach any more.)
+
+  (Mserver, Mcreatedb, and Mdestroydb are called with "-monetrc $MONETRC".
+   See below and "Mserver -help" for details.)
+
+  (MapiClient is called with "-everything".
+   See "MapiClient -help" for details.)
+
+  (sql_client is called with "--port=$SQLPORT".)
+
+
+- Mtest.py uses three directory trees based at TSTSRCBASE, TSTBLDBASE, and
+  TSTTRGBASE, respectively. These trees have similar purpose as the SOURCE,
+  BUILD, and PREFIX trees when configuring and compiling Monet: the original
+  tests are found in TSTSRCBASE, tests extracted from .mx or .in files
+  during testing are fould in TSTBLDBASE, and Mtest.py writes the test
+  output to TSTTRGBASE. The default settings are as follows:
+	TSTSRCBASE=$MONET_SOURCE  (where you cecked out Monet's source tree)
+	TSTBLDBASE=$MONET_BUILD   (where you called configure and make)
+	TSTTRGBASE=$MONET_PREFIX  (where you told configure to put Monet)
+  You can over rule any of these defaults by setting the respective
+  environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
+  line option to Mtest.py. 
+
+  IMPORTANT NOTE:
+
+  In any case, all directories must be given as ABSOLUTE PHYSICAL PATHS,
+  i.e., starting with "/" on Unix (or "[<drive-letter>:]\" on Windows, and
+  not containing any symbolic link(s). 
+  The latter is a restiction that might be released in the future, but for
+  the time being, using paths that contain symbolic links will cause
+  problems with Mtest.py.
+  Hence, if you compiled Monet in a path that contains a symbolic link,
+  e.g., ~/dev/monet -> /net/myhost/export/scratch1/myname/monet,
+  you should either
+  a) overrule the initial setting of MONET_SOURCE, MONET_BUILD,
+     and MONET_PREFIX which were hardcoded during configure as (e.g.)
+	MONET_SOURCE=~/dev/monet
+	MONET_BUILD=~/dev/monet/$OSVER
+	MONET_PREFIX=~/dev/monet/$OSVER
+     by
+     either setting the respective environment variables (e.g.) as follows
+	MONET_SOURCE=/net/myhost/export/scratch1/myname/monet
+	MONET_BUILD=/net/myhost/export/scratch1/myname/monet/$OSVER
+	MONET_PREFIX=/net/myhost/export/scratch1/myname/monet/$OSVER
+     before running Mtest.py 
+     or using the respective command line options to Mtest.py
+  or
+  b) overrule the default settings of TSTSRCBASE, TSTBLDBASE, and
+     TSTTRGBASE (e.g.) as follows
+	TSTSRCBASE=/net/myhost/export/scratch1/myname/monet
+	TSTBLDBASE=/net/myhost/export/scratch1/myname/monet/$OSVER
+	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$OSVER
+     either by setting the repective environment variables
+     or by using the respective command line options to Mtest.py (see
+     above).
+
+
+- Further, Mtest.py needs a .monet.conf just like Mserver. To distinguish it
+  from your usual .monet.conf, the one for Mtest.py is called
+  .monet.Mtest.conf. By default Mtest.py uses the first one it finds of
+	./.monet.Mtest.conf
+	$TSTSRCBASE/.monet.Mtest.conf
+	$HOME/.monet.Mtest.conf
+	$MONET_PREFIX/share/Monet/monet.Mtest.conf
+  The last one it shipped with Mtest.py. You can overrule the default by
+  giving --MONETRC=<path> as commandline option to Mtest.py. Mtest.py calls
+  Mserver, Mcreatedb, and Mdestroydb with "-monetrc $MONETRC".
+
+
+- Each test is identified by its name and its directory path relative to
+  TSTSRCBASE, but without the trailing "/Tests".
+
 
 - Running one or several tests is done by simply calling
-  + "Mtest <names...>" to run tests <names...> in ./Tests/
-  + "Mtest [All]"      to run all tests given in ./Tests/All
-  + "Mtest -r"         to run all tests in ./Tests/ as well as all tests in
-                       any subdirectory of ./
-  (this is supposed to be similar to "[g]make"...).
-  For more details call "Mtest --help".
+  + "Mtest.py <names...>" to run tests <names...> in
+                          a) ".",       if "." is a "Tests"-directory and
+                                           there is an "All"-file in "."
+                          b) "./Tests", if "./Tests/All" exists
+  + "Mtest.py -r"         to run all tests found in any subdirectory of "."
+
+  If Mtest.py is not called in (a subdirectory of) $TSTSRCBASE, Mtest.py
+  changes ("cd's") to $TSTSRCBASE before starting its work.
+  For more details call "Mtest.py --help".
+
 
 - Environment variables:
-  + Mtest expects MONETDIST and/or MONETHOME to be set appropriately; if
-    only one is set, both are assumed to be equal.
-  + Other environment variables that Mtest uses/exports are:
-	name		default				description
-	----		-------				-----------
-	TSTSRCBASE	$MONETHOME			base of (test) source tree
-	TSTTRGBASE	$MONETHOMEPREFIX		base for test output
-	MONETPORT	$HOST:[10000..65536]		depending on pid
-	MONETPATH	$MONET{DIST,HOME}PREFIX/bin	search-path for executables
-	MONET_MOD_PATH	$MONET{DIST,HOME}PREFIX/lib	search-path for modules
-	LD_LIBRARY_PATH	$MONET_MOD_PATH
-  + Further environment variables that Mtest exports (to be used in test scripts) are:
+  + Mtest.py doesn't need any special environment variables to be set.
+  + However, the following environment variables can be set to overrule the
+    default settings:
+	name		default					description
+	----		-------					-----------
+	MONET_SOURCE	(where you checked out Monet)		base of Monet's source tree
+	MONET_BUILD	(where you called configure & make)	base of extracted source tree
+	MONET_PREFIX	(where you installed Monet to)		base of Monet distribution
+	TSTSRCBASE	$MONET_SOURCE				base of test source tree
+	TSTBLDBASE	$MONET_BUILD				base of extracted test tree
+	TSTTRGBASE	$MONET_PREFIX				base for test output
+	MONETRC		(see obove)				location of .monet.Mtest.conf
+	MAPICLIENT	MapiClient -everything			mapi-client program call
+	SQLCLIENT	sql_client --port=$SQLPORT		sql-client program call
+	MAPIPORT	$HOST:<random-port-number>		the MAPI port
+	SQLPORT		<random-port-number>			the SQL port
+
+    The following variables are currently still used legacy, but they will disappear soon...
+	MONET_MOD_PATH	$MONET_PREFIX/lib;MONET_PREFIX/lib/Monet
+
+    The setting of all these environment variables maybe overruled
+    by commandline options with the same names, e.g., "--SQLPORT=12345".
+
+    NOTE: 
+    All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"
+    above).
+
+  + Further environment variables that Mtest.py exports (to be used in test
+    scripts) are:
   	name		description
 	----		-----------
 	HOST		hostname
 	OS		`uname`
 	OSVER		`uname``uname -r`
-	MONETHOMEPREFIX	$MONETHOME/$OSVER or $MONETHOME/$OS
-	MONETDISTPREFIX	$MONETDIST/$OSVER or $MONETDIST/$OS
-  	MONETFARM	directory for homes & dbfarm (=$TSTTRGBASE)
-  	TSTDB		name of default test database, unique for each directory
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
-	MSERVER		"$MTIMEOUT Mserver -modulesilent -yaccsilent -d8"
-	MCLIENT		"$MTIMEOUT Mclient"
-	MCREATEDB	"$MTIMEOUT Mcreatedb -user $USER"
-	MDESTROYDB	"$MTIMEOUT Mdestroydb"
-	MLOAD		"$MTIMEOUT Mload"
+	MSERVER		"$MTIMEOUT Mserver -monetrc $MONETRC"
+	MAPI_CLIENT	"$MTIMEOUT $MAPICLIENT"
+	MCREATEDB	"$MTIMEOUT Mcreatedb -monetrc $MONETRC"
+	MDESTROYDB	"$MTIMEOUT Mdestroydb -monetrc $MONETRC"
+	MSHUTDOWN	"$MTIMEOUT Mshutdown"
+	MDIFF		"$MTIMEOUT Mdiff"
+	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT"
+	TST		name of the current test
+  	TSTDB		name of default test database, unique for each directory
 	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
 	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
+	TSTBLDDIR	$TSTBLDBASE/$TSTDIR/Tests
 	TSTTRGDIR	$TSTTRGBASE/Tests/$TSTDIR
+	GDK_DBFARM	as read from $MONETRC
 
-- There must be at least one directory level between $TSTSRCBASE and a
-  'Tests` directory (e.g. $TSTSRCBASE/myCode/Tests/).
-  Tests in $TSTSRCBASE/Tests/ are ignored.
-	
-- For each directory, Mtest creates a database $TSTDB before running any
-  test. The homes files and the dbfarm directory are created in $MONETFARM
-  (which is equal to $TSTTRGBASE and defaults to $MONETHOMEPREFIX).
+
+- For each directory, Mtest.py creates a database $TSTDB in $GDK_DBFARM
+  before running any test.
+
 
 - A test is skipped (i.e. not executed), 
   if $TST.modules exists and contains modules that are not available, or
   if $TST.BATs exists and contains BATs that are not available in the
   current database $TSTDB.
 
-- While executing test "$TSTSRCDIR/TST", Mtest uses $TSTTRGDIR as working
-  directory; for convenience, all files "$TSTSRCDIR/TST*" are linked to
+
+- While executing test "$TSTSRCDIR/TST", Mtest.py uses $TSTTRGDIR as working
+  directory; for convenience, all files "$TSTSRCDIR/TST*" are copied to
   $TSTTRGDIR.
 
-- Mtest stores the output of test "$TSTSRCDIR/TST" in
+
+- Mtest.py stores the output of test "$TSTSRCDIR/TST" in
   $TSTTRGDIR/TST.test.{out,err} and checks it against
   $TSTSRCDIR/TST.stable.{out,err}. If system specific stable output files
-  ($TSTSRCDIR/TST.stable.{out,err}[.($OS|$OSVER[.(64|32)bit])]) exist, the
-  most specific stable output is used. Mtest stores the respective Mdiff
-  results in $TSTTRGDIR/TST.{out,err}.diff.html.
+  ($TSTSRCDIR/TST.stable.{out,err}[.($OS|$OSVER[.(64|32)bit])][.STATIC])
+  exist, the most specific stable output is used. Mtest.py stores the
+  respective Mdiff results in $TSTTRGDIR/TST.{out,err}.diff.html.
   For each test directory, a common entry point to the test results is
-  created as $TSTTRGDIR/index.html.  
+  created as $TSTTRGDIR/.index.html.  
   For the whole test run, a global entry point to the test results is
   created as $TSTTRGBASE/Tests/index.html.
+
   
-- Mfilter is used to filter out variable date form the test output to avoid
-  no-error differences when running Mdiff. Mfilter prefixes all lines
-  enclosed in two line containing only "#~BeginVariableOutput~#" and
+- Mfilter.py is used to filter out variable date form the test output to
+  avoid no-error differences when running Mdiff. Mfilter.py prefixes all
+  lines enclosed in two line containing only "#~BeginVariableOutput~#" and
   "#~EndVariableOutput~#", respectively, with "#~". These lines are then
   ignored during Mdiff.
   
   MIL Example:
 	printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n);
 
-  Additionally, Mfilter removes all lines between "#~BeginLoadingModule~#"
-  and "#~EndLoadingModule~#". This is handy to remove the echoed module .LOAD
-  sequences from the test output.
 
-- A tool Mapprove is provided to copy the recent output from
+- A tool Mapprove.py is provided to copy the recent output from
   $TSTTRGDIR/TST.test.{out,err} to $TSTSRCDIR/TST.stable.{out,err}. Lines
   starting with a '!' (i.e. error messages) are eliminated during copying. 
-  Like Mfilter, Mapprove also removes all lines between
-  "#~BeginLoadingModule~#" and "#~EndLoadingModule~#".
   Of course, $TSTTRGDIR/TST.test.{out,err} have to be checked and claimed
   correct before being approved!
-  See "Mapprove -?" for command-line options.
-
-- A development session is than supposed to proceed as follows:
-
-        cd $TSTSRCBASE/$TSTDIR
-        run  cvs update
-        loop
-                loop
-                        edit source
-                        [g]make
-                endloop
-                loop
-			edit/create  Tests/All
-                        edit/create  Tests/<names...>.*
-                        run  Mtest <names...>
-                        check 	$TSTTRGDIR/<names...>.test.{out,err}
-                        	$TSTTRGDIR/<names...>.{out,err}.diff.html
-				(cf. $TSTTRGBASE/Tests/index.html)
-                endloop
-        endloop
-        run  Mapprove <names...>
-        run  cvs ci
+  See "Mapprove.py -?" for command-line options.
 
 
+- A development session is then supposed to proceed as follows:
+  (assuming TSTSRCBASE=$MONET_SOURCE and TSTBLDBASE=$MONET_BUILD)
 
-        Stefan
+	cd $TSTSRCBASE
+	run  cvs update
+	loop
+		loop
+			loop
+				# write & compile your code
+				cd $TSTSRCBASE/$TSTDIR
+				edit source
+				cd $TSTBLDBASE/$TSTDIR
+				[g]make
+				[g]make install
+			endloop
+			loop
+				# write, adapt, run your tests ...
+				cd $TSTSRCBASE/$TSTDIR
+				edit/create  Tests/All
+				edit/create  Tests/<names...>.*
+				run  Mtest.py <names...>
+				# ... and check their results
+				check 	$TSTTRGDIR/<names...>.test.{out,err}
+					$TSTTRGDIR/<names...>.{out,err}.diff.html
+					(cf. $TSTTRGBASE/Tests/index.html)
+			endloop
+			# approve new/modified correct output of your tests
+			run  Mapprove.py <names...>
+		endloop
+		# run all Monet tests...
+		cd $TSTSRCBASE
+		run  Mtest.py -r
+		# ... and check their results
+		check $TSTTRGBASE/Tests/index.html
+	endloop
+	# approve "intended" impact of your changes on other tests' output
+	run  Mapprove.py <names...>
+	# checkin all correct new stuff to cvs
+	run  cvs ci
+
+
+- Mprofile.py:
+   Mprofile.py works just like Mtest.py, only it uses "prof.py" to add some
+   mprof-commands to all TST*.*mil* files before actually running the test.
+   Thus, profiling information is collected.
+   prof.py reads a list of mil commands from a .Mprofile-commands.lst file
+   (specified by Mprofile.py's "--CMDLST" parameter) and wraps all
+   occurances of these commands in a mil script in
+	pmB("<command>");
+	<command>; 
+	pmE("<command>");
+   Further, prof.py adds a "pmSummary();" at the end of the mil script.
+
 
 --
 | Stefan Manegold     | mailto:Stefan.Manegold@cwi.nl |
