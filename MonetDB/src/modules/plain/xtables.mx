@@ -190,8 +190,9 @@ can be used for multi-attribute join.
      PROC CTsubgroup(BAT[oid,oid] ct, BAT[oid,any] b, BAT[oid,any] sel) : BAT[oid,oid] 
      		return ct.CTgroup(b.semijoin(sel));
 
-     PROC {count}(BAT[oid,bit] sel, BAT[oid,oid] ct, BAT[oid,int] dom) : BAT[oid,int] 
-		return {count}([sel?ct:], dom);
+     PROC {count}(BAT[oid,bit] sel, BAT[oid,oid] ct, BAT[oid,int] dom) : BAT[oid,int] {
+		return {count}([sel?ct:].reverse, dom);
+	}
 
      PROC {count}(BAT[void,bit] sel, BAT[void,oid] ct, BAT[oid,int] dom) : BAT[oid,int] 
 		return CTsubhisto(sel, ct, dom);

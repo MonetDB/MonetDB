@@ -782,10 +782,6 @@ BUN BUNdelete_(BAT *b, BUN p) {
 	if (b->hidx_heap || b->tidx_heap) {
 		IDXdestroy(b); /* get rid of range index */
 	}
-/*
-	(void)ATOMsize(b->htype);
-	(void)ATOMsize(b->ttype);
-*/
 
 @- Committed Delete. 
 The (committed) bun is moved into the hole, and the first 

@@ -310,6 +310,7 @@ BAT *BATmaterialize(BAT *b, int size){
 	int ht = b->htype, tt = b->ttype, head = 0, hole_padding = 0, cnt = 0;
 	Heap buns = *b->batBuns, hh = b->H->heap, th = b->T->heap;
 	int bunwidth = b->dims.bunwidth, hlc = b->hloc, tlc = b->tloc;
+	char *hbase = Hbase(b), *tbase = Tbase(b);
 	int newbw = 0;
 	BUN p = BUNfirst(b), q = BUNlast(b);
 	
@@ -331,6 +332,8 @@ BAT *BATmaterialize(BAT *b, int size){
 	/* new types */
 	b->htype = ht; 
 	b->ttype = tt;
+	strcpy(b->hatom, ATOMname(ht));
+	strcpy(b->tatom, ATOMname(tt));
 	BATsetdims(b);
 
 	hole_padding = MAX(sizeof(int),b->dims.bunwidth)/b->dims.bunwidth;
@@ -344,15 +347,27 @@ BAT *BATmaterialize(BAT *b, int size){
 	if (head){
 		oid h = b->hseqbase;
 		BUN r = BUNlast(b);
-		for(; p<q; p += bunwidth, h++, r += newbw )
-			bunfastins_nocheck(b, r, (ptr)&h, p+hlc, newbw);
+		if (!b->tvarsized) {
+			for(; p<q; p += bunwidth, h++, r += newbw )
+				bunfastins_nocheck(b, r, (ptr)&h, p+tlc, newbw);
+		} else {
+			for(; p<q; p += bunwidth, h++, r += newbw )
+				bunfastins_nocheck(b, r, (ptr)&h, tbase+(*(int*)(p+tlc)), newbw);
+		}
 	} else {
 		oid t = b->hseqbase;
 		BUN r = BUNlast(b);
-		for(; p<q; p += bunwidth, t++, r += newbw )
-			bunfastins_nocheck(b, r, p+tlc, (ptr)&t, newbw);
+		if (!b->hvarsized) {
+			for(; p<q; p += bunwidth, t++, r += newbw )
+				bunfastins_nocheck(b, r, p+hlc, (ptr)&t, newbw);
+		} else {
+			for(; p<q; p += bunwidth, t++, r += newbw )
+				bunfastins_nocheck(b, r, hbase+(*(int*)(p+hlc)), (ptr)&t, newbw);
+		}
 	}
 	b->batDirty = TRUE;
+	b->batDirtydesc = TRUE;
+	b->batDirtybuns = TRUE;
 
 	/* cleanup the old heaps */
 	if (buns.base) HEAPfree(&buns);
@@ -376,13 +391,13 @@ BAT *BATmaterialize(BAT *b, int size){
 	bn->thash_heap = b->hhash_heap;
 	bn->hidx_heap = b->tidx_heap; 
 	bn->tidx_heap = b->hidx_heap;
+
 	if (head){ /* set the correct dense info */
-		bn->tdense = b->hdense = TRUE;
-		bn->tseqbase = b->hseqbase = oid_nil;
+		b->hdense = TRUE;
 	} else {
-		bn->hdense = b->tdense = TRUE;
-		bn->hseqbase = b->tseqbase = oid_nil;
+		b->tdense = TRUE;
 	}
+
 	
 	return b;
 }
