@@ -381,6 +381,7 @@ Safe the old type of the destination because we may have to restore it later on.
 	if(p->typechk == TYPE_UNKNOWN) {
 		setFunctionId(pci, GDKstrdup("script"));
 		freeInstruction(p);
+		setArgType(mb,pci,0,oldtpe);
 		return -1;
 	}
 @-
@@ -412,6 +413,7 @@ Check out type of the operands for use with batcalc
 		/* tobe done */
 		setFunctionId(pci, GDKstrdup("script"));
 		freeInstruction(p);
+		setArgType(mb,pci,0,oldtpe);
 		return -1;
 	}
 	clrInstruction(pci);
