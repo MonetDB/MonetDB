@@ -792,7 +792,7 @@ void printBatInfo(stream *f, VarPtr n, ValPtr v){
         int ret;
         MALfcn fcn;
 
-        fcn = getAddress("CMDinfo");
+        fcn = getAddress("CMDinfo",0);
         if(fcn){
             BAT *b;
             bid = v->val.ival;

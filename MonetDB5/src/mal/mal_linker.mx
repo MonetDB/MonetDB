@@ -52,7 +52,7 @@ For the time being we assume that all commands are statically linked.
 
 /*#define DEBUG_MAL_LINKER  */
 #define MONET64 1
-mal_export MALfcn getAddress(str fcnname);
+mal_export MALfcn getAddress(str fcnname, int silent);
 mal_export char * MSP_locate_script(const char *mod_name);
 mal_export char * MSP_locate_module(const char *mod_name);
 mal_export str loadModuleLibrary(str modnme);
@@ -100,7 +100,7 @@ MALfcn getLocalObjectFile(str fcnname){
     return 0;
 }
 
-MALfcn getAddress(str fcnname){
+MALfcn getAddress(str fcnname, int silent){
     void *dl;
     MALfcn adr;
 
@@ -108,13 +108,13 @@ MALfcn getAddress(str fcnname){
         stream_printf(GDKout,"addres of %s ?\n", fcnname);
 #endif
     dl= dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
-    if(dl==NULL){
+    if(dl==NULL ){
         GDKfatal("getAddress:can;t get dl-handle\n");
         exit(0);
     }
     adr= (MALfcn) dlsym(dl,fcnname);
     if( adr == NULL) adr = getLocalObjectFile(fcnname);
-    if(noDlopen && adr == NULL)
+    if(noDlopen && adr == NULL && silent == 0)
         GDKerror("address of '%s' not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
     if( adr != NULL)

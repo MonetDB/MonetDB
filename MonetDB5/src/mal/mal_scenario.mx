@@ -160,6 +160,7 @@ mal_export void resetScenario(Client c);
 mal_export str setScenario(Client c, str nme);
 
 mal_export Scenario findScenario(str nme);
+mal_export void updateScenario(str nme, MALfcn fcn);
 
 #endif /* _MAL_SCENARIO_H*/
 @-
@@ -175,8 +176,8 @@ struct SCENARIO scenarioRec[MAXSCEN]={
 	"MALexitClient", 0,
 	"MALreader",    0, 0,
 	"MALparser",    0, 0,
-    	0,	0, 0,	/* no MALoptimizer (jet) */
-	0,	0, 0,	/* no MALscheduler (jet) */
+    "MALoptimizer",	0, 0,	/* initialized upon module load */
+	"MALscheduler",	0, 0,	/* initialized upon module load */
 	"MALengine",    0, 0,  0
 },
 {	"mil", 
@@ -235,9 +236,7 @@ Scenario getFreeScenario(){
 @-
 @= initScen
 if( @1->@2){
-    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress( @1->@2);
-    if( @1->@2Cmd == 0) {
-        GDKerror("initScenario","@2 address not found\n"); }
+    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress( @1->@2,1);
 }
 @-
 A scenario is initialized only once per session. 
@@ -253,7 +252,7 @@ str initScenario(Client c, Scenario s){
     if(s->initSystem && s->initSystemCmd==0){
         /* prepare for conclicts */
         mal_set_lock(mal_contextLock,"Scenario");
-        s->initSystemCmd= (MALfcn)getAddress( s->initSystem);
+        s->initSystemCmd= (MALfcn)getAddress( s->initSystem,0);
         if(s->initSystemCmd) {
             msg = (*s->initSystemCmd)(c);
         }
@@ -304,6 +303,31 @@ Scenario findScenario(str nme) {
 			return scen;
 	return NULL;
 }
+@-
+Functions may become resolved only after the corresponding module
+has been loaded. This should be announced as part of the module
+prelude code.
+@= updLine
+		if( scen->@1 && strcmp(scen->@1,nme) == 0)
+				scen->initSystemCmd = fcn;
+@c
+void updateScenario(str nme, MALfcn fcn) {
+	int i;
+	Scenario scen= scenarioRec;
+
+	for(i=0;i<MAXSCEN && scen->name; i++, scen++){
+		@:updLine(initSystem)@
+		@:updLine(exitSystem)@
+		@:updLine(initClient)@
+		@:updLine(exitClient)@
+		@:updLine(reader)@
+		@:updLine(parser)@
+		@:updLine(optimizer)@
+		@:updLine(tactics)@
+		@:updLine(engine)@
+	}
+}
+
 void showScenarioByName(stream *f, str nme){
 	Scenario scen = findScenario(nme);
 
@@ -328,14 +352,6 @@ using the same scenario. After the scenario initialization file
 has been processed, the scenario phases are replaced with the
 proper ones.
 
-@c
-Scenario fndScenario(str nme){
-    int i;
-    Scenario scen= scenarioRec;
-    for(i=0;i<MAXSCEN && scen->name; i++, scen++)
-    if( strcmp(scen->name,nme)==0 ) return scen;
-    return 0;
-}
 @-
 All client records should be initialized with a default
 scenario, i.e. the first described in the scenario table.
@@ -388,7 +404,7 @@ str setScenario(Client c, str nme){
     str msg;
     Scenario scen= scenarioRec;
 
-    scen = fndScenario(nme);
+    scen = findScenario(nme);
     if( scen== NULL)
         return throwMessage("setScenario",
             "Missing scenario specification\n");
@@ -418,7 +434,7 @@ void resetScenario(Client c){
     Scenario scen= scenarioRec;
     if( c->scenario==0) return;
 
-    scen = fndScenario(c->scenario);
+    scen = findScenario(c->scenario);
     if( scen!= NULL && scen->exitClientCmd)
         (*scen->exitClientCmd)(c);
     
@@ -433,7 +449,7 @@ void resetScenario(Client c){
 void exitScenario(Client c){
     Scenario scen= scenarioRec;
     if( c->scenario==0) return;
-    scen = fndScenario(c->scenario);
+    scen = findScenario(c->scenario);
     if( scen->exitSystemCmd)
         (*scen->exitSystemCmd)(c);
 }

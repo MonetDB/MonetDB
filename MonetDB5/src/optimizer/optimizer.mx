@@ -33,11 +33,11 @@ The routines below are linked with the kernel by default
 
 MODULE optimizer;
 
-command optimizer_init()
-address optimizer_init
+command optimizer_prelude()
+address optimizer_prelude
 comment "Initialize the optimizer";
 
-optimizer_init();
+optimizer_prelude();
 
 pattern optimize(mod:any, fcn:any)
 address QOToptimize
@@ -139,11 +139,14 @@ comment "Evaluate a join path.";
 #include "mal_optimizer.h"
 #include "mal_scenario.h"
 
-str optimizer_init()
+@
+Upon loading the module it should inspect the scenario table
+for any unresolved references to the MALoptimizer and set the 
+callback function.
+@c
+str optimizer_prelude()
 {
-	Scenario s = findScenario("mal");
-
-	s->optimizerCmd = (MALfcn)MALoptimizer;
+	updateScenario("MALoptimizer", (MALfcn) MALoptimizer);
 	return MAL_SUCCEED;
 }
 
