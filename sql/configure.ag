@@ -23,12 +23,6 @@ thread_safe_flag_spec="-D_REENTRANT"
     LEXLIB=-ll
     ;;
   irix*)
-    case "$CC" in
-      *-32|*"-32 ") libsuff="";;
-      "cc -32"|*-n32|*"-n32 ") libsuff=n32;;
-      "cc -64"|*-64|*"-64 ") libsuff=64;;
-      *) libsuff=n32;;
-    esac
     LEXLIB=-ll
     ;;
   aix*)
@@ -61,57 +55,9 @@ AC_CHECK_TOOL(OBJC,objc)
 dnl Checks for header files.
 AC_HEADER_STDC
 
-dnl check for monet
-have_monet=auto
-MONETDIST="."
-AC_ARG_WITH(monet,
-[  --with-monet=DIR     monet is installed in DIR], have_monet="$withval")
-if test "x$have_monet" != xno; then
-  if test "x$have_monet" != xauto; then
-    AC_CHECK_PROG(MONET_CONFIG,monet-config,$withval/bin/monet-config,,$withval/bin)
-    MONETDIST=`$MONET_CONFIG --prefix`
-    GDKLIBS=`$MONET_CONFIG --gdklibs`
-    have_monet=yes
-  else
-    have_monet=yes
-    AC_CHECK_PROG(MONET_CONFIG,monet-config,monet-config)
-    MONETDIST=`$MONET_CONFIG --prefix`
-    GDKLIBS=`$MONET_CONFIG --gdklibs`
-  fi
-
-  if test "x$have_monet" != xyes; then
-    MONETDIST=""
-    GDKLIBS=""
-  fi
-fi
-AC_SUBST(MONETDIST)
-AC_SUBST(GDKLIBS)
-
-dnl libreadline
-have_readline=auto
-READLINE_LIBS=""
-AC_ARG_WITH(readline,
-[  --with-readline=DIR     readline library is installed in DIR], 
-	[have_readline="$withval"])
-if test "x$have_readline" != xno; then
-  if test "x$have_readline" != xauto; then
-    READLINE_LIBS="-L$withval/lib"
-  fi
-
-  save_LIBS="$LIBS"
-  LIBS="$LIBS $READLINE_LIBS"
-  AC_CHECK_LIB(readline$libsuff, readline, 
-	[ READLINE_LIBS="$READLINE_LIBS -lreadline$libsuff -ltermcap" 
-          AC_DEFINE(HAVE_LIBREADLINE) 
-	  have_readline=yes ]
-	, have_readline=no, "-ltermcap" )
-  LIBS="$save_LIBS"
-
-  if test "x$have_readline" != xyes; then
-    READLINE_LIBS=""
-  fi
-fi
-AC_SUBST(READLINE_LIBS)
+AM_MONET
+AM_MONET_OPTIONS
+AM_MONET_LIBS
 
 dnl libodbc
 have_odbc=auto
@@ -125,15 +71,15 @@ if test "x$have_odbc" != xno; then
     ODBC_INCS="-I$withval/include"
   fi
 
-  save_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $ODBC_INCS"
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $ODBC_INCS"
   AC_CHECK_HEADERS(sql.h)
-  CFLAGS="$save_CFLAGS"
+  CPPFLAGS="$save_CPPFLAGS"
 
   save_LIBS="$LIBS"
   LIBS="$ODBC_LIBS $LIBS"
-  AC_CHECK_LIB(odbc$libsuff, SQLConnect, 
-	[ ODBC_LIBS="$ODBC_LIBS -lodbc$libsuff" 
+  AC_CHECK_LIB(odbc, SQLConnect, 
+	[ ODBC_LIBS="$ODBC_LIBS -lodbc" 
           AC_DEFINE(HAVE_LIBODBC) 
 	  have_odbc=yes ]
 	, have_odbc=no )

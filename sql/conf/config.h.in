@@ -10,6 +10,23 @@
 #undef HAVE_LIBBZ2
 #undef HAVE_LIBREADLINE
 #undef HAVE_LIBODBC
+#undef HAVE_LIBGETOPT
+#undef HAVE_LIBPTHREAD
+
+/* Define if you have the mallinfo function.  */
+#undef HAVE_MALLINFO
+
+/* Define if you have the mallopt function.  */
+#undef HAVE_MALLOPT
+
+/* Define if you have the <getopt.h> header file.  */
+#undef HAVE_GETOPT_H
+
+/* Define if you have the <pthread.h> header file.  */
+#undef HAVE_PTHREAD_H
+
+/* Define if you have the <semaphore.h> header file.  */
+#undef HAVE_SEMAPHORE_H
 
 /* Define if you have the <sql.h> header file.  */
 #undef HAVE_SQL_H
