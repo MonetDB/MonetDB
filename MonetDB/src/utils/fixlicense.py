@@ -124,6 +124,7 @@ suffixrules = {
     '.msc':  ('',      '',    '# ',   ''),
     '.mx':   ('',      '',    "@' ",  ''),
     '.php':  ('<?php', '?>',  '# ',   ''),
+    '.pc':   ('',      '',    '# ',   ''),
     '.pl':   ('',      '',    '# ',   ''),
     '.pm':   ('',      '',    '# ',   ''),
     '.py':   ('',      '',    '# ',   ''),
@@ -196,7 +197,8 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
     if post:
         g.write(post + '\n')
     # add empty line after license
-    g.write('\n')
+    if line:
+        g.write('\n')
     # but only one, so skip empty line from file, if any
     if line and line != '\n':
         g.write(line)
