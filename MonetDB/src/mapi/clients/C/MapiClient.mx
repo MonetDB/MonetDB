@@ -302,6 +302,8 @@ void terminalInput( Mapi mid, char *prompt)
 				return;
 			}
 		} else
+#else
+		(void) prompt; /* pacify compiler */
 #endif
 		{
 			int len;
