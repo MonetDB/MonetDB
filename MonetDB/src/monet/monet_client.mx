@@ -217,6 +217,9 @@ void scheduleClient(Client c)
 	}
 	if (monet_first){
 		monet_first=0;
+		if( monet_dbinit ){
+			monet_eval(monet_dbinit, &k);
+		}
 		for(k=0;monet_script[k]; k++){
 			QMADD(req, 0, scheduleFile(monet_script[k]), 
 				"source(<user script>);");

@@ -263,7 +263,6 @@ int main(int argc, char **av)
 	char buf[BUFSIZ], *prog = *av;
 	opt *set = NULL;
 	int idx=0,debug = 0, setlen = 0, status = 1;
-	char *initFile=0;
 
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
@@ -353,25 +352,7 @@ capabilities depend on the malloc implementation used at run time.
 			}
 			if(strcmp(long_options[option_index].name,
                                                 "dbinit") == 0){
-				FILE *f;
-				/* single initialization statement*/
-				if(initFile == 0){
-					initFile= "/tmp/Mserver.init";
-					f= fopen(initFile,"w");
-					monet_script[idx] = initFile;
-					monet_script[idx+1] = NULL;
-					idx++;
-				} else f= fopen(initFile,"a");
-				if(f == 0) {
-					fprintf(stderr, "ERROR: could not access %s\n", initFile);
-				} else {
-					if (optarg){
-						fprintf(f,"%s;\n",optarg);
-						fflush(f);
-						fclose(f);
-					} else
-					fprintf(stderr, "ERROR: init statement missing\n");
-				}
+				monet_dbinit = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
