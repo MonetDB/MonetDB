@@ -713,6 +713,14 @@
     .alg = PFbui_op_numeric_modulo_dbl }                                 \
                                                                          \
                                                                          \
+, /* pf:item-sequence-to-node-sequence (elem*) as elem* */               \
+  { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
+    .arity = 1, .par_ty = { PFty_star (                                  \
+                                PFty_elem (                              \
+                                    wild,                                \
+                                    PFty_star (PFty_xs_anyNode ()))) },  \
+    .ret_ty = PFty_star ( PFty_elem (wild,                               \
+                                     PFty_star (PFty_xs_anyNode ()))) }  \
 , /* pf:item-sequence-to-node-sequence (item*) as node* */               \
   { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
     .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \
@@ -782,6 +790,10 @@
   { .ns = PFns_pf, .loc = "string-value",                                \
     .arity = 1, .par_ty = { PFty_node () },                              \
     .ret_ty = PFty_string () }                                           \
+, /* fn:string () as string */                                           \
+  { .ns = PFns_fn, .loc = "string",                                      \
+    .arity = 0, .par_ty = { PFty_none () },                              \
+    .ret_ty = PFty_string () }                                           \
 , /* fn:string (item?) as string */                                      \
   { .ns = PFns_fn, .loc = "string",                                      \
     .arity = 1, .par_ty = { PFty_opt (PFty_item ()) },                   \
@@ -838,6 +850,8 @@
 void
 PFfun_xquery_fo ()
 {
+    PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+
     struct {  
         PFns_t ns;
         char *loc;                                 

@@ -42,6 +42,10 @@
 #include "subtyping.h"
 #include "mil_opt.h"
 
+/* add some timing results for the code, if set to 1 */ 
+#define TIMINGS 0
+#define WITH_SCRIPT 0
+
 static void milprintf(opt_t *o, const char *format, ...)
 {
         int j, i = strlen(format) + 80;
@@ -60,10 +64,6 @@ static void milprintf(opt_t *o, const char *format, ...)
         } 
         opt_mil(o, milbuf);
 }
-
-/* add some timing results for the code, if set to 1 */ 
-#define TIMINGS 0
-#define WITH_SCRIPT 0
 
 static void
 translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c);
@@ -1429,7 +1429,7 @@ castQName (opt_t *f)
             "var strings := kind.ord_uselect(STR);\n"
             "if (counted_items != (strings.count() + counted_qn)) "
             "{ ERROR (\"only strings and qnames can be"
-            "casted to qnames\"); }\n"
+            " casted to qnames\"); }\n"
             "counted_items := nil_int;\n"
 
             "var oid_oid := strings.mark(0@0).reverse();\n"
@@ -1687,17 +1687,11 @@ loop_liftedElemConstr (opt_t *f, int i)
 
             /* merge union root and nodes */
             "{\n"
-            /* FIXME: tests if input is sorted is needed because of merged union*/
-/* FIXME: doesn't work until bug 1023816 is solved 
-   FIXME: doesn't work until bug 1023816 is solved 
-   FIXME: doesn't work until bug 1023816 is solved 
-   FIXME: doesn't work until bug 1023816 is solved 
-   FIXME: doesn't work until bug 1023816 is solved 
             "var merged_result := merged_union ("
             "root_iter, content_iter, root_size, content_size, "
             "root_level, content_level, root_kind, content_kind, "
             "root_prop, content_prop, root_frag, content_frag, "
- / * attr * / "root_pre, content_pre, root_frag_pre, content_frag_pre);\n"
+ /* attr */ "root_pre, content_pre, root_frag_pre, content_frag_pre);\n"
             "root_iter := nil_oid_oid;\n"
             "content_iter := nil_oid_oid;\n"
             "root_size := merged_result.fetch(1);\n"
@@ -1715,35 +1709,6 @@ loop_liftedElemConstr (opt_t *f, int i)
             "root_frag_pre := merged_result.fetch(7);\n"
             "content_frag_pre := nil_oid_oid;\n"
             "merged_result := nil_oid_bat;\n"
-*/
-/* temporary solution */
-            "var merged_result := merged_union ("
-            "root_iter, content_iter, root_size, content_size, "
-            "root_level, content_level, root_kind, content_kind, "
-            "root_prop, content_prop, root_frag, content_frag);\n"
-            "root_size := merged_result.fetch(1);\n"
-            "content_size := nil_oid_int;\n"
-            "root_level := merged_result.fetch(2);\n"
-            "content_level := nil_oid_chr;\n"
-            "root_kind := merged_result.fetch(3);\n"
-            "content_kind := nil_oid_chr;\n"
-            "root_prop := merged_result.fetch(4);\n"
-            "content_prop := nil_oid_oid;\n"
-            "root_frag := merged_result.fetch(5);\n"
-            "content_frag := nil_oid_oid;\n"
-
-            "merged_result := nil_oid_bat;\n"
-            "merged_result := merged_union ("
-            "root_iter, content_iter, "
- /* attr */ "root_pre, content_pre, root_frag_pre, content_frag_pre);\n"
-            "root_iter := nil_oid_oid;\n"
-            "content_iter := nil_oid_oid;\n"
-            "root_pre := merged_result.fetch(1);\n"
-            "content_pre := nil_oid_oid;\n"
-            "root_frag_pre := merged_result.fetch(2);\n"
-            "content_frag_pre := nil_oid_oid;\n"
-            "merged_result := nil_oid_bat;\n"
-/* end of temporary solution */
             /* printing output for debugging purposes */
             /* 
             "merged_result.print();\n"
@@ -2194,6 +2159,14 @@ translateIfThen (opt_t *f, int act_level, int counter,
     act_level--;
 }
 
+/**
+ * fn:boolean translates the XQuery function fn:boolean.
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param input_type the input type of the Core expression
+ *        which has to evaluated
+ */
 static void
 fn_boolean (opt_t *f, int act_level, PFty_t input_type)
 {
@@ -3403,6 +3376,8 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             /* get all the atomic values and cast them to string */
             "var atomic := kind.get_type_atomic();\n"
             "atomic := atomic.mark(0@0).reverse();\n"
+            /* FIXME: iter_atomic is not used anymore 
+               - does it need to be used?  */
             "var iter_atomic := atomic.leftfetchjoin(iter);\n"
             "iter := atomic.mirror();\n"
             "pos := atomic.leftfetchjoin(pos);\n"
@@ -3473,12 +3448,29 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
     deleteResult (f, counter);
 }
 
+/**
+ * eval_join_helper prepares the input arguments for the join
+ * and therefore gets the values from its containers or casts 
+ * them directly from the last location step (special case)
+ *
+ * @param fst the first join argument
+ * @param fst_special indicates wether the first join argument
+ *                    has to be handle differently or not
+ * @param fst_res the offset of the variables storing the first 
+ *                join argument
+ * @param snd the second join argument
+ * @param snd_special indicates wether the second join argument
+ *                    has to be handle differently or not
+ * @param snd_res the offset of the variables storing the second 
+ *                join argument
+ * @param container the value container storing the values 
+ */
 static void eval_join_helper (opt_t *f,
-                              PFcnode_t *fst, int cast_fst, int fst_res, 
-                              PFcnode_t *snd, int cast_snd, int snd_res,
+                              PFcnode_t *fst, int fst_special, int fst_res, 
+                              PFcnode_t *snd, int snd_special, int snd_res,
                               type_co container)
 {
-    if (cast_fst)
+    if (fst_special)
     {
         if (fst->child[0]->kind == c_attribute)
         {
@@ -3516,9 +3508,9 @@ static void eval_join_helper (opt_t *f,
         milprintf(f, "var join_item1 := item%03u.leftfetchjoin(%s);\n", fst_res, container.table);
     }
 
-    if (cast_snd)
+    if (snd_special)
     {
-        if (snd->child[3]->child[0]->kind == c_attribute)
+        if (snd->child[0]->kind == c_attribute)
         {
             milprintf(f,
                     "var join_item2;\n"
@@ -3555,10 +3547,22 @@ static void eval_join_helper (opt_t *f,
     }
 }
 
+/**
+ * evaluate_join translates the recognized joins
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @args the head of the argument list
+ */
 static void
 evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
 {
-    int lev_fst, lev_snd, fst_res, snd_var, snd_res, i, cast_fst, cast_snd;
+    int lev_fst, lev_snd,
+        fst_res, snd_res, 
+        snd_var, i,
+        cast_fst, cast_snd,
+        switched_args, fid;
     PFcnode_t *fst, *snd, *res, *c;
     PFfun_t *fun;
     char *comp;
@@ -3566,6 +3570,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     
     lx[0] = rx[0] = order_snd[0] = '\0';
 
+    /* retrieve the arguments of the join function */
     fst = args->child[0];
     args = args->child[1];
     c = args->child[0];
@@ -3603,20 +3608,26 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     args = args->child[1];
     c = args->child[0];
     fun = c->sem.fun;
+
+    args = args->child[1];
+    c = args->child[0];
+    switched_args = c->sem.num;
+
     if (!PFqname_eq(fun->qname,PFqname (PFns_op,"eq")))
          comp = "EQ";
 /*   
     else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"ne")))
          comp = "NE";
 */   
+    /* switches the comparison function if needed */
     else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"ge")))
-         comp = "GE";
+         comp = (switched_args)?"LE":"GE";
     else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"le")))
-         comp = "LE";
+         comp = (switched_args)?"GE":"LE";
     else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"gt")))
-         comp = "GT";
+         comp = (switched_args)?"LT":"GT";
     else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"lt")))
-         comp = "LT";
+         comp = (switched_args)?"GT":"LT";
     else
     {
          PFoops (OOPS_FATAL, "not supported comparison in join");
@@ -3625,8 +3636,14 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     args = args->child[1];
     res = args->child[0];
 
+    /* fid selects variables used in the result */
+    args = args->child[1];
+    c = args->child[0];
+    fid = c->sem.num;
+
     c = 0;
 
+    /* create variables for intermediate results */
     counter++;
     snd_var = counter;
     milprintf(f,
@@ -3652,6 +3669,8 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             "var item%03u;\n"
             "var kind%03u;\n",
             snd_res, snd_res, snd_res, snd_res);
+
+    /* create new backup scope */
     milprintf(f,
             "var jouter%03u ;\n"
             "var jinner%03u ;\n"
@@ -3665,7 +3684,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             fst_res, fst_res, fst_res, fst_res);
 
 
-    if (lev_fst)
+    if (lev_fst) /* default case */
     {
         translate2MIL (f, act_level, counter, fst);
         milprintf(f,
@@ -3688,7 +3707,8 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 fst_res, act_level, fst_res, act_level,
                 fst_res, act_level, fst_res, act_level);
     }
-    else
+    else /* first join input contains only a constant
+            (basically selection translation) */
     {
         milprintf(f,
                 "jouter%03u  := outer%03u ;\n"
@@ -3724,7 +3744,8 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 "kind%03u := kind;\n",
                 fst_res, fst_res, fst_res, fst_res);
     }
-    if (!lev_snd)
+
+    if (!lev_snd) /* default case */
     {
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
@@ -3758,15 +3779,10 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 act_level, act_level-1, act_level, act_level-1);
     }
     translate2MIL (f, act_level, counter, snd->child[2]);
-    milprintf(f,
-            "{  # for-translation\n"
-            "# project ()\n"
-            "outer%03u := iter;\n"
-            "iter := iter.mark(1@0);\n"
-            "inner%03u := iter;\n"
-            "pos := iter.project(1@0);\n"
-            "loop%03u := inner%03u;\n",
-            act_level, act_level, act_level, act_level);
+    act_level++;
+    milprintf(f, "{  # for-translation\n");
+    project (f, act_level);
+
     milprintf(f,
             "iter%03u := iter;\n"
             "pos%03u  := pos ;\n"
@@ -3774,16 +3790,18 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             "kind%03u := kind;\n",
             snd_var, snd_var, snd_var, snd_var);
 
-    /* in the actual scenario not supported 
+    milprintf(f, "var expOid;\n");
+    getExpanded (f, act_level, snd->sem.num);
     milprintf(f,
-            "var expOid := v_vid%03u.mirror();\n"
-            "var oidNew_expOid;\n",
-            act_level-1);
+            "if (expOid.count() != 0) {\n"
+            "var oidNew_expOid;\n");
             expand (f, act_level);
             join (f, act_level);
-    milprintf(f, "expOid := nil_oid_oid;\n");
-    */
-
+    milprintf(f, "} else {\n");
+            createNewVarTable (f, act_level);
+    milprintf(f,
+            "}  # end if\n"
+            "expOid := nil_oid_oid;\n");
 
     if (snd->child[0]->sem.var->used)
         insertVar (f, act_level, snd->child[0]->sem.var->vid);
@@ -3805,7 +3823,9 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     /* mapBack (f, act_level); */
     cleanUpLevel (f, act_level);
     milprintf(f, "}  # end of for-translation\n");
+    act_level--;
 
+    /* overwrites values from second join parameter (not needed anymore) */
     milprintf(f,
             "outer%03u  := jouter%03u ;\n"
             "inner%03u  := jinner%03u ;\n"
@@ -3820,22 +3840,25 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             act_level, fst_res, act_level, fst_res, 
             act_level, fst_res, act_level, fst_res);
 
+    /* retrieves the join input arguments 'join_item1' and 'join_item2'
+       from its value containers as well as covers the special cases
+       (attribute step and text() test) */
     PFty_t input_type = (fun->par_ty)[0];
     if (PFty_subtype (PFty_integer (), input_type))
     {
-        eval_join_helper (f, fst, cast_fst, fst_res, snd, cast_snd, snd_res, int_container());
+        eval_join_helper (f, fst, cast_fst, fst_res, snd->child[3], cast_snd, snd_res, int_container());
     }
     else if (PFty_subtype (PFty_decimal (), input_type))
     {
-        eval_join_helper (f, fst, cast_fst, fst_res, snd, cast_snd, snd_res, dec_container());
+        eval_join_helper (f, fst, cast_fst, fst_res, snd->child[3], cast_snd, snd_res, dec_container());
     }
     else if (PFty_subtype (PFty_double (), input_type))
     {
-        eval_join_helper (f, fst, cast_fst, fst_res, snd, cast_snd, snd_res, dbl_container());
+        eval_join_helper (f, fst, cast_fst, fst_res, snd->child[3], cast_snd, snd_res, dbl_container());
     }
     else if (PFty_subtype (PFty_string (), input_type))
     {
-        eval_join_helper (f, fst, cast_fst, fst_res, snd, cast_snd, snd_res, str_container());
+        eval_join_helper (f, fst, cast_fst, fst_res, snd->child[3], cast_snd, snd_res, str_container());
     }
     else if (PFty_subtype (PFty_boolean (), input_type))
     {
@@ -3852,15 +3875,18 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
         PFoops (OOPS_FATAL, "not supported type for comparison in join");
     }
 
+    /* adds the iter column to the join input to avoid mapping after join 
+       (relation probably is bigger afterwards) */
     milprintf(f,
             "join_item1 := join_item1.reverse().leftfetchjoin(iter%03u).reverse();\n"
             "join_item2 := join_item2.reverse().leftfetchjoin(iter%03u).reverse();\n",
             fst_res, snd_res);
 
 
+    /* pushdown stuff */
     /* (try to) push some leftfetchjoin's below the theta-join */
     snprintf(lx,32,"nil");
-    if ((snd->child[1]->kind == c_var && var_is_used (snd->child[0]->sem.var, res))
+    if ((snd->child[1]->kind == c_var && var_is_used (snd->child[1]->sem.var, res))
         && !(res->kind == c_var && res->sem.var == snd->child[0]->sem.var)) /* see query11 hack below */
     {
         /* cannot be pushed below theta-join, as 'snd_iter.[int]()' is needed for 'addValues' (below) */
@@ -3876,6 +3902,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 "var order_snd := snd_iter; #.leftfetchjoin(iter%03u.reverse()); pushed below theta-join\n",
                 snd_var);
     }
+
     if (lev_fst && lev_snd)
     {
         PFoops (OOPS_FATAL, "no solution for join with dependence");
@@ -3886,6 +3913,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     }
     else if (!lev_fst && act_level)
     {
+        /* both sides are evaluated in scope 0 */
         milprintf(f,
                 "# (for now,?) the mapping prohibits to push leftfetchjoin's below the theta-join\n"
                 "# (unless we'd push the mapping, too, but that's a m-n join that might 'explode'...)\n"
@@ -3893,6 +3921,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
                 "var fst_iter := join_result.mark(0@0).reverse();\n",
                 comp);
+        /* map back to act_level */
         milprintf(f,
                 "{\n"
                 "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
@@ -3909,11 +3938,14 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 "}\n"
                 "snd_iter := fst_iter.mark(0@0).reverse().leftfetchjoin(snd_iter);\n"
                 "fst_iter := fst_iter.reverse().mark(0@0).reverse();\n");
+
+        /* pushdown stuff */
         if (strcmp(lx,"nil")) {
             milprintf(f,
                 "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
                 "fst_iter := fst_iter.leftjoin(reverse(lx));\n");
         }
+        /* pushdown stuff */
         if (strcmp(rx,"nil")) {
             milprintf(f,
                 "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
@@ -3929,6 +3961,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 "var fst_iter := join_result.mark(0@0).reverse();\n",
                 lx, comp, rx);
     }
+    /* pushdown stuff */
     milprintf(f,
             "# order_fst isn't needed until now\n"
             "# (cannot be pushed below the theta-join due to the 'iter := fst_iter;' hereafter)\n"
@@ -3936,8 +3969,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             "%s",
             act_level, order_snd);
 
-
-    /* really dirty optimization to speed up xmark query11 */
+    /* shortcut to speed up xmark query11 */
     if (res->kind == c_var && res->sem.var == snd->child[0]->sem.var)
     {
             milprintf(f,
@@ -3952,20 +3984,25 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             return;
     }
 
-
+    /* result translation */
     act_level++;
     milprintf(f, "{  # for-translation\n");
 
     milprintf(f, "iter := fst_iter;\n");
     project (f, act_level);
 
-    milprintf(f, 
-            "var expOid := v_vid%03u.mirror();\n"
-            "var oidNew_expOid;\n",
-            act_level-1);
+    milprintf(f, "var expOid;\n");
+    getExpanded (f, act_level, fid);
+    milprintf(f,
+            "if (expOid.count() != 0) {\n"
+            "var oidNew_expOid;\n");
             expand (f, act_level);
             join (f, act_level);
-    milprintf(f, "expOid := nil_oid_oid;\n");
+    milprintf(f, "} else {\n");
+            createNewVarTable (f, act_level);
+    milprintf(f,
+            "}  # end if\n"
+            "expOid := nil_oid_oid;\n");
 
     if (var_is_used (snd->child[0]->sem.var, res))
     {
@@ -3979,7 +4016,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 snd_var, snd_var);
         insertVar (f, act_level, snd->child[0]->sem.var->vid);
     }
-    if (snd->child[1]->kind == c_var && var_is_used (snd->child[0]->sem.var, res))
+    if (snd->child[1]->kind == c_var && var_is_used (snd->child[1]->sem.var, res))
     {
         addValues (f, int_container(), "snd_iter.[int]()", "item");
         milprintf(f,
@@ -4309,9 +4346,12 @@ translateFunction (opt_t *f, int act_level, int counter,
         translate2MIL (f, act_level, counter, args->child[0]);
         if (PFty_subtype(PFty_node(),args->child[0]->type))
         {
-            /* FIXME: mixed types could be a problem */
-            PFlog ("fn:string is still not completely fixed");
             typed_value (f, false);
+        }
+        /* handle mixed data */
+        else if (!PFty_subtype(PFty_atomic(),args->child[0]->type))
+        {
+            fn_data (f);
         }
         translateCast2STR (f, args->child[0]->type);
         milprintf(f,
@@ -4563,7 +4603,6 @@ translateFunction (opt_t *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,
                          PFqname (PFns_pf,"join")))
     {
-        /* first hack to support join recognition */
         evaluate_join (f, act_level, counter, args);
     }
     else 
@@ -4930,12 +4969,18 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
     {
         if (noForBetween (v, c->child[2]) == 1)
                 return 1;
-        else if (noForBetween (v, c->child[3]) == 1)
+        else if (var_is_used (v, c->child[3]))
                 return 0;
         else return 2;
     }
     else if (c->kind == c_var && c->sem.var == v)
         return 1;
+    else if (c->kind == c_apply &&
+             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
+    {
+        if (var_is_used (v, c->child[0]))
+                return 0;
+    } 
     else
         for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
             if ((j = noForBetween (v, c->child[i])) < 2)
@@ -5029,6 +5074,7 @@ simplifyCoreTree (PFcnode_t *c)
     PFcnode_t *new_node;
     PFty_t expected, opt_expected;
     PFty_t cast_type, input_type, opt_cast_type;
+    PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
 
     assert(c);
     switch (c->kind)
@@ -5202,9 +5248,11 @@ simplifyCoreTree (PFcnode_t *c)
             else
             {
                 *c = *(c->child[1]);
+                /*
                 PFlog ("cast from '%s' to '%s' ignored",
                        PFty_str (input_type),
                        PFty_str (cast_type));
+                */
             }
             break;
         case c_typesw:
@@ -5238,22 +5286,40 @@ simplifyCoreTree (PFcnode_t *c)
             if (fun->arity == 1)
                 simplifyCoreTree (c->child[0]->child[0]);
 
-            /* throw away merge-adjacent-text-nodes if only one element content was 
-               created -> there is nothing to merge */
-            /* FIXME: to find simple version this relies on other optimizations */
-            if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"merge-adjacent-text-nodes")) &&
-                (c->child[0]->child[0]->kind == c_empty ||
-                (PFty_subtype(c->child[0]->child[0]->type, PFty_node ()) &&
-                c->child[0]->child[0]->kind != c_var &&
-                c->child[0]->child[0]->kind != c_seq)))
+            if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) && 
+                PFty_subtype(c->child[0]->child[0]->type, fun->ret_ty))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(c->child[0]->child[0]);
                 simplifyCoreTree (c);
             }
-            else if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) || 
-                 !PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-node-sequence"))) &&
-                PFty_subtype(c->child[0]->child[0]->type, fun->ret_ty))
+            /* throw away merge-adjacent-text-nodes if only one element content was 
+               created -> there is nothing to merge */
+            /* FIXME: to find simple version this relies on other optimizations */
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"merge-adjacent-text-nodes")) &&
+                 /* empty result doesn't need to be merged */ 
+                (c->child[0]->child[0]->kind == c_empty ||
+                 /* exactly one node per iteration doesn't need to be merged */
+                 (PFty_subtype(c->child[0]->child[0]->type, PFty_node ()) &&
+                  c->child[0]->child[0]->kind != c_var &&
+                  c->child[0]->child[0]->kind != c_seq) ||
+                 /* merge is not needed after is2ns anymore */
+                 ((c->child[0]->child[0]->kind == c_apply) &&
+                  !PFqname_eq(c->child[0]->child[0]->sem.fun->qname,
+                              PFqname (PFns_pf,"item-sequence-to-node-sequence"))) ||
+                 /* element nodes don't contain text nodes to merge */
+                 (PFty_subtype(c->child[0]->child[0]->type, 
+                               PFty_star (PFty_elem (wild, PFty_star (PFty_xs_anyNode ())))))
+                )
+                     )
+            {
+                /* don't use function - omit apply and arg node */
+                *c = *(c->child[0]->child[0]);
+                simplifyCoreTree (c);
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-node-sequence")) &&
+                PFty_subtype(c->child[0]->child[0]->type, PFty_star (PFty_node ())) &&
+                !PFty_subtype(c->child[0]->child[0]->type, PFty_star (PFty_attr (wild, PFty_string ()))))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(c->child[0]->child[0]);
@@ -5358,6 +5424,12 @@ simplifyCoreTree (PFcnode_t *c)
                 c->child[0]->kind = c_descendant;
                 c->child[1] = c->child[1]->child[1];
             }
+            else if (c->child[1]->kind == c_locsteps &&
+                c->child[1]->child[0]->kind == c_self &&
+                c->child[1]->child[0]->child[0]->kind == c_kind_node)
+            {
+                c->child[1] = c->child[1]->child[1];
+            }
             break;
         case c_text:
             simplifyCoreTree (c->child[0]);
@@ -5372,32 +5444,160 @@ simplifyCoreTree (PFcnode_t *c)
     }
 }
 
-static PFfun_t * switch_fun(PFfun_t *fun)
+/* variable information */
+struct var_info {
+    PFcnode_t *parent; /* binding expression */
+    PFvar_t *id;       /* name */
+    int act_lev;       /* definition level */
+    PFarray_t *reflist; /* list of referenced vars */
+};
+typedef struct var_info var_info;
+
+static void recognize_join(PFcnode_t *c, 
+                           PFarray_t *active_vlist,
+                           PFarray_t *active_vdefs,
+                           int act_level);
+
+/**
+ * create_var_info: helper function for join recognition
+ * creates a new variable entry for current variable stack
+ *
+ * @param parent the binding expression 
+ * @param id the name of the variable
+ * @param act_lev the definition level
+ * @return the var_info struct holding the variable information
+ */
+static var_info * create_var_info (PFcnode_t *parent, PFvar_t *id, int act_lev)
 {
-    assert(fun);
-    if (!PFqname_eq(fun->qname,PFqname (PFns_op,"eq")))
-        return fun;
-    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"ne")))
-        return fun;
-    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"le")))
-        return PFcore_function (PFqname (PFns_op,"ge"));
-    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"ge")))
-        return PFcore_function (PFqname (PFns_op,"le"));
-    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"lt")))
-        return PFcore_function (PFqname (PFns_op,"gt"));
-    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"gt")))
-        return PFcore_function (PFqname (PFns_op,"lt"));
-    else {
-        PFoops (OOPS_WARNING, "switch_fun: no inverse function for '%s' found.", PFqname_str(fun->qname));
-        return fun;
+    var_info *vi;
+    vi = (var_info *) PFmalloc (sizeof (var_info));
+
+    PFarray_t *reflist = PFarray (sizeof (var_info *));
+
+    vi->parent = parent;
+    vi->id = id;
+    vi->act_lev = act_lev;
+    vi->reflist = reflist;    
+    return vi;
+}
+
+/**
+ * var_lookup: helper function for join recognition
+ * looks up a variable in the active variable stack
+ * using its name as reference
+ *
+ * @param id the name of the variable
+ * @param active_vlist the active variable stack
+ * @return the var_info struct containing the variable information
+ */
+static var_info * var_lookup (PFvar_t *id, PFarray_t *active_vlist)
+{
+    unsigned int i;
+    for (i = 0; i < PFarray_last (active_vlist); i++)
+    {
+        if ((*(var_info **) PFarray_at (active_vlist, i))->id == id)
+                return *(var_info **) PFarray_at (active_vlist, i);
+    }
+    return NULL;
+}
+
+/**
+ * add_ref_to_vdef: helper function for join recognition
+ * adds a var_info to the list of referenced variables
+ *
+ * @param var the new variable to add
+ * @param active_vdefs the stack of active variable definitions
+ */
+static void add_ref_to_vdef (var_info *var, PFarray_t *active_vdefs)
+{
+    unsigned int i, j, found;
+    PFarray_t *reflist;
+
+    for (i = 0; i < PFarray_last (active_vdefs); i++)
+    {
+        /* only add variables to the reference list
+           which are defined in an outer scope */
+        if ((*(var_info **) PFarray_at (active_vdefs, i))->act_lev >= var->act_lev)
+        {
+            /* add only variables which are not already in the list */
+            found = 0;
+            reflist = (*(var_info **) PFarray_at (active_vdefs, i))->reflist;
+            for (j = 0; j < PFarray_last (reflist); j++)
+            {
+                if ((*(var_info **) PFarray_at (reflist, j))->id == var->id)
+                {
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                *(var_info **) PFarray_add (reflist) = var;
+            }
+        }
     }
 }
 
+/**
+ * collect_vars: helper function for join recognition
+ * collects all active variables in a given Core expression in
+ * a reference list (comparison of variables with active_vlist)
+ *
+ * @param c the Core expression currently searched
+ * @param active_vlist the list of active variables
+ * @param reflist the list of already collected variables
+ * @return the updated reflist
+ */
+static PFarray_t * collect_vars (PFcnode_t *c, PFarray_t *active_vlist, PFarray_t *reflist)
+{
+    unsigned int i;
+    assert(c);
+    var_info *var_struct;
+
+    switch (c->kind)
+    {
+        case c_var:
+            /* get var_info of current variable */
+            var_struct = var_lookup (c->sem.var, active_vlist);
+            /* if variable returns no variable information 
+               it is irrelevant (inner scope) */
+            if (var_struct)
+            {
+                *(var_info **) PFarray_add (reflist) = var_struct;
+            }
+            break;
+        default:
+            for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++) {
+                reflist = collect_vars (c->child[i], active_vlist, reflist);
+            }
+            break;
+    }
+    return reflist;
+}
+
+/**
+ * create_join: helper function for join recognition
+ * transforms the discovered into a new core construct
+ * (a function #pf:join), which represents the join pattern
+ *
+ * @param fst_for contains the Core expression of the left join condition
+ * @param fst_cast contains a cast expression if special case has to be applied
+ * @param fst_nested saves the most inner scope needed
+ * @param snd_for contains the Core expression of the right join condition
+ * @param snd_cast contains a cast expression if special case has to be applied
+ * @param snd_nested saves the most inner scope needed
+ * @param fun saves which join comparison has to be executed
+ * @param switched_args saves the information wether left and right side
+ *                      of the join arguments are switched
+ * @param result the Core expression containing
+ *               the return part of the join pattern
+ */
 static PFcnode_t * create_join(PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested, 
                                PFcnode_t *snd_for, PFcnode_t *snd_cast, int snd_nested,
-                               PFfun_t *fun, int fst_arg, PFcnode_t *result)
+                               PFfun_t *fun, int switched_args, PFcnode_t *result)
 {
     PFcnode_t *c, *comp;
+    int fid = -1; /* dummy fid used for variable mapping of the result */
 
     assert(fst_for);
     assert(snd_for);
@@ -5408,12 +5608,19 @@ static PFcnode_t * create_join(PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_
     snd_cast = (!snd_cast)?PFcore_nil():snd_cast;
 
     comp = PFcore_leaf(c_apply);
-    comp->sem.fun = (fst_arg == 1)?fun:switch_fun(fun);
+    comp->sem.fun = fun;
 
-    PFfun_t *join = PFfun_new(PFqname (PFns_pf,"join"), 8, true, 0, 0, 0);
+    PFfun_t *join = PFfun_new(PFqname (PFns_pf,"join"), /* name */
+                              10, /* arity */
+                              true, /* built-in function */
+                              0, /* argument types */
+                              0, /* return type */
+                              0 /* algebra expression not needed here */);
 
     c = PFcore_nil();
+    c = PFcore_arg(PFcore_num(fid),c);
     c = PFcore_arg(result, c);
+    c = PFcore_arg(PFcore_num(switched_args),c);
     c = PFcore_arg(comp, c);
     c = PFcore_arg(PFcore_num(snd_nested),c);
     c = PFcore_arg(snd_cast,c);
@@ -5426,149 +5633,85 @@ static PFcnode_t * create_join(PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_
     return c;
 }
 
-/* var info */
-struct var_info {
-    PFcnode_t *parent;
-    PFvar_t *id;
-    int act_lev;
-    PFarray_t *reflist;
-};
-typedef struct var_info var_info;
-
-struct if_info {
-    PFarray_t *varlist;
-    int act_lev;
-};
-typedef struct if_info if_info;
-
-static void recognize_join(PFcnode_t *c, 
-                           PFarray_t *active_if,
-                           PFarray_t *active_vlist,
-                           PFarray_t *active_vdefs,
-                           PFarray_t *path,
-                           int act_level);
-
-static var_info create_var_info (PFcnode_t *parent, PFvar_t *id, int act_lev)
-{
-    var_info vi;
-    PFarray_t *reflist = PFarray (sizeof (var_info));
-
-    vi.parent = parent;
-    vi.id = id;
-    vi.act_lev = act_lev;
-    vi.reflist = reflist;    
-    return vi;
-}
-
-static if_info create_if_info (int act_lev)
-{
-    if_info ii;
-    PFarray_t *varlist = PFarray (sizeof (var_info));
-    ii.act_lev = act_lev;
-    ii.varlist = varlist;
-    return ii;
-}
-
-static var_info var_lookup (PFvar_t *id, PFarray_t *active_vlist)
-{
-    unsigned int i;
-    for (i = 0; i < PFarray_last (active_vlist); i++)
-    {
-        if ((*(var_info *) PFarray_at (active_vlist, i)).id == id)
-                return *(var_info *) PFarray_at (active_vlist, i);
-    }
-    PFoops (OOPS_FATAL, "thinking error in var_lookup");
-    return *(var_info *) 0; /* only to pacify compiler */
-}
-
-static void add_ref_to_vdef (var_info var, PFarray_t *active_vdefs)
-{
-    unsigned int i, j, found;
-    PFarray_t *reflist;
-    found = 0;
-    for (i = 0; i < PFarray_last (active_vdefs); i++)
-    {
-        reflist = (*(var_info *) PFarray_at (active_vdefs, i)).reflist;
-        for (j = 0; j < PFarray_last (reflist); j++)
-        {
-            if ((*(var_info *) PFarray_at (reflist, j)).id == var.id)
-            {
-                found = 1;
-            }
-        }
-        if (!found && 
-            (*(var_info *) PFarray_at (active_vdefs, i)).act_lev >= var.act_lev)
-        {
-            *(var_info *) PFarray_add (reflist) = var;
-        }
-    }
-}
-
+/**
+ * test_join:: helper function for join recognition
+ * tests the join pattern and the variable independence
+ *
+ * @param for_node the Core expression which has to be tested
+ * @param active_vlist the stack of the active variables
+ * @param active_vdefs the stack of the active variable definitions
+ * @param act_level the current level
+ * @return information wether subtree is already tested or not
+ */
 static int test_join(PFcnode_t *for_node,
-                     PFarray_t *active_if,
                      PFarray_t *active_vlist,
                      PFarray_t *active_vdefs,
-                     PFarray_t *path,
                      int act_level)
 {
-/* printf("start test_join\n"); */
 
-    PFcnode_t *if_node, *apply_node, *c, *fst_inner, *snd_inner, *res, *fst_inner_cast, *snd_inner_cast;
-    int fst_arg, found_in_fst, found_in_snd, max_lev_fst, max_lev_snd, subtree_tested;
-    if_info fst_if_info, snd_if_info;
-    var_info vi;
+    PFcnode_t *c, *if_node, *apply_node,
+              *fst_inner, *snd_inner, 
+              *fst_inner_cast, *snd_inner_cast,
+              *res;
+    int switched_args,
+        found_in_fst, found_in_snd,
+        max_lev_fst, max_lev_snd,
+        join_found, j;
+    PFarray_t *fst_reflist, *snd_reflist;
+    var_info *vi, *vipos;
     PFfun_t *fun;
     unsigned int i;
 
-    subtree_tested = 0;
+    join_found = false;
 
-    /* test independence from outer loop */
+    /* pattern needed:
+       for $v in e_in return
+           if (comp(e_1, e_2))
+           then e_return
+           else ()
+
+       extended pattern for quantified expressions:
+       for $v in e_in return
+           if (empty(for $w in e_in return
+                     if (comp(e_1, e_2)) then 1 else ()))
+           then ()
+           else e_return
+    */
+
+    /* test variable independence of the bound variable */
     if (act_level)
     {
         vi = var_lookup (for_node->child[0]->sem.var, active_vlist);
-/*        printf("%s: ", PFqname_str(vi.id->qname)); */
-        for (i = 0; i < PFarray_last (vi.reflist); i++)
+        if (!vi) PFoops (OOPS_FATAL, "thinking error"); 
+
+        for (i = 0; i < PFarray_last (vi->reflist); i++)
         {
-/*        printf("%s, ", PFqname_str((*(var_info *) PFarray_at (vi.reflist, i)).id->qname)); */
-            if ((*(var_info *) PFarray_at (vi.reflist, i)).act_lev == vi.act_lev -1)
+            /* bound variable must not reference a variable from its enclosing scope */
+            if ((*(var_info **) PFarray_at (vi->reflist, i))->act_lev == vi->act_lev -1)
             {
-                return subtree_tested;
+                return join_found;
             }
         }
-/*        printf("\n"); */
     }
 
-    res = 0;
-    fst_inner = 0;
-    snd_inner = 0;
-    fst_inner_cast = 0;
-    snd_inner_cast = 0;
-    fst_arg = 0;
+    res = NULL;
+    fst_inner = NULL;
+    snd_inner = NULL;
+    fst_inner_cast = NULL;
+    snd_inner_cast = NULL;
+    switched_args = false;
 
-/* StM:
- * I'm not sure, whether this is correct, but at least it avoids some segfaults;
- * cf. bug reports 1076344, 1078462, 1080515 on SourceForge:
- * http://sourceforge.net/tracker/index.php?func=detail&aid=1076344&group_id=56967&atid=482468
- * http://sourceforge.net/tracker/index.php?func=detail&aid=1078462&group_id=56967&atid=482468
- * http://sourceforge.net/tracker/index.php?func=detail&aid=1080515&group_id=56967&atid=482468
- */
-    if (for_node->child[3]->child[0] == NULL)
-    {
-	fprintf(stderr, "= Avoiding segfault in compiler/mil/milprint_summer.c:test_join() ;\n");
-	fprintf(stderr, "= correctness of this fix needs to be checked!\n");
-        return subtree_tested;
-    }
-
-    if (for_node->child[3]->kind != c_ifthenelse &&
+    if (for_node->child[3]->kind != c_ifthenelse ||
         for_node->child[3]->child[0]->kind != c_apply)
     {
-        return subtree_tested;
+        return join_found;
     }
 
     if_node = for_node->child[3];
     apply_node = if_node->child[0];
     fun = apply_node->sem.fun;
 
+    /* test quantified pattern */
     if (!PFqname_eq (fun->qname, PFqname (PFns_fn,"empty")) &&
         if_node->child[1]->kind == c_empty &&
         apply_node->child[0]->child[0]->kind == c_for &&
@@ -5583,6 +5726,7 @@ static int test_join(PFcnode_t *for_node,
         apply_node = if_node->child[0];
         fun = apply_node->sem.fun;
 
+        /* test quantified pattern for second comparison input */
         if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
             if_node->child[1]->kind == c_empty &&
             apply_node->child[0]->child[0]->kind == c_for &&
@@ -5598,93 +5742,70 @@ static int test_join(PFcnode_t *for_node,
         }
     }
 
-    /* find matching patterns */
-    if (if_node->child[2]->kind == c_empty &&
-        (!PFqname_eq(fun->qname,PFqname (PFns_op,"eq")) ||
-    /*   !PFqname_eq(fun->qname,PFqname (PFns_op,"ne")) || */
-         !PFqname_eq(fun->qname,PFqname (PFns_op,"le")) ||
-         !PFqname_eq(fun->qname,PFqname (PFns_op,"lt")) ||
-         !PFqname_eq(fun->qname,PFqname (PFns_op,"ge")) ||
-         !PFqname_eq(fun->qname,PFqname (PFns_op,"gt"))))
+    /* find matching comparison function */
+    if (if_node->child[2]->kind != c_empty ||
+        (PFqname_eq(fun->qname,PFqname (PFns_op,"eq")) &&
+      /* PFqname_eq(fun->qname,PFqname (PFns_op,"ne")) && (not supported by MonetDB) */
+         PFqname_eq(fun->qname,PFqname (PFns_op,"le")) &&
+         PFqname_eq(fun->qname,PFqname (PFns_op,"lt")) &&
+         PFqname_eq(fun->qname,PFqname (PFns_op,"ge")) &&
+         PFqname_eq(fun->qname,PFqname (PFns_op,"gt"))))
     {
-        if (!res)
-        {
-            res = if_node->child[1];
-        }
-
-        if (fst_inner &&
-            var_is_used(fst_inner->child[0]->sem.var,apply_node->child[0]->child[0]))
+        return join_found;
+    }
+ 
+    /* we have no quantified expression */
+    if (!res)
+    {
+        res = if_node->child[1];
+        fst_inner = apply_node->child[0]->child[0];
+        snd_inner = apply_node->child[0]->child[1]->child[0];
+    }
+    else
+    {
+        if (var_is_used(fst_inner->child[0]->sem.var,
+                        apply_node->child[0]->child[0]))
         {
             fst_inner_cast = apply_node->child[0]->child[0];
-            /*
-            fst_inner->child[3] = c->child[0]->child[0];
-            */
-            fst_arg = 1;
+            snd_inner_cast = apply_node->child[0]->child[1]->child[0];
         }
-        else if (fst_inner && 
-                 var_is_used(fst_inner->child[0]->sem.var,apply_node->child[0]->child[1]->child[0]))
+        else if (var_is_used(fst_inner->child[0]->sem.var,
+                             apply_node->child[0]->child[1]->child[0]))
         {
             fst_inner_cast = apply_node->child[0]->child[1]->child[0];
-            /*
-            fst_inner->child[3] = c->child[0]->child[1]->child[0];
-            */
-        }
-
-        if (snd_inner &&
-            var_is_used(snd_inner->child[0]->sem.var,apply_node->child[0]->child[0]))
-        {
             snd_inner_cast = apply_node->child[0]->child[0];
-            /*
-            snd_inner->child[3] = c->child[0]->child[0];
-            */
-            fst_arg = 2;
+            switched_args = true;
         }
-        else if (snd_inner && 
-                 var_is_used(snd_inner->child[0]->sem.var,apply_node->child[0]->child[1]->child[0]))
+        else PFoops (OOPS_FATAL, "test_join: idea does not work");
+        
+        if (snd_inner)
         {
-            snd_inner_cast = apply_node->child[0]->child[1]->child[0];
-            /*
-            snd_inner->child[3] = c->child[0]->child[1]->child[0];
-            */
-        }
-
-        if (fst_inner && snd_inner)
-        {
-           /* do nothing  */            
-        }
-        else if (fst_inner)
-        {
-            if (fst_arg)
+            /* test correctness */
+            if ((switched_args && 
+                 var_is_used(snd_inner->child[0]->sem.var,
+                             apply_node->child[0]->child[0])) 
+                ||
+                (!switched_args &&
+                 var_is_used(snd_inner->child[0]->sem.var,
+                             apply_node->child[0]->child[1]->child[0]))
+               )
             {
-                snd_inner = apply_node->child[0]->child[1]->child[0];
             }
-            else
-            {
-                snd_inner = apply_node->child[0]->child[0];
-                fst_arg = 2;
-            }
-        }
-        else if (snd_inner)
-        {
-            if (fst_arg)
-            {
-                fst_inner = apply_node->child[0]->child[1]->child[0];
-            }
-            else
-            {
-                fst_inner = apply_node->child[0]->child[0];
-                fst_arg = 1;
-            }
+            else PFoops (OOPS_FATAL, "test_join: idea does not work");
         }
         else
         {
-            fst_inner = apply_node->child[0]->child[0];
-            fst_arg = 1;
-            snd_inner = apply_node->child[0]->child[1]->child[0];
+            snd_inner = snd_inner_cast;
+            snd_inner_cast = NULL;
         }
 
         /* now test simplifications for quantified expressions */
-/*printf("test_join\n"); */
+        /* test special pattern:
+            for $v in for $w in [ e/attribute::.. | e/..::text() ]
+                      return cast as untypedAtomic (string-value($w))
+            return if (comp([ $v | cast as .. ($v) ],..)) then 1 else ()
+           to avoid evaluation of two unnecessary loops and #pf:string-value
+        */
         if (fst_inner_cast)
         {
             if (fst_inner->child[2]->kind == c_for &&
@@ -5699,33 +5820,28 @@ static int test_join(PFcnode_t *for_node,
                              PFqname (PFns_pf,"string-value")) &&
                 fst_inner->child[2]->child[3]->child[1]->child[0]->child[0]->kind == c_var &&
                 fst_inner->child[2]->child[3]->child[1]->child[0]->child[0]->sem.var == fst_inner->child[2]->child[0]->sem.var &&
-                ((fst_inner_cast->kind == c_var && fst_inner_cast->sem.var == fst_inner->child[0]->sem.var) ||
-                 (fst_inner_cast->kind == c_seqcast && fst_inner_cast->child[1]->kind == c_var && 
-                  fst_inner_cast->child[1]->sem.var == fst_inner->child[0]->sem.var)))
+                fst_inner_cast->kind == c_seqcast &&
+                fst_inner_cast->child[1]->kind == c_var && 
+                fst_inner_cast->child[1]->sem.var == fst_inner->child[0]->sem.var)
             {
                 fst_inner = fst_inner->child[2]->child[2];
-                if (fst_inner_cast->kind != c_seqcast) 
-                {
-                    PFoops (OOPS_FATAL, "find_join: thinking error in join recognition!");
-                }
                 fst_inner_cast = fst_inner_cast->child[0];
+
                 if (fst_inner_cast->sem.type.type == ty_opt)
                 {
                     fst_inner_cast->type = PFty_child(fst_inner_cast->sem.type);
                     fst_inner_cast->sem.type = PFty_child(fst_inner_cast->sem.type);
                 }
-/*                printf("found pattern :)\n"); */
             }
             else if (fst_inner_cast->kind == c_var && fst_inner_cast->sem.var == fst_inner->child[0]->sem.var)
             {
                 fst_inner = fst_inner->child[2];
-                fst_inner_cast = 0;
-/*                printf("found other pattern :)\n"); */
+                fst_inner_cast = NULL;
             }
             else
             {
                 fst_inner->child[3] = fst_inner_cast;
-                fst_inner_cast = 0;
+                fst_inner_cast = NULL;
             }
         }
         if (snd_inner_cast)
@@ -5742,394 +5858,312 @@ static int test_join(PFcnode_t *for_node,
                              PFqname (PFns_pf,"string-value")) &&
                 snd_inner->child[2]->child[3]->child[1]->child[0]->child[0]->kind == c_var &&
                 snd_inner->child[2]->child[3]->child[1]->child[0]->child[0]->sem.var == snd_inner->child[2]->child[0]->sem.var &&
-                ((snd_inner_cast->kind == c_var && snd_inner_cast->sem.var == snd_inner->child[0]->sem.var) ||
-                 (snd_inner_cast->kind == c_seqcast && snd_inner_cast->child[1]->kind == c_var && 
-                  snd_inner_cast->child[1]->sem.var == snd_inner->child[0]->sem.var)))
+                snd_inner_cast->kind == c_seqcast &&
+                snd_inner_cast->child[1]->kind == c_var && 
+                snd_inner_cast->child[1]->sem.var == snd_inner->child[0]->sem.var)
             {
                 snd_inner = snd_inner->child[2]->child[2];
-                if (snd_inner_cast->kind != c_seqcast) 
-                {
-                    PFoops (OOPS_FATAL, "find_join: thinking error in join recognition!");
-                }
                 snd_inner_cast = snd_inner_cast->child[0];
+
                 if (snd_inner_cast->sem.type.type == ty_opt)
                 {
                     snd_inner_cast->type = PFty_child(snd_inner_cast->sem.type);
                     snd_inner_cast->sem.type = PFty_child(snd_inner_cast->sem.type);
                 }
-/*                printf("found pattern :)\n"); */
             }
             else if (snd_inner_cast->kind == c_var && snd_inner_cast->sem.var == snd_inner->child[0]->sem.var)
             {
                 snd_inner = snd_inner->child[2];
-                snd_inner_cast = 0;
-/*                printf("found other pattern :)\n"); */
+                snd_inner_cast = NULL;
             }
             else
             {
                 snd_inner->child[3] = snd_inner_cast;
-                snd_inner_cast = 0;
+                snd_inner_cast = NULL;
             }
         }
 
-        act_level++;
-        *(if_info *) PFarray_add (active_if) = create_if_info (act_level);
-        recognize_join (fst_inner, active_if, active_vlist, active_vdefs, path, act_level);
-        fst_if_info = *(if_info *) PFarray_top (active_if);
-        PFarray_del (active_if);
+    } /* end else (!res) */
 
-        *(if_info *) PFarray_add (active_if) = create_if_info (act_level);
-        recognize_join (snd_inner, active_if, active_vlist, active_vdefs, path, act_level);
-        snd_if_info = *(if_info *) PFarray_top (active_if);
-        PFarray_del (active_if);
-        recognize_join (res, active_if, active_vlist, active_vdefs, path, act_level);
-        
-        subtree_tested = 1;
-
-/* printf("foobar\n"); */
-        found_in_fst = 0;
-        max_lev_fst = 0;
-        for (i = 0; i < PFarray_last (fst_if_info.varlist); i++)
+    /* find referenced variables from outer scopes in first comparison side */
+    fst_reflist = PFarray (sizeof (var_info *));
+    fst_reflist = collect_vars(fst_inner, active_vlist, fst_reflist);
+    /* search for-loop variable in first argument */
+    found_in_fst = 0;
+    max_lev_fst = 0;
+    for (i = 0; i < PFarray_last (fst_reflist); i++)
+    {
+        if ((*(var_info **) PFarray_at (fst_reflist, i))->act_lev == act_level+1)
         {
-            if ((*(var_info *) PFarray_at (fst_if_info.varlist, i)).act_lev == act_level)
+            if ((*(var_info **) PFarray_at (fst_reflist, i))->id == for_node->child[0]->sem.var)
             {
-                if ((*(var_info *) PFarray_at (fst_if_info.varlist, i)).id == for_node->child[0]->sem.var)
-                {
-                     found_in_fst = 1;
-                }
-                else if (for_node->child[1]->kind == c_var &&
-                    (*(var_info *) PFarray_at (fst_if_info.varlist, i)).id == for_node->child[1]->sem.var)
-                {
-                     found_in_fst = 1;
-                }
+                 found_in_fst = 1;
             }
-            else
+            else if (for_node->child[1]->kind == c_var &&
+                (*(var_info **) PFarray_at (fst_reflist, i))->id == for_node->child[1]->sem.var)
             {
-                max_lev_fst = (max_lev_fst>(*(var_info *) PFarray_at (fst_if_info.varlist, i)).act_lev)?
-                          max_lev_fst:
-                          (*(var_info *) PFarray_at (fst_if_info.varlist, i)).act_lev;
+                 found_in_fst = 1;
             }
-        }
-        found_in_snd = 0;
-        max_lev_snd = 0;
-        for (i = 0; i < PFarray_last (snd_if_info.varlist); i++)
-        {
-            if ((*(var_info *) PFarray_at (snd_if_info.varlist, i)).act_lev == act_level)
-            {
-                if ((*(var_info *) PFarray_at (snd_if_info.varlist, i)).id == for_node->child[0]->sem.var)
-                {
-                     found_in_snd = 1;
-                }
-                else if (for_node->child[1]->kind == c_var &&
-                    (*(var_info *) PFarray_at (snd_if_info.varlist, i)).id == for_node->child[1]->sem.var)
-                {
-                     found_in_snd = 1;
-                }
-            }
-            else
-            {
-                max_lev_snd = (max_lev_snd>(*(var_info *) PFarray_at (snd_if_info.varlist, i)).act_lev)?
-                          max_lev_snd:
-                          (*(var_info *) PFarray_at (snd_if_info.varlist, i)).act_lev;
-            }
-        }
-        /* check independence */
-
-        /* change arguments if used in switched order */
-        if (found_in_fst && !found_in_snd)
-        {
-            c = fst_inner;
-            fst_inner = snd_inner;
-            snd_inner = c;
-            c = fst_inner_cast;
-            fst_inner_cast = snd_inner_cast;
-            snd_inner_cast = c;
-            i = max_lev_fst;
-            max_lev_fst = max_lev_snd;
-            max_lev_snd = i;
-            fst_arg = (fst_arg == 2)?1:2;
-        }
-        else if (!found_in_fst && found_in_snd)
-        {
-            /* do nothing */
-        }
-        /* change for-loop and if-expression if no reference is used */
-        else if (!found_in_fst && !found_in_snd && !max_lev_fst && !max_lev_snd)
-        {
-            if_node = for_node->child[3];
-            res = PFcore_wire4 (c_for,
-                                for_node->child[0],
-                                for_node->child[1],
-                                for_node->child[2],
-                                res);
-            if (if_node->child[1]->kind == c_empty)
-            {
-                if_node->child[2] = res;
-            }
-            else
-            {
-                if_node->child[1] = res;
-            }
-            *for_node = *if_node;
-            return subtree_tested;
         }
         else
         {
-            return subtree_tested;
+            j = (*(var_info **) PFarray_at (fst_reflist, i))->act_lev;
+            max_lev_fst = (max_lev_fst > j)?max_lev_fst:j;
         }
+    }
 
-        /* check references of the reflist of the for-loop variable */
-        vi = var_lookup (for_node->child[0]->sem.var, active_vlist);
-        for (i = 0; i < PFarray_last (vi.reflist); i++)
+    /* find referenced variables from outer scopes in second comparison side */
+    snd_reflist = PFarray (sizeof (var_info *));
+    snd_reflist = collect_vars(snd_inner, active_vlist, snd_reflist);
+    /* search for-loop variable in second argument */
+    found_in_snd = 0;
+    max_lev_snd = 0;
+    for (i = 0; i < PFarray_last (snd_reflist); i++)
+    {
+        if ((*(var_info **) PFarray_at (snd_reflist, i))->act_lev == act_level+1)
         {
-            max_lev_snd = (max_lev_snd>(*(var_info *) PFarray_at (vi.reflist, i)).act_lev)?
-                      max_lev_snd:
-                      (*(var_info *) PFarray_at (vi.reflist, i)).act_lev;
+            if ((*(var_info **) PFarray_at (snd_reflist, i))->id == for_node->child[0]->sem.var)
+            {
+                 found_in_snd = 1;
+            }
+            else if (for_node->child[1]->kind == c_var &&
+                (*(var_info **) PFarray_at (snd_reflist, i))->id == for_node->child[1]->sem.var)
+            {
+                 found_in_snd = 1;
+            }
         }
-        /* don't need to test reflist of snd because it should be identical 
+        else
+        {
+            j = (*(var_info **) PFarray_at (snd_reflist, i))->act_lev;
+            max_lev_snd = (max_lev_snd > j)?max_lev_snd:j;
+        }
+    }
+
+    /* change arguments if used in switched order */
+    if (found_in_fst && !found_in_snd)
+    {
+        c = fst_inner;
+        fst_inner = snd_inner;
+        snd_inner = c;
+        c = fst_inner_cast;
+        fst_inner_cast = snd_inner_cast;
+        snd_inner_cast = c;
+        i = max_lev_fst;
+        max_lev_fst = max_lev_snd;
+        max_lev_snd = i;
+        switched_args = (switched_args)?false:true;
+    }
+    else if (!found_in_fst && found_in_snd)
+    {
+        /* do nothing */
+    }
+    /* change for-loop and if-expression if no reference is used */
+    /* FIXME: this has to be checked
+    else if (!found_in_fst && !found_in_snd && !max_lev_fst && !max_lev_snd)
+    {
+        if_node = for_node->child[3];
+        res = PFcore_wire4 (c_for,
+                            for_node->child[0],
+                            for_node->child[1],
+                            for_node->child[2],
+                            res);
+        if (if_node->child[1]->kind == c_empty)
+        {
+            if_node->child[2] = res;
+        }
+        else
+        {
+            if_node->child[1] = res;
+        }
+        *for_node = *if_node;
+        return join_found;
+    }
+    */
+    else
+    {
+        return join_found;
+    }
+
+    /* add references of the for-loop variable */
+    vi = var_lookup (for_node->child[0]->sem.var, active_vlist);
+    if (!vi) PFoops (OOPS_FATAL, "thinking error");
+    for (i = 0; i < PFarray_last (vi->reflist); i++)
+    {
+        j = (*(var_info **) PFarray_at (vi->reflist, i))->act_lev;
+        max_lev_snd = (max_lev_snd > j)?max_lev_snd:j;
+    }
+    /* don't need to test reflist of snd because it should be identical 
+       if (for_node->child[1]->kind == c_var) */
+    
+    /* check independence */
+    if (!max_lev_snd) /* we can be sure, 
+        that the second/right/inner side is completely independent */
+    {
+        /* remove variables from current scope */
         if (for_node->child[1]->kind == c_var)
         {
-            vi = var_lookup (for_node->child[1]->sem.var, active_vlist);
-            for (i = 0; i < PFarray_last (vi.reflist); i++)
-            {
-                max_lev_snd = (max_lev_snd>(*(var_info *) PFarray_at (vi.reflist, i)).act_lev)?
-                          max_lev_snd:
-                          (*(var_info *) PFarray_at (vi.reflist, i)).act_lev;
-            }
-        }
-        */
-
-        
-        if (max_lev_fst && max_lev_snd)
-        {
-            /* no idea to handle this until now */
-            /* test if 'reflist.act_lev = var.act_lev - 1' and throw this out */
-            return subtree_tested;
-        }
-        else if (max_lev_fst)
-        {
-            /* normal translation */
-            snd_inner = PFcore_wire4 (c_for, 
-                                      for_node->child[0],
-                                      for_node->child[1],
-                                      for_node->child[2],
-                                      snd_inner);
-            *for_node = *create_join(fst_inner, fst_inner_cast, max_lev_fst,
-                                     snd_inner, snd_inner_cast, max_lev_snd,
-                                     fun, fst_arg, res);
-            return subtree_tested;
-        }
-        else if (max_lev_snd)
-        {
-            /* no idea to handle this until now */
-            return subtree_tested;
-        /*
-            snd_inner = PFcore_wire4 (c_for, 
-                                      for_node->child[0],
-                                      for_node->child[1],
-                                      for_node->child[2],
-                                      snd_inner);
-            *for_node = *create_join(fst_inner, fst_inner_cast, max_lev_fst,
-                                     snd_inner, snd_inner_cast, max_lev_snd,
-                                     fun, fst_arg, res);
-        */
+            /* move positional var from definition to active variable list */
+            vipos = *(var_info **) PFarray_top (active_vlist);
+            PFarray_del (active_vlist);
         }
         else
         {
-            /* translate each side with level 0 and then multiply result by loop act_level */
-            snd_inner = PFcore_wire4 (c_for, 
-                                      for_node->child[0],
-                                      for_node->child[1],
-                                      for_node->child[2],
-                                      snd_inner);
-            *for_node = *create_join(fst_inner, fst_inner_cast, max_lev_fst,
-                                     snd_inner, snd_inner_cast, max_lev_snd,
-                                     fun, fst_arg, res);
-            return subtree_tested;
+            vipos = NULL;
+        }
+        /* move var from definition to active variable list */
+        vi = *(var_info **) PFarray_top (active_vlist);
+        PFarray_del (active_vlist);
+        /* evaluate left side in scope-1 (act_level not incremented yet) */
+        recognize_join (fst_inner, active_vlist, active_vdefs, act_level);
+
+        /* evaluate right side in scope 0 (act_level is set back to 1) */
+        PFarray_t *new_active_vlist = PFarray (sizeof (var_info *));
+        *(var_info **) PFarray_add (new_active_vlist) 
+                = create_var_info(vi->parent, vi->id, 1);
+        if (vipos)
+            *(var_info **) PFarray_add (new_active_vlist)
+                = create_var_info(vipos->parent, vipos->id, 1);
+
+        /* we also need all variables in scope 0 */
+        for (i = 0; i < PFarray_last(active_vlist); i++)
+        {
+            if ((*(var_info **) PFarray_at (active_vlist, i))->act_lev == 0)
+            {
+                *(var_info **) PFarray_add (new_active_vlist)
+                    = *(var_info **) PFarray_at (active_vlist, i);
+            } 
         }
 
-/*
-printf("fst_inner: ");
-for (i = 0; i < PFarray_last (fst_if_info.varlist); i++)
-{
- printf("%s, ", PFqname_str ((*(var_info *) PFarray_at (fst_if_info.varlist, i)).id->qname));
-}
-printf("\n");
+        recognize_join (snd_inner,
+                        new_active_vlist,
+                        PFarray (sizeof (var_info *)),
+                        1);
 
-printf("snd_inner: ");
-for (i = 0; i < PFarray_last (snd_if_info.varlist); i++)
-{
- printf("%s, ", PFqname_str ((*(var_info *) PFarray_at (snd_if_info.varlist, i)).id->qname));
-}
-printf("\n");
-*/
-        /* find most specific act_level in active if list */
-/*        create_join (fst_for, way_no, fst_inner, snd_inner, fun, fst_arg, res); */
-/*        printf("join\n"); */
-        return subtree_tested;
+        /* evaluate result in current scope (act_level is now incremented) */
+        *(var_info **) PFarray_add (active_vlist) = vi;
+        if (vipos)
+            *(var_info **) PFarray_add (active_vlist) = vipos;
+
+        act_level++;
+        recognize_join (res, active_vlist, active_vdefs, act_level);
+
+        /* now body is evaluated */ 
+        join_found = true;
+
+        /* normal translation */
+        snd_inner = PFcore_wire4 (c_for, 
+                                  for_node->child[0],
+                                  for_node->child[1],
+                                  for_node->child[2],
+                                  snd_inner);
+        *for_node = *create_join(fst_inner, fst_inner_cast, max_lev_fst,
+                                 snd_inner, snd_inner_cast, max_lev_snd,
+                                 fun, switched_args, res);
     }
-        return subtree_tested;
+    
+    return join_found;
 }
 
+/* TODO: add recognition for SELECT
 static int test_select(PFcnode_t *c,
-                       PFarray_t *active_if,
                        PFarray_t *active_vlist,
                        PFarray_t *active_vdefs,
-                       PFarray_t *path,
                        int act_level)
 {
    assert(c);
-   assert(active_if);
    assert(active_vlist);
    assert(active_vdefs);
-   assert(path);
    act_level = act_level;
    return 0;
 }
+*/
 
-static void test_print(PFcnode_t *c, PFarray_t *active_if, PFarray_t *active_vlist, PFarray_t *active_vdefs, PFarray_t *path, int act_level)
-{
-unsigned int i, j;
-var_info vi;
-PFarray_t *reflist;
-
-(void) c;
-
-assert(active_if);
-printf("==========\n");
-printf("active node:\n");
-printf("path: ");
-for (i = 0; i < PFarray_last (path); i++)
-{
-  printf("%i, ", *(int *) PFarray_at (path, i));
-}
-printf("\n");
-printf("act_level: %i\n", act_level);
-printf("active_vdefs:\n");
-for (i = 0; i < PFarray_last (active_vdefs); i++)
-{
-        vi = (*(var_info *) PFarray_at (active_vdefs, i));
-        printf("%s, ", PFqname_str((*(var_info *) PFarray_at (active_vdefs, i)).id->qname));
-        printf("act_lev: %i\n", vi.act_lev);
-
-        reflist = (*(var_info *) PFarray_at (active_vdefs, i)).reflist;
-        if (PFarray_last(reflist) > 0)
-        {
-        printf("reflist: ");
-        for (j = 0; j < PFarray_last (reflist); j++)
-        {
-             printf("%s, ", PFqname_str((*(var_info *) PFarray_at (reflist, j)).id->qname));
-        }
-        printf("\n");
-        }
-}
-
-printf("active_vlist:\n");
-for (i = 0; i < PFarray_last (active_vlist); i++)
-{
-        vi = (*(var_info *) PFarray_at (active_vlist, i));
-        printf("%s, ", PFqname_str((*(var_info *) PFarray_at (active_vlist, i)).id->qname));
-        printf("act_lev: %i\n", vi.act_lev);
-
-        reflist = (*(var_info *) PFarray_at (active_vlist, i)).reflist;
-        if (PFarray_last(reflist) > 0)
-        {
-        printf("reflist: ");
-        for (j = 0; j < PFarray_last (reflist); j++)
-        {
-             printf("%s, ", PFqname_str((*(var_info *) PFarray_at (reflist, j)).id->qname));
-        }
-        printf("\n");
-        }
-}
-}
-
-
+/**
+ * recognize_join: helper function for join recognition
+ * walks through a Core expression and collects the variables
+ * as well as triggers the join pattern testing
+ *
+ * @param c the observed Core expression
+ * @param active_vlist the stack containing the active variables
+ * @param active_vdefs the stack of active variable definitions
+ * @act_level the counter storing the current scope
+ */
 static void recognize_join(PFcnode_t *c, 
-                           PFarray_t *active_if,
                            PFarray_t *active_vlist,
                            PFarray_t *active_vdefs,
-                           PFarray_t *path,
                            int act_level)
 {
     unsigned int i;
     assert(c);
-    var_info var_struct;
-
-/* test_print(c,active_if,active_vlist,active_vdefs,path,act_level); */
+    var_info *var_struct;
 
     switch (c->kind)
     {
         case c_var:
-            /* get var_info of actual var */
+            /* get var_info of current variable */
             var_struct = var_lookup (c->sem.var, active_vlist);
-            /* add variable to usage lists of active if-calls if they are defined outside the if expression */
-            for (i = 0; i < PFarray_last (active_if); i++)
-            {
-                if ((*(if_info *) PFarray_at (active_if, i)).act_lev >= var_struct.act_lev)
-                {
-                    *(var_info *) PFarray_add ((*(if_info *) PFarray_at (active_if, i)).varlist) = var_struct;
-                }
-            }
+            if (!var_struct) PFoops (OOPS_FATAL, "thinking error");
+
             /* add reference to variable definitions */
             add_ref_to_vdef (var_struct, active_vdefs);
             break;
         case c_let:
             /* add var to the active variable definition list */
-            *(var_info *) PFarray_add (active_vdefs) = create_var_info (c, c->child[0]->sem.var, act_level);
+            /* not needed here (only variable binding for of patterns are later tested)
+            *(var_info **) PFarray_add (active_vdefs) 
+                = create_var_info (c, c->child[0]->sem.var, act_level);
+            */
 
             /* call let binding */
-            *(int *) PFarray_add (path) = 1;
-            recognize_join (c->child[1], active_if, active_vlist, active_vdefs, path, act_level);
-            PFarray_del (path);
+            recognize_join (c->child[1], active_vlist, active_vdefs, act_level);
 
             /* move var from definition to active variable list */
-            *(var_info *) PFarray_add (active_vlist) = *(var_info *) PFarray_top (active_vdefs);
+            /* not needed here (only variable binding for of patterns are later tested)
+            *(var_info **) PFarray_add (active_vlist)
+                = *(var_info **) PFarray_top (active_vdefs);
             PFarray_del (active_vdefs);
+            */ 
+            /* instead needed here (only variable binding of join patterns are later tested) */
+            *(var_info **) PFarray_add (active_vlist) 
+                = create_var_info (c, c->child[0]->sem.var, act_level);
 
-            /* TODO: in a later step test act_level = min (active_vdefs.act_lev) and move let expression */
+            /* TODO: in a later step test act_level = min (active_vdefs->act_lev) and move let expression */
 
             /* call let body */
-            *(int *) PFarray_add (path) = 2;
-            recognize_join (c->child[2], active_if, active_vlist, active_vdefs, path, act_level);
-            PFarray_del (path);
+            recognize_join (c->child[2], active_vlist, active_vdefs, act_level);
 
             /* delete variable from active list */
             PFarray_del (active_vlist);
             break;
         case c_for: 
             /* add var to the active variable definition list */
-            *(var_info *) PFarray_add (active_vdefs) = create_var_info (c, c->child[0]->sem.var, act_level+1);
+            *(var_info **) PFarray_add (active_vdefs) = create_var_info (c, c->child[0]->sem.var, act_level+1);
             if (c->child[1]->kind != c_nil)
             {
                 i = 1;
                 /* add positional var to the active variable definition list */
-                *(var_info *) PFarray_add (active_vdefs) = create_var_info (c, c->child[1]->sem.var, act_level+1);
+                *(var_info **) PFarray_add (active_vdefs) = create_var_info (c, c->child[1]->sem.var, act_level+1);
             }
             else i = 0;
 
             /* call for binding */
-            *(int *) PFarray_add (path) = 2;
-            recognize_join (c->child[2], active_if, active_vlist, active_vdefs, path, act_level);
-            PFarray_del (path);
+            recognize_join (c->child[2], active_vlist, active_vdefs, act_level);
 
             if (i)
             {
                 /* move positional var from definition to active variable list */
-                *(var_info *) PFarray_add (active_vlist) = *(var_info *) PFarray_top (active_vdefs);
+                *(var_info **) PFarray_add (active_vlist) = *(var_info **) PFarray_top (active_vdefs);
                 PFarray_del (active_vdefs);
             }
             /* move var from definition to active variable list */
-            *(var_info *) PFarray_add (active_vlist) = *(var_info *) PFarray_top (active_vdefs);
+            *(var_info **) PFarray_add (active_vlist) = *(var_info **) PFarray_top (active_vdefs);
             PFarray_del (active_vdefs);
 
-            if (!test_join (c, active_if, active_vlist, active_vdefs, path, act_level))
+            if (!test_join (c, active_vlist, active_vdefs, act_level))
             {
                 /* call for body */
                 act_level++;
-                *(int *) PFarray_add (path) = 3;
-                recognize_join (c->child[3], active_if, active_vlist, active_vdefs, path, act_level);
-                PFarray_del (path);
+                recognize_join (c->child[3], active_vlist, active_vdefs, act_level);
             }
 
             /* delete variable from active list */
@@ -6141,19 +6175,18 @@ static void recognize_join(PFcnode_t *c,
             }
             break;
         case c_ifthenelse:
-            if (test_select (c, active_if, active_vlist, active_vdefs, path, act_level))
+            /* TODO: add recognition for SELECT
+            if (test_select (c, active_vlist, active_vdefs, act_level))
             {
                 break;
             }
+            */
         default:
             for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++) {
-                *(int *) PFarray_add (path) = i;
-                recognize_join (c->child[i], active_if, active_vlist, active_vdefs, path, act_level);
-                PFarray_del (path);
+                recognize_join (c->child[i], active_vlist, active_vdefs, act_level);
             }
             break;
     }
-
 }
 
 /* the fid increasing for every for node */ 
@@ -6210,6 +6243,9 @@ append_lev (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 {
     unsigned int i;
     int fid, act_fid, vid;
+    PFcnode_t *args, *fst, *snd, *res, *fid_node;
+    int fst_nested, snd_nested, j;
+    PFarray_t *new_way;
 
     if (c->kind == c_var) 
     {
@@ -6271,6 +6307,70 @@ append_lev (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
        if (c->child[2])
            counter = append_lev (f, c->child[2], way, counter);
     }
+    /* apply mapping correctly for recognized join */    
+    else if (c->kind == c_apply && 
+             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
+    {
+        /* get all necessary Core nodes */
+            args = c->child[0];
+        fst = args->child[0];
+            args = args->child[1]->child[1];
+        fst_nested = args->child[0]->sem.num;
+            args = args->child[1];
+        snd = args->child[0];
+            args = args->child[1]->child[1];
+        snd_nested = args->child[0]->sem.num;
+            args = args->child[1]->child[1]->child[1];
+        res = args->child[0];
+            args = args->child[1];
+        fid_node = args->child[0];
+            args = NULL;
+
+        /* we don't translate the general join pattern so far */
+        if (snd_nested) 
+        {
+            PFlog ("append_lev: something has to be changed here.");
+        }
+        if (fst_nested) /* otherwise we have a special translation
+                           and don't need mapping (selection) */
+        {
+            fst_nested = (int) PFarray_last (way);
+        }
+
+        /* save current fid */
+        act_fid = *(int *) PFarray_at (counter, ACT_FID);
+
+        /* get the number of fst_nested scopes 
+           for the first join argument */
+        new_way = PFarray (sizeof (int)); 
+        for (j = 0; j < fst_nested; j++)
+        {
+           *(int *) PFarray_add (new_way) = *(int *) PFarray_at (way, j);
+        }
+        counter = append_lev (f, fst, new_way, counter);
+
+        /* get the number of snd_nested scopes 
+           for the first second argument */
+        new_way = PFarray (sizeof (int)); 
+        for (j = 0; j < snd_nested; j++)
+        {
+           *(int *) PFarray_add (new_way) = *(int *) PFarray_at (way, j);
+        }
+        counter = append_lev (f, snd, new_way, counter);
+
+        /* create new fid for resulting scope */
+        (*(int *) PFarray_at (counter, FID))++;
+        fid = *(int *) PFarray_at (counter, FID);
+
+        fid_node->sem.num = fid;
+        *(int *) PFarray_add (way) = fid;
+        act_fid = fid;
+
+        counter = append_lev (f, res, way, counter);
+
+        *(int *) PFarray_at (counter, ACT_FID) = *(int *) PFarray_top (way);
+        PFarray_del (way);
+    }
 
     else 
     {
@@ -6309,10 +6409,8 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
     simplifyCoreTree (c);
 
     recognize_join (c,
-                    PFarray (sizeof (if_info)),
-                    PFarray (sizeof (var_info)),
-                    PFarray (sizeof (var_info)),
-                    PFarray (sizeof (int)),
+                    PFarray (sizeof (var_info *)),
+                    PFarray (sizeof (var_info *)),
                     0);
 
 #if TIMINGS

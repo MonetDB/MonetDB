@@ -415,18 +415,90 @@ SequenceType:    stattype (Atom)
 PathExpr:        LocationSteps;
 PathExpr:        LocationStep;
 
-LocationStep:    ancestor (NodeTest);
-LocationStep:    ancestor_or_self (NodeTest);
-LocationStep:    attribute (NodeTest);
-LocationStep:    child_ (NodeTest);
-LocationStep:    descendant (NodeTest);
-LocationStep:    descendant_or_self (NodeTest);
-LocationStep:    following (NodeTest);
-LocationStep:    following_sibling (NodeTest);
-LocationStep:    parent_ (NodeTest);
-LocationStep:    preceding (NodeTest);
-LocationStep:    preceding_sibling (NodeTest);
-LocationStep:    self (NodeTest);
+LocationStep:    ancestor (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    ancestor_or_self (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    child_ (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    descendant (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    descendant_or_self (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    following (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    following_sibling (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    parent_ (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    preceding (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    preceding_sibling (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+LocationStep:    self (NodeTest)
+    =
+    {
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+/* handle attribute axis seperately */
+/* LocationStep:    attribute (NodeTest); */
+LocationSteps:   locsteps (attribute(NodeTest), LocationSteps)
+    =
+    {
+        PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+
+        [[ $$ ]] = PFty_star (PFty_attr (wild, PFty_string ()));
+    }
+    ;
+LocationSteps:   locsteps (attribute(NodeTest), Atom)
+    =
+    {
+        PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+
+        [[ $$ ]] = PFty_star (PFty_attr (wild, PFty_string ()));
+    }
+    ;
 
 LocationSteps:   locsteps (LocationStep, LocationSteps)
     =
@@ -435,7 +507,7 @@ LocationSteps:   locsteps (LocationStep, LocationSteps)
          *        MIL mapping possible. All path steps simply
          *        have node* type.
          */
-        [[ $$ ]] = PFty_star (PFty_xs_anyNode ());
+        [[ $$ ]] = PFty_star ([[ $1$ ]]);
     }
     ;
 LocationSteps:   locsteps (LocationStep, Atom)
@@ -445,21 +517,71 @@ LocationSteps:   locsteps (LocationStep, Atom)
          *        MIL mapping possible. All path steps simply
          *        have node* type.
          */
-        [[ $$ ]] = PFty_star (PFty_xs_anyNode ());
+        [[ $$ ]] = PFty_star ([[ $1$ ]]);
     }
     ;
 
-NodeTest:        namet;
+NodeTest:        namet
+    =
+    {
+        [[ $$ ]] = PFty_elem (($$)->sem.qname,
+                              PFty_star (PFty_xs_anyNode ()));
+    }
+    ;
 NodeTest:        KindTest;
 
-KindTest:        kind_node (nil);
-KindTest:        kind_comment (nil);
-KindTest:        kind_text (nil);
-KindTest:        kind_pi (nil);
-KindTest:        kind_pi (lit_str);
-KindTest:        kind_doc (nil);
-KindTest:        kind_elem (nil);
-KindTest:        kind_attr (nil);
+KindTest:        kind_node (nil)
+    =
+    {
+        [[ $$ ]] = PFty_xs_anyNode ();
+    }
+    ;
+KindTest:        kind_comment (nil)
+    =
+    {
+        [[ $$ ]] = PFty_comm ();
+    }
+    ;
+KindTest:        kind_text (nil)
+    =
+    {
+        [[ $$ ]] = PFty_text ();
+    }
+    ;
+KindTest:        kind_pi (nil)
+    =
+    {
+        [[ $$ ]] = PFty_pi ();
+    }
+    ;
+KindTest:        kind_pi (lit_str)
+    =
+    {
+        [[ $$ ]] = PFty_pi ();
+    }
+    ;
+KindTest:        kind_doc (nil)
+    =
+    {
+        [[ $$ ]] = PFty_doc (PFty_star (PFty_xs_anyNode ()));
+    }
+    ;
+KindTest:        kind_elem (nil)
+    =
+    {
+        PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+
+        [[ $$ ]] = PFty_elem (wild, PFty_star (PFty_xs_anyNode ()));
+    }
+    ;
+KindTest:        kind_attr (nil)
+    =
+    {
+        PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+
+        [[ $$ ]] = PFty_attr (wild, PFty_string ());
+    }
+    ;
 
 FunctionAppl:    apply (FunctionArgs)
     =

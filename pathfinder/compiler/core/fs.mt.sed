@@ -2036,8 +2036,10 @@ FunctionCall:           apply (Nil_)
     {
         PFfun_t *fun = ($$)->sem.fun;
 
-        /* apply context item $fs:dot to retrieve context roots */
-        if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"root")))
+        /* apply context item $fs:dot to retrieve context roots 
+           or string values */
+        if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"root")) ||
+            !PFqname_eq(fun->qname,PFqname (PFns_fn,"string")))
         {
             if (fs_dot)
             {
