@@ -1051,7 +1051,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	int bsp, bsf, bsw, ii = 0;
 	size_t cnt, len, sze;
 	oid base, wl, wh;
-	bit triv_prop, all_hash, all_sort, some_hash, some_sort;
+	bit triv_prop, all_hash, all_sort, some_hash, some_sort, all_key;
 	
 	*res = NULL;
 
@@ -1079,7 +1079,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 
 	sze = cnt;
 	ii = 0;
-	all_hash = all_sort = TRUE;
+	all_hash = all_sort = all_key = TRUE;
 	some_hash = some_sort = FALSE;
 	BATloopFast(ws_item, pw, q, bsw) {
 		bit hsh, srt;
@@ -1103,6 +1103,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		all_sort &= srt;
 		some_hash |= hsh;
 		some_sort |= srt;
+		all_key &= (batlist[ii]->tkey!=0);
 		sze = MAX(sze, BATcount(batlist[ii]));
 		ii++;
 	}	
@@ -1198,7 +1199,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 
 	if (!bn->batDirty) bn->batDirty = TRUE;
 	triv_prop = (BATcount(bn) < 2);
-	BATkey(bn,TRUE);
+	BATkey(bn,all_key);
 	BATkey(BATmirror(bn),triv_prop);
 	bn->hsorted = GDK_SORTED;
 	bn->tsorted = triv_prop;
