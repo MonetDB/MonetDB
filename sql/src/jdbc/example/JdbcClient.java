@@ -432,6 +432,7 @@ public class JdbcClient {
 										out.print("|");
 										for (int j = 0; j < width.length; j++) {
 											String data = rs.getString(j + 1);
+											if (data == null) data = "<NULL>";
 											out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
 										}
 										out.println();
