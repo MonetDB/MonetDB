@@ -194,68 +194,54 @@ static YYSTREE scheduleFile(str filename) {
         return r;
 }
 
+#define QMADD(req, stk, lt, txt) {			\
+	Request _tmp = newRequest(stk, lt, req!=NULL);	\
+	QMmessage(_tmp, txt);				\
+	if (req) {					\
+		req->ev_wakeup = _tmp;			\
+		req->ev_prev  = _tmp;			\
+	}						\
+	_tmp->ev_next = req;  				\
+	req = _tmp; 					\
+}
+
 void scheduleClient(Client c){	
-	Request first = NULL, second, third;
-	YYSTREE n;
+	Request req = NULL;
+	YYSTREE t;
 
 	if (c->mil_accept == NULL) {
         	yyexpand(c->mil_accept = yynode(TOK_BUILTIN, TYPE_int),
-        		 n = yynode(TOK_CONSTANT, TYPE_int));
+        		 t = yynode(TOK_CONSTANT, TYPE_int));
 		c->mil_accept->yyval.val.pval = (ptr) serveClient;
-		n->yyval.val.ival = c-monet_clients;
+		t->yyval.val.ival = c-monet_clients;
 	}
-	third = newRequest(c->stk, c->mil_accept, TRUE);
-	QMmessage(third,"readCmd;");
 	if (mil_general == NULL) {
                 mil_general = scheduleFile("general.mil");
                 mil_prelude = scheduleFile("prelude.mil");
                 mil_epilogue = scheduleFile("epilogue.mil");
 
-		first = newRequest(0, mil_general, 0);
-		QMmessage(first, "source(general.mil);");
-
-	        second = newRequest(c->stk, mil_prelude, 1);
-                QMmessage(second,"source(prelude.mil);");
-
-                first->ev_wakeup = second;
-                second->ev_next  = first;
-                first->ev_prev   = second;
+		QMADD(req, 0, mil_general, "source(general.mil);");
+		QMADD(req, 0, mil_prelude, "source(prelude.mil);");
 
                 if (monet_prelude) {
-                        first = second;
-                        second = newRequest(0, scheduleFile(monet_prelude), 1);
-                        QMmessage(second,"source(<user prelude>);");
-
-                        first->ev_wakeup = second;
-                        second->ev_next  = first;
-                        first->ev_prev   = second;
+			QMADD(req, 0, scheduleFile(monet_prelude), "source(<user prelude>);");
                 }
                 if (monet_script) {
-                        first = second;
-                        second = newRequest(0, scheduleFile(monet_script), 1);
-                        QMmessage(second,"source(<user script>);");
-
-                        first->ev_wakeup = second;
-                        second->ev_next  = first;
-                        first->ev_prev   = second;
+			QMADD(req, 0, scheduleFile(monet_script), "source(<user script>);");
+			QMADD(req, 0, t = yynode(TOK_BUILTIN, TYPE_ptr), "quit;");
+			t->yyval.val.pval = (ptr) MT_global_exit;
+			t->dealloc = 0;
                 }
 	} else {
-	        second = newRequest(c->stk, mil_prelude, 0);
-		QMmessage(second,"source(prelude.mil);");
+		QMADD(req, c->stk, mil_prelude, "source(prelude.mil);");
 	}
-        if (c == monet_clients && monet_background == 1) {
-                third = second;
-        } else {
-                second->ev_wakeup = third;
-                third->ev_next    = second;
-                second->ev_prev   = third;
+	if (c != monet_clients || monet_background != 1) {
+		QMADD(req, c->stk, c->mil_accept, "readCmd;");
         }
-        putRequest(third);
+        putRequest(req);
 }
 
-void rescheduleClient(c)
-Client	c;
-{	
+void rescheduleClient(Client c) {	
 	Request rm = newRequest(c->stk, c->mil_accept, 0);
 	QMmessage(rm,"readCmd;");
 	putRequest(rm);
