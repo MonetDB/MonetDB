@@ -41,6 +41,16 @@
 #include "pathfinder.h"
 
 #include "compile_interface.h"
+ 
+static bit is_fake_project (BAT* b)
+{
+	BATcheck(b, "is_fake_project");
+	if ((BATcount(b)==1) && (b->hseqbase==oid_nil)) {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
 
 #define MAXTAGDEPTH        1024
 
@@ -508,7 +518,9 @@ static ptr idxTV(str name, BAT* b, oid oid_index) {
 
         if ( !b )
                 stream_printf(GDKout,"NIL BAT[\"%s\"]\n",name);
-        if ( BUNsize(b) == 1 ) {
+        if (is_fake_project(b)) {
+        	res = BUNtail(b,BUNfirst(b));
+        } else if ( BUNsize(b) == 1 ) {
                 /* There is a probably bug in monet. The else code should work */
                 /* for all situations but does not work for all BAT[void,chr] */
                 /* arguments. At the moment some do and some don't. */

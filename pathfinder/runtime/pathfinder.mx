@@ -406,7 +406,7 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 	ws.fetch(PRE_LEVEL).insert(nil,bat("pre_level" + docid));
 	ws.fetch(PRE_PROP).insert(nil,bat("pre_prop" + docid));
 	ws.fetch(PRE_KIND).insert(nil,bat("pre_kind" + docid));
-	ws.fetch(PRE_FRAG).insert(nil,bat("pre_level" + docid).project(frag));
+	ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
 	ws.fetch(QN_NS).insert(nil,bat("qn_ns" + docid));
 	ws.fetch(QN_LOC).insert(nil,bat("qn_loc" + docid));
 	ws.fetch(PROP_TEXT).insert(nil,bat("prop_text" + docid));
@@ -416,7 +416,7 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 	ws.fetch(ATTR_OWN).insert(nil,bat("attr_own" + docid));
 	ws.fetch(ATTR_QN).insert(nil,bat("attr_qn" + docid));
 	ws.fetch(ATTR_PROP).insert(nil,bat("attr_prop" + docid));
-	ws.fetch(ATTR_FRAG).insert(nil,bat("attr_own" + docid).project(frag));
+	ws.fetch(ATTR_FRAG).insert(nil,fake_project(frag));
 	ws.fetch(PROP_VAL).insert(nil,bat("prop_val" + docid));
         ws.fetch(FRAG).replace(0@0,frag);
         ws.fetch(HEIGHT).insert(nil,bat("doc_height").find(oid(docid)));
@@ -887,7 +887,7 @@ PROC attr_print(oid pre, oid frag, BAT[void,bat] ws) : void
     var name;
     attr_list@batloop ()
     {
-	var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fetch($h);
+	var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fake_fetch($h);
 	var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($h);
 	var attr_qn := ws.fetch(ATTR_QN).fetch(frag).fetch($h);
 	var attr_ns := ws.fetch(QN_NS).fetch(attr_frag).fetch(attr_qn);
@@ -905,7 +905,7 @@ PROC attr_print(oid pre, oid frag, BAT[void,bat] ws) : void
 PROC node_print(oid pre, oid frag, BAT[void,bat] ws, BAT[oid,str] S) : void
 {
     var kind := ws.fetch(PRE_KIND).fetch(frag).fetch(pre);
-    var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fetch(pre);
+    var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fake_fetch(pre);
     var elem_prop := ws.fetch(PRE_PROP).fetch(frag).fetch(pre);
     
 	
@@ -987,11 +987,17 @@ PROC xml_print(BAT[void,bat] ws,
     var pre;
     var lastpre;
     var format_last := item.reverse().max();
-   
+
+    if (is_fake_project(kind)) {
+        @:item_batloop(0)@
+    } else {
+        @:item_batloop($h)@
+    }
+@= item_batloop
     # for all nodes in the context set do ...
     item@batloop () {
-        var type_ := types.fetch($h);
-	var frag := frags.fetch($h);
+        var type_ := types.fetch(@1);
+	var frag := frags.fetch(@1);
 	if (type_ = INT) {
 		printf("%i\n", int_values.fetch($t));
 	}
@@ -1006,7 +1012,7 @@ PROC xml_print(BAT[void,bat] ws,
 	}
 	else if (type_ = ATTR)
 	{
-		var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fetch($t);
+		var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fake_fetch($t);
 		var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($t);
 		var attr_qn := ws.fetch(ATTR_QN).fetch(frag).fetch($h);
 		var attr_ns := ws.fetch(QN_NS).fetch(attr_frag).fetch(attr_qn);
@@ -1024,7 +1030,7 @@ PROC xml_print(BAT[void,bat] ws,
 
 		# cheat a little bit to get the same output like Galax
     		if (ws.fetch(PRE_KIND).fetch(frag).fetch(pre) = TEXT) {
-    			var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fetch(pre);
+    			var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fake_fetch(pre);
 			var elem_prop := ws.fetch(PRE_PROP).fetch(frag).fetch(pre);
 			printf("text \{\"");
 			printf("%s", ws.fetch(PROP_TEXT).fetch(elem_frag).fetch(elem_prop));
@@ -1051,6 +1057,7 @@ PROC xml_print(BAT[void,bat] ws,
 	# line feed
 	printf("\n");
     }
+@mil
 }
 ADDHELP("xml_print", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
@@ -1070,7 +1077,7 @@ PROC xml_print(BAT[void,bat] ws) : void
 {
     xml_print(ws, 
 	      ws.fetch(PRE_SIZE).fetch(0).mirror(),
-              ws.fetch(PRE_SIZE).fetch(0).project(0@0).get_kind(ELEM),
+              fake_project(0@0).get_kind(ELEM),
 	      bat(void,int),
               bat(void,dbl),
               bat(void,dbl),
@@ -1089,7 +1096,7 @@ PROC xml_print(BAT[void,bat] ws, str name) : void
     var docid := int(ws.fetch(DOC_LOADED).reverse().find(name));
     xml_print(ws, 
 	      ws.fetch(PRE_SIZE).fetch(docid).slice(0,0).mirror(),
-              ws.fetch(PRE_SIZE).fetch(docid).slice(0,0).project(oid(docid)).get_kind(ELEM),
+              fake_project(oid(docid)).get_kind(ELEM),
 	      bat(void,int),
               bat(void,dbl),
               bat(void,dbl),
@@ -1281,7 +1288,7 @@ var pre_kind;
 # code for tagname testing
 @= ns_loc_code
 		@:kind_code(@1,@2)@
-		pre_frag := result@1_item.leftfetchjoin(ws.fetch(PRE_FRAG).fetch(@2));
+		pre_frag := result@1_item.fake_leftfetchjoin(ws.fetch(PRE_FRAG).fetch(@2));
 		pre_prop := result@1_item.leftfetchjoin(ws.fetch(PRE_PROP).fetch(@2));
 		qn_loc := mposjoin(pre_prop, pre_frag, ws.fetch(QN_LOC));
 		qn_ns := mposjoin(pre_prop, pre_frag, ws.fetch(QN_NS));
@@ -1295,7 +1302,7 @@ var pre_kind;
 @
 @= loc_code
 		@:kind_code(@1,@2)@
-		pre_frag := result@1_item.leftfetchjoin(ws.fetch(PRE_FRAG).fetch(@2));
+		pre_frag := result@1_item.fake_leftfetchjoin(ws.fetch(PRE_FRAG).fetch(@2));
 		pre_prop := result@1_item.leftfetchjoin(ws.fetch(PRE_PROP).fetch(@2)); 
 		qn_loc := mposjoin(pre_prop, pre_frag, ws.fetch(QN_LOC));
 		pre_frag := nil;
@@ -1306,7 +1313,7 @@ var pre_kind;
 @
 @= ns_code
 		@:kind_code(@1,@2)@
-		pre_frag := result@1_item.leftfetchjoin(ws.fetch(PRE_FRAG).fetch(@2));
+		pre_frag := result@1_item.fake_leftfetchjoin(ws.fetch(PRE_FRAG).fetch(@2));
 		pre_prop := result@1_item.leftfetchjoin(ws.fetch(PRE_PROP).fetch(@2));
 		qn_ns := mposjoin(pre_prop, pre_frag, ws.fetch(QN_NS));
 		pre_frag := nil;
@@ -1366,7 +1373,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 	result_item := result.reverse().mark(0@0).reverse();
 	# test
 	@5
-        result_frag := result_iter.project(uniqueFrag.reverse().fetch(0));
+        result_frag := fake_project(uniqueFrag.reverse().fetch(0));
     } else {
         var result_part_frag := frag.ord_uselect(uniqueFrag.reverse().fetch(0)).mark(0@0).reverse();
         var result_part_iter := result_part_frag.leftfetchjoin(iter);

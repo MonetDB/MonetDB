@@ -185,6 +185,34 @@ proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) 
 }
 
 
+PROC fake_project (oid o) : bat[void,oid]
+{
+    	return new(void,oid,1).seqbase(nil).insert(nil,o).access(BAT_READ);
+}
+
+PROC is_fake_project (bat[oid,oid] b) : bit
+{
+	return and(count(b) = 1, isnil(seqbase(b)));
+}
+
+PROC fake_fetch (bat[void,oid] b, int p) : oid
+{
+	if (is_fake_project(b)) {
+		return b.fetch(0);
+	} else {
+		return b.fetch(p);
+	}
+}
+
+PROC fake_leftfetchjoin (bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
+{
+	if (is_fake_project(r)) {
+		return project(l,fetch(r,0));
+	} else {
+		return leftfetchjoin(l,r);
+	}
+}
+
 
 @* Module Implementation
 @h
@@ -203,6 +231,15 @@ proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) 
 #define oidoid_bunfastins(b,h,t) lnglng_bunfastins(b,h,t);
 #endif
 
+static bit is_fake_project (BAT* b)
+{
+	BATcheck(b, "is_fake_project");
+	if ((BATcount(b)==1) && (b->hseqbase==oid_nil)) {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
 
 @= mark_grp_loop3
 {	BUN p, q;
@@ -937,6 +974,8 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	size_t cnt, len;
 	oid base, wl, wh;
 	bit triv_prop;
+	bit fake_frag = FALSE;
+	bit fake_ws_item = FALSE;
 	
 	*res = NULL;
 
@@ -949,10 +988,17 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	len = BATcount(ws_item);
 	cnt = BATcount(pre);
 	base = pre->hseqbase;
-	ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
-		"mposjoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
-	ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
-		"mposjoin: first two input BATs (pre & frag) must be head-aligned.\n");
+	fake_frag = is_fake_project(frag);
+	
+	if (fake_frag) {
+		ERRORcheck(!BAThdense(pre) || !BAThdense(ws_item), 
+			"mposjoin: input BATs pre & ws_item must have a dense head.\n");
+	} else {
+		ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
+			"mposjoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
+		ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
+			"mposjoin: first two input BATs (pre & frag) must be head-aligned.\n");
+	}
 	ERRORcheck(len==0,
 		"mposjoin: third input BAT (ws_item) must not be empty.\n");
 
@@ -964,9 +1010,12 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 
 	ii = 0;
 	BATloopFast(ws_item, pw, q, bs) {
+		bit fake_item = FALSE;
 		bat bid = *(bat*)BUNtloc(ws_item, pw);
 		batlist[ii] = BATdescriptor(bid);
-		if (!BAThdense(batlist[ii])) {
+		fake_item = is_fake_project(batlist[ii]);
+		fake_ws_item |= fake_item;
+		if (!(fake_item || BAThdense(batlist[ii]))) {
 			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have a dense head.\n");
 			ii++;
 			@:free_batlist@
@@ -999,7 +1048,11 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	wh = wl + len - 1;
 
 	bsp = BUNsize(pre);
-	bsf = BUNsize(frag);
+	if (fake_frag) {
+		bsf = 0;
+	} else {
+		bsf = BUNsize(frag);
+	}
 
 	pp = BUNfirst(pre);
 	pf = BUNfirst(frag);
@@ -1009,21 +1062,38 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	 *  @2: tloc, tvar, tail
 	 *  @3: simple, atom
 	 */
+	if (fake_ws_item) {
+		@:mposjoin_(@1,@2,@3,is_fake_project(b))@
+	} else {
+		@:mposjoin_(@1,@2,@3,FALSE)@
+	}
+	break;
+@
+@= mposjoin_
+	/*  @1: ATOMstorage(batlist[0]->ttype) (chr, sht, int, flt, lng, dbl, any)
+	 *  @2: tloc, tvar, tail
+	 *  @3: simple, atom
+	 *  @4: FALSE / is_fake_project(b)
+	 */
 	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
 		oid p = *(oid*)BUNtail(pre,pp);  /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		oid f = *(oid*)BUNtail(frag,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		if (f >= wl && f <= wh) {
 			BAT *b = batlist[f - wl];
-			oid l = b->hseqbase;
-			oid h = l + BATcount(b) - 1;
-			if (p >= l && p <= h) {
-				oid b0 = BUNindex(b,BUNfirst(b));
-				void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNptr(b,p-l+b0)));
+			if (@4) {
+				void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNfirst(b)));
 				dst += bs;
+			} else {
+				oid l = b->hseqbase;
+				oid h = l + BATcount(b) - 1;
+				if (p >= l && p <= h) {
+					oid b0 = BUNindex(b,BUNfirst(b));
+					void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNptr(b,p-l+b0)));
+					dst += bs;
+				}
 			}
 		}
 	}
-	break;
 @c
 
 	switch(ATOMstorage(batlist[0]->ttype)) {
@@ -1079,7 +1149,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	int bsp, bsf, bsw, ii = 0;
 	size_t cnt, len, sze;
 	oid base, wl, wh;
-	bit triv_prop, all_hash, all_sort, some_hash, some_sort, all_key;
+	bit triv_prop, all_hash, all_sort, some_hash, some_sort, all_key, fake_frag = FALSE;
 	
 	*res = NULL;
 
@@ -1092,10 +1162,17 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	len = BATcount(ws_item);
 	cnt = BATcount(pre);
 	base = pre->hseqbase;
-	ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
-		"mvaljoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
-	ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
-		"mvaljoin: first two input BATs (pre & frag) must be head-aligned.\n");
+	fake_frag = ((BATcount(frag) == 1) && (frag->hseqbase == oid_nil));
+	
+	if (fake_frag) {
+		ERRORcheck(!BAThdense(pre) || !BAThdense(ws_item), 
+			"mvaljoin: input BATs pre & ws_item must have a dense head.\n");
+	} else {
+		ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
+			"mvaljoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
+		ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
+			"mvaljoin: first two input BATs (pre & frag) must be head-aligned.\n");
+	}
 	ERRORcheck(len==0,
 		"mvaljoin: third input BAT (ws_item) must not be empty.\n");
 
@@ -1151,7 +1228,11 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	wh = wl + len - 1;
 
 	bsp = BUNsize(pre);
-	bsf = BUNsize(frag);
+	if (fake_frag) {
+		bsf = 0;
+	} else {
+		bsf = BUNsize(frag);
+	}
 
 	pp = BUNfirst(pre);
 	pf = BUNfirst(frag);

@@ -482,13 +482,13 @@ print_output (FILE *f)
             "                ws.fetch(PRE_KIND).fetch(i).access(BAT_READ);\n"
             "                var elems := ws.fetch(PRE_KIND).fetch(i).ord_uselect(ELEMENT).mark(0@0).reverse();\n"
             "                var e_props := elems.leftfetchjoin(ws.fetch(PRE_PROP).fetch(i));\n"
-            "                var e_frags := elems.leftfetchjoin(ws.fetch(PRE_FRAG).fetch(i));\n"
+            "                var e_frags := elems.fake_leftfetchjoin(ws.fetch(PRE_FRAG).fetch(i));\n"
             "                var e_qns := mposjoin(e_props, e_frags, ws.fetch(QN_LOC));\n"
             "                e_props := nil_oid_oid;\n"
             "                e_frags := nil_oid_oid;\n"
             "                var texts := ws.fetch(PRE_KIND).fetch(i).ord_uselect(TEXT).mark(0@0).reverse();\n"
             "                var t_props := texts.leftfetchjoin(ws.fetch(PRE_PROP).fetch(i));\n"
-            "                var t_frags := texts.leftfetchjoin(ws.fetch(PRE_FRAG).fetch(i));\n"
+            "                var t_frags := texts.fake_leftfetchjoin(ws.fetch(PRE_FRAG).fetch(i));\n"
             "                var t_qns := mposjoin(t_props, t_frags, ws.fetch(PROP_TEXT));\n"
             "                t_props := nil_oid_oid;\n"
             "                t_frags := nil_oid_oid;\n"
@@ -671,7 +671,9 @@ translateSeq (FILE *f, int i)
             "item := merged_result.fetch(1);\n"
             "kind := merged_result.fetch(2);\n"
             "merged_result := nil_oid_bat;\n"
+/* NOpos
             "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+*/
             "} # end of translateSeq (counter)\n"
             "}\n");
 }
@@ -853,7 +855,9 @@ mapBack (FILE *f, int act_level)
             act_level);
     fprintf(f,
             "oid_oidMap := nil_oid_oid;\n"
+/* NOpos
             "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+*/
             "# item := item;\n"
             "# kind := kind;\n"
             "} # end of mapBack ()\n"
@@ -1216,13 +1220,19 @@ translateLocsteps (FILE *f, PFcnode_t *c)
     /* res_scj = iter|item bat */
     fprintf(f,
             "iter := res_scj.fetch(0);\n"
+/* NOpos
             "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+*/
             "item := res_scj.fetch(1);\n"
+            "kind := res_scj.fetch(2);\n"
+            "if (is_fake_project(kind)) {\n"
+            "    kind := iter.project(kind.fetch(0));\n"
+            "}\n"
            );
     if (!strcmp (axis, "attribute"))
-            fprintf(f, "kind := res_scj.fetch(2).get_kind(ATTR);\n");
+            fprintf(f, "kind := kind.get_kind(ATTR);\n");
     else
-            fprintf(f, "kind := res_scj.fetch(2).get_kind(ELEM);\n");
+            fprintf(f, "kind := kind.get_kind(ELEM);\n");
 
     fprintf(f,
             "res_scj := nil_oid_bat;\n"
@@ -1437,8 +1447,13 @@ loop_liftedElemConstr (FILE *f, int i)
                in the following (getting the values for content_size, 
                content_prop, ...) and the input for a mposjoin has to be void */
             "res_item := res_item.reverse().mark(0@0).reverse();\n"
-            "var res_frag := pruned_input.reverse().leftjoin(ctx_dn_frag);\n"
-            "res_frag := res_frag.reverse().mark(0@0).reverse();\n"
+            "var res_frag;\n"
+            "if (is_fake_project(ctx_dn_frag)) {\n"
+            "    res_frag := ctx_dn_frag;\n"
+            "} else {\n"
+            "    res_frag := pruned_input.reverse().leftjoin(ctx_dn_frag);\n"
+            "    res_frag := res_frag.reverse().mark(0@0).reverse();\n"
+            "}\n"
 
             /* create subtree copies for all bats except content_level */
             "var content_size := mposjoin(res_item, res_frag, "
@@ -1454,6 +1469,12 @@ loop_liftedElemConstr (FILE *f, int i)
  /* attr */ "var content_pre := res_item;\n"
  /* attr */ /* as well as content_frag_pre */
  /* attr */ "var content_frag_pre := res_frag;\n"
+            "if (is_fake_project(ctx_dn_frag)) {\n"
+            "    content_frag_pre := pruned_input.reverse().project(ctx_dn_frag.fetch(0));\n"
+            "    content_frag_pre := content_frag_pre.reverse().mark(0@0).reverse();\n"
+            "} else {\n"
+            "    content_frag_pre := res_frag;\n"
+            "}\n"
 
             "res_item := nil_oid_oid;\n"
             "res_frag := nil_oid_oid;\n"
@@ -1478,7 +1499,11 @@ loop_liftedElemConstr (FILE *f, int i)
             "nodes := nil_oid_oid;\n"
 
             "temp_ec_item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-            "temp_ec_frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
+            "if (is_fake_project(ctx_dn_frag)) {\n"
+            "    temp_ec_frag := ctx_dn_frag;\n"
+            "} else {\n"
+            "    temp_ec_frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
+            "}\n"
             "nodes := ctx_dn_item.mark(0@0);\n"
             "var content_level := mposjoin(temp_ec_item, temp_ec_frag, "
                                           "ws.fetch(PRE_LEVEL));\n"
@@ -3016,7 +3041,11 @@ typed_value (FILE *f, bool tv)
                 /* combine pruned_input and ctx|dn */
                 "pruned_input := pruned_input.reverse().leftjoin(ctx_dn_item.mark(0@0));\n"
                 "item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-                "frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
+                "if (is_fake_project(ctx_dn_frag)) {\n"
+                "    frag := ctx_dn_frag;\n"
+                "} else {\n"
+                "    frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
+                "}\n"
                 "ctx_dn_item := nil_oid_oid;\n"
                 "ctx_dn_frag := nil_oid_oid;\n"
                 /* get the string values of the text nodes */
@@ -3088,7 +3117,11 @@ typed_value (FILE *f, bool tv)
                     /* combine pruned_input and ctx|dn */
                     "pruned_input := pruned_input.reverse().leftjoin(ctx_dn_item.mark(0@0));\n"
                     "item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-                    "frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
+                    "if (is_fake_project(ctx_dn_frag)) {\n"
+                    "    frag := ctx_dn_frag;\n"
+                    "} else {\n"
+                    "    frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
+                    "}\n"
                     "ctx_dn_item := nil_oid_oid;\n"
                     "ctx_dn_frag := nil_oid_oid;\n"
                     /* get the string values of the text nodes */
@@ -3136,7 +3169,9 @@ typed_value (FILE *f, bool tv)
             "iter := input_iter;\n"
             "}\n"
             "input_iter := nil_oid_oid;\n"
+/* NOpos
             "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+*/
             "kind := iter.project(STR);\n"
             "} # end of typed-value\n");
 }
@@ -3187,7 +3222,10 @@ fn_data (FILE *f)
             "item := res_mu.fetch(2);\n"
             "kind := res_mu.fetch(3);\n"
             "res_mu := nil_oid_bat;\n"
-            "pos := iter.mark_grp(iter.tunique().project(1@0));\n");
+/* NOpos
+            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+*/
+            );
 }
 
 /**
@@ -3333,7 +3371,9 @@ is2ns (FILE *f, int counter, PFty_t input_type)
             "iter := res_mu_is2ns.fetch(0).leftfetchjoin(iter%03u);\n"
             "item := res_mu_is2ns.fetch(1);\n"
             "kind := res_mu_is2ns.fetch(2);\n"
+/* NOpos
             "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+*/
             "res_mu_is2ns := nil_oid_bat;\n"
             "} # end of item-sequence-to-node-sequence\n",
             counter, counter, counter, counter, counter, counter);
@@ -3795,7 +3835,9 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
             fprintf(f,
                     "item := order_snd.leftfetchjoin(item%03u);\n"
                     "iter := fst_iter;\n"
+/* NOpos
                     "pos := item.project(1@0);\n"
+*/
                     "kind := order_snd.leftfetchjoin(kind%03u);\n",
                     snd_var, snd_var);
             fprintf(f, "} # end of evaluate_join\n");
@@ -4341,7 +4383,9 @@ translateFunction (FILE *f, int act_level, int counter,
                 "var sorting := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
                 "sorting := sorting.tunique().mark(0@0).reverse();\n"
                 "iter := sorting.leftfetchjoin(iter);\n"
+/ * NOpos
                 "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+* /
                 "item := sorting.leftfetchjoin(item);\n"
                 "kind := sorting.leftfetchjoin(kind);\n"
                 "sorting := nil_oid_oid;\n"
