@@ -4,5 +4,5 @@
 	insert(t,1,"hello world");
 	insert(t,2,"sleep well");
 
-	b:= multiplex.script("startsWith",t,"%");
+	b:= multiplex.script("startsWith",t,"");
 	print(b);

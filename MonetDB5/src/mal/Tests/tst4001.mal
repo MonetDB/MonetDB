@@ -1,4 +1,5 @@
 #tesing the optimizers
+include optimizer;
 
 #setDebug();
 function qry(i:dbl):dbl;
