@@ -770,7 +770,7 @@ fi
 if test x"$python" != xno; then
 	python=yes
 fi
-AC_MSG_RESULT($python)
+AC_MSG_RESULT($python: found libdir \$prefix/$PYTHON_LIBDIR)
 AC_SUBST(PYTHONINC)
 AC_SUBST(PYTHON)
 AC_SUBST(PYTHON_LIBDIR)
@@ -830,7 +830,7 @@ fi
 if test x"$perl" != xno; then
 	perl=yes
 fi
-AC_MSG_RESULT($perl)
+AC_MSG_RESULT($perl: found libdir \$prefix/$PERL_LIBDIR)
 AC_SUBST(PERLINC)
 AC_SUBST(PERL)
 AC_SUBST(PERL_LIBDIR)
@@ -1706,18 +1706,47 @@ if test "x$have_php" != xno; then
 		have_php=no
 	else
 		PHP_INCS=" `$PHP_CONFIG --includes`"
-		PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$php_prefix++g`"
+		PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$php_prefix/++g`"
 	fi
 fi
 if test x"$have_php" != xno; then
 	have_php=yes
 fi
-AC_MSG_RESULT($have_php)
+AC_MSG_RESULT($have_php: found extensiondir \$prefix/$PHP_EXTENSIONDIR)
 AC_SUBST(PHP_INCS)
 AC_SUBST(PHP_EXTENSIONDIR)
 AM_CONDITIONAL(HAVE_PHP, test x"$have_php" != xno)
 
+PHP_PEARDIR=""
+AC_ARG_WITH(pear,
+	AC_HELP_STRING([--with-pear=<value>], [PHP support (yes/no/auto)]),
+	have_pear="$withval" PEAR="$withval/bin/pear",
+	have_pear=auto PEAR="pear")
 
+if test x"$have_php" = xno; then
+	have_pear=no
+fi
+if test "x$have_pear" != xno; then
+	AC_CHECK_PROG(have_pear, $PEAR, $have_pear, no)
+	if test $have_pear = no; then
+		AC_MSG_ERROR(Cannot find pear. Please use --with-pear=PATH)
+	fi
+fi
+AC_MSG_CHECKING([for PEAR])
+if test "x$have_pear" != xno; then
+	php_peardir="`$PEAR config-get php-dir`"
+	if test -z "$php_peardir"; then
+		have_pear=no
+	else
+		PHP_PEARDIR="`$PEAR config-get php_dir | sed -e s+php_dir=$php_prefix/++g`"
+	fi
+fi
+if test x"$have_pear" != xno; then
+	have_pear=yes
+fi
+AC_MSG_RESULT($have_pear: found peardir \$prefix/$PHP_PEARDIR)
+AC_SUBST(PHP_PEARDIR)
+AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
