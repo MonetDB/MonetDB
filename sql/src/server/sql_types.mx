@@ -462,7 +462,7 @@ sql_subfunc *sql_bind_func_(char *sqlfname, list *ops )
 			continue;
 		if (strcmp(f->name, name) == 0){ 
 		   if (list_cmp(f->ops, ops, (fcmp)&arg_subtype_cmp) == 0){
-			int scale = 0;
+			unsigned int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
 			_DELETE(name);
 			sql_ref_init( &(fres->ref) );
@@ -515,7 +515,7 @@ sql_subfunc *sql_bind_func_result_(char *sqlfname, list *ops, sql_subtype *res )
 		if (strcmp(f->name, name) == 0 &&
 		    subtype_cmp(f->res, res) == 0 &&
 		    list_cmp(f->ops, ops, (fcmp)&arg_subtype_cmp) == 0){
-			int scale = 0;
+			unsigned int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
 			_DELETE(name);
 			sql_ref_init( &(fres->ref) );
