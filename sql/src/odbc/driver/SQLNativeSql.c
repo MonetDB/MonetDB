@@ -28,7 +28,7 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	char *query;
-	size_t querylen;
+	int querylen;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLNativeSql\n");
@@ -57,7 +57,8 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 		*pcbSqlStr = (SQLINTEGER) querylen;
 
 	if (querylen >= cbSqlStrMax) {
-		szSqlStr[cbSqlStrMax - 1] = 0;
+		if (cbSqlStrMax > 0)
+			szSqlStr[cbSqlStrMax - 1] = 0;
 		addStmtError(stmt, "01004", NULL, 0);
 		return SQL_SUCCESS_WITH_INFO;
 	}

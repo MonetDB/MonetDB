@@ -151,14 +151,14 @@ parseint(const char *data, bignum_t *nval)
 static void
 parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int *ivalscale)
 {
-	int f = 1;
+	unsigned int f = 1;
 
 	ival->intval.day_second.fraction = 0;
 	*ivalscale = 0;
 	while (nval->scale > 0) {
 		if (f < 1000000000) {
 			(*ivalscale)++;
-			ival->intval.day_second.fraction += (nval->val % 10) * f;
+			ival->intval.day_second.fraction += (SQLUINTEGER) ((nval->val % 10) * f);
 			f *= 10;
 		}
 		nval->val /= 10;
@@ -171,13 +171,13 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int *ivalscale)
 	}
 	ival->interval_type = SQL_IS_DAY_TO_SECOND;
 	ival->interval_sign = nval->sign ? SQL_FALSE : SQL_TRUE;
-	ival->intval.day_second.second = nval->val % 60;
+	ival->intval.day_second.second = (SQLUINTEGER) (nval->val % 60);
 	nval->val /= 60;
-	ival->intval.day_second.minute = nval->val % 60;
+	ival->intval.day_second.minute = (SQLUINTEGER) (nval->val % 60);
 	nval->val /= 60;
-	ival->intval.day_second.hour = nval->val % 24;
+	ival->intval.day_second.hour = (SQLUINTEGER) (nval->val % 24);
 	nval->val /= 24;
-	ival->intval.day_second.day = nval->val;
+	ival->intval.day_second.day = (SQLUINTEGER) nval->val;
 }
 
 static void
@@ -190,8 +190,8 @@ parsemonthinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
 	}
 	ival->interval_type = SQL_IS_YEAR_TO_MONTH;
 	ival->interval_sign = nval->sign ? SQL_FALSE : SQL_TRUE;
-	ival->intval.year_month.year = nval->val / 12;
-	ival->intval.year_month.month = nval->val % 12;
+	ival->intval.year_month.year = (SQLUINTEGER) (nval->val / 12);
+	ival->intval.year_month.month = (SQLUINTEGER) (nval->val % 12);
 }
 
 static short monthlengths[] = {
@@ -321,6 +321,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 {
 	char *data;
 	SQLSMALLINT sql_type;
+	SQLUINTEGER maxdatetimeval;
 
 	/* various interpretations of the input data */
 	bignum_t nval;
@@ -469,9 +470,9 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		}
 	}
 	i = datetime_interval_precision;
-	datetime_interval_precision = 1;
+	maxdatetimeval = 1;
 	while (i-- > 0)
-		datetime_interval_precision *= 10;
+		maxdatetimeval *= 10;
 
 	data = mapi_fetch_field(stmt->hdl, col - 1);
 	if (mapi_error(stmt->Dbc->mid)) {
@@ -956,18 +957,18 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			switch (type) {
 			case SQL_C_STINYINT:
 			case SQL_C_TINYINT:
-				* (signed char *) ptr = nval.sign ? nval.val : -nval.val;
+				* (signed char *) ptr = nval.sign ? (signed char) nval.val : - (signed char) nval.val;
 				break;
 			case SQL_C_SSHORT:
 			case SQL_C_SHORT:
-				* (short *) ptr = nval.sign ? nval.val : -nval.val;
+				* (short *) ptr = nval.sign ? (short) nval.val : - (short) nval.val;
 				break;
 			case SQL_C_SLONG:
 			case SQL_C_LONG:
-				* (long *) ptr = nval.sign ? nval.val : -nval.val;
+				* (long *) ptr = nval.sign ? (long) nval.val : - (long) nval.val;
 				break;
 			case SQL_C_SBIGINT:
-				* (SQLBIGINT *) ptr = nval.sign ? nval.val : -nval.val;
+				* (SQLBIGINT *) ptr = nval.sign ? (SQLBIGINT) nval.val : - (SQLBIGINT) nval.val;
 				break;
 			}
 			break;
@@ -1044,16 +1045,16 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				addStmtError(stmt, "01S07", NULL, 0);
 			switch (type) {
 			case SQL_C_UTINYINT:
-				* (unsigned char *) ptr = nval.val;
+				* (unsigned char *) ptr = (unsigned char) nval.val;
 				break;
 			case SQL_C_USHORT:
-				* (unsigned short *) ptr = nval.val;
+				* (unsigned short *) ptr = (unsigned short) nval.val;
 				break;
 			case SQL_C_ULONG:
-				* (unsigned long *) ptr = nval.val;
+				* (unsigned long *) ptr = (unsigned long) nval.val;
 				break;
 			case SQL_C_UBIGINT:
-				* (SQLUBIGINT *) ptr = nval.val;
+				* (SQLUBIGINT *) ptr = (SQLUBIGINT) nval.val;
 				break;
 			}
 			break;
@@ -1349,7 +1350,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		switch (type) {
 		case SQL_C_INTERVAL_YEAR:
 			p->interval_type = SQL_IS_YEAR;
-			if ((p->intval.year_month.year = ival.intval.year_month.year) >= datetime_interval_precision) {
+			if ((p->intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1360,7 +1361,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_MONTH:
 			p->interval_type = SQL_IS_MONTH;
-			if ((p->intval.year_month.month = ival.intval.year_month.month + 12 * ival.intval.year_month.year) >= datetime_interval_precision) {
+			if ((p->intval.year_month.month = ival.intval.year_month.month + 12 * ival.intval.year_month.year) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1368,7 +1369,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_YEAR_TO_MONTH:
 			p->interval_type = SQL_IS_YEAR_TO_MONTH;
-			if ((p->intval.year_month.year = ival.intval.year_month.year) >= datetime_interval_precision) {
+			if ((p->intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1458,7 +1459,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		switch (type) {
 		case SQL_C_INTERVAL_DAY:
 			p->interval_type = SQL_IS_DAY;
-			if ((p->intval.day_second.day = ival.intval.day_second.day) >= datetime_interval_precision) {
+			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1472,7 +1473,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_HOUR:
 			p->interval_type = SQL_IS_HOUR;
-			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= datetime_interval_precision) {
+			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1485,7 +1486,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_MINUTE:
 			p->interval_type = SQL_IS_MINUTE;
-			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= datetime_interval_precision) {
+			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1497,7 +1498,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_SECOND:
 			p->interval_type = SQL_IS_SECOND;
-			if ((p->intval.day_second.second = ival.intval.day_second.second + 60 * (ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day))) >= datetime_interval_precision) {
+			if ((p->intval.day_second.second = ival.intval.day_second.second + 60 * (ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day))) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1506,7 +1507,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_DAY_TO_HOUR:
 			p->interval_type = SQL_IS_HOUR;
-			if ((p->intval.day_second.day = ival.intval.day_second.day) >= datetime_interval_precision) {
+			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1520,7 +1521,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_DAY_TO_MINUTE:
 			p->interval_type = SQL_IS_DAY_TO_MINUTE;
-			if ((p->intval.day_second.day = ival.intval.day_second.day) >= datetime_interval_precision) {
+			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1534,7 +1535,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_DAY_TO_SECOND:
 			p->interval_type = SQL_IS_DAY_TO_SECOND;
-			if ((p->intval.day_second.day = ival.intval.day_second.day) >= datetime_interval_precision) {
+			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1546,7 +1547,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_HOUR_TO_MINUTE:
 			p->interval_type = SQL_IS_HOUR_TO_MINUTE;
-			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= datetime_interval_precision) {
+			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1559,7 +1560,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_HOUR_TO_SECOND:
 			p->interval_type = SQL_IS_HOUR_TO_SECOND;
-			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= datetime_interval_precision) {
+			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -1570,7 +1571,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_C_INTERVAL_MINUTE_TO_SECOND:
 			p->interval_type = SQL_IS_MINUTE_TO_SECOND;
-			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= datetime_interval_precision) {
+			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
 				/* 22015: Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
