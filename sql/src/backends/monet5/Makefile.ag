@@ -1,5 +1,5 @@
 
-INCLUDES = ../../common ../../server $(MONET5_INCS)
+INCLUDES = ../../common ../../server $(MONET5_INCS) $(MONETDB_INCS)
 
 lib__sql = {
 	DIR = libdir/MonetDB5
