@@ -24,7 +24,7 @@ import java.util.*;
  * Multi-result queries are supported using the getMoreResults() method.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.5
+ * @version 0.6
  */
 public class MonetStatement implements Statement {
 	/** the default number of rows that are (attempted to) read at once */
@@ -116,7 +116,7 @@ public class MonetStatement implements Statement {
 			setFetchSize(DEF_FETCHSIZE);
 		} else {
 			// use smaller blocks when doing scrollable resultsets
-			setFetchSize(DEF_FETCHSIZE / 10);
+			setFetchSize(DEF_FETCHSIZE / 2);
 		}
 
 		closed = false;
