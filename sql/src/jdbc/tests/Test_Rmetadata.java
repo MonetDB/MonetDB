@@ -60,10 +60,10 @@ public class Test_Rmetadata {
 				System.out.println("\t" + rsmd.isCaseSensitive(col));
 				System.out.println("\t" + rsmd.isCurrency(col));
 				System.out.println("\t" + rsmd.isDefinitelyWritable(col));
-				System.out.println("\t" + rsmd.isNullable(col));
+		//		System.out.println("\t" + rsmd.isNullable(col)); : not yet impl.
 				System.out.println("\t" + rsmd.isReadOnly(col));
 				System.out.println("\t" + rsmd.isSearchable(col));
-		//		System.out.println("\t" + rsmd.isSigned(col));	: not yet impl.
+				System.out.println("\t" + rsmd.isSigned(col));
 				System.out.println("\t" + rsmd.isWritable(col));
 			}
 
