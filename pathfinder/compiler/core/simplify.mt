@@ -165,8 +165,22 @@ NonAtom:         ComparExpr;
 NonAtom:         FunctionAppl;
 NonAtom:         BuiltIns;
 
-BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr);
-
+BindingExpr:     for_ (var_, nil, Atom, CoreExpr)
+    =
+    {
+        return PFcore_let($1$, $3$, $4$);
+    }
+    ;
+BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr)
+    =
+    {
+        return PFcore_let($1$, 
+                          $3$,
+                          PFcore_let($2$, 
+                                     PFcore_num (0),
+                                     $4$));
+    }
+    ;
 BindingExpr:     let (var_, Atom, CoreExpr)
     { PHASE (unfold_atoms); }  
     =
@@ -229,6 +243,14 @@ SequenceTypeCast: seqcast (seqtype, CoreExpr);
 SubtypingProof:  proof (CoreExpr, seqtype, CoreExpr);
 
 ConditionalExpr: ifthenelse (Atom, CoreExpr, CoreExpr);
+    =
+    {
+      if (($1$)->kind == c_true)
+        return $2$;
+      else if (($1$)->kind == c_false)
+        return $3$;
+    }
+    ;
 
 OptVar:          var_;
 OptVar:          nil;
