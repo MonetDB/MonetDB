@@ -20,7 +20,6 @@
 @:install_module(blob)@
 @:install_module(ddbench)@
 @:install_module(enum)@
-@:install_module(io)@
 @:install_module(monettime)@
 @:install_module(unix)@
 @:install_module(xtables)@

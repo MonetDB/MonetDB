@@ -163,8 +163,10 @@ static Client Monet_init( opt *set, int setlen )
 	mo_substitute(set, setlen, dbfarm);
 
         /* determine Monet's kernel settings. */
-	if (!GDKinit(dbname, dbfarm))
+	if (!GDKinit(dbname, dbfarm)){
+		GDKfree(n);
 		return NULL;
+	}
 
 	for(i=0; i<setlen; i++){
 		int done = 0;
@@ -343,6 +345,7 @@ A grain size of 128 bytes is used to keep overhead low.
 	if (debug)
 		mo_print_options(set, setlen);
 
+	setlen = mo_add_option( &set, setlen, opt_builtin, "monet_cwd", monet_cwd );
 	c = Monet_init(set, setlen);
 	mo_free_options(set,setlen);
 

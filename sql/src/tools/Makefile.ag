@@ -23,7 +23,6 @@ smallTOC_SHARED_MODS =	\
 	-l_blob	\
 	-l_ddbench	\
 	-l_enum	\
-	-l_io	\
 	-l_monettime	\
 	-l_unix	\
 	-l_xtables	\
@@ -37,5 +36,5 @@ EXTRA_DIST = static_modules.mx
 
 bin_Mserver = {
 	SOURCES = Mserver.mx initmodules.mx 
-	LIBS = -L$(MONET_PREFIX)/lib -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONET_LIBS) -lmutils
+	LIBS = -L$(MONET_PREFIX)/lib -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONET_LIBS) -lmutils -lstream
 }
