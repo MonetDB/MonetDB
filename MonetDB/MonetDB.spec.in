@@ -94,6 +94,7 @@ Add the MonetDB php description here
 Requires: %{name}-client
 Requires: php
 %define php_extensiondir %(php-config --extension-dir)
+%define php_peardir %(pear config-get php_dir)
 %endif
 
 %description python
@@ -191,6 +192,8 @@ rm -fr $RPM_BUILD_ROOT
 %files php
 %defattr(-,monetdb,monetdb) 
 %{php_extensiondir}/*
+%{php_peardir}/DB/*
+%{prefix}/share/%{name}/php/*
 %endif
 
 %files python
