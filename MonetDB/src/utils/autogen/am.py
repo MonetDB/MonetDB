@@ -13,6 +13,14 @@ def split_filename(f):
 	if (string.find(f,".") >= 0):
 		return string.split(f,".", 1)
 	return (base,ext)
+
+def rsplit_filename(f): 
+	base = f
+	ext = ""
+	s = string.rfind(f,".") 
+	if s >= 0:
+		return (f[:s],f[s+1:])
+	return (base,ext)
 	
 def am_assignment(fd, var, values, am ):
   o = ""
@@ -29,6 +37,9 @@ def am_cflags(fd, var, values, am ):
 def am_extra_dist(fd, var, values, am ):
   for i in values:
     am['EXTRA_DIST'].append(i)
+    t,ext = rsplit_filename(i)
+    if (ext == 'in'):
+        am['OutList'].append(am['CWD']+t)
 
 def am_extra_dist_dir(fd, var, values, am ):
   fd.write("dist-hook:\n")
@@ -89,6 +100,12 @@ def am_find_hdrs(am,map):
       if (ext in hdrs_ext and not target in am['HDRS']):
         am['HDRS'].append(target)
       am_find_hdrs_r(am,target,map['DEPS'],am['HDRS'],hdrs_ext,map)
+
+def am_find_ins(am,map):
+    for source in map['SOURCES']:
+      t,ext = rsplit_filename(source)
+      if (ext == 'in'):
+        am['OutList'].append(am['CWD']+t)
 
 def am_additional_libs(name,sep,type,list, am):
     if (type == "BIN"):
@@ -155,6 +172,7 @@ def am_doc(fd, var, docmap, am ):
   fd.write("endif\n")
   am['ALL'].append(name)
   
+  am_find_ins(am, docmap)
   am_deps(fd,docmap['DEPS'],"\.o",am);
 
 def am_binary(fd, var, binmap, am ):
@@ -225,6 +243,7 @@ def am_binary(fd, var, binmap, am ):
     am['ALL'].append(name)
 
   am_find_hdrs(am, binmap)
+  am_find_ins(am, binmap)
 
   am_deps(fd,binmap['DEPS'],".o",am);
 
@@ -277,6 +296,7 @@ def am_bins(fd, var, binsmap, am ):
       if (ext in hdrs_ext):
         am['HDRS'].append(target)
 
+  am_find_ins(am, binsmap)
   am_deps(fd,binsmap['DEPS'],".o",am);
 
 def am_library(fd, var, libmap, am ):
@@ -326,6 +346,7 @@ def am_library(fd, var, libmap, am ):
     am['ALL'].append(libname)
 
   am_find_hdrs(am, libmap)
+  am_find_ins(am, libmap)
 
   am_deps(fd,libmap['DEPS'],".lo",am)
 
@@ -384,6 +405,7 @@ def am_libs(fd, var, libsmap, am ):
       if (ext in hdrs_ext):
         am['HDRS'].append(target)
 
+  am_find_ins(am, libsmap)
   am_deps(fd,libsmap['DEPS'],".lo",am)
 
 def am_translate_dir(path,am):
@@ -459,6 +481,10 @@ CXXEXT = \\\"cc\\\"
 	
   name = am['NAME']
   am['TOPDIR'] = topdir
+  if (cwd == topdir):
+  	am['CWD'] = './'
+  else:
+  	am['CWD'] = cwd[len(topdir)+1:]+'/'
   am['BUILT_SOURCES'] = []
   am['EXTRA_DIST'] = []
   am['LIBS'] = []
@@ -469,10 +495,9 @@ CXXEXT = \\\"cc\\\"
   am['ALL'] = []
   am['DEPS'] = []
   am['InstallList'] = []
-  if (cwd == topdir):
-    am['InstallList'].append("./\n")
-  else:
-    am['InstallList'].append(cwd[len(topdir)+1:]+"/\n")
+  am['InstallList'].append(am['CWD'])
+  am['OutList'] = [ am['CWD'] + 'Makefile' ]
+
   for i in tree.keys():
     j = i
     if (string.find(i,'_') >= 0):
@@ -524,4 +549,4 @@ include $(top_srcdir)/rules.mk
 ''')
   fd.close();
 
-  return am['InstallList']
+  return am['InstallList'], am['OutList']
