@@ -18,10 +18,10 @@ check: $(SRCDIR)\Makefile.msc RunMtest.bat
 install: targetdirs
 	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc install
 
-$(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \
-	$(SRCDIR)\src\utils\autogen\codegen.py \
-	$(SRCDIR)\src\utils\autogen\msc.py
-	$(CD) $(SRCDIR) && $(PYTHON) src\utils\autogen\autogen.py
+$(SRCDIR)\Makefile.msc: $(MONET_PREFIX)\lib\autogen\autogen.py \
+	$(MONET_PREFIX)\lib\autogen\codegen.py \
+	$(MONET_PREFIX)\lib\autogen\msc.py
+	$(CD) $(SRCDIR) && $(PYTHON) $(MONET_PREFIX)\lib\autogen\autogen.py
 
 all-msc: config.h
 
