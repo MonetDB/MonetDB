@@ -113,5 +113,8 @@ int uchr_tostr(char **uchrStr, int *len, uchr *c) {
 	return 4;
 }
 @mil
-var b := new(int, uchr);
-b.insert(1,uchr(1));
+
+if (mod = "main"){
+  var b := new(int, uchr);
+  b.insert(1,uchr(1));
+}

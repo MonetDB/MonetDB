@@ -127,12 +127,11 @@ only one will be created.
 .PRELUDE = TCPprelude;
 .EPILOGUE = TCPepilogue;
 
-.LOAD
+.END tcpip;
+
+@mil
         PROC arpc := mil($(1..));  # jonas backward compatibility
 
-.END;
-
-.END tcpip;
 @h
 #ifndef _TCPIP_H_
 #define _TCPIP_H_

@@ -67,11 +67,10 @@ as already present in the Monet system.
 .COMMAND sema_destroy(sema) = destroy_sema;
 	"destroy a sema"
 
-.LOAD
-	CONST EBUSY := 16;
-.END;
-
 .END lock;
+
+@mil
+	CONST EBUSY := 16;
 
 @{
 @* Implementation

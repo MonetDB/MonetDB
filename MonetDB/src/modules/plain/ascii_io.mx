@@ -77,6 +77,7 @@ to be dumped bats. These bats can be dumped with dump_data.
 .END ascii_io;
 
 @mil
+module(streams);
 module(_ascii_io);
 
 proc load_format( str fmt ) : BAT[str,BAT] := {
@@ -891,7 +892,6 @@ int ascii_io_output( BAT *order, BAT* seps, BAT* bats, Stream *s ){
 @mil
 
 if (mod = "main"){
-    module(streams);
 
     #ascii_io_debug(1);
 
