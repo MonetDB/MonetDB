@@ -712,7 +712,7 @@ find the actual arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("bat"));
 	setFunctionId(q, GDKstrdup("insert"));
-	q->argv[0]= newTmpVariable(m,TYPE_void);
+	q->argv[0]= newTmpVariable(m,TYPE_any);
 	q->argv[1]= resB;
 	q->argv[2]= hvar;
 	q->argv[3]= cr;
