@@ -597,7 +597,7 @@ that for the moment are defined as procs.
 
     PROC join(bat[any::1,any::2] l, bat[any::2,any::3] r, lng estimate, str fcn, ..any..) : bat[any::1,any::3]
     {
-	if ($0 = 3) {
+	if ($0 = 4) {
 	    if (fcn = "=") {
 		return join(l,r,estimate);
 	    } else if (fcn = "<=") {
