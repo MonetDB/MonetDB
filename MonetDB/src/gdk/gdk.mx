@@ -1468,7 +1468,7 @@ returns the BAT pointer.
 @
 The @%BATconvert@ converts a BAT that contains data saved on
 hardware with a different byte order (litte endian vs big endian),
-into the correct format. Direction is eigther CONV_NTOH or CONV_HTON,
+into the correct format. Direction is eigther CONV\_NTOH or CONV\_HTON,
 indication convertion from network to host or host to network format.
 
 @- Heap Storage Modes
