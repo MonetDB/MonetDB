@@ -1336,7 +1336,7 @@ public class MonetResultSet implements ResultSet {
 						// we have to use the given calendar to construct it
 						synchronized (MonetConnection.mTimeZ) {
 							MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
-							String tz = MonetConnection.mTimeZ.format(Time.valueOf(monetDate));
+							String tz = MonetConnection.mTimeZ.format(Time.valueOf(monetDate.substring(0, 8)));
 							tz = tz.substring(12);
 							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
 							return(MonetConnection.mTimeZ.parse(monetDate + tz));

@@ -65,7 +65,7 @@ public class MonetStatement implements Statement {
 	private int fetchSize = DEF_FETCHSIZE;
 	/** The maximum number of rows to return in a ResultSet */
 	private int maxRows = DEF_MAXROWS;
-	/** The suggested direction of fetching data (not really used) */
+	/** The suggested direction of fetching data (implemented but not used) */
 	private int fetchDirection = ResultSet.FETCH_FORWARD;
 	/** The type of ResultSet to produce; i.e. forward only, random access */
 	private int resultSetType = ResultSet.TYPE_FORWARD_ONLY;
