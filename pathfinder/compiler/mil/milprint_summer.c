@@ -3754,7 +3754,7 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
             "sorting := sorting.reverse().kunique().reverse().mark(0@0).reverse();\n"
             "fst_iter := sorting.leftfetchjoin(fst_iter);\n"
             "snd_iter := sorting.leftfetchjoin(snd_iter);\n",
-            snd_res, fst_res, comp);
+            fst_res, snd_res, comp);
 
     if (lev_fst && lev_snd)
     {
