@@ -559,7 +559,7 @@ read_more(struct scanner * lc, int n)
 			more = 1;
 		}
 		/* we need more query text */
-		if (bstream_next( b ) <= 0 || 
+		if (bstream_next( b ) < 0 || 
 	    	   /* we asked for more data but didn't get any */
 	    	   (more && b->eof && b->len < b->pos+lc->yycur+n))
 			return EOF;
