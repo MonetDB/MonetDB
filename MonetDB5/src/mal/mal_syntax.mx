@@ -13,7 +13,7 @@
 
 @a M. L. Kersten
 @v 1.0
-@+ MAL syntax summary
+@* MAL syntax summary
 The MAL syntax is summarized below in extended BNF.
 Alternative constructs are seperated by '$|$' and grouped
 by parenthesis.
@@ -81,5 +81,7 @@ constant	& : & {\sc literal\_constant} $|$ {\sc nil}\\
 \end{tabular}
 
 @-
+@{
 @c
 /* dummy C stuff */
+@}
