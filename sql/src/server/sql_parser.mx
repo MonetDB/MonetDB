@@ -2685,7 +2685,7 @@ data_type:
 			  yyerror("CHARACTER VARYING needs a mandatory length specification");
 			  YYABORT;
 			}
- |  clob		{ $$ = sql_bind_subtype("clob", 0, 0); }
+ |  clob	{ $$ = sql_bind_subtype("clob", 0, 0); }
  |  CHARACTER '(' nonzero ')'
 			{ $$ = sql_bind_subtype("char", $3, 0); }
  |  varchar '(' nonzero ')'
