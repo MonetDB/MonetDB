@@ -45,6 +45,7 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 #-----------------#
 [ "aggr"	  ]
 [ "alarm"	  ]
+[ "ascii_io"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
@@ -166,6 +167,16 @@ Module: "alarm"
 [ "sleep",	  "COMMAND: ",	  "sleep(int) : void",		  "sleep X secs"			  ]
 [ "time",	  "COMMAND: ",	  "time() : int",		  "time in millisecs"			  ]
 [ "timers",	  "COMMAND: ",	  "timers() : BAT[str,str]",	  "give a list of all active timers"	  ]
+
+Module: "ascii_io"
+
+[ 2 ]
+[ 2 ]
+#-------------------------------------------------------------------------#
+# function	| type		| signature			| help	  #
+#-------------------------------------------------------------------------#
+[ "dump",	  "COMMAND: ",	  "dump(str, str, int) : void",	  ""	  ]
+[ "load",	  "COMMAND: ",	  "load(str, str, int) : void",	  ""	  ]
 
 Module: "bitset"
 

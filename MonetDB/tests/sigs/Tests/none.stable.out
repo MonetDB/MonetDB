@@ -59,6 +59,7 @@ loaded;
 [ "alarm",	  nil	  ]
 [ "algebra",	  nil	  ]
 [ "arith",	  nil	  ]
+[ "ascii_io",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "bitset",	  nil	  ]
 [ "bitvector",	  nil	  ]
@@ -180,6 +181,7 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "blob",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "bitset",	  nil	  ]
+[ "ascii_io",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "aggr",	  nil	  ]
 [ "mprof",	  nil	  ]
@@ -1280,6 +1282,40 @@ others@batloop{
 [ "bitset",	  nil	  ]
 
 	dropping bitset
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading ascii_io
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_31  #
+# (str)		  (void)  #
+#-------------------------#
+[ "ascii_io",	  nil	  ]
+
+	dropping ascii_io
 
 #---------------------------------#
 # module	| usage_count	  #

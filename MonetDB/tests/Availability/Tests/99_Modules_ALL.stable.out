@@ -78,6 +78,7 @@ malalgebra: loading... done.
 bitvector: loaded.
    bitset: loading... done.
       bat: loaded.
+ ascii_io: loading... done.
     arith: loaded.
   algebra: loaded.
     alarm: loading... done.
@@ -91,6 +92,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "alarm"	  ]
 [ "algebra"	  ]
 [ "arith"	  ]
+[ "ascii_io"	  ]
 [ "bat"		  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]

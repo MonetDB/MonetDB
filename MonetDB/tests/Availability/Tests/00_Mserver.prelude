@@ -13,6 +13,7 @@ MODULES.replace("aggr",      "plain");
 MODULES.replace("alarm",     "plain");
 MODULES.replace("algebra",   "plain");
 MODULES.replace("arith",     "plain");
+MODULES.replace("ascii_io",  "plain");
 MODULES.replace("bat",       "plain");
 MODULES.replace("bitset",    "plain");
 MODULES.replace("bitvector", "plain");

@@ -41,6 +41,8 @@ MODULES.replace("aggr",      "plain");
 MODULES.replace("alarm",     "plain");
 MODULES.replace("algebra",   "plain");
 MODULES.replace("arith",     "plain");
+MODULES.replace("ascii_io",  "plain");
+MODULES.replace("ascii_io",  "plain");
 MODULES.replace("bat",       "plain");
 MODULES.replace("bitset",    "plain");
 MODULES.replace("bitvector", "plain");
@@ -114,6 +116,7 @@ MODULES.sort.print;
 [ "BasicOdmg",	  "odmgTest"	  ]
 [ "CC_Test",	  "odmgTest"	  ]
 [ "CC_odmg",	  "odmg"	  ]
+[ "ascii_io",	  "plain"	  ]
 [ "Meta",	  "odmgTest"	  ]
 [ "Test7",	  "odmgTest"	  ]
 [ "TransTest",	  "odmgTest"	  ]
@@ -121,6 +124,7 @@ MODULES.sort.print;
 [ "alarm",	  "plain"	  ]
 [ "algebra",	  "static"	  ]
 [ "arith",	  "static"	  ]
+[ "ascii_io",	  "static"	  ]
 [ "bat",	  "static"	  ]
 [ "bitset",	  "plain"	  ]
 [ "bitvector",	  "plain"	  ]
@@ -206,6 +210,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name("static modules"));
 [ "str"		  ]
 [ "sys"		  ]
 [ "trans"	  ]
+[ "ascii_io"		  ]
 
 table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col_name("dynamic modules"));
 #-------------------------#
@@ -219,6 +224,7 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "TransTest"		  ]
 [ "aggr"		  ]
 [ "alarm"		  ]
+[ "ascii_io"		  ]
 [ "bitset"		  ]
 [ "bitvector"		  ]
 [ "blob"		  ]
