@@ -659,8 +659,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 70 ]
-[ 70 ]
+[ 73 ]
+[ 73 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature														| help													  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -687,6 +687,9 @@ Module: "monettime"
 [ "date",		  "COMMAND:   ",  "date(int, int, int) : date",												  "creates a date from (year,month,day) parameters."							  ]
 [ "date",		  "COMMAND:   ",  "date(timestamp) : date",												  "extracts date from timestamp (in the local timezone)."						  ]
 [ "date",		  "COMMAND:   ",  "date(timestamp, tzone) : date",											  "extracts date from timestamp in a certain tzone (!DS2.2)."						  ]
+[ "date_add_sec_interval",	  "COMMAND:   ",  "date_add_sec_interval(date, int) : int",										  "add  seconds interval"										  ]
+[ "date_sub_month_interval",	  "COMMAND:   ",  "date_sub_month_interval(date, int) : int",										  "subtract months interval"										  ]
+[ "date_sub_sec_interval",	  "COMMAND:   ",  "date_sub_sec_interval(date, int) : int",										  "subtract seconds interval"										  ]
 [ "day",		  "COMMAND:   ",  "day(date) : int",													  "extracts day from date (value between 1 and 31)"							  ]
 [ "day",		  "COMMAND:   ",  "day(rule) : int",													  "extract day from rule (!DS2.2)."									  ]
 [ "dayname",		  "COMMAND:   ",  "dayname(int) : str",													  "Returns day name from a number between [1-7], str(nil) otherwise (!DS2.2)."				  ]
