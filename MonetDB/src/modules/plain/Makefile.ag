@@ -151,7 +151,7 @@ scripts_mil = {
                 aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
 		blob.mx decimal.mx enum.mx lock.mx mmath.mx \
 		monettime.mx radix.mx stats.mx tcpip.mx \
-		unix.mx url.mx counters.mx pcl.mx
+		unix.mx url.mx counters.mx pcl.mx pcre.mx
 }
 
 EXTRA_DIST_DIR = Tests
