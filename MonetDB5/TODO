@@ -45,7 +45,7 @@ Documentation issues
 170803 blocked io to clients finished for MAL
 170803 Incremental parsing of unfinished definitions in single-line interface
 150803 Removed bugs in debugger, breakpoint command now passed correctly
-150803 Roll forward of modules to 4.3.13
+150803 Roll forward of modules to 4.3.14
 140803 pcl module included, need some work, i.e. library loading
 140803 decimal is broken, derefStr policy issue. Dropped module, outdate
 100803 Mapi package rewritten
