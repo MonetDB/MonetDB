@@ -492,6 +492,13 @@ running min/max summaries for quickly reducing scan-select ranges on clustered b
 .COMMAND rmin_higher(BAT[any::1,oid] b, any::1 v) : oid = CMDrmin_higher;
 "find the lowest oid that may contain >= the passed value, in an rmax() summary."
 
+@m
+.COMMAND merge(BAT[oid,oid] b) : BAT[lng,void] = CMDmerge;
+"Merge head and tail into a single value"
+
+.COMMAND split(BAT[lng,void] b) : BAT[oid,oid] = CMDsplit;
+"Split head into two values"
+
 .END algebra;
 
 @* MIL definitions
@@ -1631,3 +1638,44 @@ int CMDr@1_@2(oid* ret, BAT *b, ptr v) {
 @c
 @:find_bounds(min,higher,<,last,-)@
 @:find_bounds(max,lower,>,first,+)@
+
+
+@c
+int CMDmerge(BAT** ret, BAT *b) {
+	int n = BATcount(b);
+	BAT *bn = *ret = BATnew(TYPE_lng, TYPE_void, n);
+	BUN p,q;
+	int xx;
+	lng *r = (lng*)BUNhead(bn, BUNfirst(bn));
+	
+	BATloopFast(b, p, q, xx) {
+		oid hp = *(oid*)BUNhead(b,p);
+		oid tp = *(oid*)BUNtail(b,p);
+		
+		*r++ = (((lng)hp)<<32) + tp;
+	}
+        bn->batBuns->free = (BUN)r - bn->batBuns->base;
+        if (!bn->batDirty) bn->batDirty = TRUE;
+	
+	return GDK_SUCCEED;
+}
+
+int CMDsplit(BAT** ret, BAT *b) {
+	int n = BATcount(b);
+	BAT *bn = *ret = BATnew(TYPE_oid, TYPE_oid, n);
+	int i;
+	lng *r = (lng*)BUNhead(b, BUNfirst(b));
+	
+	for(i=0;i<n;i++, r++) {
+		oid hp = (int)(*r>>32);
+		oid tp = (int)*r;
+		
+		bunfastins(bn, &hp, &tp);
+	}
+	
+	bn->hsorted = b->hsorted;
+	return GDK_SUCCEED;
+bunins_failed:
+	BBPreclaim(bn);
+	return GDK_FAIL;
+}
