@@ -4,16 +4,21 @@
 @a Florian Waas
 
 
+@+ Module loading
+The script modules require that the module_push/pop functionality is available.
+As these functions are in the kernel dynamic loadable library module we first
+load the dynamic libraries before we load and run the scripts.
+
 @= install_module
 {
-	extern oid @1_Module_Install(TBLinstall*, str);
-	DL_regfcn(DL_reglib("@1", NULL, 40), 
-		  @1_Module_Install, "@1_Module_Install" );
+	extern oid _@1_Module_Install(TBLinstall*, str);
+	DL_regfcn(DL_reglib("_@1", NULL, 40), 
+		  _@1_Module_Install, "_@1_Module_Install" );
 }
 @= load_module
 {
         str initscript=NULL;
-	TBL_loadmod( c, "@1", 0, &initscript );
+	TBL_loadmod( c, "@1", NULL, 0, &initscript );
         if (initscript) {
 		Cntxt stk = 0;
 		ValRecord res;
@@ -21,6 +26,7 @@
 		GDKfree(initscript);
 	}
 }
+
 @= install_load_module
 {
 #ifdef STATIC
