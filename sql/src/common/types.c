@@ -498,7 +498,7 @@ void sqltypeinit()
 	*t = NULL;
 
 	for(i=0; ts[i]; i++){
-		sql_create_func("hash", "hash", ts[i], NULL, INT, SCALE_FIX);
+		sql_create_func("hash", "hash", ts[i], INT, INT, SCALE_FIX);
 		sql_create_func("=", "=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("<>", "!=", ts[i], ts[i], BIT, SCALE_FIX);
 	}
