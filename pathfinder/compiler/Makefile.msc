@@ -34,8 +34,8 @@ all: all-recursive all-msc
 check: check-recursive check-msc
 install: install-recursive install-msc
 INCLUDES = -I$(SRCDIR) -Iinclude -I$(SRCDIR)\include $(MONET_INCS)
-SUBDIRS = daemon schema debug mem parser semantics core mil
-all-recursive: daemon-all schema-all debug-all mem-all parser-all semantics-all core-all mil-all 
+SUBDIRS = daemon schema debug mem parser semantics core mil include
+all-recursive: daemon-all schema-all debug-all mem-all parser-all semantics-all core-all mil-all include-all 
 daemon-all: daemon daemon\Makefile
 	$(CD) daemon && $(MAKE) /nologo all 
 daemon: 
@@ -84,7 +84,13 @@ mil:
 	if not exist mil $(MKDIR) mil
 mil\Makefile: $(SRCDIR)\mil\Makefile.msc
 	$(INSTALL) $(SRCDIR)\mil\Makefile.msc mil\Makefile
-check-recursive: daemon-check schema-check debug-check mem-check parser-check semantics-check core-check mil-check 
+include-all: include include\Makefile
+	$(CD) include && $(MAKE) /nologo all 
+include: 
+	if not exist include $(MKDIR) include
+include\Makefile: $(SRCDIR)\include\Makefile.msc
+	$(INSTALL) $(SRCDIR)\include\Makefile.msc include\Makefile
+check-recursive: daemon-check schema-check debug-check mem-check parser-check semantics-check core-check mil-check include-check 
 daemon-check: daemon
 	$(CD) daemon && $(MAKE) /nologo check
 schema-check: schema
@@ -101,7 +107,9 @@ core-check: core
 	$(CD) core && $(MAKE) /nologo check
 mil-check: mil
 	$(CD) mil && $(MAKE) /nologo check
-install-recursive: daemon-install schema-install debug-install mem-install parser-install semantics-install core-install mil-install 
+include-check: include
+	$(CD) include && $(MAKE) /nologo check
+install-recursive: daemon-install schema-install debug-install mem-install parser-install semantics-install core-install mil-install include-install 
 daemon-install: $(bindir) $(libdir)
 	$(CD) daemon && $(MAKE) /nologo install
 schema-install: $(bindir) $(libdir)
@@ -118,6 +126,8 @@ core-install: $(bindir) $(libdir)
 	$(CD) core && $(MAKE) /nologo install
 mil-install: $(bindir) $(libdir)
 	$(CD) mil && $(MAKE) /nologo install
+include-install: $(bindir) $(libdir)
+	$(CD) include && $(MAKE) /nologo install
 pfdir = $(bindir)
 libpf.dll:  daemon\libdaemon.lib schema\libschema.lib debug\libdebug.lib mem\libmem.lib parser\libparser.lib semantics\libsemantics.lib core\libcore.lib mil\libmil.lib
 pf_LIBS = daemon\libdaemon.lib schema\libschema.lib debug\libdebug.lib mem\libmem.lib parser\libparser.lib semantics\libsemantics.lib core\libcore.lib mil\libmil.lib $(LIBGC_LDADD) $(LIBXML2_LDADD) $(LEXLIB)
