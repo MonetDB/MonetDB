@@ -187,7 +187,7 @@ public class Mapi
 	private String prompt;
 	
 	// Tabular cache
-	private int fieldcnt= 0;
+	private int fieldcnt= 1;
 	private int maxfields= 32;
 	private int minfields= 0;
 	private int rows_affected =0;
@@ -662,10 +662,9 @@ public int sliceRow(){
 			}
 		}
 
-		//String fld= unquote(s.substring(f, l));
-		String fld= s.substring(f, l);
+		String fld= s.substring(f,l).trim();
 		if(trace) System.out.println("field ["+cr+"]["
-				+i+" "+l+"]"+fld+" "+instring);
+				+i+" "+l+"]"+fld+":"+instring+":");
 		cache.fields[cr][i]= fld;
 		// skip any immediate none-space
 		while(l<p.length )
@@ -1136,7 +1135,7 @@ private void cacheResetInternal()
 	active= true;
 	if( cache.fldcnt==null)
 		cache.fldcnt = new int[cache.limit];
-	fieldcnt=0;
+	fieldcnt=1;
 	cache.tuples= 0;
 	cacheFreeup(100);
 }
