@@ -155,11 +155,11 @@ case $CC-$CXX in
 	gcc-*-irix*|gcc-*-cygwin*|gcc-*-darwin*|gcc-2.*-aix*|*gcc-2.*)
 		;;
 	*gcc-3.3*)	
-		CFLAGS="$CFLAGS -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
+		CFLAGS="$CFLAGS -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=600"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	*gcc-3.*)	
-		CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
+		CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=600"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	esac
