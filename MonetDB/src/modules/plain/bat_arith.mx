@@ -22,14 +22,16 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f bat_arith
-@a S. Manegold, N. Nes 
 @t Optimized Multiplexed Basic Arithmetics on BATs
+@a S. Manegold, N. Nes 
 @v 1.0
+@* Introduction
 
 This module provides optimized code-expanded implementations of multiplxed
 basic arithmetics ([+],[-],[*],[/]) on void-headed, head-aligned BATs.
 Only the standard types sht, int, lng, flt, dbl are supported.
 
+@* Module Definition 
 @m
 .MODULE bat_arith;
 
@@ -37,8 +39,8 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 \begin{verbatim}
 	signatures
 	@1:	sht, int, lng, flt, dbl	arithmetic type
-	@2:	+,   -,   *,   /	basic arithmetic operator
-	@3:	add, sub, mul, div	basic arithmetic operator name
+	@2:	+,   -,   *,   /,   %	basic arithmetic operator
+	@3:	add, sub, mul, div, mod	basic arithmetic operator name
 \end{verbatim}
 @= signatures
 .OPERATOR (BAT[void,@1]) "[@2]" (BAT[void,@1]) : BAT[void,@1] = batbat_@1_@3;
@@ -47,19 +49,28 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 	"optimized multiplexed left-scalar @3 ('@2') on [void,@1] BAT"
 .OPERATOR (BAT[void,@1]) "[@2]" (@1) : BAT[void,@1] = batval_@1_@3;
 	"optimized multiplexed right-scalar @3 ('@2') on [void,@1] BAT"
+.OPERATOR (BAT[void,@1]) "[:@2=]" (BAT[void,@1]) : BAT[void,@1] = batbat_@1_@3_inplace;
+	"optimized multiplexed in-place @3 (':@2=') on head-aligned [void,@1] BATs (overwrites first operand)"
+.OPERATOR (@1) "[:@2=]" (BAT[void,@1]) : BAT[void,@1] = valbat_@1_@3_inplace;
+	"optimized multiplexed left-scalar in-place @3 (':@2=') on [void,@1] BAT (overwrites second operand)"
+.OPERATOR (BAT[void,@1]) "[:@2=]" (@1) : BAT[void,@1] = batval_@1_@3_inplace;
+	"optimized multiplexed right-scalar in-place @3 (':@2=') on [void,@1] BAT (overwrites first operand)"
 @m
 @:signatures(sht,+,add)@
 @:signatures(sht,-,sub)@
 @:signatures(sht,*,mul)@
 @:signatures(sht,/,div)@
+@:signatures(sht,%,mod)@
 @:signatures(int,+,add)@
 @:signatures(int,-,sub)@
 @:signatures(int,*,mul)@
 @:signatures(int,/,div)@
+@:signatures(int,%,mod)@
 @:signatures(lng,+,add)@
 @:signatures(lng,-,sub)@
 @:signatures(lng,*,mul)@
 @:signatures(lng,/,div)@
+@:signatures(lng,%,mod)@
 @:signatures(flt,+,add)@
 @:signatures(flt,-,sub)@
 @:signatures(flt,*,mul)@
@@ -71,7 +82,7 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 
 .END bat_arith;
 
-@+ Implementation
+@* Implementation
 @c
 #include <gdk.h>
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
@@ -92,8 +103,8 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@2](l=%s,r=%s);\n",l->batId,r->batId);
- 	ERRORcheck((l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
- 	           "batbat_@1_@3: BATs l & r must be head-aligned.\n");
+ 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(BUNsize(l)!=sizeof(@1))||(BUNsize(r)!=sizeof(@1))||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
+ 	           "batbat_@1_@3: BATs l & r must be void-headed and head-aligned.\n");
 
 	bn = BATnew(TYPE_void, l->ttype, BATcount(l));
 	BATseqbase(bn,l->hseqbase);
@@ -124,12 +135,38 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
         *ret = bn;
         return GDK_SUCCEED;
 }
+int batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r) {
+	REGISTER @1 *lp, *lq, *rp;
+
+        ALGODEBUG THRprintf(GDKout, "batbat_@1_@3_inplace[@2](l=%s,r=%s);\n",l->batId,r->batId);
+ 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(BUNsize(l)!=sizeof(@1))||(BUNsize(r)!=sizeof(@1))||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
+ 	           "batbat_@1_@3_inplace: BATs l & r must be void-headed and head-aligned.\n");
+
+	l->tsorted = 0;
+	lq = (@1*)BUNtloc(l,BUNlast(l));
+	lp = (@1*)BUNtloc(l,BUNfirst(l));
+	rp = (@1*)BUNtloc(r,BUNfirst(r));
+	for (; lp < lq; lp++, rp++) {
+		if ((*lp != @1_nil) && (*rp != @1_nil)) {
+			*lp @2= *rp;
+		} else {
+			*lp = @1_nil;
+		}
+	}
+        if (!l->batDirty) l->batDirty = TRUE;
+
+	BBPfix(l->batCacheid);
+        *ret = l;
+        return GDK_SUCCEED;
+}
 int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
 	REGISTER @1 *bp, *bq, *bnp;
-	@1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2](v,b=%s);\n",b->batId);
+ 	ERRORcheck((b->htype!=TYPE_void)||(BUNsize(b)!=sizeof(@1)),
+ 	           "valbat_@1_@3: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
@@ -140,16 +177,16 @@ int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 	if (vv != @1_nil) {
 		for (; bp < bq; bp++) {
-			@1 bv = *(@1*)BUNtloc(b,bp);
+			REGISTER @1 bv = *bp;
 			if (bv != @1_nil) {
 				bv = vv @2 bv;
 			}
-			void@1_bunfastins_nocheck_noinc(bn, bnp, NULL, &bv);
+			*bnp = bv;
 			bnp++;
 		}
 	} else {
 		for (; bp < bq; bp++) {
-			void@1_bunfastins_nocheck_noinc(bn, bnp, NULL, &vv);
+			*bnp = vv;
 			bnp++;
 		}
 	}
@@ -159,12 +196,43 @@ int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
         *ret = bn;
         return GDK_SUCCEED;
 }
+int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
+	REGISTER @1 *bp, *bq;
+	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+
+        ALGODEBUG THRprintf(GDKout, "valbat_@1_@3_inplace[@2](v,b=%s);\n",b->batId);
+ 	ERRORcheck((b->htype!=TYPE_void)||(BUNsize(b)!=sizeof(@1)),
+ 	           "valbat_@1_@3_inplace: BAT b must be void-headed.\n");
+	/* todo for commutative operators call batval (ie. for * and /) */
+
+	b->tsorted = 0;
+	bq = (@1*)BUNtloc(b,BUNlast(b));
+	bp = (@1*)BUNtloc(b,BUNfirst(b));
+	if (vv != @1_nil) {
+		for (; bp < bq; bp++) {
+			if (*bp != @1_nil) {
+				*bp = vv @2 *bp;
+			}
+		}
+	} else {
+		for (; bp < bq; bp++) {
+			*bp = vv;
+		}
+	}
+        if (!b->batDirty) b->batDirty = TRUE;
+
+	BBPfix(b->batCacheid);
+        *ret = b;
+        return GDK_SUCCEED;
+}
 int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
 	REGISTER @1 *bp, *bq, *bnp;
-	@1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@2](v,b=%s);\n",b->batId);
+ 	ERRORcheck((b->htype!=TYPE_void)||(BUNsize(b)!=sizeof(@1)),
+ 	           "batval_@1_@3: BAT b must be void-headed.\n");
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
@@ -174,16 +242,16 @@ int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 	if (vv != @1_nil) {
 		for (; bp < bq; bp++) {
-			@1 bv = *(@1*)BUNtloc(b,bp);
+			REGISTER @1 bv = *bp;
 			if (bv != @1_nil) {
 				bv @2= vv;
 			}
-			void@1_bunfastins_nocheck_noinc(bn, bnp, NULL, &bv);
+			*bnp = bv;
 			bnp++;
 		}
 	} else {
 		for (; bp < bq; bp++) {
-			void@1_bunfastins_nocheck_noinc(bn, bnp, NULL, &vv);
+			*bnp = vv;
 			bnp++;
 		}
 	}
@@ -193,19 +261,50 @@ int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
         *ret = bn;
         return GDK_SUCCEED;
 }
+int batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v) {
+	REGISTER @1 *bp, *bq;
+	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+
+        ALGODEBUG THRprintf(GDKout, "batval_@1_@3_inplace[@2](v,b=%s);\n",b->batId);
+ 	ERRORcheck((b->htype!=TYPE_void)||(BUNsize(b)!=sizeof(@1)),
+ 	           "batval_@1_@3_inplace: BAT b must be void-headed.\n");
+
+	b->tsorted = 0;
+	bq = (@1*)BUNtloc(b,BUNlast(b));
+	bp = (@1*)BUNtloc(b,BUNfirst(b));
+	if (vv != @1_nil) {
+		for (; bp < bq; bp++) {
+			if (*bp != @1_nil) {
+				*bp @2= vv;
+			}
+		}
+	} else {
+		for (; bp < bq; bp++) {
+			*bp = vv;
+		}
+	}
+        if (!b->batDirty) b->batDirty = TRUE;
+
+	BBPfix(b->batCacheid);
+        *ret = b;
+        return GDK_SUCCEED;
+}
 @c
 @:implementations(sht,+,add)@
 @:implementations(sht,-,sub)@
 @:implementations(sht,*,mul)@
 @:implementations(sht,/,div)@
+@:implementations(sht,%,mod)@
 @:implementations(int,+,add)@
 @:implementations(int,-,sub)@
 @:implementations(int,*,mul)@
 @:implementations(int,/,div)@
+@:implementations(int,%,mod)@
 @:implementations(lng,+,add)@
 @:implementations(lng,-,sub)@
 @:implementations(lng,*,mul)@
 @:implementations(lng,/,div)@
+@:implementations(lng,%,mod)@
 @:implementations(flt,+,add)@
 @:implementations(flt,-,sub)@
 @:implementations(flt,*,mul)@
