@@ -987,17 +987,17 @@ These routines should be used to alloc free or extend heaps;
 they insulate you from the different ways heaps can be accessed. 
 @{
 @h
-EXPORT( int	HEAPalloc   )(Heap *h, int nitems, int itemsize);
-EXPORT( int	HEAPfree    )(Heap *h);
-EXPORT( int	HEAPextend  )(Heap *h, int size);
-EXPORT( int	HEAPload    )(Heap *h, str nme, str ext);
-EXPORT( int	HEAPsave    )(Heap *h, str nme, str ext);
-EXPORT( void	HEAPcopy    )(Heap *dst, Heap *src);
-EXPORT( int	HEAPsubcopy )(Heap *dst, Heap *src, int size, int offset);
-EXPORT( int	HEAPmove    )(Heap *h, str o, str n, str ext);
-EXPORT( int	HEAPdelete  )(Heap *h, str o, str ext);
-EXPORT( size_t	HEAPvmsize  )(Heap *h);
-EXPORT( size_t	HEAPmemsize )(Heap *h);
+extern int	HEAPalloc   (Heap *h, int nitems, int itemsize);
+extern int	HEAPfree    (Heap *h);
+extern int	HEAPextend  (Heap *h, int size);
+extern int	HEAPload    (Heap *h, str nme, str ext);
+extern int	HEAPsave    (Heap *h, str nme, str ext);
+extern void	HEAPcopy    (Heap *dst, Heap *src);
+extern int	HEAPsubcopy (Heap *dst, Heap *src, int size, int offset);
+extern int	HEAPmove    (Heap *h, str o, str n, str ext);
+extern int	HEAPdelete  (Heap *h, str o, str ext);
+extern size_t	HEAPvmsize  (Heap *h);
+extern size_t	HEAPmemsize (Heap *h);
 @
 @- Internal HEAP Chunk Management
 @T
@@ -1397,11 +1397,11 @@ to its parameter), @%BATreset@ (which assignes the standrad view),
 and @%BATflipflop@ (which assigns to the alternate view).
 @{
 @h
-EXPORT( BAT*		BATclear  )(BAT *b); 
-EXPORT( BAT* 		BATcopy   )(BAT *b); 
-EXPORT( BAT* 		BATrcopy  )(BAT *b); 
-EXPORT( BAT*		BATmark   )(BAT *b, oid base); 
-EXPORT( BAT*		BATnumber )(BAT *b); 
+extern BAT*		BATclear  (BAT *b); 
+extern BAT* 		BATcopy   (BAT *b); 
+extern BAT* 		BATrcopy  (BAT *b); 
+extern BAT*		BATmark   (BAT *b, oid base); 
+extern BAT*		BATnumber (BAT *b); 
 @-
 Retain old-style source-level funcionality where the BAT reversal 
 induced a state change of the BAT parameter to it.
@@ -1467,24 +1467,24 @@ expected usage pattern of the memory in a heap.
 
 #define GDK_BIGMEM	(GDKmem_maxsize()/2)
 
-EXPORT( BAT*	BATload       )(str nme);
-extern  BAT*	BATload_intern (bat bid, int lock);
-EXPORT( BAT*	BATsave       )(BAT *b);
-EXPORT( int     BATmmap       )(BAT *b, int bn, int hh, int th, int ha, int ta);
-EXPORT( int     BATmadvise    )(BAT *b, int bn, int hh, int th, int ha, int ta);
-EXPORT( int     BATdelete     )(BAT* b);
-EXPORT( size_t	BATvmsize     )(BAT *b, int dirty);
-EXPORT( size_t	BATmemsize    )(BAT *b, int dirty);
+extern BAT*	BATload       (str nme);
+extern BAT*	BATload_intern(bat bid, int lock);
+extern BAT*	BATsave       (BAT *b);
+extern int      BATmmap       (BAT *b, int bn, int hh, int th, int ha, int ta);
+extern int      BATmadvise    (BAT *b, int bn, int hh, int th, int ha, int ta);
+extern int      BATdelete     (BAT* b);
+extern size_t	BATvmsize     (BAT *b, int dirty);
+extern size_t	BATmemsize    (BAT *b, int dirty);
 
-EXPORT( FILE*    GDKfilelocate )(str nme, str mode, str ext);
-EXPORT( void     GDKfilepath   )(str path, str nme, str mode, str ext);
-EXPORT( int      GDKcreatedir  )(str nme);
-EXPORT( int      GDKremovedir  )(str nme);
+extern FILE*    GDKfilelocate (str nme, str mode, str ext);
+extern void     GDKfilepath   (str path, str nme, str mode, str ext);
+extern int      GDKcreatedir  (str nme);
+extern int      GDKremovedir  (str nme);
 
-EXPORT( char*	GDKload    )(str nme, str ext, int size, int chunk, int mode);
-EXPORT( int      GDKsave   )(str nme, str ext, str buf, int size, int mode);
-EXPORT( int      GDKunlink )(str dir, str nme, str extension);
-EXPORT( int      GDKlink   )(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2);
+extern char*	GDKload   (str nme, str ext, int size, int chunk, int mode);
+extern int      GDKsave   (str nme, str ext, str buf, int size, int mode);
+extern int      GDKunlink (str dir, str nme, str extension);
+extern int      GDKlink   (str dir1, str nme1, str ext1, str dir2, str nme2, str ext2);
 @
 @}
 
@@ -1509,9 +1509,9 @@ over them, and prints the multi-column result on the file.
 
 @{
 @h
-EXPORT( int	BATprint      )(BAT *b); 
-EXPORT( int	BATprintf     )(FILE *f, BAT *b); 
-EXPORT( int	BATmultiprintf)(FILE *f, int argc, BAT *argv[], int printoid, int order);
+extern int	BATprint      (BAT *b); 
+extern int	BATprintf     (FILE *f, BAT *b); 
+extern int	BATmultiprintf(FILE *f, int argc, BAT *argv[], int printoid, int order);
 @
 @}
 
@@ -1546,13 +1546,13 @@ this does not mean that they are sorted in reverse order!
 @h
 #define 		GDK_SORTED	65 /* 65 = (32 bits radix_clustered)<<1 + 1 */
 
-EXPORT( BAT*		BATsort          )(BAT *b); 
-EXPORT( BAT*		BATsort_insert   )(BAT *r, BAT *b);
-EXPORT( BAT*		BATorder         )(BAT *b); 
-EXPORT( BAT*		BATrevert        )(BAT *b); 
-EXPORT( int		BATordered       )(BAT *b); 
+extern BAT*		BATsort          (BAT *b); 
+extern BAT*		BATsort_insert   (BAT *r, BAT *b);
+extern BAT*		BATorder         (BAT *b); 
+extern BAT*		BATrevert        (BAT *b); 
+extern int		BATordered       (BAT *b); 
 
-EXPORT( void GDKqsort )(void *a, void* base, int n, int width, int tpe, int loc);
+extern void GDKqsort (void *a, void* base, int n, int width, int tpe, int loc);
 
 #define BAThordered(b)	(((b)->htype == TYPE_void)?GDK_SORTED:(b)->hsorted)
 #define BATtordered(b)	(((b)->ttype == TYPE_void)?GDK_SORTED:(b)->tsorted)
@@ -1618,9 +1618,9 @@ typedef struct {
         volatile int status;	/* always available bat info */
 } BBPrec;
 
-EXPORT( int		BBP_dirty);	/* BBP table dirty? */
-EXPORT( int		BBPsize);	/* current size of BBP tables */
-EXPORT( BBPrec*       	BBP);
+extern int		BBP_dirty;	/* BBP table dirty? */
+extern int		BBPsize;	/* current size of BBP tables */
+extern BBPrec*       	BBP;
 
 /* fast defines without checks; internal use only  */
 #define BBP_cache(i)    BBP[ABS(i)].b[(i)<0]
@@ -1645,26 +1645,28 @@ EXPORT( BBPrec*       	BBP);
 #define BBPRENAME_ILLEGAL	-2
 #define BBPRENAME_LONG		-3
 
-EXPORT( void BBPlock       )(str s);
-EXPORT( int  BBPunload     )(bat b);
+extern void BBPlock       (str s);
+extern int  BBPunload     (bat b);
 
-EXPORT( int  BBPrename     )(bat b, str s);
-EXPORT( int  BBPfix        )(bat b);
-EXPORT( int  BBPunfix      )(bat b);
-EXPORT( void BBPhot        )(bat b);
-EXPORT( void BBPcold       )(bat b);
-EXPORT( int  BBPrefcnt     )(bat b);
-EXPORT( void BBPtrim       )(lng memdelta, lng vmdelta);
-EXPORT( void BBPunlock     )(str s);
-EXPORT( int  BBPfree       )(BAT *b);
+extern int  BBPrename     (bat b, str s);
+extern int  BBPfix        (bat b);
+extern int  BBPunfix      (bat b);
+extern void BBPhot        (bat b);
+extern void BBPcold       (bat b);
+/*
+extern int  BBPrefcnt     (bat b);
+*/
+extern void BBPtrim       (lng memdelta, lng vmdelta);
+extern void BBPunlock     (str s);
+extern int  BBPfree       (BAT *b);
 
-EXPORT( bat  BBPindex      )(str nme);
-EXPORT( BAT* BBPdescriptor )(bat b);
-EXPORT( str  BBPlogical    )(bat b, str buf); 
-EXPORT( str  BBPphysical   )(bat b, str buf); 
-EXPORT( int  BBP_curstamp);
-EXPORT( BATstore* BBPgetdesc)(int i, str nme); 
-EXPORT( BAT* BBPquickdesc  )(bat b, int delaccess);
+extern bat  BBPindex      (str nme);
+extern BAT* BBPdescriptor (bat b);
+extern str  BBPlogical    (bat b, str buf); 
+extern str  BBPphysical   (bat b, str buf); 
+extern int  BBP_curstamp;
+extern BATstore* BBPgetdesc(int i, str nme); 
+extern BAT* BBPquickdesc  (bat b, int delaccess);
 @
 @}
 
@@ -1831,23 +1833,23 @@ typedef struct {
 	int	(*atomHeapCheck) 	(Heap*, HeapRepair*); 
 } atomDesc; 
 
-EXPORT( atomDesc		BATatoms[]); 
-EXPORT( int 		GDKatomcnt); 
+extern atomDesc		BATatoms[]; 
+extern int 		GDKatomcnt; 
 
-EXPORT( void ATOMdelete   )(int id);
-EXPORT( void ATOMproperty )(char* nme, char *property, int (*fcn)());
-EXPORT( int  ATOMindex    )(char* nme);
-EXPORT( int  ATOMdump     )();
+extern void ATOMdelete    (int id);
+extern void ATOMproperty  (char* nme, char *property, int (*fcn)());
+extern int  ATOMindex     (char* nme);
+extern int  ATOMdump      ();
 
-EXPORT( int  ATOMheap     )(int id, Heap *hp, int cap); 
-EXPORT( str  ATOMname     )(int id);
-EXPORT( int  ATOMlen      )(int id, ptr v);
-EXPORT( ptr  ATOMnil	  )(int id);
-EXPORT( int  ATOMcmp	  )(int id, ptr v_1,  ptr v_2);
-EXPORT( int  ATOMprint    )(int id, ptr val,  FILE*  fd);
-EXPORT( int  ATOMformat   )(int id, ptr val,  char** buf);
+extern int  ATOMheap      (int id, Heap *hp, int cap); 
+extern str  ATOMname      (int id);
+extern int  ATOMlen       (int id, ptr v);
+extern ptr  ATOMnil	  (int id);
+extern int  ATOMcmp	  (int id, ptr v_1,  ptr v_2);
+extern int  ATOMprint     (int id, ptr val,  FILE*  fd);
+extern int  ATOMformat    (int id, ptr val,  char** buf);
 
-EXPORT( ptr  ATOMdup	  )(int id, ptr val);
+extern ptr  ATOMdup	  (int id, ptr val);
 @
 @}
 
@@ -1895,19 +1897,19 @@ Derived from that:
 #define OIDserver	(((unsigned	int) (GDKMAXDB-1)) << SERVERBITS)
 #define OIDnumber	(((unsigned	int) 1 << SERVERBITS) - 1)
 
-EXPORT( oid		GDKoid[GDKMAXDB]);
-EXPORT( int		GDKdb);
-EXPORT( int		OIDflushdelta);
+extern oid		GDKoid[GDKMAXDB];
+extern int		GDKdb;
+extern int		OIDflushdelta;
 
-EXPORT( int      	OIDinit  )();
-EXPORT( oid		OIDrand  )(int db);
-EXPORT( oid      	OIDbase  )(oid base);
-EXPORT( oid      	OIDseed  )(unsigned int seed);
-EXPORT( oid      	OIDnew   )(int inc);
-EXPORT( oid      	OIDnewdb )(int inc, int db);
-EXPORT( int      	OIDread  )(str buf);
-EXPORT( int      	OIDwrite )(FILE *fp);
-EXPORT( int      	OIDdirty )();
+extern int      	OIDinit  ();
+extern oid		OIDrand  (int db);
+extern oid      	OIDbase  (oid base);
+extern oid      	OIDseed  (unsigned int seed);
+extern oid      	OIDnew   (int inc);
+extern oid      	OIDnewdb (int inc, int db);
+extern int      	OIDread  (str buf);
+extern int      	OIDwrite (FILE *fp);
+extern int      	OIDdirty ();
 @
 @}
 
@@ -1997,22 +1999,26 @@ typedef struct {
 	void		(*accMove)    (Heap*, int from, int to, BAT*, ptr val);
 } accDesc; 
 
-EXPORT( accDesc	BATaccelerators[]);
-EXPORT( int 		GDKacc_cnt); 
+extern accDesc	BATaccelerators[];
+extern int 		GDKacc_cnt; 
 
-EXPORT( int	ACCindex      )(str name);
-EXPORT( void	ACCproperty   )(str name, str prop, ptr fcn);
-EXPORT( void	ACCdelete     )(int id);
-EXPORT( str	ACCname       )(int id);
+extern int	ACCindex      (str name);
+extern void	ACCproperty   (str name, str prop, ptr fcn);
+extern void	ACCdelete     (int id);
+extern str	ACCname       (int id);
 
-EXPORT( int	ACCbuild      )(int id, BAT *b, Heap *acc, ptr extra);
-EXPORT( int	ACCdestroy    )(int id, BAT *b, Heap *acc);
-EXPORT( int	ACCrepair     )(int id, BAT *b, Heap *acc);
-EXPORT( int  	ACCrepairSTD  )( Heap* h, BAT *b);                
+extern int	ACCbuild      (int id, BAT *b, Heap *acc, ptr extra);
+extern int	ACCdestroy    (int id, BAT *b, Heap *acc);
+/*
+extern int	ACCrepair     (int id, BAT *b, Heap *acc);
+*/
+extern int  	ACCrepairSTD  ( Heap* h, BAT *b);                
 
-EXPORT( void 	ACCremoveall  )(BAT *b);
-EXPORT( void 	ACCunloadall  )(BAT *b);
-EXPORT( void 	ACCexit       )(BAT *b);
+extern void 	ACCremoveall  (BAT *b);
+extern void 	ACCunloadall  (BAT *b);
+/*
+extern void 	ACCexit       (BAT *b);
+*/
 @
 
 @- Builtin Accelerator Functions
@@ -2047,21 +2053,23 @@ supported.
 
 @{
 @h
-EXPORT( int	HASHsize      )(Hash *h);
-EXPORT( int	BATidx        )(BAT *b, BAT *h);
-EXPORT( BAT*	BAThashsplit  )(BAT *b, int n, int unary); 
-EXPORT( BAT*	BATrangesplit )(BAT *b, int n, int unary); 
+/*
+extern int	HASHsize      (Hash *h);
+*/
+extern int	BATidx        (BAT *b, BAT *h);
+extern BAT*	BAThashsplit  (BAT *b, int n, int unary); 
+extern BAT*	BATrangesplit (BAT *b, int n, int unary); 
 
 /* low level functions */
-EXPORT( BUN	SORTfnd      )(BAT *b, ptr v);
-EXPORT( BUN	SORTfndfirst )(BAT *b, ptr v);
-EXPORT( BUN	SORTfndlast  )(BAT *b, ptr v);
-EXPORT( BUN	IDXfnd       )(BAT *b, ptr v);
-EXPORT( BUN*	IDXfndfirst  )(BAT *b, ptr v);
-EXPORT( BUN*	IDXfndlast   )(BAT *b, ptr v);
-EXPORT( void	IDXrng       )(BAT *b, ptr v, ptr w, BUN **p, BUN **q);
-EXPORT( void    IDXdestroy   )(BAT *b);
-EXPORT( void    IDXremove    )(BAT *b);
+extern BUN	SORTfnd      (BAT *b, ptr v);
+extern BUN	SORTfndfirst (BAT *b, ptr v);
+extern BUN	SORTfndlast  (BAT *b, ptr v);
+extern BUN	IDXfnd       (BAT *b, ptr v);
+extern BUN*	IDXfndfirst  (BAT *b, ptr v);
+extern BUN*	IDXfndlast   (BAT *b, ptr v);
+extern void	IDXrng       (BAT *b, ptr v, ptr w, BUN **p, BUN **q);
+extern void    IDXdestroy    (BAT *b);
+extern void    IDXremove     (BAT *b);
 
 #define BATprepareHash(X) (((X)->hhash_heap == NULL) && !BAThash(X, NULL))
 @
@@ -2100,17 +2108,18 @@ and are checked on inconsistent frees and memory leaks.
 @{
 @h
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-EXPORT( void*	GDKmmap)(void* addr, size_t len, int prot, int flags, int fd, off_t off);
-EXPORT( int	GDKmunmap)(void* addr, size_t len);
+extern void*	GDKmmap(void* addr, size_t len, int prot, int flags, int fd, off_t off);
+extern int	GDKmunmap(void* addr, size_t len);
 
-EXPORT(		ptr 	GDK_mem_start);		/* sbrk(0) at start of the program */
-EXPORT(		lng 	GDK_mem_maxsize);	/* max allowed size of committed memory */
-EXPORT(		lng 	GDK_mem_bigsize);	/* size after which we use VM rather than heap memory */
-EXPORT(		lng 	GDK_vm_minsize);		/* smallest size allowed for a vm block */
-EXPORT(		lng 	GDK_vm_maxsize);		/* max allowed size of reserverd vm */
-EXPORT(		lng 	GDK_heap_cursize);	/* bytes in use in the malloc heap */
-EXPORT(volatile	lng 	GDK_mem_cursize);	/* committed bytes outside the heap */
-EXPORT(volatile	lng 	GDK_vm_cursize);		/* reserved vm in bytes */
+extern	ptr 	GDK_mem_start;		/* sbrk(0) at start of the program */
+extern	lng 	GDK_mem_maxsize;	/* max allowed size of committed memory */
+extern	lng 	GDK_mem_bigsize;	/* size after which we use VM rather than heap memory */
+extern	lng 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
+extern	lng 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
+/*
+extern	lng 	GDK_heap_cursize;	/* bytes in use in the malloc heap */
+extern volatile	lng 	GDK_mem_cursize;	/* committed bytes outside the heap */
+extern volatile	lng 	GDK_vm_cursize;		/* reserved vm in bytes */
 
 #define GDKvm_maxsize()		GDK_vm_maxsize
 #define GDKvm_minsize()		GDK_vm_minsize
@@ -2125,17 +2134,17 @@ EXPORT(volatile	lng 	GDK_vm_cursize);		/* reserved vm in bytes */
 #else
 #define GDKvm_heapsize()	GDKmem_heapsize()
 #endif
-EXPORT( lng GDKmem_heapsize)();
-EXPORT( lng GDKmem_heapinuse)();
+extern lng GDKmem_heapsize();
+extern lng GDKmem_heapinuse();
 
-EXPORT( void* 	GDKmalloc  )(size_t size); 
-EXPORT( void* 	GDKrealloc )(void* pold, size_t size); 
-EXPORT( void	GDKfree    )(void* blk); 
-EXPORT( str	GDKstrdup  )(str s);
+extern void* 	GDKmalloc  (size_t size); 
+extern void* 	GDKrealloc (void* pold, size_t size); 
+extern void	GDKfree    (void* blk); 
+extern str	GDKstrdup  (str s);
 
-EXPORT( void*	GDKvmalloc  )(size_t size, size_t *maxsize);
-EXPORT( void*	GDKvmrealloc)(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize);
-EXPORT( void	GDKvmfree   )(void* blk, size_t size, size_t maxsize);
+extern void*	GDKvmalloc  (size_t size, size_t *maxsize);
+extern void*	GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize);
+extern void	GDKvmfree   (void* blk, size_t size, size_t maxsize);
 @
 @}
 
@@ -2176,11 +2185,11 @@ by the user. A pointer to this buffer is kept in the pseudo-variable
 #define GDKMESSAGE	"!OS: "
 #define GDKFATAL	"!FATAL: "
 
-EXPORT( void    GDKaddbuf   )(char* msg);
-EXPORT( int	GDKwarning  )(char* format, ... );
-EXPORT( int	GDKerror    )(char* format, ... );
-EXPORT( int	GDKsyserror )(char* format, ... );
-EXPORT( int	GDKfatal    )(char* format, ... );
+extern void     GDKaddbuf   (char* msg);
+extern int	GDKwarning  (char* format, ... );
+extern int	GDKerror    (char* format, ... );
+extern int	GDKsyserror (char* format, ... );
+extern int	GDKfatal    (char* format, ... );
 @
 @{
 @h
@@ -2194,12 +2203,12 @@ EXPORT( int	GDKfatal    )(char* format, ... );
 
 #define BBPLOCKMASK     7
 
-EXPORT( MT_Lock		GDKthreadLock);
-EXPORT( MT_Lock		GDKswapLock[BBPLOCKMASK+1]); 
-EXPORT( MT_Lock		GDKidxLock[BBPLOCKMASK+1]); 
-EXPORT( MT_Lock		GDKhashLock[BBPLOCKMASK+1]); 
-EXPORT( MT_Lock		GDKcacheLock); 
-EXPORT( MT_Lock		GDKtrimLock); 
+extern MT_Lock		GDKthreadLock;
+extern MT_Lock		GDKswapLock[BBPLOCKMASK+1]; 
+extern MT_Lock		GDKidxLock[BBPLOCKMASK+1]; 
+extern MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
+extern MT_Lock		GDKcacheLock; 
+extern MT_Lock		GDKtrimLock; 
 
 #define CHECKDEBUG      if (GDKdebug&2)
 #define MEMDEBUG        if (GDKdebug&4)
@@ -2214,8 +2223,8 @@ EXPORT( MT_Lock		GDKtrimLock);
 #define DLDEBUG	        if (GDKdebug&2048)
 #define PERFDEBUG	if (GDKdebug&4096)
 
-EXPORT( int		GDKnrofthreads); 
-EXPORT( int		GDKdebug); 
+extern int		GDKnrofthreads; 
+extern int		GDKdebug; 
 @}
 @-
 The kernel maintains a central table of all active threads.
@@ -2241,21 +2250,21 @@ typedef struct threadStruct{
 } ThreadRec, *Thread; 
 
 
-EXPORT( ThreadRec        GDKthreads[THREADS]);
+extern ThreadRec        GDKthreads[THREADS];
 
-EXPORT( MT_Id	THRgettid    )();
-EXPORT( Thread  THRget       )(MT_Id tid);
-EXPORT( Thread  THRnew       )(MT_Id pid, str name);
-EXPORT( void    THRdel       )(Thread t);
-EXPORT( int 	THRinit      )();
-EXPORT( int     THRexit      )(str nme);
-EXPORT( int     THRcnt       )();
-EXPORT( void    THRsetdata   )(int,ptr);
-EXPORT( void*   THRgetdata   )(int);
-EXPORT( int     THRhighwater )();
-EXPORT( int	THRprintf    )(FILE *fp, char* format, ... );
+extern MT_Id	THRgettid    ();
+extern Thread  THRget       (MT_Id tid);
+extern Thread  THRnew       (MT_Id pid, str name);
+extern void    THRdel       (Thread t);
+extern int 	THRinit      ();
+extern int     THRexit      (str nme);
+extern int     THRcnt       ();
+extern void    THRsetdata   (int,ptr);
+extern void*   THRgetdata   (int);
+extern int     THRhighwater ();
+extern int	THRprintf    (FILE *fp, char* format, ... );
 
-EXPORT( void*    THRdata[16]);
+extern void*    THRdata[16];
 
 #define GDKout	        (FILE*)THRgetdata(0)
 #define GDKin	        (FILE*)THRgetdata(1)
@@ -2391,12 +2400,12 @@ The routine @%BATfakeRestart@ is like @%BATfakeCommit@, but
 marks all BUNs in the BAT as if they were newly inserted.
 @{
 @h
-EXPORT( BAT*	BATprecommit  )(BAT *b); 
-EXPORT( BAT*	BATcommit     )(BAT *b); 
-EXPORT( BAT*	BATundo       )(BAT *b); 
-EXPORT( BAT*	BATalpha      )(BAT *b); 
-EXPORT( BAT*	BATdelta      )(BAT *b); 
-EXPORT( BAT*	BATfakeCommit )(BAT *b);
+extern BAT*	BATprecommit  (BAT *b); 
+extern BAT*	BATcommit     (BAT *b); 
+extern BAT*	BATundo       (BAT *b); 
+extern BAT*	BATalpha      (BAT *b); 
+extern BAT*	BATdelta      (BAT *b); 
+extern BAT*	BATfakeCommit (BAT *b);
 
 @}
 
@@ -2447,26 +2456,26 @@ as its view parameter (it converts void columns with seqbase!=nil
 to materialized oid columns).
 @{
 @h
-EXPORT( int      ALIGNsynced    )(BAT *b1, BAT *b2);
-EXPORT( int      ALIGNrelated   )(BAT *b1, BAT *b2);
-EXPORT( int      ALIGNsetH	)(BAT *dst, BAT *src);
+extern int      ALIGNsynced     (BAT *b1, BAT *b2);
+extern int      ALIGNrelated    (BAT *b1, BAT *b2);
+extern int      ALIGNsetH	(BAT *dst, BAT *src);
 
-EXPORT( BAT*	BATpropcheck	)(BAT *b); 
-EXPORT( BAT*	BATpropcheck_	)(BAT *b, int sanity_check); 
-EXPORT( int	BATrepair	)(BAT *b);
+extern BAT*	BATpropcheck	(BAT *b); 
+extern BAT*	BATpropcheck_	(BAT *b, int sanity_check); 
+extern int	BATrepair	(BAT *b);
 
-EXPORT( BAT*	VIEWcreate	)(BAT *b);
-EXPORT( BAT*	VIEWcreate_	)(BAT *b, int stable);
-EXPORT( BAT*	VIEWhead	)(BAT *b);
-EXPORT( BAT*	VIEWhead_	)(BAT *b, int mode);
-EXPORT( BAT*	VIEWreset	)(BAT *b);
-EXPORT( BAT*	VIEWcombine	)(BAT *b);
-EXPORT( int	VIEWdestroy	)(BAT *b);
+extern BAT*	VIEWcreate	(BAT *b);
+extern BAT*	VIEWcreate_	(BAT *b, int stable);
+extern BAT*	VIEWhead	(BAT *b);
+extern BAT*	VIEWhead_	(BAT *b, int mode);
+extern BAT*	VIEWreset	(BAT *b);
+extern BAT*	VIEWcombine	(BAT *b);
+extern int	VIEWdestroy	(BAT *b);
 
 /* low level functions */
-EXPORT( int      ALIGNundo       )(BAT *b);
-EXPORT( int      ALIGNcommit     )(BAT *b);
-EXPORT( int      ALIGNsetH       )(BAT *b1, BAT *b2);
+extern int      ALIGNundo       (BAT *b);
+extern int      ALIGNcommit     (BAT *b);
+extern int      ALIGNsetH       (BAT *b1, BAT *b2);
 #define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
 #define ALIGNdel(x,y)	{ALIGNchk(x,y);(x)->halign=(x)->talign=0; }
 #define ALIGNins(x,y)	{VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
@@ -2747,11 +2756,11 @@ properties. They can be used to improve query processing at higher levels.
 @{
 @h
 
-EXPORT( BAT*		BATsample    )(BAT *b, int n);
-EXPORT( ptr 		BATsum       )(BAT *b, ptr sumval);
-EXPORT( BAT*		BAThistogram )(BAT *b); 
-EXPORT( ptr             BATmin       )(BAT *b, ptr minval);
-EXPORT( ptr             BATmax       )(BAT *b, ptr maxval);
+extern BAT*		BATsample    (BAT *b, int n);
+extern ptr 		BATsum       (BAT *b, ptr sumval);
+extern BAT*		BAThistogram (BAT *b); 
+extern ptr              BATmin       (BAT *b, ptr minval);
+extern ptr              BATmax       (BAT *b, ptr maxval);
 @}
 @- alignment-id transformations
 @T
@@ -2841,36 +2850,38 @@ look at the head column:@%BATkunion@, @%BATkdiff@, and
 #define JOIN_GT	1
 #define JOIN_GE	2
 
-EXPORT( BAT*	BATfragment  )(BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
-EXPORT( BAT*	BATselect    )(BAT *b, ptr tl, ptr th); 
-EXPORT( BAT*	BAT_select   )(BAT *b, ptr tl, ptr th, int mode); 
-EXPORT( BAT*	BATuselect   )(BAT *b, ptr tl, ptr th); 
-EXPORT( BAT*	BATrestrict  )(BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
+extern BAT*	BATfragment  (BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
+extern BAT*	BATselect    (BAT *b, ptr tl, ptr th); 
+extern BAT*	BAT_select   (BAT *b, ptr tl, ptr th, int mode); 
+extern BAT*	BATuselect   (BAT *b, ptr tl, ptr th); 
+extern BAT*	BATrestrict  (BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
 
-EXPORT( BAT*	BATcombine   )(BAT *l, BAT *r);
-EXPORT( BAT*	BATconst     )(BAT *l, int tt, ptr val);
-EXPORT( BAT*	BATthetajoin )(BAT *l, BAT *r, int mode); 
-EXPORT( int	BATtheta     )(BAT* in, BAT* out, BAT *l, BAT *r, int mode);
-EXPORT( BAT*	BATbandjoin  )(BAT *l, BAT *r, ptr c1, ptr c2); 
-EXPORT( BAT*	BATsemijoin  )(BAT *l, BAT *r); 
-EXPORT( BAT*	BATsemijoin  )(BAT *l, BAT *r); 
-EXPORT( BAT*	BATmergejoin )(BAT *l, BAT *r); 
-EXPORT( BAT*	BATjoin      )(BAT *l, BAT *r); 
-EXPORT( BAT*	BATouterjoin )(BAT *l, BAT *r); 
+/*
+extern BAT*	BATcombine   (BAT *l, BAT *r);
+*/
+extern BAT*	BATconst     (BAT *l, int tt, ptr val);
+extern BAT*	BATthetajoin (BAT *l, BAT *r, int mode); 
+extern int	BATtheta     (BAT* in, BAT* out, BAT *l, BAT *r, int mode);
+extern BAT*	BATbandjoin  (BAT *l, BAT *r, ptr c1, ptr c2); 
+extern BAT*	BATsemijoin  (BAT *l, BAT *r); 
+extern BAT*	BATsemijoin  (BAT *l, BAT *r); 
+extern BAT*	BATmergejoin (BAT *l, BAT *r); 
+extern BAT*	BATjoin      (BAT *l, BAT *r); 
+extern BAT*	BATouterjoin (BAT *l, BAT *r); 
 
-EXPORT( BAT* 	BATslice     )(BAT* b, int* low, int* high);
-EXPORT( BAT* 	BATfetch     )(BAT* b, BAT *s);
-EXPORT( BAT* 	BATfetchjoin )(BAT* b, BAT *s);
+extern BAT* 	BATslice     (BAT* b, int* low, int* high);
+extern BAT* 	BATfetch     (BAT* b, BAT *s);
+extern BAT* 	BATfetchjoin (BAT* b, BAT *s);
 
-EXPORT( BAT*	BATsunique   )(BAT *b); 
-EXPORT( BAT*	BATkunique   )(BAT *b); 
-EXPORT( BAT*	BATukunique  )(BAT *b); 
-EXPORT( BAT*	BATsintersect)(BAT *b, BAT *c); 
-EXPORT( BAT*	BATkintersect)(BAT *b, BAT *c); 
-EXPORT( BAT*	BATsunion    )(BAT *b, BAT *c); 
-EXPORT( BAT*	BATkunion    )(BAT *b, BAT *c); 
-EXPORT( BAT*	BATsdiff     )(BAT *b, BAT *c); 
-EXPORT( BAT*	BATkdiff     )(BAT *b, BAT *c); 
+extern BAT*	BATsunique   (BAT *b); 
+extern BAT*	BATkunique   (BAT *b); 
+extern BAT*	BATukunique  (BAT *b); 
+extern BAT*	BATsintersect(BAT *b, BAT *c); 
+extern BAT*	BATkintersect(BAT *b, BAT *c); 
+extern BAT*	BATsunion    (BAT *b, BAT *c); 
+extern BAT*	BATkunion    (BAT *b, BAT *c); 
+extern BAT*	BATsdiff     (BAT *b, BAT *c); 
+extern BAT*	BATkdiff     (BAT *b, BAT *c); 
 
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]
@@ -2881,7 +2892,7 @@ EXPORT( BAT*	BATkdiff     )(BAT *b, BAT *c);
 typedef void (*ColFcn)(ptr,ptr);
 typedef void (*RowFcn)(ptr,ptr*);
 
-EXPORT( int	BATmultijoin )(int argc, BAT *argv[], RowFcn tuple_fcn,
+extern int	BATmultijoin (int argc, BAT *argv[], RowFcn tuple_fcn,
 				ptr tuple_data, ColFcn value_fcn[],
 				ptr value_data[], int orderspec);
 

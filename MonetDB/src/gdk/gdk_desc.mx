@@ -34,7 +34,9 @@ Three BAT formats are currently supported:
 
 #define GDKversionOK(x)	((x)==GDKLIBRARY)
 
+/*
 extern char GDKlegalversions[1024];
+*/
 @
 If BATs need to be added to an old BBP directory, we might need
 to save BATs in the old format. This is currently controlled 
