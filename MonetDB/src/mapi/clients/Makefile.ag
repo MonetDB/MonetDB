@@ -20,7 +20,8 @@
 # 		Peter Boncz <Peter.Boncz@cwi.nl>
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-SUBDIRS = perl
+
+#SUBDIRS = perl
 
 MTSAFE
 INCLUDES = ../../common $(READLINE_INCS)
