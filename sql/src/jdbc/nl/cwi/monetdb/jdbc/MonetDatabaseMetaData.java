@@ -2893,8 +2893,9 @@ class MonetVirtualResultSet extends MonetResultSet {
 	 *        beginning of the result set; a negative number indicates the row
 	 *        number counting from the end of the result set
 	 * @return true if the cursor is on the result set; false otherwise
+	 * @throws SQLException if a database error occurs
 	 */
- 	public boolean absolute(int row) {
+ 	public boolean absolute(int row) throws SQLException {
 		if (closed) throw new SQLException("ResultSet is closed!");
 
 		// first calculate what the JDBC row is
