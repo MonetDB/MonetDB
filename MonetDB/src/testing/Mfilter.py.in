@@ -185,7 +185,7 @@ test = (
                 "|" r'^     -c: compress node properties (40% encoding speed)$'
                 # Mtest warnings:
                 "|" r'^Over\.\.$'
-                "|" r'^(quit(\(\))?)?;$'
+                "|" r'^(quit\(\))?;$'
                 "|" r'^(printf\("\\n)?! Mserver still running after Mshutdown\. Quitting now\. !(\\n"\);)?$'
                 "|" r"^! Socket-Check failed for (SQL|MAPI)server on <[a-zA-Z0-9]*:[0-9]+> with #[0-9]+; '.*' !$"
                 "|" r'^! Waiting [0-9]+ seconds \([0-9]/[0-9]\) \.\.\. (Done\.)?$'
