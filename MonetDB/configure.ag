@@ -33,7 +33,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("MonetDB", 4.3.18_rc03)
+AM_INIT_AUTOMAKE("MonetDB", 4.3.19)
 AM_CONFIG_HEADER(monetdb_config.h:conf/config.h.in)
 CONFIG_H=monetdb_config.h
 AC_SUBST(CONFIG_H)
@@ -203,9 +203,6 @@ AC_HEADER_STAT()
 AC_HEADER_TIME()
 AC_STRUCT_TM()
 AC_STRUCT_TIMEZONE()
-AC_LANG_CPLUSPLUS()
-AC_CHECK_TYPES(bool)
-AC_LANG_C()
 AC_C_BIGENDIAN()
 AC_CHECK_TYPES(long long)
 AC_CHECK_TYPES(__int64)

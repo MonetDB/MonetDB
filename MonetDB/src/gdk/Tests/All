@@ -12,3 +12,4 @@ binsearchmultijoin
 void
 casts
 qsort
+cross

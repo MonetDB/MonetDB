@@ -70,9 +70,6 @@
    */
 /* #undef HAVE_ALLOCA_H */
 
-/* Define to 1 if the system has the type `bool'. */
-#define HAVE_BOOL 1
-
 /* Define to 1 if you have the <cstdio> header file. */
 #if _MSC_VER >= 1300
 #define HAVE_CSTDIO 1
@@ -554,7 +551,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.3.18_rc03"
+#define VERSION "4.3.19"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32

@@ -21,6 +21,6 @@ dnl 		Peter Boncz <Peter.Boncz@cwi.nl>
 dnl 		Niels Nes <Niels.Nes@cwi.nl>
 dnl 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-dnl AC_DEFUN(AC_SYS_LARGEFILE,
+dnl AC_DEFUN([AC_SYS_LARGEFILE],
 dnl [AC_MSG_CHECKING("missing AC_SYS_LARGEFILE macro please upgrade autoconf")])
 
