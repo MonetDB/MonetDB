@@ -62,6 +62,7 @@ To be assured of a proper SQL environment, you could inspect the catalog
 tables as follows:
 
 Msql> select name from tables;
+#------------------------
 #  Name			]
 #------------------------
 [ "schemas"		]
