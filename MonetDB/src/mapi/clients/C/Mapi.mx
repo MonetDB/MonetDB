@@ -349,7 +349,7 @@ or error. This can be analyzed in using mapi_error().
 
 \item[char *mapi_fetch_field(MapiHdl hdl, int fnr)]:
 Return a pointer a C-string representation of the value returned.
-A zero is returned upon encountering an error;
+A zero is returned upon encountering an error or when the database value is NULL;
 this can be analyzed in using mapi_error().
 
 \item[MapiHdl mapi_prepare(Mapi mid, char *Command)]:
@@ -1047,8 +1047,11 @@ mapi_setAutocommit(Mapi mid, int autocommit)
 		hdl = mapi_query(mid, "set auto_commit = true");
 	else
 		hdl = mapi_query(mid, "set auto_commit = false");
-	if (hdl == NULL || mapi_error(mid))
+	if (hdl == NULL || mapi_error(mid)) {
+		if (hdl)
+			mapi_close_handle(hdl);
 		return MERROR;
+	}
 	return mapi_close_handle(hdl);
 }
 
