@@ -177,28 +177,6 @@ tst960
 #
 # no stable output available (yet?)
 #
-#optimizer test scripts
-tst4000
-tst4001
-tst4002
-tst4010
-tst4015
-tst4020
-tst4024
-tst4028
-tst4030
-tst4500
-tst4600
-tst4601
-tst4602
-tst4610
-tst4611
-tst4620
-tst4630
-tst4631
-tst4730
-tst4800
-tst4801
 
 # Old x100 test moved to x100Tests
 #tst6000

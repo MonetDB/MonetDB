@@ -1,5 +1,0 @@
-#testing some optimizer constructions
-
-aliasRemoval();
-z:= "nil";
-d:= date(z);
