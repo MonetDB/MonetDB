@@ -310,6 +310,7 @@ Try: modules;                - for other modules.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
@@ -719,19 +720,34 @@ Try: modules;                - for other modules.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
+[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_30  #
-# (str)	  (void)  #
-#-----------------#
-[ "mapi", nil	  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
 
 	dropping mapi
+
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #

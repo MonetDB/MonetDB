@@ -387,15 +387,22 @@ Module: "malalgebra"
 
 Module: "mapi"
 
-[ 4 ]
-[ 4 ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help							  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "_listen",	  "COMMAND: ",	  "_listen() : void",		  "start a Mapi server with the default port number."	  ]
-[ "_listen",	  "COMMAND: ",	  "_listen(int, int) : void",	  "start a Mapi server."				  ]
-[ "listen",	  "PROC: ",	  "listen() : any",		  "not available"					  ]
-[ "listen",	  "PROC: ",	  "listen(int, int) : any",	  "not available"					  ]
+[ 11 ]
+[ 11 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature						| help																							  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "listen",	  "PROC: ",	  "listen() : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "listen",	  "PROC: ",	  "listen(int) : any",					  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "listen",	  "PROC: ",	  "listen(int, int) : any",				  "Start the Mapi listener on <port>."																			  ]
+[ "listen",	  "PROC: ",	  "listen(int, int, str) : any",			  "Start the Mapi listener on 50000."																			  ]
+[ "listen",	  "PROC: ",	  "listen(int, str) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
+[ "listen",	  "PROC: ",	  "listen(str) : any",					  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "mapi_listen",  "BUILTIN: ",	  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "stream_line",  "PROC: ",	  "stream_line(stream) : str",				  "Read a string from <S> until a newline."																		  ]
+[ "stream_read",  "PROC: ",	  "stream_read(stream) : str",				  "Read a string from <S> until a '1' character."																	  ]
+[ "stream_strip", "PROC: ",	  "stream_strip(stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
+[ "stream_until", "COMMAND: ",	  "stream_until(stream, str) : str",			  "read a string from <S> until the <stop> word"																	  ]
 
 Module: "mmath"
 
@@ -765,6 +772,7 @@ Module: "xtables"
 [ "CTregroup",		  "COMMAND: ",	  "CTregroup(BAT[oid,oid], BAT[oid,any]) : BAT[oid,oid]",			  "modifies ct and returns it doing a group"																																	  ]
 [ "CTsubgroup",		  "PROC: ",	  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",	  "not available"																																				  ]
 [ "CTsubhisto",		  "COMMAND: ",	  "CTsubhisto(BAT[void,bit], BAT[void,oid], BAT[oid,any]) : BAT[oid,int]",	  "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] \n         bats on a previously known domain "																								  ]
+[ "_CTgroup",		  "COMMAND: ",	  "_CTgroup(BAT[oid,any], int, int) : BAT[oid,oid]",				  "Cross tabulation group initialization like CTgroup, but with user\n         provided #bits in hashmask and #distinct values in range."																					  ]
 [ "histogram",		  "COMMAND: ",	  "histogram(BAT[oid,any::1]) : BAT[any::1,int]",				  "compute a histogram on the tail. Optimized for retrieving the\n         already present histogram on a cross-table computed by CTgroup."																					  ]
 [ "orderby_table",	  "PROC: ",	  "orderby_table(str, str, ..BAT[any::1,any]..) : any",				  "not available"																																				  ]
 [ "print",		  "PROC: ",	  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
