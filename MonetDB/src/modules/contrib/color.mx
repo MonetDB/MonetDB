@@ -223,11 +223,11 @@ int blue(int *b, color *c) {
 	return(GDK_SUCCEED);
 }
 
-#define max(a,b) ((a)>(b)?(a):(b))
-#define max3(a,b,c) max(max(a,b),(c))
+#define max2(a,b) ((a)>(b)?(a):(b))
+#define max3(a,b,c) max2(max2(a,b),(c))
 
-#define min(a,b) ((a)<(b)?(a):(b))
-#define min3(a,b,c) min(min(a,b),(c))
+#define min2(a,b) ((a)<(b)?(a):(b))
+#define min3(a,b,c) min2(min2(a,b),(c))
 
 #define EPS 0.001f
 
@@ -312,9 +312,9 @@ int value(flt *f, color *c) {
 
 int ycc(color *c,int* y,int* cr,int* cb) {
 	int r,g,b;
-	float Y  = *y;
-	float CR = *cr - 128;
-        float CB = *cb - 128;
+	float Y  = (float) *y;
+	float CR = (float) (*cr - 128);
+	float CB = (float) (*cb - 128);
 	r = (int)(Y+CR*1.4022f);
 	r = CLIP(r);
 	g = (int)(Y-CB*0.3456f-CR*0.7145f);

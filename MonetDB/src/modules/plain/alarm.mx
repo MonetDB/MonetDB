@@ -264,8 +264,9 @@ int CMDepoch(int *retval) {
 	return GDK_SUCCEED;
 }
 
+/* should return lng */
 int CMDusec(int *retval){
-	*retval = GDKusec();
+	*retval = (int) GDKusec();
 	return GDK_SUCCEED;
 }
 int CMDtime(int *retval){

@@ -79,6 +79,11 @@ Can be used in scripts, but is insecure.
 #define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
 #endif
 
+#ifdef NATIVE_WIN32
+/* Windows doesn't declare chdir, even though it does provide the function */
+extern int chdir(const char *);
+#endif
+
 static FILE *toConsole;
 
 static long t0, t1;		/* used for timing */

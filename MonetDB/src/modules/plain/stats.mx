@@ -99,7 +99,7 @@ struct _StatOps_t {
   void     (*Add)(Stats_t *st, gdk_uint64 value);
   void     (*Report)(Stats_t *st, FILE *out);
   gdk_uint32 (*Resets)(Stats_t *st);
-  gdk_uint32 (*NAdds)(Stats_t *st);
+  gdk_uint64 (*NAdds)(Stats_t *st);
   gdk_uint64 (*Min)(Stats_t *st);
   gdk_uint64 (*Max)(Stats_t *st);
   gdk_uint64 (*Mean)(Stats_t *st);
@@ -128,7 +128,7 @@ static void     HistogramAdd_m(StatsHistogram_t *st, gdk_uint64 value);
 static void     Report_m(Stats_t *st, FILE *out);
 static void     HistogramReport_m(StatsHistogram_t *, FILE *out);
 static gdk_uint32 Resets_m(Stats_t *st);
-static gdk_uint32 NAdds_m(Stats_t *st);
+static gdk_uint64 NAdds_m(Stats_t *st);
 static gdk_uint64 Min_m(Stats_t *st);
 static gdk_uint64 Max_m(Stats_t *st);
 static gdk_uint64 Mean_m(Stats_t *st);
@@ -273,7 +273,7 @@ Add_m(Stats_t *st, gdk_uint64 value)
 static void
 HistogramAdd_m(StatsHistogram_t *st, gdk_uint64 value)
 {
-  gdk_uint32 bin;
+  gdk_uint64 bin;	/* 32 might be enough, but 64 shuts up the compiler */
 
   Add_m((Stats_t *)st, value);
   bin = 
@@ -301,7 +301,7 @@ stats_report(ptr *_st, str outfile)
 static void
 Report_m(Stats_t *st, FILE *out)
 {
-  fprintf(out, "%s.count = %u\n", st->st_name, NAdds_m(st));
+  fprintf(out, "%s.count = " ULLFMT "\n", st->st_name, NAdds_m(st));
   fprintf(out, "%s.min = " ULLFMT "\n", st->st_name, Min_m(st));
   fprintf(out, "%s.max = " ULLFMT "\n", st->st_name, Max_m(st));
   fprintf(out, "%s.mean = " ULLFMT "\n", st->st_name, Mean_m(st));
@@ -319,7 +319,7 @@ HistogramReport_m(StatsHistogram_t *st, FILE *out)
   gdk_uint32 n;
   gdk_uint64 sum, nadds;
 
-  nadds = (gdk_uint64)st->sh_stats.st_nadds;
+  nadds = st->sh_stats.st_nadds;
   Report_m((Stats_t *)st, out);
   sum = 0;
   if (nadds > 0) {
@@ -359,7 +359,7 @@ Resets_m(Stats_t *st)
   return st->st_nresets;
 }
 
-static gdk_uint32
+static gdk_uint64
 NAdds_m(Stats_t *st)
 {
   return st->st_nadds;
@@ -408,8 +408,8 @@ static gdk_uint64
 Conf95_m(Stats_t *st)
 {
   if (st->st_nadds == 0) return (gdk_uint64)-1;
-  return (19600 * (gdk_int64)Stddev_m(st)) / 
-		sqrt((gdk_int64)st->st_nadds * 100000000);
+  return (gdk_uint64) ((19600 * Stddev_m(st)) /
+		       sqrt((double) st->st_nadds * 100000000));
 }
 
 static gdk_uint64

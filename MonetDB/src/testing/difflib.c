@@ -194,7 +194,8 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
   FILE *lw_diff_fp,*wc_diff_fp,*fp[2],*pipe_fp;
   char line[BUFLEN],command[BUFLEN],pipe_ln[BUFLEN],pipe_fn[1024];
   char *ok,*fn[2];
-  int i,j;
+  size_t i;
+  int j;
   int space,alpha_,digit,l[2],k[2];
   char wc_old_fn[BUFLEN],wc_new_fn[BUFLEN];
 

@@ -956,7 +956,7 @@ int CMDcard(int *result, BAT* b, int* maxelements) {
 				tpe = TYPE_int; /* use offsets only in case of a double-eliminated string heap */
 			}
 #endif
-			if (maxsize <= BATcount(b)) {
+			if ((size_t) maxsize <= BATcount(b)) {
 				@:card_bound(BOUNDED)@
 			} else {
 				maxsize = BATcount(b); /* reducing maxsize limits memory consumption in hash table */ 
