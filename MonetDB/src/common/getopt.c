@@ -52,7 +52,7 @@
 # define _NO_PROTO
 #endif
 
-#include <config.h>
+#include <monetdb_config.h>
 
 #if 0				/* already taken care of in config.h */
 #if !defined __STDC__ || !__STDC__

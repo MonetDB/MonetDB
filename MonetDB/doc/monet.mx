@@ -259,7 +259,7 @@ Most of the code is ANSI C, though some modules are C++.
 The code is configured with the standard GNU tools (autoconf, automake, configure) such that
 in principle a build on any Posix platform should be as simple as {\tt ./bootstrap; ./configure; make all install}. 
 As Microsoft Windows lacks configure, the Monet distribution comes with pre-built Windows
-{\tt config.h}, such that making becomes {\tt cd NT; make; make -f Makefile.msc all install}. 
+{\tt monetdb\_config.h}, such that making becomes {\tt cd NT; make; make -f Makefile.msc all install}. 
 More details and requirements are explained in the file @[<a href="www/HowToStart">HowToStart</a>@ (for Unix users)
 respectively @[<a href="www/HowToStart-Win32.txt">HowToStart-Win32.txt</a>@ (for Windows users).
 Both files are located in the root of the source distribution.

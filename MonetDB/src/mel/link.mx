@@ -50,7 +50,7 @@ class Link: public language {
 #endif //_LINK_H_
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "link.h"
 #include "ListIterator.h"
 #include <string.h>

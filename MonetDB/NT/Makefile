@@ -15,8 +15,8 @@ check: $(SRCDIR)\Makefile.msc RunMtest.bat
 	$(MAKE) /nologo /i /f $(SRCDIR)\Makefile.msc check
 	call RunMtest.bat
 
-install: targetdirs config.h all
-	$(INSTALL) config.h $(includedir)
+install: targetdirs monetdb_config.h all
+	$(INSTALL) monetdb_config.h $(includedir)
 	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc install
 
 $(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \
@@ -24,10 +24,10 @@ $(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \
 	$(SRCDIR)\src\utils\autogen\msc.py
 	$(CD) $(SRCDIR) && $(PYTHON) src\utils\autogen\autogen.py
 
-all-msc: config.h
+all-msc: monetdb_config.h
 
-config.h: winconfig.h
-	$(INSTALL) winconfig.h config.h
+monetdb_config.h: winconfig.h
+	$(INSTALL) winconfig.h monetdb_config.h
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h

@@ -44,7 +44,7 @@
    02111-1307 USA.  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <monetdb_config.h>
 #endif
 
 #include "monet_getopt.h"

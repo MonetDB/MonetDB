@@ -43,7 +43,7 @@ class Ops : public Symbol {
 #endif // _OPS_H_
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "ops.h"
 #include "language.h"
 #include <string.h>

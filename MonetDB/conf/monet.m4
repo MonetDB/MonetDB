@@ -66,7 +66,7 @@ if test "x$have_monet" != xno; then
   else
     MONET_CFLAGS=`$MONET_CONFIG --cflags`
     MONET_INCS=`$MONET_CONFIG --includes`
-    MONET_INCLUDEDIR=`$MONET_CONFIG --includedir`
+    MONET_INCLUDEDIR=`$MONET_CONFIG --pkgincludedir`
     MONET_LIBS=`$MONET_CONFIG --libs`
     MONET_MOD_PATH=`$MONET_CONFIG --modpath`
     MONET_PREFIX=`$MONET_CONFIG --prefix`

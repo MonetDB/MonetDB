@@ -49,7 +49,7 @@ class Builtin : public Symbol {
 #endif 
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "builtin.h"
 #include "language.h"
 #include <string.h>

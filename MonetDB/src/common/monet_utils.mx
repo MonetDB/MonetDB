@@ -32,7 +32,7 @@ server.
 #ifndef _MU_H_
 #define _MU_H_
 
-#include <config.h>		/* we always have this */
+#include <monetdb_config.h>		/* we always have this */
 
 #ifdef _MSC_VER
 #ifndef LIBMUTILS

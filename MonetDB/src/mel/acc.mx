@@ -49,7 +49,7 @@ class Acc : public Symbol {
 #endif 
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "acc.h"
 #include "ListIterator.h"
 #include "language.h"

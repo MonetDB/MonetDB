@@ -46,11 +46,11 @@ MXFLAGS= -n
 	$(LEX) $(LFLAGS) $<
 	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.c ; fi
 	if [ -f lex.$(PARSERNAME).c ]; then $(MV) lex.$(PARSERNAME).c $*.yy.c ; fi
-	# make sure that "config.h" is included first, also with [f]lex-generated files.
+	# make sure that "monetdb_config.h" is included first, also with [f]lex-generated files.
 	# This is crucial to prevent inconsistent (re-)definitions of macros.
 	$(MV) $*.yy.c $*.yy.c.tmp
-	echo '#include <config.h>' > $*.yy.c
-	grep -v '^#include.*[<"]config.h[">]' $*.yy.c.tmp >> $*.yy.c
+	echo '#include <monetdb_config.h>' > $*.yy.c
+	grep -v '^#include.*[<"]monetdb_config.h[">]' $*.yy.c.tmp >> $*.yy.c
 	$(RM) -f $*.yy.c.tmp
 
 %.cc: %.mx
@@ -89,11 +89,11 @@ MXFLAGS= -n
 %.yy.cc: %.ll
 	$(LEX) $(LFLAGS) $<
 	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.cc ; fi
-	# make sure that "config.h" is included first, also with [f]lex-generated files.
+	# make sure that "monetdb_config.h" is included first, also with [f]lex-generated files.
 	# This is crucial to prevent inconsistent (re-)definitions of macros.
 	$(MV) $*.yy.cc $*.yy.cc.tmp
-	echo '#include <config.h>' > $*.yy.cc
-	grep -v '^#include.*[<"]config.h[">]' $*.yy.cc.tmp >> $*.yy.cc
+	echo '#include <monetdb_config.h>' > $*.yy.cc
+	grep -v '^#include.*[<"]monetdb_config.h[">]' $*.yy.cc.tmp >> $*.yy.cc
 	$(RM) -f $*.yy.cc.tmp
 
 %.m: %.mx

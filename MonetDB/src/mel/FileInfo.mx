@@ -62,7 +62,7 @@ class FileInfo {
 #endif // _FILEINFO_H_
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "FileInfo.h"
 #include "mel.h"
 #include "ListIterator.h"

@@ -1114,7 +1114,8 @@ Print the table header and then the multijoin.
 @-
 Cleanup.
 @c
-	stream_flush(s);
+	if (stream_flush(s) < 0)
+		ret = -1;
         for(j=0; j <= argc; j++) {
 		if (c[j].buf) GDKfree(c[j].buf);
 	}

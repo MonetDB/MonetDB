@@ -61,7 +61,7 @@ class Atom : public Symbol {
 #endif 
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "atom.h"
 #include "language.h"
 

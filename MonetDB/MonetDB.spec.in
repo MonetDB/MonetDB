@@ -95,6 +95,10 @@ rm -fr $RPM_BUILD_ROOT
 
 %{prefix}/etc/monet.conf 
 
+%pre client 
+%{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
+%{_sbindir}/useradd -d %{_var}/lib/monetdb -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
+
 %files server
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/Mserver 
@@ -111,9 +115,6 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/monet-config*
 %{prefix}/share/MonetDB/conf/monet.m4 
-
-%{prefix}/include/*.h
-%{prefix}/include/*/*.[hcm]
 
 %{prefix}/bin/mel
 %{prefix}/bin/calibrator
@@ -137,9 +138,8 @@ rm -fr $RPM_BUILD_ROOT
 
 %{prefix}/lib/autogen/* 
 
-%pre 
-%{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
-%{_sbindir}/useradd -d %{_var}/lib/monetdb -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
+%{prefix}/include/MonetDB/*.h
+%{prefix}/include/MonetDB/*/*.[hcm]
 
 %post server
 umask 022

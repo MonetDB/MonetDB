@@ -218,7 +218,7 @@ extern List *dirs;
 #endif
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "mel.h"
 #include "mel.tab.h"
 #ifdef HAVE_IOSTREAM
@@ -445,7 +445,7 @@ int main(int argc, char *argv[] ){
 
 @L 
 %{
-#include <config.h>
+#include <monetdb_config.h>
 #include "mel.h"
 #include "mel.tab.h"
 #include <stdlib.h>
@@ -714,7 +714,7 @@ const char* get_signature(char* fcn){
 }
 @Y
 %{
-#include <config.h>
+#include <monetdb_config.h>
 #include "mel.h"
 #include <string.h>
 #ifdef HAVE_MALLOC_H

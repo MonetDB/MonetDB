@@ -70,7 +70,7 @@ class TypeArg : public Arg {
 #endif // _TYPEARG_H_
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "type_arg.h"
 #include "language.h"
 #include <string.h>

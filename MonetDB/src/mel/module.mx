@@ -49,7 +49,7 @@ class Module : public Symbol {
 #endif // _MODULE_H_
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "module.h"
 #include "language.h"
 #include <string.h>

@@ -61,7 +61,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "monetdb_config.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

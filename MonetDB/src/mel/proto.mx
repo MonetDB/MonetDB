@@ -63,7 +63,7 @@ class proto: public language {
 #endif //_MPROTO_H_
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "proto.h"
 #include "ListIterator.h"
 #include "mel.h"

@@ -42,7 +42,7 @@ class use: public language {
 #endif //_USE_H_
 
 @C
-#include <config.h>
+#include <monetdb_config.h>
 #include "use.h"
 #include "ListIterator.h"
 

@@ -67,7 +67,7 @@ caliblng now(void)
 
 #else
 
-# include <config.h>
+# include <monetdb_config.h>
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>

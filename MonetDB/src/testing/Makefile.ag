@@ -52,8 +52,8 @@ scripts_py = {
 
 scripts_python = {
 	EXT = py
-        DIR = pkgdatadir/python
-        SOURCES = trace.py
+	DIR = pkgdatadir/python
+	SOURCES = trace.py
 }
 
 scripts_lst = {
