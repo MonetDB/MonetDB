@@ -66,7 +66,7 @@ The port id should be obtained from the Homes file.
 
 	length = sizeof(server);
 	if (bind(sock, (SOCKPTR)&server, length) < 0) {
-		GDKsyserror("binding to stream socket (%s) failed\n", *port);
+		GDKsyserror("binding to stream socket (%d) failed\n", *port);
 		return GDK_FAIL;
 	}
 @-
