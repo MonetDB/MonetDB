@@ -46,8 +46,10 @@ class BaseCursor:
         self.close()
 
     def nextset(self):
-        if (self._result.next_result()):
+        if self._result.next_result():
             return True
+        if self._result.result_error() != None:
+            self.errorhandler(self, DatabaseError, "Query result error: " + self._result.result_error())
         return None
 
     def setinputsizes(self, *args):
@@ -124,6 +126,9 @@ class BaseCursor:
 
     def __do_query(self, q):
         self._result = self.connection._mapi.query(q)
+        if self._result.result_error() != None:
+            self.errorhandler(self, DatabaseError, "Query result error: " + self._result.result_error())
+
         self.rownumber = 0
         self.rowcount = self._result.get_row_count()
         self.description = self._describe()
@@ -172,6 +177,7 @@ class CursorStoreResultMixIn:
             else: row = {}
             for i in range(self._result.get_field_count()):
                 val = converters.monet2python(self._result.fetch_field(i), self.description[i][1])
+                    
                 if self._fetch_type == 0: row = row + (val,)
                 else: row[self.description[i][0]] = val
             self._rows.append(row)
