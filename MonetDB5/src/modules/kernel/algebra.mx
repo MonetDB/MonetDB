@@ -419,16 +419,6 @@ comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 command thetajoin( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3],
 		opname:int,estimate:lng) :bat[:any$1,:any$3] 
 address ALGthetajoinEstimate;
-@- Theta Join with inner columns
-@mal
-command theta ( inner_result:bat[:any$2,:any$2], outer_result:bat[:any$1,:any$3],
-		left:bat[:any$1,:any$2], right:bat[:any$2,:any$3], opname:str )
-address ALGtheta
-comment "Theta join, just as simple thetajoin(l,r), the difference is that 
-        it returns two values, which are added to the first params 
-        'inner_result' and 'outer_result', 'inner_result' gets all matching 
-        inner tuples, 'outer_result' the other two (what would have the 
-        result of thetajoin(l,r)).";
 @- Band Join (approximate match)
 @mal
 command bandjoin( outer:bat[:any$1,:any$2], inner:bat[:any$2,:any$3],
@@ -922,13 +912,6 @@ int
 CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate)
 {
 	return (*result = BATthetajoin(left, right, *mode, (*estimate == lng_nil) ? oid_nil : (size_t) * estimate)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode)
-{
-	BATtheta(inner, outer, left, right, *mode);
-	return GDK_SUCCEED;
 }
 
 int
@@ -1771,33 +1754,6 @@ str ALGthetajoin(int *result, int *lid, int *rid, int *opc) {
 	return ALGthetajoinEstimate(result,lid,rid,opc,&lng_nil);
 }
 
-str ALGtheta(int *iid, int *oi, int *lid, int *rid, int opc) {
-	BAT *ib, *ob, *lb, *rb;
-    if( (ib= BATdescriptor(*iid)) == NULL ){
-        return throwMessage("algebra.thetajoin", "Cannot access descriptor");
-    }
-    if( (ob= BATdescriptor(*oi)) == NULL ){
-		BBPunfix(ib->batCacheid);
-        return throwMessage("algebra.thetajoin", "Cannot access descriptor");
-    }
-    if( (lb= BATdescriptor(*lid)) == NULL ){
-		BBPunfix(ob->batCacheid);
-		BBPunfix(ib->batCacheid);
-        return throwMessage("algebra.thetajoin", "Cannot access descriptor");
-    }
-    if( (rb= BATdescriptor(*rid)) == NULL ){
-		BBPunfix(lb->batCacheid);
-		BBPunfix(ob->batCacheid);
-		BBPunfix(ib->batCacheid);
-        return throwMessage("algebra.thetajoin", "Cannot access descriptor");
-    }
-	BATtheta(ib,ob,lb,rb,opc);
-	BBPunfix(rb->batCacheid);
-	BBPunfix(lb->batCacheid);
-	BBPunfix(ob->batCacheid);
-	BBPunfix(ib->batCacheid);
-	return MAL_SUCCEED;
-}
 str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
 	BAT *left, *right, *bn= NULL;
     if( (left= BATdescriptor(*lid)) == NULL ){

@@ -118,8 +118,7 @@ The insert/delete/replace operations on the BATs are overloaded for
 the partitioned version. Insertions are added to the last partition.
 Deletion takes place in all versions and will actually shrink
 the oid range. 
-Rebalancing the partitions content is considered a separate action,
-currently not supported.
+Rebalancing the partitions content is considered a separate action.
 
 The partition capacity can be set to limit the number
 of insertions. As soon as the capacity is exhausted,
@@ -148,6 +147,10 @@ comment "Delete a tuple from the BAT group";
 command delete(b:bat[:void,:any$1],p:bat[:void,:any$1]):bat[:void,:any$1]
 address BPTdeleteBAT
 comment "Delete a BAT from the partition";
+
+command compress(b:bat[:void,:any$1]):bat[:void,:any$1]
+address BPTcompress
+comment "Compress the group to remove oid holes";
 
 command dump()
 address BPTdump;
@@ -211,6 +214,8 @@ BPTresize(int size){
 	partitions= p;
 	partitions[0].bid= -1;
 	partitions[0].pid= -1;
+	partitions[0].prev= -1;
+	partitions[0].next= -1;
 	plimit= size;
 }
 
@@ -338,11 +343,13 @@ BPTdeposit(int *ret, int *bid){
 	partitions[i].first= b->hseqbase;
 	partitions[i].last=  b->hseqbase+ BATcount(b);
 	partitions[i].prev= -1;
-	partitions[i].next= 0;
+	partitions[i].next= -1;
 	partitions[i].cap= oid_nil;
 	if(i>= ptop) {
 		ptop=i+1;
 		partitions[ptop].bid= -1;
+		partitions[ptop].next= -1;
+		partitions[ptop].prev= -1;
 	}
 	BBPunfix(*bid);
 	(void) ret;
@@ -363,7 +370,7 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 		return throwMessage("partitions.deposit","BAT group unknown");
 	}
 
-	while( partitions[idx].next)
+	while( partitions[idx].next >= 0)
 		idx= partitions[idx].next;
 	if( b->hseqbase < partitions[idx].last &&
 			partitions[idx].last != oid_nil){
@@ -385,6 +392,8 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 	if(i>= ptop) {
 		ptop=i+1;
 		partitions[ptop].bid= -1;
+		partitions[ptop].next= -1;
+		partitions[ptop].prev= -1;
 	}
 	BBPunfix(*pid);
 	(void) ret;
@@ -443,7 +452,7 @@ BPTgetLastPartition(int *ret, int *bid){
 	int i;
 	for(i=0;i<ptop; i++)
 	if( partitions[i].bid== *bid &&
-		partitions[i].next== 0){
+		partitions[i].next== -1){
 			*ret = partitions[i].pid;
 			return MAL_SUCCEED;
 	}
@@ -572,7 +581,7 @@ static int BPTgetlastindex(int bid){
 	int i;
 	for(i=0;i<ptop; i++)
 	if( (partitions[i].bid== bid || partitions[i].pid==bid) &&
-		partitions[i].next== 0)
+		partitions[i].next== -1)
 			return i;
 	return -1;
 }
@@ -604,11 +613,13 @@ static int addPartition(int idx){
 	partitions[i].last= 
 	partitions[i].first= partitions[idx].last;
 	partitions[i].cap= partitions[idx].cap;
-	partitions[i].next= 0;
+	partitions[i].next= -1;
 
 	if(i>= ptop) {
 		ptop=i+1;
 		partitions[ptop].bid= -1;
+		partitions[ptop].next= -1;
+		partitions[ptop].prev= -1;
 	}
 
 	partitions[idx].next= i;
@@ -667,62 +678,58 @@ which is solved by upgrading the hbase of the descriptors.
 str
 BPTdelete_oid(int *ret, int *bid, oid *h){
 	int i;
-	BAT *b;
 	i= BPTgetlastindex(*bid);
 	if( i<0)
 		return throwMessage("partitions.delete","BAT group not found");
 
 	for(; i>=0; i= partitions[i].prev){
-		b= BATdescriptor(partitions[i].pid);
-		if( b==0)
-			return throwMessage("partitions.delete","Internal error in BAT group");
-		partitions[i].first--;
-		b->hseqbase = partitions[i].first;
-		partitions[i].last--;
 		if( *h >= partitions[i].first)
 			return BKCdelete(ret, &partitions[i].pid,h);
-		BBPunfix(b->batCacheid);
 		if( partitions[i].prev < 0) return MAL_SUCCEED;
 	}
 	return throwMessage("partitions.delete","Element not found in BAT group");
 }
-void BPTshift(int idx, int shift){
+str
+BPTcompress(int *ret, int *bid){
 	BAT *b;
-	int j;
-	for(j=idx; j>0 ;  j= partitions[j].next){
-		partitions[j].first -= shift;
-		partitions[j].last -= shift;
-		b= BATdescriptor(partitions[j].pid);
-		if( b==0) return ;
-		b->hseqbase = partitions[j].first;
+	int i;
+	oid o=0;
+	(void) ret;
+	i= BPTgetfirstindex(*bid);
+	if( i<0)
+		return throwMessage("partitions.commpress","BAT group not found");
+	b= BATdescriptor(i);
+	if( b==0)
+		return throwMessage("partitions.commpress","BAT group not found");
+	for(; i>=0 ;  i= partitions[i].next){
+		partitions[i].first = o;
+		b= BATdescriptor(partitions[i].pid);
+		if( b==0) 
+			return throwMessage("partitions.compress","Internal error in BAT group");
+		b->hseqbase = partitions[i].first;
+		o=partitions[i].last += BATcount(b)-1;
 		BBPunfix(b->batCacheid);
 	}
+	return MAL_SUCCEED;
 }
 str
 BPTdeleteBAT(int *ret, int *bid, int *bnid){
 	int i;
 	BAT *b;
-	size_t cnt;
 	(void) ret; 
 	i = BPTgetlastindex(*bid);
 	for( ; i>= 0; i= partitions[i].prev){
 		if( partitions[i].pid == *bnid){
-			if( partitions[i].bid == partitions[i].pid)
-				BPTshift(i, partitions[i].last- partitions[i].first);
 			/* remove a complete BAT */
-			if( partitions[i].next )
+			if( partitions[i].next >= 0 )
 				partitions[partitions[i].next].prev= partitions[i].prev;
 			if( partitions[i].prev >= 0 )
 				partitions[partitions[i].prev].next= partitions[i].next;
 			return MAL_SUCCEED;
 		}
 		b= BATdescriptor(partitions[i].pid);
-		if( partitions[i].first <= b->hseqbase && b->hseqbase<=partitions[i].last){
-			cnt = BATcount(b);
+		if( partitions[i].first <= b->hseqbase && b->hseqbase<=partitions[i].last)
 			BKCdelete_bat(ret,&partitions[i].pid,bnid);
-			/* adjust IDs */
-			BPTshift(i, BATcount(b)-cnt);
-		}
 		BBPunfix(b->batCacheid);
 	}
 	return throwMessage("partitions.delete","BAT delete not yet implemented");
