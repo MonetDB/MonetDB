@@ -30,14 +30,16 @@ Vector.h.
 
 @+ Implementation Code for example module. 
 @c
+#include <config.h>
+#include <template_config.h>
+
+#include "example.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
-
-#include "example.h"
-#include "template_config.h"
 
 int hello( str *res, str src ){
 	int len = strlen(src) + strlen("hello ");

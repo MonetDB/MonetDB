@@ -4,10 +4,10 @@ AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AH_TOP([#include "sysdefs.h"])
-AH_TOP([#include "stddef.h"])
+AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("template", 0.1)
+AM_INIT_AUTOMAKE("template", 0.1, [no-define])
 AM_CONFIG_HEADER(template_config.h:conf/config.h.in)
 
 HOST=[$target]
@@ -22,3 +22,8 @@ AM_MONET_CLIENT(4.3.12)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR(Monet is not found.)
 fi
+
+dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
+CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"
+
