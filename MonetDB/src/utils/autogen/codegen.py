@@ -370,55 +370,78 @@ def do_libs(deps):
                 break
     return libs
 
+def expand_includes(incdirs):
+    dirs = incdirs
+    change = 1
+    #when there is a variable dependency cycle, this code will loop forever
+    while change > 0:
+        change = 0
+        incdirs = dirs
+        dirs = [ ]
+        for incdir in incdirs:
+            incs = string.split(incdir)
+            for i in incs:
+                if i[0:2] == "-I":
+           	    i = i[2:]
+                dir = i
+                if dir[0:2] == "$(":
+                    var, rest = string.split(dir[2:], ')')
+                    if os.environ.has_key( var ):
+                        value = os.environ[var]
+                        dir = value + rest
+                        change = 1
+                if string.find(i,os.sep) >= 0:
+                    d,rest = string.split(i,os.sep, 1)
+                    if d == "top_srcdir" or d == "top_builddir":
+                        dir = os.path.join(topdir, rest)
+                    elif d == "srcdir" or d == "builddir":
+                        dir = rest
+                dirs.append(dir)
+
+    return dirs
+
 def read_depsfile(incdirs, cwd, topdir):
     includes = {}
     incmap = {}
     for i in incdirs:
         if i[0:2] == "-I":
             i = i[2:]
-        dir = i
-        if dir[0:2] == "$(":
-            var, rest = string.split(dir[2:], ')')
-            if os.environ.has_key( var ):
-                value = os.environ[var]
-                dir = value + rest
-        if string.find(i,os.sep) >= 0:
-            d,rest = string.split(i,os.sep, 1)
-            if d == "top_srcdir" or d == "top_builddir":
-                dir = os.path.join(topdir, rest)
-            elif d == "srcdir" or d == "builddir":
-                dir = rest
-        if os.path.isabs(dir):
-            f = os.path.join(dir, ".cache")
-        else:
-            f = os.path.join(cwd, dir, ".cache")
-        lineno = 0
-        if os.path.exists(f):
-            cache = shelve.open(f)
-            for d in cache.keys():
-                inc = []
-                for dep in cache[d]:
-                    if not os.path.isabs(dep) and dep[0:2] != '$(':
-                        dep = os.path.join(i,dep)
-                    inc.append(dep)
-                includes[os.path.join(i,d)] = inc
-                incmap[d] = i
-            cache.close()
-        else:
-            if i[0:2] == "-I":
-                i = i[2:]
-            if i[0:2] == "$(":
-                var, rest = string.split(i[2:], ')')
-                if os.environ.has_key( var ):
-                    value = os.environ[var]
-                    i = value + rest
-	    p = i
-            if not os.path.isabs(i) and i[0:2] != "$(":
-               	i = os.path.join(cwd,i)
-            if os.path.exists(i):
-                for dep in os.listdir(i):
-                    includes[os.path.join(p,dep)] = [ os.path.join(p,dep) ]
-                    incmap[dep] = p
+
+        dirs = expand_includes( [ i ] )
+
+	abs = 0
+	if len(dirs) > 1:
+            abs = 1
+            print ("!WARNING: "+i+" is bound to a list of paths!")
+            print ("!WARNING: this leads to the use of absolute paths in:")
+            print ("!WARNING: "+cwd+os.sep+"Makefile.am")
+
+	for dir in dirs:
+            if abs > 0:
+                #otherwise, <i> could still be a variable bounded to a list
+                i = dir
+
+            if os.path.isabs(dir):
+                f = os.path.join(dir, ".cache")
+            else:
+                f = os.path.join(cwd, dir, ".cache")
+
+            if os.path.exists(f):
+                cache = shelve.open(f)
+                for d in cache.keys():
+                    inc = []
+                    for dep in cache[d]:
+                        if not os.path.isabs(dep) and dep[0:2] != '$(':
+                            dep = os.path.join(i,dep)
+                        inc.append(dep)
+                    includes[os.path.join(i,d)] = inc
+                    incmap[d] = i
+                cache.close()
+            else:
+                if os.path.exists(dir):
+                    for dep in os.listdir(dir):
+                        includes[os.path.join(i,dep)] = [ os.path.join(i,dep) ]
+                        incmap[dep] = i
 
     return includes,incmap
 
