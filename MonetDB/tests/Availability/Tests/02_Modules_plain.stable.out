@@ -105,15 +105,14 @@ Plain_mods@batloop {
 
 Module: "aggr"
 
-[ 62 ]
-[ 62 ]
+[ 61 ]
+[ 61 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature							| help								  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "aggrtst",		  "PROC:      ",  "aggrtst(int, int, str, ..str..) : any",			  "not available"						  ]
 [ "card",		  "COMMAND:   ",  "card(BAT[any,any]) : int",					  "return the number of different values in a tail column"	  ]
 [ "card",		  "COMMAND:   ",  "card(BAT[any,any], int) : int",				  "as card(b), but returns nil if card(b) > maxelements"	  ]
-[ "card",		  "PROC:      ",  "card(BAT[any,any]) : int",					  "not available"						  ]
 [ "hasNil",		  "COMMAND:   ",  "hasNil(BAT[any,any]) : bit",					  "return if there is a nil value in the tail column"		  ]
 [ "size",		  "COMMAND:   ",  "size(BAT[any,bit]) : int",					  "return the number of true values in a tail column"		  ]
 [ "size",		  "PROC:      ",  "size(BAT[any,bit]) : int",					  "not available"						  ]
