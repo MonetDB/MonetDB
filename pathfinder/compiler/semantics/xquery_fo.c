@@ -136,17 +136,17 @@
     .arity = 2, .par_ty = { PFty_opt (PFty_atomic ()),                   \
                             PFty_opt (PFty_atomic ()) },                 \
     .ret_ty = PFty_opt (PFty_boolean ()) }                               \
-, /* op:plus (atomic?, atomic?) as atomic? */                            \
+, /* op:plus (integer?, integer?) as integer? */                         \
   { .ns = PFns_op, .loc = "plus",                                        \
-    .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                   \
-                            PFty_opt (PFty_integer ()) },                 \
-    .ret_ty = PFty_opt (PFty_integer ()) }                                \
-, /* op:plus (atomic?, atomic?) as atomic? */                            \
+    .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
+                            PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_opt (PFty_integer ()) }                               \
+, /* op:plus (decimal?, decimal?) as decimal? */                         \
   { .ns = PFns_op, .loc = "plus",                                        \
-    .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                   \
-                            PFty_opt (PFty_decimal ()) },                 \
-    .ret_ty = PFty_opt (PFty_decimal ()) }                                \
-, /* op:plus (atomic?, atomic?) as atomic? */                            \
+    .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
+                            PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_opt (PFty_decimal ()) }                               \
+, /* op:plus (double?, double?) as double? */                            \
   { .ns = PFns_op, .loc = "plus",                                        \
     .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
                             PFty_opt (PFty_double ()) },                 \
