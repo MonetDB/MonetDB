@@ -66,6 +66,7 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %files client
 %defattr(-,monet,monet) 
 %{prefix}/bin/MapiClient 
+%{prefix}/lib/libmutils.so*
 %{prefix}/lib/libMapi.so* 
 %{prefix}/lib/libstream.so*
 
