@@ -20,15 +20,16 @@ import java.util.Properties;
  * of which @DEF_MPORT@ will be used.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.3 (beta release)
+ * @version @MAJORVERSION@.@MINORVERSION@ (@VERSIONSUFFIX@)
  */
 public class MonetDriver implements Driver {
 	// the url kind will be jdbc:monetdb://<host>[:<port>]/<database>
 	// Chapter 9.2.1 from Sun JDBC 3.0 specification
 	private static final String MONETURL = "jdbc:monetdb://";
 	// this is a real beta release (we decide not to follow Sun's rule here)
-	private static final int MONETMAJOR = @MAJORVERSION@;
-	private static final int MONETMINOR = @MINORVERSION@;
+	private static final int DRIVERMAJOR = @MAJORVERSION@;
+	private static final int DRIVERMINOR = @MINORVERSION@;
+	private static final String DRIVERVERSIONSUFFIX = "@VERSIONSUFFIX@";
 	// I don't dare to even think of calling it compliant yet ;)
 	private static final boolean MONETJDBCCOMPLIANT = false;
 
@@ -114,6 +115,9 @@ public class MonetDriver implements Driver {
 
 			// finally return the Connection as requested
 			return(new MonetConnection(host, port, db, user, pass));
+		} catch (SQLException e) {
+			// This is probably an authentication error
+			throw e;
 		} catch (Throwable t) {	// catch also errors! (like index out of bounds)
 			throw new SQLException("Could not parse URL: " + t.toString());
 		}
@@ -125,7 +129,7 @@ public class MonetDriver implements Driver {
 	 * @return this driver's major version number
 	 */
 	public int getMajorVersion() {
-		return(MONETMAJOR);
+		return(DRIVERMAJOR);
 	}
 
 	/**
@@ -134,7 +138,7 @@ public class MonetDriver implements Driver {
 	 * @return this driver's minor version number
 	 */
 	public int getMinorVersion() {
-		return(MONETMINOR);
+		return(DRIVERMINOR);
 	}
 
 	/**
@@ -155,8 +159,18 @@ public class MonetDriver implements Driver {
 	 *         are required.
 	 */
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
-		/** @todo can't be hard to set username/password here... */
-		return(null);
+		if (!acceptsURL(url)) return(null);
+		
+		DriverPropertyInfo[] dpi = new DriverPropertyInfo[2];
+		dpi[0] = new DriverPropertyInfo("user", info.getProperty("user"));
+		dpi[0].required = true;
+		dpi[0].description = "The username to use when authenticating on the database";
+
+		dpi[1] = new DriverPropertyInfo("password", info.getProperty("password"));
+		dpi[1].required = true;
+		dpi[1].description = "The password to use when authenticating on the database";
+		
+		return(dpi);
 	}
 
 	/**
@@ -236,5 +250,14 @@ public class MonetDriver implements Driver {
 			// new types
 			return(Types.OTHER);
 		}
+	}
+	
+	/**
+	 * Returns a touched up identifying version string of this driver.
+	 *
+	 * @return the version string
+	 */
+	static String getDriverVersion() {
+		return("" + DRIVERMAJOR + "." + DRIVERMINOR + " " + DRIVERVERSIONSUFFIX);
 	}
 }
