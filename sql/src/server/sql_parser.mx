@@ -1371,6 +1371,7 @@ row_commalist:
     '(' atom_commalist ')'	{ $$ = dlist_append_list(dlist_create(), $2); }
  |  row_commalist ',' '(' atom_commalist ')'
 				{ $$ = dlist_append_list($1, $4); }
+ ;
 
 atom_commalist:
     insert_atom		{ $$ = dlist_append_symbol(dlist_create(), $1); }
@@ -2379,6 +2380,7 @@ interval_expression:
 		}
 
 	/* miscellaneous */
+ ;
 
 qname:
     ident		{ $$ = dlist_append_string(dlist_create(), $1); }
