@@ -24,6 +24,7 @@
 #include	"MxFcnDef.h"
 
 #define TEXMODE	(textmode==M_TEX)
+#define TEXIMODE (textmode==M_TEXI)
 #define WWWMODE	(textmode==M_WWW)
 
 
@@ -43,11 +44,15 @@ void	PrEnv(int env)
 
 	switch( pr_env ){
 	case E_TEXT:
-		if TEXMODE ofile_printf("}");
+		if TEXMODE 
+		if( bodymode==0) ofile_printf("}");
 		break;
 	case E_CODE:
 		if TEXMODE {
+			if( bodymode==0)
 			ofile_printf("\\end{verbatim}\\normalsize}\n");
+		} else if TEXIMODE {
+			ofile_printf("@end verbatim\n@end example \n");
 		} else if WWWMODE ofile_printf("</font></pre>\n");
 		break;
 	case E_CMD:
@@ -57,11 +62,15 @@ void	PrEnv(int env)
 	pr_pos= 0;
 	switch( pr_env ){
 	case E_TEXT:
-		if TEXMODE ofile_printf("{");
+		if TEXMODE 
+		if( bodymode==0) ofile_printf("{");
 		break;
 	case E_CODE:
 		if TEXMODE {
+			if( bodymode==0)
 			ofile_printf("{\\codesize\\begin{verbatim}\n");
+		} else if TEXIMODE {
+			ofile_printf("@example\n@verbatim\n");
 		} else if WWWMODE ofile_printf("<pre><font size=\"-1\" color=\"%s\">", code_color);
 		break;
 	case E_CMD:
@@ -112,13 +121,30 @@ void PrTxt(char *s)
 	case ']':
 		MathOff(); ofile_printf("{%c}", c);
 		break;
+	case '@':
+		if TEXIMODE {
+			ofile_puts("@@");
+			break;
+		}
+		MathOff(); ofile_printf("@");
+		break;
+	case '#':
+		if TEXIMODE {
+			ofile_puts("\\#");
+			break;
+		}
+		MathOff(); ofile_printf("\\%c", c);
+		break;
+	case '{':
+	case '}':
+		if TEXIMODE {
+			ofile_printf("@%c",c);
+			break;
+		}
 	case '&':
 	case '%':
 	case '$':
-	case '#':
 	case '_':
-	case '{':
-	case '}':
 		MathOff(); ofile_printf("\\%c", c);
 		break;
 	default:
@@ -186,6 +212,17 @@ void	PrChr(char c)
 	    pr_pos++;
 	}
 
+	if( TEXIMODE ) {
+	    switch( c ){
+	    case '{':
+	    case '}':
+	    case '$':
+	    case '#':
+	    default:
+		ofile_putc(c);
+	    }
+	    return;
+	}
 	if (WWWMODE || (pr_env & E_TEXT) == E_TEXT ) {
 	    switch( c ){
 	    case '\n':
@@ -210,12 +247,14 @@ void	PrChr(char c)
 		    ofile_puts("&#38;");
 		    break;
 		}
-	    case '%':
-	    case '$':
+		ofile_printf("%c",c);
+		break;
 	    case '#':
-	    case '_':
 	    case '{':
 	    case '}':
+	    case '_':
+	    case '%':
+	    case '$':
 		MathOff();
 		if TEXMODE ofile_printf("\\%c", c);
 		else	ofile_printf("%c",c);
@@ -245,6 +284,13 @@ void	PrChr(char c)
 		MathOn();
 		ofile_putc(c);
 		break;
+	    case '@':
+		if TEXIMODE {
+			ofile_puts("@@");
+		}
+		MathOff();
+		ofile_putc(c);
+		break;
 	    case '"':
 		if WWWMODE {
 		    ofile_puts("&#34;");
@@ -265,7 +311,7 @@ void	PrChr(char c)
 		while(start_pos++ < pr_pos) ofile_putc(' ');
 		break;
 	    case '\\':
-		ofile_puts(TEXMODE?"\\":"\\e");
+		ofile_puts(TEXMODE?"\\":TEXIMODE?"\\":"\\e");
 		break;
 	    default:
 		ofile_putc(c);

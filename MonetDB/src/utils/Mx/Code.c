@@ -61,6 +61,7 @@ again:  switch( d->d_dir ){
 	case Paragraph:
 	case Continue:
 	case Qtex:
+	case Qtexi:
 	case Qcode:
 	    break;
 	case Cdef:
@@ -300,7 +301,7 @@ return 0;
 void	UnRef(char *ref)
 {
 	Error("Unresolved reference:%s", ref);
-	if( mode & M_CODE && textmode==M_TEX )
+	if( mode & M_CODE && (textmode==M_TEX || textmode==M_TEXI) )
 		ofile_printf("/* Unresolved Reference :%s */", ref);
 	if( mode & M_CODE && textmode==M_MS)
 		ofile_printf("/* %s */", ref);

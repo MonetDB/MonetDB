@@ -52,7 +52,7 @@ typedef enum {
     Index0,Index1,Index2,Index3,Index4,Index5,Index6,Index7,Index8,Index9,
     Bfile, Efile, Ofile, Mxmacro, Ifdef, Ifndef, Endif,
     Title, Author, Version, Date, InHide, OutHide, Comment, 
-    Module, Section, Subsection, Paragraph, Qtex, Qcode, Continue,
+    Module, Section, Subsection, Paragraph, Qtex, Qtexi, Qcode, Continue,
     Pspec, Pimpl, Cdef, Csrc, CCsrc, ODLspec, SQL,
     OQLspec, Cyacc, Clex, Prolog, Haskell, Monet, MALcode, MILcode, 
     Qnap, HTML, Java,
@@ -114,6 +114,7 @@ extern	char *		strchr();
 #define M_WWW 	0x00f0
 #define	M_MS	0x0f00
 #define	M_TEX	0xf000
+#define	M_TEXI	0xf0000
 
 extern	int	mode;
 /* 
@@ -147,7 +148,7 @@ extern	int	textmode;	/* either T_TEX or T_MS */
 extern	int	bodymode;	/* either 0= all 1= for inclusion */
 extern  int	noline;
 extern  int	notouch;
-
+extern  int texihdr;
 #define	NO_HIDE	-1
 
 /* MX Files

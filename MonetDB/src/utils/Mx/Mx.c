@@ -56,6 +56,7 @@ int	textmode= M_TEX;
 int	bodymode= 0;	/* all should be shown */
 char	*opt_code;
 char    *defHideText=0;
+int texihdr = 0;
 
 int	mx_err= 0;
 char * 	mx_file= 0;
@@ -76,6 +77,7 @@ usage(void)
 {
 	Message("Usage: Mx <flags> <file>.mx");
 	Message("\t-t\t\tProduce LaTeX document (default)");
+	Message("\t-i\t\tProduce texi document ");
 	Message("\t-c\t\tExtract code");
 	Message("\t-R <dir>\tSet target directory to <dir>)");
 	Message("\t-S <style>\tSet LaTeX documentstyle to 'style'");
@@ -113,13 +115,16 @@ char **	argv;
 
 /* Preprocess the arguments.
  */
-	while ((i = getopt(argc, argv, "stcC:x:Bwdg:D:R:S:H:12T:ln+")) != EOF) {
+	while ((i = getopt(argc, argv, "sticC:x:Bwdg:D:R:S:H:12T:ln+")) != EOF) {
 		switch (i) {
 		case 's':
 			textmode = M_MS;
 			break;
 		case 't':
 			textmode = M_TEX;
+			break;
+		case 'i':
+			textmode = M_TEXI;
 			break;
 		case 'c':
 			mode = M_CODE;
@@ -227,6 +232,7 @@ Directive str2dir[]={
     { "-",Subsection,"", },
     { ".",Paragraph,"", },
     { "T",Qtex,"", },
+    { "texi",Qtexi,"", },
     { "C",CCsrc,MX_CXX_SUFFIX, },
     { "i",Pimpl,"impl", },
     { "s",Pspec,"spec", },

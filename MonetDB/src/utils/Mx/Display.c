@@ -28,6 +28,7 @@
 extern int pr_env;
 
 #define TEXMODE (textmode==M_TEX)
+#define TEXIMODE (textmode==M_TEXI)
 #define WWWMODE (textmode==M_WWW )
 /* Printing modes
  *	Formatted text	Plain/Math.
@@ -42,19 +43,19 @@ void	PrFontStr(char *s, char c)
 
 	switch( c ){
 	case T_BOLD:
-		PrCmd(TEXMODE? "{\\bf " : WWWMODE? "<B>" : "\\fB");
+		PrCmd(TEXMODE? "{\\bf " : TEXIMODE ? "@b{": WWWMODE? "<B>" : "\\fB");
 		PrText(s);
-		PrCmd(TEXMODE? "}":WWWMODE? "</B>" : "\\fP" );
+		PrCmd(TEXMODE? "}": TEXIMODE? "}":WWWMODE? "</B>" : "\\fP" );
 		break;
 	case T_ITALIC:
-		PrCmd(TEXMODE? "{\\it " : WWWMODE? "<I>" : "\\fI");
+		PrCmd(TEXMODE? "{\\it " : TEXIMODE?"@i{": WWWMODE? "<I>" : "\\fI");
 		PrText(s);
-		PrCmd(TEXMODE? "}" : WWWMODE? "</I>" : "\\fP");
+		PrCmd(TEXMODE? "}" : TEXIMODE?"}": WWWMODE? "</I>" : "\\fP");
 		break;
 	case T_CODE:
-		PrCmd(TEXMODE? "{\\tt " : WWWMODE? "<TT>" : "\\fB");
+		PrCmd(TEXMODE? "{\\tt " : TEXIMODE?"@i{": WWWMODE? "<TT>" : "\\fB");
 		PrText(s);
-		PrCmd(TEXMODE? "}" : WWWMODE? "</TT>" : "\\fP");
+		PrCmd(TEXMODE? "}" : TEXIMODE?"}": WWWMODE? "</TT>" : "\\fP");
 		break;
 	}
 	PrEnv(env);
@@ -117,13 +118,21 @@ void	PrRule(char *tail)
 		strcpy((char*)strchr(filename,'.')+1, tail);
 		ofile_printf("\n\n");
 		if (opt_column == 2) {
+		    if( bodymode==0)
 		    ofile_printf("\\noindent\\rule{\\linewidth}{1pt}\\newline\\vspace{-10pt}\n");
 		}
+		if( bodymode==0)
 		ofile_printf("\\noindent\\makebox[\\linewidth][r]{\\small\\tt ");
 		PrTxt(FileName(filename));
+		if( bodymode==0)
 		ofile_printf("}\n\\noindent");
 	    } else if (opt_column == 2) {
+		if( bodymode==0)
 		ofile_printf("\\vspace{-1em}\\noindent\\rule{\\linewidth}{1pt}\n");
+	    }
+	} else if TEXIMODE {
+	    if (tail){
+		ofile_printf("\n\n");
 	    }
 	} else if WWWMODE {
 	    if (somethingPrinted && bodymode==0) {
@@ -156,6 +165,8 @@ void	PrRule(char *tail)
 
 extern char *bname;
 
+static int preludeDone = 0;
+
 void	PrPrelude(char *file)
 {
     extern char *texDocStyle;
@@ -170,6 +181,8 @@ void	PrPrelude(char *file)
     *t = 0;
 
 
+	if ( TEXIMODE && bodymode ==0 )
+		ofile_printf("\\input texinfo\n");
 	if ( TEXMODE ){
 	   if( bodymode==0){
 	    if(texDocStyle != NULL)
@@ -187,18 +200,32 @@ void	PrPrelude(char *file)
 	    }
 
 
-	    if( opt_column == 2 ) ofile_printf("\\columnsep=0.5 in\n");
+	    if( opt_column == 2 ) {
+		if( TEXIMODE)
+		     ofile_printf("@iftex\n@tex\n\\columnsep=0.5 in\n");
+		else ofile_printf("\\columnsep=0.5 in\n");
+	    }
 	    ofile_printf("\\newcommand{\\codesize}{\n");
 	    ofile_printf("  %s}\n", opt_column==1? "\\small": "\\footnotesize");
 	    ofile_printf("\\newcommand{\\eq}[1]{\n");
 	    ofile_printf("  ${\\ \\equiv\\ }$}\n");
+	    if( TEXIMODE )
+		ofile_printf("@end tex\n@end iftex\n");
 	}
 
 /*
    Starting ...
  */
-	if( bodymode==0) ofile_printf("\\begin{document}\n");
-	    if( opt_column == 2 ) ofile_printf(",\\twocolumn\n");
+	if( bodymode==0) {
+		if( TEXIMODE)
+		ofile_printf("@iftex\n@tex\n\\begin{document}\n@end tex\n@end iftex\n");
+		else ofile_printf("\\begin{document}\n");
+	}
+	if( opt_column == 2 ){
+		if( TEXIMODE)
+		     ofile_printf("@iftex\n@tex\n\\twocolumn\n@end tex\n@end iftex\n");
+		else ofile_printf(",\\twocolumn\n");
+	}
     } else if WWWMODE {
 	    extern char* outputdir;
     	    /* install the extra HTML filenames */
@@ -241,11 +268,16 @@ void	PrPostlude(void)
 	PrEnv(E_CMD);
 	if ( TEXMODE ) {
 		if( bodymode==0)ofile_printf("\\end{document}\n");
+	} else if TEXIMODE {
+		if( preludeDone)
+		if( bodymode==0)ofile_printf("@bye\n");
 	} else if WWWMODE {
 	    mx_out = 7;
 	    if( bodymode==0)ofile_printf("</BODY>\n</HTML>\n");
 	    mx_out = 5;
 	}
+	if ( TEXIMODE && bodymode ==0 )
+		ofile_printf("@bye\n");
 }
 
 

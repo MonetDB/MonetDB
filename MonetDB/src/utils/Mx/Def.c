@@ -253,6 +253,7 @@ void	MakeDefs(char *name)
 	    }
 	    break;
 	case Qtex:
+	case Qtexi:
 	case Qcode:
 	case Continue:
 	    if (allTrue()){
@@ -376,6 +377,11 @@ char * dir2ext(CmdCode dir)
 			return "bdy.html";
 		return "html";
 	} else {
+		if( textmode == M_TEXI) {
+			if(bodymode)
+				return "bdy.texi";
+			return "texi";
+		}
 		if(bodymode)
 			return "bdy.tex";
 		return "tex";

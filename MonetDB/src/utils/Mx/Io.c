@@ -190,8 +190,10 @@ void	IoWriteFile(char *s, CmdCode m)
 {
     File *	f;
 	
-    if( ofile )
-	fclose(ofile);
+    if( ofile ){
+			if( texihdr) ofile_printf("@bye\n");
+			fclose(ofile);
+	}
     
     f= GetFile(s,m);
     if( (f->f_mode & m) == m ){

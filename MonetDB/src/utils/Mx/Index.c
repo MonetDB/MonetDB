@@ -24,6 +24,7 @@
 #include	"MxFcnDef.h"
 
 #define TEXMODE (textmode==M_TEX)
+#define TEXIMODE (textmode==M_TEXI)
 #define WWWMODE (textmode==M_WWW )
 
 Itable *itable = 0;
@@ -97,6 +98,10 @@ Ientry *ie;
 		return;
 	itable_done = 1;
 
+	if( TEXIMODE) {
+		PrCmd("@c Table contents implied\n@contents\n");
+		return;
+	}
 	if WWWMODE { 
 		int m1=0,m2=0,m3=0,s1=0,s2=0,s3=0,i, n;
 		char file[128], *b = BaseName(filename);
@@ -208,6 +213,7 @@ Ientry *ie;
 	else	PrCmd(".SH\n");
 	PrText(it->it_name);
 	if TEXMODE PrCmd("\\end{center}]\n");
+	else if TEXIMODE PrCmd("\n");
 	else PrCmd("\n.LP\n");
 
 	if TEXMODE PrCmd("\\begin{flushleft}\n");
@@ -252,6 +258,10 @@ void	PrIndex(void)
 {
 int	it;
 
+	if (TEXIMODE && bodymode==0) {
+		PrCmd("@c index table implicit\n");
+		return;
+	}
 	if WWWMODE return;
 	SortIndex();
 	if (TEXMODE && bodymode==0) PrCmd("\\clearpage\n");
@@ -276,6 +286,7 @@ int first;
 	else	PrCmd(".SH\n");
 	PrText(it->it_name);
 	if TEXMODE PrCmd("\\end{center}]");
+	else if TEXIMODE PrCmd("\n");
 	else PrCmd(".LP");
 	PrCmd("\n");
  
