@@ -23,4 +23,4 @@
 
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = utils common gdk mal mil modules tools mapi testing # sql xml
+SUBDIRS = utils common gdk mal mil modules tools mapi testing 
