@@ -947,6 +947,9 @@ view_client_login(BAT **retval	/* put pointer to BAT[int,str] record here. */
 #ifdef HAVE_LOCALTIME_R
 			(void) localtime_r(&logintime, &localt);
 #else
+			/* race condition: return value could be
+			 * overwritten in parallel thread before
+			 * assignment complete */
 			localt = *localtime(&logintime);
 #endif
 
@@ -956,7 +959,11 @@ view_client_login(BAT **retval	/* put pointer to BAT[int,str] record here. */
 #ifdef HAVE_CTIME_R
 			asctime_r(&localt, s);
 #else
-			strcpy(s, "no asctime in WIN32");
+			/* race condition: return value could be
+			 * overwritten in parallel thread before
+			 * copy complete */
+			strncpy(s, asctime(&localt), 26);
+			/* strcpy(s, "no asctime in WIN32"); */
 #endif
 #endif
 			s[24] = 0;
@@ -1791,7 +1798,7 @@ print_color_map()
 int
 vm_trim(lng *lim)
 {
-	MT_mmap_trim(*lim, GDKerr);
+	MT_mmap_trim((size_t) *lim, GDKerr);
 	return GDK_SUCCEED;
 }
 

@@ -86,9 +86,3 @@ unix_setenv(bit *res, str varname, str valname)
 #endif
 	return GDK_SUCCEED;
 }
-
-/*
-Local Variables:
-c-basic-offset: 4
-End:
-*/

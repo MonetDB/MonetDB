@@ -1001,9 +1001,9 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 
 /* allocate 8 bytes extra (so it stays 8-bytes aligned) and put realsize in front */
 #define GDKmalloc_prefixsize(s,size) {					\
-	s = (ssize_t *) malloc(size + 8);					\
+	s = (ssize_t *) malloc(size + 8);				\
 	if (s != NULL) {						\
-		assert((((size_t) s)&4) == 0); /* no MISALIGN */	\
+		assert((((size_t) s)&7) == 0); /* no MISALIGN */	\
 		s = (ssize_t*) ((char*) s + 8);				\
 		s[-1] = (ssize_t) (size + 8);				\
 	}								\

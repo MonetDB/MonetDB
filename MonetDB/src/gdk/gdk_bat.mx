@@ -2086,13 +2086,21 @@ check if duplicated properties are equal
 
 			b->batDirty = TRUE;
 		}
-		zz = ((b->GDKversion != bm->GDKversion) +(b->U != bm->U) +(b->P != bm->P) +(b->H != bm->T) +(b->htype != bm->ttype) +(b->hloc != bm->tloc) +(b->dims.headvarsized != bm->dims.tailvarsized) +(b->dims.bunshift !=
-																									      bm->dims.bunshift) +(b->dims.bunwidth !=
-																												   bm->dims.bunwidth) +(b->
-																															batBuns->
-																															size ==
-																															0) +
-		      (b->batDeleted < b->batBuns->base) + (b->batHole < b->batDeleted) + (b->batHole > b->batInserted) + (b->batBuns->free > b->batBuns->size) + (b->batInserted > (b->batBuns->base + b->batBuns->free)));
+		zz = (b->GDKversion != bm->GDKversion) +
+		     (b->U != bm->U) +
+		     (b->P != bm->P) +
+		     (b->H != bm->T) +
+		     (b->htype != bm->ttype) +
+		     (b->hloc != bm->tloc) +
+		     (b->dims.headvarsized != bm->dims.tailvarsized) +
+		     (b->dims.bunshift != bm->dims.bunshift) +
+		     (b->dims.bunwidth != bm->dims.bunwidth) +
+		     (b->batBuns->size == 0) +
+		     (b->batDeleted < b->batBuns->base) +
+		     (b->batHole < b->batDeleted) +
+		     (b->batHole > b->batInserted) +
+		     (b->batBuns->free > b->batBuns->size) +
+		     (b->batInserted > b->batBuns->base + b->batBuns->free);
 		if (zz)
 			GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d\n", BBPname(b->batCacheid), zz);
 
@@ -2167,10 +2175,10 @@ first propagate already known properties. that will save some effort.
 	if (mode & BATPROPS_CHECK) {
 		dense_bak = BAThdense(b);
 		seq_bak = b->hseqbase;
-		sorted_bak = (BAThordered(b) & 1);
+		sorted_bak = BAThordered(b) & 1;
 		key_bak = b->hkey;
 		BATkey(b, FALSE);
-		b->hsorted = (((b->hsorted) >> 1) << 1);	/*FALSE; */
+		b->hsorted &= (bit) ~1;	/* FALSE */
 		b->hdense = FALSE;
 	} else if (b->hdense) {
 		disprove_dense = FALSE;
@@ -2188,14 +2196,16 @@ check whether whatever we want need to prove was already disproven
 		}
 	}
 	if (disprove_sorted) {
-		if ((BAThordered(b) & 1) || ATOMlinear(tpe) == 0 || ((b->H->nosorted > yy) && (b->H->nosorted < xx) && ATOMcmp(tpe, BUNhead(b, BUNptr(b, b->H->nosorted - 1)), BUNhead(b, BUNptr(b, b->H->nosorted))) > 0)) {
+		if ((BAThordered(b) & 1) || ATOMlinear(tpe) == 0 ||
+		    (b->H->nosorted > yy && b->H->nosorted < xx && ATOMcmp(tpe, BUNhead(b, BUNptr(b, b->H->nosorted - 1)), BUNhead(b, BUNptr(b, b->H->nosorted))) > 0)) {
 			disprove_sorted = FALSE;
 		} else {
 			b->H->nosorted = 0;
 		}
 	}
 	if (disprove_dense) {
-		if (((b->hsorted & 1) == FALSE && disprove_sorted == FALSE) || ((b->H->nodense > yy) && (b->H->nodense < xx) && (*(oid *) BUNhloc(b, BUNptr(b, b->H->nodense - 1)) + 1 != *(oid *) BUNhloc(b, BUNptr(b, b->H->nodense))))) {
+		if (((b->hsorted & 1) == FALSE && disprove_sorted == FALSE) ||
+		    (b->H->nodense > yy && b->H->nodense < xx && *(oid *) BUNhloc(b, BUNptr(b, b->H->nodense - 1)) + 1 != *(oid *) BUNhloc(b, BUNptr(b, b->H->nodense)))) {
 			disprove_dense = FALSE;
 		} else {
 			b->H->nodense = 0;
@@ -2283,7 +2293,8 @@ Merge scan check to see if head values are sorted (&key)
 				disprove_key = FALSE;
 				b->batDirtydesc = 1; 
 			} 
-			p += xx; last = v;
+			p += xx;
+			last = v;
 		}
 	}
 	break;

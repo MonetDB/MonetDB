@@ -1327,7 +1327,7 @@ int
 	str q, p = src;
 
 	@:atommem(@1,sizeof(@1))@
-	while(GDKisspace(*p))
+	while (GDKisspace(*p))
 		p++; 
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		base = @1_nil; p += 3;

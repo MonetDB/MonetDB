@@ -17,9 +17,6 @@
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
 # All Rights Reserved.
 
-# The MonetDB DBI driver implementation. New version based on the MapiLib SWIG.
-# by Arjan Scherpenisse <acscherp@science.uva.nl>
-
 package DBD::monetdb;
 
 use strict;
@@ -27,7 +24,7 @@ use sigtrap;
 use DBI();
 use MapiLib();
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our $drh = undef;
 
 require DBD::monetdb::GetInfo;
@@ -42,7 +39,7 @@ sub driver {
     $drh = DBI::_new_drh($class .'::dr', {
         Name        => 'monetdb',
         Version     => $VERSION,
-        Attribution => 'DBD::monetdb derived from monetdb.pm by Arjan Scherpenisse',
+        Attribution => 'DBD::monetdb by Martin Kersten, Arjan Scherpenisse and Steffen Goeldner',
     });
 }
 
@@ -941,7 +938,11 @@ TODO with perl5.005_03 build for i386-freebsd.
 
 =head1 AUTHORS
 
-Martin Kersten <lt>Martin.Kersten@cwi.nl<gt>
+Martin Kersten E<lt>Martin.Kersten@cwi.nlE<gt> implemented the initial Mapi
+based version of the driver (F<monet.pm>).
+Arjan Scherpenisse E<lt>acscherp@science.uva.nlE<gt> renamed this module to
+F<monetdbPP.pm> and derived the new MapiLib based version (F<monetdb.pm>).
+Current maintainer is Steffen Goeldner E<lt>sgoeldner@cpan.orgE<gt>.
 
 =head1 COPYRIGHT AND LICENCE
 

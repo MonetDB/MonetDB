@@ -66,6 +66,9 @@
    */
 /* #undef HAVE_ALLOCA_H */
 
+/* Is your compiler C99 compliant? */
+/* #undef HAVE_C99 */
+
 /* Define to 1 if you have the <cstdio> header file. */
 #if _MSC_VER >= 1300
 #define HAVE_CSTDIO 1
@@ -79,13 +82,21 @@
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 /* #undef HAVE_CTIME_R3 */
 
-/* Define to 1 if you have the declaration of `strtof', and to 0 if you don't.
+/* Define to 1 if you have the declaration of `strdup', and to 0 if you don't.
    */
 #define HAVE_DECL_STRDUP 1
 
 /* Define to 1 if you have the declaration of `strtof', and to 0 if you don't.
    */
 #define HAVE_DECL_STRTOF 0
+
+/* Define to 1 if you have the declaration of `strtoll', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_STRTOLL */
+
+/* Define to 1 if you have the declaration of `strtoull', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_STRTOULL */
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -99,6 +110,9 @@
 
 /* Define to 1 if you have the `drand48' function. */
 /* #undef HAVE_DRAND48 */
+
+/* Define to 1 if you have the `fcntl' function. */
+/* #undef HAVE_FCNTL */
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
@@ -148,6 +162,9 @@
 /* Define to 1 if you have the `getuid' function. */
 /* #undef HAVE_GETUID */
 
+/* Define if you have the iconv function */
+/* #undef HAVE_ICONV */
+
 /* Define to 1 if you have the <iconv.h> header file. */
 /* #undef HAVE_ICONV_H */
 
@@ -182,8 +199,20 @@
 /* Define to 1 if you have the <libcpc.h> header file. */
 /* #undef HAVE_LIBCPC_H */
 
+/* Define if you have the fl[ex] library */
+/* #undef HAVE_LIBFL */
+
+/* Define if you have the l[ex] library */
+/* #undef HAVE_LIBL */
+
+/* Define if you have the netcdf library */
+/* #undef HAVE_LIBNETCDF */
+
 /* Define if you have the pcl library */
 /* #undef HAVE_LIBPCL */
+
+/* Define if you have the pcre library */
+/* #undef HAVE_LIBPCRE */
 
 /* Define if you have the perfctr library */
 /* #undef HAVE_LIBPERFCTR */
@@ -204,7 +233,7 @@
 /* #undef HAVE_LIBPPERF_H */
 
 /* Define if you have the pthread library */
-/* #undef HAVE_LIBPTHREAD */
+#define HAVE_LIBPTHREAD 1
 
 /* Define if you have the readline library */
 /* #undef HAVE_LIBREADLINE */
@@ -234,6 +263,9 @@
 /* #undef HAVE_LONG_LONG */
 #endif
 
+/* Define to 1 if you have the `madvise' function. */
+/* #undef HAVE_MADVISE */
+
 /* Define to 1 if you have the `mallinfo' function. */
 /* #undef HAVE_MALLINFO */
 
@@ -261,14 +293,17 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
 
-/* Define to 1 if you have the <new> header file. */
-#define HAVE_NEW 1
-
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */
 
+/* Define to 1 if you have the <new> header file. */
+#define HAVE_NEW 1
+
 /* Define to 1 if you have the `nl_langinfo' function. */
 /* #undef HAVE_NL_LANGINFO */
+
+/* Define if you have the OpenSSL library */
+/* #undef HAVE_OPENSSL */
 
 /* Define to 1 if you have the <perfmon.h> header file. */
 /* #undef HAVE_PERFMON_H */
@@ -282,6 +317,12 @@
 #define HAVE_PIPE 1
 #define pipe(p)		_pipe(p, 4096, O_BINARY)
 */
+
+/* Define to 1 if you have the `posix_fadvise' function. */
+/* #undef HAVE_POSIX_FADVISE */
+
+/* Define to 1 if you have the `posix_madvise' function. */
+/* #undef HAVE_POSIX_MADVISE */
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #define HAVE_PTHREAD_H 1
@@ -301,6 +342,9 @@
 
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
+
+/* Define to 1 if you have the `opendir' function. */
+/* #undef HAVE_OPENDIR */
 
 /* Define if the compiler supports the restrict keyword */
 /* #undef HAVE_RESTRICT */
@@ -322,6 +366,9 @@
 
 /* Define to 1 if you have the `setlocale' function. */
 #define HAVE_SETLOCALE 1
+
+/* Define to 1 if you have the `shutdown' function. */
+/* #undef HAVE_SHUTDOWN */
 
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
@@ -346,10 +393,6 @@
 #define HAVE_STRCASECMP 1
 #define strcasecmp(x,y) stricmp(x,y)
 
-/* Define to 1 if you have the `strncasecmp' function. */
-#define HAVE_STRNCASECMP 1
-#define strncasecmp(x,y,z) strnicmp(x,y,z)
-
 /* Define to 1 if you have the `strcspn' function. */
 #define HAVE_STRCSPN 1
 
@@ -364,6 +407,10 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
+
+/* Define to 1 if you have the `strncasecmp' function. */
+#define HAVE_STRNCASECMP 1
+#define strncasecmp(x,y,z) strnicmp(x,y,z)
 
 /* Define to 1 if you have the `strsignal' function. */
 /* #undef HAVE_STRSIGNAL */
@@ -451,11 +498,14 @@
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 /* #undef HAVE_SYS_WAIT_H */
 
-/* Define to 1 if you have the <time.h> header file. */
-#define HAVE_TIME_H 1
+/* Define to 1 if you have the <termios.h> header file. */
+/* #undef HAVE_TERMIOS_H */
 
 /* Define to 1 if you have the `times' function. */
 /* #undef HAVE_TIMES */
+
+/* Define to 1 if you have the <time.h> header file. */
+#define HAVE_TIME_H 1
 
 /* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
    `HAVE_STRUCT_TM_TM_ZONE' instead. */
@@ -464,6 +514,9 @@
 /* Define to 1 if you don't have `tm_zone' but do have the external array
    `tzname'. */
 #define HAVE_TZNAME 1
+
+/* Define to 1 if you have the `uname' function. */
+/* #undef HAVE_UNAME */
 
 /* Define to 1 if you have the <unistd.h> header file. */
 /* #undef HAVE_UNISTD_H */
@@ -496,6 +549,52 @@
 /* Host identifier */
 #define HOST "i686-pc-win32"
 
+/* Define as const if the declaration of iconv() needs const for 2nd argument.
+   */
+/* #undef ICONV_CONST */
+
+/* Define if the oid type should use 32 bits on a 64-bit architecture */
+/* #undef MONET_OID32 */
+
+/* Define if you do not want assertions */
+/* #undef NDEBUG */
+
+/* Define if you don't want to expand the bat type */
+/* #undef NOEXPAND_BAT */
+
+/* Define if you don't want to expand the bit type */
+/* #undef NOEXPAND_BIT */
+
+/* Define if you don't want to expand the chr type */
+/* #undef NOEXPAND_CHR */
+
+/* Define if you don't want to expand the dbl type */
+/* #undef NOEXPAND_DBL */
+
+/* Define if you don't want to expand the flt type */
+/* #undef NOEXPAND_FLT */
+
+/* Define if you don't want to expand the int type */
+/* #undef NOEXPAND_INT */
+
+/* Define if you don't want to expand the lng type */
+/* #undef NOEXPAND_LNG */
+
+/* Define if you don't want to expand the oid type */
+/* #undef NOEXPAND_OID */
+
+/* Define if you don't want to expand the ptr type */
+/* #undef NOEXPAND_PTR */
+
+/* Define if you don't want to expand the sht type */
+/* #undef NOEXPAND_SHT */
+
+/* Define if you don't want to expand the str type */
+/* #undef NOEXPAND_STR */
+
+/* Define if OpenSSL should not use Kerberos 5 */
+/* #undef OPENSSL_NO_KRB5 */
+
 /* Name of package */
 #define PACKAGE "MonetDB"
 
@@ -514,6 +613,9 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION ""
 
+/* Compiler flag */
+/* #undef PROFILE */
+
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
 
@@ -529,14 +631,14 @@
 /* The size of a `long', as computed by sizeof. */
 #define SIZEOF_LONG 4
 
+/* The size of a `ptrdiff_t', as computed by sizeof. */
+#define SIZEOF_PTRDIFF_T 4
+
 /* The size of a `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
 /* The size of a `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
-
-/* The size of a `ptrdiff_t', as computed by sizeof. */
-#define SIZEOF_PTRDIFF_T 4
 
 /* The size of a `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 4
@@ -547,9 +649,9 @@
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at run-time.
-        STACK_DIRECTION > 0 => grows toward higher addresses
-        STACK_DIRECTION < 0 => grows toward lower addresses
-        STACK_DIRECTION = 0 => direction of growth unknown */
+	STACK_DIRECTION > 0 => grows toward higher addresses
+	STACK_DIRECTION < 0 => grows toward lower addresses
+	STACK_DIRECTION = 0 => direction of growth unknown */
 /* #undef STACK_DIRECTION */
 
 /* Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly. */
@@ -586,11 +688,29 @@
 /* Define for large files, on AIX-style hosts. */
 /* #undef _LARGE_FILES */
 
+/* Compiler flag */
+/* #undef _POSIX_C_SOURCE */
+
+/* Compiler flag */
+/* #undef _POSIX_SOURCE */
+
+/* Compiler flag */
+/* #undef _XOPEN_SOURCE */
+
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
 
-/* Define as `__inline' if that's what the C compiler calls it, or to nothing
-   if it is not supported. */
+/* Wrapper */
+/* #undef iconv */
+
+/* Wrapper */
+/* #undef iconv_close */
+
+/* Wrapper */
+/* #undef iconv_open */
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
 #define inline __inline
 
 /* Define to `long' if <sys/types.h> does not define. */

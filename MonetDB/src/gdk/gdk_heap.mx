@@ -442,7 +442,7 @@ count all memory that takes up address space.
 size_t
 HEAPvmsize(Heap *h)
 {
-	if (h && h->base && h->free)
+	if (h && h->free)
 		return h->maxsize;
 	return 0;
 }
@@ -456,7 +456,7 @@ fully backed by swap space.
 size_t
 HEAPmemsize(Heap *h)
 {
-	if (h && h->base && h->free && h->storage != STORE_MMAP)
+	if (h && h->free && h->storage != STORE_MMAP)
 		return h->size;
 	return 0;
 }

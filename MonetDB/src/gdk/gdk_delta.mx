@@ -40,7 +40,7 @@ item of e.g. a BAT[void,bit] is (at least) integer aligned.
 This optimizes processing on such BATs (DDBENCH).
 @h
 #define DELTAprintf DELTADEBUG printf
-#define DELTAinit(P1)	{						      \
+#define DELTAinit(P1)	do {						      \
 	(P1)->batBuns->free = MAX(sizeof(int), (P1)->dims.bunwidth);	      \
 	(P1)->batDeleted = (P1)->batHole = (BUN) ((char*) Bunbase(P1) +	      \
 			((P1)->batBuns->free - (P1)->dims.bunwidth));	      \
@@ -55,44 +55,40 @@ This optimizes processing on such BATs (DDBENCH).
 		PTRFMTCAST (P1)->batHole,		      \
 		PTRFMTCAST (P1)->batBuns->base );	      \
 	memset((P1)->batHole, 0, BUNsize(P1));		      \
-}
+} while (0)
 @
 
 Upon saving a BAT, we should convert the delta marker BUN pointers into indexes
 and convert them back into pointers upon reload.
 
 @h
-#define DELTAsave(P1)	{						      \
-	if ((P1)->batBuns->base) {					      \
-		(P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted);  \
-		(P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted);    \
-		(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole);	      \
-	}								      \
-	DELTAprintf(							      \
+#define DELTAsave(P1)	do {						\
+	(P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted);	\
+	(P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted);	\
+	(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole);		\
+	DELTAprintf(							\
 	 	"#DELTAsave %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", \
-		(P1)->batId,				      \
-		(P1)->batBuns->free,			      \
-		PTRFMTCAST (P1)->batInserted,		      \
-		PTRFMTCAST (P1)->batDeleted,		      \
-		PTRFMTCAST (P1)->batHole,		      \
-		PTRFMTCAST (P1)->batBuns->base );	      \
-}
+		(P1)->batId,						\
+		(P1)->batBuns->free,					\
+		PTRFMTCAST (P1)->batInserted,				\
+		PTRFMTCAST (P1)->batDeleted,				\
+		PTRFMTCAST (P1)->batHole,				\
+		PTRFMTCAST (P1)->batBuns->base );			\
+} while (0)
 
-#define DELTAload(P1)	{						      \
-	DELTAprintf(							      \
+#define DELTAload(P1)	do {						\
+	DELTAprintf(							\
 		"#DELTAload %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", \
-		(P1)->batId,				      \
-		(P1)->batBuns->free,			      \
-		PTRFMTCAST (P1)->batInserted,		      \
-		PTRFMTCAST (P1)->batDeleted,		      \
-		PTRFMTCAST (P1)->batHole,		      \
-		PTRFMTCAST (P1)->batBuns->base );	      \
-	if ((P1)->batBuns->base) {					      \
-		(P1)->batInserted = BUNptr((P1), (size_t) (P1)->batInserted); \
-		(P1)->batDeleted = BUNptr((P1), (size_t) (P1)->batDeleted);   \
-		(P1)->batHole = BUNptr((P1), (size_t) (P1)->batHole);	      \
-	}								      \
-}
+		(P1)->batId,						\
+		(P1)->batBuns->free,					\
+		PTRFMTCAST (P1)->batInserted,				\
+		PTRFMTCAST (P1)->batDeleted,				\
+		PTRFMTCAST (P1)->batHole,				\
+		PTRFMTCAST (P1)->batBuns->base );			\
+	(P1)->batInserted = BUNptr((P1), (size_t) (P1)->batInserted);	\
+	(P1)->batDeleted = BUNptr((P1), (size_t) (P1)->batDeleted);	\
+	(P1)->batHole = BUNptr((P1), (size_t) (P1)->batHole);		\
+} while (0)
 @	
 @}
 @-

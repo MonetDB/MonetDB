@@ -633,7 +633,6 @@ BATload_intern(bat i)
 		return NULL;
 	}
 	/* LOAD bun heap */
-	DELTAsave(b);
 	ret = HEAPload(b->batBuns, nme, "buns", b->batRestricted == BAT_READ);
 	if (ret < 0) {
 		return NULL;

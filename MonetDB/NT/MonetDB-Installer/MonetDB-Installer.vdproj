@@ -207,12 +207,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_4109599039174BCB900292ACC543AAD6"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_41FA714A0CD247BBA211B9F14AB9450F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -772,6 +766,12 @@
         "Entry"
         {
         "MsmKey" = "8:_F840A3E37F7C488F996097AE2689D2D2"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FE0DEA12E0D8495D89D09B665B743F95"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1499,26 +1499,6 @@
             "TargetName" = "8:lib_wisc.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4109599039174BCB900292ACC543AAD6"
-            {
-            "SourcePath" = "8:C:\\Pthreads\\lib\\pthreadVCE.dll"
-            "TargetName" = "8:pthreadVCE.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3393,6 +3373,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_FE0DEA12E0D8495D89D09B665B743F95"
+            {
+            "SourcePath" = "8:C:\\Pthreads\\lib\\pthreadVC.dll"
+            "TargetName" = "8:pthreadVC.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FF48B06416244A018B1868F55221D3B3"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\salgebra.mil"
@@ -3459,17 +3459,6 @@
                         {
                         }
                     }
-                }
-            }
-            "{78BAF5CE-F2E5-45BE-83BC-DB6AF387E941}:_9CBDAB10109A403788647CB71E46D5ED"
-            {
-            "Name" = "8:#1916"
-            "AlwaysCreate" = "11:FALSE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Property" = "8:DesktopFolder"
-                "Folders"
-                {
                 }
             }
             "{58C0ADA3-3CEA-43BD-A3B3-2EA121BC8217}:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
@@ -3577,7 +3566,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB"
         "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{657726AC-DDC3-4D75-AB66-89EFE6F0D0E4}"
+        "PackageCode" = "8:{49DE0221-F127-4D56-A8E6-A516D2D7C8D8}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"

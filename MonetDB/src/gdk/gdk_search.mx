@@ -1391,7 +1391,7 @@ ACCbuild(int id, BAT *b, Heap *acc, ptr extra)
 		size_t masksize = 127;
 
 		if (extra)
-			masksize = *(lng *) extra;
+			masksize = (size_t) *(lng *) extra;
 		return BAThash(b, masksize) ? 0 : -1;
 	} else if (id == ACC_index) {
 		BAT *h = extra ? BBPdescriptor(*(int *) extra) : NULL;

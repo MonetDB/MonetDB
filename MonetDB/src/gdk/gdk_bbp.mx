@@ -81,7 +81,6 @@ parent is memory resident as required because of the 'pointer' sharing.
 @h
 #ifndef _GDK_BBP_H_
 #define _GDK_BBP_H_
-#include "gdk.h"
 
 #define BBPINIT		2048
 #define BBPMAXSIZE	1024*1024
@@ -172,12 +171,6 @@ field in the BBPrec records.
 @c
 bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 bat BBP_mask = 0;		/* number of buckets = & mask */
-
-#ifdef NATIVE_WIN32
-#define LLFMT "%I64d"
-#else
-#define LLFMT "%lld"
-#endif
 
 static void BBPspin(bat bid, str debug, int event);
 static int BBPfree(BAT *b, str calledFrom);
@@ -1684,8 +1677,7 @@ BBPsave(BAT *b)
 TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
-static
-    int
+static int
 BBPfree(BAT *b, str calledFrom)
 {
 	int ret;

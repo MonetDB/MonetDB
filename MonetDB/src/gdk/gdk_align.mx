@@ -506,6 +506,7 @@ VIEWreset(BAT *b)
 		sprintf(buns.filename, "%s.buns", nme);
 		if (HEAPalloc(&buns, cnt + 1, BUNsize(n)) < 0) {
 			GDKfree(buns.filename);
+			buns.filename = NULL;
 			return NULL;
 		}
 		memset(&hh, 0, sizeof(Heap));
@@ -514,6 +515,7 @@ VIEWreset(BAT *b)
 		if (ATOMheap(ht, &hh, cnt) < 0) {
 			HEAPfree(&buns);
 			GDKfree(hh.filename);
+			hh.filename = NULL;
 			return NULL;
 		}
 		memset(&th, 0, sizeof(Heap));
@@ -523,6 +525,7 @@ VIEWreset(BAT *b)
 			HEAPfree(&buns);
 			HEAPfree(&hh);
 			GDKfree(th.filename);
+			th.filename = NULL;
 			return NULL;
 		}
 
