@@ -351,6 +351,8 @@ str MALparser(Client c){
 str MALengine(Client c){
 	Symbol prg;
 	str msg = 0;
+	MalBlkRecord oldstate;
+	(void) oldstate.stop; /* fool compilers */
 
 	/* check for unfinished blocks */
 	if( c->blkmode) return 0;
