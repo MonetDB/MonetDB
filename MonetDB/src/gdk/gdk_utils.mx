@@ -1192,6 +1192,22 @@ void GDKprotect(){
 		GDKprotected = 1;
 	} 
 }
+
+#ifndef WIN32
+void GDKvmtrim(void *limit) {
+	int wait = 1;
+	do {
+                stream *fp = NULL;
+                if (wait) sleep(5);
+                MEMDEBUG {
+			fp = GDKerr;
+			THRprintf(fp, "GDKvmtrim(%lld)\n", (long long) *(size_t*) limit);
+		}
+                wait = !MT_mmap_trim(*(size_t*) limit, fp);
+        } while(!GDKstopped);
+}
+#endif
+
 int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 	gdk_alloc_map = alloc_map;
 	errno = 0;
@@ -1233,8 +1249,13 @@ int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 	if(GDKenv==NULL) GDKfatal("GDKinit: Could not create environment BAT");
 	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
-
+#ifndef WIN32
+        if(!GDKembedded ) {
+                MT_Id t;
+                MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize);
+	}
 	return 1;
+#endif
 }
 
 @- 

@@ -249,7 +249,7 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << " void\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\thp,\t/* INOUT: heap of " << name << "s. */\n";
-	    o << "   size_t*\t\toffset\t/* IN: offset from heapbase.  */\n);\n";
+	    o << "   var_t*\t\toffset\t/* IN: offset from heapbase.  */\n);\n";
 	    o << "\t/* DEL: delete a " << name << " from the heap.  */\n\n\n";
 	    break;
         case OP_HASH 	:
@@ -383,7 +383,7 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   size_t\tidx,\t/* IN: BUNindex() of value. */\n";
+     o << "   var_t\tidx,\t/* IN: BUNindex() of value. */\n";
      o << "   BAT*\t\tbn,\t/* IN: BAT with accelerated head column. */\n";
      o << "   ";
      if (acc_arg->Token() == MEL_ATOM)
@@ -400,7 +400,7 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   size_t\tidx,\t/* IN: BUNindex() of value. */\n";
+     o << "   var_t\tidx,\t/* IN: BUNindex() of value. */\n";
      o << "   BAT*\t\tbn,\t/* IN: BAT with accelerated head column. */\n";
      o << "   ";
      if (acc_arg->Token() == MEL_ATOM)
@@ -471,7 +471,7 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << " int\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc<< " accelerator heap. */\n";
-     o << "   size_t\tidx,\t/* IN: future BUNindex() OUT: oldpos. */\n";
+     o << "   var_t\tidx,\t/* IN: future BUNindex() OUT: oldpos. */\n";
      o << "   void**\thdl,\t/* INOUT: ";
      acc_arg->print( this, o );
      o << " iteration record. */\n";
@@ -495,7 +495,7 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << mod_export;
      o << " void\n";
      o << d.Name() << "(\n";
-     o << "  Heap *acc, size_t from, size_t to, BAT *b, ptr val );\n";
+     o << "  Heap *acc, var_t from, var_t to, BAT *b, ptr val );\n";
      break;
    }
    return o; 

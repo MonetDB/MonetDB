@@ -102,6 +102,8 @@ low value (say 64KB).
  	"get a split-up of how much memory blocks are in use."
 .COMMAND vm_usage(lng minsize) : BAT[str,lng] = get_vm_usage;
 	"get a split-up of how much virtual memory blocks are in use."
+.COMMAND vm_trim(lng maxsize) : void = vm_trim; 
+	"flush memory maps"
 @T
 Some explanation of what mem\_usage() and vm\_usage() display:
 \begin{verbatim}
@@ -1610,6 +1612,11 @@ int print_mem_map() {
 }
 int print_color_map() {
         MT_alloc_table();
+        return GDK_SUCCEED;
+}
+
+int vm_trim(lng* lim) {
+	MT_mmap_trim(*lim, GDKerr);
         return GDK_SUCCEED;
 }
 @

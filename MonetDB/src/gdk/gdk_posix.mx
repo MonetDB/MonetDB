@@ -121,12 +121,37 @@ gdk_export int MT_alloc_register(void *p, size_t size, char mode);
 gdk_export int MT_alloc_print(void);
 gdk_export int MT_alloc_table(void);
 
+/* make sure POSIX_MADV_* and posix_madvise() are defined somehow */
+#ifdef HAVE_SYS_MMAN_H
+# include <sys/mman.h>
+#endif
+#ifndef HAVE_POSIX_MADVISE
+# ifdef HAVE_MADVISE
+#  define posix_madvise madvise
+#  ifndef MADV_RANDOM
+#   define MADV_RANDOM	0
+#  endif
+#  define POSIX_MADV_NORMAL     MADV_NORMAL
+#  define POSIX_MADV_RANDOM     MADV_RANDOM
+#  define POSIX_MADV_SEQUENTIAL MADV_SEQUENTIAL
+#  define POSIX_MADV_WILLNEED   MADV_WILLNEED
+#  define POSIX_MADV_DONTNEED   MADV_DONTNEED
+# else
+#  define posix_madvise(x,y,z)	0
+#  define POSIX_MADV_NORMAL     0
+#  define POSIX_MADV_RANDOM     0
+#  define POSIX_MADV_SEQUENTIAL 0
+#  define POSIX_MADV_WILLNEED   0
+#  define POSIX_MADV_DONTNEED   0
+# endif
+#endif
+
 /* the new mmap modes, mimick default MADV_* madvise POSIX constants */
-#define MMAP_NORMAL     	0               /* no further special treatment */
-#define MMAP_RANDOM     	1               /* expect random page references */
-#define MMAP_SEQUENTIAL 	2               /* expect sequential page references */
-#define MMAP_WILLNEED   	3               /* will need these pages */
-#define MMAP_DONTNEED   	4               /* don't need these pages */
+#define MMAP_NORMAL     	POSIX_MADV_NORMAL 	/* no further special treatment */
+#define MMAP_RANDOM     	POSIX_MADV_RANDOM	/* expect random page references */
+#define MMAP_SEQUENTIAL 	POSIX_MADV_SEQUENTIAL	/* expect sequential page references */
+#define MMAP_WILLNEED   	POSIX_MADV_WILLNEED	/* will need these pages */
+#define MMAP_DONTNEED   	POSIX_MADV_DONTNEED	/* don't need these pages */
 
 #define MMAP_READ		1024		/* region is readable (default if ommitted) */
 #define MMAP_WRITE		2048		/* region may be written into */
@@ -140,12 +165,16 @@ gdk_export int MT_alloc_table(void);
 gdk_export char *MT_heapbase;
 gdk_export char *MT_heapcur(void);
 
-gdk_export void MT_init_posix(int alloc_map);
+gdk_export void  MT_init_posix(int alloc_map);
 
 gdk_export void* MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed);
 gdk_export int   MT_munmap(void* p, size_t len);
 gdk_export int   MT_msync(void* p, size_t len, int mode);
 gdk_export int   MT_madvise(void* p, size_t len, int advise);
+
+gdk_export int   MT_mmap_trim(size_t lim, void *err);
+gdk_export void  MT_mmap_pin(void *p, size_t len);
+gdk_export void  MT_mmap_unpin(void *p, size_t len);
 
 gdk_export void *MT_vmalloc(size_t size, size_t *maxsize);
 gdk_export void  MT_vmfree(void *p, size_t size);
@@ -225,24 +254,10 @@ static void MT_alloc_init(void);
 
 #include <stdio.h>
 
-#ifdef HAVE_SYS_MMAN_H
-# include <sys/mman.h>
-#endif
-
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
 
-#ifdef HAVE_POSIX_MADVISE
-# define madvise posix_madvise
-#else
-# ifndef HAVE_MADVISE
-#  define madvise(x,y,z)	0
-#  ifndef MADV_RANDOM
-#   define MADV_RANDOM	0
-#  endif
-# endif 
-#endif
 
 #ifndef MAP_NORESERVE
 # define MAP_NORESERVE 		MAP_PRIVATE
@@ -272,10 +287,296 @@ char* MT_heapbase = NULL;
 
 #ifndef NATIVE_WIN32
 
+/* Crude VM buffer management that keep a list of all memory mapped regions.
+ *
+ * The main goal is to be able to tell the OS to please stop buffering all memory
+ * mapped pages when under pressure. Problem is that posix_madvise(POSIX_MADV_SEQUENTIAL) is often 
+ * not (properly) implemented; that is; we would want that the OS drops pages after we've 
+ * passed them. That does not happen; pages are retained and pollute the buffer cache.
+ *
+ * Regrettably, we don't know anything about how Monet is using the mmapped regions.
+ * Monet code is totally oblivious of any I/O; that's why it is so easy to create CPU
+ * efficient code in Monet.
+ *
+ * So our only option is that if we detect system swapping (exceeding a set limit 
+ * of memory usage) just to tell the OS to release everything it's got. That will
+ * unload also useful pages (but they will be brought back in -- at a cost). At least 
+ * then we're rid of the non-useful stuff polluting the OS cache.
+ *
+ * The way to free pages on linux is to call posix_fadvise(..,MADV_DONTNEED). 
+ * Particularly, posix_madvise(..,POSIX_MADV_DONTNEED) which is supported and documented doesn't 
+ * work on Linux. But we do both posix_madvise and posix_fadvise, so on other unix
+ * systems that don't support posix_fadvise, posix_madvise still might work.
+ *
+ * Note that any design that selectively releases less-than-all memory does not know
+ * what it is doing; it may just select only the useful pages and then in no time
+ * the whole excercise must be repeated (thrashing).
+ *
+ * We allow Monet to declare some heaps 'sacred' by pinning them. In that case, they 
+ * won't be unloaded. This is useful for hash-table heaps (or anything that is accessed with
+ * a random access pattern). Note that this may be a teomporary property; and different
+ * for the various Monet threads that perform work; therefore the pin-count design
+ * (one thread declaring a heap 'sacred' is enough for it to be so).
+ *
+ * This can really make a big difference in system responsiveness. Linux for example
+ * stops prefetching any pages on loads when it feels it is under pressure. This means
+ * that mmap I/O bandwidth is down the drain as soon as you hit any memory pressure.
+ *
+ * (this is based on reading the 2.6.8 linux kernel code) and microbenchmarks. 
+ */
+typedef struct {
+	char path[128]; /* mapped file, retained for debugging */
+	void *base; /* base address */ 
+	size_t len; /* length of map */
+	int fd;     /* open fd (==-1 for anon vm), retained to give posix_fadvise */
+	int pincnt; /* incremented while a MIL command uses heap with a random pattern */
+	int writable;
+	int next;
+} MT_mmap_t;
+
+#define MT_MMAP_MINSIZE (1<<22)
+#define MT_MMAP_BUFSIZE 100
+MT_mmap_t MT_mmap_tab[MT_MMAP_BUFSIZE];
+int MT_mmap_first = -1, MT_mmap_free = 0;
+
+#include <pthread.h>
+pthread_mutex_t MT_mmap_lock;
+
+static void MT_mmap_empty(int i) {
+	MT_mmap_tab[i].path[0] = 0;
+	MT_mmap_tab[i].base = NULL;
+	MT_mmap_tab[i].len = 0;
+	MT_mmap_tab[i].writable = 0;
+	MT_mmap_tab[i].fd = -1;
+	MT_mmap_tab[i].pincnt = -1;
+}
+
+static void MT_mmap_init() {
+	int i;
+	/* create lock */
+	pthread_mutex_init(&MT_mmap_lock, 0);
+
+	for(i=0; i < MT_MMAP_BUFSIZE-1; i++) {
+		MT_mmap_tab[i].next = i+1;
+		MT_mmap_empty(i);
+	}
+	MT_mmap_tab[i].next = -1;
+}
+
+/* returns previous element (to facilitate deletion) */
+static int MT_mmap_find(void* base) { 
+	/* maybe consider a hash table iso linked list?? */
+	int i, prev = MT_MMAP_BUFSIZE;
+	for(i = MT_mmap_first; i >= 0; i = MT_mmap_tab[i].next) {
+		if (MT_mmap_tab[i].base == base) {
+			return prev;
+		}
+		prev = i;
+	}
+	return i;
+}
+
+static int MT_mmap_idx(void* base, size_t len) {
+	if (len > MT_MMAP_MINSIZE) {
+		int i = MT_mmap_find(base);
+		if (i >= 0) {
+			if (i == MT_MMAP_BUFSIZE) {
+				return MT_mmap_first;
+			} else {
+				return MT_mmap_tab[i].next;
+			}
+		}
+	}
+	return -1;
+}
+
+static int MT_mmap_new(char* path, void* base, size_t len, int fd, int writable) {
+	(void)pthread_mutex_lock(&MT_mmap_lock);
+	if (MT_mmap_free >= 0) {
+		int i = MT_mmap_free;
+		MT_mmap_free = MT_mmap_tab[i].next;
+		MT_mmap_tab[i].next = MT_mmap_first;
+		MT_mmap_first = i;
+#ifdef MMAP_DEBUG
+		stream_printf(GDKerr, "MT_mmap_new: %s fd=%d\n", path, fd);
+#endif
+		strncpy(MT_mmap_tab[i].path, path, 128);
+		MT_mmap_tab[i].base = base;
+		MT_mmap_tab[i].len = len;
+		MT_mmap_tab[i].writable = writable;
+		MT_mmap_tab[i].fd = fd;
+		MT_mmap_tab[i].pincnt = 0;
+		fd = -1;
+	}
+	(void)pthread_mutex_unlock(&MT_mmap_lock);
+	return fd;
+}
+
+static void MT_mmap_del(void* base, size_t len) {
+	if (len > MT_MMAP_MINSIZE) { 
+		int victim=0, prev;
+		(void)pthread_mutex_lock(&MT_mmap_lock);
+		prev = MT_mmap_find(base);
+		if (prev >= 0) {
+			int ret;
+			if (prev == MT_MMAP_BUFSIZE) {
+				victim = MT_mmap_first;
+				MT_mmap_first = MT_mmap_tab[MT_mmap_first].next;
+			} else if (prev) {
+				victim = MT_mmap_tab[prev].next;
+				MT_mmap_tab[prev].next = MT_mmap_tab[victim].next;
+			}
+#ifdef HAVE_POSIX_FADVISE
+			if (MT_mmap_tab[victim].fd >= 0) {
+				/* tell the OS quite clearly that you want to drop this */
+				ret = posix_fadvise(MT_mmap_tab[victim].fd, 0LL, MT_mmap_tab[victim].len, POSIX_FADV_DONTNEED);
+#ifdef MMAP_DEBUG
+				stream_printf(GDKerr, "MT_mmap_del: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n", 
+					MT_mmap_tab[victim].path, MT_mmap_tab[victim].fd, 
+					(unsigned int) (MT_mmap_tab[victim].len>>20), ret);
+#endif
+			}
+#endif
+			ret = close(MT_mmap_tab[victim].fd);
+#ifdef MMAP_DEBUG
+			stream_printf(GDKerr, "MT_mmap_del: close(%s fd=%d) = %d\n", 
+				MT_mmap_tab[victim].path, MT_mmap_tab[victim].fd, ret);
+#endif
+
+			MT_mmap_tab[victim].next = MT_mmap_free;
+			MT_mmap_empty(victim);
+			MT_mmap_free = victim;
+		}
+		(void)pthread_mutex_unlock(&MT_mmap_lock);
+	}
+}
+
+static int MT_fadvise(void* base, size_t len, int advice) {
+	int ret = 0;
+#ifdef HAVE_POSIX_FADVISE
+	int i;
+	(void)pthread_mutex_lock(&MT_mmap_lock);
+	i = MT_mmap_idx(base, len);
+	if (i >= 0) {
+		if (MT_mmap_tab[i].fd >= 0) { 
+			ret = posix_fadvise(MT_mmap_tab[i].fd, 0, len, advice); 
+#ifdef MMAP_DEBUG
+			stream_printf(GDKerr, "MT_fadvise: posix_fadvise(%s,fd=%d,%uMB,%d) = %d\n", 
+				MT_mmap_tab[i].path, MT_mmap_tab[i].fd, 
+				(unsigned int) (len>>20), advice, ret);
+#endif
+		}
+	}
+	(void)pthread_mutex_unlock(&MT_mmap_lock);
+#endif
+	return ret;
+}
+
+size_t MT_getrss() {
+	/* get RSS  -- linux only for the moment */
+	static char MT_mmap_procfile[128] = {0};
+ 	int fd;
+	if (MT_mmap_procfile[0] == 0) {
+		sprintf(MT_mmap_procfile, "/proc/%d/stat", getpid());
+	}
+	fd = open(MT_mmap_procfile, O_RDONLY);
+	if (fd >= 0) {
+		char buf[1024], *r = buf;
+		size_t i, sz = read(fd, buf, 1024);
+		close(fd);
+		if (sz > 0) {
+			for(i=0; i<23; i++) {
+				while(*r && (*r == ' ' || *r == '\t')) r++;
+				while(*r && (*r != ' ' && *r != '\t')) r++;
+			}
+			while(*r && (*r == ' ' || *r == '\t')) r++;
+			return ((size_t) atol(r))*MT_pagesize();
+		}
+	}
+	return 0;
+}
+
+int MT_mmap_trim(size_t lim, void *fp) {
+	stream* err = (stream*) fp;
+	size_t rss = MT_getrss();
+	int ret, i, trim = 0, trimming = rss > lim, worry = rss*2 > lim;
+	if (err) {
+		stream_printf(err, "MT_mmap_trim(%u MB): rss = %u MB\n", 
+			(unsigned int) ((lim)>>20), (unsigned int) (rss>>20));
+	}
+	(void)pthread_mutex_lock(&MT_mmap_lock);
+
+	/* give OS advise on all memory mapped regions */
+	for(i = MT_mmap_first; i >= 0; i = MT_mmap_tab[i].next) {
+		trim = trimming && (MT_mmap_tab[i].pincnt == 0 || MT_mmap_tab[i].len > lim);
+		if (err) {
+			stream_printf(err, "MT_mmap_trim: %s %uMB (%s fd=%d pin=%d)\n", 
+					MT_mmap_tab[i].path, 
+					(MT_mmap_tab[i].len)>>20, 
+					MT_mmap_tab[i].writable?"WRITE":"READ", 
+					MT_mmap_tab[i].fd,
+					MT_mmap_tab[i].pincnt);
+		}
+		if (MT_mmap_tab[i].writable && worry) {
+			if (err) {
+				stream_printf(err, "MT_mmap_trim: msync(%s,%sSYNC)...\n", 
+					MT_mmap_tab[i].path, trim?"":"A");
+			}
+			ret = msync(MT_mmap_tab[i].base, MT_mmap_tab[i].len, trim?MS_SYNC:MS_ASYNC); 
+			if (err) {
+				stream_printf(err, "MT_mmap_trim: msync(%s,%sSYNC) = %d\n", 
+					MT_mmap_tab[i].path, trim?"":"A", ret);
+			}
+		}
+		if (trim && MT_mmap_tab[i].fd >= 0) {
+			/* tell the OS quite clearly that you want to drop this */
+			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len, POSIX_MADV_DONTNEED);
+			if (err) {
+				stream_printf(err, "MT_mmap_trim: posix_madvise(%s,fd=%d,%uMB,POSIX_MADV_DONTNEED) = %d\n", 
+					MT_mmap_tab[i].path, MT_mmap_tab[i].fd, 
+					(unsigned int) (MT_mmap_tab[i].len>>20), ret);
+			}
+#ifdef HAVE_POSIX_FADVISE
+			/* tell the OS quite clearly that you want to drop this */
+			ret = posix_fadvise(MT_mmap_tab[i].fd, 0LL, MT_mmap_tab[i].len, POSIX_FADV_DONTNEED);
+			if (err) {
+				stream_printf(err, "MT_mmap_trim: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n", 
+					MT_mmap_tab[i].path, MT_mmap_tab[i].fd, 
+					(unsigned int) (MT_mmap_tab[i].len>>20), ret);
+			}
+#endif
+		}
+	}
+	(void)pthread_mutex_unlock(&MT_mmap_lock);
+	return trim;
+}
+
+void MT_mmap_pin(void* base, size_t len) {
+	int i;
+	(void)pthread_mutex_lock(&MT_mmap_lock);
+	i = MT_mmap_idx(base, len);
+	if (i >= 0) {
+		MT_mmap_tab[i].pincnt++;
+	}
+	(void)pthread_mutex_unlock(&MT_mmap_lock);
+
+}
+
+void MT_mmap_unpin(void* base, size_t len) {
+	int i;
+	(void)pthread_mutex_lock(&MT_mmap_lock);
+	i = MT_mmap_idx(base, len);
+	if (i >= 0) {
+		MT_mmap_tab[i].pincnt--;
+	}
+	(void)pthread_mutex_unlock(&MT_mmap_lock);
+}
+
 void MT_init_posix(int alloc_map){
 	MT_heapbase = (char*) sbrk(0);
 	if (alloc_map)
 		MT_alloc_init();
+	MT_mmap_init();
 }
 
 char* MT_heapcur(void){
@@ -283,23 +584,29 @@ char* MT_heapcur(void){
 }
 
 void* MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed){
-	FILE *fp = fopen(path, (mode&MMAP_WRITABLE)?"rb+":"rb" );
+	int fd = open(path, O_CREAT|((mode&MMAP_WRITABLE)?O_RDWR:O_RDONLY));
 	void *ret = (void*) -1L;
-	if (fp) {
+	if (fd >= 0) {
 	    ret = mmap(fixed, len, 
 		((mode&MMAP_WRITABLE)?PROT_WRITE:0)|PROT_READ, 
 		((mode&MMAP_COPY)?MAP_PRIVATE:MAP_SHARED)|(fixed?MAP_FIXED:0),
-	        fileno(fp), off);
-	    fclose(fp);
-	    if (ret != (void*) -1L && (mode&MMAP_ADVISE)) {
-		(void) madvise(ret, len, mode&MMAP_ADVISE);
+	        fd, off);
+
+	    if (ret != (void*) -1L) {
+		fd = MT_mmap_new(path, ret, len, fd, (mode&MMAP_WRITABLE));
+	    	if (mode&MMAP_ADVISE) {
+			(void) MT_madvise(ret, len, mode&MMAP_ADVISE);
+		}
 	    }
+	    if (fd >= 0) close(fd);
         }
 	return ret;
 }
 
 int MT_munmap(void* p, size_t len) {
-	return munmap(p, len);
+	int ret = munmap(p, len);
+	MT_mmap_del(p, len);
+	return ret;
 } 
 
 int MT_msync(void* p, size_t len, int mode) {
@@ -307,8 +614,9 @@ int MT_msync(void* p, size_t len, int mode) {
 } 
 
 int MT_madvise(void* p, size_t len, int advise) {
-	(void) p; (void) len; (void) advise;
-	return madvise(p, len, advise); 
+	int ret = posix_madvise(p, len, advise); 
+	if (MT_fadvise(p, len, advise)) ret = -1;
+	return ret;
 }
 
 struct mallinfo 
@@ -356,7 +664,6 @@ int MT_path_absolute(char *pathname) {
 
 void MT_init_posix(int alloc_map){
 	MT_heapbase = 0;
-
 /*
 	_set_sbh_threshold(MT_SMALLBLOCK);
 */
@@ -448,10 +755,18 @@ int MT_madvise(void *p, size_t len, int advise) {
 	return 0; /* would -1 be better? */
 }
 
+void MT_mmap_pin(void* base, size_t len) {
+	(void) base; (void) len;
+}
 
+void MT_mmap_unpin(void* base, size_t len) {
+	(void) base; (void) len;
+}
 
+int MT_mmap_trim(size_t lim, stream *err) {
+	(void) lim; (void) err;
+}
 
-/* TODO */
 struct mallinfo MT_mallinfo(void) {
 	struct mallinfo _ret; 
 	_HEAPINFO hinfo;
@@ -487,7 +802,7 @@ struct mallinfo MT_mallinfo(void) {
 	    heapstatus == _HEAPBADNODE)
 	{
 	
-		GDKerror("mallinfo(): heap is corrupt.");
+		stream_printf(GDKerr, "mallinfo(): heap is corrupt.");
 	}
 	_heapmin();
 	return _ret;
@@ -620,7 +935,7 @@ void rewinddir (DIR *dir)
   if (dir == NULL) return;
 
   if (!FindClose ((HANDLE) dir->find_file_handle))
-    printf("rewinddir(): FindClose() failed\n");
+    stream_printf(GDKerr, "rewinddir(): FindClose() failed\n");
 
   mask = malloc(strlen(dir->dir_name) + 3);
   sprintf (mask, "%s\\*", dir->dir_name);
@@ -908,11 +1223,15 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
                 q = (char*) mmap(r, size, PROT_READ|PROT_WRITE, 
 				MMAP_FLAGS(MAP_PRIVATE|MAP_FIXED), MMAP_FD, 0);
         }
+        if (q != (char*) -1L) {
+		(void) MT_mmap_new("anonymous vm", q, *maxsize, -1, 1);
+	}
         MMAP_CLOSE_DEV_ZERO;
         return (void*) ((q == (char*) -1L)?NULL:q);
 }
 
 void MT_vmfree(void *p, size_t size) {
+	MT_mmap_del(p, size);
         size = MT_PAGESIZE(size);
         munmap(p, size);
 }
@@ -1028,7 +1347,7 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 	}
 	p = (void*) VirtualAlloc(a, size, MEM_COMMIT|mode, PAGE_READWRITE);
 	if (p == NULL) {
-		fprintf(MT_out, "VirtualAlloc(" PTRFMT "," SZFMT ",MEM_COMMIT,PAGE_READWRITE): failed\n", PTRFMTCAST a, size);
+		stream_printf(GDKerr, "VirtualAlloc(" PTRFMT "," SZFMT ",MEM_COMMIT,PAGE_READWRITE): failed\n", PTRFMTCAST a, size);
 	}
 	return p; 
 }
@@ -1036,9 +1355,9 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 
 void MT_vmfree(void *p, size_t size) {
 	if (VirtualFree(p, size, MEM_DECOMMIT) == 0)
-	fprintf(MT_out, "VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
+		stream_fprintf(GDKerr, "VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
 	if (VirtualFree(p, 0, MEM_RELEASE) == 0)
-	fprintf(MT_out, "VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
+		stream_fprintf(GDKerr, "VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
 }
 
 void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize) {
@@ -1056,7 +1375,7 @@ void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t oldmaxsize, s
 	if (oldsize > newsize) {
  		size_t ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
  		if (ret == 0) 
-			fprintf(MT_out, "VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", 
+			stream_fprintf(GDKerr, "VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", 
 				PTRFMTCAST (p+newsize), (ssize_t) (oldsize-newsize));
         } else if (oldsize < newsize) {
  		a = (char*) VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
@@ -1211,17 +1530,17 @@ int MT_alloc_print(void) {
 		return 0;
 
         for(i=0; i<40; i++) {
-                fprintf(MT_out, "%02d00MB ", i);
+                stream_printf(GDKout, "%02d00MB ", i);
                 for(j=0; j<100; j++) {
                         int mode = '.';
                         for(k=0; k<16; k++)  {
                                 int m = MT_alloc_map[k + 16*(j + 100*i)]&127;
                                 if (mode == '.' || INUSEMODE(m)) mode = m;
                         }
-                        fprintf(MT_out, "%c", mode);
+                        stream_printf(GDKout, "%c", mode);
                 }
 #ifdef WIN32
-                fprintf(MT_out, "\n       ");
+                stream_printf(GDKout, "\n       ");
                 for(j=0; j<100; j++) {
                         int mode = '.';
                         for(k=0; k<16; k++,p+=1<<16)
@@ -1230,10 +1549,10 @@ int MT_alloc_print(void) {
                                 } else if (MT_alloc_map[k + 16*(j + 100*i)]&128) {
                                         mode = 'X';
                                 }
-                        fprintf(MT_out, "%c", mode);
+                        stream_printf(GDKout, "%c", mode);
                 }
 #endif
-                fprintf(MT_out, "\n");
+                stream_printf(GDKout, "\n");
         }
 #endif
         return 0;
@@ -1305,7 +1624,7 @@ int MT_alloc_table(void) {
                 }
 		stream_flush(GDKout);
 #ifdef WIN32
-                fprintf(MT_out, "\n       ");
+                stream_printf(GDKout, "\n       ");
                 for(j=0; j<100; j++) {
                         int mode = '.';
                         for(k=0; k<16; k++,p+=1<<16)
@@ -1314,9 +1633,9 @@ int MT_alloc_table(void) {
                                 } else if (MT_alloc_map[k + 16*(j + 100*i)]&128) {
                                         mode = 'X';
                                 }
-                        fprintf(MT_out, "%c", mode);
+                        stream_printf(GDKout, "%c", mode);
                 }
-                fprintf(MT_out, "\n");
+                stream_printf(GDKout, "\n");
 #endif
         }
 #endif

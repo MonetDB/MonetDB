@@ -456,8 +456,13 @@ below.  The global variables should not be modified directly.
 typedef signed char	bit; 		
 typedef signed char	chr; 		
 typedef short		sht;
-typedef size_t		oid; 		
+#ifdef MONET_OID32
+#define SIZEOF_OID	4
+typedef unsigned int	oid; 		
+#else
 #define SIZEOF_OID	SIZEOF_SIZE_T
+typedef size_t		oid; 		
+#endif
 typedef int		bat; 		/* Index into BBP */
 typedef void*		ptr; 		/* Internal coding of types */
 typedef float		flt; 		
@@ -553,9 +558,9 @@ typedef char 		*BUN; 		/* pointer in some heap. */
 typedef	char		long_str[IDLENGTH];/* standard GDK static string */
 typedef	char		short_str[OLDLENGTH];/* old GDK small static string */
 
-typedef size_t hash_t;		/* type used for hash tables */
-typedef size_t var_t;		/* type used for heap index of var-sized BAT */
-#if SIZEOF_SIZE_T == SIZEOF_INT	/* a type compatible with var_t */
+typedef oid hash_t;		/* type used for hash tables */
+typedef oid var_t;		/* type used for heap index of var-sized BAT */
+#if SIZEOF_OID == SIZEOF_INT	/* a type compatible with var_t */
 #define TYPE_var	TYPE_int
 #else
 #define TYPE_var	TYPE_lng
@@ -863,7 +868,7 @@ typedef struct {
         bit             sorted;         /* 0=false, 1=true; */
         bit             dense;          /* 0=false, 1=true; */
 	oid		align;		/* OID for sync alignment */
-	oid		nosorted_rev;	/* OID for sync alignment */
+	size_t		nosorted_rev;	/* position that proves sorted_rev==FALSE */
 	size_t		nokey[2]; 	/* positions that prove key ==FALSE */
 	size_t		nosorted; 	/* position that proves sorted==FALSE */
 	size_t		nodense; 	/* position that proves dense==FALSE */
@@ -1444,6 +1449,8 @@ BAT * & BATload & (str name)\\
 BAT * & BATsave & (BAT *b)\\
 int & BATmmap & (BAT *b, int bn, int hh, int th, int ha, int ta)\\
 int & BATmadvise & (BAT *b, int bn, int hh, int th, int ha, int ta)\\
+int & BATmmap\_pin & (BAT *b)\\
+int & BATmmap\_unpin & (BAT *b)\\
 int & BATdelete & (BAT *b)\\
 BAT * & BATconvert & (str name, int direction)\\
 \hline\end{tabular}}
@@ -1461,6 +1468,12 @@ The @%BATconvert@ converts a BAT that contains data saved on
 hardware with a different byte order (little endian vs big endian),
 into the correct format. Direction is either CONV\_NTOH or CONV\_HTON,
 indication conversion from network to host or host to network format.
+@
+Monet now has a mmap trim thread that takes care of flushing the
+memory mapped regions when MonetDB starts to consume too much
+main memory. Heaps (that are randomly accessed) can be excluded
+from this mechanism, by pinning them. BATmmap\_pin/unpin do
+this for all heaps of a BAT.
 
 @- Heap Storage Modes
 The discriminative storage modes are memory-mapped, compressed, or in 
@@ -1498,6 +1511,8 @@ gdk_export BAT*	BATload       (str nme);
 gdk_export BAT*	BATload_intern(bat bid);
 gdk_export BAT*	BATsave       (BAT *b);
 gdk_export int      BATmmap       (BAT *b, int bn, int hh, int th, int ha, int ta);
+gdk_export int      BATmmap_pin   (BAT *b);
+gdk_export int      BATmmap_unpin (BAT *b);
 gdk_export int      BATmadvise    (BAT *b, int bn, int hh, int th, int ha, int ta);
 gdk_export int      BATdelete     (BAT* b);
 gdk_export size_t	BATvmsize     (BAT *b, int dirty);
@@ -1868,7 +1883,7 @@ typedef struct {
 
 	/* varsized atom-only ADT functions */
 	var_t	(*atomPut)		(Heap*, var_t* off, ptr src); 
-	void	(*atomDel)		(Heap*, size_t* atom); 
+	void	(*atomDel)		(Heap*, var_t* atom); 
 	int	(*atomLen)		(ptr atom); 
 	void	(*atomHeap)		(Heap*, size_t); 
 	/* optional functions */
@@ -2006,15 +2021,15 @@ typedef struct {
 	int		deleting;
 	void		(*accBuild)   (Heap*, BAT*, void *param);
 	void		(*accDestroy) (Heap*, BAT*);
-	void		(*accInsert)  (Heap*, size_t pos, BAT*, ptr val);
-	void		(*accDelete)  (Heap*, size_t pos, BAT*, ptr val);
+	void		(*accInsert)  (Heap*, var_t pos, BAT*, ptr val);
+	void		(*accDelete)  (Heap*, var_t pos, BAT*, ptr val);
 	void		(*accSave)    (Heap*, BAT*);
 	void		(*accCommit)  (Heap*, BAT*);
 	void		(*accAbort)   (Heap*, BAT*);
 	void		(*accCluster) (Heap*, BAT*);
 	int             (*accBuncluster)(Heap*, BAT*);
 	int		(*accRepair)  (Heap*, BAT*);
-	void		(*accMove)    (Heap*, size_t from, size_t to, BAT*, ptr val);
+	void		(*accMove)    (Heap*, var_t from, var_t to, BAT*, ptr val);
 } accDesc; 
 
 gdk_export accDesc	BATaccelerators[];

@@ -368,7 +368,7 @@ CTdestroy_hl(
 void
 CTupdate_hl(
    Heap*        hp,     /* INOUT: accelerator heap. */
-   size_t	idx,
+   var_t	idx,
    BAT*         b,      /* IN: BAT with accelerated head column. */
    ptr		val)
 {

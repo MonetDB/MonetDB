@@ -527,15 +527,15 @@ returns matches on tuples from the outer stream with the hash-table.
 @h
 typedef struct {
     BAT *inner;
-    size_t *hash, *link;
-    size_t mask, hashnum;
+    var_t *hash, *link;
+    var_t mask, hashnum;
 } JoinHandle;
 @c
-#define iterator_hashchr(tpe,val,msk) ((size_t) ((unsigned char*) val)[0])
-#define iterator_hashsht(tpe,val,msk) (((size_t) ((unsigned short*) val)[0]) % msk)
-#define iterator_hashint(tpe,val,msk) (((size_t) ((unsigned int *) val)[0]) % msk)
-#define iterator_hashlng(tpe,val,msk) ((size_t)(((unsigned int *) val)[0]^((unsigned int *) val)[1]) % msk)
-#define iterator_hashloc(tpe,val,msk) (((size_t) (*BATatoms[tpe].atomHash)(val)) % msk)
+#define iterator_hashchr(tpe,val,msk) ((var_t) ((unsigned char*) val)[0])
+#define iterator_hashsht(tpe,val,msk) (((var_t) ((unsigned short*) val)[0]) % msk)
+#define iterator_hashint(tpe,val,msk) (((var_t) ((unsigned int *) val)[0]) % msk)
+#define iterator_hashlng(tpe,val,msk) ((var_t)(((unsigned int *) val)[0]^((unsigned int *) val)[1]) % msk)
+#define iterator_hashloc(tpe,val,msk) (((var_t) (*BATatoms[tpe].atomHash)(val)) % msk)
 #define iterator_hashvar(tpe,val,msk) iterator_hashloc(tpe,val,msk)
 
 @:join(simple,chr,chr,loc)@

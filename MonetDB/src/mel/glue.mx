@@ -1433,7 +1433,7 @@ ostream &typecheck::gen_atomops( ostream &o, const Atomops &d ){
 		break;
         case OP_DEL 	: 
 	    	o << "extern void " << fcn;
-	    	o << "( Heap* hp, size_t* offset);\n";
+	    	o << "( Heap* hp, var_t* offset);\n";
 		break;
         case OP_HEAP 	: 
 	    	o << "extern int " << fcn;
@@ -1475,7 +1475,7 @@ ostream &typecheck::gen_accops( ostream &o, const Accops &d ){
 	case OP_INSERT:
 	case OP_DELETE:
      		o << "extern void " << fcn;
-     		o << "( Heap* hp, size_t idx, BAT* bn, char* atom );\n";
+     		o << "( Heap* hp, var_t idx, BAT* bn, char* atom );\n";
 		break;
 	case OP_BUILD:
      		o << "extern void " << fcn;
@@ -1491,7 +1491,7 @@ ostream &typecheck::gen_accops( ostream &o, const Accops &d ){
 		break;
 	case OP_TRAVERSE:
      		o << "extern int " << fcn;
-     		o << "( Heap* hp, size_t idx, void **hdl, BAT* bn );\n";
+     		o << "( Heap* hp, var_t idx, void **hdl, BAT* bn );\n";
 		break;
 	case OP_REPAIR:
      		o << "extern int " << fcn;
@@ -1499,7 +1499,7 @@ ostream &typecheck::gen_accops( ostream &o, const Accops &d ){
 		break;
 	case OP_MOVE:
      		o << "extern void " << fcn;
-     		o << "( Heap* hp, size_t frm, size_t to, BAT* bn, ptr val );\n";
+     		o << "( Heap* hp, var_t frm, var_t to, BAT* bn, ptr val );\n";
 		break;
 	}
 #else

@@ -737,7 +737,7 @@ DVIdestroy(
 void
 DVIinsert(
    Heap*	hp,	/* INOUT: vectoridx accelerator heap. */
-   size_t	idx,	/* IN: BUNindex() of value. */
+   var_t	idx,	/* IN: BUNindex() of value. */
    BAT*		b,	/* IN: BAT with accelerated head column. */
    oid*     	o	/* IN: atomic value that was inserted. */
 ){
@@ -749,7 +749,7 @@ DVIinsert(
 void
 DVIdelete(
    Heap*	hp,	/* INOUT: vectoridx accelerator heap. */
-   size_t	idx,	/* IN: BUNindex() of value. */
+   var_t	idx,	/* IN: BUNindex() of value. */
    BAT*		b,	/* IN: BAT with accelerated head column. */
    oid*     	o	/* IN: atomic value that was deleted. */
 ){
@@ -899,7 +899,7 @@ DVdestroy(
 void
 DVinsert(
    Heap*	hp,	/* INOUT: vector accelerator heap. */
-   size_t	idx,	/* IN: BUNindex() of value. */
+   var_t	idx,	/* IN: BUNindex() of value. */
    BAT*		b,	/* IN: BAT with accelerated head column. */
    ptr      	p	/* IN: atomic value that was inserted. */
 ){
@@ -911,7 +911,7 @@ DVinsert(
 void
 DVdelete(
    Heap*	hp,	/* INOUT: vector accelerator heap. */
-   size_t	idx,	/* IN: BUNindex() of value. */
+   var_t	idx,	/* IN: BUNindex() of value. */
    BAT*		b,	/* IN: BAT with accelerated head column. */
    ptr      	p	/* IN: atomic value that was deleted. */
 ){

@@ -155,7 +155,7 @@ gdk_export int		strCmp         (str l, str r);
 gdk_export int		strNil         (str s);
 gdk_export void 	strHeapConvert (Heap *h, int directon);
 gdk_export int		strElimDoubles (Heap *h);
-gdk_export size_t	strLocate      (Heap *h, str v);
+gdk_export var_t	strLocate      (Heap *h, str v);
 gdk_export int          strCmpNoNil    (unsigned char *l, unsigned char *r);
 
 #ifdef __cplusplus
@@ -1457,7 +1457,7 @@ old bats with these string heaps will still be compatible. TODO: replace by strH
 #define GDK_STRHASH(x,y) {                   \
     str _s = (str) (x);                      \
     for((y)=0; *_s; _s++) {                  \
-        (y) = GDK_ROTATE(y, 4, SIZEOF_VOID_P*8-4, 15) ^ *_s;\
+        (y) = GDK_ROTATE(y, 4, SIZEOF_OID*8-4, 15) ^ *_s;\
     }}
 @c
 hash_t strHash(str s) {

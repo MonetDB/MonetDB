@@ -434,13 +434,13 @@ BAT *BATclear(BAT *b) {
 		}
 	} else {
 		/* do heap-delete of all inserted atoms */
-		void (*hatmdel)(Heap*,size_t*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*,size_t*) = BATatoms[b->ttype].atomDel;
+		void (*hatmdel)(Heap*,var_t*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*,var_t*) = BATatoms[b->ttype].atomDel;
 
 		if (hatmdel || tatmdel) 
 		for(p=b->batInserted, q=BUNlast(b); p < q; p += bs) {
-			if (hatmdel) (*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
-			if (tatmdel) (*tatmdel)(&b->theap, (size_t*) BUNtloc(b,p));
+			if (hatmdel) (*hatmdel)(&b->hheap, (var_t*) BUNhloc(b,p));
+			if (tatmdel) (*tatmdel)(&b->theap, (var_t*) BUNtloc(b,p));
 		}
 	}
 
@@ -596,7 +596,7 @@ around and adapt search accelerator structures.
                 while(_src<_end) *(_dst++) = *(_src++);
         } 
 @= hacc_update
-{	void (*update)(Heap*, size_t, BAT*, ptr) = acc@1(b->hacctype);
+{	void (*update)(Heap*, var_t, BAT*, ptr) = acc@1(b->hacctype);
 	if (update) {
 		(*update)(&b->haccelerator, @4, b, BUN@2(b,@3));
 	}
@@ -605,7 +605,7 @@ around and adapt search accelerator structures.
 	}
 } 
 @= tacc_update
-{	void (*update)(Heap*, size_t, BAT*, ptr) = acc@1(b->tacctype);
+{	void (*update)(Heap*, var_t, BAT*, ptr) = acc@1(b->tacctype);
 	if (update) {
 		(*update)(&b->taccelerator, @4, bm, BUN@2(b,@3));
 	}
@@ -614,9 +614,9 @@ around and adapt search accelerator structures.
 	}
 }
 @= acc_move
-{	void (*update)(Heap*, size_t, BAT*, ptr) = accdel(b->hacctype);
-	void (*hmove)(Heap*, size_t, size_t, BAT*, ptr) = accmov(b->hacctype);
-	void (*tmove)(Heap*, size_t, size_t, BAT*, ptr) = NULL;
+{	void (*update)(Heap*, var_t, BAT*, ptr) = accdel(b->hacctype);
+	void (*hmove)(Heap*, var_t, var_t, BAT*, ptr) = accmov(b->hacctype);
+	void (*tmove)(Heap*, var_t, var_t, BAT*, ptr) = NULL;
 
 	if (hmove) { 
 		(*hmove)(&b->haccelerator, @3, @4, b, BUNhead(b,@1));
@@ -851,8 +851,8 @@ last inserted bun (if present) is copied over it.
 @c
         	int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel)(Heap*, size_t*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*, size_t*) = BATatoms[b->ttype].atomDel;
+		void (*hatmdel)(Heap*, var_t*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*, var_t*) = BATatoms[b->ttype].atomDel;
 
 		if (hunfix) {
 			(*hunfix)(BUNhead(b,p));
@@ -861,10 +861,10 @@ last inserted bun (if present) is copied over it.
 			(*tunfix)(BUNtail(b,p));
 		}
 		if (hatmdel) {
-			(*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
+			(*hatmdel)(&b->hheap, (var_t*) BUNhloc(b,p));
 		}
 		if (tatmdel) {
-			(*tatmdel)(&b->theap, (size_t*) BUNtloc(b,p));
+			(*tatmdel)(&b->theap, (var_t*) BUNtloc(b,p));
 		}
 		idx1 = BUNindex(b, p); 
 		@:hacc_update(del,head,p,idx1)@
@@ -1399,11 +1399,15 @@ int BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc){
 
 @- BATmadvise
 @= madvise
-	if ((@1 >=0) && (@2)->base && ((@2)->storage==STORE_MMAP)) {
+	if ((@1 >=0) && (@2)->base && ((@2)->storage&STORE_MMAP)) {
 	    if (MT_madvise((@2)->base, (@2)->free, @1)) {
 		GDKsyserror("madvise on @2 @1 failed.\n");
 		return -1;
 	    }
+	}
+@= pin
+	if ((@2)->base && ((@2)->storage&STORE_MMAP)) {
+		MT_mmap_@1((@2)->base, (@2)->maxsize);
 	}
 @c
 int BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc) {
@@ -1413,6 +1417,26 @@ int BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc) {
 	@:madvise(thp, &b->theap)@
 	@:madvise(hacc, &b->haccelerator)@
 	@:madvise(tacc, &b->taccelerator)@
+	return 0;
+}
+
+int BATmmap_pin(BAT *b) {
+        BATcheck(b, "BATmmap_pin");
+	@:pin(pin,b->batBuns)@
+	@:pin(pin,&b->hheap)@
+	@:pin(pin,&b->theap)@
+	@:pin(pin,&b->haccelerator)@
+	@:pin(pin,&b->taccelerator)@
+	return 0;
+}
+
+int BATmmap_unpin(BAT *b) {
+        BATcheck(b, "BATmmap_unpin");
+	@:pin(unpin,b->batBuns)@
+	@:pin(unpin,&b->hheap)@
+	@:pin(unpin,&b->theap)@
+	@:pin(unpin,&b->haccelerator)@
+	@:pin(unpin,&b->taccelerator)@
 	return 0;
 }
 

@@ -504,6 +504,7 @@ void BBPinit(void) {
 		}
 	} 
 	memset(BBP, 0, BBPlimit*sizeof(BBPrec));
+	MT_mmap_pin(BBP, BBPlimit*sizeof(BBPrec));
 
 	/* scan the BBP.dir, and insert the BATs into the BBP */
 	while((c = fgets(buffer, 3000, fp)) != NULL) {
@@ -1849,7 +1850,6 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 		/* continue while we can scan for more candiates */
 		if (!scan) break;
 	}
-
 	/* done trimming */
 	MEMDEBUG  THRprintf(GDKerr, "BBPTRIM_EXIT: memsize=" SZFMT ",vmsize=" SZFMT "\n",
 			    GDKmem_cursize(), GDKvm_cursize());

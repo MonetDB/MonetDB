@@ -318,6 +318,8 @@ BAT* BAThash(BAT *b, size_t masksize) {
 			GDKfree(hp);
 			return NULL;
 		}
+		if (hp->storage & STORE_MMAP)
+			MT_mmap_pin(hp->base, hp->maxsize);
 
 		switch(tpe) {
 #ifndef NOEXPAND_CHR
@@ -615,6 +617,8 @@ BAT* BATidx(BAT *b, BAT *h) {
 		GDKfree(hp);
 		return NULL;
 	    }
+	    if (hp->storage & STORE_MMAP)
+	        MT_mmap_pin(hp->base, hp->maxsize);
 @-
 dynamic check using sampling to see whether there are many doubles.
 @c
@@ -653,6 +657,8 @@ Use randomized order for insert elements to get a nicely balanced tree
 			HEAPfree(hp);
 			return NULL;
 		}
+	        if (tmp.storage & STORE_MMAP)
+	            MT_mmap_pin(tmp.base, tmp.maxsize);
 		idx->stack = (Tnode*) tmp.base;
 		idx->free = idx->stack; 
 		memset((str)idx->stack, 0, cnt*sizeof(Tnode)); 
@@ -713,6 +719,8 @@ construction in one pass from a sorted histogram
 			HEAPfree(hp);
 			return NULL;
 		}
+	        if (tmp.storage & STORE_MMAP)
+	            MT_mmap_pin(tmp.base, tmp.maxsize);
  		base = map = (BUN**) tmp.base;
 
 		BATloopFast(histo, p, q, i) {
@@ -1383,11 +1391,11 @@ void ACCproperty(str name, str prop, ptr fcn) {
 	} else if (strcmp(prop, "destroy") == 0) {
 		BATaccelerators[i].accDestroy = (void (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "insert") == 0) {
-		BATaccelerators[i].accInsert = (void (*)(Heap*, size_t, BAT*, ptr)) fcn;
+		BATaccelerators[i].accInsert = (void (*)(Heap*, var_t, BAT*, ptr)) fcn;
 	} else if (strcmp(prop, "delete") == 0) {
-		BATaccelerators[i].accDelete = (void (*)(Heap*, size_t, BAT*, ptr)) fcn;
+		BATaccelerators[i].accDelete = (void (*)(Heap*, var_t, BAT*, ptr)) fcn;
 	} else if (strcmp(prop, "move") == 0) {
-		BATaccelerators[i].accMove = (void (*)(Heap*, size_t, size_t, BAT*, ptr)) fcn;
+		BATaccelerators[i].accMove = (void (*)(Heap*, var_t, var_t, BAT*, ptr)) fcn;
 	} else if (strcmp(prop, "save") == 0) {
 		BATaccelerators[i].accSave = (void (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "commit") == 0) {

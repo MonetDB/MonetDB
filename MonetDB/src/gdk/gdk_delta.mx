@@ -158,8 +158,8 @@ BAT *BATcommit(BAT *b) {
 	if (b->batDeleted < b->batHole  && BBP_cache(b->batCacheid)) {
 		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel)(Heap*,size_t*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*,size_t*) = BATatoms[b->ttype].atomDel;
+		void (*hatmdel)(Heap*,var_t*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*,var_t*) = BATatoms[b->ttype].atomDel;
 		BUN p,q;
 		int xx;
 
@@ -172,13 +172,13 @@ BAT *BATcommit(BAT *b) {
 				(*hunfix)(h);
 			}
 			if (hatmdel) {
-				(*hatmdel)(&b->hheap,(size_t*)(h));
+				(*hatmdel)(&b->hheap,(var_t*)(h));
 			}
 			if (tunfix) {
 				(*tunfix)(t);
 			}
 			if (tatmdel) {
-				(*tatmdel)(&b->theap,(size_t*)(t));
+				(*tatmdel)(&b->theap,(var_t*)(t));
 			}
 		}}
 	}
@@ -250,11 +250,11 @@ BAT *BATundo(BAT *b) {
 		size_t i = BUNindex(b, bunfirst);
 		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel)(Heap*, size_t*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*, size_t*) = BATatoms[b->ttype].atomDel;
-		void (*haccdel)(Heap*,size_t,BAT*,ptr) = 
+		void (*hatmdel)(Heap*, var_t*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*, var_t*) = BATatoms[b->ttype].atomDel;
+		void (*haccdel)(Heap*,var_t,BAT*,ptr) = 
 			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accDelete;
-		void (*taccdel)(Heap*,size_t,BAT*,ptr) = 
+		void (*taccdel)(Heap*,var_t,BAT*,ptr) = 
 			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accDelete;
                
 		if (hunfix || tunfix || hatmdel || tatmdel || haccdel || taccdel) {
@@ -272,7 +272,7 @@ BAT *BATundo(BAT *b) {
 				(*haccdel)(&b->haccelerator, i, b, h);
 			}
 			if (hatmdel) {
-				(*hatmdel)(&b->hheap, (size_t*) (p+b->hloc));
+				(*hatmdel)(&b->hheap, (var_t*) (p+b->hloc));
 			}
                 	if (b->thash_heap) {
 				HASHdel(b->thash, i, t, p < bunlast);
@@ -284,7 +284,7 @@ BAT *BATundo(BAT *b) {
 				(*taccdel)(&b->taccelerator, i, b, t);
 			}
 			if (tatmdel) {
-				(*tatmdel)(&b->theap, (size_t*) (p+b->tloc));
+				(*tatmdel)(&b->theap, (var_t*) (p+b->tloc));
 			}
 		}}
 	}
@@ -294,9 +294,9 @@ BAT *BATundo(BAT *b) {
 	bunlast = b->batHole;
 	if (bunlast > b->batDeleted) { 
 		size_t i = BUNindex(b, bunfirst);
-		void (*haccins)(Heap*,size_t,BAT*,ptr) = 
+		void (*haccins)(Heap*,var_t,BAT*,ptr) = 
 			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accInsert;
-		void (*taccins)(Heap*,size_t,BAT*,ptr) = 
+		void (*taccins)(Heap*,var_t,BAT*,ptr) = 
 			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accInsert;
 
 		memcpy(b->batHole, b->batDeleted, bunsize);

@@ -360,6 +360,8 @@ end@2@3:;
 	ptr h, t, t2 = NULL, h2 = hnil;
 
 	ALGODEBUG THRprintf(GDKout, "BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
+	pin = 1;
+	BATmmap_pin(r);
 	if (BATprepareHash(r)) goto bunins_failed;
 	BATloopFast(l, p1, q1, s1) {
 	    h = BUNh@2(l, p1);
@@ -376,6 +378,7 @@ end@2@3:;
 	    MISS@1(h,t);
 	}
 	if (t2 || h2) ins = 0; /* dummy action for the compiler */
+	BATmmap_unpin(r);
 
 @= voidcheck
 {   BUN p1 = BUNfirst(r), q1 = BUNlast(r);
@@ -456,6 +459,7 @@ end@2@3:;
 BAT* BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
 	int hash = TRUE, (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
 	ptr hnil, tnil;
+	int pin = 0;
 
 	/* determine how to do the intersect */
 	if (BAThordered(l)&BAThordered(r)&1) {
@@ -512,6 +516,7 @@ BAT* BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
 	}
 	return bn;
 bunins_failed:
+	if (pin) BATmmap_unpin(r);
 	BBPreclaim(bn);
 	return NULL;
 }
