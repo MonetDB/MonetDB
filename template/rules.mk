@@ -28,7 +28,6 @@
 
 CP=cp
 MV=mv
-MXFLAGS= -n
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<
