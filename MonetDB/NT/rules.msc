@@ -57,7 +57,11 @@ MX="$(TOPDIR)\src\utils\Mx\Mx"
 CP=copy
 MV=copy
 DEL=del
+!IFDEF HAVE_JAVA
+CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" -DHAVE_JAVA "$(TOPDIR)" "$(prefix)"
+!ELSE
 CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" "$(TOPDIR)" "$(prefix)"
+!ENDIF
 
 # Use "nmake DEBUG=1" to get a debug build (assertions enabled);
 # use "nmake NDEBUG=1" to get a release build (assertions disabled);
