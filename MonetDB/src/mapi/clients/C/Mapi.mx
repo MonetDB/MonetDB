@@ -770,7 +770,7 @@ struct MapiResultSet {
 	struct MapiStatement *hdl;
 	int tableid;		/* SQL id of current result set */
 	int querytype;		/* type of SQL query */
-	int rows_affected;
+	int row_count;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
@@ -1295,7 +1295,7 @@ new_result(MapiHdl hdl)
 	result->querytype = -1;
 	result->errorstr = NULL;
 
-	result->rows_affected = 0;
+	result->row_count = 0;
 
 	result->fieldcnt = 0;
 	result->maxfields = 0;
@@ -2804,7 +2804,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		}
 	} else if (strcmp(tag, "tuplecount") == 0) {
 		if (anchors[0])
-			result->rows_affected = atoi(anchors[0]);
+			result->row_count = atoi(anchors[0]);
 	} else if (strcmp(tag, "id") == 0) {
 		if (anchors[0])
 			result->tableid = atoi(anchors[0]);
@@ -2943,8 +2943,8 @@ add_cache(struct MapiResultSet *result, char *line)
 	result->cache.tuplerev[result->cache.writer + 1] = result->cache.tuplecount + 1;
 	if (*line == '[') {
 		result->cache.tupleindex[result->cache.tuplecount++] = result->cache.writer;
-		if (result->rows_affected < result->cache.first + result->cache.tuplecount)
-			result->rows_affected = result->cache.first + result->cache.tuplecount;
+		if (result->row_count < result->cache.first + result->cache.tuplecount)
+			result->row_count = result->cache.first + result->cache.tuplecount;
 	}
 	result->cache.writer++;
 }
@@ -3066,7 +3066,7 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames,
 			result->fields[i].columnlength = columnlengths[i];
 	}
 	if (tuplecount > 0) {
-		result->rows_affected = tuplecount;
+		result->row_count = tuplecount;
 		result->cache.rowlimit = tuplecount;
 	}
 
@@ -3460,16 +3460,16 @@ mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 		if (hdl->mid->active &&
 		    read_into_cache(hdl->mid->active, 0) != MOK)
 			return MERROR;
-		rownr += result->rows_affected;
+		rownr += result->row_count;
 		break;
 	default:
 		return mapi_setError(hdl->mid, "Illegal whence value",
 				     "mapi_seek_row", MERROR);
 	}
-	if (rownr > result->rows_affected && hdl->mid->active &&
+	if (rownr > result->row_count && hdl->mid->active &&
 	    read_into_cache(hdl->mid->active, 0) != MOK)
 		return MERROR;
-	if (rownr < 0 || rownr > result->rows_affected)
+	if (rownr < 0 || rownr > result->row_count)
 		return mapi_setError(hdl->mid, "Illegal row number",
 				     "mapi_seek_row", MERROR);
 	if (result->cache.first <= rownr &&
@@ -3553,8 +3553,8 @@ mapi_fetch_line(MapiHdl hdl)
 	reply = mapi_fetch_line_internal(hdl);
 	if (reply == NULL && (result = hdl->result) != NULL &&
 	    hdl->mid->languageId == LANG_SQL &&
-	    hdl->mid->active == NULL && result->rows_affected > 0 &&
-	    result->cache.first + result->cache.tuplecount < result->rows_affected) {
+	    hdl->mid->active == NULL && result->row_count > 0 &&
+	    result->cache.first + result->cache.tuplecount < result->row_count) {
 		hdl->mid->active = hdl;
 		hdl->active = result;
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
@@ -4043,8 +4043,8 @@ mapi_fetch_all_rows(MapiHdl hdl)
 		if ((result = hdl->result) != NULL &&
 		    mid->languageId == LANG_SQL &&
 		    mid->active == NULL &&
-		    result->rows_affected > 0 &&
-		    result->cache.first + result->cache.tuplecount < result->rows_affected) {
+		    result->row_count > 0 &&
+		    result->cache.first + result->cache.tuplecount < result->row_count) {
 			mid->active = hdl;
 			hdl->active = result;
 			if (stream_printf(mid->to, "X" "export %d %d\n",
@@ -4118,7 +4118,7 @@ mapi_get_field_count(MapiHdl hdl)
 	mapi_hdl_check(hdl, "mapi_get_field_count");
 	if (hdl->result && hdl->result->fieldcnt == 0) {
 		/* no rows have been sliced yet, and there was no
-		   header, so try to figure out how many rows there
+		   header, so try to figure out how many columns there
 		   are for ourselves */
 		int i;
 
@@ -4133,7 +4133,7 @@ int
 mapi_get_row_count(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_get_row_count");
-	return hdl->result ? hdl->result->rows_affected : 0;
+	return hdl->result ? hdl->result->row_count : 0;
 }
 
 char *
@@ -4211,8 +4211,21 @@ mapi_get_querytype(MapiHdl hdl)
 int
 mapi_rows_affected(MapiHdl hdl)
 {
+	struct MapiResultSet *result;
+	
 	mapi_hdl_check(hdl, "mapi_rows_affected");
-	return hdl->result ? hdl->result->rows_affected : 0;
+	if ((result = hdl->result) == NULL)
+		return 0;
+	if (result->querytype == 4) {
+		int i;
+
+		for (i = 0; result->cache.rows[i][0] != '['; i++)
+			;
+		if (result->cache.fldcnt[i] == 0)
+			mapi_slice_row(result, i);
+		return atoi(result->cache.anchors[i][0]);
+	}
+	return result->row_count;
 }
 
 char *
