@@ -716,15 +716,42 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			backend_dump_nil(sql, s->op2.stval);
 			break;
 		}
-		case st_group:
-			dump_1(sql, s, "CTgroup", nr);
+		case st_group: {
+			buf = NEW_ARRAY(char, BUFSIZ + 1);
+			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
+			len = snprintf(buf, BUFSIZ,
+				"var s%dg := s%d.CTgroup();\n", -s->nr, l);
+			len += snprintf(buf + len, BUFSIZ - len,
+				"var s%d := s%dg.map();\n", -s->nr, -s->nr);
+			dump(sql, buf, len, -s->nr);
+			_DELETE(buf);
+			backend_dump_nil(sql, s->op1.stval);
 			break;
-		case st_group_ext:
-			dump_1(sql, s, "tunique().mirror", nr);
+		}
+		case st_group_ext: {
+			buf = NEW_ARRAY(char, BUFSIZ + 1);
+			int g = backend_dumpstmt_(s->op1.stval, nr, sql);
+			len = snprintf(buf, BUFSIZ,
+				"var s%d := s%dg.extend().mirror();\n", -s->nr, g);
+			dump(sql, buf, len, -s->nr);
+			_DELETE(buf);
+			backend_dump_nil(sql, s->op1.stval);
 			break;
-		case st_derive:
-			dump_2(sql, s, "CTgroup", nr);
+		}
+		case st_derive: {
+			buf = NEW_ARRAY(char, BUFSIZ + 1);
+			int g = backend_dumpstmt_(s->op1.stval, nr, sql);
+			int l = backend_dumpstmt_(s->op2.stval, nr, sql);
+			len = snprintf(buf, BUFSIZ,
+				"var s%dg := s%d.CTgroup(s%d);\n", -s->nr, g,l);
+			len += snprintf(buf + len, BUFSIZ - len,
+				"var s%d := s%dg.map();\n", -s->nr, -s->nr);
+			dump(sql, buf, len, -s->nr);
+			_DELETE(buf);
+			backend_dump_nil(sql, s->op1.stval);
+			backend_dump_nil(sql, s->op2.stval);
 			break;
+		}
 		case st_unique:{
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
@@ -736,7 +763,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				len += snprintf(buf + len, BUFSIZ - len,
 						/*"var s%dg := s%d.CTunique(s%d);\n", -s->nr, g, l); */
 						"var s%dg := s%d.CTgroup(s%d);\n", -s->nr, g, l);
-				len += snprintf(buf + len, BUFSIZ - len, "var s%de := s%dg.tunique().mirror();\n", -s->nr, -s->nr);
+				len += snprintf(buf + len, BUFSIZ - len, "var s%de := s%dg.extend().mirror();\n", -s->nr, -s->nr);
 				/*"var s%de := s%dg.reverse().kunique().mirror();\n", -s->nr, -s->nr); */
 				len += snprintf(buf + len, BUFSIZ - len, "var s%d := s%d.semijoin(s%de);\n", -s->nr, l, -s->nr);
 			} else {
