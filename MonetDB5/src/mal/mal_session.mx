@@ -68,7 +68,7 @@ scope name "MAL_scope".
 mal_export int malStartupAdmin();
 mal_export void serveClient(void *dummy);
 mal_export void initClientPrg(Client cntxt, str nme);
-mal_export void scheduleClient(str command, int msocket, stream *fin, stream *fout);
+mal_export void scheduleClient(str command, stream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
 mal_export str MALparser(Client c);
@@ -145,7 +145,7 @@ The first line should represent a user. The remainder may
 be a request to be handled. This way, a single message
 can be used to issue a short (<8192byte,=BLOCK) transaction.
 @c
-void scheduleClient( str command, int socket, stream *fin, stream *fout)
+void scheduleClient( str command, stream *fin, stream *fout)
 {
 	char *user = command, *passwd= NULL,*s;
 	int key=0;
@@ -180,7 +180,6 @@ void scheduleClient( str command, int socket, stream *fin, stream *fout)
 	/* c->nspace= newScope(NULL,GDKstrdup(user));*/
 	c->nspace->outer = mal_scope;
 	c->sessionkey = key;
-	c->socket= socket;
 	defaultScenario(c);
 	initClientPrg(c,"main");
 	if( !isAdministrator(c))

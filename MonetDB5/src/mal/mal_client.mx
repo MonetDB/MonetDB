@@ -123,7 +123,6 @@ from a particular client. This facility is used by Mapi to trace
 the interaction on the system console (sysmon). 
 @h
 	stream	*fdin, *fdout;		/* streams from and to user. */
-	int	socket;			/* socket based communication */
 	str	input, output, limit;	/* IO buffers + input limit */
 	str	nxt;			/* next unparsed input */
 	str	prompt;			/* acknowledge prompt */
@@ -294,7 +293,6 @@ Client initClient(str nme, str passwd, stream *fin, stream *fout){
 	c->sessionkey = 0;
 	c->blkmode = 0;
 
-	c->socket= 0;
 	c->fdin = fin? fin: GDKin;
 	if( c->input == 0) {
 		c->input = (str) GDKmalloc(BLOCK);
@@ -353,10 +351,8 @@ the proper IO descriptors.
 		GDKerror("Failed to initialize client\n");
 		resetProfiler(c->fdout);
 		stream_flush(c->fdout);
-		(void) stream_close(c->fdin);
 		(void) stream_close(c->fdout);
-		if( c->socket) close(c->socket);
-		c->socket=0;
+		(void) stream_close(c->fdin);
 		return ;
 	}
 	t->data[1] = c->fdin;
@@ -410,18 +406,17 @@ void freeClient(Client c)
 
 	/* epilogue actions have been done already */
 	if (c->father == NULL) { /* normal client */
-		if(c->fdin){
-			(void) stream_close(c->fdin);
-			(void) stream_destroy(c->fdin);
-		}
 		if( c->fdout){
 			resetProfiler(c->fdout);
 			(void) stream_flush(c->fdout); 
 			(void) stream_close(c->fdout);
 			(void) stream_destroy(c->fdout);
 		}
+		if(c->fdin){
+			(void) stream_close(c->fdin);
+			(void) stream_destroy(c->fdin);
+		}
 		c->fdout= c->fdin= NULL;
-		if( c->socket) close(c->socket); c->socket=0;
 	} 
 	/* forked client also */
 
@@ -529,12 +524,11 @@ void killClient(Client c){
 	/* the process may hang upon gaining access to the file descriptors */
 	c->mode= FINISHING;
 	(void) stream_flush(c->fdout);
-	(void) stream_close(c->fdin);
-	(void) stream_destroy(c->fdin); c->fdin= NULL;
 	resetProfiler(c->fdout);
 	(void) stream_close(c->fdout);
 	(void) stream_destroy(c->fdout); c->fdout= NULL;
-	if( c->socket) close(c->socket); c->socket=0;
+	(void) stream_close(c->fdin);
+	(void) stream_destroy(c->fdin); c->fdin= NULL;
 
 	GDKwarning("killClient:about to kill process ...\n");
 	sleep(PROCESSTIMEOUT);
