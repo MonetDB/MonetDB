@@ -645,6 +645,7 @@ void unlockparser(Client c)
 }
 
 extern int yyparse(void);
+extern void ll_flushbuffer(void);
  
 YYSTREE parseClient(Client c, int reschedule)
 {	
@@ -667,6 +668,7 @@ YYSTREE parseClient(Client c, int reschedule)
 		CNTXTfree2(c->stk, c);
 	}
 	r = yyparse();
+	ll_flushbuffer();
 
 	unlockparser(c);
 

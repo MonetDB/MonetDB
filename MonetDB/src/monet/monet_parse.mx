@@ -1335,7 +1335,6 @@ void ll_parserror(str msg){
 	char *s=buf, *t, *l = ll_lastline();
 	size_t i = strlen(GDKERROR);
 
-	ll_flushbuffer(); /* flush the lexer's buffer */
         ll_modcmds = 0; ll_resolution = 1;
         ll_templates = 0; ll_parblockdepth = 0;
 
