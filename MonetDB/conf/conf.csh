@@ -105,6 +105,7 @@ if ( ! -x bootstrap ) then
 			set cc = "${cc} -xarch=v9"
 			set cxx = "${cxx} -xarch=v9"
 		endif
+		set libpath = ":/var/tmp/local/lib${libpath}"
 	endif
 
 	if ( "${os}" == "IRIX64" ) then

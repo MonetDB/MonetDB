@@ -91,6 +91,7 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -xarch=v9"
 			cxx="${cxx} -xarch=v9"
 		fi
+		libpath=":/var/tmp/local/lib${libpath}"
 	fi
 
 	if [ "${os}" = "IRIX64" ] ; then
