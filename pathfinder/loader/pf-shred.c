@@ -49,16 +49,18 @@
  *                                        node level, property ID, node kind
  *                                        for document/element/text/comment/p-i
  *                                        nodes
- *    .tag      prop|ns|loc               property ID, namespace prefix, local
- *                                        part for element nodes
+ *    .qn       prop|ns|loc               property ID, namespace prefix, local
+ *                                        part for element and attribute nodes
  *    .text     prop|text                 property ID, text content for
  *                                        text nodes
  *    .com      prop|com                  property ID, comment content for
  *                                        comment nodes
  *    .pi       prop|tgt|ins              property ID, target, instruction for
  *                                        p-i nodes
- *    .@        @|own|ns|loc|val          attribute ID, owner, namespace
- *                                        prefix, local part, value for
+ *    .@        @|own|qn|prop             attribute ID, pre rank of owner, 
+ *                                        QName property ID, value property ID
+ *                                        for attribute nodes
+ *    .@val     prop|val                  property ID, attribute value for
  *                                        attribute nodes
  */
 
@@ -81,6 +83,7 @@ nat nsloc_id;
 nat text_id;
 nat com_id;
 nat tgtins_id;
+nat attval_id;
 
 /**
  * Monet's representation of oid(nil) on a 32-bit Monet host
@@ -132,7 +135,7 @@ typedef unsigned long u_long;
 /**
  *   Property IDs are ``reused'' if possible:
  *   
- *   - element nodes with identical ns and loc share a property ID
+ *   - element/attribute nodes with identical ns and loc share a property ID
  *   - text nodes with identical content share a property ID
  *   - comment nodes with identical content share a property ID
  *   - p-i nodes with identical tgt and ins share a property ID
@@ -154,7 +157,8 @@ typedef enum {
    nsloc_db
  , text_db
  , com_db
- , tgtins_db } db_id_t;
+ , tgtins_db
+ , attval_db } db_id_t;
 
 db_t dbs[] = {
     /* db id  handle file name  */
@@ -162,6 +166,7 @@ db_t dbs[] = {
   , [text_db]   { 0, "" }
   , [com_db]    { 0, "" } 
   , [tgtins_db] { 0, "" }
+  , [attval_db] { 0, "" }
 };
 
 #endif /* HAVE_LIBDB */
@@ -259,7 +264,8 @@ typedef enum {
  , proptext
  , propcom
  , proptgtins
- , attownnslocval
+ , attownqnprop
+ , propval
 } rel_id_t;
 
 /**
@@ -269,16 +275,16 @@ typedef enum {
 #define _void 0
 #define _oid  4
 #define _int  4
-#define _sht  2
+#define _chr  1
 #define _var  4
 
 rel_t rels[] = {
     [presizelevelpropkind] 
     /*               pre|size      pre|level       pre|prop       pre|kind */
-    { 0, "pre",   _void + _int + _void + _sht + _void + _oid + _void + _sht }
+    { 0, "pre",   _void + _int + _void + _chr + _void + _oid + _void + _chr }
   , [propnsloc]
-    /*              prop|ns        prop|loc                                */
-    { 0, "tag",   _void + _var + _void + _var }
+    /*             prop|ns        prop|loc                                 */
+    { 0, "qn",   _void + _var + _void + _var }
   , [proptext]
     /*              prop|text                                              */
     { 0, "text",  _void + _var }
@@ -288,9 +294,12 @@ rel_t rels[] = {
   , [proptgtins]
     /*              prop|tgt       prop|ins                                */
     { 0, "pi",    _void + _var + _void + _var }
-  , [attownnslocval]
-    /*                 @|own          @|ns           @|loc          @|val  */
-    { 0, "@",     _void + _oid + _void + _var + _void + _var + _void + _var }
+  , [attownqnprop]
+    /*                 @|own          @|qn           @|prop                */
+    { 0, "@",     _void + _oid + _void + _oid + _void + _oid }
+  , [propval]
+    /*              prop|val                                               */
+    { 0, "@val",  _void + _var }
 };
 
 /**
@@ -483,7 +492,7 @@ close_db (db_id_t db, int warn)
  * duplicate key check in DB identified by DB id.
  * no duplicate found: return 0, and enter key with prop_id into DB
  * duplicate found:    return 1, nothing entered in DB, prop_id
- *                     modified 
+ *                     modified
  */
 int 
 duplicate (db_id_t db, char *buf, nat len, nat *prop_id)
@@ -615,10 +624,11 @@ shred_start_document (void *ctx)
     (void) ctx;
 
     pre          = 0;   /* next ``node ID'' */
-    nsloc_id     = 0;   /*      element tag property ID */
+    nsloc_id     = 0;   /*      element/attribute QName property ID */
     text_id      = 0;   /*      text content property ID */
     com_id       = 0;   /*      comment content property ID */
     tgtins_id    = 0;   /*      proc. target/instruction property ID */
+    attval_id    = 0;   /*      attribute value property ID */
 
     level = 0;
     depth = 0;
@@ -713,6 +723,9 @@ shred_start_element (void *ctx,
     char *ns;
     char *loc;
 
+    nat qn_id;
+    nat val_id;
+
     nat len;
 
     int dup;
@@ -770,28 +783,61 @@ shred_start_element (void *ctx,
         while (*atts) {            
             attr_nodes++;
 
-            /* add attribute to @|own|ns|loc|val BAT */
-            tuples = snprintf (tuple, sizeof (tuple), "%10u@0,", 
-                               node.pre);
-            write (rels[attownnslocval].fd, tuple, tuples);
+            qn_id = nsloc_id;
 
-            ns  = only_ns ((char *) *atts);
-            loc = only_loc ((char *) *atts);
+            /* does this attribute have a duplicate QName? */
+            dup = duplicate (nsloc_db, 
+                             (char *) *atts, 
+                             strlen ((char *) *atts), 
+                             &qn_id);
 
-            write (rels[attownnslocval].fd, "\"", sizeof ("\"") - 1);
-            len =  content2rel (attownnslocval, ns, strlen (ns));   
-            write (rels[attownnslocval].fd, "\",\"", sizeof ("\",\"") - 1);
-            len += content2rel (attownnslocval, loc, strlen (loc));
-            write (rels[attownnslocval].fd, "\",\"", sizeof ("\",\"") - 1);
-            len += content2rel (attownnslocval, (char *) *(atts + 1), 
-                                strlen (*(atts + 1)));
-            write (rels[attownnslocval].fd, "\"\n", sizeof ("\"\n") - 1);
+            if (! dup) {
+                nsloc_id++;
 
-            encoded += rels[attownnslocval].bytes + len;
+                ns  = only_ns ((char *) *atts);
+                loc = only_loc ((char *) *atts);
 
-            free (loc);
-            free (ns);
-        
+                write (rels[propnsloc].fd, "\"", sizeof ("\"") - 1);
+                len =  content2rel (propnsloc, ns, strlen (ns));        
+                write (rels[propnsloc].fd, "\",\"", sizeof ("\",\"") - 1);
+                len += content2rel (propnsloc, loc, strlen (loc));        
+                write (rels[propnsloc].fd, "\"\n", sizeof ("\"\n") - 1);
+                
+                encoded += rels[propnsloc].bytes + len;
+                
+                free (loc);
+                free (ns);
+            }
+
+            val_id = attval_id;
+
+            /* is this attribute value a duplicate? */
+            dup = duplicate (attval_db,
+                             (char *) *(atts + 1), 
+                             strlen ((char *) *(atts + 1)),
+                             &val_id);
+            
+            if (! dup) {
+                attval_id++;
+
+                /* add attribute value to prop|val BAT */
+                write (rels[propval].fd, "\"", sizeof ("\"") - 1);
+                len = content2rel (propval, 
+                                   (char *) *(atts + 1),
+                                   strlen ((char *) *(atts + 1)));
+                write (rels[propval].fd, "\"\n", sizeof ("\"\n") - 1);
+
+                encoded += rels[propval].bytes + len;
+            }
+
+            /* add attribute to @|own|qn|val BAT */
+            tuples = snprintf (tuple, sizeof (tuple), 
+                               "%10u@0,%10u@0,%10u@0\n", 
+                               node.pre, qn_id, val_id);
+            write (rels[attownqnprop].fd, tuple, tuples);
+
+            encoded += rels[attownqnprop].bytes;
+
             /* process next attribute */
             atts += 2;
         }
@@ -1017,7 +1063,7 @@ interrupt (int sig)
     (void) sig;
 
     /* close relation files */
-    close_rel (attownnslocval, 0);
+    close_rel (attownqnprop, 0);
     close_rel (proptgtins, 0);
     close_rel (propcom, 0);
     close_rel (proptext, 0);
@@ -1047,6 +1093,7 @@ shred (const char *in, const char *out)
     open_db (text_db);
     open_db (com_db);
     open_db (tgtins_db);
+    open_db (attval_db);
 #endif
 
     /* open relation files */
@@ -1055,7 +1102,8 @@ shred (const char *in, const char *out)
     open_rel (out, proptext);
     open_rel (out, propcom);
     open_rel (out, proptgtins);
-    open_rel (out, attownnslocval);
+    open_rel (out, attownqnprop);
+    open_rel (out, propval);
 
     signal (SIGINT, interrupt);
 
@@ -1066,7 +1114,8 @@ shred (const char *in, const char *out)
     (void) xmlParseDocument (ctx);
 
     /* close relation files */
-    close_rel (attownnslocval, 1);
+    close_rel (propval, 1);
+    close_rel (attownqnprop, 1);
     close_rel (proptgtins, 1);
     close_rel (propcom, 1);
     close_rel (proptext, 1);
@@ -1075,6 +1124,7 @@ shred (const char *in, const char *out)
 
 #if HAVE_LIBDB    
     /* close and remove DB files */
+    close_db (attval_db, 1);
     close_db (tgtins_db, 1);
     close_db (com_db, 1);
     close_db (text_db, 1);
@@ -1168,7 +1218,7 @@ main (int argc, char *argv[])
                     "     -d: set XML node stack depth to <n> (default %d)\n"
                     "     -o: write relations to OUTPUT.<rel> instead of FILE.<rel>\n"
                     "         (mandatory if we read from stdin)\n"
-                    "         <rel> = { pre,tag,text,com,pi,@ }\n\n",
+                    "         <rel> = { pre,qn,text,com,pi,@,@val }\n\n",
                     argv[0], XML_DEPTH_MAX);
 
             exit (EXIT_FAILURE);
@@ -1259,7 +1309,11 @@ main (int argc, char *argv[])
             putchar ('\n');
         else
             printf (" [%u unique ns:loc pair(s)]\n", nsloc_id);
-        printf ("+ attribute nodes              %u\n" , attr_nodes);
+        printf ("+ attribute nodes              %u" , attr_nodes);
+        if (prop_dup)
+            putchar ('\n');
+        else
+            printf (" [%u unique attribute value(s)]\n", attval_id);
         printf ("+ text nodes                   %u" , text_nodes);
         if (prop_dup)
             putchar ('\n');
