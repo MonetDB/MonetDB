@@ -664,11 +664,11 @@ def GetBitsAndModsAndStatic(env) :
     pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" --dbname="+TSTPREF)
     pIn.write('''\
         loaded;
-        help("sunion");
+        help("kunion");
         {
             # print a list of all modules found
             # "Modules: mod1, mod2, ..."
-            MODs := sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;
+            MODs := kunion([~monet_mod_nme].reverse,[~view_modules].reverse).kunique;
             printf("\\nModules: ");
             x := "";
             MODs@batloop{
@@ -1508,23 +1508,32 @@ def Check(command, input) :
     qOut, qErr = ReadMultiple([pOut, pErr])
     qOut = string.split(qOut, '\n')
     qErr = string.split(qErr, '\n')
+    test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
+                       r"^!WARNING: monet_checkbat: "                                        "|"
+                       r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
+                       r"^!WARNING: BBPdir: initializing BBP."                               ,
+                       re.MULTILINE)
+    noErr = []
     for l in qOut+qErr:
-        if l[:1] == "!" and \
-               (len(l) < 24  or  
-                (l[:24] != "!WARNING: BATpropcheck: " and 
-                 l[:26] != "!WARNING: monet_checkbat: " and 
-                 l[:59] != "!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock." and 
-                 l[:35] != "!WARNING: BBPdir: initializing BBP.")):
-            ErrMsg("'"+command+"` failed:")
-            if qOut and len(qOut[-1]) >= 8 and qOut[-1][:8] == "! Exit 1":
-                qErr.append(qOut.pop())
-            for l in qOut+qErr:
-                STDERR.write(l)
+        if l[:1] == "!":
+            if test.match(l):
+                if l[:10] != "!WARNING: ":
+                    noErr.append(l+"\n")
+            else:
+                ErrMsg("'"+command+"` failed:")
+                if qOut and len(qOut[-1]) >= 8 and qOut[-1][:8] == "! Exit 1":
+                    qErr.append(qOut.pop())
+                for l in qOut+qErr:
+                    STDERR.write(l)
+                    STDERR.write("\n")
                 STDERR.write("\n")
-            STDERR.write("\n")
-            STDERR.flush()
-            #sys.exit(1)
-            return 1
+                STDERR.flush()
+                #sys.exit(1)
+                return 1
+    if noErr:
+        STDOUT.flush()
+        STDERR.writelines(noErr)
+        STDERR.flush()
     return 0
 ### Check(command, input) #
 
