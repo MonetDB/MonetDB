@@ -143,8 +143,14 @@ HIDE=1
 %.tex: %.mx
 	$(MX) -1 -H$(HIDE) -t $< 
 
+%.bdy.tex: %.mx
+	$(MX) -1 -H$(HIDE) -t -B $<
+
 %.html: %.mx
 	$(MX) -1 -H$(HIDE) -w $<
+
+%.bdy.html: %.mx
+	$(MX) -1 -H$(HIDE) -w -B $<
 
 %.html: %.tex
 	$(LATEX2HTML) -split 0 -noimages -rootdir ./ -norooted -noinfo -nosubdir  $<
