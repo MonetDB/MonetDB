@@ -902,7 +902,7 @@ actual_args (PFcnode_t *c)
  * @return the updated function application
  */
 static PFcnode_t *
-function_conversion (PFcnode_t *c)
+apply_function_conversion (PFcnode_t *c)
 {
     unsigned int i = 0;
     PFty_t expected;
@@ -917,15 +917,10 @@ function_conversion (PFcnode_t *c)
 
     while (args->kind == c_arg && i < fun->arity)
     {
-        expected = (fun->par_ty)[i];
-
         /* the function conversion has only to be applied for
            arguments which are a subtype of atomic and perhaps
            have a quantifying type */
-        if (expected.type == ty_opt ||
-            expected.type == ty_star ||
-            expected.type == ty_plus)
-            expected = PFty_child (expected);
+        expected = PFty_prime((fun->par_ty)[i]);
 
         if (PFty_subtype (expected, PFty_atomic ()))
         {
@@ -955,7 +950,7 @@ function_conversion (PFcnode_t *c)
 
 /**
  * Test if a xquery function is called, where the
- * conversion rules doesn't have to be applied
+ * conversion rules are already applied
  * - comparisons and calculations have this conversion
  *   already automatically
  * - typed-value is applied inside of fn:data and therefore
@@ -965,7 +960,7 @@ function_conversion (PFcnode_t *c)
  * @return an integer containing the boolean value
  */
 static int
-function_overloaded (PFfun_t *fn)
+already_converted (PFfun_t *fn)
 {
     PFqname_t qn = fn->qname;
             /* avoid recursive call inside fn:data */
@@ -1011,12 +1006,16 @@ PFcore_apply (PFfun_t *fn, PFcnode_t *e)
     arity = actual_args (e);
     fun = fn;
     funs = PFenv_lookup (PFfun_env, fun->qname);
+    /* get the first entry */
+    fun = *((PFfun_t **) PFarray_at (funs, 0));
 
     /* get the function where the number of arguments fit */
-    for (i = 0; i < PFarray_last (funs); i++) {
-        fun = *((PFfun_t **) PFarray_at (funs, i));
-        if (arity == fun->arity)
+    for (i = 1; i < PFarray_last (funs); i++) {
+        /* be sure that the least specific one (last)
+           with the same arity is chosen */
+        if (arity < fun->arity)
             break;
+        fun = *((PFfun_t **) PFarray_at (funs, i));
     }
                                                                                                                                                              
     /* see if number of actual argument matches function declaration */
@@ -1029,9 +1028,13 @@ PFcore_apply (PFfun_t *fn, PFcnode_t *e)
     core = PFcore_wire1 (c_apply, e);
     core->sem.fun = fun;
 
-    /* add conversion if necessary */
-    if (!function_overloaded (fun))
-        core = function_conversion (core);
+    /* add 'conversion rule' specific code for functions whose most 
+       non-specific type is subtype of 'atomic+' 
+       (and where the conversion rules are not already appliedif necessary)
+       - e.g., to allow doc(<name>foo.xml</name> if signature is doc(string?) 
+    */
+    if (!already_converted (fun))
+        core = apply_function_conversion (core);
   
     return core;
 }
