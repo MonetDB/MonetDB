@@ -511,11 +511,15 @@ int myisspace(int s ){
 }
 
 static INLINE char *
-strip( char *s, char *e )
-{
+lstrip( char *s ) {
         while(myisspace((int)*s)){
 		s++;
 	}
+	return s;
+}
+
+static INLINE char *
+rstrip( char *e ) {
 	e--;
         while(myisspace((int)*e)){
 		e--;
@@ -524,7 +528,7 @@ strip( char *s, char *e )
 	if (e && *e){
 		*e = 0;
 	}
-	return s;
+	return e;
 }
 
 static INLINE char *
@@ -565,15 +569,17 @@ insert_val( ascii_io *fmt, char *s, char *e, char quote )
 			e++;
 		}
 		*e = 0;
-	} else if (fmt->adt == TYPE_str) {
-		s--;
-		*s = '"';
-		*e = '"';
-		e++;
-		r = *e;
-		*e = 0;
 	} else {
-		s = strip(s,e);
+		s = lstrip(s);
+		e = rstrip(e);
+		if (fmt->adt == TYPE_str) {
+			s--;
+			*s = '"';
+			*e = '"';
+			e++;
+			r = *e;
+			*e = 0;
+		}
 	}
 	adt = fmt->frstr( fmt->extra, fmt->adt, s );
 	if (r) 
