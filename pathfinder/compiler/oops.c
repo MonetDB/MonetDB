@@ -92,7 +92,7 @@ static char *oops_msg[] = {
  *   va_start manpage.
  */
 static void
-log (const char *msg, va_list msgs)
+log_worker (const char *msg, va_list msgs)
 {
     time_t now;
     char *anow;
@@ -125,7 +125,7 @@ PFlog (const char *msg, ...)
     va_list msgs;
 
     va_start (msgs, msg);
-    log (msg, msgs);
+    log_worker (msg, msgs);
     va_end (msgs);
 }
 
