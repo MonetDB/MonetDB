@@ -834,7 +834,7 @@ void BBPclear(int i, int lock) {
 
 void BBPspin(int i, str s) {
 	if (BBPcheck(i,"BBPspin") && (BBP_status(i)&BBPWAITING)) {
-		lng spin = 0LL;
+		lng spin = (lng)0;
 		while(BBP_status(i)&BBPWAITING) spin++;
 		BATDEBUG 
 		THRprintf(GDKout, "BBPspin(%d,%s): %ld loops\n", i,s,spin);
@@ -1854,10 +1854,10 @@ lng BBPdiskscan(str parent) {
 	struct dirent *dent;
 	long_str fullname;
 	str dst = fullname, src = dir;
-	lng ret, tot = 0LL;
+	lng ret, tot = (lng)0;
 
 	if (dirp == NULL) {
-		return -1LL; /* nothing to do */
+		return (lng)-1; /* nothing to do */
 	}
 	while(*src) *dst++ = *src++;
 	*dst++ = '/';
@@ -1899,7 +1899,10 @@ lng BBPdiskscan(str parent) {
 			continue;
 		} else { 
 			/* record the real disk occupancy; not just the bytesize */
+/* windows has no st_blocks
 			filesize = st.st_blocks * 512;
+*/
+			filesize = st.st_size;
 		}
 
 		if (!persistent_bat(bid)) {

@@ -59,7 +59,7 @@ extern YYSTYPE yylval;
 #endif
 #define GDKout stdout
 
-extern const char *millexname(int Y);
+extern char *millexname(int Y);
 extern void mil_parserror(str msg);
 extern void mil_flushbuffer();
 extern str mil_lastline();
@@ -91,6 +91,7 @@ The Bison parser generator will produce the table with token names
 needed for tracing the parser.
 @l
 #include "mil_parser_tab.h"
+
 
 #define RETURN(Y)       { PARSEDEBUG {\
                                 THRprintf(GDKerr, "%s %s\n", millexname(Y), yytext);\
@@ -186,6 +187,7 @@ int yywrap(){ return 1;}
 void mil_flushbuffer() {
         YY_FLUSH_BUFFER;
 }
+
 @
 @- Input management
 The parser reads its input from a string buffer space, organized as a
@@ -559,11 +561,12 @@ static int mil_print(FILE *f, int tpe, YYSTYPE v)
 {
 	if( v.len >0) fprintf(f," %s ", v.val);
 }
-const char *millexname(int Y)           
+
+char *millexname(int Y)           
 { 	if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
-		return yytname[Y-TOK_ITERTEMP];
+		return (char*)yytname[Y-TOK_ITERTEMP];
 	} 
-	return "char";
+	return (char*)"char";
 }
 @
 @}

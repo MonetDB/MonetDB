@@ -242,3 +242,8 @@
 
 #undef HAVE_LONGLONG
 #define HAVE__INT64
+
+/* dirty hack */
+#include <winlibc.h>
+
+#define HAVE_NOMALLINFO

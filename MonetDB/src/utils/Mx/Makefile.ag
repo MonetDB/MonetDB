@@ -1,5 +1,5 @@
 
-CFLAGS = -DUNIX -DMX_CXX_SUFFIX=$(CXXEXT)
+CFLAGS = -DUNIX -DMX_CXX_SUFFIX=$(CPPEXT)
 
 EXTRA_DIST = warning.gif epstogif
 

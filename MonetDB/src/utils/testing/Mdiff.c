@@ -19,7 +19,7 @@ int optind;
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #else
-#ifdef HAVE_GETOPT
+#ifndef HAVE_GETOPT
 # include <getopt.c>
 #endif
 #endif

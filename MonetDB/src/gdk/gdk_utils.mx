@@ -465,23 +465,23 @@ the memory consumption.
 #define MAX_BIT		((int) (sizeof(long)<<3))
 
 #if (defined(WIN32) || defined(IRIX) || defined(AIX))
-#define GDK_MEM_BIGSIZE	131072LL     /* offload malloc fragmentation pressure */
+#define GDK_MEM_BIGSIZE	(lng)131072     /* offload malloc fragmentation pressure */
 #else
-#define GDK_MEM_BIGSIZE	33554432LL   /* robust malloc: use up till 32MB */ 
+#define GDK_MEM_BIGSIZE	(lng)33554432   /* robust malloc: use up till 32MB */ 
 #endif
 
 #if SIZEOF_LONG==8
-#define GDK_VM_MAXSIZE	137438953472LL /* :-) a 64-bit OS: 128 GB */
+#define GDK_VM_MAXSIZE	(lng)137438953472 /* :-) a 64-bit OS: 128 GB */
 #elif defined(WIN32) 
-#define GDK_VM_MAXSIZE	536870912LL /* :-( New Technology DOS extender: 512MB */
+#define GDK_VM_MAXSIZE	(lng)536870912 /* :-( New Technology DOS extender: 512MB */
 #else
-#define GDK_VM_MAXSIZE	1610612736LL /* :-| a 32-bit OS: 1.5GB */
+#define GDK_VM_MAXSIZE	(lng)1610612736 /* :-| a 32-bit OS: 1.5GB */
 #endif
 	 ptr	GDK_mem_start = NULL; 
-volatile lng	GDK_mem_cursize = 0LL;
-	 lng	GDK_mem_maxsize = 0LL;
+volatile lng	GDK_mem_cursize = (lng)0;
+	 lng	GDK_mem_maxsize = (lng)0;
 	 lng	GDK_mem_bigsize = GDK_MEM_BIGSIZE;
-volatile lng	GDK_vm_cursize = 0LL;
+volatile lng	GDK_vm_cursize = (lng)0;
 	 lng	GDK_vm_minsize = 131072;
 	 lng	GDK_vm_maxsize = GDK_VM_MAXSIZE;
 #ifdef GDK_VM_KEEPHISTO
@@ -507,7 +507,7 @@ lng GDKmem_heapinuse() {
         return (lng) (m.usmblks + m.uordblks);
 }
 #else 
-lng	GDK_heap_inuse = 0LL;
+lng	GDK_heap_inuse = (lng)0;
 
 lng GDKmem_heapinuse() {
 	return GDK_heap_inuse;
@@ -536,8 +536,8 @@ static int GDK_mem_allocs = 0;
 
 /* at least each 50M of memory increase, BBPtrim is run */
 #define CHKMEM(meminc, vminc) {\
-	int memchk = (meminc>0LL && (++GDK_mem_allocs>=1000 || meminc>50000LL));\
-	int vmchk = (vminc>0LL && (++GDK_vm_allocs>=10 || vminc>5000000LL));\
+	int memchk = (meminc>(lng)0 && (++GDK_mem_allocs>=1000 || meminc>(lng)50000));\
+	int vmchk = (vminc>(lng)0 && (++GDK_vm_allocs>=10 || vminc>(lng)5000000));\
 	if (memchk || vmchk) GDKmemchk(memchk, vmchk);\
 }
 	
@@ -549,11 +549,11 @@ void GDKmemchk(int memchk, int vmchk) {
 			(unsigned int) GDKmem_inuse(), (unsigned int) GDK_mem_maxsize, 
 			(unsigned int) GDK_vm_cursize, (unsigned int) GDK_vm_maxsize);
 	}
-	if (memtarget < 0LL) {
-		memtarget = 0LL;
+	if (memtarget < (lng)0) {
+		memtarget = (lng)0;
 	}
-	if (vmtarget < 0LL) {
-		vmtarget = 0LL;
+	if (vmtarget < (lng)0) {
+		vmtarget = (lng)0;
 	}
 	if (memtarget > 0 || vmtarget > 0) {
 		BBPtrim(memtarget, vmtarget);
@@ -736,7 +736,7 @@ void* GDKmalloc(size_t size) {
         if (size <= 0) {
                 GDKfatal("GDKmalloc called with size %u", size);
         }
-	CHKMEM(((lng)size),0LL);
+	CHKMEM(((lng)size),(lng)0);
 
 #ifdef GDK_MEM_VMREDIRECT
 	if (size > GDK_mem_bigsize) {
@@ -820,7 +820,7 @@ ptr GDKrealloc(void* blk, size_t size) {
                 GDKfatal("GDKrealloc called with size %u", size);
         }
 #ifdef GDK_MEM_SIMPLE
-        CHKMEM(((lng)size),0LL);
+        CHKMEM(((lng)size),(lng)0);
         blk = realloc(blk, size);
 #else
 {       long cpysize, *s = (long*) blk;
@@ -1272,7 +1272,7 @@ Note that they may consume recognizable overhead.
 lng GDKusec() {
 	struct timeval tp;
 	gettimeofday(&tp, &GDKtime_zero);
-        return ((lng) (tp.tv_sec-GDKtime_startsec))*1000000LL + (lng) tp.tv_usec;
+        return ((lng) (tp.tv_sec-GDKtime_startsec))*100000(lng)0 + (lng) tp.tv_usec;
 }
 
 

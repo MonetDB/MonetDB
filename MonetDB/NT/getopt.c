@@ -22,25 +22,29 @@
 
 /* NOTE!!!  AIX requires this to be the first thing in the file.
    Do not put ANYTHING before it!  */
-#if !defined (__GNUC__) && defined (_AIX)
- #pragma alloca
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#ifdef __GNUC__
-#define alloca __builtin_alloca
-#else /* not __GNUC__ */
-#if defined (HAVE_ALLOCA_H) || (defined(sparc) && (defined(sun) || (!defined(USG) && !defined(SVR4) && !defined(__svr4__))))
-#include <alloca.h>
-#else
-#ifndef _AIX
-char *alloca ();
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
 #endif
-#endif /* alloca.h */
-#endif /* not __GNUC__ */
+
+/* AIX requires this to be the first thing in the file.  */
+#ifndef __GNUC__
+# if HAVE_ALLOCA_H
+#  include <alloca.h>
+# else
+#  ifdef _AIX
+#pragma alloca
+#  else
+#   ifndef alloca /* predefined by HP cc +Olibcalls */
+char *alloca ();
+#   endif
+#  endif
+# endif
+#endif
 
 #if !__STDC__ && !defined(const) && IN_GCC
 #define const

@@ -56,7 +56,7 @@ extern YYSTYPE yylval;
 #endif
 #define GDKout stdout
 
-extern const char *mallexname(int Y);
+extern char *mallexname(int Y);
 extern void mal_parserror(str msg);
 extern void mal_flushbuffer();
 extern str mal_lastline();
@@ -177,6 +177,7 @@ int yywrap(){ return 1;}
 void mal_flushbuffer() {
         YY_FLUSH_BUFFER;
 }
+
 @
 @- Input management
 The parser reads its input from a string buffer space, organized as a
@@ -484,11 +485,12 @@ int mal_print(FILE *f, int tpe, YYSTYPE v)
 	if( v.len >0) fprintf(f," %s ", v.val);
 	return 0;
 }
-const char *mallexname(int Y)           
+
+char *mallexname(int Y)           
 { 	if (Y >= TOK_PROC && Y <= TOK_ANY) {
-		return yytname[Y-TOK_PROC];
+		return (char*)yytname[Y-TOK_PROC];
 	} 
-	return "char";
+	return (char*)"char";
 }
 @
 @}

@@ -23,6 +23,9 @@ functions.
 #if HAVE_UNISTD_H
 # include <unistd.h>     /* io functions */
 #endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 
 #include <stdio.h>
 
@@ -42,9 +45,8 @@ functions.
 #endif 
 
 #define NOMALLOPT
-#define HAVE_MALLINFO
 
-#ifndef HAVE_MALLINFO
+#ifdef HAVE_NOMALLINFO
 #define M_MXFAST	1  /* set size of blocks to be fast */
 #define M_NLBLKS	2  /* set number of block in a holding block */
 #define M_GRAIN		3  /* set number of sizes mapped to one, for */
@@ -277,7 +279,6 @@ extern int _MT_pagesize;
 @c
 #include "gdk_system.h"
 
-#include <fcntl.h>
 #include <errno.h>
 
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
