@@ -15,7 +15,7 @@ the applications at a later stage.
 @c
 #include <gdk.h>
 #define MAXSCRIPT 64
-
+extern void showmappings();
 extern int yyparse();
 str	mal_script[MAXSCRIPT];
 
@@ -85,6 +85,7 @@ The files are processed as one big program
 	mil_code_prelude();
 	mil_push(buf);	/*no need to copy here */
 	yyparse();
+	showmappings();
 }
 
 mil_code_prelude(){

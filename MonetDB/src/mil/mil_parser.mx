@@ -72,6 +72,9 @@ extern str getLastHead();
 extern str getLastTail();
 extern char *emitExpr(char *msg);
 extern str glue(str l, str r);
+extern str mapid(str n);
+extern int ismapped(str n);
+extern void showmappings();
 
 extern int constantdeclaration;
 #endif /* _MIL_PARSER_H */
@@ -387,6 +390,7 @@ int bindId(str nme){
 	int i, fnd= 0;
 	for( i=0; typeNames[i]; i++)
 	if( strcmp(typeNames[i],nme)==0){ fnd++; break;}
+	if( ismapped(nme)) return;
 	if(fnd==0 &&  fndId(nme) == 0 && constantdeclaration==0)
 	printf("\t%s:= bbp.bind(\"%s\");\n",nme,nme);
 }
@@ -572,8 +576,8 @@ barrier:
 	{ $$.val= newName();}
 
 iterator :
-	TOK_IDENT '(' ')'
-    |	TOK_IDENT
+	tok_ident '(' ')'
+    |	tok_ident
         
 ret_value:
         expression
@@ -600,10 +604,10 @@ proc_definition:
 	{ printf("end function;\n"); }
     |   TOK_PROCDEF proc_name proc_header TOK_ASSIGNMENT stmt
 	{ printf("end function;\n"); }
-    |   TOK_UNDEF TOK_IDENT';'
+    |   TOK_UNDEF tok_ident';'
 
 proc_name:
-        TOK_IDENT
+        tok_ident
 	{
 		switch($1.val[0]){
 		case '[':
@@ -640,17 +644,17 @@ mel_range:
 	{ newId($1.val); printf(",%s:%s[]",$1.val,$2.val);}
 
 mel_params:
-        mel_type TOK_IDENT
+        mel_type tok_ident
 	{newId($2.val); printf("%s:%s",$2.val,$1.val);}
-    |	TOK_IDENT
+    |	tok_ident
 	{newId($1.val); printf("%s:any",$1.val);}
-    |   mel_params ',' mel_type TOK_IDENT
+    |   mel_params ',' mel_type tok_ident
 	{newId($4.val); printf(", %s:%s",$4.val,$3.val);}
-    |   mel_params ',' TOK_IDENT
+    |   mel_params ',' tok_ident
 	{newId($3.val); printf("%s:any",$3.val);}
 
 mel_type:
-        TOK_IDENT 
+        tok_ident 
     |   TOK_BAT
     |   TOK_BAT '[' mel_atom ',' mel_atom ']'
 	{ char buf[PATHLENGTH];
@@ -660,7 +664,7 @@ mel_type:
     |   mel_any
 
 mel_atom:
-        TOK_IDENT
+        tok_ident
     | 	TOK_BAT
     |   mel_any
 
@@ -699,7 +703,7 @@ expression:
 	{ newId($2.val); 
 	  printf("\t%s := %s;\n", $2.val, $4.val); 
 	  $$=$2;}
-    |   constant TOK_IDENT TOK_ASSIGNMENT term
+    |   constant tok_ident TOK_ASSIGNMENT term
 	{ newId($2.val); 
 	  printf("\t%s := %s;\n", $2.val, $4.val); 
 	  $$=$2;}
@@ -722,7 +726,7 @@ term :
 	  sprintf(stmt,"%s%s)", bindFcn($1.val),$2.val);
 	  $$.val=GDKstrdup(stmt);
 	}
-    |	factor1 TOK_IDENT term
+    |	factor1 tok_ident term
 	{ char stmt[1024];
 	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
@@ -732,7 +736,7 @@ term :
 
 variable_reference:
         template 
-    |  	TOK_IDENT
+    |  	tok_ident
 
 template:
         TOK_TEMPLATE
@@ -789,7 +793,7 @@ bat_expression:
 
 fcn_call: 
 	fcn_call_A
-    | 	fcn_call '.' TOK_IDENT
+    | 	fcn_call '.' tok_ident
 	{ char stmt[1024];
 	  $1.val= emitExpr($1.val);
 	  sprintf(stmt,"%s%s)", bindFcn($3.val),$1.val);
@@ -846,7 +850,7 @@ fcn_hdr:
 	}
     |  TOK_OPERATOR	
 	{ $$= $1; }
-    |  TOK_IDENT	
+    |  tok_ident	
 	{ $$= $1; }
  
 fcn_target : TOK_CONSTANT 
@@ -868,7 +872,7 @@ module_list:
 
 modident:
         TOK_CONSTANT
-    |   TOK_IDENT
+    |   tok_ident
     |   TOK_BAT
 
 varidents:
@@ -876,10 +880,12 @@ varidents:
     |   varidents ',' ident_decl
 
 ident_decl:
-        TOK_IDENT 
+        tok_ident 
 	{newId($1.val); }
-    |   TOK_IDENT TOK_ASSIGNMENT term
+    |   tok_ident TOK_ASSIGNMENT term
  	{newId($1.val); printf("\t%s:= %s;\n",$1.val,$3.val); }
+tok_ident: TOK_IDENT
+	{ $$.val= mapid($1.val); }
 %%
 
 @-
