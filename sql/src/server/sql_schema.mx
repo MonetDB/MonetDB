@@ -799,10 +799,16 @@ drop_role(mvc * sql, dlist * qname )
 }
 
 static stmt *
-column_constraint_type(mvc * sql, char *name, symbol * s, sql_schema * ss, sql_table * t, sql_column * cs )
+column_constraint_type(mvc * sql, char *name, symbol * s, sql_schema * ss, sql_table * t, sql_column * cs, int alter )
 {
 	stmt *res = NULL;
 
+	if (alter && 
+	   (s->token == SQL_UNIQUE || 
+            s->token == SQL_PRIMARY_KEY ||
+	    s->token == SQL_FOREIGN_KEY)) {
+		return sql_error(sql, 02, "alter add column with key constraint not implemented\n");
+	}
 	(void)ss;
 	switch (s->token) {
 	case SQL_UNIQUE: 
@@ -863,7 +869,7 @@ static char *table_constraint_name()
 
 
 static stmt *
-column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column * cs )
+column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column * cs, int alter )
 {
 	stmt *res = NULL;
 	assert(cs);
@@ -875,7 +881,7 @@ column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column 
 			symbol *sym = l->h->next->data.sym;
 			if (!opt_name) 
 				opt_name = table_constraint_name();
-			res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
+			res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
 		}
 		break;
 	case SQL_ATOM: {
@@ -906,14 +912,14 @@ column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column 
 }
 
 static int 
-column_options(mvc * sql, dlist * opt_list, list *stmt_list, sql_schema *ss, sql_table * t, sql_column * cs )
+column_options(mvc * sql, dlist * opt_list, list *stmt_list, sql_schema *ss, sql_table * t, sql_column * cs, int alter )
 {
 	assert(cs);
 
 	if (opt_list) {
 		dnode *n = NULL;
 		for (n = opt_list->h; n; n = n->next) {
-			stmt *res = column_option(sql, n->data.sym, ss, t, cs);
+			stmt *res = column_option(sql, n->data.sym, ss, t, cs, alter);
 			if (!res) 
 				return -1;
 			list_append_stmt( stmt_list, res);
@@ -941,7 +947,7 @@ create_column(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, int alter )
 		ctype = sql_dup_subtype(ctype);
 		cs = mvc_create_column(sql, t, cname, ctype );
 
-		if (column_options(sql, opt_list, l, ss, t, cs) < 0) {
+		if (column_options(sql, opt_list, l, ss, t, cs, alter) < 0) {
 			list_destroy(l);
 			return NULL;
 		}
@@ -978,7 +984,7 @@ create_column(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, int alter )
 }
 
 static stmt *
-table_foreign_key( mvc * sql, char *name, symbol * s, sql_schema * ss, sql_table * t )
+table_foreign_key( mvc * sql, char *name, symbol * s, sql_schema * ss, sql_table * t, int alter )
 {
 	stmt *res = NULL;
 	dnode *n = s->data.lval->h;
@@ -1026,7 +1032,12 @@ table_foreign_key( mvc * sql, char *name, symbol * s, sql_schema * ss, sql_table
 			return sql_error(sql, 02, 
 			   "Not all colunms are handeled in the foreign key\n");
 		}
-		res = stmt_none();
+		if (alter){
+			list *l = create_stmt_list();
+			res = sql_insert_add_idx(sql, t, k->idx, l);
+		} else {
+			res = stmt_none();
+		}
 	}
 	return res;
 }
@@ -1056,16 +1067,14 @@ table_constraint_type( mvc * sql, char *name, symbol * s, sql_schema * ss, sql_t
 				(void)mvc_create_kc( sql, k, c );
 			}
 			if (alter){
-				/* TODO */
+				list *l = create_stmt_list();
+				res = sql_insert_add_idx(sql, t, k->idx, l);
+			} else {
+				res = stmt_none();
 			}
-			res = stmt_none();
 		} break;
 		case SQL_FOREIGN_KEY:
-			res = table_foreign_key( sql, name, s, ss, t );
-			if (alter){
-				/* TODO */
-			}
-			res = stmt_none();
+			res = table_foreign_key( sql, name, s, ss, t, alter );
 		 	break;
 	}
 	if (!res) {
@@ -1122,11 +1131,8 @@ table_element(mvc * sql, symbol * s, sql_schema *ss, sql_table *t, int alter )
 					"Column %s not found\n", cname);
 			} else {
 				list *l = create_stmt_list();
-				column_options(sql, olist, l, ss, t, c);
+				column_options(sql, olist, l, ss, t, c, alter);
 				res = list2stmt(l);
-			}
-			if (alter) {
-				/* TODO check constraint and update index */
 			}
 		} break;
 	case SQL_LIKE:
