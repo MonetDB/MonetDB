@@ -309,12 +309,12 @@ command getSequenceBase( b:bat[:oid,:any]):oid
 address BKCgetSequenceBase;
 
 command setSequenceBase( b:bat[:void,:any$1], 
-		seqbase:oid):int
+		seqbase:oid):any
 address BKCsetSequenceBase
 comment "Set the sequence base for the void 
 	column of a BAT.";
 command setSequenceBase( b:bat[:oid,:any$1], 
-	seqbase:oid):int
+	seqbase:oid):any
 address BKCsetSequenceBase;
 
 command setSorted(b:bat[:any,:any]) :bit 
@@ -539,6 +539,9 @@ BAT administration has indeed changed.";
 
 command isPersistent( b:bat[:any,:any]) :bit 
 address BKCisPersistent;
+command persists( b:bat[:any,:any],f:boolean) :bit 
+address BKCpersists
+comment "Backward compatibility";
 command setPersistent( b:bat[:any,:any]) :bit 
 address BKCsetPersistent
 comment "Make the BAT persistent.  Returns 
@@ -2047,6 +2050,14 @@ str BKCgetKey(bit *ret, int *bid) {
 	return MAL_SUCCEED;
 }
 
+str BKCpersists(int *res, int *bid, int *flg) {
+	BAT *b, *bn= NULL;
+	bit param = *flg;
+	@:getBATdescriptor(res,bid,b,setPersistence)@
+	CMDpersists(&bn,b,&param);
+	BBPunfix(bn->batCacheid);
+	return MAL_SUCCEED;
+}
 str BKCsetPersistent(int *res, int *bid) {
 	BAT *b, *bn= NULL;
 	bit param= 1;
