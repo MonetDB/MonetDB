@@ -57,7 +57,7 @@ for application performance, whose severity depend on what kind of {\em memory a
 the application exhibits. Reading (or writing) a memory location that is not in the cache, causes
 a miss, and the CPU is forced for waiting the latency period. It is obvious that subsequent
 reading of this exact same data will not cause sub-sequent cache misses, and be fast -- because
-this data is already in cache.	But what happens with a sequential access pattern to data that
+this data is already in cache.  But what happens with a sequential access pattern to data that
 is not in the cache? Again, the first read causes a cache miss. However, subsequent reads
 to adjacent bytes access the same cache line that is already loaded and therefore
 do {\em not} cause any cache misses. This is the reason why sequential memory access
@@ -123,7 +123,7 @@ This reduces the efficiency of partitioned join.
 
 The {\em radix-cluster} algorithm proposed
 here solves this problem by making multiple passes; in each pass the relation is
-subclustered on a number of radix-bits.	 Radix-bits are a subsequence of bits taken
+subclustered on a number of radix-bits.  Radix-bits are a subsequence of bits taken
 from a {\em radix-number}, which usually is the integer result of hashing the value on which
 we want to cluster. The first pass of the radix-cluster algorithm puts all tuples with an
 equal bit-pattern in the higher H1 radix-bits together in a cluster. The second pass starts
@@ -301,7 +301,7 @@ A hash-join performs well as long as the smaller\_key BAT plus its associated ha
 (which adds about 8 bytes per tuple), is smaller than the memory cache.
 
 The latter phase of the query (lines A0-AY,B0-BZ) fetches column values from the projected columns
-using positional join.	This performs fine up until table sizes of the larger table when one
+using positional join.  This performs fine up until table sizes of the larger table when one
 larger\_bX column BAT starts to exceed the size of the memory cache.
 
 We now turn our attention to what happens if these sizes exceed. First, we discuss what happens
@@ -552,7 +552,7 @@ That means that, e.g. during the radix-cluster, for each projected column, at le
 to move a data value from the source record to the destination record.
 
 To model this extra function calling overhead, we use the integerX Monet types, that were created specifically
-for these experiments.	An integerX value models a relational tuple that stores X simple integer column values.
+for these experiments.  An integerX value models a relational tuple that stores X simple integer column values.
 Through some tricks, copying one integer8 value in Monet is actually done by copying 8 integers width memcpy(),
 which closely mimics what happens in a typical relational DBMS.
 
