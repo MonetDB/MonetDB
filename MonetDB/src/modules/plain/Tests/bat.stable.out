@@ -8,11 +8,15 @@ stdout of test 'bat` in directory 'src/modules/plain` itself:
 # compiled for i686-pc-linux-gnu/32bit.
 #script:bat.mil
 
+# 13:35:55 >  
+# 13:35:55 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=41065 --set sql_port=55025 --set monet_prompt= --trace --dbname=mTests_src_modules_plain  < bat.milM
+# 13:35:55 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-testje := new(int,str);
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+var testje := new(int,str);
 
 testje.insert(1,"one");
 testje.insert(2,"two");
@@ -35,7 +39,7 @@ testje.print;
 [ 2,	  "twee"	  ]
 [ 3,	  "drie"	  ]
 
-deltest := new(int,str);
+var deltest := new(int,str);
 deltest.insert(1,"one");
 
 printf("\n* deleteBuns: Delete the exact BUN\n");

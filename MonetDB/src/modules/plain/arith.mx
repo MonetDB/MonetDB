@@ -321,25 +321,25 @@ PROC test_arith() : void {
   var oid2 := oid(int2);
 
   sht1.print();
-  sht2.print;
-  int1.print;
-  int2.print;
-  flt1.print;
-  flt2.print;
-  dbl1.print;
-  dbl2.print;
-  lng1.print;
-  lng2.print;
-  oid1.print;
-  oid2.print;
+  sht2.print();
+  int1.print();
+  int2.print();
+  flt1.print();
+  flt2.print();
+  dbl1.print();
+  dbl2.print();
+  lng1.print();
+  lng2.print();
+  oid1.print();
+  oid2.print();
  
   # DD/Bug 6389: (i%0) should return nil instead of crashing the server
-  (chr(1)%int(0)).print;
-  (sht(1)%int(0)).print;
-  (int(1)%sht(0)).print;
-  (int(1)%chr(0)).print;
-  (int(1)%int(0)).print;
-  (lng(1)%int(0)).print;
+  (chr(1)%int(0)).print();
+  (sht(1)%int(0)).print();
+  (int(1)%sht(0)).print();
+  (int(1)%chr(0)).print();
+  (int(1)%int(0)).print();
+  (lng(1)%int(0)).print();
   
 @:mil_comp_ops('a','z')@
 @:mil_comp_ops(sht1,sht2)@
@@ -380,62 +380,62 @@ PROC test_arith() : void {
 @:mil_arith_ops(lng1,dbl2)@
 @:mil_arith_ops(lng1,lng2)@
 
-  abs(sht2).print;
-  abs(int2).print;
-  abs(flt2).print;
-  abs(dbl2).print;
-  abs(lng2).print;
+  abs(sht2).print();
+  abs(int2).print();
+  abs(flt2).print();
+  abs(dbl2).print();
+  abs(lng2).print();
 
-  max(sht1,sht2).print;
-  max(int1,int2).print;
-  max(flt1,flt2).print;
-  max(dbl1,dbl2).print;
-  max(lng1,lng2).print;
+  max(sht1,sht2).print();
+  max(int1,int2).print();
+  max(flt1,flt2).print();
+  max(dbl1,dbl2).print();
+  max(lng1,lng2).print();
 
-  min(sht1,sht2).print;
-  min(int1,int2).print;
-  min(flt1,flt2).print;
-  min(dbl1,dbl2).print;
-  min(lng1,lng2).print;
+  min(sht1,sht2).print();
+  min(int1,int2).print();
+  min(flt1,flt2).print();
+  min(dbl1,dbl2).print();
+  min(lng1,lng2).print();
 
 @- oid-artihmetic is not available...
 @:mil_arith_ops(oid1,oid2)@
 @mil
-  max(oid1,oid2).print;
-  min(oid1,oid2).print;
+  max(oid1,oid2).print();
+  min(oid1,oid2).print();
 
-  inv(flt2).print;
-  inv(dbl2).print;
+  inv(flt2).print();
+  inv(dbl2).print();
 
-  (int1% int2).print;
-  (int1<<int2).print;
-  (int1>>int2).print;
+  (int1% int2).print();
+  (int1<<int2).print();
+  (int1>>int2).print();
 
-  (int1 or  int2).print;
-  (int1 and int2).print;
-  (int1 xor int2).print;
-  not(int2).print;
+  (int1 or  int2).print();
+  (int1 and int2).print();
+  (int1 xor int2).print();
+  not(int2).print();
 
-  bit1 := true;
-  bit2 := false;
-  (bit1 or  bit2).print;
-  (bit1 and bit2).print;
-  (bit1 xor bit2).print;
-  not(bit2).print;
+  var bit1 := true;
+  var bit2 := false;
+  (bit1 or  bit2).print();
+  (bit1 and bit2).print();
+  (bit1 xor bit2).print();
+  not(bit2).print();
 
   srand( 1234 );
-  rand().print;
+  rand().print();
 }
 @T
 The {\tt mil\_comp\_ops} implements the mil example script comparison 
 operations.  It gets two parameters which are the operants for the operations.
 
 @= mil_comp_ops
-  (@1 < @2).print;  (@2 < @1).print;  (@1 < @1).print;
-  (@1 <= @2).print; (@2 <= @1).print; (@1 <= @1).print;
-  (@1 = @2).print;  (@2 = @1).print;  (@1 = @1).print;
-  (@1 >= @2).print; (@2 >= @1).print; (@1 >= @1).print;
-  (@1 > @2).print;  (@2 > @1).print;  (@1 > @1).print;
+  (@1 < @2).print();  (@2 < @1).print();  (@1 < @1).print();
+  (@1 <= @2).print(); (@2 <= @1).print(); (@1 <= @1).print();
+  (@1 = @2).print();  (@2 = @1).print();  (@1 = @1).print();
+  (@1 >= @2).print(); (@2 >= @1).print(); (@1 >= @1).print();
+  (@1 > @2).print();  (@2 > @1).print();  (@1 > @1).print();
 @
 
 @T
@@ -443,10 +443,10 @@ The {\tt mil\_arith\_ops} implements the mil example script arithmetic
 operations.  It gets two parameters which are the operants for the operations.
 
 @= mil_arith_ops
-  (@1 + @2).print;
-  (@1 - @2).print;
-  (@1 * @2).print;
-  (@1 / @2).print;
+  (@1 + @2).print();
+  (@1 - @2).print();
+  (@1 * @2).print();
+  (@1 / @2).print();
 @
 
 @{

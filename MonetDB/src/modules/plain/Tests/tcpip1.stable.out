@@ -5,7 +5,11 @@ stdout of test 'tcpip1` in directory 'src/modules/plain` itself:
 # 17:06:13 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/MonetDB/_PREFIX_d_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB" --dbfarm "/var/tmp/MonetDB/_PREFIX_d_/var/dbfarm" --set monet_prompt= /ufs/manegold/tmp/Tests-d10/Tests/trace.mil --dbname=Tests_src_modules_plain tcpip1.prelude < tcpip1.milM
 # 17:06:13 >  
 
-x := bat(oid, oid);
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);
 x.sort.print;
@@ -17,7 +21,7 @@ x.sort.print;
 [ 1@0,	  0@0	  ]
 c.export(x, "x");
  
-y := import("x", true);
+var y := import("x", true);
 y.print;
 #-----------------#
 # BAT:	  tmp_38  #

@@ -9,7 +9,7 @@ stdout of test 'enum` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module(enum);
-a:= new(int,str);
+var a:= new(int,str);
 insert(a,0,"apples");
 insert(a,1,"oranges");
 insert(a,2,"grapes");
@@ -29,16 +29,16 @@ print(a);
 [ 5,	  "apples"	  ]
 [ 6,	  "apples"	  ]
 [ 7,	  "apples"	  ]
-fruit:= enum_create("fruit",a);
+var fruit:= enum_create("fruit",a);
 print(fruit);
 [ 15 ]
-x:= encode(fruit,"apples");
+var x:= encode(fruit,"apples");
 print(x);
 [ apples ]
-y:= encode(fruit, "oranges");
+var y:= encode(fruit, "oranges");
 print(y);
 [ oranges ]
-z:= encode(fruit,"grapes");
+var z:= encode(fruit,"grapes");
 print(z);
 [ grapes ]
 print("finding lower of apples");

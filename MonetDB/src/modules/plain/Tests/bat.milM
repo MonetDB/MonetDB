@@ -1,4 +1,4 @@
-testje := new(int,str);
+var testje := new(int,str);
 
 testje.insert(1,"one");
 testje.insert(2,"two");
@@ -10,7 +10,7 @@ testje.insert(3,"drie");
 printf("* Example BAT\n");
 testje.print;
 
-deltest := new(int,str);
+var deltest := new(int,str);
 deltest.insert(1,"one");
 
 printf("\n* deleteBuns: Delete the exact BUN\n");

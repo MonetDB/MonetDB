@@ -1,9 +1,9 @@
-DBGMSK := debugmask();
+var DBGMSK := debugmask();
 debugmask(or(DBGMSK,131072));
 
 module(decimal);
 
-d:=decimal("nil");
+var d:=decimal("nil");
 d.print;
 d:=decimal(int(nil));
 d.print;

@@ -1,10 +1,10 @@
-x := bat(oid, oid);
+var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);
 x.sort.print;
 c.export(x, "x");
  
-y := import("x", true);
+var y := import("x", true);
 y.print;
 
 quit;

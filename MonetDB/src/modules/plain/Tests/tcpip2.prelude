@@ -1,7 +1,7 @@
 module("tcpip", "alarm");
 module("unix", "ascii_io");
 
-proc get_mapi_port() := {
+proc get_mapi_port() : void {
 	if (monet_environment.exist("mapi_port")){
 		return int(monet_environment.find("mapi_port"));
 	} else {
