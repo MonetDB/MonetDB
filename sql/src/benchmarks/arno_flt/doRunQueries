@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-Msql -u monetdb -P monetdb --port=$SQLPORT < queries.sql
-
