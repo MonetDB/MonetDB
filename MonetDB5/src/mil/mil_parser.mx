@@ -250,7 +250,8 @@ needed for tracing the parser.
 		}
 (":"{IDENT}"=")	|
 (":"{OPER}"=")	| 
-({OPER}"="?)	{	yytext[yyleng]=0;
+{OPER}		|
+({OPER}"=")	{	yytext[yyleng]=0;
 			if( !yytext[1] && (yytext[0]=='~' ||
 				yytext[0]=='?' || yytext[0]==':')){
 				Symbol(yytext[0]);
@@ -863,6 +864,7 @@ whilestmt:
 
 iterator :
 	tok_ident '(' ')'
+    |	tok_ident '(' tok_ident ')'
     |	tok_ident
     ;
         
@@ -918,6 +920,7 @@ proc_definition:
 	TODO
 #endif
 	}
+    |   TOK_PROCDEF tok_ident ';'
     |   TOK_PROCDEF proc_name {
 #ifdef M2Moffline
 	  printf(");\n");
@@ -1035,7 +1038,7 @@ mel_range:
         TOK_RANGETEMP mel_type TOK_RANGETEMP
 	{ newId($1.val); 
 #ifdef M2Moffline
-	  printf(",%s:%s[]",$1.val,$2.val);
+	  printf(",%s:%s...",$1.val,$2.val);
 #else
 	TODO
 #endif
@@ -1308,8 +1311,8 @@ fcn_call:
     ;
 
 fcn_call_A:
-	fcn_target
-    |   fcn_call_B
+       fcn_call_B
+   |	fcn_target
     ;
 
 fcn_call_B:
@@ -1346,7 +1349,7 @@ fcn_hdr:
 	{ 
 	  $$.val="bat";
 	}
-    |  TOK_OPERATOR	
+    |  TOK_OPERATOR '('
 	{ $$= $1; }
     |  tok_ident	
 	{ $$= $1; }
