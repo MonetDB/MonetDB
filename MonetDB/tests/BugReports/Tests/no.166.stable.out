@@ -80,7 +80,7 @@ stdout of test 'no.166` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 
-loaded;
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -98,11 +98,11 @@ loaded;
 printf("\nloading '%s' ... ","enum");
 module("enum");
 printf("done.\n\n");
-loaded;
+loaded();
 printf("\ndropping '%s' ... ","enum");
 drop("enum");
 printf("done.\n\n");
-loaded;
+loaded();
 }
 
 loading 'enum' ... done.
@@ -137,7 +137,7 @@ dropping 'enum' ... done.
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
 
-quit;
+quit();
 
 # 17:07:30 >  
 # 17:07:30 >  Done.

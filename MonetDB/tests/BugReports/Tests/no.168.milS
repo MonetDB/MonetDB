@@ -26,16 +26,16 @@
 # --------
 # module(url);
 # u:= url("http://www.cwi.nl/~mk/Acoi/index.html");
-# u.print;
-# u.getHost.print;
-# u.getPort.print;
-# u.getDomain.print;
-# u.getFile.print;
-# u.getAnchor.print;
-# u.getBasename.print;
-# u.getProtocol.print;
-# u.getUser.print;
-# u.getDirectory.print;
+# u.print();
+# u.getHost.print();
+# u.getPort.print();
+# u.getDomain.print();
+# u.getFile.print();
+# u.getAnchor.print();
+# u.getBasename.print();
+# u.getProtocol.print();
+# u.getUser.print();
+# u.getDirectory.print();
 # quit;
 # ========
 # 
@@ -45,40 +45,40 @@
 # [...]
 # module(url);
 # u:= url("http://www.cwi.nl/~mk/Acoi/index.html");
-# u.print;
+# u.print();
 # [ nil ]
-# u.getHost.print;
+# u.getHost.print();
 # [ nil ]
-# u.getPort.print;
+# u.getPort.print();
 # [ nil ]
-# u.getDomain.print;
+# u.getDomain.print();
 # [ nil ]
-# u.getFile.print;
+# u.getFile.print();
 # [ nil ]
-# u.getAnchor.print;
+# u.getAnchor.print();
 # [ nil ]
-# u.getBasename.print;
+# u.getBasename.print();
 # [ nil ]
-# u.getProtocol.print;
+# u.getProtocol.print();
 # [ nil ]
-# u.getUser.print;
+# u.getUser.print();
 # [ nil ]
-# u.getDirectory.print;
+# u.getDirectory.print();
 # ========
 
 setoid(oid(20000000));
 
 module(url);
-u:= url("http://www.cwi.nl/~mk/Acoi/index.html");
-u.print;
-u.getHost.print;
-u.getPort.print;
-u.getDomain.print;
-u.getFile.print;
-u.getAnchor.print;
-u.getBasename.print;
-u.getProtocol.print;
-u.getUser.print;
-u.getDirectory.print;
+var u:= url("http://www.cwi.nl/~mk/Acoi/index.html");
+u.print();
+u.getHost.print();
+u.getPort.print();
+u.getDomain.print();
+u.getFile.print();
+u.getAnchor.print();
+u.getBasename.print();
+u.getProtocol.print();
+u.getUser.print();
+u.getDirectory.print();
 
-quit;
+quit();

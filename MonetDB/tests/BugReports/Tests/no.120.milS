@@ -32,10 +32,10 @@
 # [ 3,      1000000004@2    ]
 
 setoid(oid(20000000));
-a := new(int,int);
+var a := new(int,int);
 a.insert(1,2);
 a.insert(2,3);
 a.insert(3,4);
 a.seqbase(newoid(a.count()));
-[oid]([a~]).print;
-quit;
+[oid]([a~]).print();
+quit();

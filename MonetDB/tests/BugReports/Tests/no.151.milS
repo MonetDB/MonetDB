@@ -25,7 +25,7 @@
 # !       insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 
 setoid(oid(20000000));
-a:= new(int,bat);
-b:= new(int,bat);
+var a:= new(int,bat);
+var b:= new(int,bat);
 a.insert(1,b);
-quit;
+quit();

@@ -48,42 +48,42 @@ stdout of test 'no.051` in directory 'tests/BugReports` itself:
 # !ERROR: interpret command/proc: 2nd param: invalid BAT.
 # [ nil ]
 
-proc create(b) := {
+proc create(bat b) {
         var a := new (oid,flt);
         b@batloop(){
-                if (a.count = 0)
+                if (a.count() = 0)
                         return a;
         }
         return a;
 }
 
-b := new (oid,flt);
+var b := new (oid,flt);
 b.insert(oid(1),flt(2));
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (flt)	  #
 #-----------------#
 [ 1@0,	  2	  ]
 var c := create(b);
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (flt)	  #
 #-----------------#
 [ 1@0,	  2	  ]
-c.print;
+c.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (flt)	  #
 #-----------------#
-b.semijoin(c).print;
+b.semijoin(c).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (flt)	  #
 #-----------------#
 
-quit;
+quit();
 
 # 17:06:49 >  
 # 17:06:49 >  Done.

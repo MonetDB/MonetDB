@@ -62,6 +62,6 @@ right.insert(-2,"drie");
 right.insert(-1,"twee");
 right.insert(0,"een");
 
-join(left,right).print;
+join(left,right).print();
 
-quit;
+quit();

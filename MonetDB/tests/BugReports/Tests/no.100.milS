@@ -20,12 +20,12 @@
 # > a := new(int,str);
 # > a.insert(1,"hello world");
 # > a.seqbase(100@0);
-# > [oid]([a~]).reverse.print;
+# > [oid]([a~]).reverse.print();
 # #-----------------#
 # # oid   | tmp_92  #
 # #-----------------#
 # [ 100@0,  1       ]
-# > [oid]([a~]).reverse.copy.print;
+# > [oid]([a~]).reverse.copy.print();
 # #-----------------#
 # # oid   | tmp_93  #
 # #-----------------#
@@ -33,13 +33,13 @@
 # 
 
 setoid(oid(20000000));
-a := new(int,str);
+var a := new(int,str);
 a.insert(1,"hello world");
-a.print;
-[a~].print;
-[a~].reverse.print;
-[oid]([a~]).reverse.print;
+a.print();
+[a~].print();
+[a~].reverse.print();
+[oid]([a~]).reverse.print();
 a.seqbase(100@0);
-[oid]([a~]).reverse.print;
-[oid]([a~]).reverse.copy.print;
-quit;
+[oid]([a~]).reverse.print();
+[oid]([a~]).reverse.copy.print();
+quit();

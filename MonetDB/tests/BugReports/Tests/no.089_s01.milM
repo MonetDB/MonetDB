@@ -1,6 +1,6 @@
 module(url);
-Server.print;
-Server2.print;
-Clients.print;
-Clients2.print;
-quit;
+bat("Server").print();
+bat("Server2").print();
+bat("Clients").print();
+bat("Clients2").print();
+quit();

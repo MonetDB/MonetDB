@@ -38,9 +38,9 @@ stdout of test 'no.031` in directory 'tests/BugReports` itself:
 # > b.import("/home/quak/tmp/testt");
 
 module("ascii_io");
-a := new(int,int);
+var a := new(int,int);
 a.insert(1,1);
-a.print;
+a.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -48,15 +48,15 @@ a.print;
 [ 1,	  1	  ]
 a.export("testt");
 saved in testt
-b := new(int,int);
+var b := new(int,int);
 b.import("testt");
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-quit;
+quit();
 
 # 17:06:47 >  
 # 17:06:47 >  Done.

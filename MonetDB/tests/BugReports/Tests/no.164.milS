@@ -131,11 +131,11 @@
 
 setoid(oid(20000000));
 
-a:=new(int,str);    
+var a:=new(int,str);    
 a.insert(1,"A");
 a.insert(2,"B");
 a.insert(3,"C");
-b:=new(int,str);
+var b:=new(int,str);
 b.insert(3,"A");
 b.insert(2,"B");
 b.insert(1,"C");
@@ -150,4 +150,4 @@ table(a,b);
 heapclustercopy(b,a);
 table(a,b);
 
-quit;
+quit();

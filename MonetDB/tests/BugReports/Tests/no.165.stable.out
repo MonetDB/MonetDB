@@ -88,7 +88,7 @@ stdout of test 'no.165` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 
-b:= new(str,int);
+var b:= new(str,int);
 b.insert("the",1);
 b.insert("quick",20);
 b.insert("brown",30);
@@ -101,7 +101,7 @@ b.insert(str(nil),90);
 b.insert(".",100);
 b.insert("",int(nil));
 b.insert(str(nil),int(nil));
-b.print;
+b.print();
 #-------------------------#
 # BAT:		  tmp_30  #
 # (str)		  (int)	  #
@@ -119,7 +119,7 @@ b.print;
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
 
-c:= mark(b,oid(20000050));
+var c:= mark(b,oid(20000050));
 print(c);
 #---------------------------------#
 # BAT:		  tmp_70	  #
@@ -138,7 +138,7 @@ print(c);
 [ "",		  20000060@0	  ]
 [ nil,		  20000061@0	  ]
 
-quit;
+quit();
 
 # 17:07:29 >  
 # 17:07:29 >  Done.

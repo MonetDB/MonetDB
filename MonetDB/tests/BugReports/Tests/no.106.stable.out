@@ -31,10 +31,10 @@ module(xtables);
 setoid(oid(20000000));
 
 #split w in twee tabellen
-docid := new( void, oid );
-tid := new( void, str );
-docid := [w~].reverse;
-docid.print;
+var docid := new( void, oid );
+var tid := new( void, str );
+docid := [w~].reverse();
+docid.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (oid)	  #
@@ -55,7 +55,7 @@ docid.print;
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
 tid := [~w];
-tid.print;
+tid.print();
 #---------------------------------#
 # BAT:	  tmp_23		  #
 # (void)  (str)			  #
@@ -76,7 +76,7 @@ tid.print;
 [ nil,	  "this"		  ]
 [ nil,	  "database"		  ]
 docid.seqbase( 1000@0 );
-docid.print;
+docid.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (oid)	  #
@@ -97,7 +97,7 @@ docid.print;
 [ 1013@0, 2@0	  ]
 [ 1014@0, 2@0	  ]
 tid.seqbase( 1000@0 );
-tid.print;
+tid.print();
 #---------------------------------#
 # BAT:	  tmp_23		  #
 # (void)  (str)			  #
@@ -118,7 +118,7 @@ tid.print;
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
 module("xtables");
-CTgroup( docid, tid ).print;
+CTgroup( docid, tid ).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (oid)	  #

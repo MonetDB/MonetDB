@@ -79,19 +79,19 @@ stdout of test 'no.117` in directory 'tests/BugReports` itself:
 # 
 
 setoid(oid(20000000));
-test := new(oid,int);
+var test := new(oid,int);
 test.insert(oid(1),1);
 test.insert(oid(2),2);
 test.insert(oid(3),3);
 
-PROC addNr(theNrs,theNr) := {
+PROC addNr(any theNrs, any theNr) {
         printf("add Nr: %d\n",theNr);
         VAR r := [+](theNrs,theNr);
-        r.print;
+        r.print();
         return r;
 }
 
-PROC loopTest(theBAT,theMax) := {
+PROC loopTest(any theBAT,any theMax)  {
         VAR i := 0;
         WHILE (i < theMax) {
                 addNr(theBAT,i);
@@ -124,7 +124,7 @@ add Nr: 1
 [ 1@0,	  2	  ]
 [ 2@0,	  3	  ]
 [ 3@0,	  4	  ]
-quit;
+quit();
 
 # 17:06:57 >  
 # 17:06:57 >  Done.

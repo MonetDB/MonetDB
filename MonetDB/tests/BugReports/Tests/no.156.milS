@@ -204,7 +204,7 @@
 # [ 2@0,    20      ]
 
 setoid(oid(20000000));
-PROC extractBit(theBitsets,theBit,theStr,loop) := {
+PROC extractBit(any theBitsets,any theBit,any theStr,any loop) {
         VAR res;
         IF (loop = false) {
 printf("!Before multiplex operation\n");
@@ -212,17 +212,17 @@ printf("!Before multiplex operation\n");
 printf("!After multiplex operation\n");
         } ELSE {
                 res := new(theBitsets.htype,int);
-                theBitsets@batloop {
+                theBitsets@batloop() {
                         VAR b := $t*theBit;
                         res.insert($h,b);
                 }
         }
         printf("%s keer\n",theStr);
-        res.print;
+        res.print();
 }
 
-PROC bitsetHist(theEnum,theBitsets,loop) := {
-        theEnum@batloop {
+PROC bitsetHist(any theEnum,any theBitsets,any loop) {
+        theEnum@batloop() {
                 VAR c := extractBit(theBitsets,$h,$t,loop);
         }
 }
@@ -234,12 +234,12 @@ enum.insert(2,"twee");
 enum.insert(3,"drie");
 enum.insert(4,"vier");
 enum.insert(5,"vijf");
-enum.print;
+enum.print();
 
 VAR bitsets := new(oid,int);
 bitsets.insert(oid(1),2);
 bitsets.insert(oid(2),4);
-bitsets.print;
+bitsets.print();
 
 # with batloop
 bitsetHist(enum,bitsets,true);
@@ -247,4 +247,4 @@ bitsetHist(enum,bitsets,true);
 # with multiplex
 bitsetHist(enum,bitsets,false);
 
-quit;
+quit();

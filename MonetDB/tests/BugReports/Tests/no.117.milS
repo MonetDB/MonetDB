@@ -66,19 +66,19 @@
 # 
 
 setoid(oid(20000000));
-test := new(oid,int);
+var test := new(oid,int);
 test.insert(oid(1),1);
 test.insert(oid(2),2);
 test.insert(oid(3),3);
 
-PROC addNr(theNrs,theNr) := {
+PROC addNr(any theNrs, any theNr) {
         printf("add Nr: %d\n",theNr);
         VAR r := [+](theNrs,theNr);
-        r.print;
+        r.print();
         return r;
 }
 
-PROC loopTest(theBAT,theMax) := {
+PROC loopTest(any theBAT,any theMax)  {
         VAR i := 0;
         WHILE (i < theMax) {
                 addNr(theBAT,i);
@@ -87,4 +87,4 @@ PROC loopTest(theBAT,theMax) := {
 }
 loopTest(test,1);
 loopTest(test,2);
-quit;
+quit();

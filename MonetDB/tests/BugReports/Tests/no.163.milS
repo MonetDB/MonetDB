@@ -103,7 +103,7 @@
 
 setoid(oid(20000000));
 
-proc tst(BAT[any, int] b) :=
+proc tst(BAT[any, int] b) 
 {  
   var i;
 
@@ -116,12 +116,12 @@ proc tst(BAT[any, int] b) :=
   return b;
 }
 
-b1 := new(int, int);
+var b1 := new(int, int);
 b1.insert(0, 0);
 b1.insert(0, 1);
 
 bn := tst(b1);  
-bn.print;
+bn.print();
 
-quit;
+quit();
 

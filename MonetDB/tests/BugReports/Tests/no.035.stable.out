@@ -30,7 +30,7 @@ stdout of test 'no.035` in directory 'tests/BugReports` itself:
 # > b@batloop(){ printf("%s\n",$t);}
 # !ERROR: interpret: no matching iterator to 'batloop(bat[int,str], ptr)'.
 
-b:= view_bbp_name;
+var b:= view_bbp_name();
 b@batloop(){ printf("%s\n",$t);}
 monet_environment
 monet_fcn_fcn
@@ -59,7 +59,7 @@ adm_fcntbl
 adm_acctbl
 adm_atomtbl
 monet_unicode_case
-quit;
+quit();
 
 # 13:14:58 >  
 # 13:14:58 >  Done.

@@ -28,4 +28,4 @@
 setoid(oid(20000000));
 module("jabberwocky");
 module("_jabberwocky");
-quit;
+quit();

@@ -43,12 +43,12 @@ stdout of test 'no.050` in directory 'tests/BugReports` itself:
 # [ 1@0,    100     ]
 # [ 2@0,    1000    ]
 
-a := new (oid,int);
+var a := new (oid,int);
 a.insert( oid(1), 100 );
 a.insert( oid(2), 1000 );
 a.insert( oid(4), 10 );
 a.insert( oid(5), 15 );
-a.print;
+a.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (int)	  #
@@ -57,8 +57,8 @@ a.print;
 [ 2@0,	  1000	  ]
 [ 4@0,	  10	  ]
 [ 5@0,	  15	  ]
-a.reverse.accbuild(index);
-a.print;
+a.reverse().accbuild(index);
+a.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (int)	  #
@@ -67,13 +67,13 @@ a.print;
 [ 2@0,	  1000	  ]
 [ 4@0,	  10	  ]
 [ 5@0,	  15	  ]
-a.select( 94, 110 ).print;
+a.select( 94, 110 ).print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 1@0,	  100	  ]
-quit;
+quit();
 
 # 17:06:48 >  
 # 17:06:48 >  Done.

@@ -76,34 +76,34 @@ stdout of test 'no.089` in directory 'tests/BugReports` itself:
 # consistent state of the database.
 
 module(url);
-new(oid,url).persists(true).rename("Server");
-new(oid,url).persists(true).rename("Server2");
-new(oid,int).persists(true).rename("Clients");
-new(oid,int).persists(true).rename("Clients2");
-commit;
+var Server:= new(oid,url).persists(true).rename("Server");
+var Server2:= new(oid,url).persists(true).rename("Server2");
+var Clients:= new(oid,int).persists(true).rename("Clients");
+var Clients2:= new(oid,int).persists(true).rename("Clients2");
+commit();
 Server.insert(oid(1),url("http://www.cwi.nl/")); 
 Server2.insert(oid(1),url("http://www.cwi.nl/")); 
 Clients.insert(oid(1),3); 
 Clients2.insert(oid(1),3); 
-Server.print;
+Server.print();
 #---------------------------------#
 # BAT:	  Server		  #
 # (oid)	  (url)			  #
 #---------------------------------#
 [ 1@0,	  "http://www.cwi.nl/"	  ]
-Server2.print;
+Server2.print();
 #---------------------------------#
 # BAT:	  Server2		  #
 # (oid)	  (url)			  #
 #---------------------------------#
 [ 1@0,	  "http://www.cwi.nl/"	  ]
-Clients.print;
+Clients.print();
 #-------------------------#
 # BAT:	  Clients	  #
 # (oid)	  (int)		  #
 #-------------------------#
 [ 1@0,	  3		  ]
-Clients2.print;
+Clients2.print();
 #-------------------------#
 # BAT:	  Clients2	  #
 # (oid)	  (int)		  #
@@ -113,89 +113,89 @@ dir("Server");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "Server",	  "oid",  "url",  1,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "Server2",	  "oid",  "url",  1,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "Server",	  "oid",  "url",  1,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
+[ "Server2",	  "oid",  "url",  1,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
 dir("Clients");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "Clients",	  "oid",  "int",  1,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "Clients2",	  "oid",  "int",  1,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "Clients",	  "oid",  "int",  1,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
+[ "Clients2",	  "oid",  "int",  1,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
 unload("Server");
 unload("Clients");
 dir("Server");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "Server",	  "oid",  "url",  1,	  0,	  "diffs",	  "disk", "pers", 0,	  1		  ]
-[ "Server2",	  "oid",  "url",  1,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "Server",	  "oid",  "url",  1,	  0,	  "diffs",	  "disk", "pers", 0,	  2		  ]
+[ "Server2",	  "oid",  "url",  1,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
 dir("Clients");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "Clients",	  "oid",  "int",  1,	  0,	  "diffs",	  "disk", "pers", 0,	  1		  ]
-[ "Clients2",	  "oid",  "int",  1,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-abort;
+[ "Clients",	  "oid",  "int",  1,	  0,	  "diffs",	  "disk", "pers", 0,	  2		  ]
+[ "Clients2",	  "oid",  "int",  1,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
+abort();
 dir("Server");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "Server",	  "oid",  "url",  0,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "Server2",	  "oid",  "url",  0,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
+[ "Server",	  "oid",  "url",  0,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
+[ "Server2",	  "oid",  "url",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 dir("Clients");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "Clients",	  "oid",  "int",  0,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "Clients2",	  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
-Server.print;
+[ "Clients",	  "oid",  "int",  0,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
+[ "Clients2",	  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+Server.print();
 #-----------------#
-# BAT:	  Server  #
-# (oid)	  (url)	  #
-#---------------------------------#
-Server2.print;
+# h	Server	  # name
+# oid	url	  # type
+#-----------------#
+Server2.print();
 #-------------------------#
 # BAT:	  Server2	  #
 # (oid)	  (url)		  #
 #-------------------------#
-Clients.print;
+Clients.print();
 #-------------------------#
 # BAT:	  Clients	  #
 # (oid)	  (int)		  #
 #-------------------------#
-Clients2.print;
+Clients2.print();
 #-------------------------#
 # BAT:	  Clients2	  #
 # (oid)	  (int)		  #
 #-------------------------#
-quit;
+quit();
 
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module(url);
-Server.print;
+bat("Server").print();
 #-----------------#
 # BAT:	  Server  #
 # (oid)	  (url)	  #
 #-----------------#
-Server2.print;
+bat("Server2").print();
 #-------------------------#
 # BAT:	  Server2	  #
 # (oid)	  (url)		  #
 #-------------------------#
-Clients.print;
+bat("Clients").print();
 #-------------------------#
 # BAT:	  Clients	  #
 # (oid)	  (int)		  #
 #-------------------------#
-Clients2.print;
+bat("Clients2").print();
 #-------------------------#
 # BAT:	  Clients2	  #
 # (oid)	  (int)		  #
 #-------------------------#
-quit;
+quit();
 
 # 17:06:53 >  
 # 17:06:53 >  Done.

@@ -91,17 +91,17 @@
 # [ 1@0,            1               ]
 
 setoid(oid(20000000));
-test := new(oid,lng);
+var test := new(oid,lng);
 test.insert(oid(53991617),lng(60000401));
 test.insert(oid(53996584),lng(60000400));
 test.insert(oid(55526089),lng(50015637));
-test.print;
-test.select(lng(0)).print;
-test.select(lng(60000401)).print;
-test.select(lng(0),lng(1)).print;
+test.print();
+test.select(lng(0)).print();
+test.select(lng(60000401)).print();
+test.select(lng(0),lng(1)).print();
 test.insert(oid(1),lng(1));
-test.select(lng(0)).print;
-test.select(lng(60000401)).print;
-test.select(lng(0),lng(1)).print;
+test.select(lng(0)).print();
+test.select(lng(60000401)).print();
+test.select(lng(0),lng(1)).print();
 
-quit;
+quit();

@@ -32,13 +32,13 @@ stdout of test 'no.016` in directory 'tests/BugReports` itself:
 # >a.sample(1).print;
 # !FATAL GDKmalloc called with size 0
 
-a := new(int, int);
-a.sample(1).print;
+var a := new(int, int);
+a.sample(1).print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
-quit;
+quit();
 
 # 17:06:45 >  
 # 17:06:45 >  Done.

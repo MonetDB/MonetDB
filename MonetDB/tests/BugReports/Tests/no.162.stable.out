@@ -75,7 +75,7 @@ right.insert(-2,"drie");
 right.insert(-1,"twee");
 right.insert(0,"een");
 
-join(left,right).print;
+join(left,right).print();
 #-----------------#
 # BAT:	  tmp_71  #
 # (int)	  (str)	  #
@@ -85,7 +85,7 @@ join(left,right).print;
 [ 2,	  "twee"  ]
 [ 1,	  "een"	  ]
 
-quit;
+quit();
 
 # 17:07:27 >  
 # 17:07:27 >  Done.

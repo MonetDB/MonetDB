@@ -116,7 +116,7 @@ stdout of test 'no.163` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 
-proc tst(BAT[any, int] b) :=
+proc tst(BAT[any, int] b) 
 {  
   var i;
 
@@ -129,12 +129,12 @@ proc tst(BAT[any, int] b) :=
   return b;
 }
 
-b1 := new(int, int);
+var b1 := new(int, int);
 b1.insert(0, 0);
 b1.insert(0, 1);
 
 bn := tst(b1);  
-bn.print;
+bn.print();
 #-----------------#
 # BAT:	  tmp_71  #
 # (int)	  (int)	  #
@@ -142,7 +142,7 @@ bn.print;
 [ 0,	  2	  ]
 [ 0,	  3	  ]
 
-quit;
+quit();
 
 # 17:07:28 >  
 # 17:07:28 >  Done.

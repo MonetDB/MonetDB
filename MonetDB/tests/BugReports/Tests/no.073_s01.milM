@@ -1,4 +1,4 @@
-ab.print;
-ba.print;
-ab.print;
-quit;
+ab.print();
+ba.print();
+ab.print();
+quit();

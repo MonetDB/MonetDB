@@ -104,11 +104,11 @@ stdout of test 'no.157` in directory 'tests/BugReports` itself:
 # [ 1@0,            1               ]
 
 setoid(oid(20000000));
-test := new(oid,lng);
+var test := new(oid,lng);
 test.insert(oid(53991617),lng(60000401));
 test.insert(oid(53996584),lng(60000400));
 test.insert(oid(55526089),lng(50015637));
-test.print;
+test.print();
 #---------------------------------#
 # BAT:		  tmp_30	  #
 # (oid)		  (lng)		  #
@@ -116,42 +116,42 @@ test.print;
 [ 53991617@0,	  60000401	  ]
 [ 53996584@0,	  60000400	  ]
 [ 55526089@0,	  50015637	  ]
-test.select(lng(0)).print;
+test.select(lng(0)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (lng)	  #
 #-----------------#
-test.select(lng(60000401)).print;
+test.select(lng(60000401)).print();
 #---------------------------------#
 # BAT:		  tmp_70	  #
 # (oid)		  (lng)		  #
 #---------------------------------#
 [ 53991617@0,	  60000401	  ]
-test.select(lng(0),lng(1)).print;
+test.select(lng(0),lng(1)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (lng)	  #
 #-----------------#
 test.insert(oid(1),lng(1));
-test.select(lng(0)).print;
+test.select(lng(0)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (lng)	  #
 #-----------------#
-test.select(lng(60000401)).print;
+test.select(lng(60000401)).print();
 #---------------------------------#
 # BAT:		  tmp_70	  #
 # (oid)		  (lng)		  #
 #---------------------------------#
 [ 53991617@0,	  60000401	  ]
-test.select(lng(0),lng(1)).print;
+test.select(lng(0),lng(1)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (lng)	  #
 #-----------------#
 [ 1@0,	  1	  ]
 
-quit;
+quit();
 
 # 17:07:24 >  
 # 17:07:24 >  Done.

@@ -15,4 +15,4 @@ commit();
 ## Hang:
 print(t_3);
 
-quit;
+quit();

@@ -19,6 +19,6 @@
 # >a.sample(1).print;
 # !FATAL GDKmalloc called with size 0
 
-a := new(int, int);
-a.sample(1).print;
-quit;
+var a := new(int, int);
+a.sample(1).print();
+quit();

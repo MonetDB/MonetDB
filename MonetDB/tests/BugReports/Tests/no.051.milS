@@ -35,21 +35,21 @@
 # !ERROR: interpret command/proc: 2nd param: invalid BAT.
 # [ nil ]
 
-proc create(b) := {
+proc create(bat b) {
         var a := new (oid,flt);
         b@batloop(){
-                if (a.count = 0)
+                if (a.count() = 0)
                         return a;
         }
         return a;
 }
 
-b := new (oid,flt);
+var b := new (oid,flt);
 b.insert(oid(1),flt(2));
-b.print;
+b.print();
 var c := create(b);
-b.print;
-c.print;
-b.semijoin(c).print;
+b.print();
+c.print();
+b.semijoin(c).print();
 
-quit;
+quit();

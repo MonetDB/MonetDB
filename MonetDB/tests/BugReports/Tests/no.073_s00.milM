@@ -107,17 +107,17 @@
 # [ 1,      "een"   ]
 # [ 2,      "twee"  ]
 
-ab := new(int,str);
+var ab := new(int,str);
 ab.rename("ab");
 ab.persists(true);
-ab.commit;
-ba := ab.reverse;
+ab.commit();
+var ba := ab.reverse;
 ba.rename("ba");
 ba.persists(true);
-ba.commit;
+ba.commit();
 ab.insert(1,"een");
 ba.insert("twee",2);
-ab.print;
-ba.print;
-commit;
-quit;
+ab.print();
+ba.print();
+commit();
+quit();

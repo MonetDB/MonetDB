@@ -62,7 +62,7 @@ stdout of test 'no.062` in directory 'tests/BugReports` itself:
 # This is not what a user would expect
 
 setoid(oid(20000000));
-t:= new(int,int);
+var t:= new(int,int);
 t.insert(0,0);
 t.insert(1+1,0);
 t.insert(-1,-0);
@@ -100,7 +100,7 @@ t.insert(-1 -1, 1);
 t.insert(-1- 1, 2);
 t.insert(-1 - 1, 3);
 #not what is expected from nested expression
-t.print;
+t.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -118,7 +118,7 @@ t.insert(0-1+ -1, 0);
 !ERROR: "t.insert(0-1+ -1, 0);"
 !                             ^
 ! can't help you here, sorry.
-t.print;
+t.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -132,7 +132,7 @@ t.print;
 [ 0,	  3	  ]
 [ -2,	  2	  ]
 [ -2,	  3	  ]
-quit;
+quit();
 
 # 17:06:50 >  
 # 17:06:50 >  Done.

@@ -28,6 +28,6 @@
 
 setoid(oid(20000000));
 
-str(nil).print;
+str(nil).print();
 
-quit;
+quit();

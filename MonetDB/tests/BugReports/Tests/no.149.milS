@@ -46,21 +46,21 @@ setoid(oid(20000000));
 
 var b := new (int, str );
 
-proc test1 := {
+proc test1() {
         var i := 1;
         "   test1".print;
         s := sprintf("Hallo dit is een string %d", i);
-        s.print;
+        s.print();
         b.insert(i,s);
         b.insert(i,sprintf("Hallo %d", i));
-        "   end test1".print;
+        "   end test1".print();
 }
 
 var j := 0;
 while(j < 5 ){
-        test1;
+        test1();
         j := j + 1;
 }
 
-b.print;
-quit;
+b.print();
+quit();

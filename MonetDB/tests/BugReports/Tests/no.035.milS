@@ -20,6 +20,6 @@
 # > b@batloop(){ printf("%s\n",$t);}
 # !ERROR: interpret: no matching iterator to 'batloop(bat[int,str], ptr)'.
 
-b:= view_bbp_name;
+var b:= view_bbp_name();
 b@batloop(){ printf("%s\n",$t);}
-quit;
+quit();

@@ -25,6 +25,6 @@
 
 setoid(oid(20000000));
 module(mmath);
-a := new(int,int);
+var a := new(int,int);
 [sqrt](a);
-quit;
+quit();

@@ -35,11 +35,11 @@ stdout of test 'no.027` in directory 'tests/BugReports` itself:
 # > b@batloop(){$h.print;}
 #  It doesn't
 
-b := new(int,int);
+var b := new(int,int);
 b.insert(1,2);
-b@batloop(){$h.print;}
+b@batloop(){$h.print();}
 [ 1 ]
-quit;
+quit();
 
 # 17:06:46 >  
 # 17:06:46 >  Done.

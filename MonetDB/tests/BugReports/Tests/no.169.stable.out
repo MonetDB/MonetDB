@@ -41,10 +41,10 @@ stdout of test 'no.169` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 
-str(nil).print;
+str(nil).print();
 [ nil ]
 
-quit;
+quit();
 
 # 17:07:31 >  
 # 17:07:31 >  Done.

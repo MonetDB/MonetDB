@@ -37,8 +37,8 @@
 # 
 # The semantics of B is unclear within proc
 
-b:= new(int,int);
-proc error1(B):= {
+var b:= new(int,int);
+proc error1(bat B) {
         B.insert(1,2);
         B.insert(2,3);
         B:= B.join(B);
@@ -46,4 +46,4 @@ proc error1(B):= {
 }
 error1(b);
 print(b);
-quit;
+quit();

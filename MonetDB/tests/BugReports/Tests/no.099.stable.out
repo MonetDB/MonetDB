@@ -62,7 +62,7 @@ stdout of test 'no.099` in directory 'tests/BugReports` itself:
 # left equals right
 
 setoid(oid(20000000));
-PROC comp(left,right) := {
+PROC comp(any left, any right) {
   IF (left = right) {
     printf("left equals right\n");
   } ELSE {
@@ -88,7 +88,7 @@ comp(str("a"),str(nil));
 comp(str("a"),str("a"));
 left equals right
 left equals right
-quit;
+quit();
 
 # 17:06:54 >  
 # 17:06:54 >  Done.

@@ -51,4 +51,4 @@ loaded(1);
 dir(1);
 format_fcn_sig(1);
 env(1);
-quit;
+quit();

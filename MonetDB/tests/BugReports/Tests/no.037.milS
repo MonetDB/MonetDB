@@ -40,7 +40,7 @@
 # >mem.print;
 # !ERROR: atom 'monet_Mallinfo' unknown, in BAT 'mem'.!ERROR: BATprintf: BAT expected
 
-ls;
-mem.print;
-printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
-quit;
+ls();
+mem.print();
+printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
+quit();

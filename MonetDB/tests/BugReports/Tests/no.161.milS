@@ -43,11 +43,11 @@
 
 setoid(oid(20000000));
 
-PROC test_inner(in) := {
+PROC test_inner(any in) {
    printf("test_inner.in: %s\n",str(in));
 }
  
-PROC test_outer(in) := {
+PROC test_outer(any in) {
    printf("test_outer.in: %s\n",str(in));
    test_inner(in);
 }
@@ -56,4 +56,4 @@ test_outer("chr");
 module(str);
 test_outer("chr");
 
-quit;
+quit();

@@ -70,17 +70,17 @@
 
 setoid(oid(20000000));
 
-loaded;
+loaded();
 
 {
 printf("\nloading '%s' ... ","enum");
 module("enum");
 printf("done.\n\n");
-loaded;
+loaded();
 printf("\ndropping '%s' ... ","enum");
 drop("enum");
 printf("done.\n\n");
-loaded;
+loaded();
 }
 
-quit;
+quit();

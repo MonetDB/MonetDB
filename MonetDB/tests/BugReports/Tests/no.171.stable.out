@@ -73,7 +73,7 @@ stdout of test 'no.171` in directory 'tests/BugReports` itself:
 #
 #         stefan
 
-s:=new(int,int);
+var s:=new(int,int);
 insert(s,5,5);
 insert(s,3,3);
 insert(s,4,2);
@@ -82,7 +82,7 @@ insert(s,1,1);
 insert(s,4,2);
 insert(s,4,3);
 
-s.print;
+s.print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -94,40 +94,40 @@ s.print;
 [ 1,	  1	  ]
 [ 4,	  2	  ]
 [ 4,	  3	  ]
-s.select(1).print;
+s.select(1).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  1	  ]
 [ 1,	  1	  ]
-s.select(2).print;
+s.select(2).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  2	  ]
 [ 4,	  2	  ]
-s.select(3).print;
+s.select(3).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
 [ 4,	  3	  ]
-s.select(4).print;
+s.select(4).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
-s.select(5).print;
+s.select(5).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  5	  ]
 
-s.reverse.print;
+s.reverse().print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -139,25 +139,25 @@ s.reverse.print;
 [ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(1).print;
+s.reverse().select(1).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-s.reverse.select(2).print;
+s.reverse().select(2).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
-s.reverse.select(3).print;
+s.reverse().select(3).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
-s.reverse.select(4).print;
+s.reverse().select(4).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -165,7 +165,7 @@ s.reverse.select(4).print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(5).print;
+s.reverse().select(5).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -174,7 +174,7 @@ s.reverse.select(5).print;
 
 printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-s.sort.print;
+s.sort().print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -182,13 +182,13 @@ s.sort.print;
 [ 1,	  1	  ]
 [ 2,	  1	  ]
 [ 3,	  3	  ]
-[ 4,	  2	  ]
-[ 4,	  2	  ]
 [ 4,	  3	  ]
+[ 4,	  2	  ]
+[ 4,	  2	  ]
 [ 5,	  5	  ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
-s.sort_ht.print;
+s.sort_ht().print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -200,40 +200,40 @@ s.sort_ht.print;
 [ 4,	  2	  ]
 [ 4,	  3	  ]
 [ 5,	  5	  ]
-s.select(1).print;
+s.select(1).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  1	  ]
 [ 1,	  1	  ]
-s.select(2).print;
+s.select(2).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  2	  ]
 [ 4,	  2	  ]
-s.select(3).print;
+s.select(3).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
 [ 4,	  3	  ]
-s.select(4).print;
+s.select(4).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
-s.select(5).print;
+s.select(5).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  5	  ]
 
-s.reverse.print;
+s.reverse().print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -245,25 +245,25 @@ s.reverse.print;
 [ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(1).print;
+s.reverse().select(1).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-s.reverse.select(2).print;
+s.reverse().select(2).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
-s.reverse.select(3).print;
+s.reverse().select(3).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
-s.reverse.select(4).print;
+s.reverse().select(4).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -271,7 +271,7 @@ s.reverse.select(4).print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(4).sort_ht.print;
+s.reverse().select(4).sort_ht().print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
@@ -279,7 +279,7 @@ s.reverse.select(4).sort_ht.print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(5).print;
+s.reverse().select(5).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
@@ -288,7 +288,7 @@ s.reverse.select(5).print;
 
 printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-s.reverse.sort.print;
+s.reverse().sort().print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
@@ -297,12 +297,12 @@ s.reverse.sort.print;
 [ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 2,	  4	  ]
-[ 3,	  4	  ]
 [ 3,	  3	  ]
+[ 3,	  4	  ]
 [ 5,	  5	  ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
-s.reverse.sort_ht.print;
+s.reverse().sort_ht().print();
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -314,25 +314,25 @@ s.reverse.sort_ht.print;
 [ 3,	  3	  ]
 [ 3,	  4	  ]
 [ 5,	  5	  ]
-s.reverse.select(1).print;
+s.reverse().select(1).print();
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-s.reverse.select(2).print;
+s.reverse().select(2).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
-s.reverse.select(3).print;
+s.reverse().select(3).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
-s.reverse.select(4).print;
+s.reverse().select(4).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
@@ -340,7 +340,7 @@ s.reverse.select(4).print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(4).sort_ht.print;
+s.reverse().select(4).sort_ht().print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -348,14 +348,14 @@ s.reverse.select(4).sort_ht.print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(5).print;
+s.reverse().select(5).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  5	  ]
 
-quit;
+quit();
 
 # 17:07:32 >  
 # 17:07:32 >  Done.

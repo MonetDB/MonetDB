@@ -22,7 +22,7 @@
 # > b@batloop(){$h.print;}
 #  It doesn't
 
-b := new(int,int);
+var b := new(int,int);
 b.insert(1,2);
-b@batloop(){$h.print;}
-quit;
+b@batloop(){$h.print();}
+quit();

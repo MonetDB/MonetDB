@@ -18,42 +18,42 @@
 # ================
 # Test script:
 # ----------------
-# threads;
-# view_gdk_thread.print;
+# threads();
+# view_gdk_thread().print();
 # #1
 # threadcnt(1);
-# threads;
-# view_gdk_thread.print;
+# threads();
+# view_gdk_thread().print();
 # #2
 # threadcnt(1);
-# threads;
-# view_gdk_thread.print;
+# threads();
+# view_gdk_thread().print();
 # #3
 # threadcnt(1);
-# threads;
-# view_gdk_thread.print;
+# threads();
+# view_gdk_thread().print();
 # #4
 # threadcnt(1);
-# threads;
-# view_gdk_thread.print;
+# threads();
+# view_gdk_thread().print();
 # #5
 # threadcnt(1);
-# threads;
-# view_gdk_thread.print;
+# threads();
+# view_gdk_thread().print();
 # quit;
 # 
 # ================
 # output
 # ----------------
 # [...]#You are system administrator (adm)!
-# threads;
+# threads();
 # #---------------------------------#
 # # int   | thread                  #
 # #---------------------------------#
 # [ 1,      "Server"                ]
 # [ 4,      "Interpreter"           ]
 # [ 5,      "InternetServer"        ]
-# view_gdk_thread.print;
+# view_gdk_thread().print();
 # #---------------------------------#
 # # int   | thread                  #
 # #---------------------------------#
@@ -62,14 +62,14 @@
 # [ 5,      "InternetServer"        ]
 # #1
 # threadcnt(1);
-# threads;
+# threads();
 # #---------------------------------#
 # # int   | thread                  #
 # #---------------------------------#
 # [ 1,      "Server"                ]
 # [ 4,      "Interpreter"           ]
 # [ 5,      "InternetServer"        ]
-# view_gdk_thread.print;
+# view_gdk_thread().print();
 # #---------------------------------#
 # # int   | thread                  #
 # #---------------------------------#
@@ -97,86 +97,86 @@
 
 setoid(oid(2000000));
 module(alarm);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #1
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #2
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #3
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #4
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #5
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #6
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #7
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #8
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #9
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #8
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #7
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #6
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #5
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #4
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #3
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #2
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
-quit;
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
+quit();

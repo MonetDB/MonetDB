@@ -56,11 +56,11 @@ stdout of test 'no.161` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 
-PROC test_inner(in) := {
+PROC test_inner(any in) {
    printf("test_inner.in: %s\n",str(in));
 }
  
-PROC test_outer(in) := {
+PROC test_outer(any in) {
    printf("test_outer.in: %s\n",str(in));
    test_inner(in);
 }
@@ -73,7 +73,7 @@ test_outer("chr");
 test_outer.in: chr
 test_inner.in: chr
 
-quit;
+quit();
 
 # 17:07:27 >  
 # 17:07:27 >  Done.

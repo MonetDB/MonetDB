@@ -38,13 +38,13 @@ stdout of test 'no.070` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 module(mmath);
-a := new(int,int);
+var a := new(int,int);
 [sqrt](a);
 !ERROR: interpret: no matching MIL operator to '[sqrt](BAT[int,int])'.
 !MAYBE YOU MEAN:
 !	sqrt(flt) : flt
 !	sqrt(dbl) : dbl
-quit;
+quit();
 
 # 17:06:51 >  
 # 17:06:51 >  Done.

@@ -13,7 +13,7 @@ stdout of test 'no.120` in directory 'tests/BugReports` itself:
 # dbdir:/export/scratch1/monet/tmp/monet.GNU_32-d.15730/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_tests_BugReports
 
 setoid(oid(20000000));
-a := new(int,int);
+var a := new(int,int);
 a.insert(1,2);
 a.insert(2,3);
 a.insert(3,4);
@@ -23,7 +23,7 @@ a.seqbase(newoid(a.count()));
 !	seqbase(BAT[void,any::1], oid) : BAT[void,any::1]
 !	seqbase(BAT[void,any::1]) : oid
 !	seqbase(BAT[oid,any::1]) : oid
-[oid]([a~]).print;
+[oid]([a~]).print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (oid)	  #
@@ -31,7 +31,7 @@ a.seqbase(newoid(a.count()));
 [ 1,	  nil	  ]
 [ 2,	  nil	  ]
 [ 3,	  nil	  ]
-quit;
+quit();
 
 # 04:45:26 >  
 # 04:45:26 >  Done.

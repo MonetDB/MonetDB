@@ -25,11 +25,11 @@
 # > b.import("/home/quak/tmp/testt");
 
 module("ascii_io");
-a := new(int,int);
+var a := new(int,int);
 a.insert(1,1);
-a.print;
+a.print();
 a.export("testt");
-b := new(int,int);
+var b := new(int,int);
 b.import("testt");
-b.print;
-quit;
+b.print();
+quit();

@@ -110,7 +110,7 @@ stdout of test 'no.147` in directory 'tests/BugReports` itself:
 
 setoid(oid(2000000));
 module(alarm);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -118,7 +118,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -129,7 +129,7 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #1
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -138,7 +138,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 [ 1,	  "Interpreter"	  ]
 [ 2,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -150,7 +150,7 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #2
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -160,7 +160,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 [ 2,	  "Interpreter"	  ]
 [ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -173,7 +173,7 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #3
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -184,7 +184,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 [ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -198,7 +198,7 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #4
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -210,7 +210,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 [ 4,	  "Interpreter"	  ]
 [ 5,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -225,7 +225,7 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #5
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -238,7 +238,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 [ 5,	  "Interpreter"	  ]
 [ 6,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -254,7 +254,7 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #6
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -268,7 +268,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 [ 6,	  "Interpreter"	  ]
 [ 7,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -285,7 +285,7 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #7
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -300,7 +300,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 [ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -318,7 +318,7 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #8
 threadcnt(1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -334,7 +334,7 @@ printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 [ 8,	  "Interpreter"	  ]
 [ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -353,212 +353,212 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableO
 #9
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
 [ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
 [ 5,	  "Interpreter"	  ]
 [ 6,	  "Interpreter"	  ]
 [ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
 [ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
 [ 5,	  "Interpreter"	  ]
 [ 6,	  "Interpreter"	  ]
 [ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #8
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
+[ 1,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
 [ 5,	  "Interpreter"	  ]
 [ 6,	  "Interpreter"	  ]
 [ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
+[ 1,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
 [ 5,	  "Interpreter"	  ]
 [ 6,	  "Interpreter"	  ]
 [ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #7
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
 [ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 [ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
 [ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 [ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #6
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
-[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
-[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #5
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
-[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
-[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #4
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 3,	  "Interpreter"	  ]
-[ 4,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 3,	  "Interpreter"	  ]
-[ 4,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 [ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #3
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 3,	  "Interpreter"	  ]
-[ 8,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 3,	  "Interpreter"	  ]
-[ 8,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #2
 threadcnt(-1);
 sleep(1);
-printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");threads();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 8,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 8,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-quit;
+quit();
 
 # 17:07:17 >  
 # 17:07:17 >  Done.

@@ -46,19 +46,19 @@ stdout of test 'no.098` in directory 'tests/BugReports` itself:
 # #-----------------#
 
 setoid(oid(20000000));
-b:=new(oid,oid);
+var b:=new(oid,oid);
 b.insert(oid(1),oid(2));
-b.select(oid(3)).print;
+b.select(oid(3)).print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
-b.select(oid(3)).print;
+b.select(oid(3)).print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
-quit;
+quit();
 
 # 17:06:53 >  
 # 17:06:53 >  Done.
