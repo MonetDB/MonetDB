@@ -342,10 +342,6 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
 
-	if( MDBdelay ){
-		MDBdelay=0;
-		return;
-	}
     if( p != NULL){
         stream_printf(out,"#mdb ");
         printInstruction(out,mb,p,listing);
@@ -760,16 +756,28 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
     	ATOMprint(v->vtype,VALptr(v),f);
 	else if( n->literal)
 		stream_printf(f,"%s", n->literal);
+
     nme= getTypeName(n->type);
-    nmeOnStk= v? getTypeName(v->vtype):GDKstrdup(nme);
     stream_printf(f,":%s", nme);
-    if( strcmp(nmeOnStk,nme) && 
-        !(isaBatType(n->type) && strcmp(nmeOnStk,"BAT")==0)){
-        stream_printf(f," != %s", nmeOnStk);
+    nmeOnStk= v? getTypeName(v->vtype):GDKstrdup(nme);
+    if( strcmp(nmeOnStk,nme) ){
+		if( isaBatType(n->type)){
+			BAT *b;
+			b= BATdescriptor(v->val.ival);
+			if( b){
+				nmeOnStk= getTypeName(newBatType(b->htype,b->ttype));
+				if( strcmp(nme,nmeOnStk))
+					stream_printf(f," != :%s", nmeOnStk);
+				BBPunfix(b->batCacheid);
+			}
+		} else
+        if( !(isaBatType(n->type) && strcmp(nmeOnStk,"BAT")==0))
+			stream_printf(f," != %s", nmeOnStk);
     }
     stream_printf(f," %s", (n->isaconstant?" constant":""));
     stream_printf(f," %s", (n->isatypevar?" type variable":""));
     GDKfree(nme); GDKfree(nmeOnStk);
+
     if(cnt && isaBatType(n->type) && v && v->val.ival){
         BAT *b,*bs;
         b= BATdescriptor(v->val.ival);

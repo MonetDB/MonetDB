@@ -580,17 +580,29 @@ void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs){
     mb->errors++;
     p->typechk= TYPE_UNKNOWN;
 }
-
-void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p){
-    int s1= -1, i,k;
-    Scope m=0;
 @-
 A function search should inspect all modules unless a specific module
 is given. Preference is given to the lower scopes.
-If we can not find the function, the type check returns unsuccesfully,
-setting the state as TYPE_UNKNOWN. In this case we should issue an error
-message to the user.
+The type check is set to TYPE_UNKNOWN first to enforce a proper
+analysis. This way it forms a cheap mechanism to resolve
+the type after a change by an optimizer.
+If we can not find the function, the type check returns unsuccesfully.
+In this case we should issue an error message to the user.
+
+A re-check after the optimizer call should reset the token
+to assignment.
 @c
+void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p){
+    int s1= -1, i,k;
+    Scope m=0;
+	p->typechk= TYPE_UNKNOWN;
+
+	if( p->fcn && (p->token== CMDcall || p->token== PATcall ||
+		p->token==FCNcall || p->token == FACcall)){
+			p->token= ASSIGNsymbol;
+			p->fcn = NULL;
+	}
+
     if( isaSignature(p) ) {
         for(k=0;k<p->argc;k++)
             setFixed(mb,p->argv[k]);
