@@ -103,12 +103,16 @@ def am_additional_libs(name,sep,type,list, am):
     return add + "\n"
   
 def am_deps(fd,deps,objext, am):
-  for t,deplist in deps.items():
-    t = regsub.sub("\.o",objext,t)
+  if len(am['DEPS']) <= 0:
+   for t,deplist in deps.items():
+    n = regsub.sub("\.o",".lo",t)
+    if (t != n):
+	fd.write( n + " " )
     fd.write( t + ":" )
     for d in deplist:
       fd.write( " " + am_translate_dir(d,am) )
     fd.write("\n");
+  am['DEPS'].append("DONE");
 
 
 # list of scripts to install
@@ -122,13 +126,31 @@ def am_scripts(fd, var, scripts, am):
   for script in scripts['TARGETS']:
       fd.write("install-exec-local-%s: %s\n" % (script,script))
       fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
-      fd.write("\t$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
+      fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
       fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd,script))
       fd.write("uninstall-exec-local-%s: \n" % (script))
       fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd,script))
       am['INSTALL'].append(script)
 
   am_deps(fd,scripts['DEPS'],"\.o",am);
+
+def am_doc(fd, var, docmap, am ):
+
+  name = var[4:]
+
+  doc_ext = [ 'pdf', 'ps' ]
+
+  srcs = name+"_DOCS ="
+  for target in docmap['TARGETS']:
+    t,ext = split_filename(target)
+    if (ext in doc_ext):
+      srcs = srcs + " " + am_find_srcs(target,docmap['DEPS'], am)
+  fd.write(srcs + "\n")
+
+  fd.write("all-local-%s: $(%s_DOCS)\n" % (name,name))
+  am['ALL'].append(name)
+  
+  am_deps(fd,docmap['DEPS'],"\.o",am);
 
 def am_binary(fd, var, binmap, am ):
   
@@ -144,14 +166,14 @@ def am_binary(fd, var, binmap, am ):
     else: # link
       src = binmap[0][4:]
       fd.write("install-exec-local-%s: %s\n" % (name,src))
-      fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n" % (name))
+      fd.write("\t-$(RM) $(DESTDIR)$(bindir)/%s\n" % (name))
       fd.write("\tcd $(DESTDIR)$(bindir); $(LN_S) %s %s\n\n" % (src,name))
       fd.write("uninstall-exec-local-%s: \n" % (name))
       fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n\n" % (name))
       am['INSTALL'].append(name)
 
       fd.write("all-local-%s: %s\n" % (name,src))
-      fd.write("\t$(RM) %s\n" % (name))
+      fd.write("\t-$(RM) %s\n" % (name))
       fd.write("\t$(LN_S) %s %s\n\n" % (src,name))
       am['ALL'].append(name)
     return
@@ -191,6 +213,8 @@ def am_binary(fd, var, binmap, am ):
   if (len(SCRIPTS) > 0):
     fd.write("%s_scripts = %s\n" % (binname,am_list2string(SCRIPTS," ","")))
     am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
+    fd.write("all-local-%s: $(%s_scripts)\n" % (name,name))
+    am['ALL'].append(name)
 
   am_find_hdrs(am, binmap)
 
@@ -234,6 +258,8 @@ def am_bins(fd, var, binsmap, am ):
     if (len(SCRIPTS) > 0):
       fd.write("%s_scripts = %s\n\n" % (name,am_list2string(SCRIPTS," ","")))
       am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
+      fd.write("all-local-%s: $(%s_scripts)\n" % (name,name))
+      am['ALL'].append(name)
 
   if (binsmap.has_key('HEADERS')):
     HDRS = []
@@ -290,6 +316,8 @@ def am_library(fd, var, libmap, am ):
   if (len(SCRIPTS) > 0):
     fd.write("%s_scripts = %s\n" % (libname,am_list2string(SCRIPTS," ","")))
     am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
+    fd.write("all-local-%s: $(%s_scripts)\n" % (libname,libname))
+    am['ALL'].append(libname)
 
   am_find_hdrs(am, libmap)
 
@@ -339,6 +367,8 @@ def am_libs(fd, var, libsmap, am ):
     if (len(SCRIPTS) > 0):
       fd.write("%s_scripts = %s\n\n" % (lib,am_list2string(SCRIPTS," ","")))
       am['BUILT_SOURCES'].append("$(" + lib + "_scripts)")
+      fd.write("all-local-%s: $(%s_scripts)\n" % (lib,lib))
+      am['ALL'].append(lib)
 
   if (libsmap.has_key('HEADERS')):
     HDRS = []
@@ -384,6 +414,7 @@ output_funcs = { 'SUBDIRS': am_assignment,
 		 'LIB' : am_library,
 		 'BINS' : am_bins,
 		 'BIN' : am_binary,
+		 'DOC' : am_doc,
  		 'INCLUDES' : am_includes,
 		 'MTSAFE' : am_mtsafe,
 		 'SCRIPTS' : am_scripts,
@@ -430,6 +461,7 @@ CXXEXT = \\\"cc\\\"
   am['HDRS'] = []
   am['LIBDIR'] = "lib"
   am['ALL'] = []
+  am['DEPS'] = []
   for i in tree.keys():
     j = i
     if (string.find(i,'_') >= 0):

@@ -1,0 +1,814 @@
+stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
+
+#> Mtest:	milS 02_Modules_plain milS
+#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 02_Modules_plain.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for CYGWIN32_NT4.0/32bit on Wed Apr 26 03:14:02  2000.
+#script:02_Modules_plain.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+#-----------------#
+# 24 modules	  #
+#-----------------#
+[ "aggr"	  ]
+[ "alarm"	  ]
+[ "ascii_io"	  ]
+[ "bitset"	  ]
+[ "bitvector"	  ]
+[ "blob"	  ]
+[ "cluster"	  ]
+[ "counters"	  ]
+[ "ddbench"	  ]
+[ "decimal"	  ]
+[ "enum"	  ]
+[ "io"		  ]
+[ "lock"	  ]
+[ "logger"	  ]
+[ "malalgebra"	  ]
+[ "mapi"	  ]
+[ "mmath"	  ]
+[ "monettime"	  ]
+[ "oo7"		  ]
+[ "radix"	  ]
+[ "salgebra"	  ]
+[ "stats"	  ]
+[ "tcpip"	  ]
+[ "temporal"	  ]
+[ "tpcd"	  ]
+[ "uchr"	  ]
+[ "unix"	  ]
+[ "url"		  ]
+[ "wisc"	  ]
+[ "xtables"	  ]
+[ "mprof"	  ]
+
+Module: "aggr"
+
+[ 18 ]
+[ 18 ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature							| help				  #
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ "avg",	  "PROC: ",	  "avg(BAT[any,any::1]) : any::1",				  "not available"		  ]
+[ "card",	  "PROC: ",	  "card(BAT[any,any]) : int",					  "not available"		  ]
+[ "size",	  "PROC: ",	  "size(BAT[any,bit]) : int",					  "not available"		  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[int,dbl], BAT[int,any]) : BAT[int,dbl]",		  "grouped tail average"	  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",		  "grouped tail average"	  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",		  "grouped tail average"	  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail average"	  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",		  "grouped tail average"	  ]
+[ "{card}",	  "PROC: ",	  "{card}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
+[ "{count}",	  "COMMAND: ",	  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "grouped count"		  ]
+[ "{max}",	  "COMMAND: ",	  "{max}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",	  "grouped tail maximum"	  ]
+[ "{min}",	  "COMMAND: ",	  "{min}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",	  "grouped tail minimum"	  ]
+[ "{size}",	  "COMMAND: ",	  "{size}(BAT[oid,bit], BAT[oid,any]) : BAT[oid,int]",		  "grouped count of true values"  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail sum"		  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",		  "grouped tail sum"		  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",		  "grouped tail sum"		  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail sum"		  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",		  "grouped tail sum"		  ]
+
+Module: "alarm"
+
+[ 6 ]
+[ 6 ]
+#---------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help					  #
+#---------------------------------------------------------------------------------------------------------#
+[ "alarm",	  "COMMAND: ",	  "alarm(int, str) : void",	  "execute action in X secs"		  ]
+[ "ctime",	  "COMMAND: ",	  "ctime() : str",		  "current time as a string"		  ]
+[ "epoch",	  "COMMAND: ",	  "epoch() : int",		  "current time as unix epoch"		  ]
+[ "sleep",	  "COMMAND: ",	  "sleep(int) : void",		  "sleep X secs"			  ]
+[ "time",	  "COMMAND: ",	  "time() : int",		  "time in millisecs"			  ]
+[ "timers",	  "COMMAND: ",	  "timers() : BAT[str,str]",	  "give a list of all active timers"	  ]
+
+Module: "ascii_io"
+
+[ 2 ]
+[ 2 ]
+#-------------------------------------------------------------------------#
+# function	| type		| signature			| help	  #
+#-------------------------------------------------------------------------#
+[ "dump",	  "COMMAND: ",	  "dump(str, str, int) : void",	  ""	  ]
+[ "load",	  "COMMAND: ",	  "load(str, str, int) : void",	  ""	  ]
+
+Module: "bitset"
+
+[ 12 ]
+[ 12 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature					| help							  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "bitset_and",		  "COMMAND: ",	  "bitset_and(bitset, bitset) : bitset",	  "AND this BitSet with an other BitSet."		  ]
+[ "bitset_clearBit",	  "COMMAND: ",	  "bitset_clearBit(bitset, int) : bitset",	  "Clear the specified bit in this BitSet."		  ]
+[ "bitset_flipBit",	  "COMMAND: ",	  "bitset_flipBit(bitset, int) : bitset",	  "Flip the specified bit in this BitSet."		  ]
+[ "bitset_getBit",	  "COMMAND: ",	  "bitset_getBit(bitset, int) : bit",		  "Get the specified bit from this BitSet."		  ]
+[ "bitset_not",		  "COMMAND: ",	  "bitset_not(bitset) : bitset",		  "NOT this BitSet."					  ]
+[ "bitset_or",		  "COMMAND: ",	  "bitset_or(bitset, bitset) : bitset",		  "OR this BitSet with an other BitSet."		  ]
+[ "bitset_setBit",	  "COMMAND: ",	  "bitset_setBit(bitset, int) : bitset",	  "Set the specified bit from this BitSet."		  ]
+[ "bitset_toInt",	  "COMMAND: ",	  "bitset_toInt(bitset) : int",			  "Convert this BitSet to an integer."			  ]
+[ "bitset_toStr",	  "PROC: ",	  "bitset_toStr(any) : any",			  "not available"					  ]
+[ "bitset_xor",		  "COMMAND: ",	  "bitset_xor(bitset, bitset) : bitset",	  "XOR this BitSet with an other BitSet."		  ]
+[ "newBitset",		  "COMMAND: ",	  "newBitset() : bitset",			  "Create a new empty BitSet."				  ]
+[ "newBitset",		  "COMMAND: ",	  "newBitset(int) : bitset",			  "Create a new BitSet from an existing integer."	  ]
+
+Module: "bitvector"
+
+[ 11 ]
+[ 11 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature						| help							  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[allocate]",	  "COMMAND: ",	  "[allocate](int, bit) : BAT[void,lng]",		  "Allocate a new and empty bitvector"			  ]
+[ "[and]",	  "COMMAND: ",	  "[and](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",  "Logically ANDs two bitvectors"			  ]
+[ "[clr]",	  "COMMAND: ",	  "[clr](BAT[any::1,lng], int) : void",			  "Clear a bit in a bitvector"				  ]
+[ "[count]",	  "COMMAND: ",	  "[count](BAT[void,lng]) : int",			  "Count the number of bits set"			  ]
+[ "[decode]",	  "COMMAND: ",	  "[decode](BAT[void,lng]) : BAT[oid,oid]",		  "Decodes a bitvector into a real BAT"			  ]
+[ "[encode]",	  "COMMAND: ",	  "[encode](BAT[any::1,oid]) : BAT[void,lng]",		  "Encode a BAT with tail values into a bitvector"	  ]
+[ "[isclr]",	  "COMMAND: ",	  "[isclr](BAT[any::1,lng], int) : bit",		  "Is bit bnum not set?"				  ]
+[ "[isset]",	  "COMMAND: ",	  "[isset](BAT[any::1,lng], int) : bit",		  "Is bit bnum set?"					  ]
+[ "[or]",	  "COMMAND: ",	  "[or](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "Logically ORs two bitvectors"			  ]
+[ "[prt]",	  "COMMAND: ",	  "[prt](BAT[void,lng]) : void",			  "Print a bitvector"					  ]
+[ "[set]",	  "COMMAND: ",	  "[set](BAT[any::1,lng], int) : void",			  "Set a bit in a bitvector"				  ]
+
+Module: "blob"
+
+[ 3 ]
+[ 3 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help																  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "toblob",	  "COMMAND: ",	  "toblob(str) : blob",		  "store a string as a blob."													  ]
+[ "tostr",	  "COMMAND: ",	  "tostr(blob) : str",		  "get the bytes from blob as a string, till the first 0 byte\n         or the end of the blob"					  ]
+[ "tostr",	  "COMMAND: ",	  "tostr(blob, int) : str",	  "get the bytes from blob as a string, starting at byte 'index'\n         till the first 0 byte or the end of the blob."	  ]
+
+Module: "cluster"
+
+[ 3 ]
+[ 3 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature						| help																																																																																  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "acccluster",		  "COMMAND: ",	  "acccluster(BAT[any,any], int) : void",		  "Call the accelerator-specific cluster function to rearrange the\n cause less page faults."																																																																					  ]
+[ "heapclustercopy",	  "COMMAND: ",	  "heapclustercopy(BAT[any,any], BAT[any,any]) : void",	  "Rearrange the *tail* atoms -- that are supposed to of a variable sized\n typle like 'str' -- in the tail heap of the first BAT. They are put in\n order of appearance of the head elements of the second BAT. That is,\n for each head element from the second BAT we look up the appearance of\n this head element in the first BAT, and re-insert the corresponding tail\n element.\n WARNING: the second BAT *must* be a superset of the first, otherwise\n tuples will be lost!\n WARNING: you better work with head-unique BAts for this, otherwise\n the semantics are very vague.\n NOTE: the two BATs may be equal, in which case lookup is trivial."  ]
+[ "order",		  "COMMAND: ",	  "order(BAT[any::1,any::2], int) : BAT[any::1,any::2]",  "Fast order() on BATs that exceed main-memory, using partitioning. Returns b."																																																																						  ]
+
+Module: "counters"
+
+[ 7 ]
+[ 7 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature				| help													  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "check_cpu",		  "COMMAND: ",	  "check_cpu() : void",			  "on Linux systems: check, whether CPU is P5, P6, or K7\n  (to be used in .LOAD sequence, only)"	  ]
+[ "create_counter",	  "COMMAND: ",	  "create_counter(int, int) : counter",	  "start counters for two events specified by number"							  ]
+[ "create_counter",	  "COMMAND: ",	  "create_counter(str, str) : counter",	  "start counters for two events specified by name"							  ]
+[ "get_counter",	  "COMMAND: ",	  "get_counter(counter) : counter",	  "stop the counting and retrieve the results"								  ]
+[ "read_counter",	  "COMMAND: ",	  "read_counter(counter) : BAT[str,lng]", "store the retrieved results in a BAT"								  ]
+[ "show_native_events",	  "COMMAND: ",	  "show_native_events() : BAT[int,str]",  "all available events"										  ]
+[ "show_unified_events",  "COMMAND: ",	  "show_unified_events() : BAT[int,str]", "all unified event names"										  ]
+
+Module: "ddbench"
+
+[ 44 ]
+[ 44 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature										| help																																													  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "CTorderby",		  "PROC: ",	  "CTorderby(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",				  "not available"																																											  ]
+[ "CTsubgroup",		  "PROC: ",	  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",		  "not available"																																											  ]
+[ "enum_group",		  "COMMAND: ",	  "enum_group(BAT[void,any], BAT[void,any]) : BAT[void,any]",				  "optimized group: use a byte-array[card(ct)*card(b)] instead of a hash\n\t           table and directly create enumerated group oid-s"																												  ]
+[ "enum_join",		  "COMMAND: ",	  "enum_join(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "positional join if the b2 head type is an enumerated oid"																																						  ]
+[ "enum_semijoin",	  "COMMAND: ",	  "enum_semijoin(BAT[void,any::1], BAT[any,any]) : BAT[oid,any::1]",			  "positional semijoin if the b2 head type is an enumerated oid"																																					  ]
+[ "enum_view",		  "COMMAND: ",	  "enum_view(BAT[void,any]) : BAT[oid,int]",						  "produces a histogram that is an adaptation of the enum-lookup table\n  of the tail of b. Its head column differs: it contains oids; namely \n  the first oid of 'b' where the original lookup head value occured\n  in the tail of 'b'. In other words :-), this produces the lookup\n  table needed to create an 'enumeration view' that represents CTgroup(b)."	  ]
+[ "group",		  "PROC: ",	  "group(BAT[oid,any]) : BAT[oid,oid]",							  "not available"																																											  ]
+[ "group",		  "PROC: ",	  "group(BAT[oid,any], BAT[oid,any]) : BAT[oid,any]",					  "not available"																																											  ]
+[ "group",		  "PROC: ",	  "group(BAT[void,any]) : BAT[oid,oid]",						  "not available"																																											  ]
+[ "group",		  "PROC: ",	  "group(BAT[void,any], BAT[void,any]) : BAT[oid,any]",					  "not available"																																											  ]
+[ "kintersect",		  "COMMAND: ",	  "kintersect(BAT[oid,any::1], BAT[void,bit32]) : BAT[oid,any::1]",			  "do b.semijoin(sel.tobat); b must be dense and sel must correspond to it.\n"																																				  ]
+[ "mjoin",		  "PROC: ",	  "mjoin(BAT[any::1,any::3], BAT[any::3,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
+[ "mjoin",		  "PROC: ",	  "mjoin(BAT[any::1,any], BAT[void,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
+[ "mjoin",		  "PROC: ",	  "mjoin(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
+[ "not",		  "PROC: ",	  "not(BAT[void,bit32]) : BAT[void,bit32]",						  "not available"																																											  ]
+[ "orderby_table",	  "PROC: ",	  "orderby_table(str, str, ..BAT[any::1,any]..) : any",					  "not available"																																											  ]
+[ "print",		  "PROC: ",	  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",				  "not available"																																											  ]
+[ "refine",		  "COMMAND: ",	  "refine(BAT[oid,void], BAT[oid,any::1], any::1) : BAT[oid,void]",			  "like val_oidsubsel(sel,b,v), but *OVERWRITES* sel with result."																																					  ]
+[ "refine",		  "COMMAND: ",	  "refine(BAT[oid,void], BAT[oid,any::1], any::1, any::1) : BAT[oid,void]",		  "like rng_oidsubsel(sel,b,lo,hi), but *OVERWRITES* sel with result."																																					  ]
+[ "refine",		  "COMMAND: ",	  "refine(BAT[void,bit32], BAT[oid,any::1], any::1) : BAT[void,bit32]",			  "like val_bitsubsel(sel,b,v), but *OVERWRITES* sel with result."																																					  ]
+[ "refine",		  "COMMAND: ",	  "refine(BAT[void,bit32], BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",		  "like rng_bitsubsel(sel,b,lo,hi), but *OVERWRITES* sel with result."																																					  ]
+[ "rng_bitselect",	  "COMMAND: ",	  "rng_bitselect(BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",			  "do a range-scan rangeselect, but output the result as a bitmask, partitioned\n  in 32-bits integers. "																																  ]
+[ "rng_oidselect",	  "COMMAND: ",	  "rng_oidselect(BAT[oid,any::1], any::1, any::1) : BAT[void,oid]",			  "uselect, optimized for enumeration types"																																								  ]
+[ "rngs_bitselect",	  "COMMAND: ",	  "rngs_bitselect(BAT[oid,any::1], any::1, any::1, ..any::1..) : BAT[int,BAT]",		  "computes multiple bitmasks for each equi-select 'v' on 'sel'"																																					  ]
+[ "rngs_oidselect",	  "COMMAND: ",	  "rngs_oidselect(BAT[oid,any::1], any::1, any::1, ..any::1..) : BAT[int,BAT]",		  "uselect, optimized for enum types, on multiple range-select predicates"																																				  ]
+[ "semijoin",		  "PROC: ",	  "semijoin(BAT[void,any::1], BAT[any,any]) : BAT[oid,any::1]",				  "not available"																																											  ]
+[ "semijoin",		  "PROC: ",	  "semijoin(BAT[void,bit32], BAT[void,bit32]) : BAT[void,bit32]",			  "not available"																																											  ]
+[ "stats",		  "COMMAND: ",	  "stats(BAT[void,bit32]) : BAT[str,int]",						  "produce info on this bit-selection"																																									  ]
+[ "subhisto",		  "COMMAND: ",	  "subhisto(BAT[oid,any::1], BAT[oid,any]) : BAT[any,int]",				  "computes a subset-histogram on b, receiving the subset as a selection BAT"																																				  ]
+[ "subhisto",		  "COMMAND: ",	  "subhisto(BAT[oid,any::1], BAT[void,bit32]) : BAT[any,int]",				  "computes a subset-histogram on b, receiving the subset as a bitmask"																																					  ]
+[ "subhistos",		  "COMMAND: ",	  "subhistos(BAT[oid,any::1], ..BAT[void,bit32]..) : BAT[int,BAT]",			  "computes multiple subset-histograms on b, receiving multiple bitmasks"																																				  ]
+[ "subselect",		  "COMMAND: ",	  "subselect(BAT[oid,void], BAT[oid,any::1], any::1) : BAT[oid,void]",			  "uselect, on b.semijoin(sel), optimized for enum types"																																						  ]
+[ "subselect",		  "COMMAND: ",	  "subselect(BAT[oid,void], BAT[oid,any::1], any::1, any::1) : BAT[oid,void]",		  "uselect, on b.semijoin(sel), optimized for enum types"																																						  ]
+[ "subselect",		  "COMMAND: ",	  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1) : BAT[void,bit32]",		  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
+[ "subselect",		  "COMMAND: ",	  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",	  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
+[ "table",		  "PROC: ",	  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",				  "not available"																																											  ]
+[ "tobat",		  "COMMAND: ",	  "tobat(BAT[void,bit32]) : BAT[oid,void]",						  "convert a bat[void,bit32] bitmap selection into a BAT of oids"																																					  ]
+[ "val_bitselect",	  "COMMAND: ",	  "val_bitselect(BAT[oid,any::1], any::1) : BAT[void,bit32]",				  "do a range-scan equiselect, but output the result as a bitmask, partitioned\n  in 32-bits integers. "																																  ]
+[ "val_oidselect",	  "COMMAND: ",	  "val_oidselect(BAT[oid,any::1], any::1) : BAT[void,oid]",				  "uselect, optimized for enumeration types"																																								  ]
+[ "vals_bitselect",	  "COMMAND: ",	  "vals_bitselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "computes multiple bitmasks for each equi-select 'v' on 'sel'"																																					  ]
+[ "vals_oidselect",	  "COMMAND: ",	  "vals_oidselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "uselect, optimized for enum types, on multiple equi-select predicates"																																				  ]
+[ "{count}",		  "PROC: ",	  "{count}(BAT[any::1,any]) : BAT[any::1,int]",						  "not available"																																											  ]
+[ "{count}",		  "PROC: ",	  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
+[ "{count}",		  "PROC: ",	  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
+
+Module: "decimal"
+
+[ 29 ]
+[ 29 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature								| help																																																																																							  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "*",			  "OPERATOR: ",	  "*(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 * val2)."																																																																																  ]
+[ "+",			  "OPERATOR: ",	  "+(decimal, decimal) : decimal",					  "Returns a decimal whose value is extactly (val1 + val2)."																																																																																  ]
+[ "-",			  "OPERATOR: ",	  "-(decimal) : decimal",						  "Returns a decimal whose value is -1 * value, with equal scale and precision as 'value'."																																																																												  ]
+[ "-",			  "OPERATOR: ",	  "-(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 - val2)."																																																																																  ]
+[ "/",			  "OPERATOR: ",	  "/(decimal, decimal) : decimal",					  "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. \n      This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). \n      Use the tertiary divide(dum,div,prec) command for dividing with arbitrary precision. \n      Division by zero returns decimal(nil)."																																																		  ]
+[ "[/]",		  "PROC: ",	  "[/](BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",		  "not available"																																																																																					  ]
+[ "[divide]",		  "PROC: ",	  "[divide](BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",	  "not available"																																																																																					  ]
+[ "abs",		  "COMMAND: ",	  "abs(decimal) : decimal",						  "Returns a decimal whose value is the absolute value of this number."																																																																															  ]
+[ "addscale",		  "COMMAND: ",	  "addscale(decimal, int) : decimal",					  "Return a  decimal with the same number as value, but with scale = value.scale + delta.\n      This can be seen as shifting the dot in the floating-point value of the decimal\n      to the left (delta < 0) or right (delta > 0) (!DS2.2)."																																																										  ]
+[ "bulkdivide",		  "COMMAND: ",	  "bulkdivide(BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",	  "(!DS2.2)"																																																																																						  ]
+[ "bulkdivide",		  "COMMAND: ",	  "bulkdivide(BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",  "(!DS2.2)"																																																																																						  ]
+[ "dbl",		  "COMMAND: ",	  "dbl(decimal) : dbl",							  "Return the value of a decimal as a double (return dbl(nil) on overflow)."																																																																														  ]
+[ "decimal",		  "COMMAND: ",	  "decimal(dbl) : decimal",						  "Create a decimal from a double value."																																																																																		  ]
+[ "decimal",		  "COMMAND: ",	  "decimal(flt) : decimal",						  "Create a decimal from a float value."																																																																																		  ]
+[ "decimal",		  "COMMAND: ",	  "decimal(int) : decimal",						  "Translates an integer into a decimal."																																																																																		  ]
+[ "decimal",		  "COMMAND: ",	  "decimal(lng) : decimal",						  "Translates a long into a decimal."																																																																																			  ]
+[ "decimal_minrepeat",	  "COMMAND: ",	  "decimal_minrepeat(int) : void",					  "set number of repeating characters after which to condense decimals (!DS2.2)."																																																																													  ]
+[ "divide",		  "COMMAND: ",	  "divide(decimal, decimal, int) : decimal",				  "Returns a decimal whose value is (val1 / val2), truncated to a specified precision.\n      Division by zero returns decimal(nil)."																																																																							  ]
+[ "flt",		  "COMMAND: ",	  "flt(decimal) : flt",							  "Return the value of a decimal as a float (return flt(nil) on overflow)."																																																																														  ]
+[ "getprecision",	  "COMMAND: ",	  "getprecision(decimal) : int",					  "Returns the precision of this number (!DS2.2)."																																																																																	  ]
+[ "getscale",		  "COMMAND: ",	  "getscale(decimal) : int",						  "Returns the scale of this number (!DS2.2)"																																																																																		  ]
+[ "int",		  "COMMAND: ",	  "int(decimal) : int",							  "Return the truncated value of a decimal as an integer (return int(nil) on overflow)."																																																																												  ]
+[ "istenfold",		  "COMMAND: ",	  "istenfold(decimal) : bit",						  "returns whether decimal is an exact multiple of 10 (!DS2.2)."																																																																															  ]
+[ "lng",		  "COMMAND: ",	  "lng(decimal) : lng",							  "Return the truncated value of a decimal as a long (return lng(nil) on overflow)."																																																																													  ]
+[ "pow",		  "COMMAND: ",	  "pow(decimal, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision of the result is the precision of the decimal (!DS2.2)."																																																																								  ]
+[ "pow",		  "COMMAND: ",	  "pow(decimal, int, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision argument determines the maximum precision of the result (!DS2.2)."																																																																						  ]
+[ "setprecision",	  "COMMAND: ",	  "setprecision(decimal, int) : decimal",				  "Return the same number but with a different precision; i.e. truncated or zero-padded (!DS2.2)."																																																																											  ]
+[ "setscale",		  "COMMAND: ",	  "setscale(decimal, int) : decimal",					  "Normalize the number of a decimal by setting the scale to a fixed value.\n      This is compensated by making the number shorted (by truncation) or by enlarging\n      it with trailing zeros (!DS2.2)."																																																														  ]
+[ "str",		  "COMMAND: ",	  "str(decimal, str) : str",						  "Formats a decimal in a fixed-width string (truncated, if necessary).\n      format = [ '+' ] ( N1 | ( N1 '.' N2 ) | ( '.' N2 ) ) [ 'E' N3 ]\n       with: Nx = a number of the form [0-9]+ (possibly starting with 0)\n      where: N1 = is the number of digits before the comma (default = 0)\n             N2 = is the number of digits after the comma (default = 1)\n             N3 = the number of digits to use for the scale (default = 2)\n      A zero will be printed with only one zero digit (left space-padded), unless N1 has a \n      leading zero, in which case a zero-padded number of width N1 is produced. \n      If the plus at start is specified, positive numbers start with a plus. "	  ]
+
+Module: "enum"
+
+[ 18 ]
+[ 18 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature								| help										  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[decode]",		  "COMMAND: ",	  "[decode](int, BAT[any::1,any]) : BAT[any::1,any]",			  "decode a BAT of tail values, into a new BAT of decoded values"		  ]
+[ "[encode]",		  "COMMAND: ",	  "[encode](int, BAT[any::1,any]) : BAT[any::1,any]",			  "encode a BAT of tail values, into a new BAT of encoded values"		  ]
+[ "decode",		  "COMMAND: ",	  "decode(int, any) : any",						  "decode a value"								  ]
+[ "encode",		  "COMMAND: ",	  "encode(int, any) : any",						  "encode a value"								  ]
+[ "enum_create",	  "COMMAND: ",	  "enum_create(str, BAT[any,any]) : int",				  "create a new enumeration type."						  ]
+[ "enum_destroy",	  "COMMAND: ",	  "enum_destroy(int) : void",						  "destroy an enumeration type"							  ]
+[ "enum_drop",		  "PROC: ",	  "enum_drop(int) : any",						  "deactivate an enumeration type."						  ]
+[ "enum_ishisto",	  "COMMAND: ",	  "enum_ishisto(int, BAT[any,any]) : bit",				  "returns whether enum_table(tpe) is a histogram on b's head column"		  ]
+[ "enum_load",		  "COMMAND: ",	  "enum_load(BAT[any,int]) : int",					  "load/activate a previously created enumeration type."			  ]
+[ "enum_load",		  "PROC: ",	  "enum_load(str) : any",						  "activate an enumeration type from a histogram bat."				  ]
+[ "enum_print",		  "COMMAND: ",	  "enum_print(stream, BAT[any,int], BAT[any,any]) : void",		  "quick file print of 2 synced bats, an int and enumerated string tail"	  ]
+[ "enum_print",		  "COMMAND: ",	  "enum_print(stream, BAT[any,int], BAT[any,any], BAT[any,any]) : void",  "quick file print of 3 synced bats, and int tail and two enumerated strings"	  ]
+[ "enum_sethisto",	  "COMMAND: ",	  "enum_sethisto(int, BAT[any,any]) : void",				  "registers the fact that enum_table(tpe) is a histogram on b's head column"	  ]
+[ "enum_table",		  "COMMAND: ",	  "enum_table(int) : BAT[any,any]",					  "return the enumeration BAT of an enum type"					  ]
+[ "enum_trick",		  "PROC: ",	  "enum_trick(BAT[oid,any], BAT[any,int]) : BAT[oid,any]",		  "create a view on a BAT with a diffrent enum map."				  ]
+[ "isenum",		  "COMMAND: ",	  "isenum(int) : bit",							  "returns true iff tpe is an enumerated type"					  ]
+[ "lower",		  "COMMAND: ",	  "lower(int, any) : any",						  "encode to the lowest value in the encoded domain that is larger than v"	  ]
+[ "upper",		  "COMMAND: ",	  "upper(int, any) : any",						  "encode to the hightes value in the encoded domain that is smaller than v"	  ]
+
+Module: "io"
+
+[ 23 ]
+[ 23 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature						| help									  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fclose",	  "COMMAND: ",	  "fclose(stream) : void",				  "See: man fclose"							  ]
+[ "fdpipe",	  "COMMAND: ",	  "fdpipe(bipipe, bit, str) : stream",			  "Open a stream in one direction through a pipe."			  ]
+[ "feof",	  "COMMAND: ",	  "feof(stream) : bit",					  "See: man feof"							  ]
+[ "ferror",	  "COMMAND: ",	  "ferror() : str",					  "returns last error message. str(nil) if none. "			  ]
+[ "fflush",	  "COMMAND: ",	  "fflush(stream) : void",				  "See: man fflush"							  ]
+[ "fgetc",	  "COMMAND: ",	  "fgetc(stream) : chr",				  "See: man fgetc"							  ]
+[ "fgets",	  "COMMAND: ",	  "fgets(stream) : str",				  "See: man fgets"							  ]
+[ "fopen",	  "COMMAND: ",	  "fopen(str, str) : stream",				  "See: man fopen. Returns stream, or stream(nil) on failure."		  ]
+[ "fprint",	  "COMMAND: ",	  "fprint(stream, ..any..) : void",			  "Print a (comma seperated) list of arguments"				  ]
+[ "fprintf",	  "COMMAND: ",	  "fprintf(stream, str, ..any..) : void",		  "See: man fprintf"							  ]
+[ "fputc",	  "COMMAND: ",	  "fputc(int, stream) : void",				  "See: man fputs"							  ]
+[ "fputs",	  "COMMAND: ",	  "fputs(str, stream) : void",				  "See: man fputs"							  ]
+[ "fread",	  "COMMAND: ",	  "fread(stream, int) : blob",				  "See: man fread"							  ]
+[ "freopen",	  "COMMAND: ",	  "freopen(str, str, stream) : stream",			  "See: man freopen. Returns stream, or stream(nil) on failure."	  ]
+[ "fseek",	  "COMMAND: ",	  "fseek(stream, int, int) : int",			  "See: man fseek"							  ]
+[ "ftable",	  "COMMAND: ",	  "ftable(stream, ..BAT[any::1,any]..) : void",		  "Print an n-ary table to a file."					  ]
+[ "ftable",	  "COMMAND: ",	  "ftable(stream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
+[ "fwrite",	  "COMMAND: ",	  "fwrite(stream, blob, int) : void",			  "See: man fwrite"							  ]
+[ "fwrite",	  "COMMAND: ",	  "fwrite(stream, str, int) : void",			  "See: man fwrite"							  ]
+[ "popen",	  "COMMAND: ",	  "popen() : bipipe",					  "Open a bidirectional pipe. See: man pipe"				  ]
+[ "stderr",	  "COMMAND: ",	  "stderr() : stream",					  "return the error stream for the database console"			  ]
+[ "stdin",	  "COMMAND: ",	  "stdin() : stream",					  "return the input stream to the database client"			  ]
+[ "stdout",	  "COMMAND: ",	  "stdout() : stream",					  "return the output stream for the database client"			  ]
+
+Module: "lock"
+
+[ 10 ]
+[ 10 ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help							  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "lock_create",  "COMMAND: ",	  "lock_create() : lock",	  "create an unset lock"				  ]
+[ "lock_destroy", "COMMAND: ",	  "lock_destroy(lock) : void",	  "destroy a lock"					  ]
+[ "lock_set",	  "COMMAND: ",	  "lock_set(lock) : void",	  "try to set a lock; if set, block till it is freed"	  ]
+[ "lock_try",	  "COMMAND: ",	  "lock_try(lock) : int",	  "try a lock, if free set it, if not return EBUSY"	  ]
+[ "lock_unset",	  "COMMAND: ",	  "lock_unset(lock) : void",	  "unset a lock"					  ]
+[ "sema_create",  "COMMAND: ",	  "sema_create(int) : sema",	  "create an unset sema, with an initial value"		  ]
+[ "sema_destroy", "COMMAND: ",	  "sema_destroy(sema) : void",	  "destroy a sema"					  ]
+[ "sema_down",	  "COMMAND: ",	  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"		  ]
+[ "sema_try",	  "COMMAND: ",	  "sema_try(sema) : int",	  "try the semaphpore"					  ]
+[ "sema_up",	  "COMMAND: ",	  "sema_up(sema) : void",	  "increase the semaphore"				  ]
+
+Module: "logger"
+
+[ 6 ]
+[ 6 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature			| help										  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "backupfile",		  "COMMAND: ",	  "backupfile(str) : void",	  "Backup to the file log and write the log identifier to the file logid"	  ]
+[ "backuphost",		  "COMMAND: ",	  "backuphost(str, int) : void",  "Use the host,port to backup changes to"					  ]
+[ "commit",		  "COMMAND: ",	  "commit() : void",		  "commit on all BATs to the log"						  ]
+[ "logger_debug",	  "COMMAND: ",	  "logger_debug(int) : void",	  "Set the level of debuging"							  ]
+[ "logger_listen",	  "COMMAND: ",	  "logger_listen(int) : void",	  "listens for a client willing to backup to this port"				  ]
+[ "update",		  "COMMAND: ",	  "update() : void",		  "update the all BATs using the log, TODO only needed at initialisation"	  ]
+
+Module: "malalgebra"
+
+[ 14 ]
+[ 14 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature									| help								  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fetchjoin",	  "COMMAND: ",	  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the fetch implementation of the join."	  ]
+[ "hashjoin",	  "COMMAND: ",	  "hashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the hash implementation of the join."	  ]
+[ "indexjoin",	  "COMMAND: ",	  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the index implementation of the join."	  ]
+[ "mergejoin",	  "COMMAND: ",	  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the merge implementation of the join."	  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,int]) : BAT[oid,int]",					  "grouped tail sum"						  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "grouped tail sum"						  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "grouped tail sum"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "not available"						  ]
+
+Module: "mapi"
+
+[ 2 ]
+[ 2 ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help							  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "listen",	  "COMMAND: ",	  "listen() : void",		  "start a Mapi server with the default port number."	  ]
+[ "listen",	  "COMMAND: ",	  "listen(int, int) : void",	  "start a Mapi server."				  ]
+
+Module: "mmath"
+
+[ 20 ]
+[ 20 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help																																											  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "acos",	  "COMMAND: ",	  "acos(dbl) : dbl",		  "The acos(x) function calculates the arc cosine of x;\nthat is the value whose cosine is x. The value is returned in radians\nand is mathematically defined to be between 0 and PI (inclusive)."																			  ]
+[ "asin",	  "COMMAND: ",	  "asin(dbl) : dbl",		  "The asin(x) function calculates the arc sine of x;\nthat is the value whose sine is x. The value is returned in radians\nand is mathematically defined to be between -PI/20 and -PI/2 (inclusive)."																			  ]
+[ "atan",	  "COMMAND: ",	  "atan(dbl) : dbl",		  "The atan(x) function calculates the arc tangent of x;\nthat is the value whose tangent is x. The value is returned in radians\nand is mathematically defined to be between -PI/2 and PI/2 (inclusive)."																		  ]
+[ "atan2",	  "COMMAND: ",	  "atan2(dbl, dbl) : dbl",	  "The atan2(x,y) function calculates the arc tangent of the two\nvariables x and y. It is similar to calculating the arc\ntangent of y / x, except that the signs of both arguments\nare used to determine the quadrant of the result.\nThe value is returned in radians and is mathematically defined\nto be between -PI/2 and PI/2 (inclusive)."	  ]
+[ "ceil",	  "COMMAND: ",	  "ceil(dbl) : dbl",		  "The ceil(x) function rounds x upwards to the nearest integer."																																			  ]
+[ "cos",	  "COMMAND: ",	  "cos(dbl) : dbl",		  "The cos(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
+[ "cosh",	  "COMMAND: ",	  "cosh(dbl) : dbl",		  "The cosh() function  returns the hyperbolic cosine of x,\nwhich is defined mathematically as (exp(x) + exp(-x)) / 2."																												  ]
+[ "exp",	  "COMMAND: ",	  "exp(dbl) : dbl",		  "The exp(x) function returns the value of e\n(the base of natural logarithms) raised to the power of x."																														  ]
+[ "fabs",	  "COMMAND: ",	  "fabs(dbl) : dbl",		  "The fabs(x) function  returns  the  absolute value of the \nfloating-point number x."																																  ]
+[ "floor",	  "COMMAND: ",	  "floor(dbl) : dbl",		  "The floor(x) function rounds x downwards to the nearest integer."																																			  ]
+[ "fmod",	  "COMMAND: ",	  "fmod(dbl, dbl) : dbl",	  "The fmod(x,y) function computes the remainder of dividing x by y.\nThe return value is x - n * y, where n is the quotient of x / y,\nrounded towards zero to an integer."																						  ]
+[ "log",	  "COMMAND: ",	  "log(dbl) : dbl",		  "The log(x) function returns the natural logarithm of x."																																				  ]
+[ "log10",	  "COMMAND: ",	  "log10(dbl) : dbl",		  "The log10(x) function returns the base-10 logarithm of x."																																				  ]
+[ "pow",	  "COMMAND: ",	  "pow(dbl, dbl) : dbl",	  "The pow(x,y) function  returns the value of x raised to the power of y."																																		  ]
+[ "round",	  "COMMAND: ",	  "round(dbl, int) : dbl",	  "The round(n, m) returns n rounded to m places to the right of the\ndecimal point; if m is omitted, to 0 places. m can be negative to\nround off digits left of the decimal point. m must be an integer."																		  ]
+[ "sin",	  "COMMAND: ",	  "sin(dbl) : dbl",		  "The sin(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
+[ "sinh",	  "COMMAND: ",	  "sinh(dbl) : dbl",		  "The sinh() function  returns  the  hyperbolic sine of x,\nwhich is defined mathematically as (exp(x) - exp(-x)) / 2."																												  ]
+[ "sqrt",	  "COMMAND: ",	  "sqrt(dbl) : dbl",		  "The sqrt(x) function returns the non-negative square root of x."																																			  ]
+[ "tan",	  "COMMAND: ",	  "tan(dbl) : dbl",		  "The tan(x) function returns the tangent of x,\nwhere x is given in radians"																																		  ]
+[ "tanh",	  "COMMAND: ",	  "tanh(dbl) : dbl",		  "The tanh() function returns the hyperbolic tangent of x,\nwhich is defined mathematically as sinh(x) / cosh(x)."																													  ]
+
+Module: "monettime"
+
+[ 66 ]
+[ 66 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature														| help													  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "TIMEZONE",		  "PROC: ",	  "TIMEZONE(str) : tzone",												  "not available"											  ]
+[ "[date]",		  "PROC: ",	  "[date](BAT[any::1,timestamp]) : BAT[any::1,date]",									  "not available"											  ]
+[ "[daytime]",		  "PROC: ",	  "[daytime](BAT[any::1,int]) : BAT[any::1,daytime]",									  "not available"											  ]
+[ "[daytime]",		  "PROC: ",	  "[daytime](BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,daytime]",							  "not available"											  ]
+[ "[daytime]",		  "PROC: ",	  "[daytime](BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,daytime]",							  "not available"											  ]
+[ "[daytime]",		  "PROC: ",	  "[daytime](BAT[any::1,timestamp]) : BAT[any::1,daytime]",								  "not available"											  ]
+[ "[epoch]",		  "PROC: ",	  "[epoch](BAT[any::1,timestamp]) : BAT[any::1,int]",									  "not available"											  ]
+[ "[rule]",		  "PROC: ",	  "[rule](BAT[any::1,int], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,rule]",	  "not available"											  ]
+[ "[rule]",		  "PROC: ",	  "[rule](BAT[any::1,int], BAT[any::1,str], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,rule]",			  "not available"											  ]
+[ "[rule]",		  "PROC: ",	  "[rule](BAT[any::1,int], BAT[any::1,str], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,rule]",	  "not available"											  ]
+[ "[timestamp]",	  "PROC: ",	  "[timestamp](BAT[any::1,date], BAT[any::1,daytime]) : BAT[any::1,timestamp]",						  "not available"											  ]
+[ "[timestamp]",	  "PROC: ",	  "[timestamp](BAT[any::1,int]) : BAT[any::1,timestamp]",								  "not available"											  ]
+[ "add",		  "COMMAND: ",	  "add(timestamp, lng) : timestamp",											  "returns the timestamp that comes 'msecs' (possibly negative) after 'value' (!DS2.2)."		  ]
+[ "adddays",		  "COMMAND: ",	  "adddays(date, int) : date",												  "returns the date after a number of days (possibly negative)."					  ]
+[ "addmonths",		  "COMMAND: ",	  "addmonths(date, int) : date",											  "returns the date after a number of months (possibly negative)."					  ]
+[ "addyears",		  "COMMAND: ",	  "addyears(date, int) : date",												  "returns the date after a number of years (possibly negative)."					  ]
+[ "compute",		  "COMMAND: ",	  "compute(rule, int) : date",												  "compute the date from a rule in a certain year (!DS2.2)."						  ]
+[ "date",		  "COMMAND: ",	  "date(int, int, int) : date",												  "creates a date from (year,month,day) parameters."							  ]
+[ "date",		  "COMMAND: ",	  "date(timestamp) : date",												  "extracts date from timestamp (in the local timezone)."						  ]
+[ "date",		  "COMMAND: ",	  "date(timestamp, tzone) : date",											  "extracts date from timestamp in a certain tzone (!DS2.2)."						  ]
+[ "day",		  "COMMAND: ",	  "day(date) : int",													  "extracts day from date (value between 1 and 31)"							  ]
+[ "day",		  "COMMAND: ",	  "day(rule) : int",													  "extract day from rule (!DS2.2)."									  ]
+[ "dayname",		  "COMMAND: ",	  "dayname(int) : str",													  "Returns day name from a number between [1-7], str(nil) otherwise (!DS2.2)."				  ]
+[ "daynum",		  "COMMAND: ",	  "daynum(str) : int",													  "Returns number of day [1-7] from a string; or nil if does not match any (!DS2.2)."			  ]
+[ "dayofweek",		  "COMMAND: ",	  "dayofweek(date) : int",												  "Returns the current day of the week where 1=sunday, .., 7=saturday"					  ]
+[ "dayofyear",		  "COMMAND: ",	  "dayofyear(date) : int",												  "Returns N where d is the Nth day of the year (january 1 returns 1)"					  ]
+[ "daytime",		  "COMMAND: ",	  "daytime(int, int, int, int) : daytime",										  "creates a time from (hours,minutes,seconds,milliseconds) parameters."				  ]
+[ "daytime",		  "COMMAND: ",	  "daytime(timestamp) : daytime",											  "extracts daytime from timestamp (in the local timezone)."						  ]
+[ "daytime",		  "COMMAND: ",	  "daytime(timestamp, tzone) : daytime",										  "extracts daytime from timestamp in a certain tzone (!DS2.2)."					  ]
+[ "daytime",		  "PROC: ",	  "daytime(int) : daytime",												  "not available"											  ]
+[ "daytime",		  "PROC: ",	  "daytime(int, int) : daytime",											  "not available"											  ]
+[ "daytime",		  "PROC: ",	  "daytime(int, int, int) : daytime",											  "not available"											  ]
+[ "diff",		  "COMMAND: ",	  "diff(date, date) : int",												  "returns the number of days between 'val1' and 'val2'."						  ]
+[ "diff",		  "COMMAND: ",	  "diff(timestamp, timestamp) : lng",											  "returns the number of milliseconds between 'val1' and 'val2' (!DS2.2)."				  ]
+[ "dst",		  "COMMAND: ",	  "dst(timestamp, tzone) : bit",											  "return whether DST holds in the tzone at a certain point of time (!DS2.2)."				  ]
+[ "end_dst",		  "COMMAND: ",	  "end_dst(tzone) : rule",												  "extract rule that determines end of DST from tzone (!DS2.2)."					  ]
+[ "epoch",		  "PROC: ",	  "epoch(timestamp) : int",												  "not available"											  ]
+[ "hours",		  "COMMAND: ",	  "hours(daytime) : int",												  "extracts hour from daytime (value between 0 and 23)"							  ]
+[ "milliseconds",	  "COMMAND: ",	  "milliseconds(daytime) : int",											  "extracts milliseconds from daytime (value between 0 and 999)"					  ]
+[ "minutes",		  "COMMAND: ",	  "minutes(daytime) : int",												  "extracts minutes from daytime (value between 0 and 59)"						  ]
+[ "minutes",		  "COMMAND: ",	  "minutes(rule) : int",												  "extract minutes from rule (!DS2.2)."									  ]
+[ "minutes",		  "COMMAND: ",	  "minutes(tzone) : int",												  "extract number of minutes that tzone is offset wrt GMT (!DS2.2)."					  ]
+[ "monettime_synonyms",	  "COMMAND: ",	  "monettime_synonyms(bit) : void",											  "Allow synonyms for the parse format of date/timestamp in addition ot their print format (!DS2.2)."	  ]
+[ "month",		  "COMMAND: ",	  "month(date) : int",													  "extracts month from date (value between 1 and 12)"							  ]
+[ "month",		  "COMMAND: ",	  "month(rule) : int",													  "extract month from rule (!DS2.2)."									  ]
+[ "monthname",		  "COMMAND: ",	  "monthname(int) : str",												  "Returns month name from a number between [1-12], str(nil) otherwise (!DS2.2)."			  ]
+[ "monthnum",		  "COMMAND: ",	  "monthnum(str) : int",												  "Returns month number [1-12] from a string; or nil if does not match any (!DS2.2)."			  ]
+[ "msecs",		  "PROC: ",	  "msecs(int, int, int, int, int) : lng",										  "not available"											  ]
+[ "olddate",		  "COMMAND: ",	  "olddate(str) : date",												  "create a date from the old instant format."								  ]
+[ "oldduration",	  "COMMAND: ",	  "oldduration(str) : int",												  "parse the old duration format and return an (estimated) number of days."				  ]
+[ "rule",		  "COMMAND: ",	  "rule(int, int, int, int) : rule",											  "create a DST start/end date rule. (!DS2.2)"								  ]
+[ "rule",		  "PROC: ",	  "rule(int, int, int, int, int) : rule",										  "not available"											  ]
+[ "rule",		  "PROC: ",	  "rule(int, str, int, int) : rule",											  "not available"											  ]
+[ "rule",		  "PROC: ",	  "rule(int, str, int, int, int) : rule",										  "not available"											  ]
+[ "seconds",		  "COMMAND: ",	  "seconds(daytime) : int",												  "extracts seconds from daytime (value between 0 and 59)"						  ]
+[ "start_dst",		  "COMMAND: ",	  "start_dst(tzone) : rule",												  "extract rule that determines start of DST from tzone (!DS2.2)."					  ]
+[ "timestamp",		  "COMMAND: ",	  "timestamp(date, daytime) : timestamp",										  "creates a timestamp from (date,daytime) parameters (in the local timezone)."				  ]
+[ "timestamp",		  "COMMAND: ",	  "timestamp(date, daytime, tzone) : timestamp",									  "creates a timestamp from (date,daytime,tzone) parameters (!DS2.2)."					  ]
+[ "timestamp",		  "PROC: ",	  "timestamp(int) : timestamp",												  "not available"											  ]
+[ "tzone",		  "COMMAND: ",	  "tzone(int) : tzone",													  "create a tzone as a simple hour difference from GMT. (!DS2.2)"					  ]
+[ "tzone",		  "COMMAND: ",	  "tzone(int, rule, rule) : tzone",											  "create a tzone as an hour difference from GMT and a DST. (!DS2.2)"					  ]
+[ "tzone_local",	  "COMMAND: ",	  "tzone_local() : tzone",												  "get the local tzone; which is used for printing timestamps (!DS2.2)"					  ]
+[ "tzone_local",	  "COMMAND: ",	  "tzone_local(tzone) : void",												  "set the local tzone; which is used for printing timestamps (!DS2.2)"					  ]
+[ "weekday",		  "COMMAND: ",	  "weekday(rule) : int",												  "extract weekday from rule (!DS2.2)."									  ]
+[ "weekofyear",		  "COMMAND: ",	  "weekofyear(date) : int",												  "Returns the week number in the year."								  ]
+[ "year",		  "COMMAND: ",	  "year(date) : int",													  "extracts year from date (nonzero value between -5867411 and +5867411)."				  ]
+
+Module: "oo7"
+
+[ 5 ]
+[ 5 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature									| help																																		  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "closure",	  "COMMAND: ",	  "closure(BAT[any::1,any::1]) : BAT[any::1,any::1]",				  "Computes the transitive closure of all points in the 'edges'\ngraph. Breadth-first traversal is used (repeated forward joins)."																		  ]
+[ "oo7create",	  "COMMAND: ",	  "oo7create(str) : void",							  "Create the OO7 database schema and fill it. Run with -help for info."																									  ]
+[ "oo7delete",	  "COMMAND: ",	  "oo7delete() : void",								  "Delete all OO7 tables."																															  ]
+[ "subgraph",	  "COMMAND: ",	  "subgraph(BAT[any::2,any::1], BAT[any::1,any::1]) : BAT[any::1,any::1]",	  "Uses the tail values from 'in' as starting points, and\ndetermines by recursive traversal which subgraph of 'edges'\ncan be reached from there. This subgraph is returned.\n\nTraversal order is currently breadth-first.\n\nWorks only on ANY::1 e {int,oid,flt,bat,ptr}. "	  ]
+[ "traverse",	  "COMMAND: ",	  "traverse(BAT[any::2,any::1], BAT[any::1,any::1]) : BAT[any::1,any::1]",	  "From the starting points in 'in' (tail), compute all\nreachable points by (dag!) 'edges'."																							  ]
+
+Module: "radix"
+
+[ 28 ]
+[ 28 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature											| help																																																			  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[integer]",		  "COMMAND: ",	  "[integer](BAT[any::1,any], int) : BAT[any::1,any]",						  "create a view that makes tail column appear as an integerX column for some width=X"																																									  ]
+[ "[integer]",		  "PROC: ",	  "[integer](BAT[any::1,int]) : BAT[any::1,integer1]",						  "not available"																																																	  ]
+[ "normal",		  "COMMAND: ",	  "normal(oid, int, int, int, int) : BAT[oid,int]",						  "create a random bat of certain size, head values unique, tail values\n from a normal distribution between [0..domain].\n default values: base = 0@0, mean = size/2, stddev = size/10, domain=size."																											  ]
+[ "normal",		  "PROC: ",	  "normal(int) : BAT[oid,int]",									  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(int, int) : BAT[oid,int]",								  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(int, int, int) : BAT[oid,int]",							  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(int, int, int, int) : BAT[oid,int]",							  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(oid, int, int) : BAT[oid,int]",							  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(oid, int, int, int) : BAT[oid,int]",							  "not available"																																																	  ]
+[ "phash_join",		  "COMMAND: ",	  "phash_join(BAT[any::1,any::2], BAT[any::2,any::3], int, int, bit) : BAT[any::1,any::3]",	  "partitioned hash-join on radix clustered inputs"																																													  ]
+[ "phash_join",		  "PROC: ",	  "phash_join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",			  "not available"																																																	  ]
+[ "phash_join_new",	  "PROC: ",	  "phash_join_new(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",		  "not available"																																																	  ]
+[ "phash_join_new",	  "PROC: ",	  "phash_join_new(BAT[any::1,any::2], BAT[any::2,any::3], int, int, bit) : BAT[any::1,any::3]",	  "not available"																																																	  ]
+[ "radix_bits",		  "COMMAND: ",	  "radix_bits(BAT[any,any]) : int",								  "return the number of bits on which the head column is radix clustered."																																										  ]
+[ "radix_cluster",	  "COMMAND: ",	  "radix_cluster(BAT[any::1,any::2], str, flt, int, ..int..) : BAT[any::1,any::2]",		  "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters.\n partial radix cluster (i.e. skipping lower significant bits) can be indicated\n by pasing a negative number of bits as last parameter. "																								  ]
+[ "radix_cluster",	  "PROC: ",	  "radix_cluster(BAT[any::1,any::2], flt, int, ..int..) : BAT[any::1,any::2]",			  "not available"																																																	  ]
+[ "radix_cluster",	  "PROC: ",	  "radix_cluster(BAT[any::1,any::2], int, ..int..) : BAT[any::1,any::2]",			  "not available"																																																	  ]
+[ "radix_cluster",	  "PROC: ",	  "radix_cluster(BAT[any::1,any::2], str, int, ..int..) : BAT[any::1,any::2]",			  "not available"																																																	  ]
+[ "radix_count",	  "COMMAND: ",	  "radix_count(BAT[oid,oid], int, int) : BAT[int,int]",						  "return a histogram [radix-pattern,bucket-size] for the tail values of some BAT b.\n the first int holds the number of radix bits, the second how many lower bits to ignore.\n notice that the bat b maybe partially radix-clustered (or not at all). the radix_count\n command just detects consecutive chunks where (1) the tail values have the same specified\n radix-bits and (2) the head values are ascending"	  ]
+[ "radix_decluster",	  "COMMAND: ",	  "radix_decluster(BAT[oid,any::1], BAT[int,int], int) : BAT[void,any::1]",			  "merge a (partially) radix-clustered dense collection of oids back to their original void\n position.  second bat *must* be result of b.radix_count(x,y). Third parameter is a multiplier\n that tells how many times the number of chunks the matching-window-size should be."																	  ]
+[ "radix_decluster",	  "PROC: ",	  "radix_decluster(BAT[oid,any::1], BAT[int,int]) : BAT[void,any::1]",				  "not available"																																																	  ]
+[ "radix_decluster2",	  "COMMAND: ",	  "radix_decluster2(BAT[any::2,oid], BAT[any::2,any::1], BAT[int,int], int) : BAT[void,any::1]",  ""																																																			  ]
+[ "radix_join",		  "COMMAND: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3], int, int) : BAT[any::1,any::3]",		  "nested-loop join on radix clustered inputs"																																														  ]
+[ "radix_join",		  "PROC: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",			  "not available"																																																	  ]
+[ "radix_join",		  "PROC: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",		  "not available"																																																	  ]
+[ "uniform",		  "COMMAND: ",	  "uniform(oid, int, int) : BAT[oid,int]",							  "create a random bat of certain size, head values unique, tail values\n perfect uniform from a certain domain (domain>size => unique tails)."																																		  ]
+[ "uniform",		  "PROC: ",	  "uniform(int) : BAT[oid,int]",								  "not available"																																																	  ]
+[ "uniform",		  "PROC: ",	  "uniform(int, int) : BAT[oid,int]",								  "not available"																																																	  ]
+
+Module: "salgebra"
+
+[ 12 ]
+[ 12 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature							| help									  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "CHbat",	  "COMMAND: ",	  "CHbat(clusterhash) : BAT[void,any]",				  "Provides access to the original bat."				  ]
+[ "CHdir",	  "PROC: ",	  "CHdir() : void",						  "List the clusterhash dictionary."					  ]
+[ "CHdrop",	  "COMMAND: ",	  "CHdrop() : void",						  "Drop the module"							  ]
+[ "CHinit",	  "COMMAND: ",	  "CHinit() : void",						  "Initialize the module"						  ]
+[ "clusterhash",  "COMMAND: ",	  "clusterhash(BAT[any,any]) : clusterhash",			  "Build a new or get a previously built clusterhash for the input bat."  ]
+[ "destroy",	  "COMMAND: ",	  "destroy(str) : void",					  "Destroy the clusterhash with name chname (if possible)."		  ]
+[ "info",	  "COMMAND: ",	  "info(clusterhash) : BAT[str,str]",				  "Return some info about the chash."					  ]
+[ "rename",	  "COMMAND: ",	  "rename(clusterhash, str) : void",				  "Try to name ch; fail upon error."					  ]
+[ "select",	  "PROC: ",	  "select(clusterhash, any::1) : BAT[oid,any::1]",		  "Select using a clusterhash uselect plus a cast."			  ]
+[ "ujoin",	  "COMMAND: ",	  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).mark(nil) with propagated clustering."		  ]
+[ "uselect",	  "COMMAND: ",	  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).mark(nil) with propagated clustering."		  ]
+[ "usortedjoin",  "COMMAND: ",	  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).mark(nil).sort with propagated clustering."	  ]
+
+Module: "stats"
+
+[ 5 ]
+[ 5 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			| type		| signature						| help					  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[stats_add]",		  "COMMAND: ",	  "[stats_add](ptr, lng) : void",			  "Add a value to a statistics object."	  ]
+[ "[stats_del]",		  "COMMAND: ",	  "[stats_del](ptr) : void",				  "Delete a statistics object."		  ]
+[ "[stats_histogram_new]",	  "COMMAND: ",	  "[stats_histogram_new](str, int, int, lng) : ptr",	  "Construct a new statistics object."	  ]
+[ "[stats_new]",		  "COMMAND: ",	  "[stats_new](str) : ptr",				  "Construct a new statistics object."	  ]
+[ "[stats_report]",		  "COMMAND: ",	  "[stats_report](ptr, str) : void",			  "Generate results."			  ]
+
+Module: "tcpip"
+
+[ 19 ]
+[ 19 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature				| help																							  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "arpc",	  "PROC: ",	  "arpc(..any..) : any",		  "not available"																					  ]
+[ "cache",	  "COMMAND: ",	  "cache() : BAT[str,str]",		  "a copy of the list of BATs cached via the network"																	  ]
+[ "close",	  "COMMAND: ",	  "close() : void",			  "close all connections"																				  ]
+[ "close",	  "COMMAND: ",	  "close(int) : void",			  "close a connection to another TCP/IP server."																	  ]
+[ "conns",	  "COMMAND: ",	  "conns() : BAT[int,str]",		  "a BAT with all current connections."																			  ]
+[ "export",	  "COMMAND: ",	  "export(int, BAT[any,any]) : void",	  "export a value for transport on a named local TCP/IP server."															  ]
+[ "export",	  "COMMAND: ",	  "export(int, any, str) : void",	  "export a value for transport on a named local TCP/IP server."															  ]
+[ "flush",	  "COMMAND: ",	  "flush() : void",			  "Empty the TCP/IP cache, and delete all items in it."																	  ]
+[ "import",	  "COMMAND: ",	  "import(str) : any",			  "import a value from a TCP/IP server, removing it from the cache."															  ]
+[ "import",	  "COMMAND: ",	  "import(str, bit) : any",		  "import a value from a TCP/IP server, possibly removing it from the cache."														  ]
+[ "listen",	  "COMMAND: ",	  "listen() : void",			  "start a TCP/IP server with the default port number."																	  ]
+[ "listen",	  "COMMAND: ",	  "listen(int) : void",			  "start a TCP/IP server"																				  ]
+[ "mil",	  "COMMAND: ",	  "mil(int, str) : void",		  "remote MIL string evaluation. String can be just any legal mil script\n (multiple statements allowed). Does NOT return a result value."						  ]
+[ "mil",	  "COMMAND: ",	  "mil(int, str, ..any..) : void",	  "remote MIL evaluation with parameter transport, similary to rpc. \n Does NOT return a result value."											  ]
+[ "open",	  "COMMAND: ",	  "open(str) : int",			  "open a connection to another TCP/IP server."																		  ]
+[ "rpc",	  "COMMAND: ",	  "rpc(int, str, ..any..) : any",	  "remote MIL evaluation. Each argument that is represented by a %a is\n inserted with succeeding values from the parameter list of the rpc call.\n Returns the remote return value."	  ]
+[ "terminate",	  "COMMAND: ",	  "terminate() : void",			  "stop a TCP/IP server"																				  ]
+[ "terminate",	  "COMMAND: ",	  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
+[ "waits",	  "COMMAND: ",	  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
+
+Module: "temporal"
+
+[ 34 ]
+[ 34 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature					| help									  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "*",			  "OPERATOR: ",	  "*(duration, flt) : duration",		  "produce a new duration with length a multiple from the original"	  ]
+[ "*",			  "OPERATOR: ",	  "*(interval, flt) : interval",		  "produce a new interval with length a multiple from the original"	  ]
+[ "+",			  "OPERATOR: ",	  "+(instant, duration) : instant",		  "add a duration to an instant to produce a new instant"		  ]
+[ "+",			  "OPERATOR: ",	  "+(interval, duration) : interval",		  "add a duration to the length of an interval"				  ]
+[ "-",			  "OPERATOR: ",	  "-(instant, duration) : instant",		  "substract a duration to an instant to produce a new instant"		  ]
+[ "-",			  "OPERATOR: ",	  "-(instant, instant) : duration",		  "substract two instants to get a duration"				  ]
+[ "-",			  "OPERATOR: ",	  "-(interval, duration) : interval",		  "substract a duration from the length of an interval"			  ]
+[ "<",			  "OPERATOR: ",	  "<(instant, interval) : bit",			  "test whether a time insant lies before a time interval"		  ]
+[ "<",			  "OPERATOR: ",	  "<(interval, interval) : bit",		  "test whether one time interval precedes another entirely"		  ]
+[ ">",			  "OPERATOR: ",	  ">(instant, interval) : bit",			  "test whether a time insant lies after a time interval"		  ]
+[ ">",			  "OPERATOR: ",	  ">(interval, interval) : bit",		  "test whether one time intervals entirely succeeds another"		  ]
+[ "date",		  "COMMAND: ",	  "date(str) : instant",			  "creates an instant from a string field (e.g., YYYY-MM-DD)"		  ]
+[ "day",		  "COMMAND: ",	  "day(duration) : int",			  "returns the integer day value from a duration"			  ]
+[ "day",		  "COMMAND: ",	  "day(instant) : int",				  "returns the integer day value from an instant"			  ]
+[ "end_interval",	  "COMMAND: ",	  "end_interval(interval) : instant",		  "gets the ending instant of an interval"				  ]
+[ "epoch",		  "COMMAND: ",	  "epoch(instant) : lng",			  "creates a number of seconds since 1970 from an instant"		  ]
+[ "epoch",		  "COMMAND: ",	  "epoch(lng) : instant",			  "creates an instant from a number of seconds since 1970"		  ]
+[ "fromday",		  "COMMAND: ",	  "fromday(int, int, int) : instant",		  "creates an instant from a (year, month, day) specification"		  ]
+[ "fromtime",		  "COMMAND: ",	  "fromtime(int, int, int, int, int) : instant",  "creates an instant from (year, month, day, hours, week)"		  ]
+[ "hours",		  "COMMAND: ",	  "hours(duration) : int",			  "returns the integer hour value from a duration"			  ]
+[ "hours",		  "COMMAND: ",	  "hours(instant) : int",			  "returns the integer hour value from an instant"			  ]
+[ "in",			  "COMMAND: ",	  "in(instant, interval) : bit",		  "tests whether an instant lies in an interval"			  ]
+[ "include",		  "COMMAND: ",	  "include(interval, interval) : bit",		  "test whether the first interval totally includes the second"		  ]
+[ "included",		  "COMMAND: ",	  "included(interval, interval) : bit",		  "test whether the first interval is totally included by the second"	  ]
+[ "intersect",		  "COMMAND: ",	  "intersect(interval, interval) : interval",	  "get the intersection of two intervals"				  ]
+[ "minutes",		  "COMMAND: ",	  "minutes(duration) : int",			  "returns the integer minute value from a duration"			  ]
+[ "minutes",		  "COMMAND: ",	  "minutes(instant) : int",			  "returns the integer minute value from an instant"			  ]
+[ "month",		  "COMMAND: ",	  "month(duration) : int",			  "returns the integer month value {jan=1,..dec=12} from a duration"	  ]
+[ "month",		  "COMMAND: ",	  "month(instant) : int",			  "returns the integer month value {jan=1,..dec=12} from an instant"	  ]
+[ "new_interval",	  "COMMAND: ",	  "new_interval(instant, instant) : interval",	  "build an interval from two instants (starting and ending)"		  ]
+[ "overlap",		  "COMMAND: ",	  "overlap(interval, interval) : bit",		  "test whether to intervals overlap"					  ]
+[ "start_interval",	  "COMMAND: ",	  "start_interval(interval) : instant",		  "gets the starting instant of an interval"				  ]
+[ "year",		  "COMMAND: ",	  "year(duration) : int",			  "returns the integer year value from a duration"			  ]
+[ "year",		  "COMMAND: ",	  "year(instant) : int",			  "returns the integer year value from an instant"			  ]
+
+Module: "tpcd"
+
+[ 34 ]
+[ 34 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature										| help																		  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "avg",	  "PROC: ",	  "avg(..any..) : any",									  "not available"																  ]
+[ "debug",	  "PROC: ",	  "debug(..any..) : any",								  "not available"																  ]
+[ "dvjoin",	  "COMMAND: ",	  "dvjoin(BAT[oid,void], BAT[void,any::1], BAT[oid,any::2]) : BAT[any::1,any::2]",	  "Performs join(A.extent,A.vector,B) using a datavector on A.tail. \n     Creates a vextoridx on the head of B; if not present already."	  ]
+[ "dvsemijoin",	  "COMMAND: ",	  "dvsemijoin(BAT[oid,void], BAT[void,any::1], BAT[oid,any::2]) : BAT[oid,any::1]",	  "Performs semijoin(A.extent,A.vector,B) using a datavector on A.tail. \n     Creates a vextoridx on the head of B; if not present already."	  ]
+[ "extent",	  "COMMAND: ",	  "extent(BAT[oid,any::1]) : BAT[oid,void]",						  "If there is a datavector on the tail of the BAT, this returns\n     the associated extent BAT, else it gives an error."			  ]
+[ "gjoin",	  "PROC: ",	  "gjoin() : <predefinition>",								  "not available"																  ]
+[ "gjoin",	  "PROC: ",	  "gjoin(any, any) : any",								  "not available"																  ]
+[ "gorder",	  "PROC: ",	  "gorder(any) : any",									  "not available"																  ]
+[ "gselect",	  "PROC: ",	  "gselect(..any..) : any",								  "not available"																  ]
+[ "gsemijoin",	  "PROC: ",	  "gsemijoin(any, any) : any",								  "not available"																  ]
+[ "gsum",	  "PROC: ",	  "gsum(any) : any",									  "not available"																  ]
+[ "guselect",	  "PROC: ",	  "guselect(..any..) : any",								  "not available"																  ]
+[ "udiff",	  "PROC: ",	  "udiff(..any..) : any",								  "not available"																  ]
+[ "uintersect",	  "PROC: ",	  "uintersect(..any..) : any",								  "not available"																  ]
+[ "uunion",	  "PROC: ",	  "uunion(..any..) : any",								  "not available"																  ]
+[ "uunique",	  "PROC: ",	  "uunique(..any..) : any",								  "not available"																  ]
+[ "vector",	  "COMMAND: ",	  "vector(BAT[oid,any::1]) : BAT[void,any::1]",						  "If there is a datavector on the tail of the BAT, this returns\n     the associated unary vector BAT, else it gives an error."		  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail average"															  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail average"															  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail average"															  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail average"															  ]
+[ "{count}",	  "PROC: ",	  "{count}(..any..) : any",								  "not available"																  ]
+[ "{max}",	  "COMMAND: ",	  "{max}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail maximum"															  ]
+[ "{max}",	  "COMMAND: ",	  "{max}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail maximum"															  ]
+[ "{max}",	  "COMMAND: ",	  "{max}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail maximum"															  ]
+[ "{max}",	  "COMMAND: ",	  "{max}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail maximum"															  ]
+[ "{min}",	  "COMMAND: ",	  "{min}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail minimum"															  ]
+[ "{min}",	  "COMMAND: ",	  "{min}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail minimum"															  ]
+[ "{min}",	  "COMMAND: ",	  "{min}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail minimum"															  ]
+[ "{min}",	  "COMMAND: ",	  "{min}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail minimum"															  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail sum"																  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail sum"																  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail sum"																  ]
+[ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail sum"																  ]
+
+Module: "uchr"
+
+[ 0 ]
+[ 0 ]
+#-------------------------------------------------#
+# function	| type	| signature	| help	  #
+#-------------------------------------------------#
+
+Module: "unix"
+
+[ 3 ]
+[ 3 ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help							  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "getenv",	  "COMMAND: ",	  "getenv(str) : str",		  "Get the environment variable string."		  ]
+[ "setenv",	  "COMMAND: ",	  "setenv(str, str) : bit",	  "Set the environment variable string."		  ]
+[ "system",	  "COMMAND: ",	  "system(str) : int",		  "execute a command and give back the return value"	  ]
+
+Module: "url"
+
+[ 18 ]
+[ 18 ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature				| help							  #
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ "getAnchor",	  "COMMAND: ",	  "getAnchor(url) : str",		  "Extract the anchor (reference) from the URL"		  ]
+[ "getBasename",  "COMMAND: ",	  "getBasename(url) : str",		  "Extract the base file name of the URL"		  ]
+[ "getContent",	  "COMMAND: ",	  "getContent(url) : str",		  "Get the URL resource in a local file"		  ]
+[ "getContext",	  "COMMAND: ",	  "getContext(url) : str",		  "Get the path context of a URL "			  ]
+[ "getDirectory", "COMMAND: ",	  "getDirectory(url) : BAT[int,str]",	  "Extract the directory names from the URL"		  ]
+[ "getDomain",	  "COMMAND: ",	  "getDomain(url) : str",		  "Extract the Internet domain from the URL"		  ]
+[ "getExtension", "COMMAND: ",	  "getExtension(url) : str",		  "Extract the file extension of the URL"		  ]
+[ "getFile",	  "COMMAND: ",	  "getFile(url) : str",			  "Extract the last file name of the URL"		  ]
+[ "getHost",	  "COMMAND: ",	  "getHost(url) : str",			  "Extract the server identity from the URL"		  ]
+[ "getPort",	  "COMMAND: ",	  "getPort(url) : str",			  "Extract the port id from the URL"			  ]
+[ "getProtocol",  "COMMAND: ",	  "getProtocol(url) : str",		  "Extract the protocol from the URL"			  ]
+[ "getQuery",	  "COMMAND: ",	  "getQuery(url) : str",		  "Extract the query string from the URL"		  ]
+[ "getQueryArg",  "COMMAND: ",	  "getQueryArg(url) : BAT[str,str]",	  "Extract the argument mappings from the URL"		  ]
+[ "getRobotURL",  "COMMAND: ",	  "getRobotURL(url) : str",		  "Extract the location of the robot control file"	  ]
+[ "getUser",	  "COMMAND: ",	  "getUser(url) : str",			  "Extract the user identity from the URL"		  ]
+[ "isaURL",	  "COMMAND: ",	  "isaURL(url) : bit",			  "Check conformity of the URL syntax"			  ]
+[ "newurl",	  "COMMAND: ",	  "newurl(str, str, int, str) : url",	  "Construct a URL from protocol, host,port,and file"	  ]
+[ "newurl",	  "COMMAND: ",	  "newurl(str, str, str) : url",	  "Construct a URL from protocol, host,and file"	  ]
+
+Module: "wisc"
+
+[ 2 ]
+[ 2 ]
+#-----------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help						  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "wisc",	  "COMMAND: ",	  "wisc(str, int) : void",	  "Wisconsin Benchmark Database Generator"	  ]
+[ "wiscdestroy",  "COMMAND: ",	  "wiscdestroy(str) : void",	  "WBD destroy table"				  ]
+
+Module: "xtables"
+
+[ 19 ]
+[ 19 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature									| help																																						  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "CTderive",		  "COMMAND: ",	  "CTderive(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "Cross tabulation group extension step.\n         Returned head values are identical as in 'ct'. Tail values are from\n         the same domain and indicate further refinement of the groups in 'ct',\n         taking into account also the tail-values in 'attr'."						  ]
+[ "CTgroup",		  "COMMAND: ",	  "CTgroup(BAT[oid,any]) : BAT[oid,oid]",					  "Cross tabulation group initialization.\n         Returned head values are identical as in 'attr'. Tail values are from\n         the same domain and indicate unique groups in 'attr' tail column."														  ]
+[ "CTgroup",		  "COMMAND: ",	  "CTgroup(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",				  "binary grouping; a synonym for CTderive(ct,attr)"																																  ]
+[ "CThistosum",		  "COMMAND: ",	  "CThistosum(BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "Produce sum over old histogram table"																																	  ]
+[ "CTmultiderive",	  "COMMAND: ",	  "CTmultiderive(BAT[any::1,any::2]) : BAT[BAT,void]",				  "Group multiple BATs passed in the head (ct) and tail (attr) of the first parameter, \n         Passing is either direct thourgh nested BATs or as string (identified by name); \n         This multi-BAT CTderive guarantees same group oids for same values"						  ]
+[ "CTmultigroup",	  "COMMAND: ",	  "CTmultigroup(BAT[any::1,any]) : BAT[BAT,void]",				  "Group multiple BATs passed in the head of the first parameter.\n         Passing is either direct thourgh nested BATs or as string (identified by name); \n         This multi-BAT CTgroup guarantees same group oids for same values"									  ]
+[ "CTmultiregroup",	  "COMMAND: ",	  "CTmultiregroup(BAT[any::1,any::2]) : BAT[BAT,void]",				  "Re-group multiple BATs passed in the head (ct) and tail (attr) of the first parameter, \n         Passing is either direct thourgh nested BATs or as string (identified by name); \n         This multi-BAT CTregroup guarantees same group oids for same values"						  ]
+[ "CTorderby",		  "PROC: ",	  "CTorderby(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "not available"																																				  ]
+[ "CTrefine",		  "COMMAND: ",	  "CTrefine(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "refine the ordering of a tail-ordered BAT by sub-ordering on the \n         values of a second bat 'a' (where the heads of a and b match 1-1).  \n         The effect of this is similar to (hash-based) CTderive, with the \n\t distinction that the group ids respect the ordering of the group values."	  ]
+[ "CTregroup",		  "COMMAND: ",	  "CTregroup(BAT[oid,oid], BAT[oid,any]) : BAT[oid,oid]",			  "modifies ct and returns it doing a group"																																	  ]
+[ "CTsubgroup",		  "PROC: ",	  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",	  "not available"																																				  ]
+[ "CTsubhisto",		  "COMMAND: ",	  "CTsubhisto(BAT[void,bit], BAT[void,oid], BAT[oid,any]) : BAT[oid,int]",	  "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] \n         bats on a previously known domain "																								  ]
+[ "histogram",		  "COMMAND: ",	  "histogram(BAT[oid,any::1]) : BAT[any::1,int]",				  "compute a histogram on the tail. Optimized for retrieving the\n         already present histogram on a cross-table computed by CTgroup."																					  ]
+[ "orderby_table",	  "PROC: ",	  "orderby_table(str, str, ..BAT[any::1,any]..) : any",				  "not available"																																				  ]
+[ "print",		  "PROC: ",	  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
+[ "table",		  "PROC: ",	  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
+[ "tunique",		  "COMMAND: ",	  "tunique(BAT[oid,any::1]) : BAT[any::1,void]",				  "get all unique tail values. Optimized for getting all unique\n         oids from a cross-table computed by CTgroup."																								  ]
+[ "{count}",		  "PROC: ",	  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
+[ "{count}",		  "PROC: ",	  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
+
+Module: "mprof"
+
+[ 32 ]
+[ 32 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature					| help							  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "-",			  "OPERATOR: ",	  "-(Mallinfo, Mallinfo) : Mallinfo",		  "Subtract the memory info records"			  ]
+[ "-",			  "OPERATOR: ",	  "-(Rusage, Rusage) : Rusage",			  "Subtract the io and swap records"			  ]
+[ "-",			  "OPERATOR: ",	  "-(Tms, Tms) : Tms",				  "Subtract the timing records"				  ]
+[ "Ma_arena",		  "COMMAND: ",	  "Ma_arena(Mallinfo) : int",			  "Dynamic allocated arena size"			  ]
+[ "Ma_fordblks",	  "COMMAND: ",	  "Ma_fordblks(Mallinfo) : int",		  "Free ordinary blocks in arena"			  ]
+[ "Ma_fsmblks",		  "COMMAND: ",	  "Ma_fsmblks(Mallinfo) : int",			  "Free small blocks in arena"				  ]
+[ "Ma_new",		  "COMMAND: ",	  "Ma_new() : Mallinfo",			  "Get malloc information"				  ]
+[ "Ma_uordblks",	  "COMMAND: ",	  "Ma_uordblks(Mallinfo) : int",		  "Used ordinary blocks in arena"			  ]
+[ "Ma_usmblks",		  "COMMAND: ",	  "Ma_usmblks(Mallinfo) : int",			  "Used small blocks in arena"				  ]
+[ "Ru_inblock",		  "COMMAND: ",	  "Ru_inblock(Rusage) : int",			  "Extract the actual physical read count"		  ]
+[ "Ru_majflt",		  "COMMAND: ",	  "Ru_majflt(Rusage) : int",			  "Extract the major page faults"			  ]
+[ "Ru_maxrss",		  "COMMAND: ",	  "Ru_maxrss(Rusage) : int",			  "Extract the maximum resident set size utilized"	  ]
+[ "Ru_minflt",		  "COMMAND: ",	  "Ru_minflt(Rusage) : int",			  "Extract the minor page faults"			  ]
+[ "Ru_new",		  "COMMAND: ",	  "Ru_new() : Rusage",				  "Extract system resource usage record"		  ]
+[ "Ru_nivcsw",		  "COMMAND: ",	  "Ru_nivcsw(Rusage) : int",			  "Extract the non-voluntary context switch count"	  ]
+[ "Ru_nswap",		  "COMMAND: ",	  "Ru_nswap(Rusage) : int",			  "Extract the actual process swap count"		  ]
+[ "Ru_nvcsw",		  "COMMAND: ",	  "Ru_nvcsw(Rusage) : int",			  "Extract the voluntary context switch count"		  ]
+[ "Ru_oublock",		  "COMMAND: ",	  "Ru_oublock(Rusage) : int",			  "Extract the actual physical write count"		  ]
+[ "Tms_new",		  "COMMAND: ",	  "Tms_new() : Tms",				  "Create a new Tms record"				  ]
+[ "Tms_stime",		  "COMMAND: ",	  "Tms_stime(Tms) : int",			  "Extract the system time part from the record"	  ]
+[ "Tms_utime",		  "COMMAND: ",	  "Tms_utime(Tms) : int",			  "Extract the user time part from the record"		  ]
+[ "emptyMallinfo",	  "PROC: ",	  "emptyMallinfo(..any..) : any",		  "not available"					  ]
+[ "insB",		  "COMMAND: ",	  "insB(str, int, Tms, Rusage, Mallinfo) : int",  "Insert the begin of a new labelled time period"	  ]
+[ "insE",		  "COMMAND: ",	  "insE(str, int, Tms, Rusage, Mallinfo) : int",  "Insert the end of a new labelled time period"	  ]
+[ "pmB",		  "COMMAND: ",	  "pmB(str) : int",				  "Start a new labelled timing period"			  ]
+[ "pmClear",		  "COMMAND: ",	  "pmClear() : void",				  "Clear the performance bats"				  ]
+[ "pmE",		  "COMMAND: ",	  "pmE(str) : int",				  "End a labelled timing period"			  ]
+[ "pmExit",		  "COMMAND: ",	  "pmExit() : void",				  "Removes the Mprof bats"				  ]
+[ "pmPrint",		  "PROC: ",	  "pmPrint(..any..) : any",			  "not available"					  ]
+[ "pmStart",		  "COMMAND: ",	  "pmStart() : void",				  "Initializes the mprof bats"				  ]
+[ "pmSummary",		  "PROC: ",	  "pmSummary(..any..) : any",			  "not available"					  ]
+[ "pmTag",		  "COMMAND: ",	  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]

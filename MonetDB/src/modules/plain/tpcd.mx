@@ -455,7 +455,7 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
 @{
 @* Aggregate Computation 
 @c
-#include <gdk.h>
+#include "tpcd.proto.h"
 
 @+ Set-Aggregate Implementation
 @= sum
@@ -644,10 +644,10 @@ vectoridx* vectoridx_new(Heap* hp, BAT *e, int cnt) {
 void
 DVIbuild(
    Heap*	hp,	/* INOUT: vectoridx accelerator heap */
-   int		param,	/* an extra parameter */
+   int*		param,	/* an extra parameter */
    BAT*		b	/* IN: BAT with head-column. */
 ){
-	BAT *bn, *extent = BATdescriptor(param);	
+	BAT *bn, *extent = BATdescriptor((int)param);	
 	oid *first, *cur;
 	int xx, yy=0;
 	vectoridx *vi;
@@ -762,10 +762,10 @@ typedef struct {
 void
 DVbuild(
    Heap*	hp,	/* INOUT: vector accelerator heap */
-   int		param,	/* an extra parameter */
+   int*		param,	/* an extra parameter */
    BAT*		b	/* IN: BAT with head-column. */
 ){
-	BAT *bn, *extent = BATdescriptor(param);	
+	BAT *bn, *extent = BATdescriptor((int)param);	
 	int bunsize, atomsize, xx, yy=0;
 	datavector *v;
 	vectoridx *vi;

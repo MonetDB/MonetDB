@@ -25,10 +25,15 @@ The uchr atom is just a chr but uses numerical string representations.
 #define DEBUG 
 */
 
+@h
+#ifndef _UCHR_H
+#define _UCHR_H
 typedef unsigned char uchr;
 
 #include "uchr.proto.h"
-#include <gdk.h>
+#endif
+@c
+#include "uchr.h"
 
 @- Atom commands
 @c

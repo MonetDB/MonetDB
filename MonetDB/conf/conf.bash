@@ -39,8 +39,8 @@ if [ ! -x bootstrap ] ; then
 	if [ ! "${PREFIX}" ] ; then
 		echo ''
 		echo 'PREFIX not set to specify desired target directory.'
-		echo 'Using PREFIX="'${BUILD}/${os}'" (default).'
-		PREFIX="${BUILD}/${os}"
+		echo 'Using PREFIX="'${BUILD}'" (default).'
+		PREFIX="${BUILD}"
 	fi
 	if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
 		echo ''
@@ -91,10 +91,11 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -xarch=v9"
 			cxx="${cxx} -xarch=v9"
 		fi
+		libpath=":/var/tmp/local/lib${libpath}"
 	fi
 
 	if [ "${os}" = "IRIX64" ] ; then
-		binpath=":/dbfarm/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
+		binpath=":/soft/local/bin:/soft64/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
 		if [ "${COMP}${BITS}" = "GNU64" ] ; then
 			cc="${cc} -mabi=64"
 			cxx="${cxx} -mabi=64"

@@ -1,0 +1,385 @@
+@f stream
+@a Niels Nes
+@* An simple interface to streams 
+This interface can be used to open 'non compressed, gzipped, bz2zipped' 
+data files.
+@h
+#ifndef _STREAM_H_
+#define _STREAM_H_
+
+/*
+ * File: stream.h 
+ * Auteur: Niels J. Nes
+ * Date: 09-01-2001
+ * 
+ * Version 0.1: start
+ *
+ * This is the general interface to input/output. Each stream will
+ * contains some stream info (for now only byteorder). This is 
+ * required for proper conversion on different byte order platforms.
+ */
+
+#include <gdk.h>
+#include <ctype.h>
+
+typedef struct stream {
+	sht byteorder;
+	char *filename;
+	char *stream_data;
+	int errnr;
+	int (*read)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
+	int (*write)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
+	void (*close)( struct stream *s);
+	char *(*error)( struct stream *s );
+	void (*destroy)( struct stream *s );
+} stream;
+
+stream *open_rstream( char *filename );
+stream *open_wstream( char *filename );
+stream *open_rastream( char *filename ); 
+/* open in ascii stream in read mode */
+/* open in ascii stream in write mode*/
+stream *open_wastream( char *filename ); 
+
+#ifdef HAVE_LIBZ
+stream *open_gzrstream( char *filename );
+stream *open_gzwstream( char *filename );
+stream *open_gzrastream( char *filename );
+stream *open_gzwastream( char *filename );
+#endif
+
+#ifdef HAVE_LIBBZ2
+stream *open_bzrstream( char *filename );
+stream *open_bzwstream( char *filename );
+stream *open_bzrastream( char *filename );
+stream *open_bzwastream( char *filename );
+#endif
+
+#endif /*_STREAM_H_*/
+@c
+#include <gdk.h>
+#include "stream.h"
+#include <stdio.h>
+#ifdef HAVE_LIBZ
+	#include <zlib.h>
+#endif
+#ifdef HAVE_LIBBZ2
+	#include <bzlib.h>
+#endif
+
+typedef enum steam_errors {
+	NO_ERROR = 0,
+	OPEN_ERROR,
+	READ_ERROR, 
+	WRITE_ERROR
+}stream_errors;
+
+#define EXT_LEN 4
+static void get_extention( char *file, char *ext)
+{
+   	int j = 0;
+	char *ext_start = strrchr( file, '.' );
+
+	if (ext_start){
+	    ext_start++;
+            for (j = 0; j < EXT_LEN-1 && *ext_start; j++, ext_start++ )
+                ext[j] = tolower(*ext_start);
+        }
+        ext[j] = '\0';
+}
+
+static void stream_destroy( stream *s){
+	GDKfree(s->filename);
+	GDKfree(s);
+}
+
+static stream *create_stream( char *filename ){
+	stream *s = (stream*)GDKmalloc(sizeof(stream));
+	s->byteorder = 1234;
+	s->filename = GDKstrdup(filename); 
+	s->stream_data = NULL;
+	s->errnr = NO_ERROR;
+	s->destroy = &stream_destroy;
+	return s;
+}
+
+static char *stream_error( stream *s ){
+	char buf [BUFSIZ];
+	switch(s->errnr){
+	case OPEN_ERROR:
+		sprintf(buf, "Error could not open file %s\n", s->filename );
+		return GDKstrdup(buf);
+	case READ_ERROR:
+		sprintf(buf, "Error reading file %s\n", s->filename );
+		return GDKstrdup(buf);
+	case WRITE_ERROR:
+		sprintf(buf, "Error writing file %s\n", s->filename );
+		return GDKstrdup(buf);
+	}
+	return GDKstrdup("Unkonwn error");
+}
+
+static int stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	return fread( buf, elmsize, cnt, (FILE*)s->stream_data);
+}
+static int stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	return fwrite( buf, elmsize, cnt, (FILE*)s->stream_data);
+}
+static void stream_close( stream *s ){
+	fclose( (FILE*)s->stream_data);
+}
+static stream *open_stream( char *filename, char *flags ){
+	stream *s = create_stream(filename);
+	FILE *fp = fopen( filename, flags );
+
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+stream *open_rstream( char *filename ){
+  	char    ext[EXT_LEN];
+
+  	get_extention(filename, ext);
+
+#ifdef HAVE_LIBZ
+  	if (!strcmp(ext,"gz" )){
+		return open_gzrstream( filename );
+	} else 
+#else
+  	if (!strcmp(ext,"gz" )){
+		stream *s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return NULL;
+	} 
+#endif
+#ifdef HAVE_LIBBZ2
+	if (!strcmp(ext,"bz2" )){
+		return open_bzrstream( filename );
+	} else 
+#else
+	if (!strcmp(ext,"bz2" )){
+		stream *s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return NULL;
+	} 
+#endif
+	{
+	  	stream *s = open_stream( filename, "rb");
+		if (s->errnr == NO_ERROR)
+	   		fread( (char*)&s->byteorder, sizeof(sht), 
+						1, (FILE*)s->stream_data);
+		return s;
+	}
+}
+stream *open_wstream( char *filename ){
+  	char    ext[EXT_LEN];
+
+  	get_extention(filename, ext);
+
+#ifdef HAVE_LIBZ
+  	if (!strcmp(ext,"gz" )){
+		return open_gzwstream( filename );
+	} else
+#else
+  	if (!strcmp(ext,"gz" )){
+		stream *s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return NULL;
+	} 
+#endif
+#ifdef HAVE_LIBBZ2
+	if (!strcmp(ext,"bz2" )){
+		return open_bzwstream( filename );
+	} else 
+#else
+	if (!strcmp(ext,"bz2" )){
+		stream *s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return NULL;
+	} 
+#endif
+	{
+		stream *s = open_stream( filename, "wb");
+		if (s->errnr == NO_ERROR)
+	   		fwrite( (char*)&s->byteorder, sizeof(sht), 
+						1, (FILE*)s->stream_data);
+		return s;
+	}
+}
+stream *open_rastream( char *filename ){
+  	char    ext[EXT_LEN];
+
+  	get_extention(filename, ext);
+
+#ifdef HAVE_LIBZ
+  	if (!strcmp(ext,"gz" )){
+		return open_gzrastream( filename );
+	} else
+#else
+  	if (!strcmp(ext,"gz" )){
+		stream *s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return NULL;
+	} 
+#endif
+#ifdef HAVE_LIBBZ2
+	if (!strcmp(ext,"bz2" )){
+		return open_bzrastream( filename );
+	} else 
+#else
+	if (!strcmp(ext,"bz2" )){
+		stream *s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return NULL;
+	} 
+#endif
+	{
+		stream *s = open_stream( filename, "rb");
+		return s;
+	}
+}
+stream *open_wastream( char *filename ){
+  	char    ext[EXT_LEN];
+
+  	get_extention(filename, ext);
+
+#ifdef HAVE_LIBZ
+  	if (!strcmp(ext,"gz" )){
+		return open_gzwastream( filename );
+	} else
+#else
+  	if (!strcmp(ext,"gz" )){
+		stream *s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return NULL;
+	} 
+#endif
+#ifdef HAVE_LIBBZ2
+	if (!strcmp(ext,"bz2" )){
+		return open_bzwastream( filename );
+	} else 
+#else
+	if (!strcmp(ext,"bz2" )){
+		stream *s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return NULL;
+	} 
+#endif
+	{
+		stream *s = open_stream( filename, "wb");
+		return s;
+	}
+}
+
+#ifdef HAVE_LIBZ
+static int stream_gzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	int size = elmsize*cnt;
+	size = gzread( (gzFile*)s->stream_data, buf, size );
+	if (size) return size/elmsize;
+	return 0;
+}
+static int stream_gzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	int size = elmsize*cnt;
+	size = gzwrite( (gzFile*)s->stream_data, buf, size );
+	if (size) return size/elmsize;
+	return 0;
+}
+static void stream_gzclose( stream *s ){
+	gzclose( (gzFile*)s->stream_data);
+}
+stream *open_gzstream( char *filename, char *flags ){
+	stream *s = create_stream(filename);
+	gzFile *fp = gzopen( filename, flags );
+	s->read  = &stream_gzread;
+	s->write = &stream_gzwrite;
+	s->close = &stream_gzclose;
+	s->error = &stream_error;
+	s->destroy = &stream_destroy;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+stream *open_gzrstream( char *filename ){
+	stream *s = open_gzstream( filename, "rb");
+	if (s->errnr == NO_ERROR)
+	   gzread( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(sht));
+	return s;
+}
+stream *open_gzwstream( char *filename ){
+	stream *s = open_gzstream( filename, "wb");
+	if (s->errnr == NO_ERROR)
+	   gzwrite( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(sht));
+	return s;
+}
+stream *open_gzrastream( char *filename ){
+	stream *s = open_gzstream( filename, "rb");
+	return s;
+}
+stream *open_gzwastream( char *filename ){
+	stream *s = open_gzstream( filename, "wb");
+	return s;
+}
+#endif
+
+#ifdef HAVE_LIBBZ2
+static int stream_bzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	int size = elmsize*cnt;
+	size = BZ2_bzread( (BZFILE*)s->stream_data, buf, size );
+	if (size) return size/elmsize;
+	return 0;
+}
+static int stream_bzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	int size = elmsize*cnt;
+	size = BZ2_bzwrite( (BZFILE*)s->stream_data, buf, size );
+	if (size) return size/elmsize;
+	return 0;
+}
+static void stream_bzclose( stream *s ){
+	BZ2_bzclose( (BZFILE*)s->stream_data);
+}
+stream *open_bzstream( char *filename, char *flags ){
+	stream *s = create_stream(filename);
+	BZFILE *fp = BZ2_bzopen( filename, flags );
+	s->read  = &stream_bzread;
+	s->write = &stream_bzwrite;
+	s->close = &stream_bzclose;
+	s->error = &stream_error;
+	s->destroy = &stream_destroy;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+stream *open_bzrstream( char *filename ){
+	stream *s = open_bzstream( filename, "rb");
+	if (s->errnr == NO_ERROR) BZ2_bzread( 
+		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(sht) );
+	return s;
+}
+stream *open_bzwstream( char *filename ){
+	stream *s = open_bzstream( filename, "wb");
+	if (s->errnr == NO_ERROR) BZ2_bzwrite( 
+		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(sht) );
+	return s;
+}
+stream *open_bzrastream( char *filename ){
+	stream *s = open_bzstream( filename, "rb");
+	return s;
+}
+stream *open_bzwastream( char *filename ){
+	stream *s = open_bzstream( filename, "wb");
+	return s;
+}
+#endif

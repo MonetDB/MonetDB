@@ -38,7 +38,7 @@ reachable points by (dag!) 'edges'."
 @{
 @* Implementation
 @c
-#include <gdk.h>
+#include "oo7.proto.h"
 #include <monet.h>
 
 #define NEWOID 		(OID++)

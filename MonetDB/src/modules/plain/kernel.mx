@@ -220,6 +220,7 @@ should be delivered.
 #include "monet_context.h"
 #include "monet_client.h"
 #include "monet_queue.h"
+#include "kernel.proto.h"
 
 @+ Useful Macros 
 The below Mx macros serve to easily  factor out the parameter handling

@@ -3,7 +3,7 @@
 NAME="$1"
 PRELUDE="$2"
 
-for i in README awkscript column format gcol summary test100k init.mil void.mil tstvoid.mil; do
+for i in README awkscript column format gcol summary test100k init.mil void.mil tstvoid.mil load.mil; do
     if [ ! -f $i ]; then
         /bin/rm -f $i
         ln -s $RELSRCDIR/$i .
@@ -13,7 +13,8 @@ done
 TSTDB=${TSTDB}_${NAME}
 
 Mlog -x $MCREATEDB  -db $TSTDB
-Mlog -x $MLOAD test100k -db $TSTDB -oid 30000000 -s 100000 -f format
+#Mlog -x $MLOAD test100k -db $TSTDB -oid 30000000 -s 100000 -f format
+Mlog -x $MSERVER -db $TSTDB         < load.mil
 Mlog -x $MSERVER -db $TSTDB         < init.mil
 Mlog -x $MSERVER -db $TSTDB         < void.mil
 Mlog -x $MSERVER -db $TSTDB         < $NAME.mil | tee output

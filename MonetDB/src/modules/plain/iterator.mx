@@ -124,6 +124,7 @@ c.scan.aggr("min",b).print;
 typedef ptr iter;
 @c
 #include "iterator.h"
+#include "iterator.proto.h"
 
 int chunksize = 1;
 

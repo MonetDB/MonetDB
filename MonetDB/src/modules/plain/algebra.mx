@@ -2103,6 +2103,7 @@ int CMDmax_@1(@1* result, BAT *b) {
 }
 @c
 #include "gdk.h"
+#include "algebra.proto.h"
 
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@

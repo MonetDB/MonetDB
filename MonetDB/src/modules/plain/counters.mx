@@ -79,6 +79,7 @@ typedef struct {
 } counter;
 @c
 #include "counters.h"
+#include "counters.proto.h"
 #include "errno.h"
 
 int NumEvents = 0, NoEvent = 0;

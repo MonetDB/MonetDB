@@ -1,0 +1,1640 @@
+stdout of test 'none` in directory 'tests/sigs` itself:
+
+#> Mtest:	milS none milS
+#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_sigs -single none.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for CYGWIN32_NT4.0/32bit on Thu Feb 24 03:32:02  2000.
+#script:none.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_26  #
+# (str)		  (void)  #
+#-------------------------#
+[ "algebra",	  nil	  ]
+[ "arith",	  nil	  ]
+[ "bat",	  nil	  ]
+[ "kernel",	  nil	  ]
+[ "str",	  nil	  ]
+[ "sys",	  nil	  ]
+[ "trans",	  nil	  ]
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (void)  #
+#-------------------------#
+[ "BasicOdmg",	  nil	  ]
+[ "CC_Test",	  nil	  ]
+[ "CC_odmg",	  nil	  ]
+[ "Meta",	  nil	  ]
+[ "Test7",	  nil	  ]
+[ "TransTest",	  nil	  ]
+[ "aggr",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "algebra",	  nil	  ]
+[ "arith",	  nil	  ]
+[ "bat",	  nil	  ]
+[ "bitset",	  nil	  ]
+[ "bitvector",	  nil	  ]
+[ "blob",	  nil	  ]
+[ "cluster",	  nil	  ]
+[ "counters",	  nil	  ]
+[ "ddbench",	  nil	  ]
+[ "decimal",	  nil	  ]
+[ "enum",	  nil	  ]
+[ "io",		  nil	  ]
+[ "jOdmg",	  nil	  ]
+[ "kernel",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "malalgebra",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "mprof",	  nil	  ]
+[ "odmg",	  nil	  ]
+[ "oo7",	  nil	  ]
+[ "radix",	  nil	  ]
+[ "salgebra",	  nil	  ]
+[ "signature",	  nil	  ]
+[ "stats",	  nil	  ]
+[ "str",	  nil	  ]
+[ "sys",	  nil	  ]
+[ "tcpip",	  nil	  ]
+[ "temporal",	  nil	  ]
+[ "tpcd",	  nil	  ]
+[ "trans",	  nil	  ]
+[ "uchr",	  nil	  ]
+[ "unix",	  nil	  ]
+[ "url",	  nil	  ]
+[ "wisc",	  nil	  ]
+[ "xtables",	  nil	  ]
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (void)  #
+#-------------------------#
+[ "algebra",	  nil	  ]
+[ "arith",	  nil	  ]
+[ "bat",	  nil	  ]
+[ "cluster",	  nil	  ]
+[ "kernel",	  nil	  ]
+[ "str",	  nil	  ]
+[ "sys",	  nil	  ]
+[ "trans",	  nil	  ]
+
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[~monet_mod_nme].reverse.sort.print;
+#-------------------------#
+# BAT:		  tmp_73  #
+# (str)		  (void)  #
+#-------------------------#
+[ "CC_odmg",	  nil	  ]
+[ "Meta",	  nil	  ]
+[ "algebra",	  nil	  ]
+[ "arith",	  nil	  ]
+[ "bat",	  nil	  ]
+[ "bitset",	  nil	  ]
+[ "cluster",	  nil	  ]
+[ "kernel",	  nil	  ]
+[ "odmg",	  nil	  ]
+[ "signature",	  nil	  ]
+[ "str",	  nil	  ]
+[ "sys",	  nil	  ]
+[ "trans",	  nil	  ]
+
+fix:=monet_mod_nme.reverse.copy;
+[fix~].print;
+#-------------------------#
+# BAT:		  tmp_74  #
+# (str)		  (void)  #
+#-------------------------#
+[ "kernel",	  nil	  ]
+[ "arith",	  nil	  ]
+[ "str",	  nil	  ]
+[ "bat",	  nil	  ]
+[ "algebra",	  nil	  ]
+[ "sys",	  nil	  ]
+[ "trans",	  nil	  ]
+[ "cluster",	  nil	  ]
+[ "Meta",	  nil	  ]
+[ "CC_odmg",	  nil	  ]
+[ "odmg",	  nil	  ]
+[ "signature",	  nil	  ]
+[ "bitset",	  nil	  ]
+#-------------------------#
+# BAT:		  tmp_76  #
+# (str)		  (void)  #
+#-------------------------#
+[ "xtables",	  nil	  ]
+[ "wisc",	  nil	  ]
+[ "url",	  nil	  ]
+[ "unix",	  nil	  ]
+[ "uchr",	  nil	  ]
+[ "tpcd",	  nil	  ]
+[ "temporal",	  nil	  ]
+[ "tcpip",	  nil	  ]
+[ "stats",	  nil	  ]
+[ "salgebra",	  nil	  ]
+[ "radix",	  nil	  ]
+[ "oo7",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "jOdmg",	  nil	  ]
+[ "io",		  nil	  ]
+[ "enum",	  nil	  ]
+[ "decimal",	  nil	  ]
+[ "ddbench",	  nil	  ]
+[ "counters",	  nil	  ]
+[ "blob",	  nil	  ]
+[ "bitvector",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "aggr",	  nil	  ]
+[ "TransTest",	  nil	  ]
+[ "Test7",	  nil	  ]
+[ "CC_Test",	  nil	  ]
+[ "BasicOdmg",	  nil	  ]
+[ "mprof",	  nil	  ]
+
+	loading xtables
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_76  #
+# (str)		  (void)  #
+#-------------------------#
+[ "xtables",	  nil	  ]
+
+	dropping xtables
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading wisc
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "wisc",	  1		  ]
+#-----------------#
+# BAT:	  tmp_74  #
+# (str)	  (void)  #
+#-----------------#
+[ "wisc", nil	  ]
+
+	dropping wisc
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading url
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "url",	  1		  ]
+#-----------------#
+# BAT:	  tmp_76  #
+# (str)	  (void)  #
+#-----------------#
+[ "url",  nil	  ]
+
+	dropping url
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading unix
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "unix",	  1		  ]
+#-----------------#
+# BAT:	  tmp_74  #
+# (str)	  (void)  #
+#-----------------#
+[ "unix", nil	  ]
+
+	dropping unix
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading uchr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  1		  ]
+#-----------------#
+# BAT:	  tmp_78  #
+# (str)	  (void)  #
+#-----------------#
+[ "uchr", nil	  ]
+
+	dropping uchr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading tpcd
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  2		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "tpcd",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_78  #
+# (str)	  (void)  #
+#-----------------#
+[ "tpcd", nil	  ]
+
+	dropping tpcd
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading temporal
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "temporal",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_76  #
+# (str)		  (void)  #
+#-------------------------#
+[ "temporal",	  nil	  ]
+
+	dropping temporal
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading tcpip
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "tcpip",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_78  #
+# (str)		  (void)  #
+#-------------------------#
+[ "tcpip",	  nil	  ]
+
+	dropping tcpip
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "stats",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_74  #
+# (str)		  (void)  #
+#-------------------------#
+[ "stats",	  nil	  ]
+
+	dropping stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading salgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  2		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "salgebra",	  1		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_79  #
+# (str)		  (void)  #
+#-------------------------#
+[ "salgebra",	  nil	  ]
+
+	dropping salgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading radix
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "radix",	  1		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_76  #
+# (str)		  (void)  #
+#-------------------------#
+[ "radix",	  nil	  ]
+
+	dropping radix
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading oo7
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "oo7",	  1		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_78  #
+# (str)	  (void)  #
+#-----------------#
+[ "oo7",  nil	  ]
+
+	dropping oo7
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading monettime
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "monettime",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_74  #
+# (str)		  (void)  #
+#-------------------------#
+[ "monettime",	  nil	  ]
+
+	dropping monettime
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading mmath
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "mmath",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_78  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mmath",	  nil	  ]
+
+	dropping mmath
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading malalgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_78  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+
+	dropping malalgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading lock
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "lock",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_74  #
+# (str)	  (void)  #
+#-----------------#
+[ "lock", nil	  ]
+
+	dropping lock
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading jOdmg
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "blob",	  2		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "jOdmg",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  3		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "tcpip",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_74  #
+# (str)		  (void)  #
+#-------------------------#
+[ "jOdmg",	  nil	  ]
+[ "blob",	  nil	  ]
+[ "tcpip",	  nil	  ]
+[ "io",		  nil	  ]
+
+	dropping jOdmg
+
+
+	dropping blob
+
+
+	dropping tcpip
+
+
+	dropping io
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading io
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_78  #
+# (str)	  (void)  #
+#-----------------#
+[ "io",	  nil	  ]
+[ "blob", nil	  ]
+
+	dropping io
+
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading enum
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "enum",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_80  #
+# (str)	  (void)  #
+#-----------------#
+[ "enum", nil	  ]
+[ "io",	  nil	  ]
+[ "blob", nil	  ]
+
+	dropping enum
+
+
+	dropping io
+
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading decimal
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "decimal",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_79  #
+# (str)		  (void)  #
+#-------------------------#
+[ "decimal",	  nil	  ]
+
+	dropping decimal
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading ddbench
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "ddbench",	  1		  ]
+[ "enum",	  1		  ]
+[ "io",		  2		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_78  #
+# (str)		  (void)  #
+#-------------------------#
+[ "ddbench",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+[ "enum",	  nil	  ]
+
+	dropping ddbench
+
+
+	dropping xtables
+
+
+	dropping io
+
+
+	dropping blob
+
+
+	dropping enum
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading counters
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "counters",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_78  #
+# (str)		  (void)  #
+#-------------------------#
+[ "counters",	  nil	  ]
+
+	dropping counters
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_74  #
+# (str)	  (void)  #
+#-----------------#
+[ "blob", nil	  ]
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading bitvector
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "bitvector",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_80  #
+# (str)		  (void)  #
+#-------------------------#
+[ "bitvector",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping bitvector
+
+
+	dropping io
+
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading alarm
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "alarm",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_80  #
+# (str)		  (void)  #
+#-------------------------#
+[ "alarm",	  nil	  ]
+
+	dropping alarm
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading aggr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "aggr",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_79  #
+# (str)	  (void)  #
+#-----------------#
+[ "aggr", nil	  ]
+
+	dropping aggr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading TransTest
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  2		  ]
+[ "Meta",	  2		  ]
+[ "TransTest",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_78  #
+# (str)		  (void)  #
+#-------------------------#
+[ "TransTest",	  nil	  ]
+
+	dropping TransTest
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading Test7
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "BasicOdmg",	  1		  ]
+[ "CC_odmg",	  3		  ]
+[ "Meta",	  3		  ]
+[ "Test7",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#---------------------------------#
+# BAT:		  tmp_150	  #
+# (str)		  (void)	  #
+#---------------------------------#
+[ "Test7",	  nil		  ]
+[ "BasicOdmg",	  nil		  ]
+
+	dropping Test7
+
+
+	dropping BasicOdmg
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading CC_Test
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_Test",	  1		  ]
+[ "CC_odmg",	  2		  ]
+[ "Meta",	  2		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#---------------------------------#
+# BAT:		  tmp_195	  #
+# (str)		  (void)	  #
+#---------------------------------#
+[ "CC_Test",	  nil		  ]
+
+	dropping CC_Test
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading BasicOdmg
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "BasicOdmg",	  1		  ]
+[ "CC_odmg",	  2		  ]
+[ "Meta",	  2		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#---------------------------------#
+# BAT:		  tmp_205	  #
+# (str)		  (void)	  #
+#---------------------------------#
+[ "BasicOdmg",	  nil		  ]
+
+	dropping BasicOdmg
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading mprof
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "mprof",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#---------------------------------#
+# BAT:		  tmp_223	  #
+# (str)		  (void)	  #
+#---------------------------------#
+[ "mprof",	  nil		  ]
+
+	dropping mprof
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]

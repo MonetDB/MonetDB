@@ -1,0 +1,134 @@
+stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
+
+#> Mtest:	milS 99_Modules_ALL milS
+#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 99_Modules_ALL.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Tue Apr 11 05:46:23 MET DST 2000.
+#script:99_Modules_ALL.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(20000000));
+
+#All_mods:=MODULES.sort.copy;
+module("cluster");
+
+All_mods:=MODULES.sort.copy.access(BAT_WRITE).revert;
+All_mods@batloop {
+	printf("%9s: ",$h);
+	if (not(monet_mod_nme.reverse.exist($h))) {
+		printf("loading... ");
+		module($h);
+		printf("done.\n");
+	} else {
+		printf("loaded.\n");
+	}
+}
+  xtables: loading... done.
+     wisc: loading... done.
+      url: loading... done.
+     unix: loading... done.
+     uchr: loading... done.
+    trans: loaded.
+     tpcd: loading... done.
+ temporal: loading... done.
+    tcpip: loading... done.
+      sys: loaded.
+      str: loaded.
+    stats: loading... done.
+signature: loaded.
+ salgebra: loading... done.
+    radix: loading... done.
+      oo7: loading... done.
+     odmg: loaded.
+    mprof: loading... done.
+monettime: loading... done.
+    mmath: loading... done.
+malalgebra: loading... done.
+     lock: loading... done.
+   kernel: loaded.
+    jOdmg: loading... done.
+       io: loaded.
+     enum: loading... done.
+  decimal: loading... done.
+  ddbench: loading... done.
+ counters: loading... done.
+  cluster: loaded.
+     blob: loaded.
+bitvector: loading... done.
+   bitset: loaded.
+      bat: loaded.
+    arith: loaded.
+  algebra: loaded.
+    alarm: loading... done.
+     aggr: loading... done.
+TransTest: loading... done.
+    Test7: loading... done.
+     Meta: loaded.
+  CC_odmg: loaded.
+  CC_Test: loading... done.
+BasicOdmg: loaded.
+#-----------------#
+# 38 modules	  #
+#-----------------#
+[ "BasicOdmg"	  ]
+[ "CC_Test"	  ]
+[ "CC_odmg"	  ]
+[ "Meta"	  ]
+[ "Test7"	  ]
+[ "TransTest"	  ]
+[ "aggr"	  ]
+[ "alarm"	  ]
+[ "algebra"	  ]
+[ "arith"	  ]
+[ "bat"		  ]
+[ "bitset"	  ]
+[ "bitvector"	  ]
+[ "blob"	  ]
+[ "cluster"	  ]
+[ "counters"	  ]
+[ "ddbench"	  ]
+[ "decimal"	  ]
+[ "enum"	  ]
+[ "io"		  ]
+[ "jOdmg"	  ]
+[ "kernel"	  ]
+[ "lock"	  ]
+[ "malalgebra"	  ]
+[ "mmath"	  ]
+[ "monettime"	  ]
+[ "mprof"	  ]
+[ "odmg"	  ]
+[ "oo7"		  ]
+[ "radix"	  ]
+[ "salgebra"	  ]
+[ "signature"	  ]
+[ "stats"	  ]
+[ "str"		  ]
+[ "sys"		  ]
+[ "tcpip"	  ]
+[ "temporal"	  ]
+[ "tpcd"	  ]
+[ "trans"	  ]
+[ "uchr"	  ]
+[ "unix"	  ]
+[ "url"		  ]
+[ "wisc"	  ]
+[ "xtables"	  ]
