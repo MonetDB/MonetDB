@@ -482,6 +482,10 @@ module(mmath);
 module(decimal);
 module(mapi); # mapi_listen 
 
+# low memory usage for testing unloading
+#mem_maxsize(1024LL);
+#vm_maxsize(1024LL);
+
 mvc_init(int(monet_environment.find("sql_debug")));
 
 const QPARSE := 1;

@@ -1708,7 +1708,7 @@ literal:
 		{ sql_subtype *t = sql_bind_subtype("MEDIUMINT", 0, 0 );
 		  $$ = _newAtomNode( atom_int(t, $1)); }
  |  INTNUM   
-		{ sql_subtype *t = sql_bind_subtype("FLOAT", 23, 0 );
+		{ sql_subtype *t = sql_bind_subtype("DOUBLE", 51, 0 );
 		  $$ = _newAtomNode( atom_float(t, strtod($1,&$1))); }
  |  APPROXNUM
 		{ sql_subtype *t = sql_bind_subtype("DOUBLE", 51, 0 );

@@ -11,9 +11,9 @@
 char *
 simple_prompt(const char *prompt, int maxlen, int echo)
 {
-        int        length;
-        char       *destination;
-        FILE       *termin, *termout;
+        int        length = 0;
+        char       *destination = NULL;
+        FILE       *termin = NULL, *termout = NULL;
 
 #ifdef HAVE_TERMIOS_H
         struct termios t_orig, t;
@@ -31,6 +31,12 @@ simple_prompt(const char *prompt, int maxlen, int echo)
 		termout = stderr;
 	}
 
+        if (prompt)
+        {
+                fputs( prompt, termout);
+                fflush(termout);
+        }
+
 #ifdef HAVE_TERMIOS_H
         if (!echo)
         {
@@ -40,12 +46,6 @@ simple_prompt(const char *prompt, int maxlen, int echo)
                 tcsetattr(fileno(termin), TCSAFLUSH, &t);
         }
 #endif
-
-        if (prompt)
-        {
-                fputs(prompt, termout);
-                fflush(termout);
-        }
 
         if (fgets(destination, maxlen, termin) == NULL)
                 destination[0] = '\0';
@@ -74,12 +74,12 @@ simple_prompt(const char *prompt, int maxlen, int echo)
                 fputs("\n", termout);
                 fflush(termout);
         }
-#endif
 	if (termin != stdin)
 		fclose(termin);
 
 	if (termout != stdout)
 		fclose(termout);
+#endif
 
         return destination;
 }

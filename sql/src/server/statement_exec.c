@@ -43,7 +43,11 @@ static void atom_dump( atom *a, context *sql){
 					a->tpe->type->name, a->data.sval); 
  			break;
 	case float_value: 
-			i=snprintf(buf, BUFSIZ, "%s(%f)", 
+			/* float/double requires string as 
+			 * else dbl(0.1), will first be a float and
+			 * then converted to dbl, which results in the
+			 * wrong value */ 
+			i=snprintf(buf, BUFSIZ, "%s(\"%f\")", 
 					a->tpe->type->name, a->data.dval); 
 			break;
 	case general_value:

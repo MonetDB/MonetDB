@@ -56,27 +56,27 @@
 /* returns a socket descriptor (>= 0) or an error code (< 0) */
 int client(char *host, int port ){
     struct sockaddr_in server;
-    struct hostent * host_info;
+    struct hostent * hp;
     int sock;
+    int res;
 
     if ((sock = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
       fprintf (stderr, "client: could not open socket\n");
       return -2;
     }
 
-    if (!(host_info = gethostbyname (host))) {
+    if (!(hp = gethostbyname (host))) {
       fprintf (stderr, "client: unknown host %s\n", host);
       return -3;
     }
 
-    server.sin_family = host_info -> h_addrtype;
-    memcpy ((char *) &server.sin_addr,
-            host_info -> h_addr,
-            host_info -> h_length);
-    server.sin_port = htons (port);
+    memset(&server, 0, sizeof(server));
+    memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
+    server.sin_family = hp -> h_addrtype;
+    server.sin_port   = htons((unsigned short)(port&0xFFFF));
 
-    if (connect (sock, (struct sockaddr *) &server, sizeof server) < 0) {
-      fprintf (stderr, "client: could not connect to server\n");
+    if ((res=connect (sock, (struct sockaddr *) &server, sizeof server)) < 0) {
+      fprintf (stderr, "client: could not connect to server %d\n", res);
       return -4;
     }
 
