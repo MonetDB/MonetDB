@@ -138,7 +138,7 @@ BAT @#monet_atomtbl@:
 @-
 @T
 {\small\begin{verbatim}
-# Monet Database Server V4.3.13
+# Monet Database Server V4.3.12
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 monet>monet_atomtbl.print;
@@ -238,7 +238,7 @@ and their mapping to strings can be looked up in system BAT by the name
 of @#monet_acctbl@:
 @T
 {\small\begin{verbatim}
-# Monet Database Server V4.3.13
+# Monet Database Server V4.3.12
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 monet>monet_acctbl.print;

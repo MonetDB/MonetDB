@@ -856,7 +856,7 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
                 if (fd >= 0) {
                         q = (char*) mmap(p+oldsize, newsize-oldsize,
                                 PROT_READ|PROT_WRITE,
-                                MAP_PRIVATE|MAP_FIXED, fd, (off_t)oldsize);
+                                MMAP_FLAGS|MAP_FIXED, MMAP_FD, (off_t)oldsize);
                         close(fd);
                 }
         }
@@ -1153,7 +1153,11 @@ static void MT_alloc_init(void) {
                 }
 #else
 		int fd = open("/dev/zero", O_RDWR, 0666);
+#ifdef __MACH__
+                void *q = (char*) mmap(p, MT_VMUNITSIZE, PROT_NONE, MAP_NORESERVE|MAP_ANON, -1, 0);
+#else
                 void *q = (char*) mmap(p, MT_VMUNITSIZE, PROT_NONE, MAP_NORESERVE, fd, 0);
+#endif
 		close(fd);
 		if (q != p) mode |= 128;
 		if (q != (char*) -1) munmap(q, MT_VMUNITSIZE);

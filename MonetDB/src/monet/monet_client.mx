@@ -182,6 +182,7 @@ Find an empty client slot.  The console entry is reserved.
 	monet_cntxt[c->stk].reuse = -1;
 	monet_cntxt[c->stk].outer = c->stk?0:-1;
 	monet_cntxt[c->stk].next = -1;
+	monet_cntxt[c->stk].shadow = 0;
 	if (c->input == 0) {
 		c->input = (str) GDKmalloc(4096);
 	}

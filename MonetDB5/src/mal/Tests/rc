@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "---->" tst$1
-cp tst$1.output tst$1.stable
