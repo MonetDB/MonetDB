@@ -145,7 +145,7 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 		for (; lp < lq; lp+=ls, rp+=rs) {
 			if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
-				*bnp = *(@1*)rp @2 *(@1*)rp;
+				*bnp = *(@1*)lp @2 *(@1*)rp;
 			} else {
 				*bnp = @1_nil;
 			}
