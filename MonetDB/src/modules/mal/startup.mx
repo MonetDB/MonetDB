@@ -1,3 +1,4 @@
+@f startup
 @t Mal Startup file
 @a Martin Kersten
 @* Introduction
@@ -15,6 +16,7 @@ the function resolution scheme.
 @mal
 use "mal/atoms";
 use "kernel/startup";
+use "mal/batcalc";
 use "mal/mal";
 use "mal/profiler";
 use "mal/squeezer"; 

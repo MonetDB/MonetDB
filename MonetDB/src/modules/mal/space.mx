@@ -1,3 +1,4 @@
+@f space
 @t MAL object spaces
 @a Martin Kersten
 @v 0.1
@@ -23,6 +24,9 @@ comment "Locates the typed variable in the object space";
 
 pattern take(typevar:bat[any::1,any::2],nme:str): bit = CMDspace_take2
 comment "Locates the bat in the object space ";
+
+pattern releaseAll():void = CMDspace_releaseAll
+comment "Release all BAT from the client pool";
 
 pattern release(v:any, name:str):bit = CMDspace_release
 comment "Release the BAT from the client pool";
@@ -80,6 +84,11 @@ int CMDspace_take(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 
 int CMDspace_release(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	printf("space_release not yet implemented\n");
+	return GDK_SUCCEED;
+}
+
+int CMDspace_releaseAll(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	printf("space_releaseAll not yet implemented\n");
 	return GDK_SUCCEED;
 }
 

@@ -1,3 +1,4 @@
+@f profiler
 @t Monet Performance Monitor
 @a Martin Kersten
 @* Introduction
@@ -45,10 +46,16 @@ command activate(name:str)= CMDactivateProfiler
 command deactivate(name:str)= CMDdeactivateProfiler
 	comment "Deactivate the counter";
 
+command setAll()= CMDsetAllProfiler
+comment "Short cut for setFilter(*,*).\n";
+
 command setFilter(mod:str,fcn:str)= CMDsetFilterProfiler
 	comment "Generate an event record for all function calls that
 	satisfy the 'regular' expression mod.fcn. A wildcard (*) can be
 	used as name to identify all"
+
+command clrAll()= CMDcltAllProfiler
+comment "Short cut for clrFilter(*,*).\n";
 
 command clrFilter(mod:str,fcn:str)= CMDclrFilterProfiler
 	comment "Clear the performance trace bit of the selected functions.";
@@ -129,10 +136,21 @@ int CMDsetFilterProfiler(int *res, str *mod, str *fcn){
 	eventFilter(getClient()->nspace, *mod, *fcn);
 	return GDK_SUCCEED;
 }
+
+int CMDsetAllProfiler(int *res){
+	str x = GDKstrdup("*");
+	str y = GDKstrdup("*");
+	return CMDsetFilterProfiler(res, &x, &y);
+}
 int CMDclrFilterProfiler(int *res, str *mod, str *fcn){
 	@:checkProfiler@
 	resetFilter(getClient()->nspace, *mod, *fcn);
 	return GDK_SUCCEED;
+}
+int CMDclrAllProfiler(int *res){
+	str x = GDKstrdup("*");
+	str y = GDKstrdup("*");
+	return CMDclrFilterProfiler(res, &x, &y);
 }
 
 int CMDsetFileProfiler(int *res, str *fnme){

@@ -5,7 +5,7 @@ GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
 
 STATIC_MODS =  \
-	../modules/kernel/lib_arith \
+	../modules/kernel/lib_calc \
 	../modules/kernel/lib_bat ../modules/kernel/lib_algebra \
 	../modules/kernel/lib_system 
 
