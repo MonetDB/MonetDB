@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+$MONET_PREFIX/lib/MonetDB/Tests/smack01 $MAPIPORT
