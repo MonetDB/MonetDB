@@ -479,9 +479,9 @@ str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol s= NULL;
 	Client c= getClient();
 
-	scope = findScope(c->nspace,modnme);
+	scope = findModule(c->nspace,modnme);
 	if( scope)
-		s= findSymbolInScope(scope,fcnnme);
+		s= findSymbolInModule(scope,fcnnme);
 
 	if( s == NULL)
 		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
@@ -550,7 +550,7 @@ str INSPECTmanual(int *ret, str *fname, str *mod,int *recursive){
 	fs= open_wastream(*fname);
 	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
 	dumpManualHeader(fs);
-	dumpManual(fs, findScope(getClient()->nspace,*mod),*recursive);
+	dumpManual(fs, findModule(getClient()->nspace,*mod),*recursive);
 	dumpManualFooter(fs);
 	return MAL_SUCCEED;
 }
@@ -562,7 +562,7 @@ str INSPECTmanual2(int *ret, str *fname, str *mod,int *recursive){
 str INSPECTmanual1(int *ret, str *mod){
 	(void) ret; /* fool compiler */
 	dumpManualHeader(GDKout);
-	dumpManual(GDKout, findScope(getClient()->nspace,*mod),0);
+	dumpManual(GDKout, findModule(getClient()->nspace,*mod),0);
 	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
@@ -584,7 +584,7 @@ str INSPECThelp(int *ret, str *mod)
 		return throwMessage("reference.help", "failed to create BAT");
         return throwMessage("reference.help", "Search by keyword not yet available");
 
-	m= findScope(cntxt->nspace,*mod);
+	m= findModule(cntxt->nspace,*mod);
 	if(m)
 	for(i=0;i<256;i++){
 		s= m->subscope[i];

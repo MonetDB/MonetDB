@@ -72,6 +72,29 @@ comment "Dump the data flow of the function
 	M.F in a format recognizable by the 
 	command 'dot' on the file s";
 @-
+The macro processors are also be called during optimizer time
+@mal
+pattern MEoptimizer():void 
+address QOTMEoptimizer
+coment "Inliner of any function";
+pattern MEoptimizer(mod:str):void 
+address QOTMEoptimizerModule
+coment "Inliner of functions in a specific module";
+pattern MEoptimizer(mod:str, fcn:str):void
+address QOTMEoptimizerSymbol
+coment "Inliner of a specific function";
+
+pattern MCoptimizer():void
+address QOTMCoptimizer
+coment "Inliner of any function";
+pattern MCoptimizer(mod:str):void
+address QOTMCoptimizerModule
+coment "Inliner of functions in a specific module";
+pattern MCoptimizer(mod:str, fcn:str):void
+address QOTMCoptimizerSymbol
+coment "Inliner of a specific function";
+
+@-
 The remainder of this file contains dynamic optimization
 routines, i.e. those not covered by the current backend.
 The most important one is the multi-path join, which should
@@ -87,6 +110,7 @@ comment "Evaluate a join path.";
 @h
 #ifndef _OPTIMIZER_H
 #define _OPTIMIZER_H
+/* #define OPTIMIZER_DEBUG*/
 #endif /* _OPTIMIZER_H*/
 @c
 #include "optimizer.h"
@@ -109,9 +133,9 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client c= getClient();
 
 	(void) stk; /* fool compiler */
-	scope = findScope(c->nspace,modnme);
+	scope = findModule(c->nspace,modnme);
 	if( scope)
-		s= findSymbolInScope(scope,fcnnme);
+		s= findSymbolInModule(scope,fcnnme);
 
 	if( s == NULL)
 		GDKerror("@1optimizer:Could not find %s.%s\n",modnme,fcnnme);
@@ -146,9 +170,9 @@ str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol s= NULL;
 	Client c= getClient();
 
-	scope = findScope(c->nspace,modnme);
+	scope = findModule(c->nspace,modnme);
 	if( scope)
-		s= findSymbolInScope(scope,fcnnme);
+		s= findSymbolInModule(scope,fcnnme);
 
 	if( s == NULL)
 		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
@@ -165,7 +189,6 @@ results.
 For the time being, we use a simplistic model, based
 on the assumption that most joins are FK joins anyway.
 @c
-#define OPTIMIZER_DEBUG
 lng QOTjoinEstimate(BAT *l, BAT *r){
     lng lc,rc;
     lc= BATcount(l);
