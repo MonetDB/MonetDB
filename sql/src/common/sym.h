@@ -1,6 +1,16 @@
 #ifndef SYM_H
 #define SYM_H
 
+#ifdef _MSC_VER
+#ifndef LIBSQL
+#define sql_export extern __declspec(dllimport)
+#else
+#define sql_export extern __declspec(dllexport)
+#endif
+#else
+#define sql_export extern
+#endif
+
 typedef enum symtype {
 	type_int,
 	type_string,

@@ -21,17 +21,17 @@ typedef struct list {
 typedef int (*traverse_func) (char *clientdata, int seqnr, void *data);
 typedef void *(*map_func) (char *clientdata, int seqnr, void *data);
 
-extern list *list_create(fdestroy destroy);
+sql_export list *list_create(fdestroy destroy);
 
-extern void list_destroy(list * l);
-extern int list_length(list * l);
+sql_export void list_destroy(list * l);
+sql_export int list_length(list * l);
 
-extern list *list_append(list * l, void *data);
+sql_export list *list_append(list * l, void *data);
 extern list *list_prepend(list * l, void *data);
 
-extern node *list_remove_node(list * l, node * n);
-extern void list_remove_data(list * l, void *data);
-extern void list_move_data(list * l, list * d, void *data);
+sql_export node *list_remove_node(list * l, node * n);
+sql_export void list_remove_data(list * l, void *data);
+sql_export void list_move_data(list * l, list * d, void *data);
 
 
 extern int list_traverse(list * l, traverse_func f, char *clientdata);
@@ -45,7 +45,7 @@ typedef int (*fcmp)(void *data,void *key);
 typedef void *(*fdup)(void *data); 
 typedef void *(*freduce)(void *v1, void *v2); 
 
-extern node *list_find(list * l, void *key, fcmp cmp ); 
+sql_export node *list_find(list * l, void *key, fcmp cmp ); 
 extern list *list_select(list * l, void *key, fcmp cmp, fdup dup ); 
 extern list *list_distinct(list * l, fcmp cmp, fdup dup ); 
 extern void *list_reduce(list * l, freduce red, fdup dup );

@@ -29,7 +29,7 @@ extern atom *atom_general(sql_subtype * tpe, char *val);
 extern atom *atom_dup(atom * a);
 
 extern char *atom2string(atom * a);
-extern sql_subtype *atom_type(atom * a);
+sql_export sql_subtype *atom_type(atom * a);
 
 extern void atom_destroy(atom * a);
 #endif				/* _ATOM_H_ */

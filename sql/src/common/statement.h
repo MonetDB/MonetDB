@@ -184,7 +184,7 @@ extern stmt *stmt_sets(list * s1);
 extern stmt *stmt_ptable(list * basetables, stmt *s);
 
 extern stmt *stmt_copyfrom(table * t, list *files, char *tsep, char *rsep, int nr );
-extern list *stmt_copyfrom_files( stmt *s );
+sql_export list *stmt_copyfrom_files( stmt *s );
 
 extern stmt *stmt_insert(stmt *c, stmt * values, int unique_oids);
 extern stmt *stmt_replace(stmt * c, stmt * values);
@@ -217,9 +217,9 @@ extern stmt *stmt_output(stmt * l);
 extern stmt *stmt_result(stmt * l);
 
 extern sql_subtype *head_type(stmt * st);
-extern sql_subtype *tail_type(stmt * st);
+sql_export sql_subtype *tail_type(stmt * st);
 
-extern char *column_name(stmt * st);
+sql_export char *column_name(stmt * st);
 extern char *table_name(stmt * st);
 extern stmt *head_column(stmt * st);
 extern stmt *tail_column(stmt * st);
@@ -227,7 +227,7 @@ extern column *basecolumn(stmt *st);
 
 extern int stmt_dump(stmt * s, int *nr, context * sql);
 
-extern void stmt_destroy(stmt *s );
+sql_export void stmt_destroy(stmt *s );
 /* reset the stmt nr's */
 extern void stmt_reset( stmt *s );
 extern stmt *stmt_dup( stmt *s );

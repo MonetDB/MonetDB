@@ -69,20 +69,20 @@ typedef struct catalog {
 	struct list *schemas;
 } catalog;
 
-extern catalog *default_catalog_create();
+sql_export catalog *default_catalog_create();
 extern void catalog_destroy(catalog * cat);
 
-extern schema *cat_bind_schema(catalog * cat, char *name);
-extern schema *cat_create_schema(catalog * cat, long id,
+sql_export schema *cat_bind_schema(catalog * cat, char *name);
+sql_export schema *cat_create_schema(catalog * cat, long id,
 				 char *name, char *auth);
-extern void cat_drop_schema(schema * s);
+sql_export void cat_drop_schema(schema * s);
 
 extern table *cat_bind_table(catalog * cat, schema * s, char *name);
-extern table *cat_create_table(catalog * cat, long id, schema * s,
+sql_export table *cat_create_table(catalog * cat, long id, schema * s,
 			       char *name, int type, char *sql);
 
-extern key *cat_table_add_key(table *t, key_type kt, char *name, key *rk );
-extern key *cat_key_add_column(key *k, column *c, int trunc );
+sql_export key *cat_table_add_key(table *t, key_type kt, char *name, key *rk );
+sql_export key *cat_key_add_column(key *k, column *c, int trunc );
 
 #define cat_table_bind_pkey(t) t->pkey
 extern key *cat_table_bind_ukey(table *t, list *colnames);
@@ -90,8 +90,8 @@ extern key *cat_table_bind_sukey(table *t, char *cname);
 
 extern void cat_drop_table(catalog * cat, schema * s, char *name);
 
-extern column *cat_bind_column(catalog * cat, table * t, char *name);
-extern column *cat_create_column(catalog * cat, long id, table * t,
+sql_export column *cat_bind_column(catalog * cat, table * t, char *name);
+sql_export column *cat_create_column(catalog * cat, long id, table * t,
 				 char *name, sql_subtype *type, char *def,
 				 int null_check);
 

@@ -7,12 +7,12 @@
 #include "statement.h"
 #include "sql.h"
 
-extern stmt *sqlnext(context * lc, stream * in, int *err);
-extern stmt *sqlexecute(context * lc, char *stmt);
+sql_export stmt *sqlnext(context * lc, stream * in, int *err);
+sql_export stmt *sqlexecute(context * lc, char *stmt);
 
-extern void sql_init_context(context * lc, stream * out, int debug,
+sql_export void sql_init_context(context * lc, stream * out, int debug,
 			     catalog * cat);
-extern void sql_exit_context(context * lc);
+sql_export void sql_exit_context(context * lc);
 
 extern void sql_statement_init(context * c);
 
