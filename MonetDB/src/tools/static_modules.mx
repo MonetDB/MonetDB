@@ -61,7 +61,6 @@
 @:install_module(bat_mmath)@
 @:install_module(bitset)@
 @:install_module(bitvector)@
-@:install_module(cluster)@
 @:install_module(color)@
 @:install_module(ddbench)@
 @:install_module(image)@

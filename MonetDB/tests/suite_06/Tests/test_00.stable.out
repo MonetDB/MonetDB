@@ -33,7 +33,6 @@ print(t.reverse().ordered());
 var t2:= t.copy();
 t2.access(BAT_WRITE);
 #t2.order;
-module("cluster");
 t2.order();
 print(t2.ordered());
 [ true ]

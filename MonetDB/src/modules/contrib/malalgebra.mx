@@ -40,12 +40,10 @@ Too many bugs.
 @:join(fetch)@
 @:join(merge)@
 @:join(hash)@
-@:join(index)@
 @:leftjoin()@
 @:leftjoin(fetch)@
 @:leftjoin(merge)@
 @:leftjoin(hash)@
-@:leftjoin(index)@
 
   .COMMAND leftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode) :
                     BAT[any::1,any::3] = CMDleftthetajoin;
@@ -210,27 +208,6 @@ BATmalleftmergejoin(BAT *l, BAT *r)
 	return BATleftmergejoin(l, r, oid_nil);
 }
 
-BAT *
-BATmalindexjoin(BAT *l, BAT *r)
-{
-	if (l->ttype == TYPE_void && r->htype == TYPE_void) {
-		GDKerror("BATmalindexjoin: Cannot perform indexjoin on void columns.\n");
-		return NULL;
-	}
-	return BATindexjoin(l, r, oid_nil);
-}
-
-/* don't reorder! */
-BAT *
-BATmalleftindexjoin(BAT *l, BAT *r)
-{
-	if (r->htype == TYPE_void) {
-		GDKerror("BATmalleftindexjoin: Cannot perform leftindexjoin: right head must not be void.\n");
-		return NULL;
-	}
-	return BATleftindexjoin(l, r, oid_nil);
-}
-
 @= joincmd
 int CMD@1join(BAT **result, BAT *left, BAT* right) {
   ERRORcheck(left == NULL, "@1-join: invalid left operand"); 
@@ -246,8 +223,6 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
 @:joincmd(leftmerge)@
 @:joincmd(hash)@
 @:joincmd(lefthash)@
-@:joincmd(index)@
-@:joincmd(leftindex)@
 
 int
 CMDleftthetajoin(BAT **result, BAT *l, BAT *r, int *mode)
@@ -373,12 +348,10 @@ PROC test_malalgebra() : void {
 	@:compresults(hash,oid)@
 	@:compresults(fetch,oid)@
 	@:compresults(merge,oid)@
-	@:compresults(index,oid)@
 	@:compresults(left,oid)@
 	@:compresults(lefthash,oid)@
 	@:compresults(leftfetch,oid)@
 	@:compresults(leftmerge,oid)@
-	@:compresults(leftindex,oid)@
 
 	@:jointest_void()@
 	@:compresults(hash,void)@

@@ -8,7 +8,6 @@ loaded();
 mmn().reverse().mark(oid(nil)).sort().print();
 view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 
-module("cluster");
 loaded();
 mmn().reverse().mark(oid(nil)).sort().print();
 

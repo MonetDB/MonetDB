@@ -110,10 +110,6 @@ BATins(BAT *b, BAT *n)
 			fastpath = 0;
 	}
 
-	if (b->hidx_heap || b->tidx_heap) {
-		IDXdestroy(b);
-	}
-
 	if (b->hhash_heap && 2 * b->hhash.mask < BATcount(b) + BATcount(n)) {
 		HASHremove(b);
 	}
@@ -463,85 +459,7 @@ to indicate this (this is somewhat confusing). Note, however, that
 through the definition of MIL we do not want the nils to appear in
 the result (as (nil @{<,=,>@} ANY) = bit(nil) != true).
 @{
-@= indexselect
-	IDXrng_(m, tl, th, li, hi, &x, &y);
-	if (equi == 0) {
-		while(x < y && @3_EQ(nil, BUNt@2(b, *x), @1)) {
-			x++;	/* if this is a range-select, we skip nil */
-		}
-	}
-	if (b->hvarsized) {
-		IDXloop(m, x, y) {
-			bunfastins(bn, BUNhvar(b, *x), BUNt@2(b, *x));
-		}
-	} else {
-		IDXloop(m, x, y) {
-			bunfastins(bn, BUNhloc(b, *x), BUNt@2(b, *x));
-		}
-	}
-	break;
 @c
-BAT *
-BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi)
-{
-	BAT *m = BATmirror(b);
-	BUN *x, *y;
-	ptr nil = ATOMnilptr(b->ttype);
-	int t = b->ttype;
-
-	if (b->tidx_heap == NULL) {
-	      bunins_failed:
-		BBPreclaim(bn);
-		return NULL;
-	}
-	switch (ATOMstorage(b->ttype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:indexselect(chr,loc,simple)@
-
-		break;
-#endif
-#ifndef NOEXPAND_SHT
-	case TYPE_sht:
-		@:indexselect(sht,loc,simple)@
-
-		break;
-#endif
-#ifndef NOEXPAND_INT
-	case TYPE_int:
-		@:indexselect(int,loc,simple)@
-
-		break;
-#endif
-#ifndef NOEXPAND_FLT
-	case TYPE_flt:
-		@:indexselect(flt,loc,simple)@
-
-		break;
-#endif
-#ifndef NOEXPAND_DBL
-	case TYPE_dbl:
-		@:indexselect(dbl,loc,simple)@
-
-		break;
-#endif
-#ifndef NOEXPAND_LNG
-	case TYPE_lng:
-		@:indexselect(lng,loc,simple)@
-
-		break;
-#endif
-	default:
-		if (b->tvarsized) {
-			@:indexselect(t,var,atom)@
-		} else {
-			@:indexselect(t,loc,atom)@
-		}
-		break;
-	}
-	return bn;
-}
-
 BAT *
 BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit preserve_order)
 {
@@ -694,10 +612,6 @@ Create the result BAT and execute the select algorithm.
 			ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n", b->batId, b->batId, bn->batId);
 
 			bn = BAT_hashselect(b, bn, tl);
-		} else if (!preserve_order && b->tidx_heap) {
-			ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_indexselect(b=%s, bn=%s, tl, th);\n", b->batId, b->batId, bn->batId);
-
-			bn = BAT_indexselect(b, bn, tl, th, li, hi, equi);
 		} else if (!preserve_order && equi && ATOMsize(b->ttype) > 1 && estimate * 100 < batcnt && batcnt * 2 * sizeof(int) < (GDK_mem_maxsize / 4)) {
 			/* Build a hash-table on the fly for equi-select if the selectivity is low
 			 * and it is not too big */
@@ -732,9 +646,6 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 	}
 	if (equi && b->thash_heap) {
 		bn->hsorted = bn->tsorted = FALSE;
-	} else if (b->tidx_heap) {
-		bn->hsorted = FALSE;
-		bn->tsorted = GDK_SORTED;
 	} else {
 		if (BATcount(bn) == BATcount(b))
 			ALIGNset(bn, b);
@@ -912,7 +823,7 @@ BATfragment(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	if ((hl == NULL) && (hh == NULL)) {
 		return BATselect(b, tl, th);
 	}
-	if ((BAThordered(b) & 1) == FALSE && ((BATtordered(b) & 1) || (b->hidx_heap == NULL && b->tidx_heap))) {
+	if ((BAThordered(b) & 1) == FALSE && (BATtordered(b) & 1)) {
 		return BATmirror(BATrestrict(BATmirror(b), tl, th, hl, hh));
 	}
 	return BATrestrict(b, hl, hh, tl, th);
@@ -946,13 +857,6 @@ An index is exploited when possible.
 
 		if (hval && lval && @1_GT(hl,hh,@2)) {
 			GDKerror("BATrestrict: illegal head range.\n");
-		} else if (b->hidx_heap && lval && hval) {
-			BUN *x, *y;
-
-			IDXrng(b, hl, hh, &x, &y);
-			IDXloop(b, x, y) {
-				*m++ = p;
-			}
 		} else {
 			int xx;
 
@@ -1648,37 +1552,7 @@ of binary search.
 		}
 
 @-
-CASE 3: binary index on fragmentation column.
-If a binary index exist on the split column, it is quite easy to split and
-achieve totally sorted chunks at the same time.
-@c
-	} else if (b->tidx_heap) {
-		BUN *q, *p = IDXfirst(m);
-
-		for (yy = 0; yy < n; yy++) {
-			if (yy == n - 1) {
-				q = IDXlast(m);
-			} else {
-				q = IDXfndlast(m, seps[yy]);
-			}
-			bf = part_bat(bn, BAThtype(bn), BATttype(bn), (size_t) (q - p), FALSE);
-			if (bf == NULL) {
-				BBPreclaim(metabat);
-				return NULL;
-			}
-			if (!unary)
-				bf->tsorted = GDK_SORTED;
-			if (BUNins(metabat, seps[yy], &bf->batCacheid) == NULL)
-				goto bunins_failed;
-			IDXloop(m, p, q) {
-				bunfastins(bf, BUNhead(b, *p), BUNtail(b, *p));
-			}
-			BBPunfix(bf->batCacheid);
-			p = q + 1;
-		}
-
-@-
-CASE 4: full scan.
+CASE 3: full scan.
 If it ain't sorted then we gotta scan the whole thing and split.
 This is heavy stuff so we optimize execution according to datatype.
 @

@@ -27,9 +27,6 @@ stdout of test 'GNATS-2736` in directory 'tests/by_Peter` itself:
 # direct_hash_chr
 # direct_hash_sht
 # direct_hash_int
-# direct_idx_chr
-# direct_idx_sht
-# direct_idx_int
 #
 # this script intends to test them all.
 module(aggr);
@@ -62,16 +59,6 @@ tests.insert(b_int.sort().col_name("s_int"), e_int);
 tests.insert(b_sht.sort().col_name("s_sht"), e_sht);
 tests.insert(b_chr.sort().col_name("s_chr"), e_chr);
 tests.insert(b_str.sort().col_name("s_str"), e_str);
-
-proc idx(bat[any,any] b) : bat {
-	b.accbuild("index");
-	return b;
-}
-
-tests.insert(b_int.copy().idx().col_name("i_int"), e_int);
-tests.insert(b_sht.copy().idx().col_name("i_sht"), e_sht);
-tests.insert(b_chr.copy().idx().col_name("i_chr"), e_chr);
-tests.insert(b_str.copy().idx().col_name("i_str"), e_str);
 
 proc ku(bat[any,any] b) : bat[any,any] {
 	return kunique(b);
@@ -189,42 +176,6 @@ tests@batloop() {
 	5	5
 	6	6
 
-# test proc {kunique}(i_int)
-#setaggr impl: non-optimized hash
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test proc {kunique}(i_sht)
-#setaggr impl: non-optimized hash
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test proc {kunique}(i_chr)
-#setaggr impl: non-optimized hash
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test proc {kunique}(i_str)
-#setaggr impl: non-optimized hash
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
 tests@batloop() {
 	printf("\n# test proc {kunique}(%s,%s)\n", $h.bbpname(), $t.bbpname());
 	{ku}($h,$t).mset_print();
@@ -296,38 +247,6 @@ tests@batloop() {
 
 # test proc {kunique}(s_str,e_str)
 #setaggr impl: non-optimized sort
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test proc {kunique}(i_int,e_int)
-#setaggr impl: non-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test proc {kunique}(i_sht,e_sht)
-#setaggr impl: non-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test proc {kunique}(i_chr,e_chr)
-#setaggr impl: non-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test proc {kunique}(i_str,e_str)
-#setaggr impl: non-optimized hash
 	1	1
 	3	3
 	4	4
@@ -413,42 +332,6 @@ tests@batloop() {
 
 # test packed {kunique}(s_str)
 #setaggr impl: non-optimized sort
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test packed {kunique}(i_int)
-#setaggr impl: non-optimized hash
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test packed {kunique}(i_sht)
-#setaggr impl: non-optimized hash
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test packed {kunique}(i_chr)
-#setaggr impl: non-optimized hash
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test packed {kunique}(i_str)
-#setaggr impl: non-optimized hash
 	1	1
 	2	2
 	3	3
@@ -551,46 +434,6 @@ tests@batloop() {
 	7	nil
 	8	nil
 
-# test packed {max}(i_int,e_int)
-#setaggr impl: non-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-	7	nil
-	8	nil
-
-# test packed {max}(i_sht,e_sht)
-#setaggr impl: non-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-	7	nil
-	8	nil
-
-# test packed {max}(i_chr,e_chr)
-#setaggr impl: non-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-	7	nil
-	8	nil
-
-# test packed {max}(i_str,e_str)
-#setaggr impl: non-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-	7	nil
-	8	nil
-
 tests@batloop() {
 	printf("\n# test direct {max}(%s)\n", $h.bbpname());
 	{max}([int]($h)).set_print();
@@ -670,42 +513,6 @@ tests@batloop() {
 
 # test direct {max}(s_str)
 #setaggr impl: non-optimized sort
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test direct {max}(i_int)
-#setaggr impl: int-optimized loop
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test direct {max}(i_sht)
-#setaggr impl: sht-optimized loop
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test direct {max}(i_chr)
-#setaggr impl: chr-optimized loop
-	1	1
-	2	2
-	3	3
-	4	4
-	5	5
-	6	6
-
-# test direct {max}(i_str)
-#setaggr impl: non-optimized hash
 	1	1
 	2	2
 	3	3
@@ -800,46 +607,6 @@ tests@batloop() {
 
 # test direct {max}(s_str,e_str)
 #setaggr impl: non-optimized sort
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-	7	nil
-	8	nil
-
-# test direct {max}(i_int,e_int)
-#setaggr impl: int-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-	7	nil
-	8	nil
-
-# test direct {max}(i_sht,e_sht)
-#setaggr impl: sht-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-	7	nil
-	8	nil
-
-# test direct {max}(i_chr,e_chr)
-#setaggr impl: chr-optimized hash
-	1	1
-	3	3
-	4	4
-	5	5
-	6	6
-	7	nil
-	8	nil
-
-# test direct {max}(i_str,e_str)
-#setaggr impl: non-optimized hash
 	1	1
 	3	3
 	4	4

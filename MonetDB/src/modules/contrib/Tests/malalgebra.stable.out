@@ -24,12 +24,10 @@ test_malalgebra();
 Algorithm hash leads to 0 different answers.
 Algorithm fetch leads to 0 different answers.
 Algorithm merge leads to 0 different answers.
-Algorithm index leads to 0 different answers.
 Algorithm left leads to 0 different answers.
 Algorithm lefthash leads to 0 different answers.
 Algorithm leftfetch leads to 0 different answers.
 Algorithm leftmerge leads to 0 different answers.
-Algorithm leftindex leads to 0 different answers.
 Algorithm hash leads to 0 different answers.
 Algorithm fetch leads to 0 different answers.
 Algorithm merge leads to 0 different answers.

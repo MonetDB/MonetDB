@@ -2827,9 +2827,6 @@ TBL_initclient(Client client, Client father)
 		i = ACC_hash;
 		if (BUNins(client->acctbl, "hash", &i) == NULL)
 			assert(0);
-		i = ACC_index;
-		if (BUNins(client->acctbl, "index", &i) == NULL)
-			assert(0);
 
 		/* Create the client atom-table, and fill it
 		 * with the standard types.

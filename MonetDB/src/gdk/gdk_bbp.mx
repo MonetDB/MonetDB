@@ -1022,8 +1022,6 @@ BBPcacheit(BAT *b)
 	bm->U = b->U;
 	bm->hhash_heap = b->thash_heap;
 	bm->thash_heap = b->hhash_heap;
-	bm->hidx_heap = b->tidx_heap;
-	bm->tidx_heap = b->hidx_heap;
 
 	/* cache it! */
 	BBP_cache(i) = b;
@@ -2727,7 +2725,7 @@ BBPreplace(BAT *b, BAT *bn)
 			b->batDirty = dirtyb;
 			bn->batDirty = dirtybn;
 		} else {
-			/* SUCCEEDED: free b, remove bn hash/idx */
+			/* SUCCEEDED: free b, remove bn hash */
 			BATfree(b);
 			BBPuncacheit(bid, TRUE);
 			BBPcacheit(bn);

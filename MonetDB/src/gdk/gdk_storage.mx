@@ -449,7 +449,6 @@ DESCload(int i)
 		b->tacctype = 0;
 	}
 	b->hhash_heap = b->thash_heap = NULL;
-	b->hidx_heap = b->tidx_heap = NULL;
 	b->batSharecnt = 0;
 	b->void_cnt = 0;
 	/* mil shouldn't mess with just loaded bats */

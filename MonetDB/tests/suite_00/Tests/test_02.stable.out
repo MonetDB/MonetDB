@@ -26,7 +26,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 # BAT:				  tmp_29	  #
 # (str)				  (str)		  #
 #-------------------------------------------------#
-[ "version",			  "980714"	  ]
+[ "version",			  "20696"	  ]
 [ "batId",			  "tmp_29"	  ]
 [ "batCacheid",			  "29"		  ]
 [ "batParentid",		  "0"		  ]
@@ -71,10 +71,10 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "9"		  ]
-[ "batStamp",			  "-152"	  ]
-[ "lastUsed",			  "3084"	  ]
+[ "batStamp",			  "-164"	  ]
+[ "lastUsed",			  "3270"	  ]
 [ "keepAround",			  "0"		  ]
-[ "curStamp",			  "160"		  ]
+[ "curStamp",			  "172"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -96,7 +96,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "29.theap"	  ]
+[ "theap.filename",		  "no file"	  ]
 [ "theap.offset",		  "0"		  ]
 [ "hacctype",			  "null"	  ]
 [ "haccdirty",			  "clean"	  ]
@@ -116,8 +116,6 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "taccelerator.storage",	  "absent"	  ]
 [ "taccelerator.filename",	  "no file"	  ]
 [ "taccelerator.offset",	  "0"		  ]
-[ "head_index",			  "absent"	  ]
-[ "tail_index",			  "absent"	  ]
 #~EndVariableOutput~#
 print(find(s,"cello"));
 [ 3 ]

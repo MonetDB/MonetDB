@@ -30,7 +30,6 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "bat_mmath"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
-[ "cluster"	  ]
 [ "color"	  ]
 [ "ddbench"	  ]
 [ "image"	  ]
@@ -174,17 +173,6 @@ Module: "bitvector"
 [ "[prt]",		  "COMMAND:   ",  "[prt](BAT[void,lng]) : void",			  "Print a bitvector"					  ]
 [ "[set]",		  "COMMAND:   ",  "[set](BAT[any::1,lng], int) : void",			  "Set a bit in a bitvector"				  ]
 [ "test_bitvector",	  "PROC:      ",  "test_bitvector() : void",				  "not available"					  ]
-
-Module: "cluster"
-
-[ 3 ]
-[ 3 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature						| help																																																																																  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "acccluster",		  "COMMAND:   ",  "acccluster(BAT[any,any], int) : void",		  "Call the accelerator-specific cluster function to rearrange the\n cause less page faults."																																																																					  ]
-[ "heapclustercopy",	  "COMMAND:   ",  "heapclustercopy(BAT[any,any], BAT[any,any]) : void",	  "Rearrange the *tail* atoms -- that are supposed to of a variable sized\n typle like 'str' -- in the tail heap of the first BAT. They are put in\n order of appearance of the head elements of the second BAT. That is,\n for each head element from the second BAT we look up the appearance of\n this head element in the first BAT, and re-insert the corresponding tail\n element.\n WARNING: the second BAT *must* be a superset of the first, otherwise\n tuples will be lost!\n WARNING: you better work with head-unique BAts for this, otherwise\n the semantics are very vague.\n NOTE: the two BATs may be equal, in which case lookup is trivial."  ]
-[ "order",		  "COMMAND:   ",  "order(BAT[any::1,any::2], int) : BAT[any::1,any::2]",  "Fast order() on BATs that exceed main-memory, using partitioning. Returns b."																																																																						  ]
 
 Module: "color"
 

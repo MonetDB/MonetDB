@@ -17,7 +17,6 @@ PROC mmn() : BAT[oid,str] {
 }
 
 #All_mods:=MODULES.sort.copy;
-module("cluster");
 # # module(Meta);
 var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();
 All_mods@batloop() {
@@ -65,7 +64,6 @@ malalgebra: loading... done.
   ddbench: loading... done.
  counters: loading... done.
     color: loading... done.
-  cluster: loaded.
   builtin: loaded.
      blob: loading... done.
 bitvector: loaded.
@@ -101,7 +99,6 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "bitvector"	  ]
 [ "blob"	  ]
 [ "builtin"	  ]
-[ "cluster"	  ]
 [ "color"	  ]
 [ "counters"	  ]
 [ "ddbench"	  ]

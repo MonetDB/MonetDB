@@ -30,7 +30,6 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "bat_mmath"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
-[ "cluster"	  ]
 [ "color"	  ]
 [ "ddbench"	  ]
 [ "image"	  ]
@@ -176,17 +175,6 @@ Module: "bitvector"
 [ "[set]",		  "COMMAND:   ",  "[set](BAT[any::1,lng], int) : void",			  "Set a bit in a bitvector"				  ]
 [ "test_bitvector",	  "PROC:      ",  "test_bitvector() : void",				  "not available"					  ]
 
-Module: "cluster"
-
-[ 3 ]
-[ 3 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature						| help																																																																																  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "acccluster",		  "COMMAND:   ",  "acccluster(BAT[any,any], int) : void",		  "Call the accelerator-specific cluster function to rearrange the\n cause less page faults."																																																																					  ]
-[ "heapclustercopy",	  "COMMAND:   ",  "heapclustercopy(BAT[any,any], BAT[any,any]) : void",	  "Rearrange the *tail* atoms -- that are supposed to of a variable sized\n typle like 'str' -- in the tail heap of the first BAT. They are put in\n order of appearance of the head elements of the second BAT. That is,\n for each head element from the second BAT we look up the appearance of\n this head element in the first BAT, and re-insert the corresponding tail\n element.\n WARNING: the second BAT *must* be a superset of the first, otherwise\n tuples will be lost!\n WARNING: you better work with head-unique BAts for this, otherwise\n the semantics are very vague.\n NOTE: the two BATs may be equal, in which case lookup is trivial."  ]
-[ "order",		  "COMMAND:   ",  "order(BAT[any::1,any::2], int) : BAT[any::1,any::2]",  "Fast order() on BATs that exceed main-memory, using partitioning. Returns b."																																																																						  ]
-
 Module: "color"
 
 [ 12 ]
@@ -300,18 +288,16 @@ Module: "iterator"
 
 Module: "malalgebra"
 
-[ 28 ]
-[ 28 ]
+[ 26 ]
+[ 26 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																													  # name
 # str			str		str										str																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "fetchjoin",		  "COMMAND:   ",  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'fetchjoin' implementation of the join."																						  ]
 [ "hashjoin",		  "COMMAND:   ",  "hashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'hashjoin' implementation of the join."																						  ]
-[ "indexjoin",		  "COMMAND:   ",  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'indexjoin' implementation of the join."																						  ]
 [ "leftfetchjoin",	  "COMMAND:   ",  "leftfetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'leftfetchjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."	  ]
 [ "lefthashjoin",	  "COMMAND:   ",  "lefthashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'lefthashjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."	  ]
-[ "leftindexjoin",	  "COMMAND:   ",  "leftindexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",		  "Hook directly into the 'leftindexjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."	  ]
 [ "leftjoin",		  "COMMAND:   ",  "leftjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'leftjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."		  ]
 [ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'leftmergejoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."	  ]
 [ "leftthetajoin",	  "COMMAND:   ",  "leftthetajoin(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",	  "Hook directly into the 'leftthetajoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."																							  ]
@@ -416,6 +402,7 @@ Module: "qt"
 [ "test_uchr",			  "PROC:      ",  "test_uchr() : void",																				  "not available"																																																													  ]
 
 Module: "tpcd"
+
 
 [ 34 ]
 [ 34 ]

@@ -228,9 +228,6 @@ BATundo(BAT *b)
 	BATcheck(b, "BATundo");
 	DELTAprintf("#BATundo %s \n", b->batId);
 	ALIGNundo(b);
-	if (b->hidx_heap || b->tidx_heap) {
-		IDXdestroy(b);
-	}
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->batDirtybuns = 1;
 		b->haccdirty = b->taccdirty = 1;

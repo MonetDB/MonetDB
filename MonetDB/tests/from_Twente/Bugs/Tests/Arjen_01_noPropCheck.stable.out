@@ -127,7 +127,6 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "halign",			  "0",		  "2006",	  "2006",	  "2012",	  "2006",	  "2018",	  "2012",	  "2012",	  "2031",	  "2027",	  "2027"	  ]
 [ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",	  "void",	  "void"	  ]
-[ "head_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "hheap.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "hheap.free",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "hheap.maxsize",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
@@ -157,7 +156,6 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "taccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "tacctype",			  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null"	  ]
 [ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
-[ "tail_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "talign",			  "0",		  "0",		  "2005",	  "2015",	  "2017",	  "2022",	  "2015",	  "2027",	  "2027",	  "2012",	  "2035"	  ]
 [ "tdense",			  "1",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
 [ "theap.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
@@ -179,7 +177,7 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "tseqbase",			  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "1@0",	  "0@0"		  ]
 [ "tsorted",			  "1",		  "1",		  "65",		  "65",		  "0",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65"		  ]
 [ "tvarsized",			  "0",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
-[ "version",			  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714"	  ]
+[ "version",			  "20696",	  "20696",	  "20696",	  "20696",	  "20696",	  "20696",	  "20696",	  "20696",	  "20696",	  "20696",	  "20696"	  ]
 
 # 18:31:57 >  
 # 18:31:57 >  Done.

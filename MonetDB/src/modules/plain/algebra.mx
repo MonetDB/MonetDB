@@ -311,17 +311,6 @@ algorithms; either using the fact that they are ordered()
 already (left on tail, right on head), or by using/creating
 binary search trees on the join columns. "
 @- Theta Join with inner columns
-@m
-.COMMAND theta ( BAT[any::2,any::2] inner_result,
-		BAT[any::1,any::3] outer_result,
-		BAT[any::1,any::2] left,
-		BAT[any::2,any::3] right, int mode)
-				= CMDtheta;
-"Theta join, just as simple thetajoin(l,r); the difference
-is that it returns two values, which are added to the first params
-'inner_result' and 'outer_result'; 'inner_result' gets all matching
-inner tuples, 'outer_result' the other two (what would have the
-result of thetajoin(l,r))."
 @- Band Join (approximate match)
 @m
 .COMMAND bandjoin ( BAT[any::1,any::2] outer,
@@ -495,7 +484,7 @@ running min/max summaries for quickly reducing scan-select ranges on clustered b
 .END algebra;
 
 @* MIL definitions
-@- constants for theta() and thetajoin()
+@- constants for thetajoin()
 @mil
 CONST EQ := 0;
 CONST LT := -1;
@@ -1659,13 +1648,6 @@ int
 CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate)
 {
 	return (*result = BATthetajoin(left, right, *mode, (*estimate == lng_nil) ? oid_nil : (size_t) * estimate)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode)
-{
-	BATtheta(inner, outer, left, right, *mode);
-	return GDK_SUCCEED;
 }
 
 int

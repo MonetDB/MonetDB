@@ -6,9 +6,6 @@ monet_mod_nme.reverse().sort()@batloop(){
 	printf("\n\t%s\n\n",$h);
 	sigs($h);
 }
-module("cluster");
-printf("\n\t%s\n\n","cluster");
-sigs("cluster");
 procs(); 
 loaded();
 monet_mod_nme.reverse().sort().print();

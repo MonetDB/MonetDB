@@ -7,7 +7,6 @@ PROC mmn() : BAT[oid,str] {
 }
 
 #All_mods:=MODULES.sort().copy();
-module("cluster");
 # # module(Meta);
 var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();
 All_mods@batloop() {

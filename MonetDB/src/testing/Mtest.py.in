@@ -1764,10 +1764,10 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
             Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 ! Waiting %d seconds (%d/%d) ... """ % (SERVER, host, port, Serrno, Serrstr, wait, rpt, repeat)
-            STDERR.write(Smsg)
-            STDERR.flush()
-            SrvrErr.write(Smsg)
-            SrvrErr.flush()
+#            STDERR.write(Smsg)
+#            STDERR.flush()
+#            SrvrErr.write(Smsg)
+#            SrvrErr.flush()
             time.sleep(wait)
         else:
             break
@@ -1801,10 +1801,10 @@ def CheckSocket2(env,SERVER,SrvrErr) :
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 ! Using new %sPORT=%s !
 """ % (SERVER, host, port, Serrno, Serrstr, SERVER, env[SERVER+'PORT'])
-        STDERR.write(Smsg)
-        STDERR.flush()
-        SrvrErr.write(Smsg)
-        SrvrErr.flush()
+#        STDERR.write(Smsg)
+#        STDERR.flush()
+#        SrvrErr.write(Smsg)
+#        SrvrErr.flush()
 ### CheckSocket2(env,SERVER,SrvrErr) #
 
 def CheckSocket3(env,SERVER,ErrFileName) :
@@ -1816,12 +1816,12 @@ def CheckSocket3(env,SERVER,ErrFileName) :
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 ! %sPORT was not properly released by Mserver !
 """ % (SERVER, host, port, Serrno, Serrstr, SERVER)
-        STDERR.write(Smsg)
-        STDERR.flush()
-        ErrFile = open(ErrFileName, 'a')
-        ErrFile.write(Smsg)
-        ErrFile.flush()
-        ErrFile.close()
+#        STDERR.write(Smsg)
+#        STDERR.flush()
+#        ErrFile = open(ErrFileName, 'a')
+#        ErrFile.write(Smsg)
+#        ErrFile.flush()
+#        ErrFile.close()
 ### CheckSocket3(env,SERVER,ErrFileName) #
 
 def prompt() :

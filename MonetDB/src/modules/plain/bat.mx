@@ -1375,9 +1375,6 @@ CMDinfo(BAT **retval, BAT *b)
 	if (b->thash_heap) {
 		HASHinfo(bn, &b->thash, "thash->");
 	}
-	BUNins(bn, "head_index", b->hidx_heap ? "present" : "absent");
-	BUNins(bn, "tail_index", b->tidx_heap ? "present" : "absent");
-
 	return GDK_SUCCEED;
 }
 
@@ -1405,10 +1402,6 @@ CMDbatsize(int *tot, BAT *b)
 			size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
 		if (b->thash_heap)
 			size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
-		if (b->hidx_heap)
-			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
-		if (b->tidx_heap)
-			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 	}
 	*tot = size;
 	return GDK_SUCCEED;

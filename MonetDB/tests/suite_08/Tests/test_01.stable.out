@@ -248,15 +248,15 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "config",		  "C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\conf\\MonetDB.conf"																																																				  ]
-[ "gdk_arch",		  "32biti686-pc-win32"																																																														  ]
+#---------------------------------------------------------------------------------------------------------#
+[ "config",		  "/ufs/niels/data/Linux-i686/etc/MonetDB.conf"					  ]
+[ "gdk_arch",		  "32biti686-redhat-linux-gnu"							  ]
 [ "gdk_version",	  "4.7.1"																																																															  ]
-[ "monet_pid",		  "1832"																																																															  ]
-[ "prefix",		  "C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT"																																																							  ]
-[ "exec_prefix",	  "C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT"																																																							  ]
+[ "monet_pid",		  "10852"									  ]
+[ "prefix",		  "/ufs/niels/data/Linux-i686"							  ]
+[ "exec_prefix",	  "/ufs/niels/data/Linux-i686"							  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\dbfarm"																																																						  ]
+[ "gdk_dbfarm",		  "/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm"				  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -264,22 +264,22 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\src\\modules\\plain\\.libs;C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\src\\modules\\contrib\\.libs;C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\src\\modules\\calibrator\\.libs;C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\src\\modules\\mnetcdf\\.libs;C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\src\\mapi\\.libs"  ]
+[ "monet_mod_path",	  "/ufs/niels/data/Linux-i686/lib/MonetDB"					  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "49239"																																																															  ]
+[ "mapi_port",		  "48702"									  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "56935"																																																															  ]
+[ "sql_port",		  "51771"									  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\log"																																																						  ]
+[ "sql_logdir",		  "/ufs/niels/data/Linux-i686/var/MonetDB/log"					  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "xquery_port",	  "45789"																																																															  ]
 [ "xquery_output",	  "dm"																																																																  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
-[ "monet_cwd",		  "C:\\Documents and Settings\\sjoerd\\My Documents\\src\\devel\\MonetDB\\NT\\mTests\\tests\\suite_08"																																																				  ]
+[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/mTests/tests/suite_08"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -309,7 +309,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Wed Mar 30 10:02:47 2005"	  ]
+[ 0,	  "Wed Mar 30 11:43:16 2005"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree

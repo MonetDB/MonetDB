@@ -76,9 +76,6 @@ transaction.
  HASH routines for manipulating GDK's built-in linear-chained
 hash tables, for accelerating lookup searches on BATs.
 @item
- IDX routines for manipulating GDK's built-in binary-tree
-indexes, for accelerating range searches on BATs.
-@item
  ACC routines that define the ADT for user defined search
 accelerators.
 @item
@@ -156,10 +153,9 @@ portable from 32-bits to 64-bits machines: the @strong{ oid} and @strong{ ptr} t
 are derived from @strong{ int} on 32-bits machines, but is derived from @strong{ lng}
 on 64 bits machines. This requires changes in only two lines of code each.
 
-To accelerate lookup and search in BATs, GDK supports two built-in
-search accelerators: hash tables and index trees. We chose
-implementations efficient for main-memory: bucket chained hash and
-binary AVL trees
+To accelerate lookup and search in BATs, GDK supports one built-in
+search accelerator: hash tables. We chose an implementation efficient 
+for main-memory: bucket chained hash 
 @tex
 [@cite{LehCar86,Analyti92}]
 @end tex
@@ -663,12 +659,6 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 	}								\
 }
 @h
-typedef struct TN {
-	BUN v;			/* value associated with this node. */
-	struct TN *l;		/* left subtree: smaller nodes. */
-	struct TN *r;		/* rigth subtree: bigger nodes. */
-} Tnode;
-
 typedef struct {
 	int type;		/* type of index entity */
 	size_t lim;		/* collision list size */
@@ -676,15 +666,6 @@ typedef struct {
 	hash_t *hash;		/* hash table */
 	hash_t *link;		/* collision list */
 } Hash;
-
-typedef struct {
-	Tnode *root;		/* root of index structure. */
-	Tnode *stack;		/* stack with space for nodes */
-	Tnode *free;		/* index of first free node. */
-	BUN *base;		/* lowest BUN in heap. */
-	BUN *first;		/* first BUN in index order. */
-	BUN *last;		/* last BUN in index order. */
-} IDX, *Index;
 
 typedef struct {
 	size_t offset;		/* offset from start of file (bytes). */
@@ -788,7 +769,6 @@ typedef struct {
           int    hloc;             /* byte-offset in BUN for head elements */
           Heap   hheap;            /* heap for varsized head values */
           Hash   hhash;            /* linair chained hash table on head */
-          Index  hidx;             /* binary tree index on head */
           int    hacctype;         /* user-defined accelerator on head */
           str    haccname;         /* accelerator name */
           Heap   haccelerator;     /* storage for head accelerator */
@@ -806,7 +786,6 @@ typedef struct {
           int    tloc;             /* byte-offset in BUN for tail elements */
           Heap   theap;            /* heap for varsized tail values */
           Hash   thash;            /* linair chained hash table on tail */
-          Index  tidx;             /* binary tree index on tail */
           int    tacctype;         /* user-defined accelerator on tail */
           str    taccname;         /* accelerator name */
           Heap   taccelerator;     /* storage for tail accelerator */
@@ -887,7 +866,6 @@ typedef struct {
 	short_str atom;		/* head atom name */
 	Heap heap;		/* space for the head/tail column. */
 	Hash hash;		/* hash index on head/tail column. */
-	IDX idx;		/* tree index on head/tail column. */
 	Heap accelerator;	/* contains heap accelerator. */
 	chr heapdirty;		/* specific heap dirty marker */
 	chr accdirty;		/* specific accelerator dirty marker */
@@ -914,8 +892,6 @@ typedef struct {
 	/* static column properties */
 	Heap *hhash_heap;	/* hash table: points into H->hash */
 	Heap *thash_heap;	/* hash table: points into T->hash */
-	Heap *hidx_heap;	/* index tree: points into H->idx */
-	Heap *tidx_heap;	/* index tree: points into T->idx */
 	/* dynamic column properties */
 	COLrec *H;		/* column info */
 	COLrec *T;		/* column info */
@@ -957,8 +933,6 @@ typedef int (*GDKfcn) ();
 #define batDirtybuns	P->bunsdirty
 #define hhash		H->hash
 #define thash		T->hash
-#define hidx		H->idx
-#define tidx		T->idx
 #define hheapdirty	H->heapdirty
 #define theapdirty	T->heapdirty
 #define haccdirty	H->accdirty
@@ -2202,9 +2176,6 @@ gdk_export void ACCexit(BAT *b);
 @item BAT*
 @tab
  BAThash (BAT *b, size_t masksize)
-@item int
-@tab
- BATidx (BAT *b, BAT *histo)
 @item BAT *
 @tab
  BAThashsplit (BAT *b, size_t n, int unary)
@@ -2213,25 +2184,20 @@ gdk_export void ACCexit(BAT *b);
  BATrangesplit  (BAT *b, int n)
 @end multitable
 
-The current BAT implementation supports two search accelerators:
-hashing and indexing. The routine @%BAThash@ makes sure that a hash
-accelerator on the head of the BAT exists. Likewise @%BATidx@
-updates the index data structure maintained. A zero is returned upon
+The current BAT implementation supports one search accelerator:
+hashing. The routine @%BAThash@ makes sure that a hash
+accelerator on the head of the BAT exists. A zero is returned upon
 failure to create the supportive structures.
 
-The hash data structures are currently maintained during update operations..
-The index data structures are discarded upon a modification of the
-underlying BAT.
+The hash data structures are currently maintained during update operations.
 
 A @%BAT@ can be redistributed over @%n@ buckets using a hash
 function with @%BAThashsplit@. The return value is a list of BAT
-pointers.  Similarly, a range partitioning based on the index is
-supported.
+pointers.  Similarly, a range partitioning based is supported.
 
 @{
 @h
 gdk_export BAT *BAThash(BAT *b, size_t masksize);
-gdk_export BAT *BATidx(BAT *b, BAT *h);
 gdk_export BAT *BAThashsplit(BAT *b, size_t n, int unary);
 gdk_export BAT *BATrangesplit(BAT *b, size_t n, int unary);
 gdk_export BAT *BAThashjoin(BAT *l, BAT *r, size_t estimate);
@@ -2240,13 +2206,6 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BUN SORTfnd(BAT *b, ptr v);
 gdk_export BUN SORTfndfirst(BAT *b, ptr v);
 gdk_export BUN SORTfndlast(BAT *b, ptr v);
-gdk_export BUN IDXfnd(BAT *b, ptr v);
-gdk_export BUN *IDXfndfirst(BAT *b, ptr v);
-gdk_export BUN *IDXfndlast(BAT *b, ptr v);
-gdk_export void IDXrng_(BAT *b, ptr v, ptr w, bit li, bit hi, BUN **p, BUN **q);
-gdk_export void IDXrng(BAT *b, ptr v, ptr w, BUN **p, BUN **q);
-gdk_export void IDXdestroy(BAT *b);
-gdk_export void IDXremove(BAT *b);
 
 #define BATprepareHash(X) (((X)->hhash_heap == NULL) && !BAThash(X, 0))
 @
@@ -2405,7 +2364,6 @@ gdk_export int GDKerrorCount(void);
 gdk_export MT_Lock GDKthreadLock;
 gdk_export MT_Lock GDKstatusLock[BBPLOCKMASK + 1];
 gdk_export MT_Lock GDKswapLock[BBPLOCKMASK + 1];
-gdk_export MT_Lock GDKidxLock[BBPLOCKMASK + 1];
 gdk_export MT_Lock GDKhashLock[BBPLOCKMASK + 1];
 gdk_export MT_Lock GDKunloadLock;
 gdk_export MT_Cond GDKunloadCond;
@@ -2863,24 +2821,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 @item SORTloop
 @tab
  (BAT *b,p,q,tl,th,s)
-@item IDXloop
-@tab
- (BAT *b, BUN p, BUN q)
-@item IDXfrom
-@tab
- (BAT *b, BUN p, BUN q)
-@item IDXstart
-@tab
- (BAT *b, BUN p, BUN q)
-@item IDXend
-@tab
- (BAT *b, BUN p, BUN q)
-@item IDXfirst
-@tab
- (BAT *b)
-@item IDXlast
-@tab
- (BAT *b)
 @end multitable
 
 The @emph{ BATloop()} looks like a function call, but is actually a macro.
@@ -3051,38 +2991,18 @@ The 's' finally is an integer denoting the bunsize, used for speed.
 		  q = @4_EQ(th,@5,@3)?BUNfirst(b):SORTfndlast_@2(b,th),	\
 		  s = BUNsize(b); p < q; p += s)
 @}
-@- loops over BATs with a binary index
-The @%IDXloop@ can be used to traverse BUNs of a BAT in order. You
-need to have called @%BATidx@ first to create an index tree. Here you
-need to initialize 'p' to the first BUN you want to traverse, and 'q'
-to the last one. @%IDXfirst(b)@ gets you the first BUN in the index,
-@%IDXlast(b)@ to the position after the last BUN. @%IDXfndfirst(b,v)@
-goes to a first occurrence of a value, and @%IDXfndlast(b,v)@ to one
-position after the  last occurrence of that value.
 @h
-#define IDXfirst(b)	(b)->hidx.first
-#define IDXlast(b)	(b)->hidx.last
-#define IDXloop(b,p,q)	for (; p < q; p++)
-#define IDXfrom(b,p,q)	for (p = IDXfndfirst(b, p); p < q; p++)
-#define IDXstart(b,p,q)	for (p = IDXfirst(b); p < q; p++)
-#define IDXend(b,p,q)	for (p = IDXlast(b)-1; p >= q; p--)
 
 /* OIDDEPEND */
 #if SIZEOF_OID == SIZEOF_INT
 #define SORTfnd_oid(b,v)	SORTfnd_int(b,v)
 #define SORTfndfirst_oid(b,v)	SORTfndfirst_int(b,v)
 #define SORTfndlast_oid(b,v)	SORTfndlast_int(b,v)
-#define IDXfnd_oid(b,v)		IDXfnd_int(b,v)
-#define IDXfndfirst_oid(b,v)	IDXfndfirst_int(b,v)
-#define IDXfndlast_oid(b,v)	IDXfndlast_int(b,v)
 #define SORTloop_oid(b,p,q,tl,th,s) SORTloop_int(b,p,q,tl,th,s)
 #else
 #define SORTfnd_oid(b,v)	SORTfnd_lng(b,v)
 #define SORTfndfirst_oid(b,v)	SORTfndfirst_lng(b,v)
 #define SORTfndlast_oid(b,v)	SORTfndlast_lng(b,v)
-#define IDXfnd_oid(b,v)		IDXfnd_lng(b,v)
-#define IDXfndfirst_oid(b,v)	IDXfndfirst_lng(b,v)
-#define IDXfndlast_oid(b,v)	IDXfndlast_lng(b,v)
 #define SORTloop_oid(b,p,q,tl,th,s) SORTloop_lng(b,p,q,tl,th,s)
 #endif
 #define SORTloop_bit(b,p,q,tl,th,s) SORTloop_chr(b,p,q,tl,th,s)

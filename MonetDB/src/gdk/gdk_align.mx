@@ -232,18 +232,14 @@ use a copy.
 @c
 	if (slice_view || VIEWparent(b)) {
 		/* slices are unequal to their parents; cannot use accs */
-		bn->hidx.base = bn->tidx.base = NULL;
 		bn->hhash_heap = bn->thash_heap = NULL;
 		bn->hhash.link = bn->thash.link = NULL;
-		bn->hidx_heap = bn->tidx_heap = NULL;
 		bn->hacctype = bn->tacctype = 0;
 		bn->haccelerator.base = bn->taccelerator.base = NULL;
 	} else {
 		/* equal pointers to parent mean view uses acc of parent */
 		bn->hhash_heap = b->hhash_heap;
 		bn->thash_heap = b->thash_heap;
-		bn->hidx_heap = b->hidx_heap;
-		bn->tidx_heap = b->tidx_heap;
 	}
 	gdk_unset_lock(GDKhashLock[ABS(parent) & BBPLOCKMASK], "VIEWcreate_");
 	BBPcacheit(bn);
@@ -277,7 +273,6 @@ VIEWhead(BAT *b)
 	bn->tvarsized = bm->hvarsized = 1;
 	bn->tacctype = bm->hacctype = 0;
 	bn->thash_heap = bm->hhash_heap = NULL;
-	bn->tidx_heap = bm->hidx_heap = NULL;
 	BATseqbase(bm, oid_nil);
 
 	return bn;
@@ -313,7 +308,6 @@ VIEWcombine(BAT *b)
 	bn->tseqbase = bm->hseqbase = bn->hseqbase;
 	bn->tvarsized = bm->hvarsized = bn->hvarsized;
 	bn->thash_heap = bm->hhash_heap = bn->hhash_heap;
-	bn->tidx_heap = bm->hidx_heap = bn->hidx_heap;
 
 	return bn;
 }
@@ -402,8 +396,6 @@ BATmaterialize(BAT *b, size_t size)
 		bm->dims.tseq = b->dims.hseq;
 		bm->hhash_heap = b->thash_heap;
 		bm->thash_heap = b->hhash_heap;
-		bm->hidx_heap = b->tidx_heap;
-		bm->tidx_heap = b->hidx_heap;
 
 		if (head) {	/* set the correct dense info */
 			b->hdense = TRUE;
@@ -463,12 +455,6 @@ VIEWunlink(BAT *b)
 		}
 		if (b->thash_heap && (b->thash_heap == p->hhash_heap || b->thash_heap == p->thash_heap)) {
 			b->thash_heap = m->hhash_heap = NULL;
-		}
-		if (b->hidx_heap && (b->hidx_heap == p->hidx_heap || b->hidx_heap == p->tidx_heap)) {
-			b->hidx_heap = m->tidx_heap = NULL;
-		}
-		if (b->tidx_heap && (b->tidx_heap == p->hidx_heap || b->tidx_heap == p->tidx_heap)) {
-			b->tidx_heap = m->hidx_heap = NULL;
 		}
 		if (b->hacctype && (b->haccelerator.base == p->haccelerator.base || b->haccelerator.base == p->taccelerator.base)) {
 			b->hacctype = 0;

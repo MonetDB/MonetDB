@@ -21,19 +21,11 @@
 @+ BAT Descriptor Versions
 Changes to the BAT descriptors cause problems, as persistent
 BATs with older descriptor versions may still be around. BAT versions
-are marked in the first field of a BAT. Apart from the current BAT
-format, we keep recognizing two historic formats.
+are marked in the first field of a BAT. We only recognize the current BAT
+format, all older versions are discarded (please use dump/restore).
 
-Changes in the BAT image are not only introduced by developers,
-but also by different systems. Two factors are of influence:
-32- or 64-bit operating systems, and little-endian or big-endian
-hardware. Both issues are resolved by code in this file.
-
-The 32- vs 64-bit issue is resolved by saving the 32-bit
-image. 64-bit versions transform this when they get
-loaded and saved.
-
-The little-endian and big-endian problem is resolved using a lazy approach.
+To solve networking problems we can convert between little-endian and 
+big-endian formats. This problem is resolved using a lazy approach.
 Intel saves BATs in different format than Sun, but when one loads the other,
 they do on-the-fly conversions using the new routine @%BATconvert@.
 This routine uses little/big-endian conversion functionality newly
@@ -44,7 +36,7 @@ introduced to the atom ADT (atomConvert and atomHeapConvert).
 @+ BAT versions
 Three BAT formats are currently supported:
 @h
-#define GDKLIBRARY	980714	/* new 64-bits BAT */
+#define GDKLIBRARY	050330	/* new 64-bits BAT */
 
 #define GDKversionOK(x)	((x)==GDKLIBRARY)
 
@@ -124,14 +116,6 @@ BAT, and vice versa.
                 (@2)->hash = (hash_t *) ((@4)->hash?-1L:0);
                 (@2)->link = (hash_t *) ((@4)->link?-1L:0);
 
-@= IDX_ALL
-                (@2)->root = (Tnode *) ((@4)->root?-1L:0);
-               (@2)->stack = (Tnode *) ((@4)->stack?-1L:0);
-                (@2)->free = (Tnode *) ((@4)->free?-1L:0);
-                (@2)->base = (BUN *) ((@4)->base?-1L:0);
-               (@2)->first = (BUN *) ((@4)->first?-1L:0);
-                (@2)->last = (BUN *) ((@4)->last?-1L:0);
-
 @= Heap_ALL
               (@2)->offset = normal_sizet_@5(((@4))->offset);
              (@2)->maxsize = normal_sizet_@5(((@4))->maxsize);
@@ -153,7 +137,6 @@ BAT, and vice versa.
         strcpy_@5((@2)->accname,(@4)->accname)
         @:Heap_ALL(@1,&(@2)->heap,@3,&(@4)->heap,@5)@
         @:Hash_ALL(@1,&(@2)->hash,@3,&(@4)->hash,@5)@
-        @:IDX_ALL(@1,(&(@2)->idx),@3,(&(@4)->idx),@5)@
         @:Heap_ALL(@1,&(@2)->accelerator,@3,&(@4)->accelerator,@5)@
            (@2)->heapdirty = (@4)->heapdirty;
             (@2)->accdirty = (@4)->accdirty;

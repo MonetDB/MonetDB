@@ -974,8 +974,6 @@ BATleftfetchjoin(BAT *l, BAT *r, size_t estimate)
 @-
 This routine does the join optimization. TODO: it should be expressed in MIL.
 @c
-static BAT *batthetajoin(BAT *l, BAT *r, int op, size_t estimate, bit swap);
-
 static BAT *
 batjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 {
@@ -1028,15 +1026,6 @@ loop binary search (both implemented by BATmergejoin).
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r," SZFMT ");\n", estimate);
 
 		return batmergejoin(l, r, estimate, swap);
-	}
-@-
-if hash join is not right away possible and we have a binary tree index,
-we do nested loop index lookup join.
-@c
-	if (must_hash && ((l->tidx_heap && swap) || r->hidx_heap)) {
-		ALGODEBUG THRprintf(GDKout, "BATjoin: batthetajoin(l,r,JOIN_EQ," SZFMT ",swap);\n", estimate);
-
-		return batthetajoin(l, r, JOIN_EQ, estimate, swap);
 	}
 @-
 hash join: the bread&butter join of monet
@@ -1217,171 +1206,43 @@ columns (2*2).
 
 In the end, this results in 4*5*2*2 = 80 different inner loops.
 
-@-
-Thetajoin implementation uses IDXs to compute a thetajoin on two bats.
-@{
-@= thetaloop
-	BATloopFast(l, p, q, xx) {
-		v = (BUN*) BUNtail(l,p);
-		if ((*cmp)(v,nil) == 0) {
-			continue;
-		}
-		@1;
-		IDXloop(r, lo, hi) {
-			if (binner && BUNfastins(binner, BUNtail(l,p), BUNhead(r,*lo)) == NULL)
-				return -1;
-			if (bouter && BUNfastins(bouter, BUNhead(l,p), BUNtail(r,*lo)) == NULL)
-				return -1;
-		}
-	}
-break;
 @c
-static int
-IDXthetajoin(BAT *binner, BAT *bouter, BAT *l, BAT *r, int op)
-{
-	BUN p, q, *lo, *hi, *first = IDXfirst(r), *last = IDXlast(r);
-	int (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
-	ptr v, nil = ATOMnilptr(l->ttype);
-	int xx;
-
-	/* skip nils */
-	while (first < last && (*cmp) (BUNhead(r, *first), nil) == 0) {
-		first++;
-	}
-	BATmmap_pin(r);
-	switch (op) {
-	case JOIN_EQ:
-		@:thetaloop(IDXrng(r,v,v,&lo,&hi))@
-	case JOIN_LE:
-		@:thetaloop(lo=IDXfndfirst(r,v);hi=last)@;
-	case JOIN_LT:
-		@:thetaloop(lo=IDXfndlast(r,v);hi=last)@;
-	case JOIN_GE:
-		@:thetaloop(lo=first;hi=IDXfndlast(r,v))@;
-	case JOIN_GT:
-		@:thetaloop(lo=first;hi=IDXfndfirst(r,v))@;
-	}
-	BATmmap_unpin(r);
-	if (bouter) {
-		bouter->hsorted = BAThordered(l);
-		bouter->tsorted = FALSE;
-	}
-	if (binner) {
-		binner->hsorted = BATtordered(l);
-		binner->tsorted = FALSE;
-	}
-	return 0;
-}
-
-static int
-battheta(BAT *inner, BAT *outer, BAT *l, BAT *r, int op, bit swap)
-{
-	int leftinner = 1;
-
-	BATcheck(l, "BATtheta");
-	BATcheck(r, "BATtheta");
-
-	if (TYPEerror(l->ttype, r->htype) || (inner && (TYPEerror(inner->htype, l->ttype) || TYPEerror(inner->ttype, r->htype))) || (outer && (TYPEerror(outer->htype, l->htype) || TYPEerror(outer->ttype, r->ttype)))) {
-		GDKerror("BATtheta: argument types incompatible\n");
-		return -1;
-	}
-
-	if (!swap || r->hidx_heap || (BAThordered(r) & 1)) {
-		leftinner = 0;
-	} else if (l->tidx_heap || (BATtordered(l) & 1)) {
-		BATflipflop(l);
-		BATflipflop(r);
-	} else if (BATcount(l) < BATcount(r)) {
-		BATflipflop(l);
-		BATflipflop(r);
-	} else {
-		leftinner = 0;
-	}
-
-	if (leftinner) {
-		if (inner)
-			BATflipflop(inner);
-		if (outer)
-			BATflipflop(outer);
-		if (BATidx(l, 0) == 0)
-			return -2;
-		if (IDXthetajoin(inner, outer, r, l, -op) < 0)
-			return -1;
-		if (inner)
-			BATflipflop(inner);
-		if (outer)
-			BATflipflop(outer);
-		BATflipflop(l);
-		BATflipflop(r);
-	} else {
-		if (BATidx(r, 0) == 0)
-			return -2;
-		if (IDXthetajoin(inner, outer, l, r, op) < 0)
-			return -1;
-	}
-	return 0;
-}
-
-int
-BATtheta(BAT *inner, BAT *outer, BAT *l, BAT *r, int op)
-{
-	return battheta(inner, outer, l, r, op, TRUE);
-}
-
-static BAT *
-batthetajoin(BAT *l, BAT *r, int op, size_t estimate, bit swap)
-{
-	BAT *bn;
-
-	@:joinbat(op,batthetajoin(l,r,op,estimate,swap),estimate)@
-	if (battheta(NULL, bn, l, r, op, swap) < 0) {
-		BBPreclaim(bn);
-		return NULL;
-	}
-	ESTIDEBUG THRprintf(GDKout, "batthetajoin: actual resultsize: " SZFMT "\n", BATcount(bn));
-
-	return bn;
-}
-
 BAT *
 BATthetajoin(BAT *l, BAT *r, int op, size_t estimate)
 {
+	size_t _lcount = BATcount(l);
+	size_t _rcount = BATcount(r);
+	size_t _estimate = _lcount * _rcount;
+
 	@:joincheck(BATthetajoin,l->ttype,r->htype)@
+	if (estimate < _estimate)
+		_estimate = estimate;
 	if (op == JOIN_EQ) {
 		/* exploit all equi-join optimizations */
 		ALGODEBUG THRprintf(GDKout, "BATthetajoin(l,r,JOIN_EQ): BATjoin(l, r);\n");
 
-		return BATjoin(l, r, estimate);
+		return BATjoin(l, r, _estimate);
 	}
-	return batthetajoin(l, r, op, estimate, TRUE);
+	return BATnlthetajoin(l, r, op, _estimate);
 }
 
 BAT *
 BATleftthetajoin(BAT *l, BAT *r, int op, size_t estimate)
 {
+	size_t _lcount = BATcount(l);
+	size_t _rcount = BATcount(r);
+	size_t _estimate = _lcount * _rcount;
+
 	@:joincheck(BATleftthetajoin,l->ttype,r->htype)@
+	if (estimate < _estimate)
+		_estimate = estimate;
 	if (op == JOIN_EQ) {
 		/* exploit all equi-join optimizations */
 		ALGODEBUG THRprintf(GDKout, "BATleftthetajoin(l,r,JOIN_EQ): BATleftjoin(l, r);\n");
 
-		return BATleftjoin(l, r, estimate);
+		return BATleftjoin(l, r, _estimate);
 	}
-	return batthetajoin(l, r, op, estimate, FALSE);
-}
-
-BAT *
-BATindexjoin(BAT *l, BAT *r, size_t estimate)
-{
-	/* allows swapping of left and right input for faster processing */
-	return batthetajoin(l, r, JOIN_EQ, estimate, TRUE);
-}
-
-BAT *
-BATleftindexjoin(BAT *l, BAT *r, size_t estimate)
-{
-	/* do not swap left and right input,
-	   and hence maintain order of left head in result */
-	return batthetajoin(l, r, JOIN_EQ, estimate, FALSE);
+	return BATnlthetajoin(l, r, op, _estimate);
 }
 
 /* nested loop join; finally MonetDB can enjoy the virtues of this algorithm as well! */
@@ -1662,117 +1523,6 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 	return NULL;
 }
 
-@- idx semijoin
-similar to binsemijoin, but now using an existing idx accelerator
-for the binary search.
-
-@= idxsemijoin
-{
-	BUN lp, lq;
-	int xx;
-	ptr nil = ATOMnilptr(l->htype);
-
-	if (cpy == l) {
-		BATloopFast(l, lp, lq, xx) {
-			ptr v = BUNh@1(l, lp);
-
-			if (!@3_EQ(v, nil, @2) && IDXfnd_@2(r, v)) {
-				if (BUNfastins(bn, v, BUNtail(l, lp)) == NULL) {
-					BBPreclaim(bn);
-					return NULL;
-				}
-			}
-		}
-	} else {
-		BATloopFast(l, lp, lq, xx) {
-			BUN *rp, *rq;
-			ptr v = BUNh@1(l, lp);
-
-			if (!@3_EQ(v, nil, @2)) {
-				IDXrng(r, v, v, &rp, &rq);
-				IDXloop(r, rp, rq) {
-					if (BUNfastins(bn, v, BUNtail(r,*rp)) == NULL) {
-						BBPreclaim(bn);
-						return NULL;
-					}
-				}
-			}
-		}
-	}
-}
-break;
-@c
-BAT *
-BATidxsemijoin(BAT *l, BAT *r, BAT *cpy)
-{
-	BAT *bn;
-	int loc, var;
-
-	@:joincheck(BATidxsemijoin,l->htype,r->htype)@
-	@:semijoinbat(cpy,TRUE,FALSE,"BATidxsemijoin")@
-	if (r->hidx_heap == NULL) {
-		BATidx(r, 0);
-	}
-
-	BATmmap_pin(r);
-	switch (loc = var = ATOMstorage(l->htype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:idxsemijoin(loc,chr,simple)@
-#endif
-#ifndef NOEXPAND_SHT
-	case TYPE_sht:
-		@:idxsemijoin(loc,sht,simple)@
-#endif
-#ifndef NOEXPAND_INT
-	case TYPE_int:
-		@:idxsemijoin(loc,int,simple)@
-#endif
-#ifndef NOEXPAND_FLT
-	case TYPE_flt:
-		@:idxsemijoin(loc,flt,simple)@
-#endif
-#ifndef NOEXPAND_DBL
-	case TYPE_dbl:
-		@:idxsemijoin(loc,dbl,simple)@
-#endif
-#ifndef NOEXPAND_LNG
-	case TYPE_lng:
-		@:idxsemijoin(loc,lng,simple)@
-#endif
-	default:
-		if (l->hvarsized) {
-			if (r->hvarsized) {
-				@:idxsemijoin(var,var,atom)@
-			} else {
-				@:idxsemijoin(var,loc,atom)@
-			}
-		} else {
-			if (r->hvarsized) {
-				@:idxsemijoin(loc,var,atom)@
-			} else {
-				@:idxsemijoin(loc,loc,atom)@
-			}
-		}
-	}
-	BATmmap_unpin(r);
-
-	/* propagate properties */
-	bn->hsorted = l->hsorted;
-	bn->tsorted = 0;
-	if (BATcount(bn) == BATcount(l)) {
-		if (l == cpy) {
-			ALIGNset(bn, l);
-		} else if (l->hkey && r->hkey) {
-			ALIGNsetH(bn, l);
-		}
-	}
-	ESTIDEBUG THRprintf(GDKout, "BATidxsemijoin: actual resultsize: " SZFMT "\n", BATcount(bn));
-
-	return bn;
-}
-
-@}
 @-
 The reverse semijoin is only better if the other side (r) is much
 smaller than l, and iff you already have the hash table on l. It uses hash tables on
@@ -2051,20 +1801,6 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATbinsemijoin(r, l, l);\n");
 
 		bn = BATbinsemijoin(r, l, l);
-	} else if (r->hidx_heap && (lng) countl * logr < (lng) countr) {
-		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATidxsemijoin(l, r, l);\n");
-
-		bn = BATidxsemijoin(l, r, l);
-	} else if (l->hidx_heap && reverse2) {
-		if (!BAThkey(r)) {
-			BAT *v = VIEWhead_(r, BAT_WRITE);
-
-			tmp = r = BATkunique(v);
-			BBPreclaim(v);
-		}
-		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATidxsemijoin(r, l, l);\n");
-
-		bn = BATidxsemijoin(r, l, l);
 	} else {
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATkintersect(l, r);\n");
 
@@ -2251,7 +1987,6 @@ typedef struct _column_t {
 	BAT *b;			/* BAT of this column */
 	BUN cur;		/* current BUN in b */
 	size_t nhits;		/* number of matched BUNs */
-	Index idx;		/* binary index tree (b->hidx) */
 
 	/* clustered */
 	BUN lo;			/* first BUN that matches */
@@ -2351,7 +2086,6 @@ the parameter number of the BAT which was used as leader
 #define LEAD_TRAVERSE_SNK   4	/* seq, nonsorted, key */
 #define LEAD_TRAVERSE_SEQ   6	/* enforced seq (for order purposes) */
 #define LEAD_TRAVERSE_SRT   9	/* traverse by sorted chunk */
-#define LEAD_TRAVERSE_IDX   11	/* traverse by binary tree chunks */
 
 int
 BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn value_fcn[], ptr value_data[], int orderby)
@@ -2385,11 +2119,8 @@ order columns by their size (smallest first)
 		c[i].size = BATcount(c[i].b);
 
 		/* positional lookup possible => ignore other alternatives */
-		if (!BAThdense(c[i].b)) {
+		if (!BAThdense(c[i].b)) 
 			c[i].ordered = BAThordered(c[i].b) & 1;
-			if (c[i].b->hidx_heap)
-				c[i].idx = &c[i].b->hidx;
-		}
 
 		/* insertion sort on size */
 		for (j = 0; j < i; j++) {
@@ -2434,8 +2165,6 @@ and for each head value use the best possible matching algorithm.
 A local optimization is to signal a sorted head column in the lead column,
 so we can switch to LEAD_TRAVERSE_SRT; if double lead values occur we do them
 in one match iteration.
-Finally, if we are not obliged to follow the current order (lead == 0) and
-there is a binary tree present, then we do LEAD_TRAVERSE_IDX matching.
 
 We record in MULTIJOIN_SORTED(status) whether the chosen traversal method
 visits the head values in the lead column in order. This is important
@@ -2448,20 +2177,12 @@ values are visited in order, merge algorithms may be employed).
 			algo = LEAD_TRAVERSE_SRT;
 		}
 		MULTIJOIN_SORTED(status) = TRUE;
-	} else if (!BAThkey(lead_col->b) && lead_col->idx && orderby == 0) {
-		algo = LEAD_TRAVERSE_IDX;
-		MULTIJOIN_SORTED(status) = TRUE;
 	}
-	if (algo == LEAD_TRAVERSE_IDX) {
-		lead_col->cur = (BUN) lead_col->idx->first;
-		q = (BUN) lead_col->idx->last;
-	} else {
-		lead_col->hi = lead_col->cur = BUNfirst(lead_col->b);
-		q = BUNlast(lead_col->b);
-		MULTIJOIN_KEY(status) = BAThkey(lead_col->b);
-		MULTIJOIN_LEAD(status) = lead_col - c;
-		MULTIJOIN_SYNCED(status) = 1;
-	}
+	lead_col->hi = lead_col->cur = BUNfirst(lead_col->b);
+	q = BUNlast(lead_col->b);
+	MULTIJOIN_KEY(status) = BAThkey(lead_col->b);
+	MULTIJOIN_LEAD(status) = lead_col - c;
+	MULTIJOIN_SYNCED(status) = 1;
 	if (algo == LEAD_TRAVERSE_SEQ && BAThkey(lead_col->b)) {
 		algo = (BAThordered(lead_col->b) & 1) ? LEAD_TRAVERSE_SSK : LEAD_TRAVERSE_SNK;
 	}
@@ -2503,8 +2224,6 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 		}
 		if (n->ordered) {
 			n->cur = BUNfirst(n->b);
-		} else if (n->idx) {
-			n->cur = (BUN) n->idx->first;
 		} else if (!BAThkey(n->b) && n->sync == NULL) {
 			if (BATprepareHash(n->b)) {
 				GDKerror("BATmultijoin: could not hash '%s'\n", BBP_logical(n->b->batCacheid));
@@ -2596,15 +2315,9 @@ overhead.
 		/*
 		 * find the next leader bun
 		 */
-		if (algo == LEAD_TRAVERSE_IDX) {
-			if (lead_col->cur >= q)
-				break;
-			p = *(BUN *) lead_col->cur;
-		} else {
-			p = lead_col->hi;
-			if (p >= q)
-				break;
-		}
+		p = lead_col->hi;
+		if (p >= q)
+			break;
 		h = BUNhead(lead_col->b, p);
 
 		/* FIND MATCHING COLUMN RANGES
@@ -2672,34 +2385,6 @@ overhead.
 				if (n->cur >= last && (algo & LEAD_INTERRUPT_END))
 					algo = 0;
 				n->hi = n->cur;
-				/* IDX lookup
-				 * We perform a merge scan over the binary index
-				 */
-			} else if (n->idx) {
-				BUN last = (BUN) n->idx->last;
-				int yy = -1;
-
-				if (n->binsearch) {
-					n->cur = (BUN) IDXfndfirst@4(b, h);
-					if (n->cur == NULL)
-						break;	/* NOT FOUND */
-				} else {
-					for (; n->cur < last; n->cur += sizeof(BUN))
-						if ((yy = @2cmp(BUN@1(b, *(BUN *) n->cur), h)) >= 0)
-							 break;
-
-					if (yy == -1)
-						break;	/* NOT FOUND */
-				}
-				n->hit = (BUN *) n->cur;
-				while ((n->cur += sizeof(BUN)) < last) {
-					if (@2cmp(BUN@1(b, *(BUN *) n->cur), h))
-						 break;
-				}
-				if (n->cur >= last && (algo & LEAD_INTERRUPT_END))
-					algo = 0;
-				n->nhits = ((BUN *) n->cur) - n->hit;
-
 				/* Single Hash lookup
 				 */
 			} else if (BAThkey(n->b)) {

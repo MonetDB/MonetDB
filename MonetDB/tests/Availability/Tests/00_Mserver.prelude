@@ -47,7 +47,6 @@ MODULES.replace("bat_cast",  "contrib");
 MODULES.replace("bat_mmath", "contrib");
 MODULES.replace("bitset",    "contrib");
 MODULES.replace("bitvector", "contrib");
-MODULES.replace("cluster",   "contrib");
 MODULES.replace("color",     "contrib");
 MODULES.replace("ddbench",   "contrib");
 MODULES.replace("image",     "contrib");

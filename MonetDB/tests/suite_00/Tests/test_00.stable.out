@@ -21,7 +21,7 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 # BAT:				  tmp_29	  #
 # (str)				  (str)		  #
 #-------------------------------------------------#
-[ "version",			  "980714"	  ]
+[ "version",			  "20696"	  ]
 [ "batId",			  "tmp_29"	  ]
 [ "batCacheid",			  "29"		  ]
 [ "batParentid",		  "0"		  ]
@@ -66,10 +66,10 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
-[ "batStamp",			  "-152"	  ]
-[ "lastUsed",			  "3084"	  ]
+[ "batStamp",			  "-164"	  ]
+[ "lastUsed",			  "3270"	  ]
 [ "keepAround",			  "0"		  ]
-[ "curStamp",			  "153"		  ]
+[ "curStamp",			  "165"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -84,14 +84,14 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "hheap.size",			  "0"		  ]
 [ "hheap.maxsize",		  "0"		  ]
 [ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "29.hheap"	  ]
+[ "hheap.filename",		  "no file"	  ]
 [ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "29.theap"	  ]
+[ "theap.filename",		  "no file"	  ]
 [ "theap.offset",		  "0"		  ]
 [ "hacctype",			  "null"	  ]
 [ "haccdirty",			  "clean"	  ]
@@ -111,8 +111,6 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "taccelerator.storage",	  "absent"	  ]
 [ "taccelerator.filename",	  "no file"	  ]
 [ "taccelerator.offset",	  "0"		  ]
-[ "head_index",			  "absent"	  ]
-[ "tail_index",			  "absent"	  ]
 #~EndVariableOutput~#
 
 b.insert(1,15);
@@ -323,11 +321,11 @@ b.thetajoin(c,LT,lng(nil)).print();
 # BAT:	  tmp_31  #
 # (int)	  (int)	  #
 #-----------------#
+[ 2,	  nil	  ]
 [ 2,	  25	  ]
 [ 2,	  36	  ]
 [ 2,	  49	  ]
 [ 2,	  64	  ]
-[ 2,	  nil	  ]
 quit();
 
 # 15:33:19 >  

@@ -353,7 +353,6 @@ extra padding so the first BUN will be (at least) int-aligned.
 	if (ret < 0)
 		return NULL;
 
-	IDXdestroy(b);
 	HASHdestroy(b);
 
 	return b;
@@ -408,12 +407,6 @@ BATclear(BAT *b)
 	}
 
 	/* kill all search accelerators */
-	if (b->hidx_heap) {
-		IDXremove(b);
-	}
-	if (b->tidx_heap) {
-		IDXremove(bm);
-	}
 	if (b->hhash_heap) {
 		HASHremove(b);
 	}
@@ -750,9 +743,6 @@ BUNins(BAT *b, ptr h, ptr t)
 
 		ALIGNins(b, "BUNins");
 		b->batDirty = 1;
-		if (b->hidx_heap || b->tidx_heap) {
-			IDXdestroy(b);
-		}
 		bunsize = BUNsize(b);
 		p = BUNlast(b);	/* insert at end */
 		i = BUNindex(b, p);
@@ -885,10 +875,6 @@ BUNdelete_(BAT *b, BUN p)
 	size_t idx1, idx2;
 
 	ALIGNdel(b, "BUNdelete");	/* zap alignment info */
-
-	if (b->hidx_heap || b->tidx_heap) {
-		IDXdestroy(b);	/* get rid of range index */
-	}
 
 @- Committed Delete. 
 The (committed) bun is moved into the hole, and the first 
@@ -1147,8 +1133,6 @@ BUNfnd(BAT *b, ptr v)
 	if (!b->hhash_heap) {
 		if (BAThordered(b) & 1)
 			return (BUN) SORTfnd(b, v);
-		if (b->hidx_heap)
-			return (BUN) IDXfnd(b, v);
 	}
 	switch (ATOMstorage(b->htype)) {
 	case TYPE_chr:
@@ -1226,21 +1210,6 @@ BUNlocate(BAT *b, ptr x, ptr y)
 		return NULL;
 	}
 
-	/* Ttree search */
-	@:swapif(b->tidx_heap&&b->hidx_heap==NULL)@
-	if (b->hidx_heap) {
-		BUN *pi, *qi;
-
-		cmp = BATatoms[b->ttype].atomCmp;
-
-		IDXrng(b, x, y, &pi, &qi);
-		IDXloop(b, pi, qi) {
-			if ((*cmp) (y, BUNtail(b, *pi)) == 0)
-				return p;
-		}
-		return NULL;
-	}
-
 	/* hash-table lookup */
 	@:swapif(b->thash_heap&&b->hhash_heap==NULL)@
 	cmp = BATatoms[b->ttype].atomCmp;
@@ -1302,19 +1271,23 @@ size_t
 BATvmsize(BAT *b, int dirty)
 {
 	BATcheck(b, "BATvmsize");
-	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
+	if (b->batDirty || 
+	    (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
-	return ((dirty == 0 || b->batDirtybuns) ? HEAPvmsize(b->batBuns) : 0) + ((dirty == 0 || b->batDirtybuns) ? HEAPvmsize(b->hhash_heap) : 0) + ((dirty == 0 || b->batDirtybuns) ? HEAPvmsize(b->thash_heap) : 0) + ((dirty == 0 ||
-																											  b->batDirtybuns) ? HEAPvmsize(b->
-																															hidx_heap)
-																											 : 0) + ((dirty == 0 ||
-																												  b->
-																												  batDirtybuns) ?
-																												 HEAPvmsize(b->
-																													    tidx_heap) : 0) +
-	    ((dirty == 0 || b->hheapdirty) ? HEAPvmsize(&b->hheap) : 0) + ((dirty == 0 || b->theapdirty) ? HEAPvmsize(&b->theap) : 0) + ((dirty == 0 || b->haccdirty) ? HEAPvmsize(&b->haccelerator) : 0) + ((dirty == 0 ||
-																									      b->taccdirty) ? HEAPvmsize(&b->
-																													 taccelerator) : 0);
+	return ((dirty == 0 || b->batDirtybuns) ? 
+			HEAPvmsize(b->batBuns) : 0) + 
+		((dirty == 0 || b->batDirtybuns) ? 
+			HEAPvmsize(b->hhash_heap) : 0) + 
+		((dirty == 0 || b->batDirtybuns) ? 
+			HEAPvmsize(b->thash_heap) : 0) + 
+		((dirty == 0 || b->hheapdirty) ? 
+			HEAPvmsize(&b->hheap) : 0) + 
+		((dirty == 0 || b->theapdirty) ? 
+			HEAPvmsize(&b->theap) : 0) + 
+		((dirty == 0 || b->haccdirty) ? 
+			HEAPvmsize(&b->haccelerator) : 0) + 
+		((dirty == 0 || b->taccdirty) ? 
+			HEAPvmsize(&b->taccelerator) : 0);
 }
 
 size_t
@@ -1323,21 +1296,22 @@ BATmemsize(BAT *b, int dirty)
 	BATcheck(b, "BATmemsize");
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
-	return ((dirty == 0 || b->batDirtydesc) ? sizeof(BATstore) : 0) + ((dirty == 0 || b->batDirtybuns) ? HEAPmemsize(b->batBuns) : 0) + ((dirty == 0 || b->batDirtybuns) ? HEAPmemsize(b->hhash_heap) : 0) + ((dirty == 0 ||
-																										   b->batDirtybuns) ? HEAPmemsize(b->
-																														  thash_heap) :
-																										  0) + ((dirty == 0 ||
-																											 b->batDirtybuns) ? HEAPmemsize(b->
-																															hidx_heap)
-																											: 0) + ((dirty == 0 ||
-																												 b->
-																												 batDirtybuns) ?
-																												HEAPmemsize(b->
-																													    tidx_heap) : 0) +
-	    ((dirty == 0 || b->hheapdirty) ? HEAPmemsize(&b->hheap) : 0) + ((dirty == 0 || b->theapdirty) ? HEAPmemsize(&b->theap) : 0) + ((dirty == 0 || b->haccdirty) ? HEAPmemsize(&b->haccelerator) : 0) + ((dirty == 0 ||
-																										 b->taccdirty) ? HEAPmemsize(&b->
-																													     taccelerator) :
-																										0);
+	return ((dirty == 0 || b->batDirtydesc) ? 
+			sizeof(BATstore) : 0) + 
+		((dirty == 0 || b->batDirtybuns) ? 
+			HEAPmemsize(b->batBuns) : 0) + 
+		((dirty == 0 || b->batDirtybuns) ? 
+			HEAPmemsize(b->hhash_heap) : 0) + 
+		((dirty == 0 || b->batDirtybuns) ? 
+			HEAPmemsize(b->thash_heap) : 0) + 
+		((dirty == 0 || b->hheapdirty) ? 
+			HEAPmemsize(&b->hheap) : 0) + 
+		((dirty == 0 || b->theapdirty) ? 
+			HEAPmemsize(&b->theap) : 0) + 
+		((dirty == 0 || b->haccdirty) ? 
+			HEAPmemsize(&b->haccelerator) : 0) + 
+		((dirty == 0 || b->taccdirty) ? 
+			HEAPmemsize(&b->taccelerator) : 0);
 }
 
 @
@@ -2104,7 +2078,7 @@ check if duplicated properties are equal
 		if (zz)
 			GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d\n", BBPname(b->batCacheid), zz);
 
-		if (b->hhash_heap != bm->thash_heap || b->hidx_heap != bm->tidx_heap) {
+		if (b->hhash_heap != bm->thash_heap) {
 			GDKerror("BATpropcheck: BAT %s has inconsistent accrefs\n", BBPname(b->batCacheid));
 			ACCremoveall(b);
 			b->batDirty = TRUE;

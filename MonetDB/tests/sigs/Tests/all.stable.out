@@ -533,21 +533,6 @@ monet_mod_nme.reverse.sort@batloop(){
 [ "commit() : void"					  ]
 [ "commit(BAT[any,any], ..BAT[any,any]..) : void"	  ]
 [ "delta(BAT[any::1,any::2]) : BAT[any::1,any::2]"	  ]
-module("cluster");
-printf("\n\t%s\n\n","cluster");
-
-	cluster
-
-sigs("cluster");
-#---------------------------------------------------------#
-# signature						  #
-#---------------------------------------------------------#
-[ "acccluster(BAT[any,any], int) : void"		  ]
-[ "buncluster(BAT[any,any], int) : void"		  ]
-[ "heapclustercopy(BAT[any,any], BAT[any,any]) : void"	  ]
-[ "order(BAT[any::1,any::2]) : BAT[any::1,any::2]"	  ]
-[ "order(BAT[any::1,any::2], int) : BAT[any::1,any::2]"	  ]
-[ "revert(BAT[any::1,any::2]) : BAT[any::1,any::2]"	  ]
 procs; 
 loaded;
 #-----------------------------------------------------------------#
@@ -601,7 +586,6 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 monet_mod_nme.reverse.sort.print;
 #---------------------------------#
 # BAT:		  tmp_59	  #
@@ -610,7 +594,6 @@ monet_mod_nme.reverse.sort.print;
 [ "algebra",	  10293@0	  ]
 [ "arith",	  10026@0	  ]
 [ "bat",	  10244@0	  ]
-[ "cluster",	  10431@0	  ]
 [ "kernel",	  10000@0	  ]
 [ "sys",	  10366@0	  ]
 [ "trans",	  10423@0	  ]
@@ -657,7 +640,6 @@ modules;
 [ "enum",	  "any"		  ]
 [ "tcpip",	  "any"		  ]
 [ "TransTest",	  "any"		  ]
-[ "cluster",	  "any"		  ]
 [ "Test",	  "any"		  ]
 [ "tpcd",	  "any"		  ]
 [ "wisc",	  "any"		  ]
@@ -693,7 +675,6 @@ view_modules.reverse.sort.print;
 [ "bat",	  22	  ]
 [ "blg",	  29	  ]
 [ "blob",	  13	  ]
-[ "cluster",	  39	  ]
 [ "enum",	  36	  ]
 [ "fmap",	  47	  ]
 [ "gdkmem",	  34	  ]
@@ -731,7 +712,6 @@ fix.print;
 [ "algebra",	  10293@0	  ]
 [ "sys",	  10366@0	  ]
 [ "trans",	  10423@0	  ]
-[ "cluster",	  10431@0	  ]
 others:=kdiff(view_modules.reverse,monet_mod_nme.reverse).sort.access(BAT_WRITE).revert;
 others.print;
 #-------------------------#
@@ -806,7 +786,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "xtables",	  1		  ]
 #-----------------------------------------------------------------#
 # signature							  #
@@ -886,7 +865,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading wisc
 
@@ -900,7 +878,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "wisc",	  1		  ]
 #---------------------------------#
 # signature			  #
@@ -969,7 +946,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading vector
 
@@ -983,7 +959,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "vector",	  1		  ]
 [ "gdkmem",	  1		  ]
 [ "mmath",	  1		  ]
@@ -1072,7 +1047,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading url
 
@@ -1086,7 +1060,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "url",	  1		  ]
 #-----------------------------------------#
 # signature				  #
@@ -1171,7 +1144,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading unix
 
@@ -1185,7 +1157,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "unix",	  1		  ]
 #-------------------------#
 # signature		  #
@@ -1253,7 +1224,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading tpcd
 
@@ -1267,7 +1237,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "tpcd",	  1		  ]
 #-----------------------------------------------------------------#
 # signature							  #
@@ -1368,7 +1337,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading temporal
 
@@ -1382,7 +1350,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "temporal",	  1		  ]
 #-------------------------------------------------#
 # signature					  #
@@ -1502,7 +1469,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading tcpip
 
@@ -1516,7 +1482,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "tcpip",	  1		  ]
 #-----------------------------------------#
 # signature				  #
@@ -1616,7 +1581,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading str
 
@@ -1630,7 +1594,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "str",	  1		  ]
 #---------------------------------#
 # signature			  #
@@ -1725,7 +1688,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading oo7
 
@@ -1739,7 +1701,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "oo7",	  1		  ]
 #-----------------------------------------------------------------#
 # signature							  #
@@ -1827,7 +1788,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading odmg
 
@@ -1841,7 +1801,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "odmg",	  1		  ]
 #---------------------------------------------------------#
 # signature						  #
@@ -2039,7 +1998,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading mprof
 
@@ -2053,7 +2011,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "mprof",	  1		  ]
 #-----------------------------------------#
 # signature				  #
@@ -2194,7 +2151,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading mmath
 
@@ -2208,7 +2164,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "mmath",	  1		  ]
 #---------------------------------#
 # signature			  #
@@ -2343,7 +2298,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading meta
 
@@ -2357,7 +2311,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "meta",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -2590,7 +2543,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading lock
 
@@ -2604,7 +2556,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "lock",	  1		  ]
 #---------------------------------#
 # signature			  #
@@ -2760,7 +2711,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading jOdmg
 
@@ -2774,7 +2724,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "jOdmg",	  1		  ]
 [ "blob",	  1		  ]
 [ "odmg",	  1		  ]
@@ -2971,7 +2920,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading io
 
@@ -2985,7 +2933,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "io",		  1		  ]
 [ "blob",	  1		  ]
 #---------------------------------------------------------#
@@ -3192,7 +3139,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading gisbulk
 
@@ -3206,7 +3152,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "gisbulk",	  1		  ]
 [ "gis",	  1		  ]
 [ "mmath",	  1		  ]
@@ -3237,7 +3182,6 @@ others@batloop(){
 [ "rtreebbox(BAT[any,polygon]) : box"				  ]
 [ "rtreebbox(BAT[any,polyline]) : box"				  ]
 [ "rtreebbox(BAT[any,segment]) : box"				  ]
-[ "rtreecluster(BAT[box,any]) : void"				  ]
 [ "sjoin(BAT[any,segment], BAT[segment,any], int) : BAT[any,any]"  ]
 [ "sjoin(BAT[any::1,box], BAT[box,any::2]) : BAT[any::1,any::2]"  ]
 [ "sjoin(BAT[any::1,box], BAT[point,any::2]) : BAT[any::1,any::2]"  ]
@@ -3438,7 +3382,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading gis
 
@@ -3452,7 +3395,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "gis",	  1		  ]
 [ "mmath",	  1		  ]
 [ "gdkmem",	  1		  ]
@@ -3926,7 +3868,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading gdkmem
 
@@ -3940,7 +3881,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "gdkmem",	  1		  ]
 #-----------------#
 # signature	  #
@@ -4120,7 +4060,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading fmap
 
@@ -4134,7 +4073,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "fmap",	  1		  ]
 [ "gisbulk",	  1		  ]
 [ "gis",	  1		  ]
@@ -4393,7 +4331,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading enum
 
@@ -4407,7 +4344,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "enum",	  1		  ]
 #---------------------------------------------------------#
 # signature						  #
@@ -4600,7 +4536,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading blob
 
@@ -4614,7 +4549,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "blob",	  1		  ]
 #---------------------------------#
 # signature			  #
@@ -4797,7 +4731,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading blg
 
@@ -4811,7 +4744,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "blg",	  1		  ]
 [ "gis",	  1		  ]
 [ "mmath",	  1		  ]
@@ -5009,7 +4941,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading alarm
 
@@ -5023,7 +4954,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "alarm",	  1		  ]
 #---------------------------------#
 # signature			  #
@@ -5208,7 +5138,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading TransTest
 
@@ -5222,7 +5151,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "TransTest",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -5455,7 +5383,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading TestUse
 
@@ -5469,7 +5396,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "TestUse",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -5735,7 +5661,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test9
 
@@ -5749,7 +5674,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test9",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -6057,7 +5981,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test8
 
@@ -6071,7 +5994,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test8",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -6400,7 +6322,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test7
 
@@ -6414,7 +6335,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test7",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -6777,7 +6697,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test6
 
@@ -6791,7 +6710,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test6",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -7220,7 +7138,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test5
 
@@ -7234,7 +7151,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test5",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -7671,7 +7587,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test4
 
@@ -7685,7 +7600,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test4",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -8149,7 +8063,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test3
 
@@ -8163,7 +8076,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test3",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -8660,7 +8572,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test2
 
@@ -8674,7 +8585,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test2",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -9199,7 +9109,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test1
 
@@ -9213,7 +9122,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test1",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -9769,7 +9677,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Test
 
@@ -9783,7 +9690,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Test",	  1		  ]
 [ "odmg",	  1		  ]
 #---------------------------------------------------------#
@@ -10404,7 +10310,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading OdmgTest
 
@@ -10418,7 +10323,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "OdmgTest",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -11067,7 +10971,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading Example
 
@@ -11081,7 +10984,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "Example",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -11826,7 +11728,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading CC_odmg
 
@@ -11840,7 +11741,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
 #---------------------------------#
@@ -12507,7 +12407,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 
 	loading CC_Test
 
@@ -12521,7 +12420,6 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 [ "CC_Test",	  1		  ]
 [ "CC_odmg",	  1		  ]
 [ "odmg",	  1		  ]
@@ -13274,5 +13172,4 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "cluster",	  1		  ]
 quit;

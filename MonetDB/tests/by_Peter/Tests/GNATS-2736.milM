@@ -11,9 +11,6 @@
 # direct_hash_chr
 # direct_hash_sht
 # direct_hash_int
-# direct_idx_chr
-# direct_idx_sht
-# direct_idx_int
 #
 # this script intends to test them all.
 module(aggr);
@@ -46,16 +43,6 @@ tests.insert(b_int.sort().col_name("s_int"), e_int);
 tests.insert(b_sht.sort().col_name("s_sht"), e_sht);
 tests.insert(b_chr.sort().col_name("s_chr"), e_chr);
 tests.insert(b_str.sort().col_name("s_str"), e_str);
-
-proc idx(bat[any,any] b) : bat {
-	b.accbuild("index");
-	return b;
-}
-
-tests.insert(b_int.copy().idx().col_name("i_int"), e_int);
-tests.insert(b_sht.copy().idx().col_name("i_sht"), e_sht);
-tests.insert(b_chr.copy().idx().col_name("i_chr"), e_chr);
-tests.insert(b_str.copy().idx().col_name("i_str"), e_str);
 
 proc ku(bat[any,any] b) : bat[any,any] {
 	return kunique(b);

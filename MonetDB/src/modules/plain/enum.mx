@@ -513,14 +513,8 @@ enum_lower(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		else
 			p = NULL;
 	} else {
-		if (BATidx(b, NULL) == NULL) {
-			return GDK_FAIL;
-		}
-		p = (BUN) IDXfndlast(b, src);
-		if (p && p > (BUN) b->hidx.first)
-			p = ((BUN *) p)[-1];
-		else
-			p = NULL;
+		/* only sorted enum's are supported */
+		return GDK_FAIL;
 	}
 	if (ATOMstorage(*enum_t) == TYPE_chr) {
 		if (p == NULL) {
@@ -552,12 +546,8 @@ enum_upper(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	if (BAThordered(b) & 1) {
 		p = SORTfndfirst(BATmirror(b), src);
 	} else {
-		if (BATidx(b, NULL) == NULL) {
-			return GDK_FAIL;
-		}
-		p = (BUN) IDXfndfirst(b, src);
-		if (p)
-			p = *(BUN *) p;
+		/* only sorted enum's are supported */
+		return GDK_FAIL;
 	}
 	if (ATOMstorage(*enum_t) == TYPE_chr) {
 		if (p == NULL) {

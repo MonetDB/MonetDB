@@ -73,14 +73,6 @@ c.semijoin(a).print();
 a:=a.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
 c:=c.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
 
-# idxsemijoin
-var ai:=a.copy();
-ai.accbuild("index");
-var ci:=c.copy();
-ci.accbuild("index");
-ai.semijoin(ci).print();
-ci.semijoin(ai).print();
-
 # hash => kinsertsect & revsemijoin
 var ah:=a.copy();
 ah.accbuild("hash");

@@ -1312,9 +1312,6 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	if (nested->hhash_heap || nested->thash_heap) {
 		HASHdestroy(nested);
 	}
-	if (nested->hidx_heap || nested->tidx_heap) {
-		IDXdestroy(nested);
-	}
 	if (nested->hacctype) {
 		ACCdestroy(nested->hacctype, nested, &nested->haccelerator);
 	}
@@ -1659,20 +1656,7 @@ a temporary BAT 'nested'; in which we insert all tail values.
 @- optimized hashed or binary index implementation
 we know that the head is oid (or a small version) here..
 @c
-			BUN *idxptr, *idxlast;
-
-			if (b->hidx_heap) {
-				if (!(BAThordered(extent) & 1)) {
-					BAT *n = BATsort(extent);
-
-					if (histo)
-						BBPreclaim(histo);
-					extent = histo = n;
-				}
-				idxptr = b->hidx.first;
-				idxlast = b->hidx.last;
-				@:getset_ins(idx)@
-			} else if (BATcount(extent) > 6) {
+			if (BATcount(extent) > 6) {
 				if (BATprepareHash(b))
 					goto bunins_failed;
 				@:getset_ins(hash)@
@@ -1707,15 +1691,6 @@ we know that the head is oid (or a small version) here..
 
 		/* execute the function, and insert the result */
 		@:exec_opt(last)@
-	}
-@= getset_ins_idx
-	if (idxptr < idxlast && *(@1*) BUNhloc(b,*idxptr) < cur) {
-		idxptr = IDXfndfirst_@1(b, &cur);
-	}
-	while (idxptr < idxlast) {
-		if (*(@1*) BUNhloc(b,*idxptr) != cur)
-			break;
-		@:bunins_unary(*idxptr,BUNindex(b,*idxptr))@ idxptr++;
 	}
 @= getset_ins_hash
 	HASHloop_@1(b, b->hhash, hh, (&cur), r) {
