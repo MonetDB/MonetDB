@@ -1525,6 +1525,9 @@ public String quote(String msg){
 	System.out.println("Not yet implemented");
 	return null;
 }
+/**
+ * Unquote removes the bounding brackets from strings received
+*/
 public String unquote(String msg){
 	char p[]= msg.toCharArray();
 	int f=0,l=f;
@@ -1543,6 +1546,28 @@ public String unquote(String msg){
 	// get rid of comma except when it is a literal char
 	if( p[f]!=',' && p[p.length-1]==',') msg= msg.substring(f,p.length-1);
 	return msg; 
+}
+
+/**
+ * Unescape reconstructs the string by replacing the escaped characters
+*/
+public String unescape(String msg){
+	char p[]= msg.toCharArray();
+	int f=0,l=f;
+	String newmsg;
+	for(; f< p.length;f++,l++)
+	if( p[f]=='\\') {
+		switch(p[++f]){
+		case 't':p[l]='\t'; break;
+		case 'n':p[l]='\n'; break;
+		default: p[l]=p[f];
+		}
+	} else p[l]=p[f];
+
+	if( l== p.length) return msg;
+	newmsg= new String(p,0,l);
+	//System.out.println("unescaped:"+msg+"->" +newmsg);
+	return newmsg;
 }
 
 public boolean gotError(){
@@ -1655,7 +1680,7 @@ public void sortColumn(int col){
 	if( columns[col].columntype.equals("int") ||
 	    columns[col].columntype.equals("lng") ||
 	    columns[col].columntype.equals("ptr") ||
-	    columns[col].columntype.equals("short") 
+	    columns[col].columntype.equals("sht") 
 	){
 		sortIntColumn(col);
 		return;
