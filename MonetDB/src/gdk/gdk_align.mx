@@ -217,7 +217,10 @@ a void. Take care to zero the accelerator data, though.
 	*bn->U = *b->U;
 	bn->hidx.base = bn->tidx.base = NULL;
 	bn->hhash_heap = bn->thash_heap = NULL;
+	bn->hhash.link = bn->thash.link = NULL;
 	bn->hidx_heap = bn->tidx_heap = NULL;
+	/* no user defined accelerators */
+	bn->hacctype = bn->tacctype = 0; 
 	bn->haccelerator.base = bn->taccelerator.base = NULL;
 @-
 The b->P structure cannot be shared and must be copied individually.
@@ -233,10 +236,8 @@ want to take a horizontal fragment (stable=false), this cannot
 be done, and we need to put different information in U (so we can't 
 use a copy.
 @c
-	if (slice_view) {
-		bn->hacctype = bn->tacctype = 0; /* no accelerators */
-	} else {
-		/* views may use accelerators already created on their parents */
+	/* views may use builtin accelerators of their parents */
+	if (!slice_view) {
 		bn->hhash_heap = b->hhash_heap; 
 		bn->thash_heap = b->thash_heap; 
 		bn->hidx_heap = b->hidx_heap; 
