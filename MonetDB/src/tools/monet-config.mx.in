@@ -21,6 +21,7 @@ Known values for OPTION are:
   --gdkcflags		print gdk pre-processor and compiler flags
   --help		display this help and exit
   --version		output version information
+  --streamlibs		print libraries needed by the stream module
 
 NOTE: --gdklibs and --gdkcflags are not to link the gdk library into
       your application, but are internally used
@@ -74,6 +75,10 @@ while test $# -gt 0; do
 
     --gdklibs)
        	echo @SOCKET_LIBS@ @MALLOC_LIBS@ @PTHREAD_LIBS@
+       	;;
+
+    --streamlibs)
+       	echo @SOCKET_LIBS@ @BZ_LIBS@ @Z_LIBS@ 
        	;;
 
     *)
