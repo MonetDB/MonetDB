@@ -143,7 +143,6 @@ void mccValue(stream *f, MalBlkPtr mb, int i){
     int (*tostr)(str *, int *, ptr);
     str buf = 0,c;
     int sz = 0;
-    int l;
     ValPtr val;
 
     val= &getVarConstant(mb,i);
@@ -151,7 +150,7 @@ void mccValue(stream *f, MalBlkPtr mb, int i){
         stream_printf(f,"\"%s\"",val->val.sval);
     } else {
         tostr= BATatoms[val->vtype].atomToStr;
-        l = (*tostr)(&buf,&sz,VALptr(val));
+        (*tostr)(&buf,&sz,VALptr(val));
         c= strchr(buf,'@');
         if(c && *(c+1)=='0') *c=0;
         stream_printf(f,"%s",buf);
