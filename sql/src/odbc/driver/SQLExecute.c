@@ -42,7 +42,7 @@ static struct msql_types {
 	{"tinyint", SQL_TINYINT},
 	{"varchar", SQL_VARCHAR},
 	{"blob", SQL_BINARY},
-	{"datetime", 0},
+	{"datetime", SQL_TYPE_TIMESTAMP},
 	{"oid", SQL_GUID},
 	{"table", 0},
 	{"ubyte", SQL_TINYINT},
