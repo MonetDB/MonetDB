@@ -23,6 +23,8 @@
 
 void init_readline(Mapi mid, const char *language, int save_history);
 void deinit_readline(void);
+rl_completion_func_t *suspend_completion(void);
+void continue_completion(rl_completion_func_t *func);
 
 #endif /* HAVE_LIBREADLINE */
 #endif /* READLINETOOLS_H_INCLUDED */
@@ -187,6 +189,19 @@ mil_completion (const char *text, int start, int end)
 	return rl_completion_matches (text, mil_batname_generator);
 }
 
+rl_completion_func_t *
+suspend_completion(void)
+{
+	rl_completion_func_t *func = rl_attempted_completion_function;
+	rl_attempted_completion_function = NULL;
+	return func;
+}
+
+void
+continue_completion(rl_completion_func_t *func)
+{
+	rl_attempted_completion_function = func;
+}
 
 void 
 init_readline(Mapi mid, const char *language, int save_history)

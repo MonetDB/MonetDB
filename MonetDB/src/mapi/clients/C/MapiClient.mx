@@ -356,9 +356,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 	do {
 #ifdef HAVE_LIBREADLINE
 		if (prompt) {
+			rl_completion_func_t *func;
 			if (buf)
 				free(buf);
+			if (hdl)
+				func = suspend_completion();
 			buf = readline(hdl ? "more>" : prompt);
+			if (hdl)
+				continue_completion(func);
 			/* add a newline to the end since that makes
 			   further processing easier */
 			if (buf) {
