@@ -40,14 +40,6 @@ end welcome;	# 8
 #showFunction();
 #
 !ERROR: MALexception:optimizer.MACROvalidate:RETURN statement is not the last one
-#
-!ERROR: SYNTAX ERROR: instructions after END end main;
-function Admin.main():int;	# 0  (main:int)
-    io.print("test expansion");	# 1 IOprint_val ($4:int)<-($5:str)
-    a := Admin.welcome(2);	# 2  (a:int)<-($7:int)
-    mdb.showFunction();	# 3 MDBshowFunction ($8:void)
-end main;	# 4  
-end main;	# 5  
 
 # 08:01:50 >  
 # 08:01:50 >  Done.
