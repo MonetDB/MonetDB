@@ -875,7 +875,7 @@ void GDKfree (void *blk) {
 
         if (s == NULL) return;
 	size = GDK_MEM_BLKSIZE(s);
-#ifndef GDK_MEM_PREFIXSIZE
+#if !(defined(GDK_MEM_QUERYSIZE) || defined(GDK_MEM_SIMPLE))
 	/* wdk: add check for double deletes */
         assert((size&2) == 0);
         s[-1] |= 2;
