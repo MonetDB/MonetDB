@@ -34,7 +34,7 @@ bug-sf-1019529
 bug-sf-1023056
 view_case-bug-sf-1023058
 trimtest-bug-sf-1023588
-bug-sf-1024615
+select_orderby_alias-bug-sf-1024615
 bug-sf-1041324_MapiClient
 HAVE_JAVA?bug-sf-1041324_JdbcClient
 unique-bug-sf-1043512
