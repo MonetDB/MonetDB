@@ -2,7 +2,7 @@
 This directory contains the nessesary configure files and scripts to
 build a simple template module (src/template.mx) for the monet database engine.
 
-Before continuing find (or compile) a monet version 4.3.12 or higher.
+Before continuing find (or compile) a monet version 4.3.14 or higher.
 
 Add the bin-directory where monet-config is located to your path. 
 
