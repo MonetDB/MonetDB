@@ -18,7 +18,6 @@ $SQL < insert_MODEL.int.sql
 echo $?
 echo "check0"
 $SQL < check0.sql
-exit
 echo "queries"
 $SQL < queries_depth2.sql
 
