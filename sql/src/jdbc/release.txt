@@ -2,7 +2,7 @@ RELEASE NOTES
 MonetDB JDBC driver version 0.3 beta
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2004-03-30
+Release date: 2004-04-06
 
 This JDBC driver for MonetDB is a thirth implementation of a JDBC driver
 for the Monet Main Memory Database. See http://monetdb.cwi.nl/ for more info
@@ -113,5 +113,8 @@ this driver.
     . all methods implemented
 - Note that Statement's executeUpdate is implemented via executeQuery and does
   NOT return the number of affected rows.
+- Statement's execute, executeUpdate and executeQuery do not support multiline
+  queries. Newlines in strings (quoted) are allowed, but newlines anywhere else
+  lead to parser errors.
 - The getObject methods do not return all types correct, and currently ignore
   any given type map.
