@@ -424,9 +424,9 @@ Module: "tpcd"
 
 Module: "txtsim"
 
-[ 6 ]
-[ 6 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 13 ]
+[ 13 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature					help																	  # name
 # str			str		str						str																	  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -434,7 +434,14 @@ Module: "txtsim"
 [ "editdistance2",	  "COMMAND:   ",  "editdistance2(str, str) : int",		  "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2"			  ]
 [ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str) : int",		  "Calculates Levenshtein distance (edit distance) between two strings"									  ]
 [ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str, int, int, int) : int",	  "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)"	  ]
+[ "qgramnormalize",	  "COMMAND:   ",  "qgramnormalize(str) : str",												  "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space"							  ]
+[ "qgramselect",	  "PROC:      ",  "qgramselect(BAT[void,oid], BAT[void,sht], BAT[void,sht], BAT[void,oid], BAT[void,str], str, flt, int) : BAT[flt,oid]", "not available"															  ]
+[ "qgramselfjoin",	  "COMMAND:   ",  "qgramselfjoin(BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,int], flt, int) : BAT[oid,oid]",			  "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions"								  ]
+[ "qgramselfjoin_test",	  "PROC:      ",  "qgramselfjoin_test() : BAT[oid,oid]",										  "not available"															  ]
+[ "similarity",		  "COMMAND:   ",  "similarity(str, str) : dbl",												  "Normalized edit distance between two strings"											  ]
+[ "similarity",		  "COMMAND:   ",  "similarity(str, str, dbl) : dbl",											  "Normalized edit distance between two strings"											  ]
 [ "soundex",		  "COMMAND:   ",  "soundex(str) : str",				  "Soundex function for phonetic matching"												  ]
+[ "str2qgrams",		  "PROC:      ",  "str2qgrams(str) : BAT[oid,str]",											  "not available"															  ]
 [ "stringdiff",		  "PROC:      ",  "stringdiff(str, str) : int",			  "not available"															  ]
 
 Module: "uchr"
