@@ -251,7 +251,12 @@ it is resized. The spare byte is kept.
 #endif
 
 #ifndef HAVE_SSIZE_T
+#if SIZEOF_OID == SIZEOF_INT
 typedef int ssize_t;
+#else
+typedef long ssize_t;
+#endif
+#define HAVE_SSIZE_T
 #endif
 
 typedef enum steam_errors {
@@ -518,13 +523,13 @@ stream *open_wastream( char *filename ){
 
 #ifdef HAVE_LIBZ
 static size_t stream_gzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
+	int size = (int)(elmsize*cnt);
 	size = gzread( (gzFile*)s->stream_data, buf, size );
 	if (size) return size/elmsize;
 	return 0;
 }
 static size_t stream_gzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
+	int size = (int)(elmsize*cnt);
 	size = gzwrite( (gzFile*)s->stream_data, buf, size );
 	if (size) return size/elmsize;
 	return 0;
@@ -581,13 +586,13 @@ stream *open_gzwastream( char *filename ){
 
 #ifdef HAVE_LIBBZ2
 static size_t stream_bzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
+	int size = (int)(elmsize*cnt);
 	size = BZ2_bzread( (BZFILE*)s->stream_data, buf, size );
 	if (size) return size/elmsize;
 	return 0;
 }
 static size_t stream_bzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
+	int size = (int)(elmsize*cnt);
 	size = BZ2_bzwrite( (BZFILE*)s->stream_data, buf, size );
 	if (size) return size/elmsize;
 	return 0;
@@ -686,9 +691,6 @@ static void socket_close( stream *s ){
 
 static
 stream *socket_open( int socket, char *name ){
-#ifndef NATIVE_WIN32
-	int fl = fcntl(socket, F_GETFL);
-#endif
 	stream *s = create_stream(name);
 	s->read  = &socket_read;
 	s->write = &socket_write;
@@ -712,8 +714,9 @@ stream *socket_open( int socket, char *name ){
 		                         sizeof(nodelay)); }
 #endif
 #ifndef NATIVE_WIN32
+	{ int fl = fcntl(socket, F_GETFL);
 	fl &= ~O_NONBLOCK;
-	fcntl(socket, F_SETFL, fl ); 
+	fcntl(socket, F_SETFL, fl ); }
 #endif
 
 	return s;
@@ -994,7 +997,7 @@ size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 			todo -= nr;
 			s->eob = 0;
                 } else {
-                        s->inr = todo;
+                        s->inr = (int) todo; /* todo < BLOCK, i.e. will fit in int */
 			todo = 0;
 		}
 	}

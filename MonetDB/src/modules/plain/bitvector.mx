@@ -116,7 +116,7 @@ bitvector_allocate(BAT **b_dst, int *nbits, bit *initial)
   int nentries, n;
   ptr atom_nil;
 
-  nentries = numentries(*nbits, sizeof(lng) * 8);
+  nentries = numentries(*nbits, (int) sizeof(lng) * 8);
   *b_dst   = BATnew(TYPE_void, TYPE_lng, nentries);
   atom_nil = ATOMnilptr((*b_dst)->htype);
 
@@ -224,7 +224,7 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
     int *bnum, entry;
 
     bnum  = (int *)BUNtail(b_src, p);
-    entry = *bnum / (sizeof(lng) * 8);
+    entry = *bnum / ((int) sizeof(lng) * 8);
     while (lastentry + 1 < entry) {
       lastentry++;
       BUNins(*b_dst, atom_nil, (ptr)&bf);

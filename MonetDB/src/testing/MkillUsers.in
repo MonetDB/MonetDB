@@ -1,4 +1,4 @@
-#!/bin/bash
+#!@BASH@
 
 PATH=/cwi/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH
 
@@ -60,7 +60,7 @@ if [    "$TIMES_BUILD" ] ; then BINPATH="$BINPATH    $TIMES_BUILD/src/tools    $
 if [  "$PLAYPEN_BUILD" ] ; then BINPATH="$BINPATH  $PLAYPEN_BUILD/src/tools  $PLAYPEN_BUILD/src/tools/.libs" ; fi
 if [ "$TEMPLATE_BUILD" ] ; then BINPATH="$BINPATH $TEMPLATE_BUILD/src/tools $TEMPLATE_BUILD/src/tools/.libs" ; fi
 for b in $BINPATH ; do
-	files="$files `ls $b/* 2>/dev/null | egrep -v '/(M[a-z]*\.py(|\.bat)|'"$THISFILE"')$'`"
+	files="$files `ls $b/* 2>/dev/null | egrep -v '/(M[a-z]*\.py(\.bat)?|'"$THISFILE"')$'`"
 done
 
 case `uname` in

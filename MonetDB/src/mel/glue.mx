@@ -532,9 +532,9 @@ void gen_default_atomops( ostream &o, int op, const Atom &d ){
 	o << "}\n\n";
 	break;
         case OP_HASH 	:
-	o << "int " << atom;
+	o << "hash_t " << atom;
 	o << "_hash( unsigned char *v ){\n";
-	o << "   int i=0,s="<< len << ";\n";
+	o << "   hash_t i=0,s="<< len << ";\n";
 	o << "   unsigned char *p;\n";
 	o << "   for(p=v+" << len << "; v<p; v+=s)\n";
 	o << "      i = 19*i + *v;\n";
@@ -1312,14 +1312,16 @@ ostream &install_fcntbl::gen_var_arg( ostream &o, const VarArg &d ){
 
 ostream &install::gen_load( ostream &o, const Load &d ){
 	char buf[1024+1];
-	int nr,i,len = strlen(d.Name())+1;
+	size_t nr,i,len = strlen(d.Name())+1;
 	
 	if (len <= 1)
 		return o;
 	
 //	 o << "      TBL_Install_LoadMIL( mid, \"" << d.Name() << "\");\n";
 	 o << "      { char *s = alloca(" << (len+1) << ");\n";
-	 nr = 1024;
+	// C is required to do at least 509 bytes in a string
+	// don't push it, use 500 instead
+	 nr = 500;
 	 for(i=0;i < len; i+=nr){
 		if ((i+nr) > len)
 			nr = len - i;
@@ -1438,7 +1440,7 @@ ostream &typecheck::gen_atomops( ostream &o, const Atomops &d ){
 		o << "( unsigned char *v1, unsigned char *v2 );\n";
 		break;
         case OP_HASH 	:
-		o << "extern int " << fcn << "( unsigned char *v );\n";
+		o << "extern hash_t " << fcn << "( unsigned char *v );\n";
 		break;
         case OP_NULL 	:
 		o << "extern ptr " << fcn << "();\n";
@@ -1507,7 +1509,7 @@ ostream &typecheck::gen_accops( ostream &o, const Accops &d ){
 	case OP_INSERT:
 	case OP_DELETE:
      		o << "extern void " << fcn;
-     		o << "( Heap* hp, int idx, BAT* bn, char* atom );\n";
+     		o << "( Heap* hp, size_t idx, BAT* bn, char* atom );\n";
 		break;
 	case OP_BUILD:
      		o << "extern void " << fcn;
@@ -1523,7 +1525,7 @@ ostream &typecheck::gen_accops( ostream &o, const Accops &d ){
 		break;
 	case OP_TRAVERSE:
      		o << "extern int " << fcn;
-     		o << "( Heap* hp, int idx, void **hdl, BAT* bn );\n";
+     		o << "( Heap* hp, size_t idx, void **hdl, BAT* bn );\n";
 		break;
 	case OP_REPAIR:
      		o << "extern int " << fcn;
@@ -1531,7 +1533,7 @@ ostream &typecheck::gen_accops( ostream &o, const Accops &d ){
 		break;
 	case OP_MOVE:
      		o << "extern void " << fcn;
-     		o << "( Heap* hp, int frm, int to, BAT* bn, ptr val );\n";
+     		o << "( Heap* hp, size_t frm, size_t to, BAT* bn, ptr val );\n";
 		break;
 	}
 #else

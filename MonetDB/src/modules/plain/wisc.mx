@@ -62,8 +62,7 @@ char	string1[54] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char	*rndstr;
 int	count;
 
-void WISCinitRndStr(u1)
-	int	u1 ;
+void WISCinitRndStr(int u1)
 {
 	int	i;
 	int	k;
@@ -93,8 +92,7 @@ void WISCinitRndStr(u1)
 }
 
 
-char	*rndStr(i)
-	int	i;
+char	*rndStr(int i)
 {
 	int	j;
 	char	*p, *q;
@@ -117,12 +115,11 @@ char	string4[4][54] = {
 	"VVVVxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 };
 
-#define rnd4Str(u) (string4[u%4])
+#define rnd4Str(u) (string4[(u)%4])
 
 int	*rnd;
 
-void WISCinitUniq(cnt)
-int	cnt;
+void WISCinitUniq(int cnt)
 {
 	int	*src = (int *) malloc(sizeof(int)*cnt);
 	int	top = cnt;
@@ -145,8 +142,7 @@ int	cnt;
 /*
 long gen, prime, seed;
 
-WISCinitUniq(cnt)
-int	cnt;
+WISCinitUniq(int cnt)
 {
 	if (cnt <= 1000) { 
 		gen = 279;
@@ -173,9 +169,7 @@ int	cnt;
 	seed = gen;
 }
 
-long wiscrand(seed, limit)
-long	seed;
-long	limit;
+long wiscrand(long seed, long limit)
 {
 	do {
 		seed = (gen * seed)%prime;
@@ -188,22 +182,22 @@ struct {
 	char	*attr;
 	int	type;
 } wisctype[16] = {
-	"unique1", TYPE_int,
-	"unique2", TYPE_int,
-	"two", TYPE_int,
-	"four", TYPE_int,
-	"ten", TYPE_int,
-	"twenty", TYPE_int,
-	"onePercent", TYPE_int,
-	"tenPercent", TYPE_int,
-	"twentyPercent", TYPE_int,
-	"fiftyPercent", TYPE_int,
-	"unique3", TYPE_int,
-	"evenOnePercent", TYPE_int,
-	"oddOnePercent", TYPE_int,
-	"stringu1", TYPE_str,
-	"stringu2", TYPE_str,
-	"string4", TYPE_str
+	{ "unique1", TYPE_int, },
+	{ "unique2", TYPE_int, },
+	{ "two", TYPE_int, },
+	{ "four", TYPE_int, },
+	{ "ten", TYPE_int, },
+	{ "twenty", TYPE_int, },
+	{ "onePercent", TYPE_int, },
+	{ "tenPercent", TYPE_int, },
+	{ "twentyPercent", TYPE_int, },
+	{ "fiftyPercent", TYPE_int, },
+	{ "unique3", TYPE_int, },
+	{ "evenOnePercent", TYPE_int, },
+	{ "oddOnePercent", TYPE_int, },
+	{ "stringu1", TYPE_str, },
+	{ "stringu2", TYPE_str, },
+	{ "string4", TYPE_str },
 };
 
 int

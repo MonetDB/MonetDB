@@ -65,14 +65,11 @@ by the below function:
 We also use these numbers, which are always the first 32-int the 
 BAT image, to check whether the image is in big endian or little endian format.
 @c
-#include "gdk_desc.h"
+#include "gdk.h"
 
 @+ BAT Conversion functions
 These functions save/load a BAT descriptor to/from disk.
 @h
-int  strHeapOldHash (BAT *b);
-int  strHeapHash    (BAT *b);
-
 int  BATsavedesc    (BAT *b, str nme);
 BAT *BATloaddesc    (str nme);
 @

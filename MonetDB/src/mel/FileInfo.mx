@@ -122,9 +122,9 @@ void FileInfo::Buffer( void *buf ){
 }
 
 static char *new_filename( const char *dir, const char *name, const char *ext ){
-	int len_dir = strlen(dir);
-	int len_name = strlen(name);
-	int len_ext  = strlen(ext);
+	size_t len_dir = strlen(dir);
+	size_t len_name = strlen(name);
+	size_t len_ext  = strlen(ext);
 	char *fn = new char [len_dir + 1 + len_name + len_ext + 1]; 
 	strcpy( fn, dir );
 	fn[len_dir] = DIR_SEP;
@@ -158,25 +158,16 @@ char *FileInfo::find_module( char *name, List *dir_list ){
 }
  
 char *basename( char *fname ){
-   	int l = strlen( fname );
-	int i = 0;
-	int start = 0;
-	int end = 0;
-	for( i = l-1; i >= 0; i-- ){
-	   if (fname[i]=='.'){
-	      	end = i-1;
-	   }
-	   if (fname[i]==DIR_SEP){
-	      	start = i+1;
-		break;
-	   }
-	}
-	l  = end - start + 1 ;
-	char *b = new char [l+1];
-	for (i = 0; i < l; i++ ){
-	   	b[i] = fname[start+i];
-	}
-	b[i] = 0;
+	char *start = strrchr(fname, DIR_SEP);
+	if (start)
+		start++;
+	else
+		start = fname;
+	char *end = strrchr(start, '.');
+	size_t l = end ? end - start : strlen(start);
+	char *b = new char[l+1];
+	strncpy(b, start, l);
+	b[l] = 0;
 	return b;
 }
 

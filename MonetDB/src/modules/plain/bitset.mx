@@ -151,7 +151,7 @@ int bitset_fromstr(char* src,int* len,bitset** atom) {
 
 	sscanf(src,"%i",*atom);
 
-	return strlen(src);
+	return (int) strlen(src);
 
 }
 
@@ -206,7 +206,7 @@ int bitset_tostr(char** dst,int* len,bitset* atom) {
 	printf("\nconstructed string[%s]\n",*dst);
 #endif
 
-	return strlen(*dst);
+	return (int) strlen(*dst);
 
 }
 

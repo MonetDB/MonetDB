@@ -46,14 +46,6 @@ values are the parameters.
 Actually, the gdk value type defined here should become a built-in
 type in the kernel. Next step will be to define the corresponding
 extension module.
-@h
-#ifndef _GDK_VALUE_H_
-#define _GDK_VALUE_H_
-
-#include "gdk.h"
-
-#endif /* _GDK_VALUE_H_*/
-
 @}
 
 @{
@@ -63,9 +55,9 @@ Note that binding a BAT requires upgrading its reference count.
 The receiver of the value should have been cleared or represent
 free space.
 @c
-#include "gdk_value.h"
+#include "gdk.h"
 
-ValPtr VALnew(){
+ValPtr VALnew(void){
 	ValPtr v = (ValPtr) GDKmalloc(sizeof(ValRecord));
 	VALempty(v);
 	return v;

@@ -89,7 +89,7 @@ typedef struct CLIENT{
 	char		*cline;			/* current parse line */
 	YYSTREE 	tree;			/* current request */
 	YYSTREE 	mil_accept;		/* accept request */
-	int		maxstk;			/* highest context stack */
+	Cntxt		maxstk;			/* highest context stack */
 	int		stk;			/* lowest context stack */
 	BAT		*fcntbl;		/* BAT(str, FID) */
 	BAT		*atomtbl;	       	/* BAT(str, type-id) */
@@ -167,7 +167,7 @@ Find an empty client slot.  The console entry is reserved.
 	c->prompt = prompt;
 	c->fdin = GDKstdin;
 	c->fdout = GDKstdout;
-	c->maxstk = c->stk = c-monet_clients;
+	c->maxstk = c->stk = (int) (c-monet_clients);
 	c->father = -1;
 	monet_cntxt[c->stk].used = TRUE;
 	monet_cntxt[c->stk].reuse = -1;
@@ -235,7 +235,7 @@ void scheduleClient(Client c){
         	yyexpand(c->mil_accept = yynode(TOK_BUILTIN, TYPE_int),
         		 t = yynode(TOK_CONSTANT, TYPE_int));
 		c->mil_accept->yyval.val.pval = (ptr) serveClient;
-		t->yyval.val.ival = c-monet_clients;
+		t->yyval.val.ival = (int) (c-monet_clients);
 	}
 	if (monet_first){
 		monet_first=0;
@@ -473,22 +473,19 @@ int acceptClient(Client c){
 
 static 
 void enlargebuffer(Client c){
-	str s;
-	int i;
-	int l;
+	size_t i;
+	size_t l;
 
 	l = c->top - c->input;
-	i = c->limit- c->input +4096;
-	s = (char *) GDKmalloc((unsigned)i);
-	memcpy(s, c->input, l);
-	GDKfree(c->input);
-	c->input = s;
-	c->top = s + l;
+	i = c->limit - c->input + 4096;
+	c->input = GDKrealloc(c->input, i);
+	c->top = c->input + l;
 	c->limit = c->input+i;
 }
 
 int readClient(Client c){
-	int i, doflush=0;
+	size_t i;
+	int doflush=0;
 	char instring = 0;
 	int bracket = 0;
 	int incomment = 0;
@@ -504,7 +501,7 @@ bracket structure within string and character constants.
 	c->top = c->input;
 	do {
 		if (instring != '"') {
-			int l = strlen(c->prompt);
+			size_t l = strlen(c->prompt);
 			if (c == monet_clients) {
 				for(s=c->prompt; *s; s++) 
 					if (isprint((int) *s)) fd->write(fd, s, 1, 1);
@@ -520,7 +517,7 @@ the client reader does not hang too long on terminal I/O.
 /* again: */
  		s = c->top; *s = 0;
 		while ((i = c->fdin->read(c->fdin, c->top, 1, 1)) > 0) {
-			PARSEDEBUG THRprintf(GDKerr, "%c (%d)", *c->top, i);
+			PARSEDEBUG THRprintf(GDKerr, "%c (%lu)", *c->top, (unsigned long) i);
 #ifdef WIN32
 			if (*c->top == 13) { /* filter out ^M */
                                 i--;
@@ -572,11 +569,11 @@ the client reader does not hang too long on terminal I/O.
 				enlargebuffer(c);
 			}
 		}
-		if (i <= 0) {
+		if (i == 0) {
 /*
 			if (feof(c->fdin)
 #ifndef WIN32
-			    || (i < 0 && MT_geterrno() != EAGAIN) 
+			    || MT_geterrno() != EAGAIN
 #endif
 			){
 */
@@ -624,7 +621,7 @@ void unlockparser(Client c){
 	MT_unset_lock(monet_parserLock, "unlockparser");
 }
 
-extern int yyparse();
+extern int yyparse(void);
  
 YYSTREE parseClient(Client c, int reschedule){	
 	Request cur = 0, after;

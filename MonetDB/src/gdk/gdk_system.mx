@@ -113,7 +113,7 @@ The routines that are available for use for thread and process management.
 @-
 Init the package. Must be called once before any of the other operations.
 @h
-gdk_export void 	MT_init ();
+ gdk_export void 	MT_init (void);
 
 @-
 Set which signals should be blocked, ignores  SIGINT, SIGQUIT, SIGALRM
@@ -143,7 +143,7 @@ gdk_export void 	MT_global_exit(int status);
 @-
 Ask your thread id.
 @h
-gdk_export MT_Id 	MT_getpid();
+gdk_export MT_Id 	MT_getpid(void);
 
 
 @-
@@ -159,7 +159,7 @@ gdk_export void	MT_destroy_lock(MT_Lock l);
 @-
 Create a new thread-lock. Initial status: unset.
 @h
-gdk_export MT_Lock	MT_create_lock();
+gdk_export MT_Lock	MT_create_lock(void);
 
 @-
 Set a lock. The calling thread in this process blocks till the lock is set.
@@ -239,8 +239,7 @@ gdk_export size_t _MT_pagesize;
 
 @- Mthreads Routine implemtations
 @c
-#include "gdk_system.h"
-#include "gdk_posix.h"
+#include "gdk.h"
 
 #if !(defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)) && defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
 # include <sys/resource.h>
@@ -257,7 +256,7 @@ ptrdiff_t MT_cursema=0, MT_nextsema[MAXSEMAS];
 size_t     _MT_pagesize = 0;               /* variable holding memory size */
 size_t     _MT_npages = 0;                 /* variable holding page size */
  
-void MT_init() {
+void MT_init(void) {
 	static pthread_mutex_t l;
 	int i;
 
@@ -373,7 +372,7 @@ int MT_kill_thread (MT_Id t) {
 #endif
 }
 
-MT_Lock	MT_create_lock() {
+MT_Lock	MT_create_lock(void) {
 	pthread_mutex_t *new_mutex;
 
 	MT_set_lock(MT_system_lock, "MT_create_lock");
@@ -497,7 +496,7 @@ void 	MT_dump_sema (MT_Sema s, FILE *fp, char *name) {
 	fprintf(fp, "%s: MT_dump_sema() not implemented.\n",name);
 }
 
-MT_Id MT_getpid(){
+MT_Id MT_getpid(void){
 	return (MT_Id)((long)pthread_self()+1);
 }
 

@@ -364,8 +364,8 @@ bat salgebra_refcnt;
 \end{itemize}
 @c
 
-int clusterhash_size() { return sizeof(clusterhash); }
-int clusterhash_align() { return sizeof(ptr); }
+int clusterhash_size(void) { return sizeof(clusterhash); }
+int clusterhash_align(void) { return sizeof(ptr); }
 
 clusterhash clusterhash_nil = { 0, NULL, NULL, 0, NULL, 0, 0, 0 };
 
@@ -411,7 +411,7 @@ printf( "Unfix: refcount(%d) == 0\n", ch->b );
 }
 
 clusterhash* 
-clusterhashNull(){
+clusterhashNull(void){
   clusterhash* ch_nil = GDKmalloc( clusterhash_size() );
   return clusterhashNil( ch_nil );
 }
@@ -1010,7 +1010,7 @@ salgebra_CMDdestroy( str chname ) {
 }
 
 void
-salgebra_prelude() {
+salgebra_prelude(void) {
   int i = 0;
 #ifdef DEBUG
 GDKwarning( "salgebra prelude!\n" );
@@ -1045,7 +1045,7 @@ BBPrename( salgebra_@1, "ch_@1" );
 BBPfix( salgebra_@1 );
 @c
 int
-salgebra_CMDinit() {
+salgebra_CMDinit(void) {
   BAT *batcache = NULL, *batnamecache = NULL, *batrefcnt = NULL;
 #ifdef DEBUG
   GDKwarning("salgebra init!\n");
@@ -1067,7 +1067,7 @@ salgebra_CMDinit() {
 }
 
 int
-salgebra_CMDdrop() {
+salgebra_CMDdrop(void) {
 #ifdef DEBUG
   GDKwarning("salgebra drop!\n");
 #endif

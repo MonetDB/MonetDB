@@ -76,4 +76,4 @@ char *Module::filename() const {
 
 ostream &Module::print( language *l, ostream &o ) const {
 	return l->gen_module( o, *this );
-};
+}

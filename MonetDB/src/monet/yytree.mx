@@ -36,22 +36,22 @@ within a YACC environment.
 #define par_retval	free.batref.id
 #define old_cntxt	yyval.len
 
-m_export YYSTREE 		yylognode();
-m_export YYSTREE	 	yylogexpand();
-m_export void 		yylogstart();
-m_export void 		yylogclean();
+m_export YYSTREE 		yylognode(int, int);
+m_export YYSTREE	 	yylogexpand(YYSTREE, YYSTREE);
+m_export void 		yylogstart(void);
+m_export void 		yylogclean(void);
 
-m_export YYSTREE	 	yyexpand();
-m_export YYSTREE 		yynode();
-m_export YYSTREE 		yyload();
-m_export void 		yysave();
-m_export void 		yyfree();
-m_export YYSTREE 		yycopy();
-m_export void 		yyclean();
-m_export YYSTREE 		yysubstitute_proc();
-m_export YYSTREE 		yysubstitute_iter();
-m_export int 		yypostprocess();
-m_export void 		yylogout();
+m_export YYSTREE	 	yyexpand(YYSTREE, YYSTREE);
+m_export YYSTREE 		yynode(int, int);
+m_export YYSTREE 		yyload(FILE *);
+m_export void 		yysave(FILE *, YYSTREE);
+m_export void 		yyfree(YYSTREE);
+m_export YYSTREE 		yycopy(YYSTREE);
+m_export void 		yyclean(YYSTREE);
+m_export YYSTREE 		yysubstitute_proc(YYSTREE, int, ValPtr);
+m_export YYSTREE 		yysubstitute_iter(YYSTREE, int, ValPtr);
+m_export int 		yypostprocess(YYSTREE);
+m_export void 		yylogout(YYSTREE);
 @c
 #include "yytree.h"
 #include <stdio.h> 
@@ -62,11 +62,11 @@ static oid yyid = 1, yyoid = 1;
 YYSTREE	 yyroot = NULL;
 static YYSTREE nfree = NULL;
 
-void yylogstart() { 
+void yylogstart(void) { 
 	yyroot = NULL;
 }
 
-void yylogclean() {
+void yylogclean(void) {
 	YYSTREE t2, t1 = yyroot;
 	while ((t2=t1) != NULL) {
 	    t1 = t1->next; 
@@ -368,7 +368,7 @@ We store the parameter evaluation space size in the ival of the exec node.
 			params->yyval.vtype = TYPE_void;
 		}
 		exec->yyval.vtype = TYPE_int;
-		exec->yyval.val.ival = yypostprocess(params)*sizeof(ValRecord);
+		exec->yyval.val.ival = yypostprocess(params)*(int)sizeof(ValRecord);
 		lt->cnt = 0;
 		lt->last = lt->overflow = NULL;
 		lt->free.yyid = yyid;

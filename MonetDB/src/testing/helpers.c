@@ -112,7 +112,7 @@ char* default_tmpdir = "C:\\Temp";
 #define TMPDIR_ENV "TEMP"
 #endif
 
-char* tmpdir()
+char* tmpdir(void)
 {
   char* rtrn=getenv(TMPDIR_ENV);
   if (!rtrn) rtrn=default_tmpdir;

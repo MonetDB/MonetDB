@@ -218,7 +218,7 @@ static zid_t neighbor(direction_t direction, zid_t id);
 static zid_t up(zid_t id);
 static void match(direction_t direction, gdk_int16 *features, zid_t id, 
 		  int *cstring, int cindex, int clength,
-		  BAT *r_ids, int soid, int *ncolors);
+		  BAT *r_ids, oid soid, int *ncolors);
 static int get_color(gdk_uint32 hsv, colorspace_t cspace);
 static int get_nfeatures(zid_t lastid);
 static int same_color(int c1, int c2);
@@ -232,7 +232,7 @@ static ptr st_search;		/* Time to search quad trees */
 static ptr st_bunins[3];	/* Time to perform a BUNins */
 
 static Time
-now()
+now(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
   struct timeval tv;
@@ -521,10 +521,8 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
     int _x, _y;
     gdk_uint32 hsv;
 
-    assert(*(int *)BUNhead(qt_hue, hp) == 
-	   *(int *)BUNhead(qt_sat, sp) &&
-	   *(int *)BUNhead(qt_hue, hp) == 
-	   *(int *)BUNhead(qt_val, vp));
+    assert(*(int *)BUNhead(qt_hue, hp) == *(int *)BUNhead(qt_sat, sp) &&
+	   *(int *)BUNhead(qt_hue, hp) == *(int *)BUNhead(qt_val, vp));
 
     id    = *(zid_t *)BUNhead(qt_hue, hp);
     level = idlevel(id);
@@ -900,7 +898,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
 static void
 match(direction_t direction, gdk_int16 *features, zid_t id, 
       int *cstring, int cindex, int clength,
-      BAT *r_ids, int soid, int *ncolors)
+      BAT *r_ids, oid soid, int *ncolors)
 {
   int nid, pid, nnid, npid, color, cdelta;
   Time t;
@@ -924,7 +922,7 @@ match(direction_t direction, gdk_int16 *features, zid_t id,
   }
 
   /* Find the first neighbor that is colored differently. */
-  while (1) {
+  for (;;) {
     pid = nid = neighbor(direction, id);
     if (pid < 0) return;
 
@@ -1042,7 +1040,7 @@ match(direction_t direction, gdk_int16 *features, zid_t id,
     (*ncolors)++;
 
     /* Find the first neighbor that is colored differently. */
-    while (1) {
+    for (;;) {
       npid = nnid = neighbor(direction, nid);
       if (npid < 0) return;
       if (features[npid] < 0)

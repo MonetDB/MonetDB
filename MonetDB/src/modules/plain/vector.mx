@@ -440,7 +440,7 @@ typedef struct {
         HEAP_free(h,*index);
     }
 
-    @1s *atom_@1s_null() {
+    @1s *atom_@1s_null(void) {
         static @1s *nullptr = NULL;
         if(nullptr == NULL) {
             nullptr = @1screate(0);
@@ -464,8 +464,8 @@ typedef struct {
         HEAP_initialize(heap, capacity, 0, @5);
     }
 
-    int atom_@1s_hash(@1s* p) {
-        return(@1ssize(p->dimension));
+    hash_t atom_@1s_hash(@1s* p) {
+        return (hash_t) (@1ssize(p->dimension));
     }
 
     /************ Commands follow *************/
@@ -1247,7 +1247,7 @@ dblv.print;
     }
 
 
-    @1_vector@2* atom_@1_vector@2_null() {
+    @1_vector@2* atom_@1_vector@2_null(void) {
         static char nullptr[@3];
         static int init = 1;
         if(init) {

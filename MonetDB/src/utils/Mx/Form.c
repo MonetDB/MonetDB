@@ -35,10 +35,6 @@
 #define WWWMODE		(textmode==M_WWW)
 #define Newline		if WWWMODE { PrCmd("<br>"); } else if TEXMODE { PrCmd("\n"); } else { PrCmd(".LP\n"); }
 
-extern	Def *	GetDef();
-extern	Tok *	FstTok();
-extern	Tok *	NxtTok();
-extern	Tok *	SkipTok();
 extern  int     pr_env;
 extern	int	opt_hide;
 extern  char *  texDocStyle;
@@ -54,7 +50,7 @@ void    PrCodeDisplay(Def *,char*);
 	char *	mx_date= 0;
 	char	filename[200];
 
-void	GenForm()
+void	GenForm(void)
 {
     Def *	d;
     CmdCode	dirbak=Nop;
@@ -235,16 +231,13 @@ again:  switch( d->d_dir ){
 }
 
 void
-PrCodeDisplay(d,tail)
-Def *d;
-char *tail;
+PrCodeDisplay(Def *d,char *tail)
 {
 	if (tail) PrRule(tail);
 	PrEnv(E_CODE); FormBlk(d);PrEnv(E_TEXT); 
 }
 
-void FormIf(d)
-    Def * d;
+void FormIf(Def *d)
 {
     if TEXMODE switch(d->d_dir){
     case Ifdef: 
@@ -268,11 +261,13 @@ void FormIf(d)
 	PrCmd("}\n");
  */
 	break;
+    default:
+	/* shut up compiler */
+	break;
     }   
 }
  
-void	FormBlk(d)
-Def *	d;
+void	FormBlk(Def *d)
 {
 Tok *	t;
 int	i;
@@ -342,7 +337,7 @@ int	i;
 	}
 }
 
-void	FormTitle()
+void	FormTitle(void)
 {
 	if( !(mx_author && mx_title ) )
 		return;
@@ -377,8 +372,7 @@ void	FormTitle()
 	if (texDocStyle == (char *)0) PrCont();
 }
 
-void	FormSub(str)
-char *	str;
+void	FormSub(char *str)
 {
 	Def *	d;
 	char ** argv = MkArgv(str); 
@@ -388,7 +382,7 @@ char *	str;
 	if(textmode==M_MS) 
 		PrCmd("\\fI");
 
-	if (d = GetDef(argv[0]))
+	if ((d = GetDef(argv[0])) != 0)
 		if (p) *p = 0;
 
 	if (WWWMODE) {
@@ -423,9 +417,7 @@ char *	str;
 int wwwmod=0, wwwsec=0, wwwpar=0;
 
 /* handling a form module */
-void	FormMod(str, mod)
-char *	str;
-int		mod;
+void	FormMod(char *str, int mod)
 {
 	mx_title= str;
 	if TEXMODE FormHeader(); 
@@ -449,10 +441,7 @@ int		mod;
 	} else	PrCmd("\n.ps -2\n.LP\n");
 }
 
-void	FormSec(str, mod, sec)
-char *	str;
-int	mod;
-int	sec;
+void	FormSec(char *str, int mod, int sec)
 {
 	if TEXMODE {
 		PrCmd("\\subsection{");
@@ -474,8 +463,7 @@ int	sec;
 	} else	PrCmd("\n.LP\n");
 }
 
-void	FormSubSec(str)
-char * str;
+void	FormSubSec(char *str)
 {
 	if (str && (strlen(str) > 0)) {
 		if TEXMODE {
@@ -512,8 +500,7 @@ char * str;
 	}
 }
 
-void	FormPar(str)
-char * str;
+void	FormPar(char *str)
 {
 	if (str && (strlen(str) > 0)) {
 		if TEXMODE {
@@ -543,7 +530,7 @@ char * str;
 	}
 }
 
-void	FormHeader()
+void	FormHeader(void)
 {
     extern char *texDocStyle;
  

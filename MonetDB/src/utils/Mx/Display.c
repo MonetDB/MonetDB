@@ -40,8 +40,6 @@ extern int pr_env;
  *	Formatted code
  */
 
-extern	int	Hide();
-
 void	PrFontStr(char *s, char c)
 {
         int env = pr_env;
@@ -84,8 +82,7 @@ void	PrModeStr(char *s, char c)
         PrEnv(env);
 }
 
-void	PrCmd(s)
-char *	s;
+void	PrCmd(char *s)
 {
 	extern int pr_pos;
 	if( Hide() ) return;
@@ -96,8 +93,7 @@ char *	s;
         pr_pos += strlen(s);
 }
 
-void	PrText(s)
-char *	s;
+void	PrText(char *s)
 {
 	if( Hide() ) return;
 	if( !s ) return;
@@ -106,8 +102,7 @@ char *	s;
 	PrStr(s);
 }
 
-void	PrCode(s)
-char *	s;
+void	PrCode(char *s)
 {
 	if( Hide() ) return;
 	if( !s ) return;
@@ -119,8 +114,7 @@ char *	s;
 char filename_body[200]={0}, filename_index[200]={0};
 int somethingPrinted = 1;
 
-void	PrRule(tail)
-char *tail;
+void	PrRule(char *tail)
 {
 	if( Hide()) return;
 	if TEXMODE{
@@ -167,8 +161,7 @@ char *tail;
 
 extern char *bname;
 
-void	PrPrelude(file)
-char *file;
+void	PrPrelude(char *file)
 {
     extern char *texDocStyle;
     char *s,*t,full[200];
@@ -243,7 +236,7 @@ char *file;
     PrEnv(E_CMD);
 }
 
-void	PrPostlude()
+void	PrPostlude(void)
 {
 	PrEnv(E_CMD);
 	if TEXMODE {

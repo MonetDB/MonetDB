@@ -61,14 +61,26 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-#include        <unistd.h>
-*/
-#include        <stdlib.h>
-#include	<stdio.h>
-#include	<math.h>
-#include	<string.h>
-#include	<stdarg.h>
+#include "config.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#include <stdio.h>
+#include <math.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#else
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+#endif
+#include <stdarg.h>
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
 
 #define NUMLOADS 100000
 #define REDUCE	 10

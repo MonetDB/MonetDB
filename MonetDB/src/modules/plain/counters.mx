@@ -1300,7 +1300,7 @@ int NumEvents = 0, NoEvent = 0;
 #define monet_modulesilent (!(GDKdebug&16384))
 
 
-int init_counters() {
+int init_counters(void) {
 #if ( defined(HWCOUNTERS) )
  #if ( defined(HW_Linux) && defined(HAVE_LIBPPERF) )
     FILE *fp = NULL;
@@ -1644,6 +1644,7 @@ int start_count(counter *retval, int *event0, int *event1) {
 	pfm_start();
  #elif defined(HW_IRIX64)
 	int rtrn;
+	int start_counters(int e0, int e1); /* not in any include file :-(*/
         if ((rtrn = start_counters(event[e0].id0,event[e1].id1)) < 0) {
             GDKerror("start_count: start_counters failed with return value %d, errno %d\n", 
                      rtrn,errno);
@@ -1790,6 +1791,7 @@ int stop_count(counter *retval, counter *c) {
 	}
  #elif defined(HW_IRIX64)
 	int rtrn;
+	int read_counters(int e0, long long *c0, int e1, long long *c1);
         if ((rtrn = read_counters((int)(event[c->event0].id0),&count0,
                                   (int)(event[c->event1].id1),&count1)) < 0) {
             GDKerror("stop_count: read_counters failed with return value %d, errno %d\n", 

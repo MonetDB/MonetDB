@@ -164,7 +164,6 @@ extern int conn_find(str host, int port);
 #endif
 #include "tcpip.h"
 
-gdk_export BAT* BATcreatedesc();
 #include <string.h>
 
 @+ Auxiliary Functions
@@ -293,8 +292,25 @@ str atom_name(int tpe) {
 @* Data Structures
 @h
 #define TCPPORT		49153
-#define SOCKPTR		struct sockaddr *
 #define MAX_CONN	256
+
+#ifdef AIX
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN size_t
+#else
+#ifdef __sgi
+#define SOCKPTR void *
+#define SOCKLEN int
+#else
+#ifdef NATIVE_WIN32
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN int
+#else
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN socklen_t
+#endif
+#endif
+#endif
 
 @- TCPlock
 We have a global lock for protecting the cache and connection data structures.
@@ -419,7 +435,7 @@ cache_t* cache_find(str name) {
 
 @- purge all items from the cache
 @c
-int cache_clear() {
+int cache_clear(void) {
 	BUN p, q; int xx;
 	BATloopFast(cache_idx, p, q, xx) {
 	    cache_del(*(cache_t**) BUNtloc(cache_idx,p));
@@ -537,7 +553,7 @@ int conn_kill(int i) {
 
 @- close all connections
 @c
-int conn_closeall(){
+int conn_closeall(void){
 	BUN p, q; int i;
 	for(i=0; i < MAX_CONN; i++) {
 	    conn_kill(i);
@@ -911,7 +927,8 @@ TCPlisten(
 ){
 	struct sockaddr_in server;
 	int msgsock = -1, sock = socket(AF_INET, SOCK_STREAM, 0);
-	int port_no=0, i, length = sizeof(server), on=1;
+	int port_no=0, i, on=1;
+	SOCKLEN length = (SOCKLEN) sizeof(server);
 @-
 Administrate yourself
 @c
@@ -935,21 +952,11 @@ create the socket
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
 	if (bind(sock, (SOCKPTR) &server, length) < 0) {
 	    GDKsyserror("TCPlisten(%d): binding to socket failed.\n", *port);
-	} else if (getsockname(sock, (SOCKPTR) &server, 
-#ifdef AIX
-	(size_t*)
-#endif
-	&length) < 0) {
+	} else if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
 	    GDKsyserror("TCPlisten(%d): getting socket name.\n", *port);
 	} else if (listen(sock, 5) < 0) {
 	    GDKsyserror("TCPlisten(%d): getting socket name\n", *port);
-	} else while ((msgsock = accept(sock, (SOCKPTR)0, 
-#ifdef AIX
-	(size_t *)
-#else
-	(int *)
-#endif
-	0)) > 0) {
+	} else while ((msgsock = accept(sock, (SOCKPTR)0, (SOCKLEN *) 0)) > 0) {
  	    char *p, line[1024];
 @- 
 the listener heard something...
@@ -997,7 +1004,7 @@ a new connection is born
 	return GDK_SUCCEED;
 }
 
-int TCPlisten_default(){
+int TCPlisten_default(void){
 	int port = TCPPORT;
 	return TCPlisten(&port);
 }
@@ -1011,7 +1018,6 @@ TCPterminate(
    int*     	port	/* pointer to integer.*/
 ){
 	char host [BUFSIZ];
-	int t = gethostname(host, BUFSIZ );
 	int fd = socket_open(host, *port, "TCPterminate");
 	if (fd) {
 	    socket_write(fd, 5, "stop\n", "TCPterminate");
@@ -1021,7 +1027,7 @@ TCPterminate(
 	return GDK_FAIL;
 }
 
-int TCPterminate_default(){
+int TCPterminate_default(void){
 	int port = TCPPORT;
 	return TCPterminate(&port);
 }
@@ -1110,7 +1116,7 @@ TCPclose(
 }
 
 int 
-TCPcloseall(){
+TCPcloseall(void){
 	MT_set_lock(TCPlock, "TCPcloseall");
 	conn_closeall();
 	MT_unset_lock(TCPlock, "TCPcloseall");
@@ -1541,7 +1547,7 @@ typedef struct {
 
 tuple table[TABLE_SIZE] = { 0 };
 
-main() {
+main(void) {
 	int fd = socket_open(argv[1], atoi(argv[2]), "main");
 	FILE *fp = fopen(fd, "w");
 @-

@@ -38,7 +38,7 @@ FILE* Afopen (char* name);
 char* strconcat (char* a, char* b);
 int isalpha_ (int c);
 char* filename (char* path);
-char* tmpdir();
+char* tmpdir(void);
 
 #endif /* HELPERS_H */
 

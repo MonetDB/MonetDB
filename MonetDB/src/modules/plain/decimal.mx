@@ -1021,10 +1021,10 @@ string, but may only differ by trailing zeros. The hash function ignores series 
 digits, hence is immune for such differences. The compare function adds imaginary zeros at 
 the shorter digit string to obtain the same effect.
 @c
-int decimal_hash(decimal *d) {
+hash_t decimal_hash(decimal *d) {
 	unsigned int *src = d->num;
 	unsigned int *dst = src + NUMLEN(d->precision);
-	unsigned int y = d->precision + d->scale;
+	hash_t y = d->precision + d->scale;
 	
 	while(src < dst) {
 		int val = *src++;
@@ -1041,7 +1041,7 @@ int decimal_hash(decimal *d) {
 		}
 	} 
 	if (d->negative) y = ~y;
-	DECIMAL_DEBUG(d, FORMAT("decimal_hash(->%d) input", y), 1);
+	DECIMAL_DEBUG(d, FORMAT("decimal_hash(->%ld) input", (long) y), 1);
 	return y;
 }
 
@@ -1079,7 +1079,7 @@ int decimal_compare(decimal *v1, decimal *v2) {
 	return res; 
 }
 
-decimal* decimal_null() {
+decimal* decimal_null(void) {
 	if (decimal_nil == NULL) {
 		decimal_prelude();
 	}
@@ -1740,16 +1740,18 @@ void decimal_mult_table(decimal* div, decimal* mult[10]) {
 static INLINE
 void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mult[], int precision) {
 	decimal *chunk = mult[0];
-	int digit, factor=GETNUM(div,0), head, cmp, z, y, x = NUMLEN(chunk->precision); 
+	int digit, factor=GETNUM(div,0), dprec, dscal, dneg, cmp, z, y, x = NUMLEN(chunk->precision); 
 
 	/* set chunk to zero */
 	while(--x >= 0) chunk->num[x] = 0; 
 	chunk->precision = 0;
-	head = chunk->num[-1];
+	dprec = chunk->precision;	/* backup header of chunk */
+	dscal = chunk->scale;
+	dneg = chunk->negative;
 
 	/* incremental division by multiplication and subtraction */	
 	x = -1; y= 0; z = precision; 
-	while(TRUE) {
+	for (;;) {
 		/* add digits to chunk till it has as many significant digits as div */
 		if (chunk->precision < div->precision) {
 			if (++x >= z) break;
@@ -1768,7 +1770,7 @@ void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mu
 		} 
 		/* guess the divisor factor by looking at the first digits */ 
 		digit = DIV(digit,factor);
-		while(TRUE) {
+		for (;;) {
 			cmp = decimal_compare(chunk,mult[digit]);
 			if (div->negative?(cmp <= 0):(cmp >= 0)) break;
 			digit--; 
@@ -1779,7 +1781,11 @@ void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mu
 		/* subtract digit*div from chunk */ 
 		decimal_simple_dec(chunk, mult[digit]);
 		decimal_normalize(chunk,chunk,0,0,FALSE);
-		if (ISZERO(chunk)) chunk->num[-1] = head; /* hack to restore chunk fields */
+		if (ISZERO(chunk)) {
+			chunk->precision = dprec;   /* restore backup */
+			chunk->scale = dscal;
+			chunk->negative = dneg;
+		}
  	} 
 	decimal_normalize(tot,tot,0,0,TRUE);
 }
@@ -1835,7 +1841,8 @@ int decimal_divide_default(decimal **ret, decimal *num, decimal *div) {
  * directly into it) and by constructing the multiplication table only once.
  */
 int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
-	int xx = BATcount(b), yy = 10;
+	size_t xx = BATcount(b);
+	int yy = 10;
 	BAT *bn = *ret = BATnew(b->htype, TYPE_int, xx);
 	BAT *bm = BATmirror(bn);
 	decimal *mult[10];
@@ -1860,7 +1867,7 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 		int divprc = prec?yy:src->precision;
 		int zero = ISZERO(src);
 		int nil = ISNIL(src);
-		int len = (zero || nil)?sizeof(decimal):TOTLEN(divprc);
+		int len = (zero || nil)?(int)sizeof(decimal):TOTLEN(divprc);
 		int idx = HEAP_malloc(&hp, len);
 		decimal *dst = (decimal*) (hp.base + idx);
 
@@ -1901,7 +1908,7 @@ int decimal_bulkdivide_default(BAT** ret, BAT* b, decimal *div) {
 
 /* Raises a decimal to some (integer) power. precision determines the maximum precision of the result. */
 int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
-	int x, dprec, dscal, z, nfactors=0, factor[32], raise = *i, precision = *p;
+	int x, dprec, dneg, dscal, z, nfactors=0, factor[32], raise = *i, precision = *p;
 	decimal *cache[32], *tmp, *tot = d;
 
 	/* handle special cases */
@@ -1933,6 +1940,7 @@ int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
 	/* algorithm uses squaring of intermediates results; needs log2(n) multiplications */
 	dprec = d->precision;	/* backup header of d */
 	dscal = d->scale;
+	dneg = d->negative;
 
 	/* take the multiplication precision as end_precision/2 + 2 */
 	z = MIN(precision, (precision >> 1) + 2); 
@@ -1970,6 +1978,7 @@ int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
 	}
 	d->precision = dprec;	/* restore backup */
 	d->scale = dscal;
+	d->negative = dneg;
 	decimal_normalize(*ret = tot, tot, 0, precision, TRUE);
 	return GDK_SUCCEED;
 }

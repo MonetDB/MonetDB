@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 /* Generic initialization/cleanup routines */
-m_export void  TBL_init();
+m_export void  TBL_init(void);
 m_export void  TBL_initclient(Client c);
 m_export void  TBL_exitclient(Client c);
 
@@ -61,7 +61,7 @@ m_export ptr   TBL_unpacked(ptr imp);
 m_export char* TBL_search(str name, int *t, int command_hint);
 m_export str   TBL_getname(ptr imp);
 m_export int   TBL_getparams(ptr imp, str argv[]);
-m_export BAT*  TBL_getdir();
+m_export BAT*  TBL_getdir(void);
 m_export char* TBL_atomname(int atm);
 m_export void  TBL_printsigs(str s, int stk, str nme);
 m_export int   TBL_formatsig(str s, oid fid);
@@ -494,7 +494,7 @@ static short_str DL_errormsg[3] =
           "function name unknown (STATIC)" };
 
 
-char *DL_error() { 
+char *DL_error(void) { 
 #ifndef STATIC
 	if (DL_errmsg != NULL)
 		return DL_errmsg;
@@ -634,7 +634,8 @@ unpacked implementations directly (for optimization purposes).
 @c
 static int getparams(oid fid, str argv[]) {
 	str *s = argv, *t = s;
-	int i, j = 0;
+	hash_t i;
+	int j = 0;
 	BUN p;
 
 	(void) BATprepareHash(TBL_fcn_pro);
@@ -860,16 +861,16 @@ str TBL_getname(ptr imp) {
 Obtains a list of modules by looking at what files are present in the
 module directory.
 @c
-BAT* TBL_getdir() {
+BAT* TBL_getdir(void) {
     BAT *b = BATnew(TYPE_int, TYPE_str, 100);
     int i = 0;
    
 #ifndef STATIC 
     char *name,*basename;
-    int liblen = strlen("lib_");
+    size_t liblen = strlen("lib_");
 
     MSP_rewind_module_list();
-    while(TRUE) {
+    for (;;) {
             name=MSP_next_module();
             if (!name) break;
             basename=strrchr(name,DIR_SEP)+1;
@@ -950,7 +951,7 @@ they remain fixed in memory for the duration of the session.
    if (@7) BATkey(BATmirror(TBL_@1_@2),@7);
 @= VAR_create
    sprintf(buf, "%s_%s", @1, nme);
-   v = VARnew(client-monet_clients, buf); 
+   v = VARnew((Cntxt) (client-monet_clients), buf); 
    v->binding.val.bval = b->batCacheid;
    v->binding.vtype = TYPE_bat;
    v->binding.len = 0;
@@ -994,7 +995,7 @@ Subsequently the starting address of all built-in functions is stored,
 (and documentary information) [Should be removed or used as a view]
 Since all code will move to modules this function will be come obsolute.
 @c
-void TBL_init() {
+void TBL_init(void) {
         TBL_protector = MT_create_lock();
         TBL_writelock = MT_create_lock();
         TBL_barrier = MT_create_sema(0);
@@ -1079,7 +1080,8 @@ oid TBL_M_load(TBLinstall *inst, Client client, str module) {
 }
 
 int TBL_M_client_install(Client client, oid mid) {
-  int i, aid;
+  hash_t i;
+  int aid;
   char *nme;
   char s[80];
   char *usr = client->user;
@@ -1228,7 +1230,7 @@ the order of the substrings (MIL load scripts) will be correct.
 @c
 int TBL_M_initscript(oid mid, str *initstr) {
   char *p = BUNfnd(TBL_mod_load,&mid);
-  int i, j;
+  size_t i, j;
   BUN b;
 
   /* Lookup MIL init script, and add it to the
@@ -1389,12 +1391,13 @@ int TBL_unloadmod(Client client, str module, int level) {
 	BAT *fcn_mid = BATmirror(TBL_fcn_mid);
 	BAT *b, *fcntbl = BATmirror(client->fcntbl); 
        	char *nme, *r, *p, *q;
-	int i, ret = level, refcnt = 0;
-	oid aid, fid, mid; 
+	hash_t i;
+	int ret = level, refcnt = 0, aid;
+	oid fid, mid; 
 	int maccs=80, mtpes=80, naccs=0, ntpes=0;
 	int *accs = (int*) GDKmalloc(maccs*sizeof(int));
 	int *tpes = (int*) GDKmalloc(mtpes*sizeof(int));
-	int (*addr)();
+	int (*addr)(void);
 
   	/* identify as father
          */
@@ -1491,7 +1494,7 @@ If there are no more users loading it, delete it from memory.
 		if (hdl != NULL) {
      		    char mod_del_name[PATHLENGTH];
      		    sprintf(mod_del_name, "%s_Module_Delete", module);
-		    addr = (int (*)()) DL_sym(hdl, mod_del_name);
+		    addr = (int (*)(void)) DL_sym(hdl, mod_del_name);
 		    if (addr != NULL) (*addr)();
 		    BUNdelete(TBL_mod_hdl, p);
 		    DL_close(hdl);
@@ -1612,7 +1615,8 @@ Try to resolve the function to an address.
 
 	c = lookup;
 	{   BAT *b = c->fcntbl;
-	    int	i,j, tpe;
+	    hash_t i;
+	    int j, tpe;
 	    BUN p;
 
 	    (void) BATprepareHash(b);
@@ -1884,7 +1888,7 @@ int TBL_setaggr_resolve(str nme, int argc, ValPtr argv,
 @- TBL_printsigs
 prints all signatures of known commands/procs with a certain name.
 @c
-static int formatsig(str s, str nme, oid fid){
+static ptrdiff_t formatsig(str s, str nme, oid fid){
 	str src = s;
 	BUN p;
 
@@ -1924,7 +1928,8 @@ static int formatsig(str s, str nme, oid fid){
 } 
 
 void TBL_printsigs(str s, int stk, str nme) {
-	int 	i, j = 0;
+	hash_t 	i;
+	int	j = 0;
 	BAT*	b;
         Client  c;
  
@@ -1959,7 +1964,7 @@ int TBL_formatsig(str s, oid fid){
 		TBL_unset_readlock();
 		return FALSE;
 	}
-	formatsig(s, BUNtvar(TBL_fcn_nme,p), fid);
+	(void) formatsig(s, BUNtvar(TBL_fcn_nme,p), fid);
 	TBL_unset_readlock();
 	return TRUE;
 }
@@ -1972,7 +1977,7 @@ void *TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv){
 	paramcheck_t pt;
         Client  c, lookup;
 	char *v;
-	int i;
+	hash_t i;
  
         CNTXTclient(stk, &lookup);
  

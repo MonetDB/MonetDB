@@ -49,7 +49,7 @@
 
 /*	#define	MINTIME  100000	*/
 
-size_t getpagesize() { return 4096; }
+size_t getpagesize(void) { return 4096; }
 
 caliblng oldtp = 0;
 
@@ -133,7 +133,7 @@ caliblng bytes(char *s)
 	return (n);
 }
 
-caliblng getMINTIME () {
+caliblng getMINTIME (void) {
 	caliblng t0=0, t1=0;
 	t0=t1=now();
 	while(t0>=t1){

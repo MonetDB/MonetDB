@@ -28,14 +28,8 @@ The basic relational operators are implemented for BATs.
 Particular attention has been paid to speed-up processing
 joins, such that navigational access and object re-assembly
 are not being harmed too much.
-@h
-#ifndef _GDK_RELOP_H
-#define _GDK_RELOP_H
-#include "gdk.h"
-
-#endif /* _GDK_RELOP_H */
 @c
-#include "gdk_relop.h"
+#include "gdk.h"
 
 #define LOG_SAMPLESIZE 17
 @{
@@ -185,7 +179,8 @@ a binary search.
 } break;
 @c
 BAT *BATmergejoin(BAT *l, BAT *r) {
-	int i, sporadic;
+	size_t i;
+	int sporadic;
         lng logr = 0;
 	BAT *bn, *reverse = NULL; 
 	ptr nil = ATOMnilptr(r->htype);
@@ -253,7 +248,8 @@ These macros encode the core of the join algorithm. They are
 the fast inner loops, optimized towards their type.
 
 @= hashjoin
-{	int xx, yy;
+{	int xx;
+	hash_t yy;
         BATloopFast(l, p, q, xx) {
                 v = BUN@3(l,p);
 		if (@1_EQ(v,nil,@2)) {
@@ -339,14 +335,15 @@ The aftermath -- property setting -- is relatively straightforward here.
 @= fetchjoin
 void densefetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	BUN l_cur, l_end, r_cur, dst;
-	ptrdiff_t offset;
-	size_t base, xx, yy, zz;
+	ssize_t offset;
+	size_t base, xx;
+	int yy, zz;
 
         zz = BUNsize(bn);
 	yy = BUNsize(r);
         dst = BUNfirst(bn);
         base = BUNindex(r, BUNfirst(r));
-        offset = base - r->hseqbase;
+        offset = (ssize_t) (base - r->hseqbase);
 	r_cur = BUNptr(r, offset + *(oid*) BUNtail(l,BUNfirst(l)));
 
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: densefetchjoin(@1,@2);\n");
@@ -359,13 +356,14 @@ void densefetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 }
 void orderedfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	BUN l_cur, l_end, r_cur, dst;
-	ptrdiff_t offset;
-	size_t base, xx, yy, zz;
+	ssize_t offset;
+	size_t base, xx, yy;
+	int zz;
 
         zz = BUNsize(bn);
         dst = BUNfirst(bn);
         base = BUNindex(r, BUNfirst(r));
-        offset = base - r->hseqbase;
+        offset = (ssize_t) (base - r->hseqbase);
 
         ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedfetchjoin(@1,@2);\n");
         BATloopFast(l, l_cur, l_end, xx) {
@@ -378,14 +376,15 @@ void orderedfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 }
 void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	BUN l_cur, l_end, r_cur, dst;
-	ptrdiff_t offset;
-	size_t xx,yy,zz, base, end;
+	ssize_t offset;
+	size_t xx,yy, base, end;
+	int zz;
 
         zz = BUNsize(bn);
 
         dst = BUNfirst(bn);
         base = BUNindex(r, BUNfirst(r));
-        offset = base - r->hseqbase;
+        offset = (ssize_t) (base - r->hseqbase);
         end = base + BATcount(r);
 
         ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultfetchjoin(@1,@2);\n");
@@ -479,7 +478,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 @= orderedvoidfetchjoin
     ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedvoidfetchjoin(@1,@2,@3);\n");
     BATloopFast(l, l_cur, l_end, xx) {
-        yy = offset + *(oid*) BUNtloc(l,l_cur);
+        size_t yy = offset + *(oid*) BUNtloc(l,l_cur);
         r_cur = BUNptr(r, yy);
         @3put(@2, &bn->theap, dst, BUN@1(r, r_cur));
         dst += zz;
@@ -489,7 +488,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 @= defaultvoidfetchjoin
     ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3);\n");
     BATloopFast(l, l_cur, l_end, xx) {
-        yy = offset + *(oid*) BUNtloc(l,l_cur);
+        size_t yy = offset + *(oid*) BUNtloc(l,l_cur);
         if (yy < base || yy >= end) {
             bn->batBuns->free = dst - bn->batBuns->base;
             BBPreclaim(bn);
@@ -507,7 +506,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
         dst = BUNfirst(bn);
         zz = BUNsize(bn);
         BATloopFast(l, l_cur, l_end, xx) {
-                yy = offset + *(oid*) BUNtail(l,l_cur);
+                size_t yy = offset + *(oid*) BUNtail(l,l_cur);
                 if (yy < base || yy >= end) {
                         continue;
                 }
@@ -537,7 +536,9 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
 BAT* BATfetchjoin(BAT *l, BAT *r) {
-        int xx, yy, zz, base, offset, end, lht, rtt;
+        int xx, yy, zz, lht, rtt;
+	size_t base, end;
+	ssize_t offset;
         BUN r_cur, l_cur, l_end, dst;
         oid seqbase;
         BAT *bn, *l_orig = l;
@@ -566,7 +567,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
         }
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: 1\n");
         base = BUNindex(r, BUNfirst(r));
-        offset = base - r->hseqbase;
+        offset = (ssize_t) (base - r->hseqbase);
         end = base + BATcount(r);
 	/* only BUNhead crashes on empty bats with TYPE != virtual oid */
 	seqbase = (l->htype == TYPE_void)?l->hseqbase:
@@ -689,7 +690,8 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 This routine does the join optimization. TODO: it should be expressed in MIL.
 @c
 BAT *BATjoin(BAT *l, BAT *r) {
-        int i, lsize, rsize, lfetch, rfetch, must_hash; 
+	size_t i, lsize, rsize;
+        int lfetch, rfetch, must_hash; 
         lng logr, logl;
  
 	ERRORcheck(l == NULL, "BATjoin: invalid left operand"); 
@@ -712,8 +714,7 @@ collect statistics that help us decide what to do
 		if (BAThvoid(l) && !BATtvoid(r)) lfetch = 0;
 		if (BATtvoid(r) && !BAThvoid(l)) rfetch = 0;
 	}
-	must_hash = (int) ((rsize < lsize)?
-			(l->thash_heap != NULL):(r->hhash_heap != NULL));
+	must_hash = rsize < lsize ? l->thash_heap != NULL : r->hhash_heap != NULL;
 @-
 In special cases (equal join columns, void join columns, or ordered 
 join columns), we take special action.
@@ -764,11 +765,12 @@ if no match can be found.
 @{
 @= outerjoinloop
 {	ptr	v, nilh = ATOMnilptr(r->htype), nilt = ATOMnilptr(r->ttype); 
-	int	xx, yy;
+	hash_t	xx;
+	int	yy;
 	BUN	p, q, w; 
 
 	BATloopFast(l, p, q, yy) { 
-		int i = 0; 
+		size_t i = 0; 
        		v = (ptr) BUNtail(l, p); 
 		if (!@1_EQ(v, nilh, @2)) 
 	   	HASHloop_@2(r, r->hhash, xx, v, w) { 
@@ -1059,7 +1061,7 @@ differ significantly.
 
 @= binsemijoin
 {	BUN lp, lq;
-	int xx, yy;
+	int xx;
 
         if (cpy == l) {
    		BATloopFast(l, lp, lq, xx) {
@@ -1072,6 +1074,7 @@ differ significantly.
 		BATloopFast(l, lp, lq, xx) {
 			BUN rp, rq;
 			ptr v = BUNh@1(l,lp);
+			int yy;
 			SORTloop_@2(BATmirror(r), rp, rq, v, v, yy) {
 		    		BUNfastins(bn, v, BUNtail(r,rp));
 			}
@@ -1203,7 +1206,8 @@ both relations: on r to check that no item is processed twice (not necessary to 
 iff BAThkey(r) and one on l to find the matching tuples.
 
 @= revsemijoin
-{	int xx, yy;
+{	int xx;
+	hash_t yy;
 	BUN lp = 0, rp = 0, rq = 0, rr = 0;
 
 	if (merge) {
@@ -1262,8 +1266,9 @@ This implementation is dirty as it also allows fetches with
 hard integer positions, rather than oid matching on a dense-oid column.
 @c
 BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
-	int denselookup, base, end, offset, xx;
-	oid yy;
+	int denselookup, xx;
+	size_t base, end, yy;
+	ssize_t offset;
 	BUN l_cur, l_end, r_cur;
         BAT *bn;
 
@@ -1296,9 +1301,9 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
                 return NULL;
         }
         if (denselookup) {
-                offset = base - r->hseqbase; /* translate oid to BUN position */
+                offset = (ssize_t) (base - r->hseqbase); /* translate oid to BUN position */
         } else {
-		offset = base; /* fetch by hard BUNindex */
+		offset = (ssize_t) base; /* fetch by hard BUNindex */
 	} 
 
 	/* iterate r; positional fetch in l */
@@ -1344,7 +1349,8 @@ The BATsemijoin chooses between various alternatives.
 TODO: this should be moved to MIL.
 @c
 BAT *BATsemijoin(BAT *l, BAT *r) {
-	int reverse1, reverse2, countr, countl, i;
+	int reverse1, reverse2;
+	size_t countr, countl, i;
         lng logr, logl;
 	BAT *bn, *tmp = NULL;
 	
@@ -1434,7 +1440,7 @@ The below structures are used for keeping track of the matching process.
 typedef struct _column_t {
         BAT*    b;              /* BAT of this column */
         BUN     cur;            /* current BUN in b */
-        int     nhits;          /* number of matched BUNs */
+        size_t	nhits;          /* number of matched BUNs */
 	Index   idx;		/* binary index tree (b->hidx) */
 
         /* clustered */
@@ -1442,12 +1448,12 @@ typedef struct _column_t {
         BUN     hi;             /* past last BUN that matches */
         /* nonclustered */
         BUN*	hit;           /* BUN array pointer */
-        int     hitsize;        /* size of hit array */
+        size_t	hitsize;        /* size of hit array */
 
 	/* properties */
-	int 	offset;         /* BUNindex of BUNfirst  */ 
+	ssize_t	offset;         /* BUNindex of BUNfirst  */ 
         struct _column_t* sync; /* iff > 0: column with synchronous BAT */
-	int 	size;           /* size of the BAT */ 
+	size_t 	size;           /* size of the BAT */ 
 	char 	binsearch;      /* sparse matching expected? */
 	char 	ordered;        /* merge matching */
 } column_t;
@@ -1484,7 +1490,7 @@ static void column_result(table_t* t, int i) {
         /* recurse over all matches on this column */
         column_t *c = t->c + (i-1);
 	BUN q, *p = c->hit;
-        int j;
+        size_t j;
 
 	if (p == NULL) { /* clustered */
 	    for(q=c->lo; q<c->hi; q+=BUNsize(c->b)) {
@@ -1520,7 +1526,7 @@ It is an integer, of which all 4 bytes are used:
 #define COLSIZE(c)\
 	(((c)->b->htype!=TYPE_void || (c)->b->hseqbase!=oid_nil)?(c)->size:0)
 #define REALLOCBUNS(c,n) if (c->hitsize <= n)\
-	c->hit = (BUN*) GDKrealloc((int*)c->hit, (c->hitsize+=n)*sizeof(BUN))
+	c->hit = (BUN*) GDKrealloc(c->hit, (c->hitsize+=n)*sizeof(BUN))
 
 #define LEAD_INTERRUPT_NIL   1
 #define LEAD_INTERRUPT_END   3
@@ -1539,8 +1545,8 @@ int BATmultijoin(
 	ptr	value_data[],
 	int 	orderby)
 {
-        column_t *lead_col, *c = (column_t*) alloca(argc*sizeof(column_t));
-        column_t **reorder = (column_t**) alloca(argc*sizeof(column_t*));
+        column_t *lead_col, *c = (column_t*) alloca(argc*(int)sizeof(column_t));
+        column_t **reorder = (column_t**) alloca(argc*(int)sizeof(column_t*));
 	int	status=0, algo = LEAD_TRAVERSE_SEQ;
 	int	i, k, j=0;
         BUN     p, q, r;
@@ -1562,7 +1568,7 @@ order columns by their size (smallest first)
         for(i=0; i < argc; i++) {
 		c[i].b = argv[i];
 		c[i].nhits = 1; /* default value */
-		c[i].offset = BUNindex(c[i].b, BUNfirst(c[i].b));
+		c[i].offset = (ssize_t) BUNindex(c[i].b, BUNfirst(c[i].b));
 		c[i].size = BATcount(c[i].b);
 
 		/* positional lookup possible => ignore other alternatives */
@@ -1860,6 +1866,7 @@ while(algo) {
 	/* Multiple Hash lookup
 	 */
     	} else {
+		hash_t j;
     		n->nhits = 0;
     		HASHloop@3(b, b->hhash, j, h, r) {
     			REALLOCBUNS(n, n->nhits+1);

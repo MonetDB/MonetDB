@@ -87,6 +87,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 #endif /* _GDK_SETOP_H */
 
 @c
+#include "gdk.h"
 #include "gdk_setop.h"
 
 @+ Double Elimination
@@ -111,7 +112,8 @@ next@2@3@5:;
 	BATloopFast(b, p, q, xx) {
 		ptr h = BUNh@2(b,p);
 		ptr t = BUNt@3(b,p);
-		int ins = 1, yy;
+		int ins = 1;
+		hash_t yy;
 		(void) BATprepareHash(bn);
 		HASHloop@4(bn, bn->hhash, yy, h, r) {
 		    if (HIT@1(t, BUNt@3(bn,r))) {
@@ -120,12 +122,13 @@ next@2@3@5:;
 		}
 		if (ins) {
 			BUNfastins(bn, h, t);
-			if (bn->hhash_heap) HASHins@4(bn->hhash, zz, h);
+			if (bn->hhash_heap) HASHins@4(bn->hhash, (hash_t) zz, h);
 			zz++;
 		}
 	}
 @= elim
-{	int zz, xx, (*cmp)() = BATatoms[b->ttype].atomCmp;
+{	int xx, (*cmp)() = BATatoms[b->ttype].atomCmp;
+	size_t zz;
 	BUN p, q, r; 
 	if (BAThordered(b)&1) {
 	    if (b->tvarsized) {
@@ -239,7 +242,7 @@ BAT *BATsunique (BAT *b) {
 	if (b->hkey || b->tkey || b->batSet) {
 	    bn = BATrcopy(b);
 	} else {
-	    int cnt = BATcount(b);
+	    size_t cnt = BATcount(b);
 	    if (cnt > 10000) {
 		BAT *tmp1 = BATsample(b, 1000);
 		BAT *tmp2 = BATkunique(tmp1);
@@ -287,7 +290,7 @@ TODO synced/key case..
 	    }
  	    if (c == 0) {
 		BUN pb = p2;
-		while(1) {
+		for (;;) {
 		    if (EQUAL@5(t, BUNtail(r,pb))) {
 			HIT@1(h, t); break;
 		    } 
@@ -307,7 +310,8 @@ end@2@3:;
 	END@1(BUNh@2(l,p1), BUNtail(l,p1));
 @= hashcheck
 	BUN p1, q1, w; 
-	int ins, s1, s2;
+	int ins, s1;
+	hash_t s2;
 	ptr h, t, t2 = NULL;
 
 	(void) BATprepareHash(r);
@@ -340,7 +344,7 @@ end@2@3:;
 	BUN hit_start = (q1=BUNlast(l)), hit_end = q1, w = BUNfirst(r);
 	int s1 = BUNsize(l);
 	int s2 = BUNsize(r);
-	int off = BUNindex(l,p1);
+	size_t off = BUNindex(l,p1);
 	h = (ptr) &ll;
 
 	if (rl >= ll && rl < lh) {
@@ -373,7 +377,8 @@ end@2@3:;
  		ll++; p1 += s1;
 	}
     } else {
-	int s1, off = BUNindex(r,p1);
+	int s1;
+	size_t off = BUNindex(r,p1);
 	BATloopFast(l, p1, q1, s1) {
 	    oid o = *(oid*) BUNhloc(l, p1);
 	    h = (ptr) &o;
@@ -447,7 +452,7 @@ int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
 
 BAT *BAT@1@2(BAT *l, BAT *r) {
 	BAT	*bn;
-	int	smaller;
+	size_t	smaller;
 
 	ERRORcheck(l == NULL, "BAT@1@2: left is null"); 
 	ERRORcheck(r == NULL, "BAT@1@2: right is null"); 

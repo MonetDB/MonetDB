@@ -47,7 +47,7 @@
 
 #define	assert(e, m)	if( !(e) ) Fatal(m, "Assertion failed"); else
 
-extern	int	db_flag;
+extern	unsigned int	db_flag;
 extern	int	archived;
 
 /* MX control indicators

@@ -179,7 +179,7 @@ int interpret_interpret(Cntxt stk, YYSTREE tt, ValPtr argv) {
 
 static int interpret_multiplex_fcn(
 	str s, int argc, ValPtr argv, ValPtr res, int assignop,
-	int stk, int size, int tpe, int ret, GDKfcn imp);
+	int stk, size_t size, int tpe, int ret, GDKfcn imp);
 
 int interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res, 
 			YYSTREE t, Cntxt stk) 
@@ -190,8 +190,8 @@ int interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res,
 	int one_unique = FALSE;
 	int all_unique = TRUE;
 	int all_sorted = TRUE;
-	int max_size = 0;
-	int min_size = REALLY_REALLY_BIG;
+	size_t max_size = 0;
+	size_t min_size = REALLY_REALLY_BIG;
 	char name[128];
 
 	strcpy(name, s);
@@ -209,7 +209,7 @@ operator are a special case.
 	for(i=1; i < argc; i++) {
 	    if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
 		BAT *b = BATdescriptor(argv[i].val.bval);
-		int sz = BATcount(b);
+		size_t sz = BATcount(b);
 
 		if (min_size == REALLY_REALLY_BIG) {
 		    all_synced = b; 
@@ -327,7 +327,7 @@ typedef struct {
 	ColFcn f[MAXPARAMS]; 	/* pointer to value functions */
 	int (*unfix)(ptr);	/* unfix function for produced atoms */ 
 	ValRecord id;		/* current head value */
-	int cap;		/* capacity of the result */
+	size_t cap;		/* capacity of the result */
 	BAT *b;			/* result bat */
 	BAT *piv[MAXPARAMS];	/* bats to be joined */
 	int nbats;		/* actual number of involved bats */
@@ -386,7 +386,7 @@ int interpret_multiplex_fcn(
 	ValPtr res,    /* result value (to store bat) */
 	int assignop,  /* project away result head */
 	int stk,       /* -1 if no proc */
-	int size,      /* expected result size */
+	size_t size,	/* expected result size */
 	int tpe,       /* head column type */
 	int ret,       /* return type; <=0 if unknown */
 	GDKfcn imp     /* command pack address or proc YYSTREE */
@@ -394,7 +394,7 @@ int interpret_multiplex_fcn(
 	int r, i, proc = (stk >= 0), real_type = 0;
 	int special = (imp == CMDifthen || imp == CMDifelse || imp == CMDifthenelse);
 	BAT *assignbat=assignop?BATdescriptor(argv[1].val.bval):NULL;
-	ValPtr bak = (ValPtr) alloca(argc*sizeof(ValRecord));
+	ValPtr bak = (ValPtr) alloca(argc*(int)sizeof(ValRecord));
 	exec_t desc;
 	RowFcn wrap;
 
@@ -676,7 +676,7 @@ static int interpret_@1_array(
 	ValPtr	argv,
 	ValPtr	res,
 	GDKfcn  addr,
-	int 	size,
+	size_t 	size,
 	int 	ret_tpe,
 	int 	assignop,
 	int 	special
@@ -684,7 +684,8 @@ static int interpret_@1_array(
 	str  a1, a2, a3, ah;    /* heap bases */
 	int  s1, s2, s3, sh;    /* bun sizes */
 	str  p1, p2, p3, ph, hend; /* bun pointers */
-	int  hky=0, hsrt=0, hdff, htpe=-1;
+	int  hky=0, hsrt=0, htpe=-1;
+	size_t hdff;
 	BAT  *b1, *b2, *b3=0, *retb, *bh=0;
 	int ret_sze = ATOMsize(ret_tpe);
 	ptr  tptr = (ptr) GDKmalloc(ret_sze+8);
@@ -830,10 +831,10 @@ return a simple type.
     }
 @= mergeloop2
 while(p1<e1 && p2<e2) {
-    int r = *(oid*) BUNhloc(b1, p1) - *(oid*) BUNhloc(b2, p2);
-    if (r < 0) {
+    oid o1 = *(oid*) BUNhloc(b1, p1), o2 = *(oid*) BUNhloc(b2, p2);
+    if (o1 < o2) {
         p1 += s1; 
-    } else if (r > 0) {
+    } else if (o1 > o2) {
         p2 += s2; 
     } else {
 	int retval = (*addr)(tptr,BUNt@2(b1,p1),BUNt@3(b2,p2));
@@ -845,25 +846,27 @@ while(p1<e1 && p2<e2) {
 
 @= mergeloop3
 if (p1<e1 && p2<e2 && p3<e3) {
-  int r = *(oid*) BUNhloc(b1, p1) - *(oid*) BUNhloc(b2, p2);
-  while(1) {
-    if (r < 0) {
+  oid o1 = *(oid*) BUNhloc(b1, p1), o2 = *(oid*) BUNhloc(b2, p2);
+  for (;;) {
+    if (o1 < o2) {
         p1 += s2; if (p1 >= e1) goto xit;
-    } else if (r > 0) {
+    } else if (o1 > o2) {
         p2 += s2; if (p2 >= e2) goto xit;
     } else {
-      while(1) {
-        r = *(oid*) BUNhloc(b2, p2) - *(oid*) BUNhloc(b3, p3);
-        if (r < 0) {
+      for (;;) {
+        o1 = *(oid*) BUNhloc(b2, p2);
+	o2 = *(oid*) BUNhloc(b3, p3);
+        if (o1 < o2) {
             p2 += s2; if (p2 >= e2) goto xit;
-        } else if (r > 0) {
+        } else if (o1 > o2) {
             p3 += s3; if (p3 >= e3) goto xit;
         } else {
 	    break;
 	}
       } 
-      r = *(oid*) BUNhloc(b1, p1) - *(oid*) BUNhloc(b2, p2);
-      if (r == 0) {
+      o1 = *(oid*) BUNhloc(b1, p1);
+      o2 = *(oid*) BUNhloc(b2, p2);
+      if (o1 == o2) {
 	int retval = (*addr)(tptr, BUNt@2(b1,p1), BUNt@3(b2,p2), BUNt@4(b3,p3));
 	@:check_@1(name, 1+BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
 	@:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
@@ -872,7 +875,8 @@ if (p1<e1 && p2<e2 && p3<e3) {
         p3 += s3; if (p3 >= e3) goto xit;
       } else continue;
     }
-    r = *(oid*) BUNhloc(b1, p1) - *(oid*) BUNhloc(b2, p2);
+    o1 = *(oid*) BUNhloc(b1, p1);
+    o2 = *(oid*) BUNhloc(b2, p2);
   }
 }
 
@@ -904,7 +908,7 @@ static int interpret_@1_merge(
 	ValPtr	argv,
 	ValPtr	res,
 	GDKfcn  addr,
-	int 	size,
+	size_t 	size,
 	int 	ret_tpe,
 	int 	assignop,
 	int 	special
@@ -1207,13 +1211,16 @@ int interpret_setaggr(
 ){
 	monet_sig_t *sig = (monet_sig_t*) tt->yyval.val.pval;
 	BAT	*b, *nested, *nested_rev, *histo=0, *extent=0, *ret=0;
-	int	minpos, ret_val, varsize, head_type, hidden_vartype=0;
+	size_t	minpos;
+	int	ret_val, varsize, head_type, hidden_vartype=0;
 	int	prop_key, prop_sorted = 0;
 	GDKfcn	direct_call = NULL, packed_call = NULL;
         BATstore *nested_bak=NULL;
 	ValRecord argv_bak;
 	BUN	p, q, r, s;
-	int	xx, yy, zz;
+	int	xx, yy;
+	size_t	zz;
+	hash_t	hh;
 	str	buf;
 	bulkerror_t bulkerror;
 
@@ -1440,9 +1447,9 @@ a temporary BAT 'nested'; in which we insert all tail values.
 		    nested->batInserted = batbuns->base + bunsize;
 
 	    	    (void) BATprepareHash(b);
-		    HASHloop(b, b->hhash, xx, last) { 
-			r = BUNptr(b, xx);
-			@:bunins_unary(r,xx)@
+		    HASHloop(b, b->hhash, hh, last) { 
+			r = BUNptr(b, hh);
+			@:bunins_unary(r,hh)@
 		    }
 	            @:exec_interpret(last)@
 		    nested->hsorted = 0;
@@ -1506,15 +1513,15 @@ we know that the head is oid (or a small version) here..
                 @:bunins_unary(*idxptr,BUNindex(b,*idxptr))@ idxptr++;
 	}
 @= getset_ins_hash
-	HASHloop_@1(b, b->hhash, xx, (&cur), r) { 
-		@:bunins_unary(r,xx)@
+	HASHloop_@1(b, b->hhash, hh, (&cur), r) { 
+		@:bunins_unary(r,hh)@
 	}
 @= getset_ins_loop
-	xx = minpos;
-	BATloopFast(b, r, s, zz) { 
+	zz = minpos;
+	BATloopFast(b, r, s, xx) { 
 		if (cur == *(@1*) BUNhloc(b,r)) {
-			@:bunins_unary(r,xx)@
-		} xx++;
+			@:bunins_unary(r,zz)@
+		} zz++;
 	}
 
 @+ epilogue

@@ -113,7 +113,7 @@ typedef struct {
 }
 
 #define tpe_SWAP(TYPE, a, b, n) {			\
-	int _i = (n)/sizeof(TYPE);			\
+	size_t _i = (n)/sizeof(TYPE);			\
 	TYPE *_pa = (TYPE*) (((char*) (a)) - buf->loc);	\
 	TYPE *_pb = (TYPE*) (((char*) (b)) - buf->loc);	\
 	do { 						\
@@ -211,7 +211,8 @@ typedef chr any;
 static 
 void GDKqsort_@1_@2_@3(char *a, size_t n, buf_t *buf) {
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-	int d, r, swap_cnt;
+	size_t r;
+	int swap_cnt;
 
 	/* Qsort routine from Bentley & McIlroy's "Engineering a Sort Function".  */
 loop:	swap_cnt = 0;
@@ -227,6 +228,7 @@ loop:	swap_cnt = 0;
 		pl = a;
 		pn = (char *) a + MULT_WIDTH(n - 1);
 		if (n > 40) {
+			size_t d;
 			d = MULT_WIDTH(n >> 3);
 			pl = @2_@3_MED3(pl, pl + d, pl + 2 * d, buf);
 			pm = @2_@3_MED3(pm - d, pm, pm + d, buf);
@@ -238,7 +240,8 @@ loop:	swap_cnt = 0;
 	pa = pb = (char *) a + buf->width;
 	pc = pd = (char *) a + MULT_WIDTH(n - 1);
 
-	while(TRUE) {
+	for (;;) {
+		int r;
 		while (pb <= pc && (r = @2_@3_CMP(pb, a)) <= 0) {
 			if (r == 0) {
 				swap_cnt = 1;
@@ -303,7 +306,7 @@ if ((((long) a)&7) || width != 8) {
 	@:call_qsort2(@1,register)@	/* we can swap array entries by one 64-bit integer swap */
 } break;
 @c
-void GDKqsort(void *a, void* base, int n, int width, int tpe, int loc) {
+void GDKqsort(void *a, void* base, size_t n, int width, int tpe, int loc) {
 	int i = 0;
 	buf_t buf;
 

@@ -40,6 +40,10 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 #define DEFAULT_TIMEOUT 0
 

@@ -29,7 +29,7 @@
 In the Monet system it was decided that operators use full materialization.
 This is a simple approach that allows for efficient implementation of the 
 individual operators. In MIL, one operator is executed without interruption 
-one an entire BAT, producing one result. The inner loop of a C implementation of
+on an entire BAT, producing one result. The inner loop of a C implementation of
 such MIL operators therefore typically does not perform any function calls at all.
 This was deemed an important implementation feature for a main-memory
 database system, as function calls are expensive; especially non-inlineable
@@ -149,7 +149,7 @@ typedef ptr iter;
 #include "iterator.h"
 #include "iterator.proto.h"
 
-int chunksize = 1;
+size_t chunksize = 1;
 
 @- BUN insert
 @T
@@ -189,9 +189,9 @@ and an operator-specific handle.
 @c
 typedef struct _ITER ITER;
 typedef BAT*   (*BATfcn)(ITER *, BAT *);
-typedef int    (*NEXTfcn)(ITER *);
+typedef size_t (*NEXTfcn)(ITER *);
 typedef void   (*FREEfcn)(ITER *);
-typedef int    (*GUESSfcn)(ITER *);
+typedef size_t (*GUESSfcn)(ITER *);
 
 typedef union {                 
     ScanHandle scan;
@@ -201,7 +201,7 @@ typedef union {
 
 struct _ITER {
     str        		name;
-    int        		tuples_seen;
+    size_t     		tuples_seen;
     /* result tuple buffer (BAT slice of max chunksize) */
     BAT        		*result, *mirror;        
     BUN        		result_cur;
@@ -264,11 +264,11 @@ ITER *ITERinit(ITER *input, str name,
 }
 
 static INLINE 
-int ITERnext(ITER *it) {
-    int cnt = (*it->next)(it);
+size_t ITERnext(ITER *it) {
+    size_t cnt = (*it->next)(it);
     BAT *b = it->result;
     BUN cur = BUNfirst(b);
-    int idx = cnt + BUNindex(b, cur);
+    size_t idx = cnt + BUNindex(b, cur);
     b->batBuns->free = BUNptr(b, idx) - b->batBuns->base;
     it->tuples_seen += cnt;
     it->result_cur = cur;
@@ -278,7 +278,7 @@ int ITERnext(ITER *it) {
 }
 
 static 
-int ITERguess(ITER *it) {
+size_t ITERguess(ITER *it) {
     return (*it->guess)(it);
 }
 
@@ -307,7 +307,7 @@ BAT *ITERcollect(ITER *it) {
 
     ITERloop(it, p, q, xx) {
         if (bn->batBuns->free + yy > bn->batBuns->size) {
-            int delta = ITERguess(it);
+            size_t delta = ITERguess(it);
             BATextend(bn, BATcount(bn) + MAX(100,delta));
 	    r = BUNlast(bn);
         }
@@ -323,18 +323,18 @@ BAT *ITERcollect(ITER *it) {
 Input is simpy an already loaded bat. We provide slices of it.
 @h
 typedef struct {
-    int tuples_left;
+    size_t tuples_left;
 } ScanHandle;
 @c
-int ScanNext(ITER *it) {
-    int cnt = MIN(chunksize, it->hdl.scan.tuples_left);
+size_t ScanNext(ITER *it) {
+    size_t cnt = MIN(chunksize, it->hdl.scan.tuples_left);
     BAT *b = it->result;
     b->batHole = BUNlast(b) - BUNsize(b);
     it->hdl.scan.tuples_left -= cnt;
     return cnt;
 }
 
-int ScanGuess(ITER *it) {
+size_t ScanGuess(ITER *it) {
     return it->hdl.scan.tuples_left; /* no guess: it's for sure */
 }
 
@@ -358,11 +358,11 @@ int iter_scan(iter *res, BAT *b) {
 This passes through the mirrored results of its input. No buns need to be copied as
 their BAT buffers are views of each other; hence share the same data structures. 
 @c
-int ViewNext(ITER *it) {
+size_t ViewNext(ITER *it) {
     return ITERnext((ITER*) it->input);
 }
 
-int ViewGuess(ITER *it) {
+size_t ViewGuess(ITER *it) {
     return ITERguess((ITER*) it->input);
 }
 
@@ -434,11 +434,12 @@ typedef struct {
    (*it->hdl.sel.fcn)(&_zz, BUNtail(b,p), it->hdl.sel.v1, it->hdl.sel.v2);
    if (_zz) 
 @= select
-int SelectNext_@1_@2(ITER *it) {
+size_t SelectNext_@1_@2(ITER *it) {
     ITER *input = (ITER*) it->input;
     BAT *b = input->result;
     BUN p, q, r = BUNfirst(it->result);
-    int xx, yy = 0;
+    int xx;
+    size_t yy = 0;
 
     ITERloop(input, p, q, xx) {
         @:select_@2(@3,@4,@5)@ {
@@ -449,9 +450,9 @@ int SelectNext_@1_@2(ITER *it) {
     return yy;
 }
 @c
-int SelectGuess(ITER *it) {
+size_t SelectGuess(ITER *it) {
     ITER *input = (ITER*) it->input;
-    int totsize = (*input->guess)(input);
+    size_t totsize = (*input->guess)(input);
     return totsize/MAX(10, input->tuples_seen / MAX(1, it->tuples_seen));
 }
 
@@ -528,15 +529,15 @@ returns matches on tuples from the outer stream with the hash-table.
 @h
 typedef struct {
     BAT *inner;
-    unsigned int *hash, *link;
-    unsigned int mask, hashnum;
+    size_t *hash, *link;
+    size_t mask, hashnum;
 } JoinHandle;
 @c
-#define iterator_hashchr(tpe,val,msk) ((unsigned int) (((unsigned char*) val)[0])) 
-#define iterator_hashsht(tpe,val,msk) (((unsigned int) ((unsigned short*) val)[0]) % msk) 
-#define iterator_hashint(tpe,val,msk) (((unsigned int*) val)[0] % msk) 
-#define iterator_hashlng(tpe,val,msk) ((((unsigned int*) val)[0]^((unsigned int*) val)[1]) % msk) 
-#define iterator_hashloc(tpe,val,msk) (((unsigned int) (*BATatoms[tpe].atomHash)(val)) % msk)
+#define iterator_hashchr(tpe,val,msk) ((size_t) ((unsigned char*) val)[0])
+#define iterator_hashsht(tpe,val,msk) (((size_t) ((unsigned short*) val)[0]) % msk)
+#define iterator_hashint(tpe,val,msk) (((size_t) ((unsigned int *) val)[0]) % msk)
+#define iterator_hashlng(tpe,val,msk) ((size_t)(((unsigned int *) val)[0]^((unsigned int *) val)[1]) % msk)
+#define iterator_hashloc(tpe,val,msk) (((size_t) (*BATatoms[tpe].atomHash)(val)) % msk)
 #define iterator_hashvar(tpe,val,msk) iterator_hashloc(tpe,val,msk)
 
 @:join(simple,chr,chr,loc)@
@@ -547,10 +548,11 @@ typedef struct {
 @:join(atom,var,it->hdl.join.inner->htype,var)@
 
 @= join
-int JoinNext_@2(ITER *it) {
+size_t JoinNext_@2(ITER *it) {
     ITER *outer = (ITER*) it->input;
     BUN p, q, r = BUNfirst(it->result);
-    int xx, yy = 0;
+    int xx;
+    size_t yy = 0;
 
     ITERloop(outer, p, q, xx) {
 	if (it->hdl.join.hashnum == 0) {
@@ -572,10 +574,11 @@ int JoinNext_@2(ITER *it) {
 @- postional-join
 Here we can look up an OID by its position, because it resides in a VOID column.
 @c
-int JoinNextVoid(ITER *it) {
+size_t JoinNextVoid(ITER *it) {
     ITER *outer = (ITER*) it->input;
     BUN p, q, t, r = BUNfirst(it->result);
-    int xx, yy = 0;
+    int xx;
+    size_t yy = 0;
 
     ITERloop(outer, p, q, xx) {
 	ptr val;
@@ -592,15 +595,15 @@ int JoinNextVoid(ITER *it) {
     return yy;
 }
         
-int JoinGuess(ITER *it) {
+size_t JoinGuess(ITER *it) {
     ITER *outer = (ITER*) it->input;
     flt lsize = (flt) (*outer->guess)(outer);
     flt rsize = (flt) BATcount(it->hdl.join.inner);
     flt div = (flt) MAX(1.0,lsize/MAX(1.0, rsize));
     if (it->next == JoinNextVoid) {
-	return (int) lsize;
+	return (size_t) lsize;
     }
-    return (int) (lsize/MAX(div, ((flt) outer->tuples_seen) / MAX(1,it->tuples_seen)));
+    return (size_t) (lsize/MAX(div, ((flt) outer->tuples_seen) / (flt) MAX(1,it->tuples_seen)));
 }
 
 int iter_join(iter *res, iter *input, BAT *inner) {
@@ -610,7 +613,7 @@ int iter_join(iter *res, iter *input, BAT *inner) {
     int n_one = outer->result->tkey;
     BAT *bn;
 
-    if (outer->result->ttype != TYPE_oid || !BAThdense(inner)) 
+    if (outer->result->ttype != TYPE_oid || !BAThdense(inner)) {
     if (ATOMstorage(outer->result->ttype) == ATOMstorage(inner->htype)) {
         switch (ATOMstorage(inner->ttype)) {
         case TYPE_chr: nxt = JoinNext_chr; break;
@@ -626,7 +629,7 @@ int iter_join(iter *res, iter *input, BAT *inner) {
                  ATOMname(outer->result->htype), ATOMname(outer->result->ttype),
                  ATOMname(inner->htype), ATOMname(inner->ttype));
         return GDK_FAIL;
-    }
+    }}
     if (ht == TYPE_void && !n_one) {
 	ht = TYPE_oid;
     }
@@ -765,10 +768,11 @@ that works with ADT calls.
 
 @= groupby_hash
 BAT *groupby_@1_@2_@3(ITER *input, BAT *attr) {
-    int idx, xx, yy = 0, maxgrps = 100; 
+    size_t idx, yy = 0, maxgrps = 100;
+    int xx; 
     BAT *bn = BATnew(BATttype(input->result), attr->ttype, maxgrps);
-    int *cntbuf = (int*) GDKmalloc(maxgrps*sizeof(int));
-    int off = BUNindex(bn, BUNfirst(bn)), *cnt = cntbuf - off;
+    size_t off = BUNindex(bn, BUNfirst(bn));
+    int *cntbuf = (int*) GDKmalloc(maxgrps*sizeof(int)), *cnt = cntbuf - off;
     lng initval = 0;
     BUN p, q;
 
@@ -807,8 +811,8 @@ array for the aggregate totals, that is indexed with this small integer number
 BAT* groupby_@1_@2_@3(ITER *input, BAT *attr) {
     int ngrps = 0, maxgrps = 1 << (ATOMsize(input->result->ttype)*8);
     BAT *bn = BATnew(TYPE_oid, attr->ttype, maxgrps); 
-    int *cnt = (int*) alloca(maxgrps*sizeof(int));
-    int off = BUNfirst(bn) - bn->batBuns->base;
+    int *cnt = (int*) alloca(maxgrps*(int)sizeof(int));
+    size_t off = BUNfirst(bn) - bn->batBuns->base;
     BUN p, q, r = BUNfirst(bn);
     int idx, xx, yy = BUNsize(bn);
 
@@ -901,8 +905,8 @@ int iter_count(int *res, iter *input) {
 Get and set the chunksize parameter. This determines the granularity in
 which tuples flow through an iterator tree.
 @c
-int iter_setchunksize(int *size) { chunksize = *size; return GDK_SUCCEED; }
-int iter_getchunksize(int *size) { *size = chunksize; return GDK_SUCCEED; }
+int iter_setchunksize(int *size) { chunksize = (size_t)*size; return GDK_SUCCEED; }
+int iter_getchunksize(int *size) { *size = (int)chunksize; return GDK_SUCCEED; }
 
 @+ fix/unfix
 @c

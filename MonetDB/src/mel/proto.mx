@@ -78,7 +78,7 @@ int proto::generate_code( ostream &o, Symbol *root ){
 static char mod_export[1024];
 
 char *upper(char *str){
-	int i,l = strlen(str);
+	size_t i,l = strlen(str);
 	char *res = new char[l+1];
 
 	for (i=0;i<l;i++)
@@ -131,8 +131,8 @@ ostream &proto::gen_atom( ostream &o, const Atom &d ){
 	o << mod_export << " int\tTYPE_" << d.Name() << ";\n";
 
 	if (!d.type() && !d.parent() && d.size() == 0){
- 		o << mod_export << " int " << d.Name() << "_size();\n";
- 		o << mod_export << " int " << d.Name() << "_align();\n";
+ 		o << mod_export << " int " << d.Name() << "_size(void);\n";
+ 		o << mod_export << " int " << d.Name() << "_align(void);\n";
 	}
 	o << "\n\n";
 	
@@ -251,7 +251,7 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* DEL: delete a " << name << " from the heap.  */\n\n\n";
 	    break;
         case OP_HASH 	:
-	    o << "int\n";
+	    o << "hash_t\n";
 	    o << d.Name() << "(\n";
 	    o << "   " << name;
 	    if (!hasPtr)
@@ -266,7 +266,7 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    if (!hasPtr)
 		    o << "*";
 	    o << "\n";
-	    o << d.Name() << "();\n\t/* NIL: generic nil " << name << ". */\n";
+	    o << d.Name() << "(void);\n\t/* NIL: generic nil " << name << ". */\n";
 	    o << "\t/* returns a pointer to a nil-" << name << ". */\n\n\n";
 	    break;
         case OP_PUT 	:
@@ -370,7 +370,7 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << "void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   int\t\tidx,\t/* IN: BUNindex() of value. */\n";
+     o << "   size_t\tidx,\t/* IN: BUNindex() of value. */\n";
      o << "   BAT*\t\tbn,\t/* IN: BAT with accelerated head column. */\n";
      o << "   ";
      if (acc_arg->Token() == MEL_ATOM)
@@ -386,7 +386,7 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << "void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   int\t\tidx,\t/* IN: BUNindex() of value. */\n";
+     o << "   size_t\tidx,\t/* IN: BUNindex() of value. */\n";
      o << "   BAT*\t\tbn,\t/* IN: BAT with accelerated head column. */\n";
      o << "   ";
      if (acc_arg->Token() == MEL_ATOM)
@@ -450,7 +450,7 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << "int\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc<< " accelerator heap. */\n";
-     o << "   int\t\tidx,\t/* IN: future BUNindex() OUT: oldpos. */\n";
+     o << "   size_t\tidx,\t/* IN: future BUNindex() OUT: oldpos. */\n";
      o << "   void**\thdl,\t/* INOUT: ";
      acc_arg->print( this, o );
      o << " iteration record. */\n";
@@ -472,7 +472,7 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
     case OP_MOVE:
      o << "void\n";
      o << d.Name() << "(\n";
-     o << "  Heap *acc, int from, int to, BAT *b, ptr val );\n";
+     o << "  Heap *acc, size_t from, size_t to, BAT *b, ptr val );\n";
      break;
    }
    return o; 
@@ -483,11 +483,13 @@ ostream &proto::gen_command( ostream &o, const Command &d ){
 	o << " * " << d.hlp() << "\n";
 	o << " */\n";
 	o << mod_export << " int " << d.fcn() <<"( ";
+	int hasargs = 0;
 	if (d.result()){
 	   	result = 1;
 	   	d.result()->Name( "res" );
 	   	d.result()->print( this, o );
 	   	result = 0;
+		hasargs = 1;
 	}
 	if (d.args()){
 	   	if (d.result()){
@@ -501,7 +503,10 @@ ostream &proto::gen_command( ostream &o, const Command &d ){
 		   	o << ", ";
 			s->print( this, o );
 		}
+		hasargs = 1;
 	}
+	if (!hasargs)
+		o << "void";
 	o << ");\n\n";
  	return o; 
 }

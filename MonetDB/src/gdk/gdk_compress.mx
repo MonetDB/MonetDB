@@ -139,8 +139,8 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-   extern int compress(char_type* ptr,char_type* end_ptr,FILE* fp_out);
-   extern int decompress(FILE *fp_in,char_type* ptr);
+   extern ssize_t compress(char_type* ptr,char_type* end_ptr,FILE* fp_out);
+   extern ssize_t decompress(FILE *fp_in,char_type* ptr);
 #ifdef __cplusplus
 }
 #endif
@@ -201,14 +201,10 @@ extern "C" {
 @}
 @}
 @}
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "gdk.h"
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
-#undef BUS_OBJERR
-#include <sys/stat.h>
 #include <signal.h>
 #ifdef HAVE_SYS_UTIME_H
 # include <sys/utime.h>
@@ -223,7 +219,6 @@ extern "C" {
 # include <io.h>
 #endif
 #include <stdio.h>
-#include <string.h>
 #include "gdk_compress.h"
 
 @-
@@ -237,8 +232,8 @@ static char_type rmask[9] =
       { 0x00, 0x01, 0x03, 0x07, 
         0x0f, 0x1f, 0x3f, 0x7f, 0xff};
 
-static code_int getcode();
-static void output();
+static code_int getcode(globals_t *, FILE *);
+static void output(globals_t *, code_int, FILE *);
 @
 @}
 
@@ -260,14 +255,11 @@ questions about this implementation to ames! jaw.
 #define htabof(i)	global.htab[i]
 #define codetabof(i)	global.codetab[i]
 
-void writeerr();
-void cl_hash();
-void cl_block();
+void writeerr(char *);
+void cl_hash(globals_t *, count_int);
+void cl_block(globals_t *, FILE *);
 
-int compress(ptr, end_ptr, fp_out)
-char_type *ptr;
-char_type *end_ptr;
-FILE *fp_out;
+ssize_t compress(char_type *ptr, char_type *end_ptr, FILE *fp_out)
 {
     register long fcode;
     register code_int i = 0;
@@ -371,7 +363,7 @@ Put out the final code.
     output(&global, (code_int)ent, fp_out );
     output(&global, (code_int)-1, fp_out );
 
-    return global.bytes_out;
+    return (ssize_t) global.bytes_out;
 }
 
 @{
@@ -390,10 +382,7 @@ Algorithm:
 fit in it exactly). When the buffer fills up empty it and start over.
 @c
 static void 
-output(global, code, fp_out )
-globals_t *global;
-code_int  code;
-FILE *fp_out;
+output(globals_t *global, code_int code, FILE *fp_out)
 {
     register size_t off = global->offset, r_off=off;
     register size_t n_bits= global->n_bits, bits=n_bits;
@@ -409,7 +398,7 @@ Get to the first byte.
 Since code is always >= 8 bits, only need to mask the first
 hunk on the left.
 @c
-	*bp = (*bp & rmask[r_off]) | ((code << r_off) & lmask[r_off]);
+	*bp = (char_type) ((*bp & rmask[r_off]) | ((code << r_off) & lmask[r_off]));
 	bp++;
 	bits -= (8 - r_off);
 	code >>= 8 - r_off;
@@ -501,9 +490,7 @@ be stored in the compressed file.  See the definitions above.
 #define tab_suffixof(i)	((char_type	*)(global.htab))[i]
 #define de_stack	((char_type	*)&tab_suffixof(1<<BITS))
 
-int decompress(fp_in, ptr)
-FILE *fp_in;
-char_type *ptr;
+ssize_t decompress(FILE *fp_in, char_type *ptr)
 {
     register char_type *stackp;
     register int finchar;
@@ -529,7 +516,7 @@ Init globals.
     global.offset = 0;
     global.checkpoint = CHECK_GAP;
     global.maxbits = getc(fp_in);        
-    global.block_compress = global.maxbits & BLOCK_MASK;
+    global.block_compress = (int) (global.maxbits & BLOCK_MASK);
     global.maxbits &= BIT_MASK;
     global.maxcode = 1 << global.maxbits;
     global.highestcode = MAXCODE(global.n_bits = INIT_BITS);
@@ -603,7 +590,7 @@ And emit them in forward order.
 	/* Remember previous code. */
 	oldcode = incode;
     }
-    return (int) (long) (ptr - start);
+    return (ssize_t) (ptr - start);
 }
 
 
@@ -616,12 +603,10 @@ Inputs: 	stdin
 
 Outputs: 	code or -1 is returned.
 @c
-static code_int getcode(global, fp_in)
-globals_t *global;
-FILE *fp_in;
+static code_int getcode(globals_t *global, FILE *fp_in)
  {
     register code_int code;
-    register int r_off, bits;
+    register size_t r_off, bits;
     register char_type *bp = global->buf;
 
     if ( global->clear_flg > 0 || global->offset >= global->size ||
@@ -675,8 +660,7 @@ Round size down to integral number of codes.
 }
 
 
-void writeerr(str)
-char *str;
+void writeerr(char *str)
 {
 	fprintf(stderr, "compress: %s :%s\n", 
  			str, strerror(errno));
@@ -684,9 +668,7 @@ char *str;
 
 
 
-void cl_block (global, fp_out)	
-globals_t *global;
-FILE *fp_out;
+void cl_block(globals_t *global, FILE *fp_out)
 {
     register long int rat;
 
@@ -721,9 +703,7 @@ FILE *fp_out;
 @{
 @{
 
-void cl_hash(global,hsize)	
-globals_t *global;
-register count_int hsize;
+void cl_hash(globals_t *global, count_int hsize)
 {
 	register count_int *htab_p = global->htab+hsize;
 	register long i;
@@ -761,12 +741,10 @@ For debug purposes only.
 Don't forget: mv a.out zip; rm unzip; ln zip unzip
 @c
 #ifdef MAIN
-main(argc,argv)
-int argc;
-char **argv;
+main(int argc, char **argv)
 {
 	struct stat st;
-	int size,t;
+	size_t size;
 	char *ptr;
 	FILE *fp_in, *fp_out;
 
@@ -779,8 +757,8 @@ char **argv;
         stat(argv[1], &st);
 	size = 5*st.st_size;
  	if (!(ptr=GDKmalloc(size))) {
-		fprintf(stderr, "fatal: could not malloc %d bytes.\n", 
-			size);
+		fprintf(stderr, "fatal: could not malloc %ld bytes.\n", 
+			(long)size);
 		exit(1);
 	} 
 	if (strcmp(argv[0],"zip")) {

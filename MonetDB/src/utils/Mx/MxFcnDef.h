@@ -182,6 +182,7 @@ extern	void	Message ARGS((char*, ...));
  */
 extern	Tok *	FstTok ARGS((char*));
 extern	Tok *	NxtTok ARGS((Tok*));
+extern	Tok *	SkipTok ARGS((Tok*,char));
 extern	void	DbTok ARGS((Tok*));
 extern	char **	MkArgv ARGS((char*));
 extern	char **	RmArgv ARGS((char**));

@@ -908,11 +908,11 @@ void monettime_epilogue(void){
 }
 
 timestamp*
-timestamp_null() {
+timestamp_null(void) {
 	return (ts_nilptr);
 }
 tzone*
-tzone_null() {
+tzone_null(void) {
 	return (tz_nilptr);
 }
 
@@ -1010,7 +1010,7 @@ int fleximatch(str s, str pat, int min) {
 	int hit, spacy = 0;
 
 	if (min == 0) {
-		min = strlen(pat); /* default mininum required hits */
+		min = (int)strlen(pat); /* default mininum required hits */
 	}
 	for(hit = 0; *pat; s++, hit++) {
 		if (LOWER(*s) != *pat) {
@@ -1203,7 +1203,7 @@ int date_tostr(str* buf, int* len, date* val) {
 		return 3;
 	}
 	sprintf(*buf, "%d-%02d-%02d", year, month, day);
-	return strlen(*buf);
+	return (int) strlen(*buf);
 }
 
 @- daytime
@@ -1309,7 +1309,7 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 	    }
 	    timestamp_add(*ret, *ret, &offset); 
 	}
-	return s-buf;
+	return (int) (s-buf);
 }
 
 int timestamp_tostr(str* buf, int* len, timestamp *val) {
@@ -1344,7 +1344,7 @@ int timestamp_tostr(str* buf, int* len, timestamp *val) {
 		s += 4;
 	}
  */
-	return s - *buf;
+	return (int) (s - *buf);
 }
 
 str count1(int i) {
@@ -1384,7 +1384,7 @@ int rule_tostr(str* buf, int* len, rule *r) {
 		sprintf(*buf, "last %s on or before %s %d\@%02d:%02d", DAYS[WEEKDAY_ZERO - r->weekday], 
 			MONTHS[r->month],  DAY_ZERO - r->day, hours, minutes);
 	}
-	return strlen(*buf);
+	return (int) strlen(*buf);
 }
 
 int rule_fromstr(str buf, int *len, rule **d) {
@@ -1467,7 +1467,7 @@ int rule_fromstr(str buf, int *len, rule **d) {
 		(*d)->day = DAY_ZERO + (neg_day?-day:day);
 		(*d)->minutes = hours*60 + minutes;
 	}
-	return cur - buf;
+	return (int) (cur - buf);
 }
 
 @- tzone
@@ -1531,7 +1531,7 @@ int tzone_fromstr(str buf, int *len, tzone **d) {
 			(*d)->dst = FALSE;
 		}
 	}
-	return cur - buf;
+	return (int) (cur - buf);
 }
 
 int tzone_tostr(str* buf, int* len, tzone *z) {
@@ -1564,7 +1564,7 @@ int tzone_tostr(str* buf, int* len, tzone *z) {
 			*s++ = ']'; *s = 0;
 		}
 	}
-	return s - *buf;
+	return (int) (s - *buf);
 }
 
 @+ operator implementations
@@ -1580,7 +1580,7 @@ void date_prelude(void) {
 }
 
 int oldduration(int *ndays, str s) {
-   unsigned long  year= 0, month=0, day=0;
+   int  year= 0, month=0, day=0;
    int  hour=0 /*, min=0*/;
    char *snew = s;
    int v=0;

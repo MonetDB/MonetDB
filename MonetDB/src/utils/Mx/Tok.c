@@ -31,8 +31,7 @@
 #include	"Mx.h"
 #include	"MxFcnDef.h"
 
-Tok *	FstTok(s)
-char *	s;
+Tok *	FstTok(char *s)
 {
 Tok *	t;
 
@@ -50,8 +49,7 @@ Tok *	t;
 	return t;
 }
 
-Tok *	NxtTok(t)
-Tok *	t;
+Tok *	NxtTok(Tok *t)
 {
   int inside=0;
 /* Restore */
@@ -149,9 +147,7 @@ Tok *	t;
 	return t;
 }
 
-Tok *SkipTok(t, tok)
-Tok *t;
-char tok;
+Tok *SkipTok(Tok *t, char tok)
 {
 	char 	*s;
 	
@@ -173,8 +169,7 @@ char tok;
 	
 }
 
-void	DbTok(t)
-Tok *	t;
+void	DbTok(Tok *t)
 {
 	if( (db_flag & DB_TOK) == DB_TOK ){
 		if( t != 0 )
@@ -189,8 +184,7 @@ Tok *	t;
  */
 #define M_ARGS	9
 
-char **	MkArgv(str)
-char *	str;
+char **	MkArgv(char *str)
 {
 char **	argv;
 int	argc= 0;
@@ -251,8 +245,7 @@ int	i;
 	return argv;
 }
 
-char **	RmArgv(argv)
-char **	argv;
+char **	RmArgv(char **argv)
 {
 	Free((char *) argv[0]);
 	Free((char *) argv);
@@ -260,8 +253,7 @@ char **	argv;
 	return 0;
 }
 
-void	DbArgv(argv)
-char **	argv;
+void	DbArgv(char **argv)
 {
 int	argc;
 

@@ -32,11 +32,11 @@ typedef struct {
 
 #define SMP_TOLERANCE 0.30
 #define SMP_ROUNDS 1024*1024*64
-caliblng checkNrCpus()
+caliblng checkNrCpus(void)
 {
 	caliblng i,curr=1,lasttime=0,thistime,cpus;
 	struct timeval t0,t1;
-	while(1) 
+	for (;;) 
 	{	
 #ifdef CALIBRATOR_PRINT_OUTPUT
 		printf("SMP: Checking %ld CPUs\n",curr);

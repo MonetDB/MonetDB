@@ -105,7 +105,7 @@ struct mallinfo  {
 
 #endif /* ! HAVE_MALLINFO */
 
-gdk_export struct mallinfo MT_mallinfo();
+gdk_export struct mallinfo MT_mallinfo(void);
 
 @- locking, sleep
 @h
@@ -113,7 +113,7 @@ gdk_export struct mallinfo MT_mallinfo();
 #define F_ULOCK 0 /* unlock a previously locked region */
 #define F_LOCK 1 /* lock a region for exclusive use */
 
-gdk_export int 	MT_lockf(char *filename, int mode, size_t off, int len);
+gdk_export int 	MT_lockf(char *filename, int mode, off_t off, off_t len);
 gdk_export void MT_sleep_ms(unsigned int ms);
 
 @- virtual memory
@@ -121,8 +121,8 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 #define MT_VMUNITLOG 	16
 #define MT_VMUNITSIZE 	(1 << MT_VMUNITLOG)
 
-gdk_export int MT_alloc_register(void *p, unsigned int size, char mode);
-gdk_export int MT_alloc_print();
+gdk_export int MT_alloc_register(void *p, size_t size, char mode);
+gdk_export int MT_alloc_print(void);
 
 /* the new mmap modes, mimick default MADV_* madvise POSIX constants */
 #define MMAP_NORMAL     	0               /* no further special treatment */
@@ -141,12 +141,12 @@ gdk_export int MT_alloc_print();
 
 /* a hook function to add any initialization required for the MT_ functionality */
 gdk_export char *MT_heapbase;
-gdk_export char *MT_heapcur();
+gdk_export char *MT_heapcur(void);
 
-gdk_export void MT_init_posix();
+gdk_export void MT_init_posix(void);
 
-gdk_export void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed);
-gdk_export int   MT_munmap(void* p, size_t off);
+gdk_export void* MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed);
+gdk_export int   MT_munmap(void* p, size_t len);
 gdk_export int   MT_msync(void* p, size_t len, int mode);
 gdk_export int   MT_madvise(void* p, size_t len, int advise);
 
@@ -219,9 +219,8 @@ gdk_export int closedir (DIR *dir);
 #endif /* GDK_POSIX_H */
 @c
 #include "gdk.h"
-#include "gdk_posix.h"
 
-static void MT_alloc_init();
+static void MT_alloc_init(void);
 
 #include <stdio.h>
 
@@ -251,16 +250,16 @@ char* MT_heapbase = NULL;
 
 #ifndef NATIVE_WIN32
 
-void MT_init_posix(){
+void MT_init_posix(void){
 	MT_heapbase = (char*) sbrk(0);
 	MT_alloc_init();
 }
 
-char* MT_heapcur(){
+char* MT_heapcur(void){
 	return (char*) sbrk(0);
 }
 
-void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed){
+void* MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed){
 	FILE *fp = fopen(path, (mode&MMAP_WRITABLE)?"rb+":"rb" );
 	void *ret = (void*) -1;
 	if (fp) {
@@ -276,8 +275,8 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed){
 	return ret;
 }
 
-int MT_munmap(void* p, size_t off) {
-	return munmap(p, off);
+int MT_munmap(void* p, size_t len) {
+	return munmap(p, len);
 } 
 
 int MT_msync(void* p, size_t len, int mode) {
@@ -289,7 +288,7 @@ int MT_madvise(void* p, size_t len, int advise) {
 }
 
 struct mallinfo 
-MT_mallinfo(){
+MT_mallinfo(void){
 	struct mallinfo _ret;
 #ifdef HAVE_MALLINFO
 	_ret = mallinfo();
@@ -322,14 +321,13 @@ int MT_path_absolute(char *pathname) {
 
 #include <windows.h>
 
-#include <ctype.h>
 #ifdef _MSC_VER
 #include <io.h>
 #endif /* _MSC_VER */
 
 #define MT_SMALLBLOCK 256
 
-void MT_init_posix(){
+void MT_init_posix(void){
 	MT_heapbase = 0;
 
 /*
@@ -338,11 +336,11 @@ void MT_init_posix(){
 	MT_alloc_init();
 }
 
-char* MT_heapcur(){
+char* MT_heapcur(void){
 	return (char*)0;
 }
 
-void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
+void* MT_mmap(char *path, int mode, off_t off, size_t len, void* fixed) {
 	void *ret = NULL;
 	int mode0 = GENERIC_READ;
 	int mode1 = FILE_SHARE_READ;
@@ -426,7 +424,7 @@ int MT_madvise(void *p, size_t len, int advise) {
 
 
 /* TODO */
-struct mallinfo MT_mallinfo() {
+struct mallinfo MT_mallinfo(void) {
 	struct mallinfo _ret; 
 	_HEAPINFO hinfo;
 	int heapstatus;
@@ -858,7 +856,7 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
                 if (fd >= 0) {
                         q = (char*) mmap(p+oldsize, newsize-oldsize,
                                 PROT_READ|PROT_WRITE,
-                                MAP_PRIVATE|MAP_FIXED, fd, oldsize);
+                                MAP_PRIVATE|MAP_FIXED, fd, (off_t)oldsize);
                         close(fd);
                 }
         }
@@ -890,7 +888,7 @@ static int lockf(int fd, int cmd, off_t len)
 	return fcntl(fd, cmd == F_TLOCK ? F_SETLKW : F_SETLK, &l);
 }
 #endif
-int MT_lockf(char *filename, int mode, size_t off, int len){
+int MT_lockf(char *filename, int mode, off_t off, off_t len){
 	int ret, fd = open(filename, O_CREAT|O_RDWR, 0662);
 	if (fd < 0) return fd;
 	ret = lseek(fd, off, SEEK_SET) || lockf(fd, mode, len);
@@ -901,8 +899,8 @@ int MT_lockf(char *filename, int mode, size_t off, int len){
 void MT_sleep_ms(unsigned int ms) {
 #ifdef HAVE_NANOSLEEP
         struct timespec ts;
-        ts.tv_sec = ms/1000;
-        ts.tv_nsec = 1000000*(ms%1000);
+        ts.tv_sec = (time_t) (ms/1000);
+        ts.tv_nsec = (long) (1000000*(ms%1000));
         while(nanosleep(&ts, &ts) == -1 && errno == EINTR);
 #else
 	struct timeval tv;
@@ -940,7 +938,7 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 	}
 	p = (void*) VirtualAlloc(a, size, MEM_COMMIT|mode, PAGE_READWRITE);
 	if (p == NULL) {
-		fprintf(MT_out, "VirtualAlloc(%x,%d,MEM_COMMIT,PAGE_READWRITE): failed\n", (unsigned int) a, size);
+		fprintf(MT_out, "VirtualAlloc(%lx,%ld,MEM_COMMIT,PAGE_READWRITE): failed\n", (unsigned long) a, (long) size);
 	}
 	return p; 
 }
@@ -948,9 +946,9 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 
 void MT_vmfree(void *p, size_t size) {
 	if (VirtualFree(p, size, MEM_DECOMMIT) == 0)
-	fprintf(MT_out, "VirtualFree(%x,%d,MEM_DECOMMIT): failed\n", (unsigned int) p, size);
+	fprintf(MT_out, "VirtualFree(%lx,%ld,MEM_DECOMMIT): failed\n", (unsigned long) p, (long) size);
 	if (VirtualFree(p, 0, MEM_RELEASE) == 0)
-	fprintf(MT_out, "VirtualFree(%x,0,MEM_RELEASE): failed\n", (unsigned int) p);
+	fprintf(MT_out, "VirtualFree(%lx,0,MEM_RELEASE): failed\n", (unsigned long) p);
 }
 
 void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize)
@@ -976,12 +974,12 @@ void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize)
 		} p = a;
 	} else if (oldsize > newsize) {
  		size_t ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
- 		if (ret == 0) fprintf(MT_out, "VirtualFree(%x,%d,MEM_DECOMMIT): failed\n", (unsigned int) p+newsize, oldsize-newsize);
+ 		if (ret == 0) fprintf(MT_out, "VirtualFree(%lx,%ld,MEM_DECOMMIT): failed\n", (unsigned long) p+newsize, (long) (oldsize-newsize));
 	} 
 	return p;
 }
 
-int MT_lockf(char *filename, int mode, size_t off, int len) {
+int MT_lockf(char *filename, int mode, off_t off, off_t len) {
 	int ret = 1, illegalmode = 0;
 	OVERLAPPED ov;
 	OSVERSIONINFO os;
@@ -1090,11 +1088,11 @@ systems, this administation is disfunctional.
 unsigned char MT_alloc_map[49600]= { 0 };
 #endif
 
-int MT_alloc_register(void *addr, unsigned int size, char mode) {
+int MT_alloc_register(void *addr, size_t size, char mode) {
 #if SIZEOF_VOID_P == 4
-        unsigned int p = (unsigned int) addr;
-        if (p > 0 && p < 3*((unsigned int) 1024*1024*1024) && size > 0) {
-                unsigned int i, base = p >> 16;
+        size_t p = (size_t) addr;
+        if (p > 0 && p < 3*((size_t) 1024*1024*1024) && size > 0) {
+                size_t i, base = p >> 16;
                 size = (size-1) >> 16;
                 for(i=0; i<=size; i++)
                         MT_alloc_map[base+i] = (MT_alloc_map[base+i]&128) | mode;
@@ -1105,7 +1103,7 @@ int MT_alloc_register(void *addr, unsigned int size, char mode) {
 
 #define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
 
-int MT_alloc_print() {
+int MT_alloc_print(void) {
 #if SIZEOF_VOID_P == 4
 #ifdef WIN32
         char *p = NULL;
@@ -1141,7 +1139,7 @@ int MT_alloc_print() {
         return 0;
 }
 
-static void MT_alloc_init() {
+static void MT_alloc_init(void) {
 #if SIZEOF_VOID_P == 4
         char* p = NULL;
         int i;

@@ -66,9 +66,9 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
 @c
 #include "trans.proto.h"
 
-int global_sync() { BBPsync(TRUE); return GDK_SUCCEED; }
-int global_commit() { TMcommit(); return GDK_SUCCEED; }
-int global_abort() { TMabort(); return GDK_SUCCEED; }
+int global_sync(void) { BBPsync(TRUE); return GDK_SUCCEED; }
+int global_commit(void) { TMcommit(); return GDK_SUCCEED; }
+int global_abort(void) { TMabort(); return GDK_SUCCEED; }
 
 int trans_alpha(BAT **retval, BAT *b) {
 	*retval = BATalpha(b);

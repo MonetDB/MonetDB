@@ -52,9 +52,7 @@
 # define _NO_PROTO
 #endif
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <config.h>
 
 #if 0				/* already taken care of in config.h */
 #if !defined __STDC__ || !__STDC__
@@ -240,14 +238,8 @@ static char *posixly_correct;
 /* Avoid depending on library functions or files
    whose names are inconsistent.  */
 
-#if !defined(getenv) && !defined(_MSC_VER)
-char *getenv ();
-#endif
-
 static char *
-my_index (str, chr)
-     const char *str;
-     int chr;
+my_index (const char *str, int chr)
 {
   while (*str)
     {
@@ -328,8 +320,7 @@ static void exchange (char **);
 #endif
 
 static void
-exchange (argv)
-     char **argv;
+exchange (char **argv)
 {
   int bottom = first_nonopt;
   int middle = last_nonopt;
@@ -413,10 +404,7 @@ exchange (argv)
 static const char *_getopt_initialize (int, char *const *, const char *);
 #endif
 static const char *
-_getopt_initialize (argc, argv, optstring)
-     int argc;
-     char *const *argv;
-     const char *optstring;
+_getopt_initialize (int argc, char *const *argv, const char *optstring)
 {
   /* Start processing options with ARGV-element 1 (since ARGV-element 0
      is the program name); the sequence of previously skipped
@@ -535,13 +523,8 @@ _getopt_initialize (argc, argv, optstring)
    long-named options.  */
 
 int
-_getopt_internal (argc, argv, optstring, longopts, longind, long_only)
-     int argc;
-     char *const *argv;
-     const char *optstring;
-     const struct option *longopts;
-     int *longind;
-     int long_only;
+_getopt_internal (int argc, char *const *argv, const char *optstring,
+		  const struct option *longopts, int *longind, int long_only)
 {
   int print_errors = opterr;
   if (optstring[0] == ':')
@@ -1001,10 +984,7 @@ _getopt_internal (argc, argv, optstring, longopts, longind, long_only)
 }
 
 int
-getopt (argc, argv, optstring)
-     int argc;
-     char *const *argv;
-     const char *optstring;
+getopt (int argc, char *const *argv, const char *optstring)
 {
   return _getopt_internal (argc, argv, optstring,
 			   (const struct option *) 0,
@@ -1027,7 +1007,7 @@ main (argc, argv)
   int c;
   int digit_optind = 0;
 
-  while (1)
+  for (;;)
     {
       int this_option_optind = optind ? optind : 1;
 

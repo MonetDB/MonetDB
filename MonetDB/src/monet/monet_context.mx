@@ -68,7 +68,7 @@ typedef struct CNTXT {
 
 m_export CntxtRec* monet_cntxt;
 
-m_export void	CNTXTinit    ();
+m_export void	CNTXTinit    (void);
 m_export Cntxt	CNTXTnew     (Cntxt outer);
 m_export Cntxt	CNTXTreserve (Cntxt outer);
 m_export void	CNTXTclear   (Cntxt i);
@@ -91,30 +91,30 @@ m_export int 	VARpurge     (int nbats, int* bats, int natoms, int* atoms);
 #define VARfreeze(X)	if(X){X->frozen=TRUE;}
 #define VARfixate(X)	if(X){X->constant=X->frozen=TRUE;}
 
-m_export int monet_cntxtmax;
-m_export int monet_cntxtlim;
+m_export Cntxt monet_cntxtmax;
+m_export Cntxt monet_cntxtlim;
 
 #endif /* _MONET_CNTXT_H_ */
 @c
 #include "monet.h"
 
-int monet_cntxtmax = 200*MAXCLIENTS;
-int monet_cntxtlim = 1024*1024;
+Cntxt monet_cntxtmax = 200*MAXCLIENTS;
+Cntxt monet_cntxtlim = 1024*1024;
 Cntxt monet_cntxtcur = MAXCLIENTS;
 CntxtRec *monet_cntxtbuf = NULL, *monet_cntxt = NULL;
 
-void CNTXTinit() {
+void CNTXTinit(void) {
     monet_cntxtlim = MAX(monet_cntxtmax+1,monet_cntxtlim); 
 
     /* alloc cntxt space; try to reserve as much space as possible */
-    while(TRUE) {
+    for (;;) {
         size_t size = (monet_cntxtmax+1)*sizeof(CntxtRec);
         size_t maxsize = monet_cntxtlim*sizeof(CntxtRec);
 
         monet_cntxtbuf = (CntxtRec*) GDKvmalloc(size, &maxsize);
 	MT_alloc_register(monet_cntxtbuf, maxsize, 'C');
-        if (monet_cntxtbuf && maxsize >= (size_t) (monet_cntxtlim*sizeof(CntxtRec))) {
-		monet_cntxtlim = maxsize / sizeof(CntxtRec);
+        if (monet_cntxtbuf && maxsize >= monet_cntxtlim*sizeof(CntxtRec)) {
+		monet_cntxtlim = (Cntxt) (maxsize / sizeof(CntxtRec));
                 break;
         }
 	MT_alloc_register(monet_cntxtbuf, maxsize, 'c');
@@ -130,9 +130,9 @@ void CNTXTinit() {
 
 int CNTXTrealloc(flt factor) {
     /* extend the VM region; make it start at the same base address */
-    size_t oldsize = monet_cntxtmax+1;
-    size_t newsize = (size_t) (oldsize*factor);
-    size_t maxsize = MAX(newsize,(size_t) monet_cntxtlim)*sizeof(CntxtRec);
+    Cntxt oldsize = monet_cntxtmax+1;
+    Cntxt newsize = (Cntxt) ((double)oldsize*factor);
+    size_t maxsize = MAX(newsize,monet_cntxtlim)*sizeof(CntxtRec);
     CntxtRec* p = (CntxtRec*) GDKvmrealloc(monet_cntxtbuf, oldsize*sizeof(CntxtRec), 
 					newsize*sizeof(CntxtRec), maxsize, &maxsize);
     if (p == NULL || p != monet_cntxtbuf) {
@@ -142,7 +142,7 @@ int CNTXTrealloc(flt factor) {
     }
     memset(monet_cntxtbuf+oldsize, 0, (newsize-oldsize)*sizeof(CntxtRec));
     monet_cntxtmax = newsize-1;
-    monet_cntxtlim = maxsize/sizeof(CntxtRec);
+    monet_cntxtlim = (Cntxt) (maxsize/sizeof(CntxtRec));
     return TRUE;
 }
 
@@ -165,7 +165,7 @@ int CNTXTclient(Cntxt stk, Client* c){
 
 
 Cntxt CNTXTnew(Cntxt outer){
-	int i;
+	Cntxt i;
 
 	MT_set_lock(monet_contextLock, "CNTXTnew");
 	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)BATMARGIN)) {
@@ -186,7 +186,7 @@ Cntxt CNTXTnew(Cntxt outer){
 
 Cntxt CNTXTreserve(Cntxt outer) {
 	Client	c;
-	int i;
+	Cntxt i;
 
 	CNTXTclient(outer, &c);
 
@@ -307,7 +307,7 @@ Variables are stored in the context on a last in first searched policy.
 @c
 Variable VARnew(Cntxt stk, str name){
 	Variable v;
-	int	i;
+	size_t	i;
 	
 	i = strlen(name);
 	v = (Variable) GDKmalloc(sizeof(VarRecord)+i);
@@ -383,7 +383,8 @@ avoid access to unknown bats. This is done silently to avoid confusion
 about errors.
 @c
 int VARpurge(int nbats, int *bats, int natoms, int *atoms){
-	int i, j, *dst = (int*) alloca((1+natoms)*sizeof(int));
+	int i, *dst = (int*) alloca((1+natoms)*(int)sizeof(int));
+	Cntxt j;
 	Variable v;
 
 	if (nbats == 0 && natoms == 0) return 0;

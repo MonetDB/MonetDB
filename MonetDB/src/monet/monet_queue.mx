@@ -87,7 +87,7 @@ typedef struct MEVENT {
 
 /* request management */
 m_export Request	   newRequest  (Cntxt stk, YYSTREE data, int barrier);
-m_export void    putkillRequest  ();
+m_export void    putkillRequest  (void);
 m_export void	wakeupRequest  (Request p, MT_Id tid);
 m_export void	   putRequest  (Request p);
 m_export void	   nxtRequest  (Request p);
@@ -98,7 +98,7 @@ m_export void         rmRequest  (Request r);
 m_export int	handleRequest  (Thread t, Request q, ValPtr res);
 m_export void	    doRequest  (Thread t, Request preference);
 m_export void	    prRequest  (stream *fp, Request p);
-m_export Request	  thisRequest  ();
+m_export Request	  thisRequest  (void);
 m_export Request	   topRequest  (Client c);
 
 m_export Request	qm_first;
@@ -113,8 +113,8 @@ m_export Request	QMrequest     (int qkey);
 m_export Request	QMclient      (Request start, Client c);
 m_export void	QMwakeup      (int qkey);
 m_export int	QMbefore      (int qkey1, int qkey2);
-m_export void	QMprint       ();
-m_export int	QMopen	      ();
+m_export void	QMprint       (void);
+m_export int	QMopen	      (void);
 
 /* QM statistics */
 m_export void 	QMtrace       (int flag);
@@ -122,8 +122,8 @@ m_export void 	QMmessage     (Request q, str msg);
 m_export void 	QMenqueueStat (Request q);
 m_export void 	QMexecStat    (Request q);
 m_export void 	QMdequeueStat (Request q);
-m_export void 	QMprintStat   ();
-m_export void 	QMclearStat   ();
+m_export void 	QMprintStat   (void);
+m_export void 	QMclearStat   (void);
 
 #endif /* _MONET_QUEUE_H_ */
 @}
@@ -183,7 +183,8 @@ Request newRequest(Cntxt stk, YYSTREE data, int barrier){
 	p->ev_next = 0;
 	p->ev_prev = 0;
 	p->ev_seqnr = QMclock++; /* DANGEROUS, should be in critical section */
-	p->qm_puttid = p->qm_gettid = p->qm_enter = p->qm_start = 0;
+	p->qm_puttid = p->qm_gettid = 0;
+	p->qm_enter = p->qm_start = 0;
 	p->qm_cmd[0] = 0;
 	return p;
 }
@@ -196,7 +197,7 @@ and puts it in the queue. A kill request will kill the
 one arbitrary monet Interpreter thread that stumbles on it.
 @{
 @c
-void putkillRequest() {
+void putkillRequest(void) {
         Request m = newRequest((Cntxt) 0, (YYSTREE) 0, 0);
         putRequest(m);
 }
@@ -359,7 +360,7 @@ and it is the last one for the thread in the process.
 The corresponding unlink code has been written such that
 this routine need not be placed in a critical section.
 @c
-Request thisRequest(){
+Request thisRequest(void){
 	Request	q; 
 	MT_Id 	tid = THRgettid();
 
@@ -638,11 +639,11 @@ int QMbefore(int qkey1, int qkey2){
 The routine QMopen assess the queue and determines if we have
 run out of eligable requests. 
 @c
-int QMopen(){
+int QMopen(void){
 	return QMrequests > 0;
 }
 
-void QMprint() {
+void QMprint(void) {
 	stream	*fp = GDKerr;
 	Request	q;
 
@@ -664,7 +665,7 @@ The history of event records is cleared as soon as the qtrace option
 is turned off.
 
 @= QMstatistics
-	int	qm_puttid, qm_gettid;
+	MT_Id	qm_puttid, qm_gettid;
 	long	qm_enter, qm_start, qm_finish;
 	char	qm_cmd[IDLENGTH];
 @
@@ -689,13 +690,13 @@ void QMmessage(Request q, str msg){
 
 void QMenqueueStat(Request q){
 	if( qm_profile == 0 ) return;
-	q->qm_puttid = (int) THRgettid();
+	q->qm_puttid = THRgettid();
 	q->qm_enter = GDKms();
 }
 
 void QMexecStat(Request q){
 	if( qm_profile == 0 ) return;
-	q->qm_gettid = (int) THRgettid();
+	q->qm_gettid = THRgettid();
 	q->qm_start = GDKms();
 }
 
@@ -715,7 +716,7 @@ void QMdequeueStat(Request q){
 	}
 }
 
-void QMprintStat() {
+void QMprintStat(void) {
 	stream	*fd = GDKerr;
 	Request	q;
 
@@ -735,7 +736,7 @@ void QMprintStat() {
 	}
 }
 
-void QMclearStat(){
+void QMclearStat(void){
 	Request q,r;
 	MT_set_lock(monet_critical, "QMclearStat");
 	q = qm_top; qm_top = qm_bot = 0;

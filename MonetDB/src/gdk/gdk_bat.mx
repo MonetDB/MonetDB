@@ -64,12 +64,7 @@ gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
 
 #endif /* _GDK_BAT_H_ */
 @c
-#include "gdk_bat.h"
-#include "gdk_delta.h"
-#include "gdk_atoms.h"
-#include "gdk_bbp.h"
-#include "gdk_search.h"
-#include "gdk_utils.h"
+#include "gdk.h"
 
 #ifdef ALIGN
 #undef ALIGN
@@ -158,7 +153,7 @@ modules take advantage of the first bun pointer of a bat being int-aligned (ddbe
 This is especially relevant in [void,chr] and [void,sht] combinations. Therefore, in such 
 cases, we pad the hole with some extra elements (see also DELTAinit). 
 @c
-	hole_padding = MAX(sizeof(int),bn->dims.bunwidth)/bn->dims.bunwidth;
+	hole_padding = MAX((int)sizeof(int),bn->dims.bunwidth)/bn->dims.bunwidth;
 @- 
 A heap comes with integer offsets to address elements. This way
 we do not encounter unexpected results when we use mmap to (un)load
@@ -212,7 +207,7 @@ int BATdestroy(BAT *b) {
 BAT *BATtmp(BAT *b, int keys)
 {
 	int	ht ,tt;
-	int	cnt;
+	size_t	cnt;
 	BAT	*bn; 
 
 	BATcheck(b, "BATtmp: BAT pointer required"); 
@@ -266,7 +261,7 @@ size_t BATgrows(BAT *b) {
 	if (newcap < BATTINY) newcap = 2 * BATTINY; else
 	if (newcap < 10 * BATTINY ) newcap = 4 * newcap; else
 	if( newcap < 50 * BATTINY ) newcap = 2 * newcap; else
-		newcap = (size_t) (newcap * BATMARGIN); 
+		newcap = (size_t) ((double)newcap * BATMARGIN); 
 	if (newcap == oldcap)
 		newcap += 10;
 
@@ -327,7 +322,7 @@ For accelerator heaps there is no solution yet..
 
 @c
 void BATreduce(BAT *b, int percentage) {
-	int p = ((100*BUNindex(b, b->batDeleted)) / 
+	int p = (int) ((100*BUNindex(b, b->batDeleted)) / 
 		(BUNindex(b, b->batBuns->free) - BUNindex(b, b->batDeleted)));
 
 	if (percentage == 0 || p <= percentage) {
@@ -583,7 +578,7 @@ around and adapt search accellerator structures.
 		(*tacc@1)(&b->taccelerator, @4, bm, BUN@2(b,@3));
 	}
 	if (b->thash_heap) {
-		hash@1(b->thash, @4, BUN@2(b, @3), @3 < last); 
+		hash@1(b->thash, (hash_t)@4, BUN@2(b, @3), @3 < last); 
 	} 
 @= acc_move
 	if (haccmov) { 
@@ -592,7 +587,7 @@ around and adapt search accellerator structures.
 		(*haccdel)(&b->haccelerator, @3, b, BUNhead(b,@1));
 	}
 	if (b->hhash_heap) {
-		HASHmove(b->hhash, @3, @4, BUNhead(b, @1), @1 < last); 
+		HASHmove(b->hhash, (hash_t)@3, (hash_t)@4, BUNhead(b, @1), @1 < last); 
 	}
 
 	if (taccmov) {
@@ -601,7 +596,7 @@ around and adapt search accellerator structures.
 		(*taccdel)(&b->taccelerator, @3, bm, BUNtail(b,@1));
 	}
 	if (b->thash_heap) {
-		HASHmove(b->thash, @3, @4, BUNtail(b, @1), @1 < last); 
+		HASHmove(b->thash, (hash_t)@3, (hash_t)@4, BUNtail(b, @1), @1 < last); 
 	}
 
 	@:bun_move(@1,@2)@
@@ -639,7 +634,7 @@ This code assumes that new elements are appended to the BUN list.
 if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
     *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
 {
-      b = BATmaterialize(b, (size_t) (BATcount(b)*1.2));
+      b = BATmaterialize(b, (size_t) ((double)BATcount(b)*1.2));
 }
 @c
 INLINE BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t);
@@ -663,7 +658,8 @@ BAT *BUNins(BAT *b, ptr h, ptr t) {
 	} else if ((b->tkey & BOUND2BTRUE) && (p=BUNfnd(bm,t))) {
 	    BUNinplace(bm, p, t, h); 
 	} else { 
-	    unsigned int i, bunsize;
+	    unsigned int bunsize;
+	    size_t i;
 	    ALIGNins(b, "BUNins"); 
 	    b->batDirty = 1; 
 	    if (b->hidx_heap || b->tidx_heap) {
@@ -733,10 +729,10 @@ BAT *BUNins(BAT *b, ptr h, ptr t) {
              * REASON: some accelerator updates (qsignature) use the hashes! 
   	     */
 	    if (b->hhash_heap) {
-		HASHins(b->hhash, i, h); 
+		HASHins(b->hhash, (hash_t) i, h); 
 	    } 
 	    if (b->thash_heap) {
-		HASHins(b->thash, i, t); 
+		HASHins(b->thash, (hash_t)i, t); 
 	    } 
 	    if (b->hacctype) {
 		ACCins(b->hacctype, b, &b->haccelerator, i, h); 
@@ -769,14 +765,14 @@ one now must do:
 BUN BUNdelete_(BAT *b, BUN p) {
 	int 	bs = BUNsize(b);
 	BUN	l, last = BUNlast(b) - bs; 
-	unsigned int idx1, idx2; 
+	size_t	idx1, idx2; 
 	BAT*	bm = BBP_cache(-b->batCacheid);
-        void    (*haccdel)(Heap*, int, BAT*, ptr);
-	void	(*taccdel)(Heap*, int, BAT*, ptr);
-	void 	(*haccins)(Heap*, int, BAT*, ptr);
-	void	(*taccins)(Heap*, int, BAT*, ptr);
-        void    (*haccmov)(Heap*, int, int, BAT*, ptr);
-	void	(*taccmov)(Heap*, int, int, BAT*, ptr);
+        void    (*haccdel)(Heap*, size_t, BAT*, ptr);
+	void	(*taccdel)(Heap*, size_t, BAT*, ptr);
+	void 	(*haccins)(Heap*, size_t, BAT*, ptr);
+	void	(*taccins)(Heap*, size_t, BAT*, ptr);
+        void    (*haccmov)(Heap*, size_t, size_t, BAT*, ptr);
+	void	(*taccmov)(Heap*, size_t, size_t, BAT*, ptr);
 
 	@:acc_init(h)@
 	@:acc_init(t)@
@@ -871,7 +867,7 @@ BUN BUNdelete(BAT *b, BUN p) {
 	    	int bs = BUNsize(b);
 		BUN last = BUNlast(b) - bs; 
 		if (p < b->batInserted || p != last  ) {
-			int i = BUNindex(b,p);
+			size_t i = BUNindex(b,p);
       			b = BATmaterialize(b, BATcount(b));
 			p = BUNptr(b,i);
 		}
@@ -961,7 +957,7 @@ BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t) {
 		void (*taccins)() = BATaccelerators[b->tacctype].accInsert;
 		void (*taccdel)() = BATaccelerators[b->tacctype].accDelete;
 		BAT *bm = BBP_cache(-b->batCacheid);
-		unsigned int pit = BUNindex(b, p); 
+		size_t pit = BUNindex(b, p); 
 
 		ALIGNdelT(b, "BUNreplace"); /* zap alignment info */
 		if (b->tvarsized) { 
@@ -1042,7 +1038,8 @@ if (@1) {
 @c
 BUN BUNlocate(BAT *b, ptr x, ptr y) {
 	BUN	p = NULL, q = NULL; 
-	int	h, (*cmp)();
+	hash_t	h;
+	int	(*cmp)(ptr, ptr);
 
 	BATcheck(b, "BUNlocate: BAT parameter");
 	BATcheck(x, "BUNlocate: value parameter");
@@ -1320,7 +1317,7 @@ str BATrename(BAT *b, str nme) {
 
 
 BAT *BATroles(BAT *b, str hnme,str tnme) {
-	int i;
+	size_t i;
 
 	BATcheck(b,"BATroles");
 	if( (i = strlen(hnme)) >= IDLENGTH - 1) {
@@ -1401,7 +1398,8 @@ BAT* BATpropcheck_(BAT* b, int sanity_check) {
 	int disprove_dense, disprove_sorted, disprove_key = TRUE;
 	int dense_bak = 0, key_bak = 0, sorted_bak = 0;
 	oid seq_bak = 0;
-	int xx, yy, tpe;
+	size_t xx, yy;
+	int tpe;
 	BUN p, q, r;
 	ptr last;
 
@@ -1532,7 +1530,7 @@ check whether whatever we want need to prove was already disproven
 	{
 		disprove_key = FALSE;
 	} else {
-		b->H->nokey[0] = b->H->nokey[1] = -1;
+		b->H->nokey[0] = b->H->nokey[1] = 0;
 	}}
 	if (disprove_sorted) {
 	if ((BAThordered(b)&1) || ATOMlinear(tpe)==0 ||
@@ -1542,7 +1540,7 @@ check whether whatever we want need to prove was already disproven
 	{
 		disprove_sorted = FALSE;
 	} else {
-		b->H->nosorted = -1;
+		b->H->nosorted = 0;
 	}}
 	if (disprove_dense) {
 	if (((b->hsorted&1) == FALSE && disprove_sorted == FALSE) || 
@@ -1552,7 +1550,7 @@ check whether whatever we want need to prove was already disproven
 	{
 		disprove_dense = FALSE;
 	} else {
-		b->H->nodense = -1;
+		b->H->nodense = 0;
 	}}
 @-
 still got something to prove? If not, we're done.
@@ -1692,98 +1690,6 @@ exit:	if (sanity_check) {
 
 BAT *BATpropcheck(BAT *b) {
 	return BATpropcheck_(b, GDKdebug&8);
-}
-
-@- BATrepair
-@T
-Due to course of time, we learned (the hard way) to appreciate the importance of consistency checks. 
-More than often, unstable code seems to work well, turns out to save erroneous BAT images to disk. 
-Or even worse, an unrelated incorrect pointer error in a totally unrelated part of the prigram
-overwrites the memory image of a dirty BAT that is subsequently saved on disk.
-
-When these BATs are the used in following sessions (sometimes in a much later point of time; even with 
-another version of the program) these corrupted BAT images can produce all kinds of horrible crashes
-that are very hard to explain -- as the original context in which the BAT was corrupted is typically
-not available anymore.
-
-We devised the -d2 for CHECKDEBUG, a debugging mode that will leads all BAT images when  they are 
-loaded through a consistency check. PROPDEBUG automatically switches on CHECKDEBUG.
-
-@= bunrepair
-{	int idx = *(int*) BUNhloc(b,p);
-	if (idx >= hr.minpos && idx < hr.maxpos && (idx&alignmask) == 0) {
-		idx = (idx - hr.minpos) >> alignshift;  /* compute bitidx */
-		mask = 1 << (idx&31); 
-		pos = idx >> 5; 
-		if (hr.validmask[pos] & mask) {
-			continue; /* A-OK */
-		}
-	}
-	if (corrections == NULL) {
-		corrections = BATnew(TYPE_int, TYPE_int, 10);
-	}
-	BUNfndOID(r, corrections, BUNhloc(b,p));
-	if (r == NULL) {
-		BUNins(corrections, BUNhloc(b,p), &one); 
-	} else {
-		(*(int*) BUNtloc(corrections,r))++;
-	}
-	ATOMput(tpe, hp, (int*) BUNhloc(b,p), nilval);
-}
-@c
-static int atomrepair(BAT *b) {
-	int (*checkFcn)(Heap *h, HeapRepair *hr) = BATatoms[b->htype].atomHeapCheck;
-	int mask, pos, one=1, ret, xx, tpe=b->htype;
-	ptr nilval = ATOMnilptr(tpe);
-	Heap *hp = &b->hheap;
-	HeapRepair hr;
-	BUN p, q, r;
-
-	if (checkFcn == NULL) { 
-		return TRUE;
-	}
-	ret = (*checkFcn)(hp, &hr);
-
-	if (hr.validmask) {
-		int alignshift = (hr.alignment==8)?3:2;
-		int alignmask = (1 << alignshift) - 1;
-		BAT *corrections = NULL;
-
-		DELloop(b, p, q, xx) @:bunrepair@ 
-		BATloopFast(b, p, q, xx) @:bunrepair@
-
-		if (corrections) {
-			BATloopFast(corrections, p, q, xx) {
-				GDKerror("BATrepair(%s): corrected %d occurrences of illegal pos %d to nil.\n",
-					b->batId, *(int*) BUNtloc(corrections,p), *(int*) BUNhloc(corrections,p));
-			}
-			BBPreclaim(corrections); 
-			ret = FALSE;
-		}
-		GDKfree(hr.validmask);
-		hr.validmask = NULL;
-	} else {
-		GDKerror("BATrepair(%s): must correct *all* values to nil.\n", b->batId);
-		HEAPfree(hp);
-		ATOMheap(tpe, hp, BATcount(b));
-
-		DELloop(b, p, q, xx) ATOMput(tpe, hp, (int*) BUNhloc(b,p), nilval);
-		BATloopFast(b, p, q, xx) ATOMput(tpe, hp, (int*) BUNhloc(b,p), nilval);
-		ret = FALSE;
-	}
-	return ret;
-}
-
-int BATrepair(BAT *b) {
-	int ret = TRUE;
-	if (b->hheap.base) ret &= atomrepair(b);
-	if (b->theap.base) ret &= atomrepair(BATmirror(b));
-	if (b->haccelerator.base) ret &= ACCrepair(b->hacctype, b, &b->haccelerator);
-	if (b->taccelerator.base) ret &= ACCrepair(b->tacctype, BATmirror(b), &b->taccelerator);
-	if (ret == FALSE) {
-		b->batDirty = TRUE;
-	}
-	return ret;
 }
 @
 @}

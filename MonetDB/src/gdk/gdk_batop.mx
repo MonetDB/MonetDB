@@ -36,13 +36,6 @@ This module contains the following BAT algebra operations:
 	(conveniently) compiled in a single file.
 \item[bat partitioning] hash partition, range partitioning
 \end{description}
-@h
-#ifndef _GDK_BATOP_H
-#define _GDK_BATOP_H
-#include "gdk.h"
-
-#endif /* _GDK_BATOP_H */
-
 @T
 As you probably noticed :-), we try to factor out all possible 
 overhead by inlining code. This includes the macros BUNhead and BUNtail, 
@@ -51,8 +44,7 @@ variable storage heap. The updateloop(dstbat, srcbat, operation) macro
 invokes operation(dstbat, BUNhead(srcbat), BUNtail(srcbat)) on all buns
 of the srcbat, but testing only once where they reside.
 @c
-#include "gdk_bat.h"
-#include "gdk_batop.h"
+#include "gdk.h"
 #include "gdk_scanselect.h"
 
 @= updateloop
@@ -108,7 +100,7 @@ BAT *BATins(BAT *b, BAT *n) {
 		    ALIGNset(b, n);
 		} else if (BATcount(n)) {
 		    BUN last = BUNlast(b) - BUNsize(b);
-		    int idx = BUNindex(b,BUNlast(b)); 
+		    size_t idx = BUNindex(b,BUNlast(b)); 
 
 		    xx = ATOMcmp(b->htype, BUNhead(n,BUNfirst(n)), 
 					   BUNhead(b, last));
@@ -158,11 +150,11 @@ BAT *BATins(BAT *b, BAT *n) {
 				r += yy;
 			}
 		} else if (b->hhash_heap) {
-			int i = BUNindex(b, BUNlast(b));
+			size_t i = BUNindex(b, BUNlast(b));
 			BATloopFast(n, p, q, xx) {
 				ptr v = BUNhloc(n,p);
 				bunfastins_nocheck(b, r, v, BUNtail(n, p), yy); 
-				HASHins_int(b->hhash, i, v); 
+				HASHins_int(b->hhash, (hash_t)i, v); 
 				r += yy; i++; 
 			}
 		} else {
@@ -234,7 +226,7 @@ BAT *BATmark(BAT *b, oid oid_base) {
 	} else if (oid_base == oid_nil) {
 		return BATconst(b, TYPE_oid, (ptr)&oid_base);
 	} else {
-		int xx;
+		size_t xx;
 		if (b->htype == TYPE_void) {
 			oid *base, cur = oid_base; 
 			bn = BATnew(TYPE_void, TYPE_oid, xx=BATcount(b)); 
@@ -260,6 +252,7 @@ BAT *BATnumber(BAT *b) {
         BAT     *bn;
  
         BATcheck(b, "BATnumber");
+	/* assert(BATcount(b) <= MAXINT); */
         bn = BATnew(b->htype, TYPE_int, BATcount(b));
         if (bn == NULL) {
                 return NULL;
@@ -367,7 +360,8 @@ found@3@2:		(*(int*) BUNtloc(bn,r))++;
 		BUNfastins(bn, prev, &yy);
 	} break;
 @= histoloop
-{	int tt, xx, yy=0;
+{	hash_t tt;
+	int xx, yy=0;
 	BUN p, q, r;
 
 	switch(ATOMstorage(tt=bn->htype)) {
@@ -468,7 +462,8 @@ them to be used sparsely.
 
 @= BATaggr
 ptr BAT@1(BAT *b, ptr aggr) {
-	int t,s; 
+	int t;
+	size_t s; 
 	ptr v, x;
 
 	BATcheck(b, "BAT@1"); 
@@ -562,7 +557,7 @@ are semijoined).
 NOTE new semantics, the selected range is excluding the high value.
 @c
 BAT *BATslice(BAT *b, size_t l, size_t h) {
-	int low = l;
+	size_t low = l;
         int xx;
 	BAT *bn;
 
@@ -585,7 +580,7 @@ independent view on the virtual memory.
 	if (i < h && (BATrestricted(b) != BAT_WRITE && b->batBuns->storage == STORE_MMAP)) {
 		BUN start = BUNptr(b,l-1);
 		BUN end = BUNptr(b,h);
-		int add;
+		size_t add;
 	        bn = BATcreatedesc(b->htype, b->ttype);
 		bn->dims = b->dims;
 		add = HEAPsubcopy(bn->batBuns, b->batBuns, end-start, start-b->batBuns->base);
@@ -681,8 +676,10 @@ through is the "isnil" predicate). So we implement it here.
 	}
 @c
 BAT *BAT_hashselect(BAT *b, BAT *bn, ptr tl) {
-	int ht = bn->htype, tt = bn->ttype, size = BATcount(bn);
-	int i, j;
+	int ht = bn->htype, tt = bn->ttype;
+	size_t size = BATcount(bn);
+	hash_t i;
+	size_t j;
 
 	BATflipflop(b);
 	(void) BATprepareHash(b);
@@ -943,7 +940,7 @@ BAT* BATuselect(BAT *b, ptr h, ptr t) {
 @c
 BAT* BATsample(BAT *b, size_t size) {
 	size_t cnt, i, r = 0, n, j;
-	int *choice, *dst;
+	size_t *choice, *dst;
 	BAT *bn; 
 
 	BATcheck(b, "BATsample: source BAT");
@@ -956,7 +953,7 @@ BAT* BATsample(BAT *b, size_t size) {
 
 	if (n == 0)
 		return bn;
-  	dst = choice = (int*) GDKmalloc(n*sizeof(int));
+  	dst = choice = (size_t*) GDKmalloc(n*sizeof(size_t));
  
 	if (n*2 < BATcount(b)) {  /* nondense sample */
             char *vec = (char *) GDKmalloc(1 + (cnt/8));
@@ -964,7 +961,7 @@ BAT* BATsample(BAT *b, size_t size) {
             for(j=0; j<n; j++) {
                 r += rand();
 		i = r % cnt;
-		while (1) {
+		for (;;) {
 			int mask = 1 << (i & 7);
 			if (vec[i>>3] & mask) {
 				if (++i == cnt) i = 0;
@@ -972,34 +969,40 @@ BAT* BATsample(BAT *b, size_t size) {
 				vec[i>>3] |= mask; break;
 			}
 		}
-		*(dst++) = i;
+		*dst++ = i;
             }
             GDKfree(vec);
 	} else if (cnt < 65536) {
             unsigned short *vec = 
 		(unsigned short *) GDKmalloc(cnt*sizeof(unsigned short));
-            for(i=0; i<cnt; i++) vec[i] = i;
+            for(i=0; i<cnt; i++) vec[i] = (unsigned short) i;
             for(j=0; j<n; j++) {
                 r += rand();
 		i = r % cnt;
-		*(dst++) = vec[i];
+		*dst++ = vec[i];
                 vec[i] = vec[--cnt];
             }
             GDKfree(vec);
 	} else {
-            int *vec = (int *) GDKmalloc(cnt*sizeof(int));
+            size_t *vec = (size_t *) GDKmalloc(cnt*sizeof(size_t));
             for(i=0; i<cnt; i++) vec[i] = i;
             for(j=0; j<n; j++) {
                 r += rand();
 		i = r % cnt;
-		*(dst++) = vec[i];
+		*dst++ = vec[i];
                 vec[i] = vec[--cnt];
             }
             GDKfree(vec);
 	}
 
 	/* merge all positions into a sorted list */
-	qsort((void*) choice, (size_t) n, (size_t) sizeof(int), (int (*)(const void*, const void*)) intCmp);
+	qsort((void*) choice, n, sizeof(size_t),
+#if SIZEOF_SIZE_T == SIZEOF_INT
+		    (int (*)(const void*, const void*)) intCmp
+#else
+		    (int (*)(const void*, const void*)) lngCmp
+#endif
+		    );
 
 	/* insert the sorted sample */
 	cnt = BUNindex(b, BUNfirst(b));
@@ -1102,7 +1105,8 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 	BAT	*bn; 
 	BUN	p = NULL, l; 
 	BUN	*mark, *m, *i; 
-	int	t; 
+	size_t	s;
+	int	t;
 
 	BATcheck(hl,"BATrestrict:hl is null");
 	BATcheck(hh,"BATrestrict:hh is null");
@@ -1118,12 +1122,12 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
 
-	t = BATcount(b); 
-	if (t == 0) {
+	s = BATcount(b); 
+	if (s == 0) {
   		ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: %d\n",BATcount(bn));
 		return bn; 
 	}
-	mark = (BUN*) GDKmalloc((unsigned) t*sizeof(BUN)); 
+	mark = (BUN*) GDKmalloc((unsigned) s*sizeof(BUN)); 
 	m = mark;
 	i = mark; 
 	switch(ATOMstorage(t = b->htype)) {
@@ -1282,8 +1286,8 @@ partitioning operators: @%BATsplithash@ and @%BATsplitrange@.
 @-
 The @%part_bat@ function creates a partition BAT. 
 @c
-BAT *part_bat(BAT *b, int ht, int tt, int expected_size, int respect_order){
-        BAT *bn = BATnew(ht, tt, (int) (expected_size*BATMARGIN));
+BAT *part_bat(BAT *b, int ht, int tt, size_t expected_size, int respect_order){
+        BAT *bn = BATnew(ht, tt, (size_t) ((double)expected_size*BATMARGIN));
 	if (bn) {
 	    BATkey(bn, b->hkey);
 	    BATkey(BATmirror(bn), b->tkey);
@@ -1295,15 +1299,18 @@ BAT *part_bat(BAT *b, int ht, int tt, int expected_size, int respect_order){
 @- hash partitioning
 @c
 #define BUNhash(bx,hx,tx)\
-	i = HASHprobe(&h,tx)%n; if ((r = BUNfnd(bx, &i)) != NULL)\
+	/* assert(n <= 0x40000000); */\
+	i = (int)(HASHprobe(&h,tx)%n); if ((r = BUNfnd(bx, &i)) != NULL)\
 		BUNfastins(BBPcache(*(bat*) BUNtloc(bx,r)), hx, tx);
 
-BAT *BAThashsplit(BAT *b, int n, int unary) {
+BAT *BAThashsplit(BAT *b, size_t n, int unary) {
 	BAT	*metabat, *bn, *bf; 
 	BUN	r;
 	Hash	h;
-	int	cnt,i=0; 
+	size_t	cnt;
+	int	i=0;
 
+	/* assert(n <= 0x40000000); */
 	BATcheck(b, "BAThashsplit");
 	metabat = BATnew(TYPE_int, TYPE_bat, n);
 	bn = unary?VIEWhead_(b,b->batRestricted):b;
@@ -1313,7 +1320,7 @@ BAT *BAThashsplit(BAT *b, int n, int unary) {
 	    for (i=2; i<n; i*=2);
             h.mask = i-1;
             h.type = BATttype(b);
-	    cnt = (size_t) (BATMARGIN*BATbuncount(b)/n);
+	    cnt = (size_t) (BATMARGIN*(double)BATbuncount(b)/(double)n);
 	    for (i = 0; i < n; i++) {
 		bf = part_bat(bn, BAThtype(bn), BATttype(bn), cnt, TRUE);
 		if (bf == NULL) {
@@ -1333,10 +1340,11 @@ Range parititioning ensures that identical values appear in one
 partition only. The routine also tries to deliver partitions of
 uniform size.
 @c
-BAT *BATrangesplit(BAT *b, int n, int unary) {
+BAT *BATrangesplit(BAT *b, size_t n, int unary) {
 	BAT	*metabat, *slice, *histo, *bf = NULL, *bn, *m;
 	int 	target, tpe, maxsize, *sizes;
-	int	xx, yy=0, zz=0;
+	int	xx, zz=0;
+	size_t	yy=0;
 	ptr 	*seps, nilval;
 	BUN	r, s;
 	dbl	scale;
@@ -1344,6 +1352,7 @@ BAT *BATrangesplit(BAT *b, int n, int unary) {
 
 	BATcheck(b, "BATrangesplit");
 
+	/* assert(BATcount(b)/n <= 0x7fffffff); */
 	bn = unary?VIEWhead_(b,b->batRestricted):b;
 	m = BATmirror(b);
 	metabat = BATnew(BATttype(b), TYPE_bat, n);
@@ -1356,7 +1365,7 @@ If necessary though, we deliver less than n buckets.
 @c
         slice  = BATsample(b, MIN(MAX(30*n*thorough,100*thorough),BATcount(b)));
         histo  = BAThistogram(slice);
-	target = BATcount(b)/n;
+	target = (int) (BATcount(b)/n);	/* see assert above */
 	scale  = ((dbl) BATcount(b))/((dbl) BATcount(slice));
         BBPreclaim(slice);
 	BATmax(histo, &maxsize);
@@ -1394,8 +1403,8 @@ Use the histogram to determine good split boundaries on b.
 	seps[yy] = nilval;
         BBPreclaim(histo);
 	if (n != yy +1) {
-		GDKwarning("rangesplit: delivering %d instead of %d fragments\n"
-				,yy+1, n); 
+		GDKwarning("rangesplit: delivering %ld instead of %ld fragments\n"
+				,(long) (yy+1), (long) n); 
 		n = yy + 1;
 	}
 
@@ -1444,7 +1453,7 @@ achieve totally sorted chunks at the same time.
 			} else {
 				q = IDXfndlast(m, seps[yy]);
 			}
-	    		bf = part_bat(bn,BAThtype(bn),BATttype(bn),q-p,FALSE);
+	    		bf = part_bat(bn,BAThtype(bn),BATttype(bn),(size_t)(q-p),FALSE);
 			if (bf == NULL) {
 				BBPreclaim(metabat);
 				return NULL;
@@ -1475,9 +1484,9 @@ that this routine also works efficiently on many buckets.
 @= rangesplit
 BATloopFast(b, r, s, xx) {
 	ptr val = BUNt@2(b,r);
-	int lo = 0; 
-	int hi = n-1;
-	while(TRUE) {
+	size_t lo = 0; 
+	size_t hi = n-1;
+	for (;;) {
 		yy = (lo+hi)/2;
 		if (yy < n-1 && @1_GT(val, seps[yy], @3)) {
 			lo = yy + 1;

@@ -257,7 +257,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 	ALGODEBUG THRprintf(GDKout, "aggrX3_sum(@1,@2,@3,@4,@5,@6,@7,@8);\n");
 	if (@1) {
 	 	/* create tmp. sums array */
-		int i;
+		size_t i;
 		sums = (@6*) GDKmalloc(range*sizeof(@6));
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
@@ -315,7 +315,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 	ALGODEBUG THRprintf(GDKout, "aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@1) {
 		/* create tmp. sums array */
-		int i;
+		size_t i;
 		sums = (@6*) GDKmalloc(range*sizeof(@6));
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
@@ -382,7 +382,8 @@ int CMDaggrX3_sum_@1(BAT **ret, BAT *b, BAT *e){
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
 	int xx;
-	oid range, min, max;
+	size_t range;
+	oid min, max;
 	oid bhsb;
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum_@1[@2](b=%s,e=%s);\n",b->batId,e->batId);
@@ -421,10 +422,11 @@ int CMDaggrX3_sum_@1(BAT **ret, BAT *b, BAT *e){
 
 int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	int xx, off = BUNindex(bn,BUNfirst(bn));
+	int xx;
+	size_t off = BUNindex(bn,BUNfirst(bn));
 	int *cnt;
-	size_t slots; 
-	oid range, min, max;
+	size_t slots, range;
+	oid min, max;
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
 	oid bhsb;
@@ -538,11 +540,12 @@ int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
 	ptr nil = ATOMnilptr(bn->ttype);
-	int xx, off = BUNindex(e,BUNfirst(e));
+	int xx;
+	size_t off = BUNindex(e,BUNfirst(e));
 	ptr *extremes;
 	BUN p, q, r;
-	oid range, min, max;
-	size_t slots;
+	size_t slots, range;
+	oid min, max;
 	oid bhsb;
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,e=%s);\n",b->batId,e->batId);
@@ -690,7 +693,8 @@ int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e){
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
-	oid range, min, max;
+	size_t range;
+	oid min, max;
 	oid bhsb;
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
@@ -785,14 +789,14 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
         ALGODEBUG THRprintf(GDKout, "aggrX3_sum3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@1) {
 	 	/* create tmp. sums array */
-		int i;
+		size_t i;
 		sums = (@6*) GDKmalloc(range*sizeof(@6));
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
 	if (@2) { (void) BATprepareHash(bn); }
 	/* scan b & g, and add values to sums in-place or in sums-array */
 	base = BUNindex(g, BUNfirst(g));
-	offset = base - g->hseqbase;
+	offset = (ssize_t) (base - g->hseqbase);
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	BATloopFast(b, p, q, xx) {
@@ -852,7 +856,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
         ALGODEBUG THRprintf(GDKout, "aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@1) {
 		/* create tmp. sums array */
-		int i;
+		size_t i;
 		sums = (@6*) GDKmalloc(range*sizeof(@6));
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
@@ -861,7 +865,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	memset(cnt, 0, slots*sizeof(int));
 	/* scan b & g, adding sums, and incrementing counts */
 	base = BUNindex(g, BUNfirst(g));
-	offset = base - g->hseqbase;
+	offset = (ssize_t) (base - g->hseqbase);
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	BATloopFast(b, p, q, xx) {
@@ -923,15 +927,16 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 */
 @= arithpump3
 
-BAT* aggrX3_sum3_@1_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, int range, int min, int max){
+BAT* aggrX3_sum3_@1_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t range, oid min, oid max){
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
 	int xx;
 	oid bhsb;
-	int base, offset, end, w;
+	size_t base, end, w;
+	ssize_t offset;
 
-        ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_EarrayBvoidGvoid[@2](bn=%s,b=%s,g=%s,e=%s,range=%d,min=%d,max=%d);\n",
-	                             bn->batId,b->batId,g->batId,e->batId,range,min,max);
+        ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_EarrayBvoidGvoid[@2](bn=%s,b=%s,g=%s,e=%s,range=%lu,min=%lu,max=%lu);\n",
+	                             bn->batId,b->batId,g->batId,e->batId,(unsigned long)range,(unsigned long)min,(unsigned long)max);
 	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&sums[(*(int*)h)-min],)@
 	
 	return bn;
@@ -942,9 +947,11 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
 	int xx;
-	oid range, min, max;
+	size_t range;
+	oid min, max;
 	oid bhsb;
-	int base, offset, end, w;
+	size_t base, end, w;
+	ssize_t offset;
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
@@ -1001,13 +1008,17 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 
 int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	int xx, off = BUNindex(bn,BUNfirst(bn));
+	int xx;
+	size_t off = BUNindex(bn,BUNfirst(bn));
 	int *cnt;
-	oid range, min, max; 
-	@1 zero = (@1) 0, *sums, slots;
+	size_t range; 
+	oid min, max; 
+	@1 zero = (@1) 0, *sums;
+	size_t slots;
 	BUN p, q, r;
 	oid bhsb;
-  	int base, offset, end, w;
+  	size_t base, end, w;
+  	ssize_t offset;
   	
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_avg3_@1: BATs b & g must be of equal size.\n");	*/
@@ -1087,7 +1098,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	memset(extremes, 0, slots*sizeof(ptr));
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNindex(g, BUNfirst(g));
-	offset = base - g->hseqbase;
+	offset = (ssize_t) (base - g->hseqbase);
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	BATloopFast(b, p, q, xx) {
@@ -1133,13 +1144,15 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
 	ptr nil = ATOMnilptr(bn->ttype), zero = nil;
-	int xx, off = BUNindex(e,BUNfirst(e));
+	int xx;
+	size_t off = BUNindex(e,BUNfirst(e));
 	ptr *extremes;
 	BUN p, q, r;
-	oid range, min, max;
-	size_t slots;
+	size_t slots, range;
+	oid min, max;
 	oid bhsb;
-  	int base, offset, end, w;
+  	size_t base, end, w;
+  	ssize_t offset;
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13_@3_@4: BATs b & g must be of equal size.\n");	*/
@@ -1254,7 +1267,7 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	if (@2) { (void) BATprepareHash(bn); }
 	/* scan b & g, and increment counts in-place or in cnt-array */
 	base = BUNindex(g, BUNfirst(g));
-	offset = base - g->hseqbase;
+	offset = (ssize_t) (base - g->hseqbase);
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	btt = b->ttype;
@@ -1308,9 +1321,11 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e){
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
-	oid range, min, max;
+	size_t range;
+	oid min, max;
 	oid bhsb;
-  	int base, offset, end, w;
+  	size_t base, end, w;
+  	ssize_t offset;
   	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
 

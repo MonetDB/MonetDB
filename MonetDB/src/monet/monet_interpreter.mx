@@ -641,7 +641,7 @@ phase 1: resolve 'nme' in (*nme)(), {*nme}(), and [*nme]()
 		    GDKerror("interpret: operator string name expected.\n");
 		    return -1;
 		} else {
-		    int l = strlen(res->val.sval);
+		    int l = (int) strlen(res->val.sval);
 		    str s = (str) alloca(l+3);
 
 		    /* resume normal dereference case */
@@ -776,7 +776,7 @@ add it to the expansion cache.
 	}
 	argv[0].val.ival = 0;
 #endif
-	    op = yysubstitute_proc(sig->pack_fcn,argc-1,argv);
+	    op = yysubstitute_proc((YYSTREE)sig->pack_fcn,argc-1,argv);
 #if 0
 { /* PETER: temporary hack to monitor proc instantiation (2/2) */
 	BUN pp = BUNfnd(yysubst, fcn_nme);

@@ -49,8 +49,6 @@ gdk_export void BATSIGcrash(int);
 @c
 #ifndef GDK_NOLINK
 #include "gdk.h"
-#include "gdk_utils.h"
-#include "gdk_posix.h"
 
 #else /* GDK_NOLINK */
 
@@ -262,7 +260,7 @@ void BATSIGcrash(int nr) {
 	}
 }
 
-int BATSIGinit() {
+int BATSIGinit(void) {
 	(void) signal(SIGINT,  BATSIGabort); 
 /*
 	(void) signal(SIGBUS,  BATSIGcrash); 
@@ -337,12 +335,12 @@ the memory consumption.
 #define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 #define MAX_BIT         ((int) (sizeof(long)<<3))
 @c
-volatile lng	GDK_mem_cursize = LL_CONSTANT(0);
-	 lng	GDK_mem_maxsize = LL_CONSTANT(0);
-	 lng	GDK_mem_bigsize = GDK_MEM_BIGSIZE;
-volatile lng	GDK_vm_cursize = LL_CONSTANT(0);
-	 lng	GDK_vm_minsize = 131072;
-	 lng	GDK_vm_maxsize = GDK_VM_MAXSIZE;
+volatile size_t	GDK_mem_cursize = 0;
+	 size_t	GDK_mem_maxsize = 0;
+	 size_t	GDK_mem_bigsize = GDK_MEM_BIGSIZE;
+volatile size_t	GDK_vm_cursize = 0;
+	 size_t	GDK_vm_minsize = 131072;
+	 size_t	GDK_vm_maxsize = GDK_VM_MAXSIZE;
 #ifdef GDK_VM_KEEPHISTO
 	 BAT*	GDK_vm_histo = NULL;
 volatile int GDK_vm_nallocbuf[MAX_BIT<<2] = { 0 };
@@ -354,32 +352,32 @@ volatile int	GDK_nmallocbuf[MAX_BIT<<2] = { 0 };
 volatile int*	GDK_nmallocs = GDK_nmallocbuf;
 #endif
 
-lng GDKvm_heapsize() {
+size_t GDKvm_heapsize(void) {
 #ifdef _CYGNUS_H_
-	return ((lng) (96<<20));
+	return ((size_t) (96<<20));
 #else
 	/* on Linux, malloc apparently steals space from mmap(anon) */
-	lng heapsize = GDKmem_heapsize();
-	lng heapinuse = GDKmem_heapinuse();
+	size_t heapsize = GDKmem_heapsize();
+	size_t heapinuse = GDKmem_heapinuse();
 	return MAX(heapsize, heapinuse);
 #endif
 }
 
-lng GDKmem_heapsize() {
-	lng heapsize = (MT_heapcur() - MT_heapbase);
-	return (lng) SEG_SIZE(heapsize,MT_VMUNITLOG);
+size_t GDKmem_heapsize(void) {
+	size_t heapsize = (MT_heapcur() - MT_heapbase);
+	return (size_t) SEG_SIZE(heapsize,MT_VMUNITLOG);
 }
 
 #ifdef GDK_MEM_SIMPLE
-lng GDKmem_heapinuse() {
+size_t GDKmem_heapinuse(void) {
 	/* we do not keep statistics ourselves; so we ask mallinfo */
 	struct mallinfo m = MT_mallinfo();
-        return (lng) (m.usmblks + m.uordblks);
+        return (size_t) (m.usmblks + m.uordblks);
 }
 #else 
-lng	GDK_heap_inuse = LL_CONSTANT(0);
+size_t	GDK_heap_inuse = 0;
 
-lng GDKmem_heapinuse() {
+size_t GDKmem_heapinuse(void) {
 	return GDK_heap_inuse;
 }
 #endif
@@ -406,32 +404,28 @@ static int GDK_mem_allocs = 0;
 
 /* at least each 50M of memory increase, BBPtrim is run */
 #define CHKMEM(meminc, vminc) {\
-	int memchk = (meminc>LL_CONSTANT(0) && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000)));\
-	int vmchk = (vminc>LL_CONSTANT(0) && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000)));\
+	int memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000)));\
+	int vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000)));\
 	if (memchk || vmchk) GDKmemchk(memchk, vmchk);\
 }
 	
 void GDKmemchk(int memchk, int vmchk) {
-	lng memtarget = memchk?(GDKmem_inuse() - GDK_mem_maxsize):0;
-	lng vmtarget = vmchk?(GDKvm_cursize() - GDK_vm_maxsize):0;
+	size_t memtarget = GDKmem_inuse();
+	size_t vmtarget = GDKvm_cursize();
 	MEMDEBUG {
 		THRprintf(GDKerr, "GDKmemchk (memcur=%u,memmax=%u) (vmcur=%u,vmmax=%u)\n",
-			(unsigned int) GDKmem_inuse(), (unsigned int) GDK_mem_maxsize, 
+			(unsigned int) memtarget, (unsigned int) GDK_mem_maxsize, 
 			(unsigned int) GDK_vm_cursize, (unsigned int) GDK_vm_maxsize);
 	}
-	if (memtarget < LL_CONSTANT(0)) {
-		memtarget = LL_CONSTANT(0);
-	}
-	if (vmtarget < LL_CONSTANT(0)) {
-		vmtarget = LL_CONSTANT(0);
-	}
+	memtarget = (memchk && memtarget > GDK_mem_maxsize) ? memtarget - GDK_mem_maxsize : 0;
+	vmtarget = (vmchk && vmtarget > GDK_vm_maxsize) ? vmtarget - GDK_vm_maxsize : 0;
 	if (memtarget > 0 || vmtarget > 0) {
 		BBPtrim(memtarget, vmtarget);
 	}
 	GDK_mem_allocs = GDK_vm_allocs = 0;
 }
 
-void GDKmeminc(lng memdelta, lng vmdelta) {
+void GDKmeminc(size_t memdelta, size_t vmdelta) {
 	long segsize = (long) SEG_SIZE(vmdelta,MT_VMUNITLOG);
 
 	GDK_mem_cursize += memdelta;
@@ -444,7 +438,7 @@ void GDKmeminc(lng memdelta, lng vmdelta) {
 	CHKMEM(memdelta,vmdelta);
 }
 
-void GDKmemdec(lng memdelta, lng vmdelta) {
+void GDKmemdec(size_t memdelta, size_t vmdelta) {
 	long segsize = (long) SEG_SIZE(vmdelta,MT_VMUNITLOG);
 
 	GDK_mem_cursize -= memdelta;
@@ -510,11 +504,11 @@ these redirected blocks.This behavior is enabled by defining GDK\_MEM\_VMREDIREC
 #ifdef GDK_MEM_QUERYSIZE
 #define GDK_MEM_BLKSIZE(p) GDK_MEM_QUERYSIZE(p)
 #else
-#define GDK_MEM_BLKSIZE(p) ((long*) (p))[-1]
+#define GDK_MEM_BLKSIZE(p) ((ssize_t*) (p))[-1]
 #endif
 
 static 
-void GDKmemdump() {
+void GDKmemdump(void) {
 	struct mallinfo m = MT_mallinfo();
 
 	THRprintf(GDKerr, "\n!mallinfo.arena = %d\n", m.arena);
@@ -551,22 +545,22 @@ void GDKmemdump() {
 }
 
 static
-void GDKmemfail(str s, int len, lng memtarget, lng vmtarget) {
+void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 	int bak = GDKdebug;
 
 	/* bumped your nose against the wall; try to prevent repetition by adjusting maxsizes */
 	if (memtarget) {
-		lng newmax = (lng) (0.7 * GDKmem_inuse());
+		size_t newmax = (size_t) (0.7 * (double)GDKmem_inuse());
 		if (newmax < GDK_mem_maxsize) GDK_mem_maxsize = newmax;
 	}
 	if (vmtarget) {
-		lng newmax = (lng) (0.7 * GDKvm_cursize());
+		size_t newmax = (size_t) (0.7 * (double)GDKvm_cursize());
 		if (newmax < GDK_vm_maxsize) GDK_vm_maxsize = newmax;
 	}
 
         if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKmemfail");
-	THRprintf(GDKerr, "%s(%d) fail => BBPtrim(enter) usage[mem=%u,vm=%u]\n", s, len, 
-			(unsigned int) GDKmem_inuse(), (unsigned int) GDKvm_cursize());
+	THRprintf(GDKerr, "%s(%lu) fail => BBPtrim(enter) usage[mem=%lu,vm=%lu]\n", s, (unsigned long) len, 
+			(unsigned long) GDKmem_inuse(), (unsigned long) GDKvm_cursize());
 	GDKmemdump();
 	GDKdebug |= 4;
         if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKmemfail");
@@ -575,8 +569,8 @@ void GDKmemfail(str s, int len, lng memtarget, lng vmtarget) {
 
         if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug,bak);
-	THRprintf(GDKerr, "%s(%d) fail => BBPtrim(ready) usage[mem=%u,vm=%u]\n", s, len, 
-			(unsigned int) GDKmem_inuse(), (unsigned int) GDKvm_cursize());
+	THRprintf(GDKerr, "%s(%lu) fail => BBPtrim(ready) usage[mem=%lu,vm=%lu]\n", s, (unsigned long) len, 
+			(unsigned long) GDKmem_inuse(), (unsigned long) GDKvm_cursize());
 	GDKmemdump();
         if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKmemfail");
 }
@@ -584,46 +578,45 @@ void GDKmemfail(str s, int len, lng memtarget, lng vmtarget) {
 
 #if defined(GDK_MEM_QUERYSIZE) || defined(GDK_MEM_SIMPLE)
 #define GDKmalloc_prefixsize(s,size) 					\
-	s = (long*) malloc(size)
+	s = (ssize_t*) malloc(size)
 #else
 #define GDKmalloc_prefixsize(s, size) {					\
 	/* round up to multiple of 4 and add 8: */			\
-	long realsize = ((size) + 11) & ~3;				\
-	char *p = (char *) malloc((size_t) realsize);			\
+	size_t realsize = ((size) + 11) & ~3;				\
+	char *p = (char *) malloc(realsize);				\
 	if (p == NULL) {						\
 		s = NULL;						\
-	} else if (((long) p) & 4) { /* misaligned */			\
-		s = (long*) (p + 4); /* place 4 bytes before it */ 	\
-		s[-1] = realsize + 1;  /* 1 is a marker */		\
+	} else if (((size_t) p) & 4) { /* misaligned */			\
+		s = (ssize_t*) (p + 4); /* place 4 bytes before it */	\
+		s[-1] = (ssize_t) (realsize + 1);  /* 1 is a marker */	\
 	} else {							\
-		s = (long*) (p + 8); /* place 8 bytes before it */ 	\
-		s[-1] = realsize;					\
+		s = (ssize_t*) (p + 8); /* place 8 bytes before it */	\
+		s[-1] = (ssize_t) realsize;				\
 	}								\
 }
 #endif
 
 
 void* GDKmalloc(size_t size) {
-	long *s;
+	ssize_t *s;
 
-#ifdef GDK_MEM_NULLALLOWED
         if (size == 0) {
+#ifdef GDK_MEM_NULLALLOWED
 		return NULL;
-	}
+#else
+		GDKfatal("GDKmalloc called with size %lu", (unsigned long) size);
 #endif
-        if (size <= 0) {
-                GDKfatal("GDKmalloc called with size %u", size);
-        }
-	CHKMEM(((lng)size),LL_CONSTANT(0));
+	}
+	CHKMEM(size,0);
 
 #ifdef GDK_MEM_VMREDIRECT
 	if (size > GDK_mem_bigsize) {
-		long maxsize = (size += 16);
-		char *p = (char*) GDKvmalloc((size_t) size, (size_t*) &maxsize);
+		size_t maxsize = (size += 16);
+		char *p = (char*) GDKvmalloc(size, &maxsize);
 		MT_alloc_register(p, maxsize, 'S');
-		s = (long*) (p + 16);
-		s[-2] = maxsize;
-		s[-1] = -((long) size);
+		s = (ssize_t*) (p + 16);
+		s[-2] = (ssize_t) maxsize;
+		s[-1] = -((ssize_t) size);
 	} else 
 #endif
 	GDKmalloc_prefixsize(s, size);
@@ -639,7 +632,7 @@ void* GDKmalloc(size_t size) {
 		}
 	}
 #ifndef GDK_MEM_SIMPLE
-{	long realsize = GDK_MEM_BLKSIZE(s);
+{	ssize_t realsize = GDK_MEM_BLKSIZE(s);
 	if (realsize > 0) {	
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
@@ -653,7 +646,7 @@ void* GDKmalloc(size_t size) {
 }
  
 void GDKfree (void *blk) {
-	long size, *s = (long*) blk;
+	ssize_t size, *s = (ssize_t*) blk;
 
         if (s == NULL) return;
 	size = GDK_MEM_BLKSIZE(s);
@@ -670,10 +663,10 @@ void GDKfree (void *blk) {
 	}
 #ifdef GDK_MEM_VMREDIRECT
 	if (size < 0) {
-		long maxsize = s[-2];
+		size_t maxsize = (size_t) s[-2];
 		size = -size;
 		MT_alloc_register(((char*) s) - 16, maxsize, 's');
-		GDKvmfree(((char*) s)- 16, (size_t) size, (size_t) maxsize);
+		GDKvmfree(((char*) s)- 16, (size_t) size, maxsize);
 	} else
 #endif
 #ifndef GDK_MEM_QUERYSIZE
@@ -701,23 +694,23 @@ ptr GDKrealloc(void* blk, size_t size) {
                 GDKfatal("GDKrealloc called with size %u", size);
         }
 #ifdef GDK_MEM_SIMPLE
-        CHKMEM(((lng)size),LL_CONSTANT(0));
+        CHKMEM(size,0);
         blk = realloc(blk, size);
 #else
-{       long cpysize, *s = (long*) blk;
-        long oldsize = GDK_MEM_BLKSIZE(s);
+{       size_t cpysize, *s = (size_t*) blk;
+        ssize_t oldsize = GDK_MEM_BLKSIZE(s);
 #ifdef GDK_MEM_VMREDIRECT
 	if (oldsize < 0) {
-		cpysize = MIN(((long) size), (-oldsize) - 16);
+		cpysize = MIN(size, (size_t) (-oldsize - 16));
 	} else 
 #endif
 #ifdef GDK_MEM_QUERYSIZE
-	cpysize = MIN(((long) size), oldsize);
+	cpysize = MIN(size, (size_t) oldsize);
 #else
 	if (oldsize&1) {
-		cpysize = MIN(((long) size), oldsize - 5);
+		cpysize = MIN(size, (size_t) oldsize - 5);
 	} else {
-		cpysize = MIN(((long) size), oldsize - 8);
+		cpysize = MIN(size, (size_t) oldsize - 8);
 	}
 #endif
 	/* the bad news is that the alignment problems on 32-bit systems prevent us from using realloc 
@@ -742,7 +735,7 @@ char *GDKstrdup(char *s) {
 @- virtual memory
 allocations affect only the logical VM resources.
 @c
-void *GDKmmap(char* path, int mode, size_t off, size_t len, void *fixed) {
+void *GDKmmap(char* path, int mode, off_t off, size_t len, void *fixed) {
         void *ret = MT_mmap(path, mode, off, len, fixed);
         if (ret == (void*) -1) {
                 GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
@@ -881,7 +874,7 @@ int GDKinit(char *dbname, char *dbfarm) {
 	GDKtmLock = MT_create_lock(); 
 
 	/* Mserver intends to rob 85% of all memory as a default */
- 	GDK_mem_maxsize = (lng) (MT_npages() * MT_pagesize() * 0.85); 
+ 	GDK_mem_maxsize = (size_t) ((double)MT_npages() * (double)MT_pagesize() * 0.85); 
 
 	GDKremovedir(DELDIR);  
 	BBPinit(); 
@@ -974,7 +967,7 @@ for improved speed.
 Before the locks and threads are initiated, we cannot use the 
 normal routines yet. So we have a local fatal here instead of GDKfatal. 
 @c
-void GDKlockHome() {
+void GDKlockHome(void) {
 	char *p=0, buf[1024], host[PATHLENGTH];
 @-
 Go there and obtain the global database lock.
@@ -1018,7 +1011,7 @@ In shared mode, we allow more parties to join. Release the lock.
 	GDKstopped = 0;
 }
 
-void GDKunlockHome() {
+void GDKunlockHome(void) {
 	if (GDKlockFile) {
 		MT_lockf(GDKLOCK, F_ULOCK, 4, 1); 
 		fclose(GDKlockFile); 
@@ -1028,7 +1021,7 @@ void GDKunlockHome() {
 @-
 Really really get the lock. Now!!
 @c
-int GDKgetHome() {
+int GDKgetHome(void) {
 	if (GDKlockFile) return 0;
 	if (MT_system_lock==NULL) return 0;
 	while ((GDKlockFile = fopen(GDKLOCK, "r+")) == NULL) {
@@ -1058,7 +1051,7 @@ void GDKaddbuf(char *message) {
 
 	if (buf) {
 		char *dst = buf + strlen(buf);
-		int maxlen = GDKMAXERRLEN - (dst - buf);
+		size_t maxlen = GDKMAXERRLEN - (dst - buf);
 		strncpy(dst, message, maxlen);
 		dst[maxlen - 1] = '\0';
 	} else if (!GDKsilent) {
@@ -1069,7 +1062,7 @@ void GDKaddbuf(char *message) {
 /*VARARGS*/
 int GDKwarning(char *format, ...) {
 	char message[GDKMAXERRLEN];	
-	int len = strlen(GDKWARNING);
+	size_t len = strlen(GDKWARNING);
 	va_list ap; 
 
 	strcpy(message, GDKWARNING);
@@ -1086,7 +1079,7 @@ int GDKwarning(char *format, ...) {
 /*VARARGS*/
 int GDKerror(char *format, ...) {
 	char message[GDKMAXERRLEN];	
-	int len = strlen(GDKERROR);
+	size_t len = strlen(GDKERROR);
 	va_list ap; 
 
 	strcpy(message, GDKERROR);
@@ -1103,7 +1096,7 @@ int GDKerror(char *format, ...) {
 int GDKsyserror(char *format, ...)
 {
         char message[GDKMAXERRLEN];
-        int len = strlen(GDKERROR);
+        size_t len = strlen(GDKERROR);
 
         int     err = errno;
         va_list ap;
@@ -1114,9 +1107,9 @@ int GDKsyserror(char *format, ...)
 	va_end(ap); 
 	if (err > 0 && err < 1024) {
 		char *osmsg = strerror(err);
-		int len1  = strlen(message);
-		int len2  = len1 + strlen(GDKMESSAGE);
-		int len3  = len2 + strlen(osmsg);
+		size_t len1  = strlen(message);
+		size_t len2  = len1 + strlen(GDKMESSAGE);
+		size_t len3  = len2 + strlen(osmsg);
 
 		if (len3 + 2 < GDKMAXERRLEN) {
 			strcpy(message + len1, GDKMESSAGE);
@@ -1134,7 +1127,7 @@ int GDKsyserror(char *format, ...)
 /*VARARGS*/
 int GDKfatal(char *format, ...) {
 	char message[GDKMAXERRLEN];	
-	int len = strlen(GDKFATAL);
+	size_t len = strlen(GDKFATAL);
 	va_list ap; 
 	FILE *fd=stderr;
 
@@ -1173,7 +1166,7 @@ The following relative timers are available for inspection.
 Note that they may consume recognizable overhead.
 @c
 
-lng GDKusec() {
+lng GDKusec(void) {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 	gettimeofday(&tp, NULL);
@@ -1190,7 +1183,7 @@ lng GDKusec() {
 }
 
 
-int GDKms() {
+int GDKms(void) {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 	gettimeofday(&tp, NULL);
@@ -1204,7 +1197,7 @@ int GDKms() {
 #endif
 }
 
-int GDKcsec() {
+int GDKcsec(void) {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 	gettimeofday(&tp, NULL);
@@ -1219,7 +1212,7 @@ int GDKcsec() {
 }
 
 
-int GDKsec() {
+int GDKsec(void) {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 	gettimeofday(&tp, NULL);
@@ -1258,7 +1251,7 @@ Thread THRget(MT_Id tid) {
 }
 
 static INLINE 
-unsigned long THRsp(){
+unsigned long THRsp(void){
 	int l = 0;
 	unsigned long sp = (unsigned long)(&l);
 	
@@ -1356,11 +1349,11 @@ int THRexit(str nme) {
 	return 0; 
 }
 
-int THRcnt() {
+int THRcnt(void) {
 	return GDKnrofthreads; 
 }
 
-int THRhighwater() {
+int THRhighwater(void) {
 	unsigned long c = THRsp();
 	Thread s = GDK_find_thread(MT_getpid());
 	unsigned long diff = (c<s->sp)?s->sp-c:c-s->sp;
@@ -1377,7 +1370,7 @@ the internet.
 The code below should be improved to gain speed.
 @c
 
-int THRinit() {
+int THRinit(void) {
 	int i = 0;
 	THRdata[0] = (void*) file_wastream(stdout, "stdout");
 	THRdata[1] = (void*) file_rastream(stdin, "stdin");
@@ -1397,7 +1390,7 @@ void*  THRgetdata(int n) {
 	return (s?s->data[n]:THRdata[n]);
 }
 
-MT_Id THRgettid(){
+MT_Id THRgettid(void){
 	Thread s = GDK_find_thread(MT_getpid());
 	return (s?s->tid:(MT_Id)1);
 }
@@ -1407,7 +1400,9 @@ static char THRprintbuf[BUFSIZ];
 /*VARARGS*/
 int THRprintf(stream *s, char *format, ...) {
 	str bf = THRprintbuf, p = 0;
-	int bfsz = BUFSIZ, n = 0, m = 0;
+	size_t bfsz = BUFSIZ;
+	int n = 0;
+	ptrdiff_t m = 0;
 	char c;
         va_list ap;
 
@@ -1439,7 +1434,8 @@ int THRprintf(stream *s, char *format, ...) {
 		else			/* glibc 2.0 */
 			bfsz *= 2;	/* twice the old size */
 		if (bf != THRprintbuf) free(bf);
-		assert(bf = (str) malloc (bfsz));
+		bf = (str) malloc(bfsz);
+		assert(bf != NULL);
 		@:THRprintf_va_vsnprintf@
 	}
 	p += n;

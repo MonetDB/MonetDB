@@ -202,7 +202,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi, int lval, int hva
 #endif /* _GDK_SCANSELECT_H */
 
 @c
-#include "gdk_bat.h"
+#include "gdk.h"
 #include "gdk_scanselect.h"
 
 @- The actual BAT_scanselect

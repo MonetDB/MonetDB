@@ -553,7 +553,7 @@ these 'sync' OIDs with their own propagation rules.
 @* Implementation Code
 
 @= batconvert
-	(BAT@2type(@1) == TYPE_bat)?&((BAT*)@2)->batCacheid:@2
+	(BAT@2type(@1) == TYPE_bat)?(BUN)&((BAT*)@2)->batCacheid:(BUN)@2
 
 @+ Information Functions
 @c
@@ -668,10 +668,10 @@ int CMDsize(lng *res, int *bid) {
 		if (b == NULL) {
 			*res = lng_nil;
 		} else if (BBP_cache(*bid)) {
-			*res = BATcount(b);  
+			*res = (lng) BATcount(b);  
 		} else {
 			/* BAT not loaded */
-			*res = (b->batBuns->free - (b->batHole - b->batBuns->base))/BUNsize(b) - 1;
+			*res = (lng) ((b->batBuns->free - (b->batHole - b->batBuns->base))/BUNsize(b) - 1);
 		}
 	}
 	return GDK_SUCCEED;
@@ -683,7 +683,7 @@ int CMDcapacity(lng *res, int *bid) {
 		if (b == NULL) {
 			*res = lng_nil;
 		} else {
-			*res = BATcapacity(b);
+			*res = (lng) BATcapacity(b);
 		}
 	}
 	return GDK_SUCCEED;
@@ -790,21 +790,25 @@ static char* local_itoa(long i){
 	snprintf(buf, 32, "%ld", i);
 	return buf;
 }
+static char* local_utoa(unsigned long i){
+	static char buf[32];
+	snprintf(buf, 32, "%lu", i);
+	return buf;
+}
 
 #define COLLISION 6
-gdk_export int HASHlist (Hash* h, int i);
 
 void HASHinfo(BAT *bn, Hash *h, str s){
-	unsigned int i;
-	int     j;
-	int     cnt[COLLISION + 2];
-	int     largebuckets = 0;
-	int     largetot = 0;
-	char    buf[32];
+	hash_t	i;
+	hash_t	j;
+	size_t	cnt[COLLISION + 2];
+	size_t	largebuckets = 0;
+	size_t	largetot = 0;
+	char	buf[32];
  
 	BUNins(bn, pre(s,"type"), ATOMname(h->type));
-	BUNins(bn, pre(s,"mask"), local_itoa(h->mask));
-	BUNins(bn, pre(s,"lim"), local_itoa(h->lim));
+	BUNins(bn, pre(s,"mask"), local_utoa(h->mask));
+	BUNins(bn, pre(s,"lim"), local_utoa(h->lim));
  
 	for (i = 0; i <= COLLISION + 1; i++) {
 		cnt[i] = 0;
@@ -824,9 +828,9 @@ void HASHinfo(BAT *bn, Hash *h, str s){
  
 	for (i = 0; i <= COLLISION+1; i++)
 	if( cnt[i]) {
-		BUNins(bn, pre(s,local_itoa(i)), local_itoa(cnt[i]));
+		BUNins(bn, pre(s,local_utoa(i)), local_utoa(cnt[i]));
 	}
-	snprintf(buf, 32, "%d on %d", largetot, largebuckets);
+	snprintf(buf, 32, "%lu on %lu", (unsigned long) largetot, (unsigned long) largebuckets);
 	BUNins(bn, pre(s,"collision"), buf);
 }
 
@@ -835,11 +839,11 @@ static void infoHeap(BAT *bn, Heap *hp, str nme){
 
 	while(*nme) *p++ = *nme++;
 	strcpy(p, "free");
-        BUNins(bn, buf, local_itoa(hp->free ));
+        BUNins(bn, buf, local_utoa(hp->free ));
 	strcpy(p, "size");
-        BUNins(bn, buf, local_itoa(hp->size));
+        BUNins(bn, buf, local_utoa(hp->size));
 	strcpy(p, "maxsize");
-        BUNins(bn, buf, local_itoa(hp->maxsize));
+        BUNins(bn, buf, local_utoa(hp->maxsize));
 	strcpy(p, "storage");
         BUNins(bn, buf, (hp->base==NULL)?"absent":(hp->storage==STORE_MMAP)?
 		(hp->filename?"memory mapped":"anonymous vm"):
@@ -847,7 +851,7 @@ static void infoHeap(BAT *bn, Heap *hp, str nme){
 	strcpy(p, "filename");
         BUNins(bn, buf, hp->filename?hp->filename:"no file");
 	strcpy(p, "offset");
-        BUNins(bn, buf, local_itoa(hp->offset));
+        BUNins(bn, buf, local_utoa(hp->offset));
 }
 
 static char *oidtostr( oid i ){
@@ -906,8 +910,8 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "hkey", local_itoa(b->hkey));
         BUNins(bn, "hloc", local_itoa(b->hloc));
         BUNins(bn, "hvarsized", local_itoa(b->hvarsized));
-        BUNins(bn, "halign", local_itoa(b->halign));
-        BUNins(bn, "halignflushed", local_itoa(b->halignflushed));
+        BUNins(bn, "halign", local_utoa(b->halign));
+        BUNins(bn, "halignflushed", local_utoa(b->halignflushed));
  
         BUNins(bn, "tident", b->tident);
 	BUNins(bn, "tdense", local_itoa(BATtdense(b)));
@@ -916,13 +920,13 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "tkey", local_itoa(b->tkey));
         BUNins(bn, "tloc", local_itoa(b->tloc));
         BUNins(bn, "tvarsized", local_itoa(b->tvarsized));
-        BUNins(bn, "talign", local_itoa(b->talign));
-        BUNins(bn, "talignflushed", local_itoa(b->talignflushed));
+        BUNins(bn, "talign", local_utoa(b->talign));
+        BUNins(bn, "talignflushed", local_utoa(b->talignflushed));
  
-        BUNins(bn, "batInserted", local_itoa(BUNindex(b, b->batInserted)));
-        BUNins(bn, "batDeleted", local_itoa(BUNindex(b, b->batDeleted)));
-        BUNins(bn, "batHole", local_itoa(BUNindex(b, b->batHole)));
-        BUNins(bn, "top", local_itoa(BUNindex(b, (Bunbase(b) + b->batBuns->free))));
+        BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)));
+        BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)));
+        BUNins(bn, "batHole", local_utoa(BUNindex(b, b->batHole)));
+        BUNins(bn, "top", local_utoa(BUNindex(b, (Bunbase(b) + b->batBuns->free))));
 	BUNins(bn, "batStamp", local_itoa(b->batStamp));
 	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()));
         BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk));
@@ -963,11 +967,11 @@ int CMDinfo(BAT **retval, BAT *b){
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 int CMDbatsize(int *tot, BAT *b){
-	int blksize = MT_pagesize();
-	int size = ROUND_UP(sizeof(BATstore),blksize);
+	size_t blksize = MT_pagesize();
+	size_t size = ROUND_UP(sizeof(BATstore),blksize);
 
 	if (!VIEWparent(b)) {
-		int cnt = BATcapacity(b);
+		size_t cnt = BATcapacity(b);
 		size += ROUND_UP(b->batBuns->size, blksize);
 		if (b->hheap.base) size += ROUND_UP(b->hheap.size, blksize);
 		if (b->theap.base) size += ROUND_UP(b->theap.size, blksize);
@@ -1130,7 +1134,7 @@ a layout compatible with that produced by print or export.
 @c
 int CMDimport(BAT **ret, BAT *b, str fnme) {
 	int	(*hconvert)(), (*tconvert)();
-	int	bufsize = 2048; /* NIELS: tmp change used to be 1024 */
+	size_t	bufsize = 2048; /* NIELS: tmp change used to be 1024 */
 	char	*base, *cur, *end;
 	char	*buf = (char *) GDKmalloc(bufsize);
 	ptr	*h = 0, *t = 0;
@@ -1174,7 +1178,7 @@ Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 @c
 	while(cur < end) {
 		str dst = buf, src = cur, p = strchr(cur, '\n');
-		int l = p - cur;
+		size_t l = p - cur;
 
 		if (!p) {
 			p = end;
@@ -1189,8 +1193,8 @@ Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 		@:memcpy@
 @= memcpy
 		if (buf+bufsize < dst+l) {
-		        int len = dst - buf;
-			int inc = (dst+l) - buf;
+		        size_t len = dst - buf;
+			size_t inc = (dst+l) - buf;
 			buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
 			dst = buf + len;
 		}
@@ -1279,7 +1283,8 @@ int CMDaccpresent(int *retval, BAT* b) {
 int CMDhashloop(BAT* b, ptr *handle, ptr v){
 	Iteration h = *(Iteration*)handle;
 	char *p; 
-	int idx, i;
+	hash_t idx;
+	int i;
 
 	if (!BATprepareHash(b)) 
 	switch(ATOMstorage(BAThtype(b))) {

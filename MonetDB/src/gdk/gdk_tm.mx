@@ -40,8 +40,8 @@ Access to the transaction table is regulated by a semaphore.
 
 #endif /* _GDK_TM_H_ */
 @c
+#include "gdk.h"
 #include "gdk_tm.h"
-#include "gdk_bbp.h"
 
 char			TMname[MAXTM][IDLENGTH] = { SYSTRANSACTION }; 
 
@@ -57,7 +57,7 @@ int TMresume(str s) {
 	return 0;
 }
 
-str TMcntxt() {
+str TMcntxt(void) {
 	return TMname[0]; 
 }
 @
@@ -81,7 +81,7 @@ TMfakeCommit updates the BBP_status to a new transaction. It collects old bats w
 can be destroyed. The resulting array of bat's can be given to TMkill to destroy these
 bats.
 @c
-int *TMfakeCommit(){
+int *TMfakeCommit(void){
 	int i, nkills=0, maxkills = 1024, *kills = GDKmalloc((maxkills+1)*sizeof(int));
 
         /* succeeded: adapt BBPstatus of all bats while we're still locked */
@@ -131,7 +131,7 @@ void TMkill(int *kills){
 	}
 }
 
-int TMcommit() {
+int TMcommit(void) {
 	int cur = 0;
 	int i, ret = 0, *kills = NULL;
 
@@ -193,7 +193,7 @@ for BATs that are currently swapped out. Persistent BATs
 that were made transient in this transaction become
 persistent again.
 @c
-int TMabort() {
+int TMabort(void) {
 	int i; 
 
 	MT_set_lock(GDKtmLock, "TMabort"); 

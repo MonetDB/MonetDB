@@ -58,7 +58,7 @@ The threads have to update their I/O descriptor before doing I/O.
 #define _MONET_PROCESS_H_
 #include "gdk.h"
 
-m_export void	monetInternet ();
+m_export void	monetInternet (void);
 
 /* monet standard threads */
 m_export void	monetServer	(void *dummy);
@@ -66,7 +66,7 @@ m_export void	monetInterpreter(void *dummy);
 m_export void	monetSingle  	(int status);
 
 /* interpreter thread handling */
-m_export MT_Id	monetFork ();
+m_export MT_Id	monetFork (void);
 m_export int	monetAdjustThreads (int i);
 m_export int	monetSetChannel (Thread t, stream* in, stream* out);
 
@@ -145,7 +145,7 @@ int monetSetChannel(Thread t, stream* in, stream* out){
 New interpreters threads are added here. The instruction is ignored
 when the system is supposed to run within one thread.
 @c
-MT_Id monetFork() {
+MT_Id monetFork(void) {
 	MT_Id p = 0;
 
 	if (!monet_singlethreaded) {

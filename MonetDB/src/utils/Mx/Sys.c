@@ -51,8 +51,7 @@ ofile_printf(char *format,...)
 }
 
 void
-ofile_puts(s)
-char* s;
+ofile_puts(char *s)
 {
 	if (mx_out&1) fputs(s, ofile);
 	if (ofile_index && (mx_out&2)) fputs(s, ofile_index);
@@ -86,8 +85,7 @@ void	Fatal(char *fcn, char *format,...)
 }
 
 
-char *	Malloc(size)
-size_t	size;
+char *	Malloc(size_t size)
 {
 char *	buf;
 
@@ -96,16 +94,14 @@ char *	buf;
 	return buf;
 }
 
-void	Free(ptr)
-char *	ptr;
+void	Free(char *ptr)
 {
 /*
 	free(ptr);
  */
 }
 
-char *	StrDup(str)
-char *	str;
+char *	StrDup(char *str)
 {
 	return strcpy(Malloc(strlen(str) + 1), str);
 }

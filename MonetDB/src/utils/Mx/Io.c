@@ -24,12 +24,16 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include "Mx.h"
 #include "MxFcnDef.h"
 #include <sys/types.h>
 #include <sys/stat.h> 
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifndef WIN32
 #include <utime.h>
 #endif
@@ -53,8 +57,7 @@ FILE *fmustopen(char*,char*);
 int CompareFiles(char*,char*);
 
 
-void OutputDir( dir )
-char *	dir;
+void OutputDir(char *dir)
 {
     struct stat buf;
     if(stat(dir,&buf)==-1 || !(buf.st_mode&S_IFDIR)){
@@ -66,9 +69,7 @@ char *	dir;
     outputdir_len = strlen( dir );
 }
 	
-File *	GetFile(s,m)
-char *	s;
-CmdCode m;
+File *	GetFile(char *s, CmdCode m)
 {
 File *	f;
 char *fname;
@@ -105,9 +106,7 @@ char *bname;
 	return f;
 }
 
-int	HasSuffix(name, suffix)
-char *	name;
-char *	suffix;
+int	HasSuffix(char *name, char *suffix)
 {
 	if( strlen(name) <= strlen(suffix) )
 		return 0;	
@@ -118,8 +117,7 @@ char *	suffix;
 char	bname[1024];
 
 /* the name without preappended subdirectories */
-char*	FileName(name)
-char*	name;
+char*	FileName(char *name)
 {
     char *p;
     if ((p = strrchr(name, DIR_SEP)) != NULL)
@@ -131,8 +129,7 @@ char*	name;
 }
 
 /* the name without extension */
-char *	BaseName(name)
-char *	name;
+char *	BaseName(char *name)
 {
     char *b = strrchr(FileName(name),'.');
     if (b != NULL) *b= '\0';
@@ -140,8 +137,7 @@ char *	name;
 }
 
 /* the name with '.' preappended */
-char *	TempName(name)
-char *	name;
+char *	TempName(char *name)
 {
     	char *p,*r = p = bname+strlen(BaseName(name));
 	while(--r >= bname)
@@ -152,9 +148,7 @@ char *	name;
 	return bname;
 }
 
-FILE *fmustopen(fname,mode)
-char *fname;
-char *mode;
+FILE *fmustopen(char *fname, char *mode)
 {
     char *p = fname; 
     char *tmp = NULL;
@@ -187,9 +181,7 @@ char *mode;
 
 char 	fname[1024];
 
-void	IoWriteFile(s, m)
-char *	s;
-CmdCode	m;
+void	IoWriteFile(char *s, CmdCode m)
 {
     File *	f;
 	
@@ -213,8 +205,7 @@ CmdCode	m;
 /* this function replaces the fork of the 'cmp' utility 
  * had to be done on WIN32 because return values were screwed
  */
-int CompareFiles(nm1, nm2)
-char *nm1, *nm2;
+int CompareFiles(char *nm1, char *nm2)
 {
 	FILE *fp1 = fopen(nm1, "r");	
 	FILE *fp2 = fopen(nm2, "r");	
@@ -262,7 +253,7 @@ void KillLines(FILE *fp, char* pattern, int killprev){
 	fseek(fp, 0, SEEK_END);
 }
 	
-void UpdateFiles()
+void UpdateFiles(void)
 {
     File *f;
     int status;
@@ -308,8 +299,7 @@ void UpdateFiles()
     nfile = 0;
 }
 
-void	IoReadFile(name)
-char *	name;
+void	IoReadFile(char *name)
 {
 	char *p;
 
@@ -325,7 +315,7 @@ char *	name;
 }
 
 
-void	CloseFile()
+void	CloseFile(void)
 {
 	fclose(ifile);
 	/* mx_file= 0; */
@@ -335,7 +325,7 @@ void	CloseFile()
 #define MAXLINE 2048
 
 
-int	EofFile()
+int	EofFile(void)
 {
 	if (feof(ifile)) {
 		if (fptop == fpstack) return 1;
@@ -351,7 +341,7 @@ int	EofFile()
 static int  fullbuf=0;
 static char linebuf[MAXLINE];
 
-char *NextLine()
+char *NextLine(void)
 {
     if (fptop == fpstack) {
 	mx_line++;
@@ -391,7 +381,7 @@ char *NextLine()
     }
 }
 
-void PrevLine()
+void PrevLine(void)
 {
     if (fptop == fpstack) {
 	mx_line--;

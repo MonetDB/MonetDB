@@ -81,8 +81,7 @@ The below is the interface to uniformly create, extend and delete heaps of all k
 
 #endif /* _GDK_HEAP_H_ */
 @c
-#include "gdk_heap.h"
-#include "gdk_posix.h"
+#include "gdk.h"
 
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
         h->base = NULL;
@@ -152,7 +151,7 @@ PROT_NONE, so we can do it.
 		totsize -=  h->offset + h->size;
 		fclose(fp);
 	        GDKfilepath(path,BATDIR,h->filename,NULL);
-		b = GDKmmap(path, MMAP_COPY, h->offset+h->size, totsize, 
+		b = GDKmmap(path, MMAP_COPY, (off_t) (h->offset+h->size), totsize, 
 			    h->base+h->offset+h->size);
 		if ((b == (char*) -1)) {
 			GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n",
@@ -210,7 +209,7 @@ As we cannot start a new mapping at a random adress, but rather need to align
 it to a block boundary, the region is enlarged somewhat downwards,
 and the extra byte-offset is given back for the information of the caller.
 @c
-int HEAPsubcopy(Heap* dst, Heap* src, size_t size, size_t offset) {
+size_t HEAPsubcopy(Heap* dst, Heap* src, size_t size, size_t offset) {
 #ifndef WIN32
 	if ((src->storage&STORE_MMAP) && src->filename) {
 	    long_str path;
@@ -220,7 +219,7 @@ int HEAPsubcopy(Heap* dst, Heap* src, size_t size, size_t offset) {
 		size_t newoffset = (src->storage == STORE_PRIV)?
 					offset+src->offset:offset;
 		char *b = NULL;
-		unsigned int shiftback = newoffset%MT_pagesize(); /*block align*/
+		size_t shiftback = newoffset%MT_pagesize(); /*block align*/
 		newoffset -= shiftback; 
 		dst->free = size + shiftback;
 		dst->size = MT_pagesize()*(1 + (dst->free-1)/MT_pagesize()); 
@@ -245,10 +244,10 @@ grab everything we can now.
 		dst->size = dst->maxsize; /* take it all, now */
 
 #else
-		b = (char *) GDKmmap(path, MMAP_COPY, newoffset, dst->maxsize, NULL);	
+		b = (char *) GDKmmap(path, MMAP_COPY, (off_t) newoffset, dst->maxsize, NULL);	
 		if (b == (char*) -1) b = 0;
 #endif
-		dst->base = (char *) GDKmmap(path, MMAP_COPY, newoffset, dst->size, b);	
+		dst->base = (char *) GDKmmap(path, MMAP_COPY, (off_t) newoffset, dst->size, b);	
 
 		if (dst->base == (char*) -1) {
 			shiftback = 0;
@@ -286,7 +285,7 @@ int HEAPfree(Heap* h) {
                                                 (long)h->base, h->maxsize, ret);
 		if (h->storage == STORE_PRIV) {
 			/* may need to move back the file from X.priv to X */
-			int len = strlen(h->filename);
+			size_t len = strlen(h->filename);
                 	if (len < 5 || strcmp(h->filename+len-5, ".priv")) {
 				GDKerror("HEAPfree: priv-heap has unexpected name %s\n", h->filename);
 			} else {
@@ -358,15 +357,15 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 		return -1; /* file could not be located */
 	}
 	/* legacy 2: some old repositories have wasted space => truncate during load */
-	if (trunc && h->free*1.05 < h->size) {
+	if (trunc && (double)h->free*1.05 < (double)h->size) {
 		fp = (FILE*) GDKfilelocate(nme, "mrb+", ext);
 		if (fp) {
-			ret = ftruncate(fileno(fp), (off_t) (h->free*1.05));
+			ret = ftruncate(fileno(fp), (off_t) ((double)h->free*1.05));
 			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s, size=%d) = %d\n", 
                                                 h->filename, h->maxsize, ret);
 			fclose(fp);
 			if (ret == 0) {
-				h->size = h->maxsize = (size_t) (h->free*1.05);
+				h->size = h->maxsize = (size_t) ((double)h->free*1.05);
 				desc_status = 1;
 			}
                 }
@@ -461,6 +460,14 @@ typedef struct {
    int firstblock;      /* first block in heap                  */
 }  HEADER64;
 
+/* forget about compatibility: do it right */
+typedef struct {
+	int alignment;
+	size_t head;
+	size_t firstblock;
+	int (*sizefcn)(ptr);
+} HEADER64_new;
+
 #if SIZEOF_LONG==8
 typedef HEADER64 HEADER; 
 typedef HEADER32 HEADER_OTHER; 
@@ -470,13 +477,13 @@ typedef HEADER64 HEADER_OTHER;
 #endif
 typedef struct hfblock
 {
-   unsigned int size;		/* Size of this block in freelist	*/
-   unsigned int next;		/* index of next block 			*/
+	int size;	       /* Size of this block in freelist	*/
+	int next;	       /* index of next block 			*/
 } CHUNK;
 @c
 #define roundup_8(x)	(((((x)-1)>>3)+1)<<3) /* (((x)+7)&~7) */
 #define roundup_4(x)	(((((x)-1)>>2)+1)<<2) /* (((x)+3)&~3) */
-#define callfcn(h,p)    ((((size_t) (h)->sizefcn) < 65536)?(BATSIGcrash(0),0):(*(h)->sizefcn)(p))
+#define callfcn(h,p)    ((((size_t) (h)->sizefcn) < 65536)?(BATSIGcrash(0),0):(size_t) (*(h)->sizefcn)(p))
 #define blocksize(h,p)	((h)->sizefcn?callfcn(h,p):(p)->size) 
 
 static INLINE size_t roundup_num(size_t number, size_t alignment) {
@@ -808,7 +815,7 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
    size_t head = hheader->head, alignshift = 2;
    size_t block, nwords = (heap->free-1)>>7;
-   unsigned int *freemask, prevblock = 0;
+   size_t *freemask, prevblock = 0;
    CHUNK* blockp;
 
    hr->alignment = hheader->alignment;
@@ -831,8 +838,8 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    /*
     // Create bitmasks that will hold all valid block positions
     */
-   hr->validmask = (unsigned int*) GDKmalloc(sizeof(unsigned int) * ++nwords);
-   freemask = (unsigned int*) GDKmalloc(sizeof(unsigned int) * nwords);
+   hr->validmask = (size_t*) GDKmalloc(sizeof(size_t) * ++nwords);
+   freemask = (size_t*) GDKmalloc(sizeof(size_t) * nwords);
    for(block=0; block<nwords; block++) 
 	freemask[block] = hr->validmask[block] = 0;
 

@@ -116,7 +116,7 @@ int doRequest(Msession mid, char *buf ){
 	if (Mdorequest(mid, buf) != MOK){
 		return (int)'q';
 	}
-	while(rtrn=Mgetreply(mid)){
+	while ((rtrn=Mgetreply(mid)) != 0) {
 		fprintf(toConsole, "%s\n",rtrn);
 	}
 	if (Merror(mid)) {
@@ -240,9 +240,9 @@ redirection of output to a separate file.
 			}
 			break;
 		case '<':
-			if (fp = fopen(start_cmd+1, "r")) {
-				while (n = fread(message+m_index, 1,
-							 CHUNK_SIZE, fp))
+			if ((fp = fopen(start_cmd+1, "r")) != 0) {
+				while ((n = fread(message+m_index, 1,
+							 CHUNK_SIZE, fp)) != 0)
 				{
 					GROW_MESSAGE(n);
 					/* echo to stdout */
@@ -358,7 +358,7 @@ int main(int ac, char **av) {
 	if (!(setlen = mo_builtin_settings(&set)) )
                 usage(prog);
 
-	while(1){
+	for (;;){
 		int option_index = 0;
 
                 int c = getopt_long( ac, av, "c:d::h:p:?",

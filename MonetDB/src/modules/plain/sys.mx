@@ -764,7 +764,7 @@ int view_gdk_env(
 }
 
 int check_bbp_size(lng *ret) {
-	*ret = BBPdiskscan(NULL);
+	*ret = BBPdiskscan();
 	return GDK_SUCCEED;
 }
 
@@ -863,7 +863,7 @@ view_var_name(
 	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
-        while(TRUE) {
+        for (;;) {
 		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
 			BUNins(b, &v, v->name); 
                 }
@@ -891,7 +891,7 @@ view_var_type(
 	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
-        while(TRUE) {
+        for (;;) {
 		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
 			BUNins(b, &v, 
 			BATatoms[v->binding.vtype].name );
@@ -920,7 +920,7 @@ view_var_kind(
 	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
-        while(TRUE) {
+        for (;;) {
 		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
 			BUNins(b, &v, 
 			(v->frozen?"frozen":"liquid"));
@@ -948,7 +948,7 @@ view_var_constant(
 	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
-        while(TRUE) {
+        for (;;) {
 		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
 			BUNins(b, &v, 
 			(v->constant?"constant":"changeable"));
@@ -979,7 +979,7 @@ view_var_value(
 	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
-        while(TRUE) {
+        for (;;) {
 		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
 			int t = ATOMstorage(v->binding.vtype);
 			ptr p = ATOMextern(t)?v->binding.val.pval:(ptr)&v->binding.val.ival;

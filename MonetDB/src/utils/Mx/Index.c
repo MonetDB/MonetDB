@@ -30,13 +30,12 @@
 
 #define TEXMODE (textmode==M_TEX)
 #define WWWMODE (textmode==M_WWW)
-extern	char *	StrDup();
 
 Itable *itable = 0;
 int itable_done = 0;
 
 
-void	InitIndex()
+void	InitIndex(void)
 {
 Itable *it;
 char 	name[16];
@@ -63,20 +62,14 @@ char 	name[16];
 	itable[IMACRO].it_name= StrDup("Table of macro's");
 }
 
-void	IndexTable(it, name)
-int	it;
-char *	name;
+void	IndexTable(int it, char *name)
 {
 	/* test it, for legal values  */
 
 	itable[it].it_name= StrDup(name);
 }
 
-void	IndexEntry(nit, name, mod, sec)
-int	nit;
-char *	name;
-int	mod;
-int	sec;
+void	IndexEntry(int nit, char *name, int mod, int sec)
 {
 	Itable *it= itable + nit;
 	Ientry *ie= it->it_entrys + it->it_nentry++;
@@ -88,7 +81,7 @@ int	sec;
 	ie->ie_sec= sec;
 }
 
-void	SortIndex()
+void	SortIndex(void)
 {
 Itable *it;
 Ientry *ie1;
@@ -103,7 +96,7 @@ Ientry	iet;
 	}
 }
 
-void	PrCont()
+void	PrCont(void)
 {
 Itable *it;
 Ientry *ie;
@@ -264,7 +257,7 @@ Ientry *ie;
 	} else PrCmd(".sp 24i\n"); /* advance to the next column */
 }
 
-void	PrIndex()
+void	PrIndex(void)
 {
 int	it;
 
@@ -275,8 +268,7 @@ int	it;
 		PrItable(it);
 }
 
-void	PrItable(nit)
-int	nit;
+void	PrItable(int nit)
 {
 Itable *it;
 Ientry *ie;

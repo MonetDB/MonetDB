@@ -75,7 +75,7 @@ int     do_header       _((FILE *fp, int init));
 #define HSIZE        	100    /* initial size of hits table. */
 
 typedef struct {
-    int		start, end;	/* the location of a string to be indexed */
+    long	start, end;	/* the location of a string to be indexed */
     char	table; 		/* for which index table? */
 } hit_t; 
 
@@ -154,8 +154,7 @@ char old_c=0;
 
 
 int
-do_mx_block(fp)
-FILE	*fp; 				/* pointer into Mx file. */
+do_mx_block(FILE *fp /* pointer into Mx file. */)
 {
     int		at_seen = 0; 		/* was the last char an '@'? */
     char	c; 			/* current char. */
@@ -177,8 +176,7 @@ FILE	*fp; 				/* pointer into Mx file. */
 
 
 int
-do_c_block(fp)
-FILE	*fp; 				/* pointer into Mx file. */
+do_c_block(FILE *fp /* pointer into Mx file. */)
 {
     char	c; 			/* current char. */
 
@@ -251,9 +249,9 @@ FILE	*fp; 				/* pointer into Mx file. */
 
 
 int
-do_c_code(fp, init)
-FILE	*fp; 				/* pointer into Mx file. */
-int	init; 				/* init static poarsing info? */
+do_c_code(FILE *fp, int init)
+/* fp: pointer into Mx file. */
+/* init: init static poarsing info? */
 {
     static int	pars_seen; 		/* number of nested parentheses. */
     char 	c = (char ) 0;   	/* current char. */
@@ -278,8 +276,7 @@ int	init; 				/* init static poarsing info? */
 
 
 int
-do_cpp_lines(fp)
-FILE	*fp; 				/* pointer into Mx file. */
+do_cpp_lines(FILE *fp)
 {
     int 	define_seen;		/* is it a define, or other macro? */
     char	c1=0, c2; 		/* current and last char. */
@@ -309,8 +306,7 @@ FILE	*fp; 				/* pointer into Mx file. */
 
 
 int
-do_mx_macro(fp)
-FILE	*fp; 				/* pointer into Mx file. */
+do_mx_macro(FILE *fp)
 {
     char	c; 			/* current char. */
 
@@ -333,9 +329,7 @@ FILE	*fp; 				/* pointer into Mx file. */
 
 
 int
-do_header(fp, init)
-FILE	*fp; 				/* pointer into Mx file. */
-int	init; 				/* should we init static info? */
+do_header(FILE *fp, int init)
 {
     static int	status; 		/* static parsing state info. */
     char	c; 			/* current char. */
@@ -380,10 +374,9 @@ int	init; 				/* should we init static info? */
 
 
 char *
-do_identifier(fp)
-FILE	*fp; 				/* pointer into Mx file. */
+do_identifier(FILE *fp)
 {
-    int		pos	  = ftell(fp); 	/* initial file position. */
+    long	pos	  = ftell(fp); 	/* initial file position. */
     char	c; 			/* current char. */
 
 					DEBUG("do_identifier")
@@ -401,8 +394,8 @@ FILE	*fp; 				/* pointer into Mx file. */
 	        /* hack: don't allow "_" for the _() macro */
 	        if (strcmp(identifier, "_")) {
     		    /* put markers around the identifier. */
-    		    hits[nhits].start = (int) pos-1;
-    		    hits[nhits].end = (int) ftell(fp)-1;
+    		    hits[nhits].start = pos-1;
+    		    hits[nhits].end = ftell(fp)-1;
 		}
 	    }
 	    return identifier;
@@ -413,8 +406,7 @@ FILE	*fp; 				/* pointer into Mx file. */
 
 
 int
-do_comment(fp)
-FILE	*fp; 				/* pointer into Mx file. */
+do_comment(FILE *fp)
 {
     int		star_seen = 0; 		/* was last char a '*'? */
     char	c 	  = 0; 		/* current char. */
@@ -436,13 +428,12 @@ FILE	*fp; 				/* pointer into Mx file. */
 
 
 int
-do_whitespace(fp)
-FILE	*fp; 				/* pointer into Mx file. */
+do_whitespace(FILE *fp)
 {
     char	c = 0; 			/* current char. */
 
 					DEBUG("do_whitespace")
-    while (1) {
+    for (;;) {
 	do {
 	    if (FEOF(fp)) {
 		return 0;
@@ -474,8 +465,7 @@ FILE	*fp; 				/* pointer into Mx file. */
 
 
 void
-resume_parsing(fp)
-FILE	*fp; 				/* pointer into Mx file. */
+resume_parsing(FILE *fp)
 {
                           		DEBUG("resume_parsing")
     /* were we interrupted last time?? */
@@ -493,13 +483,12 @@ FILE	*fp; 				/* pointer into Mx file. */
 
 
 void
-substitute(fp, size)
-FILE	*fp; 				/* pointer into Mx file. */
-long	size;
+substitute(FILE *fp, long size)
 {
-    int		end = size; 		/* size of old file. */
-    int		tail = size+4*nhits; 	/* size of new file. */
-    int		i, j, s; 		/* scratch variables. */
+    long	end = size; 		/* size of old file. */
+    long	tail = size+4*nhits; 	/* size of new file. */
+    int		i;			/* scratch variables. */
+    long	j, s;
     char	*buf = (char *) malloc(tail);
 
     fseek(fp, 0L, 0);
@@ -564,4 +553,5 @@ char	**argv; 			/* table of strings. */
     /* put them between Mx index marks, and write to stdout. */
     substitute(fp, ftell(fp));
     exit(0);
+    return 1;
 }

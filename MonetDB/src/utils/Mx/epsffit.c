@@ -54,16 +54,14 @@
 
 static char *prog;
 
-void usage()
+void usage(void)
 {
    fprintf(stderr, "Usage: %s [-c] [-r] [-a] [-s] llx lly urx ury [infile [outfile]]\n",
 	   prog);
    exit(1);
 }
 
-main(argc, argv)
-     int argc;
-     char **argv;
+int main(int argc, char **argv)
 {
    int bbfound = 0;              /* %%BoundingBox: found */
    int urx, ury, llx, lly;
@@ -181,10 +179,10 @@ main(argc, argv)
       else
 	 fputs("%%BeginProcSet: epsffit 1 0\n", output);
       fputs("gsave\n", output);
-      fprintf(output, "%.3lf %.3lf translate\n", xoffset, yoffset);
+      fprintf(output, "%.3f %.3f translate\n", xoffset, yoffset);
       if (rotate)
 	 fputs("90 rotate\n", output);
-      fprintf(output, "%.3lf %.3lf scale\n", xscale, yscale);
+      fprintf(output, "%.3f %.3f scale\n", xscale, yscale);
       if (!showpage)
 	 fputs("%%EndProcSet\n", output);
    }
@@ -200,4 +198,5 @@ main(argc, argv)
       exit(1);
    }
    exit(0);
+   return 0;
 }

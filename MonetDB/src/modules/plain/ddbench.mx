@@ -386,7 +386,7 @@ by the increased cube sizes (probably not; {\em limit=1000} performs best).
 .TOSTR = bit32ToStr;
 .END;
 
-.COMMAND stats(BAT[void,bit32] sel) : BAT[str,int] = bit32stats;
+.COMMAND stats(BAT[void,bit32] sel) : BAT[str,lng] = bit32stats;
  "produce info on this bit-selection"
 
 .COMMAND tobat(BAT[void,bit32] sel) : BAT[oid,void] = bit32tobat;
@@ -761,7 +761,7 @@ int bit32ToStr(char **dst, int *len, unsigned int *src) {
 		*p++ = (*src & mask)?'1':'0';
 	} while (mask <<= 1);
 	*p = 0;
-        return strlen(*dst);
+        return (int) strlen(*dst);
 }
 
 int bit32FromStr(char *src, int *len, int **dst){
@@ -778,12 +778,12 @@ int bit32FromStr(char *src, int *len, int **dst){
 		}
 	} while (mask <<= 1);
 	**dst = res;
-        return p-src;
+        return (int) (p-src);
 }
 
 
 int bit32tobat(BAT** ret, BAT *sel) {
-	int size = sel->halign-1;
+	oid size = sel->halign-1;
 	oid o = sel->hseqbase, last = o + size;
 	int *cur = (int*) BUNhloc(sel,BUNfirst(sel));
 	BAT *bn;
@@ -792,7 +792,7 @@ int bit32tobat(BAT** ret, BAT *sel) {
 	
 	*ret = bn = BATnew(TYPE_oid, TYPE_void, size);
 
-	while(TRUE) {
+	for (;;) {
 		int mask = 1, val = *(cur++);
 		do {
 			if (val&mask) BUNfastins(bn, &o, NULL); 
@@ -802,7 +802,6 @@ int bit32tobat(BAT** ret, BAT *sel) {
 			}
 		} while (mask <<= 1);
 	}
-	return GDK_FAIL;
 }
 
 
@@ -815,7 +814,7 @@ int bit32semijoin(BAT** ret, BAT *b, BAT* sel) {
 	@:check_bitsel(bit32semijoin,sel,b,BATcount(b))@
 	*ret = bn = BATnew(TYPE_oid, BATttype(b), sel->halign-1);
 
-	while(TRUE) {
+	for (;;) {
 		int mask = 1, val = *(cur++);
 		do {
 			if (val&mask) BUNfastins(bn, BUNhead(b,p),BUNtail(b,p));
@@ -828,31 +827,30 @@ int bit32semijoin(BAT** ret, BAT *b, BAT* sel) {
 			} 
 		} while (mask <<= 1);
 	}
-	return GDK_FAIL;
 }
 
 
 int bit32stats(BAT** ret, BAT *sel) {
-	int hits = 0, size = sel->halign-1, i = size;
+	size_t hits = 0, size = sel->halign-1, i = size;
 	int *cur = (int*) BUNhloc(sel,BUNfirst(sel));
 
 	@:check_bitsel(bit32stats,sel,sel,size)@
 
-	while(TRUE) {
-		int mask = 1, val = *(cur++);
+	for (;;) {
+		int mask = 1, val = *cur++;
 		do {
 			if (val&mask) hits++;
 			if (--i == 0) {
-				*ret = BATnew(TYPE_str, TYPE_int, 4);
-				BUNins(*ret, "seqbase", &sel->hseqbase);
-				BUNins(*ret, "size", &size);
-				BUNins(*ret, "yes", &hits); size -= hits;
-				BUNins(*ret, "no", &size);
+				lng v;
+				*ret = BATnew(TYPE_str, TYPE_lng, 4);
+				v = (lng) sel->hseqbase; BUNins(*ret, "seqbase", &v);
+				v = (lng) size; BUNins(*ret, "size", &v);
+				v = (lng) hits; BUNins(*ret, "yes", &v); size -= hits;
+				v = (lng) size; BUNins(*ret, "no", &v);
 				return GDK_SUCCEED;
 			}
 		} while (mask <<= 1);
 	}
-	return GDK_FAIL;
 }
 
 
@@ -883,11 +881,11 @@ int enum_view( BAT** res, BAT* b){
 
 @= createview
 {	BUN p, q;
-	int xx, cnt = BATcount(histo);
+	size_t xx, cnt = BATcount(histo);
 	oid curoid = b->hseqbase;
 	BAT* map = BATnew(TYPE_oid, TYPE_int, cnt);
 	histo_t *dst = (histo_t*) BUNfirst(map);
-	int off = BUNindex(histo, BUNfirst(histo));
+	size_t off = BUNindex(histo, BUNfirst(histo));
 
 	map->batBuns->free += cnt * sizeof(histo_t);
 	map->hsorted = map->tsorted = FALSE;
@@ -911,7 +909,8 @@ int enum_view( BAT** res, BAT* b){
  */
 
 int enum_group( BAT** res, BAT* ct, BAT* b){
-	int card_b, card_c, log_c, log_b, pow_c, pow_b;
+	size_t card_b, card_c, pow_c, pow_b;
+	int log_c, log_b;
 	BAT *histo_b, *histo_ct;
 	int ctpe = ct->ttype, btpe = b->ttype;
 
@@ -936,7 +935,7 @@ int enum_group( BAT** res, BAT* ct, BAT* b){
 	/* we shift on the maptable that is closest to a power of 2 */
 	if (pow_b*card_c < pow_c*card_b) {
 		BAT *swap_bat = ct; 
-		int swap_card = card_c; 
+		size_t swap_card = card_c; 
 		ct = b; b = swap_bat;
 		card_c = card_b; card_b = swap_card;
 		pow_c = pow_b; log_c = log_b;
@@ -1040,7 +1039,8 @@ nils are not handled properly $=>$ they are treated as normal values
 @= enum_fetch
 int @1( BAT** res, BAT* b1, BAT* b2){
 	BAT *map, *bn = BATnew(TYPE_oid, b1->ttype, BATcount(b2));
-	unsigned int off1, off2;
+	ssize_t off1;
+	size_t off2;
 	int xx = b2->htype;
 	BUN p, q;
 
@@ -1052,7 +1052,7 @@ int @1( BAT** res, BAT* b1, BAT* b2){
 		GDKerror("@1: head of second BAT should be enumerated oid.\n");
 		return GDK_FAIL;
 	}
-	off1 = BUNindex(b1, BUNfirst(b1)) - b1->hseqbase;
+	off1 = (ssize_t) (BUNindex(b1, BUNfirst(b1)) - b1->hseqbase);
 	off2 = BUNindex(map, BUNfirst(map));
 	if (ATOMsize(b2->htype) == 1) {
 		@:@1(char)@
@@ -1437,7 +1437,7 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 
 	/* optimized versions are only tried if there is no head column to care
            about and the start of the values in the BAT is integer-aligned */
-	if (BUNsize(b) == ATOMsize(b->ttype) && (((size_t) p)&3) == 0) 
+	if (BUNsize(b) == ATOMsize(b->ttype) && (((size_t) p)&3) == 0) {
 	if (ATOMstorage(b->ttype) == TYPE_chr) {
 		int *src = (int*) p;
 		/* treat 32 tuples = 32 (=2^5) bytes per iteration */
@@ -1530,7 +1530,7 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 			@3 { *dst@4++ = vector@4; vector@4 = 0; } 
 		}
 		p = (BUN) end;
-	}
+	}}
 
 	/* process any tuples left with a slower (generic) implementation */
 	@3 {
@@ -1831,7 +1831,7 @@ if ((GDKdebug&786432)==262144) {
 @= checkdstFALSE
 @= checkdstTRUE
 	if (dst@1 >= last@1) {
-		int off = ((char*) dst@1) - BUNfirst(bn@1);
+		ssize_t off = ((char*) dst@1) - BUNfirst(bn@1);
 		bn@1->batBuns->free = bn@1->batBuns->size;
 		BATextend(bn@1, BATgrows(bn@1)); 
 		dst@1 = (oid*) (BUNfirst(bn@1) + off);
@@ -1938,7 +1938,7 @@ int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 
 	@:INIT@1(unsigned @3)@
 	while(cur < end) {
-		int idx = *cur - base;
+		size_t idx = *cur - base;
 		if (@:TST@1(src[idx])@) {
 			@:checkdst@2@
 			*(dst++) = *cur; 
@@ -2010,7 +2010,7 @@ int bits_subhisto( BAT** res, BAT* b, ...){
 	/* initialization */
 	(*local_enum_table)(&map, &xx);
 	@2 {
-		xx = BATcount(map);
+		size_t xx = BATcount(map);
 		cnt@3 = (int*) GDKmalloc(xx<<2);
 		for(yy=cnt@3; xx--; yy++) *yy = 0;
 	}
@@ -2025,10 +2025,10 @@ int bits_subhisto( BAT** res, BAT* b, ...){
 	}
 }
 @= bit_subhisto
-        unsigned int n = BATcount(b);
+        size_t n = BATcount(b);
         unsigned @1 *src = (unsigned @1*) BUNfirst(b);
         unsigned @1 *end = src + ((n >> 5) << 5);
-        unsigned int mask = 1;
+        size_t mask = 1;
  
         while(src < end) {
                 while(mask) {

@@ -24,15 +24,11 @@
  */
 
 #include	<stdio.h>
+#include	<stdlib.h>
 #include	"Mx.h"
 #include	"MxFcnDef.h"
 
-extern	Tok *	FstTok();
-extern	Tok *	NxtTok();
-extern	Tok *	SkipTok(Tok*,char);
-extern	Def *	GetDef();
-
-void	GenCode()
+void	GenCode(void)
 {
     Def *	d;
     char *	fname;
@@ -134,9 +130,7 @@ again:  switch( d->d_dir ){
     }
 }
 
-char* 	Strndup(src,n)
-const char*	src;
-size_t	n;
+char* 	Strndup(const char *src, size_t n)
 {
 	char *dst = (char*)Malloc(n+1);
 	strncpy(dst,src,n);
@@ -144,8 +138,7 @@ size_t	n;
 	return dst;
 }
 
-Tok* 	solveCond(t)
-Tok*	t;
+Tok* 	solveCond(Tok *t)
 {
 	char* arg[2];
 	int inside=0;
@@ -190,8 +183,7 @@ Tok*	t;
 
 int _level = 0;
 
-void	CodeBlk(blk)
-char *	blk;
+void	CodeBlk(char *blk)
 {
 Tok *	t;
 char *	c;
@@ -242,8 +234,7 @@ _level++;
 _level--;
 }
 
-void	CodeSub(call)
-char *	call;
+void	CodeSub(char *call)
 {
 Def *	def;
 char *	blk;
@@ -269,9 +260,7 @@ char **	argv= MkArgv(call);
 /* #define blk_size 1024 */
 static	char	blk[blk_size];
 
-char *	CodeSubBlk(sub, argv)
-char *	sub;
-char **	argv;
+char *	CodeSubBlk(char *sub, char **argv)
 {
 char *	s;
 char *	b;
@@ -304,8 +293,7 @@ return 0;
 
 }
 
-void	UnRef(ref)
-char *	ref;
+void	UnRef(char *ref)
 {
 	Error("Unresolved reference:%s", ref);
 	if( mode & M_CODE && textmode==M_TEX )
@@ -315,7 +303,7 @@ char *	ref;
 	/* should text for actual source format */
 }
 
-void	CodeLine()
+void	CodeLine(void)
 {
     char *s;
     if (!noline){

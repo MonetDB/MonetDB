@@ -286,7 +286,7 @@ if (lt->cnt != @1) {
 		return _k;
 	}
 	@3 = VALconvert(@2, res, 0);
-	if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+	if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
 		return handle_paramerror(res,@1,res->vtype,@2);
 	} 
 }
@@ -444,7 +444,7 @@ int CMDassign(int stk, YYSTREE lt, ValPtr res){
 		yyfree(tt);
 	}
 	res->vtype = TYPE_void;
-	res->val.ival = oid_nil;
+	res->val.oval = oid_nil;
 	return i;
 }
 
@@ -528,7 +528,7 @@ int CMDclientid(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
 	CNTXTclient(stk, &c);
 	res->vtype = TYPE_int;
-	res->val.ival = c-monet_clients;
+	res->val.ival = (int) (c-monet_clients);
 	return 0;
 }
 
@@ -559,7 +559,7 @@ to different clients.  Schedule the background request.
         res->vtype = TYPE_int;
         res->val.ival = c->stk;
         c->tree = lt->yysons[0];
-        QMwakeup(QMenqueue(c->stk,lt->yysons[0],0,c-monet_clients));
+        QMwakeup(QMenqueue(c->stk,lt->yysons[0],0,(int)(c-monet_clients)));
         lt->yysons[0] = NULL;
  
         return 1;

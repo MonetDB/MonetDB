@@ -646,7 +646,7 @@ extern int ACC_vectoridx;
 typedef struct {
 	bat extent;
 	char extent_name[IDLENGTH];
-	int extent_align;
+	oid extent_align;
 	int vectorsize;
 	int vector[1]; /* TRICKY really dynamic: vector[vectorsize] */
 } vectoridx;
@@ -739,7 +739,7 @@ DVIdestroy(
 void
 DVIinsert(
    Heap*	hp,	/* INOUT: vectoridx accelerator heap. */
-   int		idx,	/* IN: BUNindex() of value. */
+   size_t	idx,	/* IN: BUNindex() of value. */
    BAT*		b,	/* IN: BAT with accelerated head column. */
    oid*     	o	/* IN: atomic value that was inserted. */
 ){
@@ -750,7 +750,7 @@ DVIinsert(
 void
 DVIdelete(
    Heap*	hp,	/* INOUT: vectoridx accelerator heap. */
-   int		idx,	/* IN: BUNindex() of value. */
+   size_t	idx,	/* IN: BUNindex() of value. */
    BAT*		b,	/* IN: BAT with accelerated head column. */
    oid*     	o	/* IN: atomic value that was deleted. */
 ){
@@ -805,7 +805,7 @@ Create a new BAT, which will contain the data vector.
 @-
 Important! Check whether Santa Claus left the vector under the chimney.
 @c
-	if (v->vector = BBPindex(v->vector_name)) {
+	if ((v->vector = BBPindex(v->vector_name)) != 0) {
 	    bn = BATdescriptor(v->vector);
 	    if (!ALIGNsynced(bn, extent)) {
 		GDKwarning("DVbuild: aligning %s and %s..\n", 
@@ -892,7 +892,7 @@ DVdestroy(
 void
 DVinsert(
    Heap*	hp,	/* INOUT: vector accelerator heap. */
-   int		idx,	/* IN: BUNindex() of value. */
+   size_t	idx,	/* IN: BUNindex() of value. */
    BAT*		b,	/* IN: BAT with accelerated head column. */
    ptr      	p	/* IN: atomic value that was inserted. */
 ){
@@ -903,7 +903,7 @@ DVinsert(
 void
 DVdelete(
    Heap*	hp,	/* INOUT: vector accelerator heap. */
-   int		idx,	/* IN: BUNindex() of value. */
+   size_t	idx,	/* IN: BUNindex() of value. */
    BAT*		b,	/* IN: BAT with accelerated head column. */
    ptr      	p	/* IN: atomic value that was deleted. */
 ){
@@ -1067,6 +1067,7 @@ The only difference with semijoin is that the result consists of
 	}
    }
 @c
+int
 DVjoin(
    BAT**     	retval,	/* put pointer to BAT[oid,any] record here. */
    BAT*     	e,	/* pointer to BAT[oid,any] record.*/

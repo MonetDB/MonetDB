@@ -70,40 +70,41 @@ Both operations check for indexing on the header.
 This is a highly efficient implementation of simple bucket-chained hashing.
 
 In the past, we used integer modulo for hashing, with bucket chains of mean size 4.
-This was show to be inferior to direct hashing with integer anding. The new implementation
+This was shown to be inferior to direct hashing with integer anding. The new implementation
 reflects this.
 @h
-gdk_export int	        BAThash      (BAT *b, int *collision);
-gdk_export Heap*		HASHnew      (Hash *h, int tpe, unsigned int size, unsigned int mask);
-gdk_export unsigned int	HASHmask     (int cnt);
+gdk_export size_t       BAThash      (BAT *b, int *collision);
+gdk_export Heap*	HASHnew      (Hash *h, int tpe, size_t size, hash_t mask);
+gdk_export hash_t	HASHmask     (size_t cnt);
 gdk_export BAT*	        HASHprint    (BAT *b);
 gdk_export void	        HASHremove   (BAT *b);
 gdk_export void		HASHdestroy  (BAT *b);
-gdk_export unsigned int	HASHprobe    (Hash *h, ptr v); 
-gdk_export int 		HASHlist     (Hash* h, int i) ;
+gdk_export hash_t	HASHprobe    (Hash *h, ptr v); 
+gdk_export hash_t	HASHlist     (Hash* h, size_t i) ;
 
 #define mix_sht(X)            (((X)>>7)^(X))
 #define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))
 #define hash_loc(H,V)         hash_any(H,V)
 #define hash_var(H,V)         hash_any(H,V)
 #define hash_any(H,V)         (ATOMhash((H).type, (V)) & (H).mask) 
-#define hash_chr(H,V)         ((int) (*(unsigned char*) (V)) & (H).mask)
-#define hash_sht(H,V)         ((int) mix_sht(((unsigned short*) (V))[0]) & (H).mask)
-#define hash_int(H,V)         ((int) mix_int(((unsigned int*) (V))[0]) & (H).mask)
-#define hash_lng(H,V)         ((int) mix_int(((unsigned int*) (V))[0] ^ ((unsigned int*) (V))[1]) & (H).mask)
+#define hash_chr(H,V)         ((hash_t) (*(unsigned char*) (V)) & (H).mask)
+#define hash_sht(H,V)         ((hash_t) mix_sht(((unsigned short*) (V))[0]) & (H).mask)
+#define hash_int(H,V)         ((hash_t) mix_int(((unsigned int*) (V))[0]) & (H).mask)
+/* XXX return size_t-sized value for 8-byte oid? */
+#define hash_lng(H,V)         ((hash_t) mix_int(((unsigned int*) (V))[0] ^ ((unsigned int*) (V))[1]) & (H).mask)
 
 
 @= hashfnd
-#define HASHfnd_@1(x,y,z)	{ unsigned int _i; BUN _v; x=NULL;\
+#define HASHfnd_@1(x,y,z)	{ size_t _i; BUN _v; x=NULL;\
         if ((y)->hhash_heap || BAThash((y), NULL))\
         HASHloop_@1((y), (y)->hhash, _i, (z), _v) { (x) = _v; break; }\
 }
 @h
-#define HASHfnd_str(x,y,z)	{ int _i; x=NULL;\
+#define HASHfnd_str(x,y,z)	{ size_t _i; x=NULL;\
         if ((y)->hhash_heap || BAThash((y), 0))\
         HASHloop_str((y), (y)->hhash, _i, (z)) { (x) = BUNptr((y),_i); break; }\
 }
-#define HASHfnd(x,y,z)	{ int _i; x=NULL;\
+#define HASHfnd(x,y,z)	{ size_t _i; x=NULL;\
         if ((y)->hhash_heap || BAThash((y), 0))\
         HASHloop((y), (y)->hhash, _i, (z)) { (x) = BUNptr((y),_i); break; }\
 }
@@ -132,12 +133,12 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 
 @= hashins
 #define HASHins_@1(h, i, v) {\
-	unsigned int _c = hash_@1(h,v);\
+	hash_t _c = hash_@1(h,v);\
 	h.link[i] = h.hash[_c];\
 	h.hash[_c] = i; }
 @h
 #define HASHins(h,i,v) {\
-	unsigned int _c = HASHprobe(&h, v);\
+	hash_t _c = HASHprobe(&h, v);\
 	h.link[i] = h.hash[_c];\
 	h.hash[_c] = i; }
 
@@ -168,7 +169,7 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
         if (next && h.link[i+1] == i) {\
                 h.link[i+1] = h.link[i];\
         } else {\
-		unsigned int _c = HASHprobe(&h, v);\
+		size_t _c = HASHprobe(&h, v);\
 		if (h.hash[_c] == i) {\
 			h.hash[_c] = h.link[i]; \
 		} else\
@@ -185,7 +186,7 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
         if (next && h.link[i+1] == i) {\
                 h.link[i+1] = j;\
         } else {\
-		unsigned int _c = HASHprobe(&h, v); \
+		size_t _c = HASHprobe(&h, v); \
 		if (h.hash[_c] == i) {\
 			h.hash[_c] = j; \
 		} else\
@@ -219,30 +220,28 @@ the list on 25% should not exceed length 1. So, if a small number of collisssion
 occurs (mask/2) then we abandon the attemp and restart with a mask that is 4 times 
 larger. This converges after three cycles to direct hashing.
 @c
-#include "gdk_search.h"
-#include "gdk_bat.h"
-#include "gdk_atoms.h"
+#include "gdk.h"
 
-unsigned int HASHmask(int cnt) {
-	int m = 8; /* minumum size */
+hash_t HASHmask(size_t cnt) {
+	size_t m = 8; /* minumum size */
 	while(m+m < cnt) m += m;
 	if (m+m - cnt < cnt - m) m += m;
   	return m;
 }
 
 void HASHclear(Hash *h) {
-	unsigned int *i, *j;
+	hash_t *i, *j;
 	for (i = h->hash, j = i + h->mask; i <= j; i++) {
 		*i = 0;
 	}
 }
 
-Heap* HASHnew(Hash *h, int tpe, unsigned int size, unsigned int mask) { 
+Heap* HASHnew(Hash *h, int tpe, size_t size, hash_t mask) { 
 	Heap *hp = (Heap*) GDKmalloc(sizeof(Heap));
-	HEAPalloc(hp, mask+ size + 1, sizeof(int)); /* +1 is for the hole */
+	HEAPalloc(hp, mask+ size + 1, sizeof(size_t)); /* +1 is for the hole */
         h->lim = size;
 	h->mask = mask - 1;
-        h->link = (unsigned int*) hp->base;
+        h->link = (hash_t*) hp->base;
         h->hash = h->link + h->lim;
         h->type = tpe;
 	HASHclear(h); /* zero the mask */
@@ -252,29 +251,31 @@ Heap* HASHnew(Hash *h, int tpe, unsigned int size, unsigned int mask) {
 @= starthash
 	for(xx=BUNsize(b); r < p; r += xx) { 
 		ptr v = BUN@2(b, r); 
-		unsigned int c = hash_@1((*h), v);
+		size_t c = hash_@1((*h), v);
 		if (h->hash[c] == 0 && nslots-- == 0) {
 			break; /* mask too full */
 		}
 		h->link[i] = h->hash[c];
-		h->hash[c] = i++; 
+		h->hash[c] = (hash_t) i++;
 	} break; 
 @= finishhash
 	for(xx=BUNsize(b); p < q; p += xx) { 
 		ptr v = BUN@2(b, p); 
-		unsigned int c = hash_@1((*h), v);
+		size_t c = hash_@1((*h), v);
 		h->link[i] = h->hash[c]; 
-		h->hash[c] = i++; 
+		h->hash[c] = (hash_t) i++;
 	} break; 
 @- 
 The prime routine for the BAT layer is to create a new hash index.
 Its argument is the element type and the maximum number of BUNs
 be stored under the hash function. 
 @c
-int BAThash(BAT *b, int *collision) {
+size_t BAThash(BAT *b, int *collision) {
     MT_set_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
     if (b->hhash_heap == NULL) {
-	unsigned int xx, i, mask, cnt = BATcount(b), tpe = ATOMstorage(b->htype);
+	unsigned int xx, tpe = ATOMstorage(b->htype);
+	size_t i, cnt = BATcount(b);
+	hash_t mask;
 	BUN p = BUNfirst(b), q = BUNlast(b), r;
 	Hash* h = &b->hhash;
 	Heap *hp = NULL;
@@ -293,14 +294,14 @@ int BAThash(BAT *b, int *collision) {
 	} else if (b->hkey) {
 		mask = HASHmask(cnt); /* p = first; so no dynamic scheme */
 	} else {
-		/* dynamic hash: we start with HASHmask(cnt/64); if there are too much collisions 
+		/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions 
 		 * we try HASHmask(cnt/16), then HASHmask(cnt/4), and finally HASHmask(cnt).  */ 
 		mask = HASHmask(cnt >> 6);
 		p += (cnt>>2) * BUNsize(b); /* try out on first 25% of b */
 		if (p>q) p = q;
 	}
 	do {
-		int nslots = mask >> 1; /* 1/2 full is too full */
+		size_t nslots = mask >> 1; /* 1/2 full is too full */
 		r = BUNfirst(b);
 		i = BUNindex(b, r); 
 		if (hp) {
@@ -308,7 +309,7 @@ int BAThash(BAT *b, int *collision) {
 			GDKfree(hp);
 		}
 		/* create the hash structures */
-		hp = HASHnew(h, ATOMtype(b->htype), BATcapacity(b), mask);
+		hp = HASHnew(h, ATOMtype(b->htype), BATcapacity(b), (size_t)mask);
 
 		switch(tpe) {
 		case TYPE_chr: @:starthash(chr,hloc)@
@@ -342,7 +343,7 @@ int BAThash(BAT *b, int *collision) {
 The entry on which a value hashes can be calculated with the 
 routine @%HASHprobe@. 
 @c
-unsigned int HASHprobe(Hash *h, ptr v) {
+hash_t HASHprobe(Hash *h, ptr v) {
 	switch(ATOMstorage(h->type)) {
 	case TYPE_chr: return hash_chr(*h,v);
 	case TYPE_sht: return hash_sht(*h,v);
@@ -355,12 +356,16 @@ unsigned int HASHprobe(Hash *h, ptr v) {
 }
 
 BAT *HASHprint(BAT *b) {
+#if SIZEOF_OID == SIZEOF_INT
 	BAT *bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+#else
+	BAT *bn = BATnew(BAThtype(b), TYPE_lng, BATcount(b));
+#endif
 	BUN p,q;
 
 	if (!(b && b->hhash_heap)) return 0;
 	BATloop(b,p,q) {
-		unsigned int i = HASHprobe(&b->hhash, BUNhead(b,p));
+		size_t i = HASHprobe(&b->hhash, BUNhead(b,p));
 		BUNfastins(bn, BUNhead(b,p), &i); 
 	}
 	bn->hsorted = BAThordered(b);
@@ -368,14 +373,14 @@ BAT *HASHprint(BAT *b) {
 	return bn;
 }
 
-int HASHlist(Hash* h, int i) {
-        int     j;
-        int     c = 1;
+hash_t HASHlist(Hash* h, size_t i) {
+        hash_t j;
+        hash_t c = 1;
 
         while ((j = h->link[i]) > 0) {
                 c++;
                 i = j;
-                if ((i < -1) || (i > (int) h->lim)) {
+                if (i > h->lim) {
                         stream_printf(GDKout, "hash inconsistency link %d\n",i);
                         break;
                 }
@@ -494,7 +499,7 @@ can speed-up processing significantly.
 	b->hidx.free++; 
 	f->v = @4;
 
-	while (1) {
+	for (;;) {
 		if (t == NULL) {	
        			b->hidx.root = f; 
 			break;
@@ -552,11 +557,11 @@ int BATidx(BAT *b, BAT *h) {
     }
     MT_set_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
     if (b->hidx_heap == NULL) {
-	    int cnt = BATcount(b);
+	    size_t cnt = BATcount(b);
 	    BAT *unique = h;
-	    unsigned int r = 0;
+	    size_t r = 0;
 	    BUN p, q, *lnk; 
-	    int i, j;
+	    size_t i, j;
 	    Index idx = &b->hidx;
 	    Heap tmp, *hp = (Heap*) GDKmalloc(sizeof(Heap));
 
@@ -613,7 +618,7 @@ Use randomized order for insert elements to get a nicely balanced tree
 construction in one pass from a sorted histogram 
 @c
 	    } else {
-		int off, cur = 0;
+		size_t off, cur = 0;
 		BUN **base, **map;
 		BAT *histo;
 
@@ -826,7 +831,7 @@ BUN *IDXfnd@1(BAT *b, ptr v){
 
 void IDXrng(BAT	*b, ptr	v, ptr w, BUN **p, BUN **q){
 	int (*cmp)(ptr,ptr) = BATatoms[b->htype].atomCmp;
-	int res = (cmp)(v, w);
+	int res = (*cmp)(v, w);
 	if (res > 0) {
 		ptr _swap = v; v = w; w = _swap;
 	}
@@ -909,11 +914,11 @@ performance on odmg data and its high mult/div overhead.
 @= SORTfnd
 BUN SORTfndfirst_@2(BAT *b, ptr v) {
 	BUN end = BUNfirst(b), cur = end;
-	int lo = BUNindex(b,end), hi = BUNindex(b,BUNlast(b));
+	size_t lo = BUNindex(b,end), hi = BUNindex(b,BUNlast(b));
 	int cmp = 1, bunsize = BUNsize(b);
 
 	while (lo < hi) {
-	    int mid = (lo+hi)>>1;
+	    size_t mid = (lo+hi)>>1;
 	    cur = BUNptr(b, mid);
 	    cmp = @3_CMP(BUNt@1(b,cur),v,@4);
 	    if (cmp < 0) {
@@ -934,11 +939,11 @@ BUN SORTfndfirst_@2(BAT *b, ptr v) {
 
 BUN SORTfndlast_@2(BAT *b, ptr v) {
 	BUN end = BUNlast(b), cur = end;
-	int lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,end);
+	size_t lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,end);
 	int cmp = 1, bunsize = BUNsize(b);
 
 	while (lo < hi) {
-	    int mid = (lo+hi)>>1;
+	    size_t mid = (lo+hi)>>1;
 	    cur = BUNptr(b, mid);
 	    cmp = @3_CMP(BUNt@1(b,cur),v,@4);
 	    if (cmp < 0) {
@@ -961,12 +966,12 @@ BUN SORTfndlast_@2(BAT *b, ptr v) {
 
 BUN SORTfnd_@2(BAT *m, ptr v) {
 	BAT *b = BATmirror(m);
-	int lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,BUNlast(b));
+	size_t lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,BUNlast(b));
 	int cmp = 1, bunsize = BUNsize(b);
 	BUN cur = NULL;
 
 	while (lo < hi) {
-	    int mid = (lo+hi)>>1;
+	    size_t mid = (lo+hi)>>1;
 	    cur = BUNptr(b, mid);
 	    cmp = @3_CMP(BUNt@1(b,cur),v,@4);
 	    if (cmp < 0) {
@@ -1224,11 +1229,11 @@ void ACCproperty(str name, str prop, ptr fcn) {
 	} else if (strcmp(prop, "destroy") == 0) {
 		BATaccelerators[i].accDestroy = (void (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "insert") == 0) {
-		BATaccelerators[i].accInsert = (void (*)(Heap*, int pos, BAT*, ptr val)) fcn;
+		BATaccelerators[i].accInsert = (void (*)(Heap*, size_t, BAT*, ptr)) fcn;
 	} else if (strcmp(prop, "delete") == 0) {
-		BATaccelerators[i].accDelete = (void (*)(Heap*, int pos, BAT*, ptr val)) fcn;
+		BATaccelerators[i].accDelete = (void (*)(Heap*, size_t, BAT*, ptr)) fcn;
 	} else if (strcmp(prop, "move") == 0) {
-		BATaccelerators[i].accMove = (void (*)(Heap*, int from, int to, BAT*, ptr val)) fcn;
+		BATaccelerators[i].accMove = (void (*)(Heap*, size_t, size_t, BAT*, ptr)) fcn;
 	} else if (strcmp(prop, "save") == 0) {
 		BATaccelerators[i].accSave = (void (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "commit") == 0) {

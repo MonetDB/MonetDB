@@ -23,10 +23,12 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stddef.h>
 
 
 char *PrintChar(char*);
@@ -153,10 +155,9 @@ char   refbuf[10000] = {0},*refend=refbuf;
 
 /* table for html special characters */
 typedef int larr[6];
-larr	ltab[256] = { 0 };
+larr	ltab[256];
 
-void initltab(lt, p1, p2, p3, p4, p5, p6)
-int lt, p1, p2, p3, p4, p5, p6;
+void initltab(int lt, int p1, int p2, int p3, int p4, int p5, int p6)
 {
 	if (p1) { ltab[lt][0]=p1; ltab[lt-'A'+'a'][0] = p1+32; }
 	if (p2) { ltab[lt][1]=p2; ltab[lt-'A'+'a'][1] = p2+32; }
@@ -168,21 +169,20 @@ int lt, p1, p2, p3, p4, p5, p6;
 
 /* insert an occurance of a reference into the table 
  */
-int bib_insert(str)
-char *str;
+int bib_insert(char *str)
 {
 	int i;
 	for(i=0; i<nrefs; i++) 
 		if (!strcmp(str,ref_names[i])) return i+1;
 	ref_names[nrefs] = refend;
-	while(*refend++ = *str++);
+	while ((*refend++ = *str++) != 0)
+		;
 	return ++nrefs;
 }
 
 /* find an entry named 'str' in a bibtex record at 'buf' 
  */
-char *bib_entry(str,buf)
-char *str, *buf;
+char *bib_entry(char *str, char *buf)
 {
 	static char entry[1000];
 	char *e=entry, *p = (char*) strstr(buf,str);
@@ -212,20 +212,20 @@ char *str, *buf;
 
 /* look for a bibtex record named 'str' in 'buf'. Finds 'hit' place and type 
  */
-int bib_look(str,buf,hit)
-char *str,*buf;
-char **hit;
+int bib_look(char *str, char *buf, char **hit)
 {
-	int len = strlen(str), blen=0;
+	size_t len = strlen(str);
+	ptrdiff_t blen=0;
 	char *p1 = buf, *p2;
 
-	while ((p1 = (char*) strstr(p1+len,str)) && 
+	while ((p1 = strstr(p1+len,str)) && 
 	         !(isalnum(p1[-1]) || (p1[len]==',') || isspace(p1[len])));
 	if (!p1) return 0;
 	while(*++p1 && *p1 != '\n');
 	*hit = p1; 
-	if (p2= (char*) strstr(p1,"\n}")) blen=p2-p1;
-	return blen;
+	if ((p2 = strstr(p1,"\n}")) != 0)
+		blen=p2-p1;
+	return (int) blen;
 }
 
 
@@ -233,12 +233,13 @@ char **hit;
 #define outputNArg(s) { sprintf(out,s); out+=strlen(out); }
 /* print a bibtex reference list (in TeX!). Later, it is converted to html. 
  */
-void bib_print()
+void bib_print(void)
 {
 	char inbuf[100000], oubuf[100000], *out=oubuf; 
 	char *p, *www,*hit;
 	FILE *fp;
-	int nchars,i,l;
+	size_t nchars;
+	int i,l;
 
 	if ((fp=fopen(bibtexfile, "r")) == 0) {
             FILE *fileptr=ofile;
@@ -257,28 +258,28 @@ void bib_print()
 			continue;
 		hit[l]=0; /* temporarily close inbuf at hit end */
 		output("\\item[[%d]]\n", i+1);
-                if (www=bib_entry("www", hit))
+                if ((www=bib_entry("www", hit)) != 0)
                         output("\\www[%s]{", www);
-		if (p=bib_entry("author", hit)) 
+		if ((p=bib_entry("author", hit)) != 0) 
 			output("%s: ", p);
-		if (p=bib_entry("title", hit)) 
+		if ((p=bib_entry("title", hit)) != 0) 
 			output("{\\bf %s}", p);
 		outputNArg(". ");
-		if (p=bib_entry("booktitle", hit)) {
+		if ((p=bib_entry("booktitle", hit)) != 0) {
 		    output("In {\\em %s}", p);
-		} else if (p=bib_entry("journal", hit)) {
+		} else if ((p=bib_entry("journal", hit)) != 0) {
 		    output("{\\em %s} ", p);
-		    if (p=bib_entry("volume", hit)) 
+		    if ((p=bib_entry("volume", hit)) != 0) 
 			output(", %s", p);
-		    if (p=bib_entry("number", hit))
+		    if ((p=bib_entry("number", hit)) != 0)
 			output("(%s)", p);
 		}
-		if (p=bib_entry(", pages",hit))
+		if ((p=bib_entry(", pages",hit)) != 0)
 			output(", pages %s", p);
   		if ((p=bib_entry("publisher", hit)) ||
                     (p=bib_entry("institution", hit))) 
 			output(". %s", p);
-		if (p=bib_entry("month", hit)) {
+		if ((p=bib_entry("month", hit)) != 0) {
 			if (!strcmp(p,"jan")) outputNArg(", Januari")
 			else if (!strcmp(p,"feb")) outputNArg(", Februari")
 			else if (!strcmp(p,"mar")) outputNArg(", March")
@@ -291,7 +292,7 @@ void bib_print()
 			else if (!strcmp(p,"nov")) outputNArg(", November")
 			else if (!strcmp(p,"dec")) outputNArg(", December")
 			else outputNArg(",");
-			if (p=bib_entry("year", hit))
+			if ((p=bib_entry("year", hit)) != 0)
 				output(" %s", p);
 		}
 		outputNArg(".");
@@ -303,8 +304,7 @@ void bib_print()
 }
 
 
-char *PrintChar(s)
-char *s;
+char *PrintChar(char *s)
 {
 	if (*s == '@') {
 	    int index = 0;
@@ -325,8 +325,7 @@ char *s;
 	return s;
 }
 
-int new_token(str) 
-char *str;
+int new_token(char *str) 
 {
 	int i = nblocks++;
 	tb[i].nchildren = 0;
@@ -336,8 +335,7 @@ char *str;
 
 /* parse the format specification of an array of tabular environment
  */
-char *table_format(s)
-char **s;
+char *table_format(char **s)
 {
 	char *format=0, *p1;
 	for(p1 = *s; p1 < latexend && *p1; p1++) {
@@ -363,8 +361,7 @@ char **s;
 
 /* skip the [XXX] option after a LaTeX command. set 'ptr' to end. return XXX. 
  */ 
-char *skip_opt(ptr) 
-char **ptr;
+char *skip_opt(char **ptr) 
 {
 	char *t,*s = *ptr, blk;
 	if (*s != '[') return *ptr;
@@ -385,10 +382,7 @@ char **ptr;
  * (then: readonly==1), and the '\begin{XXX}'-to-'\XXX' translation we
  * do here (though we shouldn't), *only* at block-start, not block-end. 
  */
-char *skip_param(s,blockstart,readonly)
-char *s;
-int blockstart;
-int *readonly;
+char *skip_param(char *s, int blockstart, int *readonly)
 {
 	char *t;
 	while (*s && isspace(*s)) 
@@ -420,15 +414,12 @@ int *readonly;
  * For simplicity, '\begin{XXX}' ..'\end{XXX}' blocks get converted
  * to '{\XXX ... }' blocks.
  */
-char *find_blocks(vb, p1, t)
-int  vb;
-char *p1;
-int t;
+char *find_blocks(int vb, char *p1, int t)
 {
     char c,*p2;
     int escaped = 0;
 
-    while(c=*p1) {
+    while ((c=*p1) != 0) {
 	int i = t;
 	if (c == '{') {
 	    if (escaped) {
@@ -472,17 +463,13 @@ int t;
     return p1;
 }
 
-#define STACK(s,buf)	{int l=strlen(s); *buf -= l; strncpy(*buf,s,l);}
+#define STACK(s,buf)	{size_t l=strlen(s); *buf -= l; strncpy(*buf,s,l);}
 
 /* parse a LaTex string (between 'p1' and 'p2') and echo the translation
  * into HTML on the fly. Closing codes of block-operands, that are to be
  * placed at block-end, are STACK-ed in 'buf', 2b flushed later.
  */
-int translate_text(p1,p2,stack,nextstack)
-char *p1;
-char *p2;
-char **stack;
-char *nextstack;
+int translate_text(char *p1, char *p2, char **stack, char *nextstack)
 {
     char c, str[256], *opt_start, *opt_end, *p;
     int i, k;
@@ -498,7 +485,7 @@ char *nextstack;
 		if (strstr(p1,"\\multicolumn")) {
 			sscanf(p2, "%d",&width);
 			for(p4=p2; *p4; p4++); /* skip width */ 
-			for(p4+=2; p1=table_format(&p4); p4++) p5 = p1;
+			for(p4+=2; (p1=table_format(&p4)) != 0; p4++) p5 = p1;
 			memset(p2,0,p4-p2); p1 = p2;
 			table_column += width-1;
 			printed_column += width-1; 
@@ -559,7 +546,8 @@ mathon:				math=1; ofile_puts("<i>");
 	case '~':  k++;
 	case '"':  /* handle TeX's escaped chars here */
 		   while((++p1 < latexend) && ((!*p1) || (*p1 == '\\')));
-		   if (k = ltab[*p1][5-k]) ofile_printf( "&%d;", k); 
+		   if ((k = ltab[(int)*p1][5-k]) != 0)
+			   ofile_printf( "&%d;", k); 
 		   *p1 = 0; /* nullify */
 	default:   if (isprint(*p1)) break;
 		   /* ignore nonprintable chars */
@@ -649,7 +637,8 @@ mathon:				math=1; ofile_puts("<i>");
 		char *p3 = p2, *p4;
 		while(p3<latexend && !*p3) p3++;
 	        if (i >= TYPE_BIB) { /* get a label or bibname */
-			for(p4=str; *p4++ = *p3; *p3++ = 0);
+			for (p4=str; (*p4++ = *p3) != 0; *p3++ = 0)
+				;
 			if (i == TYPE_BIB) {
 				strcpy(p4-1, ".bib");
 				strcpy(bibtexfile,str);
@@ -666,7 +655,7 @@ mathon:				math=1; ofile_puts("<i>");
                                 p4=strchr(file+strlen(outputdir),'.');
                                 if (p4) *p4=0;
 				strcat(file, ".gif");
-				if (fp=fopen(file,"r")) {
+				if ((fp=fopen(file,"r")) != 0) {
 				    fclose(fp);
 				} else { 
 				    /* translate eps to 500x500-bounded gif */
@@ -679,7 +668,7 @@ mathon:				math=1; ofile_puts("<i>");
 			if (i == TYPE_DRAWPSFIG) {
 			      while(p3<latexend && !*p3) p3++;
 			      if (p3 >= latexend) continue;
-			      for(p4=str; *p4++ = *p3; *p3++ = 0);
+			      for(p4=str; (*p4++ = *p3) != 0; *p3++ = 0);
 			      ofile_printf( "<center><em>%s</em></center><p>\n",
 									str);
 		        }
@@ -703,7 +692,7 @@ mathon:				math=1; ofile_puts("<i>");
 		/* tables and arrays */
 		char *format;
 		while(*p1) p1++;
-		for(p1++; format = table_format(&p1); p1++)
+		for(p1++; (format = table_format(&p1)) != 0; p1++)
 			table_columns[table++] = format;
 		for(i=table; i<20; i++) 
 			table_columns[i] = table_empty;
@@ -758,9 +747,7 @@ mathon:				math=1; ofile_puts("<i>");
  * At the end of a block, the stack-buffer -- containing closing codes of 
  * opened blocks -- is flushed.
  */
-void subst_blocks(t,initstack)
-int t;
-char *initstack;
+void subst_blocks(int t, char *initstack)
 {
 	char *p1 = tb[t].str, *p2;
 	char nextstack[1000], stackbuf[1001], *stackptr=stackbuf+1000;
@@ -800,9 +787,7 @@ char *initstack;
  * LaTeX comment codes (lines starting with a '%') are filtered here.
  */
 void 
-latex2html(s,init,flush)
-char *s;
-int init,flush;
+latex2html(char *s, int init, int flush)
 {
 	if (!s) return;
 	if (init) {

@@ -23,9 +23,7 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +41,7 @@ extern int      optind, opterr, optopt;
 #ifndef HAVE_GETOPT
 # include "getopt.c"
 #else
-# include "getopt.h"
+# include "mygetopt.h"
 #endif
 #endif
 
@@ -57,7 +55,8 @@ void printUsage(char *progname)
 FILE* stripFile(FILE *fp)
 {
     char line[16384];
-    int ret,i;
+    size_t ret;
+    int i;
 
     fseek(fp,0,0);
     while(!feof(fp))
@@ -89,7 +88,8 @@ FILE* openFile(char *name, char *mode)
 void processFile(void)
 {
     FILE*fp,*op;
-    int temp=0,ret;
+    int temp=0;
+    size_t ret;
     char letter,cmd[256];
     
     if (!outputfile)

@@ -91,7 +91,7 @@ gdk_export lng*		lngRead        (lng *a, stream* s, size_t cnt);
 gdk_export void		lngWrite       (lng *a, stream* s, size_t cnt);
 int		lngCmp         (lng* r, lng* l);
 void 		lngConvert     (lng* s);
-unsigned int 	lngHash        (lng *l);
+hash_t	 	lngHash        (lng *l);
 
 gdk_export int		intFromStr     (str  src, int* len, int** dst);
 gdk_export int		intToStr       (str* dst, int* len, int*  src);
@@ -99,7 +99,7 @@ gdk_export int*		intRead        (int *a, stream* s, size_t cnt);
 gdk_export void		intWrite       (int *a, stream* s, size_t cnt);
 int		intCmp         (int* r, int* l);
 void 		intConvert     (int* s);
-unsigned int 	intHash        (int *i);
+hash_t	 	intHash        (int *i);
 
 gdk_export int		batFromStr     (str  src, int* len, bat** dst);
 gdk_export int		batToStr       (str* dst, int* len, bat*  src);
@@ -127,14 +127,14 @@ gdk_export sht*		shtRead        (sht *a, stream* s, size_t cnt);
 gdk_export void		shtWrite       (sht *a, stream* s, size_t cnt);
 void 		shtConvert     (sht* s);
 int		shtCmp         (sht* r, sht* l);
-unsigned int	shtHash        (sht *s);
+hash_t		shtHash        (sht *s);
 
 gdk_export int		chrFromStr     (str  src, int* len, chr** dst);
 gdk_export int		chrToStr       (str* dst, int* len, chr*  src);
 gdk_export chr*		chrRead        (chr *a, stream* s, size_t cnt);
 gdk_export void		chrWrite       (chr *a, stream* s, size_t cnt);
 int		chrCmp         (chr* r, chr* l);
-unsigned int 	chrHash        (chr *c);
+hash_t	 	chrHash        (chr *c);
 
 gdk_export int		fltFromStr     (str  src, int* len, flt** dst);
 gdk_export int		fltToStr       (str* dst, int* len, flt*  src);
@@ -152,7 +152,7 @@ gdk_export int		strFromStr     (str  src, int* len, str*  dst);
 gdk_export int		strToStr       (str* dst, int* len, str   src);
 gdk_export str		strRead        (str a, stream* s, size_t cnt);
 gdk_export void		strWrite       (str a, stream* s, size_t cnt);
-gdk_export unsigned int strHash        (str s); 
+gdk_export hash_t	strHash        (str s); 
 gdk_export int		strPut         (Heap* b, int *off, str src);
 gdk_export void 	strHeap        (Heap* d, size_t cap);
 gdk_export int		strLen         (str s);
@@ -160,7 +160,7 @@ gdk_export int		strCmp         (str l, str r);
 gdk_export int		strNil         (str s);
 gdk_export void 	strHeapConvert (Heap *h, int directon);
 gdk_export int		strElimDoubles (Heap *h);
-gdk_export int 		strLocate      (Heap *h, str v);
+gdk_export size_t	strLocate      (Heap *h, str v);
 gdk_export int          strCmpNoNil    (unsigned char *l, unsigned char *r);
 
 #ifdef __cplusplus
@@ -182,10 +182,10 @@ int dblCmp(dbl* l, dbl* r) { return simple_CMP(l,r,dbl); }
 @- inline hash routines
 Return some positive integer derived from one atom value.
 @c
-unsigned int chrHash(chr *v) { return *(unsigned char*) v; }
-unsigned int shtHash(sht *v) { return mix_sht(*(unsigned short*) v); }
-unsigned int intHash(int *v) { return mix_int(*(unsigned int*) v); }
-unsigned int lngHash(lng *v) { return mix_int(((unsigned int*) v)[0]^((unsigned int*) v)[1]); }
+hash_t chrHash(chr *v) { return (hash_t) *(unsigned char*) v; }
+hash_t shtHash(sht *v) { return (hash_t) mix_sht(*(unsigned short*) v); }
+hash_t intHash(int *v) { return (hash_t) mix_int(*(unsigned int*) v); }
+hash_t lngHash(lng *v) { return (hash_t) mix_int(((unsigned int*) v)[0]^((unsigned int*) v)[1]); }
 
 @+ Standard Atoms
 @c
@@ -202,13 +202,13 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) voidRead, (void (*)(void *, stream *, size_t)) voidWrite,
  		(int (*)(ptr, ptr)) intCmp,
- 		(unsigned int (*)(ptr)) intHash, 	0,
+ 		(hash_t (*)(ptr)) intHash, 	0,
 #else
   		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 1, (ptr) &lng_nil, 
 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) voidRead, (void (*)(void *, stream *, size_t)) voidWrite,
  		(int (*)(ptr, ptr)) lngCmp,
- 		(unsigned int (*)(ptr)) lngHash, 	0,
+ 		(hash_t (*)(ptr)) lngHash, 	0,
 #endif
  		0,			0,
  		0,			0,
@@ -218,7 +218,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) bitFromStr,	(int (*)(str*, int*, ptr)) bitToStr,
 		(void *(*)(void *, stream *, size_t)) bitRead, (void (*)(void *, stream*, size_t)) bitWrite,
  		(int (*)(ptr, ptr)) chrCmp,
- 		(unsigned int (*)(ptr)) chrHash,	0,
+ 		(hash_t (*)(ptr)) chrHash,	0,
 		0, 		0,
 		0,			0,
  		0,			0,
@@ -227,7 +227,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) @`chrFromStr@5,	(int (*)(str*, int*, ptr)) @`chrToStr@5,
 		(void *(*)(void *, stream *, size_t)) chrRead, (void (*)(void *, stream*, size_t)) chrWrite,
 	 	(int (*)(ptr, ptr)) chrCmp,
- 		(unsigned int (*)(ptr)) chrHash,	0,		
+ 		(hash_t (*)(ptr)) chrHash,	0,		
 		0, 		0,
 		0,			0,
  		0,			0,
@@ -236,7 +236,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) @`shtFromStr@5,	(int (*)(str*, int*, ptr)) @`shtToStr@5,
 		(void *(*)(void *, stream *, size_t)) shtRead, (void (*)(void *, stream*, size_t)) shtWrite,
  		(int (*)(ptr, ptr)) shtCmp,		
- 		(unsigned int (*)(ptr)) shtHash, 	(void (*)(ptr, int)) shtConvert,
+ 		(hash_t (*)(ptr)) shtHash, 	(void (*)(ptr, int)) shtConvert,
 		0, 		0,
 		0,			0,
  		0,			0,
@@ -245,7 +245,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(int (*)(str, int*, ptr*)) batFromStr,	(int (*)(str*, int*, ptr)) batToStr,
 		(void *(*)(void *, stream *, size_t)) batRead, (void (*)(void *, stream*, size_t)) batWrite,
  		(int (*)(ptr, ptr)) intCmp, 		
- 		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
+ 		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
 		(int (*)(ptr)) batFix,		(int (*)(ptr)) batUnfix,
  		(void (*)(Heap*, int*, ptr)) BATpersistent,	(void (*)(Heap*, int*)) BATtransient,
  		0,			0,
@@ -254,7 +254,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) intFromStr,	(int (*)(str*, int*, ptr)) @`intToStr@5,
 		(void *(*)(void *, stream *, size_t)) intRead, (void (*)(void *, stream*, size_t)) intWrite,
 	 	(int (*)(ptr, ptr)) intCmp,		
- 		(unsigned int (*)(ptr)) intHash, 	(void (*)(ptr, int)) intConvert,
+ 		(hash_t (*)(ptr)) intHash, 	(void (*)(ptr, int)) intConvert,
 		0, 		0,
  		0, 		0,
  		0,			0,
@@ -265,13 +265,13 @@ atomDesc BATatoms[MAXATOMS] = {
  		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) intRead, (void (*)(void *, stream*, size_t)) intWrite,
  		(int (*)(ptr, ptr)) intCmp,		
- 		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
+ 		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
 #else
 	  	TYPE_lng, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &lng_nil, 
  		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) lngRead, (void (*)(void *, stream*, size_t)) lngWrite,
  		(int (*)(ptr, ptr)) lngCmp,		
- 		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,
+ 		(hash_t (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,
 #endif
 		0, 		0,
  		0,			0,
@@ -283,13 +283,13 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
 	 	(int (*)(ptr, ptr)) intCmp,		
-		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,	
+		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,	
 #else /* SIZEOF_VOID_P == SIZEOF_LONG */
   		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
 	 	(int (*)(ptr, ptr)) lngCmp,		
-		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,	
+		(hash_t (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,	
 #endif
 		0, 		0,
 		0, 		0,
@@ -299,7 +299,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) @`fltFromStr@5,	(int (*)(str*, int*, ptr)) @`fltToStr@5,
 		(void *(*)(void *, stream *, size_t)) fltRead, (void (*)(void *, stream*, size_t)) fltWrite,
 	 	(int (*)(ptr, ptr)) fltCmp,		
- 		(unsigned int (*)(ptr)) intHash, 	(void (*)(ptr, int)) intConvert,
+ 		(hash_t (*)(ptr)) intHash, 	(void (*)(ptr, int)) intConvert,
 		0,			0,
  		0,			0,
  		0,			0,
@@ -308,7 +308,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) @`dblFromStr@5,	(int (*)(str*, int*, ptr)) @`dblToStr@5,
 		(void *(*)(void *, stream *, size_t)) dblRead, (void (*)(void *, stream*, size_t)) dblWrite,
 		(int (*)(ptr, ptr)) dblCmp,		
- 		(unsigned int (*)(ptr)) lngHash, 	(void (*)(ptr, int)) lngConvert,
+ 		(hash_t (*)(ptr)) lngHash, 	(void (*)(ptr, int)) lngConvert,
 		0,			0,
  		0,			0,
  		0,			0,
@@ -317,7 +317,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) lngFromStr,	(int (*)(str*, int*, ptr)) lngToStr,
 		(void *(*)(void *, stream *, size_t)) lngRead, (void (*)(void *, stream*, size_t)) lngWrite,
  		(int (*)(ptr, ptr)) lngCmp,		
- 		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,
+ 		(hash_t (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,
 		0,			0,
  		0,			0,
  		0,			0,
@@ -326,7 +326,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(str, int*, ptr*)) strFromStr,	(int (*)(str*, int*, ptr)) strToStr,
 		(void *(*)(void *, stream *, size_t)) strRead, (void (*)(void *, stream*, size_t)) strWrite,
 		(int (*)(ptr, ptr)) strCmp,		
-	    	(unsigned int (*)(ptr)) strHash,	0,
+	    	(hash_t (*)(ptr)) strHash,	0,
 		0, 		0,
  		(void (*)(Heap*, int*, ptr)) strPut,		0,
  		(int (*)(ptr)) strLen,		strHeap,
@@ -459,7 +459,7 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 	    if (strcmp("cmp", property) == 0) {
 		atomset(BATatoms[t].atomCmp, (int (*)(void *,void *)) arg); 
 	    } else if (strcmp("hash", property) == 0) {
-		atomset(BATatoms[t].atomHash, (unsigned int (*)(void *)) arg); 
+		atomset(BATatoms[t].atomHash, (hash_t (*)(void *)) arg); 
 	    } else if (strcmp("length", property) == 0) {
 		atomset(BATatoms[t].atomLen, (int (*)(void *)) arg); 
 	    }
@@ -495,7 +495,7 @@ char *ATOMname(int t) {
                                BATatoms[t].name:"null";
 }
 
-int ATOMdump() {
+int ATOMdump(void) {
 	int t; 
 	for (t = 0; t < GDKatomcnt; t++) {
 		stream_printf(GDKout, "%2d '%9s' (%3d) ", t, BATatoms[t].name, BATatoms[t].size); 
@@ -665,7 +665,7 @@ Recursive BATs are a special case. You should modify their reference count.
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
 		BBPpersistent(*(bat*) (P4),TRUE);	\
-		*(int *) (P3) = * (int *) (P4); 	\
+		*(bat *) (P3) = * (bat *) (P4); 	\
 	}						\
 } else {						\
 	if (t_ <= TYPE_flt) {				\
@@ -827,7 +827,7 @@ int @1ToStr(char ** dst, int *len, @1 *src) {
 		return 3;
 	}
 	snprintf(*dst, *len, "@2", (@3) *src);
-	return strlen(*dst);
+	return (int) strlen(*dst);
 }
 @c
 #define num08(x)	((x) >= '0' && (x) <= '7')
@@ -887,7 +887,7 @@ int chrFromStr(char *src, int *len, chr **dst) {
 			error = 1; p = src; 
 		}
 	} **dst = error?chr_nil:base;
-	return p-src;
+	return (int) (p-src);
 }
 
 @:atomtostr(chr,'%c',chr)@
@@ -918,7 +918,7 @@ int bitFromStr(str src, int *len, bit **dst) {
 	} else if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 	   p += 3;
 	}
-	return p-src;
+	return (int) (p-src);
 }
 
 int bitToStr(char **dst, int *len, bit *src) {
@@ -945,7 +945,8 @@ void bitWrite( bit *a, stream *s, size_t cnt) {
 
 int batFromStr(char *src, int *len, bat **dst) {
 	char *s, *t, *r=src;
-	int c, sign = 1, bid;
+	int c, sign = 1;
+	bat bid;
 
 	@:atommem(bat,sizeof(bat))@
 	while(GDKisspace(*r)) r++;
@@ -955,41 +956,42 @@ int batFromStr(char *src, int *len, bat **dst) {
 	}
 	t = r;
 	while((c=*t) && (c=='_' || GDKisalnum(c))) t++;
-	s = (char*) alloca(1+t-r);
+	s = (char*) alloca((unsigned) (1+t-r));
 	strncpy(s,r,t-r);
 	s[t-r] = 0;
 	bid = BBPindex(s);
-	**dst = (bid==0)?int_nil:sign*bid;
-	return t+(c=='>'?1:0)-src;
+	**dst = bid==0?bat_nil:sign*bid;
+	return (int) (t+(c=='>')-src);
 }
 
 int batToStr(char **dst, int *len, bat *src) {
- 	int i=*src;
+	bat b = *src;
+	int i;
 	str s;
-	if (*(bat*) src == bat_nil || (s = BBPname(i)) == NULL || *s == 0) {
+	if (b == bat_nil || (s = BBPname(b)) == NULL || *s == 0) {
 		@:atommem(char,4)@
 		strcpy(*dst,"nil");
 		return 3;
 	}
-	i = strlen(s)+4;
+	i = (int) (strlen(s)+4);
 	@:atommem(char,i)@
-	snprintf(*(dst), *len, "<%s%s>", (*src<0)?"~":"", s);	
-	return strlen(*dst);
+	snprintf(*dst, *len, "<%s%s>", b<0?"~":"", s);	
+	return (int) strlen(*dst);
 }
 
 bat *batRead(bat *a, stream *s, size_t cnt) {
-	stream_readIntArray(s, (int*)a, cnt);
+	stream_readIntArray(s, (int*)a, cnt); /* bat==int */
 	return a;
 }
 	
 void batWrite( bat *a, stream *s, size_t cnt) {
-	stream_writeIntArray(s, (int*)a, cnt);
+	stream_writeIntArray(s, (int*)a, cnt); /* bat==int */
 }
 
 
 @= numfromstr
 int @1FromStr(char* src, int * len, @1 **dst) {
-	int minus = 0, error = 0;
+	int sign = 1, error = 0;
 	@1 base = 0;
 	str q, p = src;
 
@@ -999,7 +1001,7 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 		base = @1_nil; p += 3;
 	} else {
 	 	if (*p == '-' || *p == '+') {
-			if (*p++ == '-') minus = 1;
+			if (*p++ == '-') sign = -1;
 		}
 		if (!num10(*p)) {
 			error = 1; p = src;
@@ -1014,8 +1016,8 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 		if (sizeof(@1) == 8 && p[0] == 'L' && p[1] == 'L') {
 			p += 2;
 		}
-	} **dst = error?@1_nil:(minus?-base:base);
-	return p-src;
+	} **dst = error?@1_nil:sign*base;
+	return (int) (p-src);
 }
 @c
 
@@ -1053,32 +1055,42 @@ int lngToStr(char **dst, int *len, lng *src) {
     
 	long ll; /* it turned out to be nontrivial to get a long long printed */
 	@:atommem(char,lngStrlen)@
-	p = *dst; *p = 0;
     	if (*src == lng_nil) {
-		strcpy(p, "nil");
+		strcpy(*dst, "nil");
 		return 3;
 	} 
+#if 1
+#ifdef NATIVE_WIN32
+#define LLFMT "%I64d"
+#else
+#define LLFMT "%lld"
+#endif
+	sprintf(*dst, LLFMT, *src);
+#else
+	p = *dst;
+	*p = 0;
 	if (*src < LL_CONSTANT(0)) {
 		*p++ = '-'; *p = 0;
 	}
-	ll = (*(lng*)src)/LL_CONSTANT(100000000000000);
+	ll = ll/LL_CONSTANT(100000000000000);
 	if (ll) {
 		sprintf(p, "%ld", (ll<0)?-ll:ll); 
 		l += strlen(p);
 	}
-	ll = ((*(lng*) src) % LL_CONSTANT(100000000000000)) / LL_CONSTANT(10000000);
+	ll = (*src % LL_CONSTANT(100000000000000)) / LL_CONSTANT(10000000);
 	if (l) {
 		sprintf(p+l, "%07ld", (ll<0)?-ll:ll);	
 	} else if (ll) {
 		sprintf(p, "%ld", (ll<0)?-ll:ll);	
 	}
 	l += strlen(p+l);
-	ll = (long) ((*(lng*) src) % LL_CONSTANT(10000000));
+	ll = (long) (*src % LL_CONSTANT(10000000));
 	if (l) {
 		sprintf(p+l, "%07ld", (ll<0)?-ll:ll);	
 	} else {
 		sprintf(p, "%ld", (ll<0)?-ll:ll);	
 	}
+#endif
 	return strlen(*dst);
 }
 @c
@@ -1105,7 +1117,7 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 			if (!num16(*p)) break;
 		}
 	} **dst = error?((ptr) ptr_nil):((ptr) base);
-	return p-src;
+	return (int) (p-src);
 }
 @:atomtostr(ptr,%lx,unsigned long)@
 #if SIZEOF_VOID_P == SIZEOF_INT
@@ -1126,7 +1138,7 @@ int dblFromStr(char* src, int* len, dbl **dst) {
 	} else {
 		**dst = d;
 	}
-	return p-src;
+	return (int) (p-src);
 }
 @:atomtostr(dbl,%g,double)@
 @:atom_io(dbl,Lng,lng)@
@@ -1143,7 +1155,7 @@ int fltFromStr(char* src, int* len, flt **dst) {
 	} else {
 		**dst = (flt) d;
 	}
-	return p-src;
+	return (int) (p-src);
 }
 @:atomtostr(flt,%g,float)@
 @:atom_io(flt,Int,int)@
@@ -1245,7 +1257,7 @@ we have to take corrective action to ensure that str(nil) is the smallest value 
 					strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
 @c
 int strNil(str s)        { return GDK_STRNIL(s); }
-int strLen(str s)        { return GDK_STRLEN(s); }
+int strLen(str s)        { return (int) GDK_STRLEN(s); }
 int strCmp(str l, str r) { return GDK_STRCMP(l,r); }
 
 int strCmpNoNil(unsigned char *l, unsigned char *r) {
@@ -1257,7 +1269,7 @@ int strCmpNoNil(unsigned char *l, unsigned char *r) {
 }
 
 void strHeap(Heap *d, size_t cap) {
-	int size;
+	size_t size;
 	int *h, *e; 
 
 	cap = MAX(cap, BATTINY);
@@ -1292,15 +1304,16 @@ old bats with these string heaps will still be compatible. TODO: replace by strH
         (y) = GDK_ROTATE(y, 4, 28, 15) ^ *_s;\
     }}
 @c
-unsigned int strHash(str s) {
-    unsigned int res;
+hash_t strHash(str s) {
+    hash_t res;
     GDK_STRHASH(s,res);
     return res;
 }
 
 static INLINE 
-unsigned int strOldHash(str s) {
-	unsigned int h, len; 
+hash_t strOldHash(str s) {
+	hash_t h;
+	ptrdiff_t len; 
 	char *t;
 
 	if (GDK_STRNIL(s)) {
@@ -1318,7 +1331,7 @@ unsigned int strOldHash(str s) {
 	if (len-- > 1) {
 	    h = mult7(h) + t[-1]; /* get last char */
 	    if (len-- > 1) {
-		int i=0, j = MAX(len,8), k = j*MIN(len, 8); 
+		ptrdiff_t i=0, j = MAX(len,8), k = j*MIN(len, 8); 
 		/* get 8 intermediate chars. 8==2^3 */
 		for(i=0; i < k; i+=j) {
 			h = mult7(h) + s[i >> 3];
@@ -1333,7 +1346,7 @@ The @%strPut@ routine. The routine @%strLocate@ can be used to identify
 the location of a string in the heap if it exists. Otherwise it returns
 zero.
 @c
-int strLocate(Heap *h, str v) {
+size_t strLocate(Heap *h, str v) {
 	int *htab = (int*) h->base; 
 	int *l, *e = htab + (strOldHash(v) & GDK_STRHASHMASK); 
 
@@ -1341,7 +1354,7 @@ int strLocate(Heap *h, str v) {
 		for (l = e; *l; l = (int*) (h->base + *l)) {
 			str x = (str) (h->base + *l + sizeof(int)); 
 			if (GDK_STRCMP(v, x) == 0) {
-				return *l + sizeof(int); 
+				return (size_t) *l + sizeof(int); 
 			}
 		}
 	}
@@ -1369,16 +1382,18 @@ void strHeapConvert(Heap *h,int dir) {
 }
 
 int strPut(Heap *h, int *dst, str v) {
-	int *l, off, i = GDK_STRLEN(v);
-	int len = (((i-1) >> 2) + 2) << 2; /* round up to 4-byte alignment + 4 (next pointer) */
-	unsigned int elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
+	int *l;
+	size_t i = GDK_STRLEN(v);
+	hash_t off;
+	size_t len = (((i-1) >> 2) + 2) << 2; /* round up to 4-byte alignment + 4 (next pointer) */
+	size_t elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
 
 	/* search hash-table, if double-elimination is still in place */
 	off = strOldHash(v) & GDK_STRHASHMASK; 
 	for (l = ((int*) h->base) + off; *l; l = (int*) (h->base + *l)) {
 		str x = (str) (h->base + *l + sizeof(int)); 
 		if (GDK_STRCMP(v, x) == 0) {
-			*dst = *l + sizeof(int); /* already in heap; do not insert! */
+			*dst = *l + (int) sizeof(int); /* already in heap; do not insert! */
 			return 0; 
 		}
  	}
@@ -1432,7 +1447,7 @@ int strFromStr(char *src, int *len, char** dst) {
 		}
 		*dst = ATOMnil(TYPE_str);
 		*len = 2;
-		return strncmp(cur,"nil",3)?0:((cur+3)-src);
+		return strncmp(cur,"nil",3)?0:(int) ((cur+3)-src);
 	} 
 
 	/* scout the string to find out its length and correctness */
@@ -1483,7 +1498,7 @@ int strFromStr(char *src, int *len, char** dst) {
 		}
 	}
 	*p++ = 0;
-	return (cur + 1) - src;
+	return (int) ((cur + 1) - src);
 }
 
 @-
@@ -1546,9 +1561,9 @@ str strRead(str a, stream *s, size_t cnt) {
 } 
 
 void strWrite(str a, stream *s, size_t cnt) {
-	int len = strlen(a);
+	size_t len = strlen(a);
 	assert(cnt==1);
-	stream_writeInt(s, len);
+	stream_writeInt(s, (int) len);
 	s->write(s, a, len, 1 );
 }
 
@@ -1561,7 +1576,7 @@ oid	GDKoid, GDKflushed;
 @-
 Init the shared array of oid bases.
 @c
-int OIDinit(){
+int OIDinit(void){
         GDKflushed = GDKoid = 0;
 	return 0;
 }
@@ -1569,7 +1584,7 @@ int OIDinit(){
 @-
 Make up some new OID for a specified database, based on the current time.
 @c
-oid OIDrand() { 
+oid OIDrand(void) { 
 	return 1000000;
 } 
 @-
@@ -1596,7 +1611,7 @@ oid OIDseed(oid o) {
 Initialize a sequence of OID seeds (for a sequence of database)
 as stored in a string.
 @c
-int OIDread(str s) {
+oid OIDread(str s) {
 	oid new = 0, *p=&new;
 	int l=sizeof(oid);
 
@@ -1617,13 +1632,13 @@ int OIDwrite(stream *s) {
 	if (GDKoid) {
 		GDKflushed = GDKoid;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
-		if (s->write(s, " ", 1, 1) < 0) ret = -1;
+		if (s->write(s, " ", 1, 1) == 0) ret = -1;
 	}
 	MT_unset_lock(MT_system_lock, "OIDwrite");
 	return ret;
 }
 
-int OIDdirty() {
+int OIDdirty(void) {
 	if (GDKoid && GDKoid > GDKflushed) {
 		return TRUE;
 	}
@@ -1632,7 +1647,7 @@ int OIDdirty() {
 @-
 Reserve a range of unique OIDs 
 @c
-oid OIDnew(int inc) {
+oid OIDnew(size_t inc) {
 	oid ret;
 	MT_set_lock(MT_system_lock, "OIDnew");
 	if (!GDKoid) GDKoid = OIDrand();
@@ -1672,7 +1687,7 @@ int OIDfromStr(char *src, int *len, oid **dst) {
 		}
 		p += pos;
 	} 
-	return p - src;
+	return (int) (p - src);
 }
 
 int OIDtoStr(char** dst, int *len, oid *src) {
@@ -1682,7 +1697,7 @@ int OIDtoStr(char** dst, int *len, oid *src) {
 		return 3;
 	}
 	snprintf(*dst, *len, "%lu@0", (unsigned long) *src);
-	return strlen(*dst);
+	return (int) strlen(*dst);
 }
 @
 @}

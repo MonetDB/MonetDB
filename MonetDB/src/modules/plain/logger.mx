@@ -131,7 +131,7 @@ typedef struct buf_t {
 } buf_t, *buf_p;
 
 INLINE static 
-buf_p new_buffer(){
+buf_p new_buffer(void){
 	buf_p b = (buf_p)GDKmalloc(sizeof(buf_t));
 	b->root = b->cur = new_buffer_node(NULL);
 	return b;
@@ -260,7 +260,7 @@ void logger_end(void){
 
 typedef struct logf {
 	char flag;
-	int id;
+	bat id;
 	int nr; /* not used by block (begin/end) */
 } logf;
 
@@ -278,11 +278,11 @@ void logger_bat(buf_p buf, BAT *b ){
 	    bwrite(buf, &l, sizeof(logf));
             if (logger_debug&2)
 		printf("new bat htype %d ttype %d id %d\n", 
-			b->htype, b->ttype, l.id );
+			b->htype, b->ttype, (int) l.id );
 	} 
 	if (status&BBPDELETED){
 	    if (logger_debug&2)
-		fprintf(stderr, "logger_bat destroyed %d \n", l.id );
+		fprintf(stderr, "logger_bat destroyed %d \n", (int) l.id );
 	    l.flag = LOG_DESTROY;
 	    bwrite(buf, &l, sizeof(logf));
 	} 
@@ -316,7 +316,7 @@ void logger_bat(buf_p buf, BAT *b ){
 		fprintf(stderr, "logger_bat deleted %d from %s \n", 
 			l.nr, b->batId);
 	    l.flag = LOG_DELETE;
-	    printf("%d del %d\n", l.id, l.nr );
+	    printf("%d del %d\n", (int) l.id, l.nr );
 	    bwrite(buf, &l, sizeof(logf));
 	    for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
 		int s1,s2;
@@ -352,7 +352,7 @@ static BAT *dirty_bat(int i) {
 	return NULL;
 }
 
-int logger_commit(){
+int logger_commit(void){
 	int  i,id,nr, *kills = NULL; 
 	buf_p buf = new_buffer();
 	/* first build the buffer with data to write
@@ -392,7 +392,7 @@ int logger_commit(){
 INLINE static 
 void merge_block(char *p, char *block_end){
     while(p<block_end){
-    	int s1,s2;
+    	size_t s1,s2;
 	logf l;
 	BAT *b;
 
@@ -400,12 +400,12 @@ void merge_block(char *p, char *block_end){
 	switch(l.flag){
 	case LOG_CREATE:
 		printf("create bat htype %d ttype %d id %d\n",
-			(l.nr>>16)&((1<<16)-1), l.nr&((1<<16)-1), l.id);
-		b = BATnew((l.nr>>16)&((1<<16)-1),l.nr&((1<<16)-1),l.id);
+			(l.nr>>16)&((1<<16)-1), l.nr&((1<<16)-1), (int)l.id);
+		b = BATnew((l.nr>>16)&((1<<16)-1),l.nr&((1<<16)-1),(int)l.id);
 		BATmode(b,PERSISTENT);
 		break;
 	case LOG_DESTROY:
-		printf("destroy bat %d\n", l.id);
+		printf("destroy bat %d\n", (int)l.id);
 		b = BATdescriptor(l.id); 
 		BATmode(b,TRANSIENT);
 		BBPreclaim(b);
@@ -415,7 +415,7 @@ void merge_block(char *p, char *block_end){
 		s2 = strlen(p);
 		BBPrename(l.id,p);
 		BBPrename(-l.id,p+s1);
-		printf("rename bat %d %s %s\n", l.id, p, p+s1);
+		printf("rename bat %d %s %s\n", (int)l.id, p, p+s1);
 		break;
 	default:	
 		b = BATdescriptor(l.id); 
@@ -431,13 +431,13 @@ void merge_block(char *p, char *block_end){
 				p += s2;
 	    		}
 		} else {
-			fprintf(stderr,"bat missing %d\n", l.id);
+			fprintf(stderr,"bat missing %d\n", (int)l.id);
 		}
 	}
     }
 }
 
-int logger_update() { 
+int logger_update(void) { 
 	/* first try the file */
 	/* else get it from the backup server. */
 	int i;
@@ -494,17 +494,29 @@ int logger_set_debug( int *l){
 /* server just reading in the request and does a true commit once 
  * every ... time 
  */
+#ifdef AIX
 #define SOCKPTR struct sockaddr *
+#define SOCKLEN size_t
+#else
+#ifdef __sgi
+#define SOCKPTR void *
+#define SOCKLEN int
+#else
+#ifdef NATIVE_WIN32
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN int
+#else
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN socklen_t
+#endif
+#endif
+#endif
 
 int logger_listen(int *port){
 	
 	struct sockaddr_in server;
 	int 	sock;
-#ifdef AIX
-	size_t 	length;
-#else
-	int 	length;
-#endif
+	SOCKLEN length;
 	int    	on = 1;
 	int 	msgsock;
 	int	i = 0;
@@ -538,11 +550,7 @@ int logger_listen(int *port){
 	printf("Backup started at %d\n", *port);
 
 	do {
-#ifdef AIX
-       		msgsock = accept(sock, 0, (size_t)0);
-#else
-       		msgsock = accept(sock, 0, (int *)0);
-#endif
+       		msgsock = accept(sock, (SOCKPTR)0, (SOCKLEN *)0);
 
 		if (msgsock == -1) {
 			if (MT_geterrno() != EINTR) {
@@ -579,7 +587,7 @@ int logger_listen(int *port){
 				nr -= (2 * sizeof(int));
 
 				data = GDKmalloc(nr);
-				size = fread( data, 1, nr, fdin);
+				size = (int) fread( data, 1, nr, fdin);
 
 	    			merge_block( data, data+nr ); 
 				logger_logid = id;

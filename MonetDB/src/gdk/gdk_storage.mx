@@ -53,15 +53,9 @@ extern void DESCclean(BAT*);
 
 #endif /* _GDK_STORAGE_H_ */
 @c
+#include "gdk.h"
 #include <stdlib.h>
-#include "gdk_bat.h"
-#include "gdk_delta.h"
-#include "gdk_atoms.h"
-#include "gdk_bbp.h"
-#include "gdk_search.h"
-#include "gdk_utils.h"
 #include "gdk_storage.h"
-#include "gdk_posix.h"
 @}
 
 @
@@ -242,7 +236,7 @@ The primary concern here is to handle STORE_MMAP and STORE_MEM.
 extern int compress   (str buf, str end, FILE* fp);
 extern int decompress (FILE* fp, str dst);
 
-int GDKsave(str nme, str ext, str buf, int size, int mode) { 
+int GDKsave(str nme, str ext, str buf, size_t size, int mode) { 
 	int fd = -1, err = 0;
 	FILE *fp = NULL; 
 
@@ -261,8 +255,8 @@ at commit-time.
 		err = MT_msync(buf, size, MMAP_ASYNC);
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-		IODEBUG THRprintf(GDKerr, "MT_msync(buf %ld, size %d, MMAP_ASYNC) = %d\n", 
-							(long) buf, size, err);
+		IODEBUG THRprintf(GDKerr, "MT_msync(buf %ld, size %ld, MMAP_ASYNC) = %d\n", 
+							(long) buf, (long) size, err);
 	} else if (mode == STORE_COMPR) {
 		char extension[PATHLENGTH];
         	sprintf(extension, "%s.Z", ext); 
@@ -272,8 +266,8 @@ at commit-time.
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "compress(buf %ld, size %d, fd %d) = %d\n", 
-							(long) buf, size, fileno(fp), err);
+			IODEBUG THRprintf(GDKerr, "compress(buf %ld, size %ld, fd %d) = %d\n", 
+							(long) buf, (long) size, fileno(fp), err);
 	       	}  else {
 			err = -1;
 		}
@@ -284,8 +278,8 @@ at commit-time.
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "fwrite(buf %ld, size %d, fd %d) = %d\n", 
-							(long) buf, size, fd, err);
+			IODEBUG THRprintf(GDKerr, "fwrite(buf %ld, size %ld, fd %d) = %d\n", 
+							(long) buf, (long) size, fd, err);
 	       	}  else {
 			err = -1;
 		}
@@ -308,9 +302,11 @@ Space for the load is directly allocated and the heaps are mapped.
 Further initialization of the atom heaps require a separate action
 defined in their implementation.
 @c
-char *GDKload(str nme, str ext, int size, int chunk, int mode){
+char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
         char	extension[PATHLENGTH], *buf = NULL;
-	int 	fd = -1, n, n_expected = 0; 
+	int 	fd = -1;
+	ssize_t	n;
+	size_t	n_expected = 0; 
 	int	varsize = mode&256;
 	int	store = mode&255;
 	FILE*	fp = NULL;
@@ -327,8 +323,8 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 
 		for(n_expected = size; n_expected > 0; n_expected -= n){
                         n = read(fd, dst, n_expected);
-			IODEBUG THRprintf(GDKerr, "read(dst %ld, n_expected %d, fd %d) = %d\n", 
-							(long) dst, n_expected, fd, n);
+			IODEBUG THRprintf(GDKerr, "read(dst %ld, n_expected %lu, fd %d) = %ld\n", 
+							(long) dst, (unsigned long) n_expected, fd, (long) n);
 			if (n <= 0) break;
 			dst += n;
 		}
@@ -352,28 +348,28 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 	
 		fclose(fp); fp = NULL;
 	        GDKfilepath(path,BATDIR,nme,ext);
-		buf = (char *)GDKmmap(path, mod, 0, chunk, (void*)0);	
+		buf = (char *)GDKmmap(path, mod, (off_t)0, chunk, (void*)0);	
 		if (buf == (char *) -1)  {
        	    	    GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
      		    buf = NULL;
 		}
-		IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, chunk %d, mod %d, tpe %d, path %s, 0) = %ld\n",
-						chunk, mod, tpe, path, (long) buf);
+		IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, chunk %lu, mod %d, tpe %d, path %s, 0) = %ld\n",
+						(unsigned long) chunk, mod, tpe, path, (long) buf);
 		n_expected = 0;
 	    }
 	}
-	if (n_expected && fd < 0 && fp == NULL) { 
+	if ((n = (ssize_t) n_expected) != 0 && fd < 0 && fp == NULL) { 
 	if ((fp = GDKfilelocate(nme, "rb", extension)) != NULL) {
 	    buf = (char *) GDKmalloc(chunk); 
-	    n_expected = size - decompress(fp, buf); 
+	    n = (ssize_t) (size - decompress(fp, buf)); 
 	} else {
        	    GDKsyserror("GDKload: cannot access: name=%s, extension=%s\n", nme,extension);
 	    return 0; 
 	}}
-	if (n_expected >  0 && !varsize) {
-       	    GDKerror("GDKload: read error: name=%s, ext=%s, n_expected=%d\n", nme,ext?ext:"",n_expected);
+	if (n > 0 && !varsize) {
+       	    GDKerror("GDKload: read error: name=%s, ext=%s, n=%d\n", nme,ext?ext:"",n);
 	    return 0;
-       	} else if (n_expected < 0) {
+       	} else if (n < 0) {
        	    GDKwarning("GDKload: file larger than expected: name=%s, ext=%s\n", nme, ext?ext:"");
 	}
 	if (fd >= 0) close(fd); 
@@ -430,7 +426,8 @@ static BAT *DESCload(int i) {
 	}
 	b->hhash_heap = b->thash_heap = NULL; 
 	b->hidx_heap = b->tidx_heap = NULL; 
-	b->batSharecnt = b->void_cnt = 0;
+	b->batSharecnt = 0;
+	b->void_cnt = 0;
 	/* mil shouldn't mess with just loaded bats */
 	if (b->batStamp > 0) b->batStamp = -b->batStamp;
 	return b;
@@ -507,7 +504,7 @@ void DESCclean(BAT* b) {
 	}
 
 BAT *BATsave(BAT *bd) {
-	int     err = 0, remap = 0, hsaved = 0, tsaved = 0;
+	int     err = 0, hsaved = 0, tsaved = 0;
 	char    *nme;
 	BATstore bs;
 	BAT *b = bd;
@@ -539,12 +536,11 @@ BAT *BATsave(BAT *bd) {
 	DESCsetmodes(bd, b);
 
 	/* try to cut off unused bytes at the start of the heap */
-	remap = (!(b->batBuns->storage & STORE_MMAP || b->batRestricted)) && 
-	    b->hacctype == 0 && b->tacctype == 0;
-	if (remap) {
-		remap = (b->batDeleted - b->batBuns->base) / BUNsize(b);
+	if ((!(b->batBuns->storage & STORE_MMAP || b->batRestricted)) && 
+	    b->hacctype == 0 && b->tacctype == 0) {
+		size_t remap = (b->batDeleted - b->batBuns->base) / BUNsize(b);
 		if (BUNsize(b) < sizeof(int)) {
-			int x = sizeof(int)/BUNsize(b);
+			size_t x = sizeof(int)/BUNsize(b);
 			remap = (remap/x)*x;
 		}
 		if (remap) {
@@ -919,16 +915,17 @@ int print_nil(char** dst, int *len, ptr dummy) {
 static 
 int print_tabwidth(BAT *b, str title, col_format_t *c) {
         strFcn tostr = printfcn(b);
-        int cnt = BATcount(b);
+        size_t cnt = BATcount(b);
         int max, t = BATttype(b);
 	
 	c->tpe = ATOMname(b->ttype);	
         c->buf = (char*) GDKmalloc(c->size = strLen(title)); 
-        max = MAX((2+strlen(c->tpe)), strlen(title));
+        max = (int) MAX((2+strlen(c->tpe)), strlen(title));
  
         if (t >= 0 && t < GDKatomcnt && tostr) {
-            int off = BUNindex(b, BUNfirst(b));
-            int j, k, i, probe = MIN(10000,MAX(200,cnt/100));
+            size_t off = BUNindex(b, BUNfirst(b));
+	    int k;
+            size_t j, i, probe = MIN(10000,MAX(200,cnt/100));
             for(i=0; i < probe; i++) {
 		if (i >= cnt) break;
                 j = off + ((cnt < probe)?i:(rand() % cnt));
@@ -973,7 +970,7 @@ void print_format(col_format_t *c, ptr v) {
 
 @= print_head
 	str buf = @1?argv[@2].tpe:argv[@2].buf; /* contains column title */
-	int len = strlen(buf);
+	int len = (int) strlen(buf);
 	if (@1) s->write(s, "(", 1, 1);
 	s->write(s, buf, len, 1);
 	if (@1) s->write(s, ")", 1, 1);
@@ -985,7 +982,7 @@ void print_format(col_format_t *c, ptr v) {
 		@:print_head(@1,0)@
 		s->write(s, "  ", 2, 1);
 	}
-	while(TRUE) {
+	for (;;) {
 		@:print_head(@1,k)@
 		if (k++ < argc) s->write(s, "| ", 2, 1);
 		else break;
@@ -1042,9 +1039,9 @@ int BATmultiprintf(
 	int     printhead,	/* boolean: print the head column? */
 	int	order		/* respect order of bat X (X=0 is none)*/
 ){
-	col_format_t *c = (col_format_t*) alloca(argc*sizeof(col_format_t));
-	col_format_t **cp = (col_format_t**) alloca((argc+1)*sizeof(void*));
-	ColFcn *value_fcn = (ColFcn*) alloca(argc*sizeof(ColFcn));
+	col_format_t *c = (col_format_t*) alloca((unsigned)(argc*sizeof(col_format_t)));
+	col_format_t **cp = (col_format_t**) alloca((unsigned)((argc+1)*sizeof(void*)));
+	ColFcn *value_fcn = (ColFcn*) alloca((unsigned)(argc*sizeof(ColFcn)));
 	int ret, j, total = 0;
 @-
 Init the column descriptor of the head column.

@@ -181,7 +181,7 @@ int oo7genAssembly(int mod_oid, int level);
 /**** Randomize functions ****/
 /*****************************/
 
-int RandomCpBuildDate()
+int RandomCpBuildDate(void)
 {
     static int c=0;
 
@@ -192,41 +192,41 @@ int RandomCpBuildDate()
 	return MinOldCompDate+rand()%(MaxOldCompDate-MinOldCompDate+1); /* old */
 }
 
-int RandomAtomBuildDate()
+int RandomAtomBuildDate(void)
 {
     return MinAtomicDate+rand()%(MaxAtomicDate-MinAtomicDate+1);
 }
 
-int RandomBaBuildDate()
+int RandomBaBuildDate(void)
 {
 
 	return MinAssmDate + rand() % (MaxAssmDate-MinAssmDate+1);
 }
 
-int RandomBaId()
+int RandomBaId(void)
 {
     return(rbaid++);
 }
 
-char *RandomBaType()
+char *RandomBaType(void)
 {
     strcpy(rbatype,"anytype");
     return(rbatype);
 }
 
-char *RandomType()
+char *RandomType(void)
 {
     strcpy(rtype,"anytype");
     return rtype;
 }
 
-char *RandomTitle()
+char *RandomTitle(void)
 {
     sprintf(rtitle,"any title you like here (%d)",rdocid);
     return(rtitle);
 }
 
-char *RandomDocText()
+char *RandomDocText(void)
 {
     int i;
     for(i=0;i<DocumentSize;i++)
@@ -236,90 +236,90 @@ char *RandomDocText()
 
 }
 
-int RandomDocId()
+int RandomDocId(void)
 {
     return(rdocid++);
 }
 
-int RandomCpId()
+int RandomCpId(void)
 {
     return(rcpid++);
 }
 
-int RandomAtomId()
+int RandomAtomId(void)
 {
     return(ratomid++);
 }
 
-int RandomAtomDocId()
+int RandomAtomDocId(void)
 {
     return(ratomdocid++);
 }
 
-char *RandomAtomType()
+char *RandomAtomType(void)
 {
     strcpy(ratomtype,"anytype");
     return(ratomtype);
 }
 
-int RandomAtomX()
+int RandomAtomX(void)
 {
     return(rand());
 }
 
-int RandomAtomY()
+int RandomAtomY(void)
 {
     return(rand());
 }
 
-char *RandomConnType()
+char *RandomConnType(void)
 {
     return(connType[rand() % connTypeSize]);
 }
 
-int RandomConnLen()
+int RandomConnLen(void)
 {
     return(rand());
 }
 
-int RandomCpaId()
+int RandomCpaId(void)
 {
     return(rcpaid++);
 }
 
-int RandomCpaBuildDate()
+int RandomCpaBuildDate(void)
 {
     return(MinAssmDate + rand() % (MaxAssmDate-MinAssmDate+1));
 }
 
-char *RandomCpaType()
+char *RandomCpaType(void)
 {
     strcpy(rcpatype,"anytype");
     return(rcpatype);
 }
 
-int RandomModId()
+int RandomModId(void)
 {
 	return(rmodid++);
 }
 
-char *RandomModType()
+char *RandomModType(void)
 {
 	strcpy(rmodtype,"anytype");
         return(rmodtype);
 }
 
-int RandomModBuildDate()
+int RandomModBuildDate(void)
 {
 	return(rand());
 }
 
-int RandomManId()
+int RandomManId(void)
 {
 	return(rmanid++);
 }
 
-char *RandomManText()
+char *RandomManText(void)
 {   int i;
     for(i=0;i<ManualSize;i++)
 	rmantext[i]=(char) ('a' + (rand()%26));
@@ -332,10 +332,7 @@ char *RandomManText()
 @* oo7 create
 
 @c
-BAT *createBat(name,ht,tt)
-char *name;
-int ht;
-int tt;
+BAT *createBat(char *name, int ht, int tt)
 {
 	int i;
 	BAT *b;
@@ -789,7 +786,7 @@ int oo7_create(str par)
 
 @* oo7 delete
 @c
-int oo7_delete() {
+int oo7_delete(void) {
     BAT *b;
     bat bid;
 
@@ -817,7 +814,8 @@ does not affect the BATloop [it doesn't!]
 #undef  ANTICHECK
 #define ANTICHECK(src, p, chk) {\
     ptr w,u=BUNh@2(src, p);\
-    int i, r=0; \
+    hash_t i; \
+    int r=0; \
     (void) BATprepareHash(chk);\
     HASHloop@1(chk, chk->hhash, i, u, w) {\
         if (@3_EQ(BUNt@2(chk, w), BUNt@2(src, p), @4)) { r=1; break;}\
@@ -847,8 +845,7 @@ while (BATcount(delta) > 0) {
 } break;
 @
 @c
-BAT *BATclosure(b)
-BAT	*b; 
+BAT *BATclosure(BAT *b)
 {
 	BAT	*bn, *delta; 
 	int	xx, tpe;
@@ -894,14 +891,14 @@ Some performance is lost when we have to check for it.
 Code expansion on type later.
 
 @c
-BAT *BATtraverse(b,dag)
-BAT	*b,*dag; 
+BAT *BATtraverse(BAT *b, BAT *dag)
 {
 	BAT	*bn,*delta;
 	BUN	p;
 	BUN	q; 
 	ptr	v,w;
-	int	i,xx;
+	hash_t	i;
+	int	xx;
 	int	grows,fnd; 
 
 	BATcheck(b, "BATtraverse"); 
@@ -949,12 +946,11 @@ is not orthogonal. works for INTs, OIDs, only
 Notice that the bat has to be reconstructed when the BAT grows.
 Perhaps this should become part of BATexpand.
 @c
-int BATgraphtraverse(v,bn,dag)
-ptr	v;
-BAT *bn,*dag;
+int BATgraphtraverse(ptr v, BAT *bn, BAT *dag)
 {
 	ptr	w,t;
-	int 	i,j;
+	hash_t 	i;
+	int	j;
 
 	if( BUNfnd(bn,v) != NULL ){
 		return 0;
@@ -979,19 +975,19 @@ The routine works its waau through the graph in a semi-breadth search.
 An older version was based on a recursive call to BATgraphtraverse.
 The routine works its way through the graph recursively.
 @c
-BAT *BATsubgraph(b,dag)
-BAT	*b,*dag; 
+BAT *BATsubgraph(BAT *b, BAT *dag)
 {
 	BAT	*bn;
 	BUN	p;
-	BUN q;
-	int i, j, bnsize=0;
+	BUN	q;
+	size_t	i, j;
+	size_t	bnsize=0;
 
 
 	BATcheck(b, "BATsubgraph"); 
 	BATcheck(dag, "BATsubgraph"); 
 	ERRORcheck(TYPEerror(b->ttype,b->htype), "BATsubgraph:type conflict\n"); 
-	if (b->ttype <= TYPE_sht || b->ttype >= TYPE_flt) {
+	if (ATOMstorage(b->ttype) != TYPE_int || b->ttype >= TYPE_flt) {
 		GDKerror("subgraph works on INT-like types.\n");
 		return 0;
 	}

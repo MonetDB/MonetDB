@@ -132,8 +132,7 @@ The hash structure is maintained for all elements to be deleted ?.
 
 @{
 @c
-#include "gdk_delta.h"
-#include "gdk_bat.h"
+#include "gdk.h"
 
 
 BAT *BATprecommit (BAT *b) {
@@ -229,12 +228,12 @@ BAT *BATundo(BAT *b) {
 	bunfirst = b->batInserted;
 	bunlast = BUNlast(b) - BUNsize(b); 
 	if (bunlast >= b->batInserted) {
-		unsigned int i = BUNindex(b, bunfirst);
+		size_t i = BUNindex(b, bunfirst);
 		void (*hatmdel)(Heap*, int*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*, int*) = BATatoms[b->ttype].atomDel;
-		void (*haccdel)(Heap*,int,BAT*,ptr) = 
+		void (*haccdel)(Heap*,size_t,BAT*,ptr) = 
 			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accDelete;
-		void (*taccdel)(Heap*,int,BAT*,ptr) = 
+		void (*taccdel)(Heap*,size_t,BAT*,ptr) = 
 			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accDelete;
 		if (hatmdel || tatmdel || haccdel || taccdel) {
 		for(p = bunfirst; p <= bunlast; p += bunsize, i++) { 
@@ -267,10 +266,10 @@ BAT *BATundo(BAT *b) {
 	bunfirst = b->batDeleted+bunsize;
 	bunlast = b->batHole;
 	if (bunlast > b->batDeleted) { 
-		unsigned int i = BUNindex(b, bunfirst);
-		void (*haccins)(Heap*,int,BAT*,ptr) = 
+		size_t i = BUNindex(b, bunfirst);
+		void (*haccins)(Heap*,size_t,BAT*,ptr) = 
 			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accInsert;
-		void (*taccins)(Heap*,int,BAT*,ptr) = 
+		void (*taccins)(Heap*,size_t,BAT*,ptr) = 
 			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accInsert;
 
 		/* elements are 'inserted' => zap properties */
@@ -340,13 +339,11 @@ BAT *BATdelta(BAT *b) {
 The event status associated with a BAT can be inspected by simple routines.
 @c
 int BATdeltaEvent(BAT *b) {
-	int i = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted); 
-	return i > 0; 
+	return BUNindex(b, b->batHole) > BUNindex(b, b->batDeleted); 
 }
 
 int BATalphaEvent(BAT *b) {
-	int i = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted); 
-	return i > 0; 
+	return BUNindex(b, BUNlast(b)) > BUNindex(b, b->batInserted); 
 }
 
 @}

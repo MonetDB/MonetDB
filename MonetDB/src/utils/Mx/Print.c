@@ -38,8 +38,7 @@
 	int	pr_math= 0;
 	int	pr_pos= 0;
 
-void	PrEnv(env)
-int	env;
+void	PrEnv(int env)
 {
 	if( Hide() ) return;
 
@@ -76,9 +75,7 @@ int	env;
 /* Low Level Print routines
  */
 
-void	PrRef(mod, sec)
-int	mod;
-int	sec;
+void	PrRef(int mod, int sec)
 {
 	PrChr('[');
 	if( mod != 0 )
@@ -92,16 +89,14 @@ int	sec;
 	PrChr(']');
 }
 
-void	PrNum(n)
-int	n;
+void	PrNum(int n)
 {
 	if( Hide() ) return;
 
 	ofile_printf("%d", n);
 }
 
-void PrTxt(s)
-    char * s;
+void PrTxt(char *s)
 {
 
     char c = *s;
@@ -149,8 +144,7 @@ void PrTxt(s)
 }
 
 
-void	PrStr(s)
-char *	s;
+void	PrStr(char *s)
 {
 	char *	c;
 	
@@ -166,7 +160,7 @@ char *	s;
 
 extern int codeline;
 
-void PrCodeline()
+void PrCodeline(void)
 {
 	if (WWWMODE && (pr_pos<8)) {
 		ofile_printf("<font color=\"8FBC8F\" size=\"-2\">%6d  </font>", codeline);
@@ -291,7 +285,7 @@ void	PrChr(char c)
 	}
 }
 
-void	MathOn()
+void	MathOn(void)
 {
 	if TEXMODE
 	if( pr_math == 0 )
@@ -299,7 +293,7 @@ void	MathOn()
 	pr_math= 1;
 }
 
-void	MathOff()
+void	MathOff(void)
 {
 	if TEXMODE
 	if( pr_math == 1)
@@ -307,17 +301,17 @@ void	MathOff()
 	pr_math= 0;
 }
 
-void	HideOn()
+void	HideOn(void)
 {
 	pr_hide++;
 }
 
-void	HideText()
+void	HideText(void)
 {
 	pr_hide_text = 1;
 }
 
-void	HideOff()
+void	HideOff(void)
 {
     extern char *defHideText;
 
@@ -327,7 +321,7 @@ void	HideOff()
     pr_hide_text = 0;
 }
 
-int	Hide()
+int	Hide(void)
 {
 	if( archived) return 1;
 	return (((opt_hide == NO_HIDE) && pr_hide_text)||

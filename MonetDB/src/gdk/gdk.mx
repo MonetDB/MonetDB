@@ -465,6 +465,8 @@ typedef char 		*BUN; 		/* pointer in some heap. */
 typedef	char		long_str[IDLENGTH];/* standard GDK static string */
 typedef	char		short_str[OLDLENGTH];/* old GDK small static string */
 
+typedef size_t hash_t;
+
 @- Checking and Error definitions:
 @h
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
@@ -551,10 +553,10 @@ typedef struct TN {
 
 typedef struct {
 	int 		type; 		/* type of index entity */
-	unsigned int 	lim; 		/* collision list size */
-	unsigned int 	mask; 		/* number of hash buckets-1 (power of 2) */
-	@:PTR(unsigned int*)@ hash;	/* hash table */
-	@:PTR(unsigned int*)@ link;	/* collision list */
+	size_t	 	lim; 		/* collision list size */
+	hash_t	 	mask; 		/* number of hash buckets-1 (power of 2) */
+	@:PTR(hash_t*)@ hash;		/* hash table */
+	@:PTR(hash_t*)@ link;		/* collision list */
 } 
 @:DEF(Hash)@; 
 
@@ -804,9 +806,9 @@ typedef struct {
         bit             dense;          /* 0=false, 1=true; */
 	oid		align;		/* OID for sync alignment */
 	oid		alignflushed;	/* OID for sync alignment */
-	int		nokey[2]; 	/* positions that prove key ==FALSE */
-	int		nosorted; 	/* position that proves sorted==FALSE */
-	int		nodense; 	/* position that proves dense==FALSE */
+	size_t		nokey[2]; 	/* positions that prove key ==FALSE */
+	size_t		nosorted; 	/* position that proves sorted==FALSE */
+	size_t		nodense; 	/* position that proves dense==FALSE */
 	int		dummy1,dummy2, dummy3;
 	int		accCopiedtodisk;
 } 
@@ -953,10 +955,10 @@ gdk_export int	HEAPextend  (Heap *h, size_t size);
 gdk_export int	HEAPload    (Heap *h, str nme, str ext, int trunc);
 gdk_export int	HEAPsave    (Heap *h, str nme, str ext);
 gdk_export void	HEAPcopy    (Heap *dst, Heap *src);
-gdk_export int	HEAPsubcopy (Heap *dst, Heap *src, size_t size, size_t offset);
+gdk_export size_t HEAPsubcopy (Heap *dst, Heap *src, size_t size, size_t offset);
 gdk_export int	HEAPdelete  (Heap *h, str o, str ext);
-gdk_export size_t	HEAPvmsize  (Heap *h);
-gdk_export size_t	HEAPmemsize (Heap *h);
+gdk_export size_t HEAPvmsize  (Heap *h);
+gdk_export size_t HEAPmemsize (Heap *h);
 @
 @- Internal HEAP Chunk Management
 @T
@@ -984,13 +986,13 @@ index to it.  @%HEAP_free@ frees a previously allocated chunk
 @h
 /* structure used by HEAP_check functions */
 typedef struct {
-	int minpos;			/* minimum block byte-index */
-	int maxpos;			/* maximum block byte-index */
-	int alignment;			/* block index alignment */
-	unsigned int *validmask;	/* bitmap with all valid byte-indices 
-	                                 * first bit corresponds with 'minpos'; 
-                                         * 2nd bit with 'minpos+alignment', etc 
-					 */
+	size_t minpos;		/* minimum block byte-index */
+	size_t maxpos;		/* maximum block byte-index */
+	int alignment;		/* block index alignment */
+	size_t *validmask;	/* bitmap with all valid byte-indices 
+	                         * first bit corresponds with 'minpos';
+                                 * 2nd bit with 'minpos+alignment', etc
+				 */
 } HeapRepair;
 
 gdk_export void HEAP_initialize(
@@ -1203,7 +1205,7 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 #define BUNhead(b,p)	(BUN)((b)->hvarsized?BUNhvar(b,p):BUNhloc(b,p))
 #define BUNtail(b,p)	(BUN)((b)->tvarsized?BUNtvar(b,p):BUNtloc(b,p))
 
-#define BUNsize(b)	((size_t)(b)->dims.bunwidth)
+#define BUNsize(b)	((b)->dims.bunwidth)
 #define BUNptr(b,i)    ((BUN) (Bunbase(b) + (((b)->batElmshift<0)?\
 				((i)*BUNsize(b)):((i)<<(b)->batElmshift))))
 #define BUNindex(b,p)  ((size_t) (((b)->batElmshift<0)?\
@@ -1453,8 +1455,8 @@ gdk_export void     GDKfilepath   (str path, str nme, str mode, str ext);
 gdk_export int      GDKcreatedir  (str nme);
 gdk_export int      GDKremovedir  (str nme);
 
-gdk_export char*	GDKload   (str nme, str ext, int size, int chunk, int mode);
-gdk_export int      GDKsave   (str nme, str ext, str buf, int size, int mode);
+gdk_export char*    GDKload   (str nme, str ext, size_t size, size_t chunk, int mode);
+gdk_export int      GDKsave   (str nme, str ext, str buf, size_t size, int mode);
 gdk_export int      GDKunlink (str dir, str nme, str extension);
 gdk_export int      GDKmove   (str dir1, str nme1, str ext1, str dir2, str nme2, str ext2);
 @
@@ -1523,7 +1525,7 @@ gdk_export BAT*		BATorder         (BAT *b);
 gdk_export BAT*		BATrevert        (BAT *b); 
 gdk_export int		BATordered       (BAT *b); 
 
-gdk_export void GDKqsort (void *a, void* base, int n, int width, int tpe, int loc);
+gdk_export void GDKqsort (void *a, void* base, size_t n, int width, int tpe, int loc);
 
 #define BAThordered(b)	(((b)->htype == TYPE_void)?GDK_SORTED:(b)->hsorted)
 #define BATtordered(b)	(((b)->ttype == TYPE_void)?GDK_SORTED:(b)->tsorted)
@@ -1612,12 +1614,12 @@ gdk_export BBPrec*       	BBP;
 /* macros that nicely check parameters */
 #define BBPdirty(x)	 (BBP_dirty=(x))
 #define BBPheat(i)	 (BBPcache(i)?BBP_cache(i)->batLastused:0)
-#define BBPcacheid(b)	 (b)->batCacheid
-#define BBPstatus(i)	 (BBPcheck(i,"BBPstatus")?BBP_status(i):-1)
+#define BBPcacheid(b)	 ((b)->batCacheid)
+#define BBPstatus(i)	 (BBPcheck((i),"BBPstatus")?BBP_status(i):-1)
 #define BBPcurstamp()	 BBP_curstamp
-#define BBPrefs(i)	 (BBPcheck(i,"BBPrefs")?BBP_refs(i):-1)
-#define BBPcache(i)	 (BBPcheck(i,"BBPcache")?BBP_cache(i):(BAT*) NULL)
-#define BBPname(i)	 (BBPcheck(i,"BBPname")?(i > 0 || BBP_logical(i))?BBP_logical(i):BBP_logical(-i):"")
+#define BBPrefs(i)	 (BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
+#define BBPcache(i)	 (BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
+#define BBPname(i)	 (BBPcheck((i),"BBPname")?((i) > 0 || BBP_logical(i))?BBP_logical(i):BBP_logical(-(i)):"")
  
 #define BBPRENAME_ALREADY	-1
 #define BBPRENAME_ILLEGAL	-2
@@ -1631,7 +1633,7 @@ gdk_export int  BBPfix        (bat b);
 gdk_export int  BBPunfix      (bat b);
 gdk_export void BBPhot        (bat b);
 gdk_export void BBPcold       (bat b);
-gdk_export void BBPtrim       (lng memdelta, lng vmdelta);
+gdk_export void BBPtrim       (size_t memdelta, size_t vmdelta);
 gdk_export void BBPunlock     (str s);
 gdk_export int  BBPfree       (BAT *b);
 
@@ -1640,7 +1642,7 @@ gdk_export BAT* BBPdescriptor (bat b);
 gdk_export str  BBPlogical    (bat b, str buf); 
 gdk_export str  BBPphysical   (bat b, str buf); 
 gdk_export int  BBP_curstamp;
-gdk_export BATstore* BBPgetdesc(int i); 
+gdk_export BATstore* BBPgetdesc(bat i); 
 gdk_export BAT* BBPquickdesc  (bat b, int delaccess);
 @
 @}
@@ -1793,7 +1795,7 @@ typedef struct {
 	void	*(*atomRead)		(ptr a, stream* s, size_t cnt); 
 	void	(*atomWrite)		(ptr a, stream* s, size_t cnt); 
 	int	(*atomCmp)		(ptr v1, ptr v2); 
-	unsigned int (*atomHash)	(ptr v); 
+	hash_t	(*atomHash)		(ptr v); 
 	/* optional functions */ 
 	void	(*atomConvert)		(ptr v, int direction); 
 	int	(*atomFix)		(ptr atom);
@@ -1815,7 +1817,7 @@ gdk_export int 		GDKatomcnt;
 gdk_export void ATOMdelete    (int id);
 gdk_export void ATOMproperty  (char* nme, char *property, int (*fcn)());
 gdk_export int  ATOMindex     (char* nme);
-gdk_export int  ATOMdump      ();
+gdk_export int  ATOMdump      (void);
 
 gdk_export void ATOMheap      (int id, Heap *hp, size_t cap); 
 gdk_export str  ATOMname      (int id);
@@ -1833,7 +1835,7 @@ gdk_export ptr  ATOMdup	  (int id, ptr val);
 @T
 {\tt \begin{tabular}{|lll|}\hline
 oid  &  OIDseed & (oid seed);\\ 
-oid  &  OIDnew  & (int inc);\\
+oid  &  OIDnew  & (size_t inc);\\
 \hline\end{tabular}}
 
 OIDs are special kinds of unsigned integers because the system
@@ -1849,14 +1851,14 @@ unused OIDs, and returns the starting value of this range.
 Derived from that: 
 @{
 @h
-gdk_export int      	OIDinit  ();
-gdk_export oid		OIDrand  ();
+gdk_export int      	OIDinit  (void);
+gdk_export oid		OIDrand  (void);
 gdk_export oid      	OIDbase  (oid base);
 gdk_export oid      	OIDseed  (oid seed);
-gdk_export oid      	OIDnew   (int inc);
-gdk_export int      	OIDread  (str buf);
+gdk_export oid      	OIDnew   (size_t inc);
+gdk_export oid      	OIDread  (str buf);
 gdk_export int      	OIDwrite (stream *fp);
-gdk_export int      	OIDdirty ();
+gdk_export int      	OIDdirty (void);
 @
 @}
 
@@ -1935,15 +1937,15 @@ typedef struct {
 	char		name[IDLENGTH]; 
 	void		(*accBuild)   (Heap*, BAT*, void *param);
 	void		(*accDestroy) (Heap*, BAT*);
-	void		(*accInsert)  (Heap*, int pos, BAT*, ptr val);
-	void		(*accDelete)  (Heap*, int pos, BAT*, ptr val);
+	void		(*accInsert)  (Heap*, size_t pos, BAT*, ptr val);
+	void		(*accDelete)  (Heap*, size_t pos, BAT*, ptr val);
 	void		(*accSave)    (Heap*, BAT*);
 	void		(*accCommit)  (Heap*, BAT*);
 	void		(*accAbort)   (Heap*, BAT*);
 	void		(*accCluster) (Heap*, BAT*);
 	int             (*accBuncluster)(Heap*, BAT*);
 	int		(*accRepair)  (Heap*, BAT*);
-	void		(*accMove)    (Heap*, int from, int to, BAT*, ptr val);
+	void		(*accMove)    (Heap*, size_t from, size_t to, BAT*, ptr val);
 } accDesc; 
 
 gdk_export accDesc	BATaccelerators[];
@@ -2004,8 +2006,8 @@ supported.
 gdk_export int	HASHsize      (Hash *h);
 */
 gdk_export int	BATidx        (BAT *b, BAT *h);
-gdk_export BAT*	BAThashsplit  (BAT *b, int n, int unary); 
-gdk_export BAT*	BATrangesplit (BAT *b, int n, int unary); 
+gdk_export BAT*	BAThashsplit  (BAT *b, size_t n, int unary); 
+gdk_export BAT*	BATrangesplit (BAT *b, size_t n, int unary); 
 gdk_export BAT* BAThashjoin(BAT* l, BAT* r);
 
 /* low level functions */
@@ -2056,15 +2058,15 @@ and are checked on inconsistent frees and memory leaks.
 @{
 @h
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(char* path, int mode, size_t off, size_t len, void *fixed);
+gdk_export void *GDKmmap(char* path, int mode, off_t off, size_t len, void *fixed);
 gdk_export int	GDKmunmap(void* addr, size_t len);
 
-gdk_export	lng 	GDK_mem_maxsize;	/* max allowed size of committed memory */
-gdk_export	lng 	GDK_mem_bigsize;	/* size after which we use VM rather than heap memory */
-gdk_export	lng 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
-gdk_export	lng 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
-gdk_export volatile	lng 	GDK_mem_cursize;	/* committed bytes outside the heap */
-gdk_export volatile	lng 	GDK_vm_cursize;		/* reserved vm in bytes */
+gdk_export	size_t 	GDK_mem_maxsize;	/* max allowed size of committed memory */
+gdk_export	size_t 	GDK_mem_bigsize;	/* size after which we use VM rather than heap memory */
+gdk_export	size_t 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
+gdk_export	size_t 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
+gdk_export volatile	size_t 	GDK_mem_cursize;	/* committed bytes outside the heap */
+gdk_export volatile	size_t 	GDK_vm_cursize;		/* reserved vm in bytes */
 
 #define GDKvm_maxsize()		GDK_vm_maxsize
 #define GDKvm_minsize()		GDK_vm_minsize
@@ -2074,9 +2076,9 @@ gdk_export volatile	lng 	GDK_vm_cursize;		/* reserved vm in bytes */
 #define GDKmem_cursize()	(GDK_mem_cursize + GDKmem_heapsize())
 #define GDKvm_cursize()		(GDK_vm_cursize + GDKvm_heapsize())
 
-gdk_export lng GDKvm_heapsize();
-gdk_export lng GDKmem_heapsize();
-gdk_export lng GDKmem_heapinuse();
+gdk_export size_t GDKvm_heapsize(void);
+gdk_export size_t GDKmem_heapsize(void);
+gdk_export size_t GDKmem_heapinuse(void);
 
 gdk_export void* 	GDKmalloc  (size_t size); 
 gdk_export void* 	GDKrealloc (void* pold, size_t size); 
@@ -2209,16 +2211,16 @@ typedef struct threadStruct{
 
 gdk_export ThreadRec        GDKthreads[THREADS];
 
-gdk_export MT_Id	THRgettid    ();
+gdk_export MT_Id	THRgettid    (void);
 gdk_export Thread  THRget       (MT_Id tid);
 gdk_export Thread  THRnew       (MT_Id pid, str name);
 gdk_export void    THRdel       (Thread t);
-gdk_export int 	THRinit      ();
+gdk_export int 	THRinit      (void);
 gdk_export int     THRexit      (str nme);
-gdk_export int     THRcnt       ();
+gdk_export int     THRcnt       (void);
 gdk_export void    THRsetdata   (int,ptr);
 gdk_export void*   THRgetdata   (int);
-gdk_export int     THRhighwater ();
+gdk_export int     THRhighwater (void);
 gdk_export int	THRprintf    (stream *s, char* format, ... );
 
 gdk_export void*    THRdata[16];
@@ -2236,7 +2238,7 @@ gdk_export void*    THRdata[16];
 #ifdef __cplusplus
 extern "C" {
 #endif
-static INLINE int BBPcheck(REGISTER bat x, REGISTER str y) {
+static INLINE bat BBPcheck(REGISTER bat x, REGISTER str y) {
 	if (x && x != bat_nil) {
 	    REGISTER bat z = ABS(x);
 	    if (z > BBPsize || BBP[z].nme[0] == NULL) {
@@ -2319,11 +2321,11 @@ detail by the user.
 @{
 @h
 gdk_export int	TMnew       (str cntxt); 
-gdk_export int	TMcommit    (); 
-gdk_export int	TMabort     (); 
+gdk_export int	TMcommit    (void); 
+gdk_export int	TMabort     (void); 
 gdk_export int	TMresume    (str cntxt); 
-gdk_export str	TMcntxt     (); 
-gdk_export int*	TMfakeCommit(); 
+gdk_export str	TMcntxt     (void); 
+gdk_export int*	TMfakeCommit(void); 
 gdk_export void	TMkill      (int *kills); 
 @
 @}
@@ -2429,7 +2431,6 @@ gdk_export int      ALIGNsetH	(BAT *dst, BAT *src);
 
 gdk_export BAT*	BATpropcheck	(BAT *b); 
 gdk_export BAT*	BATpropcheck_	(BAT *b, int sanity_check); 
-gdk_export int	BATrepair	(BAT *b);
 
 gdk_export BAT*	VIEWcreate	(BAT *b);
 gdk_export BAT*	VIEWcreate_	(BAT *b, int stable);
@@ -2492,20 +2493,20 @@ BATloop & (BAT *b; BUN p, BUN q)\\
 BATloopDEL & (BAT *b; BUN p; BUN q; int dummy)\\
 DELloop & (BAT *b; BUN p, BUN q, int dummy)\\
 \hline
-HASHloop & (BAT *b; Hash *h, int dummy; ptr value)\\
-HASHloop\_bit & (BAT *b; Hash *h, int idx; bit *value, BUN w)\\
-HASHloop\_chr & (BAT *b; Hash *h, int idx; char *value, BUN w)\\
-HASHloop\_sht & (BAT *b; Hash *h, int idx; sht *value, BUN w)\\
-HASHloop\_bat & (BAT *b; Hash *h, int idx; bat *value, BUN w)\\
-HASHloop\_ptr & (BAT *b; Hash *h, int idx; ptr *value, BUN w)\\
-HASHloop\_int & (BAT *b; Hash *h, int idx; int *value, BUN w)\\
-HASHloop\_oid & (BAT *b; Hash *h, int idx; oid *value, BUN w)\\
-HASHloop\_flt & (BAT *b; Hash *h, int idx; flt *value, BUN w)\\
-HASHloop\_lng & (BAT *b; Hash *h, int idx; lng *value, BUN w)\\
-HASHloop\_dbl & (BAT *b; Hash *h, int idx; dbl *value, BUN w)\\
-HASHloop\_str & (BAT *b; Hash *h, int idx; str value, BUN w)\\
-HASHlooploc & (BAT *b; Hash *h, int idx; ptr value, BUN w)\\
-HASHloopvar & (BAT *b; Hash *h, int idx; ptr value, BUN w)\\
+HASHloop & (BAT *b; Hash *h, size_t dummy; ptr value)\\
+HASHloop\_bit & (BAT *b; Hash *h, size_t idx; bit *value, BUN w)\\
+HASHloop\_chr & (BAT *b; Hash *h, size_t idx; char *value, BUN w)\\
+HASHloop\_sht & (BAT *b; Hash *h, size_t idx; sht *value, BUN w)\\
+HASHloop\_bat & (BAT *b; Hash *h, size_t idx; bat *value, BUN w)\\
+HASHloop\_ptr & (BAT *b; Hash *h, size_t idx; ptr *value, BUN w)\\
+HASHloop\_int & (BAT *b; Hash *h, size_t idx; int *value, BUN w)\\
+HASHloop\_oid & (BAT *b; Hash *h, size_t idx; oid *value, BUN w)\\
+HASHloop\_flt & (BAT *b; Hash *h, size_t idx; flt *value, BUN w)\\
+HASHloop\_lng & (BAT *b; Hash *h, size_t idx; lng *value, BUN w)\\
+HASHloop\_dbl & (BAT *b; Hash *h, size_t idx; dbl *value, BUN w)\\
+HASHloop\_str & (BAT *b; Hash *h, size_t idx; str value, BUN w)\\
+HASHlooploc & (BAT *b; Hash *h, size_t idx; ptr value, BUN w)\\
+HASHloopvar & (BAT *b; Hash *h, size_t idx; ptr value, BUN w)\\
 \hline
 SORTloop& (BAT *b,p,q,tl,th,s) \\
 \hline
@@ -2593,7 +2594,7 @@ BAT *author\_books;
 str author;
 {
         BAT *b = author\_books;
-        int i; 
+        size_t i; 
 
         printf("%s\n==================\n", author);
         HASHloop(b, (b)->hhash, i, author) 
@@ -2947,7 +2948,7 @@ typedef struct {
 #define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
 
 /* interface definitions */
-gdk_export ValPtr	VALnew		();
+gdk_export ValPtr	VALnew		(void);
 gdk_export ptr	VALconvert	(int typ, ValPtr t, int silent);
 gdk_export int	VALformat	(char **buf, ValPtr res);
 gdk_export int	VALprint	(stream *fd, ValPtr res);

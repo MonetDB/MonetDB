@@ -114,8 +114,9 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 	rp = (@1*)BUNtloc(r,BUNfirst(r));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 	for (; lp < lq; lp+=cnt, rp+=cnt) {
-		REGISTER int x = (((lq-lp)<cnt)?(lq-lp):cnt);
-		REGISTER int y = x*sizeof(@1);
+		/* 0 <= cnt <= 4096, so cast to int is safe */
+		REGISTER int x = (int) (lq - lp < cnt ? lq - lp : cnt);
+		REGISTER int y = x*(int)sizeof(@1);
 		REGISTER int i;
 		memcpy(lbuf,lp,y);
 		memcpy(rbuf,rp,y);

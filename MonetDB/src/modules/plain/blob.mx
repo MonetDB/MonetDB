@@ -163,12 +163,12 @@ void blob_del(Heap* h,int* index)
    HEAP_free(h,*index);
 }
 
-int blob_hash(blob* b)
+hash_t blob_hash(blob* b)
 {
    return(b->nitems);
 }
 
-blob* blob_null()
+blob* blob_null(void)
 {
    static blob nullval;
    nullval.nitems = -1;

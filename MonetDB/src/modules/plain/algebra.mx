@@ -1072,9 +1072,7 @@ The string pattern matching routine has been added. It should be
 dynamically linked.
 A simple string matcher is included. It should be refined later on
 @c
-INLINE int like(x, y, ylen)
-char *x, *y;
-int ylen;
+INLINE int like(char *x, char *y, int ylen)
 {
         char *r;
         if (x == (char *)NULL) {

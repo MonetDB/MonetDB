@@ -635,7 +635,8 @@ void getword(char *word, char *line, char stop) {
     if(line[x]) ++x;
     y=0;
 
-    while(line[y++] = line[x++]);
+    while ((line[y++] = line[x++]) != 0)
+	    ;
 }
 
 char *makeword(char *line, char stop) {
@@ -649,7 +650,8 @@ char *makeword(char *line, char stop) {
     if(line[x]) ++x;
     y=0;
 
-    while(line[y++] = line[x++]);
+    while ((line[y++] = line[x++]) != 0)
+	    ;
     return word;
 }
 

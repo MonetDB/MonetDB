@@ -238,14 +238,14 @@ static int fromstr@1@2(str src, int* len, @2** dst){
  		v = (ptr) GDKmalloc(l=32);
 		r = (*fromstr)(src, &l, &v);
 	} else {
-		r = strlen(src); 
+		r = (int) strlen(src); 
 		v = src;
 	}
 	if (*len < sizeof(@2)) {
 		*dst = (@2*) GDKmalloc(*len = sizeof(@2));
 	}
 	if ((p = SORTfnd(b, v)) != NULL) {
-		**(unsigned @3**) dst = BUNindex(b,p)-1;
+		**(unsigned @3**) dst = (unsigned @3) (BUNindex(b,p)-1);
 	} else {
 		**dst = @2_nil;
 	}
@@ -323,13 +323,13 @@ int enum_encode(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 		if (p == NULL) {
 			*(chr*) dst = chr_nil; 
 		} else {
-			*(unsigned char*) dst = BUNindex(b,p) - 1;
+			*(unsigned char*) dst = (unsigned char) (BUNindex(b,p) - 1);
 		}
 	} else {
 		if (p == NULL) {
 			*(sht*) dst = sht_nil; 
 		} else {
-			*(unsigned short*) dst = BUNindex(b,p) - 1;
+			*(unsigned short*) dst = (unsigned short) (BUNindex(b,p) - 1);
 		}
 	}
 	return GDK_SUCCEED;
@@ -357,13 +357,13 @@ int enum_lower(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 		if (p == NULL) {
 			*(chr*) dst = chr_nil; 
 		} else {
-			*(unsigned char*) dst = BUNindex(b,p) - 1;
+			*(unsigned char*) dst = (unsigned char ) (BUNindex(b,p) - 1);
 		}
 	} else {
 		if (p == NULL) {
 			*(sht*) dst = sht_nil; 
 		} else {
-			*(unsigned short*) dst = BUNindex(b,p) - 1;
+			*(unsigned short*) dst = (unsigned short) (BUNindex(b,p) - 1);
 		}
 	}
 	return GDK_SUCCEED;
@@ -388,13 +388,13 @@ int enum_upper(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 		if (p == NULL) {
 			*(chr*) dst = chr_nil; 
 		} else {
-			*(unsigned char*) dst = BUNindex(b,p) - 1;
+			*(unsigned char*) dst = (unsigned char) (BUNindex(b,p) - 1);
 		}
 	} else {
 		if (p == NULL) {
 			*(sht*) dst = sht_nil; 
 		} else {
-			*(unsigned short*) dst = BUNindex(b,p) - 1;
+			*(unsigned short*) dst = (unsigned short) (BUNindex(b,p) - 1);
 		}
 	}
 	return GDK_SUCCEED;
@@ -446,7 +446,7 @@ int enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 		if (r == NULL) {
 			idx = @1_nil; 
 		} else {
-			idx = BUNindex(b,r) - 1;
+			idx = (unsigned @2) (BUNindex(b,r) - 1);
 		}
 		BUNfastins(bn, BUNhead(src,p), &idx); 
 	    } 
@@ -456,7 +456,7 @@ int enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 		if (r == NULL) {
 			idx = @1_nil; 
 		} else {
-			idx = BUNindex(b,r) - 1;
+			idx = (unsigned @2) (BUNindex(b,r) - 1);
 		}
 		BUNfastins(bn, BUNhead(src,p), &idx); 
 	    } 
@@ -595,7 +595,7 @@ void enum_epilogue(void) {
 
 @+ Fast printing
 On the small DD benchmark, printing proved to take up half of the
-benchmark time. While this actually is an modeling error in the
+benchmark time. While this actually is a modeling error in the
 benchmark (all this is caused by printing cubes with thousands of entries --
 which is not very realistic) the following code was written to
 produce the ascii result more quickly.
@@ -611,7 +611,8 @@ whole table is built in memory and flushed in one go to disk.
 int enum_print1(Stream *fp, BAT* b2, BAT* b1) {
 	BAT *e1;
 	int tpe1 = b1->ttype;
-	str dst; int i = 1000 + 20*BATcount(b2);
+	str dst;
+	size_t i = 1000 + 20*BATcount(b2);
 	stream *s = *(stream**)fp;
 
 	if (ALIGNsynced(b1,b2)==0) {
@@ -626,7 +627,7 @@ int enum_print1(Stream *fp, BAT* b2, BAT* b1) {
 		GDKerror("enum_print: only string enumerations allowed\n");
 		return GDK_FAIL;
 	}
-	dst = GDKmalloc(i);
+	dst = GDKmalloc(1000 + 20*BATcount(b2));
 	if (ATOMsize(b1->ttype) == 1) {
 		i = enum_print_char(dst, dst+i, b1, e1, b2);
 	} else {
@@ -638,9 +639,9 @@ int enum_print1(Stream *fp, BAT* b2, BAT* b1) {
 }
 
 @= enum_print1
-static int enum_print_@1(str p, str q, BAT* b1, BAT* e1, BAT* b2) {
-	int s1 = BUNsize(b1)/sizeof(@1);
-	int s2 = BUNsize(b2)/sizeof(int);
+static size_t enum_print_@1(str p, str q, BAT* b1, BAT* e1, BAT* b2) {
+	int s1 = BUNsize(b1)/(int)sizeof(@1);
+	int s2 = BUNsize(b2)/(int)sizeof(int);
 	unsigned @1* p1 = (unsigned @1*) BUNtloc(b1,BUNfirst(b1));
 	int *p2 = (int*) BUNtloc(b2,BUNfirst(b2));
 	int *end = (int*) BUNtloc(b2,BUNlast(b2));
@@ -674,7 +675,8 @@ int enum_print2(Stream *fp, BAT* b3, BAT* b2, BAT* b1) {
 	BAT *e1, *e2;
 	int tpe1 = b1->ttype;
 	int tpe2 = b2->ttype;
-	str dst; int i = 1000 + 28*BATcount(b3);
+	str dst;
+	size_t i = 1000 + 28*BATcount(b3);
 	stream *s = *(stream**)fp;
 
 	if (ALIGNsynced(b1,b3)==0 || ALIGNsynced(b2,b3)==0) {
@@ -709,11 +711,11 @@ int enum_print2(Stream *fp, BAT* b3, BAT* b2, BAT* b1) {
 }
 
 @= enum_print2
-static int 
+static size_t
 enum_print_@1_@2(str p, str q, BAT* b1, BAT* e1, BAT* b2, BAT* e2, BAT* b3) {
-	int s1 = BUNsize(b1)/sizeof(@1);
-	int s2 = BUNsize(b2)/sizeof(@2);
-	int s3 = BUNsize(b3)/sizeof(int);
+	int s1 = BUNsize(b1)/(int)sizeof(@1);
+	int s2 = BUNsize(b2)/(int)sizeof(@2);
+	int s3 = BUNsize(b3)/(int)sizeof(int);
 	unsigned @1* p1 = (unsigned @1*) BUNtloc(b1,BUNfirst(b1));
 	unsigned @2* p2 = (unsigned @2*) BUNtloc(b2,BUNfirst(b2));
 	int *p3 = (int*) BUNtloc(b3,BUNfirst(b3));

@@ -44,13 +44,13 @@
  */
 
 /* rewind list cursor and initialize the list if not done yet */
-void MSP_rewind_module_list();
+void MSP_rewind_module_list(void);
 
 /* search for module and return the complete path */
 char *MSP_locate_module(char *);
 
 /* return next module found in the list */
-char *MSP_next_module();
+char *MSP_next_module(void);
 
 #endif
 @c
@@ -70,7 +70,7 @@ struct moddir {
 
 static struct moddir *moddir_list=0;
 
-static void print_moddir_list() {
+static void print_moddir_list(void) {
     struct moddir *entry=moddir_list;
     while(entry)
         {
@@ -125,11 +125,11 @@ void insert_moddir_recursively(char *name) {
 }
 
 static 
-void parse_mod_path() {
+void parse_mod_path(void) {
     char *mod_path = GDKstrdup(GDKgetenv("monet_mod_path"));
 
     if (mod_path){
-      int pos=0, len=strlen(mod_path);
+      size_t pos=0, len=strlen(mod_path);
       char *dirbegin=mod_path;
       do
         {
@@ -152,14 +152,14 @@ void parse_mod_path() {
 static struct moddir *current_entry=0;
 static DIR *dirp=0;
 
-void MSP_rewind_module_list() {
+void MSP_rewind_module_list(void) {
     if (!moddir_list) parse_mod_path();
     current_entry=moddir_list;
     if(dirp) closedir(dirp);
     dirp=0;
 }
     
-char *MSP_next_module() {
+char *MSP_next_module(void) {
     struct dirent *dent=0;
     char *next_module;
 
@@ -216,11 +216,11 @@ static char *MSP_libname( char *name ){
 
 char *MSP_locate_module(char *mod_name) {
     char *name = MSP_libname( mod_name ); 
-    int len = strlen(name);
-    int fulllen = 0;
+    size_t len = strlen(name);
+    size_t fulllen = 0;
     char *next_module,*fullname;
     MSP_rewind_module_list();
-    while(1)
+    for (;;)
         {
             next_module=MSP_next_module();
             if (!next_module) break;

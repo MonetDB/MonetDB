@@ -132,7 +132,23 @@ This module contains a simple interface for internet connections.
 # include <winsock.h>
 #endif
 
+#ifdef AIX
 #define SOCKPTR struct sockaddr *
+#define SOCKLEN size_t
+#else
+#ifdef __sgi
+#define SOCKPTR void *
+#define SOCKLEN int
+#else
+#ifdef NATIVE_WIN32
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN int
+#else
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN socklen_t
+#endif
+#endif
+#endif
 
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
@@ -140,7 +156,7 @@ This module contains a simple interface for internet connections.
                 return _k;
         }
         @3 = VALconvert(@2, res, 0);
-        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+        if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
                 return handle_paramerror(res,@1,res->vtype,@2);
         }
 }
@@ -149,11 +165,7 @@ This module contains a simple interface for internet connections.
 int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	struct sockaddr_in server;
 	int 	sock;
-#ifdef AIX
-	size_t 	length;
-#else
-	int 	length;
-#endif
+	SOCKLEN 	length;
 	int    	on = 1;
 	int 	msgsock;
 	int	i = 0;
@@ -194,7 +206,7 @@ The port id should be obtained from the Homes file.
  
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
 
-	length = sizeof(server);
+	length = (SOCKLEN) sizeof(server);
 	if (bind(sock, (SOCKPTR)&server, length) < 0) {
 		GDKsyserror("MAPIlisten:binding to stream socket (%d) failed\n", port);
 		return GDK_FAIL;
@@ -223,14 +235,7 @@ Get the new information for the server socket and start listening.
     		tv.tv_usec = 0;
 
     		retval = select(sock+1, &fds, &fds, &fds, &tv);
-    		if (retval &&
-#ifdef AIX
-       			(msgsock = accept(sock, 0, (size_t)0))
-#else
-       			(msgsock = accept(sock, 0, (int *)0))
-#endif
-			< 0) {
-
+    		if (retval && (msgsock = accept(sock, 0, (SOCKLEN *)0)) < 0) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlisten:accept failed\n");
 				return GDK_FAIL;

@@ -43,14 +43,8 @@ as synced with the head of the original @%BAT@, and for instance
 @
 Each alignment sequence is given a unique identifier, so as to easily
 detect this situation. It is retained in the @%BAT descriptor@.
-@h
-#ifndef _GDK_ALIGN_H_
-#define _GDK_ALIGN_H_
-#include "gdk.h"
-
-#endif /* _GDK_ALIGN_H_ */
 @c
-#include "gdk_align.h"
+#include "gdk.h"
 
 @+ Alignment Design Considerations
 @T
@@ -411,16 +405,16 @@ void VIEWunlink(BAT *v) {
 	bat parent = VIEWparent(b);
 
 	/* unlink accelerators shared with parent */
-	if (b->hhash_heap && b->hhash_heap->base != (ptr) bs->H.hash.link) {
+	if (b->hhash_heap && b->hhash_heap->base != (str) bs->H.hash.link) {
 		b->hhash_heap = m->thash_heap = NULL;
 	}
-	if (b->thash_heap && b->thash_heap->base != (ptr) bs->T.hash.link) {
+	if (b->thash_heap && b->thash_heap->base != (str) bs->T.hash.link) {
 		b->thash_heap = m->hhash_heap = NULL;
 	}
-	if (b->hidx_heap && b->hidx_heap->base != (ptr) bs->H.idx.base) {
+	if (b->hidx_heap && b->hidx_heap->base != (str) bs->H.idx.base) {
 		b->hidx_heap = m->tidx_heap = NULL;
 	}
-	if (b->tidx_heap && b->tidx_heap->base != (ptr) bs->T.idx.base) {
+	if (b->tidx_heap && b->tidx_heap->base != (str) bs->T.idx.base) {
 		b->tidx_heap = m->hidx_heap = NULL;
 	}		      
 	BBPunshare(parent);
@@ -431,7 +425,7 @@ Materialize a view into a normal BAT. If it is a slice, we really
 want to reduce storage of the new BAT.
 @c
 BAT *VIEWreset(BAT *b) {
-    int parent = VIEWparent(b);
+    bat parent = VIEWparent(b);
     if (parent) {
 	BAT *n = BATreset(b);
 	BAT *m = BATmirror(n);
@@ -528,22 +522,22 @@ void VIEWdestroy(BAT *v) {
 		BBP_cache(-b->batCacheid) = NULL;
 	}
 
-	if (b->hhash_heap && b->hhash_heap->base == (ptr) bs->H.hash.link) {
+	if (b->hhash_heap && b->hhash_heap->base == (str) bs->H.hash.link) {
 		HEAPfree(b->hhash_heap);
 		GDKfree(b->hhash_heap);
 		b->hhash_heap = NULL;
 	}
-	if (b->thash_heap && b->thash_heap->base == (ptr) bs->T.hash.link) {
+	if (b->thash_heap && b->thash_heap->base == (str) bs->T.hash.link) {
 		HEAPfree(b->thash_heap);
 		GDKfree(b->thash_heap);
 		b->thash_heap = NULL;
 	}
-	if (b->hidx_heap && b->hidx_heap->base == (ptr) bs->H.idx.base) {
+	if (b->hidx_heap && b->hidx_heap->base == (str) bs->H.idx.base) {
 		HEAPfree(b->hidx_heap);
 		GDKfree(b->hidx_heap);
 		b->hidx_heap = NULL;
 	}
-	if (b->tidx_heap && b->tidx_heap->base == (ptr) bs->T.idx.base) {
+	if (b->tidx_heap && b->tidx_heap->base == (str) bs->T.idx.base) {
 		HEAPfree(b->tidx_heap);
 		GDKfree(b->tidx_heap);
 		b->tidx_heap = NULL;

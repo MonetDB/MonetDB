@@ -340,7 +340,7 @@ int io_fprintf(Stream *filepp, str format,  ...){
         if (ret == GDK_FAIL) {
                 return GDK_FAIL;
         }
-        if (fp->write(fp, s, ret, strlen(s)) < 0) {
+        if (fp->write(fp, s, ret, strlen(s)) == 0) {
                 GDKsyserror("io_fprintf():");
                 GDKfree(s);
                 return GDK_FAIL;

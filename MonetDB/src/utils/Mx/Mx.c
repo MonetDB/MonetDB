@@ -39,7 +39,7 @@ extern	int	_trace;
 #define MX_CXX_SUFFIX "cc"
 #endif
 
-int	db_flag= 0x00;
+unsigned int	db_flag= 0x00;
 int	archived;		/* set for archived portions */
 int	mode= M_TEXT;
 int	opt_column= 1;
@@ -165,75 +165,76 @@ char **	argv;
 		GenForm();
 	
 	exit(mx_err ? 1 : 0);
+	return 1;
 }
 
 Directive str2dir[]={
-    "", Continue,"",
-    "0",Index0,"",
-    "1",Index1,"",
-    "2",Index2,"",
-    "3",Index3,"",
-    "4",Index4,"",
-    "5",Index5,"",
-    "6",Index6,"",
-    "7",Index7,"",
-    "8",Index8,"",
-    "9",Index9,"",
-    "f",Ofile,"",
-    "=",Mxmacro,"",
-    "ifdef",Ifdef,"",
-    "else",Ifndef,"",
-    "endif",Endif,"",
-    "a", Author,"",
-    "v", Version,"",
-    "t", Title,"",
-    "d", Date,"",
-    "*",Module,"",
-    "+",Section,"",
-    "-",Subsection,"",
-    ".",Paragraph,"",
-    "T",Qtex,"",
-    "C",CCsrc,MX_CXX_SUFFIX,
-    "i",Pimpl,"impl",
-    "s",Pspec,"spec",
-    "h",Cdef,"h",
-    "c",Csrc,"c",
-    "y",Cyacc,"y",
-    "l",Clex,"l",
-    "odl",ODLspec,"odl",
-    "oql",OQLspec,"oql",
-    "sql",SQL,"sql",
-    "p",Prolog,"pl",
-    "hs",Haskell,"hs",
-    "m",Monet,"m",
-    "mil",MILcode,"mil",
-    "w",HTML,"www",
-    "java",Java,"java",
-    "tcl",Tcl,"tcl",
-    "Qnap",Qnap,"qnp",
-    "pc",ProC,"pc",
-    "sh",Shell,"",
-    "fgr",fGrammar,"fgr",
-    "mcr",Macro,"mcr",
-    "xml",XML,"xml",
-    "dtd",DTD,"dtd",
-    "xsl",XSL,"xsl",
-    "cfg",Config,"cfg",
-    "swig",Swig,"i",
-    "Y",CCyacc,"yy",
-    "L",CClex,"ll",
-    "bib",BibTeX,"bib",
-    "{",InHide,"",
-    "}",OutHide,"",
-    "/",Comment,"",
-    NULL,Nop,NULL};
+    { "", Continue,"", },
+    { "0",Index0,"", },
+    { "1",Index1,"", },
+    { "2",Index2,"", },
+    { "3",Index3,"", },
+    { "4",Index4,"", },
+    { "5",Index5,"", },
+    { "6",Index6,"", },
+    { "7",Index7,"", },
+    { "8",Index8,"", },
+    { "9",Index9,"", },
+    { "f",Ofile,"", },
+    { "=",Mxmacro,"", },
+    { "ifdef",Ifdef,"", },
+    { "else",Ifndef,"", },
+    { "endif",Endif,"", },
+    { "a", Author,"", },
+    { "v", Version,"", },
+    { "t", Title,"", },
+    { "d", Date,"", },
+    { "*",Module,"", },
+    { "+",Section,"", },
+    { "-",Subsection,"", },
+    { ".",Paragraph,"", },
+    { "T",Qtex,"", },
+    { "C",CCsrc,MX_CXX_SUFFIX, },
+    { "i",Pimpl,"impl", },
+    { "s",Pspec,"spec", },
+    { "h",Cdef,"h", },
+    { "c",Csrc,"c", },
+    { "y",Cyacc,"y", },
+    { "l",Clex,"l", },
+    { "odl",ODLspec,"odl", },
+    { "oql",OQLspec,"oql", },
+    { "sql",SQL,"sql", },
+    { "p",Prolog,"pl", },
+    { "hs",Haskell,"hs", },
+    { "m",Monet,"m", },
+    { "mil",MILcode,"mil", },
+    { "w",HTML,"www", },
+    { "java",Java,"java", },
+    { "tcl",Tcl,"tcl", },
+    { "Qnap",Qnap,"qnp", },
+    { "pc",ProC,"pc", },
+    { "sh",Shell,"", },
+    { "fgr",fGrammar,"fgr", },
+    { "mcr",Macro,"mcr", },
+    { "xml",XML,"xml", },
+    { "dtd",DTD,"dtd", },
+    { "xsl",XSL,"xsl", },
+    { "cfg",Config,"cfg", },
+    { "swig",Swig,"i", },
+    { "Y",CCyacc,"yy", },
+    { "L",CClex,"ll", },
+    { "bib",BibTeX,"bib", },
+    { "{",InHide,"", },
+    { "}",OutHide,"", },
+    { "/",Comment,"", },
+    { NULL,Nop,NULL, },
+};
 
 #define NUMEXTENS (sizeof(str2dir)/sizeof(Directive))
 
 int extcnt=0;
 CmdCode extens[NUMEXTENS];
-void addextension(ext)
-   char *ext;
+void addextension(char *ext)
 {
     extens[extcnt] = lookup(ext);
     if (extens[extcnt] > 0) {
@@ -242,8 +243,7 @@ void addextension(ext)
     else fprintf(stderr,"Invalid extension %s\n",ext);
 }
 	
-int extract(dir)
-   int dir;
+int extract(int dir)
 {
    int i=0;
    if(extcnt==0) return 1;

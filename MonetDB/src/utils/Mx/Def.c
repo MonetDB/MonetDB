@@ -54,7 +54,7 @@ int  ndef = 0;
                   else condStack[condSP-1].defined=1;}
 #define popCond() {if(condSP) condSP--;else Fatal("DefDir","IFDEF error");}
 
-int allTrue()
+int allTrue(void)
 {
     int i;
     for(i=0; i < condSP; i++)
@@ -83,7 +83,7 @@ Def*	d;
 	return d;
 }
 
-void	InitDef()
+void	InitDef(void)
 {
     time_t clock;
 
@@ -97,8 +97,7 @@ void	InitDef()
 	defs= (Def *) Malloc(sizeof(Def) * M_DEFS);
 }
 
-void	MakeDefs(name)
-char *	name;
+void	MakeDefs(char *name)
 {
     Def 	*d;
     CmdCode	dir;
@@ -371,16 +370,16 @@ char *	name;
     pr_hide = 0;
 }
 
-char * dir2ext(dir)
-    CmdCode dir;
+char * dir2ext(CmdCode dir)
 {
     Directive *d = str2dir;
 
-    if(dir == Bfile)
+    if(dir == Bfile) {
 	if(textmode == M_WWW) 
 		return "html";
 	else 
 		return "tex";
+    }
 
     while (d->cmd != (char *)0){
         if (d->code == dir)
@@ -391,8 +390,7 @@ char * dir2ext(dir)
 }
 
 
-CmdCode lookup(str)
-    char *str;
+CmdCode lookup(char *str)
 {
     Directive *d = str2dir;
     
@@ -404,8 +402,7 @@ CmdCode lookup(str)
     return Nop;
 }
 
-char *dir2str(dir)
-    CmdCode dir;
+char *dir2str(CmdCode dir)
 {
     Directive *d = str2dir;
     
@@ -419,8 +416,7 @@ char *dir2str(dir)
 
 char *line;
 
-char *substr(s,sep)
-    char *s,*sep;
+char *substr(char *s, char *sep)
 {
     size_t loc;
     
@@ -428,7 +424,7 @@ char *substr(s,sep)
     if (loc==strlen(s)) return NULL; else return s+loc;
 }
 
-CmdCode DefDir()
+CmdCode DefDir(void)
 {
      char        *dir;
      CmdCode         dircode;
@@ -445,11 +441,11 @@ CmdCode DefDir()
 
      Error("Non directive:%s",line);
      return Nop;
- }
+}
 
- char *
- DefCmd()
- {
+char *
+DefCmd(void)
+{
 
      char *f=line;
      char *l;
@@ -469,7 +465,7 @@ CmdCode DefDir()
 
 static	char	blk[ M_BLK+2];
 char *
-DefBlk()
+DefBlk(void)
 {
 	char *	f;
 	size_t size = 0;
@@ -504,8 +500,7 @@ DefBlk()
 }
 
 Def *
-GetDef(str)
-char *	str;
+GetDef(char *str)
 {
 Def *	d;
 
@@ -523,8 +518,7 @@ Def *	d;
 	return 0;
 }
 
-void	DbDef(d)
-Def *	d;
+void	DbDef(Def *d)
 {
 	if( (db_flag & DB_DEF) != DB_DEF )
 		return;

@@ -78,7 +78,7 @@ char *lexname[] = {
  "TOK_BACK", "TOK_TRGDEF", "TOK_ON", "TOK_MODULE", "TOK_DROP", "TOK_EVENT",
  "TOK_ANY", "TOK_UNDEF", "TOK_DEREF", "TOK_ANYNUM", 0, };
 
-char *LEXNAME(Y)           { if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
+char *LEXNAME(int Y)       { if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
                                 return lexname[Y-TOK_ITERTEMP];
                              } else {
                                 return "char";
@@ -108,7 +108,7 @@ char *LEXNAME(Y)           { if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
 				Vector(X, TYPE_str, sval, _s, strLen(_s));\
 			   }
 
-void ll_flushbuffer() {
+void ll_flushbuffer(void) {
 #ifdef FLEX_SCANNER
 	YY_FLUSH_BUFFER;
 #else
@@ -123,7 +123,7 @@ void ll_flushbuffer() {
 	  unput(offend); \
 	  r = TBL_search(s, token, hint&&(offend == '(')); }
 
-static int ll_skipcomment();
+static int ll_skipcomment(void);
 %}
 %p 3400
 %a 2300
@@ -153,7 +153,7 @@ static int ll_skipcomment();
 "::"                  { Symbol(TOK_ANYNUM);                                   }
 ("$h"|"$H"|"$head"|"$HEAD") { Vector(TOK_ITERTEMP, TYPE_int, ival, 1, 0);     }
 ("$t"|"$T"|"$tail"|"$TAIL") { Vector(TOK_ITERTEMP, TYPE_int, ival, 2, 0);     }
-"$"{D}+               { Vector(TOK_TEMPLATE,TYPE_int,ival,atol(yytext+1),0);  }
+"$"{D}+               { Vector(TOK_TEMPLATE,TYPE_int,ival,atoi(yytext+1),0);  }
 ":="                  { Symbol(TOK_ASSIGNMENT);                               }
 "(*"                  { Symbol(TOK_DEREF);                                    }
 "[*"                  { Symbol(TOK_SETOP);                                    }
@@ -175,7 +175,7 @@ static int ll_skipcomment();
 (":"{P}+"=") |
 (":"{L}({L}|{D})*"=") |
 ({L}({L}|{D})*"="?)  {
-command:             {  int i, l = strlen(yytext);
+command:             {  int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
 			strcpy(t,yytext); /* copy yytext before unput */
                         if (ll_resolution) {
@@ -202,7 +202,7 @@ command:             {  int i, l = strlen(yytext);
 ("[:"{L}({P}|{L}|{D})*"=]") |
 ("{"{L}({L}|{D})*"}") |
 ("["{P}+"="?"]") |
-("[:"{P}+"=]")      {   int i, l = strlen(yytext);
+("[:"{P}+"=]")      {   int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
 			strcpy(t,yytext); /* copy yytext before unput */
                         if (ll_resolution) {
@@ -217,7 +217,7 @@ command:             {  int i, l = strlen(yytext);
 				if (i == TOK_BUILTIN) {
 				   GDKerror("yyparse: cannot use a %cBUILTIN%c()\n", *t, (*t=='[')?']':'}');
 				} else if (i!=TOK_ASSIGNOP || *t == '[') {
-				   str nme = (str) alloca(strlen(s)+3);
+				   str nme = (str) alloca((int)strlen(s)+3);
 				   sprintf(nme, "%c%s%c", *t, s, cb);
                                    Function(i,nme);
 				}
@@ -249,12 +249,12 @@ command:             {  int i, l = strlen(yytext);
 ("-")?{D}+{E}         { flt val, *p = &val; int l = sizeof(flt);
 			fltFromStr(yytext, &l, &p);
 			Vector(TOK_CONSTANT, TYPE_flt, fval, val, 0);         }
-"'"\\0{O}({O})?({O})?"'" {int i; sscanf(yytext+2, "%o", &i);
+"'"\\0{O}({O})?({O})?"'" {unsigned int i; sscanf(yytext+2, "%o", &i);
                         Vector(TOK_CONSTANT, TYPE_chr, cval[0], i, 0);        }
 \"[^\n"]* 	      { int len, offending_chr = input();
 			str s = ll_getstr(yytext, yyleng, offending_chr);
 			if (s) {
-				len = strlen(s);
+				len = (int) strlen(s);
 				len = strFromStr(s, &len, &s);
                             	Vector(TOK_STRING, TYPE_str, sval, s, len);
 			} else {
@@ -264,7 +264,7 @@ command:             {  int i, l = strlen(yytext);
 			char val, *p = &val;
 			str s = ll_getstr(yytext, yyleng, offending_chr);
 			if (s) {
-				len = strlen(s);
+				len = (int) strlen(s);
 				chrFromStr(s, &len, (ptr)&p);
 				GDKfree(s);
                             	Vector(TOK_CONSTANT, TYPE_chr, cval[0], val, 0);
@@ -276,7 +276,7 @@ command:             {  int i, l = strlen(yytext);
 {S}                   ;
 .                     { Symbol(*yytext);                                      }
 %%
-int ll_skipcomment() { char c; while ((c=input()) && (c != '\n')); return yylex();}
+int ll_skipcomment(void) { char c; while ((c=input()) && (c != '\n')); return yylex();}
 @
 @-
 The routine @%ll_getch@ manipulates the input buffer for the current
@@ -305,7 +305,7 @@ int ll_push(str s) {
 	return 1;
 }
 
-int ll_pop() {
+int ll_pop(void) {
 	strstack *sp = ll_stack;
 	if (ll_stack) {
 		ll_stack = sp->up;
@@ -318,7 +318,7 @@ int ll_pop() {
 	return 0;
 }
 
-int ll_getch() {
+int ll_getch(void) {
         char ch;
 
         if (ll_client == 0) {
@@ -374,15 +374,15 @@ int ll_getstring(char *buf, int max_size) {
 		    break;
 		}
 	}
-	return (buf-start);
+	return (int) (buf-start);
 }
 
 
-void ll_init() {
+void ll_init(void) {
 	ll_lines = (str*) GDKmalloc((ll_maxlines=500)*sizeof(str));
 }
 
-str ll_lastline(){
+str ll_lastline(void){
         static char line[1024];
         char *l=line, *s = ll_client->cline;
 	int c = *s--;
@@ -475,7 +475,7 @@ m_export str*       ll_lines;             /* string chunks */
 m_export int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res);
 
 
-m_export void ll_flushbuffer();
+m_export void ll_flushbuffer(void);
 m_export int ll_getstring(char *buf, int max_size);
 m_export int ll_push(str s);
 
@@ -508,7 +508,7 @@ YYSTREE yysugar(YYSTREE node){
         return t;
 }
 
-int yywrap() { return 1; }
+int yywrap(void) { return 1; }
 
 @- The YACC Grammar
 @T
@@ -538,7 +538,7 @@ parses the grammar, executing the inlined C statements along the way.
 
 static void ll_parserror(str msg);
 
-extern int yylex();
+extern int yylex(void);
 
 #undef yyerror
 #define yyerror(X)	{ ll_parserror(NULL);  }
@@ -683,7 +683,7 @@ statement:
         {   $$ = $2; $2->token = TOK_VAR;                                     }
     |   TOK_CONST constidents ';'
         {   YYSTREE t=$2,tt, n = yylognode(TOK_BUILTIN, TYPE_ptr);
-            int i; extern int CMDconstant();
+            int i;
             n->yyval.val.pval = (ptr) CMDconstant;
             $$ = yylognode(TOK_SEQ,0);
             $2->token = TOK_VAR;
@@ -725,7 +725,7 @@ expr_statement:
         ';'
         {   $$ = ll_sugarnode; ll_sugarnode = NULL;                           }
     |   TOK_ITERATION parallel TOK_ITERATOR expression_list
-        {   $$ = ll_templates ? (YYSTREE)1 /* non-NULL */ : (ptr) 0; ll_templates = 1; } nonvar_statement
+        {   $$ = ll_templates ? (YYSTREE)(size_t)1 /* non-NULL */ : (ptr) 0; ll_templates = 1; } nonvar_statement
         {   ll_templates = ($5 != NULL);
             yylogexpand($3, $6); yylogexpand($3, $4);
             if ($2) yylogexpand($3, $2); $$ = $3;                             }
@@ -753,7 +753,7 @@ parallel:
     ;
 
 sequential_block:
-        '{' { $$=ll_modcmds?(YYSTREE)1:0; ll_modcmds=1; } statement_seq '}'
+        '{' { $$=ll_modcmds?(YYSTREE)(size_t)1:0; ll_modcmds=1; } statement_seq '}'
         {   ll_modcmds = ($2 != NULL);
 	    $$ = $3;
             if ($3->token == TOK_SEQ || $3->token == TOK_SEQBLOCK) {
@@ -765,7 +765,7 @@ sequential_block:
     ;
 
 parallel_block:
-        TOK_PARBLOCK {ll_parblockdepth++; $$=ll_modcmds?(YYSTREE)1:0;ll_modcmds=1;}
+        TOK_PARBLOCK {ll_parblockdepth++; $$=ll_modcmds?(YYSTREE)(size_t)1:0;ll_modcmds=1;}
 	statement_seq TOK_PAREND
         {   ll_modcmds = ($2 != NULL);
 	    if (--ll_parblockdepth == 0) ll_clrids();
@@ -1049,15 +1049,15 @@ template:
         temptok
         {   $$ = $1; }
     |   TOK_VARTEMP expression rangetemp
-	{   $$ = yylognode($3, 0);
+	{   $$ = yylognode((int)(size_t)$3, 0);
 	    yylogexpand($$,$2); }
     ;
 
 rangetemp:
 	')'
-	{ $$ = (YYSTREE) TOK_VARTEMP; }
+	{ $$ = (YYSTREE) (size_t) TOK_VARTEMP; }
     | 	TOK_RANGETEMP ')'
-	{ $$ = (YYSTREE) TOK_RANGETEMP; }
+	{ $$ = (YYSTREE) (size_t) TOK_RANGETEMP; }
     ;
 
 constant_expression:
@@ -1261,7 +1261,7 @@ we should also copy the input.
 void ll_parserror(str msg){
 	static char buf[1024];
 	char *s=buf, *t, *l = ll_lastline();
-	int i = strlen(GDKERROR);
+	size_t i = strlen(GDKERROR);
 
 	ll_flushbuffer(); /* flush the lexer's buffer */
         ll_modcmds = 0; ll_resolution = 1;
@@ -1376,7 +1376,7 @@ The identifier table is also used to map the formal arguments into their
 position number.
 In this case we start at the bottom.
 @c
-void ll_clrids() {
+void ll_clrids(void) {
         str *t = ids;
         char *c = iderrors;
 
