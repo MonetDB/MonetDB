@@ -572,10 +572,12 @@ static int conn_delete(int i)
 static int conn_kill(int i)
 {
 	if (connections[i].me) {
-	    MT_Id pid = connections[i].waiter->pid; 
-       	    THRdel(connections[i].waiter); 
-	    MT_kill_thread(pid);
-	    MT_sleep_ms(1000);
+	    if (connections[i].waiter) {
+	    	MT_Id pid = connections[i].waiter->pid; 
+       	    	THRdel(connections[i].waiter); 
+	    	MT_kill_thread(pid);
+	    	MT_sleep_ms(1000);
+	    }
 	    return conn_delete(i);
 	}
 	return 0;
@@ -961,7 +963,7 @@ static int conn_insert(str host, int port, int me, int sock)
 	    connections[i].sock = sock;
             connections[i].waiter = (Thread)0;
 	    strcpy(connections[i].hostname, host);
-	    if (me != -1) {
+	    if (me) {
 		    /* We want to pass the value of i to conn_waiter.
 		       This has to be done using a pointer to i,
 		       except that i is a local variable which may not
