@@ -34,10 +34,9 @@ load the dynamic libraries before we load and run the scripts.
 
 @= install_module
 {
-	extern oid @1_Module_Install(TBLinstall*, str);
+	extern oid _@1_Module_Install(TBLinstall*, str);
 	DL_regfcn(DL_reglib("_@1", NULL, 40), 
-		  @1_Module_Install, "_@1_Module_Install" );
-	@:load_module(_@1)@
+		  _@1_Module_Install, "_@1_Module_Install" );
 }
 @= load_module
 {

@@ -882,7 +882,7 @@ BAT* TBL_getdir(void) {
 #else 
     for(i=0; i<DL_TABLE_MAXLIBS; i++)  
     	if (DL_mod[i] != NULL) {
-            BUNins(b, &i, DL_mod[i]);
+            BUNins(b, &i, DL_mod[i]+1);
         }
 #endif
     return b;
