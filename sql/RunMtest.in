@@ -1,0 +1,26 @@
+#!/bin/sh
+
+builddir=`pwd`
+# make sure srcdir contains absolute path name
+srcdir=`cd '@srcdir@'; pwd`
+uname=`uname`
+
+MONET_PREFIX=@MONET_PREFIX@
+
+if [ ! -x "${MONET_PREFIX}/bin/Mtest.py" ]
+then
+	echo "Mtest.py not found, install MonetDB first" >&2
+	exit 1
+fi
+
+# enhance PATH with Msql and MonetDB binaries
+PATH="${builddir}/src/client:${MONET_PREFIX}/bin:$PATH"; export PATH
+
+MOD_PATH="${builddir}/src/client/.libs:${builddir}/src/common/.libs:${builddir}/src/odbc/driver/.libs:${builddir}/src/odbc/setup/.libs:${builddir}/src/server/.libs:/ufs/sjoerd/Monet/lib/MonetDB"
+
+# execute Mtest.py in the source directory
+cd "$srcdir"
+
+# execute the script
+# if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
+exec Mtest.py --monet_mod_path="$MOD_PATH" --SQL_PREFIX="$MONET_PREFIX" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" "${@--r}"

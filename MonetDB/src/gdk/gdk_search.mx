@@ -1167,15 +1167,15 @@ accDesc BATaccelerators[MAXACCS] = {
    { "_dummy_",	0,		0,		0,
 		0,		0,		0,
 		0,		0,		0,
-		0,		0 },
+		0,		0,		0 },
    { "hash",	0,		0,		0,
 		0,		0,		0,
 		0,		0,		0,
-		0,		0 },
+		0,		0,		0 },
    { "index",	0,		0,		0,
 		0,		0,		0,
 		0,		0,		0,
-		0,		0 } };
+		0,		0,		0 } };
 
 
 
@@ -1218,6 +1218,7 @@ void ACCproperty(str name, str prop, ptr fcn) {
 	if (i < 0) {
 		i = -i;
 		strcpy(BATaccelerators[i].name, name);
+		BATaccelerators[i].deleting = 1;
 		if (i >= GDKacc_cnt) {
 			GDKacc_cnt++;
 		}

@@ -336,7 +336,7 @@ if (lt->cnt != @1) {
 	if (_k < 0) {
 		return _k;
 	}
-	@3 = VALconvert(@2, res, 0);
+	@3 = VALconvert(@2, res);
 	if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
 		return handle_paramerror(res,@1,res->vtype,@2);
 	} 
@@ -869,7 +869,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 		monet_running = 0;
 		/*
 		freeClient(c);
-		monet_exit();
+		monet_exit(*statusp);
 		*/
 		GDKout->destroy(GDKout);
 		MT_global_exit(*statusp);

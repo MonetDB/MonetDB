@@ -94,6 +94,17 @@ test scripts were added.
 .COMMAND {avg}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_dbl; 
 	"grouped tail average"
 
+.COMMAND {variance}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_variance_sht;
+        "grouped tail variance"
+.COMMAND {variance}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_variance_int;
+        "grouped tail variance"
+.COMMAND {variance}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_variance_lng;
+        "grouped tail variance"
+.COMMAND {variance}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_variance_flt;
+        "grouped tail variance"
+.COMMAND {variance}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_variance_dbl;
+        "grouped tail variance"
+
 .COMMAND {min}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_min; 
 	"grouped tail minimum"
 .COMMAND {max}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_max; 
@@ -103,6 +114,15 @@ test scripts were added.
 	"grouped count; ignores nil values iff ignore_nils==TRUE"
 .COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_size;
 	"grouped count of true values"
+
+.COMMAND size(BAT[any,bit]) : int = CMDsize;
+        "return the number of true values in a tail column"
+.COMMAND hasNil(BAT[any,any]) : bit = CMDhasNil;
+        "return if there is a nil value in the tail column"
+.COMMAND card(BAT[any,any]) : int = CMDcard_unlimited;
+        "return the number of different values in a tail column"
+.COMMAND card(BAT[any,any], int maxelements) : int = CMDcard;
+        "as card(b), but returns nil if card(b) > maxelements"
 
 .END aggr;
 
@@ -170,6 +190,16 @@ test scripts were added.
 
     proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
 	return {count}(b.sunique,e);
+    }
+
+    proc variance(BAT[any,any::1] b) : any::1 {
+	var c := dbl(b.count);
+	if (c = 0.0LL) {
+		return 0.cast(b.ttype);
+	}
+	var s := [*](b,b).sum;
+	var a := b.avg;
+	return ((s / c) - (a * a)).cast(b.ttype); 
     }
 
 @{
@@ -260,6 +290,7 @@ PROC test_aggr() : void := {
 	aggrtst(5,9,"count","sht","int","lng","flt","dbl","decimal");
 	aggrtst(5,9,"count_no_nil","sht","int","lng","flt","dbl","decimal");
 	aggrtst(5,9,"card","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"variance","sht","int","lng","flt","dbl");
 }
 
 PROC test_aggr_uchr() : void := {
@@ -593,6 +624,83 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 @:arithavg(flt,tloc)@
 @:arithavg(dbl,tloc)@
 
+@-
+this was imported in the DD merge. 
+TODO: add ALGODEBUG and optimize further?
+
+@= arithvar
+int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
+	int nElements = BATcount(e);
+	BAT *bn = BATnew(e->htype, BATttype(b), nElements);	
+	int xx, off = BUNindex(e,BUNfirst(e)), idx=0;
+	int *cnt = (int*) GDKmalloc(nElements*sizeof(int)); 
+	dbl *sum = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
+	dbl *sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
+	@1 zero = (@1) 0;
+	BUN p, q, r;
+	oid previousOid = oid_nil;
+
+	/* init sums and counts to zero */
+	memset(cnt, 0, nElements*sizeof(int));
+	memset(sum, 0, nElements*sizeof(dbl));
+	memset(sumsquares, 0, nElements*sizeof(dbl));
+
+	/* scan b, adding sums, and incrementing counts */
+	(void) BATprepareHash(e);
+	BATloopFast(b, p, q, xx) {
+		oid *h = (oid*) BUNhead(b,p);
+		if(*h != previousOid) {
+			previousOid = *h;
+			BUNfndOID(r,e,h);
+			if(!r) continue;
+			idx = BUNindex(e,r)-off;
+		}
+
+		if (cnt[idx] != int_nil) {
+			@1 v = *(@1*) BUNtloc(b,p);
+			if (v == @1_nil) {
+				cnt[idx] = int_nil;
+			} else {
+				cnt[idx]++;
+				sum[idx] += v;
+				sumsquares[idx] += (v * v);
+			}
+		}
+	}
+
+	/* postprocess by dividing sumsquares and sum by counts and
+	   substracting square of the averages from the average sum of
+	   squares */
+	idx = 0;
+	BATloopFast(e, p, q, xx) {
+		if (cnt[idx] == int_nil) {
+			BUNfastins(bn, BUNhead(e,p), &@1_nil);
+		} else if (cnt[idx] <= 1) {
+			BUNfastins(bn, BUNhead(e,p), &zero);
+		} else {
+			dbl avg = (sum[idx] / cnt[idx]);
+			@1 variance = (@1) (sumsquares[idx] / cnt[idx]
+					    - (avg * avg));
+			BUNfastins(bn, BUNhead(e,p), &variance);
+		}
+		idx++;
+	}
+	bn->hsorted = bn->tsorted = 0;
+	ALIGNsetH(bn, e);
+
+	GDKfree(cnt);
+	GDKfree(sum);
+	*ret = bn;
+	return GDK_SUCCEED;
+}
+@c
+@:arithvar(sht)@
+@:arithvar(int)@
+@:arithvar(lng)@
+@:arithvar(flt)@
+@:arithvar(dbl)@
+
+
 @= extreme
 int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
@@ -647,6 +755,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 		BUNfndOID(r, bn, h);
 		if (r) {
 			ptr t = BUNtail(b,p);
+			(void) t; /* silence compiler about unused variable */
 			@1 {
 				int *dst = (int*) BUNtloc(bn, r);
 				(*dst)++;
@@ -662,6 +771,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 
 		if (h < range) {
 			ptr t = BUNtail(b,p);
+			(void) t; /* silence compiler about unused variable */
 			@1 {
 				cnt[h]++;
 			}
@@ -759,5 +869,124 @@ int CMDaggr_size(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 
+int CMDsize(int *ret, BAT* b) {
+	*ret = BATgetaggr(b, GDK_AGGR_SIZE);
+	if (*ret < 0) {
+		bit *cur = (bit*) BUNtail(b, BUNfirst(b));
+		bit *end = (bit*) BUNtail(b, BUNlast(b));
+		int cnt, xx = BUNsize(b);
+		for(cnt=0; cur<end; cur+=xx) cnt += (*cur == TRUE);
+		BATsetaggr(b, GDK_AGGR_SIZE, *ret = cnt);
+	}
+	return GDK_SUCCEED;
+}
+
+#define CARD_INC_BOUNDED(x,y) if (++(x) > (y)) break
+#define CARD_INC_UNBOUNDED(x,y) ++(x)
+
+@= card_bound_tpe
+if (BATtordered(b)&1) {
+	/* the sorted algorithm: scan */
+	ptr prev =  (ptr) BUNt@2(b, BUNfirst(b));
+	cursize = 1; /* start counting unique elements... (at one) */
+	BATloopFast(b, p, q, xx) {
+		ptr cur =  (ptr) BUNt@2(b, p);
+		if (!@1_EQ(prev, cur, @3)) {
+			CARD_INC_@4(cursize, maxsize);
+			prev = cur;
+		} 
+	}
+} else {
+	/* default algorithm is hash based */
+	int yy = BUNindex(b, BUNfirst(b));
+	BAT *v = VIEWcreate(BATmirror(b));
+	Heap *hp = HASHnew(&v->hhash, any, BATcapacity(b), HASHmask(BATcount(b)));
+	v->hhash_heap = BATmirror(v)->thash_heap = hp;
+	cursize = 0; /* start counting unique elements... (at zero) */
+	BATloopFast(b, p, q, xx) {
+		ptr cur =  (ptr) BUNt@2(b, p);
+		HASHfnd_@3(r, v, cur);
+		if (r == NULL) {
+			CARD_INC_@4(cursize, maxsize);
+			HASHins_@3(v->hhash, yy, cur); 
+		} 
+		yy++;
+	}
+	BBPreclaim(v); /* free view and hash table */
+} break;
+@= card_bound
+{	int any = tpe; /* name chosen for convenience in atom macros */
+	switch(ATOMstorage(any)) {
+	case TYPE_chr:  @:card_bound_tpe(simple,loc,chr,@1)@
+	case TYPE_sht:  @:card_bound_tpe(simple,loc,sht,@1)@
+	case TYPE_int:
+	case TYPE_flt:  @:card_bound_tpe(simple,loc,int,@1)@
+	case TYPE_lng: 
+	case TYPE_dbl:  @:card_bound_tpe(simple,loc,lng,@1)@
+	default: if (b->tvarsized) {
+			@:card_bound_tpe(atom,var,any,@1)@
+		 } else {
+			@:card_bound_tpe(atom,loc,any,@1)@
+		 }
+	}
+}
+@c
+
+int CMDcard(int *result, BAT* b, int* maxelements) {
+	int maxsize = *maxelements, cursize = BATcount(b); 
+
+	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+		cursize = 1; 
+	} else if (cursize > 1 && !b->tkey) {
+		cursize = BATgetaggr(b, GDK_AGGR_CARD);
+		if (b->ttype == TYPE_chr && *maxelements > 256) {
+			maxsize = 256;
+		} else if (b->ttype == TYPE_sht && *maxelements > 65536) {
+			maxsize = 65536;
+		} else if (cursize == int_nil && BATcount(b) > 10000 && *maxelements > 1000 && !(BATtordered(b)&1)) {
+			/* the recursive quick-look optimization does not make sense made for the sorted case */
+			maxsize = *maxelements / 10;
+			CMDcard(&cursize, b, &maxsize); /* try your luck with a smaller limit... */
+			maxsize = *maxelements;
+		}
+		if (cursize == int_nil) {
+			BUN p, q, r; /* if we could not figure out the cardinality by now, we must do real work.. :( */
+			int xx, tpe = b->ttype;
+#if 0
+			if (tpe ==TYPE_str && strElimDoubles(&b->theap)) {
+				tpe = TYPE_int; /* use offsets only in case of a double-eliminated string heap */
+			}
+#endif
+			if (maxsize <= BATcount(b)) {
+				@:card_bound(BOUNDED)@
+			} else {
+				maxsize = BATcount(b); /* reducing maxsize limits memory consumption in hash table */ 
+				@:card_bound(UNBOUNDED)@ /* UNBOUNDED = no overhead for checking maxsize */
+			}
+		}
+	}
+	if (cursize <= *maxelements) {
+		BATsetaggr(b, GDK_AGGR_CARD, *result = cursize);
+	} else {
+		*result = int_nil;
+	}
+	return GDK_SUCCEED;
+}
+
+int CMDcard_unlimited(int *result, BAT* b) {
+	int limit = BATcount(b);
+	return CMDcard(result, b, &limit);
+}
+
+int CMDhasNil(bit *ret, BAT* b) {
+	*ret = (BATcount(b) == 0)?FALSE:
+                                  BATtdense(b)?(b->tseqbase == oid_nil):
+	                                       BATgetaggr(BATmirror(b), GDK_AGGR_HASNIL);
+	if (*ret == bit_nil) {
+		*ret = BUNfnd(BATmirror(b),ATOMnilptr(b->ttype))?TRUE:FALSE;
+		 BATsetaggr(BATmirror(b), GDK_AGGR_HASNIL, *ret);
+	}
+	return GDK_SUCCEED;
+}
 @}
 @}

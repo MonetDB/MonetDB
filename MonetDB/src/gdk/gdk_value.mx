@@ -179,32 +179,33 @@ The result, a pointer to a value, is returned. If there are
 illegal values, or type combinations involved, it gives
 up with an ILLEGALVALUE.
 
+@= valcheck
+	(@1 < GDK_@2_min || @1 > GDK_@2_max) ? @2_nil : (@2) @1
 @= valconvert
 	if (dst_tpe == TYPE_chr) {
-		t->val.cval[0] = (char) @1; 
+		t->val.cval[0] = @:valcheck(@1,chr)@; 
 	} else if (dst_tpe == TYPE_sht) {
-		t->val.shval = (short) @1; 
+		t->val.shval = @:valcheck(@1,sht)@; 
 	} else if (dst_tpe == TYPE_bat) {
 		bat bid = (bat) @1;
-		if (ABS(bid) > BBPsize || BBP_logical(bid) == NULL) {
+		if (ABS(@1) > BBPsize || BBP_logical(bid) == NULL) {
 			bid = 0;
 			p = ILLEGALVALUE;
 		} else {
 			p = (ptr) BATdescriptor(bid);
 		} t->val.bval = bid; 
 	} else if (dst_tpe == TYPE_int) {
-		t->val.ival = (int) @1; 
+		t->val.ival = @:valcheck(@1,int)@; 
 	} else if (dst_tpe == TYPE_flt) {
-		t->val.fval = (float) @1; 
+		t->val.fval = @:valcheck(@1,flt)@; 
 	} else if (dst_tpe == TYPE_lng) {
-		t->val.lval = (lng) @1; 
+		t->val.lval = @:valcheck(@1,lng)@; 
 	} else if (dst_tpe == TYPE_dbl) {
-		t->val.dval = (dbl) @1; 
+		t->val.dval = @:valcheck(@1,dbl)@; 
 	}
-	warning = (sizeof(dst_tpe) < sizeof(@2));
 @c
-ptr VALconvert(int typ, ValPtr t, int silent){
-	int src_tpe = ATOMstorage(t->vtype), dst_tpe = typ, warning = 0;
+ptr VALconvert(int typ, ValPtr t){
+	int src_tpe = ATOMstorage(t->vtype), dst_tpe = typ;
 	ptr p = VALptr(t);
 
         if (dst_tpe != TYPE_bat) {
@@ -235,10 +236,6 @@ ptr VALconvert(int typ, ValPtr t, int silent){
 		} else if (src_tpe == TYPE_dbl) {
 			@:valconvert(t->val.dval, dbl)@;
 		}
-        	if (!silent && t->vtype && warning) {
-                	GDKwarning("VALconvert: converted type '%s' to '%s'.\n",
-                        	ATOMname(t->vtype), ATOMname(typ));
-        	}
 	}
 	t->vtype = typ;
 	return p;

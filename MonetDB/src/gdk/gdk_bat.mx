@@ -556,6 +556,9 @@ around and adapt search accellerator structures.
 @h
 #define hashins(h,i,v,n) HASHins(h,i,v)
 #define hashdel(h,i,v,n) HASHdel(h,i,v,n)
+#define accmov(acc) (acc?BATaccelerators[acc].accMove:NULL)
+#define accdel(acc) (acc?BATaccelerators[acc].accDelete:NULL)
+#define accins(acc) (acc?BATaccelerators[acc].accInsert:NULL)
 
 @= bun_move
         if (bs == 8) {
@@ -566,43 +569,41 @@ around and adapt search accellerator structures.
                 str _dst=(str)@2, _src=(str)@1, _end=_src+bs;
                 while(_src<_end) *(_dst++) = *(_src++);
         } 
-@= acc_init
-        if (b->@1acctype == 0) {
-                @1accmov = NULL;
-		@1accins = @1accdel = NULL;
-        } else {
-                @1accmov = BATaccelerators[b->@1acctype].accMove;
-                @1accdel = BATaccelerators[b->@1acctype].accDelete;
-                @1accins = BATaccelerators[b->@1acctype].accInsert;
-        }
 @= hacc_update
-	if (hacc@1) {
-		(*hacc@1)(&b->haccelerator, @4, b, BUN@2(b,@3));
+{	void (*update)(Heap*, size_t, BAT*, ptr) = acc@1(b->hacctype);
+	if (update) {
+		(*update)(&b->haccelerator, @4, b, BUN@2(b,@3));
 	}
 	if (b->hhash_heap) {
 		hash@1(b->hhash, @4, BUN@2(b, @3), @3 < last); 
-	} 
+	}
+} 
 @= tacc_update
-	if (tacc@1) {
-		(*tacc@1)(&b->taccelerator, @4, bm, BUN@2(b,@3));
+{	void (*update)(Heap*, size_t, BAT*, ptr) = acc@1(b->tacctype);
+	if (update) {
+		(*update)(&b->taccelerator, @4, bm, BUN@2(b,@3));
 	}
 	if (b->thash_heap) {
 		hash@1(b->thash, (hash_t)@4, BUN@2(b, @3), @3 < last); 
-	} 
+	}
+}
 @= acc_move
-	if (haccmov) { 
-		(*haccmov)(&b->haccelerator, @3, @4, b, BUNhead(b,@1));
-	} else if (haccdel) {
-		(*haccdel)(&b->haccelerator, @3, b, BUNhead(b,@1));
+{	void (*update)(Heap*, size_t, BAT*, ptr) = accdel(b->hacctype);
+	void (*hmove)(Heap*, size_t, size_t, BAT*, ptr) = accmov(b->hacctype);
+	void (*tmove)(Heap*, size_t, size_t, BAT*, ptr) = NULL;
+
+	if (hmove) { 
+		(*hmove)(&b->haccelerator, @3, @4, b, BUNhead(b,@1));
+	} else if (update) {
+		(*update)(&b->haccelerator, @3, b, BUNhead(b,@1));
 	}
 	if (b->hhash_heap) {
 		HASHmove(b->hhash, (hash_t)@3, (hash_t)@4, BUNhead(b, @1), @1 < last); 
 	}
-
-	if (taccmov) {
-		(*taccmov)(&b->taccelerator, @3, @4, bm, BUNtail(b,@1));
-	} else if (taccdel) {
-		(*taccdel)(&b->taccelerator, @3, bm, BUNtail(b,@1));
+	if ((tmove = accmov(b->tacctype)) != NULL) {
+		(*tmove)(&b->taccelerator, @3, @4, bm, BUNtail(b,@1));
+	} else if ((update = accdel(b->tacctype)) != NULL) {
+		(*update)(&b->taccelerator, @3, bm, BUNtail(b,@1));
 	}
 	if (b->thash_heap) {
 		HASHmove(b->thash, (hash_t)@3, (hash_t)@4, BUNtail(b, @1), @1 < last); 
@@ -610,13 +611,13 @@ around and adapt search accellerator structures.
 
 	@:bun_move(@1,@2)@
 
-	if (haccmov == NULL && haccins) {
-		(*haccins)(&b->haccelerator, @4, b, BUNhead(b,@2));
+	if (hmove == NULL && (update = accins(b->hacctype)) != NULL) {
+		(*update)(&b->haccelerator, @4, b, BUNhead(b,@2));
 	}
-	if (taccmov == NULL && taccins) {
-		(*taccins)(&b->taccelerator, @4, bm, BUNtail(b,@2));
+	if (tmove == NULL && (update = accins(b->tacctype)) != NULL) {
+		(*update)(&b->taccelerator, @4, bm, BUNtail(b,@2));
 	}
-
+}
 
 @- BUN Insertion
 Insertion into a BAT is split into two operations @%BUNins@ and
@@ -771,20 +772,11 @@ one now must do:
 {\small\tt BATloopDEL(b,p) p = BUNdelete(b,p)}.
 @
 @c
-BUN BUNdelete_(BAT *b, BUN p) {
+static INLINE BUN BUNdelete_(BAT *b, BUN p) {
+	BAT*	bm = BBP_cache(-b->batCacheid);
 	int 	bs = BUNsize(b);
 	BUN	l, last = BUNlast(b) - bs; 
 	size_t	idx1, idx2; 
-	BAT*	bm = BBP_cache(-b->batCacheid);
-        void    (*haccdel)(Heap*, size_t, BAT*, ptr);
-	void	(*taccdel)(Heap*, size_t, BAT*, ptr);
-	void 	(*haccins)(Heap*, size_t, BAT*, ptr);
-	void	(*taccins)(Heap*, size_t, BAT*, ptr);
-        void    (*haccmov)(Heap*, size_t, size_t, BAT*, ptr);
-	void	(*taccmov)(Heap*, size_t, size_t, BAT*, ptr);
-
-	@:acc_init(h)@
-	@:acc_init(t)@
  
 	ALIGNdel(b, "BUNdelete"); /* zap alignment info */
 
@@ -828,9 +820,17 @@ bun is moved to its old place. The "hole" pointer is incremented.
 This bun was not committed, and should therefore disappear. The 
 last inserted bun (if present) is copied over it. 
 @c
-        	void (*hatmdel)(Heap*, size_t*) = BATatoms[b->htype].atomDel;
+        	int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
+		void (*hatmdel)(Heap*, size_t*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*, size_t*) = BATatoms[b->ttype].atomDel;
 
+		if (hunfix) {
+			(*hunfix)(BUNhead(b,p));
+		}
+		if (tunfix) {
+			(*tunfix)(BUNtail(b,p));
+		}
 		if (hatmdel) {
 			(*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
 		}
@@ -846,18 +846,18 @@ last inserted bun (if present) is copied over it.
 			if (b->hsorted&1) {
 				b->hsorted = FALSE;
 				b->H->nosorted = idx1;
+				if (b->hdense) {
+					b->hdense = FALSE;
+					b->H->nodense = idx1;
+				}
 			}
 			if (b->tsorted&1) {
 				b->tsorted = FALSE;
-				b->T->nosorted = idx1;
-			}
-			if (b->hdense) {
-				b->hdense = FALSE;
-				b->H->nodense = idx1;
-			}
-			if (b->tdense) {
-				b->tdense = FALSE;
-				b->T->nodense = idx1;
+				b->H->nosorted = idx1;
+				if (b->tdense) {
+					b->tdense = FALSE;
+					b->T->nodense = idx1;
+				}
 			}
 		}
 		b->batBuns->free -= bs;
@@ -963,8 +963,6 @@ BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t) {
 	if (p>=b->batInserted){
   		/* uncommitted BUN elements */
 		BUN last = BUNlast(b) - BUNsize(b);
-		void (*taccins)(Heap*, size_t, BAT*, ptr) = BATaccelerators[b->tacctype].accInsert;
-		void (*taccdel)(Heap*, size_t, BAT*, ptr) = BATaccelerators[b->tacctype].accDelete;
 		BAT *bm = BBP_cache(-b->batCacheid);
 		size_t pit = BUNindex(b, p); 
 
@@ -1168,7 +1166,7 @@ size_t BATbuncount (BAT *b)
 }
 
 size_t BATvmsize(BAT *b, int dirty) {
-	if (b->batDirty) dirty = 0;
+	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk)) dirty = 0;
         return  ((dirty == 0 || b->batDirtybuns)?HEAPvmsize(b->batBuns):0) +
                 ((dirty == 0 || b->batDirtybuns)?HEAPvmsize(b->hhash_heap):0) +
                 ((dirty == 0 || b->batDirtybuns)?HEAPvmsize(b->thash_heap):0) +
@@ -1181,7 +1179,7 @@ size_t BATvmsize(BAT *b, int dirty) {
 }
 
 size_t BATmemsize(BAT *b, int dirty) {
-	if (b->batDirty) dirty = 0;
+	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk)) dirty = 0;
         return  ((dirty == 0 || b->batDirtydesc)?sizeof(BATstore):0) +
                 ((dirty == 0 || b->batDirtybuns)?HEAPmemsize(b->batBuns):0) +
                 ((dirty == 0 || b->batDirtybuns)?HEAPmemsize(b->hhash_heap):0) +
@@ -1369,6 +1367,59 @@ BAT *BATroles(BAT *b, str hnme,str tnme) {
 	return b;
 }
 
+BAT *BATmode(BAT *b, int mode) {
+        BATcheck(b, "BATmode");
+
+        if (mode != b->batPersistence) {
+                bat bid = ABS(b->batCacheid);
+
+		if (mode == PERSISTENT && (b->htype == TYPE_bat || b->ttype == TYPE_bat)) {
+			GDKerror("BATmode(%s) recursive BATs cannot be made persitent\n",
+				BBP_logical(b->batCacheid));
+			return b;
+		}
+                BBPdirty(1);
+		
+		/* a SESSION bat is a TRANSIENT with one logical reference added */
+		if (mode == SESSION) {
+			BBPincref(bid, TRUE);
+		} else if (b->batPersistence == SESSION) {
+			BBPdecref(bid, TRUE);
+		} 
+		if (mode == PERSISTENT && VIEWparent(b)) {
+                        VIEWreset(b);
+                }
+		/* persistent BATs get a logical reference */
+		if (mode == PERSISTENT) {
+			BBPincref(bid, TRUE);
+		} else if (b->batPersistence == PERSISTENT) {
+			BBPdecref(bid, TRUE);
+		}
+                MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
+                if (mode == PERSISTENT) {
+                        if (!(BBPstatus(bid)&BBPDELETED))
+                                BBP_status_on(bid, BBPNEW, "BATmode");
+                        BBP_status_off(bid, BBPDELETED, "BATmode");
+                } else if (b->batPersistence == PERSISTENT) {
+                        if (!(BBPstatus(bid)&BBPNEW))
+                                BBP_status_on(bid, BBPDELETED, "BATmode");
+                        BBP_status_off(bid, BBPPERSISTENT, "BATmode");
+                }
+                /* session bats or persistent bats that did not witness a commit yet may have been saved */
+                if (b->batCopiedtodisk) {
+                        if (mode == PERSISTENT) {
+                                BBP_status_off(bid, BBPTMP, "BATmode");
+                        } else {
+                                /* TMcommit must remove it to guarantee free space */
+                                BBP_status_on(bid, BBPTMP, "BATmode");
+                        }
+                }
+                b->batPersistence = mode;
+                MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
+        }
+        return b;
+}
+
 int BATkeytst(BAT *b, ptr h, ptr t) {
 	BUN p = NULL; 
 
@@ -1428,14 +1479,15 @@ on the BAT head column, is set after execution. Hence it can be
 used for determining with certainty whether the head column of a 
 BAT is sorted, key or dense. 
 @c
-BAT* BATpropcheck_(BAT* b, int sanity_check) {
+BAT* BATpropcheck(BAT* b, int mode) {
 	int disprove_dense, disprove_sorted, disprove_key = TRUE;
 	int dense_bak = 0, key_bak = 0, sorted_bak = 0;
 	oid seq_bak = 0;
 	size_t xx, yy;
-	int tpe;
+	int zz, tpe;
 	BUN p, q, r;
 	ptr last;
+        bit isKey = FALSE;
 
 	BATcheck(b, "BATpropcheck: BAT parameter"); 
 	if (b->halign == 0) {
@@ -1448,33 +1500,24 @@ BAT* BATpropcheck_(BAT* b, int sanity_check) {
 @- 
 check if duplicated properties are equal
 @c
-if (sanity_check) {
+PROPDEBUG mode |= BATPROPS_CHECK;
+if (mode & BATPROPS_CHECK) {
 	BAT *bm = BATmirror(b);
 	if (BAThvoid(b) && b->hseqbase != bm->tseqbase) {
 		oid o = (b->htype && yy != xx)?*(oid*) BUNhloc(b,BUNfirst(b)):oid_nil;
 		GDKerror("BATpropcheck: BAT %d set inconsistent hseqbase=%d\n", b->batCacheid, o);
 		b->hseqbase = bm->tseqbase = o; b->batDirty = TRUE;
 	}
-	if (b->GDKversion != bm->GDKversion || b->U != bm->U || b->P != bm->P ||
-	    b->H != bm->T || b->htype != bm->ttype || b->hloc != bm->tloc || 
-	    b->dims.headvarsized != bm->dims.tailvarsized  ||
-	    b->dims.bunshift != bm->dims.bunshift ||
-	    b->dims.bunwidth != bm->dims.bunwidth || b->batBuns->size == 0 ||
-	    b->batDeleted < b->batBuns->base || b->batHole < b->batDeleted ||
-	    b->batHole > b->batInserted || b->batBuns->free > b->batBuns->size||
-	    b->batInserted > (b->batBuns->base + b->batBuns->free))
-	{
-	int val =
-	   ((b->GDKversion != bm->GDKversion) + (b->U != bm->U) + (b->P != bm->P) +
-	    (b->H != bm->T) + (b->htype != bm->ttype) + (b->hloc != bm->tloc) + 
-	    (b->dims.headvarsized != bm->dims.tailvarsized)  +
-	    (b->dims.bunshift != bm->dims.bunshift) +
-	    (b->dims.bunwidth != bm->dims.bunwidth) + (b->batBuns->size == 0) +
-	    (b->batDeleted < b->batBuns->base) + (b->batHole < b->batDeleted) +
-	    (b->batHole > b->batInserted) + (b->batBuns->free > b->batBuns->size) +
-	    (b->batInserted > (b->batBuns->base + b->batBuns->free)));
-		GDKfatal("BATpropcheck: BAT %d has inconsistent descriptor %d\n", b->batCacheid, val);
-	}
+	zz = ((b->GDKversion != bm->GDKversion) + (b->U != bm->U) + (b->P != bm->P) +
+	      (b->H != bm->T) + (b->htype != bm->ttype) + (b->hloc != bm->tloc) +
+	      (b->dims.headvarsized != bm->dims.tailvarsized)  +
+	      (b->dims.bunshift != bm->dims.bunshift) +
+	      (b->dims.bunwidth != bm->dims.bunwidth) + (b->batBuns->size == 0) +
+	      (b->batDeleted < b->batBuns->base) + (b->batHole < b->batDeleted) +
+	      (b->batHole > b->batInserted) + (b->batBuns->free > b->batBuns->size) +
+	      (b->batInserted > (b->batBuns->base + b->batBuns->free)));
+	if (zz) GDKfatal("BATpropcheck: BAT %d has inconsistent descriptor %d\n", b->batCacheid, zz);
+
 	if (b->hhash_heap != bm->thash_heap || b->hidx_heap != bm->tidx_heap) {
 		GDKerror("BATpropcheck: BAT %d has inconsistent accrefs\n", b->batCacheid);
 		ACCremoveall(b); 
@@ -1541,7 +1584,7 @@ first propagate already known properties. that will save some effort.
 	}
 	disprove_dense = (tpe == TYPE_oid);
 
-	if (sanity_check) {
+	if (mode&BATPROPS_CHECK) {
 		dense_bak = BAThdense(b);
 		seq_bak = b->hseqbase;
 		sorted_bak = BAThordered(b);
@@ -1612,6 +1655,7 @@ is only relevant for this type..
 		}
 		last = v;
 	} else p += xx;
+        if(disprove_dense) isKey = TRUE;
 @-
 Merge scan check to see if head values are sorted (&key) 
 @c
@@ -1646,48 +1690,70 @@ Merge scan check to see if head values are sorted (&key)
 check to see if head values are key.
 We create a view on the bat as the hash table created is 
 partial; hence inconsistent (it should also not molest
-existing consistent hash tables). On this VIEW we can do a HASfnd
-@c
-	if (disprove_key && p < q) {
-		BAT *bv = VIEWcreate(b);
-		Heap *hp = HASHnew(&bv->hhash, tpe, BATcapacity(b), HASHmask(BATcount(b)));
-		bv->hhash_heap = BATmirror(bv)->thash_heap = hp;
+existing consistent hash tables). On this VIEW we can do a HASHfnd
 
-		switch(ATOMstorage(tpe)) {
-		case TYPE_chr: @:hash_disprove(_chr,loc)@
-		case TYPE_sht: @:hash_disprove(_sht,loc)@
-		case TYPE_int:
-		case TYPE_flt: @:hash_disprove(_int,loc)@
-		case TYPE_lng:
-		case TYPE_dbl: @:hash_disprove(_lng,loc)@
-		default:       @:hash_disprove(,ead)@
-		}
+The code was modified to limit memory consumption in the hash-table.
+Basically, unless we really need to determine that a bat is key,
+we say that it isn't if we cannot determine easily. Easily here means
+'with a small hash table'. In the case of a sanity check,
+we also do full key derivation (with whatever it takes).
+
+We also insert a debug statement triggered with BATDEBUG (mask 32) 
+that displays the size of the hash table used.  We chose BATDEBUG because 
+that also gives the best overview of MIL execution - necessary
+for determining which algebra commands set properties sub-optimally.
+@c
+        if (disprove_key) {
+          if(p < q) {
+            int cnt = BATcount(b);
+            int lim = MIN(cnt,(mode&BATPROPS_ALL)?GDK_int_max:16000);
+	    q = BUNptr(b, yy+lim);
+            if(p < q) {
+                BAT *bv = VIEWcreate(b);
+                Heap *hp = HASHnew(&bv->hhash, tpe, yy+lim, HASHmask(lim));
+                bv->hhash_heap = BATmirror(bv)->thash_heap = hp;
+
+                switch(ATOMstorage(tpe)) {
+                case TYPE_chr: @:hash_disprove(_chr,loc)@
+                case TYPE_sht: @:hash_disprove(_sht,loc)@
+                case TYPE_int:
+                case TYPE_flt: @:hash_disprove(_int,loc)@
+                case TYPE_lng:
+                case TYPE_dbl: @:hash_disprove(_lng,loc)@
+                default:       @:hash_disprove(,ead)@
+                }
+                BBPreclaim(bv);
+		BATDEBUG THRprintf(GDKerr, "BATpropcheck(%s) : used hashtable of size %d\n", BBPname(b->batCacheid), lim);
+            }
+          } else {
+            isKey = TRUE;
+          }
+	}
 
 @= hash_disprove
 		for(r=BUNfirst(b); r<p; r+=xx, yy++) {
 			HASHins@1(bv->hhash, yy, BUNh@2(bv,r));
 		}
-		do {
+		while(p < q) {
 			ptr v = BUNh@2(bv,p);
 			HASHfnd@1(r,bv,v); /* purify: UMR */
 			if (r != NULL) {
 				b->H->nokey[0] = BUNindex(bv,r);
 				b->H->nokey[1] = yy;
 				disprove_key = FALSE;
-				b->batDirtydesc = 1; 
+				b->batDirtydesc = 1;
 				break;
-			} 
-			HASHins@1(bv->hhash, yy, v); yy++;
-		} while((p += xx) < q);
-		break;
-@c
-		BBPreclaim(bv);
-	}
+			}
+			HASHins@1(bv->hhash, yy, v);
+			yy++; p += xx;
+		}
+                if(disprove_key && cnt == lim) isKey = TRUE;
+                break;
 @-
 failed to disprove on exhaustive check => succeeded to prove
 @c
 	if (disprove_key || disprove_dense) {
-		BATkey(b, key_bak|TRUE); /* respect BOUND2BTRUE */
+		BATkey(b, key_bak|isKey); /* respect BOUND2BTRUE */
 	}
 	if (disprove_sorted || disprove_dense) {
 		b->batDirtydesc = TRUE;
@@ -1697,7 +1763,7 @@ failed to disprove on exhaustive check => succeeded to prove
 		b->batDirtydesc = b->hdense = TRUE; 
 		BATseqbase(b, *(oid*) BUNhloc(b,BUNfirst(b)));
 	}
-exit:	if (sanity_check) {
+exit:	if (mode&BATPROPS_CHECK) {
 		if (sorted_bak && !(BAThordered(b)&1)) 
 		GDKwarning("BATpropcheck: BAT %s was incorrectly marked sorted!\n", b->batId);
 		if (key_bak && !b->hkey) 
@@ -1708,22 +1774,18 @@ exit:	if (sanity_check) {
 		   if (seq_bak != b->hseqbase) 
 		   GDKwarning("BATpropcheck: BAT %s had incorrect seqbase!\n", b->batId);
 		}
-		XPROPDEBUG {
-			if (!sorted_bak && (BAThordered(b)&1)) 
-			GDKwarning("BATpropcheck: BAT %s was not marked sorted!\n", b->batId);
-			if (!key_bak && b->hkey) 
-			GDKwarning("BATpropcheck: BAT %s was not marked keyed!\n", b->batId);
-			if (!dense_bak && disprove_dense) {
-			   if(BAThdense(b)) 
-			   GDKwarning("BATpropcheck: BAT %s was not marked dense!\n", b->batId);
-			}
-		}
+                XPROPDEBUG {
+                        if (!sorted_bak && (BAThordered(b)&1))
+                        GDKwarning("BATpropcheck: BAT %s was not marked sorted!\n", b->batId);
+                        if (!key_bak && b->hkey)
+                        GDKwarning("BATpropcheck: BAT %s was not marked keyed!\n", b->batId);
+                        if (!dense_bak && disprove_dense) {
+                           if(BAThdense(b))
+                           GDKwarning("BATpropcheck: BAT %s was not marked dense!\n", b->batId);
+                        }
+                }
 	}
 	return b; 
-}
-
-BAT *BATpropcheck(BAT *b) {
-	return BATpropcheck_(b, GDKdebug&8);
 }
 @
 @}

@@ -30,36 +30,15 @@ or through its server console.
 Access through the internet requires a Monet client program at the
 source, but ordinary telnet connections can be applied when the internet
 number of the database server is publicised.
-
-At the server, each client is represented by a record about the
-current status, such as name, file descriptors, and local stack.
-Acceptance of request is regulated through an authorization
-algorithm. 
-
-The monitor task is to assemble the textual command 
-and to submit it to the parser upon requests. It takes care of blocking
-However, in interactive mode it can not recognize blocks associated with
-procedures and triggers. Therefore, the header should be followed by the
-opening bracket.
-
 @-
 The number of clients permitted concurrent access is a compile time option.
 They are referenced internally by number. The console is the first and 
 should always be present. It reads from standard input and writes to 
 standard output.
 The number of clients depends on the permissible open file
-descriptors. Each client has a socket (with two file descriptors ?)
-and an open file for logging.
+descriptors.
 
 @{
-The file descriptors for communication are also stored here for
-ease of access. The field @%cptr@ can be manipulated by the lexical analyser.
-The backup file descriptors are used to enable temporary reads from
-another input file. 
-
-{ TODO: recursive calls, should be based on linked Client records. }
-
-The input of a client may be logged on a specific file for offline inspection.
 @h
 #ifndef _MONET_CLIENT_H_
 #define _MONET_CLIENT_H_
@@ -68,11 +47,13 @@ The input of a client may be logged on a specific file for offline inspection.
 #define MAXCLIENTS	32
 #define BLOCKMODE	32
 #define FINISHED	0
-#define FINISHING	1	
+#define STARTING	1
+#define FINISHING	2	
 #define CONSOLE		0
 
 typedef struct _modstack_t {
 	str mod;
+	ptr var;
 	struct _modstack_t *up;
 } modstack;
 
@@ -102,6 +83,7 @@ typedef struct CLIENT{
 	BAT		*triggers;		/* BAT(str, type-id) */
 	BAT		*events;		/* BAT(str, type-id) */
 	modstack	*m_stack;		/* module stack */
+        void            (*cleanup)(struct CLIENT* c);   /* cleanup handler */
 } *Client, ClientRec;
 
 m_export ClientRec monet_clients[MAXCLIENTS+1];
@@ -112,7 +94,6 @@ m_export Client	forkClient     (Cntxt stk, int thread);
 m_export int	closeClient    (Client c, int thread);
 m_export void	killClient     (Client c, int thread);
 m_export void	scheduleClient (Client c);
-m_export int 	acceptClient   (Client c);
 m_export int 	readClient     (Client c);
 m_export YYSTREE	parseClient    (Client c, int reschedule);
 m_export int	serveClient    (Cntxt stk, YYSTREE lt, ValPtr res);
@@ -126,16 +107,6 @@ m_export void lockparser(Client c);
 m_export void unlockparser(Client c);
 
 #endif /* _MONET_CLIENT_H_ */
-@-
-Upon acceptance of a connection a client record is initialized.
-A new thread is started to ensure that a read request on a client
-does not block the complete system. 
-Failure leads to refusal of the client. 
-
-{ TODO: The accept request should involve a timeout }.
-
-No protection is yet given against
-a parallel block with multiple readClient statements
 @c
 #include "monet.h"
 #ifdef HAVE_SYS_SOCKET_H
@@ -149,27 +120,29 @@ a parallel block with multiple readClient statements
 ClientRec		monet_clients[MAXCLIENTS+1];
 int			monet_nclients = 0;
 
+@-
+Upon acceptance of a connection a client record is initialized.
+@c
 Client initClient(str nme, str prompt, int thread){
 	Client 	c;
-@-
-Find an empty client slot.  The console entry is reserved.
-@c
+
+	/* find an empty client slot. The console entry (0) is reserved. */
 	MT_set_lock(monet_contextLock, "initClient");
 	for(c = monet_clients; c < monet_clients+MAXCLIENTS; c++) {
 		if (c->mode == FINISHED) {
 			monet_nclients++;
-			c->mode = BLOCKMODE;
+			c->mode = STARTING;
 			break;
 		}
 	}
 	MT_unset_lock(monet_contextLock, "initClient");
 
 	if (c == monet_clients+MAXCLIENTS) {
-		GDKfatal("Out of client slots\n");
+		GDKerror("Out of client slots\n");
 		return 0;
 	}
-	if (thread) {
-		if ((int)monetFork() < 0) return 0;
+	if (thread && (int)monetFork() < 0) {
+		return 0; /* cannot create required MIL interpreter thread */
 	}
        	c->user = GDKstrdup(nme);
 	c->prompt = GDKstrdup(prompt);
@@ -191,14 +164,7 @@ Find an empty client slot.  The console entry is reserved.
 	c->limit = c->input + 4096;
 	c->top = c->input;
 	*c->top = 0;
-@-
-Upon entering of each client we should ensure that there are
-at least as many threads as there are clients. Otherwise, waiting for
-client input may block the system.
-The easiest way to look for sufficient clients is to set a flag in
-each Client record to indicate that for this slot a thread has been
-created (in the past).
-@c
+	c->mode = BLOCKMODE;
 
 	return c;
 }
@@ -270,10 +236,15 @@ void rescheduleClient(Client c) {
 
 @-
 Forking is a relatively cheap way to create a new client.
-The new client record is shared most datastructures with the father.
+The new client record shares most datastructures with the father.
+The idea of such a forked client is that it has its own MIL string
+buffer, MIL parse tree, and own context management. It is typically
+used for evaluating a MIL string from within MIL. This evaluation
+takes place in a forked client, so that all MIL resources (context records)
+can be freed immediately, independent from the MIL execution context 
+of the father.
 @c
 Client forkClient(Cntxt stk, int thread){
-	Cntxt nstk = 0;
         Client father = NULL, son = NULL;
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) { 
@@ -295,16 +266,18 @@ Client forkClient(Cntxt stk, int thread){
         	son->triggers = father->triggers;
         	son->events = father->events;
         	son->login = father->login;
+		son->cleanup = NULL;
 
-		/* also reuse father's stack */
 		if (thread) {
-			son->father = -1;
-			nstk = CNTXTcopy( stk );
-			monet_cntxt[son->stk].outer = nstk;
+			/* independent thread must be fully decoupled from father */
+			CNTXTcopy(stk, son); /* copy all variables available in father into private context */
+			monet_cntxt[son->stk].outer = 0; 
+			son->father = -1; 
 			TBL_initclient(son, father);
 			son->fdin = file_rastream(stdin, "stdin");
 			son->fdout = file_wastream(stdout, "stdout");
 		} else {
+			/* temporary (synchronous) forks reuse father's stack */
         		son->father = father->stk;
         		monet_cntxt[son->stk].outer = stk;
         		monet_cntxt[son->stk].shadow = 1;
@@ -320,12 +293,9 @@ Client forkClient(Cntxt stk, int thread){
 }
 
 @-
-When a client wishes to terminate then the file descriptors for
-its input/output are closed. Termination of the server should lead to
-a proper degradation using the quit command.
-The end of a session for the client is administered in the log.
-The backup output file is often the same as the primary. Thus, 
-it may not be simply closed.
+freeClient() frees up the client slot, file descriptors, user name and
+prompt, and all cached context (i.e. MIL variable) records that were
+used in the client session.
 @c
 void freeClient(Client c) {
 	if (c->mode <= FINISHING) {
@@ -340,13 +310,32 @@ void freeClient(Client c) {
 	c->mode = FINISHING;
 	MT_unset_lock(monet_contextLock, "freeClient");
 
-	/* epilogue actions */
-	if (c->father < 0) { /* normal client */
+	/* epilogue: free all resources taken by client */
+	if (c->tree) {
+		yyfree(c->tree); /* garbage collect return values in last MIL tree */
+		c->tree = NULL;
+	}
+	/* destroy MIL stack (must happen before module drops) */
+	CNTXTclear(c->stk);
+	CNTXTfree2(c->stk, c); 
+	CNTXTdelete(c->stk);
+	c->top = c->limit = NULL;
+
+	/* free other buffers, fds referenced by the client */
+	if (c->father >= 0) { 
+		/* tmp client resus parent so misses some epilogue work */
+		c->father = monet_cntxt[c->stk].outer = -1;
+	} else {
+		/* normal client  */
 		Thread t = THRget(THRgettid()); 
 		stream *bkin = t->data[1], *bkout = t->data[0];
 
+		if (c->cleanup) {
+			(*c->cleanup)(c);
+			c->cleanup = NULL;
+		}
 		monetSetChannel(t, bkin, bkout);
-       		TBL_exitclient(c);
+       		TBL_exitclient(c); /* module drops */
 		GDKlog("Mserver: %s session ends", c->user);	
 		(void) c->fdout->flush(c->fdout); 
 		c->fdin->close(c->fdin);
@@ -358,26 +347,19 @@ void freeClient(Client c) {
 		}
 		GDKfree(c->user); 
 		GDKfree(c->prompt); 
-	} else { 			/* nested client */
-		c->father = monet_cntxt[c->stk].outer = -1;
 	}
-
-	/* destroy all bindings */
-
-	if (c->tree) {
-		yyfree(c->tree);
-		c->tree = NULL;
-		CNTXTfree2(c->stk, c);
-	}
-
-	CNTXTclear(c->stk);
-	CNTXTfree2(c->stk, c); 
-	CNTXTdelete(c->stk); 
+	GDKfree(c->input);
+	GDKfree(c->output);
+	c->input = c->output = NULL;
 	c->user = c->prompt = NULL;
 	c->children = 0;
 	c->mode = FINISHED;
 }
 
+@-
+closeClient is called if a MIL client session ends. Most of the time it leads
+to a freeClient to free up resources.
+@c
 int closeClient(Client c, int thread) {
 	static int killadm = FALSE;
 
@@ -412,7 +394,7 @@ int closeClient(Client c, int thread) {
                         putkillRequest();
                 }
  	} else {
-		/* client: free your recources imediately */
+		/* client: free your recources immediately */
 		MT_set_lock(monet_contextLock, "closeClient");
 		freeClient(c);
 		if (thread) {
@@ -432,6 +414,11 @@ int closeClient(Client c, int thread) {
 }
 
 
+@-
+killClient() interrupts the MIL session abruptly, killing any executing MIL 
+interpreter threads. It is not deadlock safe nor memory leak free, and should
+be used only as a last resort to kill an out-of-control query.
+@c
 void killClient(Client c, int thread){
     if (c && c->user) {
         MT_Id   me = THRgettid();
@@ -455,30 +442,10 @@ void killClient(Client c, int thread){
     }
 }
 @-
-The input is read from a terminal and stored in the client record
-message buffer. The storage area grows automatically.
-The user can not interrupt the processing of an outstanding request yet.
-This should become part of the functionality of the client monitor at
-some later stage.
-To simplify entering blocks the monitor looks for lines starting
-with [ or {. They lead to block mode processing which terminates
-by finding a line with the closing bracket.
+readClient() reads MIL from a string into the client MIL  buffer. It reads MIL (without really parsing it yet) until 
+the minimal point that something can be executed, hence it detects just when we have read one MIL statement. Notice 
+that a MIL (parallel) block counts as one statement, but may span many lines.
 @c
-
-
-int acceptClient(Client c){
-	int r;
-	PARSEDEBUG THRprintf(GDKerr, "accept from %s\n", c->user);
-	r = readClient(c);
-	if ( r) {
-		parseClient(c, TRUE);
-	} else {
-		Request q = thisRequest();
-		q->ev_kill = c->stk + 1;
-	}
-	return 0;
-}
-
 static 
 void enlargebuffer(Client c){
 	size_t i;
@@ -502,10 +469,7 @@ int readClient(Client c){
  
 	PARSEDEBUG THRprintf(GDKerr, "accept client %d input %s buffer:\n#%s\n", 
 			c-monet_clients, c->fdin->name, c->top);
-@-
-The next statement block is read. Care is taken to recognize the
-bracket structure within string and character constants.
-@c
+
 	c->top = c->input;
 	do {
 		if (instring != '"') {
@@ -518,11 +482,6 @@ bracket structure within string and character constants.
 			}
 			fd->flush(fd);
 		}
-@-
-The system should use the low level read primitives to ensure that
-the client reader does not hang too long on terminal I/O.
-@c
-/* again: */
  		s = c->top; *s = 0;
 		while ((i = c->fdin->read(c->fdin, c->top, 1, 1)) > 0) {
 			PARSEDEBUG THRprintf(GDKerr, "%c (%lu)", *c->top, (unsigned long) i);
@@ -578,19 +537,7 @@ the client reader does not hang too long on terminal I/O.
 			}
 		}
 		if (i == 0) {
-/*
-			if (feof(c->fdin)
-#ifndef WIN32
-			    || MT_geterrno() != EAGAIN
-#endif
-			){
-*/
-				return 0;
-/*
-			}
-			MT_seterrno(0);
-			goto again; 
-*/
+			return 0;
 		}
 		c->top++;
 		if (doflush && bracket <= 0) {
@@ -604,15 +551,15 @@ the client reader does not hang too long on terminal I/O.
 
 
 @-
-The message is parsed and entered into the queue for execution.
-Currently the parser is a single resource, shared among all users,
-since both lex and yacc use global datastructures.
-The tree should be freed by the client at a convenient point in time.
-Note that the request queue is extended with the command @%readClient()@, 
-which ensures that after the block has been executed the next request is
-read from the tcp connection.
+parseClient() parses the client MIL string byffer into a MIL parse tree. This
+is also the point that the context resources of the previous MIL parse tree are
+released. In the past, frreing resources could not be done right away after
+executing the tree, because return values would be lost. Improvements in MIL
+value fixing and the return statement have now made this unnecessary.
 
-yacc/lex is not thread-safe => locking is necessary!
+PETER: this coule be changed; freeing ASAP makes purify output easier to judge.
+
+As yacc/lex are not thread-safe, we lock around the parsing actions.
 @c
 void lockparser(Client c){
 	MT_set_lock(monet_parserLock, "lockparser");
@@ -665,12 +612,15 @@ YYSTREE parseClient(Client c, int reschedule){
 }
 
 @-
-A dummy client is one that receives it input from a file, executes
-the content and terminates.
-The client file is read relative to the starting directory of the
-server unless the name indicates a complete path.
-Actually it makes sense to read the complete file immediately to reduce
-the number of IO calls.
+serveClient() tries to read MIL from the client input stream, and parse it. 
+It is typically called from the MIL queue, which basically has two kinds
+of requests: serveClient and MIL execution.
+
+It calls on parseClient(), which will again add a MIL executuin request 
+containing a parsed MIL tree in to the MIL queue. 
+
+If and end-of-stream is detected, we signal in the queue that the
+corresponding client should be terminated.
 @c
 int serveClient(Cntxt stk, YYSTREE lt, ValPtr res){
         int     i = 0;
@@ -693,7 +643,13 @@ int serveClient(Cntxt stk, YYSTREE lt, ValPtr res){
         if (monetSetChannel(t,  c->fdin,c->fdout)) {
                 return -1;
         }
-        return acceptClient(c);
+	if (readClient(c)) {
+		parseClient(c, TRUE);
+	} else {
+		Request q = thisRequest();
+		q->ev_kill = c->stk + 1;
+	}
+        return 0;
 }
 
 str moduleClient(Client c, str mod, str parmod ){
@@ -737,6 +693,7 @@ void moduleEnterClient(Client c, str mod){
 		modstack *s = (modstack*)GDKmalloc(sizeof(modstack));
 		s->mod = GDKstrdup(mod);
 		s->up = c->m_stack;
+		s->var = CNTXTregvars(c);
 		c->m_stack = s;
 	}
 }
@@ -744,7 +701,9 @@ void moduleEnterClient(Client c, str mod){
 void moduleExitClient(Client c){
 	if (c->m_stack){
 		modstack *s = c->m_stack;
+		ptr var = CNTXTregvars(c);
 		c->m_stack = s->up;
+		if (c->m_stack) c->m_stack->var = var;
 		GDKfree(s->mod);
 		GDKfree(s);
 	}

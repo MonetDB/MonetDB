@@ -115,6 +115,11 @@ int ALIGNsetH(BAT *b1, BAT *b2) {
 	if (b2->halign==0) { 
 		b2->halign=OIDnew(1);
 		b2->batDirtydesc = TRUE;
+	} else {
+		/* propagate GDK_AGGR information */
+		b1->H->aggr[0] = b2->H->aggr[0];
+		b1->H->aggr[1] = b2->H->aggr[1];
+		b1->H->aggr[2] = b2->H->aggr[2];
 	}
 	if (BAThvoid(b2)) {
 		if (b1->htype != TYPE_void) b1->hdense = TRUE;
@@ -400,7 +405,6 @@ void VIEWunlink(BAT *v) {
 	BAT *b = BATreset(v);
 	BAT *m = BATmirror(b);
 	BATstore *bs = (BATstore*) b;
-	bat parent = VIEWparent(b);
 
 	/* unlink accelerators shared with parent */
 	if (b->hhash_heap && b->hhash_heap->base != (str) bs->H.hash.link) {
@@ -415,7 +419,6 @@ void VIEWunlink(BAT *v) {
 	if (b->tidx_heap && b->tidx_heap->base != (str) bs->T.idx.base) {
 		b->tidx_heap = m->hidx_heap = NULL;
 	}		      
-	BBPunshare(parent);
 }
 
 @-
@@ -448,6 +451,7 @@ BAT *VIEWreset(BAT *b) {
 
 	/* cut the link to your parents */
 	VIEWunlink(n);
+	BBPunshare(parent);
 
 	/* cut all references to parent */
 	n->hacctype = m->hacctype = 0;

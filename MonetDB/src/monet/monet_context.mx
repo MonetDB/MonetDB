@@ -25,24 +25,30 @@
 @a M. L. Kersten, P. Boncz
 
 @* Monet variables
-The Monet name space is a three-level hierarchy of variables with a value binding.
-The root is formed by the context created at server start, i.e. client 0. 
-The next layer is bound to a client session, the lowest layer deals 
-with dynamic context. This layering reflects a static scope structure a 
-la C.
+The Monet name space is a multi-level hierarchy of contexts. Each
+context contains variables. Variables are sought from the deepest 
+level upwards.s The root conext is formed by the context created at 
+server start, i.e. the administrator console (0).  The next layer is 
+bound to a client session, the lower layers correspond to the stack 
+of MIL blocks in execution.
 
 The context structures are collected in a table. The first entries
 are reserved for a session context per client.
 
-The stack forms a potential shared resource. Several threads may inspect
-it to find an entry and to update it. To synchronize access, a global
-lock is currently used for gaining exclusive access.
+The stack forms a potential shared resource. The task of assigning new
+context records or freeing them therefore is protected with a lock.
 The implementation is optimistic in the sense that once an entry has been
 located it is privately used. This assumes the implementation of detecting
 duplicate identifier use in parallel blocks!
 
 A variable binding may become CONSTANT for the duration of its
 life time, or the type can be FROZEN.
+
+TODO: looking for a variable in a context is implemented by scanning 
+the whole list.  Maybe we should switch to a hash-table here!
+One thing to have in mind, though, is intrensive MIL scripts that do
+while or batloops, only lookup a variable the first time the loop
+is executed, so the performance problem should not be very severe.
 @h
 #ifndef _MONET_CNTXT_H_
 #define _MONET_CNTXT_H_
@@ -50,46 +56,48 @@ life time, or the type can be FROZEN.
 
 
 typedef struct VARSTRUCT{
-        ValRecord   binding;	/* value,type */
-        struct VARSTRUCT *next;
+        ValRecord   binding;	/* the MIL value of the variable */
+        struct VARSTRUCT *next;	/* linked list */
         bit	constant;	/* value cannot change */
         bit	frozen;		/* type cannot change */
-        char    name[1];	/* variable name (var lengths) */
+        char    name[1];	/* variable name (var length, extends after record!!) */
 } *Variable, VarRecord;
 
 typedef struct CNTXT {
-	Variable var;
-	Cntxt   outer;	/* where to look next */
-	Cntxt   next;	/* for making chains */
-	bit 	shadow;	/* shadow stk; do everything in outer */
+	Variable var;   /* head of the variable list */
+	Cntxt   outer;	/* where to look next, basically the call stack */
+	Cntxt   next;	/* for making chains. differs from 'outer' due to parallel execution */
+	bit 	shadow;	/* shadow stk; create new variables in outer */
 	bit 	used;	/* in use or not */
-	short 	reuse;	/* can be reused in a next iteration */
+	short 	reuse;	/* context record is reused (i.e. kept around) for speed among multiple loop iterations 
+			 * reuse==-1: not in a loop, reuse==stk: reused by (while/multiplex/bat)loop in 'stk' 
+		         */
 } CntxtRec;
 
 m_export CntxtRec* monet_cntxt;
 
 m_export void	CNTXTinit    (void);
 m_export Cntxt	CNTXTnew     (Cntxt outer);
-m_export Cntxt	CNTXTreserve (Cntxt outer);
 m_export void	CNTXTclear   (Cntxt i);
 m_export void	CNTXTfree    (Cntxt stk, Client c);
 m_export void	CNTXTdelete  (Cntxt i);
 m_export int	CNTXTclient  (Cntxt i, Client *c);
-m_export Cntxt 	CNTXTcopy    (Cntxt src);
+m_export void 	CNTXTcopy    (Cntxt src, Client c);
+m_export ptr    CNTXTregvars (Client c);
 
+/* inline for speed */
 #define CNTXTuse(stk)		monet_cntxt[stk].used = 1;
-#define CNTXTfree2(stk,c)	if	(c->maxstk != stk) CNTXTfree(stk,c)
-#define CNTXTfree1(stk)		{	Client c; CNTXTclient(stk, &c);\
-						    CNTXTfree2(stk,c); }
+#define CNTXTfree2(stk,c)	if ((c) && (c)->maxstk != stk) CNTXTfree(stk,c)
+#define CNTXTfree1(stk)		{ Client c; CNTXTclient(stk, &c); CNTXTfree2(stk,c); }
 
-m_export Variable	VARfind      (Cntxt *stk, str scope);
-m_export Variable	VARlocalfind (Cntxt *stk, str scope);
-m_export Variable	VARnew       (Cntxt stk, str name);  
-m_export int 	VARpurge     (int nbats, int* bats, int natoms, int* atoms);
+m_export Variable	VARfind        (Cntxt *stk, str scope);
+m_export Variable	VARlocalfind   (Cntxt *stk, str scope);
+m_export Variable	VARnew         (Cntxt stk, str name);  
+m_export str 		VARfindinstance(Cntxt *foundstk, int *foundatom, int natoms, int* atoms);
+m_export void           VARdel         (Cntxt stk, Variable del);
 
-#define VARclearBAT(B)	if(B) VARpurge(1, &(B)->batCacheid, 0, NULL)
-#define VARfreeze(X)	if(X){X->frozen=TRUE;}
-#define VARfixate(X)	if(X){X->constant=X->frozen=TRUE;}
+#define VARfreeze(X)	((X) && ((X)->frozen=TRUE))
+#define VARfixate(X)	((X) && ((X)->constant=(X)->frozen=TRUE))
 
 m_export Cntxt monet_cntxtmax;
 m_export Cntxt monet_cntxtlim;
@@ -100,7 +108,8 @@ m_export Cntxt monet_cntxtlim;
 
 Cntxt monet_cntxtmax = 200*MAXCLIENTS;
 Cntxt monet_cntxtlim = 1024*1024;
-Cntxt monet_cntxtcur = MAXCLIENTS;
+Cntxt monet_cntxtfree = MAXCLIENTS;
+Cntxt monet_cntxtcur = 0;
 CntxtRec *monet_cntxtbuf = NULL, *monet_cntxt = NULL;
 
 void CNTXTinit(void) {
@@ -147,11 +156,7 @@ int CNTXTrealloc(flt factor) {
 }
 
 @- 
-Initialize a new context for a particular user. The non-used
-context records are linked through the outer field. This way
-we can get a new context in 'constant' time.
-The context structure is a shared resource and protected with 
-the @%monet_contextLock@.
+find the Client who owns  a cetrain context record 'stk' (by walking upwards).
 @c
 int CNTXTclient(Cntxt stk, Client* c){
 	int depth = 0;	
@@ -163,53 +168,41 @@ int CNTXTclient(Cntxt stk, Client* c){
 	return depth;
 }
 
-
+@- 
+Initialize a new context for a particular user. The non-used
+context records are linked through the outer field. This way
+we can get a new context in 'constant' time.
+@c
 Cntxt CNTXTnew(Cntxt outer){
-	Cntxt i;
+	Client c;
+        Cntxt i;
 
-	MT_set_lock(monet_contextLock, "CNTXTnew");
-	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)BATMARGIN)) {
-		MT_unset_lock(monet_contextLock, "CNTXTnew");
-		return 0;
-	}
-	i = monet_cntxtcur;
-	monet_cntxtcur = monet_cntxt[i].next;
-	if (!monet_cntxtcur) monet_cntxtcur = i+1;
-	monet_cntxt[i].shadow = 0;
-	monet_cntxt[i].used = 1;
-	monet_cntxt[i].reuse = monet_cntxt[outer].reuse;
-	monet_cntxt[i].next = 0;
-	monet_cntxt[i].outer = outer;
-	MT_unset_lock(monet_contextLock, "CNTXTnew");
-	return i;
+        CNTXTclient(outer, &c);
+
+        MT_set_lock(monet_contextLock, "CNTXTnew");
+        if (monet_cntxtcur >= MAXCLIENTS) {
+                i = monet_cntxtcur; /* get from freelist */
+                monet_cntxtcur = monet_cntxt[monet_cntxtcur].next;
+        } else if (monet_cntxtfree >= monet_cntxtmax && !CNTXTrealloc(BATMARGIN)) {
+                MT_unset_lock(monet_contextLock, "CNTXTnew");
+                return 0;
+        } else {
+                i = monet_cntxtfree++; /* alloc new at end succeeded */
+        }
+        monet_cntxtcur = monet_cntxt[i].next;
+        if (!monet_cntxtcur) monet_cntxtcur = i+1;
+        monet_cntxt[i].shadow = 0;
+        monet_cntxt[i].used = 1;
+        monet_cntxt[i].reuse = monet_cntxt[outer].reuse;
+        monet_cntxt[i].next = c->maxstk;
+        monet_cntxt[i].outer = outer;
+        c->maxstk = i;
+        MT_unset_lock(monet_contextLock, "CNTXTnew");
+        return i;
 }
 
-Cntxt CNTXTreserve(Cntxt outer) {
-	Client	c;
-	Cntxt i;
-
-	CNTXTclient(outer, &c);
-
-	MT_set_lock(monet_contextLock, "CNTXTreserve");
-	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)BATMARGIN)) {
-		MT_unset_lock(monet_contextLock, "CNTXTnew");
-		return 0;
-	}
-	i = monet_cntxtcur;
-	monet_cntxtcur = monet_cntxt[i].next;
-	if (monet_cntxtcur < MAXCLIENTS) monet_cntxtcur = i+1;
-	monet_cntxt[i].outer = outer;
-	monet_cntxt[i].next = c->maxstk;
-	monet_cntxt[i].reuse = monet_cntxt[outer].reuse;
-	c->maxstk = i; 
-	MT_unset_lock(monet_contextLock, "CNTXTreserve");
-	return i;
-}
-@-
-The free operation throws away contexts. They go onto the free context 
-(monet_cntxtcur). Freeing a context also means doing away with all variable records. 
-In parallel execution, I discovered that contexts between maxstk and stk  may ideed still be 
-in use in parallel worker threads. We must keep them and adapt 
+@- 
+Deleting a context basically means deleting all its variables
 @c
 void CNTXTdelete(Cntxt cur){
 	Variable w, v = monet_cntxt[cur].var;
@@ -221,6 +214,11 @@ void CNTXTdelete(Cntxt cur){
 	monet_cntxt[cur].reuse = -1;
 }
 
+@-
+CNTXTfree deletes all unsed contexts between maxstk and stk. It then adapts maxstk.
+Due to parallel execution, not all stacks on the trail from maxstk to current
+can be freed. Hence we filter out those that can, and leave in those that cannot.
+@c
 void CNTXTfree(Cntxt stk, Client c){
 	Cntxt keep_first = -1, del_first = -1;
 	Cntxt keep_last = -1, del_last = -1;
@@ -254,7 +252,11 @@ void CNTXTfree(Cntxt stk, Client c){
 	MT_unset_lock(monet_contextLock, "CNTXTfree");
 }
 @-
-A context is cleared by removing the variable bindings.
+Clearing a context leavs all variables in place, but frees
+all their values, which are set to nil. This typically
+occurs when a MIL block (context) that is in a loop
+reaches end-of-scope. The context and all variable records
+are left intact, so they can be reused in the next iteration.
 @c
 void CNTXTclear(Cntxt stk){
         Variable w, v = monet_cntxt[stk].var;
@@ -269,41 +271,34 @@ void CNTXTclear(Cntxt stk){
 }
 
 @-
-Copy the stack with all its variables.
+Create a new stack with copies of all variables in all scopes until root.
 @c
-Cntxt CNTXTcopy(Cntxt srcstk){
-	Cntxt res, tmp = CNTXTnew(-1); 
-
-	res = tmp;
-	while(srcstk>=0){
+void CNTXTcopy(Cntxt stk, Client c){
+	while(stk > 0) {
         	Variable v;
-
-		monet_cntxt[tmp].shadow = 0;
-		monet_cntxt[tmp].used = monet_cntxt[srcstk].used;
-		monet_cntxt[tmp].reuse = monet_cntxt[srcstk].reuse;
-
-		for(v = monet_cntxt[srcstk].var; v != NULL; v= v->next) {
-			Variable n = VARnew( tmp, v->name );
-			
+		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
+			Variable n = VARnew(c->stk, v->name );
 			n->constant = v->constant;
 			n->frozen = v->frozen;
 			VALcopy(&n->binding, &v->binding);
 			ATOMfix(n->binding.vtype, VALptr(&n->binding));
 		}
-		if (monet_cntxt[srcstk].outer >= 0){ 
-			monet_cntxt[tmp].outer = CNTXTnew(-1); 
-			tmp = monet_cntxt[tmp].outer;
-		}
-		srcstk = monet_cntxt[srcstk].outer;
+		stk = monet_cntxt[stk].outer;
 	}
-	return res;
 }
+
+ptr CNTXTregvars(Client c) {
+        Variable n, r =  monet_cntxt[c->stk].var;
+        if (c->m_stack)
+                for(n=r; n != c->m_stack->var; n = n->next)
+                        TBL_Install_MilVar(c, c->m_stack->mod, (ptr) n);
+        return (ptr) r;
+}
+
 
 @-
 A variable is initialized as an integer 0 and made accessible through
 a context.
-The value structure can be cleared with VALclear, it releases the BAT.
-Variables are stored in the context on a last in first searched policy.
 @c
 Variable VARnew(Cntxt stk, str name){
 	Variable v;
@@ -329,8 +324,6 @@ Variable VARnew(Cntxt stk, str name){
 @
 @-
 The routine @%VARfind@ dereferences a name to find the variable descriptor.
-Both the local and global stack is inspected. If it is not found then 
-an attempt is made to load a BAT from disk.
 @c
 Variable VARfind(Cntxt *stk, str nme){
         Variable v;
@@ -377,56 +370,71 @@ Variable VARlocalfind(Cntxt *stk, str nme){
 
 
 @-
-The BATs are referenced by index from the variable table. This means
-that once the BAT is removed, we should clear all such references to
-avoid access to unknown bats. This is done silently to avoid confusion
-about errors.
+In order to drop a module we must enforce that the client does not use
+anu more instances of soon-to-be-obsolete atomic types (that disappear 
+through the drop). Thus, we check the client's variable stack, and
+even better, check all variable stacks for such offending varaiables.
+
+If any variables of offending types are found, the drop will fail.
+
+BAT values are now checked in the drop implementation (monet_tbl).
 @c
-int VARpurge(int nbats, int *bats, int natoms, int *atoms){
-	int i, *dst = (int*) alloca((1+natoms)*(int)sizeof(int));
-	Cntxt j;
+str VARfindinstance(Cntxt *foundstk, int* foundatom, int natoms, int *atoms){
 	Variable v;
+	Cntxt j;
+	int i;
 
-	if (nbats == 0 && natoms == 0) return 0;
+        MT_set_lock(monet_contextLock, "VARfindinstance");
+	for (j = 0; j < monet_cntxtmax; j++) {
+		if (!monet_cntxt[j].used) 
+			continue;
 
-	for(i=0; i<natoms; i++) {
-		dst[i] = ATOMstorage(atoms[i]);
-		if (dst[i] > TYPE_str) dst[i] = 0; 
-	}
-	for(i=0; i<nbats; i++) {
-		if (bats[i] < 0)  bats[i] = -bats[i];
-	}
-
-	for (j = 0; j < monet_cntxtmax; j++) if (monet_cntxt[j].used)
-	for (v = monet_cntxt[j].var; v; v = v->next) {
-		int tpe = v->binding.vtype;
-		if (tpe == TYPE_bat) {
-			int bid = ABS(v->binding.val.bval);
-			for(i=0; i<nbats; i++) 
-				if (bats[i] == bid) {
-				    v->binding.vtype = TYPE_int; 
-				    break;
+		for (v = monet_cntxt[j].var; v; v = v->next) {
+			if (v->binding.vtype > TYPE_str) {
+				for(i=0; i<natoms; i++) { 
+			        	if (atoms[i] == v->binding.vtype) {
+						str foundvar = GDKstrdup(v->name);
+						*foundstk = j;
+						*foundatom = v->binding.vtype;
+        					MT_unset_lock(monet_contextLock, "VARfindinstance");
+						return foundvar;
+					}
 				}
-		} else if (tpe > TYPE_str) {
-			for(i=0; i<natoms; i++) 
-		        if (atoms[i] == tpe) {
-				if (dst[i]) {
-				    v->binding.vtype = dst[i];
-				} else {
-				    if (ATOMextern(tpe)) {
-					GDKfree(v->binding.val.pval);
-				    }
-				    v->binding.vtype = TYPE_int; 
-	   			    v->binding.val.ival = int_nil;
-				}
-				break;
 			}
 		}
 	}
-	for(i=0; i<nbats; i++) {
-		BAT* b = BBPcache(bats[i]);
-		if (b != NULL) BBPreclaim(b);
+        MT_unset_lock(monet_contextLock, "VARfindinstance");
+	return NULL;
+}
+
+void VARdel(Cntxt stk, Variable del){
+	Variable cur, last = NULL, modify = NULL;
+	int found = FALSE;
+
+        MT_set_lock(monet_contextLock, "VARdel");
+	for(cur = monet_cntxt[stk].var; cur; cur = cur->next) {
+		if (cur == del) {
+			modify = last;
+			found = TRUE;
+		}
+		last = cur;
 	}
-	return 0;
+	if (found) {
+		/* put it at the end of the list, invalidate name, and unfix value */
+		if (modify) {
+			modify->next = del->next;
+		} else {
+			monet_cntxt[stk].var = del->next;
+		}
+		last->next = del;
+		del->next = NULL;
+
+		/* do not destroy Variable nor memory space because of potential race conditions */
+		ATOMunfix(del->binding.vtype, VALptr(&del->binding));
+		del->name[0] = '.'; /* normal MIL variable names cannot have a dot */
+		del->binding.vtype = TYPE_void;
+		/* del->binding.val.pval is leaked on purpose */
+	}
+        MT_unset_lock(monet_contextLock, "VARdel");
 }
 @

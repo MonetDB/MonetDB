@@ -259,6 +259,7 @@ BAT *BATnumber(BAT *b) {
         }
 	ALIGNsetH(bn,b);
         @:updateloop(bn,b,BUNnumber)@
+	BATsetaggr(bn, GDK_AGGR_CARD, i);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
         return bn;
@@ -266,7 +267,7 @@ BAT *BATnumber(BAT *b) {
 
 BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
         BUN p, q;
-        int i = 0, xx;
+        int ngroups = 1, i = 0, xx;
         BAT *bn;
 
         BATcheck(b, "BATgroup");
@@ -279,11 +280,13 @@ BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
    
         BATloopFast(b, p, q, xx) {
             BUNfastins(bn, BUNhead(b, p), (ptr)&start);
-            if(i == grpsize-1) { start += incr; i = 0; } else { i++; }
+            if(i == grpsize-1) { start += incr; i = 0; ngroups++; } else { i++; }
         }
-
+	if (i == 0) ngroups--;
+	BATsetaggr(bn, GDK_AGGR_CARD, ngroups);
         bn->hsorted = BAThordered(b);
         bn->tsorted = GDK_SORTED;
+
         return bn;
 }
 
@@ -315,11 +318,78 @@ BAT* BATconst(BAT *b, int tailtype, ptr v) {
 	}
 	ALIGNsetH(bn,b);
 	bn->tsorted = GDK_SORTED;
+	BATsetaggr(bn, GDK_AGGR_CARD, BATcount(b) > 0);
+	if (tailtype == TYPE_bit) {
+		BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit*) v == TRUE)?BATcount(b):0);
+	}
         return bn;
 }
 
+
 @+ BAT Aggregates
 
+We retain the size() and card() agggregate results in the column descriptor.
+We would like to have such functionality in an extensible way for many aggregates, 
+for DD (1) we do not want to change the binary BAT format on disk and (2) aggr
+and size are the most relevant aggregates. 
+
+It is all hacked into the aggr[3] records; three adjacent integers that 
+were left over in the column record. We refer to these as if it where an int aggr[3] array.
+The below routines set and retrieve the aggregate values from the tail of the BAT, as many 
+aggregate-manipulating BAT functions work on tail.
+
+The rules are as follows: aggr[0] contains the alignment ID of the column (if set i.e. nonzero).
+Hence, if this value is nonzero and equal to b->talign, the precomputed aggregate values in 
+aggr[GDK_AGGR_SIZE] and aggr[GDK_AGGR_CARD] hold. However, only one of them may be set
+at the time. This is encoded by the value int_nil, which cannot occur in these two aggregates.
+
+This was now extended to record the property whether we know there is a nil value present
+by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
+@c
+#define GDK_NIL_BIT (1 << 31)
+
+/* later to evolve into a more sophisticated aggregate retention system */
+int BATgetaggr(BAT *b, int idx) {
+        int *aggr = b->T->aggr;
+        if (aggr[0] && aggr[0] == (int) b->talign) {
+		if (idx == GDK_AGGR_HASNIL) {
+			if (aggr[1] & GDK_NIL_BIT) {
+                		return (aggr[2] & GDK_NIL_BIT)?TRUE:FALSE;
+}
+		} else {
+			int val = (int) (aggr[idx] & ~GDK_NIL_BIT);
+			if (val != ~GDK_NIL_BIT) {
+				return val;
+			}
+		}
+        }
+        return (idx == GDK_AGGR_HASNIL)?((int) bit_nil):int_nil;
+}
+
+int BATsetaggr(BAT *b, int idx, int val) {
+        int *aggr = b->T->aggr;
+        if (aggr[0] == 0 || aggr[0] != (int) b->talign || BATgetaggr(b, idx) != val) {
+                if (b->talign == 0) {
+			b->talign = OIDnew(1);
+		}
+		if (aggr[0] != (int) b->talign) {
+                	aggr[0] = (int) b->talign;
+			aggr[GDK_AGGR_SIZE] = aggr[GDK_AGGR_CARD] = ~GDK_NIL_BIT;
+		} 
+		if (idx != GDK_AGGR_HASNIL) {
+                	aggr[idx] &= GDK_NIL_BIT;
+                	aggr[idx] |= (val == int_nil)?~GDK_NIL_BIT:(val & ~GDK_NIL_BIT);
+		} else if (val != (int) bit_nil) {
+                	aggr[1] |= GDK_NIL_BIT;
+                	aggr[2] = (val & ~GDK_NIL_BIT) | (val?GDK_NIL_BIT:0);
+		} else {
+                	aggr[1] &= ~GDK_NIL_BIT;
+		}
+                b->batDirtydesc = TRUE;
+        }
+        return val;
+}
+@-
 The @%BAThistogram@ function calculates the frequency distribution of the
 tail values in its operand bat. Notice, that updates on the result do
 not affect the delta administration.
@@ -413,7 +483,12 @@ by bulk copying the heap as well
 		BAT *bm = BATmirror(b);
                 ALIGNsetH(bn,bm);
         }
-
+	if (ATOMstorage(b->ttype) == TYPE_bit) {
+		bit trueval = TRUE;
+		BUN p = BUNfnd(bn, &trueval);
+		BATsetaggr(b,GDK_AGGR_SIZE,p?*(int*)BUNtloc(bn,p):0);
+	}
+	BATsetaggr(b,GDK_AGGR_CARD,BATcount(bn));
 	return bn; 
 }
 
@@ -539,6 +614,8 @@ We have to do it: create a new BAT and put everything into it.
                 	BUNfastins(bn, BUNhead(b,p), BUNtail(b,p));
         	}
 	}
+        bn->H->aggr[0] =  bn->H->aggr[1] = bn->H->aggr[2] = 0;
+        bn->T->aggr[0] =  bn->T->aggr[1] = bn->T->aggr[2] = 0;
         bn->hsorted = BAThordered(b);
         bn->tsorted = BATtordered(b);
 	BATkey(bn, BAThkey(b));
@@ -775,10 +852,8 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 	}
 @-
 Use sampling to determine a good result size, when the bat is large.
-We do not sample in an equi-select on a BAT with a hash table, as the
-BAT_hashselect code already ensures a good allocation estimate. 
 @c
-	if (batcnt > 10000 && (equi == 0 || b->thash_heap == NULL)) {
+	if (batcnt > 10000) {
             size_t _lo = batcnt/2, _hi = _lo + 105;
 	    BAT *tmp1;
 	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%u, _hi=%u);\n",
@@ -838,7 +913,12 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		BATkey(bn,TRUE);
         	BATkey(BATmirror(bn), TRUE);
 	}
-
+        if (equi && tail) {
+            BATsetaggr(bn, GDK_AGGR_CARD, BATcount(bn) > 0);
+            if (b->ttype == TYPE_bit) {
+                BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit*) tl == TRUE)?BATcount(bn):0);
+            }
+        }
 	if (equi && b->thash_heap) {
 	    bn->hsorted = bn->tsorted = FALSE;
         } else if (b->tidx_heap) {
@@ -1126,7 +1206,7 @@ IDXloop(b, p, q) {
 @c
 int BATordered(BAT *b) {
 	BATcheck(b, "BATordered: BAT"); 
-	PROPDEBUG BATpropcheck(b);
+	PROPDEBUG BATpropcheck(b, BATPROPS_QUICK);
 	return (BAThordered(b)&1);
 }
 
@@ -1176,21 +1256,13 @@ BAT* BATrevert(BAT *b) {
         BUN p,q;
      
         BATcheck(b, "BATrevorder");
-	if (BAThvoid(b)) {
-	  /* otherwise, tail would be placed in reverse order of head */
-	  GDKwarning( "Cannot reverse order on void head.\n" );
+	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) ||
+            (b->ttype == TYPE_void && b->tseqbase != oid_nil)) 
+        {
+	  GDKwarning( "Cannot reverse order on void columns.\n" );
 	  return b;
 	}
         ALIGNdel(b, "BATrevorder");
-	if (BATordered(b)) {
-	  /* ignore the void case here as well */
-	  b->tseqbase = oid_nil;
-	} else {
-	  /* NOTE: a GDK_revorder property would be handy;
-	     now, an already reverse ordered BAT is first going to be ordered,
-	     and then reverse ordered once more! */
-	  BATorder(b);
-	}
         xx = BUNsize(b);
         buf = (char*) GDKmalloc(xx);
         for(p=BUNlast(b)-xx, q=BUNfirst(b); p > q; p -=xx, q+=xx) {

@@ -376,8 +376,10 @@ static ColFcn multiplex_fcn(int tpe){
 	return (ColFcn) (ATOMextern(tpe)?multiplex_copy_var:multiplex_copy_loc);
 }
 
+#if 0
 @:multiplex_exec(proc,intern,tpechk)@
 @:multiplex_exec(proc,extern,tpechk)@
+#endif
 @:multiplex_exec(fcn,intern,intern)@
 @:multiplex_exec(fcn,extern,intern)@
 @:multiplex_exec(fcn,intern,extern)@
@@ -1230,12 +1232,13 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	if (nested->hacctype) {
 		ACCdestroy(nested->hacctype, nested, &nested->haccelerator); 
 	}
+	nested->halign = nested->talign = 0;
 	nested_rev->hkey = nested_rev->tkey = nested->hkey = nested->tkey = prop_key; 
 	nested->hsorted = prop_sorted;
 @= exec_interpret
 {	ptr _p;
 	if (packed_call) {
-		ret_val = (packed_call)(2, argv);
+		ret_val = (*packed_call)(2, argv);
 	} else {
 		ret_val = interpret_interpret(stk, tt, argv);
 	}
@@ -1258,14 +1261,15 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 		/* terrible+true; we must check for views (on nested) */
 		BAT *b = BBP_cache(argv->val.bval);
 		if (VIEWparent(b)) VIEWreset(b);
+		BUNfastins(ret, @1, _p = VALptr(argv));
+		BBPdecref(*(bat*) _p, !packed_call); /* TOK_COMMAND=hard unfix, proc=logical */
+	} else {
+		BUNfastins(ret, @1, _p = VALptr(argv));
+		ATOMunfix(argv->vtype, _p);
+		if (ATOMextern(argv->vtype)) {
+			GDKfree(_p);
+		}
 	}
-	BUNfastins(ret, @1, _p = VALptr(argv));
-	ATOMunfix(argv->vtype, _p);
-	if (ATOMextern(argv->vtype)) {
-		GDKfree(_p);
-	}
-	/* NIELS for packed_call/bat results
-		 a BBPunfix is needed instead of a ATOMunfix */
 	@:exec_cleanup@
 }
 @= exec_opt

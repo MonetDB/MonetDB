@@ -208,7 +208,7 @@ PROC test_str() : void := {
     var v := " " + s;
     if (s.chrAt(3) != 't') printf("bug1 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
     if (s.chrAt(5) != 'j') printf("bug2 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
-    if (i < 256) {
+    if (i < 128) {
       if (isnil(s.chrAt(4))) {
         printf("char %d is nil\n", i);
       } else if (s.chrAt(4) != chr(i)) {
@@ -405,7 +405,7 @@ static unsigned short UTF8_upper[UTF8_CONVERSIONS] = {
 
 static BAT *UTF8_toupperBat = NULL, *UTF8_tolowerBat;
 
-void strPrelude(void) {
+bat* strPrelude(void) {
 	if (!UTF8_toupperBat) {
 		int i = UTF8_CONVERSIONS; 
 		UTF8_toupperBat = BATnew(TYPE_int, TYPE_int, UTF8_CONVERSIONS);
@@ -417,6 +417,7 @@ void strPrelude(void) {
 		UTF8_tolowerBat = BATmirror(UTF8_toupperBat);
 		BATname(UTF8_toupperBat, "monet_unicode_case");
 	}
+	return NULL;
 }
 
 void strEpilogue(void) {
@@ -668,11 +669,10 @@ int strIconv( str *res, str org, str f, str t)
 int strChrAt( chr *res, str val, int *at ){
 	int v;
 	strWChrAt(&v, val, at);
-	if (v < 0 || v > 255) {
+	if (0 <= v && v <= 127)
+		*res = (chr) v;
+	else
 		*res = chr_nil;
-	} else {
-		*res = (chr) (v & 0xFF); 
-	}
 	return GDK_SUCCEED;
 }
 

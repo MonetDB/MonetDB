@@ -201,6 +201,14 @@ in a string.
 	.TOSTR = date_tostr;
 .END;
 
+.COMMAND isnil(date) : bit = date_isnil;            "date nil test (!DS2.2)"
+.OPERATOR (date) "="  (date) : bit = date_comp_EQ;  "date equality test (!DS2.2)"
+.OPERATOR (date) "!=" (date) : bit = date_comp_NE; "date non-equality test (!DS2.2)"
+.OPERATOR (date) "<"  (date) : bit = date_comp_LT;  "date smaller-than test (!DS2.2)"
+.OPERATOR (date) ">"  (date) : bit = date_comp_GT;  "date greater-than test (!DS2.2)"
+.OPERATOR (date) "<=" (date) : bit = date_comp_LE;  "date smaller-or-equal test (!DS2.2)"
+.OPERATOR (date) ">=" (date) : bit = date_comp_GE;  "date greater-or-equal test (!DS2.2)"
+
 @- daytime atom
 @T
 A valid time of day to the detail of milliseconds, like 23:59:59:000
@@ -221,6 +229,15 @@ with: HOUR = integer between 0 and 23
 	.FROMSTR = daytime_fromstr;
 	.TOSTR = daytime_tostr;
 .END;
+
+.COMMAND isnil(daytime) : bit = daytime_isnil;               "daytime nil test (!DS2.2)"
+.OPERATOR (daytime) "="  (daytime) : bit = daytime_comp_EQ;  "daytime equality test (!DS2.2)"
+.OPERATOR (daytime) "!=" (daytime) : bit = daytime_comp_NE; "daytime non-equality test (!DS2.2)"
+.OPERATOR (daytime) "<"  (daytime) : bit = daytime_comp_LT;  "daytime smaller-than test (!DS2.2)"
+.OPERATOR (daytime) ">"  (daytime) : bit = daytime_comp_GT;  "daytime greater-than test (!DS2.2)"
+.OPERATOR (daytime) "<=" (daytime) : bit = daytime_comp_LE;  "daytime smaller-or-equal test (!DS2.2)"
+.OPERATOR (daytime) ">=" (daytime) : bit = daytime_comp_GE;  "daytime greater-or-equal test (!DS2.2)"
+
 
 @- timestamp
 @T
@@ -249,6 +266,14 @@ arbitrarily.
 	.TOSTR = timestamp_tostr;
 	.NULL	 = timestamp_null;
 .END;
+
+.COMMAND isnil(timestamp) : bit = timestamp_isnil;                 "timestamp nil test (!DS2.2)"
+.OPERATOR (timestamp) "="  (timestamp) : bit = timestamp_comp_EQ;  "timestamp equality test (!DS2.2)"
+.OPERATOR (timestamp) "!=" (timestamp) : bit = timestamp_comp_NE; "timestamp non-equality test (!DS2.2)"
+.OPERATOR (timestamp) "<"  (timestamp) : bit = timestamp_comp_LT;  "timestamp smaller-than test (!DS2.2)"
+.OPERATOR (timestamp) ">"  (timestamp) : bit = timestamp_comp_GT;  "timestamp greater-than test (!DS2.2)"
+.OPERATOR (timestamp) "<=" (timestamp) : bit = timestamp_comp_LE;  "timestamp smaller-or-equal test (!DS2.2)"
+.OPERATOR (timestamp) ">=" (timestamp) : bit = timestamp_comp_GE;  "timestamp greater-or-equal test (!DS2.2)"
 
 @T
 When creating a timestamp from a date and daytime, a timezone should be specified
@@ -852,7 +877,7 @@ typedef union {
 				weekday:4,  /* values: [-7..-1,1..7] */
 				empty:7;    /* rule uses just 32-7=25 bits */
 	} s;
-	unsigned int asint; /* the same, seen as single value */
+	int asint;		/* the same, seen as single value */
 } rule;
 @c
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
@@ -922,12 +947,15 @@ static tzone *tz_nilptr = NULL;
 
 static void date_prelude(void);
 
-void monettime_prelude(void){
+bat* monettime_prelude(void){
+	ts_nil.days = date_nil;
+	ts_nil.msecs = daytime_nil;
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
 	*ts_nilptr = ts_nil;
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
 	*tz_nilptr = tz_nil;
 	date_prelude();
+	return NULL;
 }
 void monettime_epilogue(void){
 	GDKfree(ts_nilptr);
@@ -1110,7 +1138,7 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2)) 
 
-#define ts_isnil(t) ((t).days == -1 && (t).msecs == -1)
+#define ts_isnil(t) ((t).days == date_nil && (t).msecs == daytime_nil)
 #define tz_isnil(z) ((z).dst == (z).off2 == (z).dst_start == (z).dst_end == 1 \
 			&& (z).off1 == 12 )
 
@@ -2141,4 +2169,90 @@ int compute_rule_foryear(date *ret, rule* val, int *year) {
 	return GDK_SUCCEED;
 }
 
+@= isnil
+int @1_isnil(bit *retval, @1 *val) {
+	*retval = *val == @1_nil;
+	return GDK_SUCCEED;
+}
+@c
+@:isnil(date)@
+@:isnil(daytime)@
 
+@= compare
+int @1_comp_@2(bit *retval, @1 *val1, @1 *val2) {
+	if (*val1 == @1_nil || *val2 == @1_nil)
+		*retval = bit_nil;
+	else
+		*retval = *val1 @3 *val2;
+	return GDK_SUCCEED;
+}
+@c
+@:compare(date,EQ,==)@
+@:compare(date,NE,!=)@
+@:compare(date,LT,<)@
+@:compare(date,GT,>)@
+@:compare(date,LE,<=)@
+@:compare(date,GE,>=)@
+@:compare(daytime,EQ,==)@
+@:compare(daytime,NE,!=)@
+@:compare(daytime,LT,<)@
+@:compare(daytime,GT,>)@
+@:compare(daytime,LE,<=)@
+@:compare(daytime,GE,>=)@
+
+int timestamp_isnil(bit *retval, timestamp *val) {
+	*retval = ts_isnil(*val);
+	return GDK_SUCCEED;
+}
+
+int timestamp_comp_EQ(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days == val2->days && val1->msecs == val2->msecs;
+	return GDK_SUCCEED;
+}
+
+int timestamp_comp_NE(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days != val2->days || val1->msecs != val2->msecs;
+	return GDK_SUCCEED;
+}
+
+int timestamp_comp_LT(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days < val2->days ||
+			  (val1->days == val2->days && val1->msecs < val2->msecs);
+	return GDK_SUCCEED;
+}
+
+int timestamp_comp_LE(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days < val2->days ||
+			  (val1->days == val2->days && val1->msecs <= val2->msecs);
+	return GDK_SUCCEED;
+}
+
+int timestamp_comp_GT(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days > val2->days ||
+			  (val1->days == val2->days && val1->msecs > val2->msecs);
+	return GDK_SUCCEED;
+}
+
+int timestamp_comp_GE(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days > val2->days ||
+			  (val1->days == val2->days && val1->msecs >= val2->msecs);
+	return GDK_SUCCEED;
+}

@@ -60,7 +60,7 @@ will even be the case for long 64-bit integers.
 
 .USE streams;
 
-.COMMAND enum_create(str name, BAT[any,any] data) : int = enum_new;
+.COMMAND enum_new(str name, BAT[any,any] data) : int = enum_new;
  "create a new enumeration type."
 
 .COMMAND enum_load(BAT[any,int] map) : int = enum_load;
@@ -113,15 +113,29 @@ will even be the case for long 64-bit integers.
 .END enum;
 
 @mil
-    proc enum_load(str name) := {
+    proc enum_create(str name, BAT[any,any] data) : int {
+	var tpe := enum_new(name, data);
+	if (monet_atomtbl != adm_atomtbl)
+	    adm_atomtbl.insert(sprintf("%s",name),tpe);
+	monet_atomtbl.insert(sprintf("%s",name),tpe);
+	return tpe;
+    }
+    ADDHELP("enum_create", "boncz", "Aug  5 2003",
+         "create a new enumeration type.", "enum");
+
+    proc enum_load(str name) : void {
 	var tpe := enum_load(bat(name));
+	if (monet_atomtbl != adm_atomtbl)
+	    adm_atomtbl.insert(sprintf("%s",name),tpe);
 	monet_atomtbl.insert(sprintf("%s",name),tpe);
 	return tpe;
     }
     ADDHELP("enum_load", "boncz", "Sep  6 1997",
          "activate an enumeration type from a histogram bat.", "enum");
 
-    proc enum_drop(int tpe) := {
+    proc enum_drop(int tpe) : void {
+	if (monet_atomtbl != adm_atomtbl)
+	    adm_atomtbl.reverse.delete(tpe);
 	monet_atomtbl.reverse.delete(tpe);
 	enum_destroy(tpe);
     }
@@ -584,8 +598,9 @@ int enum_ishisto(bit* ret, int* enum_t, BAT* column) {
 	return GDK_SUCCEED;
 }
 
-void enum_prelude(void) {
+bat* enum_prelude(void) {
 	enum_lock = MT_create_lock();
+	return NULL;
 }
 
 void enum_epilogue(void) {

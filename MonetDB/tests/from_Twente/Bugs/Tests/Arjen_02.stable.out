@@ -1,12 +1,12 @@
 stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 13:54:25 >  
-# 13:54:25 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_from_Twente_Bugs  < Arjen_02.milM
-# 13:54:25 >  
+# 17:42:17 >  
+# 17:42:17 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=51972 --set sql_port=57382 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_02.milM
+# 17:42:17 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.11
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #
 # Another interesting bug in our newest (=august) Monet release:
@@ -22,7 +22,7 @@ a.insert( nil, 1 );
 a.insert( nil, 2 );
 a.seqbase(0@0).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
@@ -32,7 +32,7 @@ a.seqbase(0@0).print;
 A := 0;
 aA := [=]( a, A );   aA.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_29  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -40,7 +40,7 @@ aA := [=]( a, A );   aA.print;
 [ 2@0,	  false	  ]
 aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_31  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -51,9 +51,9 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 # (str)				  (str)		| (str)		| (str)		  #
 #---------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_26",	  "tmp_27",	  "tmp_29"	  ]
-[ "batCacheid",			  "26",		  "27",		  "29"		  ]
-[ "batParentid",		  "0",		  "0",		  "28"		  ]
+[ "batId",			  "tmp_28",	  "tmp_29",	  "tmp_31"	  ]
+[ "batCacheid",			  "28",		  "29",		  "31"		  ]
+[ "batParentid",		  "0",		  "0",		  "30"		  ]
 [ "batSharecnt",		  "0",		  "0",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "oid"		  ]
 [ "tail",			  "int",	  "bit",	  "void"	  ]
@@ -86,8 +86,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-160",	  "-161",	  "-164"	  ]
-[ "curStamp",			  "165",	  "170",	  "173"		  ]
+[ "batStamp",			  "-162",	  "-163",	  "-166"	  ]
+[ "curStamp",			  "167",	  "172",	  "175"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -135,7 +135,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 A := 1;
 aA := [=]( a, A );   aA.print;
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_34  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  false	  ]
@@ -143,7 +143,7 @@ aA := [=]( a, A );   aA.print;
 [ 2@0,	  false	  ]
 aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_33  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
@@ -154,9 +154,9 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 # (str)				  (str)		| (str)		| (str)		  #
 #---------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_26",	  "tmp_32",	  "tmp_31"	  ]
-[ "batCacheid",			  "26",		  "32",		  "31"		  ]
-[ "batParentid",		  "0",		  "0",		  "27"		  ]
+[ "batId",			  "tmp_28",	  "tmp_34",	  "tmp_33"	  ]
+[ "batCacheid",			  "28",		  "34",		  "33"		  ]
+[ "batParentid",		  "0",		  "0",		  "29"		  ]
 [ "batSharecnt",		  "0",		  "0",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "oid"		  ]
 [ "tail",			  "int",	  "bit",	  "void"	  ]
@@ -189,8 +189,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-160",	  "-176",	  "-179"	  ]
-[ "curStamp",			  "180",	  "185",	  "188"		  ]
+[ "batStamp",			  "-162",	  "-178",	  "-181"	  ]
+[ "curStamp",			  "182",	  "187",	  "190"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -240,7 +240,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 A := 2;
 aA := [=]( a, A );   aA.print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_32  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  false	  ]
@@ -248,7 +248,7 @@ aA := [=]( a, A );   aA.print;
 [ 2@0,	  true	  ]
 aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_34  #
 # (void)  (void)  #
 #-----------------#
 [ 2@0,	  0@0	  ]
@@ -259,9 +259,9 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 # (str)				  (str)		| (str)		| (str)		  #
 #---------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_26",	  "tmp_30",	  "tmp_32"	  ]
-[ "batCacheid",			  "26",		  "30",		  "32"		  ]
-[ "batParentid",		  "0",		  "0",		  "30"		  ]
+[ "batId",			  "tmp_28",	  "tmp_32",	  "tmp_34"	  ]
+[ "batCacheid",			  "28",		  "32",		  "34"		  ]
+[ "batParentid",		  "0",		  "0",		  "32"		  ]
 [ "batSharecnt",		  "0",		  "1",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "void"	  ]
 [ "tail",			  "int",	  "bit",	  "void"	  ]
@@ -294,8 +294,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-160",	  "-191",	  "-194"	  ]
-[ "curStamp",			  "195",	  "200",	  "203"		  ]
+[ "batStamp",			  "-162",	  "-193",	  "-196"	  ]
+[ "curStamp",			  "197",	  "202",	  "205"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -344,7 +344,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 
 quit;
 
-# 17:08:34 >  
-# 17:08:34 >  Done.
-# 17:08:34 >  
+# 17:42:17 >  
+# 17:42:17 >  Done.
+# 17:42:17 >  
 

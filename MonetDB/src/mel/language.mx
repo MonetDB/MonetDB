@@ -49,8 +49,6 @@
 #include "any_arg.h"
 #include "prelude.h"
 #include "epilogue.h"
-#include "load.h"
-#include "drop.h"
 #ifdef HAVE_IOSTREAM
 #include <iostream>
 using namespace std;
@@ -122,13 +120,6 @@ class language {
 	virtual ostream &gen_epilogue( ostream &o, const Epilogue & ){ 
 		return o; 
 	}
-	virtual ostream &gen_load( ostream &o, const Load & ){ 
-		return o; 
-	}
-	virtual ostream &gen_drop( ostream &o, const Drop & ){ 
-		return o; 
-	}
-
 	ostream &gen_list( ostream &o, List *, const char *sep = "");
 };
 

@@ -2192,7 +2192,7 @@ static void clean_table_result(res_table *t)
 	for(i=0; i<t->nr_cols; i++){
 		res_col *c = t->cols+i;
 		if (c->b){
-			BBPtransient(c->b, FALSE);
+			BBPdecref(c->b, TRUE);
 		} else {
 			_DELETE(c->p);
 		}
@@ -2200,7 +2200,7 @@ static void clean_table_result(res_table *t)
 		sql_subtype_destroy(c->type);
 	}
 	if (t->order)
-		BBPtransient(t->order, FALSE);
+		BBPdecref(t->order, TRUE);
 	_DELETE(t->cols);
 	_DELETE(t);
 }
@@ -3514,7 +3514,7 @@ int mvc_result_table( mvc *m, int nr_cols, BAT *order )
 	res_table *t = mvc_result_table_(m, nr_cols);
 
 	t->order = order->batCacheid;
-	BBPpersistent(t->order, FALSE);
+	BBPincref(t->order, TRUE);
 	return t->id;
 }
 
@@ -3536,7 +3536,7 @@ int mvc_result_column( mvc *m, char *name, char *typename, int digits, int scale
 	res_col *c = mvc_result_value_(m, name, typename, digits, scale);
 
 	c->b = b->batCacheid;
-	BBPpersistent(c->b, FALSE);
+	BBPincref(c->b, TRUE);
 	return 0;
 }
 

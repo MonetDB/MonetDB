@@ -1,12 +1,12 @@
 stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 13:54:24 >  
-# 13:54:24 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_from_Twente_Bugs  < Arjen_01.milM
-# 13:54:24 >  
+# 17:42:14 >  
+# 17:42:14 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=51972 --set sql_port=57382 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_01.milM
+# 17:42:14 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.11
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #
 # This program should select the valuesA that are larger than 20 and smaller
@@ -34,7 +34,7 @@ indexA.seqbase(0@0);
 valuesA.seqbase(0@0);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (void)  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -43,7 +43,7 @@ indexA.print;
 [ 3@0,	  3@0	  ]
 valuesA.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_29  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  10	  ]
@@ -55,7 +55,7 @@ valuesA.print;
 
 _MMoper_2 := [>=](valuesA,20);   _MMoper_2.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_30  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  false	  ]
@@ -64,7 +64,7 @@ _MMoper_2 := [>=](valuesA,20);   _MMoper_2.print;
 [ 3@0,	  true	  ]
 _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);   _MMuselect_3.print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_31  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
@@ -72,7 +72,7 @@ _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);   _MMuselect_3.print;
 [ 3@0,	  2@0	  ]
 _MMoper_4 := [<=](valuesA,30);   _MMoper_4.print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_32  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -81,7 +81,7 @@ _MMoper_4 := [<=](valuesA,30);   _MMoper_4.print;
 [ 3@0,	  false	  ]
 _MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);   _MMuselect_5.print;
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_34  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -89,35 +89,35 @@ _MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);   _MMuselect_5.print;
 [ 2@0,	  2@0	  ]
 _MMsemijoin_6 := semijoin(_MMuselect_3,_MMuselect_5);   _MMsemijoin_6.print;
 #-----------------#
-# BAT:	  tmp_32  #
+# BAT:	  tmp_35  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 _MMcastnil_7 := _MMsemijoin_6.mark(0@0);   _MMcastnil_7.print;
 #-----------------#
-# BAT:	  tmp_33  #
+# BAT:	  tmp_36  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 _MMjoin_8 := join(indexA,_MMcastnil_7);   _MMjoin_8.print;
 #-----------------#
-# BAT:	  tmp_35  #
+# BAT:	  tmp_38  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 _MMreverse_9 := reverse(_MMcastnil_7);   _MMreverse_9.print;
 #-----------------#
-# BAT:	  tmp_33  #
+# BAT:	  tmp_36  #
 # (void)  (void)  #
 #-----------------#
 [ 0@0,	  1@0	  ]
 [ 1@0,	  2@0	  ]
 _MMjoin_10 := join(_MMreverse_9,valuesA);   _MMjoin_10.print;
 #-----------------#
-# BAT:	  tmp_36  #
+# BAT:	  tmp_39  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  20	  ]
@@ -142,9 +142,9 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 # (str)				  (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_26",	  "tmp_27",	  "tmp_28",	  "tmp_29",	  "tmp_30",	  "tmp_32",	  "tmp_33",	  "tmp_34",	  "tmp_36",	  "tmp_34",	  "tmp_37"	  ]
-[ "batCacheid",			  "26",		  "27",		  "28",		  "29",		  "30",		  "32",		  "-33",	  "34",		  "-36",	  "-34",	  "37"		  ]
-[ "batParentid",		  "0",		  "0",		  "0",		  "28",		  "0",		  "31",		  "-28",	  "28",		  "0",		  "28",		  "0"		  ]
+[ "batId",			  "tmp_28",	  "tmp_29",	  "tmp_30",	  "tmp_31",	  "tmp_32",	  "tmp_34",	  "tmp_35",	  "tmp_36",	  "tmp_38",	  "tmp_36",	  "tmp_39"	  ]
+[ "batCacheid",			  "28",		  "29",		  "30",		  "31",		  "32",		  "34",		  "-35",	  "36",		  "-38",	  "-36",	  "39"		  ]
+[ "batParentid",		  "0",		  "0",		  "0",		  "30",		  "0",		  "33",		  "-30",	  "30",		  "0",		  "30",		  "0"		  ]
 [ "batSharecnt",		  "0",		  "0",		  "3",		  "1",		  "0",		  "1",		  "1",		  "1",		  "0",		  "1",		  "0"		  ]
 [ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",	  "void",	  "void"	  ]
 [ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
@@ -177,8 +177,8 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 [ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "top",			  "5",		  "5",		  "8",		  "4",		  "8",		  "4",		  "3",		  "3",		  "3",		  "3",		  "3"		  ]
-[ "batStamp",			  "-160",	  "-161",	  "-162",	  "-165",	  "-166",	  "-168",	  "-169",	  "-170",	  "-172",	  "-170",	  "-174"	  ]
-[ "curStamp",			  "175",	  "182",	  "185",	  "188",	  "191",	  "194",	  "197",	  "200",	  "203",	  "206",	  "209"		  ]
+[ "batStamp",			  "-162",	  "-163",	  "-164",	  "-167",	  "-168",	  "-170",	  "-171",	  "-172",	  "-174",	  "-172",	  "-176"	  ]
+[ "curStamp",			  "177",	  "184",	  "187",	  "190",	  "193",	  "196",	  "199",	  "202",	  "205",	  "208",	  "211"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
@@ -223,7 +223,7 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 
 quit;
 
-# 17:08:32 >  
-# 17:08:32 >  Done.
-# 17:08:32 >  
+# 17:42:15 >  
+# 17:42:15 >  Done.
+# 17:42:15 >  
 

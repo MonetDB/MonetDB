@@ -139,6 +139,8 @@ only one will be created.
 #include "monet.h"
 #include "tcpip.proto.h"
 
+extern int conn_findByThread(MT_Id pid);
+extern int conn_write(int conn_id, int len, char *src, char *msg);
 extern int conn_find(str host, int port);
 
 @{
@@ -233,6 +235,9 @@ int socket_read(int fd, int size, char* dst, char* msg){
 
 int socket_write(int fd, int len, char *src, char *msg){
 	int ret = send(fd, src, len, 0);
+	if (GDKdebug&65536) {
+		THRprintf(GDKerr, "send:%s:%d\n", src, len);
+	}
 	if (ret != len) {
 	    GDKsyserror("socket_write: %s(%d) returned %d.\n", msg, len, ret);
 	    return FALSE;
@@ -240,20 +245,25 @@ int socket_write(int fd, int len, char *src, char *msg){
 	return TRUE;
 }
 
-char* socket_gets(int fd, char *buf, int len){
-	char *end;
-	int n;
-
-	for(end = buf + len; buf < end; buf++) {
-	    n = recv(fd, buf,1,0);
-	    if (n <= 0) {
-		GDKsyserror("socket_gets: ");
-		return NULL;
-	    }
-	    if (*buf == '\n') break; 
+bit socket_gets(int fd, char **buf, int *len){
+	char *s = *buf, *end = *buf + *len;
+	while(TRUE) {
+		if (s == end) {
+			int oldlen = *len;
+			*len *= 2;
+			*buf = GDKrealloc(*buf,*len);
+			s = *buf + oldlen;
+			end = *buf + *len;
+		}
+		if (read(fd, s, 1) <= 0) {
+			GDKsyserror("socket_gets: ");
+			return FALSE;
+	    	}
+	    	if (*s == '\n') break; 
+		++s;
 	} 
-	*buf = 0;
-	return buf;
+	*s = 0;
+	return TRUE;
 }
 
 @- MIL Types
@@ -518,6 +528,17 @@ conn_t connections[MAX_CONN] = { {0, "", 0, 0, (Thread) 0}, };
 
 @- look for a certain connection
 @c
+int conn_findByThread(MT_Id pid) {
+	int i;
+	MT_set_lock(TCPlock, "TCPopen");
+	for(i=0; i < MAX_CONN; i++)
+		if (connections[i].waiter && connections[i].waiter->pid == pid)
+			break;
+	MT_unset_lock(TCPlock, "TCPopen");
+
+	return i==MAX_CONN?-1:i;
+}
+
 int conn_find(str host, int port) {
 	int i;
 	for(i=0; i < MAX_CONN; i++) 
@@ -550,6 +571,16 @@ int conn_kill(int i) {
 	return 0;
 }
 
+
+int conn_write(int conn_id, int len, char *src, char *msg){
+	if(socket_write(connections[conn_id].sock,len,src,msg))
+		return TRUE;
+	MT_set_lock(TCPlock, "TCPopen");
+	conn_delete(conn_id);
+	MT_unset_lock(TCPlock, "TCPopen");
+	return FALSE;
+}
+
 @- close all connections
 @c
 int conn_closeall(void){
@@ -561,6 +592,28 @@ int conn_closeall(void){
 	    cache_free(*(cache_t**) BUNtloc(cache_idx, p));
 	}
 	return 1;
+}
+
+#define NM_LEN 80
+#define MAX_LINE 64
+static int
+TCPraise(int fd, str name)
+{
+	char *errbuf = GDKerrbuf;
+	if (errbuf && *errbuf && *errbuf != *str_nil) {
+		int errlen = strlen(errbuf);
+		int msglen;
+		char *msg = (char*) alloca(errlen+NM_LEN+32);
+		sprintf(msg, "err:%s:%d\n", name, errlen + 1);
+		msglen = strlen(msg);
+		memcpy(msg+msglen, errbuf, errlen+1);
+		*errbuf = '\0';
+		if (GDKdebug&65536) {
+			THRprintf(GDKerr, "send err:%s\n", msg);
+		}
+		socket_write(fd, msglen+errlen+1, msg,"error msg");
+	}
+	return GDK_SUCCEED;
 }
 
 
@@ -585,16 +638,24 @@ The evaluation identifier is also used for generating error messages.
 #define M_TCPIP_ALIGN(n,b) ((b)?(b)*(1+(((n)-1)/(b))):n)
 
 void conn_waiter(void * vi){
-	int i=(int)vi;
-	Thread thr = THRnew(MT_getpid(), "conn_waiter");
-	int fd = connections[i].sock;
-	char line[16384], nm[80];
-	char msg[4096], errbuf[GDKMAXERRLEN], *errbuf_bak = GDKerrbuf;
+    int i=(int)vi;
+    Thread thr = THRnew(MT_getpid(), "conn_waiter");
 
-	connections[i].waiter = thr;
+    if (thr) {
+      int fd = connections[i].sock;
+      Client monetClient = forkClient(0, 1);
+      connections[i].waiter = thr;
+
+      if(monetClient) {
+        int lineLength = MAX_LINE;
+        char *line = GDKmalloc(lineLength), nm[NM_LEN];
+        char errbuf[GDKMAXERRLEN], *errbuf_bak = GDKerrbuf;
+
 	GDKsetbuf(errbuf);
+        monetClient->socket = -1;
+        monetClient->login = time(0);
 
-	while(socket_gets(fd, line, 16384)) {
+	while(socket_gets(fd, &line, &lineLength)) {
 	     char *p, *r, *q, *tp = line;
 	     int tpe = TYPE_bat;
 	     cache_t *c; 
@@ -616,31 +677,43 @@ the standard mechanism.
 		THRprintf(GDKerr, "%s:%s:%s\n", tp, nm, p);
 	    }
 	    if (strcmp(tp, "mil") == 0) {
+                int asynchronous  = (strncmp(nm, "arpc", 4) == 0);
 	        int expect_return = (strncmp(nm, "rpc", 3) == 0);
 		ValRecord res;
 		ptr val = &res.val.ival;
 		res.vtype = TYPE_void;
-
-#define RETURN_PREFIX "return " 
-		if (expect_return) {
-			p -= strlen(RETURN_PREFIX); 
-			strncpy(p, RETURN_PREFIX, strlen(RETURN_PREFIX));
-		}
 		*errbuf = '\0';
-		interpret_str(0, p, &res);  /* 0=>fork off the ADM cntxt */
+
+		if (asynchronous) {
+			int plen = strlen(p);
+			char *tmp = (char*) alloca(plen+256);
+			p[plen-1] = '\0'; /* remove trailing ';' */
+			sprintf(tmp,"export(%d,%s,\"%s\").enqueue.wakeup;", i,p,nm);
+			interpret_str(monetClient->stk, tmp, &res);
+		} else {
+#define RETURN_PREFIX "return " 
+			if (expect_return) {
+				p -= strlen(RETURN_PREFIX); 
+				strncpy(p, RETURN_PREFIX, strlen(RETURN_PREFIX));
+			}
+			*errbuf = '\0';
+			interpret_str(0, p, &res);  /* 0=>fork off the ADM cntxt */
+		}
 @-
 'GDKerror' messages have been stored in 'errbuf' (if any)
 @c
+#ifndef DDIPATCH
 		if (*errbuf) {
+			char msg[16384];
  			size_t len;
 			int fd = connections[i].sock;
 
-			sprintf(msg, "err:%s:%lu\n", nm, (unsigned long) strlen(errbuf) + 1);
+			snprintf(msg, 16384, "err:%s:%lu\n", nm, (unsigned long) strlen(errbuf) + 1);
 			len = strlen(msg);
 			memcpy(msg+len, errbuf, strlen(errbuf)+1);
 	    		socket_write(fd, len+strlen(errbuf)+1, msg,"error msg");
-printf("ERROR: %s \n", msg );
 		}
+#endif
 
 		if (res.vtype == TYPE_bat) {
 		    val = (ptr) BBPdescriptor(res.val.bval);
@@ -654,6 +727,8 @@ Rpc request get a value back; mil requests not.
 @c
 	        if (expect_return) {
 		    TCPexport(&i, val, res.vtype, nm); 
+		} else {
+		    TCPraise(fd,nm);
 		}
 @-
 All said and done, now we clean up any returned values.
@@ -772,7 +847,7 @@ For variable sized atoms, there may be a head and/or tail heap.
 		    (b->hheap.base && 
 			!socket_read(fd, hsize, b->hheap.base, "head heap")) ||
 		    (b->theap.base && 
-			!socket_read(fd, tsize, b->theap.base, "tail heap"))) 
+                       !socket_read(fd, tsize, b->theap.base, "tail heap")))
 		{
 		    BBPreclaim(b);
 		    goto fail;
@@ -791,8 +866,8 @@ For variable sized atoms, there may be a head and/or tail heap.
 #ifndef WORDS_BIGENDIAN
 	    	BATconvert(b,CONV_NTOH);
 #endif
-		BATpropcheck(b);
-		BATpropcheck(BATmirror(b));
+		BATpropcheck(b, BATPROPS_ALL);
+		BATpropcheck(BATmirror(b), BATPROPS_ALL);
 
 @- Atomic Value Receive
 @c
@@ -810,11 +885,16 @@ Mark the value as totally ready in the cache.
 	    cache_fill(c, tpe, dst, i);
 	}
 	GDKsetbuf(errbuf_bak);
+	GDKfree(line);
+	closeClient(monetClient, 1);
 	stream_printf(GDKout, "conn_waiter: lost connection, exiting.\n");
-	MT_set_lock(TCPlock, "conn_waiter");
-	conn_delete(i);
-	MT_unset_lock(TCPlock, "conn_waiter");
-	THRdel(thr);
+      }
+      THRdel(thr);
+    }
+    MT_set_lock(TCPlock, "conn_waiter");
+    conn_delete(i);
+    MT_unset_lock(TCPlock, "conn_waiter");
+    MT_exit_thread(0);
 }
 @- insert a new connection
 also involves forking a waiter thread
@@ -824,14 +904,18 @@ int conn_insert(str host, int port, int me, int sock) {
 	for(i=0; connections[i].me; i++);
 	if (i == MAX_CONN) {
 	    GDKerror("conn_insert: too many connections\n");
+            i = -1;
 	} else {
 	    MT_Id t = 0;
 	    connections[i].me = me;
 	    connections[i].port = port;
 	    connections[i].sock = sock;
+            connections[i].waiter = (Thread)0;
 	    strcpy(connections[i].hostname, host);
-	    if (me != -1)
-		MT_create_thread(&t, conn_waiter, (void*)i);
+	    if (me != -1 && MT_create_thread(&t, conn_waiter, (void*)i) != 0) {
+                connections[i].me = 0;
+                i = -1;
+            }
 	}
 	return i;
 }
@@ -875,10 +959,15 @@ Init the global structures.
 @c
 int listeners=0, ports[256] = {0};
 
-void TCPprelude(void){
+bat* TCPprelude(void){
 	TCPlock = MT_create_lock();
 	cache_idx = BATnew(TYPE_str, TYPE_ptr, 1000);
 	BBPrename(cache_idx->batCacheid, "tcpip_idx");
+
+        /* fork extra asynchronous interpreter, so there are always
+           two threads to handle to asynchronous requests */
+        monetFork();
+	return NULL;
 }
 
 @+ prelude
@@ -911,6 +1000,9 @@ close all connections, and destroy our global structures.
 	BBPreclaim(cache_idx);
 	MT_unset_lock(TCPlock, "TCPepilogue");
 	MT_destroy_lock(TCPlock);
+
+	/* kill the extra asynchronous interpreter thread */
+	putkillRequest();
 }
 
 @* Listener Implementation
@@ -925,6 +1017,9 @@ TCPlisten(
 	int msgsock = -1, sock = socket(AF_INET, SOCK_STREAM, 0);
 	int port_no=0, i, on=1;
 	SOCKLEN length = (SOCKLEN) sizeof(server);
+	int lineLength = MAX_LINE;
+	char *p, *line = GDKmalloc(lineLength);
+
 @-
 Administrate yourself
 @c
@@ -953,7 +1048,6 @@ create the socket
 	} else if (listen(sock, 5) < 0) {
 	    GDKsyserror("TCPlisten(%d): getting socket name\n", *port);
 	} else while ((msgsock = accept(sock, (SOCKPTR)0, (SOCKLEN *) 0)) > 0) {
- 	    char *p, line[1024];
 @- 
 the listener heard something...
 @c
@@ -971,7 +1065,7 @@ the listener heard something...
 	    setsockopt(msgsock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
 		       sizeof(nodelay)); }
 #endif
-	    if (socket_gets(msgsock, line, 1024) == NULL){
+	    if (socket_gets(msgsock, &line, &lineLength) == 0){
 		close(msgsock);
 		continue;
 	    } else if (strncmp(line, "stop", 4) == 0) {
@@ -997,6 +1091,7 @@ a new connection is born
 	MT_unset_lock(TCPlock, "TCPlisten");
 	shutdown(sock,2); 
 	socket_close(sock);
+	GDKfree(line);
 	return GDK_SUCCEED;
 }
 
@@ -1009,12 +1104,17 @@ int TCPlisten_default(void){
 @+ terminate(int)
 Stop a TCP/IP server
 @c
+static char TCPhostname[128] = { 0 };
+static char* hostname(void) {
+	if (!*TCPhostname) gethostname(TCPhostname, 128);
+	return TCPhostname;
+}
+
 int
 TCPterminate(
    int*     	port	/* pointer to integer.*/
 ){
-	char host [BUFSIZ];
-	int fd = socket_open(host, *port, "TCPterminate");
+	int fd = socket_open(hostname(), *port, "TCPterminate");
 	if (fd) {
 	    socket_write(fd, 5, "stop\n", "TCPterminate");
 	    return GDK_SUCCEED;
@@ -1085,7 +1185,7 @@ In the meantime, the other way round might have gotten through.  If so, use it.
 We really initiated a new connection
 @c
 	    *retval = conn_insert(host, port, -1, fd);
-	    sprintf(buf, "%s\n", host);
+	    sprintf(buf, "%s\n", hostname());
 	    if (send(fd, buf, strlen(buf), 0) != (int) strlen(buf)) {
 		GDKsyserror("conn_insert: could not communicate.\n");
 		conn_delete(*retval);
@@ -1141,6 +1241,9 @@ TCPexport(
 	    return GDK_FAIL;
 	}
  	fd = connections[*conn_id].sock;
+
+        TCPraise(fd,name);
+
 	if (tpe == TYPE_bat) {
 @- bat:<name>:<cnt>*<width>:<htype>\@<off>[+][k]:<ttype>\@<off>[+][k]:
 	<hheap>:<theap>:<halign>:<talign>:<oidbase>

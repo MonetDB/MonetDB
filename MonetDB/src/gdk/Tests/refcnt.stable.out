@@ -1,12 +1,12 @@
 stdout of test 'refcnt` in directory 'src/gdk` itself:
 
 
-# 09:28:02 >  
-# 09:28:02 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_gdk  < refcnt.milM
-# 09:28:02 >  
+# 11:40:32 >  
+# 11:40:32 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=57441 --set sql_port=54507 --set monet_prompt= --trace --dbname=mTests_src_gdk  < refcnt.milM
+# 11:40:32 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.11
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 PROC tmp() : void := {
         var sts := view_bbp_status;
@@ -40,7 +40,7 @@ tmp;
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| refcnt  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 2	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -61,9 +61,11 @@ tmp;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
+[ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 
 {
@@ -91,7 +93,7 @@ res := nil;
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| refcnt  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 2	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -112,17 +114,19 @@ res := nil;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
+[ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 [ "top",		  0,	  "load", "tran", 0	  ]
-[ "one",		  0,	  "load", "pers", 0	  ]
-[ "two",		  0,	  "load", "pers", 0	  ]
+[ "one",		  0,	  "load", "tran", 0	  ]
+[ "two",		  0,	  "load", "tran", 0	  ]
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| refcnt  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 2	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -143,16 +147,18 @@ res := nil;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
+[ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 [ "top",		  0,	  "load", "tran", 0	  ]
-[ "two",		  0,	  "load", "pers", 0	  ]
+[ "two",		  0,	  "load", "tran", 0	  ]
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| refcnt  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 2	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -173,16 +179,18 @@ res := nil;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
+[ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 [ "top",		  0,	  "load", "tran", 0	  ]
-[ "tmp_27",		  0,	  "load", "tran", 0	  ]
-[ "two",		  0,	  "load", "pers", 0	  ]
-[ "ten",		  0,	  "load", "pers", 0	  ]
-[ "tmp_32",		  0,	  "load", "tran", 0	  ]
-[ "twenty",		  0,	  "load", "pers", 0	  ]
+[ "tmp_29",		  0,	  "load", "tran", 0	  ]
+[ "two",		  0,	  "load", "tran", 0	  ]
+[ "ten",		  0,	  "load", "tran", 0	  ]
+[ "tmp_34",		  0,	  "load", "tran", 0	  ]
+[ "twenty",		  0,	  "load", "tran", 0	  ]
 
 #BUGS:
 #- bat("one") still exists, due to not decreasing the reference counter
@@ -193,7 +201,7 @@ tmp;
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| refcnt  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 2	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -214,13 +222,15 @@ tmp;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
+[ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 quit;
 
-# 09:28:02 >  
-# 09:28:02 >  Done.
-# 09:28:02 >  
+# 11:40:32 >  
+# 11:40:32 >  Done.
+# 11:40:32 >  
 

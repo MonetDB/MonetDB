@@ -160,7 +160,7 @@ This module contains a simple interface for internet connections.
         if (_k < 0) {
                 return _k;
         }
-        @3 = VALconvert(@2, res, 0);
+        @3 = VALconvert(@2, res);
         if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
                 return handle_paramerror(res,@1,res->vtype,@2);
         }
@@ -184,13 +184,13 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	if (lt->cnt != 3) {
 		return handle_argerror(res,lt->cnt,3);
 	}
-
 	@:builtin_operand(0,TYPE_int,Port)@
 	port = *Port;
 	@:builtin_operand(1,TYPE_int,Maxusers)@
 	maxusers = *Maxusers;
 	@:builtin_operand(2,TYPE_str,Cmd)@
 	cmd = GDKstrdup(Cmd);
+	res->vtype = TYPE_void;
 
 	port = (port?port:MAPIPORT);
 	maxusers = (maxusers?maxusers:MAPIMAXUSERS);
@@ -308,7 +308,7 @@ Get the new information for the server socket and start listening.
 			c->fdin = fdin;
 			c->fdout = fdout;
 			c->mode = BLOCKMODE;
-			monet_cntxt[c->stk].outer = CNTXTcopy(stk);
+			CNTXTcopy(stk,c);
 			TBL_initclient(c, father);
 			(void)monetFork();
 			scheduleClient(c);

@@ -103,7 +103,7 @@ sql_export void cmd_add_string(context * c, char *str);
         if (_k < 0) {
                 return _k;
         }
-        @3 = VALconvert(@2, res, 0);
+        @3 = VALconvert(@2, res);
         if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
                 return handle_paramerror(res,@1,res->vtype,@2);
         }

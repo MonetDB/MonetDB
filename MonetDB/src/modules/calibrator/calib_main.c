@@ -43,18 +43,21 @@ struct fullInfo {
 
 struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 {
-	FILE	*fp;
 	caliblng align=0;
 	caliblng	mincachelines, minTLBentries, maxlinesize, mincachesize, 
 		maxcachesize, minstride = (caliblng)sizeof(char*), yy, y;
 	caliblng maxCstride=0,	maxTstride=0, maxAstride=0, delayC, delayT;
-        char	*array0, *array, fnn1[1024], fnx1[1024], fnn2[1024], fnx2[1024];
+        char	*array0, *array;
 	caliblng	**result1, **result2;
 	cacheInfo *cache;
 	TLBinfo	  *TLB;
 	AssoInfo  *Asso;
 	caliblng pgsz=getpagesize();
 	struct fullInfo *calibratorInfo;
+#ifdef CALIBRATOR_CREATE_PLOTS
+	FILE	*fp;
+	char	fnn1[1024], fnx1[1024], fnn2[1024], fnx2[1024];
+#endif
 	
 	if (!(array0 = (char *)malloc(maxrange+pgsz)))
 		ErrXit("main: 'array0 = malloc(%ld)` failed", maxrange+pgsz);
