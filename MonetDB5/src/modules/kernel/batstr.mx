@@ -53,6 +53,22 @@ command ==( l:bat[:any$1,:str], r:str) :bat[:any$1,:bit]
 address STRbatEqualCst
 comment "Equate a bat of strings against a singleton";
 
+command toLower( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatLower
+comment "Convert a string to lower case.";
+command toUpper( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatUpper
+comment "Convert a string to upper case.";
+
+command trim( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatStrip
+comment "Strip whitespaces around a string.";
+command ltrim( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatLtrim
+comment "Strip whitespaces from start of a string.";
+command rtrim( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatRtrim
+comment "Strip whitespaces from end of a string.";
 @-
 not now
 command ==( l:bat[:any$1,:str], r:bat[:any$1,:str]) :bat[:any$1,:str]
@@ -93,12 +109,6 @@ command endsWith( s:bat[:void,:str], suffix:bat[:void,:str] ) :bat[:void,:bit]
 address STRbatSuffix
 comment "Suffix check.";
 
-command toLower( s:bat[:void,:str] ) :bat[:void,:str]
-address STRbatLower
-comment "Convert a string to lower case.";
-command toUpper( s:bat[:void,:str] ) :bat[:void,:str]
-address STRbatUpper
-comment "Convert a string to upper case.";
 command search( s:bat[:void,:str], c:bat[:void,:str] ) bat[:void,:int]
 address STRbatstrSearch
 comment "Search for a substring. Returns position, -1 if not found.";
@@ -113,15 +123,6 @@ command r_search( s:bat[:void,:str], c:bat[:void,:chr] ) :bat[:void,:int]
 address STRReverseChrSearch
 comment "Reverse search for a char. Returns position, -1 if not found.";
 
-command trim( s:bat[:void,:str] ) :bat[:void,:str]
-address STRbatStrip
-comment "Strip whitespaces around a string.";
-command ltrim( s:bat[:void,:str] ) :bat[:void,:str]
-address STRbatLtrim
-comment "Strip whitespaces from start of a string.";
-command rtrim( s:bat[:void,:str] ) :bat[:void,:str]
-address STRbatRtrim
-comment "Strip whitespaces from end of a string.";
 command substitute(s:bat[:void,:str],src:bat[:void,:str],dst:bat[:void,:str],rep:bat[:void,:bit]):bat[:void,:str]
 address STRbatSubstitute
 comment "Substitute first occurrence of 'src' by
@@ -189,8 +190,12 @@ bunins_failed:
 	@:BATstr(bytes,STRBytes,str,int)@
 	@:BATstr(lower,STRLower,str,str)@
 	@:BATstr(upper,STRUpper,str,str)@
+	@:BATstr(strio,STRStrip,str,str)@
+	@:BATstr(ltrim,STRLtrim,str,str)@
+	@:BATstr(rtrim,STRRtrim,str,str)@
 @-
-	@:BATstr(charAt,ChrAt,str,chr)@
+	@:BATstr(unicode,STRFromWChr,str,int)@
+	@:BATstr(charAt,STRChrAt,str,chr)@
 @-
 @c
 str STRbatEqualCst(int *ret, int *l,str *cst)
@@ -228,7 +233,7 @@ bunins_failed:
 }
 @c
 str
-STRbatstrtostr(int *ret, int *bid){
+STRbattostr(int *ret, int *bid){
 	BBPincref(*ret= *bid,TRUE);
 	return MAL_SUCCEED;
 }
