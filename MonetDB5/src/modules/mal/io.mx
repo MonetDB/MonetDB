@@ -153,6 +153,7 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 #include "mal.h"
 #include "mal_interpreter.h"
 
+extern str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 extern str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
 		  InstrPtr pci, int i, int order, int printhead);
 extern str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl);
