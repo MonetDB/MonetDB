@@ -767,9 +767,7 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	} else if (monet_background == 1) {
 		fprintf(GDKout,"Shutdown of server in progress\n");
 		fflush(GDKout);
-		CMDquit(stk, lt, res);
 		closeClient(monet_clients, TRUE);
-		return 0;
 	} else {
 		int status = 1, *statusp = &status;
         	if (lt->cnt > 0) { 

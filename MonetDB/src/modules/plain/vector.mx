@@ -1,13 +1,14 @@
 @f vector
-@a Wilko Quak, Arjen P. de Vries,Alex Van Ballegooij
-@d 15/02/2001
-@t A variable length vector for Monet
+@a Wilko Quak, Arjen P. de Vries
+@d 03/03/2000
+@t A variable lenght vector for Monet
 
 @* Introduction
 The module defines some basic operations for a multidimensional vector type
 for int, flt, or dbl.
 
-{\em Given its ad-hockery nature, this module should not be considered as an example module. Additionally the porting from C++ to C hasn't improved readability... }
+{\em Given its ad-hockery nature, this module should not be considered as an example 
+module.}
 
 @* Module Definition
 @m
@@ -98,22 +99,79 @@ in {\tt static} class methods.
 @:vecheader(dbl)@
 
 @= vecheader
-typedef struct {
-   int dimension;
-   @1  data[1];
-} @1s;
+class @1s
+{
+private:
+   int dimension_v;
 
-@1s* @1screate(int dim);
+public:
+   @1 data[1];
 
+public:
+   @1s(int dim);
+
+   int dimension() const;
+   @1 operator[](int index) const;
+   @1& operator[](int index);
+   void *operator new(size_t size,int dimension);
+   void operator delete(void *ptr);
+
+   static @1s* rancreate(int dim);
+   static @1s* create(int dim);
+
+@:vecaggrheader(@1,max)@
+@:vecaggrheader(@1,min)@
+
+   @1s* copy() const;
+};
+
+extern double L2distance(const @1s& I1,const @1s& I2);
+
+inline @1s::@1s(int d)
+{
+   dimension_v = d;
+}
+
+inline int @1s::dimension() const
+{
+   return(dimension_v);
+}
+
+inline void @1s::operator delete( void *ptr )
+{
+   delete ptr;
+}
+
+inline void* @1s::operator new(size_t size,int dim)
+{
+   return ((void *)new char[size + ((dim -1)* sizeof(@1))]);
+}
+
+inline size_t @1ssize(int dim)
+{
+   return(sizeof(@1s) + (((dim>0)?(dim -1):(0))* sizeof(@1)));
+}
+
+inline @1s* @1s::copy() const
+{
+   @1s* rval = new(dimension()) @1s(dimension());
+   memcpy(rval,this,@1ssize(dimension()));
+   return(rval);
+}
+@
+@= vecaggrheader
+   static @1s* @2range( BAT *vecs );
 @
 @h
 
 #endif /* __VECTOR_H__ */
 
-@c
+@C
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+// old: define HEAPindex(HEAP,INDEX,TYPE) ((TYPE *)(HEAP->base + INDEX))
 
 #include "vector.h"
 #include "vector.proto.h"
@@ -134,37 +192,25 @@ static double get_double(const char* startp,char** endp)
 
 @= vecimpl
 
-size_t @1ssize(int dim) {
-   return(sizeof(@1s) + (((dim>0)?(dim -1):(0))* sizeof(@1)));
-}
-
-@1s* @1screate(int dim) {
-   @1s* rval = GDKmalloc(@1ssize(dim));
-   rval->dimension = dim;
-   return(rval);
-}
-
-
-int @1s_tostr(str* tostr,int* l,@1s* p) {
-   char *s;
-   int i;
+int @1s_tostr(str* tostr,int* l,@1s* p)
+{
    {
-      int expectedlen = 20 + (p->dimension * 15);
+      int expectedlen = 20 + (p->dimension() * 15);
       if (*l < expectedlen)
       {
          if (*tostr != NULL)
-	    GDKfree(*tostr);
-	 *tostr = GDKmalloc(expectedlen);
+	    delete *tostr;
+	 *tostr = new char[expectedlen];
          *l = expectedlen;
       }
    }
 
-   sprintf(*tostr,"(%d:", p->dimension);
-   s = *tostr + strlen(*tostr);
+   sprintf(*tostr,"(%d:", p->dimension());
+   char* s = *tostr + strlen(*tostr);
 
-   for(i=0;i<p->dimension;++i)
+   for (int i=0;i<p->dimension();++i)
    {
-      sprintf(s,"%s@3", ((i==0)?"":","), p->data[i]);
+      sprintf(s,"%s@3", ((i==0)?"":","), (*p)[i]);
       s += strlen(s);
    }
    *s++ = ')';
@@ -172,12 +218,16 @@ int @1s_tostr(str* tostr,int* l,@1s* p) {
    return(s - *tostr);
 }
 
-int @1s_fromstr(str instr,int* l,@1s** val) {
+int @1s_fromstr(str instr,int* l,@1s** val)
+{
    long         dim;
    char         *s;
    int          i;
    @1s     *result;
 
+   //
+   // Read the header of the @1s.
+   //
    for (i = 0, s = instr; *s && i < 1 && *s != ')' ; ++s)
    {
       if (*s == ',' || (*s == '(' && !i))
@@ -189,23 +239,26 @@ int @1s_fromstr(str instr,int* l,@1s** val) {
 
    if (*val == NULL)
    {
-      *val = GDKmalloc(@1ssize(dim));
-      (*val)->dimension = dim;
-      *l   = @1ssize(dim);
-   } else if (*l < (int)@1ssize(dim)) {
-      GDKfree(*val);
-      *val = GDKmalloc(@1ssize(dim));
-      (*val)->dimension = dim;
-      *l   = @1ssize(dim);
+      *val = new(dim) @1s(dim);
+      *l = @1ssize(dim);
+   }
+   else if (*l < (int)@1ssize(dim))
+   {
+      delete *val;
+      *val = new(dim) @1s(dim);
+      *l = @1ssize(dim);
    }
    result = *val;
 
-   for (i = 0; *s && i < result->dimension && *s != ')'; ++s)
+   //
+   // Read the values of the @1s.
+   //
+   for (i = 0; *s && i < result->dimension() && *s != ')'; ++s)
    {
       if (*s == ',' || *s == ':')
       {
 	 ++s;
-         result->data[i] = @2(s,&s);
+         (*result)[i] = @2(s,&s);
 	 --s;
 	 ++i;
       }
@@ -214,98 +267,199 @@ int @1s_fromstr(str instr,int* l,@1s** val) {
    return s-instr;
 }
 
-void @1s_put(Heap* h,int* bun,@1s* val) {
+void @1s_put(Heap* h,int* bun,@1s* val)
+{
    char* base;
 
-   *bun  = HEAP_malloc(h,@1ssize(val->dimension));
+   *bun  = HEAP_malloc(h,@1ssize(val->dimension()));
    base = h->base;
-   memcpy(&base[*bun],(char *)val,@1ssize(val->dimension));
+   memcpy(&base[*bun],(char *)val,@1ssize(val->dimension()));
+
 }
 
-int @1s_comp(@1s* l,@1s*  r) {
-   int i,minlen = l->dimension;
-   if (r->dimension < minlen) minlen = r->dimension;
-   
-   if (minlen == -1) return(0);
+/*
+int @1s_get(Heap* h,int* bun,int* l,@1s** val)
+{
+   @1s* from = HEAPindex(h,*bun,@1s);
+   int size = @1ssize(from->dimension());
 
-   for(i=0;i<minlen;++i) {
-      if(l->data[i] != r->data[i]) {
-	 if (l->data[i] > r->data[i]) return(1);
-	 else                         return(-1);
+   if (*val == NULL)
+   {
+      *val = (@1s *)(new char[size]);
+      *l = size;
+   }
+   else if (*l < size)
+   {
+      delete *val;
+      *val = (@1s *)(new char[size]);
+      *l = size;
+   }
+   memcpy(*val,from,size);
+
+   return (size);
+}
+*/
+
+int @1s_comp(@1s* l,@1s*  r)
+{
+   int minlen = l->dimension();
+   if (r->dimension() < minlen)
+      minlen = r->dimension();
+   
+   if (minlen == -1)
+      return(0);
+
+   for(int i=0;i<minlen;++i)
+   {
+      // if ((*r)[i] != (*l)[i])
+      if(l->data[i] != r->data[i])
+      {
+	 if ((*l)[i] > (*r)[i])
+	    return(1);
+	 else
+	    return(-1);
       }
    }
 
-   if (l->dimension == r->dimension)     return(0);
-   else if (l->dimension < r->dimension) return(-1);
-   else                                  return(1);
+   if (l->dimension() == r->dimension())
+      return(0);
+   else if (l->dimension() < r->dimension())
+      return(-1);
+   else
+      return(1);
 }
 
-void @1s_del(Heap* h,int* index) {
+void @1s_del(Heap* h,int* index)
+{
    HEAP_free(h,*index);
 }
 
 static int @1war=0;
-int @1s_hash(@1s* I) {
-   return(I->dimension);
+int @1s_hash(@1s* I)
+{
+   return(I->dimension());
+
+   if (@1war == 0)
+   {
+      ++@1war;
+      GDKerror("@1s_hash badly implemented yet");
+   }
+   return 1;
 }
 
- @1s* @1s_null() {
+ @1s* @1s_null()
+{
    static @1s* nullptr = NULL;
-   if (nullptr == NULL) { nullptr = GDKmalloc(@1ssize(0)); }
+   if (nullptr == NULL)
+   {
+      nullptr = new(0) @1s(0);
+   }
    return(nullptr);
 }
 
-int @1s_length(@1s* p) {
-   return(@1ssize(p->dimension));
+int @1s_length(@1s* p)
+{
+   return(@1ssize(p->dimension()));
 }
 
 
-int @1s_heap(Heap* heap,int capacity) {
+int @1s_heap(Heap* heap,int capacity)
+{
    HEAP_initialize(heap,capacity,0,@5);
    return 0;
 }
 
-double @1sL2distance(const @1s* I1,const @1s* I2) {
-   double rval,tmp;
-   int i,dim = I1->dimension;
-   if (I1->dimension != I2->dimension) {
-      GDKerror("L2distance between vectors of different length\n");
-      if (I2->dimension < dim) dim = I2->dimension;
+double L2distance(const @1s& I1,const @1s& I2)
+{
+   int dim = I1.dimension();
+   if (I1.dimension() != I2.dimension())
+   {
+      GDKerror("L2distance between vectors of different lenght\n");
+      if (I2.dimension() < dim)
+	 dim = I2.dimension();
    }
    
-   rval = 0;
-   for(i=0;i<dim;++i) {
-      tmp   = (double)(I2->data[i] - I1->data[i]);
-      rval += tmp * tmp;
-   }
+   double rval = 0;
+   for(int i=0;i<dim;++i)
+      rval += (I2[i] - I1[i]) * (I2[i] - I1[i]);
    rval = sqrt(rval);
    return(rval);
 }
 
-int @1Sdimension(int* rval, @1s* i) {
-   *rval = i->dimension;
+@1s* @1s::rancreate(int dim)
+{
+   @1s* rval = @1s::create(dim);
+   for(int i=0;i<dim;++i)
+      (*rval)[i] = @4rand48();
+   return(rval);
+}
+
+extern int @1Sdimension(
+   int*     	rval,
+   @1s*	i)
+{
+   *rval = i->dimension();
    return(GDK_SUCCEED);
 }
 
-int @1Srancreate(@1s**  rval,int*  dim) {
-   int i;
-   *rval = @1screate(*dim);
-   for(i=0;i<(*dim);++i) (*rval)->data[i] = @4rand48();
+int @1Srancreate(
+   @1s**  rval,
+   int*  dim)
+
+{
+   *rval = @1s::rancreate(*dim);
    return(GDK_SUCCEED);
 }
 
-int @1SL2distance(dbl*  rval,@1s*  I1,@1s*  I2) {
-   *rval = @1sL2distance(I1,I2);
+int @1SL2distance(
+   dbl*  rval,
+   @1s*  I1,
+   @1s*  I2)
+
+{
+   *rval = L2distance(*I1,*I2);
    return(GDK_SUCCEED);
 }
 
-int @1Sgetval(@1*  rval,@1s* I,int*  index) {
-   if ((*index > I->dimension) || (*index < 0)) {
+int @1Sgetval(
+   @1*  rval,
+   @1s* I,
+   int*  index)
+
+{
+   if ((*index > I->dimension()) || (index < 0))
+   {
       GDKwarning("@1s index out of bounds\n");
       return(GDK_FAIL);
    }
-   *rval = I->data[*index];
+   *rval = (*I)[*index];
    return(GDK_SUCCEED);
+}
+
+ @1s* @1s::create(int dimension)
+{
+   @1s* rval = new(dimension) @1s(dimension);
+   return(rval);
+}
+
+ @1& @1s::operator[](int index)
+{
+#ifdef DEBUG
+   if ((index < 0) || (index >= dimension()))
+      GDKerror("index %d out of bounds [0,%d] allowed in @1s::operator[]\n",
+         index,dimension()-1);
+#endif
+   return(data[index]);
+}
+
+ @1 @1s::operator[](int index) const
+{
+#ifdef DEBUG
+   if ((index < 0) || (index >= dimension()))
+      GDKerror("index %d out of bounds [0,%d] allowed in @1s::operator[]\n",
+         index,dimension()-1);
+#endif
+   return(data[index]);
 }
 
 @:vecaggrimpl(@1,max,MAX)@
@@ -314,36 +468,38 @@ int @1Sgetval(@1*  rval,@1s* I,int*  index) {
 @
 
 @= vecaggrimpl
-@1s* @1s@2range(BAT* vecs) {
-  int  i,xx;
-  BUN  p,q;
-  BUN  firstbun = BUNfirst( vecs );
-  @1s* vec      = (@1s*) ( BUNtvar( vecs, firstbun ) );
-  int  dim      = vec->dimension;
+int @1S@2range(
+   @1s* *rval,
+   BAT* vecs)
 
-  /* Make Copy... */
-  @1s* rval    = @1screate(dim);
-  for(i=0;i<dim;i++) rval->data[i] = vec->data[i];
+{
+  *rval = @1s::@2range(vecs);
+  if ( *rval == NULL ) 
+    return(GDK_FAIL);
+  else
+    return(GDK_SUCCEED);
+}
 
-  /* Compute aggregate */
+@1s* @1s::@2range(BAT* vecs)
+{
+  BUN firstbun = BUNfirst( vecs );
+  @1s* vec = (@1s*) ( BUNtvar( vecs, firstbun ) );
+  int dim = vec->dimension();
+
+  // compute aggregate
+  @1s* rval = vec->copy();
+  BUN p,q;
+  int xx;
   BATloopFast(vecs, p, q, xx) {
     vec = (@1s*) BUNtvar(vecs, p);
-    if(vec->dimension != dim) {
+    if ( vec->dimension() != dim ) {
       GDKerror( "Cannot compute @2range for vectors of different lengths\n");
       return NULL;
     }
-    for(i=0;i<dim;i++) rval->data[i] = @3(rval->data[i],vec->data[i]);
+    for(int i=0;i<dim;++i)
+      (*rval)[i] = @3( (*rval)[i], (*vec)[i] );
   }
-
+  
   return(rval);
 }
-
-int @1S@2range(@1s* *rval, BAT* vecs) {
-  *rval = @1s@2range(vecs);
-  if(*rval == NULL) return(GDK_FAIL);
-  else              return(GDK_SUCCEED);
-}
 @
-
-@
-

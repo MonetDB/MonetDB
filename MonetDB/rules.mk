@@ -66,16 +66,16 @@ MXFLAGS= -notouch
 	$(MV) doc.tex $@
 
 %.pdf: %.tex
-	$(PDFLATEX) $< 
+	pdflatex $< 
 
 %.dvi: %.tex
-	$(LATEX) $< 
+	latex $< 
 
 %.ps: %.dvi
-	$(DVIPS) $< -o $@
+	dvips $< -o $@
 
 %.eps: %.fig
-	$(FIG2DEV) -Leps -e $< > $@
+	fig2dev -Leps -e $< > $@
 
 %.eps: %.feps
 	$(CP) $< $@

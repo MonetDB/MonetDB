@@ -591,26 +591,6 @@ function milC () {
 	LOG2x sleep 9
 } # milC ()
 
-function milMXs () {
-	local TST="$1"     ; if [ "$1" ] ; then  shift ; fi
-	local EXT="$1"     ; if [ "$1" ] ; then  shift ; fi
-	local PRELUDE="$1" ; if [ "$1" ] ; then  shift ; fi
-
-	for SCRIPT in ${TST}_s[0-9][0-9].$EXT ; do
-		LOG2x $MSERVER -db $TSTDB $PRELUDE < $SCRIPT
-	done
-} # milMXs ()
-
-function milSXs () {
-	local TST="$1"     ; if [ "$1" ] ; then  shift ; fi
-	local EXT="$1"     ; if [ "$1" ] ; then  shift ; fi
-	local PRELUDE="$1" ; if [ "$1" ] ; then  shift ; fi
-
-	for SCRIPT in ${TST}_s[0-9][0-9].$EXT ; do
-		LOG2x $MSERVER -db $TSTDB -single $PRELUDE < $SCRIPT
-	done
-} # milSXs ()
-
 function milCXs () {
 	local TST="$1"     ; if [ "$1" ] ; then  shift ; fi
 	local EXT="$1"     ; if [ "$1" ] ; then  shift ; fi
@@ -826,11 +806,6 @@ function MtestIt () {
 	  elif [ -f "$TST.milM"       ] ; then  EXT="milM" ; CALL="milM   $TST $EXT"
 	  elif [ -f "$TST.milS"       ] ; then  EXT="milS" ; CALL="milS   $TST $EXT"
 	  elif [ -f "$TST.milC"       ] ; then  EXT="milC" ; CALL="milC   $TST $EXT"
-	  elif [ -f "$TST.milM.src"   ] ; then  EXT="milM" ; CALL="milM   $TST $EXT"
-	  elif [ -f "$TST.milS.src"   ] ; then  EXT="milS" ; CALL="milS   $TST $EXT"
-	  elif [ -f "$TST.milC.src"   ] ; then  EXT="milC" ; CALL="milC   $TST $EXT"
-	  elif [ -f "${TST}_s00.milM" ] ; then  EXT="milM" ; CALL="milMXs $TST $EXT"
-	  elif [ -f "${TST}_s00.milS" ] ; then  EXT="milS" ; CALL="milSXs $TST $EXT"
 	  elif [ -f "${TST}_s00.milC" ] ; then  EXT="milC" ; CALL="milCXs $TST $EXT"
 	  elif [ -f "${TST}_p00.milC" ] ; then  EXT="milC" ; CALL="milCXp $TST $EXT"
 	  elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   $TST $EXT"
@@ -873,11 +848,6 @@ function MtestIt () {
 		if [ -f $THESRCDIR/${TST}_s00.$EXT ] ; then  ln -fs $THESRCDIR/${TST}_s[0-9][0-9].$EXT . ; fi
 		if [ -f $THESRCDIR/${TST}_p00.$EXT ] ; then  ln -fs $THESRCDIR/${TST}_p[0-9][0-9].$EXT . ; fi
 		ln -fs $THESRCDIR/$TST.* .
-		if [ -f $TST.$EXT.src  -a  ! -f $TST.$EXT ] ; then
-			unset TSTSRC
-			eval TSTSRC=`cat $TST.$EXT.src`
-			ln -fs $TSTSRC $TST.$EXT
-		fi
 		if     [ -f $TST.stable.out.$OSVER.$BITS ] ; then  export STABLEout=stable.out.$OSVER.$BITS
 		  elif [ -f $TST.stable.out.$OSVER       ] ; then  export STABLEout=stable.out.$OSVER
 		  elif [ -f $TST.stable.out.$OS          ] ; then  export STABLEout=stable.out.$OS

@@ -393,8 +393,6 @@ int interpret_multiplex_fcn(
 		real_type = b->htype;
 		desc.piv[desc.nbats] = b;	
 		desc.c[++desc.nbats] = desc.argv + i;
-	    } else if (argv[i].vtype == TYPE_bat){
-		argv[i].len = 0; /* no idea but != int_nil */
 	    }
 	}
 @- 
@@ -490,13 +488,6 @@ static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
     if (!desc->b) {
 	desc->b = BATnew(desc->id.vtype, desc->argv[0].vtype, desc->cap+3); 
 	desc->unfix = (desc->notall)?NULL:BATatoms[desc->argv[0].vtype].atomUnfix;
-	/* void void case */
-	if (!desc->b){
-		GDKsetbuf(desc->bulkerror.bak);
-		GDKerror("Result bat[void,void] impossible.\n");
-		GDKsetbuf(desc->bulkerror.buf);
-		return -1;
-	}
     } 
     @:insert_@3(@2)@
     return 0;

@@ -68,7 +68,7 @@ stream *open_bzwastream( char *filename );
 #endif
 
 typedef enum steam_errors {
-	NO__ERROR = 0,
+	NO_ERROR = 0,
 	OPEN_ERROR,
 	READ_ERROR, 
 	WRITE_ERROR
@@ -98,7 +98,7 @@ static stream *create_stream( char *filename ){
 	s->byteorder = 1234;
 	s->filename = GDKstrdup(filename); 
 	s->stream_data = NULL;
-	s->errnr = NO__ERROR;
+	s->errnr = NO_ERROR;
 	s->destroy = &stream_destroy;
 	return s;
 }
@@ -172,7 +172,7 @@ stream *open_rstream( char *filename ){
 #endif
 	{
 	  	stream *s = open_stream( filename, "rb");
-		if (s->errnr == NO__ERROR)
+		if (s->errnr == NO_ERROR)
 	   		fread( (char*)&s->byteorder, sizeof(sht), 
 						1, (FILE*)s->stream_data);
 		return s;
@@ -207,7 +207,7 @@ stream *open_wstream( char *filename ){
 #endif
 	{
 		stream *s = open_stream( filename, "wb");
-		if (s->errnr == NO__ERROR)
+		if (s->errnr == NO_ERROR)
 	   		fwrite( (char*)&s->byteorder, sizeof(sht), 
 						1, (FILE*)s->stream_data);
 		return s;
@@ -311,13 +311,13 @@ stream *open_gzstream( char *filename, char *flags ){
 }
 stream *open_gzrstream( char *filename ){
 	stream *s = open_gzstream( filename, "rb");
-	if (s->errnr == NO__ERROR)
+	if (s->errnr == NO_ERROR)
 	   gzread( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(sht));
 	return s;
 }
 stream *open_gzwstream( char *filename ){
 	stream *s = open_gzstream( filename, "wb");
-	if (s->errnr == NO__ERROR)
+	if (s->errnr == NO_ERROR)
 	   gzwrite( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(sht));
 	return s;
 }
@@ -364,13 +364,13 @@ stream *open_bzstream( char *filename, char *flags ){
 }
 stream *open_bzrstream( char *filename ){
 	stream *s = open_bzstream( filename, "rb");
-	if (s->errnr == NO__ERROR) BZ2_bzread( 
+	if (s->errnr == NO_ERROR) BZ2_bzread( 
 		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(sht) );
 	return s;
 }
 stream *open_bzwstream( char *filename ){
 	stream *s = open_bzstream( filename, "wb");
-	if (s->errnr == NO__ERROR) BZ2_bzwrite( 
+	if (s->errnr == NO_ERROR) BZ2_bzwrite( 
 		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(sht) );
 	return s;
 }

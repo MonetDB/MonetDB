@@ -185,9 +185,9 @@ of form-based applications.
 @C
 
 void htmlTimeStamp() {
-    time_t ltime;
-    time(&ltime);
-    htmlComment(ctime(&ltime));
+    time_t tloc;
+    time(&tloc);
+    htmlComment(ctime(&tloc));
 }
 
 void htmlHeader(char *type) {

@@ -236,9 +236,6 @@ def do_recursive_combine(deplist,includes,cache,depfiles):
       for f in includes[d]:
         if (f not in depfiles):
 	  depfiles.append(f)
-      # need to add include d too
-      if (d not in depfiles):
-        depfiles.append(d)
     elif (cache.has_key(d)):
       if (d not in depfiles):
         depfiles.append(d)
@@ -307,7 +304,7 @@ def do_scan(targets,deps,incmap,cwd,cache):
 	        if (fnd+depext not in inc_files):
 		  inc_files.append(incmap[fnd+depext]+os.sep+fnd+depext)
  	      #else:
-		#print(fnd + depext + " not in deps and incmap " )
+		#print(fnd + " not in deps and incmap " + depext )
               m = pat.search(b,m+1)
         cache[target] = inc_files
   #for i in cache.keys():
@@ -320,15 +317,11 @@ def do_lib(lib,deps):
     if (deps.has_key(lib)):
       lib_deps = deps[lib]
       for d in lib_deps:
-	dirname = os.path.dirname(d)
-      	b,ext = split_filename(os.path.basename(d))
+      	b,ext = split_filename(d)
 	if (base != b):
       	  if (ext in lib_map):
 	    if (b not in true_deps):
-	      if (len(dirname) > 0):
-	      	true_deps.append("-l_"+b)
-	      else:
-	      	true_deps.append("lib_"+b)
+	      true_deps.append("lib_"+b)
 	    n_libs = do_lib(d,deps)
 	    for l in n_libs:
 	      if (l not in true_deps):
@@ -354,14 +347,7 @@ def read_depsfile(incdirs, cwd, topdir):
   includes = {}
   incmap = {}
   for i in incdirs:
-    if (i[0:2] == "-I"):
-      i = i[2:]
     dir = i
-    if (dir[0:2] == "$("):
-      var, rest = string.split(dir[2:], ')');
-      if (os.environ.has_key( var )):
-	value = os.environ[var]
-	dir = value + rest
     if (string.find(i,os.sep) >= 0):
       d,rest = string.split(i,os.sep, 1) 
       if (d == "top_srcdir" or d == "top_builddir"):
@@ -384,21 +370,9 @@ def read_depsfile(incdirs, cwd, topdir):
 	  includes[i+os.sep+d] = inc
 	  incmap[d] = i
         cache.close()
-    else:
-	if (i[0:2] == "-I"):
-		i = i[2:]
-	if (i[0:2] == "$("):
-		var, rest = string.split(i[2:], ')');
-		if (os.environ.has_key( var )):
-			value = os.environ[var]
-			i = value + rest
-    	if os.path.exists(i):
-		for dep in os.listdir(i):
-	  		includes[i+os.sep+dep] = [ i+os.sep+dep ]
-			incmap[dep] = i
-
   return includes,incmap
 
+# todo (change to a class)
 def codegen(tree, cwd, topdir):
   includes = {}
   incmap = {}
@@ -407,7 +381,19 @@ def codegen(tree, cwd, topdir):
  
   deps = {}
   for i in tree.keys():  
-    if ( i[0:4] == "lib_" or i[0:4] == "bin_" or  i[0:4] == "doc_" or \
+    if ( i[0:4] == "doc_" ):
+	  targets = []
+ 	  if (type(tree.value(i)) == type({}) ):
+	    for f in tree.value(i)["SOURCES"]:
+	      (base,ext) = split_filename(f)
+	      do_code_extract(f,base,ext, targets, deps, cwd)
+	    targets = do_code_gen(targets,deps)
+	    do_deps(targets,deps,includes,incmap,cwd)
+	    libs = do_libs(deps)
+      	    tree.value(i)["TARGETS"] = targets
+      	    tree.value(i)["DEPS"] = deps
+
+    elif ( i[0:4] == "lib_" or i[0:4] == "bin_" or  \
          i == "LIBS" or i == "BINS" or i[0:8] == "scripts_" ):
 	  targets = []
  	  if (type(tree.value(i)) == type({}) ):
@@ -420,12 +406,10 @@ def codegen(tree, cwd, topdir):
       	    tree.value(i)["TARGETS"] = targets
       	    tree.value(i)["DEPS"] = deps
 		 
+	    # todo fix this stuff
 	    if (i[0:4] == "lib_"):
-	      lib = i[4:] + "_LIBS"
-	      if (lib[0] == "_"):
-		lib = lib[1:]
-	      if (libs.has_key(lib)):
-	        d = libs[lib]
+	      if (libs.has_key(i[4:]+"_LIBS")):
+	        d = libs[i[4:]+"_LIBS"]
 	        if (tree.value(i).has_key('LIBS')):
 		  for l in d:
 	            tree.value(i)['LIBS'].append(l)
@@ -435,6 +419,14 @@ def codegen(tree, cwd, topdir):
 	      for l,d in libs.items():
 		n,dummy = string.split(l,"_",1)
 	        tree.value(i)[n+'_DLIBS'] = d
+		#if (tree.value(i).has_key(l)):
+		  # for dep in d:
+		    # tree.value(i)[l].append(dep)
+		#else:
+	        #  tree.value(i)[l] = d
+	        #  if (tree.value(i).has_key('LIBS')):
+		#     for dep in tree.value(i)['LIBS']:
+		#       tree.value(i)[l].append(dep)
 	    else:
 	      for l,d in libs.items():
 	        tree.value(i)[l] = d

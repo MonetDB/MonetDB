@@ -1366,11 +1366,11 @@ Delete all the modules's atoms from user table.
 		if (r != NULL) {
 			aid = *(int*) BUNtloc(father->atomtbl, r);
 			BUNdelete(father->atomtbl, r);
-			if (BUNfnd(father->atomtbl, buf) == NULL) {
-				tpes[ntpes++] = aid;
-				if (ntpes == mtpes) 
-					tpes = (int*) GDKrealloc(tpes, (mtpes*=2)*sizeof(int));
-			}
+		}
+		if (BUNfnd(father->atomtbl, buf) == NULL) {
+			tpes[ntpes++] = aid;
+			if (ntpes == mtpes) 
+			 tpes = (int*) GDKrealloc(tpes, (mtpes*=2)*sizeof(int));
 		}
 	}
 @-
