@@ -1408,7 +1408,6 @@ int THRexit(str nme) {
 	Thread	t;
 	Thread	s; 
 
-	printf("THRexit\n", nme );
 	for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 		if (t->pid && t->name && strcmp(t->name, nme) == 0) {
 			MT_Id victim = t->pid; 
