@@ -1325,7 +1325,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
         BBPdecref(bid,TRUE);
         stk->stk[k].val.ival= 0;
     }
-    BBPdecref(bid,TRUE);    /* one more because batAfterCall is still in progress */
+    /* BBPdecref(bid,TRUE);    OBSOLETE one more because batAfterCall is still in progress */
     if( BBP_lrefs(bid) == 0){
         BBPunfix(bid);
     }

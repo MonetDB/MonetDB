@@ -126,6 +126,7 @@ malInclude(Client c, str name, str libname, int listing)
 
 	c->yycur = 0;
     c->prompt = GDKstrdup(""); /* do not produce visible prompts */
+	c->promptlength= strlen(c->prompt);
     c->listing = listing;
 	c->bak = NULL;
 
@@ -162,6 +163,7 @@ resolving addresses.
 	if (c->prompt)
 		GDKfree(c->prompt);
     c->prompt = oldprompt;
+	c->promptlength= strlen(c->prompt);
     c->glb = oldglb;
     c->nspace = oldnspace;
     c->curprg = oldprg;
