@@ -25,24 +25,13 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLProcedureColumns(SQLHSTMT hStmt,
-		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		    SQLCHAR *szProcName, SQLSMALLINT nProcNameLength,
-		    SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+static SQLRETURN
+SQLProcedureColumns_(ODBCStmt *stmt,
+		     SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		     SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		     SQLCHAR *szProcName, SQLSMALLINT nProcNameLength,
+		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedureColumns\n");
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
-
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {
 		/* 24000 = Invalid cursor state */
@@ -81,4 +70,70 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 	addStmtError(stmt, "IM001", NULL, 0);
 
 	return SQL_ERROR;
+}
+
+SQLRETURN SQL_API
+SQLProcedureColumns(SQLHSTMT hStmt,
+		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		    SQLCHAR *szProcName, SQLSMALLINT nProcNameLength,
+		    SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLProcedureColumns\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLProcedureColumns_(stmt,
+				    szCatalogName, nCatalogNameLength,
+				    szSchemaName, nSchemaNameLength,
+				    szProcName, nProcNameLength,
+				    szColumnName, nColumnNameLength);
+}
+
+SQLRETURN SQL_API
+SQLProcedureColumnsW(SQLHSTMT hStmt,
+		     SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		     SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		     SQLWCHAR *szProcName, SQLSMALLINT nProcNameLength,
+		     SQLWCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL, *column = NULL;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLProcedureColumnsW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
+	fixWcharIn(szProcName, nProcNameLength, proc, addStmtError, stmt, goto exit);
+	fixWcharIn(szColumnName, nColumnNameLength, column, addStmtError, stmt, goto exit);
+
+	rc = SQLProcedureColumns_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
+				  proc, SQL_NTS, column, SQL_NTS);
+
+  exit:
+	if (catalog)
+		free(catalog);
+	if (schema)
+		free(schema);
+	if (proc)
+		free(proc);
+	if (column)
+		free(column);
+
+	return rc;
 }

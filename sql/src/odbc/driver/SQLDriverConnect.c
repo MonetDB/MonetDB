@@ -83,27 +83,17 @@ get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 	return 1;
 }
 
-SQLRETURN SQL_API
-SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
-		 SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
-		 SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
-		 SQLUSMALLINT nDriverCompletion)
+static SQLRETURN
+SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
+		  SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
+		  SQLUSMALLINT nDriverCompletion)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	char *key, *attr;
 	char *dsn = 0, *uid = 0, *pwd = 0;
 	SQLRETURN rc;
 
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLDriverConnect ");
-#endif
-
 	(void) hWnd;		/* Stefan: unused!? */
-
-	if (!isValidDbc(dbc))
-		return SQL_INVALID_HANDLE;
-
-	clearDbcErrors(dbc);
 
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
@@ -217,5 +207,62 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		free(uid);
 	if (pwd)
 		free(pwd);
+	return rc;
+}
+
+SQLRETURN SQL_API
+SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
+		 SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
+		 SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
+		 SQLUSMALLINT nDriverCompletion)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDriverConnect ");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	return SQLDriverConnect_(dbc, hWnd, szConnStrIn, nConnStrIn,
+				 szConnStrOut, cbConnStrOutMax, pnConnStrOut,
+				 nDriverCompletion);
+}
+
+SQLRETURN SQL_API
+SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
+		  SQLSMALLINT nConnStrIn, SQLWCHAR *szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
+		  SQLUSMALLINT nDriverCompletion)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	SQLCHAR *in = NULL, *out;
+	SQLSMALLINT n;
+	SQLRETURN rc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDriverConnectW ");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	fixWcharIn(szConnStrIn, nConnStrIn, in, addDbcError, dbc, return SQL_ERROR);
+	prepWcharOut(out, cbConnStrOutMax);
+
+	rc = SQLDriverConnect_(dbc, hWnd, szConnStrIn, nConnStrIn,
+			       szConnStrOut, cbConnStrOutMax, pnConnStrOut,
+			       &n);
+
+	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pnConnStrOut, addDbcError, dbc);
+	if (out)
+		free(out);
+	if (in)
+		free(in);
 	return rc;
 }

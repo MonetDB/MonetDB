@@ -20,8 +20,16 @@
 
 static char *DriverName = "MonetDB ODBC Driver";
 static char *DataSourceName = "MonetDB";
-static char *DriverDLL = "libMonetODBC.dll";
-static char *DriverDLLs = "libMonetODBCs.dll";
+static char *InstallDLLs[] = {
+	"libMonetODBC.dll",
+	"libMonetODBCs.dll",
+	"libMapi.dll",
+	"libstream.dll",
+	"libmutils.dll",
+	NULL,
+};
+#define DriverDLL	(InstallDLLs[0])
+#define DriverDLLs	(InstallDLLs[1])
 
 /* General error handler for installer functions */
 
@@ -160,7 +168,7 @@ VersionCheckCopyFile(const char *srcpath, const char *dstpath,
 	if (!CopyFile(srcfile, dstfile, FALSE)) {
 		snprintf(srcfileVersion, sizeof(srcfileVersion),
 			 "Unable to copy %s to %s\n", srcfile, dstfile);
-		MessageBox(NULL, srcfileVersion, "CopyODBCCore",
+		MessageBox(NULL, srcfileVersion, "VersionCheckCopyFile",
 			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		return FALSE;
 	}
@@ -194,6 +202,7 @@ InstallMyDriver(const char *driverpath)
 	WORD outpathlen;
 	DWORD usagecount;
 	char *p;
+	char **dll;
 
 	/* the correct format of driver keywords are
 	 * "DriverName\0Driver=xxxxxx.DLL\0Setup=xxxxxx.DLL\0\0" */
@@ -224,12 +233,9 @@ InstallMyDriver(const char *driverpath)
 		if (*p == ';')
 			*p = '\0';
 
-	if (!VersionCheckCopyFile(driverpath, inpath, DriverDLL))
-		if (ProcessSQLErrorMessages("SQLInstallDriverEx"))
-			return FALSE;
-
-	if (!VersionCheckCopyFile(driverpath, inpath, DriverDLLs))
-		if (ProcessSQLErrorMessages("SQLInstallDriverEx"))
+	for (dll = InstallDLLs; *dll; dll++)
+		if (!VersionCheckCopyFile(driverpath, inpath, *dll) &&
+		    ProcessSQLErrorMessages("SQLInstallDriverEx"))
 			return FALSE;
 
 	/* call SQLInstallDriverEx to install the driver in the
@@ -252,6 +258,7 @@ RemoveMyDriver()
 	DWORD usagecount;
 	DWORD valtype, valsize, rc;
 	char *p;
+	char **dll;
 
 	/* most of this is equivalent to what SQLRemoveDriver is
 	   suppposed to do, except that it consistently causes a
@@ -298,10 +305,10 @@ RemoveMyDriver()
 	SQLInstallDriverEx(buf, NULL, dirname, sizeof(dirname),
 			   &len, ODBC_INSTALL_INQUIRY, &usagecount);
 	/* and the delete them */
-	snprintf(buf, sizeof(buf), "%s\\%s", dirname, DriverDLL);
-	DeleteFile(buf);
-	snprintf(buf, sizeof(buf), "%s\\%s", dirname, DriverDLLs);
-	DeleteFile(buf);
+	for (dll = InstallDLLs; *dll; dll++) {
+		snprintf(buf, sizeof(buf), "%s\\%s", dirname, *dll);
+		DeleteFile(buf);
+	}
 
 	return TRUE;
 }
@@ -329,10 +336,9 @@ AddMyDSN()
 	SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, attrs);
 
 	/* then create a new DSN */
-	if (!SQLConfigDataSource(NULL, ODBC_ADD_SYS_DSN, DriverName, attrs)) {
-		ProcessSQLErrorMessages("SQLConfigDataSource");
+	if (!SQLConfigDataSource(NULL, ODBC_ADD_SYS_DSN, DriverName, attrs) &&
+	    ProcessSQLErrorMessages("SQLConfigDataSource"))
 		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -347,10 +353,9 @@ RemoveMyDSN()
 	for (p = buf; *p; p++)
 		if (*p == ';')
 			*p = 0;
-	if (!SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, buf)) {
-		ProcessSQLErrorMessages("SQLConfigDataSource");
+	if (!SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, buf) &&
+	    ProcessSQLErrorMessages("SQLConfigDataSource"))
 		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -367,10 +372,9 @@ Install(const char *redistpath, const char *driverpath)
 
 	/* first, retrieve the path the driver should be installed to
 	 * in path */
-	if (!SQLInstallDriverManager(path, sizeof(path), &pathlen)) {
-		ProcessSQLErrorMessages("SQLInstallDriverManager");
+	if (!SQLInstallDriverManager(path, sizeof(path), &pathlen) &&
+	    ProcessSQLErrorMessages("SQLInstallDriverManager"))
 		return FALSE;
-	}
 
 	if (redistpath && !CheckIfFileExists(path, redistpath)) {
 		snprintf(path, sizeof(path), "Can't find ODBC SDK in %s\n", redistpath);
@@ -395,13 +399,11 @@ Install(const char *redistpath, const char *driverpath)
 				       sizeof(newversion));
 
 			if (strcmp(newversion, existingversion) > 0) {
-#ifndef SKIP_IF_EXISTS
 				if (!SQLRemoveDriverManager(&usagecount)) {
 					if (ProcessSQLErrorMessages("SQLRemoveDriverManager"))
 						return FALSE;
 				} else
 					rc = CopyODBCCore(redistpath, path);
-#endif
 			}
 		}
 	} else if (redistpath == NULL) {

@@ -30,11 +30,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 {
 	ODBCDescRec *rec;
 
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
-
 	/* check statement cursor state, query should be prepared or executed */
 	if (stmt->State == INITED) {
 		/* caller should have called SQLPrepare or SQLExecDirect first */
@@ -219,7 +214,64 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 	ODBCLOG("SQLColAttribute %d\n", nFieldIdentifier);
 #endif
 
+	if (!isValidStmt((ODBCStmt *) hStmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors((ODBCStmt *) hStmt);
+
 	return SQLColAttribute_((ODBCStmt *) hStmt, nCol, nFieldIdentifier,
 				pszValue, nValueLengthMax, pnValueLength,
 				pnValue);
+}
+
+SQLRETURN SQL_API
+SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol,
+		 SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
+		 SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
+		 SQLPOINTER pnValue)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLPOINTER ptr;
+	SQLRETURN rc;
+	SQLSMALLINT n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLColAttributeW %d\n", nFieldIdentifier);
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	switch (nFieldIdentifier) {
+	/* all string atributes */
+	case SQL_DESC_BASE_COLUMN_NAME:
+	case SQL_DESC_BASE_TABLE_NAME:
+	case SQL_DESC_CATALOG_NAME: /* SQL_COLUMN_QUALIFIER_NAME */
+	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
+	case SQL_DESC_LITERAL_PREFIX:
+	case SQL_DESC_LITERAL_SUFFIX:
+	case SQL_DESC_LOCAL_TYPE_NAME:
+	case SQL_DESC_NAME:
+	case SQL_DESC_SCHEMA_NAME: /* SQL_COLUMN_OWNER_NAME */
+	case SQL_DESC_TABLE_NAME: /* SQL_COLUMN_TABLE_NAME */
+	case SQL_DESC_TYPE_NAME: /* SQL_COLUMN_TYPE_NAME */
+		n = nValueLengthMax * 4;
+		ptr = malloc(n);
+		break;
+	default:
+		n = nValueLengthMax;
+		ptr = pszValue;
+		break;
+	}
+
+	rc = SQLColAttribute_(stmt, nCol, nFieldIdentifier, ptr, n, &n, pnValue);
+	
+	if (ptr != pszValue)
+		fixWcharOut(rc, ptr, n, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
+	else if (pnValueLength)
+		*pnValueLength = n;
+
+	return rc;
 }

@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <sql.h>
 #include <sqlext.h>
+#include <stdio.h>
 #ifdef EXPORT
 #undef EXPORT
 #endif
@@ -11,10 +12,33 @@
 static char *DriverName = "MonetDB ODBC Driver";
 static char *DataSourceName = "MonetDB";
 
+static void
+ODBCLOG(const char *fmt, ...)
+{
+	va_list ap;
+	char *s = getenv("ODBCDEBUG");
+
+	s = "C:\\Documents and Settings\\sjoerd\\My Documents\\odbc.log";
+	va_start(ap, fmt);
+	if (s && *s) {
+		FILE *f;
+
+		f = fopen(s, "a");
+		if (f) {
+			vfprintf(f, fmt, ap);
+			fclose(f);
+		} else
+			vfprintf(stderr, fmt, ap);
+	}
+	va_end(ap);
+}
+
 BOOL
 ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg,
 	     WORD msgmax, WORD *msgout)
 {
+	ODBCLOG("ConfigDriver\n");
+
 	if (msgout)
 		*msgout = 0;
 	if (msg && msgmax > 0)
@@ -41,6 +65,8 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg,
 BOOL
 ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 {
+	ODBCLOG("ConfigDSN\n");
+
 	if (strcmp(driver, DriverName) != 0) {
 		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
 				      "Invalid driver name");

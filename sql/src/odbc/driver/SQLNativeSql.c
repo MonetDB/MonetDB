@@ -22,21 +22,11 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
-	     SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+static SQLRETURN
+SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
+	      SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	char *query;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSql\n");
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
 
 	fixODBCstring(szSqlStrIn, cbSqlStrIn, addStmtError, stmt);
 
@@ -51,4 +41,52 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	free(query);
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+}
+
+SQLRETURN SQL_API
+SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
+	     SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLNativeSql\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLNativeSql_(stmt, szSqlStrIn, cbSqlStrIn, szSqlStr,
+			     cbSqlStrMax, pcbSqlStr);
+}
+
+SQLRETURN SQL_API
+SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
+	      SQLWCHAR *szSqlStr, SQLINTEGER cbSqlStrMax,
+	      SQLINTEGER *pcbSqlStr)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLSMALLINT n;
+	SQLCHAR *sqlin, *sqlout;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLNativeSqlW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szSqlStrIn, cbSqlStrIn, sqlin, addStmtError, stmt, return SQL_ERROR);
+	prepWcharOut(sqlout, cbSqlStrMax);
+
+	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, cbSqlStrMax * 4, &n);
+
+	fixWcharOut(rc, sqlout, n, szSqlStr, cbSqlStrMax, pcbSqlStr, addStmtError, stmt);
+
+	return rc;
 }

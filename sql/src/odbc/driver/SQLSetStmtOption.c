@@ -30,6 +30,11 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 	ODBCLOG("SQLSetStmtOption\n");
 #endif
 
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
 	switch (fOption) {
 		/* only the ODBC 1.0 and ODBC 2.0 options */
 	case SQL_QUERY_TIMEOUT:
@@ -49,11 +54,6 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 		return SQLSetStmtAttr_(stmt, fOption,
 				       (SQLPOINTER) (size_t) vParam, SQL_NTS);
 	default:
-		if (!isValidStmt(stmt))
-			 return SQL_INVALID_HANDLE;
-
-		clearStmtErrors(stmt);
-
 		/* return error: Invalid option/attribute identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 

@@ -34,21 +34,13 @@
 				return SQL_SUCCESS_WITH_INFO;		\
 		} while (0)
 
-SQLRETURN SQL_API
-SQLGetDiagField(SQLSMALLINT HandleType,	/* must contain a valid type */
-		SQLHANDLE Handle,	/* must contain a valid Handle */
-		SQLSMALLINT RecNumber,	/* must be >= 1 */
-		SQLSMALLINT DiagIdentifier,	/* a valid identifier */
-		SQLPOINTER DiagInfo,	/* may be null */
-		SQLSMALLINT BufferLength,	/* must be >= 0 */
-		SQLSMALLINT *StringLength   /* may be null */
-	)
+static SQLRETURN
+SQLGetDiagField_(SQLSMALLINT HandleType, SQLHANDLE Handle,
+		 SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier,
+		 SQLPOINTER DiagInfo, SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLength)
 {
 	ODBCError *err;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagField\n");
-#endif
 
 	/* input & output parameters validity checks */
 
@@ -137,4 +129,62 @@ SQLGetDiagField(SQLSMALLINT HandleType,	/* must contain a valid type */
 	/* Currently no Diagnostic Fields are supported.
 	   Hence we always return NO_DATA */
 	return SQL_NO_DATA;
+}
+
+SQLRETURN SQL_API
+SQLGetDiagField(SQLSMALLINT HandleType, SQLHANDLE Handle,
+		SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier,
+		SQLPOINTER DiagInfo, SQLSMALLINT BufferLength,
+		SQLSMALLINT *StringLength)
+{
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDiagField\n");
+#endif
+
+	return SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier,
+				DiagInfo, BufferLength, StringLength);
+}
+
+SQLRETURN SQL_API
+SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle,
+		 SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier,
+		 SQLPOINTER DiagInfo, SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLength)
+{
+	SQLRETURN rc;
+	SQLPOINTER ptr;
+	SQLSMALLINT n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDiagFieldW\n");
+#endif
+
+	switch (DiagIdentifier) {
+	/* all string attributes */
+	case SQL_DIAG_DYNAMIC_FUNCTION:
+	case SQL_DIAG_CLASS_ORIGIN:
+		n = BufferLength * 4;
+		ptr = malloc(n);
+		break;
+	default:
+		n = BufferLength;
+		ptr = DiagInfo;
+		break;
+	}
+
+	rc = SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier,
+			      ptr, n, &n);
+
+	if (ptr != DiagInfo) {
+		if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+			char *e = ODBCutf82wchar(ptr, n, DiagInfo, BufferLength, &n);
+			if (e)
+				rc = SQL_ERROR;
+			if (StringLength)
+				*StringLength = n;
+		}
+		free(ptr);
+	}
+
+	return rc;
 }

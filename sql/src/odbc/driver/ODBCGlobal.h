@@ -91,7 +91,11 @@ SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,
 			 SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText,
 			 SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
 
+#define ODBCDEBUG 1
 #ifdef ODBCDEBUG
+#ifdef NATIVE_WIN32
+extern void ODBCLOG(const char *fmt, ...);
+#else
 #define ODBCLOG(...)	do {						\
 				char *s = getenv("ODBCDEBUG");		\
 				if (s && *s) {				\
@@ -103,6 +107,7 @@ SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,
 					}				\
 				}					\
 			} while (0)
+#endif
 #endif
 
 #endif

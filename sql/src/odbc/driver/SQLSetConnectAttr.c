@@ -19,6 +19,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
+#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -26,11 +27,6 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
 	(void) StringLength;	/* Stefan: unused!? */
-
-	if (!isValidDbc(dbc))
-		return SQL_INVALID_HANDLE;
-
-	clearDbcErrors(dbc);
 
 	switch (Attribute) {
 	case SQL_ATTR_AUTOCOMMIT:
@@ -85,6 +81,50 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 	ODBCLOG("SQLSetConnectAttr\n");
 #endif
 
+	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors((ODBCDbc *) ConnectionHandle);
+
 	return SQLSetConnectAttr_((ODBCDbc *) ConnectionHandle, Attribute,
 				  ValuePtr, StringLength);
+}
+
+SQLRETURN SQL_API
+SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+{
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
+	SQLPOINTER ptr;
+	SQLINTEGER n;
+	SQLRETURN rc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetConnectAttrW\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	switch (Attribute) {
+	case SQL_ATTR_CURRENT_CATALOG:
+	case SQL_ATTR_TRACEFILE:
+	case SQL_ATTR_TRANSLATE_LIB:
+		fixWcharIn(ValuePtr, StringLength, ptr, addDbcError, dbc, return SQL_ERROR);
+		n = SQL_NTS;
+		break;
+	default:
+		ptr = ValuePtr;
+		n = StringLength;
+		break;
+	}
+
+	rc = SQLSetConnectAttr_(dbc, Attribute, ptr, n);
+
+	if (ptr && ptr != ValuePtr)
+		free(ptr);
+
+	return rc;
 }

@@ -19,7 +19,24 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
+
+static SQLRETURN
+SQLGetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor,
+		 SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
+{
+	(void) szCursor;	/* Stefan: unused!? */
+	(void) nCursorMaxLength;	/* Stefan: unused!? */
+	(void) pnCursorLength;	/* Stefan: unused!? */
+
+	/* TODO: implement the requested behavior when SQLSetCursorName() is implemented */
+
+	/* for now always return error: No cursor name available */
+	addStmtError(stmt, "HY015", NULL, 0);
+
+	return SQL_ERROR;
+}
 
 SQLRETURN SQL_API
 SQLGetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor,
@@ -31,19 +48,38 @@ SQLGetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor,
 	ODBCLOG("SQLGetCursorName\n");
 #endif
 
-	(void) szCursor;	/* Stefan: unused!? */
-	(void) nCursorMaxLength;	/* Stefan: unused!? */
-	(void) pnCursorLength;	/* Stefan: unused!? */
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLGetCursorName_(stmt, szCursor, nCursorMaxLength,
+				 pnCursorLength);
+}
+
+SQLRETURN SQL_API
+SQLGetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
+		  SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLSMALLINT n;
+	SQLCHAR *cursor;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetCursorNameW\n");
+#endif
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
 
-	/* TODO: implement the requested behavior when SQLSetCursorName() is implemented */
+	prepWcharOut(cursor, nCursorMaxLength);
 
-	/* for now always return error: No cursor name available */
-	addStmtError(stmt, "HY015", NULL, 0);
+	rc = SQLGetCursorName_(stmt, cursor, nCursorMaxLength, &n);
 
-	return SQL_ERROR;
+	fixWcharOut(rc, cursor, n, szCursor, nCursorMaxLength, pnCursorLength, addStmtError, stmt);
+
+	return rc;
 }

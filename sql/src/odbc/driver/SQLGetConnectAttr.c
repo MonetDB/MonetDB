@@ -110,3 +110,41 @@ SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 	return SQLGetConnectAttr_((ODBCDbc *) hDbc, Attribute, ValuePtr,
 				  BufferLength, StringLength);
 }
+
+SQLRETURN SQL_API
+SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
+		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+	ODBCDbc * dbc = (ODBCDbc *) hDbc;
+	SQLRETURN rc;
+	SQLPOINTER ptr;
+	SQLINTEGER n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetConnectAttrW\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	switch (Attribute) {
+	/* all string attributes */
+	case SQL_ATTR_CURRENT_CATALOG:
+		n = BufferLength * 4;
+		ptr = malloc(n);
+		break;
+	default:
+		n = BufferLength;
+		ptr = ValuePtr;
+		break;
+	}
+
+	rc = SQLGetConnectAttr_(dbc, Attribute, ptr, n, &n);
+
+	if (ptr != ValuePtr)
+		fixWcharOut(rc, ptr, n, ValuePtr, BufferLength, StringLength, addDbcError, dbc);
+
+	return rc;
+}

@@ -16,18 +16,15 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
-SQLRETURN SQL_API
-SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
-		 SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
-		 SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+static SQLRETURN
+SQLColAttributes_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
+		  SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
+		  SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
 {
 	SQLRETURN rc;
 	SQLINTEGER value;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributes\n");
-#endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nDescType) {
@@ -41,7 +38,7 @@ SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 		nDescType = SQL_DESC_COUNT;
 		break;
 	}
-	rc = SQLColAttribute_((ODBCStmt *) hStmt, nCol, nDescType, pszDesc,
+	rc = SQLColAttribute_(stmt, nCol, nDescType, pszDesc,
 			      nDescMax, pcbDesc, &value);
 
 	/* TODO: implement specials semantics for nDescTypes: SQL_COLUMN_TYPE,
@@ -55,5 +52,74 @@ SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 */
 	if (pfDesc)
 		*pfDesc = value;
+	return rc;
+}
+
+SQLRETURN SQL_API
+SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
+		 SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
+		 SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLColAttributes\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLColAttributes_(stmt, nCol, nDescType, pszDesc, nDescMax,
+				 pcbDesc, pfDesc);
+}
+
+SQLRETURN SQL_API
+SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
+		  SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
+		  SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLPOINTER ptr;
+	SQLRETURN rc;
+	SQLSMALLINT n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLColAttributesW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	switch (nDescType) {
+	/* all string atributes */
+	case SQL_DESC_BASE_COLUMN_NAME:
+	case SQL_DESC_BASE_TABLE_NAME:
+	case SQL_DESC_CATALOG_NAME: /* SQL_COLUMN_QUALIFIER_NAME */
+	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
+	case SQL_DESC_LITERAL_PREFIX:
+	case SQL_DESC_LITERAL_SUFFIX:
+	case SQL_DESC_LOCAL_TYPE_NAME:
+	case SQL_DESC_NAME:
+	case SQL_DESC_SCHEMA_NAME: /* SQL_COLUMN_OWNER_NAME */
+	case SQL_DESC_TABLE_NAME: /* SQL_COLUMN_TABLE_NAME */
+	case SQL_DESC_TYPE_NAME: /* SQL_COLUMN_TYPE_NAME */
+		n = nDescMax * 4;
+		ptr = malloc(n);
+		break;
+	default:
+		n = nDescMax;
+		ptr = pszDesc;
+		break;
+	}
+
+	rc = SQLColAttributes_(stmt, nCol, nDescType, ptr, n, &n, pfDesc);
+	
+	if (ptr != pszDesc)
+		fixWcharOut(rc, ptr, n, pszDesc, nDescMax, pcbDesc, addStmtError, stmt);
+
 	return rc;
 }

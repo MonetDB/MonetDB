@@ -60,7 +60,7 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#define SQL_API __stdcall
+#define SQL_API /* __stdcall */
 #else
 #define SQL_API
 #endif

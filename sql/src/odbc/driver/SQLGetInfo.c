@@ -22,23 +22,13 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
-	   SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+static SQLRETURN
+SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
+	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	int nValue = 0;
 	const char *sValue = NULL;	/* iff non-NULL, return string value */
 	int len = 0;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfo %d\n", nInfoType);
-#endif
-
-	if (!isValidDbc(dbc))
-		return SQL_INVALID_HANDLE;
-
-	clearDbcErrors(dbc);
 
 	/* For some info types an active connection is needed */
 	if ((nInfoType == SQL_DATA_SOURCE_NAME ||
@@ -675,4 +665,97 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	}
 
 	return dbc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+}
+
+SQLRETURN SQL_API
+SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
+	   SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetInfo %d\n", nInfoType);
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	return SQLGetInfo_(dbc, nInfoType, pInfoValue, nInfoValueMax,
+			   pnLength);
+}
+
+SQLRETURN SQL_API
+SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
+	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	SQLRETURN rc;
+	SQLPOINTER ptr;
+	SQLSMALLINT n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetInfoW %d\n", nInfoType);
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	switch (nInfoType) {
+	/* all string attributes */
+	case SQL_ACCESSIBLE_PROCEDURES:
+	case SQL_ACCESSIBLE_TABLES:
+	case SQL_CATALOG_NAME:
+	case SQL_CATALOG_NAME_SEPARATOR:
+	case SQL_CATALOG_TERM:
+	case SQL_COLLATION_SEQ:
+	case SQL_COLUMN_ALIAS:
+	case SQL_DATA_SOURCE_NAME:
+	case SQL_DATA_SOURCE_READ_ONLY:
+	case SQL_DATABASE_NAME:
+	case SQL_ROW_UPDATES:
+	case SQL_SERVER_NAME:
+	case SQL_SEARCH_PATTERN_ESCAPE:
+	case SQL_DBMS_NAME:
+	case SQL_DBMS_VER:
+	case SQL_PROCEDURES:
+	case SQL_EXPRESSIONS_IN_ORDERBY:
+	case SQL_IDENTIFIER_QUOTE_CHAR:
+	case SQL_MULT_RESULT_SETS:
+	case SQL_MULTIPLE_ACTIVE_TXN:
+	case SQL_OUTER_JOINS:
+	case SQL_SCHEMA_TERM:
+	case SQL_PROCEDURE_TERM:
+	case SQL_TABLE_TERM:
+	case SQL_USER_NAME:
+	case SQL_INTEGRITY:
+	case SQL_KEYWORDS:
+	case SQL_ORDER_BY_COLUMNS_IN_SELECT:
+	case SQL_SPECIAL_CHARACTERS:
+	case SQL_MAX_ROW_SIZE_INCLUDES_LONG:
+	case SQL_NEED_LONG_DATA_LEN:
+	case SQL_LIKE_ESCAPE_CLAUSE:
+	case SQL_DESCRIBE_PARAMETER:
+	case SQL_DM_VER:
+	case SQL_XOPEN_CLI_YEAR:
+		n = nInfoValueMax * 4;
+		ptr = malloc(n);
+		break;
+	default:
+		n = nInfoValueMax;
+		ptr = pInfoValue;
+		break;
+	}
+
+	rc = SQLGetInfo_(dbc, nInfoType, ptr, n, &n);
+
+	if (ptr != pInfoValue)
+		fixWcharOut(rc, ptr, n, pInfoValue, nInfoValueMax, pnLength, addDbcError, dbc);
+	else if (pnLength)
+		*pnLength = n;
+
+	return rc;
 }

@@ -20,16 +20,11 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
+#include "ODBCUtil.h"
 
-SQLRETURN SQL_API
-SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
+static SQLRETURN
+SQLSetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLULEN vParam)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOption\n");
-#endif
-
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nOption) {
 		/* connection attributes (ODBC 1 and 2 only) */
@@ -53,15 +48,64 @@ SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 
 	default:
 		/* other options (e.g. ODBC 3) are NOT valid */
-		if (!isValidDbc(dbc))
-			return SQL_INVALID_HANDLE;
-
-		clearDbcErrors(dbc);
-
 		/* set error: Invalid attribute/option */
 		addDbcError(dbc, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	return SQL_ERROR;
+}
+
+SQLRETURN SQL_API
+SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetConnectOption\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	return SQLSetConnectOption_(dbc, nOption, vParam);
+}
+
+SQLRETURN SQL_API
+SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	SQLPOINTER ptr;
+	SQLULEN p;
+	SQLRETURN rc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetConnectOptionW\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	switch (nOption) {
+	case SQL_ATTR_CURRENT_CATALOG:
+	case SQL_ATTR_TRACEFILE:
+	case SQL_ATTR_TRANSLATE_LIB:
+		fixWcharIn((SQLPOINTER) vParam, SQL_NTS, ptr, addDbcError, dbc, return SQL_ERROR);
+		p = (SQLULEN) ptr;
+		break;
+	default:
+		p = vParam;
+		break;
+	}
+
+	rc = SQLSetConnectOption_(dbc, nOption, p);
+
+	if (ptr && p != vParam)
+		free(ptr);
+
+	return rc;
 }

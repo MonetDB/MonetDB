@@ -22,23 +22,13 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
-	       SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
-	       SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
-	       SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+static SQLRETURN
+SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
+		SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
+		SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
+		SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ODBCDescRec *rec = NULL;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeCol\n");
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
 
 	/* check statement cursor state, query should be executed */
 	if (stmt->State != EXECUTED) {
@@ -102,4 +92,57 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 		*pnNullable = rec->sql_desc_nullable;
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+}
+
+SQLRETURN SQL_API
+SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
+	       SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
+	       SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
+	       SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDescribeCol\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLDescribeCol_(stmt, nCol, szColName, nColNameMax,
+			       pnColNameLength, pnSQLDataType, pnColSize,
+			       pnDecDigits, pnNullable);
+}
+
+SQLRETURN SQL_API
+SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
+		SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
+		SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
+		SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLCHAR *colname;
+	SQLSMALLINT n;
+	SQLRETURN rc = SQL_ERROR;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDescribeColW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	prepWcharOut(colname, nColNameMax);
+
+	rc = SQLDescribeCol_(stmt, nCol, colname, nColNameMax * 4,
+			     &n, pnSQLDataType, pnColSize,
+			     pnDecDigits, pnNullable);
+
+	fixWcharOut(rc, colname, n, szColName, nColNameMax, pnColNameLength, addStmtError, stmt);
+
+	return rc;
 }

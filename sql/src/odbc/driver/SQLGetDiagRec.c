@@ -24,15 +24,10 @@
 #include "ODBCError.h"
 
 SQLRETURN
-SQLGetDiagRec_(SQLSMALLINT handleType,	/* must contain a valid type */
-	       SQLHANDLE handle,	/* must contain a valid handle */
-	       SQLSMALLINT recNumber,	/* must be >= 1 */
-	       SQLCHAR *sqlState,	/* may be null */
-	       SQLINTEGER *nativeErrorPtr,/* may be null */
-	       SQLCHAR *messageText,	/* may be null */
-	       SQLSMALLINT bufferLength,/* must be >= 0 */
-	       SQLSMALLINT *textLengthPtr/* may be null */
-	)
+SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,
+	       SQLSMALLINT recNumber, SQLCHAR *sqlState,
+	       SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText,
+	       SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
 {
 	ODBCError *err;
 	SQLRETURN retCode;
@@ -141,14 +136,10 @@ SQLGetDiagRec_(SQLSMALLINT handleType,	/* must contain a valid type */
 }
 
 SQLRETURN SQL_API
-SQLGetDiagRec(SQLSMALLINT handleType,	/* must contain a valid type */
-	      SQLHANDLE handle,	/* must contain a valid handle */
-	      SQLSMALLINT recNumber,	/* must be >= 1 */
-	      SQLCHAR *sqlState,	/* may be null */
-	      SQLINTEGER *nativeErrorPtr,	/* may be null */
-	      SQLCHAR *messageText,	/* may be null */
-	      SQLSMALLINT bufferLength,	/* must be >= 0 */
-	      SQLSMALLINT *textLengthPtr)
+SQLGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle,
+	      SQLSMALLINT recNumber, SQLCHAR *sqlState,
+	      SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText,
+	      SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetDiagRec %d %d\n", handleType, recNumber);
@@ -157,4 +148,42 @@ SQLGetDiagRec(SQLSMALLINT handleType,	/* must contain a valid type */
 	return SQLGetDiagRec_(handleType, handle, recNumber, sqlState,
 			      nativeErrorPtr, messageText, bufferLength,
 			      textLengthPtr);
+}
+
+SQLRETURN SQL_API
+SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle,
+	       SQLSMALLINT recNumber, SQLWCHAR *sqlState,
+	       SQLINTEGER *nativeErrorPtr, SQLWCHAR *messageText,
+	       SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
+{
+	SQLRETURN rc;
+	SQLCHAR state[6];
+	SQLCHAR *msg;
+	SQLSMALLINT n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDiagRecW %d %d\n", handleType, recNumber);
+#endif
+
+	msg = malloc(bufferLength * 4);
+
+	rc = SQLGetDiagRec_(handleType, handle, recNumber, state,
+			    nativeErrorPtr, msg, bufferLength * 4, &n);
+
+	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+		char *e = ODBCutf82wchar(state, 5, sqlState, 6, NULL);
+		if (e)
+			rc = SQL_ERROR;
+	}
+
+	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+		char *e = ODBCutf82wchar(msg, n, messageText, bufferLength, &n);
+		if (e)
+			rc = SQL_ERROR;
+		if (textLengthPtr)
+			*textLengthPtr = n;
+	}
+	free(msg);
+
+	return rc;
 }

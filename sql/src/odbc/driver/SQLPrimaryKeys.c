@@ -24,27 +24,17 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-SQLRETURN SQL_API
-SQLPrimaryKeys(SQLHSTMT hStmt,
-	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	       SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+static SQLRETURN
+SQLPrimaryKeys_(ODBCStmt *stmt,
+		SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLPrimaryKeys\n");
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
 
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {
@@ -115,6 +105,65 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
+
+	return rc;
+}
+
+SQLRETURN SQL_API
+SQLPrimaryKeys(SQLHSTMT hStmt,
+	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLPrimaryKeys\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLPrimaryKeys_(stmt, szCatalogName, nCatalogNameLength,
+			       szSchemaName, nSchemaNameLength,
+			       szTableName, nTableNameLength);
+}
+
+SQLRETURN SQL_API
+SQLPrimaryKeysW(SQLHSTMT hStmt,
+		SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLPrimaryKeysW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
+	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
+
+	rc = SQLPrimaryKeys_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
+			     table, SQL_NTS);
+
+  exit:
+	if (catalog)
+		free(catalog);
+	if (schema)
+		free(schema);
+	if (table)
+		free(table);
 
 	return rc;
 }

@@ -22,25 +22,14 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
-		 SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
-		 SQLSMALLINT *pcbConnStrOut)
+static SQLRETURN
+SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
+		  SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pcbConnStrOut)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnect\n");
-#endif
-
 	(void) szConnStrOut;	/* Stefan: unused!? */
 	(void) cbConnStrOutMax;	/* Stefan: unused!? */
 	(void) pcbConnStrOut;	/* Stefan: unused!? */
-
-	if (!isValidDbc(dbc))
-		return SQL_INVALID_HANDLE;
-
-	clearDbcErrors(dbc);
 
 	fixODBCstring(szConnStrIn, cbConnStrIn, addDbcError, dbc);
 
@@ -62,4 +51,52 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 	/* IM001 = Driver does not support this function */
 	addDbcError(dbc, "IM001", NULL, 0);
 	return SQL_ERROR;
+}
+
+SQLRETURN SQL_API
+SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
+		 SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
+		 SQLSMALLINT *pcbConnStrOut)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLBrowseConnect\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	return SQLBrowseConnect_(dbc, szConnStrIn, cbConnStrIn, szConnStrOut,
+				 cbConnStrOutMax, pcbConnStrOut);
+}
+
+SQLRETURN SQL_API
+SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
+		  SQLWCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pcbConnStrOut)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	SQLCHAR *in = NULL, *out;
+	SQLSMALLINT n;
+	SQLRETURN rc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLBrowseConnectW\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	fixWcharIn(szConnStrIn, cbConnStrIn, in, addDbcError, dbc, return SQL_ERROR);
+	prepWcharOut(out, cbConnStrOutMax);
+	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, cbConnStrOutMax * 4, &n);
+	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pcbConnStrOut, addDbcError, dbc);
+	if (in)
+		free(in);
+	return rc;
 }

@@ -22,27 +22,17 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLTables(SQLHSTMT hStmt,
-	  SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	  SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	  SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-	  SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+static SQLRETURN
+SQLTables_(ODBCStmt *stmt,
+	   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	   SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLTables ");
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
 
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {
@@ -198,6 +188,72 @@ SQLTables(SQLHSTMT hStmt,
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
 
 	free(query);
+
+	return rc;
+}
+
+SQLRETURN SQL_API
+SQLTables(SQLHSTMT hStmt,
+	  SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	  SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	  SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	  SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLTables ");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLTables_(stmt,
+			  szCatalogName, nCatalogNameLength,
+			  szSchemaName, nSchemaNameLength,
+			  szTableName, nTableNameLength,
+			  szTableType, nTableTypeLength);
+}
+
+SQLRETURN SQL_API
+SQLTablesW(SQLHSTMT hStmt,
+	   SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	   SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	   SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	   SQLWCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *type = NULL;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLTablesW ");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
+	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
+	fixWcharIn(szTableType, nTableTypeLength, type, addStmtError, stmt, goto exit);
+
+	return SQLTables_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
+			  table, SQL_NTS, type, SQL_NTS);
+
+  exit:
+	if (catalog)
+		free(catalog);
+	if (schema)
+		free(schema);
+	if (table)
+		free(table);
+	if (type)
+		free(type);
 
 	return rc;
 }

@@ -25,28 +25,18 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
-	      SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName,
-	      SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName,
-	      SQLSMALLINT nTableNameLength, SQLUSMALLINT nUnique,
-	      SQLUSMALLINT nReserved)
+static SQLRETURN
+SQLStatistics_(ODBCStmt *stmt,
+	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	       SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLStatistics\n");
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
 
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {
@@ -161,6 +151,68 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
+
+	return rc;
+}
+
+SQLRETURN SQL_API
+SQLStatistics(SQLHSTMT hStmt,
+	      SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	      SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	      SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	      SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLStatistics\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLStatistics_(stmt, szCatalogName, nCatalogNameLength,
+			      szSchemaName, nSchemaNameLength,
+			      szTableName, nTableNameLength,
+			      nUnique, nReserved);
+}
+
+SQLRETURN SQL_API
+SQLStatisticsW(SQLHSTMT hStmt,
+	       SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	       SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLStatisticsW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
+	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
+
+	rc = SQLStatistics_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
+			    table, SQL_NTS, nUnique, nReserved);
+
+  exit:
+	if (catalog)
+		free(catalog);
+	if (schema)
+		free(schema);
+	if (table)
+		free(table);
 
 	return rc;
 }

@@ -16,21 +16,11 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
+#include "ODBCUtil.h"
 
-
-SQLRETURN SQL_API
-SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+static SQLRETURN
+SQLGetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOption\n");
-#endif
-
-	if (!isValidDbc(dbc))
-		return SQL_INVALID_HANDLE;
-	clearDbcErrors(dbc);
-
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nOption) {
 		/* connection attributes (ODBC 1 and 2 only) */
@@ -58,4 +48,60 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	}
 
 	return SQL_ERROR;
+}
+
+SQLRETURN SQL_API
+SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+{
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetConnectOption\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+	clearDbcErrors(dbc);
+
+	return SQLGetConnectOption_(dbc, nOption, pvParam);
+}
+
+SQLRETURN SQL_API
+SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+{
+	ODBCDbc * dbc = (ODBCDbc *) hDbc;
+	SQLRETURN rc;
+	SQLPOINTER ptr;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetConnectOptionW\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	switch (nOption) {
+	/* all string attributes */
+	case SQL_CURRENT_QUALIFIER:
+	case SQL_OPT_TRACEFILE:
+	case SQL_TRANSLATE_DLL:
+		ptr = malloc(SQL_MAX_OPTION_STRING_LENGTH);
+		break;
+	default:
+		ptr = pvParam;
+		break;
+	}
+
+	rc = SQLGetConnectOption_(dbc, nOption, ptr);
+
+	if (ptr != pvParam) {
+		SQLSMALLINT n = strlen((char *) ptr);
+		SQLSMALLINT *nullp = NULL;
+
+		fixWcharOut(rc, ptr, n, pvParam, SQL_MAX_OPTION_STRING_LENGTH, nullp, addDbcError, dbc);
+	}
+
+	return rc;
 }

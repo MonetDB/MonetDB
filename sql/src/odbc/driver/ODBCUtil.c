@@ -43,6 +43,163 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 	return tmp;
 }
 
+/* Conversion to and from SQLWCHAR */
+static int utf8chkmsk[] = {
+	0x0000007f,
+	0x00000780,
+	0x0000f800,
+	0x001f0000,
+	0x03e00000,
+	0x7c000000,
+};
+#define LEAD_OFFSET		(0xD800 - (0x10000 >> 10))
+#define SURROGATE_OFFSET	(0x10000 - (0xD800 << 10) - 0xDC00)
+
+/* Convert a SQLWCHAR (UTF-16 encoded string) to UTF-8.  On success,
+   clears the location pointed to by errmsg and returns NULL or a
+   newly allocated buffer.  On error, assigns a string with an error
+   message to the location pointed to by errmsg and returns NULL.
+   The first two arguments describe the input string in the normal
+   ODBC fashion.
+*/
+SQLCHAR *
+ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
+{
+	const SQLWCHAR *s1;
+	unsigned long c;
+	SQLCHAR *buf, *p;
+	int i, l, n;
+
+	if (errmsg)
+		*errmsg = NULL;
+	if (s == NULL)
+		return NULL;
+	if (length == SQL_NTS)
+		for (s1 = s, length = 0; *s1; s1++)
+			length++;
+	else if (length == SQL_NULL_DATA)
+		return NULL;
+	else if (length < 0) {
+		if (errmsg)
+			*errmsg = "Invalid length parameter";
+		return NULL;
+	}
+	/* count necessary length */
+	l = 1;			/* space for NULL byte */
+	for (s1 = s, i = 0; i < length; s1++, i++) {
+		c = *s1;
+		if (0xD800 <= c && c <= 0xDBFF) {
+			/* high surrogate, must be followed by low surrogate */
+			s1++;
+			i++;
+			if (i >= length || *s1 < 0xDC00|| *s1 > 0xDFFF) {
+				if (errmsg)
+					*errmsg = "High surrogate not followed by low surrogate";
+				return NULL;
+			}
+			c = (c << 10) + *s1 + SURROGATE_OFFSET;
+		} else if (0xDC00 <= c && c <= 0xDFFF) {
+			/* low surrogate--illegal */
+			if (errmsg)
+				*errmsg = "Low surrogate not preceded by high surrogate";
+			return NULL;
+		}
+		for (n = 5; n > 0; n--)
+			if (c & utf8chkmsk[n])
+				break;
+		l += n + 1;
+	}
+	/* convert */
+	buf = malloc(l);
+	for (s1 = s, p = buf, i = 0; i < length; s1++, i++) {
+		c = *s1;
+		if (0xD800 <= c && c <= 0xDBFF) {
+			/* high surrogate followed by low surrogate */
+			s1++;
+			i++;
+			c = (c << 10) + *s1 + SURROGATE_OFFSET;
+		}
+		for (n = 5; n > 0; n--)
+			if (c & utf8chkmsk[n])
+				break;
+		if (n == 0)
+			*p++ = (SQLWCHAR) c;
+		else {
+			*p++ = ((c >> (n * 6)) | (0x1F80 >> n)) & 0xFF;
+			while (--n >= 0)
+				*p++ = ((c >> (n * 6)) & 0x3F) | 0x80;
+		}
+	}
+	*p = 0;
+	return buf;
+}
+
+/* Convert a UTF-8 encoded string to UTF-16 (SQLWCHAR).  On success
+   returns NULL, on error returns a string with an error message.  The
+   first two arguments describe the input, the last three arguments
+   describe the output, both in the normal ODBC fashion. */
+char *
+ODBCutf82wchar(const SQLCHAR *s, SQLSMALLINT length,
+	       SQLWCHAR *buf, SQLSMALLINT buflen, SQLSMALLINT *buflenout)
+{
+	SQLWCHAR *p;
+	int i, m, n;
+	unsigned int c;
+
+	if (buflenout)
+		*buflenout = 0;
+	if (s == NULL || length == SQL_NULL_DATA || buf == NULL) {
+		if (buf && buflen > 0)
+			*buf = 0;
+		return NULL;
+	}
+	if (length == SQL_NTS)
+		length = strlen(s);
+	else if (length < 0)
+		return "Invalid length parameter";
+
+	for (p = buf, i = 0; i < length; i++) {
+		c = *s++;
+		if ((c & 0x80) != 0) {
+			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
+				;
+			/* n now is number of 10xxxxxx bytes that
+			 * should follow */
+			c &= ~(0xFFC0) >> n;
+			while (--n >= 0) {
+				i++;
+				c <<= 6;
+				c |= *s++ & 0x3F;
+			}
+		}
+		if ((c & 0xF8) == 0xD8) {
+			/* UTF-8 encoded high or low surrogate */
+			free(buf);
+			return "Illegal code point";
+		}
+		if (c > 0x10FFFF) {
+			/* cannot encode as UTF-16 */
+			free(buf);
+			return "Codepoint too large to be representable in UTF-16";
+		}
+		if (c <= 0xFFFF) {
+			if (--buflen > 0)
+				*p++ = c;
+			if (buflenout)
+				(*buflenout)++;
+		} else {
+			if ((buflen -= 2) > 0) {
+				*p++ = LEAD_OFFSET + (c >> 10);
+				*p++ = 0xDC00 + (c & 0x3FF);
+			}
+			if (buflenout)
+				*buflenout += 2;
+		}
+	}
+	*p = 0;
+	return NULL;
+}
+
 /*
  * Translate an ODBC-compatible query to one that the SQL server
  * understands.
@@ -136,3 +293,26 @@ struct sql_types ODBC_c_types[] = {
 	{SQL_C_DEFAULT, SQL_C_DEFAULT, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED, 0, SQL_FALSE},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0}, /* sentinel */
 };
+
+#if defined(ODBCDEBUG) && defined(NATIVE_WIN32)
+void
+ODBCLOG(const char *fmt, ...)
+{
+	va_list ap;
+	char *s = getenv("ODBCDEBUG");
+
+	s = "C:\\Documents and Settings\\sjoerd\\My Documents\\odbc.log";
+	va_start(ap, fmt);
+	if (s && *s) {
+		FILE *f;
+
+		f = fopen(s, "a");
+		if (f) {
+			vfprintf(f, fmt, ap);
+			fclose(f);
+		} else
+			vfprintf(stderr, fmt, ap);
+	}
+	va_end(ap);
+}
+#endif

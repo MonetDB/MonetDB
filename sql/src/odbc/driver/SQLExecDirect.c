@@ -19,6 +19,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 SQLRETURN
 SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
@@ -49,4 +50,30 @@ SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	clearStmtErrors((ODBCStmt *) hStmt);
 
 	return SQLExecDirect_((ODBCStmt *) hStmt, szSqlStr, nSqlStr);
+}
+
+SQLRETURN SQL_API
+SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStr)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLCHAR *sql;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLExecDirectW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szSqlStr, nSqlStr, sql, addStmtError, stmt, return SQL_ERROR);
+
+	rc = SQLExecDirect_((ODBCStmt *) hStmt, sql, SQL_NTS);
+
+	if (sql)
+		free(sql);
+
+	return rc;
 }

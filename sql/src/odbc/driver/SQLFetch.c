@@ -1647,7 +1647,8 @@ SQLFetch_(ODBCStmt *stmt)
 {
 	ODBCDesc *desc;
 	ODBCDescRec *rec;
-	int i, row;
+	int i;
+	unsigned int row;
 	SQLINTEGER offset;
 	SQLUSMALLINT *statusp;
 
@@ -1670,7 +1671,7 @@ SQLFetch_(ODBCStmt *stmt)
 	if (stmt->retrieveData == SQL_RD_OFF) {
 		/* don't really retrieve the data, just do as if,
 		   updating the SQL_DESC_ARRAY_STATUS_PTR */
-		int rowcount = mapi_get_row_count(stmt->hdl);
+		unsigned int rowcount = (unsigned int) mapi_get_row_count(stmt->hdl);
 
 		stmt->rowSetSize = desc->sql_desc_array_size;
 		if (stmt->startRow + stmt->rowSetSize > rowcount)

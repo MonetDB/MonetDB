@@ -287,3 +287,41 @@ SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	return SQLSetDescField_((ODBCDesc *) DescriptorHandle, RecordNumber,
 				FieldIdentifier, Value, BufferLength);
 }
+
+SQLRETURN SQL_API
+SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
+		 SQLINTEGER BufferLength)
+{
+	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
+	SQLRETURN rc;
+	SQLPOINTER ptr;
+	SQLSMALLINT n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetDescFieldW %d %d\n", RecordNumber, FieldIdentifier);
+#endif
+
+	if (!isValidDesc(desc))
+		 return SQL_INVALID_HANDLE;
+
+	clearDescErrors(desc);
+
+	switch (FieldIdentifier) {
+	case SQL_DESC_NAME:
+		fixWcharIn(Value, BufferLength, ptr, addDescError, desc, return SQL_ERROR);
+		n = SQL_NTS;
+		break;
+	default:
+		ptr = Value;
+		n = BufferLength;
+		break;
+	}
+
+	rc = SQLSetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n);
+
+	if (ptr && ptr != Value)
+		free(ptr);
+
+	return rc;
+}

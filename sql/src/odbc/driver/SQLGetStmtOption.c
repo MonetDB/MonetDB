@@ -30,6 +30,11 @@ SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 	ODBCLOG("SQLGetStmtOption\n");
 #endif
 
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
 	switch (fOption) {
 		/* only the ODBC 1.0 and ODBC 2.0 options */
 	case SQL_QUERY_TIMEOUT:
@@ -50,11 +55,6 @@ SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 		/* use mapping as described in ODBC 3.0 SDK Help */
 		return SQLGetStmtAttr_(stmt, fOption, pvParam, 0, NULL);
 	default:
-		if (!isValidStmt(stmt))
-			 return SQL_INVALID_HANDLE;
-
-		clearStmtErrors(stmt);
-
 		/* return error: Invalid option/attribute identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 

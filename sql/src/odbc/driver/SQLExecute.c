@@ -50,47 +50,6 @@ static struct msql_types {
 };
 
 SQLRETURN
-SQLExecute_(ODBCStmt *stmt)
-{
-	MapiHdl hdl;
-	MapiMsg msg;
-
-	/* check statement cursor state, query should be prepared */
-	if (stmt->State != PREPARED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
-	/* internal state correctness checks */
-	assert(stmt->ImplRowDescr->descRec == NULL);
-
-	assert(stmt->Dbc);
-	assert(stmt->Dbc->mid);
-	hdl = stmt->hdl;
-	assert(hdl);
-
-	/* Have the server execute the query */
-	msg = mapi_execute(hdl);
-	switch (msg) {
-	case MOK:
-		break;
-	case MTIMEOUT:
-		/* 08S01 Communication link failure */
-		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
-		return SQL_ERROR;
-	default:
-		/* General error */
-		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
-		return SQL_ERROR;
-	}
-
-	/* now get the result data and store it to our internal data structure */
-
-	return ODBCInitResult(stmt);
-}
-
-SQLRETURN
 ODBCInitResult(ODBCStmt *stmt)
 {
 	int i = 0;
@@ -201,6 +160,47 @@ ODBCInitResult(ODBCStmt *stmt)
 
 	stmt->State = EXECUTED;
 	return SQL_SUCCESS;
+}
+
+SQLRETURN
+SQLExecute_(ODBCStmt *stmt)
+{
+	MapiHdl hdl;
+	MapiMsg msg;
+
+	/* check statement cursor state, query should be prepared */
+	if (stmt->State != PREPARED) {
+		/* 24000 = Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	/* internal state correctness checks */
+	assert(stmt->ImplRowDescr->descRec == NULL);
+
+	assert(stmt->Dbc);
+	assert(stmt->Dbc->mid);
+	hdl = stmt->hdl;
+	assert(hdl);
+
+	/* Have the server execute the query */
+	msg = mapi_execute(hdl);
+	switch (msg) {
+	case MOK:
+		break;
+	case MTIMEOUT:
+		/* 08S01 Communication link failure */
+		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		return SQL_ERROR;
+	default:
+		/* General error */
+		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+		return SQL_ERROR;
+	}
+
+	/* now get the result data and store it to our internal data structure */
+
+	return ODBCInitResult(stmt);
 }
 
 SQLRETURN SQL_API

@@ -24,30 +24,20 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-SQLRETURN SQL_API
-SQLForeignKeys(SQLHSTMT hStmt,
-	       SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength,
-	       SQLCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength,
-	       SQLCHAR *szPKTableName, SQLSMALLINT nPKTableNameLength,
-	       SQLCHAR *szFKCatalogName, SQLSMALLINT nFKCatalogNameLength,
-	       SQLCHAR *szFKSchemaName, SQLSMALLINT nFKSchemaNameLength,
-	       SQLCHAR *szFKTableName, SQLSMALLINT nFKTableNameLength)
+static SQLRETURN
+SQLForeignKeys_(ODBCStmt *stmt,
+		SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength,
+		SQLCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength,
+		SQLCHAR *szPKTableName, SQLSMALLINT nPKTableNameLength,
+		SQLCHAR *szFKCatalogName, SQLSMALLINT nFKCatalogNameLength,
+		SQLCHAR *szFKSchemaName, SQLSMALLINT nFKSchemaNameLength,
+		SQLCHAR *szFKTableName, SQLSMALLINT nFKTableNameLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLForeignKeys\n");
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
 
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {
@@ -160,6 +150,85 @@ SQLForeignKeys(SQLHSTMT hStmt,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
+
+	return rc;
+}
+
+SQLRETURN SQL_API
+SQLForeignKeys(SQLHSTMT hStmt,
+	       SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength,
+	       SQLCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength,
+	       SQLCHAR *szPKTableName, SQLSMALLINT nPKTableNameLength,
+	       SQLCHAR *szFKCatalogName, SQLSMALLINT nFKCatalogNameLength,
+	       SQLCHAR *szFKSchemaName, SQLSMALLINT nFKSchemaNameLength,
+	       SQLCHAR *szFKTableName, SQLSMALLINT nFKTableNameLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLForeignKeys\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLForeignKeys_(stmt, szPKCatalogName, nPKCatalogNameLength,
+			       szPKSchemaName, nPKSchemaNameLength,
+			       szPKTableName, nPKTableNameLength,
+			       szFKCatalogName, nFKCatalogNameLength,
+			       szFKSchemaName, nFKSchemaNameLength,
+			       szFKTableName, nFKTableNameLength);
+}
+
+SQLRETURN SQL_API
+SQLForeignKeysW(SQLHSTMT hStmt,
+		SQLWCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength,
+		SQLWCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength,
+		SQLWCHAR *szPKTableName, SQLSMALLINT nPKTableNameLength,
+		SQLWCHAR *szFKCatalogName, SQLSMALLINT nFKCatalogNameLength,
+		SQLWCHAR *szFKSchemaName, SQLSMALLINT nFKSchemaNameLength,
+		SQLWCHAR *szFKTableName, SQLSMALLINT nFKTableNameLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLCHAR *PKcatalog = NULL, *PKschema = NULL, *PKtable = NULL;
+	SQLCHAR *FKcatalog = NULL, *FKschema = NULL, *FKtable = NULL;
+	SQLRETURN rc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLForeignKeysW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szPKCatalogName, nPKCatalogNameLength, PKcatalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szPKSchemaName, nPKSchemaNameLength, PKschema, addStmtError, stmt, goto exit);
+	fixWcharIn(szPKTableName, nPKTableNameLength, PKtable, addStmtError, stmt, goto exit);
+	fixWcharIn(szFKCatalogName, nFKCatalogNameLength, FKcatalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szFKSchemaName, nFKSchemaNameLength, FKschema, addStmtError, stmt, goto exit);
+	fixWcharIn(szFKTableName, nFKTableNameLength, FKtable, addStmtError, stmt, goto exit);
+
+	rc = SQLForeignKeys_(stmt, PKcatalog, SQL_NTS, PKschema, SQL_NTS,
+			     PKtable, SQL_NTS, FKcatalog, SQL_NTS,
+			     FKschema, SQL_NTS, FKtable, SQL_NTS);
+
+  exit:
+	if (PKcatalog)
+		free(PKcatalog);
+	if (PKschema)
+		free(PKschema);
+	if (PKtable)
+		free(PKtable);
+	if (FKcatalog)
+		free(FKcatalog);
+	if (FKschema)
+		free(FKschema);
+	if (FKtable)
+		free(FKtable);
 
 	return rc;
 }

@@ -85,3 +85,29 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 	return SQLPrepare_((ODBCStmt *) hStmt, szSqlStr, nSqlStrLength);
 }
+
+SQLRETURN SQL_API
+SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLCHAR *sql;
+	SQLRETURN rc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLPrepareW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szSqlStr, nSqlStrLength, sql, addStmtError, stmt, return SQL_ERROR);
+
+	rc = SQLPrepare_(stmt, szSqlStr, nSqlStrLength);
+
+	if (sql)
+		free(sql);
+
+	return rc;
+}

@@ -25,11 +25,6 @@ SQLRETURN
 SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
-
 	/* TODO: check parameters: Value, BufferLength and StringLength */
 
 	switch (Attribute) {
@@ -149,6 +144,30 @@ SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtAttr %d\n", Attribute);
 #endif
+
+	if (!isValidStmt((ODBCStmt *) hStmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors((ODBCStmt *) hStmt);
+
+	return SQLGetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value,
+			       BufferLength, StringLength);
+}
+
+SQLRETURN SQL_API
+SQLGetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
+		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetStmtAttrW %d\n", Attribute);
+#endif
+
+	if (!isValidStmt((ODBCStmt *) hStmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors((ODBCStmt *) hStmt);
+
+	/* there are no string-valued attributes */
 
 	return SQLGetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value,
 			       BufferLength, StringLength);

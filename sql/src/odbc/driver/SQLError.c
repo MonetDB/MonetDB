@@ -42,3 +42,47 @@ SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
 			      szSqlState, pfNativeError, szErrorMsg,
 			      nErrorMsgMax, pcbErrorMsg);
 }
+
+SQLRETURN SQL_API
+SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR *szSqlState,
+	  SQLINTEGER *pfNativeError, SQLWCHAR *szErrorMsg,
+	  SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
+{
+	SQLCHAR state[6];
+	SQLRETURN rc;
+	SQLSMALLINT n;
+	SQLCHAR *errmsg;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLErrorW\n");
+#endif
+
+	errmsg = malloc(nErrorMsgMax * 4);
+
+	/* use mapping as described in ODBC 3 SDK Help file */
+	rc = SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT :
+			    (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
+			    hStmt ? hStmt : (hDbc ? hDbc : hEnv),
+			    (hStmt ? ++((ODBCStmt *)hStmt)->RetrievedErrors :
+			     (hDbc ? ++((ODBCDbc *)hDbc)->RetrievedErrors :
+			      ++((ODBCEnv *)hEnv)->RetrievedErrors)),
+			    state, pfNativeError, errmsg,
+			    nErrorMsgMax * 4, &n);
+
+	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+		char *e = ODBCutf82wchar(state, 5, szSqlState, 6, NULL);
+		if (e)
+			rc = SQL_ERROR;
+	}
+
+	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+		char *e = ODBCutf82wchar(errmsg, n, szErrorMsg, nErrorMsgMax, &n);
+		if (e)
+			rc = SQL_ERROR;
+		if (pcbErrorMsg)
+			*pcbErrorMsg = n;
+	}
+	free(errmsg);
+
+	return rc;
+}

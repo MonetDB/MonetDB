@@ -58,6 +58,11 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 		}							\
 	} while (0)
 
+extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg);
+extern char *ODBCutf82wchar(const SQLCHAR *s, SQLSMALLINT length,
+			    SQLWCHAR *buf, SQLSMALLINT buflen,
+			    SQLSMALLINT *buflenout);
+
 /*
   Function to translate an ODBC SQL query to native format.
   The return value is a freshly allocated null-terminated string.
@@ -81,9 +86,37 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
 			strncpy((char *) (buf), (str) ? (char *) (str) : "", (len)); \
 		if (lenp)					\
 			*(lenp) = _l;				\
-		if ((buf) == NULL || _l >= (len))		\
+		if ((buf) == NULL || _l >= (size_t) (len))	\
 			errfunc((hdl), "01004", NULL, 0);	\
 	} while (0)
+
+#define fixWcharIn(ws, wsl, s, errfunc, hdl, exit)		\
+	do {							\
+		char *e;					\
+		(s) = ODBCwchar2utf8((ws), (wsl), &e);	\
+		if (e) {					\
+			errfunc((hdl), "HY000", e, 0);	\
+			exit;					\
+		}						\
+	} while (0)
+#define prepWcharOut(s, wsl)	 (s) = malloc((wsl) * 4)
+#define fixWcharOut(r, s, sl, ws, wsl, wslp, errfunc, hdl)		\
+	do {								\
+		if ((r) == SQL_SUCCESS || (r) == SQL_SUCCESS_WITH_INFO) { \
+			char *e = ODBCutf82wchar((s), (sl), (ws), (wsl), &(sl)); \
+			if (e) {					\
+				errfunc((hdl), "HY000", e, 0);	\
+				(r) = SQL_ERROR;			\
+			} else if ((sl) >= (wsl)) {			\
+				errfunc((hdl), "01004", NULL, 0);	\
+				(r) = SQL_SUCCESS_WITH_INFO;		\
+			}						\
+			if (wslp)					\
+				*(wslp) = (sl);				\
+		}							\
+		free(s);						\
+	} while (0)
+
 
 /* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and
    SQL_DESC_TYPE are interdependent and setting one affects the other.

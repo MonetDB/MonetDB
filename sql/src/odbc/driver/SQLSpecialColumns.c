@@ -25,28 +25,18 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
-		  SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		  SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		  SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		  SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
+static SQLRETURN
+SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
+		   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+		   SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumns %d ", nIdentifierType);
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
 
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
@@ -204,6 +194,70 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
+
+	return rc;
+}
+
+SQLRETURN SQL_API
+SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
+		  SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		  SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		  SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+		  SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSpecialColumns %d ", nIdentifierType);
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLSpecialColumns_(stmt, nIdentifierType,
+				  szCatalogName, nCatalogNameLength,
+				  szSchemaName, nSchemaNameLength,
+				  szTableName, nTableNameLength,
+				  nScope, nNullable);
+}
+
+SQLRETURN SQL_API
+SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
+		   SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		   SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		   SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength,
+		   SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSpecialColumnsW %d ", nIdentifierType);
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
+	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
+
+	rc = SQLSpecialColumns_(stmt, nIdentifierType, catalog, SQL_NTS,
+				schema, SQL_NTS, table, SQL_NTS,
+				nScope, nNullable);
+
+  exit:
+	if (catalog)
+		free(catalog);
+	if (schema)
+		free(schema);
+	if (table)
+		free(table);
 
 	return rc;
 }

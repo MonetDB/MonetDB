@@ -150,3 +150,38 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength,
 			   szUID, nUIDLength, szPWD, nPWDLength);
 }
+
+SQLRETURN SQL_API
+SQLConnectW(SQLHDBC hDbc,
+	    SQLWCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+	    SQLWCHAR *szUID, SQLSMALLINT nUIDLength,
+	    SQLWCHAR *szPWD, SQLSMALLINT nPWDLength)
+{
+	SQLCHAR *ds = NULL, *uid = NULL, *pwd = NULL;
+	SQLRETURN rc = SQL_ERROR;
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLConnectW\n");
+#endif
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
+	fixWcharIn(szDataSource, nDataSourceLength, ds, addDbcError, dbc, goto exit);
+	fixWcharIn(szUID, nUIDLength, uid, addDbcError, dbc, goto exit);
+	fixWcharIn(szPWD, nPWDLength, pwd, addDbcError, dbc, goto exit);
+
+	rc = SQLConnect_(dbc, ds, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
+
+  exit:
+	if (ds)
+		free(ds);
+	if (uid)
+		free(uid);
+	if (pwd)
+		free(pwd);
+	return rc;
+}

@@ -17,22 +17,14 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-SQLRETURN SQL_API
-SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
-	      SQLCHAR *Name, SQLSMALLINT BufferLength,
-	      SQLSMALLINT *StringLength, SQLSMALLINT *Type,
-	      SQLSMALLINT *SubType, SQLINTEGER *Length, SQLSMALLINT *Precision,
-	      SQLSMALLINT *Scale, SQLSMALLINT *Nullable)
+static SQLRETURN
+SQLGetDescRec_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLCHAR *Name,
+	       SQLSMALLINT BufferLength, SQLSMALLINT *StringLength,
+	       SQLSMALLINT *Type, SQLSMALLINT *SubType, SQLINTEGER *Length,
+	       SQLSMALLINT *Precision, SQLSMALLINT *Scale,
+	       SQLSMALLINT *Nullable)
 {
-	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 	ODBCDescRec *rec;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescRec %d\n", RecordNumber);
-#endif
-
-	if (!isValidDesc(desc))
-		return SQL_INVALID_HANDLE;
 
 	if (RecordNumber <= 0) {
 		addDescError(desc, "07009", NULL, 0);
@@ -75,4 +67,62 @@ SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	}
 
 	return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+}
+
+SQLRETURN SQL_API
+SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
+	      SQLCHAR *Name, SQLSMALLINT BufferLength,
+	      SQLSMALLINT *StringLength, SQLSMALLINT *Type,
+	      SQLSMALLINT *SubType, SQLINTEGER *Length, SQLSMALLINT *Precision,
+	      SQLSMALLINT *Scale, SQLSMALLINT *Nullable)
+{
+	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDescRec %d\n", RecordNumber);
+#endif
+
+	if (!isValidDesc(desc))
+		return SQL_INVALID_HANDLE;
+
+	return SQLGetDescRec_(desc, RecordNumber, Name, BufferLength,
+			      StringLength, Type, SubType, Length, Precision,
+			      Scale, Nullable);
+}
+
+SQLRETURN SQL_API
+SQLGetDescRecW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
+	       SQLWCHAR *Name, SQLSMALLINT BufferLength,
+	       SQLSMALLINT *StringLength, SQLSMALLINT *Type,
+	       SQLSMALLINT *SubType, SQLINTEGER *Length,
+	       SQLSMALLINT *Precision, SQLSMALLINT *Scale,
+	       SQLSMALLINT *Nullable)
+{
+	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
+	SQLRETURN rc;
+	SQLCHAR *name;
+	SQLSMALLINT n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDescRecW %d\n", RecordNumber);
+#endif
+
+	if (!isValidDesc(desc))
+		return SQL_INVALID_HANDLE;
+
+	name = malloc(BufferLength * 4);
+
+	rc = SQLGetDescRec_(desc, RecordNumber, name, BufferLength, &n, Type,
+			    SubType, Length, Precision, Scale, Nullable);
+
+	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+		char *e = ODBCutf82wchar(name, n, Name, BufferLength, &n);
+		if (e)
+			rc = SQL_ERROR;
+		if (StringLength)
+			*StringLength = n;
+	}
+	free(name);
+
+	return rc;
 }

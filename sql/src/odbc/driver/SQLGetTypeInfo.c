@@ -21,23 +21,13 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN SQL_API
-SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
+static SQLRETURN
+SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLGetTypeInfo %d\n", nSqlDataType);
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
 
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {
@@ -218,4 +208,38 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	free(query);
 
 	return rc;
+}
+
+SQLRETURN SQL_API
+SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetTypeInfo %d\n", nSqlDataType);
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLGetTypeInfo_(stmt, nSqlDataType);
+}
+
+SQLRETURN SQL_API
+SQLGetTypeInfoW(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetTypeInfoW %d\n", nSqlDataType);
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLGetTypeInfo_(stmt, nSqlDataType);
 }

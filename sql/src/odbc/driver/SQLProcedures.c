@@ -25,23 +25,12 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
-SQLProcedures(SQLHSTMT hStmt,
+static SQLRETURN
+SQLProcedures_(ODBCStmt *stmt,
 	      SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 	      SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
 	      SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
-#ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedures\n");
-#endif
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
-
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {
 		/* 24000 = Invalid cursor state */
@@ -76,4 +65,63 @@ SQLProcedures(SQLHSTMT hStmt,
 			      "cast('' as varchar) as remarks, "
 			      "cast(0 as smallint) as procedure_type "
 			      "where 0 = 1", SQL_NTS);
+}
+
+SQLRETURN SQL_API
+SQLProcedures(SQLHSTMT hStmt,
+	      SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	      SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	      SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLProcedures\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	return SQLProcedures_(stmt, szCatalogName, nCatalogNameLength,
+			      szSchemaName, nSchemaNameLength,
+			      szProcName, nProcNameLength);
+}
+
+SQLRETURN SQL_API
+SQLProceduresW(SQLHSTMT hStmt,
+	       SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLWCHAR *szProcName, SQLSMALLINT nProcNameLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLProceduresW\n");
+#endif
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
+	fixWcharIn(szProcName, nProcNameLength, proc, addStmtError, stmt, goto exit);
+
+	rc = SQLProcedures_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
+			    proc, SQL_NTS);
+
+  exit:
+	if (catalog)
+		free(catalog);
+	if (schema)
+		free(schema);
+	if (proc)
+		free(proc);
+
+	return rc;
 }

@@ -23,6 +23,21 @@
 
 
 SQLRETURN SQL_API
+SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
+{
+	fixODBCstring(szCursor, nCursorLength, addStmtError, stmt);
+
+	/* TODO: implement the requested behavior */
+	/* Note: when cursor names are to be implemented the SQL parser &
+	   executor must also be able to use it. */
+
+	/* for now always return error: Driver does not support this function */
+	addStmtError(stmt, "IM001", NULL, 0);
+
+	return SQL_ERROR;
+}
+
+SQLRETURN SQL_API
 SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
@@ -36,14 +51,32 @@ SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 
 	clearStmtErrors(stmt);
 
-	fixODBCstring(szCursor, nCursorLength, addStmtError, stmt);
+	return SQLSetCursorName_(stmt, szCursor, nCursorLength);
+}
 
-	/* TODO: implement the requested behavior */
-	/* Note: when cursor names are to be implemented the SQL parser &
-	   executor must also be able to use it. */
+SQLRETURN SQL_API
+SQLSetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
+		  SQLSMALLINT nCursorLength)
+{
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	SQLRETURN rc;
+	SQLCHAR *cursor;
 
-	/* for now always return error: Driver does not support this function */
-	addStmtError(stmt, "IM001", NULL, 0);
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetCursorNameW\n");
+#endif
 
-	return SQL_ERROR;
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	fixWcharIn(szCursor, nCursorLength, cursor, addStmtError, stmt, return SQL_ERROR);
+
+	rc = SQLSetCursorName_(stmt, cursor, SQL_NTS);
+
+	if (cursor)
+		free(cursor);
+
+	return rc;
 }

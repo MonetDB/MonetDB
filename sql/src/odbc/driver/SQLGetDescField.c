@@ -248,3 +248,51 @@ SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 				FieldIdentifier, Value, BufferLength,
 				StringLength);
 }
+
+SQLRETURN SQL_API
+SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
+		SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
+		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
+	SQLRETURN rc;
+	SQLPOINTER ptr;
+	SQLINTEGER n;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDescFieldW %d %d\n", RecordNumber, FieldIdentifier);
+#endif
+
+	if (!isValidDesc(desc))
+		 return SQL_INVALID_HANDLE;
+	clearDescErrors(desc);
+
+	switch (FieldIdentifier) {
+	/* all string attributes */
+	case SQL_DESC_BASE_COLUMN_NAME:
+	case SQL_DESC_BASE_TABLE_NAME:
+	case SQL_DESC_CATALOG_NAME:
+	case SQL_DESC_LABEL:
+	case SQL_DESC_LITERAL_PREFIX:
+	case SQL_DESC_LITERAL_SUFFIX:
+	case SQL_DESC_LOCAL_TYPE_NAME:
+	case SQL_DESC_NAME:
+	case SQL_DESC_SCHEMA_NAME:
+	case SQL_DESC_TABLE_NAME:
+	case SQL_DESC_TYPE_NAME:
+		n = BufferLength * 4;
+		ptr = malloc(n);
+		break;
+	default:
+		n = BufferLength;
+		ptr = Value;
+		break;
+	}
+
+	rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
+
+	if (ptr != Value)
+		fixWcharOut(rc, ptr, n, Value, BufferLength, StringLength, addDescError, desc);
+
+	return rc;
+}
