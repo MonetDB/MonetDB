@@ -657,7 +657,7 @@ CXXEXT = \\\"cc\\\"
         fd.write("%sinclude_HEADERS = %s %s\n" % (name,am_list2string(am['HDRS']," ",""), cache))
 
     fd.write('''
-include $(top_srcdir)/rules.mk
+include $(top_srcdir)/*.mk
 
 ''')
     fd.close()
