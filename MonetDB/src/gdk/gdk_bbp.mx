@@ -1310,35 +1310,23 @@ static int file_exists(str dir, str name, str ext)
 }
 
 static int heap_move(Heap* hp, str srcdir, str dstdir, str nme, str ext) {
-	if (hp->filename && hp->storage == STORE_MMAP) {
-		GDKwarning("heap_move: read-only %s.%s should not be dirty.\n", nme, ext);
-	}  
-	if (hp->filename && hp->storage == STORE_PRIV) {
-		/* private mappings have an untouchable X.priv file; and write new versions to X.
-		 * in order to be able to recover correctly, we create a precommit file X that is
-                 * a link to X.priv (only if X does not exists yet). This X is backed up and 
-                 * restored. Without doing this, a newly written X could survive the BBPrecover.
-		 */
+	if (hp->filename && strstr(hp->filename, ".priv")) {
 		long_str path;
 		struct stat st;
 		GDKfilepath(path, srcdir, nme, ext);
 		if (stat(path, &st)) {
-			/* would have worked if all implementations of 
-			 * MAP_PRIVATE allowed moving the file away 
-		         * while it was mmapped
-			if (GDKmove(srcdir, hp->filename, NULL, srcdir, nme, ext)) return -1;
-			*/
-			/* new solution creates a dummy file in the 
-			 * BACKUP(dstdir) recover should take care of
-			 * copying back the X.priv over X.
+			/* in order to prevent half-saved X files surviving a recover
+                         * we create a dummy file in the BACKUP(dstdir) whose precense
+                         * will trigger BBPrecover to remove them. Thus, X.priv will 
+                         * prevail where it otherwise wouldn't have.
 			 */
-			FILE *fd;
+			FILE *fp;
 			long_str kill_ext;
-			strcpy(kill_ext,ext);
-			strcat(kill_ext,".kill");
-			GDKfilepath(path,dstdir,nme,kill_ext);
-			if ((fd=fopen(path,"w"))!=NULL){
-				fclose(fd);
+			strcpy(kill_ext, ext);
+			strcat(kill_ext, ".kill");
+			GDKfilepath(path, dstdir, nme, kill_ext);
+			if ((fp=fopen(path,"w")) != NULL){
+				fclose(fp);
 				return 0;
 			} else {
 				return 1;
