@@ -74,7 +74,7 @@ else
 	# which of monet, sql, xml, acoi, template, ... we are.
 	wh_t="`basename $base`"
 fi
-what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]'`"
+what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]' | tr '.-' '_'`"
 if [ "${what}" = "MONET5" ] ; then
 	pkgdir="MonetDB5"
   else
