@@ -69,7 +69,7 @@ SQLExecute(SQLHSTMT hStmt)
 	/* Have the server execute the query */
 	if (mapi_execute(mid) != MOK) {
 		/* 08S01 Communication link failure */
-		addStmtError(hstmt, "08S01", NULL, 0);
+		addStmtError(hstmt, "08S01", mapi_error_str(mid), 0);
 		return SQL_ERROR;
 	}
 
@@ -80,6 +80,11 @@ SQLExecute(SQLHSTMT hStmt)
 	hstmt->currentRow = 0;
 	hstmt->retrieved = 0;
 	hstmt->currentCol = -1;
+
+	if (hstmt->nrCols == 0 && mapi_get_row_count(mid) == 0) {
+		hstmt->State = PREPARED;
+		return SQL_SUCCESS;
+	}
 
 	hstmt->ResultCols = NEW_ARRAY(ColumnHeader, (hstmt->nrCols + 1));
 	memset(hstmt->ResultCols, 0, (hstmt->nrCols + 1) * sizeof(ColumnHeader));
