@@ -26,20 +26,20 @@
 #!@BASH@
 
 pkg=@PACKAGE@
-source=@QMONET_SOURCE@
-build=@QMONET_BUILD@
-prefix=@Qprefix@
-exec_prefix=@Qexec_prefix@
+source=@MONET_SOURCE@
+build=@MONET_BUILD@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 
-bindir=@Qbindir@
-libexecdir=@Qlibexecdir@
-datadir=@Qdatadir@
-sysconfdir=@Qsysconfdir@
-localstatedir=@Qlocalstatedir@
-libdir=@Qlibdir@
-infodir=@Qinfodir@
-mandir=@Qmandir@
-includedir=@Qincludedir@
+bindir=@bindir@
+libexecdir=@libexecdir@
+datadir=@datadir@
+sysconfdir=@sysconfdir@
+localstatedir=@localstatedir@
+libdir=@libdir@
+infodir=@infodir@
+mandir=@mandir@
+includedir=@includedir@
 
 pkglibdir=${libdir}/${pkg}
 pkgdatadir=${datadir}/${pkg}
