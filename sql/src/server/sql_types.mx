@@ -996,7 +996,7 @@ void sqltypeinit()
 	*t++ = sql_create_type("DATETIME", 0, 0, 0, 1, 		"timestamp");
 	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0, 0, 1,"timestamp");
 
-	*t++ = sql_create_type("BLOB", 0, 0, 0, 0, "blob");
+	*t++ = sql_create_type("BLOB", 0, 0, 0, 0, "sqlblob");
 	end = t;
 	*t = NULL;
 
