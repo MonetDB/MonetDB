@@ -168,6 +168,8 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
         oid BATid = (oid)batID;
         oid WSid  = (oid)wsID;
 
+	if ( wsID < 0 )
+              fatal_err(ctx,"fetchWsContextBAT: NO wsID CONTEXT SELECTED");
         if ( !(bun = BUNfnd(ws,&BATid)) )
               fatal_err(ctx,"fetchWsContextBAT: NOT FOUND BAT[%d]",batID);
 
@@ -203,7 +205,9 @@ static BAT* wsBAT(XqueryCtx* ctx, int batId) {
         return ctx->curBAT[batId];
 }
 
-static void switchWsContext(XqueryCtx* ctx, int wsID) {
+static int switchWsContext(XqueryCtx* ctx, int wsID) {
+	int res = ctx->curFRAG;
+
         if ( ctx->curFRAG != wsID ) {
                 int i;
 
@@ -218,6 +222,7 @@ static void switchWsContext(XqueryCtx* ctx, int wsID) {
                 }
                 ctx->curFRAG   = wsID;
         }
+	return res;
 }
 
 static void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
@@ -232,8 +237,8 @@ static void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
             else
                 ctx->dmMode = 0;
         }
-        ctx->dmSeparator = "\n";
-        /* ctx->dmSeparator = ",\n"; */
+        /* ctx->dmSeparator = "\n"; */
+        ctx->dmSeparator = ",\n";
         ctx->ws        = ws;
         ctx->curFRAG   = -1; /* empty, no frag loaded */
         /* initialize with all wsBAT()'s closed */
@@ -450,7 +455,7 @@ static void handle_endDocument(XqueryCtx* ctx) {
  * the usage of an attribute. A sequence of these events will be ended
  * by a handle_attributeEnd() call.
  */
-static void handle_attribute(XqueryCtx* ctx, str ns, str name, str value) {
+static void handle_attribute(XqueryCtx* ctx, str ns, str name, str value, int top) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         emit(" attribute",name,0);
@@ -459,6 +464,12 @@ static void handle_attribute(XqueryCtx* ctx, str ns, str name, str value) {
                         emit(" attribute value",value,0);
                 } else {
                         stream_printf(GDKout,"<A %s=\"%s\"\n",name,value);
+                }
+        } else if (ctx->dmMode && top) { /* dmMode */
+                if ( ns && strlen(ns)>0 ) {
+                        stream_printf(GDKout,"attribute %s:%s { %s }",ns,name,value);
+                } else {
+                        stream_printf(GDKout,"attribute %s { %s }",name,value);
                 }
         } else { /* xmlMode */
                 if ( ns && strlen(ns)>0 ) {
@@ -650,7 +661,31 @@ static ptr idxTVinWSorFRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index)
  * Handle the generation of the attributes of the node with oid 'pre'. This
  * function is only called from the xquery_node_print() function.
  */
-static int query_attr_print(XqueryCtx* ctx, oid pre, int emptyNode) {
+
+static void handle_attr_data(XqueryCtx* ctx, int nFRAG, int vFRAG, oid id, int top) {
+	/* nFRAG is the fragment where the data about the namespace is stored.
+	   This is most of the time equivalent to ctx->curFRAG.
+	*/
+	/* vFRAG is the fragment where the data about the value is stored. This
+	   value is obtained from the PRE_FRAG bat in the ws context
+	*/
+
+	int mysteryFRAG;
+	mysteryFRAG = nFRAG;
+		
+        oid prop_oid = *(oid*)idxTVinWSorFRGN(ctx,mysteryFRAG,ATTR_PROP,id);
+        int frag     = (int)*(oid*)idxTVinWSorFRGN(ctx,mysteryFRAG,ATTR_FRAG,id);
+        str val      = (str)idxTVinWSorFRGN(ctx,frag,PROP_VAL,prop_oid);
+        /* */
+        oid qn_oid = *(oid*)idxTVinWSorFRGN(ctx,nFRAG,ATTR_QN,id);
+	if (0) stream_printf(GDKout,"[|nfr=%d,vfr=%d,frag=%d,po=%d|]",nFRAG,vFRAG,frag,prop_oid);
+        str ns     = (str)idxTVinWSorFRGN(ctx,frag,QN_NS,qn_oid);
+        str name   = (str)idxTVinWSorFRGN(ctx,frag,QN_LOC,qn_oid);
+        /* */
+        handle_attribute(ctx,ns,name,val,top);
+}
+
+static int query_attr_print(XqueryCtx* ctx, int nFRAG, int vFRAG, oid pre, int emptyNode) {
         BAT *b;
 
         if ( !(b  = BATuselect(wsBAT(ctx,ATTR_OWN),&pre,&pre)) )
@@ -658,17 +693,7 @@ static int query_attr_print(XqueryCtx* ctx, oid pre, int emptyNode) {
         BUN p, q; 
         BATloop(b, p, q) {
                 oid id = *(oid*)BUNhead(b, p);
-                /* */
-                oid poid = *(oid*)idxTVinWS(ctx,ATTR_PROP,id);
-                int frag = (int)*(oid*)idxTVinWS(ctx,ATTR_FRAG,id);
-                str val  = (str)idxTVinWSorFRGN(ctx,frag,PROP_VAL,poid);
-                /* */
-                oid qoid = *(oid*)idxTVinWS(ctx,ATTR_QN,id);
-                str ns   = (str)idxTVinWSorFRGN(ctx,frag,QN_NS,qoid);
-                str name = (str)idxTVinWSorFRGN(ctx,frag,QN_LOC,qoid);
-                /* */
-
-                handle_attribute(ctx,ns,name,val);
+		handle_attr_data(ctx,nFRAG,vFRAG,id,0/*top*/);
         }
         handle_attributeEnd(ctx,emptyNode);
         BBPunfix( BBPcacheid( b ) );
@@ -682,30 +707,33 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
         chr kind = *(chr*)idxTVinWS(ctx,PRE_KIND,pre);
         oid prop = *(oid*)idxTVinWS(ctx,PRE_PROP,pre);
 
-        int valueFRAG = ctx->curFRAG;
-        if ( pre_frag )
-                valueFRAG = (int)*(oid*)idxTVinWS(ctx,PRE_FRAG,pre);
+        int vFRAG = ctx->curFRAG;
+        if ( pre_frag ) {
+                /* vFRAG = (int)*(oid*)idxTVinWS(ctx,PRE_FRAG,pre); */
+                vFRAG = (int)*(oid*)idxTV(ctx,"par_pre_frag",pre_frag,pre);
+	}
+	if (0) stream_printf(GDKout,"QNP[|xpre=%d,nf=%d,vf=%d|]",pre,ctx->curFRAG,vFRAG);
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
-                        str name = (str)idxTVinWSorFRGN(ctx,valueFRAG,QN_LOC,prop);
-                        str ns   = (str)idxTVinWSorFRGN(ctx,valueFRAG,QN_NS,prop);
+                        str name = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_LOC,prop);
+                        str ns   = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_NS,prop);
                         handle_startElement(ctx,ns,name);
                         int size = *(int*)idxTVinWS(ctx,PRE_SIZE,pre);
-                        query_attr_print(ctx,pre,(size==0));
+                        query_attr_print(ctx,ctx->curFRAG,vFRAG,pre,(size==0));
                         pushTag(ctx,pre+size,ns,name,(size==0));
                         break;
                         }
                 case (char)1: {/* TEXT */
-                        handle_characters(ctx,(str)idxTVinWSorFRGN(ctx,valueFRAG,PROP_TEXT,prop),(top?"text":0));
+                        handle_characters(ctx,(str)idxTVinWSorFRGN(ctx,vFRAG,PROP_TEXT,prop),(top?"text":0));
                         break;
                         }
                 case (char)2: {/* COMMENT */
-                        handle_comment(ctx,(str)idxTVinWSorFRGN(ctx,valueFRAG,PROP_COM,prop));
+                        handle_comment(ctx,(str)idxTVinWSorFRGN(ctx,vFRAG,PROP_COM,prop));
                         break;
                         }
                 case (char)3: {/* PI */
-                        str target = (str)idxTVinWSorFRGN(ctx,valueFRAG,PROP_TGT,prop);
-                        str data   = (str)idxTVinWSorFRGN(ctx,valueFRAG,PROP_INS,prop);
+                        str target = (str)idxTVinWSorFRGN(ctx,vFRAG,PROP_TGT,prop);
+                        str data   = (str)idxTVinWSorFRGN(ctx,vFRAG,PROP_INS,prop);
                         handle_processingInstruction(ctx,target,data);
                         break;
                         }
@@ -830,16 +858,21 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 /**
  * Handle the start() of an XQUERY/Pathfinder result sequence
  */
-static void  seqStart(XqueryCtx* ctx) {
-        if ( ctx->saxMode ) {
-                handle_startElement(ctx,NULL,XQRESTAG);
-        } else if ( ctx->dmMode ) {
-                /* in DM mode no header is printed !!! */
-        } else {
+static void  seqHeadStart(XqueryCtx* ctx) {
+	if ( ! ctx->dmMode ) { /* dmMode has no header */
+	     if ( !ctx->saxMode )
                 stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-                stream_printf(GDKout,"<%s>\n",XQRESTAG);
-                ctx->nAttrOnLine = 0;
-        }
+             handle_startElement(ctx,NULL,XQRESTAG);
+             ctx->nAttrOnLine = 0;
+	}
+}
+
+static void  seqHeadEnd(XqueryCtx* ctx) {
+	if ( ! ctx->dmMode ) { /* dmMode has no header */
+	    handle_attributeEnd(ctx,0);
+	    if ( !ctx->saxMode )
+	         stream_printf(GDKout,"\n");
+	}
 }
 
 /**
@@ -968,8 +1001,6 @@ static void  seqEmitStr(XqueryCtx* ctx, str sv) {
 #define ELEM  33
 #define ATTR  34
 
-#define DEBUG_BAT       0
-
 int xquery_print_result_main(
                 str  mode,
                 BAT* ws,
@@ -987,13 +1018,26 @@ int xquery_print_result_main(
         if ( setjmp(ctx_struct.exitPoint) != 0 ) {
                 return GDK_FAIL;
         }
-        if ( DEBUG_BAT ) {
-                stream_printf(GDKout,"# RAW XQUERY RESULT:\n");
-                stream_printf(GDKout,"# pre\tkind\tvaloid\tval\n");
-                stream_printf(GDKout,"# ---\t----\t------\t---\n");
-        }
         /* */
-        seqStart(ctx);
+        seqHeadStart(ctx);
+	if ( ! ctx->dmMode ) {
+	    /* If the mode is not the DM mode do a scan of all attributes here
+	     * and generate the appropriate calls to connect them to the
+	     * head tag of the result document
+	     */
+            BUN p, q; 
+            BATloop(item, p, q) {
+                oid pre = *(oid*)BUNhead(item, p);
+                oid valoid = *(oid*)BUNtail(item, p);
+                int cmbn_frag_kind = *(int*)idxTV(ctx,"kind",kind,pre);
+
+                if ( XTRACT_KIND(cmbn_frag_kind) == ATTR ) {
+                     int frag = XTRACT_FRAG(cmbn_frag_kind);
+		     handle_attr_data(ctx,frag,frag,valoid,1/* top */);
+		}
+	    }
+	}
+        seqHeadEnd(ctx);
         /* */
 	int cnt = 0; /* loopcounter, used for checking when to print commas. */
         BUN p, q; 
@@ -1003,58 +1047,52 @@ int xquery_print_result_main(
                 int cmbn_frag_kind = *(int*)idxTV(ctx,"kind",kind,pre);
                 if ( cnt++ && ctx->dmMode  ) {
                         /* should print a separator here */
-                        /* stream_printf(GDKout,"%s",ctx->dmSeparator); */
+                        stream_printf(GDKout,"%s",ctx->dmSeparator);
                 }
-                if ( DEBUG_BAT )
-                        stream_printf(GDKout,"## pre=%d\tcbn=%d\tkind=%d\tv_oid=%d\t",pre,cmbn_frag_kind,XTRACT_KIND(cmbn_frag_kind),valoid);
-                /* */
                 switch( XTRACT_KIND(cmbn_frag_kind) ) {
                  case ATTR: {
-			/* xxxxxxxxxxxxxxxxx */
-                        stream_printf(GDKout,"<!--attr-not-impl-yet-->\n");
+		 	if ( ctx->dmMode ) {
+                            int frag = XTRACT_FRAG(cmbn_frag_kind);
+			    handle_attr_data(ctx,frag,frag,valoid,1/* top */);
+			}
                         break;
                         };
                  case ELEM: {
                         int frag = XTRACT_FRAG(cmbn_frag_kind);
-                        if (DEBUG_BAT) stream_printf(GDKout,"ELEM(frag=%d,v_oid=%d)\n",frag, valoid);
                         /* if ( ctx->dmMode ),check for first kind text { "t" } 
                          * check idxTVinWSorFRGN(ctx,frag,PRE_KIND,valoid);
                          * for TEXT
                          */
-                        switchWsContext(ctx,frag);
+                        int oldCtx = switchWsContext(ctx,frag);
                         seqEmitNode(ctx, valoid, wsBAT(ctx,PRE_FRAG),1/*top*/);
+                        switchWsContext(ctx,oldCtx);
                         break;
                         };
                  case NODE: {
-                        /* incomplete, suppose just ignore ?*/
+                        /* INCOMPLETE, suppose just ignore ?*/
                         break;
                         };
                  case BOOL: {
-                        if (DEBUG_BAT) stream_printf(GDKout,"%s\n",(valoid?"true":"false"));
                         seqEmitBool(ctx,valoid);
                         break;
                         }
                  case DBL: {
                         dbl dv = *(dbl*)idxTV(ctx,"dblVAL",dblVAL,valoid);
-                        if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
                         seqEmitDbl(ctx,dv); /* INCOMPLETE ?diff between d and e */
                         break;
                         }
                  case DEC: {
                         dbl dv = *(dbl*)idxTV(ctx,"decCVAL",decVAL,valoid);
-                        if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
                         seqEmitDbl(ctx,dv); /* INCOMPLETE ?diff between d and e */
                         break;
                         }
                  case INT: {
                         int iv = *(int*)idxTV(ctx,"intVAL",intVAL,valoid);
-                        if (DEBUG_BAT) stream_printf(GDKout,"%d\n",iv);
                         seqEmitInt(ctx,iv);
                         break;
                         }
                  case STR: {
                         str sv = (str)idxTV(ctx,"strVAL",strVAL,valoid);
-                        if (DEBUG_BAT) stream_printf(GDKout,"\"%s\"\n",sv);
                         seqEmitStr(ctx,sv);
                         break;
                         }
@@ -1062,14 +1100,9 @@ int xquery_print_result_main(
                         stream_printf(GDKerr,"[kind=%d, frag=%d]\n",XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
                         fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
                 }
-                if ( ctx->dmMode ) {
-                        /* should print a separator here */
-                        stream_printf(GDKout,"%s",ctx->dmSeparator);
-                }
         }
         if ( ctx->dmMode ) {
-            /* should print a newline here */
-            /* stream_printf(GDKout,"/n"); */
+            stream_printf(GDKout,"\n"); /* end of the sequence newline */
         }
         /* */
         seqEnd(ctx);
@@ -1099,6 +1132,7 @@ static FILE *string2FILE(char* s) {
  * of output needed eg. "sax" or "xml".
  */
 static int xquery_compile2MIL(FILE* in, FILE* out, char* mode) {
+	/* if mode == "org" Jan Rittingers code is called */
         return pf_compile_interface(in, out, mode);
 }
 
