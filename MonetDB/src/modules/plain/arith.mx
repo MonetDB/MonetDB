@@ -152,6 +152,7 @@ atomic types and a result type.
 	.OPERATOR (sht) "%"  (sht) : sht = shtsht_checkbinary_MOD;	"modulo"
 	.OPERATOR (sht) "%"  (int) : int = shtint_checkbinary_MOD;	"modulo"
 	.OPERATOR (int) "%"  (int) : int = intint_checkbinary_MOD;	"modulo"
+	.OPERATOR (lng) "%"  (lng) : lng = lnglng_checkbinary_MOD;	"modulo"
 	.OPERATOR (lng) "%"  (int) : int = lngint_checkbinary_MOD;	"modulo"
 	.OPERATOR (int) "%"  (chr) : chr = intchr_checkbinary_MOD;	"modulo"
 	.OPERATOR (int) "%"  (sht) : sht = intsht_checkbinary_MOD;	"modulo"
@@ -561,6 +562,7 @@ int flt2int(int *r, flt* v) { *r = *(int*) v; return GDK_SUCCEED; }
 @:check_binop(_MOD,%,sht,sht,sht)@
 @:check_binop(_MOD,%,sht,int,int)@
 @:check_binop(_MOD,%,int,int,int)@
+@:check_binop(_MOD,%,lng,lng,lng)@
 @:check_binop(_MOD,%,lng,int,int)@
 @:check_binop(_MOD,%,int,chr,chr)@
 @:check_binop(_MOD,%,int,sht,sht)@
