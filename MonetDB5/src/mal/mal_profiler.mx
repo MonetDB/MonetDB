@@ -386,7 +386,6 @@ void infoHeapProfile(Heap *hp, str nme){
         strcpy(p, "filename");
     log0(buf); log("=\"%s\" ", hp->filename?hp->filename:"no file");
     }
-        strcpy(p, "offset"); log0(buf); log("=\"%d\" ", hp->offset);
 }
 void HASHinfoProfile(Hash *h, str s){
     char buf[MAXPATHLEN];
@@ -582,8 +581,6 @@ inspect the properties of BATs and their propagation.
         infoHeapProfile(&b->taccelerator, "taccelerator");
         if (b->hhash_heap) { HASHinfoProfile(&b->hhash, "hhash"); }
         if (b->thash_heap) { HASHinfoProfile(&b->thash, "thash"); }
-        if (b->hidx_heap) log0("hidx_heap=\"present\"");
-        if (b->tidx_heap) log0("tidx_heap=\"present\"");
         BBPunfix(b->batCacheid);
         }
         }
