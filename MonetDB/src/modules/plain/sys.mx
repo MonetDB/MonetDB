@@ -143,6 +143,12 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 @m
 .COMMAND view_bbp_name(): BAT[int,str] = view_bbp_name; 
 	"Pseudo bat to map a BAT id into its name"
+.COMMAND view_bbp_htype(): BAT[int,str] = view_bbp_htype; 
+	"Pseudo bat to map a BAT id into its head type"
+.COMMAND view_bbp_ttype(): BAT[int,str] = view_bbp_ttype; 
+	"Pseudo bat to map a BAT id into its tail type"
+.COMMAND view_bbp_count(): BAT[int,lng] = view_bbp_count; 
+	"Pseudo bat to map a BAT id into its count"
 .COMMAND view_bbp_refcnt(): BAT[int,int] = view_bbp_refcnt; 
 	"Pseudo bat to map a BAT id into its reference count"
 .COMMAND view_bbp_lrefcnt(): BAT[int,int] = view_bbp_lrefcnt; 
@@ -320,26 +326,34 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
     proc dir(bat[int,str] b) : void {
         var nme := view_bbp_name();
+	var ht  := view_bbp_htype();
+	var tt  := view_bbp_ttype();
+	var cnt  := view_bbp_count();
 	
-	table(1, b.reverse().sort().reverse().col_name("name"),
-		[head](b.join(nme.reverse())).col_name("htype"),	
-		[tail](b.join(nme.reverse())).col_name("ttype"),	
-		[count](b.mirror()).col_name("count"),	
-		view_bbp_heat().col_name("heat"),
-		view_bbp_dirty().col_name("dirty"),
-		view_bbp_status().col_name("status"),
-		view_bbp_kind().col_name("kind"), 
-		view_bbp_refcnt().col_name("refcnt"),
-		view_bbp_lrefcnt().col_name("lrefcnt"));
+        var heat :=  view_bbp_heat(); heat.col_name("heat");
+        var dirty :=  view_bbp_dirty(); dirty.col_name("dirty");
+        var status :=  view_bbp_status(); status.col_name("status");
+        var kind :=  view_bbp_kind(); kind.col_name("kind");
+        var refcnt :=  view_bbp_refcnt(); refcnt.col_name("refcnt");
+        var lrefcnt :=  view_bbp_lrefcnt(); lrefcnt.col_name("lrefcnt");
+
+
+        table(1, b.reverse().sort().reverse().col_name("name"),
+                ht.semijoin(b.join(nme.reverse())),
+                tt.semijoin(b.join(nme.reverse())),
+                cnt.semijoin(b.mirror()),
+                heat, dirty,status,kind,refcnt,lrefcnt);
     }
 
     PROC dir() : void {
-        var nme := view_bbp_name().copy().access(BAT_WRITE).col_name("name");
+        var nme := view_bbp_name().copy().access(BAT_WRITE); 
+	    nme.col_name("name");
 	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
 	dir(nme.replace(rev));
     }
     PROC dir(str substr) : void {
-        var nme := view_bbp_name().like(substr).access(BAT_WRITE).col_name("name");
+        var nme := view_bbp_name().like(substr).access(BAT_WRITE);
+	    nme.col_name("name");
         var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
         dir(nme.replace(rev));
     }
@@ -364,7 +378,8 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	var nme := view_bbp_name();
 	var prs := nme.semijoin(view_bbp_kind().select("pers"));
 	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
-	dir(prs.access(BAT_WRITE).col_name("name").replace(rev));
+	prs.access(BAT_WRITE); prs.col_name("name"); prs.replace(rev);
+	dir(prs);
     }
     ADDHELP("ls", "boncz", "Feb  6 1996", 
 	"list all data bats. Optionally filter on name with a certain substring", "sys"); 
@@ -373,7 +388,9 @@ Some explanation of what mem\_usage() and vm\_usage() display:
         var nme := view_bbp_name();
 	var prs := nme.semijoin(view_bbp_kind().select("pers"));
 	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
-	prs.access(BAT_WRITE).col_name("name").replace(rev);
+	prs.access(BAT_WRITE);
+	prs.col_name("name");
+	prs.replace(rev);
 	dir(prs.like(substr));
     }
     ADDHELP("ls", "arjen", "Jun 12 2001", 
@@ -530,7 +547,57 @@ view_bbp_name(
 	@:Pseudo(bbp,name)@
         return GDK_SUCCEED;
 }
+@-
+Finding all head/tail types is similar
+@= bbp_types
+int
+view_bbp_@1(
+   BAT**        retval  /* put pointer to BAT[int,str] record here. */
+){       
+	BAT*    b;
+        int     i;
 
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return GDK_FAIL;
+
+	BBPlock("view_bbp_@1");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+		BAT *bn = (BAT*) BBPgetdesc(ABS(i));
+        	if (bn ) { 
+			str tpe = ATOMname(bn->@1);
+			BUNins(b, &i, tpe);
+		}
+	}
+	BBPunlock("view_bbp_@1");
+	@:Pseudo(bbp,@1)@
+        return GDK_SUCCEED;
+}
+@c
+@:bbp_types(htype,ttype)@
+@:bbp_types(ttype,htype)@
+
+int
+view_bbp_count(
+   BAT**        retval  /* put pointer to BAT[int,str] record here. */
+){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_lng,BBPsize);
+        if (b == 0) return GDK_FAIL;
+
+	BBPlock("view_bbp_count");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+		BAT *bn = (BAT*) BBPgetdesc(ABS(i));
+        	if (bn ) { 
+			lng cnt = BATcount(bn);
+			BUNins(b, &i, &cnt);
+		}
+	}
+	BBPunlock("view_bbp_count");
+	@:Pseudo(bbp,cnt)@
+        return GDK_SUCCEED;
+}
 @-
 The BAT status is redundantly stored in view_bat_info.
 @c
