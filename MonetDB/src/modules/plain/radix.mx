@@ -1095,6 +1095,11 @@ radix_cluster(attr_int,
 
 #include "radix.proto.h"
 
+#if defined(ia64) && !defined(__GNUC__)
+/* constants for use with _mm_prefetch */
+#include <xmmintrin.h>
+#endif
+
 /* math.h files do not have M_PI/M_E defined */
 #ifndef M_PI
 # define M_PI		3.14159265358979323846	/* pi */
