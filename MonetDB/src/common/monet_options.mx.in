@@ -213,7 +213,7 @@ int mo_system_config( opt **Set, int setlen)
 int mo_builtin_settings(opt **Set)
 {
 	int i = 0;
-	opt *set = (opt*)malloc(sizeof(opt)*14);
+	opt *set = (opt*)malloc(sizeof(opt)*18);
 
 	if (!set) return 0;
 
@@ -279,6 +279,22 @@ int mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_deamon");
 	set[i].value = strdup("yes");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("host");
+	set[i].value = strdup("localhost");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("mapi_port");
+	set[i].value = strdup("50000");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("mapi_noheaders");
+	set[i].value = strdup("no");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("mapi_debug");
+	set[i].value = strdup("0");
 	i++;
 	
 	*Set = set;

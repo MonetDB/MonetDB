@@ -2,6 +2,8 @@
 
 MTSAFE
 
+INCLUDES = srcdir
+
 EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c monet_options.py.in
 
 lib_mutils = { 
