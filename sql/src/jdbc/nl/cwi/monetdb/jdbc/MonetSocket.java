@@ -2,7 +2,6 @@ package nl.cwi.monetdb.jdbc;
 
 import java.io.*;
 import java.net.*;
-//import java.util.regex.*;
 
 /**
  * A Socket for communicating with the Monet database
