@@ -336,7 +336,7 @@ public class MonetConnection extends Thread implements Connection {
 
 		stmt = createStatement();
 		ResultSet rs =
-			stmt.executeQuery("SELECT \"value\" FROM \"session\" WHERE \"name\"='auto_commit'");
+			stmt.executeQuery("SELECT \"value\" FROM \"sessions\" WHERE \"name\"='auto_commit'");
 		if (rs.next()) {
 			boolean ret = rs.getBoolean(1);
 			rs.close();

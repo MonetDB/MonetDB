@@ -8,7 +8,7 @@ import java.util.*;
  * <br /><br />
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.2 (beta release)
+ * @version 0.3 (beta release)
  */
 public class MonetDatabaseMetaData implements DatabaseMetaData {
 	private Connection con;
@@ -1407,33 +1407,28 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	{
 		String select;
 		String orderby;
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
 
 		select =
 			"SELECT * FROM ( " +
-			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"'SYSTEM TABLE' AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
-				"null AS \"TYPE_NAME\", 'id' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
-				"FROM \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" AND \"tables\".\"type\" = 1 " +
+			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
+				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = true THEN 'SYSTEM TABLE' " +
+				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false THEN 'SYSTEM VIEW' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true THEN 'TABLE' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false THEN 'VIEW' " +
+				"END AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
+				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
+				"FROM \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\"" +
 			"UNION ALL " +
-			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"'TABLE' AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
-				"null AS \"TYPE_NAME\", 'id' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
-				"FROM \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" AND \"tables\".\"type\" = 0 " +
-			"UNION ALL " +
-			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"'VIEW' AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
-				"null AS \"TYPE_NAME\", 'id' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
-				"FROM \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" AND \"tables\".\"type\" = 2 " +
-			"UNION ALL " +
-			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"'SESSION TEMPORARY TABLE' AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
-				"null AS \"TYPE_NAME\", 'id' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
-				"FROM \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" AND \"tables\".\"type\" = 3 " +
-			"UNION ALL " +
-			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"'TEMPORARY TABLE' AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
-				"null AS \"TYPE_NAME\", 'id' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
-				"FROM \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" AND \"tables\".\"type\" = 4 " +
+
+			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
+				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = true THEN 'SYSTEM SESSION TABLE' " +
+				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false THEN 'SYSTEM SESSION VIEW' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true THEN 'SESSION TABLE' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false THEN 'SESSION VIEW' " +
+				"END AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
+				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
+				"FROM \"tmp_tables\" AS \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\"" +
 			") AS \"tables\" WHERE 1 = 1 ";
 
 		if (tableNamePattern != null) {
@@ -1470,8 +1465,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database error occurs
 	 */
 	public ResultSet getSchemas() throws SQLException {
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
 		String query =
-			"SELECT \"name\" AS \"TABLE_SCHEM\", null AS \"TABLE_CATALOG\" " +
+			"SELECT \"name\" AS \"TABLE_SCHEM\", '" + cat + "' AS \"TABLE_CATALOG\" " +
 				"FROM \"schemas\" " +
 				"ORDER BY \"TABLE_SCHEM\"";
 
@@ -1524,15 +1520,18 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 		columns = new String[1];
 		types = new String[1];
-		results = new String[5][1];
+		results = new String[8][1];
 
 		columns[0] = "TABLE_TYPE";
-		types[0] = "VARCHAR";
+		types[0] = "varchar";
 		results[0][0] = "SYSTEM TABLE";
 		results[1][0] = "TABLE";
-		results[2][0] = "VIEW";
-		results[3][0] = "SESSION TEMPORARY TABLE";
-		results[4][0] = "TEMPORARY TABLE";
+		results[2][0] = "SYSTEM VIEW";
+		results[3][0] = "VIEW";
+		results[4][0] = "SYSTEM SESSION TABLE";
+		results[5][0] = "SESSION TABLE";
+		results[6][0] = "SYSTEM SESSION VIEW";
+		results[7][0] = "SESSION VIEW";
 
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
@@ -1598,23 +1597,65 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String columnNamePattern
 	) throws SQLException
 	{
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
 		String query =
-			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
+			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", \"columns\".\"name\" AS \"COLUMN_NAME\", " +
+			"CASE \"columns\".\"type\" " +
+				"WHEN 'table' THEN " + Types.ARRAY + " " +
+				"WHEN 'boolean' THEN " + Types.BOOLEAN + " " +
+				"WHEN 'bool' THEN " + Types.BOOLEAN + " " +
+				"WHEN 'ubyte' THEN " + Types.CHAR + " " +
+				"WHEN 'char' THEN " + Types.CHAR + " " +
+				"WHEN 'character' THEN " + Types.CHAR + " " +
+				"WHEN 'varchar' THEN " + Types.VARCHAR + " " +
+				"WHEN 'text' THEN " + Types.LONGVARCHAR + " " +
+				"WHEN 'tinytext' THEN " + Types.LONGVARCHAR + " " +
+				"WHEN 'string' THEN " + Types.LONGVARCHAR + " " +
+				"WHEN 'tinyint' THEN " + Types.TINYINT + " " +
+				"WHEN 'smallint' THEN " + Types.SMALLINT + " " +
+				"WHEN 'mediumint' THEN " + Types.INTEGER + " " +
+				"WHEN 'oid' THEN " + Types.OTHER + " " +
+				"WHEN 'int' THEN " + Types.INTEGER + " " +
+				"WHEN 'integer' THEN " + Types.INTEGER + " " +
+				"WHEN 'bigint' THEN " + Types.BIGINT + " " +
+				"WHEN 'number' THEN " + Types.INTEGER + " " +
+				"WHEN 'decimal' THEN " + Types.DECIMAL + " " +
+				"WHEN 'numeric' THEN " + Types.NUMERIC + " " +
+				"WHEN 'float' THEN " + Types.FLOAT + " " +
+				"WHEN 'double' THEN " + Types.DOUBLE + " " +
+				"WHEN 'real' THEN " + Types.DOUBLE + " " +
+				"WHEN 'month_interval' THEN " + Types.INTEGER + " " +
+				"WHEN 'sec_interval' THEN " + Types.BIGINT + " " +
+				"WHEN 'date' THEN " + Types.DATE + " " +
+				"WHEN 'time' THEN " + Types.TIME + " " +
+				"WHEN 'datetime' THEN " + Types.TIMESTAMP + " " +
+				"WHEN 'timestamp' THEN " + Types.TIMESTAMP + " " +
+				"WHEN 'blob' THEN " + Types.BLOB + " " +
+				"ELSE " + Types.OTHER + " " +
+			"END AS \"DATA_TYPE\", " +
 			"\"columns\".\"type\" AS \"TYPE_NAME\", \"columns\".\"type_digits\" AS \"COLUMN_SIZE\", " +
 			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", 0 AS \"BUFFER_LENGTH\", " +
-			"10 AS \"NUM_PREC_RADIX\", \"null\" AS \"nullable\", null AS \"REMARKS\", " +
+			"10 AS \"NUM_PREC_RADIX\", " +
+			"CASE \"null\" " +
+				"WHEN true THEN " + ResultSetMetaData.columnNullable + " " +
+				"WHEN false THEN " + ResultSetMetaData.columnNoNulls + " " +
+			"END AS \"nullable\", null AS \"REMARKS\", " +
 			"\"columns\".\"default\" AS \"COLUMN_DEF\", 0 AS \"SQL_DATA_TYPE\", " +
 			"0 AS \"SQL_DATETIME_SUB\", 0 AS \"CHAR_OCTET_LENGTH\", " +
 			"\"columns\".\"number\" + 1 AS \"ORDINAL_POSITION\", null AS \"SCOPE_CATALOG\", " +
-			"null AS \"SCOPE_SCHEMA\", null AS \"SCOPE_TABLE\" " +
-				"FROM \"columns\", \"tables\", \"schemas\" " +
+			"null AS \"SCOPE_SCHEMA\", null AS \"SCOPE_TABLE\", " + ((MonetDriver)driver).getJavaType("other") + " AS \"SOURCE_DATA_TYPE\" " +
+				"FROM ( " +
+					"SELECT * FROM \"columns\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_columns\" " +
+					") AS \"columns\", ( " +
+					"SELECT * FROM \"tables\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_tables\" " +
+					") AS \"tables\", \"schemas\" " +
 				"WHERE \"columns\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" ";
-
-		// Unfortunately we cannot get everything out of the query, so we have
-		// to add DATA_TYPE, NULLABLE, IS_NULLABLE and SOURCE_DATA_TYPE using
-		// Java logic and a virtual result set.
 
 		if (schemaPattern != null) {
 			query += "AND \"schemas\".\"name\" LIKE '" + escapeQuotes(schemaPattern) + "' ";
@@ -1628,62 +1669,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 		query += "ORDER BY \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"";
 
-		String[] columns = {
-			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
-			"DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH",
-			"DECIMAL_DIGITS", "NUM_PREC_RADIX", "NULLABLE", "REMARKS",
-			"COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
-			"CHAR_OCTET_LENGTH", "ORDINAL_POSITION", "IS_NULLABLE",
-			"SCOPE_CATALOG", "SCOPE_SCHEMA", "SCOPE_TABLE", "SOURCE_DATA_TYPE"
-		};
-
-		String[] types = {
-			"varchar", "varchar", "varchar", "varchar", "mediumint",
-			"varchar", "mediumint", "mediumint", "mediumint", "mediumint",
-			"mediumint", "varchar", "varchar", "mediumint", "mediumint",
-			"mediumint", "mediumint", "varchar", "varchar", "varchar",
-			"varchar", "mediumint"
-		};
-
-		String[][] results;
-		ArrayList tmpRes = new ArrayList();
-
-		ResultSet rs = getStmt().executeQuery(query);
-		while (rs.next()) {
-			String[] result = new String[22];
-			result[0]  = rs.getString("table_cat");
-			result[1]  = rs.getString("table_schem");
-			result[2]  = rs.getString("table_name");
-			result[3]  = rs.getString("column_name");
-			result[4]  = "" + ((MonetDriver)driver).getJavaType(rs.getString("type_name"));
-			result[5]  = rs.getString("type_name");
-			result[6]  = rs.getString("column_size");
-			result[7]  = rs.getString("buffer_length");
-			result[8]  = rs.getString("decimal_digits");
-			result[9]  = rs.getString("num_prec_radix");
-			result[10] = "" + (rs.getBoolean("nullable") ? ResultSetMetaData.columnNullable : ResultSetMetaData.columnNoNulls);
-			result[11] = rs.getString("remarks");
-			result[12] = rs.getString("column_def");
-			result[13] = rs.getString("sql_data_type");
-			result[14] = rs.getString("sql_datetime_sub");
-			result[15] = rs.getString("char_octet_length");
-			result[16] = rs.getString("ordinal_position");
-			result[17] = rs.getBoolean("nullable") ? "YES" : "NO";
-			result[18] = rs.getString("scope_catalog");
-			result[19] = rs.getString("scope_schema");
-			result[20] = rs.getString("scope_table");
-			result[21] = "" + ((MonetDriver)driver).getJavaType("other");
-			tmpRes.add(result);
-		}
-		rs.close();
-
-		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
-
-		try {
-			return(new MonetVirtualResultSet(columns, types, results));
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
-		}
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -1843,7 +1829,15 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"SELECT \"columns\".\"name\" AS \"COLUMN_NAME\", \"columns\".\"type\" AS \"TYPE_NAME\", " +
 			"\"columns\".\"type_digits\" AS \"COLUMN_SIZE\", 0 AS \"BUFFER_LENGTH\", " +
 			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", \"keys\".\"type\" AS \"keytype\" " +
-				"FROM \"keys\", \"keycolumns\", \"tables\", \"columns\", \"schemas\" " +
+				"FROM \"keys\", \"keycolumns\", ( " +
+					"SELECT * FROM \"columns\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_columns\" " +
+					") AS \"columns\", ( " +
+					"SELECT * FROM \"tables\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_tables\" " +
+					") AS \"tables\", \"schemas\" " +
 				"WHERE \"keys\".\"id\" = \"keycolumns\".\"id\" AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"keys\".\"table_id\" = \"columns\".\"table_id\" " +
 					"AND \"keycolumns\".\"column\" = \"columns\".\"name\" " +
@@ -1989,7 +1983,11 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", \"keycolumns\".\"column\" AS \"COLUMN_NAME\", " +
 			"\"keys\".\"type\" AS \"KEY_SEQ\", \"keys\".\"name\" AS \"PK_NAME\" " +
-				"FROM \"keys\", \"keycolumns\", \"tables\", \"schemas\" " +
+				"FROM \"keys\", \"keycolumns\", ( " +
+					"SELECT * FROM \"tables\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_tables\" " +
+					") AS \"tables\", \"schemas\" " +
 				"WHERE \"keys\".\"id\" = \"keycolumns\".\"id\" AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 					"AND \"keys\".\"type\" = 0 ";
@@ -2016,7 +2014,15 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		"\"fkkey\".\"name\" AS \"FK_NAME\", \"pkkey\".\"name\" AS \"PK_NAME\", " +
 		"" + DatabaseMetaData.importedKeyNotDeferrable + " AS \"DEFERRABILITY\" " +
 			"FROM \"keys\" AS \"fkkey\", \"keys\" AS \"pkkey\", \"keycolumns\" AS \"fkkeycol\", " +
-			"\"keycolumns\" AS \"pkkeycol\", \"tables\" AS \"fktable\", \"tables\" AS \"pktable\", " +
+			"\"keycolumns\" AS \"pkkeycol\", ( " +
+					"SELECT * FROM \"tables\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_tables\" " +
+					") AS \"fktable\", ( " +
+					"SELECT * FROM \"tables\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_tables\" " +
+					") AS \"pktable\", " +
 			"\"schemas\" AS \"fkschema\", \"schemas\" AS \"pkschema\" " +
 			"WHERE \"fktable\".\"id\" = \"fkkey\".\"table_id\" AND \"pktable\".\"id\" = \"pkkey\".\"table_id\" AND " +
 			"\"fkkey\".\"id\" = \"fkkeycol\".\"id\" AND \"pkkey\".\"id\" = \"pkkeycol\".\"id\" AND " +
@@ -2428,7 +2434,15 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"\"columns\".\"number\" AS \"ORDINAL_POSITION\", \"columns\".\"name\" AS \"COLUMN_NAME\", " +
 			"null AS \"ASC_OR_DESC\", 0 AS \"PAGES\", " +
 			"null AS \"FILTER_CONDITION\" " +
-				"FROM \"idxs\", \"columns\", \"keycolumns\", \"tables\", \"schemas\" " +
+				"FROM \"idxs\", ( " +
+					"SELECT * FROM \"columns\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_columns\" " +
+					") AS \"columns\", ( " +
+					"SELECT * FROM \"tables\" " +
+					"UNION ALL " +
+					"SELECT * FROM \"tmp_tables\" " +
+					") AS \"tables\", \"keycolumns\", \"schemas\" " +
 				"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 					"AND \"keycolumns\".\"id\" = \"idxs\".\"id\" " +
