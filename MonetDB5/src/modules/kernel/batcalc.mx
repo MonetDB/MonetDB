@@ -1258,8 +1258,8 @@ str CMDconvertvoid_int_oid(int *ret, int *bid){
 	x= b->hseqbase;
 
 	BATloopFast(b, p, q, xx) {
-		ptr t = BUNtail(b,p);
-		bunfastins(bn, &x,t);
+		oid t = *(int*)BUNtail(b,p);
+		bunfastins(bn, &x, &t);
 		x++;
 	}
 bunins_failed:
