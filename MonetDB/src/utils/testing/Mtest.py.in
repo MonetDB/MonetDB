@@ -1170,6 +1170,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 			pSrvrIn.flush()
 			EPILOGUE.close()
 
+			pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
+			pSrvrIn.flush()
+			ln=""
+			while ( not ( pSrvrIn.closed or pSrvrOut.closed or pSrvrErr.closed ) ) and ( len(ln) < 6 or ln[:6] not in  ['Done..','Over..'] ):
+				ln=pSrvrOut.readline()
+				SrvrOut.write(ln)
+				SrvrOut.flush()
+
 		if SERVER == "MAPI":
 			Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
 			ShwnOut = open(TST+".shutdown.out","w")
