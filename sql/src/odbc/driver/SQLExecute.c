@@ -68,6 +68,7 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 	context *	sqlContext = NULL;
 	stmt *		res = NULL;
 	RETCODE		rc = SQL_SUCCESS;
+	char* 		query = NULL;
 
 
 	if (! isValidStmt(hstmt))
@@ -92,8 +93,49 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 	assert(dbc->Mrs);
 	assert(dbc->Mws);
 
+	query = hstmt->Query;
 	/* Send the Query to the server for execution */
-	dbc->Mws->write( dbc->Mws, hstmt->Query, strlen(hstmt->Query), 1 );
+	if (hstmt->bindParams.size){
+		char	*Query = 0;
+		int	i = 0, params = 1;
+		int	queryLen = strlen(hstmt->Query) + 1;
+		char    *oldquery = GDKstrdup(hstmt->Query);
+
+		for(i=1; i <= hstmt->bindParams.size; i++){
+			if (!hstmt->bindParams.array[i])
+				break;
+
+			if (hstmt->bindParams.array[i]->StrLen_or_IndPtr)
+				queryLen += *hstmt->bindParams.array[i]->StrLen_or_IndPtr + 2;
+			else
+				queryLen += hstmt->bindParams.array[i]->BufferLength + 2;
+		}
+		Query = GDKmalloc(queryLen);
+		Query[0] = '\0';
+		i = 0;
+		query = oldquery;
+		while(query && *query){
+			/* problem with strings with ?s */
+			char *old = query;
+			if ((query = strchr(query, '?')) != NULL){
+				*query = '\0';
+				if (!hstmt->bindParams.array[params])
+					break;
+				i += snprintf(Query+i, queryLen-i, "%s'%s'", old,
+					hstmt->bindParams.array[params]->ParameterValuePtr);
+				query++;
+				old = query;
+				params++;
+		        }
+			if (old && *old != '\0') 
+				i += snprintf(Query+i, queryLen-i, "%s", old);
+			Query[i] = '\0';
+		}
+		GDKfree(oldquery);
+		query = Query;
+	}
+
+	dbc->Mws->write( dbc->Mws, query, strlen(query), 1 );
 	dbc->Mws->write( dbc->Mws, ";\n", 2, 1 );
 	dbc->Mws->flush( dbc->Mws );
 

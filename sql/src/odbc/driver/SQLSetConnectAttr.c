@@ -36,7 +36,7 @@
 #include "ODBCDbc.h"
 
 
-SQLRETURN SQLSetConnectAttr(
+SQLRETURN SetConnectAttr(
 	SQLHDBC		ConnectionHandle,
 	SQLINTEGER	Attribute,
 	SQLPOINTER	ValuePtr,
@@ -57,9 +57,12 @@ SQLRETURN SQLSetConnectAttr(
 
 	switch (Attribute)
 	{
+		case SQL_ATTR_AUTOCOMMIT:
+			dbc->autocommit = 1;
+			return SQL_SUCCESS;
+
 		/* TODO: implemenent connection attribute behavior */
 		case SQL_ATTR_ACCESS_MODE:
-		case SQL_ATTR_AUTOCOMMIT:
 		case SQL_ATTR_CONNECTION_TIMEOUT:
 		case SQL_ATTR_CURRENT_CATALOG:
 		case SQL_ATTR_DISCONNECT_BEHAVIOR:
@@ -84,4 +87,12 @@ SQLRETURN SQLSetConnectAttr(
 	}
 
 	return SQL_SUCCESS;
+}
+SQLRETURN SQLSetConnectAttr(
+	SQLHDBC		ConnectionHandle,
+	SQLINTEGER	Attribute,
+	SQLPOINTER	ValuePtr,
+	SQLINTEGER	StringLength )
+{
+	return SetConnectAttr( ConnectionHandle, Attribute, ValuePtr, StringLength);
 }

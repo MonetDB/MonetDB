@@ -40,31 +40,101 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN SQLBindParameter(
+SQLRETURN BindParameter(
 	SQLHSTMT	hStmt,
-	SQLUSMALLINT	nParameterNumber,
-	SQLSMALLINT	nIOType,
-	SQLSMALLINT	nBufferType,
-	SQLSMALLINT	nParamType,
-	SQLUINTEGER	nParamLength,
-	SQLSMALLINT	nScale,
-	SQLPOINTER	pData,
-	SQLINTEGER	nBufferLength,
-	SQLINTEGER *	pnLengthOrIndicator )
+     	SQLUSMALLINT	ParameterNumber,
+     	SQLSMALLINT	InputOutputType,
+     	SQLSMALLINT	ValueType,
+     	SQLSMALLINT	ParameterType,
+     	SQLUINTEGER	ColumnSize,
+     	SQLSMALLINT	DecimalDigits,
+     	SQLPOINTER	ParameterValuePtr,
+     	SQLINTEGER	BufferLength,
+     	SQLINTEGER *	StrLen_or_IndPtr)
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
+	OdbcInHostVar inVar = NULL;
 
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
 
-	/* TODO: check the parameter values */
+	/* check input parameters */
+	/* For safety: linmit the maximum number of columns to bind */
+	if (ParameterNumber <= 0  ||  ParameterNumber > MONETDB_MAX_BIND_COLS)
+	{
+		/* HY000 = General Error */
+		addStmtError(stmt, "HY000", "Maximum number of bind columns (8192) exceeded", 0);
+		return SQL_ERROR;
+	}
 
-	/* TODO: store the parameter information in stmt */
+	if (InputOutputType != SQL_PARAM_INPUT)
+	{
+		/* HYC00 = Optional feature not implemented */
+		addStmtError(stmt, "HYC00", "Output parameters are not supported", 0);
+		return SQL_ERROR;
+	}
 
-	/* TODO: implement this function and corresponding behavior */
-	/* for now return error IM001: driver not capable */
-	addStmtError(stmt, "IM001", NULL, 0);
-	return SQL_ERROR;
+	switch (ValueType) {
+		case SQL_C_CHAR:
+		case SQL_C_SSHORT:
+		case SQL_C_USHORT:
+		case SQL_C_SLONG:
+		case SQL_C_ULONG:
+		case SQL_C_STINYINT:
+		case SQL_C_UTINYINT:
+		case SQL_C_SBIGINT:
+		case SQL_C_UBIGINT:
+		case SQL_C_FLOAT:
+		case SQL_C_DOUBLE:
+		case SQL_C_TYPE_DATE:
+		case SQL_C_TYPE_TIME:
+		case SQL_C_TYPE_TIMESTAMP:
+		case SQL_C_DEFAULT:
+			/* these are supported */
+			break;
+
+		case SQL_C_BINARY:
+		case SQL_C_NUMERIC:
+		case SQL_C_GUID:
+			/* these are NOT supported */
+		default:
+			/* HY003 = Invalid application buffer type */
+			addStmtError(stmt, "HY003", NULL, 0);
+			return SQL_ERROR;
+	}
+
+	/* Now store the bind information in stmt struct */
+	inVar = makeOdbcInHostVar(ParameterNumber, InputOutputType, ValueType, ParameterType, ColumnSize, DecimalDigits, ParameterValuePtr, BufferLength, StrLen_or_IndPtr);
+
+	/* Note: there may already be bind information stored, in that
+	   case the column is rebind, so old bind info is overwritten */
+	addOdbcInArray(&(stmt->bindParams), inVar);
+
+	return SQL_SUCCESS;
+}
+SQLRETURN SQLBindParameter(
+	SQLHSTMT	hStmt,
+     	SQLUSMALLINT	ParameterNumber,
+     	SQLSMALLINT	InputOutputType,
+     	SQLSMALLINT	ValueType,
+     	SQLSMALLINT	ParameterType,
+     	SQLUINTEGER	ColumnSize,
+     	SQLSMALLINT	DecimalDigits,
+     	SQLPOINTER	ParameterValuePtr,
+     	SQLINTEGER	BufferLength,
+     	SQLINTEGER *	StrLen_or_IndPtr)
+{
+	return BindParameter(
+		hStmt,
+		ParameterNumber,
+		InputOutputType,
+		ValueType,
+		ParameterType,
+		ColumnSize,
+		DecimalDigits,
+		ParameterValuePtr,
+		BufferLength,
+		StrLen_or_IndPtr );
 }

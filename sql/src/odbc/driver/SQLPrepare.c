@@ -44,6 +44,9 @@ SQLRETURN Prepare(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 	RETCODE rc = SQL_ERROR;
+	int params = 0;
+	char *query = 0;
+
 
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
@@ -81,15 +84,31 @@ SQLRETURN Prepare(
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
 	}
-	/* update the internal state */
-	stmt->State = PREPARED;
 
 	/* TODO: check (parse) the Query on correctness */
 	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
 	   {ts 'value'} or {escape 'e-char'} or {oj outer-join} or
 	   {fn scalar-function} etc. ) to MonetDB SQL syntax */
-	/* TODO: count the number of parameter markers (question mark: ?) */
+	/* count the number of parameter markers (question mark: ?) */
+
+	/* should move to the parser (or a parser should be moved in here) */
+	if (stmt->bindParams.size){
+		query = stmt->Query;
+		while(query){
+			/* problem with strings with ?s */
+			if ((query = strchr(query, '?')) != NULL)
+				params++;
+		}
+	       	if (stmt->bindParams.size != params){
+			addStmtError(stmt, "HY000", NULL, 0);
+			return SQL_ERROR;
+		}
+	}
+
 	/* TODO: count the number of output columns and their description */
+
+	/* update the internal state */
+	stmt->State = PREPARED;
 
 	return SQL_SUCCESS;
 }

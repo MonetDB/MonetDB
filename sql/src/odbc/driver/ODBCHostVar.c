@@ -41,23 +41,27 @@
 
 
 OdbcInHostVar makeOdbcInHostVar(
-	UWORD		ipar,
-	SWORD		fCType,
-	SWORD		fSqlType,
-	UDWORD		cbColDef,
-	SWORD		ibScale,
-	PTR		rgbValue,
-	SDWORD *	pcbValue )
+	SQLUSMALLINT	ParameterNumber,
+	SQLSMALLINT	InputOutputType,
+	SQLSMALLINT	ValueType,
+	SQLSMALLINT	ParameterType,
+	SQLUINTEGER	ColumnSize,
+	SQLSMALLINT	DecimalDigits,
+	SQLPOINTER	ParameterValuePtr,
+	SQLINTEGER	BufferLength,
+	SQLINTEGER*	StrLen_or_IndPtr)
 {
 	OdbcInHostVar this = (OdbcInHostVar)GDKmalloc(sizeof(OdbcInHostVarRec));
 
-	this->ipar = ipar;
-	this->fCType = fCType;
-	this->fSqlType = fSqlType;
-	this->cbColDef = cbColDef;
-	this->ibScale = ibScale;
-	this->rgbValue = rgbValue;
-	this->pcbValue = pcbValue;
+	this->ParameterNumber = ParameterNumber;
+	this->InputOutputType = InputOutputType;
+	this->ValueType = ValueType;
+	this->ParameterType = ParameterType;
+	this->ColumnSize = ColumnSize;
+	this->DecimalDigits = DecimalDigits;
+	this->ParameterValuePtr = ParameterValuePtr;
+	this->BufferLength = BufferLength;
+	this->StrLen_or_IndPtr = StrLen_or_IndPtr;
 
 	return this;
 }
@@ -104,14 +108,14 @@ void destroyOdbcOutHostVar(OdbcOutHostVar this)
  */
 void addOdbcInArray(OdbcInArray * this, OdbcInHostVar var)
 {
-	UWORD ipar;
+	SQLUSMALLINT ParameterNumber;
 	assert(this);
 	assert(var);
 
-	ipar = var->ipar;
-	if (ipar > this->size) {
+	ParameterNumber = var->ParameterNumber;
+	if (ParameterNumber > this->size) {
 		int idx = this->size;
-		int new_size = ipar + 7;	/* grow in steps of 8 for efficiency */
+		int new_size = ParameterNumber + 7;	/* grow in steps of 8 for efficiency */
 		OdbcInHostVar * new_array = NULL;
 
 		if (this->array == NULL) {
@@ -135,12 +139,12 @@ void addOdbcInArray(OdbcInArray * this, OdbcInHostVar var)
 	}
 
 	/* add the InHostVar to the array */
-	assert(ipar <= this->size);
+	assert(ParameterNumber <= this->size);
 	assert(this->array);
-	if (this->array[ipar] != NULL) {
-		destroyOdbcInHostVar(this->array[ipar]);
+	if (this->array[ParameterNumber] != NULL) {
+		destroyOdbcInHostVar(this->array[ParameterNumber]);
 	}
-	this->array[ipar] = var;
+	this->array[ParameterNumber] = var;
 }
 
 

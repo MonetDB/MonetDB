@@ -130,6 +130,7 @@ SQLRETURN ColAttribute(
 			*pnValueLength = strlen(pszValue);
 		break;
 	case SQL_DESC_LENGTH:
+	case SQL_COLUMN_LENGTH:
 		nValue = pColumnHeader->nSQL_DESC_LENGTH;
 		break;
 	case SQL_DESC_LITERAL_PREFIX:

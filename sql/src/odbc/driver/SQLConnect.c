@@ -87,28 +87,25 @@ SQLRETURN SQLConnect(
 
 	uid = copyODBCstr2Cstr(szUID, nUIDLength);
 	if (uid == NULL || strlen(uid) == 0) {
-		SQLGetPrivateProfileString(dsn, "USER", "", buf, BUFSIZ, ODBC_INI);
+		__SQLGetPrivateProfileString(dsn, "USER", "", buf, BUFSIZ, ODBC_INI);
 		uid = GDKstrdup(buf);
 	}
 	pwd = copyODBCstr2Cstr(szPWD, nPWDLength);
 	if (uid == NULL || strlen(pwd) == 0) {
-		SQLGetPrivateProfileString(dsn, "PASSWORD", "", buf, BUFSIZ, ODBC_INI);
+		__SQLGetPrivateProfileString(dsn, "PASSWORD", "", buf, BUFSIZ, ODBC_INI);
 		pwd = GDKstrdup(buf);
 	}
 
 	/* get the other information from the ODBC.INI file */
-	SQLGetPrivateProfileString(dsn, "DATABASE", "", buf, BUFSIZ, ODBC_INI);
+	__SQLGetPrivateProfileString(dsn, "DATABASE", "", buf, BUFSIZ, ODBC_INI);
 	database = GDKstrdup(buf);
 	/* TODO: Provided database/schema are currently not used/implemented */
-	SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ, ODBC_INI);
+	__SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ, ODBC_INI);
 	host = GDKstrdup(buf);
-/*	host = GDKstrdup("localhost"); */
-	SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
+	__SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
 	port = atoi(buf);
-/*	port = 45123; */
-	SQLGetPrivateProfileString(dsn, "DEBUG", "0", buf, BUFSIZ, ODBC_INI);
+	__SQLGetPrivateProfileString(dsn, "DEBUG", "0", buf, BUFSIZ, ODBC_INI);
 	debug = atoi(buf);
-
 
 	/* Retrieved and checked the arguments.
 	   Now try to open a connection with the server */

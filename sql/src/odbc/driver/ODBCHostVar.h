@@ -45,15 +45,18 @@
 typedef struct _OdbcInHostVarRec
 {
 	/* supplied by SQLBindParameter() or SQLSetParam() */
-	SQLUSMALLINT	ipar;
-	SQLSMALLINT	fCType;
-	SQLSMALLINT	fSqlType;
-	SQLUINTEGER	cbColDef;
-	SQLSMALLINT	ibScale;
-	SQLPOINTER	rgbValue;
-	SQLINTEGER *	pcbValue;
+	SQLUSMALLINT	ParameterNumber;
+	SQLSMALLINT	InputOutputType;
+	SQLSMALLINT	ValueType;
+	SQLSMALLINT	ParameterType;
+	SQLUINTEGER	ColumnSize;
+	SQLSMALLINT	DecimalDigits;
+	SQLPOINTER	ParameterValuePtr;
+	SQLINTEGER	BufferLength;
+	SQLINTEGER*	StrLen_or_IndPtr;
 
-	/* TODO: if *pcbValue == SQL_DATA_AT_EXEC then we need to
+
+	/* TODO: if *StrLen_or_IndPtr == SQL_DATA_AT_EXEC then we need to
 	 * administer extra information in a separate OdbcInDAEParRec.
 	 */
 } OdbcInHostVarRec, *OdbcInHostVar;
@@ -69,7 +72,7 @@ typedef struct _OdbcOutHostVarRec
 } OdbcOutHostVarRec, *OdbcOutHostVar;
 
 
-OdbcInHostVar makeOdbcInHostVar(SQLUSMALLINT, SQLSMALLINT, SQLSMALLINT, SQLUINTEGER, SQLSMALLINT, SQLPOINTER, SQLINTEGER *);
+OdbcInHostVar makeOdbcInHostVar(SQLUSMALLINT, SQLSMALLINT, SQLSMALLINT, SQLSMALLINT, SQLUINTEGER, SQLSMALLINT, SQLPOINTER, SQLINTEGER, SQLINTEGER *);
 OdbcOutHostVar makeOdbcOutHostVar(SQLUSMALLINT, SQLSMALLINT, SQLPOINTER, SQLINTEGER, SQLINTEGER *);
 
 void destroyOdbcInHostVar(OdbcInHostVar);

@@ -70,13 +70,13 @@ SQLRETURN SQLDisconnect(SQLHDBC hDbc)
 		int	flag = 0;
 		char	buf[BUFSIZ];
 
-		/*
-		chars_printed = snprintf(buf, BUFSIZ, "COMMIT;\n");
-		ws->write(ws, buf, chars_printed, 1);
-		ws->flush(ws);
+		if (dbc->autocommit && dbc->Error == NULL){
+			chars_printed = snprintf(buf, BUFSIZ, "COMMIT;\n");
+			ws->write(ws, buf, chars_printed, 1);
+			ws->flush(ws);
 
-		simple_receive(rs, ws, debug);
-		*/
+			simple_receive(rs, ws, debug);
+		}
 
 		/* client waves goodbye */
 		buf[0] = EOT;

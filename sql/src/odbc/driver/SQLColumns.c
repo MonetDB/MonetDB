@@ -174,7 +174,6 @@ SQLRETURN SQLColumns(
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
-	fprintf(stderr, query);
 	rc = ExecDirect(hStmt, query, SQL_NTS);
 
 	GDKfree(query);

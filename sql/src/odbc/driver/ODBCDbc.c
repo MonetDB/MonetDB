@@ -63,6 +63,7 @@ ODBCDbc * newODBCDbc(ODBCEnv * env)
 	dbc->DBNAME = NULL;
 
 	dbc->Connected = 0;
+	dbc->autocommit = 0;
 	dbc->socket = 0;
 	dbc->Mrs = NULL;
 	dbc->Mws = NULL;
