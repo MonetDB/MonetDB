@@ -39,7 +39,7 @@ EXTRA_DIST_DIR = mapi
 
 lib_Mapi = {
 	SOURCES = Mapi.mx 
-	LIBS = $(MAPI_LIBS) ../../common/libmutils
+	LIBS = $(MAPI_LIBS) ../../common/libmutils ../../common/libstream
 	HEADERS = h
 }
 
@@ -50,9 +50,10 @@ jar_mapi = {
 
 BINS = {
 	SOURCES = MapiClient.mx
-	LIBS = libMapi ../../common/libmutils $(MAPI_LIBS)
-	MapiClient_LIBS = libMapi ../../common/libmutils \
-		$(MAPI_LIBS) $(READLINE_LIBS)
+	LIBS = libMapi $(MAPI_LIBS) \	
+		../../common/libmutils ../../common/libstream
+	MapiClient_LIBS = libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
+		../../common/libmutils ../../common/libstream
 }
 
 scripts_mapi = {

@@ -854,6 +854,7 @@ int GDKinit(char *dbname, char *dbfarm) {
 	if (!GDKenvironment(dbname, dbfarm))
 		return 0;
 
+	stream_init();
 	MT_init_posix();
 	THRinit();
 	BATSIGinit(); 

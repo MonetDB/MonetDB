@@ -321,22 +321,9 @@ int MT_path_absolute(char *pathname) {
 #define MT_SMALLBLOCK 256
 
 void MT_init_posix(){
-	WSADATA w;
-	int sockopt = SO_SYNCHRONOUS_NONALERT;
-
 	MT_heapbase = 0;
 
 	_set_sbh_threshold(MT_SMALLBLOCK);
-	if (WSAStartup(0x0101, &w) != 0){
-		GDKerror("MT_init: winsock initialisation failed %d\n", 
-			WSAGetLastError());
-	}
-	if ( setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, 
-		(char*)&sockopt, sizeof(sockopt)) < 0){
-		GDKerror("MT_init: winsock set sockopt failed %d\n", 
-			WSAGetLastError());
-		WSACleanup();
-	}
 	MT_alloc_init();
 }
 
