@@ -138,7 +138,7 @@ AC_CHECK_HEADERS(fcntl.h limits.h unistd.h getopt.h malloc.h pwd.h dlfcn.h)
 AC_CHECK_HEADERS(time.h sys/time.h sys/utime.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
-AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h)
+AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h termios.h)
 AC_CHECK_HEADERS(ieeefp.h)
 AC_LANG_SAVE
 #AC_LANG_PUSH(C++)
@@ -226,6 +226,11 @@ if test $mn_cv_have__sys_siglist = yes; then
 	AC_DEFINE(HAVE__SYS_SIGLIST, 1, [Define if you have _sys_siglist])
 fi
 
+AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }]),
+AC_DEFINE(HAVE_RESTRICT, 1, [Define if the compiler supports the restrict keyword]),
+AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * __restrict__ p) { return *p; }]),
+AC_DEFINE(HAVE___RESTRICT__, 1, [Define if the compiler supports the __restrict__ keyword])))
+
 dnl Checks for library functions.
 AC_FUNC_ALLOCA()
 AC_FUNC_MMAP()
@@ -245,7 +250,7 @@ AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select times)
 AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf)
 AC_CHECK_FUNCS(mrand48 drand48)
 AC_CHECK_FUNCS(nanosleep lockf)
-AC_CHECK_FUNCS(ctime_r isinf fpclassify fpclass getlogin)
+AC_CHECK_FUNCS(ctime_r localtime_r isinf fpclassify fpclass getlogin)
 AC_CHECK_DECLS([strdup, strtof])
 ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)
