@@ -38,26 +38,19 @@ will even be the case for long 64-bit integers.
 
 The prototypical use of the enum facility runs as follows.
 The user starts with collecting the values of interest in 
-a persistent BAT.  Subsequently, the command 
-enum.encode(NME:str, B:bat[:void,:any]) adds a subtype
-to the MAL type table, which is large enough to hold
-the encoded value.
-It also returns a enum variable set to the maximum encoding value encountered.
-
-To enable the type checker to analyse programs upfront, 
-the MAL program should 'pre-define' existence of the type
-using the instruction 'atom NME:enum'.
-
-Furthermore, the enumerated types are considered ordinary BATs,
-whose scope is limited unless they are explicitly made persistent.
-Destroying an enumerated type removes its encoding bat and the
-information from the GDK atom library, but does not affect the
-MAL programs. This implies a runtime error as soon as you
-try to encode/decode a value.
+a (persistent) BAT.  
+Then the operation enum.encode(B)(Bn,E)
+creates an encoding table E large enough to hold the encoded value
+and maps the original BAT into its smaller representation Bn.
+Once an encoding table E is known, any BAT can be encoded using
+enum.encode(B,E)
+The original table B can be recovered using enum.decode(Bn,E), which
+actually performs join(Bn,E) and performs a check on missing encoding values.
 
 This module supports encodings using 'chr' (1-byte encoding),
 and 'sht' (2-byte encoding).
 
+[TODO implementation has to match the documentation]
 @mal
 atom enum:int;
 module enum;
