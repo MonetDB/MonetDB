@@ -23,7 +23,7 @@
 
 MTSAFE
 
-SUBDIR = HAVE_PHP?Cimpl
+SUBDIRS = HAVE_PHP?Cimpl
 
 EXTRA_DIST = MapiClient.php   Mapi.php 
 

@@ -21,14 +21,10 @@
 
 /* $Id$ */
 
-
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+
 #include "php_monetdb.h"
 
 #define MONETDB_PHP_VERSION "0.02"
@@ -142,15 +138,12 @@ static void _free_monetdb_link(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 static void _free_monetdb_handle(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 {
 	MapiHdl monet_handle = (MapiHdl)rsrc->ptr;
-    /* fprintf(stderr, "Freeing result\n"); */
 	mapi_close_handle(monet_handle);
 }
 /* }}} */
 
 /* {{{ PHP_INI
  */
-/* Remove comments and fill if you need to have entries in php.ini
-*/
 PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("monetdb.default_port",		"50000",		PHP_INI_ALL, OnUpdateInt,		default_port,		zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_language",	"mil",			PHP_INI_ALL, OnUpdateString,	default_language,	zend_monetdb_globals, monetdb_globals)
@@ -421,6 +414,7 @@ PHP_FUNCTION(monetdb_query)
 	phpMonetHandle *h ;
 	MapiHdl handle ;
 	char *query = NULL ;
+	char *error = NULL ;
 	
 	switch( ZEND_NUM_ARGS() ) {
 		case 1:
@@ -445,19 +439,30 @@ PHP_FUNCTION(monetdb_query)
 	convert_to_string_ex(z_query);
 	query = Z_STRVAL_PP(z_query);
 
-	/* fprintf(stderr, "Query: %s\n", query); */
-	handle = mapi_query(conn->mid, query);
-
-	if (mapi_error(conn->mid)) {
-		if (handle) 
-			mapi_close_handle(handle);
-		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, 
-			"Mapi Error #%d: %s", mapi_error(conn->mid), mapi_error_str(conn->mid));
+	if (!conn || !conn->mid) {
+		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection");
 		RETURN_FALSE ;
 	}
 
+	handle = mapi_new_handle(conn->mid);
+	if (!handle) {
+		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection");
+		RETURN_FALSE ;
+	}
+
+	mapi_query_handle(handle, query);
+
+	if ((error = mapi_result_error(handle)) != NULL) {
+		/* mapi_close_handle(handle); */
+		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, 
+			"MonetDB Error: %s", error);
+		RETURN_FALSE ;
+	}
+
+	mapi_fetch_all_rows(handle);
+
 	/* We need to cache all rows directly, otherwise things get confusing. This is a mapi bug/feature. */
-	mapi_fetch_all_rows(handle); 
+	/* mapi_fetch_all_rows(handle); */
 
 	/*~ printf("MON: successfull, handle=%p\n", handle); */
 	/*~ printf("MON: -- error=%d, \n%s \n", mapi_error(conn), mapi_error_str(conn)); */
@@ -528,6 +533,8 @@ PHP_FUNCTION(monetdb_next_result)
 {
 	zval **z_handle=NULL ;
 	MapiHdl handle;
+	int result = -1;
+	char *error = NULL;
 	
 	if ((ZEND_NUM_ARGS()!=1) || (zend_get_parameters_ex(1, &z_handle)==FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -538,12 +545,21 @@ PHP_FUNCTION(monetdb_next_result)
 
 	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
 	
-	Z_LVAL_P(return_value) = (int) mapi_next_result(handle);
+	result = (int) mapi_next_result(handle);
+
+	if ((error = mapi_result_error(handle)) != NULL) {
+		/* mapi_close_handle(handle); */
+		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, 
+			"MonetDB Error: %s", error);
+		RETURN_FALSE ;
+	}
+
+	Z_LVAL_P(return_value) = result;
 	Z_TYPE_P(return_value) = IS_LONG;
 }
 /* }}} */
 
-/* {{{ proto string monetdb_field_name(int index, resource handle)
+/* {{{ proto string monetdb_field_name(resource handle, int index)
    return a name of a specified field (column) */
 PHP_FUNCTION(monetdb_field_name)
 {
@@ -567,7 +583,7 @@ PHP_FUNCTION(monetdb_field_name)
 	/*~ printf("MON: _field_name: index=%d handle=%p\n", index, handle); */
 	
 	if (index >= mapi_get_field_count(handle)) {
-		php_error_docref("function.monetdb_field_name" TSRMLS_CC, E_ERROR, 
+		php_error_docref("function.monetdb_field_name" TSRMLS_CC, E_WARNING, 
 			"Accessing field number #%ld, which is out of range", index);
 		RETURN_FALSE ;
 	}
@@ -582,7 +598,7 @@ PHP_FUNCTION(monetdb_field_name)
 }
 /* }}} */
 
-/* {{{ proto string monetdb_field_type(int index, resource handle)
+/* {{{ proto string monetdb_field_type(resource handle, int index)
    return a type (as string) of a specified field (column) */
 PHP_FUNCTION(monetdb_field_type)
 {
@@ -606,7 +622,7 @@ PHP_FUNCTION(monetdb_field_type)
 	/*~ printf("MON: _field_type: index=%d handle=%p\n", index, handle); */
 	
 	if (index >= mapi_get_field_count(handle)) {
-		php_error_docref("function.monetdb_field_type" TSRMLS_CC, E_ERROR, 
+		php_error_docref("function.monetdb_field_type" TSRMLS_CC, E_WARNING,
 			"Accessing field number #%ld, which is out of range", index);
 		RETURN_FALSE ;
 	}

@@ -22,15 +22,21 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 MTSAFE
+# INCLUDES = ../../../../common ../../C $(PHP_INCS)
 
-INCLUDES = ../../../../common ../../C $(PHP_INCS)
+INCLUDES = -I../../C @PHP_INCS@
+X_CFLAGS = -DCOMPILE_DL_MONETDB=1 -D_BSD_SOURCE
 
-lib_MonetDB_php = {
+monetdb_la_LDFLAGS = -module
+
+lib_monetdb = {
+	PREFIX =
+	NAME = monetdb
 	SOURCES = php_monetdb.h php_monetdb.c
-	LIBS = ../../C/libMapi $(MAPI_LIBS) \
-	       ../../../../common/libmutils ../../../../common/libstream
+	LIBS = ../../C/libMapi $(MAPI_LIBS)
+	DIR = @PHP_EXTENSIONDIR@
 }
 
-scripts_php = {
-	SOURCES = monetdb.php
-}
+# scripts_php = {
+# 	SOURCES = monetdb.php
+# }
