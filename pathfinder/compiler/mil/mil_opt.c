@@ -25,6 +25,10 @@
  *
  * $Id$
  */
+
+/* always include "pathfinder.h", first! */
+#include "pathfinder.h"
+
 #include "mil_opt.h"
 #include <string.h>
 

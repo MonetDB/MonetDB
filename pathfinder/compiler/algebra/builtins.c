@@ -32,6 +32,9 @@
  * $Id$
  */
 
+/* always include "pathfinder.h", first! */
+#include "pathfinder.h"
+
 #include "builtins.h"
 
 
