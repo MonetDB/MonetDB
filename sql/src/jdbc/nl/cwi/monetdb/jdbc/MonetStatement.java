@@ -755,7 +755,7 @@ public class MonetStatement implements Statement {
 		 */
 		String getLine(int row) throws SQLException {
 			if (headers.size() == 0) throw
-				new SQLException("Cannot retrieve date before headers are retrieved!");
+				new SQLException("Cannot retrieve data before headers are retrieved!");
 
 			if (row >= tupleCount || row < 0) return null;
 			
