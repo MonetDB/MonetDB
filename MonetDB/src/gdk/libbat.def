@@ -409,3 +409,20 @@ EXPORTS
 	TMabort
 	TMresume
 	TMcntxt
+        GDKdbnameStr
+        GDKdbfarmStr
+        GDKdirStr
+        GDKdistrStr
+        GDKmonetrcStr
+        VALnew 
+        VALset 
+        VALempty
+        VALcopy 
+        VALformat
+        VALconvert     
+        VALclear
+        VALprint
+        VARfind
+        VARnew
+        VARpurge
+ 
