@@ -2374,7 +2374,8 @@ literal:
 		  $$ = _newAtomNode( atom_string(t,sql2str(_strdup(m->user))));
 		}
 
- |  sqlINT   	{ int digits = strlen($1), err = 0, len = sizeof(lng);
+ |  sqlINT   	
+		{ int digits = strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value; 
 		  sql_subtype *t = NULL;
 
@@ -2382,6 +2383,12 @@ literal:
 		  	t = sql_bind_subtype("int", digits, 0 );
 		  else 
 			err = 1;
+
+		  if (!err) {
+		  	lngFromStr($1, &len, &p);
+			if (value == lng_nil) 
+				err = 2;
+		  }
 
 		  if (err) {
 			char buf[BUFSIZ]; 
@@ -2391,7 +2398,6 @@ literal:
 			$$ = NULL;
 			YYABORT;
 		  } else {
-		  	lngFromStr($1, &len, &p);
 		  	$$ = _newAtomNode( atom_int(t, value)); 
 		  }
 		}
@@ -2644,7 +2650,8 @@ opt_else:
 		/* data types, more types to come */
 
 nonzero:
-	intval 	{ $$ = $1;
+	intval 	
+		{ $$ = $1;
 		  if ($$ <= 0) {
 			$$ = -1;
 			yyerror("Positive value greater than 0 expected");
@@ -2672,12 +2679,12 @@ data_type:
 				$$ = sql_bind_subtype("char", $4, 0); 
 			}
  |  TINYINT		{ $$ = sql_bind_subtype("int", 2, 0); }
- |  SMALLINT		{ $$ = sql_bind_subtype("int", 4, 0); }
- |  MEDIUMINT		{ $$ = sql_bind_subtype("int", 9, 0); }
+ |  SMALLINT	{ $$ = sql_bind_subtype("int", 4, 0); }
+ |  MEDIUMINT	{ $$ = sql_bind_subtype("int", 9, 0); }
  |  BIGINT		{ $$ = sql_bind_subtype("int", 19, 0); }
- |  sqlDECIMAL		{ $$ = sql_bind_subtype("decimal", 0, 0); }
+ |  sqlDECIMAL	{ $$ = sql_bind_subtype("decimal", 0, 0); }
  |  sqlDECIMAL '(' nonzero ')'	
-			{ $$ = sql_bind_subtype("decimal", $3, 0); }
+				{ $$ = sql_bind_subtype("decimal", $3, 0); }
  |  sqlDECIMAL '(' intval ',' intval ')' 
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ]; 
