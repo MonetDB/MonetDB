@@ -595,7 +595,7 @@ Memory Map the ASCII file for sequential access
 	    base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fileno(fp), 0);
 	  */
 	    fclose(fp);
-	    base = MT_mmap(argv[1], 0, MMAP_SEQUENTIAL, st.st_size, NULL);
+	    base = MT_mmap(argv[1], MMAP_SEQUENTIAL, 0, st.st_size, NULL);
  	}
 	if (base == (char*) -1) {
 	    fprintf(stderr, 
