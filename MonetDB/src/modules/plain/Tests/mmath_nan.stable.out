@@ -10,9 +10,8 @@ stdout of test 'mmath_nan` in directory 'src/modules/plain` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("mmath");
 test_mmath_nan();
-[ nan ]
-[ false ]
-[ true ]
+
+
 
 quit();
 

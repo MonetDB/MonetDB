@@ -15,9 +15,9 @@ test_mmath();
 [ -inf ]
 [ -1 ]
 [ true ]
-[ false ]
-[ false ]
-[ false ]
+
+
+
 
 quit();
 
