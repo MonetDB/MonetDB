@@ -544,9 +544,9 @@ signatures satisfying the pattern.
     {   str modnme, fcnname;
         Scope fsym;
         Symbol fs;
-        int i;
+        int i, lstng;
 
-        listing |= *b=='L'? LIST_MAL_ALL:LIST_MAL_INSTR;
+        lstng = listing | (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
         skipWord(b);
         if( *b!= 0){
             modnme=b;
@@ -561,7 +561,7 @@ signatures satisfying the pattern.
                 for(i=0;i<MAXSCOPE;i++){
                     fs= fsym->subscope[i];
                     while(fs != NULL){
-                        printFunction(out,fs->def,listing);
+                        printFunction(out,fs->def,lstng);
                         fs= fs->peer;
                     }
                 }
@@ -575,11 +575,11 @@ signatures satisfying the pattern.
                 continue;
             }
             /* display the overloaded symbol definition */
-            if( displayModule(out,fsym,fcnname,listing)==0){
+            if( displayModule(out,fsym,fcnname,lstng)==0){
                 stream_printf(out,"%sSymbol '%s.%s' not found\n",
                     "#mdb ",modnme,fcnname);
             } 
-        } else printFunction(out,mb,listing);
+        } else printFunction(out,mb,lstng);
         continue;
     }
     case 'r': /* reset program counter */
