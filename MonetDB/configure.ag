@@ -32,7 +32,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_TOP([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("MonetDB", 4.3.9)
+AM_INIT_AUTOMAKE("MonetDB", 4.3.11)
 AM_CONFIG_HEADER(config.h:conf/config.h.in)
 
 HOST=[$target]
