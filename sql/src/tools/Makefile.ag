@@ -19,7 +19,6 @@ smallTOC_SHARED_MODS =	\
 	-l_ascii_io	\
 	-l_bat_arith	\
 	-l_blob	\
-	-l_decimal	\
 	-l_enum	\
 	-l_mmath	\
 	-l_monettime	\
