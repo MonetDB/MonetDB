@@ -656,7 +656,7 @@ del_mem(BAT *b, mem_t mem)
 				if(mtrace > 1) GDKmprint(&idx);
 			} else {
 				BUNdelete(b,p);
-				// BUNinplace(b,p,&mem,&idx);
+				/* BUNinplace(b,p,&mem,&idx); */
 			}
 			return;
 		}

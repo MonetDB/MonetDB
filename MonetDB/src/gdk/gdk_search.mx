@@ -536,7 +536,7 @@ binary search trees later on.
 @= idxhistoloop
 	BATloopFast(b, p, q, i) {
 		BUN r = SORTfnd_@1(histo, BUNh@2(b,p));
-		if (!r) { cur = -1; break; }
+		if (!r) { cur = ~(size_t)0 /*(size_t)(-1)*/; break; }
 		j = BUNindex(histo, r) - off;
 		*base[j] = p; base[j]++;
 	} break;

@@ -361,7 +361,7 @@ size_t create_dumpformat( ascii *as, BAT *names, BAT *seps, BAT *bats ){
 		BAT *b = (BAT*)BATdescriptor(*(bat*)bun_tail(bats, p));
 
 		if (!b) 
-			return -1;
+			return ~(size_t)0; /* (size_t)(-1) */
 		fmt[p].name = NULL;
 		if (names)
 			fmt[p].name = (char*)bun_tail(names, p);
