@@ -1,3 +1,0 @@
-
-SUBDIRS = common client server HAVE_ODBC?odbc LINK_STATIC?tools
-

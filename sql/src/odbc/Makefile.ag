@@ -1,5 +1,0 @@
-
-EXTRA_DIST_DIR = include
-
-SUBDIRS = setup driver
-
