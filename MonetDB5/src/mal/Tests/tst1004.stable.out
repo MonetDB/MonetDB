@@ -81,7 +81,7 @@ end main;	# 26
 # bbp	objects		  # name
 # int	str		  # type
 #-------------------------#
-[ 4,	  "myfirstbat"	  ]
+[ 13,	  "myfirstbat"	  ]
 [ "got myfirstbat?" ]
 #-----------------#
 # h	tmp_4	  # name
@@ -95,8 +95,18 @@ end main;	# 26
 [ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_unicode_case"	  ]
 [ 3,	  "timezones"		  ]
-[ 4,	  "tmp_4"		  ]
-[ 5,	  "tmp_5"		  ]
+[ 4,	  "stat_id_inuse"	  ]
+[ 5,	  "stat_id_nme"		  ]
+[ 6,	  "stat_id_expire"	  ]
+[ 7,	  "stat_id_stamp"	  ]
+[ 8,	  "stat_id_count"	  ]
+[ 9,	  "stat_id_size"	  ]
+[ 10,	  "stat_id_min_lng"	  ]
+[ 11,	  "stat_id_max_lng"	  ]
+[ 12,	  "stat_id_histogram"	  ]
+[ 13,	  "tmp_13"		  ]
+[ 14,	  "tmp_14"		  ]
+#
 
 # 07:58:53 >  
 # 07:58:53 >  Done.

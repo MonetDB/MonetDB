@@ -24,7 +24,7 @@ command Admin.lookup(nme:str):bat[:str,:str] address CMDlookup;	# 0  (lookup:bat
 #   return sample:=true;
 #end sample;
 function Admin.sample(nme:str,val:any):bit;	# 0  (sample:bit)<-(nme:str)(val:any)
-    b := Admin.lookup(nme);	# 1  unknown (b:bat[:str,:str])<-(nme:str)
+    b := Admin.lookup(nme);	# 1  (b:bat[:str,:str])<-(nme:str)
     h := algebra.select(b,val,val);	# 2 ALGselect (h:bat[:str,:str])<-(b:bat[:str,:str])(val:any)(val:any)
     t := algebra.count(h);	# 3 ALGcount_bat (t:lng)<-(h:bat[:str,:str])
     x := io.print(t);	# 4 IOprint_val (x:int)<-(t:lng)
@@ -36,7 +36,7 @@ end sample;	# 7
 #
 !ERROR: 'Admin.sample' undefined in Admin.main[1]
 function Admin.main():int;	# 0  (main:int)
-    Admin.sample("hello","world");	# 1  ($1:bit)<-($2:str)($3:str)
+    Admin.sample("hello","world");	# 1  unknown ($1:bit)<-($2:str)($3:str)
     Admin.sample("hello",1);	# 2  ($4:bit)<-($2:str)($5:int)
 end main;	# 3  
 

@@ -62,7 +62,7 @@ end main;	# 16
 [ 4,	  16	  ]
 [ 9,	  81	  ]
 # idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name
-[   0   4, L, -1 -2147483648, 2147483647, 1, 10, -1, -1, -1 ]
+[   0  13, L, -1 -2147483648, 2147483647, 1, 10, -1, -1, -1 ]
  #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type

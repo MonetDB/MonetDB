@@ -43,7 +43,17 @@ end main;	# 8
 [ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_unicode_case"	  ]
 [ 3,	  "timezones"		  ]
-[ 4,	  "mybat"		  ]
+[ 4,	  "stat_id_inuse"	  ]
+[ 5,	  "stat_id_nme"		  ]
+[ 6,	  "stat_id_expire"	  ]
+[ 7,	  "stat_id_stamp"	  ]
+[ 8,	  "stat_id_count"	  ]
+[ 9,	  "stat_id_size"	  ]
+[ 10,	  "stat_id_min_lng"	  ]
+[ 11,	  "stat_id_max_lng"	  ]
+[ 12,	  "stat_id_histogram"	  ]
+[ 13,	  "mybat"		  ]
+#
 
 # 07:58:52 >  
 # 07:58:52 >  Done.

@@ -50,11 +50,12 @@ end main;	# 5
 [ 19,	  "timestamp",	  "lng",	  8	  ]
 [ 20,	  "tzone",	  "lng",	  8	  ]
 [ 21,	  "rule",	  "int",	  4	  ]
-[ 22,	  "mapentry",	  "mapentry",	  16	  ]
-[ 23,	  "idxentry",	  "idxentry",	  8	  ]
-[ 24,	  "stream",	  "int",	  4	  ]
-[ 25,	  "bstream",	  "int",	  4	  ]
-[ 26,	  "enum",	  "int",	  4	  ]
+[ 22,	  "pcre",	  "int",	  4	  ]
+[ 23,	  "mapentry",	  "mapentry",	  16	  ]
+[ 24,	  "idxentry",	  "idxentry",	  8	  ]
+[ 25,	  "stream",	  "int",	  4	  ]
+[ 26,	  "bstream",	  "int",	  4	  ]
+[ 27,	  "enum",	  "int",	  4	  ]
 #
 
 # 22:47:41 >  

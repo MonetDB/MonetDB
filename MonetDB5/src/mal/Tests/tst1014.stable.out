@@ -79,7 +79,7 @@ end main;	# 9
 # bbp	objects		  # name
 # int	str		  # type
 #-------------------------#
-[ 5,	  "myfirstbat"	  ]
+[ 14,	  "myfirstbat"	  ]
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type

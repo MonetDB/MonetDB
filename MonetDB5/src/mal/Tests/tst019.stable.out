@@ -75,7 +75,7 @@ end welcome3;	# 3
 #end welcome4;
 function Admin.welcome4(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
     i := 2;	# 1  (i:int)<-($4:int)
-    return (w,i):= "hello";	# 2  (w:str)(i:int)<-($5:str)
+    return (w,i):= "hello";	# 2  unknown (w:str)(i:int)<-($5:str)
 end welcome4;	# 3  
 !ERROR: Multiple assignment mismatch
 !WARNING: garbage collection not guaranteed

@@ -20,7 +20,7 @@ stdout of test 'tst755` in directory 'src/mal` itself:
 #	print(k);
 #end test;
 function Admin.test(b:bat[:any$1,:any$2],c:any$2):void;	# 0  (test:void)<-(b:bat[:any$1,:any$2])(c:any$2)
-    k := +(1,"wrong");	# 1  unknown (k:any)<-($4:int)($5:str)
+    k := +(1,"wrong");	# 1  (k:any)<-($4:int)($5:str)
     io.print(k);	# 2 IOprint_val ($6:int)<-(k:any)
 end test;	# 3  
 #
@@ -36,7 +36,7 @@ end test;	# 3
 !ERROR: 'Admin.test' undefined in Admin.main[2]
 function Admin.main():int;	# 0  (main:int)
     c := bbp.new(:int,:str);	# 1 CMDBATnew (c:bat[:int,:str])<-($2:int)($3:str)
-    Admin.test(c,"hello");	# 2  ($4:void)<-(c:bat[:int,:str])($5:str)
+    Admin.test(c,"hello");	# 2  unknown ($4:void)<-(c:bat[:int,:str])($5:str)
 end main;	# 3  
 
 # 08:01:30 >  
