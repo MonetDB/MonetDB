@@ -620,7 +620,7 @@ def msc_includes(fd, var, values, msc):
             incs = incs + " " + string.replace(i, '/', '\\')
         else:
             incs = incs + " -I" + msc_translate_dir(i,msc) \
-                   + msc_add_srcdir(i,msc," -I");
+                   + msc_add_srcdir(i,msc," -I")
     fd.write("INCLUDES = " + incs + "\n")
 
 def msc_jar(fd, var, values, msc):

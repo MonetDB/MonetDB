@@ -66,32 +66,32 @@ def cond_subdir(fd, dir, i):
     return res
 
 def am_sort_libs( libs, tree ):
-	res = []
-	for lib in libs:
-		after = -1;
-		# does lib depend on a other library 
-		if tree.has_key('lib_'+ lib):
-			v = tree['lib_'+lib]
-			if (v.has_key("LIBS")):
-				for l in v['LIBS']: 
-					if (len(l) > 3):
-						l = l[3:]; # strip lib prefix
-					if l in res:
-						pos = res.index(l);
-						if (pos > after):
-							after = pos 
-		elif tree.has_key( 'LIBS' ):
-			v = tree['LIBS']
-			if (v.has_key(lib[1:] + "_DLIBS")):
-				for l in v[lib[1:] + '_DLIBS']: 
-					if (len(l) > 3):
-						l = l[3:]; # strip lib prefix
-					if l in res:
-						pos = res.index(l);
-						if (pos > after):
-							after = pos 
-		res.insert(after+1,lib)
-	return res;
+    res = []
+    for lib in libs:
+        after = -1
+        # does lib depend on a other library 
+        if tree.has_key('lib_'+ lib):
+            v = tree['lib_'+lib]
+            if (v.has_key("LIBS")):
+                for l in v['LIBS']: 
+                    if (len(l) > 3):
+                        l = l[3:] # strip lib prefix
+                    if l in res:
+                        pos = res.index(l)
+                        if (pos > after):
+                            after = pos 
+        elif tree.has_key( 'LIBS' ):
+            v = tree['LIBS']
+            if (v.has_key(lib[1:] + "_DLIBS")):
+                for l in v[lib[1:] + '_DLIBS']: 
+                    if (len(l) > 3):
+                        l = l[3:] # strip lib prefix
+                    if l in res:
+                        pos = res.index(l)
+                        if (pos > after):
+                            after = pos 
+        res.insert(after+1,lib)
+    return res
 
 def am_subdirs(fd, var, values, am ):
     dirs = []
@@ -632,7 +632,7 @@ def am_includes(fd, var, values, am):
             incs = incs + " " + i
         else:
             incs = incs + " -I" + am_translate_dir(i,am) \
-                   + am_add_srcdir(i,am," -I");
+                   + am_add_srcdir(i,am," -I")
     fd.write("INCLUDES = " + incs + "\n")
 
 output_funcs = { 'SUBDIRS': am_subdirs,
@@ -653,7 +653,7 @@ output_funcs = { 'SUBDIRS': am_subdirs,
                  'smallTOC_SHARED_MODS' : am_mods_to_libs,
                  'largeTOC_SHARED_MODS' : am_mods_to_libs,
                  'HEADERS' : am_headers,
-		 'JAR' : am_jar,
+                 'JAR' : am_jar,
                 }
 
 def output(tree, cwd, topdir, automake):
@@ -732,7 +732,7 @@ CXXEXT = \\\"cc\\\"
           am_list2string(am['EXTRA_DIST']," ",""))
 
     if (len(am['LIBS']) > 0):
-	libs = am_sort_libs( am['LIBS'], tree);
+        libs = am_sort_libs( am['LIBS'], tree)
         fd.write("%s_LTLIBRARIES =%s\n" % \
                     (am['LIBDIR'], am_list2string(libs," lib",".la")))
         for i in libs:

@@ -48,7 +48,7 @@ class server:
         try:
             idx = string.find( self.buffer, "\1" )
             if (trace>1):
-                self.buffer;
+                self.buffer
             str = ""
             while (idx < 0):
                 if (trace>1):
@@ -91,7 +91,7 @@ class server:
     def disconnect( self ):
         self.result = self.cmd_intern( 'quit;\n' )
         self.socket.close()
-        self.socket = 0;
+        self.socket = 0
 
     def cmd( self, cmd ):
         self.cmd_intern(cmd)
@@ -99,7 +99,7 @@ class server:
 
 
 if __name__ == '__main__':
-    import fileinput;
+    import fileinput
 
     s = server( "localhost" , 50000, environ['USER'])
     fi = fileinput.FileInput()
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     line= fi.readline()
     while( line != "quit;\n" ):
         res = s.cmd( line )
-        print(res);
+        print(res)
         sys.stdout.write( s.prompt )
         line = fi.readline()
     s.disconnect()

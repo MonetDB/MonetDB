@@ -37,7 +37,7 @@ n = 195
 STDOUT.write("\n# %d Mapi-Client connections\n\n" % n)
 STDERR.write("\n# %d Mapi-Client connections\n\n" % n)
 
-i=0;
+i=0
 while i < n:
     i = i + 1
     STDOUT.write("%d:\n" % i)

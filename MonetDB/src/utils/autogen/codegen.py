@@ -277,7 +277,7 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
                 nvals.append(i)
             else:
                 inc = os.path.normpath(os.path.join(cwd,i))
-                mlen = 0;
+                mlen = 0
                 subsrc = ''
                 subins = ''
                 for src,install in incdirsmap:
@@ -560,8 +560,8 @@ def codegen(tree, cwd, topdir, incdirsmap):
                     d = libs[lib]
                     if not v.has_key('LIBS'):
                         v['LIBS'] = []
-		    if (d not in v['LIBS']):
-                    	v['LIBS'].extend(d)
+                    if (d not in v['LIBS']):
+                        v['LIBS'].extend(d)
             elif i == "LIBS":
                 for l,d in libs.items():
                     n,dummy = string.split(l,"_",1)

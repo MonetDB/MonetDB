@@ -829,7 +829,7 @@ def RunTest(env, TST, BusyPorts) :
     os.chdir(TSTSRCDIR)
 
     TX = 0
-    EXT = "" ; CALL = "" ; SERVER = ""
+    EXT = CALL = SERVER = ""
     x  = isexecutable(TST)
     xS = isexecutable(TST+".SQL")
     xM = isexecutable(TST+".MAPI")
@@ -871,7 +871,7 @@ def RunTest(env, TST, BusyPorts) :
         #elif [ -f "${TST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+TST+" "+EXT
         #elif [ -f "$TST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+TST+" "+EXT
     else:
-        EXT = ""      ; CALL = ""  ; SERVER = ""
+        EXT = CALL = SERVER = ""
         if os.name == "nt":
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|milM|milS|milC)`")
             #TODO:

@@ -56,7 +56,7 @@ sys.stdout.write( s.prompt )
 line= fi.readline()
 while( line != "quit;\n" ):
     res = s.cmd( line )
-    print(res);
+    print(res)
     sys.stdout.write( s.prompt )
     line = fi.readline()
 

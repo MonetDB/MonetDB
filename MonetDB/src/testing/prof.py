@@ -176,7 +176,7 @@ def prof(input_fil_name, commands_fil_name = None):
                     if close_brac == 1 :
                         with_semicolon = prev_with_semicolon
                         close_brac = 0
-                    commands_fil.seek(0);
+                    commands_fil.seek(0)
                     command_no = 0
                     prev_line2 = ''
                     multiple = 0
@@ -235,7 +235,7 @@ def prof(input_fil_name, commands_fil_name = None):
     # The output file prof_... has the original file with the mprof tags at
     # the appropriate places. These mprof tags help us in measuring the system
     # performances like page faults, time taken etc for the SQL commands.
-    fin_fil.close();
+    fin_fil.close()
 
 if __name__ == '__main__' or sys.argv[0] == __name__:
     if not (2 <= len(sys.argv) <= 3):
