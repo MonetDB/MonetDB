@@ -443,11 +443,6 @@ It should be explicitly set afterwards.
 # include <sys/times.h>
 #endif
 
-#if OSVER < 560 && defined(SOLARIS)
-#include "/usr/ucbinclude/sys/rusage.h"
-#include "/usr/ucbinclude/sys/resource.h"
-#endif
-
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif
