@@ -292,7 +292,7 @@ def am_scripts(fd, var, scripts, am):
 	if scripts.has_key('COND'):
             condname = scripts['COND']
             fd.write("C_%s = \n" % (script))
-            fd.write("ifdef $(%s)\n" % (condname))
+            fd.write("if $(%s)\n" % (condname))
             fd.write("	C_%s = %s\n" % (script,script))
             fd.write("endif\n")
             cond = '#' + string.join(scripts['COND'], '+')
@@ -593,7 +593,7 @@ def am_library(fd, var, libmap, am):
         condname = string.join(libmap['COND'], '+')
         cond = '#' + condname
         fd.write("C_%s = \n" % (libname))
-        fd.write("ifdef $(%s)\n" % (condname))
+        fd.write("if $(%s)\n" % (condname))
         fd.write("	C_%s = %s\n" % (libname,libname))
         fd.write("endif\n")
 	cname = "$(C_" + cname + ")"
