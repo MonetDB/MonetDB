@@ -26,9 +26,9 @@ standard input/output.
 
 @+ Manual Page
 @T
-The Mserver is a multithreaded program. There is one system thread, and for
-each user (system administrater included) there is one worker thread.
-As a default, the Mserver also starts the internet listener thread,
+The Mserver is a multi-threaded program. There is one system thread, and for
+each user (system administrator included) there is one worker thread.
+As a default, the Mserver also starts the network listener thread,
 on the port number specified in the parameter file.
 
 @- Usage
@@ -142,7 +142,7 @@ The server is stopped by cntrl-D or the quit command.
 @
 
 @-
-Braindamaged Sun engineers decided to use malloc for allocating an enormous
+Brain-damaged Sun engineers decided to use malloc for allocating an enormous
 buffer of 20 bytes in the sunos2.5.5.X thread library, making the tunable 
 malloc library totally unusable, since it requires you to do advice before any 
 use of malloc().  We hack around it, by using realloc(0,size) in 
@@ -240,9 +240,13 @@ static Client Monet_init( opt *set, int setlen )
 		GDK_mem_bigsize = strtol(p,NULL,10);
 	if ((p=GDKgetenv("gdk_vm_minsize")) )
 		GDK_vm_minsize = strtol(p,NULL,10);
+	if (GDKgetenv_isyes("gdk_embedded")){	
+		GDKembedded = 1;
+		monet_daemon = 1;
+	}
 
 	if (GDKgetenv_isyes("monet_daemon")){	
-		monet_daemon=1;
+		monet_daemon = 1;
 	}
 
 	return monet_init();

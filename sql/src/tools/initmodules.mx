@@ -47,9 +47,9 @@ void static_module_init(void);
 @c
 #include "gdk.h"
 #include "monet.h"
+#include "initmodules.h"
 
-void
-static_module_init(void)
+void static_module_init(void)
 {
 @include static_modules.mx
 }
