@@ -101,7 +101,7 @@ typedef struct SCOPEDEF {
 mal_export Scope	mal_scope;	/* the start of the module list */
 
 mal_export Scope 	newScope(Scope scope, str nme);
-mal_export Scope	fixateScope(Scope scope, str nme);
+mal_export Scope	fixateScope(Scope scope, str nme, int len);
 mal_export void         freeScope(Scope cur);
 mal_export void         freeScopeList(Scope cur);
 mal_export void		insertSymbol(Scope scope, Symbol prg);
@@ -172,14 +172,27 @@ Scope newScope(Scope scope, str nme){
 	return cur;
 }
 @-
+The scope can be fixed using a length delimited string. 
+This is used by the parser to avoid creation of
+a string structure when possible. Subsequently we can
+replace the modname in the instructions to become a pointer
+to the scope directly.
 Reading a module often calls for opening a scope level
 if it didn't exist.
 @c
-Scope fixateScope(Scope scope, str nme){
-	Scope cur;
-	cur = findScope(scope,nme);
-	if( cur!= NULL) return cur;
-	return newScope(scope, GDKstrdup(nme));
+Scope fixateScope(Scope scope, str nme, int len){
+	Scope s= scope;
+	if( nme == NULL) return scope;
+	if( s->name != NULL) {
+		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]) 
+			s= scopeJump[(int)(*nme)][(int)(*(nme+1))];
+		while(s != NULL){
+			if( strncmp(nme,s->name,len)== 0 )
+				return s;
+			s= s->outer;
+		}
+	}
+	return newScope(scope, GDKstrndup(nme,len));
 }
 @-
 The freeScope operation throws away a symbol without
@@ -252,7 +265,7 @@ void insertSymbol(Scope scope, Symbol prg){
 
 
 @+ Searching the scope structure.
-Finding a scope is unrestricted. for modules we explicitly look for
+Finding a scope is unrestricted. For modules we explicitly look for
 the start of a new module scope.
 @c
 Scope findScope(Scope scope, str name){

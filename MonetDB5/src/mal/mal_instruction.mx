@@ -184,7 +184,7 @@ The exception handling keywords are: {\tt catch} and {\tt raise}
 The {\tt catch}  marks a point in the dataflow where
 an exception raised can be dealt with. Any statement between the
 point where it is raised and the catch block is ignored.
-Moreover, the {\tt catch} {\tt done} block is ignored when
+Moreover, the {\tt catch} ... {\tt done} block is ignored when
 no errors have occurred in the preceeding dataflow structure.
 
 Exceptions are linked with the variables that receive it
@@ -209,6 +209,11 @@ The snippet below illustrates how an exception raised
 in the function X is catched using the receiving variable Y.
 
 \begin{verbatim}
+    V:= io.read("password:");
+    ...
+catch V;
+    print("input error");
+done;
 \end{verbatim}
 
 An exception can be raised explicitly at any time
@@ -228,8 +233,8 @@ The interprocess communication keywords are:
 {\tt return}
 
 @+ Block descriptor
-The datastructures to represent a MAL block is kept simple.
-Each descriptor represents a sequence of MAL statements 
+The datastructure to represent a MAL block is kept simple.
+Each descriptor carries a sequence of MAL statements 
 and a local symbol table.
 
 The constants are stored in the symbol table.
@@ -432,6 +437,7 @@ for separate name space management.
 #define setModuleId(P,S)	(P)->modname= S
 #define moduleName(P)		(P)->modname
 #define freeModuleName(P)	{ GDKfree((P)->modname); (P)->modname=0;}
+
 #define functionId(P)		(P)->fcnname
 #define setFunctionId(P,S)	(P)->fcnname= S
 #define functionName(P)		(P)->fcnname

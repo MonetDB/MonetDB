@@ -545,7 +545,7 @@ Atom storage may be defined in terms of an existing type.
 	}
 	if( findScope(cntxt->nspace,modnme) != NULL)
 		cntxt->curprg->def->errors  = FATALINPUT;
-	else	cntxt->nspace = fixateScope(cntxt->nspace, modnme);
+	else	cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
 	if( atomary) cntxt->nspace->isAtomModule = TRUE;
 	GDKfree(modnme);
 	@:typeInfo@
@@ -1294,9 +1294,9 @@ startFCNcall:
 		cntxt->nxt=v;
 		}
 
-		arg= idCopy(cntxt,l);
 		/* continue with parseing a function/operator call */
-		if( currChar(cntxt) == '.'){
+		if( cntxt->nxt[l] == '.'){
+			arg= idCopy(cntxt,l);
 			nextChar(cntxt);
 			skipSpace(cntxt);
 			setModuleId(curInstr, arg);
@@ -1315,12 +1315,13 @@ startFCNcall:
 				return;
 			}
 			skipSpace(cntxt);
-		} else if(currChar(cntxt) != '(')
+		} else if( cntxt->nxt[l] != '(')
 		{
 			parseError(cntxt,"'(' expected\n");
 			pushInstruction(curBlk,curInstr);
 			return;
 		} else { 
+			arg= idCopy(cntxt,l);
 			nextChar(cntxt); skipSpace(cntxt);
 			setFunctionId(curInstr, arg);
 		}
