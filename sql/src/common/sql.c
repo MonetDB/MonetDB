@@ -1419,7 +1419,6 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 	} break;
 	case SQL_EXISTS: 
 	case SQL_NOT_EXISTS: {
-		/* NOT still broken */
 		symbol *lo = sc->data.sym;
 		statement *ls = subquery(sql, scp, lo );
 
@@ -1430,8 +1429,9 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 		       	return NULL;
 		}
 		if (list_length(ls->op1.lval) == 1){
+			/* NOT still broken */
 			return statement_reverse(ls->op1.lval->h->data.stval); 
-		} else {
+		} else if (sc->token == SQL_EXISTS) {
 			node *o = ls->op1.lval->h->next; /* skip first */
 			statement *sd, *j = statement_reverse( o->data.stval );
 
@@ -1446,6 +1446,37 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 				list_append_statement( sd->op1.lval,
 				  statement_join( j, o->data.stval, 
 			      		cmp_equal ) ); 
+			}
+			return sd;
+		} else { /* not exists */
+		  	type *t = cat_bind_type( sql->cat, "INTEGER");
+			statement *a = statement_atom( atom_int(t, 0));
+			node *o = ls->op1.lval->h->next; /* skip first */
+			statement *sd, *j, *jr;
+
+			j = statement_const(
+				statement_diff( basecolumn(o->data.stval),
+				statement_reverse( o->data.stval )), a);
+
+			o = o->next;
+			if (!o)
+			    return j;
+
+			jr = statement_const(
+				statement_diff( basecolumn(o->data.stval),
+				statement_reverse( o->data.stval )), a);
+			sd = statement_diamond( 
+				 statement_join( j, 
+					statement_reverse(jr), cmp_equal )); 
+			o = o->next;
+			for( ; o; o = o->next ){
+				jr = statement_const(
+				  statement_diff( basecolumn(o->data.stval),
+				  statement_reverse( o->data.stval )), a);
+
+				list_append_statement( sd->op1.lval,
+				  statement_join( j, 
+					statement_reverse(jr), cmp_equal )); 
 			}
 			return sd;
 		}

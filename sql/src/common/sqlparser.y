@@ -1135,9 +1135,9 @@ string_funcs:
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, _symbol_create_atom(
-					SQL_ATOM, atom_int(t, $5)));
+					SQL_ATOM, atom_int(t, $5 -1 )));
   		  		  dlist_append_symbol(l, _symbol_create_atom(
-					SQL_ATOM, atom_int(t, $7)));
+					SQL_ATOM, atom_int(t, $7 )));
 		  		  $$ = _symbol_create_list( SQL_TRIOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
