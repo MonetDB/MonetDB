@@ -166,6 +166,7 @@ static int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 {
 	int idx;
+	InstrPtr q;
 	ValPtr vr = (ValPtr) &a->data;
 	char *val;
 
@@ -176,8 +177,12 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 		val[strlen(val) - 1] = 0;
 		idx = newConstant(mb, vr->vtype, _strdup(val + 1), 1);
 		GDKfree(val);
-	} else
+	} else {
 		idx = newConstant(mb, vr->vtype, _strdup(val), 1);
+		q = newStmt(mb, "calc", a->tpe->type->base.name ); 
+		q = pushArgument(mb, q, idx);
+		idx = getDestVar(q);
+	}
 	return idx;
 }
 
