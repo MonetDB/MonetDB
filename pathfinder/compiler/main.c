@@ -697,7 +697,7 @@ main (int argc, char *argv[])
         }
     }
 
-    if (hidden_setjmp(PFexitPoint) != 0 ) {
+    if (hidden_setjmp() != 0 ) {
         goto failure;
     }
 
