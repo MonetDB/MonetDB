@@ -658,7 +658,9 @@ static BAT* batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap) {
 		/* below range checking do not support empty bats. so treat them separately (easy) */
                 bn = BATnew(l->htype, l->htype?r->ttype:ATOMtype(r->ttype), 0); 
 		bn->hdense = bn->tdense = TRUE;
-		bn->hsorted = bn->tsorted = TRUE;
+		bn->hsorted = bn->tsorted = GDK_SORTED;
+		BATkey(bn, TRUE);
+		BATkey(BATmirror(bn), TRUE);
 		BATseqbase(bn, l->hseqbase);
                 return bn;
 	} else if (BATtordered(l)&1) {
