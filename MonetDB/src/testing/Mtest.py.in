@@ -40,7 +40,6 @@ except NameError:
 
 import os
 import sys
-import getopt
 import fileinput
 import popen2
 import shutil
@@ -1483,8 +1482,8 @@ def RunTest(env, TST, BusyPorts, COND) :
             SetExecEnv(env['exe'],0)
         CTIMEOUT = 0
         if   CALL in ["other", "python"]:
-	    if TIMEOUT > 0:
-            	CTIMEOUT = CTIMEOUT + 60
+            if TIMEOUT > 0:
+                CTIMEOUT = CTIMEOUT + 60
             for l in fileinput.input(TST+EXT):
                 TOm = test.match(l)
                 if TOm:
@@ -1611,7 +1610,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                 STDOUT.write("\n%s : Killed!\n" % TST)
             else:
                 STDOUT.write("(Killed!) ")
-		
+
         if not quiet:
             STDOUT.write("\n")
 
@@ -1847,7 +1846,7 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
         pOut,pIn,pErr = popen2.popen3(cmd)
 
     if OS == "IRIX" or OS == "IRIX64":
-    	time.sleep(1)
+        time.sleep(1)
 
     pIn.write(TestIn)
     try:
@@ -1931,13 +1930,13 @@ def mapi_ping(port) :
     wait = 1
     host = 'localhost'
     while (retry < 3):
-	retry += 1
-    	try:
-            	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            	sock.connect((host, port))
-		r = sock.makefile('r').readline();
-		sock.makefile('w').write("ping\n");
-		return True
+        retry += 1
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((host, port))
+            r = sock.makefile('r').readline();
+            sock.makefile('w').write("ping\n");
+            return True
         except socket.error, (Serrno,Serrstr):
             pass
         time.sleep(wait)
@@ -2021,9 +2020,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if ln[:6] != 'Ready.':
             ServerReady = False
 
-	if ServerReady:
-    	    port = int(env[SERVER+'PORT'])
-	    ServerReady = mapi_ping(port)
+        if ServerReady:
+            port = int(env[SERVER+'PORT'])
+            ServerReady = mapi_ping(port)
 
     else:
         ClntOutFile = TestOutFile
@@ -2188,7 +2187,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     if TestErr is not None:
         TestErr.write(Prompt('Done.'))
         TestErr.close()
-			
+
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
 
 def Check(command, input) :
@@ -2582,7 +2581,7 @@ def main(argv) :
             env[v] = a
 
     quiet = par['QUIET']
-	
+
     # display par's
     STDERR.flush()
     if not quiet:
@@ -2658,7 +2657,7 @@ def main(argv) :
     for p in 'TSTSRCBASE', 'TSTBLDBASE', 'TSTTRGBASE':
         if os.path.isdir(env[p]):
             os.chdir(env[p])
-            if (os.getcwd() != env[p]):
+            if os.getcwd() != env[p]:
                 Warn(p+": Replacing logical path  "+env[p]+
                      "  by absolute physical path  "+os.getcwd())
                 env[p] = os.getcwd()

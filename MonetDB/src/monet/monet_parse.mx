@@ -54,58 +54,86 @@ C	[!<>]
  */
 #define YYLMAX 100000
 
-#if (!defined(FLEX_SCANNER))
+#ifndef FLEX_SCANNER
 extern YYSTREE yylval;
 #endif
 #define YY_NEVER_INTERACTIVE	1 /* workaround to flex bug */
 #define YY_USE_PROTOS		/* make sure ANSI-C prototyes are used */
 
 char *lexname[] = {
- "TOK_ITERTEMP", "TOK_TEMPLATE", "TOK_VARTEMP", "TOK_RANGETEMP",
- "TOK_CONSTANT", "TOK_ASSIGNMENT", "TOK_SEQBLOCK", "TOK_SEQ", "TOK_PARBLOCK",
- "TOK_PAREND", "TOK_IDENT", "TOK_IF", "TOK_WHILE", "TOK_ITERATOR",
- "TOK_ITCOMPILED", "TOK_BREAK", "TOK_RETURN", "TOK_VAR", "TOK_ATOM",
- "TOK_CONST", "TOK_BUILTIN", "TOK_CAST", "TOK_BATCAST", "TOK_BATCONV",
- "TOK_TRG", "TOK_FUNCTION", "TOK_PROC", "TOK_COMPILED", "TOK_COMMAND",
- "TOK_OPERATOR0", "TOK_OPERATOR", "TOK_OPERATOR1",
- "TOK_SETOP", "TOK_ASSIGNOP", "TOK_SETAGGR", "TOK_PROCDEF",
- "TOK_STRING", "TOK_OBJECT", "TOK_ITERATION", "TOK_ELSE", "TOK_BAT",
- "TOK_TRGDEF", "TOK_ON", "TOK_MODULE", "TOK_DROP", "TOK_EVENT",
- "TOK_ANY", "TOK_UNDEF", "TOK_DEREF", "TOK_ANYNUM", 0, };
+	"TOK_ITERTEMP", "TOK_TEMPLATE", "TOK_VARTEMP", "TOK_RANGETEMP",
+	"TOK_CONSTANT", "TOK_ASSIGNMENT", "TOK_SEQBLOCK", "TOK_SEQ",
+	"TOK_PARBLOCK", "TOK_PAREND", "TOK_IDENT", "TOK_IF", "TOK_WHILE",
+	"TOK_ITERATOR", "TOK_ITCOMPILED", "TOK_BREAK", "TOK_RETURN",
+	"TOK_VAR", "TOK_ATOM", "TOK_CONST", "TOK_BUILTIN", "TOK_CAST",
+	"TOK_BATCAST", "TOK_BATCONV", "TOK_TRG", "TOK_FUNCTION", "TOK_PROC",
+	"TOK_COMPILED", "TOK_COMMAND", "TOK_OPERATOR0", "TOK_OPERATOR",
+	"TOK_OPERATOR1", "TOK_SETOP", "TOK_ASSIGNOP", "TOK_SETAGGR",
+	"TOK_PROCDEF", "TOK_STRING", "TOK_OBJECT", "TOK_ITERATION",
+	"TOK_ELSE", "TOK_BAT", "TOK_TRGDEF", "TOK_ON", "TOK_MODULE",
+	"TOK_DROP", "TOK_EVENT", "TOK_ANY", "TOK_UNDEF", "TOK_DEREF",
+	"TOK_ANYNUM", 0,
+};
 
-char *LEXNAME(int Y)	   { if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
-				return lexname[Y-TOK_ITERTEMP];
-			     } else {
-				return "char";
-			   } }
-#define RETURN(Y)	{ ll_lastval = Y;\
-			  PARSEDEBUG {\
-				THRprintf(GDKerr, "%s %s\n", LEXNAME(Y), yytext);\
-			   }\
-			   return Y; }
+char *
+LEXNAME(int Y)
+{
+	if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
+		return lexname[Y-TOK_ITERTEMP];
+	} else {
+		return "char";
+	}
+}
+
+#define RETURN(Y)							\
+	do {								\
+		ll_lastval = Y;						\
+		PARSEDEBUG {						\
+			THRprintf(GDKerr, "%s %s\n", LEXNAME(Y), yytext); \
+		}							\
+		switch (ll_lastval) {					\
+		case TOK_CONSTANT:					\
+		case TOK_IDENT:						\
+		case ')':						\
+			BEGIN(IDCONST);					\
+			break;						\
+		default:						\
+			BEGIN(0);					\
+			break;						\
+		}							\
+		return Y;						\
+	} while (0)
 #ifdef FLEX_SCANNER
 /*
 #define YY_INPUT(buf,result,max_size)	{ int c = ll_getch();\
 			   result = (c==0) ? YY_NULL: (buf[0] = (char)c,1);}
 */
-#define YY_INPUT(buf,result,max_size)	{ result = ll_getstring(buf,max_size); }
+#define YY_INPUT(buf,result,max_size)	(result = ll_getstring(buf,max_size))
 #else
 #undef input
-#define input()		(yytchar = yysptr > yysbuf?U(*--yysptr):ll_getch())
+#define input()		(yytchar = yysptr > yysbuf ? U(*--yysptr) : ll_getch())
 #endif
-#define Symbol(X)	{ RETURN (X); }
-#define Vector(X,Y,Z,V,L)	{ yylval = Myylognode(X, Y);	\
-			     yylval->yyval.val.Z = V;		\
-			     yylval->yyval.len = L;		\
-			     RETURN (X); }
-#define Function(X,V)	if ((X)==TOK_BUILTIN) {\
-				Vector(X, TYPE_ptr, pval, (ptr) V, 0);\
-			   } else {\
-				str _s = GDKstrdup(V);\
-				Vector(X, TYPE_str, sval, _s, strLen(_s));\
-			   }
+#define Symbol(X)	RETURN(X)
+#define Vector(X,Y,Z,V,L)			\
+	do {					\
+		yylval = Myylognode((X), (Y));	\
+		yylval->yyval.val.Z = (V);	\
+		yylval->yyval.len = (L);	\
+		RETURN(X);			\
+	} while (0)
+#define Function(X,V)							\
+	do {								\
+		if ((X)==TOK_BUILTIN) {					\
+			Vector(X, TYPE_ptr, pval, (ptr) V, 0);		\
+		} else {						\
+			str _s = GDKstrdup(V);				\
+			Vector(X, TYPE_str, sval, _s, strLen(_s));	\
+		}							\
+	} while (0)
 
-void ll_flushbuffer(void) {
+void
+ll_flushbuffer(void)
+{
 #ifdef FLEX_SCANNER
 	YY_FLUSH_BUFFER;
 #else
@@ -114,195 +142,217 @@ void ll_flushbuffer(void) {
 #endif
 }
 
-#define TBLSEARCH(r,s,token,cur_is_ident,guess_if_notfound,no_command) {\
-        int spaces = 0, offend;\
-        do  { offend = input(); } while(GDKisspace(offend));\
-	if (offend && offend != EOF) unput(offend);\
-	while(spaces-- > 0) unput(' ');\
-        r = TBL_search(s, token, guess_if_notfound, cur_is_ident, no_command&&ll_nocommand[offend],\
-                         (offend >= 'a' && offend <= 'z') | (offend >= 'A' && offend <= 'Z')); }
+#define TBLSEARCH(r,s,token,cur_is_ident,guess_if_notfound,no_command)	\
+	do {								\
+		int spaces = 0, offend;					\
+		do {							\
+			offend = input();				\
+		} while (GDKisspace(offend));				\
+		if (offend && offend != EOF)				\
+			unput(offend);					\
+		while (spaces-- > 0)					\
+			unput(' ');					\
+		r = TBL_search(s, token, guess_if_notfound, cur_is_ident, \
+			       no_command && ll_nocommand[offend],	\
+			       (offend >= 'a' && offend <= 'z') ||	\
+			       (offend >= 'A' && offend <= 'Z'));	\
+	} while (0)
 
-static int ll_skipcomment(void);
+static void ll_skipcomment(void);
 static str ll_getstr(int quote, int *len);
 %}
 %p 3400
 %a 2300
 %e 2000
 %pointer
-%s idconst
+%s IDCONST
 %%
-"#"		      { BEGIN(0); return ll_skipcomment();		      }
-("nil"|"NIL")	      { BEGIN(idconst); Vector(TOK_CONSTANT, TYPE_void, oval, void_nil, 0);   }
-("proc"|"PROC")	      { BEGIN(0); Symbol(TOK_PROCDEF);			      }
-("undef"|"UNDEF")     { BEGIN(0); Symbol(TOK_UNDEF);			      }
-("return"|"RETURN")   { BEGIN(0); Symbol(TOK_RETURN);			      }
-("break"|"BREAK")     { BEGIN(0); Symbol(TOK_BREAK);			      }
-("while"|"WHILE")     { BEGIN(0); Symbol(TOK_WHILE);			      }
-("if"|"IF")	      { BEGIN(0); Symbol(TOK_IF);			      }
-("else"|"ELSE")	      { BEGIN(0); Symbol(TOK_ELSE);			      }
-("false"|"FALSE")     { BEGIN(idconst); Vector(TOK_CONSTANT, TYPE_bit, cval[0], 0, 0);	      }
-("var"|"VAR")	      { BEGIN(0); Symbol(TOK_VAR);			      }
-("const"|"CONST")     { BEGIN(0); Symbol(TOK_CONST);			      }
-("true"|"TRUE")	      { BEGIN(idconst); Vector(TOK_CONSTANT, TYPE_bit, cval[0], 1, 0);	      }
-("trigger"|"TRIGGER") { BEGIN(0); Symbol(TOK_TRGDEF);			      }
-("event"|"EVENT")     { BEGIN(0); Symbol(TOK_EVENT);			      }
-("on"|"ON")	      { BEGIN(0); Symbol(TOK_ON);			      }
-("module"|"MODULE")   { BEGIN(0); if (!ll_modcmds) Symbol(TOK_MODULE);goto command;     }
-("any"|"ANY")	      { BEGIN(0); Vector(TOK_ANY, TYPE_int, ival, -1, 0);     }
-"$("		      { BEGIN(0); Symbol(TOK_VARTEMP);			      }
-".."		      { BEGIN(0); Symbol(TOK_RANGETEMP);		      }
-"::"		      { BEGIN(0); Symbol(TOK_ANYNUM);			      }
-("$h"|"$H"|"$head"|"$HEAD") { BEGIN(0); Vector(TOK_ITERTEMP, TYPE_int, ival, 1, 0);     }
-("$t"|"$T"|"$tail"|"$TAIL") { BEGIN(0); Vector(TOK_ITERTEMP, TYPE_int, ival, 2, 0);     }
-"$"{D}+		      { BEGIN(0); Vector(TOK_TEMPLATE,TYPE_int,ival,atoi(yytext+1),0);  }
-":="		      { BEGIN(0); Symbol(TOK_ASSIGNMENT);		      }
-"(*"		      { BEGIN(0); Symbol(TOK_DEREF);			      }
-"[*"		      { BEGIN(0); Symbol(TOK_SETOP);			      }
-"{*"		      { BEGIN(0); Symbol(TOK_SETAGGR);			      }
-"@"		      { BEGIN(0); Symbol(TOK_ITERATION);		      }
+"#"			ll_skipcomment();
+("nil"|"NIL")		Vector(TOK_CONSTANT, TYPE_void, oval, void_nil, 0);
+("proc"|"PROC")		Symbol(TOK_PROCDEF);
+("undef"|"UNDEF")	Symbol(TOK_UNDEF);
+("return"|"RETURN")	Symbol(TOK_RETURN);
+("break"|"BREAK")	Symbol(TOK_BREAK);
+("while"|"WHILE")	Symbol(TOK_WHILE);
+("if"|"IF")		Symbol(TOK_IF);
+("else"|"ELSE")		Symbol(TOK_ELSE);
+("false"|"FALSE")	Vector(TOK_CONSTANT, TYPE_bit, cval[0], 0, 0);
+("var"|"VAR")		Symbol(TOK_VAR);
+("const"|"CONST")	Symbol(TOK_CONST);
+("true"|"TRUE")		Vector(TOK_CONSTANT, TYPE_bit, cval[0], 1, 0);
+("trigger"|"TRIGGER")	Symbol(TOK_TRGDEF);
+("event"|"EVENT")	Symbol(TOK_EVENT);
+("on"|"ON")		Symbol(TOK_ON);
+("module"|"MODULE")   { if (!ll_modcmds)
+				Symbol(TOK_MODULE);
+			else
+				goto command;
+		      }
+("any"|"ANY")		Vector(TOK_ANY, TYPE_int, ival, -1, 0);
+"$("			Symbol(TOK_VARTEMP);
+".."			Symbol(TOK_RANGETEMP);
+"::"			Symbol(TOK_ANYNUM);
+("$h"|"$H"|"$head"|"$HEAD")	Vector(TOK_ITERTEMP, TYPE_int, ival, 1, 0);
+("$t"|"$T"|"$tail"|"$TAIL")	Vector(TOK_ITERTEMP, TYPE_int, ival, 2, 0);
+"$"{D}+			Vector(TOK_TEMPLATE, TYPE_int, ival, atoi(yytext+1), 0);
+":="			Symbol(TOK_ASSIGNMENT);
+"(*"			Symbol(TOK_DEREF);
+"[*"			Symbol(TOK_SETOP);
+"{*"			Symbol(TOK_SETAGGR);
+"@"			Symbol(TOK_ITERATION);
 (":"{P}+"=") |
 ({P}+) |
 ({C}*"=")	      { int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
-			BEGIN(0);
-			strcpy(t,yytext); /* copy yytext before unput */
+			strcpy(t, yytext); /* copy yytext before unput */
 			if (l > 1 || (*t != '~' && *t != '?' && *t != ':')) {
 				if (ll_resolution) {
 					TBLSEARCH(s, t, &i, FALSE, TRUE, FALSE);
 					if (s != NULL) {
-						Function(i,s);
+						Function(i, s);
 					}
 				}
 			}
-			while(--l > 0) unput(t[l]);
-			Symbol(*t);					     }
+			while (--l > 0)
+				unput(t[l]);
+			Symbol(*t);
+		      }
 (":"{L}({L}|{D})*"=") |
 ({L}({L}|{D})*)	 {
-command:	     {	int i, l = (int) strlen(yytext);
-			char *s, *t = (str) alloca(l+1);
-			BEGIN(idconst);
-			strcpy(t,yytext); /* copy yytext before unput */
+command:	      {	int i, l = (int) strlen(yytext);
+			char *s, *t = (str) alloca(l + 1);
+			strcpy(t, yytext); /* copy yytext before unput */
 			if (ll_resolution) {
-			    TBLSEARCH(s, t, &i, TRUE, TRUE, TRUE);
-			    if (s != NULL) {
-				Function(i,s);
-			    }
+				TBLSEARCH(s, t, &i, TRUE, TRUE, TRUE);
+				if (s != NULL) {
+					Function(i, s);
+				}
 			}
 			s = GDKstrdup(t);
-			Vector(TOK_IDENT, TYPE_str, sval, s, 0);	     }}
+			Vector(TOK_IDENT, TYPE_str, sval, s, 0);
+		      }
+		 }
 
 ("["{P}+"]") |
 ("["{C}*"=]") |
 ("[:"{P}+"=]") |
 ("["{L}({L}|{D})*"]") |
 ("[:"{L}({L}|{D})*"=]") |
-("{"{L}({L}|{D})*"}") {	  int i, l = (int) strlen(yytext);
+("{"{L}({L}|{D})*"}") { int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
-			BEGIN(0);
-			strcpy(t,yytext); /* copy yytext before unput */
+			strcpy(t, yytext); /* copy yytext before unput */
 			if (ll_resolution) {
-			    char cb = t[l-1];  /* save bracket */
-			    TBLSEARCH(s, t, &i, TRUE, FALSE, FALSE);
-			    if (s) {
-			       Function(i,s);
-			    }
-			    t[l-1] = 0; /*remove last bracket*/
-			    TBLSEARCH(s, t+1, &i, TRUE, TRUE, FALSE);
-			    if (s != NULL) {
-				if (i == TOK_BUILTIN) {
-				   GDKerror("yyparse: cannot use a %cBUILTIN%c()\n", *t, (*t=='[')?']':'}');
-				} else if (i!=TOK_ASSIGNOP || *t == '[') {
-				   str nme = (str) alloca((int)strlen(s)+3);
-				   sprintf(nme, "%c%s%c", *t, s, cb);
-				   Function(i,nme);
+				char cb = t[l-1];      /* save bracket */
+				TBLSEARCH(s, t, &i, TRUE, FALSE, FALSE);
+				if (s) {
+					Function(i, s);
 				}
-			    }
+				t[l-1] = 0; /* remove last bracket */
+				TBLSEARCH(s, t+1, &i, TRUE, TRUE, FALSE);
+				if (s != NULL) {
+					if (i == TOK_BUILTIN) {
+						GDKerror("yyparse: cannot use a %cBUILTIN%c()\n", *t, (*t=='[')?']':'}');
+					} else if (i != TOK_ASSIGNOP || *t == '[') {
+						str nme = (str) alloca((int)strlen(s)+3);
+						sprintf(nme, "%c%s%c", *t, s, cb);
+						Function(i, nme);
+					}
+				}
 			}
 			yyleng--;
-			unput((*t == '[')?']':'}');
-			while(--yyleng > 0) unput(t[yyleng]);
-			Symbol(*t);					 }
-{D}+"@"{D}+	      { oid obj, *p=&obj; int l=sizeof(oid);
-			BEGIN(idconst);
+			unput(*t == '[' ? ']' : '}');
+			while (--yyleng > 0)
+				unput(t[yyleng]);
+			Symbol(*t);
+		      }
+{D}+"@"{D}+	      { oid obj, *p=&obj;
+			int l=sizeof(oid);
 			OIDfromStr(yytext, &l, &p);
-			Vector(TOK_CONSTANT, TYPE_oid, oval, obj, 0);	      }
+			Vector(TOK_CONSTANT, TYPE_oid, oval, obj, 0);
+		      }
 <INITIAL>"-"{D}+"LL"  { lng val, *p = &val; int l=sizeof(lng);
-			BEGIN(idconst);
 			lngFromStr(yytext, &l, &p);
-			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
+			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);
+		      }
 <INITIAL>"-"{D}+      { lng val, *p = &val; int l=sizeof(lng);
-			BEGIN(idconst);
 			lngFromStr(yytext, &l, &p);
-			if (val > ((lng) GDK_int_min) \
-			 && val <= ((lng) GDK_int_max))
-			  Vector(TOK_CONSTANT, TYPE_int, ival, ((int) val), 0);
-			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
+			if (val > (lng) GDK_int_min &&
+			    val <= (lng) GDK_int_max)
+				Vector(TOK_CONSTANT, TYPE_int, ival, ((int) val), 0);
+			else
+				Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);
+		      }
 <INITIAL>"-"{D}+"."{D}+({E})?"LL" |
 "-""."{D}+({E})?"LL" |
-"-"{D}+{E}"LL"        { dbl val, *p = &val; int l = sizeof(dbl);
-			BEGIN(idconst);
+"-"{D}+{E}"LL"        { dbl val, *p = &val;
+			int l = sizeof(dbl);
 			dblFromStr(yytext, &l, &p);
-			Vector(TOK_CONSTANT, TYPE_dbl, dval, val, 0);	      }
+			Vector(TOK_CONSTANT, TYPE_dbl, dval, val, 0);
+		      }
 <INITIAL>"-"{D}+"."{D}+({E})? |
 "-""."{D}+({E})? |
-"-"{D}+{E}	      { flt val, *p = &val; int l = sizeof(flt);
-			BEGIN(idconst);
+"-"{D}+{E}	      { flt val, *p = &val;
+			int l = sizeof(flt);
 			fltFromStr(yytext, &l, &p);
-			Vector(TOK_CONSTANT, TYPE_flt, fval, val, 0);	      }
-{D}+"LL"	      { lng val, *p = &val; int l=sizeof(lng);
-			BEGIN(idconst);
+			Vector(TOK_CONSTANT, TYPE_flt, fval, val, 0);
+		      }
+{D}+"LL"	      { lng val, *p = &val;
+			int l=sizeof(lng);
 			lngFromStr(yytext, &l, &p);
-			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
-{D}+		      { lng val, *p = &val; int l=sizeof(lng);
-			BEGIN(idconst);
+			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);
+		      }
+{D}+		      { lng val, *p = &val;
+			int l = sizeof(lng);
 			lngFromStr(yytext, &l, &p);
-			if (val > ((lng) GDK_int_min) \
-			 && val <= ((lng) GDK_int_max))
-			  Vector(TOK_CONSTANT, TYPE_int, ival, ((int) val), 0);
-			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
+			if (val > (lng) GDK_int_min &&
+			    val <= (lng) GDK_int_max)
+				Vector(TOK_CONSTANT, TYPE_int, ival, ((int) val), 0);
+			else
+				Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);
+		      }
 {D}+"."{D}+({E})?"LL" |
 "."{D}+({E})?"LL"	    |
-{D}+{E}"LL"	      { dbl val, *p = &val; int l = sizeof(dbl);
-			BEGIN(idconst);
+{D}+{E}"LL"	      { dbl val, *p = &val;
+			int l = sizeof(dbl);
 			dblFromStr(yytext, &l, &p);
-			Vector(TOK_CONSTANT, TYPE_dbl, dval, val, 0);	      }
+			Vector(TOK_CONSTANT, TYPE_dbl, dval, val, 0);
+		      }
 {D}+"."{D}+({E})? |
 "."{D}+({E})?	|
-{D}+{E}		      { flt val, *p = &val; int l = sizeof(flt);
-			BEGIN(idconst);
+{D}+{E}		      { flt val, *p = &val;
+			int l = sizeof(flt);
 			fltFromStr(yytext, &l, &p);
-			Vector(TOK_CONSTANT, TYPE_flt, fval, val, 0);	      }
-"'"\\0{O}({O})?({O})?"'" {unsigned int i; sscanf(yytext+2, "%o", &i);
-			BEGIN(idconst);
-			Vector(TOK_CONSTANT, TYPE_chr, cval[0], i, 0);	      }
+			Vector(TOK_CONSTANT, TYPE_flt, fval, val, 0);
+		      }
+"'"\\0{O}({O})?({O})?"'" {
+			unsigned int i;
+			sscanf(yytext+2, "%o", &i);
+			Vector(TOK_CONSTANT, TYPE_chr, cval[0], i, 0);
+		      }
 \"		      { int len;
 			str s = ll_getstr(*yytext, &len);
-			BEGIN(0);
 			len = strFromStr(s, &len, &s);
 			Vector(TOK_STRING, TYPE_str, sval, s, len);
 		      }
 \'		      { int len;
 			str s = ll_getstr(*yytext, &len);
 			char val, *p = &val;
-			BEGIN(idconst);
 			len = chrFromStr(s, &len, (ptr) &p);
 			GDKfree(s);
 			Vector(TOK_CONSTANT, TYPE_chr, cval[0], val, 0);
 		      }
-"{|"		      { BEGIN(0); Symbol(TOK_PARBLOCK);			      }
-"|}"		      { BEGIN(0); Symbol(TOK_PAREND);			      }
-{S}		      ;
-")"		      { BEGIN(idconst); Symbol(*yytext);		      }
-.		      { BEGIN(0); Symbol((int) (unsigned char) *yytext);      }
+"{|"			Symbol(TOK_PARBLOCK);
+"|}"			Symbol(TOK_PAREND);
+{S}			/* skip white space */
+.			Symbol((int) (unsigned char) *yytext);
 %%
-int
+void
 ll_skipcomment(void)
 {
 	char c;
 
-	while ((c=input()) != 0 && c != EOF && c != '\n')
+	while ((c = input()) != 0 && c != EOF && c != '\n')
 		;
-	return yylex();
 }
 
 static str
@@ -481,7 +531,7 @@ ll_getstring(char *buf, int max_size)
 
 		if (ch == 0)
 			break;
-		if (statement && !isspace((int) ch)) {
+		if (statement && !GDKisspace(ch)) {
 			/* quit before non-whitespace after end of statement */
 			break;
 		}
@@ -664,8 +714,8 @@ static void ll_parserror(str msg);
 extern int yylex(void);
 
 #undef yyerror
-#define yyerror(X)	{ ll_parserror(NULL);  }
-#define yylogkill(t)	(t)->yyval.vtype = TYPE_void;
+#define yyerror(X)	ll_parserror(NULL);
+#define yylogkill(t)	((t)->yyval.vtype = TYPE_void)
 #define yylogfree(t)
 
 extern YYSTREE yysugar(YYSTREE node);
@@ -689,24 +739,45 @@ extern YYSTREE yysugar(YYSTREE node);
 %%
 program:
 	monet_session
-	{ ll_client->tree = $1;
-	  if (Myypostprocess(ll_client->tree) < 0) {
-		ll_clrids(); yyerrok; yyclearin; ll_lastval=0; return 1;
-	  }
-	  ll_lastval=0; }
-    |	error ';' { ll_clrids(); yyerrok; yyclearin; ll_lastval=0; return 1;  }
+	{
+		ll_client->tree = $1;
+		if (Myypostprocess(ll_client->tree) < 0) {
+			ll_clrids();
+			yyerrok;
+			yyclearin;
+			ll_lastval = 0;
+			return 1;
+		}
+		ll_lastval = 0;
+	}
+    |	error ';'
+	{
+		ll_clrids();
+		yyerrok;
+		yyclearin;
+		ll_lastval = 0;
+		return 1;
+	}
     |	/* empty */
 	{ $$ = NULL; }
     ;
 
 monet_session:
 	session
-	{   if (!$1 || $1->token != TOK_SEQ) {
-		$$ = Myylognode(TOK_SEQ, 0);
-		if ($1) Myylogexpand($$, $1);
-	    } else $$ = $1;						      }
+	{
+		if (!$1 || $1->token != TOK_SEQ) {
+			$$ = Myylognode(TOK_SEQ, 0);
+			if ($1)
+				Myylogexpand($$, $1);
+		} else
+			$$ = $1;
+	}
     |	monet_session session
-	{   $$ = $1; if ($2) Myylogexpand($$, $2);			      }
+	{
+		$$ = $1;
+		if ($2)
+			Myylogexpand($$, $2);
+	}
     ;
 
 session:
@@ -717,17 +788,19 @@ session:
     |	statement
 	{   $$ = $1;							      }
     |	TOK_MODULE { $$ = NULL; ll_resolution = 0; } '(' modidents ')' ';'
-	{   YYSTREE lt = $4;
-	    str initstr;
-	    str parmod = ll_parent_module();
-	    ll_resolution = 1;
-	    /* EXECUTE MODULE LOAD *DURING* PARSE!!*/
+	{
+		YYSTREE lt = $4;
+		str initstr;
+		str parmod = ll_parent_module();
+		ll_resolution = 1;
+		/* EXECUTE MODULE LOAD *DURING* PARSE!!*/
 		while (lt) {
 			unsigned i;
 			for(i = 0; i < lt->cnt; i++)  {
 				str mod;
 
-				if (!lt->yysons[i]) continue;
+				if (!lt->yysons[i])
+					continue;
 				if ((int) lt->yysons[i]->token == monet_tokident) {
 					mod = arg(lt, i)->yyval.val.sval;
 				} else {
@@ -746,7 +819,9 @@ session:
 			ll_reset();
 			lt = lt->overflow;
 		}
-		$$=0; yylogfree($4);						  }
+		$$ = 0;
+		yylogfree($4);
+	}
     ;
 
 definition:
@@ -764,11 +839,14 @@ statement_list:
 	statement
 	{   $$ = $1;							      }
     |	statement_list statement
-	{   if ($1->token != TOK_SEQ) {
-		 $$ = Myylognode(TOK_SEQ, 0);
-		 Myylogexpand($$, $1);
-	    } else  $$ = $1;
-	    Myylogexpand($$, $2);					      }
+	{
+		if ($1->token != TOK_SEQ) {
+			$$ = Myylognode(TOK_SEQ, 0);
+			Myylogexpand($$, $1);
+		} else
+			$$ = $1;
+		Myylogexpand($$, $2);
+	}
     ;
 
 statement:
@@ -777,23 +855,26 @@ statement:
     |	TOK_VAR varidents ';'
 	{   $$ = $2; $2->token = TOK_VAR;				      }
     |	TOK_CONST constidents ';'
-	{   YYSTREE t=$2,tt, n = Myylognode(TOK_BUILTIN, TYPE_ptr);
-	    unsigned i;
-	    n->yyval.val.pval = (ptr) CMDconstant;
-	    $$ = Myylognode(TOK_SEQ,0);
-	    $2->token = TOK_VAR;
-	    Myylogexpand($$, $2); Myylogexpand($$,n);
-	    while(t) {
-		for(i=0; i<t->cnt; i++)
-		if (t->yysons[i]) {
-		    Myylogexpand(n, tt=Myylognode(TOK_IDENT, TYPE_str));
-		    tt->yyval.val.sval=GDKstrdup(t->yysons[i]->yyval.val.sval);
+	{
+		YYSTREE t=$2,tt, n = Myylognode(TOK_BUILTIN, TYPE_ptr);
+		unsigned i;
+		n->yyval.val.pval = (ptr) CMDconstant;
+		$$ = Myylognode(TOK_SEQ,0);
+		$2->token = TOK_VAR;
+		Myylogexpand($$, $2); Myylogexpand($$,n);
+		while (t) {
+			for (i = 0; i < t->cnt; i++)
+				if (t->yysons[i]) {
+					Myylogexpand(n, tt = Myylognode(TOK_IDENT, TYPE_str));
+					tt->yyval.val.sval = GDKstrdup(t->yysons[i]->yyval.val.sval);
+				}
+			n->cnt = t->cnt;
+			if ((t = t->overflow) != NULL) {
+				n->overflow = Myylognode(0, 0);
+				n = n->overflow;
+			}
 		}
-		n->cnt = t->cnt;
-		if ((t=t->overflow) != NULL) {
-		    n->overflow=Myylognode(0,0); n=n->overflow;
-		}
-	    }								      }
+	}
     ;
 
 nonvar_statement:
@@ -803,15 +884,25 @@ nonvar_statement:
     |	blk_expression
 	{    $$ = $1;							      }
     |	TOK_RETURN ret_value ';'
-	{    $$ = Myylognode(TOK_RETURN, 0);
-	     if ($2) Myylogexpand($$, $2);				      }
+	{
+		$$ = Myylognode(TOK_RETURN, 0);
+		if ($2)
+			Myylogexpand($$, $2);
+	}
     |	TOK_WHILE '(' expression ')' nonvar_statement
-	{    $$ = Myylognode(TOK_WHILE, 0);
-	     Myylogexpand($$, $3); Myylogexpand($$, $5);		      }
+	{
+		$$ = Myylognode(TOK_WHILE, 0);
+		Myylogexpand($$, $3);
+		Myylogexpand($$, $5);
+	}
     |	TOK_IF '(' expression ')' nonvar_statement else_statement
-	{    $$ = Myylognode(TOK_IF, 0);
-	     Myylogexpand($$, $3); Myylogexpand($$, $5);
-	     if ($6) Myylogexpand($$, $6);				      }
+	{
+		$$ = Myylognode(TOK_IF, 0);
+		Myylogexpand($$, $3);
+		Myylogexpand($$, $5);
+		if ($6)
+			Myylogexpand($$, $6);
+	}
     |	TOK_BREAK ';'
 	{    $$ = Myylognode(TOK_BREAK, 0);				      }
     ;
@@ -821,10 +912,14 @@ expr_statement:
 	{   $$ = ll_sugarnode; ll_sugarnode = NULL;			      }
     |	TOK_ITERATION parallel TOK_ITERATOR argument_list
 	{   $$ = ll_templates ? (YYSTREE)(size_t)1 /* non-NULL */ : (ptr) 0; ll_templates = 1; } nonvar_statement
-	{   ll_templates = ($5 != NULL);
-	    Myylogexpand($3, $6); Myylogexpand($3, $4);
-	    if ($2) Myylogexpand($3, $2);
-	    $$ = $3;							      }
+	{
+		ll_templates = ($5 != NULL);
+		Myylogexpand($3, $6);
+		Myylogexpand($3, $4);
+		if ($2)
+			Myylogexpand($3, $2);
+		$$ = $3;
+	}
     ;
 
 else_statement:
@@ -849,32 +944,42 @@ parallel:
     ;
 
 sequential_block:
-	'{' { $$=ll_modcmds?(YYSTREE)(size_t)1:0; ll_modcmds=1; } statement_seq '}'
-	{   ll_modcmds = ($2 != NULL);
-	    $$ = $3;
-	    if ($3->token == TOK_SEQ || $3->token == TOK_SEQBLOCK) {
-		    $3->token = TOK_SEQBLOCK;
-	    } else if ($3->token != TOK_PARBLOCK) {
-		    $$ = Myylognode(TOK_SEQBLOCK, 0);
-		    if ($3) Myylogexpand($$, $3);
-	    }								      }
+	'{' { $$ = ll_modcmds ? (YYSTREE) (size_t) 1 : 0; ll_modcmds = 1; } statement_seq '}'
+	{
+		ll_modcmds = ($2 != NULL);
+		$$ = $3;
+		if ($3->token == TOK_SEQ || $3->token == TOK_SEQBLOCK) {
+			$3->token = TOK_SEQBLOCK;
+		} else if ($3->token != TOK_PARBLOCK) {
+			$$ = Myylognode(TOK_SEQBLOCK, 0);
+			if ($3)
+				Myylogexpand($$, $3);
+		}
+	}
     ;
 
 parallel_block:
-	TOK_PARBLOCK {ll_parblockdepth++; $$=ll_modcmds?(YYSTREE)(size_t)1:0;ll_modcmds=1;}
+	TOK_PARBLOCK
+	{
+		ll_parblockdepth++;
+		$$ = ll_modcmds ? (YYSTREE) (size_t) 1 : 0;
+		ll_modcmds = 1;
+	}
 	statement_seq TOK_PAREND
-	{   ll_modcmds = ($2 != NULL);
-	    if (--ll_parblockdepth == 0) ll_clrids();
-	    if ($3->token == TOK_SEQBLOCK ||
-		$3->token == TOK_SEQ ||
-		$3->token == TOK_PARBLOCK)
-	    {
-		$$ = $3;
-		$$->token = TOK_PARBLOCK;
-	    } else {
-		$$ = Myylognode(TOK_SEQBLOCK, 0);
-		Myylogexpand($$, $3);
-	    }								      }
+	{
+		ll_modcmds = ($2 != NULL);
+		if (--ll_parblockdepth == 0)
+			ll_clrids();
+		if ($3->token == TOK_SEQBLOCK ||
+		    $3->token == TOK_SEQ ||
+		    $3->token == TOK_PARBLOCK) {
+			$$ = $3;
+			$$->token = TOK_PARBLOCK;
+		} else {
+			$$ = Myylognode(TOK_SEQBLOCK, 0);
+			Myylogexpand($$, $3);
+		}
+	}
     ;
 
 assignment:
@@ -886,56 +991,71 @@ assignment:
 
 variable_reference:
 	TOK_IDENT assignment
-	{   ll_idconflict($1->yyval.val.sval);
-	    $1->yyval.len = 0; /* var depth.. */
-	    if ($2) {
-		$$ = Myylognode(TOK_ASSIGNMENT, 0);
-		Myylogexpand($$, $1); Myylogexpand($$, $2);
-	    } else $$ = $1;						      }
+	{
+		ll_idconflict($1->yyval.val.sval);
+		$1->yyval.len = 0; /* var depth.. */
+		if ($2) {
+			$$ = Myylognode(TOK_ASSIGNMENT, 0);
+			Myylogexpand($$, $1); Myylogexpand($$, $2);
+		} else
+			$$ = $1;
+	}
     |	template assignment
-	{   $1->yyval.len = 0;
-	    if ($2) {
-		$$ = Myylognode(TOK_ASSIGNMENT, 0);
-		Myylogexpand($$, $1); Myylogexpand($$, $2);
-	    } else $$ = $1;						      }
+	{
+		$1->yyval.len = 0;
+		if ($2) {
+			$$ = Myylognode(TOK_ASSIGNMENT, 0);
+			Myylogexpand($$, $1);
+			Myylogexpand($$, $2);
+		} else
+			$$ = $1;
+	}
     ;
 
 proc_definition:
 	TOK_PROCDEF proc_name proc_header
 	proc_assign { $$ = NULL; ll_templates = ll_modcmds = 1; } sequential_block
 
-	{   YYSTREE sig = (YYSTREE) ($3?$3->yyval.val.pval:NULL);
-	    YYSTREE ret = (YYSTREE) (sig?sig->yyval.val.pval:NULL);
-	    int params = ($3 && $3->cnt > 0);
+	{
+		YYSTREE sig = (YYSTREE) ($3 ? $3->yyval.val.pval : NULL);
+		YYSTREE ret = (YYSTREE) (sig ? sig->yyval.val.pval : NULL);
+		int params = ($3 && $3->cnt > 0);
 
-	    if (params || (($6->token != TOK_SEQ) &&
-			   ($6->token != TOK_SEQBLOCK) &&
-			   ($6->token != TOK_PARBLOCK)))
-	    {
-		$$ = Myylognode((params)?TOK_SEQBLOCK:TOK_SEQ, 0);
-		if (params) Myylogexpand($$, $3);
-		Myylogexpand($$, $6);
-	    } else {
-		$$ = $6;
-	    }
-	    if ($3 && $3->cnt == 0) {
-		yylogfree($3);
-	    }
-	    $$->yyval = $2->yyval;
-	    $2->yyval.vtype = TYPE_void;
+		if (params || (($6->token != TOK_SEQ) &&
+			       ($6->token != TOK_SEQBLOCK) &&
+			       ($6->token != TOK_PARBLOCK))) {
+			$$ = Myylognode(params ? TOK_SEQBLOCK : TOK_SEQ, 0);
+			if (params)
+				Myylogexpand($$, $3);
+			Myylogexpand($$, $6);
+		} else {
+			$$ = $6;
+		}
+		if ($3 && $3->cnt == 0) {
+			yylogfree($3);
+		}
+		$$->yyval = $2->yyval;
+		$2->yyval.vtype = TYPE_void;
 
-	    /* DIRECT: insert the new proc */
-	    Myylogout($$);
-	    TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $$, sig, ret);
-	    if (sig) { yylogfree(sig); }
-	    if (ret) { yylogfree(ret); }
-	    ll_modcmds = ll_templates = 0;				      }
+		/* DIRECT: insert the new proc */
+		Myylogout($$);
+		TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $$, sig, ret);
+		if (sig) {
+			yylogfree(sig);
+		}
+		if (ret) {
+			yylogfree(ret);
+		}
+		ll_modcmds = ll_templates = 0;
+	}
     |	TOK_PROCDEF proc_name ';'
-	{   $$ = NULL;
-	    Myylogout($2);
-	    TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $2, $2, NULL);
-	    $2->token = TOK_CONSTANT;
-	    $2->yyval.vtype = TYPE_int;					      }
+	{
+		$$ = NULL;
+		Myylogout($2);
+		TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $2, $2, NULL);
+		$2->token = TOK_CONSTANT;
+		$2->yyval.vtype = TYPE_int;
+	}
     |	TOK_UNDEF TOK_IDENT ';'
 	{   $$ = NULL; TBL_delproc(ll_client, $2->yyval.val.sval); }
     ;
@@ -967,23 +1087,35 @@ proc_name:
 
 proc_header:
 	'(' mel_header ')' mel_return
-	{   YYSTREE header = (YYSTREE) $2->yyval.val.pval;
-	    if (header) {
-		header->yyval.val.pval = $4;
-		header->yyval.vtype = TYPE_ptr;
-	    } $$ = $2;							      }
+	{
+		YYSTREE header = (YYSTREE) $2->yyval.val.pval;
+		if (header) {
+			header->yyval.val.pval = $4;
+			header->yyval.vtype = TYPE_ptr;
+		}
+		$$ = $2;
+	}
     ;
 
 mel_header:
 	mel_params mel_tail
-	{   YYSTREE h = (YYSTREE) $1->yyval.val.pval;
-	    $$ = $1; if ($2) Myylogexpand(h,$2);			      }
+	{
+		YYSTREE h = (YYSTREE) $1->yyval.val.pval;
+		$$ = $1;
+		if ($2)
+			Myylogexpand(h,$2);
+	}
     |	mel_range
-	{   YYSTREE n = Myylognode(0,0); Myylogexpand(n,$1);
-	    $$ = Myylognode(0,TYPE_ptr); $$->yyval.val.pval = (ptr) n;	      }
+	{
+		YYSTREE n = Myylognode(0,0); Myylogexpand(n,$1);
+		$$ = Myylognode(0,TYPE_ptr);
+		$$->yyval.val.pval = (ptr) n;
+	}
     |	/* empty */
-	{ $$ = Myylognode(0,TYPE_ptr);
-	  $$->yyval.val.pval = (ptr) Myylognode(0,0);			      }
+	{
+		$$ = Myylognode(0,TYPE_ptr);
+		$$->yyval.val.pval = (ptr) Myylognode(0,0);
+	}
     ;
 
 mel_tail:
@@ -1000,52 +1132,65 @@ mel_range:
 
 mel_params:
 	mel_type TOK_IDENT
-	{   YYSTREE temp = Myylognode(TOK_TEMPLATE, TYPE_int);
-	    YYSTREE sig = Myylognode(0,0);
-	    Myylogexpand(sig, $1);
-	    ll_argc = 0; temp->yyval.val.ival = ++ll_argc;
-	    $2->token = TOK_ASSIGNMENT;
-	    Myylogexpand($2, Myylognode(TOK_TEMPLATE,0)); Myylogexpand($2, temp);
-	    $$ = Myylognode(TOK_VAR,TYPE_ptr); Myylogexpand($$, $2);
-	    $$->yyval.val.pval = (ptr) sig;				      }
+	{
+		YYSTREE temp = Myylognode(TOK_TEMPLATE, TYPE_int);
+		YYSTREE sig = Myylognode(0,0);
+		Myylogexpand(sig, $1);
+		ll_argc = 0; temp->yyval.val.ival = ++ll_argc;
+		$2->token = TOK_ASSIGNMENT;
+		Myylogexpand($2, Myylognode(TOK_TEMPLATE,0));
+		Myylogexpand($2, temp);
+		$$ = Myylognode(TOK_VAR,TYPE_ptr);
+		Myylogexpand($$, $2);
+		$$->yyval.val.pval = (ptr) sig;
+	}
     |	mel_params ',' mel_type TOK_IDENT
-	{   YYSTREE temp = Myylognode(TOK_TEMPLATE, TYPE_int);
-	    YYSTREE sig = (YYSTREE) $1->yyval.val.pval;
-	    Myylogexpand(sig, $3);
-	    temp->yyval.val.ival = ++ll_argc;
-	    $4->token = TOK_ASSIGNMENT;
-	    Myylogexpand($4, Myylognode(TOK_TEMPLATE,0)); Myylogexpand($4, temp);
-	    Myylogexpand($1, $4); $$ = $1;				      }
+	{
+		YYSTREE temp = Myylognode(TOK_TEMPLATE, TYPE_int);
+		YYSTREE sig = (YYSTREE) $1->yyval.val.pval;
+		Myylogexpand(sig, $3);
+		temp->yyval.val.ival = ++ll_argc;
+		$4->token = TOK_ASSIGNMENT;
+		Myylogexpand($4, Myylognode(TOK_TEMPLATE,0));
+		Myylogexpand($4, temp);
+		Myylogexpand($1, $4);
+		$$ = $1;
+	}
     ;
 
 mel_type:
 	TOK_ATOM mel_bat
-	{ $$ = ($2 && $2->token == TOK_ATOM)?$2:NULL;
-	  if ($2 && strcmp($2->yyval.val.sval,"BAT")) {
-		ll_parserror("only bat types are parametrized");
-	  } else if ($2 == NULL && strcmp($1->yyval.val.sval, "BAT")==0) {
-		YYSTREE any1 = Myylognode(TOK_ANY,TYPE_int);
-		YYSTREE any2 = Myylognode(TOK_ANY,TYPE_int);
-		any1->yyval.val.ival = any2->yyval.val.ival = -1;
-		$$ = Myylognode(TOK_ATOM,TYPE_str);
-		$$->yyval.val.sval = GDKstrdup(BATatoms[TYPE_bat].name);
-		Myylogexpand($$, any1);
-		Myylogexpand($$, any2);
-	  }
-	  if ($$ == NULL) {
-		Myylogexpand($$=$1,$2);
-	  } else {
-		yylogfree($1);
-	  }								      }
+	{
+		$$ = ($2 && $2->token == TOK_ATOM) ? $2 : NULL;
+		if ($2 && strcmp($2->yyval.val.sval, "BAT")) {
+			ll_parserror("only bat types are parametrized");
+		} else if ($2 == NULL && strcmp($1->yyval.val.sval, "BAT") == 0) {
+			YYSTREE any1 = Myylognode(TOK_ANY,TYPE_int);
+			YYSTREE any2 = Myylognode(TOK_ANY,TYPE_int);
+			any1->yyval.val.ival = any2->yyval.val.ival = -1;
+			$$ = Myylognode(TOK_ATOM, TYPE_str);
+			$$->yyval.val.sval = GDKstrdup(BATatoms[TYPE_bat].name);
+			Myylogexpand($$, any1);
+			Myylogexpand($$, any2);
+		}
+		if ($$ == NULL) {
+			Myylogexpand($$ = $1, $2);
+		} else {
+			yylogfree($1);
+		}
+	}
     |	mel_other
 	{ $$ = $1;							      }
     ;
 
 mel_bat:
 	'[' mel_atom ',' mel_atom ']'
-	{ $$ = Myylognode(TOK_ATOM,TYPE_str);
-	  $$->yyval.val.sval = GDKstrdup(BATatoms[TYPE_bat].name);
-	  Myylogexpand($$,$2); Myylogexpand($$,$4);			      }
+	{
+		$$ = Myylognode(TOK_ATOM,TYPE_str);
+		$$->yyval.val.sval = GDKstrdup(BATatoms[TYPE_bat].name);
+		Myylogexpand($$,$2);
+		Myylogexpand($$,$4);
+	}
     |	/* empty */
 	{ $$ = NULL;							      }
     ;
@@ -1059,24 +1204,35 @@ mel_atom:
 
 mel_other:
 	TOK_ANY mel_any
-	{ $$ = $1;
-	  if ($2) { $$->yyval = $2->yyval; yylogfree($2); }		      }
+	{
+		$$ = $1;
+		if ($2) {
+			$$->yyval = $2->yyval;
+			yylogfree($2);
+		}
+	}
     ;
 
 mel_any:
 	TOK_ANYNUM TOK_CONSTANT
-	{ $$ = $2; if ($2->yyval.vtype != TYPE_int)
-		ll_parserror("any::<int> expected");			      }
+	{
+		$$ = $2;
+		if ($2->yyval.vtype != TYPE_int)
+			ll_parserror("any::<int> expected");
+	}
     |	/* empty */
 	{ $$ = NULL;							      }
     ;
 
 mel_return:
 	':' mel_type
-	{ if ($2->token == TOK_ANY && $2->yyval.val.ival == 0) {
-	      yylogfree($2); $2 = NULL;
-	  }
-	  $$ = $2;							      }
+	{
+		if ($2->token == TOK_ANY && $2->yyval.val.ival == 0) {
+			yylogfree($2);
+			$2 = NULL;
+		}
+		$$ = $2;
+	}
     ;
 
 expression:
@@ -1116,39 +1272,54 @@ simple_expression:
 
 deref_or_simple_expression:
 	TOK_DEREF expression ')' argument_list
-	{   $$ = Myylognode(TOK_FUNCTION,0);
-	    Myylogexpand($$,$2); Myylogexpand($$,$4);			      }
+	{
+		$$ = Myylognode(TOK_FUNCTION,0);
+		Myylogexpand($$,$2);
+		Myylogexpand($$,$4);
+	}
     |	TOK_SETOP expression ']' argument_list
-	{   $$ = Myylognode(TOK_SETOP,0);
-	    Myylogexpand($$,$2); Myylogexpand($$,$4);			      }
+	{
+		$$ = Myylognode(TOK_SETOP,0);
+		Myylogexpand($$,$2);
+		Myylogexpand($$,$4);
+	}
     |	TOK_SETAGGR expression '}' argument_list
-	{   $$ = Myylognode(TOK_SETAGGR,0);
-	    Myylogexpand($$,$2); Myylogexpand($$,$4);			      }
+	{
+		$$ = Myylognode(TOK_SETAGGR,0);
+		Myylogexpand($$,$2);
+		Myylogexpand($$,$4);
+	}
     |	'(' expression ')'
 	{   $$ = $2;							      }
     ;
 
 temptok:
 	TOK_TEMPLATE
-	{   $$ = $1;
-	    if (!ll_templates) {
-		ll_parserror("template not in procedure body");
-		$$->token = TOK_CONSTANT;
-	    }								      }
+	{
+		$$ = $1;
+		if (!ll_templates) {
+			ll_parserror("template not in procedure body");
+			$$->token = TOK_CONSTANT;
+		}
+	}
     |	TOK_ITERTEMP
-	{   $$ = $1;
-	    if (!ll_templates) {
-		ll_parserror("template not in iterator body");
-		$$->token = TOK_CONSTANT;
-	    }								      }
+	{
+		$$ = $1;
+		if (!ll_templates) {
+			ll_parserror("template not in iterator body");
+			$$->token = TOK_CONSTANT;
+		}
+	}
     ;
 
 template:
 	temptok
 	{   $$ = $1; }
     |	TOK_VARTEMP expression rangetemp
-	{   $$ = Myylognode((int)(size_t)$3, 0);
-	    Myylogexpand($$,$2); }
+	{
+		$$ = Myylognode((int)(size_t)$3, 0);
+		Myylogexpand($$,$2);
+	}
     ;
 
 rangetemp:
@@ -1167,46 +1338,69 @@ constant_expression:
 
 command_or_ident_expression:
 	builtin argument_list
-	{   $2->token = $1->token;
-	    $2->yyval = $1->yyval;
-	    yylogkill($1); $$ = $2;					      }
+	{
+		$2->token = $1->token;
+		$2->yyval = $1->yyval;
+		yylogkill($1);
+		$$ = $2;
+	}
     |	command_or_operator_or_ident argument_list
-	{   YYSTREE t1 = $1, t2 = $2;
-	    t2->yyval = t1->yyval;
-	    t2->token = (t1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
-	    yylogkill(t1); $$ = t2;					      }
+	{
+		YYSTREE t1 = $1, t2 = $2;
+		t2->yyval = t1->yyval;
+		t2->token = t1->token == TOK_ASSIGNOP ? TOK_ASSIGNOP : TOK_FUNCTION;
+		yylogkill(t1);
+		$$ = t2;
+	}
     |	TOK_ATOM argument_list_nocheck
-	{   YYSTREE t1 = $1, t2 = $2;
-	    t2->yyval = t1->yyval;
-	    t2->token = TOK_FUNCTION;
-	    yylogkill(t1); $$ = t2;					      }
+	{
+		YYSTREE t1 = $1, t2 = $2;
+		t2->yyval = t1->yyval;
+		t2->token = TOK_FUNCTION;
+		yylogkill(t1);
+		$$ = t2;
+	}
     ;
 
 command_expression:
 	builtin argument_list
-	{   $2->token = $1->token;
-	    $2->yyval = $1->yyval;
-	    yylogkill($1); $$ = $2;					      }
+	{
+		$2->token = $1->token;
+		$2->yyval = $1->yyval;
+		yylogkill($1);
+		$$ = $2;
+	}
     |	command_or_operator argument_list
-	{   YYSTREE t1 = $1, t2 = $2;
-	    t2->yyval = t1->yyval;
-	    t2->token = (t1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
-	    yylogkill(t1); $$ = t2;					      }
+	{
+		YYSTREE t1 = $1, t2 = $2;
+		t2->yyval = t1->yyval;
+		t2->token = t1->token == TOK_ASSIGNOP ? TOK_ASSIGNOP : TOK_FUNCTION;
+		yylogkill(t1);
+		$$ = t2;
+	}
     |	TOK_ATOM argument_list_nocheck
-	{   YYSTREE t1 = $1, t2 = $2;
-	    t2->yyval = t1->yyval;
-	    t2->token = TOK_FUNCTION;
-	    yylogkill(t1); $$ = t2;					      }
+	{
+		YYSTREE t1 = $1, t2 = $2;
+		t2->yyval = t1->yyval;
+		t2->token = TOK_FUNCTION;
+		yylogkill(t1);
+		$$ = t2;
+	}
     ;
 
 operator_expression:
 	operator
-	{   $$ = NULL;
-	    if (ll_firstnode) Myylogexpand($1, ll_firstnode);		      }
+	{
+		$$ = NULL;
+		if (ll_firstnode)
+			Myylogexpand($1, ll_firstnode);
+	}
 	expression
-	{   Myylogexpand($1, $3);
-	    $1->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
-	    $$ = $1;							      }
+	{
+		Myylogexpand($1, $3);
+		$1->token = $1->token == TOK_ASSIGNOP ? TOK_ASSIGNOP : TOK_FUNCTION;
+		$$ = $1;
+	}
     ;
 
 command_or_operator_or_ident:
@@ -1249,11 +1443,13 @@ argument_list:
     |	'(' ')'
 	{   $$ = (ptr) yysugar(ll_sugarnode);				      }
     |	 /* empty */
-	{   $$ = (ptr) yysugar(ll_sugarnode);
-	    if (!monet_nostalgic) {
-		ll_parserror("new MIL syntax (>=4.4) requires parentheses for all operators.\n");
-		YYERROR;
-	    }								      }
+	{
+		$$ = (ptr) yysugar(ll_sugarnode);
+		if (!monet_nostalgic) {
+			ll_parserror("new MIL syntax (>=4.4) requires parentheses for all operators.\n");
+			YYERROR;
+		}
+	}
     ;
 
 argument_list_nocheck:
@@ -1288,24 +1484,34 @@ modident:
 
 modidents:
 	modident
-	{    $$ = Myylognode(0,0);
-	     $1->yyval.len = 0; Myylogexpand($$, $1);			      }
+	{
+		$$ = Myylognode(0,0);
+		$1->yyval.len = 0;
+		Myylogexpand($$, $1);
+	}
     |	modidents ',' modident
 	{    $3->yyval.len = 0; Myylogexpand($1, $3); $$ = $1;		      }
     ;
 
 constidents:
 	TOK_IDENT TOK_ASSIGNMENT expression
-	{    $$ = Myylognode(0,0);
-	     Myylogexpand($1, Myylognode(TOK_TEMPLATE, 0));
-	     Myylogexpand($1, $3);
-	     $1->token = TOK_ASSIGNMENT;
-	     $1->yyval.len = 0; Myylogexpand($$, $1);			      }
+	{
+		$$ = Myylognode(0,0);
+		Myylogexpand($1, Myylognode(TOK_TEMPLATE, 0));
+		Myylogexpand($1, $3);
+		$1->token = TOK_ASSIGNMENT;
+		$1->yyval.len = 0;
+		Myylogexpand($$, $1);
+	}
     |	constidents ',' TOK_IDENT TOK_ASSIGNMENT expression
-	{    Myylogexpand($3, Myylognode(TOK_TEMPLATE, 0));
-	     Myylogexpand($3, $5);
-	     $3->token = TOK_ASSIGNMENT;
-	     $3->yyval.len = 0; Myylogexpand($1, $3); $$ = $1;		      }
+	{
+		Myylogexpand($3, Myylognode(TOK_TEMPLATE, 0));
+		Myylogexpand($3, $5);
+		$3->token = TOK_ASSIGNMENT;
+		$3->yyval.len = 0;
+		Myylogexpand($1, $3);
+		$$ = $1;
+	}
     ;
 
 varidents:
@@ -1324,12 +1530,14 @@ initialization:
 
 ident_decl:
 	{ $$ = NULL; ll_resolution = 0; } TOK_IDENT { $$ = NULL; ll_resolution = 1; } initialization
-	{    $$ = $2; $2->yyval.len = 0;
-	     if ($4) {
-		 Myylogexpand($$, Myylognode(TOK_TEMPLATE, 0));
-		 Myylogexpand($$, $4);
-		 $$->token = TOK_ASSIGNMENT;
-	     }								      }
+	{
+		$$ = $2; $2->yyval.len = 0;
+		if ($4) {
+			Myylogexpand($$, Myylognode(TOK_TEMPLATE, 0));
+			Myylogexpand($$, $4);
+			$$->token = TOK_ASSIGNMENT;
+		}
+	}
     ;
 %%
 

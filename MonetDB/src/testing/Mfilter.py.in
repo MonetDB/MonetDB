@@ -51,8 +51,8 @@ test = (
         # potential differences, which we want to ignore
         re.compile('(?:'+')|(?:'.join([
 ## sql5
-		      r"^printf\(\"\\nReady.\\n\"\);",
-		      r"^quit\(\);",
+                      r"^printf\(\"\\nReady.\\n\"\);",
+                      r"^quit\(\);",
 ##                    r"^module\(mprof\);$",
 ##                    r'^pm(?:[BE]\("(?:global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$',
 ##                    r'^printf\("#~BeginProfilingOutput~#\\n"\);$',
@@ -63,7 +63,7 @@ test = (
 ##                    r"^Mcreatedb: database .* has been initialized succesfully!$",
                     r"^[Uu]sage: (?:/.*/)?(?:lt-)?(?:Mserver|MapiClient)(?: \[ options \])?(?: \[ script\+ \])? *$",
 ##                    r"^!WARNING: GDKlockHome: created directory .*$",
-		      r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$",
+                      r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$",
                       r"^!WARNING: BBPdir: initializing BBP.$",
 ##                    r"^connection= .*:[0-9]*$",
 ##                    r"^Connecting to server: localhost:[0-9]*$",
