@@ -41,6 +41,8 @@ void showUsage(char *name)
     printf(" -I<exp>   : ignore lines matching <exp> during diff (optional, default: -I'^#')\n");
     printf(" -C<num>   : use <num> lines of context during diff (optional, default: -C1)\n");
     printf(" -A<num>   : accuracy for diff: 0=lines, 1=words, 2=chars (optional, default: -A1)\n");
+    printf(" -d        : change the algorithm to perhaps find a smaller set of changes;\n");
+    printf("             this makes diff slower (sometimes much slower)\n");
     printf(" -t<text>  : text for caption (optional, default: empty)\n");
     printf(" -r<rev>   : revision of old file (optinal, default: empty)\n");
     printf(" <oldfile> : first file for diff\n");
@@ -54,11 +56,12 @@ int main(int argc, char** argv)
   char DEFAULT[]="-I'^#'";
   char ignoreWHITE[]=" -b -B";
   char *old_fn,*new_fn,*html_fn,*caption=EMPTY,*revision=EMPTY,*ignoreEXP=DEFAULT,*ignore;
-  int LWC=1,context=1,option;
+  int LWC=1,context=1,option,mindiff=0;
 
-  while((option=getopt(argc,argv,"hA:C:I:t:r:"))!=EOF)
+  while((option=getopt(argc,argv,"hdA:C:I:t:r:"))!=EOF)
    switch (option)
      {
+       case 'd': mindiff=1; break;
        case 'A': LWC=atoi(optarg); break;
        case 'C': context=atoi(optarg); break;
        case 'I': ignoreEXP=(char*)malloc(strlen(optarg)+6);
@@ -87,10 +90,10 @@ int main(int argc, char** argv)
   new_fn=((argc>(++optind))?argv[optind]:"-");
   html_fn=((argc>(++optind))?argv[optind]:"-");
 
-  TRACE(fprintf(STDERR,"%s -A %i -C %i %s -t %s -r %s  %s %s %s\n",
-                 argv[0],LWC,context,ignore,caption,revision,old_fn,new_fn,html_fn));
+  TRACE(fprintf(STDERR,"%s %s -A %i -C %i %s -t %s -r %s  %s %s %s\n",
+                 argv[0],mindiff?"-d":"",LWC,context,ignore,caption,revision,old_fn,new_fn,html_fn));
 
-  switch ( oldnew2html (LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision) )
+  switch ( oldnew2html (mindiff,LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision) )
     {
       case 0: fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn); break;
       case 1: fprintf(STDERR,"%s and %s differ slightly.\n",old_fn,new_fn); break;
