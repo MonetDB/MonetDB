@@ -1,11 +1,11 @@
 stdout of test 'salgebra` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other salgebra 1200
-#> Mtest:	Mtimeout -timeout 1200 ./salgebra salgebra
-#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_plain salgebra.mil
-# Monet Database Server V4.1
+#> Mtest (19:19:18):	other salgebra 420
+#> Mtest (19:19:18):	Mtimeout -timeout 420 ./salgebra salgebra
+#> Mlog (19:19:18):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain salgebra.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for Linux2.2.14-12/32bit on Thu Aug 17 18:05:43 CEST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:salgebra.mil
 
 loaded;
@@ -27,7 +27,7 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 1070 "salgebra.mx"
+#line 1070 "../../../../src/modules/plain/salgebra.mx"
 
 
 
@@ -49,13 +49,13 @@ Created clusterhash ti
 ch_2 := clusterhash( "ti" );
 ch_2.info.print;
 #-------------------------#
-# BAT:		  tmp_28  #
+# BAT:		  tmp_43  #
 # (str)		  (str)	  #
 #-------------------------#
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "26"	  ]
+[ "batId",	  "41"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "3"	  ]
 ch_2 := nil;
@@ -70,13 +70,13 @@ tj.insert( 3@0, "three" );
 
 ch.info.print;
 #-------------------------#
-# BAT:		  tmp_29  #
+# BAT:		  tmp_44  #
 # (str)		  (str)	  #
 #-------------------------#
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "26"	  ]
+[ "batId",	  "41"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "2"	  ]
 #ch2.info.print;
@@ -86,30 +86,30 @@ CHdir();
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
-[ 26,	  "ti",		  2,		  ti		  ]
+[ 41,	  "ti",		  2,		  ti		  ]
 
 # use the clusterhash for a uselect or a ujoin
 uselect( ch, 0@0 ).print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_44  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  nil	  ]
 [ 2@0,	  nil	  ]
 uselect( ch, 1@0 ).print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_44  #
 # (oid)	  (void)  #
 #-----------------#
 uselect( ch, 2@0 ).print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_44  #
 # (oid)	  (void)  #
 #-----------------#
 [ 3@0,	  nil	  ]
 uselect( ch, 3@0 ).print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_44  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  nil	  ]
@@ -117,7 +117,7 @@ uselect( ch, 3@0 ).print;
 
 ujoin( ch, tj ).print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_44  #
 # (oid)	  (void)  #
 #-----------------#
 [ 3@0,	  nil	  ]
@@ -125,7 +125,7 @@ ujoin( ch, tj ).print;
 [ 4@0,	  nil	  ]
 usortedjoin( ch, tj ).print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_44  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  nil	  ]
@@ -137,7 +137,7 @@ CHdir();
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
-[ 26,	  "ti",		  2,		  ti		  ]
+[ 41,	  "ti",		  2,		  ti		  ]
 
 ch := nil;
 drop( "salgebra" );
