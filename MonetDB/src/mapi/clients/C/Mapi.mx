@@ -607,6 +607,9 @@ typedef struct MapiStruct {
 	char mapiversion[MAPINAMELEN];	/* mapi version */
 	char hostname[MAPINAMELEN];
 	int  port;
+#ifdef HAVE_OPENSSL
+	int secure;
+#endif
 	char username[MAPINAMELEN];
 	char password[MAPINAMELEN];
 	char language[MAPINAMELEN];
@@ -800,6 +803,12 @@ static void mapi_lost_connection();
 #ifndef HAVE_GETLOGIN
 #define getlogin() "win32"
 #endif
+
+#ifdef HAVE_OPENSSL
+static SSL_CTX *mapi_ssl_ctx = 0;
+#endif
+
+static int mapi_initialized = 0;
 
 /* code adapted from gdk.mx */
 #ifdef HAVE_LONG_LONG
@@ -1022,12 +1031,21 @@ Mapi mapi_dup(Mapi mid)
 	strcpy(m->password, mid->password);
 	strcpy(m->prompt, mid->prompt);
 	m->port= mid->port;
+#ifdef HAVE_OPENSSL
+	m->secure = mid->secure;
+#endif
 	return m;
 }
 
 Mapi mapi_mapi(char *host, int port, char *username, char *password, char *lang)
 {
 	Mapi mid;
+
+	if (!mapi_initialized) {
+		mapi_initialized = 1;
+		if (stream_init() < 0)
+			return NULL;
+	}
 
 	mid= mapi_new();
 	if (mid == NULL)
@@ -1062,6 +1080,9 @@ Mapi mapi_mapi(char *host, int port, char *username, char *password, char *lang)
 	}
 
 	mid->port= port;
+#ifdef HAVE_OPENSSL
+	mid->secure = 0;
+#endif
 
 	if (lang == NULL) {
 #ifdef MONET5
@@ -1100,8 +1121,14 @@ Mapi mapi_connect(char *host, int port, char *username, char *password, char *la
 Mapi mapi_connect_ssl(char *host, int port, char *username, char *password, char *lang)
 {
 	Mapi mid = mapi_mapi(host, port, username, password, lang);
-	mapi_setError(mid, "SSL connections not yet supported",
+#ifdef HAVE_OPENSSL
+	mid->secure = 1;
+	if (mid && mid->error == MOK)
+		mapi_reconnect(mid); /* actually, initial connect */
+#else
+	mapi_setError(mid, "SSL connections not supported",
 		      "mapi_connect_ssl");
+#endif
 	return mid;
 }
 
@@ -1145,13 +1172,22 @@ static void promptMonet(Mapi mid)
 Disconnection from the server leads to removal of the
 Mapi structure. Subsequent access may lead to a crash.
 @c
-static void mapi_lost_connection(Mapi mid){
-	mapi_setError(mid,"Lost connection with server",
-		"mapi_fetch_line");
-	mid->connected= 0;
+static void mapi_lost_connection(Mapi mid)
+{
+	/* TODO: decide what to do with dup'ed entries */
+	mapi_setError(mid, "Lost connection with server", "mapi_fetch_line");
+	mid->connected = 0;
 	/* finish channels */
-	if( mid->to){ (void) stream_close(mid->to); mid->to =0;}
-	if( mid->from){ (void) stream_close(mid->from); mid->from =0;}
+	if (mid->to) {
+		stream_close(mid->to);
+		stream_destroy(mid->to);
+		mid->to = 0;
+	}
+	if (mid->from) {
+		stream_close(mid->from);
+		stream_destroy(mid->from);
+		mid->from = 0;
+	}
 }
 
 MapiMsg mapi_disconnect(Mapi mid)
@@ -1177,8 +1213,10 @@ MapiMsg mapi_disconnect(Mapi mid)
 	   sharing the streams */
 	if (mid->next == mid) {
 		/* only (last) element in circular list, so close streams */
-		(void) stream_close(mid->from);
-		(void) stream_close(mid->to);
+		stream_close(mid->from);
+		stream_destroy(mid->from);
+		stream_close(mid->to);
+		stream_destroy(mid->to);
 	} else {
 		/* remove from circular list */
 		Mapi m;
@@ -1193,6 +1231,60 @@ MapiMsg mapi_disconnect(Mapi mid)
 	return MOK;
 }
 
+#ifdef HAVE_OPENSSL
+static char *
+ssl_error(int err, int ret)
+{
+	char *errstr;
+	char buf[120];
+	unsigned long e;
+
+	switch (err) {
+	case SSL_ERROR_ZERO_RETURN:
+		errstr = "TLS/SSL connection has been closed";
+		break;
+	case SSL_ERROR_WANT_READ:
+		errstr = "The operation did not complete (read)";
+		break;
+	case SSL_ERROR_WANT_WRITE:
+		errstr = "The operation did not complete (write)";
+		break;
+	case SSL_ERROR_WANT_X509_LOOKUP:
+		errstr = "The operation did not complete (X509 lookup)";
+		break;
+	case SSL_ERROR_WANT_CONNECT:
+		errstr = "The operation did not complete (connect)";
+		break;
+	case SSL_ERROR_SYSCALL:
+		e = ERR_get_error();
+		if (e == 0) {
+			if (ret == 0) {
+				errstr = "EOF occurred in violation of protocol";
+			} else if (ret == -1) {
+				/* the underlying BIO reported an I/O error */
+				errstr = "I/O error";
+			} else {  /* possible? */
+				errstr = "Some I/O error occurred";
+			}
+		} else {
+			errstr = ERR_error_string(e, buf);
+		}
+		break;
+	case SSL_ERROR_SSL:
+		e = ERR_get_error();
+		if (e != 0) 
+			errstr = ERR_error_string(e, buf);
+		else { /* possible? */
+			errstr = "A failure in the SSL library occurred";
+		}
+		break;
+	default:
+		errstr = "Invalid error code";
+	}
+	return strdup(errstr);
+}
+#endif	/* HAVE_OPENSSL */
+
 MapiMsg mapi_reconnect(Mapi mid)
 {
 	struct hostent *hp;
@@ -1200,6 +1292,9 @@ MapiMsg mapi_reconnect(Mapi mid)
 	int s;
 	char buf[BLOCK];
 	size_t len, ret;
+#ifdef HAVE_OPENSSL
+	SSL *ssl;
+#endif
 
 	hp = gethostbyname(mid->hostname);
 	if(!hp) {
@@ -1212,6 +1307,18 @@ MapiMsg mapi_reconnect(Mapi mid)
 	server.sin_family = hp->h_addrtype;
 	server.sin_port   = htons((unsigned short)(mid->port&0xFFFF));
 
+#ifdef HAVE_OPENSSL
+	if (mid->secure && mapi_ssl_ctx == NULL) {
+		mapi_ssl_ctx = SSL_CTX_new(SSLv23_method());
+		if (mapi_ssl_ctx == 0) {
+			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
+			mapi_setError(mid, errstr, "mapi_reconnect");
+			free(errstr);
+			return mid->error;
+		}
+		SSL_CTX_set_verify(mapi_ssl_ctx, SSL_VERIFY_NONE, NULL);
+	}
+#endif
 	s=socket(AF_INET, SOCK_STREAM, 0);
 	if(s<0) {
 		return mapi_setError(mid, "Open socket failed",
@@ -1224,7 +1331,59 @@ MapiMsg mapi_reconnect(Mapi mid)
 				     "mapi_reconnect");
 	}
 
-	mid->to = socket_wastream(s,"Mapi client write");
+#ifdef HAVE_OPENSSL
+	if (mid->secure) {
+		if ((ssl = SSL_new(mapi_ssl_ctx)) == 0) {
+			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
+			mapi_setError(mid, errstr, "mapi_reconnect");
+			free(errstr);
+			close(s);
+			return mid->error;
+		}
+		if (!SSL_set_fd(ssl, s)) {
+			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
+			mapi_setError(mid, errstr, "mapi_reconnect");
+			free(errstr);
+			SSL_free(ssl);
+			close(s);
+			return mid->error;
+		}
+		SSL_set_connect_state(ssl);
+
+		for (;;) {
+			int ret, err;
+			char *errstr;
+
+			ret = SSL_connect(ssl);
+			err = SSL_get_error(ssl, ret);
+			switch (err) {
+			case SSL_ERROR_WANT_READ:
+			case SSL_ERROR_WANT_WRITE:
+				/* try again */
+				continue;
+			case SSL_ERROR_NONE:
+				/* successful connect */
+				break;
+			case SSL_ERROR_WANT_CONNECT:
+			case SSL_ERROR_WANT_ACCEPT:
+			case SSL_ERROR_WANT_X509_LOOKUP:
+			default:
+				/* some error occurred */
+				SSL_free(ssl);
+				close(s);
+				errstr = ssl_error(err, ret);
+				mapi_setError(mid, errstr, "mapi_reconnect");
+				free(errstr);
+				return mid->error;
+			}
+			break;
+		}
+
+		mid->to = ssl_wastream(ssl,"Mapi client write");
+	}
+	else
+#endif
+		mid->to = socket_wastream(s,"Mapi client write");
 	if (mid->to == NULL || stream_errnr(mid->to)){
 		return mapi_setError(mid, "Cannot open socket for writing",
 				     "mapi_reconnect");
@@ -1251,17 +1410,34 @@ MapiMsg mapi_reconnect(Mapi mid)
 				     "mapi_reconnect");
 	}
 	if( mid->blocked){
-		mid->to = block_stream(socket_wstream(s,"Mapi client write"));
+		stream_destroy(mid->to); /* don't close! */
+#ifdef HAVE_OPENSSL
+		if (mid->secure)
+			mid->to = block_stream(ssl_wstream(ssl,"Mapi client write"));
+		else
+#endif
+			mid->to = block_stream(socket_wstream(s,"Mapi client write"));
 	}
 	if( stream_errnr(mid->to)){
 		return mapi_setError(mid, "Cannot open socket for writing",
 				     "mapi_reconnect");
 	}
 
-	if( mid->blocked){
-		mid->from = block_stream(socket_rstream(s,"Mapi client read"));
-	} else {
-		mid->from = socket_rastream(s,"Mapi client read");
+#ifdef HAVE_OPENSSL
+	if (mid->secure) {
+		if( mid->blocked){
+			mid->from = block_stream(ssl_rstream(ssl,"Mapi client read"));
+		} else {
+			mid->from = ssl_rastream(ssl,"Mapi client read");
+		}
+	} else
+#endif
+	{
+		if( mid->blocked){
+			mid->from = block_stream(socket_rstream(s,"Mapi client read"));
+		} else {
+			mid->from = socket_rastream(s,"Mapi client read");
+		}
 	}
 	if (mid->from == NULL || stream_errnr(mid->from)) {
 		return mapi_setError(mid, "Cannot open socket for reading",

@@ -708,6 +708,8 @@ AC_SUBST(READLINE_LIBS)
 AC_SUBST(READLINE_INCS)
 
 dnl OpenSSL
+dnl change "no" in the next line to "auto" to get OpenSSL automatically
+dnl when available
 have_openssl=no
 OPENSSL_LIBS=""
 OPENSSL_INCS=""
