@@ -830,11 +830,11 @@ int readClient(Client c){
 		assert(in->pos == in->len);
 
 		if (in->eof || !isa_block_stream(in->s)) {
-    		@:sentPrompt@
+			@:sentPrompt@
 			in->eof = 0;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
-			if (!in->mode) /* read one line at a time in line mode */
+			if (!in->mode)/* read one line at a time in line mode */
 				break;
 			sum += rd;
 		}
@@ -856,17 +856,17 @@ int readClient(Client c){
         return 0;
     }
     if( *CURRENT(c) == '<'){
-        bstream *fdin;
-        str nme= GDKstrdup(CURRENT(c)+1);
+	bstream *fdin;
+	str nme= GDKstrdup(CURRENT(c)+1);
 
-        nme[strlen(CURRENT(c)+1)]=0;
+	nme[strlen(CURRENT(c)+1)]=0;
         printf("# loading from file `%s`\n",nme);
         if (malLoadScript(nme,&fdin)) {
             return 0;
         }
         GDKfree(nme);
         pushClientInput(c, fdin, c->listing, c->prompt);
-		return readClient(c);
+        return readClient(c);
     } else {
 #ifdef MAL_CLIENT_DEBUG
         printf("#finished\n");
@@ -875,5 +875,4 @@ int readClient(Client c){
     }
     return 1;
 }
-/* vim:set shiftwidth=4 expandtab: */
 @}

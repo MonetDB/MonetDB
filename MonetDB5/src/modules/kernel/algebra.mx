@@ -237,10 +237,13 @@ comment "Select unique tuples from the input BAT.  Double elimination is
         done only looking at the head column. Result is a BAT with
 	property hkeyed() == true.";
 
-command tunique ( b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 
-address ALGsunique
-comment "Select unique tail tuples from the BAT.  Equivalent to 
-        reverse().kunique() ";
+function tunique ( b:bat[:any$1,:any$2] ) 
+		:bat[:any$1,:any$2];
+	r:= bat.reverse(b);
+	u:= kunique(r);
+	r:= bat.reverse(u);
+	return r;
+end tunique;
 
 @- Bun-intersecting elements
 @mal

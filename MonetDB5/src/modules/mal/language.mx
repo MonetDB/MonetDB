@@ -144,7 +144,7 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return throwMessage("mal.print","descriptor access failed");
 		}
 		/* BATprint(b);*/
-		BATmultiprintf(GDKout,2,&b,TRUE,0);
+		BATmultiprintf(GDKout,2,&b,TRUE,0,TRUE);
 		return MAL_SUCCEED;
 	}
         stream_printf(fp,"[ ");
@@ -189,7 +189,7 @@ str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
 		if(b == NULL) return throwMessage("mal.otable","GDKerror");
                 piv[nbats++] = b;
         } 
-        BATmultiprintf(GDKout, nbats, piv, flg, order);
+        BATmultiprintf(GDKout, nbats, piv, flg, order, TRUE);
 	stream_flush(GDKout);
         return MAL_SUCCEED;
 }
@@ -219,7 +219,7 @@ str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if(b == NULL) return throwMessage("mal.print_table_default","GDKerror");
                 piv[nbats++] = b;
         } 
-        BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
+        BATmultiprintf(GDKout, i-1, piv, FALSE, 0, TRUE);
 	stream_flush(GDKout);
         return MAL_SUCCEED;
 }

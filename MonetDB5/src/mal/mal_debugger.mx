@@ -770,7 +770,7 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
         bs= BATslice(b,first,first+cnt);
         if(bs== NULL)
             stream_printf(f,"Failed to take chunk\n");
-        else BATmultiprintf(f,2,&bs,TRUE,0);
+        else BATmultiprintf(f,2,&bs,TRUE,0,TRUE);
         BBPunfix(b->batCacheid);
     } else 
     if( isaBatType(n->type) && v){
@@ -804,7 +804,7 @@ void printBatInfo(stream *f, VarPtr n, ValPtr v){
                 stream_printf(f,"Could not access descriptor\n");
                 return;
             }
-            BATmultiprintf(f,2,&b,TRUE,0);
+            BATmultiprintf(f,2,&b,TRUE,0,TRUE);
             BBPunfix(b->batCacheid);
         }
     }

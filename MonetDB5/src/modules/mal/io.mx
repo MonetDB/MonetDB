@@ -155,7 +155,7 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 
 extern str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 extern str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
-		  InstrPtr pci, int i, int order, int printhead);
+	 InstrPtr pci, int i, int order, int printhead, int printorderby);
 extern str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl);
 
 typedef struct {
@@ -222,7 +222,7 @@ str IOprintBoth(
 		if (b == NULL) {
 			return throwMessage("io.print","could not access descriptor");
 		}
-		BATmultiprintf(GDKout, 2, &b, TRUE, 0);
+		BATmultiprintf(GDKout, 2, &b, TRUE, 0, TRUE);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -252,7 +252,7 @@ str IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 }
 str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-        IOtableAll(GDKout,mb,stk,p,1,0,FALSE);
+        IOtableAll(GDKout,mb,stk,p,1,0,FALSE,TRUE);
         return MAL_SUCCEED;
 }
 
@@ -280,7 +280,7 @@ The table printing routine implementations rely on the multiprintf.
 They merely differ in destination and order prerequisite
 @c
 str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
-		  InstrPtr pci, int i, int order, int printhead)
+		  InstrPtr pci, int i, int order, int printhead, int printorder)
 {
         BAT *piv[MAXPARAMS],*b;
         int nbats = 0;
@@ -299,7 +299,7 @@ str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk,
                 piv[nbats++] = b;
         } 
 	/*if(printhead)*/ nbats++;
-        BATmultiprintf(f, nbats, piv, printhead, order);
+        BATmultiprintf(f, nbats, piv, printhead, order, printorder);
 	stream_flush(f);
 	for(k=0; k< nbats-1;k++) BBPunfix(piv[k]->batCacheid);
         return MAL_SUCCEED;
@@ -308,11 +308,11 @@ str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk,
 str IOotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int order;
 	order = *(int*) getArgReference(stk,pci,1);
-	return IOtableAll(GDKout,mb,stk,pci,2,order,TRUE);
+	return IOtableAll(GDKout,mb,stk,pci,2,order,TRUE,TRUE);
 }
 
 str IOtable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return IOtableAll(GDKout,mb,stk,pci,1,0,TRUE);
+	return IOtableAll(GDKout,mb,stk,pci,1,0,TRUE,TRUE);
 }
 str IOfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	stream *fp;
@@ -321,22 +321,22 @@ str IOfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	fp= *(stream **) getArgReference(stk,pci,1);
 	order = *(int*) getArgReference(stk,pci,2);
 	(void) order; /* fool compiler */
-	return IOtableAll(fp,mb,stk,pci,3,1,TRUE);
+	return IOtableAll(fp,mb,stk,pci,3,1,TRUE,TRUE);
 }
 
 str IOftable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	stream *fp;
 	fp= *(stream **) getArgReference(stk,pci,1);
-	return IOtableAll(fp,mb,stk,pci,2,0,TRUE);
+	return IOtableAll(fp,mb,stk,pci,2,0,TRUE,TRUE);
 }
 str IOttable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return IOtableAll(GDKout,mb,stk,pci,1,0,FALSE);
+	return IOtableAll(GDKout,mb,stk,pci,1,0,FALSE,TRUE);
 }
 str IOtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int order;
 	order = *(int*) getArgReference(stk,pci,1);
 	(void) order; /* fool compiler */
-	return IOtableAll(GDKout,mb,stk,pci,2,order,FALSE);
+	return IOtableAll(GDKout,mb,stk,pci,2,order,FALSE,TRUE);
 }
 
 @- Formatter print
