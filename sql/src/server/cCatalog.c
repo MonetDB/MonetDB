@@ -128,7 +128,7 @@ void drop_column( mvc *c, oid id ){
 static
 void drop_table( mvc *c, oid id, oid tid ){
 	BAT *columns = BATselect(c->column_table, (ptr)&tid, (ptr)&tid);
-	ptr p,q;
+	BUN p,q;
 
 	BATloop(columns, p, q ){
 		drop_column( c, *(oid*)BUNhead(columns,p));
@@ -145,7 +145,7 @@ void mvc_drop_schema( mvc *c, oid sid ){
 	BAT *m = BATmirror(c->schema_id);
 	oid id = *(oid*)BUNtail(m, BUNfnd(m, (ptr)&sid));
 	BAT *tables = BATselect(c->table_schema, (ptr)&sid, (ptr)&sid);
-	ptr p,q;
+	BUN p,q;
 	
 	BATloop(tables, p, q){
 		drop_table( c, 
