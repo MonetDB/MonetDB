@@ -93,14 +93,14 @@ public class JdbcClient {
 		} else {
 			// use stdin
 			fr = in;
-			System.out.println("Welcome to the JDBC interactive terminal!");
+			System.out.println("Welcome to the MonetDB interactive JDBC terminal!");
 			System.out.println("Database: " + dbmd.getDatabaseProductName() + " " +
 				dbmd.getDatabaseProductVersion() + " (" + dbmd.getDatabaseMajorVersion() +
 				"." + dbmd.getDatabaseMinorVersion() + ")");
 			System.out.println("Driver: " + dbmd.getDriverName() + " " +
 				dbmd.getDriverVersion() + " (" + dbmd.getDriverMajorVersion() +
 				"." + dbmd.getDriverMinorVersion() + ")");
-			System.out.println("Use \\q to quit");
+			System.out.println("Type \\q to quit, \\h for a list of available commands");
 			System.out.println("auto commit mode: on");
 		}
 
@@ -123,6 +123,12 @@ public class JdbcClient {
 					if (qp.getQuery().equals("\\q")) {
 						// quit
 						break;
+					} else if (qp.getQuery().startsWith("\\h")) {
+						System.out.println("Available commands:");
+						System.out.println("\\q      quits this program");
+						System.out.println("\\h      this help screen");
+						System.out.println("\\d      list available tables and views");
+						System.out.println("\\d<obj> describes the given table or view");
 					} else if (qp.getQuery().startsWith("\\d")) {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
 						if (object.endsWith(";")) object = object.substring(0, object.length() - 1);
@@ -138,7 +144,7 @@ public class JdbcClient {
 									if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
 										System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
 									} else {
-										System.out.println(createTable(dbmd, tbl.getString("TABLE_CAT"),
+										System.out.print(createTable(dbmd, tbl.getString("TABLE_CAT"),
 											tbl.getString("TABLE_SCHEM"), tbl.getString("TABLE_NAME"),
 											tbl.getString("TABLE_TYPE")));
 									}
