@@ -160,7 +160,7 @@ for the time being.
 	.COMMAND mvc_null( mvc m, sql_column col, int flag ) : 
 		sql_column = mvc_null_wrap; "Set column null or not"
 
-	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
+	.COMMAND mvc_default( mvc m, sql_column col, any val ) :
 		sql_column = mvc_default_wrap; "Set column default value"
 
 	.COMMAND mvc_create_key( mvc m, sql_table t, str name, int kt):
@@ -496,10 +496,19 @@ int mvc_null_wrap( sql_column* res, mvc* c, sql_column* col, int *flag){
 	return GDK_SUCCEED;
 }
 
-int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val)
+int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, ptr val, int tpe)
 {
-	*(sql_column**)res = mvc_default( *(mvc**)c, *(sql_column**)col, val );
-	return GDK_SUCCEED;
+	int l = 0;
+	str v = NULL;
+
+	l = BATatoms[tpe].atomToStr(&v, &l, val );
+	if (l) {
+		*(sql_column**)res = mvc_default( *(mvc**)c, *(sql_column**)col, v );
+		if (v) GDKfree(v);
+		return GDK_SUCCEED;
+	} else {
+		return GDK_FAIL;
+	}
 }
 
 int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt )
