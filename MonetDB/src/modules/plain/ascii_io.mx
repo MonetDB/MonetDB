@@ -507,11 +507,12 @@ char *strip( char *s, char *e ){
 }
 
 static INLINE
-int insert_val( ascii_io *fmt, char *s, char *e ){
+int insert_val( ascii_io *fmt, char *s, char *e, int need2strip ){
 	ptr *adt;
 	oid on = oid_nil;	/* can't use &oid_nil because of the
 				   way it's defined */
-	adt = fmt->frstr( fmt->extra, fmt->adt, strip(s,e) );
+	if (need2strip) s = strip(s,e);
+	adt = fmt->frstr( fmt->extra, fmt->adt, s );
 	
 	if (!adt){
 		GDKerror("%lx not inserted %s\n", (size_t)adt, s);
@@ -584,14 +585,14 @@ int insert_line( ascii *as, char *line ){
 		if (e){
 			char *end = e;
 			if (quotes){
-				quotes = 0;
 				s = find_quote(s, quote);
 				if (!s) return -1;
 				s++;
 				e = rfind_quote(e, quote);
 			}
 			*e = 0;
-			res |= insert_val( &fmt[i], s, e );
+			res |= insert_val( &fmt[i], s, e, !quotes );
+			quotes = 0;
 			line = end + fmt[i].seplen;
 		} else {
 		        GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
@@ -625,14 +626,14 @@ int insert_line( ascii *as, char *line ){
 	if (e){
 		char *end = e;
 		if (quotes){
-			quotes = 0;
 			s = find_quote(s, quote);
 			if (!s) return -1;
 			s++;
 			e = rfind_quote(e, quote);
 		}
 		*e = 0;
-		res |= insert_val( &fmt[as->nr_attrs-1], s, e );
+		res |= insert_val( &fmt[as->nr_attrs-1], s, e, !quotes );
+		quotes = 0;
 		line = end + fmt[as->nr_attrs-1].seplen;
 	} else {
 		GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
