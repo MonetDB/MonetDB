@@ -267,6 +267,9 @@ main(int argc, char **argv)
 		       f5.hour, f5.minute, f5.second);
 	}
 
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
+
 	/* cleanup and disconnect */
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt2);
 	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle 1");
