@@ -762,6 +762,11 @@ int TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl) 
                                 /* swap head/tail types in case of mirrored bats */
 				htpe = (bid>0)?b->htype:b->ttype;
 				ttpe = (bid>0)?b->ttype:b->htype;
+				if (BATcount(b) == 0) {
+					/* treat empty oid columns as void columns */
+					if (htpe == TYPE_oid) htpe = TYPE_void;
+					if (ttpe == TYPE_oid) ttpe = TYPE_void;
+				}
 			}
 			BBPunfix(bid);
 			if (b) {

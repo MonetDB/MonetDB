@@ -654,7 +654,14 @@ static BAT* batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap) {
 	} else {
 		ERRORcheck(!BAThdense(r), "BATleftfetchjoin: head column of right input must be dense");
 	}
-        if ((BATcount(l)>0)&&(BATcount(r)>0)&&(BATtordered(l)&1)) {
+        if ((BATcount(l) == 0) || (BATcount(r) == 0)) {
+		/* below range checking do not support empty bats. so treat them separately (easy) */
+                bn = BATnew(l->htype, l->htype?r->ttype:ATOMtype(r->ttype), 0); 
+		bn->hdense = bn->tdense = TRUE;
+		bn->hsorted = bn->tsorted = TRUE;
+		BATseqbase(bn, l->hseqbase);
+                return bn;
+	} else if (BATtordered(l)&1) {
                 /* optimization to be able to carry over more void head columns */
                 /* (only needed if neither operand is empty) */
                 ssize_t r_lo = *(ssize_t*) BUNhead(r, BUNfirst(r));
