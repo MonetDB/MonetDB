@@ -604,7 +604,7 @@ Lines received from the server without 'standard' line headers are
 considered a single field.
 @c
 typedef struct {
-	int rowlimit;		/* maximal number of rows to cache */
+	int rowlimit;		/* maximum number of rows to cache */
 	int shuffle;		/* percentage of rows to shuffle upon overflow */
 	int limit;		/* current storage space limit */
 	int writer;
@@ -1015,7 +1015,7 @@ mapi_new(void)
 	assert(m->bindings);
 	memset(m->bindings, 0, m->maxbindings * sizeof(MapiBinding));
 	m->cache.rowlimit = 10000;
-	m->cache.shuffle = 0;	/* derive from rowlimit */
+	m->cache.shuffle = 100;
 	m->cache.limit = 0;
 	m->cache.writer = 0;
 	m->cache.reader = -1;
@@ -1543,8 +1543,7 @@ mapi_reconnect(Mapi mid)
 			break;
 		}
 		if (mid->cache.rows)
-			mid->versionId = strcmp("Mserver 5.0",
-						mid->cache.rows[0]) == 0 ? 5 : 4;
+			mid->versionId = strcmp("Mserver 5.0", mid->cache.rows[0]) == 0 ? 5 : 4;
 	}
 
 	if (mid->trace)
@@ -1966,23 +1965,23 @@ mapi_param_store(Mapi mid)
 					*(double *) src);
 				break;
 			case MAPI_DATE:
-				checkSpace(40);
-				sprintf(mid->query + k, "%04d-%02u-%02u",
+				checkSpace(50);
+				sprintf(mid->query + k, "DATE '%04d-%02u-%02u'",
 					((MapiDate *) src)->year,
 					((MapiDate *) src)->month,
 					((MapiDate *) src)->day);
 				break;
 			case MAPI_TIME:
-				checkSpace(50);
-				sprintf(mid->query + k, "%02u:%02u:%02u",
+				checkSpace(60);
+				sprintf(mid->query + k, "TIME '%02u:%02u:%02u'",
 					((MapiTime *) src)->hour,
 					((MapiTime *) src)->minute,
 					((MapiTime *) src)->second);
 				break;
 			case MAPI_DATETIME:
-				checkSpace(90);
+				checkSpace(110);
 				sprintf(mid->query + k,
-					"%04d-%02u-%02u %02u:%02u:%02u.%09u",
+					"TIMESTAMP '%04d-%02u-%02u %02u:%02u:%02u.%09u'",
 					((MapiDateTime *) src)->year,
 					((MapiDateTime *) src)->month,
 					((MapiDateTime *) src)->day,
@@ -2173,9 +2172,9 @@ mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
 }
 
 @-
-Stream queries are request to the database engine that produce a stream
+Stream queries are requests to the database engine that produce a stream
 of answers of indefinite length. Elements are eaten away using the normal way.
-The stream ends with encountering the prompt.
+The stream ends upon encountering of the prompt.
 A stream query can not rely on upfront caching.
 The stream query also ensures that the cache contains a window
 over the stream by shuffling tuples once it is filled.
@@ -2225,7 +2224,15 @@ mapi_cache_limit(Mapi mid, int limit)
 	/* clean out superflous space TODO */
 	mapi_check(mid, "mapi_cache_limit");
 	mid->cache.rowlimit = limit;
-	mid->cache.shuffle = 100;
+	if (mid->cache.rowlimit < mid->cache.limit) {
+		/* TODO: decide what to do here */
+		mid->cache.limit = mid->cache.rowlimit; /* arbitrarily throw away cache lines */
+		if (mid->cache.writer > mid->cache.limit) {
+			mid->cache.writer = mid->cache.limit;
+			if (mid->cache.reader > mid->cache.writer)
+				mid->cache.reader = mid->cache.writer;
+		}
+	}
 	return MOK;
 }
 
@@ -2235,7 +2242,6 @@ mapi_cache_shuffle(Mapi mid, int percentage)
 	/* clean out superflous space TODO */
 	mapi_check(mid, "mapi_cache_shuffle");
 	if (percentage < 0 || percentage > 100) {
-		percentage = 100;
 		return mapi_setError(mid, "Illegal percentage",
 				     "mapi_cache_shuffle");
 	}
@@ -2292,10 +2298,6 @@ mapi_extend_cache(Mapi mid)
 	int incr, newsize, oldsize = mid->cache.limit, i;
 
 	/* extend row cache */
-	if (oldsize == mid->cache.rowlimit) {
-		mapi_setError(mid, "Row cache limit reached",
-			      "mapi_extend_cache");
-	}
 	if (oldsize == 0)
 		incr = 10000;
 	else
@@ -2303,9 +2305,14 @@ mapi_extend_cache(Mapi mid)
 	if (incr > 200000)
 		incr = 20000;
 	newsize = oldsize + incr;
-	if (newsize > mid->cache.rowlimit && mid->cache.rowlimit > 0) {
+	if (mid->cache.rowlimit > 0 && newsize > mid->cache.rowlimit) {
 		newsize = mid->cache.rowlimit;
 		incr = newsize - oldsize;
+		if (incr <= 0) {
+			mapi_setError(mid, "Row cache limit reached",
+				      "mapi_extend_cache");
+			return;
+		}
 	}
 
 	mid->cache.rows = REALLOC(mid->cache.rows, newsize * sizeof(char **));
@@ -2390,7 +2397,7 @@ mapi_clear_freeup(Mapi mid, int percentage)
 	return MOK;
 }
 
-static int
+static MapiMsg
 mapi_clear_cache(Mapi mid)
 {
 	int i;
@@ -2439,7 +2446,7 @@ mapi_fetch_line_internal(Mapi mid)
 	if (mid->active == 0)
 		return 0;
 	/* get rid of old buffer space */
-	if (mid->cache.writer == mid->cache.rowlimit && mapi_clear_cache(mid))
+	if (mid->cache.writer >= mid->cache.rowlimit && mapi_clear_cache(mid))
 		return 0;
 
 	/* check if you need to read more blocks to catch a new line */
@@ -2454,31 +2461,22 @@ mapi_fetch_line_internal(Mapi mid)
 		n = s - mid->blk.buf;
 
 		if (mid->blk.lim - n < BLOCK) {
-			rest = n - mid->blk.nxt;
-			if (mid->blk.nxt > BLOCK) {
-				/* simply shuffle */
-				newbuf = malloc(mid->blk.lim + 1);
-				memcpy(newbuf, mid->blk.buf + mid->blk.nxt,
-				       rest + 1);
-				if (mid->blk.buf)
-					free(mid->blk.buf);
-				mid->blk.buf = newbuf;
-				mid->blk.nxt = 0;
-				n = rest;
-			} else {
-				/* extend space */
-				int len = mid->blk.lim + BLOCK;
+			int len;
 
-				newbuf = malloc(len + 1);
-				memcpy(newbuf, mid->blk.buf + mid->blk.nxt,
-				       rest + 1);
-				if (mid->blk.buf)
-					free(mid->blk.buf);
-				mid->blk.buf = newbuf;
-				mid->blk.nxt = 0;
-				mid->blk.lim = len;
-				n = rest;
+			rest = n - mid->blk.nxt;
+			len = mid->blk.lim;
+			if (mid->blk.nxt <= BLOCK) {
+				/* extend space */
+				len += BLOCK;
 			}
+			newbuf = malloc(len + 1);
+			memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest + 1);
+			if (mid->blk.buf)
+				free(mid->blk.buf);
+			mid->blk.buf = newbuf;
+			mid->blk.nxt = 0;
+			mid->blk.lim = len;
+			n = rest;
 		}
 
 		if (mid->blocked) {
