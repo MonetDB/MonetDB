@@ -780,7 +780,11 @@ multiplex_expression:
 
 multiplex_term:
         bat_expression
-    |   expression '?' bat_expression ':' bat_expression
+    |   expression '?' bat_expression ':' 
+	{$$.val = newName();
+	 printf("\t%s := ifthen(%s,%s);\n",$$.val, $1.val,$3.val);
+	}
+    |   expression '?' bat_expression ':' expression
 	{$$.val = newName();
 	 printf("\t%s := ifthenelse(%s,%s,%s);\n",$$.val,
 		$1.val,$3.val,$5.val);
