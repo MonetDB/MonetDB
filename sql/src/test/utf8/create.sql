@@ -1,1 +1,1 @@
-create table provÃ­ncial ( language varchar, text varchar );
+create table províncial ( language varchar, text varchar );

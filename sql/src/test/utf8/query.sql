@@ -1,1 +1,1 @@
-select * from provÃ­ncial;
+select * from províncial;
