@@ -1,7 +1,7 @@
 CREATE TABLE sys.maps (
-        id      int(19) NOT NULL,
-        parent  int(19),
-        world   int(19) NOT NULL,
+        id      int NOT NULL,
+        parent  int,
+        world   int NOT NULL,
         imagefile       varchar(255)    NOT NULL,
         top_left_x      double,
         top_left_y      double,

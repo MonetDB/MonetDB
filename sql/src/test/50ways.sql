@@ -1,8 +1,8 @@
 drop table s;
 drop table sp;
 commit;
-create table s ( snr int(9), sname varchar );
-create table sp ( snr int(9), pnr varchar );
+create table s ( snr int, sname varchar );
+create table sp ( snr int, pnr varchar );
 
 select 1;
 SELECT DISTINCT S.SNAME

@@ -1,8 +1,8 @@
 SET auto_commit = true;
 
 CREATE TABLE branches (
-  bid int(8) NOT NULL default '0',
-  cid tinyint(4) NOT NULL default '0',
+  bid int NOT NULL default '0',
+  cid tinyint NOT NULL default '0',
   bdesc varchar(255) NOT NULL default '',
   bloc char(3) NOT NULL default ''
   );
@@ -16,8 +16,8 @@ INSERT INTO branches (bid, cid, bdesc, bloc) VALUES (1031, 103, 'N Region HO', '
 INSERT INTO branches (bid, cid, bdesc, bloc) VALUES (1032, 103, 'NE Region HO', 'CT'); 
 INSERT INTO branches (bid, cid, bdesc, bloc) VALUES (1033, 103, 'NW Region HO', 'NY');
 CREATE TABLE branches_services (
-  bid int(8) NOT NULL default '0',
-  sid tinyint(4) NOT NULL default '0'
+  bid int NOT NULL default '0',
+  sid tinyint NOT NULL default '0'
   );
 INSERT INTO branches_services (bid, sid) VALUES (1011, 1); 
 INSERT INTO branches_services (bid, sid) VALUES (1011, 2); 
@@ -37,7 +37,7 @@ INSERT INTO branches_services (bid, sid) VALUES (1032, 3);
 INSERT INTO branches_services (bid, sid) VALUES (1033, 4);
 CREATE TABLE clients (
 
-  cid tinyint(4) NOT NULL default '0',
+  cid tinyint NOT NULL default '0',
 
   cname varchar(255) NOT NULL default '',
 
@@ -51,7 +51,7 @@ INSERT INTO clients (cid, cname) VALUES (104, 'Rabbit Foods Inc');
 INSERT INTO clients (cid, cname) VALUES (110, 'Sharp Eyes Detective Agency');
 CREATE TABLE services (
 
-  sid tinyint(4) NOT NULL default '0',
+  sid tinyint NOT NULL default '0',
 
   sname varchar(255) NOT NULL default '',
 

@@ -1,6 +1,6 @@
 
 CREATE TABLE MODEL (
-   MODEL_ID int(11) DEFAULT '0' NOT NULL,
+   MODEL_ID int DEFAULT '0' NOT NULL,
    IS_MUTAGEN char(3),
    LUMO float,
    LOGP float,
@@ -9,7 +9,7 @@ CREATE TABLE MODEL (
 
 CREATE TABLE ATOM (
    ATOM_ID varchar(10) NOT NULL,
-   MODEL_ID int(11),
+   MODEL_ID int,
    ELEMENT char(2),
    TYPE char(3),
    CHARGE float,
@@ -17,8 +17,8 @@ CREATE TABLE ATOM (
 );
 
 CREATE TABLE BOND (
-   BOND_ID int(11) DEFAULT '0' NOT NULL,
-   MODEL_ID int(11),
+   BOND_ID int DEFAULT '0' NOT NULL,
+   MODEL_ID int,
    ATOM1 varchar(10),
    ATOM2 varchar(10),
    TYPE char(3),
