@@ -372,16 +372,16 @@ Get the new information for the server socket and start listening.
 				continue;
 			}
 			*user=0;
-                        /* printf("mapi:Client accepted %s\n", name);fflush(stdout);*/
-                        s= strrchr(name,':');
-                        blocked= s && strncmp(s,":blocked",8)==0;
-                        if( blocked){
-                                /* printf("mapi:use blocked mode\n");fflush(stdout);*/
-                                *s=0;
-                                fdin= block_stream(stream_rstream(fdin));
-                                fdout= block_stream(socket_wstream(msgsock, "Mserver mapi write"));
-                        } else
-                                fdout= socket_wastream(msgsock,"Mserver mapi write");
+            s= strrchr(name,':');
+            blocked= s && strncmp(s,":blocked",8)==0;
+            if( blocked){
+            	/* printf("mapi:use blocked mode\n");fflush(stdout);*/
+                *s=0;
+                fdin= block_stream(stream_rstream(fdin));
+                fdout= block_stream(socket_wstream(msgsock, "Mserver mapi write"));
+            } else {
+            	fdout= socket_wastream(msgsock,"Mserver mapi write");
+			}
 			/* remove password (eventually we have to
 			   check the password, for now ignore it) */
 			s = strchr(name, ':');

@@ -2009,10 +2009,11 @@ mapi_start_talking(Mapi mid)
 	MapiHdl hdl;
 
 	if (mid->blocked) {
-		snprintf(buf, BLOCK, "%s:%s:blocked\n", mid->username,
-			 mid->password);
+		snprintf(buf, BLOCK, "%s:%s:%s:blocked\n", 
+			mid->username, mid->password, mid->language);
 	} else {
-		snprintf(buf, BLOCK, "%s:%s\n", mid->username, mid->password);
+		snprintf(buf, BLOCK, "%s:%s:%s\n", 
+			mid->username, mid->password, mid->language);
 	}
 	if (mid->trace) {
 		printf("sending first request [%d]:%s", BLOCK, buf);

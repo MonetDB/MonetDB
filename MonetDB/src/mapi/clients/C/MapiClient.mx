@@ -1079,7 +1079,6 @@ main(int argc, char **argv)
 	int trace = 0;
 	int guest = 1;
 	int linemode = 1;
-	int monet5 = 0;
 	int c;
 	Mapi mid;
 	int quiet = 0;
@@ -1177,9 +1176,6 @@ main(int argc, char **argv)
 		case 'H':
 			save_history = 1;
 			break;
-		case '5':
-			monet5 = 1;
-			break;
 		case '?':
 			usage(argv[0]);
 		default:
@@ -1217,10 +1213,7 @@ main(int argc, char **argv)
 			passwd = simple_prompt("Password ", BUFSIZ, 0, "monetdb");
 	}
 
-	if (monet5)
-		mid = mapi_connect(host, port, user, passwd, "mal");
-	else
-		mid = mapi_connect(host, port, user, passwd, language);
+	mid = mapi_connect(host, port, user, passwd, language);
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);
@@ -1236,13 +1229,6 @@ main(int argc, char **argv)
 			printf("%s", motd);
 	}
 	mapi_trace(mid, trace);
-
-	if (monet5 && strcmp(language, "mal") != 0) {
-		char buf[1024];
-		snprintf(buf, sizeof(buf), "%s();", language);
-		doRequest(mid, buf);
-		printf("started senario %s\n", language);
-	}
 
 	if (dodump && strcmp(language, "sql") == 0) {
 		c = dump_tables(mid);
