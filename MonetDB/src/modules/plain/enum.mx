@@ -229,7 +229,7 @@ static int tostr@1@2(char** dst, int* len, ptr src){
 		*dst = (char*) GDKmalloc(*len = l);
 	}
 	memcpy(*dst, v, l);
-	return l; 
+	return (l-1); /* return string length excluding eos */
 }
 static int fromstr@1@2(str src, int* len, ptr* dst){
 	BAT *b = BATdescriptor(enum_map[@1]);
