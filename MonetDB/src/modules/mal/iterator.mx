@@ -26,6 +26,8 @@ COMMAND foreach(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep;
 COMMAND foreach(i:int, first:int, last:int, step:int):bit = intForloopStep;
 COMMAND foreach(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep;
 
+PATTERN argument(i:int, arg:any):bit = tobedefinedIterator;
+
 # batloop functions require fixed storage for their result
 COMMAND batloop(b:bat, head:int,tail:int):bit = intintBatloopStep;
 @+ Dummy code 

@@ -21,10 +21,10 @@ infrastructure. They will disappear when the functionality is fixed.
 
 MODULE squeezer;
 EXCEPTION IllegalAccess;
-RULER prepare():int = sqzPrepare;
-RULER access(nme:str):int = sqzAccess;
+PATTERN prepare():int = sqzPrepare;
+PATTERN access(nme:str):int = sqzAccess;
 COMMAND AccessTst(i:int):void = sqzAccessTst;
-RULER propagateConstants():int = sqzPropagateConstants;
+PATTERN propagateConstants():int = sqzPropagateConstants;
 
 @+ Dummy code 
 @h

@@ -52,6 +52,26 @@ of a particular routine
 For the time being we assume that all commands are statically linked,
 because we now focus on the squeezer.
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
 #ifndef _MAL_LINKER_H
 /* #include "monet.h"*/
 #include "mal_instruction.h"
@@ -59,9 +79,9 @@ because we now focus on the squeezer.
 
 /* #define DEBUG_MAL_LINKER*/
 #define MONET64 1
-extern void 	*getAddress(str fcnname);
-extern void 	*loadModuleLibrary(str modname);
-extern int 	initLibraries(str dbname);
+mal_export void 	*getAddress(str fcnname);
+mal_export void 	*loadModuleLibrary(str modname);
+mal_export int 	initLibraries(str dbname);
 
 #endif
 @+ Function binding
@@ -78,16 +98,21 @@ the consistency of this counter.
 void *getAddress(str fcnname){
 	void *dl;
 	void (*adr)();
+	str msg;
 
+#ifdef DEBUG_MAL_LINKER
+        printf("addres of %s ?\n", fcnname);
+#endif
         dl= dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
         if(dl==NULL){
                 GDKfatal("getAddress:can;t get dl-handle\n");
                 exit(0);
         }
         adr= dlsym(dl,fcnname);
-#ifdef DEBUG_MAL_LINKER1
+	msg= dlerror();
+#ifdef DEBUG_MAL_LINKER
 	if( adr != NULL)
-        printf("addres of %s %o\n", fcnname,(int) adr);
+        printf("addres of %s %o %s\n", fcnname,(int) adr, (msg?msg:""));
 #endif
 	dlclose(dl);
 	return adr;
@@ -115,6 +140,7 @@ void *loadModuleLibrary(str modname){
 	void *handle = NULL;
 	str path ="";
 	str library=0;
+	str msg= NULL;
 
 	if( (library=strrchr(modname,DIR_SEP))  != NULL){
 		*library=0;
@@ -133,8 +159,9 @@ void *loadModuleLibrary(str modname){
 #endif
 		if( access(buf,R_OK)== 0) {
 			handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
-			if(handle!= NULL && dlerror() != NULL){
-				sprintf(buf,"loadModuleLibrary(1):%s\n",dlerror());
+			msg =dlerror();
+			if(handle!= NULL && msg != NULL){
+				sprintf(buf,"loadModuleLibrary(1):%s\n",msg);
 				GDKerror(buf);
 				return NULL;
 			}
@@ -151,8 +178,10 @@ void *loadModuleLibrary(str modname){
 	SLASH_2_DIR_SEP(buf);
 	if( access(buf,R_OK) == 0) {
 		handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
-		if( handle==NULL && dlerror() != NULL){
-			sprintf(buf,"loadModuleLibrary(2):%s\n", dlerror());
+		msg= dlerror();
+		if( handle==NULL && msg != NULL){
+			printf("load:%s:%s\n",buf,handle==NULL?"failed":"succeeded");
+			sprintf(buf,"loadModuleLibrary(2):%s\n", msg);
 			GDKerror(buf);
 			return NULL;
 		}

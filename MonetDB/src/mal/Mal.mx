@@ -13,8 +13,8 @@ the applications at a later stage.
 #include "mal_parser.h"
 #include "mal_interpreter.h"
 
-extern void debugParser(int i);
-extern void dbargs(int argc, char **argv, char *args[4]);
+mal_export void debugParser(int i);
+mal_export void dbargs(int argc, char **argv, char *args[4]);
 
 @-
 Ideally we shouldn't be forced to use locks. Since this results in

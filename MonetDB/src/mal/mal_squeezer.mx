@@ -28,6 +28,9 @@ The fall-back instruction pointer list is secured in mal_procedure,
 as a standard operation after parsing has been completed.
 (see safeFunction and restoreFunction)
 
+A squeezer call appears at the language level as a PATTERN call,
+which passes control over the interpretation to the squeezer body.
+
 The first implementation contains the sqzPrepare(), sqzAccess(),
 and sqzConstantPropagate() routines. 
 The former merely prepares a copy of the instruction list
@@ -67,7 +70,81 @@ All examples are meant to help identifying the API for squeezer construction.
 #include "mal_resolve.h"
 
 #define DEBUG_MAL_SQUEEZER 1
+mal_export ptr getValuePtr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k);
+mal_export ptr getArgVal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k);
 #endif /*  _MAL_SQUEEZE_H*/
+@+ Pattern analysis
+Patterns analysis routines need handy functions to obtain the
+argument values. Note that the garbage collection  for return
+arguments should be handled by the pattern implementation.
+(see keepBAT,keepString,releaseBAT,releaseString)
+
+@c
+#include "mal_squeezer.h"
+
+ptr getValuePtr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
+	int j;
+	ptr val = NULL;
+	ValPtr v;
+
+	j = pci->argv[k];
+	if( isVarConstant(mb,j) )
+		v= &getVarConstant(mb,j);
+	else {
+		v= &stk->stk[j];
+	}
+	switch(ATOMstorage(v->vtype)){
+	case TYPE_void: val= (ptr) & v->val.ival; break;
+	case TYPE_bit: val= (ptr) & v->val.bval; break;
+	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
+	case TYPE_sht: val= (ptr) & v->val.shval; break;
+	case TYPE_bat: val= (ptr) BATdescriptor(v->val.br.id); break;
+	case TYPE_int: val= (ptr) & v->val.ival; break;
+	case TYPE_oid: val= (ptr) & v->val.oval; break;
+	case TYPE_ptr: val= (ptr) & v->val.pval; break;
+	case TYPE_flt: val= (ptr) & v->val.fval; break;
+	case TYPE_dbl: val= (ptr) & v->val.dval; break;
+	case TYPE_lng: val= (ptr) & v->val.lval; break;
+	case TYPE_str: val= (ptr) & v->val.sval; break;
+	default:
+		GDKerror("evalParameters:unknown value type\n");
+	}
+	return val;
+} 
+@-
+The variation on this theme is to obtain the value pointer
+directly. This is needed if you are preparing a call to one
+of the GDK functions directly.
+@c
+ptr getArgVal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
+	int j;
+	ptr val = NULL;
+	ValPtr v;
+
+	j = pci->argv[k];
+	if( isVarConstant(mb,j) )
+		v= &getVarConstant(mb,j);
+	else {
+		v= &stk->stk[j];
+	}
+	switch(ATOMstorage(v->vtype)){
+	case TYPE_void: val= (ptr) & v->val.ival; break;
+	case TYPE_bit: val= (ptr) & v->val.bval; break;
+	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
+	case TYPE_sht: val= (ptr) & v->val.shval; break;
+	case TYPE_bat: val= (ptr) BATdescriptor(v->val.br.id); break;
+	case TYPE_int: val= (ptr) & v->val.ival; break;
+	case TYPE_oid: val= (ptr) & v->val.oval; break;
+	case TYPE_ptr: val= (ptr) v->val.pval; break;
+	case TYPE_flt: val= (ptr) & v->val.fval; break;
+	case TYPE_dbl: val= (ptr) & v->val.dval; break;
+	case TYPE_lng: val= (ptr) & v->val.lval; break;
+	case TYPE_str: val= (ptr) v->val.sval; break;
+	default:
+		GDKerror("evalParameters:unknown value type\n");
+	}
+	return val;
+} 
 @-
 The sqzPrepare function simple copies the procedure definition
 sequence to the optimized version, leaving out the call to the
@@ -110,10 +187,10 @@ can update the administration of the MAL block.
 		break;
 	}
 @-
+The squeezer does not use argument values from the instruction itself.
 @c
-#include "mal_squeezer.h"
 
-str sqzPrepare(MalBlkPtr m, MalStkPtr s, int argc, ptr argv[MAXARG]){
+str sqzPrepare(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	@:initSqueezes@
 	@:prepareSqueeze(0)@
 
@@ -141,21 +218,22 @@ Note that it is up to the implementor to assure that the value pointers
 are interpreted correctly.
 @c
 
-str sqzAccess(MalBlkPtr m, MalStkPtr s, int argc, ptr argv[MAXARG]){
+str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	@:initSqueezes@
-	str nme = (str *) argv[1];
+	str nme ;
 	int j,symid;
-	InstrPtr p, newstmt;
+	InstrPtr pp, newstmt;
 
+	nme = * (str *) getValuePtr(m,s,p,1);
 	symid= findVariable(m,nme);
 	printf("entering sqzAccess blocking %d %s\n",symid,nme);
 	@:prepareSqueeze(10)@
 	for(i=0;i<s->pc;i++)
 		new[top++]= m->stmt[i];
 	for(i=s->pc+1;i<lim;i++){
-		p= getInstrPtr(m,i);
-		for(j=0;j<p->argc;j++)
-		if( p->argv[j]== symid){
+		pp= getInstrPtr(m,i);
+		for(j=0;j<pp->argc;j++)
+		if( pp->argv[j]== symid){
 			/* insert blocking statement */
 			newstmt= newCmdCall(m,"squeezer","AccessTst");
 			setReturnArgument(newstmt, newTmpVariable(m,TYPE_int));

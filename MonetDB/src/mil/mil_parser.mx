@@ -37,6 +37,9 @@ The lexical analyser returns simple triples to the parser.
 They include the token identifier, the Monet type-id, and a string
 representation.
 
+WARNING. This paper performs a single linear scan over the mil code
+and immediately produces strings for output. A better solution would have been
+to build a parsetree followed by a recursive descend code generation phase.
 @h
 #ifndef _MIL_PARSER_H
 #define _MIL_PARSER_H
@@ -181,6 +184,15 @@ int yywrap(){ return 1;}
 
 void mil_flushbuffer() {
         YY_FLUSH_BUFFER;
+}
+
+str glue(str l, str r){
+	str t;
+	t= (str) GDKmalloc(strlen(l)+strlen(r)+1);
+	t[0]=0;
+	strcpy(t,l);
+	strcat(t,r);
+	return t;
 }
 @
 @- Input management
@@ -619,14 +631,14 @@ factor:
 path_expr_list: '(' expression ')' '.' path_elm
 	{ char *nme= newName();
 	  printf("\t%s := %s(%s);\n",
-	  	nme,$5.val,accum.val);
-	  accum.val= nme;
+	  	nme,$5.val,$2.val);
+	  $$.val= nme;
 	}
     | path_expr_list '.' path_elm
 	{ char *nme= newName();
 	  printf("\t%s := %s(%s);\n",
-	  	nme,$3.val,accum.val);
-	  accum.val= nme;
+	  	nme,$3.val,$1.val);
+	  $$.val= nme;
 	}
 
 
@@ -663,42 +675,40 @@ bat_expression:
 
 fcn_call: 
      	fcn_hdr '(' expr_list ')'
-	{ printf(");\n"); $$.val = $1.val;}
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$1.val,$3.val); $$.val = nme;}
     |	fcn_hdr '(' ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s();\n",nme,$1.val); $$.val = nme;}
 	{ printf(");\n"); $$.val = $1.val;}
 
 fcn_hdr: 
        TOK_DEREF factor ')'  
-	{ char *nme=newName();
-	  printf("\t%s := dereference.%s(", nme,$2.val);
-	  $$.val=nme;
+	{ 
+	  $$.val= glue("dereference.",$2.val);
 	}
     |  TOK_SETOP factor ']' 
-	{ char *nme=newName();
-	  printf("\t%s := setop.%s(", nme,$2.val);
-	  $$.val=nme;
+	{ 
+	  $$.val= glue("setop.",$2.val);
 	}
     |  TOK_SETAGGR factor '}'
-	{ char *nme=newName();
-	  printf("\t%s := aggregate.%s(", nme,$2.val);
-	  $$.val=nme;
+	{ 
+	  $$.val= glue("aggregate.",$2.val);
 	}
     |  TOK_BAT
-	{ char *nme=newName();
-	  printf("\t%s := bat(", nme);
-	  $$.val=nme;
+	{ 
+	  $$.val="bat";
 	}
     |  TOK_IDENT	
-	{ char *nme=newName();
-	  printf("\t%s := %s(", nme,$1.val);
-	  $$.val=nme;
+	{ 
+	  $$.val = $1.val;
 	}
  
 expr_list:
      	expression
-	{printf("%s",$1.val);}
+	{$$=$1;}
     |	expr_list ',' expression
-	{ printf(",%s",$3.val); $$=$3;}
+	{ $$.val= glue(glue($1.val,","),$3.val);}
 
 module_list:
       modident

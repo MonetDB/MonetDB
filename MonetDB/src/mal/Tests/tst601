@@ -1,0 +1,5 @@
+# type coercion and createion
+
+o := oid("999");
+i := sht(1);
+j := sht("1");

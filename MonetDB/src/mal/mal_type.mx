@@ -12,9 +12,30 @@ atomic types. If this grows, then the encoding scheme presented
 below permits 2^15 different bat types at most
 Beware the malAnyType is a speudo type known within MAL only.
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
 #ifndef MAL_TYPE_H
 #define MAL_TYPE_H
 #include "gdk.h"
+#include "mal.h"
 
 /*#define DEBUG_MAL_TYPE*/
 #define GDKerror printf
@@ -22,6 +43,7 @@ Beware the malAnyType is a speudo type known within MAL only.
 typedef int malType;
 #define malVarType -2
 #define malAnyType 255
+#define malVARG " malVARG"
 
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
 #define getHeadType(X)	((X>>8) & 0377 )
@@ -63,17 +85,19 @@ derived from the parser to avoid a loop in the define-structure.
 #define ENDsymbol 	36
 #define SCOPEsymbol	41
 #define PUSHsymbol	42	/* move constant to stack */
+#define PATTERNsymbol   44
 
 #define FCNcall		50	/* determines interpreter action*/
 #define RLRcall		51
 #define CMDcall		52
 #define THRDcall	53
+#define PATcall		54	/* pattern call */
 
-extern str malTypeName(malType tpe);
-extern malType coercion(malType t1, malType t2);
-extern int getTypeIndex(str nme);
-extern malType reverseBatType(malType v);
-extern malType malAnyBatType(malType t1, malType t2);
+mal_export str malTypeName(malType tpe);
+mal_export malType coercion(malType t1, malType t2);
+mal_export int getTypeIndex(str nme);
+mal_export malType reverseBatType(malType v);
+mal_export malType malAnyBatType(malType t1, malType t2);
 #endif /* MAL_TYPE_H*/
 @-
 At any point we should be able to construct an ascii representation of

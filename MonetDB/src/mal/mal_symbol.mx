@@ -68,28 +68,48 @@ derived from the parser to avoid a loop in the define-structure.
 The type dispatching table is only required for SCOPYsymbols, a union
 structure would have been better.
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
 #ifndef _MAL_NAMESPACE_H_
 #define _MAL_NAMESPACE_H_
 #include "mal_instruction.h"
 
 #define MAXSCOPE 258
 
-extern Symbol mal_scope;	/* the root of the tree */
-extern Symbol MAL_scope;		/* the bottom of the imported scopes */
+mal_export Symbol mal_scope;	/* the root of the tree */
+mal_export Symbol MAL_scope;		/* the bottom of the imported scopes */
 
-extern Symbol	initScope();
-extern Symbol 	newScope(Symbol cntxt, str nme);
-extern Symbol	insertSymbol(Symbol cntxt, Symbol prg);
-extern Symbol	findScope(Symbol cntxt, str name);
-extern Symbol	findTypeScope(Symbol cntxt, MalBlkPtr mb, InstrPtr sig);
-extern int	getSubScope(MalBlkPtr mb, InstrPtr sig);
-extern Symbol	fixateScope(Symbol cntxt, str nme);
-extern Symbol 	findSymbol(str mod, str fcn);
+mal_export Symbol	initScope();
+mal_export Symbol 	newScope(Symbol cntxt, str nme);
+mal_export Symbol	insertSymbol(Symbol cntxt, Symbol prg);
+mal_export Symbol	findScope(Symbol cntxt, str name);
+mal_export Symbol	findTypeScope(Symbol cntxt, MalBlkPtr mb, InstrPtr sig);
+mal_export int	getSubScope(MalBlkPtr mb, InstrPtr sig);
+mal_export Symbol	fixateScope(Symbol cntxt, str nme);
+mal_export Symbol 	findSymbol(str mod, str fcn);
 
-extern Symbol 	newSymbolDefinition(str nme, int kind);
-extern Symbol	newSymbol(str nme, int kind, Symbol outer);
-extern void	freeSymbol  (Symbol cur);
-extern void 	freeAllSymbols();
+mal_export Symbol 	newSymbolDefinition(str nme, int kind);
+mal_export Symbol	newSymbol(str nme, int kind, Symbol outer);
+mal_export void	freeSymbol  (Symbol cur);
+mal_export void 	freeAllSymbols();
 
 #endif /* _MAL_NAMESPACE_H_ */
 @-

@@ -92,6 +92,7 @@ See the monet.conf file for additional system variable settings
 
 m_export void monet_init(int argc, char **argv );
 m_export void monet_hello();
+m_export str absolute_path(str s);
 
 #endif /* _MONET_H_ */
 @c 
@@ -130,7 +131,7 @@ void monet_hello() {
 
 #define MT_path_absolute(x) (*(x) == '/')
 
-static str absolute_path(str s) {
+str absolute_path(str s) {
         if (!MT_path_absolute(s)) {
                 str ret = GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
                 sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);

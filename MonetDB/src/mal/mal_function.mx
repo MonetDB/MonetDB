@@ -22,6 +22,26 @@ Beware that the function signatures contain variable declarations
 in the form of arguments. They are initialized on the runtime stack
 upon function call.
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
 #ifndef _MAL_FCN_H
 #define _MAL_FCN_H
 
@@ -29,21 +49,21 @@ upon function call.
 
 /* #define DEBUG_MAL_FCN */
 
-extern Symbol	newFunction(Symbol scope, str nme);
-extern InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
-extern InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
-extern InstrPtr newRulerCall(MalBlkPtr m, str modname, str fcnname);
-extern void 	pushArgumentId(InstrPtr p,str name);
-extern void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
-extern void	chkRaise(MalBlkPtr mb, InstrPtr pp);
-extern void	chkCatch(MalBlkPtr mb, InstrPtr pp);
-extern void 	chkLabel(MalBlkPtr mb, InstrPtr p);
-extern Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
-extern void	safeFunction(Symbol proc);
-extern void	restoreFunction(Symbol proc);
-extern malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
-extern str 	reverseOperator(Symbol scope, MalBlkPtr mb,str nme);
-extern void 	printFunction(FILE *fd, MalBlkPtr mb);
+mal_export Symbol	newFunction(Symbol scope, str nme);
+mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
+mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
+mal_export InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname);
+mal_export void 	pushArgumentId(InstrPtr p,str name);
+mal_export void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
+mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
+mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
+mal_export void 	chkLabel(MalBlkPtr mb, InstrPtr p);
+mal_export Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
+mal_export void	safeFunction(Symbol proc);
+mal_export void	restoreFunction(Symbol proc);
+mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
+mal_export str 	reverseOperator(Symbol scope, MalBlkPtr mb,str nme);
+mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
 
 
 #endif /*  _MAL_FCN_H*/
@@ -84,8 +104,8 @@ InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname){
 InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname){
 	return newCall(m,modname,fcnname, FCNcall);
 }
-InstrPtr newRulerCall(MalBlkPtr m, str modname, str fcnname){
-	return newCall(m,modname,fcnname, RLRcall);
+InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname){
+	return newCall(m,modname,fcnname, PATcall);
 }
 @-
 Check barrier should ensure that both end-points of a block for the

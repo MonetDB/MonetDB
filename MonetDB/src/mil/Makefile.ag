@@ -1,10 +1,10 @@
 
-INCLUDES = top_builddir/src/gdk 
+INCLUDES = top_builddir/src/gdk  top_builddir/src/monet top_builddir/src/mal
 
 YFLAGS = -d
 
 bin_mil = {
-	SOURCES = M2M.mx  mil_parser.mx
-	LIBS = ../gdk/libbat \
+	SOURCES = mil.mx  mil_parser.mx
+	LIBS = ../gdk/libbat ../monet/libmonet ../mal/libmal \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

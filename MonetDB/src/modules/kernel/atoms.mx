@@ -1,0 +1,205 @@
+@t The Atom Module
+@a M.L. Kersten
+@* Introduction
+Monet supports definitions of user-defined types. 
+This feature is of particular interest to system experts. 
+It is not meant for end-users trying to intruduce record- or 
+struct-like objects in the database. They better decompose
+the complex object structure and represent the components in
+different BATs.
+
+For the courageous at heart, you may enter the difficult world
+of extending the kernel library. This calls for studying the
+documentation associated with the atom structures (gdk_atoms),
+because you have to develop routines complying with the
+signatures required in the GDK library.
+
+Once you have assembled these primitive, you can introduce them
+in a running server using a ATOM MODULE definition, which contains
+a MAL specification of their signature and calls to the routines
+below to register the atom in the kernel.
+
+Each ruler dealing with registering a function performs the necessary
+type check, but relies on the user to comply with this signature in
+its C-implementation. The ruler calls are part of a module
+initialization routine.
+
+A concrete example is the 'blob' datatype (see blob.mx)
+
+@mal
+MODULE atoms;
+
+PATTERN tostr(nme:str)   = atoms_tostr;
+PATTERN fromstr(nme:str) = atoms_fromstr;
+PATTERN nequal(nme:str)  = atoms_nequal;
+PATTERN hash(nme:str)    = atoms_hash;
+PATTERN null(nme:str)    = atoms_null;
+PATTERN convert(nme:str) = atoms_convert;
+PATTERN put(nme:str)     = atoms_put;
+PATTERN del(nme:str)     = atoms_del;
+PATTERN length(nme:str)  = atoms_length;
+PATTERN heap(nme:str)    = atoms_heap;
+
+@-
+The Monet kernel contains a few built-in atomic types together
+with useful functions. 
+Those accessible at the MAL command level are introduced below.
+
+@= convertCmd
+COMMAND @1(v:str):@1 = @1FromStrImpl;
+COMMAND @1(v:@1):str = @1ToStrImpl;
+
+@mal
+@:convertCmd(oid)@
+@:convertCmd(void)@
+@:convertCmd(sht)@
+@:convertCmd(int)@
+@:convertCmd(lng)@
+@:convertCmd(flt)@
+@:convertCmd(dbl)@
+@:convertCmd(bit)@
+@:convertCmd(ptr)@
+@:convertCmd(bat)@
+@:convertCmd(chr)@
+
+COMMAND setoid(v:int)= intSetoidImpl;
+COMMAND setoid(v:lng)= lngSetoidImpl;
+COMMAND setoid(v:oid)= oidSetoidImpl;
+@-
+We might also support a number of common coercion routines.
+Note, we do not support automatic coercion at the MIL level.
+@mal
+COMMAND lng(v:oid):lng = lngFromoidImpl;
+COMMAND lng(v:int):lng = lngFromintImpl;
+COMMAND lng(v:sht):lng = lngFromshtImpl;
+COMMAND lng(v:bit):lng = lngFrombitImpl;
+COMMAND int(v:sht):int = intFromshtImpl;
+COMMAND int(v:bit):int = intFromintImpl;
+COMMAND dbl(v:flt):dbl = dblFromfltImpl;
+COMMAND oid(v:lng):oid = oidFromlngImpl;
+COMMAND oid(v:int):oid = oidFromintImpl;
+COMMAND sht(v:int):sht = shtFromintImpl;
+COMMAND sht(v:lng):sht = shtFromlngImpl;
+@-
+We should also deal with superflous operations, such as int(v:int).
+This is a noop operation that should ideally be filtered out with
+the code squeezer. [TODO]
+@c
+@+ The Module implementation
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
+#ifndef _MAL_ATOMS
+#define _MAL_ATOMS
+/*
+#include "mal_stack.h"
+#include "mal_resolve.h"
+
+*/
+#include "gdk.h"
+#define DEBUG_MAL_ATOMS 1
+#endif /*  _MAL_ATOMS*/
+
+@c
+#include "atoms.h"
+/*
+str atoms_tostr(MalBlkPtr m, MalStkPtr s, int argc, ptr argv[MAXARG]){
+	str nme = argv[1];
+	InstrPtr p;
+
+	search the function 'nme' in the current scope 
+
+	sprintf(buf,"signature of '%s.%s' should be: tostr(...)\n",
+		p->modname, p->fcnnme);
+	return raiseException("GDKerror","signature should be: tostr(...)\n");
+}
+*/
+@-
+The pattern for conversion routines is relatively easy to define.
+@= convertImpl
+
+int @1FromStrImpl(@1 *ret, str *val){
+	int l = strlen(*val);
+	(void) @1FromStr(*val, &l, &ret);
+	return GDK_SUCCEED;
+}
+int @1ToStrImpl(str *ret, @1 *val){
+	int l;
+	(void) @1ToStr(ret,&l,val);
+	return GDK_SUCCEED;
+}
+@-
+@c
+int oidFromStrImpl(oid *ret, str *val){
+	int l = strlen(*val);
+	(void) OIDfromStr(*val, &l, &ret);
+	return GDK_SUCCEED;
+}
+int oidToStrImpl(str *ret, oid *val){
+	int l;
+	(void) OIDtoStr(ret,&l,val);
+	return GDK_SUCCEED;
+}
+@:convertImpl(void)@
+@:convertImpl(sht)@
+@:convertImpl(int)@
+@:convertImpl(lng)@
+@:convertImpl(flt)@
+@:convertImpl(dbl)@
+@:convertImpl(bit)@
+@:convertImpl(ptr)@
+@:convertImpl(bat)@
+@:convertImpl(chr)@
+
+@-
+Type conversion template. Only allowed then no information is lost.
+
+@= coercionImpl
+int @1From@2Impl(@1 *res, @2 *val){
+	*res = *val;
+	return GDK_SUCCEED;
+}
+@c
+@:coercionImpl(lng,oid)@
+@:coercionImpl(lng,int)@
+@:coercionImpl(lng,sht)@
+@:coercionImpl(lng,bit)@
+@:coercionImpl(int,sht)@
+@:coercionImpl(int,bit)@
+@:coercionImpl(dbl,flt)@
+@:coercionImpl(oid,lng)@
+@:coercionImpl(oid,int)@
+@:coercionImpl(oid,sht)@
+
+int shtFromlngImpl(sht *res, lng *val){
+	/* perform a range check !! */
+	*res = *val;
+	return GDK_SUCCEED;
+}
+int shtFromintImpl(sht *res, int *val){
+	/* perform a range check !! */
+	*res = *val;
+	return GDK_SUCCEED;
+}

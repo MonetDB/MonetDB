@@ -18,6 +18,26 @@ All other errors are turned into an exception, followed by continuing
 at the exception handling block of the MAL procedure.
 
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
 #ifndef _MAL_INTERPRET_H
 #define _MAL_INTERPRET_H
 
@@ -27,7 +47,8 @@ at the exception handling block of the MAL procedure.
 #include "mal_debugger.h"
 
 /*#define DEBUG_MAL_INTERPRETER */
-extern str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace);
+mal_export str runMAL(MalBlkPtr mbcaller, MalStkPtr env, 
+			FILE *in, FILE *out, int trace);
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_interpreter.h"
@@ -163,7 +184,8 @@ elements in the value stack.
 	case BARRIERsymbol:
 		@:barrierControl@ break;
 	case RLRcall:
-		@:rulecall@ stk->pc++; break;
+	case PATcall:
+		@:patterncall@ stk->pc++; break;
 	case CMDcall:
 		@:commandcall@ stk->pc++; break;
 	case FCNcall:
@@ -264,10 +286,10 @@ a function can not be resolved, this is the latest moment to check
 		ret= raiseException("GDKerror",buf);
 		goto MALevalExit;
 	} 
-	@:evalParameters@
 
 @= commandcall
 	@:preparecall@
+	@:evalParameters@
 	switch(pci->argc){
 	case 0 : ret = (str) (*pci->fcn)(); break;
 	case 1 : ret = (str) (*pci->fcn)(argv[0]); break;
@@ -286,9 +308,9 @@ a function can not be resolved, this is the latest moment to check
 	}
 	@:resultParameter@
 
-@= rulecall
+@= patterncall
 	@:preparecall@
-	ret = (str) (*pci->fcn)(mb,stk,pci->argc,argv);
+	ret = (str) (*pci->fcn)(mb,stk,pci);
 
 @-
 MAL function calls are relatively expensive, because they have to assemble
@@ -314,38 +336,43 @@ the bind(namespace,batname,mode) operation.[todo]
 
 @= evalParameters
 { int k;
-ValPtr v;
 retval=  &stk->stk[pci->argv[0]];
 retval->vtype = mb->var[pci->argv[0]].type;
 for(k=0;k<pci->argc; k++){
-	int j = pci->argv[k];
+	int j;
+	ptr val = NULL;
+	ValPtr v;
+
+	j = pci->argv[k];
 	if( isVarConstant(mb,j) )
 		v= &getVarConstant(mb,j);
 	else {
 		v= &stk->stk[j];
 	}
 	switch(ATOMstorage(v->vtype)){
-	case TYPE_void: argv[k]= (ptr) & v->val.ival; break;
-	case TYPE_bit: argv[k]= (ptr) & v->val.bval; break;
-	case TYPE_chr: argv[k]= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: argv[k]= (ptr) & v->val.shval; break;
+	case TYPE_void: val= (ptr) & v->val.ival; break;
+	case TYPE_bit: val= (ptr) & v->val.bval; break;
+	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
+	case TYPE_sht: val= (ptr) & v->val.shval; break;
 	case TYPE_bat: 
 		if( k==0 && v == &stk->stk[j]) @:keepBAT(v)@
-		argv[k]= (ptr) BATdescriptor(v->val.br.id);
+		val= (ptr) BATdescriptor(v->val.br.id);
 		break;
-	case TYPE_int: argv[k]= (ptr) & v->val.ival; break;
-	case TYPE_oid: argv[k]= (ptr) & v->val.oval; break;
-	case TYPE_ptr: argv[k]= (ptr) v->val.pval; break;
-	case TYPE_flt: argv[k]= (ptr) & v->val.fval; break;
-	case TYPE_dbl: argv[k]= (ptr) & v->val.dval; break;
-	case TYPE_lng: argv[k]= (ptr) & v->val.lval; break;
-	case TYPE_str: argv[k]= (ptr) v->val.sval; 
+	case TYPE_int: val= (ptr) & v->val.ival; break;
+	case TYPE_oid: val= (ptr) & v->val.oval; break;
+	case TYPE_ptr: val= (ptr) & v->val.pval; break;
+	case TYPE_flt: val= (ptr) & v->val.fval; break;
+	case TYPE_dbl: val= (ptr) & v->val.dval; break;
+	case TYPE_lng: val= (ptr) & v->val.lval; break;
+	case TYPE_str: val= (ptr) & v->val.sval; 
 		if( k==0 && v == &stk->stk[j]) @:keepString(argv[k])@
 		break;
 	default:
 		GDKerror("evalParameters:unknown value type\n");
 	}
-} }
+	argv[k]= val;
+}
+}
 @-
 The type dispatching table can be removed if we determine at compile
 time the address offset within a ValRecord. 
@@ -353,7 +380,7 @@ We leave this optimization for the future, it leads to about 10%
 improvement (100ms for 1M calls).
 @-
 Upon return of the function we may be interested in the result
-and we have to do some housekeeping.
+and we have to do some housekeeping, such as string length adjustment.
 @= resultParameter
 	@:exceptionHndlr@
 	switch(ATOMstorage(retval->vtype)){

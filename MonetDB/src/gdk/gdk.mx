@@ -2983,6 +2983,8 @@ gdk_export void	VALempty	(ValPtr v);
 gdk_export void	VALclear	(ValPtr v);
 gdk_export ValPtr	VALset		(ValPtr v, int t, ptr p);
 gdk_export void	*VALget		(ValPtr v);
+gdk_export int   VALsprintf   (str *dst, str format, va_list ap);
+
 
 #define ILLEGALVALUE	((ptr)-1)
 #define MAXPARAMS	32

@@ -19,7 +19,7 @@ bin_Mserver = {
 
 bin_Mdestroydb = bin_Mcreatedb
 BINS = {
-	SOURCES = Mcreatedb.mx Mal.mx
+	SOURCES = Mcreatedb.mx 
 	LIBS = ../gdk/libbat ../mal/libmal $(SOCKET_LIBS) $(GDK_LIBS)
 }
 

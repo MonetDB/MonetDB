@@ -47,6 +47,26 @@ life time, or the type can be FROZEN after the first assignment.
 The symbol table structure is defined here, because it is cross-referenced
 from the instruction record.
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
 #ifndef _MAL_INSTR_H
 #define _MAL_INSTR_H
 
@@ -54,7 +74,7 @@ from the instruction record.
 #include "mal.h"
 
 #define DEBUG_MAL_INSTR
-#define MAXARG 64
+#define MAXARG 256
 
 typedef struct SYMDEF {
         struct SYMDEF   *peer;  /* where to look next */
@@ -129,7 +149,7 @@ Allocation of space assumes a rather exotic number of arguments.
 #define getArgType(M,P,I)  (M)->var[(P)->argv[I]].type
 #define getArgDef(M,P,I)  (M)->var[(P)->argv[I]].def
 #define getArgOffset(M,P,I)  (M)->var[(P)->argv[I]].offset
-#define getArgValue(M,P,I)  (M)->var[(P)->argv[I]].value
+#define getArgDefault(M,P,I)  (M)->var[(P)->argv[I]].value
 #define getPrgSize(M)	(M)->stop
 #define getVarName(M,I)  (M)->var[I].name
 #define getVarType(M,I)  (M)->var[I].type
@@ -140,30 +160,31 @@ Allocation of space assumes a rather exotic number of arguments.
 #define getVarAccess(M,I) (M)->var[I].accessmode
 #define getRetType(S)	getDestType(((S).def),0)
 
-extern InstrPtr newInstruction(MalBlkPtr mb, int kind);
-extern MalBlkPtr newMalBlk();
-extern MalBlkPtr copyMalBlk(MalBlkPtr);
-extern void freeInstruction(InstrPtr p);
-extern void freeVariable(MalBlkPtr mb, int varid);
-extern int findVariable(MalBlkPtr mb, str name);
-extern malType getType(MalBlkPtr mb, str nme);
-extern int newVariable(MalBlkPtr mb, str name,malType type);
-extern int newTmpVariable(MalBlkPtr mb, malType type);
-extern str newConstant(MalBlkPtr mb, malType type, str val);
-extern int isPolymorphic(MalBlkPtr mb, InstrPtr p, int i);
-extern int chkPolyType(malType p1, malType a1);
-extern int chkPolyTypePair(malType p1, malType a1, malType p2, malType a2);
-extern malType getPolyReturn(MalBlkPtr cmd, InstrPtr pp, 
+mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
+mal_export MalBlkPtr newMalBlk();
+mal_export MalBlkPtr copyMalBlk(MalBlkPtr);
+mal_export void freeInstruction(InstrPtr p);
+mal_export void freeVariable(MalBlkPtr mb, int varid);
+mal_export int findVariable(MalBlkPtr mb, str name);
+mal_export malType getType(MalBlkPtr mb, str nme);
+mal_export int newVariable(MalBlkPtr mb, str name,malType type);
+mal_export int newTmpVariable(MalBlkPtr mb, malType type);
+mal_export str newConstant(MalBlkPtr mb, malType type, str val);
+mal_export int isPolymorphic(MalBlkPtr mb, InstrPtr p, int i);
+mal_export int isVARG(MalBlkPtr mb, InstrPtr p, int i);
+mal_export int chkPolyType(malType p1, malType a1);
+mal_export int chkPolyTypePair(malType p1, malType a1, malType p2, malType a2);
+mal_export malType getPolyReturn(MalBlkPtr cmd, InstrPtr pp, 
 			     MalBlkPtr mb, InstrPtr p);
-extern str newTmpName(int i);
-extern MalBlkPtr copyMalBlk(MalBlkPtr old);
-extern void pushInstruction(MalBlkPtr mb, InstrPtr p);
-extern void pushArgument(InstrPtr p, int varid);
-extern void setReturnArgument(InstrPtr p, int varid);
-extern void printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
-extern void promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
-extern void freeMalBlk(MalBlkPtr mb);
-extern str raiseException(str name, str msg);
+mal_export str newTmpName(int i);
+mal_export MalBlkPtr copyMalBlk(MalBlkPtr old);
+mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
+mal_export void pushArgument(InstrPtr p, int varid);
+mal_export void setReturnArgument(InstrPtr p, int varid);
+mal_export void printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
+mal_export void promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
+mal_export void freeMalBlk(MalBlkPtr mb);
+mal_export str raiseException(str name, str msg);
 
 #endif /*  _MAL_INSTR_H*/
 @c
@@ -419,6 +440,10 @@ str newConstant(MalBlkPtr mb, malType type, str val){
 The current GDK layer does not perform a value range check.
 Since constants are dealt with only once, it is performed here
 as part of the parsing overhead.
+Note that we support automatic coercion to a 
+coerced type even in the case that a specific type specifier
+has been given at the language level. A Warning is issued
+to make the user aware of this situation.
 @c
 	switch( type){
 	case TYPE_void: VALset(vr,TYPE_void,ATOMnilptr(TYPE_void));break;
@@ -438,10 +463,17 @@ as part of the parsing overhead.
 			break;
 	case TYPE_sht: {long l= strtol(val,NULL,0);
 			if( l>256 || l<0) {
-				sprintf(buf,"newConstant:sht conversion error\n");
+				if( l<2^31 && l> -2^31){
+				sprintf(buf,"WARNING:newConstant:sht coerced to int\n");
 				GDKerror(buf);
-				vr->vtype= TYPE_sht;
-				vr->val.shval= *(sht *) ATOMnil(TYPE_sht);
+				vr->vtype= TYPE_int;
+				vr->val.ival = l;
+				} else{
+				sprintf(buf,"WARNING:newConstant:sht coerced to lng\n");
+				GDKerror(buf);
+				vr->vtype= TYPE_lng;
+				vr->val.lval = l;
+				}
 			} else {
 				vr->vtype= TYPE_sht;
 				vr->val.shval= l;
@@ -449,10 +481,10 @@ as part of the parsing overhead.
 			break; }
 	case TYPE_int: {long l= strtol(val,NULL,0);
 			if( l>= (2<<16) || l <= (-1<<16)){
-				sprintf(buf,"newConstant:int conversion error\n");
-				GDKerror(buf);
-				vr->vtype= TYPE_int;
-				vr->val.ival= *(int*) ATOMnil(TYPE_int);
+			sprintf(buf,"WARNING:newConstant:int coerced to lng\n");
+			GDKerror(buf);
+				vr->vtype= TYPE_lng;
+				vr->val.lval= l;
 			} else {
 				vr->vtype= TYPE_int;
 				vr->val.ival= l;
@@ -578,6 +610,15 @@ malType getPolyReturn(MalBlkPtr cmd, InstrPtr pp, MalBlkPtr mb, InstrPtr p){
 	if( isBatType(t))
 		return newBatType(head,tail);
 	return malAnyType;
+}
+@+ Variable argument list
+Functions and rules may contain a single variable argument list
+They are recognized with the function below and can be used to control
+the iterator over argument lists.
+@c
+int isVARG(MalBlkPtr mb, InstrPtr p, int i){
+	if( strcmp(getArgName(mb,p,i),malVARG)==0) return 1;
+	return 0;
 }
 @- Argument handling
 The number of arguments for procedures is currently limited
@@ -713,6 +754,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	switch( p->token){
 		case FCNcall:
 		case RLRcall:
+		case PATcall:
 		case CMDcall:
 		case ASSIGNsymbol:
 			sprintf(t,"\t%s := ",nme); break;
@@ -751,10 +793,11 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	if( p->fcnname) sprintf(t,"%s(",p->fcnname);
 	for(i=1;i<p->argc;i++){
 		advance(t);
-		if( getArgValue(mb,p,i) != NULL){
+		if( isVARG(mb,p,i)) {sprintf(t,"...");break;}
+		if( getArgDefault(mb,p,i) != NULL){
 			if( getArgType(mb,p,i)== TYPE_str)
-				sprintf(t,"\"%s\"", getArgValue(mb,p,i));
-			else	sprintf(t,"%s", getArgValue(mb,p,i));
+				sprintf(t,"\"%s\"", getArgDefault(mb,p,i));
+			else	sprintf(t,"%s", getArgDefault(mb,p,i));
 		} else sprintf(t,"%s", getArgName(mb,p,i));
 		advance(t);
 		if( strcmp("bat",getArgName(mb,p,i))==0 ){

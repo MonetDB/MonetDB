@@ -1,6 +1,6 @@
 # check propagation of type variables over bats
 
-function f(any::1 a, any::2 b):bat[any::2,any::1] ; function end;
+function f(a:any::1, b:any::2):bat[any::2,any::1] ; end function;
 
 a:= f(1,"hello");
 b:= f(1,"world");

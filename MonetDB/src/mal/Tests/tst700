@@ -1,0 +1,7 @@
+# A few system calls
+err:= print("hello world");
+err:= print(0);
+err:= print(1);
+pi := 3.147;
+err:= print(pi);
+err:= printf("%s","hello");

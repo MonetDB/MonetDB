@@ -5,14 +5,34 @@
 The code below manages function resolution over MAL instructions. 
 The policy is described in mal_symbol.mx
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
 #ifndef _MAL_RESOLVE_H
 #define _MAL_RESOLVE_H
 
 #include "mal_function.h"
 
-/* #define DEBUG_MAL_RESOLVE*/
-extern void resolveTypes(InstrPtr p);
-extern int resolveFunction(Symbol prg);
+/*#define DEBUG_MAL_RESOLVE*/
+mal_export void resolveTypes(InstrPtr p);
+mal_export int resolveFunction(Symbol prg);
 
 #endif /*  _MAL_RESOLVE_H*/
 @+ Function call resolution
@@ -37,7 +57,7 @@ the first parameter is used to isolate a subscope.
 malType findFunctionType(Symbol scope, MalBlkPtr mb, InstrPtr p){
 	Symbol s,m;
 	InstrPtr sig;
-	int donetwice=0, i,j,polymorphic, unmatched = 0, s1;
+	int donetwice=0, i,j,k,l, polymorphic, unmatched = 0, s1;
 
 @-
 @-
@@ -59,26 +79,38 @@ Perform a strong type-check on the actual arguments. If it turns
 out to be polymorphic, we have to clone the procedure or module. 
 Provided the actual/formal parameters are compliant throughout
 the function call.
+
+Also look out for variable argument lists. This means that we
+have to keep to iterators, one for the caller (i) and one for
+the callee (k). Since the variable argument only occurs as last,
+we simple avoid an increment when running out of formal arguments.
+
 @c
 	sig = getSignature(s); 
-	if( sig->argc!= p->argc) {s= s->peer; continue;}
+	if( isVARG(s->def,sig,sig->argc-1)){
+		if( p->argc< sig->argc-1 ) {s= s->peer; continue;}
+	} else
+	if( sig->argc!= p->argc ) {s= s->peer; continue;}
 
 	polymorphic = 0;
 	unmatched = 0;
-	for(i=1;i<p->argc;i++){
-		if( isPolymorphic(s->def,sig,i) ){
+	for(k=i=1;i<p->argc;i++,k++){
+		if( isVARG(s->def,sig,k)) k--;
+		if( isPolymorphic(s->def,sig,k) ){
 			polymorphic++;
 
-			for(j=i+1;j<p->argc;j++)
-			if( isPolymorphic(s->def,sig,j) &&
+			for(l=j=i+1;j<p->argc;j++,l++){
+			/* the variable argument list is checked in outerloop*/
+			if( isVARG(s->def,sig,l)) break;
+			if( isPolymorphic(s->def,sig,l) &&
 			    chkPolyTypePair(
-				   getArgType(s->def,sig,j),
+				   getArgType(s->def,sig,l),
 				   getArgType(mb,p,j),
-				   getArgType(s->def,sig,i),
+				   getArgType(s->def,sig,k),
 				   getArgType(mb,p,i)) ){
 					unmatched++;
 					break;
-			}
+			} }
 			continue;
 		}
 @-
@@ -88,13 +120,14 @@ level. (e.g. var2:= var0:int). This avoids repeated type analysis
 just before you execute a function.
 At a later stage we may automatically insert such coercion requests.
 @c
-		if( getArgType(mb,p,i) != getArgType(s->def,sig,i) ){
+		if( getArgType(mb,p,i) != getArgType(s->def,sig,k) ){
 			unmatched= i;
 			break;
 		}
 	}
 	if( unmatched) { s= s->peer; continue; }
 	if( polymorphic){
+		/* what to do with varargs */
 		if( s->kind == COMMANDsymbol)
 			s1= getPolyReturn(s->def,sig,mb,p);
 		else {
@@ -110,7 +143,7 @@ At a later stage we may automatically insert such coercion requests.
 #endif
 @-
 We found the proper function. Copy some properties. In particuler,
-determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall
+determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 @c
 	switch(getSignature(s)->token){
 	case COMMANDsymbol: 
@@ -119,6 +152,10 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall
 		break;
 	case RULERsymbol: 
 		p->token = RLRcall; 
+		p->fcn = getSignature(s)->fcn;
+		break;
+	case PATTERNsymbol: 
+		p->token = PATcall; 
 		p->fcn = getSignature(s)->fcn;
 		break;
 	case FUNCTIONsymbol: 
