@@ -218,7 +218,7 @@ print( docid, tid );
 [ 1013@0, 2@0,	  "this"		  ]
 [ 1014@0, 2@0,	  "database"		  ]
 
-
+module( "xtables" );
 CTgroup( docid, tid ).print;
 #-----------------#
 # BAT:	  tmp_31  #

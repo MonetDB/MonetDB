@@ -27,7 +27,7 @@ stdout of test 'no.106` in directory 'tests/BugReports` itself:
 [ 2@0,	  "test"		  ]
 [ 2@0,	  "this"		  ]
 [ 2@0,	  "database"		  ]
-
+module(xtables);
 setoid(oid(20000000));
 
 #split w in twee tabellen
