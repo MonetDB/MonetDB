@@ -68,6 +68,7 @@ a01 := a01.[int];
 ai2:=a01.info;
 a01.[-](b01);
 b01 := b01.[oid].reverse.[int];
+b01.print;
 #-----------------#
 # t	tmp_35	  # name
 # oid	int	  # type
@@ -75,6 +76,7 @@ b01 := b01.[oid].reverse.[int];
 [ 1@0,	  2	  ]
 [ 2@0,	  1	  ]
 [ 0@0,	  0	  ]
+quit();
 
 # 20:26:10 >  
 # 20:26:10 >  Done.
