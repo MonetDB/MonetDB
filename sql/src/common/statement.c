@@ -789,24 +789,8 @@ stmt *stmt_diff(stmt * op1, stmt * op2)
 
 stmt *stmt_intersect(stmt * op1, stmt * op2)
 {
-/*
-	stmt *s = stmt_create();
-	s->type = st_intersect;
-	s->op1.stval = op1;
-	if (op1->h != op2->h){
-		s->op2.stval = stmt_reverse(op2);
-	} else {
-		s->op2.stval = op2;
-	}
-	s->nrcols = op1->nrcols;
-	s->key = op1->key;
-	s->h = stmt_dup(op1->h);
-	s->t = stmt_dup(op1->t);
-	return s;
-*/
 	stmt *res = NULL;
 	int reverse = 0;
-printf("#TODO stmt_intersect\n");
 	while(op1->type == st_reverse){
 		stmt *r = op1;
 		op1 = stmt_dup(op1->op1.stval);
@@ -828,40 +812,61 @@ printf("#TODO stmt_intersect\n");
 		stmt_destroy(op2);
 		return op1;
 	}
-	/*
-         * need to add the mark trick as [].select(true) on tables 
-	 * without unique head identifiers + semijoin is wrong
-	 */
-	if (!reverse){
-		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-		stmt *mr = stmt_mark(stmt_dup(op1), 50);
-		stmt *l = stmt_join(stmt_dup(ml), 
-			stmt_dup(op2->op1.stval), cmp_equal ); 
-		stmt *r = stmt_join(stmt_dup(mr), 
-			stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-		stmt *v = stmt_select( l, r, op2->flag);
-		res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
-	} else { /* reverse */
-		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-		stmt *mr = stmt_mark(stmt_dup(op1), 50);
-		stmt *l = stmt_join(stmt_dup(mr), 
-			stmt_dup(op2->op1.stval), cmp_equal ); 
-		stmt *r = stmt_join(stmt_dup(ml), 
-			stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-		stmt *v = stmt_select( l, r, op2->flag);
-		res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
-	}
+
+	if (op1->flag == cmp_equal && op2->flag == cmp_equal) {
+printf("#TODO stmt_intersect (1)\n");
+		/* 
+		 * needs to be replaced by proper multi-attribute join
+		 */
+		res = stmt_create();
+		res->type = st_intersect;
+		res->op1.stval = op1;
+		if (reverse){
+			res->op2.stval = stmt_reverse(op2);
+		} else {
+			res->op2.stval = op2;
+		}
+		res->nrcols = op1->nrcols;
+		res->key = op1->key;
+		res->h = stmt_dup(op1->h);
+		res->t = stmt_dup(op1->t);
+	} else {
+printf("#TODO stmt_intersect (2)\n");
+		/*
+	         * need to add the mark trick as [].select(true) on tables 
+		 * without unique head identifiers + semijoin is wrong
+		 */
+		if (!reverse){
+			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+			stmt *mr = stmt_mark(stmt_dup(op1), 50);
+			stmt *l = stmt_join(stmt_dup(ml), 
+				stmt_dup(op2->op1.stval), cmp_equal ); 
+			stmt *r = stmt_join(stmt_dup(mr), 
+				stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
+			stmt *v = stmt_select( l, r, op2->flag);
+			res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
+		} else { /* reverse */
+			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+			stmt *mr = stmt_mark(stmt_dup(op1), 50);
+			stmt *l = stmt_join(stmt_dup(mr), 
+				stmt_dup(op2->op1.stval), cmp_equal ); 
+			stmt *r = stmt_join(stmt_dup(ml), 
+				stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
+			stmt *v = stmt_select( l, r, op2->flag);
+			res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
+		}
 
 /*
-	if (!reverse){
- 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal ), stmt_dup(op2->op1.stval), op2->flag));
-	} else {
- 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_dup(op2->op1.stval), cmp_equal ), stmt_reverse(stmt_dup(op2->op2.stval)), op2->flag));
-	}
-	stmt_destroy(op2);
+		if (!reverse){
+	 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal ), stmt_dup(op2->op1.stval), op2->flag));
+		} else {
+	 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_dup(op2->op1.stval), cmp_equal ), stmt_reverse(stmt_dup(op2->op2.stval)), op2->flag));
+		}
+		stmt_destroy(op2);
 */
-	stmt_destroy(op1);
-	stmt_destroy(op2);
+		stmt_destroy(op1);
+		stmt_destroy(op2);
+	}
 	return res;
 }
 

@@ -64,6 +64,7 @@ static int select_count( stmt *s )
 		*/
 		case st_semijoin: return select_count(s->op1.stval) +
 					select_count(s->op2.stval);
+		case st_like:
 		case st_select: return 1;
 		default: return 0;
 	}
