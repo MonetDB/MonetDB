@@ -248,6 +248,9 @@ address BKCsetSequenceBase
 comment "Set the sequence base for the void column of a BAT.";
 command setSequenceBase( b:bat[:oid,:any$1], seqbase:oid):any
 address BKCsetSequenceBase;
+command setSequenceBase( b:bat[:void,:any$1], seqbase:void):any
+address BKCsetSequenceBaseNil;
+
 
 command setSorted(b:bat[:any,:any]) :bit 
 address BKCsetSorted
@@ -2271,6 +2274,12 @@ str BKCsetSequenceBase(int *r, int *bid, oid* o){
 	BATseqbase(b, *o);
 	return MAL_SUCCEED;
 }
+str BKCsetSequenceBaseNil(int *r, int *bid, oid* o){
+      oid ov= oid_nil;
+      (void) o;
+      return BKCsetSequenceBase(r,bid, &ov);
+}
+
 str BKCgetSequenceBase(oid *r, int *bid){
 	BAT *b;
 	@:getBATdescriptor(r,bid,b,seqbase)@
