@@ -612,7 +612,7 @@ main (int argc, char *argv[])
     while (true) {
         int c;
 
-#if HAVE_GETOPT_H
+#if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
         c = getopt_long (argc, argv, "DOPTcd:hl:mno:pqst", 
