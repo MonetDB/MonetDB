@@ -1370,7 +1370,6 @@ promptMonet(Mapi mid)
 		printf("promptMonet:");
 	s = strchr(mid->blk.buf + mid->blk.nxt, '\n');
 	assert(s);
-	*s = 0;
 	i = s - (mid->blk.buf + mid->blk.nxt);
 	mid->blk.nxt += i + 1;
 	mid->active = 0;
@@ -2887,9 +2886,11 @@ empy the row cache.
 	do {								\
 		s= strchr(mid->blk.buf+mid->blk.nxt,PROMPTBEG);		\
 		if (s) {						\
-			ptrdiff_t len = s - mid->blk.buf;		\
-			fwrite(mid->blk.buf+mid->blk.nxt,1,len,fd);	\
-			mid->blk.nxt += len;				\
+			ptrdiff_t len = s - (mid->blk.buf + mid->blk.nxt); \
+			if (len > 0) {					\
+				fwrite(mid->blk.buf+mid->blk.nxt,1,len,fd); \
+				mid->blk.nxt += len;			\
+			}						\
 			promptMonet(mid);				\
 			return MOK;					\
 		} else if (sz > 0) {					\
