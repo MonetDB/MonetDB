@@ -73,7 +73,7 @@ dir;
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  14,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  647,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  26,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
+[ "monet_environment",	  "str",  "str",  27,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_fcn_aut",	  "oid",  "str",  599,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  647,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_fcn_dat",	  "oid",  "str",  599,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
