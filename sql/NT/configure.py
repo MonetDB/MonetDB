@@ -28,8 +28,9 @@ import fileinput
 import os
 import string
 
-prefix=os.path.abspath(sys.argv[1]);
-build=prefix
+build=os.path.abspath(sys.argv[1]);
+prefix=os.path.abspath(sys.argv[2]);
+
 source=os.path.abspath(os.path.join(build,os.pardir))
 
 # double back slashes
@@ -78,5 +79,5 @@ def substitute(line):
         line = string.replace(line, p, v);
     return line
 
-for line in fileinput.input(sys.argv[2:]):
+for line in fileinput.input(sys.argv[3:]):
     sys.stdout.write(substitute(line))

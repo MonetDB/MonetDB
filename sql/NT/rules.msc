@@ -63,7 +63,7 @@ MX="$(MONET_PREFIX)\bin\Mx"
 CP=copy
 MV=copy
 DEL=del
-CONFIGURE=$(PYTHON) $(TOPDIR)\configure.py $(TOPDIR)
+CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" "$(TOPDIR)" "$(prefix)"
 
 MONET_INCLUDEDIR=$(MONET_PREFIX)\include
 MONET_INCS="-I$(MONET_INCLUDEDIR)" "-I$(MONET_INCLUDEDIR)\common" "-I$(MONET_INCLUDEDIR)\gdk" "-I$(MONET_INCLUDEDIR)\monet" "-I$(MONET_INCLUDEDIR)\plain" "-I$(MONET_INCLUDEDIR)\mapi"
