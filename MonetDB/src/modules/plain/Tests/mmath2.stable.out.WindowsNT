@@ -21,7 +21,7 @@ sin(M_PI_4).print;
 sin(M_PI_2).print;
 [ 1 ]
 sin(M_PI).print;
-[ 1.22461e-016 ]
+[ 1.22465e-016 ]
 sin(3*M_PI_2).print;
 [ -1 ]
 cos(dbl(0)).print;
@@ -29,21 +29,21 @@ cos(dbl(0)).print;
 cos(M_PI_4).print;
 [ 0.707107 ]
 cos(M_PI_2).print;
-[ 6.12303e-017 ]
+[ 6.12323e-017 ]
 cos(M_PI).print;
 [ -1 ]
 cos(3*M_PI_2).print;
-[ -1.83691e-016 ]
+[ -1.83697e-016 ]
 tan(dbl(0)).print;
 [ 0 ]
 tan(M_PI_4).print;
 [ 1 ]
 tan(M_PI_2).print;
-[ 1.63318e+016 ]
+[ 1.63312e+016 ]
 tan(M_PI).print;
-[ -1.22461e-016 ]
+[ -1.22465e-016 ]
 tan(3*M_PI_2).print;
-[ 5.44393e+015 ]
+[ 5.44375e+015 ]
 asin(dbl(-1)).print;
 [ -1.5708 ]
 asin(dbl(-0.5)).print;
@@ -76,7 +76,7 @@ atan(dbl(1)).print;
 [ 0.785398 ]
 
 asin(sin(M_PI)).print;
-[ 1.22461e-016 ]
+[ 1.22465e-016 ]
 acos(cos(M_PI)).print;
 [ 3.14159 ]
 atan(tan(M_PI_2)).print;

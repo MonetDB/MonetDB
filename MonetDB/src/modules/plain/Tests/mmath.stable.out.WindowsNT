@@ -13,7 +13,7 @@ stdout of test 'mmath` in directory 'src/modules/plain` itself:
 module(mmath);
 setoid(oid(20000000));
 asin(sin(M_PI)).print;
-[ 1.22461e-016 ]
+[ 1.22465e-016 ]
 acos(cos(M_PI)).print;
 [ 3.14159 ]
 atan(tan(M_PI_2)).print;
