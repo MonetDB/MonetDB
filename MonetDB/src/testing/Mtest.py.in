@@ -1517,6 +1517,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if os.path.isfile(TST+".prologue"):
             PROLOGUE = " "+TST+".prologue"
 
+        CheckSocket2(env, SERVER, SrvrErr)
+        if SERVER == "SQL":
+            CheckSocket2(env, "MAPI", SrvrErr)
+
         Srvr = '%s%s %s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], TSTDB)
         if SERVER == "MAPI":
             Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
@@ -1538,10 +1542,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         ClntErrFile = TST+".client.err"
         open(ClntOutFile,"w").close()
         open(ClntErrFile,"w").close()
-
-        CheckSocket2(env, SERVER, SrvrErr)
-        if SERVER == "SQL":
-            CheckSocket2(env, "MAPI", SrvrErr)
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
         ln=""
