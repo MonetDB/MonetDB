@@ -382,15 +382,78 @@ bunins_failed:
 	BBPunfix(*ret);
 	return throwMessage("batstr"@5, "bunins failed");
 }
+@= binarySTRstr
+str STRbat@1(int *ret, int *l, int *r)
+{   BAT *bn, *left, *right;
+	BUN o,p,q;
+	int xx,yy;
+	@2 v, *vp= &v;
+
+	prepareOperand2(left,l,right,r,@5);
+	@:chkSize(left,right,CMDcompare@1)@
+	prepareResult2(bn,left,right,TYPE_@2,@5);
+
+	o = BUNfirst(left);
+	p = BUNfirst(right);
+	q = BUNlast(right);
+	xx = BUNsize(left);
+	yy = BUNsize(right);
+	while(p<q) {
+	    ptr h = BUNhead(left,o);
+	    str tl = (str) BUNtail(left,o);
+	    str tr = (str) BUNtail(right,p);
+		@4(vp, &tl, &tr);
+		bunfastins(bn, h, @6);
+		o += xx;
+		p += yy;
+	}
+	BBPunfix(right->batCacheid);
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
+
+bunins_failed:
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	BBPunfix(*ret);
+	return throwMessage("batstr." @5, "bunins failed");
+}
+
+str STRbat@1cst(int *ret, int *l, @3 *cst)
+{   BAT *bn, *left;
+	BUN p,q;
+	int xx;
+	@2 v, *vp= &v;
+
+	prepareOperand(left,l,@5);
+	prepareResult(bn,left,TYPE_@2,@5);
+
+	p = BUNfirst(left);
+	q = BUNlast(left);
+	xx = BUNsize(left);
+	while(p<q) {
+	    ptr h = BUNhead(left,p);
+	    str tl = (str) BUNtail(left,p);
+		@4(vp, &tl, cst);
+		bunfastins(bn, h, @6);
+		p += xx;
+	}
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
+
+bunins_failed:
+	BBPunfix(left->batCacheid);
+	BBPunfix(*ret);
+	return throwMessage("batstr"@5, "bunins failed");
+}
 @c
-	@:binarySTR(Prefix,bit,str, STRPrefix,"prefix")@
-	@:binarySTR(Suffix,bit,str, STRSuffix,"suffix")@
-	@:binarySTR(strSearch,int,str, STRstrSearch,"search")@
-	@:binarySTR(RstrSearch,int,str, STRReverseStrSearch,"r_search")@
+	@:binarySTRstr(Prefix,bit,str, STRPrefix,"prefix",vp)@
+	@:binarySTRstr(Suffix,bit,str, STRSuffix,"suffix",vp)@
+	@:binarySTRstr(strSearch,int,str, STRstrSearch,"search",vp)@
+	@:binarySTRstr(RstrSearch,int,str, STRReverseStrSearch,"r_search",vp)@
+	@:binarySTRstr(Concat,str,str,STRConcat,"+",v)@
 	@:binarySTR(Tail,str,int,strTail,"tail")@
-	@:binarySTR(ChrAt,chr,int,strChrAt,"chrAt")@
 	@:binarySTR(WChrAt,int,int,strWChrAt,"chrAt")@
-	@:binarySTR(Concat,str,str,STRConcat,"+")@
+	@:binarySTR(ChrAt,chr,int,strChrAt,"chrAt")@
 
 str
 STRbattostr(int *ret, int *bid){
