@@ -44,7 +44,7 @@ def mFilter (FILE, IGNORE) :
 			  + "^Mcreatedb: calling .Mserver .*-db .* for the first time..$"	+ "|"	\
 			  + "^Mcreatedb: database .* has been initialized succesfully!$"+ "|"	\
 			  + "^module\(mprof\);$"					+ "|"	\
-			  + "^pm([BE]\(\"[a-zA-Z0-9_]+[0-9]\"\)|Summary\(\));$"		+ "|"	\
+			  + "^pm([BE]\(\"(global_.+|[a-zA-Z0-9_]+[0-9])\"\)|Summary\(\));$"		+ "|"	\
 			  + "^printf\(\"#~BeginProfilingOutput~#\\\\n\"\);$"		+ "|"	\
 			  + "^connection= .*:[0-9]*$"					+ "|"	\
 			  + "^Connecting to server: localhost:[0-9]*$"			+ "|"	\

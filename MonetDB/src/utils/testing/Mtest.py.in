@@ -47,11 +47,11 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
 ''')
 
 	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
-		print('''\
- -I<exp> : ignore lines matching <exp> during diff (default: -I'^#')
+		print("""\
+ -I<exp> : ignore lines matching <exp> during diff (default: -I'"""+dftIGNORE+"""')
  -c<num> : use <num> lines of context during diff (default: -c1)
  -a<num> : accuracy for diff: 0=lines, 1=words, 2=chars (default: -a1)
-''')
+""")
 
 	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
 		print('''\
@@ -256,7 +256,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
 
 	xWHAT = WHAT
 	if THISFILE == "Mprofile.py":
-		test = re.compile("^"+TST+".*\..*mil.*\.prof\.diff\.html$")
+		test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*\.prof\.diff\.html$")
 		d = os.listdir(os.getcwd())
 		d.sort()
 		rows = ""
@@ -790,7 +790,7 @@ def RunTest(env, TST) :
 	elif CALL == "sqlXp":
 		SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
 	else:
-		test = re.compile("^"+TST+"(|\..*|_[sp][0-9][0-9]\..*)$")
+		test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$")
 		for f in os.listdir(TSTSRCDIR):
 			if test.match(f):
 				shutil.copy(TSTSRCDIR+os.sep+f,TSTTRGDIR)
@@ -805,7 +805,7 @@ def RunTest(env, TST) :
 				return TX
 
 		if THISFILE == "Mprofile.py":
-			test = re.compile("^"+TST+".*\..*mil.*$")
+			test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*$")
 			d = os.listdir(os.getcwd())
 			for f in d:
 				if test.match(f)  and  f != TST+EXT+".src":
@@ -1235,7 +1235,9 @@ THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 if THISFILE == "Mprofile.py":
 	TSTPREF = "Profiles"
+	dftIGNORE = '^[#~]'
 else:
+	dftIGNORE = '^#'
 	TSTPREF = "Tests"
 TSTSUFF = "Tests"
 
@@ -1358,9 +1360,9 @@ def main(argv) :
 
 	#par = {}
 	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
-		par['IGNORE']    = '-I"^#"'
+		par['IGNORE']    = '-I"'+dftIGNORE+'"'
 		par['CONTEXT']   = '-c1'
-		par['ACCURACY']  = 2
+		par['ACCURACY']  = 1
 	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
 		par['TIMEOUT']   = 600
 	if THISFILE == "Mapprove.py":

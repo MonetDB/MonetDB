@@ -58,25 +58,77 @@ counter = 1
 bool = 0
 count = 0
 quit = 0
+concatenate = 0
+temp_sentence = ''
+beeninhash = 0
 
 fin_fil.write('module(mprof);\n')
+
+global_tag_name = 'global_' + input_fil_name
+g_bpatt = 'pmB("' + global_tag_name + '");'
+g_epatt = 'pmE("' + global_tag_name + '");'
+fin_fil.write(g_bpatt+'\n')
 
 for line in input_fil.readlines() :
 	if regex.search('#',line) == -1 :
 		if regex.search('quit;',line) != -1 :
 			quit = 1
+			fin_fil.write(g_epatt+'\n')
 			fin_fil.write('printf("#~BeginProfilingOutput~#\\n");\n')
-			fin_fil.write('pmSummary();\n')		
+			fin_fil.write('pmSummary();\n')
 			fin_fil.write('printf("#~EndProfilingOutput~#\\n");\n')
+	semicolon = 0
 	if regex.search(';',line) != -1 :
 		with_semicolon = 1	
 	else :
 		with_semicolon = 0
 	first_time_in_loop = 1
 	for splitted_sentence in regsub.split(line,";") :
+		if concatenate == 1 :
+			if semicolon == 0 :
+				splitted_sentence = temp_sentence + splitted_sentence
+			else :	
+				splitted_sentence = temp_sentence + ';' + splitted_sentence
+			concatenate = 0
+			if (beeninhash == 1 and regex.search('#',splitted_sentence) != -1) :
+				if semicolon == 1 :
+					with_semicolon = 0
+			if (regex.search('#',splitted_sentence) != -1 and regex.search('\n',splitted_sentence) == -1) :
+				concatenate = 1
+				temp_sentence = splitted_sentence
+			else :
+				temp_sentence = ''
+
+		if regex.search('#',splitted_sentence) != -1 :
+			if regex.search('\(.\)*\(#\)[^;]*\(.\)\([^\n\t\w]\)',line) != -1 :
+				if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*#.',splitted_sentence) != -1 :
+					if beeninhash == 0 :	
+						concatenate = 1
+						temp_sentence = splitted_sentence
+						semicolon = 1
+					beeninhash = 1
+
+		if regex.search('"',splitted_sentence) != -1 :
+			if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*$',splitted_sentence) == -1 :
+				temp_sentence = splitted_sentence
+				concatenate = 1
+				semicolon = 1
+
+		if regex.search('#',splitted_sentence) == -1 :
+#			if (with_semicolon == 0 and 
+			if (regex.search('\n',splitted_sentence) != -1 and splitted_sentence!='\n') :
+				if (regex.search('{',splitted_sentence) == -1 and regex.search('}',splitted_sentence) == -1) :	
+					temp_sentence = splitted_sentence
+					if regex.search('\n',temp_sentence) != -1 :
+						t_sentence = regsub.split(splitted_sentence,"\n")
+						temp_sentence = t_sentence[0]
+					concatenate = 1
+	
 		flag = 0
-		if splitted_sentence!='\n' :
-			if splitted_sentence[0]==' ' :
+		if (splitted_sentence!='\n' and concatenate == 0) :
+			beeninhash = 0
+			concatenate = 0
+			if regex.search('#',temp_sentence) == -1 :
 				flag = 1
 				cnt = 0
 				for j in splitted_sentence :
@@ -87,22 +139,16 @@ for line in input_fil.readlines() :
 						flag = 0
 						break
 			if flag == 0 :
-#                                if (regex.search(';',splitted_sentence) == -1 and (regex.search('{',splitted_sentence) != -1 or
-#regex.search('}',splitted_sentence) != -1 or regex.search('#',splitted_sentence) != -1)) :
-#                                        line1 = splitted_sentence
-#                                else :
-#                                        if with_semicolon == 1 :
-#                                                line1 = splitted_sentence + ';\n' 
-#                                if regex.search('#',splitted_sentence) != -1 :  
-#                                        if with_semicolon == 1 :  
-#                                                line1 = splitted_sentence + ';\n'
                                 if with_semicolon == 1 :  
-					if (first_time_in_loop == 1 or regex.search('\n',splitted_sentence) == -1):
+					if (first_time_in_loop == 1 or regex.search('\n',splitted_sentence) == -1 or regex.search('#',splitted_sentence) != -1) :
 	                                	line1 = splitted_sentence + ';\n'
 				else :
                                 	line1 = splitted_sentence
 				commands_fil.seek(0);
 				command_no = 0
+				prev_line2 = ''
+				multiple = 0
+				found = 0
 				for line2 in commands_fil.readlines() :
 					command_no=command_no + 1
 					count = count + 1
@@ -111,25 +157,39 @@ for line in input_fil.readlines() :
 						if line2[temp] == ' ' or line2[temp] == '\n' :
 							line2=line2[0:temp]
 							break
-					if regex.search(line2,line1) != -1 :
+					if regex.search('\<'+line2+'\>',line1) != -1 :
 						if regex.search('#',line1) == -1 :
-							if (line2 !='join' or ( line2 == 'join' and regex.search('semijoin',splitted_sentence) == -1)) :
+							found = 1	
+#							if (line2 !='join' or ( line2 == 'join' and regex.search('\<' + 'semijoin' + '\>',splitted_sentence) == -1)) :
+							if prev_line2!='' :
+								multiple = 1
+							if multiple == 0 :
 								command_name[command_no]=command_name[command_no] + 1
-								bpatt = 'pmB("' + line2 + "%d" %command_name[command_no] + '");'
-								epatt = 'pmE("' + line2 + "%d" %command_name[command_no] + '");'
-								fin_fil.write(bpatt + '\n')
-								fin_fil.write(line1)
-								fin_fil.write(epatt + '\n')
-								counter = counter + 1
-								bool = 1
+							bpatt = 'pmB("' + line2 + "%d" %command_name[command_no] + '");'
+							epatt = 'pmE("' + line2 + "%d" %command_name[command_no] + '");'
+							if multiple == 1 :
+								line2 = line2+'.'+prev_line2
+								bpatt = 'pmB("' + line2 + '");'
+								epatt = 'pmE("' + line2 + '");'
+							prev_line2 = line2
+						
+				if found == 1 :
+					fin_fil.write('\n' + bpatt + '\n')
+					fin_fil.write(line1)
+					fin_fil.write(epatt + '\n\n')
+					found = 0
+					counter = counter + 1
+					bool = 1
 				if (bool == 0) :
 					fin_fil.write(line1)
 				bool = 0
 		first_time_in_loop = 0
 if quit == 0 :
+	fin_fil.write(g_epatt+'\n')
 	fin_fil.write('printf("#~BeginProfilingOutput~#\\n");\n')
-	fin_fil.write('pmSummary();')
+	fin_fil.write('pmSummary();\n')
 	fin_fil.write('printf("#~EndProfilingOutput~#\\n");\n')
+
 print 'done.'
 commands_fil.close()		
 # The output file prof_... has the original file with the mprof tags at 
