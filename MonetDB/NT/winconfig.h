@@ -25,6 +25,11 @@
 
 /* Manual config.h. needed for win32 .  */
 
+/* We use #if _MSC_VER >= 1300 to identify Visual Studio .NET 2003 in
+ * which the value is actually 0x1310 (in Visual Studio 6 the value is
+ * 1200)
+ */
+
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
    versions.  We need to include stdlib.h and malloc.h first or else
@@ -69,7 +74,11 @@
 #define HAVE_BOOL 1
 
 /* Define to 1 if you have the <cstdio> header file. */
+#if _MSC_VER >= 1300
+#define HAVE_CSTDIO 1
+#else
 /* #undef HAVE_CSTDIO */
+#endif
 
 /* Define to 1 if you have the `ctime_r' function. */
 /* #undef HAVE_CTIME_R */
@@ -156,7 +165,11 @@
 /* #undef HAVE_INTTYPES_H */
 
 /* Define to 1 if you have the <iostream> header file. */
+#if _MSC_VER >= 1300
+#define HAVE_IOSTREAM 1
+#else
 /* #undef HAVE_IOSTREAM */
+#endif
 
 /* Define to 1 if you have the `isinf' function. */
 /* #undef HAVE_ISINF */
@@ -219,7 +232,11 @@
 /* #undef HAVE_LOCKF */
 
 /* Define to 1 if the system has the type `long long'. */
+#if _MSC_VER >= 1300
+#define HAVE_LONG_LONG 1
+#else
 /* #undef HAVE_LONG_LONG */
+#endif
 
 /* Define to 1 if you have the `mallinfo' function. */
 /* #undef HAVE_MALLINFO */
@@ -354,10 +371,20 @@
 #define HAVE_STRTOL 1
 
 /* Define to 1 if you have the `strtoll' function. */
+#if _MSC_VER >= 1300
+#define HAVE_STRTOLL 1
+#define strtoll _strtoi64
+#else
 /* #undef HAVE_STRTOLL */
+#endif
 
 /* Define to 1 if you have the `strtoull' function. */
+#if _MSC_VER >= 1300
+#define HAVE_STRTOULL
+#define strtoull _strtoui64
+#else
 /* #undef HAVE_STRTOULL */
+#endif
 
 /* Define if you have struct mallinfo */
 /* #undef HAVE_STRUCT_MALLINFO */
