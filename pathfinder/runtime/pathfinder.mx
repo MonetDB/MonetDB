@@ -1531,9 +1531,9 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var X_loc    := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC));
 		    X_prop   := nil;
 		    X_frag   := nil;
-		    X_ns     := X_ns.ord_uselect(ns).reverse();
-		    X_loc    := X_loc.ord_uselect(loc).reverse();
-		var _X       := X_ns.mirror().leftjoin(X_loc).mark(nil).reverse();
+		    X_ns     := X_ns.ord_uselect(ns);
+		    X_loc    := X_loc.ord_uselect(loc);
+		var _X       := X_ns.mirror().leftjoin(X_loc).reverse();
 		    X_ns     := nil;
 		    X_loc    := nil;
 		tmp_res := _X.leftfetchjoin(X_res).reverse().mark(0@0).reverse();
@@ -1611,10 +1611,8 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	cands := cands.chk_order();
 @
 @= kind_pre
- {
 	cands := ws.fetch(KIND_PRE + int(@1)).fetch(theFrag);
 	cands := cands.chk_order();
- }
 @
 @= nsloc_pre
  {
@@ -1654,12 +1652,12 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var X_loc    := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC));
 		    X_prop   := nil;
 		    X_frag   := nil;
-		    X_ns     := X_ns.ord_uselect(ns).reverse();
-		    X_loc    := X_loc.ord_uselect(loc).reverse();
-		var _X       := X_ns.mirror().leftjoin(X_loc).mark(nil).reverse();
+		    X_ns     := X_ns.ord_uselect(ns);
+		    X_loc    := X_loc.ord_uselect(loc);
+		var _X       := X_ns.mirror().leftjoin(X_loc).reverse();
 		    X_ns     := nil;
 		    X_loc    := nil;
-		cands := _X.leftfetchjoin(X_pre).reverse();
+		cands := _X.leftfetchjoin(X_pre);
 	}
 	cands := cands.chk_order();
  }
@@ -1699,7 +1697,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    X_frag   := nil;
 		var _X       := X_@1.ord_uselect(@1).reverse();
 		    X_@1     := nil;
-		tmp_pre := _X.leftfetchjoin(X_pre).reverse().mark(0@0).reverse();
+		cands := _X.leftfetchjoin(X_pre);
 	}
 	cands := cands.chk_order();
  }
