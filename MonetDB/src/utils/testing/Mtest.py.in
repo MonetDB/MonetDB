@@ -69,7 +69,7 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
 """ % (os.path.join(os.getcwd(),".monet."+string.split(THISFILE,'.')[0]),
        os.sep+".monet."+string.split(THISFILE,'.')[0],
        os.path.join(os.environ['HOME'],".monet."+string.split(THISFILE,'.')[0]),
-       path(GetMonetConfig('--prefix')+"/share/Monet/")+"monet."+string.split(THISFILE,'.')[0])
+       path(GetMonetConfig('--prefix')+"/share/@PACKAGE@/")+"monet."+string.split(THISFILE,'.')[0])
 
     if THISFILE == "Mprofile.py":
         print '''\
@@ -82,7 +82,7 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
 ''' % (os.getcwd()+os.sep,
        os.sep,
        os.environ['HOME']+os.sep,
-       path(GetMonetConfig('--prefix')+"/share/Monet/"))
+       path(GetMonetConfig('--prefix')+"/share/@PACKAGE@/"))
 
     if THISFILE == "Mapprove.py":
         print """\
@@ -821,8 +821,8 @@ def RunTest(env, TST, BusyPorts) :
         SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif SERVER in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
         SkipTest(env, TST, EXT, "as Mshutdown is not available.")
-    elif SERVER == "MAPI" and  not os.path.isfile(env['MONET_PREFIX']+path("/share/Monet/mapi.mil")):
-        SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")+" is not available.")
+    elif SERVER == "MAPI" and  not os.path.isfile(env['MONET_PREFIX']+path("/share/@PACKAGE@/mapi.mil")):
+        SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/@PACKAGE@/mapi.mil")+" is not available.")
     elif SERVER == "MAPI" and  os.name == "nt":
         SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
@@ -1248,7 +1248,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 
         Srvr = MTO+str(STO)+" "+exe['Mserver'][1]+" -db "+TSTDB
         if SERVER == "MAPI":
-            Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")
+            Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/@PACKAGE@/mapi.mil")
         else:
             Srvr = Srvr+" "+env['SQL_PREFIX']+path("/share/sql/catalog.mil")
             Srvr = Srvr+" "+env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")
@@ -1512,7 +1512,7 @@ def FindMonetConf(env) :
     dirs = [ os.path.join(os.getcwd(),"."), os.path.join(env['TSTSRCBASE'],".") ]
     if os.environ.has_key('HOME'):
         dirs.append(os.path.join(os.environ['HOME'],"."))
-    dirs.append(path(env['MONET_PREFIX']+"/share/Monet/"))
+    dirs.append(path(env['MONET_PREFIX']+"/share/@PACKAGE@/"))
     for d in dirs:
         f = d+'monet.'+string.split(THISFILE,'.')[0]+'.conf'
         if os.path.isfile(f):
@@ -1524,7 +1524,7 @@ def FindCmdLst(env) :
     dirs = [ os.path.join(os.getcwd(),"."), os.path.join(env['TSTSRCBASE'],".") ]
     if os.environ.has_key('HOME'):
         dirs.append(os.path.join(os.environ['HOME'],"."))
-    dirs.append(path(env['MONET_PREFIX']+"/share/Monet/"))
+    dirs.append(path(env['MONET_PREFIX']+"/share/@PACKAGE@/"))
     for d in dirs:
         f = d+'Mprofile-commands.lst'
         if os.path.isfile(f):
@@ -1583,7 +1583,7 @@ def main(argv) :
     dft['TSTTRGBASE']     = "env['MONET_PREFIX']"   # or os.getcwd() ?
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['MONETRC']        = "FindMonetConf(env)"
-        #dft['MONET_MOD_PATH'] = "''"   #"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
+        #dft['MONET_MOD_PATH'] = "''"   #"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'@PACKAGE@'"
         dft['MAPIPORT']       = "HOST+':'+str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
         dft['SQLCLIENT']      = "'sql_client --port='+env['SQLPORT']"

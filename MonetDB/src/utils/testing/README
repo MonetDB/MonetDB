@@ -103,7 +103,7 @@ have changed since my proposal.
   * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
   * Mserver -db TSTDB [TST.prelude] < TST.mil(M|S)
-  * Mserver -db TSTDB $MONET_PREFIX/share/Monet/mapi.mil [TST.prologue] -background &
+  * Mserver -db TSTDB $MONET_PREFIX/share/MonetDB/mapi.mil [TST.prologue] -background &
          MapiClient [-prelude TST.prelude] < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
@@ -184,7 +184,7 @@ have changed since my proposal.
 	./.monet.Mtest.conf
 	$TSTSRCBASE/.monet.Mtest.conf
 	$HOME/.monet.Mtest.conf
-	$MONET_PREFIX/share/Monet/monet.Mtest.conf
+	$MONET_PREFIX/share/MonetDB/monet.Mtest.conf
   The last one it shipped with Mtest.py. You can overrule the default by
   giving --MONETRC=<path> as commandline option to Mtest.py. Mtest.py calls
   Mserver, Mcreatedb, and Mdestroydb with "-monetrc $MONETRC".
