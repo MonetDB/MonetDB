@@ -6,7 +6,7 @@
 
 -->
 
-<project name="MonetJDBC" default="all" basedir=".">
+<project name="MonetDB_JDBC" default="all" basedir=".">
 
   <!-- set global properties for this build -->
   <property name="srcdir"   value="." />
@@ -27,7 +27,7 @@
   <!-- create a distribution jar file -->
   <target name="jar" depends="compile">
     <!-- the driver + JdbcClient -->
-    <jar jarfile="${jardir}/MonetJDBC.jar" manifest="${srcdir}/manifest">
+    <jar jarfile="${jardir}/MonetDB_JDBC.jar" manifest="${srcdir}/manifest">
       <fileset dir="${builddir}">
         <include name="*.class" />
         <include name="${package}/**/*.class" />
