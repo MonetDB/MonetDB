@@ -60,6 +60,8 @@ sql_export stmt *stmt2pivot(scope * scp, stmt * s);
 
 static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel );
 static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * selection);
+static stmt *sql_compare(mvc * sql, stmt * ls,
+			 stmt * rs, char *compare_op, int f);
 static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op, int f );
 
 static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q);
@@ -353,27 +355,46 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 	list *results = create_stmt_list();
 	dnode *dn = when_search_list->h;
 	sql_subtype *restype = NULL;
-	stmt *res = NULL;
+	stmt *res = NULL, *else_stmt = NULL;
 	node *n, *m;
 
 	if (dn) {
-		stmt *cond, *result;
+		stmt *cond = NULL, *result = NULL;
 
-		if (token == SQL_COALESCE || token == SQL_NULLIF) {
-			sql_subfunc *isnil = NULL;
+		/* NULLIF(e1,e2) == CASE WHEN e1=e2 THEN NULL ELSE e1 END */
+		if (token == SQL_NULLIF) {
+			stmt *e1, *e2;
+		
+ 			e1 = sql_value_exp(sql, scp,
+				dn->data.sym, grp, subset, f);
+			e2 = sql_value_exp(sql, scp,
+				dn->next->data.sym, grp, subset, f);
+			if (e1 && subset->nrcols && e1->nrcols == 0) 
+				e1 =stmt_const(first_subset(subset),e1);
+			if (e1 && e2) {
+				cond = sql_compare(sql, stmt_dup(e1), e2,
+					"=", sql_where);
+				result = stmt_atom( atom_general( sql_dup_subtype(tail_type(e1)), NULL));
+				else_stmt = e1; /* ELSE case */
+			} else {
+				if (e1) stmt_destroy(e1);
+				if (e2) stmt_destroy(e2);
+			}
+		/* COALESCE(e1,e2) == CASE WHEN e1 
+			IS NOT NULL THEN e1 ELSE e2 END */
+		} else if (token == SQL_COALESCE) {
 			cond = sql_value_exp(sql, scp,
 				dn->data.sym, grp, subset, f);
-			if (!cond) 
-				return NULL;
-			result = stmt_dup(cond);
-			if (token == SQL_COALESCE) {
-				isnil = sql_bind_func(
-					"isnotnull", tail_type(cond), NULL );
-			} else {
-				isnil = sql_bind_func(
-					"isnull", tail_type(cond), NULL );
+
+			if (cond && subset->nrcols && cond->nrcols == 0) 
+				cond = stmt_const(first_subset(subset),cond);
+			if (cond) {
+				result = stmt_dup(cond);
+				cond = sql_compare(sql, cond, 
+					stmt_atom( atom_general( 
+					  sql_dup_subtype(tail_type(cond)), 
+					  NULL)), "<>", sql_where);
 			}
-			cond = stmt_unop( cond, isnil );
 		} else {
 			dlist *when = dn->data.sym->data.lval;
 			if (opt_cond){
@@ -395,31 +416,34 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 		list_prepend(results, result);
 
 		restype = sql_dup_subtype(tail_type(result));
+
+		if (token == SQL_NULLIF)
+			dn = NULL;
+		else
+			dn = dn->next;
 	}
 	if (!restype) {
 		list_destroy(conds);
 		list_destroy(results);
 		return sql_error(sql, 02, "Error: result type missing");
 	}
-	for (dn = dn->next; dn; dn = dn->next) {
+	for (; dn; dn = dn->next) {
 		sql_subtype *tpe = NULL;
-		stmt *cond, *result;
+		stmt *cond = NULL, *result = NULL;
 
-		if (token == SQL_COALESCE || token == SQL_NULLIF) {
-			sql_subfunc *isnil = NULL;
+		if (token == SQL_COALESCE){
 			cond = sql_value_exp(sql, scp,
 				dn->data.sym, grp, subset, f);
-			if (!cond) 
-				return NULL;
-			result = stmt_dup(cond);
-			if (token == SQL_COALESCE) {
-				isnil = sql_bind_func(
-					"isnotnull", tail_type(cond), NULL );
-			} else {
-				isnil = sql_bind_func(
-					"isnull", tail_type(cond), NULL );
+
+			if (cond && subset->nrcols && cond->nrcols == 0) 
+				cond = stmt_const(first_subset(subset),cond);
+			if (cond) {
+				result = stmt_dup(cond);
+				cond = sql_compare(sql, cond, 
+					stmt_atom( atom_general( 
+					  sql_dup_subtype(tail_type(cond)), 
+					  NULL)), "<>", sql_where);
 			}
-			cond = stmt_unop( cond, isnil );
 		} else {
 			dlist *when = dn->data.sym->data.lval;
 
@@ -466,8 +490,11 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 	} else {
 		return sql_error(sql, 02, "Case in query currently not supported");
 	}
-	if (opt_else) {
-		stmt *result = sql_value_exp(sql, scp, opt_else, grp, subset, f);
+	if (opt_else || else_stmt) {
+		stmt *result = else_stmt;
+
+		if (!result)
+		 	result = sql_value_exp(sql, scp, opt_else, grp, subset, f);
 
 		if (!result || !(result = check_types(sql, restype, result))) {
 			list_destroy(conds);
@@ -535,11 +562,12 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 static stmt *sql_case_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f)
 {
 	dlist *l = se->data.lval;
-	if (se->token != SQL_CASE) {
-		dlist *when_search_list = l->h->data.lval;
+	if (se->token == SQL_COALESCE) {
 		symbol *opt_else = l->t->data.sym;
 		dlist_remove_node(l, l->t);
-		return sql_case(sql, scp, se->token, NULL,  when_search_list, opt_else, grp, subset, f);
+		return sql_case(sql, scp, se->token, NULL,  l, opt_else, grp, subset, f);
+	} else if (se->token == SQL_NULLIF) {
+		return sql_case(sql, scp, se->token, NULL,  l, NULL, grp, subset, f);
 	} else if (l->h->type == type_list) {
 		dlist *when_search_list = l->h->data.lval;
 		symbol *opt_else = l->h->next->data.sym;

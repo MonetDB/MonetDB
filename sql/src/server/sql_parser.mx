@@ -2266,6 +2266,11 @@ case_exp:
 		   dlist_append_symbol(
 		    dlist_append_symbol(
 		     dlist_create(), $3), $5)); }
+ |   COALESCE '(' scalar_exp ',' scalar_exp ')'
+		{ $$ = _symbol_create_list(SQL_COALESCE, 
+		   dlist_append_symbol(
+		    dlist_append_symbol(
+		     dlist_create(), $3), $5)); }
  |   COALESCE '(' scalar_exp_list ')'
 		{ $$ = _symbol_create_list(SQL_COALESCE, $3); }
  |   CASE scalar_exp when_value_list opt_else END
