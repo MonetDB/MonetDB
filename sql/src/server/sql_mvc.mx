@@ -2158,11 +2158,16 @@ int mvc_set_user( mvc *m, char *user )
 int mvc_set_schema( mvc *m, char *schema )
 {
 	int ret = 0;
+	sql_schema *s = find_schema(m->trans, schema);
 
-	m->trans->schema = find_schema(m->trans, schema);
-	if (m->trans->schema) {
+	if (s) {
+		if (m->schema)
+			_DELETE(m->schema);
 		m->schema = _strdup(schema);
-		mvc_rollback(m, 0, NULL);
+		m->status = 0;
+		m->type = Q_TRANS;
+		if (m->trans)
+			m->trans->schema = s;
 		ret = 1;
 	}
 	return ret;
@@ -2211,6 +2216,7 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 		_DELETE(schema);
 		return NULL;
 	}
+	mvc_rollback(m, 0, NULL);
 	return schema;
 }
 

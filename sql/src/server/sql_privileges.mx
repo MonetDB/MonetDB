@@ -65,6 +65,7 @@ sql_export int sql_drop_user(mvc *m,  str user);
 /*#include <monet_context.h>*/
 #include "sql_privileges.h"
 #include "sql_bm.h"
+#include "sql_statement.h"
 /*#include <algebra.h>*/
 
 @-
@@ -81,9 +82,9 @@ int sql_create_role(mvc *m,  str auth, int grantor )
   int zero = 0;
   oid onil =oid_nil;
   ptr p;
-	auth_id = mvc_bind( m, "sys", "auths", "id", 1); 
-	auth_name = mvc_bind( m, "sys", "auths", "name", 1);
-	auth_grantor = mvc_bind( m, "sys", "auths", "grantor", 1);
+	auth_id = mvc_bind( m, "sys", "auths", "id", UPD); 
+	auth_name = mvc_bind( m, "sys", "auths", "name", UPD);
+	auth_grantor = mvc_bind( m, "sys", "auths", "grantor", UPD);
 	
 	p = BUNfnd(BATmirror(auth_name), auth);
 	if (p){
@@ -109,10 +110,10 @@ int sql_drop_role( mvc *m, str auth )
 { BAT *auth_id, *auth_name, *auth_grantor, *D_auth;
   ptr id, p;
   oid onil =oid_nil;
-	auth_id = mvc_bind( m, "sys", "auths", "id", 1);
-	auth_name = mvc_bind( m, "sys", "auths", "name", 1);
-	auth_grantor = mvc_bind( m, "sys", "auths", "grantor", 1);
-	D_auth = mvc_bind_dbat( m, "sys", "auths", 1);
+	auth_id = mvc_bind( m, "sys", "auths", "id", DEL);
+	auth_name = mvc_bind( m, "sys", "auths", "name", DEL);
+	auth_grantor = mvc_bind( m, "sys", "auths", "grantor", DEL);
+	D_auth = mvc_bind_dbat( m, "sys", "auths", INS);
 	
 	@:accessRight(auth)@
 	@:accessId(id,auth)@
@@ -132,10 +133,10 @@ int sql_grant_role( mvc *m, str grantee, str auth )
 { BAT *auth_ids, *auth_name, *login_id, *role_id;
   ptr auth_id, grantee_id, p;
   oid onil = oid_nil;
-	auth_ids = mvc_bind( m, "sys", "auths", "id", 1);
-	auth_name = mvc_bind( m, "sys", "auths", "id", 1);
-	login_id = mvc_bind( m, "sys", "user_role", "login_id", 1);
-	role_id = mvc_bind( m, "sys", "user_role", "role_id", 1);
+	auth_ids = mvc_bind( m, "sys", "auths", "id", UPD);
+	auth_name = mvc_bind( m, "sys", "auths", "id", UPD);
+	login_id = mvc_bind( m, "sys", "user_role", "login_id", UPD);
+	role_id = mvc_bind( m, "sys", "user_role", "role_id", UPD);
 
 	@:accessRight(grantee)@
 	@:accessRight(auth)@
@@ -159,11 +160,11 @@ int sql_revoke_role( mvc *m, str grantee, str auth )
   BAT *role, *logins;
   ptr id, auth_id, grantee_id, p;
   oid onil =oid_nil;
-	auth_ids = mvc_bind( m, "sys", "auths", "id", 1);
-	auth_name = mvc_bind( m, "sys", "auths", "id", 1);
-	login_id = mvc_bind( m, "sys", "user_role", "login_id", 1);
-	role_id = mvc_bind( m, "sys", "user_role", "role_id", 1);
-	D_user_role = mvc_bind_dbat( m, "sys", "user_role", 1);
+	auth_ids = mvc_bind( m, "sys", "auths", "id", RDONLY);
+	auth_name = mvc_bind( m, "sys", "auths", "id", RDONLY);
+	login_id = mvc_bind( m, "sys", "user_role", "login_id", DEL);
+	role_id = mvc_bind( m, "sys", "user_role", "role_id", DEL);
+	D_user_role = mvc_bind_dbat( m, "sys", "user_role", INS);
 
 	@:accessRight(grantee)@
 	@:accessRight(auth)@
@@ -193,8 +194,8 @@ int sql_revoke_role( mvc *m, str grantee, str auth )
 int sql_find_auth( mvc *m, str auth )
 {
 	int res = -1;
-	BAT *auth_name = mvc_bind( m, "sys", "auths", "name", 0);
-	BAT *auth_id = mvc_bind( m, "sys", "auths", "id", 0);
+	BAT *auth_name = mvc_bind( m, "sys", "auths", "name", RDONLY);
+	BAT *auth_id = mvc_bind( m, "sys", "auths", "id", RDONLY);
 	BUN p = BUNfnd(BATmirror(auth_name), auth);
 	
 	if (p){
@@ -209,8 +210,8 @@ int sql_find_auth( mvc *m, str auth )
 
 int sql_find_schema( mvc *m, str schema )
 {
-	BAT *schema_ids = mvc_bind( m, "sys", "schemas", "id", 1);
-	BAT *schema_names = mvc_bind( m, "sys", "schemas", "name", 1);
+	BAT *schema_ids = mvc_bind( m, "sys", "schemas", "id", RDONLY);
+	BAT *schema_names = mvc_bind( m, "sys", "schemas", "name", RDONLY);
 	BUN p;
 	int schema_id = -1;
 
@@ -234,13 +235,13 @@ int sql_create_user( mvc *m, str user, str passwd, str fullname, str schema_name
 	if (!(sql_create_role( m, user, grantor )))
 		return FALSE; 
 
-	user_name = mvc_bind( m, "sys", "users", "name", 1);
-	user_passwd = mvc_bind( m, "sys", "users", "passwd", 1);
-	user_fullname = mvc_bind( m, "sys", "users", "fullname", 1);
-	user_dschema = mvc_bind( m, "sys", "users", "default_schema", 1);
+	user_name = mvc_bind( m, "sys", "users", "name", UPD);
+	user_passwd = mvc_bind( m, "sys", "users", "passwd", UPD);
+	user_fullname = mvc_bind( m, "sys", "users", "fullname", UPD);
+	user_dschema = mvc_bind( m, "sys", "users", "default_schema", UPD);
 
-	schema_ids = mvc_bind( m, "sys", "schemas", "id", 1);
-	schema_names = mvc_bind( m, "sys", "schemas", "name", 1);
+	schema_ids = mvc_bind( m, "sys", "schemas", "id", 0);
+	schema_names = mvc_bind( m, "sys", "schemas", "name", 0);
 
 	schema_id = bun_find(schema_ids, bun_find(BATmirror(schema_names),schema_name));
 
@@ -262,11 +263,11 @@ int sql_drop_user(mvc *m,  str user)
 { BAT *user_name, *user_passwd, *user_fullname, *user_dschema, *D_user;
   ptr id, p;
   oid onil = oid_nil;
-	user_name = mvc_bind( m, "sys", "users", "name", 1);
-	user_passwd = mvc_bind( m, "sys", "users", "passwd", 1);
-	user_fullname = mvc_bind( m, "sys", "users", "fullname", 1);
-	user_dschema = mvc_bind( m, "sys", "users", "default_schema", 1);
-	D_user = mvc_bind_dbat( m, "sys", "users", 1);
+	user_name = mvc_bind( m, "sys", "users", "name", DEL);
+	user_passwd = mvc_bind( m, "sys", "users", "passwd", DEL);
+	user_fullname = mvc_bind( m, "sys", "users", "fullname", DEL);
+	user_dschema = mvc_bind( m, "sys", "users", "default_schema", DEL);
+	D_user = mvc_bind_dbat( m, "sys", "users", INS);
 
 	p = BUNfnd(BATmirror(user_name), user);
 	if (!p)
@@ -289,10 +290,10 @@ int sql_drop_user(mvc *m,  str user)
 
 int sql_privilege_( mvc *m, int auth_id, int obj_id, int priv, int sub )
 {
- 	BAT *priv_obj = mvc_bind( m, "sys", "privileges", "obj_id", 1);
- 	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", 1);
- 	BAT *priv_priv = mvc_bind( m, "sys", "privileges", "privileges", 1);
- 	BAT *priv_hier = mvc_bind( m, "sys", "privileges", "hierarchy", 1);
+ 	BAT *priv_obj = mvc_bind( m, "sys", "privileges", "obj_id", RDONLY);
+ 	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", RDONLY);
+ 	BAT *priv_priv = mvc_bind( m, "sys", "privileges", "privileges", RDONLY);
+ 	BAT *priv_hier = mvc_bind( m, "sys", "privileges", "hierarchy", RDONLY);
 	int res = 0;
 	
 	BAT *b1,*b2 = BATselect(priv_obj, &obj_id, &obj_id );
@@ -347,11 +348,11 @@ int table_privs( mvc *m, sql_table *t, int priv )
 int sql_grantable_( mvc *m, int grantorid, int obj_id, int privs, int sub )
 {
 	BUN p,q;
- 	BAT *priv_obj = mvc_bind( m, "sys", "privileges", "obj_id", 1);
- 	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", 1);
- 	BAT *priv_priv = mvc_bind( m, "sys", "privileges", "privileges", 1);
- 	BAT *priv_allowed = mvc_bind( m, "sys", "privileges", "grantable", 1);
- 	BAT *priv_hier = mvc_bind( m, "sys", "privileges", "hierarchy", 1);
+ 	BAT *priv_obj = mvc_bind( m, "sys", "privileges", "obj_id", RDONLY);
+ 	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", RDONLY);
+ 	BAT *priv_priv = mvc_bind( m, "sys", "privileges", "privileges", RDONLY);
+ 	BAT *priv_allowed = mvc_bind( m, "sys", "privileges", "grantable", RDONLY);
+ 	BAT *priv_hier = mvc_bind( m, "sys", "privileges", "hierarchy", RDONLY);
 	
 	BAT *b1,*b2 = BATselect(priv_obj, &obj_id, &obj_id );
 
