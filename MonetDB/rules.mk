@@ -39,7 +39,7 @@ MX=$(top_builddir)/src/utils/Mx/Mx
 %.glue.c: %.m
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
-SUFFIXES = .m .mx .proto.h .mil
+SUFFIXES = .m .mx .proto.h .mil .glue.c
 PRECIOUS = .m 
 
 all-local: $(BUILT_SOURCES)
