@@ -28,7 +28,7 @@ int sql( str file, str output, int debug ){
 
 	sql_init_context( &lc, out, debug, default_catalog_create() );
 	catalog_create( &lc );
-	lc.cat->cc_getschema( lc.cat->cc_getschema, "default-schema", "default-user");
+	lc.cat->cc_getschema( lc.cat, "default-schema", "default-user");
 	res = sql_execute( &lc, in ); 
 
 	stream_close_stream(in);
