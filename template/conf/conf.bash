@@ -212,7 +212,7 @@ if [ "${os}" = "Linux" ] ; then
 		# Portland Group compiler on spin
 		cc='pgcc'
 		cxx='pgCC'
-		export PGI=/soft/32/pgi-5.1-3
+		export PGI=/soft/64/pgi-5.1
 		if [ "${BITS}" = "64" ] ; then
 			binpath="${PGI}/linux86-64/5.1/bin:${binpath}"
 		  else

@@ -391,12 +391,12 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	}
 
 	/* scan b, and add values to sums in-place or in sums-array */
-	bhsb = b->hseqbase;
+	bhsb = b->hseqbase - 1;
 	BATloopFast(b, p, q, xx) {
 		@6 *t = (@6*) BUNt@7(b,p);
 		oid *h = (oid*) @5;
 
-		@3(r, bn, (oid*)h);
+		@3(r, bn, h);
 		if (r) {
 			@9 *dst = (@9*) @8;
 			if (*dst != @9_nil) {
@@ -452,12 +452,12 @@ HASHfnd_oid for void- and hash-lookups, respectively
 		return GDK_FAIL; 
 	}
 	/* scan b, and mul values to prods in-place or in prods-array */
-	bhsb = b->hseqbase;
+	bhsb = b->hseqbase - 1;
 	BATloopFast(b, p, q, xx) {
 		@6 *t = (@6*) BUNt@7(b,p);
 		oid *h = (oid*) @5;
 
-		@3(r, bn, (oid*)h);
+		@3(r, bn, h);
 		if (r) {
 			@9 *dst = (@9*) @8;
 			if (*dst != @9_nil) {
@@ -516,12 +516,12 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	cnt = (size_t*) GDKmalloc(slots*sizeof(cnt[0]));
 	memset(cnt, 0, slots*sizeof(cnt[0]));
 	/* scan b, adding sums, and incrementing counts */
-        bhsb = b->hseqbase;
+        bhsb = b->hseqbase - 1;
 	BATloopFast(b, p, q, xx) {
 		@6 *t = (@6*) BUNt@7(b,p);
 		oid *h = (oid*) @5;
 
-		@3(r, bn, (oid*)h);
+		@3(r, bn, h);
 		if (r) {
 			dbl *dst = (dbl*) @8;
 			if (*dst != dbl_nil) {
@@ -787,12 +787,12 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	extremes = (ptr*) GDKmalloc(slots*sizeof(ptr));
 	memset(extremes, 0, slots*sizeof(ptr));
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
-        bhsb = b->hseqbase;
+        bhsb = b->hseqbase - 1;
 	BATloopFast(b, p, q, xx) {
 		ptr t = BUNt@7(b,p);
 		oid *h = (oid*) @5;
 
-		@3(r, bn, (oid*)h);
+		@3(r, bn, h);
 		if (r) {
 			ptr *val = &extremes[@8];
 			if (*val != nil) {
