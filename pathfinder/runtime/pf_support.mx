@@ -185,17 +185,18 @@ proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) 
 }
 
 
-PROC fake_project (oid o) : bat[void,oid]
+PROC fake_project (any::1 c) : bat[void,any::1]
 {
-    	return new(void,oid,1).seqbase(nil).insert(nil,o).access(BAT_READ);
+    	return new(void,type(c),1).seqbase(nil).insert(nil,c).access(BAT_READ);
 }
 
-PROC is_fake_project (bat[oid,oid] b) : bit
+PROC is_fake_project (bat[oid,any::1] b) : bit
 {
 	return and(count(b) = 1, isnil(seqbase(b)));
 }
 
-PROC fake_fetch (bat[void,oid] b, int p) : oid
+@= fake_fetch
+PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
 {
 	if (is_fake_project(b)) {
 		return b.fetch(0);
@@ -203,6 +204,9 @@ PROC fake_fetch (bat[void,oid] b, int p) : oid
 		return b.fetch(p);
 	}
 }
+@mil
+@:fake_fetch(int)@
+@:fake_fetch(oid)@
 
 PROC fake_leftfetchjoin (bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
 {
