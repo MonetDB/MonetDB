@@ -28,26 +28,24 @@ MTSAFE
 
 # install these libs in the pkglib
 LIBDIR = pkglib
-#SUBDIRS = stream
-
-# io.mx depricated 
 
 LIBS = {
 	SEP = _
 	SOURCES = \
 		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
-		bitvector.mx blob.mx cluster.mx  ddbench.mx \
+		bitvector.mx blob.mx cluster.mx  \
 		decimal.mx enum.mx iterator.mx kernel.mx lock.mx \
 		malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx \
-		perfex.mx qt.mx radix.mx salgebra.mx stats.mx str.mx \
+		perfex.mx radix.mx salgebra.mx stats.mx str.mx \
 		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
 		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
 		mel.mx \
 		bat_arith.mx aggrX3.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 
 }
 
@@ -55,23 +53,45 @@ lib__streams = {
 	SOURCES = streams.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet ../../common/libstream \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 }
 
 lib__ascii_io = {
 	SOURCES = ascii_io.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet ../../common/libstream ./lib_streams
+	LIBS = -L. ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+}
+
+lib__qt = {
+	SOURCES = qt.mx
+	HEADERS = h proto.h m
+	#SCRIPTS = mil ""
+	LIBS = -L. ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+}
+
+lib__ddbench = {
+	SOURCES = ddbench.mx
+	HEADERS = h proto.h m
+	#SCRIPTS = mil ""
+	LIBS = -L. ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 }
 
 lib__counters = {
 	SOURCES = counters.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(HWCOUNTERS_LIBS)
+	LIBS = -L. ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(HWCOUNTERS_LIBS)
 }
 
 
