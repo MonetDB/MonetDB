@@ -60,6 +60,11 @@ $MONETFARM/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 @
 @{
 @+ Implementation
+@h
+#ifndef _Mclient_H_
+#define _Mclient_H_
+#include "Mapi.h"
+#endif /* _Mclient_H_*/
 @c
 /*
  * The contents of this file are subject to the Monet Public
@@ -83,8 +88,7 @@ $MONETFARM/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
  *		   Peter Boncz <Peter.Boncz@cwi.nl>
  *		   Niels Nes <Niels.Nes@cwi.nl>
  */
-
-#include "Mapi.h"
+#include "Mclient.h"
 
 #include <monet_options.h>
 #include <stdlib.h> 
@@ -606,12 +610,12 @@ int main(int ac, char **av) {
         stream_init();
 	if(debug==0){
 		snprintf(buf,BUFSIZ,"%s_debug",language);
-		str nme=mo_find_option(set, setlen, buf);
+		char *nme=mo_find_option(set, setlen, buf);
 		if(nme) debug= strtol(nme, NULL, 10);
 	}
 	if(port==0){
 		snprintf(buf,BUFSIZ,"%s_port",language);
-		str nme=mo_find_option(set, setlen, buf);
+		char *nme=mo_find_option(set, setlen, buf);
 		if(nme) port= strtol(nme, NULL, 10);
 	}
 
@@ -649,7 +653,7 @@ int main(int ac, char **av) {
 		Mexplain(mid,toConsole);
 		EXIT(2);
 	}
-	if(language){
+	if( language && strcmp(language,"mal")){
 		char buf[BUFSIZ];
 		snprintf(buf,BUFSIZ,"%s();",language);
 		doRequest(mid, buf);				\

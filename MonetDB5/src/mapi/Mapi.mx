@@ -185,13 +185,39 @@ MMONETERR & Monet error.\\
  *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
-#ifdef HAVE_CONFIG_H
-#include <gdk.h>		/* needed for windows version since the
-				   posix wrappers are part of gdk 
-				   this should move to a small wrap library */
-#endif
 #include  <stdio.h>
 #include  <stream.h>
+
+#include  <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK_H
+# include <winsock.h>
+#endif
+
+#ifdef AIX
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN size_t
+#else
+#ifdef __sgi
+#define SOCKPTR void *
+#define SOCKLEN int
+#else
+#define SOCKPTR struct sockaddr *
+#if HAVE_SOCKLEN_T
+#define SOCKLEN socklen_t
+#else
+#define SOCKLEN int
+#endif
+#endif
+#endif
+
+#ifdef NATIVE_WIN32
+#define s_close closesocket
+#else
+#define s_close close
+#endif
 
 #define NAMELEN	256
 #define ERRLEN	1024
