@@ -60,9 +60,8 @@ Can be used in scripts, but is insecure.
 #include "Mapi.h"
 #endif /* _MapiClient_H_*/
 @c
-#include "MapiClient.h"
-
 #include <monet_options.h>
+#include "MapiClient.h"
 #include <stdlib.h> 
 #include <ctype.h> 
 #include <sys/types.h> 
@@ -572,13 +571,15 @@ int main(int ac, char **av) {
 
         stream_init();
 	if(debug==0){
+		char *nme;
 		snprintf(buf,BUFSIZ,"%s_debug",language);
-		char *nme=mo_find_option(set, setlen, buf);
+		nme=mo_find_option(set, setlen, buf);
 		if(nme) debug= strtol(nme, NULL, 10);
 	}
 	if(port==0){
+		char *nme;
 		snprintf(buf,BUFSIZ,"%s_port",language);
-		char *nme=mo_find_option(set, setlen, buf);
+		nme=mo_find_option(set, setlen, buf);
 		if(nme) port= strtol(nme, NULL, 10);
 	}
 

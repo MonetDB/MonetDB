@@ -43,7 +43,7 @@ def main(argv) :
         ]
 
     try:
-        opt, args = monet_options.parse_options(sys.argv[1:], cmd_options)
+        opt, args = monet_options.parse_options(argv[1:], cmd_options)
     except monet_options.Error:
         # error parsing options
         sys.exit(1)

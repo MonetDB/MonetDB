@@ -652,6 +652,7 @@ The Monet application interface commands are described below.
 They have been developed to ease interaction.
 
 @c
+#include <config.h>
 #include   "Mapi.h"
 
 #include  <stdio.h>
@@ -703,9 +704,10 @@ MapiMsg mapi_ping(Mapi mid){
 	return mapi_error(mid);
 }
 int mapi_setError(Mapi mid, char *msg, char *action){
+	char *c;
 	assert(mid);
 	assert(msg);
-	char *c= (char*) malloc(strlen(msg)+1);
+	c= (char*) malloc(strlen(msg)+1);
 	strcpy(c,msg);
 	if( mid->errorstr) free(mid->errorstr);
 	mid->error = MERROR;
@@ -1643,8 +1645,8 @@ int mapi_get_row(Mapi mid) {
 		} else reply = mid->cache.rows[++mid->cache.reader];
 		
 		switch(reply[0]){
-		case '!': {
-consumeErrors:		;
+		case '!': 
+consumeErrors:		{
 			/* concatenate the error messages */
 			char *olderr= mid->errorstr;
 			char *newerr;
@@ -1762,9 +1764,10 @@ static
 int mapi_extend_fields(Mapi mid, int minfields)
 {
 	/* extend the field table */
+	MapiField *nf;
 	int nm= mid->maxfields +32;
 	if( nm <=minfields) nm= minfields+32;
-	MapiField *nf= (MapiField *) malloc(nm * sizeof(MapiField));
+	nf= (MapiField *) malloc(nm * sizeof(MapiField));
 	assert(nf);
 	memset(nf,0,  nm* sizeof(MapiField));
 	memcpy(nf, mid->fields, mid->maxfields * sizeof(MapiField));
@@ -1889,9 +1892,10 @@ int mapi_fetch_all(Mapi mid){
 }
 
 char *mapi_fetch_field(Mapi mid, int fnr){
+	int cr;
 	assert(mid);
 	mapi_check(mid,0,"mapi_fetch_field");
-	int cr= mid->cache.reader;
+	cr= mid->cache.reader;
 
 	if( fnr >=0 ){
 		/* slice if needed */
@@ -1904,9 +1908,10 @@ char *mapi_fetch_field(Mapi mid, int fnr){
 	return 0;
 }
 char **mapi_fetch_field_array(Mapi mid){
+	int cr;
 	assert(mid);
 	mapi_check(mid,0,"mapi_fetch_field_array");
-	int cr= mid->cache.reader;
+	cr= mid->cache.reader;
 	if( mid->cache.fldcnt[cr]==0)
 		mapi_slice_row(mid);
 	return mid->cache.anchors[cr];
