@@ -20,7 +20,7 @@ extern int parse_error(void *lc, char *s);
 #ifdef yyerror
 #undef yyerror
 #endif
-#define yyerror(s) parse_error(YYLEX_PARAM, s)
+#define yyerror(s) parse_error(YYLEX_PARAM, s); yyclearin
 
 #define FALSE 0
 #define TRUE 1

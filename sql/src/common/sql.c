@@ -2410,14 +2410,13 @@ static stmt *sql_simple_select(context * sql, scope * scp, dlist * selection)
 				stmt_destroy(cs);
 				return NULL;
 			} else if (cs->nrcols == 0){
-				printf("single value\n");
+				list_append(rl, cs);
 			} else {
 				list_append(rl, cs);
 			}
 			n = n->next;
 		}
 	}
-	stmt_destroy(s);
 	s = stmt_list(rl);
 
 	if (!s)

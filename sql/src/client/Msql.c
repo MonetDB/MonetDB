@@ -161,6 +161,7 @@ void clientAccept( stream *ws, stream *rs ){
 			}
 		}
 		cmdcnt = parse_line(line);
+		printf("%s\n", line);
 		ws->write( ws, line, strlen(line), 1 );
 		ws->write( ws, "\n", 1, 1 );
 		if (cmdcnt)

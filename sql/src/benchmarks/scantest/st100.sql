@@ -1,14 +1,14 @@
 select sum(
-	v1+v2+v3+v4+v5+v6+v7+v8+v9+v10+
-	v11+v12+v13+v14+v15+v16+v17+v18+v19+v20+
-	v21+v22+v23+v24+v25+v26+v27+v28+v29+v30+
-	v31+v32+v33+v34+v35+v36+v37+v38+v39+v40+
-	v41+v42+v43+v44+v45+v46+v47+v48+v49+v50+
-	v51+v52+v53+v54+v55+v56+v57+v58+v59+v60+
-	v61+v62+v63+v64+v65+v66+v67+v68+v69+v70+
-	v71+v72+v73+v74+v75+v76+v77+v78+v79+v80+
-	v81+v82+v83+v84+v85+v86+v87+v88+v89+v90+
-	v91+v92+v93+v94+v95+v96+v97+v98+v99+v100
+	v1)+sum(v2)+sum(v3)+sum(v4)+sum(v5)+sum(v6)+sum(v7)+sum(v8)+sum(v9)+sum(v10)+sum(
+	v11)+sum(v12)+sum(v13)+sum(v14)+sum(v15)+sum(v16)+sum(v17)+sum(v18)+sum(v19)+sum(v20)+sum(
+	v21)+sum(v22)+sum(v23)+sum(v24)+sum(v25)+sum(v26)+sum(v27)+sum(v28)+sum(v29)+sum(v30)+sum(
+	v31)+sum(v32)+sum(v33)+sum(v34)+sum(v35)+sum(v36)+sum(v37)+sum(v38)+sum(v39)+sum(v40)+sum(
+	v41)+sum(v42)+sum(v43)+sum(v44)+sum(v45)+sum(v46)+sum(v47)+sum(v48)+sum(v49)+sum(v50)+sum(
+	v51)+sum(v52)+sum(v53)+sum(v54)+sum(v55)+sum(v56)+sum(v57)+sum(v58)+sum(v59)+sum(v60)+sum(
+	v61)+sum(v62)+sum(v63)+sum(v64)+sum(v65)+sum(v66)+sum(v67)+sum(v68)+sum(v69)+sum(v70)+sum(
+	v71)+sum(v72)+sum(v73)+sum(v74)+sum(v75)+sum(v76)+sum(v77)+sum(v78)+sum(v79)+sum(v80)+sum(
+	v81)+sum(v82)+sum(v83)+sum(v84)+sum(v85)+sum(v86)+sum(v87)+sum(v88)+sum(v89)+sum(v90)+sum(
+	v91)+sum(v92)+sum(v93)+sum(v94)+sum(v95)+sum(v96)+sum(v97)+sum(v98)+sum(v99)+sum(v100
 		  )
 from t100
 where rownum < &1;

@@ -1,7 +1,7 @@
 #!/bin/sh
 PWD=`pwd`
-#SQL="sql_client --debug=8 -u monetdb -P monetdb"
 SQL="sql_client -u monetdb -P monetdb"
+SQL="sql_client --debug=10 -u monetdb -P monetdb"
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
@@ -45,7 +45,9 @@ st_v1(){
 	done
 }
 
-create
-load
+#time cat st50.sql | grep -v 'PROMPT' | sed -e "s|&1|50000|g" | sed -e 's|rownum|Id|g' | $SQL
+#create
+#load
 st
-st_v1
+st
+#st_v1
