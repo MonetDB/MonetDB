@@ -87,8 +87,8 @@ SQLExecute_(SQLHSTMT hStmt)
 		return SQL_SUCCESS;
 	}
 
-	hstmt->ResultCols = NEW_ARRAY(ColumnHeader, (hstmt->nrCols + 1));
-	memset(hstmt->ResultCols, 0, (hstmt->nrCols + 1) * sizeof(ColumnHeader));
+	hstmt->ResultCols = malloc((hstmt->nrCols + 1) * sizeof(*hstmt->ResultCols));
+	memset(hstmt->ResultCols, 0, (hstmt->nrCols + 1) * sizeof(*hstmt->ResultCols));
 	pCol = hstmt->ResultCols + 1;
 	for (i = 0; i < hstmt->nrCols; i++) {
 		struct sql_types *p;
