@@ -1049,8 +1049,10 @@ void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, si
                 } else  {
                         THRprintf(GDKerr, "GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
                 }
-        }
-        if (ret != NULL) {
+        } 
+	if (ret == pold) {
+		*maxsize = oldmax;
+	} else if (ret != NULL) {
                 GDKmemdec(oldsize,oldmax);
                 GDKmeminc(newsize,*maxsize);
 	}
