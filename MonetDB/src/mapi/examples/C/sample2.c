@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	}
 
 	if( mapi_bind(dbh,0,&nme) ) mapi_explain(dbh,stdout);
-	if( mapi_bind_var(dbh,1,SQL_INT,&age) ) mapi_explain(dbh,stdout);
+	if( mapi_bind_var(dbh,1,MAPI_INT,&age) ) mapi_explain(dbh,stdout);
 	while( mapi_fetch_row(dbh)){
 		printf("%s is %d\n", nme, age);
 	}
