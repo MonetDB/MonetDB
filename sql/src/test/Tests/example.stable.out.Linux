@@ -28,8 +28,13 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
+printf("\nReady.\n");
+
+Ready.
 [ 8 ]
 quit;
+
+Over..
 
 # 15:39:17 >  
 # 15:39:17 >  Mtimeout -timeout 432 sql_client --port=58607  < example.sql

@@ -28,8 +28,13 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
+printf("\nReady.\n");
+
+Ready.
 [ 6 ]
 quit;
+
+Over..
 
 # 15:50:10 >  
 # 15:50:10 >  Mtimeout -timeout 210 sql_client --port=58607  < example-queries.sql
@@ -37,21 +42,31 @@ quit;
 
 types 13
 aggr 4
-tables 0
-columns 0
-views 0
+tables 1
+columns 3
+views 1
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
 8	"texxst"	0.0001
-5 Rows affected
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
 8	"texxst"	0.0001
-5 Rows affected
+10 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+10 Rows affected
 
 # 15:50:10 >  
 # 15:50:10 >  Done.
