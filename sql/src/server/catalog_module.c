@@ -56,11 +56,11 @@ static void getschemas( catalog *c, char *schema, char *user ){
 
 				if (o){
 	    				nk = cat_table_add_key( t, k->type, 
-							o->data);
+							k->name, o->data);
 	  				list_remove_node( keys, o); 
 				} else {
 	    				nk = cat_table_add_key( t, k->type, 
-							NULL);
+							k->name, NULL);
 					list_append( keys, nk);
 				}
 				nk->id = k->id;

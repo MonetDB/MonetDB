@@ -151,7 +151,7 @@
 	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
 		sql_column = mvc_default_wrap; "Set column default value"
 
-	.COMMAND mvc_create_key( mvc m, sql_table t, int kt, sql_key fk ) :
+	.COMMAND mvc_create_key( mvc m, str sname, str tname, str name, int kt, sql_key fk ) :
 		sql_key = mvc_create_key_wrap; "Create a table key"
 
 	.COMMAND mvc_key_add_column( mvc m, sql_key k, sql_column c ) :
@@ -583,11 +583,11 @@ int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val){
 	return GDK_SUCCEED;
 }
 
-int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table* t, int *kt, sql_key *fk){
+int mvc_create_key_wrap( sql_key* res, mvc* c, str sname, str tname, str name, int *kt, sql_key *fk){
 	if (*(ptr*)fk == ptr_nil){
-		*(sql_key**)res = mvc_create_key( *(mvc**)c, *(sql_table**)t, *kt, NULL);
+		*(sql_key**)res = mvc_create_key( *(mvc**)c, sname, tname, name, *kt, NULL);
 	} else {
-		*(sql_key**)res = mvc_create_key( *(mvc**)c, *(sql_table**)t, *kt, *(sql_key**)fk);
+		*(sql_key**)res = mvc_create_key( *(mvc**)c, sname, tname, name, *kt, *(sql_key**)fk);
 	}
 	return GDK_SUCCEED;
 }

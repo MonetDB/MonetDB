@@ -138,7 +138,7 @@ extern stmt *stmt_create_column(stmt *t, column * c);
 extern stmt *stmt_not_null(stmt * col);
 extern stmt *stmt_default(stmt * col, stmt * def);
 
-extern stmt *stmt_key(stmt * t, key_type kt, stmt *rk );  
+extern stmt *stmt_key(key *k, stmt *rk );  
 extern stmt *stmt_key_add_column(stmt *key, stmt *col );
 
 extern stmt *stmt_create_role(char *name, int admin);

@@ -274,9 +274,7 @@ static table *create_table_intern(context * sql, schema * schema,
        	for ( m = sq->op1.lval->h; m; m = m->next ) {
 		stmt *st = m->data;
 		char *cname = column_name(st);
-		column *col = cat_create_column(cat, 0,
-						table, cname, tail_type(st),
-						"NULL", 1);
+		column *col = cat_create_column(cat, 0, table, cname, sql_dup_subtype(tail_type(st)), "NULL", 1);
 		col->s = st;
 		st_attache(st, NULL);
 	}
@@ -2910,11 +2908,7 @@ static stmt *create_view(context * sql, schema * schema, stmt * ss,
 			while (n) {
 				char *cname = n->data.sval;
 				stmt *st = m->data;
-				column *col = cat_create_column(cat, 0,
-								table,
-								cname,
-								tail_type(st),
-								"NULL", 1);
+				column *col = cat_create_column(cat, 0, table, cname, sql_dup_subtype( tail_type(st)), "NULL", 1);
 				col->s = st;
 				st_attache(st, NULL);
 				n = n->next;
@@ -2956,23 +2950,23 @@ static stmt *drop_role(context * sql, schema * s, dlist * qname )
 	return stmt_drop_role(role_name);
 }
 
-static stmt *column_constraint_type(context * sql, symbol * s, stmt * ss,
-			       stmt * ts, stmt * cs, column *c)
+static stmt *column_constraint_type(context * sql, char *name, 
+			symbol * s, stmt * ss, stmt * ts, stmt * cs, column *c)
 {
 	stmt *res = NULL;
 
 	switch (s->token) {
 	case SQL_UNIQUE: 
 	{
-		key *k = cat_table_add_key(c->table, ukey, NULL);
+		key *k = cat_table_add_key(c->table, ukey, name, NULL);
 		cat_key_add_column(k, c);
-		res = stmt_key_add_column(stmt_key(ts, ukey, NULL), cs);
+		res = stmt_key_add_column(stmt_key(k, NULL), cs);
 	} break;
 	case SQL_PRIMARY_KEY: 
 	{
-		key *k = cat_table_add_key(c->table, pkey, NULL);
+		key *k = cat_table_add_key(c->table, pkey, name, NULL);
 		cat_key_add_column(k, c);
-		res = stmt_key_add_column(stmt_key(ts, pkey, NULL), cs);
+		res = stmt_key_add_column(stmt_key(k, NULL), cs);
 	} break;
 	case SQL_FOREIGN_KEY:
 	{
@@ -2991,11 +2985,11 @@ static stmt *column_constraint_type(context * sql, symbol * s, stmt * ss,
 				_("Could not find referenced unique key in table %s\n"), ft->name );
 			return NULL;
 		} else {
-			key *k = cat_table_add_key(c->table, fkey, rk);
+			key *k = cat_table_add_key(c->table, fkey, name, rk);
 			stmt *fts = stmt_bind_table(ss, ft);
 			stmt *rks = stmt_bind_key(ss, rk);
 			cat_key_add_column(k, c);
-			res = stmt_key_add_column( stmt_key(ts, fkey, rks), cs);
+			res = stmt_key_add_column( stmt_key(k, rks), cs);
 		}
 	} break;
 	case SQL_NOT_NULL:
@@ -3025,9 +3019,10 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss,
 	case SQL_CONSTRAINT:
 		{
 			dlist *l = s->data.lval;
-			/*char *opt_name = l->h->data.sval;  not used jet */
+			char *opt_name = l->h->data.sval;  
 			symbol *sym = l->h->next->data.sym;
-			res = column_constraint_type(sql, sym, ss, ts, cs, c);
+			res = column_constraint_type(sql, opt_name,
+						sym, ss, ts, cs, c);
 		}
 		break;
 	case SQL_ATOM: {
@@ -3072,8 +3067,7 @@ static stmt *create_column(context * sql, symbol * s, stmt * ss, stmt * ts, tabl
 	dlist *opt_list = l->h->next->next->data.lval;
 	stmt *res = NULL;
 	if (cname && ctype) {
-		column *c = cat_create_column(cat, 0, table, cname, ctype,
-					      "NULL", 1);
+		column *c = cat_create_column(cat, 0, table, cname, sql_dup_subtype(ctype), "NULL", 1);
 		res = stmt_create_column(ts, c);
 		c->s = res;
 		st_attache(res, NULL);
@@ -3087,7 +3081,7 @@ static stmt *create_column(context * sql, symbol * s, stmt * ss, stmt * ts, tabl
 	return res;
 }
 
-static stmt *table_foreign_key( context * sql, symbol * s, stmt * ss, stmt * ts, table * t )
+static stmt *table_foreign_key( context * sql, char *name, symbol * s, stmt * ss, stmt * ts, table * t )
 {
 	catalog *cat = sql->cat;
 	stmt *res = NULL;
@@ -3118,10 +3112,10 @@ static stmt *table_foreign_key( context * sql, symbol * s, stmt * ss, stmt * ts,
 			snprintf(sql->errstr, ERRSIZE, _("Could not find referenced unique key in table %s\n"), ft->name );
 			return NULL;
 		}
-	       	k = cat_table_add_key(t, fkey, rk);
+	       	k = cat_table_add_key(t, fkey, name, rk);
 		fts = stmt_bind_table(ss, ft);
 		rks = stmt_bind_key(fts, rk);
-		ks = stmt_key(ts, fkey, rks);
+		ks = stmt_key(k, rks);
 
 		for(fnms = rk->columns->h;
 				nms && fnms; 
@@ -3149,7 +3143,7 @@ static stmt *table_foreign_key( context * sql, symbol * s, stmt * ss, stmt * ts,
 	return res;
 }
 
-static stmt *table_constraint_type( context * sql, symbol * s, 
+static stmt *table_constraint_type( context * sql, char *name, symbol * s, 
 		stmt * ss, stmt *ts, table * t )
 {
 	catalog *cat = sql->cat;
@@ -3159,8 +3153,8 @@ static stmt *table_constraint_type( context * sql, symbol * s,
 		case SQL_PRIMARY_KEY:
 		{
 			key_type kt = (s->token==SQL_PRIMARY_KEY?pkey:ukey);
-			key *k = cat_table_add_key(t, kt, NULL);
-			stmt *ks = stmt_key(ts, kt, NULL);
+			key *k = cat_table_add_key(t, kt, name, NULL);
+			stmt *ks = stmt_key(k, NULL);
 			dnode *nms = s->data.lval->h;
 
 			for(;nms; nms = nms->next){
@@ -3179,7 +3173,7 @@ static stmt *table_constraint_type( context * sql, symbol * s,
 			}
 		} break;
 		case SQL_FOREIGN_KEY:
-			res = table_foreign_key( sql, s, ss, ts, t );
+			res = table_foreign_key( sql, name, s, ss, ts, t );
 		 	break;
 	}
 	if (!res && sql->errstr[0] == '\0') {
@@ -3197,9 +3191,9 @@ static stmt *table_constraint( context * sql, symbol * s,
 
 	if (s->token == SQL_CONSTRAINT){
 		dlist *l = s->data.lval;
-		/*char *opt_name = l->h->data.sval;  not used jet */
+		char *opt_name = l->h->data.sval; 
 		symbol *sym = l->h->next->data.sym;
-		res = table_constraint_type(sql, sym, ss, ts, table );
+		res = table_constraint_type(sql, opt_name, sym, ss, ts, table );
 	}
 
 	if (!res && sql->errstr[0] == '\0') {
@@ -3543,6 +3537,18 @@ static stmt *insert_into(context * sql, dlist * qname,
 		}
 	}
 	scp = scope_close(scp);
+	/* int insert = 1;
+	 * while insert and has u/pkey and not defered then
+	 * 	if u/pkey values exist then
+	 * 		insert = 0
+	 * while insert and has fkey and not defered then
+	 *	find id of corresponding u/pkey  
+	 *	if (!found)
+	 *		insert = 0
+	 * if insert
+	 * 	insert values
+	 * 	insert fkey/pkey index
+	 */
 	for (i = 0; i < len; i++) {
 		if (!inserts[i])
 			return NULL;
@@ -3845,12 +3851,6 @@ stmt *semantic(context * s, symbol * sym)
 {
 	stmt *res = NULL;
 
-		/*
-	if (sym && (res = sql_stmt(s, sym)) == NULL) {
-		fprintf(stderr, "Semantic error: %s\n", s->errstr);
-		fprintf(stderr, "in %s line %d: %s\n",
-			sym->filename, sym->lineno, sym->sql);
-			*/
 	if (sym){
 		res = sql_stmt(s, sym);
 	}

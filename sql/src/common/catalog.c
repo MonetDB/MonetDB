@@ -12,11 +12,14 @@ static void key_destroy(key *k)
 {
 	if (k->columns)
 		list_destroy(k->columns);
+	if (k->name)
+		_DELETE(k->name);
 	_DELETE(k);
 }
 
 static void column_destroy(column *c)
 {
+	assert(c && c->tpe);
 	if (c->name)
 		_DELETE(c->name);
 	_DELETE(c->tpe);
@@ -75,12 +78,13 @@ table *cat_create_table(catalog * cat, long id, schema * s, char *name,
 	return t;
 }
 
-key *cat_table_add_key(table *t, key_type kt, key *fk)
+key *cat_table_add_key(table *t, key_type kt, char *name, key *fk)
 {
 	key *k = NEW(key);
 	k->id = 0;
 	k->type = kt;
 	k->t = t;
+	k->name = (name) ? _strdup(name) : NULL;
 	if (!t->keys)
 		t->keys = list_create((fdestroy)&key_destroy);
 	list_append(t->keys, k);

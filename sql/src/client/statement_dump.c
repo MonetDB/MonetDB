@@ -1,3 +1,27 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
 
 #include "mem.h"
 #include "statement.h"
@@ -204,18 +228,17 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		    "s%d := default_val(myc, s%d, s%d );\n", -s->nr, c, d );
 		dump(sql,buf,len,-s->nr);
 	} break;
-	/* todo: change to simple mvc_create_key(myc, key, list_of_string); */
 	case st_create_key: {
-		int t = stmt_dump( s->op1.stval, nr, sql );
+		key *k = s->op1.kval;
 		if (s->flag == fkey){
 			int ft = stmt_dump( s->op2.stval, nr, sql );
 			len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_create_key(myc, s%d, %d, s%d );\n", 
-			-s->nr, t, s->flag, ft );
+		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, s%d );\n", 
+			-s->nr, k->t->schema->name, k->t->name, k->name, k->type, ft );
 		} else {
 			len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_create_key(myc, s%d, %d, sql_key(nil));\n",
-			-s->nr, t, s->flag );
+		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, sql_key(nil));\n",
+			-s->nr, k->t->schema->name, k->t->name, k->name, k->type );
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;

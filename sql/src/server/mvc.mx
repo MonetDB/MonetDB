@@ -18,6 +18,12 @@
 #define ISO_READ_REPEAT	    3
 #define ISO_SERIALIZABLE    4
 
+/* TODO
+
+	isview change
+
+*/
+
 /* todo change the sql_schema/sql_table/sql_column such that it only contains
  * operational data (access rules and times and bids)
  */
@@ -25,9 +31,12 @@
 /* fkey consists of two of these */
 typedef struct sql_key { /* pkey, ukey, fkey */
 	oid id;
+	char *name; 	/* constraint name */
 	key_type type; /* pkey, ukey, fkey */
 	struct list *columns; 
 	struct sql_table *t;
+
+	bat bid; /* bid for index(void,oid) or hash (void,int) */
 } sql_key;
 
 typedef struct sql_ukey { /* pkey, ukey */
@@ -38,8 +47,6 @@ typedef struct sql_ukey { /* pkey, ukey */
 typedef struct sql_fkey { /* fkey */
 	sql_key k;
 	struct sql_ukey *rkey; /* only set for fkey and rkey */
-
-	bat bid;
 } sql_fkey;
 
 typedef struct sql_column {
@@ -167,7 +174,8 @@ extern sql_column *mvc_create_column( mvc *c, sql_table *t, char *name, char *ty
 extern sql_column *mvc_not_null( mvc *c, sql_column *col );
 extern sql_column *mvc_default( mvc *c, sql_column *col, char *val );
 
-extern sql_key *mvc_create_key( mvc *m, sql_table *t, int kt, sql_key *fk );
+extern sql_key *mvc_create_key( mvc *m, char *sname, 
+			char *tname, char *kname, int kt, sql_key *fk );
 extern sql_key *mvc_key_add_column( mvc *m, sql_key *k, sql_column *c );
 
 extern void mvc_export(stream *s, BAT *order, BAT *bats, char *sep, char *rsep);
@@ -218,8 +226,8 @@ static BAT *sql_column_id, *sql_column_name, *sql_column_type, *sql_column_type_
 static BAT *U_column_id, *U_column_name, *U_column_type, *U_column_type_size, *U_column_type_digits, *U_column_table, *U_column_default, *U_column_null, *U_column_number;
 static BAT *D_sql_column, *O_sql_column;
 
-static BAT *key_id, *key_table, *key_tpe, *key_rkey;
-static BAT *U_key_id, *U_key_table, *U_key_tpe, *U_key_rkey;
+static BAT *key_id, *key_table, *key_tpe, *key_name, *key_rkey;
+static BAT *U_key_id, *U_key_table, *U_key_tpe, *U_key_name, *U_key_rkey;
 static BAT *D_key, *O_key;
 
 static BAT *kc_id, *kc_col, *kc_nr; 
@@ -294,6 +302,7 @@ static int key_cmp(sql_key *k, oid *id)
 
 static void key_destroy(sql_key * k)
 {
+	if (k->name) _DELETE(k->name);
 	list_destroy(k->columns);
 }
 
@@ -415,6 +424,7 @@ sql_schema *find_schema(sql_trans *t, char *sname)
 	return NULL;
 }
 
+/* todo: add 'truncation` */
 static void load_add_column(BAT * columns, BUN j, sql_key *k )
 {
 	ptr lid = BUNhead(columns, j);
@@ -431,12 +441,14 @@ static sql_key *load_key(BAT * keys, BUN j, sql_table *t)
 	BAT *cols, *rcols;
 	ptr lid = BUNhead(keys, j);
 	int ktype = *(int*) bun_find(key_tpe, lid);
+	char *name = (char*) bun_find(key_name, lid);
 	sql_key *nk = (ktype!=fkey)?(sql_key*)NEW(sql_ukey)
 				:(sql_key*)NEW(sql_fkey);
 	BUN p,q;
 
 	nk->id = *(oid *) bun_find(key_id, lid);
 	nk->type = ktype;
+	nk->name = (name)?_strdup(name):NULL;
 	nk->columns = list_create(NULL);
 	nk->t = t;
 
@@ -690,6 +702,7 @@ static sql_key *key_dup(sql_trans *tr, sql_key *k, sql_table *t)
 
 	nk->id = k->id;
 	nk->type = k->type;
+	nk->name = (k->name)?_strdup(k->name):NULL;
 	nk->columns = list_create(NULL);
 	nk->t = t;
 
@@ -868,10 +881,6 @@ static BAT *mvc_bat(char *name, int type)
 		int cnt = BUFSIZ;
 		b = BATnew( TYPE_oid, type, cnt );
 		BBPpersistent(b->batCacheid, FALSE);
-		/*
-		BATrename(b, name);
-		log_bat_persists(b);
-		*/
 	} else {
 		b = mvc_descriptor(id);
 	}
@@ -960,16 +969,19 @@ void mvc_init(int debug, char *dirname)
 	key_id = mvc_bat("keys_id", TYPE_int);
 	key_table = mvc_bat("keys_table_id", TYPE_int);
 	key_tpe = mvc_bat("keys_type", TYPE_int);
+	key_name = mvc_bat("keys_name", TYPE_str);
 	key_rkey = mvc_bat("keys_rkey", TYPE_int);
 	U_key_id = mvc_bat("U_keys_id", TYPE_int);
 	U_key_table = mvc_bat("U_keys_table_id", TYPE_int);
-	U_key_tpe = mvc_bat("U_keys_type", TYPE_int);
+	U_key_tpe = mvc_bat("U_keys_type", TYPE_str);
+	U_key_name = mvc_bat("U_keys_name", TYPE_int);
 	U_key_rkey = mvc_bat("U_keys_rkey", TYPE_int);
 	D_key = mvc_bat("D_keys", TYPE_oid);
 	O_key = mvc_bat("O_keys", TYPE_oid);
 	update_table_bat(key_id, U_key_id, D_key);
 	update_table_bat(key_table, U_key_table, D_key);
 	update_table_bat(key_tpe, U_key_tpe, D_key);
+	update_table_bat(key_name, U_key_name, D_key);
 	update_table_bat(key_rkey, U_key_rkey, D_key);
 	/* key_updaterule = mvc_bat("keys_updaterule", TYPE_int); */
 	/* key_deleterule = mvc_bat("keys_deleterule", TYPE_int); */
@@ -1033,7 +1045,8 @@ void mvc_init(int debug, char *dirname)
 		mvc_create_column_bat(m, t, "id", "INTEGER",0,0, 0, key_id, U_key_id);
 		mvc_create_column_bat(m, t, "table_id", "INTEGER",0,0, 1, key_table, U_key_table);
 		mvc_create_column_bat(m, t, "type", "INTEGER",0,0, 2, key_tpe, U_key_tpe);
-		mvc_create_column_bat(m, t, "rkey", "INTEGER",0,0, 3, key_rkey, U_key_rkey);
+		mvc_create_column_bat(m, t, "name", "INTEGER",0,0, 3, key_name, U_key_name);
+		mvc_create_column_bat(m, t, "rkey", "INTEGER",0,0, 4, key_rkey, U_key_rkey);
 
 		t = mvc_create_table_bat(m, s, "keycolumns", FALSE, O_kc, D_kc);
 		mvc_create_column_bat(m, t, "id", "INTEGER",0,0, 0, kc_id, U_kc_id);
@@ -1180,10 +1193,12 @@ void mvc_exit()
 	BBPunfix(key_id->batCacheid);
 	BBPunfix(key_table->batCacheid);
 	BBPunfix(key_tpe->batCacheid);
+	BBPunfix(key_name->batCacheid);
 	BBPunfix(key_rkey->batCacheid);
 	BBPunfix(U_key_id->batCacheid);
 	BBPunfix(U_key_table->batCacheid);
 	BBPunfix(U_key_tpe->batCacheid);
+	BBPunfix(U_key_name->batCacheid);
 	BBPunfix(U_key_rkey->batCacheid);
 	BBPunfix(D_key->batCacheid);
 	BBPunfix(O_key->batCacheid);
@@ -1300,6 +1315,7 @@ static void create_key(sql_trans * tr, sql_schema * gs, sql_table *gt, sql_key *
 	BUNins(key_id, (ptr) & ki, (ptr) & gk->id);
 	BUNins(key_table, (ptr) & ki, (ptr) & gt->id);
 	BUNins(key_tpe, (ptr) & ki, (ptr) & gk->type);
+	BUNins(key_name, (ptr) & ki, (ptr) gk->name);
 	if (gk->type == fkey){
 		int rkey;
 		assert( ((sql_fkey*)gk)->rkey );
@@ -1509,6 +1525,7 @@ void mvc_drop_keys(sql_trans * tr, sql_table * t)
 		BUNdelHead(key_id, (ptr) & k->id);
 		BUNdelHead(key_table, (ptr) & k->id);
 		BUNdelHead(key_tpe, (ptr) & k->id);
+		BUNdelHead(key_name, (ptr) & k->id);
 		BUNdelHead(key_rkey, (ptr) & k->id);
 
 		BATloop(b,p,q){
@@ -1704,6 +1721,7 @@ static void rollforward_schemas(sql_trans *tr)
 		log_bat(key_id);
 		log_bat(key_table);
 		log_bat(key_tpe);
+		log_bat(key_name);
 		log_bat(key_rkey);
 
 		log_bat(kc_id);
@@ -1909,6 +1927,16 @@ static BAT *bind_writable(sql_trans * tr, sql_column * c)
 	return b;
 }
 
+/* TODO 
+	implement late binding here, than only the schema/tables/column 
+	bats are always needed the others could be created when needed,
+	ie it would be possible to implement CREATE TABLE in a rewriten
+	SQL statement(INSERT INTO TABLES) 
+		(There is however a problem, we still need to
+		update the sql_* structs, could maybe also done using
+		late bindings, ie fill structs when needed)
+*/
+	
 BAT *mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
 {
 	sql_trans *tr = m->trans;
@@ -2187,8 +2215,12 @@ static sql_table *create_table_intern( mvc *m, char *name, bit temp)
 	return t;
 }
 
-sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
+sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, sql_key *rkey )
 { 
+	int cnt = BUFSIZ;
+	sql_trans *tr = m->trans;
+	sql_schema *s = find_schema(tr, sname);
+	sql_table *t = find_table(s, tname);
 	sql_key *nk = (kt!=fkey)?(sql_key*)NEW(sql_ukey)
 				:(sql_key*)NEW(sql_fkey);
 
@@ -2197,24 +2229,39 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 
 	nk->id = key_new_id();
 	nk->type = kt;
+	nk->name = (name)?_strdup(name):NULL;
 	nk->columns = list_create(NULL);
 	nk->t = t;
 
 	if (nk->type != fkey){
+		/* create void,int bat to keep the hash values */
+		BAT *b = BATnew( TYPE_void, TYPE_int, cnt );
 		sql_ukey *uk = (sql_ukey*)nk;
 		uk -> keys = NULL;
+
+		BATseqbase(b,0);
+		nk->bid = b->batCacheid;
+		BBPpersistent(b->batCacheid, FALSE);
+/*
+		snprintf(name, BUFSIZ, "K_%s_%s", nk->t->name, nk->name );
+		BATrename(b, name);
+*/
+		BBPunfix(b->batCacheid);
 
 		if (nk->type == pkey)
 			t->pkey = uk;
 	} else {
+		BAT *b = BATnew( TYPE_void, TYPE_oid, cnt );
 		sql_fkey *fk = (sql_fkey*)nk;
 		sql_ukey *uk = (sql_ukey*)rkey;
 
-		int cnt = BUFSIZ;
-		BAT *b = BATnew( TYPE_void, TYPE_oid, cnt );
 		BATseqbase(b,0);
-		fk->bid = b->batCacheid;
+		nk->bid = b->batCacheid;
 		BBPpersistent(b->batCacheid, FALSE);
+/*
+		snprintf(name, BUFSIZ, "F_%s_%s", nk->t->name, nk->name );
+		BATrename(b, name);
+*/
 		BBPunfix(b->batCacheid);
 
 		fk -> rkey = uk;
@@ -2230,7 +2277,8 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 	return nk;
 }
 
-sql_key *mvc_key_add_column( mvc * m, sql_key *k, sql_column *c ){
+/* todo: add 'truncation` */
+sql_key *mvc_key_add_column( mvc * m, sql_key *k, sql_column *c/*, int length */ ){
 
 	if (m->debug)
 		printf("mvc_key_add_column %s\n", c->name);
@@ -2508,8 +2556,8 @@ void mvc_export_schema(mvc * c, stream * s, sql_schema *schema )
 			if (t->keys) for (m = t->keys->h; m; m = m->next) {
 				node *l;
 				sql_key *k = m->data;
-				i = snprintf(buf, BUFSIZ, "%d,%d,%d,%d\n",
-					     k->id, k->type,
+				i = snprintf(buf, BUFSIZ, "%d,%d,%s,%d,%d\n",
+					     k->id, k->type, k->name, 
 					     list_length(k->columns),
 					     (k->type==fkey)?
 						((sql_fkey*)k)->rkey->k.id:0);

@@ -256,11 +256,14 @@ main(int ac, char **av)
 	if (!passwd)
 		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
 
+	/* todo move these into a client lib */
 	i = snprintf(buf, BUFSIZ, "api(milsql,%d);\n", debug );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
 	/* read login */
 	login = readblock( rs );
+
+	if (login) free(login);
 
 	i = snprintf(buf, BUFSIZ, "login(%s,%s);\n", user, passwd );
 	ws->write( ws, buf, i, 1 );
@@ -295,6 +298,9 @@ main(int ac, char **av)
 		}
 		sql_exit_context( &lc );
 	}
+	if (schema) free(schema);
+	if (user) free(user);
+	if (passwd) free(passwd);
 
 	if (rs){
 	       	rs->close(rs);

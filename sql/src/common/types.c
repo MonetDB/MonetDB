@@ -47,12 +47,13 @@ static int type_cmp( sql_type *t1, sql_type *t2)
 	if (!t1 || !t2){	
 		return -1;
 	}
-	return strcmp(t1->sqlname, t2->sqlname) == 0;
+	return strcmp(t1->sqlname, t2->sqlname);
 }
 
 int subtype_cmp( sql_subtype *t1, sql_subtype *t2 )
 {
-	return type_cmp( t1->type, t2->type);
+	int res = type_cmp( t1->type, t2->type);
+	return res;
 }
 
 

@@ -175,7 +175,6 @@ void stmt_destroy(stmt * s)
 			st_detach(s->op2.stval, s);
 			break;
 		case st_create_key:
-			st_detach(s->op1.stval, s);
 			if (s->op2.stval)
 				st_detach(s->op2.stval, s);
 			break;
@@ -285,7 +284,6 @@ void stmt_reset( stmt *s ){
 			grp_reset(s->op2.gval);
 		break;
 	case st_create_key:
-		stmt_reset(s->op1.stval);
 		if (s->op2.stval)
 			stmt_reset(s->op2.stval);
 		break;
@@ -477,17 +475,15 @@ stmt *stmt_default(stmt * col, stmt * def)
 	return s;
 }
 
-stmt *stmt_key( stmt * t, key_type kt, stmt *rk )
+stmt *stmt_key( key *k, stmt *rk )
 {
 	stmt *s = stmt_create();
 	s->type = st_create_key;
-	s->op1.stval = t; 
-	st_attache(t, s);
+	s->op1.kval = k; 
 	if (rk){
 		s->op2.stval = rk; 
 		st_attache(rk, s);
 	}
-	s->flag = kt;
 	return s;
 }
 

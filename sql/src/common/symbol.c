@@ -6,6 +6,9 @@
 
 int symbol_debug = 0;
 
+/* todo move SelectNode and AtomNode code in here */
+/* add proper SelectNode_destroy */
+
 symbol *symbol_init(symbol *s, context * lc, int token)
 {
 	s->token = token;
@@ -84,6 +87,10 @@ symbol *symbol_create_atom(context * lc, int token, atom * data)
 
 void symbol_destroy(symbol * s)
 {
+	if (symbol_debug)
+		fprintf(stderr, "%ld = symbol_destroy(%s)\n",
+			(long) s, token2string(s->token) );
+
 	if (s && s->data.sval) {
 		switch (s->type) {
 		case type_atom: {
@@ -121,9 +128,10 @@ void dnode_destroy(dnode * s)
 {
 	if (s->data.sval) {
 		switch (s->type) {
-		case type_atom:
-			atom_destroy(s->data.aval);
-			break;
+		case type_atom: {
+			AtomNode *a = (AtomNode*)s;
+			atom_destroy(a->a);
+		}	break;
 		case type_symbol:
 			symbol_destroy(s->data.sym);
 			break;

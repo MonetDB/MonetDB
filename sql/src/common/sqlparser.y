@@ -144,6 +144,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	interval_type
 
 %type <sval>
+	opt_constraint_name 
 	any_all_some
 	non_reserved_word
 	ident
@@ -165,7 +166,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	name_commalist 
 	column_ref
 	atom_commalist
-	opt_constraint_name 
 	qname 
 	ordering_spec_commalist
 	opt_schema_element_list
@@ -634,7 +634,7 @@ column_constraint:
     opt_constraint_name column_constraint_type  /*opt_constraint_attributes*/
 
    	{ dlist *l = dlist_create();
- 	  dlist_append_list(l, $1 );
+ 	  dlist_append_string(l, $1 );
 	  dlist_append_symbol(l, $2 );
 	  $$ = _symbol_create_list( SQL_CONSTRAINT, l ); }
  ;
@@ -643,7 +643,7 @@ table_constraint:
     opt_constraint_name table_constraint_type  /*opt_constraint_attributes*/
 
    	{ dlist *l = dlist_create();
-	  dlist_append_list(l, $1 );
+	  dlist_append_string(l, $1 );
 	  dlist_append_symbol(l, $2 );
 	  $$ = _symbol_create_list( SQL_CONSTRAINT, l ); }
  ;
@@ -652,7 +652,7 @@ table_constraint:
 
 opt_constraint_name:
     /* empty */	 		{ $$ = NULL; }
- |  CONSTRAINT qname 		{ $$ = $2; }
+ |  CONSTRAINT ident 		{ $$ = $2; }
  ;
 
 ref_action:
@@ -1092,6 +1092,7 @@ simple_select:
 	  sn->name = NULL;
 
 	  $$ = (symbol*)sn;
+	  /* a destroy of the $5 is needed, without data destruction */
 	  _symbol_init($$, SQL_SELECT); }
 
  |  select_clause UNION opt_all select_clause
@@ -1382,6 +1383,7 @@ subquery:
 	  sn->having = $5->h->next->next->next->data.sym;
 	  sn->orderby = NULL;
 	  $$ = (symbol*)sn;
+	  /* a destroy of the $5 is needed, without data destruction */
 	  _symbol_init($$, SQL_SELECT); }
  ;
 

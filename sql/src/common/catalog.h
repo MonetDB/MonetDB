@@ -15,6 +15,7 @@ typedef enum key_type {
 typedef struct key {
 	key_type type;
 	long id;
+	char *name;
 	struct table *t;
 	struct list *columns;
 	struct key *rkey;
@@ -74,7 +75,7 @@ extern table *cat_bind_table(catalog * cat, schema * s, char *name);
 extern table *cat_create_table(catalog * cat, long id, schema * s,
 			       char *name, int temp, char *sql);
 
-extern key *cat_table_add_key(table *t, key_type kt, key *rk );
+extern key *cat_table_add_key(table *t, key_type kt, char *name, key *rk );
 extern key *cat_key_add_column(key *k, column *c );
 
 #define cat_table_bind_pkey(t) t->pkey

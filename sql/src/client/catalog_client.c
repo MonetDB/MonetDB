@@ -1,3 +1,27 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
 
 #include "catalog.h"
 #include "statement.h"
@@ -19,22 +43,6 @@ static int key_cmp( key *k, long *id )
 	if (k && id && k->id == *id)
 		return 0;
 	return 1;
-}
-
-static char *readblock( stream *s ){
-	int len = 0;
-	int size = BLOCK + 1;
-	char *buf = NEW_ARRAY(char, size ), *start = buf;
-
-	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
-		size += BLOCK;
-		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - BLOCK - 1;
-		*start = '\0';
-	}
-	start += len;
-	*start = '\0';
-	return buf;
 }
 
 static void send_gettypes( catalog *cat ){
@@ -197,12 +205,16 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 			key *k = NULL;
             		long id = 0, rkid;
 			int ci, type = 0, cnr = 0;
+			char *name;
 
 		    	n = strchr(start = n+1, ','); *n = '\0';
 	    		id = strtol(start, (char**)NULL, 10);
 
 		    	n = strchr(start = n+1, ','); *n = '\0';
 	    		type = atoi(start);
+
+		    	n = strchr(start = n+1, ','); *n = '\0';
+	    		name = start;
 
 		    	n = strchr(start = n+1, ','); *n = '\0';
 	    		cnr = atoi(start);
@@ -214,10 +226,10 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 				m = list_find(keys, &rkid, (fcmp)&key_cmp);
 
 			if (m){
-	    			k = cat_table_add_key( t, type, m->data);
+	    			k = cat_table_add_key( t, type, name, m->data);
 	  			list_remove_node( keys, m); 
 			} else {
-	    			k = cat_table_add_key( t, type, NULL);
+	    			k = cat_table_add_key( t, type, name, NULL);
 				list_append( keys, k);
 			}
 			k->id = id;

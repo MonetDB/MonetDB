@@ -26,22 +26,6 @@ void usage( char *prog ){
 }
 
 
-static char *readblock( stream *s ){
-	int len = 0;
-	int size = BLOCK + 1;
-	char *buf = NEW_ARRAY(char, size ), *start = buf;
-
-	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
-		size += BLOCK;
-		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - BLOCK - 1;
-		*start = '\0';
-	}
-	start += len;
-	*start = '\0';
-	return buf;
-}
-
 static void forward_data(stream *out)
 	/* read from stdin */
 {
@@ -317,6 +301,8 @@ main(int ac, char **av)
 	/* read login */
 	login = readblock( rs );
 
+	if (login) free(login);
+
 	i = snprintf(buf, BUFSIZ, "login(%s,%s);\n", user, passwd );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
@@ -329,6 +315,10 @@ main(int ac, char **av)
 
 	if (strlen(schema) > 0)
 		clientAccept( ws, rs );
+
+	if (schema) free(schema);
+	if (user) free(user);
+	if (passwd) free(passwd);
 
 	if (rs){
 	       	rs->close(rs);
