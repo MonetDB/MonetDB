@@ -518,7 +518,7 @@ if (x->dealloc) {\
 	BAT* _b = BATdescriptor(x->free.batref.id);\
         if (_b == NULL) {\
 		GDKerror("yyclean: BAT %d GONE\n", x->free.batref.id);\
-	} else if (x->free.batref.stamp != _b->batStamp) {\
+	} else if (ABS(x->free.batref.stamp) != ABS(_b->batStamp)) {\
 		GDKerror("yyclean: BAT %d OVERWRITTEN (stamp %d != %d)\n", x->free.batref.id,\
 			BATdescriptor(x->free.batref.id)->batStamp, x->free.batref.stamp);\
 	} else {\
