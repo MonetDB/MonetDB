@@ -657,11 +657,17 @@ static BAT* batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap) {
         if ((BATcount(l) == 0) || (BATcount(r) == 0)) {
 		/* below range checking do not support empty bats. so treat them separately (easy) */
                 bn = BATnew(l->htype, l->htype?r->ttype:ATOMtype(r->ttype), 0); 
-		bn->hdense = bn->tdense = TRUE;
 		bn->hsorted = bn->tsorted = GDK_SORTED;
 		BATkey(bn, TRUE);
 		BATkey(BATmirror(bn), TRUE);
-		BATseqbase(bn, l->hseqbase);
+		if ( bn->htype == TYPE_void || bn->htype == TYPE_oid ) {
+			bn->hdense = TRUE;
+			BATseqbase(bn, l->hseqbase);
+		}
+		if ( bn->ttype == TYPE_void || bn->ttype == TYPE_oid ) {
+			bn->tdense = TRUE;
+			BATseqbase(BATmirror(bn), l->tseqbase);
+		}
                 return bn;
 	} else if (BATtordered(l)&1) {
                 /* optimization to be able to carry over more void head columns */
