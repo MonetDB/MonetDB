@@ -23,15 +23,9 @@ Over..
 
 # 6 # querytype
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 11 # length
-# 1 # tuplecount
-# 1 # id
-[ 28	]
+[ 21	]
 
-# 13:21:28 >  
-# 13:21:28 >  Done.
-# 13:21:28 >  
+# 11:14:25 >  
+# 11:14:25 >  Done.
+# 11:14:25 >  
 
