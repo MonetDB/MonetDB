@@ -1054,28 +1054,34 @@ AC_ARG_WITH(readline,
 	have_readline="$withval")
 if test "x$have_readline" != xno; then
   if test "x$have_readline" != xauto; then
-    READLINE_LIBS="-L$withval/lib"
-    READLINE_INCS="-I$withval/include"
+    READLINE_LIBS="-L$have_readline/lib"
+    READLINE_INCS="-I$have_readline/include"
   fi
 
   save_LDFLAGS="$LDFLAGS"
   LDFLAGS="$LDFLAGS $READLINE_LIBS"
+  dnl use different functions in the cascade of AC_CHECK_LIB
+  dnl calls since configure may cache the results
   AC_CHECK_LIB(readline, readline, 
 	[ READLINE_LIBS="$READLINE_LIBS -lreadline" 
-          AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library]) 
 	  have_readline=yes ]
 	, [ AC_CHECK_LIB(readline, rl_history_search_forward, 
 	[ READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap" 
-          AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library]) 
 	  have_readline=yes ]
 	, [ AC_CHECK_LIB(readline, rl_reverse_search_history,
 	[ READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses" 
-          AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library]) 
 	  have_readline=yes ] 
 	, have_readline=no, "-lncurses" ) ], "-ltermcap" ) ],)
   LDFLAGS="$save_LDFLAGS"
 
-  if test "x$have_readline" != xyes; then
+  if test "x$have_readline" = xyes; then
+    AC_CHECK_LIB(readline, rl_completion_matches,
+	have_readline=yes, have_readline=no,
+	$READLINE_LIBS)
+  fi
+  if test "x$have_readline" = xyes; then
+    AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library])
+  else
     READLINE_LIBS=""
     READLINE_INCS=""
   fi
