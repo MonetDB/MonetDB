@@ -110,14 +110,14 @@ SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 					     sqlState, &nativeErrCode, msgText,
 					     sizeof(msgText), NULL);
 
-			addDbcError(dbc, (char *) sqlState, (char *) msgText,
+			addDbcError(dbc, (char *) sqlState, (char *) msgText + ODBCErrorMsgPrefixLength,
 				    nativeErrCode);
 		}
 		/* clean up the statement handle */
 		SQLFreeStmt(stmt, SQL_CLOSE);
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	} else {
-		/* could not allocated a statement object */
+		/* could not allocate a statement object */
 		addDbcError(dbc, "HY013", NULL, 0);
 		return SQL_ERROR;
 	}

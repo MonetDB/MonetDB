@@ -787,7 +787,7 @@
 // It would be nice if we could also not return the result value
 %{
 #define CheckResult(res,tpe,hnd)					\
-	if (res == SQL_ERROR) {			  		\
+	if (res == SQL_ERROR) {				  		\
 		char msg[256];						\
 		SQLSMALLINT len;					\
 		SQLGetDiagRec(tpe, hnd, 1, NULL, NULL, msg, 256, &len);	\
@@ -795,14 +795,6 @@
 		return NULL;						\
 	}
 %}
-%exception SQLBindCol {
-	$action
-	CheckResult(result, SQL_HANDLE_STMT, arg1)
-}
-%exception SQLBindParam {
-	$action
-	CheckResult(result, SQL_HANDLE_STMT, arg1)
-}
 %exception SQLCancel {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
@@ -884,10 +876,6 @@
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
 %exception SQLSetCursorName {
-	$action
-	CheckResult(result, SQL_HANDLE_STMT, arg1)
-}
-%exception SQLSetParam {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }

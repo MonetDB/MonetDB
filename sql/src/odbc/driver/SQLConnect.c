@@ -117,6 +117,8 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 						 "sql client read"));
 		ws = block_stream(socket_wstream(socket_fd,
 						 "sql client write"));
+		assert(!stream_errnr(rs));
+		assert(!stream_errnr(ws));
 
 		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n",
 					 debug, trace);
@@ -150,7 +152,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		if (db != NULL) {
 			free(db);
 		}
-		if (schema && strlen(schema) > 0) {
+		if (schema && *schema) {
 			/* all went ok, store the connection info */
 			dbc->socket = socket_fd;
 			dbc->Mrs = rs;

@@ -263,11 +263,11 @@ static void header_data( stream *rs, stream *out, int nCols, int trace ){
 	}
 	for (i=0; i<nCols; i++){
 		if (cols[i].name){
-			int l =	strlen(cols[i].name); 
-	        	len += l;
+	        	len += strlen(cols[i].name);
 		}
 		len += 3;
-	} len ++;
+	}
+	len ++;
 
 	printf("#"); for (i=0; i<len; i++){ printf("-"); } printf("\n");
 	printf("#");
@@ -1007,8 +1007,8 @@ main(int ac, char **av)
 	if (!passwd)
 		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
 
-	snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n", debug, trace ); 
-	stream_write( ws, buf, strlen(buf), 1 );
+	i = snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n", debug, trace ); 
+	stream_write( ws, buf, i, 1 );
 	stream_flush( ws );
 	/* read login */
 	login = readblock( rs );
@@ -1033,14 +1033,14 @@ main(int ac, char **av)
 		}
 	}
 
-	if (strlen(schema) > 0){
-		struct stat st;
-
+	if (schema && *schema){
 		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
 		fflush(stdout);
 		if (!dump){
-			fstat(fileno(stdin),&st);
 #ifdef HAVE_LIBREADLINE
+			struct stat st;
+
+			fstat(fileno(stdin),&st);
 			if (S_ISCHR(st.st_mode))
 	   			is_chrsp = 1;
 #endif

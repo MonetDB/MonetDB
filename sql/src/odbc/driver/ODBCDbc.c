@@ -35,10 +35,12 @@
 ODBCDbc *
 newODBCDbc(ODBCEnv *env)
 {
-	ODBCDbc *dbc = (ODBCDbc *) malloc(sizeof(ODBCDbc));
+	ODBCDbc *dbc;
 
-	assert(dbc);
 	assert(env);
+
+	dbc = (ODBCDbc *) malloc(sizeof(ODBCDbc));
+	assert(dbc);
 
 	dbc->Env = env;
 	dbc->next = NULL;
@@ -107,7 +109,7 @@ addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg,
 
 	assert(isValidDbc(dbc));
 
-	fprintf(stderr, errMsg);
+	fprintf(stderr, "%s\n", errMsg);
 
 	error = newODBCError(SQLState, errMsg, nativeErrCode);
 	if (dbc->Error == NULL) {
