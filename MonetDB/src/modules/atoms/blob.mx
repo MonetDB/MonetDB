@@ -23,25 +23,25 @@ the bytes-size of the blob (excluding the integer), and then just binary data.
 @mal
 atom module blob;
 
-      command tostr(b:blob):str = blob_tostr;
-      command fromstr(s:str):blob = blob_fromstr;
-      command nequal(l:blob,r:blob):bit  = blob_nequal;
-      command hash(b:blob):int	= blob_hash;
-      command null():blob	= blob_null;
-      command convert(b:blob,direction:int):int = blob_convert;
-      command put(heap:ptr,bun:int,val:blob):int= blob_put;
-      command del(heap:ptr,index:int):int = blob_del;
-      command length(b:blob):lng = blob_length;
-      command heap(heap:ptr, capacity:int):int = blob_heap;
+      command tostr()   = blob_tostr;
+      command fromstr() = blob_fromstr;
+      command nequal()  = blob_nequal;
+      command hash()    = blob_hash;
+      command null()    = blob_null;
+      command convert() = blob_convert;
+      command put()     = blob_put;
+      command del()     = blob_del;
+      command length()  = blob_length;
+      command heap()    = blob_heap;
 
 @+ string functions
 Manipulation functions to extract strings from blobs and vice versa.
 Not to be confused with blob parsing and printing.
 @mal
-   command tostr(v:blob) : str = fromblob
+   command tostring(v:blob) : str = fromblob
 	comment "get the bytes from blob as a string, till the first 0 byte
          or the end of the blob";
-   command tostr(v:blob, index:int ) : str = fromblob_idx
+   command tostring(v:blob, index:int ) : str = fromblob_idx
 	comment "get the bytes from blob as a string, starting at byte 'index'
          till the first 0 byte or the end of the blob.";
    command toblob(v:str) : blob = toblob
@@ -54,7 +54,7 @@ bl := "(5:11 FC E2 A0 0A)":blob;
 err:= print(bl);
 b2 := blob.toblob("Hello World");
 err:= print(b2);
-v1 := blob.tostr(bl2);
+v1 := blob.tostring(b2);
 err:= print(v1);
 @{
 @* Implementation Code
@@ -75,7 +75,7 @@ html
  * The Original Code is the Monet Database System.
  *
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
  * All Rights Reserved.
  *
  * Contributor(s): 	Wilko Quak
@@ -170,7 +170,7 @@ int blob_hash(blob* b)
    return(b->nitems);
 }
 
-blob* blob_null()
+blob *blob_null()
 {
    static blob nullval;
    nullval.nitems = -1;
@@ -182,9 +182,7 @@ void blob_convert( blob *b, int direction){
 }
 
 int blob_length(blob* p)
-{
-   return(blobsize(p->nitems));
-}
+{ return(blobsize(p->nitems)); }
 
 
 int blob_heap(Heap* heap,int capacity)
@@ -194,8 +192,9 @@ int blob_heap(Heap* heap,int capacity)
 }
 
 #ifndef ODSTYLE
-int blob_tostr(str* tostr,int* l,blob* p)
+int blob_tostr(str* tostr,int* l,blob** pin)
 {
+   blob *p= *pin;
    char* s;
    int i;
    {
@@ -233,8 +232,11 @@ int blob_fromstr(char* instr,int* l,blob** val)
    s = strchr(s,'(');
    if (s == NULL)
    {
-      GDKwarning("Missing ( in bob\n");
-      *val = (blob*)NULL;
+      if(strcmp(instr,"nil")==0) *val = (blob*) NULL;
+      else {
+	GDKwarning("Missing ( in blob literal string\n");
+	*val = (blob*)NULL;
+      }
       return(0);
    }
    nitems = strtol(s + 1,&s,10);
@@ -332,8 +334,9 @@ char *blob_outdec(char* p,char* dst)
 	return dst+4;
 }
  
-int blob_tostr(str* dst,int* size,blob* src)
+int blob_tostr(str* dst,int* size,blob** srcin)
 {
+	blob *src= *srcin;
 	int i, n, len = *(int*) src;
 	int memsize = 4 + (len*4)/3;
 	char *out, *end;
@@ -392,7 +395,7 @@ int blob_fromstr(char* src,int* size,blob** dst)
 		unsigned int n, c, len = r-src;
 		char buf[LINELEN], *bp;
 @-
-PETER: this code wanted to modify the source line. So we copy it.
+This code wanted to modify the source line. So we copy it.
 @c
 		memcpy(buf, src, len);
 		buf[--len] = '\0';
@@ -426,15 +429,13 @@ output all of them at the end of the file.
 			bp += 4;
 		}
 	}
-@-
-PETER: set the blob size.
-@c
 	*(int*) *dst = ut- ((char *)*dst + sizeof(int));
         return l;
 }
 #endif
 
-int fromblob_idx(str *retval, blob *b, int *index){
+int fromblob_idx(str *retval, blob **binp, int *index){
+	blob *b = *binp;
 	str s, p = b->data + *index; 
 	str r, q = b->data + b->nitems;
 	for(r=p; r<q; r++) {
@@ -447,16 +448,16 @@ int fromblob_idx(str *retval, blob *b, int *index){
 	return GDK_SUCCEED;
 }
 
-int fromblob(str *retval, blob *b){
+int fromblob(str *retval, blob **b){
 	int zero = 0;
 	return fromblob_idx(retval, b , &zero);
 }
 
-int toblob(blob **retval, str s){
-	int len = strLen(s); 	
+int toblob(blob **retval, str *s){
+	int len = strLen(*s); 	
 	blob *b = (blob*) GDKmalloc(sizeof(int) + len);
 	b->nitems = len;
-	memcpy(b->data, s, len);
+	memcpy(b->data, *s, len);
 	*retval = b;
 	return GDK_SUCCEED;
 }
