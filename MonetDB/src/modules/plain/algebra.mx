@@ -959,8 +959,18 @@ int CMDsum_@1_@2(@2* res, BAT *b) {
 	*res = result;
 	return GDK_SUCCEED;
 }
+@h
+#ifndef ALGEBRA_H
+#define ALGEBRA_H
+
+#include "algebra.proto.h"
+
+algebra_export ptr BATmax( BAT *b, ptr res );
+algebra_export ptr BATmin( BAT *b, ptr res );
+
+#endif
 @c
-#include "gdk.h"
+#include "algebra.h"
 
 @+ Minimum and Maximum
 The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
