@@ -165,8 +165,7 @@ static Client Monet_init( opt *set, int setlen )
 	mo_substitute(set, setlen, dbfarm);
 
         /* determine Monet's kernel settings. */
-	if (!GDKinit(dbname, dbfarm))
-		return NULL;
+	GDKinit(dbname, dbfarm);
 
 	for(i=0; i<setlen; i++){
 		int done = 0;
