@@ -62,7 +62,7 @@ NOTE: the current code breaks if the hash code changes -> ugly
       share code with kunique?
 
 unfinished documentation:
-De clusterhash is speciaal bedoelt voor mappings van gegroepeerde
+De clusterhash is speciaal bedoeld voor mappings van gegroepeerde
 n-relationele schemas op binary relational schemas.
 Ofwel, we hebben een schema { ag , { < a1, a2, ..., an > } }.
 Een eigenschap van de query-load is dat er veel aggregaten worden uitgevoerd
@@ -659,7 +659,7 @@ salgebra_CHbuild( clusterhash* ch, BAT* b ) {
   /* build a hash if it does not yet exist */
   bt = BATmirror( b );
   if ( !( bt->hhash_heap ) ) BAThash( bt, NULL );
-  assert( h = &bt->hhash );
+  h = &bt->hhash;
   ch->bhash = (Hash*) GDKmalloc( sizeof(Hash) );
   memcpy( ch->bhash, h, sizeof(Hash) );
 
