@@ -1,6 +1,7 @@
 import string
 import os
 import regsub
+from codegen import find_org
 
 #automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
 automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', '' ]
@@ -69,16 +70,25 @@ def am_find_srcs(target,deps,am):
 		am['BUILT_SOURCES'].append(pf)
   return pf
 
-def am_find_hdrs(target,deps,hdrs):
-  base,ext = split_filename(target) 	
-  f = target
-  pf = f
-  while (ext != "h" and deps.has_key(f) ):
-    f = deps[f][0]
-    b,ext = split_filename(f)
-    if (ext in automake_ext):
-      pf = f 
-  return pf
+def am_find_hdrs_r(am,target,deps,hdrs,hdrs_ext,map):
+  if deps.has_key(target):
+    tdeps = deps[target]
+    for dtarget in tdeps:
+      org = find_org(deps,dtarget)
+      if (org in map['SOURCES']):
+        t,ext = split_filename(dtarget)
+        if (ext in hdrs_ext and not dtarget in hdrs):
+          hdrs.append(dtarget)
+        am_find_hdrs_r(am,dtarget,deps,hdrs,hdrs_ext,map)
+
+def am_find_hdrs(am,map):
+  if map.has_key('HEADERS'):
+    hdrs_ext = map['HEADERS']
+    for target in map['TARGETS']:
+      t,ext = split_filename(target)
+      if (ext in hdrs_ext and not target in am['HDRS']):
+        am['HDRS'].append(target)
+      am_find_hdrs_r(am,target,map['DEPS'],am['HDRS'],hdrs_ext,map)
 
 def am_additional_libs(name,sep,type,list, am):
     if (type == "BIN"):
@@ -146,11 +156,6 @@ def am_binary(fd, var, binmap, am ):
       am['ALL'].append(name)
     return
 
-  HDRS = []
-  hdrs_ext = []
-  if (binmap.has_key('HEADERS')):
-	hdrs_ext = binmap['HEADERS']
-
   SCRIPTS = []
   scripts_ext = []
   if (binmap.has_key('SCRIPTS')):
@@ -177,8 +182,6 @@ def am_binary(fd, var, binmap, am ):
   srcs = binname+"_SOURCES ="
   for target in binmap['TARGETS']:
     t,ext = split_filename(target)
-    if (ext in hdrs_ext):
-      HDRS.append(target)
     if (ext in scripts_ext):
       if (target not in SCRIPTS):
         SCRIPTS.append(target)
@@ -189,18 +192,11 @@ def am_binary(fd, var, binmap, am ):
     fd.write("%s_scripts = %s\n" % (binname,am_list2string(SCRIPTS," ","")))
     am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
 
-  if (binmap.has_key('HEADERS')):
-    for h in HDRS:
-	am['HDRS'].append(h)
+  am_find_hdrs(am, binmap)
 
   am_deps(fd,binmap['DEPS'],".o",am);
 
 def am_bins(fd, var, binsmap, am ):
-
-  HDRS = []
-  hdrs_ext = []
-  if (binsmap.has_key('HEADERS')):
-	hdrs_ext = binsmap['HEADERS']
 
   scripts_ext = []
   if (binsmap.has_key('SCRIPTS')):
@@ -229,8 +225,6 @@ def am_bins(fd, var, binsmap, am ):
       l = len(bin)
       if (target[0:l] == bin):
         t,ext = split_filename(target)
-	if (ext in hdrs_ext):
-	  HDRS.append(target)
         if (ext in scripts_ext):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
@@ -242,17 +236,16 @@ def am_bins(fd, var, binsmap, am ):
       am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
 
   if (binsmap.has_key('HEADERS')):
-    for h in HDRS:
-	am['HDRS'].append(h)
+    HDRS = []
+    hdrs_ext = binsmap['HEADERS']
+    for target in binsmap['DEPS'].keys():
+      t,ext = split_filename(target)
+      if (ext in hdrs_ext):
+        am['HDRS'].append(target)
 
   am_deps(fd,binsmap['DEPS'],".o",am);
 
 def am_library(fd, var, libmap, am ):
-
-  HDRS = []
-  hdrs_ext = []
-  if (libmap.has_key('HEADERS')):
-    hdrs_ext = libmap['HEADERS']
 
   SCRIPTS = []
   scripts_ext = []
@@ -288,8 +281,6 @@ def am_library(fd, var, libmap, am ):
   srcs = "lib"+sep+libname+"_la_SOURCES ="
   for target in libmap['TARGETS']:
     t,ext = split_filename(target)
-    if (ext in hdrs_ext):
-      HDRS.append(target)
     if (ext in scripts_ext):
       if (target not in SCRIPTS):
         SCRIPTS.append(target)
@@ -300,27 +291,25 @@ def am_library(fd, var, libmap, am ):
     fd.write("%s_scripts = %s\n" % (libname,am_list2string(SCRIPTS," ","")))
     am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
 
-  if (libmap.has_key('HEADERS')):
-    for h in HDRS:
-	am['HDRS'].append(h)
+  am_find_hdrs(am, libmap)
 
   am_deps(fd,libmap['DEPS'],".lo",am)
 
-def am_libs(fd, var, values, am ):
+def am_libs(fd, var, libsmap, am ):
 
   sep = ""
-  if (values.has_key('SEP')):
-  	sep = values['SEP'][0]
+  if (libsmap.has_key('SEP')):
+  	sep = libsmap['SEP'][0]
 
   scripts_ext = []
-  if (values.has_key('SCRIPTS')):
-	scripts_ext = values['SCRIPTS']
+  if (libsmap.has_key('SCRIPTS')):
+	scripts_ext = libsmap['SCRIPTS']
 
-  if (values.has_key('MTSAFE')):
+  if (libsmap.has_key('MTSAFE')):
     fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
     fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
 
-  for libsrc in values['SOURCES']:
+  for libsrc in libsmap['SOURCES']:
     SCRIPTS = []
     lib,libext = split_filename(libsrc) 	
     if (libext not in automake_ext):
@@ -329,15 +318,15 @@ def am_libs(fd, var, values, am ):
 	
 # temporarily switched off, the by libtool created scripts cause problems
 # for so-so linking
-#    if (values.has_key(lib + "_LIBS")):
-#      fd.write(am_additional_libs(lib, sep, "LIB", values[lib + "_LIBS"],am))
-#    elif (values.has_key("LIBS")):
-#      fd.write(am_additional_libs(lib, sep, "LIB", values["LIBS"],am))
-    if (values.has_key(lib + "_DLIBS")):
-      fd.write(am_additional_libs(lib, sep, "LIB", values[lib + "_DLIBS"],am))
+#    if (libsmap.has_key(lib + "_LIBS")):
+#      fd.write(am_additional_libs(lib, sep, "LIB", libsmap[lib + "_LIBS"],am))
+#    elif (libsmap.has_key("LIBS")):
+#      fd.write(am_additional_libs(lib, sep, "LIB", libsmap["LIBS"],am))
+    if (libsmap.has_key(lib + "_DLIBS")):
+      fd.write(am_additional_libs(lib, sep, "LIB", libsmap[lib + "_DLIBS"],am))
 
     srcs = "lib"+sep+lib+"_la_SOURCES ="
-    for target in values['TARGETS']:
+    for target in libsmap['TARGETS']:
       l = len(lib)
       if (target[0:l] == lib):
         t,ext = split_filename(target)
@@ -345,21 +334,21 @@ def am_libs(fd, var, values, am ):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
         else:
-          srcs = srcs + " " + am_find_srcs(target,values['DEPS'], am) 
+          srcs = srcs + " " + am_find_srcs(target,libsmap['DEPS'], am) 
     fd.write(srcs + "\n")
     if (len(SCRIPTS) > 0):
       fd.write("%s_scripts = %s\n\n" % (lib,am_list2string(SCRIPTS," ","")))
       am['BUILT_SOURCES'].append("$(" + lib + "_scripts)")
 
-  if (values.has_key('HEADERS')):
+  if (libsmap.has_key('HEADERS')):
     HDRS = []
-    hdrs_ext = values['HEADERS']
-    for target in values['DEPS'].keys():
+    hdrs_ext = libsmap['HEADERS']
+    for target in libsmap['DEPS'].keys():
       t,ext = split_filename(target)
       if (ext in hdrs_ext):
         am['HDRS'].append(target)
 
-  am_deps(fd,values['DEPS'],".lo",am)
+  am_deps(fd,libsmap['DEPS'],".lo",am)
 
 def am_translate_dir(path,am):
     dir = path
@@ -402,9 +391,6 @@ output_funcs = { 'SUBDIRS': am_assignment,
 		}
 
 
-# TODO
-# make a class am
-#
 def output(tree, cwd, topdir):
   fd = open(cwd+os.sep+'Makefile.am',"w")
 

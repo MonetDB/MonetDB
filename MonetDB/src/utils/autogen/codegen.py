@@ -103,10 +103,6 @@ scan_map = { 'c': [ c_inc, None, '' ],
 	 'xsl': [ xsl_inc, None, '' ], 
 }
 
-dep_map = { 'glue.c': [ '.proto.h' ],
-	    'glue.o': [ '.proto.h' ]
-}
-
 dep_rules = { 'glue.c': [ 'm', '.proto.h' ] , 
 	      'proto.h': [ 'm', '.proto.h']
 }
@@ -150,6 +146,12 @@ def readfilepart(f,ext):
 		m = n
     return buf2
 
+# targets are all objects which can somehow be created.
+# In the code extraction phase targets are created from files
+# possibly containing multiple targets
+#
+# The do_code_extract also tracks the files from which to extract
+# these targets , ie. the dependencies.
 def do_code_extract(f,base,ext, targets, deps, cwd):
         file = cwd+os.sep+f
     	if os.path.exists(file):
@@ -166,6 +168,11 @@ def do_code_extract(f,base,ext, targets, deps, cwd):
  	else:
 	  targets.append(f)
   
+# In the code generation phase targets are generated using input files
+# depending on the extention a target is generated
+#
+# The do_code_gen also tracks the input files for the code extraction
+# of these targets , ie. the dependencies.
 def do_code_gen(targets, deps):
   changes = 1
   while(changes):
@@ -188,13 +195,15 @@ def do_code_gen(targets, deps):
   return targets
 		  
 	
-
 def find_org(deps,f):
   org = f
   while (deps.has_key(org)):	
 	org = deps[org][0] #gen code is done first, other deps are appended 
   return org
 
+# do_deps finds the dependencies for the given list of targets
+# based on the includes (or alike)
+#
 def do_deps(targets,deps,includes,incmap,cwd):
   cache = {}
   do_scan(targets,deps,incmap,cwd,cache)
@@ -219,12 +228,21 @@ def do_recursive_combine(deplist,includes,cache,depfiles):
         depfiles.append(d)
         do_recursive_combine(cache[d],includes,cache,depfiles)
 
+# combine the found dependencies, ie. transitive closure.
 def do_dep_combine(deps,includes,cwd,cache):
   for target,depfiles in deps.items():
     for d in depfiles:
       if (cache.has_key(d)):
 	do_recursive_combine(cache[d],includes,cache,depfiles)
+    # remove recursive dependencies (target depends somehow on itself)
+    if target in depfiles:
+	depfiles.remove(target)
 
+# dependency rules describe two forms of dependencies, first
+# are implicite rules, glue.c depends on proto.h and
+# second dependency between generated targets based on 
+# dependencies between the input files for the target generation process 
+# ie. io.m, generates io_glue.c which and depends on io_proto.h)
 def do_dep_rules(deps,cwd,cache):
   for target in deps.keys():
     tf,te = split_filename(target)
@@ -238,6 +256,7 @@ def do_dep_rules(deps,cwd,cache):
 	  if (de == dep and df+new not in cache[target]):
       	    cache[target].append(df+new)
 
+# scan for includes and match against the known deps and include map.
 def do_scan(targets,deps,incmap,cwd,cache):
   for target,depfiles in deps.items():
       base,ext = split_filename(target)
