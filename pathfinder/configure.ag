@@ -417,6 +417,20 @@ dnl available on the system. If not, we will define it ourselves
 dnl in burg/main.c
 AC_CHECK_HEADERS([string.h], [AC_CHECK_FUNCS([strdup])])
 
+AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h sys/times.h)
+AC_HEADER_TIME()
+AC_STRUCT_TM()
+AC_STRUCT_TIMEZONE()
+AC_FUNC_UTIME_NULL()
+AC_CHECK_FUNCS(gettimeofday ftime times ctime_r localtime_r)
+ctime_r3=yes
+AC_MSG_CHECKING(ctime_r3)
+AC_TRY_COMPILE([$ac_includes_default
+#include <time.h>], 
+[char buf[26]; time_t t; ctime_r(&t,buf,26);],
+[AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
+AC_MSG_RESULT($ctime_r3)
+
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"
