@@ -859,15 +859,16 @@ column_constraint_type(mvc * sql, char *name, symbol * s, sql_schema * ss, sql_t
 		dnode *n = s->data.lval->h;
 		char *rtname = qname_table(n->data.lval);
 		char *rcname = n->next->data.lval->h->data.sval;
-		list *cols = list_append(list_create(NULL), rcname);
+		list *cols;
 		sql_table *rt = mvc_bind_table( sql, cur_schema(sql), rtname );
 		sql_key *k, *rk;
 
-		list_destroy(cols);
 		if (!rt) 
 			return sql_error(sql, 02, "table %s unknown\n", rtname);
 
+ 		cols = list_append(list_create(NULL), rcname);
  		rk = mvc_bind_ukey( rt, cols);
+		list_destroy(cols);
 		if (!rk) 
 			return sql_error(sql, 02, "Could not find referenced unique key in table %s.%s\n", rtname, rcname );
 		k = mvc_create_key(sql, t, name, fkey, rk);
