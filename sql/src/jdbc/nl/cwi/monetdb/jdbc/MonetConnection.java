@@ -1844,7 +1844,7 @@ class SendThread extends Thread {
 		start();
 	}
 
-	public void run() {
+	public synchronized void run() {
 		while (true) {
 			while (query == null) {
 				try {
@@ -1873,7 +1873,7 @@ class SendThread extends Thread {
 	 * @param query a String containing the query to send
 	 * @param monet the socket to write to
 	 */
-	public void runQuery(String query, MonetSocket monet) {
+	public synchronized void runQuery(String query, MonetSocket monet) {
 		this.query = query;
 		conn = monet;
 	
