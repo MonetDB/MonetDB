@@ -14,12 +14,11 @@ REQUIREMENTS
       `locations' feature of current bison versions.
 
    -- m4 (the GNU macro processor)
-      Version 1.4o works fine. Pathfinder requires the `changesyntax'
-      feature that is NOT available in the current stable version 1.4.
-      Most current Linux distributions, however, come with a development
-      version that understands `changesyntax'. (SuSE, as an instance,
-      comes with 1.4o; cygwin, however, does not provide a sufficent
-      version.)
+      Version 1.4 works fine; should be present on most systems.
+
+   -- sed (the the stream editor)
+      GNU sed version 3.02 works fine here, but most other versions
+      should also do.
 
    -- A C compiler, of course
       The GNU C compiler gcc works fine with versions 2.95 and 3.3.
@@ -27,7 +26,13 @@ REQUIREMENTS
       know.
 
    -- twig (tree pattern matcher generator)
-      FIXME: License issues; where to get it
+      The Twig tree pattern matcher is currently in the process of
+      going ``Open Source''. If you cannot find it, contact the
+      Pathfinder development team
+
+   -- MonetDB (the MonetDB main-memory database system)
+      Pathfinder is quite tightly coupled to the MonetDB database system.
+      It depends on a version that is at least 4.3.14.
 
 
   Some libraries are used or even required by the Pathfinder compiler:
@@ -115,13 +120,13 @@ Installation from Development Sources
 -------------------------------------
 
 The development sources do not contain the `./configure' script, but
-sources for the auto... tools to produce it. The script `./autogen'
+sources for the auto... tools to produce it. The script `./bootstrap'
 contains all the commands to produce the `./configure' script, as
 well as the other required files (`Makefile.in', `config.h.in', etc.).
 
 The sources work fine with autoconf 2.57 and automake 1.75.
 
-After running `./autogen' proceed as in a regular installation as
+After running `./bootstrap' proceed as in a regular installation as
 described above (`./configure ; make ; make install').
 
 
