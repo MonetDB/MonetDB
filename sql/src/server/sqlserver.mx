@@ -588,6 +588,7 @@ int mvc_export_schema_wrap( mvc *c, stream *s ){
 }
 @mil
 module(sqlserver);
+#module(MILsqueezer);
 
 module(str);
 module(alarm);
@@ -781,6 +782,8 @@ proc SQLclient_thread( int sock ):= {
 
 proc sqlexecute( str cmd, stream Output ):= {
 	#printf("sqlexecute %s\n", cmd);
+	#scmd := squeeze(cmd,1);
+	#printf("squeezed %s\n", scmd);
 	eval(cmd);
 }
 

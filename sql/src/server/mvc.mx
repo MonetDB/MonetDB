@@ -17,13 +17,24 @@
 #define ISO_SERIALIZABLE    4
 
 /* fkey consists of two of these */
-typedef struct sql_key { /* pkey, ukey, */
+typedef struct sql_key { /* pkey, ukey, fkey */
 	oid id;
-	key_type type; /* pkey, ukey, fkey <-> rkey */
+	key_type type; /* pkey, ukey, fkey */
 	struct list *columns; 
 	struct sql_table *t;
-	struct sql_key *rkey; /* only set for fkey and rkey */
 } sql_key;
+
+typedef struct sql_ukey { /* pkey, ukey */
+	sql_key k;
+	list *keys;
+} sql_ukey;
+
+typedef struct sql_fkey { /* fkey */
+	sql_key k;
+	struct sql_ukey *rkey; /* only set for fkey and rkey */
+
+	bat bid;
+} sql_fkey;
 
 typedef struct sql_column {
 	oid id;
@@ -50,7 +61,7 @@ typedef struct sql_table {
 	struct list *columns;
 	struct list *dcolumns;
 	sql_column *ncolumn;
-	sql_key *pkey;
+	sql_ukey *pkey;
 	struct list *keys; 	/* all keys (primary,unique and foreign) */
 	sql_key *nkey;
 	struct list *dkeys;	/* list of dropped keys, not used jet */
@@ -201,6 +212,13 @@ static int stamp = 1;
 static int timestamp()
 {
 	return stamp++;
+}
+
+static int ky_id = 1;
+
+static int key_new_id()
+{
+	return ky_id++;
 }
 
 static 
@@ -375,19 +393,27 @@ static sql_key *load_key(BAT * keys, BUN j, sql_table *t)
 	sql_trans *tr = gtrans;
 	int ccnt;
 	BAT *cols, *rcols;
-	sql_key *nk = NEW(sql_key);
 	ptr lid = BUNhead(keys, j);
-	oid rkey;
+	int ktype = *(int*) bun_find(key_tpe, lid);
+	sql_key *nk = (ktype!=fkey)?(sql_key*)NEW(sql_ukey)
+				:(sql_key*)NEW(sql_fkey);
 	BUN p,q;
 
 	nk->id = *(oid *) bun_find(key_id, lid);
-	nk->type = *(int *) bun_find(key_tpe, lid);
+	nk->type = ktype;
 	nk->columns = list_create(NULL);
 	nk->t = t;
-	rkey = *(oid *) bun_find(key_rkey, lid);
 
-	if (nk->type == pkey)
-		t->pkey = nk;
+	if (ktype == ukey || ktype == pkey){
+		sql_ukey *uk = (sql_ukey*)nk;
+		uk -> keys = NULL;
+
+		if (ktype == pkey)
+			t->pkey = uk;
+	} else {
+		sql_fkey *fk = (sql_fkey*)nk;
+		fk -> rkey = NULL;
+	}
 
 	cols = BATselect(kc_id, (ptr) & nk->id, (ptr) & nk->id);
 	rcols = BATsemijoin(kc_nr, cols);
@@ -403,13 +429,32 @@ static sql_key *load_key(BAT * keys, BUN j, sql_table *t)
 			load_add_column(cols, p, nk);
 	}
 	BBPunfix(cols->batCacheid);
-	if (nk->type == fkey){
+
+	if (ktype == fkey){
+		sql_fkey *fk = (sql_fkey*)nk;
+		oid rkey = *(oid *) bun_find(key_rkey, lid);
 		node *n = list_find(tr->keys, &rkey, (fcmp)&key_cmp);
 		if (n){
-			sql_key *rk = n->data;
-			nk->rkey = rk;
+			sql_ukey *uk = n->data;
+			fk->rkey = uk;
+			if (!uk->keys) uk->keys = list_create(NULL);
+			list_append(uk->keys, fk);
+		} else {
+			list_append(tr->keys, fk);
 		}
-	} else { /* add pkey and ukey */
+	} else { /* could be a set of rkeys */
+		sql_ukey *uk = (sql_ukey*)nk;
+		BAT *keys = BATselect(key_rkey, (ptr) & nk->id, (ptr) & nk->id);
+		BATloop(keys,p,q){
+			oid fkey = *(oid *) BUNhead(keys, p);
+			node *n = list_find(tr->keys, &fkey, (fcmp)&key_cmp);
+			if (n){
+				sql_fkey *fk = n->data;
+				if (!uk->keys) uk->keys = list_create(NULL);
+				list_append(uk->keys, fk);
+				fk->rkey = uk;
+			}
+		}
 		list_append(tr->keys, nk);
 	}
 	return nk;
@@ -533,34 +578,70 @@ static sql_trans *load_trans()
 	BATloop(sql_schema_id,p,q)
 		list_append(t->schemas, load_schema(sql_schema_id, p));
 
+	list_destroy(t->keys);
+	t->keys = list_create(NULL);
+
 	return t;
 }
 
 static sql_key *key_dup(sql_trans *tr, sql_key *k, sql_table *t)
 {
-	sql_key *nk = NEW(sql_key);
+	sql_key *nk = (k->type!=fkey)?(sql_key*)NEW(sql_ukey)
+				:(sql_key*)NEW(sql_fkey);
 	node *n;
+
 	nk->id = k->id;
 	nk->type = k->type;
 	nk->columns = list_create(NULL);
-	nk->rkey = NULL;
 	nk->t = t;
 
-	if (nk->type == pkey)
-		t->pkey = nk;
+	if (nk->type != fkey){
+		sql_ukey *tk = (sql_ukey*)nk;
+		tk -> keys = NULL;
+
+		if (nk->type == pkey)
+			t->pkey = tk;
+	} else {
+		sql_fkey *tk = (sql_fkey*)nk;
+		tk -> rkey = NULL;
+	}
 
 	for(n = k->columns->h; n; n = n->next){
 		sql_column *oc = n->data;
 		sql_column *c = find_column(t,oc->name); 
+		assert(c);
 		list_append(nk->columns,c);
 	}
+
 	if (nk->type == fkey){
-		node *n = list_find(tr->keys, &k->rkey->id, (fcmp)&key_cmp);
+		sql_fkey *fk = (sql_fkey*)nk;
+		sql_fkey *ok = (sql_fkey*)k;
+		node *n;
+		assert( ok->rkey );
+		n = list_find(tr->keys, &ok->rkey->k.id, (fcmp)&key_cmp);
+		assert(n);
 		if (n){
-			sql_key *rk = n->data;
-			nk->rkey = rk;
+			sql_ukey *uk = n->data;
+			fk->rkey = uk;
+			if (!uk->keys) uk->keys = list_create(NULL);
+			list_append(uk->keys, fk);
+		} else {
+			list_append(tr->keys, fk);
 		}
-	} else { /* add pkey and ukey */
+	} else { /* could be a set of rkeys */
+		sql_ukey *uk = (sql_ukey*)nk;
+		sql_ukey *ok = (sql_ukey*)k;
+		node *m;
+		if (ok->keys) for(m=ok->keys->h; m; m = m -> next){
+			sql_fkey *ofk = m->data;
+			node *n = list_find(tr->keys, &ofk->k.id, (fcmp)&key_cmp);
+			if (n){
+				sql_fkey *fk = n->data;
+				if (!uk->keys) uk->keys = list_create(NULL);
+				list_append(uk->keys, fk);
+				fk->rkey = uk;
+			}
+		}
 		list_append(tr->keys, nk);
 	}
 	return nk;
@@ -872,60 +953,69 @@ int void_insert_bat( BAT *b, BAT *u){
 	return nr;
 }
 
-static void create_key(sql_trans * tr, sql_schema * s, sql_table *t, sql_key *k, int ki )
+static void create_key(sql_trans * tr, sql_schema * gs, sql_table *gt, sql_key *gk, int ki )
 {
 	node *n;
 	int kc = BATcount(kc_id);
 	int neg = -1;
 	int nr = 0;
-	k->id = ki;
-	k->t = t;
-	BUNins(key_id, (ptr) & ki, (ptr) & ki);
-	BUNins(key_table, (ptr) & ki, (ptr) & t->id);
-	BUNins(key_tpe, (ptr) & ki, (ptr) & k->type);
-	if (k->rkey)
-		BUNins(key_rkey, (ptr) & ki, (ptr) & k->rkey->id);
-	else
+
+/*
+	gk->id = ki;
+*/
+	assert (gk->t == gt);
+
+	BUNins(key_id, (ptr) & ki, (ptr) & gk->id);
+	BUNins(key_table, (ptr) & ki, (ptr) & gt->id);
+	BUNins(key_tpe, (ptr) & ki, (ptr) & gk->type);
+	if (gk->type == fkey){
+		int rkey;
+		assert( ((sql_fkey*)gk)->rkey );
+		rkey = ((sql_fkey*)gk)->rkey->k.id;
+		BUNins(key_rkey, (ptr) & ki, (ptr) & rkey);
+	} else {
 		BUNins(key_rkey, (ptr) & ki, (ptr) & neg);
-	for (n = k->columns->h; n; n = n->next, nr++, kc++){
+	}
+	for (n = gk->columns->h; n; n = n->next, nr++, kc++){
 		sql_column *c = n->data;
-		BUNins(kc_id, (ptr)&kc, (ptr)&ki);
+		BUNins(kc_id, (ptr)&kc, (ptr)&gk->id);
 		BUNins(kc_col, (ptr)&kc, (ptr)c->name);
 		BUNins(kc_nr, (ptr)&kc, (ptr)&nr);
 	}
+
 }
 
-static void create_column(sql_trans * tr, sql_schema * s, sql_table *t, sql_column *c, int ci )
+static void create_column(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_column *gc, int ci )
 {
-	BAT *b = BATdescriptor(c->bid);
+	BAT *b = BATdescriptor(gc->bid);
 
-	c->id = ci;
-	c->rtime = s->rtime;
-	c->wtime = s->wtime;
+	gc->id = ci;
+	gc->rtime = gs->rtime;
+	gc->wtime = gs->wtime;
 
 	bat_log_persists(b); 
 	BUNins(sql_column_id, (ptr) & ci, (ptr) & ci);
-	BUNins(sql_column_table, (ptr) & ci, (ptr) & t->id);
-	BUNins(sql_column_name, (ptr) & ci, (ptr) c->name);
-	BUNins(sql_column_type, (ptr) & ci, (ptr) c->type);
-	BUNins(sql_column_default, (ptr) & ci, (ptr) c->def);
-	BUNins(sql_column_null, (ptr) & ci, (ptr) & c->null);
-	BUNins(sql_column_number, (ptr) & ci, (ptr) & c->colnr);
-	BUNins(sql_column_bat, (ptr) & ci, (ptr) & c->bid);
+	BUNins(sql_column_table, (ptr) & ci, (ptr) & gt->id);
+	BUNins(sql_column_name, (ptr) & ci, (ptr) gc->name);
+	BUNins(sql_column_type, (ptr) & ci, (ptr) gc->type);
+	BUNins(sql_column_default, (ptr) & ci, (ptr) gc->def);
+	BUNins(sql_column_null, (ptr) & ci, (ptr) & gc->null);
+	BUNins(sql_column_number, (ptr) & ci, (ptr) & gc->colnr);
+	BUNins(sql_column_bat, (ptr) & ci, (ptr) & gc->bid);
 	BBPunfix(b->batCacheid);
 }
 
-static void rollforward_table(sql_trans * tr, sql_schema * os, sql_table * ct)
+static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 {
 	int ci = BATcount(sql_column_id);
 	int ki = BATcount(key_id);
-	sql_table *t = find_table(os, ct->name);
+	sql_table *gt = find_table(gs, ct->name);
 	node *n, *m;
 
-	assert(list_length(t->columns) == list_length(t->columns));
+	assert(list_length(gt->columns) == list_length(ct->columns));
 
 	n = ct->columns->h;
-	m = t->columns->h;
+	m = gt->columns->h;
 	if (n && m) {
 		sql_column *cc = n->data;
 		sql_column *oc = m->data;
@@ -975,14 +1065,14 @@ static void rollforward_table(sql_trans * tr, sql_schema * os, sql_table * ct)
 	}
 	for(; n; n = n->next, ci++){
 		sql_column *c = n->data;
-		create_column( tr, os, t, column_dup(c), ci );
+		create_column( ctr, gs, gt, column_dup(c), ci );
 	}
-	if (t->nkey){
-		for (n = t->keys->h; n->data != t->nkey; n = n->next);
+	if (ct->nkey){
+		for (n = ct->keys->h; n->data != ct->nkey; n = n->next);
 
 		for (; n; n = n->next, ki++) {
-			sql_key *k = n->data;
-			create_key( tr, os, t, key_dup(tr,k,t), ki );
+			sql_key *ck = n->data;
+			create_key( ctr, gs, gt, key_dup(ctr,ck,gt), ki );
 		}
 	}
 }
@@ -1082,8 +1172,9 @@ static void mvc_forward_create_table(sql_trans * tr, sql_schema * ns,
 
 static void rollforward_tables(sql_trans *tr, sql_schema * s)
 {
+	sql_trans *gtr = tr->parent;
 	node *n;
-	sql_schema *os = find_schema(tr->parent, s->name);
+	sql_schema *os = find_schema(gtr, s->name);
 
 	/* delete the dropped tables */
 	if (s->dtables) for (n = s->dtables->h; n; n = n->next) {	
@@ -1113,7 +1204,7 @@ static void rollforward_tables(sql_trans *tr, sql_schema * s)
 		sql_table *nt, *t = n->data;
 
 		if (!t->temp) {
-			mvc_forward_create_table(tr, os, nt = table_dup(tr, t));
+			mvc_forward_create_table(tr, os, nt = table_dup(gtr,t));
 			list_append(os->tables, nt);
 		}
 	}
@@ -1195,6 +1286,8 @@ static void rollforward_schemas(sql_trans *tr)
 		log_bat(kc_col);
 		log_bat(kc_nr);
 	}
+	list_destroy(tr->keys);
+	tr->keys = list_create(NULL);
 }
 
 
@@ -1537,7 +1630,7 @@ void mvc_drop_schema(mvc * m, char *sname)
 	s->wtime = tr->wtime = tr->stime;
 }
 
-static sql_table *create_table_intern( char *name, bit temp)
+static sql_table *create_table_intern( mvc *m, char *name, bit temp)
 {
 	sql_table *t = NEW(sql_table);
 
@@ -1559,25 +1652,46 @@ static sql_table *create_table_intern( char *name, bit temp)
 
 sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 { 
-	sql_key *k = NEW(sql_key);
+	sql_key *nk = (kt!=fkey)?(sql_key*)NEW(sql_ukey)
+				:(sql_key*)NEW(sql_fkey);
 
 	if (m->debug)
 		printf("mvc_create_key %s %d %d\n", t->name, kt, (int)rkey);
 
-	k->id = 0;
-	k->type = kt;
-	k->t = t;
-	k->columns = list_create(NULL);
-	if (k->type == fkey)
-		k->rkey = rkey;
+	nk->id = key_new_id();
+	nk->type = kt;
+	nk->columns = list_create(NULL);
+	nk->t = t;
 
-	if (kt == pkey) t->pkey = k;
-	if (!t->nkey) t->nkey = k;
+	if (nk->type != fkey){
+		sql_ukey *uk = (sql_ukey*)nk;
+		uk -> keys = NULL;
+
+		if (nk->type == pkey)
+			t->pkey = uk;
+	} else {
+		sql_fkey *fk = (sql_fkey*)nk;
+		sql_ukey *uk = (sql_ukey*)rkey;
+
+		int cnt = BUFSIZ;
+		BAT *b = BATnew( TYPE_void, TYPE_oid, cnt );
+		BATseqbase(b,0);
+		fk->bid = b->batCacheid;
+		BATmode(b,PERSISTENT);
+
+		fk -> rkey = uk;
+		if (!uk->keys) uk->keys = list_create(NULL);
+		list_append(uk->keys, fk);
+
+		
+	}
+
+	if (!t->nkey) t->nkey = nk;
 	if (!t->keys)
 		t->keys = list_create((fdestroy)&key_destroy);
-	list_append(t->keys, k);
+	list_append(t->keys, nk);
 
-	return k;
+	return nk;
 }
 
 sql_key *mvc_key_add_column( mvc * m, sql_key *k, sql_column *c ){
@@ -1591,7 +1705,7 @@ sql_key *mvc_key_add_column( mvc * m, sql_key *k, sql_column *c ){
 sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, bit temp)
 {
 	sql_trans *tr = m->trans;
-	sql_table *t = create_table_intern(name, temp);
+	sql_table *t = create_table_intern(m, name, temp);
 
 	if (m->debug)
 		printf("mvc_create_table %s %s %d\n", s->name, name, temp);
@@ -1609,7 +1723,7 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, bit temp)
 sql_table *mvc_create_view(mvc * m, sql_schema *s, char *name, char *sql)
 {
 	sql_trans *tr = m->trans;
-	sql_table *t = create_table_intern(name, 0);
+	sql_table *t = create_table_intern(m, name, 0);
 
 	if (m->debug)
 		printf("mvc_create_view %s %s %s\n", s->name, name, sql);
@@ -1994,7 +2108,8 @@ void mvc_export_schema(mvc * c, stream * s )
 				i = snprintf(buf, BUFSIZ, "%d,%d,%d,%d\n",
 					     k->id, k->type,
 					     list_length(k->columns),
-					     k->rkey?k->rkey->id:0);
+					     (k->type==fkey)?
+						((sql_fkey*)k)->rkey->k.id:0);
 
 				s->write(s, buf, i, 1);
 				for (l = k->columns->h; l; l = l->next){
@@ -2095,6 +2210,8 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 		}
 	}
 	inss = ASCIIinput( nmes, seps, tpes, s, sz);
+	if (!inss)
+		return -1;
 	bns = BATjoin(BATmirror(bats),nmes);
 	rbats = BATjoin(bns,inss);
 
