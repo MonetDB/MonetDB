@@ -56,8 +56,6 @@ stderr of test 'bug-sf-941788` in directory 'src/test/bugs` itself:
 # 21:38:28 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53845  < bug-sf-941788.sql
 # 21:38:28 >  
 
-MAPI  = monetdb@stem:53845
-ACTION= mapi_get_row
 
 
 # 21:38:28 >  
