@@ -37,7 +37,7 @@ This module contains a simple interface for internet connections.
 		"Start the Mapi listener on <port> for <maxusers>.",
 		"mapi");
 
-	PROC listen(int port, str cmd) := listen(port,5,"");
+	PROC listen(int port, str cmd) := listen(port,5,cmd);
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
 		"mapi");
