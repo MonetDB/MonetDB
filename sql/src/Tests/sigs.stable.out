@@ -27,7 +27,7 @@ module 'sqlserver'
 [ "append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
 [ "append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]"		  ]
 [ "append(BAT[void,any::1], any::1) : BAT[void,any::1]"				  ]
-[ "hash(any::1) : int"								  ]
+[ "hash(any::1, int) : int"							  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_column(mvc, sql_table, str) : sql_column"				  ]
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"			  ]
