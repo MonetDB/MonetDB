@@ -1,11 +1,5 @@
-/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
-
 /**
  * @file
- * 
- * Declarations for algdebug.c; dump Algebra
- * tree in AY&T dot format or human readable
- *
  *
  * Copyright Notice:
  * -----------------
@@ -27,26 +21,17 @@
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
- *          Torsten Grust <torsten.grust@uni-konstanz.de>
- *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
  *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
  */
 
-#ifndef ALGDEBUG_H
-#define ALGDEBUG_H
+#ifndef MA_CSE_H
+#define MA_CSE_H
 
-/* FILE, ... */
-#include <stdio.h>
+#include "milalgebra.h"
 
-#include "algebra.h"
+PFma_op_t *PFma_cse (PFma_op_t *);
 
-extern char *a_id[];
+#endif  /* MA_CSE_H */
 
-void PFalg_dot (FILE *, PFalg_op_t *);
-void PFalg_pretty (FILE *, PFalg_op_t *);
-
-#endif  /* ALGDEBUG_H */
-
-/* vim:set shiftwidth=4 expandtab: */

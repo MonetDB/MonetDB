@@ -3,8 +3,7 @@
 /**
  * @file
  * 
- * Declarations for algdebug.c; dump Algebra
- * tree in AY&T dot format or human readable
+ * Declarations for ma_debug.c; dump MIL Algebra tree in AT&T dot format
  *
  *
  * Copyright Notice:
@@ -34,19 +33,16 @@
  * $Id$
  */
 
-#ifndef ALGDEBUG_H
-#define ALGDEBUG_H
+#ifndef MA_DEBUG_H
+#define MA_DEBUG_H
 
 /* FILE, ... */
 #include <stdio.h>
 
-#include "algebra.h"
+#include "milalgebra.h"
 
-extern char *a_id[];
+void PFma_dot (FILE *, PFma_op_t *);
 
-void PFalg_dot (FILE *, PFalg_op_t *);
-void PFalg_pretty (FILE *, PFalg_op_t *);
-
-#endif  /* ALGDEBUG_H */
+#endif  /* MA_DEBUG_H */
 
 /* vim:set shiftwidth=4 expandtab: */

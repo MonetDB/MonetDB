@@ -246,24 +246,44 @@
  * hook for optimizations. The (twig based) code in @c algopt.mt does
  * some of them (e.g., removal of statically empty expressions).
  *
+ * @subsection ma_gen Compilation to MIL Algebra
+ *
+ * Our target language is the Monet Interpreter Language (MIL).  Before
+ * actually generating (imperative) MIL programs, the algebraic query
+ * representation is compiled into a more explicit algebra that is
+ * closely aligned to MIL, the "MIL Algebra".
+ *
+ * Much like the MonetDB data model, the "MIL Algebra" only knows
+ * two-column relations (BATs). Some operations further require or
+ * produce atomic values.
+ *
+ * Compilation to the MIL algebra takes place in ma_gen.mt.sed. Most
+ * files related to the MIL algebra carry the prefix @c ma_.
+ *
+ * @subsection ma_opt MIL Algebra Optimization
+ *
+ * The MIL algebra is a physical algebra, where properties like
+ * sortedness or uniqueness are well defined. This properties can
+ * lead to interesting optimizations that are performed in ma_opt.mt.
+ *
+ * @subsection ma_cse MIL Algebra CSE
+ *
+ * Much like the relational algebra tree, the MIL algebra tree can
+ * contain identical subtrees that are candidates for sharing in
+ * the tree. The code in ma_cse.c thus rewrites the MIL algebra tree
+ * so that identical subtrees are shared.
+ *
  * @subsection milgen MIL Code Generation
  *
- * The (optimized) algebra expression tree is compiled to our target
- * language, MIL, in @c milgen.mt.sed. The compilation produces another
- * in-memory data structure that will be serialized afterwards (see below).
+ * The algebraic (tree) MIL representation is converted into a serial
+ * MIL program in milgen.mt. For nodes in the MIL algebra tree, it will
+ * create unique variable names in which the expression results are
+ * kept.
  *
- * The MIL code is produced bottom-up, with a twig based compiler. The
- * resulting MIL code computes the result of each sub-expression
- * (i.e., each node in the algebra DAG) and stores it in a set of MIL
- * variables (MonetDB only knows 2-column tables, we need a set of BATs
- * to store a whole relation). The name of these variables is determined
- * with help of a @em prefix that is generated for each sub-expression,
- * followed by suffixes for attribute name and type. The generated code
- * will keep each sub-expression result as long in the corresponding
- * variable, as it may still be used by other operations (i.e., if there
- * still are ingoing edges in the DAG that have not yet been used). As
- * soon as a variable is no longer needed, we set it to @c nil, which
- * allows MonetDB to dispose the variable's old content.
+ * The MIL code generation phase does not directly emit MIL code in
+ * its serialized form, but creates an internal (tree) representation
+ * of the MIL program that will be serialized in the subsequent
+ * processing phase.
  *
  * @subsection milprint Printing the MIL Code as the Compiler Output
  *
@@ -304,10 +324,10 @@
  *
  * @subsection what_to_print Data Structures that may be Printed
  *
- * The command line switches <code>-p</code>, <code>-c</code>, and
- * <code>-a</code> request printing of parse tree (aka. abstract
- * syntax tree), Core language tree, or algebra expression tree,
- * respectively.
+ * The command line switches <code>-p</code>, <code>-c</code>, 
+ * <code>-a</code>, and <code>-m</code> request printing of parse
+ * tree (aka. abstract syntax tree), Core language tree, algebra
+ * expression tree, or MIL algebra tree, respectively.
  *
  * @subsection stopping Stopping Processing at a Certain Point
  *
@@ -395,6 +415,7 @@ static struct option long_options[] = {
     { "print-algebra",                 0, NULL, 'a' },
     { "print-core-tree",               0, NULL, 'c' },
     { "help",                          0, NULL, 'h' },
+    { "print-mil-algebra",             0, NULL, 'm' },
     { "print-parse-tree",              0, NULL, 'p' },
     { "quiet",                         0, NULL, 'q' },
     { "stop-after",                    1, NULL, 's' },
@@ -456,6 +477,7 @@ static const char
 #include "abssynprint.h"
 #include "coreprint.h"
 #include "algdebug.h"
+#include "ma_debug.h"
 #include "timer.h"
 #include "fs.h"           /* core mapping (formal semantics) */
 #include "types.h"        /* type system */
@@ -465,12 +487,15 @@ static const char
 #include "algebra.h"      /* algebra tree */
 #include "core2alg.h"     /* Compile Core to Relational Algebra */
 #include "algopt.h"
-#include "milgen.h"       /* MIL tree generation */
+#include "algebra_cse.h"
+#include "ma_gen.h"       /* MIL algebra generation */
+#include "ma_opt.h"
+#include "ma_cse.h"
+#include "milgen.h"       /* MIL command tree generation */
 #include "milprint.h"     /* create string representation of MIL tree */
 #include "milprint_summer.h" /* create MILcode directly from the Core tree */
 #include "oops.h"
 #include "mem.h"
-#include "algebra_cse.h"
 #include "coreopt.h"
 #include "hsk_parser.h"
 
@@ -493,8 +518,11 @@ static char *phases[] = {
     [13]    "after the Core tree has been translated to the internal algebra",
     [14]    "after the algebra tree has been rewritten/optimized",
     [15]    "after the common subexpression elimination on the algebra tree",
-    [16]    "after the algebra has been translated to MIL",
-    [17]    "after the MIL program has been serialized"
+    [16]    "after the algebra has been translated to MIL algebra",
+    [17]    "after MIL algebra optimization/simplification",
+    [18]    "after MIL algebra common subexpression elimination",
+    [19]    "after the MIL algebra has been compiled into MIL commands",
+    [20]    "after the MIL program has been serialized"
 };
 
 #define STOP_POINT(a) \
@@ -513,6 +541,7 @@ PFstate_t PFstate = {
     print_parse_tree    : false,
     print_core_tree     : false,
     print_algebra_tree  : false,
+    print_ma_tree       : false,
     parse_hsk           : false
 };
 
@@ -523,6 +552,7 @@ PFstate_t PFstate = {
  */
 static char *progname = 0;
 
+#if 0
 /**
  * @c dirname(argv[0]) is stored here later. The dirname() call may
  * modify its argument (according to the manpage). To avoid modifying
@@ -573,7 +603,6 @@ print_algebra (PFalg_op_t * aroot)
         PFalg_pretty (stdout, aroot);
 }
 
-#if 0
 /**
  * Print MIL tree in dot notation or prettyprinted,
  * depending on command line switches.
@@ -600,11 +629,12 @@ static PFcnode_t * unfold_lets (PFcnode_t *c);
 int
 main (int argc, char *argv[])
 {
-    PFpnode_t  *proot  = 0;
-    PFcnode_t  *croot  = 0;
-    PFalg_op_t *aroot  = 0;
-    PFmil_t    *mroot  = 0;
-    PFarray_t  *mil_program = 0;
+    PFpnode_t  *proot  = NULL;
+    PFcnode_t  *croot  = NULL;
+    PFalg_op_t *aroot  = NULL;
+    PFma_op_t  *maroot = NULL;
+    PFmil_t    *mroot  = NULL;
+    PFarray_t  *mil_program = NULL;
     unsigned int i;
 
     /* fd of query file (if present) */
@@ -631,10 +661,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DHMOPTachpqrs:t", 
+        c = getopt_long (argc, argv, "DHMOPTachmpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DHMOPTachpqrs:t");
+        c = getopt (argc, argv, "DHMOPTachmpqrs:t");
 #endif
 
         if (c == -1)
@@ -675,8 +705,10 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'p'));
             printf ("  -c%s: print internal Core language\n",
                     long_option (opt_buf, ", --%s", 'c'));
-            printf ("  -a%s: stop after algebra tree generation\n",
+            printf ("  -a%s: print internal algebra tree\n",
                     long_option (opt_buf, ", --%s", 'a'));
+            printf ("  -m%s: print internal MIL algebra tree\n",
+                    long_option (opt_buf, ", --%s", 'm'));
             printf ("\n");
             printf ("Enjoy.\n");
             exit (0);
@@ -695,6 +727,10 @@ main (int argc, char *argv[])
 
         case 'a':
             PFstate.print_algebra_tree = true;
+            break;
+
+        case 'm':
+            PFstate.print_ma_tree = true;
             break;
 
         case 's':
@@ -972,21 +1008,52 @@ subexelim:
 
     STOP_POINT(15);
 
-    /* Map core to MIL */
-    mroot = PFmilgen (aroot);
-
+    /* Compile algebra into two-column MIL algebra */
+    tm = PFtimer_start ();
+    maroot = PFma_gen (aroot);
     tm = PFtimer_stop (tm);
+
+    if (PFstate.timing)
+        PFlog ("Compilation to MIL algebra:\t %s", PFtimer_str (tm));
+
+    STOP_POINT(16);
+
+    /* MIL algebra common subexpression elimination */
+    tm = PFtimer_start ();
+    maroot = PFma_opt (maroot);
+    tm = PFtimer_stop (tm);
+
+    if (PFstate.timing)
+        PFlog ("MIL algebra optimization:\t %s", PFtimer_str (tm));
+
+    STOP_POINT(17);
+
+    /* MIL algebra common subexpression elimination */
+    tm = PFtimer_start ();
+    maroot = PFma_cse (maroot);
+    tm = PFtimer_stop (tm);
+
+    if (PFstate.timing)
+        PFlog ("MIL algebra CSE:\t %s", PFtimer_str (tm));
+
+    STOP_POINT(18);
+
+    /* Map core to MIL */
+    tm = PFtimer_start ();
+    mroot = PFmilgen (maroot);
+    tm = PFtimer_stop (tm);
+
     if (PFstate.timing)
         PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(16);
+    STOP_POINT(19);
 
     /* Render MIL program in Monet MIL syntax 
      */
     if (!(mil_program = PFmil_serialize (mroot)))
         goto failure;
 
-    STOP_POINT(17);
+    STOP_POINT(20);
 
     /* Print MIL program to stdout */
     if (mil_program)
@@ -1040,6 +1107,22 @@ subexelim:
         else
             PFinfo (OOPS_NOTICE,
                     "core tree not available at this point of compilation");
+    }
+
+    /* print MIL algebra tree if requested */
+    if (PFstate.print_ma_tree) {
+        if (maroot) {
+            if (PFstate.print_pretty) {
+                PFinfo (OOPS_WARNING,
+                        "Cannot prettyprint MIL algebra tree. Sorry.");
+            }
+            if (PFstate.print_dot)
+                PFma_dot (stdout, maroot);
+        }
+        else
+            PFinfo (OOPS_NOTICE,
+                    "MIL algebra tree not available at this "
+                    "point of compilation");
     }
 
     exit (EXIT_SUCCESS);

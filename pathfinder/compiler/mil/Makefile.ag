@@ -33,9 +33,13 @@ lib_mil = {
 	DIR = libdir
 	SOURCES = \
 		mil.c \
-		milgen.mt.sed \
+		milalgebra.c \
+		ma_gen.mt.sed \
+		ma_opt.mt \
+		ma_cse.c \
+		milgen.mt \
 		milprint.c \
 		milprint_summer.c
 }
 
-EXTRA_DIST = milgen_impl.h
+EXTRA_DIST = milgen_impl.c ma_gen_impl.c ma_opt_impl.c

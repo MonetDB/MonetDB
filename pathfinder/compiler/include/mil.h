@@ -10,7 +10,7 @@
 #define MIL_H
 
 /** maximum number of children of a MIL tree node */
-#define MIL_MAXCHILD 5
+#define MIL_MAXCHILD 7
 
 /** MIL oid's are unsigned integers */
 typedef unsigned int oid;
@@ -77,6 +77,7 @@ enum PFmil_kind_t {
     , m_mnot         /**< multiplexed boolean negation `[not]' */
 
     , m_max          /**< MIL max() function */
+    , m_count        /**< MIL count() function */
 
     , m_nop          /**< `no operation', do nothing.
                           (This may be produced during compilation.) */
@@ -105,6 +106,7 @@ enum PFmil_access_t {
     , BAT_WRITE     /**< full read/write access to this BAT */
 };
 typedef enum PFmil_access_t PFmil_access_t;
+
 
 /** semantic content for MIL tree nodes */
 union PFmil_sem_t {
@@ -247,6 +249,9 @@ PFmil_t * PFmil_ctrefine (const PFmil_t *, const PFmil_t *);
 /** MIL max() function, return maximum tail value */
 PFmil_t * PFmil_max (const PFmil_t *);
 
+/** MIL count() function, return number of BUNs in a BAT */
+PFmil_t * PFmil_count (const PFmil_t *);
+
 /** typecast */
 PFmil_t * PFmil_cast (const PFmil_t *, const PFmil_t *);
 
@@ -277,11 +282,21 @@ PFmil_t * PFmil_meq (const PFmil_t *, const PFmil_t *);
 /** MIL multiplexed boolean negation */
 PFmil_t * PFmil_mnot (const PFmil_t *);
 
+PFmil_t *
+PFmil_ser (const PFmil_t *pos,
+           const PFmil_t *item_int,
+           const PFmil_t *item_str,
+           const PFmil_t *item_dec,
+           const PFmil_t *item_dbl,
+           const PFmil_t *item_bln,
+           const PFmil_t *item_node);
+/*
 PFmil_t * PFmil_ser (const char *prefix,
                      const bool has_nat_part, const bool has_int_part,
                      const bool has_str_part, const bool has_node_part,
                      const bool has_dec_part, const bool has_dbl_part,
                      const bool has_bln_part);
+*/
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \
@@ -289,3 +304,5 @@ PFmil_t * PFmil_ser (const char *prefix,
 PFmil_t *PFmil_seq_ (int count, const PFmil_t **stmts);
 
 #endif   /* MIL_H */
+
+/* vim:set shiftwidth=4 expandtab: */

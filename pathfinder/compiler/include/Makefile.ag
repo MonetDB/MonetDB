@@ -22,13 +22,51 @@
 #
 
 EXTRA_DIST = \
-	abssyn.h         env.h        milprint.h   pathfinder.h  twig.h \
-	abssynprint.h    fs.h                      pfstrings.h   typecheck.h \
-	array.h          func_chk.h                prettyp.h     types.h \
-	                 functions.h  normalize.h  qname.h       variable.h \
-	core.h           import.h     ns.h         scope.h       varscope.h \
-	core_mnemonic.h  mem.h        nsres.h      simplify.h    xquery_fo.h \
-	coreprint.h      core2alg.h   oops.h       subtyping.h   algebra.h \
-	                 mil.h        parser.h     timer.h       builtins.h \
-	mil_mnemonic.h   milgen.h     algopt.h     algebra_cse.h coreopt.h \
-	algebra_mnemonic.h milprint_summer.h hsk_parser.h
+	abssyn.h \
+	abssynprint.h \
+	algebra.h \
+	algebra_cse.h \
+	algebra_mnemonic.h \
+	algopt.h \
+	array.h \
+	builtins.h \
+	core.h \
+	core2alg.h \
+	core_mnemonic.h \
+	coreopt.h \
+	coreprint.h \
+	env.h \
+	fs.h \
+	func_chk.h \
+	functions.h \
+	hsk_parser.h \
+	import.h \
+	ma_debug.h \
+	ma_gen.h \
+	ma_opt.h \
+	mem.h \
+	mil.h \
+	mil_mnemonic.h \
+	milalgebra.h \
+	milgen.h \
+	milprint.h \
+	milprint_summer.h \
+	normalize.h \
+	ns.h \
+	nsres.h \
+	oops.h \
+	parser.h \
+	pathfinder.h \
+	pfstrings.h \
+	prettyp.h \
+	qname.h \
+	scope.h \
+	simplify.h \
+	subtyping.h \
+	timer.h \
+	twig.h \
+	typecheck.h \
+	types.h \
+	variable.h \
+	varscope.h \
+	xquery_fo.h

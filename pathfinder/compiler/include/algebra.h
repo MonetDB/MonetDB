@@ -340,15 +340,26 @@ struct PFalg_op_t {
     PFalg_op_kind_t    kind;       /**< operator kind */
     PFalg_op_sem_t     sem;        /**< semantic content for this operator */
     PFalg_schema_t     schema;     /**< result schema */
-    int                refctr;     /**< number of references to this node. */
+    int                refctr;     /**< number of references to this node.
+                                        @deprecated no longer needed with the
+                                          MIL algebra approach */
     int                usectr;     /**< How often has the result already been
                                         used? (If this reaches @a refctr, we
-                                        may destroy the variable.) */
+                                        may destroy the variable.)
+                                        @deprecated no longer needed with the
+                                          MIL algebra approach */
     char              *bat_prefix; /**< prefix that all BATs will carry that
                                         represent this relation. The attribute
                                         name is appended after a `_' for the
                                         full BAT name (there's one BAT for
-                                        each attribute). */
+                                        each attribute).
+                                        @deprecated no longer needed with the
+                                          MIL algebra approach */
+    PFarray_t         *env;        /**< environment to store the corresponding
+                                        MIL algebra expression trees (for MIL
+                                        algebra generation only) */
+    struct PFma_op_t  *ma;         /**< MIL algebra generation will store its
+                                        overall result here. */
     struct PFalg_op_t *child[PFALG_OP_MAXCHILD];
     int                node_id;    /**< specifies the id of this operator
 				        node; required exclusively to

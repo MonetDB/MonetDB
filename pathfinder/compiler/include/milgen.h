@@ -30,8 +30,8 @@
  * $Id$
  */
 
-#include "algebra.h"
+#include "milalgebra.h"
 #include "mil.h"
 
 /** Generate MIL tree from algebra expression tree */
-PFmil_t *PFmilgen (PFalg_op_t *);
+PFmil_t *PFmilgen (PFma_op_t *);

@@ -136,6 +136,9 @@
 /** max() operator */
 #define max(a) PFmil_max(a)
 
+/** count() operator */
+#define count(a) PFmil_count(a)
+
 /** type cast */
 #define cast(type,e) PFmil_cast ((type), (e))
 
@@ -167,5 +170,7 @@
 #define mnot(a) PFmil_mnot (a)
 
 /** serialization function */
-#define serialize(prefix, a, b, c, d, e, f, g) \
-    PFmil_ser ((prefix), (a), (b), (c), (d), (e), (f), (g))
+#define serialize(a, b, c, d, e, f, g) \
+    PFmil_ser ((a), (b), (c), (d), (e), (f), (g))
+
+/* vim:set shiftwidth=4 expandtab: */

@@ -189,6 +189,8 @@ struct PFalg_pair_t PFbui_fn_boolean_bln (PFalg_op_t *loop,
 
 struct PFalg_pair_t PFbui_fn_boolean_optbln (PFalg_op_t *loop,
                                              struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_fn_boolean_item (PFalg_op_t *loop,
+                                           struct PFalg_pair_t *args);
 
 struct PFalg_pair_t PFbui_fn_empty (PFalg_op_t *loop,
                                     struct PFalg_pair_t *args);

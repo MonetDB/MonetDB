@@ -88,6 +88,55 @@ wire3 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3)
 }
 
 /**
+ * Construct a MIL tree node with given node kind.
+ */
+static PFmil_t *
+wire4 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
+       const PFmil_t *n4)
+{
+    PFmil_t *ret = wire3 (k, n1, n2, n3);
+    ret->child[3] = (PFmil_t *) n4;
+    return ret;
+}
+
+/**
+ * Construct a MIL tree node with given node kind.
+ */
+static PFmil_t *
+wire5 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
+       const PFmil_t *n4, const PFmil_t *n5)
+{
+    PFmil_t *ret = wire4 (k, n1, n2, n3, n4);
+    ret->child[4] = (PFmil_t *) n5;
+    return ret;
+}
+
+/**
+ * Construct a MIL tree node with given node kind.
+ */
+static PFmil_t *
+wire6 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
+       const PFmil_t *n4, const PFmil_t *n5, const PFmil_t *n6)
+{
+    PFmil_t *ret = wire5 (k, n1, n2, n3, n4, n5);
+    ret->child[5] = (PFmil_t *) n6;
+    return ret;
+}
+
+/**
+ * Construct a MIL tree node with given node kind.
+ */
+static PFmil_t *
+wire7 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
+       const PFmil_t *n4, const PFmil_t *n5, const PFmil_t *n6,
+       const PFmil_t *n7)
+{
+    PFmil_t *ret = wire6 (k, n1, n2, n3, n4, n5, n6);
+    ret->child[6] = (PFmil_t *) n7;
+    return ret;
+}
+
+/**
  * Create a MIL tree node representing a literal integer.
  * (The result will be a MIL leaf node, with kind #m_lit_int and
  * semantic value @a i.)
@@ -463,6 +512,15 @@ PFmil_max (const PFmil_t *a)
 }
 
 /**
+ * Monet count operator, return number of items in @a a.
+ */
+PFmil_t *
+PFmil_count (const PFmil_t *a)
+{
+    return wire1 (m_count, a);
+}
+
+/**
  * Type cast.
  */
 PFmil_t *
@@ -557,12 +615,18 @@ PFmil_mnot (const PFmil_t *a)
 }
 
 PFmil_t *
-PFmil_ser (const char *prefix,
-           const bool has_nat_part, const bool has_int_part,
-           const bool has_str_part, const bool has_node_part,
-           const bool has_dec_part, const bool has_dbl_part,
-           const bool has_bln_part)
+PFmil_ser (const PFmil_t *pos,
+           const PFmil_t *item_int,
+           const PFmil_t *item_str,
+           const PFmil_t *item_dec,
+           const PFmil_t *item_dbl,
+           const PFmil_t *item_bln,
+           const PFmil_t *item_node)
 {
+    return wire7 (m_serialize, pos, item_int, item_str, item_dec,
+                  item_dbl, item_bln, item_node);
+
+    /*
     PFmil_t *ret = leaf (m_serialize);
 
     ret->sem.ser.prefix = (char *) prefix;
@@ -575,4 +639,5 @@ PFmil_ser (const char *prefix,
     ret->sem.ser.has_bln_part  = has_bln_part;
 
     return ret;
+    */
 }

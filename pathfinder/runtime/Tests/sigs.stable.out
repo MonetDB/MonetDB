@@ -67,7 +67,7 @@ module 'pathfinder'
 [ "scj_ancorself(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"		  ]
 [ "scj_desc(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"			  ]
 [ "scj_descorself(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"		  ]
-[ "serialize(str, bit, bit, bit, bit, bit, bit, bit) : void"                              ]
+[ "serialize(BAT[void,oid], BAT[oid,int], BAT[oid,str], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,bit], BAT[oid,oid]) : void"                   ]
 [ "xml_print(BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : void"  ]
 [ "xml_print(BAT[void,BAT], str) : void"  ]
 quit();

@@ -17,7 +17,7 @@
 
 extern int hsklex(void); /* function prototype */
 
-PFalg_op_t *root;        /* result of the parsing process */
+static PFalg_op_t *root;        /* result of the parsing process */
 
 extern int hskparse (void);
 
@@ -31,12 +31,12 @@ void hskerror (const char *s)
 #define YYERROR_VERBOSE
 
 /* Generic arrays to store all sorts of list items. */
-PFarray_t *list_arr = NULL;
-PFarray_t *proj_arr = NULL;
-PFarray_t *join_arr = NULL;
-PFarray_t *tupl_arr = NULL;
-PFarray_t *atom_arr = NULL;
-PFarray_t *schm_arr = NULL;
+static PFarray_t *list_arr = NULL;
+static PFarray_t *proj_arr = NULL;
+static PFarray_t *join_arr = NULL;
+static PFarray_t *tupl_arr = NULL;
+static PFarray_t *atom_arr = NULL;
+static PFarray_t *schm_arr = NULL;
 
 %}
 
@@ -607,5 +607,7 @@ PFhsk_parse (void)
 	PFoops(OOPS_FATAL, "parsing of Haskell XQuery-to-Algebra output"
 	       "failed");
 
-    return root;
+    return serialize (lit_tbl (attlist ("pre", "size", "level"),
+                               tuple (lit_nat (0), lit_nat (0), lit_nat (0))),
+                      root);
 }

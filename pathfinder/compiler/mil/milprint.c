@@ -12,9 +12,6 @@
 
    statement        : 'var' Variable ':=' expression           <m_assgn>
                     | Variable ':=' expression                 <m_reassgn>
-                    | expr '.insert (' expr ',' expr ')'       <m_insert>
-                    | expr '.insert (' expr ')'                <m_binsert>
-                    | expr '.access (' restriction ')'         <m_access>
                     | <nothing>                                <m_nop>
                     | 'serialize (...)'                        <m_serialize>
 
@@ -31,12 +28,16 @@
                     | expression '.leftjoin (' expression ')'  <m_leftjoin>
                     | expression '.kunion (' expression ')'    <m_kunion>
                     | expression '.CTrefine (' expression ')'  <m_ctrefine>
+                    | expression '.insert (' expression ')'    <m_binsert>
                     | expression '.kunique ()'                 <m_kunique>
                     | expression '.reverse ()'                 <m_reverse>
                     | expression '.mirror ()'                  <m_mirror>
                     | expression '.copy ()'                    <m_copy>
                     | expression '.sort ()'                    <m_sort>
                     | expression '.max ()'                     <m_max>
+                    | expression '.count ()'                   <m_count>
+                    | expression '.access (' restriction ')'   <m_access>
+                    | expr '.insert (' expr ',' expr ')'       <m_insert>
                     | Type '(' expression ')'                  <m_cast>
                     | '[' Type '](' expression ')'             <m_mcast>
                     | '+(' expression ',' expression ')'       <m_add>
@@ -129,6 +130,7 @@ static char *ID[] = {
     , [m_mnot]     = "[not]"
 
     , [m_max]      = "max"
+    , [m_count]    = "count"
 
 };
 
@@ -208,31 +210,6 @@ print_statement (PFmil_t * n)
             print_expression (n->child[1]);
             break;
 
-        case m_insert:
-            print_expression (n->child[0]);
-            milprintf (".%s (", ID[n->kind]);
-            print_expression (n->child[1]);
-            milprintf (", ");
-            print_expression (n->child[2]);
-            milprintf (")");
-            break;
-
-        case m_binsert:
-            print_expression (n->child[0]);
-            milprintf (".%s (", ID[n->kind]);
-            print_expression (n->child[1]);
-            milprintf (")");
-            break;
-
-        case m_access:
-            print_expression (n->child[0]);
-            switch (n->sem.access) {
-                case BAT_READ:   milprintf (".access (BAT_READ)"); break;
-                case BAT_APPEND: milprintf (".access (BAT_APPEND)"); break;
-                case BAT_WRITE:  milprintf (".access (BAT_WRITE)"); break;
-            }
-            break;
-
         case m_order:
             print_expression (n->child[0]);
             milprintf (".%s", ID[n->kind]);
@@ -243,14 +220,12 @@ print_statement (PFmil_t * n)
             break;
 
         case m_serialize:
-            milprintf ("serialize (\"%s\"", n->sem.ser.prefix);
-            milprintf (n->sem.ser.has_nat_part ? ", true" : ", false");
-            milprintf (n->sem.ser.has_int_part ? ", true" : ", false");
-            milprintf (n->sem.ser.has_str_part ? ", true" : ", false");
-            milprintf (n->sem.ser.has_node_part ? ", true" : ", false");
-            milprintf (n->sem.ser.has_dec_part ? ", true" : ", false");
-            milprintf (n->sem.ser.has_dbl_part ? ", true" : ", false");
-            milprintf (n->sem.ser.has_bln_part ? ", true" : ", false");
+            milprintf ("serialize (");
+            for (unsigned int i = 0; i < 7; i++) {
+                if (i)
+                    milprintf (", ");
+                print_expression (n->child[i]);
+            }
             milprintf (")");
             break;
 
@@ -302,6 +277,8 @@ print_expression (PFmil_t * n)
         case m_leftjoin:
         /* expression : expression '.CTrefine (' expression ')' */
         case m_ctrefine:
+        /* expression : expression '.insert (' expression ')' */
+        case m_binsert:
         /* expression : expression '.kunion (' expression ')' */
         case m_kunion:
             print_expression (n->child[0]);
@@ -322,8 +299,19 @@ print_expression (PFmil_t * n)
         case m_sort:
         /* expression : expression '.max' */
         case m_max:
+        /* expression : expression '.count' */
+        case m_count:
             print_expression (n->child[0]);
             milprintf (".%s ()", ID[n->kind]);
+            break;
+
+        case m_access:
+            print_expression (n->child[0]);
+            switch (n->sem.access) {
+                case BAT_READ:   milprintf (".access (BAT_READ)"); break;
+                case BAT_APPEND: milprintf (".access (BAT_APPEND)"); break;
+                case BAT_WRITE:  milprintf (".access (BAT_WRITE)"); break;
+            }
             break;
 
         /* expression : Type '(' expression ')' */
@@ -379,6 +367,15 @@ print_expression (PFmil_t * n)
         case m_lit_bit:
         case m_nil:
             print_literal (n);
+            break;
+
+        case m_insert:
+            print_expression (n->child[0]);
+            milprintf (".%s (", ID[n->kind]);
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (")");
             break;
 
         default:

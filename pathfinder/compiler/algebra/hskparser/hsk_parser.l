@@ -232,12 +232,7 @@ text\(\)               {return TEXT;}
                          */
                         BEGIN(ANY); continue;}
 
-.                      {PFoops (OOPS_FATAL,
-                                "illegal token named %s between line "
-                                "%i, column %i and line %i, column %i "
-                                "during lexical analysis of Haskell"
-                                "algebra\n",
-                                 hsktext, yylloc.first_row, yylloc.first_col,
-                                 yylloc.last_row, yylloc.last_col);}
-
-
+.                      {
+                         PFoops_loc (OOPS_PARSE, yylloc,
+                                     "illegal token `%s'", hsktext);
+                       }
