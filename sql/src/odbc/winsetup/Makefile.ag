@@ -29,7 +29,7 @@ lib_MonetODBCs = {
 	LIBS = $(ODBCLIBS)
 }
 
-bin_install = {
+bin_odbcinstall = {
 	SOURCES = install.c
 	LIBS = $(ODBCLIBS)
 }

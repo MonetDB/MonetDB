@@ -12,6 +12,7 @@
   <property name="srcdir"    value="." />
   <property name="builddir"  value="build" />
 
+
   <!-- Prepares the build directory -->
   <target name="prepare">
     <mkdir dir="${builddir}" />
