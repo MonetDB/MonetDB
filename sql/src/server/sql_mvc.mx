@@ -2159,6 +2159,10 @@ void mvc_exit()
 	if (mvc_debug)
 		fprintf(stderr, "mvc_exit\n");
 
+	/* never started! */
+	if (!logger)
+		return ;
+
 	MT_set_lock(mvc_lock, "mvc_commit");
 	logger_exit(logger); 
 	logger_destroy(logger); 
