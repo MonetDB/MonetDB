@@ -1176,12 +1176,16 @@ oid* sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid* dst, oi
 	oid id = *idp + 1;
 	ptr cur, val;
 
-	/* qsort works fine for small amount of tuples; with few duplicates */
-	if (reverse) {
-		GDKqsort_rev(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
-	} else {
-		GDKqsort(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+	/* StM: we don't need to sort voids, do we??? */
+	if (tpe != TYPE_void) {
+		/* qsort works fine for small amount of tuples; with few duplicates */
+		if (reverse) {
+			GDKqsort_rev(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+		} else {
+			GDKqsort(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+		}
 	}
+
 	cur = base + buf->off;
 	while(buf < end) {
 		val = base + buf->off;
@@ -1263,7 +1267,8 @@ int refine(BAT **res, BAT *b, BAT *a, int rv) {
 	GDKfree(buf);
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	bn->tsorted = 1;
-    } *res = bn;
+    } 
+    *res = bn;
     return GDK_SUCCEED;
 }
 
