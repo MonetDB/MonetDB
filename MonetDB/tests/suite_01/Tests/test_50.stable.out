@@ -33,7 +33,7 @@ Try: modules;                - for other modules.
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_24>	  ]
+[ 2,	  <tmp_25>	  ]
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -42,7 +42,7 @@ Try: modules;                - for other modules.
 [ "elapsed",	  0	  ]
 [ "user",	  190	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  400	  ]
+[ "system",	  500	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #-------------------------#
@@ -50,19 +50,19 @@ Try: modules;                - for other modules.
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_24>	  ]
+[ 2,	  <tmp_25>	  ]
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_24>	  ]
+[ 2,	  <tmp_25>	  ]
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_24>	  ]
+[ 2,	  <tmp_25>	  ]
 
 # 06:09:11 >  
 # 06:09:11 >  Done.

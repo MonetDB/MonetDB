@@ -48,8 +48,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  28	  ]
-[ "tmpbats",	  28	  ]
+[ "bats",	  29	  ]
+[ "tmpbats",	  29	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -188,11 +188,11 @@ Start of MIL script.
 [ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
 [ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_27>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_28>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_27>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -244,6 +244,7 @@ Start of MIL script.
 [ 25,	  "tran"  ]
 [ 26,	  "tran"  ]
 [ 27,	  "tran"  ]
+[ 28,	  "tran"  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -275,42 +276,44 @@ Start of MIL script.
 [ 25,	  "25"		  ]
 [ 26,	  "26"		  ]
 [ 27,	  "27"		  ]
+[ 28,	  "28"		  ]
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
 #---------------------------------#
-[ 1,	  "monet_fcn_fcn"	  ]
-[ 2,	  "monet_fcn_imp"	  ]
-[ 3,	  "monet_fcn_tpe"	  ]
-[ 4,	  "monet_fcn_mid"	  ]
-[ 5,	  "monet_fcn_sig"	  ]
-[ 6,	  "monet_fcn_dsc"	  ]
-[ 7,	  "monet_fcn_aut"	  ]
-[ 8,	  "monet_fcn_dat"	  ]
-[ 9,	  "monet_fcn_nme"	  ]
-[ 10,	  "monet_fcn_pro"	  ]
-[ 11,	  "monet_fcn_cnt"	  ]
-[ 12,	  "monet_mod_nme"	  ]
-[ 13,	  "monet_mod_cnt"	  ]
-[ 14,	  "monet_mod_atm"	  ]
-[ 15,	  "monet_mod_acc"	  ]
-[ 16,	  "monet_mod_hdl"	  ]
-[ 17,	  "monet_mod_dep"	  ]
-[ 18,	  "monet_mod_use"	  ]
-[ 19,	  "monet_mod_load"	  ]
-[ 20,	  "monet_mod_drop"	  ]
-[ 21,	  "monet_fcntbl"	  ]
-[ 22,	  "monet_acctbl"	  ]
-[ 23,	  "monet_atomtbl"	  ]
-[ 24,	  "tmp_24"		  ]
-[ 25,	  "mapi_params"		  ]
-[ 26,	  "tmp_26"		  ]
+[ 1,	  "monet_envirenment"	  ]
+[ 2,	  "monet_fcn_fcn"	  ]
+[ 3,	  "monet_fcn_imp"	  ]
+[ 4,	  "monet_fcn_tpe"	  ]
+[ 5,	  "monet_fcn_mid"	  ]
+[ 6,	  "monet_fcn_sig"	  ]
+[ 7,	  "monet_fcn_dsc"	  ]
+[ 8,	  "monet_fcn_aut"	  ]
+[ 9,	  "monet_fcn_dat"	  ]
+[ 10,	  "monet_fcn_nme"	  ]
+[ 11,	  "monet_fcn_pro"	  ]
+[ 12,	  "monet_fcn_cnt"	  ]
+[ 13,	  "monet_mod_nme"	  ]
+[ 14,	  "monet_mod_cnt"	  ]
+[ 15,	  "monet_mod_atm"	  ]
+[ 16,	  "monet_mod_acc"	  ]
+[ 17,	  "monet_mod_hdl"	  ]
+[ 18,	  "monet_mod_dep"	  ]
+[ 19,	  "monet_mod_use"	  ]
+[ 20,	  "monet_mod_load"	  ]
+[ 21,	  "monet_mod_drop"	  ]
+[ 22,	  "monet_fcntbl"	  ]
+[ 23,	  "monet_acctbl"	  ]
+[ 24,	  "monet_atomtbl"	  ]
+[ 25,	  "tmp_25"		  ]
+[ 26,	  "mapi_params"		  ]
 [ 27,	  "tmp_27"		  ]
+[ 28,	  "tmp_28"		  ]
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
 #-----------------#
-[ 1,	  3	  ]
+[ 1,	  1	  ]
 [ 2,	  3	  ]
 [ 3,	  3	  ]
 [ 4,	  3	  ]
@@ -330,13 +333,14 @@ Start of MIL script.
 [ 18,	  3	  ]
 [ 19,	  3	  ]
 [ 20,	  3	  ]
-[ 21,	  4	  ]
+[ 21,	  3	  ]
 [ 22,	  4	  ]
 [ 23,	  4	  ]
-[ 24,	  1	  ]
-[ 25,	  6	  ]
-[ 26,	  1	  ]
+[ 24,	  4	  ]
+[ 25,	  1	  ]
+[ 26,	  6	  ]
 [ 27,	  1	  ]
+[ 28,	  1	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -368,6 +372,7 @@ Start of MIL script.
 [ 25,	  "load"  ]
 [ 26,	  "load"  ]
 [ 27,	  "load"  ]
+[ 28,	  "load"  ]
 #-------------------------------------------------#
 # BAT:	  tree					  #
 # (int)	  (str)					  #
@@ -379,8 +384,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  28	  ]
-[ "tmpbats",	  28	  ]
+[ "bats",	  29	  ]
+[ "tmpbats",	  29	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -592,6 +597,7 @@ Start of MIL script.
 [ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 6,	  0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_envirenment",	  "str",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
@@ -613,9 +619,9 @@ Start of MIL script.
 [ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "tmp_24",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_26",		  "str",  "oid",  632,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_27",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_25",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_27",		  "str",  "oid",  632,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_28",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #-----------------------------------------------------------------------------------------#
@@ -650,6 +656,7 @@ Start of MIL script.
 [ 25,	  0	  ]
 [ 26,	  0	  ]
 [ 27,	  0	  ]
+[ 28,	  0	  ]
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
@@ -830,8 +837,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  28	  ]
-[ "tmpbats",	  28	  ]
+[ "bats",	  29	  ]
+[ "tmpbats",	  29	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -970,11 +977,11 @@ Start of MIL script.
 [ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
 [ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_27>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_27>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_28>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_24>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -1026,6 +1033,7 @@ Start of MIL script.
 [ 25,	  "tran"  ]
 [ 26,	  "tran"  ]
 [ 27,	  "tran"  ]
+[ 28,	  "tran"  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -1057,42 +1065,44 @@ Start of MIL script.
 [ 25,	  "25"		  ]
 [ 26,	  "26"		  ]
 [ 27,	  "27"		  ]
+[ 28,	  "28"		  ]
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
 #---------------------------------#
-[ 1,	  "monet_fcn_fcn"	  ]
-[ 2,	  "monet_fcn_imp"	  ]
-[ 3,	  "monet_fcn_tpe"	  ]
-[ 4,	  "monet_fcn_mid"	  ]
-[ 5,	  "monet_fcn_sig"	  ]
-[ 6,	  "monet_fcn_dsc"	  ]
-[ 7,	  "monet_fcn_aut"	  ]
-[ 8,	  "monet_fcn_dat"	  ]
-[ 9,	  "monet_fcn_nme"	  ]
-[ 10,	  "monet_fcn_pro"	  ]
-[ 11,	  "monet_fcn_cnt"	  ]
-[ 12,	  "monet_mod_nme"	  ]
-[ 13,	  "monet_mod_cnt"	  ]
-[ 14,	  "monet_mod_atm"	  ]
-[ 15,	  "monet_mod_acc"	  ]
-[ 16,	  "monet_mod_hdl"	  ]
-[ 17,	  "monet_mod_dep"	  ]
-[ 18,	  "monet_mod_use"	  ]
-[ 19,	  "monet_mod_load"	  ]
-[ 20,	  "monet_mod_drop"	  ]
-[ 21,	  "monet_fcntbl"	  ]
-[ 22,	  "monet_acctbl"	  ]
-[ 23,	  "monet_atomtbl"	  ]
-[ 24,	  "tmp_24"		  ]
-[ 25,	  "mapi_params"		  ]
-[ 26,	  "tmp_26"		  ]
+[ 1,	  "monet_envirenment"	  ]
+[ 2,	  "monet_fcn_fcn"	  ]
+[ 3,	  "monet_fcn_imp"	  ]
+[ 4,	  "monet_fcn_tpe"	  ]
+[ 5,	  "monet_fcn_mid"	  ]
+[ 6,	  "monet_fcn_sig"	  ]
+[ 7,	  "monet_fcn_dsc"	  ]
+[ 8,	  "monet_fcn_aut"	  ]
+[ 9,	  "monet_fcn_dat"	  ]
+[ 10,	  "monet_fcn_nme"	  ]
+[ 11,	  "monet_fcn_pro"	  ]
+[ 12,	  "monet_fcn_cnt"	  ]
+[ 13,	  "monet_mod_nme"	  ]
+[ 14,	  "monet_mod_cnt"	  ]
+[ 15,	  "monet_mod_atm"	  ]
+[ 16,	  "monet_mod_acc"	  ]
+[ 17,	  "monet_mod_hdl"	  ]
+[ 18,	  "monet_mod_dep"	  ]
+[ 19,	  "monet_mod_use"	  ]
+[ 20,	  "monet_mod_load"	  ]
+[ 21,	  "monet_mod_drop"	  ]
+[ 22,	  "monet_fcntbl"	  ]
+[ 23,	  "monet_acctbl"	  ]
+[ 24,	  "monet_atomtbl"	  ]
+[ 25,	  "tmp_25"		  ]
+[ 26,	  "mapi_params"		  ]
 [ 27,	  "tmp_27"		  ]
+[ 28,	  "tmp_28"		  ]
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
 #-----------------#
-[ 1,	  4	  ]
+[ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
 [ 4,	  4	  ]
@@ -1112,13 +1122,14 @@ Start of MIL script.
 [ 18,	  4	  ]
 [ 19,	  4	  ]
 [ 20,	  4	  ]
-[ 21,	  5	  ]
+[ 21,	  4	  ]
 [ 22,	  5	  ]
 [ 23,	  5	  ]
-[ 24,	  1	  ]
-[ 25,	  8	  ]
-[ 26,	  1	  ]
+[ 24,	  5	  ]
+[ 25,	  1	  ]
+[ 26,	  8	  ]
 [ 27,	  1	  ]
+[ 28,	  1	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -1150,6 +1161,7 @@ Start of MIL script.
 [ 25,	  "load"  ]
 [ 26,	  "load"  ]
 [ 27,	  "load"  ]
+[ 28,	  "load"  ]
 #-------------------------------------------------#
 # BAT:	  tree					  #
 # (int)	  (str)					  #
@@ -1161,8 +1173,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  28	  ]
-[ "tmpbats",	  28	  ]
+[ "bats",	  29	  ]
+[ "tmpbats",	  29	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -1374,6 +1386,7 @@ Start of MIL script.
 [ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 8,	  0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 5,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 5,	  0	  ]
+[ "monet_envirenment",	  "str",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  632,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
@@ -1395,9 +1408,9 @@ Start of MIL script.
 [ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "tmp_24",		  "str",  "oid",  632,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_26",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_27",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_25",		  "str",  "oid",  632,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_27",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_28",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #-----------------------------------------------------------------------------------------#
@@ -1432,6 +1445,7 @@ Start of MIL script.
 [ 25,	  0	  ]
 [ 26,	  0	  ]
 [ 27,	  0	  ]
+[ 28,	  0	  ]
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
