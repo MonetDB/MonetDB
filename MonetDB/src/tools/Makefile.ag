@@ -50,6 +50,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_mkey	\
 	../modules/plain/lib_mmath	\
 	../modules/plain/lib_monettime	\
+	../modules/contrib/lib_profiler	\
 	../modules/plain/lib_radix	\
 	../modules/plain/lib_stats	\
 	../modules/plain/lib_streams	\
@@ -58,10 +59,15 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_url	\
 	../modules/plain/lib_xtables	\
 	\
+	../modules/contrib/lib_array	\
+	../modules/contrib/lib_bat_cast	\
+	../modules/contrib/lib_bat_mmath	\
 	../modules/contrib/lib_bitset	\
 	../modules/contrib/lib_bitvector	\
 	../modules/contrib/lib_cluster	\
+	../modules/contrib/lib_color	\
 	../modules/contrib/lib_ddbench	\
+	../modules/contrib/lib_image	\
 	../modules/contrib/lib_malalgebra	\
 	../modules/contrib/lib_mel	\
 	../modules/contrib/lib_mprof	\
