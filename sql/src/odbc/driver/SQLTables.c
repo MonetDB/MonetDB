@@ -56,7 +56,8 @@ SQLTables(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	fixODBCstring(szTableType, nTableTypeLength);
 
 	/* Check first on the special cases */
-	if (szCatalogName && strcmp(szCatalogName, SQL_ALL_CATALOGS) == 0 &&
+	if (szCatalogName && 
+			strcmp((char*)szCatalogName, SQL_ALL_CATALOGS) == 0 &&
 	    szSchemaName && nSchemaNameLength == 0 &&
 	    szTableName && nTableNameLength == 0) {
 		/* Special case query to fetch all Catalog names. */
@@ -65,7 +66,8 @@ SQLTables(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 			       "'' AS TABLE_NAME, '' AS TABLE_TYPE, "
 			       "'' AS REMARKS FROM SCHEMAS WHERE 0 = 1");
 	} else if (szCatalogName && nCatalogNameLength == 0 &&
-		   szSchemaName && strcmp(szSchemaName, SQL_ALL_SCHEMAS) == 0 &&
+		   szSchemaName && 
+		   	strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0 &&
 		   szTableName && nTableNameLength == 0) {
 		/* Special case query to fetch all Schema names. */
 		query = strdup("SELECT '' AS TABLE_CAT, NAME AS TABLE_SCHEM, "
@@ -74,7 +76,8 @@ SQLTables(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	} else if (szCatalogName && nCatalogNameLength == 0 &&
 		   szSchemaName && nSchemaNameLength == 0 &&
 		   szTableName && nTableNameLength == 0 &&
-		   szTableType && strcmp(szTableType, SQL_ALL_TABLE_TYPES) == 0) {
+		   szTableType && 
+		   	strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
 		query = strdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, "
 			       "'' AS TABLE_NAME, "

@@ -48,7 +48,7 @@ char *dupODBCstring(SQLCHAR *inStr, SQLSMALLINT lenCode);
 			len = 0;			\
 		switch (len) {				\
 		case SQL_NTS:				\
-			len = str ? strlen(str) : 0;	\
+			len = str ? strlen((char*)str) : 0;	\
 			break;				\
 		case SQL_NULL_DATA:			\
 			str = NULL;			\
