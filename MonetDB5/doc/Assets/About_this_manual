@@ -1,4 +1,4 @@
-@node About this manual, , Top , Top
+@node About this manual, Introduction V5, Top , Top
 @chapter About this manual
 This is the MonetDB reference manual, which serves as the primary entry
 point to locate information on its functionality,
