@@ -1206,7 +1206,7 @@ Module: "xtables"
 [ "xtable_histo_remap",	  "PROC:      ",  "xtable_histo_remap(..any..) : any",						  "not available"																																				  ]
 [ "xtable_print",	  "PROC:      ",  "xtable_print(..any..) : any",						  "not available"																																				  ]
 [ "xtable_realloc",	  "PROC:      ",  "xtable_realloc(any, any) : any",						  "not available"																																				  ]
-[ "xtable_test",	  "PROC:      ",  "xtable_test(any, any, any, any) : any",					  "not available"																																				  ]
+[ "xtable_test",	  "PROC:      ",  "xtable_test(str, BAT[any,any], BAT[any,any], BAT[any,any]) : void",		  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 
