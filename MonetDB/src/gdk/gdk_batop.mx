@@ -1254,23 +1254,6 @@ BAT *part_bat(BAT *b, int ht, int tt, int expected_size, int respect_order){
 	    BATkey(BATmirror(bn), b->tkey);
             bn->hsorted = respect_order && (BAThordered(b)&1);
             bn->tsorted = respect_order && (BATtordered(b)&1);
-@-
-On big bats, we force memory mapped storage by swapping the dirty bat out.
-If there is memory shortage, it will be read in mapped. We also give 
-memory advice for sequental access (sequential inserts).
-
-            bat bid = bn->batCacheid;
-	    int memuse = b->batBuns->size + (b->hheap.base?b->hheap.size:0) +
-				        (b->theap.base?b->theap.size:0);
-	    if (memuse > GDK_BIGMEM) {
-        	bn->batBuns->free = MIN(16384, bn->batBuns->size);
-        	BBPcold(bid);
-        	bn = BATdescriptor(bid);
-        	bn->batBuns->free = BUNsize(bn);
-	        b->batDirtydesc = TRUE;
-        	BATmadvise(bn, BUF_SEQUENTIAL, -1, -1, -1, -1);
-	    }
-@c
 	}
         return bn;
 }
