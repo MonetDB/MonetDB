@@ -281,6 +281,8 @@ int sql_update_var(mvc *m, char *name )
 		m->debug = sql_get_int_var(m, "debug");
 	} else if (strcmp(name, "auto_commit") == 0) {
 		m->auto_commit = sql_get_bit_var(m, "auto_commit");
+		if (mvc_rollback(m, 0, NULL) < 0)
+			return GDK_FAIL;
 	} else if (strcmp(name, "reply_size") == 0) {
 		m->reply_size = sql_get_int_var(m, "reply_size");
 	} else if (strcmp(name, "current_schema") == 0) {

@@ -237,6 +237,7 @@ init_keywords()
 	keywords_insert("SCHEMA", SCHEMA);
 	keywords_insert("SELECT", SELECT);
 	keywords_insert("SET", SET);
+	keywords_insert("AUTO_COMMIT", AUTO_COMMIT);
 
 	keywords_insert("ALL", ALL);
 	keywords_insert("ANY", ANY);

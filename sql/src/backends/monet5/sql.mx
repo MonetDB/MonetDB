@@ -203,6 +203,7 @@ freeing the stack and code segment.
 @-
 @h
 typedef struct backend{
+	int console;
 	int debug;
 	int trace;
 	mvc	*mvc;
@@ -224,7 +225,7 @@ query has been successfully executed.
 	str qry;
 } backend;
 
-extern backend *backend_create( int trace, mvc *c );
+extern backend *backend_create( int trace, mvc *m, Client c );
 extern void backend_destroy( backend *b );
 
 extern int sqlcleanup( mvc *c, int err );
@@ -237,15 +238,16 @@ First introduce the routines to be called by the front-end.
 #include "sql.h"
 #include "sql_gencode.h"
 
-backend *backend_create( int trace, mvc *c )
+backend *backend_create( int trace, mvc *m, Client c )
 {
 	backend *b = NEW(backend);
 
+	b->console = isAdministrator(c);
 	b->debug=0;
 	b->outbuf= NULL;
 	b->out= NULL;
 	b->trace = trace;
-	b->mvc= c;
+	b->mvc = m;
 	b->currSchema = NULL;
 	b->currTable = NULL;
 	b->currColumn = NULL;
@@ -286,16 +288,16 @@ the transaction as well, e.g. commit or rollback.
 @c
 int sqlcleanup( mvc *c, int err )
 {
-        sql_destroy_params(c);
-        sql_destroy_args(c);
+	sql_destroy_params(c);
+	sql_destroy_args(c);
 
-        /* some statements dynamically disable caching */
-        if (c->sym) {
-                symbol_destroy(c->sym);
-                c->sym = NULL;
-        }
-        scanner_query_processed(&(c->scanner));
-        return err;
+	/* some statements dynamically disable caching */
+	if (c->sym) {
+		symbol_destroy(c->sym);
+		c->sym = NULL;
+	}
+	scanner_query_processed(&(c->scanner));
+	return err;
 }
 
 @-
@@ -304,7 +306,9 @@ is administered by a state descriptor accessible in each phase.
 Failure to find the state descriptor aborts the session.
 
 @= getContext
-{	Client _client = getClient();
+{	
+	Client _client = getClient();
+
 	if(_client == NULL ){
 		return throwMessage("mvc","Can not access client record");
 	} 

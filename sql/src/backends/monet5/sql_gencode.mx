@@ -1104,8 +1104,8 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 
 void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 {
-        MalBlkPtr curBlk = 0;
-        Symbol curPrg = 0;
+	MalBlkPtr curBlk = 0;
+	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
 
 	int i = 0;
@@ -1115,7 +1115,6 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 	/* later we could use the id directly (as its unique) and
  	   just create a InstrPtr using newInstruction */
 	i = snprintf( fnme, BUFSIZ, "sql%d", id);
-
 	
 	c->backup = c->curprg;
 
@@ -1123,8 +1122,8 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 	/* later we change this to a factory ? */
 	c->curprg = newFunction( _strdup(fnme), FUNCTIONsymbol);
 	curPrg = c->curprg;
-        curBlk = curPrg->def;
-        curInstr = getInstrPtr(curBlk,0);
+	curBlk = curPrg->def;
+	curInstr = getInstrPtr(curBlk,0);
 	setModuleId(curInstr, "sql_cache");
 
 	if (be->mvc->args){
@@ -1133,22 +1132,22 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 		for (n = be->mvc->args->h; n; n = n->next, argc++){
 			atom *a = n->data;
 			int type = a->tpe->type->localtype;
-                	int varid = 0;
+            int varid = 0;
 
-                        snprintf(arg,32,"A%d",argc);
-                        varid= newVariable(curBlk, _strdup(arg), type);
-                        curInstr = pushArgument(curBlk,curInstr,varid);
+            snprintf(arg,32,"A%d",argc);
+            varid = newVariable(curBlk, _strdup(arg), type);
+            curInstr = pushArgument(curBlk,curInstr,varid);
 	 		setVarType(curBlk,varid,type);
-                }
-        }
-        backend_dumpstmt( be, curBlk, s);
+		}
+	}
+	backend_dumpstmt( be, curBlk, s);
 
 	pushEndInstruction(curBlk);
-        addQueryToCache(c);
-        if( c->backup){
-        	c->curprg = c->backup;
-                c->backup = 0;
-        }
+	addQueryToCache(c);
+	if (c->backup){
+		c->curprg = c->backup;
+		c->backup = 0;
+	}
 }
 
 void 
@@ -1156,7 +1155,7 @@ backend_call( backend *be, Client c, int id, list *args )
 {
 	
 	InstrPtr q;
-        MalBlkPtr mb = c->curprg->def;
+	MalBlkPtr mb = c->curprg->def;
 	char name[BUFSIZ];
 
 	(void)snprintf( name, BUFSIZ, "sql%d", id);

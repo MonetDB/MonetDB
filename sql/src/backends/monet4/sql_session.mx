@@ -993,6 +993,11 @@ Use default setting for trace.
 		blocked = 1;
 		*passwd=0;
 	}
+	passwd= strrchr(user,':');
+	if(passwd && strncasecmp(passwd,":sql",4)==0){
+		/* skip :sql only used for M5 */
+		*passwd=0;
+	}
 
 	passwd= strchr(user,':');
 	if( passwd){

@@ -490,7 +490,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO 
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES 
-%token<sval> PUBLIC REFERENCES SCHEMA SET 
+%token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT 
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW BATS WHERE WITH 
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
@@ -1313,6 +1313,12 @@ _transaction_stmt:
 		{ $$ = _symbol_create_int( TR_START, $3); }
  |  SET local TRANSACTION transaction_mode_list
 		{ $$ = _symbol_create_int( TR_MODE, $4); }
+ |  SET AUTO_COMMIT '=' scalar_exp	
+		{ dlist *l = dlist_create();
+			dlist_append_string(l, _strdup("auto_commit") );
+			dlist_append_symbol(l, $4 );
+			$$ = _symbol_create_list( SQL_SET, l); 
+		}
  ;
 
 local:

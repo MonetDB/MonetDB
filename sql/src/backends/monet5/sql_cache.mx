@@ -81,7 +81,7 @@ sql_export str SQLCacheRemove(int *ret, str *nme);
 str SQLCacheExists(bit *res, str *nme){
 	Scope scope;
 	Symbol s;
-        Client c = getClient();
+	Client c = getClient();
 
 	scope= findModule(c->nspace,"sql_cache");
 	if( scope == NULL)
@@ -92,12 +92,13 @@ str SQLCacheExists(bit *res, str *nme){
 	return MAL_SUCCEED;
 }
 str SQLCacheGetDefinition(int *ret, str *nme){
-        Scope scope;
+	Scope scope;
 	Symbol s;
-        Client c= getClient();
+	Client c= getClient();
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if(b == 0) 
-	return throwMessage("sql_cache.getDefinition", "failed to create BAT");
+
+	if(b == 0) 
+		return throwMessage("sql_cache.getDefinition", "failed to create BAT");
 	
         scope= findModule(c->nspace,"sql_cache");
         if( scope == NULL)
@@ -122,7 +123,7 @@ str SQLCacheGetDefinition(int *ret, str *nme){
 str SQLCacheRemove(int *ret, str *nme){
 	Scope scope;
 	Symbol s;
-        Client c = getClient();
+   	Client c = getClient();
 
 	(void) ret;
 #ifdef _SQL_CACHE_DEBUG
