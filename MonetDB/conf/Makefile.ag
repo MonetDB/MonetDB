@@ -2,11 +2,11 @@ EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh mkinstalldirs missing \
 	ltmain.sh stamp-h.in config.h.in \
-	monet.m4 conf.bash conf.csh monet.conf.in
+	monet.m4 conf.bash monet.conf.in
 
 scripts_m4 = {
 	DIR = pkgdatadir/conf
-	SOURCES = monet.m4 conf.bash conf.csh
+	SOURCES = monet.m4 conf.bash
 }
 
 scripts_conf = {
