@@ -31,9 +31,9 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 	"grouped tail sum on @1"
 .COMMAND {avg}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_avg_@1; 
 	"grouped tail average on @1"
-.COMMAND {sum}(BAT[oid,@1] b, BAT[void,oid] g, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_sum3_@1; 
+.COMMAND {sum}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_sum3_@1; 
 	"grouped tail sum on @1"
-.COMMAND {avg}(BAT[oid,@1] b, BAT[void,oid] g, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_avg3_@1; 
+.COMMAND {avg}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_avg3_@1; 
 	"grouped tail average on @1"
 @m
 @:sum_avg_signatures(sht)@
@@ -46,38 +46,20 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 	"grouped tail minimum"
 .COMMAND {max}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_max; 
 	"grouped tail maximum"
-.COMMAND {min}(BAT[oid,any::1] b, BAT[void,oid] g, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_min3; 
+.COMMAND {min}(BAT[oid,any::1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_min3; 
 	"grouped tail minimum"
-.COMMAND {max}(BAT[oid,any::1] b, BAT[void,oid] g, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_max3; 
+.COMMAND {max}(BAT[oid,any::1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_max3; 
 	"grouped tail maximum"
 
 .COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_count; 
 	"grouped count"
-.COMMAND {count}(BAT[oid,any] b, BAT[void,oid] g, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_count3; 
+.COMMAND {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_count3; 
 	"grouped count"
 
 .COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_size;
 	"grouped count of true values"
 
 .LOAD
-
-@= sum_avg_procs
-PROC {sum}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@1] := {
-	return {sum}(g.reverse().join(b),e);
-}
-PROC {avg}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@1] := {
-	return {avg}(g.reverse().join(b),e);
-}
-@m
-@:sum_avg_procs(sht)@
-@:sum_avg_procs(int)@
-@:sum_avg_procs(lng)@
-@:sum_avg_procs(flt)@
-@:sum_avg_procs(dbl)@
-
-PROC {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] := {
-	return {count}(g.reverse().join(b),e);
-}
 
     proc size(BAT[any,bit] b) : int {
 	var h := b.histogram;
@@ -936,6 +918,11 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
+
+	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
+		return CMDaggrX3_sum_@1(ret, BATjoin(BATmirror(g),b), e);
+	}
+
 	/* init: set all sums to zero and calculate min/max oid */
 	@:init_result(@1)@
 	range = max - min + 1;
@@ -993,6 +980,11 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_avg3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_avg3_@1: head of BAT g must not be nil.\n");
+
+	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
+		return CMDaggrX3_avg_@1(ret, BATjoin(BATmirror(g),b), e);
+	}
+
 	/* init: set all sums & counts to zero and calculate min/max oid */
 	@:init_result(@1)@
 	range = max - min + 1;
@@ -1119,6 +1111,11 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13_@3_@4: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13_@3_@4: head of BAT g must not be nil.\n");
+
+	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
+		return CMDaggrX3_@1_@3_@4(ret, BATjoin(BATmirror(g),b), e);
+	}
+
       	/* init: prepare the result bat; 
 	 * trick: by using "tail-type" void, we only write the head column, here */
 	@:init_result(void)@
@@ -1172,6 +1169,11 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13: head of BAT g must not be nil.\n");
+
+	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
+		return CMDaggrX3_@1(ret, BATjoin(BATmirror(g),b), e);
+	}
+
 	if (tt == TYPE_chr) {
 		rtrn = aggrX3_@13_chr_loc(ret, b, g, e);
 	} else if (tt == TYPE_sht) {
@@ -1281,6 +1283,11 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e){
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count3(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_count3: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_count3: head of BAT g must not be nil.\n");
+
+	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
+		return CMDaggrX3_count(ret, BATjoin(BATmirror(g),b), e);
+	}
+
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(int)@
 	range = max - min + 1;
