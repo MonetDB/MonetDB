@@ -1226,12 +1226,18 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
 
 def ReadMultiple(inpipes, outpipes = None):
     if outpipes is None:
+        # we will return a list of strings, one for each of the pipes,
+        # with the input from the corresponding pipe
         outbuffers = [''] * len(inpipes)
     else:
+        # we will return nothing.  the input from the pipes will be
+        # written to the correspondging outpipes.
         outbuffers = None
     if os.name == 'nt':
+        # On Windows, select only works on sockets.
+        # We must hope that reading the pipes in order won't cause
+        # deadlock.
         for i in range(len(inpipes)):
-            p = inpipes[i]
             if outpipes is None:
                 outbuffers[i] = inpipes[i].read()
             else:
@@ -1244,6 +1250,7 @@ def ReadMultiple(inpipes, outpipes = None):
             for r in readers:
                 data = os.read(r.fileno(), 1024)
                 if not data:
+                    # we hit EOF on this pipe
                     todelete.append(r)
                 else:
                     for i in range(len(inpipes)):
@@ -1253,6 +1260,7 @@ def ReadMultiple(inpipes, outpipes = None):
                             else:
                                 outpipes[i].write(data)
             for r in todelete:
+                # remove the pipe from consideration and close it
                 readlist.remove(r)
                 r.close()
     if outpipes is not None:
