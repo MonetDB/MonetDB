@@ -1,16 +1,16 @@
 stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
 
-# 05:52:33 >  
-# 05:52:33 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 02_Modules_plain.milS
-# 05:52:33 >  
+# 15:16:29 >  
+# 15:16:29 >  Mtimeout -timeout 600 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 02_Modules_plain.milS
+# 15:16:29 >  
 
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# dbfarm:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm
+# dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
 # dbname:Tests_tests_Availability
-# dbdir:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_tests_Availability
+# dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_tests_Availability
 
 loaded;
 #---------------------------------#
@@ -429,15 +429,22 @@ Module: "malalgebra"
 
 Module: "mapi"
 
-[ 4 ]
-[ 4 ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help							  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "_listen",	  "COMMAND: ",	  "_listen() : void",		  "start a Mapi server with the default port number."	  ]
-[ "_listen",	  "COMMAND: ",	  "_listen(int, int) : void",	  "start a Mapi server."				  ]
-[ "listen",	  "PROC: ",	  "listen() : any",		  "not available"					  ]
-[ "listen",	  "PROC: ",	  "listen(int, int) : any",	  "not available"					  ]
+[ 11 ]
+[ 11 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature						| help																							  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "listen",	  "PROC: ",	  "listen() : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "listen",	  "PROC: ",	  "listen(int) : any",					  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "listen",	  "PROC: ",	  "listen(int, int) : any",				  "Start the Mapi listener on <port>."																			  ]
+[ "listen",	  "PROC: ",	  "listen(int, int, str) : any",			  "Start the Mapi listener on 50000."																			  ]
+[ "listen",	  "PROC: ",	  "listen(int, str) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
+[ "listen",	  "PROC: ",	  "listen(str) : any",					  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "mapi_listen",  "BUILTIN: ",	  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "stream_line",  "PROC: ",	  "stream_line(stream) : str",				  "Read a string from <S> until a newline."																		  ]
+[ "stream_read",  "PROC: ",	  "stream_read(stream) : str",				  "Read a string from <S> until a '1' character."																	  ]
+[ "stream_strip", "PROC: ",	  "stream_strip(stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
+[ "stream_until", "COMMAND: ",	  "stream_until(stream, str) : str",			  "read a string from <S> until the <stop> word"																	  ]
 
 Module: "mmath"
 
@@ -700,7 +707,6 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND: ",	  "terminate() : void",			  "stop a TCP/IP server"																				  ]
 [ "terminate",	  "COMMAND: ",	  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND: ",	  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
-!WARNING: TCPepilogue: terminate 0 listeners
 
 Module: "tpcd"
 
@@ -999,7 +1005,7 @@ Module: "mprof"
 [ "pmSummary",		  "PROC: ",	  "pmSummary(..any..) : any",			  "not available"					  ]
 [ "pmTag",		  "COMMAND: ",	  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]
 
-# 05:52:36 >  
-# 05:52:36 >  Done.
-# 05:52:36 >  
+# 15:16:34 >  
+# 15:16:34 >  Done.
+# 15:16:34 >  
 
