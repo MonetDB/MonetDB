@@ -637,7 +637,7 @@ The language should also recognize (a,b):=(1,2);
 This is achieved by propagation of the rhs types to the lhs
 variables.
 @c
-    if( p->retc > 1 && p->argc!= 2 * p->retc){
+    if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
         GDKerror("Multiple assignment mismatch\n");
         mb->errors++;
     }

@@ -250,7 +250,7 @@ void chkFlow(MalBlkPtr mb)
                 } else
                 if(ps->typechk == TYPE_FIXED)
                 for(i=0;i<p->retc; i++)
-                if( getArgType(mb,ps,i) != getArgType(mb,p,i)){
+                if( resolveType(getArgType(mb,ps,i), getArgType(mb,p,i)) == -1){
                     GDKerror("type mismatch at argument %d\n",i);
                     mb->errors++;
                 }
