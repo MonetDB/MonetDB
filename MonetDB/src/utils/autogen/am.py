@@ -797,12 +797,11 @@ def am_add_srcdir(path, am, prefix =""):
     return prefix+dir
 
 def am_translate_dir(path, am):
-    path = string.replace(path, '/', os.sep)
     dir = path
     rest = ""
-    if string.find(path, os.sep) >= 0:
-        dir, rest = string.split(path, os.sep, 1)
-        rest = os.sep + rest
+    if string.find(path, '/') >= 0:
+        dir, rest = string.split(path, '/', 1)
+        rest = '/' + rest
 
     if dir in ('bindir', 'builddir', 'datadir', 'includedir', 'infodir',
                'libdir', 'libexecdir', 'localstatedir', 'mandir',
@@ -812,7 +811,7 @@ def am_translate_dir(path, am):
                'top_srcdir'):
         dir = "$("+dir+")"
     dir = dir + rest
-    return string.replace(dir, os.sep, '/')
+    return dir
 
 def am_includes(fd, var, values, am):
     incs = "-I$(srcdir)"
@@ -883,7 +882,8 @@ CXXEXT = \\\"cc\\\"
     am['TOPDIR'] = topdir
     am['CWD'] = ''
     if cwd != topdir:
-        am['CWD'] = cwd[len(topdir)+1:]+'/'
+        # in case we happen to be running this on Windows, replace dir seps
+        am['CWD'] = cwd[len(topdir)+1:].replace('\\', '/')+'/'
     am['BUILT_SOURCES'] = []
     am['EXTRA_DIST'] = []
     am['LIBS'] = []     # all libraries (am_libs and am_library)
