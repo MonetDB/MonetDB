@@ -89,6 +89,7 @@ rows_affected() & 	Obtain number of rows changed
 quickResponse()	&       Quick pass response to stream
 initStream()	&	Prepare for reading a stream of answers
 seekRow() 	&       Move row reader to specific row location in cache
+sortColumn()	&	Sort column by string
 timeout()  	&       Set timeout for long-running queries[TODO]
 trace()    	&       Set trace flag
 traceLog()	& 	Keep log of interaction
@@ -696,11 +697,9 @@ public int fetchRow(){
 public int fetchAllRows(){
 	check("fetchAllRows");
 	cacheLimit(-1);
-	//cache.tuples=0;
 	while( getRow()== MOK)
 		sliceRow();
 	fetchReset();
-	//return cache.tuples;
 	return cache.tupleCount;
 }
 
@@ -851,7 +850,7 @@ private void checkQuery(){
 	// trim white space
 	int j= query.length()-1;
 	while(j>0 && (query.charAt(j)==' ' || query.charAt(j)=='\t')) j--;
-	if( j != query.length()-1) query= query.substring(0,j);
+	if( j != query.length()-1) query= query.substring(0,j+1);
 	// check for unbalanced string quotes
 	byte qbuf[]= query.getBytes();
 	boolean instring=false;
@@ -1125,7 +1124,7 @@ public int cacheFreeup(int percentage){
 	if( percentage <0 || percentage>100) percentage=100;
 	int k= (cache.writer * percentage) /100;
 	if( k < 1) k =1;
-	System.out.println("shuffle cache:"+percentage+" tuples:"+k);
+	if(trace) System.out.println("shuffle cache:"+percentage+" tuples:"+k);
 	for(int i=0; i< cache.writer-k; i++){
 		cache.rows[i]= cache.rows[i+k];
 		cache.fldcnt[i]= cache.fldcnt[i+k];
@@ -1142,7 +1141,7 @@ public int cacheFreeup(int percentage){
 	if(cache.reader < -1) cache.reader= -1;
 	cache.writer -=k;
 	if(cache.writer < 0) cache.writer= 0;
-	System.out.println("new reader:"+cache.reader+" writer:"+cache.writer);
+	if(trace) System.out.println("new reader:"+cache.reader+" writer:"+cache.writer);
 	//rebuild the tuple index
 	cache.tupleCount=0;
 	int i=0;
@@ -1478,6 +1477,15 @@ private int getRow(){
         }
         return MERROR;
 }
+//---------------------- Special features ------------------------
+/**
+ * Retrieving the tuples in a particular value order is a recurring
+ * situation, which can be accomodated easily through the tuple index.
+ * Calling sorted on an incomplete cache doesn;t produce the required
+ * information.
+ */
+public void sortColumn(int row, int direction){
+}
 // ------------------------------- Utilities
 /** The java context provides a table abstraction 
  * the methods below provide access to the relevant Mapi components
@@ -1623,7 +1631,32 @@ class RowCache{
 		for(int j=0;j<maxfields;j++) fields[i][j]= null;
 	}
     }
+//---------------------- Special features ------------------------
+/**
+ * Retrieving the tuples in a particular value order is a recurring
+ * situation, which can be accomodated easily through the tuple index.
+ * Calling sorted on an incomplete cache doesn;t produce the required
+ * information.
+ * The sorting function is rather expensive and not type specific.
+ * This should be improved in the near future
+ */
+public void sortColumn(int col, int direction){
+	if( col <0 || col > maxfields) return;
+	for(int i=0;i<writer; i++){
+		String x= fields[i][col];
+		for(int j=i+1;j<writer; j++){
+			String y= fields[j][col];
+			if( y.compareTo(x) >0 && direction<0){
+				int z= tuples[i];
+				tuples[i]= tuples[j];
+				tuples[j]= z;
+			}
+		}
+	}
 }
+
+}
+
 class Column{
     String tablename=null;
     String columnname=null;
