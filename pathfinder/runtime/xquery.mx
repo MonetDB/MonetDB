@@ -34,6 +34,12 @@
 /*******************************************
 * xquery.c : xquery command stuff
 *
+* TODO:
+* - Decide how to generate output for query results. I propose that we
+*   generate output in three different modes:
+*   1) "xml", generate the xml output data as we do now.
+*   2) "sax", generate the Sax-O-Phone SAX event stream as we do now
+*   3) "?galax?", generate exactly the same output as GALAX
 */
 
 #include <gdk.h>
@@ -289,11 +295,13 @@ static void emit_start() {
 static void emit_escaped(char* src) {
         /* Emit a string with all special character escaped
          * Function adapted from strToStr() in gdk_atoms.mx
+         * incomplete, could be faster with a xlation table.
          */
         int start=0,end;
         for(end=0; src[end]; end++) {
                 if (src[end] == '\t' || src[end] == '\n' ||
-                    src[end] == '\\' || src[end] == '\"' ||
+                    src[end] == '\\' || src[end] == '\"' || src[end] == '\'' ||
+                    src[end] == '&'  || src[end] == '<'  || src[end] == '>'  ||
                     (!allowed_chr(src[end])) ) {
                         stream_write(GDKout,&src[start],end-start,1); /*flush */
                         start = end+1;
@@ -308,7 +316,19 @@ static void emit_escaped(char* src) {
                                 stream_write(GDKout,"\\\\ ",2,1);
                                 break;
                          case '\"':
-                                stream_write(GDKout,"\"",2,1);
+                                stream_write(GDKout,"&quot;",6,1);
+                                break;
+                         case '\'':
+                                stream_write(GDKout,"&apos;",6,1);
+                                break;
+                         case '&':
+                                stream_write(GDKout,"&amp;",5,1);
+                                break;
+                         case '<':
+                                stream_write(GDKout,"&lt;",4,1);
+                                break;
+                         case '>':
+                                stream_write(GDKout,"&gt;",4,1);
                                 break;
                          default: /* case: not_allowed() */
                                 stream_printf(GDKout,"\\%03o",(unsigned char)src[end]);
@@ -756,7 +776,7 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
  * the main function
  */
 
-#define XQRESTAG        "XqueryResult"
+#define XQRESTAG        "XQueryResult"
 
 /**
  * Handle the start() of an XQUERY/Pathfinder result sequence
@@ -844,7 +864,10 @@ static void  seqEmitStr(XqueryCtx* ctx, str sv) {
                 handle_characters(ctx,sv);
         } else {
                 ctx->nAttrOnLine++;
-                stream_printf(GDKout,"\"%s\" ",sv);
+                /* stream_printf(GDKout,"\"%s\" ",sv); */
+                stream_printf(GDKout,"\"");
+                emit_escaped( sv );
+                stream_printf(GDKout,"\" ");
         }
 }
 
