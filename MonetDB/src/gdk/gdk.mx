@@ -2546,6 +2546,7 @@ gdk_export BAT*	VIEWcombine	(BAT *b);
 gdk_export BAT*	VIEWreset	(BAT *b);
 gdk_export BAT*	BATmaterialize	(BAT *b, size_t size);
 gdk_export void	VIEWdestroy	(BAT *b);
+gdk_export void VIEWbounds	(BAT *view, size_t l, size_t h);
 gdk_export void	VIEWunlink	(BAT *b);
 
 /* low level functions */

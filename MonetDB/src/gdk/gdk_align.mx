@@ -559,6 +559,42 @@ BAT *VIEWreset(BAT *b) {
 }
 
 @-
+The remainder are utilities to manipulate the BAT view and
+not to forget some details in the process.
+It expects a position range in the underlying BAT and
+compensates for outliers.
+@c
+void VIEWbounds(BAT *view, size_t l, size_t h){
+	BAT *b;
+	if( view == NULL){
+		GDKerror("VIEWbounds: bat required");
+		return;
+	}
+	b = BATdescriptor(view->batParentid);
+	if( l < BUNindex(b,BUNfirst(b)) )
+		l = BUNindex(b,BUNfirst(b));
+        view->batBuns->base = BUNptr(b, l-1);
+        view->batInserted = BUNptr(b, l);
+        view->batHole = view->batDeleted = view->batBuns->base;
+	if( BUNlast(b)< BUNptr(b,h+1))
+		view->batBuns->maxsize = view->batBuns->size =
+        	view->batBuns->free = BUNlast(b) - view->batBuns->base;
+	else	view->batBuns->maxsize = view->batBuns->size =
+         	view->batBuns->free = BUNptr(b,h+1) - view->batBuns->base;
+
+        view->hsorted = BAThordered(b);
+        view->tsorted = BATtordered(b);
+
+        BATkey(view, BAThkey(b));
+        BATkey(BATmirror(view), BATtkey(b));
+        if (BAThdense(b)) {
+                BATseqbase(view, b->hseqbase+l);
+        }
+        if (BATtdense(b)) {
+                BATseqbase(BATmirror(view), b->tseqbase+l);
+        }
+}
+@-
 Destroy a view.
 @c
 void VIEWdestroy(BAT *v) {
