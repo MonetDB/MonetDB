@@ -159,8 +159,6 @@ needed for tracing the parser.
 "(*"                  { Symbol(TOK_DEREF);                                    }
 "[*"                  { Symbol(TOK_SETOP);                                    }
 "{*"                  { Symbol(TOK_SETAGGR);                                  }
-"@"                   { Symbol(TOK_ITERATION);                                }
-"@"{S}"["                   { Symbol(TOK_ITERATION_PAR);               }
 ("-")?{D}+"LL"        { Vector(TOK_CONSTANT, TYPE_lng, yytext, yyleng);}
 ("-")?{D}+            { Vector(TOK_CONSTANT, TYPE_int, yytext, yyleng);}
 {D}+"@"{D}+           { Vector(TOK_CONSTANT, TYPE_oid, yytext, yyleng);         }
@@ -184,6 +182,8 @@ needed for tracing the parser.
                         } else {
                                 yymore(); 
                         }                                                     }
+"@"                   { Symbol(TOK_ITERATION);                                }
+"@"{S}"["                   { Symbol(TOK_ITERATION_PAR);               }
 "{|"                  { Symbol(TOK_PARBLOCK);                                 }
 "|}"                  { Symbol(TOK_PAREND);                                   }
 {S}                   ;
@@ -393,7 +393,7 @@ char *bindFcn(str nme){
 	switch(*nme){
 	case '[':
 		nme[strlen(nme)-1]=0;
-		sprintf(buffer,"multiplex.%s(", nme+1);
+		sprintf(buffer,"multiplex(\"%s\"", nme+1);
 		break;
 	case '{':
 		nme[strlen(nme)-1]=0;
@@ -482,9 +482,8 @@ stmt: ';'
 	{ char local[100];
 	  $2.val= newName();
 	  pushIterator($2.val);
-	  printf("\t%s_cursor := 0:lng;\n",$2.val);
-	  printf("barrier\t%s:= batloop(%s_cursor,%s,%sH,%sT);\n",
-		$2.val,$2.val,$4.val,$2.val,$2.val);
+	  printf("barrier\t%s:= bunStream(%s,%sH,%sT);\n",
+		$2.val,$4.val,$2.val,$2.val);
 	  sprintf(local,"%sH",$2.val); newId(GDKstrdup(local));
 	  sprintf(local,"%sT",$2.val); newId(GDKstrdup(local));
 	}
@@ -498,9 +497,8 @@ stmt: ';'
 	{ char local[100];
 	  $2.val= newName();
 	  pushIterator($2.val);
-	  printf("\t%s_cursor := 0:lng;\n",$2.val);
-	  printf("barrier\t%s:= batloop(%s_cursor,%s,%sH,%sT);\n",
-		$2.val,$2.val,$1.val,$2.val,$2.val);
+	  printf("barrier\t%s:= bunStream(%s,%sH,%sT);\n",
+		$2.val,$1.val,$2.val,$2.val);
 	  sprintf(local,"%sH",$2.val); newId(GDKstrdup(local));
 	  sprintf(local,"%sT",$2.val); newId(GDKstrdup(local));
 	}
@@ -594,7 +592,7 @@ proc_name:
 		switch($1.val[0]){
 		case '[':
 			$1.val[strlen($1.val)-1]=0;
-			printf("function %s_multiplex(", $1.val+1);
+			printf("function multiplex(\"%s\"", $1.val+1);
 			break;
 		case '{':
 			$1.val[strlen($1.val)-1]=0;

@@ -1,0 +1,29 @@
+The naming of several functions in MIL has been changed 
+The following changes are necessary to obtain equivalent semantics
+
+Version 4.3		Version 5.		Comments
+----------------------------------------------------------------
+col_name(bat,str)	setColumn(bat,str)
+name(bat,str,str)	setColumn(bat,str,str)
+rename(bat,str)		setName(bat,str)
+bbpname(bat,str)	setName(bat,str)
+bbpname(bat)		getName(bat)
+persists(bat,bit)	setPersistent(bat)	when true
+			setTransient(bat)	when false
+key(bat,bit)		setKey(bat,bit)
+key(bat)		isaKey(bat)
+set(bat,bit)		setSet(bat,bit)
+			isaSet(bat)
+access(bat,chr)		setReadOnly(bat)	when mode ='r'
+			setAppendOnly(bat)	when mode = 'a'
+			setReadWrite(bat)	when mode = 'w'
+			setAccess(bat)
+access(bat)		isReadOnly(bat)		when mode ='r'
+			isAppendOnly(bat)	when mode = 'a'
+			isReadWrite(bat)	when mode = 'w'
+			getAccess(bat)
+ordered(bat)		isOrdered(bat)
+seqbase(bat,oid)	setSequenceBase(bat,oid)
+batsize(bat)		getSize(bat)
+-------------------------------------------------------------
+			getBATrefcnt(bat)
