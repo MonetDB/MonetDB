@@ -277,7 +277,7 @@ freeing the stack and code segment.
 typedef struct backend{
 	int debug;
 	int trace;
-	mvc	*context;
+	mvc	*mvc;
 	buffer 	*outbuf;
 	stream 	*out;
 	sql_schema *currSchema;
@@ -303,17 +303,17 @@ sql_export str SQLengine(Client c);
 First introduce the routines to be called by the front-end.
 @c
 #include "sql.h"
-#define DEBUG
+#include "sql_gencode.h"
 
 static backend *backend_create( int trace, mvc *c )
 {
-#ifdef DEBUG
-	printf("create backend\n");
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"create backend\n");
 #endif
 	backend *b = NEW(backend);
 
 	b->trace = trace;
-	b->context= c;
+	b->mvc= c;
 	b->currSchema = NULL;
 	b->currTable = NULL;
 	b->currColumn = NULL;
@@ -329,20 +329,20 @@ void backend_destroy( backend *b )
 
 void monet5_freestack( backend_stack stk){
 	(void) stk;
-#ifdef DEBUG
-	printf("monet5_freestack\n");
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"monet5_freestack\n");
 #endif
 }
 void monet5_parse( backend_stack stk, char *cmd){
 	(void) stk;
-#ifdef DEBUG
-	printf("monet5_parse:%s\n",cmd);
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"monet5_parse:%s\n",cmd);
 #endif
 }
 void monet5_freecode(backend_code code, backend_stack stk, int nr){
 	(void) code; (void) stk; (void)nr;
-#ifdef DEBUG
-	printf("monet5_free:%d\n",nr);
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"monet5_free:%d\n",nr);
 #endif
 }
 	
@@ -351,14 +351,36 @@ Before we are can process SQL statements the global catalogue
 should be initialized. Thereafter, each time a client enters
 we update its context descriptor to denote an SQL scenario.
 @c
+static int SQLinitialized;
+
 str SQLinit(Client c){
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"SQLinit\n");
+#endif
+	if( SQLinitialized ){
+		return throwMessage("SQLinit",
+			"Catalogue already available\n");
+	}
+	SQLinitialized= FALSE;
 	(void)c; /* not used */
-	mvc_init(0,0);
+	if( mvc_init(FALSE,0) <0) {
+		return throwMessage("SQLinit",
+			"Catalogue initialization failed\n");
+	}
+	SQLinitialized= TRUE;
 	return MAL_SUCCEED;
 }
 str SQLexit(Client c){
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"SQLexit\n");
+#endif
 	(void)c; /* not used */
+	if( SQLinitialized == FALSE){
+		return throwMessage("SQLexit",
+			"Catalogue not available\n");
+	}
 	mvc_exit();
+	SQLinitialized= FALSE;
 	return MAL_SUCCEED;
 }
 str SQLinitClient(Client c){
@@ -366,6 +388,13 @@ str SQLinitClient(Client c){
 	mvc *m;
 	str schema;
 
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"SQLinitClient\n");
+#endif
+	if( SQLinitialized == FALSE){
+		return throwMessage("SQLinitClient",
+			"Catalogue not available\n");
+	}
 	sql = (backend*) c->state[PARSER];
 	if( sql == 0){
 		m = mvc_create(0, 0, NULL, c->fdout);
@@ -390,8 +419,15 @@ str SQLexitClient(Client c){
 	mvc *m;
 	backend *sql;
 
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"SQLexitClient\n");
+#endif
 	sql = (backend*) c->state[PARSER];
 	m = (mvc *) c->state[OPTIMIZE];
+	if( SQLinitialized == FALSE){
+		return throwMessage("SQLinitClient",
+			"Catalogue not available\n");
+	}
 	if(sql && m){
 		mvc_destroy(m);
 		backend_destroy(sql);
@@ -411,7 +447,7 @@ str SQLlanguage(str *ret){
 
 str SQLstatement(int *ret, str *cmd){
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"execute sql:%s\n",*cmd);
+	stream_printf(GDKout,"SQLstatement:%s\n",*cmd);
 #endif
 	*ret= 0;
 	return MAL_SUCCEED;
@@ -419,7 +455,7 @@ str SQLstatement(int *ret, str *cmd){
 str SQLreader(Client c){
 	int cnt, oldcnt,eof=0;
 #ifdef _SQL_SCENARIO_DEBUG
-	printf("SQLparser: start reading SQL block\n");
+	stream_printf(GDKout,"SQLparser: start reading SQL block\n");
 #endif
 	if( c->mode <= FINISHING)
 		return throwMessage("SQLreader","end of SQL input\n");
@@ -442,7 +478,7 @@ str SQLreader(Client c){
 	c->nxt=c->input;
 
 #ifdef _SQL_SCENARIO_DEBUG
-	printf("SQL blk:%s\n",c->input);
+	stream_printf(GDKout,"SQL blk:%s\n",c->input);
 #endif
 	if(eof==0) {
 		c->mode= FINISHING;
@@ -466,65 +502,328 @@ A future version may analyse the parameter settings in more detail.
 #define skip() while(*c->nxt && isspace(*c->nxt) ) c->nxt++;
 #define tst(X) (strncmp(c->nxt,(X),strlen(X))==0 && isspace(c->nxt[strlen(X)]))
 
+enum ex_t {
+        ex_none,
+        ex_mil,
+        ex_sql
+};
+
+void SQLsetDebugger(Client c)
+{
+	InstrPtr q;
+	q= newInstruction(ASSIGNsymbol);
+	functionId(q)= GDKstrdup("showFunction");
+	pushInstruction(c->curprg->def,q);
+	q= newInstruction(ASSIGNsymbol);
+	functionId(q)= GDKstrdup("mdb");
+	q= pushArgument(c->curprg->def,q,
+		     newConstant(c->curprg->def,TYPE_bit,
+			       GDKstrdup("true"),0));
+	pushInstruction(c->curprg->def,q);
+}
+void SQLsetTrace(Client c, int on){
+	if(on)
+		c->listing = (c->listing & LIST_INPUT) | LIST_MAL_INSTR;
+	else	c->listing &= LIST_INPUT;
+}
+void SQLsetExplain(Client c){
+	c->listing = (c->listing & LIST_INPUT) | LIST_MAL_ALL;
+}
+@-
+Analyse the flags and prepare the execution context
+@c
 int SQLsetEnvironment(Client c){
-	do{
-		skip();
-		if( tst("quit") || tst("exit")){
-			mvc_exit();
-			InstrPtr q;
-			c->nxt+= 5;
-			q= newInstruction(ASSIGNsymbol);
-			moduleId(q)= GDKstrdup("system");
-			functionId(q)= GDKstrdup("quit");
-			pushInstruction(c->curprg->def,q);
-			return 0;
-		} else
-		if( tst("set")|| tst("SET") ){
-			c->nxt += 3;
-			skip();
-			if(tst("debug") ){
-				InstrPtr q;
-				c->nxt+= 6;
-				q= newInstruction(ASSIGNsymbol);
-				functionId(q)= GDKstrdup("showFunction");
-				pushInstruction(c->curprg->def,q);
-				q= newInstruction(ASSIGNsymbol);
-				functionId(q)= GDKstrdup("mdb");
-				q= pushArgument(c->curprg->def,q,
-					     newConstant(c->curprg->def,TYPE_bit,
-						       GDKstrdup("true"),0));
-				pushInstruction(c->curprg->def,q);
-				return 1;
-			}
-			if(tst("trace") ){
-				c->listing = (c->listing & LIST_INPUT) | LIST_MAL_INSTR;
-				c->nxt+=6;
-				return 0;
-			}
-			if(tst("explain") ){
-				c->listing = (c->listing & LIST_INPUT) | LIST_MAL_ALL;
-				c->nxt+=8;
-				return 0;
-			}
-			if(tst("notrace") ){
-				c->listing &= LIST_INPUT;
-				c->nxt+=6;
-				return 0;
-			}
-		} else break;
-	} while(1);
+	(void) c;
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"SQLsetEnvironment\n");
+#endif
+	/* test flags and react accordingly */
 	return 0;
 }
 @-
 Stuff copied from the Monet 4 backend
 @c
-
-int sqlexecute(backend * be, stream *out )
+static int
+error(stream *out, char *str)
 {
-	(void) be; (void) out;
-#ifdef DEBUG
-	printf("execute the query");
+        char *p;
+                                                                                
+        if (stream_errnr(out))
+                return -1;
+        while ((p = strchr(str, '\n')) != NULL) {
+                p++;            /* include newline */
+                if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
+                        return -1;
+                if (stream_write(out, str, p - str, 1) != 1)
+                        return -1;
+                str = p;
+        }
+        if (str && *str) {
+                if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
+                        return -1;
+                if (stream_write(out, str, strlen(str), 1) != 1 ||
+                    stream_write(out, "\n", 1, 1) != 1)
+                        return -1;
+        }
+        return stream_flush(out);
+}
+
+int explain_cmd( mvc *c, char *cmd, stream *out )
+{
+	(void) c; 
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"explain command\n");
 #endif
+	stream_printf(out,"explain:%s\n",cmd);
+	return 0;
+}
+
+@-
+Lookup the statement associated with a specific identifier
+from the statement cache. Compile and optimize it for later
+consumption, e.g. display
+@c
+stmt *sql_symbol2stmt( mvc *c ){
+        stmt *s = semantic(c, c->sym);
+        if (s){
+                stmt *opt = optimize(c, s);
+                stmt_destroy(s);
+                s = rel2bin(c, opt);
+                stmt_destroy(opt);
+        }
+        return s;
+}
+@-
+After the SQL statement has been executed, its data structures
+should be garbage collected. For successful actions we have to finish
+the transaction as well, e.g. commit or rollback.
+@c
+int sqlcleanup( mvc *c, int err, int cache)
+{
+        sql_destroy_params(c);
+        sql_destroy_args(c);
+
+        /* some statements dynamically disable caching */
+        c->cache = cache;
+        if (c->sym) {
+                symbol_destroy(c->sym);
+                c->sym = NULL;
+        }
+        scanner_query_processed(&(c->scanner));
+        if (c->auto_commit && c->trans) {
+                if (err)
+                        mvc_rollback(c, 0, NULL);
+                else
+                        mvc_commit(c, 0, NULL);
+        }
+        return err;
+}
+@-
+When a query is 'prepared' by the front-end, we return the list of parameters and their
+type. The front-end can use it e.g. to drive a form-based interface.
+@c
+static int
+output_prepare( stream *out, cq *q )
+{
+        int i;
+        node *n;
+        char buf[BUFSIZ];
+                                                                                
+        i = snprintf( buf, BUFSIZ, "%d\n%d\n", q->id, list_length(q->params));
+        if (stream_write(out, buf, i, 1) != 1) {
+                return -1;
+        }
+        for (n = q->params->h; n; n = n->next) {
+                var_ *v = n->data;
+                sql_subtype *t = tail_type(v->s);
+                if (t) {
+                        i = snprintf( buf, BUFSIZ, "%s(%d,%d)\n",
+                                t->type->sqlname, t->digits, t->scale);
+                        if (stream_write(out, buf, i, 1) != 1) {
+                                return -1;
+                        }
+                }
+        }
+        return 0;
+}
+
+
+int sqlexecute(Client clt, backend * be, stream *out )
+{
+        char *query = NULL;
+        lng T0 = 0, Tparse = 0, Tmil = 0, Texec = 0, T1 = 0;
+        mvc *c = be->mvc;
+        int err = 0, cache = 0;
+        enum ex_t explain = ex_none;
+        cq *q = NULL;
+
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"sqlexecute\n");
+#endif
+        c->type = Q_PARSE;
+
+        cache = c->cache;
+
+        if (!c->trans)
+                mvc_trans(c);
+
+        if (c->explain)
+        {
+                if (strcmp(c->explain, "mil") == 0)
+                        explain = ex_mil;
+                else if (strcmp(c->explain, "sql") == 0)
+                        explain = ex_sql;
+        }
+
+        if (explain == ex_sql)
+                T0 = GDKusec();
+
+        if ((err = sqlparse(c)) ||
+            /* Only forget old errors on transaction boundaries */
+            (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
+                if (!err)
+                        err = mvc_status(c);
+                return sqlcleanup(c, err, cache);
+        }
+        if (explain == ex_sql)
+                Tparse = GDKusec();
+
+        if (explain == ex_mil || !c->cache ||
+            !(q = qc_find(c->qc, c->sym, c->params, c->scanner.key))) {
+                char *cmd = NULL;
+                stmt *s = sql_symbol2stmt(c);
+
+                if (!s && mvc_status(c)){
+                        err = mvc_status(c);
+                        return sqlcleanup(c, err, cache);
+                }
+                assert(s);
+
+                if (explain == ex_mil) {
+                        /* insert mil statements into a bat */
+                        if (c->args && c->params){
+                                node *n, *m;
+
+                                for (n=c->args->h, m=c->params->h;
+                                        n && m;
+                                        n = n->next, m = m->next){
+                                        atom *a = n->data;
+                                        var_ *v = m->data;
+
+                                        stream_write(be->out, v->name,
+                                                strlen(v->name), 1);
+                                        stream_write(be->out, " := ", 4, 1);
+                                        atom_dump(a, be->out);
+                                        stream_write(be->out, ";\n", 2, 1);
+                                }
+                        }
+                }
+
+                if (explain == ex_mil || !c->cache) {
+                        backend_dumpstmt( be, clt->curprg->def, s);
+                } else {
+                        backend_dumpproc( be,clt->curprg->def, c->qc->id, s );
+                }
+/* In monet5 the statement has already been entered somewhere
+Rethink the cacheing
+                cmd = buffer_get_buf(be->outbuf);
+                stream_flush( be->out );
+                stmt_destroy(s);
+
+                if (explain == ex_mil) {
+                        err = explain_cmd( c, cmd, out);
+                } else {
+                        err = backend_parse( c->stk, cmd );
+                        if (c->cache) {
+                                q = qc_insert(c->qc, c->sym, c->params,
+                                                c->scanner.key, c->type );
+                                c->sym = NULL;
+                                c->params = NULL;
+                        }
+                }
+*/
+
+                /* beware to use free instead of _DELETE
+                 * as the stream library is built without
+                 * libbat i.e. it cannot use gdkmalloc */
+                free(cmd);
+
+                if (err)
+                        return sqlcleanup(c, err, cache);
+        }
+        if (explain == ex_sql) {
+                query = _strdup(QUERY(c->scanner));
+                Tmil = GDKusec();
+        }
+
+        scanner_query_processed(&(c->scanner));
+@-
+The user can issue 'prepare' statements. The response is
+a list of parameters needed.
+@c
+        if (q && c->mode == m_prepare) {
+                if ( (err = output_prepare( out, q )) ) {
+                        return sqlcleanup(c, err, cache);
+                }
+        } else if (q && !q->code) {
+/* THIS code should be removed, because in Monet 5 calling
+is differently
+                char buf[BUFSIZ];
+                Cntxt procstk = backend_newstack(c->stk);
+                YYSTREE callnode;
+
+                snprintf( buf, BUFSIZ, "sql%d", q->id);
+
+                c->type = q->type;
+                callnode = monet4_interpret( procstk, buf, c->args, &err);
+
+                if (!err){
+                        q->code = (backend_code)callnode;
+                        q->stk = (backend_stack)(ptrdiff_t)procstk;
+                } else {
+                        c->status = err;
+                        monet4_freecode( callnode, (backend_stack)(ptrdiff_t)procstk, q->id);
+                        backend_freestack( (backend_stack)(ptrdiff_t)procstk );
+                }
+        } else if (q) {
+                c->type = q->type;
+                err = backend_fastpath( (Cntxt)(ptrdiff_t)q->stk, (YYSTREE)q->code, c->args);
+*/
+        }
+        if (explain == ex_sql)
+                Texec = GDKusec();
+
+        /*
+         * clear query cache after Transaction boundaries (commit/rollback)
+         * and on schema changes
+         */
+        if (c->cache &&
+           ( c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id > 100)) {
+                if (c->qc) qc_destroy(c->qc);
+                c->qc = qc_create();
+        }
+
+        if (explain == ex_sql) {
+                char *e = c->explain;
+                char buf[BUFSIZ];
+
+                T1 = GDKusec();
+                /* TODO use sql_prepare/execute */
+                snprintf(buf, BUFSIZ, "insert into history values(now,'%s',%lld,%lld,%lld,%lld,USER);\n", query, Tparse-T0, Tmil-Tparse, Texec-Tmil, T1-T0);
+                _DELETE(query);
+                /* switch of explain to prevent recursion */
+                c->explain = NULL;
+/* RETHINK
+                (void)mvc_sql( c, buf);
+*/
+                c->explain = e;
+        }
+
+        if (!err && explain != ex_mil) {
+                if (mvc_status(c) < 0)
+                        error(out, "Error in result");
+        }
+        return sqlcleanup(c, err, cache);
 	return 0;
 }
 
@@ -541,6 +840,9 @@ int sqlstatement(char *cmd)
         m->trans->schema = mvc_bind_schema(m, "sys");
         sql = backend_create( 0, m );
 
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"execute the sql statement\n");
+#endif
 /* OLD
 	if ((err = sqlparse(c)) || c->mvc->status || !c->sym) {
 		if (!err)
@@ -570,7 +872,7 @@ int sqlstatement(char *cmd)
 		c->qc = qc_create();
 	}
 */
-        err = sqlexecute(sql, GDKout);
+        err = sqlexecute(getClient(),sql, GDKout);
         if (err)
                 GDKerror(m->errstr);
         backend_destroy( sql );
@@ -580,29 +882,82 @@ int sqlstatement(char *cmd)
 	return err? GDK_FAIL: GDK_SUCCEED;
 }
 
+@-
+The core part of the SQL interface, parse the query and
+prepare the intermediate code.
+@c
+#define explainMIL() (be->mvc->explain && \
+	strcmp(be->mvc->explain, "mil") == 0)
+#define explainSQL() (be->mvc->explain && \
+	strcmp(be->mvc->explain, "sql") == 0)
 
 str SQLparser(Client c) {
 	str msg=0;
-	int debug=0, err=0;
+	int debug=0, err=0,cache= 0;
 	backend *be;
 	MalBlkRecord oldstate;
+	lng T0 =0, Tparse=0;
 
 	oldstate= *c->curprg->def;
 #ifdef _SQL_SCENARIO_DEBUG
-	printf("SQL start compilation \n");
+	stream_printf(GDKout,"SQL compilation %s\n",c->nxt);
 #endif
 	debug= SQLsetEnvironment(c);
 	be = ((backend*)c->state[PARSER]);
-	/* code should be in the be structure */
-	if ( (err = sqlexecute(be, GDKout)) ){
-#ifdef _SQL_SCENARIO_DEBUG
-		printf("continue parser from:%s", c->nxt);
-#endif
-		stream_printf(c->fdout,"#%s\n", be->context->errstr);
-		*be->context->errstr=0;
-		msg= throwMessage("SQLparser","Parser errors\n");
-	}
+	/* input string is copied to the SQL structure for parsing */
+	scanner_reset(&be->mvc->scanner, _strdup(c->nxt));
 
+        be->mvc->type = Q_PARSE;
+
+        cache = be->mvc->cache;
+
+        if (!be->mvc->trans)
+                mvc_trans(be->mvc);
+
+        if ( explainSQL())
+                T0 = GDKusec();
+
+        if ((err = sqlparse(be->mvc)) ||
+            /* Only forget old errors on transaction boundaries */
+            (mvc_status(be->mvc) && be->mvc->type != Q_TRANS) || 
+	    !be->mvc->sym) {
+                if (!err)
+                        err = mvc_status(be->mvc);
+		stream_printf(c->fdout,"#%s\n", be->mvc->errstr);
+		*be->mvc->errstr=0;
+		msg= throwMessage("SQLparser","Parser errors\n");
+                sqlcleanup(be->mvc, err, cache);
+        }
+        if (explainSQL())
+                Tparse = GDKusec();
+@-
+We have dealt with the first parsing step. Now is the time to
+also perform the semantic analysis, optimize and produce code.
+@c
+	if( err == 0){
+                stmt *s = sql_symbol2stmt(be->mvc);
+
+                if (!s && mvc_status(be->mvc)){
+                        err = mvc_status(be->mvc);
+                        sqlcleanup(be->mvc, err, cache);
+			msg= throwMessage("SQLparser","Semantic errors\n");
+			goto finalize;
+                }
+                assert(s);
+		/* generate MAL code */
+		if (!be->mvc->cache) {
+			backend_dumpstmt( be, c->curprg->def,s );
+		} else {
+			backend_dumpproc( be, c->curprg->def, 
+					  be->mvc->qc->id, s );
+		}
+	} 
+#ifdef _SQL_SCENARIO_DEBUG
+	else stream_printf(GDKout,"parse result %d\n",err);
+#endif
+@-
+In the final phase we add any debugging control
+@c
 	/* turn off debugger */
 	if(debug){
 		InstrPtr q;
@@ -625,8 +980,10 @@ str SQLparser(Client c) {
 		c->curprg->def->errors=0;
 		msg= throwMessage("SQLparser","Semantic errors\n");
 	}
+finalize:
 #ifdef _SQL_SCENARIO_DEBUG
-	if(msg) printf("SQL finished:%s\n",msg);
+	printf("SQL finished:%s\n",msg);
+	printFunction(c->fdout,c->curprg->def, c->listing);
 #endif
 	stream_flush(c->fdout);
 		
@@ -642,7 +999,7 @@ str SQLengine(Client c) {
 	if( c->curprg->def->errors)
 		return throwMessage("SQLengine","Program contains errors\n");
 #ifdef SQL_SCENARIO_DEBUG
-	printf("Ready to execute SQL statement\n");
+	stream_printf(GDKout,"Ready to execute SQL statement\n");
 #endif
 	c->glb= 0;
 	msg= MALengine(c);
