@@ -10,12 +10,24 @@ PTHREAD_LIBS = $(PTHREAD)\pthread.lib
 PTHREAD_INCS = -I$(PTHREAD) 
 
 pkg = MonetDB
-libdir = $(TOPDIR)\lib
-bindir = $(TOPDIR)\bin
-datadir = $(TOPDIR)\share
-pkglibdir = $(libdir)\$(pkg)
-pkgbindir = $(bindir)
+prefix = $(TOPDIR)
+exec_prefix = $(prefix)
+
+bindir = $(exec_prefix)\bin
+sbindir = $(exec_prefix)\sbin
+libexecdir = $(exec_prefix)\libexec
+datadir = $(prefix)\share
+sysconfdir = $(prefix)\etc
+sharedstatedir = $(prefix)\com
+localstatedir = $(prefix)\var
+libdir = $(exec_prefix)\lib
+infodir = $(prefix)\info
+mandir = $(prefix)\man
+includedir = $(prefix)\include
+oldincludedir = \usr\include
 pkgdatadir = $(datadir)\$(pkg)
+pkglibdir = $(libdir)\$(pkg)
+pkgincludedir = $(includedir)\$(pkg)
 
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = -I$(PTHREAD)

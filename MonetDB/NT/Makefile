@@ -46,10 +46,17 @@ sys\socket.h:
 	$(ECHO) #endif >> sys\socket.h
 
 targetdirs:
-	if not exist $(libdir) $(MKDIR) $(libdir)
-	if not exist $(bindir) $(MKDIR) $(bindir)
-	if not exist $(datadir) $(MKDIR) $(datadir)
-	if not exist $(pkglibdir) $(MKDIR) $(pkglibdir)
-	if not exist $(pkgbindir) $(MKDIR) $(pkgbindir)
-	if not exist $(pkgdatadir) $(MKDIR) $(pkgdatadir)
-
+	if not exist $(bindir)		$(MKDIR) $(bindir)
+	if not exist $(sbindir)		$(MKDIR) $(sbindir)
+	if not exist $(libexecdir)	$(MKDIR) $(libexecdir)
+	if not exist $(datadir)		$(MKDIR) $(datadir)
+	if not exist $(sysconfdir)	$(MKDIR) $(sysconfdir)
+	if not exist $(sharedstatedir)	$(MKDIR) $(sharedstatedir)
+	if not exist $(localstatedir)	$(MKDIR) $(localstatedir)
+	if not exist $(libdir)		$(MKDIR) $(libdir)
+	if not exist $(infodir)		$(MKDIR) $(infodir)
+	if not exist $(mandir)		$(MKDIR) $(mandir)
+	if not exist $(includedir)	$(MKDIR) $(includedir)
+	if not exist $(pkgdatadir)	$(MKDIR) $(pkgdatadir)
+	if not exist $(pkglibdir)	$(MKDIR) $(pkglibdir)
+	if not exist $(pkgincludedir)	$(MKDIR) $(pkgincludedir)
