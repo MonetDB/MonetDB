@@ -1,3 +1,4 @@
+@f bat
 @t Binary Association Tables
 @v 2.0
 @a Peter Boncz, M.L. Kersten
@@ -57,20 +58,20 @@ Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
 
 @mal
-command capacity ( bid:int ) : int = CMDcapacity
-comment "Returns the current allocation size (in max number of elements) of a BAT.";
-
 command info ( b:BAT) : bat[str,str] = CMDinfo
 comment "Produce a BAT containing info about a BAT in [attribute,value] format.
  It contains all properties of the BAT record. See the BAT documentation in
  GDK for more information.";
  
-command htype ( bid:int ) : int = CMDhtype
+command getCapacity ( bid:int ) : lng = CMDgetCapacity
+comment "Returns the current allocation size (in max number of elements) of a BAT.";
+
+command getType ( bid:int ) : int = CMDgetType
 comment "Returns the type of the head column of a BAT, as an integer type number.";
  
-command ttype ( bid:int ) : int = CMDttype
-comment "Returns the type of the tail column of a BAT, as an integer type number.";
-
+command getRole ( bid:int ) : str = CMDgetRole
+comment "Returns the rolename of the head column of a BAT.";
+ 
 command setKey( b:bat[any::1,any::2], mode:bit) :bat[any::1,any::2] = CMDsetkey
 comment "Sets the 'key' property of the head column to 'mode'. In 'key' mode, 
  the kernel will silently block insertions that cause a duplicate entries
@@ -101,36 +102,38 @@ comment "Try to change the update access priviliges to this BAT. Mode:
  subsequent updates fail with an error message.
  Returns the BAT itself.";
 
-command setAppendOnly( b:bat[any,any]) : int = CMDsetAppendOnly
+command setAppendMode( b:bat[any,any]) : int = CMDsetAppendMode
 comment "Change access privilige of BAT to append only";
 
-command setReadOnly( b:bat[any,any]) : int = CMDsetReadOnly
+command setReadMode( b:bat[any,any]) : int = CMDsetReadMode
 comment "Change access privilige of BAT to read only";
 
-command setReadWrite( b:bat[any,any]) : int = CMDsetReadWrite
+command setWriteMode( b:bat[any,any]) : int = CMDsetWriteMode
 comment "Change access privilige of BAT to read and write";
 
 command getAccess( b:bat[any::1,any::2]):chr = CMDgetAccess
 comment "return the access mode attached to this BAT as a character.";
 
-command isAppendOnly( b:bat[any::1,any::2]):bit = CMDisAppendOnly
+command hasAppendMode( b:bat[any::1,any::2]):bit = CMDhasAppendMode
 comment "return true if to this BAT is append only.";
 
-command isReadWrite( b:bat[any::1,any::2]):bit = CMDisReadWrite
+command hasWriteMode( b:bat[any::1,any::2]):bit = CMDhasWriteMode
 comment "return true if to this BAT is read and write.";
 
-command isReadOnly( b:bat[any::1,any::2]):bit = CMDisReadOnly
+command hasReadMode( b:bat[any::1,any::2]):bit = CMDhasReadMode
 comment "return true if to this BAT is read only.";
 
 
-command setSequenceBase( b:bat[void,any::1], seqbase:oid):int = CMDseqbase
+command getSequenceBase( b:bat[void,any::1]): oid = CMDgetSequenceBase
+command setSequenceBase( b:bat[void,any::1], seqbase:oid):int 
+			= CMDsetSequenceBase
 comment "Set the sequence base for the void vcolumn of a BAT.";
 
-command isOrdered(b:bat[any,any]) : bit = CMDordered
-comment "Returns whether a BAT is ordered on head or not.";
+command setSorted(b:bat[any,any]) : bit = CMDsetSorted
+comment "Assure BAT is ordered on head.";
 
-command getSize(batname:str) : int = CMDbatsize_str
-comment "A version of BATsize that does not require loading the BAT.";
+command isSorted(b:bat[any,any]) : bit = CMDisSorted
+comment "Returns whether a BAT is ordered on head or not.";
 
 command getSize(b:bat[any,any]) : int = CMDbatsize
 comment "A version of BATsize that does not require loading the BAT.";
@@ -181,7 +184,10 @@ command deleteBuns(b:bat[any::1, any::2], src:bat[any::1,any::2])
 				: bat[any::1,any::2] = CMDdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN in the second.";
 
-
+command getAlpha(b:bat[any::1,any::2]):bat[any::1,any::2] 
+	= CMDgetAlpha;
+command getDelta(b:bat[any::1,any::2]):bat[any::1,any::2] 
+	= CMDgetDelta;
 @- BAT I/O, Persistency
 @T
 The BAT Buffer Pool (BBP) manages all known BATs. It administers
@@ -206,17 +212,20 @@ name 's' already exists. The command then returns FALSE, ales TRUE.";
 command getName ( b:bat[any,any]) : STR = CMDbbpname
 comment "Gives back the logical name of a BAT.";
 
-command setColumn( b:bat[any::1,any::2] , h:str, t:str):bat[any::1,any::2]
+command setRole( b:bat[any::1,any::2] , h:str, t:str):bat[any::1,any::2]
 	= CMDsetRoles
 comment "Give a logical name to the columns of a BAT.";
-command setColumn ( b:bat[any::1,any::2],h:str):bat[any::1,any::2] = CMDsetColumn
+
+command setRole( b:bat[any::1,any::2],h:str):bat[any::1,any::2] = CMDsetColumn
 comment "Give a logical name to the head column of a BAT.";
 
+command isTransient( b:BAT) :bit = CMDisTransient;
 command setTransient( b:BAT) :bit = CMDsetTransient
 comment "Make the BAT transient.  Returns boolean which indicates if the
 BAT administration has indeed changed.";
 
-command setPersistent( b:BAT) : bit = CMDsetPersistence
+command isPersistent( b:BAT) : bit = CMDisPersistent;
+command setPersistent( b:BAT) : bit = CMDsetPersistent
 comment "Make the BAT persistent.  Returns boolean which indicates if the
 BAT administration has indeed changed.";
 
@@ -228,12 +237,16 @@ Returns whether IO was necessary.
 Please realize that calling this function violates 
 the atomic commit protocol!!";
 
+
 command load(name:str) : bat[any,any] = CMDload
 comment "Load a particylar bat from disk";
 
 command unload(name:str) : bit = CMDunload
 comment "Swapout a BAT to disk. Transient BATs can also be swapped out.
  Returns whether the unload indeed happened. ";
+
+command isCached(b:bat[any,any]):bit = CMDisCached
+comment "Bat is stored in main memory.";
 
 command hot(name:str) : void = CMDhot
 comment "Makes a BAT very hot for the BBP. The chance of being chosen 
@@ -322,8 +335,7 @@ access to data in BATs. Monet comes with the builtin accelerators
 {\tt index}, meaning binary tree index, and {\tt hash} meaning 
 bucket-chained hash table. The extension facilities of Monet allow
 more accelerators to be defined by users. Exanples are the {\tt rtree}
-and {\tt datavector}. The system variable {\tt monet\_acctbl} contains 
-a list of all currently known accelarator types.
+and {\tt datavector}. 
 
 \begin{verbatim}
 >monet_acctbl.print;
@@ -332,7 +344,6 @@ a list of all currently known accelarator types.
 #-------------------------#
 [ "hash",         1       ]
 [ "index",        2       ]
-[ "datavector",   3       ]
 \end{verbatim}
 @
 More info on how to write new search accelerators can be found in the
@@ -357,6 +368,10 @@ comment "Returns the accelerator type of the *persistent* accelerator present
  on the head column of b. Note that index and hash accelerators are
  generally *not* persistent, and will not be returned by this function!";
   
+command hasHash(b:bat[any,any]):bit = CMDhasHash;
+command setHash(b:bat[any,any],prop:bit):bit = CMDsetHash;
+command hasIndex(b:bat[any,any]):bit = CMDhasIndex;
+command setIndex(b:bat[any,any],prop:bit):bit = CMDsetIndex;
 
 @- Synced BATs
 The binary model of Monet has important advantages when working in
@@ -416,7 +431,6 @@ int CMDnewBat(int *res, int *ht, int *tt){
 
 	if( *ht<0 || *ht >= GDKatomcnt ||
 	    *tt<0 || *tt >= GDKatomcnt){
-printf("CMDnewBat %d %d\n",*ht,*tt);
 		GDKerror("CMDnewBat:type values out of range\n");
 		return GDK_FAIL;
 	}
@@ -625,26 +639,41 @@ int CMDdelete_bat_head(int *r, int *bid, int *sid){
 	return GDK_SUCCEED;
 } 
 
+int CMDgetAlpha(int *r, int *bid) {
+	BAT *b,*c;
+	@:batcheck(r,bid,b,"CMDgetInserted")@
+	BBPfix(b->batCacheid);
+	c= BATalpha(b);
+	*r = c->batCacheid;
+	return GDK_SUCCEED;
+} 
+int CMDgetDelta(int *r, int *bid) {
+	BAT *b,*c;
+	@:batcheck(r,bid,b,"CMDgetInserted")@
+	BBPfix(b->batCacheid);
+	c= BATdelta(b);
+	*r = c->batCacheid;
+	return GDK_SUCCEED;
+} 
 @- Property management
 @c
-int CMDcapacity(int *res, int *bid) {
+int CMDgetCapacity(lng *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDcapacity")@
+	@:batcheck(res,bid,b,"CMDgetCapacity")@
 	*res = BATcapacity(b);
 	return GDK_SUCCEED;
 }
 
-int CMDhtype(int *res, int *bid) {
+int CMDgetType(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDhtype")@
+	@:batcheck(res,bid,b,"CMDgetType")@
 	*res = (*bid > 0)?BAThtype(b):BATttype(b);
 	return GDK_SUCCEED;
 }
-
-int CMDttype(int *res, int *bid) {
+int CMDgetRole(str *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDttype")@
-	*res = (*bid > 0)?BATttype(b):BAThtype(b);
+	@:batcheck(res,bid,b,"CMDgetType")@
+	*res = GDKstrdup((*bid > 0)?b->hident:b->tident);
 	return GDK_SUCCEED;
 }
 
@@ -672,9 +701,16 @@ int CMDisaSet(int *res, int *bid) {
         return GDK_SUCCEED;
 }
 
-int CMDordered(bit *res, int *bid) {
+int CMDsetSorted(bit *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDordered")@
+	@:batcheck(res,bid,b,"CMDisSorted")@
+	BATorder(b);
+        *res = BATordered(b)?1:0;
+        return GDK_SUCCEED;
+}
+int CMDisSorted(bit *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDisSorted")@
         *res = BATordered(b)?1:0;
         return GDK_SUCCEED;
 }
@@ -698,7 +734,7 @@ int CMDgetkey(bit *ret, int *bid) {
 	return GDK_SUCCEED;
 }
 
-int CMDsetPersistence(int *res, int *bid) {
+int CMDsetPersistent(int *res, int *bid) {
 	BAT *b;
 	@:batcheck(res,bid,b,"CMDsetPersistence")@
 	BATpropcheck(b);
@@ -706,11 +742,26 @@ int CMDsetPersistence(int *res, int *bid) {
 	BATmode(b, PERSISTENT);
         return *res= GDK_SUCCEED;
 }
+int CMDisPersistent(int *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDsetPersistence")@
+	BATpropcheck(b);
+	BATpropcheck(BATmirror(b));
+	BATmode(b, PERSISTENT);
+	*res= b->batPersistence & PERSISTENT;
+        return *res= GDK_SUCCEED;
+}
 int CMDsetTransient(int *res, int *bid) {
 	BAT *b;
 	@:batcheck(res,bid,b,"CMDsetTransient")@
 	BATmode(b, TRANSIENT);
         return *res= GDK_SUCCEED;
+}
+int CMDisTransient(bit *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDsetTransient")@
+	*res= b->batPersistence & TRANSIENT;
+        return GDK_SUCCEED;
 }
 
 @-
@@ -723,7 +774,7 @@ int CMDset@1(int *res, int *bid) {
 	*res = b->batCacheid;
         return GDK_SUCCEED;
 }
-int CMDis@1(bit *res, int *bid) {
+int CMDhas@1(bit *res, int *bid) {
 	BAT *b;
 	@:batcheck(res,bid,b,"CMDset@1")@
 	*res = BATgetaccess(b)=='@3';
@@ -731,9 +782,9 @@ int CMDis@1(bit *res, int *bid) {
 }
 @-
 @c
-	@:accessMode(ReadWrite,0,w)@
-	@:accessMode(ReadOnly,1,r)@
-	@:accessMode(AppendOnly,2,a)@
+	@:accessMode(WriteMode,0,w)@
+	@:accessMode(ReadMode,1,r)@
+	@:accessMode(AppendMode,2,a)@
 
 int CMDsetAccess(int *res, int *bid, str *param) {
 	BAT *b;
@@ -864,7 +915,7 @@ int CMDinfo(int *retval, int *bid){
 
 	switch(b->batRestricted) {
 	case BAT_READ:         access="read-only";      break;
-	case BAT_WRITE:        access="writable";      break;
+	case BAT_WRITE:        access="updatable";      break;
 	case BAT_APPEND:       access="append-only";      break;
 	default:               access="unknown";
 	}
@@ -969,17 +1020,6 @@ int CMDbatsize(int *tot, int *bid){
 	return GDK_SUCCEED;
 }
 
-int CMDbatsize_str(int *tot, str *batname){
-	int bid = BBPindex(*batname);
-	BAT *b = bid?(BAT*) BBPgetdesc(bid):NULL;
-
-	if (b == NULL) {
-		GDKerror("CMDbatsize(%s): no such bat.\n", *batname);
-		return GDK_FAIL;
-	}
-	return CMDbatsize(tot, &bid);
-}
-
 @+ Synced BATs
 @c
 int CMDisSynced(bit *ret, int *bid1, int *bid2){
@@ -1044,6 +1084,13 @@ int CMDunload(bit *res, str *input) {
 		BBPfix(bid);
 		*res = BBPunload(bid);
 	}
+        return GDK_SUCCEED;
+}
+int CMDisCached(int *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDisCached")@
+	*res = 0;
+	GDKerror("CMDisCached:not yet implemented\n");
         return GDK_SUCCEED;
 }
 int CMDload(int *res, str *input) {
@@ -1278,13 +1325,46 @@ int CMDaccpresent(int *ret, int *bid) {
 	return GDK_SUCCEED;
 }
 
+int CMDhasHash(bit *ret, int *bid) {
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDhasHash")@
+	*ret = b->hacctype == 1;
+	GDKwarning("CMDhasHash: not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int CMDsetHash(bit *ret, int *bid, bit *prop) {
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDsetHash")@
+	GDKwarning("CMDsetHash: not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int CMDhasIndex(bit *ret, int *bid) {
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDhasIndex")@
+	*ret = b->hacctype == 2;
+	GDKwarning("CMDhasIndex: not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int CMDsetIndex(bit *ret, int *bid, bit *prop) {
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDsetIndex")@
+	GDKwarning("CMDsetIndex: not yet implemented\n");
+	return GDK_SUCCEED;
+}
 
 
-int CMDseqbase(int *r, int *bid, oid* o){
+
+int CMDsetSequenceBase(int *r, int *bid, oid* o){
 	BAT *b;
 	@:batcheck(r,bid,b,"CMDseqbase")@
 	BATseqbase(b, *o);
 	return *r= GDK_SUCCEED;
+}
+int CMDgetSequenceBase(oid *r, int *bid){
+	BAT *b;
+	@:batcheck(r,bid,b,"CMDseqbase")@
+	*r = b->hseqbase;
+	return GDK_SUCCEED;
 }
 @}
 @}

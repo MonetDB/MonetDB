@@ -1,0 +1,121 @@
+@f lock
+@t Lightweight Lock Module
+@v 1.0
+@a Peter Boncz
+@* Introduction
+This module provides simple SMP lock and thread functionality
+as already present in the Monet system.
+
+@* MEL Definitions
+@mal
+atom module lock:ptr;
+
+command create() : lock = create_lock
+	comment "create an unset lock";
+command set(l:lock) = set_lock
+	comment "try to set a lock; if set, block till it is freed";
+command try(l:lock) : int = try_lock
+	comment "try a lock, if free set it, if not return EBUSY";
+command unset(l:lock) = unset_lock
+	comment "unset a lock";
+command destroy(l:lock) = destroy_lock
+	comment "destroy a lock";
+
+@- semaphores
+@mal
+atom module sema:ptr;
+
+command create(init:int ) : sema = create_sema
+	comment "create an unset sema, with an initial value";
+command down(s:sema) = down_sema
+	comment "decrease the semaphpore if >0; else block";
+command try(s:sema) : int = try_sema
+	comment "try the semaphpore";
+command up(s:sema) = up_sema
+	comment "increase the semaphore";
+command destroy(s:sema) = destroy_sema
+	comment "destroy a sema";
+
+@mil
+	CONST EBUSY := 16;
+@{
+@* Implementation
+@c
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ */
+
+#include <gdk.h>
+typedef ptr lock;
+typedef ptr sema;
+typedef ptr monet_lock;
+typedef ptr monet_sema;
+
+int create_lock(monet_lock *l){
+	*l = MT_create_lock();
+	return GDK_SUCCEED;
+}
+
+int set_lock(int *res, monet_lock *l){
+	MT_set_lock((MT_Lock) *l, "set_lock");
+	return GDK_SUCCEED;
+}
+
+int try_lock(int* res, monet_lock* l){
+	*res = MT_try_lock((MT_Lock) *l);
+	return GDK_SUCCEED;
+}
+
+int unset_lock(int *res, monet_lock *l){
+	MT_unset_lock((MT_Lock) *l, "unset_lock");
+	return GDK_SUCCEED;
+}
+
+int destroy_lock(int *res, monet_lock *l){
+	MT_destroy_lock((MT_Lock) *l);
+	return GDK_SUCCEED;
+}
+
+int create_sema(monet_sema *s, int *init){
+	*s = MT_create_sema(*init);
+	return GDK_SUCCEED;
+}
+
+int up_sema(int *res, monet_sema *s){
+	MT_up_sema((MT_Sema) *s, "up_sema");
+	return GDK_SUCCEED;
+}
+
+int try_sema(int *res, monet_sema *s){
+	*res = MT_try_sema((MT_Sema) *s)?0:EBUSY;
+	return GDK_SUCCEED;
+}
+
+int down_sema(int *res, monet_sema *s){
+	MT_down_sema((MT_Sema) *s, "down_sema");
+	return GDK_SUCCEED;
+}
+
+int destroy_sema(int *res, monet_sema *s){
+	MT_destroy_sema((MT_Sema) *s);
+	return GDK_SUCCEED;
+}
+@}

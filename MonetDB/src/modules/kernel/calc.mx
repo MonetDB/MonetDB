@@ -13,7 +13,7 @@ for {\tt bit}, {\tt oid} and {\tt str}.
 \item[binary operators]
 The implemented operators are first of all all comparison that return a 
 TRUE/FALSE value ({\tt bit} values), i.e. 
-{\tt $<=$}, {\tt $<$}, {\tt $=$}, {\tt $!=$}, {\tt $>=$}, and {\tt $>=$}.
+{\tt $<=$}, {\tt $<$}, {\tt $==$}, {\tt $!=$}, {\tt $>=$}, and {\tt $>=$}.
 
 The module also implements the operators {\tt +}, {\tt -}, {\tt *} and {\tt /}. 
 The rules for the return types operators is as follows.
@@ -88,7 +88,7 @@ module calc;
 	@:mal_isnil(dbl)@
 	@:mal_isnil(str)@
 
-@- comparisons { <, <=, =, !=, >=, > } 
+@- comparisons { <, <=, ==, !=, >=, > } 
 @T 
 The {\tt mel\_comp\_ops} Mx macro implements the mel interface to the
 arithmetic operations. Note that comparison operators with unequal
@@ -100,6 +100,8 @@ at function resoluton. The least interesting one is pushed
 first onto the symbol table stack.
 @= mal_eq_ops
 	command =(left:@1, right:@1) : bit = @2_comp_EQ
+		comment "left equal to right?";
+	command ==(left:@1, right:@1) : bit = @2_comp_EQ
 		comment "left equal to right?";
 	command !=(left:@1, right:@1) : bit = @2_comp_NEQ
 		comment "left unequal to right?";

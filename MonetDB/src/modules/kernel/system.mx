@@ -1,3 +1,4 @@
+@f system
 @t System Information BATs and basic IO
 @a M.L. Kersten, P. Boncz, N.Nes
 @v 2.0
@@ -567,7 +568,7 @@ int view_fcn_stmt(int *ret, str *nme, str *fcn)
 		int i;
 		str ps;
 		for(i=0;i<s->def->stop;i++){
-			ps= instruction2str(s->def, getInstrPtr(s->def,i));
+			ps= instruction2str(s->def, getInstrPtr(s->def,i),0);
 			ps[strlen(ps)-1]=0; 
 			BUNins(b,&i,ps);
 			GDKfree(ps);
@@ -586,7 +587,7 @@ int view_fcn_sig(int *ret, str *mod, str *fcn)
 
 	s= findSymbol(*mod,*fcn);
 	if(s){
-		ps= instruction2str(s->def, getSignature(s));
+		ps= instruction2str(s->def, getSignature(s),0);
 		ps[strlen(ps)-1]=0; 
 		BUNins(b,&i,ps);
 		GDKfree(ps);
