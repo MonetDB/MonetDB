@@ -24,7 +24,7 @@ lib_batstore = {
 	DIR = libdir
 	SOURCES = \
 		bat_store.mx bat_table.mx bat_logger.mx bat_bm.mx \
-		changeset.mx sql_catalog.mx sql_types.mx sql_keyword.mx \
+		sql_catalog.mx \
 		res_table.mx
 
 	WINLIBS = ../../common/libsqlcommon -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra 
