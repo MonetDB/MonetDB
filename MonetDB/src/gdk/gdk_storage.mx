@@ -705,22 +705,32 @@ int BATdelete(BAT* b) {
 	if (b->batCopiedtodisk || (b->batBuns->storage&STORE_MMAP)) {
 		if (HEAPdelete(b->batBuns, o, "buns") && b->batCopiedtodisk)
 			GDKwarning("BATdelete(%s): bun heap\n", b->batId);
+	} else if (b->batBuns->base) {
+		HEAPfree(b->batBuns);
 	}
 	if (b->batCopiedtodisk || (b->hheap.storage&STORE_MMAP)) {
 		if (HEAPdelete(&b->hheap, o, "hheap") && b->batCopiedtodisk)
 			GDKwarning("BATdelete(%s): head heap\n", b->batId);
+	} else if (b->hheap.base) {
+		HEAPfree(&b->hheap);
 	}
 	if (b->batCopiedtodisk || (b->theap.storage&STORE_MMAP)) {
 		if (HEAPdelete(&b->theap, o, "theap") && b->batCopiedtodisk)
 			GDKwarning("BATdelete(%s): tail heap\n", b->batId);
+	} else if (b->theap.base) {
+		HEAPfree(&b->theap);
 	}
 	if (b->haccCopiedtodisk || (b->haccelerator.storage&STORE_MMAP)) {
 		if (HEAPdelete(&b->haccelerator, o, "hacc") && b->haccCopiedtodisk)
 			GDKwarning("BATdelete(%s): head accelerator\n", b->batId);
+	} else if (b->haccelerator.base) {
+		HEAPfree(&b->haccelerator);
 	}
 	if (b->taccCopiedtodisk || (b->taccelerator.storage&STORE_MMAP)) {
 		if (HEAPdelete(&b->taccelerator, o, "tacc") && b->taccCopiedtodisk)
 			GDKwarning("BATdelete(%s): tail accelerator\n", b->batId);
+	} else if (b->taccelerator.base) {
+		HEAPfree(&b->taccelerator);
 	}
         b->batCopiedtodisk = FALSE;
         b->haccCopiedtodisk = FALSE;
