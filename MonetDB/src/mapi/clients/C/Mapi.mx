@@ -807,7 +807,7 @@ static int mapi_slice_row(Mapi mid);
 static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action);
 static char *mapi_fetch_line_internal(Mapi mid);
 static MapiMsg mapi_finish_internal(Mapi mid);
-static void mapi_lost_connection();
+static void mapi_lost_connection(Mapi mid);
 
 #ifndef HAVE_GETLOGIN
 #define getlogin() "win32"
@@ -855,6 +855,14 @@ typedef __int64 mapi_int64;
 #error no definition for SZFMT
 #endif
 
+#define check_stream(mid,s,msg,f,e)				\
+	do {							\
+		if ((s) == NULL || stream_errnr(s)) {		\
+			mapi_lost_connection(mid);		\
+			mapi_setError((mid), (msg), (f));	\
+			return (e);				\
+		}						\
+	} while (0)
 @+ Blocking
 The server side code works with a common/stream package, a fast buffered IO scheme.
 However, this package is not always available for every language runtime system.
@@ -904,10 +912,12 @@ mapi_trace_log(Mapi mid, const char *nme)
 {
 	mapi_check(mid, "mapi_trace_log");
 	mid->tracelog = open_wastream(nme);
-	if (stream_errnr(mid->tracelog)) {
-		mid->tracelog = 0;
+	if (mid->tracelog == NULL || stream_errnr(mid->tracelog)) {
+		if (mid->tracelog)
+			stream_destroy(mid->tracelog);
+		mid->tracelog = NULL;
 		return mapi_setError(mid, "Could not create log file",
-				     "mapi_trace+log");
+				     "mapi_trace_log");
 	}
 	return MOK;
 }
@@ -1225,7 +1235,6 @@ static void
 mapi_lost_connection(Mapi mid)
 {
 	/* TODO: decide what to do with dup'ed entries */
-	mapi_setError(mid, "Lost connection with server", "mapi_fetch_line");
 	mid->connected = 0;
 	/* finish channels */
 	if (mid->to) {
@@ -1348,7 +1357,7 @@ mapi_reconnect(Mapi mid)
 	struct sockaddr_in server;
 	int s;
 	char buf[BLOCK];
-	size_t len, ret;
+	size_t len;
 
 #ifdef HAVE_OPENSSL
 	SSL *ssl = NULL;
@@ -1443,10 +1452,8 @@ mapi_reconnect(Mapi mid)
 	} else
 #endif
 		mid->to = socket_wastream(s, "Mapi client write");
-	if (mid->to == NULL || stream_errnr(mid->to)) {
-		return mapi_setError(mid, "Cannot open socket for writing",
-				     "mapi_reconnect");
-	}
+	check_stream(mid, mid->to, "Cannot open socket for writing",
+		     "mapi_reconnect", mid->error);
 	mid->connected = 1;
 
 	if (mid->blocked) {
@@ -1460,31 +1467,29 @@ mapi_reconnect(Mapi mid)
 		fflush(stdout);
 	}
 	len = strlen(buf);
-	ret = stream_write(mid->to, buf, 1, len);
+	stream_write(mid->to, buf, 1, len);
+	check_stream(mid, mid->to, "Could not send initial byte sequence",
+		     "mapi_reconnect", mid->error);
 	stream_flush(mid->to);
+	check_stream(mid, mid->to, "Could not send initial byte sequence",
+		     "mapi_reconnect", mid->error);
 	mid->active++;
-	if (ret != len) {
-		return mapi_setError(mid,
-				     "Could not send initial byte sequence",
-				     "mapi_reconnect");
-	}
 	if (mid->blocked) {
-		stream_destroy(mid->to);	/* don't close! */
-#ifdef HAVE_OPENSSL
-		if (mid->secure)
-			mid->to = block_stream(ssl_wstream(ssl, "Mapi client write"));
-		else
-#endif
-			mid->to = block_stream(socket_wstream(s, "Mapi client write"));
-	}
-	if (stream_errnr(mid->to)) {
-		return mapi_setError(mid, "Cannot open socket for writing",
-				     "mapi_reconnect");
+		mid->to = stream_wstream(mid->to);
+		check_stream(mid, mid->to, stream_error(mid->to),
+			     "mapi_reconnect", mid->error);
+		mid->to = block_stream(mid->to);
+		check_stream(mid, mid->to, stream_error(mid->to),
+			     "mapi_reconnect", mid->error);
 	}
 #ifdef HAVE_OPENSSL
 	if (mid->secure) {
 		if (mid->blocked) {
-			mid->from = block_stream(ssl_rstream(ssl, "Mapi client read"));
+			mid->from = ssl_rstream(ssl, "Mapi client read");
+			check_stream(mid, mid->from,
+				     "Cannot open socket for reading",
+				     "mapi_reconnect", mid->error);
+			mid->from = block_stream(mid->from);
 		} else {
 			mid->from = ssl_rastream(ssl, "Mapi client read");
 		}
@@ -1492,15 +1497,18 @@ mapi_reconnect(Mapi mid)
 #endif
 	{
 		if (mid->blocked) {
-			mid->from = block_stream(socket_rstream(s, "Mapi client read"));
+			mid->from = socket_rstream(s, "Mapi client read");
+			check_stream(mid, mid->from,
+				     "Cannot open socket for reading",
+				     "mapi_reconnect", mid->error);
+			mid->from = block_stream(mid->from);
 		} else {
 			mid->from = socket_rastream(s, "Mapi client read");
 		}
 	}
-	if (mid->from == NULL || stream_errnr(mid->from)) {
-		return mapi_setError(mid, "Cannot open socket for reading",
-				     "mapi_reconnect");
-	}
+	check_stream(mid, mid->from, "Cannot open socket for reading",
+		     "mapi_reconnect", mid->error);
+
 	/* consume the welcome message from the server */
 	while (mid->error == MOK && mid->active) {
 		mapi_get_row(mid);
@@ -2003,26 +2011,23 @@ mapi_execute_internal(Mapi mid)
 	if (mid->trace) {
 		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
-	if (stream_errnr(mid->from) || stream_errnr(mid->to)) {
-		return mapi_setError(mid, "communication line broken",
-				     "mapi_execute");
-	}
-	if (stream_write(mid->to, cmd, 1, size) != size) {
-		return mapi_setError(mid, "write error on stream",
-				     "mapi_execute");
-	}
+	stream_write(mid->to, cmd, 1, size);
+	check_stream(mid, mid->to, "write error on stream", "mapi_execute",
+		     mid->error);
 	/* all SQL statements should end with a semicolon */
 	/* for the other languages it is assumed that the statements are correct */
 	if (mid->languageId == LANG_SQL &&
 	    (size == 0 || mid->query[size - 1] != ';')) {
-		if (stream_write(mid->to, ";", 1, 1) != 1)
-			return mapi_setError(mid, "write error on stream",
-					     "mapi_execute");
+		stream_write(mid->to, ";", 1, 1);
+		check_stream(mid, mid->to, "write error on stream",
+			     "mapi_execute", mid->error);
 	}
-	if (stream_write(mid->to, "\n", 1, 1) != 1)
-		return mapi_setError(mid, "write error on stream",
-				     "mapi_execute");
+	stream_write(mid->to, "\n", 1, 1);
+	check_stream(mid, mid->to, "write error on stream",
+		     "mapi_execute", mid->error);
 	stream_flush(mid->to);
+	check_stream(mid, mid->to, "write error on stream",
+		     "mapi_execute", mid->error);
 	return MOK;
 }
 
@@ -2360,15 +2365,6 @@ mapi_fetch_row.
 The content received is analysed further by mapi_getRow()
 
 @c
-#define endofsession(rv)				\
-	do {						\
-		if( rv<=0){				\
-			mid->blk.eos=1;			\
-			mapi_lost_connection(mid);	\
-			return 0;			\
-		}					\
-	} while (0)
-
 char *
 mapi_fetch_line_internal(Mapi mid)
 {
@@ -2424,34 +2420,24 @@ mapi_fetch_line_internal(Mapi mid)
 			}
 		}
 
-		if (stream_errnr(mid->from)) {
-			mapi_setError(mid, "Connection terminated",
-				      "mapi_fetch_line");
-			return 0;
-		}
 		if (mid->blocked) {
 			/* fetch one more block */
 			if (mid->trace)
 				printf("fetch next block: start at:%d\n", n);
 			len = stream_read(mid->from, mid->blk.buf + n, 1, BLOCK);
+			check_stream(mid, mid->from, "Connection terminated",
+				     "mapi_fetch_line", (mid->blk.eos = 1, (char *) 0));
 			mid->blk.buf[n + len] = 0;
 			if (mid->trace) {
 				printf("got next block: length:" SSZFMT "\n",
 				       len);
 				printf("text:%s\n", mid->blk.buf + n);
 			}
-			endofsession(len);
 		} else {
 			/* fetch one more line */
 			len = 0;
 			s = mid->blk.buf + n;
 			while ((k = stream_read(mid->from, s, 1, 1)) == 1) {
-				if (k < 0) {
-					mapi_setError(mid,
-						      "Connection terminated",
-						      "mapi_fetch_line");
-					return 0;
-				}
 				len++;
 				if (*s == '\n')
 					break;
@@ -2459,8 +2445,9 @@ mapi_fetch_line_internal(Mapi mid)
 				if (s == mid->blk.buf + mid->blk.lim)
 					break;
 			}
+			check_stream(mid, mid->from, "Connection terminated",
+				     "mapi_fetch_line", (mid->blk.eos = 1, (char *) 0));
 			mid->blk.buf[n + len] = 0;
-			endofsession(k);
 		}
 	}
 	if (mid->trace) {
@@ -2579,30 +2566,23 @@ mapi_quick_response(Mapi mid, FILE *fd)
 	mid->blk.eos = 0;
 	mid->blk.nxt = 0;
 	if (mid->blocked) {
-		while ((k = stream_read(mid->from, mid->blk.buf, 1, BLOCK)) == BLOCK) {
-			if (k < 0) {
-				mapi_setError(mid, "Connection terminated",
-					      "mapi_quick_response");
-				break;
-			}
+		while ((k = stream_read(mid->from, mid->blk.buf, 1, BLOCK)) == BLOCK)
 			handlePart(BLOCK);
-		}
+		check_stream(mid, mid->from, "Connection terminated",
+			     "mapi_quick_response", mid->error);
 	} else {
 		/* read until we find the prompt */
 		s = mid->blk.buf;
 		while ((k = stream_read(mid->from, s, 1, 1)) == 1) {
-			if (k < 0) {
-				mapi_setError(mid, "Connection terminated",
-					      "mapi_quick_response");
-				break;
-			}
 			fwrite(s, 1, 1, fd);
 			if (*s == PROMPTBEG) {
 				s++;
 				break;
 			}
 		}
-		if (k == 1)
+		check_stream(mid, mid->from, "Connection terminated",
+			     "mapi_quick_response", mid->error);
+		if (k == 1) {
 			while (stream_read(mid->from, s, 1, 1) == 1) {
 				k++;
 				if (*s == '\n') {
@@ -2613,6 +2593,9 @@ mapi_quick_response(Mapi mid, FILE *fd)
 				if (s == mid->blk.buf + mid->blk.lim)
 					break;
 			}
+			check_stream(mid, mid->from, "Connection terminated",
+				     "mapi_quick_response", mid->error);
+		}
 	}
 
 	if (k > 0) {
@@ -2970,6 +2953,10 @@ mapi_store_field(Mapi mid, int fnr, int outtype, void *dst)
 		return mapi_setError(mid, "Field value undefined",
 				     "mapi_store_field");
 	}
+
+	if (strcmp(val, "nil") == 0)
+		return mapi_setError(mid, "Field value is nil",
+				     "mapi_store_field");
 
 	/* auto convert to C-type */
 	switch (outtype) {

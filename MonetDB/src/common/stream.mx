@@ -374,6 +374,7 @@ ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 #ifdef STREAM_DEBUG
 	printf("read %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
+	assert(s->access == ST_READ);
 	return (*s->read)(s, buf, elmsize, cnt);
 }
 
@@ -382,6 +383,7 @@ ssize_t stream_write(stream *s, void *buf, size_t elmsize, size_t cnt)
 #ifdef STREAM_DEBUG
 	printf("write %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
+	assert(s->access == ST_WRITE);
 	return (*s->write)(s, buf, elmsize, cnt);
 }
 
@@ -435,7 +437,7 @@ stream *stream_rstream(stream *s)
 #ifdef STREAM_DEBUG
 	printf("stream_rstream %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	/* assert(s->access == ST_READ); */
+	assert(s->access == ST_READ);
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR)
 		s->read(s, (void *) &s->byteorder, sizeof(short), 1);
@@ -447,7 +449,7 @@ stream *stream_wstream(stream *s)
 #ifdef STREAM_DEBUG
 	printf("stream_wstream %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	/* assert(s->access == ST_WRITE); */
+	assert(s->access == ST_WRITE);
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR)
 		s->write(s, (void *) &s->byteorder, sizeof(short), 1);
@@ -531,6 +533,7 @@ static void file_close( stream *s )
 		fclose( fp );
 	else if (s->access == ST_WRITE)
 		fflush( fp );
+	s->stream_data.p = NULL;
 }
 
 static void file_flush( stream *s )
@@ -736,7 +739,9 @@ static ssize_t stream_gzwrite( stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 static void stream_gzclose( stream *s )
 {
-	gzclose( (gzFile*)s->stream_data.p);
+	if (s->stream_data.p)
+		gzclose( (gzFile*)s->stream_data.p);
+	s->stream_data.p = NULL;
 }
 static void stream_gzflush( stream *s )
 {
@@ -809,7 +814,9 @@ static ssize_t stream_bzwrite( stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 static void stream_bzclose( stream *s )
 {
-	BZ2_bzclose( (BZFILE*)s->stream_data.p);
+	if (s->stream_data.p)
+		BZ2_bzclose( (BZFILE*)s->stream_data.p);
+	s->stream_data.p = NULL;
 }
 static void stream_bzflush( stream *s )
 {
@@ -908,10 +915,14 @@ static ssize_t socket_read( stream *s, void *buf, size_t elmsize, size_t cnt )
 static void socket_close( stream *s )
 {
 	int fd = s->stream_data.i;
-	if (s->access == ST_READ)
-		shutdown(fd,0);
-	else
-		shutdown(fd,1);
+	if (fd >= 0) {
+		if (s->access == ST_READ)
+			shutdown(fd, 0);
+		else
+			shutdown(fd, 1);
+		close(fd);
+	}
+	s->stream_data.i = -1;
 }
 
 static
@@ -1006,9 +1017,12 @@ struct ssl_data {
 
 static ssize_t ssl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
-	SSL *ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
+	SSL *ssl;
 	size_t res = 0, size = elmsize * cnt;
 
+	assert(s->stream_data.p);
+	ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
+	assert(ssl);
 	assert(!s->errnr);
 	while (res < size) {
 		int nr, err;
@@ -1041,9 +1055,12 @@ static ssize_t ssl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 
 static ssize_t ssl_write(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
-	SSL *ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
+	SSL *ssl;
 	int size = (int) (elmsize * cnt);
 
+	assert(s->stream_data.p);
+	ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
+	assert(ssl);
 	for (;;) {
 		int nr, err;
 
@@ -1074,34 +1091,38 @@ static void ssl_destroy(stream *s)
 {
 	if (s->stream_data.p)
 		free(s->stream_data.p);
+	s->stream_data.p = NULL;
 	destroy(s);
 }
 
 static void ssl_close(stream *s)
 {
 	struct ssl_data *ssl_data = (struct ssl_data *) s->stream_data.p;
-	int sock;
 
-	sock = SSL_shutdown(ssl_data->ssl);
-	if (sock == 0)
-		sock = SSL_shutdown(ssl_data->ssl);
-#if 0
-	if (sock == -1) {
-		int err = SSL_get_error(ssl_data->ssl, sock);
-		char *errstr = error(err, sock);
+	if (ssl_data && ssl_data->ssl) {
+		int sock = SSL_shutdown(ssl_data->ssl);
 
-		fprintf(stderr, "SSL_shutdown: %s\n", errstr);
-		free(errstr);
-	}
+		if (sock == 0)
+			sock = SSL_shutdown(ssl_data->ssl);
+#ifdef REPORT_SSL_SHUTDOWN_ERROR /* usually undefined */
+		if (sock == -1) {
+			int err = SSL_get_error(ssl_data->ssl, sock);
+			char *errstr = error(err, sock);
+
+			fprintf(stderr, "SSL_shutdown: %s\n", errstr);
+			free(errstr);
+		}
 #endif
-	sock = SSL_get_fd(ssl_data->ssl);
-	if (ssl_data->ssl)
-		SSL_free(ssl_data->ssl);
-	if (s->access == ST_READ)
-		shutdown(sock, 0);
-	else
-		shutdown(sock, 1);
-	close(sock);
+		sock = SSL_get_fd(ssl_data->ssl);
+		if (s->access == ST_READ)
+			shutdown(sock, 0);
+		else
+			shutdown(sock, 1);
+		close(sock);
+		if (ssl_data->ssl)
+			SSL_free(ssl_data->ssl);
+		ssl_data->ssl = NULL;
+	}
 }
 
 static char *ssl_error(stream *s)
@@ -1110,6 +1131,7 @@ static char *ssl_error(stream *s)
 	char buf[120];
 	unsigned long e;
 
+	assert(s->stream_data.p);
 	switch (((struct ssl_data *) s->stream_data.p)->error) {
 	case SSL_ERROR_ZERO_RETURN:
 		errstr = "TLS/SSL connection has been closed";
@@ -1160,6 +1182,7 @@ stream *ssl_open(SSL *ssl, const char *name)
 	struct ssl_data *ssl_data;
 	stream *s = create_stream(name);
 
+	assert(ssl);
 	s->read = ssl_read;
 	s->write = ssl_write;
 	s->close = ssl_close;
@@ -1616,6 +1639,7 @@ stream *block_stream( stream *s )
 	ns = create_stream(s->name);
 	bs = bs_create(s);
 	ns->type = s->type;
+	ns->access = s->access;
 	ns->read  = bs_read;
 	ns->write = bs_write;
 	ns->close = bs_close;

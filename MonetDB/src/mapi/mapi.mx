@@ -275,7 +275,7 @@ Get the new information for the server socket and start listening.
 			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
 			char *mp, *nmp;
 			int blocked=0;
-			stream *fdin = socket_rastream(msgsock, "mapi-r");
+			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
 			stream *fdout= NULL;
 			Client c;
 
@@ -292,19 +292,16 @@ Get the new information for the server socket and start listening.
 				stream_read(fdin, user, 1, 1);
 			}
 			*user=0;
-                        /* printf("mapi:Client accepted %s\n", name);*/
-                        fflush(stdout);
+                        /* printf("mapi:Client accepted %s\n", name);fflush(stdout);*/
                         s= strrchr(name,':');
                         blocked= s && strncmp(s,":blocked",8)==0;
                         if( blocked){
-                                /* printf("mapi:use blocked mode\n");*/
-                                fflush(stdout);
+                                /* printf("mapi:use blocked mode\n");fflush(stdout);*/
                                 *s=0;
-				stream_destroy(fdin); /* don't close */
-                                fdin= block_stream(socket_rstream(msgsock,"Mserver mapi read"));
-                                fdout= block_stream(socket_wstream(msgsock,"Mserver mapi write"));
-                        }else
-                                fdout= socket_wastream(msgsock,"Mserver mapi write");
+                                fdin= block_stream(stream_rstream(fdin));
+                                fdout= block_stream(socket_wstream(dup(msgsock), "Mserver mapi write"));
+                        } else
+                                fdout= socket_wastream(dup(msgsock),"Mserver mapi write");
 
 			if (fdout == 0){
 				GDKsyserror("CLIENTlisten:fdout problems\n");
@@ -352,7 +349,7 @@ Get the new information for the server socket and start listening.
 			stream *sin, *sout;
 
 			sin = socket_rastream(msgsock, "mapi-r");
-			sout = socket_wastream(msgsock, "mapi-w");
+			sout = socket_wastream(dup(msgsock), "mapi-w");
 			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, sin, sout );
 			res.vtype = TYPE_void; 
 			interpret_str( stk, buf, &res);
@@ -644,7 +641,7 @@ Get the new information for the server socket and start listening.
 			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
 			char *mp, *nmp;
 			int blocked=0;
-			stream *fdin = ssl_rastream(ssl, "mapi-r");
+			stream *fdin = ssl_rastream(ssl, "Mserver mapi read");
 			stream *fdout= NULL;
 			Client c;
 
@@ -661,19 +658,18 @@ Get the new information for the server socket and start listening.
 				stream_read(fdin, user, 1, 1);
 			}
 			*user = 0;
-                        /* printf("mapi:Client accepted %s\n", name);*/
-                        fflush(stdout);
+                        /* printf("mapi:Client accepted %s\n", name);fflush(stdout);*/
                         s = strrchr(name,':');
                         blocked = s && strncmp(s,":blocked",8)==0;
                         if (blocked) {
-                                /* printf("mapi:use blocked mode\n");*/
-                                fflush(stdout);
+                                /* printf("mapi:use blocked mode\n");fflush(stdout);*/
                                 *s=0;
-				stream_destroy(fdin); /* don't close */
-                                fdin = block_stream(ssl_rstream(ssl, "Mserver mapi read"));
-                                fdout = block_stream(ssl_wstream(ssl, "Mserver mapi write"));
+                                fdin = block_stream(stream_rstream(fdin));
+                                fdout = block_stream(ssl_wstream(SSL_dup(ssl),
+								 "Mserver mapi write"));
                         } else {
-                                fdout = ssl_wastream(ssl, "Mserver mapi write");
+                                fdout = ssl_wastream(SSL_dup(ssl),
+						     "Mserver mapi write");
 			}
 
 			if (fdout == 0){
@@ -722,7 +718,7 @@ Get the new information for the server socket and start listening.
 			stream *sin, *sout;
 
 			sin = ssl_rastream(ssl, "mapi-r");
-			sout = ssl_wastream(ssl, "mapi-w");
+			sout = ssl_wastream(SSL_dup(ssl), "mapi-w");
 			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, sin, sout );
 			THRprintf(GDKerr, "MAPIlistenSSL: %s", buf);
 			res.vtype = TYPE_void; 
