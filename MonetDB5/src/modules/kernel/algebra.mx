@@ -1427,7 +1427,7 @@ str ALGtopN(int *res, int *bid, lng *top) {
         return MAL_SUCCEED;
 }
 
-str ALGcard(int *result, int *bid) {
+str ALGcard(int *result, lng *bid) {
 	BAT *b,*bn;
 	@:getBATdescriptor(result,bid,b,card)@
 	bn = (BAT*) BATkunique(BATreverse(b));
