@@ -1420,10 +1420,12 @@ scalar_exp:
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
- |  '+' scalar_exp %prec UMINUS { dlist *l = dlist_create();
+ |  '+' scalar_exp %prec UMINUS { $$ = $2;
+				  /*
+				  dlist *l = dlist_create();
 				  dlist_append_string(l, _strdup("pos"));
 	  			  dlist_append_symbol(l, $2);
-	  			  $$ = _symbol_create_list( SQL_UNOP, l ); }
+	  			  $$ = _symbol_create_list( SQL_UNOP, l );*/ }
  |  '-' scalar_exp %prec UMINUS { dlist *l = dlist_create();
 				  dlist_append_string(l, _strdup("neg"));
 	  			  dlist_append_symbol(l, $2);
