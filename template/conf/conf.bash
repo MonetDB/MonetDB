@@ -65,6 +65,7 @@ eval WHAT_PREFIX="\${${what}_PREFIX}"
 binpath=""
 libpath=""
 modpath=""
+mtest_modpath=""
 conf_opts=""
 
 os="`uname`"
@@ -284,6 +285,7 @@ if [ "${what}" != "MONET" ] ; then
 	package="`egrep -h '^(AM_INIT_AUTOMAKE|PACKAGE).".*"' configure* | head -1 | perl -pe 's/^(AM_INIT_AUTOMAKE|PACKAGE)."(.*)".*$/$2/'`"
 	modpath="${WHAT_PREFIX}/lib/${package}"
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
+	mtest_modpath="--monet_mod_path=`${MONET_PREFIX}/bin/monet-config --modpath`:${modpath}"
 fi
 
 # remove trailing ':'
@@ -352,7 +354,7 @@ WHAT_CONFIGURE="${base}/configure ${conf_opts} --prefix=${WHAT_PREFIX}"
 echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
 eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
 eval "alias configure_${wh_t}"
-eval "alias Mtest_${wh_t}='Mtest.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
+eval "alias Mtest_${wh_t}='Mtest.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}'"
 eval "alias Mtest_${wh_t}"
 
 mkdir -p ${WHAT_BUILD}
