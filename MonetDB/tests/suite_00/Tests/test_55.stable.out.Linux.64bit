@@ -10,7 +10,7 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 # basic nameing problem
-b:= new(int,int);
+var b:= new(int,int);
 b.insert(1,15);
 b.insert(2,4);
 b.insert(3,int(nil));
@@ -23,7 +23,7 @@ b.insert(9,int(nil));
 b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
 
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
@@ -39,8 +39,8 @@ b.print;
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-h:=b.hashsplit(3);
-h.print;
+var h:=b.hashsplit(3);
+h.print();
 #-------------------------#
 # BAT:	  tmp_30	  #
 # (int)	  (BAT)		  #
@@ -71,7 +71,7 @@ dir("tmp");
 [ "tmp_30",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "tmp_31",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "tmp_32",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-vars;
+vars();
 #-----------------------------------------------------------------------------------------#
 # tmp_36		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
@@ -103,16 +103,16 @@ vars;
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "287"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "284"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "278"			  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-quit;
+quit();
 
 # 18:33:09 >  
 # 18:33:09 >  Done.
