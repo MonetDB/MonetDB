@@ -2412,8 +2412,9 @@ BAT * & BATpropcheck & (BAT *b)\\
 BAT* & VIEWcreate   & (BAT *b)\\
 bat  & VIEWparent   & (BAT *b)\\
 BAT* & VIEWhead     & (BAT *b)\\
-BAT* & VIEWreset    & (BAT *b)\\
 BAT* & VIEWcombine  & (BAT *b)\\
+BAT* & VIEWreset    & (BAT *b)\\
+BAT* & BATmaterialize    & (BAT *b, int size)\\
 \hline\end{tabular}}
 @
 Alignments of two columns of a BAT means that the system knows
@@ -2443,6 +2444,11 @@ head column as the parent, but has a void column with seqbase=nil
 in the tail. @%VIEWreset@ creates a normal BAT with the same contents
 as its view parameter (it converts void columns with seqbase!=nil
 to materialized oid columns).
+
+The @%BATmaterialize@ materializes a VIEW (TODO) or void bat inplace. The
+size parameter can be used to hint the new size. This is usefull as 
+materialization is usualy needed for updates.
+
 @{
 @h
 gdk_export int      ALIGNsynced     (BAT *b1, BAT *b2);
@@ -2457,8 +2463,9 @@ gdk_export BAT*	VIEWcreate	(BAT *b);
 gdk_export BAT*	VIEWcreate_	(BAT *b, int stable);
 gdk_export BAT*	VIEWhead	(BAT *b);
 gdk_export BAT*	VIEWhead_	(BAT *b, int mode);
-gdk_export BAT*	VIEWreset	(BAT *b);
 gdk_export BAT*	VIEWcombine	(BAT *b);
+gdk_export BAT*	VIEWreset	(BAT *b);
+gdk_export BAT*	BATmaterialize	(BAT *b, int size);
 gdk_export void	VIEWdestroy	(BAT *b);
 
 /* low level functions */

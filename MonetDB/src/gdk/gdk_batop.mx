@@ -83,6 +83,13 @@ BAT *BATins(BAT *b, BAT *n) {
 		return BATmirror(BATins(BATmirror(b),BATmirror(n)));
 	}
 
+	if (BAThdense(b) && b->htype == TYPE_void){
+		oid t = *(oid*)BUNhead(b,BUNlast(b)-1);
+		oid h = *(oid*)BUNhead(n,BUNfirst(n));
+		if ((t+1) != h)
+			b = BATmaterialize(b, BATcount(b)+ BATcount(n));
+	}
+
 	needed = BATcount(n) - (((b)->batBuns->size - (b)->batBuns->free)/BUNsize(b));
   	if (needed > 0)
 		BATextend(b, BATcapacity(b) + needed); /* allocation hint */ 

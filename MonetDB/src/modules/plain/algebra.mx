@@ -1121,6 +1121,11 @@ int CMDlike(BAT **ret, BAT* b, str s) {
 @c
 int CMDslice(BAT **retval, BAT *b, int *start, int *end){
 	/* the internal BATslice requires exclusive end */
+	if (*start < 0){
+                GDKerror("CMDslice: start position of slice should >= 0\n");
+                return GDK_FAIL;
+        }
+		
 	return (*retval = BATslice(b, (size_t)*start, (size_t)*end+1))?
 			GDK_SUCCEED:GDK_FAIL;
 }

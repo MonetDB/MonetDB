@@ -1,18 +1,17 @@
 stdout of test 'no.148` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.148 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.148.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
-#script:no.148.milS
 
+# 11:39:48 >  
+# 11:39:48 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_BugReports  < no.148.milS
+# 11:39:48 >  
 
-#You are system administrator (adm)!
-# xtable_test: small hash grouping (8 tuples, 114688 bytes)
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# xtable_test: small hash grouping (8 tuples, 32768 bytes)
 
 #---------------------------------#
-# BAT:	  tmp_72| y	| z	  #
+# BAT:	  tmp_34| y	| z	  #
 # (oid)	  (chr)	| (dbl)	| (str)	  #
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]
@@ -26,7 +25,7 @@ stdout of test 'no.148` in directory 'tests/BugReports` itself:
 synced(x,y) := true
 synced(x,z) := true
 
-# CT(x) (ct: 8 elts, 3 groups, 1120 bytes)
+# CT(x) (ct: 8 elts, 3 groups, 12288 bytes)
 #-----------------#
 # count	| x	  #
 #-----------------#
@@ -34,7 +33,7 @@ synced(x,z) := true
 [ 4,	  'b'	  ]
 [ 2,	  'c'	  ]
 
-# CT(x,y) (ct: 8 elts, 5 groups, 900 bytes)
+# CT(x,y) (ct: 8 elts, 5 groups, 12288 bytes)
 #-------------------------#
 # count	| x	| y	  #
 #-------------------------#
@@ -44,7 +43,7 @@ synced(x,z) := true
 [ 1,	  'b',	  3	  ]
 [ 2,	  'c',	  1	  ]
 
-# CT(x,y|v) (ct: 5 elts, 3 groups, 1120 bytes)
+# CT(x,y|v) (ct: 5 elts, 3 groups, 12288 bytes)
 #-------------------------#
 # count	| x	| y	  #
 #-------------------------#
@@ -52,7 +51,7 @@ synced(x,z) := true
 [ 3,	  'b',	  2	  ]
 [ 1,	  'b',	  3	  ]
 
-# CT(x,y,z) (ct: 8 elts, 8 groups, 900 bytes)
+# CT(x,y,z) (ct: 8 elts, 8 groups, 12288 bytes)
 #---------------------------------#
 # count	| x	| y	| z	  #
 #---------------------------------#
@@ -64,10 +63,10 @@ synced(x,z) := true
 [ 1,	  'b',	  3,	  "a"	  ]
 [ 1,	  'c',	  1,	  "c"	  ]
 [ 1,	  'c',	  1,	  "a"	  ]
-# xtable_test: small vectorized grouping (8 tuples, 114688 bytes)
+# xtable_test: small vectorized grouping (8 tuples, 32768 bytes)
 
 #---------------------------------#
-# BAT:	  tmp_72| y	| z	  #
+# BAT:	  tmp_34| y	| z	  #
 # (void)  (chr)	| (dbl)	| (str)	  #
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]
@@ -81,7 +80,7 @@ synced(x,z) := true
 synced(x,y) := true
 synced(x,z) := true
 
-# CT(x) (ct: 8 elts, 3 groups, 900 bytes)
+# CT(x) (ct: 8 elts, 3 groups, 12288 bytes)
 #-----------------#
 # count	| x	  #
 #-----------------#
@@ -89,7 +88,7 @@ synced(x,z) := true
 [ 4,	  'b'	  ]
 [ 2,	  'c'	  ]
 
-# CT(x,y) (ct: 8 elts, 5 groups, 900 bytes)
+# CT(x,y) (ct: 8 elts, 5 groups, 12288 bytes)
 #-------------------------#
 # count	| x	| y	  #
 #-------------------------#
@@ -99,7 +98,7 @@ synced(x,z) := true
 [ 1,	  'b',	  3	  ]
 [ 2,	  'c',	  1	  ]
 
-# CT(x,y|v) (ct: 5 elts, 3 groups, 1120 bytes)
+# CT(x,y|v) (ct: 5 elts, 3 groups, 12288 bytes)
 #-------------------------#
 # count	| x	| y	  #
 #-------------------------#
@@ -107,7 +106,7 @@ synced(x,z) := true
 [ 3,	  'b',	  2	  ]
 [ 1,	  'b',	  3	  ]
 
-# CT(x,y,z) (ct: 8 elts, 8 groups, 900 bytes)
+# CT(x,y,z) (ct: 8 elts, 8 groups, 12288 bytes)
 #---------------------------------#
 # count	| x	| y	| z	  #
 #---------------------------------#
@@ -119,7 +118,7 @@ synced(x,z) := true
 [ 1,	  'b',	  3,	  "a"	  ]
 [ 1,	  'c',	  1,	  "c"	  ]
 [ 1,	  'c',	  1,	  "a"	  ]
-[ "growing vectorized tables from 8 to 512k elements..." ]
+[ "growing tables from 8 to 512k elements..." ]
 [ 16 ]
 [ 32 ]
 [ 64 ]
@@ -137,10 +136,120 @@ synced(x,z) := true
 [ 262144 ]
 [ 524288 ]
 [ "done!" ]
-# xtable_test: big vectorized grouping (524288 tuples, 7192576 bytes)
+# xtable_test: big hash grouping (524288 tuples, 21274624 bytes)
 
 #---------------------------------#
-# BAT:	  tmp_70| y	| z	  #
+# BAT:	  tmp_31| y	| z	  #
+# (oid)	  (chr)	| (dbl)	| (str)	  #
+#---------------------------------#
+[ 1@0,	  'a',	  1,	  "c"	  ]
+[ 2@0,	  'a',	  3,	  "a"	  ]
+[ 3@0,	  'b',	  2,	  "b"	  ]
+[ 4@0,	  'b',	  2,	  "c"	  ]
+[ 5@0,	  'b',	  2,	  "a"	  ]
+[ 6@0,	  'b',	  3,	  "a"	  ]
+[ 7@0,	  'c',	  1,	  "c"	  ]
+[ 8@0,	  'c',	  1,	  "a"	  ]
+synced(x,y) := true
+synced(x,z) := true
+
+# CT(x) (ct: 524288 elts, 3 groups, 4206592 bytes)
+#-----------------#
+# count	| x	  #
+#-----------------#
+[ 131072, 'a'	  ]
+[ 262144, 'b'	  ]
+[ 131072, 'c'	  ]
+
+# CT(x,y) (ct: 524288 elts, 5 groups, 2109440 bytes)
+#-------------------------#
+# count	| x	| y	  #
+#-------------------------#
+[ 65536,  'a',	  1	  ]
+[ 65536,  'a',	  3	  ]
+[ 196608, 'b',	  2	  ]
+[ 65536,  'b',	  3	  ]
+[ 131072, 'c',	  1	  ]
+
+# CT(x,y|v) (ct: 327680 elts, 3 groups, 2633728 bytes)
+#-------------------------#
+# count	| x	| y	  #
+#-------------------------#
+[ 65536,  'a',	  3	  ]
+[ 196608, 'b',	  2	  ]
+[ 65536,  'b',	  3	  ]
+
+# CT(x,y,z) (ct: 524288 elts, 8 groups, 2109440 bytes)
+#---------------------------------#
+# count	| x	| y	| z	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  "c"	  ]
+[ 65536,  'a',	  3,	  "a"	  ]
+[ 65536,  'b',	  2,	  "b"	  ]
+[ 65536,  'b',	  2,	  "c"	  ]
+[ 65536,  'b',	  2,	  "a"	  ]
+[ 65536,  'b',	  3,	  "a"	  ]
+[ 65536,  'c',	  1,	  "c"	  ]
+[ 65536,  'c',	  1,	  "a"	  ]
+# xtable_test: big synced grouping (524288 tuples, 10780672 bytes)
+
+#---------------------------------#
+# BAT:	  tmp_31| y	| z	  #
+# (oid)	  (chr)	| (dbl)	| (str)	  #
+#---------------------------------#
+[ 1@0,	  'a',	  1,	  "c"	  ]
+[ 2@0,	  'a',	  3,	  "a"	  ]
+[ 3@0,	  'b',	  2,	  "b"	  ]
+[ 4@0,	  'b',	  2,	  "c"	  ]
+[ 5@0,	  'b',	  2,	  "a"	  ]
+[ 6@0,	  'b',	  3,	  "a"	  ]
+[ 7@0,	  'c',	  1,	  "c"	  ]
+[ 8@0,	  'c',	  1,	  "a"	  ]
+synced(x,y) := true
+synced(x,z) := true
+
+# CT(x) (ct: 524288 elts, 3 groups, 4206592 bytes)
+#-----------------#
+# count	| x	  #
+#-----------------#
+[ 131072, 'a'	  ]
+[ 262144, 'b'	  ]
+[ 131072, 'c'	  ]
+
+# CT(x,y) (ct: 524288 elts, 5 groups, 2109440 bytes)
+#-------------------------#
+# count	| x	| y	  #
+#-------------------------#
+[ 65536,  'a',	  1	  ]
+[ 65536,  'a',	  3	  ]
+[ 196608, 'b',	  2	  ]
+[ 65536,  'b',	  3	  ]
+[ 131072, 'c',	  1	  ]
+
+# CT(x,y|v) (ct: 327680 elts, 3 groups, 2633728 bytes)
+#-------------------------#
+# count	| x	| y	  #
+#-------------------------#
+[ 65536,  'a',	  3	  ]
+[ 196608, 'b',	  2	  ]
+[ 65536,  'b',	  3	  ]
+
+# CT(x,y,z) (ct: 524288 elts, 8 groups, 2109440 bytes)
+#---------------------------------#
+# count	| x	| y	| z	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  "c"	  ]
+[ 65536,  'a',	  3,	  "a"	  ]
+[ 65536,  'b',	  2,	  "b"	  ]
+[ 65536,  'b',	  2,	  "c"	  ]
+[ 65536,  'b',	  2,	  "a"	  ]
+[ 65536,  'b',	  3,	  "a"	  ]
+[ 65536,  'c',	  1,	  "c"	  ]
+[ 65536,  'c',	  1,	  "a"	  ]
+# xtable_test: big vectorized grouping (524288 tuples, 12288 bytes)
+
+#---------------------------------#
+# BAT:	  tmp_37| y	| z	  #
 # (void)  (chr)	| (dbl)	| (str)	  #
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]
@@ -154,7 +263,7 @@ synced(x,z) := true
 synced(x,y) := true
 synced(x,z) := true
 
-# CT(x) (ct: 524288 elts, 3 groups, 2097852 bytes)
+# CT(x) (ct: 524288 elts, 3 groups, 2109440 bytes)
 #-----------------#
 # count	| x	  #
 #-----------------#
@@ -162,7 +271,7 @@ synced(x,z) := true
 [ 262144, 'b'	  ]
 [ 131072, 'c'	  ]
 
-# CT(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# CT(x,y) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #-------------------------#
 # count	| x	| y	  #
 #-------------------------#
@@ -172,7 +281,7 @@ synced(x,z) := true
 [ 65536,  'b',	  3	  ]
 [ 131072, 'c',	  1	  ]
 
-# CT(x,y|v) (ct: 327680 elts, 3 groups, 2622160 bytes)
+# CT(x,y|v) (ct: 327680 elts, 3 groups, 2633728 bytes)
 #-------------------------#
 # count	| x	| y	  #
 #-------------------------#
@@ -180,7 +289,7 @@ synced(x,z) := true
 [ 196608, 'b',	  2	  ]
 [ 65536,  'b',	  3	  ]
 
-# CT(x,y,z) (ct: 524288 elts, 8 groups, 2097852 bytes)
+# CT(x,y,z) (ct: 524288 elts, 8 groups, 2109440 bytes)
 #---------------------------------#
 # count	| x	| y	| z	  #
 #---------------------------------#
@@ -192,113 +301,8 @@ synced(x,z) := true
 [ 65536,  'b',	  3,	  "a"	  ]
 [ 65536,  'c',	  1,	  "c"	  ]
 [ 65536,  'c',	  1,	  "a"	  ]
-# xtable_test: big hash grouping (524288 tuples, 21381120 bytes)
 
-#---------------------------------#
-# BAT:	  tmp_73| y	| z	  #
-# (oid)	  (chr)	| (dbl)	| (str)	  #
-#---------------------------------#
-[ 1@0,	  'a',	  1,	  "c"	  ]
-[ 2@0,	  'a',	  3,	  "a"	  ]
-[ 3@0,	  'b',	  2,	  "b"	  ]
-[ 4@0,	  'b',	  2,	  "c"	  ]
-[ 5@0,	  'b',	  2,	  "a"	  ]
-[ 6@0,	  'b',	  3,	  "a"	  ]
-[ 7@0,	  'c',	  1,	  "c"	  ]
-[ 8@0,	  'c',	  1,	  "a"	  ]
-synced(x,y) := true
-synced(x,z) := true
+# 11:39:51 >  
+# 11:39:51 >  Done.
+# 11:39:51 >  
 
-# CT(x) (ct: 524288 elts, 3 groups, 4195024 bytes)
-#-----------------#
-# count	| x	  #
-#-----------------#
-[ 131072, 'a'	  ]
-[ 262144, 'b'	  ]
-[ 131072, 'c'	  ]
-
-# CT(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
-#-------------------------#
-# count	| x	| y	  #
-#-------------------------#
-[ 65536,  'a',	  1	  ]
-[ 65536,  'a',	  3	  ]
-[ 196608, 'b',	  2	  ]
-[ 65536,  'b',	  3	  ]
-[ 131072, 'c',	  1	  ]
-
-# CT(x,y|v) (ct: 327680 elts, 3 groups, 2622160 bytes)
-#-------------------------#
-# count	| x	| y	  #
-#-------------------------#
-[ 65536,  'a',	  3	  ]
-[ 196608, 'b',	  2	  ]
-[ 65536,  'b',	  3	  ]
-
-# CT(x,y,z) (ct: 524288 elts, 8 groups, 2097852 bytes)
-#---------------------------------#
-# count	| x	| y	| z	  #
-#---------------------------------#
-[ 65536,  'a',	  1,	  "c"	  ]
-[ 65536,  'a',	  3,	  "a"	  ]
-[ 65536,  'b',	  2,	  "b"	  ]
-[ 65536,  'b',	  2,	  "c"	  ]
-[ 65536,  'b',	  2,	  "a"	  ]
-[ 65536,  'b',	  3,	  "a"	  ]
-[ 65536,  'c',	  1,	  "c"	  ]
-[ 65536,  'c',	  1,	  "a"	  ]
-# xtable_test: big synced grouping (524288 tuples, 10862592 bytes)
-
-#---------------------------------#
-# BAT:	  tmp_73| y	| z	  #
-# (oid)	  (chr)	| (dbl)	| (str)	  #
-#---------------------------------#
-[ 1@0,	  'a',	  1,	  "c"	  ]
-[ 2@0,	  'a',	  3,	  "a"	  ]
-[ 3@0,	  'b',	  2,	  "b"	  ]
-[ 4@0,	  'b',	  2,	  "c"	  ]
-[ 5@0,	  'b',	  2,	  "a"	  ]
-[ 6@0,	  'b',	  3,	  "a"	  ]
-[ 7@0,	  'c',	  1,	  "c"	  ]
-[ 8@0,	  'c',	  1,	  "a"	  ]
-synced(x,y) := true
-synced(x,z) := true
-
-# CT(x) (ct: 524288 elts, 3 groups, 4195024 bytes)
-#-----------------#
-# count	| x	  #
-#-----------------#
-[ 131072, 'a'	  ]
-[ 262144, 'b'	  ]
-[ 131072, 'c'	  ]
-
-# CT(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
-#-------------------------#
-# count	| x	| y	  #
-#-------------------------#
-[ 65536,  'a',	  1	  ]
-[ 65536,  'a',	  3	  ]
-[ 196608, 'b',	  2	  ]
-[ 65536,  'b',	  3	  ]
-[ 131072, 'c',	  1	  ]
-
-# CT(x,y|v) (ct: 327680 elts, 3 groups, 2622160 bytes)
-#-------------------------#
-# count	| x	| y	  #
-#-------------------------#
-[ 65536,  'a',	  3	  ]
-[ 196608, 'b',	  2	  ]
-[ 65536,  'b',	  3	  ]
-
-# CT(x,y,z) (ct: 524288 elts, 8 groups, 2097852 bytes)
-#---------------------------------#
-# count	| x	| y	| z	  #
-#---------------------------------#
-[ 65536,  'a',	  1,	  "c"	  ]
-[ 65536,  'a',	  3,	  "a"	  ]
-[ 65536,  'b',	  2,	  "b"	  ]
-[ 65536,  'b',	  2,	  "c"	  ]
-[ 65536,  'b',	  2,	  "a"	  ]
-[ 65536,  'b',	  3,	  "a"	  ]
-[ 65536,  'c',	  1,	  "c"	  ]
-[ 65536,  'c',	  1,	  "a"	  ]

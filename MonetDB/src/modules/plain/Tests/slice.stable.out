@@ -1,0 +1,85 @@
+stdout of test 'slice` in directory 'src/modules/plain` itself:
+
+
+# 13:40:31 >  
+# 13:40:31 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_src_modules_plain  < slice.milM
+# 13:40:31 >  
+
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+[ "slice tests" ]
+#-----------------#
+# BAT:	  tmp_26  #
+# (void)  (int)	  #
+#-----------------#
+[ 10@0,	  1	  ]
+[ 11@0,	  4	  ]
+[ 12@0,	  7	  ]
+[ 13@0,	  2	  ]
+[ 14@0,	  8	  ]
+[ 15@0,	  1	  ]
+[ 16@0,	  4	  ]
+[ 17@0,	  5	  ]
+[ 18@0,	  8	  ]
+[ 19@0,	  3	  ]
+#-----------------#
+# BAT:	  tmp_25  #
+# (oid)	  (int)	  #
+#-----------------#
+[ 10@0,	  1	  ]
+[ 11@0,	  4	  ]
+[ 12@0,	  7	  ]
+[ 13@0,	  2	  ]
+[ 14@0,	  8	  ]
+[ 19@0,	  3	  ]
+[ 16@0,	  4	  ]
+[ 17@0,	  5	  ]
+[ 18@0,	  8	  ]
+[ "simple slice" ]
+#-----------------#
+# BAT:	  tmp_27  #
+# (oid)	  (int)	  #
+#-----------------#
+[ 12@0,	  7	  ]
+[ 13@0,	  2	  ]
+[ 14@0,	  8	  ]
+[ 19@0,	  3	  ]
+#-----------------#
+# BAT:	  tmp_27  #
+# (void)  (int)	  #
+#-----------------#
+[ 12@0,	  7	  ]
+[ 13@0,	  2	  ]
+[ 14@0,	  8	  ]
+[ 15@0,	  1	  ]
+[ "negative start slice" ]
+!ERROR: CMDslice: start position of slice should >= 0
+!ERROR: CMDslice: operation failed.
+!ERROR: print(param 1): evaluation error.
+!ERROR: CMDslice: start position of slice should >= 0
+!ERROR: CMDslice: operation failed.
+!ERROR: print(param 1): evaluation error.
+[ "over end slice" ]
+#-----------------#
+# BAT:	  tmp_27  #
+# (oid)	  (int)	  #
+#-----------------#
+[ 19@0,	  3	  ]
+[ 16@0,	  4	  ]
+[ 17@0,	  5	  ]
+[ 18@0,	  8	  ]
+#-----------------#
+# BAT:	  tmp_27  #
+# (void)  (int)	  #
+#-----------------#
+[ 15@0,	  1	  ]
+[ 16@0,	  4	  ]
+[ 17@0,	  5	  ]
+[ 18@0,	  8	  ]
+[ 19@0,	  3	  ]
+
+# 13:40:31 >  
+# 13:40:31 >  Done.
+# 13:40:31 >  
+

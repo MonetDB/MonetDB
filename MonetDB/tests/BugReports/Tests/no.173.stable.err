@@ -1,15 +1,15 @@
 stderr of test 'no.173` in directory 'tests/BugReports` itself:
 
 
-# 09:40:10 >  
-# 09:40:10 >  Mtimeout -timeout 60 Mserver --config=/ufs/alexb/local/Monet/soft/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_BugReports  < no.173.milS
-# 09:40:10 >  
+# 22:18:35 >  
+# 22:18:35 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_BugReports  < no.173.milS
+# 22:18:35 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 24180
-# builtin opt 	prefix = /ufs/alexb/local/Monet/soft
-# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	monet_pid = 12777
+# builtin opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	exec_prefix = ${exec_prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -25,10 +25,10 @@ stderr of test 'no.173` in directory 'tests/BugReports` itself:
 # builtin opt 	mapi_debug = 0
 # builtin opt 	sql_port = 45123
 # builtin opt 	sql_debug = 0
-# builtin opt 	sql_api = sql
-# builtin opt 	sql_user = sqladmin
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/alexb/local/Monet/soft
+# config opt 	prefix = /ufs/niels/data/monet/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -40,10 +40,12 @@ stderr of test 'no.173` in directory 'tests/BugReports` itself:
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_deamon = no
 # cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /ufs/niels/data/monet/Linux/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/niels/data/monet/Linux/var/dbfarm
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_tests_BugReports
 
-# 09:40:11 >  
-# 09:40:11 >  Done.
-# 09:40:11 >  
+# 22:18:35 >  
+# 22:18:35 >  Done.
+# 22:18:35 >  
 

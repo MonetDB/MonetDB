@@ -1,0 +1,97 @@
+
+
+print("First keep void tests");
+var a := bat(void,int,10);
+a.insert(nil,1);
+a.insert(nil,4);
+a.insert(nil,7);
+a.insert(nil,2);
+a.insert(nil,8);
+a.insert(nil,1);
+a.insert(nil,4);
+a.insert(nil,5);
+a.insert(nil,8);
+a.insert(nil,3);
+a.seqbase(oid(10));
+a.print;
+
+var b := a.copy();
+
+print("insert tests");
+#insert in order
+a.insert(oid(20),8);
+a.print;
+
+print("replace tests");
+# replace uncommited no need to change to oid
+a.replace(oid(15),9);
+a.print;
+
+# replace last no need to change to oid
+a.replace(oid(20),9);
+a.print;
+
+# replace last + 1, noting needed
+a.replace(oid(20),9);
+a.print;
+
+print("delete tests");
+# delete uncommited from the top
+a.delete(oid(20));
+a.delete(oid(19));
+a.delete(oid(18));
+a.delete(oid(17));
+a.delete(oid(16));
+a.delete(oid(15));
+a.delete(oid(14));
+a.delete(oid(13));
+a.delete(oid(12));
+a.delete(oid(11));
+# only 1 left and still void
+a.print;
+
+# now the convert to oid test
+print("convert void to oid tests");
+a := b.copy().access(BAT_WRITE);
+
+print("insert tests");
+#insert in out of order
+a.insert(oid(21),8);
+a.print;
+
+# use oid bat (test if its a properly made bat)
+a.delete(oid(21));
+a.reverse().join(b).print;
+
+print("replace tests");
+#replace commited bun
+a := b.copy().access(BAT_WRITE);
+a.commit();
+
+# replace commited 
+a.replace(oid(15),-3);
+# replace last (or used to be last)
+a.replace(oid(19),-1);
+# replace something not there
+a.replace(oid(20),-2);
+a.print;
+
+# delete commited 
+print("delete tests");
+a := b.copy().access(BAT_WRITE);
+a.commit();
+
+a.delete(oid(20));
+a.delete(oid(19));
+a.delete(oid(18));
+a.delete(oid(17));
+a.delete(oid(16));
+a.delete(oid(15));
+a.delete(oid(14));
+a.delete(oid(13));
+a.delete(oid(12));
+a.delete(oid(11));
+# only 1 left and still void
+a.print;
+
+quit;

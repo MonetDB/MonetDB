@@ -438,6 +438,7 @@ printf("#~BeginVariableOutput~#\n"); arith_perftest(int_10K, 101, "int_10K"); pr
 var dec_10K := [decimal](int_10K);
 printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_10K, decimal("101"), "dec_10K"); printf("#~EndVariableOutput~#\n");
 
+int_10K.seqbase(oid(nil));
 var int_100K := new(void,int,100000);
 while((i :+= 1) < 10) {
         var base := (9 - i) * 10000;
@@ -450,6 +451,7 @@ printf("#~BeginVariableOutput~#\n"); arith_perftest(int_100K, 1001, "int_100K");
 var dec_100K := [decimal](int_100K);
 printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_100K, decimal("1001"), "dec_100K"); printf("#~EndVariableOutput~#\n");
 
+int_100K.seqbase(oid(nil));
 var int_1M := new(void,int,1000000);
 while((i :-= 1) >= 0) {
         var base := i * 100000;

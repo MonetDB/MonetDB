@@ -526,17 +526,7 @@ int CMDorder(BAT **ret, BAT *b){
 	return GDK_SUCCEED;
 }
 
-@= void_insertbun
-if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
-    *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
-{
-      GDKerror("CMDinsert: cannot insert non-nil values in a void column.\n");
-      return GDK_FAIL;
-}
-@c
 int CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	@:void_insertbun(h)@
-	@:void_insertbun(t)@
 	BUNins(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -548,16 +538,6 @@ int CMDinsert_bat(BAT **r, BAT *b, BAT *s){
 	return GDK_SUCCEED;
 } 
 
-@= void_append_only
-	if ((b->hseqbase != oid_nil && b->htype == TYPE_void) ||
-	    (b->tseqbase != oid_nil && b->ttype == TYPE_void))
-	{
-		GDKerror("@1: %s[%s,%s] is append-only.\n", 
-			BBPname(b->batCacheid), 
-			ATOMname(b->htype), ATOMname(b->ttype));
-		return GDK_FAIL;
-	}
-@c
 int CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t) {
 	BUNreplace(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@);
 	BBPfix(b->batCacheid);
@@ -571,14 +551,12 @@ int CMDreplace_bat(BAT **r, BAT *b, BAT *s){
 } 
 
 int CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	@:void_append_only(CMDdelete_bun)@
 	BUNdel(*r=b,h,t);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_head(BAT **r, BAT *b, ptr h) {
-	@:void_append_only(CMDdelete_head)@
 	BUNdelHead(*r=b, @:batconvert(b,h)@);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -591,14 +569,12 @@ int CMDdelete_all(BAT **r, BAT *b) {
 } 
 
 int CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s){
-	@:void_append_only(CMDdelete_bat_bun)@
 	BATdel(*r=b,s);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
-	@:void_append_only(CMDdelete_bat_head)@
 	BATdelHead(*r=b,s);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;

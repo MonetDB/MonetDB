@@ -1,117 +1,117 @@
 stdout of test 'no.173` in directory 'tests/BugReports` itself:
 
 
-# 09:40:10 >  
-# 09:40:10 >  Mtimeout -timeout 60 Mserver --config=/ufs/alexb/local/Monet/soft/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_BugReports  < no.173.milS
-# 09:40:10 >  
+# 22:18:35 >  
+# 22:18:35 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_BugReports  < no.173.milS
+# 22:18:35 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_33  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_32  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_35  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 10@0,	  10	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 10@0,	  10	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 10@0,	  10	  ]
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
-#-----------------#
-[ 0@0,	  0	  ]
-[ 1@0,	  1	  ]
-[ 2@0,	  2	  ]
-#-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
+# (void)  (int)	  #
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+#-----------------#
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 10@0,	  10	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 10@0,	  10	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_34  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 10@0,	  10	  ]
 
-# 09:40:11 >  
-# 09:40:11 >  Done.
-# 09:40:11 >  
+# 22:18:35 >  
+# 22:18:35 >  Done.
+# 22:18:35 >  
 

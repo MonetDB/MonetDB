@@ -496,7 +496,7 @@ double elimination.
 #define KEYk	TRUE
 #define KEYs	FALSE
 
-BAT* BATmaterialize(BAT *b, int size){
+BAT* BATmaterialize_(BAT *b, int size){
 	BAT *bn = BATnew(TYPE_oid, ATOMtype(b->ttype), size);
 	BUN p,q; int xx;
 	oid base = b->hseqbase;
@@ -534,9 +534,9 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 		return BATrcopy(l);
 	}
 	if (l->htype == TYPE_void) {
-		bn = BATmaterialize(l, BATcount(l)+BATcount(r));
+		bn = BATmaterialize_(l, BATcount(l)+BATcount(r));
 	} else if (l->ttype == TYPE_void) {
-		bn = BATmirror(BATmaterialize(BATmirror(l), 
+		bn = BATmirror(BATmaterialize_(BATmirror(l), 
 			     		      BATcount(l)+BATcount(r)));
 	} else {
 		bn = BATcopy(l); 

@@ -1,13 +1,13 @@
-stderr of test 'no.035` in directory 'tests/BugReports` itself:
+stderr of test 'void` in directory 'src/gdk` itself:
 
 
-# 18:58:56 >  
-# 18:58:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_BugReports  < no.035.milS
-# 18:58:56 >  
+# 13:38:53 >  
+# 13:38:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_src_gdk  < void.milM
+# 13:38:53 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 27460
+# builtin opt 	monet_pid = 1137
 # builtin opt 	prefix = /ufs/niels/data/monet/Linux
 # builtin opt 	exec_prefix = ${exec_prefix}
 # builtin opt 	gdk_dbname = tst
@@ -43,9 +43,9 @@ stderr of test 'no.035` in directory 'tests/BugReports` itself:
 # cmdline opt 	monet_mod_path = /ufs/niels/data/monet/Linux/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /ufs/niels/data/monet/Linux/var/dbfarm
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = Tests_tests_BugReports
+# cmdline opt 	gdk_dbname = Tests_src_gdk
 
-# 18:58:56 >  
-# 18:58:56 >  Done.
-# 18:58:56 >  
+# 13:38:53 >  
+# 13:38:53 >  Done.
+# 13:38:53 >  
 

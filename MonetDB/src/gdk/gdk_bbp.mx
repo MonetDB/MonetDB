@@ -133,7 +133,7 @@ gdk_export BAT* BBPdescriptor(bat b);
 
 /* swapping interface */ 
 gdk_export void BBPrecover   ();
-gdk_export lng  BBPdiskscan  (str dir);
+gdk_export lng  BBPdiskscan  ();
 gdk_export int  BBPsync      (int commit);
 gdk_export int  BBPfix       (bat b);
 gdk_export int  BBPunfix     (bat b);
@@ -513,8 +513,8 @@ void BBPinit() {
 		BBPrecover(); /* move files to the LEFTOVER/ dir */ 
 	}
 
-	/* 
-	BBPdiskscan(NULL); cleanup any leftovers */
+	/* cleanup any leftovers */
+	BBPdiskscan(); 
 
 	ret = prepare_backup();
 	if (!ret){
@@ -2024,9 +2024,7 @@ static int transient_acc(str nme) {
 }
 	
 	
-static BAT* BBP_diskscan = NULL;    /* global bat with [bid,batsize] data */
-
-lng BBPdiskscan(str parent) {
+lng BBPdiskscan_r(str parent, BAT *BBP_diskscan) {
 	str dir = parent?parent:BATDIR;
 	DIR *dirp = opendir(dir);
 	struct dirent *dent;
@@ -2040,18 +2038,6 @@ lng BBPdiskscan(str parent) {
 	while(*src) *dst++ = *src++;
 	*dst++ = DIR_SEP;
 
-	if (parent == NULL) {
-		/* MT unsafe initialisation; TODO: resolve, but is not urgent */
-		if (BBP_diskscan == NULL) {
-    			BBP_diskscan = BATnew(TYPE_int,TYPE_int, BBPsize);
-    			BATrename(BBP_diskscan, "monet_bbp_scan");
-    			BATmode(BBP_diskscan, TRANSIENT);
-		} else {
-			BATclear(BBP_diskscan);
-		}
-		BBPlock("BBPdiskscan");
-	}
-	
 	while((dent = readdir(dirp)) != NULL) {
 		str p = strchr(dent->d_name, '.');
 		int bid = atoi(dent->d_name);
@@ -2065,7 +2051,7 @@ lng BBPdiskscan(str parent) {
 		if (dent->d_name[0] == '.') {
 			continue; /* ignore .dot files and directories (. ..) */
 		} else if (p == NULL) {
-			ret = BBPdiskscan(fullname);
+			ret = BBPdiskscan_r(fullname, BBP_diskscan);
 			if (ret >= 0) {
 				tot += ret; /* it was a directory; add subtotal */
 				continue;
@@ -2131,10 +2117,23 @@ lng BBPdiskscan(str parent) {
 		IODEBUG THRprintf(GDKerr, "BBPdiskscan: stat(%s) = %d\n", fullname, r);
 	}
 	closedir(dirp);
-
-	if (parent == NULL) {
-		BBPunlock("BBPdiskscan");
-	}
 	return tot;
 }
+
+lng BBPdiskscan() {
+	BAT* BBP_diskscan = NULL;    
+	lng res;
+
+	if (BBP_diskscan == NULL) {
+    		BBP_diskscan = BATnew(TYPE_int,TYPE_int, BBPsize);
+    		BATmode(BBP_diskscan, TRANSIENT);
+	}
+	BBPlock("BBPdiskscan");
+	res = BBPdiskscan_r(NULL, BBP_diskscan);
+	BBPunlock("BBPdiskscan");
+
+	BBPreclaim(BBP_diskscan);
+	return res;
+}
 @}
+

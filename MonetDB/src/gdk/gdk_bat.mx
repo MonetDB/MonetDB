@@ -631,6 +631,13 @@ The interface routine should also perform integrity checks.
 Null values should have been obtained at a higher level.
 This code assumes that new elements are appended to the BUN list.
 @c
+@= void_insertbun
+if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
+    *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
+{
+      b = BATmaterialize(b, ((dbl)BATcount(b)*1.2));
+}
+@c
 INLINE BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t);
 
 BAT *BUNins(BAT *b, ptr h, ptr t) {	
@@ -640,6 +647,9 @@ BAT *BUNins(BAT *b, ptr h, ptr t) {
 	BATcheck(b, "BUNins"); 
 	BATcheck(h, "BUNins: head value is nil\n"); 
 	bm = BBP_cache(-b->batCacheid);
+
+	@:void_insertbun(h)@
+	@:void_insertbun(t)@
 
 	if (b->batSet && BUNlocate(b, h, t)) {
 	    return b;
@@ -752,11 +762,11 @@ one now must do:
 {\small\tt BATloopDEL(b,p) p = BUNdelete(b,p)}.
 @
 @c
-BUN BUNdelete(BAT *b, BUN p) {
-	unsigned int idx1, idx2; 
-	BAT*	bm = BBP_cache(-b->batCacheid);
+BUN BUNdelete_(BAT *b, BUN p) {
 	int 	bs = BUNsize(b);
 	BUN	l, last = BUNlast(b) - bs; 
+	unsigned int idx1, idx2; 
+	BAT*	bm = BBP_cache(-b->batCacheid);
         void    (*haccdel)(Heap*, int, BAT*, ptr);
 	void	(*taccdel)(Heap*, int, BAT*, ptr);
 	void 	(*haccins)(Heap*, int, BAT*, ptr);
@@ -767,16 +777,15 @@ BUN BUNdelete(BAT *b, BUN p) {
 	@:acc_init(h)@
 	@:acc_init(t)@
  
-	if (p == NULL) {
-		return p; 
-	}
 	ALIGNdel(b, "BUNdelete"); /* zap alignment info */
 
 	if (b->hidx_heap || b->tidx_heap) {
 		IDXdestroy(b); /* get rid of range index */
 	}
+/*
 	(void)ATOMsize(b->htype);
 	(void)ATOMsize(b->ttype);
+*/
 
 @- Committed Delete. 
 The (committed) bun is moved into the hole, and the first 
@@ -843,6 +852,23 @@ last inserted bun (if present) is copied over it.
 	}
 	b->batDirty = 1; /* bat is dirty */
 	return p; 
+}
+
+BUN BUNdelete(BAT *b, BUN p) {
+	if (p == NULL) {
+		return p; 
+	}
+	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) ||
+	    (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
+	    	int bs = BUNsize(b);
+		BUN last = BUNlast(b) - bs; 
+		if (p < b->batInserted || p != last  ) {
+			int i = BUNindex(b,p);
+      			b = BATmaterialize(b, BATcount(b));
+			p = BUNptr(b,i);
+		}
+	}
+	return BUNdelete_(b,p);
 }
 
 BAT *BUNdel (BAT *b, ptr x, ptr y) {
@@ -921,9 +947,8 @@ explicitly.
 @c
 INLINE 
 BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t) {
-	if (p>=b->batInserted || (b->htype==TYPE_void && b->hseqbase!=oid_nil)){
-  		/* uncommitted BUN, or void elements */
-		/* NO REPLACE DELTA MANAGEMENT ON VOID COLUMNS!! */
+	if (p>=b->batInserted){
+  		/* uncommitted BUN elements */
 		BUN last = BUNlast(b) - BUNsize(b);
 		void (*taccins)() = BATaccelerators[b->tacctype].accInsert;
 		void (*taccdel)() = BATaccelerators[b->tacctype].accDelete;
@@ -1402,7 +1427,16 @@ if (sanity_check) {
 	    b->batHole > b->batInserted || b->batBuns->free > b->batBuns->size||
 	    b->batInserted > (b->batBuns->base + b->batBuns->free))
 	{
-		GDKfatal("BATpropcheck: BAT %d has inconsistent descriptor\n", b->batCacheid);
+	int val =
+	   ((b->GDKversion != bm->GDKversion) + (b->U != bm->U) + (b->P != bm->P) +
+	    (b->H != bm->T) + (b->htype != bm->ttype) + (b->hloc != bm->tloc) + 
+	    b->dims.headvarsized != bm->dims.tailvarsized  +
+	    b->dims.bunshift != bm->dims.bunshift +
+	    b->dims.bunwidth != bm->dims.bunwidth + b->batBuns->size <= 0 +
+	    (b->batDeleted < b->batBuns->base) + (b->batHole < b->batDeleted) +
+	    (b->batHole > b->batInserted) + (b->batBuns->free > b->batBuns->size) +
+	    (b->batInserted > (b->batBuns->base + b->batBuns->free)));
+		GDKfatal("BATpropcheck: BAT %d has inconsistent descriptor %d\n", b->batCacheid, val);
 	}
 	if (b->hhash_heap != bm->thash_heap || b->hidx_heap != bm->tidx_heap) {
 		GDKerror("BATpropcheck: BAT %d has inconsistent accrefs\n", b->batCacheid);
