@@ -288,7 +288,13 @@ if test "x$enable_optim" = xyes; then
                       dnl  hence, we omit -funroll-all-loops, here.
                       ;;
       i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
-      ia64-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions                                                     -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      ia64-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions                                                     -fexpensive-optimizations                                    -frerun-cse-after-loop -frerun-loop-opt"
+                      dnl  Obviously, 4-byte alignment doesn't make sense on Linux64; didn't try 8-byte alignment, yet.
+                      dnl  Further, when combining either of "-funroll-all-loops" and "-funroll-loops" with "-On" (n>1),
+                      dnl  gcc (3.2.1 & 2.96) does not seem to produce stable/correct? binaries under Linux64
+                      dnl  (Mserver crashes with segmentation fault);
+                      dnl  hence, we omit both "-funroll-all-loops" and "-funroll-loops", here
+                      ;;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
                       if test "$CC" = "gcc -m64" ; then
                         NO_INLINE_CFLAGS="-O1"
@@ -302,7 +308,11 @@ if test "x$enable_optim" = xyes; then
     else
       case "$host" in
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -tpp6 -axiMK -unroll -ipo -ipo_obj";;
-      ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -tpp2 -mcpu=itanium2 -unroll -ipo -ipo_obj";;
+      ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -tpp2 -mcpu=itanium2 -unroll -ipo -ipo_obj "
+                      dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
+                      dnl  (Mserver produces some incorrect BATpropcheck warnings);
+                      dnl  hence, we use only "-O2", here.
+                      ;;
 #      *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
       *irix6.5*)      CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
                       LDFLAGS="$LDFLAGS -IPA"
