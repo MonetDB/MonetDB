@@ -113,26 +113,29 @@ c_extern_func = regex.compile(c_extern_func)
 c_extern_var = "^[ \t]*extern[ \t]*[^( \t]*[ \t\*]*\([a-zA-Z0-9\_]+\)[;\[]"
 c_extern_var = regex.compile(c_extern_var)
 
-def do_defs(targets,deps):
+def do_defs(targets,deps,cwd):
   defs = []
   for f in targets:
-    org = find_org(deps,f);
-    b = readfile(org)
-    m = c_extern_func.search(b)
-    while(m > 0):
+    org = cwd+os.sep+find_org(deps,f);
+    if os.path.exists(org):
+      b = readfile(org)
+      m = c_extern_func.search(b)
+      while(m > 0):
 	fnd = c_extern_func.group(1)
 	if (fnd not in defs):
 		defs.append(fnd)
         m = c_extern_func.search(b,m+1)
-    m = c_extern_var.search(b)
-    while(m > 0):
+      m = c_extern_var.search(b)
+      while(m > 0):
 	fnd = c_extern_var.group(1)
 	if (fnd not in defs):
 		defs.append(fnd)
         m = c_extern_var.search(b,m+1)
-  print("EXPORTS")
+  deffile = cwd + os.sep + ".defs"
+  fd=open(deffile, 'w');
+  fd.write("EXPORTS")
   for i in defs:
-	print ("\t%s" % i)
+	fd.write("\t%s" % i)
 
 def do_deps(deps,includes,incmap,cwd):
   cachefile = cwd + os.sep + '.cache'
@@ -274,7 +277,7 @@ def codegen(tree, cwd, topdir):
 	      (base,ext) = string.split(f,".", 1)
 	      do_code_extract(f,base,ext, targets, deps, cwd)
 	    targets = do_code_gen(targets,deps)
-            #do_defs(targets,deps)
+            do_defs(targets,deps,cwd)
 	    do_deps(deps,includes,incmap,cwd)
 	    libs = do_libs(deps)
       	    tree.value(i)["TARGETS"] = targets

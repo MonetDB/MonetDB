@@ -119,9 +119,9 @@ def msc_deps(fd,deps,objext, msc):
       fd.write( " " + msc_translate_dir(msc_translate_ext(d),msc) )
     fd.write("\n");
     if (ext == "glue.c"):
-	fd.write( "\t$(MEL) $(INCLUDES) -o $@ -glue $<\n" );
+	fd.write( "\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t,b) );
     if (ext == "proto.h"):
-	fd.write( "\t$(MEL) $(INCLUDES) -o $@ -proto $<\n" );
+	fd.write( "\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t,b) );
 
 def msc_binary(fd, var, binmap, msc ):
 
@@ -352,7 +352,7 @@ def msc_libs(fd, var, libsmap, msc ):
     fd.write( ln + ".def: \n" )
     fd.write( "\t$(ECHO) EXPORTS > $@\n" )
     fd.write( "\t$(ECHO) 	%s_Module_Install >> $@\n" % lib )
-    fd.write( "\t$(ECHO) 	s_Module_Delete >> $@\n" % lib )
+    fd.write( "\t$(ECHO) 	%s_Module_Delete >> $@\n" % lib )
 
   if (len(SCRIPTS) > 0):
     fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))
