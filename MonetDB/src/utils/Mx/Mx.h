@@ -12,6 +12,12 @@
 # define DIR_SEP '/'
 #endif
 
+#include 	<stdio.h>
+
+#ifdef HAVE_STRING_H
+#include	<string.h>
+#endif
+
 #define	DB_DEF	0x10
 #define	DB_TEXT	0x20
 #define	DB_CODE	0x40

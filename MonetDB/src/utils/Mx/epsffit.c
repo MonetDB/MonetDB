@@ -14,6 +14,7 @@
  * outputs PostScript.
  */
 
+#include "Mx.h"
 #include <stdio.h>
 #include <ctype.h>
 /* #include "patchlev.h" */
