@@ -199,29 +199,29 @@ mvc_init(int debug, backend_stack stk)
 
 		t = mvc_create_table(m, s, "ttables", 1, 1, 1, -1);
 		mvc_create_column_(m, t, "id", "int", 9);
-		mvc_create_column_(m, t, "name", "varchar", 0);
+		mvc_create_column_(m, t, "name", "clob", 0);
 		mvc_create_column_(m, t, "schema_id", "int", 9);
-		mvc_create_column_(m, t, "query", "varchar", 0);
+		mvc_create_column_(m, t, "query", "clob", 0);
 		mvc_create_column_(m, t, "istable", "boolean", 0);
 		mvc_create_column_(m, t, "system", "boolean", 0);
 		mvc_create_column_(m, t, "clear", "boolean", 0);
 
 		t = mvc_create_table(m, s, "tcolumns", 1, 1, 1, -1);
 		mvc_create_column_(m, t, "id", "int", 9);
-		mvc_create_column_(m, t, "name", "varchar", 0);
-		mvc_create_column_(m, t, "type", "varchar", 0);
+		mvc_create_column_(m, t, "name", "clob", 0);
+		mvc_create_column_(m, t, "type", "clob", 0);
 		mvc_create_column_(m, t, "type_digits", "int", 9);
 		mvc_create_column_(m, t, "type_scale", "int", 9);
 		mvc_create_column_(m, t, "table_id", "int", 9);
-		mvc_create_column_(m, t, "default", "varchar", 0);
+		mvc_create_column_(m, t, "default", "clob", 0);
 		mvc_create_column_(m, t, "null", "boolean", 0);
 		mvc_create_column_(m, t, "number", "int", 9);
 
 		t = mvc_create_view(m, s, "tables", "select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;", 1, 1);
 		mvc_create_column_(m, t, "id", "int", 9);
-		mvc_create_column_(m, t, "name", "varchar", 0);
+		mvc_create_column_(m, t, "name", "clob", 0);
 		mvc_create_column_(m, t, "schema_id", "int", 9);
-		mvc_create_column_(m, t, "query", "varchar", 0);
+		mvc_create_column_(m, t, "query", "clob", 0);
 		mvc_create_column_(m, t, "istable", "boolean", 0);
 		mvc_create_column_(m, t, "system", "boolean", 0);
 		mvc_create_column_(m, t, "clear", "boolean", 0);
@@ -229,12 +229,12 @@ mvc_init(int debug, backend_stack stk)
 
 		t = mvc_create_view(m, s, "columns", "select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;", 1, 1);
 		mvc_create_column_(m, t, "id", "int", 9);
-		mvc_create_column_(m, t, "name", "varchar", 0);
-		mvc_create_column_(m, t, "type", "varchar", 0);
+		mvc_create_column_(m, t, "name", "clob", 0);
+		mvc_create_column_(m, t, "type", "clob", 0);
 		mvc_create_column_(m, t, "type_digits", "int", 9);
 		mvc_create_column_(m, t, "type_scale", "int", 9);
 		mvc_create_column_(m, t, "table_id", "int", 9);
-		mvc_create_column_(m, t, "default", "varchar", 0);
+		mvc_create_column_(m, t, "default", "clob", 0);
 		mvc_create_column_(m, t, "null", "boolean", 0);
 		mvc_create_column_(m, t, "number", "int", 9);
 
