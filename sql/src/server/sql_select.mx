@@ -729,10 +729,10 @@ static stmt *sql_unop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * s
 	f = sql_bind_func(l->data.sval, rt, NULL );
 	if (f) {
 		if (f->func->imp) {
-			/* output same type as input */
+			/* HACK ALERT: output same type as input */
 			if (f->func->res->scale == SCALE_SUB) {
-				f->res.digits = rt->digits;
-				f->res.scale = rt->scale;
+				f->res->digits = rt->digits;
+				f->res->scale = rt->scale;
 			}
 			return stmt_unop(rs, f);
 		} else {
@@ -918,10 +918,10 @@ static list *join_on_column_name(mvc * sql, scope * scp, tvar * tv,
 }
 
 
-static stmt *sql_join_
-    (mvc * sql,
-     scope * scp,
-     symbol * tab1, int natural, jt jointype, symbol * tab2, symbol * js) {
+static stmt *
+sql_join_ (mvc * sql, scope * scp, symbol * tab1, int natural, 
+	   jt jointype, symbol * tab2, symbol * js) 
+{
 	stmt *s = NULL, *subset = NULL;
 	tvar *tv1, *tv2;
 
@@ -1137,9 +1137,8 @@ static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int dist, dlist *cols,
 	stmt *res;
 	node *n, *m;
 
-	scope *nscp = scope_open(scp);
-	tvar *tv1 = table_ref(sql, nscp, t1);
-	tvar *tv2 = table_ref(sql, nscp, t2);
+	tvar *tv1 = table_ref(sql, scp, t1);
+	tvar *tv2 = table_ref(sql, scp, t2);
 	list *unions = NULL;
 
 	if (!tv1 || !tv2) {
@@ -1165,8 +1164,10 @@ static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int dist, dlist *cols,
 							tail_type(lc->s)));
 					ls = stmt_append(temp, ls);
 				}
-				list_append(unions, stmt_append(ls, 
-					stmt_dup(rc->s)));
+				ls = stmt_append(ls, stmt_dup(rc->s));
+				/* the alias keeps the column name around */
+				ls = stmt_alias(ls, lc->cname);
+				list_append(unions, ls );
 		}
 	/* TODO cols length 0 see natural join
 	        cols length > 0 see union join, join on name */
@@ -1175,7 +1176,6 @@ static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int dist, dlist *cols,
 	if (dist) {
 		res = distinct(res);
 	}
-	scp = scope_close(nscp);
 	return res;
 }
 
@@ -1248,10 +1248,8 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 		{
 			scope *nscp = scope_open(scp);
 			stmt *tq = sql_union(sql, nscp, q);
-			if (!tq) {
-				printf("empty union result\n");
+			if (!tq) 
 				return NULL;
-			}
 			res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
 			scp = scope_close(nscp);
 			return res;
@@ -1260,10 +1258,8 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 		{
 			scope *nscp = scope_open(scp);
 			stmt *tq = sql_join(sql, nscp, q);
-			if (!tq) {
-				printf("empty join result\n");
+			if (!tq) 
 				return NULL;
-			}
 			res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
 			scp = scope_close(nscp);
 			return res;
@@ -1272,10 +1268,8 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 		{
 			scope *nscp = scope_open(scp);
 			stmt *tq = sql_cross(sql, nscp, q);
-			if (!tq) {
-				printf("empty join result\n");
+			if (!tq) 
 				return NULL;
-			}
 			res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
 			scp = scope_close(nscp);
 			return res;

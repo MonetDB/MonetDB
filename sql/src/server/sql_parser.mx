@@ -2140,8 +2140,11 @@ literal:
 		   $$ = _newAtomNode( atom_string(t, _strdup(m->user))); }
 
  |  sqlINT   	{ int digits = strlen($1);
-		  long value = strtol($1,&$1,10); 
+		  int len = sizeof(lng);
+		  lng value, *p = &value; 
 		  sql_subtype *t = sql_bind_subtype("INT", digits, 0 );
+
+		  lngFromStr($1, &len, &p);
 		  $$ = _newAtomNode( atom_int(t, value)); }
  |  INTNUM   
 		{ char *s = strip_extra_zeros($1);

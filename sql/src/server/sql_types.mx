@@ -102,7 +102,7 @@ typedef struct sql_subaggr {
 	sql_ref ref;
 
 	sql_aggr *aggr;
-	sql_subtype res;
+	sql_subtype *res;
 } sql_subaggr;
 
 /* sql_func need type transform rules 
@@ -141,7 +141,7 @@ typedef struct sql_subfunc {
 	sql_ref ref;
 
 	sql_func *func;
-	sql_subtype res;
+	sql_subtype *res;
 } sql_subfunc;
 
 sql_export char *sql_bind_alias( char *alias );
@@ -306,6 +306,7 @@ static void type_destroy(sql_type * t)
 void sql_subtype_destroy(sql_subtype * t)
 {
 	int ref = 0;
+
 	if ((ref = sql_ref_dec( &(t->ref)) ) == 0){
 		_DELETE(t);
 	} else if (sql_end == END_SUBTYPE){
@@ -375,15 +376,18 @@ sql_subaggr *sql_bind_aggr(char *sqlaname, sql_subtype *type)
 		if (strcmp(a->name, name) == 0 &&
 		    (!a->tpe
 		     || (type && subtype_cmp(a->tpe, type) == 0))){
+			int scale = 0;
 			sql_subaggr *ares = NEW(sql_subaggr);
 			_DELETE(name);
 			sql_ref_init( &(ares->ref) );
 			sql_ref_inc( &(a->ref) );
 			ares -> aggr = a;
-			ares -> res = *a->res;
+			scale = a->res->scale;
 			/* same scale as the input */
 			if (type)
-				ares -> res . scale = type->scale; 
+				scale = type->scale;
+			ares -> res = sql_create_subtype(a->res->type, 
+				a->res->digits, scale);
 			if (sql_debug){
 				sql_ref_inc( &(ares->ref) );
 				list_append(subaggrs, ares);
@@ -421,6 +425,7 @@ void sql_subaggr_destroy( sql_subaggr *a )
 	int ref = 0;
 	if ((ref = sql_ref_dec( &(a->ref) )) == 0){
 		aggr_destroy(a->aggr);
+		if (a->res) sql_subtype_destroy(a->res);
 		_DELETE(a);
 	} else if (sql_end == END_SUBAGGR){
 		printf("= REFCOUNT of subaggr %s %s is wrong %d\n", a->aggr->name, a->aggr->imp, ref);
@@ -457,19 +462,20 @@ sql_subfunc *sql_bind_func_(char *sqlfname, list *ops )
 			continue;
 		if (strcmp(f->name, name) == 0){ 
 		   if (list_cmp(f->ops, ops, (fcmp)&arg_subtype_cmp) == 0){
+			int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
 			_DELETE(name);
 			sql_ref_init( &(fres->ref) );
 			sql_ref_inc( &(f->ref) );
 			fres -> func = f;
-			fres -> res = *f->res;
-			fres -> res . scale = 0;
 			for (n=ops->h; n; n=n->next){
 				sql_subtype *a = n->data;
 				/* same scale as the input */
-				if (a && a->scale > fres->res.scale)
-					fres -> res . scale = a->scale; 
+				if (a && a->scale > scale)
+					scale = a->scale; 
 			}
+			fres -> res = sql_create_subtype(f->res->type, 
+					f->res->digits, scale );
 			if (sql_debug){
 				sql_ref_inc( &(fres->ref) );
 				list_append(subfuncs, fres);
@@ -509,19 +515,20 @@ sql_subfunc *sql_bind_func_result_(char *sqlfname, list *ops, sql_subtype *res )
 		if (strcmp(f->name, name) == 0 &&
 		    subtype_cmp(f->res, res) == 0 &&
 		    list_cmp(f->ops, ops, (fcmp)&arg_subtype_cmp) == 0){
+			int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
 			_DELETE(name);
 			sql_ref_init( &(fres->ref) );
 			sql_ref_inc( &(f->ref) );
 			fres -> func = f;
-			fres -> res = *f->res;
-			fres -> res . scale = 0;
 			for (n=ops->h; n; n=n->next){
 				sql_subtype *a = n->data;
 				/* same scale as the input */
-				if (a && a->scale > fres->res.scale)
-					fres -> res . scale = a->scale; 
+				if (a && a->scale > scale)
+					scale = a->scale; 
 			}
+			fres -> res = sql_create_subtype(f->res->type, 
+					f->res->digits, scale );
 			if (sql_debug){
 				sql_ref_inc( &(fres->ref) );
 				list_append(subfuncs, fres);
@@ -549,8 +556,7 @@ sql_subfunc *sql_bind_proc(char *sqlfname, list *ops )
 			sql_ref_init( &(fres->ref) );
 			sql_ref_inc( &(f->ref) );
 			fres -> func = f;
-			fres -> res . type = NULL;
-			fres -> res . scale = 0;
+			fres -> res = NULL;
 			if (sql_debug){
 				sql_ref_inc( &(fres->ref) );
 				list_append(subfuncs, fres);
@@ -588,6 +594,7 @@ void sql_subfunc_destroy( sql_subfunc *f )
 	int ref = 0;
 	if ((ref = sql_ref_dec( &(f->ref) )) == 0){
 		func_destroy(f->func);
+		if (f->res) sql_subtype_destroy(f->res);
 		_DELETE(f);
 	} else if (sql_end == END_SUBAGGR){
 		printf("= REFCOUNT of subfunc %s %s is wrong %d\n", f->func->name, f->func->imp, ref);

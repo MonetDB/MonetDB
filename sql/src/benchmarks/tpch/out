@@ -1,33 +1,101 @@
++ SQL=MapiClient -lsql -u monetdb -P monetdb -hpavo
++ '[' 0 -eq 1 ']'
++ echo loading
 loading
-/ufs/niels/data/sql/src/benchmarks/tpch
-SQL  connected to database demo using schema sys
-#     0: CREATE TABLE part (p_partkey INT NOT NULL, p_name VARCHAR(55) NOT NULL, p_mfgr VARCHAR(25) NOT NULL, p_brand VARCHAR(10) NOT NULL, p_type VARCHAR(25) NOT NULL, p_size INT NOT NULL, p_container VARCHAR(10) NOT NULL, p_retailprice DECIMAL(15,2) NOT NULL, p_comment VARCHAR(23) NOT NULL) ;
-SQL ERROR -1 2: Create Table name part allready in use in:
-CREATE TABLE part (p_partkey INT NOT NULL, p_name VARCHAR(55) NOT NULL, p_mfgr VARCHAR(25) NOT NULL, p_brand VARCHAR(10) NOT NULL, p_type VARCHAR(25) NOT NULL, p_size INT NOT NULL, p_container VARCHAR(10) NOT NULL, p_retailprice DECIMAL(15,2) NOT NULL, p_comment VARCHAR(23) NOT NULL) ;
-#     1: CREATE TABLE supplier (s_suppkey INT NOT NULL, s_name VARCHAR(25) NOT NULL, s_address VARCHAR(40) NOT NULL, s_nationkey INT NOT NULL, s_phone VARCHAR(15) NOT NULL, s_acctbal DECIMAL(15,2) NOT NULL, s_comment VARCHAR(101) NOT NULL) ;
-SQL ERROR -1 2: Create Table name supplier allready in use in:
-CREATE TABLE supplier (s_suppkey INT NOT NULL, s_name VARCHAR(25) NOT NULL, s_address VARCHAR(40) NOT NULL, s_nationkey INT NOT NULL, s_phone VARCHAR(15) NOT NULL, s_acctbal DECIMAL(15,2) NOT NULL, s_comment VARCHAR(101) NOT NULL) ;
-#     2: CREATE TABLE partsupp (ps_partkey INT NOT NULL, ps_suppkey INT NOT NULL, ps_availqty INT NOT NULL, ps_supplycost DECIMAL(15,2) NOT NULL, ps_comment VARCHAR(199) NOT NULL) ;
-SQL ERROR -1 2: Create Table name partsupp allready in use in:
-CREATE TABLE partsupp (ps_partkey INT NOT NULL, ps_suppkey INT NOT NULL, ps_availqty INT NOT NULL, ps_supplycost DECIMAL(15,2) NOT NULL, ps_comment VARCHAR(199) NOT NULL) ;
-#     3: CREATE TABLE customer (c_custkey INT NOT NULL, c_name VARCHAR(25) NOT NULL, c_address VARCHAR(40) NOT NULL, c_nationkey INT NOT NULL, c_phone VARCHAR(15) NOT NULL, c_acctbal DECIMAL(15,2) NOT NULL, c_mktsegment VARCHAR(10) NOT NULL, c_comment VARCHAR(117) NOT NULL) ;
-SQL ERROR -1 2: Create Table name customer allready in use in:
-CREATE TABLE customer (c_custkey INT NOT NULL, c_name VARCHAR(25) NOT NULL, c_address VARCHAR(40) NOT NULL, c_nationkey INT NOT NULL, c_phone VARCHAR(15) NOT NULL, c_acctbal DECIMAL(15,2) NOT NULL, c_mktsegment VARCHAR(10) NOT NULL, c_comment VARCHAR(117) NOT NULL) ;
-#     4: CREATE TABLE orders (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice DECIMAL(15,2) NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL) ;
-SQL ERROR -1 2: Create Table name orders allready in use in:
-CREATE TABLE orders (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice DECIMAL(15,2) NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL) ;
-#     5: CREATE TABLE lineitem (l_orderkey INT NOT NULL, l_partkey INT NOT NULL, l_suppkey INT NOT NULL, l_linenumber INT NOT NULL, l_quantity INTEGER(15) NOT NULL, l_extendedprice DECIMAL(15,2) NOT NULL, l_discount DECIMAL(15,2) NOT NULL, l_tax DECIMAL(15,2) NOT NULL, l_returnflag VARCHAR(1) NOT NULL, l_linestatus VARCHAR(1) NOT NULL, l_shipdate DATE NOT NULL, l_commitdate DATE NOT NULL, l_receiptdate DATE NOT NULL, l_shipinstruct VARCHAR(25) NOT NULL, l_shipmode VARCHAR(10) NOT NULL, l_comment VARCHAR(44) NOT NULL) ;
-SQL ERROR -1 2: Create Table name lineitem allready in use in:
-CREATE TABLE lineitem (l_orderkey INT NOT NULL, l_partkey INT NOT NULL, l_suppkey INT NOT NULL, l_linenumber INT NOT NULL, l_quantity INTEGER(15) NOT NULL, l_extendedprice DECIMAL(15,2) NOT NULL, l_discount DECIMAL(15,2) NOT NULL, l_tax DECIMAL(15,2) NOT NULL, l_returnflag VARCHAR(1) NOT NULL, l_linestatus VARCHAR(1) NOT NULL, l_shipdate DATE NOT NULL, l_commitdate DATE NOT NULL, l_receiptdate DATE NOT NULL, l_shipinstruct VARCHAR(25) NOT NULL, l_shipmode VARCHAR(10) NOT NULL, l_comment VARCHAR(44) NOT NULL) ;
-#     6: CREATE TABLE nation (n_nationkey INT NOT NULL, n_name VARCHAR(25) NOT NULL, n_regionkey INT NOT NULL, n_comment VARCHAR(152) NOT NULL) ;
-SQL ERROR -1 2: Create Table name nation allready in use in:
-CREATE TABLE nation (n_nationkey INT NOT NULL, n_name VARCHAR(25) NOT NULL, n_regionkey INT NOT NULL, n_comment VARCHAR(152) NOT NULL) ;
-#     7: CREATE TABLE region (r_regionkey INT NOT NULL, r_name VARCHAR(25) NOT NULL, r_comment VARCHAR(152) NOT NULL) ;
-SQL ERROR -1 2: Create Table name region allready in use in:
-CREATE TABLE region (r_regionkey INT NOT NULL, r_name VARCHAR(25) NOT NULL, r_comment VARCHAR(152) NOT NULL) ;
-#     8: COMMIT;
-#     9: COMMIT;
-SQL  connected to database demo using schema sys
-#     0: COPY 1500 RECORDS INTO customer from '/ufs/niels/data/sql/src/benchmarks/tpch/SF-0.01/customer.tbl' USING DELIMITERS '|', '|\n';
-type Q_END, 0 , 2
++ ./load.sh 'MapiClient -lsql -u monetdb -P monetdb -hpavo'
+++ pwd
++ PWD=/ufs/niels/data/rc/sql/src/benchmarks/tpch
++ echo /ufs/niels/data/rc/sql/src/benchmarks/tpch
+/ufs/niels/data/rc/sql/src/benchmarks/tpch
++ SQL=MapiClient -lsql -u monetdb -P monetdb
++ '[' 1 -eq 1 ']'
++ SQL=MapiClient -lsql -u monetdb -P monetdb -hpavo
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
++ cat load.sql
++ sed -e s+PWD+/ufs/niels/data/rc/sql/src/benchmarks/tpch/SF-0.01+
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
++ echo queries
 queries
++ echo O1
+O1
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
+# l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
+# varchar,	varchar,	bigint,	decimal,	decimal,	decimal,	double,	double,	double,	mediumint # type
+# 4,	,	,	,	,	,	,	,	,	 # tuplecount
+# 0,	,	,	,	,	,	,	,	,	 # id
+[ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
+[ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]
+[ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.454987834549879,	35691.129209074395,	0.049931119564099929,	29181	]
+[ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.597168165346933,	35874.006532680178,	0.049827539927526504,	14902	]
++ echo O2
+O2
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
+# s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
+# decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
+# 4,	,	,	,	,	,	,	 # tuplecount
+# 0,	,	,	,	,	,	,	 # id
+[ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
+[ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
+[ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
+[ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
++ echo O3
+O3
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
+# l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
+# int,	decimal,	date,	int # type
+# 10,	,	,	 # tuplecount
+# 0,	,	,	 # id
+[ 47714,	267010.5894,	1995-03-11,	0	]
+[ 22276,	266351.5562,	1995-01-29,	0	]
+[ 32965,	263768.3414,	1995-02-25,	0	]
+[ 21956,	254541.1285,	1995-02-02,	0	]
+[ 1637,	243512.7981,	1995-02-08,	0	]
+[ 10916,	241320.0814,	1995-03-11,	0	]
+[ 30497,	208566.6969,	1995-02-07,	0	]
+[ 450,	205447.4232,	1995-03-05,	0	]
+[ 47204,	204478.5213,	1995-03-13,	0	]
+[ 9696,	201502.2188,	1995-02-20,	0	]
++ echo O4
+O4
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
+# o_orderpriority,	order_count # name
+# varchar,	mediumint # type
+# 5,	 # tuplecount
+# 0,	 # id
+[ "1-URGENT",	93	]
+[ "2-HIGH",	103	]
+[ "3-MEDIUM",	109	]
+[ "4-NOT SPECIFIED",	102	]
+[ "5-LOW",	128	]
++ echo O5
+O5
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
+# n_name,	revenue # name
+# varchar,	decimal # type
+# 5,	 # tuplecount
+# 0,	 # id
+[ "VIETNAM",	1000926.6999	]
+[ "CHINA",	740210.7570	]
+[ "JAPAN",	660651.2425	]
+[ "INDONESIA",	566379.5276	]
+[ "INDIA",	422874.6844	]
++ echo O6
+O6
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
+# revenue # name
+# decimal # type
+# 1 # tuplecount
+# 0 # id
+[ 1193053.2253	]
++ echo O7
+O7
++ MapiClient -lsql -u monetdb -P monetdb -hpavo
+# supp_nation,	cust_nation,	l_year,	revenue # name
+# varchar,	varchar,	mediumint,	decimal # type
+# 4,	,	,	 # tuplecount
+# 0,	,	,	 # id
+[ "FRANCE",	"GERMANY",	1995,	268068.5774	]
+[ "FRANCE",	"GERMANY",	1996,	303862.2980	]
+[ "GERMANY",	"FRANCE",	1995,	621159.4882	]
+[ "GERMANY",	"FRANCE",	1996,	379095.8854	]
++ MapiClient -lsql -u monetdb -P monetdb -hpavo

@@ -272,7 +272,7 @@ static lng scale2value(int scale){
 void sum_scales( sql_subfunc *f, stmt *ls, stmt *rs ){
 	if (strcmp(f->func->imp, "*") == 0 && 
 			f->func->res->type->scale == SCALE_FIX){
-		f->res.scale = tail_type(ls)->scale + 
+		f->res->scale = tail_type(ls)->scale + 
 					tail_type(rs)->scale;
 	}
 }
@@ -319,7 +319,7 @@ stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int always)
 			if (c) {
 				lng val = scale2value(scale_diff);
 				atom *a = atom_int(sql_dup_subtype(it), val);
-				c->res.scale = (st->scale + scale_diff);
+				c->res->scale = (st->scale + scale_diff);
 				return stmt_binop(s, stmt_atom(a), c);
 			}
 		}
@@ -331,7 +331,7 @@ stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int always)
 		if (c) {
 			lng val = scale2value(scale_diff);
 			atom *a = atom_int(sql_dup_subtype(it), val);
-			c->res.scale = 0;
+			c->res->scale = 0;
 			return stmt_binop(s, stmt_atom(a), c);
 		} else {
 			printf("scale_down mising (%s)\n", st->type->base.name);

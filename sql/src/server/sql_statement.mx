@@ -132,12 +132,10 @@ typedef struct stmt {
 	symdata op3;
 	symdata op4;		/* only op4 will hold other types */
 
-	fdestroy destroy4;	/* destroy op4 */
-	fdup 	 dup4;		/* dup op4 */
-
 	char nrcols;
 	char key;		/* key (aka all values are unique) */
 	char aggr;		/* aggregated */
+
 	int flag;
 
 	int nr; 		/* variable assignement */
@@ -354,7 +352,7 @@ const char * st_type2string(st_type type) {
 /* #TODO make proper traversal operations */
 stmt *stmt_atom_string( char * s )
 {
-	sql_subtype *t = sql_bind_subtype("CHAR", strlen(s), 0);
+	sql_subtype *t = sql_bind_subtype("VARCHAR", strlen(s), 0);
 	return stmt_atom( atom_string(t, _strdup(s)) );
 }
 
@@ -733,7 +731,9 @@ stmt *stmt_ibat(stmt * op1, stmt * basetable )
 {
 	stmt *s = stmt_create(st_ibat);
 	s->op1.stval = op1;
-	s->nrcols = 1;
+	/* if not single value, its a single column ! */
+	if (op1->nrcols > 0)
+		s->nrcols = 1;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
 	s->h = basetable; /* oid's used from this basetable */
@@ -1267,26 +1267,21 @@ stmt *stmt_sets(list * l1)
 stmt *stmt_ptable()
 {
 	stmt *s = stmt_create(st_ptable);
-/*
-	s->op1.lval = list_create( (fdestroy)&stmt_destroy );
-	s->op2.lval = list_create( (fdestroy)&stmt_destroy );
-*/
 	s->op1.lval = list_create( (fdestroy)NULL );
 	s->op2.lval = list_create( (fdestroy)NULL );
 	s->op3.stval = NULL;
 	s->op4.stval = NULL;
+	s->nrcols = 2;
 	return s;
 }
 
 static void stmt_ptable_add_ppivot( stmt *ptable, stmt *piv )
 {
-	/*list_append(ptable->op1.lval, stmt_dup(piv));*/
 	list_append(ptable->op1.lval, piv);
 }
 
 static void stmt_ptable_add_pivot( stmt *ptable, stmt *piv )
 {
-	/*list_append(ptable->op2.lval, stmt_dup(piv));*/
 	list_append(ptable->op2.lval, piv);
 }
 
@@ -1298,6 +1293,7 @@ stmt *stmt_partial_pivot(stmt * base, stmt *ptable)
 	s->op2.stval = ptable;
 	stmt_ptable_add_ppivot(ptable, s);
 	s->nrcols = 2;
+	assert(ptable->type == st_ptable);
 	s->h = stmt_dup(ptable); /* the ptable is the new base table */
 	s->t = stmt_dup(base); 	 /* pivots have oid's in the tail */
 	return s;
@@ -1311,6 +1307,7 @@ stmt *stmt_pivot(stmt * base, stmt *ptable)
 	s->op2.stval = ptable;
 	stmt_ptable_add_pivot(ptable, s);
 	s->nrcols = 2;
+	assert(ptable->type == st_ptable);
 	s->h = stmt_dup(ptable); /* the ptable is the new base table */
 	s->t = stmt_dup(base); 	 /* pivots have oid's in the tail */
 	return s;
@@ -1323,6 +1320,8 @@ stmt *stmt_append(stmt * c, stmt * a )
 	s->op2.stval = a;
 	s->h = stmt_dup(c->h);
 	s->t = stmt_dup(c->t);
+	s->nrcols = c->nrcols;
+	s->key = c->key;
 	return s;
 }
 
@@ -1546,12 +1545,12 @@ sql_subtype *tail_type(stmt * st)
 		return head_type(st->op1.stval);
 
 	case st_aggr:
-		return &st->op4.aggrval->res;
+		return st->op4.aggrval->res;
 	case st_op:
 	case st_unop:
 	case st_binop:
 	case st_Nop:
-		return &st->op4.funcval->res;
+		return st->op4.funcval->res;
 	case st_atom:
 		return atom_type(st->op1.aval);
 	case st_temp:
