@@ -935,7 +935,10 @@ def RunTest(env, TST, BusyPorts) :
     elif CALL == "sqlXp":
         SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif SERVER in BusyPorts:
-        SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
+        if SERVER == "SQL":
+            SkipTest(env, TST, EXT, "as SQLPORT=%s and/or MAPIPORT=%s are not available." % (env['SQLPORT'],env['MAPIPORT']))
+        else:
+            SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in os.listdir(TSTSRCDIR):
@@ -1397,7 +1400,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         Srvr = '%s%s %s "--dbname=%s" --set %s_port=%s' % (MTO, str(STO), exe['Mserver'][1], TSTDB, string.lower(SERVER), env[SERVER+'PORT'])
         if SERVER == "MAPI":
             Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
-        else:
+        if SERVER == "SQL":
+            Srvr = '%s --set mapi_port=%s' % (Srvr, env['MAPIPORT'])
             Srvr = '%s "%s"' % (Srvr, env['SQLSERVER_MIL'])
         Srvr = Srvr+PROLOGUE
         #-background"
@@ -1417,6 +1421,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         open(ClntErrFile,"w").close()
 
         CheckSocket(env, SERVER, SrvrErr, LogLine)
+        if SERVER == "SQL":
+            CheckSocket(env, "MAPI", SrvrErr, LogLine)
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
         ln=""
@@ -2208,6 +2214,9 @@ def main(argv) :
             if busy:
                 Warn("Skipping %s tests as %sPORT=%s is not available (Error #%d: '%s')!" % (S,S,env[S+'PORT'],Serrno,Serrstr))
                 BusyPorts.append(S)
+        if 'SQL' not in BusyPorts  and  'MAPI' in BusyPorts:
+            Warn("Skipping SQL tests as MAPIPORT=%s is not available!" % env['MAPIPORT'])
+            BusyPorts.append('SQL')
 
     STDERR.flush()
     t_ = 0
