@@ -1,14 +1,14 @@
 stderr of test 'load` in directory 'src` itself:
 
 
-# 20:09:17 >  
-# 20:09:17 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src  < load.milS
-# 20:09:17 >  
+# 21:25:53 >  
+# 21:25:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src  < load.milS
+# 21:25:53 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.9
-# builtin opt 	monet_pid = 13346
-# builtin opt 	prefix = /var/tmp/_PREFIX_MONET_GNU_32_d__
+# builtin opt 	monet_pid = 19732
+# builtin opt 	prefix = /ufs/niels/data/Linux-i686
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -28,7 +28,7 @@ stderr of test 'load` in directory 'src` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /var/tmp/_PREFIX_MONET_GNU_32_d__
+# config opt 	prefix = /ufs/niels/data/Linux-i686
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -40,12 +40,12 @@ stderr of test 'load` in directory 'src` itself:
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_daemon = no
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm
+# cmdline opt 	monet_mod_path = /ufs/niels/data/Linux-i686/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/niels/data/Linux-i686/var/dbfarm
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src
 
-# 20:09:17 >  
-# 20:09:17 >  Done.
-# 20:09:17 >  
+# 21:25:53 >  
+# 21:25:53 >  Done.
+# 21:25:53 >  
 

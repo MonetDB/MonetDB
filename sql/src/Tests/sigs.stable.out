@@ -1,9 +1,9 @@
 stdout of test 'sigs` in directory 'src` itself:
 
 
-# 21:09:20 >  
-# 21:09:20 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src  < sigs.milS
-# 21:09:20 >  
+# 21:25:54 >  
+# 21:25:54 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src  < sigs.milS
+# 21:25:54 >  
 
 # Monet Database Server V4.3.9
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -21,8 +21,8 @@ module 'sqlserver'
 #---------------------------------------------------------------------------------#
 # signature									  #
 #---------------------------------------------------------------------------------#
-[ "append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
-[ "append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]"		  ]
+[ "insert(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
+[ "insert(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]"		  ]
 [ "isNil(str) : bit"								  ]
 [ "mvc_admin_login(mvc) : str"							  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
@@ -56,23 +56,23 @@ module 'sqlserver'
 [ "mvc_set_iso_level(mvc, int) : int"						  ]
 [ "mvc_status(mvc) : int"							  ]
 [ "mvc_type(mvc) : int"								  ]
+[ "parser_exit() : void"							  ]
+[ "parser_init(int) : void"							  ]
 [ "renumber(BAT[oid,any::1], oid) : BAT[oid,any::1]"				  ]
+[ "replace(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
 [ "socket_close(int) : void"							  ]
 [ "socket_dup(int) : int"							  ]
 [ "sql_aggr(str, str, str, str) : void"						  ]
-[ "sql_alias(str, str) : void"							  ]
 [ "sql_create_context(int, Stream, mvc, str, str) : context"			  ]
 [ "sql_destroy_context(context) : void"						  ]
 [ "sql_func(str, str, str, str, str, str) : void"				  ]
-[ "sql_type(str, str) : void"							  ]
+[ "sql_type(str, int, int, str) : void"						  ]
 [ "sqlclient( mvc m,  context c, Stream in, Stream out ) "			  ]
 [ "sqlserver_start(int port, str cmd) "						  ]
-[ "types_exit() : void"								  ]
-[ "types_init(int) : void"							  ]
 
 quit;
 
-# 21:09:21 >  
-# 21:09:21 >  Done.
-# 21:09:21 >  
+# 21:25:54 >  
+# 21:25:54 >  Done.
+# 21:25:54 >  
 
