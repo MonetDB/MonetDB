@@ -25,7 +25,7 @@ char *atom_dump_fast( atom *a){
 	char buf[1024];
 	switch (a->type){
 	case int_value: sprintf(buf, "%d", a->data.ival); break;
-	case string_value: sprintf(buf, "%s", a->data.sval); break;
+	case string_value: sprintf(buf, "\1%s\1", a->data.sval); break;
 	case float_value: sprintf(buf, "%f", a->data.dval); break;
 	case general_value:
 			if (a->data.sval)
@@ -559,7 +559,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				n = n->next;
 			}
 		} else {
-			len += snprintf( buf+len, BUFSIZ, "mvc_insert(myc, \"%d,", 
+			len += snprintf( buf+len, BUFSIZ, "mvc_insert(myc, \"0,%d,", 
 				 	list_length(s->op1.lval) );
 			while(n){
 				statement *r = n->data.stval;

@@ -22,40 +22,11 @@ char *atom_dump( atom *a){
 }
 
 static
-void dump_string( char *buf, char *str, int size ){
-	char *dst = buf;
-	int esc = 0;
-
-	size -= 3;
-
-	*dst++ = '\'';
-	printf("%s\n", str);
-	while(*str && size > 0){
-
-		if (!esc && *str == '\''){
-			*dst++ = '\\';
-			size--;
-		}
-
-		if (!esc && *str == '\\')
-			esc = 1;
-		else
-			esc = 0;
-
-		*dst++ = *str++;
-		size--;
-	}
-	*dst++ = '\'';
-	*dst = '\0';
-	printf("%s\n", buf);
-}
-
-static
 char *atom_dump_fast( atom *a){
 	char buf[BUFSIZ];
 	switch (a->type){
 	case int_value: sprintf(buf, "%d", a->data.ival); break;
-	case string_value: dump_string(buf, a->data.sval, BUFSIZ); break;
+	case string_value: sprintf(buf, "\1%s\1", a->data.sval); break;
 	case float_value: sprintf(buf, "%f", a->data.dval); break;
 	case general_value:
 			if (a->data.sval)
@@ -589,7 +560,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				n = n->next;
 			}
 		} else {
-			len += snprintf( buf+len, BUFSIZ, "mvc_insert(myc, \"%d,", 
+			len += snprintf( buf+len, BUFSIZ, "0,%d,", 
 				 	list_length(s->op1.lval) );
 			while(n){
 				statement *r = n->data.stval;
@@ -610,7 +581,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				}
 				n = n->next;
 			}
-			len += snprintf( buf+len, BUFSIZ, "\");\n" );
+			len += snprintf( buf+len, BUFSIZ, "\n" );
 		}
 		s->nr = (*nr)++;
 	} break;
