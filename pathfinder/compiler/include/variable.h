@@ -58,6 +58,11 @@ struct PFvar_t {
     PFqname_t    qname;   /**< variable name. Note that this might change
                                to an NCName, see issue 207 of the April 30
                                draft. */
+    char         used;    /**< information if variables (in for loops)
+                               are used */
+    char         base;    /**< the level (based on for-expression) in which
+                               the variable is bound */ 
+    int          vid;     /**< the oid the variable gets in MIL */
     PFty_t       type;    /**< type of value bound to this variable */
     PFmty_t      impl_ty; /**< implementation type in MIL */
 };

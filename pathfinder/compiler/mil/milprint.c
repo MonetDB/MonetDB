@@ -103,6 +103,9 @@
 #include "pfstrings.h"
 #include "oops.h"
 
+/* inserted for PFmalloc in temporary MILprint */
+#include "mem.h"
+
 /**
  * Denotes an illegal value for a PFmty_simpl_t. This is used in
  * conjunction with milprintf() to correctly start the first color
@@ -794,4 +797,460 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     }
 }
 
+/* ============================================================================ */
+/* ====================                                        ================ */
+/* ====================  added MIL Hack ouput (iter|pos|item)  ================ */
+/* ====================                                        ================ */
+/* ============================================================================ */
+
+    /* generates a number for the row where a value can be found 
+       for a lookup in values */
+    static unsigned int valuecount = 0;
+    /* saves the actual level (corresponding to the for nodes) */
+    static unsigned int act_level = 0;
+    /* start 'seq_level' from a level where no name conflict can occur */
+    static unsigned int seq_level = 10;
+
+    static void
+    init (void)
+    {
+        printf("# init ()\n");
+        printf("values := bat(void,str);\n");
+        printf("loop000 := bat(void,oid);\n");
+        printf("loop000.insert(nil, 1@0);\n");
+        printf("loop000 := loop000.reverse.mark(0@0).reverse;\n");
+        printf("v_vid000 := bat(void,oid);\n");
+        printf("v_iter000 := bat(void,oid);\n");
+        printf("v_pos000 := bat(void,oid);\n");
+        printf("v_item000 := bat(void,oid);\n");
+        printf("empty_bat := bat(void,oid);\n");
+    }
+
+    static void
+    translateEmpty (void)
+    {
+        printf("# translateEmpty ()\n");
+        printf("iter := empty_bat;\n");
+        printf("pos := empty_bat;\n");
+        printf("item := empty_bat;\n");
+    }
+
+    static void
+    translateVar (PFcnode_t *c)
+    {
+        printf("# translateVar (c)\n");
+        printf("vid := v_vid%03u.uselect(%i@0);\n", act_level, c->sem.var->vid);
+        printf("vid := vid.mark(0@0);\n");
+        printf("vid := vid.reverse;\n");
+        printf("iter := vid.join(v_iter%03u);\n", act_level);
+        printf("pos := vid.join(v_pos%03u);\n", act_level);
+        printf("item := vid.join(v_item%03u);\n", act_level);
+        printf("vid := nil;\n");
+    }
+
+    static void
+    saveSeqResult (int i)
+    {
+        printf("# saveSeqResult (seq_level)\n");
+        printf("iter%03u := iter;\n", i);
+        printf("pos%03u := pos;\n", i);
+        printf("item%03u := item;\n", i);
+    }
+
+    static void
+    translateSeq (int i)
+    {
+        printf("# translateSeq (seq_level)\n");
+printf("iter2 := iter;pos2 := pos;item2 := item;iter1 := iter%03u;pos1 := pos%03u;item1 := item%03u;\
+ord1 := iter1.project(1@0);ord2 := iter2.project(2@0);temp := count(iter1);temp := oid(temp);\
+iter1 := iter1.reverse;iter1 := iter1.mark(0@0);iter1 := iter1.reverse;iter2 := iter2.reverse;iter2 := iter2.mark(0@0);iter2 := iter2.reverse;iter2 := iter2.seqbase(temp);iter1.access(BAT_APPEND);iter1.insert(iter2);iter1.access(BAT_READ);\
+ord1 := ord1.reverse;ord1 := ord1.mark(0@0);ord1 := ord1.reverse;ord2 := ord2.reverse;ord2 := ord2.mark(0@0);ord2 := ord2.reverse;ord2 := ord2.seqbase(temp);ord1.access(BAT_APPEND);ord1.insert(ord2);ord1.access(BAT_READ);\
+pos1 := pos1.reverse;pos1 := pos1.mark(0@0);pos1 := pos1.reverse;pos2 := pos2.reverse;pos2 := pos2.mark(0@0);pos2 := pos2.reverse;pos2 := pos2.seqbase(temp);pos1.access(BAT_APPEND);pos1.insert(pos2);pos1.access(BAT_READ);\
+item1 := item1.reverse;item1 := item1.mark(0@0);item1 := item1.reverse;item2 := item2.reverse;item2 := item2.mark(0@0);item2 := item2.reverse;item2 := item2.seqbase(temp);item1.access(BAT_APPEND);item1.insert(item2);item1.access(BAT_READ);\
+temp := iter1.reverse;temp := temp.sort;temp := temp.reverse;temp := temp.CTrefine(ord1);temp := temp.CTrefine(pos1);temp := temp.mark(0@0);temp := temp.reverse;\
+iter := temp.join(iter1);pos := temp.mark(1@0);item := temp.join(item1);\
+iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2 := nil;ord2 := nil;iter%03u := nil;pos%03u := nil;item%03u := nil;temp := nil;\n", i, i, i, i, i, i);
+
+    }
+
+    static void
+    deleteTemp (void)
+    {
+        printf("# deleteTemp ()\n");
+        printf("temp := nil;\n");
+        printf("temp2 := nil;\n");
+        printf("temp3 := nil;\n");
+    }
+
+    static void
+    project (void)
+    {
+        printf("# project ()\n");
+        printf("outer%03u := iter;\n", act_level);
+        printf("iter := iter.mark(1@0);\n");
+        printf("inner%03u := iter;\n", act_level);
+        printf("pos := iter.project(1@0);\n");
+        printf("loop%03u := inner%03u;\n", act_level, act_level);
+    }
+
+    static void
+    getExpanded (int fid)
+    {
+        printf("# getExpanded (fid)\n");
+        printf("temp := vu_fid.uselect(%i@0);\n",fid);
+        printf("temp := temp.mark(10@0);\n");
+        printf("temp2 := vu_vid.reverse;\n");
+        printf("temp := temp2.join(temp);\n");
+        printf("temp := v_vid%03u.join(temp);\n", act_level - 1);
+        printf("temp := temp.mirror;\n");
+        printf("temp2 := nil;\n");
+    }
+
+    static void
+    expand (void)
+    {
+        printf("# expand ()\n");
+        printf("temp2 := temp.join(v_iter%03u);\n", act_level-1); 
+                                               /* -1 is important */
+        printf("temp2 := temp2.reverse;\n");
+        printf("temp2 := outer%03u.join(temp2);\n", act_level);
+        printf("temp2 := temp2.reverse;\n");
+        printf("v_iter%03u := temp2.join(inner%03u);\n", act_level, act_level);
+        printf("temp2 := v_iter%03u.mark(0@0);\n", act_level);
+        printf("temp2 := temp2.reverse;\n");
+    }
+
+    static void
+    join (void)
+    {
+        printf("# join ()\n");
+        printf("v_iter%03u := v_iter%03u.reverse;\n", act_level, act_level);
+        printf("v_iter%03u := v_iter%03u.mark(0@0);\n", act_level, act_level);
+        printf("v_iter%03u := v_iter%03u.reverse;\n", act_level, act_level);
+        printf("v_vid%03u := temp2.join(temp);\n", act_level);
+        printf("v_vid%03u := v_vid%03u.join(v_vid%03u);\n",
+               act_level, act_level, act_level - 1);
+        printf("v_pos%03u := temp2.join(temp);\n", act_level);
+        printf("v_pos%03u := v_pos%03u.join(v_pos%03u);\n",
+               act_level, act_level, act_level - 1);
+        printf("v_item%03u := temp2.join(temp);\n", act_level);
+        printf("v_item%03u := v_item%03u.join(v_item%03u);\n",
+               act_level, act_level, act_level - 1);
+    }
+
+    static void
+    append (char *name, int level)
+    {
+        printf("# append (%s, level)\n", name);
+        printf("temp := %s.reverse;\n", name);
+        printf("temp := temp.mark(0@0);\n");
+        printf("temp := temp.reverse;\n");
+        printf("temp := temp.seqbase(temp2);\n");
+        printf("v_%s%03u := v_%s%03u.access(BAT_APPEND);\n",name, level, name, level);
+        printf("v_%s%03u.insert(temp);\n",name, level);
+        printf("v_%s%03u.access(BAT_READ);\n",name, level);
+        printf("temp := nil;\n");
+    }
+
+    static void
+    mapBack (void)
+    {
+        printf("# mapBack ()\n");
+        printf("temp := iter.mirror;\n");
+        printf("temp3 := inner%03u.reverse;\n", act_level);
+        printf("temp2 := iter.join(temp3);\n");
+        printf("iter := temp2.join(outer%03u);\n", act_level);
+        printf("pos := pos.mark(1@0);\n");
+        printf("item := item;\n");
+        deleteTemp ();
+    }
+
+    static void
+    insertVar (int vid_)
+    {
+        char *vid, *iter, *pos, *item;
+        vid = PFmalloc (sizeof("vid"));
+        snprintf (vid, sizeof("vid"), "vid");
+        iter = PFmalloc (sizeof("iter"));
+        snprintf (iter, sizeof("iter"), "iter");
+        pos = PFmalloc (sizeof("pos"));
+        snprintf (pos, sizeof("pos"), "pos");
+        item = PFmalloc (sizeof("item"));
+        snprintf (item, sizeof("item"), "item");
+
+        printf("# insertVar (vid)\n");
+        printf("vid := iter.project(%i@0);\n", vid_);
+        printf("temp2 := count(vid);\n");
+        printf("temp2 := oid(temp2);\n");
+
+        append (vid, act_level);
+        append (iter, act_level);
+        append (pos, act_level);
+        append (item, act_level);
+        printf("temp2 := nil;\n");
+        printf("vid := nil;\n");
+    }
+
+    static void
+    translateConst (int valueId)
+    {
+        printf("# translateConst (valueId)\n");
+        printf("iter := loop%03u;\n",act_level);
+        printf("iter := iter.reverse;\n");
+        printf("iter := iter.mark(0@0);\n");
+        printf("iter := iter.reverse;\n");
+        printf("pos := iter.project(1@0);\n");
+        printf("item := iter.project(%i@0);\n", valueId);
+    }
+
+    static void
+    translate2MIL (PFcnode_t *c)
+    {
+        assert(c);
+        switch (c->kind)
+        {
+                case c_var:
+                        translateVar(c);
+                        break;
+                case c_seq:
+                        if ((c->child[0]->kind == c_empty)
+                            && (c->child[1]->kind != c_empty))
+                                translateEmpty ();
+                        else if (c->child[0]->kind == c_empty)
+                                translate2MIL (c->child[1]);
+                        else if (c->child[1]->kind == c_empty)
+                                translate2MIL (c->child[0]);
+                        else
+                        {
+                                translate2MIL (c->child[0]);
+                                saveSeqResult (seq_level);
+                                seq_level++;
+                                                                                                                                                         
+                                translate2MIL (c->child[1]);
+                                seq_level--;
+                                translateSeq (seq_level);
+                        }
+                        break;
+                case c_let:
+                        translate2MIL (c->child[1]);
+                        if (c->child[0]->sem.var->used)
+                                insertVar (c->child[0]->sem.var->vid);
+
+                        translate2MIL (c->child[2]);
+                        break;
+                case c_for:
+                        translate2MIL (c->child[2]);
+                        /* not allowed to overwrite iter,pos,item */
+
+                        act_level++;
+                        project ();
+                        getExpanded (c->sem.num);
+                        expand ();
+                        join ();
+                        deleteTemp ();
+                        if (c->child[0]->sem.var->used)
+                                insertVar (c->child[0]->sem.var->vid);
+                        if ((c->child[1]->kind == c_var)
+                            && (c->child[1]->sem.var->used))
+                                insertVar (c->child[1]->sem.var->vid);
+                        /* end of not allowed to overwrite iter,pos,item */
+
+                        translate2MIL (c->child[3]);
+                        
+                        mapBack ();
+                        act_level--;
+                        break;
+                case c_lit_str:
+                        printf("values.insert(%i@0,\"%s\");\n",
+                               valuecount,
+                               PFesc_string (c->sem.str));
+                        translateConst(valuecount);
+                        valuecount++;
+                        break;
+                case c_lit_int:
+                        printf("values.insert(%i@0,\"%u\");\n",
+                               valuecount,
+                               c->sem.num);
+                        translateConst(valuecount);
+                        valuecount++;
+                        break;
+                case c_lit_dec:
+                        printf("values.insert(%i@0,\"%.5g\");\n",
+                               valuecount,
+                               c->sem.dec);
+                        translateConst(valuecount);
+                        valuecount++;
+                        break;
+                case c_lit_dbl:
+                        printf("values.insert(%i@0,\"%.5g\");\n",
+                               valuecount,
+                               c->sem.dbl);
+                        translateConst(valuecount);
+                        valuecount++;
+                        break;
+                case c_empty:
+                        translateEmpty ();
+                        break;
+                case c_nil:
+                default: 
+                        PFoops (OOPS_WARNING, "not supported feature is translated");
+                        break;
+        }
+    }
+
+    /* the fid increasing for every for node */ 
+    static int fid = 0;
+    /* the actual fid saves the level (the right fid) */
+    static int act_fid = 0;
+    /* the vid increasing for every new variable binding */
+    static int vid = 0;
+
+    /**
+      * the pairs of vid and fid are inserted in the var_usage bat
+      *
+      * @param var the pointer to the variable and its vid
+      * @param fid the id of the for expression
+      */
+    static void
+    add_level (PFvar_t *var, int fid)
+    {
+        printf("var_usage.insert(%i@0,%i@0)\n;", var->vid, fid); 
+    }
+
+    /**
+      * for a variable usage all fids between the definition of the 
+      * variable and its usage are added to the var_usage bat
+      *
+      * @param c the variable core node
+      * @param way the path of the for ids (active for-expression)
+      */
+    static void
+    update_expansion (PFcnode_t *c,  PFarray_t *way)
+    {
+        int m;
+        PFvar_t *var;
+
+        assert(c->sem.var);
+        var = c->sem.var;
+
+        for (m = PFarray_last (way) - 1; m >= 0 
+             && *(int *) PFarray_at (way, m) > var->base; m--)
+        {
+            add_level (var, *(int *) PFarray_at (way, m));
+        }
+    }
+
+    /**
+      * for each variable a vid (variable id) and
+      * for each for expression a fid (for id) is added;
+      * for each variable usage the needed fids are added to a 
+      * bat variable_usage
+      *
+      * @param c a core tree node
+      * @param way an array containing the path of the for ids
+      *        (active for-expression)
+      */
+    static void
+    append_lev (PFcnode_t *c,  PFarray_t *way)
+    {
+        unsigned int i;
+
+        if (c->kind == c_var) 
+        {
+           /* inserts fid|vid combinations into var_usage bat */
+           update_expansion (c, way);
+           /* the field used is for pruning the MIL code and
+              avoid translation of variables which are later
+              not used */
+           c->sem.var->used = 1;
+        }
+
+        /* only in for and let variables can be bound */
+        else if (c->kind == c_for)
+        {
+           if (c->child[2])
+               append_lev (c->child[2], way);
+           
+           fid++;
+           c->sem.num = fid;
+           *(int *) PFarray_add (way) = fid;
+           act_fid = fid;
+
+           c->child[0]->sem.var->base = act_fid;
+           c->child[0]->sem.var->vid = vid;
+           c->child[0]->sem.var->used = 0;
+           vid++;
+
+           if (c->child[1]->kind == c_var)
+           {
+                c->child[1]->sem.var->base = act_fid;
+                c->child[1]->sem.var->vid = vid;
+                c->child[1]->sem.var->used = 0;
+                vid++;
+           }
+
+           if (c->child[3])
+               append_lev (c->child[3], way);
+           
+           act_fid = *(int *) PFarray_at (way, PFarray_last (way) - 1);
+           PFarray_del (way);
+        }
+
+        else if (c->kind == c_let)
+        {
+           if (c->child[1])
+               append_lev (c->child[1], way);
+
+           c->child[0]->sem.var->base = act_fid;
+           c->child[0]->sem.var->vid = vid;
+           c->child[0]->sem.var->used = 0;
+           vid++;
+
+           if (c->child[2])
+               append_lev (c->child[2], way);
+        }
+
+        else 
+        {
+           for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+              append_lev (c->child[i], way);
+        } 
+    }
+
+    /**
+      * first MIL generation from Pathfinder Core
+      *
+      * first to each `for' and `var' node additional
+      * information is appended. With this information
+      * the core tree is translated into MIL.
+      *
+      * @param c the root of the core tree
+      */
+    void
+    PFprintMILtemp (PFcnode_t *c)
+    {
+        PFarray_t *way;
+
+        way = PFarray (sizeof (int));
+        assert (way);
+        
+        /* append_lev appends information to the core nodes and
+           creates a var_usage table, which is later split in vu_fid
+           and vu_vid */
+        printf("var_usage := bat(oid,oid);\n");
+        append_lev (c, way);
+        printf("var_usage := var_usage.unique.reverse.sort;\n");
+        printf("vu_fid := var_usage.mark(1000@0).reverse;\n");
+        printf("vu_vid := var_usage.reverse.mark(1000@0).reverse;\n");
+
+        /* some bats are initialized and some variables get bound */
+        init ();
+        /* recursive translation of the core tree */
+        translate2MIL (c);
+
+        /* print result in iter|pos|item representation */
+        printf("temp := values.reverse.mark(0@0).reverse;\n");
+        printf("temp := item.join(temp);\n");
+        printf("print (iter, pos, temp);\n");
+    }
 /* vim:set shiftwidth=4 expandtab: */

@@ -81,8 +81,6 @@ node  var_
       preceding_sibling
       self
 
-      namet
-
       kind_node
       kind_comment
       kind_text
@@ -91,11 +89,18 @@ node  var_
       kind_elem
       kind_attr
 
-      instof
+      namet
+
+      elem
+      attr 
+      text
+      doc 
+      comment
+      pi  
+      tag
 
       true_
       false_
-      atomize
       error
       root_
       empty_
@@ -117,6 +122,8 @@ label Query
       LocationSteps
       NodeTest
       KindTest
+      ConstructorExpr
+      TagName
       ComparExpr
       Atom
       NonAtom
@@ -139,6 +146,7 @@ NonAtom:         error;
 NonAtom:         ConditionalExpr;
 NonAtom:         SequenceExpr;
 NonAtom:         PathExpr;
+NonAtom:         ConstructorExpr;
 NonAtom:         ComparExpr;
 NonAtom:         FunctionAppl;
 NonAtom:         BuiltIns;
@@ -244,8 +252,17 @@ KindTest:        kind_doc (nil);
 KindTest:        kind_elem (nil);
 KindTest:        kind_attr (nil);
 
+ConstructorExpr: elem (TagName, CoreExpr);
+ConstructorExpr: attr (TagName, CoreExpr);
+ConstructorExpr: text (CoreExpr);  
+ConstructorExpr: doc (CoreExpr); 
+ConstructorExpr: comment (lit_str); 
+ConstructorExpr: pi (lit_str);  
+
+TagName:         tag;
+TagName:         CoreExpr;
+
 ComparExpr:      int_eq (Atom, Atom);
-ComparExpr:      instof (Atom, seqtype);
 
 FunctionAppl:    apply (FunctionArgs);
 

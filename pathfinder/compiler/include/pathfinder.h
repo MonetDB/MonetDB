@@ -62,6 +62,7 @@ enum PFphases_t {
   , phas_semantics       /**< Semantics checks (varscope, ns, functions) */
   , phas_fs              /**< Compilation to core language */
   , phas_simpl           /**< Simplification/normalization of core language */
+  , phas_milprint        /**< temporary MIL ouput generation */
   , phas_mil             /**< MIL code generation */
 
   , phas_all             /**< Do all processing phases */

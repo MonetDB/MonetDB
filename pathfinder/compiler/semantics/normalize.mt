@@ -678,6 +678,7 @@ IntersectExceptExpr:    except (IntersectExceptExpr, UnaryExpr);
 
 ValueExpr:              ValidateExpr;
 ValueExpr:              CastExpr;
+ValueExpr:              TreatExpr;
 ValueExpr:              Constructor;
 ValueExpr:              PathExpr;                       
 

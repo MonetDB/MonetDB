@@ -70,14 +70,14 @@ static int TWIG_ID[] = {
  , [c_apply]              apply      /**< function application */
  , [c_arg]                arg        /**< function argument (list) */
 
- , [c_ifthenelse]         ifthenelse /**< if-then-else conditional */
-
  , [c_typesw]             typeswitch /**< typeswitch */
  , [c_cases]              cases      /**< case rules (list) */
  , [c_case]               case_      /**< case rule */
  , [c_seqtype]            seqtype    /**< SequenceType */
  , [c_seqcast]            seqcast    /**< cast along <: */
  , [c_proof]              proof      /**< type checker only: prove <: rel. */
+
+ , [c_ifthenelse]         ifthenelse /**< if-then-else conditional */
 
  , [c_locsteps]           locsteps
   
@@ -94,7 +94,6 @@ static int TWIG_ID[] = {
  , [c_preceding_sibling]  preceding_sibling
  , [c_self]               self
 
- , [c_namet]              namet
  , [c_kind_node]          kind_node
  , [c_kind_comment]       kind_comment
  , [c_kind_text]          kind_text
@@ -103,11 +102,23 @@ static int TWIG_ID[] = {
  , [c_kind_elem]          kind_elem
  , [c_kind_attr]          kind_attr
 
+ , [c_namet]              namet
+
+ /* Constructor Nodes */
+ , [c_elem]               elem       /**< the element constructor */
+ , [c_attr]               attr       /**< the attribute constructor */
+ , [c_text]               text       /**< the text constructor */
+ , [c_doc]                doc        /**< the document constructor */
+ , [c_comment]            comment    /**< the comment constructor */
+ , [c_pi]                 pi         /**< the processing-instruction constructor */
+ , [c_tag]                tag        /**< the tagname for element and attribute constructors */
+
  , [c_true]               true_      /**< built-in function `fn:true ()' */
  , [c_false]              false_     /**< built-in function `fn:false ()' */
- , [c_empty]              empty_     /**< empty sequence */
 
  , [c_root]               root_      /**< document root node */
+
+ , [c_empty]              empty_     /**< empty sequence */
 };
 
 /** twig: setup twig */
@@ -124,13 +135,15 @@ static int TWIG_ID[] = {
 #undef for_       
 #undef apply      
 #undef arg        
-#undef ifthenelse 
 #undef typeswitch 
 #undef cases      
 #undef case_      
 #undef seqtype    
-#undef upcast    
-#undef downcast    
+#undef seqcast
+#undef proof
+#undef upcast           /* FIXME: what is upcast doing here */ 
+#undef downcast         /* FIXME: what is downcast doing here */
+#undef ifthenelse 
 #undef locsteps
 #undef ancestor
 #undef ancestor_or_self
@@ -144,7 +157,6 @@ static int TWIG_ID[] = {
 #undef preceding
 #undef preceding_sibling
 #undef self
-#undef namet
 #undef kind_node
 #undef kind_comment
 #undef kind_text
@@ -152,10 +164,18 @@ static int TWIG_ID[] = {
 #undef kind_doc
 #undef kind_elem
 #undef kind_attr
+#undef namet
+#undef elem
+#undef attr
+#undef text
+#undef doc 
+#undef comment 
+#undef pi
+#undef tag
 #undef true_ 
 #undef false_
-#undef empty_
 #undef root_
+#undef empty_
 
 /** mnemonic XQuery Core constructors */
 #include "core_mnemonic.h"
