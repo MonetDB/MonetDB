@@ -37,9 +37,9 @@ print "\nstart simple Monet MIL interaction\n";
 	#}
 
  # Connect to the database.
-  my $dbh = DBI->connect("dbi:monet:database=test;host=localhost;port=49999;language=mil",
+  my $dbh = DBI->connect("dbi:monet:database=test;host=localhost;port=50000;language=mil",
                          "joe", "joe's password",
-                         {'PrintError' =>0, 'RaiseError' => 0});
+                         {'PrintError' =>1, 'RaiseError' => 1});
 
   my $sth;
   $sth= $dbh->prepare("print(2);\n");
