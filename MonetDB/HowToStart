@@ -32,7 +32,7 @@ autoconf/automake/libtool
 
 standard software development tools
 	To compile MonetDB, you also need to have a the following 
-	standard software develpments tools installed and ready for use
+	standard software developments tools installed and ready for use
 	on you system:
 	 - a C/C++ compiler (e.g., GNU's gcc/g++)
 	 - a lexical analyzer generator (e.g., "lex" or "flex")
@@ -41,7 +41,7 @@ standard software development tools
 dlcompat (MacOS X/Darwin, only)
 	MacOS X/Darwin itself does not support dlopen, however, there's
 	a third-party library called dlcompat from Fink that provides
-	the repective functionallity. MonetDB requires dlcompat to be
+	the respective functionality. MonetDB requires dlcompat to be
 	installed on MacOS X/Darwin.
 	(http://fink.sourceforge.net/pdb/package.php/dlcompat)
 
