@@ -1205,11 +1205,12 @@ def RunTest(env, TST, BusyPorts) :
                         os.remove(t)
                         break
             if os.path.isfile(f):
-                p = open(txf, 'a')
-                for l in fileinput.input(f):
-                    p.write("! "+l)
-                    killed = 1
-                p.close()
+                p = try_open(txf, 'a')
+                if p is not None:
+                    for l in fileinput.input(f):
+                        p.write("! "+l)
+                        killed = 1
+                    p.close()
 
         if SERVER in ["MAPI", "SQL"]:
             CheckSocket3(env, SERVER, TestErrFile)
