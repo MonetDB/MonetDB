@@ -604,12 +604,18 @@ PFcore_orderby (const PFcnode_t *crits, const PFcnode_t *expr)
  * @param specs  other order specs
  */
 PFcnode_t *
-PFcore_orderspecs (const PFcnode_t *crit, const PFcnode_t *specs)
+PFcore_orderspecs (PFsort_t mode, const PFcnode_t *crit, const PFcnode_t *specs)
 {
+    PFcnode_t *ret;
+
     assert (crit); assert (specs);
     assert (specs->kind == c_orderspecs || specs->kind == c_nil);
 
-    return PFcore_wire2 (c_orderspecs, crit, specs);
+    ret = PFcore_wire2 (c_orderspecs, crit, specs);
+
+    ret->sem.mode = mode;
+
+    return ret;
 }
 
 /**

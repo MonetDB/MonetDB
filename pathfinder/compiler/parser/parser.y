@@ -197,7 +197,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
     struct phole_t  phole;
     PFptype_t       ptype;
     PFpaxis_t       axis;
-    PFpsort_t       mode;
+    PFsort_t        mode;
     PFpoci_t        oci;
     PFarray_t      *buf;
 }

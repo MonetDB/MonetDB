@@ -1232,7 +1232,7 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* OrderSpecList:          orderspecs (OptExpr, OrderSpecList) */
         case 69:
-            C(p) = orderspecs (C(L(p)), C(R(p)));
+            C(p) = orderspecs (p->sem.mode, fn_data (C(L(p))), C(R(p)));
             break;
 
         /* QuantifiedExpr:         some (binds (bind (vars (var_type (Var,

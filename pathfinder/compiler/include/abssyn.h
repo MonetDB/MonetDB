@@ -212,15 +212,6 @@ enum PFpoci_t {
 
 typedef enum PFpoci_t PFpoci_t;
 
-/** XQuery `order by' modifier (see W3C XQuery, 3.8.3) */
-typedef struct PFpsort_t PFpsort_t;
-
-struct PFpsort_t {
-  enum { p_asc, p_desc }       dir;     /**< ascending/descending */
-  enum { p_greatest, p_least } empty;   /**< empty greatest/empty least */
-  char                        *coll;    /**< collation (may be 0) */
-};
-
 
 /** XQuery parse tree node
  */
@@ -240,7 +231,7 @@ union PFpsem_t {
   PFqname_t  qname;      /**< qualified name */
   PFpaxis_t  axis;       /**< XPath axis */
   PFpkind_t  kind;       /**< node kind */
-  PFpsort_t  mode;       /**< sort modifier */
+  PFsort_t   mode;       /**< sort modifier */
   PFpoci_t   oci;        /**< occurrence indicator */
   PFempty_order_t empty; /**< empty ordering declaration */
 

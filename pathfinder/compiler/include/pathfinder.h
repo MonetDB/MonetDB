@@ -141,6 +141,15 @@ struct PFloc_t {
  */
 typedef float dec;
 
+/** XQuery `order by' modifier (see W3C XQuery, 3.8.3) */
+typedef struct PFsort_t PFsort_t;
+
+struct PFsort_t {
+  enum { p_asc, p_desc }       dir;     /**< ascending/descending */
+  enum { p_greatest, p_least } empty;   /**< empty greatest/empty least */
+  char                        *coll;    /**< collation (may be 0) */
+};
+
 #endif  /* PATHFINDER_H */
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -106,7 +106,7 @@
 #define let(e1,e2)            PFcore_let ((e1), (e2))
 #define letbind(e1,e2)        PFcore_letbind ((e1), (e2))
 #define orderby(e1,e2)        PFcore_orderby ((e1), (e2))
-#define orderspecs(e1,e2)     PFcore_orderspecs ((e1), (e2))
+#define orderspecs(m,e1,e2)   PFcore_orderspecs ((m), (e1), (e2))
 #define seq(e1,e2)            PFcore_seq ((e1), (e2))
 #define ordered(e)            PFcore_ordered (e)
 #define unordered(e)          PFcore_unordered (e)

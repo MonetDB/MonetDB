@@ -158,6 +158,7 @@ union PFcsem_t {
   PFqname_t  qname;      /**< qualified name */
   PFvar_t   *var;        /**< variable information */
   PFty_t     type;       /**< used with c_type */
+  PFsort_t   mode;       /**< sort modifier */
   struct PFfun_t *fun;   /**< function reference */
 };
 
@@ -238,7 +239,7 @@ PFcnode_t *PFcore_let (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_letbind (const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_orderby (const PFcnode_t *, const PFcnode_t *);
-PFcnode_t *PFcore_orderspecs (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_orderspecs (PFsort_t, const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_seq (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_ordered (const PFcnode_t *);
