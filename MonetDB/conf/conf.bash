@@ -210,12 +210,10 @@ if [ "${os}" = "Linux" ] ; then
 	if [ "${hw}" = "ia64" ] ; then
 		if [ "`hostname`" = "demo.ins.cwi.nl" ] ; then
 			# specific settings for our Itanium2 "demo" system
-			binpath="/soft/python2/bin:${binpath}"
-			if [ "${COMP}" = "ntv" ] ; then
-				binpath="/opt/intel/compiler70/ia64/bin:${binpath}"
-			  else
-				binpath="/soft/gcc-3.2.1/bin:${binpath}"
-				libpath="/soft/gcc-3.2.1/lib:${libpath}"
+			binpath="/soft/python-2.3/bin:${binpath}"
+			if [ "${COMP}" = "GNU" ] ; then
+				binpath="/soft/gcc-3.3/bin:${binpath}"
+				libpath="/soft/gcc-3.3/lib:${libpath}"
 			fi
 		  elif [ "`hostname`" = "theo.sara.nl" ] ; then
 			# specific settings for Sara's Itanium system
