@@ -34,7 +34,10 @@
 #include <malloc.h>
 #include <crtdbg.h>
 #endif
+
 #include <process.h>
+#include <windows.h>
+#undef ERROR			/* too generic name defined in wingdi.h */
 
 #ifndef WIN32
 #define WIN32
@@ -287,6 +290,10 @@
 
 /* Define if you have the <getopt.h> header file.  */
 /* #undef HAVE_GETOPT_H */
+
+#define HAVE_GETSYSTEMINFO
+#define HAVE_GLOBALMEMORYSTATUS
+/* #undef HAVE_GLOBALMEMORYSTATUSEX */
 
 /* Define if you have the <io.h> header file.  */
 #define HAVE_IO_H 1

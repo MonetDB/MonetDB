@@ -261,12 +261,34 @@ void MT_init() {
 	static pthread_mutex_t l;
 	int i;
 
+#ifdef HAVE_GETSYSTEMINFO
+	{
+	SYSTEM_INFO sysInfo;
+	GetSystemInfo(&sysInfo);
+	_MT_pagesize = sysInfo.dwPageSize;
+	}
+#else
 #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
         _MT_pagesize = sysconf(_SC_PAGESIZE);
-	if (_MT_pagesize <= 0)
 #endif
+#endif
+	if (_MT_pagesize <= 0)
 		_MT_pagesize = 4096;   /* default */ 
 
+#ifdef HAVE_GLOBALMEMORYSTATUSEX
+	{
+		MEMORYSTATUSEX memStatEx;
+		if (GlobalMemoryStatusEx(&memStatEx))
+			_MT_npages = memStatEx.allAvailPhys / _MT_pagesize;
+	}
+#endif
+#ifdef HAVE_GLOBALMEMORYSTATUS
+	if (_MT_npages <= 0) {
+		MEMORYSTATUS memStat;
+		GlobalMemoryStatus(&memStat);
+		_MT_npages = memStat.dwAvailPhys / _MT_pagesize;
+	}
+#endif
 #if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
@@ -276,8 +298,6 @@ void MT_init() {
 		getrlimit(RLIMIT_RSS, &rl);
 		_MT_npages = rl.rlim_cur / _MT_pagesize;
         }
-#else
-	_MT_npages = 0;		/* XXX */
 #endif
 #endif
 	
