@@ -27,7 +27,7 @@
 @d 1/10/2002
 @* Introduction
 @T
-This document intends to introduce you to get you up and running with @<a href="http://monetdb.cwi.nl">Monet</a>@, 
+This document intends to introduce you to get you up and running with @[<a href="http://monetdb.cwi.nl">Monet</a>@, 
 a novel database system under development since 1993 at the 
 @[<a href="http://db.cwi.nl/projecten/thema.php4?themanr=5">CWI database research group</a>@.\\ 
 
@@ -431,8 +431,8 @@ of how this works will be given below in the interactive MIL session.\\
 
 Suffice it to say now that @[<a href="www/MapiClient.html">MapiClient</a>@ needs to know the machine name and 
 TCP port where an @[<a href="www/Mserver.html">Mserver</a>@ is listening. These options can be given to
-@[<a href="www/MapiClient.html">MapiClient</a>@ with the {\tt -h HOSTNAME} / {\tt - -host HOSTNAME} and 
-{\-p PORTNO} / {-$$-port PORTNO} command line options. Default values,
+@[<a href="www/MapiClient.html">MapiClient</a>@ with the {\tt -h HOSTNAME} / {\tt -$$-host HOSTNAME} and 
+{\tt -p PORTNO} / {\tt -$$-port PORTNO} command line options. Default values,
 though, can be put in your monet configuration file, such that you will
 be able to start @[<a href="www/MapiClient.html">MapiClient</a>@ without command-line parameters.
 
