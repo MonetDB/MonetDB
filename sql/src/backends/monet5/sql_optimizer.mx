@@ -487,11 +487,17 @@ We have to perform the expensive kdiff anyway
 				pushArgument(mb,q,p->argv[2]);
 				pushInstruction(mb,q);
 				typeChecker(c->nspace,mb,q,TRUE);
-				endLifespan = mb->var[p->argv[1]]->endLifespan;
+				endLifespan = mb->var[p->argv[0]]->endLifespan;
 				k= i; /* for later */
 				for(i++;i< limit-1; i++){
 					q= old[i];
+/* just handle the first */
 					pushInstruction(mb,q);
+					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
+						strcmp(functionName(q),"kdiff")==0){
+						GDKfree(moduleId(q));
+						setModuleId(q,GDKstrdup("algebra"));
+					}
 				}
 				i--;
 
@@ -523,9 +529,16 @@ Now we don;t have to perform the expensive kdiff
 				map[0]= getArg(p,0);
 				map[1]= getArg(p,1);
 				mtop=2;
+
 				i=k; 
 				for(i++;i< limit-1; i++){
 					q= copyInstruction(old[i]);
+/* just handle the first */
+					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
+						strcmp(functionName(q),"kdiff")==0){
+						GDKfree(moduleId(q));
+						setModuleId(q,GDKstrdup("algebra"));
+					}
 					for(k=0;k<q->argc; k++)
 					for(l=0;l<mtop; l+=2)
 					if( getArg(q,k)== map[2*l] ){
@@ -550,7 +563,11 @@ Now we don;t have to perform the expensive kdiff
 			/* just move the instruction into place */
 			pushInstruction(mb,p);
 		}
-		foundit= foundit || (i<mb->stop);
+@-
+The code is wrong, we should not try it more than once
+		foundit= foundit || (i<limit);
+@c
+		foundit=0;
 		GDKfree(old);
 	}
 	if( total) {
