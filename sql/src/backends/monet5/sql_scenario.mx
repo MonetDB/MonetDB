@@ -551,13 +551,16 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		} else {
 			/* generate a factory instantiation */
 			backend_dumpproc(be, c, m->qc->id, s);
-			be->q = qc_insert(m->qc, m->sym,	/* the sql symbol tree */
-					  m->args,	/* the argument list */
+			be->q = qc_insert(m->qc, 
+					  m->sa,      /* the allocator */
+					  m->sym,     /* the sql symbol tree */
+					  m->args,    /* the argument list */
 					  m->scanner.key,	/* the statement hash key */
 					  m->type,	/* the type of the statement */
 					  _strdup("the mal block?"));
 
 			be->q->code = (backend_code) c->curprg;
+			m->sa = NULL;
 			m->sym = NULL;
 		}
 	}

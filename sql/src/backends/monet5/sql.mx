@@ -80,6 +80,7 @@ prepended by the 'sql.' module name.
 The original code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
+
 command createCatalog( debug:int ) :void 
 address mvc_create_wrap
 comment "Create multi version catalog";
@@ -147,6 +148,10 @@ comment "Import a table from stream s with the
 
 pattern hash( v:any$1, sh:int ) :int 
 address hash_wrap 
+comment "calculate a hash value and shift left";
+
+command hash( b:bat[:void,:any$1], sh:int ) :bat[:void,:int]
+address bathash_wrap 
 comment "calculate a hash value and shift left";
 
 @-
@@ -398,10 +403,10 @@ sqlcleanup(mvc *c, int err)
 	sql_destroy_args(c);
 
 	/* some statements dynamically disable caching */
-	if (c->sym) {
-		symbol_destroy(c->sym);
-		c->sym = NULL;
-	}
+	c->sym = NULL;
+	if (c->sa) 
+		sa_destroy(c->sa);
+	c->sa = sa_create();
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
@@ -620,7 +625,8 @@ mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access)
 	@:getContext(m)@
 	b = mvc_bind_ubat(m, *sname, *tname, *cname, *access);
 	if (b) {
-		*ret = b->batCacheid;
+		BBPincref( *ret = b->batCacheid, TRUE);
+		BBPunfix(*ret);
 		return MAL_SUCCEED;
 	}
 	return throwException(MALEXCEPTION, "mvc_bind_ubat_wrap", "error");
@@ -635,7 +641,8 @@ mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access)
 	@:getContext(m)@
 	b = mvc_bind_dbat(m, *sname, *tname, *access);
 	if (b) {
-		*ret = b->batCacheid;
+		BBPincref( *ret = b->batCacheid, TRUE);
+		BBPunfix(*ret);
 		return MAL_SUCCEED;
 	}
 	return throwException(MALEXCEPTION, "mvc_bind_dbat_wrap", "error");
@@ -650,7 +657,8 @@ mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access)
 	@:getContext(m)@
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b) {
-		*ret = b->batCacheid;
+		BBPincref( *ret = b->batCacheid, TRUE);
+		BBPunfix(*ret);
 		return MAL_SUCCEED;
 	}
 	return throwException(MALEXCEPTION, "mvc_bind_idxbat_wrap", "error");
@@ -709,6 +717,56 @@ mvc_export_table_wrap(stream *s, int *res_id, int *offset, int *nr)
 	return NULL;
 }
 
+#define BATsetcount(b, cnt) (b->batBuns->free += ((cnt)*BUNsize(b)))
+
+str
+bathash_wrap(int *res, int *bid, int *shift)
+{
+	BAT *b, *dst;
+	int sh = *shift;
+	hash_t (*hash)(ptr v); 
+	int *r, *f;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bathash", "Cannot access descriptor");
+	}
+
+	dst= BATnew(TYPE_void,TYPE_int, BATcount(b));
+	if (!dst) {
+		BBPunfix(b->batCacheid);
+		return throwMessage("bathash", "can not create bat");
+	}
+	BATseqbase(dst, b->hseqbase);
+
+ 	r = (int*)BUNtail(dst, BUNfirst(dst));
+	f = r;
+	hash = BATatoms[b->ttype].atomHash;
+	if (ATOMvarsized(b->ttype)) { /* ugh */
+		BUN p,q;
+		int xx;
+
+		BATloopFast(b,p,q,xx){
+			ptr v = BUNtail(b,p);
+			*r++ = (hash(v) << (sh)) & 0xEFFFFFFF;
+		}
+	} else {
+		char *v = BUNtail(b,BUNfirst(b)), *e = BUNtail(b,BUNlast(b));
+		int sz = BUNsize(b);
+
+		for(; v < e; v+=sz) {
+			*r++ = (hash(v) << (sh)) & 0xEFFFFFFF;
+		}
+	}
+	BATsetcount(dst, r-f);
+	BATkey(dst, 0);
+	dst->tsorted = 0;
+
+	BBPincref( *res = dst->batCacheid, TRUE);
+	BBPunfix(*res);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 str
 hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -725,7 +783,13 @@ hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	v = getArgReference(s,p,1);
 	sh = *(int*)getArgReference(s,p,2);
 
-	*res = (ATOMhash(tpe, v) << (sh)) & 0xEFFFFFFF;
+	if (tpe == TYPE_bat)
+		return bathash_wrap(res, (int*)v, &sh); 
+
+	if (ATOMvarsized(tpe)) /* ugh */
+		*res = (ATOMhash(tpe, *(char**)v) << (sh)) & 0xEFFFFFFF;
+	else
+		*res = (ATOMhash(tpe, v) << (sh)) & 0xEFFFFFFF;
 	return NULL;
 }
 

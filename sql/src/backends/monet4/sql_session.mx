@@ -421,10 +421,10 @@ sqlcleanup(mvc *c, int err)
 	sql_destroy_args(c);
 
 	/* some statements dynamically disable caching */
-	if (c->sym) {
-		symbol_destroy(c->sym);
-		c->sym = NULL;
-	}
+	c->sym = NULL;
+	if (c->sa) 
+		sa_destroy(c->sa);
+	c->sa = sa_create();
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
@@ -580,8 +580,9 @@ sqlexecute(backend *be, stream *out)
 		} else {
 			err = backend_parse(c->stk, cmd);
 			if (c->cache) {
-				q = qc_insert(c->qc, c->sym, c->args, c->scanner.key, c->type, GDKstrdup(cmd));
+				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->scanner.key, c->type, GDKstrdup(cmd));
 
+				c->sa = NULL;
 				c->sym = NULL;
 			}
 		}
@@ -873,12 +874,28 @@ sqlstatement(char *cmd, Cntxt stk)
 	mvc *m;
 	backend *sql;
 	Variable v;
+	bstream *rs;
+	buffer *b;
+	char *n;
+	int len = strlen(cmd);
 
-	m = mvc_create(0, (backend_stack) stk, NULL, GDKout);
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, cmd, len);
+	cmd = n;
+	cmd[len] = '\n';
+	cmd[len+1] = 0;
+	len++;
+
+	buffer_init(b, cmd, len);
+	rs = bstream_create(buffer_rastream(b, "sqlstatement"), b->len);
+	m = mvc_create(0, (backend_stack) stk, rs, GDKout);
 	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
 	sql = backend_create(0, m, 1);
 
 	/* add myc and Output, Input to the stack */
@@ -886,13 +903,13 @@ sqlstatement(char *cmd, Cntxt stk)
 	v->binding.vtype = TYPE_mvc;
 	v->binding.val.pval = m;
 
-	scanner_reset(&m->scanner, cmd = _strdup(cmd));
-
 	err = sqlexecute(sql, GDKout);
 	if (err)
 		GDKerror(m->errstr);
 	backend_destroy(sql);
 	GDKfree(cmd);
+	GDKfree(b);
+
 	mvc_commit(m, 0, NULL);
 	res_tables_destroy(m->results);
 	mvc_destroy(m);
@@ -912,6 +929,9 @@ mvc_sql(mvc *m, char *cmd)
 	int err = 0;
 	backend *sql;
 	Variable v;
+	buffer *b;
+	char *n;
+	int len = strlen(cmd);
 
 	sql = backend_create(0, m, 1);
 
@@ -927,7 +947,20 @@ mvc_sql(mvc *m, char *cmd)
 	m->qc = NULL;
 
 	m->cache = 0;
-	scanner_reset(&m->scanner, cmd);
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, cmd, len);
+	cmd = n;
+	cmd[len] = '\n';
+	cmd[len+1] = 0;
+	len++;
+	buffer_init(b, cmd, len);
+	scanner_init( &m->scanner, 
+		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
+		NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
 	m->args = NULL;
@@ -936,6 +969,9 @@ mvc_sql(mvc *m, char *cmd)
 
 	err = sqlexecute(sql, NULL);
 	backend_destroy(sql);
+	GDKfree(cmd);
+	GDKfree(b);
+	bstream_destroy(m->scanner.rs);
 	assert(m->qc == NULL);
 
 	*m = o;
