@@ -537,6 +537,7 @@ static BAT *sys_bat( struct bm *bm, char *name ) {
 		b = bat_lcopy(b, "sys_bat");
 		bm_new_bat(bm, lbid, b->batCacheid);
 	}
+	assert(b);
 	return b;
 }
 
@@ -588,6 +589,8 @@ static BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 			 
 			BATseqbase(b,0);
 			c->bat.ibid = temp_create(b);
+			c->base.wtime = c->t->base.wtime = 
+				c->t->s->base.wtime = tr->wtime = tr->stime;
 			return b;
 		}
 	}
@@ -2376,6 +2379,7 @@ rollforward_create_column( sql_trans *tr, sql_column *c )
 
 	if (!c->t->clear){
 		/* only log on toplevel */
+		assert(!c->bat.ibid);
 		b = bm_lbid2bat( tr->bm, c->bat.bid);
 		snprintf(bname, BUFSIZ, "%s_%s", 
 			c->t->base.name, c->base.name );
@@ -2534,12 +2538,14 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
                 tt->base.rtime = ft->base.rtime;
                 tt->base.wtime = ft->base.wtime;
 
-		bm_new_bat( ttr->bm, tt->dbid, db->batCacheid );
-		if (tr->parent == gtrans)
+		if (BUNlast(db) > db->batInserted)
+			bm_new_bat( ttr->bm, tt->dbid, db->batCacheid );
+		if (ttr == gtrans)
 			log_bat(logger, tt->dbid, db);
 		bat_destroy(db);
 
 		do { 
+			int replace = 1;
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
 
@@ -2551,12 +2557,24 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
                 	oc->base.rtime = cc->base.rtime;
                 	oc->base.wtime = cc->base.wtime;
 			
-			bm_new_bat( ttr->bm, oc->bat.bid, ins->batCacheid );
-			if (tr->parent == gtrans)
+			if (cc->bat.ibid) {
+				BAT *cur = bm_lbid2bat( 
+					ttr->bm, oc->bat.bid);
+
+				if (BATcount(cur)){
+					replace = 0;
+					void_append_bat(cur, ins);
+				} 
+				bat_destroy(cur);
+			}
+			if (replace && (BUNlast(ins) > ins->batInserted))
+				bm_new_bat( ttr->bm, oc->bat.bid, ins->batCacheid );
+			if (ttr == gtrans)
 				log_bat(logger, oc->bat.bid, ins);
 			bat_destroy(ins);
-			bm_new_bat( ttr->bm, oc->bat.ubid, ups->batCacheid );
-			if (tr->parent == gtrans)
+			if (BUNlast(ups) > ups->batInserted)
+				bm_new_bat( ttr->bm, oc->bat.ubid, ups->batCacheid );
+			if (ttr == gtrans)
 				log_bat(logger, oc->bat.ubid, ups);
 			bat_destroy(ups);
 
@@ -2576,17 +2594,20 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 					bm_lbid2bat( tr->bm, ci->bat.bid);
 				BAT *ups = bm_lbid2bat( tr->bm, ci->bat.ubid);
 
+			    	assert(!ci->bat.ibid);
                 		oi->base.rtime = ci->base.rtime;
                 		oi->base.wtime = ci->base.wtime;
 			
-				bm_new_bat( ttr->bm, oi->bat.bid, 	
+				if (BUNlast(ins) > ins->batInserted)
+					bm_new_bat( ttr->bm, oi->bat.bid, 	
 					    ins->batCacheid );
-				if (tr->parent == gtrans)
+				if (ttr == gtrans)
 					log_bat(logger, oi->bat.bid, ins);
 				bat_destroy(ins);
-				bm_new_bat( ttr->bm, oi->bat.ubid, 
+				if (BUNlast(ups) > ups->batInserted)
+					bm_new_bat( ttr->bm, oi->bat.ubid, 
 					    ups->batCacheid );
-				if (tr->parent == gtrans)
+				if (ttr == gtrans)
 					log_bat(logger, oi->bat.ubid, ups);
 				bat_destroy(ups);
 
