@@ -981,8 +981,6 @@ void sqltypeinit()
 	*t++ = sql_create_type("DECIMAL", 10, SCALE_FIX, 10, 0,		"int");
 	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 0,		"lng");
 
-	sql_create_alias(T->sqlname, "NUMERIC");
-
 	/* float(n) (n indicates precision of atleast n digits)*/
 	/* ie n <= 23 -> flt */
 	/*    n <= 51 -> dbl */

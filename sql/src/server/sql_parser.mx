@@ -435,7 +435,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
 	CHARACTER VARYING sqlDECIMAL sqlFLOAT 
-	TINYINT SMALLINT MEDIUMINT BIGINT sqlINTEGER
+	SMALLINT MEDIUMINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
@@ -2683,7 +2683,6 @@ data_type:
 			  else
 				$$ = sql_bind_subtype("char", $4, 0); 
 			}
- |  TINYINT		{ $$ = sql_bind_subtype("smallint", 3, 0); }
  |  SMALLINT	{ $$ = sql_bind_subtype("smallint", 0, 0); }
  |  sqlINTEGER	{ $$ = sql_bind_subtype("int", 0, 0); }
  |  BIGINT		{ $$ = sql_bind_subtype("bigint", 0, 0); }
