@@ -89,6 +89,7 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		* (SQLUINTEGER *) Value = stmt->retrieveData;
 		break;
 	case SQL_ATTR_ROW_ARRAY_SIZE:
+	case SQL_ROWSET_SIZE:
 		return SQLGetDescField_(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_SIZE,
 					Value, BufferLength, StringLength);

@@ -109,12 +109,12 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, cw, errfunc, hdl)		\
 	do {								\
 		if (SQL_SUCCEEDED(r)) {					\
-			char *e = ODBCutf82wchar((s), (sl), (ws), (wsl), &(sl)); \
+			char *e = ODBCutf82wchar((s), (sl), (ws), (wsl) / (cw), &(sl)); \
 			if (e) {					\
 				/* General error */			\
 				errfunc((hdl), "HY000", e, 0);		\
 				(r) = SQL_ERROR;			\
-			} else if ((sl) >= (wsl)) {			\
+			} else if ((sl) * (cw) >= (wsl)) {		\
 				/* String data, right-truncated */	\
 				errfunc((hdl), "01004", NULL, 0);	\
 				(r) = SQL_SUCCESS_WITH_INFO;		\
