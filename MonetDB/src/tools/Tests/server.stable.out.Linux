@@ -190,12 +190,12 @@ Start of MIL prelude.
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "287"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "284"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "278"			  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
@@ -635,29 +635,29 @@ Start of MIL prelude.
 # client	name	login				tree											  # name
 # int	str	str				str											  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 0,	  "adm",  "Fri Oct 22 20:06:55 2004",	  "clients()"										  ]
-[ 1,	  "adm",  "Fri Oct 22 20:06:55 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
+[ 0,	  "adm",  "Tue Oct 26 15:16:21 2004",	  "clients()"										  ]
+[ 1,	  "adm",  "Tue Oct 26 15:16:21 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  200	  ]
+[ "user",	  110	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  690	  ]
+[ "system",	  40	  ]
 [ "elapsystem",	  0	  ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#---------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/data/rc/Linux-i686/etc/MonetDB.conf"				  ]
-[ "gdk_arch",		  "32biti686-redhat-linux-gnu"					  ]
+#-----------------------------------------------------------------------------------------#
+[ "config",		  "/data/home/niels/data/rc/Linux-x86_64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "32bitx86_64-unknown-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.0"									  ]
-[ "monet_pid",		  "13737"									  ]
-[ "prefix",		  "/ufs/niels/data/rc/Linux-i686"						  ]
-[ "exec_prefix",	  "/ufs/niels/data/rc/Linux-i686"						  ]
+[ "monet_pid",		  "20584"							  ]
+[ "prefix",		  "/data/home/niels/data/rc/Linux-x86_64"			  ]
+[ "exec_prefix",	  "/data/home/niels/data/rc/Linux-x86_64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/dbfarm"				  ]
+[ "gdk_dbfarm",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -665,30 +665,30 @@ Start of MIL prelude.
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_mod_path",	  "/ufs/niels/data/rc/Linux-i686/lib/MonetDB"					  ]
+[ "monet_mod_path",	  "/data/home/niels/data/rc/Linux-x86_64/lib/MonetDB"		  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "44425"									  ]
+[ "mapi_port",		  "42364"							  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "52742"									  ]
+[ "sql_port",		  "55640"							  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/log"				  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/rc/Linux-i686/mTests/src/tools"	  ]
-#---------------------------------------------------------------------------------------------------------#
+[ "sql_logdir",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/log"	  ]
+[ "monet_cwd",		  "/data/db3/niels/rc/Linux-x86_64/mTests/src/tools"		  ]
+#-----------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#---------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/data/rc/Linux-i686/etc/MonetDB.conf"				  ]
-[ "gdk_arch",		  "32biti686-redhat-linux-gnu"							  ]
+#-----------------------------------------------------------------------------------------#
+[ "config",		  "/data/home/niels/data/rc/Linux-x86_64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "32bitx86_64-unknown-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.0"																																											  ]
-[ "monet_pid",		  "13737"									  ]
-[ "prefix",		  "/ufs/niels/data/rc/Linux-i686"						  ]
-[ "exec_prefix",	  "/ufs/niels/data/rc/Linux-i686"						  ]
+[ "monet_pid",		  "20584"							  ]
+[ "prefix",		  "/data/home/niels/data/rc/Linux-x86_64"			  ]
+[ "exec_prefix",	  "/data/home/niels/data/rc/Linux-x86_64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/dbfarm"				  ]
+[ "gdk_dbfarm",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -696,44 +696,44 @@ Start of MIL prelude.
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_mod_path",	  "/ufs/niels/data/rc/Linux-i686/lib/MonetDB"					  ]
+[ "monet_mod_path",	  "/data/home/niels/data/rc/Linux-x86_64/lib/MonetDB"		  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "44425"									  ]
+[ "mapi_port",		  "42364"							  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "52742"									  ]
+[ "sql_port",		  "55640"							  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/log"				  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/rc/Linux-i686/mTests/src/tools"	  ]
+[ "sql_logdir",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/log"	  ]
+[ "monet_cwd",		  "/data/db3/niels/rc/Linux-x86_64/mTests/src/tools"		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1631	  ]
-[ "majflt",	  0	  ]
+[ "minflt",	  921	  ]
+[ "majflt",	  986	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  34	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  1667072	  ]
-[ "arena",	  1802240	  ]
-[ "ordblks",	  119		  ]
+[ "arena",	  1804284	  ]
+[ "ordblks",	  130		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1656456	  ]
-[ "fordblks",	  145784	  ]
+[ "uordblks",	  1660532	  ]
+[ "fordblks",	  143752	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -743,8 +743,8 @@ Start of MIL prelude.
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Oct 22 20:06:55 2004"	  ]
-[ 1,	  "Fri Oct 22 20:06:55 2004"	  ]
+[ 0,	  "Tue Oct 26 15:16:21 2004"	  ]
+[ 1,	  "Tue Oct 26 15:16:21 2004"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
@@ -756,22 +756,22 @@ Start of MIL prelude.
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  200	  ]
+[ "user",	  110	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  690	  ]
+[ "system",	  40	  ]
 [ "elapsystem",	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#---------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/data/rc/Linux-i686/etc/MonetDB.conf"				  ]
-[ "gdk_arch",		  "32biti686-redhat-linux-gnu"					  ]
+#-----------------------------------------------------------------------------------------#
+[ "config",		  "/data/home/niels/data/rc/Linux-x86_64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "32bitx86_64-unknown-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.0"									  ]
-[ "monet_pid",		  "13737"									  ]
-[ "prefix",		  "/ufs/niels/data/rc/Linux-i686"						  ]
-[ "exec_prefix",	  "/ufs/niels/data/rc/Linux-i686"						  ]
+[ "monet_pid",		  "20584"							  ]
+[ "prefix",		  "/data/home/niels/data/rc/Linux-x86_64"			  ]
+[ "exec_prefix",	  "/data/home/niels/data/rc/Linux-x86_64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/dbfarm"				  ]
+[ "gdk_dbfarm",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -779,44 +779,44 @@ Start of MIL prelude.
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_mod_path",	  "/ufs/niels/data/rc/Linux-i686/lib/MonetDB"					  ]
+[ "monet_mod_path",	  "/data/home/niels/data/rc/Linux-x86_64/lib/MonetDB"		  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "44425"									  ]
+[ "mapi_port",		  "42364"							  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "52742"									  ]
+[ "sql_port",		  "55640"							  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/log"				  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/rc/Linux-i686/mTests/src/tools"	  ]
+[ "sql_logdir",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/log"	  ]
+[ "monet_cwd",		  "/data/db3/niels/rc/Linux-x86_64/mTests/src/tools"		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1632	  ]
-[ "majflt",	  0	  ]
+[ "minflt",	  921	  ]
+[ "majflt",	  986	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  34	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1802240	  ]
-[ "ordblks",	  118		  ]
+[ "arena",	  1804284	  ]
+[ "ordblks",	  128		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1665272	  ]
-[ "fordblks",	  136968	  ]
+[ "uordblks",	  1669348	  ]
+[ "fordblks",	  134936	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1017,12 +1017,12 @@ vars();
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "287"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "284"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "278"			  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
@@ -1483,30 +1483,30 @@ clients();
 # BAT:	  name	| login				| tree		  #
 # (int)	  (str)	| (str)				| (str)		  #
 #-----------------------------------------------------------------#
-[ 0,	  "adm",  "Fri Oct 22 20:06:55 2004",	  "clients()"	  ]
+[ 0,	  "adm",  "Tue Oct 26 15:16:21 2004",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  230	  ]
-[ "elapuser",	  30	  ]
-[ "system",	  690	  ]
+[ "user",	  130	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  40	  ]
 [ "elapsystem",	  0	  ]
 env();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#---------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/data/rc/Linux-i686/etc/MonetDB.conf"				  ]
-[ "gdk_arch",		  "32biti686-redhat-linux-gnu"					  ]
+#-----------------------------------------------------------------------------------------#
+[ "config",		  "/data/home/niels/data/rc/Linux-x86_64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "32bitx86_64-unknown-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.0"									  ]
-[ "monet_pid",		  "13737"									  ]
-[ "prefix",		  "/ufs/niels/data/rc/Linux-i686"						  ]
-[ "exec_prefix",	  "/ufs/niels/data/rc/Linux-i686"						  ]
+[ "monet_pid",		  "20584"							  ]
+[ "prefix",		  "/data/home/niels/data/rc/Linux-x86_64"			  ]
+[ "exec_prefix",	  "/data/home/niels/data/rc/Linux-x86_64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/dbfarm"				  ]
+[ "gdk_dbfarm",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -1514,31 +1514,31 @@ env();
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_mod_path",	  "/ufs/niels/data/rc/Linux-i686/lib/MonetDB"					  ]
+[ "monet_mod_path",	  "/data/home/niels/data/rc/Linux-x86_64/lib/MonetDB"		  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "44425"									  ]
+[ "mapi_port",		  "42364"							  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "52742"									  ]
+[ "sql_port",		  "55640"							  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/log"				  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/rc/Linux-i686/mTests/src/tools"	  ]
+[ "sql_logdir",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/log"	  ]
+[ "monet_cwd",		  "/data/db3/niels/rc/Linux-x86_64/mTests/src/tools"		  ]
 environment().print();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#---------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/data/rc/Linux-i686/etc/MonetDB.conf"				  ]
-[ "gdk_arch",		  "32biti686-redhat-linux-gnu"							  ]
+#-----------------------------------------------------------------------------------------#
+[ "config",		  "/data/home/niels/data/rc/Linux-x86_64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "32bitx86_64-unknown-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.0"																																											  ]
-[ "monet_pid",		  "13737"									  ]
-[ "prefix",		  "/ufs/niels/data/rc/Linux-i686"						  ]
-[ "exec_prefix",	  "/ufs/niels/data/rc/Linux-i686"						  ]
+[ "monet_pid",		  "20584"							  ]
+[ "prefix",		  "/data/home/niels/data/rc/Linux-x86_64"			  ]
+[ "exec_prefix",	  "/data/home/niels/data/rc/Linux-x86_64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/dbfarm"				  ]
+[ "gdk_dbfarm",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -1546,46 +1546,46 @@ environment().print();
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_mod_path",	  "/ufs/niels/data/rc/Linux-i686/lib/MonetDB"					  ]
+[ "monet_mod_path",	  "/data/home/niels/data/rc/Linux-x86_64/lib/MonetDB"		  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "44425"									  ]
+[ "mapi_port",		  "42364"							  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "52742"									  ]
+[ "sql_port",		  "55640"							  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/log"				  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/rc/Linux-i686/mTests/src/tools"	  ]
+[ "sql_logdir",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/log"	  ]
+[ "monet_cwd",		  "/data/db3/niels/rc/Linux-x86_64/mTests/src/tools"		  ]
 io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1633	  ]
-[ "majflt",	  0	  ]
+[ "minflt",	  922	  ]
+[ "majflt",	  987	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  35	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1802240	  ]
-[ "ordblks",	  452		  ]
+[ "arena",	  1804284	  ]
+[ "ordblks",	  454		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1507512	  ]
-[ "fordblks",	  294728	  ]
+[ "uordblks",	  1511548	  ]
+[ "fordblks",	  292736	  ]
 threads();
 #-------------------------#
 # BAT:	  thread	  #
@@ -1597,7 +1597,7 @@ view_client_login().print();
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Oct 22 20:06:55 2004"	  ]
+[ 0,	  "Tue Oct 26 15:16:21 2004"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -1610,23 +1610,23 @@ view_gdk_cpu().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  230	  ]
+[ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  700	  ]
-[ "elapsystem",	  10	  ]
+[ "system",	  40	  ]
+[ "elapsystem",	  0	  ]
 view_gdk_env().print();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
 # str			str																																										  # type
-#---------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/data/rc/Linux-i686/etc/MonetDB.conf"				  ]
-[ "gdk_arch",		  "32biti686-redhat-linux-gnu"					  ]
+#-----------------------------------------------------------------------------------------#
+[ "config",		  "/data/home/niels/data/rc/Linux-x86_64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "32bitx86_64-unknown-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.0"									  ]
-[ "monet_pid",		  "13737"									  ]
-[ "prefix",		  "/ufs/niels/data/rc/Linux-i686"						  ]
-[ "exec_prefix",	  "/ufs/niels/data/rc/Linux-i686"						  ]
+[ "monet_pid",		  "20584"							  ]
+[ "prefix",		  "/data/home/niels/data/rc/Linux-x86_64"			  ]
+[ "exec_prefix",	  "/data/home/niels/data/rc/Linux-x86_64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/dbfarm"				  ]
+[ "gdk_dbfarm",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"													  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -1634,46 +1634,46 @@ view_gdk_env().print();
 [ "monet_admin",	  "adm"													  ]
 [ "monet_prompt",	  ""													  ]
 [ "monet_welcome",	  "yes"													  ]
-[ "monet_mod_path",	  "/ufs/niels/data/rc/Linux-i686/lib/MonetDB"					  ]
+[ "monet_mod_path",	  "/data/home/niels/data/rc/Linux-x86_64/lib/MonetDB"		  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "44425"									  ]
+[ "mapi_port",		  "42364"							  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "52742"									  ]
+[ "sql_port",		  "55640"							  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/niels/data/rc/Linux-i686/var/MonetDB/log"				  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/rc/Linux-i686/mTests/src/tools"	  ]
+[ "sql_logdir",		  "/data/home/niels/data/rc/Linux-x86_64/var/MonetDB/log"	  ]
+[ "monet_cwd",		  "/data/db3/niels/rc/Linux-x86_64/mTests/src/tools"		  ]
 view_gdk_io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1633	  ]
-[ "majflt",	  0	  ]
+[ "minflt",	  922	  ]
+[ "majflt",	  987	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  36	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 view_gdk_memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1802240	  ]
-[ "ordblks",	  455		  ]
+[ "arena",	  1804284	  ]
+[ "ordblks",	  457		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1506904	  ]
-[ "fordblks",	  295336	  ]
+[ "uordblks",	  1510932	  ]
+[ "fordblks",	  293352	  ]
 view_gdk_thread().print();
 #-------------------------#
 # BAT:	  thread	  #
