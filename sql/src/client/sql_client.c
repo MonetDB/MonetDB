@@ -123,7 +123,7 @@ void clientAccept_new( context *lc, stream *rs ){
 
 	    		lc->out->flush( lc->out );
 		}
-		if (!lc->debug&64 && s && s->type == st_output){
+		if (!(lc->debug&64) && s && s->type == st_output){
 			int nRows = 0;
 			char *buf = readblock( rs ), *n = buf;
 			
