@@ -53,7 +53,7 @@ while(i < 10) {
 # BAT:			  tmp_31	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+[ "theap.storage",	  "private map"	  ]
 [ 40000 ]
 #-------------------------------------------------#
 # t			tmp_32			  # name

@@ -586,22 +586,59 @@ dump_table(Mapi mid, char *tname)
 	string = malloc(sizeof(int)*cnt);
 	for (i = 0; i < cnt; i++) {
 		string[i] = 0;
-		if (strcmp(mapi_get_type(hdl, i), "char") == 0)
+		if (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
+			strcmp(mapi_get_type(hdl, i), "varchar") == 0)
+		{
 			string[i] = 1;
+		}
 	}
 	while (mapi_fetch_row(hdl)) {
-		char *format;
+		char *s;
 
-		for(i = 0; i < cnt - 1; i++) {
-			format = "%s\t";
-			if (string[i])
-				format = "'%s'\t";
-			fprintf(toConsole, format, mapi_fetch_field(hdl, i));
+		for(i = 0; i < cnt; i++) {
+			s = mapi_fetch_field(hdl, i);
+			if (string[i]) {
+				/* write double-quoted string with
+				   certain characters escaped */
+				putc('"', toConsole);
+				while (*s) {
+					/* strToStr and strFromStr in gdk_atoms.mx only
+					   support \t \n \\ \" and \377 */
+					switch (*s) {
+					case '\\':
+					case '"':
+						putc('\\', toConsole);
+						putc(*s, toConsole);
+						break;
+					case '\n':
+						putc('\\', toConsole);
+						putc('n', toConsole);
+						break;
+					case '\t':
+						putc('\\', toConsole);
+						putc('t', toConsole);
+						break;
+					default:
+						if ((0 < *s && *s < 32) || *s == '\377') {
+							char *tmp = malloc(sizeof(char) * 4 + 1);
+							snprintf(tmp, 5, "\\%03o", (unsigned char)*s);
+							fwrite(tmp, 4, 1, toConsole);
+							free(tmp);
+						} else {
+							putc(*s, toConsole);
+						}
+						break;
+					}
+					s++;
+				}
+				putc('"', toConsole);
+			} else
+				fputs(s, toConsole);
+			if (i < cnt - 1)
+				putc('\t', toConsole);
+			else
+				putc('\n', toConsole);
 		}
-		format = "%s\n";
-		if (string[i])
-			format = "'%s'\n";
-		fprintf(toConsole, format, mapi_fetch_field(hdl, i));
 	}
 	free(string);
 	if (mapi_error(mid)) {
@@ -654,7 +691,7 @@ dump_tables(Mapi mid)
 		char *vname = mapi_fetch_field(hdl, 0);
 		char *query = mapi_fetch_field(hdl, 1);
 
-		fprintf(toConsole, "CREATE VIEW %s %s\n", vname, query);
+		fprintf(toConsole, "CREATE VIEW %s AS %s\n", vname, query);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -662,6 +699,9 @@ dump_tables(Mapi mid)
 		return 1;
 	}
 	mapi_close_handle(hdl);
+
+	/* finally commit the whole transaction */
+	fprintf(toConsole, "COMMIT;\n");
 
 	return rc;
 }

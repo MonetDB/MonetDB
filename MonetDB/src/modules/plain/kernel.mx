@@ -647,7 +647,11 @@ int CMDclientid(Cntxt stk, YYSTREE lt, ValPtr res){
 	(void) lt;
 	CNTXTclient(stk, &c);
 	res->vtype = TYPE_int;
-	res->val.ival = (int) (c-monet_clients);
+	if (c->father >= 0) {
+		res->val.ival = c->father;
+	} else {
+		res->val.ival = (int) (c-monet_clients);
+	}
 	return 0;
 }
 

@@ -91,6 +91,10 @@ case "$host" in
 powerpc-apple-darwin*)
 	CPPFLAGS="$CPPFLAGS -I/sw/include"
 	LDFLAGS="$LDFLAGS -L/sw/lib"
+	if test "$host" = "powerpc-apple-darwin6.8"; then
+		dnl  Jaguar still requires this...
+		CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
+	fi
 	;;
 esac
 
@@ -122,14 +126,24 @@ AC_ARG_WITH(gcc,
 		    ;;
 		esac
 		;;
-	*)	CC=$withval;;
+	*)	CC=$withval
+		case "$CC" in
+		dnl  Portland Group compiler (pgcc/pgCC)
+		pgcc*)	CC="$CC -fPIC";;
+		esac
+		;;
 	esac])
 
 AC_ARG_WITH(gxx,
 [  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
-	*)	CXX=$withval;;
+	*)	CXX=$withval
+		case "$CXX" in
+		dnl  Portland Group compiler (pgcc/pgCC)
+		pgcc*)	CXX="$CXX -fPIC";;
+		esac
+		;;
 	esac])
 
 AC_PROG_CC()
@@ -157,8 +171,8 @@ dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 X_CFLAGS=''
 X_CXXFLAGS=''
 NO_X_CFLAGS='_NO_X_CFLAGS_'
-case $GCC-$host_os in
-yes-*)
+case "$GCC-$CC-$host_os" in
+yes-*-*)
 	dnl  GNU (gcc/g++)
 	dnl  We need more features than the C89 standard offers, but not all
 	dnl  (if any at all) C/C++ compilers implements the complete C99
@@ -234,7 +248,7 @@ yes-*)
 		;;
 	esac
 	;;
--linux*)
+-icc*-linux*|-ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
  	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
@@ -294,9 +308,9 @@ case $withval in
 	ia64*)	AC_ERROR([we do not support 32 bits on $host, yet]);;
 	esac
 	;;
-64)	case "$host-$GCC" in
-	i?86*-*)  AC_ERROR([$host does not support 64 bits]);;
-	x86_64*-) AC_ERROR([$CC on $host does not support 64 bits]);;
+64)	case "$host-$GCC-$CC" in
+	i?86*-*-*)  AC_ERROR([$host does not support 64 bits]);;
+	x86_64*--icc*) AC_ERROR([$CC on $host does not support 64 bits]);;
 	esac
 	;;
 *)	AC_ERROR(--with-bits argument must be either 32 or 64);;
@@ -305,10 +319,13 @@ bits=$withval
 ])
 if test "$bits" = "64"; then
 	dnl  Keep in mind how to call the 32-bit compiler.
-	case "$GCC-$host_os-$host" in
-	yes-linux*-x86_64*)
+	case "$GCC-$CC-$host_os-$host" in
+	yes-*-linux*-x86_64*)
 		dnl  On our x86_64 machine, "gcc" defaults to "gcc -m64" ...
 		CC32="$CC -m32";;
+	-pgcc*-linux*-x86_64*)
+		dnl  On our x86_64 machine, "pgcc" defaults to "pgcc -tp=k8_64" ...
+		CC32="$CC -tp=k8_32";;
 	*)	CC32="$CC";;
 	esac
 fi
@@ -500,6 +517,11 @@ if test "$bits" = "64"; then
 fi
 AC_PROG_LEX
 AM_PROG_LEX()
+case "$CC-$bits" in
+pgcc*-64)
+	dnl  32-bit version of Portland Group compiler (pgcc/pgCC) does not work, yet...
+	AC_DEFINE(YYTEXT_POINTER, 1, [Define to 1 if `lex' declares `yytext' as a `char *' by default, not a `char[]'.]);;
+esac
 if test "$CC64" != ""; then
 	dnl  Back to 64-bit, and don't use the 32-bit lib[f]l that might have been found.
 	CC="$CC64"
@@ -625,6 +647,8 @@ if test "x$enable_optim" = xyes; then
       esac
     else
       case "$host-$icc_ver" in
+      dnl Portland Group compiler (pgcc/pgCC) has $icc_ver=""
+      *-*-*-)    ;;
       dnl  With icc-8.0, Interprocedural (IP) Optimization does not seem to work with MonetDB:
       dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
       dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.

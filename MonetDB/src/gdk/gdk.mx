@@ -1352,6 +1352,7 @@ gdk_export int		BATname	     (BAT *b, str nme);
 gdk_export BAT*		BATseqbase   (BAT *b, oid o); 
 gdk_export BAT*		BATsetaccess (BAT *b, int mode); 
 gdk_export int		BATgetaccess (BAT *b); 
+gdk_export int		BATcheckmodes(BAT *b, int persistent, int unloadable); 
 
 
 #define BATdirty(b)	((b)->batCopiedtodisk == 0 || (b)->batDirty ||\
@@ -2391,7 +2392,6 @@ gdk_export int	TMcommit    (void);
 gdk_export int	TMabort     (void); 
 gdk_export int	TMresume    (str cntxt); 
 gdk_export str	TMcntxt     (void); 
-gdk_export void	TMfakeCommit(void); 
 @
 @}
 

@@ -31,11 +31,11 @@ while(i < 100) {
 a.mmap(1,1,1,1,1);
 unload("a");
 a.info.reverse.select("theap.storage").reverse.print;
-#-----------------------------------------#
-# BAT:			  tmp_30	  #
-# (str)			  (str)		  #
-#-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+#-------------------------------------------------#
+# t			tmp_31			  # name
+# str			str			  # type
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 
 [int](a.mirror);
 e := [str]([int](a.mirror));
