@@ -384,6 +384,7 @@
 #if _MSC_VER >= 1300
 #define HAVE_STRTOLL 1
 #define strtoll _strtoi64
+#define HAVE_DECL_STRTOLL 1
 #else
 /* #undef HAVE_STRTOLL */
 #endif
@@ -392,6 +393,7 @@
 #if _MSC_VER >= 1300
 #define HAVE_STRTOULL
 #define strtoull _strtoui64
+#define HAVE_DECL_STRTOULL 1
 #else
 /* #undef HAVE_STRTOULL */
 #endif

@@ -233,24 +233,22 @@ yes-*-*)
 	dnl  standard.  Moreover, there seems to be no standard for the
 	dnl  defines that enable the features beyond C89 in the various
 	dnl  platforms.  Here's what we found working so far...
+	CFLAGS="$CFLAGS -std=c99"
 	case "$gcc_ver-$host_os" in
 	*-solaris*)
 		AC_DEFINE(__EXTENSIONS__, 1, [Compiler flags])
 		;;
-	*-irix*|*-cygwin*|*-darwin*|2.*-*)
+	*-cygwin*)
+		dnl  Otherwise, snprintf prototype is not declared in stdio.h ...
+		CFLAGS="$CFLAGS -U__STRICT_ANSI__"
 		;;
-	3.[[2-9]]*-*)
+	*-irix*|*-darwin*)
+		dnl  Are these exceptions still necessary??
+		;;
+	3.*-*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		CFLAGS="$CFLAGS -std=c99"
-		CXXFLAGS="$CXXFLAGS -ansi"
-		;;
-	3.*-*)	
-		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		CFLAGS="$CFLAGS -ansi -std=c99"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	esac
