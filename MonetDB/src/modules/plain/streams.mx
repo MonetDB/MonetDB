@@ -44,6 +44,9 @@ data files.
 .COMMAND stream_write( stream s, str data ) = stream_write_string;
 	"write data on the stream"
 
+.COMMAND stream_writeInt( stream s, int data ) = stream_writeInt_wrap;
+	"write an integer on the stream"
+
 .COMMAND stream_read( stream s ) : str = stream_read_string;
 	"read data from the stream"
 
@@ -52,6 +55,21 @@ data files.
 
 .COMMAND stream_close( stream s ) = stream_close_stream; 
 	"close and destroy the stream s"
+
+    .ATOM buffer = ptr;
+    .END;
+
+.COMMAND buffer_create( int size ) : buffer = buffer_create_wrap;
+	"create a buffer of the given size"
+
+.COMMAND buffer_destroy( buffer b ) = buffer_destroy_wrap;
+	"destroy buffer"
+
+.COMMAND buffer_rastream( buffer b, str name ) : stream = buffer_rastream_wrap;
+	"create a buffer read stream"
+
+.COMMAND buffer_wastream( buffer b, str name ) : stream = buffer_wastream_wrap; 
+	"create a buffer write stream"
 
 .END streams;
 @h
@@ -160,6 +178,14 @@ int stream_write_string( stream *S, str data ){
 	return GDK_SUCCEED;
 }
 
+<<<<<<< streams.mx
+int stream_writeInt_wrap( stream *S, int *data ){
+	stream *s = *(stream**)S;
+	s->writeInt( s, *data);
+	return GDK_SUCCEED;
+}
+
+=======
 #define CHUNK (64*1024)
 int stream_read_string( str *res, stream *S ){
 	stream *s = *(stream**)S;
@@ -194,6 +220,32 @@ int stream_close_stream( stream *S ){
 
 int open_block_stream( stream *S, stream *is ){
 	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+
+int buffer_create_wrap( buffer *b, int *size){
+	if ((*(buffer**)b = buffer_create( *size )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int buffer_destroy_wrap( buffer *b ){
+	buffer_destroy( *(buffer**)b );
+	return GDK_SUCCEED;
+}
+int buffer_rastream_wrap( stream *S, buffer *b, str name ){
+	if ((*(stream**)S = buffer_rastream( *(buffer**)b, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int buffer_wastream_wrap( stream *S, buffer *b, str name ){
+	if ((*(stream**)S = buffer_wastream( *(buffer**)b, name )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
