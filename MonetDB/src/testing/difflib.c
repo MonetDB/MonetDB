@@ -112,9 +112,9 @@ int oldnew2u_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
       sprintf(command,"%s %s %s.cp > nul",COPY,new_fn,new_fn);
       SYSTEM(command);
 
-      sprintf(command,"%s %s -a -d -u%i %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+      sprintf(command,"%s %s -a -d -U%d %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
     #else
-      sprintf(command,"%s %s -a -d -u%i %s    %s    > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+      sprintf(command,"%s %s -a -d -U%d %s    %s    > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
     #endif
 
       SYSTEM(command);
