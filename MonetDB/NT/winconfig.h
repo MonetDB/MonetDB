@@ -24,6 +24,8 @@
  * 1200)
  */
 
+#define WIN32_LEAN_AND_MEAN 1
+
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
    versions.  We need to include stdlib.h and malloc.h first or else
@@ -476,6 +478,9 @@
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
 #define vsnprintf _vsnprintf
+
+/* Define to 1 if you have the <winsock.h> header file. */
+#define HAVE_WINSOCK_H 1
 
 /* Define if you have _sys_siglist */
 /* #undef HAVE__SYS_SIGLIST */

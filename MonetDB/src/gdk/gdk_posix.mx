@@ -48,6 +48,10 @@ the WIN32 native platform.
 # endif
 #endif
 
+#ifdef HAVE_WINSOCK_H
+#include <winsock.h>    /* for timeval */
+#endif
+
 #ifdef NATIVE_WIN32
 #include <io.h>
 #include <direct.h>
