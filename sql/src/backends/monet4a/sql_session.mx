@@ -496,6 +496,7 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	backend *sql;
 	char *prompt= "\001sql>\002\n";
 	int promptlength= strlen(prompt);
+	int language;
 
 	int size, err;
 	char *inbuf, *start;
@@ -638,8 +639,9 @@ These lines should be eaten away into the prompt is encountered.
 			/*error(out, "!ERROR:Connection terminated");*/
 			break;
 		}
-		if (*start != 'S') {
-			error(out, "!ERROR:Expected S prefix");
+		language = *start;
+		if (language != 'S' && language != 'X') {
+			error(out, "!ERROR:Unrecognized language prefix");
 			break;
 		}
 		if( blocked ){
@@ -683,6 +685,15 @@ These lines should be eaten away into the prompt is encountered.
 		}
 		if (!inlen || inbuf[0] == EOT)
 			break;
+
+		if (language == 'X') {
+			if (sscanf(inbuf, "reply_size %d", &reply_size) == 1) {
+				sql->reply_size = reply_size;
+				goto loop_end; /* continue */
+			}
+			error(out, "!ERROR:Unrecognized X command");
+			break;
+		}
 
 		sqlc->buf = inbuf;
 		sqlc->cur = ' ';
@@ -739,7 +750,15 @@ End of echo */
 				stream_flush( out );
 			}
 		}
-		if (inbuf) _DELETE(inbuf);
+	  loop_end:
+		if (inbuf) {
+			_DELETE(inbuf);
+			inbuf = NULL;
+		}
+	}
+	if (inbuf) {
+		_DELETE(inbuf);
+		inbuf = NULL;
 	}
 	mvc_destroy(m);
 
