@@ -177,8 +177,8 @@ void bun_inplace(BAT *b, oid id, ptr val )
 	BUN oldInserted = b->batInserted;
 
 	assert(b->htype == TYPE_void);
-	assert(b->hseqbase == 0);
-	assert(BATcount(b) > id);
+	assert(b->hseqbase != oid_nil);
+	assert(BATcount(b) > (id-b->hseqbase));
 
 	b->batInserted = NULL;
 	BUNfndVOID(p, b, (ptr)&id);
