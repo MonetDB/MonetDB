@@ -5,7 +5,6 @@ use IO::Socket;
 use IO::Handle;
 
 sub new {
-	
     my($self,$server,$user) = @_;
     my $self = {};
     $self->{SERVER} = $server;
@@ -38,50 +37,42 @@ sub portnr {
 }
 
 sub disconnect {
-
     my ($self) = @_;
     $self->cmd_intern("quit;\n");
     $self->{SOCKET}->close;
 }
 
 sub cmd_intern {
-	
     my($self,$cmd) = @_;
-    
-    #print $cmd;
-    #print "\n";
     $self->{SOCKET}->send( $cmd ) 
 	|| die "can't send $cmd: $!";
 }
 
-sub result {
-	
+sub answer_intern {
     my($self) = @_;
     my($res,$buf,$index);
     $buf = $self->{BUF};
     while( ($index = index($self->{BUF},"\001")) < 0){
-	$self->{SOCKET}->recv($buf,4096);
-	$self->{BUF} = "$self->{BUF}$buf";
+        $self->{SOCKET}->recv($buf,4096);
+        $self->{BUF} = "$self->{BUF}$buf";
     }
     $res = substr($self->{BUF},0,$index);
     $index += 1;
-    $self->{BUF} = substr($self->{BUF},$index,length($self->{BUF})); 
-    $self->getprompt();
+    $self->{BUF} = substr($self->{BUF},$index,length($self->{BUF}));
     return $res;
 }
 
 sub getprompt {
-
     my($self) = @_;
-    my($prompt,$buf,$index);
-    $buf = $self->{BUF};
-    while( ($index = index($self->{BUF},"\001")) < 0){
-	$self->{SOCKET}->recv($buf,4096);
-	$self->{BUF} = "$self->{BUF}$buf";
-    }
-    $prompt = substr($self->{BUF},0,$index);
-    $index += 1;
-    $self->{BUF} = substr($self->{BUF},$index,length($self->{BUF})); 
+    $self->answer_intern();
+}
+
+sub result {
+    my($self) = @_;
+    my $res;
+    $res = $self->answer_intern();
+    $self->getprompt();
+    return $res;
 }
 
 sub cmd {
