@@ -202,7 +202,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		printf("#@1optimizer %s.%s\n",modnme,fcnnme);
 	setLifespan(s->def);
 	@1optimizer(s->def,0,0);
-	if(c->listing) printFunction(GDKout,s->def,c->listing);
+	/* if(c->listing) printFunction(GDKout,s->def,c->listing);*/
 
 	removeInstruction(mb, p);
 	return NULL;

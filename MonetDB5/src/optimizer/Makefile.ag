@@ -7,7 +7,8 @@ MTSAFE
 lib_optimizer = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = mal_optimizer.mx optimizer.mx  mal_factorize.mx
+	SOURCES = mal_optimizer.mx optimizer.mx  mal_factorize.mx \
+		mal_garbageCollector.mx
 
 	HEADERS = h 
 	SCRIPTS = mal

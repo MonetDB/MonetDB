@@ -826,7 +826,7 @@ void chkProgram(Scope s, MalBlkPtr mb)
 
 /*	if( mb->flowfixed == 0)*/
 	chkFlow(mb);
-	/* chkDeclarations(mb); too strict */
+	chkDeclarations(mb);
 }
 @+ Polymorphic type analysis
 MAL provides for type variables of the form any$N. This feature

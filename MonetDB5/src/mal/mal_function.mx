@@ -54,6 +54,8 @@ mal_export int getBarrierEnvelop(MalBlkPtr mb);
 mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 
 #include "mal_exception.h"
+
+#define MAXDEPTH 128
 #endif /*  _MAL_FCN_H*/
 @-
 The MAL function blocks are constructed incrementally while parsing the source.
@@ -333,59 +335,57 @@ Variables declared within a block may not be used outside it.
 In many situation chkFlow and chkDeclarations should be called
 together. Moreover, an erroneous chkFlow most likely implies
 errors in the declarations as well.
+
+Since in interactive mode each statement is handled separately,
+we have to remember the scope assigned to a variable.
 @c
-#define MAXDEPTH 128
+
 void chkDeclarations(MalBlkPtr mb){
     int pc,i, k;
     InstrPtr p;
-    int blks[MAXDEPTH], top= 0,blk=0;
-    int *defs;
+    int blks[MAXDEPTH], top= 0,blk=1;
     str nme;
 
-    defs= alloca(mb->vtop * sizeof(int));
-    for(k=0;k<mb->vtop;k++) 
-    if( ! isVarInitialized(mb,k))
-         defs[k]= -1;
-    else  defs[k]= 0;
-    blks[top] = 0;
-    blks[++top]= -1;
+    blks[top] = 1;
+    blks[++top]= 0;
 
     /* all signature variables are declared */
     p= getInstrPtr(mb,0);
     for(k=0;k<p->argc; k++)
-        defs[p->argv[k]] = 0;
+        getVarScope(mb,p->argv[k])= 1;
     /* and the function name as well */
     k= findVariable(mb,functionName(p));
-    defs[k]= 0;
+    getVarScope(mb,k) = 1;
     nme= functionName(p);
 
     for(pc=0;pc<mb->stop; pc++){
         p= getInstrPtr(mb,pc);
         for(k=p->retc;k<p->argc; k++){
                 for( i=0; i< top; i++)
-                if( blks[i]== defs[p->argv[k]]) break;
-                if( (blks[i]!= defs[p->argv[k]] || blks[i] == -1)  &&
+                if( blks[i] == getVarScope(mb,getArg(p,k)) ) break;
+                if( (blks[i]!= getVarScope(mb,getArg(p,k)) || blks[i] == 0)  &&
                     !isTmpVar(mb, p->argv[k])){
                     GDKerror("'%s' may be used before being set in %s[%d]\n",
-                        getVarName(mb,p->argv[k]), nme,pc);
+                        getVarName(mb,getArg(p,k)), nme,pc);
                     mb->errors++;
                 }
         }
         for(k=0; k<p->retc; k++){
-            if( defs[p->argv[k]] == -1)
-                defs[p->argv[k]] = blks[top-1];
+            if( getVarScope(mb, p->argv[k]) == 0)
+                getVarScope(mb,p->argv[k]) = blks[top-1];
             else {
                 /* is the block still active ? */
                 for( i=0; i< top; i++)
-                if( blks[i]== defs[p->argv[k]]) break;
-                if( blks[i]!= defs[p->argv[k]] && !isTmpVar(mb, p->argv[k])){
+                if( blks[i] == getVarScope(mb,getArg(p,k)) ) break;
+                if( blks[i]!= getVarScope(mb,getArg(p,k)) && 
+                    !isTmpVar(mb, p->argv[k])){
 /*
     printf("blk %d defs %d [",i,defs[p->argv[k]]);
     for(z=0;z<top; z++) printf(" %d",blks[z]);
     printf("]\n");
 */
                         GDKerror("'%s' used outside declaration scope in %s[%d]\n",
-                        getVarName(mb,p->argv[k]), nme,pc);
+                        getVarName(mb,getArg(p,k)), nme,pc);
                     mb->errors++;
                 }
             }
@@ -394,7 +394,7 @@ void chkDeclarations(MalBlkPtr mb){
             blk++;
             if( top <MAXDEPTH-2){
                 blks[top]= blk;
-                blks[++top]= -1;
+                blks[++top]= 0;
 /*
     printf("enter block [");
     for(z=0;z<top; z++) printf(" %d",blks[z]);
@@ -409,7 +409,7 @@ void chkDeclarations(MalBlkPtr mb){
         if( blockExit(p))
             if( top > 0) {
                 top--;
-                blks[top]= -1;
+                blks[top]= 0;
 /*
     printf("leave block %d [",blk);
     for(z=0;z<top; z++) printf(" %d",blks[z]);

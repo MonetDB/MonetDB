@@ -380,6 +380,7 @@ typedef struct VARRECORD{
     bit     isatypevar; /* denotes a type variable */
     int     tmpindex;   /* temporary variable */
     short   isinit; /* used once as destination */
+	short	scope;	/* block id where it is declared */
     short   isused; /* for stack copying scope */
     short   fixtype;/* the type has been fixed */
     short   garbage;/* remove upon function return */
@@ -485,6 +486,7 @@ for separate name space management.
 #define isVarUsed(M,I)      ((M)->var[I]->isused)
 #define setVarUsed(M,I,X)      ((M)->var[I]->isused)=X
 #define isVarInitialized(M,I)   ((M)->var[I]->isinit)
+#define getVarScope(M,I)   ((M)->var[I]->scope)
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
 #define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
 #define garbageControl(M,I)     ((M)->var[I]->garbage)
@@ -1190,6 +1192,7 @@ void    copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
 	w->tmpindex = v->tmpindex;
 	w->isused = v->isused;
 	w->isinit = v->isinit;
+	w->scope = v->scope;
     VALcopy(&w->value,&v->value);
     dst->var[dst->vtop]= w;
 }

@@ -619,7 +619,6 @@ void debugLifespan(MalBlkPtr mb){
                 v->beginLifespan, v->endLifespan);
     }
 }
-#define MAXDEPTH 64
 void setLifespan(MalBlkPtr mb){
     int pc,k;
     InstrPtr p;
@@ -1633,66 +1632,6 @@ str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #endif
 	@:optimizerCleanup(pci)@
 	return MAL_SUCCEED;
-}
-@- Garbage collection
-The GCoptimizer removes all BATs that are at their end of
-life to make room for new ones.
-This optimizer should not be called when the scheduler
-intends to keep intermediates around for re-use.
-
-The algorithm is straight forward. After each instruction
-we check whether BAT arguments are needed in the future.
-If not, we inject a statement to release them.
-
-Some variables have an endLifespan that aligns with
-the end of a block, rather then their last use.
-We should look for them as well.
-@= releaseBAT
-	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q,"bbp");
-	setFunctionId(q,GDKstrdup("garbage"));
-	pushArgument(mb,q,getArg(p,j));
-	pushInstruction(mb,q);
-	typeChecker(s,mb,q);
-@c
-str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,j,k,limit,done;
-    InstrPtr p, q, *stmt;
-	VarPtr v;
-	Scope s = getClient()->nspace;
-    (void) pci; (void) stk;  /* to fool compilers */
-
-	stmt= (InstrPtr *) GDKmalloc( mb->stop * sizeof(InstrPtr));
-	memcpy(stmt, mb->stmt,  mb->stop * sizeof(InstrPtr));
-	limit= mb->stop;
-
-	mb->stop = 0;
-    for(i=0; i<limit; i++){
-        p= stmt[i];
-		pushInstruction(mb,p);
-		for(j= p->retc; j<p->argc; j++){
-			v= getVar(mb,getArg(p,j));
-			/* avoid duplicate releases */
-			done = 0;
-			for(k=j-1;k>=p->retc;k--)
-			if( getArg(p,j)== getArg(p,k)) done++;
-
-			if( done==0 && v->endLifespan == i && isaBatType(getArgType(mb,p,j)) ){
-/* 			printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);*/
-				@:releaseBAT()@
-			}
-		}
-    }
-#ifdef DEBUG_MAL_OPTIMIZER
-	{	Client cntxt= getClient();
-    if( cntxt->debugOptimizer){
-    stream_printf(GDKout,"Garbage collected BAT variables \n");
-	printFunction(GDKout,mb, LIST_MAL_ALL);
-    stream_printf(GDKout,"End of GCoptimizer\n");
-    }}
-#endif
-	GDKfree(stmt);
-    return NULL;
 }
 @+ Operator Reduction
 Scientific calculations are pretty expensive in the current kernel,
