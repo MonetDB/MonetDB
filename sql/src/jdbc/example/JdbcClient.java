@@ -204,7 +204,7 @@ public class JdbcClient {
 				}
 			} else {
 				tbl = dbmd.getImportedKeys(null, null, null);
-				while(tbl.next()) {
+				while (tbl.next()) {
 					// find FK table object
 					Table fk = Table.findTable(tbl.getString("FKTABLE_SCHEM") + "." + tbl.getString("FKTABLE_NAME"), tables);
 
@@ -219,9 +219,16 @@ public class JdbcClient {
 					fk.addDependancy(pk);
 				}
 
+				// search for cycles of type a -> (x ->)+ b
+				// probably not the most optimal way, but it works by just scanning
+				// every table for loops in a recursive manor
+				for (int i = 0; i < tables.size(); i++) {
+					Table.checkForLoop((Table)(tables.get(i)), new ArrayList());
+				}
+
 				// find the graph
 				// at this point we know there are no cycles, thus a solution exists
-				for(int i = 0; i < tables.size(); i++) {
+				for (int i = 0; i < tables.size(); i++) {
 					List needs = ((Table)(tables.get(i))).requires(tables.subList(0, i + 1));
 					if (needs.size() > 0) {
 						tables.removeAll(needs);
@@ -999,5 +1006,15 @@ class Table {
 		}
 		// not found
 		return(null);
+	}
+
+	static void checkForLoop(Table table, List parents) throws Exception {
+		parents.add(table);
+		for (int i = 0; i < table.needs.size(); i++) {
+			Table child = (Table)(table.needs.get(i));
+			if (parents.contains(child))
+				throw new Exception("Cyclic dependancy graphs are not supported (cycle detected for " + child.fqname + ")");
+			checkForLoop(child, parents);
+		}
 	}
 }
