@@ -64,6 +64,9 @@ later add low level api
 @m
 .MODULE pcl;
 
+.COMMAND pcl_info() : BAT[str,str] = pcl_info;
+  "get information about the processor in use"
+
 .COMMAND pcl_start(BAT[int,any] events, int mode) = pcl_start;
   "start counting the given events"
 
@@ -81,6 +84,9 @@ later add low level api
 
 .COMMAND pcl_try(BAT[int,any] events, int mode) : bit = pcl_try;
   "try wheter the events could be started together on this CPU"
+
+.COMMAND pcl_eventname(int event) : str = pcl_eventname;
+  "return name of given event number"
 
 .PRELUDE = pcl_init;
 .EPILOGUE = pcl_exit;
@@ -198,6 +204,11 @@ pcl_events := pcl_events.reverse;
 bat* pcl_init(){ return NULL; }
 void pcl_exit(){ }
 
+int pcl_info(BAT **result){
+	*result = NULL;
+	return GDK_SUCCEED;
+}
+
 int pcl_start(BAT *event, int *mode){ return GDK_SUCCEED; }
 int pcl_start_rates(BAT *event, int *mode){ return GDK_SUCCEED; }
 
@@ -220,6 +231,11 @@ int pcl_try(bit *result, BAT *event, int *mode){
 	*result = FALSE; 
 	return GDK_SUCCEED; 
 }
+
+int pcl_eventname(str *result, int *event){ 
+	*result = str_nil; 
+	return GDK_SUCCEED; 
+}
 #else
 
 #include "pcl.proto.h"
@@ -240,13 +256,35 @@ void pcl_exit(){
 	}
 }
 
+int pcl_info(BAT **result){
+	int res;
+	char mhz[16], ncounters[16];
+	PCL_PROCESSOR_INFO info;
+	
+	res = PCL_driver_info(&info);
+	if (res != PCL_SUCCESS){
+		GDKwarning("pcl_info failed with %d\n", res);
+		*result = NULL;
+		return GDK_FAIL;
+	}
+	*result = BATnew(TYPE_str, TYPE_str, 5);
+	BUNins(*result, "vendor", info.vendor);
+	BUNins(*result, "family", info.family);
+	BUNins(*result, "model", info.model);
+	snprintf(mhz,16,"%d",info.mhz);
+	BUNins(*result, "mhz", mhz);
+	snprintf(ncounters,16,"%d",info.ncounters);
+	BUNins(*result, "ncounters", ncounters);
+	return GDK_SUCCEED;
+}
+
 int pcl_start(BAT *event, int *mode){
 	int clist[PCL_MAX_EVENT_PER_CALL];
 	int res, i = 0;
 	BUN p,q;
 
 	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only start %d events per call\n", 
+		GDKwarning("Can only use %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
@@ -271,7 +309,7 @@ int pcl_start_rates(BAT *event, int *mode){
 	BUN p,q;
 
 	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only start %d events per call\n", 
+		GDKwarning("Can only use %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
@@ -284,7 +322,7 @@ int pcl_start_rates(BAT *event, int *mode){
 	}
 	res = PCLstart(pcl_desc, clist, i, *mode);
 	if (res != PCL_SUCCESS){
-		GDKwarning("pcl_start failed with %d\n", res);
+		GDKwarning("pcl_start_rates failed with %d\n", res);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -298,12 +336,13 @@ int pcl_stop(BAT **result, BAT *event){
 	BUN p,q;
 
 	if (cnt > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only start %d events per call\n", 
+		GDKwarning("Can only use %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
 	res = PCLstop(pcl_desc, ilist, flist, cnt);
 	if (res != PCL_SUCCESS){
+		GDKwarning("pcl_stop failed with %d\n", res);
 		return GDK_FAIL;
 	}
 	*result = BATnew(TYPE_int, TYPE_lng, cnt);
@@ -326,12 +365,13 @@ int pcl_stop_rates(BAT **result, BAT *event){
 	BUN p,q;
 
 	if (cnt > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only start %d events per call\n", 
+		GDKwarning("Can only use %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
 	res = PCLstop(pcl_desc, ilist, flist, cnt);
 	if (res != PCL_SUCCESS){
+		GDKwarning("pcl_stop_rates failed with %d\n", res);
 		return GDK_FAIL;
 	}
 	*result = BATnew(TYPE_int, TYPE_dbl, cnt);
@@ -368,7 +408,7 @@ int pcl_try(bit *result, BAT *event, int *mode){
 	BUN p,q;
 
 	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only start %d events per call\n", 
+		GDKwarning("Can only use %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
@@ -383,6 +423,17 @@ int pcl_try(bit *result, BAT *event, int *mode){
 	else
 	 	*result = FALSE;
 	return GDK_SUCCEED;
+}
+
+int pcl_eventname(str *result, int *event){ 
+	str res = (str)PCLeventname(*event);
+	if (res == NULL) {
+		*result = str_nil;
+	} else {
+		*result = GDKstrdup(res);
+		/* free(res); */
+	}
+	return GDK_SUCCEED; 
 }
 #endif
 

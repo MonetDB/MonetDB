@@ -824,11 +824,13 @@ Module: "monettime"
 
 Module: "pcl"
 
-[ 7 ]
-[ 7 ]
+[ 9 ]
+[ 9 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature					| help								  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "pcl_eventname",	  "COMMAND:   ",  "pcl_eventname(int) : str",			  "return name of given event number"				  ]
+[ "pcl_info",		  "COMMAND:   ",  "pcl_info() : BAT[str,str]",			  "get information about the processor in use"			  ]
 [ "pcl_query",		  "COMMAND:   ",  "pcl_query(BAT[int,any], int) : BAT[int,int]",  "query for existing events"					  ]
 [ "pcl_start",		  "COMMAND:   ",  "pcl_start(BAT[int,any], int) : void",	  "start counting the given events"				  ]
 [ "pcl_start_rates",	  "COMMAND:   ",  "pcl_start_rates(BAT[int,any], int) : void",	  "start counting the events needed for the given rates"	  ]
