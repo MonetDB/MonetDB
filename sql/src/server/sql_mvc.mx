@@ -116,7 +116,7 @@ typedef struct sql_column {
 	sql_base base;
 	sql_subtype *type;
 	int colnr;
-	int null;
+	bit null;
 	char *def;
 
 	struct stmt *st; /* for prepared view's */
@@ -2644,7 +2644,7 @@ mvc_rollback(mvc * m, int chain, char *name)
 	schema = _strdup(tr->schema->base.name);
 	assert(schema);
 	if (name && name[0] != '\0'){
-		while(tr && tr->name && strcmp(tr->name,name) != 0)
+		while(tr && (!tr->name || strcmp(tr->name,name) != 0))
 			tr = tr -> parent;
 		if (!tr) {
 			GDKerror("rollback savepoint %s doesn't exists", name);
@@ -2652,7 +2652,7 @@ mvc_rollback(mvc * m, int chain, char *name)
 			return -1;
 		}
 		tr = m->trans;
-		while(tr->name && strcmp(tr->name,name) != 0)
+		while(!tr->name || strcmp(tr->name,name) != 0)
 	       		tr = trans_destroy(tr);
 		m->trans = tr; /* restart at savepoint */
 	} else {
@@ -2677,22 +2677,24 @@ mvc_release(mvc * m, char *name)
 {
 	int res = Q_TRANS;
 	sql_trans *tr = m->trans;
-	sql_trans *p = tr->parent;
 
-	while(p && p->name && strcmp(p->name,name) != 0)
-		p = p -> parent;
-	if (!p) {
+	while(tr && (!tr->name || strcmp(tr->name,name) != 0))
+		tr = tr -> parent;
+	if (!tr) {
 		GDKerror("release savepoint %s doesn't exists", name);
 		m->status = -1;
 		return -1;
 	}
-	p = tr->parent;
-	while(p->name && strcmp(p->name, name) != 0) {
+	tr = m->trans;
+	while(!tr->name || strcmp(tr->name, name) != 0) {
+		rollforward_trans(tr);
+		tr = trans_destroy(tr);
+	}
+	if (tr->name && strcmp(tr->name, name) == 0) {
 		rollforward_trans(tr);
 		tr = trans_destroy(tr);
 	}
 
-	tr->parent = p; 
 	m->trans = tr; /* restart at savepoint */
 	m->type = res;
 	return res;
