@@ -31,14 +31,11 @@
       </fileset>
     </jar>
 
-	<!--
-	currenly NO examples...
     <jar jarfile="${jardir}/monetdb-examples.jar">
       <fileset dir="${builddir}">
-        <include name="example/**/*.class" />
+        <include name="*.class" />
       </fileset>
     </jar>
-	-->
   </target>
 
 
@@ -106,13 +103,9 @@
 
   <!-- This builds the examples -->
   <target name="examples" depends="compile">
-  <!-- not yet applicable
-    <javac srcdir="${srcdir}" destdir="${builddir}" debug="${debug}">
-      <include name="example/**" />
-      <exclude name="example/corba/**"/>
-      <exclude name="example/blobtest.java" if="jdbc1"/>
+    <javac classpath="{$builddir}" srcdir="${srcdir}" destdir="${builddir}" debug="${debug}">
+      <include name="example/*.java" />
     </javac>
-  -->
   </target>
 
 
