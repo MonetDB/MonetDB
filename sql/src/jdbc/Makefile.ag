@@ -23,8 +23,6 @@
 
 MTSAFE
 
-VPATH = $(srcdir):$(srcdir)/example
-
 EXTRA_DIST = manifest
 
 jar_MonetJDBC = {
@@ -37,8 +35,6 @@ jar_MonetJDBC = {
 	          nl/cwi/monetdb/jdbc/MonetSocket.java \
 	          nl/cwi/monetdb/jdbc/MonetStatement.java \
 	          nl/cwi/monetdb/jdbc/MonetSocketBlockMode.java \
-	          JdbcClient.java
-	EXTRA = MaskingThread.class PasswordField.class QueryPart.class SQLStack.class
+	          example/JdbcClient.java
 	MANIFEST = $(srcdir)/manifest
 }
-

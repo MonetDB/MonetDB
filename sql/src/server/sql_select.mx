@@ -615,6 +615,31 @@ static stmt *sql_Nop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * su
 	if (f) {
 		return stmt_Nop(stmt_list(sl), f);
 	} else {
+		if ( (f = sql_bind_member(l->data.sval, tail_type(sl->h->data), list_length(sl))) != NULL) {
+			node *n, *m;
+			list *nsl = create_stmt_list();
+			
+			n = sl->h;
+			list_append( nsl, stmt_dup(n->data));
+			m = f->func->ops->h;
+			for(n = n->next, m = m->next; n && m; 
+			    n = n->next, m = m->next){
+				sql_arg *a = m->data;
+				stmt *op = stmt_dup(n->data);
+
+				op = check_types(sql, a->type, op);
+				if (!op) {
+					list_destroy(nsl);
+					nsl = NULL;
+					break;
+				}
+				list_append( nsl, op);
+			}
+			if (nsl) {
+				list_destroy(sl);
+				return stmt_Nop(stmt_list(nsl), f);
+			}
+		} 
 		list_destroy(sl);
 		return sql_error(sql, 02, "operator: %s unknown", l->data.sval);
 	}

@@ -1922,34 +1922,36 @@ datetime_funcs:
  ;
 
 string_funcs:
-    SUBSTRING '(' scalar_exp FROM nonzero FOR intval ')' 
+    SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')' 
 				{ dlist *l = dlist_create();
 				  dlist *ops = dlist_create();
-				  sql_subtype *t = 
-					sql_bind_subtype("MEDIUMINT", 0, 0);
-
-				  dlist_append_symbol(ops, $3);
-  		  		  dlist_append_symbol(ops, _newAtomNode(
-					atom_int(t, $5 -1 )));
-  		  		  dlist_append_symbol(ops, _newAtomNode(
-					atom_int(sql_dup_subtype(t), $7 )));
-
   		  		  dlist_append_string(l, _strdup("substring"));
-  		  		  dlist_append_list(l, ops);
+  		  		  dlist_append_symbol(ops, $3);
+  		  		  dlist_append_symbol(ops, $5);
+  		  		  dlist_append_symbol(ops, $7);
+				  dlist_append_list(l, ops);
 		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
-  | SUBSTRING '(' scalar_exp FROM nonzero ')' 
+  | SUBSTRING '(' scalar_exp ',' scalar_exp ',' scalar_exp ')' 
 				{ dlist *l = dlist_create();
 				  dlist *ops = dlist_create();
-				  sql_subtype *t = 
-					sql_bind_subtype("MEDIUMINT", 0, 0);
-
-				  dlist_append_symbol(ops, $3);
-  		  		  dlist_append_symbol(ops, _newAtomNode(
-					atom_int(t, $5 -1 )));
-
   		  		  dlist_append_string(l, _strdup("substring"));
-  		  		  dlist_append_list(l, ops);
+  		  		  dlist_append_symbol(ops, $3);
+  		  		  dlist_append_symbol(ops, $5);
+  		  		  dlist_append_symbol(ops, $7);
+				  dlist_append_list(l, ops);
 		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
+  | SUBSTRING '(' scalar_exp FROM scalar_exp ')' 
+				{ dlist *l = dlist_create();
+  		  		  dlist_append_string(l, _strdup("substring"));
+  		  		  dlist_append_symbol(l, $3);
+  		  		  dlist_append_symbol(l, $5);
+		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+  | SUBSTRING '(' scalar_exp ',' scalar_exp ')' 
+				{ dlist *l = dlist_create();
+  		  		  dlist_append_string(l, _strdup("substring"));
+  		  		  dlist_append_symbol(l, $3);
+  		  		  dlist_append_symbol(l, $5);
+		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("concat"));

@@ -573,6 +573,17 @@ module(mmath);
 module(mkey);
 module(mapi); # mapi_listen 
 
+# extra SQL string functions 
+
+proc substring( str s, int start, int l ) {
+	if (start < 1) start := 1;
+	return string(s, start - 1, l);
+}
+proc substring( str s, int start ) {
+	if (start < 1) start := 1;
+	return string(s, start - 1);
+}
+
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
