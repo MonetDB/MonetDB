@@ -103,138 +103,143 @@ exit	ja_a;
 exit	ia_a;
 	return ab_a :=idx;
 end find_unescaped_occurrence;
-function likeselect(b:bat[:any$1,:str], pat:str):bat[:any$1,:oid];
+
+function algebra.likeselect(b:bat[:any$1,:str], pat:str):bat[:any$1,:oid];
+	pat := substitute(pat,"%_","_%",true);
+	pat := substitute(pat,"%%","%",true);
 	idxper := find_unescaped_occurrence(pat,'%');
 	idxund := find_unescaped_occurrence(pat,'_');
-	bb_a := ==(idxper,-1);
-	cb_a := ==(idxund,-1);
-barrier	db_a := and(bb_a,cb_a);
-	return eb_a :=uselect(b,pat);
-exit	db_a;
-barrier	fb_a := not(db_a);
-barrier	gb_a := ==(idxper,-1);
+	wasper := false;
+	aa_a := ==(idxper,-1);
+	ba_a := ==(idxund,-1);
+barrier	ca_a := and(aa_a,ba_a);
+	return da_a :=uselect(b,pat);
+exit	ca_a;
+barrier	ea_a := not(ca_a);
+barrier	fa_a := ==(idxper,-1);
 	idx := idxund;
 	isper := false;
-exit	gb_a;
-barrier	hb_a := not(gb_a);
-barrier	ib_a := ==(idxund,-1);
+exit	fa_a;
+barrier	ga_a := not(fa_a);
+barrier	ha_a := ==(idxund,-1);
 	idx := idxper;
 	isper := true;
-exit	ib_a;
-barrier	jb_a := not(ib_a);
-barrier	kb_a := <(idxper,idxund);
+exit	ha_a;
+barrier	ia_a := not(ha_a);
+barrier	ja_a := <(idxper,idxund);
 	idx := idxper;
 	isper := true;
-exit	kb_a;
-barrier	lb_a := not(kb_a);
+exit	ja_a;
+barrier	ka_a := not(ja_a);
 	idx := idxund;
 	isper := false;
-exit	lb_a;
+exit	ka_a;
+exit	ia_a;
+exit	ga_a;
+exit	ea_a;
+barrier	la_a := true;
+	na_a := length(pat);
+barrier	ma_a := <(idx,na_a);
+barrier	oa_a := wasper;
+barrier	pa_a := <(idx,0);
+	qa_a := length(pat);
+barrier	ra_a := >(qa_a,0);
+	sa_a := multiplex.tactics("endsWith",b,pat);
+	b := multiplex.tactics("ifthen",sa_a,b);
+exit	ra_a;
+leave	la_a;
+exit	pa_a;
+barrier	ta_a := isper;
+	ua_a := string(pat,0,idx);
+	va_a := int(nil);
+	wa_a := multiplex.tactics("search",b,ua_a);
+	s := select(wa_a,0,va_a);
+	xa_a := multiplex.tactics("+",s,idx);
+	b := multiplex.tactics("string",b,xa_a);
+exit	ta_a;
+barrier	ya_a := not(ta_a);
+	ab_a := multiplex.tactics("length",b);
+	bb_a := +(idx,1);
+	cb_a := multiplex.tactics(">=",ab_a,bb_a);
+	b := multiplex.tactics("ifthen",cb_a,b);
+	db_a := string(pat,0,idx);
+	eb_a := int(nil);
+	fb_a := multiplex.tactics("search",b,db_a);
+	s := select(fb_a,0,eb_a);
+	gb_a := +(idx,1);
+	hb_a := multiplex.tactics("+",s,gb_a);
+	b := multiplex.tactics("string",b,hb_a);
+exit	ya_a;
+exit	oa_a;
+barrier	ib_a := not(oa_a);
+barrier	jb_a := <(idx,0);
+	kb_a := multiplex.tactics("==",b,pat);
+	b := multiplex.tactics("ifthen",kb_a,b);
+leave	la_a;
 exit	jb_a;
-exit	hb_a;
-exit	fb_a;
-barrier	mb_a := >(idx,0);
-	nb_a := string(pat,0,idx);
-	ob_a := multiplex.tactics("search",b,nb_a);
-	s := select(ob_a,0);
-barrier	pb_a := isper;
-	qb_a := semijoin(b,s);
-	rb_a := multiplex.tactics("length",qb_a);
-	sb_a := multiplex.tactics("-",rb_a,s);
-	b := multiplex.tactics("string",b,s,sb_a);
+	lb_a := string(pat,0,idx);
+	mb_a := multiplex.tactics("startsWith",b,lb_a);
+	b := multiplex.tactics("ifthen",mb_a,b);
+barrier	nb_a := isper;
+barrier	ob_a := >(idx,0);
+	b := multiplex.tactics("string",b,idx);
+exit	ob_a;
+exit	nb_a;
+barrier	pb_a := not(nb_a);
+	qb_a := multiplex.tactics("length",b);
+	rb_a := +(idx,1);
+	sb_a := multiplex.tactics(">=",qb_a,rb_a);
+	b := multiplex.tactics("ifthen",sb_a,b);
+	tb_a := +(idx,1);
+	b := multiplex.tactics("string",b,tb_a);
 exit	pb_a;
-barrier	tb_a := not(pb_a);
-	ub_a := semijoin(b,s);
-	vb_a := multiplex.tactics("length",ub_a);
-	wb_a := multiplex.tactics("-",vb_a,s);
-	xb_a := multiplex.tactics("+",wb_a,1);
-	b := multiplex.tactics("string",b,s,xb_a);
-exit	tb_a;
-	didMatch := true;
-exit	mb_a;
-barrier	yb_a := not(mb_a);
-	didMatch := false;
-exit	yb_a;
-barrier	ac_a := true;
-	cc_a := +(idx,1);
-	dc_a := length(pat);
-barrier	bc_a := <(cc_a,dc_a);
-	ec_a := length(pat);
-	fc_a := -(ec_a,idx);
-	pat := string(pat,idx,fc_a);
-barrier	gc_a := and(didMatch,isper);
+exit	ib_a;
+	wasper := isper;
+	ub_a := +(idx,1);
+	pat := string(pat,idx);
+barrier	vb_a := isper;
 	idxper := find_unescaped_occurrence(pat,'%');
-barrier	hc_a := >(idxund,0);
-	ic_a := -(idxund,idx);
-exit	hc_a;
-exit	gc_a;
-barrier	jc_a := not(gc_a);
-barrier	kc_a := didMatch;
+barrier	wb_a := >(idxund,0);
+	xb_a := -(idxund,idx);
+exit	wb_a;
+exit	vb_a;
+barrier	yb_a := not(vb_a);
 	idxund := find_unescaped_occurrence(pat,'_');
-barrier	lc_a := >(idxper,0);
-	mc_a := -(idxper,idx);
-exit	lc_a;
-exit	kc_a;
-barrier	nc_a := not(kc_a);
-	didMatch := true;
-exit	nc_a;
-exit	jc_a;
-	oc_a := ==(idxper,-1);
-	pc_a := ==(idxund,-1);
-barrier	qc_a := and(oc_a,pc_a);
-	idx := -1;
-exit	qc_a;
-barrier	rc_a := not(qc_a);
-barrier	sc_a := ==(idxper,-1);
-	idx := idxund;
-	isper := false;
-exit	sc_a;
-barrier	tc_a := not(sc_a);
-barrier	uc_a := ==(idxund,-1);
-	idx := idxper;
-	isper := true;
-exit	uc_a;
-barrier	vc_a := not(uc_a);
-barrier	wc_a := <(idxper,idxund);
-	idx := idxper;
-	isper := true;
-exit	wc_a;
-barrier	xc_a := not(wc_a);
-	idx := idxund;
-	isper := false;
-exit	xc_a;
-exit	vc_a;
-exit	tc_a;
-exit	rc_a;
-barrier	yc_a := <(idx,0);
-	ad_a := length(pat);
-barrier	bd_a := >(ad_a,0);
-	cd_a := multiplex.tactics("endsWith",b,pat);
-	b := multiplex.tactics("ifthen",cd_a,b);
-exit	bd_a;
-leave	ac_a;
-exit	yc_a;
-	dd_a := string(pat,0,idx);
-	ed_a := int(nil);
-	fd_a := multiplex.tactics("search",b,dd_a);
-	s := select(fd_a,0,ed_a);
-barrier	gd_a := isper;
-	hd_a := semijoin(b,s);
-	id_a := multiplex.tactics("length",hd_a);
-	jd_a := multiplex.tactics("-",id_a,s);
-	b := multiplex.tactics("string",b,s,jd_a);
-exit	gd_a;
-barrier	kd_a := not(gd_a);
-	ld_a := semijoin(b,s);
-	md_a := multiplex.tactics("length",ld_a);
-	nd_a := multiplex.tactics("-",md_a,s);
-	od_a := multiplex.tactics("+",nd_a,1);
-	b := multiplex.tactics("string",b,s,od_a);
-exit	kd_a;
-redo	ac_a;
-exit	bc_a;
+barrier	ac_a := >(idxper,0);
+	bc_a := -(idxper,idx);
 exit	ac_a;
-	return pd_a :=mark(b,nil);
+exit	yb_a;
+	cc_a := ==(idxper,-1);
+	dc_a := ==(idxund,-1);
+barrier	ec_a := and(cc_a,dc_a);
+	idx := -1;
+exit	ec_a;
+barrier	fc_a := not(ec_a);
+barrier	gc_a := ==(idxper,-1);
+	idx := idxund;
+	isper := false;
+exit	gc_a;
+barrier	hc_a := not(gc_a);
+barrier	ic_a := ==(idxund,-1);
+	idx := idxper;
+	isper := true;
+exit	ic_a;
+barrier	jc_a := not(ic_a);
+barrier	kc_a := <(idxper,idxund);
+	idx := idxper;
+	isper := true;
+exit	kc_a;
+barrier	lc_a := not(kc_a);
+	idx := idxund;
+	isper := false;
+exit	lc_a;
+exit	jc_a;
+exit	hc_a;
+exit	fc_a;
+redo	la_a;
+exit	ma_a;
+exit	la_a;
+	return mc_a :=mark(b,nil);
 end likeselect;
 function tunique(b:bat[:any,:any$1]):bat[:any$1,:void];
 	qd_a := reverse(b);
@@ -486,17 +491,32 @@ end count_no_nil;
 #   ADDHELP("find_unescaped_occurrence", "groffen", "Sep 26 2004",
 #   "finds the first occurrence of c that is not escaped by a \\", "algebra");
 
-    # SQL LIKE functionality, vectorized MIL implementation
     PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid]  {
         var s;
 		var idxper;
 		var idxund;
 		var isper;
 		var idx;
-		var didMatch;
+		var wasper;
+
+		# preprocess the pattern, remove redundant % and make sure
+		# %_ can be handled by replacing it with _%
+		# consider 'bla%_!': this would match anything like /bla.+!/
+		# since we match from the left, the _ is matched immediately,
+		# after which the ! might not be found.  To circumvent this
+		# problem, we replace %_ with _%.  This results in the _ being
+		# matched immediately -- which is already was -- and a variable
+		# space after it.  This substitution works for the given
+		# pattern, as it basically requires at least one char to be
+		# between bla and !.
+		pat := substitute(pat, "%_", "_%", true);
+		pat := substitute(pat, "%%", "%", true);
 		
 		idxper := find_unescaped_occurrence(pat, '%');
 		idxund := find_unescaped_occurrence(pat, '_');
+
+		# force matching without position freedom for the first part
+		wasper := false;
 
         if ((idxper = -1) and (idxund = -1)) {
 			# no % or _ found at all, return simple selection on the given
@@ -519,35 +539,65 @@ end count_no_nil;
 			}
 		}
 
-		if (idx > 0) {
-			s := b.[search](pat.string(0, idx)).select(0);
-			if (isper) {
-				b := b.[string](s, [-](b.semijoin(s).[length](), s));
+		while (idx < pat.length()) {
+			if (wasper) {
+				# do position free match
+				
+				# is idx is smaller than 0 at this point, then both idxper and
+				# idxund are -1; we only have a tail, so we should see if it
+				# matches to complete this search
+				if (idx < 0) {
+					if (pat.length() > 0) {
+						b := b.[endsWith](pat).[ifthen](b);
+					}
+					break;
+				}
+				if (isper) {
+					s := b.[search](pat.string(0, idx)).select(0, int(nil));
+					b := b.[string](s.[+](idx));
+				} else {
+					b := ((b.[length]()).[>=](idx + 1)).[ifthen](b);
+					s := b.[search](pat.string(0, idx)).select(0, int(nil));
+					b := b.[string](s.[+](idx + 1));
+				}
 			} else {
-				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
-			}
-			didMatch := true;
-		} else {
-			didMatch := false;
-		}
+				# do a startsWith match
 
-		while ((idx :+= 1) < pat.length()) {
+				# is idx is smaller than 0 at this point, then both idxper and
+				# idxund are -1; we only have a tail, so we should see if it
+				# matches to complete this search
+				if (idx < 0) {
+					b := (b.[=](pat)).[ifthen](b);
+					break;
+				}
+
+				b := (b.[startsWith](pat.string(0, idx))).[ifthen](b);
+				if (isper) {
+					# shortcut; everything matches with an empty string
+					if (idx > 0) b := b.[string](idx);
+				} else {
+					b := ((b.[length]()).[>=](idx + 1)).[ifthen](b);
+					b := b.[string](idx + 1);
+				}
+			}
+
+			wasper := isper;
+
 			# remove from the search pattern what we have matched so far
-            pat := pat.string(idx, pat.length()-idx);
+			idx :+= 1;	# include the wilcard char!
+			pat := pat.string(idx);
 
 			# find next match for the last matching char (% or _)
-			if (didMatch and isper) {
+			if (isper) {
 				idxper := find_unescaped_occurrence(pat, '%');
 				# correct value of other index
 				if (idxund > 0) idxund :-= idx;
-			} else if (didMatch) {
+			} else {
 				idxund := find_unescaped_occurrence(pat, '_');
 				# correct value of other index
 				if (idxper > 0) idxper :-= idx;
-			} else {
-				didMatch := true;
 			}
-				
+
 			if ((idxper = -1) and (idxund = -1)) {
 				idx := -1;
 			} else if (idxper = -1) {
@@ -565,22 +615,6 @@ end count_no_nil;
 					idx := idxund;
 					isper := false;
 				}
-			}
-		
-			# is idx is smaller than 0 at this point, then both idxper and
-			# idxund are -1
-			if (idx < 0) {
-				if (pat.length() > 0) {
-					b := [endsWith](b,pat).[ifthen](b);
-				}
-				break;
-			}
-			
-			s := b.[search](pat.string(0, idx)).select(0, int(nil));
-			if (isper) {
-				b := b.[string](s, [-](b.semijoin(s).[length](), s));
-			} else {
-				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
 			}
 		}
 
