@@ -165,6 +165,13 @@ use MapiLib;
 use strict;
 
 
+sub ping {
+    my $dbh = shift;
+    my $mapi = $dbh->FETCH('monetdb_connection');
+
+    MapiLib::mapi_ping($mapi) ? 0 : 1;
+}
+
 sub quote {
     my $dbh = shift;
     my ($statement, $type) = @_;
