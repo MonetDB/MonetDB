@@ -1,4 +1,4 @@
-#!/usr/bin/env bash 
+#!/usr/bin/env bash
 
 n=195
 Mlog "${n}x MapiClient -everything"
