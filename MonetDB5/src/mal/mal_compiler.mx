@@ -125,6 +125,7 @@ static char *mccPrelude[]={
     "*/\n",
     "#include \"mal.h\"\n",
     "#include \"mal_function.h\"\n",
+    "#define nil 0\n",
     0
 };
 void mccVar(stream *f,MalBlkPtr mb,int i){
@@ -162,7 +163,9 @@ void mccValue(stream *f, MalBlkPtr mb, int i){
 void mccType(stream *f, MalBlkPtr mb, int i){
     str tpe;
     tpe= getTypeName(getVarType(mb,i));
-    if( isaBatType(getVarType(mb,i)) ) {
+    if( strcmp(tpe,"void")== 0) {
+        stream_printf(f,"void *");
+    } else if( isaBatType(getVarType(mb,i)) ) {
         stream_printf(f,"BAT *");
     } else {
         stream_printf(f,"%s *", tpe);
@@ -193,12 +196,15 @@ void mccInit(stream *f, MalBlkPtr mb){
 void mccVariables(stream *f,MalBlkPtr mb){
     int i;
     str tpe, v;
-    for(i=1;i<mb->vtop; i++)
-    if( isVarUsed(mb,i)){
+    for(i=1;i<mb->vtop; i++) {
         tpe= getTypeName(getVarType(mb,i));
         v= getVarName(mb, i);
         if(isTmpVar(mb,i)) *v='V';
-        if( isaBatType(getVarType(mb,i)) ) {
+        if( getVarType(mb,i) == TYPE_void){
+            stream_printf(f,"\tvoid *");
+            mccVar(f,mb,i);
+            stream_printf(f,"= 0; /* %s */\n", tpe);
+        } else if( isaBatType(getVarType(mb,i)) ) {
             stream_printf(f,"\tBAT *");
             mccVar(f,mb,i);
             stream_printf(f,"= 0; /* %s */\n", tpe);
@@ -210,8 +216,8 @@ void mccVariables(stream *f,MalBlkPtr mb){
             stream_printf(f,";\n");
         }
         GDKfree(tpe);
-        /* if( isTmpVar(mb,i) ) GDKfree(v);*/
     }
+    /* if( isTmpVar(mb,i) ) GDKfree(v);*/
     stream_printf(f,"\tstr Xmsg = MAL_SUCCEED;\n");
 }
 void mccEntry(stream *f, MalBlkPtr mb, int i){

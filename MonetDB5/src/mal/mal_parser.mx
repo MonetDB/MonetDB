@@ -1082,10 +1082,19 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
         cntxt->backup = 0;
     }
     skipSpace(cntxt);
-@-
-Most functions are (dynamically) linked with the kernel.
-Once we encounter an external function, the block mode
-for reading unfinished definitions is also terminated.
+@}
+@- Short-cut function calls
+Most functions are (dynamically) linked with the kernel as
+commands or pattern definitions.  This enables for fast execution.
+
+In addition we allow functions to be bound to both
+a linked C-function and a MAL specification block.
+It the function address is not available, the interpreter
+will use the MAL block instead.
+This scheme is intended for just-in-time compilation.
+
+[note, command and patterns do not have a MAL block]
+@{
 @c
     if( keyphrase(cntxt,"address",7)){
         str nme;
@@ -1127,6 +1136,22 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
     int type= TYPE_any;
 
     @:fcnHeader@
+    skipSpace(cntxt);
+    if( keyphrase(cntxt,"address",7)){
+        str nme;
+        int i;
+        skipSpace(cntxt);
+        i = idLength(cntxt);
+        if( i==0){
+            parseError(cntxt,"<identifier> expected\n");
+            return 0;
+        }
+        nme = idCopy(cntxt,i);
+        curInstr->fcn = getAddress(nme);
+printf("parse the address %s %d\n", nme, curInstr->fcn);
+printInstruction(GDKout,curBlk,curInstr,LIST_MAL_ALL);
+        skipSpace(cntxt);
+    }
     /* block is terminated at the END statement */
     @:helpInfo(curBlk->help)@
     return curBlk;

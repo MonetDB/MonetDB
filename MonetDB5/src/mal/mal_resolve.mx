@@ -417,6 +417,8 @@ This piece of code may be shared by the separate binder
             break;
         case FUNCTIONsymbol: 
             p->token = FCNcall; 
+            if( getSignature(s)->fcn)
+                p->fcn = getSignature(s)->fcn;
             break;
         default:
             showException(mb,getPC(mb,p),"MALresolve",

@@ -467,12 +467,18 @@ elements in the value stack.
     case PATcall: @:patterncall@ break;
     case CMDcall: @:commandcall@ break;
     case FACcall: @:factorycall@ break;
-    case FCNcall: @:functioncall@ break;
+    case FCNcall: if( pci->fcn) {
+                    @:commandcall@ 
+                } else {
+                    @:functioncall@ 
+                    break;
+                }
     case NOOPsymbol:
     case ENDsymbol: 
     case COMMANDsymbol:
     case FUNCTIONsymbol:
     case FACTORYsymbol:
+        GDKerror("unexpected symbol in interpreter\n");
         break;
     case ENDDEFsymbol: 
         if( getInstrPtr(mb,0)->token == FACTORYsymbol)
