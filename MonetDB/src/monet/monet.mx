@@ -409,6 +409,7 @@ int yesno(str n){
 }
 void MILenvironment()
 {
+	static char path[PATHLENGTH];
 	char buf[2*PATHLENGTH];
 	FILE *fd= NULL;
 
@@ -444,9 +445,13 @@ void MILenvironment()
 		if( strcmp(s,"monet_version")==0)
                     monet_ver = val;
 		else
-		if( strcmp(s,"monet_prelude")==0)
-                    monet_prelude=GDKstrdup(val);
-		else
+		if( strcmp(s,"monet_prelude")==0){
+		    if( strncmp(".../",val,4)==0){
+		        sprintf(path,"%s/%s",MONET_PREFIX,val+4);
+		        monet_prelude=GDKstrdup(path);
+		    }else
+                        monet_prelude=GDKstrdup(val);
+		}else
 		if( strcmp(s,"monet_deamon")==0)
                     monet_deamon=yesno(val);
 		else

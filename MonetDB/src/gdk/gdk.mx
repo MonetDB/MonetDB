@@ -2935,7 +2935,6 @@ gdk_export int	BATmultijoin (int argc, BAT *argv[], RowFcn tuple_fcn,
 #ifdef __cplusplus
 }
 #endif
-#endif /* BAT32IMAGE */
 @
 @- GDK variant record type
 When manipulating values, Monet puts them into value records.
@@ -2967,6 +2966,8 @@ typedef struct {
 	int 		vtype;
 	int 	       	len;
 } *ValPtr, ValRecord;
+
+#endif /* BAT32IMAGE */
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
 #define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
