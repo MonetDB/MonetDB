@@ -8,6 +8,9 @@ uname=`uname`
 # where compiled modules are to be found
 MOD_PATH="${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/mal/.libs"
 
+#where module init scripts are to be found
+#MAL_PATH="${builddir}/src/modules"
+
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
 fi
@@ -43,3 +46,4 @@ python -V
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
 exec python "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/monet.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" --TSTTRGBASE="${builddir}" "${@--r}"
+#--monet_mal_path="${MAL_PATH}"
