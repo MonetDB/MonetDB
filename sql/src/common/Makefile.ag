@@ -1,0 +1,17 @@
+## Process this file with automake to produce Makefile.in
+
+YFLAGS = -d -p sql
+
+INCLUDES = \
+	-I$(MONETDIST)/include  \
+	-I$(MONETDIST)/include/stream
+
+lib_sql = {
+	SOURCES = \
+		sqlparser.y sqlscan.c sqlscan.h sqlexecute.c sqlexecute.h \
+		sql.c sql.h \
+		catalog.c catalog.h \
+		list.c list.h symbol.c symbol.h sym.h \
+		statement.c statement.h atom.c atom.h mem.h
+	HEADERS = h tab.h
+}

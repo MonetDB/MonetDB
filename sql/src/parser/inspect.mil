@@ -1,3 +1,0 @@
-
-print( table_name, table_temp, table_schema );
-print( column_name, column_type, column_table, column_default, column_bat );

@@ -2,7 +2,7 @@
 INCLUDES = \
         -I$(srcdir)/../include -I. \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/src/parser \
+	-I$(top_srcdir)/src/common \
 	-I$(MONETDIST)/include/plain \
 	-I$(MONETDIST)/include/stream \
 	-I$(top_builddir)/ \
@@ -99,11 +99,11 @@ lib_MonetODBC = {
 	_NativeTypeDesc.c \
 	_NativeTypeLength.c \
 	_NativeTypePrecision.c \
-	catalog-client.c \
+	catalog_client.c \
 	statement_dump.c \
 	comm.c comm.h \
 	gdk.c 
 	LIBS = \
-	${top_builddir}/src/parser/libsql.la \
+	../../common/libsql \
 	-L$(MONETDIST)/lib/Monet -lstream  -lm
 }
