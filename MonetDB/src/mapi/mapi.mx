@@ -145,10 +145,14 @@ int MAPIlisten_default(){
 
 @mil
 module(unix,str,mapi);
-var monet_port := getenv("MONETPORT");
-var port := 0;
-var p := search( monet_port, ":" );
-if (p >= 0){
-	port := int(string(monet_port, p+1));
+
+proc get_monet_port() := {
+	var monet_port := getenv("MONETPORT");
+	var port := 0;
+	var p := search( monet_port, ":" );
+	if (p >= 0){
+		port := int(string(monet_port, p+1));
+	}
+	return port;
 }
-listen(port,5);
+listen(get_monet_port(),5);

@@ -459,8 +459,6 @@ view_bbp_location(
         return GDK_SUCCEED;
 }
 
-extern int monet_modulesilent;
-
 int
 view_bbp_heat(
    BAT**        retval  /* put pointer to BAT[int,int] record here. */
@@ -694,9 +692,6 @@ view_client_login(
 	@:Pseudo(client,login)@
         return GDK_SUCCEED;
 }
-
-extern void lockparser(Client);
-extern void unlockparser(Client);
 
 int view_client_tree(BAT **retval){
 	BAT *b = *retval = BATnew(TYPE_int, TYPE_str, 50); 
@@ -982,7 +977,6 @@ if (sz > *minsize) {
 	BUNins(bn, buf, &sz);
 } @3 += sz; tot += sz;
 @c
-extern int monet_cntxtmax, monet_cntxtlim, BBPmaxsize, BBPlimit;
 
 int get_mem_usage(BAT **ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, n=0, sz;
