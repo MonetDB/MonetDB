@@ -147,6 +147,12 @@ pattern new(ht:any$1, tt:any$2, size:lng)
 	:bat[:any$1,:any$2] 	
 address CMDBATnew
 comment "Creates a new BAT and allocate space.";
+pattern new(ht:void, tt:any$2, size:lng) 
+	:bat[:void,:any$2] 	
+address CMDBATnew;
+pattern new(ht:void, tt:any$2, size:int) 
+	:bat[:void,:any$2] 	
+address CMDBATnew;
 @+ Algebraic operators
 Those that rely on knowledge of the runtime environment
 @mal
@@ -215,7 +221,7 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("bbp.@4","cannot access bat @2 in bbp");
+		return throwMessage("bbp.@4","cannot access bat '@2' in bbp");
         if( *@2 < 0) {
                 /* reverse descriptor should be explicitly loaded */
                 @3=BATdescriptor(*@2); BBPunfix(*@2);

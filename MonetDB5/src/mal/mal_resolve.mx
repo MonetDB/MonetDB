@@ -43,7 +43,7 @@ function sample(nme:str, val:any):bit;
    t := count(h);
    x := print(t);
    y := print(val);
-end function;
+end sample;
 
 \end{verbatim}
 @-
@@ -491,17 +491,16 @@ int resolveType(int dsttype, int srctype){
 		i2= getTailIndex(dsttype);
 #endif
 		h1= getHeadType(dsttype);
-		if( h1== TYPE_bat)
-			h1= newBatType(TYPE_any,TYPE_any);
 		t1= getTailType(dsttype);
-		if( t1== TYPE_bat)
-			t1= newBatType(TYPE_any,TYPE_any);
 		h2= getHeadType(srctype);
-		if( h2== TYPE_bat)
-			h2= newBatType(TYPE_any,TYPE_any);
 		t2= getTailType(srctype);
-		if( t2== TYPE_bat)
-			t2= newBatType(TYPE_any,TYPE_any);
+
+		/* BAT reference type , ignore for the time being
+		if( h1== TYPE_bat) h1= newBatType(TYPE_any,TYPE_any);
+		if( t1== TYPE_bat) t1= newBatType(TYPE_any,TYPE_any);
+		if( h2== TYPE_bat) h2= newBatType(TYPE_any,TYPE_any);
+		if( t2== TYPE_bat) t2= newBatType(TYPE_any,TYPE_any);
+		*/
 
 @-
 The BAT void column type is exchangeable with an oid column type
@@ -623,10 +622,6 @@ When we arrive here the operator is an assignment.
 The language should also recognize (a,b):=(1,2);
 This is achieved by propagation of the rhs types to the lhs
 variables.
-Furthermore, the constant nil can be a proper value
-assigned to any variable. 
-This case should be recognized separately, because it
-requires a call to a type-specific setToNil() function call.
 @c
 	p->typechk= TYPE_FIXED;
 	for(k=0,i= p->retc; k<p->retc && i<p->argc; i++,k++){

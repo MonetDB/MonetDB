@@ -50,13 +50,13 @@ comment "global abort on all BATs";
 
 @- BAT specific transaction management
 @mal
-pattern commit(b:bat[:any,:any],c:bat[:any,:any]...) 
+pattern commit(c:bat[:any,:any]...) 
 address TRNtrans_commit
 comment "commit changes in certain BATs.";
-pattern abort(b:bat[:any,:any],c:bat[:any,:any]...) 
+pattern abort(c:bat[:any,:any]...) 
 address TRNtrans_abort
 comment "abort changes in certain BATs.";
-pattern clean(b:bat[:any,:any], c:bat[:any,:any]...) 
+pattern clean(c:bat[:any,:any]...) 
 address TRNtrans_clean
 comment "declare a BAT clean without flushing to disk.";
 @- delta status

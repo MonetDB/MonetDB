@@ -427,7 +427,7 @@ int typeId(Client cntxt)
 
 	if( *cntxt->nxt!=':') return -1; /* no type qualifier */
 	if( strncmp(cntxt->nxt,":bat[",5)==0){
-		/* parse bat[:type,:type] */
+		/* parse :bat[:type,:type] */
 		advance(cntxt,5);
 		ht= simpleTypeId(cntxt);
 		if( ht == TYPE_any ) kh= typeAlias(cntxt);
@@ -445,6 +445,12 @@ int typeId(Client cntxt)
 			parseError(cntxt,"']' expected\n");
 		skipSpace(cntxt);
 		return i;
+	}  
+	if( strncmp(cntxt->nxt,":bat",4)==0){
+		/* parse default for :bat[:any,:any] */
+		advance(cntxt,4);
+		skipSpace(cntxt);
+		return newBatType(TYPE_any,TYPE_any);
 	} 
 	ht= simpleTypeId(cntxt);
 	if(ht >=0 ) return ht;
