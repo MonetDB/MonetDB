@@ -79,10 +79,10 @@ NIL boundary values have a special meaning.
 + high == nil means: no upper bound.
 
 NOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)
-	in order to cirumvent type clashes.
+        in order to circumvent type clashes.
 NOTE 2: as the 'nil' element has no clear place in the ordered domain
-	of values, tuples with 'nil values are NEVER returned by the
-	range select."
+        of values, tuples with 'nil values are NEVER returned by the
+        range select."
 
 .COMMAND select ( BAT[any::1,any::2] b, any::2 low, any::2 high, bit l_in, bit h_in) :
 				BAT[any::1, any::2] = CMDselect_;
@@ -95,10 +95,10 @@ NIL boundary values have a special meaning.
 + high == nil means: no upper bound.
 
 NOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)
-	in order to cirumvent type clashes.
+        in order to cirumvent type clashes.
 NOTE 2: as the 'nil' element has no clear place in the ordered domain
-	of values, tuples with 'nil values are NEVER returned by the
-	range select."
+        of values, tuples with 'nil values are NEVER returned by the
+        range select."
 @- unary range select
 @m
 .COMMAND uselect ( BAT[any::1,any::2] b, any::2 low, any::2 high) :
@@ -262,7 +262,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 .COMMAND sunion ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) :
 				BAT[any::1,any::2] = CMDsunion;
 "Returns the union of two BATs; looking at both columns of both BATs.
- Results in all BUNs of 'left' that are	 not in 'right', plus all BUNs
+ Results in all BUNs of 'left' that are not in 'right', plus all BUNs
  of 'right'. *no* double-elimination is done. If you want this, do:
  'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'."
 @- union on head
@@ -270,7 +270,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 .COMMAND kunion ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) :
 				BAT[any::1,any::2] = CMDkunion;
 "Returns the union of two BATs; looking at head-columns only.
- Results in all BUNs of 'left' that are	 not in 'right', plus all BUNs
+ Results in all BUNs of 'left' that are not in 'right', plus all BUNs
  of 'right'. *no* double-elimination is done. If you want this, do:
  'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'."
 @+ Joins
@@ -545,7 +545,7 @@ that for the moment are defined as procs.
     PROC intersect(bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2] {
 		return sintersect(b1,b2);
    }
-    ADDHELP("intersect", "boncz", "Apr	6 1997",
+    ADDHELP("intersect", "boncz", "Apr  6 1997",
 	     "backward compatibility: use sintersect() explicitly.", "algebra");
 
     PROC union(bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2]  {
@@ -689,7 +689,7 @@ that for the moment are defined as procs.
 		# %_ can be handled by replacing it with _%
 		# consider 'bla%_!': this would match anything like /bla.+!/
 		# since we match from the left, the _ is matched immediately,
-		# after which the ! might not be found.	 To circumvent this
+		# after which the ! might not be found.  To circumvent this
 		# problem, we replace %_ with _%.  This results in the _ being
 		# matched immediately -- which is already was -- and a variable
 		# space after it.  This substitution works for the given
@@ -983,7 +983,7 @@ that for the moment are defined as procs.
 		} else if (fcn = ">") {
 		    return b.select(val, nilval, FALSE, FALSE);
 		} else if (fcn = "like") {
-		    var bn := likeselect(b, val);
+		    var bn := like_uselect(b, val, "\\");
 		    return b.semijoin(bn);
 		}
 	    }
@@ -1006,7 +1006,7 @@ that for the moment are defined as procs.
 	var bitvector := [*fcn](b,lo,hi);
 	return [ifthen](bitvector,b);
     }
-    ADDHELP("mil_select", "boncz", "Aug	 6 1998",
+    ADDHELP("mil_select", "boncz", "Aug  6 1998",
 	    "Returns all BUNs where (*fcn)(tail,,..params..).", "algebra");
 
     PROC neg_select(bat[any::1,any::2] b, str fcn, ..any..) : bat[any::1,any::2]
@@ -1025,7 +1025,7 @@ that for the moment are defined as procs.
 		} else if (fcn = "<") {
 		    return b.mil_select(">=", val);
 		} else if (fcn = "like") {
-		    var bn := likeselect(b, val);
+		    var bn := like_uselect(b, val, "\\");
 		    return b.kdiff(bn);
 		}
 	    }
@@ -1033,7 +1033,7 @@ that for the moment are defined as procs.
 	var bitvector := [*fcn](b,$(3..));
 	return [ifelse](bitvector,b);
     }
-    ADDHELP("neg_select", "boncz", "Aug	 6 1998",
+    ADDHELP("neg_select", "boncz", "Aug  6 1998",
 	    "Returns all BUNs where not (*fcn)(tail,,..params..)", "algebra");
 
     PROC rev_select(bat[any::1,any::2] b, str fcn, any::2 val) : bat[any::1,any::2]
@@ -1053,7 +1053,7 @@ that for the moment are defined as procs.
 	}
 	ERROR("rev_select: unknown predicate %s(%s)\n", fcn, str(val));
     }
-    ADDHELP("rev_select", "boncz", "Aug	 6 1998",
+    ADDHELP("rev_select", "boncz", "Aug  6 1998",
 	    "(value OP column) select rather than (column OP value)","algebra");
 
     PROC tunique (bat[any,any::1] b) : bat[any::1,void] {
@@ -1072,7 +1072,7 @@ that for the moment are defined as procs.
     }
     ADDHELP("sort_ht", "manegold", "Dec 17 1998",
 	    "sorts a BAT according to its head (primary) and tail values (secondary).\
-	     (straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
+(straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
 
 @= milsumprod
     proc sum( bat[any,@1] b ) : @1 { return sum_@1(b); }

@@ -139,7 +139,7 @@ operands are already supported in the kernel, but are not nearly as fast,
 @- computation of { +, -, *, /, % }
 @T
 The {\tt mel\_arith\_ops} Mx macro implements the mel interface to the
-arithmetic operations.	The macro expects three parameters, two input
+arithmetic operations.  The macro expects three parameters, two input
 atomic types and a result type.
 @m
 	.OPERATOR1 (chr) "%"  (int) : int = chrint_checkbinary_MOD;	"modulo"
@@ -301,7 +301,7 @@ The constants defined in limit.h are defined using autoloaded mil code.
 #define __arith_H__
 
 #include "gdk.h"
-/* DEBUG phase.	 #include "arith.proto.h" */
+/* DEBUG phase.  #include "arith.proto.h" */
 
 
 #endif /* __arith_H__ */

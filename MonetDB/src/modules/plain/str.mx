@@ -71,58 +71,58 @@ this facilitates the use of the string module in bulk operations.
 .MODULE str;
 
 .COMMAND string( str s, int offset ) : str = strTail;
-	"Return the tail s[offset..n] of a string s[0..n]."
+"Return the tail s[offset..n] of a string s[0..n]."
 .COMMAND string( str s, int offset, int count ) : str = strSubString;
-	"Return substring s[offset..offset+count] of a string s[0..n]"
+"Return substring s[offset..offset+count] of a string s[0..n]"
 .OPERATOR (str) "+" (any) : str = strConcat;
-	"Concatenate two strings."
+"Concatenate two strings."
 .COMMAND length( str s ) : int = strLength;
-	"Return the length of a string in characters."
+"Return the length of a string in characters."
 .COMMAND nbytes( str s ) : int = strBytes;
-	"Return the length of a string in bytes."
+"Return the length of a string in bytes."
 .COMMAND chrAt( str s, int index ) : chr = strChrAt;
-	"String array lookup operation. DEPRECATED: non-ASCII characters become nil, use: string(str,pos,1)"
+"String array lookup operation. DEPRECATED: non-ASCII characters become nil, use: string(str,pos,1)"
 .COMMAND unicodeAt(str s, int index) : int = strWChrAt;
-	"get a unicode character (as an int) from a string position. (!DS2.2)"
+"get a unicode character (as an int) from a string position. (!DS2.2)"
 .COMMAND unicode(int wchar) : str = strFromWChr;
-	"convert a unicode to a one-character string. (!DS2.2)"
+"convert a unicode to a one-character string. (!DS2.2)"
 
 .COMMAND codeset() : str = codeset;
-	"Return the locale's codeset"
+"Return the locale's codeset"
 .COMMAND iconv(str org, str fromCodeset, str toCodeset ) : str = strIconv;
-	"String codeset conversion"
+"String codeset conversion"
 
 .COMMAND startsWith( str s, str prefix ) : bit = strPrefix;
-	"Prefix check."
+"Prefix check."
 .COMMAND endsWith( str s, str suffix ) : bit = strSuffix;
-	"Suffix check."
+"Suffix check."
 
 .COMMAND toLower( str s ) : str = strLower;
-	"Convert a string to lower case."
+"Convert a string to lower case."
 .COMMAND toUpper( str s ) : str = strUpper;
-	"Convert a string to upper case."
+"Convert a string to upper case."
 
 .COMMAND search( str s, chr c ) : int = strChrSearch;
-	"Search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: search(str,str)"
+"Search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: search(str,str)"
 .COMMAND r_search( str s, chr c ) : int = strReverseChrSearch;
-	"Reverse search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: r_search(str,str)"
+"Reverse search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: r_search(str,str)"
 .COMMAND search( str s, str s2 ) : int = strStrSearch;
-	"Search for a substring. Returns position, -1 if not found."
+"Search for a substring. Returns position, -1 if not found."
 .COMMAND r_search( str s, str s2 ) : int = strReverseStrSearch;
-	"Reverse search for a substring. Returns position, -1 if not found."
+"Reverse search for a substring. Returns position, -1 if not found."
 .COMMAND trim( str s ) : str = strStrip;
-	"Strip whitespaces around a string."
+"Strip whitespaces around a string."
 .COMMAND ltrim( str s ) : str = strLtrim;
-	"Strip whitespaces from start of a string."
+"Strip whitespaces from start of a string."
 .COMMAND rtrim( str s ) : str = strRtrim;
-	"Strip whitespaces from end of a string."
+"Strip whitespaces from end of a string."
 .COMMAND substitute( str s, str src, str dst, bit repeated) : str = strSubstitute;
-	"Substitute first occurrence of substring 'src' by 'dst'.
-	 Iff repeated = true this is repeated while 'src' can be found in the result string.
-	 In order to prevent recursion and result strings of unlimited size, repeating
-	 is only done iff src is not a substring of dst."
+"Substitute first occurrence of substring 'src' by 'dst'.
+Iff repeated = true this is repeated while 'src' can be found in the result string.
+In order to prevent recursion and result strings of unlimited size, repeating
+is only done iff src is not a substring of dst."
 .COMMAND split( str s, str sep ) : BAT[void,str] = strSplit;
-	"Split the string s based on the seperator sep"
+"Split the string s based on the seperator sep"
 
 .PRELUDE  = strPrelude;
 .EPILOGUE = strEpilogue;
@@ -1652,7 +1652,7 @@ strStrip(str *res, str s)
 	while (GDKisspace(*start))
 		start++;
 
-	/* Remove the trailing spaces.	Make sure not to pass the start */
+	/* Remove the trailing spaces.  Make sure not to pass the start */
 	/* pointer in case a string only contains spaces.		*/
 	s = start + strlen(start);
 	while (s > start && GDKisspace(*(s - 1)))

@@ -102,34 +102,34 @@ basic multi-attribute group operations, that take the incremental approach.
 CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
 @m
 .COMMAND CTgroup(BAT[oid,any] attr) : BAT[oid,oid] = CTgroup;
-	"Cross tabulation group initialization.
-	 Returned head values are identical as in 'attr'. Tail values are from
-	 the same domain and indicate unique groups in 'attr' tail column."
+"Cross tabulation group initialization.
+Returned head values are identical as in 'attr'. Tail values are from
+the same domain and indicate unique groups in 'attr' tail column."
 
 .COMMAND _CTgroup(BAT[oid,any] attr, int N, int rng) : BAT[oid,oid] = CTgroup_custom;
-	"Cross tabulation group initialization like CTgroup, but with user
-	 provided #bits in hashmask and #distinct values in range."
+"Cross tabulation group initialization like CTgroup, but with user
+provided #bits in hashmask and #distinct values in range."
 
 .COMMAND CTderive(BAT[oid,any] ct, BAT[oid,any] attr) : BAT[oid,oid] = CTderive;
-	"Cross tabulation group extension step.
-	 Returned head values are identical as in 'ct'. Tail values are from
-	 the same domain and indicate further refinement of the groups in 'ct',
-	 taking into account also the tail-values in 'attr'."
+"Cross tabulation group extension step.
+Returned head values are identical as in 'ct'. Tail values are from
+the same domain and indicate further refinement of the groups in 'ct',
+taking into account also the tail-values in 'attr'."
 
 .COMMAND CTgroup(BAT[oid,any] ct, BAT[oid,any] attr) : BAT[oid,oid] = CTderive;
-	"binary grouping; a synonym for CTderive(ct,attr)"
+"binary grouping; a synonym for CTderive(ct,attr)"
 
 .COMMAND CTregroup(BAT[oid,oid] ct, BAT[oid,any] attr) : BAT[oid,oid]
 		= CTregroup; "modifies ct and returns it doing a group"
 
 .COMMAND CTrefine(BAT[oid,any] b, BAT[oid,any] a) : BAT[oid,oid] = CTrefine;
-	"refine the ordering of a tail-ordered BAT by sub-ordering on the
-	 values of a second bat 'a' (where the heads of a and b match 1-1).
-	 The effect of this is similar to (hash-based) CTderive, with the
-	 distinction that the group ids respect the ordering of the group values."
+"refine the ordering of a tail-ordered BAT by sub-ordering on the
+values of a second bat 'a' (where the heads of a and b match 1-1).
+The effect of this is similar to (hash-based) CTderive, with the
+distinction that the group ids respect the ordering of the group values."
 
 .COMMAND CTrefine_rev(BAT[oid,any] b, BAT[oid,any] a) : BAT[oid,oid] = CTrefine_rev;
-	"reverse sorting version of CTrefine"
+"reverse sorting version of CTrefine"
 @-
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the CT by means of a histolink.
@@ -142,20 +142,20 @@ for quick re-use. They are attached to the CT by means of a histolink.
 .END;
 
 .COMMAND histogram(BAT[oid,any::1]) : BAT[any::1,int] = CThistogram;
-	"compute a histogram on the tail. Optimized for retrieving the
-	 already present histogram on a cross-table computed by CTgroup."
+"compute a histogram on the tail. Optimized for retrieving the
+already present histogram on a cross-table computed by CTgroup."
 
 .COMMAND tunique(BAT[oid,any::1]) : BAT[any::1,void] = CTtunique;
-	"get all unique tail values. Optimized for getting all unique
-	 oids from a cross-table computed by CTgroup."
+"get all unique tail values. Optimized for getting all unique
+oids from a cross-table computed by CTgroup."
 
 .COMMAND CTsubhisto(BAT[void,bit] sel, BAT[void,oid] grp, BAT[oid,any] domain)
-	: BAT[oid,int] = CTsubhisto;
-	"optimized sub-histogram for synced grp[void,oid] and sel[void,bit]
-	 bats on a previously known domain "
+: BAT[oid,int] = CTsubhisto;
+"optimized sub-histogram for synced grp[void,oid] and sel[void,bit]
+bats on a previously known domain "
 
 .COMMAND CThistosum(BAT[oid,oid] ct, BAT[oid,int] histo) : BAT[oid,int] = CThistosum;
-	"Produce sum over old histogram table"
+"Produce sum over old histogram table"
 
 .END xtables;
 

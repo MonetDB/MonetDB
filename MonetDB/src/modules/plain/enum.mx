@@ -124,7 +124,7 @@ will even be the case for long 64-bit integers.
 	monet_atomtbl.insert(sprintf("%s",name),tpe);
 	return tpe;
     }
-    ADDHELP("enum_load", "boncz", "Sep	6 1997",
+    ADDHELP("enum_load", "boncz", "Sep  6 1997",
 	 "activate an enumeration type from a histogram bat.", "enum");
 
     proc enum_drop(int tpe) : void {
@@ -133,7 +133,7 @@ will even be the case for long 64-bit integers.
 	monet_atomtbl.reverse().delete(tpe);
 	enum_destroy(tpe);
     }
-    ADDHELP("enum_drop", "boncz", "Sep	6 1997",
+    ADDHELP("enum_drop", "boncz", "Sep  6 1997",
 	 "deactivate an enumeration type.", "enum");
 
     proc enum_trick(bat[oid,any] b, BAT[any,int] map) : bat[oid,any] {
@@ -143,7 +143,7 @@ will even be the case for long 64-bit integers.
 	enum_sethisto(tpe, b.reverse());
 	return [*nme](b);
     }
-    ADDHELP("enum_trick", "boncz", "Dec	 5 1998",
+    ADDHELP("enum_trick", "boncz", "Dec  5 1998",
 	 "create a view on a BAT with a diffrent enum map.", "enum");
 
 @{
