@@ -121,11 +121,13 @@ str LCKdestroy(int *res, monet_lock *l){
 
 int lockToStr(char **dst, int *len, ptr *src){
 	(void)len; /* fool compiler */
+	(void)src; /* fool compiler */
 	if( src == ptr_nil){
 		strcpy(*dst,"nil");
 		return 3;
 	}
-	sprintf(*dst,"%o", (lng)*src);
+	/* sprintf(*dst,"%o", (ptr)*src);*/
+	sprintf(*dst,"redo lockToStr");
 	return strlen(*dst);
 }
 str SEMAcreate(monet_sema *s, int *init){
@@ -155,4 +157,5 @@ str SEMAdestroy(int *res, monet_sema *s){
 	MT_destroy_sema((MT_Sema) *s);
 	return MAL_SUCCEED;
 }
+
 @}
