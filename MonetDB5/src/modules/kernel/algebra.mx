@@ -445,7 +445,7 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 @- Marking tables
 @mal
 command tmark( b:bat[:any$1,:any], base:void ) :bat[:any$1,:oid] 
-address ALGtmark_default
+address ALGtmark
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
 command tmark( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
