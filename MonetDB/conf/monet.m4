@@ -165,28 +165,30 @@ case $CC-$CXX in
 	dnl  Be rigid; "MonetDB code is supposed to adhere to this... ;-)
 	X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
 	dnl X_CXXFLAGS="$X_CXXFLAGS -Werror-implicit-function-declaration"
-	case "$gcc_ver" in
-	3.*)	dnl  Doesn't work (yet?) for gcc < 3.0, 
-		dnl  due to defined but not used functions and the missing
-		dnl  "-Wno-unused-function" (see below), 
-		dnl  and due to "warning: value computed is not used" 
-		dnl  in src/monet/monet_context.mx:
-		dnl  #define VARfixate(X)   ((X) && ((X)->constant=(X)->frozen=TRUE)==TRUE)
-		X_CFLAGS="$X_CFLAGS -Werror"
-		X_CXXFLAGS="$X_CXXFLAGS -Werror"
-	esac
+	X_CFLAGS="$X_CFLAGS -Werror"
+	X_CXXFLAGS="$X_CXXFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet ...
-	case "$gcc_ver" in
-	3.*)	dnl  Doesn't exist for gcc < 3.0 ?
-		X_CFLAGS="$X_CFLAGS -Wno-unused-function"
-		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function"
-	esac
 	X_CFLAGS="$X_CFLAGS -Wno-format -Wno-sign-compare"
 	X_CXXFLAGS="$X_CXXFLAGS -Wno-format -Wno-sign-compare"
 	dnl  ... and some are beyond our control:
-	dnl  In some cases, there is a (possibly) uninitialized variable in bison.simple ... |-(
+	case "$gcc_ver" in
+		dnl  Some versions of flex and bison require these:
+	3.*)	dnl  (Don't exist for gcc < 3.0.)
+		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
+		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function -Wno-unused-label"
+		;;
+	*)	dnl  gcc < 3.0 also complains about "value computed is not used"
+		dnl  in src/monet/monet_context.mx:
+		dnl  #define VARfixate(X)   ((X) && ((X)->constant=(X)->frozen=TRUE)==TRUE)
+		dnl  But there is no "-Wno-unused-value" switch for gcc < 3.0 either...
+		X_CFLAGS="$X_CFLAGS -Wno-unused"
+		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused"
+		;;
+	esac
 	case $CC-$host_os in
 	gcc-solaris*|gcc-darwin*)
+		dnl  In some cases, there is a (possibly) uninitialized
+		dnl  variable in bison.simple ... |-(
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
 		;;

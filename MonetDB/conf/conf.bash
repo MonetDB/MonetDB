@@ -274,7 +274,7 @@ fi
 if [ "${os}" = "AIX" ] ; then
 	# paths on beluga
 	mypath=""
-	for d in "usr/local/bin" "usr/local/tgcc-2.95.3/bin" "usr/vac/bin" "usr/vacpp/bin" "opt/freeware/bin" "usr/java131/jre/bin" "usr/java131/bin" "usr/ccs/bin" "usr/ucb" "usr/bin" "usr/dt/bin" "usr/bin/X11" "usr/lpp/X11/bin" ; do
+	for d in "/usr/local/bin" "/usr/local/tgcc-2.95.3/bin" "/usr/vac/bin" "/usr/vacpp/bin" "/opt/freeware/bin" "/usr/java131/jre/bin" "/usr/java131/bin" "/usr/ccs/bin" "/usr/ucb" "/usr/bin" "/usr/dt/bin" "/usr/bin/X11" "/usr/lpp/X11/bin" ; do
 		if [ -d ${d} ] ; then
 			mypath="${mypath}${d}:"
 		fi
