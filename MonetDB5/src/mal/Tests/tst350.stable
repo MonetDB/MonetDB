@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 ##inspection of the runtime setting
 ##it uses the dynamic type analysis scheme
@@ -105,7 +105,7 @@ end main;	# 7
 # bbp	tmp_8			htype	ttype		count	heat	dirty		status		kind		refcnt	  # name
 # int	str			str	str		lng	int	str		str		str		int	  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  33,	  151,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ 4,	  "simplemind",		  "int",  "int",	  0,	  33,	  "dirty",	  "dirty",	  "transient",	  3	  ]

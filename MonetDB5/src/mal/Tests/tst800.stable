@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 ## Testing global consts defined for all users
 ## It should travers the nested spaces looking for the correct variable
@@ -37,7 +37,7 @@ exit b;	# 10  (b:lng)
 end main;	# 11  
 user=Admin
 dbname=demo
-dbfarm=/ufs/mk/monet5/Linux/var/MonetDB
+dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 version=5.0
 config=/ufs/mk/monet5/src/mal/Tests/tst.conf
 STORE_MEM=0

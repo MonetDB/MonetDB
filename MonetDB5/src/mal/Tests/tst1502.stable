@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 #	x := new(:oid,:chr);
 #	insert(x,1@0,'a');
@@ -91,8 +91,8 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 43  
 [ "sort x" ]
 #-----------------#
-# h	tmp_7	  # name
-# void	chr	  # type
+# h	tmp_4	  # name
+# oid	chr	  # type
 #-----------------#
 [ 1@0,	  a	  ]
 [ 2@0,	  a	  ]
@@ -104,8 +104,8 @@ end main;	# 43
 [ 8@0,	  c	  ]
 [ "sort xrev" ]
 #-----------------#
-# h	tmp_8	  # name
-# chr	void	  # type
+# t	tmp_4	  # name
+# chr	oid	  # type
 #-----------------#
 [ a,	  1@0	  ]
 [ a,	  2@0	  ]

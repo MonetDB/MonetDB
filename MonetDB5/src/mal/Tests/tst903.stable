@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 ## the multiplex code blocks.
 #
@@ -232,17 +232,17 @@ exit v;	# 8  (v:bit)
     d0 := calc.-(t1,t0);	# 109 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#multiplex.tactics(+) %d\n",d0);	# 110 SYSprint_formatted_lng ($78:int)<-($79:str)(d0:lng)
 end main;	# 111  
-#copy 40070#count 1000000
-#select none 421829 count 0
-#select all 55966 count 1000000
-#select 0.05 30598 count 50004
-#select 0.1 28333 count 100016
-#select 0.2 35464 count 199929
-#select 0.4 41759 count 399791
-#select 0.6 47418 count 600237
-#select 0.8 50602 count 799837
-#select 1.0 55081 count 999999
-#tail sort 659536 count 1000000
-#multiplex.script(+) 6432606
-#multiplex.tactics(+) 88408
+#copy 27#count 4
+#select none 271669 count 5
+#select all 42403 count 6
+#select 0.05 25879 count 7
+#select 0.1 27537 count 8
+#select 0.2 30337 count 9
+#select 0.4 35613 count 10
+#select 0.6 39118 count 11
+#select 0.8 42727 count 12
+#select 1.0 42112 count 13
+#tail sort 9 count -4
+#multiplex.script(+) 19385320
+#multiplex.tactics(+) 70382
 >

@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 ## what is the overhead of MAL in multiplex situations
 ## using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
@@ -47,7 +47,7 @@ exit w;	# 17  (w:lng)
     io.print(d);	# 18 CMDprint_val ($22:int)<-(d:bat[:lng,:lng])
 end main;	# 19  
 #-----------------#
-# h	tmp_6	  # name
+# h	tmp_5	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]

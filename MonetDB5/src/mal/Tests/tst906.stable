@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 ## the multiplex code blocks.
 ## check detection of the underlying fast implementations
@@ -52,7 +52,7 @@ exit v;	# 6  (v:bit)
     io.print(z);	# 20 CMDprint_val ($25:int)<-(z:bat[:lng,:bit])
 end main;	# 21  
 #-----------------#
-# h	tmp_5	  # name
+# h	tmp_4	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
@@ -66,7 +66,7 @@ end main;	# 21
 [ 8,	  8	  ]
 [ 9,	  9	  ]
 #-----------------#
-# h	tmp_6	  # name
+# h	tmp_5	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
@@ -80,7 +80,7 @@ end main;	# 21
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# h	tmp_7	  # name
+# h	tmp_6	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  1	  ]
@@ -94,7 +94,7 @@ end main;	# 21
 [ 8,	  9	  ]
 [ 9,	  10	  ]
 #-----------------#
-# h	tmp_8	  # name
+# h	tmp_7	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
@@ -108,7 +108,7 @@ end main;	# 21
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# h	tmp_9	  # name
+# h	tmp_8	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
@@ -122,7 +122,7 @@ end main;	# 21
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# h	tmp_10	  # name
+# h	tmp_9	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
@@ -136,7 +136,7 @@ end main;	# 21
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# h	tmp_11	  # name
+# h	tmp_10	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  false	  ]

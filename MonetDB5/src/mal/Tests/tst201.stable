@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 ## Mil compiler Version 1.0)
 ## Copyright (c) 1993-2001, CWI. All rights reserved.
@@ -280,7 +280,7 @@ end main;	# 94
 [ 1 ]
 [ 4 ]
 [ nil ]
-[ "MALexception:Admin.main[29]:algebra.find:value not found\n" ]
+[ 0 ]
 #-------------------------#
 # h		tmp_4	  # name
 # str		int	  # type
@@ -294,7 +294,7 @@ end main;	# 94
 [ "lazy",	  7	  ]
 [ "dog",	  8	  ]
 [ nil,		  9	  ]
-[ 12 ]
+[ 4 ]
 #-------------------------#
 # h		tmp_5	  # name
 # str		int	  # type

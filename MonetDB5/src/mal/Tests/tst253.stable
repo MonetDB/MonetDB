@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 ## testing void bats
 #
@@ -43,6 +43,6 @@ end main;	# 9
 # h		tmp_5		  # name
 # str		void		  # type
 #---------------------------------#
-[ "hello",	  1000074@0	  ]
-[ "world",	  1000075@0	  ]
+[ "hello",	  1000070@0	  ]
+[ "world",	  1000071@0	  ]
 >

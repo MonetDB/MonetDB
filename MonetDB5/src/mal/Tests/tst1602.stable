@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 #	int_1M:= new(:void,:lng,1000000);
 #	setSequenceBase(int_1M,0@0);
@@ -228,7 +228,7 @@ end main;	# 94
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "1"		  ]
 [ "halign",			  "0"		  ]
-[ "halignflushed",		  "1000072"	  ]
+[ "halignflushed",		  "1000068"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -236,8 +236,8 @@ end main;	# 94
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "0"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000073"	  ]
-[ "talignflushed",		  "1000073"	  ]
+[ "talign",			  "1000069"	  ]
+[ "talignflushed",		  "1000069"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
@@ -289,10 +289,10 @@ end main;	# 94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 284 ms
-count 1000000 = 209 ms
-count 1000000 = 207 ms
-count 1000000 = 208 ms
+count 6 = 282 ms
+count 7 = 212 ms
+count 8 = 212 ms
+count 9 = 212 ms
 #-------------------------------------------------#
 # h				tmp_10		  # name
 # str				str		  # type
@@ -319,8 +319,8 @@ count 1000000 = 208 ms
 [ "hkey",			  "1"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000130"	  ]
-[ "halignflushed",		  "1000130"	  ]
+[ "halign",			  "1000126"	  ]
+[ "halignflushed",		  "1000126"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -328,14 +328,14 @@ count 1000000 = 208 ms
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "4"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000131"	  ]
-[ "talignflushed",		  "1000131"	  ]
+[ "talign",			  "1000127"	  ]
+[ "talignflushed",		  "1000127"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1000001"	  ]
 [ "batStamp",			  "33"		  ]
-[ "lastUsed",			  "1000084"	  ]
+[ "lastUsed",			  "1000080"	  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "34"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
@@ -381,10 +381,10 @@ count 1000000 = 208 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 316 ms
-count 1000000 = 218 ms
-count 1000000 = 223 ms
-count 1000000 = 239 ms
+count 12 = 289 ms
+count 13 = 212 ms
+count 14 = 207 ms
+count 15 = 213 ms
 #-------------------------------------------------#
 # h				tmp_16		  # name
 # str				str		  # type
@@ -411,8 +411,8 @@ count 1000000 = 239 ms
 [ "hkey",			  "1"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000196"	  ]
-[ "halignflushed",		  "1000196"	  ]
+[ "halign",			  "1000192"	  ]
+[ "halignflushed",		  "1000192"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -420,14 +420,14 @@ count 1000000 = 239 ms
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "8"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000197"	  ]
-[ "talignflushed",		  "1000197"	  ]
+[ "talign",			  "1000193"	  ]
+[ "talignflushed",		  "1000193"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1000001"	  ]
 [ "batStamp",			  "66"		  ]
-[ "lastUsed",			  "2000172"	  ]
+[ "lastUsed",			  "2000164"	  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "68"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
