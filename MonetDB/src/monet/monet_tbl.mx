@@ -515,6 +515,7 @@ char *DL_error(void) {
 
 ptr TBL_openmod(Client client, str module) {
     ptr ret=0;
+    (void) client;
     if (module) {      
         ret=(ptr)DL_open(module, (RTLD_NOW|RTLD_GLOBAL));
     } else {
@@ -766,6 +767,7 @@ int TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl) 
 static INLINE 
 int TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str tp2) {
 	int j, k;
+	(void) v1;
 
 	/* simple 1-1 match */
 	if (same_type(tp1, tp2)) {
@@ -2527,6 +2529,7 @@ static void TBL_Insert_Depend( oid mid, str name ) {
 }
 
 void TBL_Install_Depend(TBLinstall *inst, oid mid, str user, str name) {
+	(void) user;
 	/* use parent module NULL else circular dependencies are added */
 	if (!TBL_loadmod(inst->client, name, NULL, inst->level+1, inst->initstr)) {
 		GDKwarning("TBL_Install_Depend: requires module %s, not loaded!\n", name);
@@ -2604,6 +2607,7 @@ TBL_Install_Function(
 {
 	int zero = 0;
 	oid fid = TBL_oid++;
+	(void) type_imp;
 
 	dlFPRINTF(GDKerr, "  TBL_Install_Function(%lu,%s) = %lu\n", mid, name, fid);
 

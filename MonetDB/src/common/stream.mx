@@ -681,6 +681,7 @@ static size_t socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	return 0;
 }
 static void socket_flush( stream *s ){
+	(void) s;
 	/* not needed */
 }
 static void socket_close( stream *s ){
@@ -819,6 +820,7 @@ stream *file_wastream( FILE *fp, char *name ){
 
 buffer *buffer_create( size_t size ){
 	buffer *b = (buffer*)malloc(sizeof(buffer));
+	(void) size;
 	b->pos = 0;
 	b->buf = malloc(BUFSIZ);
 	b->len = BUFSIZ;
@@ -870,7 +872,7 @@ static size_t buffer_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	return size;
 }
 
-static void buffer_close( stream *s ){ }
+static void buffer_close( stream *s ){ (void) s; }
 static void buffer_flush( stream *s ){ 
 	buffer *b = (buffer*)s->stream_data.p;
 	b->pos = 0;

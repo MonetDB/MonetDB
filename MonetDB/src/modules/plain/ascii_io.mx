@@ -319,6 +319,7 @@ static char *sep_dup( char *sep ){
 }
 
 ptr *ASCIIadt_frStr( void *extra, int type, char *s){
+	(void) extra;
         int l = 0;
         ptr *res = NULL;
         if (type == TYPE_str) {
@@ -332,6 +333,7 @@ ptr *ASCIIadt_frStr( void *extra, int type, char *s){
 }
 
 int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
+	(void) extra;
         if (type == TYPE_str){
 		char *dst, *src = a;
 		int l;

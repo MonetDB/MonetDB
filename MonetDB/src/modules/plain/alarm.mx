@@ -87,6 +87,7 @@ are outstanding timer events.
 #ifdef SIGALRM
 void CLKinitTimer(int sec, int usec){
 	int i = sec - time(0);
+	(void) usec;
 	TRGDEBUG THRprintf(GDKerr, "CLKinitTimer: set timer to %d secs \n", i); 
         alarm(i);
 }
@@ -133,6 +134,7 @@ static RETSIGTYPE CLKsignal(int nr){
 	int restype;
 	int k=timerTop;
         int t; 
+	(void) nr;
  
 	if (signal(SIGALRM, CLKsignal) == SIG_ERR) {
 		GDKsyserror("CLKsignal: call failed\n");

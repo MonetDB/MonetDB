@@ -477,6 +477,7 @@ CTcheck_hl(
 ){
         histolink *hl = (histolink*) hp->base;
 	BAT *h = NULL;
+	(void) b;
 
         if (hl == 0 || hl->histogram == 0 || ABS(hl->histogram) >= BBPsize ||
 		BBP_logical(ABS(hl->histogram)) == NULL || 
@@ -511,6 +512,7 @@ CTupdate_hl(
    BAT*         b,      /* IN: BAT with accelerated head column. */
    ptr		val)
 {
+	(void) idx; (void) val;
 	CTdestroy_hl(hp, b);
 }
 
@@ -1029,6 +1031,7 @@ CThistosum(
         BUN p,q, qb;
         int xx,i,*z;
         oid ot,oh;
+	(void) c;
 
 	BATloopFast(b,p,q,xx) {
 		oh = *(oid *) BUNhloc(b,p);

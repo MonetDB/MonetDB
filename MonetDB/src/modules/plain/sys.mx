@@ -830,6 +830,7 @@ view_var_name(
         Client  c;
         Variable v;
 	BAT *b, **retval=&b;
+	(void) lt;
 
         CNTXTclient(stk, &c);
 
@@ -860,6 +861,7 @@ view_var_type(
         Client  c;
         Variable v;
 	BAT *b, **retval=&b;
+	(void) lt;
 
         CNTXTclient(stk, &c);
 
@@ -891,6 +893,7 @@ view_var_kind(
         Client  c;
         Variable v;
 	BAT *b, **retval=&b;
+	(void) lt;
 
         CNTXTclient(stk, &c);
 
@@ -921,6 +924,7 @@ view_var_constant(
         Client  c;
         Variable v;
 	BAT *b, **retval=&b;
+	(void) lt;
 
         CNTXTclient(stk, &c);
 
@@ -954,6 +958,7 @@ view_var_value(
 	BAT *b, **retval=&b;
 	char *buf = NULL;
 	int l = 0;
+	(void) lt;
 
         CNTXTclient(stk, &c);
 

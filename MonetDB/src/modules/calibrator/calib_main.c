@@ -58,6 +58,7 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 	FILE	*fp;
 	char	fnn1[1024], fnx1[1024], fnn2[1024], fnx2[1024];
 #endif
+	(void) fname;
 	
 	if (!(array0 = (char *)malloc(maxrange+pgsz)))
 		ErrXit("main: 'array0 = malloc(%ld)` failed", maxrange+pgsz);

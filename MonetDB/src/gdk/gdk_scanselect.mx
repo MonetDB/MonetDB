@@ -230,7 +230,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 	BUN p,q;
 	int xx, t = b->ttype;
         ptr nil = ATOMnilptr(t);
-	(void)nil;
+	(void)nil; (void) tl; (void) th;
 @= seqscanEpilogue
 	if (!bn->batDirty) bn->batDirty = TRUE;
 	return bn;

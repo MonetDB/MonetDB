@@ -1101,6 +1101,7 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 	BAT *bn, *b = BBP_cache(val->val.bval);
 	int tpe = ATOMindex(atom);
+	(void) argc;
 
 	if (trivial_cast(tpe,b->ttype)) {
 	    /* trivial conversion, e.g. int => int or oid => int */
@@ -1355,6 +1356,7 @@ int interpret_parblock(int stk, YYSTREE lt, ValPtr res, int scope){
 	Request q;
 	Client  c;
 	int 	i;
+	(void) res;
 
 	PARDEBUG THRprintf(GDKerr, "parallel block\n");
 
@@ -1490,6 +1492,8 @@ void iterator_maketrees(
 ){
 	ValPtr p;
 	int i;
+	(void) ht;
+	(void) tt;
 
 	if (handle->params) {
 		GDKfree(handle->params); 

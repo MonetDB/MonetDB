@@ -892,20 +892,25 @@ int @1ToStr(char ** dst, int *len, @1 *src) {
 
 int voidFromStr(str src, int *len, void **dst)
 {
+	(void) src; (void) len; (void) dst;
 	return 0;
 }
 
 int voidToStr(str *dst, int *len, void *src) {
+	(void) src;
 	@:atommem(char,3)@
 	strcpy(*dst, "nil");
 	return 3;
 }
 
 void *voidRead(void *a, stream *s, size_t cnt){
+	(void) s; (void) cnt;
 	return a;
 }
 
-void voidWrite(void *a, stream *s, size_t cnt){ }
+void voidWrite(void *a, stream *s, size_t cnt){
+	(void) a; (void) s; (void) cnt;
+}
 
 int chrFromStr(char *src, int *len, chr **dst) {
 	unsigned char* p = (unsigned char*) src;

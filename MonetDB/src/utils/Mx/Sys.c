@@ -97,6 +97,7 @@ char *	buf;
 
 void	Free(char *ptr)
 {
+	(void) ptr;
 /*
 	free(ptr);
  */

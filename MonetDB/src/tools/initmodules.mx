@@ -63,6 +63,7 @@ load the dynamic libraries before we load and run the scripts.
 
 void static_module_init(Client c, char buf[]) {
 
+(void) buf;
 @include static_modules.mx
 
 }

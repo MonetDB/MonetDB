@@ -888,6 +888,7 @@ int
 salgebra_CMDuselect( BAT** res, clusterhash* ch, ptr v, int v_type ) {
   BAT *result = NULL;
   int nres = 0, nmaxres = 0;
+  (void) v_type;
 
   @:CHECKnil(error,FAIL)@
   nmaxres = DICTclustersize( ch, v );

@@ -241,6 +241,7 @@ RETSIGTYPE BATSIGabort(int nr) {
 #ifdef SIGPIPE
 RETSIGTYPE BATSIGpipe(int nr) {
 	int	status; 
+	(void) nr;
 
 	while (waitpid(-1, &status, WNOHANG) > 0)
 		;
@@ -252,6 +253,7 @@ RETSIGTYPE BATSIGpipe(int nr) {
 
 RETSIGTYPE BATSIGcrash(int nr) {
 	static int crash = 0;
+	(void) nr;
 	if (!crash++) {
 		GDKlog(GDKCRASH);
 		MT_global_exit(1);

@@ -357,6 +357,7 @@ void MT_global_exit(int s) {
 
 void MT_exit_thread(int s) {
 	int st=0;
+	(void) s;
 	pthread_exit(&st);
 }
 
@@ -366,6 +367,7 @@ int MT_kill_thread (MT_Id t) {
 	thread_t id = (thread_t)(t-1);
 	return pthread_kill((pthread_t)id, SIGHUP);
 #else
+	(void) t;
 	return -1;		/* XXX */
 #endif
 }
@@ -429,6 +431,7 @@ int MT_try_lock (MT_Lock l) {
 
 
 void MT_dump_lock (MT_Lock l, FILE *fp, char* name) {
+	(void) l;
 	fprintf(fp, "%s: MT_dump_lock() not implemented.\n", name);
 }
 
@@ -491,6 +494,7 @@ void	MT_destroy_sema (MT_Sema s) {
 }
 
 void 	MT_dump_sema (MT_Sema s, FILE *fp, char *name) {
+	(void) s;
 	fprintf(fp, "%s: MT_dump_sema() not implemented.\n",name);
 }
 

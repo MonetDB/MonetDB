@@ -1196,6 +1196,7 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 @= integerdef
 #define integer@1 int
 size_t integer@1Copy(void *dst, void *src, size_t size){
+	(void) size;
 	*(int*) dst = *(int*) src;
 	return sizeof(int);
 }

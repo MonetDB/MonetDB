@@ -1441,6 +1441,7 @@ int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res){
         int i,j;
         Variable act;
         YYSTREE t;
+	(void) res;
 
         for(t=lt; t; t=t->overflow) {
             for(i=0 ; i<lt->cnt; i++)

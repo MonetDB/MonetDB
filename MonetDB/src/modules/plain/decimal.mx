@@ -888,6 +888,7 @@ int decimal_length(decimal *d) {
 void decimal_convert(decimal *d, int dummy) {
 	int *src = (int*) d, *dst = (int*) (((char*) d) + TOTLEN(d->precision));
 	short *s = (short*) d;
+	(void) dummy;
 	s[0] = short_int_SWAP(s[0]);
 	s[1] = short_int_SWAP(s[1]);
 	while(++src < dst) {

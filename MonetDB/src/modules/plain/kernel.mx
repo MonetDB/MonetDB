@@ -393,6 +393,7 @@ int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
  
 int CMDdrop(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
+	(void) res;
 	/* TODO maybe run drop also in the lowest stack context ?? */ 
 	CNTXTclient(stk, &c);
 	return dropClient(c, lt);
@@ -401,6 +402,7 @@ int CMDdrop(Cntxt stk, YYSTREE lt, ValPtr res){
 int CMDmodule_peek(Cntxt stk, YYSTREE lt, ValPtr res){
 	str r = NULL; 
 	Client c;
+	(void) lt;
 
 	CNTXTclient(stk, &c);
 	r = moduleGetClient(c);
@@ -428,6 +430,7 @@ int CMDmodule_enter(Cntxt stk, YYSTREE lt, ValPtr res){
 
 int CMDmodule_exit(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
+	(void) lt;
 
 	CNTXTclient(stk, &c);
 	moduleExitClient(c);
@@ -507,6 +510,7 @@ int CMDbatcast(Cntxt stk, YYSTREE lt, ValPtr res){
 }
 
 int CMDvarname(int stk, YYSTREE lt, ValPtr res){
+	(void) stk;
         if (lt->cnt==1 && lt->yysons[0] && 
 	    lt->yysons[0]->token==monet_tokident) 
 	{
@@ -595,6 +599,7 @@ int CMDfreeze(Cntxt stk, YYSTREE lt, ValPtr res){
         int i,j;
         Variable act;
         YYSTREE t;
+	(void) res;
  
         for(t=lt; t; t=t->overflow) {
             for(i=0 ; i<lt->cnt; i++)
@@ -635,6 +640,7 @@ be used to stop out-of-hand jobs. There is no protection system yet!
 @c
 int CMDclientid(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
+	(void) lt;
 	CNTXTclient(stk, &c);
 	res->vtype = TYPE_int;
 	res->val.ival = (int) (c-monet_clients);
@@ -698,6 +704,7 @@ int CMDthreadcnt(Cntxt stk, YYSTREE lt, ValPtr res){
 }
 
 int CMDthreadid(Cntxt stk, YYSTREE lt, ValPtr res){
+	(void) stk; (void) lt;
 	res->vtype = TYPE_int;
 /* res->val.ival = (int) MT_getpid(); */
 	res->val.ival = THRgettid();
@@ -731,11 +738,13 @@ The contents of the Monet Queue can be monitored with @%CMDqueue@.
 The corresponding history sequence can be obtained with @%CMDqueueStat@.
 @c
 int CMDqueue(Cntxt stk, YYSTREE lt, ValPtr res){
+	(void) stk; (void) lt; (void) res;
 	QMprint();
 	return 0;
 }
 
 int CMDqstat(Cntxt stk, YYSTREE lt, ValPtr res){
+	(void) stk; (void) lt; (void) res;
 	QMprintStat();
 	return 0;
 }
@@ -943,6 +952,7 @@ int CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res){
 int CMDERROR(Cntxt stk, YYSTREE lt, ValPtr res){
 	ValRecord argv[MAXPARAMS];
 	int i;
+	(void) res;
 
         if (lt->cnt < 1) {
                 return -1;

@@ -207,6 +207,7 @@ url_getContent(
    str*         retval, /* put string: pointer to char here. */
    url         Str1    /* string: pointer to char.*/
 ){
+	(void) Str1;
 	*retval = 0;
 	return GDK_FAIL;
 }
@@ -577,6 +578,7 @@ url_isaURL(
    bit*     	retval,	/* put return atom here. */
    url      	Str1	/* string: pointer to char.*/
 ){
+	(void) retval;
 	if( Str1 == 0) return GDK_FAIL;
 	return GDK_SUCCEED;
 }

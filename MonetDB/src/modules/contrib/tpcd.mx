@@ -733,6 +733,7 @@ DVIdestroy(
    Heap*	hp,	/* INOUT: accelerator heap. */
    BAT*		b	/* IN: BAT with accelerated head column. */
 ){
+	(void) b;
 	HEAPfree(hp);
 }
 
@@ -743,6 +744,7 @@ DVIinsert(
    BAT*		b,	/* IN: BAT with accelerated head column. */
    oid*     	o	/* IN: atomic value that was inserted. */
 ){
+	(void) idx; (void) o;
 	GDKwarning("DVIinsert: destroys vector index\n");
 	ACCdestroy(ACC_vectoridx, b, hp);
 }
@@ -754,6 +756,7 @@ DVIdelete(
    BAT*		b,	/* IN: BAT with accelerated head column. */
    oid*     	o	/* IN: atomic value that was deleted. */
 ){
+	(void) idx; (void) o;
 	GDKwarning("DVIdelete: destroys vector index\n");
 	ACCdestroy(ACC_vectoridx, b, hp);
 }
@@ -763,6 +766,7 @@ DVIsave(
    Heap*	hp,	/* INOUT: accelerator heap. */
    BAT*		b	/* IN: BAT with accelerated head column. */
 ){
+	(void) hp; (void) b;
 	/* vectoridx *v = (vectoridx*) hp->base; */
 }
 
@@ -895,6 +899,7 @@ DVinsert(
    BAT*		b,	/* IN: BAT with accelerated head column. */
    ptr      	p	/* IN: atomic value that was inserted. */
 ){
+	(void) idx; (void) p;
 	GDKwarning("DVinsert: destroys vector\n");
 	ACCdestroy(ACC_datavector, b, hp);
 }
@@ -906,6 +911,7 @@ DVdelete(
    BAT*		b,	/* IN: BAT with accelerated head column. */
    ptr      	p	/* IN: atomic value that was deleted. */
 ){
+	(void) idx; (void) p;
 	GDKwarning("DVdelete: destroys vector\n");
 	ACCdestroy(ACC_datavector, b, hp);
 }
@@ -915,6 +921,7 @@ DVsave(
    Heap*	hp,	/* INOUT: accelerator heap. */
    BAT*		b	/* IN: BAT with accelerated head column. */
 ){
+	(void) hp; (void) b;
 	/* datavector *v = (datavector*) hp->base; */
 }
 

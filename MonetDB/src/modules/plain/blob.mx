@@ -167,6 +167,7 @@ blob* blob_null(void)
 }
 
 void blob_convert( blob *b, int direction){
+	(void) direction;
 	b->nitems = normal_vart_SWAP(b->nitems);
 }
 

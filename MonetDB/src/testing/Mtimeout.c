@@ -71,6 +71,7 @@ invocation(FILE *fp, char *prefix, char **argv)
 static void
 alarm_handler(int sig)
 {
+    (void) sig;
     exec_timeout = 1;
 #if defined(LINUX)
     kill(-exec_pid, SIGINT);

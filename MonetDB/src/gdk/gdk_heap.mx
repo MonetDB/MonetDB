@@ -479,6 +479,7 @@ static INLINE size_t roundup_num(size_t number, size_t alignment) {
 
 size_t HEAP_private(Heap *h)
 {
+	(void) h;
 	return roundup_8(sizeof(HEADER));
 }
 
@@ -899,6 +900,8 @@ void HEAP_checkformat(Heap *heap) {
 	hheader->alignment = image.alignment;
 	hheader->sizefcn = (int (*)(ptr)) hasfcn;
    }
+#else
+	(void) heap;
 #endif
 }
 

@@ -544,6 +544,7 @@ take care of memory deallocation.
 @= multiplex_exec
 static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
     int retval = @:call_@1@
+    (void) argv;
     if (desc->notall && retval < 0) {
 	return 0;
     }
@@ -1152,6 +1153,7 @@ some bulk technique is not possible.
 @c
 int CMDifelse(int argc, ValPtr argv){
 	int ret = argv[1].val.cval[0];
+	(void) argc;
 
 	if (ret == FALSE) {
 	    VALcopy(argv,argv+2);
@@ -1163,6 +1165,7 @@ int CMDifelse(int argc, ValPtr argv){
 
 int CMDifthen(int argc, ValPtr argv){
 	int ret = argv[1].val.cval[0];
+	(void) argc;
 
 	if (ret == TRUE) {
 	    VALcopy(argv,argv+2);
@@ -1174,6 +1177,7 @@ int CMDifthen(int argc, ValPtr argv){
 	
 int CMDifthenelse(int argc, ValPtr argv){
 	int ret = argv[1].val.cval[0];
+	(void) argc;
 
 	if (ret == bit_nil) {
             VALnil(argv, argv[2].vtype);
@@ -1306,6 +1310,7 @@ int interpret_setaggr(
 	hash_t	hh;
 	str	buf;
 	bulkerror_t bulkerror;
+	(void) name;
 
 @- argument check
 @T

@@ -1145,6 +1145,7 @@ int CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp,
 @+ Accelerator Control
 @c
 int CMDaccbuild(BAT *b, int* acc, ptr param, int dummy){
+	(void) dummy;
 	ACCbuild(*acc, b, &b->haccelerator, param); 
 	return GDK_SUCCEED;
 }

@@ -138,6 +138,8 @@ simple_prompt(const char *prompt, int maxlen, int echo)
 
 #ifdef HAVE_TERMIOS_H
 	struct termios t_orig, t;
+#else
+	(void) echo;
 #endif
 
 	destination = (char *) malloc(maxlen + 2);
@@ -424,6 +426,7 @@ using its help operator '?'.
 
 void usage( char *prog )
 {
+	(void) prog;
 	fprintf(stderr, "Usage: MapiClient [ options ]\n");
 	fprintf(stderr, "Options are:\n");
 	fprintf(stderr, " -d          | --debug=[level]  /* set debug level */\n");

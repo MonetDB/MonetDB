@@ -915,6 +915,7 @@ we can skip checking, as we can assume the reverse column will get checked.
 		BATsetaccess(b, BAT_READ);
 	}
 */
+	(void) protect;
         BATDEBUG {
                 _t2 = GDKms() - _t1; _t3 += _t2;
                 THRprintf(GDKerr, "check %s = %d (tot %d)\n", b->batId,_t2,_t3);

@@ -917,6 +917,7 @@ typedef struct {
 
 static 
 int print_nil(char** dst, int *len, ptr dummy) {
+	(void) dummy;
 	if (*len < 3) {
 		if (*dst) GDKfree(*dst);
 		*dst = (char*) GDKmalloc(*len = 40);

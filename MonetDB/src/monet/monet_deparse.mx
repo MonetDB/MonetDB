@@ -53,6 +53,7 @@ char 			yybuffer[4048], *yylim= yybuffer+4048;
 
 static int lex_name(Client c, char* buf, char *end, YYSTREE t, ValPtr v){
 	str nme=0; ptr p = v->val.pval;
+	(void) c;
 
 	if (t == NULL || buf > end) {
 		end[-1] = 0;

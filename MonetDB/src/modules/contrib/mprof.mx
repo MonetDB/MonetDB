@@ -621,6 +621,7 @@ Tms_del(
 	Heap* h,    
     size_t* b	  
 ){
+	(void) h; (void) b;
 }
 
 hash_t
@@ -792,6 +793,7 @@ Ma_del(
 	Heap* h,     
     size_t* b
 ){
+	(void) h; (void) b;
 }
 
 hash_t
@@ -981,6 +983,7 @@ Ru_del(
 	Heap* h,    
     size_t* b
 ){
+	(void) h; (void) b;
 }
 
 hash_t
@@ -1374,6 +1377,7 @@ int
 pmPrint_impl(
    str      	Str1	/* string: pointer to char.*/
 ){
+	(void) Str1;
 	return GDK_SUCCEED;
 }
 
@@ -1392,6 +1396,7 @@ pmParent_impl(
    str      	Str1,	/* string: pointer to char.*/
    str      	Str2	/* string: pointer to char.*/
 ){
+	(void) Str1; (void) Str2;
 	return GDK_SUCCEED;
 }
 @}

@@ -510,12 +510,14 @@ void gen_default_atomops( ostream &o, int op, const Atom &d ){
 	case OP_READ	:
 	o << "char * " << atom;
 	o << "_read( char *a, stream *s, size_t cnt) {\n";
+	o << "   (void) a; (void) s; (void) cnt;";
 	o << "   return NULL;\n";
 	o << "}\n\n";
 	break;
 	case OP_WRITE	:
 	o << "void " << atom;
 	o << "_write( char *a, stream *s, size_t cnt) {\n";
+	o << "   (void) a; (void) s; (void) cnt;";
 	o << "}\n\n";
 	break;
 
@@ -574,7 +576,7 @@ void gen_default_atomops( ostream &o, int op, const Atom &d ){
         break;
 	case OP_CONVERT : 
 	o << "void " << atom;
-	o << "_convert( char *a, int direction ){ (void)a; }\n\n";
+	o << "_convert( char *a, int direction ){ (void)a; (void) direction; }\n\n";
 	break;
 	case OP_HCONVERT : 
 	o << "void " << atom;
@@ -1076,6 +1078,7 @@ ostream &protoize::gen_epilogue( ostream &o, const Epilogue &d ){
 }
 
 ostream &install::gen_dependency( ostream &o, const Dependency &d ){ 
+	(void) d;
 	//o << "   TBL_Install_Depend(inst, mid, user, \"_"<<d.Name()<<"\");\n";
 	return o;
 }
@@ -1273,6 +1276,7 @@ ostream &install_fcntbl::gen_object( ostream &o, const Object &d ){
 }
 
 ostream &gen_install_arg( ostream &o, const char *name, const Arg &d){
+	(void) d;
 	o << "\"" << name << "\"";
 	//if (d.value()) {
 	//	o << d.value();

@@ -100,6 +100,7 @@ void printAsso(AssoInfo *Asso, caliblng MHz)
 {
 	caliblng	l;
 	FILE	*fp = stderr;
+	(void) MHz;
 		
 	fprintf(fp, "Assos:\n");
 /*+
