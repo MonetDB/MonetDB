@@ -40,45 +40,6 @@ sql_export int stmt_dump( stmt *s, int *nr, context *sql );
 #include "sql_genmilcode.h"
 #include <string.h>
 
-static void atom_dump( atom *a, context *sql){
-	stream *s = sql->out;
-	int i = 0;
-	char buf[BUFSIZ];
-
-	switch (a->type){
-	case int_value: 
-			i=snprintf(buf, BUFSIZ, "%s(%lld)", 
-					a->tpe->type->name, a->data.ival); 
-			break;
-	case string_value: 
-			i=snprintf(buf, BUFSIZ-2, "%s(\"%s\")", 
-					a->tpe->type->name, a->data.sval); 
- 			break;
-	case float_value: 
-			/* float/double requires string as 
-			 * else dbl(0.1), will first be a float and
-			 * then converted to dbl, which results in the
-			 * wrong value */ 
-			i=snprintf(buf, BUFSIZ, "%s(\"%E\")", 
-					a->tpe->type->name, a->data.dval); 
-			break;
-	case general_value:
-			if (a->data.sval)
-			  i=snprintf(buf, BUFSIZ, "%s(\"%s\")", 
-				a->tpe->type->name, a->data.sval );
-			else 
-			  i=snprintf(buf, BUFSIZ, "%s(nil)", 
-				a->tpe->type->name );
-			break;
-	default:
-			break;
-	}
-	s->write(s, buf, 1, i);
-
-	if (sql->debug&8)
-		fwrite( buf, 1, i, stderr);
-}
-
 static void write_head( context *sql, int nr )
 {
 	if (sql->debug&2){
@@ -279,6 +240,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 
 	switch(s->type){
 	case st_none: 
+		len = snprintf( buf, BUFSIZ, "none := \"none\";\n");
+		dump(sql,buf,len,-s->nr);
 		break;
 	case st_assign: {
 		int val = stmt_dump( s->op1.stval, nr, sql );
@@ -545,16 +508,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		int r1 = stmt_dump( s->op2.stval, nr, sql );
 		int r2 = stmt_dump( s->op3.stval, nr, sql );
 		switch(s->flag){
-		case cmp_equal: len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.select(s%d, s%d);\n", 
+		case 0: 
+		case 1: 
+		case 2: 
+		case 3: 
+			len = snprintf( buf, BUFSIZ, 
+			  "s%d := s%d.uselect(s%d, s%d);\n", 
 			  -s->nr, l, r1, r2 ); 
-			break;
-		case cmp_notequal: 
-			(void)(*nr)++; 
-			len = snprintf( buf, BUFSIZ,
-			  "s%d := s%d.select(s%d, s%d);\n", *nr, l, r1, r2 ); 
-			len += snprintf( buf+len, BUFSIZ-len, 
-			  "s%d := s%d.kdiff(s%d);\n", -s->nr, l, *nr );
 			break;
 		}
 		dump(sql,buf,len,-s->nr);
@@ -778,7 +738,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
 		write_command(sql,buf);
 		write_part(sql,buf,len);
-		atom_dump(s->op1.aval, sql);
+		atom_dump(s->op1.aval, sql->out);
 		len = snprintf( buf, BUFSIZ, ";\n");
 		write_part(sql,buf,len);
 		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
@@ -875,6 +835,15 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		len += snprintf( buf+len, BUFSIZ-len, "senddata(Output);\n");
 		dump(sql,buf,len,-s->nr);
 	} break;
+	case st_export: {
+		int o1 = stmt_dump(s->op1.stval, nr, sql);
+		int o2 = stmt_dump(s->op2.stval, nr, sql);
+		int o3 = stmt_dump(s->op3.stval, nr, sql);
+		int len = snprintf( buf, BUFSIZ, 
+		    "s%d := mvc_export_table(myc, Output, s%d, s%d, s%d);\n", 
+			-s->nr, o1, o2, o3);
+		dump(sql,buf,len,-s->nr);
+	}
 	case st_filter:
 		s->nr = -stmt_dump( s->op1.stval, nr, sql );
 		break;

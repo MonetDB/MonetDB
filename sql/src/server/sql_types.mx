@@ -125,6 +125,7 @@ sql_export sql_subtype *sql_create_subtype( sql_type *t, int s, int d );
 sql_export sql_subtype *sql_dup_subtype( sql_subtype *t );
 sql_export void sql_subtype_destroy( sql_subtype *t );
 
+sql_export int type_cmp( sql_type *t1, sql_type *t2);
 sql_export int subtype_cmp( sql_subtype *t1, sql_subtype *t2);
 
 sql_export sql_type *sql_create_type(char *sqlname, int digits, int scale, int radix, char *name );
@@ -178,7 +179,7 @@ sql_subtype *sql_create_subtype( sql_type *t, int digits, int scale )
 	sql_ref_init( &(res->ref) );
 	sql_ref_inc( &(t->ref) );
 	res->type = t;
-	res->digits = digits;
+	res->digits = digits?digits:t->digits;
 	res->scale = scale;
 	return res;
 }
@@ -273,7 +274,7 @@ sql_type *sql_bind_type( char *name )
 	return NULL;
 }
 
-static int type_cmp( sql_type *t1, sql_type *t2)
+int type_cmp( sql_type *t1, sql_type *t2)
 {
 	int res = 0;
 	if (!t1 || !t2)

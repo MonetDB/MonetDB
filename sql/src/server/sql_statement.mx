@@ -110,6 +110,7 @@ typedef enum stmt_type {
 	st_insert,
 	st_replace,
 	st_exception,
+	st_export,
 
 	st_group_ext,
 	st_group,
@@ -134,13 +135,13 @@ typedef enum stmt_type {
 } st_type;
 
 typedef enum comp_type {
-	cmp_equal,
-	cmp_notequal,
-	cmp_lt,
-	cmp_lte,
-	cmp_gt,
-	cmp_gte,
-	cmp_all
+	cmp_gt = 0,
+	cmp_gte = 1,
+	cmp_lte = 2,
+	cmp_lt = 3,
+	cmp_equal = 4,
+	cmp_notequal = 5,
+	cmp_all = 6
 } comp_type;
 
 typedef struct stmt {
@@ -241,10 +242,11 @@ extern stmt *stmt_temp(sql_subtype * t );
 extern stmt *stmt_atom(atom * op1);
 extern stmt *stmt_filter(stmt * sel);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
-/* cmp 0 ==   l <= x <= h
-       1 ==   l <  x <  h
-       2 == !(l <= x <= h)  => l >  x >  h
-       3 == !(l <  x <  h)  => l >= x >= h
+/* cmp 
+       0 ==   l <  x <  h 	
+       1 ==   l <  x <= h 
+       2 ==   l <= x <  h
+       3 ==   l <= x <= h
        */
 extern stmt *stmt_select2(stmt * op1, stmt * op2, stmt * op3, int cmp);
 extern stmt *stmt_like(stmt * op1, stmt * a);
@@ -273,6 +275,7 @@ extern stmt *stmt_pivot(stmt *s, stmt *ptable);
 extern stmt *stmt_find(stmt *b, stmt *v );
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
 extern stmt *stmt_senddata();
+extern stmt *stmt_export(int id, int offset, int len);
 
 extern stmt *stmt_append(stmt *c, stmt * values);
 extern stmt *stmt_insert(stmt *c, stmt * values);
@@ -387,6 +390,7 @@ const char * st_type2string(st_type type) {
 	case st_select:	return "st_select";
 	case st_select2:	return "st_select2";
 	case st_bulkinsert:	return "st_bulkinsert";
+	case st_export:	return "st_export";
 	case st_like:	return "st_like";
 	case st_append:	return "st_append";
 	case st_insert:	return "st_insert";
@@ -554,6 +558,7 @@ void stmt_destroy(stmt * s)
 		case st_append: case st_insert: case st_replace:
 		case st_exception:
 		case st_partial_pivot: case st_pivot:
+		case st_export:
 
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
 			if (s->op2.stval) stmt_destroy(s->op2.stval);
@@ -572,7 +577,7 @@ void stmt_destroy(stmt * s)
 			break;
 		case st_var:
 			_DELETE(s->op1.sval);
-			sql_subtype_destroy(s->op4.typeval);
+			sql_subtype_destroy(s->op2.typeval);
 			break;
 
 		/* reference only independently managed resources */
@@ -658,6 +663,7 @@ stmt *stmt_var(char *varname, sql_subtype *t){
 	stmt *s = stmt_create(st_var);
 	s->op1.sval = varname;
 	s->op2.typeval = t;
+	s->key = 1;
 	return s;
 }
 
@@ -1300,6 +1306,15 @@ stmt *stmt_senddata(){
 	return s;
 }
 
+stmt *stmt_export(int id, int offset, int len )
+{
+	stmt *s = stmt_create(st_export);
+	s->op1.stval = stmt_atom_int(id);
+	s->op2.stval = stmt_atom_int(offset);
+	s->op3.stval = stmt_atom_int(len);
+	return s;
+}
+
 stmt *stmt_list(list * l)
 {
 	stmt *s = stmt_create(st_list);
@@ -1809,8 +1824,9 @@ char *column_name(stmt * st)
 	case st_bat:
 		return _strdup(st->op1.cval->name);
 	case st_atom:
-		if (st->op1.aval->type == string_value)
+		if (st->op1.aval->data.vtype == TYPE_str)
 			return atom2string(st->op1.aval);
+	case st_var:
 		return _strdup("single_value");
 
 	case st_relselect:
@@ -1853,7 +1869,7 @@ char *table_name(stmt * st)
 		return table_name(st->op2.stval);
 
 	case st_atom:
-		if (st->op1.aval->type == string_value)
+		if (st->op1.aval->data.vtype == TYPE_str)
 			return atom2string(st->op1.aval);
 		assert(0);
 

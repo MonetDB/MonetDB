@@ -304,6 +304,7 @@ void init_keywords()
 	keywords_insert("RETURNS", RETURNS );
 	keywords_insert("EXTERNAL", EXTERNAL );
 	keywords_insert("NAME", sqlNAME );
+	keywords_insert("EXPORT", EXPORT );
 }
 
 void exit_keywords()
@@ -430,16 +431,8 @@ static int lex_getc(context * lc)
 	unsigned char ch[5];
 	int c = EOF;
 	ch[4] = 0;
-	if (lc->in) {
-		*(int*)ch = 0;
-		if (lc->in->read(lc->in, (char*)ch, 1, 1) == 1) {
-			len = utf8_charlen(ch[0]) - 1;
-			if (len && lc->in->read(lc->in, (char*)ch+1, len, 1) != 1) {
-				fprintf(stderr, "couldn't read len %d\n", len);
-			}
-			c = utf8_getchar(ch);
-		}
-	} else if (lc->buf && *lc->buf) {
+	assert(lc->buf);
+	if (*lc->buf) {
 		len = utf8_charlen(lc->buf[0]);
 		c = utf8_getchar((unsigned char*)lc->buf);
 		lc->buf += len;
@@ -804,14 +797,15 @@ int sqllex(YYSTYPE * yylval, void *parm)
 			}
 		} else {
 			if (token == IDENT || token == COMPARISON ||
-			    token == STRING || token == AGGR || 
-			    token == TYPE)
+			    token == AGGR || token == TYPE ||
+			    token == STRING)
 				yylval->sval = _strdup(lc->yytext);
 
-			if (token == STRING)
+			if ( token == STRING )
 				cmd_add_string(lc, lc->yytext);
 			else
 				cmd_add_token(lc, lc->yytext);
+			lc->key ^= token;
 		}
 	}
 	return token;

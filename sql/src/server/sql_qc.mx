@@ -1,0 +1,169 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at 
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+@' All Rights Reserved.
+@' 
+@' Contributor(s):
+@' 		Martin Kersten <Martin.Kersten@cwi.nl>
+@' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
+
+@f sql_qc
+@a N.J. Nes
+@* 
+
+@h
+#ifndef _SQL_QC_H_
+#define _SQL_QC_H_
+
+#include <mem.h>
+#include <list.h>
+#include <sql_symbol.h>
+#include <monet_context.h>
+
+typedef struct cq {
+	struct cq *next;
+	symbol 	*s;
+	list 	*params;
+	Cntxt	stk;
+	YYSTREE mil;
+	int 	id;
+	int 	key;
+} cq;
+
+typedef struct qc {
+	int id;
+	cq *q;
+} qc;
+
+sql_export qc *qc_create();
+sql_export void qc_destroy( qc *cache, Cntxt stk );
+sql_export cq *qc_find( qc *cache, symbol *s, list *params, int key );
+sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key );
+sql_export int qc_size( qc *cache );
+
+#endif /*_SQL_QC_H_*/
+
+@c
+
+#include "sql_qc.h"
+#include "sql_scope.h"
+
+qc *qc_create()
+{
+	qc *r = NEW(qc);
+	r->id = 0;
+	r->q = NULL;
+	return r;
+}
+
+void qc_destroy( qc *cache, Cntxt stk )
+{
+	char buf[BUFSIZ];
+	cq *q, *n;
+	ValRecord v;
+
+	v.vtype = TYPE_void;
+	for (q = cache->q; q; q = n){
+		n = q->next;
+		
+		if (q->params && q->mil){
+			/* clear arguments */
+			node *m; 
+			int i;
+			ValPtr argv = (ValPtr) 
+				q->mil->yysons[1]->yyval.val.pval;
+			for (i=1, m = q->params->h; m; i++, m = m->next){
+				argv[i].vtype = TYPE_void; 
+				argv[i].len = 0; 
+			}
+		}
+		if (q->params)
+			list_destroy(q->params);
+		if (q->stk){ 
+			monet_cntxt[q->stk].reuse = FALSE;
+			CNTXTfree1(q->stk);
+		}
+/* somehow this gives problems (sudden module unloads, procs not found )!!
+		snprintf(buf, BUFSIZ, "undef sql%d;", q->id );
+		interpret_str(stk, buf, &v);
+*/
+		_DELETE(q);
+	}
+	_DELETE(cache);
+}
+
+int param_cmp( var *v1, var *v2 )
+{
+	sql_subtype *t1 = tail_type(v1->s);
+	sql_subtype *t2 = tail_type(v2->s);
+
+	if (t1->scale != t2->scale)
+		return -1;
+	return subtype_cmp(t1,t2);
+}
+
+int param_list_cmp( list *l1, list *l2 )
+{
+	node *n1, *n2;
+
+	if (l1 == l2) 
+		return 0;
+	if (!l1 || !l2 || list_length(l1) != list_length(l2))
+		return -1;
+	for (n1 = l1->h, n2 = l2->h; n1; n1 = n1->next, n2 = n2->next ){
+		var *v1 = n1->data;
+		var *v2 = n2->data;
+		if (param_cmp(v1,v2) != 0)
+			return -1;
+	}
+	return 0;
+}
+
+cq *qc_find( qc *cache, symbol *s, list *params, int key )
+{
+	cq *q;
+
+	for (q = cache->q; q; q = q->next ){
+	    	if (q->key == key){
+			/*if (list_cmp(q->params, params, (fcmp)&param_cmp) == 0 */
+			if (param_list_cmp(q->params, params) == 0 
+				 && symbol_cmp(q->s, s) == 0){
+				return q;
+			}
+	    	}
+	}
+	return NULL;
+}
+
+cq *qc_insert( qc *cache, symbol *s, list *params, int key )
+{
+	cq *n = NEW(cq);
+	n->id = cache->id++;
+	n->s = s;
+	n->params = params;
+	n->next = cache->q;
+	n->stk = 0;
+	n->mil = NULL;
+	n->key = key;
+	cache -> q = n;
+	return n;
+}
+
+int qc_size( qc *cache )
+{
+	return cache->id;
+}

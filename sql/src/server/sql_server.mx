@@ -161,8 +161,8 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND mvc_export_result(mvc m, Stream s, int result_id) =
 		mvc_export_result_wrap; "export a result to stream s"
 
-	.COMMAND mvc_export_table(mvc m, Stream s, int result_id, int offset, int nr, str sep, str rsep) =
-		mvc_export_table_wrap; "export a result to stream s with the given tuple and record seperators (sep/rsep)"
+	.COMMAND mvc_export_table(mvc m, Stream s, int result_id, int offset, int nr ) =
+		mvc_export_table_wrap; "export a result to stream s"
 
 	.COMMAND mvc_import_table( mvc c, Stream s, str tname, 
 					str sep, str rsep, int nr) : 
@@ -449,8 +449,8 @@ int mvc_export_result_wrap( mvc *M, Stream *S, int *res_id){
 	
 	return GDK_SUCCEED;
 }
-int mvc_export_table_wrap( mvc *M, Stream *S, int *res_id, int *offset, int *nr, str sep, str rsep){
-	if (mvc_export_table( *(mvc**)M, *(stream**)S, *res_id, *offset, *nr, sep, rsep)) 
+int mvc_export_table_wrap( mvc *M, Stream *S, int *res_id, int *offset, int *nr){
+	if (mvc_export_table( *(mvc**)M, *(stream**)S, *res_id, *offset, *nr)) 
 		return GDK_FAIL;
 	
 	return GDK_SUCCEED;

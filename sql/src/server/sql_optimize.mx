@@ -853,7 +853,7 @@ stmt *optimize( context *c, stmt *s ){
 
 	case st_atom: 
 	case st_find: 
-	case st_bulkinsert: case st_senddata: 
+	case st_bulkinsert: case st_senddata: case st_export:
 	case st_assign: case st_var:
 
 		s->optimized = 1;
@@ -866,8 +866,13 @@ stmt *optimize( context *c, stmt *s ){
 	{	node *n1, *n2;
 
 		for(n1 = s->op1.lval->h, n2 = s->op2.lval->h; n1 && n2; n1 = n1->next, n2 = n2->next ){
-			n1->data = optimize(c, n1->data);
-			n2->data = optimize(c, n2->data);
+			stmt *nn1 = optimize(c, n1->data);
+			stmt *nn2 = optimize(c, n2->data);
+
+			stmt_destroy(n1->data);
+			stmt_destroy(n2->data);
+			n1->data = nn1;
+			n2->data = nn2;
 		}
 		s->optimized = 1;
 		return stmt_dup(s);
@@ -880,7 +885,9 @@ stmt *optimize( context *c, stmt *s ){
 	{	node *n;
 
 		for(n = s->op1.lval->h; n; n = n->next ){
-			n->data = optimize(c, n->data);
+			stmt *nn = optimize(c, n->data);
+			stmt_destroy(n->data);
+			n->data = nn;
 		}
 		s->optimized = 1;
 		return stmt_dup(s);

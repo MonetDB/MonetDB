@@ -118,7 +118,8 @@ typedef enum tokens {
 	SQL_WHEN,
 	SQL_ESCAPE,
 	SQL_COPYFROM,
-	SQL_COPYTO
+	SQL_COPYTO,
+	SQL_EXPORT
 } tokens;
 
 typedef enum jt {
@@ -146,11 +147,11 @@ sql_export int sqlparse(void *);
 #include <string.h>
 #include <stdlib.h>
 
-#define _symbol_create(t,d)         symbol_create( (context*)parm, t, d)
-#define _symbol_create_list(t,d)    symbol_create_list( (context*)parm, t, d)
-#define _symbol_create_int(t,d)     symbol_create_int( (context*)parm, t, d)
-#define _symbol_create_symbol(t,d)  symbol_create_symbol( (context*)parm, t, d)
-#define _newAtomNode(d)		    newAtomNode( (context*)parm, d)
+#define _symbol_create(t,d)         symbol_create( t, d)
+#define _symbol_create_list(t,d)    symbol_create_list( t, d)
+#define _symbol_create_int(t,d)     symbol_create_int( t, d)
+#define _symbol_create_symbol(t,d)  symbol_create_symbol( t, d)
+#define _newAtomNode(d)		    newAtomNode( d)
 
 #define YYPARSE_PARAM parm
 #define YYLEX_PARAM parm
@@ -193,6 +194,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	create
 	drop
 	set
+	export
 	sql
 	sqlstmt
 	schema
@@ -446,7 +448,7 @@ UNDER WHENEVER
 %token GRANT REVOKE ROLE ADMIN HAVING INTO 
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES HIERARCHY
-%token<sval> PUBLIC REFERENCES SCHEMA SET
+%token<sval> PUBLIC REFERENCES SCHEMA SET EXPORT
 
 %token ALTER ADD TABLE COLUMN TO UNION UNIQUE USER VALUES VIEW WHERE WITH 
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
@@ -482,11 +484,26 @@ sqlstmt:
 
 
 	/* schema definition language */
-sql: schema | grant | revoke | create | drop | set ;
+sql: schema | grant | revoke | create | drop | set | export;
 	
+export:
+	EXPORT intval intval '-' intval
+			{ dlist *l = dlist_create();
+			  dlist_append_int(l, $2);
+			  dlist_append_int(l, $3);
+			  dlist_append_int(l, -$5);
+			  $$ = _symbol_create_list( SQL_EXPORT, l); }
+ |	EXPORT intval intval intval
+			{ dlist *l = dlist_create();
+			  dlist_append_int(l, $2);
+			  dlist_append_int(l, $3);
+			  dlist_append_int(l, $4);
+			  $$ = _symbol_create_list( SQL_EXPORT, l); }
+ ;
 
 set: 
-	SET ident '=' atom	{ dlist *l = dlist_create();
+	SET ident '=' scalar_exp	
+				{ dlist *l = dlist_create();
 				dlist_append_string(l, $2 );
 				dlist_append_symbol(l, $4 );
 				$$ = _symbol_create_list( SQL_SET, l); }
@@ -1359,7 +1376,7 @@ simple_select:
     SELECT opt_distinct selection opt_into
            table_exp opt_order_by_clause opt_limit
 
-	{ $$ = newSelectNode( (context*)parm, $2, $3, $4, 
+	{ $$ = newSelectNode( $2, $3, $4, 
 	  	$5->h->data.sym,
 	  	$5->h->next->data.sym,
 	  	$5->h->next->next->data.sym,
@@ -1587,7 +1604,9 @@ like_predicate:
 
 
 atom_exp:
-    atom 		
+    atom 	{ dlist *l = dlist_create();
+		  dlist_append_symbol(l, $1); 
+		  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  |  atom ESCAPE atom 	 
 		{ dlist *l = dlist_create();
 		  dlist_append_symbol(l, $1); 
@@ -1655,7 +1674,7 @@ existence_test:
 subquery:
     '(' SELECT opt_distinct  selection table_exp ')' 
 
-	{ $$ = newSelectNode( (context*)parm, $3, $4, NULL, 
+	{ $$ = newSelectNode( $3, $4, NULL, 
 	  	$5->h->data.sym,
 	  	$5->h->next->data.sym,
 	  	$5->h->next->next->data.sym,
@@ -1802,7 +1821,26 @@ opt_alias_name:
  ;
 
 atom:
-    literal 	
+    literal	
+	{ /* replace by argument */
+	  context *c = (context*)parm;
+	  int len = (c->params)?list_length(c->params):0;
+	  if (len < MAXPARAMS-2 && c->qc){
+	  	char name[BUFSIZ]; 
+	  	AtomNode *an = (AtomNode*)$1;
+	  	sql_subtype *t = sql_dup_subtype(atom_type(an->a));
+
+	  	snprintf(name, BUFSIZ, "a%d", len);
+	  	sql_add_param( c, _strdup(name), stmt_var(_strdup(name), t) );
+	  	sql_add_arg( c, an->a);
+	  	/* we miss use SQL_COLUMN also for param's, maybe 
+	     	change SQL_COLUMN to SQL_IDENT */
+ 	  	$$ = _symbol_create_list( SQL_COLUMN, dlist_append_string(dlist_create(), _strdup(name))); 
+		c->key ^= t->type->localtype;
+	   } else {
+		$$ = $1;
+	   }
+	}
  ;
 
 
@@ -1922,7 +1960,7 @@ literal:
 
  |  sqlINT   	{ int digits = strlen($1);
 		  long value = strtol($1,&$1,10); 
-		  sql_subtype *t = sql_bind_subtype("MEDIUMINT", digits, 0 );
+		  sql_subtype *t = sql_bind_subtype("INT", digits, 0 );
 		  $$ = _newAtomNode( atom_int(t, value)); }
  |  INTNUM   
 		{ char *s = strip_extra_zeros($1);
@@ -2218,6 +2256,8 @@ const char *token2string(int token)
 		return "Commit";
 	case SQL_ROLLBACK:
 		return "Rollback";
+	case SQL_SET:
+		return "Set";
 	case SQL_SELECT:
 		return "Select";
 	case SQL_WHERE:
@@ -2306,6 +2346,8 @@ const char *token2string(int token)
 		return "Copy From";
 	case SQL_COPYTO:
 		return "Copy To";
+	case SQL_EXPORT:
+		return "Export";
 	default:
 		return "unknown";
 	}
@@ -2327,8 +2369,8 @@ stmt *sql_error( context * sql, int error_code, char *format, ... )
 int parse_error(context * c, char *err)
 {
 	(void)sql_error( c, 4, 
-		 "%s(%d) %s at token (%d): %s in statement: %s",
-		 c->filename, c->lineno, err, c->yyval, c->yytext, c->sql);
+		 "(%d) %s at token (%d): %s in statement: %s",
+		 c->lineno, err, c->yyval, c->yytext, c->sql);
 	c->cur = ' ';
 	return 1;
 }

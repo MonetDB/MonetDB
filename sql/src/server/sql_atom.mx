@@ -30,23 +30,13 @@
 #define _SQL_ATOM_H_
 
 #include <mem.h>
+#include <gdk.h>
 #include <sql_types.h>
 
-typedef enum atomtype {
-	string_value,
-	int_value,
-	float_value,
-	general_value
-} atomtype;
-
 typedef struct atom {
+	int isnull;
 	sql_subtype *tpe;
-	atomtype type;
-	union {
-		lng ival;
-		char *sval;
-		double dval;
-	} data;
+	ValRecord data;
 } atom;
 
 extern atom *atom_int(sql_subtype * tpe, lng val);
@@ -61,6 +51,8 @@ extern char *atom2string(atom * a);
 sql_export sql_subtype *atom_type(atom * a);
 
 extern void atom_destroy(atom * a);
+
+sql_export void atom_dump(atom *a, stream *s);
 #endif	/* _SQL_ATOM_H_ */
 
 @c
@@ -70,22 +62,50 @@ static int atom_debug = 0;
 
 atom *atom_int(sql_subtype * tpe, lng val)
 {
-	atom *a = NEW(atom);
-	a->tpe = tpe;
-	a->data.ival = val;
-	a->type = int_value;
-	if (atom_debug)
-		fprintf(stderr, "atom_int(%s,%ld)\n", tpe->type->sqlname, val);
-	return a;
+	if (tpe->type->localtype == TYPE_dbl || tpe->type->localtype == TYPE_flt){
+		return atom_float( tpe, val);
+	} else {
+		atom *a = NEW(atom);
+		a->isnull = 0;
+		a->tpe = tpe;
+		a->data.vtype = tpe->type->localtype;
+		switch(ATOMstorage(a->data.vtype)){
+		case TYPE_sht:
+			a->data.val.shval = val;
+			break;
+		case TYPE_int:
+			a->data.val.ival = val;
+			break;
+		case TYPE_lng:
+			a->data.val.lval = val;
+			break;
+		default:
+			printf ("atom_int %d\n", a->data.vtype);
+			assert(0);
+		}
+		a->data.len = 0;
+		if (atom_debug)
+			fprintf(stderr, "atom_int(%s,%ld)\n", tpe->type->sqlname, val);
+		return a;
+	}
+	return NULL;
 }
 
 atom *atom_string(sql_subtype * tpe, char *val)
 {
 	atom *a = NEW(atom);
+	a->isnull = 1;
 	a->tpe = tpe;
-	a->data.sval = val;
-	a->type = string_value;
-	if (atom_debug)
+	a->data.val.sval = NULL;
+	a->data.vtype = TYPE_str;
+	a->data.len = 0;
+	if (val){
+		a->isnull = 0;
+		a->data.val.sval = sql2str(val);
+		a->data.len = strlen(val); 
+	}
+
+	if (atom_debug) 
 		fprintf(stderr, "atom_string(%s,%s)\n", tpe->type->sqlname,val);
 	return a;
 }
@@ -93,9 +113,11 @@ atom *atom_string(sql_subtype * tpe, char *val)
 atom *atom_float(sql_subtype * tpe, double val)
 {
 	atom *a = NEW(atom);
+	a->isnull = 0;
 	a->tpe = tpe;
-	a->data.dval = val;
-	a->type = float_value;
+	a->data.val.dval = val;
+	a->data.vtype = TYPE_dbl;
+	a->data.len = 0;
 	if (atom_debug)
 		fprintf(stderr, "atom_float(%s,%f)\n", tpe->type->sqlname,val);
 	return a;
@@ -103,19 +125,38 @@ atom *atom_float(sql_subtype * tpe, double val)
 
 atom *atom_general(sql_subtype * tpe, char *val)
 {
-	atom *a = NEW(atom);
+	atom *a;
+	ptr p = NULL;
+
+	if (tpe->type->localtype == TYPE_str)
+		return atom_string(tpe, val);
+	a = NEW(atom);
+	a->isnull = 1;
 	a->tpe = tpe;
-	a->data.sval = val;
-	a->type = general_value;
-	if (atom_debug)
-		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname, val);
+	a->data.val.pval = NULL; 
+	a->data.vtype = tpe->type->localtype;
+	a->data.len = 0;
+
+	if (atom_debug) 
+		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname,val);
+	if (val){
+		a->isnull = 0;
+		ATOMfromstr(a->data.vtype, &p, &a->data.len, val);
+		VALset(&a->data, a->data.vtype, p);
+
+		if (p && ATOMstorage(a->data.vtype) >= TYPE_str) 
+			GDKfree(p);
+		_DELETE(val);
+	} else if (ATOMstorage(a->data.vtype) < TYPE_str){
+		p = ATOMnilptr(a->data.vtype);
+		VALset(&a->data, a->data.vtype, p);
+	}
 	return a;
 }
 
 void atom_destroy(atom * a)
 {
-	if (a->type == string_value || a->type == general_value)
-		_DELETE(a->data.sval);
+	VALclear(&a->data);
 	if (a->tpe) 
 		sql_subtype_destroy(a->tpe);
 	_DELETE(a);
@@ -124,20 +165,22 @@ void atom_destroy(atom * a)
 char *atom2string(atom * a)
 {
 	char buf[1024];
-	switch (a->type) {
-	case int_value:
-		sprintf(buf, "%lld", a->data.ival);
+	switch (a->data.vtype) {
+	case TYPE_lng:
+		sprintf(buf, "%lld", a->data.val.lval);
 		break;
-	case string_value:
-		sprintf(buf, "%s", a->data.sval);
+	case TYPE_int:
+		sprintf(buf, "%d", a->data.val.ival);
 		break;
-	case float_value:
-		sprintf(buf, "%f", a->data.dval);
+	case TYPE_sht:
+		sprintf(buf, "%d", a->data.val.shval);
 		break;
-	case general_value:
-		if (a->data.sval)
-			sprintf(buf, "%s %s", a->tpe->type->name,
-				a->data.sval);
+	case TYPE_dbl:
+		sprintf(buf, "%f", a->data.val.dval);
+		break;
+	case TYPE_str:
+		if (a->data.val.sval)
+			sprintf(buf, "%s", a->data.val.sval);
 		else
 			sprintf(buf, "NULL");
 		break;
@@ -155,7 +198,22 @@ atom *atom_dup(atom * a)
 	atom *r = NEW(atom);
 	*r = *a;
 	r->tpe = sql_dup_subtype(a->tpe);
-	if (a->type == string_value || a->type == general_value)
-		r->data.sval = _strdup(a->data.sval);
+	if (!a->isnull)
+		VALcopy(&r->data, &a->data);
 	return r;
 }
+
+void atom_dump( atom *a, stream *s){
+	if (!a->isnull && a->data.vtype == TYPE_str){
+		ATOMprint(a->data.vtype, VALget(&a->data), s);
+	} else if (!a->isnull){
+		s->write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
+		s->write(s, "(\"", 2, 1);
+		ATOMprint(a->data.vtype, VALget(&a->data), s);
+		s->write(s, "\")", 2, 1);
+	} else {
+		s->write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
+		s->write(s, "(nil)", 5, 1);
+	}
+}
+

@@ -25,6 +25,7 @@ lib__sql_server = {
 		sql_semantic.mx \
 		sql_optimize.mx \ 
 		sql_rel2bin.mx \
+		sql_qc.mx \
 		sql_sym.mx \
 		sql_symbol.mx \
 		sql_scan.mx \   

@@ -39,12 +39,14 @@ extern char *mkLower(char *v);
 extern char *toLower(const char *v);
 extern char *strconcat(const char *s1, const char *s2);
 extern char *strip_extra_zeros(char *v);
+extern char *sql2str( char *s );
 
 #endif /*_SQL_STRING_H_*/
 
 @c
 
 #include <mem.h>
+#include <gdk.h>
 #include "sql_string.h"
 
 /* 
@@ -95,3 +97,37 @@ char *strip_extra_zeros( char *s ){
 	*s=0;
 	return res;
 }
+
+char *sql2str( char *s )
+{
+	int escaped = 0;
+	char *cur, *p = s;
+
+	for(cur = s; *cur; cur++) {
+		if (escaped) {
+			if (*cur == 'n') { 
+				*p++ = '\n';
+			} else if (*cur == 't') { 
+				*p++ = '\t';
+			} else if ((cur[0] >= '0' && cur[0] <= '7') &&
+				   (cur[1] >= '0' && cur[1] <= '7') &&
+				   (cur[2] >= '0' && cur[2] <= '7'))
+			{
+				*p++ =  (cur[2] & 7) 	 | 
+				       ((cur[1] & 7) <<3)| 
+				       ((cur[0] & 7) <<6);
+				cur += 2;
+			} else {
+			        *p++ = *cur;
+			}
+			escaped = FALSE;
+		} else if (*cur == '\\') {
+			escaped = TRUE;
+		} else {
+			*p++ = *cur;
+		}
+	}
+	*p = '\0';
+	return s;
+}
+

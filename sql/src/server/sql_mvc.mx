@@ -268,7 +268,7 @@ extern int mvc_result_column( mvc *c, char *name, char *typename, int digits, in
 extern int mvc_result_value( mvc *c, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
 
 extern int mvc_export_result( mvc *c, stream *s, int res_id );
-extern int mvc_export_table( mvc *c, stream *s, int res_id, int offset, int nr, char *sep, char *rsep);
+extern int mvc_export_table( mvc *c, stream *s, int res_id, int offset, int nr);
 extern BAT *mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rsep, int nr);
 
 extern size_t void_insert_bat( BAT *b, BAT *u);
@@ -3562,6 +3562,7 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	int i;
 	res_table *t = find_export_table(m, res_id);
 	
+	m->type = Q_RESULT;
 	stream_writeInt( s, Q_RESULT );
 	stream_writeInt( s, t->nr_cols );
 	stream_writeInt( s, t->id );
@@ -3579,10 +3580,14 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	return 0;
 }
 
-static int mvc_export_row( mvc *m, stream *s, res_table *t, char *sep, char *rsep) 
+static int mvc_export_row( mvc *m, stream *s, res_table *t ) 
 {
+	char *sep = "\t";
+	char *rsep = "\n";
+
 	int i;
 
+	m->type = Q_RESULT;
 	stream_writeInt( s, Q_TABLE );
 	stream_writeInt( s, 1 );
 
@@ -3613,8 +3618,11 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t, char *sep, char *rse
 	return 0;
 }
 
-int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr, char *sep, char *rsep)
+int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
 {
+	char *sep = "\t";
+	char *rsep = "\n";
+
 	ascii as;
         ascii_io *fmt;
 	res_table *t = find_export_table(m, res_id);
@@ -3627,8 +3635,9 @@ int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr, char *s
 		return -1;
 
 	if (!t->order)
-		return mvc_export_row(m, s, t, sep, rsep);
+		return mvc_export_row(m, s, t );
 
+	m->type = Q_RESULT;
 	order = BATdescriptor(t->order);
 	cnt = nr;
 	if (cnt < 0){
