@@ -570,7 +570,6 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 	stmt *res = NULL;
 	sql_subtype *t1, *t2;
 	sql_subfunc *f = NULL;
-	list *l = NULL;
 
  	t1 = tail_type(ls);
 	t2 = tail_type(rs);
@@ -590,10 +589,7 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 			ls = scale_algebra( f, ls, rs );
 		if (f->func->res->scale == SCALE_ADD)
 			sum_scales(f, ls, rs);
-		ls = stmt_binop(ls, rs, f);
-		if (l) 
-			return stmt_list( list_append( l, ls));
-		return ls;
+		return stmt_binop(ls, rs, f);
 	} else {
 		if (convert_types( sql, &ls, &rs, 0) >= 0){
  			t1 = tail_type(ls);
@@ -608,10 +604,7 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 					ls = scale_algebra( f, ls, rs );
 				if (f->func->res->scale == SCALE_ADD)
 					sum_scales(f, ls, rs);
-				ls = stmt_binop(ls, rs, f);
-				if (l) 
-					ls = stmt_list( list_append( l, ls));
-				return ls;
+				return stmt_binop(ls, rs, f);
 			}
 		}
 	}
