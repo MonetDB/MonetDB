@@ -136,7 +136,7 @@ m_export int stopProfiler(void);
 m_export int setProfilerFilter(str left, str right);
 m_export void setProfilerMode(int mode);
 m_export BAT * getProfilerCount();
-m_export void resetProfilerCount();
+m_export void resetProfiler();
 #endif /* _MONET_INTERPRETER_H_ */
 
 @c
@@ -459,7 +459,7 @@ static stream *eventstream=NULL;
 static int delayswitch=0;
 static int showheader=0;
 static int profilemode=0;	/* 1-> events 2-> count summary */
-static BAT *profileBAT=0;
+static BAT *profilerBAT=0;
 
 static MT_Lock profilerLock;
 
@@ -491,6 +491,7 @@ int stopProfiler(void)
 	monet_set_lock(profilerLock, "stopProfiler");
 	eventstream= NULL;
 	profilemode = 0;
+	if( profilerBAT) TMcommit();
 	monet_unset_lock(profilerLock, "stopProfiler");
 	return 0;
 }
@@ -498,23 +499,23 @@ void setProfilerMode(int mode){
 	profilemode= mode;
 	if( mode>1){
 		/* check existence of the BAT */
-		int bid = BBPindex("monet_profile_count");
-		if(bid) profileBAT = BATdescriptor(bid);
-		if( profileBAT == NULL){
-			profileBAT = BATnew(TYPE_str,TYPE_int, (size_t) 1000);
-			BBPrename(profileBAT->batCacheid,"monet_profile_count");
-			BATroles(profileBAT,"name","count");
-			BATmode(profileBAT, PERSISTENT);
-			BBPincref(profileBAT->batCacheid,TRUE);
-		}
-		BBPfix(profileBAT->batCacheid);
+		profilerBAT = BATdescriptor(BBPindex("monet_profile_count"));
+		if( profilerBAT == NULL){
+			profilerBAT = BATnew(TYPE_str,TYPE_int, (size_t) 1000);
+			BBPrename(profilerBAT->batCacheid,"monet_profile_count");
+			BATroles(profilerBAT,"name","count");
+			BATmode(profilerBAT,PERSISTENT);
+			BBPincref(profilerBAT->batCacheid,TRUE);
+			TMcommit();
+		} else	/* keep it in memory */
+			BBPincref(profilerBAT->batCacheid,TRUE);
 		/* set default filters */
 		setProfilerFilter("proc","*");
 		setProfilerFilter("command","*");
 	}
 }
-BAT *getProfilerCount(){ return profileBAT;}
-void resetProfilerCount(){ if(profileBAT) BATclear(profileBAT); }
+BAT *getProfilerCount(){ return profilerBAT;}
+void resetProfiler(){ if(profilerBAT) BATclear(profilerBAT); }
 #else
 void closeProfiler(stream *o)
 {
@@ -531,7 +532,7 @@ int stopProfiler(void)
 }
 void setProfilerMode(int mode){ }
 BAT *getProfilerCount(){ return 0;}
-void resetProfilerCount(){ }
+void resetProfiler(){ }
 #endif /* HAVE_TIMES */
 @-
 The information gathered is currently limited to some basic OS properties;
@@ -2092,12 +2093,13 @@ void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, 
 		namebuf[0]=0;
 		yydeparseFunction(monet_clients,lt,namebuf,namebuf+1024);
 		if( tstFilter(caller,namebuf)) {
-			BUN cnt = BUNfnd(profileBAT,namebuf);
+			BUN cnt = BUNfnd(profilerBAT,namebuf);
 			if( cnt == NULL)
-				BUNins(profileBAT,namebuf, &one);
+				BUNins(profilerBAT,namebuf, &one);
 			else { 
-				cnt = BUNtail(profileBAT,cnt);
+				cnt = BUNtail(profilerBAT,cnt);
 				*(int*) cnt = *(int *)cnt +1;
+				profilerBAT->batDirty= TRUE;
 			}
 		}
 		return;
