@@ -12,14 +12,14 @@ import time
 #       FUNCTIONS
 
 def Usage(THISFILE) :
-    print('''
+    print """
 
 Usage:  %s [-I<exp>] <files>
 
 -I<exp> : ignore lines matching <exp> during first count (optional, default: -I'^#`)
 <files> : list of files to be processed
 
-''' % THISFILE)
+""" % THISFILE
 ### Usage(THISFILE) #
 
 def Warn(THISFILE,TEXT) :
@@ -37,25 +37,26 @@ def mFilter (FILE, IGNORE) :
     else:
         WHAT, TST, TSTDIR = "", "", ""
 
-    test =  re.compile(IGNORE) , \
-            re.compile( "^Mdestroydb: processing database ..*. in "                 + "|"   \
-                      + "^Mcreatedb: processing database ..*. in "                  + "|"   \
-                      + "^Mcreatedb: using default dbdir "                          + "|"   \
-                      + "^Mcreatedb: calling .Mserver .*-db .* for the first time..$"       + "|"   \
-                      + "^Mcreatedb: database .* has been initialized succesfully!$"+ "|"   \
-                      + "^module\(mprof\);$"                                        + "|"   \
-                      + "^pm([BE]\(\"(global_.+|[a-zA-Z0-9_]+[0-9])\"\)|Summary\(\));$"             + "|"   \
-                      + "^printf\(\"#~BeginProfilingOutput~#\\\\n\"\);$"            + "|"   \
-                      + "^connection= .*:[0-9]*$"                                   + "|"   \
-                      + "^Connecting to server: localhost:[0-9]*$"                  + "|"   \
-                      + "^server listening on port [0-9]*$"                         ) ,     \
-            re.compile( "^!ERROR: DL_open: Unknown error.$"                 + "|"   \
-                      + "^!ERROR: DL_open: library not found \(STATIC\).$"          ) ,     \
-            re.compile( "^!ERROR: TBL_loadmod: module load .* cancelled.$"  ) ,     \
-            re.compile( "^!ERROR: module\(.*\): load error.$"               )
+    test = (re.compile(IGNORE) ,
+            re.compile( r"^Mdestroydb: processing database ..*. in "                     "|"
+                        r"^Mcreatedb: processing database ..*. in "                      "|"
+                        r"^Mcreatedb: using default dbdir "                              "|"
+                        r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$"   "|"
+                        r"^Mcreatedb: database .* has been initialized succesfully!$"    "|"
+                        r"^module\(mprof\);$"                                            "|"
+                        r'^pm([BE]\("(global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$'   "|"
+                        r'^printf\("#~BeginProfilingOutput~#\\n"\);$'                    "|"
+                        r"^connection= .*:[0-9]*$"                                       "|"
+                        r"^Connecting to server: localhost:[0-9]*$"                      "|"
+                        r"^server listening on port [0-9]*$"                         ) ,
+            re.compile( r"^!ERROR: DL_open: Unknown error.$"                             "|"
+                        r"^!ERROR: DL_open: library not found \(STATIC\).$"          ) ,
+            re.compile( r"^!ERROR: TBL_loadmod: module load .* cancelled.$"  ) ,
+            re.compile( r"^!ERROR: module\(.*\): load error.$"               )
 
-    #                 + "^!WARNING: TCPlisten\([0-9]*\): stopped.$"                 + "|"   \
-    #                 + "^!WARNING: TCPepilogue: terminate [01] listeners$"         + "|"   \
+##                        r"^!WARNING: TCPlisten\([0-9]*\): stopped.$"                     "|"
+##                        r"^!WARNING: TCPepilogue: terminate [01] listeners$"             "|"
+            )
 
     ftmp = []
     ig = n = 0

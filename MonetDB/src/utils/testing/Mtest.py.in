@@ -40,55 +40,61 @@ TIMES = []
 random.seed(time.time())
 
 def Usage () :
-    print('''\
+    print '''\
 
-Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
-''')
+Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
+''' % THISFILE
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        print("""\
- -I<exp> : ignore lines matching <exp> during diff (default: -I'"""+dftIGNORE+"""')
+        print """\
+ -I<exp> : ignore lines matching <exp> during diff (default: -I'%s')
  -c<num> : use <num> lines of context during diff (default: -c1)
  -a<num> : accuracy for diff: 0=lines, 1=words, 2=chars (default: -a1)
-""")
+""" % dftIGNORE
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        print('''\
+        print """\
  -t<sec> : timeout: kill (hanging) tests after <sec> seconds;
             -t0 means no timeout (default: -t60)
- -r      : proceed in subdirectories as well (implies 'All`)
+ -r      : proceed in subdirectories as well (implies 'All')
 
  --monetrc=<path>
  --MONETRC=<path>
          : location of .monet.conf file; default is the first found of
-		'''+os.getcwd()+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf                        
-		<TSTSRCBASE>'''+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf            
-		'''+os.environ['HOME']+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf                               
-		'''+path(GetMonetConfig('--prefix')+"/share/Monet/")+"monet."+string.split(THISFILE,'.')[0]+'''.conf                                                                      
-''')
+		%s.conf                        
+		<TSTSRCBASE>%s.conf            
+		%s.conf                               
+		%s.conf                                                                      
+""" % (os.path.join(os.getcwd(),".monet."+string.split(THISFILE,'.')[0]),
+       os.sep+".monet."+string.split(THISFILE,'.')[0],
+       os.path.join(os.environ['HOME'],".monet."+string.split(THISFILE,'.')[0]),
+       path(GetMonetConfig('--prefix')+"/share/Monet/")+"monet."+string.split(THISFILE,'.')[0])
 
     if THISFILE == "Mprofile.py":
-        print('''\
+        print '''\
  --CMDLST=<path>
          : location of .Mprofile-commands.lst file; default is the first found of
-		'''+os.getcwd()+os.sep+'''.Mprofile-commands.lst                        
-		<TSTSRCBASE>'''+os.sep+'''.Mprofile-commands.lst            
-		'''+os.environ['HOME']+os.sep+'''.Mprofile-commands.lst                               
-		'''+path(GetMonetConfig('--prefix')+"/share/Monet/")+'''Mprofile-commands.lst                                                                      
-''')
+		%s.Mprofile-commands.lst                        
+		<TSTSRCBASE>%s.Mprofile-commands.lst            
+		%s.Mprofile-commands.lst                               
+		%sMprofile-commands.lst                                                                      
+''' % (os.getcwd()+os.sep,
+       os.sep,
+       os.environ['HOME']+os.sep,
+       path(GetMonetConfig('--prefix')+"/share/Monet/"))
 
     if THISFILE == "Mapprove.py":
-        print('''\
+        print """\
  -x<ext> : consider only output files *.<ext><sys> (<ext> = 'out' or 'err')
             (default: <ext> = 'out' & 'err')
  -s<sys> : consider only output files *.<ext><sys> 
-            (<sys> = '', '.'''+OS+"', '."+OSVER+"', '."+OSVER+'''.(32|64)bit,'
+            (<sys> = '', '.%s', '.%s', '.%s.(32|64)bit,'
                      or any of these plus suffix '.STATIC')
             (default: <sys> = '')
- -r      : proceed in subdirectories as well (implies 'All`)
-''')
+ -r      : proceed in subdirectories as well (implies 'All')
+""" % (OS, OSVER, OSVER)
 
-    print('''\
+    print '''\
  --MONET_SOURCE=<abspath>
  --MONET_BUILD=<abspath>
  --MONET_PREFIX=<abspath>
@@ -97,39 +103,46 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
  --TSTBLDBASE=<abspath>
  --TSTTRGBASE=<abspath>
          : overrule defaults:
-		MONET_SOURCE='''+GetMonetConfig('--source')+'''
-		MONET_BUILD='''+GetMonetConfig('--build')+'''
-		MONET_PREFIX='''+GetMonetConfig('--prefix')+'''
-		SQL_PREFIX='''+SQLprefix+'''
+		MONET_SOURCE=%s
+		MONET_BUILD=%s
+		MONET_PREFIX=%s
+		SQL_PREFIX=%s
 		TSTSRCBASE=<MONET_SOURCE>
 		TSTBLDBASE=<MONET_BUILD>
 		TSTTRGBASE=<MONET_PREFIX>
-''')
+''' % (GetMonetConfig('--source'),
+       GetMonetConfig('--build'),
+       GetMonetConfig('--prefix'),
+       SQLprefix)
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        print('''\
+        print '''\
  --MAPICLIENT=<mapi-client program call>
  --SQLCLIENT=<sql-client program call>
  --MAPIPORT=<host-name:port-no.>
  --SQLPORT=<portno.>
          : overrule defaults:
-		MAPICLIENT='''+dft['MAPICLIENT']+'''
-		SQLCLIENT='''+dft['SQLCLIENT']+'''
-		MAPIPORT='''+dft['MAPIPORT']+'''
-		SQLPORT='''+dft['SQLPORT']+'''
-''')
+		MAPICLIENT=%s
+		SQLCLIENT=%s
+		MAPIPORT=%s
+		SQLPORT=%s
+''' % (dft['MAPICLIENT'], dft['SQLCLIENT'], dft['MAPIPORT'], dft['SQLPORT'])
 
-    print('''\
- <dir>   : if present, '''+THISFILE+''' behaves as if called in <dir>
- <tests> : list of tests to be processed; if none or 'All` is given,
-            all tests listed in 'Tests/All` are processed
-            (defaults to 'All` if -r is used)
- <dirs>  : list of directories to be processed; if present, '''+THISFILE+'''
-            processes 'All` tests in each directory of <dirs>; -r may be used also
+    print """\
+ <dir>   : if present, %s behaves as if called in <dir>
+ <tests> : list of tests to be processed; if none or 'All' is given,
+            all tests listed in 'Tests/All' are processed
+            (defaults to 'All' if -r is used)
+ <dirs>  : list of directories to be processed; if present, %s
+            processes 'All' tests in each directory of <dirs>; -r may be used also
 
-         See  '''+path(GetMonetConfig('--source')+"/src/utils/testing/")+'''README
-         for details about  '''+THISFILE+'''.
-''')
+         See  %sREADME
+         for details about  %s.
+""" % (THISFILE,
+       THISFILE,
+       path(GetMonetConfig('--source')+"/src/utils/testing/"),
+       THISFILE)
+
 ### Usage () #
 
 #TODO:
@@ -185,7 +198,7 @@ def CreateHtmlIndex (env) :
     else:
         INDEX="index"
 
-    if os.path.isfile(TSTTRGDIR+os.sep+INDEX+".head.html"):
+    if os.path.isfile(os.path.join(TSTTRGDIR,INDEX+".head.html")):
         BACK = os.getcwd()
         os.chdir(TSTTRGDIR)
 
@@ -195,21 +208,21 @@ def CreateHtmlIndex (env) :
         f = open(INDEX+".head.html","w")
         f.write("""\
 <HTML>
-<HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
+<HEAD><TITLE>%s</TITLE></HEAD>
 <BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
 <CENTER>
 <TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=3>
 <TR>
 <TH ALIGN=CENTER><FONT FACE='helvetica, arial'>
-""")
+""" % HTMLTITLE)
         if TSTDIR:
             f.write("""\
-<A HREF='"""+URLPREFIX+url(TSTDIR)+"/"+TSTSUFF+URLSUFFIX_D+"""' TARGET='"""+OSVER+"_"+TSTDIR+"""_body'><FONT COLOR=#000000>"""+TSTDIR+"""</FONT></A><BR>
-""")
+<A HREF='%s%s/%s' TARGET='%s%s_%s_body'><FONT COLOR=#000000>%s</FONT></A><BR>
+""" % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D, OSVER, TSTDIR, TSTDIR))
             #TODO ?
             #<A HREF='.$THISFILE.Slave.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000><I>(log)</I></FONT></A>
         else:
-            f.write("<FONT COLOR=#000000>"+OSVER+"</FONT>")
+            f.write("<FONT COLOR=#000000>%s</FONT>" % OSVER)
             #TODO ?
             #f.write("""\
 			#<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
@@ -231,13 +244,15 @@ def CreateHtmlIndex (env) :
         f = open(INDEX+".html","w")
         f.write("""\
 <HTML>
-<HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
-<FRAMESET ROWS='"""+ROWS+""",*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='"""+INDEX+""".head.html' SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"""_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='"""+url(env['_'+TSTDIR+'_BODY_'][0])+"""' SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"""_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+<HEAD><TITLE>%s</TITLE></HEAD>
+<FRAMESET ROWS='%s,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+<FRAME SRC='%s.head.html' SCROLLING=auto NAME='%s_%s_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+<FRAME SRC='%s' SCROLLING=auto NAME='%s_%s_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
 </FRAMESET>
 </HTML>
-""")
+""" % (HTMLTITLE, ROWS, INDEX, OSVER, TSTDIR,
+       url(env['_'+TSTDIR+'_BODY_'][0]),
+       OSVER, TSTDIR))
         f.close()
         env['_'+TSTDIR+'_BODY_'] = ["",0]
         os.chdir(BACK)
@@ -252,7 +267,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     testS = re.compile("^/"+TST+stableWHAT+"/([^/]*)/")
     REVt="?"
     REVs="?"
-    entries = TSTSRCDIR+os.sep+"CVS"+os.sep+"Entries"
+    entries = os.path.join(TSTSRCDIR,"CVS","Entries")
     if os.path.isfile(entries):
         for l in fileinput.input(entries):
             mT = testT.match(l)
@@ -288,47 +303,47 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
             f = open(TST+xWHAT+".diff.html","w")
             f.write("""\
 <HTML>
-<HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
-<FRAMESET ROWS='"""+rows+"""' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-"""+frames+"""
+<HEAD><TITLE>%s</TITLE></HEAD>
+<FRAMESET ROWS='%s' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+%s
 </FRAMESET>
 </HTML>
-""")
+""" % (HTMLTITLE, rows, frames))
 
-    f = open("."+TST+WHAT+".html","w")
+    f = open(".%s%s.html" % (TST, WHAT),"w")
     f.write("""\
 <HTML>
-<HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
+<HEAD><TITLE>%s</TITLE></HEAD>
 <FRAMESET ROWS='42,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='."""+TST+ WHAT+""".head.html' SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='""" +TST+xWHAT+""".diff.html' SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+<FRAME SRC='.%s%s.head.html' SCROLLING=auto NAME='%s_%s_%s_%s_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+<FRAME SRC='%s%s.diff.html' SCROLLING=auto NAME='%s_%s_%s_%s_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
 </FRAMESET>
 </HTML>
-""")
+""" % (HTMLTITLE, TST, WHAT, OSVER, TSTDIR, TST, WHAT[1:], TST, xWHAT, OSVER, TSTDIR, TST, WHAT[1:]))
     f.close()
-    f = open("."+TST+WHAT+".head.html","w")
+    f = open(".%s%s.head.html" % (TST, WHAT),"w")
     f.write("""\
 <HTML>
-<HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
+<HEAD><TITLE>%(title)s</TITLE></HEAD>
 <BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
 <CENTER>
 <FONT FACE='helvetica, arial'>
-"""+SYSTEM+"""
-<A HREF='"""+TST+xWHAT+""".diff.html' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>"""+DIFF+"""</A>
+%(system)s
+<A HREF='%(tst)s%(xwhat)s.diff.html' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>%(diff)s</A>
 between
-<A HREF='"""+TST+stableWHAT+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>"""+stableWHAT[1:]+" (r"+REVs+""")</A>
+<A HREF='%(tst)s%(stablewhat)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>%(stablewhat1)s (r%(revs)s)</A>
 and
-<A HREF='"""+TST+".test"+WHAT+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>test"""+WHAT+"""</A>
+<A HREF='%(tst)s.test%(what)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>test%(what)s</A>
 of
-<A HREF='"""+TST+EXT+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>"""+TST+EXT+" (r"+REVt+""")</A>
+<A HREF='%(tst)s%(ext)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>%(tst)s%(ext)s (r%(revt)s)</A>
 in
-<A HREF='./' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>"""+TSTDIR+"""</A>
-(<A HREF='"""+URLPREFIX+url(TSTDIR)+"/"+TSTSUFF+URLSUFFIX_D+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>CVS</A>,
- <A HREF='"""+url(env['RELSRCDIR'])+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>SRC</A>""")
+<A HREF='./' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>%(tstdir)s</A>
+(<A HREF='%(urlprefix)s%(urltstdir)s/%(tstsuff)s%(urlsuffix)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>CVS</A>,
+ <A HREF='%(urlrelsrcdir)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>SRC</A>""" % {'title':HTMLTITLE, 'system':SYSTEM, 'tst':TST, 'xwhat':xWHAT, 'osver':OSVER, 'tstdir':TSTDIR, 'what1':WHAT[1:], 'diff':DIFF, 'stablewhat':stableWHAT, 'stablewhat1':stableWHAT[1:], 'revs':REVs, 'what':WHAT, 'ext':EXT, 'revt':REVt, 'urlprefix':URLPREFIX, 'urltstdir':url(TSTDIR), 'tstsuff':TSTSUFF, 'urlsuffix':URLSUFFIX_D, 'urlrelsrcdir':url(env['RELSRCDIR'])})
     for d in env['RELBLDDIR'], os.path.dirname(env['RELBLDDIR']), env['RELBLDBASE']:
         if os.path.isdir(d):
             f.write(""",
- <A HREF='"""+url(d)+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>BLD</A>""")
+ <A HREF='%s' TARGET='%s_%s_%s_%s_body'>BLD</A>""" % (url(d), OSVER, TSTDIR, TST, WHAT[1:]))
     f.write(""").
 </FONT>
 </CENTER>
@@ -347,32 +362,32 @@ def CreateSrcIndex (env, TST, EXT) :
     f = open("."+TST+".src.index.html","w")
     f.write("""\
 <HTML>
-<HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
+<HEAD><TITLE>%s</TITLE></HEAD>
 <FRAMESET ROWS='54,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='."""+TST+""".src.index.head.html' SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"_"+TST+"""_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='"""+URLPREFIX+url(TSTDIR)+"/"+TSTSUFF+"/"+TST+EXT+URLSUFFIX_F+"""'
-  SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"_"+TST+"""_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+<FRAME SRC='.%s.src.index.head.html' SCROLLING=auto NAME='%s_%s_%s_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+<FRAME SRC='%s%s/%s/%s%s%s'
+  SCROLLING=auto NAME='%s_%s_%s_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
 </FRAMESET>
 </HTML>
-""")
+""" % (HTMLTITLE, TST, OSVER, TSTDIR, TST, URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F, OSVER, TSTDIR, TST))
     f.close()
     f = open("."+TST+".src.index.head.html","w")
     f.write("""\
 <HTML>
-<HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
+<HEAD><TITLE>%s</TITLE></HEAD>
 <BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
 <CENTER>
 <TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=3>
 <TR>
-<TH ALIGN=CENTER><FONT FACE='helvetica, arial'>"""+TST+"""</FONT></TH>
-""")
+<TH ALIGN=CENTER><FONT FACE='helvetica, arial'>%s</FONT></TH>
+""" % (HTMLTITLE, TST))
     for s in os.listdir(TSTSRCDIR):
         if len(s) >= len(TST)  and  s[:len(TST)] == TST:
             f.write("""\
 <TD><FONT FACE='helvetica, arial'>
-  <A HREF='"""+URLPREFIX+url(TSTDIR)+"/"+TSTSUFF+"/"+s+URLSUFFIX_F+"""'
-    TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_body'>"+s+"""</A></FONT></TD>
-""")
+  <A HREF='%s%s/%s/%s%s'
+    TARGET='%s_%s_%s_body'>%s</A></FONT></TD>
+""" % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F, OSVER, TSTDIR, TST, s))
     f.write("""\
 </TR>
 </TABLE>
@@ -431,15 +446,15 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 def AddSubToHtmlIndex (env, TSTDIR) :
     TSTTRGBASE = env['TSTTRGBASE']
 
-    if os.path.isfile(TSTTRGBASE+os.sep+TSTPREF+os.sep+TSTDIR+os.sep+".index.html"):
+    if os.path.isfile(os.path.join(TSTTRGBASE,TSTPREF,TSTDIR,".index.html")):
         BACK = os.getcwd()
-        os.chdir(TSTTRGBASE+os.sep+TSTPREF)
+        os.chdir(os.path.join(TSTTRGBASE,TSTPREF))
         f = open("index.head.html","a")
         f.write("<TD><FONT FACE='helvetica, arial'>")
         STRING = "<A HREF='"+url(TSTDIR)+"/.index.html' TARGET='"+OSVER+"__body'>"+TSTDIR+"</A>"
         test = re.compile("^.*><B>.*</B><.*$")
         diff = 0
-        for l in fileinput.input(TSTDIR+os.sep+".index.head.html"):
+        for l in fileinput.input(os.path.join(TSTDIR,".index.head.html")):
             if test.match(l):
                 diff = 1
         if diff:
@@ -464,9 +479,9 @@ def SkipTest(env, TST, EXT, REASON) :
     f.close()
     f = open(".index.head.html","a")
     f.write("""\
-<TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='."""+TST+""".src.index.html' TARGET='"""+OSVER+"_"+TSTDIR+"""_body'><FONT COLOR=#000000>
-"""+TST+"</FONT></A><BR><A HREF='."+TST+".SKIPPED' TARGET='"+OSVER+"_"+TSTDIR+"""_body'>(skipped)</A></FONT></TD>
-""")
+<TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='.%(tst)s.src.index.html' TARGET='%(osver)s_%(tstdir)s_body'><FONT COLOR=#000000>
+%(tst)s</FONT></A><BR><A HREF='.%(tst)s.SKIPPED' TARGET='%(osver)s_%(tstdir)s_body'>(skipped)</A></FONT></TD>
+""" % {'tst':TST, 'osver':OSVER, 'tstdir':TSTDIR})
     if not env.has_key('_'+TSTDIR+'_BODY_')  or  \
        not env['_'+TSTDIR+'_BODY_'][0]  or  \
        not env['_'+TSTDIR+'_BODY_'][1]:
@@ -479,10 +494,10 @@ def find_test_dirs(thisdir) :
     thisdir = os.path.abspath(thisdir)
     dirnme = os.path.basename(thisdir)
     dirlst = os.listdir(thisdir)
-    if dirnme == TSTSUFF  and  "All" in dirlst  and  os.path.isfile(thisdir+os.sep+"All"):
+    if dirnme == TSTSUFF  and  "All" in dirlst  and  os.path.isfile(os.path.join(thisdir,"All")):
         testdirs.append(os.path.dirname(thisdir))
     for d in dirlst:
-        d = thisdir+os.sep+d
+        d = os.path.join(thisdir,d)
         if os.path.isdir(d):
             testdirs = testdirs + find_test_dirs(d)
     return testdirs
@@ -495,9 +510,9 @@ def PerformDir(env, testdir, testlist) :
         TSTDIR = os.curdir
     else:
         TSTDIR = testdir[len(TSTSRCBASE+os.sep):]
-    TSTSRCDIR = testdir+os.sep+TSTSUFF
-    TSTBLDDIR = env['TSTBLDBASE']+os.sep+TSTDIR+TSTSUFF
-    TSTTRGDIR = env['TSTTRGBASE']+os.sep+TSTPREF+os.sep+TSTDIR
+    TSTSRCDIR = os.path.join(testdir,TSTSUFF)
+    TSTBLDDIR = os.path.join(env['TSTBLDBASE'],TSTDIR+TSTSUFF)
+    TSTTRGDIR = os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR)
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         if os.name == "nt":
@@ -508,7 +523,7 @@ def PerformDir(env, testdir, testlist) :
         TSTDB = ""
 
     if not testlist:
-        for tst in fileinput.input(TSTSRCDIR+os.sep+"All"):
+        for tst in fileinput.input(os.path.join(TSTSRCDIR,"All")):
             tst = string.strip(tst)
             if tst  and  tst[0] != "#":
                 testlist.append(tst)
@@ -521,8 +536,8 @@ def PerformDir(env, testdir, testlist) :
     env['TSTSRCDIR'] = TSTSRCDIR
     env['TSTBLDDIR'] = TSTBLDDIR
     env['TSTTRGDIR'] = TSTTRGDIR
-    env['RELSRCDIR'] = ((os.pardir+os.sep)*(len(string.split(TSTDIR,os.sep))+1))+env['RELSRCBASE']+os.sep+TSTDIR+os.sep+TSTSUFF
-    env['RELBLDDIR'] = ((os.pardir+os.sep)*(len(string.split(TSTDIR,os.sep))+1))+env['RELBLDBASE']+os.sep+TSTDIR+os.sep+TSTSUFF
+    env['RELSRCDIR'] = os.path.join(((os.pardir+os.sep)*(len(string.split(TSTDIR,os.sep))+1))+env['RELSRCBASE'],TSTDIR,TSTSUFF)
+    env['RELBLDDIR'] = os.path.join(((os.pardir+os.sep)*(len(string.split(TSTDIR,os.sep))+1))+env['RELBLDBASE'],TSTDIR,TSTSUFF)
     os.environ['TSTDB']     = TSTDB
     os.environ['TSTDIR']    = TSTDIR
     os.environ['TSTSRCDIR'] = TSTSRCDIR
@@ -532,7 +547,7 @@ def PerformDir(env, testdir, testlist) :
     os.environ['RELBLDDIR'] = env['RELBLDDIR']
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        if os.path.exists(env['GDK_DBFARM']+os.sep+TSTDB):
+        if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTDB)):
             if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db "+TSTDB, ""):
                 Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
                 #TODO:
@@ -586,11 +601,11 @@ def ApproveOutput (env, TST) :
 #                          + "^!WARNING: TCPepilogue: terminate [01] listeners$"        )
 
     for WHAT in EXTENSIONS:
-        testOUTPUT   = TSTTRGDIR+os.sep+TST+".test."+WHAT
-        stableOUTPUT = TSTSRCDIR+os.sep+TST+".stable."+WHAT+SYSTEM
+        testOUTPUT   = os.path.join(TSTTRGDIR,TST+".test."+WHAT)
+        stableOUTPUT = os.path.join(TSTSRCDIR,TST+".stable."+WHAT+SYSTEM)
         if os.path.isfile(testOUTPUT):
-#                       print("Approving "+testOUTPUT+" -> "+stableOUTPUT)
-            print("Approving "+TSTDIR+os.sep+TST+".test."+WHAT+" -> stable."+WHAT+SYSTEM)
+#                       print "Approving "+testOUTPUT+" -> "+stableOUTPUT
+            print "Approving %s -> stable.%s%s" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM)
             f = open(stableOUTPUT, "w")
             for l in fileinput.input(testOUTPUT):
                 if len(l) == 0  or  l[0] != '!':        # or  filter.match(ln):
@@ -620,7 +635,7 @@ def isexecutable(TST) :
 def GetBitsAndModsAndStatic(env) :
     pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db "+TSTPREF)
     pIn.write('''\
-MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModules: ");x:="";MODs@batloop{printf("%s'%s'",x,$h);x:=",";}printf("\\n");quit;
+MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModules: ");x:="";MODs@batloop{printf("%s\'%s\'",x,$h);x:=",";}printf("\\n");quit;
 ''')
     ##module("NoModule");
     pIn.close()
@@ -681,7 +696,7 @@ def CheckMods(env, TST, SERVER) :
 def CheckBATs(env, TST, TSTDB) :
     pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db "+TSTDB)
     pIn.write('''\
-BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s'%s'",x,$t);x:=",";}printf("\\n");quit;
+BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s\'%s\'",x,$t);x:=",";}printf("\\n");quit;
 ''')
     pIn.close()
     qOut = pOut.readlines()
@@ -787,11 +802,11 @@ def RunTest(env, TST) :
     else:
         EXT = ""      ; CALL = ""  ; SERVER = ""
         if os.name == "nt":
-            ErrMsg("test missing: '"+TSTSRCDIR+os.sep+TST+".(exe|com|bat|cmd|py|milM|milS|milC)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|milM|milS|milC)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+TSTSRCDIR+os.sep+TST+"[.py|.milM|.milS|.milC]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.milM|.milS|.milC]`")
         return TX
 
     MissingMods = CheckMods(env, TST, SERVER)
@@ -845,7 +860,7 @@ def RunTest(env, TST) :
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$")
         for f in os.listdir(TSTSRCDIR):
             if test.match(f):
-                shutil.copy(TSTSRCDIR+os.sep+f,TSTTRGDIR)
+                shutil.copy(os.path.join(TSTSRCDIR,f),TSTTRGDIR)
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = open(TST+EXT+".src","r")
             TSTSRC = os.path.expandvars(path(string.strip(f.readline())))
@@ -871,7 +886,7 @@ def RunTest(env, TST) :
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f)  and  f != TST+EXT+".src":
-                    os.system("python "+THISPATH+os.sep+"prof.py "+f+" "+env['CMDLST'])
+                    os.system("python "+os.path.join(THISPATH,"prof.py")+" "+f+" "+env['CMDLST'])
                     os.rename(f,f+".no_prof")
                     os.rename("prof_"+f,f)
                     os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(par['ACCURACY'])+' '+f+'.no_prof '+f+' '+f+'.prof.diff.html')
@@ -965,10 +980,10 @@ def RunTest(env, TST) :
                     os.remove(f)
             ME = str(os.getpid())
             WAIT = str(int(STIMEOUT / 60) + 2)
-            FILES = TSTTRGDIR+os.sep+TST+" "+TSTTRGDIR+os.sep+TST+".*"
+            FILES = os.path.join(TSTTRGDIR,TST)+" "+os.path.join(TSTTRGDIR,TST)+".*"
             for f in ["bat/\\*", '.gdk_lock']:
-                FILES = FILES+" "+env['GDK_DBFARM']+os.sep+TSTDB+os.sep+path(f)
-            WHAT = THISPATH+os.sep+"MkillUsers -l"+ME+" -p"+ME+" "+FILES+" \\>\\>"+TSTTRGDIR+os.sep+TST+".KILLED.out 2\\>\\>"+TSTTRGDIR+os.sep+TST+".KILLED.err"
+                FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
+            WHAT = os.path.join(THISPATH,"MkillUsers")+" -l"+ME+" -p"+ME+" "+FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
             WHEN = "now + "+WAIT+" minutes"
             cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'"
             ATJOB1 = StartAt(cmd)
@@ -999,7 +1014,7 @@ def RunTest(env, TST) :
         for (x,p) in [("out",TestOut),("err",TestErr)]:
             f = n+x
             if os.name == "nt":
-                for t in TSTTRGBASE+os.sep+f, TSTTRGBASE+os.sep+".KILLED."+x:
+                for t in os.path.join(TSTTRGBASE,f), os.path.join(TSTTRGBASE,".KILLED."+x):
                     if os.path.isfile(t):
                         shutil.copy(t,f)
                         os.remove(t)
@@ -1045,7 +1060,7 @@ def RunTest(env, TST) :
             SetExecEnv(env['exe'],0)
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
-            os.system("python "+THISPATH+os.sep+"Mfilter.py "+par['IGNORE']+" "+TST+STABLEout+" "+TST+STABLEerr+" "+TST+".test.out "+TST+".test.err")
+            os.system("python "+os.path.join(THISPATH,"Mfilter.py")+" "+par['IGNORE']+" "+TST+STABLEout+" "+TST+STABLEerr+" "+TST+".test.out "+TST+".test.err")
             if os.name == "nt":
                 time.sleep(1)
 
@@ -1053,7 +1068,7 @@ def RunTest(env, TST) :
             testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/")
             REVo="?"
             REVe="?"
-            entries = TSTSRCDIR+os.sep+"CVS"+os.sep+"Entries"
+            entries = os.path.join(TSTSRCDIR,"CVS","Entries")
             if os.path.isfile(entries):
                 for l in fileinput.input(entries):
                     mO = testO.match(l)
@@ -1179,7 +1194,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr) :
 
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     ATJOB2 = ""
-    LogLine = time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE+" ..."
+    LogLine = time.strftime('%H:%M:%S> ',time.localtime(time.time()))+os.path.join(env['TSTDIR'],TST+EXT)+" "+PRELUDE+" ..."
     STDERR.flush()
     STDOUT.write(LogLine)
     STDOUT.flush()
@@ -1233,7 +1248,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
         ClntErr = TestErr
 
     if   CALL == "other":
-        cmd = MTO+str(CTO)+" ."+os.sep+TST+EXT+" "+TST+" "+PRELUDE
+        cmd = MTO+str(CTO)+" "+os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
         RunIt(cmd, "", ClntOut, ClntErr)
     elif CALL == "python":
         cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
@@ -1386,9 +1401,9 @@ def Check(command, input) :
 
 def CheckExec(cmd) :
     for p in string.split(os.environ['PATH'],os.pathsep):
-        x = isexecutable(p+os.sep+cmd)
+        x = isexecutable(os.path.join(p,cmd))
         if x[0]:
-            return p+os.sep+cmd+x[1]
+            return os.path.join(p,cmd+x[1])
     return ""
 ### CheckExec(cmd) #
 
@@ -1408,7 +1423,7 @@ def SetExecEnv(exe,verbose) :
         else:
             os.environ[V] = ""
         if verbose:
-            print(V+" = "+exe[v][0]+" : "+exe[v][1])
+            print "%s = %s : %s" % (V, exe[v][0], exe[v][1])
     if verbose:
         STDOUT.flush()
 ### SetExecEnv(exe,verbose) #
@@ -1468,9 +1483,9 @@ URLSUFFIX_D = '?cvsroot=Monet-4.3&only_with_tag=Monet_4-3'
 par = {}
 
 def FindMonetConf(env) :
-    dirs = [ os.getcwd()+os.sep+".", env['TSTSRCBASE']+os.sep+"." ]
+    dirs = [ os.path.join(os.getcwd(),"."), os.path.join(env['TSTSRCBASE'],".") ]
     if os.environ.has_key('HOME'):
-        dirs.append(os.environ['HOME']+os.sep+".")
+        dirs.append(os.path.join(os.environ['HOME'],"."))
     dirs.append(path(env['MONET_PREFIX']+"/share/Monet/"))
     for d in dirs:
         f = d+'monet.'+string.split(THISFILE,'.')[0]+'.conf'
@@ -1480,9 +1495,9 @@ def FindMonetConf(env) :
 ### FindMonetConf(env) #
 
 def FindCmdLst(env) :
-    dirs = [ os.getcwd()+os.sep+".", env['TSTSRCBASE']+os.sep+"." ]
+    dirs = [ os.path.join(os.getcwd(),"."), os.path.join(env['TSTSRCBASE'],".") ]
     if os.environ.has_key('HOME'):
-        dirs.append(os.environ['HOME']+os.sep+".")
+        dirs.append(os.path.join(os.environ['HOME'],"."))
     dirs.append(path(env['MONET_PREFIX']+"/share/Monet/"))
     for d in dirs:
         f = d+'Mprofile-commands.lst'
@@ -1645,12 +1660,12 @@ def main(argv) :
     STDERR.flush()
     for v in par.keys():
         #os.environ[v] = par[v]
-        print(v+" = "+str(par[v]))
+        print "%s = %s" % (v, str(par[v]))
     STDOUT.flush()
     #env['par'] = par
 
     if env.has_key('MONET_PREFIX'):
-        bp = env['MONET_PREFIX']+os.sep+"bin"
+        bp = os.path.join(env['MONET_PREFIX'],"bin")
         if os.environ.has_key('PATH'):
             bp = bp+os.pathsep+os.environ['PATH']
         os.environ['PATH'] = bp
@@ -1709,7 +1724,7 @@ def main(argv) :
 
     #STDERR.flush()
     #for v in 'RELSRCBASE', 'RELBLDBASE':
-    #       print(v+" = "+str(env[v]))
+    #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -1723,7 +1738,7 @@ def main(argv) :
         vars_ = vars
     for v in vars_:
         os.environ[v] = env[v]
-        print(v+" = "+env[v])
+        print "%s = %s" % (v, env[v])
     STDOUT.flush()
 
     ## set/extend PATH & LD_LIBRARY_PATH
@@ -1743,7 +1758,7 @@ def main(argv) :
     #       else:
     #               bp = os.environ['PATH']
     #os.environ['PATH'] = bp
-    #print("PATH = "+bp)
+    #print "PATH = "+bp
     #if os.name == "posix":
     #       if os.environ.has_key('LD_LIBRARY_PATH'):
     #               if lp:
@@ -1751,7 +1766,7 @@ def main(argv) :
     #               else:
     #                       lp = os.environ['LD_LIBRARY_PATH']
     #       os.environ['LD_LIBRARY_PATH'] = lp
-    #       print("LD_LIBRARY_PATH = "+lp)
+    #       print "LD_LIBRARY_PATH = "+lp
 
     if not startswith(os.getcwd()+os.sep, env['TSTSRCBASE']+os.sep):
         Warn("Current directory "+os.getcwd()+" is no descendant of TSTSRCBASE="+env['TSTSRCBASE']+";")
@@ -1839,9 +1854,9 @@ def main(argv) :
                     testdirs.append(t)
     else:
         for d in dirlist:
-            if   os.path.basename(d) == TSTSUFF  and  os.path.isfile(d+os.sep+"All"):
+            if   os.path.basename(d) == TSTSUFF  and  os.path.isfile(os.path.join(d,"All")):
                 testdirs.append(os.path.dirname(os.path.abspath(d)))
-            elif os.path.isdir(d+os.sep+TSTSUFF)  and  os.path.isfile(d+os.sep+TSTSUFF+os.sep+"All"):
+            elif os.path.isdir(os.path.join(d,TSTSUFF))  and  os.path.isfile(os.path.join(d,TSTSUFF,"All")):
                 testdirs.append(os.path.abspath(d))
             else:
                 Warn("No tests found in '"+d+"`; skipping directory!")
@@ -1857,19 +1872,19 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
 
         if os.name == "nt":
-            n = THISPATH+os.sep+"MkillNT."
+            n = os.path.join(THISPATH,"MkillNT.")
             for x in "bat", "py":
                 f = n+x
                 if os.path.isfile(f):
                     shutil.copy(f,"D:"+os.sep+"Tools")
 
-        if os.path.exists(env['TSTTRGBASE']+os.sep+TSTPREF):
-            shutil.rmtree(env['TSTTRGBASE']+os.sep+TSTPREF)
+        if os.path.exists(os.path.join(env['TSTTRGBASE'],TSTPREF)):
+            shutil.rmtree(os.path.join(env['TSTTRGBASE'],TSTPREF))
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
 
-        if os.path.exists(env['GDK_DBFARM']+os.sep+TSTPREF):
+        if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db "+TSTPREF, ""):
                 sys.exit(1)
         if Check(env['exe']['Mtimeout'][1]+env['exe']['Mcreatedb'][1] +" -db "+TSTPREF, ""):
@@ -1878,8 +1893,8 @@ def main(argv) :
             sys.exit(1)
         GetBitsAndModsAndStatic(env)
         STDERR.flush()
-        print("Bits: ", env['TST_BITS'])
-        print("Modules: ", env['TST_MODS'])
+        print "Bits: ", env['TST_BITS']
+        print "Modules: ", env['TST_MODS']
         STDOUT.flush()
 
     STDERR.flush()
@@ -1889,39 +1904,39 @@ def main(argv) :
             tsts = "tests "+str(testlist)
         else:
             tsts = "all tests"
-        print("\nRunning "+tsts+" in directory "+testdirs[0]+".\n")
+        print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
         t_ = PerformDir(env, testdirs[0], testlist)
     else:
         testdirs.sort()
-        print("\nRunning all tests in directories "+str(testdirs)+".\n")
+        print "\nRunning all tests in directories %s.\n" % str(testdirs)
         for d in testdirs:
             t_ = t_ + PerformDir(env, d, [])
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        fn = env['TSTTRGBASE']+os.sep+TSTPREF+os.sep+"times."
+        fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
         for TSTDIR,TST,tt in TIMES:
-            fl.write(url(TSTDIR+os.sep+TST)+":\t"+tt+"\n")
+            fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+"\n")
         fl.write(":\t%7.3f\n" % t_)
         fl.close()
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         env['TSTDIR'] = ""
-        env['TSTTRGDIR'] = env['TSTTRGBASE']+os.sep+TSTPREF
+        env['TSTTRGDIR'] = os.path.join(env['TSTTRGBASE'],TSTPREF)
         CreateHtmlIndex(env)
 
         test = re.compile("^.*<B>.*$")
         failed = 0
-        for l in fileinput.input(env['TSTTRGBASE']+os.sep+TSTPREF+os.sep+"index.head.html"):
+        for l in fileinput.input(os.path.join(env['TSTTRGBASE'],TSTPREF,"index.head.html")):
             if test.match(l):
                 failed = 1
         STDERR.flush()
         if failed:
-            print("""\
+            print """\
 
  !ERROR:  Testing FAILED ! 
 
- First, check the testing results in  """+env['TSTTRGBASE']+os.sep+TSTPREF+os.sep+"index.html"+"""  ! 
+ First, check the testing results in  %s  ! 
 
  Then, fix the problems by: 
   - fixing sources and test scripts 
@@ -1929,22 +1944,22 @@ def main(argv) :
   - approving test output by Mapprove.py (cf. Mapprove.py -?) 
 
  After that, re-run Mtest. 
-""")
+""" % os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html")
         else:
-            print("""\
+            print """\
 
  No differences encountered during testing. 
 
  If necessary, you can checkin your modifications, now. 
-""")
+"""
 
     if THISFILE == "Mapprove.py":
-        print("""\
+        print """\
 
  First, run 'cvs -q diff` to check what you have changed.
 
  Then, re-run Mtest.py.
-""")
+"""
 ### main(argv) #
 
 if __name__ == "__main__":
