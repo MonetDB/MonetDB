@@ -1,22 +1,34 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'		Martin Kersten <Martin.Kersten@cwi.nl>
+@'		Peter Boncz <Peter.Boncz@cwi.nl>
+@'		Niels Nes <Niels.Nes@cwi.nl>
+@'		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @h
 #ifndef READLINETOOLS_H_INCLUDED
 #define READLINETOOLS_H_INCLUDED
-#include <monet_options.h>
-#include "Mapi.h"
-#ifdef HAVE_LIBREADLINE
-#include <readline/readline.h>
-#include <readline/history.h>
 
+#ifdef HAVE_LIBREADLINE
 
 void init_readline(Mapi mid, const char *language, int save_history);
-void deinit_readline();
-
-char **sql_completion (const char *text, int start, int end);
-char *sql_tablename_generator (const char *text, int state);
-char *sql_command_generator (const char *text, int state);
-
-char **mil_completion (const char *text, int start, int end);
-char *mil_batname_generator (const char *text, int state);
+void deinit_readline(void);
 
 #endif /* HAVE_LIBREADLINE */
 #endif /* READLINETOOLS_H_INCLUDED */
@@ -24,9 +36,14 @@ char *mil_batname_generator (const char *text, int state);
 /*
  * Readline specific stuff
  */
-#include "ReadlineTools.h"
+#include <monet_options.h>
+#include "Mapi.h"
 
 #ifdef HAVE_LIBREADLINE
+
+#include <readline/readline.h>
+#include <readline/history.h>
+#include "ReadlineTools.h"
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* for strncasecmp */
@@ -34,69 +51,29 @@ char *mil_batname_generator (const char *text, int state);
 
 #define PATHLENGTH	256		/* maximum file pathname length. */ 
 
-const char *SQL_COMMANDS[] = {	"SELECT", "INSERT", "UPDATE", "SET", "DELETE", "COMMIT", "ROLLBACK", 
-		  		"DROP TABLE", "CREATE", "ALTER", "RELEASE SAVEPOINT", "START TRANSACTION", 0};
+static const char *sql_commands[] = {
+	"SELECT",
+	"INSERT",
+	"UPDATE",
+	"SET",
+	"DELETE",
+	"COMMIT",
+	"ROLLBACK", 
+	"DROP TABLE",
+	"CREATE",
+	"ALTER",
+	"RELEASE SAVEPOINT",
+	"START TRANSACTION",
+	0,
+};
 
-Mapi _mid;
-char _history_file[PATHLENGTH];
-int _save_history = 0;
+static Mapi _mid;
+static char _history_file[PATHLENGTH];
+static int _save_history = 0;
 
-void 
-init_readline(Mapi mid, const char *language, int save_history)
+static char *
+sql_tablename_generator (const char *text, int state)
 {
-	_mid = mid;
-	/* Allow conditional parsing of the ~/.inputrc file. */
-	rl_readline_name = "MapiClient";
-	/* Tell the completer that we want to try our own completion before std completion (filename) kicks in. */
-	if (strcmp(language, "sql")==0) {
-		rl_attempted_completion_function = sql_completion;
-	} else {
-		rl_attempted_completion_function = mil_completion;
-	}
-
-	if (save_history) {
-#ifndef NATIVE_WIN32
-		if (getenv("HOME")!=NULL) {
-			snprintf(_history_file, PATHLENGTH, "%s/.mapiclient_history_%s", getenv("HOME"), language);
-			_save_history = 1;
-		}
-#else
-		snprintf(_history_file, PATHLENGTH, "%s%c_mapiclient_history_%s", mo_find_option(&set, setlen, "prefix"), DIR_SEP, language);
-		_save_history = 1;
-#endif
-		read_history(_history_file);
-	}
-}
-
-void
-deinit_readline()
-{
-	if (_save_history) {
-		write_history(_history_file);
-	}
-}
-
-
-char **
-sql_completion (const char *text, int start, int end)
-{
-	char **matches;
-
-	matches = (char **)NULL;
-
-	if (start==0 || end == 0) {
-	}	
-	/* FIXME: Nice, context-sensitive completion strategy should go here */
-	if (start == 0) {
-		matches = rl_completion_matches (text, sql_command_generator);
-	} else {
-		matches = rl_completion_matches (text, sql_tablename_generator);
-	}
-
-	return (matches);
-}
-
-char *sql_tablename_generator (const char *text, int state) {
 
 	static int seekpos, len, rowcount;
 	static MapiHdl table_hdl;
@@ -129,7 +106,9 @@ char *sql_tablename_generator (const char *text, int state) {
 }
 
 /* SQL commands (at start of line) */
-char *sql_command_generator (const char *text, int state) {
+static char *
+sql_command_generator (const char *text, int state)
+{
 
 	static int index, len;
 	const char *name;
@@ -139,7 +118,7 @@ char *sql_command_generator (const char *text, int state) {
 	}
 
 	
-	while ((name = SQL_COMMANDS[index++])) {
+	while ((name = sql_commands[index++])) {
 #ifdef HAVE_STRNCASECMP
 		if (strncasecmp(name, text, len)==0)
 #else
@@ -151,23 +130,28 @@ char *sql_command_generator (const char *text, int state) {
 	return NULL;
 }
 
-char **
-mil_completion (const char *text, int start, int end)
+static char **
+sql_completion (const char *text, int start, int end)
 {
 	char **matches;
 
 	matches = (char **)NULL;
 
-	if (start==0 || end == 0) {
-	}
+	(void) end;
 
 	/* FIXME: Nice, context-sensitive completion strategy should go here */
-	matches = rl_completion_matches (text, mil_batname_generator);
+	if (start == 0) {
+		matches = rl_completion_matches (text, sql_command_generator);
+	} else {
+		matches = rl_completion_matches (text, sql_tablename_generator);
+	}
 
 	return (matches);
 }
 
-char *mil_batname_generator (const char *text, int state) {
+static char *
+mil_batname_generator (const char *text, int state)
+{
 
 	static int seekpos, len, rowcount;
 	static MapiHdl table_hdl;
@@ -186,7 +170,6 @@ char *mil_batname_generator (const char *text, int state) {
 		}
 		mapi_fetch_all_rows(table_hdl);
 		rowcount = mapi_get_row_count(table_hdl);
-    	} else {
 	}
 
 	while (seekpos < rowcount) {
@@ -198,6 +181,52 @@ char *mil_batname_generator (const char *text, int state) {
 	}
 
 	return NULL;
+}
+
+static char **
+mil_completion (const char *text, int start, int end)
+{
+	(void) start;
+	(void) end;
+
+	/* FIXME: Nice, context-sensitive completion strategy should go here */
+	return rl_completion_matches (text, mil_batname_generator);
+}
+
+
+void 
+init_readline(Mapi mid, const char *language, int save_history)
+{
+	_mid = mid;
+	/* Allow conditional parsing of the ~/.inputrc file. */
+	rl_readline_name = "MapiClient";
+	/* Tell the completer that we want to try our own completion before std completion (filename) kicks in. */
+	if (strcmp(language, "sql")==0) {
+		rl_attempted_completion_function = sql_completion;
+	} else {
+		rl_attempted_completion_function = mil_completion;
+	}
+
+	if (save_history) {
+#ifndef NATIVE_WIN32
+		if (getenv("HOME")!=NULL) {
+			snprintf(_history_file, PATHLENGTH, "%s/.mapiclient_history_%s", getenv("HOME"), language);
+			_save_history = 1;
+		}
+#else
+		snprintf(_history_file, PATHLENGTH, "%s%c_mapiclient_history_%s", mo_find_option(&set, setlen, "prefix"), DIR_SEP, language);
+		_save_history = 1;
+#endif
+		read_history(_history_file);
+	}
+}
+
+void
+deinit_readline(void)
+{
+	if (_save_history) {
+		write_history(_history_file);
+	}
 }
 
 
