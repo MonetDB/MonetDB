@@ -341,6 +341,7 @@ def am_doc(fd, var, docmap, am):
         t, ext = split_filename(target)
         if ext in doc_ext:
             srcs = srcs + " " + target
+            am['InstallList'].append("\t"+docdir+"/"+target+"\n")
     fd.write(srcs + "\n")
 
     fd.write("if DOCTOOLS\n")
