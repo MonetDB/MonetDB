@@ -374,6 +374,8 @@ stream_init(void)
 #endif
 #endif	/* STREAM_DEBUG */
 
+/* Read at most cnt elements of size elmsize from the stream.  Returns
+   the number of elements actually read. */
 ssize_t
 stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
@@ -384,6 +386,9 @@ stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	return (*s->read)(s, buf, elmsize, cnt);
 }
 
+/* Write cnt elements of size elmsize to the stream.  Returns the
+   number of elements actually read.  If elmsize or cnt equals zero,
+   returns cnt. */
 ssize_t
 stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
@@ -576,7 +581,7 @@ file_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 			s->errnr = WRITE_ERROR;
 		return (ssize_t) rc;
 	}
-	return 0;
+	return cnt;
 }
 
 static void
@@ -638,10 +643,12 @@ static ssize_t
 stream_gzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	int size = (int) (elmsize * cnt);
-	size = gzwrite((gzFile *) s->stream_data.p, (void *) buf, size);
-	if (size)
+
+	if (size) {
+		size = gzwrite((gzFile *) s->stream_data.p, (void *) buf, size);
 		return size / elmsize;
-	return 0;
+	}
+	return cnt;
 }
 
 static void
@@ -755,10 +762,11 @@ static ssize_t
 stream_bzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	int size = (int) (elmsize * cnt);
-	size = BZ2_bzwrite((BZFILE *) s->stream_data.p, (void *) buf, size);
-	if (size)
+	if (size) {
+		size = BZ2_bzwrite((BZFILE *) s->stream_data.p, (void *) buf, size);
 		return size / elmsize;
-	return 0;
+	}
+	return cnt;
 }
 
 static void
@@ -1043,7 +1051,7 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr)
 		return -1;
 	
-	if (size == 0)
+	if (size == 0 || elmsize == 0)
 		return cnt;
 #ifdef NATIVE_WIN32
 	sz = send(s->stream_data.i, buf, size, 0);
@@ -1269,7 +1277,7 @@ ssl_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	assert(s->stream_data.p);
 	ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
 	assert(ssl);
-	if (size == 0)
+	if (size == 0 || elmsize == 0)
 		return cnt;	/* nothing to do */
 	for (;;) {
 		int nr, err;
@@ -2234,7 +2242,7 @@ pipe_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr)
 		return -1;
 	
-	if (size == 0)
+	if (size == 0 || elmsize == 0)
 		return cnt;
 	sz = write(s->stream_data.i, buf, size);
 	if (sz > 0)
