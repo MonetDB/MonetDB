@@ -138,8 +138,8 @@ m_export int interpret_str       (Cntxt stk, str buf, ValPtr res);
 m_export int interpret_file      (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_cast      (str atom, int argc, ValPtr val, ValPtr res);
 m_export int interpret_batcast   (str atom, int argc, ValPtr val, ValPtr res);
-m_export void closeProfiler(struct stream* o);
-m_export int startProfiler(struct stream* o);
+m_export void closeProfiler(stream* o);
+m_export int startProfiler(stream* o);
 m_export int stopProfiler(void);
 m_export int setProfilerFilter(str left, str right);
 #endif /* _MONET_INTERPRETER_H_ */
@@ -361,7 +361,8 @@ placing the parameter count in  'argc' and the result values in 'argv[1..argc]'
 @c
 int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
     ValPtr val_array = params+1;
-    int j, argc = 1;
+    unsigned j;
+    int argc = 1;
 
     params[0].vtype = TYPE_void;
     params[0].val.oval = void_nil;
@@ -456,7 +457,7 @@ static int showheader=0;
 
 static MT_Lock profilerLock;
 
-void closeProfiler(struct stream *o)
+void closeProfiler(stream *o)
 {
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
@@ -466,7 +467,7 @@ void closeProfiler(struct stream *o)
 	}
 	MT_unset_lock(profilerLock, "startProfiler");
 }
-int startProfiler(struct stream *o)
+int startProfiler(stream *o)
 {
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
@@ -485,12 +486,13 @@ int stopProfiler(void)
 	return 0;
 }
 #else
-void closeProfiler(void *o)
+void closeProfiler(stream *o)
 {
 	(void) o;
 }
-int startProfiler(void)
+int startProfiler(stream *o)
 {
+	(void) o;
 	return 0;
 }
 int stopProfiler(void)
@@ -799,7 +801,8 @@ phase 3: check if we have this already in expanded form
 	monet_sig_pack(sig, argc, argv);
 
 	{   YYSTREE tt = opcache;
-	    do for(i=0; i<tt->cnt && (op=tt->yysons[i]); i++) { 
+	    unsigned j;
+	    do for(j=0; j<tt->cnt && (op=tt->yysons[j]); j++) { 
 		monet_sig_t *p = (monet_sig_t*) op->yyval.val.pval;
 		if (monet_sig_eq(sig, p)) {
 			if (deref_fcn && strcmp(p->fcn_nme,fcn_nme)) continue;
@@ -1112,7 +1115,7 @@ int interpret_var(int	stk, YYSTREE lt, ValPtr res)
         lt->token = TOK_SEQ; /* we only create once */ 
         for(; lt; lt = lt->overflow) {
             Variable v;
-            int j;
+            unsigned j;
             for(j = 0; j < lt->cnt; j++) { 
                 YYSTREE t = lt->yysons[j];
                 if (t != NULL) {
@@ -1438,7 +1441,8 @@ Sequential blocks can be handled directly -- no need to go to the queue.
 @c
 int interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope)
 {
-	int	i, r = 0;
+	unsigned i;
+	int r = 0;
 
 	if (scope) {
 		if (!lt->old_cntxt) {
@@ -1450,11 +1454,11 @@ int interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope)
 	} 
 	for( ; lt; lt = lt->overflow) {  
 		for(i = 0; i < lt->cnt; i++) 
-		if (lt->yysons[i]) {
-			r = interpret(stk, lt->yysons[i], res); 
-			CLEANUP(lt->yysons[i]);
-			if (r<0) goto xit;
-		}
+			if (lt->yysons[i]) {
+				r = interpret(stk, lt->yysons[i], res); 
+				CLEANUP(lt->yysons[i]);
+				if (r<0) goto xit;
+			}
 	}
 xit:   if (scope) {
 		CNTXTclear(stk);
@@ -1485,7 +1489,7 @@ int interpret_parblock(int stk, YYSTREE lt, ValPtr res, int scope)
 	Request p = 0;
 	Request q = 0;
 	Client  c;
-	int 	i;
+	unsigned i;
 	(void) res;
 
 	PARDEBUG THRprintf(GDKerr, "parallel block\n");
@@ -1867,7 +1871,7 @@ int par_collect_@1@2_@3@4(
 @= par_interpret
 	if (@1->parcnt > 0) {
 		YYSTREE t;
-		int i;
+		unsigned i;
 
 		for(t = @1->tree; t; t = t->overflow)
 			for(i = 0; i < t->cnt; i++)

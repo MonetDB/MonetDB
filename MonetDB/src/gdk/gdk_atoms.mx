@@ -962,10 +962,12 @@ int chrFromStr(char *src, int *len, chr **dst) {
 		if (p[1] == '\\' && num08(p[2])) {
 			p += 2;
 			while (error == 0) {
-				chr val = mult08(base) + base08(*p);
-				if (val < base) error = 1;
-				base = val; p++;
-				if (!num08(*p)) break;
+				base = mult08(base) + base08(*p);
+				if (base >= 128)
+					error = 1;
+				p++;
+				if (!num08(*p))
+					break;
 			}
 		} else {
 			base = p[1]; p += 2;

@@ -113,7 +113,7 @@ if (@3 == (size_t) oid_nil) {
 			}
 		}
 		/* overestimate always by 5% */
-		@3 = (((lng) _tot) * ((lng) _lcount)) / (0.95 * _sample); 
+		@3 = (size_t) ((double) (((lng) _tot) * ((lng) _lcount)) / (0.95 * (double) _sample)); 
 		l = _tmp1;
 	}
 }
@@ -838,7 +838,8 @@ if no match can be found.
        			BUNfastins(bn, BUNhead(l, p), nilt);
        		}
 	}
-} break;
+}
+break;
 @
 @-
 The baseline join algorithm creates a hash on the smallest element and
@@ -936,7 +937,8 @@ BATloopFast(l, p, q, xx) {
 	    if (binner) BUNfastins(binner, BUNtail(l,p), BUNhead(r,*lo));
 	    if (bouter) BUNfastins(bouter, BUNhead(l,p), BUNtail(r,*lo));
 	}
-} break;
+}
+break;
 @c
 static void IDXthetajoin(BAT *binner, BAT *bouter, BAT *l, BAT *r, int op) {
 	BUN p, q, *lo, *hi, *first = IDXfirst(r), *last = IDXlast(r);
@@ -1143,7 +1145,8 @@ differ significantly.
 			}
 		}
 	} 
-} break;
+}
+break;
 @c
 BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	BAT *bn, *del = NULL;;
@@ -1216,7 +1219,8 @@ for the binary search.
 			}
 		}
 	} 
-} break;
+}
+break;
 @c
 BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	BAT *bn;
@@ -1296,7 +1300,8 @@ iff BAThkey(r) and one on l to find the matching tuples.
 				BUNfastins(bn, v, BUNtail(l, lp));
 		}
 	}
-} break;
+}
+break;
 @c
 BAT *BATrevsemijoin(BAT *l, BAT *r) {
 	int any, rdoubles = (BAThkey(r) == 0), merge = rdoubles&BAThordered(r);
@@ -1611,7 +1616,7 @@ int BATmultijoin(
         column_t *lead_col, *c = (column_t*) alloca(argc*(int)sizeof(column_t));
         column_t **reorder = (column_t**) alloca(argc*(int)sizeof(column_t*));
 	int	status=0, algo = LEAD_TRAVERSE_SEQ;
-	int	i, k, j=0;
+	int	i, k;
         BUN     p, q, r;
         table_t t;
 
@@ -1629,6 +1634,7 @@ Init the table descriptor.
 order columns by their size (smallest first)
 @c
         for(i=0; i < argc; i++) {
+		int j;
 		c[i].b = argv[i];
 		c[i].nhits = 1; /* default value */
 		c[i].offset = (ssize_t) BUNindex(c[i].b, BUNfirst(c[i].b));
@@ -1646,9 +1652,11 @@ order columns by their size (smallest first)
 			if (COLSIZE(reorder[j]) > COLSIZE(c+i)) {
 				for(k=i; k>j; k--) {
 					reorder[k] = reorder[k-1];
-				} break; 
+				}
+				break; 
 			}
-		} reorder[j] = c+i;
+		}
+		reorder[j] = c+i;
         }
 
 @- handle explicit ordering requests
@@ -1726,6 +1734,7 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 @c
         for(k=1; k < argc; k++) {
 		column_t *n = reorder[k];
+		int j;
 		for(j=(algo==LEAD_TRAVERSE_SEQ); j<k; j++) {
 			if (ALIGNsynced(reorder[j]->b, n->b)) {
 				n->sync = (struct _column_t*) reorder[j];
@@ -1863,6 +1872,7 @@ while(algo) {
 	 */
 	if ((m=n->sync) != NULL) {
     		if (m->hit) {
+			size_t j;
     			REALLOCBUNS(n, m->nhits);
     			for(j=0; j < m->nhits; j++) {
     				n->hit[j] = BUNptr(n->b, n->offset +

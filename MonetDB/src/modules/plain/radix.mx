@@ -1077,6 +1077,8 @@ var b4 := radix_cluster(b2, cnt.bbpname, 1.0, 1, 7);
 b4.info.find("tsorted").print;
 radix_cluster(attr_int,  
 
+@-
+@{
 @f radix
 @* Implementation
 @c
@@ -1709,7 +1711,8 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
 @:radix_chunk(any)@
 
 int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
-    int shift = ABS(*nbits), total_shift, n;
+    int shift = ABS(*nbits), total_shift;
+    size_t n;
     size_t cap = BATcount(b);
     int radix[MAXPARAMS], argc = 1, *p;
     size_t *lim;
@@ -3418,3 +3421,4 @@ int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	bn->tsorted = 0;
 	return GDK_SUCCEED;
 }
+@}

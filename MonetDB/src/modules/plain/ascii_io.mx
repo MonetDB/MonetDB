@@ -229,6 +229,8 @@ proc export( BAT[any,any] b, str filename ) {
 }
 
 # todo add function to create a key (oid sequence) colom
+@-
+@{
 
 @h
 #ifndef _ASCII_IO2_H_
@@ -1119,4 +1121,4 @@ PROC test_ascii_io() : void := {
     c.import("/tmp/test");
     c.print;
 }
-
+@}

@@ -1452,8 +1452,8 @@ public int quickResponse(Writer fd){
 	if( fd== null)
 		return setError("File destination missing","response");
 	try{
+		PrintWriter p = new PrintWriter(fd);
 		while( active && (msg=fetchLineInternal()) != null) {
-			PrintWriter p = new PrintWriter(fd);
 			p.println(msg);
 			p.flush();
 			if (p.checkError())

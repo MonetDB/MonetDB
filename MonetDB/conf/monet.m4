@@ -290,7 +290,7 @@ case $withval in
 esac
 bits=$withval
 ])
-if test "$bits" == "64"; then
+if test "$bits" = "64"; then
 	dnl  Keep in mind how to call the 32-bit compiler.
 	case "$GCC-$host_os-$host" in
 	yes-linux*-x86_64*)
@@ -389,8 +389,15 @@ if test "x$have_java" != xno; then
   fi
   AC_PATH_PROG(JAVA,java,,$JPATH)
   if test "x$JAVA" != "x"; then
-    AC_MSG_CHECKING(for Java >= 1.4)
+    AC_MSG_CHECKING(for Java >= 1.2)
     JAVA_VERSION=[`$JAVA -version 2>&1 | head -n1 | sed -e 's|.*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*|\1|'`]
+    if test MONET_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONET_VERSION_TO_NUMBER(echo "1.2"); then
+      have_java_1_2=yes
+    else
+      have_java_1_2=no
+    fi
+    AC_MSG_RESULT($have_java_1_2 -> $JAVA_VERSION found)
+    AC_MSG_CHECKING(for Java >= 1.4)
     if test MONET_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONET_VERSION_TO_NUMBER(echo "1.4"); then
       have_java_1_4=yes
     else
@@ -398,6 +405,7 @@ if test "x$have_java" != xno; then
     fi
     AC_MSG_RESULT($have_java_1_4 -> $JAVA_VERSION found)
   fi
+  AM_CONDITIONAL(HAVE_JAVA_1_2,test x$have_java_1_2 = xyes)
   AM_CONDITIONAL(HAVE_JAVA_1_4,test x$have_java_1_4 = xyes)
 
   AC_PATH_PROG(JAVAC,javac,,$JPATH)
@@ -447,7 +455,7 @@ AC_PROG_LIBTOOL()
 AM_PROG_LIBTOOL()
 
 dnl AC_PROG_CC_STDC()
-if test "$bits" == "64"; then
+if test "$bits" = "64"; then
 	dnl  On 64-bit systems, there might be no 64-bit libfl or libl, which is not a major problem,
 	dnl  as we define our own yywrap function, and hence don't need these libraries.
 	dnl  However, the standard "AC_PROG_LEX" & "AM_PROG_LEX" tests fail to correctly determine,

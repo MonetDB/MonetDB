@@ -23,12 +23,9 @@
 
 @f pcl
 @a N. Nes
-@t Performance Counters Library
+@t PCL - The Performance Counter Library
+@v 2.2, January 2003
 @T
-
-             PCL - The Performance Counter Library
-                   Version 2.2, January 2003
-
 PCL (The Performance Counter Library) is a common interface to access
 in a portable way performance counters built into modern
 microprocessors. PCL supports query for functionality, start and stop
@@ -38,28 +35,25 @@ user-or-system mode. Functions are callable from C, C++, Fortran, and
 Java.
 
 Currently, the following systems are supported:
-
-  -  Linux 2.x.x with Intel Pentium/PPro/Pentium II/Pentium III/Pentium 4
-  -  Linux 2.x.x with AMD Athlon/Duron
-  -  IBM AIX 4.x >= 4.3 with PowerPC 604, 604e, Power3, Power3-II
-  -  SUN Solaris 2.x, Solaris 7, 8 with UltraSPARC I,II, III
-  -  Digital Unix with Alpha 21164, 21264
-  -  Cray T3E with Alpha 21164
-  -  SGI IRIX with R10000, R12000
+\begin{tabular}{l}
+  Linux 2.x.x with Intel Pentium/PPro/Pentium II/Pentium III/Pentium 4\\
+  Linux 2.x.x with AMD Athlon/Duron\\
+  IBM AIX 4.x >= 4.3 with PowerPC 604, 604e, Power3, Power3-II\\
+  SUN Solaris 2.x, Solaris 7, 8 with UltraSPARC I,II, III\\
+  Digital Unix with Alpha 21164, 21264\\
+  Cray T3E with Alpha 21164\\
+  SGI IRIX with R10000, R12000\\
+\begin{tabular}
 
 The homepage of PCL can be found at
 
-    http://www.fz-juelich.de/zam/PCL/
+\begin{center}
+http://www.fz-juelich.de/zam/PCL/
+\end{center}
 
 were you can find the source and a detailled description of PCL
 including a description of performance counters on various
 microprocessors.
-
-TODO
-
-add pcl_cpu_info! (void,str bat) (max counters?)
-later add low level api
-
 @+ Module Definition
 @m
 .MODULE pcl;
@@ -193,6 +187,13 @@ pcl_events.insert( "PCL_L2DCACHE_MISSRATE",       59);
 pcl_events.insert( "PCL_MEM_FP_RATIO",            60);
 
 pcl_events := pcl_events.reverse;
+@{
+@-
+
+TODO
+
+add pcl_cpu_info! (void,str bat) (max counters?)
+later add low level api
 
   
 @+ Implementation
@@ -466,4 +467,4 @@ PROC test_pcl() : void := {
   counts := pcl_stop(events);
   print(events,counts);
 }
-
+@}

@@ -651,11 +651,11 @@ session:
 	    ll_resolution = 1;
 	    /* EXECUTE MODULE LOAD *DURING* PARSE!!*/
             while (lt) {
-	        int i; 
+	        unsigned i; 
                 for(i = 0; i < lt->cnt; i++)  {
         	    str mod;
                     if (!lt->yysons[i]) continue;
-                    if (lt->yysons[i]->token == monet_tokident) {
+                    if ((int) lt->yysons[i]->token == monet_tokident) {
                             mod = arg(lt, i)->yyval.val.sval;
                     } else {
 			    ValRecord res;
@@ -755,7 +755,7 @@ statement:
         {   $$ = $2; $2->token = TOK_VAR;                                     }
     |   TOK_CONST constidents ';'
         {   YYSTREE t=$2,tt, n = yylognode(TOK_BUILTIN, TYPE_ptr);
-            int i;
+            unsigned i;
             n->yyval.val.pval = (ptr) CMDconstant;
             $$ = yylognode(TOK_SEQ,0);
             $2->token = TOK_VAR;
@@ -1488,38 +1488,39 @@ void ll_idconflict(str s){
 All variables mentioned in the constant list become constant.
 @c
 int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res){
-        int i,j;
+	unsigned i;
+        int j;
         Variable act;
         YYSTREE t;
 	(void) res;
 
         for(t=lt; t; t=t->overflow) {
             for(i=0 ; i<lt->cnt; i++)
-            if (arg(t, i)->token == monet_tokident) {
-                str nme = arg(t, i)->yyval.val.sval;
-                int s = stk;
+		    if ((int) arg(t, i)->token == monet_tokident) {
+		    str nme = arg(t, i)->yyval.val.sval;
+		    int s = stk;
 
-                for(j = arg(t, i)->yyval.len; j > 0; j--) {
-                        if (s >= 0) {
-                                s = monet_cntxt[s].outer;
-                        } else {
-                                GDKerror("illegal context.\n");
-                                return -1;
-                        }
-                }
-                if ((act = VARfind(&s, nme)) == 0) {
-                        GDKerror("variable '%s' does not exist.\n",nme);
-                        return -1;
-                }
-                if (act->constant) {
-                        GDKerror("cannot assign to constant '%s'.\n",nme);
-                        return -1;
-                }
-                VARfixate(act);
-            } else {
-                GDKerror("CONST works on variable names only.\n");
-                return -1;
-            }
+		    for(j = arg(t, i)->yyval.len; j > 0; j--) {
+			    if (s >= 0) {
+				    s = monet_cntxt[s].outer;
+			    } else {
+				    GDKerror("illegal context.\n");
+				    return -1;
+			    }
+		    }
+		    if ((act = VARfind(&s, nme)) == 0) {
+			    GDKerror("variable '%s' does not exist.\n",nme);
+			    return -1;
+		    }
+		    if (act->constant) {
+			    GDKerror("cannot assign to constant '%s'.\n",nme);
+			    return -1;
+		    }
+		    VARfixate(act);
+		} else {
+		    GDKerror("CONST works on variable names only.\n");
+		    return -1;
+		}
         }
 	return 0;
 }

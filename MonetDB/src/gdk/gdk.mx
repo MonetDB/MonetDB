@@ -2030,7 +2030,7 @@ gdk_export void 	ACCexit       (BAT *b);
 int & BAThash & (BAT *b, int coll)\\
 int & HASHpersist & (BAT *b, bit persist);\\
 int & BATidx & (BAT *b, BAT *histo)\\
-BAT * & BAThashsplit & (BAT *b, int n)\\
+BAT * & BAThashsplit & (BAT *b, size_t n, int unary)\\
 BAT * & BATrangesplit & (BAT *b, int n)\\
 \hline\end{tabular}}
 @

@@ -1057,7 +1057,7 @@ int format_type(YYSTREE t, str *p) {
 }
 
 void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE ret) {
-	int i, j, tpe = TOK_PROC;
+	int j, tpe = TOK_PROC;
 	oid pid = TBL_oid++;
 
 	TBL_M_lock(NULL);
@@ -1111,8 +1111,9 @@ void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYS
 		if (sig == NULL) {
 			BUNins(TBL_fcn_pro, &pid, "*any"); 
 		} else {
-			YYSTREE cur=sig; 
+			YYSTREE cur=sig;
 			for(j=1; cur; cur=cur->overflow) {
+				unsigned i;
 				for(i=0; i<cur->cnt; i++,j++) {
 					char tpenme[512], *p=tpenme;
 					YYSTREE t = cur->yysons[i];
@@ -1157,12 +1158,12 @@ void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYS
 		}
 		BUNins(TBL_fcn_pro, &pid, returntpe); 
 	}
-	i = 1; /* initial reference count */
+	j = 1; /* initial reference count */
 	if (mod) {
 		BUNins(TBL_mod_proc, mod, &pid);
-		i++; /* extra reference if it belongs to a module */
+		j++; /* extra reference if it belongs to a module */
 	}
-	BUNins(TBL_fcn_cnt, &pid, &i);
+	BUNins(TBL_fcn_cnt, &pid, &j);
 	BUNins(TBL_fcn_nme, &pid, nme);
 	BUNins(TBL_fcn_imp, &pid, &body);
 	BUNins(TBL_fcn_tpe, &pid, &tpe);

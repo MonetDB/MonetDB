@@ -1742,7 +1742,7 @@ bs_write(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		buf = (void *) ((char *) buf + n);
 		if (s->nr == sizeof(s->buf)) {
 			if (!stream_writeInt(s->s, s->nr) ||
-			    s->s->write(s->s, s->buf, 1, s->nr) != s->nr) {
+			    s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = WRITE_ERROR;
 				return -1;
 			}
@@ -1771,7 +1771,7 @@ bs_flush(stream *ss)
 		   flush */
 		if ((s->nr > 0 &&
 		     (!stream_writeInt(s->s, s->nr) ||
-		      s->s->write(s->s, s->buf, 1, s->nr) != s->nr)) ||
+		      s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) ||
 		    !stream_writeInt(s->s, 0)
 			) {
 			ss->errnr = WRITE_ERROR;
@@ -2005,7 +2005,7 @@ stream_writeLng(stream *s, lng val)
 int
 stream_read@1Array(stream *s, @2 *val, size_t cnt)
 {
-	if (s->read(s, (void *) val, sizeof(*val), cnt) < cnt) {
+	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
 		s->errnr = READ_ERROR;
 		return 0;
 	}
@@ -2024,7 +2024,7 @@ stream_read@1Array(stream *s, @2 *val, size_t cnt)
 int
 stream_writeShtArray(stream *s, const short *val, size_t cnt)
 {
-	return s->write(s, (void *) val, sizeof(*val), cnt) == cnt;
+	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
 @:stream_readArray(Int,int,normal_int)@
@@ -2032,7 +2032,7 @@ stream_writeShtArray(stream *s, const short *val, size_t cnt)
 int
 stream_writeIntArray(stream *s, const int *val, size_t cnt)
 {
-	return s->write(s, (void *) val, sizeof(*val), cnt) == cnt;
+	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
 @:stream_readArray(Lng,lng,long_long)@
@@ -2040,7 +2040,7 @@ stream_writeIntArray(stream *s, const int *val, size_t cnt)
 int
 stream_writeLngArray(stream *s, const lng *val, size_t cnt)
 {
-	return s->write(s, (void *) val, sizeof(*val), cnt) == cnt;
+	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
 int

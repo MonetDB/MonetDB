@@ -62,10 +62,15 @@ def msc_subdirs(fd, var, values, msc):
         else:
             # conditional => use "then" or "else"
             thn = string.split(cond[1], ':', 1)
+            # handle "known" conditionals
             if cond[0] == 'CROSS_COMPILING'  and  len(thn) > 1:
+                # use "else"
                 Vals.append(thn[1])
             elif cond[0] == 'MONET4':
+                # use "then"
                 Vals.append(thn[0])
+            #else: 
+            #    # "unknown" conditional => use none
     values = Vals
     # HACK to keep uncompilable stuff out of Windows makefiles.
     if 'calibrator' in values:
@@ -854,7 +859,7 @@ ECHO = echo
 CD = cd
 
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
-CXXFLAGS = $(CFLAGS)
+CXXFLAGS = $(CFLAGS) -EHsc
 
 CXXEXT = \\\"cxx\\\"
 

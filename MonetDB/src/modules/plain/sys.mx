@@ -1166,7 +1166,7 @@ int get_mmapsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_mmapsize(lng *num) {
-	GDK_mem_bigsize = *num;
+	GDK_mem_bigsize = (size_t) *num;
 	return GDK_SUCCEED;
 }
 

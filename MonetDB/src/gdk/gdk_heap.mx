@@ -113,7 +113,7 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
         	h->maxsize = h->size;
 		if (h->size > GDK_mem_bigsize) {
 			/* maxsize is a multiple of 65536, andhas 20% free space */
- 			h->maxsize = (h->maxsize * BATMARGIN) - 1;
+ 			h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
 			h->maxsize = (1 + (h->maxsize >> 16)) << 16;
 		}
                 h->base = (char *) GDKmallocmax(h->size, &h->maxsize);
@@ -201,7 +201,7 @@ ifndef NOEXTEND_PRIVMAP
         	h->maxsize = h->size = size;
 		if (size > GDK_mem_bigsize) {
 			/* maxsize is a multiple of 65536, andhas 20% free space */
- 			h->maxsize = (h->maxsize * BATMARGIN) - 1;
+ 			h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
 			h->maxsize = (1 + (h->maxsize >> 16)) << 16;
 		}
 

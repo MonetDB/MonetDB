@@ -27,7 +27,6 @@
 @t BAT Algebra
 
 @* Introduction
-[THIS MODULE HAS BEEN PATCHED FOR V5, all Prolog code is removed as well]
 This modules contains the most common algebraic BAT manipulation 
 commands. We call them @#algebra@, because all operations take
 values as parameters, and produce new result values, but  
@@ -752,7 +751,10 @@ This module contains a full cost model on the algebraic
 operators, in the form of executable Prolog clauses.
 We in turn discuss the basic concepts of this model:
 properties, propagation rules, and cost functions.
-
+Notice that this code was used in the past to study
+the issues as we developed the kernel routines.
+No Prolog code is used and the information is retained
+as it illustrates many of the issues.
 @+ Modeling With Properties
 @T
 The Monet kernel performs {\em run-time optimizations}. To choose between

@@ -68,12 +68,12 @@ public class MapiClient
       		Mapi M = new Mapi( hostname, portnr, user, password, lang );
 		Reader r = new BufferedReader(new InputStreamReader(System.in));
 		LineNumberReader input = new LineNumberReader(r);
-		OutputStreamWriter output = new OutputStreamWriter(new FileOutputStream(FileDescriptor.out),"UTF-8");
+		Writer out = new OutputStreamWriter(System.out);
 		String s;
 		System.out.print(M.getPrompt());
 		while((s=input.readLine()) != null){
 			if (s.equals("quit;")) break;
-			M.quickQuery(s,output);
+			M.quickQuery(s,out);
 			System.out.print(M.getPrompt());
 		}
 	} catch (MapiException e){

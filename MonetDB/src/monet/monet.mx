@@ -602,7 +602,7 @@ for using vfsprintf proved to be too compiler-dependent (OLD approach).
 	sprintf(add, meta, @1);
 #else
 	n = snprintf( add, adds, meta, @1 );
-	while ((n < 0) || (n >= adds)) {
+	while (n < 0 || (size_t) n >= adds) {
           if (n >= 0)    /* glibc 2.1 */
              adds = n+1; /* precisely what is needed */
           else           /* glibc 2.0 */
@@ -760,7 +760,7 @@ int monet_sprintf(str *res, str format, va_list ap){
 				len = strLen(p);
 				width++; prec++;  /* account for '\0' */
 				if (dotseen && prec < len) len = prec;
-				if (len > width) width = len;
+				if ((size_t) len > width) width = (size_t) len;
 				@:sprintf(p)@
 			} else {
 				return_error(format_error);

@@ -1995,7 +1995,7 @@ int BBPsync(int commit) {
 
 	if (ret == 0 && bbpdirty) {
 		ret = BBPdir();
-	} else if (ret == 0 && !bbpdirty) {
+	} else if (ret == 0) {
 		/* restore BBP.dir */
 		ret = GDKmove( BAKDIR,"BBP","dir", BATDIR,"BBP","dir");
 	}
@@ -2003,38 +2003,39 @@ int BBPsync(int commit) {
         PERFDEBUG THRprintf(GDKerr, "BBPsync (dir time %d) %d bats\n", 
 			(t1=GDKms()) - t0, BBPsize);
 
-	if (bbpdirty == 0 && backuped_files == 0) {
-		goto out;
-	}
-        if (ret == 0) {
-	        /* atomic switchover */
-		ret = rename(BAKDIR, DELDIR);
-		if (ret) 
-		GDKsyserror("BBPsync: rename(%s,%s) failed.\n", BAKDIR,DELDIR);
-		IODEBUG THRprintf(GDKerr, "BBPsync: rename %s %s = %d\n", 
-						BAKDIR, DELDIR, ret);
-	}
-
-	/* AFTERMATH */
-        if (ret == 0) {
-		for (i = 1; i < BBPsize; i++) {
-			BAT *b = dirty_bat(i);
-			if (b) DESCclean(b);
+	if (bbpdirty || backuped_files > 0) {
+		if (ret == 0) {
+			/* atomic switchover */
+			/* this is the big one: this call determines
+			 * whether the operation of this function
+			 * succeeded, so no changing of ret after this
+			 * call anymore */
+			ret = rename(BAKDIR, DELDIR);
+			if (ret) 
+				GDKsyserror("BBPsync: rename(%s,%s) failed.\n", BAKDIR,DELDIR);
+			IODEBUG THRprintf(GDKerr, "BBPsync: rename %s %s = %d\n", 
+							BAKDIR, DELDIR, ret);
 		}
-		BBP_dirty = 0;
-		ret = GDKremovedir(DELDIR);
-        } else {
-               	BBPrecover(); 
+
+		/* AFTERMATH */
+		if (ret == 0) {
+			for (i = 1; i < BBPsize; i++) {
+				BAT *b = dirty_bat(i);
+				if (b) DESCclean(b);
+			}
+			BBP_dirty = 0;
+			(void) GDKremovedir(DELDIR);
+		} else {
+			BBPrecover(); 
+		}
 	}
-out:
 
 	backuped_files = 0;
-	ret = prepare_backup();
-	if (!ret){
+	if (prepare_backup() == 0) {
 		/* always move the BBP.dir to the BAKDIR, as unloads
 		   and mmap's can happen at any time during a transaction
 		 */
-		ret = GDKmove( BATDIR,"BBP","dir", BAKDIR,"BBP","dir" );
+		(void) GDKmove( BATDIR,"BBP","dir", BAKDIR,"BBP","dir" );
 	}
 
 	if (!commit)

@@ -1,0 +1,27 @@
+## integers from -25 to 24
+var a := bat(void, int,50).seqbase(0@0);
+var i := -25;
+while(i < 25) a.insert(nil, (i :+= 1));
+
+## reverse sort and split into 2 chunks
+a := a.sort_rev.reverse.mark(0@0).reverse;
+VAR sliced := a.rangesplit(2);
+
+sliced.fetch(0).print;
+sliced.fetch(1).print;
+
+
+var a := bat(void, int,50).seqbase(0@0);
+var i := -25;
+while(i < 25) { a.insert(nil, i); i :+= 1; };
+
+## ugly way to shuffle a little bit
+var b:=new(void,int).seqbase(0@0).insert(a.sample(10)).insert(a.sample(10)).insert(a.sample(10)).insert(a.sample(10)).insert(a.sample(10));
+b:=b.reverse.mark(0@0).reverse;
+VAR sliced := b.rangesplit(2);
+
+VAR c:=b.reverse.sort.reverse;
+c.slice(0,24).print;
+sliced.fetch(0).reverse.sort.reverse.print;
+c.slice(25,50).print;
+sliced.fetch(1).reverse.sort.reverse.print;

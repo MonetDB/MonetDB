@@ -20,15 +20,14 @@
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 @f calib
-@t Calibrator for Monet
-@a mzu
+@t A calibrator for Monet
+@a S. Manegold
 @v 0.1
-@* Calibrator for Monet
-@T
-The Calibrator is microbenchmark that is supposed to analyze a computers (cache-) 
+@* Synopsis
+The Calibrator is microbenchmark to analyze a computers (cache-) 
 memory system and extract the following parameters:
+@T
 \begin{itemize}
 \item number of cache levels
 \item for each cache level:
@@ -56,10 +55,6 @@ See also the @[<a href="http://www.cwi.nl/~manegold/Calibrator/calibrator.shtml"
 with a @[<a href="http://www.cwi.nl/~manegold/Calibrator/DB/DB.shtml">database</a>@ of calibrated systems.
 @m
 .MODULE calib;
-
-@T
-Run {\tt calib_init()} once, then extract the results with {\tt calib_info()} into a BAT.
-@m
 .COMMAND calib_info() : BAT[str,dbl] = CMDcalib_info;
   "Gives results of calibrator tests as BAT. 
   First row 'ready' indicates if the tests have been performed "
@@ -68,7 +63,12 @@ Run {\tt calib_init()} once, then extract the results with {\tt calib_info()} in
 .COMMAND calib_free() : void = CMDcalib_free;
   "Frees calibrator allocated resources"
 .END calib;
-
+@-
+@T
+Run {\tt calib_init()} once, then extract the results with {\tt calib_info()} into a BAT.
+@{
+@-
+The remainder is a wrapper around the calibrator library.
 @c
 #include "monet.h"
 #include <gdk.h>
@@ -223,3 +223,4 @@ int CMDcalib_free()
 	calibInfo=0;
 	return GDK_SUCCEED;
 }
+@}
