@@ -73,32 +73,32 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	query_end = query;
 
 	strcpy(query_end,
-	       "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, "
-	       "T.NAME AS TABLE_NAME, C.NAME AS COLUMN_NAME, "
-	       "KC.ORDINAL_POSITION AS KEY_SEQ, "
-	       "K.KEY_NAME AS PK_NAME FROM SCHEMAS S, TABLES T, "
-	       "COLUMNS C, KEYS K, KEYCOLUMNS KC "
-	       "WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID AND "
-	       "T.ID = K.TABLE_ID AND C.ID = KC.COLUMN_ID AND "
-	       "KC.KEY_ID = K.KEY_ID AND K.IS_PRIMARY = 1");
+	       "select '' as table_cat, s.name as table_schem, "
+	       "t.name as table_name, c.name as column_name, "
+	       "kc.ordinal_position as key_seq, "
+	       "k.key_name as pk_name from schemas s, tables t, "
+	       "columns c, keys k, keycolumns kc "
+	       "where s.id = t.schema_id and t.id = c.table_id and "
+	       "t.id = k.table_id and c.id = kc.column_id and "
+	       "kc.key_id = k.key_id and k.is_primary = 1");
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
 	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " AND T.TABLE_NAME = '%.*s'",
+	sprintf(query_end, " and t.name = '%.*s'",
 		nTableNameLength, szTableName);
 	query_end += strlen(query_end);
 
 	if (szSchemaName != NULL) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " AND S.NAME = '%.*s'",
+		sprintf(query_end, " and s.name = '%.*s'",
 			nSchemaNameLength, szSchemaName);
 		query_end += strlen(query_end);
 	}
 
 	/* add the ordering */
-	strcpy(query_end, " ORDER BY S.NAME, T.NAME, K.KEY_SEQ");
+	strcpy(query_end, " order by s.name, t.name, k.key_seq");
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */

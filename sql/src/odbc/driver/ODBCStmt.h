@@ -149,11 +149,11 @@ ODBCError *getStmtError(ODBCStmt *stmt);
 
 
 /* utility macro to quickly remove any none collected error msgs */
-#define clearStmtErrors(stm) do {					\
-				assert(stm);				\
-				if (stm->Error) {			\
-					deleteODBCErrorList(&stm->Error); \
-					stm->RetrievedErrors = 0;	\
+#define clearStmtErrors(stmt) do {					\
+				assert(stmt);				\
+				if (stmt->Error) {			\
+					deleteODBCErrorList(&stmt->Error); \
+					stmt->RetrievedErrors = 0;	\
 				}					\
 			} while (0)
 

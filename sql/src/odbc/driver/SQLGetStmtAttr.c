@@ -76,12 +76,10 @@ SQLGetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* return error: Optional feature not supported */
 		addStmtError(stmt, "HYC00", NULL, 0);
-
 		return SQL_ERROR;
 	default:
 		/* return error: Invalid option/attribute identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -93,7 +91,7 @@ SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	       SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtAttr\n");
+	ODBCLOG("SQLGetStmtAttr %d\n", Attribute);
 #endif
 
 	return SQLGetStmtAttr_(hStmt, Attribute, Value, BufferLength,

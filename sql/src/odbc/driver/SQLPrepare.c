@@ -60,6 +60,9 @@ SQLPrepare_(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 	/* we need a null-terminated string, so allocate a copy */
 	query = dupODBCstring(szSqlStr, nSqlStrLength);
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLPrepare: \"%s\"\n", query);
+#endif
 	ret = mapi_prepare_handle(stmt->hdl, query);
 	free(query);
 	if (ret != MOK) {

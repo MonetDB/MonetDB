@@ -68,16 +68,16 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	query_end = query;
 
 	strcpy(query_end,
-	       "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, "
-	       "T.NAME AS TABLE_NAME, C.NAME AS COLUMN_NAME, "
-	       "C.TYPE AS DATA_TYPE, C.TYPE AS TYPE_NAME, "
-	       "C.TYPE_DIGITS AS COLUMN_SIZE, C.TYPE_DIGITS AS BUFFER_LENGTH, "
-	       "C.TYPE_SCALE AS DECIMAL_DIGITS, '' AS NUM_PREC_RADIX, "
-	       "C.NULL AS NULLABLE, '' AS REMARKS, '' AS COLUMN_DEF, "
-	       "C.TYPE AS SQL_DATA_TYPE, '' AS SQL_DATETIME_SUB, "
-	       "'' AS CHAR_OCTET_LENGTH, C.NUMBER AS ORDINAL_POSITION, "
-	       "C.NULL AS IS_NULLABLE FROM SCHEMAS S, TABLES T, COLUMNS C "
-	       "WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID");
+	       "select '' as table_cat, s.name as table_schem, "
+	       "t.name as table_name, c.name as column_name, "
+	       "c.type as data_type, c.type as type_name, "
+	       "c.type_digits as column_size, c.type_digits as buffer_length, "
+	       "c.type_scale as decimal_digits, '' as num_prec_radix, "
+	       "c.null as nullable, '' as remarks, '' as column_def, "
+	       "c.type as sql_data_type, '' as sql_datetime_sub, "
+	       "'' as char_octet_length, c.number as ordinal_position, "
+	       "c.null as is_nullable from schemas s, tables t, columns c "
+	       "where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
 
 	/* dependent on the input parameter values we must add a
@@ -89,10 +89,10 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped. Check it and may
 		   be convert it. */
-		sprintf(query_end, " AND S.NAME %s '%.*s'",
+		sprintf(query_end, " and s.name %s '%.*s'",
 			memchr(szSchemaName, '%', nSchemaNameLength) ||
 			memchr(szSchemaName, '_', nSchemaNameLength) ?
-			"LIKE" : "=",
+			"like" : "=",
 			nSchemaNameLength, szSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -102,10 +102,10 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check it and
 		   may be convert it. */
-		sprintf(query_end, " AND T.NAME %s '%.*s'",
+		sprintf(query_end, " and t.name %s '%.*s'",
 			memchr(szTableName, '%', nTableNameLength) ||
 			memchr(szTableName, '_', nTableNameLength) ?
-			"LIKE" : "=",
+			"like" : "=",
 			nTableNameLength, szTableName);
 		query_end += strlen(query_end);
 	}
@@ -115,16 +115,16 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check it and
 		   may be convert it. */
-		sprintf(query_end, " AND C.NAME %s '%.*s'",
+		sprintf(query_end, " and c.name %s '%.*s'",
 			memchr(szColumnName, '%', nColumnNameLength) ||
 			memchr(szColumnName, '_', nColumnNameLength) ?
-			"LIKE" : "=",
+			"like" : "=",
 			nColumnNameLength, szColumnName);
 		query_end += strlen(query_end);
 	}
 
 	/* add the ordering */
-	strcpy(query_end, " ORDER BY S.NAME, T.NAME, C.NUMBER");
+	strcpy(query_end, " order by s.name, t.name, c.number");
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */

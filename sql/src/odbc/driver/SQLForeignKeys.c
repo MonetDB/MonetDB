@@ -78,22 +78,22 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	query_end = query;
 
 	strcpy(query_end,
-	       "SELECT '' AS PKTABLE_CAT, S1.NAME AS PKTABLE_SCHEM, "
-	       "T1.NAME AS PKTABLE_NAME, C1.NAME AS PKCOLUMN_NAME, "
-	       "'' AS FKTABLE_CAT, S1.NAME AS FKTABLE_SCHEM, "
-	       "T1.NAME AS FKTABLE_NAME, C1.NAME AS FKCOLUMN_NAME, "
-	       "KC.ORDINAL_POSITION AS KEY_SEQ, "
-	       "K.UPDATE_RULE AS UPDATE_RULE, K.DELETE_RULE AS DELETE_RULE, "
-	       "K.FK_NAME AS FK_NAME, K.PK_NAME AS PK_NAME, "
-	       "K.DEFERRABILITY AS DEFERRABILITY FROM SCHEMAS S, TABLES T, "
-	       "_COLUMNS C WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID");
+	       "select '' as pktable_cat, s1.name as pktable_schem, "
+	       "t1.name as pktable_name, c1.name as pkcolumn_name, "
+	       "'' as fktable_cat, s1.name as fktable_schem, "
+	       "t1.name as fktable_name, c1.name as fkcolumn_name, "
+	       "kc.ordinal_position as key_seq, "
+	       "k.update_rule as update_rule, k.delete_rule as delete_rule, "
+	       "k.fk_name as fk_name, k.pk_name as pk_name, "
+	       "k.deferrability as deferrability from schemas s, tables t, "
+	       "columns c where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
 	if (szPKSchemaName != NULL && nPKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " AND S1.NAME = '%.*s'",
+		sprintf(query_end, " and s1.name = '%.*s'",
 			nPKSchemaNameLength, szPKSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -101,7 +101,7 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	if (szPKTableName != NULL && nPKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " AND T1.NAME = '%.*s'",
+		sprintf(query_end, " and t1.name = '%.*s'",
 			nPKTableNameLength, szPKTableName);
 		query_end += strlen(query_end);
 	}
@@ -109,7 +109,7 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	if (szFKSchemaName != NULL && nFKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " AND S2.NAME = '%.*s'",
+		sprintf(query_end, " and s2.name = '%.*s'",
 			nFKSchemaNameLength, szFKSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -117,7 +117,7 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	if (szFKTableName != NULL && nFKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " AND T2.NAME = '%.*s'",
+		sprintf(query_end, " and t2.name = '%.*s'",
 			nFKTableNameLength, szFKTableName);
 		query_end += strlen(query_end);
 	}
@@ -128,9 +128,9 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	/* add the ordering */
 	/* if szPKTableName != NULL, selection on primary key, order
 	   on FK output columns, else order on PK output columns */
-	sprintf(query_end, " ORDER BY %s.NAME, %s.NAME, KC.ORDINAL_POSITION",
-		szPKTableName != NULL ? "S2" : "S1",
-		szPKTableName != NULL ? "T2" : "T1");
+	sprintf(query_end, " order by %s.name, %s.name, kc.ordinal_position",
+		szPKTableName != NULL ? "s2" : "s1",
+		szPKTableName != NULL ? "t2" : "t1");
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */

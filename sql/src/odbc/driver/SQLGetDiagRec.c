@@ -151,7 +151,7 @@ SQLGetDiagRec(SQLSMALLINT handleType,	/* must contain a valid type */
 	      SQLSMALLINT *textLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRec\n");
+	ODBCLOG("SQLGetDiagRec %d %d\n", handleType, recNumber);
 #endif
 
 	return SQLGetDiagRec_(handleType, handle, recNumber, sqlState,

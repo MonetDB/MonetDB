@@ -98,6 +98,7 @@ static UWORD FuncImplemented[] = {
 	SQL_API_SQLTRANSACT,
 };
 #define NFUNCIMPLEMENTED (sizeof(FuncImplemented)/sizeof(FuncImplemented[0]))
+
 /* this table is a bit map compatible with
    SQL_API_ODBC3_ALL_FUNCTIONS, to be initialized from the table
    above */

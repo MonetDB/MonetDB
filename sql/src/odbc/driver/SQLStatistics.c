@@ -104,34 +104,34 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 
 	/* TODO: finish the SQL query */
 	strcpy(query_end,
-	       "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, "
-	       "T.NAME AS TABLE_NAME, 1 AS NON_UNIQUE, "
-	       "NULL AS INDEX_QUALIFIER, NULL AS INDEX_NAME, 0 AS TYPE, "
-	       "NULL AS ORDINAL_POSITION, C.COLUMN_NAME AS COLUMN_NAME, "
-	       "'A' AS ASC_OR_DESC, NULL AS CARDINALITY, NULL AS PAGES, "
-	       "NULL AS FILTER_CONDITION FROM SCHEMAS S, TABLES T, COLUMNS C "
-	       "WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID AND "
-	       "T.ID = K.TABLE_ID");
+	       "select '' as table_cat, s.name as table_schem, "
+	       "t.name as table_name, 1 as non_unique, "
+	       "null as index_qualifier, null as index_name, 0 as type, "
+	       "null as ordinal_position, c.name as column_name, "
+	       "'a' as asc_or_desc, null as cardinality, null as pages, "
+	       "null as filter_condition from schemas s, tables t, columns c "
+	       "where s.id = t.schema_id and t.id = c.table_id and "
+	       "t.id = k.table_id");
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
 	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " AND T.TABLE_NAME = '%.*s'",
+	sprintf(query_end, " and t.name = '%.*s'",
 		nTableNameLength, szTableName);
 	query_end += strlen(query_end);
 
 	if (szSchemaName != NULL) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " AND S.NAME = '%.*s'",
+		sprintf(query_end, " and s.name = '%.*s'",
 			nSchemaNameLength, szSchemaName);
 		query_end += strlen(query_end);
 	}
 
 	/* add the ordering */
 	strcpy(query_end,
-	       " ORDER BY NON_UNIQUE, TYPE, INDEX_QUALLIFIER, INDEX_NAME, "
-	       "ORDINAL_POSITION");
+	       " order by non_unique, type, index_quallifier, index_name, "
+	       "ordinal_position");
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */

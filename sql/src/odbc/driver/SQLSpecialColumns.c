@@ -126,16 +126,16 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		/* Note: SCOPE is SQL_SCOPE_TRANSACTION is 1 */
 		/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO is 1 */
 		strcpy(query_end,
-		       "SELECT 1 AS SCOPE, C.COLUMN_NAME AS COLUMN_NAME, "
-		       "C.DATA_TYPE AS DATA_TYPE, C.TYPE_NAME AS TYPE_NAME, "
-		       "C.COLUMN_SIZE AS COLUMN_SIZE, "
-		       "C.BUFFER_LENGTH AS BUFFER_LENGTH, "
-		       "C.DECIMAL_DIGITS AS DECIMAL_DIGITS, "
-		       "1 AS PSEUDO_COLUMN FROM SCHEMAS S, TABLES T, "
-		       "COLUMNS C, KEYS K, KEYCOLUMNS KC "
-		       "WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID AND "
-		       "T.ID = K.TABLE_ID AND C.ID = KC.COLUMN_ID AND "
-		       "KC.KEY_ID = K.KEY_ID AND K.IS_PRIMARY = 1");
+		       "select 1 as scope, c.name as column_name, "
+		       "c.type as data_type, c.type_name as type_name, "
+		       "c.column_size as column_size, "
+		       "c.buffer_length as buffer_length, "
+		       "c.decimal_digits as decimal_digits, "
+		       "1 as pseudo_column from schemas s, tables t, "
+		       "columns c, keys k, keycolumns kc "
+		       "where s.id = t.schema_id and t.id = c.table_id and "
+		       "t.id = k.table_id and c.id = kc.'column' and "
+		       "kc.id = k.id" /*" and k.is_primary = 1"*/);
 		query_end += strlen(query_end);
 		/* TODO: improve the SQL to get the correct result:
 		   - only one set of columns should be returned, also when
@@ -150,21 +150,21 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 
 		/* add the selection condition */
 		/* search pattern is not allowed for table name so use = and not LIKE */
-		sprintf(query_end, " AND T.TABLE_NAME = '%.*s'",
+		sprintf(query_end, " and t.name = '%.*s'",
 			nTableNameLength, szTableName);
 		query_end += strlen(query_end);
 
 		if (szSchemaName != NULL && nSchemaNameLength > 0) {
 			/* filtering requested on schema name */
 			/* search pattern is not allowed so use = and not LIKE */
-			sprintf(query_end, " AND S.NAME = '%.*s'",
+			sprintf(query_end, " and s.name = '%.*s'",
 				nSchemaNameLength, szSchemaName);
 			query_end += strlen(query_end);
 		}
 
 		/* add an extra selection when SQL_NO_NULLS is requested */
 		if (nNullable == SQL_NO_NULLS) {
-			strcpy(query_end, " AND C.IS_NULLABLE = 0");
+			strcpy(query_end, " and c.is_nullable = 0");
 			query_end += strlen(query_end);
 		}
 
@@ -173,13 +173,13 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		assert(nIdentifierType == SQL_ROWVER);
 		/* The backend does not have such info available */
 		/* create just a query which results in zero rows */
-		/* Note: PSEUDO_COLUMN is SQL_PC_UNKNOWN is 0 */
+		/* Note: pseudo_column is sql_pc_unknown is 0 */
 		strcpy(query_end,
-		       "SELECT NULL AS SCOPE, '' AS COLUMN_NAME, "
-		       "1 AS DATA_TYPE, 'CHAR' AS TYPE_NAME, "
-		       "1 AS COLUMN_SIZE, 1 AS BUFFER_LENGTH, "
-		       "0 AS DECIMAL_DIGITS, 0 AS PSEUDO_COLUMN "
-		       "FROM SCHEMAS S WHERE 0 = 1");
+		       "select null as scope, '' as column_name, "
+		       "1 as data_type, 'char' as type_name, "
+		       "1 as column_size, 1 as buffer_length, "
+		       "0 as decimal_digits, 0 as pseudo_column "
+		       "from schemas s where 0 = 1");
 		query_end += strlen(query_end);
 	}
 

@@ -69,27 +69,27 @@ SQLTables(SQLHSTMT hStmt,
 	    strcmp((char*)szCatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
 		/* Note: Catalogs are not supported so the result set will be empty. */
-		query = strdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, "
-			       "'' AS TABLE_NAME, '' AS TABLE_TYPE, "
-			       "'' AS REMARKS FROM SCHEMAS WHERE 0 = 1");
+		query = strdup("select '' as table_cat, '' as table_schem, "
+			       "'' as table_name, '' as table_type, "
+			       "'' as remarks from schemas where 0 = 1");
 	} else if (nCatalogNameLength == 0 && nTableNameLength == 0 &&
 		   szSchemaName && 
 		   strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
-		query = strdup("SELECT '' AS TABLE_CAT, NAME AS TABLE_SCHEM, "
-			       "'' AS TABLE_NAME, '' AS TABLE_TYPE, "
-			       "'' AS REMARKS FROM SCHEMAS ORDER BY NAME");
+		query = strdup("select '' as table_cat, name as table_schem, "
+			       "'' as table_name, '' as table_type, "
+			       "'' as remarks from schemas order by name");
 	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 &&
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
-		query = strdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, "
-			       "'' AS TABLE_NAME, "
-			       "DISTINCT CASE T.TYPE WHEN 1 THEN 'TABLE' "
-			       "WHEN 0 THEN 'SYSTEM_TABLE' WHEN 2 THEN 'VIEW' "
-			       "WHEN 3 THEN 'LOCAL TEMPORARY TABLE' "
-			       "ELSE 'INTERNAL TYPE' END AS TABLE_TYPE, "
-			       "'' AS REMARKS FROM TABLES ORDER BY TYPE");
+		query = strdup("select '' as table_cat, '' as table_schem, "
+			       "'' as table_name, "
+			       "distinct case t.type when 1 then 'TABLE' "
+			       "when 0 then 'SYSTEM_TABLE' when 2 then 'VIEW' "
+			       "when 3 then 'LOCAL TEMPORARY TABLE' "
+			       "else 'INTERNAL TYPE' end as table_type, "
+			       "'' as remarks from tables order by type");
 		/* TODO: UNION it with all supported table types */
 	} else {
 		/* no special case argument values */
@@ -102,14 +102,14 @@ SQLTables(SQLHSTMT hStmt,
 		query_end = query;
 
 		sprintf(query_end,
-			"SELECT '%.*s' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, "
-			"T.NAME AS TABLE_NAME, "
-			"CASE T.TYPE WHEN 0 THEN 'TABLE' "
-			"WHEN 1 THEN 'SYSTEM_TABLE' WHEN 2 THEN 'VIEW' "
-			"WHEN 3 THEN 'LOCAL TEMPORARY TABLE' "
-			"ELSE 'INTERNAL TABLE TYPE' END AS TABLE_TYPE, "
-			"'' AS REMARKS FROM SCHEMAS S, TABLES T "
-			"WHERE S.ID = T.SCHEMA_ID",
+			"select '%.*s' as table_cat, s.name as table_schem, "
+			"t.name as table_name, "
+			"case t.type when 0 then 'TABLE' "
+			"when 1 then 'SYSTEM_TABLE' when 2 then 'VIEW' "
+			"when 3 then 'LOCAL TEMPORARY TABLE' "
+			"else 'INTERNAL TABLE TYPE' end as table_type, "
+			"'' as remarks from schemas s, tables t "
+			"where s.id = t.schema_id",
 			nCatalogNameLength, szCatalogName);
 		query_end += strlen(query_end);
 
@@ -127,10 +127,10 @@ SQLTables(SQLHSTMT hStmt,
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped. Check it
 			   and maybe convert it. */
-			sprintf(query_end, " AND S.NAME %s '%.*s'",
+			sprintf(query_end, " and s.name %s '%.*s'",
 				memchr(szSchemaName, '%', nSchemaNameLength) ||
 				memchr(szSchemaName, '_', nSchemaNameLength) ?
-				"LIKE" : "=",
+				"like" : "=",
 				nSchemaNameLength, szSchemaName);
 			query_end += strlen(query_end);
 		}
@@ -140,10 +140,10 @@ SQLTables(SQLHSTMT hStmt,
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped.  Check
 			   it and may be convert it. */
-			sprintf(query_end, " AND T.NAME %s '%.*s'",
+			sprintf(query_end, " and t.name %s '%.*s'",
 				memchr(szTableName, '%', nTableNameLength) ||
 				memchr(szTableName, '_', nTableNameLength) ?
-				"LIKE" : "=",
+				"like" : "=",
 				nTableNameLength, szTableName);
 			query_end += strlen(query_end);
 		}
@@ -168,7 +168,7 @@ SQLTables(SQLHSTMT hStmt,
 		}
 
 		/* add the ordering */
-		strcpy(query_end, " ORDER BY S.NAME, T.NAME, T.TYPE");
+		strcpy(query_end, " order by s.name, t.name, t.type");
 	}
 
 	/* query the MonetDb data dictionary tables */

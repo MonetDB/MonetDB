@@ -175,26 +175,26 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	 *      SMALLINT       INTERVAL_PRECISION 
 	 */
 	strcpy(query,
-	       "SELECT SQLNAME AS TYPE_NAME, "
-	       "SYSTEMNAME AS DATA_TYPE, "
-	       "DIGITS AS COLUMN_SIZE, "
-	       "'' /*LITERAL_PREFIX*/ AS LITERAL_PREFIX, "
-	       "'' /*LITERAL_SUFFIX*/ AS LITERAL_SUFFIX, "
-	       "'' /*CREATE_PARAMS*/ AS CREATE_PARAMS, "
-	       "1 /*SQL_NULLABLE*/ AS NULLABLE, "
-	       "0 /*CASE_SENSITIVE*/ AS CASE_SENSITIVE, "
-	       "0 /*SEARCHABLE*/ AS SEARCHABLE, "
-	       "0 /*UNSIGNED*/ AS UNSIGNED_ATTRIBUTE, "
-	       "SCALE /*FIXED_PREC_SCALE*/ AS FIXED_PREC_SCALE, "
-	       "0 /*AUTO_UNIQUE_VALE*/ AS AUTO_UNIQUE_VALE, "
-	       "SYSTEMNAME /*MONET_TYPE_NAME*/ AS LOCAL_TYPE_NAME, "
-	       "0 /*MIN_SCALE*/ AS MINIMUM_SCALE, "
-	       "SCALE /*MAX_SCALE*/ AS MAXIMUM_SCALE, "
-	       "0 /*SQL_TYPE*/ AS SQL_DATA_TYPE, "
-	       "NULL AS SQL_DATETIME_SUB, " /* parser complains about NULL */
-	       "10 AS NUM_PREC_RADIX, "
-	       "0 /*INTERVAL_PREC*/ AS INTERVAL_PRECISION "
-	       "FROM TYPES");
+	       "select sqlname as type_name, "
+	       "systemname as data_type, "
+	       "digits as column_size, "
+	       "'' /*literal_prefix*/ as literal_prefix, "
+	       "'' /*literal_suffix*/ as literal_suffix, "
+	       "'' /*create_params*/ as create_params, "
+	       "1 /*sql_nullable*/ as nullable, "
+	       "0 /*case_sensitive*/ as case_sensitive, "
+	       "0 /*searchable*/ as searchable, "
+	       "0 /*unsigned*/ as unsigned_attribute, "
+	       "scale /*fixed_prec_scale*/ as fixed_prec_scale, "
+	       "0 /*auto_unique_vale*/ as auto_unique_vale, "
+	       "systemname /*monet_type_name*/ as local_type_name, "
+	       "0 /*min_scale*/ as minimum_scale, "
+	       "scale /*max_scale*/ as maximum_scale, "
+	       "0 /*sql_type*/ as sql_data_type, "
+	       "null as sql_datetime_sub, " /* parser complains about NULL */
+	       "10 as num_prec_radix, "
+	       "0 /*interval_prec*/ as interval_precision "
+	       "from types");
 
 /* TODO: SEARCHABLE should return an int iso str. Add a CASE
    SEARCHABLE WHEN ... to convert str to correct int values */
@@ -205,11 +205,11 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 		   requested */
 		char *tmp = query + strlen(query);
 
-		snprintf(tmp, 30, " WHERE SQL_TYPE = %d", nSqlDataType);
+		snprintf(tmp, 30, " where sql_type = %d", nSqlDataType);
 	} else {
 		/* add the ordering (only needed when all types are
 		   selected) */
-		strcat(query, " ORDER BY SQL_TYPE");
+		strcat(query, " order by sql_type");
 	}
 
 	/* query the MonetDb data dictionary tables */
