@@ -156,48 +156,24 @@ illegal values, or type combinations involved, it gives
 up with an ILLEGALVALUE.
 
 @= valcheck
-	((lng) @1 < (lng) GDK_@2_min || (lng) @1 > (lng) GDK_@2_max) ? @2_nil : (@2) @1
-@= valconvert
-	switch (src_tpe) {
-	case TYPE_bit:
-		@1 = (@2) t->val.cval[0]; /* always fits */
-		break;
-	case TYPE_chr:
-		@1 = (@2) t->val.cval[0]; /* always fits */
-		break;
-	case TYPE_sht:
-		@1 = @:valcheck(t->val.shval,@2)@;
-		break;
-	case TYPE_bat:
-		@1 = @:valcheck(t->val.bval,@2)@;
-		break;
-	case TYPE_int:
-		@1 = @:valcheck(t->val.ival,@2)@;
-		break;
-	case TYPE_oid:
-		/* no need to compare to GDK_@2_min, since source
-		   value is unsigned (i.e. >= 0) and all GDK_*_min values
-		   are <= 0 (in fact, compilers may warn about the
-		   test) */
-		@1 = ((lng) t->val.oval > (lng) GDK_@2_max) ? @2_nil : (@2) t->val.oval;
-		break;
-	case TYPE_lng:
-		@1 = @:valcheck(t->val.lval,@2)@;
-		break;
-	case TYPE_flt:
-		@1 = ((dbl) t->val.fval < (dbl) GDK_@2_min || (dbl) t->val.fval > (dbl) GDK_@2_max) ? @2_nil : (@2) t->val.fval;
-		break;
-	case TYPE_dbl:
-		@1 = (t->val.dval < (dbl) GDK_@2_min || t->val.dval > (dbl) GDK_@2_max) ? @2_nil : (@2) t->val.dval;
-		break;
-	}
+	((@3) @1 < (@3) GDK_@2_min || (@3) @1 > (@3) GDK_@2_max) ? @2_nil : (@2) @1
+@= valcheck_r
+	/* when converting from oid, there's no need to compare to GDK_@2_min,
+	 * since source value is unsigned (i.e. >= 0) and all GDK_*_min values
+	 * are <= 0 (in fact, compilers may warn about the test) */
+	((@3) @1 > (@3) GDK_@2_max) ? @2_nil : (@2) @1
+@= valcheck_l
+	/* when converting to oid, there's no need to compare to GDK_@2_max
+	 * for those types, where we know that GDK_@2_max <= GDK_oid_max
+	 * (in fact, compilers may warn about the test) */
+	((@3) @1 < (@3) GDK_@2_min) ? @2_nil : (@2) @1
 @= valfconvert
 	/* dbl always fits; flt almost always fits */
 	switch (src_tpe) {
 	case TYPE_bit:
 	case TYPE_chr:
 		@1 = (@2) t->val.cval[0];
-		break;
+  		break;
 	case TYPE_sht:
 		@1 = (@2) t->val.shval;
 		break;
@@ -214,7 +190,7 @@ up with an ILLEGALVALUE.
 		@1 = (@2) t->val.fval;
 		break;
 	case TYPE_dbl:
-		/* only need to do range check on dbl for flt->dbl conversion */
+		/* only need to do range check on dbl for dbl->flt conversion */
 		if (t->val.dval < (dbl) GDK_@2_min || t->val.dval > (dbl) GDK_@2_max)
 			@1 = @2_nil;
 		else
@@ -305,6 +281,9 @@ ptr VALconvert(int typ, ValPtr t)
 				case TYPE_int:
 					t->val.cval[0] = (t->val.ival != 0);
 					break;
+				case TYPE_bat:
+					t->val.cval[0] = (t->val.bval != 0);
+					break;
 				case TYPE_oid:
 					t->val.cval[0] = (t->val.oval != 0);
 					break;
@@ -317,25 +296,152 @@ ptr VALconvert(int typ, ValPtr t)
 				case TYPE_dbl:
 					t->val.cval[0] = (t->val.dval != 0);
 					break;
-				case TYPE_bat:
-					t->val.cval[0] = (t->val.bval != 0);
-					break;
 				}
 				break;
 			case TYPE_chr:
-				@:valconvert(t->val.cval[0],chr)@;
+				switch (src_tpe) {
+				case TYPE_bit:
+				case TYPE_chr:
+					t->val.cval[0] = (chr) t->val.cval[0];
+					break;
+				case TYPE_sht:
+					t->val.cval[0] = @:valcheck(t->val.shval,chr,lng)@;
+					break;
+				case TYPE_int:
+					t->val.cval[0] = @:valcheck(t->val.ival,chr,lng)@;
+					break;
+				case TYPE_bat:
+					t->val.cval[0] = @:valcheck(t->val.bval,chr,lng)@;
+					break;
+				case TYPE_oid:
+					t->val.cval[0] = @:valcheck_r(t->val.oval,chr,lng)@;
+					break;
+				case TYPE_lng:
+					t->val.cval[0] = @:valcheck(t->val.lval,chr,lng)@;
+					break;
+				case TYPE_flt:
+					t->val.cval[0] = @:valcheck(t->val.fval,chr,dbl)@;
+					break;
+				case TYPE_dbl:
+					t->val.cval[0] = @:valcheck(t->val.dval,chr,dbl)@;
+					break;
+				}
 				break;
 			case TYPE_sht:
-				@:valconvert(t->val.shval,sht)@;
+				switch (src_tpe) {
+				case TYPE_bit:
+				case TYPE_chr:
+					t->val.shval = (sht) t->val.cval[0];
+					break;
+				case TYPE_sht:
+					t->val.shval = (sht) t->val.shval;
+					break;
+				case TYPE_int:
+					t->val.shval = @:valcheck(t->val.ival,sht,lng)@;
+					break;
+				case TYPE_bat:
+					t->val.shval = @:valcheck(t->val.bval,sht,lng)@;
+					break;
+				case TYPE_oid:
+					t->val.shval = @:valcheck_r(t->val.oval,sht,lng)@;
+					break;
+				case TYPE_lng:
+					t->val.shval = @:valcheck(t->val.lval,sht,lng)@;
+					break;
+				case TYPE_flt:
+					t->val.shval = @:valcheck(t->val.fval,sht,dbl)@;
+					break;
+				case TYPE_dbl:
+					t->val.shval = @:valcheck(t->val.dval,sht,dbl)@;
+					break;
+				}
 				break;
 			case TYPE_int:
-				@:valconvert(t->val.ival,int)@;
+				switch (src_tpe) {
+				case TYPE_bit:
+				case TYPE_chr:
+					t->val.ival = (int) t->val.cval[0];
+					break;
+				case TYPE_sht:
+					t->val.ival = (int) t->val.shval;
+					break;
+				case TYPE_int:
+					t->val.ival = (int) t->val.ival;
+					break;
+				case TYPE_bat:
+					t->val.ival = (int) t->val.bval;
+					break;
+				case TYPE_oid:
+					t->val.ival = @:valcheck_r(t->val.oval,int,lng)@;
+					break;
+				case TYPE_lng:
+					t->val.ival = @:valcheck(t->val.lval,int,lng)@;
+					break;
+				case TYPE_flt:
+					t->val.ival = @:valcheck(t->val.fval,int,dbl)@;
+					break;
+				case TYPE_dbl:
+					t->val.ival = @:valcheck(t->val.dval,int,dbl)@;
+					break;
+				}
 				break;
 			case TYPE_oid:
-				@:valconvert(t->val.oval,oid)@;
+				switch (src_tpe) {
+				case TYPE_bit:
+				case TYPE_chr:
+					t->val.oval = @:valcheck_l(t->val.cval[0],oid,lng)@;
+					break;
+				case TYPE_sht:
+					t->val.oval = @:valcheck_l(t->val.shval,oid,lng)@;
+					break;
+				case TYPE_int:
+					t->val.oval = @:valcheck_l(t->val.ival,oid,lng)@;
+					break;
+				case TYPE_bat:
+					t->val.oval = @:valcheck_l(t->val.bval,oid,lng)@;
+					break;
+				case TYPE_oid:
+					t->val.oval = (oid) t->val.oval;
+					break;
+				case TYPE_lng:
+					t->val.oval = @:valcheck(t->val.lval,oid,lng)@;
+					break;
+				case TYPE_flt:
+					t->val.oval = @:valcheck(t->val.fval,oid,dbl)@;
+					break;
+				case TYPE_dbl:
+					t->val.oval = @:valcheck(t->val.dval,oid,dbl)@;
+					break;
+				}
 				break;
 			case TYPE_lng:
-				@:valconvert(t->val.lval,lng)@;
+				switch (src_tpe) {
+				case TYPE_bit:
+				case TYPE_chr:
+					t->val.lval = (lng) t->val.cval[0];
+					break;
+				case TYPE_sht:
+					t->val.lval = (lng) t->val.shval;
+					break;
+				case TYPE_int:
+					t->val.lval = (lng) t->val.ival;
+					break;
+				case TYPE_bat:
+					t->val.lval = (lng) t->val.bval;
+					break;
+				case TYPE_oid:
+					t->val.lval = (lng) t->val.oval;
+					break;
+				case TYPE_lng:
+					t->val.lval = (lng) t->val.lval;
+					break;
+				case TYPE_flt:
+					t->val.lval = @:valcheck(t->val.fval,lng,dbl)@;
+					break;
+				case TYPE_dbl:
+					t->val.lval = @:valcheck(t->val.dval,lng,dbl)@;
+					break;
+				}
 				break;
 			case TYPE_flt:
 				@:valfconvert(t->val.fval,flt)@;
