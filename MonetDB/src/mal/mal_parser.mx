@@ -71,7 +71,7 @@ html
 #include "mal_client.h"
 #include "mal_linker.h"
 
-mal_export int parseMal(Client cntxt, int flag);
+mal_export int parseMal(Client cntxt);
 mal_export void debugParser(int i);
 
 #endif /* _MAL_PARSER_H */
@@ -415,23 +415,7 @@ int parseModule(Client cntxt)
 	if( (curPrg= findScope(cntxt->nspace,modname)) != NULL){
 		GDKerror("duplicate module\n");
 		cntxt->curprg = curPrg;
-	} else {
-		cntxt->nspace = fixateScope(cntxt->nspace, modname);
-@-
-The statements after the definitions are collected
-in a 'init' procedure. This procedure definition should be
-re-used to avoid overhead in procedure declaration for each individual
-instruction obtained from the used. Moreover, its symbol table
-should be retained to accomodate global variables and constants.
-@c
-		curPrg= newFunction(cntxt->nspace, GDKstrdup("init"));
-		curBlk = curPrg->def;
-		curInstr = getSignature(curPrg);
-		curInstr->modname= modname;
-		getVarType(curBlk,findVariable(curBlk,"init"))= TYPE_int;
-		staticTypeCheck(curInstr);
-		cntxt->mainprg =insertSymbol(cntxt->nspace,curPrg);
-	}
+	} else	cntxt->nspace = fixateScope(cntxt->nspace, modname);
 	skipToEnd(cntxt);
 	return 1;
 }
@@ -454,13 +438,15 @@ int parseImport(Client cntxt)
 
 	@:parsePath@
 
-	malImport(modname, cntxt->listing,0);
+	malImport(modname, cntxt->listing);
 	skipToEnd(cntxt);
 	return 1;
 }
 @- Definition
 The definition statements share a lot in common, which calls for factoring
-out the code in a few text macros.
+out the code in a few text macros. Upon encountering a definition, we
+initialize a MAL instruction container. We should also check for
+non-terminated definitions.
 @T
 defineStmt : FUNCTION
 	: COMMAND functionHdr [COMMENT string] ';'
@@ -479,9 +465,21 @@ defineStmt : FUNCTION
 		return (MalBlkPtr)parseError(cntxt,"'(' expected\n");
 	}
 	skipBlanc2(cntxt);
-	cntxt->curprg = curPrg = newFunction(cntxt->nspace,fnme);
+	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk,0);
+
+	/* re-assign MAL block to new function */
+	GDKfree(curPrg->name);
+	curPrg->name = GDKstrdup(fnme);
+	GDKfree(curInstr->fcnname);
+	curInstr->token= FUNCTIONsymbol;
+	curInstr->fcnname = fnme;
+	GDKfree(getVarName(curBlk,0));
+	getVarName(curBlk,0) = GDKstrdup(fnme);
+	getVarType(curBlk,0) = malAnyType;
+
+
 	/* get parameters */
 	ch= currChar(cntxt);
 	while( ch !=')' && ch && !NL(ch)){
@@ -654,15 +652,11 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	int type;
 
 	@:fcnHeader@
-	
 	getInstrPtr(curBlk,0)->token= kind;
 	curPrg->kind = kind;
-	chkFlowOfControl(curPrg);
-	insertSymbol(cntxt->nspace,curPrg);
-
+	closeClientPrg(cntxt, FALSE);
 	@:externalFcn@
 	@:helpInfo@
-	initStack(curBlk);
 	if(curBlk && cntxt->listing) 
 		printFunction(stdout, curBlk);
 	return curBlk;
@@ -680,9 +674,6 @@ MalBlkPtr parseFunction(Client cntxt){
 	if( ! keyword(cntxt,"function",8) ) return 0;
 	@:fcnHeader@
 	@:helpInfo@
-	initStack(curBlk);
-	insertSymbol(cntxt->nspace,curPrg); 
-	staticTypeCheck(curInstr);
 	return curBlk;
 }
 
@@ -690,8 +681,10 @@ MalBlkPtr parseFunction(Client cntxt){
 Commands, functions, rulers, barriers and catch blocks all end
 with a labeled end-statement. The routine below checks for
 misalignment of the closing statements.
+Any instruction parsed after the function block is considered an
+error.
 @c
-int parseEnd(Client cntxt, int *block)
+int parseEnd(Client cntxt)
 {	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
@@ -705,20 +698,18 @@ int parseEnd(Client cntxt, int *block)
 		if ( keyword(cntxt,"function",8)){
 			if( curPrg->kind != FUNCTIONsymbol) 
 				parseError(cntxt,"'end function' expected\n");
-			curInstr = newInstruction(curBlk,ENDDEFsymbol);
-			pushInstruction(curBlk,curInstr);
-			chkFlowOfControl(curPrg);
-			*block = FALSE;
+                        curInstr = newInstruction(curBlk, ENDDEFsymbol);
+                        pushInstruction(curBlk,curInstr);
+			closeClientPrg(cntxt,TRUE);
 			showit= TRUE;
 		} else
 		if ( keyword(cntxt,"handler",5)){
 			if( curPrg->kind != HANDLERsymbol) 
 				parseError(cntxt,"'end agent' expected\n");
-			curInstr = newInstruction(curBlk,ENDDEFsymbol);
-			pushInstruction(curBlk,curInstr);
-			chkFlowOfControl(curPrg);
-			*block = FALSE;
-		} else {
+                        curInstr = newInstruction(curBlk, ENDDEFsymbol);
+                        pushInstruction(curBlk,curInstr);
+			closeClientPrg(cntxt,TRUE);
+		} else{
 			i = findVariableLength(curBlk,cntxt->nxt,l);
 			if( i<0) {
 				v= idCopy(cntxt,l);
@@ -954,31 +945,29 @@ part3:
 	skipToEnd(cntxt);
 	pushInstruction(curBlk,curInstr);
 }
-int parseMal(Client cntxt, int flag){
-	int block= FALSE, kind=0;
-	Symbol curPrg= cntxt->mainprg;
+int parseMal(Client cntxt){
+	int kind=0, i;
+	Symbol curPrg= cntxt->curprg;
+	InstrPtr curInstr;
 
 	echoInput(cntxt);
 	/* here the work takes place */
 	skipBlanc(cntxt);
 	while( currChar(cntxt)){
-		if( block== FALSE) cntxt->curprg= cntxt->mainprg;
 		switch( currChar(cntxt)){
 		case '\n':
 		case '\r':
 		case '\f': nextChar(cntxt);
 			   echoInput(cntxt);
-			   break;
+			   continue;
 		case '\t':
 		case ' ': nextChar(cntxt);
-		case  0 : break;
-		case '#': skipComment(cntxt); 
-			  break;
+		case  0 : continue;
+		case '#': skipComment(cntxt);
+			  continue;
 		case 'A': case 'a':
 			  if( keyword(cntxt,"atom",4) &&
 			      parseModule(cntxt)) break;
-			  if( keyword(cntxt,"agent",5)) 
-			  { skipToEnd(cntxt);break; }
 			  goto allLeft;
 		case 'b': case 'B':
 			  if( keyword(cntxt,"barrier",7)) 
@@ -987,16 +976,19 @@ int parseMal(Client cntxt, int flag){
 		case 'C': case 'c': 
 			  if( keyword(cntxt,"command",7) ) {
 				parseCommandPattern(cntxt, COMMANDsymbol);
-				break;
+				continue;
 			  }
 			  if( parseCATCH(cntxt)) break;
 			  goto allLeft;
 		case 'E': case 'e': 
-			  if( parseEnd(cntxt,&block)) break;
+			  if( parseEnd(cntxt)) break;
 			  goto allLeft;
 		case 'F': case 'f': 
-			  if( parseFunction(cntxt)) { block=TRUE; break;}
+			  if( parseFunction(cntxt)) break;
 			  goto allLeft;
+		case 'H': case 'h':
+			  if( keyword(cntxt,"handler",5)) 
+			  { skipToEnd(cntxt); break; }
 		case 'L':
 		case 'l': if( parseLEAVE(cntxt)) break;
 			  goto allLeft;
@@ -1006,7 +998,7 @@ int parseMal(Client cntxt, int flag){
 		case 'P': case 'p': 
 			  if( keyword(cntxt,"pattern",7) ) {
 				parseCommandPattern(cntxt, PATTERNsymbol);
-				break;
+				continue;
 			  }
 			  goto allLeft;
 		case 'R': case 'r': 
@@ -1015,18 +1007,16 @@ int parseMal(Client cntxt, int flag){
 			  if( parseRETURN(cntxt)) break;
 			  if( keyword(cntxt,"rule",4) ) {
 				parseCommandPattern(cntxt, RULEsymbol);
-				block= TRUE;
 				break;
 			  }
 
 			  goto allLeft;
-		case 'u': if( parseImport(cntxt)) break;
+		case 'u': if( parseImport(cntxt)) continue;
 		default: allLeft:
 			parseAssign(cntxt,kind);
 			kind =0;
 		}
 	}
-	if( flag) chkFlowOfControl(curPrg);
 	return curPrg->def->errors;
 }
 @- Error display

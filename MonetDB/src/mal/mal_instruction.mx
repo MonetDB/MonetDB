@@ -436,12 +436,9 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 	if( n>=0){
 		if( type != malAnyType){
 		    if( getVarType(mb,n) != type  &&
-		        getVarType(mb,n) != malAnyType){
-			char buf[1024];
-			sprintf(buf,"'%s' type mismatch %d vs %d\n",
+		        getVarType(mb,n) != malAnyType)
+			GDKerror("'%s' type mismatch %d vs %d\n",
 				name, getVarType(mb,n),type);
-			GDKerror(buf);
-		    }
 		}
 		/* GDKfree(name); not correct, check use!!!*/
 		return n;
@@ -463,6 +460,7 @@ int newTmpVariable(MalBlkPtr mb, malType type){
 void freeVariable(MalBlkPtr mb, int varid){
 	VarRecord v;
 	v= mb->var[varid];
+	if( v.name ==0) return;
 	if( v.name) GDKfree(v.name); v.name = 0;
 	if( v.value) GDKfree(v.value); v.value= 0;
 	VALclear(&v.cstvalue);
@@ -503,7 +501,6 @@ int newConstant(MalBlkPtr mb, malType type, str val){
 	int i,k,idx;
 	str s;
 	ValPtr vr;
-	char buf[1024];
 
 	k= mb->vtop - MAL_VAR_WINDOW;
 	if( k<0) k=0;
@@ -552,13 +549,11 @@ to make the user aware of this situation.
 	case TYPE_sht: {long l= strtol(val,NULL,0);
 			if( l>255 || l<0) {
 				if( l<2^31 && l> -2^31){
-				sprintf(buf,"WARNING:newConstant:sht coerced to int\n");
-				GDKerror(buf);
+				GDKerror("WARNING:newConstant:sht coerced to int\n");
 				vr->vtype= TYPE_int;
 				vr->val.ival = l;
 				} else{
-				sprintf(buf,"WARNING:newConstant:sht coerced to lng\n");
-				GDKerror(buf);
+				GDKerror("WARNING:newConstant:sht coerced to lng\n");
 				vr->vtype= TYPE_lng;
 				vr->val.lval = l;
 				}
@@ -569,8 +564,7 @@ to make the user aware of this situation.
 			break; }
 	case TYPE_int: {long l= strtol(val,NULL,0);
 			if( l>= (2<<16) || l <= (-1<<16)){
-			sprintf(buf,"WARNING:newConstant:int coerced to lng\n");
-			GDKerror(buf);
+			GDKerror("WARNING:newConstant:int coerced to lng\n");
 				vr->vtype= TYPE_lng;
 				vr->val.lval= l;
 			} else {
@@ -605,8 +599,7 @@ to make the user aware of this situation.
 			break;
 	default:{ 
 		s= malTypeName(type);
-		sprintf(buf,"newConstant:unknown constant type %s\n", s);
-		GDKerror(buf);
+		GDKerror("newConstant:unknown constant type %s\n", s);
 		GDKfree(s);
 		}
 	}
@@ -660,25 +653,6 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p){
 	int i;
 	InstrPtr prev;
 
-	if(mb->stop > 0 ){
-	prev = getInstrPtr(mb,mb->stop-1);
-	if(prev->token == ENDDEFsymbol && p!=prev){
-		printFunction(stdout,mb);
-		GDKerror("SYNTAX ERROR:%s.%s text after definition ignored\n",
-			getModName(mb), getFcnName(mb));
-		return;
-	} }
-	if( p->token == FUNCTIONsymbol ||
-	    p->token == COMMANDsymbol ||
-	    p->token == PATTERNsymbol ||
-	    p->token == HANDLERsymbol ){
-		if( mb->stop != 0){
-		printInstruction(stdout,mb,p);
-		GDKerror("SYNTAX ERROR: %s.%s statement header misplaced\n",
-			getModName(mb), getFcnName(mb));
-			return;
-		}
-	}
 	i= mb->stop;
 	if( i+1 >= mb->ssize){
 		int *newblk= (int *) GDKmalloc( (mb->ssize + MAXSTMTS)
@@ -696,7 +670,6 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p){
 	p->pc= i;
 	mb->stmt[i]= ((char *) p)-((char*)mb->code);
 	mb->stop++;
-	(void) staticTypeCheck(p);
 }
 @-
 The internal representation should be such that it becomes
@@ -837,6 +810,9 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 		case ENDDEFsymbol:
 			switch(getInstrPtr(mb,0)->token){
 			case FUNCTIONsymbol: nme = "function"; break;
+			case COMMANDsymbol: nme = "command"; break;
+			case PATTERNsymbol: nme = "pattern"; break;
+			case HANDLERsymbol: nme = "handler"; break;
 			case RULEsymbol: nme = "ruler"; break;
 			default: nme = "unknown";
 			}

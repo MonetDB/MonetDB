@@ -112,12 +112,8 @@ void *getAddress(str fcnname){
         }
         adr= dlsym(dl,fcnname);
 	msg= dlerror();
-	if(noDlopen && adr == NULL){
-		char buf[1024];
-		sprintf(buf,"address of function %s not found\n",
-			fcnname);
-		GDKerror(buf);
-	}
+	if(noDlopen && adr == NULL)
+		GDKerror("address of function %s not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
 	if( adr != NULL)
         printf("addres of %s %o %s\n", fcnname,(int) adr, (msg?msg:""));
@@ -139,10 +135,12 @@ before the loader returns. Likewise the routine _fini is called just
 before the module is unloaded.
 
 A module loading conflict emerges if a function is redefined.
-A duplicate load is simply ignored.
+A duplicate load is simply ignored by keeping track of modules
+already loaded.
 @c
 #define LIBPATH "lib/Monet"
 
+static str modulesLoaded[128];
 
 void *loadModuleLibrary(str modname){
 	char buf[MAXPATHLEN];
@@ -150,8 +148,11 @@ void *loadModuleLibrary(str modname){
 	str path ="";
 	str library=0;
 	str msg= NULL;
+	int i;
 
-	/* STATIC load only !if( isPreloaded(modname)) return;*/
+	for(i=0;modulesLoaded[i] && i<128;i++)
+	if( strcmp(modulesLoaded[i],modname)==0)
+		return;
 	if( (library=strrchr(modname,DIR_SEP))  != NULL){
 		*library=0;
 		library++;
@@ -164,41 +165,35 @@ void *loadModuleLibrary(str modname){
 	if( modname != NULL && modname[0]!='/') {
 		sprintf(buf,"%s/lib/lib_%s.so", GDKdirStr, library);
 		SLASH_2_DIR_SEP(buf);
-#ifdef DEBUG_MAL_LINKER
-	printf("loadModuleLibrary:%s\n",buf);
-#endif
 		if( access(buf,R_OK)== 0) {
 			handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 			msg =dlerror();
 			if(handle!= NULL && msg != NULL){
-				sprintf(buf,"loadModuleLibrary(1):%s\n",msg);
-				GDKerror(buf);
+				GDKerror("loadModuleLibrary(1):%s\n",msg);
 				return NULL;
 			}
-#ifdef DEBUG_MAL_LINKER
-			printf("loadModuleLibrary:succeeded\n");
-#endif
 			return handle;
 		}
 	} 
-#ifdef DEBUG_MAL_LINKER
-	printf("try distribution\n");
-#endif
 	sprintf(buf,"%s/%s/lib_%s.so", GDKdistrStr, LIBPATH, library);
 	SLASH_2_DIR_SEP(buf);
 	if( access(buf,R_OK) == 0) {
 		handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 		msg= dlerror();
 		if( handle==NULL && msg != NULL){
-			printf("load:%s:%s\n",buf,handle==NULL?"failed":"succeeded");
-			sprintf(buf,"loadModuleLibrary(2):%s\n", msg);
-			GDKerror(buf);
+			GDKerror("loadModuleLibrary(2):%s\n", msg);
 			return NULL;
 		}
 	}
 #ifdef DEBUG_MAL_LINKER
 	printf("load:%s:%s\n",buf,handle==NULL?"failed":"succeeded");
 #endif
+        MT_set_lock(mal_contextLock, "loadModule");
+	for(i=0;modulesLoaded[i] && i<127;i++);
+	if( i==128)
+		GDKerror("loadModule:too many modules loaded\n");
+	else	modulesLoaded[i]= GDKstrdup(modname);
+        MT_unset_lock(mal_contextLock, "loadModule");
 	return handle;
 }
 @+ Static pre-loading
@@ -242,7 +237,7 @@ void initLibraries() {
 /*
 	for(i=0;preloaded[i];i++) {
 		printf("loading %s\n",preloaded[i]);
-		malImport(preloaded[i],0,1);
+		runScript(getClient(),preloaded[i],0);
 	}
 */
 }

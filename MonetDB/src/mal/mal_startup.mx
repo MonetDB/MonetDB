@@ -51,10 +51,12 @@ html
 #define SRVORIGIN "share/Monet/startup.mal"
 
 mal_export int malStartupAdmin(int listing);
-mal_export void         serveClient     (Client c);
-mal_export void         closeClientMain(Client cntxt);
-mal_export void         setClientMain(Client cntxt);
-mal_export void         scheduleClient(str user, int socket);
+mal_export void serveClient(void *dummy);
+mal_export void resetClientPrg(Client cntxt);
+mal_export void closeClientPrg(Client cntxt, int flag);
+mal_export void chkClientPrg(Client cntxt,int flag);
+mal_export void scheduleClient(str user, int socket);
+mal_export void runScript(Client c, str fname, int listing);
 #endif /*  _MAL_STARTUP_H*/
 @-
 The startup script for databases recides in the administrator's
@@ -80,7 +82,7 @@ void startupPrelude(Client c, str fnme1, str fnme2)
 		}
 	} 
 	fclose(fd);
-	malImport(buf,0,0);
+	runScript(c,buf,0);
 }
 
 int malStartupAdmin(int listing){
@@ -91,42 +93,110 @@ int malStartupAdmin(int listing){
         c->itrace =0;
 	c->nspace= newScope(mal_scope, GDKstrdup("Admin"));
 	startupPrelude(c,SRVINIT,SRVORIGIN);
-	mal_scope = c->nspace;
+	mal_scope = c->nspace->outer;
         c->itrace = oldtrace;
+	/* showScopeTrail(stdout,c->nspace);*/
 	return 1;
 }
 @+ Client main routine
-Every client has a 'main' function which will containt the statements
-outside a definition block.
+Every client has a 'main' function to collect the statements.
+Once the END instruction has been found, it is added to the
+symbol table and a fresh container is being constructed.
+Note, this scheme makes testing for recursive function calls a
+little more difficult. Therefore, type checking should be performed
+afterwards.
+
+In interactive mode,  the closing statement is never reached.
 The 'main' procedure is typically cleaned between successive external
-messages except for the variables.
+messages except for its variables, which are considerd global.
 @c
 
-void setClientMain(Client cntxt){
-        InstrPtr curInstr;
-        MalBlkPtr curBlk;
-        Symbol curPrg;
+void resetClientPrg(Client cntxt){
+        InstrPtr p;
+        MalBlkPtr mb;
 
-        if( cntxt->mainprg) {
-/* printf("setClientMain error\n");*/
-		return;
-	}
-        cntxt->mainprg = newFunction(cntxt->nspace, GDKstrdup("main"));
-        curBlk = cntxt->mainprg->def;
-        curInstr = getSignature(cntxt->mainprg);
-        curInstr->modname= GDKstrdup(cntxt->nspace->name);
-        getVarType(curBlk,findVariable(curBlk,"main"))= TYPE_int;
-	initStack(curBlk);
-        staticTypeCheck(curInstr);
-        insertSymbol(cntxt->nspace,cntxt->mainprg);
+        cntxt->curprg = newFunction(cntxt->nspace, GDKstrdup("main"));
+        mb = cntxt->curprg->def;
+        p = getSignature(cntxt->curprg);
+        p->modname= GDKstrdup(cntxt->nspace->name);
+        getVarType(mb,findVariable(mb,"main"))= TYPE_int;
+	initSymbolTable(mb);
 }
-void closeClientMain(Client cntxt){
-        InstrPtr curInstr;
-        MalBlkPtr curBlk;
+void closeClientPrg(Client cntxt, int flag){
+        InstrPtr p;
+        MalBlkPtr mb;
+	int i;
 
-	curBlk = cntxt->mainprg->def;
-	curInstr = newInstruction(curBlk, ENDDEFsymbol);
-	pushInstruction(curBlk,curInstr);
+	mb = cntxt->curprg->def;
+	i = mb->stop-1;
+	/* ignore empty MAL function blocks */
+	p = getInstrPtr(mb,0);
+	if( !(i==0 && p->token == FUNCTIONsymbol)){
+		insertSymbol(cntxt->nspace,cntxt->curprg);
+	} else return;
+	if( flag){
+		p = getInstrPtr(mb,i);
+		if( p->token != ENDDEFsymbol){
+			p = newInstruction(mb, ENDDEFsymbol);
+			pushInstruction(mb,p);
+		}
+	}
+	chkClientPrg(cntxt,flag);
+	resetClientPrg(cntxt);
+}
+@-
+After the parser finishes, we have to look for semantic errors,
+such as flow of control problems and possible typeing conflicts.
+The nesting of BARRIER and CATCH statements with their associated
+flow of control primitives LEAVE and RETRY should form a valid
+hierarchy. Failure to comply is considered a structural error
+and leads to flagging the function as erroneous.
+
+Also check general conformaty of the ML block structure.
+It should start with a signature and finish with and ENDDEFsymbol
+@c
+void chkClientPrg(Client cntxt,int flag)
+{
+        InstrPtr p;
+        MalBlkPtr mb;
+	int i, signature= FALSE;
+
+        mb = cntxt->curprg->def;
+	for(i=0;i<mb->stop;i++) {
+		p= getInstrPtr(mb,i);
+		if(p== NULL) continue;
+		typeChecker(p, TYPE_FIXED);
+		switch(p->token){
+		case FUNCTIONsymbol: case COMMANDsymbol:
+		case PATTERNsymbol: case HANDLERsymbol:
+			if( i) {
+			str msg=instruction2str(mb,p);
+			GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
+			GDKfree(msg);
+			} else signature = TRUE;
+			break;
+		case ENDsymbol:
+			chkEnd(mb,p);
+			break;
+		case RAISEsymbol:
+			chkRaise(mb,p);
+			break;
+		case CATCHsymbol:
+			chkCatch(mb,p);
+			break;
+		case LEAVEsymbol:
+		case REDOsymbol:
+			chkLabel(mb,p);
+		}
+		if( p->barrier == BARRIERsymbol)
+			chkBarrier(mb,p);
+	}
+	if( signature == FALSE){
+		str msg=instruction2str(mb,p);
+		GDKerror("SYNTAX ERROR: signature missing\n!%s\n",msg);
+		printFunction(stdout,mb);
+		GDKfree(msg);
+	}
 }
 @+ Client authorization
 The default method to interact with the database server is to
@@ -156,19 +226,21 @@ void scheduleClient(str user, int socket)
 			key= atol(mode+1);
 		}
 	}
+	mode = strchr(user,'\n');
+	if( mode) *mode =0;
 	c= initClient(GDKstrdup(user),NULL,socket);
-	c->nspace= newScope(mal_scope,GDKstrdup(user));
+	c->nspace= newScope(NULL,GDKstrdup(user));
+	c->nspace->outer = mal_scope;
 	c->sessionkey = key;
-	setClientMain(c);
-	c->curprg= c->mainprg;
+	resetClientPrg(c);
+	/*showScopeTrail(stdout,c->nspace);*/
 
 	if( (i= MT_create_thread(&p, serveClient, (void *)c)) < 0) {
 		GDKerror("initClient: can not fork new client\n");
 		return;
 	}
 }
-@+ Client service
-@-
+@+ Client services
 After the client initialization has been finished, we
 can start the interaction protocol. This involves parsing the
 input in the context of an already defined procedure and upon
@@ -188,13 +260,11 @@ but maybe everything beyond a previous defined pont.
 @c
 #define MAGIC GDKatomcnt+2	/* keep at least some */
 
-void    resetMalBlk(Client c, MalStkPtr glb){
-	MalBlkPtr mb;
+void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
         InstrPtr p;
 	VarPtr v;
         int i,j;
 
-	mb = c->curprg->def;
         for(i=0;i<mb->stop;i++){
                 p= getInstrPtr(mb,i); 
                 freeInstruction(p);
@@ -221,16 +291,17 @@ void    resetMalBlk(Client c, MalStkPtr glb){
 	mb->errors = 0;
 }
 @c
-void serveClient(Client c)
+void serveClient(void *dummy)
 {
 	int inblock= -1;
 	str msg;
 	InstrPtr p;
 	MalBlkPtr mb;
 	MalStkPtr glb;
+	Client c= (Client) dummy;
+
 
 	if( !isAdministrator(c) ) initClientThread(c);
-/*printf("MTpid= %d pid %d \n",MT_getpid(), getpid());*/
 @-
 A stack frame is initialized to keep track of global variables.
 Note that it should be garbage collected before returning.
@@ -244,7 +315,7 @@ Note that it should be garbage collected before returning.
 	while(c->mode > FINISHING && readClient(c)){
 		c->nxt= c->input;
 		if( parseMal(c,0)) {
-			resetMalBlk(c,glb);
+			resetMalBlk(c->curprg->def,glb);
 			continue;
 		}
 		p= getInstrPtr(mb, mb->stop-1);
@@ -256,7 +327,7 @@ Note that it should be garbage collected before returning.
 				inblock= -1;
 			} else continue;
 		}
-		chkFlowOfControl(c->curprg);
+		chkClientPrg(c,TRUE);
 		if( c->curprg->def->errors == 0){
 			if( c->listing) printFunction(c->fdout,mb);
 			msg= (str) runMAL(c,c->curprg->def,0,glb);
@@ -267,14 +338,13 @@ Note that it should be garbage collected before returning.
 				GDKfree(msg);
 			}
 		}
-		resetMalBlk(c,glb);
+		resetMalBlk(c->curprg->def,glb);
 	}
 @-
 Garbage collect and time to close down a client.
 @c
 	garbageCollector(mb,glb);
 	if( c->mode > FINISHING){
-/* printf("#finishing %d\n",c-mal_clients); fflush(stdout); */
 		if( isAdministrator(c)){
 			OIDflushdelta =0;
 			TMcommit();
@@ -283,4 +353,13 @@ Garbage collect and time to close down a client.
 		}
 		closeClient(c);
 	}
+}
+@-
+A recurring situation is to execute a MAL program stored on a file.
+The code below uses the import facility, which means that any
+initialization routine, called 'main', will be executed automatically.
+@c
+void runScript(Client c, str fname, int listing)
+{	
+	malImport(fname,listing);
 }

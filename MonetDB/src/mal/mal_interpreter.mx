@@ -107,10 +107,14 @@ assume here that it aligns with the variable table of the routine.
 
 	if( env){
 		int k;
+@-
+Beware, the prelude of the stack frame contains type constants
+and a variable to keep the return value.
+@c
 		/* printf("recursive MAL function call %s[%d]\n",
 			pci->fcnname,env->pc); */
-		for(k=1;k<pci->argc;k++){
-			lhs = &stk->stk[k];
+		for(k=1; k<pci->argc; k++){
+			lhs = &stk->stk[k+ SYMBOLFRAME];
 			if( isVarConstant(mbcaller,pci->argv[k]))
 				rhs = &getVarConstant(mbcaller,pci->argv[k]);
 			else	rhs = &env->stk[pci->argv[k]];
@@ -144,12 +148,12 @@ MALrestart:
 	while(stk->pc < stop ){
 		pci = getInstrPtr(mb,stk->pc);
 		@:exceptionTest@
-
 		if( cntxt->itrace  ) {
 			cmd = mdbStep(cntxt,mb,stk,pci,cmd);
 			if( cmd == 'q') goto MALevalExit;
 			if( cmd == 'r') goto MALrestart;
 		}
+
 		@:beginProfile@
 		@:MALinterpret@
 		@:endProfile@
@@ -464,8 +468,7 @@ may also be handled, i.e. by issueing an GDKerror message.The upper layers
 merely receive a negative integer value to indicate occurrence of an
 error somewhere in the calling sequence.
 
-We have to look into the GDKerror messages to see if they can be
-recognized.
+We have to look into GDKerrbuf to see if they can be recognized.
 
 The policy for the time being realized in the new module structure is
 to require all functions to return a string-pointer. Upon successfull
@@ -480,13 +483,19 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 	ValPtr v;
 	int symid;
 	msg= strchr(ret,':');
-	if( msg== NULL){
-		GDKerror("syntax error in exception message");
-		stk->pc++;
-		continue;
+	if( msg) {
+		*msg= 0;
+		symid = findVariable(mb,ret);
+	} else {
+		if( ret == (str) GDK_FAIL ){
+			msg= GDKstrdup(GDKerrbuf);
+			symid = findVariable(mb,"GDKerror");
+		} else {
+			GDKerror("syntax error in exception message");
+			stk->pc++;
+			continue;
+		}
 	}
-	*msg= 0;
-	symid = findVariable(mb,ret);
 	if( symid == -1){
 		*msg=':';
 /*		terminate this block and pass error 

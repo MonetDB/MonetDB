@@ -148,11 +148,12 @@ The following routines are available for inclusion also in MAL programs.
 Either one set is sufficient to produce the required action.
 
 @c
-int MDBmdb(int *res){ 
+int MDBmdb(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client c =getClient();
 	if( c->itrace) c->itrace = 0;
 	else c->itrace =1;
 	fprintf(c->fdout,"#Monet Debugger %s\n", (c->itrace?"on":"off"));
+	mdbStep(c, mb, stk, p,'n');
 	return GDK_SUCCEED;
 }
 

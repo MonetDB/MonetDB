@@ -95,10 +95,12 @@ mal_export void		initScope();
 mal_export Symbol 	newScope(Symbol cntxt, str nme);
 mal_export Symbol	insertSymbol(Symbol cntxt, Symbol prg);
 mal_export Symbol	findScope(Symbol cntxt, str name);
+mal_export Symbol 	findSymbolInScope(Symbol v, str fcn);
 mal_export int		getSubScope(str nme);
 mal_export Symbol	fixateScope(Symbol cntxt, str nme);
 mal_export Symbol 	findSymbol(str mod, str fcn);
 mal_export int	 	displaySymbol(FILE *f, str mod, str fcn);
+mal_export int 		showScopeTrail(FILE *fd, Symbol s);
 mal_export void 	debugScope(str nme);
 
 mal_export Symbol 	newSymbol(str nme, int kind);
@@ -138,6 +140,12 @@ void newSubScope(Symbol cntxt){
 	cntxt->subscope = (Symbol *) GDKmalloc(len);
 	bzero((char*)cntxt->subscope, len);
 }
+void freeSubScope(Symbol cntxt){
+	if(cntxt->subscope==0) return;
+	GDKfree(cntxt->subscope);
+	cntxt->subscope = 0;
+}
+
 void	initScope()
 {	Symbol cur;
 	str nme= GDKstrdup("root");
@@ -163,7 +171,6 @@ Symbol insertSymbol(Symbol cntxt, Symbol prg){
         sig = getSignature(prg);
         t = getSubScope(sig->fcnname);
         if( cntxt->subscope == NULL){
-printf("unexpected insert in non-initialized scope %s\n",cntxt->name);
 		newSubScope(cntxt);
                 cntxt->subscope[t] = prg;
         } else {
@@ -204,9 +211,6 @@ Symbol newSymbol(str nme, int kind){
 Symbol newScope(Symbol cntxt, str nme){
 	Symbol cur;
 	int kind= SCOPEsymbol;
-	if( cntxt == NULL){
-		GDKfatal("@1:unexpected outer scope (=null)\n");
-	}
 	@:newsymbol(newScope)@
 	newSubScope(cur);
 	if( cntxt != NULL){
@@ -221,9 +225,8 @@ if it didn't exist.
 @c
 Symbol fixateScope(Symbol cntxt, str nme){
 	Symbol cur;
-	/* printf("fixate the scope %s ",nme);*/
 	cur = findScope(cntxt,nme);
-	if( cur!= NULL) { /* printf("found\n"); */ return cur;}
+	if( cur!= NULL) return cur;
 	return newScope(cntxt, GDKstrdup(nme));
 }
 
@@ -231,35 +234,50 @@ void  printScope(Symbol cntxt, int tab, int outer)
 {
 	int i,j;
 	Symbol s=cntxt,t;
+	FILE *fd= GDKout;
 
 	while(s!= NULL){
-		printf("SCOPE %s",s->name);
+		fprintf(fd,"SCOPE %s",s->name);
 		if( s->subscope)
 		for(j=0;j<MAXSCOPE;j++)
 		if(s->subscope[j]){
-			printf("[%c]",j);
+			fprintf(fd,"[%c]",j);
 			for(t= s->subscope[j];t!=NULL;t=t->peer) {
-				printf(" %s",t->name);
+				fprintf(fd," %s",t->name);
 				if( getSignature(t)==NULL ||
 				    (getSignature(t)->fcn==0 &&
-				     getSignature(t)->blk==0) ) printf("(?)");
+				     getSignature(t)->token == COMMANDsymbol &&
+				     getSignature(t)->blk==0) ) fprintf(fd,"(?)");
 			}
-			printf("\n");
+			fprintf(fd,"\n");
 		}
-			printf("\n");
+			fprintf(fd,"\n");
 		s= s->peer;
 	}
 	if(outer && cntxt->outer) printScope(cntxt->outer,tab+1, outer);
 }
+
+int showScopeTrail(FILE *fd, Symbol s)
+{
+	printf("Scope trail %s:",s->name);
+	for(; s; s= s->outer) {
+		printf("->%s",s->name);
+		if( s->subscope==0) printf("?");
+	}
+	printf("\n");
+}
+
 void debugScope(str nme){
 	Symbol m;
+	FILE *fd= GDKout;
+	if( mal_scope== 0) GDKerror("mal_scope == NULL\n");
 	if( nme==0 || *nme ==0) printScope(mal_scope,0,TRUE);
 	else{
 		char *s;
 		for(s=nme;*s && (isalnum(*s) ||*s=='_');s++);
 		*s = 0;
 		m= findScope(mal_scope,nme);
-		if( m== NULL) printf("Scope name '%s' not found\n",nme);
+		if( m== NULL) fprintf(fd,"Scope name '%s' not found\n",nme);
 		else printScope(m,0,FALSE);
 	}
 }
@@ -273,10 +291,10 @@ helps in localization of memory leakages.
 @c
 void freeSymbol(Symbol s){
 	if(s==NULL) return;
+	freeSubScope(s);
 	if( s->name) GDKfree(s->name);
 	if( s->help) GDKfree(s->help);
 	if( s->def) freeMalBlk(s->def);
-	if( s->subscope) GDKfree(s->subscope);
 	GDKfree(s);
 }
 void freeSymbolList(Symbol s){
@@ -296,11 +314,8 @@ block introduces a temporary scope.
 The variation on this routine is to dump the definition of
 all matching definitions.
 @c
-Symbol findSymbol(str mod, str fcn){
-	Symbol v, s;
-	int i;
-
-	v= findScope(mal_scope, mod);
+Symbol findSymbolInScope(Symbol v, str fcn){
+	Symbol s;
 	if( v == NULL || fcn == NULL) return NULL;
 	s= v->subscope[*fcn];
 	while(s!=NULL){
@@ -308,6 +323,11 @@ Symbol findSymbol(str mod, str fcn){
 		s= s->peer;
 	}
 	return NULL;
+}
+Symbol findSymbol(str mod, str fcn){
+	Symbol v;
+	v= findScope(mal_scope, mod);
+	return findSymbolInScope(v,fcn);
 }
 int displaySymbol(FILE *f, str mod, str fcn){
 	Symbol v, s;

@@ -49,14 +49,13 @@ html
 /* #define DEBUG_MAL_FCN */
 
 mal_export Symbol	newFunction(Symbol scope, str nme);
-mal_export void 	initStack(MalBlkPtr mb);
+mal_export void 	initSymbolTable(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname);
 mal_export void		clearFcn(MalBlkPtr m);
 mal_export void 	pushArgumentId(InstrPtr p,str name);
 
-mal_export void chkFlowOfControl(Symbol prg);
 mal_export void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
@@ -69,6 +68,7 @@ mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
 /* mal_export str 	reverseOperator(Symbol scope, MalBlkPtr mb,str nme);*/
 mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
 
+#define SYMBOLFRAME GDKatomcnt
 
 #endif /*  _MAL_FCN_H*/
 @-
@@ -102,7 +102,7 @@ stored directly after the paran=meter list.
 Although this increases somewhat the space, it is much cheaper
 than testing at any other occassion 
 @c
-void initStack(MalBlkPtr mb){
+void initSymbolTable(MalBlkPtr mb){
 	int i,j;
 
 	for(i=0;i<GDKatomcnt; i++){
@@ -112,6 +112,7 @@ void initStack(MalBlkPtr mb){
 		getVarConstant(mb,j).val.ival = i;
 		getVarConstant(mb,j).vtype= TYPE_int; 
 	}
+	if( j!= SYMBOLFRAME) printf("initSymbolTable:assumption failed\n");
 }
 InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind){
 	InstrPtr p;
@@ -134,34 +135,7 @@ The nesting of BARRIER and CATCH statements with their associated
 flow of control primitives LEAVE and RETRY should form a valid
 hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.
-@c
-void chkFlowOfControl(Symbol prg){
-	MalBlkPtr mb= prg->def;
-	InstrPtr p;
-	int i;
 
-	for(i=0;i<mb->stop;i++) {
-		p= getInstrPtr(mb,i);
-		if(p== NULL) continue;
-		switch(p->token){
-		case ENDsymbol:
-			chkEnd(mb,p);
-			break;
-		case RAISEsymbol:
-			chkRaise(mb,p);
-			break;
-		case CATCHsymbol:
-			chkCatch(mb,p);
-			break;
-		case LEAVEsymbol:
-		case REDOsymbol:
-			chkLabel(mb,p);
-		}
-		if( p->barrier == BARRIERsymbol)
-			chkBarrier(mb,p);
-	}
-}
-@-
 Check barrier should ensure that both end-points of a block for the
 variable referenced in 'pp' exists. In addition, we should ensure
 proper weaveing of the begin-end pairs. This can simply be checked by
@@ -170,7 +144,6 @@ Finally, the destination variable type should be of type 'bit'
 @c
 int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 {	int i, v, endBlk= -1,cnt=0;
-	char buf[1024];
 
 	v = pp->argv[0];
 	for(i= begBlk+1; i<mb->stop; i++){
@@ -188,51 +161,40 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 				return i;
 			} else {
 			mb->errors++;
-			sprintf(buf,"%d:end-label '%s' doesnot match '%s'\n",
+			GDKerror("%d:end-label '%s' doesnot match '%s'\n",
 				p->pc,getVarName(mb,p->argv[0]),
 				getVarName(mb,v)
 				);
-			GDKerror(buf);
 			return i;
 			}
 		} 
 	}
 	if( cnt!= 0)
-	sprintf(buf,"%d: non-hierarchical block structure %s %d\n",
+	GDKerror("%d: non-hierarchical block structure %s %d\n",
 			pp->pc,getVarName(mb,v),cnt);
-	else sprintf(buf,"%d: begin-label '%s' without end-label\n", 
+	else GDKerror("%d: begin-label '%s' without end-label\n", 
 		begBlk,getVarName(mb,v));
-	GDKerror(buf);
 	mb->errors++;
 	return i;
 }
 void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 {	int i, v, begBlk = -1, endBlk = -1;
-	char buf[1024];
 
 	v = pp->argv[0];
 	if( v>=0)
 	for(i=0; i<mb->stop;i++){
-	InstrPtr p= getInstrPtr(mb,i);
-	if( (p->barrier == BARRIERsymbol ||
-	     p->barrier == CATCHsymbol) &&
-	     p->argv[0] == v){
-		i = chkBrackets(mb,pp,i);
-	} /* else
-
-	if( p->token== ENDsymbol && p->argv[0]==v){
-		mb->errors++;
-		sprintf(buf,"%d: end-label '%s' without begin-label\n", 
-			p->pc,getVarName(mb,v));
-		GDKerror(buf);
-	} */ 		
+		InstrPtr p= getInstrPtr(mb,i);
+		if( (p->barrier == BARRIERsymbol ||
+		     p->barrier == CATCHsymbol) &&
+		     p->argv[0] == v){
+			i = chkBrackets(mb,pp,i);
+		} 
 	}
 
 	if( getArgType(mb,pp,0) != TYPE_bit && pp->token==BARRIERsymbol){
 		mb->errors++;
-		sprintf(buf,"%d: barrier '%s' should be of type bit\n",
+		GDKerror("%d: barrier '%s' should be of type bit\n",
 			pp->pc,getVarName(mb,v));
-		GDKerror(buf);
 	}
 }
 @-
@@ -240,7 +202,6 @@ Loose END-statements should also be catched.
 @c
 void chkEnd(MalBlkPtr mb, InstrPtr pp)
 {	int i, v;
-	char buf[1024];
 
 	v = pp->argv[0];
 	if( v>=0)
@@ -253,9 +214,8 @@ void chkEnd(MalBlkPtr mb, InstrPtr pp)
 	} 
 	}
 	mb->errors++;
-	sprintf(buf,"%d: end-label '%s' without begin-label\n", 
+	GDKerror("%d: end-label '%s' without begin-label\n", 
 		pp->pc,getVarName(mb,v));
-	GDKerror(buf);
 }
 @-
 Exception blocks start with a CATCH statement and end with the
@@ -265,7 +225,6 @@ and introduced in any of the visible modules.
 @c
 void chkCatch(MalBlkPtr mb, InstrPtr pp)
 {	int i, v, begBlk = -1, endBlk = -1;
-	char buf[1024];
 
 	v = pp->argv[0];
 	if( v>=0)
@@ -276,20 +235,18 @@ void chkCatch(MalBlkPtr mb, InstrPtr pp)
 	}
 	if( p->token == ENDsymbol && p->argv[0] == v){
 		if( begBlk == -1){
-		mb->errors++;
-		sprintf(buf,"%d: missing start of exception block '%s'\n",
-			i, getVarName(mb,v));
-		GDKerror(buf);
-		return;
+			mb->errors++;
+			GDKerror("%d: missing start of exception block '%s'\n",
+				i, getVarName(mb,v));
+			return;
 		}
 		return;
 	}
 	}
 	if( endBlk<0 && begBlk>=0){
 		mb->errors++;
-		sprintf(buf,"CATCH '%s' without end statement\n", 
+		GDKerror("CATCH '%s' without end statement\n", 
 			getVarName(mb,v));
-		GDKerror(buf);
 	}
 }
 @-
@@ -298,7 +255,6 @@ block in which it is being handled.
 @c
 void chkRaise(MalBlkPtr mb, InstrPtr pp)
 {	int i, v, begBlk = -1;
-	char buf[1024];
 
 	v = pp->argv[0];
 	if( v>=0)
@@ -308,10 +264,9 @@ void chkRaise(MalBlkPtr mb, InstrPtr pp)
 			begBlk = i;
 		}
 		if (p==pp && begBlk != -1){
-		sprintf(buf,"recursive exception '%s' not allowed\n", 
-			getVarName(mb,v));
-		GDKerror(buf);
-		mb->errors++;
+			GDKerror("recursive exception '%s' not allowed\n", 
+				getVarName(mb,v));
+			mb->errors++;
 		}
 		if( p->token == ENDsymbol && p->argv[0] == v){
 			begBlk = -1;
@@ -326,7 +281,6 @@ Thus, upon encountering an error we simply introduce a new variable.
 @c
 void chkLabel(MalBlkPtr mb, InstrPtr pp)
 {	int i,k, begBlk = -1;
-	char buf[1024];
 
 	k= pp->argv[0];
 	for(i=0; i<mb->stop;i++){
@@ -340,9 +294,8 @@ void chkLabel(MalBlkPtr mb, InstrPtr pp)
 		}
 	}
 	mb->errors++;
-	sprintf(buf,"%d:label '%s' not in guarded block\n",
+	GDKerror("%d:label '%s' not in guarded block\n",
 		pp->pc,getVarName(mb,k));
-	GDKerror(buf);
 }
 @-
 Store the information of a destination variable in the signature structure of
@@ -358,36 +311,6 @@ void pushArgumentId(InstrPtr p,str name){
 	if( v<0) v= newVariable(mb,name,getTypeIndex(name));
 	pushArgument(p,v);
 }
-@-
-Create an instruction to reverse a bat variable and return its identity.
-@c
-/*
-str reverseOperator(Symbol scope, MalBlkPtr mb,str nme){
-	InstrPtr p;
-	malType v;
-	int k;
-
-	v = getType(mb,nme);
-	if( !isBatType(v) ){
-		GDKerror("MALparser:'`' illegal operation\n");
-	}
-#ifdef DEBUG_MAL_FCN
-	{ str d1= malTypeName(newBatType(getHeadType(v),getTailType(v))),
-		d2= malTypeName(newBatType(getTailType(v),getHeadType(v)));
-	printf("reverseOperator %d %s %s\n",v,d1,d2);
-	GDKfree(d1); GDKfree(d2);
-	}
-#endif
-	p = newInstruction(mb,ASSIGNsymbol);
-	p->pc= mb->stop;
-	p->modname = GDKstrdup("bat");
-	p->fcnname = GDKstrdup("reverse");
-	k = newTmpVariable(mb,reverseBatType(v));
-	pushArgument(p,k);
-	pushInstruction(mb,p);
-	return GDKstrdup(getVarName(mb,k));
-}
-*/
 @+ Function cloning
 MAL supports functions defined with type variables.
 Each time such a MAL routine is called, a complete copy of

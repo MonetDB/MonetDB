@@ -143,6 +143,12 @@ Within a module find the subscope to locate the element in its list
 of symbols.
 @c
 	m= s= scope;
+	if( m->subscope == NULL){
+		char buf[2048];
+		sprintf(buf,"subscope of %s\n",(scope?scope->name:"scope wrong"));
+		GDKfatal(buf);
+		GDKfatal("findFunction:subscope table disappeared\n");
+	}
 	s= m->subscope[lev = getSubScope(p->fcnname)];
 	while(s != NULL){	/* single scope elements */
 	if( idcmp(p->fcnname,s->name ) ){
@@ -240,6 +246,7 @@ At a later stage we may automatically insert such coercion requests.
 We found the proper function. Copy some properties. In particuler,
 determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 @c
+	if(getSignature(s) != p)
 	switch(getSignature(s)->token){
 	case COMMANDsymbol: 
 		p->token = CMDcall; 
@@ -259,7 +266,7 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 		break;
 	default:
 		showException(mb,p->pc,"MALresolve","unexpected token type\n");
-		p->token= FCNcall;
+		mb->errors++;
 	}
 	if(tracefcn) printf("%s:=%s\n",malTypeName(getDestType(mb,p)),
 		malTypeName(s1));
@@ -280,11 +287,9 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 We haven;t found the function. 
 @c
 	if( foundbutwrong){
-		char buf[1024];
-		sprintf(buf,"type conflict in assignment of %s.%s\n",
+		GDKerror("type conflict in assignment of %s.%s\n",
 			m->name,p->fcnname);
-		GDKerror(buf);
-		printInstruction(stdout,mb,p);
+		printInstruction(GDKout,mb,p);
 	}
 	return -3;
 }
@@ -385,12 +390,7 @@ procedure call without arguments and no module name.
 	  showException(mb,p->pc,"MALresolve",buf);
 	  mb->errors++;
 	}
-/*printf("end of typechecker\n");*/
 	p->typechk= TYPE_UNKNOWN;
-}
-
-void staticTypeCheck(InstrPtr p){
-	typeChecker(p, TYPE_FIXED);
 }
 
 @+ Type analysis

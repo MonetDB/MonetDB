@@ -67,6 +67,7 @@ are located in mal_startup.
 #define TIMEOUT		(5*60)	/* seconds */
 #define PROCESSTIMEOUT	2	/* seconds */
 #define BLOCKSIZE	4096
+#define MAPIBLKSIZE	1024
 #define PROMPT 		"\001>\001"
 
 @-
@@ -125,7 +126,6 @@ to keep track of critical elements.
 @h
 	Symbol		nspace;
 	Symbol		curprg;		/* focus of parser */
-	Symbol		mainprg;	/* default global block */
 } *Client, ClientRec;
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
@@ -139,7 +139,9 @@ mal_export void		killClient     (Client c);
 mal_export void 	freeClient	(Client c);
 mal_export int 		readClient	(Client c);
 
-#define clientPrompt(X) fprintf(X->fdout, X->prompt); fflush(X->fdout);
+#define clientPrompt(X) if( fputs(X->prompt,X->fdout) ==EOF) return 0;\
+	if(fflush(X->fdout) || feof(X->fdout)) return 0;
+
 #endif /* _MAL_CLIENT_H_ */
 @-
 Upon acceptance of a connection a client record is initialized.
@@ -228,9 +230,10 @@ Client initClient(str nme, str passwd, int msgsock){
 	c->sessionkey = 0;
 
 	c->fdin = msgsock? fdopen(msgsock, "r"):stdin;
-	if( c->input == 0)
-	c->input = (str) GDKmalloc(BLOCKSIZE);
-	c->limit = c->input + BLOCKSIZE;
+	if( c->input == 0) {
+		c->input = (str) GDKmalloc(BLOCKSIZE);
+		c->limit = c->input + BLOCKSIZE;
+	}
 	c->listing = FALSE;
 	*c->input = 0;
 	c->nxt = c->input;
@@ -245,8 +248,8 @@ collect the buffer when in use.
 	c->output = 0;
  	c->socket = msgsock;
 	
-	c->nspace = mal_scope;
-	c->curprg = c->mainprg=0;
+	c->nspace = 0;
+	c->curprg = 0;
 
 	c->father = NULL;
 	c->login = time(0); c->delay= TIMEOUT;
@@ -255,7 +258,6 @@ collect the buffer when in use.
 	c->itrace = mal_trace;
 
 	if( ! isAdministrator(c)){
-		/* c->father = mal_clients;*/
 		c->prompt = GDKstrdup(PROMPT);
 		c->promptlength= strlen(c->prompt);
 	} else {
@@ -279,8 +281,6 @@ The GDK thread administration should be set to reflect use of
 the proper IO descriptors.
 @c
 	if ( t==0) {
-fprintf(stderr,"#%s thread ended !! %d\n",c->user,t);
-fflush(stderr);
 		GDKerror("Failed to initialize client\n");
 		fflush(c->fdout);
 		(void) fclose(c->fdin);
@@ -291,7 +291,6 @@ fflush(stderr);
 	t->data[1] = c->fdin;
 	t->data[0] = c->fdout;
 } 
-
 
 @- Client decendants
 Forking is a relatively cheap way to create a new client.
@@ -314,7 +313,8 @@ Client forkClient(Client father){
 		son->father = father;
 		son->language = GDKstrdup(father->language);
 		son->prompt = GDKstrdup(father->prompt);
-		son->nspace = newScope(mal_scope, GDKstrdup("Client-child"));
+		son->nspace = newScope(NULL, GDKstrdup("Client-child"));
+		son->nspace->outer = mal_scope;
 	}
         return son;
 }
@@ -338,7 +338,6 @@ void freeClient(Client c)
 	/* epilogue actions have been done already */
 	if (c->father == NULL) { /* normal client */
 		(void) fclose(c->fdin);
-		GDKlog("Mserver: %s session ends", c->user);	
 		(void) fflush(c->fdout); 
         	(void) fclose(c->fdout);
 		(void) shutdown(c->socket, 2);
@@ -347,21 +346,14 @@ void freeClient(Client c)
 	} 
 	/* forked client also */
 
-	if( c->curprg && c->curprg!= c->mainprg){
-		freeSymbol(c->curprg);
-	}
+	if( c->curprg ) freeSymbol(c->curprg);
 	c->curprg= 0;
-	if( c->mainprg){
-		freeSymbol(c->mainprg);
-		c->mainprg= 0;
-	}
-	if( c->nspace != mal_scope){
-/*	Causes malfunctions CHECK OUT
-		if( c->nspace) freeSymbol(c->nspace);
-*/
+	if( !isAdministrator(c) && c->nspace){
+		freeSymbol(c->nspace);
 		c->nspace=0;
 	}
-	/* if( c->input ) GDKfree(c->input);
+	/* causes an ERROR, reuse it 
+	if( c->input ) GDKfree(c->input);
 	c->input = c->limit= NULL; */
 	if( c->output ) GDKfree(c->output);
 	c->output= NULL;
@@ -383,6 +375,9 @@ because the children may be ignoring the primary IO streams.
 
 Special care should be taken by closing the 'adm' thread.
 It is permitted to leave only when it is the sole user of the system.
+
+Furthermore, once we enter closeClient, the process in which it is
+raised has already lost its file descriptors.
 @c
 void closeClient(Client c) {
 	Client k;
@@ -408,7 +403,7 @@ void closeClient(Client c) {
 		GDKerror("closeClient:client '%s' is still active\n", k->user);
 		killClient(k);
 	}
-	/* MT_global_exit(0);*/
+	MT_global_exit(0);
 }
 
 @-
@@ -439,14 +434,16 @@ void killClient(Client c){
 		GDKerror("killClient: attempt to perform process suicide.\n");
 		return;
 	}
+	GDKwarning("killClient:forcing client to stop ...\n");
 	c->mode= FINISHING;
-	sleep(PROCESSTIMEOUT);
-printf("killing client %d %d %d\n",c-mal_clients, tid,pid);
 	(void) fclose(c->fdin);
 	(void) fclose(c->fdout);
 	(void) shutdown(c->socket, 2);
-	pthread_kill((pthread_t)(pid-1),SIGHUP);
-printf("Still doesn;t work correctly\n");
+	GDKwarning("killClient:about to kill process ...\n");
+	sleep(PROCESSTIMEOUT);
+	pthread_kill((pthread_t)(pid-1),SIGKILL);
+	sleep(PROCESSTIMEOUT);
+	GDKwarning("killClient:process killed\n");
     }
 }
 @+ Client input
@@ -484,10 +481,10 @@ To simplify misaligned communication with front-ends, we use different
 prompts structures. [think, can we avoid acks]
 
 @h
-#define BYTEMSG	"#bytes:%6d"
+#define BYTEMSG	"#blocks:%6d"
 @c
 int readClient(Client c){
-	int i,bytes,len;
+	int i,bytes,blocks,len;
 	str  s, last;
  
 @-
@@ -497,9 +494,7 @@ the front-end to issue the request.
  	last= s = c->input; *s = 0;
 	bytes = c->limit - c->input;
 again:
-	if( feof(c->fdout)) return 0;
 	clientPrompt(c);
-	if (fflush(c->fdout) || feof(c->fdout)) return 0;
 	if( feof(c->fdin) ) return 0;
 @-
 Beware, that in terminal mode you loose backspaceing options.
@@ -507,7 +502,11 @@ Therefore, most interaction should be regulated through the Mclient
 front-end. This will also take care of buffering a request before
 submission. This avoids a significant number of network interactions.
 @c
-	if(fgets(s,bytes,c->fdin) == NULL){
+	if(c->fdin!=stdin && (i=fread(s,1,MAPIBLKSIZE,c->fdin)) != MAPIBLKSIZE){
+		GDKerror("readClient:Block read failed\n");
+		return 0;
+	} 
+	if( c->fdin== stdin && fgets(s,bytes,c->fdin) == NULL){
 		if (feof(c->fdin)
 #ifndef WIN32
 		    || (i < 0 && MT_geterrno() != EAGAIN) 
@@ -536,9 +535,10 @@ Check to see if this involves a blocked message. If so, read
 the complete block in one blow. Turn the ^M into a space afterwards.
 The alternative is to read the next line;
 @c
-	if(*last=='#' && sscanf(last,BYTEMSG,&bytes)==1){
-		if( bytes >= c->limit-c->input)
-			enlargebuffer(c, BLOCKSIZE);
+	if(*last=='#' && sscanf(last,BYTEMSG,&blocks)==1){
+		bytes= blocks * MAPIBLKSIZE;
+		while( bytes >= c->limit-c->input)
+			enlargebuffer(c, MAPIBLKSIZE);
 		if( fread(last, 1,bytes,c->fdin) != bytes){
 			GDKerror("readClient:unable to read all bytes\n");
 			return 0;

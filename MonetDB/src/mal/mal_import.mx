@@ -33,7 +33,7 @@ html
 
 #include "mal_symbol.h"
 
-mal_export void malImport(str fname,int listing,int loaded);
+mal_export void malImport(str fname,int listing);
 #endif /*  _MAL_IMPORT_H*/
 @-
 The import context is located. If it already exists, we should silently skip
@@ -49,7 +49,7 @@ Make sure it is loaded as well.
 #include "mal_client.h"
 #include "mal_import.h"
 
-void malImport(str fname,int listing,int loaded){
+void malImport(str fname,int listing){
 	FILE *fd;
 	long i,len;
 	char *buf;
@@ -62,7 +62,7 @@ void malImport(str fname,int listing,int loaded){
 	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
 	int oldlisting = c->listing;
 	Symbol oldscope = c->nspace;
-	Symbol oldmain = c->mainprg;
+	Symbol oldprg = c->curprg;
 	int limit;
 
         SLASH_2_DIR_SEP(fname);
@@ -99,43 +99,36 @@ void malImport(str fname,int listing,int loaded){
 	}
 
         i=fread(c->input, 1, len, fd);
-        if( i != len-2) {
-                GDKerror("not enough bytes read \n");
-        }
+        if( i != len-2) GDKerror("not enough bytes read \n");
         fclose(fd);
         c->input[i] = 0;
 @-
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
-	if(loaded == 0) (void) loadModuleLibrary(fname);
+	loadModuleLibrary(fname);
 
 	c->listing = listing;
-	setClientMain(c);
+	resetClientPrg(c);
 	parseMal(c);
+	closeClientPrg(c);
+	prg = findSymbolInScope(c->nspace,"main");
+	if( prg && listing) printFunction(c->fdout,prg->def);
 	
-
 	/* reset the input buffer */
 	GDKfree(c->input);
-	if( oldmain) {
-		if( c->mainprg != oldmain) {
-			curBlk = c->curprg->def;
-			curInstr= newInstruction(curBlk,ENDDEFsymbol);
-			pushInstruction(curBlk,curInstr);
-		} else closeClientMain(c); 
-		if( listing && c->mainprg) 
-			printFunction(stdout,c->mainprg->def);
-		c->mainprg = oldmain;
-	} 
 	c->listing = oldlisting;
 	c->input= oldinput;
 	c->limit= oldlimit;
 	c->nxt = oldnxt;
 	c->nspace= oldscope;
-	/* execute main procedure of module? */
-	if( c->curprg){
-		str msg= (str) runMAL(c,c->curprg->def,0,0);
-		if( msg && msg != (str) GDK_SUCCEED) GDKerror(msg);
-	}
-}
 
+	if( prg){
+		str msg;
+		msg= (str) runMAL(c,prg->def,0,0);
+		if( msg && msg != (str) GDK_SUCCEED){
+			GDKerror(msg);
+			GDKfree(msg);
+		}
+	} 
+}
