@@ -1289,9 +1289,10 @@ int daytime_fromstr(str buf, int *len, daytime **ret) {
 			sec = (buf[pos] - '0') + sec * 10;
 		}
 		if ((buf[pos] == '.' || (synonyms && buf[pos] == ':')) && GDKisdigit(buf[pos+1])) {
+			int fac = 100;
 			for(pos++,msec=0; GDKisdigit(buf[pos]); pos++)  {
-				if (msec <= 1000) 
-				msec = (buf[pos] - '0') + msec * 10;
+				msec += (buf[pos] - '0') * fac;
+				fac /= 10;
 			}
 		}
 	}
