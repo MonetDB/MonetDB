@@ -236,7 +236,6 @@ print(dec_bat.col_name("decimal"),
 
 # test binary operators
 var dec_zero := project(dec_bat.reverse,0@0).reverse;
-!WARNING: Overwriting var dec_zero
 var dec_cart := join(dec_zero.reverse,dec_zero);
 var dec_bat1 := dec_cart.reverse.mark(0@0).reverse;
 var dec_bat2 := dec_cart.mark(0@0).reverse;
