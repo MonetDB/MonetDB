@@ -17,7 +17,9 @@ mx2yy = "^@Y[ \t]*$"
 mx2ll = "^@L[ \t]*$"
 mx2odl = "^@odl[ \t]*$"
 
-code_extract = { 'mx': [ (mx2mil, '.mil'), 
+e_mx = regex.compile('^@[^\{\}]')
+
+code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2mel, '.m'), 
 		  (mx2cc, '.cc'), 
 		  (mx2c, '.c'), 
@@ -26,8 +28,9 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2l, '_yy.l'), 
 		  (mx2yy, '_tab.yy'), 
 		  (mx2ll, '_yy.ll'), 
-		  (mx2odl, '.odl') ] 
+		  (mx2odl, '.odl') ]  
 }
+end_code_extract = { 'mx': e_mx }
 
 code_gen = { 'm': [ '.proto.h', '.glue.c' ],
 	    'odl': [ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
@@ -54,7 +57,11 @@ scan_map = { 'c': [ c_inc, None, '' ],
 	 'm': [ m_use, m_sep, '.m' ]
 }
 
-dep_map = { 'glue.c': [ '.proto.h' ]
+dep_map = { 'glue.c': [ '.proto.h' ],
+	    'glue.o': [ '.proto.h' ]
+}
+
+dep_rules = { 'glue.o': ('glue.c', 'm', '.proto.h') 
 }
 
 lib_map = [ 'glue.c', 'm' ]
@@ -65,12 +72,33 @@ def readfile(f):
     src.close()
     return buf
 
+def readfilepart(f,ext):
+    fn,fext = string.split(f,".", 1)
+    src = open(f, 'rb')
+    buf = src.read()
+    src.close()
+    buf2 = ""
+    if (code_extract.has_key(fext)):
+      e = end_code_extract[fext]
+      for pat,newext in code_extract[fext]:
+	s = regex.compile(pat)
+	if (newext == "." + ext):
+	  m = s.search(buf)
+          while(m>=0):
+	    n = e.search(buf,m+1)
+	    if (n >= 0):
+	    	buf2 = buf2 + buf[m:n]
+	    	m = s.search(buf,n)
+	    else:
+	    	buf2 = buf2 + buf[m:]
+		m = n
+    return buf2
+
 def do_code_extract(f,base,ext, targets, deps, cwd):
 	b = readfile(cwd+os.sep+f)
-	v = var(base + "." + ext)
 	if (code_extract.has_key(ext)):
 	  for pat,newext in code_extract[ext]:
-	    p = regex.compile(pat);
+	    p = regex.compile(pat)
 	    if (p.search(b) > 0 ):
 	      extracted = base + newext
 	      targets.append( extracted )
@@ -102,106 +130,98 @@ def do_code_gen(targets, deps):
 	
 
 def find_org(deps,f):
-  org = f;
+  org = f
   while (deps.has_key(org)):	
 	org = deps[org][0] #gen code is done first, other deps are appended 
   return org
 
-c_extern_func = "^[ \t]*extern[ \t].*[ \t\*]\([a-zA-Z0-9\_]+\)[ \t]*("
-c_extern_func = regex.compile(c_extern_func)
+def do_deps(targets,deps,includes,incmap,cwd):
+  do_scan(targets,deps,incmap,cwd)
+  do_dep_combine(deps,includes,cwd)
+  do_dep_rules(deps,cwd)
 
-c_extern_var = "^[ \t]*extern[ \t]*[^( \t]*[ \t\*]*\([a-zA-Z0-9\_]+\)[;\[]"
-c_extern_var = regex.compile(c_extern_var)
+def do_dep_combine(deps,includes,cwd):
+  cachefile = cwd + os.sep + '.cache'
+  cache = shelve.open( cachefile )
+  for target,depfiles in deps.items():
+    for d in depfiles:
+      df,de = string.split(d,".",1)
+      if (includes.has_key(d)):
+	for f in includes[d]:
+	  if (f not in depfiles):
+	    depfiles.append(f)
+      elif (cache.has_key(d)):
+	for f in cache[d]:
+	  if (f not in depfiles):
+	    depfiles.append(f)
+  cache.close()
 
-def do_defs(targets,deps,cwd):
-  defs = []
-  for f in targets:
-    org = cwd+os.sep+find_org(deps,f);
-    if os.path.exists(org):
-      b = readfile(org)
-      m = c_extern_func.search(b)
-      while(m > 0):
-	fnd = c_extern_func.group(1)
-	if (fnd not in defs):
-		defs.append(fnd)
-        m = c_extern_func.search(b,m+1)
-      m = c_extern_var.search(b)
-      while(m > 0):
-	fnd = c_extern_var.group(1)
-	if (fnd not in defs):
-		defs.append(fnd)
-        m = c_extern_var.search(b,m+1)
-  deffile = cwd + os.sep + ".defs"
-  fd=open(deffile, 'w');
-  fd.write("EXPORTS")
-  for i in defs:
-	fd.write("\t%s" % i)
+def do_dep_rules(deps,cwd):
+  cachefile = cwd + os.sep + '.cache'
+  cache = shelve.open( cachefile)
+  for target,depfiles in deps.items():
+    tf,te = string.split(target,".",1)
+    if (dep_rules.has_key(te)):
+      (dep,old,new) = dep_rules[te]
+      for d in depfiles:
+        df,de = string.split(d,".",1)
+	if (de == dep and deps.has_key(d)):
+	  incfiles = deps[d]
+	  for i in incfiles:
+            incf,ie = string.split(i,".",1)
+	    if (ie == old and incf+new not in depfiles):
+	      depfiles.append(incf+new)
+        if (dep_map.has_key(de)):
+          for depext in dep_map[de]:
+	    if (df+depext not in depfiles):
+	      depfiles.append(df+depext)
+  cache.close()
 
-def do_deps(deps,includes,incmap,cwd):
+def do_scan(targets,deps,incmap,cwd):
   cachefile = cwd + os.sep + '.cache'
   if os.path.exists( cachefile ):
     os.unlink(cachefile)
   cache = shelve.open( cachefile, "c")
   for target,depfiles in deps.items():
-    for i in depfiles:
-      if (includes.has_key(i)):
-	for f in includes[i]:
-	  if (f not in depfiles):
-	    depfiles.append(f)
-      elif (cache.has_key(i)):
-	for f in cache[i]:
-	  if (f not in depfiles):
-	    depfiles.append(f)
-      else:
-        base,ext = string.split(i,".", 1)
-	inc_files = []
-        if (dep_map.has_key(ext)):
-	  for depext in dep_map[ext]:
-	    if (base+depext not in depfiles):
-	      depfiles.append(base+depext)
-	    if (base+depext not in inc_files):
-	      inc_files.append(base+depext)
+      base,ext = string.split(target,".", 1)
+      if (not cache.has_key(target)):
+        inc_files = []
         if (scan_map.has_key(ext)):
-          org = cwd+os.sep+find_org(deps,i)
+          org = cwd+os.sep+find_org(deps,target)
     	  if os.path.exists(org):
-            b = readfile(org)
+            b = readfilepart(org,ext)
             pat,sep,depext = scan_map[ext]
             m = pat.search(b)
-            while (m > 0):
+            while (m >= 0):
 	      fnd = pat.group(1)
 	      if (sep):
-                p = 0;
+                p = 0
                 n = sep.search(fnd)
 	        while (n > 0):
 	          sepm = sep.group(0)
                   fnd1 = fnd[p:n]
 	          p = n+len(sepm)
-	          if (deps.has_key(fnd1+depext)):
-	            if (fnd1+depext not in depfiles):
-		      depfiles.append(fnd1+depext)
+	          if (deps.has_key(fnd1+depext) or fnd1+depext in targets):
 	            if (fnd1+depext not in inc_files):
 		      inc_files.append(fnd1+depext)
  		  elif (incmap.has_key(fnd1+depext)):
-	            if (fnd1+depext not in depfiles):
-		      depfiles.append(incmap[fnd1+depext]+os.sep+fnd1+depext)
 	            if (fnd1+depext not in inc_files):
 		      inc_files.append(incmap[fnd1+depext]+os.sep+fnd1+depext)
 	          n = sep.search(fnd,p)
-	      if (deps.has_key(fnd+depext)):
-	        if (fnd+depext not in depfiles):
-	          depfiles.append(fnd+depext)
+	      if (deps.has_key(fnd+depext) or fnd+depext in targets):
 	        if (fnd+depext not in inc_files):
 		  inc_files.append(fnd+depext)
  	      elif (incmap.has_key(fnd+depext)):
-	        if (fnd+depext not in depfiles):
-	          depfiles.append(incmap[fnd+depext]+os.sep+fnd+depext)
 	        if (fnd+depext not in inc_files):
 		  inc_files.append(incmap[fnd+depext]+os.sep+fnd+depext)
+ 	      #else:
+		#print(fnd + " not in deps and incmap " + depext )
               m = pat.search(b,m+1)
-          cache[i] = inc_files
+        cache[target] = inc_files
+  #for i in cache.keys():
+    #print(i,cache[i])
   cache.close()
-	
-# move to am
+
 def do_lib(lib,deps):
   true_deps = []
   base,ext = string.split(lib,".", 1)
@@ -246,7 +266,10 @@ def read_depsfile(incdirs, cwd, topdir):
 	dir = topdir + os.sep + rest
       elif (d == "srcdir" or d == "builddir"):
 	dir = rest
-    f = cwd + os.sep + dir + os.sep + ".cache"
+    if (dir[0:2] == ".."):
+    	f = cwd + os.sep + dir + os.sep + ".cache"
+    else:
+    	f = dir + os.sep + ".cache"
     lineno = 0
     if os.path.exists(f):
         cache = shelve.open(f)
@@ -277,8 +300,7 @@ def codegen(tree, cwd, topdir):
 	      (base,ext) = string.split(f,".", 1)
 	      do_code_extract(f,base,ext, targets, deps, cwd)
 	    targets = do_code_gen(targets,deps)
-            do_defs(targets,deps,cwd)
-	    do_deps(deps,includes,incmap,cwd)
+	    do_deps(targets,deps,includes,incmap,cwd)
 	    libs = do_libs(deps)
       	    tree.value(i)["TARGETS"] = targets
       	    tree.value(i)["DEPS"] = deps

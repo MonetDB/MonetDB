@@ -3,7 +3,7 @@
 
 #include	"Mx.h"
 #include	"MxFcnDef.h"
-#include        "disclaimer.h"
+#include	"disclaimer.h"
 
 #ifndef UNIX
 extern	int	_trace;

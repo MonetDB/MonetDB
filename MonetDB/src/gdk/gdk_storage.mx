@@ -231,14 +231,14 @@ on the file, reading those will be cheap.  Only the changed blocks are now
 mapped to swap space. PUSHED OUT: due to rather horrendous performance 
 caused by updating the image on disk.
 @
-Maybe it is better to make use of @%msync()@. But then, we would need to
+Maybe it is better to make use of @%MT_msync()@. But then, we would need to
 bring in a backup mechanism, in which stable images of the BATs are created
 at commit-time.
 @c
-		err = MT_msync(buf, size, 0);
+		err = MT_msync(buf, size, MMAP_ASYNC);
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-		IODEBUG THRprintf(GDKerr, "msync(buf %d, size %d, MS_ASYNC) = %d\n", 
+		IODEBUG THRprintf(GDKerr, "MT_msync(buf %d, size %d, MMAP_ASYNC) = %d\n", 
 							(int) buf, size, err);
 	} else if (mode == STORE_COMPR) {
 		char extension[PATHLENGTH];
@@ -327,7 +327,7 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 		fseek(fp, (long) chunk, SEEK_SET);
                	fputc('\n',fp); fflush(fp);
 	
-		fclose(fp);
+		fclose(fp); fp = NULL;
 	        GDKfilepath(path,BATDIR,nme,ext);
 		buf = (char *)MT_mmap(path, mod, 0, chunk, (void*)0);	
 		/*
@@ -342,7 +342,7 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 		n_expected = 0;
 	    }
 	}
-	if (fd < 0 && fp == NULL) { 
+	if (n_expected && fd < 0 && fp == NULL) { 
 	if ((fp = GDKfilelocate(nme, "rb", extension)) != NULL) {
 	    buf = (char *) GDKmalloc(chunk); 
 	    n_expected = size - decompress(fp, buf); 

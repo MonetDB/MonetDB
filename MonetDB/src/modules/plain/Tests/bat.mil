@@ -26,3 +26,5 @@ printf("\n* delete: Delete the BUNs with corresponding head values\n");
 deltest.print;
 testje.delete(deltest);
 testje.print;
+
+quit;

@@ -82,6 +82,7 @@ xmin := minrange( vecs );
 
 L2distance( xmin, xmax ).print;
 
+quit;
 @* Header file
 
 We define for each of the supported basetypes a C++ class to implement the

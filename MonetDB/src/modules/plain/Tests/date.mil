@@ -30,3 +30,4 @@ module(temporal);
 (date("1998-10-10") = date("1998-10-11")).print;
 (date("1998-10-10") = date("1998-10-10")).print;
 
+quit;

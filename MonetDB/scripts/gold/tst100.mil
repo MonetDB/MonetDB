@@ -164,3 +164,4 @@ t0_neg.count.print; print("end");
 t1_pos.count.print; print("end");
 t1_neg.count.print; print("end");
 commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+quit;

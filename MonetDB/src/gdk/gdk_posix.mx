@@ -186,9 +186,11 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed){
 		((mode&MMAP_COPY)?MAP_PRIVATE:MAP_SHARED)|(fixed?MAP_FIXED:0),
 	        fileno(fp), off);
 	    fclose(fp);
+/*
 	    if (ret != (void*) -1 && (mode&MMAP_ADVISE)) {
 		madvise(fixed+off, len, mode&MMAP_ADVISE);
 	    }
+*/
         }
 	return ret;
 }

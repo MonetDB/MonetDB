@@ -19,3 +19,4 @@ load("DRUID_sample");
 DRUID_sample.print;
 
 DRUID_sample.persists(false);
+quit;

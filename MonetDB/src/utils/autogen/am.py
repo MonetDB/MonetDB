@@ -238,8 +238,8 @@ def am_library(fd, var, libmap, am ):
 
 # temporarily switched off, the by libtool created scripts cause problems
 # for so-so linking
-#  if (libmap.has_key("LIBS")):
-#    fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
+  if (libmap.has_key("LIBS")):
+    fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
 
   for src in libmap['SOURCES']:
     base,ext = string.split(src,".", 1) 	
@@ -288,10 +288,10 @@ def am_libs(fd, var, values, am ):
 	
 # temporarily switched off, the by libtool created scripts cause problems
 # for so-so linking
-#    if (values.has_key(lib + "_LIBS")):
-#      fd.write(am_additional_libs(lib, sep, "LIB", values[lib + "_LIBS"],am))
-#    elif (values.has_key("LIBS")):
-#      fd.write(am_additional_libs(lib, sep, "LIB", values["LIBS"],am))
+    if (values.has_key(lib + "_LIBS")):
+      fd.write(am_additional_libs(lib, sep, "LIB", values[lib + "_LIBS"],am))
+    elif (values.has_key("LIBS")):
+      fd.write(am_additional_libs(lib, sep, "LIB", values["LIBS"],am))
 
     srcs = "lib"+sep+lib+"_la_SOURCES ="
     for target in values['TARGETS']:

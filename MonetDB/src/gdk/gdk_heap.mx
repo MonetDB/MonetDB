@@ -133,12 +133,6 @@ As we now that size < maxsize, we know that we have this range
 PROT_NONE, so we can do it.
 @c
 		totsize -=  h->offset + h->size;
-/*
-		b = GDKmmap(h->base+h->offset+h->size, totsize, 
-				PROT_READ|PROT_WRITE, 
-				MAP_PRIVATE|MAP_FIXED, 
-				fileno(fp), h->offset+h->size);
-*/
 		fclose(fp);
 	        GDKfilepath(path,BATDIR,h->filename,NULL);
 		b = MT_mmap(path, MMAP_COPY, h->offset+h->size, totsize, 
@@ -230,28 +224,15 @@ using mmap and MAP_PRIVATE
 Some OSs do not allow you to extend this mapping later. In that case, we
 grab everything we can now.
 @c
+		fclose(fp);
+	        GDKfilepath(path,BATDIR,src->filename,NULL);
 #ifdef NOEXTEND_PRIVMAP
 		dst->size = dst->maxsize; /* take it all, now */
 
-		fclose(fp);
-	        GDKfilepath(path,BATDIR,src->filename,NULL);
 #else
-/*
-		b = (char *) GDKmmap((caddr_t) NULL, dst->maxsize,
-			PROT_NONE, MAP_PRIVATE|MAP_NORESERVE
-			,fileno(fp), newoffset);
-*/
-	    	fclose(fp);
-	        GDKfilepath(path,BATDIR,src->filename,NULL);
 		b = (char *) MT_mmap(path, MMAP_COPY, newoffset, dst->maxsize, NULL);	
 		if (b == (char*) -1) b = 0;
 #endif
-/*
-		dst->base = (char *) mmap((caddr_t) b, dst->size, 
-			PROT_READ|PROT_WRITE, MAP_PRIVATE|(b?MAP_FIXED:0), 
-			fileno(fp), newoffset);
-		fclose(fp);
-*/
 		dst->base = (char *) MT_mmap(path, MMAP_COPY, newoffset, dst->size, b);	
 
 		if (dst->base == (char*) -1) {

@@ -1507,6 +1507,7 @@ static int file_move(str srcdir, str dstdir, str name, str ext) {
 }
 
 static int heap_move(Heap* hp, str srcdir, str dstdir, str nme, str ext) {
+        printf("heap_move\n");
 	if (hp->filename && hp->storage == STORE_MMAP) {
 		GDKwarning("heap_move: read-only %s.%s should not be dirty.\n", nme, ext);
 	}  

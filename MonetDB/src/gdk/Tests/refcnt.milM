@@ -57,3 +57,4 @@ res := nil;
 #- bat("ten") and bat("twenty") still exist, due to creation during multiplex
 #  operation (?)
 tmp;
+quit;

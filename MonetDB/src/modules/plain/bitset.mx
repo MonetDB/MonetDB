@@ -438,3 +438,5 @@ bitset_not(a).print;
 
 printf("convert to integer\n");
 bitset_toInt(a).print;
+ 
+quit;

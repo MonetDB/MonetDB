@@ -2669,6 +2669,8 @@ join_batbat(MMjoin_4, l_order, MMuselect_3), printbat(MMjoin_4),
 semijoin_batbat(MMsemijoin_5, l_returnflag, MMjoin_4), printbat(MMsemijoin_5),
 uselect_batany(MMuselect_7, MMsemijoin_5, 114), printbat(MMuselect_7),
 join_batbat(MMjoin_8, l_order_, MMuselect_7), printbat(MMjoin_8).
+
+quit;
 @T
 {\small\begin{verbatim}
 $ algebra q13_5.mil

@@ -411,6 +411,8 @@ in(date("1999/06/07"), new_interval(date("1999/02/02"), date("1999/06/06"))).pri
 >(new_interval(date("1999/02/02"), date("1999/03/03")), new_interval(date("1999/03/03"), date("1999/06/06"))).print;
 <=(new_interval(date("1999/02/02"), date("1999/03/03")), new_interval(date("1999/03/03"), date("1999/06/06"))).print;
 >=(new_interval(date("1999/02/02"), date("1999/03/03")), new_interval(date("1999/03/03"), date("1999/06/06"))).print;
+
+quit;
 @
 It expects that the year is 2 or 4 digits,  the day is 2 digits,
 and the month is 2 digits or 3 characters.
