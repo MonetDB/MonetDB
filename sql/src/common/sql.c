@@ -1948,6 +1948,23 @@ statement *sql_simple_select
   return s;
 }
 
+static 
+statement *sql_search_condition2pivot( context *sql, statement *s ){
+	if (s->type != st_diamond && s->type != st_pearl){
+		s = statement_diamond(s);
+	}
+	if (s->type == st_pearl){
+		statement *ns = pearl2pivot(sql, s->op1.lval);
+		statement_destroy(s);
+		s = ns;
+	} else {
+	  	statement *ns = diamond2pivot(sql, s->op1.lval);
+		statement_destroy(s);
+		s = ns;
+	}
+	return s;
+}
+
 static
 statement *sql_select
 ( 
@@ -2012,19 +2029,7 @@ statement *sql_select
   } 
 
   if (s){
-	if (s->type != st_diamond && s->type != st_pearl){
-		s = statement_diamond(s);
-	}
-	if (s->type == st_pearl){
-		statement *ns = pearl2pivot(sql, s->op1.lval);
-		statement_destroy(s);
-		s = ns;
-	} else {
-	  	statement *ns = diamond2pivot(sql, s->op1.lval);
-		statement_destroy(s);
-		s = ns;
-	}
-
+	s = sql_search_condition2pivot(sql, s);
   	if (s && groupby){
 	       	group = query_groupby(sql, scp, groupby, s );
 		if (!group){
@@ -2481,8 +2486,10 @@ statement *update_set( context *sql, dlist *qname,
 		scp = scope_open(NULL);
 		scope_add_table( scp, t, t->name );
 
-		if (opt_where) 
+		if (opt_where){
 			s = search_condition(sql, scp, opt_where, NULL, NULL);
+			s = sql_search_condition2pivot(sql, s);
+		}
 
 		n = assignmentlist->h;
 		while (n){
@@ -2493,38 +2500,18 @@ statement *update_set( context *sql, dlist *qname,
 				snprintf(sql->errstr, ERRSIZE, 
 				  _("Updating non existing column %s.%s"), 
 				  	tname, assignment->h->data.sval);
+				list_destroy(l);
 				return NULL;
 			} else {
-				statement *ts = s;
 				statement *scl = statement_column(cl, NULL);
-				symbol *a = assignment->h->next->data.sym;
-				statement *v = 
-                                    scalar_exp(sql, scp, a, NULL, NULL);
+				symbol *a    = assignment->h->next->data.sym;
+				statement *v = scalar_exp(sql, scp, a, NULL, s);
 
 				if (!v) return NULL;
 					v = check_types( sql, cl->tpe, v );
-				/*
-					column_exp( sql, scp, a, NULL, s);
-
-                                statement *sc =
-                                    scalar_exp(sql, scp, a, NULL, NULL);
-
-				sc = check_types( sql, cl->tpe, sc );
-				if (!sc) return NULL;
-                                if (sc->nrcols > 0){
-                                        statement *j, *co = sc;
-                                        while(sc->type != st_column)
-                                                sc = sc->op1.stval;
-                                        j = statement_semijoin(sc, s );
-                                        sc = substitute( co, j );
-                                } else { 
-                                        sc = statement_const( s, sc);
-                                }
-				*/
-				if (!ts) ts = scl;
 
                                 if (v->nrcols <= 0)
-                                        v = statement_const( ts, v);
+                                        v = statement_const( s?s:scl, v);
 
                                 list_append_statement( l,
                                         statement_update( scl, v ));
