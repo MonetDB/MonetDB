@@ -115,7 +115,7 @@ SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,
 			 SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
 
 #ifdef ODBCDEBUG
-#ifdef NATIVE_WIN32
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 extern void ODBCLOG(const char *fmt, ...);
 #else
 #define ODBCLOG(...)	do {						\

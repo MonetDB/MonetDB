@@ -312,7 +312,8 @@ struct sql_types ODBC_c_types[] = {
 	{0, 0, 0, 0, 0, 0, 0, 0, 0}, /* sentinel */
 };
 
-#if defined(ODBCDEBUG) && defined(NATIVE_WIN32)
+#ifdef ODBCDEBUG
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
 void
 ODBCLOG(const char *fmt, ...)
 {
@@ -332,4 +333,5 @@ ODBCLOG(const char *fmt, ...)
 	}
 	va_end(ap);
 }
+#endif
 #endif
