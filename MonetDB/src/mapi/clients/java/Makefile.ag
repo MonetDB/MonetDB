@@ -21,4 +21,10 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SUBDIRS = C perl python Tests haskell tcl php java
+MTSAFE
+
+jar_mapi = {
+	DIR = pkglibdir/java
+	SOURCES = MapiException.java Mapi.java MapiClient.java
+}
+
