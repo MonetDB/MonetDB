@@ -1,14 +1,14 @@
-#!/bin/bash 
+#!/usr/bin/env bash 
 
 n=195
-#Mlog "${n}x MapiClient -everything"
+Mlog "${n}x MapiClient -everything"
 i=0;
 while [ $i -lt $n ] ; do
 	i=$[i+1]
 	echo "$i:"
 	echo "$i:" >&2
 #	$MAPICLIENT <<- EOF
-	/home/niels/data/monet/Linux/bin/MapiClient -everything <<- EOF
+	MapiClient -everything <<- EOF
 		print($i);
 	EOF
 done
