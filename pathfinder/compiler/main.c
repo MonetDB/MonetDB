@@ -492,6 +492,9 @@ static char *phases[] = {
  */
 static char *progname = 0;
 
+#define MAIN_EXIT(rtrn)	\
+	fputs (PFerrbuf, stderr);\
+	exit (rtrn);
 /**
  * Entry point to the Pathfinder compiler,
  * parses the command line (switches), then invokes the compiler driver
@@ -505,8 +508,7 @@ main (int argc, char *argv[])
      */
     int rtrn = 0;
     if ((rtrn = setjmp(PFexitPoint)) != 0 ) {
-        fputs (PFerrbuf, stderr);
-        exit ( rtrn<0 ? -rtrn : rtrn );
+        MAIN_EXIT ( rtrn<0 ? -rtrn : rtrn );
     }
 
  {
@@ -703,10 +705,10 @@ main (int argc, char *argv[])
     if ( pfin != stdin )
         fclose(pfin);
 
-    exit (EXIT_SUCCESS);
+    MAIN_EXIT (EXIT_SUCCESS);
 
  failure:
-    exit (EXIT_FAILURE);
+    MAIN_EXIT (EXIT_FAILURE);
  }
 }
 
