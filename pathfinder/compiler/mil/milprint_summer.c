@@ -8194,29 +8194,44 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (L(c));
             simplifyCoreTree (R(c));
 
-            if ((L(c)->kind == c_empty) &&
-                (R(c)->kind == c_empty))
+            if (TY_EQ(TY(L(c)), PFty_empty ()) &&
+                TY_EQ(TY(R(c)), PFty_empty ()))
             {
                 new_node = PFcore_empty ();
                 new_node->type = PFty_empty ();
                 *c = *new_node;
             }
-            else if (L(c)->kind == c_empty)
+            else if (TY_EQ(TY(L(c)), PFty_empty ()))
                 *c = *(R(c));
-            else if (R(c)->kind == c_empty)
+            else if (TY_EQ(TY(R(c)), PFty_empty ()))
                 *c = *(L(c));
             break;
         case c_let:
-            /* we need to simplify R(c) here because otherwise 
-               var_is_used can contain more occurrences than necessary */
-            simplifyCoreTree (R(c));
-
             /* don't do anything with global variables */
             if (LL(c)->sem.var->global)
             {
                 simplifyCoreTree (LR(c));
+                simplifyCoreTree (R(c));
+                break;
             }
-            else if ((i = var_is_used (LL(c)->sem.var, R(c))))
+            /* Replacing one occurrence is probably the 
+               most used case because let binding are
+               added everywhere. To avoid multiple calls
+               of simplifyCoreTree for one subtree do
+               this test separately before all others. */
+            else if (var_is_used (LL(c)->sem.var, R(c)) && expandable (c))
+            {
+                replace_var (LL(c)->sem.var, LR(c), R(c));
+                *c = *(R(c));
+                simplifyCoreTree (c);
+                break;
+            }
+
+            /* we need to simplify R(c) first because otherwise 
+               var_is_used can contain more occurrences than necessary 
+               (e.g., subtree which are pruned completely) */
+            simplifyCoreTree (R(c));
+            if ((i = var_is_used (LL(c)->sem.var, R(c))))
             {
                 simplifyCoreTree (LR(c));
 
@@ -8233,7 +8248,6 @@ simplifyCoreTree (PFcnode_t *c)
                 {
                     replace_var (LL(c)->sem.var, LR(c), R(c));
                     *c = *(R(c));
-                    simplifyCoreTree (c);
                 }
                 /* removes let statements, which are used only once and contain
                    no constructor */
@@ -8246,7 +8260,6 @@ simplifyCoreTree (PFcnode_t *c)
                 }
                 else
                 {
-                    simplifyCoreTree (R(c));
                     /* remove let statements, whose body contains only
                        the bound variable */
                     if (R(c)->kind == c_var && 
@@ -8260,7 +8273,6 @@ simplifyCoreTree (PFcnode_t *c)
             else
             {
                 *c = *(R(c));
-                simplifyCoreTree (c);
             }
             break;
         case c_for:
