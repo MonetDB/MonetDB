@@ -966,7 +966,7 @@ str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	int i;
 	str tpe;
 	
-	sprintf(s,"\t#%d%s:",getPC(mb,p), typechkName(p->typechk));
+	sprintf(s," #%d%s:",getPC(mb,p), typechkName(p->typechk));
 	advance(s);
 	for(i=0;i<p->argc;i++)
 	if( p->argv[i] >=0){
@@ -991,7 +991,7 @@ beginning of each line.
 #ifdef MALprofiler
 	if( p->counter ){
 		double avg= (p->ticks+0.0)/p->counter;
-		sprintf(t,"[%7d, %5.2f]\t",p->counter,avg);
+		sprintf(t,"[%7d, %5.2f] ",p->counter,avg);
 	} 
 	advance(t);
 #endif
@@ -1005,7 +1005,7 @@ beginning of each line.
 		if( i<p->@1-1) sprintf(t,",");
 		GDKfree(tpe);
 @c
-str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
+str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int hidden ){
 	int i;
 	str t,tpe;
 
@@ -1041,18 +1041,23 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 		sprintf(t," = %s;",mb->binding);
 	else	sprintf(t,";");
 #ifdef DEBUG_MAL_INSTR
-	if( mal_xlisting){
+	if( hidden){
 		advance(t);
 		hiddenInstructionArgs(mb,p,t);
 	}
 #endif
-	advance(t);
-	sprintf(t,"\n");
 	return s;
 }
 
+@-
+@= tabulate
+	for(;tab>0;tab--) *t++= ' ';
+	*t= 0;
+	advance(t);
+@c
+
 str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
-	int i,len=0;
+	int i,len=0,tab=4;
 	str s,t,nme;
 	int low,high;
 
@@ -1064,8 +1069,10 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 	if( getDestName(mb,p) ) nme= getDestName(mb,p); else nme="";
 	advance(t);
 	if( p->barrier){
-		if( p->barrier== BARRIERsymbol)
+		if( p->barrier== BARRIERsymbol){
 			sprintf(t,"barrier"); 
+			tab=1;
+		}
 	}
 	advance(t);
 	switch( p->token){
@@ -1074,16 +1081,18 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 		case PATcall:
 		case CMDcall:
 		case ASSIGNsymbol:
-			if( p->argc<=1 && p->fcnname==NULL)
-				sprintf(t,"\t%s",nme); 
-			else
+			if( p->argc<=1 && p->fcnname==NULL){
+				@:tabulate@
+				sprintf(t,"%s",nme); 
+			} else
 			if( *nme!='$'){
 				if( p->retc == 1){
-				sprintf(t,"\t%s := ",nme); 
-				break;
+					@:tabulate@
+					sprintf(t,"%s := ",nme); 
+					break;
 				}
 				/* display multi-assignment */
-				*t++ = '\t';
+				@:tabulate@
 				*t++ = '(';
 				for(i=0;i<p->retc;i++){
 					sprintf(t,"%s",getArgName(mb,p,i));
@@ -1092,17 +1101,21 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 						*t++= ',';
 				}
 				sprintf(t,"):=");t+=3;
-			}else
-				sprintf(t,"\t"); 
+			}else{
+				@:tabulate@
+			}
 			break;
 		case REDOsymbol:
-			sprintf(t,"\tredo %s ",nme); break;
+			@:tabulate@
+			sprintf(t,"redo %s ",nme); break;
 		case LEAVEsymbol:
-			sprintf(t,"\tleave %s",nme); break;
+			@:tabulate@
+			sprintf(t,"leave %s",nme); break;
 		case RETURNsymbol:
-			sprintf(t,"\treturn "); break;
+			@:tabulate@
+			sprintf(t,"return "); break;
 		case CATCHsymbol:
-			sprintf(t,"catch\t%s",nme); break;
+			sprintf(t,"catch %s",nme); break;
 		case ENDDEFsymbol:
 			switch(getInstrPtr(mb,0)->token){
 			case FUNCTIONsymbol: nme = "function"; break;
@@ -1115,17 +1128,19 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 			sprintf(t,"end %s",nme);
 			break;
 		case ENDsymbol:
-			sprintf(t,"end\t%s",nme); break;
+			sprintf(t,"end %s",nme); break;
 		case RULEsymbol:
 		case COMMANDsymbol:
 		case FUNCTIONsymbol:
 		case PATTERNsymbol:
-			return fcnDefinition(mb,p,s); 
+			return fcnDefinition(mb,p,s,hidden); 
 		case RAISEsymbol:
-			sprintf(t,"\traise %s",nme);
+			@:tabulate@
+			sprintf(t,"raise %s",nme);
 			break;
 		case BARRIERsymbol:
-			sprintf(t,"\t%s",nme);
+			@:tabulate@
+			sprintf(t,"%s",nme);
 			break;
 		default:
 			sprintf(t," ?%d? ",p->token); 
@@ -1174,7 +1189,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 		t= hiddenInstructionArgs(mb,p,t);
 	}
 	advance(t);
-	sprintf(t,"\n");
+	/* sprintf(t,"\n");*/
 	if(t-s >len)
 		GDKfatal("instruction2str:");
 	return s;
@@ -1183,7 +1198,7 @@ void promptInstruction(FILE *fd, MalBlkPtr mb, InstrPtr p){
 	str ps;
 	if( fd == 0) GDKfatal("printInstruction:no file\n");
 	ps= instruction2str(mb,p,mal_xlisting);
-	ps[strlen(ps)-1] = 0; /* remove '\n' */
+	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	fprintf(fd,"%s",ps);
 	GDKfree(ps);
 }
@@ -1197,7 +1212,7 @@ void printSignature(FILE *fd, Symbol s){
 	str txt= GDKmalloc(8192);
 	bzero(txt,8192);
 	p= getSignature(s);
-	(void) fcnDefinition(s->def, p,txt);
+	(void) fcnDefinition(s->def, p,txt, mal_xlisting);
 	fprintf(fd,"%s",txt);
 	GDKfree(txt);
 }
