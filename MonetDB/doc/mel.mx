@@ -85,7 +85,7 @@ interface for implementing extensions.
 
 Checking and installing your MEL extension modules is done   
 using the 
-@[<a href="www/mel.html">mel utility</a>@.
+@[<a href=" ../mel/index.html">mel utility</a>@.
 @T
 It checks the MEL syntax, and depending on the switch:
 \begin{description}
@@ -121,12 +121,12 @@ functionality.
 The C or C++ implementation can contain any kind of code, depending
 on your application domain. For handling of Monet values and BATs,
 and the existing GDK library of BAT operations, see the 
-@[<a href="www/gdk.html">GDK Interface</a>@. 
+@[<a href="../gdk/index.html">GDK Interface</a>@. 
 
 The Monet extension module loader expects unmangled routine names, 
 so C++ programmers have to declare their top-level functions as 
 @!extern "C" { }@ blocks (see the 
-@[<a href="www/modules/monettime.html">monettime module</a>@ 
+@[<a href="../../Modules/monettime/index.html">monettime module</a>@ 
 for an example of use of C++ as implementation language).
 
 @- The Development Process
@@ -401,7 +401,7 @@ for variable-sized extension atoms. Since such values are managed
 in a separate heap, users have to implement heap managing ADT operations 
 for e.g. the {\tt polygon} type. To facilitate development, you 
 can declare a polygon as the {\tt blob} type from the 
-@[<a href="www/modules/blob.html">standard library</a>@.
+@[<a href="../../Modules/blob/index.html">standard library</a>@.
 
 @+ New Primitives
 Apart from new atomic types, the MEL extension mechanism also allows
@@ -649,25 +649,25 @@ provide references to their detailed definitions.
 @- GDK 
 @T
 GDK stands for the Goblin Database Kernel,
-(see the @[<a href="www/gdk.html">The GDK Document</a>@), 
+(see the @[<a href="../gdk/index.html">The GDK Document</a>@), 
 and forms the basic 
 library on which on which Monet is built. GDK contains an extensive
 collection of relational operators on the binary model. It
 supports a standard collection of 
-@[<a href="www/gdk.html#mod_1_5_1">atoms</a>@ 
+@[<a href="../gdk/index.html#mod_1_5_1">atoms</a>@ 
 {\tt \{ void, bit, chr, sht, int,
 oid, flt, bat, lng, dbl, str \}}. All relational operators are
 optimized for these atoms and use the two standard 
-@[<a href="www/gdk.html#mod_1_5_6">accelerators</a>@ 
+@[<a href="../gdk/index.html#mod_1_5_6">accelerators</a>@ 
 {\tt index}, and {\tt hash}.
 
 Of special interest is the section on how 
-@[<a href="www/gdk.html#mod_1_3_0">BATs</a>@
+@[<a href="../gdk/index.html#mod_1_3_0">BATs</a>@
 (Binary Association Tables) are managed.
 
 @- Monet
 Monet (see the 
-@[<a href="www/monet.html">The Monet Document</a>@), 
+@[<a href="../../monet.html">The Monet Document</a>@), 
 is a threaded execution system built on top of GDK.
 Its specific features will only be used by extension programmers 
 delving in the more complex extension possibilities (builtins,
@@ -682,9 +682,9 @@ The specifics for variable-size atoms are discussed in
 @[<a target="\_self" href="\#mod\_3\_3\_0">the next section</a>@.
 
 You are strongly urged to look at the 
-@[<a href="www/gdk.html#mod_1_5_1">ATOM</a>@ and
-@[<a href="www/gdk.html#mod_1_3_2">HEAP</a>@ sections 
-of the GDK Document and the @[<a href="www/gdk\_atoms.html">gdk\_atoms</a>@ 
+@[<a href="../gdk/index.html#mod_1_5_1">ATOM</a>@ and
+@[<a href="../gdk/index.html#mod_1_3_2">HEAP</a>@ sections 
+of the GDK Document and the @[<a href="../gdk\_atoms/index.html">gdk\_atoms</a>@ 
 file, as prereading material.
 
 We will use the fictitious  user-defined atoms called {\small\tt point} 
@@ -749,10 +749,10 @@ It is the duty of this implementation function to see whether the
 presented region is large enough to hold the new atom. If so, this
 region is used, and {\tt dst} and {\tt len} are left untouched. 
 If not, the function itselfs allocates enough space with
-@[<a href="www/gdk.html#mod_1_6_1">GDKmalloc(size) : void*</a>@
+@[<a href="../gdk/index.html#mod_1_6_1">GDKmalloc(size) : void*</a>@
 returns it in {\tt *dst} and stores the size in {\tt *len}.
 If {\tt *dst} was not NULL, the old region is freed first with 
-@[<a href="www/gdk.html#mod_1_6_1">GDKfree(void*)</a>@.
+@[<a href="../gdk/index.html#mod_1_6_1">GDKfree(void*)</a>@.
  
 @- TOSTR: print in string
 @T
@@ -779,10 +779,10 @@ It is the duty of this implementation function to see whether the
 presented region is large enough to hold the string. If so, this
 region is used, and {\tt dst} and {\tt len} are left untouched. 
 If not, the function itselfs allocates enough space with
-@[<a href="www/gdk.html#mod_1_6_1">GDKmalloc(size) : void*</a>@
+@[<a href="../gdk/index.html#mod_1_6_1">GDKmalloc(size) : void*</a>@
 returns it in {\tt *dst} and stores the size in {\tt *len}.
 If {\tt *dst} was not NULL, the old region is freed first with 
-@[<a href="www/gdk.html#mod_1_6_1">GDKfree(void*)</a>@.
+@[<a href="../gdk/index.html#mod_1_6_1">GDKfree(void*)</a>@.
  
 @- HASH: hash number computation
 @T
@@ -852,13 +852,13 @@ This simple function just returns a pointer to a static nil value.
 
 @+ Variable-size Atoms
 Probably the easiest way to create variable sized atoms is to
-overload functions from the @[<a href="www/modules/blob.html">blob</a>@
+overload functions from the @[<a href="../../Modules/blob/index.html">blob</a>@
 module; which is provided in the standard collection of extension modules.
 
 Only if very specific functionality is required, will you need to
 write your own functions -- as described in this section. 
 Variable-size atoms need to manage a 
-additional @[<a href="www/gdk.html#mod_1_3_2">Heap</a>@.
+additional @[<a href="../gdk/index.html#mod_1_3_2">Heap</a>@.
 Monet provides a standard collection of functions to do this. 
 
 @- LEN: atom length function 
@@ -973,7 +973,7 @@ to the way they are passed to command implementations:
 
 \begin{description}
 \item[{\em BAT}] these are passed as a 
-@[<href="www/gdk.html#mod_1_3_1">BAT*</a>@ descriptor.
+@[<href="../gdk/index.html#mod_1_3_1">BAT*</a>@ descriptor.
 \item[{\em fixed-size atoms}] are just discriminated from..
 \item[{\em variable-size atoms}] in the way they get stored in 
 a BAT. Fixed-size atoms are stored in the tuples (BUNs), whereas 
@@ -984,11 +984,11 @@ an integer offset into that heap.
 Fixed- and variable-size atoms are essentially treated in
 the same way. Monet just requires them to consist of contiguous
 range of memory. You can use the 
-@[<a href="www/gdk\_atoms.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
+@[<a href="../gdk\_atoms/index.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
 macro to inquire for the length of the region. For fixed-size
 atoms, this will always yield the same value, that can be
 statically looked up with the 
-@[<a href="www/gdk\_atoms.html#mod_1_2_2">ATOMsize(tpe): int</a>@
+@[<a href="../gdk\_atoms/index.html#mod_1_2_2">ATOMsize(tpe): int</a>@
 macro as well.
 
 The following example MEL definition:
@@ -1009,8 +1009,8 @@ Note that passing the 'pointer to the atomic region' for fixed-size atoms
 like {\tt int} means passing an {\tt int*}, whereas the variable-size
 atom {\tt str} is passed as is. BAT parameters follow a different logic 
 altogether. The BAT interface provides the macros 
-@[<a href="www/gdk.html#mod_1_3_5">BAThtype(bat) : int</a>@ and
-@[<a href="www/gdk.html#mod_1_3_5">BATttype(bat) : int</a>@ respectively,
+@[<a href="../gdk/index.html#mod_1_3_5">BAThtype(bat) : int</a>@ and
+@[<a href="../gdk/index.html#mod_1_3_5">BATttype(bat) : int</a>@ respectively,
 to inquire about the type of the left colum ({\em head}) and
 right column ({\em tail}).
 
@@ -1036,9 +1036,9 @@ Any-parameters that occur in a BAT signature, like {\small\tt BAT[any::1,int]}
 are an exception to the rules. If the any-type is untagged or free, one 
 would expect the extra type integer to be passed. Because one can always 
 inquire about the head- and tail-type of a 
-@[<href="www/gdk.html#mod_1_3_1">BAT</a>@ with the
-@[<a href="www/gdk.html#mod_1_3_5">BAThtype(bat) : int</a>@ and
-@[<a href="www/gdk.html#mod_1_3_5">BATttype(bat) : int</a>@ 
+@[<href="../gdk/inex.html#mod_1_3_1">BAT</a>@ with the
+@[<a href="../gdk/index.html#mod_1_3_5">BAThtype(bat) : int</a>@ and
+@[<a href="../gdk/index.html#mod_1_3_5">BATttype(bat) : int</a>@ 
 macros, Monet does *not* pass extra integer parameters to specify
 head- and tail-types of a BAT.
 
@@ -1050,7 +1050,7 @@ expects a C implementation with prototype:
 {\small\begin{verbatim}
 extern int foo1_impl(ptr a, int tpe, ptr b);
 \end{verbatim}}
-where {\tt ptr} is @[<a href="www/gdk.html#mod_1_2_3">defined</a>@
+where {\tt ptr} is @[<a href="../gdk/index.html#mod_1_2_3">defined</a>@
 as {\tt void*}. Since {\small\tt a} is a free any-parameter,
 it is followed by an extra type integer. We know, however, that {\small\tt b}
 has the same type as {\small\tt a}, so no second type integer is passed 
@@ -1065,7 +1065,7 @@ you get a different prototype:
 extern int foo2_impl(BAT* a, ptr b, ptr c, int tpe);
 \end{verbatim}}
 Here the type of {\tt b} is
-@[<a href="www/gdk.html#mod_1_3_5">BAThtype(a)</a>@ and
+@[<a href="../gdk/index.html#mod_1_3_5">BAThtype(a)</a>@ and
 is not passed. Since {\tt c} is a free any-parameter, it does
 need a type integer.
 
@@ -1164,7 +1164,7 @@ int pi_impl(flt* retval) {
 \item[{\em variable-size atoms}] 
 The first parameter is the address of a region.  You must {\bf allocate} 
 this region with 
-@[<a href="www/gdk.html#mod_1_6_1">GDKmalloc(size) : void*</a>@
+@[<a href="../gdk/index.html#mod_1_6_1">GDKmalloc(size) : void*</a>@
 (obligatory to use!).
 For example:
 
@@ -1235,14 +1235,14 @@ internal type.
 
 External return atoms use the first parameter a the address of a pointer
 to some region.  You must set this pointer to a region {\bf you allocate} 
-with @[<a href="www/gdk.html#mod_1_6_1">GDKmalloc(size) : void*</a>@.
+with @[<a href="../gdk/index.html#mod_1_6_1">GDKmalloc(size) : void*</a>@.
 \end{description}
 
 Note that the internal/external distinction between atoms is different 
 from fixed size/var-size!!
 To discover run-time whether a type needs internal or external storage,
 you can use the
-@[<a href="www/gdk.html#mod_1_2_4">ATOMextern(type) : int</a>@
+@[<a href="../gdk/index.html#mod_1_2_4">ATOMextern(type) : int</a>@
 macro, which returns TRUE for external atoms, and FALSE otherwise. 
 
 @+ Implementing Accelerators
@@ -1325,7 +1325,7 @@ void meanBuild(Heap *h, BAT *b){
 \end{verbatim}}
 
 This routine creates the standard GDK
-@[<a href="www/gdk.html#mod_1_3_2">HEAP</a>@
+@[<a href="../gdk/index.html#mod_1_3_2">HEAP</a>@
 interface for managing heaps.
 
 It then iterates first over all deleted records of the BAT,
@@ -1333,18 +1333,18 @@ and calculates the sum of the head values.
 Then it iterates over all elements of the BATs and sums all stable 
 elements and all inserted elements.
 
-The @[<a href="www/gdk.html#mod_1_9_1">BATloopFast</a>@ and
-@[<a href="www/gdk.html#mod_1_9_3">DELloop</a>@ and
+The @[<a href="../gdk/index.html#mod_1_9_1">BATloopFast</a>@ and
+@[<a href="../gdk/index.html#mod_1_9_3">DELloop</a>@ and
 iterator macros are described in the 
-@[<a href="www/gdk.html">GDK interface document</a>@.
+@[<a href="../gdk/index.html">GDK interface document</a>@.
 
 {\bf Please don't confuse the HEAP interface with the HEAP\_ interface!} 
 
 The former is GDK's standard way of allocating bulk data, in its
-@[<a href="www/gdk.html#mod_1_3_2">Heap</a>@ type.
+@[<a href="../gdk/index.html#mod_1_3_2">Heap</a>@ type.
 The latter is like a small {\bf malloc} library that manages allocating 
 and free-ing small chunks from within one
-@[<a href="www/gdk.html#mod_1_3_2">Heap</a>@ structure. 
+@[<a href="../gdk/index.html#mod_1_3_2">Heap</a>@ structure. 
 
 @- DESTROY: destroy a search accelerator
 @T
@@ -1439,7 +1439,7 @@ The implementation function has the syntax:
 extern int fork_impl(Cntxt stk, YYSTREE lt, Value res);
 \end{verbatim}}
 
-The @[<a href="www/monet.html#mod_1_2_1">YYSTREE</a>@ syntax
+The YYSTREE syntax
 tree structure has the field {\tt lt->cnt} that indicates how many 
 sons it has. The {\tt lt->yysons[YYMAXSONS]} contains these subtrees. 
 If there are more sons than {\tt YYMAXSONS}, the node is recursively continued 
