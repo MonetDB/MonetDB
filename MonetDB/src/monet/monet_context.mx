@@ -58,13 +58,16 @@ extern int	CNTXTclient  (Cntxt i, Client *c);
 #define CNTXTfree1(stk)		{	Client c; CNTXTclient(stk, &c);\
 						    CNTXTfree2(stk,c); }
 
-Variable	VARfind      (Cntxt *stk, str scope);
-Variable	VARnew       (Cntxt stk, str name);  
-int 		VARpurge     (int nbats, int* bats, int natoms, int* atoms);
+extern Variable	VARfind      (Cntxt *stk, str scope);
+extern Variable	VARnew       (Cntxt stk, str name);  
+extern int 	VARpurge     (int nbats, int* bats, int natoms, int* atoms);
 
 #define VARclearBAT(B)	if(B) VARpurge(1, &(B)->batCacheid, 0, NULL)
 #define VARfreeze(X)	if(X){X->frozen=TRUE;}
 #define VARfixate(X)	if(X){X->constant=TRUE;}
+
+extern int monet_cntxtmax;
+extern int monet_cntxtlim;
 
 #endif /* _MONET_CNTXT_H_ */
 @c

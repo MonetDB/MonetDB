@@ -308,8 +308,8 @@ that can either be implemented using dynamic loading or with static
 loading. In case of static loading, libs and functions should first
 be registered with the DL_register_* functions.
 @h
-void*	DL_reglib(str path, void* dynamic_handle, int maxsize);
-int	DL_regfcn(void* tbl, ptr fcnptr, str name);
+extern void*	DL_reglib(str path, void* dynamic_handle, int maxsize);
+extern int	DL_regfcn(void* tbl, ptr fcnptr, str name);
 @c
 #ifndef STATIC
 

@@ -103,18 +103,18 @@ typedef struct {
 
 #include "monet.h"
 
-int interpret            (Cntxt stk, YYSTREE lt, ValPtr res);
-int interpret_while      (Cntxt stk, YYSTREE lt, ValPtr res);
-int interpret_ident      (Cntxt stk, YYSTREE lt, ValPtr res);
-int interpret_var        (Cntxt stk, YYSTREE lt, ValPtr res);
-int interpret_assignment (Cntxt stk, YYSTREE lt, ValPtr res);
-int interpret_seqblock   (Cntxt stk, YYSTREE lt, ValPtr res, int scope);
-int interpret_parblock   (Cntxt stk, YYSTREE lt, ValPtr res, int scope);
-int interpret_iterator   (Cntxt stk, YYSTREE lt, ValPtr res, int parallel);
-int interpret_str        (Cntxt stk, str buf, ValPtr res);
-int interpret_file       (Cntxt stk, YYSTREE lt, ValPtr res);
-int interpret_cast       (str atom, int argc, ValPtr val, ValPtr res);
-int interpret_batcast    (str atom, int argc, ValPtr val, ValPtr res);
+extern int interpret           (Cntxt stk, YYSTREE lt, ValPtr res);
+extern int interpret_while     (Cntxt stk, YYSTREE lt, ValPtr res);
+extern int interpret_ident     (Cntxt stk, YYSTREE lt, ValPtr res);
+extern int interpret_var       (Cntxt stk, YYSTREE lt, ValPtr res);
+extern int interpret_assignment(Cntxt stk, YYSTREE lt, ValPtr res);
+extern int interpret_seqblock  (Cntxt stk, YYSTREE lt, ValPtr res, int scope);
+extern int interpret_parblock  (Cntxt stk, YYSTREE lt, ValPtr res, int scope);
+extern int interpret_iterator  (Cntxt stk, YYSTREE lt, ValPtr res, int paralle);
+extern int interpret_str       (Cntxt stk, str buf, ValPtr res);
+extern int interpret_file      (Cntxt stk, YYSTREE lt, ValPtr res);
+extern int interpret_cast      (str atom, int argc, ValPtr val, ValPtr res);
+extern int interpret_batcast   (str atom, int argc, ValPtr val, ValPtr res);
 
 #endif /* _MONET_INTERPRETER_H_ */
 

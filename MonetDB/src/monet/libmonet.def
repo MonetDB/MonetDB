@@ -139,6 +139,12 @@ EXPORTS
 	TBL_Install_Functions
 	TBL_Install_LoadMIL
 	TBL_Install_Info
+	TBL_Install_Depend
+	TBL_Install_Atom
+	TBL_Install_Accelerator
+	TBL_Install_Functions
+	DL_reglib
+	DL_regfcn
 	CNTXTinit
 	CNTXTnew
 	CNTXTreserve
@@ -147,6 +153,8 @@ EXPORTS
 	CNTXTdelete
 	CNTXTclient
 	monet_cntxt
+	monet_cntxtmax
+	monet_cntxtlim
 	yysugar
 	yylval
 	yytext
@@ -159,6 +167,8 @@ EXPORTS
 	ll_templates
 	ll_argc
 	ll_ifthenelse
+	lockparser
+	unlockparser
 	yytoProlog
 	yydeparse
 	monetInternet
@@ -168,3 +178,26 @@ EXPORTS
 	monetFork
 	monetAdjustThreads
 	monetSetChannel
+	VALnew	
+	VALset 
+	VALempty
+	VALcopy	
+	VALformat
+	VALconvert
+	VALclear 
+	VALprint
+	VARfind
+	VARnew  
+	VARpurge 
+	interpret       
+	interpret_while
+	interpret_ident
+	interpret_var 
+	interpret_assignment
+	interpret_seqblock 
+	interpret_parblock
+	interpret_iterator
+	interpret_str    
+	interpret_file  
+	interpret_cast 
+	interpret_batcast

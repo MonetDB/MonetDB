@@ -178,14 +178,14 @@ typedef struct {
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
 
-ValPtr 		VALnew	    ();
-ValPtr 		VALset      (ValPtr v, int t, ptr p);
-void 		VALempty    (ValPtr v);
-ValPtr 		VALcopy	    (ValPtr dst, ValPtr src);
-int             VALformat   (char** buf, ValPtr v);
-ptr 		VALconvert  (int typ, ValPtr v,int silent);
-void            VALclear    (ValPtr v);
-int             VALprint    (FILE* fd, ValPtr v);
+extern ValPtr 		VALnew	    ();
+extern ValPtr 		VALset      (ValPtr v, int t, ptr p);
+extern void 		VALempty    (ValPtr v);
+extern ValPtr 		VALcopy	    (ValPtr dst, ValPtr src);
+extern int             VALformat   (char** buf, ValPtr v);
+extern ptr 		VALconvert  (int typ, ValPtr v,int silent);
+extern void            VALclear    (ValPtr v);
+extern int             VALprint    (FILE* fd, ValPtr v);
 
 #define ILLEGALVALUE	((ptr)-1)
 #define MAXPARAMS	32
