@@ -141,7 +141,7 @@ ostream &proto::gen_atom( ostream &o, const Atom &d ){
 	   	Ops **cmds = d.cmds();
 	   	for( int i = OP_FIX; i <= OP_NEQUAL; i++ ){  
 			Ops *s = cmds[i];
-			if (s)
+			if (s) 
 				s->print( this, o );
 		}
 	}
@@ -157,7 +157,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	
 	switch( d.operation() ){
 	case OP_TOSTR 	:
-	    o << "int\n";
+	    o << mod_export;
+	    o << " int\n";
 	    o << d.Name() << "(\n";
 	    o << "   char**\tdst,\t";
 	    o << "/* INOUT: dst charbuffer [maybe 0, may need realloc]*/\n";
@@ -171,7 +172,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* return length of resulting string. */\n\n\n" ;
     	    break;
         case OP_FROMSTR :
-	    o << "int\n";
+	    o << mod_export;
+	    o << " int\n";
 	    o << d.Name() << "(\n";
 	    o << "   char*\tsrc,\t/* IN: to-be-parsed string. */\n";
 	    o << "   int*\t\tlen,\t";
@@ -186,7 +188,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* return number of parsed characters. */\n\n\n";
 	    break;
 	case OP_WRITE 	:
-	    o << "void\n";
+	    o << mod_export;
+	    o << " void\n";
 	    o << d.Name() << "(\n";
 	    o << "   " << name << " ";
 	    if (!hasPtr)
@@ -200,7 +203,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
     	    break;
         case OP_READ :
 	    o << "\n";
-	    o << name << " ";
+	    o << mod_export;
+	    o << " " << name << " ";
 	    if (!hasPtr)
 	    	o << "*";
 	    o << d.Name() << "(\n";
@@ -215,7 +219,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* return new atom (in case of var atoms allocation is required). */\n\n\n";
 	    break;
         case OP_COMP 	:
-	    o << "int\n";
+	    o << mod_export;
+	    o << " int\n";
 	    o << d.Name() << "(\n   " << name;
 	    if (!hasPtr)
 		    o << "*";
@@ -230,7 +235,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* returns int <0 if l<r, 0 if l==r, >0 else */\n\n\n";
 	    break;
         case OP_NEQUAL 	:
-	    o << "int\n";
+	    o << mod_export;
+	    o << " int\n";
 	    o << d.Name() << "(\n   " << name;
 	    if (!hasPtr)
 		    o << "*";
@@ -245,14 +251,16 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* returns int !=0 if l!=r, 0 else */\n\n\n";
  	    break;
         case OP_DEL 	:
-	    o << "void\n";
+	    o << mod_export;
+	    o << " void\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\thp,\t/* INOUT: heap of " << name << "s. */\n";
 	    o << "   size_t*\t\toffset\t/* IN: offset from heapbase.  */\n);\n";
 	    o << "\t/* DEL: delete a " << name << " from the heap.  */\n\n\n";
 	    break;
         case OP_HASH 	:
-	    o << "hash_t\n";
+	    o << mod_export;
+	    o << " hash_t\n";
 	    o << d.Name() << "(\n";
 	    o << "   " << name;
 	    if (!hasPtr)
@@ -263,7 +271,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* returns a positive integer hash value */\n\n\n";
 	    break;
         case OP_NULL 	:
-	    o << name; 
+	    o << mod_export;
+	    o << " " << name; 
 	    if (!hasPtr)
 		    o << "*";
 	    o << "\n";
@@ -271,7 +280,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* returns a pointer to a nil-" << name << ". */\n\n\n";
 	    break;
         case OP_PUT 	:
-	    o << "var_t\n";
+	    o << mod_export;
+	    o << " var_t\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\thp,\t/* INOUT: heap of " << name << "s. */\n";
 	    o << "   var_t*\t\toffset,\t/* OUT: offset from heapbase. */\n";
@@ -283,7 +293,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << " into a heap. */\n\n\n";
 	    break;
         case OP_FIX 	:
-	    o << "int\n";
+	    o << mod_export;
+	    o << " int\n";
 	    o << d.Name() << "(\n";
 	    o << "   " << name;
 	    if (!hasPtr) o << "*";
@@ -291,7 +302,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* FIX: decrease the refcnt and return it */\n\n\n";
 	    break;
         case OP_UNFIX 	:
-	    o << "int\n";
+	    o << mod_export;
+	    o << " int\n";
 	    o << d.Name() << "(\n";
 	    o << "   " << name;
 	    if (!hasPtr) o << "*";
@@ -299,7 +311,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* UNFIX: decrease the refcnt and return it */\n\n\n";
 	    break;
         case OP_LEN 	:
-	    o << "int\n";
+	    o << mod_export;
+	    o << " int\n";
 	    o << d.Name() << "(\n";
 	    o << "   " << name;
 	    if (!hasPtr)
@@ -309,7 +322,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* returns the byte-length of the " << name << " */\n\n\n";
 	    break;
         case OP_HEAP 	:
-	    o << "void\n";
+	    o << mod_export;
+	    o << " void\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\thp,\t/* OUT: heap of " << name << "s. */\n";
 	    o << "   size_t\t\tsize\t/* IN: #atoms you expect to store.*/\n);\n";
@@ -318,13 +332,15 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\n\n\n";
 	    break;
         case OP_CHECK 	:
-	    o << "int\n";
+	    o << mod_export;
+	    o << " int\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\th,\n   HeapRepair*\thr\n";
 	    o << ");\t/* returns 1 on success 0 on failure */\n\n\n";
 	    break;
 	case OP_CONVERT  :
-	    o << "void\n";
+	    o << mod_export;
+	    o << " void\n";
 	    o << d.Name() << "(\n";
 	    o << "   " << name;
 	    if (!hasPtr)
@@ -335,7 +351,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t * from host to network and network to host */\n\n\n";
 	    break;
 	case OP_HCONVERT  :
-	    o << "void\n";
+	    o << mod_export;
+	    o << " void\n";
 	    o << d.Name() << "( Heap *hp\n";
 	    o << "\t/* IN/OUT: inplace heap conversion.*/);\n";
 	    o << "/* This conversion routine is used for both conversions\n";
@@ -368,7 +385,8 @@ ostream &proto::gen_acc( ostream &o, const Acc &d ){
 ostream &proto::gen_accops( ostream &o, const Accops &d ){
    switch (d.operation()){
     case OP_INSERT: 
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
      o << "   size_t\tidx,\t/* IN: BUNindex() of value. */\n";
@@ -384,7 +402,8 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << "\n\t/* INSERT: insert an atom at BUN position 'idx' */\n\n\n";
      break;
     case OP_DELETE:
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
      o << "   size_t\tidx,\t/* IN: BUNindex() of value. */\n";
@@ -400,7 +419,8 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << "\n\t/* DELETE: delete an atom from BUN position 'idx' */\n\n\n";
      break;
     case OP_BUILD:
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap */\n";
      o << "   int*\t\tparam,\t/* an extra parameter */\n";
@@ -408,7 +428,8 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << "\n\t/* BUILD: build a search accelerator on the head */\n\n\n";
      break;
     case OP_DESTROY:
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
      o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head column. */\n);";
@@ -416,7 +437,8 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << " accelerator on the head */\n\n\n";
      break;
     case OP_ABORT:
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
      o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head column. */\n);";
@@ -424,7 +446,8 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << " accelerator after abort */\n\n\n";
      break;
     case OP_COMMIT:
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
      o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
@@ -432,7 +455,8 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << " accelerator after commit */\n\n\n";
      break;
     case OP_SAVE:
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
      o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
@@ -440,7 +464,8 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << " accelerator before saving */\n\n\n";
      break;
     case OP_CLUSTER:
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
      o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
@@ -448,7 +473,8 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << " accelerator after abort */\n\n\n";
      break;
     case OP_TRAVERSE:
-     o << "int\n";
+     o << mod_export;
+     o << " int\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc<< " accelerator heap. */\n";
      o << "   size_t\tidx,\t/* IN: future BUNindex() OUT: oldpos. */\n";
@@ -464,14 +490,16 @@ ostream &proto::gen_accops( ostream &o, const Accops &d ){
      o << "\t/* returns: (are there more nodes 2bvisited?)   */\n\n\n";
      break;
     case OP_REPAIR:
-     o << "int\n";
+     o << mod_export;
+     o << " int\n";
      o << d.Name() << "(\n";
      o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
      o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
      o << "\n\t/* CHECK&REPAIR: " << acc << " accelerator. */\n\n\n";
      break;
     case OP_MOVE:
-     o << "void\n";
+     o << mod_export;
+     o << " void\n";
      o << d.Name() << "(\n";
      o << "  Heap *acc, size_t from, size_t to, BAT *b, ptr val );\n";
      break;
