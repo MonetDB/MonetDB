@@ -373,14 +373,8 @@ void monet_hello(void) {
         printf("# Monet Database Server V%s\n", monet_version);
         printf("# Copyright (c) 1993-2003, CWI. ");
         printf("All rights reserved.\n");
-#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
-	/* C99 defines z length modifier to indicate size_t */
-        printf("# compiled for %s/%zdbit; %s linked.\n", 
-			monet_arch, sizeof(ptr)*8, linkinfo );
-#else
-        printf("# compiled for %s/%ldbit; %s linked.\n", 
-			monet_arch, (long) (sizeof(ptr)*8), linkinfo );
-#endif
+        printf("# compiled for %s/%lubit; %s linked.\n", 
+			monet_arch, (unsigned long) (sizeof(ptr)*8), linkinfo );
     }
 }
 

@@ -523,16 +523,9 @@ Init globals.
     global.free_ent = ((global.block_compress) ? FIRST : 256 );
 
     if(global.maxbits > BITS) {
-#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
-	/* C99 defines z length modifier to indicate size_t */
 	fprintf(stderr,
-	"input compressed with %zd bits, can only handle %d bits\n",
-	 global.maxbits, BITS);
-#else
-	fprintf(stderr,
-	"input compressed with %ld bits, can only handle %d bits\n",
-	 (long) global.maxbits, BITS);
-#endif
+	"input compressed with %lu bits, can only handle %d bits\n",
+	 (unsigned long) global.maxbits, BITS);
 	return -1;
     }
 @-

@@ -639,11 +639,7 @@ the standard mechanism.
 		if (*errbuf) {
  			int len, fd = connections[i].sock;
 
-#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
-			sprintf(msg, "err:%s:%zd\n", nm, strlen(errbuf) + 1);
-#else
-			sprintf(msg, "err:%s:%u\n", nm, (unsigned int) strlen(errbuf) + 1);
-#endif
+			sprintf(msg, "err:%s:%lu\n", nm, (unsigned long) strlen(errbuf) + 1);
 			len = strlen(msg);
 			memcpy(msg+len, errbuf, strlen(errbuf)+1);
 	    		socket_write(fd, len+strlen(errbuf)+1, msg,"error msg");
@@ -1157,19 +1153,11 @@ TCPexport(
 #ifndef WORDS_BIGENDIAN
 	    BATconvert(b,CONV_HTON);
 #endif
-#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
-	    sprintf(buf, "bat:%s:%zd*%zd:%s\@%d%s%s:%s\@%d%s%s:%zd:%zd:", 
-		name, BATcount(b), BUNsize(b), 
-		atom_name(b->htype), b->hloc, b->hsorted?"+":"", b->hkey?"k":"",
-		atom_name(b->ttype), b->tloc, b->tsorted?"+":"", b->tkey?"k":"",
-		b->hheap.base?b->hheap.free:0, b->theap.base?b->theap.free:0);
-#else
 	    sprintf(buf, "bat:%s:%lu*%lu:%s\@%d%s%s:%s\@%d%s%s:%lu:%lu:", 
 		name, (unsigned long) BATcount(b), (unsigned long) BUNsize(b), 
 		atom_name(b->htype), b->hloc, b->hsorted?"+":"", b->hkey?"k":"",
 		atom_name(b->ttype), b->tloc, b->tsorted?"+":"", b->tkey?"k":"",
 		b->hheap.base?(unsigned long)b->hheap.free:0, b->theap.base?(unsigned long)b->theap.free:0);
-#endif
 
 	    p = buf + strlen(buf);
 	    p += OIDtoStr(&p, &len, &b->halign); *p++ = ':';
