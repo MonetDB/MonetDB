@@ -1363,6 +1363,26 @@ static stmt *sets2pivot(context * sql, list * ll)
 	return NULL;
 }
 
+/* turns a stmt set (or a set of stmt_sets) into a pivot table 
+ * ie a table with a oid column for each base table.
+ * A row of this pivot table expresses how the rows of the base tables
+ * relate.
+ *
+ * TODO current implementation really converts the stmt set here.
+ * As this translation involves optimization questions this should be
+ * moved to the optimizer. 
+ * This change can be implemented using a new stmt pivot table 
+ * (stmt_pivot_table(stmt_list (of basetables), stmt_set)) . Through out
+ * sql.c the test for st_list should be checked and changed to st_ptable.
+ *
+ * The optimizer should just go through the stmt tree and change all
+ * pivot statements using the current expansion code.
+ *
+ * simple transition steps
+ * 	1) stmt_pivot_table intoduction (but as (stmt_pivot_table(basetableslist, expanded list) (chould be handled by the statement_exec to only expand the second argument of the pivot table.
+ * 	2) start optimizer.
+ *
+ */
 static stmt *stmt2pivot(context * sql, scope * scp, stmt * s)
 {
 	if (s->type != st_set && s->type != st_sets) {

@@ -120,7 +120,7 @@ SQLRETURN SQLSpecialColumns(
 	}
 	assert(tabName);
 	if (strcmp(tabName, "") == 0) {
-		GDKfree(tabName);
+		free(tabName);
 		/* HY090 = Invalid string */
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
@@ -135,7 +135,7 @@ SQLRETURN SQLSpecialColumns(
 	if (schName != NULL) {
 		work_str_len += strlen(schName);
 	}
-	work_str = GDKmalloc(work_str_len);
+	work_str = malloc(work_str_len);
 	assert(work_str);
 	strcpy(work_str, "");	/* initialize it */
 
@@ -156,7 +156,7 @@ SQLRETURN SQLSpecialColumns(
 
 
 	/* construct the query now */
-	query = GDKmalloc(1000 + strlen(work_str));
+	query = malloc(1000 + strlen(work_str));
 	assert(query);
 
 	if (nIdentifierType == SQL_BEST_ROWID) {
@@ -192,21 +192,21 @@ SQLRETURN SQLSpecialColumns(
 		strcpy(query, "SELECT NULL AS SCOPE, '' AS COLUMN_NAME, 1 AS DATA_TYPE, 'CHAR' AS TYPE_NAME, 1 AS COLUMN_SIZE, 1 AS BUFFER_LENGTH, 0 AS DECIMAL_DIGITS, 0 AS PSEUDO_COLUMN FROM SCHEMAS S WHERE 0 = 1");
 	}
 
-	GDKfree(work_str);
+	free(work_str);
 
 	/* Done with parameter values evaluation. Now free the C strings. */
 	if (schName != NULL) {
-		GDKfree(schName);
+		free(schName);
 	}
 	if (tabName != NULL) {
-		GDKfree(tabName);
+		free(tabName);
 	}
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
 	rc = ExecDirect(hStmt, query, SQL_NTS);
 
-	GDKfree(query);
+	free(query);
 
 	return rc;
 }

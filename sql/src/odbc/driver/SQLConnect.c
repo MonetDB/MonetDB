@@ -88,20 +88,20 @@ SQLRETURN Connect(
 	uid = copyODBCstr2Cstr(szUID, nUIDLength);
 	if (uid == NULL || strlen(uid) == 0) {
 		__SQLGetPrivateProfileString(dsn, "USER", "", buf, BUFSIZ, ODBC_INI);
-		uid = GDKstrdup(buf);
+		uid = strdup(buf);
 	}
 	pwd = copyODBCstr2Cstr(szPWD, nPWDLength);
 	if (uid == NULL || strlen(pwd) == 0) {
 		__SQLGetPrivateProfileString(dsn, "PASSWORD", "", buf, BUFSIZ, ODBC_INI);
-		pwd = GDKstrdup(buf);
+		pwd = strdup(buf);
 	}
 
 	/* get the other information from the ODBC.INI file */
 	__SQLGetPrivateProfileString(dsn, "DATABASE", "", buf, BUFSIZ, ODBC_INI);
-	database = GDKstrdup(buf);
+	database = strdup(buf);
 	/* TODO: Provided database/schema are currently not used/implemented */
 	__SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ, ODBC_INI);
-	host = GDKstrdup(buf);
+	host = strdup(buf);
 	__SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
 	port = atoi(buf);
 	__SQLGetPrivateProfileString(dsn, "DEBUG", "0", buf, BUFSIZ, ODBC_INI);
@@ -109,6 +109,7 @@ SQLRETURN Connect(
 
 	/* Retrieved and checked the arguments.
 	   Now try to open a connection with the server */
+	fprintf(stderr, "SQLConnect %s %s %s %d\n", uid, database, host, port);
 	/* connect to a server on host via port */
 	socket_fd = client(host, port);
 	if (socket_fd > 0) {
@@ -142,7 +143,7 @@ SQLRETURN Connect(
 				if (s){ 
 					*s = '\0';
 				}
-				schema = GDKstrdup(schema);
+				schema = strdup(schema);
 			}
 		}
 		if (db != NULL) {
@@ -170,40 +171,40 @@ SQLRETURN Connect(
 	/* store internal information and clean up buffers */
 	if (dbc->Connected == 1) {
 		if (dbc->DSN != NULL) {
-			GDKfree(dbc->DSN);
+			free(dbc->DSN);
 			dbc->DSN = NULL;
 		}
 		dbc->DSN = dsn;
 		if (dbc->UID != NULL) {
-			GDKfree(dbc->UID);
+			free(dbc->UID);
 			dbc->UID = NULL;
 		}
 		dbc->UID = uid;
 		if (dbc->PWD != NULL) {
-			GDKfree(dbc->PWD);
+			free(dbc->PWD);
 			dbc->PWD = NULL;
 		}
 		dbc->PWD = pwd;
 		if (dbc->DBNAME != NULL) {
-			GDKfree(dbc->DBNAME);
+			free(dbc->DBNAME);
 			dbc->DBNAME = NULL;
 		}
 		dbc->DBNAME = schema;
 
 	} else {
 		if (uid != NULL) {
-			GDKfree(uid);
+			free(uid);
 		}
 		if (pwd != NULL) {
-			GDKfree(pwd);
+			free(pwd);
 		}
 		if (database != NULL) {
-			GDKfree(database);
+			free(database);
 		}
 	}
 	/* free allocated but not stored strings */
 	if (host != NULL) {
-		GDKfree(host);
+		free(host);
 	}
 	return rc;
 }

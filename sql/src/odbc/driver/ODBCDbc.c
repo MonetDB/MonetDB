@@ -49,7 +49,7 @@
  */
 ODBCDbc * newODBCDbc(ODBCEnv * env)
 {
-	ODBCDbc * dbc = (ODBCDbc *)GDKmalloc(sizeof(ODBCDbc));
+	ODBCDbc * dbc = (ODBCDbc *)malloc(sizeof(ODBCDbc));
 	assert(dbc);
 	assert(env);
 
@@ -209,18 +209,18 @@ void destroyODBCDbc(ODBCDbc * dbc)
 	/* cleanup own managed data */
 	deleteODBCErrorList(dbc->Error);
 	if (dbc->DSN) {
-		GDKfree(dbc->DSN);
+		free(dbc->DSN);
 	}
 	if (dbc->UID) {
-		GDKfree(dbc->UID);
+		free(dbc->UID);
 	}
 	if (dbc->PWD) {
-		GDKfree(dbc->PWD);
+		free(dbc->PWD);
 	}
 	if (dbc->DBNAME) {
-		GDKfree(dbc->DBNAME);
+		free(dbc->DBNAME);
 	}
 
-	GDKfree(dbc);
+	free(dbc);
 }
 

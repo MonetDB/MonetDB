@@ -71,7 +71,7 @@ SQLRETURN Prepare(
 
 	if (stmt->Query != NULL) {
 		/* there was already a prepared statement, free it */
-		GDKfree(stmt->Query);
+		free(stmt->Query);
 		stmt->Query = NULL;
 	}
 

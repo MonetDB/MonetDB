@@ -49,7 +49,7 @@
  */
 ODBCEnv * newODBCEnv()
 {
-	ODBCEnv * env = (ODBCEnv *)GDKmalloc(sizeof(ODBCEnv));
+	ODBCEnv * env = (ODBCEnv *)malloc(sizeof(ODBCEnv));
 	assert(env);
 
 	env->Error = NULL;
@@ -152,6 +152,6 @@ void destroyODBCEnv(ODBCEnv * env)
 	env->Type = 0;
 
 	deleteODBCErrorList(env->Error);
-	GDKfree((void *)env);
+	free((void *)env);
 }
 

@@ -58,11 +58,11 @@ SQLRETURN FreeStmt(
 		{
 			/* close cursor, discard result set, set to prepared */
 			if (stmt->ResultCols) {
-				GDKfree(stmt->ResultCols);
+				free(stmt->ResultCols);
 				stmt->ResultCols = NULL;
 			}
 			if (stmt->ResultRows) {
-				GDKfree(stmt->ResultRows);
+				free(stmt->ResultRows);
 				stmt->ResultRows = NULL;
 			}
 			stmt->nrCols = 0;

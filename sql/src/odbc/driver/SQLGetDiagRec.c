@@ -156,13 +156,13 @@ SQLRETURN GetDiagRec(
 				} else {
 					/* copy only the data that fits in the buffer and make it null terminated */
 					/* use an extra tmp_str storage */
-					char * tmp_str = (char *) GDKmalloc(msgLen + 1);
+					char * tmp_str = (char *) malloc(msgLen + 1);
 					strcpy((char *)messageText, ODBCErrorMsgPrefix);
 					strcat((char *)messageText, msg);
 
 					strncpy((char *)messageText, tmp_str, bufferLength - 1);
 					messageText[bufferLength - 1] = '\0';
-					GDKfree(tmp_str);
+					free(tmp_str);
 
 					retCode = SQL_SUCCESS_WITH_INFO;
 				}

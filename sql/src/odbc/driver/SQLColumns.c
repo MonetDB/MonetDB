@@ -93,7 +93,7 @@ SQLRETURN SQLColumns(
 	if (colName != NULL) {
 		work_str_len += strlen(colName);
 	}
-	work_str = GDKmalloc(work_str_len);
+	work_str = malloc(work_str_len);
 	assert(work_str);
 	strcpy(work_str, "");	/* initialize it */
 
@@ -149,7 +149,7 @@ SQLRETURN SQLColumns(
 
 
 	/* construct the query now */
-	query = GDKmalloc(1000 + strlen(work_str));
+	query = malloc(1000 + strlen(work_str));
 	assert(query);
 
 	strcpy(query, "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, T.NAME AS TABLE_NAME, C.NAME AS COLUMN_NAME, C.TYPE AS DATA_TYPE, C.TYPE AS TYPE_NAME, C.TYPE_DIGITS AS COLUMN_SIZE, C.TYPE_DIGITS AS BUFFER_LENGTH, C.TYPE_SCALE AS DECIMAL_DIGITS, '' AS NUM_PREC_RADIX, C.NULL AS NULLABLE, '' AS REMARKS, '' AS COLUMN_DEF, C.TYPE AS SQL_DATA_TYPE, '' AS SQL_DATETIME_SUB, '' AS CHAR_OCTET_LENGTH, C.NUMBER AS ORDINAL_POSITION, C.NULL AS IS_NULLABLE FROM SCHEMAS S, TABLES T, COLUMNS C WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID");
@@ -159,24 +159,24 @@ SQLRETURN SQLColumns(
 
 	/* add the ordering */
 	strcat(query, " ORDER BY S.NAME, T.NAME, C.NUMBER");
-	GDKfree(work_str);
+	free(work_str);
 
 	/* Done with parameter values evaluation. Now free the C strings. */
 	if (schName != NULL) {
-		GDKfree(schName);
+		free(schName);
 	}
 	if (tabName != NULL) {
-		GDKfree(tabName);
+		free(tabName);
 	}
 	if (colName != NULL) {
-		GDKfree(colName);
+		free(colName);
 	}
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
 	rc = ExecDirect(hStmt, query, SQL_NTS);
 
-	GDKfree(query);
+	free(query);
 
 	return rc;
 }

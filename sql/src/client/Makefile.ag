@@ -1,9 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = ../common $(MONET_INCS) $(READLINE_INCS)
+INCLUDES = $(MONET_INCS) $(READLINE_INCS)
 
 bin_Msql = {
-	SOURCES = Msql.c comm.c comm.h gdk.c query.h \
+	SOURCES = Msql.c comm.c comm.h query.h mem.h \
 		  simple_prompt.c simple_prompt.h
-	LIBS = $(MONET_LIBS) -lstream -lmutils $(READLINE_LIBS) $(PTHREAD_LIBS)
+	LIBS = $(MONET_LIBS) -lstream -lmutils $(READLINE_LIBS) 
 }

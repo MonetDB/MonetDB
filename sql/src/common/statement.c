@@ -192,6 +192,10 @@ void stmt_destroy(stmt * s)
 		case st_triop:
 			list_destroy(s->op1.lval);
 			break;
+		case st_ptable:
+			list_destroy(s->op1.lval);
+			stmt_destroy(s->op2.stval);
+			break;
 		case st_atom:
 			atom_destroy(s->op1.aval);
 			break;
@@ -297,6 +301,16 @@ void stmt_reset( stmt *s ){
 				stmt_reset( m->data );
 			}
 		}
+	} break;
+	case st_ptable: {
+		for(n = s->op1.lval->h; n; n = n->next ){
+			list *l = n->data;
+			node *m = l->h;
+			while(m){
+				stmt_reset( m->data );
+			}
+		}
+		stmt_reset( s->op2.stval );
 	} break;
 
 	case st_column: case st_create_column: 
@@ -848,6 +862,15 @@ stmt *stmt_sets(list * l1)
 	stmt *s = stmt_create();
 	s->type = st_sets;
 	s->op1.lval = l1;
+	return s;
+}
+
+stmt *stmt_pivot_table(list * l1, stmt *set)
+{
+	stmt *s = stmt_create();
+	s->type = st_ptable;
+	s->op1.lval = l1;
+	s->op2.stval = set;
 	return s;
 }
 

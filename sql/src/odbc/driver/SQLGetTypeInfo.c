@@ -162,7 +162,7 @@ SQLRETURN SQLGetTypeInfo(
 	}
 
 	/* construct the query now */
-	query = GDKmalloc(1000);
+	query = malloc(1000);
 	assert(query);
 
 	/* result (see http://odbcrouter.com/api/SQLGetTypeInfo.shtml (some
@@ -210,7 +210,7 @@ SQLRETURN SQLGetTypeInfo(
 	assert(query);
 	rc = ExecDirect(hStmt, query, SQL_NTS);
 
-	GDKfree(query);
+	free(query);
 
 	return rc;
 }

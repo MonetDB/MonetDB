@@ -43,7 +43,7 @@ static char *convert(char *str ){
 		if (str[i] == '\'')
 			len++;
 	}
-	res = GDKmalloc(len);
+	res = malloc(len);
 	for(len = 0, i=0; str[i]; i++, len++){
 		if (str[i] == '\''){
 			res[len] = '\\';
@@ -119,8 +119,8 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		char	*Query = 0;
 		int	i = 0, params = 1;
 		int	queryLen = strlen(hstmt->Query) + 1;
-		char    *oldquery = GDKstrdup(hstmt->Query);
-		char 	**strings = (char**)GDKmalloc(sizeof(char*)*hstmt->bindParams.size );
+		char    *oldquery = strdup(hstmt->Query);
+		char 	**strings = (char**)malloc(sizeof(char*)*hstmt->bindParams.size );
 
 		memset(strings,0,sizeof(char*)*hstmt->bindParams.size);
 		for(i=1; i <= hstmt->bindParams.size; i++){
@@ -130,7 +130,7 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 			strings[i] = convert(hstmt->bindParams.array[i]->ParameterValuePtr);
 			queryLen += 2 + strlen(strings[i]);
 		}
-		Query = GDKmalloc(queryLen);
+		Query = malloc(queryLen);
 		Query[0] = '\0';
 		i = 0;
 		query = oldquery;
@@ -152,10 +152,10 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		}
 		for(i=0;i<hstmt->bindParams.size; i++){
 			if(strings[i])
-				GDKfree(strings[i]);
+				free(strings[i]);
 		}
-		GDKfree(strings);
-		GDKfree(oldquery);
+		free(strings);
+		free(oldquery);
 		query = Query;
 	}
 

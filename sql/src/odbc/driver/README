@@ -69,7 +69,6 @@ Next there are some files which were already there:
 - comm.[ch]		/* client connect(host, port) function. Used in SQLConnect.c */
 - catalog_client.c	/* catalog retrieval functions and types. Used in SQLConnect.c */
 - statement_dump.c	/* dumps a parsed SQL command. Used in SQLExecute.c */
-- gdk.c			/* implementation of GDKmalloc() etc. Used in ODBC*.c */
 - prof.c		/* not used */
 
 Of course there is a Makefile. Because we use autoconf and automake
@@ -284,7 +283,7 @@ the communication APIs, SQL to MIL translator and possibly MonetDB.
 
 
 TODO 5) For ease of maintenance the functions which communicate with the SQL
- frontend (comm.[ch], catalog_client.c, statement_dump.c, gdk.c, prof.c)
+ frontend (comm.[ch])
  should be placed in the SQL frontend lib or SQL client communications lib.
 This is a small cleanup to improve the layered architecture.
 

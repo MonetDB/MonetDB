@@ -64,7 +64,6 @@
 
 
 /* MonetDB / SQL frontend include files */
-#include <gdk.h>	/* for GDKmalloc(), GDKfree(), GDKstrdup() */
 #include "comm.h"	/* for ??() */
 #include <context.h>	/* for ??() */
 #include <statement.h>	/* for ??() */

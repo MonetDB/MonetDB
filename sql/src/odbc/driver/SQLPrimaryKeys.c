@@ -83,7 +83,7 @@ SQLRETURN SQLPrimaryKeys(
 	}
 	assert(tabName);
 	if (strcmp(tabName, "") == 0) {
-		GDKfree(tabName);
+		free(tabName);
 		/* HY090 = Invalid string */
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
@@ -98,7 +98,7 @@ SQLRETURN SQLPrimaryKeys(
 	if (schName != NULL) {
 		work_str_len += strlen(schName);
 	}
-	work_str = GDKmalloc(work_str_len);
+	work_str = malloc(work_str_len);
 	assert(work_str);
 	strcpy(work_str, "");	/* initialize it */
 
@@ -119,7 +119,7 @@ SQLRETURN SQLPrimaryKeys(
 
 
 	/* construct the query now */
-	query = GDKmalloc(1000 + strlen(work_str));
+	query = malloc(1000 + strlen(work_str));
 	assert(query);
 
 	strcpy(query, "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, T.NAME AS TABLE_NAME, C.NAME AS COLUMN_NAME, KC.ORDINAL_POSITION AS KEY_SEQ, K.KEY_NAME AS PK_NAME FROM SCHEMAS S, TABLES T, COLUMNS C, KEYS K, KEYCOLUMNS KC WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID AND T.ID = K.TABLE_ID AND C.ID = KC.COLUMN_ID AND KC.KEY_ID = K.KEY_ID AND K.IS_PRIMARY = 1");
@@ -129,21 +129,21 @@ SQLRETURN SQLPrimaryKeys(
 
 	/* add the ordering */
 	strcat(query, " ORDER BY S.NAME, T.NAME, K.KEY_SEQ");
-	GDKfree(work_str);
+	free(work_str);
 
 	/* Done with parameter values evaluation. Now free the C strings. */
 	if (schName != NULL) {
-		GDKfree(schName);
+		free(schName);
 	}
 	if (tabName != NULL) {
-		GDKfree(tabName);
+		free(tabName);
 	}
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
 	rc = ExecDirect(hStmt, query, SQL_NTS);
 
-	GDKfree(query);
+	free(query);
 
 	return rc;
 }

@@ -104,7 +104,7 @@ SQLRETURN SQLForeignKeys(
 	if (fktabName != NULL) {
 		work_str_len += strlen(fktabName);
 	}
-	work_str = GDKmalloc(work_str_len);
+	work_str = malloc(work_str_len);
 	assert(work_str);
 	strcpy(work_str, "");	/* initialize it */
 
@@ -144,7 +144,7 @@ SQLRETURN SQLForeignKeys(
 
 
 	/* construct the query now */
-	query = GDKmalloc(1000 + strlen(work_str));
+	query = malloc(1000 + strlen(work_str));
 	assert(query);
 
 	strcpy(query, "SELECT '' AS PKTABLE_CAT, S1.NAME AS PKTABLE_SCHEM, T1.NAME AS PKTABLE_NAME, C1.NAME AS PKCOLUMN_NAME, '' AS FKTABLE_CAT, S1.NAME AS FKTABLE_SCHEM, T1.NAME AS FKTABLE_NAME, C1.NAME AS FKCOLUMN_NAME, KC.ORDINAL_POSITION AS KEY_SEQ, K.UPDATE_RULE AS UPDATE_RULE, K.DELETE_RULE AS DELETE_RULE, K.FK_NAME AS FK_NAME, K.PK_NAME AS PK_NAME, K.DEFERRABILITY AS DEFERRABILITY \
@@ -162,27 +162,27 @@ SQLRETURN SQLForeignKeys(
 		/* order on PK output columns */
 		strcat(query, " ORDER BY S1.NAME, T1.NAME, KC.ORDINAL_POSITION");
 	}
-	GDKfree(work_str);
+	free(work_str);
 
 	/* Done with parameter values evaluation. Now free the C strings. */
 	if (pkschName != NULL) {
-		GDKfree(pkschName);
+		free(pkschName);
 	}
 	if (pktabName != NULL) {
-		GDKfree(pktabName);
+		free(pktabName);
 	}
 	if (fkschName != NULL) {
-		GDKfree(fkschName);
+		free(fkschName);
 	}
 	if (fktabName != NULL) {
-		GDKfree(fktabName);
+		free(fktabName);
 	}
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
 	rc = ExecDirect(hStmt, query, SQL_NTS);
 
-	GDKfree(query);
+	free(query);
 
 	return rc;
 }

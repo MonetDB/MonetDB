@@ -82,19 +82,19 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_DATA_SOURCE_NAME:	/* 02 */
 			isNumericValue = 0;
-			sValue = GDKstrdup((dbc->DSN != NULL) ? dbc->DSN : "");
+			sValue = strdup((dbc->DSN != NULL) ? dbc->DSN : "");
 			break;
 		case SQL_DATABASE_NAME:		/* 16 */
 			isNumericValue = 0;
-			sValue = GDKstrdup((dbc->DBNAME != NULL) ? dbc->DBNAME : "");
+			sValue = strdup((dbc->DBNAME != NULL) ? dbc->DBNAME : "");
 			break;
 		case SQL_DRIVER_NAME:		/* 06 */
 			isNumericValue = 0;
-			sValue = GDKstrdup(MONETDB_DRIVER_NAME);
+			sValue = strdup(MONETDB_DRIVER_NAME);
 			break;
 		case SQL_DRIVER_VER:		/* 07 */
 			isNumericValue = 0;
-			sValue = GDKstrdup(MONETDB_DRIVER_VER);
+			sValue = strdup(MONETDB_DRIVER_VER);
 			break;
 		case SQL_FETCH_DIRECTION:	/* 08 */
 			nValue = SQL_FD_FETCH_NEXT;
@@ -107,11 +107,11 @@ SQLRETURN SQLGetInfo(
 		case SQL_ODBC_VER:		/* 10 */
 		case SQL_DRIVER_ODBC_VER:	/* 77 */
 			isNumericValue = 0;
-			sValue = GDKstrdup(MONETDB_ODBC_VER);
+			sValue = strdup(MONETDB_ODBC_VER);
 			break;
 		case SQL_ROW_UPDATES:		/* 11 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_ODBC_SAG_CLI_CONFORMANCE:	/* 12 */
 			nValue = SQL_OSCC_COMPLIANT;
@@ -119,11 +119,11 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_SERVER_NAME:		/* 13 */
 			isNumericValue = 0;
-			sValue = GDKstrdup(MONETDB_SERVER_NAME);
+			sValue = strdup(MONETDB_SERVER_NAME);
 			break;
 		case SQL_SEARCH_PATTERN_ESCAPE:	/* 14 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("");	/* No search-char. escape char.*/
+			sValue = strdup("");	/* No search-char. escape char.*/
 			break;
 		case SQL_ODBC_SQL_CONFORMANCE:	/* 15 */
 			nValue = SQL_OSC_CORE;
@@ -131,23 +131,23 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_DBMS_NAME:		/* 17 */
 			isNumericValue = 0;
-			sValue = GDKstrdup(MONETDB_PRODUCT_NAME);
+			sValue = strdup(MONETDB_PRODUCT_NAME);
 			break;
 		case SQL_DBMS_VER:		/* 18 */
 			isNumericValue = 0;
-			sValue = GDKstrdup(MONETDB_DRIVER_VER);
+			sValue = strdup(MONETDB_DRIVER_VER);
 			break;
 		case SQL_ACCESSIBLE_TABLES:	/* 19 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("Y");
+			sValue = strdup("Y");
 			break;
 		case SQL_ACCESSIBLE_PROCEDURES:	/* 20 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_PROCEDURES:		/* 21 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_CONCAT_NULL_BEHAVIOR:	/* 22 */
 			nValue = SQL_CB_NON_NULL;
@@ -160,7 +160,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_DATA_SOURCE_READ_ONLY:	/* 25 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_DEFAULT_TXN_ISOLATION:	/* 26 */
 			nValue = SQL_TXN_READ_COMMITTED;
@@ -168,7 +168,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_EXPRESSIONS_IN_ORDERBY:	/* 27 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("Y");
+			sValue = strdup("Y");
 			break;
 		case SQL_IDENTIFIER_CASE:	/* 28 */
 			nValue = SQL_IC_UPPER;
@@ -176,7 +176,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_IDENTIFIER_QUOTE_CHAR:	/* 29 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("\""); /* the " (double quote) */
+			sValue = strdup("\""); /* the " (double quote) */
 			break;
 		case SQL_MAX_COLUMN_NAME_LEN:	/* 30 */
 		case SQL_MAX_TABLE_NAME_LEN:	/* 35 */
@@ -196,15 +196,15 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_MULT_RESULT_SETS:	/* 36 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_MULTIPLE_ACTIVE_TXN:	/* 37 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("Y");
+			sValue = strdup("Y");
 			break;
 		case SQL_OUTER_JOINS:	/* 38 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("Y");
+			sValue = strdup("Y");
 			break;
 		case SQL_OWNER_TERM:		/* 39 */
 		case SQL_PROCEDURE_TERM:	/* 40 */
@@ -212,11 +212,11 @@ SQLRETURN SQLGetInfo(
 		case SQL_TABLE_TERM:		/* 45 */
 			/* no Terms suoported */
 			isNumericValue = 0;
-			sValue = GDKstrdup("");
+			sValue = strdup("");
 			break;
 		case SQL_QUALIFIER_NAME_SEPARATOR:	/* 41 */
 			isNumericValue = 0;
-			sValue = GDKstrdup(".");
+			sValue = strdup(".");
 			break;
 		case SQL_SCROLL_CONCURRENCY:	/* 43 */
 			nValue = SQL_SCCO_READ_ONLY;
@@ -232,7 +232,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_USER_NAME:		/* 47 */
 			isNumericValue = 0;
-			sValue = GDKstrdup((dbc->UID != NULL) ? dbc->UID : "");
+			sValue = strdup((dbc->UID != NULL) ? dbc->UID : "");
 			break;
 		case SQL_CONVERT_FUNCTIONS:		/* 48 */
 			/* No convert function supported */
@@ -375,7 +375,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_ODBC_SQL_OPT_IEF:	/* 73 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_CORRELATION_NAME:	/* 74 */
 			nValue = SQL_CN_ANY;
@@ -416,7 +416,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_COLUMN_ALIAS:		/* 87 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_GROUP_BY:		/* 88 */
 			nValue = SQL_GB_NO_RELATION;
@@ -428,12 +428,12 @@ SQLRETURN SQLGetInfo(
 			 * in sql.h */
 			char MonetSQL_keywords[] = "BOOLEAN,COLUMNS,FLOOR,IMPORT,REAL";
 			isNumericValue = 0;
-			sValue = GDKstrdup(MonetSQL_keywords);
+			sValue = strdup(MonetSQL_keywords);
 			break;
 		}
 		case SQL_ORDER_BY_COLUMNS_IN_SELECT:	/* 90 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_QUOTED_IDENTIFIER_CASE:	/* 93 */
 			nValue = SQL_IC_MIXED;
@@ -441,7 +441,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_SPECIAL_CHARACTERS:	/* 94 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("`!#$;:'<>"); /* allowed table name chars */
+			sValue = strdup("`!#$;:'<>"); /* allowed table name chars */
 			break;
 		case SQL_SUBQUERIES:		/* 95 */
 			if (nInfoValueMax >= sizeof(SQLUINTEGER)) /* 32 bits */
@@ -489,7 +489,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_MAX_ROW_SIZE_INCLUDES_LONG:	/* 103 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("N");
+			sValue = strdup("N");
 			break;
 		case SQL_MAX_USER_NAME_LEN:	/* 107 */
 			nValue = (SQLUSMALLINT) 0; /* no max.len. */
@@ -506,7 +506,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_NEED_LONG_DATA_LEN:	/* 111 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("Y");
+			sValue = strdup("Y");
 			break;
 		case SQL_MAX_BINARY_LITERAL_LEN:	/* 112 */
 			if (nInfoValueMax >= sizeof(SQLUINTEGER)) /* 32 bits */
@@ -519,7 +519,7 @@ SQLRETURN SQLGetInfo(
 			break;
 		case SQL_LIKE_ESCAPE_CLAUSE:		/* 113 */
 			isNumericValue = 0;
-			sValue = GDKstrdup("Y");
+			sValue = strdup("Y");
 			break;
 		case SQL_QUALIFIER_LOCATION:		/* 114 */
 			nValue = (SQLUSMALLINT) SQL_QL_END;
@@ -593,7 +593,7 @@ SQLRETURN SQLGetInfo(
 					returnstate = SQL_SUCCESS_WITH_INFO;
 			}
 			/* clean up the allocated string */
-			GDKfree(sValue);
+			free(sValue);
 		} else {
 			len = 0;
 			if (pInfoValue)

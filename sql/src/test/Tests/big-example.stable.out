@@ -1,9 +1,9 @@
 stdout of test 'big-example` in directory 'src/test` itself:
 
 
-# 20:07:29 >  
-# 20:07:29 >  Mtimeout -timeout 1560 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=0 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_test" --set sql_port=50445 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" ; echo ; echo Over..
-# 20:07:29 >  
+# 15:05:37 >  
+# 15:05:37 >  Mtimeout -timeout 1560 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_test" --set sql_port=55408 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 15:05:37 >  
 
 # Monet Database Server V4.3.9
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -15,9 +15,9 @@ quit;
 
 Over..
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s00.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s00.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -39,9 +39,9 @@ SQL  5 Rows affected
 8	"texxst"	1e-04
 SQL  5 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s01.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s01.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -73,9 +73,9 @@ SQL  10 Rows affected
 8	"texxst"	1e-04
 SQL  10 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s02.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s02.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -97,15 +97,15 @@ SQL  6 Rows affected
 8	"texxst"	1e-04
 SQL  4 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s03.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s03.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s04.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s04.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -127,9 +127,9 @@ SQL  5 Rows affected
 8	"texxst"	1e-04
 SQL  5 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s05.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s05.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -148,39 +148,15 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 SQL  2 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s06.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s06.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s07.sql
-# 20:07:30 >  
-
-SQL  connected to database mTests_src_test using schema sys
-#----------------------
-#| val1 | val2 | val3 |
-#----------------------
-1	"test"	0.1
-5	"xtest"	0.9
-9	"testx"	9.1
-0	"texst"	99999.1
-8	"texxst"	1e-04
-SQL  5 Rows affected
-#----------------------
-#| val1 | val2 | val3 |
-#----------------------
-1	"test"	0.1
-5	"xtest"	0.9
-9	"testx"	9.1
-0	"texst"	99999.1
-8	"texxst"	1e-04
-SQL  5 Rows affected
-
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s08.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s07.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -196,16 +172,40 @@ SQL  5 Rows affected
 #| val1 | val2 | val3 |
 #----------------------
 1	"test"	0.1
-8	"texxst"	1e-04
+5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
+8	"texxst"	1e-04
+SQL  5 Rows affected
+
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s08.sql
+# 15:05:38 >  
+
+SQL  connected to database mTests_src_test using schema sys
+#----------------------
+#| val1 | val2 | val3 |
+#----------------------
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	1e-04
+SQL  5 Rows affected
+#----------------------
+#| val1 | val2 | val3 |
+#----------------------
+1	"test"	0.1
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	1e-04
 SQL  4 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
 1	"test"	0.1
-8	"texxst"	1e-04
 0	"texst"	99999.1
+8	"texxst"	1e-04
 SQL  3 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -214,15 +214,15 @@ SQL  3 Rows affected
 0	"texst"	99999.1
 SQL  2 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s09.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s09.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s10.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s10.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -244,9 +244,9 @@ SQL  5 Rows affected
 8	"texxst"	1e-04
 SQL  5 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s11.sql
-# 20:07:30 >  
+# 15:05:38 >  
+# 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s11.sql
+# 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -266,15 +266,15 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 SQL  3 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s12.sql
-# 20:07:30 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s12.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s13.sql
-# 20:07:30 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s13.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -296,9 +296,9 @@ SQL  5 Rows affected
 8	"texxst"	1e-04
 SQL  5 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s14.sql
-# 20:07:30 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s14.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -320,39 +320,15 @@ SQL  5 Rows affected
 8	"texxst"	-1
 SQL  5 Rows affected
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s15.sql
-# 20:07:30 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s15.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s16.sql
-# 20:07:30 >  
-
-SQL  connected to database mTests_src_test using schema sys
-#----------------------
-#| val1 | val2 | val3 |
-#----------------------
-1	"test"	0.1
-5	"xtest"	0.9
-9	"testx"	9.1
-0	"texst"	99999.1
-8	"texxst"	1e-04
-SQL  5 Rows affected
-#----------------------
-#| val1 | val2 | val3 |
-#----------------------
-1	"test"	0.1
-5	"xtest"	0.9
-9	"testx"	9.1
-0	"texst"	99999.1
-8	"texxst"	1e-04
-SQL  5 Rows affected
-
-# 20:07:30 >  
-# 20:07:30 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s17.sql
-# 20:07:30 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s16.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -368,39 +344,63 @@ SQL  5 Rows affected
 #| val1 | val2 | val3 |
 #----------------------
 1	"test"	0.1
-8	"texxst"	1e-04
+5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
+8	"texxst"	1e-04
+SQL  5 Rows affected
+
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s17.sql
+# 15:05:39 >  
+
+SQL  connected to database mTests_src_test using schema sys
+#----------------------
+#| val1 | val2 | val3 |
+#----------------------
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	1e-04
+SQL  5 Rows affected
+#----------------------
+#| val1 | val2 | val3 |
+#----------------------
+1	"test"	0.1
 -5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
 1	"test"	0.1
-8	"texxst"	1e-04
+-5	"xtest"	0.9
 -5	"testx"	9.1
 0	"texst"	99999.1
--5	"xtest"	0.9
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
 1	"test"	0.1
+-5	"xtest"	0.9
+-5	"testx"	9.1
+0	"texst"	99999.1
 -5	"texxst"	1e-04
--5	"testx"	9.1
-0	"texst"	99999.1
--5	"xtest"	0.9
 SQL  5 Rows affected
 
-# 20:07:31 >  
-# 20:07:31 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s18.sql
-# 20:07:31 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s18.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 
-# 20:07:31 >  
-# 20:07:31 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s19.sql
-# 20:07:31 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s19.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -422,9 +422,9 @@ SQL  5 Rows affected
 8	"texxst"	1e-04
 SQL  5 Rows affected
 
-# 20:07:31 >  
-# 20:07:31 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s20.sql
-# 20:07:31 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s20.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -446,15 +446,15 @@ SQL  5 Rows affected
 8	"updated"	1e-04
 SQL  5 Rows affected
 
-# 20:07:31 >  
-# 20:07:31 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s21.sql
-# 20:07:31 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s21.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 
-# 20:07:31 >  
-# 20:07:31 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s22.sql
-# 20:07:31 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s22.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 #----------------------
@@ -476,13 +476,13 @@ SQL  5 Rows affected
 8	"texxst"	1e-04
 SQL  5 Rows affected
 
-# 20:07:31 >  
-# 20:07:31 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < big-example_s23.sql
-# 20:07:31 >  
+# 15:05:39 >  
+# 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s23.sql
+# 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
 
-# 20:07:31 >  
-# 20:07:31 >  Done.
-# 20:07:31 >  
+# 15:05:40 >  
+# 15:05:40 >  Done.
+# 15:05:40 >  
 

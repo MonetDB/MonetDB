@@ -86,14 +86,14 @@ SQLRETURN SQLTables(
 	{
 		/* Special case query to fetch all Catalog names. */
 		/* Note: Catalogs are not supported so the result set will be empty. */
-		query = GDKstrdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, '' AS TABLE_TYPE, '' AS REMARKS FROM SCHEMAS WHERE 0 = 1");
+		query = strdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, '' AS TABLE_TYPE, '' AS REMARKS FROM SCHEMAS WHERE 0 = 1");
 	} else {
 	if (catName != NULL && (strcmp(catName, "") == 0) &&
 	    schName != NULL && (strcmp(schName, SQL_ALL_SCHEMAS) == 0) &&
 	    tabName != NULL && (strcmp(tabName, "") == 0) )
 	{
 		/* Special case query to fetch all Schema names. */
-		query = GDKstrdup("SELECT '' AS TABLE_CAT, NAME AS TABLE_SCHEM, '' AS TABLE_NAME, '' AS TABLE_TYPE, '' AS REMARKS FROM SCHEMAS ORDER BY NAME");
+		query = strdup("SELECT '' AS TABLE_CAT, NAME AS TABLE_SCHEM, '' AS TABLE_NAME, '' AS TABLE_TYPE, '' AS REMARKS FROM SCHEMAS ORDER BY NAME");
 	} else {
 	if (catName != NULL && (strcmp(catName, "") == 0) &&
 	    schName != NULL && (strcmp(schName, "") == 0) &&
@@ -101,7 +101,7 @@ SQLRETURN SQLTables(
 	    typName != NULL && (strcmp(typName, SQL_ALL_TABLE_TYPES) == 0) )
 	{
 		/* Special case query to fetch all Table type names. */
-		query = GDKstrdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, DISTINCT CASE T.TYPE WHEN 1 THEN 'TABLE' WHEN 0 THEN 'SYSTEM_TABLE' WHEN 2 THEN 'VIEW' WHEN 3 THEN 'LOCAL TEMPORARY TABLE' ELSE 'INTERNAL TYPE' END AS TABLE_TYPE, '' AS REMARKS FROM TABLES ORDER BY TYPE");
+		query = strdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, DISTINCT CASE T.TYPE WHEN 1 THEN 'TABLE' WHEN 0 THEN 'SYSTEM_TABLE' WHEN 2 THEN 'VIEW' WHEN 3 THEN 'LOCAL TEMPORARY TABLE' ELSE 'INTERNAL TYPE' END AS TABLE_TYPE, '' AS REMARKS FROM TABLES ORDER BY TYPE");
 		/* TODO: UNION it with all supported table types */
 	}
 	}
@@ -129,7 +129,7 @@ SQLRETURN SQLTables(
 		if (typName != NULL) {
 			work_str_len += strlen(typName);
 		}
-		work_str = GDKmalloc(work_str_len);
+		work_str = malloc(work_str_len);
 		assert(work_str);
 		strcpy(work_str, "");	/* initialize it */
 
@@ -186,7 +186,7 @@ SQLRETURN SQLTables(
 		}
 
 		/* construct the query now */
-		query = GDKmalloc(1000 + strlen(work_str));
+		query = malloc(1000 + strlen(work_str));
 		assert(query);
 
 		snprintf(query, 1000+ strlen(work_str), "SELECT '%s' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, T.NAME AS TABLE_NAME, CASE T.TYPE WHEN 0 THEN 'TABLE' WHEN 1 THEN 'SYSTEM_TABLE' WHEN 2 THEN 'VIEW' WHEN 3 THEN 'LOCAL TEMPORARY TABLE' ELSE 'INTERNAL TABLE TYPE' END AS TABLE_TYPE, '' AS REMARKS FROM SCHEMAS S, TABLES T WHERE S.ID = T.SCHEMA_ID ", catName);
@@ -196,21 +196,21 @@ SQLRETURN SQLTables(
 
 		/* add the ordering */
 		strcat(query, " ORDER BY S.NAME, T.NAME, T.TYPE");
-		GDKfree(work_str);
+		free(work_str);
 	}
 
 	/* Done with parameter values evaluation. Now free the C strings. */
 	if (catName != NULL) {
-		GDKfree(catName);
+		free(catName);
 	}
 	if (schName != NULL) {
-		GDKfree(schName);
+		free(schName);
 	}
 	if (tabName != NULL) {
-		GDKfree(tabName);
+		free(tabName);
 	}
 	if (typName != NULL) {
-		GDKfree(typName);
+		free(typName);
 	}
 
 	/* query the MonetDb data dictionary tables */
@@ -218,7 +218,7 @@ SQLRETURN SQLTables(
 
 	rc = ExecDirect(hStmt, query, SQL_NTS);
 
-	GDKfree(query);
+	free(query);
 
 	return rc;
 }

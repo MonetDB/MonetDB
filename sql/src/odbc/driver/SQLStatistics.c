@@ -108,7 +108,7 @@ SQLRETURN SQLStatistics(
 	}
 	assert(tabName);
 	if (strcmp(tabName, "") == 0) {
-		GDKfree(tabName);
+		free(tabName);
 		/* HY090 = Invalid string */
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
@@ -123,7 +123,7 @@ SQLRETURN SQLStatistics(
 	if (schName != NULL) {
 		work_str_len += strlen(schName);
 	}
-	work_str = GDKmalloc(work_str_len);
+	work_str = malloc(work_str_len);
 	assert(work_str);
 	strcpy(work_str, "");	/* initialize it */
 
@@ -144,7 +144,7 @@ SQLRETURN SQLStatistics(
 
 
 	/* construct the query now */
-	query = GDKmalloc(1000 + strlen(work_str));
+	query = malloc(1000 + strlen(work_str));
 	assert(query);
 
 	/* TODO: finish the SQL query */
@@ -155,21 +155,21 @@ SQLRETURN SQLStatistics(
 
 	/* add the ordering */
 	strcat(query, " ORDER BY NON_UNIQUE, TYPE, INDEX_QUALLIFIER, INDEX_NAME, ORDINAL_POSITION");
-	GDKfree(work_str);
+	free(work_str);
 
 	/* Done with parameter values evaluation. Now free the C strings. */
 	if (schName != NULL) {
-		GDKfree(schName);
+		free(schName);
 	}
 	if (tabName != NULL) {
-		GDKfree(tabName);
+		free(tabName);
 	}
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
 	rc = ExecDirect(hStmt, query, SQL_NTS);
 
-	GDKfree(query);
+	free(query);
 
 	return rc;
 }

@@ -667,16 +667,16 @@ var strings := new(str,str);
 strings.insert("CHAR", 		"chr");
 strings.insert("VARCHAR", 	"str");
 
-var numerical := new(str,str);
-numerical.insert("TINYINT", 	"uchr"); 
-numerical.insert("SMALLINT", 	"sht");
-numerical.insert("MEDIUMINT", 	"int");
-numerical.insert("BIGINT", 	"lng");
-numerical.insert("DECIMAL", 	"dbl");
+var numerical := new(str,str); # head is the sum result type 
+numerical.insert("int", 	"uchr"); 
+numerical.insert("int", 	"sht");
+numerical.insert("lng", 	"int");
+numerical.insert("lng", 	"lng");
+numerical.insert("dbl", 	"dbl");
 
-var floats := new(str,str);
-floats.insert("FLOAT", 		"flt");
-floats.insert("DOUBLE", 	"dbl");
+var floats := new(str,str);	# head is the sum result type
+floats.insert("dbl", 		"flt");
+floats.insert("dbl", 		"dbl");
 numerical.insert(floats);
 
 var dates := new(str,str);
@@ -693,7 +693,8 @@ type_sql.insert(dates);
 
 type_sql@batloop(){ sql_aggr( "min", "min", $t, $t ); }
 type_sql@batloop(){ sql_aggr( "max", "max", $t, $t ); }
-numerical@batloop(){ sql_aggr( "sum", "sum", $t, $t ); }
+# sum has special output types
+numerical@batloop(){ sql_aggr( "sum", "sum", $t, $h ); }
 # avg only outputs doubles
 numerical@batloop(){ sql_aggr( "avg", "avg", $t, "dbl" ); }
 sql_aggr( "count", "count", "", "int" ); 

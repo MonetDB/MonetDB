@@ -78,6 +78,7 @@ typedef enum stmt_type {
 	st_alias,
 	st_set,
 	st_sets,
+	st_ptable,
 	/* used internally only */
 	st_list,
 	st_output, /* return table */
@@ -180,6 +181,7 @@ extern stmt *stmt_union(stmt * op1, stmt * op2);
 extern stmt *stmt_list(list * l);
 extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
+extern stmt *stmt_ptable(list * basetables, stmt *s);
 
 extern stmt *stmt_copyfrom(table * t, list *files, char *tsep, char *rsep, int nr );
 extern list *stmt_copyfrom_files( stmt *s );

@@ -51,7 +51,7 @@ OdbcInHostVar makeOdbcInHostVar(
 	SQLINTEGER	BufferLength,
 	SQLINTEGER*	StrLen_or_IndPtr)
 {
-	OdbcInHostVar this = (OdbcInHostVar)GDKmalloc(sizeof(OdbcInHostVarRec));
+	OdbcInHostVar this = (OdbcInHostVar)malloc(sizeof(OdbcInHostVarRec));
 
 	this->ParameterNumber = ParameterNumber;
 	this->InputOutputType = InputOutputType;
@@ -74,7 +74,7 @@ OdbcOutHostVar makeOdbcOutHostVar(
 	SDWORD		cbValueMax,
 	SDWORD *	pcbValue )
 {
-	OdbcOutHostVar this = (OdbcOutHostVar)GDKmalloc(sizeof(OdbcOutHostVarRec));
+	OdbcOutHostVar this = (OdbcOutHostVar)malloc(sizeof(OdbcOutHostVarRec));
 
 	this->icol = icol;
 	this->fCType = fCType;
@@ -89,14 +89,14 @@ OdbcOutHostVar makeOdbcOutHostVar(
 void destroyOdbcInHostVar(OdbcInHostVar this)
 {
 	assert(this);
-	GDKfree((void *)this);
+	free((void *)this);
 }
 
 
 void destroyOdbcOutHostVar(OdbcOutHostVar this)
 {
 	assert(this);
-	GDKfree((void *)this);
+	free((void *)this);
 }
 
 
@@ -120,11 +120,11 @@ void addOdbcInArray(OdbcInArray * this, OdbcInHostVar var)
 
 		if (this->array == NULL) {
 			/* create a new array of pointers */
-			new_array = (OdbcInHostVar *) GDKmalloc((new_size +1) * sizeof(OdbcInHostVar));
+			new_array = (OdbcInHostVar *) malloc((new_size +1) * sizeof(OdbcInHostVar));
 			idx = 0;
 		} else {
 			/* enlarge the array of pointers */
-			new_array = (OdbcInHostVar *) GDKrealloc(this->array, ((new_size +1) * sizeof(OdbcInHostVar)));
+			new_array = (OdbcInHostVar *) realloc(this->array, ((new_size +1) * sizeof(OdbcInHostVar)));
 			idx = this->size;
 		}
 		assert(new_array);
@@ -167,11 +167,11 @@ void addOdbcOutArray(OdbcOutArray * this, OdbcOutHostVar var)
 
 		if (this->array == NULL) {
 			/* create a new array of pointers */
-			new_array = (OdbcOutHostVar *) GDKmalloc((new_size +1) * sizeof(OdbcOutHostVar));
+			new_array = (OdbcOutHostVar *) malloc((new_size +1) * sizeof(OdbcOutHostVar));
 			idx = 0;
 		} else {
 			/* enlarge the array of pointers */
-			new_array = (OdbcOutHostVar *) GDKrealloc(this->array, ((new_size +1) * sizeof(OdbcOutHostVar)));
+			new_array = (OdbcOutHostVar *) realloc(this->array, ((new_size +1) * sizeof(OdbcOutHostVar)));
 			idx = this->size;
 		}
 		assert(new_array);
@@ -227,7 +227,7 @@ void destroyOdbcInArray(OdbcInArray * this)
 		}
 
 		/* next remove the allocated array */
-		GDKfree((void *)this->array);
+		free((void *)this->array);
 		this->array = NULL;
 	}
 	this->size = 0;
@@ -247,7 +247,7 @@ void destroyOdbcOutArray(OdbcOutArray * this)
 		}
 
 		/* next remove the allocated array */
-		GDKfree((void *)this->array);
+		free((void *)this->array);
 		this->array = NULL;
 	}
 	this->size = 0;

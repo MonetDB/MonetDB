@@ -49,7 +49,7 @@
  */
 ODBCStmt * newODBCStmt(ODBCDbc * dbc)
 {
-	ODBCStmt * stmt = (ODBCStmt *)GDKmalloc(sizeof(ODBCStmt));
+	ODBCStmt * stmt = (ODBCStmt *)malloc(sizeof(ODBCStmt));
 	assert(stmt);
 	assert(dbc);
 
@@ -208,7 +208,7 @@ void destroyODBCStmt(ODBCStmt * stmt)
 	/* cleanup own managed data */
 	deleteODBCErrorList(stmt->Error);
 	if (stmt->Query) {
-		GDKfree(stmt->Query);
+		free(stmt->Query);
 	}
 
 	destroyOdbcInArray(&(stmt->bindParams));
@@ -216,11 +216,11 @@ void destroyODBCStmt(ODBCStmt * stmt)
 
 	if (stmt->ResultCols) {
 		/* probably we need to free strings in here */
-		GDKfree(stmt->ResultCols);
+		free(stmt->ResultCols);
 	}
 	if (stmt->ResultRows) {
-		GDKfree(stmt->ResultRows);
+		free(stmt->ResultRows);
 	}
 
-	GDKfree(stmt);
+	free(stmt);
 }

@@ -55,7 +55,7 @@ static char * getStandardSQLStateMsg(char * SQLState);
  */
 ODBCError * newODBCError(char * SQLState, char * msg, int nativeCode)
 {
-	ODBCError * error = (ODBCError *)GDKmalloc(sizeof(ODBCError));
+	ODBCError * error = (ODBCError *)malloc(sizeof(ODBCError));
 	assert(error);
 
 	if (SQLState) {
@@ -68,7 +68,7 @@ ODBCError * newODBCError(char * SQLState, char * msg, int nativeCode)
 			error->sqlState[i] = '\0';
 	}
 
-	error->message = (msg) ? GDKstrdup(msg) : NULL;
+	error->message = (msg) ? strdup(msg) : NULL;
 	error->nativeErrorCode = nativeCode;
 	error->next = NULL;
 
@@ -109,7 +109,7 @@ char * getMessage(ODBCError * error)
 		/* check if a usefull (not empty) msg was found */
 		if (strcmp(SQLStateMsg, "") != 0) {
 			/* use this message instead of the NULL */
-			error->message = GDKstrdup(SQLStateMsg);
+			error->message = strdup(SQLStateMsg);
 		}
 	}
 	return error->message;
@@ -267,10 +267,10 @@ void deleteODBCError(ODBCError * error)
 	assert(error);
 
 	if (error->message) {
-		GDKfree(error->message);
+		free(error->message);
 	}
 	error->next = NULL;
-	GDKfree(error);
+	free(error);
 }
 
 
