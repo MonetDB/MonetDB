@@ -52,6 +52,8 @@ use "mal/bbp";
 use "mal/box"; 
 use "mal/inspect";
 use "mal/optimizer";
+use "mal/chopper";
+use "mal/crackers";
 #use "sql/sql_server";
 #use "sql/sql";
 

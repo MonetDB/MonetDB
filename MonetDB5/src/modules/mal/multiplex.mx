@@ -539,7 +539,7 @@ find the actule arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	q->barrier = BARRIERsymbol;
 	q->argv[0]= mloop= newVariable(m,GDKstrdup("mloop"),TYPE_lng);
-	setModuleId(q, GDKstrdup("bbp"));
+	setModuleId(q, GDKstrdup("chopper"));
 	setFunctionId(q, GDKstrdup("bunStream"));
 	q->argv[1] = refBat;
 	hvar= q->argv[2] = newVariable(m,GDKstrdup("h"),getHeadType(refType));

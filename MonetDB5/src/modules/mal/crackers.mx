@@ -1,0 +1,375 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ 
+@f crackers
+@a Martin Kersten
+@* Crackers
+This module contains the experimental code to play with cracked tables.
+It supports int-based bats for the time being.
+
+A cracker consists of 3 BATs associated with a table, which
+contains an administration of interesting partitions.
+The partitions are commonly value ranges.
+
+Each time we issue a scan against the BAT we split all partitions
+accordingly and retain their location. In this process we
+re-shuffle BUNs around to produce dense range lists.
+It can be used in subsequent scans to speed up the search.
+
+The implementation currently requires all auxillary BATs to
+be passed around to the cracker routines. It should be
+replaced in the future by a generic administration for
+cracked tables.
+
+Furthermore, we keep a copy of the value ranges
+in a separate bat for ease of debugging and search.
+@mal
+module crackers;
+
+command new(b:bat[:int,:int]) 
+	(cidx:bat[:int,:int],
+	vrng:bat[:int,:int])
+address CRKnew
+comment "Create the index tables for a cracked
+	table.";
+
+command crack(b:bat[:int,:int],
+	cidx:bat[:int,:int],
+	vrng:bat[:int,:int],
+	low:int, hgh:int) :int
+address CRKcrackNaive
+comment "Break the partitions into smaller pieces";
+@-
+A cracker partition is indicated by the index in the cidx
+table. It can be used to initialize a BATview to represent
+the partition during processing.
+@mal
+command portion(b:bat[:int,:int],
+	cidx:bat[:int,:int])
+	(:int, :bat[:int,:int])
+address CRKportion
+comment "Retrieve the first portion of a cracked
+	BAT as a BAT view and also return the
+	identity of the next portion.";
+
+command nextPortion(b:bat[:int,:int],
+	cidx:bat[:int,:int], 
+	p:int, crk:bat[:int,:int])
+	:int
+address CRKnextPortion
+comment "Retrieve the next portion of a cracked
+	BAT by adjusting the BAT view descriptor.
+	It returns the next valid portion id.";
+@{
+@* Implementation
+The implementation is geared at early experimentation
+without all the details to make the code robust and
+ultra fast.
+@= getBATdescriptor
+        if( BBPcheck(*@2,"@4")==0)
+                return throwMessage("crackers.@4","cannot access bat @2 in bbp");
+        @3= (BAT*) BBPgetdesc(*@2);
+        if( @3 == NULL) { *@1 = 0;
+                return throwMessage("crackers.@4","cannot access descriptor @2");
+        }
+        if( *@2 <0) @3= BATmirror(@3);
+
+@-
+During initialization of the crackers structure we already
+shuffle the data around to have a first assessment of
+the value ranges supported.
+
+@c
+#include "mal.h"
+#include "mal_function.h"
+
+str CRKnew(int *cret, int *vret, int *bid){
+	BAT *b, *cidx,*vrng;
+	int result=0;
+	ptr kmin=0, vmin=0, kmax=0, vmax=0;
+	ptr p,q;
+	int xx,yy;
+	char buf[128]; /* scratch space */
+
+        @:getBATdescriptor(&result,bid,b,new)@
+@-
+The target BAT should be modifyable and not come with any index
+already. [todo]
+@c
+	p= BUNfirst(b);
+	kmax= kmin= p;
+	vmax= vmin= p;
+	
+	BATloopFast(b,p,q,xx){
+		ptr v= BUNhead(b,p);
+		if( *(int *)v < *(int *)BUNhead(b,kmin)) kmin = p;
+		if( *(int *)v > *(int *)BUNhead(b,kmax)) kmax = p;
+		v= BUNtail(b,p);
+		if( *(int *)v < *(int *)BUNtail(b,vmin)) vmin = p;
+		if( *(int *)v > *(int *)BUNtail(b,vmax)) vmax = p;
+	}
+	cidx = BATnew(TYPE_int,TYPE_int, oid_nil);
+	vrng = BATnew(TYPE_int,TYPE_int, oid_nil);	
+@-
+Initialize the index tables and reshuffle the BUNs
+according to the tail value;
+@c
+	BUNins(vrng, (int*)BUNtail(b,vmin),(int*)BUNtail(b,vmax));
+	xx= BUNindex(b,BUNfirst(b));
+	yy= BUNindex(b,BUNlast(b))-1;
+	BUNins(cidx, &xx, &yy);
+
+	assert(BUNsize(b)<128);
+	p= BUNfirst(b);
+	@:exchange(p,vmin)@
+	if( p == vmax) vmax= vmin;
+	p= BUNlast(b)- BUNsize(b);
+	@:exchange(vmax,p)@
+
+	BBPfix(*cret = cidx->batCacheid);
+	BBPfix(*vret = vrng->batCacheid);
+	return MAL_SUCCEED;
+}
+@-
+@= exchange
+#ifdef DEBUG
+	printf("exchange %d %d\n",BUNindex(b,@1),BUNindex(b,@2));
+#endif
+	memcpy(buf, @1, BUNsize(b));
+	memcpy(@1, @2, BUNsize(b));
+	memcpy(@2, buf, BUNsize(b));
+
+@- Cracking
+The key operation for the cracker infrastructure is to process a scan
+efficiently and re-shuffle the tuples in the BAT such that a simple
+BATview can be used to denote the subrange of interest to upper layers.
+Assume the rane (low,hgh), both inclusive, is needed then all tuples
+not qualifying this range should be moved out of the way by effectively
+splitting the BAT into three segments.
+
+Two strategies can be considered; a naive exchange shuffle and
+pre-scan shuffle.
+The naive exchange shuffle works as follows. We simple walk through the table
+left to right and move all elements >=low to the right. 
+A slightly improved version is to find groups of tuples to move around
+as larger chunks.
+
+The pre-scan shuffle reads the table twice. In the first phase we
+calculate (for each partition) the number of elements in the range
+(low,hgh). In the second phase we move the data into the designated place.
+The advantage over the naive shuffle is potential less data writes.
+
+First experiment is a simple partitioning on the tail value.
+@c
+str CRKcrackNaive(int *partid, int *bid, 
+	int *cbid, int *vbid, 
+	int *low, int *hgh)
+{
+	BAT *b, *cidx,*vrng;
+	int result=0, xx,yy;
+	ptr p, s, w,c,v;
+	char buf[128]; /* scratch space */
+	ptr vmax=0, vmin=0;
+	int l,h,lb,hb,i,j, pid= -1;
+
+	if( *(int*) low > *(int*) hgh)
+                return throwMessage("crackers.crack","illegal range");
+        @:getBATdescriptor(&result,bid,b,new)@
+        @:getBATdescriptor(&result,cbid,cidx,new)@
+        @:getBATdescriptor(&result,vbid,vrng,new)@
+@-
+Inspect the value range table to only further crack known fragments.
+@c
+	
+#ifdef DEBUG
+	printf("search range %d %d\n",*(int*)low, *(int*) hgh);
+#endif
+	BATloopFast(vrng,v,s,yy){
+		xx= BUNsize(b);
+		w= BUNhead(vrng,v);
+		if( *(int*) w > *(int*)hgh) continue;
+		p= BUNtail(vrng,v);
+		if( *(int*) p < *(int*) low) continue;
+		if( *(int*) low <= *(int*)w &&
+		    *(int*) hgh >= *(int*)p) {
+#ifdef DEBUG
+			printf("skip range %d-%d\n",
+				*(int*)w, *(int*)p);
+#endif
+			continue;
+		}
+
+		/* set bounds */
+		i= BUNindex(vrng,v);
+		j= *(int*) BUNhead(cidx,BUNptr(cidx,i));
+printf("scan partition %d-",j);
+		vmin= BUNptr(b,j)-xx;
+		j= *(int*) BUNtail(cidx,BUNptr(cidx,i));
+printf("%d\n",j);
+		vmax= BUNptr(b,j)+xx;
+
+		for(p = vmin+xx; p < vmax; p += xx) {
+			w= BUNtail(b,p);
+			if( *(int *)w < *(int *)low){
+				/* exchange with first low*/
+				vmin+= xx;
+				if( vmin != p){
+					@:exchange(vmin,p)@
+				}
+			} else
+			if( *(int *)w > *(int *) hgh){
+				/* exchange with last */
+				vmax-= xx;
+				if( vmax != p){
+					@:exchange(vmax,p)@
+					p-= xx;
+				}
+			}
+		}
+@-
+For each fragment discovered we have to break it into several pieces
+and update the administration BATs. 
+@c
+		l= BUNindex(b,vmin)+1;
+		h= BUNindex(b,vmax)-1;
+		xx= BUNindex(vrng,v);
+		c= BUNptr(cidx,xx);
+		lb= *(int*) BUNhead(cidx,c);
+		hb= *(int*) BUNtail(cidx,c);
+#ifdef DEBUG
+		printf("split %d-%d using %d-%d\n",lb,hb,l,h);
+#endif
+		if(lb == l){
+			if( h<hb){
+				/* update vrng */
+				j = (*(int*)hgh) +1;
+				BUNins(vrng, &j, BUNtail(vrng,v));
+				w= BUNtail(vrng,v);
+				*(int *) w= (*(int *) hgh);
+
+				/* remember first partition*/
+				pid= BUNindex(cidx,c);
+				/* the cracker index */
+				w= BUNtail(cidx,c);
+				*(int *) w= h;
+				h++;
+				BUNins(cidx,&h,&hb);
+			} 
+		} else
+		if( hb == h){
+			if( l>lb){
+				/* update vrng */
+				BUNins(vrng, low, BUNtail(vrng,v));
+				w= BUNtail(vrng,v);
+				*(int *) w= (*(int *) low)-1;
+
+				w= BUNtail(cidx,c);
+				*(int *) w= l-1;
+				w= BUNins(cidx,&l,&hb);
+				/* remember first partition*/
+				pid= BUNindex(cidx,w);
+			}
+		} else {
+			/* update vrng */
+			w= BUNtail(vrng,v);
+			j= *(int *)w;
+			*(int*) w = (*(int*)low)-1;
+			BUNins(vrng,low,hgh);
+			i= (*(int *) hgh)+1;
+			BUNins(vrng,&i,&j);
+
+			w= BUNtail(cidx,c);
+			*(int *) w= l-1;
+			w= BUNins(cidx,&l,&h);
+			/* remember first partition*/
+			pid= BUNindex(cidx,w);
+			h++;
+			BUNins(cidx,&h,&hb);
+			/* update vrng */
+		}
+	}
+@-
+If this was the first cracking operation it makes sense to administer
+the ranges of the outer partitions as well.
+@c
+	*partid= pid;
+	return MAL_SUCCEED;
+}
+@- 
+The portions of a cracked BAT are obtained through bat view.
+The nextPortion simply changes the dimensions of the BATview
+returned previously to represent a cracker portion.
+@c
+#define DEBUG
+int CRKsetBounds(BAT *view, BAT *cidx, int pid){
+	int l,h;
+	ptr p;
+	(void) view; /* fool compiler */
+
+	p= BUNptr(cidx,pid);
+	l= *(int*) BUNhead(cidx,p);
+	h= *(int*) BUNtail(cidx,p);
+#ifdef DEBG
+	printf("set view to new dimension: %d-%d",l,h);
+#endif
+	return pid+1;
+}
+str CRKportion(int *newpid, int *vid, int *bid, int *cbid) 
+{
+	BAT *b, *cidx, *view;
+	int result=0;
+
+        @:getBATdescriptor(&result,bid,b,Portion)@
+        @:getBATdescriptor(&result,cbid,cidx,Portion)@
+	if( BATcount(cidx)==0)
+                return throwMessage("crackers.Portion",
+			"BAT not yet cracked");
+
+	view= VIEWcreate_(b,TRUE);
+	BBPfix(*vid=  view->batCacheid);
+	*newpid = CRKsetBounds(view,cidx,0);
+	return MAL_SUCCEED;
+}
+str CRKnextPortion(int *newpid, int *bid, 
+	int *cbid, int *pid, int *vbid) 
+{
+	BAT *b, *cidx,*vid;
+	int result=0;
+
+        @:getBATdescriptor(&result,bid,b,nextPortion)@
+        @:getBATdescriptor(&result,cbid,cidx,nextPortion)@
+        @:getBATdescriptor(&result,vbid,vid,nextPortion)@
+
+	/* test validity of pid  [todo] */
+	if(*pid<0 || *pid >BATcount(cidx)){
+                return throwMessage("crackers.nextPortion",
+			"illegal portion id");
+	}
+
+	*newpid = CRKsetBounds(vid,cidx,*pid);
+	return MAL_SUCCEED;
+}
+@-
+Test cases for this experiment are stored under the sequente tst5000
+
+@}

@@ -726,5 +726,6 @@ str ENUMepilogue() {
 	}
 	return MAL_SUCCEED;
 }
+
 @-
 @}
