@@ -472,6 +472,7 @@ int output_line_dense( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_a
 static INLINE
 int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_attrs, int id ){
 	int i;
+	int id;
 	for( i = 0; i<nr_attrs; i++){
 		char *p = BUNtail(fmt[i].c, BUNptr(fmt[i].c,id+BUNindex(fmt[i].c,BUNfirst(fmt[i].c))));
 		if (fmt[i].adt == TYPE_str){
@@ -595,14 +596,14 @@ int output_file_dense( ascii *as, stream *fd ){
 }
 
 static
-int output_file_ordered( ascii *as, BAT *order, stream *fd ){
+int output_file_ordered( ascii *as, BAT *order, stream *fd, int base ){
 	int len = BUFSIZ; 
 	char *buf = GDKmalloc(len);
 	BUN p,q;
         int i = 0;
 	
 	BATloop( order, p, q){
-		oid h = *(oid*)BUNhead(order, p);
+		oid h = *(oid*)BUNhead(order, p) - base;
 		if(output_line_lookup( &buf, &len, as->format, fd, as->nr_attrs, h )<0){
 			GDKfree(buf);
 			return -1;
@@ -671,7 +672,7 @@ int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s ){
 			if (order->hseqbase == base && BATcount(order) == as.nr)
 				output_file_dense( &as, s );
 			else
-				output_file_ordered( &as, order, s );
+				output_file_ordered( &as, order, s, base );
 		} else {
 			output_file( &as, order, s ); 
 		}
