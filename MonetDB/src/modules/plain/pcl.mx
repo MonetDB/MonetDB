@@ -75,6 +75,10 @@ microprocessors.
 
 var pcl_events := new(str,int,100);
 
+const PCL_MODE_USER := 1;
+const PCL_MODE_SYSTEM := 2;
+const PCL_MODE_BOTH := 3;
+
 #/* Level-1-Cache */
 pcl_events.insert( "PCL_L1CACHE_READ",            0);
 pcl_events.insert( "PCL_L1CACHE_WRITE",           1);

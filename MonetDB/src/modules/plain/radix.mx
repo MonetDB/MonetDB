@@ -966,22 +966,43 @@ res_join.count.print;
 quick test
 ==========
 
-res_join := uniform(2000000,999999).[oid];
-res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-12,8);
-borders_smaller := res_smaller_clustered.radix_count(12, 8);
+module(radix,alarm,pcl);
 
-res_smaller := res_join.reverse.mark(0@0).reverse;
-t := time; res_a1 := join(res_smaller, smaller_a1); print(time - t);
+var b := view_bbp_name.reverse;
+if (not(b.exist("res_join")))
+  uniform(30000000,10000000).[oid].rename("res_join").persists(true).mmap(1);
+if (not(b.exist("tab_attr")))
+  uniform(10000000).[oid].reverse.mark(0@0).reverse.rename("tab_attr").persists(true).mmap(1);
 
-cl_old := res_smaller_clustered.reverse.mark(0@0).reverse; 
-cl_new := res_smaller_clustered.mark(0@0).reverse; 
+var available := pcl_query(pcl_events.reverse.project(nil).reverse,1).select(0).project(nil).reverse.select(10,55).reverse;
 
-t := time; cl_tmp := join(cl_old,  smaller_a1); print(time - t);
-t := time; res_a1 := radix_decluster2(cl_new, cl_old, borders_smaller, 32);print(time - t);
+proc tst(bat[oid,oid] res_join, int nbits) {
+    var res_smaller_clustered := res_join.reverse.mark(0@0).reverse;
+    var skip := 24 - nbits;
+    if (nbits > 7) {
+    	res_smaller_clustered := res_smaller_clustered.radix_cluster(-1 * skip, nbits - nbits/2, nbits/2);
+    } else {
+    	res_smaller_clustered := res_smaller_clustered.radix_cluster(-1 * skip, nbits);
+    }
+    borders_smaller := res_smaller_clustered.radix_count(skip, nbits);
+    cl_new := res_smaller_clustered.mark(0@0).reverse; 
+    cl_old := res_smaller_clustered.reverse.mark(0@0).reverse; 
 
-t := time; b := join(res_smaller_clustered,  smaller_a1); print(time - t);
-t := time; res_a1 := radix_decluster(b, borders_smaller, 16);print(time - t);
+    t := time; cl_tmp := join(cl_old, tab_attr); print(time - t);
 
+    var res_a1;
+    available@batloop() {
+    	var e := bat(void,int).insert(nil,$h);
+        CATCH(pcl_start(e,1));
+        t := time; res_a1 := radix_decluster2(cl_new, cl_tmp, borders_smaller, 32);
+        printf("% 6dms === % 15lld %s\n",  time - t, pcl_stop(e).mark(0@0).reverse.find(0@0), pcl_events.reverse.find($h));
+    }
+    res_a1.slice(3343424,20).print;
+}
+
+tst(res_join,1);
+tst(res_join,13);
+tst(res_join,19);
 
 jivejoin
 ========
@@ -2357,17 +2378,12 @@ price paid are two parameters to radix\_decluster.
         lim += mult;
         yy = 0;
         while(yy < cnt) {
+	    int nxt = cnk[yy].nxt;
             p = src1 + cnk[yy].cur1;
             q = src1 + cnk[yy].end1;
             r = src2 + cnk[yy].cur2;
-            while(TRUE) {
-                if (p >= q) {
-		    int nxt = cnk[yy].nxt;
-		    if (nxt < 0) nxt = --cnt;
-                    cnk[yy] = cnk[nxt];
-                    break; /* cluster exhausted; overwrite with last; start over */
-                }
-                cur = *(oid*) BUNhloc(b,p);
+            while(p < q) {
+                cur = *(oid*) BUNtloc(b,p);
                 if (cur >= lim) {
                     cnk[yy].cur2 = r - src2;
                     cnk[yy++].cur1 = p - src1;
@@ -2377,6 +2393,8 @@ price paid are two parameters to radix\_decluster.
                 @2_put(dst[cur], @1, BUN@3(a,r));
 		r += zz;
             }
+            if (nxt < 0) nxt = --cnt; /* cluster exhausted; overwrite with last; start over */
+            cnk[yy] = cnk[nxt];
         }
     } break;
 } 
@@ -2427,7 +2445,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 		pos = ++yy; /* normal increment */
 	} else {
 		/* look in the other chunks to find who's first */
-	        while(*(oid*) BUNhloc(b, src1+offset1) > *(oid*) BUNhloc(b, src1+cnk[pos].cur1)) { 
+	        while(*(oid*) BUNtloc(b, src1+offset1) > *(oid*) BUNtloc(b, src1+cnk[pos].cur1)) { 
 			if ((pos = cnk[pos].nxt) < 0) break;
 		}
 		if (pos > 0) {
