@@ -3,7 +3,7 @@
 #inclusion in the MonetDB5 website
 
 ps,pdf: 
-	cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
+	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	pdftex manual.texi \
@@ -12,7 +12,7 @@ ps,pdf:
 	echo "Manual created" 
 
 web:
-	cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
+	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	makeinfo --force --html manual.texi \
@@ -21,7 +21,7 @@ web:
 	echo "Web created"
 
 xml:
-	cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
+	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	makeinfo --force --xml manual.texi \

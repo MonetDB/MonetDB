@@ -44,8 +44,34 @@ Last updated: @value{UPDATED}
 @end menu
 @end ifnottex
 
+@node Introduction V5, ,About this manual, Top
 @include Assets/About_this_manual
 
-@include Assets/mal.bdy.texi
+@include mal.bdy.texi
+@include mal_scenario.bdy.texi
+@include mal_instruction.bdy.texi
+@include mal_parser.bdy.texi
+@include mal_function.bdy.texi
+@include mal_factory.bdy.texi
+@include mal_linker.bdy.texi
+@include mal_import.bdy.texi
+@include mal_interpreter.bdy.texi
+@include mal_stack.bdy.texi
+@include mal_client.bdy.texi
+@include mal_session.bdy.texi
+@include mal_atom.bdy.texi
+@include mal_type.bdy.texi
+@include mal_resolve.bdy.texi
+@include mal_box.bdy.texi
+@include mal_optimizer.bdy.texi
+@include mal_properties.bdy.texi
+@include mal_namespace.bdy.texi
+@include mal_scope.bdy.texi
+@include mal_xml.bdy.texi
+@include mal_debugger.bdy.texi
+@include mal_profiler.bdy.texi
+@include mal_syntax.bdy.texi
+@c @include mil_parser.bdy.texi
+
 
 @bye
