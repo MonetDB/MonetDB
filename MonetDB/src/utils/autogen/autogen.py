@@ -131,7 +131,7 @@ def main(cwd, topdir, automake, incdirsmap):
     p = parser()
     read_makefile(p, cwd)
     codegen(p.curvar, cwd, topdir, incdirsmap)
-    (InstallList, OutList) = am.output(p.curvar, cwd, topdir, automake)
+    (InstallList, DocList, OutList) = am.output(p.curvar, cwd, topdir, automake)
     msc.output(p.curvar, cwd, topdir)
     if p.curvar.has_key('SUBDIRS'):
         subdirs = expand_subdirs(p.curvar['SUBDIRS'])
@@ -140,18 +140,22 @@ def main(cwd, topdir, automake, incdirsmap):
             if os.path.exists(d):
                 incdirsmap.append((d, os.path.join('includedir', dir)))
                 print(d)
-                (deltaInstallList, deltaOutList) = \
+                (deltaInstallList, deltaDocList, deltaOutList) = \
                                    main(d, topdir, automake, incdirsmap)
                 InstallList = InstallList + deltaInstallList
+                DocList = DocList + deltaDocList
                 OutList = OutList + deltaOutList
                 #cmd = "cd " + dir + "; " + sys.argv[0] + " " + topdir
                 #os.system (cmd)
-    return InstallList, OutList
+    return InstallList, DocList, OutList
 
 InstallListFd = open("install.lst", "w")
-(InstallList, OutList) = main(topdir, topdir, automake, [])
+DocListFd = open("doc.lst", "w")
+(InstallList, DocList, OutList) = main(topdir, topdir, automake, [])
 InstallListFd.writelines(InstallList)
 InstallListFd.close()
+DocListFd.writelines(DocList)
+DocListFd.close()
 
 skip = ["conf/stamp-h", "conf/config.h"]
 prev = ''

@@ -341,7 +341,7 @@ def am_doc(fd, var, docmap, am):
         t, ext = split_filename(target)
         if ext in doc_ext:
             srcs = srcs + " " + target
-            am['InstallList'].append("\t"+docdir+"/"+target+"\n")
+            am['DocList'].append("\t"+docdir+"/"+target+"\n")
     fd.write(srcs + "\n")
 
     fd.write("if DOCTOOLS\n")
@@ -919,6 +919,8 @@ CXXEXT = \\\"cc\\\"
     am['DEPS'] = []
     am['InstallList'] = []
     am['InstallList'].append(am['CWD']+"\n")
+    am['DocList'] = []
+    am['DocList'].append(am['CWD']+"\n")
     am['OutList'] = [am['CWD'] + 'Makefile']
 
     for i, v in tree.items():
@@ -1001,4 +1003,4 @@ include $(top_srcdir)/*.mk
 ''')
     fd.close()
 
-    return am['InstallList'], am['OutList']
+    return am['InstallList'], am['DocList'], am['OutList']
