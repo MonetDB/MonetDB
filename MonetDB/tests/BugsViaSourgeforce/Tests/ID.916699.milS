@@ -1,5 +1,5 @@
 ## integers from -25 to 24
-var a := bat(void, int,50).seqbase(0@0).rename("a");
+var a := bat(void, int,50).seqbase(0@0);
 var i := -25;
 while(i < 25) a.insert(nil, (i :+= 1));
 
@@ -11,7 +11,7 @@ sliced.fetch(0).print;
 sliced.fetch(1).print;
 
 
-var a := bat(void, int,50).seqbase(0@0).rename("a");
+var a := bat(void, int,50).seqbase(0@0);
 var i := -25;
 while(i < 25) { a.insert(nil, i); i :+= 1; };
 
