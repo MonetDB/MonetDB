@@ -420,45 +420,45 @@ PROC test_bitset() : void {
 
 	printf("constructor\n");
 	var b := newBitset();
-	b.print;
+	b.print();
 
 	printf("get(15)\n");
-	b.bitset_getBit(15).print;
+	b.bitset_getBit(15).print();
 	printf("set(15)\n");
 	b := b.bitset_setBit(15);
-	b.print;
+	b.print();
 	printf("get(15)\n");
-	b.bitset_getBit(15).print;
+	b.bitset_getBit(15).print();
 	printf("clear(15)\n");
 	b := b.bitset_clearBit(15);
-	b.print;
+	b.print();
 	printf("get(15)\n");
-	b.bitset_getBit(15).print;
+	b.bitset_getBit(15).print();
 
 	printf("flip(7)\n");
 	b := b.bitset_flipBit(7);
-	b.print;
+	b.print();
 	printf("flip(7)\n");
 	b := b.bitset_flipBit(7);
-	b.print;
+	b.print();
 
 	printf("constructor(35)\n");
 	var a := newBitset(35);
-	a.print;
+	a.print();
 
 	printf("constructor(0x22)\n");
 	b := bitset("0x22");
-	b.print;
+	b.print();
 
 	printf("and\n");
-	bitset_and(a,b).print;
+	bitset_and(a,b).print();
 	printf("or\n");
-	bitset_or(a,b).print;
+	bitset_or(a,b).print();
 	printf("xor\n");
-	bitset_xor(a,b).print;
+	bitset_xor(a,b).print();
 	printf("not\n");
-	bitset_not(a).print;
+	bitset_not(a).print();
 
 	printf("convert to integer\n");
-	bitset_toInt(a).print;
+	bitset_toInt(a).print();
 }
