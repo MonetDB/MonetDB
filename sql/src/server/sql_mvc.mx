@@ -585,6 +585,7 @@ BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 			}
 			i = b;
 		}
+		i->batDirty |= 2;
 		return i;
 	} else {
 		if (access == INS && c->base.wtime == 0 &&
