@@ -1138,7 +1138,7 @@ int stream_readShtArray( stream *s, short *val, size_t cnt ){
 }
 
 int stream_writeShtArray( stream *s, const short *val, size_t cnt ){
-	int ok = s->write(s, (char*)&val, sizeof(short), cnt)==cnt;
+	int ok = s->write(s, (char*)val, sizeof(short), cnt)==cnt;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
@@ -1154,7 +1154,7 @@ extern int stream_readIntArray( stream *s, int *val, size_t cnt ){
 	return ok;
 }
 extern int stream_writeIntArray( stream *s, const int *val, size_t cnt ){
-	int ok = s->write(s, (char*)&val, sizeof(int), cnt)==cnt;
+	int ok = s->write(s, (char*)val, sizeof(int), cnt)==cnt;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
@@ -1171,7 +1171,7 @@ int stream_readLngArray( stream *s, lng *val, size_t cnt ){
 }
 
 int stream_writeLngArray( stream *s, const lng *val, size_t cnt ){
-	int ok = s->write(s, (char*)&val, sizeof(lng), cnt)==cnt;
+	int ok = s->write(s, (char*)val, sizeof(lng), cnt)==cnt;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }

@@ -281,7 +281,8 @@ if test "x$enable_optim" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)[[^0-9]].*$|\1|'`"
       case "$host-$gcc_ver" in
-      i*86-*-*-3.2)   CFLAGS="$CFLAGS -O6"
+      i*86-*-*-3.[[2-9]]*)
+                      CFLAGS="$CFLAGS -O6"
                       case "$host" in
                       i*86-*-cygwin) 
                            dnl  With gcc 3.2, the combination of "-On -fomit-frame-pointer" (n>1)

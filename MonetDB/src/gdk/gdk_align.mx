@@ -352,7 +352,7 @@ BAT *BATmaterialize(BAT *b, size_t size){
 				bunfastins_nocheck(b, r, (ptr)&h, tbase+(*(var_t*)(p+tlc)), newbw);
 		}
 	} else {
-		oid t = b->hseqbase;
+		oid t = b->tseqbase;
 		BUN r = BUNlast(b);
 		if (!b->hvarsized) {
 			for(; p<q; p += bunwidth, t++, r += newbw )
@@ -369,7 +369,7 @@ BAT *BATmaterialize(BAT *b, size_t size){
 	/* cleanup the old heaps */
 	if (buns.base) HEAPfree(&buns);
 	if (th.base) HEAPfree(&th);
-	if (hh.base) HEAPfree(&th);
+	if (hh.base) HEAPfree(&hh);
 	
 	bn = BATmirror(b);
 	bn->dims.headtype = b->dims.tailtype;
@@ -394,8 +394,6 @@ BAT *BATmaterialize(BAT *b, size_t size){
 	} else {
 		b->tdense = TRUE;
 	}
-
-	
 	return b;
 }
 

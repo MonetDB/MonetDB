@@ -288,17 +288,24 @@ static char *sep_dup( char *sep ){
 ptr *ASCIIadt_frStr( void *extra, int type, char *s){
         int l = 0;
         ptr *res = NULL;
-        if (type == TYPE_str)
-                res = (ptr*)GDKstrdup(s);
-        else
+        if (type == TYPE_str) {
+        	if (s == NULL || strcmp(s,"nil") == 0)
+        		res = (ptr*)ATOMnil(TYPE_str);
+        	else
+                	res = (ptr*)GDKstrdup(s);
+        } else
                 (void) (*BATatoms[type].atomFromStr)(s, &l, (ptr)&res);
         return res;
 }
 
 int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
         if (type == TYPE_str){
-		char *dst;
-		int l = strlen(a);
+		char *dst, *src = a;
+		int l;
+		if (GDK_STRNIL(src)) {
+			src = "nil";
+		}
+		l = strlen(src);
 		if (l+3 > *len){
 			GDKfree(buf);
 			*len = 2*l+3;
@@ -306,7 +313,7 @@ int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
 		}
 		dst = *buf;
 		dst[0] = '"';
-		strncpy(dst+1, a, l);
+		strncpy(dst+1, src, l);
 		dst[l+1] = '"';
 		dst[l+2] = 0;
 		return l+2;

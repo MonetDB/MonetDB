@@ -276,8 +276,9 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOu
 [ "sql_api",		  "sql(default-schema)"					  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "default-schema"					  ]
-[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"		  ]
-[ "monet_cwd",		  "/ufs/manegold/tmp/Tests-d10/Tests/tests/suite_08"	  ]
+[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
+[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/mTests/tests/suite_08"																																	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name

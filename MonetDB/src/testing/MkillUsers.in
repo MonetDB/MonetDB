@@ -23,8 +23,9 @@ if [ ! "$files" ] ; then  exit 0 ; fi
 sync ; while [ -f $LOCKFILE ] ; do sleep 9 ; done
 touch $LOCKFILE
 
-function  LOG1  () { prompt="\n# `date +%H:%M:%S` >  " ; echo -en "$prompt$prompt$*$prompt\n\n" ; }
+function  LOG1  () { prompt="\n# `date +%H:%M:%S` >  " ; echo -en "$prompt$prompt$*$prompt\n\n" >&2 ; }
 function  LOG2  () {  LOG1 $* ; LOG1 $* >&2 ; }
+function  LOG1x () {  LOG1 $* ; "$@" >&2 ; }
 function  LOG2x () {  LOG2 $* ; "$@" ; }
 
 cpids=""
@@ -101,27 +102,27 @@ case `uname` in
 esac
 
 if [ "$pids1" ] ; then
-	LOG2 "BEGIN"
+	LOG1 "BEGIN"
 	pids2="(`echo $pids1 | perl -pe 's/ +/|/g'`)"
-	echo PARENT=$PARENT
-	echo CHILD=$CHILD
-	echo files=$files
-	echo cpids=$cpids
-	echo pids1=$pids1
-	echo pids2=$pids2
-	LOG2x	$PS
-	LOG2x	$FUSER   $files
-	#LOG2x	fuser -k $files
-	LOG2x	kill     $pids1
+	echo PARENT=$PARENT	>&2
+	echo CHILD=$CHILD	>&2
+	echo files=$files	>&2
+	echo cpids=$cpids	>&2
+	echo pids1=$pids1	>&2
+	echo pids2=$pids2	>&2
+	LOG1x	$PS
+	LOG1x	$FUSER   $files
+	#LOG1x	fuser -k $files
+	LOG1x	kill     $pids1
 	if [ "$cpids" ] ; then
 		sleep 3
-		LOG2x   kill $cpids
+		LOG1x   kill $cpids
 	fi
 	sleep 4
 	if [ "`( ps -ef | egrep -w "$pids2" | egrep -v egrep ) 2>/dev/null`" ] ; then
-		LOG2x	kill -9 $pids1
+		LOG1x	kill -9 $pids1
 	fi
-	LOG2 "END"
+	LOG1 "END"
 fi
 
 rm -f $LOCKFILE

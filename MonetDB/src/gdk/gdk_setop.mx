@@ -478,8 +478,13 @@ BAT *BAT@1@2(BAT *l, BAT *r) {
 	}
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = BATtordered(l);
-	BATkey(bn, l->hkey);
-	BATkey(BATmirror(bn), l->tkey);
+	if (BATcount(bn)){
+		BATkey(bn, l->hkey);
+		BATkey(BATmirror(bn), l->tkey);
+	} else {
+		BATkey(bn, TRUE);
+		BATkey(BATmirror(bn), TRUE);
+	}
   	return bn;
 }
 @c

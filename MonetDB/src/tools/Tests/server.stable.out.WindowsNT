@@ -533,7 +533,7 @@ Start of MIL prelude.
 #-------------------------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  14,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
-[ "monet_environment",	  "str",  "str",  25,	  0,	  "dirty",	  "load", "tran", 2,	  0,	  0	  ]
+[ "monet_environment",	  "str",  "str",  26,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  586,	  0,	  "dirty",	  "load", "tran", 1,	  1,		  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  630,	  0,	  "dirty",	  "load", "tran", 1,	  1,		  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  586,	  0,	  "dirty",	  "load", "tran", 1,	  1,		  0	  ]
@@ -598,12 +598,12 @@ unknown(0)               #"                            ]
 #[      1,         1,   running,         2, "!ERROR: TBL_getname: inexistent function 1000132A.
 unknown("D:\\TmpDir\\mone#"                            ]
 [ 1 ]
-#---------------------------------------------------------#
-# BAT:	  name	| login			| mil		  #
-# (int)	  (str)	| (str)			| (str)		  #
-#---------------------------------------------------------#
-[ 0,	  "adm",  "no asctime in WIN32",  ""		  ]
-[ 1,	  "adm",  "no asctime in WIN32",  "clients()"	  ]
+#-----------------------------------------------------------------#
+# BAT:	  name	| login				| mil		  #
+# (int)	  (str)	| (str)				| (str)		  #
+#-----------------------------------------------------------------#
+[ 0,	  "adm",  "Thu Oct 10 01:29:53 2002",	  ""		  ]
+[ 1,	  "adm",  "Thu Oct 10 01:29:53 2002",	  "clients()"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
@@ -640,9 +640,10 @@ unknown("D:\\TmpDir\\mone#"                            ]
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
-[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
-[ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
-#-------------------------------------------------------------------------#
+[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
+[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/mTests/src/tools"																																	  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # BAT:			  monet_environment				  #
 # (str)			  (str)						  #
 #-------------------------------------------------------------------------#
@@ -669,8 +670,9 @@ unknown("D:\\TmpDir\\mone#"                            ]
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
-[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
-[ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
+[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
+[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/mTests/src/tools"																																	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
@@ -750,8 +752,9 @@ unknown("D:\\TmpDir\\mone#"                            ]
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
-[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
-[ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
+[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
+[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/mTests/src/tools"																																	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
@@ -1332,7 +1335,7 @@ dir();
 #-------------------------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  14,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
-[ "monet_environment",	  "str",  "str",  25,	  0,	  "dirty",	  "load", "tran", 2,	  0,	  0	  ]
+[ "monet_environment",	  "str",  "str",  26,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  586,	  0,	  "dirty",	  "load", "tran", 1,	  1,		  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  630,	  0,	  "dirty",	  "load", "tran", 1,	  1,		  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  586,	  0,	  "dirty",	  "load", "tran", 1,	  1,		  0	  ]
@@ -1406,11 +1409,11 @@ threadid().print();
 [ 1 ]
 
 clients();
-#---------------------------------------------------------#
-# BAT:	  name	| login			| mil		  #
-# (int)	  (str)	| (str)			| (str)		  #
-#---------------------------------------------------------#
-[ 0,	  "adm",  "no asctime in WIN32",  "clients()"	  ]
+#-----------------------------------------------------------------#
+# BAT:	  name	| login				| mil		  #
+# (int)	  (str)	| (str)				| (str)		  #
+#-----------------------------------------------------------------#
+[ 0,	  "adm",  "Thu Oct 10 01:29:53 2002",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
@@ -1449,8 +1452,9 @@ env();
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
-[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
-[ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
+[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
+[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/mTests/src/tools"																																	  ]
 environment().print();
 #-------------------------------------------------------------------------#
 # BAT:			  monet_environment				  #
@@ -1479,8 +1483,9 @@ environment().print();
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
-[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
-[ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
+[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
+[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/mTests/src/tools"																																	  ]
 io().print();
 #-------------------------#
 # BAT:		  io	  #
@@ -1565,8 +1570,9 @@ view_gdk_env().print();
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
-[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
-[ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
+[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
+[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/mTests/src/tools"																																	  ]
 view_gdk_io().print();
 #-------------------------#
 # BAT:		  io	  #

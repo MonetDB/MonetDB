@@ -50,6 +50,7 @@
 @:install_module(xtables)@
 @:install_module(decimal)@
 @:install_module(lock)@
+@:install_module(mkey)@
 @:install_module(mmath)@
 @:install_module(monettime)@
 @:install_module(radix)@

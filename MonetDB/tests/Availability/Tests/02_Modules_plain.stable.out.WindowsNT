@@ -35,6 +35,7 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "enum"	  ]
 [ "lock"	  ]
 [ "mapi"	  ]
+[ "mkey"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "pcl"		  ]
@@ -612,6 +613,33 @@ Module: "mapi"
 [ "stream_strip", "PROC:      ",  "stream_strip(Stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
 [ "stream_until", "COMMAND:   ",  "stream_until(Stream, str) : str",			  "read a string from <S> until the <stop> word"																	  ]
 [ "test_streams",	  "PROC:      ",  "test_streams() : void",				  "not available"																					  ]
+
+Module: "mkey"
+
+[ 19 ]
+[ 19 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature									| help													  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[:rotate_xor_hash=]",  "PROC:      ",  "[:rotate_xor_hash=](BAT[any::1,int], int, BAT[any::1,any]) : BAT[any::1,int]", "not available"											  ]
+[ "bulk_rotate_xor_hash", "COMMAND:   ",  "bulk_rotate_xor_hash(BAT[oid,int], int, BAT[oid,any]) : BAT[oid,int]",	  "pre:  h and b should be synced on head\n         post: [:xor=]([:rotate=](h, nbits), [hash](b))"	  ]
+[ "ds_eq",		  "PROC:      ",  "ds_eq(BAT[void,oid], str, BAT[void,oid], str) : BAT[void,bit]",		  "not available"											  ]
+[ "ds_hash",		  "PROC:      ",  "ds_hash(BAT[str,any]) : BAT[oid,int]",					  "not available"											  ]
+[ "ds_link",		  "PROC:      ",  "ds_link(BAT[BAT,BAT]) : BAT[oid,oid]",					  "not available"											  ]
+[ "ds_link",		  "PROC:      ",  "ds_link(BAT[oid,any::1], BAT[oid,any::1], ..BAT[oid,any]..) : BAT[oid,oid]",	  "not available"											  ]
+[ "ds_link",		  "PROC:      ",  "ds_link(BAT[str,str]) : BAT[oid,oid]",					  "not available"											  ]
+[ "ds_sort",		  "PROC:      ",  "ds_sort(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",			  "not available"											  ]
+[ "hash",		  "COMMAND:   ",  "hash(any) : int",								  "compute a hash int number from any value"								  ]
+[ "hash",		  "COMMAND:   ",  "hash(bit) : int",								  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(chr) : int",								  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(dbl) : int",								  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(flt) : int",								  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(int) : int",								  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(lng) : int",								  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(sht) : int",								  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(str) : int",								  ""													  ]
+[ "rotate",		  "COMMAND:   ",  "rotate(int, int) : int",							  "left-rotate an int by nbits"										  ]
+[ "rotate_xor_hash",	  "PROC:      ",  "rotate_xor_hash(int, int, any) : int",					  "not available"											  ]
 
 Module: "mmath"
 

@@ -240,8 +240,8 @@ if [ "${os}" = "SunOS" ] ; then
 	soft64="/var/tmp${soft64}"
 	softpath="/var/tmp${softpath}"
 	# "standard" SunOS paths
-	binpath="/opt/SUNWspro/bin:/sw/SunOS/5.8/bin:/usr/java/bin:${binpath}"
-	libpath="/sw/SunOS/5.8/lib:${libpath}"
+	binpath="/opt/SUNWspro/bin:/cwi/bin:/usr/java/bin:${binpath}"
+	libpath="/cwi/lib:${libpath}"
 	if [ "${BITS}" = "64" ] ; then
 		# propper/extended LD_LIBRARY_PATH for 64bit on SunOS
 		libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"

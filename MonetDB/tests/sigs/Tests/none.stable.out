@@ -67,6 +67,7 @@ loaded;
 [ "malalgebra",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "mel",	  nil	  ]
+[ "mkey",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mprof",	  nil	  ]
@@ -164,6 +165,7 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "mprof",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
+[ "mkey",	  nil	  ]
 [ "mel",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
@@ -848,6 +850,44 @@ others@batloop{
 [ "mmath",	  nil	  ]
 
 	dropping mmath
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading mkey
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "mkey",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-----------------#
+# BAT:	  tmp_49  #
+# (str)	  (void)  #
+#-----------------#
+[ "mkey", nil	  ]
+
+	dropping mkey
 
 #---------------------------------#
 # module	| usage_count	  #
