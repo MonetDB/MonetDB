@@ -61,6 +61,10 @@
   { .ns = PFns_fn, .loc = "data",                                        \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
     .ret_ty = PFty_star (PFty_atomic ()) }                               \
+, /* fn:doc (string?) as document? - FIXME: is type of PFty_doc right? */\
+  { .ns = PFns_fn, .loc = "doc",                                         \
+    .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())) }                 \
 , /* fn:empty (item*) as boolean  (F&O 14.2.5) */                        \
   { .ns = PFns_fn, .loc = "empty",                                       \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
@@ -73,6 +77,10 @@
   { .ns = PFns_fn, .loc = "boolean",                                     \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
     .ret_ty = PFty_boolean () }                                          \
+, /* fn:count (item*) as integer */                                      \
+  { .ns = PFns_fn, .loc = "count",                                       \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_integer () }                                          \
 , /* fn:error (item?) as none */                                         \
   { .ns = PFns_fn, .loc = "error",                                       \
     .arity = 1, .par_ty = { PFty_opt (PFty_item ()) },                   \
