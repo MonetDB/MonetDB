@@ -390,8 +390,6 @@ extern char 		monet_version[PATHLENGTH];
 @c 
 #include "monet.h"
 
-void		static_module_init();
-
 char            monet_cwd[PATHLENGTH]={0}, *monet_id=0, *monet_ver=0;
 char            *monet_prompt="\1>\1", *monet_dir=0, *monet_db=0;
 int             monet_listing=0, monet_welcome=1, monet_background=2;
@@ -654,7 +652,6 @@ Make constants for important language tokens
 @-
 Install all link-in modules.
 @c
-	static_module_init(c,buf);
 
         c->listing = monet_listing;
 	return (ptr) c;

@@ -261,6 +261,16 @@ An error at this stage normally lead to an abort.
 #define INLINE
 #endif
 
+/* Definitions for Windows/Unix exporting */
+#if defined(__WIN32__)
+#   if defined(_MSC_VER)
+#       define EXPORT(a) extern __declspec(dllexport) a
+#   endif
+#else
+#   define EXPORT(a) extern a
+#endif
+
+
 #define REGISTER	register
 
 #ifdef __cplusplus
@@ -377,8 +387,8 @@ extern int setenv(char *name, char *value, int overwrite);
 #define GDKdir		3
 #define GDKowner	4
 
-extern char 		*GDKenviron[GDKPROP]; 
-extern char 		*GDKenvironName[GDKPROP]; 
+EXPORT( char 		*GDKenviron[GDKPROP]); 
+EXPORT( char 		*GDKenvironName[GDKPROP]); 
 @
 @}
 
@@ -399,11 +409,11 @@ A zero is returned upon encountering an erroneous situation.
 During system startup some environment variables are set.
 @{
 @h
-extern int              GDKrecovery;
-extern int              GDKstopped;
+EXPORT( int              GDKrecovery);
+EXPORT( int              GDKstopped);
 
-int     		GDKinit	    (int argc, char **argv); 
-void			GDKexit     (); 
+EXPORT( int     		GDKinit)	    (int argc, char **argv); 
+EXPORT( void			GDKexit)     (); 
 
 @
 @}
@@ -459,14 +469,14 @@ typedef __int64		lng;
 typedef char*		str; 		
 
 /* representation of the nil */
-extern chr		chr_nil; 	
-extern bit		bit_nil; 	
-extern short		sht_nil; 	
-extern int		int_nil; 	
-extern flt		flt_nil; 	
-extern dbl		dbl_nil; 	
-extern lng		lng_nil; 	
-extern str		str_nil; 	
+EXPORT( chr		chr_nil); 	
+EXPORT( bit		bit_nil); 	
+EXPORT( short		sht_nil); 	
+EXPORT( int		int_nil); 	
+EXPORT( flt		flt_nil); 	
+EXPORT( dbl		dbl_nil); 	
+EXPORT( lng		lng_nil); 	
+EXPORT( str		str_nil); 	
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)

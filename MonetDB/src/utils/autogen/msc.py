@@ -446,7 +446,7 @@ CXXEXT = \\\"cxx\\\"
 
   fd.write("all-msc:")
   if (topdir == cwd):
-    fd.write(" config.h unistd.h")
+    fd.write(" config.h unistd.h sys\\socket.h")
   if (len(msc['LIBS']) > 0):
     for v in msc['LIBS']:
       fd.write(" lib%s.dll" % (v) )
@@ -459,8 +459,8 @@ CXXEXT = \\\"cxx\\\"
 
   if (topdir == cwd):
       fd.write("config.h: winconfig.h\n\t$(INSTALL) winconfig.h config.h\n")
-  if (topdir == cwd):
       fd.write("unistd.h: \t$(ECHO) \"#ifndef UNISTD_H\n#define UNISTD_H\n#include <io.h>\n#endif\n\" > unistd.h")
+      fd.write("sys\\socket.h: \tmkdir sys\n\t$(ECHO) \"#ifndef SOCKET_H\n#define SOCKET_H\n#include <winsock.h>\n#endif\n\" > sys\\socket.h")
 
   fd.write("install-msc: install-exec install-data\n")
   fd.write("install-exec: all\n")

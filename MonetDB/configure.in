@@ -10,6 +10,8 @@ AC_CANONICAL_HOST
 HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
+dnl we use LEXLIB=-ll because this is usually correctly installed 
+dnl and -lfl usually only in the 32bit version
 dnl some dirty hacks
 thread_safe_flag_spec="-D_REENTRANT"
 [ case "$host_os" in
@@ -19,6 +21,7 @@ thread_safe_flag_spec="-D_REENTRANT"
       LDFLAGS="$LDFLAGS -z muldefs"
       thread_safe_flag_spec="-mt"
     fi
+    LEXLIB=-ll
     ;;
   irix*)
     case "$CC" in
