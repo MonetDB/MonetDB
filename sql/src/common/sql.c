@@ -2518,6 +2518,7 @@ stmt *sql_select
 		stmt *cur = NULL;
 
 		s = sql_logical_exp(sql, scp, where, NULL, NULL);
+		if (!s) return NULL;
 		if (s->type != st_set && s->type != st_sets) {
 			s = stmt_set(s);
 		}
