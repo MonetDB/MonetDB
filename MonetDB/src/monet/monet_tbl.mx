@@ -67,7 +67,7 @@ m_export void  TBL_printsigs(str s, int stk, str nme);
 m_export int   TBL_formatsig(str s, oid fid);
 m_export int   TBL_procreturn(int argc, ValPtr argv, ValPtr res, YYSTREE t);
 m_export void* TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv);
-m_export oid   TBL_loadmod(Client client, str module, int level, str *initstr);
+m_export oid   TBL_loadmod(Client client, str module, str parmod, int level, str *initstr);
 m_export int   TBL_unloadmod(Client client, str module, int level);
 
 m_export BAT *TBL_fcn_nme;
@@ -224,6 +224,7 @@ TBL_setaggr_resolve(
 
 #define ERROR(progname,	filename, lineno) { THRprintf(GDKerr, "Mserver: "); }
 
+static void TBL_Insert_Depend( oid mid, str name );
 
 BAT *TBL_fcn_nme = NULL;  /* BAT(oid, str): (function name, FID). */
 BAT *TBL_fcn_fcn = NULL;  /* BAT(oid, ptr): (FID, implementation fcn). */
@@ -866,14 +867,14 @@ BAT* TBL_getdir(void) {
    
 #ifndef STATIC 
     char *name,*basename;
-    size_t liblen = strlen("lib_");
+    size_t liblen = strlen("lib");
 
     MSP_rewind_module_list();
     for (;;) {
-            name=MSP_next_module();
+            name=MSP_next_module(".mil");
             if (!name) break;
             basename=strrchr(name,DIR_SEP)+1;
-	    if (strncmp(basename,"lib_",liblen)==0)
+	    if (strncmp(basename,"lib",liblen)==0)
 	       basename+=liblen;
             BUNins(b, &i, basename);
             i++;
@@ -1048,23 +1049,14 @@ oid TBL_M_load(TBLinstall *inst, Client client, str module) {
   char mod_init_name[PATHLENGTH];
   oid (*mod_init)(TBLinstall *, str) = NULL;;
 
-  sprintf(mod_init_name, "%s_Module_Install", module);
-#ifndef STATIC
-  mod_init = (oid (*)(TBLinstall *, str))dlsym(NULL, mod_init_name);
-#endif
-
-  if (mod_init){
-    hdl = DL_reglib(module, NULL, 0);
-  } else {
-    dlFPRINTF(GDKerr, "  TBL_M_load(%s)\n", module);
-    if (!(hdl = TBL_openmod(client, module))) {
-      GDKerror("TBL_loadmod: module load %s cancelled.\n", module);
-      return 0;
-    }
-  
-    sprintf(mod_init_name, "%s_Module_Install", module);
-    mod_init = (oid (*)(TBLinstall *, str))DL_sym(hdl, mod_init_name);
+  dlFPRINTF(GDKerr, "  TBL_M_load(%s)\n", module);
+  if (!(hdl = TBL_openmod(client, module))) {
+    GDKerror("TBL_loadmod: module load %s cancelled.\n", module);
+    return 0;
   }
+  
+  sprintf(mod_init_name, "%s_Module_Install", module);
+  mod_init = (oid (*)(TBLinstall *, str))DL_sym(hdl, mod_init_name);
   if (mod_init == NULL) {
     dlFPRINTF(GDKerr, "    No function %s\n", mod_init_name);
     GDKerror("TBL_M_load: %s not a module.\n", module);
@@ -1084,6 +1076,22 @@ oid TBL_M_load(TBLinstall *inst, Client client, str module) {
   BUNdelHead(TBL_mod_hdl, &mid);
   BUNins(TBL_mod_hdl, &mid, &hdl);
   dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
+  return mid;
+}
+
+int TBL_load_script(TBLinstall *inst, Client client, str module, str *initscript)
+{
+  oid mid = 0;
+  char *fullname;
+
+  if ((fullname = MSP_locate_script(module)) != NULL) {
+	*initscript = monet_load_script(fullname, module);
+	mid = TBL_Install_Info( inst, client->user, module);
+  	/*BUNdelHead(TBL_mod_hdl, &mid);
+  	//BUNins(TBL_mod_hdl, &mid, &null);
+ 	*/
+  	dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
+  }
   return mid;
 }
 
@@ -1283,7 +1291,7 @@ loaded	byuser	level	ACTION (in order!)
 @c
 
 
-oid TBL_loadmod(Client client, str module, int level, str *initstr) {
+oid TBL_loadmod(Client client, str module, str parmod, int level, str *initstr) {
   /* State
    */
   TBLinstall inst;
@@ -1325,7 +1333,16 @@ Lets do the things in the right order, see above!
   dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
 
   if (!loaded) {
-    mid = TBL_M_load(&inst, client, module); /* generates a mid! */
+    if (module[0] == '_'){
+      mid = TBL_M_load(&inst, client, module); /* generates a mid! */
+    } else {
+      mid = TBL_load_script(&inst, client, module, initstr);	
+      used = 1; /* Script is now loaded, ie not need for M_initscript */
+    }
+    if (parmod){
+      oid pmid = TBL_module_lookup(parmod);
+      TBL_Insert_Depend(pmid, module );
+    }
     loaded = (mid != 0);
   }
   dlFPRINTF(GDKerr, "  loaded = %d, mid = %ld\n", loaded, (long)mid);
@@ -2424,11 +2441,18 @@ is called from the generated code in the routine <modulename>_Module_Install.
 It is called one time for each module that it is dependent on.
 @c
 
+static void TBL_Insert_Depend( oid mid, str name )
+{
+  if (BUNlocate(TBL_mod_dep, &mid, name) == NULL) {
+    BUNins(TBL_mod_dep, &mid, name);  
+  }
+}
 void TBL_Install_Depend(TBLinstall *inst, oid mid, str user, str name) {
-  if (!TBL_loadmod(inst->client, name, inst->level+1, inst->initstr)) {
-   GDKwarning("TBL_Install_Depend: requires module %s, not loaded!\n", name);
-  } else if (BUNlocate(TBL_mod_dep, &mid, name) == NULL) {
-   BUNins(TBL_mod_dep, &mid, name);  
+  /* use parent module NULL else circular dependencies are added */
+  if (!TBL_loadmod(inst->client, name, NULL, inst->level+1, inst->initstr)) {
+    GDKwarning("TBL_Install_Depend: requires module %s, not loaded!\n", name);
+  } else {
+    TBL_Insert_Depend(mid, name);
   }
 }
 

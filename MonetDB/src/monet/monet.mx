@@ -250,6 +250,7 @@ typedef struct {
 @h
 m_export int 	monet_running;
 m_export ptr	monet_init	(void);
+m_export str	monet_load_script(str file, str module);
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
 m_export void	monet_exit	(void);
@@ -324,6 +325,7 @@ m_export int		monet_tokobject;	/* value of TOK_OBJECT */
 
 m_export char 		monet_arch[PATHLENGTH];
 m_export char 		monet_version[PATHLENGTH];
+
 @h
 #endif /* _MONET_H_ */
 @c 
@@ -402,6 +404,13 @@ provided to make inclusion of new modules a piece of cake.
 	VARfreeze(v);
 	VARfixate(v);
 }
+@= tokenstrvar
+{	Variable v = VARnew(0, "@1");
+	v->binding.vtype = TYPE_str;
+	v->binding.val.sval = GDKstrdup(@2);
+	/*VARfreeze(v);
+	VARfixate(v);*/
+}
 
 @c
 ptr monet_init(void){
@@ -440,12 +449,63 @@ Make constants for important language tokens
 	@:tokenvar(TOK_COMMAND)@
 	@:tokenvar(TOK_ITERATOR)@
 	@:tokenvar(TOK_OBJECT)@
+	@:tokenstrvar(mod,"main")@
 @-
 Install all link-in modules.
 @c
 
         c->listing = monet_listing;
 	return (ptr) c;
+}
+@- Monet load MIL script
+
+@c
+str monet_load_script(str file, str mod)
+{
+	FILE *fp = NULL;
+	int i = 0, totlen = 8192;
+        char *buf = (char *) GDKmalloc(totlen), *p = buf;
+	char *mpop = "mod := module_pop();\n";
+
+@-
+Open the scriptfile.
+@c
+        if ((fp = fopen(file, "r")) == 0) {
+                GDKerror("monet_load_script: could not open file: %s (%s)\n", file, mod?mod:"main");
+                return NULL;
+        }
+@-
+Read the entire file, realloc if necessary.
+@c
+	if (mod){
+	     i = snprintf(p, totlen, "module_push(mod); mod := \"%s\";\n", mod);
+	     p += i;
+	}
+        while((i+=fread(p, 1, totlen-i, fp)) == totlen ) {
+                int len = totlen; totlen *= 2;
+                p = GDKmalloc(totlen);
+                memcpy(p, buf, len);
+                GDKfree(buf);
+                buf = p; p += len;
+        }
+        fclose(fp);
+	p = buf + i;
+
+	if (mod){
+	     int l = strlen(mpop);
+	     if ((i + l + 1) > totlen){
+                p = GDKmalloc(i + l + 1);
+                memcpy(p, buf, i);
+                GDKfree(buf);
+                buf = p; p += i;
+	     }
+		
+	     strncpy(p, mpop, l);
+	     i += l;
+	}
+
+        buf[i] = 0;
+	return buf;
 }
 
 @- Monet MIL Evaluation

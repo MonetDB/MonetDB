@@ -429,12 +429,13 @@ macro):
 @:aggregate_definition(@1,flt,@2)@
 @:aggregate_definition(@1,dbl,@2)@
 @:aggregate_definition(@1,lng,@2)@
+@m
+.END algebra;
 
 @* MIL definitions
-@m
-.LOAD
+@mil
 @- constants for theta() and thetajoin()
-@m
+@mil
 CONST EQ := 0;
 CONST LT := -1;
 CONST LE := -2;
@@ -462,7 +463,8 @@ CONST GE := 2;
 @- new MIL procedures
 The MIL described in the journal paper needs the below constructs
 that for the moment are defined as procs.
-@m
+@mil 
+    module(_algebra);
     PROC semijoin(bat[any::1,any::2] l, bat[any::1,any] r) : bat[any::1,any::2] 
  		return kintersect(l,r);
     ADDHELP("semijoin", "boncz", "Nov  1 1998",
@@ -716,9 +718,6 @@ that for the moment are defined as procs.
     proc sum( bat[any,lng] b ) : lng { return sum_lng(b); }
     proc sum( bat[any,flt] b ) : flt { return sum_flt(b); }
     proc sum( bat[any,dbl] b ) : dbl { return sum_dbl(b); }
-
-.END;
-.END algebra;
 
 @* Cost Model
 This module contains a full cost model on the algebraic 

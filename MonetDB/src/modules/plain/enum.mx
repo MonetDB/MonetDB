@@ -110,7 +110,12 @@ will even be the case for long 64-bit integers.
 .PRELUDE = enum_prelude;
 .EPILOGUE = enum_epilogue;
 
-.LOAD
+.END enum;
+
+@mil
+    module(streams);
+    module(_enum);
+
     proc enum_load(str name) := {
 	var tpe := enum_load(bat(name));
 	monet_atomtbl.insert(sprintf("%s",name),tpe);
@@ -135,10 +140,6 @@ will even be the case for long 64-bit integers.
     }
     ADDHELP("enum_trick", "boncz", "Dec  5 1998",
          "create a view on a BAT with a diffrent enum map.", "enum");
-
-.END;
-.END enum;
-
 
 @{
 @* Implementation

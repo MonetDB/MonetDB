@@ -128,7 +128,11 @@ the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump)
     .COMMAND fgetc( Stream filep ): int = io_fgetc; 
 	"See: man fgetc"
 
-.LOAD
+.END streams;
+
+@mil
+	module(_streams);
+
 	# backward compatibility with old io module (alas: seek has gone..)
 	const EOF := -1;
 	proc fputs(str buf, Stream s):void		stream_write(s, buf);
@@ -142,8 +146,6 @@ the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump)
 		} 
 		return Stream(ptr(0));
 	}
-.END;
-.END streams;
 @h
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
@@ -455,15 +457,13 @@ int io_fwrite(Stream *S, str buf, int *nbytes ){
 }
 @mil
 
-module(streams);
+if (mod = "main"){
+    s := open_wastream( "test.mil" );
+    stream_write( s, "test\n" );
+    stream_close( s );
 
-s := open_wastream( "test.mil" );
-stream_write( s, "test\n" );
-stream_close( s );
-
-s := open_rastream( "test.mil" );
-st := stream_read( s );
-stream_close( s );
-print(st);
-quit;
-
+    s := open_rastream( "test.mil" );
+    st := stream_read( s );
+    stream_close( s );
+    print(st);
+}

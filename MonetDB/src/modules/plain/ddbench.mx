@@ -512,7 +512,13 @@ work only on void BATs with enum tails.
 	 BAT[any,int] = bit_subhisto;
  "computes a subset-histogram on b, receiving the subset as a bitmask"
 
-.LOAD
+.END ddbench;
+
+@mil
+    module(xtables);
+    module(enum);
+    module(_ddbench);
+
     proc group(bat[oid,any] b) : bat[oid,oid] {
         return CTgroup(b);
     }
@@ -582,84 +588,84 @@ work only on void BATs with enum tails.
 	}
 	return join(b1,b2);
     }
-.END;
 
-.END ddbench;
 @* Test Script
 @mil
 
-if (view_bbp_name.reverse.exist("tpe")) {
+if (mod = "main"){
+    if (view_bbp_name.reverse.exist("tpe")) {
 	tpe := tpe.destroy;
 	commit;
+    }
+
+    a := new(oid,oid);
+    a.insert(2@0,nil); a.insert(2@0,nil); a.insert(2@0,nil); a.insert(2@0,nil);
+    a.insert(1@0,nil); a.insert(1@0,nil); a.insert(1@0,nil);
+    a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil);
+    a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil);
+    a.insert(3@0,nil); a.insert(3@0,nil); a.insert(3@0,nil); a.insert(3@0,nil);
+    a.insert(a.copy);
+    aa := a.mark(0@0).reverse;
+    tpe := enum_create("tpe", aa);
+    aaa := tpe.[encode](aa);
+
+    brsel := rng_bitselect(aaa, tpe.encode(1@0), tpe.encode(3@0));
+    aa.semijoin(brsel.tobat).print;
+    aaa.bit_subhisto(brsel).print;
+    
+    bvsel := val_bitselect(aaa, tpe.encode(2@0));
+    aa.semijoin(bvsel.tobat).print;
+    aaa.bit_subhisto(bvsel).print;
+    
+    bvvsel := val_bitselect(brsel, aaa, tpe.encode(3@0));
+    aaa.bit_subhisto(bvvsel).print;
+    
+    brrsel := rng_bitselect(brsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
+    aaa.bit_subhisto(brrsel).print;
+
+    brsel.access(BAT_WRITE);
+    rng_bitrefine(brsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
+    aaa.bit_subhisto(brsel).print;
+
+    val_bitrefine(brsel, aaa, tpe.encode(2@0));
+    aaa.bit_subhisto(brsel).print;
+
+    bvs := vals_bitselect(aaa, tpe.encode(1@0), tpe.encode(3@0)); 
+    bvs@batloop() print($t);
+
+    brs := rngs_bitselect(aaa, tpe.encode(1@0), tpe.encode(2@0), 
+                           tpe.encode(2@0), tpe.encode(3@0)); 
+    brs@batloop() print($t);
+
+    bhs := bits_subhisto(aaa, bvvsel, brsel); 
+    bhs@batloop() print($t);
+
+    orsel := rng_oidselect(aaa, tpe.encode(1@0), tpe.encode(3@0));
+    aaa.oid_subhisto(orsel).print;
+
+    ovsel := val_oidselect(aaa, tpe.encode(2@0));
+    aaa.oid_subhisto(ovsel).print;
+
+    ovvsel := val_oidselect(orsel, aaa, tpe.encode(3@0));
+    aaa.oid_subhisto(ovvsel).print;
+
+    orrsel := rng_oidselect(orsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
+    aaa.oid_subhisto(orrsel).print;
+
+    orsel.access(BAT_WRITE);
+    rng_oidrefine(orsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
+    aaa.oid_subhisto(orsel).print;
+
+    val_oidrefine(orsel, aaa, tpe.encode(2@0));
+    aaa.oid_subhisto(orsel).print;
+
+    ovs := vals_oidselect(aaa, tpe.encode(1@0), tpe.encode(3@0)); 
+    ovs@batloop() print($t);
+
+    ors := rngs_oidselect(aaa, tpe.encode(1@0), tpe.encode(2@0), 
+                           tpe.encode(2@0), tpe.encode(3@0)); 
+    ors@batloop() print($t);
 }
-module(ddbench);
-a := new(oid,oid);
-a.insert(2@0,nil); a.insert(2@0,nil); a.insert(2@0,nil); a.insert(2@0,nil);
-a.insert(1@0,nil); a.insert(1@0,nil); a.insert(1@0,nil);
-a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil);
-a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil);
-a.insert(3@0,nil); a.insert(3@0,nil); a.insert(3@0,nil); a.insert(3@0,nil);
-a.insert(a.copy);
-aa := a.mark(0@0).reverse;
-tpe := enum_create("tpe", aa);
-aaa := tpe.[encode](aa);
-
-brsel := rng_bitselect(aaa, tpe.encode(1@0), tpe.encode(3@0));
-aa.semijoin(brsel.tobat).print;
-aaa.bit_subhisto(brsel).print;
-
-bvsel := val_bitselect(aaa, tpe.encode(2@0));
-aa.semijoin(bvsel.tobat).print;
-aaa.bit_subhisto(bvsel).print;
-
-bvvsel := val_bitselect(brsel, aaa, tpe.encode(3@0));
-aaa.bit_subhisto(bvvsel).print;
-
-brrsel := rng_bitselect(brsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
-aaa.bit_subhisto(brrsel).print;
-
-brsel.access(BAT_WRITE);
-rng_bitrefine(brsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
-aaa.bit_subhisto(brsel).print;
-
-val_bitrefine(brsel, aaa, tpe.encode(2@0));
-aaa.bit_subhisto(brsel).print;
-
-bvs := vals_bitselect(aaa, tpe.encode(1@0), tpe.encode(3@0)); 
-bvs@batloop() print($t);
-
-brs := rngs_bitselect(aaa, tpe.encode(1@0), tpe.encode(2@0), 
-                           tpe.encode(2@0), tpe.encode(3@0)); 
-brs@batloop() print($t);
-
-bhs := bits_subhisto(aaa, bvvsel, brsel); 
-bhs@batloop() print($t);
-
-orsel := rng_oidselect(aaa, tpe.encode(1@0), tpe.encode(3@0));
-aaa.oid_subhisto(orsel).print;
-
-ovsel := val_oidselect(aaa, tpe.encode(2@0));
-aaa.oid_subhisto(ovsel).print;
-
-ovvsel := val_oidselect(orsel, aaa, tpe.encode(3@0));
-aaa.oid_subhisto(ovvsel).print;
-
-orrsel := rng_oidselect(orsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
-aaa.oid_subhisto(orrsel).print;
-
-orsel.access(BAT_WRITE);
-rng_oidrefine(orsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
-aaa.oid_subhisto(orsel).print;
-
-val_oidrefine(orsel, aaa, tpe.encode(2@0));
-aaa.oid_subhisto(orsel).print;
-
-ovs := vals_oidselect(aaa, tpe.encode(1@0), tpe.encode(3@0)); 
-ovs@batloop() print($t);
-
-ors := rngs_oidselect(aaa, tpe.encode(1@0), tpe.encode(2@0), 
-                           tpe.encode(2@0), tpe.encode(3@0)); 
-ors@batloop() print($t);
 
 @* Implementation 
 @h
@@ -2210,7 +2216,7 @@ export MONETFARM
 echo "pushd $TEMP/$BENCH"
 
 @+ Benchmark Initialization
-@f scripts/mload
+@f scripts_mload
 @s
 ,",",int
 *age_tmp,",",int
@@ -2221,14 +2227,14 @@ echo "pushd $TEMP/$BENCH"
 *spendings_tmp,",",int
 *reliable_tmp,",",str
 
-@f scripts/init_par
+@f scripts_init_par
 @mil
 module(str,enum,alarm); 
 
 threadcnt(1);
 sleep(1);
 
-@f scripts/init_enum
+@f scripts_init_enum
 @mil
 # construct [void,enum] and [oid,tpe] from [void,tpe]
 proc init(str nme) {
@@ -2249,7 +2255,7 @@ proc init(str nme) {
     printf("end %s\n",nme);
 }
 
-@f scripts/init_scale
+@f scripts_init_scale
 @mil
 # construct [void,enum] and [oid,tpe] from [void,tpe]
 # while scaling 10 times with multiple inserts
@@ -2277,7 +2283,7 @@ proc init(str nme) {
     printf("end %s\n",nme);
 }
 
-@f scripts/init
+@f scripts_init
 @mil
 {|
     init("zipcode");
@@ -2291,7 +2297,7 @@ proc init(str nme) {
 
 commit;
 
-@f scripts/run
+@f scripts_run
 @sh
 #!/bin/sh
 #
@@ -2331,7 +2337,7 @@ echo export TMP=$MONETFARM/$4
 MONETFARM=$MONETBAK
 export MONETFARM
 
-@f scripts/all
+@f scripts_all
 @sh
 #!/bin/sh
 RESULTS=$HOME/results`echo echo '$$'|sh`
@@ -2354,7 +2360,7 @@ cp -r $2/* $RESULTS/$2
 ddbench noprint normal
 #ddbench noprint wide          
 
-@f scripts/summary
+@f scripts_summary
 @sh
 #!/bin/sh
 
@@ -2366,7 +2372,7 @@ do
  done
 done
 
-@f scripts/head
+@f scripts_head
 @mil
 module(unix,alarm,stream,str,xtables);
 
@@ -2396,7 +2402,7 @@ proc group;
 var cache_batch1 := true; 
 var CT_reliable := nil;
 
-@f scripts/print
+@f scripts_print
 @mil
 module(stream,alarm);
 
@@ -2431,11 +2437,11 @@ proc print_table(str seq, str att1, str att2, bat[any,any] aggr) : int {
         return time - t0;
 }
 
-@f scripts/noprint.mil
+@f scripts_noprint.mil
 @mil
 proc print_table := true; 
 
-@f scripts/enum
+@f scripts_enum
 @mil
 module(enum);
 
@@ -2463,7 +2469,7 @@ proc conv_str(bat[void,any] b) : bat[void,any] := {
 proc revprint(fp,b1,b2) := enum_print(fp,b2,b1);
 proc revprint(fp,b1,b2,b3) := enum_print(fp,b3,b2,b1);
 
-@f scripts/prelude
+@f scripts_prelude
 @mil
 proc semijoin(str seq, bat[any::1,any::2] b1, bat[any::1,any] b2) : 
 							bat[any::1,any::2] 
@@ -2532,7 +2538,7 @@ var tot5 := 0, tot6 := 0, tot7 := 0, tot8 := 0; tot9 := 0;
 
 @+ Option 1: Subgroup Method
 @- CT-semijoin-histogram (semijoin.mil)
-@f scripts/semijoin
+@f scripts_semijoin
 @mil
 proc group(b) := return CTgroup(b);
 proc group(a,b) := return CTgroup(a,b);
@@ -2552,7 +2558,7 @@ proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
 }
 
 @- CTsubgroup-histogram (subgroup.mil)
-@f scripts/subgroup
+@f scripts_subgroup
 @mil
 cache_batch1 := false; # we cache batch 0 here
 
@@ -2574,7 +2580,7 @@ proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
 }
 
 @- Nonmaterialized sub-histogram (subhisto.mil)
-@f scripts/subhisto
+@f scripts_subhisto
 @mil
 module(ddbench);
 
@@ -2592,7 +2598,7 @@ proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
 
 @+ Option 2: Select Method
 @- old uselect (old.mil)
-@f scripts/old
+@f scripts_old
 @mil
 proc valselect(str seq, bat[any,any] b, any val) : bat[any,any] {
 	var t0 := time;
@@ -2612,7 +2618,7 @@ proc rngselect(str seq, bat[any,any] b, any::1 lo, any::1 hi) : bat[any,any] {
 }
 
 @- oid enum-select (oid.mil)
-@f scripts/oid
+@f scripts_oid
 @mil
 module(ddbench);
 proc valselect(str seq, bat[any,any] b, any val) : bat[any,any] {
@@ -2633,7 +2639,7 @@ proc rngselect(str seq, bat[any,any] b, any::1 lo, any::1 hi) : bat[any,any] {
 }
 
 @- bit enum-select (bit.mil)
-@f scripts/bit
+@f scripts_bit
 @mil
 module(ddbench);
 proc valselect(str seq, bat[any,any] b, any val) : bat[any,any] {
@@ -2655,7 +2661,7 @@ proc rngselect(str seq, bat[any,any] b, any::1 lo, any::1 hi) : bat[any,any] {
 
 @+ Option 2: Selection Combination Method
 @- select-semijoin (and.mil)
-@f scripts/and
+@f scripts_and
 @mil
 proc valselect(str seq, bat[any,any] sel, bat[any,any] b, any val) : bat[any,any] {
 	var b1 := seq.valselect(b, val);
@@ -2677,7 +2683,7 @@ proc rngselect(str seq, bat[any,any] sel, bat[any,any] b, any::1 lo, any::1 hi) 
 }
 
 @- subselect (sub.mil)
-@f scripts/sub
+@f scripts_sub
 @mil
 module(ddbench);
 proc valselect(str seq, bat[any,any] sel, bat[any,any] b, any val) : bat[any,any] {
@@ -2702,7 +2708,7 @@ proc rngselect(str seq, bat[any,any] sel, bat[any,any] b, any::1 lo, any::1 hi) 
 Loading phase is not officially part of the benchmark
 The timing is of interest for future direct access
 to another database
-@f scripts/load
+@f scripts_load
 @mil
 var res_0000, res_0001, res_0002, res_0003, res_0004, res_0005; 
 var res_0100, res_0101, res_0102, res_0103, res_0104, res_0105;
@@ -2738,7 +2744,7 @@ fpNice.fprintf("s/LLL6/%dms/\n", tot6);
 fpNice.fprintf("s/LLLL/%dms/\n", time-t);
 
 @- BATCH 0
-@f scripts/batch0
+@f scripts_batch0
 @mil
 printf("# %d start of batch0.mil\n", (t := time)-start); 
 tot0 := 0; tot1 := 0; tot2 := 0; tot3 := 0; tot4 := 0; tot5 := 0; 
@@ -2769,7 +2775,7 @@ fpNice.fprintf("s/AAA6/%dms/\n", tot6);
 fpNice.fprintf("s/AAAA/%dms/\n", time-t); 
 
 @- BATCH 1
-@f scripts/batch1
+@f scripts_batch1
 @mil
 printf("# %d start of batch1.mil\n", (t := time)-start); 
 tot0 := 0; tot1 := 0; tot2 := 0; tot3 := 0; tot4 := 0; tot5 := 0; 
@@ -2796,7 +2802,7 @@ fpNice.fprintf("s/BBB5/%dms/\n", tot5);
 fpNice.fprintf("s/BBBB/%dms/\n", time-t); 
 
 @- BATCH 2
-@f scripts/select2
+@f scripts_select2
 @mil
 printf("# %d start of select2.mil\n", (t := time)-start); 
 tot0 := 0; tot1 := 0; tot2 := 0; tot3 := 0; tot4 := 0; 
@@ -2818,7 +2824,7 @@ var single_0, married_0, divorced_0, center_0, south_0;
   { var tt := time;      south_0 := "seq_0025".rngselect(zipcode_0, 4000, 7000); res_0900 := time - tt; }
 |}
 
-@f scripts/batch2
+@f scripts_batch2
 @mil
 printf("# %d start of group batch2.mil\n", time-start); 
 
@@ -2906,7 +2912,7 @@ fpNice.fprintf("s/CCCC/%dms/\n",time - t);
 
 
 @- BATCH 3
-@f scripts/select3
+@f scripts_select3
 @mil
 printf("# %d start of select3.mil\n", (t := time)-start); 
 tot0 := 0; tot1 := 0; tot2 := 0; tot3 := 0; tot4 := 0; 
@@ -2933,7 +2939,7 @@ var married_age_19to25_0, married_age_45to55_0, married_females_0, center_mokum_
   { var tt := time;         center_mokum_0 := "seq_0085".valselect(center_0,town_0,"Amsterdam");     res_0900 := time - tt; }
 |}
 
-@f scripts/batch3
+@f scripts_batch3
 @mil
 printf("# %d start of group batch3.mil\n", time-start); 
 
@@ -3018,7 +3024,7 @@ fpNice.fprintf("s/DDD9/%dms/\n", tot9);
 fpNice.fprintf("s/DDDD/%dms/\n",time - t); 
 
 @- BATCH 4
-@f scripts/select4
+@f scripts_select4
 @mil
 printf("# %d start of select4.mil\n", (t := time)-start); 
 tot0 := 0; tot1 := 0; tot2 := 0; tot3 := 0; tot4 := 0; 
@@ -3046,7 +3052,7 @@ var married_females_countryside_0, center_age_60to100_mokum_0, center_age_45to55
   { var tt := time;        center_age_45to55_mokum_0 := "seq_0136".rngselect(center_mokum_0,age_0,45,55);               res_0900 := time - tt; }
 |}
 
-@f scripts/batch4
+@f scripts_batch4
 @mil
 printf("# %d start of group batch4.mil\n", time-start);
 
@@ -3118,7 +3124,7 @@ fpNice.fprintf("s/EEE7/%dms/\n", tot7);
 fpNice.fprintf("s/EEE8/%dms/\n", tot8);
 fpNice.fprintf("s/EEE9/%dms/\n", tot9);
 
-@f scripts/epilogue
+@f scripts_epilogue
 @mil
 fpNice.fprintf("s/EEEE/%dms/\n",time - t); 
 fpNice.fprintf("s/TOTALTIME/%dms/\n",time-start);
@@ -3136,7 +3142,7 @@ var tm := ctime;
 fpNice.fprintf("s/REPORTDATE/%s/\n", tm.string(0, tm.length - 1));
 fpNice.fclose;
 
-@f scripts/config
+@f scripts_config
 These are parameters in sed style that describe the machine configuration.
 @p
 # your company name
@@ -3177,7 +3183,7 @@ s/NOTE//
 #s/STARS/**/
 #s/NOTE/footnote that appears at the bottom/
 
-@f scripts/template
+@f scripts_template
 The DDBench results summary form in XFIG format. It contains capital
 variable names that are filled in using a sed script. This sed script
 is produced during the benchmark run; and is supplemented with some

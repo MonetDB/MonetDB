@@ -93,7 +93,9 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 .COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_size;
 	"grouped count of true values"
 
-.LOAD
+.END aggrX3;
+
+@mil
 
     proc size(BAT[any,bit] b) : int {
 	var h := b.histogram;
@@ -147,14 +149,10 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
     proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
 	return {count}(b.sunique,e);
     }
-.END;
-
-.END aggrX3;
 
 @{
 @+ Test Script
 @mil
-module(aggrX3,decimal);
 
 proc toset(bat[any,any] b) : str {
         var res := "{ ";
@@ -199,12 +197,14 @@ proc aggrtst(int num, int fanout, str aggr, ..str..) {
         }
 }
 
-aggrtst(16,160,"{sum}","sht","int","lng","flt","dbl");
-aggrtst(16,160,"{avg}","sht","int","lng","flt","dbl");
-aggrtst(16,160,"{min}","sht","int","lng","flt","dbl","decimal");
-aggrtst(16,160,"{max}","sht","int","lng","flt","dbl","decimal");
-aggrtst(16,160,"{card}","sht","int","lng","flt","dbl","decimal");
-aggrtst(16,160,"{count}","sht","int","lng","flt","dbl","decimal");
+if (mod = "main"){
+	aggrtst(16,160,"{sum}","sht","int","lng","flt","dbl");
+	aggrtst(16,160,"{avg}","sht","int","lng","flt","dbl");
+	aggrtst(16,160,"{min}","sht","int","lng","flt","dbl");
+	aggrtst(16,160,"{max}","sht","int","lng","flt","dbl");
+	aggrtst(16,160,"{card}","sht","int","lng","flt","dbl");
+	aggrtst(16,160,"{count}","sht","int","lng","flt","dbl");
+}
 
 @{
 @+ Implementation

@@ -309,12 +309,23 @@ def msc_deps(fd, deps, objext, msc):
 # list of scripts to install
 def msc_scripts(fd, var, scripts, msc):
 
+    s, ext = string.split(var, '_', 1);
+    ext = [ ext ]
+    if scripts.has_key("EXT"):
+        ext = scripts["EXT"] # list of extentions 
+
     sd = "SCRIPTSDIR"
     if scripts.has_key("DIR"):
         sd = scripts["DIR"][0] # use first name given
     sd = msc_translate_dir(sd, msc)
 
     for script in scripts['TARGETS']:
+	try:
+		s,ext2 = string.split(script, '.');
+		if not ext2 in ext:
+			continue
+	except:
+		continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
             inf = '$(SRCDIR)\\%s.in' % script
             if inf not in msc['_IN']:

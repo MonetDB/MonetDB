@@ -473,10 +473,12 @@ these 'sync' OIDs with their own propagation rules.
 @m
 .COMMAND synced (BAT[any,any] b1, BAT[any,any] b2) : bit = CMDsynced;
 "Tests whether two BATs are synced or not. "
-@m
-.LOAD
+
+.END bat;
+
 @- constants for mmap()
-@m
+@mil
+    module(_bat);
     CONST STORE_MEM   := 0;     # load into GDKmalloced memory
     CONST STORE_MMAP  := 1;     # mmap() into virtual memory
     CONST STORE_COMPR := 2;     # currently not implemented this way
@@ -491,14 +493,14 @@ these 'sync' OIDs with their own propagation rules.
     }
 
 @- constants for madvise()
-@m
+@mil
     CONST BUF_NORMAL    := 0;   # No further special treatment
     CONST BUF_RANDOM    := 1;   # Expect random page references
     CONST BUF_SEQUENTIAL:= 2;   # Expect sequential page references
     CONST BUF_WILLNEED  := 3;   # Will need these pages
     CONST BUF_DONTNEED  := 4;   # Don't need these pages
 @- constants for readonly()
-@m
+@mil
     CONST BAT_READ   := 1;      # allow only read access.
     CONST BAT_APPEND := 2;      # allow reads and insertions of new elements.
     CONST BAT_WRITE  := 0;      # allow reads, insertions, and updates.
@@ -544,9 +546,6 @@ these 'sync' OIDs with their own propagation rules.
 
     PROC new(int ht, int tt, lng cnt) : bat[any,any]
 	return bat(ht,tt,cnt);
-.END;
-
-.END bat;
 @
 @{
 @{

@@ -274,10 +274,15 @@ array. Specific operations work with this interpretation.
 @= limit_definition
 .COMMAND get@1_MAX (): @2 = CMDget@1_MAX; "Get maximum value of ordered type @2"
 .COMMAND get@1_MIN (): @2 = CMDget@1_MIN; "Get minimum value of ordered type @2"
+@m
+
+.END arith;
+
 @
 The constants defined in limit.h are defined using autoloaded mil code.
-@m
-.LOAD
+@mil
+	module(_arith);
+
         const RAND_MAX   := getRAND_MAX();
 @:limit_milconst(CHR)@
 @:limit_milconst(SHT)@
@@ -286,44 +291,41 @@ The constants defined in limit.h are defined using autoloaded mil code.
 @= limit_milconst
         const @1_MAX   := get@1_MAX();
         const @1_MIN   := get@1_MIN();
-@m
-.END;
-
-.END arith;
+@
 
 @+ Example script 
 The following example script will do each operation in the
 arith module. It can be used for testing.
 
 @mil
-setoid(oid(20000000));
-module(arith);
-sht1 := sht(2);
-sht2 := sht(5);
-int1 := 5;
-int2 := 2;
-flt1 := 2.5;
-flt2 := 5.4;
-dbl1 := dbl(-2.500001);	       # may also need string since float is default
-dbl2 := dbl(54.00456789);      # real and is less significant	
-lng1 := lng("-9000000000000"); # string needed because lng doesn't fit in an
-lng2 := lng("5400456789");     # int
-oid1 := oid(int1);
-oid2 := oid(int2);
+if (mod = "main"){
+  setoid(oid(20000000));
+  sht1 := sht(2);
+  sht2 := sht(5);
+  int1 := 5;
+  int2 := 2;
+  flt1 := 2.5;
+  flt2 := 5.4;
+  dbl1 := dbl(-2.500001);	 # may also need string since float is default
+  dbl2 := dbl(54.00456789);      # real and is less significant	
+  lng1 := lng("-9000000000000"); # string needed because lng doesn't fit in an
+  lng2 := lng("5400456789");     # int
+  oid1 := oid(int1);
+  oid2 := oid(int2);
 
-sht1.print;
-sht2.print;
-int1.print;
-int2.print;
-flt1.print;
-flt2.print;
-dbl1.print;
-dbl2.print;
-lng1.print;
-lng2.print;
-oid1.print;
-oid2.print;
-
+  sht1.print;
+  sht2.print;
+  int1.print;
+  int2.print;
+  flt1.print;
+  flt2.print;
+  dbl1.print;
+  dbl2.print;
+  lng1.print;
+  lng2.print;
+  oid1.print;
+  oid2.print;
+  
 @:mil_comp_ops('a','z')@
 @:mil_comp_ops(sht1,sht2)@
 @:mil_comp_ops(int1,int2)@
@@ -363,61 +365,60 @@ oid2.print;
 @:mil_arith_ops(lng1,dbl2)@
 @:mil_arith_ops(lng1,lng2)@
 
-abs(sht2).print;
-abs(int2).print;
-abs(flt2).print;
-abs(dbl2).print;
-abs(lng2).print;
+  abs(sht2).print;
+  abs(int2).print;
+  abs(flt2).print;
+  abs(dbl2).print;
+  abs(lng2).print;
 
-max(sht1,sht2).print;
-max(int1,int2).print;
-max(flt1,flt2).print;
-max(dbl1,dbl2).print;
-max(lng1,lng2).print;
+  max(sht1,sht2).print;
+  max(int1,int2).print;
+  max(flt1,flt2).print;
+  max(dbl1,dbl2).print;
+  max(lng1,lng2).print;
 
-min(sht1,sht2).print;
-min(int1,int2).print;
-min(flt1,flt2).print;
-min(dbl1,dbl2).print;
-min(lng1,lng2).print;
+  min(sht1,sht2).print;
+  min(int1,int2).print;
+  min(flt1,flt2).print;
+  min(dbl1,dbl2).print;
+  min(lng1,lng2).print;
 
 @:mil_arith_ops(oid1,oid2)@
-max(oid1,oid2).print;
-min(oid1,oid2).print;
+  max(oid1,oid2).print;
+  min(oid1,oid2).print;
 
-inv(flt2).print;
-inv(dbl2).print;
+  inv(flt2).print;
+  inv(dbl2).print;
 
-(int1% int2).print;
-(int1<<int2).print;
-(int1>>int2).print;
+  (int1% int2).print;
+  (int1<<int2).print;
+  (int1>>int2).print;
 
-(int1 or  int2).print;
-(int1 and int2).print;
-(int1 xor int2).print;
-not(int2).print;
+  (int1 or  int2).print;
+  (int1 and int2).print;
+  (int1 xor int2).print;
+  not(int2).print;
 
-bit1 := true;
-bit2 := false;
-(bit1 or  bit2).print;
-(bit1 and bit2).print;
-(bit1 xor bit2).print;
-not(bit2).print;
+  bit1 := true;
+  bit2 := false;
+  (bit1 or  bit2).print;
+  (bit1 and bit2).print;
+  (bit1 xor bit2).print;
+  not(bit2).print;
 
-srand( 1234 );
-rand().print;
-quit;
-
+  srand( 1234 );
+  rand().print;
+}
 @T
 The {\tt mil\_comp\_ops} implements the mil example script comparison 
 operations.  It gets two parameters which are the operants for the operations.
 
 @= mil_comp_ops
- (@1 < @2).print;  (@2 < @1).print;  (@1 < @1).print;
-(@1 <= @2).print; (@2 <= @1).print; (@1 <= @1).print;
- (@1 = @2).print;  (@2 = @1).print;  (@1 = @1).print;
-(@1 >= @2).print; (@2 >= @1).print; (@1 >= @1).print;
- (@1 > @2).print;  (@2 > @1).print;  (@1 > @1).print;
+  (@1 < @2).print;  (@2 < @1).print;  (@1 < @1).print;
+  (@1 <= @2).print; (@2 <= @1).print; (@1 <= @1).print;
+  (@1 = @2).print;  (@2 = @1).print;  (@1 = @1).print;
+  (@1 >= @2).print; (@2 >= @1).print; (@1 >= @1).print;
+  (@1 > @2).print;  (@2 > @1).print;  (@1 > @1).print;
 @
 
 @T
@@ -425,10 +426,10 @@ The {\tt mil\_arith\_ops} implements the mil example script arithmetic
 operations.  It gets two parameters which are the operants for the operations.
 
 @= mil_arith_ops
-(@1 + @2).print;
-(@1 - @2).print;
-(@1 * @2).print;
-(@1 / @2).print;
+  (@1 + @2).print;
+  (@1 - @2).print;
+  (@1 * @2).print;
+  (@1 / @2).print;
 @
 
 @{

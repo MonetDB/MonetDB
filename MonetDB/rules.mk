@@ -93,14 +93,14 @@ MXFLAGS= -notouch
 %.mal: %.mx
 	$(MX) $(MXFLAGS) -x mal $<
 
-%: %.mx
+%: %.mx 
 	$(MX) $(MXFLAGS) -x sh $<
 	chmod a+x $@
 
-%.proto.h: %.m
+%.proto.h: %.m $(MEL)
 	$(MEL) $(INCLUDES) -proto $< > $@
 
-%.glue.c: %.m
+%.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
 
 %.tex: %.mx

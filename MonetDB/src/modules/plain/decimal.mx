@@ -199,7 +199,9 @@ These commands are internal to the procedures in the load section.
 .PRELUDE = decimal_prelude;
 .EPILOGUE = decimal_epilogue;
 
-.LOAD
+.END decimal;
+
+@mil
     const DECIMAL_NIL     := decimal("nil");
     const DECIMAL_ZERO    := decimal("0");
     const DECIMAL_E       := decimal("2.7182818284590452354");
@@ -235,13 +237,12 @@ These commands are internal to the procedures in the load section.
         } 
         return bulkdivide(b, div);
     }
-.END;
-
-.END decimal;
 
 @+ Test
 The below MIL script stress-tests all operations on decimals, as well as the performance 
 of grouping, sort and join on decimal columns. 
+
+@f test_decimal
 @mil
 module(xtables,alarm,decimal,mmath);
 

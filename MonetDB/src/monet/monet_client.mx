@@ -110,7 +110,7 @@ m_export int 	acceptClient   (Client c);
 m_export int 	readClient     (Client c);
 m_export YYSTREE	parseClient    (Client c, int reschedule);
 m_export int	serveClient    (Cntxt stk, YYSTREE lt, ValPtr res);
-m_export str	moduleClient   (Client c, YYSTREE lt, int idents);
+m_export str	moduleClient   (Client c, str mod, str parmod );
 m_export int	dropClient     (Client c, YYSTREE lt);
 
 m_export void lockparser(Client c);
@@ -687,32 +687,13 @@ int serveClient(Cntxt stk, YYSTREE lt, ValPtr res){
         return acceptClient(c);
 }
 
-str moduleClient(Client c, YYSTREE lt, int idents){
+str moduleClient(Client c, str mod, str parmod ){
         str init_script=NULL;
- 
-        while (lt) {
-	    int i; 
-            for(i = 0; i < lt->cnt; i++)  {
-        	str mod;
-                if (!lt->yysons[i]) continue;
-                if (idents && lt->yysons[i]->token == monet_tokident) {
-                        mod = arg(lt, i)->yyval.val.sval;
-                } else {
-			ValRecord res;
-			int ret = interpret(c->stk, lt->yysons[i], &res);
-			if (ret < 0 || res.vtype != TYPE_str) {
-				GDKerror("module: illegal argument.\n");
-				return init_script;
-			} 
-			mod = res.val.sval; 
-                }
-                if (TBL_loadmod(c, mod, 0, &init_script) == 0) {
-			GDKerror("module(%s): load error.\n", mod);
-			return init_script;
-		}
-            }
-            lt = lt->overflow;
-        }
+
+	if (TBL_loadmod(c, mod, parmod, 0, &init_script) == 0) {
+		GDKerror("module(%s): load error.\n", mod);
+		return init_script;
+	}
 	return init_script;
 }
 

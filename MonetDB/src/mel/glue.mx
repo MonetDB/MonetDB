@@ -367,9 +367,9 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	o << "#endif\n\n";
 	o << "typedef int (*fptr)();\n\n";
 
-	o << d.Name() << "_export oid " << d.Name();
+	o << d.Name() << "_export oid _" << d.Name();
 		o << "_Module_Install( TBLinstall *inst, str user );\n";
-	o << d.Name() << "_export int " << d.Name() << "_Module_Delete( str user );\n";
+	o << d.Name() << "_export int _" << d.Name() << "_Module_Delete( str user );\n";
 
 
 #if 0
@@ -408,9 +408,9 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	o << "    {(NULL)}};\n";
 	delete(l);
 
-	o << "oid " << d.Name();
+	o << "oid _" << d.Name();
 	o << "_Module_Install( TBLinstall *inst, str user ){\n";
-	o << "   oid mid = TBL_Install_Info( inst, user, \"" << d.Name();	
+	o << "   oid mid = TBL_Install_Info( inst, user, \"_" << d.Name();	
 	o << "\");\n";
 
 	l = new install();
@@ -431,7 +431,7 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	o << "}\n\n";
 
 	l = new deinstall(); 
-	o << "int " << d.Name() << "_Module_Delete( str user ){\n";
+	o << "int _" << d.Name() << "_Module_Delete( str user ){\n";
 	o << "   (void)user;\n";
 	print_list( o, d.Defs(), l );
 	o << "   return 1;\n";
@@ -1077,7 +1077,7 @@ ostream &protoize::gen_epilogue( ostream &o, const Epilogue &d ){
 }
 
 ostream &install::gen_dependency( ostream &o, const Dependency &d ){ 
-	o << "   TBL_Install_Depend(inst, mid, user, \""<<d.Name()<<"\");\n";
+	o << "   TBL_Install_Depend(inst, mid, user, \"_"<<d.Name()<<"\");\n";
 	return o;
 }
 
