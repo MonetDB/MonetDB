@@ -1248,12 +1248,12 @@ BAT *BATset(BAT *b, int flag) {
 Changes the access permission mode. It may seem simple, but this has become very tricky 
 when memory-mapped files are involved.
 
-Let us recall the two main memory mapped heap modes:
+Let us recall the two main memory mapped file modes:
 \begin{itemize}
 \item STORE_MMAP files must be readonly, because you never know the exact saved status. 
       HEAPsave consists of the rather efficient msync(X).
 \item STORE_PRIV files modify pages in swap area, and can be writable. 
-      HEAPsave actually write a full write(X), while the mapped file stays is X.priv
+      HEAPsave actually does a full write(X), while the mapped file stays in X.priv
 \end{itemize}
 In case of a change from writable->readonly (PRIV->MMAP), nothing needs to be done immediately.
 The mapped BAT is saved in the old mode (in X, not X.priv), and made un-modifyable.
@@ -1293,7 +1293,7 @@ writable:                      initially created by:     when made readonly:
 
 readonly:                                                when made writable:
 
-(3) [ H=map, M=map, F=X]       load a readonly mmap bat  if (persistent) goto (1) else goto (4)
+(3) [ H=map, M=map, F=X]       load a readonly mmap bat  if (persistent) goto (1) else goto (2)
 (4) [ H=map, M=priv,F=X.priv ] n.a.                      goto (1)
 \end{verbatim}
 
@@ -1313,57 +1313,87 @@ readonly mmap heaps, we see that due to H=map in all cases, HEAPsave will use
 the (efficient) msync. This is not dangerous when saving an accelerator heap the
 first time, as its file will be ignored if [ht]accCopiedtodisc in the .desc
 is not set (only happens after fully succesful heap write).
+@c
+/* transition heap from readonly to writable (or appendable) */
+static int make_writable(Heap *hp, int committed, int *remap, int *reload) {
+	str p;
+	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL) {
+		return hp->storage;
+	}
+	/* STORE_PRIV would indicate an illegal heap state */
+	assert(hp->storage != STORE_PRIV); 
 
-@= mmap_write
-    /* transition from readonly to writable (or appendable) */
-    if (@2.base != NULL && (@2.storage&STORE_MMAP) && @2.filename != NULL) {
-        str p = strstr(@2.filename, ".priv");
-	assert(@2.storage != STORE_PRIV); /* would indicate an illegal heap state */
+	*remap = TRUE; 
+	p = strstr(hp->filename, ".priv");
         if (p) {
 		/* state(4), goto state (1) */
-	        @1 = STORE_PRIV; 
-	} else if (BBP_status(b->batCacheid)&BBPEXISTING) {
-		/* state(3), goto state (1) */
-	        @1 = STORE_PRIV; 
-		reload = TRUE; 
-	} else {
-		/* state(3), goto state (4) */
-		str nme = @2.filename; 
-		sprintf(@2.filename = (char*) GDKmalloc(strlen(nme)+12), "%s.priv", nme);
-		GDKfree(nme);
-	        @1 = STORE_MMAP; 
+	       	return STORE_PRIV; 
 	}
-	remap = 1; 
-    } else {
-        @1 = @2.storage;
-    }
-@= mmap_read
-    /* transition from writable (or appendable) to readonly */
-    if (@2.base != NULL && (@2.storage&STORE_MMAP) && @2.filename != NULL) {
-      if (@2.storage == STORE_PRIV) {
-         /* state(1), goto state (4) */
-         @1 = STORE_MMAP; 
-      } else {
-         /* state(2), goto state (3) */
-         str p = strstr(@2.filename, ".priv");
-	 assert(p); /* absence of .priv would indicate an illegal heap state */
-	 *p = 0; /* cut off .priv */
-      } 
-      remap = 1; 
-    } else {
-        @1 = @2.storage;
-    }
+	if (!committed) {
+		/* state(3), goto state (2) */
+         	long_str src, dst, nme;
+		int ret;
+
+		sprintf(nme, "%s.priv", hp->filename);
+	 	GDKfilepath(src, BATDIR, hp->filename, NULL);
+	 	GDKfilepath(dst, BATDIR, nme, NULL);
+	 
+		/* rename X->X.priv is crucial. If X becomes persistent later, we must be able to save to X */
+		ret = rename(src, dst);
+	 	IODEBUG THRprintf(GDKerr, "BATsetaccess(make_writable): rename(%s,%s) = %d\n", src, dst, ret);
+		if (ret >= 0) {
+			GDKfree(hp->filename);
+			hp->filename = GDKstrdup(nme); 
+			return STORE_MMAP; 
+		}
+	}
+	/* state(3), goto state (1) */
+	*reload = TRUE; 
+	return STORE_PRIV; 
+}
+
+/* transition heap from writable (or appendable) to readonly */
+static int make_readonly(Heap *hp, int *remap) {
+	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL) {
+		return hp->storage;
+	}
+	*remap = TRUE; 
+	if (hp->storage == STORE_MMAP) {
+        	/* state(2), goto state (3) */
+         	long_str src, dst;
+         	str p = strstr(hp->filename, ".priv");
+	 	int ret;
+	 
+		assert(p); /* absence of .priv would indicate an illegal heap state */
+
+	 	GDKfilepath(src, BATDIR, hp->filename, NULL);
+	 	*p = 0; /* cut off .priv */
+	 	GDKfilepath(dst, BATDIR, hp->filename, NULL);
+
+		/* rename X.priv->X is not crucial for this to work (X.priv is not in the way) */
+	 	ret = rename(src, dst);
+	 	IODEBUG THRprintf(GDKerr, "BATsetaccess(make_readonly) rename(%s,%s) = %d\n", src, dst, ret);
+	} else {
+		/* state(1), goto state (4) */
+		hp->storage = STORE_MMAP; /* direct change! */
+	}
+	return STORE_MMAP; 
+}
 @c
 BAT *BATsetaccess(BAT *b, int mode) {
 	BATcheck(b, "BATsetaccess"); 
 
 	if (b->batRestricted != mode) {
-   	    int reload=FALSE, remap=FALSE, dirty=BATdirty(b), bak=b->batRestricted;
 	    int m1=0, bak1 = b->batBuns->storage; 
 	    int m2=0, bak2 = b->hheap.storage; 
 	    int m3=0, bak3 = b->theap.storage; 
 	    int m4=0, bak4 = b->haccelerator.storage; 
 	    int m5=0, bak5 = b->taccelerator.storage; 
+	    int committed = BBP_status(b->batCacheid)&BBPEXISTING;
+	    int bak = b->batRestricted;
+	    int dirty = BATdirty(b);
+   	    int reload = FALSE;
+	    int remap = FALSE;
 
 	    if (VIEWparent(b) && mode != BAT_READ) {
 		VIEWreset(b);
@@ -1374,23 +1404,17 @@ BAT *BATsetaccess(BAT *b, int mode) {
 		if (b->batStamp > 0) b->batStamp = -b->batStamp; /* prevent MIL setaccess */
 	    } else {
 		if (mode == BAT_READ) {
-		    @:mmap_read(m1,(*b->batBuns))@
-		    @:mmap_read(m2,b->hheap)@
-		    @:mmap_read(m3,b->theap)@
-		    @:mmap_read(m4,b->haccelerator)@
-		    @:mmap_read(m5,b->haccelerator)@
+		    m1 = make_readonly(b->batBuns, &remap);
+		    m2 = make_readonly(&b->hheap, &remap);
+		    m3 = make_readonly(&b->theap, &remap);
+		    m4 = make_readonly(&b->haccelerator, &remap);
+		    m5 = make_readonly(&b->taccelerator, &remap);
 	 	} else { /* BAT_APPEND || BAT_WRITE */
-		    if (mode == BAT_WRITE) {
-		    	@:mmap_write(m1,(*b->batBuns))@
-		    }
-		    if (mode == BAT_WRITE || b->htype != TYPE_str || GDK_ELIMDOUBLES((&b->hheap))) {
-		    	@:mmap_write(m2,b->hheap)@
-		    }
-		    if (mode == BAT_WRITE || b->ttype != TYPE_str || GDK_ELIMDOUBLES((&b->theap))) {
-		    	@:mmap_write(m3,b->theap)@
-		    }
-		    @:mmap_write(m4,b->haccelerator)@
-		    @:mmap_write(m5,b->haccelerator)@
+		    m1 = make_writable(b->batBuns, committed, &remap, &reload);
+		    m2 = make_writable(&b->hheap, committed, &remap, &reload);
+		    m3 = make_writable(&b->theap, committed, &remap, &reload);
+		    m4 = make_writable(&b->haccelerator, committed, &remap, &reload);
+		    m5 = make_writable(&b->taccelerator, committed, &remap, &reload);
 		}
 	    }
 	    if (remap && b->batCopiedtodisk && dirty) {
