@@ -174,6 +174,9 @@ pop (stack *s)
         return *((int *) PFarray_at (s->lifo, --(s->sp)));
     
     PFoops (OOPS_NOTPRETTY, "missing START_BLOCK?");
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 /** Return the topmost element of the stack without removing it */
@@ -184,6 +187,9 @@ top (stack *s)
         return *((int *) PFarray_at (s->lifo, s->sp - 1));
     
     PFoops (OOPS_NOTPRETTY, "missing START_BLOCK?");
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 /** Push an element onto the stack */
