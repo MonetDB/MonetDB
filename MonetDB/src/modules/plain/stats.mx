@@ -179,6 +179,12 @@ static StatOps_t stathistops = {
   (void (*)(Stats_t *))HistogramDispose_m,
 };
 
+#ifdef NATIVE_WIN32
+#define LLFMT "%I64d"
+#else
+#define LLFMT "%lld"
+#endif
+
 int
 stats_new(ptr *_st, str name)
 {
@@ -301,14 +307,14 @@ static void
 Report_m(Stats_t *st, FILE *out)
 {
   fprintf(out, "%s.count = %d\n", st->st_name, NAdds_m(st));
-  fprintf(out, "%s.min = %lld\n", st->st_name, Min_m(st));
-  fprintf(out, "%s.max = %lld\n", st->st_name, Max_m(st));
-  fprintf(out, "%s.mean = %lld\n", st->st_name, Mean_m(st));
-  fprintf(out, "%s.stddev = %lld\n", st->st_name, Stddev_m(st));
-  fprintf(out, "%s.variance = %lld\n", st->st_name, Variance_m(st));
-  fprintf(out, "%s.conf95 = %lld\n", st->st_name, Conf95_m(st));
-  fprintf(out, "%s.relconf95 = %lld\n", st->st_name, RelConf95_m(st));
-  fprintf(out, "%s.total = %lld\n", st->st_name, Total_m(st));
+  fprintf(out, "%s.min = " LLFMT "\n", st->st_name, Min_m(st));
+  fprintf(out, "%s.max = " LLFMT "\n", st->st_name, Max_m(st));
+  fprintf(out, "%s.mean = " LLFMT "\n", st->st_name, Mean_m(st));
+  fprintf(out, "%s.stddev = " LLFMT "\n", st->st_name, Stddev_m(st));
+  fprintf(out, "%s.variance = " LLFMT "\n", st->st_name, Variance_m(st));
+  fprintf(out, "%s.conf95 = " LLFMT "\n", st->st_name, Conf95_m(st));
+  fprintf(out, "%s.relconf95 = " LLFMT "\n", st->st_name, RelConf95_m(st));
+  fprintf(out, "%s.total = " LLFMT "\n", st->st_name, Total_m(st));
   fflush(out);
 }
 
@@ -334,7 +340,7 @@ HistogramReport_m(StatsHistogram_t *st, FILE *out)
       
       /* Print in two steps, it seems printf is buggy when dealing
 	 with 64 bits numbers (and I didn't feel like debugging) */
-      fprintf(out, "%s.cumulative = \t%ld\t", st->sh_stats.st_name,
+      fprintf(out, "%s.cumulative = \t" LLFMT "\t", st->sh_stats.st_name,
 	      st->sh_binlo + n * st->sh_binwidth);
       fprintf(out, "%d.%02d\n", cumulative / 100, cumulative % 100);
     }
@@ -344,7 +350,7 @@ HistogramReport_m(StatsHistogram_t *st, FILE *out)
 	  st->sh_bins[n - 1] == 0 && st->sh_bins[n + 1] == 0) 
 	continue;
       
-      fprintf(out, "%s.density = \t%ld\t", st->sh_stats.st_name,
+      fprintf(out, "%s.density = \t" LLFMT "\t", st->sh_stats.st_name,
 	      st->sh_binlo + n * st->sh_binwidth);
       fprintf(out, "%d\n", st->sh_bins[n]);
     }

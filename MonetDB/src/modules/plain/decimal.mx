@@ -586,6 +586,11 @@ them for corruption.
 char decimal_global_buf[1024];
 #define DECIMAL_DEBUG(d,t,c)	if (GDKdebug&131072) decimal_debug(d,t,c)
 #define FORMAT(f,s)		((sprintf(decimal_global_buf,f,s)||1)?decimal_global_buf:NULL)
+#ifdef NATIVE_WIN32
+#define LLFMT "%I64d"
+#else
+#define LLFMT "%lld"
+#endif
 
 void decimal_debug(decimal* d, str tag, int check) {
 	int x=0, y, precision = d->precision, scale = d->scale;
@@ -1235,7 +1240,7 @@ int decimal_from_lng(decimal **ret, lng* val) {
 			if ((x += 4) > 12) { x = 0; y--; } 
 		}
 	}
-	DECIMAL_DEBUG(*ret, FORMAT("decimal_from_lng(%lld) result", *val), 1);
+	DECIMAL_DEBUG(*ret, FORMAT("decimal_from_lng(" LLFMT ") result", *val), 1);
 	return GDK_SUCCEED;
 }
 
@@ -1303,7 +1308,7 @@ int decimal_to_lng(lng *ret, decimal *val) {
 		}
 		*ret = long_value(val, digits, padding);
 	}
-	DECIMAL_DEBUG(val, FORMAT("decimal_to_lng(->%lld) result", *ret), 1);
+	DECIMAL_DEBUG(val, FORMAT("decimal_to_lng(->" LLFMT ") result", *ret), 1);
 	return GDK_SUCCEED;
 }
 
