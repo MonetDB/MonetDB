@@ -849,8 +849,8 @@ def RunTest(env, TST, BusyPorts) :
         SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif SERVER in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
         SkipTest(env, TST, EXT, "as Mshutdown is not available.")
-    elif SERVER == "MAPI" and  not os.path.isfile(env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")):
-        SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")+" is not available.")
+    elif SERVER == "MAPI" and  not env['MAPI_MIL']:
+        SkipTest(env, TST, EXT, "as 'mapi.mil' is not available.")
     elif SERVER == "MAPI" and  os.name == "nt":
         SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
@@ -865,10 +865,10 @@ def RunTest(env, TST, BusyPorts) :
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
         #SkipTest(env, TST, EXT, "as java is not in $PATH.")
-    elif SERVER == "SQL" and  not os.path.isfile(env['SQL_PREFIX']+path("/share/sql/catalog.mil")):
-        SkipTest(env, TST, EXT, "as "+env['SQL_PREFIX']+path("/share/sql/catalog.mil")+" is not available.")
-    elif SERVER == "SQL" and  not os.path.isfile(env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")):
-        SkipTest(env, TST, EXT, "as "+env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")+" is not available.")
+    elif SERVER == "SQL" and  not env['CATALOG_MIL']:
+        SkipTest(env, TST, EXT, "as catalog.mil is not available.")
+    elif SERVER == "SQL" and  not env['SQLSERVER_MIL']:
+        SkipTest(env, TST, EXT, "as sqlserver.mil is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_client'][0]:
         SkipTest(env, TST, EXT, "as "+string.split(env['SQLCLIENT'])[0]+" is not available.")
     elif MissingMods:
@@ -1285,10 +1285,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
         Srvr = MTO+str(STO)+" "+exe['Mserver'][1]+" --dbname="+TSTDB
         Srvr = Srvr+" --set "+string.lower(SERVER)+"_port="+env[SERVER+'PORT']
         if SERVER == "MAPI":
-            Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")
+            Srvr = Srvr+" "+env['MAPI_MIL']
         else:
-            Srvr = Srvr+" "+env['SQL_PREFIX']+path("/share/sql/catalog.mil")
-            Srvr = Srvr+" "+env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")
+            Srvr = Srvr+" "+env['CATALOG_MIL']
+            Srvr = Srvr+" "+env['SQLSERVER_MIL']
         Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
@@ -1835,10 +1835,33 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"] and not env.has_key('GDK_DBFARM'):
         env['GDK_DBFARM'] = path(ReadFromMonetConf(env, "gdk_dbfarm"))
 
+    # find mil script for MAPI and SQL server
+    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+        mapi_mil = env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")
+        if not os.path.isfile(mapi_mil):
+            mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
+            if not os.path.isfile(mapi_mil):
+                mapi_mil = ''
+        env['MAPI_MIL'] = mapi_mil
+        catalog_mil = env['SQL_PREFIX']+path("/share/sql/catalog.mil")
+        if not os.path.isfile(catalog_mil):
+            catalog_mil = env['TSTBLDBASE']+path("/src/server/catalog.mil")
+            if not os.path.isfile(catalog_mil):
+                catalog_mil = env['TSTSRCBASE']+path("/src/server/catalog.mil")
+                if not os.path.isfile(catalog_mil):
+                    catalog_mil = ''
+        env['CATALOG_MIL'] = catalog_mil
+        sqlserver_mil = env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")
+        if not os.path.isfile(sqlserver_mil):
+            sqlserver_mil = env['TSTBLDBASE']+path("/src/server/sqlserver.mil")
+            if not os.path.isfile(sqlserver_mil):
+                sqlserver_mil = ''
+        env['SQLSERVER_MIL'] = sqlserver_mil
+
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH'] 
+        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','CATALOG_MIL','SQLSERVER_MIL'] 
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
