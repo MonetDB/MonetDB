@@ -84,9 +84,6 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	   SMALLINT	deferrability
 	 */
 
-/* XXX this query is bogus: it should contain s2,t2,c2 in addition to
- * s1,t1,c1 in the select part, k should perhaps be kc, and all of the
- * above should be used in the from and where clauses.  */
 	sprintf(query_end,
 		"select "
 		"cast(null as varchar) as pktable_cat, "
@@ -113,8 +110,8 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		"pkk.\"id\" = pkkc.\"id\" and "
 		"fks.\"id\" = fkt.\"schema_id\" and "
 		"pks.\"id\" = pkt.\"schema_id\" and "
-		"fkk.\"rkey\" > -1 and "
-		"fkk.\"rkey\" = pkk.\"id\"",
+		"fkk.\"rkey\" = pkk.\"id\" and "
+		"fkkc.\"nr\" = pkkc.\"nr\"",
 		SQL_NO_ACTION, SQL_NO_ACTION, SQL_NOT_DEFERRABLE);
 	query_end += strlen(query_end);
 
