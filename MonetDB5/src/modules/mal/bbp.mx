@@ -595,10 +595,12 @@ str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		tt= b->htype;
 		ht= b->ttype;
 	}
-	BBPunfix(b->batCacheid);
 
 	if( p->argc>2)
 		cap= *(int *) getArgReference(s,p,2);
+	else cap = BATcount(b);
+	BBPunfix(b->batCacheid);
+
 	res= (int *) getArgReference(s,p,0);
 	msg= (str) BKCnewBATint(res,&ht,&tt,&cap);
 
