@@ -48,7 +48,7 @@ class BuiltinOptions:
     monet_prompt = '>'
     monet_welcome = 'yes'
     monet_mod_path = os.path.join('@Qlibdir@','@PACKAGE@')
-    monet_deamon = 'yes'
+    monet_daemon = 'yes'
 
     def get(self, name, default = None):
         '''get(name, [default]) -> value
