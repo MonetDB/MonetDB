@@ -845,6 +845,22 @@ private void checkQuery(){
 	int j= query.length()-1;
 	while(j>0 && (query.charAt(j)==' ' || query.charAt(j)=='\t')) j--;
 	if( j != query.length()-1) query= query.substring(0,j);
+	// check for unbalanced string quotes
+	byte qbuf[]= query.getBytes();
+	boolean instring=false;
+	char quote=' ';
+	for(j=0; j<qbuf.length; j++){
+	switch(qbuf[j]){
+	case '\\':j++; break;
+	case '"': if(instring){
+			if( quote== '"') { instring=false;quote=' ';}
+		} else{ quote='"'; instring=true;}
+		 break;
+	case '\'': if(instring){
+			if( quote== '\'') { instring=false;quote=' ';}
+		} else{ quote='\''; instring=true;}
+	} }
+	if(quote!=' ') expandQuery(""+quote);
 	if( language.equals("sql")){
 		i= query.lastIndexOf(';');
 		if( i != query.length()-1) expandQuery(";");
