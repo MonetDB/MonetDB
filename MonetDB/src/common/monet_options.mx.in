@@ -21,10 +21,9 @@ file, special config file or command line option).
 
 typedef enum opt_kind
 {
-	opt_builtin,
-	opt_systemconfig,
-	opt_config,
-	opt_cmdline
+	opt_builtin 		= 0,
+	opt_config 		= 1,
+	opt_cmdline 		= 2
 } opt_kind;
 
 typedef struct opt 
@@ -52,7 +51,7 @@ mutils_export void mo_substitute( opt *set, int setlen, char *name );
 
 /* mo_config_file adds all options int the given config file, to the current
    options set  (returns the new setlen) */
-mutils_export int mo_config_file( opt **Set, int setlen, char *file, opt_kind kind);
+mutils_export int mo_config_file( opt **Set, int setlen, char *file );
 
 
 /* mo_system_config will add the options from the system config file
@@ -87,30 +86,24 @@ void mo_print_options(opt *set, int setlen)
 	int i = 0;
 
 	for( i = 0; i<setlen; i++){
-		switch(set[i].kind){
-		case opt_builtin:
+		if(set[i].kind == opt_builtin){
 			fprintf(stderr, 
 				"# builtin opt \t%s = %s\n", 
 				set[i].name, set[i].value);
-			break;
-		case opt_systemconfig:
-			fprintf(stderr,
-				"# system opt \t%s = %s\n", 
-				set[i].name, set[i].value);
-			break;
-		case opt_config:
+		}
+	}
+	for( i = 0; i<setlen; i++){
+		if(set[i].kind == opt_config){
 			fprintf(stderr,
 				"# config opt \t%s = %s\n", 
 				set[i].name, set[i].value);
-			break;
-		case opt_cmdline:
+		}
+	}
+	for( i = 0; i<setlen; i++){
+		if(set[i].kind == opt_cmdline){
 			fprintf(stderr,
 				"# cmdline opt \t%s = %s\n", 
 				set[i].name, set[i].value);
-			break;
-		default: 
-			fprintf(stderr, "! error: unknown kind (%d)\n", 
-				set[i].kind );
 		}
 	}
 }
@@ -153,7 +146,7 @@ void mo_substitute( opt *set, int setlen, char *val )
 	}
 }
 
-int mo_config_file(opt **Set, int setlen, char *file, opt_kind kind )
+int mo_config_file(opt **Set, int setlen, char *file )
 {
         char buf[BUFSIZ];
         FILE *fd= NULL;
@@ -186,7 +179,7 @@ int mo_config_file(opt **Set, int setlen, char *file, opt_kind kind )
                 *t=0;
 
 		set = (opt*)realloc(set,(setlen+1)*sizeof(opt));
-		set[setlen].kind = kind;
+		set[setlen].kind = opt_config;
 		set[setlen].name = strdup(s);
 		set[setlen].value = strdup(val);
 		setlen++;
@@ -206,14 +199,14 @@ int mo_system_config( opt **Set, int setlen)
 
 	snprintf(config,BUFSIZ,"@sysconfdir@%cmonet.conf", DIR_SEP);
 	mo_substitute(*Set, setlen, config);
-	return mo_config_file(Set, setlen, config, opt_systemconfig );
+	return mo_config_file(Set, setlen, config );
 }
 	
 
 int mo_builtin_settings(opt **Set)
 {
 	int i = 0;
-	opt *set = (opt*)malloc(sizeof(opt)*18);
+	opt *set = (opt*)malloc(sizeof(opt)*23);
 
 	if (!set) return 0;
 
@@ -295,6 +288,26 @@ int mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_debug");
 	set[i].value = strdup("0");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("sql_port");
+	set[i].value = strdup("45123");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("sql_debug");
+	set[i].value = strdup("0");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("sql_api");
+	set[i].value = strdup("sql");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("sql_user");
+	set[i].value = strdup("sqladmin");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("sql_schema");
+	set[i].value = strdup("default-schema");
 	i++;
 	
 	*Set = set;

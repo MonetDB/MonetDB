@@ -34,6 +34,8 @@
 # include <ctype.h>
 #endif
 
+#include "monet_utils.h"
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
@@ -44,7 +46,7 @@ extern "C" {
    Also, when `ordering' is RETURN_IN_ORDER,
    each non-option ARGV-element is returned here.  */
 
-extern char *optarg;
+mutils_export char *optarg;
 
 /* Index in ARGV of the next element to be scanned.
    This is used for communication to and from the caller
@@ -58,16 +60,16 @@ extern char *optarg;
    Otherwise, `optind' communicates from one call to the next
    how much of ARGV has been scanned so far.  */
 
-extern int optind;
+mutils_export int optind;
 
 /* Callers store zero here to inhibit the error message `getopt' prints
    for unrecognized options.  */
 
-extern int opterr;
+mutils_export int opterr;
 
 /* Set to an option character which was unrecognized.  */
 
-extern int optopt;
+mutils_export int optopt;
 
 #ifndef __need_getopt
 /* Describe the long-named options requested by the application.
@@ -143,36 +145,36 @@ struct option
    differences in the consts, in stdlib.h.  To avoid compilation
    errors, only prototype getopt for the GNU C library.  */
 #ifndef HAVE_GETOPT
-extern int getopt (int __argc, char *const *__argv, const char *__shortopts);
+mutils_export int getopt (int __argc, char *const *__argv, const char *__shortopts);
 #endif
 # else /* not __GNU_LIBRARY__ */
 #ifndef HAVE_GETOPT
-extern int getopt ();
+mutils_export int getopt ();
 #endif
 # endif /* __GNU_LIBRARY__ */
 
 # ifndef __need_getopt
-extern int getopt_long (int __argc, char *const *__argv, const char *__shortopts,
+mutils_export int getopt_long (int __argc, char *const *__argv, const char *__shortopts,
 		        const struct option *__longopts, int *__longind);
-extern int getopt_long_only (int __argc, char *const *__argv,
+mutils_export int getopt_long_only (int __argc, char *const *__argv,
 			     const char *__shortopts,
 		             const struct option *__longopts, int *__longind);
 
 /* Internal only.  Users should not call this directly.  */
-extern int _getopt_internal (int __argc, char *const *__argv,
+mutils_export int _getopt_internal (int __argc, char *const *__argv,
 			     const char *__shortopts,
 		             const struct option *__longopts, int *__longind,
 			     int __long_only);
 # endif
 #else /* not __STDC__ */
 #ifndef HAVE_GETOPT
-extern int getopt ();
+mutils_export int getopt ();
 #endif
 # ifndef __need_getopt
-extern int getopt_long ();
-extern int getopt_long_only ();
+mutils_export int getopt_long ();
+mutils_export int getopt_long_only ();
 
-extern int _getopt_internal ();
+mutils_export int _getopt_internal ();
 # endif
 #endif /* __STDC__ */
 
