@@ -2027,7 +2027,7 @@ and READONLY (cd-rom) storage.
 @+ GDK Utilities
 @T
 Interfaces for memory management, error handling, thread management
-ands system information.
+and system information.
 
 @- GDK memory management
 @T
