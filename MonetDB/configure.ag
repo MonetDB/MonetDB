@@ -231,7 +231,15 @@ AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf)
 AC_CHECK_FUNCS(mrand48 drand48)
 AC_CHECK_FUNCS(nanosleep lockf)
 AC_CHECK_FUNCS(ctime_r isinf fpclassify fpclass)
-AC_CHECK_FUNCS(iconv nl_langinfo setlocale)
+AC_CHECK_FUNCS(nl_langinfo setlocale)
+dnl  If not present in libc, the iconv* functions might be in a separate libiconv;
+dnl  on CYGWIN, they are even called libiconv* (iconv.h takes care of mapping
+dnl  iconv* to libiconv*).
+ICONV_LIBS=""
+AC_CHECK_FUNC(iconv, [], [
+  AC_CHECK_LIB(iconv, iconv, [ ICONV_LIBS="-liconv" ],
+    AC_CHECK_LIB(iconv, libiconv, [ ICONV_LIBS="-liconv"   ] ))])
+AC_SUBST(ICONV_LIBS)   
 ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)
 AC_TRY_COMPILE([$ac_includes_default
