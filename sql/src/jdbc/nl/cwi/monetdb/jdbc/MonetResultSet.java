@@ -529,7 +529,28 @@ public class MonetResultSet implements ResultSet {
 	 * @throws SQLException if there is no such column
 	 */
 	public boolean getBoolean(int columnIndex) throws SQLException{
-		return((Boolean.valueOf(getString(columnIndex))).booleanValue());
+		int dataType = MonetDriver.getJavaType(types[columnIndex - 1]);
+		if (dataType == Types.TINYINT ||
+			dataType == Types.BIGINT ||
+			dataType == Types.INTEGER)
+		{
+			if (getInt(columnIndex) == 0) {
+				return(false);
+			} else {
+				return(true);
+			}
+		} else if (dataType == Types.DOUBLE ||
+			dataType == Types.FLOAT ||
+			dataType == Types.DECIMAL)
+		{
+			if (getDouble(columnIndex) == 0.0) {
+				return(false);
+			} else {
+				return(true);
+			}
+		} else {
+			return((Boolean.valueOf(getString(columnIndex))).booleanValue());
+		}
 	}
 
 	/**
