@@ -1723,26 +1723,31 @@ int
 strSplit(BAT **Res, str s, str sep)
 {
 	size_t seplen = strlen(sep);
-	char *d = GDKstrdup(s);
+	char *d = GDKstrdup(s), *x = d;
 	BAT *res = BATnew(TYPE_void, TYPE_str, BUFSIZ);
 	oid n = oid_nil;
 
 	if (res == NULL)
 		return GDK_FAIL;
-	while (d) {
-		char *e = strstr(d, sep);
 
-		if (!e)
-			break;
-
-		*e = 0;
-		BUNins(res, (ptr) &n, d);
-		d = e + seplen;
+	if (seplen) {
+		while (d) {
+			char *e = strstr(d, sep);
+	
+			if (!e)
+				break;
+	
+			*e = 0;
+			BUNins(res, (ptr) &n, d);
+			d = e + seplen;
+		}
 	}
 
 	if (d && *d)
 		BUNins(res, (ptr) &n, d);
 
+	if (x)
+		GDKfree(x);
 	*Res = res;
 	return GDK_SUCCEED;
 }
