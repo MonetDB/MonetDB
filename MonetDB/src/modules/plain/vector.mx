@@ -85,6 +85,20 @@ static double get_double(const char* startp,char** endp) {
    return(strtod(startp,endp));
 }
 
+#ifndef HAVE_MRAND48
+long int mrand48(void)
+{
+	/* for now we assume that RAND_MAX == 0x7FFF */
+	return (rand() << 8) | (rand() << 1) | (rand() & 1);
+}
+#endif
+
+#ifndef HAVE_DRAND48
+double drand48(void)
+{
+	return (double) mrand48() / 2147483648.0;
+}
+#endif
 @= varsized_m
    .ATOM @1s;
       .TOSTR   = atom_@1s_tostr;
@@ -363,7 +377,7 @@ typedef struct {
         for(i = 0; *s && i < result->dimension && *s != ')'; ++s) {
             if(*s == ',' || *s == ':') {
                 ++s;
-                result->data[i] = @2(s,&s);
+                result->data[i] = (@1) @2(s,&s);
                 --s;
                 ++i;
             }
@@ -425,7 +439,7 @@ typedef struct {
         int i;
         
         *rval = @1screate(*dim);
-        for(i=0;i<(*dim);++i) (*rval)->data[i] = @4rand48();
+        for(i=0;i<(*dim);++i) (*rval)->data[i] = (@1) @4rand48();
         return(GDK_SUCCEED);
     }
 
@@ -442,7 +456,7 @@ typedef struct {
             tmp += (dbl)(in->data[i]);
         }
 
-        *rval = tmp;
+        *rval = (@1) tmp;
         return GDK_SUCCEED;
     }
 
@@ -501,7 +515,6 @@ typedef struct {
     }
 
     int cmd_@1s_d1distance(dbl *rval, @1s *I1, @1s *I2) {
-        double tmp;
         int i,dim = I1->dimension;
    
         if(I1->dimension != I2->dimension) {
@@ -519,7 +532,6 @@ typedef struct {
     }
 
     int cmd_@1s_l1distance(dbl *rval, @1s *I1, @1s *I2) {
-        double tmp;
         int i,dim = I1->dimension;
    
         if(I1->dimension != I2->dimension) {
@@ -624,7 +636,7 @@ typedef struct {
         /* Ne = n = N1*N2 / N1+N2
         /* Qtk = Q(sqrt(Ne) + 0.155 + 0.24/sqrt(Ne) * D)
          */
-        n1 = n2 = dim;
+        n1 = n2 = (@1) dim;
         n = ((dbl)(n1+n2)) / ((dbl)(n1+n2));
         x = sqrt((dbl)n);
         x = x + 0.155 + ((0.24/x) * d);
@@ -933,7 +945,7 @@ typedef struct {
 
 @= varsized_meanvector_c
     int cmd_@1s_meanvector(@2s **res, BAT *b, int *dim) {
-        BUN p, q, r;
+        BUN p, q;
         int i, m;
 
         if(b->ttype != TYPE_@1s) {
@@ -960,7 +972,7 @@ typedef struct {
 
 @= fixedsize_meanvector_c
     int cmd_@1_vector@3_meanvector(@2_vector@3 *res, BAT *b) {
-        BUN p, q, r;
+        BUN p, q;
         int i, m;
 
         if(b->ttype != TYPE_@1_vector@3) {
@@ -1151,7 +1163,6 @@ dblv.print;
     }
 
     int atom_@1_vector@2_fromstr(str instr, int *l, @1_vector@2 **val) {
-        long         dim;
         char         *s;
         int          i;
         @1_vector@2  *result;

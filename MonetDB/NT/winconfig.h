@@ -167,6 +167,9 @@
 /* The number of bytes in a short.  */
 #define SIZEOF_SHORT 2
 
+/* Define if you have the drand48 function.  */
+/* #undef HAVE_DRAND48 */
+
 /* Define if you have the ctime_r function.  */
 /* #undef HAVE_CTIME_R */
 
@@ -214,6 +217,9 @@
 
 /* Define if you have the mkdir function.  */
 #define HAVE_MKDIR 1
+
+/* Define if you have the mrand48 function.  */
+/* #undef HAVE_MRAND48 */
 
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV 1
