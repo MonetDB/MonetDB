@@ -971,6 +971,25 @@ xmlSAXHandler shredder = {
   , .comment               = shred_comment
   , .error                 = error
   , .cdataBlock            = shred_cdata
+  , .internalSubset        = 0
+  , .isStandalone          = 0
+  , .hasInternalSubset     = 0
+  , .hasExternalSubset     = 0
+  , .resolveEntity         = 0
+  , .getEntity             = 0
+  , .entityDecl            = 0
+  , .notationDecl          = 0
+  , .attributeDecl         = 0
+  , .elementDecl           = 0
+  , .unparsedEntityDecl    = 0
+  , .setDocumentLocator    = 0
+  , .reference             = 0
+  , .ignorableWhitespace   = 0
+  , .warning               = 0
+  , .fatalError            = 0
+  , .getParameterEntity    = 0
+  , .externalSubset        = 0
+  , .initialized           = 0
 };
 
 /**

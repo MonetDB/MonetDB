@@ -1909,9 +1909,34 @@ end_anyAttribute (PFarray_t *atts)
  * binds the callbacks to the xml SAXHandler
  */
 static xmlSAXHandler schema_import_sax = {
-    .startElement = schema_import_start_element
-  , .endElement   = schema_import_end_element
-  , .error        = schema_import_error
+    .startElement          = schema_import_start_element
+  , .endElement            = schema_import_end_element
+  , .error                 = schema_import_error
+  , .internalSubset        = 0
+  , .isStandalone          = 0
+  , .hasInternalSubset     = 0
+  , .hasExternalSubset     = 0
+  , .resolveEntity         = 0
+  , .getEntity             = 0
+  , .entityDecl            = 0
+  , .notationDecl          = 0
+  , .attributeDecl         = 0
+  , .elementDecl           = 0
+  , .unparsedEntityDecl    = 0
+  , .setDocumentLocator    = 0
+  , .startDocument         = 0
+  , .endDocument           = 0
+  , .reference             = 0
+  , .characters            = 0
+  , .ignorableWhitespace   = 0
+  , .processingInstruction = 0
+  , .comment               = 0
+  , .warning               = 0
+  , .fatalError            = 0
+  , .getParameterEntity    = 0
+  , .cdataBlock            = 0
+  , .externalSubset        = 0
+  , .initialized           = 0
 };
 
 static action actions [] = {
