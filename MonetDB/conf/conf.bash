@@ -311,7 +311,7 @@ fi
 if [ "${cxx}" != "g++" ] ; then
 	conf_opts="${conf_opts} --with-gxx='${cxx}'"
 fi
-if [ "${BITS} = "64" ] ; then
+if [ "${BITS}" = "64" ] ; then
 	conf_opts="${conf_opts} --with-bits=${BITS}"
 fi
 
