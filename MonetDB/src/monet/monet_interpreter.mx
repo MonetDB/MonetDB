@@ -906,8 +906,7 @@ to the @%ValRecord@ of that variable in the context stack.
 @c
 int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 	Variable v;
-	int i=0;
-	BAT *b;
+	int i=0, j;
 
 	for(i = lt->yyval.len; i > 0; i--) { /* hacky use of len as ../ depth */
 		if (stk >= 0) {
@@ -931,23 +930,23 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 	/* resolve only once: CONSTANT */
         lt->token = TOK_CONSTANT; 
 	i = BBPindex(lt->yyval.val.sval);
-	if (i) BBPfix(i);
-	if (i == 0 || (b=BATdescriptor(i)) == NULL) {
+	j = BBPfix(i); 
+	if (j == 0 || strcmp(BBP_logical(i), lt->yyval.val.sval)) {
+		if (j) BBPunfix(i);
 		lt->yyval.vtype = TYPE_str;
 		lt->yyval.len = 1+strlen(lt->yyval.val.sval);
                	GDKwarning("interpret: convert identifier '%s' to string.\n", 
 			lt->yyval.val.sval);
 		return interpret(stk, lt, res);
        	}
-	BBPunfix(b->batCacheid);
-	/* LOAD FIX: pin the bat and register for unpinning */
+	/* LOAD FIX: register the bat for unpinning */
 	GDKfree(lt->yyval.val.sval);
 	lt->yyval.vtype = TYPE_bat;
 	lt->yyval.val.bval = i;
 	lt->yyval.len = 0;
 	lt->dealloc = TYPE_bat;
 	lt->free.batref.id = i;
-	lt->free.batref.stamp = b->batStamp;
+	lt->free.batref.stamp = BBPquickdesc(ABS(i), FALSE)->batStamp;
 	BBPincref(i, TRUE);
 	BBPunfix(i);
 	*res = lt->yyval;
