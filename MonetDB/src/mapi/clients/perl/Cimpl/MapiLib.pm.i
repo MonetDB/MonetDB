@@ -27,10 +27,6 @@
 
 %{
 #include "Mapi.h"
-
-#ifndef PL_na
-#define PL_na na
-#endif
 %}
 
 // don't care for the guard symbol
@@ -57,24 +53,24 @@
     AV *tempav; 
     I32 len; int i; 
     SV **tv; 
-    if (!SvROK($source)) 
-	croak("$source is not a reference."); 
-    if (SvTYPE(SvRV($source)) != SVt_PVAV) 
-	croak("$source is not an array."); 
-    tempav = (AV*)SvRV($source); 
+    if (!SvROK($input))
+	croak("$input is not a reference."); 
+    if (SvTYPE(SvRV($input)) != SVt_PVAV) 
+	croak("$input is not an array."); 
+    tempav = (AV*)SvRV($input);
     len = av_len(tempav); 
-    $target = (char **) malloc((len+2)*sizeof(char *)); 
+    $1 = (char **) malloc((len+2)*sizeof(char *)); 
     for (i = 0; i <= len; i++) { 
 	tv = av_fetch(tempav, i, 0); 
-	$target[i] = (char *) SvPV(*tv,PL_na); 
+	$1[i] = (char *) SvPV(*tv,PL_na); 
     } 
-    $target[i] = 0;
+    $1[i] = 0;
 
 }; 
 
 // This cleans up our char ** array after the function call 
 %typemap(perl5,freearg) char ** { 
-    free($source); 
+    free($1);
 } 
 
 // Creates a new Perl array and places a char ** into it 
@@ -84,19 +80,19 @@
     int i = 0,len = 0; 
 
     /* Figure out how many elements we have */ 
-    while ($source[len]) len++; 
+    while ($1[len]) len++; 
     svs = (SV **) malloc(len*sizeof(SV *)); 
     for (i = 0; i < len ; i++) { 
 	svs[i] = sv_newmortal(); 
-	sv_setpv((SV*)svs[i],$source[i]); 
+	sv_setpv((SV*)svs[i],$1[i]);
     };
     myav = av_make(len,svs); 
     free(svs); 
-    $target = newRV((SV*)myav); 
-    sv_2mortal($target); 
+    $result = newRV((SV*)myav); 
+    sv_2mortal($result);
 }
 
-%typemap(memberin) char [ANY] { strncpy($target,$source,$dim0); }
+%typemap(memberin) char [ANY] { strncpy($1,$input,$dim0); }
 
 // options string arg, i.e. arg can be a string or NULL.
 // %typemap(in,parse="z") char *OPTSTRING "";
@@ -111,7 +107,7 @@
 // %typemap(out) char * { }
 
 %typemap(perl5,in) FILE * {
-    $target = IoIFP(sv_2io($source));
+    $1 = IoIFP(sv_2io($input));
 }
 
 %include "Mapi.h"
