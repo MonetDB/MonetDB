@@ -2070,10 +2070,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         except IOError, (IOerrNo, IOerrStr):
             Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
-        if os.name != "nt":
+        if MkillUsers:
             ATJOB2 = StartAt(MkillUsers)
         CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
-        if os.name != "nt" and sys.platform != 'cygwin':
+        if MkillUsers:
             StopAt(ATJOB2,ME)
 
         AllOut = [SrvrOut, ClntOutFile]
