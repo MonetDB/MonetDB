@@ -17,9 +17,7 @@ LIBS = {
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = $(MONETDB_LIBS) 
 }
 doc_mal = {
 	DIR = pkgdatadir/docs/modules/mal

@@ -124,6 +124,7 @@ static str modulesLoaded[MAXMODULES];
 static void *handles[MAXMODULES];
 
 str loadModuleLibrary(str modnme){
+	int mode = RTLD_NOW|RTLD_GLOBAL;
 	char nme[MAXPATHLEN];
 	char errbuf[1024];
 	void *handle = NULL;
@@ -141,8 +142,13 @@ Use the search path provided in the configuration file
 	s= strrchr(modnme,DIR_SEP);
 	snprintf(nme,MAXPATHLEN,"_%s", s? s+1:modnme);
 	fullname = MSP_locate_module(nme);
-	if( fullname && access(fullname,R_OK)== 0){
-		handle = dlopen(fullname, RTLD_NOW | RTLD_GLOBAL);
+
+/* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
+#ifdef RTLD_MEMBER
+        mode |= RTLD_MEMBER;
+#endif
+	if( fullname){
+		handle = dlopen(fullname, mode);
 #ifdef DEBUG_MAL_LINKER
 		stream_printf(GDKout,"load:%s:%s\n",fullname,handle==NULL?
 			(handle==NULL?errbuf:"failed"):"succeeded");

@@ -92,12 +92,6 @@ comment "Return the length of a string.";
 command nbytes( s:str ) :int 
 address STRBytes
 comment "Return the string length in bytes.";
-command chrAt( s:str, index:lng) :chr 
-address STRChrAt
-comment "String array lookup operation.";
-command chrAt( s:str, index:sht) :chr 
-address STRChrAt
-comment "String array lookup operation.";
 command chrAt( s:str, index:int) :chr 
 address STRChrAt
 comment "String array lookup operation.";
@@ -149,14 +143,6 @@ command r_search( s:str, c:chr ) :int
 address STRReverseChrSearch
 comment "Reverse search for a char. Returns 
 	 position, -1 if not found.";
-command search( s:str, s2:str) :int 
-address STRstrSearch
-comment "Search for a substring. Returns 
-	 position, -1 if not found.";
-command r_search( s:str, s2:str ) :int 
-address STRReverseStrSearch
-comment "Reverse search for a substring. 
-	Returns position, -1 if not found.";
 
 command trim( s:str ) :str 
 address STRStrip
@@ -379,7 +365,7 @@ in which we perform high-performance hash-lookup (all code inlined).
    with some hand munging afterward.  The data file is UnicodeData.txt
    from http://www.unicode.org/.
  */
-struct UTF8_lower_upper {
+static struct UTF8_lower_upper {
 	unsigned short lower, upper;
 } UTF8_lower_upper[] = {
 	{0x0061,0x0041,}, {0x0062,0x0042,}, {0x0063,0x0043,}, {0x0064,0x0044,},

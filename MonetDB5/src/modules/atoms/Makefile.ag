@@ -5,14 +5,23 @@ MTSAFE
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = str.mx blob.mx url.mx mtime.mx
+	SOURCES = blob.mx url.mx mtime.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = $(MONETDB_LIBS) ../../mal/libmal
 }
+
+lib__str = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = str.mx 
+
+	HEADERS = h 
+	SCRIPTS = mal mil ""
+	LIBS = $(MONETDB_LIBS) $(ICONV_LIBS) ../../mal/libmal
+}
+
 doc_atoms = {
 	DIR = pkgdatadir/docs/modules/atoms
 	SOURCES = str.mx blob.mx url.mx mtime.mx
