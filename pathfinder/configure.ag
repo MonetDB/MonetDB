@@ -178,14 +178,20 @@ save_CPPFLAGS="$CPPFLAGS"
 save_LDFLAGS="$LDFLAGS"
 if test "x$have_libxml2" != xno; then
 
+    XML2_CONFIG=""
+    XPATH="$PATH"
     if test "x$have_libxml2" != xauto; then
-        LIBXML2_CFLAGS="-I$have_libxml2/include/libxml2"
-        LIBXML2_LIBS="-L$have_libxml2/lib"
+	XPATH="$have_libxml2/bin:$XPATH"
     fi
 
-    if test "x$have_libxml2" = xauto; then
-        LIBXML2_CFLAGS="-I/usr/include/libxml2"
-        LIBXML2_LIBS=""
+    AC_PATH_PROG(XML2_CONFIG,xml2-${bits}-config,,$XPATH)
+    if test "x$XML2_CONFIG" = x; then
+        AC_PATH_PROG(XML2_CONFIG,xml2-config,,$XPATH)
+    fi
+
+    if test "x$XML2_CONFIG" != x; then
+        LIBXML2_CFLAGS="`$XML2_CONFIG --cflags`"
+        LIBXML2_LIBS="`$XML2_CONFIG --libs`"
     fi
 
     CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"

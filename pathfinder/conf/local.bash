@@ -14,8 +14,13 @@ done
 
 if [ "${xml}" ] ; then
 	conf_opts="${conf_opts} --with-libxml2=${xml}"
-	binpath="${xml}/bin:${binpath}"
-	libpath="${xml}/lib:${libpath}"
+	if [ "${xml#/usr}" != "${xml}" ] ; then
+		binpath="${binpath}:${xml}/bin"
+		libpath="${libpath}:${xml}/lib"
+	  else
+		binpath="${xml}/bin:${binpath}"
+		libpath="${xml}/lib:${libpath}"
+	fi
 fi
 
 for d in "${MONETDB_PREFIX}" "${PATHFINDER_PREFIX}" "${softpath}" "${xml}" ; do
