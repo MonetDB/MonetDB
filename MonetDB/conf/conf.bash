@@ -158,6 +158,10 @@ if [ "${os}" = "Linux" ] ; then
 		echo ''
 		echo 'Currently, we do not support 32-bit on '"${hw}"'; hence, using BITS="64".'
 		BITS="64"
+	  elif [ "${BITS}" = "32"  -a  "${hw}" = "x86_64"  -a  \( -s /etc/fedora-release  -o  -s /etc/fedora-release \) ] ; then
+		echo ''
+		echo 'Currently, we do not support 32-bit with RedHat/Fedora Linux on '"${hw}"'; hence, using BITS="64".'
+		BITS="64"
 	fi
 fi
 

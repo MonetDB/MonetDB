@@ -122,7 +122,8 @@ Iff repeated = true this is repeated while 'src' can be found in the result stri
 In order to prevent recursion and result strings of unlimited size, repeating
 is only done iff src is not a substring of dst."
 .COMMAND split( str s, str sep ) : BAT[void,str] = strSplit;
-"Split the string s based on the seperator sep"
+"Split the string s based on the seperator sep
+note: the separator may not be an empty string."
 .COMMAND split( str s ) : BAT[void,chr] = chrSplit;
 "Split the string s into separate chrs"
 
@@ -1729,6 +1730,9 @@ strSplit(BAT **Res, str s, str sep)
 	BAT *res = BATnew(TYPE_void, TYPE_str, BUFSIZ);
 	oid n = oid_nil;
 
+	if (sep[0] == '\0') {
+		return GDK_FAIL;
+	}
 	if (res == NULL)
 		return GDK_FAIL;
 

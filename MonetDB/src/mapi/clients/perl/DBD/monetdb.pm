@@ -21,16 +21,14 @@
 # by Arjan Scherpenisse <acscherp@science.uva.nl>
 
 package DBD::monetdb;
+
 use strict;
-
-use DBI;
-use Carp;
-use vars qw($VERSION $drh);
 use sigtrap;
-# use Data::Dump qw(dump);
+use DBI();
+use MapiLib();
 
-$VERSION = '0.03';
-$drh = undef;
+our $VERSION = '0.03';
+our $drh = undef;
 
 require DBD::monetdb::GetInfo;
 require DBD::monetdb::TypeInfo;
@@ -39,16 +37,20 @@ require DBD::monetdb::TypeInfo;
 sub driver {
     return $drh if $drh;
 
-    my $class = shift;
-    my $attr  = shift;
-    $class .= '::dr';
+    my ($class, $attr) = @_;
 
-    $drh = DBI::_new_drh($class, {
-				  Name        => 'monetdb',
-				  Version     => $VERSION,
-				  Attribution => 'DBD::monetdb derived from monetdb.pm by Arjan Scherpenisse',
-				 }, {});
+    $drh = DBI::_new_drh($class .'::dr', {
+        Name        => 'monetdb',
+        Version     => $VERSION,
+        Attribution => 'DBD::monetdb derived from monetdb.pm by Arjan Scherpenisse',
+    });
 }
+
+
+sub CLONE {
+    undef $drh;
+}
+
 
 # The monetdb dsn structure is DBI:monetdb:host:port:dbname:language
 sub _parse_dsn {
@@ -100,9 +102,6 @@ package DBD::monetdb::dr;
 
 $DBD::monetdb::dr::imp_data_size = 0;
 
-use MapiLib;
-use strict;
-
 
 sub connect {
     my ($drh, $dsn, $user, $password, $attr) = @_;
@@ -143,12 +142,10 @@ sub data_sources {
 package DBD::monetdb::db;
 
 $DBD::monetdb::db::imp_data_size = 0;
-use MapiLib;
-use strict;
 
 
 sub ping {
-    my $dbh = shift;
+    my ($dbh) = @_;
     my $mapi = $dbh->{monetdb_connection};
 
     MapiLib::mapi_ping($mapi) ? 0 : 1;
@@ -511,8 +508,7 @@ SQL
 
 
 sub tables {
-    my $dbh = shift;
-    my @args = @_;
+    my ($dbh, @args) = @_;
     my $mapi = $dbh->{monetdb_connection};
 
     my @table_list;
@@ -530,7 +526,7 @@ sub tables {
 
 
 sub _ListDBs {
-    my $dbh = shift;
+    my ($dbh) = @_;
     my @database_list;
     push @database_list, MapiLib::mapi_get_dbname($dbh->{monetdb_connection});
     return @database_list;
@@ -538,13 +534,13 @@ sub _ListDBs {
 
 
 sub _ListTables {
-    my $dbh = shift;
+    my ($dbh) = @_;
     return $dbh->tables;
 }
 
 
 sub disconnect {
-    my $dbh = shift;
+    my ($dbh) = @_;
     my $mapi = $dbh->{monetdb_connection};
     MapiLib::mapi_disconnect($mapi);
     $dbh->STORE('Active', 0 );
@@ -553,47 +549,42 @@ sub disconnect {
 
 
 sub FETCH {
-    my $dbh = shift;
-    my $key = shift;
+    my ($dbh, $key) = @_;
     return $dbh->{$key} if $key =~ /^monetdb_/;
     return $dbh->SUPER::FETCH($key);
 }
 
 
 sub STORE {
-    my $dbh = shift;
-    my ($key, $new) = @_;
+    my ($dbh, $key, $value) = @_;
 
     if ($key eq 'AutoCommit') {
 	my $old = $dbh->{$key} || 0;
-	if ($new != $old) {
+	if ($value != $old) {
 	    my $mapi = $dbh->{monetdb_connection};
-	    MapiLib::mapi_setAutocommit($mapi, $new);
-	    $dbh->{$key} = $new;
+	    MapiLib::mapi_setAutocommit($mapi, $value);
+	    $dbh->{$key} = $value;
 	}
 	return 1;
 
     } elsif ($key =~ /^monetdb_/) {
-	$dbh->{$key} = $new;
+	$dbh->{$key} = $value;
 	return 1;
     }
-    return $dbh->SUPER::STORE($key, $new);
+    return $dbh->SUPER::STORE($key, $value);
 }
 
 
 sub DESTROY {
-    my $dbh = shift;
+    my ($dbh) = @_;
     $dbh->disconnect if $dbh->FETCH('Active');
     my $mapi = $dbh->{monetdb_connection};
     MapiLib::mapi_destroy($mapi) if $mapi;
 }
 
 
+
 package DBD::monetdb::st;
-
-use DBI qw(:sql_types);
-use MapiLib;
-
 
 $DBD::monetdb::st::imp_data_size = 0;
 
@@ -650,10 +641,10 @@ sub execute {
         push @nullables , 0;  # TODO
     }
     $sth->STORE('NUM_OF_FIELDS', $field_count) unless $sth->FETCH('NUM_OF_FIELDS');
-    $sth->STORE('NAME'         , \@names     );
-#   $sth->STORE('TYPE'         , \@types     );  # TODO: monetdb2dbi
-#   $sth->STORE('PRECISION'    , \@precisions);  # TODO
-#   $sth->STORE('NULLABLE'     , \@nullables );  # TODO
+    $sth->{NAME}      = \@names;
+#   $sth->{TYPE}      = \@types;       # TODO: monetdb2dbi
+#   $sth->{PRECISION} = \@precisions;  # TODO
+#   $sth->{NULLABLE}  = \@nullables;   # TODO
     $sth->STORE('Active', 1 );
 
     $sth->{monetdb_rows} = 0;
@@ -684,8 +675,9 @@ sub fetch {
 
 *fetchrow_arrayref = \&fetch;
 
+
 sub rows {
-    my $sth = shift;
+    my ($sth) = @_;
     return $sth->{monetdb_rows};
 }
 
@@ -703,23 +695,17 @@ sub finish {
 
 
 sub FETCH {
-    my $sth = shift;
-    my $key = shift;
+    my ($sth, $key) = @_;
 
-    return $sth->{NAME} if $key eq 'NAME';
     return $sth->{$key} if $key =~ /^monetdb_/;
     return $sth->SUPER::FETCH($key);
 }
 
 
 sub STORE {
-    my $sth = shift;
-    my ($key, $value) = @_;
+    my ($sth, $key, $value) = @_;
 
-    if ($key eq 'NAME') {
-	$sth->{NAME} = $value;
-	return 1;
-    } elsif ($key =~ /^monetdb_/) {
+    if ($key =~ /^monetdb_/) {
 	$sth->{$key} = $value;
 	return 1;
     }

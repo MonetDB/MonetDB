@@ -1002,7 +1002,7 @@ collect statistics that help us decide what to do
 	if (lfetch && rfetch) {
 		if (BAThvoid(l) && !BATtvoid(r))
 			lfetch = 0;
-		if (BATtvoid(r) && !BAThvoid(l))
+		if (swap && BATtvoid(r) && !BAThvoid(l))
 			rfetch = 0;
 	}
 	must_hash = (swap && (rsize < lsize)) ? l->thash_heap != NULL : r->hhash_heap != NULL;
@@ -1135,8 +1135,9 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	if (BAThdense(r)) {
 		/* positional algorithm: hash on void column would give error and is stupid */
 		ptr nilt = ATOMnilptr(r->ttype);
+		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
-		int yy, xx = BUNsize(bn);;
+		int yy, xx = BUNsize(bn);
 		BATloopFast(l, p, q, yy) {
 			oid v = *(oid *) BUNtail(l, p);
 			ptr t = nilt;
@@ -1146,10 +1147,11 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 				if (w)
 					t = BUNtail(r, w);
 			}
+			nonil &= (t != nilt);
 			bunfastins_nocheck(bn, s, BUNhead(l, p), t, xx);
 			s += xx;
 		}
-		bn->tsorted = (BATtordered(l) & BATtordered(r) & 1) ? GDK_SORTED : 0;
+		bn->tsorted = ((BATtordered(l) & BATtordered(r) & 1) && nonil) ? GDK_SORTED : 0;
 	} else {
 		/* hash based algorithm (default) */
 		int any = ATOMstorage(r->htype);

@@ -649,14 +649,14 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 
 @= extreme
 int
-CMDaggr_@1(BAT **ret, BAT *b, BAT *e)
+CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));
 	int (*cmp)(ptr,ptr);
 	ptr nil;
 	int xx;
 	size_t yy = 0, off;
-	ptr *extremes;
+	@3 *extremes;
 	BUN p, q, r;
 
 	if (bn == NULL)
@@ -664,14 +664,14 @@ CMDaggr_@1(BAT **ret, BAT *b, BAT *e)
 	cmp= BATatoms[bn->ttype].atomCmp;
 	nil = ATOMnilptr(bn->ttype);
 	off = BUNindex(e,BUNfirst(e));
-	extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr));
+	extremes = (@3*) GDKmalloc(BATcount(e)*sizeof(@3));
 	if (extremes == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
 
 	/* init: set all extremes to the zero pointer */
-	memset(extremes, 0, BATcount(e)*sizeof(ptr));
+	@:extreme_init_@3(@4)@
 
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	if (BATprepareHash(e)) {
@@ -685,20 +685,14 @@ CMDaggr_@1(BAT **ret, BAT *b, BAT *e)
 
 		BUNfndOID(r,e,h);
 		if (r) {
-			ptr *val = extremes + (BUNindex(e,r) - off);
-			if (*val != nil) {
-				if ((*cmp)(t,nil) == 0) {
-					*val = nil;
-				} else if (*val == NULL || (*cmp)(t,*val) @2 0) {
-					*val = t;
-				}
-			}
+			@:extreme_body_@3(@2)@
 		}
 	}
 	/* insert the extreme values into the result */
+	yy = 0;
 	BATloopFast(e, p, q, xx) {
-		ptr val = extremes[yy++];
-		if (BUNfastins(bn, BUNhead(e,p), val?val:nil) == NULL) {
+		@3 val = extremes[yy++];
+		if (BUNfastins(bn, BUNhead(e,p), @:extreme_tail_@3@) == NULL) {
 			*ret = NULL;
 			break;
 		}
@@ -712,9 +706,47 @@ CMDaggr_@1(BAT **ret, BAT *b, BAT *e)
 	ALIGNsetH(bn, e);
 	return GDK_SUCCEED;
 }
+@= extreme_init_oid
+	for (yy = 0 ; yy < BATcount(e) ; yy++) extremes[yy] = GDK_oid_@1;
+@= extreme_init_ptr
+	memset(extremes, 0, BATcount(e)*sizeof(ptr));
+@= extreme_body_oid
+			oid *val = extremes + (BUNindex(e,r) - off);
+			if (*val != *(oid*)nil) {
+				if ((*cmp)(t,nil) == 0) {
+					*val = *(oid*)nil;
+				} else if ((*cmp)(t,val) @1 0) {
+					*val = *(oid*)t;
+				}
+			}
+@= extreme_body_ptr
+			ptr *val = extremes + (BUNindex(e,r) - off);
+			if (*val != nil) {
+				if ((*cmp)(t,nil) == 0) {
+					*val = nil;
+				} else if (*val == NULL || (*cmp)(t,*val) @1 0) {
+					*val = t;
+				}
+			}
+@= extreme_tail_oid
+	&val
+@= extreme_tail_ptr
+	val?val:nil
+@= extreme_
+@:extreme(@1,@2,oid,@3)@
+@:extreme(@1,@2,ptr,@3)@
+int
+CMDaggr_@1(BAT **ret, BAT *b, BAT *e)
+{
+	if (b->ttype == TYPE_void) {
+		return CMDaggr_@1_oid(ret, b, e);
+	} else {
+		return CMDaggr_@1_ptr(ret, b, e);
+	}
+}
 @c
-@:extreme(min,<)@
-@:extreme(max,>)@
+@:extreme_(min,<,max)@
+@:extreme_(max,>,min)@
 
 @= large_aggr_count
 	if (BATprepareHash(bn)) {

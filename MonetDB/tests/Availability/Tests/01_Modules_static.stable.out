@@ -707,7 +707,7 @@ Module: "str"
 [ "rtrim",	  "COMMAND:   ",  "rtrim(str) : str",											  "Strip whitespaces from end of a string."																																																																							  ]
 [ "search",	  "COMMAND:   ",  "search(str, chr) : int",										  "Search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: search(str,str)"																																																												  ]
 [ "search",	  "COMMAND:   ",  "search(str, str) : int",										  "Search for a substring. Returns position, -1 if not found."																																																																					  ]
-[ "split",	  "COMMAND:   ",  "split(str, str) : BAT[void,str]",						  "Split the string s based on the seperator sep"																															  ]
+[ "split",	  "COMMAND:   ",  "split(str, str) : BAT[void,str]",								  "Split the string s based on the seperator sep\nnote: the separator may not be an empty string."																																																								  ]
 [ "startsWith",	  "COMMAND:   ",  "startsWith(str, str) : bit",										  "Prefix check."																																																																										  ]
 [ "string",	  "COMMAND:   ",  "string(str, int) : str",										  "Return the tail s[offset..n] of a string s[0..n]."																																																																						  ]
 [ "string",	  "COMMAND:   ",  "string(str, int, int) : str",									  "Return substring s[offset..offset+count] of a string s[0..n]"																																																																				  ]

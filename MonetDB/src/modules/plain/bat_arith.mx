@@ -87,6 +87,7 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 	@1:	sht, int, lng, flt, dbl arithmetic type
 	@2:	+,   -,   *,   /,   %   basic arithmetic operator
 	@3:	add, sub, mul, div, mod basic arithmetic operator name
+	@4:		0 / 1		disable/enable division by zero check
 */
 @= implementations
 int
@@ -95,7 +96,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 	REGISTER @1 *bnp;
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@2](l=%s,r=%s);\n",l->batId,r->batId);
+	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@2,@4](l=%s,r=%s);\n",l->batId,r->batId);
 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
 		   "batbat_@1_@3: BATs l & r must be void-headed and head-aligned.\n");
 
@@ -123,7 +124,12 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 			memcpy(lbuf,lp,y);
 			memcpy(rbuf,rp,y);
 			for (i=0; i<x; i++) {
-				if ((lbuf[i] != @1_nil) && (rbuf[i] != @1_nil)) {
+				if (@4 && (rbuf[i] == 0)) {
+					GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+					GDKfree(lbuf);
+					BBPreclaim(bn);
+					return GDK_FAIL;
+				} else if ((lbuf[i] != @1_nil) && (rbuf[i] != @1_nil)) {
 					*bnp = lbuf[i] @2 rbuf[i];
 				} else {
 					*bnp = @1_nil;
@@ -150,7 +156,12 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 			memcpy(lbuf,lp,z);
 			memcpy(rbuf,rp,z);
 			for (; lbp < lbq; lbp+=bs, rbp+=bs) {
-				if ((*(@1*)lbp != @1_nil) && (*(@1*)rbp != @1_nil)) {
+				if (@4 && (*(@1*)rbp == 0)) {
+					GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+					GDKfree(lbuf);
+					BBPreclaim(bn);
+					return GDK_FAIL;
+				} else if ((*(@1*)lbp != @1_nil) && (*(@1*)rbp != @1_nil)) {
 					*bnp = *(@1*)lbp @2 *(@1*)rbp;
 				} else {
 					*bnp = @1_nil;
@@ -169,7 +180,11 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 		rp = (chr*)BUNtloc(r,BUNfirst(r));
 		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 		for (; lp < lq; lp+=ls, rp+=rs) {
-			if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
+			if (@4 && (*(@1*)rp == 0)) {
+                                GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+                                BBPreclaim(bn);
+                                return GDK_FAIL;
+			} else if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
 				*bnp = *(@1*)lp @2 *(@1*)rp;
 			} else {
 				*bnp = @1_nil;
@@ -191,7 +206,7 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 	REGISTER int ls = BUNsize(l);
 	REGISTER int rs = BUNsize(r);
 
-	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3_inplace[@2](l=%s,r=%s);\n",l->batId,r->batId);
+	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3_inplace[@2,@4](l=%s,r=%s);\n",l->batId,r->batId);
 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
 		   "batbat_@1_@3_inplace: BATs l & r must be void-headed and head-aligned.\n");
 
@@ -200,7 +215,10 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 	lp = (chr*)BUNtloc(l,BUNfirst(l));
 	rp = (chr*)BUNtloc(r,BUNfirst(r));
 	for (; lp < lq; lp+=ls, rp+=rs) {
-		if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
+		if (@4 && (*(@1*)rp == 0)) {
+                        GDKerror("[:@2=] (batbat_@1_@3_inplace): Division by Zero!");
+                        return GDK_FAIL;
+		} else if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
 			*(@1*)lp @2= *(@1*)rp;
 		} else {
 			*(@1*)lp = @1_nil;
@@ -221,7 +239,7 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2](v,b=%s);\n",b->batId);
+	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2,@4](v,b=%s);\n",b->batId);
 	ERRORcheck((b->htype!=TYPE_void),
 		   "valbat_@1_@3: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
@@ -237,7 +255,11 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
 			REGISTER @1 bv = *(@1*)bp;
-			if (bv != @1_nil) {
+			if (@4 && (bv == 0)) {
+                                GDKerror("[@2] (valbat_@1_@3): Division by Zero!");
+                                BBPreclaim(bn);
+                                return GDK_FAIL;
+			} else if (bv != @1_nil) {
 				bv = vv @2 bv;
 			}
 			*bnp = bv;
@@ -260,7 +282,7 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 
-	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3_inplace[@2](v,b=%s);\n",b->batId);
+	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3_inplace[@2,@4](v,b=%s);\n",b->batId);
 	ERRORcheck((b->htype!=TYPE_void),
 		   "valbat_@1_@3_inplace: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
@@ -270,7 +292,10 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
-			if (*(@1*)bp != @1_nil) {
+			if (@4 && (*(@1*)bp == 0)) {
+                                GDKerror("[:@2=] (valbat_@1_@3_inplace): Division by Zero!");
+                                return GDK_FAIL;
+			} else if (*(@1*)bp != @1_nil) {
 				*(@1*)bp = vv @2 *(@1*)bp;
 			}
 		}
@@ -294,7 +319,7 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@2](v,b=%s);\n",b->batId);
+	ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@2,@4](v,b=%s);\n",b->batId);
 	ERRORcheck((b->htype!=TYPE_void),
 		   "batval_@1_@3: BAT b must be void-headed.\n");
 
@@ -306,7 +331,11 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	bq = (chr*)BUNtloc(b,BUNlast(b));
 	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-	if (vv != @1_nil) {
+	if (@4 && (vv == 0)) {
+                GDKerror("[@2] (batval_@1_@3): Division by Zero!");
+                BBPreclaim(bn);
+                return GDK_FAIL;
+	} else if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
 			REGISTER @1 bv = *(@1*)bp;
 			if (bv != @1_nil) {
@@ -334,14 +363,17 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 
-	ALGODEBUG THRprintf(GDKout, "batval_@1_@3_inplace[@2](v,b=%s);\n",b->batId);
+	ALGODEBUG THRprintf(GDKout, "batval_@1_@3_inplace[@2,@4](v,b=%s);\n",b->batId);
 	ERRORcheck((b->htype!=TYPE_void),
 		   "batval_@1_@3_inplace: BAT b must be void-headed.\n");
 
 	b->tsorted = 0;
 	bq = (chr*)BUNtloc(b,BUNlast(b));
 	bp = (chr*)BUNtloc(b,BUNfirst(b));
-	if (vv != @1_nil) {
+	if (@4 && (vv == 0)) {
+                GDKerror("[:@2=] (batval_@1_@3_inplace): Division by Zero!");
+                return GDK_FAIL;
+	} else if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
 			if (*(@1*)bp != @1_nil) {
 				*(@1*)bp @2= vv;
@@ -359,26 +391,26 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 	return GDK_SUCCEED;
 }
 @c
-@:implementations(sht,+,add)@
-@:implementations(sht,-,sub)@
-@:implementations(sht,*,mul)@
-@:implementations(sht,/,div)@
-@:implementations(sht,%,mod)@
-@:implementations(int,+,add)@
-@:implementations(int,-,sub)@
-@:implementations(int,*,mul)@
-@:implementations(int,/,div)@
-@:implementations(int,%,mod)@
-@:implementations(lng,+,add)@
-@:implementations(lng,-,sub)@
-@:implementations(lng,*,mul)@
-@:implementations(lng,/,div)@
-@:implementations(lng,%,mod)@
-@:implementations(flt,+,add)@
-@:implementations(flt,-,sub)@
-@:implementations(flt,*,mul)@
-@:implementations(flt,/,div)@
-@:implementations(dbl,+,add)@
-@:implementations(dbl,-,sub)@
-@:implementations(dbl,*,mul)@
-@:implementations(dbl,/,div)@
+@:implementations(sht,+,add,0)@
+@:implementations(sht,-,sub,0)@
+@:implementations(sht,*,mul,0)@
+@:implementations(sht,/,div,1)@
+@:implementations(sht,%,mod,1)@
+@:implementations(int,+,add,0)@
+@:implementations(int,-,sub,0)@
+@:implementations(int,*,mul,0)@
+@:implementations(int,/,div,1)@
+@:implementations(int,%,mod,1)@
+@:implementations(lng,+,add,0)@
+@:implementations(lng,-,sub,0)@
+@:implementations(lng,*,mul,0)@
+@:implementations(lng,/,div,1)@
+@:implementations(lng,%,mod,1)@
+@:implementations(flt,+,add,0)@
+@:implementations(flt,-,sub,0)@
+@:implementations(flt,*,mul,0)@
+@:implementations(flt,/,div,1)@
+@:implementations(dbl,+,add,0)@
+@:implementations(dbl,-,sub,0)@
+@:implementations(dbl,*,mul,0)@
+@:implementations(dbl,/,div,1)@
