@@ -606,7 +606,7 @@ gdk_export int		int_nil;
 gdk_export flt		flt_nil; 	
 gdk_export dbl		dbl_nil; 	
 gdk_export lng		lng_nil; 	
-gdk_export str		str_nil; 	
+gdk_export char		str_nil[2]; 	
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)
@@ -631,7 +631,7 @@ int		int_nil = GDK_int_min;
 flt		flt_nil = GDK_flt_min;
 dbl		dbl_nil = GDK_dbl_min;
 lng		lng_nil = GDK_lng_min;
-str		str_nil = (str) &chr_nil;
+char		str_nil[2] = {GDK_chr_min, 0};
 
 ptr ATOMnil(int t) { 
 	ptr src = ATOMnilptr(t);
@@ -1554,72 +1554,148 @@ int strPut(Heap *h, var_t *dst, str v) {
 }
 
 @-
-Convert an "" separated string to a GDK string value.
+Convert an "" separated string to a GDK string value, checking that the input is correct UTF-8.
 @c
 
-int strFromStr(char *src, int *len, char** dst) {
-	str p, start = NULL, cur = src;
+/*
+   UTF-8 encoding is as follows:
+U-00000000 - U-0000007F: 0xxxxxxx
+U-00000080 - U-000007FF: 110xxxxx 10xxxxxx
+U-00000800 - U-0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
+U-00010000 - U-001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+*/
+/* To be correctly coded UTF-8, the sequence should be the shortest
+   possible encoding of the value being encoded.  This means that for
+   an encoding of length n+1 (1 <= n <= 5), at least one of the bits in
+   utf8chkmsk[n] should be non-zero (else the encoding could be
+   shorter).
+*/
+static int utf8chkmsk[] = {
+	0x0000007f,
+	0x00000780,
+	0x0000f800,
+	0x001f0000,
+	0x03e00000,
+	0x7c000000,
+};
+
+int strFromStr(char *src, int *len, char** dst)
+{
+	unsigned char *p, *start = NULL, *cur = (unsigned char *) src;
 	int l = 1, escaped = FALSE;
+	int mask, n, c, utf8char;
 
 	while(GDKisspace(*cur)) cur++;
 	if (*cur != '"') {
 		if (*dst != NULL && *dst != str_nil) {
 			GDKfree(*dst);
 		}
-		*dst = ATOMnil(TYPE_str);
+		*dst = GDKstrdup(str_nil);
 		*len = 2;
-		return strncmp(cur,"nil",3)?0:(int) ((cur+3)-src);
+		return strncmp((char *)cur,"nil",3)?0:(int) (((char *)cur+3)-src);
 	} 
 
-	/* scout the string to find out its length and correctness */
-	for(start = ++cur; *cur != '"' || escaped; cur++) {
+	/* scout the string to find out its length and whether it was properly quoted */
+	for (start = ++cur; *cur != '"' || escaped; cur++) {
 		if (*cur == 0) { 
-			start = NULL; break;
+			goto error;
 		} else if (*cur == '\\' && escaped == FALSE) {
 			escaped = TRUE;
 		} else {
-			escaped = FALSE; l++;
+			escaped = FALSE;
+			l++;
 		}
 	}
 
 	/* alloc new memory */
-	p = *dst;
-	if (*dst == NULL || (*dst==str_nil)) {
-		p = *dst = (char *) GDKmalloc(*len = l);
-	} else if (*len < l) {
-		GDKfree(*dst);
-		p = *dst = (char *) GDKmalloc(*len = l);
+	p = (unsigned char *) *dst;
+	if (p != NULL && (char *) p != str_nil && *len < l) {
+		GDKfree(p);
+		p = NULL;
 	}
+	if (p == NULL || (char *) p == str_nil)
+		p = GDKmalloc(*len = l);
+	*dst = (char *) p;
 
 	/* copy it in, while performing the correct escapes */
-	if (start == NULL) {
-		*p = GDK_chr_min; /* error => str_nil */
-	} else for(cur = start; *cur != '"' || escaped ; cur++) {
+	/* n is the number of follow-on bytes left in a multi-byte
+	  UTF-8 sequence */
+	for (cur = start, n = 0; *cur != '"' || escaped; cur++) {
+		/* first convert any \ escapes and store value in c */
 		if (escaped) {
 			if (*cur == 'n') { 
-				*p++ = '\n';
+				c = '\n';
 			} else if (*cur == 't') { 
-				*p++ = '\t';
-			} else if ((cur[0] >= '0' && cur[0] <= '7') &&
+				c = '\t';
+			} else if ((cur[0] >= '0' && cur[0] <= '3') &&
 				   (cur[1] >= '0' && cur[1] <= '7') &&
-				   (cur[2] >= '0' && cur[2] <= '7'))
-			{
-				*p++ =  (cur[2] & 7) 	 | 
-				       ((cur[1] & 7) <<3)| 
-				       ((cur[0] & 7) <<6);
+				   (cur[2] >= '0' && cur[2] <= '7')) {
+				c = ((cur[0] & 7) <<6) |
+				    ((cur[1] & 7) <<3) | 
+				    (cur[2] & 7);
 				cur += 2;
 			} else {
-			        *p++ = *cur;
+				c = *cur;
 			}
 			escaped = FALSE;
 		} else if (*cur == '\\') {
 			escaped = TRUE;
+			continue;
 		} else {
-			*p++ = *cur;
+			c = *cur;
 		}
+		if (n > 0) {
+			/* we're still expecting follow-up bytes in a
+			  UTF-8 sequence */
+			if ((c & 0xC0) != 0x80) {
+				/* incorrect UTF-8 sequence: byte is
+				  not 10xxxxxx */
+				goto error;
+			}
+			utf8char = (utf8char << 6) | (c & 0x3F);
+			n--;
+			if (n == 0) {
+				/* this was the last byte in the sequence */
+				if ((utf8char & mask) == 0) {
+					/* incorrect UTF-8 sequence:
+					  not shortest possible */
+					goto error;
+				}
+			}
+		} else if (c >= 0x80) {
+			int m;
+
+			/* start of multi-byte UTF-8 character */
+			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
+				;
+			/* n now is number of 10xxxxxx bytes that should follow */
+			if (n == 0 || n >= 6) {
+				/* incorrect UTF-8 sequence */
+				/* n==0: c == 10xxxxxx */
+				/* n>=6: c == 1111111x */
+				goto error;
+			}
+			mask = utf8chkmsk[n];
+			/* collect the Unicode code point in utf8char */
+			utf8char = c & ~(0xFFC0 >> n); /* remove non-x bits */
+		}
+		*p++ = c;
+	}
+	if (n > 0) {
+		/* incomplete UTF-8 sequence */
+		goto error;
 	}
 	*p++ = 0;
-	return (int) ((cur + 1) - src);
+	return (int) (((char *)cur + 1) - src);
+
+error:
+	if (*dst && *dst != str_nil)
+		GDKfree(*dst);
+	*dst = GDKstrdup(str_nil);
+	*len = 2;
+	return 0;
 }
 
 @-

@@ -557,7 +557,7 @@ Start of MIL script.
 [ "monet_mod_proc",	  "str",  "oid",  5,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_use",	  "oid",  "ptr",  63,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_var",	  "str",  "ptr",  27,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
-[ "monet_unicode_case",	  "int",  "int",  685,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
+[ "monet_unicode_case",	  "int",  "int",  730,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "tmp_28",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
 [ "tmp_30",		  "str",  "oid",  698,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
 [ "tmp_31",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
