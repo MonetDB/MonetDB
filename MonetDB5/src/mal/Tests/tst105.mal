@@ -1,9 +1,0 @@
-# check propagation of type variables over bats
-# can be checked after bat module has been added
-
-module bat2;
-command new(h:any$1,t:any$2) :bat[:any$1, :any$2] = GDKbatnew;
-
-a:= bat2.new(:str,:int);
-b:= bat2.new(:str,:int);
-c:= new(:str,:int);
