@@ -391,7 +391,11 @@ if [ "${os}" = "IRIX64" ] ; then
 fi
 if [ "${os}${COMP}${BITS}${what}" = "SunOSntv64MONET" ] ; then
 	# native 64-bit version on SunOS needs this to find libmonet
-	libpath="${WHAT_PREFIX}/lib:${libpath}"
+	if [ "${what}" = "MONET" ] ; then
+		libpath="${WHAT_PREFIX}/lib:${libpath}"
+	  else
+		libpath="${MONET_PREFIX}/lib:${libpath}"
+	fi
 fi
 
 # remove trailing ':'
