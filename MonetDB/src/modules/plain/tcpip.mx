@@ -1046,7 +1046,6 @@ conn_insert(str host, int port, int me, int sock)
 		i = -1;
 	} else {
 		MT_Id t = 0;
-		char *p;
 
 		if (GDKdebug & 65536) {
 			THRprintf(GDKerr, "Allocate connection record %d (%d, %d)\n", i, port, me);
