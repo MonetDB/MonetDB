@@ -124,10 +124,10 @@ while test $# -gt 0; do
 		-I\${MONET_INCLUDEDIR} \
 		-I\${MONET_INCLUDEDIR}/common \
 		-I\${MONET_INCLUDEDIR}/gdk \
-	  	-I\${MONET_INCLUDEDIR}/monet \
-	  	-I\${MONET_INCLUDEDIR}/plain \
-	  	-I\${MONET_INCLUDEDIR}/stream \
-	  	-I\${MONET_INCLUDEDIR}/mapi 
+	  	-I\${MONET_INCLUDEDIR}/mal \
+	  	-I\${MONET_INCLUDEDIR}/kernel \
+	  	-I\${MONET_INCLUDEDIR}/atoms \
+	  	-I\${MONET_INCLUDEDIR}/C 
        	;;
 
     --cflags)
@@ -135,10 +135,10 @@ while test $# -gt 0; do
 		-I$includedir \
 		-I$includedir/common \
 		-I$includedir/gdk \
-		-I$includedir/monet \
-		-I$includedir/plain \
-		-I$includedir/stream \
-		-I$includedir/mapi 
+		-I$includedir/mal \
+		-I$includedir/kernel \
+		-I$includedir/atoms \
+		-I$includedir/C 
        	;;
 
     --libs)

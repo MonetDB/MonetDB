@@ -30,18 +30,17 @@ MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
 
 bin_Mserver = {
 	SOURCES = Mserver.mx
-	LIBS = ../mal/libmal ../common/libmutils ../gdk/libbat \
-		$(MONET_LIBS) $(Z_LIBS) $(BZ_LIBS) -lm
-#		../sql/parser/libsql 
+	LIBS = ../mal/libmal @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS) \
+		../common/libmutils ../common/libstream
 }
 
-scripts_mcsh = {
+scripts_sh = {
+	EXT = ""
 	DIR = bindir
 	SOURCES = monet-config.mx.in 
 }
 
-scripts_mcbat = {
+scripts_bat = {
 	DIR = bindir
 	SOURCES = monet-config.bat.in 
 }
-
