@@ -430,7 +430,7 @@ char *bindFcn(str nme){
 	return GDKstrdup(buffer);
 }
 char *emitExpr(char *msg){
-	if(strchr(msg,'(') ){
+	if(*msg !='\'' && *msg!='"' && strchr(msg,'(') ){
 		char *nme= newName();
 		printf("\t%s := %s;\n",nme,msg);
 		return nme;

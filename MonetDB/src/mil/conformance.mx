@@ -58,9 +58,8 @@ struct{
 {"isenum",		"enum.isEnum",0},
 {"CTgroup",		"group",0},
 {"CTrefine",		"refine",0},
-{"CTderive",		"derive",0},
+{"CTderive",		"group",0},
 {"CTregroup",		"regroup",0},
-{"CTsubhisto",		"subhisto",0},
 {0,0,0}
 };
 
