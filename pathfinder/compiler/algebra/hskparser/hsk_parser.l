@@ -33,9 +33,8 @@ static int i;
 /**
  * Executed (in the flex-generated scanner) each time a rule matches,
  * after yytext and yyleng were set, but before the action is
- * triggered.  Used to calculate length of a token (esp. in the
- * presence of tabstops) and to increment the line number in case of
- * newline commands.
+ * triggered.  Used to calculate length of a token and to increment
+ * the line number in case of newline commands.
  */ 
 #define YY_USER_ACTION                                      \
  do {                                                       \
@@ -46,10 +45,6 @@ static int i;
      if (hsktext[i] == '\n') {                              \
        yylloc.last_col = 0;                                 \
        yylloc.last_row++;                                   \
-     }                                                      \
-     else if (hsktext[i] == '\t') {                         \
-       yylloc.last_col = ((yylloc.last_col + TAB_STEP) /    \
-                          TAB_STEP) * TAB_STEP;             \
      }                                                      \
      else {                                                 \
        yylloc.last_col++;                                   \
@@ -67,7 +62,13 @@ int hskwrap(void)
 
 %}
 
-%s XPMODE ATTMODE TYPEMODE RELMODE
+%s XPMODE ATTMODE TYPEMODE RELMODE ANY
+
+/* integers consist of at least one digit */
+digits [0-9]+
+
+
+/* Regular expressions */
 
 %%
 <INITIAL>
@@ -111,17 +112,47 @@ COUNT                  {return COUNT;}
 DIST                   {return DIST;}
 CINT                   {return CINT;}
 CSTR                   {return CSTR;}
+CDEC                   {return CDEC;}
+CDBL                   {return CDBL;}
 TEXT                   {return TEXT;}
-@[0-9]+                {s = malloc(hskleng);
+![01]                  {/* representation of boolean values */
+                        s = malloc(hskleng);
+                        /* Delete ! character. */
+                        strncpy(s, hsktext + 1, hskleng - 1);
+                        hsklval.ival=atoi(s);
+                        return BLN;}
+@{digits}             {/* representation of node references */
+                        s = malloc(hskleng);
                         /* Delete @ character. */
                         strncpy(s, hsktext + 1, hskleng - 1);
                         hsklval.ival=atoi(s);
                         return NODEREF;}
-[0-9]+                 {s = malloc(hskleng + 1);
+&{digits}             {/* representation of unsigned integers */
+                        s = malloc(hskleng);
+                        /* Delete & character. */
+                        strncpy(s, hsktext + 1, hskleng - 1);
+                        hsklval.ival=atoi(s);
+                        return NAT;}
+{digits}               {/* representation of integers */
+                        s = malloc(hskleng + 1);
                         strcpy(s, hsktext);
                         hsklval.ival=atoi(s);
                         return INT;}
-[a-zA-Z0-9._ø]+        {s = malloc(hskleng + 1);
+%("\."{digits})|({digits}"\."[0-9]*) {/* representation of decimals */
+                        s = malloc(hskleng + 1);
+                        /* Delete # character. */
+                        strncpy(s, hsktext + 1, hskleng - 1);
+                        hsklval.fval=(float)atof(s);
+                        return DEC;}
+#(("\."{digits})|({digits}("."[0-9]*)?))[eE][+-]?{digits} {
+                        /* representation of doubles */
+                        s = malloc(hskleng + 1);
+                        /* Delete # character. */
+                        strncpy(s, hsktext + 1, hskleng - 1);
+                        hsklval.dval=atof(s);
+                        return DBL;}
+[a-zA-Z0-9._ø]+        {/* representation of strings */
+                        s = malloc(hskleng + 1);
                         strcpy(s, hsktext);
                         hsklval.attval = s;
                         return ATTREF;
@@ -198,7 +229,18 @@ text\(\)               {return TEXT;}
 
 
 " "                    {continue;}
+\n                     {/* After Haskell algebra output, there follows
+                         * a newline and then the result of the XQuery
+                         * statement. This keeps the additional output
+                         * from being scanned and parsed.
+                         */
+                        BEGIN(ANY); continue;}
+
+<ANY>
+{
 \n                     {continue;}
+.                      {continue;}
+}
 
 .                      {PFoops (OOPS_FATAL,
                                 "illegal token named %s between line "

@@ -337,26 +337,22 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
 	    break;
 
         case aop_sum:
-            if (n->sem.sum.part.count == 0)
+            if (!n->sem.sum.part)
                 PFarray_printf (dot, "%s %s:(%s)", a_id[n->kind],
                                 n->sem.sum.res, n->sem.sum.att);
             else
                 PFarray_printf (dot, "%s %s:(%s)/%s", a_id[n->kind],
                                 n->sem.sum.res, n->sem.sum.att,
-                                n->sem.sum.part.atts[0]);
-                for (c = 1; c < n->sem.sum.part.count; c++)
-                    PFarray_printf (dot, ", %s", n->sem.sum.part.atts[c]);
+                                n->sem.sum.part);
             break;
 
         case aop_count:
-            if (n->sem.count.part.count == 0)
+            if (!n->sem.count.part)
                 PFarray_printf (dot, "%s %s", a_id[n->kind],
                                 n->sem.count.res);
             else
                 PFarray_printf (dot, "%s %s/%s", a_id[n->kind],
-                                n->sem.count.res, n->sem.count.part.atts[0]);
-                for (c = 1; c < n->sem.count.part.count; c++)
-                    PFarray_printf (dot, ", %s", n->sem.count.part.atts[c]);
+                                n->sem.count.res, n->sem.count.part);
             break;
 
         case aop_project:

@@ -844,7 +844,6 @@ find_unary (PFalg_op_t *new)
 static PFalg_op_t * find_sum (PFalg_op_t *new)
 {
     unsigned int subex_idx;
-    int j;
 
     assert (new);
 
@@ -861,19 +860,8 @@ static PFalg_op_t * find_sum (PFalg_op_t *new)
              */
             if (new->child[0] != old->child[0]
              || strcmp (new->sem.sum.att, old->sem.sum.att)
-             || strcmp (new->sem.sum.res, old->sem.sum.res))
-                continue;
-
-	    /* see if partitioning attributes match */
-            if (new->sem.sum.part.count != old->sem.sum.part.count)
-		continue;
-
-            for (j = 0; j < new->sem.sum.part.count; j++)
-		if (strcmp (new->sem.sum.part.atts[j],
-			    old->sem.sum.part.atts[j]))
-		    break;
-
-            if (j != new->sem.sum.part.count)
+             || strcmp (new->sem.sum.res, old->sem.sum.res)
+             || strcmp (new->sem.sum.part, old->sem.sum.part))
                 continue;
             
             /*
@@ -902,7 +890,6 @@ static PFalg_op_t * find_sum (PFalg_op_t *new)
 static PFalg_op_t * find_count (PFalg_op_t *new)
 {
     unsigned int subex_idx;
-    int j;
 
     assert (new);
 
@@ -918,21 +905,10 @@ static PFalg_op_t * find_count (PFalg_op_t *new)
 	     * attribute and same result attribute
 	     */
             if (new->child[0] != old->child[0]
-             || strcmp (new->sem.count.res, old->sem.count.res))
+             || strcmp (new->sem.count.res, old->sem.count.res)
+             || strcmp (new->sem.count.part, old->sem.count.part))
                 continue;
-
-	    /* see if partitioning attributes match */
-            if (new->sem.count.part.count != old->sem.count.part.count)
-		continue;
-
-            for (j = 0; j < new->sem.count.part.count; j++)
-		if (strcmp (new->sem.count.part.atts[j],
-			    old->sem.count.part.atts[j]))
-		   break;
-
-            if (j != new->sem.count.part.count)
-                continue;
-            
+           
             /*
              * if we came until here, old and new row count expression
              * must be equal; return the existing one

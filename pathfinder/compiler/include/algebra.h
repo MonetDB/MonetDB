@@ -293,13 +293,13 @@ union PFalg_op_sem_t {
     /* semantic content for operators for (partitioned) sum of a column */
     struct {
 	PFalg_att_t     att;      /**< attribute to be summed up */
-	PFalg_attlist_t part;     /**< partitioning attribute(s) */
+	PFalg_att_t     part;     /**< partitioning attribute */
 	PFalg_att_t     res;      /**< attribute to hold the result */
     } sum;
 
     /* semantic content for (partitioned) row counting operator */
     struct {
-	PFalg_attlist_t part;     /**< partitioning attribute(s) */
+	PFalg_att_t     part;     /**< partitioning attribute */
 	PFalg_att_t     res;      /**< attribute to hold the result */
     } count;
 
@@ -539,11 +539,11 @@ PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t att,
 
 /** Constructor for operators forming (partitioned) sum of a column. */
 PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t att,
-			PFalg_att_t res, PFalg_attlist_t part);
+			PFalg_att_t res, PFalg_att_t part);
 
 /** Constructor for (partitioned) row counting operators. */
 PFalg_op_t * PFalg_count (PFalg_op_t *n, PFalg_att_t res,
-			  PFalg_attlist_t part);
+			  PFalg_att_t part);
 
 /** Constructor for duplicate elimination operators. */
 PFalg_op_t * PFalg_distinct (PFalg_op_t *n);

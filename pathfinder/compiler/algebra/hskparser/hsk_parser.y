@@ -44,6 +44,8 @@ PFarray_t *schm_arr = NULL;
 %union {
         int ival;
 	char *sval;
+        float fval;
+        double dval;
         PFalg_op_t *algop;       /* algebra operator */
         PFalg_att_t attval;      /* attribute value */
         PFalg_attlist_t attlist; /* list of attributes */
@@ -58,7 +60,13 @@ PFarray_t *schm_arr = NULL;
 %token <sval> TYPEREF RELREF SCHMATT SCHMTYPE STR TAG
 
 /* Tokens from the lexer (terminals) with semantic integer value. */
-%token <ival> INT NODEREF
+%token <ival> INT NODEREF BLN NAT
+
+/* Tokens from the lexer (terminals) with semantic float value. */
+%token <fval> DEC
+
+/* Tokens from the lexer (terminals) with semantic double value. */
+%token <dval> DBL
 
 %token <attval> ATTREF
 
@@ -71,13 +79,13 @@ PFarray_t *schm_arr = NULL;
     REL DESC DESCSELF ANC ANCSELF FOL PREC
     FOLSIBL PRECSIBL CHILD PARENT SELF ATTRIB
     XMLELEM NODES TEXT SUM COUNT DIFF DIST
-    CINT CSTR TEXT
+    CINT CSTR CDEC CDBL TEXT
 
 /* Types of non-terminals. */
 %type <algop> query operator rownum project eqjoin
  scjoin crosspr disunion binaryop unaryop select
  type table element relation sum count differ distinct
- castint caststr textnode ktest xpath
+ castint caststr castdec castdbl textnode ktest xpath
 
 %type <attval> item schmitem
 
@@ -120,6 +128,8 @@ operator:    rownum             {$$=$1;}
         |    distinct           {$$=$1;}
         |    castint            {$$=$1;}
         |    caststr            {$$=$1;}
+        |    castdec            {$$=$1;}
+        |    castdbl            {$$=$1;}
         |    textnode           {$$=$1;}
         ;
 
@@ -195,10 +205,7 @@ joincond:   LBRACK item EQUAL item RBRACK
 
 scjoin  :   LSQBR SCJOIN xpath operator operator RSQBR
             {
-              /* [/| axis::kind_test operator operator]
-	       * TODO: is is possible that there is more than one
-	       * location steps?
-	       */
+              /* [/| axis::kind_test operator operator] */
               $$=scjoin ($4, $5, $3);
             }
         ;
@@ -343,8 +350,7 @@ select  :   LSQBR SEL LBRACK item RBRACK operator RSQBR
 
 type    :   LSQBR TYPE list COMMA TYPEREF operator RSQBR
             {
-              /* [TYPE (attr,attr,type) operator]
-	       * TODO: insert further or other types? */
+              /* [TYPE (attr,attr,type) operator] */
               assert (PFarray_last ($3) == 2);
 	      if (!strcmp ($5, "int"))
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
@@ -354,6 +360,18 @@ type    :   LSQBR TYPE list COMMA TYPEREF operator RSQBR
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
 			   *((PFalg_att_t*) PFarray_at ($3, 0)),
 			   PFty_string ());
+	      else if (!strcmp ($5, "bool"))
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
+			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   PFty_boolean ());
+	      else if (!strcmp ($5, "dec"))
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
+			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   PFty_decimal ());
+	      else if (!strcmp ($5, "dbl"))
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
+			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   PFty_double ());
 	      else if (!strcmp ($5, "node"))
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
 			   *((PFalg_att_t*) PFarray_at ($3, 0)),
@@ -421,10 +439,19 @@ atomlist:   atom
             }
         ;
 
-atom    :   STR     {$$=PFalg_lit_str ($1);}
+atom    :   STR     {$$=lit_str ($1);}
         |   NODEREF {$$=(PFalg_atom_t) { .type = aat_node,
 					 .val = { .node = $1 } }; }
-        |   INT     {$$=PFalg_lit_int ($1);}
+        |   BLN     {
+                      if ($1 == 0)
+                          $$=lit_bln(false);
+                      else
+                          $$=lit_bln(true);
+                    }
+        |   NAT     {$$=lit_nat ($1);}
+        |   INT     {$$=lit_int ($1);}
+        |   DEC     {$$=lit_dec ($1);}
+        |   DBL     {$$=lit_dbl ($1);}
         ;
 
 schmlist:   schmitem
@@ -446,9 +473,8 @@ schmlist:   schmitem
 
 schmitem:   LBRACK SCHMATT COMMA SCHMTYPE RBRACK
             {
-              /* We discard the requested type (for the moment?
-	       * TODO), because the type can be derived from the
-	       * 'atom' rule (STR, NODEREF, or INT).
+              /* We discard the requested type , because the
+	       * type can be derived from the 'atom' rule.
 	       */
               $$=$2;
             }
@@ -470,27 +496,25 @@ relation:   LSQBR REL RELREF RSQBR
 
 sum     :   LSQBR SUM item COLON LBRACK item RBRACK operator RSQBR
             {
-              /* [SUM attr:(attr) operator] TODO empty partitioning list */
-	      $$=sum ($8, $6, $3, PFalg_attlist_ (0, NULL));
+              /* [SUM attr:(attr) operator] */
+	      $$=sum ($8, $6, $3, NULL);
             }
-        |   LSQBR SUM item COLON LBRACK item RBRACK DIVIDE list operator RSQBR
+        |   LSQBR SUM item COLON LBRACK item RBRACK DIVIDE item operator RSQBR
             {
               /* [SUM attr:(attr)/attrlist operator] */
-	      $$=sum ($10, $6, $3, PFalg_attlist_ (PFarray_last($9),
-				   ((PFalg_att_t *) $9->base)));
+	      $$=sum ($10, $6, $3, $9);
             }
         ;
 
 count   :   LSQBR COUNT item operator RSQBR
             {
               /* [COUNT attr operator] */
-	      $$=count ($4, $3, PFalg_attlist_ (0, NULL));
+	      $$=count ($4, $3, NULL);
             }
-        |   LSQBR COUNT item DIVIDE list operator RSQBR
+        |   LSQBR COUNT item DIVIDE item operator RSQBR
             {
               /* [COUNT attr/attrlist operator] */
-	      $$=count ($6, $3, PFalg_attlist_ (PFarray_last($5),
-						((PFalg_att_t *) $5->base)));
+	      $$=count ($6, $3, $5);
             }
         ;
 
@@ -519,6 +543,20 @@ caststr :   LSQBR CSTR LBRACK item RBRACK operator RSQBR
             {
               /* [CSTR (attr) operator] */
               $$=cast ($6, $4, aat_str);
+            }
+        ;
+
+castdec :   LSQBR CDEC LBRACK item RBRACK operator RSQBR
+            {
+              /* [CDEC (attr) operator] */
+              $$=cast ($6, $4, aat_dec);
+            }
+        ;
+
+castdbl :   LSQBR CDBL LBRACK item RBRACK operator RSQBR
+            {
+              /* [CDBL (attr) operator] */
+              $$=cast ($6, $4, aat_dbl);
             }
         ;
 

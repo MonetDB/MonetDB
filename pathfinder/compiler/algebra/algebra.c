@@ -68,10 +68,17 @@
 
 
 /**
- * Encapsulates initialization stuff common to binary numeric operators.
+ * Encapsulates initialization stuff common to binary arithmetic operators.
  */
 static PFalg_op_t *
-numeric_op(PFalg_op_kind_t kind, PFalg_op_t *n,
+arithm_op(PFalg_op_kind_t kind, PFalg_op_t *n,
+           PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Encapsulates initialization stuff common to binary comparison operators.
+ */
+static PFalg_op_t *
+compar_op(PFalg_op_kind_t kind, PFalg_op_t *n,
            PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
 
 /**
@@ -105,7 +112,7 @@ static PFalg_schema_t doc_schm = {
                                              { "level", aat_int },
                                              { "kind",  aat_int },
                                              { "prop",  aat_str },
-                                             { "frag",  aat_nat } } };
+                                             { "frag",  aat_int } } };
 /*
 static PFalg_schema_t doc_schm = { 
     .count = 6,
@@ -426,9 +433,9 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
         ret->sem.lit_tbl.tuples[i] = tuples[i];
 
         /* add type of this tuple to schema */
-        for (j = 0; j < tuples[i].count; j++) {
+        for (j = 0; j < tuples[i].count; j++)
             ret->schema.items[j].type |= tuples[i].atoms[j].type;
-	}
+
     }
 
 #ifndef NDEBUG
@@ -545,9 +552,8 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     /* copy schema from argument 1 */
-    for (i = 0; i < n1->schema.count; i++) {
+    for (i = 0; i < n1->schema.count; i++)
         ret->schema.items[i] = n1->schema.items[i];
-    }
 
     /* copy schema from argument 2, check for duplicate attribute names */
     for (j = 0; j < n2->schema.count; j++) {
@@ -562,6 +568,7 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
                         n2->schema.items[j].name);
 #endif
     }
+
 
     return ret;
 }
@@ -607,8 +614,8 @@ PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2, PFalg_att_t a1, PFalg_att_t a2)
     ret = alg_op_wire2 (aop_eqjoin, n1, n2);
 
     /* insert semantic value (join attributes) into the result */
-    ret->sem.eqjoin.att1 = a1;
-    ret->sem.eqjoin.att2 = a2;
+    ret->sem.eqjoin.att1 = PFstrdup (a1);
+    ret->sem.eqjoin.att2 = PFstrdup (a2);
 
     /* allocate memory for the result schema (schema(n1) + schema(n2)) */
     ret->schema.count = n1->schema.count + n2->schema.count;
@@ -740,29 +747,39 @@ PFalg_disjunion (PFalg_op_t *n1, PFalg_op_t *n2)
         PFoops (OOPS_FATAL,
                 "Schema of two arguments of UNION do not match");
 
-    /* see if we find each attribute of n1 also in n2 */
-    for (i = 0; i < n1->schema.count; i++) {
-        for (j = 0; j < n2->schema.count; j++)
-            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name))
-                break;
-        if (j == n2->schema.count)
-            PFoops (OOPS_FATAL,
-                    "Schema of two arguments of UNION do not match");
-    }
-
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* set schema */
+    /* see if we find each attribute of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
+        for (j = 0; j < n2->schema.count; j++)
+            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name)) {
+		/* The two attributes match, so include their name
+		 * and type information into the result. This allows
+		 * for the order of schema items in n1 and n2 to be
+		 * different.
+		 */
+		ret->schema.items[i] =
+		(struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
+					     .type = n1->schema.items[i].type
+                                                 | n2->schema.items[j].type };
+                break;
+	    }
 
+        if (j == n2->schema.count)
+            PFoops (OOPS_FATAL,
+                    "Schema of two arguments of UNION do not match");
+    }
+
+/* set schema
+    for (i = 0; i < n1->schema.count; i++)
         ret->schema.items[i] =
             (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
                                          .type = n1->schema.items[i].type
                                                  | n2->schema.items[i].type };
-    }
+*/
 
     return ret;
 }
@@ -782,28 +799,39 @@ PFalg_op_t * PFalg_difference (PFalg_op_t *n1, PFalg_op_t *n2)
         PFoops (OOPS_FATAL,
                 "Schema of two arguments of DIFFERENCE do not match");
 
-    /* see if we find each attribute of n1 also in n2 */
-    for (i = 0; i < n1->schema.count; i++) {
-        for (j = 0; j < n2->schema.count; j++)
-            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name))
-                break;
-        if (j == n2->schema.count)
-            PFoops (OOPS_FATAL,
-                    "Schema of two arguments of DIFFERENCE do not match");
-    }
-
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* set schema */
+    /* see if we find each attribute of n1 also in n2 */
+    for (i = 0; i < n1->schema.count; i++) {
+        for (j = 0; j < n2->schema.count; j++)
+            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name)) {
+		/* The two attributes match, so include their name
+		 * and type information into the result. This allows
+		 * for the order of schema items in n1 and n2 to be
+		 * different.
+		 */
+		ret->schema.items[i] =
+		(struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
+					     .type = n1->schema.items[i].type
+                                                 | n2->schema.items[j].type };
+                break;
+	    }
+
+        if (j == n2->schema.count)
+            PFoops (OOPS_FATAL,
+                    "Schema of two arguments of UNION do not match");
+    }
+
+    /* set schema
     for (i = 0; i < n1->schema.count; i++)
         ret->schema.items[i] =
             (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
                                          .type = n1->schema.items[i].type
                                                | n2->schema.items[i].type };
-
+    */
     return ret;
 }
 
@@ -844,7 +872,7 @@ PFalg_rownum (PFalg_op_t *n, PFalg_att_t a, PFalg_attlist_t s, PFalg_att_t p)
         /* copy this attribute specification */
         ret->schema.items[i] = n->schema.items[i];
     }
-    /* append new attribute, named as given in a, with type int */
+    /* append new attribute, named as given in a, with type nat */
     ret->schema.items[ret->schema.count - 1]
         = (struct PFalg_schm_item_t) { .name = a, .type = aat_nat };
 
@@ -912,7 +940,7 @@ PFalg_select (PFalg_op_t *n, PFalg_att_t att)
     ret = alg_op_wire1 (aop_select, n);
 
     /* insert semantic value (select-attribute) into the result */
-    ret->sem.select.att = att;
+    ret->sem.select.att = PFstrdup (att);
 
     /* allocate memory for the result schema (= schema(n)) */
     ret->schema.count = n->schema.count;
@@ -955,9 +983,9 @@ PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
     /* insert semantic value (type-tested attribute and its type,
      * result attribute) into the result
      */
-    ret->sem.type.att = att;
+    ret->sem.type.att = PFstrdup (att);
     ret->sem.type.ty = ty;
-    ret->sem.type.res = res;
+    ret->sem.type.res = PFstrdup (res);
 
     /* allocate memory for the result schema (= schema(n) + 1 for the
      * 'res' attribute which is to hold the result of the type test) 
@@ -975,7 +1003,7 @@ PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
      * boolean
      */
     ret->schema.items[ret->schema.count - 1].type = aat_bln;
-    ret->schema.items[ret->schema.count - 1].name = res;
+    ret->schema.items[ret->schema.count - 1].name = PFstrdup (res);
 
     return ret;
 }
@@ -1010,7 +1038,7 @@ PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFalg_simple_type_t ty)
      * insert semantic value (type-tested attribute and its type)
      * into the result
      */
-    ret->sem.cast.att = att;
+    ret->sem.cast.att = PFstrdup (att);
     ret->sem.cast.ty = ty;
 
     /* allocate memory for the result schema (= schema(n)) */
@@ -1037,7 +1065,7 @@ PFalg_op_t *
 PFalg_add (PFalg_op_t *n,
            PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_add, n, res, att1, att2);
+    return arithm_op (aop_num_add, n, res, att1, att2);
 }
 
 
@@ -1046,7 +1074,7 @@ PFalg_op_t *
 PFalg_subtract (PFalg_op_t *n,
                 PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_subtract, n, res, att1, att2);
+    return arithm_op (aop_num_subtract, n, res, att1, att2);
 }
 
 
@@ -1055,7 +1083,7 @@ PFalg_op_t *
 PFalg_multiply (PFalg_op_t *n,
                 PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_multiply, n, res, att1, att2);
+    return arithm_op (aop_num_multiply, n, res, att1, att2);
 }
 
 
@@ -1064,15 +1092,7 @@ PFalg_op_t *
 PFalg_divide (PFalg_op_t *n,
               PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_divide, n, res, att1, att2);
-}
-
-
-/** Constructor for numeric equal operators. */
-PFalg_op_t * PFalg_eq (PFalg_op_t *n,
-                       PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
-{
-    return numeric_op (aop_num_eq, n, res, att1, att2);
+    return arithm_op (aop_num_divide, n, res, att1, att2);
 }
 
 
@@ -1095,7 +1115,15 @@ PFalg_op_t * PFalg_eq (PFalg_op_t *n,
 PFalg_op_t * PFalg_gt (PFalg_op_t *n,
                        PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_gt, n, res, att1, att2);
+    return compar_op (aop_num_gt, n, res, att1, att2);
+}
+
+
+/** Constructor for numeric equal operators. */
+PFalg_op_t * PFalg_eq (PFalg_op_t *n,
+                       PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
+{
+    return compar_op (aop_num_eq, n, res, att1, att2);
 }
 
 
@@ -1136,13 +1164,13 @@ PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t att,
  * operators.
  *
  * Depending on the @a kind parameter, we add, subtract, multiply, or
- * divide the two values of columns @a att1 and @a att2 and stores the
+ * divide the two values of columns @a att1 and @a att2 and store the
  * result in newly created attribute @a res. @a res gets the same data
  * type as @a att1 and @a att2. The result schema corresponds to the
  * schema of the input relation @a n plus @a res.
  */
 static PFalg_op_t *
-numeric_op (PFalg_op_kind_t kind, PFalg_op_t *n,
+arithm_op (PFalg_op_kind_t kind, PFalg_op_t *n,
             PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
     PFalg_op_t *ret;
@@ -1163,18 +1191,16 @@ numeric_op (PFalg_op_kind_t kind, PFalg_op_t *n,
     /* did we find attribute 'att1' and 'att2'? */
     if (ix1 < 0)
 	PFoops (OOPS_FATAL,
-		"attribute `%s' referenced in binary operation "
+		"attribute `%s' referenced in arithmetic operation "
 		"not found", att1);
     else if (ix2 < 0)
 	PFoops (OOPS_FATAL,
-		"attribute `%s' referenced in binary operation "
+		"attribute `%s' referenced in arithmetic operation "
 		"not found", att2);
 
-    /* make sure both attributes are of the same numeric type
-     * TODO: should 'aat_node' type be integrated? */
+    /* make sure both attributes are of the same numeric type */
     assert (n->schema.items[ix1].type == aat_nat ||
 	    n->schema.items[ix1].type == aat_int ||
-	    n->schema.items[ix1].type == aat_node ||
 	    n->schema.items[ix1].type == aat_dec ||
 	    n->schema.items[ix1].type == aat_dbl);
     assert (n->schema.items[ix1].type == n->schema.items[ix2].type);
@@ -1185,9 +1211,9 @@ numeric_op (PFalg_op_kind_t kind, PFalg_op_t *n,
     /* insert semantic value (operand attributes and result attribute)
      * into the result
      */
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
-    ret->sem.binary.res = res;
+    ret->sem.binary.att1 = PFstrdup (att1);
+    ret->sem.binary.att2 = PFstrdup (att2);
+    ret->sem.binary.res = PFstrdup (res);
 
     /* allocate memory for the result schema (schema(n) + 'res') */
     ret->schema.count = n->schema.count + 1;
@@ -1201,8 +1227,79 @@ numeric_op (PFalg_op_kind_t kind, PFalg_op_t *n,
     /* add the information on the 'res' attribute; it has the same type
      * as attribute 'att1' (and 'att2'), but a different name
      */
-    ret->schema.items[ret->schema.count - 1] = n->schema.items[ix1];
-    ret->schema.items[ret->schema.count - 1].name = res;
+    ret->schema.items[ret->schema.count - 1].type = n->schema.items[ix1].type;
+    ret->schema.items[ret->schema.count - 1].name = PFstrdup (res);
+
+    return ret;
+}
+
+
+/**
+ * Encapsulates initialization stuff common to binary comparison
+ * operators.
+ *
+ * Depending on the @a kind parameter, we connect the two values
+ * of columns @a att1 and @a att2 and store the result in newly
+ * created attribute @a res. @a res gets the same data type as @a
+ * att1 and @a att2. The result schema corresponds to the schema
+ * of the input relation @a n plus @a res.
+ */
+static PFalg_op_t *
+compar_op (PFalg_op_kind_t kind, PFalg_op_t *n,
+            PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
+{
+    PFalg_op_t *ret;
+    int         i;
+    int         ix1 = -1;
+    int         ix2 = -1;
+    
+    assert (n);
+
+    /* verify that 'att1' and 'att2' are attributes of n ... */
+    for (i = 0; i < n->schema.count; i++) {
+	if (!strcmp (att1, n->schema.items[i].name))
+	    ix1 = i;                /* remember array index of att1 */
+	else if (!strcmp (att2, n->schema.items[i].name))
+	    ix2 = i;                /* remember array index of att2 */
+    }
+
+    /* did we find attribute 'att1' and 'att2'? */
+    if (ix1 < 0)
+	PFoops (OOPS_FATAL,
+		"attribute `%s' referenced in arithmetic operation "
+		"not found", att1);
+    else if (ix2 < 0)
+	PFoops (OOPS_FATAL,
+		"attribute `%s' referenced in arithmetic operation "
+		"not found", att2);
+
+    /* make sure both attributes are of the same type */
+    assert (n->schema.items[ix1].type == n->schema.items[ix2].type);
+
+    /* create new binary operator node */
+    ret = alg_op_wire1 (kind, n);
+
+    /* insert semantic value (operand attributes and result attribute)
+     * into the result
+     */
+    ret->sem.binary.att1 = PFstrdup (att1);
+    ret->sem.binary.att2 = PFstrdup (att2);
+    ret->sem.binary.res = PFstrdup (res);
+
+    /* allocate memory for the result schema (schema(n) + 'res') */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res' attribute; it is of type
+     * boolean and named 'res'
+     */
+    ret->schema.items[ret->schema.count - 1].type = aat_bln;
+    ret->schema.items[ret->schema.count - 1].name = PFstrdup (res);
 
     return ret;
 }
@@ -1213,11 +1310,10 @@ numeric_op (PFalg_op_kind_t kind, PFalg_op_t *n,
  * operators.
  *
  * Depending on the @a kind parameter, we connect the two values
- * of columns @a att1 and @a att2 and stores the result in newly
+ * of columns @a att1 and @a att2 and store the result in newly
  * created attribute @a res. @a res gets the same data type as @a
  * att1 and @a att2. The result schema corresponds to the schema
  * of the input relation @a n plus @a res.
- * TODO: merge this routine with numeric_op()?
  */
 static PFalg_op_t *
 boolean_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
@@ -1258,9 +1354,9 @@ boolean_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
     /* insert semantic value (operand attributes and result attribute)
      * into the result
      */
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
-    ret->sem.binary.res = res;
+    ret->sem.binary.att1 = PFstrdup (att1);
+    ret->sem.binary.att2 = PFstrdup (att2);
+    ret->sem.binary.res = PFstrdup (res);
 
     /* allocate memory for the result schema (schema(n) + 'res') */
     ret->schema.count = n->schema.count + 1;
@@ -1274,8 +1370,8 @@ boolean_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
     /* add the information on the 'res' attribute; it is of type
      * boolean and named 'res'
      */
-    ret->schema.items[ret->schema.count - 1] = n->schema.items[ix1];
-    ret->schema.items[ret->schema.count - 1].name = res;
+    ret->schema.items[ret->schema.count - 1].type = n->schema.items[ix1].type;
+    ret->schema.items[ret->schema.count - 1].name = PFstrdup (res);
 
     return ret;
 }
@@ -1301,12 +1397,11 @@ unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att,
     assert (n);
 
     /* verify that 'att' is an attribute of n ... */
-    for (i = 0; i < n->schema.count; i++) {
+    for (i = 0; i < n->schema.count; i++)
 	if (!strcmp (att, n->schema.items[i].name)) {
 	    ix = i;                /* remember array index of att */
 	    break;
 	}
-    }
 
     /* did we find attribute 'att'? */
     if (i >= n->schema.count)
@@ -1314,11 +1409,9 @@ unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att,
 		"attribute `%s' referenced in unary operation not found",
 		att);
 
-    /* assert that att is of correct type TODO: inclusion of node */
+    /* assert that 'att' is of correct type */
     if (kind == aop_num_neg)
-	assert (n->schema.items[ix].type == aat_nat ||
-		n->schema.items[ix].type == aat_int ||
-		n->schema.items[ix].type == aat_node ||
+	assert (n->schema.items[ix].type == aat_int ||
 		n->schema.items[ix].type == aat_dec ||
 		n->schema.items[ix].type == aat_dbl);
     else if (kind == aop_bool_not)
@@ -1330,8 +1423,8 @@ unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att,
     /* insert semantic value (operand attribute and result attribute)
      * into the result
      */
-    ret->sem.unary.att = att;
-    ret->sem.unary.res = res;
+    ret->sem.unary.att = PFstrdup (att);
+    ret->sem.unary.res = PFstrdup (res);
 
     /* allocate memory for the result schema (schema(n) + 'res') */
     ret->schema.count = n->schema.count + 1;
@@ -1346,7 +1439,7 @@ unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att,
      * as attribute 'att', but a different name
      */
     ret->schema.items[ret->schema.count - 1] = n->schema.items[ix];
-    ret->schema.items[ret->schema.count - 1].name = res;
+    ret->schema.items[ret->schema.count - 1].name = PFstrdup (res);
 
     return ret;
 }
@@ -1356,62 +1449,59 @@ unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att,
  * Constructor for operators forming (partitioned) sum of a column.
  *
  * The values of attribute @a att are to be summed up. The partitioning
- * (group by) attributes are containes in @a part. The results (sums)
- * are stored in attribute @a res.
+ * (group by) attribute is represented by @a part. The result (sum) is
+ * stored in attribute @a res.
  */
 PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t att,
-			PFalg_att_t res, PFalg_attlist_t part)
+			PFalg_att_t res, PFalg_att_t part)
 {
     /* build a new sum node */
     PFalg_op_t *ret = alg_op_wire1 (aop_sum, n);
     int         i;
-    int         j;
-    int         c = 0;
+    int         c1 = 0;
+    int         c2 = 0;
 
-    /* calculate number of schema items in the result schema
-     * (partitioning attribute(s) plus result attribute) and
-     * assign it to the result operator
+    /* set number of schema items in the result schema
+     * (partitioning attribute plus result attribute)
      */
-    ret->schema.count = part.count + 1;
+    ret->schema.count = 2;
 
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
 
-    /* verify that 'att' and the attributes in 'part' are attributes of n;
-     * if so, include them into the array of result schema items
+    /* verify that attributes 'att' and 'part' are attributes of n
+     * and include them into the result schema
      */
     for (i = 0; i < n->schema.count; i++) {
-	/* copy the summed-up attribute 'att'; it will be named
-	 * 'res' in the result
-	 */
 	if (!strcmp (att, n->schema.items[i].name)) {
-	    ret->schema.items[c] = n->schema.items[i];
-	    ret->schema.items[c].name = res;
-	    c++;
+	    ret->schema.items[0] = n->schema.items[i];
+	    ret->schema.items[0].name = PFstrdup (res);
+	    c1 = 1;
 	}
-
-	/* copy the partitioning attributes */
-	for (j = 0; j < part.count; j++) {
-	    if (!strcmp (n->schema.items[i].name, part.atts[j])) {
-	        ret->schema.items[c] = n->schema.items[i];
-		c++;
-		break;
-	    }
+	if (!strcmp (part, n->schema.items[i].name)) {
+	    ret->schema.items[1] = n->schema.items[i];
+	    c2 = 1;
 	}
     }
 
-    /* did we find attribute 'att' and attributes in 'part'? */
-    if (c < ret->schema.count)
+    /* did we find attribute 'att'? */
+    if (!c1)
 	PFoops (OOPS_FATAL,
-		"attribute referenced in sum operator not found");
+		"attribute `%s' referenced in sum not found", att);
+
+    /* did we find attribute 'part'? */
+    if (!c2)
+	PFoops (OOPS_FATAL,
+		"partitioning attribute `%s' referenced in sum not found",
+		part);
 
     /* insert semantic value (summed-up attribute, partitioning
      * attribute(s), and result attribute) into the result
      */
-    ret->sem.sum.att = att;
-    ret->sem.sum.part = part;
-    ret->sem.sum.res = res;
+    ret->sem.sum.att = PFstrdup (att);
+    ret->sem.sum.part = part ? PFstrdup (part) : NULL;
+    ret->sem.sum.res = PFstrdup (res);
 
     return ret;
 }
@@ -1421,50 +1511,46 @@ PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t att,
  * Constructor for (partitioned) row counting operators.
  *
  * Counts all rows with identical values in column @a part (which holds
- * the partitioning or group by columns). The results are stored in
+ * the partitioning or group by column). The result is stored in
  * attribute @a res. 
  */
 PFalg_op_t * PFalg_count (PFalg_op_t *n, PFalg_att_t res,
-			  PFalg_attlist_t part)
+			  PFalg_att_t part)
 {
     PFalg_op_t *ret = alg_op_wire1 (aop_count, n);
     int         i;
-    int         j;
-    int         c = 0;
 
-    /* calculate number of schema items in the result schema
-     * (partitioning attribute(s) plus result attribute) and
-     * assign it to the result operator
+    /* set number of schema items in the result schema
+     * (partitioning attribute plus result attribute)
      */
-    ret->schema.count = part.count + 1;
+    ret->schema.count = 2;
 
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* copy the partitioning attributes */
+    /* copy the partitioning attribute */
     for (i = 0; i < n->schema.count; i++)
-	for (j = 0; j < part.count; j++) {
-	    if (!strcmp (n->schema.items[i].name, part.atts[j])) {
-	        ret->schema.items[c] = n->schema.items[i];
-		c++;
-		break;
+	if (!strcmp (n->schema.items[i].name, part)) {
+	    ret->schema.items[1] = n->schema.items[i];
+	    break;
 	    }
-	}
 
-    /* did we find all attributes in 'part'? */
-    if (c < (ret->schema.count-1))
+    /* did we find attribute 'part'? */
+    if (i >= n->schema.count)
 	PFoops (OOPS_FATAL,
-		"attribute referenced in count operator not found");
+		"partitioning attribute %s referenced in count operator "
+		"not found", part);
 
     /* insert result attribute into schema */
-    ret->schema.items[c].name = res;
-    ret->schema.items[c].type = aat_int;
+    ret->schema.items[0].name = PFstrdup (res);
+    ret->schema.items[0].type = aat_int;
 
     /* insert semantic value (partitioning and result attribute) into
      * the result
      */
-    ret->sem.count.part = part;
-    ret->sem.count.res = res;
+    ret->sem.count.part = part ? PFstrdup (part) : NULL;
+    ret->sem.count.res = PFstrdup (res);
+
 
     return ret;
 }
@@ -1500,15 +1586,14 @@ PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tags,
     PFalg_op_t *ret = alg_op_wire3 (aop_element, doc, tags, cont);
     int i;
 
-    /* copy schema from argument 'doc' and additionally add attribute
-     * 'iter'; the result schema is (<doc_tbl schema> | iter)
-     */
-    ret->schema.count = doc->schema.count + 1;
+    /* set result schema */
+    ret->schema.count = doc_schm.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    for (i = 0; i < doc->schema.count; i++)
-        ret->schema.items[i] = doc->schema.items[i];
+    for (i = 0; i < doc_schm.count; i++)
+        ret->schema.items[i] = doc_schm.items[i];
+
 
     ret->schema.items[ret->schema.count-1].name = "iter";
     ret->schema.items[ret->schema.count-1].type = aat_nat;
@@ -1527,15 +1612,13 @@ PFalg_op_t * PFalg_textnode (PFalg_op_t *doc, PFalg_op_t *cont)
     PFalg_op_t *ret = alg_op_wire2 (aop_textnode, doc, cont);
     int i;
 
-    /* copy schema from argument 'doc' and additionally add attribute
-     * 'iter'; the result schema is (<doc_tbl schema> | iter)
-     */
-    ret->schema.count = doc->schema.count + 1;
+    /* set result schema */
+    ret->schema.count = doc_schm.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    for (i = 0; i < doc->schema.count; i++)
-        ret->schema.items[i] = doc->schema.items[i];
+    for (i = 0; i < doc_schm.count; i++)
+        ret->schema.items[i] = doc_schm.items[i];
 
     ret->schema.items[ret->schema.count-1].name = "iter";
     ret->schema.items[ret->schema.count-1].type = aat_nat;

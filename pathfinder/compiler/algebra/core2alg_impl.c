@@ -423,7 +423,7 @@ static PFalg_op_t *pitarTest (char *target)
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
     ret->sem.scjoin.test = aop_pi_tar;
-    ret->sem.scjoin.str.target = target;
+    ret->sem.scjoin.str.target = PFstrdup (target);
 
     return ret;
 }
