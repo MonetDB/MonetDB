@@ -1009,6 +1009,7 @@ rel2bin(mvc *c, stmt *s)
 		return stmt_dup(s);
 
 	case st_output: {
+		stmt *lst = NULL;
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
@@ -1027,11 +1028,11 @@ rel2bin(mvc *c, stmt *s)
 			stmt_destroy(os);
 			s->op2.stval = ns;
 		}
+
 		/*
 		if all outputs depend on the same mark, just use
 			   the mark as order and simply use the bases.
-		stmt *lst = NULL;
-
+		*/
 		lst = s->op1.stval;
 		if (lst->type != st_ordered) {
 			node *n = lst->op1.lval->h;
@@ -1041,19 +1042,24 @@ rel2bin(mvc *c, stmt *s)
 			int all = 1;
 			for( ; n; n = n->next) {
 				stmt *c = n->data;
-				if (c->type != st_join || h != c->op1.stval) {
+				if (c->type != st_join || h != c->op1.stval ||
+				    c->op2.stval->type != st_bat) {
 					all = 0;
 					break;
 				}
 				list_append(l, stmt_dup(c->op2.stval));
 			}
 			if (all) {
-				stmt *res = stmt_ordered(stmt_reverse(stmt_dup(h)), stmt_output(stmt_list(l)));
+				stmt *m = stmt_reverse(stmt_dup(h));
+				stmt *r = eliminate_reverse(m);
+				stmt *res = stmt_output(stmt_ordered(r, stmt_list(l)));
+				stmt_destroy(m);
 				res->optimized = 2;
 				return res;
+			} else {
+				list_destroy(l);
 			}
 		}
-		*/
 		s->optimized = 2;
 		return stmt_dup(s);
 	}

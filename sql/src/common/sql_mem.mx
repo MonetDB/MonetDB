@@ -52,7 +52,7 @@ sql_ref_dec(sql_ref *r)
 }
 
 
-#define M 	(1024*1024)
+#define SA_BLOCK (4*1024*1024)
 
 sql_allocator *sa_create()
 {
@@ -71,7 +71,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
-	if (sz > M) {
+	if (sz > SA_BLOCK) {
 		char *r = GDKmalloc(sz);
 		if (sa->nr >= sa->size) {
 			sa->size *=2;
@@ -82,8 +82,8 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 		sa->nr ++;
 		return r;
 	}
-	if (sz > (M-sa->used)) {
-		char *r = GDKmalloc(M);
+	if (sz > (SA_BLOCK-sa->used)) {
+		char *r = GDKmalloc(SA_BLOCK);
 		if (sa->nr >= sa->size) {
 			sa->size *=2;
 			RENEW_ARRAY(char*,sa->blks,sa->size);
