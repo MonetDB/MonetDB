@@ -550,7 +550,14 @@ that for the moment are defined as procs.
                         ht := oid;
                 }
         }
-	return new(ht, tt, sz);
+	var r := new(ht, tt, sz);
+	if ((tt == void) and (not(isnil(b.reverse.seqbase())))) {
+		r.reverse.seqbase( b.reverse.seqbase() );
+	}
+	if ((ht == void) and (not(isnil(a.seqbase())))) {
+		r.seqbase( a.seqbase() );
+	}
+	return r;
     }
 
 
