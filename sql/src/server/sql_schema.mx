@@ -218,7 +218,12 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
 		char *grantee = gn->data.sval;
-		int grantee_id = sql_find_auth(sql, grantee);
+		int grantee_id;
+
+		if (grantee)
+			grantee_id = sql_find_auth(sql, grantee);
+		else
+			grantee_id = sql_find_auth(sql, "public");
 
 		if (grantee_id < 0) {
 			list_destroy(l);
@@ -382,7 +387,12 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 	if (privs == NULL) {	/* ALL [ PRIVILEGES ] */
 		for (gn = grantees->h; gn; gn = gn->next) {
 			char *grantee = gn->data.sval;
-			int grantee_id = sql_find_auth(sql, grantee);
+			int grantee_id;
+	
+			if (grantee)
+				grantee_id = sql_find_auth(sql, grantee);
+			else
+				grantee_id = sql_find_auth(sql, "public");
 
 			if (grantee_id < 0) {
 				list_destroy(l);
@@ -397,9 +407,14 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 		return stmt_list(l);
 	}
 	for (gn = grantees->h; gn; gn = gn->next) {
-		char *grantee = gn->data.sval;
-		int grantee_id = sql_find_auth(sql, grantee);
 		dnode *opn;
+		char *grantee = gn->data.sval;
+		int grantee_id;
+
+		if (grantee)
+			grantee_id = sql_find_auth(sql, grantee);
+		else
+			grantee_id = sql_find_auth(sql, "public");
 
 		if (grantee_id < 0) {
 			list_destroy(l);
