@@ -65,6 +65,8 @@ end main;	# 12
 # void	str		  # type
 #-------------------------#
 [ nil,	  "Admin"	  ]
+[ nil,	  "crackers"	  ]
+[ nil,	  "chopper"	  ]
 [ nil,	  "optimizer"	  ]
 [ nil,	  "inspect"	  ]
 [ nil,	  "box"		  ]
@@ -83,7 +85,7 @@ end main;	# 12
 [ nil,	  "mapi"	  ]
 [ nil,	  "aggrX3"	  ]
 [ nil,	  "group"	  ]
-[ nil,	  "system"	  ]
+[ nil,	  "status"	  ]
 [ nil,	  "batcalc"	  ]
 [ nil,	  "calc"	  ]
 [ nil,	  "algebra"	  ]

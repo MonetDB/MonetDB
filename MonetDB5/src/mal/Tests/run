@@ -2,7 +2,7 @@
 echo "Initialize database"
 rm -rf /usr/mk/Linux/var/MonetDB/demo/*
 
-for f in  `ls tst???.mal tst1???.mal tst2???.mal tst3???.mal`
+for f in  `ls tst???.mal tst1???.mal tst2???.mal tst3???.mal tst5???.mal`
 do
 	echo "---->" $f
 	Mserver -c tst.conf $f </dev/null > `basename $f .mal`.output 

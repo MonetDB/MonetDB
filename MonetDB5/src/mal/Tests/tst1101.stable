@@ -25,7 +25,7 @@
 #        rb:= new(:int,:url);
 #	print("start loop");
 ## Drop this line and you get a segmentation fault
-#barrier mloop:lng := bbp.bunStream(t,h:int,B2:url);
+#barrier mloop:lng := chopper.bunStream(t,h:int,B2:url);
 #	print(B2);
 #	redo mloop;
 #exit mloop;
@@ -53,7 +53,7 @@ function Admin.main():int;	# 0  (main:int)
     io.print(t);	# 17 IOprint_val ($34:int)<-(t:bat[:int,:url])
     rb := bbp.new(int:,url:);	# 18 CMDBATnew (rb:bat[:int,:url])<-($36:int)($37:url)
     io.print("start loop");	# 19 IOprint_val ($38:int)<-($39:str)
-barrier mloop := bbp.bunStream(t,h,B2);	# 20 CMDbunStream (mloop:lng)<-(t:bat[:int,:url])(h:int)(B2:url) jump 23
+barrier mloop := chopper.bunStream(t,h,B2);	# 20 CHPbunStream (mloop:lng)<-(t:bat[:int,:url])(h:int)(B2:url) jump 23
     io.print(B2);	# 21 IOprint_val ($43:int)<-(B2:url)
     redo mloop;	# 22  (mloop:lng) jump 20
 exit mloop;	# 23  (mloop:lng)
