@@ -3,6 +3,7 @@
 #include "mem.h"
 #include <comm.h>
 #include <sys/stat.h>
+#include <query.h>
 
 #ifdef HAVE_LIBGETOPT 
 #include <getopt.h>
@@ -32,51 +33,91 @@ void usage( char *prog ){
 	exit(-1);
 }
 
-void receiver( stream *rs ){
-	int cont = 1;
-	while(cont){
-		int flag = 0;
-		if (!rs->readInt(rs, &flag) || flag == COMM_DONE){
-			cont = 0;
-		} else {
-			char buf[BLOCK+1], *n = buf;
-			int last = 0;
+
+void receive( stream *rs ){
+	int flag = 0;
+	if (rs->readInt(rs, &flag) && flag != COMM_DONE){
+		char buf[BLOCK+1], *n = buf;
+		int last = 0;
+		int type;
+		int status;
+		int nRows;
+
+		rs->readInt(rs, &type);
+		rs->readInt(rs, &status);
+		if (status < 0){ /* output error */
 			int nr = bs_read_next(rs,buf,&last);
-			int nRows = strtol(n,&n,10);
-			n++; /* skip \n */
-	
-			fwrite( n, nr-(n-buf), 1, stdout );
+			fprintf( stdout, "SQL ERROR %d: ", status );
+			fwrite( n, nr, 1, stdout );
 			while(!last){
-				nr = bs_read_next(rs,buf,&last);
+				int nr = bs_read_next(rs,buf,&last);
 				fwrite( buf, nr, 1, stdout );
 			}
-			fflush(stdout);
-			if (nRows > 1)
-				fprintf(stdout, "%d Rows affected\n", nRows );
-			else if (nRows == 1)
-				fprintf(stdout, "1 Row affected\n" );
-			else 
-				fprintf(stdout, "no Rows affected\n" );
+			fprintf( stdout, "\n");
 		}
+		if (type == QTABLE){
+			int nr = bs_read_next(rs,buf,&last);
+	
+			n++; /* skip newline */
+			fwrite( n, nr - (n - buf), 1, stdout );
+			while(!last){
+				int nr = bs_read_next(rs,buf,&last);
+				fwrite( buf, nr, 1, stdout );
+			}
+		}
+		nRows = status;
+		if (type == QTABLE || type == QUPDATE){
+			if (nRows > 1)
+				printf("%d Rows affected\n", nRows );
+			else if (nRows == 1)
+				printf("1 Row affected\n" );
+			else 
+				printf("no Rows affected\n" );
+		}
+	} else if (flag != COMM_DONE){
+		printf("flag %d\n", flag);
 	}
-	rs->close(rs);
-	rs->destroy(rs);
 }
 
+int parse_line( const char *line )
+{
+	int cnt = 0;
+	int ins = 0;
+	int esc = 0;
+	while (isspace(*line)) line++;
+	if (*line && *line == '-' && line[1] == '-')
+		return 0;
+	for(;*line != 0; line++){
+		if (esc){
+			while (isdigit(*line)) 
+				line++;
+			esc = 0;
+		} else if (ins &&  *line == '\''){
+			ins = 0;
+		} else if (*line == '\\'){
+			esc = 1;
+		} else if (*line == '\''){
+			ins = 1;
+		} else if (*line == ';'){
+			cnt++;
+		}
+	}
+	return cnt;
+}
 
-void *send_commands( void *Ws ){
-	char eot[1];
-	stream *ws = (stream*)Ws;
-	int	is_chrsp	= 0;
+void clientAccept( stream *ws, stream *rs ){
+	int  i,	is_chrsp	= 0;
 	char *prompt = "> ";
 	char *line = NULL;
 	struct stat st;
+	char buf[BUFSIZ];
 
 	fstat(fileno(stdin),&st);
 	if (S_ISCHR(st.st_mode))
 	   is_chrsp = 1;
 
 	while(!feof(stdin)){
+		int cmdcnt = 0;
 		if (line) {
 			free(line);
 		}
@@ -95,22 +136,24 @@ void *send_commands( void *Ws ){
 	                	break;
 			}
 		}
+		cmdcnt = parse_line(line);
 		ws->write( ws, line, strlen(line), 1 );
-		ws->flush( ws );
+		if (cmdcnt)
+			ws->flush( ws );
+
+		for (; cmdcnt > 0; cmdcnt--)
+			receive(rs);
 	}
 	
-	eot[0] = EOT;
-	ws->write( ws, eot, 1, 1 );
+	i = snprintf(buf, BUFSIZ, "COMMIT;\n" );
+	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
-	return NULL;
-}
+	receive(rs);
 
-void start_workers( stream *ws, stream *rs ){
-	pthread_t sender;
-
-	pthread_create( &sender, NULL, &send_commands, (void*)ws );
-
-	receiver(rs);
+	/* client waves goodbye */
+	buf[0] = EOT; 
+	ws->write( ws, buf, 1, 1 );
+	ws->flush( ws );
 }
 
 int
@@ -206,8 +249,12 @@ main(int ac, char **av)
 	ws->write( ws, buf, strlen(buf), 1 );
 	ws->flush( ws );
 
-	start_workers( ws, rs );
+	clientAccept( ws, rs );
 
+	if (rs){
+	       	rs->close(rs);
+	       	rs->destroy(rs);
+	}
 	ws->close(ws);
 	ws->destroy(ws);
 

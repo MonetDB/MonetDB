@@ -6,6 +6,7 @@
 #include <comm.h>
 #include <sys/stat.h>
 #include <catalog.h>
+#include <query.h>
 
 #ifdef HAVE_LIBGETOPT 
 #include <getopt.h>
@@ -25,6 +26,12 @@ stream *ws = NULL, *rs = NULL;
  * 	64 	output code only, no excution on the server.
  *     128 	export code in xml.
  */ 
+/*
+ * todo
+ * 	what to do on err (stop,continue etc)
+ * 	default transaction ? (ie one single transaction, or
+ * 		 commit/abort on end)
+ */
 extern catalog *catalog_create_stream( stream *s, context *lc );
 
 void usage( char *prog ){
@@ -39,21 +46,37 @@ void usage( char *prog ){
 	exit(-1);
 }
 
-void receive( stream *rs, int output ){
+void receive( stream *rs ){
 	int flag = 0;
 	if (rs->readInt(rs, &flag) && flag != COMM_DONE){
 		char buf[BLOCK+1], *n = buf;
 		int last = 0;
-		int nr = bs_read_next(rs,buf,&last);
-		int nRows = strtol(n,&n,10);
+		int type;
+		int status;
+		int nRows;
 
-		n++; /* skip newline */
-		fwrite( n, nr - (n - buf), 1, stdout );
-		while(!last){
+		rs->readInt(rs, &type);
+		rs->readInt(rs, &status);
+		if (status < 0){ /* output error */
 			int nr = bs_read_next(rs,buf,&last);
-			fwrite( buf, nr, 1, stdout );
+			fprintf( stdout, "SQL ERROR %d: ", status );
+			fwrite( n, nr, 1, stdout );
+			while(!last){
+				int nr = bs_read_next(rs,buf,&last);
+				fwrite( buf, nr, 1, stdout );
+			}
 		}
-		if (output){
+		if (type == QTABLE){
+			int nr = bs_read_next(rs,buf,&last);
+	
+			fwrite( buf, nr, 1, stdout );
+			while(!last){
+				int nr = bs_read_next(rs,buf,&last);
+				fwrite( buf, nr, 1, stdout );
+			}
+		}
+		nRows = status;
+		if (type == QTABLE || type == QUPDATE){
 			if (nRows > 1)
 				printf("%d Rows affected\n", nRows );
 			else if (nRows == 1)
@@ -75,7 +98,10 @@ void clientAccept( context *lc, stream *rs ){
 
 	while(lc->cur != EOF ){
 		s = sqlnext(lc, in, &err);
-		if (err) break;
+		if (err){
+			fprintf(stderr, "%s\n", lc->errstr);
+		       	continue;
+		}
 		if (s){
 	    		int nr = 1;
 			if (lc->debug&128){
@@ -87,18 +113,18 @@ void clientAccept( context *lc, stream *rs ){
 
 	    		lc->out->flush( lc->out );
 		}
-		if (!(lc->debug&64) && s && s->type == st_output){
-			receive(rs, 1);
+		if (!(lc->debug&64) && s){
+			receive(rs);
 		}
 		if (s) stmt_destroy(s);
 	}
 	in->destroy(in);
 
 	i = snprintf(buf, BUFSIZ, "s0 := mvc_commit(myc, 0, \"\");\n" );
-	i += snprintf(buf+i, BUFSIZ-i, "result(Output, s0);\n" );
+	i += snprintf(buf+i, BUFSIZ-i, "result(Output, mvc_type(myc), mvc_status(myc));\n" );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
-	receive(rs, 0);
+	receive(rs);
 
 	/* client waves goodbye */
 	buf[0] = EOT; 
