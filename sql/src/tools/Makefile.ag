@@ -54,7 +54,7 @@ lib_initmodules = {
 
 bin_Mserver = {
 	SOURCES = Mserver.mx
-	LIBS = -L$(MONETDB_PREFIX)/lib -linitmodules -lmonet @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
+	LIBS = -L$(MONETDB_PREFIX)/lib -linitmodules -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
 
 lib_embedded = {
