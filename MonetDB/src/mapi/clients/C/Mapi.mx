@@ -29,11 +29,11 @@
 The easiest way to extend the functionality of Monet is to construct
 an independent Monet application, which communicates with a
 running server using a database driver with a simple API and a textual protocol.
-The effectivness of such an approach has been demonstrated by the wide
+The effectiveness of such an approach has been demonstrated by the wide
 use of database API implementations, such as Perl DBI, PHP ADO, ODBC,...
 
 The database driver implementation given in this document is
-focussed on developing applications in C/C++. The command collection
+focused on developing applications in C/C++. The command collection
 have been chosen to align with common practice, i.e. queries follow
 a prepare,execute,and fetch_row paradigm. The output is considered
 a regular table. An example of a mini
@@ -51,20 +51,25 @@ main(int argc, char *argv)
 {
 	Mapi	*dbh;
 
-	dbh= mapi_connect("localhost:50001","guest",0,"sql");
-	if(mapi_error(dbh)) die(dbh);
+	dbh = mapi_connect("localhost:50001", "guest", 0, "sql");
+	if (mapi_error(dbh))
+		die(dbh);
 
-	if( mapi_query(dbh,"create table emp(name varchar,age int)")) die(dbh);
+	if (mapi_query(dbh, "create table emp(name varchar, age int)"))
+		die(dbh);
 
-	if( mapi_query(dbh,"insert into emp values(\"John\", 23)") ) die(dbh);
+	if (mapi_query(dbh, "insert into emp values(\"John\", 23)"))
+		die(dbh);
 
-	if( mapi_query(dbh,"insert into emp values(\"Mary\", 22)") ) die(dbh);
+	if (mapi_query(dbh, "insert into emp values(\"Mary\", 22)"))
+		die(dbh);
 
-	if( mapi_query("select * from emp") ) die(stmt);
+	if (mapi_query("select * from emp"))
+		die(stmt);
 
-	while( mapi_fetch_row(dbh)){
-		char *nme = mapi_fetch_field(dbh,0);
-		char *age = mapi_fetch_field(dbh,1);
+	while (mapi_fetch_row(dbh)) {
+		char *nme = mapi_fetch_field(dbh, 0);
+		char *age = mapi_fetch_field(dbh, 1);
 		printf("%s is %s\n", nme, age);
 	}
 
@@ -74,7 +79,7 @@ main(int argc, char *argv)
 
 The mapi_connect() operation establishes a communication channel
 with a running server on the local machine. The user identification
-is the ubiguitous anonymous guest, for whom we do not require a password.
+is the ubiquitous anonymous guest, for whom we do not require a password.
 The query language interface is "sql". Alternatives are the lower
 level languages "mil" and "mal". Future versions are expected to
 recognize also "xcore" and "xquery".
@@ -88,21 +93,21 @@ in many similar application development packages. Queries are shipped
 for execution using mapi_query() and an answer table can be consumed
 one row at a time. In many cases these functions suffice.
 
-The tabular data exchange model is premarily meant to support sql
+The tabular data exchange model is primarily meant to support sql
 (mil,mal) For xml and xcore the engine is expected to generate
 a XPath-like token stream from which the application can built
 the internal representation of the document (e.g. a DOM-tree).
 
 The Mapi interface provides caching of rows at the client side.
-Using mapi_query() will load all tuples into the cache, whereafter
-it can be repeatedly read using mapi_fetc_row()
-of directly accessed (mapi_seek_row()). This facility is particular
+mapi_query() will load all tuples into the cache, after which
+they can be read repeatedly using mapi_fetch_row()
+or directly accessed (mapi_seek_row()). This facility is particularly
 handy when small, but stable query results are repeatedly used
 in the client program.
 
 To ease communication between application code and the cache
 entries, the user can bind the C-variables both for input and
-output to the query parameters, and output colums, respectively.
+output to the query parameters, and output columns, respectively.
 The query parameters are indicated by '?' and may appear anywhere
 in the query template.
 
@@ -199,7 +204,7 @@ lead to synchronization errors. It should also be clear that references
 returned by the API point directly into the administrative structures of Mapi.
 This means that they are valid only for a short period, mostly between
 successive mapi_fetch_row commands.
-A defensive programming style is adviced.
+A defensive programming style is advised.
 Upon an error, the routine mapi_explain gives information about the context of
 the failed call, including the expression shipped and any response received.
 The side-effect is clearing the error status.
@@ -213,7 +218,7 @@ login with {\em username} and {\em password}. If host == NULL, the
 local host with a default port is accessed.
 If username == NULL, the username of the
 owner of the client application containing the Mapi code is used.
-If password == NULL, the password is ommited.
+If password == NULL, the password is omitted.
 The preferred query language is any of \{sql,mil,mal,xcore,xquery\}\\
 The command returns a structure with administration about the interconnect.
 It also contains an explanation when connection to the server fails.
@@ -242,11 +247,11 @@ is the question mark (?).
 
 \item[MapiMsg mapi_quick_query(Mapi mid, char *Command, FILE *fd)]:
 Similar to mapi_query, except that the response of the server is
-not analysed, but shipped immediately to the file indicated.
+not analyzed, but shipped immediately to the file indicated.
 
 \item[MapiMsg mapi_quick_query_array(Mapi mid, char *Command, char **argv, FILE *fd)]:
 Similar to mapi_query, except that the response of the server is
-not analysed, but shipped immediately to the file indicated.
+not analyzed, but shipped immediately to the file indicated.
 
 \item[int mapi_num_fields(Mapi mid)]:
 Return the number of fields in the current row.
@@ -266,7 +271,7 @@ The text retrieved is kept around in a buffer linked with the session
 descriptor from which selective fields can be extracted.
 It returns the number of fields recognized.
 A zero is returned upon encountering end of sequence
-or error. This can be analysed in using mapi_error().
+or error. This can be analyzed in using mapi_error().
 
 \item[int mapi_fetch_all_rows(Mapi mid)]:
 All rows are cached at the client side first. Subsequent calls
@@ -276,7 +281,7 @@ is returned.
 
 \item[int mapi_quick_response(Mapi mid, stream s)]:
 Read the answer to a query and pass the results verbatim
-to a stream. The result is not analysed, nor cached.
+to a stream. The result is not analyzed, nor cached.
 
 \item[MapiMsg mapi_seek_row(Mapi mid, int rownr)];
 Reset the row pointer to the requested row number;
@@ -290,12 +295,12 @@ This is mostly used in combination with fetching all tuples at once.
 \item[char **mapi_fetch_array(Mapi mid)]:
 Returns an array of string pointers to the individual fields.
 A zero is returned upon encountering end of sequence
-or error. This can be analysed in using mapi_error().
+or error. This can be analyzed in using mapi_error().
 
 \item[char *mapi_fetch_field(Mapi mid, int fnr)]:
 Returns a pointer a C-string representation of the value returned.
 A zero is returned upon encountering an error;
-This can be analysed in using mapi_error().
+This can be analyzed in using mapi_error().
 
 \item[MapiMsg mapi_prepare(Mapi mid, char **Command)];
 Move the query to the connection structure. Possibly interact with the
@@ -350,7 +355,7 @@ called when a new query is shipped to the database.
 
 \item[char * mapi_quote(char *name)]:
 Strings in the database should be surrounded by double quotes and
-escape of the charactes \n,\t,...
+escape of the characters \n,\t,...
 
 \item[char * mapi_unquote(char *name)]:
 The reverse action of mapi_quote(), turning the database representation
@@ -366,11 +371,11 @@ offline inspection. Beware that the log file overwrites any
 previous log. It is not intended for recovery.
 
 \item[MapiMsg mapi_ping(Mapi mid)]:
-Test avalability of the server. Returns zero upon success.
+Test availability of the server. Returns zero upon success.
 
 \end{description}
 
-The remaining operations are wrappers around the datastructures
+The remaining operations are wrappers around the data structures
 maintained. Note that column properties are derived from the
 table output returned from the server.
 \begin{description}
@@ -1168,8 +1173,8 @@ MapiMsg mapi_explain(Mapi mid, FILE *fd)
 The routine mapi_query is one of the most heavily used ones.
 It sends a complete Monet statement for execution
 (i.e., ending in a newline; possibly including additional newlines).
-Interaction with the server is speed-up using block based interaction.
-The query is retained in the Mapi structure to repeate shipping.
+Interaction with the server is sped up using block based interaction.
+The query is retained in the Mapi structure to repeat shipping.
 @= prepareQuery
 	if( cmd==0){
 		/* re-use the previous query */
