@@ -30,7 +30,6 @@ public class MonetPreparedStatement
 	private final String pQuery;
 
 	private final int[] pos;
-	private final Object[] type;
 	private final String[] value;
 
 	/**
@@ -143,7 +142,6 @@ public class MonetPreparedStatement
 		// initialize the ? container arrays
 		int size = tpos.size();
 		pos = new int[size];
-		type = new Object[size];
 		value = new String[size];
 
 		// fill the position array
@@ -173,7 +171,6 @@ public class MonetPreparedStatement
 	 */
 	public void clearParameters() {
 		for (int i = 0; i < pos.length; i++) {
-			type[i] = null;
 			value[i] = null;
 		}
 	}
@@ -185,6 +182,7 @@ public class MonetPreparedStatement
 	 * the simpler form of statements handled by the methods executeQuery and
 	 * executeUpdate.
 	 * <br /><br />
+
 	 * The execute method returns a boolean to indicate the form of the first
 	 * result. You must call either the method getResultSet or getUpdateCount
 	 * to retrieve the result; you must call getMoreResults to move to any
@@ -215,7 +213,10 @@ public class MonetPreparedStatement
 	 *                      statement does not return a ResultSet object
 	 */
 	public ResultSet executeQuery() throws SQLException{
-		return(super.executeQuery(transform()));
+		if (execute() != true)
+			throw new SQLException("Query did not produce a result set");
+
+		return(getResultSet());
 	}
 
 	/** override the executeQuery from the Statement to throw an SQLException*/
@@ -234,7 +235,10 @@ public class MonetPreparedStatement
 	 *                     statement returns a ResultSet object
 	 */
 	public int executeUpdate() throws SQLException {
-		return(super.executeUpdate(transform()));
+		if (execute() != false)
+			throw new SQLException("Query produced a result set");
+
+		return(getUpdateCount());
 	}
 
 	/** override the executeUpdate from the Statement to throw an SQLException*/
@@ -287,6 +291,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setArray(int i, Array x) throws SQLException {
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -308,6 +313,7 @@ public class MonetPreparedStatement
 	public void setAsciiStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -322,6 +328,7 @@ public class MonetPreparedStatement
 	public void setBigDecimal(int parameterIndex, BigDecimal x)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -342,6 +349,7 @@ public class MonetPreparedStatement
 	public void setBinaryStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -353,6 +361,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setBlob(int i, Blob x) throws SQLException {
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -365,6 +374,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setBoolean(int parameterIndex, boolean x) throws SQLException {
+		setValue(parameterIndex, "" + x);
 	}
 
 	/**
@@ -376,6 +386,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setByte(int parameterIndex, byte x) throws SQLException {
+		setValue(parameterIndex, "" + x);
 	}
 
 	/**
@@ -389,6 +400,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setBytes(int parameterIndex, byte[] x) throws SQLException {
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -413,6 +425,7 @@ public class MonetPreparedStatement
 		int length)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -424,6 +437,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setClob(int i, Clob x) throws SQLException {
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -456,6 +470,7 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -467,6 +482,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setDouble(int parameterIndex, double x) throws SQLException {
+		setValue(parameterIndex, "" + x);
 	}
 
 	/**
@@ -478,6 +494,7 @@ public class MonetPreparedStatement
 	 * @param SQLException if a database access error occurs
 	 */
 	public void setFloat(int parameterIndex, float x) throws SQLException {
+		setValue(parameterIndex, "" + x);
 	}
 
 	/**
@@ -489,6 +506,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setInt(int parameterIndex, int x) throws SQLException {
+		setValue(parameterIndex, "" + x);
 	}
 
 	/**
@@ -500,6 +518,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setLong(int parameterIndex, long x) throws SQLException {
+		setValue(parameterIndex, "" + x);
 	}
 
 	/**
@@ -512,6 +531,8 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setNull(int parameterIndex, int sqlType) throws SQLException {
+		// should be: "CAST(NULL AS " + asMonetType(sqlType) + ")"
+		setValue(parameterIndex, "NULL");
 	}
 
 	/**
@@ -540,6 +561,7 @@ public class MonetPreparedStatement
 	public void setNull(int paramIndex, int sqlType, String typeName)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -580,6 +602,7 @@ public class MonetPreparedStatement
 			// catches:
 			// BigDecimal, BigInteger, Byte, Double, Float, Integer, Long, Short
 		}
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -596,6 +619,7 @@ public class MonetPreparedStatement
 	public void setObject(int parameterIndex, Object x, int targetSqlType)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -632,6 +656,7 @@ public class MonetPreparedStatement
 		int scale)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -644,6 +669,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setRef(int i, Ref x) throws SQLException {
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -655,6 +681,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setShort(int parameterIndex, short x) throws SQLException {
+		setValue(parameterIndex, "" + x);
 	}
 
 	/**
@@ -668,6 +695,10 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setString(int parameterIndex, String x) throws SQLException {
+		setValue(
+			parameterIndex,
+			"'" + x.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'"
+		);
 	}
 
 	/**
@@ -700,6 +731,7 @@ public class MonetPreparedStatement
 	public void setTime(int parameterIndex, Time x, Calendar cal)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -735,6 +767,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -761,6 +794,7 @@ public class MonetPreparedStatement
 	public void setUnicodeStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
@@ -773,9 +807,26 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setURL(int parameterIndex, URL x) throws SQLException {
+		throw new SQLException("Operation currently not supported!");
 	}
 
 	//== end methods interface PreparedStatement
+
+	/**
+	 * Sets the given index with the supplied value. If the given index is
+	 * out of bounds, and SQLException is thrown.  The given value should
+	 * never be null.
+	 *
+	 * @param index the parameter index
+	 * @param val the exact String representation to set
+	 * @throws SQLException if the given index is out of bounds
+	 */
+	private void setValue(int index, String val) throws SQLException {
+		if (index <= 0 || index > pos.length) throw
+			new SQLException("No such parameter index: " + index);
+
+		value[index - 1] = val;
+	}
 
 	/**
 	 * Transforms the prepare query into a simple SQL query by replacing
@@ -785,7 +836,17 @@ public class MonetPreparedStatement
 	 * @throws SQLException if not all columns are set
 	 */
 	private String transform() throws SQLException {
-		// do something with the pos and values/types.
-		return(null);
+		StringBuffer ret = new StringBuffer(pQuery);
+		// check if all columns are set and do a replace
+		int offset = 0;
+		for (int i = 0; i < pos.length; i++) {
+			if (value[i] == null) throw
+				new SQLException("Cannot execute, parameter " +  (i + 1) + " is missing.");
+
+			ret.replace(offset + pos[i], offset + pos[i] + 1, value[i]);
+			offset += value[i].length() - 1;
+		}
+
+		return(ret.toString());
 	}
 }

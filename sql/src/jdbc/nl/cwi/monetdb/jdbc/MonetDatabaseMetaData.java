@@ -1360,8 +1360,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the quoted string
 	 */
 	private static String dq(String in) {
-		return("\"" + escapeQuotes(in) + "\"");
+		return("\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"");
 	}
+
 	//== end helper methods
 
 	/**
