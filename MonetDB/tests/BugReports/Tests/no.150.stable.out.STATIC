@@ -40,7 +40,6 @@ stdout of test 'no.150` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 module("jabberwocky");
-!ERROR: TBL_M_load: jabberwocky not a module.
 !ERROR: module(jabberwocky): load error.
 quit;
 
