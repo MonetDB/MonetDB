@@ -200,10 +200,13 @@ command:             {  int i, l = strlen(yytext);
                         Symbol(*t);                                      }
 ("-")?{D}+"LL"        { lng val, *p = &val; int l=sizeof(lng);
 			lngFromStr(yytext, &l, &p); 
-		        Vector(TOK_CONSTANT, TYPE_int, lval, val, 0);}
-("-")?{D}+            { int val, *p = &val; int l=sizeof(int);
-			intFromStr(yytext, &l, &p); 
-		        Vector(TOK_CONSTANT, TYPE_int, ival, val, 0);}
+		        Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
+("-")?{D}+            { lng val, *p = &val; int l=sizeof(lng);
+			lngFromStr(yytext, &l, &p); 
+			if (val > ((lng) GDK_int_min) \
+			 && val <= ((lng) GDK_int_max))
+		          Vector(TOK_CONSTANT, TYPE_int, ival, ((int) val), 0);
+		        Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
 {D}+"@"{D}+           { oid obj, *p=&obj; int l=sizeof(oid);
 			OIDfromStr(yytext, &l, &p);
 			Vector(TOK_CONSTANT, TYPE_oid, oval, obj, 0);         } 

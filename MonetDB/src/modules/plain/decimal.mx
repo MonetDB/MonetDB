@@ -1229,7 +1229,7 @@ int decimal_from_dbl(decimal **ret, dbl *val) {
 	} else {
 		char buf[64];
 		int zero = 0;
-		sprintf(buf, "%1.19E", *val);
+		sprintf(buf, "%g", *val);
 		decimal_fromstr(buf, &zero, ret);
 	}
 	return GDK_SUCCEED;
@@ -1244,7 +1244,7 @@ int decimal_from_flt(decimal **ret, flt* val){
 	} else {
 		char buf[32];
 		int zero = 0;
-		sprintf(buf, "%1.9E", *val);
+		sprintf(buf, "%g", *val);
 		decimal_fromstr(buf, &zero, ret);
 	}
 	return GDK_SUCCEED;

@@ -77,6 +77,7 @@ whether a value is nil).
 	@:mel_isnil(flt,flt)@
 	@:mel_isnil(lng,lng)@
 	@:mel_isnil(dbl,dbl)@
+	@:mel_isnil(str,str)@
 
 @- comparisons { <, <=, =, !=, >=, > } 
 @T 
@@ -644,6 +645,10 @@ int @1_isnil(bit *retval, @1* val) {
 @:c_isnil(flt)@
 @:c_isnil(lng)@
 @:c_isnil(dbl)@
+
+int str_isnil(bit *retval, str val) {
+        *retval = (*(chr*) (val) == GDK_chr_min);
+}
 
 int any_isnil(bit *retval, ptr val, int tpe) {
 	ptr nilval = ATOMnilptr(tpe);
