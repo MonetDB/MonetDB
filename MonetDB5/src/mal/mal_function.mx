@@ -374,7 +374,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
                 }
                 if( (getVarDepth(mb,getArg(p,k)) >top  || fnd == 0)  &&
                     !isTmpVar(mb, p->argv[k])  ){
-                    GDKerror("'%s' may be used before being set in %s[%d]\n",
+                    GDKerror("'%s' may not be used before being set in %s[%d]\n",
                         getVarName(mb,getArg(p,k)), nme,pc);
                     mb->errors++;
                 }
