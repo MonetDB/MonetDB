@@ -141,17 +141,17 @@ end function;
 #
 #  # casting bats of bats should have worked with [dbl] but doesn't -- BUG!
 function conv2sht(b:bat[any::1,any]):bat[any::1,sht];
-	ub_a := multiplex.sht(b);
+	ub_a := sht(b);
 	return ub_a;
 end function;
 #  PROC conv2sht(BAT[any::1,any] b):BAT[any::1,sht] := {RETURN [sht](b);}
 function conv2flt(b:bat[any::1,any]):bat[any::1,flt];
-	vb_a := multiplex.flt(b);
+	vb_a := flt(b);
 	return vb_a;
 end function;
 #  PROC conv2flt(BAT[any::1,any] b):BAT[any::1,flt] := {RETURN [flt](b);}
 function conv2dbl(b:bat[any::1,any]):bat[any::1,dbl];
-	wb_a := multiplex.dbl(b);
+	wb_a := dbl(b);
 	return wb_a;
 end function;
 #  PROC conv2dbl(BAT[any::1,any] b):BAT[any::1,dbl] := {RETURN [dbl](b);}
@@ -162,9 +162,9 @@ function sqrt(x:flt):dbl;
 	return yb_a;
 end function;
 #  PROC sqrt(flt x):dbl := {RETURN sqrt(dbl(x));}
-function sqrt_multiplex(x:bat[any::1,flt]):bat[any::1,dbl];
-	ac_a := multiplex.dbl(x);
-	bc_a := multiplex.sqrt(ac_a);
+function multiplex("sqrt",x:bat[any::1,flt]):bat[any::1,dbl];
+	ac_a := dbl(x);
+	bc_a := sqrt(ac_a);
 	return bc_a;
 end function;
 #  PROC [sqrt](BAT[any::1,flt] x):BAT[any::1,dbl] := {RETURN [sqrt]([dbl](x));}
@@ -174,9 +174,9 @@ function log(x:flt):dbl;
 	return dc_a;
 end function;
 #  PROC log(flt x):dbl := {RETURN log(dbl(x));}
-function log_multiplex(x:bat[any::1,flt]):bat[any::1,dbl];
-	ec_a := multiplex.dbl(x);
-	fc_a := multiplex.log(ec_a);
+function multiplex("log",x:bat[any::1,flt]):bat[any::1,dbl];
+	ec_a := dbl(x);
+	fc_a := log(ec_a);
 	return fc_a;
 end function;
 #  PROC [log](BAT[any::1,flt] x):BAT[any::1,dbl] := {RETURN [log]([dbl](x));}
@@ -208,7 +208,7 @@ end function;
 #  }
 #
 function square(x:bat[any::1,any::2]):bat[any::1,any::2];
-	jc_a := multiplex.*(x,x);
+	jc_a := *(x,x);
 	return jc_a;
 end function;
 #  PROC square(bat[any::1,any::2] x):BAT[any::1,any::2] := {RETURN [*](x, x );}
@@ -275,7 +275,7 @@ end function;
 	TCluster:= init_clustertype();
 #  VAR TCluster := init_clustertype();
 	cseq:= take("cseq");
-	cseq := multiplex.encode(TCluster,cseq);
+	cseq := multiplex.script("encode",TCluster,cseq);
 #  cseq := [encode](TCluster,cseq);
 #
 #
@@ -712,7 +712,7 @@ barrier	ii_a:= ji_a;
 ##line 1305 "../../../src/gmm/gmm.mx"
 	covar:= find(gmm,"Covar");
 #  VAR covar    := gmm.find("Covar");
-	covar := multiplex.nestedop("dbl",covar);
+	covar := multiplex.script("nestedop","dbl",covar);
 #                  covar := [nestedop]( "dbl", covar);
 #  
 ##line 107 "../../../src/gmm/gmm.mx"
@@ -727,7 +727,7 @@ barrier	ii_a:= ji_a;
 barrier	mi_a:= bunStream(Nthreads,mi_aH,mi_aT);
 #    covar@ [Nthreads]batloop(){
 #      VAR _ivariances_result := [inv]($t
-	_ivariances_result:= multiplex.inv(mi_aT);
+	_ivariances_result:= multiplex.script("inv",mi_aT);
 #	   );
 	ni_a := lock_set(ivariances_lock);
 #      lock_set(ivariances_lock);
@@ -780,14 +780,14 @@ barrier	ri_a:= true;
 #	{|
 barrier	si_a:= true;
 	BAT_WRITE:= take("BAT_WRITE");
-	ti_a := multiplex.*(isqrtdet_a,isqrtdet_b);
+	ti_a := *(isqrtdet_a,isqrtdet_b);
 	isqrtdet_a := access(ti_a,BAT_WRITE);
 #	   isqrtdet_a := [*](isqrtdet_a,isqrtdet_b).access(BAT_WRITE);
-	isqrtdet_c := multiplex.*(isqrtdet_c,isqrtdet_d);
+	isqrtdet_c := *(isqrtdet_c,isqrtdet_d);
 #	   isqrtdet_c := [*](isqrtdet_c,isqrtdet_d);
 end	si_a;
 #	 |}
-	ui_a := multiplex.:*=(isqrtdet_a,isqrtdet_c);
+	ui_a := multiplex.script(":*=",isqrtdet_a,isqrtdet_c);
 #	 [:*=](isqrtdet_a,isqrtdet_c);
 #      }
 #
@@ -800,14 +800,14 @@ end	si_a;
 #      {
 #	{|
 barrier	vi_a:= true;
-	wi_a := multiplex.*(isqrtdet_e,isqrtdet_f);
+	wi_a := *(isqrtdet_e,isqrtdet_f);
 	isqrtdet_e := access(wi_a,BAT_WRITE);
 #	   isqrtdet_e := [*](isqrtdet_e,isqrtdet_f).access(BAT_WRITE);
-	isqrtdet_g := multiplex.*(isqrtdet_g,isqrtdet_h);
+	isqrtdet_g := *(isqrtdet_g,isqrtdet_h);
 #	   isqrtdet_g := [*](isqrtdet_g,isqrtdet_h);
 end	vi_a;
 #	 |}
-	xi_a := multiplex.:*=(isqrtdet_e,isqrtdet_g);
+	xi_a := multiplex.script(":*=",isqrtdet_e,isqrtdet_g);
 #	 [:*=](isqrtdet_e,isqrtdet_g);
 #      }
 #
@@ -816,7 +816,7 @@ end	vi_a;
 #
 end	ri_a;
 #       |}
-	yi_a := multiplex.:*=(isqrtdet_a,isqrtdet_e);
+	yi_a := multiplex.script(":*=",isqrtdet_a,isqrtdet_e);
 #       [:*=](isqrtdet_a,isqrtdet_e);      
 #    }
 #
@@ -838,7 +838,7 @@ end	ri_a;
 #
 ##line 1309 "../../../src/gmm/gmm.mx"
 #
-	isqrtdet := multiplex.sqrt(isqrtdet);
+	isqrtdet := sqrt(isqrtdet);
 #  isqrtdet     := [sqrt](isqrtdet);
 #  
 ##line 1227 "../../../src/gmm/gmm.mx"
@@ -881,11 +881,11 @@ end	cj_a;
 ##line 1311 "../../../src/gmm/gmm.mx"
 #
 	hj_a := find(gmm,"Mean");
-	means:= multiplex.join(cIdx,hj_a);
+	means:= multiplex.script("join",cIdx,hj_a);
 #  VAR means    := [join]( const cIdx, gmm.find("Mean") );
-	ivars:= multiplex.join(cIdx,ivariances);
+	ivars:= multiplex.script("join",cIdx,ivariances);
 #  VAR ivars    := [join]( const cIdx, ivariances );
-	diffs:= multiplex.nestedop("dmahalanobis_i_diagcov",xs,means,ivars);
+	diffs:= multiplex.script("nestedop","dmahalanobis_i_diagcov",xs,means,ivars);
 #  VAR diffs    := [nestedop]("dmahalanobis_i_diagcov",xs,means,ivars);
 #  
 ##line 130 "../../../src/gmm/gmm.mx"
@@ -919,14 +919,14 @@ barrier	ij_a:= true;
 #      {
 #	{|
 barrier	jj_a:= true;
-	kj_a := multiplex.+(dists_a,dists_b);
+	kj_a := +(dists_a,dists_b);
 	dists_a := access(kj_a,BAT_WRITE);
 #	   dists_a := [+](dists_a,dists_b).access(BAT_WRITE);
-	dists_c := multiplex.+(dists_c,dists_d);
+	dists_c := +(dists_c,dists_d);
 #	   dists_c := [+](dists_c,dists_d);
 end	jj_a;
 #	 |}
-	lj_a := multiplex.:+=(dists_a,dists_c);
+	lj_a := multiplex.script(":+=",dists_a,dists_c);
 #	 [:+=](dists_a,dists_c);
 #      }
 #
@@ -939,14 +939,14 @@ end	jj_a;
 #      {
 #	{|
 barrier	mj_a:= true;
-	nj_a := multiplex.+(dists_e,dists_f);
+	nj_a := +(dists_e,dists_f);
 	dists_e := access(nj_a,BAT_WRITE);
 #	   dists_e := [+](dists_e,dists_f).access(BAT_WRITE);
-	dists_g := multiplex.+(dists_g,dists_h);
+	dists_g := +(dists_g,dists_h);
 #	   dists_g := [+](dists_g,dists_h);
 end	mj_a;
 #	 |}
-	oj_a := multiplex.:+=(dists_e,dists_g);
+	oj_a := multiplex.script(":+=",dists_e,dists_g);
 #	 [:+=](dists_e,dists_g);
 #      }
 #
@@ -955,7 +955,7 @@ end	mj_a;
 #
 end	ij_a;
 #       |}
-	pj_a := multiplex.:+=(dists_a,dists_e);
+	pj_a := multiplex.script(":+=",dists_a,dists_e);
 #       [:+=](dists_a,dists_e);      
 #    }
 #
@@ -990,7 +990,7 @@ end	ij_a;
 	isdet:= join(cIdx,isqrtdet);
 #  VAR isdet    := join( cIdx, isqrtdet );
 	N:= take("N");
-	act:= multiplex.multivariate_gaussian_pdf_diagcov(dists,isdet,N);
+	act:= multiplex.script("multivariate_gaussian_pdf_diagcov",dists,isdet,N);
 #  VAR act      := [multivariate_gaussian_pdf_diagcov]( dists, isdet, N );
 	dists := nil;
 #                  dists  := nil;
@@ -1001,10 +1001,10 @@ end	ij_a;
 ##line 1331 "../../../src/gmm/gmm.mx"
 #
 	qj_a := find(gmm,"Prior");
-	rj_a := multiplex.dbl(qj_a);
+	rj_a := dbl(qj_a);
 	priors:= join(cIdx,rj_a);
 #  VAR priors   := join( cIdx, [dbl](gmm.find("Prior")) );
-	act := multiplex.*(act,priors);
+	act := *(act,priors);
 #  act          := [*]( act, priors );
 	sj_a := reverse(xIdx);
 	tj_a := join(sj_a,act);
@@ -1012,13 +1012,13 @@ end	ij_a;
 #  VAR s        := {sum}( xIdx.reverse.join(act) );
 ##  s            := [ [>](s,const MIN_S)? s : const MIN_S ];
 ##  s            := [ [!=](s,const dbl(0))? s : const 1.0LL ];
-	uj_a := multiplex.>(s,MIN_S);
+	uj_a := >(s,MIN_S);
 	vj_a := M2m.ifthen(uj_a,s,1.0LL);
 	wj_a:= M2m.batconstruct1(vj_a);
 	s := wj_a;
 #  s            := [ [>](s,const MIN_S)? s : const 1.0LL ];
 	xj_a := join(xIdx,s);
-	post:= multiplex./(act,xj_a);
+	post:= /(act,xj_a);
 #  VAR post     := [/](act,xIdx.join(s));
 	priors := nil;
 #                  priors := nil;
@@ -1030,8 +1030,8 @@ end	ij_a;
 #
 #  
 ##line 1353 "../../../src/gmm/gmm.mx"
-	yj_a := multiplex.log(s);
-	loglikelihood := multiplex.*(yj_a,-1);
+	yj_a := log(s);
+	loglikelihood := *(yj_a,-1);
 #  loglikelihood := [*]([log](s), const -1);
 	ak_a := join(Ib,loglikelihood);
 	loglikelihood := pump.sum(ak_a);
@@ -1053,11 +1053,11 @@ end	gk_a;
 #    debug("Iter %d", iter);    
 barrier	ik_a:= >(iter,1);
 #  IF (iter>1) {
-	jk_a := multiplex.-(loglikelihood,olde);
-	deltall:= multiplex.abs(jk_a);
+	jk_a := -(loglikelihood,olde);
+	deltall:= multiplex.script("abs",jk_a);
 #    VAR deltall := [abs]([-](loglikelihood, olde));
 ##print( loglikelihood, olde, deltall );
-	kk_a := multiplex.<(deltall,1.0LL);
+	kk_a := <(deltall,1.0LL);
 	converged:= uselect(kk_a,1);
 #    VAR converged := [<](deltall, const 1.0LL).uselect(true);
 barrier	lk_a:= bunStream(converged,lk_aH,lk_aT);
@@ -1133,14 +1133,14 @@ barrier	pk_a:= >(ok_a,0);
 	sl_a := find(gmmfinal,"Mean");
 #  [insert]( gmmfinal.find("Mean"),
 	tl_a := find(gmm,"Mean");
-	ul_a := multiplex.join(fIdx,tl_a);
-	vl_a := multiplex.insert(sl_a,ul_a);
+	ul_a := multiplex.script("join",fIdx,tl_a);
+	vl_a := multiplex.script("insert",sl_a,ul_a);
 #            [join](const fIdx, gmm.find("Mean")) );
 	wl_a := find(gmmfinal,"Covar");
 #  [insert]( gmmfinal.find("Covar"),
 	xl_a := find(gmm,"Covar");
-	yl_a := multiplex.join(fIdx,xl_a);
-	am_a := multiplex.insert(wl_a,yl_a);
+	yl_a := multiplex.script("join",fIdx,xl_a);
+	am_a := multiplex.script("insert",wl_a,yl_a);
 #            [join](const fIdx, gmm.find("Covar")) );
 #
 	bm_a := find(gmm,"init_variances");
@@ -1201,11 +1201,11 @@ end	im_a;
 	xm_a := insert(restgmm,"Prior",wm_a);
 #  restgmm.insert( "Prior", join(fIdx, gmm.find("Prior")) );
 	ym_a := find(gmm,"Mean");
-	an_a := multiplex.join(fIdx,ym_a);
+	an_a := multiplex.script("join",fIdx,ym_a);
 	bn_a := insert(restgmm,"Mean",an_a);
 #  restgmm.insert( "Mean",  [join](const fIdx, gmm.find("Mean")) );
 	cn_a := find(gmm,"Covar");
-	dn_a := multiplex.join(fIdx,cn_a);
+	dn_a := multiplex.script("join",fIdx,cn_a);
 	en_a := insert(restgmm,"Covar",dn_a);
 #  restgmm.insert( "Covar", [join](const fIdx, gmm.find("Covar")) );
 #
@@ -1375,14 +1375,14 @@ end	ik_a;
 	to_a := join(so_a,post);
 	newpr:= pump.sum(to_a);
 #   VAR newpr     := {sum}( cIdx.reverse.join(post) );
-	newpr := multiplex.flt(newpr);
+	newpr := flt(newpr);
 #                  newpr := [flt]( newpr );
 #   VAR newpriors := [/]( newpr,
 	uo_a := reverse(Ib);
 	vo_a := histogram(uo_a);
 	wo_a := reverse(mImgIdx);
 	xo_a := join(wo_a,vo_a);
-	newpriors:= multiplex./(newpr,xo_a);
+	newpriors:= /(newpr,xo_a);
 #                         mImgIdx.reverse.join( Ib.reverse.histogram ) );
 #debug("NP: #post %d, #newpr %d, #newpriors %d, #Ndata %d",
 	yo_a := reverse(cIdx);
@@ -1433,9 +1433,9 @@ end	kp_a;
 #
 ##line 1443 "../../../src/gmm/gmm.mx"
 #
-	xhc:= multiplex.nestedop("*",xs,post);
+	xhc:= multiplex.script("nestedop","*",xs,post);
 #   VAR xhc       := [nestedop]( "*", xs, const post );
-	xhc := multiplex.nestedop("flt",xhc);
+	xhc := multiplex.script("nestedop","flt",xhc);
 #                  xhc := [nestedop]("flt", xhc);
 #   
 ##line 1227 "../../../src/gmm/gmm.mx"
@@ -1512,7 +1512,7 @@ end	aq_a;
 #                  gxhc    := nil;
 	xhc := nil;
 #                  xhc     := nil;
-	newmeans:= multiplex.nestedop("/",newc,newpr);
+	newmeans:= multiplex.script("nestedop","/",newc,newpr);
 #   VAR newmeans  := [nestedop]("/", newc, const newpr);
 	newc := nil;
 #                  newc    := nil;
@@ -1550,17 +1550,17 @@ end	hq_a;
 #
 ##line 1453 "../../../src/gmm/gmm.mx"
 #
-	hdiffs:= multiplex.nestedop("-",xs,means);
+	hdiffs:= multiplex.script("nestedop","-",xs,means);
 #   VAR hdiffs    := [nestedop]("-",xs,means);
 	xs := nil;
 #                  xs      := nil;
 	means := nil;
 #                  means   := nil;
-	hdiffs := multiplex.square(hdiffs);
+	hdiffs := multiplex.script("square",hdiffs);
 #   hdiffs        := [square](hdiffs);
-	hdiffs := multiplex.nestedop("*",hdiffs,post);
+	hdiffs := multiplex.script("nestedop","*",hdiffs,post);
 #   hdiffs	 := [nestedop]("*",hdiffs,const post);
-	hdiffs := multiplex.nestedop("flt",hdiffs);
+	hdiffs := multiplex.script("nestedop","flt",hdiffs);
 #                  hdiffs := [nestedop]("flt", hdiffs);
 #   
 ##line 1227 "../../../src/gmm/gmm.mx"
@@ -1637,7 +1637,7 @@ end	wq_a;
 #                  ghdiffs := nil;
 	hdiffs := nil;
 #                  hdiffs  := nil;
-	newvars:= multiplex.nestedop("/",diffs,newpr);
+	newvars:= multiplex.script("nestedop","/",diffs,newpr);
 #   VAR newvars   := [nestedop]("/",diffs,const newpr);
 	diffs := nil;
 #                  diffs   := nil;
@@ -1679,14 +1679,14 @@ barrier	cr_a:= true;
 #      {
 #	{|
 barrier	dr_a:= true;
-	er_a := multiplex.min(minvars_a,minvars_b);
+	er_a := multiplex.script("min",minvars_a,minvars_b);
 	minvars_a := access(er_a,BAT_WRITE);
 #	   minvars_a := [min](minvars_a,minvars_b).access(BAT_WRITE);
-	minvars_c := multiplex.min(minvars_c,minvars_d);
+	minvars_c := multiplex.script("min",minvars_c,minvars_d);
 #	   minvars_c := [min](minvars_c,minvars_d);
 end	dr_a;
 #	 |}
-	fr_a := multiplex.:min=(minvars_a,minvars_c);
+	fr_a := multiplex.script(":min=",minvars_a,minvars_c);
 #	 [:min=](minvars_a,minvars_c);
 #      }
 #
@@ -1699,14 +1699,14 @@ end	dr_a;
 #      {
 #	{|
 barrier	gr_a:= true;
-	hr_a := multiplex.min(minvars_e,minvars_f);
+	hr_a := multiplex.script("min",minvars_e,minvars_f);
 	minvars_e := access(hr_a,BAT_WRITE);
 #	   minvars_e := [min](minvars_e,minvars_f).access(BAT_WRITE);
-	minvars_g := multiplex.min(minvars_g,minvars_h);
+	minvars_g := multiplex.script("min",minvars_g,minvars_h);
 #	   minvars_g := [min](minvars_g,minvars_h);
 end	gr_a;
 #	 |}
-	ir_a := multiplex.:min=(minvars_e,minvars_g);
+	ir_a := multiplex.script(":min=",minvars_e,minvars_g);
 #	 [:min=](minvars_e,minvars_g);
 #      }
 #
@@ -1715,7 +1715,7 @@ end	gr_a;
 #
 end	cr_a;
 #       |}
-	jr_a := multiplex.:min=(minvars_a,minvars_e);
+	jr_a := multiplex.script(":min=",minvars_a,minvars_e);
 #       [:min=](minvars_a,minvars_e);      
 #    }
 #
@@ -1737,12 +1737,12 @@ end	cr_a;
 #
 ##line 1471 "../../../src/gmm/gmm.mx"
 #
-	covarsmall:= multiplex.<(minvars,MIN_COVAR);
+	covarsmall:= <(minvars,MIN_COVAR);
 #   VAR covarsmall    := [<](minvars,const MIN_COVAR);
-	covarnil:= multiplex.isnil(minvars);
+	covarnil:= multiplex.script("isnil",minvars);
 #   VAR covarnil      := [isnil](minvars);
-	kr_a := multiplex.or(covarsmall,covarnil);
-	covarnotsmall:= multiplex.not(kr_a);
+	kr_a := or(covarsmall,covarnil);
+	covarnotsmall:= not(kr_a);
 #   VAR covarnotsmall := [not]([or](covarsmall,covarnil));
 	covarsmall := nil;
 #                  covarsmall := nil;
@@ -1909,14 +1909,14 @@ barrier	ys_a:= =(iter,Niter);
 	cu_a := find(gmmfinal,"Mean");
 #  [insert]( gmmfinal.find("Mean"),
 	du_a := find(gmm,"Mean");
-	eu_a := multiplex.join(fIdx,du_a);
-	fu_a := multiplex.insert(cu_a,eu_a);
+	eu_a := multiplex.script("join",fIdx,du_a);
+	fu_a := multiplex.script("insert",cu_a,eu_a);
 #            [join](const fIdx, gmm.find("Mean")) );
 	gu_a := find(gmmfinal,"Covar");
 #  [insert]( gmmfinal.find("Covar"),
 	hu_a := find(gmm,"Covar");
-	iu_a := multiplex.join(fIdx,hu_a);
-	ju_a := multiplex.insert(gu_a,iu_a);
+	iu_a := multiplex.script("join",fIdx,hu_a);
+	ju_a := multiplex.script("insert",gu_a,iu_a);
 #            [join](const fIdx, gmm.find("Covar")) );
 #
 	ku_a := find(gmm,"init_variances");
@@ -2006,7 +2006,7 @@ end function;
 #
 #
 ##line 1591 "../../../src/gmm/gmm.mx"
-function cumsum_multiplex(xs:bat[any::1,any]):bat[any::1,lng];
+function multiplex("cumsum",xs:bat[any::1,any]):bat[any::1,lng];
 #  PROC [cumsum](BAT[any::1,any] xs): BAT[any::1,lng] := {
 	dv_a := htype(xs);
 	ev_a := count(xs);
@@ -2036,11 +2036,11 @@ function randseq(Nsamples:int, prior:bat[int,flt]):bat[void,any::1];
 	res:= new(oid,iv_a,Nsamples);
 #    VAR res := new(oid, prior.htype,Nsamples);
 	jv_a := randseq(Nsamples);
-	samp:= multiplex.lng(jv_a);
+	samp:= lng(jv_a);
 #    VAR samp := [lng](randseq(Nsamples));
-	kv_a := multiplex.*(prior,RAND_MAX);
-	lv_a := multiplex.int(kv_a);
-	mv_a := multiplex.cumsum(lv_a);
+	kv_a := *(prior,RAND_MAX);
+	lv_a := int(kv_a);
+	mv_a := multiplex.script("cumsum",lv_a);
 	cint:= reverse(mv_a);
 #    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
 	ib:= lng(0);
@@ -2051,9 +2051,9 @@ barrier	nv_a:= bunStream(cint,nv_aH,nv_aT);
 #      VAR ie := $h;
 #      # a poor man's interval-join
 #      res.insert(
-	ov_a := multiplex.>(samp,ib);
-	pv_a := multiplex.<=(samp,ie);
-	qv_a := multiplex.and(ov_a,pv_a);
+	ov_a := >(samp,ib);
+	pv_a := <=(samp,ie);
+	qv_a := and(ov_a,pv_a);
 	rv_a := uselect(qv_a,1);
 #	[and]( [>](samp,ib), [<=](samp,ie) ).uselect(true).project($t) 
 	sv_a := project(rv_a,nv_aT);
@@ -2085,11 +2085,11 @@ function randseq(Nsamples:int, prior:bat[TCluster,flt]):bat[void,any::1];
 	res:= new(oid,xv_a,Nsamples);
 #    VAR res := new(oid, prior.htype,Nsamples);
 	yv_a := randseq(Nsamples);
-	samp:= multiplex.lng(yv_a);
+	samp:= lng(yv_a);
 #    VAR samp := [lng](randseq(Nsamples));
-	aw_a := multiplex.*(prior,RAND_MAX);
-	bw_a := multiplex.int(aw_a);
-	cw_a := multiplex.cumsum(bw_a);
+	aw_a := *(prior,RAND_MAX);
+	bw_a := int(aw_a);
+	cw_a := multiplex.script("cumsum",bw_a);
 	cint:= reverse(cw_a);
 #    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
 	ib:= lng(0);
@@ -2100,9 +2100,9 @@ barrier	dw_a:= bunStream(cint,dw_aH,dw_aT);
 #      VAR ie := $h;
 #      # a poor man's interval-join
 #      res.insert(
-	ew_a := multiplex.>(samp,ib);
-	fw_a := multiplex.<=(samp,ie);
-	gw_a := multiplex.and(ew_a,fw_a);
+	ew_a := >(samp,ib);
+	fw_a := <=(samp,ie);
+	gw_a := and(ew_a,fw_a);
 	hw_a := uselect(gw_a,1);
 #	[and]( [>](samp,ib), [<=](samp,ie) ).uselect(true).project($t) 
 	iw_a := project(hw_a,dw_aT);
@@ -2134,11 +2134,11 @@ function randseq(Nsamples:int, prior:bat[void,flt]):bat[void,any::1];
 	res:= new(oid,nw_a,Nsamples);
 #    VAR res := new(oid, prior.htype,Nsamples);
 	ow_a := randseq(Nsamples);
-	samp:= multiplex.lng(ow_a);
+	samp:= lng(ow_a);
 #    VAR samp := [lng](randseq(Nsamples));
-	pw_a := multiplex.*(prior,RAND_MAX);
-	qw_a := multiplex.int(pw_a);
-	rw_a := multiplex.cumsum(qw_a);
+	pw_a := *(prior,RAND_MAX);
+	qw_a := int(pw_a);
+	rw_a := multiplex.script("cumsum",qw_a);
 	cint:= reverse(rw_a);
 #    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
 	ib:= lng(0);
@@ -2149,9 +2149,9 @@ barrier	sw_a:= bunStream(cint,sw_aH,sw_aT);
 #      VAR ie := $h;
 #      # a poor man's interval-join
 #      res.insert(
-	tw_a := multiplex.>(samp,ib);
-	uw_a := multiplex.<=(samp,ie);
-	vw_a := multiplex.and(tw_a,uw_a);
+	tw_a := >(samp,ib);
+	uw_a := <=(samp,ie);
+	vw_a := and(tw_a,uw_a);
 	ww_a := uselect(vw_a,1);
 #	[and]( [>](samp,ib), [<=](samp,ie) ).uselect(true).project($t) 
 	xw_a := project(ww_a,sw_aT);
@@ -2220,7 +2220,7 @@ end	dx_a;
 barrier	kx_a:= bunStream(Nthreads,kx_aH,kx_aT);
 #    covar@ [Nthreads]batloop(){
 #      VAR _sigma_result := [sqrt]($t
-	_sigma_result:= multiplex.sqrt(kx_aT);
+	_sigma_result:= sqrt(kx_aT);
 #	   );
 	lx_a := lock_set(sigma_lock);
 #      lock_set(sigma_lock);
@@ -2251,15 +2251,15 @@ barrier	sx_a:= bunStream(clusters,sx_aH,sx_aT);
 	c:= find(tx_a,sx_aT);
 #      VAR c := cseq.reverse.find($t);
 #      [insert]( samples, const $h,
-	ux_a := multiplex.find(mean,c);
-	vx_a := multiplex.find(sigma,c);
-	wx_a := multiplex.ran_gaussian(ux_a,vx_a);
-	xx_a := multiplex.insert(samples,sx_aH,wx_a);
+	ux_a := multiplex.script("find",mean,c);
+	vx_a := multiplex.script("find",sigma,c);
+	wx_a := multiplex.script("ran_gaussian",ux_a,vx_a);
+	xx_a := multiplex.script("insert",samples,sx_aH,wx_a);
 #	[ran_gaussian]( [find](mean,c), [find](sigma,c) ) );
 redo	sx_a;
 end	sx_a;
 #    }
-	yx_a := multiplex.access(samples,BAT_READ);
+	yx_a := multiplex.script("access",samples,BAT_READ);
 #    [access](samples,BAT_READ);
 #    # return structure
 	ay_a := insert(res,"Samples",samples);
@@ -2307,11 +2307,11 @@ function gmmsamp_diag(Nsamples:int, theImg:oid, gmm:bat[str,bat]):bat[str,bat];
 	sy_a := insert(subgmm,"Prior",ry_a);
 #  subgmm.insert( "Prior", join(fIdx, gmm.find("Prior")) );
 	ty_a := find(gmm,"Mean");
-	uy_a := multiplex.join(fIdx,ty_a);
+	uy_a := multiplex.script("join",fIdx,ty_a);
 	vy_a := insert(subgmm,"Mean",uy_a);
 #  subgmm.insert( "Mean",  [join](const fIdx, gmm.find("Mean")) );
 	wy_a := find(gmm,"Covar");
-	xy_a := multiplex.join(fIdx,wy_a);
+	xy_a := multiplex.script("join",fIdx,wy_a);
 	yy_a := insert(subgmm,"Covar",xy_a);
 #  subgmm.insert( "Covar", [join](const fIdx, gmm.find("Covar")) );
 #
@@ -2334,10 +2334,10 @@ function randprob(N:int):bat[void,dbl];
 #  PROC randprob(int N):bat[void,dbl] := {
 	t:= randseq(N);
 #    VAR t := randseq(N);
-	ea_b := multiplex.lng(t);
+	ea_b := lng(t);
 	fa_b := sum(ea_b);
 	ga_b := dbl(fa_b);
-	t := multiplex./(t,ga_b);
+	t := /(t,ga_b);
 #    t := [/]( t, const dbl([lng](t).sum) );
 	return t;
 #    RETURN t;
@@ -2418,11 +2418,11 @@ end	bb_b;
 #  gmm.insert( "Mean",
 #      [reverse]( 
 #	[join](
-	kb_b := multiplex.reverse(coeffs);
+	kb_b := multiplex.script("reverse",coeffs);
 #	  [reverse](coeffs), 
-	lb_b := multiplex.join(kb_b,aSample);
+	lb_b := multiplex.script("join",kb_b,aSample);
 #	  const aSample ))
-	mb_b := multiplex.reverse(lb_b);
+	mb_b := multiplex.script("reverse",lb_b);
 	nb_b := insert(gmm,"Mean",mb_b);
 #  );
 #
@@ -2522,7 +2522,7 @@ barrier	gc_b:= bunStream(Nthreads,gc_bH,gc_bT);
 #
 #
 ##line 112 "../../../src/gmm/gmm.mx"
-	_means_result:= multiplex./(gc_bT,Ndata);
+	_means_result:= /(gc_bT,Ndata);
 #   );
 	hc_b := lock_set(means_lock);
 #      lock_set(means_lock);
@@ -2584,13 +2584,13 @@ end	nc_b;
 	means := nil;
 #            means := nil;
 #
-	diffs:= multiplex.nestedop("-",coeffs,alignedmeans);
+	diffs:= multiplex.script("nestedop","-",coeffs,alignedmeans);
 #  VAR diffs := [nestedop]("-",coeffs,alignedmeans);
 	alignedmeans := nil;
 #            alignedmeans := nil;
 	coeffs := nil;
 #	    coeffs := nil;
-	diffs := multiplex.square(diffs);
+	diffs := multiplex.script("square",diffs);
 #  diffs := [square](diffs);       # deepop?
 #  
 ##line 1227 "../../../src/gmm/gmm.mx"
@@ -2680,7 +2680,7 @@ barrier	kd_b:= bunStream(Nthreads,kd_bH,kd_bT);
 #
 #
 ##line 112 "../../../src/gmm/gmm.mx"
-	_variances_result:= multiplex./(kd_bT,Ndata);
+	_variances_result:= /(kd_bT,Ndata);
 #   );
 	ld_b := lock_set(variances_lock);
 #      lock_set(variances_lock);
@@ -2737,14 +2737,14 @@ barrier	pd_b:= true;
 #	{|
 barrier	qd_b:= true;
 	BAT_WRITE:= take("BAT_WRITE");
-	rd_b := multiplex.+(init_variances_a,init_variances_b);
+	rd_b := +(init_variances_a,init_variances_b);
 	init_variances_a := access(rd_b,BAT_WRITE);
 #	   init_variances_a := [+](init_variances_a,init_variances_b).access(BAT_WRITE);
-	init_variances_c := multiplex.+(init_variances_c,init_variances_d);
+	init_variances_c := +(init_variances_c,init_variances_d);
 #	   init_variances_c := [+](init_variances_c,init_variances_d);
 end	qd_b;
 #	 |}
-	sd_b := multiplex.:+=(init_variances_a,init_variances_c);
+	sd_b := multiplex.script(":+=",init_variances_a,init_variances_c);
 #	 [:+=](init_variances_a,init_variances_c);
 #      }
 #
@@ -2757,14 +2757,14 @@ end	qd_b;
 #      {
 #	{|
 barrier	td_b:= true;
-	ud_b := multiplex.+(init_variances_e,init_variances_f);
+	ud_b := +(init_variances_e,init_variances_f);
 	init_variances_e := access(ud_b,BAT_WRITE);
 #	   init_variances_e := [+](init_variances_e,init_variances_f).access(BAT_WRITE);
-	init_variances_g := multiplex.+(init_variances_g,init_variances_h);
+	init_variances_g := +(init_variances_g,init_variances_h);
 #	   init_variances_g := [+](init_variances_g,init_variances_h);
 end	td_b;
 #	 |}
-	vd_b := multiplex.:+=(init_variances_e,init_variances_g);
+	vd_b := multiplex.script(":+=",init_variances_e,init_variances_g);
 #	 [:+=](init_variances_e,init_variances_g);
 #      }
 #
@@ -2773,7 +2773,7 @@ end	td_b;
 #
 end	pd_b;
 #       |}
-	wd_b := multiplex.:+=(init_variances_a,init_variances_e);
+	wd_b := multiplex.script(":+=",init_variances_a,init_variances_e);
 #       [:+=](init_variances_a,init_variances_e);      
 #    }
 #
@@ -2795,9 +2795,9 @@ end	pd_b;
 #
 ##line 1759 "../../../src/gmm/gmm.mx"
 #
-	xd_b := multiplex./(init_variances,N);
+	xd_b := /(init_variances,N);
 #  init_variances := [*]( [/]( init_variances, const N ), 
-	init_variances := multiplex.*(xd_b,COVAR_INIT_FRACTION);
+	init_variances := *(xd_b,COVAR_INIT_FRACTION);
 #    const COVAR_INIT_FRACTION );
 #    # Q: blow up this one here or in the loop???
 	yd_b := reverse(mImgIdx);
@@ -3031,7 +3031,7 @@ end	dh_b;
 #  }
 	C:= take("C");
 	nh_b := randprob(C);
-	oh_b := multiplex.flt(nh_b);
+	oh_b := flt(nh_b);
 	ph_b := find(src_gmm,"Prior");
 	qh_b := insert(ph_b,oh_b);
 #  src_gmm.find("Prior").insert( [flt](randprob(C)) );
@@ -3044,22 +3044,22 @@ barrier	rh_b:= bunStream(cseq,rh_bH,rh_bT);
 	th_b := randseq(N);
 	uh_b := +(RAND_MAX,1.0);
 	vh_b := /(uh_b,255);
-	wh_b := multiplex./(th_b,vh_b);
+	wh_b := /(th_b,vh_b);
 	xh_b := reverse(wh_b);
 	yh_b := number(xh_b);
 	ai_b := reverse(yh_b);
-	bi_b := multiplex.insert(sh_b,nil,ai_b);
+	bi_b := multiplex.script("insert",sh_b,nil,ai_b);
 #      [/]( randseq(N), const (RAND_MAX + 1.0) / 255).reverse.number.reverse );
 	ci_b := find(src_gmm,"Covar");
 #    [insert]( src_gmm.find("Covar"), const nil,
 	di_b := randseq(N);
 	ei_b := +(RAND_MAX,1.0);
 	fi_b := /(ei_b,128);
-	gi_b := multiplex./(di_b,fi_b);
+	gi_b := /(di_b,fi_b);
 	hi_b := reverse(gi_b);
 	ii_b := number(hi_b);
 	ji_b := reverse(ii_b);
-	ki_b := multiplex.insert(ci_b,nil,ji_b);
+	ki_b := multiplex.script("insert",ci_b,nil,ji_b);
 #      [/]( randseq(N), const (RAND_MAX + 1.0) / 128).reverse.number.reverse );
 redo	rh_b;
 end	rh_b;
@@ -3125,13 +3125,13 @@ end	sj_b;
 #  VAR aSampleImg := gmmsamp_diag(M, oid(0), src_gmm);
 #  {
 	vj_b := find(aSampleImg,"Samples");
-	imgSamples:= multiplex.nestedop("sht",vj_b);
+	imgSamples:= multiplex.script("nestedop","sht",vj_b);
 #    VAR imgSamples := [nestedop]( "sht", aSampleImg.find("Samples") );
 #    [insert](
 	wj_b := find(imgs,"Coeffs");
 #      imgs.find("Coeffs"),
 #      imgSamples
-	xj_b := multiplex.insert(wj_b,imgSamples);
+	xj_b := multiplex.script("insert",wj_b,imgSamples);
 #    );
 	commit:= take("commit");
 #    commit;
@@ -3250,7 +3250,7 @@ redo	pl_b;
 end	pl_b;
 #  }
 	am_b := randprob(C);
-	bm_b := multiplex.flt(am_b);
+	bm_b := flt(am_b);
 	cm_b := find(src_gmm,"Prior");
 	dm_b := insert(cm_b,bm_b);
 #  src_gmm.find("Prior").insert( [flt](randprob(C)) );
@@ -3262,22 +3262,22 @@ barrier	em_b:= bunStream(cseq,em_bH,em_bT);
 	gm_b := randseq(N);
 	hm_b := +(RAND_MAX,1.0);
 	im_b := /(hm_b,255);
-	jm_b := multiplex./(gm_b,im_b);
+	jm_b := /(gm_b,im_b);
 	km_b := reverse(jm_b);
 	lm_b := number(km_b);
 	mm_b := reverse(lm_b);
-	nm_b := multiplex.insert(fm_b,nil,mm_b);
+	nm_b := multiplex.script("insert",fm_b,nil,mm_b);
 #      [/]( randseq(N), const (RAND_MAX + 1.0) / 255).reverse.number.reverse );
 	om_b := find(src_gmm,"Covar");
 #    [insert]( src_gmm.find("Covar"), const nil,
 	pm_b := randseq(N);
 	qm_b := +(RAND_MAX,1.0);
 	rm_b := /(qm_b,128);
-	sm_b := multiplex./(pm_b,rm_b);
+	sm_b := /(pm_b,rm_b);
 	tm_b := reverse(sm_b);
 	um_b := number(tm_b);
 	vm_b := reverse(um_b);
-	wm_b := multiplex.insert(om_b,nil,vm_b);
+	wm_b := multiplex.script("insert",om_b,nil,vm_b);
 #      [/]( randseq(N), const (RAND_MAX + 1.0) / 128).reverse.number.reverse );
 redo	em_b;
 end	em_b;
@@ -3342,13 +3342,13 @@ end	fo_b;
 #  VAR aSampleImg := gmmsamp_diag(M, oid(imgNr), src_gmm);
 #  {
 	io_b := find(aSampleImg,"Samples");
-	imgSamples:= multiplex.nestedop("sht",io_b);
+	imgSamples:= multiplex.script("nestedop","sht",io_b);
 #    VAR imgSamples := [nestedop]( "sht", aSampleImg.find("Samples") );
 #    [insert](
 	jo_b := find(imgs,"Coeffs");
 #      imgs.find("Coeffs"),
 #      imgSamples
-	ko_b := multiplex.insert(jo_b,imgSamples);
+	ko_b := multiplex.script("insert",jo_b,imgSamples);
 #    );
 #    commit;
 #  }
@@ -3429,7 +3429,7 @@ function classify(coeffs:bat[int,bat], gmm:bat[str,bat]):bat[void,TCluster];
 ##line 1305 "../../../src/gmm/gmm.mx"
 	covar:= find(gmm,"Covar");
 #  VAR covar    := gmm.find("Covar");
-	covar := multiplex.nestedop("dbl",covar);
+	covar := multiplex.script("nestedop","dbl",covar);
 #                  covar := [nestedop]( "dbl", covar);
 #  
 ##line 107 "../../../src/gmm/gmm.mx"
@@ -3444,7 +3444,7 @@ function classify(coeffs:bat[int,bat], gmm:bat[str,bat]):bat[void,TCluster];
 barrier	vo_b:= bunStream(Nthreads,vo_bH,vo_bT);
 #    covar@ [Nthreads]batloop(){
 #      VAR _ivariances_result := [inv]($t
-	_ivariances_result:= multiplex.inv(vo_bT);
+	_ivariances_result:= multiplex.script("inv",vo_bT);
 #	   );
 	wo_b := lock_set(ivariances_lock);
 #      lock_set(ivariances_lock);
@@ -3497,14 +3497,14 @@ barrier	bp_b:= true;
 #	{|
 barrier	cp_b:= true;
 	BAT_WRITE:= take("BAT_WRITE");
-	dp_b := multiplex.*(isqrtdet_a,isqrtdet_b);
+	dp_b := *(isqrtdet_a,isqrtdet_b);
 	isqrtdet_a := access(dp_b,BAT_WRITE);
 #	   isqrtdet_a := [*](isqrtdet_a,isqrtdet_b).access(BAT_WRITE);
-	isqrtdet_c := multiplex.*(isqrtdet_c,isqrtdet_d);
+	isqrtdet_c := *(isqrtdet_c,isqrtdet_d);
 #	   isqrtdet_c := [*](isqrtdet_c,isqrtdet_d);
 end	cp_b;
 #	 |}
-	ep_b := multiplex.:*=(isqrtdet_a,isqrtdet_c);
+	ep_b := multiplex.script(":*=",isqrtdet_a,isqrtdet_c);
 #	 [:*=](isqrtdet_a,isqrtdet_c);
 #      }
 #
@@ -3517,14 +3517,14 @@ end	cp_b;
 #      {
 #	{|
 barrier	fp_b:= true;
-	gp_b := multiplex.*(isqrtdet_e,isqrtdet_f);
+	gp_b := *(isqrtdet_e,isqrtdet_f);
 	isqrtdet_e := access(gp_b,BAT_WRITE);
 #	   isqrtdet_e := [*](isqrtdet_e,isqrtdet_f).access(BAT_WRITE);
-	isqrtdet_g := multiplex.*(isqrtdet_g,isqrtdet_h);
+	isqrtdet_g := *(isqrtdet_g,isqrtdet_h);
 #	   isqrtdet_g := [*](isqrtdet_g,isqrtdet_h);
 end	fp_b;
 #	 |}
-	hp_b := multiplex.:*=(isqrtdet_e,isqrtdet_g);
+	hp_b := multiplex.script(":*=",isqrtdet_e,isqrtdet_g);
 #	 [:*=](isqrtdet_e,isqrtdet_g);
 #      }
 #
@@ -3533,7 +3533,7 @@ end	fp_b;
 #
 end	bp_b;
 #       |}
-	ip_b := multiplex.:*=(isqrtdet_a,isqrtdet_e);
+	ip_b := multiplex.script(":*=",isqrtdet_a,isqrtdet_e);
 #       [:*=](isqrtdet_a,isqrtdet_e);      
 #    }
 #
@@ -3555,7 +3555,7 @@ end	bp_b;
 #
 ##line 1309 "../../../src/gmm/gmm.mx"
 #
-	isqrtdet := multiplex.sqrt(isqrtdet);
+	isqrtdet := sqrt(isqrtdet);
 #  isqrtdet     := [sqrt](isqrtdet);
 #  
 ##line 1227 "../../../src/gmm/gmm.mx"
@@ -3599,11 +3599,11 @@ end	lp_b;
 ##line 1311 "../../../src/gmm/gmm.mx"
 #
 	qp_b := find(gmm,"Mean");
-	means:= multiplex.join(cIdx,qp_b);
+	means:= multiplex.script("join",cIdx,qp_b);
 #  VAR means    := [join]( const cIdx, gmm.find("Mean") );
-	ivars:= multiplex.join(cIdx,ivariances);
+	ivars:= multiplex.script("join",cIdx,ivariances);
 #  VAR ivars    := [join]( const cIdx, ivariances );
-	diffs:= multiplex.nestedop("dmahalanobis_i_diagcov",xs,means,ivars);
+	diffs:= multiplex.script("nestedop","dmahalanobis_i_diagcov",xs,means,ivars);
 #  VAR diffs    := [nestedop]("dmahalanobis_i_diagcov",xs,means,ivars);
 #  
 ##line 130 "../../../src/gmm/gmm.mx"
@@ -3637,14 +3637,14 @@ barrier	rp_b:= true;
 #      {
 #	{|
 barrier	sp_b:= true;
-	tp_b := multiplex.+(dists_a,dists_b);
+	tp_b := +(dists_a,dists_b);
 	dists_a := access(tp_b,BAT_WRITE);
 #	   dists_a := [+](dists_a,dists_b).access(BAT_WRITE);
-	dists_c := multiplex.+(dists_c,dists_d);
+	dists_c := +(dists_c,dists_d);
 #	   dists_c := [+](dists_c,dists_d);
 end	sp_b;
 #	 |}
-	up_b := multiplex.:+=(dists_a,dists_c);
+	up_b := multiplex.script(":+=",dists_a,dists_c);
 #	 [:+=](dists_a,dists_c);
 #      }
 #
@@ -3657,14 +3657,14 @@ end	sp_b;
 #      {
 #	{|
 barrier	vp_b:= true;
-	wp_b := multiplex.+(dists_e,dists_f);
+	wp_b := +(dists_e,dists_f);
 	dists_e := access(wp_b,BAT_WRITE);
 #	   dists_e := [+](dists_e,dists_f).access(BAT_WRITE);
-	dists_g := multiplex.+(dists_g,dists_h);
+	dists_g := +(dists_g,dists_h);
 #	   dists_g := [+](dists_g,dists_h);
 end	vp_b;
 #	 |}
-	xp_b := multiplex.:+=(dists_e,dists_g);
+	xp_b := multiplex.script(":+=",dists_e,dists_g);
 #	 [:+=](dists_e,dists_g);
 #      }
 #
@@ -3673,7 +3673,7 @@ end	vp_b;
 #
 end	rp_b;
 #       |}
-	yp_b := multiplex.:+=(dists_a,dists_e);
+	yp_b := multiplex.script(":+=",dists_a,dists_e);
 #       [:+=](dists_a,dists_e);      
 #    }
 #
@@ -3708,7 +3708,7 @@ end	rp_b;
 	isdet:= join(cIdx,isqrtdet);
 #  VAR isdet    := join( cIdx, isqrtdet );
 	N:= take("N");
-	act:= multiplex.multivariate_gaussian_pdf_diagcov(dists,isdet,N);
+	act:= multiplex.script("multivariate_gaussian_pdf_diagcov",dists,isdet,N);
 #  VAR act      := [multivariate_gaussian_pdf_diagcov]( dists, isdet, N );
 	dists := nil;
 #                  dists  := nil;
@@ -3719,10 +3719,10 @@ end	rp_b;
 ##line 1331 "../../../src/gmm/gmm.mx"
 #
 	aq_b := find(gmm,"Prior");
-	bq_b := multiplex.dbl(aq_b);
+	bq_b := dbl(aq_b);
 	priors:= join(cIdx,bq_b);
 #  VAR priors   := join( cIdx, [dbl](gmm.find("Prior")) );
-	act := multiplex.*(act,priors);
+	act := *(act,priors);
 #  act          := [*]( act, priors );
 	cq_b := reverse(xIdx);
 	dq_b := join(cq_b,act);
@@ -3730,13 +3730,13 @@ end	rp_b;
 #  VAR s        := {sum}( xIdx.reverse.join(act) );
 ##  s            := [ [>](s,const MIN_S)? s : const MIN_S ];
 ##  s            := [ [!=](s,const dbl(0))? s : const 1.0LL ];
-	eq_b := multiplex.>(s,MIN_S);
+	eq_b := >(s,MIN_S);
 	fq_b := M2m.ifthen(eq_b,s,1.0LL);
 	gq_b:= M2m.batconstruct1(fq_b);
 	s := gq_b;
 #  s            := [ [>](s,const MIN_S)? s : const 1.0LL ];
 	hq_b := join(xIdx,s);
-	post:= multiplex./(act,hq_b);
+	post:= /(act,hq_b);
 #  VAR post     := [/](act,xIdx.join(s));
 	priors := nil;
 #                  priors := nil;
@@ -3755,7 +3755,7 @@ end	rp_b;
 #    VAR res  := pmax.project(const encode(TCluster, post.mirror.fetch(0)));
 barrier	lq_b:= bunStream(post,lq_bH,lq_bT);
 #    post@batloop(){
-	pcomp:= multiplex.<=(lq_bT,pmax);
+	pcomp:= <=(lq_bT,pmax);
 #      VAR pcomp := [<=]($t,pmax);
 	mq_b := encode(TCluster,lq_bH);
 	nq_b := M2m.ifthen(pcomp,res,mq_b);
@@ -3869,7 +3869,7 @@ barrier	es_b:= bunStream(ds_b,es_bH,es_bT);
 	hs_b := dbl(gs_b);
 #	s.insert( nil, sprintf( "prior[%d]: %.3lf\t", $h, dbl(find(gmm.find("Prior"), $t)) ) +
 	is_b := find(gmm,"Mean");
-	js_b := multiplex.find(is_b,es_bT);
+	js_b := multiplex.script("find",is_b,es_bT);
 	ks_b := vectostr(js_b);
 	ls_b := sprintf("prior[%d]: %.3lf\t",es_bH,hs_b);
 	ms_b := +("mean:  ",ks_b);
@@ -3877,7 +3877,7 @@ barrier	es_b:= bunStream(ds_b,es_bH,es_bT);
 	os_b := insert(s,nil,ns_b);
 #		       "mean:  " + vectostr([find](gmm.find("Mean" ),$t)) );
 	ps_b := find(gmm,"Covar");
-	qs_b := multiplex.find(ps_b,es_bT);
+	qs_b := multiplex.script("find",ps_b,es_bT);
 	rs_b := vectostr(qs_b);
 	ss_b := +("            \tcovar: ",rs_b);
 	ts_b := insert(s,nil,ss_b);
@@ -3901,7 +3901,7 @@ function printmodel(gmm:bat[str,bat]):void;
 	g:= gmminfo(gmm);
 #    VAR g := gmminfo(gmm);
 	ws_b := project(g,"%s\n");
-	xs_b := multiplex.printf(ws_b,g);
+	xs_b := multiplex.script("printf",ws_b,g);
 #    [printf]( g.project("%s\n"), g );
 end function;
 #  }
@@ -3911,7 +3911,7 @@ function printmodels(gmma:bat[str,bat], gmmb:bat[str,bat]):void;
 #    VAR ga := gmminfo(gmma);
 	gb:= gmminfo(gmmb);
 #    VAR gb := gmminfo(gmmb);
-	ys_b := multiplex.printf("%s\t|\t%s\n",ga,gb);
+	ys_b := multiplex.script("printf","%s\t|\t%s\n",ga,gb);
 #    [printf]( const "%s\t|\t%s\n", ga, gb );
 end function;
 #  }
@@ -3964,11 +3964,11 @@ function sampleQueries(Nqimg:int, testmodels:bat[str,bat]):bat[str,bat];
 	rt_b := insert(qgmm,"Prior",qt_b);
 #  qgmm.insert( "Prior", join(fIdx, gmm.find("Prior")) );
 	st_b := find(gmm,"Mean");
-	tt_b := multiplex.join(fIdx,st_b);
+	tt_b := multiplex.script("join",fIdx,st_b);
 	ut_b := insert(qgmm,"Mean",tt_b);
 #  qgmm.insert( "Mean",  [join](const fIdx, gmm.find("Mean")) );
 	vt_b := find(gmm,"Covar");
-	wt_b := multiplex.join(fIdx,vt_b);
+	wt_b := multiplex.script("join",fIdx,vt_b);
 	xt_b := insert(qgmm,"Covar",wt_b);
 #  qgmm.insert( "Covar", [join](const fIdx, gmm.find("Covar")) );
 #
@@ -4063,7 +4063,7 @@ function RSL(gmm_q:bat[str,bat], gmm_i:bat[str,bat]):void;
 #
 ##line 1944 "../../../src/gmm/gmm.mx"
 	ev_b := find(gmm_i,"Prior");
-	logpriors_i:= multiplex.log(ev_b);
+	logpriors_i:= log(ev_b);
 #    VAR logpriors_i := [log](gmm_i.find("Prior"));
 	covar_i:= find(gmm_i,"Covar");
 #    VAR covar_i     := gmm_i.find("Covar");
@@ -4100,14 +4100,14 @@ barrier	fv_b:= true;
 #	{|
 barrier	gv_b:= true;
 	BAT_WRITE:= take("BAT_WRITE");
-	hv_b := multiplex.*(det_i_a,det_i_b);
+	hv_b := *(det_i_a,det_i_b);
 	det_i_a := access(hv_b,BAT_WRITE);
 #	   det_i_a := [*](det_i_a,det_i_b).access(BAT_WRITE);
-	det_i_c := multiplex.*(det_i_c,det_i_d);
+	det_i_c := *(det_i_c,det_i_d);
 #	   det_i_c := [*](det_i_c,det_i_d);
 end	gv_b;
 #	 |}
-	iv_b := multiplex.:*=(det_i_a,det_i_c);
+	iv_b := multiplex.script(":*=",det_i_a,det_i_c);
 #	 [:*=](det_i_a,det_i_c);
 #      }
 #
@@ -4120,14 +4120,14 @@ end	gv_b;
 #      {
 #	{|
 barrier	jv_b:= true;
-	kv_b := multiplex.*(det_i_e,det_i_f);
+	kv_b := *(det_i_e,det_i_f);
 	det_i_e := access(kv_b,BAT_WRITE);
 #	   det_i_e := [*](det_i_e,det_i_f).access(BAT_WRITE);
-	det_i_g := multiplex.*(det_i_g,det_i_h);
+	det_i_g := *(det_i_g,det_i_h);
 #	   det_i_g := [*](det_i_g,det_i_h);
 end	jv_b;
 #	 |}
-	lv_b := multiplex.:*=(det_i_e,det_i_g);
+	lv_b := multiplex.script(":*=",det_i_e,det_i_g);
 #	 [:*=](det_i_e,det_i_g);
 #      }
 #
@@ -4136,7 +4136,7 @@ end	jv_b;
 #
 end	fv_b;
 #       |}
-	mv_b := multiplex.:*=(det_i_a,det_i_e);
+	mv_b := multiplex.script(":*=",det_i_a,det_i_e);
 #       [:*=](det_i_a,det_i_e);      
 #    }
 #
@@ -4158,20 +4158,20 @@ end	fv_b;
 #
 ##line 1946 "../../../src/gmm/gmm.mx"
 #
-	logdet_i:= multiplex.log(det_i);
+	logdet_i:= log(det_i);
 #    VAR logdet_i    := [log](det_i);
-	ivars_i:= multiplex.nestedop("inv",covar_i);
+	ivars_i:= multiplex.script("nestedop","inv",covar_i);
 #    VAR ivars_i     := [nestedop]("inv",covar_i);
 #
 #
 ##line 1955 "../../../src/gmm/gmm.mx"
-	qivars_i:= multiplex.join(iIdx,ivars_i);
+	qivars_i:= multiplex.script("join",iIdx,ivars_i);
 #    VAR qivars_i    := [join](const iIdx, ivars_i);
 	covar_q:= find(gmm_q,"Covar");
 #    VAR covar_q     := gmm_q.find("Covar");
-	qvars_q:= multiplex.join(qIdx,covar_q);
+	qvars_q:= multiplex.script("join",qIdx,covar_q);
 #    VAR qvars_q     := [join](const qIdx, covar_q);
-	tmp:= multiplex.nestedop("*",qvars_q,qivars_i);
+	tmp:= multiplex.script("nestedop","*",qvars_q,qivars_i);
 #    VAR tmp         := [nestedop]("*", qvars_q, qivars_i);
 #    
 ##line 130 "../../../src/gmm/gmm.mx"
@@ -4205,14 +4205,14 @@ barrier	nv_b:= true;
 #      {
 #	{|
 barrier	ov_b:= true;
-	pv_b := multiplex.+(traces_a,traces_b);
+	pv_b := +(traces_a,traces_b);
 	traces_a := access(pv_b,BAT_WRITE);
 #	   traces_a := [+](traces_a,traces_b).access(BAT_WRITE);
-	traces_c := multiplex.+(traces_c,traces_d);
+	traces_c := +(traces_c,traces_d);
 #	   traces_c := [+](traces_c,traces_d);
 end	ov_b;
 #	 |}
-	qv_b := multiplex.:+=(traces_a,traces_c);
+	qv_b := multiplex.script(":+=",traces_a,traces_c);
 #	 [:+=](traces_a,traces_c);
 #      }
 #
@@ -4225,14 +4225,14 @@ end	ov_b;
 #      {
 #	{|
 barrier	rv_b:= true;
-	sv_b := multiplex.+(traces_e,traces_f);
+	sv_b := +(traces_e,traces_f);
 	traces_e := access(sv_b,BAT_WRITE);
 #	   traces_e := [+](traces_e,traces_f).access(BAT_WRITE);
-	traces_g := multiplex.+(traces_g,traces_h);
+	traces_g := +(traces_g,traces_h);
 #	   traces_g := [+](traces_g,traces_h);
 end	rv_b;
 #	 |}
-	tv_b := multiplex.:+=(traces_e,traces_g);
+	tv_b := multiplex.script(":+=",traces_e,traces_g);
 #	 [:+=](traces_e,traces_g);
 #      }
 #
@@ -4241,7 +4241,7 @@ end	rv_b;
 #
 end	nv_b;
 #       |}
-	uv_b := multiplex.:+=(traces_a,traces_e);
+	uv_b := multiplex.script(":+=",traces_a,traces_e);
 #       [:+=](traces_a,traces_e);      
 #    }
 #
@@ -4267,16 +4267,16 @@ end	nv_b;
 #
 ##line 1966 "../../../src/gmm/gmm.mx"
 	vv_b := find(gmm_q,"Mean");
-	qmeanq:= multiplex.join(qIdx,vv_b);
+	qmeanq:= multiplex.script("join",qIdx,vv_b);
 #    VAR qmeanq      := [join](const qIdx, gmm_q.find("Mean"));
 	wv_b := find(gmm_i,"Mean");
-	qmeani:= multiplex.join(iIdx,wv_b);
+	qmeani:= multiplex.script("join",iIdx,wv_b);
 #    VAR qmeani	    := [join](const iIdx, gmm_i.find("Mean"));
-	diffs:= multiplex.nestedop("-",qmeanq,qmeani);
+	diffs:= multiplex.script("nestedop","-",qmeanq,qmeani);
 #    VAR diffs       := [nestedop]("-", qmeanq, qmeani);
-	diffs := multiplex.square(diffs);
+	diffs := multiplex.script("square",diffs);
 #    diffs           := [square]( diffs );
-	diffs := multiplex.nestedop("*",diffs,qivars_i);
+	diffs := multiplex.script("nestedop","*",diffs,qivars_i);
 #    diffs	    := [nestedop]("*", diffs, qivars_i);
 #    
 ##line 130 "../../../src/gmm/gmm.mx"
@@ -4310,14 +4310,14 @@ barrier	xv_b:= true;
 #      {
 #	{|
 barrier	yv_b:= true;
-	aw_b := multiplex.+(Dmaha_a,Dmaha_b);
+	aw_b := +(Dmaha_a,Dmaha_b);
 	Dmaha_a := access(aw_b,BAT_WRITE);
 #	   Dmaha_a := [+](Dmaha_a,Dmaha_b).access(BAT_WRITE);
-	Dmaha_c := multiplex.+(Dmaha_c,Dmaha_d);
+	Dmaha_c := +(Dmaha_c,Dmaha_d);
 #	   Dmaha_c := [+](Dmaha_c,Dmaha_d);
 end	yv_b;
 #	 |}
-	bw_b := multiplex.:+=(Dmaha_a,Dmaha_c);
+	bw_b := multiplex.script(":+=",Dmaha_a,Dmaha_c);
 #	 [:+=](Dmaha_a,Dmaha_c);
 #      }
 #
@@ -4330,14 +4330,14 @@ end	yv_b;
 #      {
 #	{|
 barrier	cw_b:= true;
-	dw_b := multiplex.+(Dmaha_e,Dmaha_f);
+	dw_b := +(Dmaha_e,Dmaha_f);
 	Dmaha_e := access(dw_b,BAT_WRITE);
 #	   Dmaha_e := [+](Dmaha_e,Dmaha_f).access(BAT_WRITE);
-	Dmaha_g := multiplex.+(Dmaha_g,Dmaha_h);
+	Dmaha_g := +(Dmaha_g,Dmaha_h);
 #	   Dmaha_g := [+](Dmaha_g,Dmaha_h);
 end	cw_b;
 #	 |}
-	ew_b := multiplex.:+=(Dmaha_e,Dmaha_g);
+	ew_b := multiplex.script(":+=",Dmaha_e,Dmaha_g);
 #	 [:+=](Dmaha_e,Dmaha_g);
 #      }
 #
@@ -4346,7 +4346,7 @@ end	cw_b;
 #
 end	xv_b;
 #       |}
-	fw_b := multiplex.:+=(Dmaha_a,Dmaha_e);
+	fw_b := multiplex.script(":+=",Dmaha_a,Dmaha_e);
 #       [:+=](Dmaha_a,Dmaha_e);      
 #    }
 #
@@ -4369,13 +4369,13 @@ end	xv_b;
 ##line 1971 "../../../src/gmm/gmm.mx"
 #
 #
-	tmp:= multiplex.+(Dmaha,traces);
+	tmp:= +(Dmaha,traces);
 #    VAR tmp         := [+](Dmaha,traces);
 	gw_b := join(iIdx,logdet_i);
-	tmp := multiplex.+(gw_b,tmp);
+	tmp := +(gw_b,tmp);
 #    tmp             := [+](iIdx.join(logdet_i), tmp);
 	hw_b := join(iIdx,logpriors_i);
-	compiL:= multiplex.-(hw_b,tmp);
+	compiL:= -(hw_b,tmp);
 #    VAR compiL	    := [-](iIdx.join(logpriors_i), tmp);
 	iw_b := reverse(giIdx);
 	jw_b := join(iw_b,compiL);
@@ -4384,7 +4384,7 @@ end	xv_b;
 #
 	kw_b := find(gmm_q,"Prior");
 	lw_b := join(cqIdx,kw_b);
-	compqL:= multiplex.*(lw_b,maxcompiL);
+	compqL:= *(lw_b,maxcompiL);
 #    VAR compqL	    := [*](join(cqIdx,gmm_q.find("Prior")), maxcompiL);
 #
 #
@@ -4424,9 +4424,9 @@ end function;
 ##line 2009 "../../../src/gmm/gmm.mx"
 function L2dist(x:bat[any::1,dbl], y:bat[any::1,dbl]):dbl;
 #  PROC L2dist( BAT[any::1,dbl] x, BAT[any::1,dbl] y ): dbl := {
-	dist:= multiplex.-(x,y);
+	dist:= -(x,y);
 #    VAR dist := [-](x, y);
-	dist := multiplex.*(dist,dist);
+	dist := *(dist,dist);
 #    dist := [*](dist, dist);
 	tw_b := sum(dist);
 	uw_b := count(dist);
@@ -4460,9 +4460,9 @@ barrier	ww_b:= bunStream(cseq,ww_bH,ww_bT);
 	cnew:= ww_bT;
 #	VAR cnew := $t;
 #	cdist_c.insert( cnew, 
-	xw_b := multiplex.find(ma,csrcoid);
+	xw_b := multiplex.script("find",ma,csrcoid);
 #	  L2dist( [find](ma,csrcoid), 
-	yw_b := multiplex.find(mb,cnewoid);
+	yw_b := multiplex.script("find",mb,cnewoid);
 	ax_b := L2dist(xw_b,yw_b);
 	bx_b := insert(cdist_c,cnew,ax_b);
 #		[find](mb,cnewoid) ) ); 
@@ -4476,7 +4476,7 @@ end	ww_b;
 redo	vw_b;
 end	vw_b;
 #    }
-	fx_b := multiplex.fetch(cdist,0);
+	fx_b := multiplex.script("fetch",cdist,0);
 	return fx_b;
 #    RETURN [fetch](cdist, const 0);
 end function;
@@ -4510,11 +4510,11 @@ end function;
 ##line 2052 "../../../src/gmm/gmm.mx"
 function dmahalanobis(x:bat[void,dbl], mu:dbl, variance:dbl):bat[void,dbl];
 #  PROC dmahalanobis( BAT[void,dbl] x, dbl mu, dbl variance ): BAT[void,dbl] := {
-	dist:= multiplex.-(x,mu);
+	dist:= -(x,mu);
 #    VAR dist := [-](x, const mu);
-	dist := multiplex.*(dist,dist);
+	dist := *(dist,dist);
 #    dist := [*](dist, dist);
-	dist := multiplex./(dist,variance);
+	dist := /(dist,variance);
 #    dist := [/]( dist, const variance );
 	return dist;
 #    RETURN dist;
@@ -4532,10 +4532,10 @@ function mvgpdf(d:bat[void,dbl], det:dbl, Ndim:int):bat[void,dbl];
 	qx_b := *(ox_b,px_b);
 	norm:= /(1,qx_b);
 #    VAR norm := 1/(pow((2*M_PI), dbl(Ndim)/2) * sqrt(det) );
-	rx_b := multiplex.*(d,-0.5LL);
-	p:= multiplex.exp(rx_b);
+	rx_b := *(d,-0.5LL);
+	p:= exp(rx_b);
 #    VAR p := [exp]( [*]( d, -0.5LL ) );
-	sx_b := multiplex.*(p,norm);
+	sx_b := *(p,norm);
 	return sx_b;
 #    RETURN [*]( p, const norm );
 end function;
@@ -4569,7 +4569,7 @@ function test():void;
 #
 #
 ##line 2081 "../../../src/gmm/gmm.mx"
-	covar:= multiplex.*(sigma,sigma);
+	covar:= *(sigma,sigma);
 #    VAR covar := [*]( sigma, sigma );
 	det:= prod(covar);
 #    VAR det := prod( covar );
@@ -4616,19 +4616,19 @@ end	iy_b;
 ##line 2100 "../../../src/gmm/gmm.mx"
 	qy_b := find(mu,1);
 	ry_b := find(covar,1);
-	dist_1:= multiplex.dmahalanobis_i_diagcov(x_1,qy_b,ry_b);
+	dist_1:= multiplex.script("dmahalanobis_i_diagcov",x_1,qy_b,ry_b);
 #    VAR dist_1 := [dmahalanobis_i_diagcov]( x_1, mu.find(1), covar.find(1) );
 	sy_b := find(mu,2);
 	ty_b := find(covar,2);
-	dist_2:= multiplex.dmahalanobis_i_diagcov(x_2,sy_b,ty_b);
+	dist_2:= multiplex.script("dmahalanobis_i_diagcov",x_2,sy_b,ty_b);
 #    VAR dist_2 := [dmahalanobis_i_diagcov]( x_2, mu.find(2), covar.find(2) );
 #    # ...
-	dist:= multiplex.+(dist_1,dist_2);
+	dist:= +(dist_1,dist_2);
 #    VAR dist := [+]( dist_1, dist_2 ); # ...
 #
 #
 ##line 2108 "../../../src/gmm/gmm.mx"
-	p:= multiplex.multivariate_gaussian_pdf_diagcov(dist,det,2);
+	p:= multiplex.script("multivariate_gaussian_pdf_diagcov",dist,det,2);
 #    VAR p := [multivariate_gaussian_pdf_diagcov]( dist, det, 2 );
 #    # print( x_1, x_2, p );
 #
@@ -4638,13 +4638,13 @@ end	iy_b;
 	uy_b := find(mu,1);
 	vy_b := find(covar,1);
 	wy_b := dmahalanobis(x_1,uy_b,vy_b);
-	thediff:= multiplex.-(wy_b,dist_1);
+	thediff:= -(wy_b,dist_1);
 #    VAR thediff := [-]( dmahalanobis(x_1, mu.find(1), covar.find(1) ), dist_1 );
 	xy_b := find(mu,2);
 	yy_b := find(covar,2);
 	aa_c := dmahalanobis(x_2,xy_b,yy_b);
-	ba_c := multiplex.-(aa_c,dist_2);
-	thediff := multiplex.+(thediff,ba_c);
+	ba_c := -(aa_c,dist_2);
+	thediff := +(thediff,ba_c);
 #    thediff := [+]( thediff, [-]( dmahalanobis(x_2, mu.find(2), covar.find(2) ), dist_2 ) );
 	ca_c := sum(thediff);
 barrier	da_c:= >(ca_c,1e-10LL);
@@ -4659,7 +4659,7 @@ barrier	ha_c:= not(da_c);
 end	ha_c;
 #    } ELSE printf( "Mahalanobis distances ok.\n" );
 	ja_c := mvgpdf(dist,det,2);
-	thediff := multiplex.-(ja_c,p);
+	thediff := -(ja_c,p);
 #    thediff := [-]( mvgpdf( dist, det, 2 ), p );
 	ka_c := sum(thediff);
 barrier	la_c:= >(ka_c,1e-10LL);
@@ -4716,7 +4716,7 @@ end function;
 ##line 2145 "../../../src/gmm/gmm.mx"
 #
 	view_bbp_name:= take("view_bbp_name");
-	ra_c := multiplex.startsWith(view_bbp_name,"gmm_trained");
+	ra_c := multiplex.script("startsWith",view_bbp_name,"gmm_trained");
 	sa_c := uselect(ra_c,1);
 	ta_c := count(sa_c);
 barrier	ua_c:= >(ta_c,0);
@@ -4933,13 +4933,13 @@ end	be_c;
 	se_c := insert(tmBatIds,"init_variances",re_c);
 #  tmBatIds.insert( "init_variances", trainedmodels.find("init_variances").info.find("batId") );
 	te_c := find(trainedmodels,"Mean");
-	ue_c := multiplex.info(te_c);
-	ve_c := multiplex.find(ue_c,"batId");
+	ue_c := multiplex.script("info",te_c);
+	ve_c := multiplex.script("find",ue_c,"batId");
 	we_c := insert(tmBatIds_Mean,ve_c);
 #  tmBatIds_Mean.insert(  [find]([info](trainedmodels.find("Mean")), const "batId") );
 	xe_c := find(trainedmodels,"Covar");
-	ye_c := multiplex.info(xe_c);
-	af_c := multiplex.find(ye_c,"batId");
+	ye_c := multiplex.script("info",xe_c);
+	af_c := multiplex.script("find",ye_c,"batId");
 	bf_c := insert(tmBatIds_Covar,af_c);
 #  tmBatIds_Covar.insert( [find]([info](trainedmodels.find("Covar")), const "batId") );
 #
@@ -5017,13 +5017,13 @@ end	bg_c;
 #  # Must be paired with a modelBatIds(tmBatIds,X) in the same context
 	trainedmodels := new(str,bat);
 #  trainedmodels := new(str, bat);
-	jg_c := multiplex.bat(tmBatIds);
+	jg_c := bat(tmBatIds);
 	kg_c := insert(trainedmodels,jg_c);
 #  trainedmodels.insert( [bat](tmBatIds) );
-	lg_c := multiplex.bat(tmBatIds_Mean);
+	lg_c := bat(tmBatIds_Mean);
 	mg_c := insert(trainedmodels,"Mean",lg_c);
 #  trainedmodels.insert( "Mean", [bat](tmBatIds_Mean) );
-	ng_c := multiplex.bat(tmBatIds_Covar);
+	ng_c := bat(tmBatIds_Covar);
 	og_c := insert(trainedmodels,"Covar",ng_c);
 #  trainedmodels.insert( "Covar", [bat](tmBatIds_Covar) );
 #
@@ -5082,14 +5082,14 @@ end	bg_c;
 	qh_c := find(trainedmodels,"Mean");
 #  [insert]( trainedmodels.find("Mean"),
 	rh_c := find(gmm,"Mean");
-	sh_c := multiplex.join(fIdx,rh_c);
-	th_c := multiplex.insert(qh_c,sh_c);
+	sh_c := multiplex.script("join",fIdx,rh_c);
+	th_c := multiplex.script("insert",qh_c,sh_c);
 #            [join](const fIdx, gmm.find("Mean")) );
 	uh_c := find(trainedmodels,"Covar");
 #  [insert]( trainedmodels.find("Covar"),
 	vh_c := find(gmm,"Covar");
-	wh_c := multiplex.join(fIdx,vh_c);
-	xh_c := multiplex.insert(uh_c,wh_c);
+	wh_c := multiplex.script("join",fIdx,vh_c);
+	xh_c := multiplex.script("insert",uh_c,wh_c);
 #            [join](const fIdx, gmm.find("Covar")) );
 #
 	yh_c := find(gmm,"init_variances");
@@ -5138,13 +5138,13 @@ end	bg_c;
 	si_c := insert(tmBatIds,"init_variances",ri_c);
 #  tmBatIds.insert( "init_variances", trainedmodels.find("init_variances").info.find("batId") );
 	ti_c := find(trainedmodels,"Mean");
-	ui_c := multiplex.info(ti_c);
-	vi_c := multiplex.find(ui_c,"batId");
+	ui_c := multiplex.script("info",ti_c);
+	vi_c := multiplex.script("find",ui_c,"batId");
 	wi_c := insert(tmBatIds_Mean,vi_c);
 #  tmBatIds_Mean.insert(  [find]([info](trainedmodels.find("Mean")), const "batId") );
 	xi_c := find(trainedmodels,"Covar");
-	yi_c := multiplex.info(xi_c);
-	aj_c := multiplex.find(yi_c,"batId");
+	yi_c := multiplex.script("info",xi_c);
+	aj_c := multiplex.script("find",yi_c,"batId");
 	bj_c := insert(tmBatIds_Covar,aj_c);
 #  tmBatIds_Covar.insert( [find]([info](trainedmodels.find("Covar")), const "batId") );
 #
@@ -5198,12 +5198,12 @@ function modelIdx(N:int):bat[str,void];
 #  modelidx.insert( "Prior", nil );
 	kj_c := project(seq,"Mu_");
 	lj_c := mirror(seq);
-	mj_c := multiplex.+(kj_c,lj_c);
+	mj_c := +(kj_c,lj_c);
 	mu:= _x(mj_c);
 #  VAR mu := _x([+](seq.project("Mu_"), seq.mirror));
 	nj_c := project(seq,"Sigma_");
 	oj_c := mirror(seq);
-	pj_c := multiplex.+(nj_c,oj_c);
+	pj_c := +(nj_c,oj_c);
 	covar:= _x(pj_c);
 #  VAR covar := _x([+](seq.project("Sigma_"), seq.mirror));
 	qj_c := reverse(mu);

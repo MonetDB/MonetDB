@@ -387,13 +387,25 @@ int bindId(str nme){
 	printf("\t%s:= take(\"%s\");\n",nme,nme);
 }
 
+str multiplexOp[]={"+","-","/","*","%",">","<","<=",">=","=","and",
+	"or","not","void","bit","chr","sht","bat","int","oid","ptr",
+        "flt","dbl","lng","str","asin","acos","atan","cos","sin",
+	"tan","cosh","sinh","tanh","exp","log","log10","sqrt",
+	"ceil","fabs","floor","round","fmod","atan2","pow",0};
+
 char *bindFcn(str nme){
 	char buffer[1024];
+	int i;
 
 	switch(*nme){
 	case '[':
 		nme[strlen(nme)-1]=0;
-		sprintf(buffer,"multiplex(\"%s\"", nme+1);
+		for(i=0; multiplexOp[i];i++)
+		if( strcmp(nme+1, multiplexOp[i])==0){
+			sprintf(buffer,"%s(",nme+1);
+			return GDKstrdup(buffer);
+		}
+		sprintf(buffer,"multiplex.script(\"%s\",", nme+1);
 		break;
 	case '{':
 		nme[strlen(nme)-1]=0;
@@ -592,7 +604,7 @@ proc_name:
 		switch($1.val[0]){
 		case '[':
 			$1.val[strlen($1.val)-1]=0;
-			printf("function multiplex(\"%s\"", $1.val+1);
+			printf("function multiplex(\"%s\",", $1.val+1);
 			break;
 		case '{':
 			$1.val[strlen($1.val)-1]=0;

@@ -306,7 +306,7 @@ PROC newGMM( str mname ): BAT[str,bat] := {
                   covar := [nestedop]( "dbl", covar);
   
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR ivariances := new(covar.htype,bat,covar.count);
+  VAR ivariances := new(covar.getType,bat,covar.count);
   {
     VAR ivariances_lock := lock_create();
     covar@ [Nthreads]batloop(){
@@ -397,7 +397,7 @@ VAR xs;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  xs := new(coeffs.htype,bat,coeffs.count);
+  xs := new(coeffs.getType,bat,coeffs.count);
   VAR xs_lock := lock_create();
   coeffs@ [Nthreads]batloop(){
     VAR _xs_result := join( xIdx, $t );
@@ -625,7 +625,7 @@ VAR fIdx           := nconvIdx.reverse.mark(oid(0)).reverse;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  coeffs := new(oldc.htype,bat,oldc.count);
+  coeffs := new(oldc.getType,bat,oldc.count);
   VAR coeffs_lock := lock_create();
   oldc@ [Nthreads]batloop(){
     VAR _coeffs_result := join( iIdx, $t );
@@ -697,7 +697,7 @@ debug("NP: #post %d, #newpr %d, #newpriors %d, #Ndata %d",
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  xs := new(coeffs.htype,bat,coeffs.count);
+  xs := new(coeffs.getType,bat,coeffs.count);
   VAR xs_lock := lock_create();
   coeffs@ [Nthreads]batloop(){
     VAR _xs_result := join( xIdx, $t );
@@ -723,7 +723,7 @@ VAR gxhc;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  gxhc := new(xhc.htype,bat,xhc.count);
+  gxhc := new(xhc.getType,bat,xhc.count);
   VAR gxhc_lock := lock_create();
   xhc@ [Nthreads]batloop(){
     VAR _gxhc_result := join( cIdx.reverse, $t );
@@ -746,7 +746,7 @@ VAR gxhc;
 
    
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR newc := new(gxhc.htype,bat,gxhc.count);
+  VAR newc := new(gxhc.getType,bat,gxhc.count);
   {
     VAR newc_lock := lock_create();
     gxhc@ [Nthreads]batloop(){
@@ -771,7 +771,7 @@ VAR gxhc;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  means := new(newmeans.htype,bat,newmeans.count);
+  means := new(newmeans.getType,bat,newmeans.count);
   VAR means_lock := lock_create();
   newmeans@ [Nthreads]batloop(){
     VAR _means_result := join( cIdx, $t );
@@ -801,7 +801,7 @@ VAR ghdiffs;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  ghdiffs := new(hdiffs.htype,bat,hdiffs.count);
+  ghdiffs := new(hdiffs.getType,bat,hdiffs.count);
   VAR ghdiffs_lock := lock_create();
   hdiffs@ [Nthreads]batloop(){
     VAR _ghdiffs_result := join( cIdx.reverse, $t );
@@ -824,7 +824,7 @@ VAR ghdiffs;
 
    
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR diffs := new(ghdiffs.htype,bat,ghdiffs.count);
+  VAR diffs := new(ghdiffs.getType,bat,ghdiffs.count);
   {
     VAR diffs_lock := lock_create();
     ghdiffs@ [Nthreads]batloop(){
@@ -925,7 +925,7 @@ VAR minvars;
    IF ( Ntoosmall > 0 ) {
      debug("Covariance too small in %d model(s)", Ntoosmall);
      VAR init_variances := gmm.find("init_variances");
-     VAR ccovars   := new( newvars.htype, bat, newvars.count );
+     VAR ccovars   := new( newvars.getType, bat, newvars.count );
      newvars@batloop(){
        VAR cv := [ covarnotsmall ? $t : init_variances ];
        ccovars.insert($h, cv);
@@ -1036,7 +1036,7 @@ VAR minvars;
 
 #line 1591 "../../../src/gmm/gmm.mx"
   PROC [cumsum](BAT[any::1,any] xs): BAT[any::1,lng] := {
-    VAR res := new(xs.htype,lng,xs.count);
+    VAR res := new(xs.getType,lng,xs.count);
     VAR s := lng(0);
     xs@batloop(){
       s :+= $t;
@@ -1048,7 +1048,7 @@ VAR minvars;
   
 #line 1605 "../../../src/gmm/gmm.mx"
   PROC randseq(int Nsamples, bat[int,flt] prior): bat[void,any::1] := {
-    VAR res := new(oid, prior.htype,Nsamples);
+    VAR res := new(oid, prior.getType,Nsamples);
     VAR samp := [lng](randseq(Nsamples));
     VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
     VAR ib := lng(0);
@@ -1070,7 +1070,7 @@ VAR minvars;
   
 #line 1605 "../../../src/gmm/gmm.mx"
   PROC randseq(int Nsamples, bat[TCluster,flt] prior): bat[void,any::1] := {
-    VAR res := new(oid, prior.htype,Nsamples);
+    VAR res := new(oid, prior.getType,Nsamples);
     VAR samp := [lng](randseq(Nsamples));
     VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
     VAR ib := lng(0);
@@ -1092,7 +1092,7 @@ VAR minvars;
   
 #line 1605 "../../../src/gmm/gmm.mx"
   PROC randseq(int Nsamples, bat[void,flt] prior): bat[void,any::1] := {
-    VAR res := new(oid, prior.htype,Nsamples);
+    VAR res := new(oid, prior.getType,Nsamples);
     VAR samp := [lng](randseq(Nsamples));
     VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
     VAR ib := lng(0);
@@ -1129,7 +1129,7 @@ VAR minvars;
     VAR covar := gmm.find("Covar");
     
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR sigma := new(covar.htype,bat,covar.count);
+  VAR sigma := new(covar.getType,bat,covar.count);
   {
     VAR sigma_lock := lock_create();
     covar@ [Nthreads]batloop(){
@@ -1234,7 +1234,7 @@ VAR imgcoeffs;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  imgcoeffs := new(coeffs.htype,bat,coeffs.count);
+  imgcoeffs := new(coeffs.getType,bat,coeffs.count);
   VAR imgcoeffs_lock := lock_create();
   coeffs@ [Nthreads]batloop(){
     VAR _imgcoeffs_result := join( Ib, $t );
@@ -1257,7 +1257,7 @@ VAR imgcoeffs;
 
   
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR Area := new(imgcoeffs.htype,bat,imgcoeffs.count);
+  VAR Area := new(imgcoeffs.getType,bat,imgcoeffs.count);
   {
     VAR Area_lock := lock_create();
     imgcoeffs@ [Nthreads]batloop(){
@@ -1277,7 +1277,7 @@ VAR imgcoeffs;
   VAR Ndata := Ib.reverse.histogram;
   
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR means := new(Area.htype,bat,Area.count);
+  VAR means := new(Area.getType,bat,Area.count);
   {
     VAR means_lock := lock_create();
     Area@ [Nthreads]batloop(){
@@ -1306,7 +1306,7 @@ VAR alignedmeans;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  alignedmeans := new(means.htype,bat,means.count);
+  alignedmeans := new(means.getType,bat,means.count);
   VAR alignedmeans_lock := lock_create();
   means@ [Nthreads]batloop(){
     VAR _alignedmeans_result := join( Ib.reverse, $t );
@@ -1340,7 +1340,7 @@ VAR imgdiffs;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  imgdiffs := new(diffs.htype,bat,diffs.count);
+  imgdiffs := new(diffs.getType,bat,diffs.count);
   VAR imgdiffs_lock := lock_create();
   diffs@ [Nthreads]batloop(){
     VAR _imgdiffs_result := join( Ib, $t );
@@ -1363,7 +1363,7 @@ VAR imgdiffs;
 
   
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR tmp := new(imgdiffs.htype,bat,imgdiffs.count);
+  VAR tmp := new(imgdiffs.getType,bat,imgdiffs.count);
   {
     VAR tmp_lock := lock_create();
     imgdiffs@ [Nthreads]batloop(){
@@ -1381,7 +1381,7 @@ VAR imgdiffs;
 
   
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR variances := new(tmp.htype,bat,tmp.count);
+  VAR variances := new(tmp.getType,bat,tmp.count);
   {
     VAR variances_lock := lock_create();
     tmp@ [Nthreads]batloop(){
@@ -1740,7 +1740,7 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
                   covar := [nestedop]( "dbl", covar);
   
 #line 107 "../../../src/gmm/gmm.mx"
-  VAR ivariances := new(covar.htype,bat,covar.count);
+  VAR ivariances := new(covar.getType,bat,covar.count);
   {
     VAR ivariances_lock := lock_create();
     covar@ [Nthreads]batloop(){
@@ -1831,7 +1831,7 @@ VAR xs;
 #line 1224 "../../../src/gmm/gmm.mx"
 
 #line 1240 "../../../src/gmm/gmm.mx"
-  xs := new(coeffs.htype,bat,coeffs.count);
+  xs := new(coeffs.getType,bat,coeffs.count);
   VAR xs_lock := lock_create();
   coeffs@ [Nthreads]batloop(){
     VAR _xs_result := join( xIdx, $t );

@@ -3,8 +3,10 @@ The following changes are necessary to obtain equivalent semantics
 
 Version 4.3		Version 5.		Comments
 ----------------------------------------------------------------
-col_name(bat,str)	setColumn(bat,str)
-name(bat,str,str)	setColumn(bat,str,str)
+col_name(bat,str)	setRole(bat,str)
+			getRole(bat)
+name(bat,str,str)	setRole(bat,str,str)
+			getName(bat)
 rename(bat,str)		setName(bat,str)
 bbpname(bat,str)	setName(bat,str)
 bbpname(bat)		getName(bat)
@@ -14,16 +16,23 @@ key(bat,bit)		setKey(bat,bit)
 key(bat)		isaKey(bat)
 set(bat,bit)		setSet(bat,bit)
 			isaSet(bat)
-access(bat,chr)		setReadOnly(bat)	when mode ='r'
-			setAppendOnly(bat)	when mode = 'a'
-			setReadWrite(bat)	when mode = 'w'
-			setAccess(bat)
-access(bat)		isReadOnly(bat)		when mode ='r'
-			isAppendOnly(bat)	when mode = 'a'
-			isReadWrite(bat)	when mode = 'w'
+access(bat,chr)		setReadMode(bat)	when mode ='r'
+			setAppendMode(bat)	when mode = 'a'
+			setWriteMode(bat)	when mode = 'w'
+			setAccess(bat,chr)
+access(bat)		hasReadMode(bat)		when mode ='r'
+			hasAppendMode(bat)	when mode = 'a'
+			hasWriteMode(bat)	when mode = 'w'
 			getAccess(bat)
 ordered(bat)		isOrdered(bat)
 seqbase(bat,oid)	setSequenceBase(bat,oid)
 batsize(bat)		getSize(bat)
--------------------------------------------------------------
+htype(bat)		getType(bat)
+ttype(bat)		getType(reverse(bat))
+---------------------------------------------------------
 			getBATrefcnt(bat)
+---------------- Alignment with C -----------------------
+and( bit,bit)		&&(bit,bit)	
+or(bit,bit)		||(bit,bit)	
+not(bit)		!(bit)
+=(x,y)			==(x,y)
