@@ -29,7 +29,7 @@ doc_kernel = {
 }
 
 scripts_mal = {
-	DIR = pkglibdir/kernel
+	DIR = pkglibdir
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx kernel_init.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx mkey.mx aggrX3.mx pf_support.mx

@@ -155,7 +155,7 @@ is locally maintained.
 #ifndef _CRACKERS_H_
 #define _CRACKERS_H_
 
-/*#define DEBUG_CRACKERS */
+/* #define DEBUG_CRACKERS  */
 
 #define LEAF 'L'
 #define PHI  'P'		/* broken using a select */
@@ -169,6 +169,7 @@ typedef struct{
 	int idx_first;	/* the slice boundaries */
 	int idx_last;	
 	int parent;	/* lineage */
+	int left, middle, right; /* tree branch directions */
 } Piece;
 
 typedef struct{
@@ -186,6 +187,8 @@ the value ranges supported.
 #include "mal.h"
 #include "mal_exception.h"
 #include "crackers.h"
+
+#define MAXPIECE 1024*100
 
 static CrackMap *crackMap;
 static int maxCrackMap=0;
@@ -217,10 +220,10 @@ int findCrackMap(int bid){
 	}
 	/* init the crackmap */
 	crackMap[i].bid= bid;
-	crackMap[i].pieces = GDKmalloc(sizeof(Piece) *1024);
-	bzero((void*) crackMap[i].pieces, sizeof(Piece) *1024);
+	crackMap[i].pieces = GDKmalloc(sizeof(Piece) *MAXPIECE);
+	bzero((void*) crackMap[i].pieces, sizeof(Piece) *MAXPIECE);
 	crackMap[i].freepiece= 0;
-	crackMap[i].maxpiece = 1024;
+	crackMap[i].maxpiece = MAXPIECE;
 	return i;
 }
 void freeCrackMap(int m){
@@ -237,23 +240,27 @@ void printCrackMapElement(Piece *list, int i, int bid){
 	stream_printf(GDKout,"%d, ",list[i].rng_min);
 	stream_printf(GDKout,"%d, ",list[i].rng_max);
 	stream_printf(GDKout,"%d, ",list[i].idx_first);
-	stream_printf(GDKout,"%d, ]\n",list[i].idx_last);
+	stream_printf(GDKout,"%d, ",list[i].idx_last);
+	stream_printf(GDKout,"%d, ",list[i].left);
+	stream_printf(GDKout,"%d, ",list[i].middle);
+	stream_printf(GDKout,"%d ]\n ",list[i].right);
 }
 void printCrackMap(int bid){
 	int i,m;
 	m= findCrackMap(bid);
 	if( crackMap[m].freepiece)
-	stream_printf(GDKout,"# idx bid kind parent rng_max rng_min idx_first idx_last # name\n");
+	stream_printf(GDKout,"# idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name\n");
 	for(i=0;i<crackMap[m].freepiece;i++)
 		printCrackMapElement(crackMap[m].pieces,i,bid);
 }
 str initCrackMap(CrackMap *map, int *bid){
 	BAT *b;
 	BUN kmin=NULL, vmin=NULL, kmax=NULL, vmax=NULL;
-	BUN p,q;
-	int xx;
-	int result;
+	BUN p;
+	/* BUN q;
 	ptr v;
+	int xx; */
+	int result;
 	char buf[128]; /* scratch space */
 
         @:getBATdescriptor(&result,bid,b,initCrackMap)@
@@ -267,6 +274,7 @@ already. [todo]
 	kmax= kmin= p;
 	vmax= vmin= p;
 	
+/* initialize the buffers with the max bounderies
 	BATloopFast(b,p,q,xx){
 		v= BUNhead(b,p);
 		if( *(int *)v < *(int *)BUNhead(b,kmin)) kmin = p;
@@ -281,10 +289,16 @@ according to the tail value;
 @c
 	map->pieces[0].rng_min= *(int*)BUNtail(b,vmin);
 	map->pieces[0].rng_max= *(int*)BUNtail(b,vmax);
+*/
+	map->pieces[0].rng_min= INT_MIN;
+	map->pieces[0].rng_max= INT_MAX;
 	map->pieces[0].idx_first = BUNindex(b,BUNfirst(b));
 	map->pieces[0].idx_last = BUNindex(b,BUNlast(b))-1;
 	map->pieces[0].kind = LEAF;
 	map->pieces[0].parent = -1;
+	map->pieces[0].left = -1;
+	map->pieces[0].middle = -1;
+	map->pieces[0].right = -1;
 	map->freepiece= 1;
 
 	assert(BUNsize(b)<128);
@@ -314,7 +328,7 @@ str CRKinfo(int *k, int *bid)
 }
 @-
 @= exchange
-#ifdef DEBUG_CRACKERS
+#ifdef DEBUG_CRACKERS_DETAIL
 	printf("exchange %d %d\n",BUNindex(b,@1),BUNindex(b,@2));
 #endif
 { /* be aware of reversed bats, which disallow memcpy
@@ -332,7 +346,7 @@ str CRKinfo(int *k, int *bid)
 	*(int*) BUNtail(b,@2)= tdummy;
 }
 @= exchange2
-#ifdef DEBUG_CRACKERS
+#ifdef DEBUG_CRACKERS_DETAIL
 	printf("exchange %d %d %d\n",BUNindex(b,@1),
 		BUNindex(b,@2),BUNindex(b,@3));
 #endif
@@ -368,6 +382,7 @@ First experiment is a simple partitioning on the tail value.
 		exit(-1);
 	}
 	@2 = crackMap[@1].pieces+ crackMap[@1].freepiece;
+	@2->left= @2->middle= @2->right = -1;
 	crackMap[@1].freepiece++;
 @c
 str CRKcrackNaive(int *partid, int *bid, int *low, int *hgh)
@@ -397,17 +412,12 @@ Inspect the value range table to only further crack qualifying fragments.
 #endif
 	for(i=0; i< lim; i++){
 		if( crackMap[m].pieces[i].kind != LEAF) continue;
-		if( crackMap[m].pieces[i].rng_max < *(int*) low) continue;
-		if( crackMap[m].pieces[i].rng_min > *(int*) hgh) continue;
 		if( *(int*) low <=  crackMap[m].pieces[i].rng_min &&
 		    *(int*) hgh >=  crackMap[m].pieces[i].rng_max) {
-#ifdef DEBUG_CRACKERS
-			printf("skip range %d-%d\n",
-				crackMap[m].pieces[i].rng_min,
-				crackMap[m].pieces[i].rng_max);
-#endif
 			continue;
 		}
+		if( crackMap[m].pieces[i].rng_max < *(int*) low) continue;
+		if( crackMap[m].pieces[i].rng_min > *(int*) hgh) continue;
 
 		piece = crackMap[m].pieces+i;
 		/* set bounds */
@@ -460,7 +470,7 @@ and update the administration BATs.
 		printf("left split [%d] %d-%d \n",i,l,h);
 #endif
 				piece->kind = PHI;
-				pid = crackMap[m].freepiece;
+				piece->left = pid = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
 				npiece->rng_min= piece->rng_min;
 				npiece->rng_max= *(int*)hgh;
@@ -468,6 +478,10 @@ and update the administration BATs.
 				npiece->idx_last = h;
 				npiece->kind = LEAF;
 				npiece->parent=i;
+
+				piece->middle = -1; 
+
+				piece->right= crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
 				npiece->rng_min= *(int*)hgh + 1;
 				npiece->rng_max= piece->rng_max;
@@ -484,6 +498,7 @@ and update the administration BATs.
 #endif
 				/* falls at high end */
 				piece->kind= PHI;
+				piece->left = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
                                 npiece->rng_min= piece->rng_min;
                                 npiece->rng_max= *(int*) low -1;
@@ -492,7 +507,9 @@ and update the administration BATs.
                                 npiece->kind = LEAF;
                                 npiece->parent=i;
 
-				pid = crackMap[m].freepiece;
+				piece->middle = -1;
+
+				piece->right = pid = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
                                 npiece->rng_min= *(int*) low;
                                 npiece->rng_max= piece->rng_max;
@@ -506,6 +523,7 @@ and update the administration BATs.
 		printf("middle split [%d] %d-%d \n",i,l,h);
 #endif
 				piece->kind= PHI;
+				piece->left = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
                                 npiece->rng_min= piece->rng_min;
                                 npiece->rng_max= *(int*) low -1;
@@ -513,7 +531,8 @@ and update the administration BATs.
                                 npiece->idx_last = l-1;
                                 npiece->kind = LEAF;
                                 npiece->parent=i;
-				pid = crackMap[m].freepiece;
+
+				piece->middle = pid = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
                                 npiece->rng_min= *(int*) low;
                                 npiece->rng_max= *(int*) hgh;
@@ -521,6 +540,8 @@ and update the administration BATs.
                                 npiece->idx_last = h;
                                 npiece->kind = LEAF;
                                 npiece->parent=i;
+
+				piece->right = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
                                 npiece->rng_min= *(int*) hgh+1;
                                 npiece->rng_max= piece->rng_max;
@@ -659,7 +680,37 @@ str CRKgetPiece1(int *newpid, int *bid, int *vbid, int *piece)
 }
 @-
 The combined pieces can be retrieved as an ordinary
-overloaded select. 
+overloaded select.  The cracker administration is
+organized as an interval tree. The left and right
+branch are always set. The middle may be empty.
+@c
+int intervalFind(int m, int p, int *val){
+	int x= -1;
+/* printf("search %d in %d[%d,%d]\n",
+	*val,p,crackMap[m].pieces[p].rng_min ,crackMap[m].pieces[p].rng_max); */
+	if( crackMap[m].pieces[p].left >0){
+		x= intervalFind(m, crackMap[m].pieces[p].left,val);
+	}
+	if( x== -1 && crackMap[m].pieces[p].middle >0){
+		x= intervalFind(m, crackMap[m].pieces[p].middle,val);
+	}
+	if( x== -1 && crackMap[m].pieces[p].right >0){
+		x= intervalFind(m, crackMap[m].pieces[p].right,val);
+	}
+	if( x== -1 && *val>= crackMap[m].pieces[p].rng_min && 
+	    *val<= crackMap[m].pieces[p].rng_max )
+		return p;
+	return x;
+}
+void intervalSelect(int m, int p, int *low, int *high, int *first, int *last){
+	if( crackMap[m].pieces[p].rng_min> *low) *first= p;
+	else *first = intervalFind(m,p,low);
+/* printf("left found %d\n",*first);*/
+	if( crackMap[m].pieces[p].rng_max< *high) *last= p;
+	else *last = intervalFind(m,p,high);
+/* printf("right found %d\n",*last);*/
+}
+@-
 The algorithm collects the elements by repeatedly
 inspecting the cracker table to extend the scope.
 It keeps a count of number of leftover pieces.
@@ -672,6 +723,28 @@ would be sufficient. This works because we know that
 the reshuffling of a range always takes place within the
 space of its origin.
 @c
+str CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
+	BAT *b, *view;
+	int m;
+	int left, right;
+	(void)li; (void) hi ;
+
+        @:getBATdescriptor(vid,bid,b,Piece)@
+	m= findCrackMap(*bid);
+
+	b->batRestricted= BAT_READ;
+	view= VIEWcreate_(b,TRUE);
+	/* BBPfix(*vid=  view->batCacheid); */
+	*vid=  view->batCacheid;
+	intervalSelect(m,0,low,high, &left, &right);
+	/* printf("get range from %d %d\n",left,right);*/
+	if( left >=0 && right >=0 )
+		setViewBound(b,view, 
+			crackMap[m].pieces[left].idx_first, 
+			crackMap[m].pieces[right].idx_last);
+	return MAL_SUCCEED;
+}
+
 str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	BAT *b, *view;
 	int m,i;
@@ -687,11 +760,16 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	/*BBPfix(*vid=  view->batCacheid);*/
 	*vid=  view->batCacheid;
 
+@-
+Select an interval with a desirable value to start the glueing process
+@c
 	for(i=0; i<crackMap[m].freepiece; i++)
-	if( /* crackMap[m].pieces[i].kind == LEAF && NOT NEEDED */
-	    crackMap[m].pieces[i].rng_min>= *(int*) low &&
-	    crackMap[m].pieces[i].rng_max<= *(int*) high
-	) {
+	if( crackMap[m].pieces[i].kind == LEAF && /* NOT NEEDED */
+	    ((crackMap[m].pieces[i].rng_min<= *(int*) low &&
+	     *(int*) low <= crackMap[m].pieces[i].rng_max) ||
+	    (crackMap[m].pieces[i].rng_min<= *(int*) high &&
+	     *(int*) high <= crackMap[m].pieces[i].rng_max)
+	) ) {
 		CRKsetBounds(b,view,m,i);
 		idxlow= crackMap[m].pieces[i].idx_first;
 		idxhgh= crackMap[m].pieces[i].idx_last;
@@ -707,10 +785,11 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	do{
 		glued=0; leftover=0;
 		for(i=0; i<crackMap[m].freepiece; i++)
-		if( /* crackMap[m].pieces[i].kind == LEAF && NOT NEEDED */
+		if( crackMap[m].pieces[i].kind == LEAF && /* NOT NEEDED */
 		    crackMap[m].pieces[i].rng_min>= *(int*) low &&
 		    crackMap[m].pieces[i].rng_max<= *(int*) high
 		) {
+/* no little speedup, disgarded
 			if( crackMap[m].pieces[i].idx_first < idxlow &&
 			    crackMap[m].pieces[i].idx_last > idxhgh){
 				setViewBound(b,view,
@@ -718,6 +797,7 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 					idxhgh=crackMap[m].pieces[i].idx_last);
 				glued++;
 			} else
+*/
 			if( crackMap[m].pieces[i].idx_last == idxlow-1){
 #ifdef DEBUG_CRACKERS
 				printf("lglue: [%d][%d]%d %d\n",m,i, 

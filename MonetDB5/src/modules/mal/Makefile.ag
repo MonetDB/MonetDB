@@ -31,7 +31,7 @@ doc_mal = {
 }
 
 scripts_mal = {
-	DIR = pkglibdir/mal
+	DIR = pkglibdir
 	SOURCES = language.mx mal_init.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx streams.mx inspect.mx crackers.mx \

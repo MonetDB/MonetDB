@@ -36,28 +36,27 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
-use "mal/thread";
-use "mal/crackers";
-use "kernel/kernel_init";
+use "thread";
+use "crackers";
+use "kernel_init";
 #use "x100/x100core";
-use "mal/clients";
-use "mal/streams";
-use "mal/tablet";
-use "mal/io";
-use "mal/enum";
-use "mal/multiplex";
-use "mal/language";
-use "mal/profiler";
-use "mal/const"; 
-use "mal/bbp";
-use "mal/box"; 
-use "mal/inspect";
-use "mal/optimizer";
-use "mal/chopper";
-use "mal/transaction";
-#use "sql/sql_server";
-#use "sql/sql";
-
+use "clients";
+use "streams";
+use "tablet";
+use "io";
+use "enum";
+use "multiplex";
+use "language";
+use "profiler";
+use "const"; 
+use "bbp";
+use "box"; 
+use "inspect";
+use "optimizer";
+use "chopper";
+use "transaction";
+use "sql_server";
+use "sql";
 @-
 In practice, we have to introduce different startup for each
 client group or database.

@@ -21,7 +21,7 @@ doc_atoms = {
 		uchr.mx 
 }
 scripts_mal = {
-	DIR = pkglibdir/atoms
+	DIR = pkglibdir
 	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx \
 		uchr.mx 
 }
