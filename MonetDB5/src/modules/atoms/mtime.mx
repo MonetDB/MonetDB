@@ -894,16 +894,13 @@ of the calendar).
 #ifndef _MONETTIME_H_
 #define _MONETTIME_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <gdk.h>
+#include <mal.h>
 
 typedef int date;
 #define date_nil ((date) int_nil)
 @c
-#include "monettime.h"
+#include "mtime.h"
 
 @- daytime
 Daytime values are also stored as the number of milliseconds that passed since
@@ -966,15 +963,9 @@ typedef struct {
 tzone tzone_local;
 
 @h
-#include "monettime.proto.h"	/* generated definitions by mel */
-
-monettime_export void fromdate(int n, int *d, int *m, int *y);
-monettime_export void fromtime(int n, int *hour, int *min, int *sec, int *msec);
-monettime_export int daytime_tz_fromstr(str buf, int *len, daytime **ret);
-
-#ifdef __cplusplus
-}
-#endif
+mal_export void fromdate(int n, int *d, int *m, int *y);
+mal_export void fromtime(int n, int *hour, int *min, int *sec, int *msec);
+mal_export int daytime_tz_fromstr(str buf, int *len, daytime **ret);
 #endif	/* _MONETTIME_H_ */
 @+ Defines
 @c
@@ -1247,6 +1238,7 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2))
 
+int timestamp_add(timestamp *ret, timestamp *v, lng *msecs);
 static INLINE int
 timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 {
@@ -2225,6 +2217,7 @@ timestamp_extract_date_default(date *ret, timestamp *t)
 	return timestamp_extract_date(ret, t, &tzone_local);
 }
 
+int date_adddays(date *ret, date *v, int *delta);
 /* returns the date that comes a number of years after 'v' (or before iff *delta < 0). */
 int
 date_addyears(date *ret, date *v, int *delta)
