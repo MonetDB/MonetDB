@@ -1682,7 +1682,7 @@ bunins_failed:
 }
 
 BAT* BATfetch(BAT *l, BAT *r) {
-	return BATfetchsemijoin(r, l, l, TRUE);
+	return BATfetchsemijoin(r, l, l, FALSE);
 }
 
 @-
@@ -1720,13 +1720,13 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 		bn = BATmirror(BATselect(BATmirror(l), &lo, &hi)); 
 	} else if (BAThdense(r)) {
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATfetchsemijoin(l, r, l);\n");
-		bn = BATfetchsemijoin(l, r, l, FALSE);
+		bn = BATfetchsemijoin(l, r, l, TRUE);
 	} else if (BAThdense(l) && reverse1) {
 		if (!BAThkey(r)) {
 			BAT *v = VIEWhead_(r,BAT_WRITE); tmp = r = BATkunique(v); BBPreclaim(v);
 		}
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATfetchsemijoin(r, l, l);\n");
-		bn = BATfetchsemijoin(r, l, l, FALSE);
+		bn = BATfetchsemijoin(r, l, l, TRUE);
 	} else if (l->hhash_heap && reverse1) {
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATrevsemijoin(l,r);\n");
 		bn = BATrevsemijoin(l,r); 
