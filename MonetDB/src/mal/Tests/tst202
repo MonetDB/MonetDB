@@ -4,7 +4,7 @@
 
 	b:= bat.new(int,int);
 	rename(b,"mybat");
-	setPersistent(b);
+	#setPersistent(b);
 	roles(b,"first","second");
 	print(b);
 	c:= bat.new(int,str);
