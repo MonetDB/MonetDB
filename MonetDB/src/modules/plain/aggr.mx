@@ -31,7 +31,7 @@ test scripts were added.
 	"grouped tail average"
 .COMMAND {avg}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_avg_flt; 
 	"grouped tail average"
-.COMMAND {avg}(BAT[int,dbl] b, BAT[int,any] e) : BAT[int,dbl] = CMDaggr_avg_dbl; 
+.COMMAND {avg}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_dbl; 
 	"grouped tail average"
 
 .COMMAND {min}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_min; 
