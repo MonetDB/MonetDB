@@ -631,7 +631,7 @@ mathon:				math=1; ofile_puts("<i>");
 		while(isspace((int)(*p1))) p1++;
 		if (!*p1) { 
 		    if (i >= TYPE_TITLE) ofile_puts("<center>");
-		    if (i == TYPE_WWW) {
+		    if (i == TYPE_WWW ) {
 		        ofile_printf( "<a href=\"%s\">", opt_start);
 		        sprintf(nextstack, "</a>\n");
 		    } else {

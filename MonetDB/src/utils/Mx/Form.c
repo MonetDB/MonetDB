@@ -33,7 +33,7 @@
 #include	"MxFcnDef.h"
 
 #define TEXMODE		(textmode==M_TEX)
-#define WWWMODE		(textmode==M_WWW)
+#define WWWMODE		(textmode==M_WWW )
 #define Newline		if WWWMODE { PrCmd("<br>"); } else if TEXMODE { PrCmd("\n"); } else { PrCmd(".LP\n"); }
 
 extern  int     pr_env;
@@ -341,6 +341,7 @@ int	i;
 
 void	FormTitle(void)
 {
+	if( bodymode==0) return;
 	if( !(mx_author && mx_title ) )
 		return;
 		
@@ -423,12 +424,16 @@ void	FormMod(char *str, int mod)
 {
 	mx_title= str;
 	if TEXMODE FormHeader(); 
-	if TEXMODE {
-		PrCmd("\\vfill\\clearpage\\section{"); 
+	if (TEXMODE ) {
+		if( bodymode == 0) PrCmd("\\vfill\\clearpage"); 
+		PrCmd("\\section{"); 
 	} else if WWWMODE {
-		PrCmd("<hr size=1 noshade><hr size=1 noshade><br><br>");
+		if( bodymode==0) PrCmd("<hr size=1 noshade><hr size=1 noshade><br><br>");
 		PrCmd("<a name=mod_"); PrNum(wwwmod=mod); PrCmd("_0_0>\n<h2>"); 
-		PrNum(mod); PrChr(' ');  
+		if(bodymode==0) { 
+			PrNum(mod); 
+			PrChr(' ');  
+		}
 		wwwpar = 1;
 	} else	{
 		PrCmd(".ps+2\n.SH\n");
@@ -448,10 +453,13 @@ void	FormSec(char *str, int mod, int sec)
 	if TEXMODE {
 		PrCmd("\\subsection{");
 	} else if WWWMODE {
-                PrCmd("<hr size=1 noshade><br><a name=mod_");
+                if( bodymode==0) PrCmd("<hr size=1 noshade>");
+                PrCmd("<br><a name=mod_");
 		PrNum(wwwmod=mod);PrChr('_');
 		PrNum(wwwsec=sec);PrCmd("_0>\n<h4>"); wwwpar = 1;
-		PrNum(mod);PrChr('.'); PrNum(sec);PrChr(' ');
+		if( bodymode==0){
+			PrNum(mod);PrChr('.'); PrNum(sec);PrChr(' ');
+		}
 	} else	{
 		PrCmd(".SH\n");
 		PrNum(mod);PrChr('.');PrNum(sec);PrChr(' ');
@@ -476,9 +484,11 @@ void	FormSubSec(char *str)
 			PrNum(wwwsec);PrChr('_');
 			PrNum(wwwpar);
 			PrCmd(">\n<h5><b>");
-			PrNum(wwwmod);PrChr('.');
-			PrNum(wwwsec);PrChr('.');
-			PrNum(wwwpar++);PrChr(' ');
+			if(bodymode==0){
+				PrNum(wwwmod);PrChr('.');
+				PrNum(wwwsec);PrChr('.');
+				PrNum(wwwpar++);PrChr(' ');
+			}
 		} else {
 			PrCmd("\n.LP\n");
 		}

@@ -150,6 +150,7 @@ extern	int	opt_column;
 extern	int	opt_hide;
 extern	char	*opt_code;	/* extract code of interest only*/
 extern	int	textmode;	/* either T_TEX or T_MS */
+extern	int	bodymode;	/* either 0= all 1= for inclusion */
 extern  int	noline;
 extern  int	notouch;
 

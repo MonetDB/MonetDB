@@ -30,7 +30,7 @@
 #include	"MxFcnDef.h"
 
 #define TEXMODE (textmode==M_TEX)
-#define WWWMODE (textmode==M_WWW)
+#define WWWMODE (textmode==M_WWW )
 
 Itable *itable = 0;
 int itable_done = 0;
@@ -109,7 +109,7 @@ Ientry *ie;
 
 		/* print the simple HTML1.0 TOC in the main doc (noframes) */
 		mx_out = 1;
-		PrCmd("\n<hr size=5 noshade>\n");
+		if ( bodymode==0 )PrCmd("\n<hr size=5 noshade>\n");
 		PrCmd("<h2>Table Of Contents</h2>\n");
 		for(i=0, ie = it->it_entrys; i<it->it_nentry; i++, ie++) { 
 			if (ie->ie_sec == 0) { 
@@ -248,8 +248,9 @@ Ientry *ie;
 	if TEXMODE{
 		if (opt_column == 1) 
 			PrCmd("\\onecolumn\n");
-		else
-			PrCmd("\\clearpage\n");
+		else{
+			if(bodymode==0) PrCmd("\\clearpage\n");
+		}
 	} else PrCmd(".sp 24i\n"); /* advance to the next column */
 }
 
@@ -259,7 +260,7 @@ int	it;
 
 	if WWWMODE return;
 	SortIndex();
-	if TEXMODE PrCmd("\\clearpage\n");
+	if (TEXMODE && bodymode==0) PrCmd("\\clearpage\n");
 	for( it= 1; it <  M_ITABLE; it++ )
 		PrItable(it);
 }
@@ -276,6 +277,7 @@ int first;
 	if( it->it_nentry == 0)
 		return;
 
+	if( bodymode==0){
 	if TEXMODE PrCmd("\\twocolumn[\\begin{center} \\large\\bf ");
 	else	PrCmd(".SH\n");
 	PrText(it->it_name);
@@ -330,7 +332,9 @@ int first;
 	if TEXMODE{
 		if (opt_column == 1) 
 			PrCmd("\\onecolumn\n");
-		else
-			PrCmd("\\clearpage\n");
+		else {
+			if( bodymode == 0) PrCmd("\\clearpage\n");
+		}
 	} else	PrCmd(".XE\n");
+	}
 }

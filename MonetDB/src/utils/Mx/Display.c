@@ -34,7 +34,7 @@
 extern int pr_env;
 
 #define TEXMODE (textmode==M_TEX)
-#define WWWMODE (textmode==M_WWW)
+#define WWWMODE (textmode==M_WWW )
 /* Printing modes
  *	Formatted text	Plain/Math.
  *		Math is used for special symbols.
@@ -132,7 +132,7 @@ void	PrRule(char *tail)
 		ofile_printf("\\vspace{-1em}\\noindent\\rule{\\linewidth}{1pt}\n");
 	    }
 	} else if WWWMODE {
-	    if (somethingPrinted) {
+	    if (somethingPrinted && bodymode==0) {
 	    	ofile_printf("\n<hr size=1 noshade>");
 	    }
 	    if (tail) {
@@ -143,7 +143,7 @@ void	PrRule(char *tail)
 		ofile_printf("</i></font></td></tr></table>\n");
 	    }
 	} else {
-	    if (somethingPrinted) {
+	    if (somethingPrinted && bodymode==0) {
 	    	ofile_printf(".br\n.sp -0.5v\n");
 	    	ofile_printf("\\l'\\n(.lu-\\n(.iu'\n");
 	    	ofile_printf(".ps -1\n.vs -1\n.br\n");
@@ -176,7 +176,8 @@ void	PrPrelude(char *file)
     *t = 0;
 
 
-	if TEXMODE{
+	if ( TEXMODE ){
+	   if( bodymode==0){
 	    if(texDocStyle != NULL)
 		ofile_printf("\\documentclass%s\n",texDocStyle);
 	    else {
@@ -197,11 +198,12 @@ void	PrPrelude(char *file)
 	    ofile_printf("  %s}\n", opt_column==1? "\\small": "\\footnotesize");
 	    ofile_printf("\\newcommand{\\eq}[1]{\n");
 	    ofile_printf("  ${\\ \\equiv\\ }$}\n");
+	}
 
 /*
    Starting ...
  */
-	    ofile_printf("\\begin{document}\n");
+	if( bodymode==0) ofile_printf("\\begin{document}\n");
 	    if( opt_column == 2 ) ofile_printf(",\\twocolumn\n");
     } else if WWWMODE {
 	    extern char* outputdir;
@@ -218,6 +220,7 @@ void	PrPrelude(char *file)
             if (disclaimer) insertDisclaimer(ofile_body,filename_body);
 
 	    mx_out = 7; 
+	if( bodymode==0){
 	    ofile_printf("<HTML>\n<HEAD>\n");
 	    ofile_printf("<LINK REL=STYLESHEET HREF=/MonetDB.css>\n");
 	    mx_out = 4;
@@ -231,6 +234,7 @@ void	PrPrelude(char *file)
 	    ofile_printf("</FRAMESET>\n\n<NOFRAMES>\n");
 	    mx_out = 7;
 	    ofile_printf("<BODY bgcolor=\"#FFFFFF\" text=\"%s\" vlink=\"%s\" link=\"%s\">\n",text_color, vlnk_color, link_color);
+	}
 	    mx_out = 5;
     } else {
 	if( opt_column==2) ofile_printf(".2C\n");
@@ -241,11 +245,11 @@ void	PrPrelude(char *file)
 void	PrPostlude(void)
 {
 	PrEnv(E_CMD);
-	if TEXMODE {
-		ofile_printf("\\end{document}\n");
+	if ( TEXMODE ) {
+		if( bodymode==0)ofile_printf("\\end{document}\n");
 	} else if WWWMODE {
 	    mx_out = 7;
-	    ofile_printf("</BODY>\n</HTML>\n");
+	    if( bodymode==0)ofile_printf("</BODY>\n</HTML>\n");
 	    mx_out = 5;
 	}
 }

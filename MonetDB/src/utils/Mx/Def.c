@@ -377,7 +377,7 @@ char * dir2ext(CmdCode dir)
     Directive *d = str2dir;
 
     if(dir == Bfile) {
-	if(textmode == M_WWW) 
+	if(textmode == M_WWW )
 		return "html";
 	else 
 		return "tex";
