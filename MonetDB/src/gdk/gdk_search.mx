@@ -130,16 +130,32 @@ gdk_export hash_t	HASHlist     (Hash* h, size_t i) ;
 A new entry is added with @%HASHins@ using the BAT, the BUN index, 
 and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 
+@h
+#define hash_link_loop(f,i,h) \
+HASHDEBUG {\
+	if ((h).link[i] > 0) {\
+		if ((h).link[i] == (hash_t)(i)) \
+			stream_printf(GDKerr,"! hash-link-loop-1 in %s: h.link[" SZFMT "] = " SZFMT " !\n",\
+						f,(hash_t)(i),(hash_t)(i));\
+		else if ((h).link[(h).link[i]] == (hash_t)(i)) \
+			stream_printf(GDKerr,"! hash-link-loop-2 in %s: h.link[" SZFMT "] = " SZFMT " && h.link[" SZFMT "] = " SZFMT " !\n",\
+						f,(hash_t)(i),(h).link[i],(h).link[i],(hash_t)(i));\
+	}\
+}
 @= hashins
 #define HASHins_@1(h, i, v) {\
 	hash_t _c = hash_@1(h,v);\
 	h.link[i] = h.hash[_c];\
-	h.hash[_c] = i; }
+	hash_link_loop("HASHins_@1",i,h);\
+	h.hash[_c] = i;\
+}
 @h
 #define HASHins(h,i,v) {\
 	hash_t _c = HASHprobe(&h, v);\
 	h.link[i] = h.hash[_c];\
-	h.hash[_c] = i; }
+	hash_link_loop("HASHins",i,h);\
+	h.hash[_c] = i;\
+}
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
@@ -167,6 +183,7 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 #define HASHdel(h, i, v, next) {\
         if (next && h.link[i+1] == i) {\
                 h.link[i+1] = h.link[i];\
+		hash_link_loop("HASHdel(1)",(i+1),h);\
         } else {\
 		size_t _c = HASHprobe(&h, v);\
 		if (h.hash[_c] == i) {\
@@ -175,15 +192,18 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 		for(_c = h.hash[_c]; _c; _c = h.link[_c]) {\
 			if (h.link[_c] == i) {\
 				h.link[_c] = h.link[i]; \
+				hash_link_loop("HASHdel(2)",_c,h);\
 				break;\
 			}\
 		}\
-	} h.link[i] = 0;\
+	} \
+	h.link[i] = 0;\
 }
 
 #define HASHmove(h, i, j, v, next) { \
         if (next && h.link[i+1] == i) {\
                 h.link[i+1] = j;\
+		hash_link_loop("HASHmove(1)",(i+1),h);\
         } else {\
 		size_t _c = HASHprobe(&h, v); \
 		if (h.hash[_c] == i) {\
@@ -192,10 +212,13 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 		for(_c = h.hash[_c]; _c; _c = h.link[_c]) {\
 			if (h.link[_c] == i) {\
 				h.link[_c] = j; \
+				hash_link_loop("HASHmove(2)",(i+1),h);\
 				break;\
 			}\
 		}\
-	} h.link[j] = h.link[i];\
+	} \
+	h.link[j] = h.link[i];\
+	hash_link_loop("HASHmove(3)",j,h);\
 }
 
 @- Hash Table Creation
@@ -255,6 +278,7 @@ Heap* HASHnew(Hash *h, Heap *hp, int tpe, size_t size, hash_t mask) {
 			break; /* mask too full */
 		}
 		h->link[i] = h->hash[c];
+		hash_link_loop("starthash[@1,@2]",i,(*h));
 		h->hash[c] = (hash_t) i++;
 	} break; 
 @= finishhash
@@ -262,6 +286,7 @@ Heap* HASHnew(Hash *h, Heap *hp, int tpe, size_t size, hash_t mask) {
 		ptr v = BUN@2(b, p); 
 		hash_t c = hash_@1((*h), v);
 		h->link[i] = h->hash[c]; 
+		hash_link_loop("finishhash[@1,@2]",i,(*h));
 		h->hash[c] = (hash_t) i++;
 	} break; 
 @- 
@@ -391,6 +416,7 @@ hash_t HASHlist(Hash* h, size_t i) {
 
         while ((j = h->link[i]) > 0) {
                 c++;
+		hash_link_loop("HASHlist",i,(*h));
                 i = j;
                 if (i > h->lim) {
                         stream_printf(GDKout, "hash inconsistency link " SZFMT "\n",i);

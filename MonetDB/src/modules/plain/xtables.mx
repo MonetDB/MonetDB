@@ -467,7 +467,6 @@ static bat build_hl(Heap* hp, bat histo, BAT *b) {
         	hl->alignment = h->halign;
         	b->hacctype = ACC_histolink;
 		BBPincref(histo, TRUE);
-printf("build histolink %ld on bat %d\n", (int) hp->base, b->batCacheid); 
 	} 
 	return created;
 }
@@ -485,7 +484,6 @@ CTbuild_hl(
 }
 
 static void destroy_hl(Heap* hp, BAT* b, bat histo) {
-printf("destroy histolink %ld on bat %d\n", (int) hp->base, b->batCacheid); 
 	if (histo) {
 		BBPdecref(histo, TRUE);
 		BBPunfix(histo);
