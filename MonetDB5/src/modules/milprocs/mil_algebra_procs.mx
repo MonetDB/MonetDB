@@ -237,10 +237,7 @@ function tunique(b:bat[:any,:any$1]):bat[:any$1,:void];
 	return td_a :=kunique(sd_a);
 end tunique;
 function sort_ht(B:bat[:any$1,:any$2]):bat[:any$1,:any$2];
-	ud_a := getHeadType(B);
-	vd_a := getTailType(B);
-	wd_a := count(B);
-	R := new(ud_a,vd_a,wd_a);
+	R := new(B);
 	xd_a := kunique(B);
 	yd_a := sort(xd_a);
 barrier	ae_a := bunStream(yd_a,ae_aH,ae_aT);
@@ -838,4 +835,5 @@ end count_no_nil;
 @-
 Dummy C code
 @c
+
 
