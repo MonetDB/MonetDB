@@ -1832,6 +1832,7 @@ Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 			l = p - src;
 		} 
 		@:memcpy@
+@-
 @= memcpy
 		if (buf+bufsize < dst+l) {
 		        int len = dst - buf;
@@ -1848,6 +1849,7 @@ Parse the line, and insert a BUN.
 @c
 		for(p = buf; *p && GDKisspace(*p); p++);
 		if (*p == '#') continue;
+@-
 @= parsevalue
 	       	for (;*p && ((int) *p) != @2; p++);
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
