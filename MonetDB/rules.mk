@@ -153,7 +153,12 @@ HIDE=1
 	$(MX) -1 -H$(HIDE) -w -B $<
 
 %.html: %.tex
-	$(LATEX2HTML) -split 0 -noimages -rootdir ./ -norooted -noinfo -nosubdir  $<
+	# if the .tex source file is found in srcdir (via VPATH), there might be a '.'
+	# in the path, which latex2html doesn't like; hence, we temporarly link the
+	# .tex file to the local build dir.
+	if [ "$<" != "$(<F)" ] ; then $(LN_S) $< $(<F) ; fi
+	$(LATEX2HTML) -split 0 -noimages -rootdir ./ -norooted -noinfo -nosubdir  $(<F)
+	$(RM) -f $(<F)
 
 %.pdf: %.tex
 	$(PDFLATEX) $< 
