@@ -440,6 +440,94 @@ int sql_string( context *lc, int quote ){
 
 static int tokenize(context *lc);
 
+int number(context *lc, int len){
+	char *yytext = lc->yytext;
+	int token = INT;
+	int cur = 0;
+	int yylen = len;
+	int yysz = lc->yysize;
+	/* todo start with . */
+
+	yytext[len-1] = lc->cur;
+
+	while( (cur = lex_getc(lc)) != EOF && isdigit(cur)){
+		if (yylen == yysz){
+			yytext = realloc(yytext, yysz<<1);
+			yysz = yysz<<1;
+		}
+		yytext[yylen++] = (char)cur;
+	}
+	if (cur == '.'){
+		token = INTNUM;
+		if (yylen == yysz){
+			yytext = realloc(yytext, yysz<<1);
+			yysz = yysz<<1;
+		}
+		yytext[yylen++] = (char)cur;
+		while( (cur = lex_getc(lc)) != EOF && isdigit(cur)){
+			if (yylen == yysz){
+				yytext = realloc(yytext, yysz<<1);
+				yysz = yysz<<1;
+			}
+			yytext[yylen++] = (char)cur;
+		}
+		if (cur == 'e' || cur == 'E'){
+			token = APPROXNUM;
+			if (yylen == yysz){
+				yytext = realloc(yytext, yysz<<1);
+				yysz = yysz<<1;
+			}
+			yytext[yylen++] = (char)cur;
+			cur = lex_getc(lc);
+			if (lc->cur == '-' || lc->cur == '+'){
+				token = 0;
+				if (yylen == yysz){
+					yytext = realloc(yytext, yysz<<1);
+					yysz = yysz<<1;
+				}
+				yytext[yylen++] = (char)lex_getc(lc); 
+			}
+			while( (cur = lex_getc(lc)) != EOF && isdigit(cur)){
+				token = APPROXNUM;
+				if (yylen == yysz){
+					yytext = realloc(yytext, yysz<<1);
+					yysz = yysz<<1;
+				}
+				yytext[yylen++] = (char)cur;
+			}
+		}
+	}
+	yytext[yylen] = 0;
+	if (token){
+		lc->yyval = token;
+	} else if (yylen == 1){
+		if (yytext[0] == '-'){
+			if (cur == '-'){
+				if (skip_sql_comment(lc) == EOF)
+					return lc->cur;
+				return tokenize(lc);
+			} else {
+				lc->cur = cur;
+				return context_yychar(lc, yytext[0]);
+			}
+		} else if (yytext[0] == '+'){
+			lc->cur = cur;
+			return context_yychar(lc, yytext[0]);
+		}
+	} else {
+		snprintf(lc->errstr, ERRSIZE, 
+				_("Unexpected symbol %c"), lc->cur);
+		return -1;
+	}
+	lc->yytext = yytext;
+	lc->yylen = yylen;
+	lc->yysize = yysz;
+	
+	lc->cur = cur;
+	return lc->yyval;
+}
+
+
 int lex_symbol(context *lc){
 	int cur = lc->cur;
 	if (cur == '/'){
@@ -453,7 +541,11 @@ int lex_symbol(context *lc){
 		}
 	} else if (cur == '-'){
 		int next = lex_getc(lc);
-		if (next == '-'){
+		if (isdigit(next)){
+			lc->yytext[0] = '-';
+			lc->cur = next;
+			return number(lc,2);
+		} else if (next == '-'){
 			if (skip_sql_comment(lc) == EOF)
 				return lc->cur;
 			return tokenize(lc);
@@ -505,96 +597,13 @@ int lex_symbol(context *lc){
 	return -1;
 }
 
-int number(context *lc){
-	char *yytext = lc->yytext;
-	int token = INT;
-	int cur = 0;
-	int yylen = 1;
-	int yysz = lc->yysize;
-	/* todo start with . */
-
-	yytext[0] = lc->cur;
-
-	while( (cur = lex_getc(lc)) != EOF && isdigit(cur)){
-		if (yylen == yysz){
-			yytext = realloc(yytext, yysz<<1);
-			yysz = yysz<<1;
-		}
-		yytext[yylen++] = (char)cur;
-	}
-	if (cur == '.'){
-		token = INTNUM;
-		if (yylen == yysz){
-			yytext = realloc(yytext, yysz<<1);
-			yysz = yysz<<1;
-		}
-		yytext[yylen++] = (char)cur;
-		while( (cur = lex_getc(lc)) != EOF && isdigit(cur)){
-			if (yylen == yysz){
-				yytext = realloc(yytext, yysz<<1);
-				yysz = yysz<<1;
-			}
-			yytext[yylen++] = (char)cur;
-		}
-		if (cur == 'e' || cur == 'E'){
-			token = APPROXNUM;
-			if (yylen == yysz){
-				yytext = realloc(yytext, yysz<<1);
-				yysz = yysz<<1;
-			}
-			yytext[yylen++] = (char)cur;
-			if (lc->cur == '-' || lc->cur == '+'){
-				if (yylen == yysz){
-					yytext = realloc(yytext, yysz<<1);
-					yysz = yysz<<1;
-				}
-				yytext[yylen++] = (char)lex_getc(lc); 
-			}
-			while( (cur = lex_getc(lc)) != EOF && isdigit(cur)){
-				if (yylen == yysz){
-					yytext = realloc(yytext, yysz<<1);
-					yysz = yysz<<1;
-				}
-				yytext[yylen++] = (char)cur;
-			}
-		}
-	}
-	yytext[yylen] = 0;
-	if (isdigit(yytext[yylen-1])){
-		lc->yyval = token;
-	} else if (yylen == 1){
-		if (yytext[0] == '-'){
-			if (cur == '-'){
-				if (skip_sql_comment(lc) == EOF)
-					return lc->cur;
-				return tokenize(lc);
-			} else {
-				lc->cur = cur;
-				return context_yychar(lc, yytext[0]);
-			}
-		} else if (yytext[0] == '+'){
-			lc->cur = cur;
-			return context_yychar(lc, yytext[0]);
-		}
-	} else {
-		snprintf(lc->errstr, ERRSIZE, _("Unexpected symbol %c"), lc->cur);
-		return -1;
-	}
-	lc->yytext = yytext;
-	lc->yylen = yylen;
-	lc->yysize = yysz;
-	
-	lc->cur = cur;
-	return lc->yyval;
-}
-
 int tokenize(context *lc){
 	while(1){
 		if(isspace(lc->cur)){
 			skip_white_space(lc); 
 			if (lc->cur == EOF) return lc->cur;
 		} else if (isdigit(lc->cur)){
-			return number(lc);
+			return number(lc,1);
 		} else if (isalpha(lc->cur) || lc->cur == '_'){
 			return keyword_or_ident(lc);
 		} else if (ispunct(lc->cur)){
@@ -646,8 +655,9 @@ int sqllex( YYSTYPE *yylval, void *parm ){
 int
 parse_error(context *lc, char *err)
 {
-	snprintf(lc->errstr, ERRSIZE, "%s(%d) %s at token: %s\n in statement: %s", 
-		lc->filename, lc->lineno, err, lc->yytext, lc->sql);
+	snprintf(lc->errstr, ERRSIZE, 
+			"%s(%d) %s at token (%d): %s\n in statement: %s", 
+		lc->filename, lc->lineno, err, lc->yyval, lc->yytext, lc->sql);
 	return 1;
 }
 
