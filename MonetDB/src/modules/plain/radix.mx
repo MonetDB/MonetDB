@@ -1608,7 +1608,7 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
     int nchunks = 1<<nbits;
     int chunksize = ntuples/nchunks;
     int i, mask = (nchunks-1) << shift;
-    move_t buf[512], *mov = (move_t*) (nchunks>512)?GDKmalloc(nchunks*sizeof(move_t)):buf;
+    move_t buf[512], *mov = (nchunks>512)?(move_t*)GDKmalloc(nchunks*sizeof(move_t)):buf;
 
     /* kick off with uniform boundaries */
     for(i=0; i<nchunks; i++) {
