@@ -69,7 +69,7 @@ main(int argc, char **argv)
 	SQLHANDLE env;
 	SQLHANDLE dbc;
 	SQLHANDLE stmt;
-	SQLCHAR *host = "localhost";
+	SQLCHAR *host = "Default";
 	SQLCHAR *user = "monetdb";
 	SQLCHAR *pass = "monetdb";
 	SQLRETURN ret;

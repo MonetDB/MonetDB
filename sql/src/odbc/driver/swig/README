@@ -5,7 +5,7 @@ Try this for testing:
 import odbc
 env = odbc.SQLAllocEnv()[1]
 dbc = odbc.SQLAllocConnect(env)[1]
-odbc.SQLConnect(dbc, 'localhost', 'monetdb', 'monetdb')
+odbc.SQLConnect(dbc, 'Default', 'monetdb', 'monetdb')
 stmt = odbc.SQLAllocStmt(dbc)[1]
 
 or alternatively:
@@ -13,7 +13,7 @@ or alternatively:
 import odbc
 env = odbc.SQLAllocHandle(odbc.SQL_HANDLE_ENV, None)[1]
 dbc = odbc.SQLAllocHandle(odbc.SQL_HANDLE_DBC, env)[1]
-odbc.SQLConnect(dbc, 'localhost', 'monetdb', 'monetdb')
+odbc.SQLConnect(dbc, 'Default', 'monetdb', 'monetdb')
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
 
 
@@ -24,7 +24,7 @@ sys.path.insert(0,"build/lib.linux-i686-2.4")
 import odbc
 env = odbc.SQLAllocHandle(odbc.SQL_HANDLE_ENV, None)[1]
 dbc = odbc.SQLAllocHandle(odbc.SQL_HANDLE_DBC, env)[1]
-odbc.SQLConnect(dbc, "localhost", "monetdb", "monetdb")
+odbc.SQLConnect(dbc, "Default", "monetdb", "monetdb")
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
 odbc.SQLExecDirect(stmt, """CREATE TABLE model (
    model_id int(11) DEFAULT '0' NOT NULL,
