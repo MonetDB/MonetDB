@@ -68,7 +68,7 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
  -c<path>
  --config=<path>
          : location of monet.conf file; default is
-		%smonet.conf                        
+                %smonet.conf                        
 
  --monet_mod_path=<pathlist>
          : overwrite Mserver's default module search path
@@ -80,10 +80,10 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
         print '''\
  --CMDLST=<path>
          : location of .Mprofile-commands.lst file; default is the first found of
-		%s.Mprofile-commands.lst                        
-		<TSTSRCBASE>%s.Mprofile-commands.lst            
-		%s.Mprofile-commands.lst                               
-		%sMprofile-commands.lst                                                                      
+                %s.Mprofile-commands.lst                        
+                <TSTSRCBASE>%s.Mprofile-commands.lst            
+                %s.Mprofile-commands.lst                               
+                %sMprofile-commands.lst                                                                      
 ''' % (os.getcwd()+os.sep,
        os.sep,
        os.environ['HOME']+os.sep,
@@ -110,13 +110,13 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
  --TSTBLDBASE=<abspath>
  --TSTTRGBASE=<abspath>
          : overrule defaults:
-		MONET_SOURCE=%s
-		MONET_BUILD=%s
-		MONET_PREFIX=%s
-		SQL_PREFIX=%s
-		TSTSRCBASE=<MONET_SOURCE>
-		TSTBLDBASE=<MONET_BUILD>
-		TSTTRGBASE=<MONET_PREFIX>
+                MONET_SOURCE=%s
+                MONET_BUILD=%s
+                MONET_PREFIX=%s
+                SQL_PREFIX=%s
+                TSTSRCBASE=<MONET_SOURCE>
+                TSTBLDBASE=<MONET_BUILD>
+                TSTTRGBASE=<MONET_PREFIX>
 ''' % (GetMonetConfig('--source'),
        GetMonetConfig('--build'),
        GetMonetConfig('--prefix'),
@@ -129,10 +129,10 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
  --MAPIPORT=<port-no.>
  --SQLPORT=<port-no.>
          : overrule defaults:
-		MAPICLIENT=%s
-		SQLCLIENT=%s
-		MAPIPORT=%s
-		SQLPORT=%s
+                MAPICLIENT=%s
+                SQLCLIENT=%s
+                MAPIPORT=%s
+                SQLPORT=%s
 ''' % (dft['MAPICLIENT'], dft['SQLCLIENT'], dft['MAPIPORT'], dft['SQLPORT'])
 
     print """\
@@ -229,8 +229,8 @@ def CreateHtmlIndex (env) :
             f.write("<FONT COLOR=#000000>%s</FONT>" % OSVER)
             #TODO ?
             #f.write("""\
-			#<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
-			#""")
+                        #<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
+                        #""")
         f.write("</FONT></TH>\n")
         for l in BODY:
             f.write(l)
