@@ -796,9 +796,9 @@ int ASCIIload_file( ascii *as, bstream *b ){
 	if (ascii_io_debug)
 		stream_printf( GDKerr, "ASCIIload_file\n");
 
-	while(!b->eof && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
+	while((b->pos < b->len || !b->eof) && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
 		char *s, *end;
-		if (bstream_read(b, b->size - (b->len - b->pos)) == 0) {
+		if (b->pos >= b->len && !b->eof && bstream_read(b, b->size - (b->len - b->pos)) == 0) {
 			GDKerror("read error\n");
 			res = -1;
 			break;
