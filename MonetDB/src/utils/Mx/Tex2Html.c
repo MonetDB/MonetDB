@@ -509,6 +509,21 @@ mathon:				math=1; ofile_puts("<i>");
 			  	ofile_printf( "</font></td>\n");
 			  	table_column++; break;
 			  } 
+		/* 
+		 * proper handling of sub- & superscripts in math mode requires
+		 * that there is an extra {}-block around '_'/'^', e.g.,
+		 * "{^2}", "{_{max}}", "{_\theta{}}".
+		 */
+		case '^': if (math) {
+				ofile_puts("<sup>");
+				STACK("</sup>",stack);
+				break;
+			  }
+		case '_': if (math) {
+				ofile_puts("<sub>");
+				STACK("</sub>",stack);
+				break;
+			  }
 		case '\n':if (p1[1]=='\n') {
 				ofile_printf("<br>");
 				p1++;
