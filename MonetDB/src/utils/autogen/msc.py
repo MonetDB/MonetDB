@@ -404,8 +404,8 @@ def msc_bins(fd, var, binsmap, msc ):
 
         srcs = bin+"_OBJS ="
         for target in binsmap['TARGETS']:
-            l = len(bin)
-            if (target[0:l] == bin):
+            t,ext = split_filename(target)
+            if (t == bin):
                 t,ext = split_filename(target)
                 if (ext == "o"):
                     srcs = srcs + " " + t + ".obj"
@@ -541,8 +541,8 @@ def msc_libs(fd, var, libsmap, msc ):
 
         srcs = "lib"+sep+lib+"_OBJS ="
         for target in libsmap['TARGETS']:
-            l = len(lib)
-            if (target[0:l] == lib):
+            t,ext = split_filename(target)
+            if (t == lib):
                 t,ext = split_filename(target)
                 if (ext == "o"):
                     srcs = srcs + " " + t + ".obj"

@@ -341,8 +341,8 @@ def am_bins(fd, var, binsmap, am ):
 
         srcs = bin+"_SOURCES ="
         for target in binsmap['TARGETS']:
-            l = len(bin)
-            if (target[0:l] == bin):
+            t,ext = split_filename(target)
+            if (t == bin):
                 t,ext = split_filename(target)
                 if (ext in scripts_ext):
                     if (target not in SCRIPTS):
@@ -454,9 +454,8 @@ def am_libs(fd, var, libsmap, am ):
 
         srcs = "lib"+sep+lib+"_la_SOURCES ="
         for target in libsmap['TARGETS']:
-            l = len(lib)
-            if (target[0:l] == lib):
-                t,ext = split_filename(target)
+            t,ext = split_filename(target)
+            if (t == lib):
                 if (ext in scripts_ext):
                     if (target not in SCRIPTS):
                         SCRIPTS.append(target)
