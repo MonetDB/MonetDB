@@ -3,6 +3,7 @@ import java.io.*;
 import java.util.*;
 
 /**
+ * -- rewrite this school example of how not to write proper software
  * This rather awkard implemented program acts like an extended client program
  * for MonetDB. It's look and feel is very much like PostgreSQL's interactive
  * terminal program.
@@ -14,19 +15,81 @@ import java.util.*;
  */
 
 public class JdbcClient {
-	public static void main(String[] args) throws Exception {
-		// variables that we use, and their defaults
-		String file = null;
-		String user = System.getProperty("user.name");
+	private static Connection con;
+	private static Statement stmt;
+	private static BufferedReader in;
+	private static PrintWriter out;
+	private static DatabaseMetaData dbmd;
+
+	public final static void main(String[] args) throws Exception {
+		// the arguments we handle
+		Map arg = new HashMap();
+		// arguments which need a value
+		ArrayList value = new ArrayList();
+		value.add("1");
+		
+		arg.put("h", value);
+		arg.put("-host", value);
+		value = (ArrayList)(value.clone());
+		arg.put("p", value);
+		arg.put("-port", value);
+		value = (ArrayList)(value.clone());
+		arg.put("f", value);
+		arg.put("-file", value);
+		value = (ArrayList)(value.clone());
+		arg.put("u", value);
+		arg.put("-user", value);
+		value = (ArrayList)(value.clone());
+		arg.put("Xmode", value);
+		value = (ArrayList)(value.clone());
+		arg.put("Xblksize", value);
+		value = (ArrayList)(value.clone());
+		arg.put("Xoutput", value);
+		
+		// arguments which can have zero to lots of arguments
+		value = new ArrayList();
+		value.add("0*");
+		
+		arg.put("d", value);
+		arg.put("-dump", value);
+		
+		// arguments which can have zero or one argument(s)
+		value = new ArrayList();
+		value.add("01");
+		
+		value = (ArrayList)(value.clone());
+		arg.put("Xdebug", value);
+		value = (ArrayList)(value.clone());
+		arg.put("Xbatching", value);
+		
+		// arguments which have no argument(s)
+		value = new ArrayList();
+		value.add("0");
+		
+		value = (ArrayList)(value.clone());
+		arg.put("-help", value);
+		
+		
+		// default values, the username is prefixed with a space to identify
+		// at a later stage if it has been set via the command line
+		((ArrayList)(arg.get("u"))).add(" " + System.getProperty("user.name"));
+		((ArrayList)(arg.get("h"))).add("localhost");
+		((ArrayList)(arg.get("p"))).add("45123");
+		((ArrayList)(arg.get("f"))).add(null);
+		((ArrayList)(arg.get("Xmode"))).add(null);
+		((ArrayList)(arg.get("Xblksize"))).add(null);
+		((ArrayList)(arg.get("Xoutput"))).add(null);
+		((ArrayList)(arg.get("d"))).add(null);
+		((ArrayList)(arg.get("Xdebug"))).add(null);
+		((ArrayList)(arg.get("Xbatching"))).add(null);
+		((ArrayList)(arg.get("-help"))).add(null);
+
+		// we cannot put password in the arg map, since it would be accessable
+		// from the command line by then.
 		String pass = null;
-		String host = "localhost";
-		String port = "45123";
-		String database = "default";
-		String dump = null;
-		String blockmode = null;
-		// we leave checking if this is a valid number to the driver
 
 		// look for a file called .monetdb in the users homedir
+		// and read it's preferences
 		File pref = new File(System.getProperty("user.home"), ".monetdb");
 		if (pref.exists()) {
 			// the file is there, parse it and set the default settings
@@ -36,125 +99,164 @@ public class JdbcClient {
 				prop.load(in);
 				in.close();
 
-				user = prop.getProperty("username", user);
+				if (prop.containsKey("user"))
+					((ArrayList)(arg.get("u"))).set(1, " " + prop.getProperty("user"));
+				if (prop.containsKey("host"))
+					((ArrayList)(arg.get("h"))).set(1, prop.getProperty("host"));
+				if (prop.containsKey("port"))
+					((ArrayList)(arg.get("p"))).set(1, prop.getProperty("port"));
+				if (prop.containsKey("file"))
+					((ArrayList)(arg.get("f"))).set(1, prop.getProperty("file"));
+				if (prop.containsKey("mode"))
+					((ArrayList)(arg.get("Xmode"))).set(1, prop.getProperty("mode"));
+				if (prop.containsKey("debug"))
+					((ArrayList)(arg.get("Xdebug"))).set(1, prop.getProperty("debug"));
+
 				pass = prop.getProperty("password", pass);
-				host = prop.getProperty("hostname", host);
-				port = prop.getProperty("port", port);
-				database = prop.getProperty("database", database);
-				blockmode = prop.getProperty("blockmode", blockmode);
-
 			} catch (IOException e) {
-				// ok, then not
+				// ok, forget it
 			}
 		}
 
-		// parse the arguments
-		boolean hasFile = false, hasUser = false, hasHost = false,
-				hasPort = false, hasDump = false, hasXMLDump = false,
-				debug = false;
+
+		// parse and set the command line arguments
+		value = null;
+		int quant = -1;
+		int qcount = 0;
+		boolean moreData = false;
 		for (int i = 0; i < args.length; i++) {
-			if (!hasFile && args[i].equals("-f") && i + 1 < args.length) {
-				file = args[i + 1];
-				i++;
-				hasFile = true;
-			} else if (!hasFile && args[i].startsWith("-f")) {
-				file = args[i].substring(2);
-				if (file.equals("")) {
-					System.out.println("-f needs a filename as argument");
+			if (value == null) {
+				if (args[i].charAt(0) != '-') {
+					System.err.println("Unexpected value: " + args[i]);
 					System.exit(-1);
 				}
-				hasFile = true;
-			} else if (!hasUser && args[i].equals("-u") && i + 1 < args.length) {
-				user = args[i + 1];
-				i++;
-				hasUser = true;
-				pass = null;
-			} else if (!hasUser && args[i].startsWith("-u")) {
-				user = args[i].substring(2);
-				if (user.equals("")) user = null;
-				hasUser = true;
-				pass = null;
-			} else if (!hasHost && args[i].equals("-h") && i + 1 < args.length) {
-				host = args[i + 1];
-				i++;
-				hasHost = true;
-			} else if (!hasHost && args[i].startsWith("-h")) {
-				host = args[i].substring(2);
-				if (host.equals("")) {
-					System.out.println("-h needs a hostname as argument");
+
+				// see what kind of argument we have
+				if (args[i].length() == 1)
+					throw new Exception("Illegal argument, -");
+				if (args[i].charAt(1) == '-') {
+					// we have a long argument
+					// since we don't accept inline values we can take
+					// everything left in the string as argument
+					value = (ArrayList)(arg.get(args[i].substring(1)));
+					moreData = false;
+				} else if (args[i].charAt(1) == 'X') {
+					// extra argument, same as long argument
+					value = (ArrayList)(arg.get(args[i].substring(1)));
+					moreData = false;
+				} else {
+					// single char argument
+					value = (ArrayList)(arg.get(new String("" + args[i].charAt(1))));
+					moreData = args[i].length() > 2 ? true : false;
+				}
+				
+				if (value != null) {
+					String type = (String)(value.get(0));
+					if (type == null)
+						throw new AssertionError("Internal error, slap that programmer!");
+					if (type.equals("1")) {
+						if (moreData) {
+							value.set(1, args[i].substring(2));
+							value = null;
+						} else {
+							quant = 1;
+						}
+					} else if (type.equals("01")) {
+						// store an object to indicate this argument was specified
+						value.set(1, new Object());
+						qcount = 1;
+						quant = 2;
+						if (moreData) {
+							value.add(args[i].substring(2));
+							value = null;
+						}
+					} else if (type.equals("0*")) {
+						// store an object to indicate this argument was specified
+						value.set(1, new Object());
+						qcount = 1;
+						quant = -1;
+						if (moreData) {
+							value.add(args[i].substring(2));
+							qcount++;
+						}
+					} else if (type.equals("0")) {
+						// no values allowed, put an object in place to indicate
+						// this argument was specified
+						value.set(1, new Object());
+						value = null;
+					}
+				} else {
+					System.err.println("Unknown argument: " + args[i]);
 					System.exit(-1);
 				}
-				hasHost = true;
-			} else if (!hasPort && args[i].equals("-p") && i + 1 < args.length) {
-				port = args[i + 1];
-				i++;
-				hasPort = true;
-			} else if (!hasPort && args[i].startsWith("-p")) {
-				port = args[i].substring(2);
-				if (port.equals("")) {
-					System.out.println("-p needs a port as argument");
-					System.exit(-1);
-				}
-				hasPort = true;
-			} else if (!debug && args[i].equals("-d")) {
-				debug = true;
-			} else if (!hasDump && args[i].equals("-D") && i + 1 < args.length) {
-				dump = args[i + 1];
-				i++;
-				hasDump = true;
-			} else if (!hasDump && args[i].startsWith("-D")) {
-				dump = args[i].substring(2);
-				if (dump.equals("")) dump = null;
-				hasDump = true;
-			} else if (!hasDump && args[i].equals("-X") && i + 1 < args.length) {
-				dump = args[i + 1];
-				i++;
-				hasXMLDump = true;
-				hasDump = true;
-			} else if (!hasDump && args[i].startsWith("-X")) {
-				dump = args[i].substring(2);
-				if (dump.equals("")) dump = null;
-				hasXMLDump = true;
-				hasDump = true;
-			} else if (blockmode == null && args[i].startsWith("-b")) {
-				blockmode = "false";
-			} else if (blockmode == null && args[i].startsWith("-B")) {
-				blockmode = "true";
-			} else if (args[i].equals("--help")) {
-				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file]");
-				System.out.println("                              [-u user] [-d] [-D [table]] [-X [table]]");
-				System.out.println("where arguments may be written directly after the option like -p45123");
-				System.out.println("");
-				System.out.println("If no host and port are given, localhost:45123 is assumed. The program");
-				System.out.println("will ask for the username if not given or avaiable in .monetdb file in");
-				System.out.println("the users home directory. The -u flag overrides the preferences file.");
-		 		System.out.println("If no input file is given using the -f flag, an interactive session is");
-				System.out.println("started on the terminal. The -d option creates a debug log.");
-				System.out.println("");
-				System.out.println("The -D and -X options can be used for dumping database tables. If no");
-				System.out.println("table is given all tables are assumed. -D dumps using SQL format, -X");
-				System.out.println("using an experimental XML format. If the -f flag is used when using");
-				System.out.println("-D or -X the file is used for writing the output to.");
-				System.exit(-1);
 			} else {
-				System.out.println("Ignoring unknown argument: " + args[i]);
+				// store the `value'
+				if (qcount == 0) {
+					value.set(1, args[i]);
+				} else {
+					value.add(args[i]);
+				}
+				if (++qcount == quant) {
+					quant = 0;
+					qcount = 0;
+					value = null;
+				}
 			}
 		}
-
-		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-		PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)));
-
-		// do we need to ask for the username?
-		if (hasUser && user == null) {
-			System.err.print("username: ");
-			if ((user = in.readLine()) == null) {
-				System.err.println("Invalid username!");
-				System.exit(-1);
-			}
+		
+		if (((ArrayList)(arg.get("-help"))).get(1) != null) {
+			System.out.print(
+"Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user]\n" +
+"                              [-d [table]] [-X<opt>]\n" +
+"or using long option equivalents --host --port --file --user --dump.\n" +
+"Arguments may be written directly after the option like -p45123.\n" +
+"\n" +
+"If no host and port are given, localhost and 45123 are assumed.  An .monetdb\n" +
+"file may exist in the user's home directory.  This file can contain\n" +
+"preferences to use each time JdbcClient is started.  Options given on the\n" +
+"command line override the preferences file.  The .monetdb file syntax is\n" +
+"<option>=<value> where option is one of the options host, port, file, mode\n" +
+"debug, or password.  Note that the last one is perilous and therefore not\n" +
+"available as command line option.\n" +
+"If no input file is given using the -f flag, an interactive session is\n" +
+"started on the terminal.\n" +
+"\n" +
+"OPTIONS\n" +
+"-h --host  The hostname of the host that runs the MonetDB database.  A port\n" +
+"           number can be supplied by use of a colon, i.e. -h somehost:12345.\n" +
+"-p --port  The port number to connect to.\n" +
+"-f --file  A file name to use either for reading or writing.  The file will\n" +
+"           be used for writing when dump mode is used (-d --dump).\n" +
+"-u --user  The username to use when connecting to the database.\n" +
+"-d --dump  Dumps the given table(s), or the complete database if none given.\n" +
+"--help     This screen.\n" +
+"\n" +
+"EXTRA OPTIONS\n" +
+"-Xdebug    Writes a transmission log to disk for debugging purposes.  If a\n" +
+"           file name is given, it is used, otherwise a file called\n" +
+"           monet<timestamp>.log is created.  A given file will never be\n" +
+"           overwritten; instead a unique variation of the file is used.\n" +
+"-Xmode     Specifies whether to use line or block mode when connecting.  Use\n" +
+"           block or line to specify which mode to use.\n" +
+"-Xblksize  Specifies the blocksize when using block mode, given in bytes.\n" +
+"-Xoutput   The output mode when dumping.  Default is sql, xml may be used for\n" +
+"           an experimental XML output.\n" +
+"-Xbatching Indicates that a batch should be used instead of direct\n" +
+"           communication with the server for each statement.  If a number is\n" +
+"           given, it is used as batch size.  I.e. 8000 would execute the\n" +
+"           contents on the batch after each 8000 read rows.  Batching can\n" +
+"           greatly speedup the process of restoring a database dump.\n"
+);
+			System.exit(0);
 		}
 
-		// we need the password from the user
-		if (pass == null) {
+		in = new BufferedReader(new InputStreamReader(System.in));
+		out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)));
+
+		// we need the password from the user, fetch it with a pseudo password
+		// protector
+		String user = ((ArrayList)(arg.get("u"))).get(1).toString();
+		if (pass == null || user.charAt(0) != ' ') {
 			PasswordField passfield = new PasswordField();
 			try {
 				char[] tmp = passfield.getPassword(System.in, "password: ");
@@ -166,38 +268,63 @@ public class JdbcClient {
 			System.out.println("");
 		}
 
-		// fixate the hostname
+		// remove the trailing space of the username, if any
+		user = user.trim();
+
+		// build the hostname
+		String host = ((ArrayList)(arg.get("h"))).get(1).toString();
 		if (host.indexOf(":") == -1) {
-			host = host + ":" + port;
+			host = host + ":" + ((ArrayList)(arg.get("p"))).get(1).toString();
 		}
 
 		// make sure the driver is loaded
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 
+		// build the extra arguments of the JDBC connect string
 		String attr = "?";
-		if (blockmode != null) attr += "blockmode=" + blockmode + "&";
-		if (debug) attr += "debug=" + debug + "&";
+		String tmp = (String)(((ArrayList)(arg.get("Xmode"))).get(1));
+		if ("line".equals(tmp)) attr += "blockmode=false&";
+		tmp = (String)(((ArrayList)(arg.get("Xblksize"))).get(1));
+		if (tmp != null) attr += "blockmode_blocksize=" + tmp + "&";
+		
+		ArrayList ltmp = (ArrayList)(arg.get("Xdebug"));
+		if (ltmp.get(1) != null) {
+			attr += "debug=true&";
+			if (ltmp.size() == 3) attr += "logfile=" + ltmp.get(2).toString() + "&";
+		}
+			
 
-		// request a connection suitable for Monet from the driver manager
+		// request a connection suitable for MonetDB from the driver manager
 		// note that the database specifier is currently not implemented, for
 		// Monet itself can't access multiple databases.
-		Connection con = null;
+		con = null;
 		try {
-			con = DriverManager.getConnection("jdbc:monetdb://" + host + "/" + database + attr, user, pass);
+			con = DriverManager.getConnection(
+					"jdbc:monetdb://" + host + "/database" + attr,
+					user,
+					pass
+			);
 		} catch (SQLException e) {
-			System.err.println(e.getMessage());
+			System.err.println("Database connect failed: " + e.getMessage());
 			System.exit(-1);
 		}
-		DatabaseMetaData dbmd = con.getMetaData();
-		Statement stmt = con.createStatement();
+		dbmd = con.getMetaData();
+		stmt = con.createStatement();
 
-		if (hasDump) {
+		// see if we will have to perform a database dump
+		ltmp = (ArrayList)(arg.get("d"));
+		if (ltmp.get(1) != null) {
 			ResultSet tbl;
 
-			if (hasFile) out = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+			// use the given file for writing
+			tmp = (String)(((ArrayList)(arg.get("f"))).get(1));
+			if (tmp != null) out = new PrintWriter(new BufferedWriter(new FileWriter(tmp)));
 
+			// we only want tables and views to be dumped, unless a specific
+			// table is requested
 			String[] types = {"TABLE", "VIEW"};
-			if (dump != null) types = null;
+			if (ltmp.size() > 2) types = null;
+			// request the tables available in the database
 			tbl = dbmd.getTables(null, null, null, types);
 
 			LinkedList tables = new LinkedList();
@@ -209,17 +336,25 @@ public class JdbcClient {
 					tbl.getString("TABLE_TYPE")));
 			}
 
+			// are we doing XML dumping?
+			tmp = (String)(((ArrayList)(arg.get("Xoutput"))).get(1));
+			boolean hasXMLDump = tmp != null && tmp.equals("xml");
+
+			// start SQL output
 			if (!hasXMLDump) out.println("START TRANSACTION;");
 
-			// dump a specific table or not?
-			if (dump != null) { // yes we do
+			// dump specific table(s) or not?
+			if (ltmp.size() > 2) { // yes we do
+				List dumpers = ltmp.subList(2, ltmp.size());
 				for (int i = 0; i < tables.size(); i++) {
-					Table tmp = (Table)(tables.get(i));
-					if (tmp.getName().equalsIgnoreCase(dump) ||
-						tmp.getFqname().equalsIgnoreCase(dump))
-					{
-						// dump the table
-						doDump(out, hasXMLDump, tmp, dbmd, stmt);
+					Table ttmp = (Table)(tables.get(i));
+					for (int j = 0; j < dumpers.size(); j++) {
+						if (ttmp.getName().equalsIgnoreCase(dumpers.get(j).toString()) ||
+							ttmp.getFqname().equalsIgnoreCase(dumpers.get(j).toString()))
+						{
+							// dump the table
+							doDump(out, hasXMLDump, ttmp, dbmd, stmt);
+						}
 					}
 				}
 			} else {
@@ -233,7 +368,7 @@ public class JdbcClient {
 
 					// should not be possible to happen
 					if (fk == null || pk == null)
-						throw new Exception("Illegal table; table not found in list");
+						throw new AssertionError("Illegal table; table not found in list");
 
 					// add PK table dependancy to FK table
 					fk.addDependancy(pk);
@@ -260,7 +395,6 @@ public class JdbcClient {
 				}
 
 				// we now have the right order to dump tables
-
 				for (int i = 0; i < tables.size(); i++) {
 					// dump the table
 					doDump(out, hasXMLDump, (Table)(tables.get(i)), dbmd, stmt);
@@ -275,26 +409,72 @@ public class JdbcClient {
 		}
 
 
-		BufferedReader fr;
-		if (hasFile) {
-			// open the file
-			fr = new BufferedReader(new FileReader(file));
-		} else {
-			// use stdin
-			fr = in;
+		try {
+			// use the given file for reading
+			tmp = (String)(((ArrayList)(arg.get("f"))).get(1));
+			boolean hasFile = tmp != null;
+			if (hasFile) {
+				int batchSize = 0;
+				// open the file
+				in = new BufferedReader(new FileReader(tmp));
+				
+				// check for batch mode
+				ltmp = (ArrayList)(arg.get("Xbatching"));
+				if (ltmp.get(1) != null) {
+					if (ltmp.size() == 3) {
+						// parse the number
+						try {
+							batchSize = Integer.parseInt(ltmp.get(2).toString());
+						} catch (NumberFormatException ex) {
+							// complain to the user
+							throw new IllegalArgumentException("Illegal argument for Xbatching: " + ltmp.get(2).toString() + " is not a parseable number!");
+						}
+					}
+					processBatch(batchSize);
+				} else {
+					processInteractive(true, user);
+				}
+			} else {
+				// print welcome message
+				out.println("Welcome to the MonetDB interactive JDBC terminal!");
+				out.println("Database: " + dbmd.getDatabaseProductName() + " " +
+					dbmd.getDatabaseProductVersion() + " (" + dbmd.getDatabaseMajorVersion() +
+					"." + dbmd.getDatabaseMinorVersion() + ")");
+				out.println("Driver: " + dbmd.getDriverName() + " " +
+					dbmd.getDriverVersion() + " (" + dbmd.getDriverMajorVersion() +
+					"." + dbmd.getDriverMinorVersion() + ")");
+				out.println("Type \\q to quit, \\h for a list of available commands");
+				out.println("auto commit mode: on");
 
-			out.println("Welcome to the MonetDB interactive JDBC terminal!");
-			out.println("Database: " + dbmd.getDatabaseProductName() + " " +
-				dbmd.getDatabaseProductVersion() + " (" + dbmd.getDatabaseMajorVersion() +
-				"." + dbmd.getDatabaseMinorVersion() + ")");
-			out.println("Driver: " + dbmd.getDriverName() + " " +
-				dbmd.getDriverVersion() + " (" + dbmd.getDriverMajorVersion() +
-				"." + dbmd.getDriverMinorVersion() + ")");
-			out.println("Type \\q to quit, \\h for a list of available commands");
-			out.println("auto commit mode: on");
+				processInteractive(false, user);
+			}
+
+			// free resources, close the statement
+			stmt.close();
+			// close the connection with the database
+			con.close();
+			// close the file (if we used a file)
+			in.close();
+		} catch (Exception e) {
+			System.err.println("A fatal exception occurred: " + e.toString());
+			e.printStackTrace(System.err);
+			// at least try to close the connection properly, since it will
+			// close all statements associated with it
+			try {
+				con.close();
+			} catch (SQLException ex) {
+				// ok... nice try
+			}
+			System.exit(-1);
 		}
+	}
 
+	public static void processInteractive(boolean hasFile, String user)
+		throws IOException, SQLException
+	{
+		// an SQL stack keeps track of ( " and '
 		SQLStack stack = new SQLStack();
+		// a query part is a line of an SQL query
 		QueryPart qp;
 
 		String query = "", curLine;
@@ -303,7 +483,9 @@ public class JdbcClient {
 			out.print(getPrompt(user, stack));
 			out.flush();
 		}
-		for (int i = 1; (curLine = fr.readLine()) != null; i++) {
+
+		// the main (interactive) process loop
+		for (int i = 1; (curLine = in.readLine()) != null; i++) {
 			qp = scanQuery(curLine, stack);
 			if (!qp.isEmpty()) {
 				doProcess = true;
@@ -460,7 +642,11 @@ public class JdbcClient {
 							} while ((nextRslt = stmt.getMoreResults()) ||
 									 (aff = stmt.getUpdateCount()) != -1);
 						} catch (SQLException e) {
-							System.err.println("Error on line " + i + ": " + e.getMessage());
+							if (hasFile) {
+								System.err.println("Error on line " + i + ": " + e.getMessage());
+							} else {
+								System.err.println("Error: " + e.getMessage());
+							}
 							System.err.println("Executed query: " + query);
 						} finally {
 							query = "";
@@ -472,12 +658,42 @@ public class JdbcClient {
 			if (!hasFile) out.print(getPrompt(user, stack));
 			out.flush();
 		}
+	}
 
-		// free resources, close the statement
-		stmt.close();
-		// close the connection with the database
-		con.close();
-		fr.close();
+	public static void processBatch(int batchSize) throws IOException {
+		StringBuffer query = new StringBuffer();
+		String curLine;
+		int i = 0;
+		try {
+			// because this is an explicit batch from a file, we turn off
+			// auto-commit
+			con.setAutoCommit(false);
+		
+			// the main loop
+			for (i = 1; (curLine = in.readLine()) != null; i++) {
+				query.append(curLine);
+				if (curLine.endsWith(";")) {
+					// lousy check for end of statement, but in batch mode it
+					// is not very important to catch all end of statements...
+					stmt.addBatch(query.toString());
+					query.delete(0, query.length());
+				} else {
+					query.append('\n');
+				}
+				if (batchSize > 0 && i % batchSize == 0) {
+					stmt.executeBatch();
+					stmt.clearBatch();
+				}
+			}
+			stmt.addBatch(query.toString());
+			stmt.executeBatch();
+			stmt.clearBatch();
+
+			// commit the transaction (if we came this far)
+			con.commit();
+		} catch (SQLException e) {
+			System.err.println("Error at line " + i + ": " + e.getMessage());
+		}
 	}
 
 	private static String repeat(char chr, int cnt) {
