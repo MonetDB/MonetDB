@@ -184,7 +184,7 @@ public class MonetDataSource implements DataSource {
 	/**
 	 * Sets the database name
 	 *
-	 * @param user the database name
+	 * @param databaseName the database name
 	 */
 	public void setDatabaseName(String databaseName) {
 		this.databaseName = databaseName;
@@ -202,7 +202,7 @@ public class MonetDataSource implements DataSource {
 	/**
 	 * Sets the description
 	 *
-	 * @param user the description
+	 * @param description the description
 	 */
 	public void setDescription(String description) {
 		this.description = description;

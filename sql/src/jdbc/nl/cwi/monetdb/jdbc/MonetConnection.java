@@ -877,7 +877,7 @@ public class MonetConnection extends Thread implements Connection {
 	 * @return a RawResults object which will get filled as soon as the
 	 *         query is processed
 	 * @throws IllegalStateException if this thread is not alive
-	 * @see MonetStatement.RawResults
+	 * @see RawResults
 	 */
 	RawResults addBlock(Header hdr, int block) throws IllegalStateException {
 		if (state == DEAD) throw
@@ -1442,8 +1442,8 @@ public class MonetConnection extends Thread implements Connection {
 		/**
 		 * Sets the querytype header and updates the bitmask
 		 *
-		 * @param id a string representing the query type of
-		 *           this `result'
+		 * @param queryType a string representing the query type of
+		 *                  this `result'
 		 * @throws SQLException if the given string is not a parseable
 		 *                      number
 		 */
@@ -1469,7 +1469,7 @@ public class MonetConnection extends Thread implements Connection {
 		/**
 		 * Sets the length header and updates the bitmask
 		 *
-		 * @param name an array of Strings holding the column lengths
+		 * @param len an array of Strings holding the column lengths
 		 */
 		private void setColumnLengths(String[] len) {
 			// convert each string to an int
@@ -1491,7 +1491,7 @@ public class MonetConnection extends Thread implements Connection {
 		 * position.
 		 *
 		 * @param block the result block the RawResults object represents
-		 * @param rawr the RawResults to add
+		 * @param rr the RawResults to add
 		 */
 		void addRawResults(int block, RawResults rr) {
 			resultBlocks.put("" + block, rr);
@@ -1750,6 +1750,7 @@ public class MonetConnection extends Thread implements Connection {
 		 *
 		 * @param query the query that is the 'cause' of this HeaderList
 		 * @param cachesize overall cachesize to use
+		 * @param maxrows maximum number of rows to allow in the set
 		 * @param rstype the type of result sets to produce
 		 * @param rsconcur the concurrency of result sets to produce
 		 */

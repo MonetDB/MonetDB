@@ -120,7 +120,6 @@ public class MonetResultSet implements ResultSet {
 	 * @param columns the column names
 	 * @param types the column types
 	 * @param results the number of rows in the ResultSet
-	 * @param stmt the Statement object to associate this virtual result set with
 	 * @throws IOException if communicating with monet failed
 	 * @throws SQLException is a protocol error occurs
 	 */
