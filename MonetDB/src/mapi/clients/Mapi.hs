@@ -45,14 +45,12 @@ mapiConnect user mserver mapiport = do
     sock <- connectTo mserver (PortNumber (fromIntegral mapiport))
     hSetBuffering sock NoBuffering
     hPutStrLn sock user
---    hFlush sock
     mapiResult sock
     return sock
 	
 mapiSend :: Mapi -> String -> IO ()
 mapiSend sock mil = do
     hPutStrLn sock mil
---    hFlush sock
 
 mapiAnswer :: Mapi -> IO String 
 mapiAnswer sock = do
@@ -74,7 +72,7 @@ mapiResult sock = do
 mapiQuery :: Mapi -> String -> IO String 
 mapiQuery sock mil = do
     mapiSend sock mil
-    result <- mapiAnswer sock
+    result <- mapiResult sock
     return result
 
 mapiDisconnect :: Mapi -> IO ()
