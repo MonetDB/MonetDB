@@ -1,6 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT
-AC_CONFIG_SRCDIR([src/utils/Mx/Mx.h])
+AC_INIT(src/utils/Mx/Mx.h)
 AC_CONFIG_AUX_DIR(conf)
 
 dnl ----------------------
@@ -46,8 +45,8 @@ AC_PROG_GCC_TRADITIONAL
 AC_PROG_INSTALL
 AM_PROG_LEX
 AC_PROG_YACC
-AC_PROG_LIBTOOL
-AC_PROG_CC_STDC
+AM_PROG_LIBTOOL
+dnl AC_PROG_CC_STDC
 
 AC_PROG_LN_S
 AC_CHECK_PROG(RM,rm,rm -f)
@@ -57,8 +56,8 @@ AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
 
-AM_DEPENDENCIES(CC)
-AM_DEPENDENCIES(CXX)
+#AM_DEPENDENCIES(CC)
+#AM_DEPENDENCIES(CXX)
 
 dnl AC_CHECK_PROG(CP,cp,cp -f)
 dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
@@ -166,7 +165,7 @@ AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 
-AC_CONFIG_FILES([src/Makefile
+AC_OUTPUT(src/Makefile
 src/utils/Makefile src/utils/Mx/Makefile 
 src/utils/rewrite/Makefile src/utils/testing/Makefile 
 src/mil/Makefile src/mel/Makefile src/mal/Makefile
@@ -184,5 +183,4 @@ src/utils/testing/Mlog
 src/utils/testing/Mfilter
 src/utils/testing/Mtest
 src/utils/testing/MkillUsers
-])
-AC_OUTPUT
+)

@@ -36,7 +36,7 @@ MX=$(top_builddir)/src/utils/Mx/Mx
 %.proto.h: %.m
 	$(MEL) $(INCLUDES) -o $@ -proto $<
 
-%_glue.c: %.m
+%.glue.c: %.m
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
 SUFFIXES = .m .mx .proto.h .mil

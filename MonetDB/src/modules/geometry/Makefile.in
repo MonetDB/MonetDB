@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4a from Makefile.am
+# Makefile.in generated automatically by automake 1.4 from Makefile.am
 
-# Copyright (C) 1994, 1995-9, 2000 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -9,6 +9,8 @@
 # but WITHOUT ANY WARRANTY, to the extent permitted by law; without
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
+
+
 
 SHELL = @SHELL@
 
@@ -31,6 +33,8 @@ mandir = @mandir@
 includedir = @includedir@
 oldincludedir = /usr/include
 
+DESTDIR =
+
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -43,10 +47,9 @@ AUTOMAKE = @AUTOMAKE@
 AUTOHEADER = @AUTOHEADER@
 
 INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
-INSTALL_STRIP_FLAG =
 transform = @program_transform_name@
 
 NORMAL_INSTALL = :
@@ -55,25 +58,17 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-
-@SET_MAKE@
 host_alias = @host_alias@
 host_triplet = @host@
-AMDEP = @AMDEP@
-AMTAR = @AMTAR@
 AS = @AS@
-AWK = @AWK@
 BASH = @BASH@
 CC = @CC@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CXX = @CXX@
-CXXCPP = @CXXCPP@
 CXXFLAGS = @CXXFLAGS@
-DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 DL_LIBS = @DL_LIBS@
-EXEEXT = @EXEEXT@
 LEX = @LEX@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
@@ -82,21 +77,16 @@ MALLOC_LIBS = @MALLOC_LIBS@
 MV = @MV@
 OBJC = @OBJC@
 OBJDUMP = @OBJDUMP@
-OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 READLINE_LIBS = @READLINE_LIBS@
 RM = @RM@
 SOCKET_LIBS = @SOCKET_LIBS@
-STRIP = @STRIP@
 THREAD = @THREAD@
 THREAD_LIBS = @THREAD_LIBS@
 VERSION = @VERSION@
 YACC = @YACC@
-install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
-
-
 
 AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
@@ -123,7 +113,6 @@ MX = $(top_builddir)/src/utils/Mx/Mx
 
 SUFFIXES = .m .mx .proto.h .mil
 PRECIOUS = .m 
-subdir = src/modules/geometry
 mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
 CONFIG_HEADER = ../../../config.h
 CONFIG_CLEAN_FILES = 
@@ -134,34 +123,32 @@ DEFS = @DEFS@ -I. -I$(srcdir) -I../../..
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-lib_blg_la_LDFLAGS = 
-lib_blg_la_LIBADD = 
-am_lib_blg_la_OBJECTS =  blg_glue.lo blg.lo
-lib_blg_la_OBJECTS =  $(am_lib_blg_la_OBJECTS)
-lib_gdkmem_la_LDFLAGS = 
-lib_gdkmem_la_LIBADD = 
-am_lib_gdkmem_la_OBJECTS =  gdkmem_glue.lo gdkmem.lo
-lib_gdkmem_la_OBJECTS =  $(am_lib_gdkmem_la_OBJECTS)
 lib_gis_la_LDFLAGS = 
 lib_gis_la_LIBADD = 
-am_lib_gis_la_OBJECTS =  geometry.lo baserelate.lo precision.lo \
-reader.lo direction.lo interval.lo point.lo box.lo segment.lo \
-triangle.lo circle.lo polystruct.lo polyline.lo polygon.lo cpolygon.lo \
+lib_gis_la_OBJECTS =  geometry.lo baserelate.lo precision.lo reader.lo \
+direction.lo interval.lo point.lo box.lo segment.lo triangle.lo \
+circle.lo polystruct.lo polyline.lo polygon.lo cpolygon.lo \
 multipoint.lo distance.lo overlap.lo inside.lo triangulate.lo \
 tri_construct.lo tri_misc.lo tri_monotone.lo tri_tri.lo varray.lo \
 varlen.lo varheap.lo chull.lo minitree.lo point3d.lo triangle3d.lo \
 box3d.lo gis_glue.lo gis.lo
-lib_gis_la_OBJECTS =  $(am_lib_gis_la_OBJECTS)
 lib_gisbulk_la_LDFLAGS = 
 lib_gisbulk_la_LIBADD = 
-am_lib_gisbulk_la_OBJECTS =  split.lo rtree.lo rtree_box.lo \
-rtree_point.lo rtree_segment.lo rtree_polyline.lo rtree_polygon.lo \
-rtree_djoin.lo rtree_sjoin.lo interval_tree.lo octree.lo \
-gisbulk_glue.lo gisbulk.lo
-lib_gisbulk_la_OBJECTS =  $(am_lib_gisbulk_la_OBJECTS)
+lib_gisbulk_la_OBJECTS =  split.lo rtree.lo rtree_box.lo rtree_point.lo \
+rtree_segment.lo rtree_polyline.lo rtree_polygon.lo rtree_djoin.lo \
+rtree_sjoin.lo interval_tree.lo octree.lo gisbulk_glue.lo gisbulk.lo
+lib_blg_la_LDFLAGS = 
+lib_blg_la_LIBADD = 
+lib_blg_la_OBJECTS =  blg_glue.lo blg.lo
+lib_opengisbulk_la_LDFLAGS = 
+lib_opengisbulk_la_LIBADD = 
+lib_opengisbulk_la_OBJECTS =  opengisbulk_glue.lo opengisbulk.lo
+lib_gdkmem_la_LDFLAGS = 
+lib_gdkmem_la_LIBADD = 
+lib_gdkmem_la_OBJECTS =  gdkmem_glue.lo gdkmem.lo
 lib_opengis_la_LDFLAGS = 
 lib_opengis_la_LIBADD = 
-am_lib_opengis_la_OBJECTS =  writer.lo opengiswriter.lo Geometry.lo \
+lib_opengis_la_OBJECTS =  writer.lo opengiswriter.lo Geometry.lo \
 opengisreader.lo MultiLineString.lo MultiPolygon.lo \
 GeometryCollection.lo Polygon.lo PointPoint.lo LineLine.lo PointLine.lo \
 LineStringLineString.lo PointLineString.lo MultiPointMultiPoint.lo \
@@ -169,37 +156,29 @@ PointMultiPoint.lo MultiPointLine.lo LineLineString.lo \
 MultiPointLineString.lo PointPolygon.lo MultiPointPolygon.lo \
 PointMultiLineString.lo minirealm.lo PolygonLineString.lo Reverse.lo \
 opengis_glue.lo opengis.lo
-lib_opengis_la_OBJECTS =  $(am_lib_opengis_la_OBJECTS)
-lib_opengisbulk_la_LDFLAGS = 
-lib_opengisbulk_la_LIBADD = 
-am_lib_opengisbulk_la_OBJECTS =  opengisbulk_glue.lo opengisbulk.lo
-lib_opengisbulk_la_OBJECTS =  $(am_lib_opengisbulk_la_OBJECTS)
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES =  $(lib_blg_la_SOURCES) $(lib_gdkmem_la_SOURCES) \
-$(lib_gis_la_SOURCES) $(lib_gisbulk_la_SOURCES) \
-$(lib_opengis_la_SOURCES) $(lib_opengisbulk_la_SOURCES)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
 HEADERS =  $(geometryinclude_HEADERS)
 
-depcomp = 
-DIST_COMMON =  $(geometryinclude_HEADERS) Makefile.am Makefile.in
+DIST_COMMON =  Makefile.am Makefile.in
 
 
-DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
+TAR = gtar
 GZIP_ENV = --best
-SOURCES = $(lib_blg_la_SOURCES) $(lib_gdkmem_la_SOURCES) $(lib_gis_la_SOURCES) $(lib_gisbulk_la_SOURCES) $(lib_opengis_la_SOURCES) $(lib_opengisbulk_la_SOURCES)
-OBJECTS = $(am_lib_blg_la_OBJECTS) $(am_lib_gdkmem_la_OBJECTS) $(am_lib_gis_la_OBJECTS) $(am_lib_gisbulk_la_OBJECTS) $(am_lib_opengis_la_OBJECTS) $(am_lib_opengisbulk_la_OBJECTS)
+SOURCES = $(lib_gis_la_SOURCES) $(lib_gisbulk_la_SOURCES) $(lib_blg_la_SOURCES) $(lib_opengisbulk_la_SOURCES) $(lib_gdkmem_la_SOURCES) $(lib_opengis_la_SOURCES)
+OBJECTS = $(lib_gis_la_OBJECTS) $(lib_gisbulk_la_OBJECTS) $(lib_blg_la_OBJECTS) $(lib_opengisbulk_la_OBJECTS) $(lib_gdkmem_la_OBJECTS) $(lib_opengis_la_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .c .cc .h .lo .m .mil .mx .o .obj .proto.h
+.SUFFIXES: .S .c .cc .lo .m .mil .mx .o .proto.h .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
 	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/modules/geometry/Makefile
 
@@ -222,21 +201,28 @@ install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(LIBTOOL)  --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$p"; \
-	    $(LIBTOOL)  --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$p; \
+	    echo "$(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p; \
 	  else :; fi; \
 	done
 
 uninstall-libLTLIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  echo " $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p"; \
+	list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
 	done
 
+.c.o:
+	$(COMPILE) -c $<
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
 mostlyclean-compile:
 	-rm -f *.o core *.core
-	-rm -f *.$(OBJEXT)
 
 clean-compile:
 
@@ -244,6 +230,15 @@ distclean-compile:
 	-rm -f *.tab.c
 
 maintainer-clean-compile:
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.s.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.S.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -255,77 +250,62 @@ distclean-libtool:
 
 maintainer-clean-libtool:
 
-lib_blg.la: $(lib_blg_la_OBJECTS) $(lib_blg_la_DEPENDENCIES)
-	$(CXXLINK) -rpath $(libdir) $(lib_blg_la_LDFLAGS) $(lib_blg_la_OBJECTS) $(lib_blg_la_LIBADD) $(LIBS)
-
-lib_gdkmem.la: $(lib_gdkmem_la_OBJECTS) $(lib_gdkmem_la_DEPENDENCIES)
-	$(CXXLINK) -rpath $(libdir) $(lib_gdkmem_la_LDFLAGS) $(lib_gdkmem_la_OBJECTS) $(lib_gdkmem_la_LIBADD) $(LIBS)
-
 lib_gis.la: $(lib_gis_la_OBJECTS) $(lib_gis_la_DEPENDENCIES)
 	$(CXXLINK) -rpath $(libdir) $(lib_gis_la_LDFLAGS) $(lib_gis_la_OBJECTS) $(lib_gis_la_LIBADD) $(LIBS)
 
 lib_gisbulk.la: $(lib_gisbulk_la_OBJECTS) $(lib_gisbulk_la_DEPENDENCIES)
 	$(CXXLINK) -rpath $(libdir) $(lib_gisbulk_la_LDFLAGS) $(lib_gisbulk_la_OBJECTS) $(lib_gisbulk_la_LIBADD) $(LIBS)
 
-lib_opengis.la: $(lib_opengis_la_OBJECTS) $(lib_opengis_la_DEPENDENCIES)
-	$(CXXLINK) -rpath $(libdir) $(lib_opengis_la_LDFLAGS) $(lib_opengis_la_OBJECTS) $(lib_opengis_la_LIBADD) $(LIBS)
+lib_blg.la: $(lib_blg_la_OBJECTS) $(lib_blg_la_DEPENDENCIES)
+	$(CXXLINK) -rpath $(libdir) $(lib_blg_la_LDFLAGS) $(lib_blg_la_OBJECTS) $(lib_blg_la_LIBADD) $(LIBS)
 
 lib_opengisbulk.la: $(lib_opengisbulk_la_OBJECTS) $(lib_opengisbulk_la_DEPENDENCIES)
 	$(CXXLINK) -rpath $(libdir) $(lib_opengisbulk_la_LDFLAGS) $(lib_opengisbulk_la_OBJECTS) $(lib_opengisbulk_la_LIBADD) $(LIBS)
-.c.o:
-	$(COMPILE) -c $<
-.c.obj:
-	$(COMPILE) -c `cygpath -w $<`
-.c.lo:
-	$(LTCOMPILE) -c -o $@ $<
+
+lib_gdkmem.la: $(lib_gdkmem_la_OBJECTS) $(lib_gdkmem_la_DEPENDENCIES)
+	$(CXXLINK) -rpath $(libdir) $(lib_gdkmem_la_LDFLAGS) $(lib_gdkmem_la_OBJECTS) $(lib_gdkmem_la_LIBADD) $(LIBS)
+
+lib_opengis.la: $(lib_opengis_la_OBJECTS) $(lib_opengis_la_DEPENDENCIES)
+	$(CXXLINK) -rpath $(libdir) $(lib_opengis_la_LDFLAGS) $(lib_opengis_la_OBJECTS) $(lib_opengis_la_LIBADD) $(LIBS)
 .cc.o:
-	$(CXXCOMPILE) -c -o $@ $<
-.cc.obj:
-	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+	$(CXXCOMPILE) -c $<
 .cc.lo:
-	$(LTCXXCOMPILE) -c -o $@ $<
+	$(LTCXXCOMPILE) -c $<
 
 install-geometryincludeHEADERS: $(geometryinclude_HEADERS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(geometryincludedir)
 	@list='$(geometryinclude_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(geometryincludedir)/$$f"; \
-	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(geometryincludedir)/$$f; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(geometryincludedir)/$$p"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(geometryincludedir)/$$p; \
 	done
 
 uninstall-geometryincludeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(geometryinclude_HEADERS)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(geometryincludedir)/$$f"; \
-	  rm -f $(DESTDIR)$(geometryincludedir)/$$f; \
+	list='$(geometryinclude_HEADERS)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(geometryincludedir)/$$p; \
 	done
 
 tags: TAGS
 
-ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
-	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
+ID: $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
-	mkid -fID $$unique $(LISP)
+	here=`pwd` && cd $(srcdir) \
+	  && mkid -f$$here/ID $$unique $(LISP)
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
-		$(TAGS_FILES) $(LISP)
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || etags $(ETAGS_ARGS) $$tags  $$unique $(LISP)
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 
@@ -338,16 +318,17 @@ maintainer-clean-tags:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
+subdir = src/modules/geometry
+
 distdir: $(DISTFILES)
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
-	    cp -pR $$d/$$file $(distdir) \
-	    || exit 1; \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
 	  else \
 	    test -f $(distdir)/$$file \
-	    || cp -p $$d/$$file $(distdir)/$$file \
-	    || exit 1; \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
 	  fi; \
 	done
 info-am:
@@ -372,7 +353,7 @@ uninstall: uninstall-am
 all-am: Makefile $(LTLIBRARIES) $(HEADERS) all-local
 all-redirect: all-am
 install-strip:
-	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
+	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
 installdirs:
 	$(mkinstalldirs)  $(DESTDIR)$(libdir) $(DESTDIR)$(geometryincludedir)
 
@@ -386,7 +367,6 @@ distclean-generic:
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
 
 maintainer-clean-generic:
-	-rm -f Makefile.in
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean-am:  mostlyclean-libLTLIBRARIES mostlyclean-compile \
 		mostlyclean-libtool mostlyclean-tags \
@@ -425,9 +405,9 @@ install-geometryincludeHEADERS tags mostlyclean-tags distclean-tags \
 clean-tags maintainer-clean-tags distdir info-am info dvi-am dvi check \
 check-am installcheck-am installcheck install-exec-am install-exec \
 install-data-am install-data install-am install uninstall-am uninstall \
-all-local all-redirect all-am all install-strip installdirs \
-mostlyclean-generic distclean-generic clean-generic \
-maintainer-clean-generic clean mostlyclean distclean maintainer-clean
+all-local all-redirect all-am all installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
 
 box.lo: box.cc geometry.h Array.h precision.h direction.h interval.h point.h box.h point3d.h box3d.h segment.h triangle.h triangle3d.h circle.h polystruct.h polyline.h polygon.h multipoint.h minitree.h varray.h cpolygon.h distance.h inside.h overlap.h baserelate.h Pqueue.h gis.proto.h varlen.h
 gis.mil: gis.mx
@@ -713,7 +693,7 @@ opengis.mil: opengis.mx
 %.proto.h: %.m
 	$(MEL) $(INCLUDES) -o $@ -proto $<
 
-%_glue.c: %.m
+%.glue.c: %.m
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
 all-local: $(BUILT_SOURCES)

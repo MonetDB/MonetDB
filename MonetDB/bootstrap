@@ -4,17 +4,15 @@
 # requires GNU autoconf and GNU automake
 # this is not meant to go into the distributions
 
-~/data/autogen/autogen.py
+~/autogen/autogen.py
 test -f conf/ltmain.sh || libtoolize -c -f; perl -i -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
 aclocal -I .
 autoheader
 automake -a -c
-#mfiles=`find . \( -name Makefile.in \)  -print`
-#for i in $mfiles; do
-#  if [ "`grep all-local $i 2>/dev/null`" ]; then  
-##    perl -i -p -e 's|all-am: Makefile|all-am: Makefile \$\(BUILT_SOURCES\)|g' $i
-#  fi
-#done
+
+# dirty hack, needed because automake 1.4 generates the wrong dependency
+echo "mel_tab.h: mel_tab.cc" >> src/mel/Makefile.in
+
 autoupdate
 autoconf
 

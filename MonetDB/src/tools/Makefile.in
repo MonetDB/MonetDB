@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4a from Makefile.am
+# Makefile.in generated automatically by automake 1.4 from Makefile.am
 
-# Copyright (C) 1994, 1995-9, 2000 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -9,6 +9,8 @@
 # but WITHOUT ANY WARRANTY, to the extent permitted by law; without
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
+
+
 
 SHELL = @SHELL@
 
@@ -31,6 +33,8 @@ mandir = @mandir@
 includedir = @includedir@
 oldincludedir = /usr/include
 
+DESTDIR =
+
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -43,10 +47,9 @@ AUTOMAKE = @AUTOMAKE@
 AUTOHEADER = @AUTOHEADER@
 
 INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
-INSTALL_STRIP_FLAG =
 transform = @program_transform_name@
 
 NORMAL_INSTALL = :
@@ -55,25 +58,17 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-
-@SET_MAKE@
 host_alias = @host_alias@
 host_triplet = @host@
-AMDEP = @AMDEP@
-AMTAR = @AMTAR@
 AS = @AS@
-AWK = @AWK@
 BASH = @BASH@
 CC = @CC@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CXX = @CXX@
-CXXCPP = @CXXCPP@
 CXXFLAGS = @CXXFLAGS@
-DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 DL_LIBS = @DL_LIBS@
-EXEEXT = @EXEEXT@
 LEX = @LEX@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
@@ -82,21 +77,16 @@ MALLOC_LIBS = @MALLOC_LIBS@
 MV = @MV@
 OBJC = @OBJC@
 OBJDUMP = @OBJDUMP@
-OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 READLINE_LIBS = @READLINE_LIBS@
 RM = @RM@
 SOCKET_LIBS = @SOCKET_LIBS@
-STRIP = @STRIP@
 THREAD = @THREAD@
 THREAD_LIBS = @THREAD_LIBS@
 VERSION = @VERSION@
 YACC = @YACC@
-install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
-
-
 
 AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
@@ -133,7 +123,6 @@ MX = $(top_builddir)/src/utils/Mx/Mx
 
 SUFFIXES = .m .mx .proto.h .mil
 PRECIOUS = .m 
-subdir = src/tools
 mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
 CONFIG_HEADER = ../../config.h
 CONFIG_CLEAN_FILES = 
@@ -146,78 +135,63 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libMapi_la_LDFLAGS = 
 libMapi_la_LIBADD = 
-am_libMapi_la_OBJECTS =  Mapi.lo
-libMapi_la_OBJECTS =  $(am_libMapi_la_OBJECTS)
-bin_PROGRAMS =  Mdump$(EXEEXT) Mshutdown$(EXEEXT) Mrecover$(EXEEXT) \
-Mcgi$(EXEEXT) Mclient$(EXEEXT) Mcreatedb$(EXEEXT) Mserver$(EXEEXT) \
-Mload$(EXEEXT)
+libMapi_la_OBJECTS =  Mapi.lo
 PROGRAMS =  $(bin_PROGRAMS)
 
-am_Mcgi_OBJECTS =  Mcgi.$(OBJEXT)
-Mcgi_OBJECTS =  $(am_Mcgi_OBJECTS)
+Mdump_OBJECTS =  Mdump.o
+Mdump_DEPENDENCIES =  libMapi.la ../gdk/libbat.la
+Mdump_LDFLAGS = 
+Mshutdown_OBJECTS =  Mshutdown.o
+Mshutdown_DEPENDENCIES =  libMapi.la ../gdk/libbat.la
+Mshutdown_LDFLAGS = 
+Mrecover_OBJECTS =  Mrecover.o
+Mrecover_DEPENDENCIES =  libMapi.la ../gdk/libbat.la
+Mrecover_LDFLAGS = 
+Mcgi_OBJECTS =  Mcgi.o
 Mcgi_DEPENDENCIES =  libMapi.la ../gdk/libbat.la
 Mcgi_LDFLAGS = 
-am_Mclient_OBJECTS =  Mclient.$(OBJEXT)
-Mclient_OBJECTS =  $(am_Mclient_OBJECTS)
+Mclient_OBJECTS =  Mclient.o
 Mclient_DEPENDENCIES = 
 Mclient_LDFLAGS = 
-am_Mcreatedb_OBJECTS =  Mcreatedb.$(OBJEXT)
-Mcreatedb_OBJECTS =  $(am_Mcreatedb_OBJECTS)
+Mcreatedb_OBJECTS =  Mcreatedb.o
 Mcreatedb_LDADD = $(LDADD)
 Mcreatedb_DEPENDENCIES = 
 Mcreatedb_LDFLAGS = 
-am_Mdump_OBJECTS =  Mdump.$(OBJEXT)
-Mdump_OBJECTS =  $(am_Mdump_OBJECTS)
-Mdump_DEPENDENCIES =  libMapi.la ../gdk/libbat.la
-Mdump_LDFLAGS = 
-am_Mload_OBJECTS =  Mload.$(OBJEXT) initmodules.$(OBJEXT)
-Mload_OBJECTS =  $(am_Mload_OBJECTS)
-Mload_DEPENDENCIES =  ../monet/libmonet.la \
-../modules/plain/lib_kernel.la ../modules/plain/lib_arith.la \
-../modules/plain/lib_bat.la ../modules/plain/lib_algebra.la \
-../modules/plain/lib_sys.la ../modules/plain/lib_trans.la \
-../modules/plain/lib_str.la ../gdk/libbat.la
-Mload_LDFLAGS = 
-am_Mrecover_OBJECTS =  Mrecover.$(OBJEXT)
-Mrecover_OBJECTS =  $(am_Mrecover_OBJECTS)
-Mrecover_DEPENDENCIES =  libMapi.la ../gdk/libbat.la
-Mrecover_LDFLAGS = 
-am_Mserver_OBJECTS =  Mserver.$(OBJEXT) initmodules.$(OBJEXT)
-Mserver_OBJECTS =  $(am_Mserver_OBJECTS)
+Mserver_OBJECTS =  Mserver.o initmodules.o
 Mserver_DEPENDENCIES =  ../monet/libmonet.la \
 ../modules/plain/lib_kernel.la ../modules/plain/lib_arith.la \
 ../modules/plain/lib_bat.la ../modules/plain/lib_algebra.la \
 ../modules/plain/lib_sys.la ../modules/plain/lib_trans.la \
 ../modules/plain/lib_str.la ../gdk/libbat.la
 Mserver_LDFLAGS = 
-am_Mshutdown_OBJECTS =  Mshutdown.$(OBJEXT)
-Mshutdown_OBJECTS =  $(am_Mshutdown_OBJECTS)
-Mshutdown_DEPENDENCIES =  libMapi.la ../gdk/libbat.la
-Mshutdown_LDFLAGS = 
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+Mload_OBJECTS =  Mload.o initmodules.o
+Mload_DEPENDENCIES =  ../monet/libmonet.la \
+../modules/plain/lib_kernel.la ../modules/plain/lib_arith.la \
+../modules/plain/lib_bat.la ../modules/plain/lib_algebra.la \
+../modules/plain/lib_sys.la ../modules/plain/lib_trans.la \
+../modules/plain/lib_str.la ../gdk/libbat.la
+Mload_LDFLAGS = 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES =  $(libMapi_la_SOURCES) $(Mcgi_SOURCES) $(Mclient_SOURCES) \
-$(Mcreatedb_SOURCES) $(Mdump_SOURCES) $(Mload_SOURCES) \
-$(Mrecover_SOURCES) $(Mserver_SOURCES) $(Mshutdown_SOURCES)
-depcomp = 
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
 DIST_COMMON =  Makefile.am Makefile.in
 
 
-DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
+TAR = gtar
 GZIP_ENV = --best
-SOURCES = $(libMapi_la_SOURCES) $(Mcgi_SOURCES) $(Mclient_SOURCES) $(Mcreatedb_SOURCES) $(Mdump_SOURCES) $(Mload_SOURCES) $(Mrecover_SOURCES) $(Mserver_SOURCES) $(Mshutdown_SOURCES)
-OBJECTS = $(am_libMapi_la_OBJECTS) $(am_Mcgi_OBJECTS) $(am_Mclient_OBJECTS) $(am_Mcreatedb_OBJECTS) $(am_Mdump_OBJECTS) $(am_Mload_OBJECTS) $(am_Mrecover_OBJECTS) $(am_Mserver_OBJECTS) $(am_Mshutdown_OBJECTS)
+SOURCES = $(libMapi_la_SOURCES) $(Mdump_SOURCES) $(Mshutdown_SOURCES) $(Mrecover_SOURCES) $(Mcgi_SOURCES) $(Mclient_SOURCES) $(Mcreatedb_SOURCES) $(Mserver_SOURCES) $(Mload_SOURCES)
+OBJECTS = $(libMapi_la_OBJECTS) $(Mdump_OBJECTS) $(Mshutdown_OBJECTS) $(Mrecover_OBJECTS) $(Mcgi_OBJECTS) $(Mclient_OBJECTS) $(Mcreatedb_OBJECTS) $(Mserver_OBJECTS) $(Mload_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .c .cc .h .lo .m .mil .mx .o .obj .proto.h
+.SUFFIXES: .S .c .cc .lo .m .mil .mx .o .proto.h .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
 	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/tools/Makefile
 
@@ -240,21 +214,28 @@ install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(LIBTOOL)  --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$p"; \
-	    $(LIBTOOL)  --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$p; \
+	    echo "$(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p; \
 	  else :; fi; \
 	done
 
 uninstall-libLTLIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  echo " $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p"; \
+	list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
 	done
 
+.c.o:
+	$(COMPILE) -c $<
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
 mostlyclean-compile:
 	-rm -f *.o core *.core
-	-rm -f *.$(OBJEXT)
 
 clean-compile:
 
@@ -262,6 +243,15 @@ distclean-compile:
 	-rm -f *.tab.c
 
 maintainer-clean-compile:
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.s.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.S.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -290,87 +280,72 @@ install-binPROGRAMS: $(bin_PROGRAMS)
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	@list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    f="`echo $$p|sed -e 's/$(EXEEXT)$$//' -e '$(transform)' -e 's/$$/$(EXEEXT)/'`"; \
-	    echo " $(LIBTOOL)  --mode=install $(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(bindir)/$$f"; \
-	    $(LIBTOOL)  --mode=install $(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(bindir)/$$f; \
+	    echo " $(LIBTOOL)  --mode=install $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`"; \
+	    $(LIBTOOL)  --mode=install $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
 	  else :; fi; \
 	done
 
 uninstall-binPROGRAMS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(bin_PROGRAMS)'; for p in $$list; do \
-	  f="`echo $$p|sed -e 's/$(EXEEXT)$$//' -e '$(transform)' -e 's/$$/$(EXEEXT)/'`"; \
-	  echo " rm -f $(DESTDIR)$(bindir)/$$f"; \
-	  rm -f $(DESTDIR)$(bindir)/$$f; \
+	list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
 	done
 
-Mcgi$(EXEEXT): $(Mcgi_OBJECTS) $(Mcgi_DEPENDENCIES)
-	@rm -f Mcgi$(EXEEXT)
-	$(CXXLINK) $(Mcgi_LDFLAGS) $(Mcgi_OBJECTS) $(Mcgi_LDADD) $(LIBS)
-
-Mclient$(EXEEXT): $(Mclient_OBJECTS) $(Mclient_DEPENDENCIES)
-	@rm -f Mclient$(EXEEXT)
-	$(LINK) $(Mclient_LDFLAGS) $(Mclient_OBJECTS) $(Mclient_LDADD) $(LIBS)
-
-Mcreatedb$(EXEEXT): $(Mcreatedb_OBJECTS) $(Mcreatedb_DEPENDENCIES)
-	@rm -f Mcreatedb$(EXEEXT)
-	$(LINK) $(Mcreatedb_LDFLAGS) $(Mcreatedb_OBJECTS) $(Mcreatedb_LDADD) $(LIBS)
-
-Mdump$(EXEEXT): $(Mdump_OBJECTS) $(Mdump_DEPENDENCIES)
-	@rm -f Mdump$(EXEEXT)
+Mdump: $(Mdump_OBJECTS) $(Mdump_DEPENDENCIES)
+	@rm -f Mdump
 	$(LINK) $(Mdump_LDFLAGS) $(Mdump_OBJECTS) $(Mdump_LDADD) $(LIBS)
 
-Mload$(EXEEXT): $(Mload_OBJECTS) $(Mload_DEPENDENCIES)
-	@rm -f Mload$(EXEEXT)
-	$(LINK) $(Mload_LDFLAGS) $(Mload_OBJECTS) $(Mload_LDADD) $(LIBS)
+Mshutdown: $(Mshutdown_OBJECTS) $(Mshutdown_DEPENDENCIES)
+	@rm -f Mshutdown
+	$(LINK) $(Mshutdown_LDFLAGS) $(Mshutdown_OBJECTS) $(Mshutdown_LDADD) $(LIBS)
 
-Mrecover$(EXEEXT): $(Mrecover_OBJECTS) $(Mrecover_DEPENDENCIES)
-	@rm -f Mrecover$(EXEEXT)
+Mrecover: $(Mrecover_OBJECTS) $(Mrecover_DEPENDENCIES)
+	@rm -f Mrecover
 	$(LINK) $(Mrecover_LDFLAGS) $(Mrecover_OBJECTS) $(Mrecover_LDADD) $(LIBS)
 
-Mserver$(EXEEXT): $(Mserver_OBJECTS) $(Mserver_DEPENDENCIES)
-	@rm -f Mserver$(EXEEXT)
+Mcgi: $(Mcgi_OBJECTS) $(Mcgi_DEPENDENCIES)
+	@rm -f Mcgi
+	$(CXXLINK) $(Mcgi_LDFLAGS) $(Mcgi_OBJECTS) $(Mcgi_LDADD) $(LIBS)
+
+Mclient: $(Mclient_OBJECTS) $(Mclient_DEPENDENCIES)
+	@rm -f Mclient
+	$(LINK) $(Mclient_LDFLAGS) $(Mclient_OBJECTS) $(Mclient_LDADD) $(LIBS)
+
+Mcreatedb: $(Mcreatedb_OBJECTS) $(Mcreatedb_DEPENDENCIES)
+	@rm -f Mcreatedb
+	$(LINK) $(Mcreatedb_LDFLAGS) $(Mcreatedb_OBJECTS) $(Mcreatedb_LDADD) $(LIBS)
+
+Mserver: $(Mserver_OBJECTS) $(Mserver_DEPENDENCIES)
+	@rm -f Mserver
 	$(CXXLINK) $(Mserver_LDFLAGS) $(Mserver_OBJECTS) $(Mserver_LDADD) $(LIBS)
 
-Mshutdown$(EXEEXT): $(Mshutdown_OBJECTS) $(Mshutdown_DEPENDENCIES)
-	@rm -f Mshutdown$(EXEEXT)
-	$(LINK) $(Mshutdown_LDFLAGS) $(Mshutdown_OBJECTS) $(Mshutdown_LDADD) $(LIBS)
-.c.o:
-	$(COMPILE) -c $<
-.c.obj:
-	$(COMPILE) -c `cygpath -w $<`
-.c.lo:
-	$(LTCOMPILE) -c -o $@ $<
+Mload: $(Mload_OBJECTS) $(Mload_DEPENDENCIES)
+	@rm -f Mload
+	$(LINK) $(Mload_LDFLAGS) $(Mload_OBJECTS) $(Mload_LDADD) $(LIBS)
 .cc.o:
-	$(CXXCOMPILE) -c -o $@ $<
-.cc.obj:
-	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+	$(CXXCOMPILE) -c $<
 .cc.lo:
-	$(LTCXXCOMPILE) -c -o $@ $<
+	$(LTCXXCOMPILE) -c $<
 
 tags: TAGS
 
-ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
-	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
+ID: $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
-	mkid -fID $$unique $(LISP)
+	here=`pwd` && cd $(srcdir) \
+	  && mkid -f$$here/ID $$unique $(LISP)
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
-		$(TAGS_FILES) $(LISP)
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || etags $(ETAGS_ARGS) $$tags  $$unique $(LISP)
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 
@@ -383,16 +358,17 @@ maintainer-clean-tags:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
+subdir = src/tools
+
 distdir: $(DISTFILES)
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
-	    cp -pR $$d/$$file $(distdir) \
-	    || exit 1; \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
 	  else \
 	    test -f $(distdir)/$$file \
-	    || cp -p $$d/$$file $(distdir)/$$file \
-	    || exit 1; \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
 	  fi; \
 	done
 info-am:
@@ -418,7 +394,7 @@ uninstall: uninstall-am
 all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) all-local
 all-redirect: all-am
 install-strip:
-	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
+	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
 installdirs:
 	$(mkinstalldirs)  $(DESTDIR)$(libdir) $(DESTDIR)$(bindir)
 
@@ -432,7 +408,6 @@ distclean-generic:
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
 
 maintainer-clean-generic:
-	-rm -f Makefile.in
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean-am:  mostlyclean-libLTLIBRARIES mostlyclean-compile \
 		mostlyclean-libtool mostlyclean-binPROGRAMS \
@@ -473,8 +448,8 @@ install-binPROGRAMS tags mostlyclean-tags distclean-tags clean-tags \
 maintainer-clean-tags distdir info-am info dvi-am dvi check check-am \
 installcheck-am installcheck install-exec-local install-exec-am \
 install-exec install-data-am install-data install-am install \
-uninstall-am uninstall all-local all-redirect all-am all install-strip \
-installdirs mostlyclean-generic distclean-generic clean-generic \
+uninstall-am uninstall all-local all-redirect all-am all installdirs \
+mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 install-exec-local-Mdestroydb: Mcreatedb
@@ -549,7 +524,7 @@ all-local: all-local-Mdestroydb
 %.proto.h: %.m
 	$(MEL) $(INCLUDES) -o $@ -proto $<
 
-%_glue.c: %.m
+%.glue.c: %.m
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
 all-local: $(BUILT_SOURCES)

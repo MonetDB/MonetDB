@@ -9,21 +9,21 @@ libbat_la_SOURCES = gdk.h gdk_batop.c gdk_batop.h gdk_desc.c gdk_desc.h gdk_sear
 gdk_system.h: gdk_system.mx
 gdk_system.lo: gdk_system.c gdk_system.h
 gdk_bat.lo: gdk_bat.c gdk.h gdk_bat.h gdk_delta.h gdk_atoms.h gdk_bbp.h gdk_search.h gdk_utils.h gdk_system.h gdk_desc.h gdk_heap.h
-gdk_desc.lo: gdk_desc.c gdk.h gdk_desc.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_desc.lo: gdk_desc.c gdk.h gdk_desc.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_utils.h gdk_heap.h gdk_bat.h
 gdk_heap.c: gdk_heap.mx
 gdk_desc.h: gdk_desc.mx
-gdk_heap.lo: gdk_heap.c gdk.h gdk_heap.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_heap.lo: gdk_heap.c gdk.h gdk_heap.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_desc.h gdk_utils.h gdk_bat.h
 gdk_desc.c: gdk_desc.mx
 gdk_heap.h: gdk_heap.mx
 gdk.h: gdk.mx
 gdk_setop.c: gdk_setop.mx
-gdk_search.lo: gdk_search.c gdk.h gdk_search.h gdk_bat.h gdk_atoms.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_search.lo: gdk_search.c gdk.h gdk_search.h gdk_bat.h gdk_atoms.h gdk_system.h gdk_delta.h gdk_bbp.h gdk_desc.h gdk_utils.h gdk_heap.h
 gdk_batop.c: gdk_batop.mx
 gdk_system.c: gdk_system.mx
-gdk_batop.lo: gdk_batop.c gdk.h gdk_batop.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_batop.lo: gdk_batop.c gdk.h gdk_batop.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_desc.h gdk_utils.h gdk_heap.h gdk_bat.h
 gdk_setop.h: gdk_setop.mx
 gdk_search.h: gdk_search.mx
-gdk_setop.lo: gdk_setop.c gdk.h gdk_setop.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_setop.lo: gdk_setop.c gdk.h gdk_setop.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_desc.h gdk_utils.h gdk_heap.h gdk_bat.h
 gdk_batop.h: gdk_batop.mx
 gdk_search.c: gdk_search.mx
 gdk_storage.h: gdk_storage.mx
@@ -31,31 +31,31 @@ gdk_storage.lo: gdk_storage.c gdk.h gdk_bat.h gdk_delta.h gdk_atoms.h gdk_bbp.h 
 gdk_storage.c: gdk_storage.mx
 gdk_compress.h: gdk_compress.mx
 gdk_atoms.h: gdk_atoms.mx
-gdk_atoms.lo: gdk_atoms.c gdk.h gdk_atoms.h gdk_bat.h gdk_desc.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_atoms.lo: gdk_atoms.c gdk.h gdk_atoms.h gdk_bat.h gdk_desc.h gdk_system.h gdk_delta.h gdk_search.h gdk_bbp.h gdk_utils.h gdk_heap.h
 gdk_bbp.c: gdk_bbp.mx
 gdk_compress.lo: gdk_compress.c gdk_compress.h
 gdk_atoms.c: gdk_atoms.mx
 gdk_compress.c: gdk_compress.mx
 gdk_bbp.h: gdk_bbp.mx
 gdk_utils.h: gdk_utils.mx
-gdk_bbp.lo: gdk_bbp.c gdk.h gdk_bbp.h gdk_bat.h gdk_utils.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_bbp.lo: gdk_bbp.c gdk.h gdk_bbp.h gdk_bat.h gdk_utils.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_desc.h gdk_heap.h
 gdk_align.c: gdk_align.mx
 gdk_utils.c: gdk_utils.mx
-gdk_align.lo: gdk_align.c gdk.h gdk_align.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_align.lo: gdk_align.c gdk.h gdk_align.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_desc.h gdk_utils.h gdk_heap.h gdk_bat.h
 gdk_align.h: gdk_align.mx
 gdk_relop.c: gdk_relop.mx
 gdk_tm.h: gdk_tm.mx
-gdk_tm.lo: gdk_tm.c gdk.h gdk_tm.h gdk_bbp.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_tm.lo: gdk_tm.c gdk.h gdk_tm.h gdk_bbp.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_desc.h gdk_utils.h gdk_heap.h gdk_bat.h
 gdk_tm.c: gdk_tm.mx
 gdk_relop.h: gdk_relop.mx
-gdk_relop.lo: gdk_relop.c gdk.h gdk_relop.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_relop.lo: gdk_relop.c gdk.h gdk_relop.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_desc.h gdk_utils.h gdk_heap.h gdk_bat.h
 gdk_delta.h: gdk_delta.mx
 gdk_qsort.c: gdk_qsort.mx
-gdk_delta.lo: gdk_delta.c gdk.h gdk_delta.h gdk_bat.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_delta.lo: gdk_delta.c gdk.h gdk_delta.h gdk_bat.h gdk_system.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_desc.h gdk_utils.h gdk_heap.h
 gdk_bat.c: gdk_bat.mx
-gdk_qsort.lo: gdk_qsort.c gdk.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_qsort.lo: gdk_qsort.c gdk.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_desc.h gdk_utils.h gdk_heap.h gdk_bat.h
 gdk_delta.c: gdk_delta.mx
-gdk_utils.lo: gdk_utils.c gdk.h gdk_utils.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_utils.lo: gdk_utils.c gdk.h gdk_utils.h gdk_system.h gdk_delta.h gdk_search.h gdk_atoms.h gdk_bbp.h gdk_desc.h gdk_heap.h gdk_bat.h
 gdk_bat.h: gdk_bat.mx
 dist-hook:
 	mkdir $(distdir)/Tests

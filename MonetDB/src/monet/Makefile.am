@@ -11,43 +11,43 @@ libmonet_la_SOURCES = monet.c monet.h monet_interpreter.c monet_interpreter.h mo
 monet_interpreter.h: monet_interpreter.mx
 monet_deparse.lo: monet_deparse.c monet.h monet_deparse.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
 monet_client.c: monet_client.mx
-monet_interpreter.lo: monet_interpreter.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
-monet_client.lo: monet_client.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_interpreter.lo: monet_interpreter.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h monet_deparse.h
+monet_client.lo: monet_client.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h monet_deparse.h
 monet_interpreter.c: monet_interpreter.mx
 monet.h: monet.mx
 monet_client.h: monet_client.mx
-monet.lo: monet.c monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet.h monet_parse.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet.lo: monet.c monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet.h monet_parse.h searchpath.h monet_deparse.h
 monet_queue.lo: monet_queue.c monet.h monet_deparse.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
 yytree.h: yytree.mx
-yytree.lo: yytree.c monet.h yytree.h monet_parse.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+yytree.lo: yytree.c monet.h yytree.h monet_parse.h monet_parse_tab.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h searchpath.h monet_deparse.h
 monet_queue.h: monet_queue.mx
 monet_parse.c: monet_parse.mx
 monet_deparse.c: monet_deparse.mx
 yytree.c: yytree.mx
-monet_parse.lo: monet_parse.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_parse.lo: monet_parse.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_context.h monet_interpreter.h monet_multiplex.h monet_queue.h monet_deparse.h
 monet.c: monet.mx
 monet_deparse.h: monet_deparse.mx
 monet_parse.h: monet_parse.mx
 monet_queue.c: monet_queue.mx
-monet_parse_yy.lo: monet_parse_yy.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_parse_yy.lo: monet_parse_yy.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_context.h monet_interpreter.h monet_multiplex.h monet_queue.h monet_deparse.h
 monet_parse_tab.h: monet_parse_tab.y
-searchpath.lo: searchpath.c monet.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+searchpath.lo: searchpath.c monet.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h monet_deparse.h
 searchpath.h: searchpath.mx
-monet_parse_tab.lo: monet_parse_tab.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_parse_tab.lo: monet_parse_tab.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_context.h monet_interpreter.h monet_multiplex.h monet_queue.h monet_deparse.h
 monet_tbl.c: monet_tbl.mx
 monet_parse_tab.c: monet_parse_tab.y
-monet_tbl.lo: monet_tbl.c monet.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_tbl.lo: monet_tbl.c monet.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h monet_deparse.h
 monet_tbl.h: monet_tbl.mx
 monet_parse_yy.c: monet_parse_yy.l
 searchpath.c: searchpath.mx
 monet_parse_tab.y: monet_parse.mx
 monet_context.h: monet_context.mx
-monet_context.lo: monet_context.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_context.lo: monet_context.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h monet_deparse.h
 monet_process.c: monet_process.mx
 monet_multiplex.c: monet_multiplex.mx
 monet_context.c: monet_context.mx
-monet_process.lo: monet_process.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
-monet_multiplex.lo: monet_multiplex.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_process.lo: monet_process.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h monet_deparse.h
+monet_multiplex.lo: monet_multiplex.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h monet_deparse.h
 monet_multiplex.h: monet_multiplex.mx
 monet_process.h: monet_process.mx
 monet_parse_yy.l: monet_parse.mx

@@ -7,89 +7,89 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
 INCLUDES =  -I$(top_builddir)/src/gdk -I$(top_builddir)/src/monet
 MTSAFE = 
-lib_aggr_la_SOURCES = aggr.proto.h aggr_glue.c aggr.c
-lib_alarm_la_SOURCES = alarm.proto.h alarm_glue.c alarm.c alarm.h
-lib_algebra_la_SOURCES = algebra.proto.h algebra_glue.c algebra.c
-lib_arith_la_SOURCES = arith.proto.h arith_glue.c arith.c arith.h
-lib_bat_la_SOURCES = bat.proto.h bat_glue.c bat.c
-lib_bitset_la_SOURCES = bitset.proto.h bitset_glue.c bitset.c bitset.h
-lib_bitvector_la_SOURCES = bitvector.proto.h bitvector_glue.c bitvector.c
-lib_blob_la_SOURCES = blob.proto.h blob_glue.c blob.c blob.h
-lib_cluster_la_SOURCES = cluster.proto.h cluster_glue.c cluster.c
-lib_counters_la_SOURCES = counters.proto.h counters_glue.c counters.c counters.h
-lib_ddbench_la_SOURCES = ddbench.proto.h ddbench_glue.c ddbench.c ddbench.h
-lib_decimal_la_SOURCES = decimal.proto.h decimal_glue.c decimal.c decimal.h
-lib_enum_la_SOURCES = enum.proto.h enum_glue.c enum.c
-lib_io_la_SOURCES = io.proto.h io_glue.c io.c io.h
-lib_iterator_la_SOURCES = iterator.proto.h iterator_glue.c iterator.c iterator.h
-lib_kernel_la_SOURCES = kernel.proto.h kernel_glue.c kernel.c
-lib_lock_la_SOURCES = lock.proto.h lock_glue.c lock.c
-lib_malalgebra_la_SOURCES = malalgebra.proto.h malalgebra_glue.c malalgebra.c malalgebra.h
-lib_mmath_la_SOURCES = mmath.proto.h mmath_glue.c mmath.c mmath.h
-lib_monettime_la_SOURCES = monettime.proto.h monettime_glue.c monettime.c monettime.h
-lib_mprof_la_SOURCES = mprof.proto.h mprof_glue.c mprof.c mprof.h
-lib_oo7_la_SOURCES = oo7.proto.h oo7_glue.c oo7.c
-lib_perfex_la_SOURCES = perfex.proto.h perfex_glue.c perfex.c perfex.h
-lib_qt_la_SOURCES = qt.proto.h qt_glue.c qt.c
-lib_radix_la_SOURCES = radix.proto.h radix_glue.c radix.c
-lib_salgebra_la_SOURCES = salgebra.proto.h salgebra_glue.c salgebra.c salgebra.h
-lib_stats_la_SOURCES = stats.proto.h stats_glue.c stats.c
-lib_str_la_SOURCES = str.proto.h str_glue.c str.c str.h
-lib_sys_la_SOURCES = sys.proto.h sys_glue.c sys.c sys.h
-lib_tcpip_la_SOURCES = tcpip.proto.h tcpip_glue.c tcpip.c tcpip.h
-lib_temporal_la_SOURCES = temporal.proto.h temporal_glue.c temporal.cc temporal.h
-lib_tpcd_la_SOURCES = tpcd.proto.h tpcd_glue.c tpcd.c
-lib_trans_la_SOURCES = trans.proto.h trans_glue.c trans.c
-lib_uchr_la_SOURCES = uchr.proto.h uchr_glue.c uchr.c
-lib_unix_la_SOURCES = unix.proto.h unix_glue.c unix.c
-lib_url_la_SOURCES = url.proto.h url_glue.c url.c
-lib_vector_la_SOURCES = vector.proto.h vector_glue.c vector.cc vector.h
-lib_wisc_la_SOURCES = wisc.proto.h wisc_glue.c wisc.c wisc.h
-lib_xtables_la_SOURCES = xtables.proto.h xtables_glue.c xtables.c
+lib_aggr_la_SOURCES = aggr.proto.h aggr.glue.o aggr.c
+lib_alarm_la_SOURCES = alarm.proto.h alarm.glue.o alarm.c alarm.h
+lib_algebra_la_SOURCES = algebra.proto.h algebra.glue.o algebra.c
+lib_arith_la_SOURCES = arith.proto.h arith.glue.o arith.c arith.h
+lib_bat_la_SOURCES = bat.proto.h bat.glue.o bat.c
+lib_bitset_la_SOURCES = bitset.proto.h bitset.glue.o bitset.c bitset.h
+lib_bitvector_la_SOURCES = bitvector.proto.h bitvector.glue.o bitvector.c
+lib_blob_la_SOURCES = blob.proto.h blob.glue.o blob.c blob.h
+lib_cluster_la_SOURCES = cluster.proto.h cluster.glue.o cluster.c
+lib_counters_la_SOURCES = counters.proto.h counters.glue.o counters.c counters.h
+lib_ddbench_la_SOURCES = ddbench.proto.h ddbench.glue.o ddbench.c ddbench.h
+lib_decimal_la_SOURCES = decimal.proto.h decimal.glue.o decimal.c decimal.h
+lib_enum_la_SOURCES = enum.proto.h enum.glue.o enum.c
+lib_io_la_SOURCES = io.proto.h io.glue.o io.c io.h
+lib_iterator_la_SOURCES = iterator.proto.h iterator.glue.o iterator.c iterator.h
+lib_kernel_la_SOURCES = kernel.proto.h kernel.glue.o kernel.c
+lib_lock_la_SOURCES = lock.proto.h lock.glue.o lock.c
+lib_malalgebra_la_SOURCES = malalgebra.proto.h malalgebra.glue.o malalgebra.c malalgebra.h
+lib_mmath_la_SOURCES = mmath.proto.h mmath.glue.o mmath.c mmath.h
+lib_monettime_la_SOURCES = monettime.proto.h monettime.glue.o monettime.c monettime.h
+lib_mprof_la_SOURCES = mprof.proto.h mprof.glue.o mprof.c mprof.h
+lib_oo7_la_SOURCES = oo7.proto.h oo7.glue.o oo7.c
+lib_perfex_la_SOURCES = perfex.proto.h perfex.glue.o perfex.c perfex.h
+lib_qt_la_SOURCES = qt.proto.h qt.glue.o qt.c
+lib_radix_la_SOURCES = radix.proto.h radix.glue.o radix.c
+lib_salgebra_la_SOURCES = salgebra.proto.h salgebra.glue.o salgebra.c salgebra.h
+lib_stats_la_SOURCES = stats.proto.h stats.glue.o stats.c
+lib_str_la_SOURCES = str.proto.h str.glue.o str.c str.h
+lib_sys_la_SOURCES = sys.proto.h sys.glue.o sys.c sys.h
+lib_tcpip_la_SOURCES = tcpip.proto.h tcpip.glue.o tcpip.c tcpip.h
+lib_temporal_la_SOURCES = temporal.proto.h temporal.glue.o temporal.cc temporal.h
+lib_tpcd_la_SOURCES = tpcd.proto.h tpcd.glue.o tpcd.c
+lib_trans_la_SOURCES = trans.proto.h trans.glue.o trans.c
+lib_uchr_la_SOURCES = uchr.proto.h uchr.glue.o uchr.c
+lib_unix_la_SOURCES = unix.proto.h unix.glue.o unix.c
+lib_url_la_SOURCES = url.proto.h url.glue.o url.c
+lib_vector_la_SOURCES = vector.proto.h vector.glue.o vector.cc vector.h
+lib_wisc_la_SOURCES = wisc.proto.h wisc.glue.o wisc.c wisc.h
+lib_xtables_la_SOURCES = xtables.proto.h xtables.glue.o xtables.c
 plain_scripts =  aggr.mil algebra.mil arith.mil bitset.mil bitvector.mil blob.mil counters.mil ddbench.mil decimal.mil io.mil iterator.mil malalgebra.mil mmath.mil monettime.mil mprof.mil perfex.mil radix.mil salgebra.mil str.mil temporal.mil uchr.mil url.mil vector.mil xtables.mil
 lock.c: lock.mx
-io_glue.lo: io_glue.c blob.h io.proto.h io.h blob.proto.h
+ddbench.m: ddbench.mx
+sys.glue.c: sys.m
 mprof.mil: mprof.mx
-tpcd_glue.lo: tpcd_glue.c
+bitvector.glue.lo: bitvector.glue.c bitvector.proto.h
+bitvector.glue.c: bitvector.m io.m blob.m
 algebra.mil: algebra.mx
 lock.lo: lock.c
 lock.m: lock.mx
-algebra_glue.lo: algebra_glue.c
 iterator.h: iterator.mx
 iterator.m: iterator.mx
 arith.proto.h: arith.m
+algebra.glue.lo: algebra.glue.c algebra.proto.h
 decimal.mil: decimal.mx
 iterator.c: iterator.mx
-algebra_glue.c: algebra.m
 str.c: str.mx
 tpcd.proto.h: tpcd.m cluster.m
 vector.mil: vector.mx
 qt.lo: qt.c
+kernel.glue.c: kernel.m
+str.lo: str.c
 mmath.mil: mmath.mx
-lock_glue.c: lock.m
 unix.proto.h: unix.m
-ddbench_glue.c: ddbench.m xtables.m io.m enum.m blob.m
+url.glue.c: url.m
+iterator.lo: iterator.c iterator.h
 alarm.proto.h: alarm.m
+kernel.glue.lo: kernel.glue.c kernel.proto.h
 kernel.proto.h: kernel.m
 alarm.c: alarm.mx
 bitset.proto.h: bitset.m
+iterator.glue.c: iterator.m
 mmath.proto.h: mmath.m
-arith_glue.lo: arith_glue.c arith.h
 alarm.h: alarm.mx
-oo7_glue.lo: oo7_glue.c
+iterator.glue.lo: iterator.glue.c iterator.proto.h
 alarm.m: alarm.mx
 salgebra.c: salgebra.mx
 alarm.lo: alarm.c alarm.h
 wisc.m: wisc.mx
-oo7_glue.c: oo7.m
 salgebra.m: salgebra.mx
-cluster.m: cluster.mx
+cluster.lo: cluster.c
 wisc.h: wisc.mx
-cluster_glue.c: cluster.m
-bat_glue.lo: bat_glue.c
-cluster_glue.lo: cluster_glue.c
-bat_glue.c: bat.m
-stats.lo: stats.c
+stats.glue.c: stats.m
+str.glue.lo: str.glue.c str.proto.h
 stats.proto.h: stats.m
 wisc.c: wisc.mx
 url.mil: url.mx
@@ -98,83 +98,78 @@ algebra.m: algebra.mx
 unix.lo: unix.c
 algebra.lo: algebra.c
 url.c: url.mx
-sys_glue.lo: sys_glue.c sys.proto.h
-mprof_glue.c: mprof.m
-radix_glue.lo: radix_glue.c radix.proto.h
+radix.proto.h: radix.m
+stats.glue.lo: stats.glue.c stats.proto.h
 url.lo: url.c url.proto.h
-lock_glue.lo: lock_glue.c
 url.m: url.mx
-monettime_glue.lo: monettime_glue.c monettime.h monettime.proto.h
-str_glue.c: str.m
+uchr.glue.lo: uchr.glue.c uchr.proto.h
+sys.glue.lo: sys.glue.c sys.proto.h
 unix.c: unix.mx
 algebra.c: algebra.mx
 perfex.mil: perfex.mx
-iterator.lo: iterator.c iterator.h
-blob_glue.lo: blob_glue.c blob.h blob.proto.h blob.proto.h
-malalgebra_glue.lo: malalgebra_glue.c malalgebra.h malalgebra.proto.h
+sys.lo: sys.c sys.proto.h
+wisc.glue.lo: wisc.glue.c wisc.proto.h
+wisc.glue.c: wisc.m
 malalgebra.proto.h: malalgebra.m
-blob_glue.c: blob.m
 radix.m: radix.mx
 xtables.mil: xtables.mx
 counters.mil: counters.mx
 radix.lo: radix.c radix.proto.h
 radix.mil: radix.mx
+qt.glue.lo: qt.glue.c qt.proto.h
 str.proto.h: str.m
 iterator.mil: iterator.mx
+alarm.glue.lo: alarm.glue.c alarm.proto.h
 uchr.mil: uchr.mx
+xtables.glue.lo: xtables.glue.c xtables.proto.h
+qt.glue.c: qt.m uchr.m bitvector.m stats.m io.m blob.m
 arith.mil: arith.mx
-str_glue.lo: str_glue.c
-sys.proto.h: sys.m
+xtables.glue.c: xtables.m
+arith.glue.c: arith.m
 mmath.m: mmath.mx
 bitset.c: bitset.mx
 kernel.lo: kernel.c
-uchr_glue.c: uchr.m
 mmath.h: mmath.mx
 kernel.c: kernel.mx
-mmath_glue.c: mmath.m
 kernel.m: kernel.mx
 bitset.h: bitset.mx
-mmath_glue.lo: mmath_glue.c mmath.proto.h mmath.h
-enum_glue.c: enum.m
+io.glue.lo: io.glue.c io.proto.h
 bitset.lo: bitset.c bitset.proto.h bitset.h
 mmath.c: mmath.mx
 bitset.m: bitset.mx
 io.m: io.mx
 io.lo: io.c blob.h io.proto.h io.h blob.proto.h
-bitvector_glue.lo: bitvector_glue.c
 io.h: io.mx
 bitvector.lo: bitvector.c
 bitset.mil: bitset.mx
 bitvector.m: bitvector.mx
-counters_glue.lo: counters_glue.c counters.h
 io.c: io.mx
-mprof_glue.lo: mprof_glue.c mprof.proto.h mprof.h
 bat.m: bat.mx
-kernel_glue.c: kernel.m
+algebra.proto.h: algebra.m
+salgebra.glue.lo: salgebra.glue.c salgebra.proto.h
 temporal.lo: temporal.cc temporal.proto.h temporal.h
-alarm_glue.lo: alarm_glue.c alarm.h
-unix_glue.c: unix.m
-alarm_glue.c: alarm.m
+unix.glue.c: unix.m
+mprof.proto.h: mprof.m
 bat.c: bat.mx
+salgebra.glue.c: salgebra.m algebra.m
 oo7.m: oo7.mx
 str.h: str.mx
 oo7.lo: oo7.c
 tpcd.m: tpcd.mx
 str.m: str.mx
 enum.c: enum.mx
-str.lo: str.c
+str.glue.c: str.m
 qt.m: qt.mx
-tcpip_glue.c: tcpip.m
 qt.c: qt.mx
-bitvector_glue.c: bitvector.m io.m blob.m
+alarm.glue.c: alarm.m
 wisc.lo: wisc.c wisc.proto.h
 tpcd.c: tpcd.mx
 oo7.c: oo7.mx
-wisc_glue.c: wisc.m
-counters_glue.c: counters.m
-perfex_glue.lo: perfex_glue.c perfex.h
+arith.glue.lo: arith.glue.c arith.proto.h
+monettime.glue.lo: monettime.glue.c monettime.proto.h
+unix.glue.lo: unix.glue.c unix.proto.h
+monettime.glue.c: monettime.m
 blob.proto.h: blob.m
-tcpip_glue.lo: tcpip_glue.c tcpip.proto.h tcpip.h
 oo7.proto.h: oo7.m
 monettime.h: monettime.mx
 arith.m: arith.mx
@@ -186,147 +181,152 @@ temporal.cc: temporal.mx
 monettime.lo: monettime.c monettime.h monettime.proto.h
 xtables.proto.h: xtables.m
 monettime.c: monettime.mx
+enum.glue.c: enum.m io.m blob.m
 blob.mil: blob.mx
 arith.c: arith.mx
 tcpip.h: tcpip.mx
 perfex.proto.h: perfex.m
 stats.m: stats.mx
-salgebra_glue.lo: salgebra_glue.c salgebra.h salgebra.proto.h
-radix_glue.c: radix.m
+mmath.glue.lo: mmath.glue.c mmath.proto.h
 tcpip.m: tcpip.mx
-decimal.proto.h: decimal.m
 tcpip.lo: tcpip.c tcpip.proto.h tcpip.h
 uchr.proto.h: uchr.m
-tpcd_glue.c: tpcd.m cluster.m
 tcpip.c: tcpip.mx
 stats.c: stats.mx
-vector.lo: vector.cc vector.h vector.proto.h
-blob.h: blob.mx
+temporal.glue.lo: temporal.glue.c temporal.proto.h
 uchr.m: uchr.mx
 uchr.lo: uchr.c uchr.proto.h
-vector_glue.lo: vector_glue.c vector.h vector.proto.h
+url.glue.lo: url.glue.c url.proto.h
 vector.cc: vector.mx
-temporal_glue.lo: temporal_glue.c temporal.proto.h temporal.h
-vector_glue.c: vector.m mmath.m
-url_glue.c: url.m
 uchr.c: uchr.mx
-wisc_glue.lo: wisc_glue.c wisc.proto.h
+tcpip.glue.c: tcpip.m
+ddbench.glue.c: ddbench.m xtables.m io.m enum.m blob.m
 aggr.proto.h: aggr.m
+tcpip.glue.lo: tcpip.glue.c tcpip.proto.h
 url.proto.h: url.m
-bitset_glue.c: bitset.m
 io.proto.h: io.m blob.m
-qt_glue.lo: qt_glue.c
+malalgebra.glue.lo: malalgebra.glue.c malalgebra.proto.h
+enum.glue.lo: enum.glue.c enum.proto.h
+ddbench.glue.lo: ddbench.glue.c ddbench.proto.h
 mprof.h: mprof.mx
 malalgebra.mil: malalgebra.mx
 mprof.lo: mprof.c mprof.proto.h mprof.h
 mprof.m: mprof.mx
 mprof.c: mprof.mx
-uchr_glue.lo: uchr_glue.c uchr.proto.h
+xtables.m: xtables.mx
+lock.glue.lo: lock.glue.c lock.proto.h
 str.mil: str.mx
-aggr_glue.c: aggr.m
-perfex_glue.c: perfex.m
+sys.proto.h: sys.m
+lock.glue.c: lock.m
+oo7.glue.c: oo7.m
 tcpip.proto.h: tcpip.m
-aggr_glue.lo: aggr_glue.c
 temporal.mil: temporal.mx
-trans_glue.lo: trans_glue.c
+cluster.glue.c: cluster.m
 bitvector.proto.h: bitvector.m io.m blob.m
-ddbench_glue.lo: ddbench_glue.c ddbench.h io.h enum.proto.h
-enum.proto.h: enum.m
-trans_glue.c: trans.m
+malalgebra.glue.c: malalgebra.m
+enum.proto.h: enum.m io.m blob.m
+aggr.glue.lo: aggr.glue.c aggr.proto.h
 iterator.proto.h: iterator.m
 qt.proto.h: qt.m uchr.m bitvector.m stats.m io.m blob.m
+mmath.glue.c: mmath.m
+bitset.glue.c: bitset.m
 ddbench.mil: ddbench.mx
+bitset.glue.lo: bitset.glue.c bitset.proto.h
 enum.m: enum.mx
-enum_glue.lo: enum_glue.c
 enum.lo: enum.c
 perfex.c: perfex.mx
-kernel_glue.lo: kernel_glue.c
 perfex.lo: perfex.c perfex.h
 perfex.m: perfex.mx
 perfex.h: perfex.mx
 xtables.lo: xtables.c xtables.proto.h
-aggr.m: aggr.mx
-xtables.m: xtables.mx
+counters.glue.c: counters.m
+bat.glue.c: bat.m
 aggr.lo: aggr.c
-monettime_glue.c: monettime.m
+tpcd.glue.c: tpcd.m cluster.m
 wisc.proto.h: wisc.m
 vector.proto.h: vector.m mmath.m
+perfex.glue.c: perfex.m
 xtables.c: xtables.mx
+counters.glue.lo: counters.glue.c counters.proto.h
+io.glue.c: io.m blob.m
 aggr.c: aggr.mx
-stats_glue.lo: stats_glue.c
 bitvector.mil: bitvector.mx
-decimal_glue.c: decimal.m
+decimal.proto.h: decimal.m
 aggr.mil: aggr.mx
 bat.proto.h: bat.m
-stats_glue.c: stats.m
-decimal_glue.lo: decimal_glue.c decimal.proto.h decimal.h
-sys.lo: sys.c sys.proto.h
-sys_glue.c: sys.m
+trans.glue.c: trans.m
+oo7.glue.lo: oo7.glue.c oo7.proto.h
+tpcd.glue.lo: tpcd.glue.c tpcd.proto.h
+aggr.m: aggr.mx
 sys.m: sys.mx
-algebra.proto.h: algebra.m
 sys.h: sys.mx
 bitvector.c: bitvector.mx
 tpcd.lo: tpcd.c
+mprof.glue.lo: mprof.glue.c mprof.proto.h
 sys.c: sys.mx
-io_glue.c: io.m blob.m
-mprof.proto.h: mprof.m
+stats.lo: stats.c
 decimal.m: decimal.mx
-blob.lo: blob.c blob.h blob.proto.h blob.proto.h
+blob.lo: blob.c blob.h blob.proto.h
 decimal.lo: decimal.c decimal.proto.h decimal.h
 blob.m: blob.mx
 cluster.proto.h: cluster.m
 decimal.h: decimal.mx
-arith_glue.c: arith.m
+blob.h: blob.mx
 temporal.proto.h: temporal.m
-url_glue.lo: url_glue.c url.proto.h
-bitset_glue.lo: bitset_glue.c bitset.proto.h bitset.h
+uchr.glue.c: uchr.m
+radix.glue.lo: radix.glue.c radix.proto.h
 blob.c: blob.mx
 decimal.c: decimal.mx
 radix.c: radix.mx
 malalgebra.lo: malalgebra.c malalgebra.h malalgebra.proto.h
+aggr.glue.c: aggr.m
 malalgebra.m: malalgebra.mx
-malalgebra_glue.c: malalgebra.m
+vector.glue.lo: vector.glue.c vector.proto.h
 malalgebra.h: malalgebra.mx
 counters.c: counters.mx
 counters.m: counters.mx
+trans.glue.lo: trans.glue.c trans.proto.h
 counters.lo: counters.c counters.h
 malalgebra.c: malalgebra.mx
 io.mil: io.mx
 trans.proto.h: trans.m
 temporal.m: temporal.mx
+vector.glue.c: vector.m mmath.m
 salgebra.mil: salgebra.mx
 salgebra.proto.h: salgebra.m algebra.m
 temporal.h: temporal.mx
-salgebra_glue.c: salgebra.m algebra.m
 counters.h: counters.mx
 vector.m: vector.mx
-temporal_glue.c: temporal.m
+vector.lo: vector.cc vector.h vector.proto.h
 vector.h: vector.mx
-unix_glue.lo: unix_glue.c
+radix.glue.c: radix.m
+bat.glue.lo: bat.glue.c bat.proto.h
 cluster.c: cluster.mx
 mmath.lo: mmath.c mmath.proto.h mmath.h
-iterator_glue.lo: iterator_glue.c iterator.h
+perfex.glue.lo: perfex.glue.c perfex.proto.h
 bat.lo: bat.c
 ddbench.proto.h: ddbench.m xtables.m io.m enum.m blob.m
-qt_glue.c: qt.m uchr.m bitvector.m stats.m io.m blob.m
-cluster.lo: cluster.c
-iterator_glue.c: iterator.m
+algebra.glue.c: algebra.m
+temporal.glue.c: temporal.m
+cluster.m: cluster.mx
 lock.proto.h: lock.m
-ddbench.lo: ddbench.c ddbench.h io.h enum.proto.h
+ddbench.lo: ddbench.c ddbench.h io.h enum.proto.h blob.h io.proto.h blob.proto.h
 salgebra.h: salgebra.mx
-ddbench.m: ddbench.mx
+blob.glue.c: blob.m
 salgebra.lo: salgebra.c salgebra.h salgebra.proto.h
 ddbench.h: ddbench.mx
 trans.c: trans.mx
 trans.m: trans.mx
 unix.m: unix.mx
 trans.lo: trans.c
+cluster.glue.lo: cluster.glue.c cluster.proto.h
 ddbench.c: ddbench.mx
-xtables_glue.lo: xtables_glue.c xtables.proto.h
-xtables_glue.c: xtables.m
+blob.glue.lo: blob.glue.c blob.proto.h
+decimal.glue.lo: decimal.glue.c decimal.proto.h
+decimal.glue.c: decimal.m
+mprof.glue.c: mprof.m
 counters.proto.h: counters.m
-radix.proto.h: radix.m
-BUILT_SOURCES = aggr.proto.h aggr_glue.c aggr.c alarm.proto.h alarm_glue.c alarm.c alarm.h algebra.proto.h algebra_glue.c algebra.c arith.proto.h arith_glue.c arith.c arith.h bat.proto.h bat_glue.c bat.c bitset.proto.h bitset_glue.c bitset.c bitset.h bitvector.proto.h bitvector_glue.c bitvector.c blob.proto.h blob_glue.c blob.c blob.h cluster.proto.h cluster_glue.c cluster.c counters.proto.h counters_glue.c counters.c counters.h ddbench.proto.h ddbench_glue.c ddbench.c ddbench.h decimal.proto.h decimal_glue.c decimal.c decimal.h enum.proto.h enum_glue.c enum.c io.proto.h io_glue.c io.c io.h iterator.proto.h iterator_glue.c iterator.c iterator.h kernel.proto.h kernel_glue.c kernel.c lock.proto.h lock_glue.c lock.c malalgebra.proto.h malalgebra_glue.c malalgebra.c malalgebra.h mmath.proto.h mmath_glue.c mmath.c mmath.h monettime.proto.h monettime_glue.c monettime.c monettime.h mprof.proto.h mprof_glue.c mprof.c mprof.h oo7.proto.h oo7_glue.c oo7.c perfex.proto.h perfex_glue.c perfex.c perfex.h qt.proto.h qt_glue.c qt.c radix.proto.h radix_glue.c radix.c salgebra.proto.h salgebra_glue.c salgebra.c salgebra.h stats.proto.h stats_glue.c stats.c str.proto.h str_glue.c str.c str.h sys.proto.h sys_glue.c sys.c sys.h tcpip.proto.h tcpip_glue.c tcpip.c tcpip.h temporal.proto.h temporal_glue.c temporal.cc temporal.h tpcd.proto.h tpcd_glue.c tpcd.c trans.proto.h trans_glue.c trans.c uchr.proto.h uchr_glue.c uchr.c unix.proto.h unix_glue.c unix.c url.proto.h url_glue.c url.c vector.proto.h vector_glue.c vector.cc vector.h wisc.proto.h wisc_glue.c wisc.c wisc.h xtables.proto.h xtables_glue.c xtables.c $(plain_scripts)
+BUILT_SOURCES = aggr.proto.h aggr.glue.o aggr.c alarm.proto.h alarm.glue.o alarm.c alarm.h algebra.proto.h algebra.glue.o algebra.c arith.proto.h arith.glue.o arith.c arith.h bat.proto.h bat.glue.o bat.c bitset.proto.h bitset.glue.o bitset.c bitset.h bitvector.proto.h bitvector.glue.o bitvector.c blob.proto.h blob.glue.o blob.c blob.h cluster.proto.h cluster.glue.o cluster.c counters.proto.h counters.glue.o counters.c counters.h ddbench.proto.h ddbench.glue.o ddbench.c ddbench.h decimal.proto.h decimal.glue.o decimal.c decimal.h enum.proto.h enum.glue.o enum.c io.proto.h io.glue.o io.c io.h iterator.proto.h iterator.glue.o iterator.c iterator.h kernel.proto.h kernel.glue.o kernel.c lock.proto.h lock.glue.o lock.c malalgebra.proto.h malalgebra.glue.o malalgebra.c malalgebra.h mmath.proto.h mmath.glue.o mmath.c mmath.h monettime.proto.h monettime.glue.o monettime.c monettime.h mprof.proto.h mprof.glue.o mprof.c mprof.h oo7.proto.h oo7.glue.o oo7.c perfex.proto.h perfex.glue.o perfex.c perfex.h qt.proto.h qt.glue.o qt.c radix.proto.h radix.glue.o radix.c salgebra.proto.h salgebra.glue.o salgebra.c salgebra.h stats.proto.h stats.glue.o stats.c str.proto.h str.glue.o str.c str.h sys.proto.h sys.glue.o sys.c sys.h tcpip.proto.h tcpip.glue.o tcpip.c tcpip.h temporal.proto.h temporal.glue.o temporal.cc temporal.h tpcd.proto.h tpcd.glue.o tpcd.c trans.proto.h trans.glue.o trans.c uchr.proto.h uchr.glue.o uchr.c unix.proto.h unix.glue.o unix.c url.proto.h url.glue.o url.c vector.proto.h vector.glue.o vector.cc vector.h wisc.proto.h wisc.glue.o wisc.c wisc.h xtables.proto.h xtables.glue.o xtables.c $(plain_scripts)
 EXTRA_DIST = Makefile.ag Makefile.msc aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx bitvector.mx blob.mx cluster.mx counters.mx ddbench.mx decimal.mx enum.mx io.mx iterator.mx kernel.mx lock.mx malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx perfex.mx qt.mx radix.mx salgebra.mx stats.mx str.mx sys.mx tcpip.mx temporal.mx tpcd.mx trans.mx uchr.mx unix.mx url.mx vector.mx wisc.mx xtables.mx
 lib_LTLIBRARIES = lib_aggr.la lib_alarm.la lib_algebra.la lib_arith.la lib_bat.la lib_bitset.la lib_bitvector.la lib_blob.la lib_cluster.la lib_counters.la lib_ddbench.la lib_decimal.la lib_enum.la lib_io.la lib_iterator.la lib_kernel.la lib_lock.la lib_malalgebra.la lib_mmath.la lib_monettime.la lib_mprof.la lib_oo7.la lib_perfex.la lib_qt.la lib_radix.la lib_salgebra.la lib_stats.la lib_str.la lib_sys.la lib_tcpip.la lib_temporal.la lib_tpcd.la lib_trans.la lib_uchr.la lib_unix.la lib_url.la lib_vector.la lib_wisc.la lib_xtables.la
 plainincludedir = $(includedir)/plain

@@ -730,6 +730,15 @@ compiler."
     CC=$arg
     CC=$arg
     CC=$arg
+    CC=$arg
+    CC=$arg
+    CC=$arg
+    CC=$arg
+    CC=$arg
+    CC=$arg
+    CC=$arg
+    CC=$arg
+    CC=$arg
     modename="$modename: link"
     case "$host" in
     *-*-cygwin* | *-*-mingw* | *-*-os2*)
