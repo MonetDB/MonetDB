@@ -84,7 +84,7 @@ dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
 dnl --enable-debug
-CFLAGS="$CFLAGS"
+dnl CFLAGS="$CFLAGS"
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable full debugging [default=off]],
   enable_debug=$enableval, enable_debug=no)
@@ -131,6 +131,20 @@ if test "x$enable_warning" = xyes; then
     CFLAGS="$CFLAGS -ansi -pedantic"
   fi
 fi
+
+dnl --enable-profile
+need_profiling=no
+AC_ARG_ENABLE(profile,
+[  --enable-profile        enable profiling [default=off]],
+  enable_prof=$enableval, enable_prof=no)
+if test "x$enable_prof" = xyes; then
+  CFLAGS="$CFLAGS -DPROFILE"
+  need_profiling=yes
+  if test "x$GCC" = xyes; then
+    CFLAGS="$CFLAGS -pg"
+  fi
+fi
+AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 
 dnl systems checks
 AC_AIX
