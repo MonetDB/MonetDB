@@ -761,7 +761,8 @@ and leave it up to the interpreter to deal with exception handling.
 @c
         retval=  &stk->stk[pci->argv[0]];
         garbageElement(retval);
-        ret= runMAL(getClient(),m,mb,stk,pci,getPC(mb,pci));
+	stk->pcup = getPC(mb,pci);
+        ret= runMAL(getClient(),m,1,mb,stk,pci);
 @-
 It is tempting to retain the function in the namespace of
 the client. However, this complicates the administration, e.g.

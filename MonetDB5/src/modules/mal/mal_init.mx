@@ -61,6 +61,7 @@ include "streams";
 include "tablet";
 include "io";
 include "enum";
+include "factory";
 include "multiplex";
 include "language";
 include "profiler";
