@@ -262,19 +262,23 @@ int 	mode		= LINEMODE;
 char*	sentinel 	= "Mclient~sentinel"; 
 
 
-int doRequest(Msession mid, char *buf ){
+int doRequest(Mapi mid, char *buf ){
 	char *rtrn;
+	int i;
  
-	if (Mdorequest(mid, buf) != MOK){
+	if (mapi_query(mid, buf) != MOK){
 		return 'q';
 	}
-	while(rtrn=Mgetreply(mid)){
+/*
+	while(rtrn=mapi_fetch_line(mid)){
 		fprintf(toConsole, "%s\n",rtrn);
 	}
-	/* show any non-\nl terminated response */
-	if(mid->reply[0])
-	fprintf(toConsole, "%s\n",mid->reply);
-	if (Merror(mid)) {
+*/
+	while( (i= mapi_fetch_row(mid)) ){
+		int d= mapi_num_fields(mid);
+		fprintf(toConsole,"next row %d %d fields?\n",i,d);
+	}
+	if (mapi_error(mid)) {
 		return 'q';
 	}
 	return 0;
@@ -314,7 +318,7 @@ of the server before continuing
 	}							\
 }
 
-void terminalInput( Msession mid) {
+void terminalInput( Mapi mid) {
 	FILE	*fp;
 	char 	*line=0, *start_cmd, *end_cmd;
 	int	n, m_size=CHUNK_SIZE, m_index=0;
@@ -488,7 +492,7 @@ int main(int ac, char **av) {
  	char	*prelude  = NULL;  
 
         struct stat st;
-        Msession mid;
+        Mapi mid;
 
         static struct option long_options[] =
              {
@@ -644,13 +648,13 @@ int main(int ac, char **av) {
 		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
 
 	toConsole = stdout;
-	mid = Mconnect(host,port, user, passwd);
+	mid = mapi_connect(host,port, user, passwd,0);
 	/* fprintf(toConsole,"#connect %s:%d %s:%d\n",
 			host,port,user,skey);
 	*/
 	mid->trace = debug;
-	if (Merror(mid)) {
-		Mexplain(mid,toConsole);
+	if (mapi_error(mid)) {
+		mapi_explain(mid,toConsole);
 		EXIT(2);
 	}
 	if( language && strcmp(language,"mal")){

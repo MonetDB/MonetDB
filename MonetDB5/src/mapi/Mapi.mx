@@ -1,147 +1,267 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold <Stefan.Manegold@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
 @f Mapi
-@a M.L. Kersten, F. Kwakkel
-@v 1.0
+@a M.L. Kersten
+@v 2.0
+@d August 2003
 @* The Monet Application Programming Interface
 
 The easiest way to extend the functionality of Monet is to construct
 an independent Monet application, which communicates with a
-running server on a textual basis. 
-The prime advantage is a secure and traceable interface. Unlink Minstall,
-programming errors are likely to hang up the application without
-affecting the server. The server merely notices a client disappearing and
-can subsequently abort its pending transactions.
-The overhead in command preparation and response decoding is mainly 
-localized in the workstation of the application.
+running server using a database driver with a simple API and a textual protocol.
+The effectivness of such an approach has been demonstrated by the wide
+use of database API implementations, such as Perl DBI, PHP ADO, ODBC,...
+
+The database driver implementation given in this document is 
+focussed on developing applications in C/C++. The command collection 
+have been chosen to align with common practice, i.e. queries follow
+a prepare,execute,and fetch_row paradigm. An example of a mini
+application below illustrates the main operations.
+@T
+#include <mapi.h>
+
+#define die(X) {mapi_explain(X,stdout); exit(-1); }
+
+main(int argc, char *argv){
+	Mapi	*dbh;
+
+	dbh= mapi_connect("localhost:50001","guest",0,"sql");
+	if(mapi_error(dbh)) die(dbh);
+
+	if( mapi_query(dbh,"create table emp(name varchar,age int)")) die(dbh);
+
+	if( mapi_query(dbh,"insert into emp values(\"John\", 23)") ) die(dbh);
+
+	if( mapi_query(dbh,"insert into emp values(\"Mary\", 22)") ) die(dbh);
+
+	if( mapi_query("select * from emp") ) die(stmt);
+
+	while( mapi_fetch_row(dbh)){
+		char *nme = mapi_fetch_field(dbh,0);
+		char *age = mapi_fetch_field(dbh,1);
+		printf("person %s age %s\n", nme, age);
+	}
+
+	mapi_disconnect(dbh);
+}
+@-
+The mapi_connect() operation establishes a communication channel
+with a running server on the local machine. The user identification
+is the ubiguitous guest, for whome we do not require a password.
+The query language interface is "sql". Alternatives are the lower
+level languages "mil" and "mal". Future versions are expected to
+recognize also "xcore" and "xquery".
+
+Errors on the interaction can be captured using mapi_error(), possibly
+followed by a request to dump a short error message explanation on a
+standard file location. It has been abstracted away in a macro.
+
+Provided we can establish a connection, the interaction proceeds as
+in many similar application development packages. Queries are shipped
+for execution using mapi_query() and an answer table can be consumed
+one row at a time. In many cases these functions suffice.
+
+The tabular data exchange model is premarily meant to support sql
+(mil,mal) For xml and xcore the engine is expected to generate
+a Xpat-like token stream from which the application can built
+the internal representatio of the document.
+
+@+ Mapi library
+The routines to build a Monet application are grouped in the library
+Monet Application Programming Interface, or Mapi.
+
+The protocol information is stored in a Mapi interface descriptor (mid),
+which should be passed to the library routines in most cases.
+The application can set up several channels with the same or a different
+Monet server. It is the programmers responsibility not to mix the
+descriptors in retrieving the results.
+
+The application may be multi-threaded as long as the user respects
+the individual connections represented by the database handlers.
 
 The interface assumes a cautious user, who understands and has experience
 with the Monet programming model. In particular, syntax errors may easily
-lead to synchronization errors. A defensive programming style is adviced.
-Upon an error, the routine Mexplain gives information about the context of
+lead to synchronization errors. It should also be clear that references
+returned by the API point directly into the administrative structures of Mapi.
+This means that they are valid only for a short period, mostly between
+successive mapi_fetch_row commands.
+A defensive programming style is adviced.
+Upon an error, the routine mapi_explain gives information about the context of
 the failed call, include the expression shipped and any response received.
 
-The routines to build a Monet application are grouped in the library
-Monet Application Programming Interface, or Mapi.
-The application may be multi-threaded. 
-The channel information is stored in a Msession structure,
-which should be passed to the library in various circumstances.
-The application set up several channels with the same or a different
-Monet server. It is the programmers responsibility not to mix the
-descriptors in retrieving the results.
-The application is build around the following routines.
-
-@+ Manual Page
 @T
 \begin{description}
 
-\item[Msession Mconnect(char *host, int port, char *username, char *password
-)]:
+\item[Mapi mapi_connect(char *host, int port, char *username, char *password, 
+char *lang)]:
 Setup a connection with a Monet server at a {\em host}:{\em port} and
 login with {\em username} and {\em password}. If host == NULL, the
 local host is accessed. If username == NULL, the username of the
 owner of the client application containing the Mapi code is used.
-If password == NULL, the password is ommited.\\
+If password == NULL, the password is ommited.
+The preferred query language is any of \{sql,mil,mal,xcore,xquery\}\\
 The command returns a structure with administration about the interconnect.
 It also contains an explanation when connection to the server fails.
 
-\item[Msession Mdup(Msession mid)]:
-Creates a copy of a session descriptor. It is normally used to keep
-templates for database interactions, without the overhead of 
-occupying multiple IO channels. One descriptor should be used at a time.
+\item[Mapi mapi_dup(Mapi mid)]:
+Setup a second communication channel using the parameter setting of
+the previous on. 
+\item[int mapi_disconnect(Mapi mid)]:
+Terminates the session described by {\em mid}. Subsequent use 
+of the channel represented by this descriptor leads to a failure.
 
-\item[int Mdisconnect(Msession mid)]:
-Terminates the session described by {\em mid}. Subsequent use leads
-to a failure.
-
-\item[int Mdorequest(Msession mid, char *Command)]:
-This is the lowest level operation to send the Command string
-to the database server. The command is fully prepared by the application,
-including a necessary newline to force the server to process the request.
-A copy of the command string is kept in the session structure.
+\item[MapiMsg mapi_query(Mapi mid, char *Command)]:
+This routine sends the Command to the database server represented by mid.
+It is one of the most common operations. 
 If Command is zero it takes the last query string kept around.
+It returns zero upon success, otherwise it indicates a failure of the request.
+The command response is buffered for consumption, e.g. mapi_fetch_row();
 
-\item[int Mgetreply(Msession mid)]:
-This is the lowest level routine to retrieve a single line from the server.
-The routine routinely ignores comment lines received unless the flag
-{\em everything} is set in the session structure.
+\item[MapiMsg mapi_query_array(Mapi mid, char *Command, char **argv)]:
+This routine sends the Command to the database server replacing
+the placeholders by the string arguments presented. The default placeholder
+is the question mark (?), but also ':identifier' markers are recognized.
+
+\item[ int mapi_num_fields(Mapi mid)]:
+Return the number of fields in the current row.
+
+\item[ int mapi_num_rows(Mapi mid)]:
+Return the number of rows in the last select call. [ no guarantee given]
+A -1 is returned if this information is not available.
+
+\item[ int mapi_rows_affected(Mapi mid)]:
+Called after a database update (INSERT/DELETE/REPLACE)
+to determine the number of rows affected
+by the command.
+
+\item[ int mapi_fetch_row(Mapi mid)]:
+This routine retrieves a row line from the server.
 The text retrieved is kept around in a buffer linked with the session
-structure. Its address is returned. A zero is returned upon encountering
-a prompt or error. This can be analysed in using Merror().
+descriptor from which selective fields can be extracted.
+It returns the number of fields.
+A zero is returned upon encountering end of sequence 
+or error. This can be analysed in using mapi_error().
 
-\item[int Msend(Msession mid, char *Command, void *Ptr$_0$...)]:
-Send a single Monet command that produces no result tuple.
-The Command string is interpreted as a format string using the pointer list.
-This list should be terminated with a 0.
-Returns MOK if the request succeeded, otherwise an error code is returned.
-A newline is appended upon need to force the server to process the request.
-The command should not contain other newlines to avoid synchronization errors.
+\item[ int mapi_fetch_row_all(Mapi mid)]:
+All rows are cached at the client side first. Subsequent calls
+to either mapi_fetch_row() and mapi_fetch_row_all() will take
+the row from the cache. The number or rows cached 
+can be obtained using mapi_rows_affected().
+The value returned is the same as for mapi_fetch_row().
 
-\item[int Mquery(Msession mid, char *Query, void *Ptr$_0$, ...)]:
-Send a single request which produces 0 or more tuples as a result
-using a print command.
-The resulting tuples can be fetched and processed one by one using 
-the {\em Mfetch} command. If a single answer is expected then {\em Mget}
-can be used to interpreter the first tuple and skip to the synchronization
-point.
+\item[ char **mapi_fetch_array(Mapi mid)]:
+Returns an array of string pointers to the individual fields.
+A zero is returned upon encountering end of sequence 
+or error. This can be analysed in using mapi_error().
 
-\item[int Mget(Msession mid, void *Ptr$_0$, Type$_0$, ...)]:
-A single answer tuple is expected and obtained from the server.
-The fields returned are stored into the memory pointed at
-by Ptr$_i$ (0 $\leq$ i $\leq$ fields-1). 
-This list is terminated by a null ptr.
-String values are copied into space allocated by the user.
-The return type TYPE\_ptr can be used to obtain a reference into the
-reply buffer. It can be used to handle large answers without the need
-to apriori allocate space. However, it is then up to the user to detect then 
-end of the field.
-Returns MOK if a value is received. The routine skips everything to the
-next prompt.
+\item[ char *mapi_fetch_field(Mapi mid, int fnr)]:
+Returns a pointer a C-string representation of the value returned.
+A zero is returned upon encountering an error;
+This can be analysed in using mapi_error().
 
-\item[int Mfetch(Msession mid)]:
-Fetch the next tuple. The fields are extracted from the tuple 
-according to {\em Mget}.
-Mfetch returns MOK if a new tuple is retrieved, or MEOBAT if 
-no more tuples are available, otherwise an error code is returned.
+\item [MapiMsg mapi_finish(Mapi mid)]:
+This routine is used in the rare cases that consumption of the 
+tuple stream produced should be prematurely terminated. It is automatically
+called when a new query is shipped to the database.
 
-%\item[int Mgetfields(Msession mid)]:
-%Extract all values from the reply buffer. Used in combination with the low
-%level operations {\em Mdorequest} and {\em Mgetreply}.
+\item [MapiMsg mapi_prepare(Mapi mid, char **Command)];
+\item [int mapi_execute(Mapi mid, char **Command)];
+\item [int mapi_execute_array(Mapi mid, char **Command, char **argv)];
 
-\item[int Mbatch(Msession mid, char *Query, void *Ptr$_0$, ...)]:
-A batch of commands is prepared with subsequent calls the {\em Mbatch}.
-The query pattern is expanded when it is about to be shipped to the server.
-This way, the command can be used to prepare parameterized queries.
-The routine returns an error upon buffer overflow, which should be considered
-a fatal one. The batch can be send using any of {\em Mdorequest}, {\em Msend},
-or {\em Mquery}. The batch of request is disgarded using {\em Mbatchreset()}.
+\item [MapiMsg mapi_bind(Mapi mid, int varnr, int type, void *val);
+Describe the type and location of the next parameter in a query template.
+The types recognized are {SQL_INT, SQL_CHAR, SQL_VARCHAR, SQL_FLOAT, 
+SQL_DOUBLE, SQL_TIME, SQL_DATE}.
+The pointer should permit a dereference to gain access to the value.
+The binding operations should be performed after the mapi_execute command.
+Subsequently all rows being fetched also involve delivery of the field
+values in the C-variables using proper conversion. For variable length
+strings a pointer is set into the cache.
 
-%\item[int Mfield(Msession mid, int fnr, void *ptr, int typ)]:
-%Describes the location of a field in a result tuple, the memory location
-%where to leave the result, and the expected type. 
+\item[ MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
+A limited number of tuples are pre-fetched after each execute().
+If maxrows is negative, all rows will be fetched before the
+application is permitted to continue. The previous cache size is
+returned.
 
-\item[int Merror(Msession mid)]:
+\item [MapiMsg mapi_reset(Mapi mid)];
+Reset the row pointer to the first row in the row cache.
+This is mostly used in combination with fetching all tuples at once.
+
+\item[char * mapi_quote(char *name)]:
+Strings in the database should be surrounded by double quotes and
+escape of the charactes \n,\t,...
+\item[char * mapi_unquote(char *name)]:
+The reverse action of mapi_quote(), turning the database representation
+into a C-representation. The storage space is dynamically created and
+should be freed after use.
+
+\item [MapiMsg mapi_ping(Mapi mid)]:
+Test avalability of the server. Returns zero upon success.
+
+\end{description}
+
+The remaining operations are wrappers around the datastructures
+maintained. Note that column properties are derived from the
+table output returned from the server. 
+\begin{description}
+\item[ char *mapi_get_name(Mapi mid, int fnr)]:
+\item[ char *mapi_get_table(Mapi mid, int fnr)]:
+\item[ int mapi_get_type(Mapi mid, int fnr)]:
+\item[ int mapi_get_len(Mapi mid, int fnr)]:
+
+\item[ char *mapi_get_host(Mapi mid)]:
+\item[ char *mapi_get_user(Mapi mid)]:
+\item[ char *mapi_get_lang(Mapi mid)]:
+\item[ char *mapi_get_server(Mapi mid)]:
+
+\item[ char **mapi_list_fields(Mapi mid, char  *tablename)]:
+
+
+\item[MapiMsg mapi_error(Mapi mid)]:
 Returns the last error code or 0 if there is no error.
 
-\item[Mexplain(Msession mid, FILE *fd)]:
+\item[char *mapi_error_str(Mapi mid)]:
+Returns a pointer to the last error message.
+
+\item[MapiMsg mapi_explain(Mapi mid, FILE *fd)]:
 Writes the error message obtained from Monet to a file.
 
-\item[Mstatistics(Msession mid, FILE *fd)]:
-Writes relevant statistics about the interconnect to the file.
-%
-%\item[char *Metext(Msession mid)]:
-%Returns a pointer to the text of the last error.
+\item[MapiMsg mapi_stat(Mapi mid)]:
+Retrieves a table with statistics on the use of the Mapi interface.
+(illustrate)
 
-%\item[int Mreset(Msession mid)]:
-%Reset the error status and clear the query, reply, format, binding,
-%and variable table.
+%\item[int mapi_timeout(Mapi mid, int timeout)]:
+%Sets the time out time in milli seconds for all subsequent
+%Mapi commands. Default value is 0, wait indefinitely.
 
-%\item[int Mbind(Msession mid, void *ptr)]:
-%Describe the location of the next  parameter in a query template.
-%The pointer should permit a dereference to gain access to the value
-%referenced.
+\item [char **mapi_tables(Mapi mid)]:
+Returns a list of accessible database tables.
 
-\item[int Mtimeout(Msession mid, int timeout)]:
-Sets the time out time in milli seconds for all subsequent
-Mapi commands. Default value is 0, wait indefinitely.
+\item [char **mapi_fields(Mapi mid)]:
+Returns a list of accessible tables fields. This can also be obtained
+by inspecting the field descriptor returned by mapi_fetch_field.
+
 \end{description}
 @
 
@@ -151,39 +271,12 @@ The Mapi interface calls return one of the following codes.\\
 
 \begin{tabular}{l l}
 MOK  & No error \\
-MEOBAT      & No more tuples retrieved: end of BAT. \\
-MSYNCERR  & Synchronization error. \\
-MMAPIERR  & Mapi internal error.\\
-MMONETERR & Monet error.\\
+MERROR  & Mapi internal error.\\
 \end{tabular}
 @
 @{
 @+ Implementation
 @h
-
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
- */
 
 #include  <stdio.h>
 #include  <stream.h>
@@ -225,54 +318,78 @@ MMONETERR & Monet error.\\
 #define REPLYBUFFER MAPIBLKSIZE*1024*32	/* seems large enough */
 #define QRYLEN	32*MAPIBLKSIZE 
 				
+#define SQL_AUTO	0	/* automatic type detection */
+#define SQL_INT		1
+#define SQL_CHAR	2
+#define SQL_VARCHAR	3	
+#define SQL_FLOAT	4
+#define SQL_DOUBLE	5
+#define SQL_TIME	6
+#define SQL_DATE	7
+
+typedef int MapiMsg;
 
 #define MOK	0
-#define MEOBAT	-1
+#define MERROR	-1
 #define MTIMEOUT	-2
-#define MSYNCERR	-3
-#define MMAPIERR	-4
-#define MMONETERR	-5
 
 #define COUNT(M,X)	(M)->counts[X]++;
-#define MAXVARS		32
-#define MAXBIND		16
 #define PROMPTBEG		'\001'	/* start prompt bracket */
 #define PROMPTEND		'\002'	/* end prompt bracket */
 
-typedef struct {
-	int  field;
-	void *ptr;
+typedef struct{
+	char tablename[NAMELEN];
+	char columnname[NAMELEN];
+	int  colwidth;
+	void *binding;		/* to application variable */
 	int  type;
-} Mvarstruct;
+	int  precision;
+	int  scale;
+	int  isnull;		/* global table property */
+} MapiField;
 
 typedef struct {
-    char hostname[NAMELEN];
-    int  port;
-    char username[NAMELEN];
-    char password[NAMELEN];
-    char prompt[NAMELEN];
-    int  counts[20];
-    int *ptrs[MAXBIND];
-    Mvarstruct vars[MAXVARS];
-    int everything;
-    int error;
-    int trace;		/* Trace Mapi interaction */
-    char errortext[ERRLEN];
-    int querylength;	/* capacity of buffers */
-    int tmplength;
-    int  replylength;	
-    char *qrytail;	/* free space in querytext */
-    char *querytext; 
-    char *tmp;
-    char *reply;
-    stream *from, *to;
-} MsessionStruct;
+	int rowlimit;	/* maximal number of rows to cache */
+	int limit;	/* current storage space limit */
+	int writer;	/* current maximal storage */
+	int reader; /* what has been consumed so far */
+	int  *cnt;	/* actual number of fields in each row */
+	char **rows;	/* string representation of rows received */
+	char ***anchors;/* corresponding field pointers */
+} MapiRowBuf;
+
+typedef struct {
+	char server[NAMELEN];	/* server welcome message */
+	char hostname[NAMELEN];
+	int  port;
+	char username[NAMELEN];
+	char password[NAMELEN];
+	char lang[NAMELEN];
+	char prompt[NAMELEN];
+	int  counts[20];	/* statistics maintained */
 
 
-typedef MsessionStruct *Msession;
+	int everything;
+	int trace;		/* Trace Mapi interaction */
+	int error;		/* Error occurred */
+	char *errorstr;	/* pointer to constant string */
 
-#define Merror(x)	((x)->error)
-#define Metext(x)	((x)->errortext)
+	int active;		/* set when not all rows have been received */
+	char *qrytail;	/* free space in querytext */
+	char *querytext; 
+
+	int	fieldcnt;	/* the table report section */
+	int	rows_affected;	/* mostly unknown */
+	int 	maxfields;
+	MapiField *fields;
+	MapiRowBuf cache;
+
+	stream *from, *to;
+} MapiStruct, *Mapi;
+
+
+#define mapi_error(x)	((x)->error)
+#define Metext(x)	((x)->errorstr)
 
 #ifdef __cplusplus
 extern "C" {
@@ -288,32 +405,35 @@ extern "C" {
 #define mapi_export extern 
 #endif
 
-mapi_export char *Mmessages[];
+mapi_export MapiMsg mapi_bind(Mapi mid, int fnr, int type, void *ptr) ;
+mapi_export MapiMsg mapi_query(Mapi mid,char *cmd);
+mapi_export Mapi mapi_connect(char *host, int port, char *username,
+	 char *password, char *lang);
+mapi_export MapiMsg mapi_disconnect(Mapi mid);
+mapi_export MapiMsg mapi_finish(Mapi mid);
+mapi_export MapiMsg mapi_stat(Mapi mid);
+mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
+mapi_export MapiMsg mapi_reset_cache(Mapi mid);
+mapi_export int mapi_timeout(Mapi mid, int time);
+mapi_export char * mapi_fetch_line(Mapi mid);
+mapi_export int mapi_fetch_row(Mapi mid);
+mapi_export char *mapi_fetch_field(Mapi mid, int fnr);
+mapi_export char **mapi_fetch_field_array(Mapi mid);
+mapi_export int mapi_num_fields(Mapi mid);
+mapi_export int mapi_num_rows(Mapi mid);
+mapi_export int mapi_rows_affected(Mapi mid);
+mapi_export char *mapi_get_host(Mapi mid);
+mapi_export char *mapi_get_user(Mapi mid);
+mapi_export char *mapi_get_lang(Mapi mid);
+mapi_export char *mapi_get_server(Mapi mid);
 
-mapi_export void checkMid(Msession mid, char *nme);
-mapi_export void promptMonet(Msession mid);
-mapi_export void Mtail(Msession mid, char *qry);
-mapi_export int Mbind(Msession mid, void *ptr);
-mapi_export char *Mgetreply(Msession mid);
-mapi_export int Mdorequest(Msession mid,char *cmd);
-mapi_export Msession Mconnect(char *host, int port, char *username, char *password);
-mapi_export Msession Mdup(Msession mid);
-mapi_export Msession Mnewstruct(Msession mid);
-mapi_export void Mdisconnect(Msession mid);
-mapi_export int Msend(Msession mid, char *format, ...);
-mapi_export int Maction();
-mapi_export int Mget(Msession mid, ...);
-mapi_export int Mquery(Msession mid, char *query, ...);
-mapi_export int Mfetch(Msession mid, ...);
-mapi_export void Mreset();
-mapi_export void Mbatchreset();
-mapi_export void Mstatistics(Msession mid, FILE *fd);
-mapi_export void Mexplain(Msession mid, FILE *fd);
-mapi_export void Mgetfields(Msession mid);
-mapi_export int Mslice(char *tuple,int fnr, void *ptr, int typ);
-mapi_export int MsliceText(char *tuple, char **ptrs, int max);
-mapi_export int Msync(Msession mid);
-mapi_export int Mtimeout(Msession mid, int time);
+static void promptMonet(Mapi mid);
+static Mapi mapi_new();
+static int mapi_get_row(Mapi mid) ;
+static void mapi_check_query(Mapi mid, char *qry);
+static void  mapi_extend_cache(Mapi mid);
+static int mapi_extend_fields(Mapi mid);
+static int mapi_slice_row(Mapi mid);
 
 #ifdef __cplusplus
 }
@@ -347,22 +467,12 @@ They have been developed to ease interaction.
 # endif
 #endif
 
-
-char *Mmessages[]= { 
-	"No error:",
-	"End of BAT:",
-	"Time out occurred:",
-	"Synchronization error:",
-	"Mapi internal error:",
-	"Monet error:",
-	0
-};
-/* Used in Mstatistics:
+/* Used in mapi_stat:
    #events Mcommands[i] are counted in counts[i]: */
 char *Mcommands[]={
 	"Unknown command",
-	"Mconnect",
-	"Mdisconnect",
+	"mapi_connect",
+	"mapi_disconnect",
 	"Msend",
 	"Mquery",
 	"Mfetch",
@@ -370,63 +480,54 @@ char *Mcommands[]={
 	"Mbatch",
 	"--  total   --",
 	"Mbatchreset",
-	"Mdup",
-	"Mexplain",
+	"____",
+	"mapi_explain",
 	"Mreset",
-	"Mtimeout",
+	"mapi_timeout",
 	"-- internal --",	/* low level routines */
-	"Mbind",
+	"mapi_bind",
 	"Mfield",
-	"Mdorequest",
-	"Mgetreply",
-	"Mslice",
+	"mapi_query",
+	"mapi_finish",
+	"mapi_get_row",
 	0};
 
 
-@
+@+ Channel constructor
 The first call of an application is to establish a connection with
 an already server. The username and password are sent as part of
 the initialization sequence.
-Future versions may be allowed to set the username.
-The space for the buffers is dynamically allocated. It may be
-redefined by the user, provided he sets the corresponding length
-indicators as well.
+Future versions may be allowed to set the username and will also
+provide a secure socket layer support.
 @c
-Msession Mnewstruct(Msession mid) {
-	Msession m;
-	m = (Msession) malloc(sizeof(MsessionStruct));
-	if(m==0) {
-		fprintf(stderr,"Could not allocate space for session.\n");
-		exit(1);
-	}
-	m->tmplength= (mid==0 ? QRYLEN: mid->tmplength);
-        m->tmp= (char *) malloc(m->tmplength);
-	m->querylength= (mid == 0 ? QRYLEN: mid->querylength);
-        m->querytext= (char *) malloc(m->querylength);
+Mapi mapi_new() {
+	Mapi m;
+	m = (Mapi) malloc(sizeof(MapiStruct));
+	assert(m);
+        m->querytext= (char *) malloc(MAPIBLKSIZE);
+	assert(m->querytext);
 	m->qrytail= m->querytext;
-	m->replylength= (mid == 0 ? MAPIBLKSIZE: mid->replylength);
-        m->reply= (char *) malloc(m->replylength);
-	m->reply[0]=0;
-        if( m->reply == 0 || m->querytext == 0 || m->tmp==0){
-                printf("Could not allocate buffer space\n");
-                exit(1);
-        }
-	m -> trace = 0;
-	m -> everything = 1;
 
-	m->vars[0].ptr=0;
-	m->ptrs[0]=0;
-
+	m->trace = 1;
+	m->everything = 1;
 	m->error= MOK;
 	strcpy(m->hostname,"localhost");
+
+	m->maxfields = 64;
+	m->fields = (MapiField *) malloc( 64 * sizeof(MapiField));
+	assert(m->fields);
+	m->cache.rowlimit= 100;
+	m->cache.limit= 0;
+	m->cache.writer= 0;
+	m->cache.reader= -1;
 	return m;
 }
 
-Msession Mdup(Msession mid) {
-	Msession m;
-	checkMid(mid,"Mdup");
+Mapi Mdup(Mapi mid) {
+	Mapi m;
+	assert(mid);
 	COUNT(mid,10);
-	m= Mnewstruct(mid);
+	m= mapi_new();
 	if( mid){
 		m->to= mid->to;
 		m->from= mid->from;
@@ -438,14 +539,26 @@ Msession Mdup(Msession mid) {
 	}
 	return m;
 }
-Msession Mconnect(char *host, int port, char *username, char *password) {
+static
+int mapi_setError(Mapi mid, char *msg){
+	assert(mid);
+	mid->error = MERROR;
+	mid->errorstr = msg;
+}
+Mapi mapi_connect_ssl(char *host, int port, char *username, char *password, char *lang) {
+	Mapi mid = mapi_connect(host,port,username,password,lang);
+	mapi_setError(mid,"SSL connections not yet supported");
+	return mid;
+}
+Mapi mapi_connect(char *host, int port, char *username, char *password, char *lang) {
 	struct hostent *hp;
 	struct sockaddr_in server;
 	int s;
 	char *defport;
-	Msession mid;
+	Mapi mid;
 
-	mid= Mnewstruct(0);
+	mid= mapi_new();
+	mid->trace=1;
 
 	COUNT(mid,1);
 	if(host) strcpy(mid->hostname,host); 
@@ -457,22 +570,20 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	       errno != ERANGE)
 		errno= errno; /* no error */
 	    else {      
-		mid->error = MMAPIERR; 
-		sprintf(mid->errortext,     "Illegal or unknown port number"); 
+		mapi_setError(mid, "Illegal or unknown port number"); 
 		return(mid);
 	   }
 	}
 	
 	if(username) strcpy(mid->username,username);
-	else strcpy(mid->username,cuserid((char*)NULL));
+	/* ReDO else strcpy(mid->username,cuserid((char*)NULL));*/
 
 	if(password) strcpy(mid->password,password);
 	else strcpy(mid->password,"");
 	
 	hp = gethostbyname(mid->hostname);
 	if(!hp) {
-	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"gethostbyname(\"%s\") failed with h_errno=%d",mid->hostname,h_errno);
+	    mapi_setError(mid,"gethostbyname failed");
 	    return(mid);
 	}
 	memset(&server, 0, sizeof(server));
@@ -483,28 +594,24 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	
 	s=socket(AF_INET, SOCK_STREAM, 0);
 	if(s<0) {
-	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"Open socket failed");
+	    mapi_setError(mid,"Open socket failed");
 	    return(mid);
 	}
 
 	if(connect(s,(struct sockaddr *)&server, sizeof(server))<0) {
-	    perror("! Mapi.Mconnect.connect: ");
-	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"Connect to %s:%d failed",mid->hostname, mid->port);
+	    perror("! Mapi.mapi_connect: ");
+	    mapi_setError(mid,"Setup connection failed");
 	    return(mid);
 	}
 	
 	mid->from = socket_rastream(s,"Mapi client read");
 	if( mid->from->errnr){
-	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"Cannot open socket for reading");
+	    mapi_setError(mid,"Cannot open socket for reading");
 	    return(mid);
 	}
 	mid->to = socket_wastream(s,"Mapi client write");
 	if( mid->to->errnr){
-	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"Cannot open socket for writing ");
+	    mapi_setError(mid,"Cannot open socket for writing ");
 	    return(mid);
 	}
 
@@ -513,7 +620,7 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	
 	{ char buf[MAPIBLKSIZE];
 	  char c= EOF;
-	  int ret;
+	  int ret,i=0;
 	  snprintf(buf, MAPIBLKSIZE,"%s:%s\n",
 		username, (password?password:""));
 	  if(mid->trace){
@@ -523,683 +630,566 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	  ret= mid->to->write(mid->to,buf,1,MAPIBLKSIZE);
 	  mid->to->flush(mid->to);
 	  if( ret != MAPIBLKSIZE){
-	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"Could not send initial bytes %d.",c);
+	    mapi_setError(mid,"Could not send initial byte sequence");
 	    return(mid);
 	  }
+	/* consume the welcome message from the server */
 	  while( !((mid->from->read(mid->from,(char*)&c,1,1)==1 && c == PROMPTBEG) || (c == EOF)) ) { 
-		if(mid->trace) printf("got char %d=%c\n",(int)c,c);
+		if(i< NAMELEN-1) mid->server[i++]= c;
 		if(mid->from->errnr) {c= EOF; break;}
 	  }
+	  if( i) mid->server[i]= 0;
+	  if(mid->trace) printf("welcome:%s\n",mid->server);
 	  if (c == EOF) {
-	    /* perror("! Mapi.Mconnect.connect: "); */
-	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"Could not connect as %s.", mid->username );
+	    /* perror("! mapi_connect: "); */
+	    mapi_setError(mid,"Setup connection for user failed");
 	    return(mid);
 	  }
 
 	  promptMonet(mid);
-          /* printf("connection established\n");*/
+          if(mid->trace) printf("connection established\n");
+	  if( lang==0 || strcmp(lang,"mal")==0) return mid;
+
+	  snprintf(buf,MAPIBLKSIZE,"%s();",lang);
+	  if( mapi_error(mid)) return mid;
+	  if( mid->trace) printf("send scenario initializer %s\n", buf);
+	  mapi_query(mid,buf);
           return mid;
 	}
 }
 @-
-The library is programmed defensively.
+Once the start of the prompt string (\0001) has been recognized, the rest should
+be eaten away. It is stored in the prompt buffer for possible subsequent display.
 @c
-void checkMid(Msession mid, char *nme) {
-	if( mid==0){
-	fprintf(stderr,"Mapi %s called with illegal Msession argument\n",nme);
-	exit(0);
-	}
-}
-@-
-Once the start of the prompt string has been recognized, the rest should
-be eaten away. It is stored in the prompt buffer for possible
-subsequent display.
-@c
-void promptMonet(Msession mid) {
-        int i;
+void promptMonet(Mapi mid) {
+        int i=0;
 	char c;
 
-	checkMid(mid,"promptMonet");
-	if( mid->trace) fprintf(stderr,"promptMonet.");
-        for(i=0; mid->reply[i]; i++);
-        for( ;i<mid->replylength-1 && 
-	      mid->from->read(mid->from,(char*)&c,1,1) == 1; i++) 
-		if(c==PROMPTEND) break; else mid->reply[i]=c;
-        mid->reply[i] = '\0';
-	strcpy(mid->prompt,mid->reply);
-	mid->reply[0]=0;
-	mid->from->read(mid->from,(char*)&c,1,1); /* skip newline */
+	assert(mid);
+	if( mid->trace) printf("promptMonet:");
+        while( mid->from->read(mid->from,(char*)&c,1,1) == 1) {
+		if(c==PROMPTEND) break; 
+		if( i<NAMELEN-1) { mid->prompt[i]=c; i++;}
+	}
+        mid->prompt[i] = '\0';
+	mid->active = 0;
+	mid->from->read(mid->from,(char*)&c,1,1); /* skip newline  as well*/
+	if( mid->trace) printf("%s\n", mid->prompt);
 }
 
 @
 Disconnection from the server leads to removal of the
-Msession structure. Subsequent access may lead to a crash.
+Mapi structure. Subsequent access may lead to a crash.
 @c
-void Mdisconnect(Msession mid) {
-	checkMid(mid,"Mdisconnect");
+MapiMsg mapi_disconnect(Mapi mid) {
+	assert(mid);
 	COUNT(mid,2);
 	(void) mid->from->close(mid->from);
 	(void) mid->to->close(mid->to);
-	(void) free(mid->reply);
-	(void) free(mid->tmp);
-	(void) free(mid->querytext);
 	(void) free(mid);
-}
-@
-@-
-To synchronize on a prompt, the low level routine Msync can be used.
-It disgards all output received.
-@c
-int Msync(Msession mid) {
-	checkMid(mid,"Msync");
-	while(Mgetreply(mid)) ;
-	return(mid->error);
-}
-@
-@-
-The Msend operation assumes a string with the query. The query string
-should not contain newlines, otherwise synchronization errors will occur.
-A semicolon and newline are appended if needed.
-[Future, count them??]
-@c
-int Msend(Msession mid, char *format, ...) {
-	va_list ap;
-	char *s;
-	int i=0;
-	void *ptr;
-
-	checkMid(mid,"MSend");
-
-	va_start(ap,format);
-	for(;;){
-		ptr= va_arg(ap,void*);
-		if( ptr==0) break;
-                if (i == MAXBIND) {
-                        fprintf(stderr,"Mapi Msend called with too many arguments\n");
-                        exit(0);
-                }
-
-		mid->ptrs[i++]= ptr;
-	}
-	va_end(ap);
-
-	COUNT(mid,3);
-	if( mid->trace) fprintf(stderr,"Msend.");
-	mid->error= MOK;
-	if(format) strcpy(mid->tmp,format);
-	Mtail(mid, 0);
-	Mdorequest(mid, 0);
-	s= Mgetreply(mid);
-	if( s){
-		sprintf(mid->errortext,
-		"Incorrect reply from server: prompt expected got '%s'", s);
-		Msync(mid);
-		mid->error=MSYNCERR;
-		return mid->error;
-	}
 	return MOK;
 }
 @
 @-
-Formatting and batching the Monet requests can be delegated to the 
-Mapi library.
-Therefore, the user sets the format Mtemplate and announces the parameters to be
-used with Mbind. Thereafter, subsequent calls to Mget, Mquery, or Msend
-with an empty query string leads to preparing the format and shipping 
-it to the server. 
+To synchronize on a prompt, the low level routine mapi_finish can be used.
+It disgards all output received.
 @c
-int Mbatch(Msession mid, char *format, ...) {
-	va_list pa;
-	void *ptr;
-
-	checkMid(mid,"Mbatch");
-
-	va_start(pa,format);
-	for(;;){
-		ptr= va_arg(pa, void*);
-		if( ptr==0) break;
-		Mbind(mid,ptr);
-	}
-
-	va_end(pa);
-
-	COUNT(mid,7);
-	mid->error= MOK;
-	if ( strlen(format) >= QRYLEN){
-		mid->error= MMAPIERR;
-		sprintf(mid->errortext,"Query format too long\n");
-		return mid->error;
-	}
-	strcat(mid->tmp, format);
+MapiMsg mapi_finish(Mapi mid) {
+	assert(mid);
+	if( mid->active)
+	while(mapi_fetch_line(mid))  mid->cache.reader++;
 	return mid->error;
 }
 
-int Mbind(Msession mid, void *ptr) {
-	int i;
-	checkMid(mid,"Mbind");
+MapiMsg mapi_bind(Mapi mid, int fnr, int type, void *ptr) {
+	assert(mid);
 	COUNT(mid,16);
-	for(i=0; i<MAXBIND; i++)
-	if( mid->ptrs[i]==0) break;
-
-	if( i== MAXBIND-1){
-		mid->error= MMAPIERR;
-		sprintf(mid->errortext,"Too many bindings\n");
-		return MMAPIERR;
-	}
-	mid->ptrs[i]= ptr;
-	return mid->error;
+	if( fnr <0 || fnr>mid->fieldcnt )
+		return mapi_setError(mid,"Illegal field number");
+	if( fnr >= mid->fieldcnt) mapi_extend_fields(mid);
+	mid->fields[fnr].binding= ptr;
+	if( type>=0 && type <= SQL_DATE)
+		mid->fields[fnr].type= type;
+	else	mapi_setError(mid,"Illegal SQL type identifier");
+	return MOK;
 }
 @-
-The routine Mfield is similar. It sets an output variable.
+The routine mapi_check_query appends the semicolon and new line if needed.
+Furthermore, it ensures that no 'false' newlines are sent to the server,
+because this may lead to a synchronization error easily.
 @c
-int Mfield(Msession mid, int fnr, void *ptr, int typ) {
+static void mapi_check_query(Mapi mid, char *qry) {
 	int i;
-	checkMid(mid,"Mfield");
-	COUNT(mid,17);
-	for(i=0; i<MAXVARS; i++)
-	if( mid->vars[i].ptr ==0) break;
+	char *c;
 
-	if( i== MAXVARS){
-		mid->error= MMAPIERR;
-		sprintf(mid->errortext,"Too many bindings\n");
-		return MMAPIERR;
+	assert(mid);
+	i= strlen(qry)-1;
+	for(c=qry;*c; c++){
+		if( *c == '\n'){
+		mapi_setError(mid,"Newline in query string not allowed");
+		*c= ' ';
+		}
 	}
-	mid->vars[i].ptr = ptr;
-	mid->vars[i].field = fnr;
-	mid->vars[i].type = typ;
-	return mid->error;
-}
-@-
-The routine Maction reuses the reply buffer to prepare the
-query for shipment. It should be large enough to hold it.
-Since this can only be determined at the end of formating,
-a failure may result when it did not fit.
-@c
-#define arg(Y,X)	( mid->ptrs[X]? *mid->ptrs[X]:dummy)
-
-int Maction(Msession mid) {
-	int bytes;
-	int dummy=0;
-
-	checkMid(mid,"Maction");
-	mid->error= MOK;
-	bytes= sprintf(mid->qrytail,mid->tmp, 
-	arg(mid,0),
-	arg(mid,1),
-	arg(mid,2),
-	arg(mid,3),
-	arg(mid,4),
-	arg(mid,5),
-	arg(mid,6),
-	arg(mid,7),
-	arg(mid,8),
-	arg(mid,9),
-	arg(mid,10),
-	arg(mid,11),
-	arg(mid,12),
-	arg(mid,13),
-	arg(mid,14),
-	arg(mid,15)
-	);
-	if( bytes >= QRYLEN){
-		sprintf(mid->errortext, "Expanded query too large for reply buffer");
-		mid->error= MMAPIERR;
-		return MMAPIERR;
-	}
-	return mid->error;
-}
-@-
-The routine Mtail appends the semicolon.
-@c
-void Mtail(Msession mid, char *qry) {
-	int i;
-
-	checkMid(mid,"Mtail");
-	if( qry  == 0) Maction(mid);
-	if( qry){
-		i= strlen(qry)-1;
-		if(  i < QRYLEN-2)
-			strcpy(mid->qrytail,qry);
-	} else 
-		i= strlen(mid->qrytail)-1;
-	
-	if( i >= QRYLEN-2){
-		mid->error= MMAPIERR;
-		sprintf(mid->errortext,"Query too large for buffer");
-		return;
-	}
-
-	if( mid->qrytail[i] != '\n'){
-		mid->qrytail[i+1]= '\n';
-		mid->qrytail[i+2]= 0;
-	}
+	c--;
 	return;
 }
 
-@c
-/* int Mget(Msession mid, char *query, void *ptr, int typ) */
-/*VARARGS*/
-int Mget(Msession mid, ...) {
-	va_list ap;
-	char *s;
-	int i,typ;
-	void *ptr;
-
-	va_start(ap,mid);
-	i=0;
-	for(;;){
-		ptr= va_arg(ap, void*);
-		if( ptr==0) break;
-		typ= va_arg(ap, int);
-		Mfield(mid, i, ptr, typ);
-		i++;
-	}
-	va_end(ap);
-
-	checkMid(mid,"Mget");
-	COUNT(mid,6);
-	if( mid->trace) fprintf(stderr,"Mget.");
-	mid->error= MOK;
-	s= Mgetreply(mid);
-	if( s == 0){
-                if (mid->error == MOK) {
-                        sprintf(mid->errortext,"End of BAT reached.");
-                        mid->error=MEOBAT;
-                } else {
-                        Msync(mid);
-			mid->error=MSYNCERR;
-		}
-                return mid->error;
-	}
-	if( mid->reply[0]=='!'){
-		mid->error= MMONETERR;
-		strncpy(mid->errortext,mid->reply,ERRLEN);
-	} else Mgetfields(mid);
-	mid->vars[0].ptr=0;
-	if( Merror(mid) == MOK) Msync(mid);
-	return mid->error;
-}
-
-void Mgetfields(Msession mid) {
-	int i;
-	checkMid(mid,"Mgetfields");
-
-	for(i=0; mid->vars[i].ptr; i++)
-		Mslice(mid->reply, i, mid->vars[i].ptr, mid->vars[i].type);
-}
-@
-
-@c
-int Mquery(Msession mid, char *query, ...) {
-	va_list ap;
-	void *ptr;
-	int i;
-
-	va_start(ap,query);
-	if( query ) Mreset(mid);
-	i=0;
-	do{ 
-		ptr= va_arg(ap,void *);
-		if(ptr ==0) break;
-		Mbind(mid, ptr);
-	} while( ++i <MAXBIND);
-	va_end(ap);
-
-	checkMid(mid,"Mquery");
-	COUNT(mid,4);
-	if( mid->trace) fprintf(stderr,"Mquery.");
-	mid->error= MOK;
-	if (query && (int)(strlen(query)) >= QRYLEN){
-		mid->error= MMAPIERR;
-		sprintf(mid->errortext,"Query format too long\n");
-		return mid->error;
-	}
-	if( query) strcpy(mid->tmp,query);
-	Mtail(mid, 0);
-	Mdorequest(mid, 0);
-	return mid->error;
-}
-@
-
-@c
-int Mfetch(Msession mid, ...) {
-	va_list ap;
-	char *s;
-	int i,typ;
-	void *ptr;
-
-	va_start(ap,mid);
-	i=0;
-	for(;;){
-		ptr= va_arg(ap, void*);
-		if( ptr==0) break;
-		typ= va_arg(ap, int);
-		Mfield(mid, i, ptr, typ);
-		i++;
-	}
-	va_end(ap);
-
-	checkMid(mid,"Mfetch");
-	COUNT(mid,5);
-	if( mid->trace) fprintf(stderr,"Mfetch.");
-	mid->error= MOK;
-	s= Mgetreply(mid);
-	if( s == 0){
-		if (mid->error == MOK) {
-			sprintf(mid->errortext,"End of BAT reached.");
-			mid->error=MEOBAT;
-                } else {
-                        Msync(mid);
-			mid->error=MSYNCERR;
-		}
-		return mid->error;
-	}
-	Mgetfields(mid);
-	mid->vars[0].ptr=0;
-	return mid->error;
-}
-@
-
-@c
-int Mtimeout(Msession mid, int time) {
-	checkMid(mid,"Mtimeout");
+MapiMsg mapi_timeout(Mapi mid, int time) {
+	assert(mid);
 	COUNT(mid,14);
 	if( mid->trace) printf("Set timeout to %d\n", time);
 	return MOK;
 }
-@
 
-@-
-The routine Mreset manipulates the Msession structure. 
-It can be used before bulk operation from the client or
-before a query result is consumed.
-@c
-void Mreset(Msession mid) {
-	int i;
-
-	checkMid(mid,"Mreset");
-	COUNT(mid,12);
-	mid->error = MOK;
-	strcpy(mid->errortext,"No error");
-	mid->querytext[0]=0;
-	mid->tmp[0]=0;
-	mid->qrytail= mid->querytext;
-	for(i=0; i< MAXBIND; i++){
-		mid->ptrs[i] =0;
-	}
-	for(i=0; i< MAXVARS; i++){
-		mid->vars[i].ptr =0;
-	}
-}
-
-void Mbatchreset(Msession mid){
-	checkMid(mid,"Mbatchreset");
-	COUNT(mid,9);
-	mid->qrytail = mid->querytext;
-	*mid->qrytail = 0;
-}
-
-void Mexplain(Msession mid, FILE *fd) { 
-	if(mid== 0) {
-		fprintf(fd, "Mexplain:Msession argument is zero \n");
-		return;
-	}
+MapiMsg mapi_explain(Mapi mid, FILE *fd) { 
+	assert(mid);
 	COUNT(mid,11);
-	fprintf(fd,"connection= %s:%d\n", mid->hostname, mid->port);
-	fprintf(fd,"template= %s", mid->querytext);
-	fprintf(fd,"query= %s", mid->querytext);
-	if( mid->error> -5 && mid->error <=0){
-		 fprintf(fd,"Error code=");
-		 fprintf(fd,Mmessages[-mid->error]);
-		 fprintf(fd,"\n");
-	}
-	fprintf(fd,"Error text= %s\n",mid->errortext);
-	fprintf(fd,"Reply= %s\n",mid->reply);
+	fprintf(fd,"mapi  = %s\@%s:%d\n",
+		mid->username, mid->hostname, mid->port);
+	fprintf(fd,"query = %s", mid->querytext);
+	if( mid->error) 
+	fprintf(fd,"error = %s\n",mid->errorstr);
 }
-void Mstatistics(Msession mid, FILE *fd) {
+@-
+The statistics gathered should become available as a cached table.
+@c
+MapiMsg mapi_stat(Mapi mid) {
  	int i;
-	if(mid== 0) {
-		fprintf(fd, "Mstatistics:Msession argument is zero \n");
-		return;
-	}
+	char buf[MAPIBLKSIZE];
+
+	assert(mid);
 	COUNT(mid,13);
-	fprintf(fd,"---- Mapi statistics for %s:%d\n",
-		mid->hostname,mid->port);
+	mapi_reset_cache(mid);
+
 	mid->counts[8]=0;
 	for(i=0; Mcommands[i]; i++){
-	fprintf(fd,"%15s %d\n", Mcommands[i], mid->counts[i]);
-	if( i< 8) mid->counts[8] += mid->counts[i];
+		snprintf(buf, MAPIBLKSIZE,"[ %15s,\t%d ]", Mcommands[i], mid->counts[i]);
+		printf("%s\n",buf);
+		if( i< 8) mid->counts[8] += mid->counts[i];
 	}
+	return MOK;
 }
 @-
-Mdorequest and Mgetreply are two low level routines. They assume
-the default synchronization prompt. It assumes a complete Monet statement
+The routine mapi_query is one of the most heavily used ones.
+It sends a complete Monet statement for execution
 (i.e., ending in a newline; possibly including additional newlines).
 Interaction with the server is speed-up using block based interaction.
+The query is retained in the Mapi structure to repeated shipping.
 @c
-int Mdorequest(Msession mid, char* cmd) {
-int k,size;
+MapiMsg mapi_execute(Mapi mid) {
+	int k,size;
+	char *cmd;
 	COUNT(mid,18);
-	if( cmd==0) cmd= mid->querytext;
-	else strcpy(mid->querytext,cmd);
 
+	cmd= mid->querytext;
 	size =strlen(cmd)+1 /* null byte */;
+	/* perform binding */
+
+	mapi_reset_cache(mid);
         if (mid->trace) {
-                printf("Mdorequest:%d:%s",size, cmd);
+                printf("mapi_query:%d:%s",size, cmd);
         }
         if (mid->from->errnr || mid->to->errnr) {
-                sprintf(mid->errortext, "!communication line broken\n");
-		mid->error= MMONETERR;
-                return mid->error;
+                return mapi_setError(mid, "communication line broken");
         }
 	if( size > MAPIBLKSIZE){
 		char hdr[MAPIBLKSIZE] = "#blocks:%d\n";
 		sprintf(hdr,"#blocks:%d\n", (size-1)/MAPIBLKSIZE+1);
 		if( mid->trace)
-			printf("Mdorequest:multiple blocks: %d\n",
+			printf("mapi_query:multiple blocks: %d\n",
 				 (size-1)/MAPIBLKSIZE+1);
 		if( mid->to->write(mid->to,hdr, 1, MAPIBLKSIZE) != MAPIBLKSIZE){
 			mid->to->flush(mid->to);
-			sprintf(mid->errortext, "!write error on stream\n");
-			mid->error= MMONETERR;
-			return mid->error;
+			return mapi_setError(mid, "write error on stream");
 		}
 		mid->to->flush(mid->to);
 	}
 	for(k=0; k<size; k+= MAPIBLKSIZE) 
 	if( mid->to->write(mid->to,cmd+k, 1, MAPIBLKSIZE) != MAPIBLKSIZE ){
 		mid->to->flush(mid->to);
-                sprintf(mid->errortext, "!write error on stream\n");
-		mid->error= MMONETERR;
-                return mid->error;
+                return mapi_setError(mid, "write error on stream");
 	}
 	mid->to->flush(mid->to);
         return MOK;
 }
 
+MapiMsg mapi_query(Mapi mid, char* cmd) {
+	int len= strlen(cmd);
+	if( cmd==0){
+	} else {
+		if( mid->querytext) free(mid->querytext);
+		mid->querytext= (char*) malloc( len+1);
+		assert(mid->querytext);
+		strcpy(mid->querytext,cmd);
+	} 
+	mapi_check_query(mid,cmd);
+	return (mapi_execute(mid) || mapi_fetch_line(mid)==0);
+}
 @-
-The routine Mgetreply returns with 0 upon encountering the prompt
-(MOK) or an error. The reply buffer is extended automatically to 
-the largest message received, topped by a strong limit.
+The routine mapi_fetch_line forms the basic interaction with the server.
+It simply retrieves the next line and stores it in the row cache.
+The field anchor structure is prepared for subsequent use by
+mapi_fetch_row.
+The content received is analysed further by mapi_getRow()
 @c
-char *Mgetreply(Msession mid) {
-	char ch= EOF,*newbuf;
+MapiMsg mapi_reset_cache(Mapi mid){
+	mapi_finish(mid);
+	mid->rows_affected = 0;
+	mid->active= 1;
+	mid->cache.reader= -1;
+	mid->cache.writer= 0;
+}
+static 
+void  mapi_extend_cache(Mapi mid){
+	int incr, newsize, oldsize= mid->cache.writer;
+	char **newrows, ***anchors;
+	int *fldcnt;
+	/* extend row cache */
+	if( oldsize == mid->cache.rowlimit ){
+		mapi_setError(mid,"Row cache limit reached");
+	}
+	incr = oldsize /10;
+	newsize = oldsize + (incr <100? 100: incr);
+	if( newsize >mid->cache.rowlimit && mid->cache.rowlimit>0)
+		newsize = mid->cache.rowlimit;
+
+	newrows = (char **) malloc(newsize * sizeof(char**));
+	assert(newrows);
+	memset(newrows,0, newsize * sizeof(char **));
+	if( oldsize){
+		memcpy(newrows, mid->cache.rows, oldsize*sizeof(char**));
+		free(mid->cache.rows);
+	}
+	mid->cache.rows= newrows;
+
+	anchors = (char ***) malloc(newsize * sizeof (char **));
+	assert(anchors);
+	memset(anchors, 0, newsize * sizeof( char **));
+	if( oldsize) {
+		memcpy(anchors, mid->cache.anchors, oldsize*sizeof(char*));
+		free(mid->cache.anchors);
+	}
+	mid->cache.anchors= anchors;
+	fldcnt= (int *) malloc( newsize * sizeof(int));
+	assert(fldcnt);
+	memset(fldcnt,0, newsize * sizeof(int));
+	if( oldsize){
+		memcpy(fldcnt, mid->cache.cnt, oldsize *sizeof(int));
+		free(mid->cache.cnt);
+	}
+	mid->cache.cnt = fldcnt;
+
+	mid->cache.limit= newsize;
+}
+
+char * mapi_fetch_line(Mapi mid){
+	char *l,ch= EOF,*reply,*newbuf;
+	int replylength;
+	static int lastsize;
 	int n=0;        
+
+	if(mid->cache.writer>0 && mid->cache.reader< mid->cache.writer)
+		return mid->cache.rows[++mid->cache.reader];
+
+	mid->error = MOK;
+	replylength= lastsize>0?lastsize:MAPIBLKSIZE;
+	reply = (char *) malloc(replylength);
+	assert(reply);
+	reply[0]=0;
+	/* manage the row cache space first */
+	if( mid->cache.writer >= mid->cache.limit)
+		mapi_extend_cache(mid);
+	mid->cache.rows[mid->cache.writer++]= reply;
+
+        while ( mid->from->read(mid->from,(char*)&ch,1,1) == 1) {
+		if( ch == -1) mid->from->errnr= EOF;
+		if( ch == '\n') break;
+		if( ch== PROMPTBEG){
+			promptMonet(mid);
+			return 0;
+		}
+                if (mid->from->errnr) {
+                        mapi_setError(mid, "Connection terminated");
+			return 0;
+		}
+                if (!isprint(ch) && !isspace(ch)) {
+                        mapi_setError(mid, "Unrecognized character");
+			return 0;
+		}
+                if( n == replylength){
+			replylength= n + MAPIBLKSIZE;
+			newbuf= (char *) malloc(replylength);
+			assert(newbuf);
+			strncpy(newbuf,reply,n);
+			free(reply);
+			reply = newbuf;
+			mid->cache.rows[mid->cache.writer-1]= reply;
+                }
+		reply[n++] = ch;
+		ch = EOF;
+        }
+	if( ch == -1) { mapi_setError(mid, "connection broken"); return 0;}
+        reply[n]=0;
+	if( mid->trace) printf("mapi_fetch_line:%s\n", reply);
+        
+	if( n> lastsize ) lastsize = n; 
+	if( n> MAPIBLKSIZE && n<lastsize *0.9) lastsize = 0.9 *lastsize;
+        return mid->cache.rows[mid->cache.reader+1];
+}
+@-
+The routine mapi_get_row retrieves lines from the channel until
+it finds either a valid row, or encounters an error.
+In passing, it interprets comment lines to detect table headers.
+It returns with 0 upon encountering the prompt
+(MOK) or an error. The row cache buffer is extended until the limit
+is reached.
+@c
+static
+void mapi_header(Mapi mid, char *line){
+	char *tag= "name", *c;
+	if( mid->trace) printf("mapi_header:%s\n",line);
+	c= strrchr(line,'#');
+	if( c == 0 || c==line ) return;
+
+	*line = '['; 	/* fake a value row */
+	*c = ']';
+	
+	mapi_slice_row(mid);
+
+	c++; while(*c && *c == ' ') c++;
+	if(*c) tag= c;
+
+	if(strcmp("name",tag)==0){
+	}
+	if(strcmp("type",tag)==0){
+	}
+}
+
+static 
+int mapi_get_row(Mapi mid) {
+	char *reply=0;
 
 	COUNT(mid,19);
 	mid->error = MOK;
-	mid->reply[0]=0;
 
-        while ( mid->from->read(mid->from,(char*)&ch,1,1) == 1) {
-		if(ch== PROMPTBEG) break;
-		if( ch == -1) mid->from->errnr= EOF;
-                if (mid->from->errnr) {
-                        sprintf(mid->errortext, "!terminated connection\n");
-			mid->error= MMONETERR;
-                        return 0;
+	while(mid->active || mid->cache.reader < mid->cache.writer ){
+		reply= mapi_fetch_line(mid);
+		mid->cache.reader++;
+		if( reply == 0) return MERROR;
+		
+		switch(reply[0]){
+		case '!': {
+			/* concatenate the error messages */
+			char *olderr= mid->errorstr;
+			char *newerr;
+			newerr= (char*) malloc(strlen(olderr)+strlen(reply)+2);
+			assert(newerr);
+			strcpy(newerr,olderr);
+			strcat(newerr,reply);
+			if( mid->errorstr) free(mid->errorstr);
+			mid->errorstr= newerr;
+			mid->error = MERROR;
+			continue;
+			} break;
+		case '#':
+			mapi_header(mid,reply);
+		case '[':
+		default:
+			return MOK;
 		}
-		if( ch == '\n') break;
-                if (!isprint(ch) && !isspace(ch)) {
-                        sprintf(mid->errortext, "!terminating connection\n");
-			mid->error= MMONETERR;
-                        return 0;
-                }
-                if( n == mid->replylength){
-			if( n > REPLYBUFFER){
-				sprintf(mid->errortext,"!Answer too long\n");
-				mid->error=MMONETERR;
-				return 0;
-			}
-			mid->replylength= n + MAPIBLKSIZE;
-			newbuf= (char *) malloc(mid->replylength);
-			strncpy(newbuf,mid->reply,n);
-			GDKfree(mid->reply);
-			mid->reply = newbuf;
-                }
-		mid->reply[n++] = ch;
-		ch = EOF;
-        }
-	if( ch == -1){
-                sprintf(mid->errortext, "!connection broken\n");
-		mid->error= MMONETERR;
-                return 0;
-	}
-        mid->reply[n]=0;
-        mid->error = (mid->reply[0]=='!');
-
-	if( mid->trace){
-		printf("Mgetreply:%s\n", mid->reply);
-	}
-	if( mid->reply[0]=='#' && mid->everything==0) return Mgetreply(mid);
-        
-        if (mid->from->errnr) {
-                sprintf(mid->errortext, "!connection broken\n");
-		mid->error= MMONETERR;
-                return 0;
-        }
-	if( ch == PROMPTBEG){
-		/* eat rest of prompt string away */
-		promptMonet(mid);
-		return 0;
-	}
-        return mid->reply;
+		if( mid->everything) break;
+	} 
+        return MOK;
 }
 @-
-The routine @% Mslice@ accepts a tuple and slices out a specific
-field. The attribute value is copied to a dynamically allocated piece of
-memory and terminated by a null byte. The string quotes are removed in
-the process.
-It returns a NULL pointer when either the tuple does not conform the
-tuple output syntax or the field does not exists.
+Unquoting of a string is done in place. It returns the start
+of the unquoted part section.
 @c
-int Mslice(char *tuple,int fnr, void *ptr, int typ) {
-        char *start, *out;
-        char *p,*s,quote;
-        int i;
-        unsigned size;
+static
+void unquote(char *msg, char **start, char **next){
+	char *p= msg, *s;
+	char quote;
 
-        if( *tuple!='[' || fnr<0) return MMAPIERR;
-
-        p= tuple+1;
-	i =0;
-	do{
-                while(isspace(*p)) p++;
-                start =p;
-                size=0; quote= *p;
-                if( quote=='\'' || quote=='"'){
-                        /* get string */
-                        p++; start=p;
-                        while(*p != quote){
-                                if(*p=='\\') p++; p++;
-                                size++;
-                        }
-                }
-/* else
-                if( isalpha(*p)){
-                        while( isalnum(*p)) { p++;size++;}
-                } else
-                        while(!isspace(*p) && *p !=',') { p++;size++;}
-*/
-                if(i==fnr) break;
-                while(*p && *p!=',' && *p!=']') p++;
-                if(*p!=',') return MMAPIERR;
-                p++;i++;
-        } while(1);
-	switch( typ){
-	case TYPE_bit:
-		if( strncmp(start,"true",4)==0) *(int *)ptr=1; else
-                if( strncmp(start,"false",5)==0) *(int *)ptr=0; 
-		else return MMAPIERR;
-		/*FALLTHRU*/
-	case TYPE_int:
-        case TYPE_oid:
-        case TYPE_ptr:
-		return sscanf(start,"%d",ptr)==1? 0: MMAPIERR;
-        case TYPE_flt:
-                return sscanf(start,"%f",ptr)==1? 0: MMAPIERR;
-	case TYPE_chr:
-		*(char*) ptr= *start;
-		return 0;
-	case TYPE_str:
-		out= (char*) malloc(size+1);
-		*(char**)ptr= out;
-		s= out;
-		while(start<p){
-			if( *start=='\\') start++;
-			*s++ = *start++;
+	while(*p && isspace(*p)) p++;
+	*start =p;
+	quote= *p;
+	if( quote=='\'' || quote=='"'){
+		/* get quoted string */
+		p++; *start=p;
+		s= p;
+		while(*p != quote){
+			if(*p=='\\') {
+				p++;
+				switch(*p){
+				/* later
+				case '0': case '1': case '2': case '3': case '4':
+				case '5': case '6': case '7': case '8': case '9':
+				*/
+				case 'n': *s= '\n'; break;
+				case 't': *s= '\t'; break;
+				case 'r': *s= '\r'; break;
+				case 'f': *s= '\f'; break;
+				case '\\': *s= '\\'; break;
+				default: *s =*p;
+				}
+				p++;
+			} else *s++ = *p++;
 		}
-	       *(out+size)=0;
-		break;
-	default: return MMAPIERR;
+		*p = 0;
+	} else {
+		while( *p && (*p != ',' && *p != ']')) p++;
+		for( s= p-1; s > *start && *s == ' '; s--);
+		if( s>= *start && s< p-1) *s=0;
+		if( *p==0) { *next = p; return;}
+		*p = 0;
 	}
-       return 0;
+	*next = ++p;
+}
+char *mapi_unquote(char *msg){
+	char *start, *next;
+	int size;
+	unquote(msg, &start,&next);
+	return start;
+}
+char *mapi_quote(char *msg){
+	int len= sizeof(msg)*3;
+	char *s= (char*) malloc(len);
+	char *t=s,*v= s+ len;
+	for(; *msg && t<v; t++){
+		switch(*msg){
+		case '\n': *t++= '\\'; *t= 'n'; break;
+		case '\t': *t++= '\\'; *t= 't'; break;
+		case '\\': *t++= '\\'; *t= '\\'; break;
+		default:
+			*t= *msg++;
+		}
+		/* also deal with binaries */
+	}
+	*t=0;
+	return s;
 }
 @-
-The low level routine MsliceText is similar to Mslice, except that it
-initalizes a list of pointers to fragments in the reply buffer.
-It overwrites the contents of the Mid buffer
+The low level routine mapi_slice_row breaks the last row received into pieces
+and binds the field descriptors with their location. All escaped characters
+are immediately replaced, such that we end with a list of C-strings.
+It overwrites the contents of the row buffer, because de-escaping
+only reduces the size.
+It also silently extends the field descriptor table.
 @c
-int MsliceText(char *tuple, char **ptrs, int max) {
+static
+int mapi_extend_fields(Mapi mid)
+{
+	/* extend the field table */
+	int nm= mid->maxfields +32;
+	MapiField *nf= (MapiField *) malloc(nm * sizeof(MapiField));
+	assert(nf);
+	memcpy(nf, mid->fields, mid->maxfields * sizeof(MapiField));
+	memset(nf,0,  nm* sizeof(MapiField));
+	if( mid->fields) free(mid->fields);
+	mid->fields= nf;
+	mid->maxfields= nm;
+}
+static 
+void mapi_extend_anchor(Mapi mid){
+        int cr= mid->cache.reader;
+	char **ac= mid->cache.anchors[cr], **acnew=0;
+	if( ac == 0 || mid->maxfields> mid->cache.cnt[cr]){
+		acnew= (char **)malloc(sizeof(char*)* mid->maxfields);
+		assert(acnew);
+		mid->cache.anchors[cr]= acnew;
+		memcpy(acnew,ac, sizeof(char*)*mid->cache.cnt[cr]);
+		memset(ac, 0, sizeof(char*)*mid->cache.cnt[cr]);
+	}
+	if(ac) free(ac);
+}
+static
+int mapi_slice_row(Mapi mid) {
         char *start;
-        char *p,quote;
-        int i;
-        unsigned size;
+        char *p;
+        int single, i, cr= mid->cache.reader;
 
-        if( *tuple!='[' ) return MMAPIERR;
+	p= mid->cache.rows[cr];
+        if( p== NULL ) return mapi_setError(mid,"Current row missing");
+	single = *p == '[';
+	if(single) p++;
 
-        p= tuple+1;
-	i=0;
+	mapi_extend_anchor(mid);
+        i=0;
 	do{
-                while(isspace(*p)) p++;
-                start =p;
-                size=0; quote= *p;
-                if( quote=='\'' || quote=='"'){
-                        /* get string */
-                        p++; start=p;
-                        while(*p != quote){
-                                if(*p=='\\') p++; p++;
-                                size++;
-                        }
-			*p = 0;
-			p++;
-                }
-		ptrs[i] = start;
-/* else
-                if( isalpha(*p)){
-                        while( isalnum(*p)) { p++;size++;}
-                } else
-                        while(!isspace(*p) && *p !=',') { p++;size++;}
-*/
-                while(*p && *p!=',' && *p!=']') p++;
-		if ( *p == ']') {i++; *p=0; break;}
-                if(*p!=',') return MMAPIERR;
-		*p=0;
-                p++;
-		i++;
-        } while(i && i<max-1);
-	ptrs[i]=0;
-       return 0;
+		if( i== mid->maxfields ) {
+			if(mapi_extend_fields(mid)) return mid->error;
+			mapi_extend_anchor(mid);
+		}
+		unquote(p, &start, &p);
+		mid->cache.anchors[cr][i++] = start;
+		while(*p && *p=='\t' && *p != ']') p++;
+        } while(!single && *p && *p != ']');
+	if( mid->fieldcnt <i) mid->fieldcnt=i;
+	mid->cache.cnt[mid->cache.reader-1]= i;
+       return i;
 }
+@-
+The rows presented are broken down into pieces to
+simplify access later on.
+@c
+int mapi_fetch_row(Mapi mid){
+	if( mapi_get_row(mid)== MOK)
+		return mapi_slice_row(mid);
+	return MERROR;
+}
+int mapi_fetch_row_all(Mapi mid){
+	return MERROR;
+}
+
+char *mapi_fetch_field(Mapi mid, int fnr){
+	assert(mid);
+	int cr= mid->cache.reader;
+	if( fnr >=0 ){
+		/* slice if needed */
+		if( mid->cache.cnt[cr]==0)
+			mapi_slice_row(mid);
+		if( fnr < mid->cache.cnt[cr]==0)
+			return mid->cache.anchors[cr][fnr];
+	}
+	mapi_setError(mid,"Illegal field number");
+	return 0;
+}
+char **mapi_fetch_field_array(Mapi mid){
+	assert(mid);
+	int cr= mid->cache.reader;
+	if( mid->cache.cnt[cr]==0)
+		mapi_slice_row(mid);
+	return mid->cache.anchors[cr];
+}
+
+int mapi_num_fields(Mapi mid){ return mid->fieldcnt;}
+int mapi_num_rows(Mapi mid){ return mid->rows_affected;}
+
+char *mapi_get_name(Mapi mid, int fnr) { 
+	if( fnr >=0 && fnr <mid->fieldcnt) {
+		if( mid->fields[fnr].columnname[0] == 0)
+		snprintf(mid->fields[fnr].columnname, NAMELEN, "column_%d",fnr);
+		return mid->fields[fnr].columnname;
+	}
+	mapi_setError(mid,"Illegal field number");
+	return 0;
+}
+char *mapi_get_table(Mapi mid, int fnr) { 
+	if( fnr >=0 && fnr <mid->fieldcnt) {
+		if( mid->fields[fnr].tablename[0] == 0)
+		snprintf(mid->fields[fnr].tablename, NAMELEN, "table_%d",fnr);
+		return mid->fields[fnr].tablename;
+	}
+	mapi_setError(mid,"Illegal field number");
+	return 0;
+}
+int mapi_rows_affected(Mapi mid) { return mid->rows_affected;}
+char *mapi_get_host(Mapi mid) { return mid->hostname;}
+char *mapi_get_user(Mapi mid) { return mid->username;}
+char *mapi_get_lang(Mapi mid) { return mid->lang;}
+char *mapi_get_server(Mapi mid) { return mid->server;}
+@-
+int mapi_get_type(Mapi mid, int fnr) { return mid->name;}
+int mapi_get_len(Mapi mid, int fnr) { return mid->name;}
+
 @}
