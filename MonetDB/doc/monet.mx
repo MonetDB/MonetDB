@@ -33,7 +33,8 @@ a novel database system under development since 1993 at the
 
 When you start reading this, you are supposed to have downloaded Monet from   
 @[<a href="http://sourceforge.net/projects/monetdb/">sourceforge</a>@ and succesfully compiled following
-the instructions in the file @[<a href="www/HowToStart">HowToStart</a>@. \\
+the instructions in the file @[<a href="www/HowToStart">HowToStart</a>@ (for Unix) or 
+@[<a href="www/HowToStart-Win32">HowToStart-Win32</a>@ (for Windows). \\
 
 After reading this document,
 the next step to take is to study the @[<a href="mil.html">MIL Reference Manual</a>@.
@@ -259,8 +260,9 @@ The code is configured with the standard GNU tools (autoconf, automake, configur
 in principle a build on any Posix platform should be as simple as {\tt ./bootstrap; ./configure; make all install}. 
 As Microsoft Windows lacks configure, the Monet distribution comes with pre-built Windows
 {\tt config.h}, such that making becomes {\tt cd NT; make; make -f Makefile.msc all install}. 
-More details and requirements are explained in the file @[<a href="www/HowToStart">HowToStart</a>@ 
-in the root of the source distribution.
+More details and requirements are explained in the file @[<a href="www/HowToStart">HowToStart</a>@ (for Unix users)
+respectively @[<a href="www/HowToStart-Win32">HowToStart-Win32</a>@ (for Windows users).
+Both files are located in the root of the source distribution.
 
 Monet is an open database system that can be extended with new {\bf types} (e.g. point,polygons)
 new {\bf operators} (e.g. spatial join) and new {\bf search accelerators} (e.g. R-trees)
@@ -301,7 +303,8 @@ ODBC3.0 and is available both on Unix and Windows.
 @* Using Monet 
 
 As stated before, we assume here you have succesfully built and installed Monet according
-to the indications in the file @[<a href="www/HowToStart">HowToStart</a>@. 
+to the indications in the file @[<a href="www/HowToStart">HowToStart</a>@ resp. 
+@[<a href="www/HowToStart-Win32">HowToStart-Win32</a>@.
 
 @+ System Utilities
 @T
@@ -469,7 +472,7 @@ We then proceed to start a Monet server on the newly created 'gold' database:
 
 \begin{verbatim}
 $ Mserver --dbname gold  
-# Monet Database Server V4.3.7
+# Monet Database Server V4.3.6
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 >

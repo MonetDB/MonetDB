@@ -26,12 +26,13 @@ dnl -*- mode: autoconf -*-
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/utils/Mx/Mx.h)
 AC_CONFIG_AUX_DIR(conf)
-
-dnl ----------------------
-AM_INIT_AUTOMAKE("MonetDB", 4.3.7)
-AM_CONFIG_HEADER(config.h:conf/config.h.in)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
+AH_TOP([#include "sysdefs.h"])
+
+dnl ----------------------
+AM_INIT_AUTOMAKE("MonetDB", 4.3.6)
+AM_CONFIG_HEADER(config.h:conf/config.h.in)
 
 HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])

@@ -250,7 +250,7 @@ BAT *BATmergejoin(BAT *l, BAT *r) {
 
 @- hash join
 These macros encode the core of the join algorithm. They are
-the fast innerloops, optimized towards their type.
+the fast inner loops, optimized towards their type.
 
 @= hashjoin
 {	int xx, yy;
@@ -302,7 +302,7 @@ BAT* BAThashjoin(BAT* l, BAT* r) {
 @- fetch-join 
 @T
 The @`BATfetchjoin@5(l,r) does a join on the basis of positional lookup. 
-It looks up index numers from the second parameter in first parameter BAT.
+It looks up index numbers from the second parameter in first parameter BAT.
 The right parameter may contain OIDs, in which case their base is
 subtracted. 
 
@@ -310,10 +310,10 @@ In a typical join(BAT[any::1,oid) L, BATvoid,any::2] R) : BAT[any::1,any::2]
 we expect each tuple of L to hit exactly once in R. Now if any::1=void
 this void column can be carried over to the result. We do that.
 
-However, it is possible that an tail-oid is out of range wrt R; in that
-case some tuples will be missing and we cannot carry on producing
-a void column. In that case, we have to switch back on-the-fly
-to the non-dense implementation.
+However, it is possible that an tail-oid is out of range with respect
+to R; in that case some tuples will be missing and we cannot carry on
+producing a void column. In that case, we have to switch back
+on-the-fly to the non-dense implementation.
 
 The aftermath -- property setting -- is relatively straightforward here.
 
@@ -948,7 +948,7 @@ involved with time and distance.
 The boundary conditions for the bandjoin are constants or a NULL value.
 The latter enables encoding of arbitrary theta joins using the more
 general bandjoin.
-Incidently note that c1 = c2 = 0 leads to an equi-join.
+Incidentally note that c1 = c2 = 0 leads to an equi-join.
 
 The straight forward implementation uses a nested loop.
 The current implementation does not optimize processing, because
@@ -1040,13 +1040,12 @@ differ significantly.
 
 @= binsemijoin
 {	BUN lp, lq;
-	BAT *rr = BATmirror(r);
 	int xx, yy;
 
         if (cpy == l) {
    		BATloopFast(l, lp, lq, xx) {
 			ptr v = BUNh@1(l,lp);
-			if (SORTfnd_@2(rr, v)) {
+			if (SORTfnd_@2(r, v)) {
 				BUNfastins(bn, v, BUNtail(l,lp));
 			}
 		}
@@ -1054,7 +1053,7 @@ differ significantly.
 		BATloopFast(l, lp, lq, xx) {
 			BUN rp, rq;
 			ptr v = BUNh@1(l,lp);
-			SORTloop_@2(rr, rp, rq, v, v, yy) {
+			SORTloop_@2(BATmirror(r), rp, rq, v, v, yy) {
 		    		BUNfastins(bn, v, BUNtail(r,rp));
 			}
 		}
@@ -1240,7 +1239,7 @@ BAT *BATrevsemijoin(BAT *l, BAT *r) {
 
 @- positional semijoin 
 the below routine performs a semijoin using positional lookup.
-This implementation is dirty as it also alows fetches with 
+This implementation is dirty as it also allows fetches with 
 hard integer positions, rather than oid matching on a dense-oid column.
 @c
 BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
@@ -1398,7 +1397,7 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 Computes the n-ary equijoin over the head columns of multiple BATs.
 This function is complex, and uses nested functions calls, 
 for the specific stuff, it uses the stack for generating the 
-cartesian product on each hit tuple. Most of all, it emits tuples one 
+Cartesian product on each hit tuple. Most of all, it emits tuples one 
 at a time, in a pipeline rather than bulk fashion. For all these reasons, 
 it is not main-memory efficient. It does things that Monet actually 
 specifically was designed to avoid.
@@ -1442,14 +1441,14 @@ typedef struct {
         int       argc;        /* size of c */
 } table_t;
 
-@+ carthesian product
+@+ Cartesian product
 @T
 The matching algorithms tries to construct non-empty matches on all head 
-columns. Each time this succeeds, it calls the cartesian routine to
-construct a join result that consists of the cartesian product of these
+columns. Each time this succeeds, it calls the Cartesian routine to
+construct a join result that consists of the Cartesian product of these
 matches.
 
-The maching tuples can be encoded in two ways: 
+The matching tuples can be encoded in two ways: 
 \begin{description}
 \item[clustered] here we have two BUN pointers 'hi' and 'lo' that point
 to a consecutive range of BUNs in a BAT that match.
@@ -1632,7 +1631,7 @@ is treated. There are a number of possibilities. If a column is
 synced with a previous column, this is registered, so it can copy the 
 matching results of that previous column. If not, we use the fact that a
 column is ordered and if not, has an binary index on it. Both cases
-fall into two subcases: merge-lookup or binary-search; depending on
+fall into two sub cases: merge-lookup or binary-search; depending on
 whether we visit the head elements in order (MULTIJOIN\_SORTED(status)).
 If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 @c
@@ -1692,7 +1691,7 @@ Cleanup & exit.
 
 @+ The Matching Algorithm
 @T
-In multi-column join, all Monet accellerators are put to use when 
+In multi-column join, all Monet accelerators are put to use when 
 equi-lookup is done on a number of head columns.  In order of 
 preference, it:
 
@@ -1720,12 +1719,12 @@ those cases the merge algorithms use binary search instead of mergescan.
 
 In non-empty matching ranges are found in all head columns, a recursive 
 routine is used to go over all combinations of matching BUNs. This recursive 
-routine calls for every match (the cartesian product) a special-purpose 
+routine calls for every match (the Cartesian product) a special-purpose 
 routine that is passed all matching BUN pointers. This sequence of calls 
 represents the result of the multijoin.
 
 Normally you want to perform an action on each value (like formatting or 
-copying), but many values reoccur in the same place when the cartesian product 
+copying), but many values reoccur in the same place when the Cartesian product 
 over all columns is formed.  For instance, when we have 5 attributes in which 
 each has 2 matches on the current id, we have 2*2*2*2*2=32 result tuples for 
 this one id. A simple-minded strategy would then do 32*5 value actions, when 
@@ -1849,7 +1848,7 @@ while(algo) {
     		if (n->nhits == 0) break; /* NOT FOUND */
     	}
     }
-    /* Recursively print the carthesian product of all match collections of h.
+    /* Recursively print the Cartesian product of all match collections of h.
      */
     if (i >= argc) {
     	t.value_fcn[0](t.value_data[0], h);

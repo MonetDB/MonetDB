@@ -35,6 +35,7 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 fi
 
 find . -name .incs.\* \-exec rm {} \;
+rm -rf autom4te-*.cache
 
 REQ_AM_VERSION="1.4"
 AM_VERSION=`automake --version | grep '^automake' | sed -e 's|.*)||g' -e 's| ||g' -e 's|-.*||g'`
@@ -49,7 +50,22 @@ fi
 
 $AUTOGEN `pwd` $_AM_VERSION
 
-cat configure.ag > configure.in
+NEW_AC_VERSION="2.53"
+AC_VERSION=`autoconf --version | grep '^[Aa]utoconf' | sed -e 's|.* ||g' -e 's| ||g' -e 's|-.*||g'`
+_AC_VERSION=`echo $AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+_NEW_AC_VERSION=`echo $NEW_AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+
+if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
+	# old autoconf, we need to work around a few incompatibilities
+	sed '/AH_TOP/s/.*/AC_SUBST(LIBOBJS) AC_DEFUN(AC_LIBOBJ,[LIBOBJS="$LIBOBJS $1.$ac_objext"])/' configure.ag > configure.in
+	cat > acconfig.h <<EOF
+#include "sysdefs.h"
+@TOP@
+EOF
+else
+	cp configure.ag configure.in
+fi
+
 echo "AC_OUTPUT(" >> configure.in
 cat acout.in  >> configure.in
 echo ")" >> configure.in
@@ -78,44 +94,6 @@ test -f conf/ltmain.sh || libtoolize -c -f;
 # default deplibs_check_method (pass all libs)
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
 test -f conf/ltconfig && perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
-
-## patch conf/config.guess for Intel compiler on Linux (icc) 
-#grep 'ifdef __INTEL_COMPILER' conf/config.guess >/dev/null || (
-#grep 'printf ("%s-${VENDOR}-linux-gnuaout\\n", argv\[1\]);' conf/config.guess >/dev/null && \
-#cat << "EOF" | patch conf/config.guess
-#--- conf/config.guess~	Sun Feb 10 14:13:07 2002
-#+++ conf/config.guess	Wed Jan 30 15:14:03 2002
-#@@ -936,7 +936,10 @@
-#    printf ("%s-${VENDOR}-linux-gnulibc1\n", argv[1]);
-# # endif
-# #else
-#-  printf ("%s-${VENDOR}-linux-gnuaout\n", argv[1]);
-#+# ifdef __INTEL_COMPILER
-#+   printf ("%s-${VENDOR}-linux-Intel\n", argv[1]);
-#+# else
-#+   printf ("%s-${VENDOR}-linux-gnuaout\n", argv[1]);
-# #endif
-#   return 0;
-# }
-#EOF
-#grep 'printf ("%s-pc-linux-gnuaout\\n", argv\[1\]);' conf/config.guess >/dev/null && \
-#cat << "EOF" | patch conf/config.guess
-#--- conf/config.guess~	Sun Feb 10 14:13:07 2002
-#+++ conf/config.guess	Wed Jan 30 15:14:03 2002
-#@@ -936,7 +936,10 @@
-#    printf ("%s-pc-linux-gnulibc1\n", argv[1]);
-# # endif
-# #else
-#-  printf ("%s-pc-linux-gnuaout\n", argv[1]);
-#+# ifdef __INTEL_COMPILER
-#+   printf ("%s-pc-linux-Intel\n", argv[1]);
-#+# else
-#+   printf ("%s-pc-linux-gnuaout\n", argv[1]);
-# #endif
-#   return 0;
-# }
-#EOF
-#)
 
 aclocal -I . -I conf $CONFDIR
 
@@ -193,6 +171,8 @@ automake -a -c
 autoconf
 
 # patch configure to cope with Intel's C/C++ compiler for Linux ("icc")
+if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
+echo "autoconf $AC_VERSION is older than $NEW_AC_VERSION"
 grep 'ac_cv_prog_cc_g=yes' configure >/dev/null && cat << "EOF" | patch configure
 --- configure~	Wed May 23 20:46:51 2001
 +++ configure	Wed May 23 20:49:57 2001
@@ -219,8 +199,11 @@ grep 'ac_cv_prog_cxx_g=yes' configure >/dev/null && cat << "EOF" | patch configu
  else
    ac_cv_prog_cxx_g=no
 EOF
+fi # $_AC_VERSION -lt $_NEW_AC_VERSION
 
 # patch configure to remove config.cache when bootstrap was executed
+if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
+echo "autoconf $AC_VERSION is older than $NEW_AC_VERSION"
 grep 'when bootstrap was executed' configure >/dev/null || cat << "EOF" | patch configure
 --- configure	Fri Oct  4 11:38:50 2002
 +++ configure.new	Fri Oct  4 11:38:40 2002
@@ -238,6 +221,10 @@ grep 'when bootstrap was executed' configure >/dev/null || cat << "EOF" | patch 
  ac_help=
  ac_default_prefix=/usr/local
 EOF
+else # $_AC_VERSION -ge $_NEW_AC_VERSION
+echo "autoconf $AC_VERSION is $NEW_AC_VERSION or newer"
+# autoconf 2.53 (and newer?) doens't use a config.cache anymore
+fi # $_AC_VERSION -ge $_NEW_AC_VERSION
 
 # patch configure to run also gcc/gxx with only -g (i.e., w/o -O2) by default
 grep 'CFLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure

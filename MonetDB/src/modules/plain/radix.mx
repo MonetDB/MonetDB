@@ -890,7 +890,7 @@ t := time; res_a1 := radix_decluster(b, borders_smaller, 16);print(time - t);
 @c
 
 int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
-        int n = *size, i, j = 0, r = 0;
+        unsigned int n = *size, i, j = 0, r = 0;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
         int *buf = ((int*) BUNfirst(b));
         oid bs = *base;

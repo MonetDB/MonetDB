@@ -35,14 +35,15 @@ MONET_LIBS=""
 MONET_MOD_PATH=""
 MONET_PREFIX="."
 if test "x$1" = "x"; then
-  MONET_REQUIRED_VERSION="4.3.7"
+  MONET_REQUIRED_VERSION="4.3.6"
 else
   MONET_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monet,
 [  --with-monet=DIR     monet is installed in DIR], have_monet="$withval")
 if test "x$have_monet" != xno; then
-  AC_PATH_PROG(MONET_CONFIG,monet-config,,$withval/bin:$PATH)
+  MPATH="$withval/bin:$PATH"
+  AC_PATH_PROG(MONET_CONFIG,monet-config,,$MPATH)
 
   if test "x$MONET_CONFIG" != x; then
     AC_MSG_CHECKING(for Monet >= $MONET_REQUIRED_VERSION) 
@@ -176,8 +177,9 @@ JAR="jar"
 AC_ARG_WITH(java,
 [  --with-java=DIR     javac and jar are installed in DIR/bin], have_java="$withval")
 if test "x$have_java" != xno; then
-  AC_PATH_PROG(JAVAC,javac,,$withval/bin:$PATH)
-  AC_PATH_PROG(JAR,jar,,$withval/bin:$PATH)
+  JPATH="$withval/bin:$PATH"
+  AC_PATH_PROG(JAVAC,javac,,$JPATH)
+  AC_PATH_PROG(JAR,jar,,$JPATH)
   if test "x$JAVAC" = "x"; then
      have_java=no
   elif test "x$JAR" = "x"; then
@@ -225,7 +227,7 @@ AC_PROG_LN_S()
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
-AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
+AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
@@ -263,16 +265,25 @@ if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xno; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
-      case "$host" in
-      i*86-*-cygwin)  CFLAGS="$CFLAGS -O6                      -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations                     -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
-                      dnl  The combination of "-On -fomit-frame-pointer" with n>1 
-                      dnl  does not seem to produce stable/correct? binaries under CYGWIN
-                      dnl  (Mdiff and Mserver crash with segmentation faults);
-                      dnl  the same hold for, the combination of "-On -funroll-all-loops" with n>1
+      gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)[[^0-9]].*$|\1|'`"
+      case "$host-$gcc_ver" in
+      i*86-*-*-3.2)   CFLAGS="$CFLAGS -O6"
+                      case "$host" in
+                      i*86-*-cygwin) 
+                           dnl  With gcc 3.2, the combination of "-On -fomit-frame-pointer" (n>1)
+                           dnl  does not seem to produce stable/correct? binaries under CYGWIN
+                           dnl  (Mdiff and Mserver crash with segmentation faults);
+                           dnl  hence, we omit -fomit-frame-pointer, here.
+                           ;;
+                      *)   CFLAGS="$CFLAGS -fomit-frame-pointer";;
+                      esac
+                      CFLAGS="$CFLAGS                          -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations                     -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
+                      dnl  With gcc 3.2, the combination of "-On -funroll-all-loops" (n>1)
+                      dnl  does not seem to produce stable/correct? binaries
                       dnl  (Mserver produces tons of incorrect BATpropcheck warnings);
-                      dnl  hence, we omit -fomit-frame-pointer and -funroll-all-loops, here.
+                      dnl  hence, we omit -funroll-all-loops, here.
                       ;;
-      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
                       if test "$CC" = "gcc -m64" ; then
                         NO_INLINE_CFLAGS="-O1"
@@ -524,8 +535,7 @@ AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
 
 dnl check for getopt in standard library
-AC_SUBST(LIBOBJS)
-AC_CHECK_FUNCS(getopt_long , , [LIBOBJS="getopt.lo getopt1.lo"] ) 
+AC_CHECK_FUNCS(getopt_long , , AC_LIBOBJ(getopt); AC_LIBOBJ(getopt1))
 
 dnl hwcounters
 have_hwcounters=auto
@@ -650,7 +660,8 @@ AC_DEFUN(AM_MONET_CLIENT,[
 
 dnl check for Monet and some basic utilities
 AM_MONET($1)
-AC_PATH_PROG(MX,Mx,$MONET_PREFIX/bin:$PATH)
-AC_PATH_PROG(MEL,mel,$MONET_PREFIX/bin:$PATH)
+MPATH="$MONET_PREFIX/bin:$PATH"
+AC_PATH_PROG(MX,Mx,,$MPATH)
+AC_PATH_PROG(MEL,mel,,$MPATH)
 
 ])
