@@ -265,33 +265,14 @@ An alternative scheme is to collect these statements in an SQL boot file.
 int
 mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	int ret, *Debug = NULL, **D = &Debug;
+	int *Debug = NULL, **D = &Debug;
 
 	if (lt->cnt != 1) {
 		return handle_argerror(res, lt->cnt, 1);
 	}
 	builtin_operand(stk, lt, 0, (ptr *) D, TYPE_int, res);
 	backend_init(&monet4_freestack, &monet4_freecode, &monet4_parse);
-	if ((ret = mvc_init(*Debug, (backend_stack) stk)) > 0) {
-#define S(q) sqlstatement(q,stk)
-		/* PUBLIC can only select on these tables! 
-		   S("GRANT ALL on modules to PUBLIC with grant option;" );
-		   S("GRANT ALL on schemas to PUBLIC with grant option;" );
-		   S("GRANT ALL on tables to PUBLIC with grant option;" );
-		   S("GRANT ALL on columns to PUBLIC with grant option;" );
-		   S("GRANT ALL on keys to PUBLIC with grant option;" );
-		   S("GRANT ALL on idxs to PUBLIC with grant option;" );
-		   S("GRANT ALL on keycolumns to PUBLIC with grant option;" );
-		   S("GRANT ALL on types to PUBLIC with grant option;" );
-		   S("GRANT ALL on user_role to PUBLIC with grant option;" );
-		   S("GRANT ALL on auths to PUBLIC with grant option;" );
-		   S("GRANT ALL on privileges to PUBLIC with grant option;" );
-		   S("GRANT ALL on users to PUBLIC with grant option;" );
-		   S("GRANT ALL on sessions to PUBLIC with grant option;" );
-		   S("GRANT ALL on history to PUBLIC with grant option;" );
-		   S("GRANT ALL on env to PUBLIC with grant option;" );
-		 */
-	} else if (ret < 0) {
+	if (mvc_init(*Debug, (backend_stack) stk) < 0) {
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -859,7 +840,7 @@ proc sql_server_start() : void {
 	tzone_local(TIMEZONE("GMT"));
 
 	if (isnil(err)){
-		#fork(sqllogmanager());
+		fork(sqllogmanager());
 
 		mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
 		# start a default mapi client for debugging, this should go once
