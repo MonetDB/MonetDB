@@ -836,7 +836,7 @@ opt_passwd:
 
 opt_schema:
 	/* empty */		{ $$ = NULL; }
-  |	SET SCHEMA ident		{ $$ = $2; }
+  |	SET SCHEMA ident	{ $$ = $3; }
   ;
 
 alter_table_element:

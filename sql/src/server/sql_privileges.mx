@@ -311,6 +311,9 @@ schema_privs(int grantor, sql_schema *s)
 int
 table_privs(mvc *m, sql_table *t, int priv)
 {
+	/* temporary and clearable tables are owned by the session user */
+	if (!t->persists || t->clear)
+		return 1;
 	if (m->user_id == USER_MONETDB || m->role_id == t->s->auth_id || sql_privilege(m, m->user_id, t->base.id, priv, 0) == priv || sql_privilege(m, m->role_id, t->base.id, priv, 0) == priv || sql_privilege(m, ROLE_PUBLIC, t->base.id, priv, 0) == priv) {
 		return 1;
 	}
@@ -487,7 +490,8 @@ mvc_login(mvc *m, char *user, char *passwd)
 int
 sql_create_privileges(mvc *m, sql_schema *s)
 {
-	sql_table *t;
+	int pub, p, zero = 0;
+	sql_table *t, *privs;
 
 	/* now the authorisation related tables */
 	t = mvc_create_table(m, s, "db_users", 1, 1, 0, -1);
@@ -526,6 +530,45 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	mvc_create_column_(m, t, "name", "varchar", 0);
 	mvc_create_column_(m, t, "fullname", "varchar", 0);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
+
+	pub = ROLE_PUBLIC;
+	p = PRIV_SELECT;
+	privs = find_table(s, "privileges");
+
+	t = find_table(s, "modules");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "schemas");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "tables");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "ptables");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "columns");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "pcolumns");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "keys");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "idxs");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "keycolumns");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "types");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+
+	t = find_table(s, "env");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+
+	/* owned by the users anyway 
+	t = find_table(s, "sessions");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "history");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "ttables");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_table(s, "tcolumns");
+	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
+	*/
 
 	return 0;
 }
