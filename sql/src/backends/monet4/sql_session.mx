@@ -655,8 +655,7 @@ int handle_error(mvc *m, stream *out, int pstatus)
 		}
 	} else {
 		if (error(out, m->errstr) < 0 || 
-		    (buf && buf[0] && 
-		    (stream_write( out, buf, strlen(buf), 1) != 1))) {
+		    (buf && buf[0] && error( out, buf) < 0)) {
 			go = !go;
 		}
 	}
