@@ -10,7 +10,7 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\rules.msc"
 
-all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h
+all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
@@ -38,6 +38,12 @@ unistd.h:
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
 	if exist "$(SRCDIR)\RunMtest.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
+
+RunMapprove.bat: "$(SRCDIR)\RunMapprove.bat.in"
+	if exist "$(SRCDIR)\RunMapprove.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMapprove.bat.in" > RunMapprove.bat
+
+RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
+	if exist "$(SRCDIR)\RunMserver.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"
