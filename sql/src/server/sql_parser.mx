@@ -2266,7 +2266,7 @@ literal:
 
  |  sqlINT   	{ int digits = strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value; 
-		  sql_subtype *t;
+		  sql_subtype *t = NULL;
 
 		  if (digits <= 19)
 		  	t = sql_bind_subtype("INT", digits, 0 );
@@ -2291,7 +2291,7 @@ literal:
 		  int digits = strlen(s) - 1;
 		  int scale = digits - (dot-s);
 		  lng value = decimal_from_str(s);
-		  sql_subtype *t;
+		  sql_subtype *t = NULL;
 
 		  if (*s == '+' || *s == '-')
 			digits --;
@@ -2407,7 +2407,7 @@ interval_expression:
 			$$ = NULL;
 			YYABORT;
 	  	  } else {
-			sql_subtype *t; 
+			sql_subtype *t = NULL; 
 			if (tpe == 0){
 				t = sql_bind_subtype("MONTH_INTERVAL", 0, 0);
 			} else {
