@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/bin/sh
 # Translate an Encapsulated Postscript file to a bounded, 
 # white-transparent GIF; nice for inclusion in HTML pages.
 #
