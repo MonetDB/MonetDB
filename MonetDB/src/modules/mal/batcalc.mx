@@ -183,8 +183,6 @@ command @1(x:bat[any::1,dbl],y:@2)  :bat[any::1,dbl] = CMDscience_@1;
  */
 #include "gdk.h"
 #include "math.h"
-#include "mal_resolve.h"
-#include "mal_stack.h"
 #include "mal_squeezer.h"
 #include "mal_client.h"
 

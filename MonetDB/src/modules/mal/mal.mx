@@ -173,8 +173,7 @@ comment "Return the type of a value (expression). Returns an type number.
  TIP: use the monet_atomtbl BAT to translate type numbers to strings.";
 
 pattern cast(v:any, tpe:int ) : any = CMDcast
-comment "Cast values explicitly, using an integer-expression as type
-specifier.";
+comment "Cast values explicitly, using an integer-expression as type specifier.";
 
 pattern cast(v:bat[any::1,any], tpe:int):bat[any::1,any]= CMDbatcast
 comment "Cast values explicitly, using an integer-expression as type
@@ -206,13 +205,10 @@ specifier.";
 #define _ITERATOR_H
 #endif /* _ITERATOR_H*/
 @c
-#include "monet.h"
 #include <stdarg.h>
 #include <time.h>
 #include "gdk.h"
-#include "mal_stack.h"
 #include "mal_resolve.h"
-#include "mal_squeezer.h"
 #include "mal_client.h"
 
 
@@ -620,7 +616,7 @@ int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int tpe,i;
 	ptr val;
 
-	for(i=1; i< pci->argc;i++) {
+	for(i=pci->retc; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
 		val = getArgReference(stk,pci,i);
 		if( !isaBatType(tpe)) return GDK_FAIL;

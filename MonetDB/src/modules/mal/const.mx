@@ -92,7 +92,7 @@ The content of this box my only be changed by the Administrator.
 			"unauthorized access to 'const' box\n");
 	}
 @c
-#include "monet.h"
+#include "mal_client.h"
 
 int isAuthorized(){
 	Client c;

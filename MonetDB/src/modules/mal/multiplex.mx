@@ -83,7 +83,6 @@ comment "Generic processor for mutiplexed instructions.";
 #define _MAL_MULTIPLEX_H_
 #include "mal.h"
 #include "mal_client.h"
-#include "mal_function.h"
 
 /* #define DEBUG_MULTIPLEX*/
 
