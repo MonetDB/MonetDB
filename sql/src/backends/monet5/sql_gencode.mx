@@ -380,9 +380,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgumentId(mb, q, _strdup("void"));
 			q = pushArgumentId(mb, q, _strdup(s->op4.typeval->type->base.name));
 			l = getDestVar(q);
-			q = newStmt(mb, "calc", "oid");
-			q = pushInt(mb, q, 0);
-			r = getDestVar(q);
+			r = newConstant(mb, TYPE_oid, _strdup("0@0"), TRUE);
 			q = newStmt(mb, "bat", "seqbase");
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);

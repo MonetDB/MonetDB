@@ -189,6 +189,7 @@ Reduce the program before other optimizations take place
 	MCoptimizer(c->curprg->def, 0, 0, "algebra", "joinPath");
 	ARoptimizer(c->curprg->def, 0, 0);
 	CXoptimizer(c->curprg->def, 0, 0);
+	ORoptimizer(c->curprg->def, 0, 0);
 	/* AMoptimizer(c->curprg->def, 0,0); */
 	/*SQLsetAccessMode(c); done in libraries now */
 
