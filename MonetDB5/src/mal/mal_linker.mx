@@ -152,7 +152,7 @@ static int lastmodule= 0;
 static void initM5Loader(){
 	str *newModuleLoaded;
 	void **newModuleHandle;
-	int newsize= maxmodules+MAXMODULES;
+	int i,newsize= maxmodules+MAXMODULES;
 
 	/* assume a safe all environment */
 	if( moduleLoaded == NULL){
@@ -161,6 +161,10 @@ static void initM5Loader(){
 			maxmodules= MAXMODULES;
 			moduleLoaded = (str*) GDKmalloc(maxmodules * sizeof(str));
 			moduleHandle = (void **) GDKmalloc(maxmodules * sizeof(void *));
+			for(i=0;i<maxmodules;i++){
+				moduleLoaded[i]=NULL;
+				moduleHandle[i]=NULL;
+			}
 		}
 		mal_unset_lock(mal_contextLock, "loadModule");
 	} else if( lastmodule+2 == maxmodules){
@@ -177,6 +181,10 @@ static void initM5Loader(){
 		GDKfree(moduleHandle);
 		moduleLoaded = newModuleLoaded;
 		moduleHandle = newModuleHandle;
+		for(i=maxmodules;i<newsize;i++){
+			moduleLoaded[i]=NULL;
+			moduleHandle[i]=NULL;
+		}
 		maxmodules= newsize;
 		mal_unset_lock(mal_contextLock, "loadModule");
 	}
