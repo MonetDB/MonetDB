@@ -5,6 +5,7 @@ do
 	M2m --trace=1 $i >$base.mal
 	if test -e $base.patch
 	then
-		$base.patch
+		echo "apply patch"
+		sh $base.patch
 	fi
 done
