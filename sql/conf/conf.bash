@@ -1,6 +1,19 @@
 #
-# This script is supposed to be "sourced" in order to set your (architecture
-# dependent) environment to be able to compile sql.
+# This script is supposed to be "sourced" in the top-level directory of the
+# checked-out SQL source tree (referred to as BASE in the remainder). 
+# While sourced, this script sets your (architecture dependent) environment
+# as required to compile SQL.
+#
+# In order to find your Monet installation, this script requires
+# 'monet-config` to be in your PATH.
+#
+# By default, compilation will take place in SQL_BUILD=BASE/`uname` and SQL
+# will be installed in PREFIX=SQL_BUILD. You can change either directory by
+# setting the enviroment variables
+#	SQL_BUILD
+# and/or
+#	PREFIX
+# appropiately before "sourcing" this script.
 #
 # To select your desired compiler ("GNU" or "ntv" (native)), your desired
 # binary type (32bit or 64bit), and whether binarys should be linked
@@ -11,9 +24,8 @@
 #	BITS="32"	or	BITS="64"
 #	LINK="dynamic"	or	LINK="static"
 #
-# (If not or wrongly set, "GNU32dynamic" is used as default.)
+# (If not or wrongly set, "GNU 32 dynamic" is used as default.)
 #
-#source `monet-config --prefix`/share/Monet/conf/conf.bash
 
 os="`uname`"
 base="${PWD}"
@@ -26,7 +38,7 @@ if [ ! -x `monet-config --prefix`/bin/monet-config ] ; then
 fi
 
 MONET_PREFIX=`monet-config --prefix`
-	
+
 
 if [ ! -x bootstrap ] ; then
 	echo ''
@@ -57,14 +69,14 @@ if [ ! -x bootstrap ] ; then
 		echo 'Using COMP="GNU" (default).'
 		COMP="GNU"
 	fi
-	if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ]  ; then
+	if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ] ; then
 		echo ''
 		echo 'BITS not set to either "32" or "64" to select the desired binary type.'
 		echo 'Using BITS="32" (default).'
 		BITS="32"
 	fi
 	LINK="`echo "${LINK}" | cut -c1`"
-	if [ "${LINK}" != "d"    -a  "${LINK}" != "s"   ]  ; then
+	if [ "${LINK}" != "d"    -a  "${LINK}" != "s"   ] ; then
 		echo ''
 		echo 'LINK not set to either "dynamic" or "static" to select the desired way of linking.'
 		if [ "${os}${COMP}" = "Linuxntv" ] ; then
@@ -86,7 +98,7 @@ if [ ! -x bootstrap ] ; then
 		fi
 	fi
 
-	# set default compilers & configure options
+	# set default compilers, configure options & paths
 
 	if [ "${COMP}" = "GNU" ] ; then
 		# standard GNU compilers are gcc/g++
@@ -103,15 +115,23 @@ if [ ! -x bootstrap ] ; then
 		conf_opts="--enable-shared --disable-static"
 	  else
 		# static linking
-	  	conf_opts="--disable-shared --enable-static"
+		conf_opts="--disable-shared --enable-static"
+	fi
+	# "standard" local paths
+	binpath="/usr/local/bin:${binpath}"
+	libpath="/usr/local/lib:${libpath}"
+	# "our" /soft[64] path
+	soft32=/soft/local
+	soft64=/soft64/local
+	if [ "${BITS}" = "32" ] ; then
+		softpath=${soft32}
+	  else
+		softpath=${soft64}
 	fi
 
 	# (additional) system-specific settings
 
 	if [ "${os}" = "Linux" ] ; then
-		# "standard" Linux paths
-		binpath="/soft/local/bin:${binpath}"
-		libpath="/soft/local/lib:${libpath}"
 		if [ "${COMP}" = "ntv" ] ; then
 			# "ntv" on Linux means IntelC++-5.0.1-beta ("icc")
 			# source /soft/IntelC++-5.0.1-beta/bin/iccvars.sh
@@ -128,9 +148,13 @@ if [ ! -x bootstrap ] ; then
 	fi
 
 	if [ "${os}" = "SunOS" ] ; then
+		# "our" /soft[64] path on apps
+		soft32="/var/tmp${soft32}"
+		soft64="/var/tmp${soft64}"
+		softpath="/var/tmp${softpath}"
 		# "standard" SunOS paths
-		binpath="/opt/SUNWspro/bin:/sw/SunOS/5.8/bin:/usr/local/bin:/usr/java/bin:${binpath}"
-		libpath="/sw/SunOS/5.8/lib:/usr/local/lib:${libpath}"
+		binpath="/opt/SUNWspro/bin:/sw/SunOS/5.8/bin:/usr/java/bin:${binpath}"
+		libpath="/sw/SunOS/5.8/lib:${libpath}"
 		if [ "${BITS}" = "64" ] ; then
 			# propper/extended LD_LIBRAY_PATH for 64bit on SunOS
 			libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
@@ -138,10 +162,14 @@ if [ ! -x bootstrap ] ; then
 			export AR='/usr/ccs/bin/ar'
 			export AR_FLAGS='-r -cu'
 		fi
+		if [ "${COMP}${BITS}${LINK}" = "ntv32d" ] ; then
+			# propper/extended LD_LIBRAY_PATH for native 32bit shared libs on SunOS
+			libpath="/usr/ucblib:${libpath}"
+		fi
 		if [ "${COMP}${BITS}" = "GNU64" ] ; then
-			# our gcc/g++ is in /soft/local/bin on apps
-			binpath="/var/tmp/soft/local/bin:${binpath}"
-			libpath="/var/tmp/soft/local/lib:${libpath}"
+			# our gcc/g++ on apps is in ${soft32} (also for 64 bit)
+			binpath="${soft32}/bin:${binpath}"
+			libpath="${soft32}/lib:${libpath}"
 		fi
 		if [ "${COMP}" = "GNU" ] ; then
 			# required GNU gcc/g++ options for 32 & 64 bit
@@ -153,36 +181,18 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -xarch=v9"
 			cxx="${cxx} -xarch=v9"
 		fi
-		if [ "${BITS}" = "64" ] ; then
-			# our "fake" /soft64/local/bin on apps
-			binpath="/var/tmp/soft64/local/bin:${binpath}"
-			libpath="/var/tmp/soft64/local/lib:${libpath}"
-		  else
-			# our "fake" /soft/local/bin on apps
-			binpath="/var/tmp/soft/local/bin:${binpath}"
-			libpath="/var/tmp/soft/local/lib:${libpath}"
-		fi
-		if [ "${BITS}" = "64" ] ; then
-			conf_opts="${conf_opts} --with-readline=/var/tmp/soft64/local"
-			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft64/local"
-			conf_opts="${conf_opts} --with-odbc=/var/tmp/soft64/local"
-		else
-			conf_opts="${conf_opts} --with-readline=/var/tmp/soft/local"
-			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft/local"
-			conf_opts="${conf_opts} --with-odbc=/var/tmp/soft/local"
-		fi
 	fi
 
 	if [ "${os}" = "IRIX64" ] ; then
 		# propper/extended paths on medusa
-		binpath="/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin:${binpath}"
-		if [ "${COMP}${BITS}" = "GNU32" ] ; then
-			# propper/extended paths on medusa
-			libpath="/soft/local/lib:${libpath}"
+		binpath="/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/java/bin:${binpath}"
+		if [ "${BITS}" = "64" ] ; then
+			# some tools are not in ${soft64} on medusa
+			binpath="${soft32}/bin:${binpath}"
 		fi
 		if [ "${COMP}${BITS}" = "GNU64" ] ; then
-			# propper/extended paths on medusa
-			libpath="/soft/local/lib/mabi=64:${libpath}"
+			# our gcc/g++ on medusa is in ${soft32} (also for 64 bit)
+			libpath="${soft32}/lib/mabi=64:${libpath}"
 			# required GNU gcc/g++ options for 64bit
 			cc="${cc} -mabi=64"
 			cxx="${cxx} -mabi=64"
@@ -192,24 +202,17 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -64"
 			cxx="${cxx} -64"
 		fi
-		if [ "${BITS}" = "64" ] ; then
-			# our /soft64/local/bin on medusa
-			binpath="/soft64/local/bin:${binpath}"
-			libpath="/soft64/local/lib:${libpath}"
-		  else
-			# our /soft/local/bin on medusa
-			binpath="/soft/local/bin:${binpath}"
-			libpath="/soft/local/lib:${libpath}"
-		fi
-		if [ "${BITS}" = "64" ] ; then
-			conf_opts="${conf_opts} --with-readline=/soft64/local"
-			conf_opts="${conf_opts} --with-getopt=/soft64/local"
-			conf_opts="${conf_opts} --with-odbc=/soft64/local"
-		else
-			conf_opts="${conf_opts} --with-readline=/soft/local"
-			conf_opts="${conf_opts} --with-getopt=/soft/local"
-			conf_opts="${conf_opts} --with-odbc=/soft/local"
-		fi
+	fi
+
+	if [ "${os}" != "Linux" ] ; then
+		# on Linux, /soft/local is identical with /usr/local
+		# prepend ${softpath} to ${binpath} & ${libpath}
+		binpath="${softpath}/bin:${binpath}"
+		libpath="${softpath}/lib:${libpath}"
+		# "our" libs/tools in ${softpath}
+		conf_opts="${conf_opts} --with-readline=${softpath}"
+		conf_opts="${conf_opts} --with-getopt=${softpath}"
+		conf_opts="${conf_opts} --with-odbc=${softpath}"
 	fi
 
 	# prepend target bin-dir to PATH
@@ -236,7 +239,7 @@ if [ ! -x bootstrap ] ; then
 				export PATH="${binpath}:${PATH}"
 			fi
 		  else
-		  	# set PATH as binpath
+			# set PATH as binpath
 			export PATH="${binpath}"
 		fi
 		echo " PATH=${PATH}"
@@ -248,21 +251,22 @@ if [ ! -x bootstrap ] ; then
 				export LD_LIBRARY_PATH="${libpath}:${LD_LIBRARY_PATH}"
 			fi
 		  else
-		  	# set LD_LIBRARY_PATH as libpath
+			# set LD_LIBRARY_PATH as libpath
 			export LD_LIBRARY_PATH="${libpath}"
 		fi
 		echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 	fi
-	
+
 #	# we shouldn't need this
 #	if [ "${LD_LIBRARY_PATH}" ] ; then
 #		export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
 #	  else	export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet"
 #	fi
 
-#	# this is obsolete (not jet!!)
+#	# this still needed for SQL
 #	export MONETDIST="${PREFIX}"
 	export MONET_MOD_PATH="${PREFIX}/lib:${PREFIX}/lib/sql:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
+	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
 
 	# for convenience: store the complete configure-call in CONFIGURE
 	export CONFIGURE="${base}/configure ${conf_opts} --with-monet=${MONET_PREFIX} --prefix=${PREFIX}"
