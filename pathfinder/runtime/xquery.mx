@@ -802,7 +802,7 @@ static void  seqEmitBool(XqueryCtx* ctx, int bv) {
                 handle_characters(ctx,bool_str);
         } else {
                 ctx->nAttrOnLine++;
-                stream_printf(GDKout,"%d ",bool_str);
+                stream_printf(GDKout,"%s ",bool_str);
         }
 }
 
