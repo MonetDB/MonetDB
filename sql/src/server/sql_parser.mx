@@ -435,7 +435,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
 	CHARACTER VARYING sqlDECIMAL sqlFLOAT 
-	SMALLINT MEDIUMINT BIGINT sqlINTEGER
+	TINYINT SMALLINT MEDIUMINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
@@ -2683,30 +2683,11 @@ data_type:
 			  else
 				$$ = sql_bind_subtype("char", $4, 0); 
 			}
-/* we don't have bytes, so since this one is optional, don't support it.
- * since postgres doesn't support it for this reason also, we're relatively
- * safe with this decision
- |  TINYINT		{ $$ = sql_bind_subtype("int", 2, 0); }
- */
+ |  TINYINT		{ $$ = sql_bind_subtype("smallint", 2, 0); }
  |  SMALLINT	{ $$ = sql_bind_subtype("smallint", 0, 0); }
- |  MEDIUMINT	{ $$ = sql_bind_subtype("int", 0, 0); }
+ |  sqlINTEGER	{ $$ = sql_bind_subtype("int", 0, 0); }
  |  BIGINT		{ $$ = sql_bind_subtype("bigint", 0, 0); }
- |  sqlINTEGER		{ $$ = sql_bind_subtype("int", 0, 0); }
- |  sqlINTEGER '(' nonzero ')'
-			{ if ($3 > 0 && $3 <= 5) {
-				$$ = sql_bind_subtype("smallint", $3, 0);
-			  } else if ($3 > 5 && $3 <= 10) {
-				$$ = sql_bind_subtype("int", $3, 0);
-			  } else if ($3 > 10 && $3 <= 19) {
-				$$ = sql_bind_subtype("bigint", $3, 0);
-			  } else {
-				char buf[BUFSIZ];
-				snprintf(buf, BUFSIZ, "Number of digits for INTEGER values should be between 1 and 19");
-				yyerror(buf);
-				$$ = NULL;
-				YYABORT;
-			  }
-			}
+ 
  |  sqlDECIMAL	{ $$ = sql_bind_subtype("decimal", 0, 0); }
  |  sqlDECIMAL '(' nonzero ')'	
 				{ $$ = sql_bind_subtype("decimal", $3, 0); }
