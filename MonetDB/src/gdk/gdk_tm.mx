@@ -149,8 +149,21 @@ int TMabort(void) {
 			if (b == NULL) continue;
 	
 			BBPfix(i);
-			if (BATdirty(b)) {
- 				/* BUN move-backes need a real BAT! */ 
+			if (BATdirty(b) || DELTAdirty(b)) {
+ 				/* BUN move-backes need a real BAT! */
+				/* Stefan: 
+				 * Actually, in case DELTAdirty(b), i.e., a
+				 * BAT with differences that is
+				 * saved/swapped-out but not yet committed,
+				 * we (AFAIK) don't have to load the BAT and
+				 * apply the undo, but rather could simply
+				 * discard the delta and revive the backup;
+				 * however, I don't know how to do this
+				 * (yet), hence we stick with this solution
+				 * for the time being --- it should be
+				 * correct though it might not be the most
+				 * efficient way...
+				 */
 				b = BBPdescriptor(i);
 				BATundo(b); 
 			}
