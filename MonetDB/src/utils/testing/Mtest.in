@@ -1038,8 +1038,8 @@ function GetBits () {
 function M_Master () {
 	if [ $THISFILE = Mtest ] ; then
 		CHECK $MCREATEDB -db Tests
-		MERROR=`echo '' | ( $MSERVER -db Tests || echo -e '\n!Exit 1' ) | grep '^!'`
-		if [ "$MERROR" ] ; then  ErrXit "'$MSERVER -db Tests\` fails with:\n$MERROR" ; fi
+		MERROR="`echo '' | ( $MSERVER -db Tests 2>&1 || echo -e '\n!Exit 1' )`"
+		if [ "`echo "$MERROR" | grep '^!'`" ] ; then  ErrXit "'$MSERVER -db Tests\` fails with:\n`echo "$MERROR"`" ; fi
 		export TSTMODS="`GetModules`" ; LOG1 $TSTMODS
 		export BITS="`GetBits`"       ; LOG1 $BITS
 	fi

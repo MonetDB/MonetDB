@@ -58,7 +58,7 @@ have changed since my proposal.
   * TST [-prelude TST.prelude]
   * Mserver -db TSTDB [-prelude TST.prelude] TST.milM
   * Mserver -db TSTDB -single [-prelude TST.prelude] TST.milS
-  * Mserver -db TSTDB -background &
+  * Mserver -db TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &
     Mclient [-prelude TST.prelude] TST[_(s|p)XX].milC
     Mshutdown
   * Mserver -db TSTDB -prelude TST.prelude &
