@@ -115,6 +115,9 @@ needed for tracing the parser.
 @l
 #include "mil_parser.tab.h"
 
+#define YY_NEVER_INTERACTIVE	1 /* workaround to flex bug */
+#define YY_USE_PROTOS	  	/* make sure ANSI-C prototyes are used */
+
 #define RETURN(Y)       { PARSEDEBUG {\
                                 THRprintf(GDKerr, "\n%s %s\n", yylexname(Y), yytext);\
                           } return Y; }
