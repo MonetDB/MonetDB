@@ -17,21 +17,8 @@
 
 MTSAFE
 
-SUBDIRS = HAVE_PEAR?DB examples 
-
-INCLUDES = ../../../../common ../../C @PHP_INCS@
-X_CFLAGS = -DCOMPILE_DL_MONETDB=1 -D_GNU_SOURCE
-
-monetdb_la_LDFLAGS = -module
-
-lib_monetdb = {
-	PREFIX =
-	NAME = monetdb
-	SOURCES = php_monetdb.h php_monetdb.c
-	LIBS = ../../C/libMapi $(MAPI_LIBS)
-	DIR = $(prefix)/$(PHP_EXTENSIONDIR)
+scripts_php = {
+	EXT = php
+	DIR = $(prefix)/$(PHP_PEARDIR)/DB
+	SOURCES = monetdb.php
 }
-
-# scripts_php = {
-# 	SOURCES = monetdb.php
-# }
