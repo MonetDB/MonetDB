@@ -55,7 +55,7 @@ comment "Associate a value domain with an enumerated type.";
 pattern load(map:any::1):BAT[any,any::1] = ENUMload
 comment "Load/activate a previously created enumeration type.";
 
-pattern destroy(map:any):void = ENUMdestroy
+pattern destroy(map:any):nil = ENUMdestroy
 comment "Destroy an enumeration type";
 
 pattern encode(e:any::1,v:any::2):any::1 = ENUMencode
@@ -85,7 +85,7 @@ comment "Return the enumeration BAT of an enum type";
 command isEnum(tpe:bat) : bit = isEnum
 comment "Returns true iff the bat is used as an enumerated type";
 
-command setHistogram(tpe:any::1, b:BAT[any,any]):void = ENUMsethisto
+command setHistogram(tpe:any::1, b:BAT[any,any]):nil = ENUMsethisto
 comment "registers the fact that ENUMtable(tpe) is a histogram on b's head column";
 
 pattern isHistogram(tpe:any,b:BAT[any,any]) : bit = ENUMishisto

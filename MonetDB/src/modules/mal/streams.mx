@@ -7,6 +7,7 @@ data files. It encapsulates the corresponding library managed in
 
 @mal
 atom stream : ptr;
+
 module streams;
 
 command open_rstream( filename:str ) : stream = stream_open_rstream
@@ -83,94 +84,94 @@ command stream_close( s:stream ) = stream_close_stream
 #include "streams.h"
 #include "monet.h"
 
-str stream_open_rstream( stream *S, str filename ){
-	if ((*(stream**)S = open_rstream( filename )) == NULL){
+str stream_open_rstream( stream *S, str *filename ){
+	if ((*(stream**)S = open_rstream( *filename )) == NULL){
 		return throwMessage("open_rstream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_open_wstream( stream *S, str filename ){
-	if ((*(stream**)S = open_wstream( filename )) == NULL){
+str stream_open_wstream( stream *S, str *filename ){
+	if ((*(stream**)S = open_wstream( *filename )) == NULL){
 		return throwMessage("open_wstream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_open_rastream( stream *S, str filename ){
-	if ((*(stream**)S = open_rastream( filename )) == NULL){
+str stream_open_rastream( stream *S, str *filename ){
+	if ((*(stream**)S = open_rastream( *filename )) == NULL){
 		return throwMessage("open_rastream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_open_wastream( stream *S, str filename ){
-	if ((*(stream**)S = open_wastream( filename )) == NULL){
+str stream_open_wastream( stream *S, str *filename ){
+	if ((*(stream**)S = open_wastream( *filename )) == NULL){
 		return throwMessage("open_wastream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_socket_rstream( stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_rstream( *socket, name )) == NULL){
+str stream_socket_rstream( stream *S, int *socket, str *name ){
+	if ((*(stream**)S = socket_rstream( *socket, *name )) == NULL){
 		return throwMessage("socket_rstream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_socket_wstream( stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_wstream( *socket, name )) == NULL){
+str stream_socket_wstream( stream *S, int *socket, str *name ){
+	if ((*(stream**)S = socket_wstream( *socket, *name )) == NULL){
 		return throwMessage("socket_rstream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_socket_rastream( stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_rastream( *socket, name )) == NULL){
+str stream_socket_rastream( stream *S, int *socket, str *name ){
+	if ((*(stream**)S = socket_rastream( *socket, *name )) == NULL){
 		return throwMessage("socket_rastream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_socket_wastream( stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_wastream( *socket, name )) == NULL){
+str stream_socket_wastream( stream *S, int *socket, str *name ){
+	if ((*(stream**)S = socket_wastream( *socket, *name )) == NULL){
 		return throwMessage("socket_wasstream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_file_rstream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_rstream( *file, name )) == NULL){
+str stream_file_rstream( stream *S, fstream *file, str *name ){
+	if ((*(stream**)S = file_rstream( *file, *name )) == NULL){
 		return throwMessage("file_rstream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_file_wstream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_wstream( *file, name )) == NULL){
+str stream_file_wstream( stream *S, fstream *file, str *name ){
+	if ((*(stream**)S = file_wstream( *file, *name )) == NULL){
 		return throwMessage("file_wstream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_file_rastream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_rastream( *file, name )) == NULL){
+str stream_file_rastream( stream *S, fstream *file, str *name ){
+	if ((*(stream**)S = file_rastream( *file, *name )) == NULL){
 		return throwMessage("file_rastream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
-str stream_file_wastream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_wastream( *file, name )) == NULL){
+str stream_file_wastream( stream *S, fstream *file, str *name ){
+	if ((*(stream**)S = file_wastream( *file, *name )) == NULL){
 		return throwMessage("open_wastream:failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 
-str stream_write_string( stream *S, str data ){
+str stream_write_string( stream *S, str *data ){
 	stream *s = *(stream**)S;
-	s->write( s, data, 1, strlen(data));
+	s->write( s, *data, 1, strlen(*data));
 	return MAL_SUCCEED;
 }
 

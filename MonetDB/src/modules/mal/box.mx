@@ -14,34 +14,34 @@ to set-up the list of current users and to perform authorization.
 @mal
 module box;
 
-pattern open(bname:str):void= BOXopen
+pattern open(bname:str):nil= BOXopen
 comment "Locate the boxant box and open it ";
 
-pattern close(bname:str):void= BOXclose
+pattern close(bname:str):nil= BOXclose
 comment "Close the box ";
 
-pattern destroy(bname:str):void= BOXdestroy
+pattern destroy(bname:str):nil= BOXdestroy
 comment "Destroy the box ";
 
 pattern take(bname:str,name:str):any = BOXtake
 comment "Locates the typed value in the boxant box";
 
-pattern deposit(bname:str,name:str,v:any):void = BOXdeposit
+pattern deposit(bname:str,name:str,v:any):nil = BOXdeposit
 comment "Enter a new value into the boxant box";
 
-pattern releaseAll(bname:str,):void = BOXreleaseAll
+pattern releaseAll(bname:str,):nil = BOXreleaseAll
 comment "Release all boxants for this client";
 
-pattern release(bname:str,name:str,val:any):void = BOXrelease
+pattern release(bname:str,name:str,val:any):nil = BOXrelease
 comment "Release the BAT from the client pool";
 
-pattern release(bname:str,name:str):void = BOXrelease
+pattern release(bname:str,name:str):nil = BOXrelease
 comment "Release the BAT from the client pool";
 
 pattern toString(bname:str,name:str):str = BOXtoString
 comment "Get the string representation of the i-th element in the box";
 
-pattern discard(bname:str,name:str):void = BOXdiscard
+pattern discard(bname:str,name:str):nil = BOXdiscard
 comment "Release the BAT from the client pool";
 
 pattern iterator(nme:str):lng = BOXiterator

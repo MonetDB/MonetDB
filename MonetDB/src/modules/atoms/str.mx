@@ -82,7 +82,7 @@ command r_search( s:str, c:chr ) : int = STRReverseChrSearch
 	comment "Reverse search for a char. Returns position, -1 if not found.";
 command search( s:str, s2:str) : int = STRStrSearch
 	comment "Search for a substring. Returns position, -1 if not found.";
-command r_search( s:str, s2:Str ) : int = STRReverseStrSearch
+command r_search( s:str, s2:str ) : int = STRReverseStrSearch
 	comment "Reverse search for a substring. 
 	Returns position, -1 if not found.";
 command trim( s:str ) : str = STRStrip

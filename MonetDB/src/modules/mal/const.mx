@@ -21,40 +21,40 @@ prohibiting all updates unless issued by the system administrator.
 @mal
 module const;
 
-pattern open():void= CONSTopen
+pattern open():nil= CONSTopen
 comment "Locate the constant box and open it";
 
-pattern close():void= CONSTclose
+pattern close():nil= CONSTclose
 comment "Close the constant box ";
 
-pattern destroy():void= CONSTdestroy
+pattern destroy():nil= CONSTdestroy
 comment "Destroy the box";
 
 pattern take(name:str):any = CONSTtake
 comment "Locates the typed value in the constant box";
 
-pattern deposit(name:str,v:any):void = CONSTdeposit
+pattern deposit(name:str,v:any):nil = CONSTdeposit
 comment "Enter a new value into the constant box";
 
-pattern releaseAll():void = CONSTreleaseAll
+pattern releaseAll():nil = CONSTreleaseAll
 comment "Release all constants for this client";
 
-pattern release(name:str,val:any):void = CONSTrelease
+pattern release(name:str,val:any):nil = CONSTrelease
 comment "Release a new constant value";
 
-pattern release(name:str):void = CONSTrelease
+pattern release(name:str):nil = CONSTrelease
 comment "Release a new constant value";
 
 pattern toString(name:str):str = CONSTtoString
 comment "Get the string representation of an element in the box";
 
-pattern discard(name:str):void = CONSTdiscard
+pattern discard(name:str):nil = CONSTdiscard
 comment "Release the const from the box";
 
 pattern iterator(nme:str):lng = CONSTiterator
 comment "Locates the next element in the constant box";
 
-pattern prelude():void = CONSTprelude
+pattern prelude():nil = CONSTprelude
 comment "Initialize the const box";
 
 const.prelude();

@@ -84,15 +84,15 @@ comment "Open a fstream in one direction through a pipe." ;
 command ferror() : str = io_ferror 
 comment "returns last error message. str(nil) if none. ";
 
-command fclose( f:fstream ):void = io_fclose comment "See: man fclose";
-command fflush( f:fstream ):void = io_fflush comment "See: man fflush";
+command fclose( f:fstream ):nil = io_fclose comment "See: man fclose";
+command fflush( f:fstream ):nil = io_fflush comment "See: man fflush";
 command feof( f:fstream ) : bit = io_feof comment "See: man feof";
 
 command fread( filep:fstream, nbytes:int ) : blob = io_fread 
 comment "See: man fread";
-command fwrite( filep:fstream, buf:str, nbytes:int ):void = io_fwrite_str 
+command fwrite( filep:fstream, buf:str, nbytes:int ):nil = io_fwrite_str 
 comment "See: man fwrite";
-command fwrite( filep:fstream, buf:blob, nbytes:int ):void = io_fwrite 
+command fwrite( filep:fstream, buf:blob, nbytes:int ):nil = io_fwrite 
 comment "See: man fwrite";
 command fseek( filep:fstream, pos:int, offset:int ) : int = io_fseek 
 comment "See: man fseek";
@@ -102,10 +102,10 @@ comment "See: man ftell";
 command fsize( filename:str ) : int = io_fsize 
 comment "Return the filesize, or -1 when there was some error";
 
-command fputs( s:str, filep:fstream):voidd = io_fputs comment "See: man fputs";
+command fputs( s:str, filep:fstream):nil = io_fputs comment "See: man fputs";
 command fgets( filep:fstream ): str = io_fgets comment "See: man fgets";
 
-command fputc( c:int, filep:fstream ):void = io_fputc comment "See: man fputs";
+command fputc( c:int, filep:fstream ):nil = io_fputc comment "See: man fputs";
 command fgetc( filep:fstream ): chr = io_fgetc comment "See: man fgetc";
 
 @+ Printing 
@@ -144,10 +144,10 @@ pattern print(val:any):int = CMDprint_val
 pattern printft(val:any):int = CMDprint_ft
 	comment "Select default format ";
 
-pattern fprint( filep:fstream , arg:any... ):void = io_fprint 
+pattern fprint( filep:fstream , arg:any... ):nil = io_fprint 
 comment "Print a (comma seperated) list of arguments";
 
-pattern fprintf( filep:fstream, format:str, arg:any... ):void = io_fprintf 
+pattern fprintf( filep:fstream, format:str, arg:any... ):nil = io_fprintf 
 comment "See: man fprintf";
 
 
