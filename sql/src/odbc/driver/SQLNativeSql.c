@@ -28,7 +28,6 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	char *query;
-	int querylen;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLNativeSql\n");
@@ -47,21 +46,9 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	}
 
 	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn);
-	querylen = strlen(query);
-
-	if (cbSqlStrMax > 0)
-		strncpy((char *) szSqlStr, query, cbSqlStrMax);
+	copyString(query, szSqlStr, cbSqlStrMax, pcbSqlStr,
+		   addStmtError, stmt);
 	free(query);
 
-	if (pcbSqlStr)
-		*pcbSqlStr = (SQLINTEGER) querylen;
-
-	if (querylen >= cbSqlStrMax) {
-		if (cbSqlStrMax > 0)
-			szSqlStr[cbSqlStrMax - 1] = 0;
-		addStmtError(stmt, "01004", NULL, 0);
-		return SQL_SUCCESS_WITH_INFO;
-	}
-
-	return SQL_SUCCESS;
+	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }

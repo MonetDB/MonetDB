@@ -87,6 +87,8 @@ int getNativeErrorCode(ODBCError *err);
  */
 ODBCError *getErrorRec(ODBCError *error, int recNumber);
 
+int getErrorRecCount(ODBCError *error);
+
 /*
  * Appends a valid ODBCError object 'this' to the end of the list
  * of a valid ODBCError object 'head'.

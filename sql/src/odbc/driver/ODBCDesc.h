@@ -88,6 +88,7 @@ void destroyODBCDesc(ODBCDesc *desc);
 void setODBCDescRecCount(ODBCDesc *desc, int count);
 ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
 
+SQLRETURN ODBCFreeDesc_(ODBCDesc *desc);
 SQLRETURN SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 			   SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
 			   SQLINTEGER BufferLength, SQLINTEGER *StringLength);

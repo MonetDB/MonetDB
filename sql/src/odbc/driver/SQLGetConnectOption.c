@@ -27,6 +27,10 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	ODBCLOG("SQLGetConnectOption\n");
 #endif
 
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+	clearDbcErrors(dbc);
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nOption) {
 		/* connection attributes (ODBC 1 and 2 only) */
@@ -41,21 +45,13 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
 		return SQLGetConnectAttr_(dbc, nOption, pvParam, 0, NULL);
-
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
 		return SQLGetConnectAttr_(dbc, nOption, pvParam,
 					  SQL_MAX_OPTION_STRING_LENGTH, NULL);
-
 	default:
-		/* other options (e.g. ODBC 3) are NOT valid */
-		if (!isValidDbc(dbc))
-			return SQL_INVALID_HANDLE;
-
-		clearDbcErrors(dbc);
-
 		/* set error: Invalid attribute/option */
 		addDbcError(dbc, "HY092", NULL, 0);
 		return SQL_ERROR;

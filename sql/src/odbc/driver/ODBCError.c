@@ -310,6 +310,17 @@ getErrorRec(ODBCError *error, int recNumber)
 	return error;
 }
 
+int
+getErrorRecCount(ODBCError *error)
+{
+	int n = 0;
+
+	while (error) {
+		error = error->next;
+		n++;
+	}
+	return n;
+}
 
 /*
  * Appends a valid ODBCError object 'this' to the end of the list

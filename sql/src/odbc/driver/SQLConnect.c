@@ -39,18 +39,12 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	char *s;
 	Mapi mid;
 
-	if (!isValidDbc(dbc))
-		return SQL_INVALID_HANDLE;
-
-	clearDbcErrors(dbc);
-
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
 		/* 08002 = Connection already in use */
 		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
-	assert(!dbc->Connected);
 
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szDataSource, nDataSourceLength, addDbcError, dbc);
@@ -147,6 +141,11 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLConnect\n");
 #endif
+
+	if (!isValidDbc((ODBCDbc *) hDbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors((ODBCDbc *) hDbc);
 
 	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength,
 			   szUID, nUIDLength, szPWD, nPWDLength);

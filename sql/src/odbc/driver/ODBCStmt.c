@@ -56,12 +56,17 @@ newODBCStmt(ODBCDbc *dbc)
 	assert(stmt->hdl);
 
 	stmt->currentRow = 0;
-	stmt->previousRow = 0;
+	stmt->startRow = 0;
+	stmt->rowSetSize = 0;
 	stmt->query = NULL;
 
 	/* add this stmt to the administrative linked stmt list */
 	stmt->next = dbc->FirstStmt;
 	dbc->FirstStmt = stmt;
+
+	stmt->cursorType = SQL_CURSOR_FORWARD_ONLY;
+	stmt->cursorScrollable = SQL_NONSCROLLABLE;
+	stmt->retrieveData = SQL_RD_ON;
 
 	stmt->ApplRowDescr = newODBCDesc(dbc);
 	stmt->ApplParamDescr = newODBCDesc(dbc);

@@ -28,11 +28,6 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	char *query;
 	MapiMsg ret;
 
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
-
 	/* check statement cursor state, query should NOT be executed */
 	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
@@ -82,6 +77,11 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare\n");
 #endif
+
+	if (!isValidStmt((ODBCStmt *) hStmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors((ODBCStmt *) hStmt);
 
 	return SQLPrepare_((ODBCStmt *) hStmt, szSqlStr, nSqlStrLength);
 }

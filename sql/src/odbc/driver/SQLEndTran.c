@@ -98,7 +98,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 
 
 	/* construct a statement object and excute a SQL COMMIT or ROLLBACK */
-	rc = SQLAllocHandle_(SQL_HANDLE_STMT, dbc, &hStmt);
+	rc = SQLAllocStmt_(dbc, &hStmt);
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
 		ODBCStmt *stmt = (ODBCStmt *) hStmt;
 		rc = SQLExecDirect_(stmt,
@@ -120,7 +120,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 		}
 		/* clean up the statement handle */
 		SQLFreeStmt_(stmt, SQL_CLOSE);
-		SQLFreeHandle_(SQL_HANDLE_STMT, stmt);
+		ODBCFreeStmt_(stmt);
 	} else {
 		/* could not allocate a statement object */
 		addDbcError(dbc, "HY013", NULL, 0);

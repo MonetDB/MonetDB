@@ -26,6 +26,93 @@
 
 
 SQLRETURN
+ODBCFreeEnv_(ODBCEnv *env)
+{
+	if (env->sql_attr_odbc_version == 0) {
+		addEnvError(env, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	/* check if no associated connections are still active */
+	if (env->FirstDbc != NULL) {
+		/* There are allocated connections */
+		addEnvError(env, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	/* Ready to destroy the env handle */
+	destroyODBCEnv(env);
+	return SQL_SUCCESS;
+}
+
+SQLRETURN
+ODBCFreeDbc_(ODBCDbc *dbc)
+{
+	/* check if connection is not active */
+	if (dbc->Connected) {
+		/* should be disconnected first */
+		addDbcError(dbc, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	/* check if no associated statements are still active */
+	if (dbc->FirstStmt != NULL) {
+		/* There are allocated statements */
+		/* should be closed and freed first */
+		addDbcError(dbc, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	/* Ready to destroy the dbc handle */
+	destroyODBCDbc(dbc);
+	return SQL_SUCCESS;
+}
+
+SQLRETURN
+ODBCFreeStmt_(ODBCStmt *stmt)
+{
+	/* check if statement is not active */
+	if (stmt->State == EXECUTED) {
+		/* should be closed first */
+		SQLRETURN res = SQLFreeStmt_(stmt, SQL_CLOSE);
+
+		if (res != SQL_SUCCESS)
+			return res;
+	}
+
+	/* Ready to destroy the stmt handle */
+	destroyODBCStmt(stmt);
+	return SQL_SUCCESS;
+}
+
+SQLRETURN
+ODBCFreeDesc_(ODBCDesc *desc)
+{
+	ODBCStmt *stmt;
+
+	/* check if descriptor is implicitly allocated */
+	if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
+		/* Invalid use of an automatically allocated
+		   descriptor handle */
+		addDescError(desc, "HY017", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	/* all statements using this handle revert to
+	   implicitly allocated descriptor handles */
+	for (stmt = desc->Dbc->FirstStmt; stmt; stmt = stmt->next) {
+		if (desc == stmt->ApplRowDescr)
+			stmt->ApplRowDescr = stmt->AutoApplRowDescr;
+		if (desc == stmt->ApplParamDescr)
+			stmt->ApplParamDescr = stmt->AutoApplParamDescr;
+	}
+
+	/* Ready to destroy the desc handle */
+	destroyODBCDesc(desc);
+	return SQL_SUCCESS;
+}
+
+SQLRETURN
 SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 {
 	/* Check parameter handle */
@@ -44,21 +131,9 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		if (!isValidEnv(env))
 			return SQL_INVALID_HANDLE;
 
-		if (env->sql_attr_odbc_version == 0) {
-			addEnvError(env, "HY010", NULL, 0);
-			return SQL_ERROR;
-		}
+		clearEnvErrors(env);
 
-		/* check if no associated connections are still active */
-		if (env->FirstDbc != NULL) {
-			/* There are allocated connections */
-			addEnvError(env, "HY010", NULL, 0);
-			return SQL_ERROR;
-		}
-
-		/* Ready to destroy the env handle */
-		destroyODBCEnv(env);
-		return SQL_SUCCESS;
+		return ODBCFreeEnv_(env);
 	}
 	case SQL_HANDLE_DBC:
 	{
@@ -68,24 +143,9 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		if (!isValidDbc(dbc))
 			return SQL_INVALID_HANDLE;
 
-		/* check if connection is not active */
-		if (dbc->Connected) {
-			/* should be disconnected first */
-			addDbcError(dbc, "HY010", NULL, 0);
-			return SQL_ERROR;
-		}
+		clearDbcErrors(dbc);
 
-		/* check if no associated statements are still active */
-		if (dbc->FirstStmt != NULL) {
-			/* There are allocated statements */
-			/* should be closed and freed first */
-			addDbcError(dbc, "HY010", NULL, 0);
-			return SQL_ERROR;
-		}
-
-		/* Ready to destroy the dbc handle */
-		destroyODBCDbc(dbc);
-		return SQL_SUCCESS;
+		return ODBCFreeDbc_(dbc);
 	}
 	case SQL_HANDLE_STMT:
 	{
@@ -95,47 +155,21 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		if (!isValidStmt(stmt))
 			return SQL_INVALID_HANDLE;
 
-		/* check if statement is not active */
-		if (stmt->State == EXECUTED) {
-			/* should be closed first */
-			SQLRETURN res = SQLFreeStmt_(stmt, SQL_CLOSE);
+		clearStmtErrors(stmt);
 
-			if (res != SQL_SUCCESS)
-				return res;
-		}
-
-		/* Ready to destroy the stmt handle */
-		destroyODBCStmt(stmt);
-		return SQL_SUCCESS;
+		return ODBCFreeStmt_(stmt);
 	}
 	case SQL_HANDLE_DESC:
 	{
 		ODBCDesc *desc = (ODBCDesc *) handle;
-		ODBCStmt *stmt;
 
 		/* check it's validity */
 		if (!isValidDesc(desc))
 			return SQL_INVALID_HANDLE;
 
-		/* check if descriptor is implicitly allocated */
-		if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
-			/* Invalid use of an automatically allocated descriptor handle */
-			addDescError(desc, "HY017", NULL, 0);
-			return SQL_ERROR;
-		}
+		clearDescErrors(desc);
 
-		/* all statements using this handle revert to
-		   implicitly allocated descriptor handles */
-		for (stmt = desc->Dbc->FirstStmt; stmt; stmt = stmt->next) {
-			if (desc == stmt->ApplRowDescr)
-				stmt->ApplRowDescr = stmt->AutoApplRowDescr;
-			if (desc == stmt->ApplParamDescr)
-				stmt->ApplParamDescr = stmt->AutoApplParamDescr;
-		}
-
-		/* Ready to destroy the desc handle */
-		destroyODBCDesc(desc);
-		return SQL_SUCCESS;
+		return ODBCFreeDesc_(desc);
 	}
 	default:
 		return SQL_INVALID_HANDLE;

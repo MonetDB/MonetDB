@@ -19,6 +19,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
+#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -29,7 +30,6 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	int nValue = 0;
 	const char *sValue = NULL;	/* iff non-NULL, return string value */
 	int len = 0;
-	SQLRETURN returnstate = SQL_SUCCESS;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetInfo %d\n", nInfoType);
@@ -109,22 +109,35 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 	case SQL_ASYNC_MODE:
 		nValue = SQL_AM_NONE;
+		/* SQL_AM_CONNECTION, SQL_AM_STATEMENT */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_BATCH_ROW_COUNT:
 		nValue = 0;
+		/* SQL_BRC_EXPLICIT SQL_BRC_PROCEDURES | SQL_BRC_ROLLED_UP | */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_BATCH_SUPPORT:
 		nValue = 0;
+		/* SQL_BS_ROW_COUNT_EXPLICIT |
+		   SQL_BS_ROW_COUNT_PROC |
+		   SQL_BS_SELECT_EXPLICIT |
+		   SQL_BS_SELECT_PROC */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_BOOKMARK_PERSISTENCE:
 		nValue = 0;	/* bookmarks not supported */
+		/* SQL_BP_CLOSE |
+		   SQL_BP_DELETE |
+		   SQL_BP_DROP |
+		   SQL_BP_OTHER_HSTMT |
+		   SQL_BP_TRANSACTION |
+		   SQL_BP_UPDATE */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_CATALOG_LOCATION:
-		nValue = 0;
+		nValue = 0;	/* catalogs not supported */
+		/* SQL_CL_END, SQL_CL_START */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_CATALOG_NAME:
@@ -136,6 +149,11 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 	case SQL_CATALOG_USAGE:
 		nValue = 0;
+		/* SQL_CU_DML_STATEMENTS |
+		   SQL_CU_INDEX_DEFINITION |
+		   SQL_CU_PRIVILEGE_DEFINITION |
+		   SQL_CU_PROCEDURE_INVOCATION |
+		   SQL_CU_TABLE_DEFINITION */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_COLLATION_SEQ:
@@ -146,6 +164,7 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 	case SQL_CONCAT_NULL_BEHAVIOR:
 		nValue = SQL_CB_NULL;
+		/* SQL_CB_NON_NULL */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_CONVERT_BIGINT:
@@ -169,27 +188,28 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_CONVERT_TINYINT:
 	case SQL_CONVERT_VARBINARY:
 	case SQL_CONVERT_VARCHAR:
-		nValue = SQL_CVT_CHAR |
-			SQL_CVT_NUMERIC |
-			SQL_CVT_DECIMAL |
-			SQL_CVT_INTEGER |
-			SQL_CVT_SMALLINT |
-			SQL_CVT_FLOAT |
-			SQL_CVT_REAL |
-			SQL_CVT_DOUBLE |
-			SQL_CVT_VARCHAR |
-			SQL_CVT_LONGVARCHAR |
+		nValue = SQL_CVT_BIGINT |
 			SQL_CVT_BINARY |
-			SQL_CVT_VARBINARY |
 			SQL_CVT_BIT |
-			SQL_CVT_TINYINT |
-			SQL_CVT_BIGINT |
+			SQL_CVT_CHAR |
 			SQL_CVT_DATE |
+			SQL_CVT_DECIMAL |
+			SQL_CVT_DOUBLE |
+			SQL_CVT_FLOAT |
+			SQL_CVT_INTEGER |
+			SQL_CVT_INTERVAL_DAY_TIME |
+			SQL_CVT_INTERVAL_YEAR_MONTH |
+			SQL_CVT_LONGVARBINARY |
+			SQL_CVT_LONGVARCHAR |
+			SQL_CVT_NUMERIC |
+			SQL_CVT_REAL |
+			SQL_CVT_SMALLINT |
 			SQL_CVT_TIME |
 			SQL_CVT_TIMESTAMP |
-			SQL_CVT_LONGVARBINARY |
-			SQL_CVT_INTERVAL_YEAR_MONTH |
-			SQL_CVT_INTERVAL_DAY_TIME;
+			SQL_CVT_TINYINT |
+			SQL_CVT_VARBINARY |
+			SQL_CVT_VARCHAR;
+		/* SQL_CVT_GUID */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_CONVERT_FUNCTIONS:
@@ -199,29 +219,56 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 	case SQL_CORRELATION_NAME:
 		nValue = SQL_CN_ANY;
+		/* SQL_CN_DIFFERENT, SQL_CN_NONE */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_CREATE_ASSERTION:
+		/* SQL_CA_CREATE_ASSERTION |
+		   SQL_CA_CONSTRAINT_DEFERRABLE |
+		   SQL_CA_CONSTRAINT_INITIALLY_DEFERRED |
+		   SQL_CA_CONSTRAINT_INITIALLY_IMMEDIATE |
+		   SQL_CA_CONSTRAINT_NON_DEFERRABLE */
 	case SQL_CREATE_CHARACTER_SET:
+		/* SQL_CCS_CREATE_CHARACTER_SET |
+		   SQL_CCS_COLLATE_CLAUSE |
+		   SQL_CCS_LIMITED_COLLATION */
 	case SQL_CREATE_COLLATION:
+		/* SQL_CCOL_CREATE_COLLATION */
 	case SQL_CREATE_DOMAIN:
+		/* SQL_CDO_CREATE_DOMAIN |
+		   SQL_CDO_CONSTRAINT_NAME_DEFINITION |
+		   SQL_CDO_DEFAULT |
+		   SQL_CDO_CONSTRAINT |
+		   SQL_CDO_COLLATION |
+		   SQL_CDO_CONSTRAINT_DEFERRABLE |
+		   SQL_CDO_CONSTRAINT_INITIALLY_DEFERRED |
+		   SQL_CDO_CONSTRAINT_INITIALLY_IMMEDIATE |
+		   SQL_CDO_CONSTRAINT_NON_DEFERRABLE */
 	case SQL_CREATE_TRANSLATION:
+		/* SQL_CTR_CREATE_TRANSLATION */
 		nValue = 0;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_CREATE_SCHEMA:
 		nValue = SQL_CS_CREATE_SCHEMA | SQL_CS_AUTHORIZATION;
+		/* SQL_CS_DEFAULT_CHARACTER_SET */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_CREATE_TABLE:
-		nValue = SQL_CT_CREATE_TABLE |
+		nValue = SQL_CT_COLUMN_CONSTRAINT |
+			SQL_CT_COLUMN_DEFAULT |
 			SQL_CT_COMMIT_PRESERVE |
+			SQL_CT_CONSTRAINT_NAME_DEFINITION |
+			SQL_CT_CREATE_TABLE |
 			SQL_CT_GLOBAL_TEMPORARY |
 			SQL_CT_LOCAL_TEMPORARY |
-			SQL_CT_COLUMN_CONSTRAINT |
-			SQL_CT_COLUMN_DEFAULT |
-			SQL_CT_TABLE_CONSTRAINT |
-			SQL_CT_CONSTRAINT_NAME_DEFINITION;
+			SQL_CT_TABLE_CONSTRAINT;
+		/* SQL_CT_COLUMN_COLLATION |
+		   SQL_CT_COMMIT_DELETE |
+		   SQL_CT_CONSTRAINT_DEFERRABLE |
+		   SQL_CT_CONSTRAINT_INITIALLY_DEFERRED |
+		   SQL_CT_CONSTRAINT_INITIALLY_IMMEDIATE |
+		   SQL_CT_CONSTRAINT_NON_DEFERRABLE */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_CREATE_VIEW:
@@ -230,15 +277,17 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 	case SQL_CURSOR_COMMIT_BEHAVIOR:
 	case SQL_CURSOR_ROLLBACK_BEHAVIOR:
-		nValue = SQL_CB_DELETE;
+		nValue = SQL_CB_PRESERVE;
+		/* SQL_CB_CLOSE, SQL_CB_DELETE */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_CURSOR_SENSITIVITY:
-		nValue = SQL_UNSPECIFIED;
+		nValue = SQL_INSENSITIVE;
+		/* SQL_SENSITIVE, SQL_UNSPECIFIED */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_DATA_SOURCE_NAME:
-		sValue = dbc->DSN != NULL ? dbc->DSN : "";
+		sValue = dbc->DSN ? dbc->DSN : "";
 		break;
 	case SQL_DATA_SOURCE_READ_ONLY:
 		sValue = "N";
@@ -250,7 +299,67 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		nValue = SQL_OIC_CORE;
 		len = sizeof(SQLUINTEGER);
 		break;
+	case SQL_SCROLL_OPTIONS:
+		nValue = SQL_SO_STATIC;
+		/* SQL_SO_DYNAMIC,
+		   SQL_SO_FORWARD_ONLY,
+		   SQL_SO_KEYSET_DRIVEN,
+		   SQL_SO_MIXED */
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_DYNAMIC_CURSOR_ATTRIBUTES1:
+	case SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1:
+	case SQL_KEYSET_CURSOR_ATTRIBUTES1:
+	case SQL_DYNAMIC_CURSOR_ATTRIBUTES2:
+	case SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2:
+	case SQL_KEYSET_CURSOR_ATTRIBUTES2:
+		nValue = 0;
+		len = sizeof(SQLUINTEGER);
+		break;
+	/* the above values have been checked */
 
+	case SQL_STATIC_CURSOR_ATTRIBUTES1:
+		/* SQL_CA1_BOOKMARK |
+		   SQL_CA1_BULK_ADD |
+		   SQL_CA1_BULK_DELETE_BY_BOOKMARK |
+		   SQL_CA1_BULK_FETCH_BY_BOOKMARK |
+		   SQL_CA1_BULK_UPDATE_BY_BOOKMARK |
+		   SQL_CA1_LOCK_EXCLUSIVE |
+		   SQL_CA1_LOCK_UNLOCK |
+		   SQL_CA1_POS_DELETE |
+		   SQL_CA1_POSITIONED_DELETE |
+		   SQL_CA1_POSITIONED_UPDATE |
+		   SQL_CA1_POS_REFRESH |
+		   SQL_CA1_POS_UPDATE |
+		   SQL_CA1_SELECT_FOR_UPDATE */
+		nValue = SQL_CA1_ABSOLUTE |
+			SQL_CA1_LOCK_NO_CHANGE |
+			SQL_CA1_NEXT |
+			SQL_CA1_POS_POSITION |
+			SQL_CA1_RELATIVE;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_STATIC_CURSOR_ATTRIBUTES2:
+		/* SQL_CA2_CRC_APPROXIMATE |
+		   SQL_CA2_LOCK_CONCURRENCY |
+		   SQL_CA2_MAX_ROWS_AFFECTS_ALL |
+		   SQL_CA2_MAX_ROWS_CATALOG |
+		   SQL_CA2_MAX_ROWS_DELETE |
+		   SQL_CA2_MAX_ROWS_INSERT |
+		   SQL_CA2_MAX_ROWS_SELECT |
+		   SQL_CA2_MAX_ROWS_UPDATE |
+		   SQL_CA2_OPT_ROWVER_CONCURRENCY |
+		   SQL_CA2_OPT_VALUES_CONCURRENCY |
+		   SQL_CA2_READ_ONLY_CONCURRENCY |
+		   SQL_CA2_SENSITIVITY_ADDITIONS |
+		   SQL_CA2_SENSITIVITY_DELETIONS |
+		   SQL_CA2_SENSITIVITY_UPDATES |
+		   SQL_CA2_SIMULATE_NON_UNIQUE |
+		   SQL_CA2_SIMULATE_TRY_UNIQUE |
+		   SQL_CA2_SIMULATE_UNIQUE */
+		nValue = SQL_CA2_CRC_EXACT;
+		len = sizeof(SQLUINTEGER);
+		break;
 	case SQL_SQL_CONFORMANCE:
 		nValue = SQL_SC_SQL92_FULL;
 		len = sizeof(SQLUINTEGER);
@@ -358,10 +467,6 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		nValue = SQL_SCCO_READ_ONLY;
 		len = sizeof(SQLUSMALLINT);
 		break;
-	case SQL_SCROLL_OPTIONS:
-		nValue = SQL_SO_FORWARD_ONLY;
-		len = sizeof(SQLUSMALLINT);
-		break;
 	case SQL_TXN_CAPABLE:
 		nValue = SQL_TC_ALL;
 		len = sizeof(SQLUSMALLINT);
@@ -425,7 +530,10 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_GETDATA_EXTENSIONS:
-		nValue = SQL_GD_ANY_COLUMN | SQL_GD_ANY_ORDER | SQL_GD_BOUND;
+		nValue = SQL_GD_ANY_COLUMN |
+			SQL_GD_ANY_ORDER |
+			SQL_GD_BLOCK |
+			SQL_GD_BOUND;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_FILE_USAGE:
@@ -505,10 +613,14 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_LIKE_ESCAPE_CLAUSE:
 		sValue = "Y";
 		break;
+	case SQL_STATIC_SENSITIVITY:
+		nValue = 0;
+		/* SQL_SS_ADDITIONS | SQL_SS_DELETIONS | SQL_SS_UPDATES */
+		len = sizeof(SQLINTEGER);
+		break;
 
 	case SQL_LOCK_TYPES:			/* SQLSetPos NOT supported */
 	case SQL_POS_OPERATIONS:		/* SQLSetPos NOT supported */
-	case SQL_STATIC_SENSITIVITY:		/* SQLSetPos NOT supported */
 	case SQL_TIMEDATE_ADD_INTERVALS:	/* INTERVALS NOT supported */
 	case SQL_TIMEDATE_DIFF_INTERVALS:	/* INTERVALS NOT supported */
 		nValue = 0;
@@ -529,22 +641,14 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_DROP_TABLE:
 	case SQL_DROP_TRANSLATION:
 	case SQL_DROP_VIEW:
-	case SQL_DYNAMIC_CURSOR_ATTRIBUTES1:
-	case SQL_DYNAMIC_CURSOR_ATTRIBUTES2:
-	case SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1:
-	case SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2:
 	case SQL_INFO_SCHEMA_VIEWS:
 	case SQL_INSERT_STATEMENT:
-	case SQL_KEYSET_CURSOR_ATTRIBUTES1:
-	case SQL_KEYSET_CURSOR_ATTRIBUTES2:
 	case SQL_MAX_ASYNC_CONCURRENT_STATEMENTS:
 	case SQL_MAX_IDENTIFIER_LEN:
 	case SQL_OJ_CAPABILITIES:
 	case SQL_PARAM_ARRAY_ROW_COUNTS:
 	case SQL_PARAM_ARRAY_SELECTS:
 	case SQL_SCHEMA_USAGE:
-	case SQL_STATIC_CURSOR_ATTRIBUTES1:
-	case SQL_STATIC_CURSOR_ATTRIBUTES2:
 	case SQL_XOPEN_CLI_YEAR:
 		/* TODO: implement all the other Info Types */
 		/* HYC00 = Optional feature not implemented */
@@ -559,36 +663,16 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 
 	/* copy the data to the supplied output parameters */
 	if (sValue) {
-		len = strlen(sValue);
-		if (pInfoValue && nInfoValueMax > 0) {
-			strncpy((char *) pInfoValue, sValue,
-				nInfoValueMax);
-			if (len >= nInfoValueMax) {
-				/* value got truncated */
-				((char *) pInfoValue)[nInfoValueMax - 1] = 0;
-				returnstate = SQL_SUCCESS_WITH_INFO;
-			}
-		} else {
-			/* no valid return buffer pointer supplied */
-			/* set warning data is truncated */
-			returnstate = SQL_SUCCESS_WITH_INFO;
-		}
-
-		/* depending on the returnstate add, an error msg */
-		if (returnstate == SQL_SUCCESS_WITH_INFO) {
-			/* 01004 = String data, right truncation */
-			addDbcError(dbc, "01004", NULL, 0);
-		}
-
+		copyString(sValue, pInfoValue, nInfoValueMax, pnLength,
+			   addDbcError, dbc);
 	} else if (pInfoValue) {
 		if (len == sizeof(SQLUINTEGER))
 			* (SQLUINTEGER *) pInfoValue = (SQLUINTEGER) nValue;
 		else if (len == sizeof(SQLUSMALLINT))
 			* (SQLUSMALLINT *) pInfoValue = (SQLUSMALLINT) nValue;
+		if (pnLength)
+			*pnLength = len;
 	}
 
-	if (pnLength)
-		*pnLength = len;
-
-	return returnstate;
+	return dbc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }

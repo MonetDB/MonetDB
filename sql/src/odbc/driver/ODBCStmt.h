@@ -39,15 +39,6 @@ typedef enum {
 	EXECUTED
 } StatementState;
 
-
-typedef struct {
-	void *pTargetValue;
-	SQLINTEGER *pnLengthOrIndicator;
-	SQLINTEGER nTargetValueMax;
-	char **ppszTargetStr;
-	SQLUSMALLINT column;
-} ODBCBIND;
-	
 typedef struct tODBCDRIVERSTMT {
 	/* Stmt properties */
 	int Type;		/* structure type, used for handle validy test */
@@ -58,11 +49,21 @@ typedef struct tODBCDRIVERSTMT {
 	StatementState State;	/* needed to detect invalid cursor state */
 	MapiHdl hdl;
 
-	unsigned int currentRow;	/* used by SQLFetch() */
-	unsigned int previousRow;	/* used by SQLFetch() */
-	unsigned int currentCol; /* used by SQLGetData() */
+	/* startRow is the row number of first row in the result
+	   set (0 based); rowSetSize is the number of rows in the
+	   current result set; currentRow is the row number of the
+	   current row within the current result set */
+	unsigned int currentRow;
+	unsigned int startRow;
+	unsigned int rowSetSize;
+
+	unsigned int currentCol;	/* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
 	char *query;		/* the query to be executed */
+
+	SQLUINTEGER cursorType;
+	SQLUINTEGER cursorScrollable;
+	SQLUINTEGER retrieveData;
 
 	ODBCDesc *ApplRowDescr;	/* Application Row Descriptor (ARD) */
 	ODBCDesc *ApplParamDescr; /* Application Parameter Descriptor (APD) */
@@ -156,8 +157,9 @@ SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		    SQLPOINTER pTarget, SQLINTEGER nTargetLength,
 		    SQLINTEGER *pnLength, SQLINTEGER *pnIndicator,
 		    SQLSMALLINT precision, SQLSMALLINT scale,
-		    SQLINTEGER datetime_interval_precision, SQLINTEGER offset);
-
+		    SQLINTEGER datetime_interval_precision, SQLINTEGER offset,
+		    int row);
+SQLRETURN ODBCFreeStmt_(ODBCStmt *stmt);
 SQLRETURN SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 			    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
 			    SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
