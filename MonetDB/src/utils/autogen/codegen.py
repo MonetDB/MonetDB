@@ -374,7 +374,7 @@ def do_libs(deps):
                 break
     return libs
 
-def expand_includes(incdirs):
+def expand_includes(incdirs,topdir):
     dirs = incdirs
     change = 1
     #when there is a variable dependency cycle, this code will loop forever
@@ -411,7 +411,7 @@ def read_depsfile(incdirs, cwd, topdir):
         if i[0:2] == "-I":
             i = i[2:]
 
-        dirs = expand_includes( [ i ] )
+        dirs = expand_includes( [ i ], topdir )
 
         abs = 0
         if len(dirs) > 1:
