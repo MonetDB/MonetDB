@@ -73,7 +73,6 @@ command cast(v:any, w:chr):chr= CMDcast;
 command cast(v:any, w:oid):oid= CMDcast;
 command cast(v:any, w:bit):bit= CMDcast;
 @+ Iterator primitives
-This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few paramaters,
 e.g. a lower/upper bound, or a bat. An iterator is initialized in the first
 call by recognizing that the control variable lies outside the intended
@@ -86,22 +85,25 @@ command nextElement(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep;
 command nextElement(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep; 
 command nextElement(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep; 
 command nextElement(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep; 
-command nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep; 
+command nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep
+comment "This routine provides an iterator over a scalar domain.
+         The step size is dependent on the underlying type."; 
 
 command nextElement(i:chr, first:chr, last:chr):bit = chrForloop; 
 command nextElement(i:sht, first:sht, last:sht):bit = shtForloop; 
 command nextElement(i:lng, first:lng, last:lng):bit = lngForloop; 
-command nextElement(i:int, first:int, last:int):bit = intForloop; 
+command nextElement(i:int, first:int, last:int):bit = intForloop
+comment "This routine provides an iterator over a scalar domain.
+         A default, type-specific step size is assumed."; 
 
 @+ BAT iterator
-A BATloop iterator uses an integer cursor to keep track of its
-position in the underlying table. 
-The head and tail elements can be obtained using the getHead and 
-getTail functions, which are to be defined for all atomary types.
 
 @mal
 command batloop(i:lng,b:bat[any,any]):bit = CMDnextElement_lng
-comment "Iterate over the elements of a BAT using a cursor.";
+comment "A BATloop iterator uses an integer cursor to keep track of its
+	position in the underlying table. 
+	The head and tail elements can be obtained using the getHead and 
+	getTail functions, which are to be defined for all atomary types.";
 
 pattern batloop(i:lng,b:bat[any::1,any::2],h:any::1,t:any::2):bit 
 	= CMDnextElement
@@ -155,9 +157,11 @@ pattern mdb():void = mdbToggle
 command debugmask(i:int):int= CMDdebug
 "Return the debug mask. If a MASK is nonzero, set it to that value.";
 
-command manual(f:str,m:str)= CMDmanual
+command manual(file:str,mod:str)= CMDmanual2
 comment "Generate a synopsis of a module";
-command manual(m:str)= CMDmanual1
+command manual(file:str,mod:str,recursive:int)= CMDmanual
+comment "Generate a synopsis of a module";
+command manual(mod:str)= CMDmanual1
 comment "Generate a synopsis of a module";
 command manual()= CMDmanual0
 comment "Generate a synopsis of a module";
@@ -203,7 +207,8 @@ The time module provides a few abstractions that rely on
 knowledge of basic operators such as /(int,int), which
 are not known upon load time.
 @mal
-function timestamp(secs:lng):timestamp;
+function timestamp(secs:lng):timestamp
+comment "Enhancement of timestamp atom definition";
         d1:=epoch();
         d2:= secs *1000:lng;
         d3:= d1+d2;
@@ -211,7 +216,7 @@ function timestamp(secs:lng):timestamp;
         return d4;
 end timestamp;
 function epoch():timestamp
-        comment "unix-time (epoch) support: seconds since 1-jan-1970 GMT";
+comment "Enhancement of timestamp atom definition";
         d0:= date(1970,1,1);
         d1:=daytime(0,0,0,0);
         d2:=tzone("GMT");
@@ -219,7 +224,8 @@ function epoch():timestamp
 	return d4;
 end epoch;
 #inline
-function epoch(t:timestamp):lng;
+function epoch(t:timestamp):lng
+comment "Enhancement of timestamp atom definition";
         e := epoch();
         t0:= lng(t);
         e0:= lng(e);
@@ -250,7 +256,8 @@ end ruleDef;
 @-
 Some compiled old module load stuff from decimal:
 @mal
-function divide(b:bat[any::1,decimal], div:decimal, prec:int):bat[any::1,decimal];
+function divide(b:bat[any::1,decimal], div:decimal, prec:int):bat[any::1,decimal]
+comment "Perform the divide operation over a bat of decimals";
 #proc divide(bat[any::1,decimal] b, decimal div, int prec) : bat[any::1,decimal] {
 	DECIMAL_ZERO:= decimal(0);
 	aa_a := =(div,DECIMAL_ZERO);
@@ -902,19 +909,34 @@ str CMDdebug(int *ret, int *flg){
 	if( *flg) GDKdebug = *flg;
 	return MAL_SUCCEED;
 }
-str CMDmanual(int *ret, str *fname, str *mod){
+str CMDmanual(int *ret, str *fname, str *mod, int *recursive){
 	stream *fs;
 	fs= open_wastream(*fname);
 	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
-	dumpManual(fs, findScope(getClient()->nspace,*mod));
+	dumpManualHeader(fs);
+	dumpManual(fs, findScope(getClient()->nspace,*mod),*recursive);
+	dumpManualFooter(fs);
+	return MAL_SUCCEED;
+}
+str CMDmanual2(int *ret, str *fname, str *mod){
+	stream *fs;
+	fs= open_wastream(*fname);
+	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
+	dumpManualHeader(fs);
+	dumpManual(fs, findScope(getClient()->nspace,*mod),0);
+	dumpManualFooter(fs);
 	return MAL_SUCCEED;
 }
 str CMDmanual1(int *ret, str *mod){
-	dumpManual(GDKout, findScope(getClient()->nspace,*mod));
+	dumpManualHeader(GDKout);
+	dumpManual(GDKout, findScope(getClient()->nspace,*mod),0);
+	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
 str CMDmanual0(int *ret){
-	dumpManual(GDKout, getClient()->nspace);
+	dumpManualHeader(GDKout);
+	dumpManual(GDKout, getClient()->nspace,1);
+	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
 str CMDsetCwd(str *ret, str *fnme){

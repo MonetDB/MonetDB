@@ -76,7 +76,7 @@ command import( name:str, remove:bit) : any = TCPimport
 comment "import a value from a TCP/IP server, possibly removing it from the cache.";
 
 pattern rpc(conn_id:int, fcn_call:str, a:any...) : any = TCPrpc
-comment "remote MIL evaluation. Each argument that is represented by a \%a is
+comment "remote MIL evaluation. Each argument is
  inserted with succeeding values from the parameter list of the rpc call.
  Returns the remote return value.";
 

@@ -49,12 +49,12 @@ command deactivate(name:str)= CMDdeactivateProfiler
 command openStream():void = openProfilerStream
 	comment "Sent the event records to client output stream";
 command openStream(fnme:str)= CMDsetProfilerStream
-	comment "Send the log event records to a given file \n");
+	comment "Send the log event records to a given file ");
 command closeStream():void = closeProfilerStream
 	comment "Stop sending the event records and close log file";
 
 command setAll()= CMDsetAllProfiler
-comment "Short cut for setFilter(*,*).\n";
+comment "Short cut for setFilter(*,*).";
 
 command setFilter(mod:str,fcn:str)= CMDsetFilterProfiler
 	comment "Generate an event record for all function calls that
@@ -62,22 +62,22 @@ command setFilter(mod:str,fcn:str)= CMDsetFilterProfiler
 	used as name to identify all"
 
 command clrAll()= CMDcltAllProfiler
-comment "Short cut for clrFilter(*,*).\n";
+comment "Short cut for clrFilter(*,*).";
 
 command clrFilter(mod:str,fcn:str)= CMDclrFilterProfiler
 	comment "Clear the performance trace bit of the selected functions.";
 
 command setStartPoint(mod:str,fcn:str)= CMDstartPointProfiler
-	comment "Start performance tracing upon calling mod.fcn\n");
+	comment "Start performance tracing upon calling mod.fcn");
 
 command setEndPoint(mod:str,fcn:str)= CMDendPointProfiler
-	comment "Start performance tracing upon calling mod.fcn\n");
+	comment "Start performance tracing upon calling mod.fcn");
 
 command start()= CMDstartProfiler
-	comment "Start performance tracing\n");
+	comment "Start performance tracing");
 
 command stop()= CMDstopProfiler
-	comment "Stop performance tracing\n");
+	comment "Stop performance tracing");
 
 @+ Implementation
 The commands merely encapsulate the functionality provided by
