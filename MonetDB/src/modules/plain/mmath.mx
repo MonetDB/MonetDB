@@ -20,6 +20,7 @@
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+@' 		Alex van Ballegooij <Alex.van.Ballegooij@cwi.nl>
 
 @f mmath
 @a N.J. Nes
@@ -104,6 +105,15 @@ rounded towards zero to an integer."
 decimal point; if m is omitted, to 0 places. m can be negative to
 round off digits left of the decimal point. m must be an integer."
 
+
+   .COMMAND isnan(dbl) : bit = math_unary_ISNAN;
+"The isnan(x) function returns true if x is 'not-a-number' (NaN), and false otherwise."
+   .COMMAND isinf(dbl) : int = math_unary_ISINF;
+"The isinf(x) function returns -1 if x represents negative infinity, 1 if x represents positive infinity, and 0 otherwise."
+   .COMMAND finite(dbl) : bit = math_unary_FINITE;
+"The finite(x) function returns true if x is neither infinite nor a 'not-a-number' (NaN) value, and false otherwise."
+
+
 @
 The constants defined in math.h are defined using the following mil code.
 @m
@@ -143,6 +153,10 @@ ceil(dbl(1.2)).print;
 fabs(dbl(1.2)).print;
 floor(dbl(1.2)).print;
 fmod(dbl(15.2),dbl(2.5)).print;
+
+log(-1.0LL).print;
+(log(-1.0LL)=log(-1.0LL)).print;
+isnan(log(-1.0LL)).print;
 
 quit;
 @{
@@ -267,5 +281,41 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
   }
 
   return(GDK_SUCCEED);
+}
+
+int math_unary_ISNAN(bit *res , dbl *a ) {
+#ifdef DEBUG
+	printf( "math_unary_ISNAN\n");
+#endif
+   if (*a == dbl_nil) {
+	*res = bit_nil;
+   } else {
+	*res = isnan(*a);
+   }
+   return(GDK_SUCCEED);
+}
+
+int math_unary_ISINF(int *res , dbl *a ) {
+#ifdef DEBUG
+	printf( "math_unary_ISINF\n");
+#endif
+   if (*a == dbl_nil) {
+	*res = int_nil;
+   } else {
+	*res = isinf(*a);
+   }
+   return(GDK_SUCCEED);
+}
+
+int math_unary_FINITE(bit *res , dbl *a ) {
+#ifdef DEBUG
+	printf( "math_unary_FINITE\n");
+#endif
+   if (*a == dbl_nil) {
+	*res = bit_nil;
+   } else {
+	*res = finite(*a);
+   }
+   return(GDK_SUCCEED);
 }
 @}
