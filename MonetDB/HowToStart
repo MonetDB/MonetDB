@@ -1,0 +1,36 @@
+
+To compile Monet-4.2, you first need to set your (architecture dependent)
+environment to be able to compile Monet-4.2. The easiest way to do so, is to
+
+	source conf/conf.bash	(for [ba]sh users)
+or
+	source conf/conf.csh	(for [t]csh users)
+
+in the top-level directory of the checked-out Monet-4.2 source tree (i.e.,
+"here"; we call it "BASE" in the following).
+
+To select your desired compiler ("GNU" or "ntv" (native)) and your desired
+binary type (32bit or 64bit), set the following environment variables before
+"sourcing" the conf-script:
+	COMP="GNU"	or	COMP="ntv"
+	BITS="32"	or	BITS="64"
+(If not or wrongly set, "GNU32" is used as default.)
+
+Further, you can set the environment variable PREFIX to select your desired
+target directory. If not set, 
+	PREFIX=${PWD}/`uname`
+is used as default.
+
+
+Once you setup your environment properly, you just need to execute the
+following in BASE (i.e., "here"):
+
+	./bootstrap
+	cd ${PREFIX}
+	../configure --prefix=${PREFIX}
+	make
+	make install
+
+
+Have fun with Monet-4.2!
+
