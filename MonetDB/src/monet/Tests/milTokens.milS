@@ -1,0 +1,8 @@
+# this is like vars(), except we're only interested in variables whose
+# names start with TOK_.  The difference between the implementation of
+# vars() (see sys.mx) and this is the string "TOK_" (was ".") and the
+# uselect which was uselect(true) (we want to keep everything that
+# starts with "TOK_", not delete everything that starts with ".").
+
+table(view_var_name().kdiff([startsWith](view_var_name(), "TOK_").uselect(false)),
+      view_var_type(), view_var_kind(), view_var_constant(), view_var_value());
