@@ -14,11 +14,11 @@
 #	raise IllegalAccess;
 #	print("should have left function ");
 #end function;
-function Admin.myException():any;	#0 polymorphic:(myException:any)
-	IllegalAccess := "new exception";	#1:(IllegalAccess:str)<-($2:str)
-	raise IllegalAccess;	#2:(IllegalAccess:str)
-	io.print("should have left function ");	#3:($3:int)<-($4:str)
-end function;	#4:
+function Admin.myException():any; #0 polymorphic:(myException:any)
+    IllegalAccess := "new exception"; #1:(IllegalAccess:str)<-($2:str)
+    raise IllegalAccess; #2:(IllegalAccess:str)
+    io.print("should have left function "); #3:($3:int)<-($4:str)
+end function; #4:
 #
 #	myException();
 #	print("should not come here");
@@ -28,13 +28,13 @@ end function;	#4:
 #end	IllegalAccess;
 #	print("done");
 #
-function Admin.main():int;	#0:(main:int)
-	Admin.myException();	#1:($1:any)
-	io.print("should not come here");	#2:($2:int)<-($3:str)
-catch	IllegalAccess;	#3:(IllegalAccess:str) jump 6
-	system.printf("catched IllegalAccess\n");	#4:($5:int)<-($6:str)
-end	IllegalAccess;	#5:(IllegalAccess:str)
-	io.print("done");	#6:($7:int)<-($8:str)
-end function;	#7:
+function Admin.main():int; #0:(main:int)
+    Admin.myException(); #1:($1:any)
+    io.print("should not come here"); #2:($2:int)<-($3:str)
+catch IllegalAccess; #3:(IllegalAccess:str) jump 6
+    system.printf("catched IllegalAccess\n"); #4:($5:int)<-($6:str)
+end IllegalAccess; #5:(IllegalAccess:str)
+    io.print("done"); #6:($7:int)<-($8:str)
+end function; #7:
 !ERROR: new exceptionMALexception:Admin.myException[4]: propagated
 >

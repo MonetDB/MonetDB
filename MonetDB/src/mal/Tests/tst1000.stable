@@ -16,15 +16,15 @@
 #x:= catalog.bbpNames();
 #print(x);
 #
-function Admin.main():int;	#0:(main:int)
-	b := mal.new(int,int);	#1:(b:bat[int,int])<-(int:int)(int:int)
-	bat.insert(b,1,2);	#2:($3:bat[int,int])<-(b:bat[int,int])($4:int)($5:int)
-	bbp.setName(b,"mybat");	#3:($6:bat[int,int])<-(b:bat[int,int])($7:str)
-	c := bbp.bind("mybat");	#4:(c:bat[any,any])<-($7:str)
-	io.print(c);	#5:($9:int)<-(c:bat[any,any])
-	x := catalog.bbpNames();	#6:(x:bat[int,str])
-	io.print(x);	#7:($11:int)<-(x:bat[int,str])
-end function;	#8:
+function Admin.main():int; #0:(main:int)
+    b := mal.new(int,int); #1:(b:bat[int,int])<-(int:int)(int:int)
+    bat.insert(b,1,2); #2:($3:bat[int,int])<-(b:bat[int,int])($4:int)($5:int)
+    bbp.setName(b,"mybat"); #3:($6:bat[int,int])<-(b:bat[int,int])($7:str)
+    c := bbp.bind("mybat"); #4:(c:bat[any,any])<-($7:str)
+    io.print(c); #5:($9:int)<-(c:bat[any,any])
+    x := catalog.bbpNames(); #6:(x:bat[int,str])
+    io.print(x); #7:($11:int)<-(x:bat[int,str])
+end function; #8:
 #-----------------#
 # BAT:	  mybat	  #
 # (int)	  (int)	  #

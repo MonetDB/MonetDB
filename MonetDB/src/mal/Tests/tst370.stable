@@ -13,20 +13,20 @@
 #        setName(b,title);
 #        return b;
 #end function;
-function Admin.z(mod:str,nme:str,title:str):bat[any,any];	#0:(z:bat[any,any])<-(mod:str)(nme:str)(title:str)
-	b := mod.nme();	#1 unknown:(b:any)
-	setName(b,title);	#2 unknown:($5:any)<-(b:any)(title:str)
-	return b;	#3:(b:any)
-end function;	#4:
+function Admin.z(mod:str,nme:str,title:str):bat[any,any]; #0:(z:bat[any,any])<-(mod:str)(nme:str)(title:str)
+    b := mod.nme(); #1 unknown:(b:any)
+    setName(b,title); #2 unknown:($5:any)<-(b:any)(title:str)
+    return b; #3:(b:any)
+end function; #4:
 #
 #	r:= z("catalog","bbpNames","names");
 #	print(r);
 #
 #
-function Admin.main():int;	#0:(main:int)
-	r := Admin.z("catalog","bbpNames","names");	#1:(r:bat[any,any])<-($2:str)($3:str)($4:str)
-	io.print(r);	#2:($5:int)<-(r:bat[any,any])
-end function;	#3:
+function Admin.main():int; #0:(main:int)
+    r := Admin.z("catalog","bbpNames","names"); #1:(r:bat[any,any])<-($2:str)($3:str)($4:str)
+    io.print(r); #2:($5:int)<-(r:bat[any,any])
+end function; #3:
 #---------------------------------#
 # BAT:	  names			  #
 # (int)	  (str)			  #

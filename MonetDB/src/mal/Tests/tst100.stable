@@ -14,11 +14,11 @@
 #d:= +(3,1);
 #
 #
-function Admin.main():int;	#0:(main:int)
-	a := calc.+(3,1);	#1:(a:int)<-($2:int)($3:int)
-	c := calc.+(7,8);	#2:(c:int)<-($5:int)($6:int)
-	b := calc.+(3.5,2.7);	#3:(b:flt)<-($8:flt)($9:flt)
-	s := "hello world";	#4:(s:str)<-($11:str)
-	d := calc.+(3,1);	#5:(d:int)<-($2:int)($3:int)
-end function;	#6:
+function Admin.main():int; #0:(main:int)
+    a := calc.+(3,1); #1:(a:int)<-($2:int)($3:int)
+    c := calc.+(7,8); #2:(c:int)<-($5:int)($6:int)
+    b := calc.+(3.5,2.7); #3:(b:flt)<-($8:flt)($9:flt)
+    s := "hello world"; #4:(s:str)<-($11:str)
+    d := calc.+(3,1); #5:(d:int)<-($2:int)($3:int)
+end function; #6:
 >

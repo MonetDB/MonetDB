@@ -15,13 +15,13 @@
 #	print("catched the exception");
 #end MALexception;
 #
-function Admin.main():int;	#0:(main:int)
-	b := mal.new(int,int);	#1:(b:bat[int,int])<-(int:int)(int:int)
-	z := algebra.find(b,0);	#2:(z:int)<-(b:bat[int,int])($4:int)
-	io.print("should not come here anymore");	#3:($5:int)<-($6:str)
-catch	MALexception;	#4:(MALexception:str) jump 7
-	io.print("catched the exception");	#5:($8:int)<-($9:str)
-end	MALexception;	#6:(MALexception:str)
-end function;	#7:
+function Admin.main():int; #0:(main:int)
+    b := mal.new(int,int); #1:(b:bat[int,int])<-(int:int)(int:int)
+    z := algebra.find(b,0); #2:(z:int)<-(b:bat[int,int])($4:int)
+    io.print("should not come here anymore"); #3:($5:int)<-($6:str)
+catch MALexception; #4:(MALexception:str) jump 7
+    io.print("catched the exception"); #5:($8:int)<-($9:str)
+end MALexception; #6:(MALexception:str)
+end function; #7:
 [ "catched the exception" ]
 >

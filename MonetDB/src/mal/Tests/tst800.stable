@@ -25,19 +25,19 @@
 #	redo b;
 #end b;
 #
-function Admin.main():int;	#0:(main:int)
-	v := const.take("version");	#1:(v:str)<-($2:str)
-	u := const.take("user");	#2:(u:str)<-($4:str)
-	db := const.take("database");	#3:(db:str)<-($6:str)
-	df := const.take("dbfarm");	#4:(df:str)<-($8:str)
-	dd := const.take("distribution");	#5:(dd:str)<-($10:str)
-barrier	b := const.iterator(nme);	#6:(b:lng)<-(nme:str) jump 12
-	system.printf("%s=",nme);	#7:($13:int)<-($14:str)(nme:str)
-	val := const.toString(nme);	#8:(val:str)<-(nme:str)
-	system.printf("%s\n",val);	#9:($16:int)<-($17:str)(val:str)
-	redo b ;	#10:(b:lng) jump 6
-end	b;	#11:(b:lng)
-end function;	#12:
+function Admin.main():int; #0:(main:int)
+    v := const.take("version"); #1:(v:str)<-($2:str)
+    u := const.take("user"); #2:(u:str)<-($4:str)
+    db := const.take("database"); #3:(db:str)<-($6:str)
+    df := const.take("dbfarm"); #4:(df:str)<-($8:str)
+    dd := const.take("distribution"); #5:(dd:str)<-($10:str)
+barrier b := const.iterator(nme); #6:(b:lng)<-(nme:str) jump 12
+    system.printf("%s=",nme); #7:($13:int)<-($14:str)(nme:str)
+    val := const.toString(nme); #8:(val:str)<-(nme:str)
+    system.printf("%s\n",val); #9:($16:int)<-($17:str)(val:str)
+    redo b ; #10:(b:lng) jump 6
+end b; #11:(b:lng)
+end function; #12:
 user=Admin
 database=demo
 dbfarm=/ufs/mk/monet_5-0/Linux/../dbfarm/demo

@@ -23,17 +23,17 @@
 !ERROR: end-label 'v' doesnot match 't' in main[7]
 !ERROR: end-label 't' doesnot match 'v' in main[9]
 !ERROR: end-label 'v' doesnot match 't' in main[7]
-function Admin.main():int;	#0:(main:int)
-	i := 0;	#1:(i:int)<-($2:int)
-barrier	v := 1;	#2:(v:int)<-($4:int)
-	leave v;	#3:(v:int)
-	i := 1;	#4:(i:int)<-($4:int)
-barrier	t := calc.<(i,3);	#5:(t:bit)<-(i:int)($6:int)
-	i := calc.+(i,1);	#6:(i:int)<-(i:int)($4:int)
-end	v;	#7:(v:int)
-	redo t ;	#8:(t:bit)
-end	t;	#9:(t:bit)
-	i := 0;	#10:(i:int)<-($2:int)
-end function;	#11:
+function Admin.main():int; #0:(main:int)
+    i := 0; #1:(i:int)<-($2:int)
+barrier v := 1; #2:(v:int)<-($4:int)
+    leave v; #3:(v:int)
+    i := 1; #4:(i:int)<-($4:int)
+barrier t := calc.<(i,3); #5:(t:bit)<-(i:int)($6:int)
+    i := calc.+(i,1); #6:(i:int)<-(i:int)($4:int)
+end v; #7:(v:int)
+    redo t ; #8:(t:bit)
+end t; #9:(t:bit)
+    i := 0; #10:(i:int)<-($2:int)
+end function; #11:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

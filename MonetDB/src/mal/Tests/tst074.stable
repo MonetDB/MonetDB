@@ -10,16 +10,16 @@
 #function swap(x:str):str;
 #	return x;
 #end function;
-function Admin.swap(x:str):str;	#0:(swap:str)<-(x:str)
-	return x;	#1:(x:str)
-end function;	#2:
+function Admin.swap(x:str):str; #0:(swap:str)<-(x:str)
+    return x; #1:(x:str)
+end function; #2:
 #
 #x:= swap("world hello");
 #print(x);
 #
-function Admin.main():int;	#0:(main:int)
-	x := Admin.swap("world hello");	#1:(x:str)<-($2:str)
-	io.print(x);	#2:($3:int)<-(x:str)
-end function;	#3:
+function Admin.main():int; #0:(main:int)
+    x := Admin.swap("world hello"); #1:(x:str)<-($2:str)
+    io.print(x); #2:($3:int)<-(x:str)
+end function; #3:
 [ "world hello" ]
 >

@@ -18,18 +18,18 @@
 #end	IllegalAccess;
 #	print("should not be done");
 #
-function Admin.main():int;	#0:(main:int)
-	IllegalAccess := "an exception";	#1:(IllegalAccess:str)<-($2:str)
-	raise IllegalAccess;	#2:(IllegalAccess:str)
-	io.print("should not come here\n");	#3:($3:int)<-($4:str)
-catch	IllegalAccess;	#4:(IllegalAccess:str) jump 10
-	system.printf("catched %s\n",IllegalAccess);	#5:($5:int)<-($6:str)(IllegalAccess:str)
-	IllegalAccess := "a second exception raise";	#6:(IllegalAccess:str)<-($7:str)
-	raise IllegalAccess;	#7:(IllegalAccess:str)
-	io.print("should not come here either\n");	#8:($8:int)<-($9:str)
-end	IllegalAccess;	#9:(IllegalAccess:str)
-	io.print("should not be done");	#10:($10:int)<-($11:str)
-end function;	#11:
+function Admin.main():int; #0:(main:int)
+    IllegalAccess := "an exception"; #1:(IllegalAccess:str)<-($2:str)
+    raise IllegalAccess; #2:(IllegalAccess:str)
+    io.print("should not come here\n"); #3:($3:int)<-($4:str)
+catch IllegalAccess; #4:(IllegalAccess:str) jump 10
+    system.printf("catched %s\n",IllegalAccess); #5:($5:int)<-($6:str)(IllegalAccess:str)
+    IllegalAccess := "a second exception raise"; #6:(IllegalAccess:str)<-($7:str)
+    raise IllegalAccess; #7:(IllegalAccess:str)
+    io.print("should not come here either\n"); #8:($8:int)<-($9:str)
+end IllegalAccess; #9:(IllegalAccess:str)
+    io.print("should not be done"); #10:($10:int)<-($11:str)
+end function; #11:
 catched an exception
 !ERROR: a second exception raiseMALexception:Admin.main[11]: propagated
 >

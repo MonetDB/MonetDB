@@ -16,22 +16,22 @@
 #l:lng := nil:lng;	print(l);
 #j:int := nil:int;	print(j);
 #
-function Admin.main():int;	#0:(main:int)
-	s := "nil";	#1:(s:str)<-($2:str)
-	io.print(s);	#2:($3:int)<-(s:str)
-	i := nil;	#3:(i:sht)<-($5:sht)
-	io.print(i);	#4:($6:int)<-(i:sht)
-	b := nil;	#5:(b:bit)<-($8:bit)
-	io.print(b);	#6:($9:int)<-(b:bit)
-	f := nil;	#7:(f:flt)<-($11:flt)
-	io.print(f);	#8:($12:int)<-(f:flt)
-	d := nil;	#9:(d:dbl)<-($14:dbl)
-	io.print(d);	#10:($15:int)<-(d:dbl)
-	l := nil;	#11:(l:lng)<-($17:lng)
-	io.print(l);	#12:($18:int)<-(l:lng)
-	j := nil;	#13:(j:int)<-($20:int)
-	io.print(j);	#14:($21:int)<-(j:int)
-end function;	#15:
+function Admin.main():int; #0:(main:int)
+    s := "nil"; #1:(s:str)<-($2:str)
+    io.print(s); #2:($3:int)<-(s:str)
+    i := nil; #3:(i:sht)<-($5:sht)
+    io.print(i); #4:($6:int)<-(i:sht)
+    b := nil; #5:(b:bit)<-($8:bit)
+    io.print(b); #6:($9:int)<-(b:bit)
+    f := nil; #7:(f:flt)<-($11:flt)
+    io.print(f); #8:($12:int)<-(f:flt)
+    d := nil; #9:(d:dbl)<-($14:dbl)
+    io.print(d); #10:($15:int)<-(d:dbl)
+    l := nil; #11:(l:lng)<-($17:lng)
+    io.print(l); #12:($18:int)<-(l:lng)
+    j := nil; #13:(j:int)<-($20:int)
+    io.print(j); #14:($21:int)<-(j:int)
+end function; #15:
 [ nil ]
 [ nil ]
 [ nil ]

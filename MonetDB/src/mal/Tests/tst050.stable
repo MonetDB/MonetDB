@@ -26,15 +26,15 @@
 !ERROR: type conflict in statement .new[7]
 !ERROR: 'new' undefined in Admin.main[7]
 !ERROR: MALresolve:Admin.main[8]:type mismatch flt := str
-function Admin.main():int;	#0:(main:int)
-	s := "hello";	#1:(s:str)<-($2:str)
-	i := 1;	#2:(i:sht)<-($4:sht)
-	b := true;	#3:(b:bit)<-($6:bit)
-	z := mal.new(int,int);	#4:(z:bat[int,int])<-(int:int)(int:int)
-	j := 1;	#5 unknown:(j:sht)<-($10:lng)
-	k := 1;	#6 unknown:(k:lng)<-($4:sht)
-	y := new(int,int);	#7 unknown:(y:bat[str,int])<-(int:int)(int:int)
-	f := "wrong";	#8 unknown:(f:flt)<-($14:str)
-end function;	#9:
+function Admin.main():int; #0:(main:int)
+    s := "hello"; #1:(s:str)<-($2:str)
+    i := 1; #2:(i:sht)<-($4:sht)
+    b := true; #3:(b:bit)<-($6:bit)
+    z := mal.new(int,int); #4:(z:bat[int,int])<-(int:int)(int:int)
+    j := 1; #5 unknown:(j:sht)<-($10:lng)
+    k := 1; #6 unknown:(k:lng)<-($4:sht)
+    y := new(int,int); #7 unknown:(y:bat[str,int])<-(int:int)(int:int)
+    f := "wrong"; #8 unknown:(f:flt)<-($14:str)
+end function; #9:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

@@ -1,0 +1,158 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+##testing the catalog module for help information
+#
+#a:= catalog.atomNames();	print(a);
+#m:= catalog.scopeNames();	print(m);
+#stmt:= catalog.symbolDefinition("algebra","select");
+#sig:= catalog.symbolSignature("algebra","select");
+#tpe:= catalog.symbolType("algebra","select");
+#
+#n:= catalog.helpComment("algebra","insert"); print(n);
+#d:= catalog.symbolDefinition("catalog","dir"); print(d);
+#
+function Admin.main():int; #0:(main:int)
+    a := catalog.atomNames(); #1:(a:bat[int,str])
+    io.print(a); #2:($2:int)<-(a:bat[int,str])
+    m := catalog.scopeNames(); #3:(m:bat[void,str])
+    io.print(m); #4:($4:int)<-(m:bat[void,str])
+    stmt := catalog.symbolDefinition("algebra","select"); #5:(stmt:bat[int,str])<-($6:str)($7:str)
+    sig := catalog.symbolSignature("algebra","select"); #6:(sig:bat[str,str])<-($6:str)($7:str)
+    tpe := catalog.symbolType("algebra","select"); #7:(tpe:bat[str,str])<-($6:str)($7:str)
+    n := catalog.helpComment("algebra","insert"); #8:(n:bat[int,str])<-($6:str)($11:str)
+    io.print(n); #9:($12:int)<-(n:bat[int,str])
+    d := catalog.symbolDefinition("catalog","dir"); #10:(d:bat[int,str])<-($14:str)($15:str)
+    io.print(d); #11:($16:int)<-(d:bat[int,str])
+end function; #12:
+#-------------------------#
+# BAT:	  name		  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 0,	  "void"	  ]
+[ 1,	  "bit"		  ]
+[ 2,	  "chr"		  ]
+[ 3,	  "sht"		  ]
+[ 4,	  "BAT"		  ]
+[ 5,	  "int"		  ]
+[ 6,	  "oid"		  ]
+[ 7,	  "ptr"		  ]
+[ 8,	  "flt"		  ]
+[ 9,	  "dbl"		  ]
+[ 10,	  "lng"		  ]
+[ 11,	  "str"		  ]
+[ 12,	  "lock"	  ]
+[ 13,	  "sema"	  ]
+[ 14,	  "blob"	  ]
+[ 15,	  "url"		  ]
+[ 16,	  "uchr"	  ]
+[ 17,	  "date"	  ]
+[ 18,	  "daytime"	  ]
+[ 19,	  "timestamp"	  ]
+[ 20,	  "tzone"	  ]
+[ 21,	  "rule"	  ]
+[ 22,	  "decimal"	  ]
+[ 23,	  "fixed_16_4"	  ]
+[ 24,	  "fixed_8_4"	  ]
+[ 25,	  "fstream"	  ]
+[ 26,	  "bipipe"	  ]
+[ 27,	  "stream"	  ]
+[ 28,	  "enum"	  ]
+#-------------------------#
+# BAT:	  names		  #
+# (void)  (str)		  #
+#-------------------------#
+[ nil,	  "Admin"	  ]
+[ nil,	  "catalog"	  ]
+[ nil,	  "box"		  ]
+[ nil,	  "bbp"		  ]
+[ nil,	  "const"	  ]
+[ nil,	  "multiplex"	  ]
+[ nil,	  "squeezer"	  ]
+[ nil,	  "profiler"	  ]
+[ nil,	  "mal"		  ]
+[ nil,	  "enum"	  ]
+[ nil,	  "ascii_io"	  ]
+[ nil,	  "streams"	  ]
+[ nil,	  "fstream"	  ]
+[ nil,	  "bipipe"	  ]
+[ nil,	  "io"		  ]
+[ nil,	  "mapi"	  ]
+[ nil,	  "aggrX3"	  ]
+[ nil,	  "group"	  ]
+[ nil,	  "system"	  ]
+[ nil,	  "batcalc"	  ]
+[ nil,	  "calc"	  ]
+[ nil,	  "algebra"	  ]
+[ nil,	  "bat"		  ]
+[ nil,	  "decimal"	  ]
+[ nil,	  "date"	  ]
+[ nil,	  "daytime"	  ]
+[ nil,	  "timestamp"	  ]
+[ nil,	  "tzone"	  ]
+[ nil,	  "rule"	  ]
+[ nil,	  "mtime"	  ]
+[ nil,	  "uchr"	  ]
+[ nil,	  "url"		  ]
+[ nil,	  "str"		  ]
+[ nil,	  "blob"	  ]
+[ nil,	  "mmath"	  ]
+[ nil,	  "alarm"	  ]
+[ nil,	  "lock"	  ]
+[ nil,	  "sema"	  ]
+[ nil,	  "unix"	  ]
+[ nil,	  "tcpip"	  ]
+#-------------------------#
+# BAT:	  Comment	  #
+# (str)	  (str)		  #
+#-------------------------#
+#-----------------------------------------------------------------------------------------#
+# BAT:	  stmt										  #
+# (int)	  (str)										  #
+#-----------------------------------------------------------------------------------------#
+[ 0,	  "function catalog.dir():void;"						  ]
+[ 1,	  "    t := catalog.bbpNames();"						  ]
+[ 2,	  "    catalog.dir(t);"								  ]
+[ 3,	  "end function;"								  ]
+[ 0,	  "function catalog.dir(s:str):void;"						  ]
+[ 1,	  "    t := catalog.bbpNames();"						  ]
+[ 2,	  "    tn := algebra.like(t,s);"						  ]
+[ 3,	  "    io.print(tn);"								  ]
+[ 4,	  "    catalog.dir(tn);"							  ]
+[ 5,	  "end function;"								  ]
+[ 0,	  "function catalog.dir(b:bat[int,str]):void;"					  ]
+[ 1,	  "    atm := catalog.atomNames();"						  ]
+[ 2,	  "    brev := bat.reverse(b);"							  ]
+[ 3,	  "    bm := bat.mirror(brev);"							  ]
+[ 4,	  "    h := catalog.bbpHeadType();"						  ]
+[ 5,	  "    bHead := algebra.join(brev,h);"						  ]
+[ 6,	  "    bbp.setName(bHead,\"htype\");"						  ]
+[ 7,	  "    h := catalog.bbpTailType();"						  ]
+[ 8,	  "    bTail := algebra.join(brev,h);"						  ]
+[ 9,	  "    bbp.setName(bTail,\"ttype\");"						  ]
+[ 10,	  "    bcount := catalog.bbpCount();"						  ]
+[ 11,	  "    bCount := algebra.join(brev,bcount);"					  ]
+[ 12,	  "    bbp.setName(bCount,\"count\");"						  ]
+[ 13,	  "    bheat := catalog.bbpHeat();"						  ]
+[ 14,	  "    bHeat := algebra.join(brev,bheat);"					  ]
+[ 15,	  "    bbp.setName(bHeat,\"heat\");"						  ]
+[ 16,	  "    bdirty := catalog.bbpDirty();"						  ]
+[ 17,	  "    bDirty := algebra.join(brev,bdirty);"					  ]
+[ 18,	  "    bbp.setName(bDirty,\"dirty\");"						  ]
+[ 19,	  "    bstatus := catalog.bbpDirty();"						  ]
+[ 20,	  "    bStatus := algebra.join(brev,bstatus);"					  ]
+[ 21,	  "    bbp.setName(bStatus,\"status\");"					  ]
+[ 22,	  "    bkind := catalog.bbpKind();"						  ]
+[ 23,	  "    bKind := algebra.join(brev,bkind);"					  ]
+[ 24,	  "    bbp.setName(bKind,\"kind\");"						  ]
+[ 25,	  "    bref := catalog.bbpRefcnt();"						  ]
+[ 26,	  "    bRef := algebra.join(brev,bref);"					  ]
+[ 27,	  "    bbp.setName(bRef,\"refcnt\");"						  ]
+[ 28,	  "    io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);"	  ]
+[ 29,	  "end function;"								  ]
+>

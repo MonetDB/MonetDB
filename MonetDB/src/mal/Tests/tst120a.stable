@@ -8,7 +8,7 @@
 # monetrc:/ufs/mk/.monet.conf
 #module top;
 #function first(i:sht):sht; end function;
-function top.first(i:sht):sht;	#0:(first:sht)<-(i:sht)
-end function;	#1:
+function top.first(i:sht):sht; #0:(first:sht)<-(i:sht)
+end function; #1:
 #
 >

@@ -37,27 +37,27 @@
 #print(b,b,b);
 #
 !WARNING: newConstant:int coerced to lng
-function Admin.main():int;	#0:(main:int)
-	o := calc.oid(20000000);	#1:(o:oid)<-($2:int)
-	calc.setoid(o);	#2:($3:oid)<-(o:oid)
-	b := mal.new(int,int);	#3:(b:bat[int,int])<-(int:int)(int:int)
-	system.printf("#~BeginVariableOutput~#\n");	#4:($6:int)<-($7:str)
-	system.printf("#~EndVariableOutput~#\n");	#5:($8:int)<-($9:str)
-	err := bat.insert(b,1,15);	#6:(err:bat[int,int])<-(b:bat[int,int])($11:int)($12:int)
-	err := bat.insert(b,2,4);	#7:(err:bat[int,int])<-(b:bat[int,int])($13:int)($14:int)
-	n0 := calc.int(nil);	#8:(n0:int)<-($16:void)
-	err := bat.insert(b,3,n0);	#9:(err:bat[int,int])<-(b:bat[int,int])($17:int)(n0:int)
-	err := bat.insert(b,4,16);	#10:(err:bat[int,int])<-(b:bat[int,int])($14:int)($18:int)
-	err := bat.insert(b,5,25);	#11:(err:bat[int,int])<-(b:bat[int,int])($19:int)($20:int)
-	err := bat.insert(b,6,36);	#12:(err:bat[int,int])<-(b:bat[int,int])($21:int)($22:int)
-	err := bat.insert(b,7,49);	#13:(err:bat[int,int])<-(b:bat[int,int])($23:int)($24:int)
-	err := bat.insert(b,8,64);	#14:(err:bat[int,int])<-(b:bat[int,int])($25:int)($26:int)
-	err := bat.insert(b,9,n0);	#15:(err:bat[int,int])<-(b:bat[int,int])($27:int)(n0:int)
-	err := bat.insert(b,n0,n0);	#16:(err:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
-	err := bat.insert(b,n0,81);	#17:(err:bat[int,int])<-(b:bat[int,int])(n0:int)($28:int)
-	io.print(b);	#18:($29:int)<-(b:bat[int,int])
-	io.print(b,b,b);	#19:($30:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
-end function;	#20:
+function Admin.main():int; #0:(main:int)
+    o := calc.oid(20000000); #1:(o:oid)<-($2:int)
+    calc.setoid(o); #2:($3:oid)<-(o:oid)
+    b := mal.new(int,int); #3:(b:bat[int,int])<-(int:int)(int:int)
+    system.printf("#~BeginVariableOutput~#\n"); #4:($6:int)<-($7:str)
+    system.printf("#~EndVariableOutput~#\n"); #5:($8:int)<-($9:str)
+    err := bat.insert(b,1,15); #6:(err:bat[int,int])<-(b:bat[int,int])($11:int)($12:int)
+    err := bat.insert(b,2,4); #7:(err:bat[int,int])<-(b:bat[int,int])($13:int)($14:int)
+    n0 := calc.int(nil); #8:(n0:int)<-($16:void)
+    err := bat.insert(b,3,n0); #9:(err:bat[int,int])<-(b:bat[int,int])($17:int)(n0:int)
+    err := bat.insert(b,4,16); #10:(err:bat[int,int])<-(b:bat[int,int])($14:int)($18:int)
+    err := bat.insert(b,5,25); #11:(err:bat[int,int])<-(b:bat[int,int])($19:int)($20:int)
+    err := bat.insert(b,6,36); #12:(err:bat[int,int])<-(b:bat[int,int])($21:int)($22:int)
+    err := bat.insert(b,7,49); #13:(err:bat[int,int])<-(b:bat[int,int])($23:int)($24:int)
+    err := bat.insert(b,8,64); #14:(err:bat[int,int])<-(b:bat[int,int])($25:int)($26:int)
+    err := bat.insert(b,9,n0); #15:(err:bat[int,int])<-(b:bat[int,int])($27:int)(n0:int)
+    err := bat.insert(b,n0,n0); #16:(err:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81); #17:(err:bat[int,int])<-(b:bat[int,int])(n0:int)($28:int)
+    io.print(b); #18:($29:int)<-(b:bat[int,int])
+    io.print(b,b,b); #19:($30:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
+end function; #20:
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#

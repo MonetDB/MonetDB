@@ -14,10 +14,10 @@
 #	address_str := bat(oid,str);
 #	address_city:= bat(oid,str);
 #
-function Admin.main():int;	#0:(main:int)
-	person_key_name := mal.bat(oid,str);	#1:(person_key_name:bat[oid,str])<-(oid:oid)(str:str)
-	person_key_age := mal.bat(oid,int);	#2:(person_key_age:bat[oid,int])<-(oid:oid)(int:int)
-	address_str := mal.bat(oid,str);	#3:(address_str:bat[oid,str])<-(oid:oid)(str:str)
-	address_city := mal.bat(oid,str);	#4:(address_city:bat[oid,str])<-(oid:oid)(str:str)
-end function;	#5:
+function Admin.main():int; #0:(main:int)
+    person_key_name := mal.bat(oid,str); #1:(person_key_name:bat[oid,str])<-(oid:oid)(str:str)
+    person_key_age := mal.bat(oid,int); #2:(person_key_age:bat[oid,int])<-(oid:oid)(int:int)
+    address_str := mal.bat(oid,str); #3:(address_str:bat[oid,str])<-(oid:oid)(str:str)
+    address_city := mal.bat(oid,str); #4:(address_city:bat[oid,str])<-(oid:oid)(str:str)
+end function; #5:
 >

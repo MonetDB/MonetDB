@@ -23,17 +23,17 @@
 #f1:= 14:fruit;
 #print(f1);
 #
-function Admin.main():int;	#0:(main:int)
-	e0 := 12;	#1:(e0:int)<-($2:int)
-	io.print(e0);	#2:($3:int)<-(e0:int)
-	f0 := 11;	#3:(f0:int)<-($5:int)
-	io.print(f0);	#4:($6:int)<-(f0:int)
-	io.print("conversions");	#5:($7:int)<-($8:str)
-	e1 := 13;	#6:(e1:enum)<-($10:enum)
-	io.print(e1);	#7:($11:int)<-(e1:enum)
-	f1 := 14;	#8:(f1:fruit)<-($13:fruit)
-	io.print(f1);	#9:($14:int)<-(f1:fruit)
-end function;	#10:
+function Admin.main():int; #0:(main:int)
+    e0 := 12; #1:(e0:int)<-($2:int)
+    io.print(e0); #2:($3:int)<-(e0:int)
+    f0 := 11; #3:(f0:int)<-($5:int)
+    io.print(f0); #4:($6:int)<-(f0:int)
+    io.print("conversions"); #5:($7:int)<-($8:str)
+    e1 := 13; #6:(e1:enum)<-($10:enum)
+    io.print(e1); #7:($11:int)<-(e1:enum)
+    f1 := 14; #8:(f1:fruit)<-($13:fruit)
+    io.print(f1); #9:($14:int)<-(f1:fruit)
+end function; #10:
 [ 12 ]
 [ 11 ]
 [ "conversions" ]

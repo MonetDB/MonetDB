@@ -30,28 +30,28 @@
 #print(z);
 #
 #
-function Admin.main():int;	#0:(main:int)
-	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
-	i := -1;	#2:(i:lng)<-($4:lng)
-barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
-	bat.insert(b,i,i);	#4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
-	redo v ;	#5:(v:bit) jump 3
-end	v;	#6:(v:bit)
-	c := algebra.copy(b);	#7:(c:bat[lng,lng])<-(b:bat[lng,lng])
-	io.print(c);	#8:($10:int)<-(c:bat[lng,lng])
-	x := batcalc.+(b,c);	#9:(x:bat[lng,lng])<-(b:bat[lng,lng])(c:bat[lng,lng])
-	io.print(x);	#10:($12:int)<-(x:bat[lng,lng])
-	x := batcalc.+(b,1);	#11:(x:bat[lng,lng])<-(b:bat[lng,lng])($13:lng)
-	io.print(x);	#12:($14:int)<-(x:bat[lng,lng])
-	x := batcalc.*(b,c);	#13:(x:bat[lng,lng])<-(b:bat[lng,lng])(c:bat[lng,lng])
-	io.print(x);	#14:($15:int)<-(x:bat[lng,lng])
-	y := batcalc.==(b,b);	#15:(y:bat[lng,bit])<-(b:bat[lng,lng])(b:bat[lng,lng])
-	io.print(y);	#16:($17:int)<-(y:bat[lng,bit])
-	y := batcalc.==(b,x);	#17:(y:bat[lng,bit])<-(b:bat[lng,lng])(x:bat[lng,lng])
-	io.print(y);	#18:($18:int)<-(y:bat[lng,bit])
-	z := batcalc.not(y);	#19:(z:bat[lng,bit])<-(y:bat[lng,bit])
-	io.print(z);	#20:($20:int)<-(z:bat[lng,bit])
-end function;	#21:
+function Admin.main():int; #0:(main:int)
+    b := mal.new(lng,lng); #1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
+    i := -1; #2:(i:lng)<-($4:lng)
+barrier v := mal.nextElement(i,0,10); #3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
+    bat.insert(b,i,i); #4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
+    redo v ; #5:(v:bit) jump 3
+end v; #6:(v:bit)
+    c := algebra.copy(b); #7:(c:bat[lng,lng])<-(b:bat[lng,lng])
+    io.print(c); #8:($10:int)<-(c:bat[lng,lng])
+    x := batcalc.+(b,c); #9:(x:bat[lng,lng])<-(b:bat[lng,lng])(c:bat[lng,lng])
+    io.print(x); #10:($12:int)<-(x:bat[lng,lng])
+    x := batcalc.+(b,1); #11:(x:bat[lng,lng])<-(b:bat[lng,lng])($13:lng)
+    io.print(x); #12:($14:int)<-(x:bat[lng,lng])
+    x := batcalc.*(b,c); #13:(x:bat[lng,lng])<-(b:bat[lng,lng])(c:bat[lng,lng])
+    io.print(x); #14:($15:int)<-(x:bat[lng,lng])
+    y := batcalc.==(b,b); #15:(y:bat[lng,bit])<-(b:bat[lng,lng])(b:bat[lng,lng])
+    io.print(y); #16:($17:int)<-(y:bat[lng,bit])
+    y := batcalc.==(b,x); #17:(y:bat[lng,bit])<-(b:bat[lng,lng])(x:bat[lng,lng])
+    io.print(y); #18:($18:int)<-(y:bat[lng,bit])
+    z := batcalc.not(y); #19:(z:bat[lng,bit])<-(y:bat[lng,bit])
+    io.print(z); #20:($20:int)<-(z:bat[lng,bit])
+end function; #21:
 #-----------------#
 # BAT:	  tmp_5	  #
 # (lng)	  (lng)	  #

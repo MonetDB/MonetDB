@@ -22,24 +22,24 @@
 #print("hb1 becomes"); print(hb1);
 #
 !WARNING: garbage collection not guaranteed
-function Admin.main():int;	#0:(main:int)
-	x := mal.new(oid,chr);	#1:(x:bat[oid,chr])<-(oid:oid)(chr:chr)
-	de_a := bat.insert(x,1@0,'a');	#2:(de_a:bat[oid,chr])<-(x:bat[oid,chr])($5:oid)($6:chr)
-	ee_a := bat.insert(x,2@0,'a');	#3:(ee_a:bat[oid,chr])<-(x:bat[oid,chr])($8:oid)($6:chr)
-	fe_a := bat.insert(x,3@0,'b');	#4:(fe_a:bat[oid,chr])<-(x:bat[oid,chr])($10:oid)($11:chr)
-	ge_a := bat.insert(x,4@0,'b');	#5:(ge_a:bat[oid,chr])<-(x:bat[oid,chr])($13:oid)($11:chr)
-	he_a := bat.insert(x,5@0,'b');	#6:(he_a:bat[oid,chr])<-(x:bat[oid,chr])($15:oid)($11:chr)
-	ie_a := bat.insert(x,6@0,'b');	#7:(ie_a:bat[oid,chr])<-(x:bat[oid,chr])($17:oid)($11:chr)
-	je_a := bat.insert(x,7@0,'c');	#8:(je_a:bat[oid,chr])<-(x:bat[oid,chr])($19:oid)($20:chr)
-	ke_a := bat.insert(x,8@0,'c');	#9:(ke_a:bat[oid,chr])<-(x:bat[oid,chr])($22:oid)($20:chr)
-	io.print("group x");	#10:($23:int)<-($24:str)
-	io.print(x);	#11:($25:int)<-(x:bat[oid,chr])
-	(hb1,b1):=group.group(x);	#12:(hb1:bat[chr,int])(b1:bat[oid,oid])<-(x:bat[oid,chr])
-	io.print("b1 becomes");	#13:($28:int)<-($29:str)
-	io.print(b1);	#14:($30:int)<-(b1:bat[oid,oid])
-	io.print("hb1 becomes");	#15:($31:int)<-($32:str)
-	io.print(hb1);	#16:($33:int)<-(hb1:bat[chr,int])
-end function;	#17:
+function Admin.main():int; #0:(main:int)
+    x := mal.new(oid,chr); #1:(x:bat[oid,chr])<-(oid:oid)(chr:chr)
+    de_a := bat.insert(x,1@0,'a'); #2:(de_a:bat[oid,chr])<-(x:bat[oid,chr])($5:oid)($6:chr)
+    ee_a := bat.insert(x,2@0,'a'); #3:(ee_a:bat[oid,chr])<-(x:bat[oid,chr])($8:oid)($6:chr)
+    fe_a := bat.insert(x,3@0,'b'); #4:(fe_a:bat[oid,chr])<-(x:bat[oid,chr])($10:oid)($11:chr)
+    ge_a := bat.insert(x,4@0,'b'); #5:(ge_a:bat[oid,chr])<-(x:bat[oid,chr])($13:oid)($11:chr)
+    he_a := bat.insert(x,5@0,'b'); #6:(he_a:bat[oid,chr])<-(x:bat[oid,chr])($15:oid)($11:chr)
+    ie_a := bat.insert(x,6@0,'b'); #7:(ie_a:bat[oid,chr])<-(x:bat[oid,chr])($17:oid)($11:chr)
+    je_a := bat.insert(x,7@0,'c'); #8:(je_a:bat[oid,chr])<-(x:bat[oid,chr])($19:oid)($20:chr)
+    ke_a := bat.insert(x,8@0,'c'); #9:(ke_a:bat[oid,chr])<-(x:bat[oid,chr])($22:oid)($20:chr)
+    io.print("group x"); #10:($23:int)<-($24:str)
+    io.print(x); #11:($25:int)<-(x:bat[oid,chr])
+    (hb1,b1):=group.group(x); #12:(hb1:bat[chr,int])(b1:bat[oid,oid])<-(x:bat[oid,chr])
+    io.print("b1 becomes"); #13:($28:int)<-($29:str)
+    io.print(b1); #14:($30:int)<-(b1:bat[oid,oid])
+    io.print("hb1 becomes"); #15:($31:int)<-($32:str)
+    io.print(hb1); #16:($33:int)<-(hb1:bat[chr,int])
+end function; #17:
 [ "group x" ]
 #-----------------#
 # BAT:	  tmp_4	  #

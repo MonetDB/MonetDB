@@ -20,11 +20,11 @@
 #	deposit("STORE_MMAP",1:int);
 #	deposit("STORE_COMPR",2:int);
 #end function;
-function constants.main():void;	#0:(main:void)
-	const.deposit("STORE_MEM",0);	#1:($1:void)<-($2:str)($3:int)
-	const.deposit("STORE_MMAP",1);	#2:($4:void)<-($5:str)($6:int)
-	const.deposit("STORE_COMPR",2);	#3:($7:void)<-($8:str)($9:int)
-end function;	#4:
+function constants.main():void; #0:(main:void)
+    const.deposit("STORE_MEM",0); #1:($1:void)<-($2:str)($3:int)
+    const.deposit("STORE_MMAP",1); #2:($4:void)<-($5:str)($6:int)
+    const.deposit("STORE_COMPR",2); #3:($7:void)<-($8:str)($9:int)
+end function; #4:
 #
 ## take uses the 'root' versions.
 #function take(v:str):any;
@@ -32,21 +32,21 @@ end function;	#4:
 #	w:= take(v);
 #	return w;
 #end function;
-function constants.take(v:str):any;	#0 polymorphic:(take:any)<-(v:str)
-	system.printf("looking for %s\n",v);	#1:($2:int)<-($3:str)(v:str)
-	w := constants.take(v);	#2:(w:any)<-(v:str)
-	return w;	#3:(w:any)
-end function;	#4:
+function constants.take(v:str):any; #0 polymorphic:(take:any)<-(v:str)
+    system.printf("looking for %s\n",v); #1:($2:int)<-($3:str)(v:str)
+    w := constants.take(v); #2:(w:any)<-(v:str)
+    return w; #3:(w:any)
+end function; #4:
 #
 ## release is overloaded for testing only
 #function release(v:any):void;
 #	BoxException:= "releasing a constant is forbidden";
 #	raise BoxException;
 #end function;
-function constants.release(v:any):void;	#0:(release:void)<-(v:any)
-	BoxException := "releasing a constant is forbidden";	#1:(BoxException:str)<-($3:str)
-	raise BoxException;	#2:(BoxException:str)
-end function;	#3:
+function constants.release(v:any):void; #0:(release:void)<-(v:any)
+    BoxException := "releasing a constant is forbidden"; #1:(BoxException:str)<-($3:str)
+    raise BoxException; #2:(BoxException:str)
+end function; #3:
 #
 ## accept the definition of a new constant
 #function deposit(v:any,name:str) = space_deposit;

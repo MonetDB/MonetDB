@@ -8,8 +8,8 @@
 # monetrc:/ufs/mk/.monet.conf
 #printf("hello world\n");
 #
-function Admin.main():int;	#0:(main:int)
-	system.printf("hello world\n");	#1:($1:int)<-($2:str)
-end function;	#2:
+function Admin.main():int; #0:(main:int)
+    system.printf("hello world\n"); #1:($1:int)<-($2:str)
+end function; #2:
 hello world
 >

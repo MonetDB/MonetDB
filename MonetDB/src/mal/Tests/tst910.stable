@@ -13,10 +13,10 @@
 #	z:= a+b;
 #	return z;
 #end function;
-function Admin.inc(a:lng,b:lng):lng;	#0:(inc:lng)<-(a:lng)(b:lng)
-	z := calc.+(a,b);	#1:(z:lng)<-(a:lng)(b:lng)
-	return z;	#2:(z:lng)
-end function;	#3:
+function Admin.inc(a:lng,b:lng):lng; #0:(inc:lng)<-(a:lng)(b:lng)
+    z := calc.+(a,b); #1:(z:lng)<-(a:lng)(b:lng)
+    return z; #2:(z:lng)
+end function; #3:
 #
 #b:= new(lng,lng);
 #i:= -1:lng;
@@ -42,30 +42,30 @@ end function;	#3:
 #print(z);
 #
 #
-function Admin.main():int;	#0:(main:int)
-	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
-	i := -1;	#2:(i:lng)<-($4:lng)
-barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
-	bat.insert(b,i,i);	#4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
-	redo v ;	#5:(v:bit) jump 3
-end	v;	#6:(v:bit)
-	c := algebra.copy(b);	#7:(c:bat[lng,lng])<-(b:bat[lng,lng])
-	io.print(c);	#8:($10:int)<-(c:bat[lng,lng])
-	x := multiplex.script("+",b,c);	#9:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	io.print(x);	#10:($13:int)<-(x:bat[lng,lng])
-	x := multiplex.script("+",b,1);	#11:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])($14:lng)
-	io.print(x);	#12:($15:int)<-(x:bat[lng,lng])
-	x := multiplex.script("inc",b,c);	#13:(x:bat[lng,lng])<-($16:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	io.print(x);	#14:($17:int)<-(x:bat[lng,lng])
-	x := multiplex.script("*",b,c);	#15:(x:bat[lng,lng])<-($18:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	io.print(x);	#16:($19:int)<-(x:bat[lng,lng])
-	y := multiplex.script("==",b,b);	#17:(y:bat[lng,bit])<-($21:str)(b:bat[lng,lng])(b:bat[lng,lng])
-	io.print(y);	#18:($22:int)<-(y:bat[lng,bit])
-	y := multiplex.script("=",b,x);	#19:(y:bat[lng,bit])<-($23:str)(b:bat[lng,lng])(x:bat[lng,lng])
-	io.print(y);	#20:($24:int)<-(y:bat[lng,bit])
-	z := multiplex.script("not",y);	#21:(z:bat[lng,bit])<-($26:str)(y:bat[lng,bit])
-	io.print(z);	#22:($27:int)<-(z:bat[lng,bit])
-end function;	#23:
+function Admin.main():int; #0:(main:int)
+    b := mal.new(lng,lng); #1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
+    i := -1; #2:(i:lng)<-($4:lng)
+barrier v := mal.nextElement(i,0,10); #3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
+    bat.insert(b,i,i); #4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
+    redo v ; #5:(v:bit) jump 3
+end v; #6:(v:bit)
+    c := algebra.copy(b); #7:(c:bat[lng,lng])<-(b:bat[lng,lng])
+    io.print(c); #8:($10:int)<-(c:bat[lng,lng])
+    x := multiplex.script("+",b,c); #9:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
+    io.print(x); #10:($13:int)<-(x:bat[lng,lng])
+    x := multiplex.script("+",b,1); #11:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])($14:lng)
+    io.print(x); #12:($15:int)<-(x:bat[lng,lng])
+    x := multiplex.script("inc",b,c); #13:(x:bat[lng,lng])<-($16:str)(b:bat[lng,lng])(c:bat[lng,lng])
+    io.print(x); #14:($17:int)<-(x:bat[lng,lng])
+    x := multiplex.script("*",b,c); #15:(x:bat[lng,lng])<-($18:str)(b:bat[lng,lng])(c:bat[lng,lng])
+    io.print(x); #16:($19:int)<-(x:bat[lng,lng])
+    y := multiplex.script("==",b,b); #17:(y:bat[lng,bit])<-($21:str)(b:bat[lng,lng])(b:bat[lng,lng])
+    io.print(y); #18:($22:int)<-(y:bat[lng,bit])
+    y := multiplex.script("=",b,x); #19:(y:bat[lng,bit])<-($23:str)(b:bat[lng,lng])(x:bat[lng,lng])
+    io.print(y); #20:($24:int)<-(y:bat[lng,bit])
+    z := multiplex.script("not",y); #21:(z:bat[lng,bit])<-($26:str)(y:bat[lng,bit])
+    io.print(z); #22:($27:int)<-(z:bat[lng,bit])
+end function; #23:
 #-----------------#
 # BAT:	  tmp_5	  #
 # (lng)	  (lng)	  #
@@ -95,7 +95,7 @@ end function;	#23:
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_7	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  1	  ]
@@ -109,7 +109,7 @@ end function;	#23:
 [ 8,	  9	  ]
 [ 9,	  10	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_8	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -123,7 +123,7 @@ end function;	#23:
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_9	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -137,7 +137,7 @@ end function;	#23:
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# BAT:	  tmp_7	  #
+# BAT:	  tmp_10  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -151,7 +151,7 @@ end function;	#23:
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# BAT:	  tmp_7	  #
+# BAT:	  tmp_11  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -165,7 +165,7 @@ end function;	#23:
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# BAT:	  tmp_8	  #
+# BAT:	  tmp_12  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  false	  ]

@@ -78,24 +78,24 @@
 ##print("end_dst");print(pd_a);
 ##	qd_a := print(ld_a,nd_a,pd_a);
 #
-function Admin.main():int;	#0:(main:int)
-	rule_apr := mtime.rule("last THU on or before aPr 1@01:15");	#1:(rule_apr:rule)<-($2:str)
-	rule_nov := mtime.rule(11,-10,-4,75);	#2:(rule_nov:rule)<-($4:int)($5:int)($6:int)($7:int)
-	io.print("start");	#3:($8:int)<-($9:str)
-	mc_a := calc.*(23,60);	#4:(mc_a:int)<-($11:int)($12:int)
-	tzone_07 := mtime.tzone(mc_a,rule_apr,rule_nov);	#5:(tzone_07:tzone)<-(mc_a:int)(rule_apr:rule)(rule_nov:rule)
-	nc_a := calc.*(-23,59);	#6:(nc_a:int)<-($15:int)($16:int)
-	oc_a := calc.-(nc_a,59);	#7:(oc_a:int)<-(nc_a:int)($16:int)
-	tzone_08 := mtime.tzone(oc_a);	#8:(tzone_08:tzone)<-(oc_a:int)
-	tzone_09 := mtime.tzone(0);	#9:(tzone_09:tzone)<-($20:int)
-	pc_a := calc.*(23,60);	#10:(pc_a:int)<-($11:int)($12:int)
-	qc_a := calc.+(pc_a,59);	#11:(qc_a:int)<-(pc_a:int)($16:int)
-	tzone_bat := mal.new(oid,tzone);	#12:(tzone_bat:bat[oid,tzone])<-(oid:oid)(tzone:tzone)
-	bd_a := bat.insert(tzone_bat,08@0,tzone_08);	#13:(bd_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($27:oid)(tzone_08:tzone)
-	cd_a := bat.insert(tzone_bat,09@0,tzone_09);	#14:(cd_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($29:oid)(tzone_09:tzone)
-	id_a := bbp.setColumn(tzone_bat,"tzone");	#15:(id_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($31:str)
-	jd_a := io.print(id_a);	#16:(jd_a:int)<-(id_a:bat[oid,tzone])
-end function;	#17:
+function Admin.main():int; #0:(main:int)
+    rule_apr := mtime.rule("last THU on or before aPr 1@01:15"); #1:(rule_apr:rule)<-($2:str)
+    rule_nov := mtime.rule(11,-10,-4,75); #2:(rule_nov:rule)<-($4:int)($5:int)($6:int)($7:int)
+    io.print("start"); #3:($8:int)<-($9:str)
+    mc_a := calc.*(23,60); #4:(mc_a:int)<-($11:int)($12:int)
+    tzone_07 := mtime.tzone(mc_a,rule_apr,rule_nov); #5:(tzone_07:tzone)<-(mc_a:int)(rule_apr:rule)(rule_nov:rule)
+    nc_a := calc.*(-23,59); #6:(nc_a:int)<-($15:int)($16:int)
+    oc_a := calc.-(nc_a,59); #7:(oc_a:int)<-(nc_a:int)($16:int)
+    tzone_08 := mtime.tzone(oc_a); #8:(tzone_08:tzone)<-(oc_a:int)
+    tzone_09 := mtime.tzone(0); #9:(tzone_09:tzone)<-($20:int)
+    pc_a := calc.*(23,60); #10:(pc_a:int)<-($11:int)($12:int)
+    qc_a := calc.+(pc_a,59); #11:(qc_a:int)<-(pc_a:int)($16:int)
+    tzone_bat := mal.new(oid,tzone); #12:(tzone_bat:bat[oid,tzone])<-(oid:oid)(tzone:tzone)
+    bd_a := bat.insert(tzone_bat,08@0,tzone_08); #13:(bd_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($27:oid)(tzone_08:tzone)
+    cd_a := bat.insert(tzone_bat,09@0,tzone_09); #14:(cd_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($29:oid)(tzone_09:tzone)
+    id_a := bbp.setColumn(tzone_bat,"tzone"); #15:(id_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($31:str)
+    jd_a := io.print(id_a); #16:(jd_a:int)<-(id_a:bat[oid,tzone])
+end function; #17:
 [ "start" ]
 #-------------------------#
 # BAT:	  tmp_4		  #
