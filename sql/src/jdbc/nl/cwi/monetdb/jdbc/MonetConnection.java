@@ -980,7 +980,8 @@ public class MonetConnection extends Thread implements Connection {
 				new IllegalStateException("Should not fetch empty block!");
 
 			rawr = new RawResults(size,
-				"Xexport " + hdr.getID() + " " + block * cacheSize + " " + size);
+				"Xexport " + hdr.getID() + " " + block * cacheSize + " " + size,
+				hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
 
 			queryQueue.add(rawr);
 			queryQueue.notify();
@@ -1003,7 +1004,7 @@ public class MonetConnection extends Thread implements Connection {
 			new IllegalStateException("CacheThread shutting down or not running");
 
 		synchronized(queryQueue) {
-			queryQueue.add(0, new RawResults(0, "Xclose " + id));
+			queryQueue.add(0, new RawResults(0, "Xclose " + id, true));
 			queryQueue.notify();
 		}
 	}
@@ -1109,7 +1110,7 @@ public class MonetConnection extends Thread implements Connection {
 					// complete the header info and add to list
 					if (lastState == MonetSocket.HEADER) {
 						hdr.complete();
-						rawr = new RawResults(hdrl.cachesize != 0 ? Math.min(hdrl.cachesize, hdr.getTupleCount()) : hdr.getTupleCount(), null);
+						rawr = new RawResults(hdrl.cachesize != 0 ? Math.min(hdrl.cachesize, hdr.getTupleCount()) : hdr.getTupleCount(), null, hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
 						hdr.addRawResults(0, rawr);
 						// a RawResults must be in hdr at this point!!!
 						hdrl.addHeader(hdr);
@@ -1221,17 +1222,22 @@ public class MonetConnection extends Thread implements Connection {
 		private int watch;
 		/** The errors generated for this ResultBlock */
 		private String error;
+		/** Whether we can discard lines as soon as we have read them */
+		private boolean forwardOnly;
 
 		/**
 		 * Constructs a RawResults object
 		 * @param size the size of the data array to create
+		 * @param export the Xexport query
+		 * @param forward whether this is a forward only result
 		 */
-		RawResults(int size, String export) {
+		RawResults(int size, String export, boolean forward) {
 			pos = -1;
 			data = new String[size];
 			// a newly set watch will always be smaller than size
 			watch = data.length;
 			this.export = export;
+			this.forwardOnly = forward;
 			error = "";
 		}
 
@@ -1290,7 +1296,13 @@ public class MonetConnection extends Thread implements Connection {
 				// re-check for errors
 				if (error != "") throw new SQLException(error);
 			}
-			return(data[line]);
+			if (forwardOnly) {
+				String ret = data[line];
+				data[line] = null;
+				return(ret);
+			} else {
+				return(data[line]);
+			}
 		}
 
 		/**
