@@ -461,7 +461,7 @@ def am_bins(fd, var, binsmap, am):
         elif binsmap.has_key("LIBS"):
             fd.write(am_additional_libs(bin, "", "BIN", binsmap["LIBS"], am))
 
-        if binmap.has_key("LDFLAGS"):
+        if binsmap.has_key("LDFLAGS"):
             fd.write(am_additional_flags(bin, "", "BIN", binsmap["LDFLAGS"], am))
 
         srcs = am_normalize(bin)+"_SOURCES ="
