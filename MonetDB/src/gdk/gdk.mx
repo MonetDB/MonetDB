@@ -2268,7 +2268,8 @@ gdk_export MT_Lock		GDKtmLock;
 #define ?ddbench?	if (GDKdebug&524288)
 #define ?ddbench?	if (GDKdebug&1048576)
 */
-#define JOINDEBUG	if (GDKdebug&2097152)
+#define ALGODEBUG	if (GDKdebug&2097152)
+#define ESTIDEBUG	if (GDKdebug&4194304)
 
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 

@@ -705,6 +705,7 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
          * and there is sufficient memory available */
 	} else if (equi && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDKmem_inuse() - GDK_mem_maxsize)) { 
 	    bn = BAT_hashselect(b, bn, tl);
+ 	    ALGODEBUG THRprintf(GDKout, "BAT_select.rangeselect.select: BAT_hashselect(b, bn, tl);\n");
 	} else 
 @-
 Single-valued sequential scans for strings are optimized when double
@@ -831,6 +832,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		}
 	    }
 	    bn = BATslice(v, &low, &high);
+	    ALGODEBUG THRprintf(GDKout, "BAT_select: BATslice(v, &low, &high);\n");
 	    if (!tail) {
 		BBPreclaim(v);
 	    }
@@ -862,6 +864,7 @@ Create the result BAT and execute the select algorithm.
 	if (bn) {
 	    if (equi && b->thash_heap) {
 	    	bn = BAT_hashselect(b, bn, tl);
+ 	        ALGODEBUG THRprintf(GDKout, "BAT_select: BAT_hashselect(b, bn, tl);\n");
 	    } else if (b->hvarsized) {
 		@:rangeselect(var)@
 	    } else {
@@ -888,6 +891,7 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
             bn->hsorted = BAThordered(b);
             bn->tsorted = BATtordered(b);
 	}
+	ESTIDEBUG THRprintf(GDKout, "BAT_select: resultsize: estimated %d, got %d.\n",estimate,BATcount(bn));
 	return bn; 
 }
 
@@ -1068,6 +1072,7 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 	BATcheck(tl,"BATrestrict:tl is null");
 	BATcheck(th,"BATrestrict:th is null");
 	bn = BATnew(BAThtype(b), BATttype(b), BATguess(b));
+  	ESTIDEBUG THRprintf(GDKout, "BATrestrict: estimated resultsize: %d\n",BATguess(b));
 	if (bn == NULL) {
 		return NULL; 
 	}
@@ -1078,6 +1083,7 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 
 	t = BATcount(b); 
 	if (t == 0) {
+  		ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: %d\n",BATcount(bn));
 		return bn; 
 	}
 	mark = (BUN*) GDKmalloc((unsigned) t*sizeof(BUN)); 
@@ -1135,6 +1141,7 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 	/* propagate alignment info */
 	if (BATcount(bn)==BATcount(b)) ALIGNset(bn,b);
 
+  	ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: %d\n",BATcount(bn));
 	return bn; 
 }
 
