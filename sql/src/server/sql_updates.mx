@@ -30,14 +30,14 @@
 #include "sql_scope.h"
 #include "sql_statement.h"
 
-sql_export stmt *updates(mvc *sql, symbol *sym);
+extern stmt *updates(mvc *sql, symbol *sym);
 
-sql_export void cleanup_stmts(stmt **stmts, int cnt);
-sql_export stmt *sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output);
-sql_export stmt *sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l);
-sql_export stmt *sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output);
-sql_export stmt *sql_update(mvc *sql, sql_table *t, stmt **updates, list *l);
-sql_export stmt *output_value(stmt *s);
+extern void cleanup_stmts(stmt **stmts, int cnt);
+extern stmt *sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output);
+extern stmt *sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l);
+extern stmt *sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output);
+extern stmt *sql_update(mvc *sql, sql_table *t, stmt **updates, list *l);
+extern stmt *output_value(stmt *s);
 
 #endif /*_SQL_UPDATES_H_*/
 @c

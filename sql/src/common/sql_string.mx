@@ -29,13 +29,13 @@
 #define _(String) (String)
 #define N_(String) (String)
 
-sqlcommon_export char *mkLower(char *v);
-sqlcommon_export char *toLower(const char *v);
-sqlcommon_export char *strconcat(const char *s1, const char *s2);
-sqlcommon_export char *strip_extra_zeros(char *v);
-sqlcommon_export char *sql2str(char *s);
-sqlcommon_export char *sql_strdup(char *s);
-sqlcommon_export char *sql_escape(char *s);
+extern char *mkLower(char *v);
+extern char *toLower(const char *v);
+extern char *strconcat(const char *s1, const char *s2);
+extern char *strip_extra_zeros(char *v);
+extern char *sql2str(char *s);
+extern char *sql_strdup(char *s);
+extern char *sql_escape(char *s);
 
 #endif /*_SQL_STRING_H_*/
 

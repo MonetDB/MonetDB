@@ -33,9 +33,9 @@ table or column level) overwrite privileges on higher levels.
 #include <sql_mvc.h>
 #include <sql_catalog.h>
 
-sql_export int mvc_set_role(mvc *m, char *role);
-sql_export int mvc_set_schema(mvc *m, char *schema);
-sql_export char *mvc_login(mvc *c, char *user, char *passwd);
+extern int mvc_set_role(mvc *m, char *role);
+extern int mvc_set_schema(mvc *m, char *schema);
+extern char *mvc_login(mvc *c, char *user, char *passwd);
 
 extern int schema_privs(int grantor, sql_schema *t);
 extern int table_privs(mvc *m, sql_table *t, int privs);
@@ -45,14 +45,14 @@ extern int sql_grantable(mvc *m, int grantorid, int obj_id, int privs, int sub);
 extern int sql_find_auth(mvc *m, str auth);
 extern int sql_find_schema(mvc *m, str schema);
 
-sql_export int sql_create_role(mvc *m, str auth, int grantor);
-sql_export int sql_drop_role(mvc *m, str auth);
-sql_export int sql_grant_role(mvc *m, str grantee, str auth);
-sql_export int sql_revoke_role(mvc *m, str grantee, str auth);
-sql_export int sql_create_user(mvc *m, str user, str passwd, str fullname, str schema_name, int grantor);
-sql_export int sql_alter_user(mvc *m, str user, str passwd, oid schema_id);
-sql_export int sql_drop_user(mvc *m, str user);
-sql_export int sql_create_privileges(mvc *m, sql_schema *s);
+extern int sql_create_role(mvc *m, str auth, int grantor);
+extern int sql_drop_role(mvc *m, str auth);
+extern int sql_grant_role(mvc *m, str grantee, str auth);
+extern int sql_revoke_role(mvc *m, str grantee, str auth);
+extern int sql_create_user(mvc *m, str user, str passwd, str fullname, str schema_name, int grantor);
+extern int sql_alter_user(mvc *m, str user, str passwd, oid schema_id);
+extern int sql_drop_user(mvc *m, str user);
+extern int sql_create_privileges(mvc *m, sql_schema *s);
 
 #endif /*_SQL_PRIV_H_ */
 @c

@@ -21,11 +21,11 @@ extern int keywords_init_done;
 extern keyword *keywords[HASH_SIZE];
 
 extern int keyword_key(char *k, int *l);
-sqlcommon_export void keywords_insert(char *k, int token);
-sqlcommon_export keyword *find_keyword(char *text);
+extern void keywords_insert(char *k, int token);
+extern keyword *find_keyword(char *text);
 extern int keyword_exists(char *text);
 
-sqlcommon_export void keyword_init();
-sqlcommon_export void keyword_exit();
+extern void keyword_init();
+extern void keyword_exit();
 
 #endif /* SQL_KEYWORD_H */

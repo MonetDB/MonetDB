@@ -67,19 +67,19 @@ called 'sessions'.
 #include "sql_statement.h"
 #include "sql_mvc.h"
 
-sql_export int mvc_debug_on(mvc *m, int flag);
+extern int mvc_debug_on(mvc *m, int flag);
 
-sql_export stmt *env(mvc *sql, symbol *s);
+extern stmt *env(mvc *sql, symbol *s);
 
-sql_export int sql_update_var(mvc *sql, char *name);
-sql_export int sql_set_var_value(mvc *sql, char *name, char *value);
+extern int sql_update_var(mvc *sql, char *name);
+extern int sql_set_var_value(mvc *sql, char *name, char *value);
 
-sql_export char *sql_get_var(mvc *sql, char *name);
-sql_export char *sql_get_type(mvc *sql, char *name);
+extern char *sql_get_var(mvc *sql, char *name);
+extern char *sql_get_type(mvc *sql, char *name);
 
-sql_export int sql_create_sessions(mvc *sql, sql_schema *s);
-sql_export int sql_create_history(mvc *sql, sql_schema *s);
-sql_export int sql_session(mvc *sql);
+extern int sql_create_sessions(mvc *sql, sql_schema *s);
+extern int sql_create_history(mvc *sql, sql_schema *s);
+extern int sql_session(mvc *sql);
 
 #endif /* _SQL_ENV_H_ */
 @c

@@ -26,8 +26,8 @@
 #include "sql_symbol.h"
 #include <sql_statement.h>
 
-sql_export int sql_create_sequences(mvc *sql, sql_schema *s);
-sql_export stmt *sequences(mvc *sql, symbol *s);
+extern int sql_create_sequences(mvc *sql, sql_schema *s);
+extern stmt *sequences(mvc *sql, symbol *s);
 
 #endif /*_SQL_SEQUENCE_H_*/
 @c

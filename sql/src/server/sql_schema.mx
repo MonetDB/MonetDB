@@ -29,7 +29,7 @@
 #include "sql_symbol.h"
 #include "sql_statement.h"
 
-sql_export stmt *schemas(mvc *sql, symbol *sym);
+extern stmt *schemas(mvc *sql, symbol *sym);
 
 #endif /*_SQL_SCHEMA_H_*/
 

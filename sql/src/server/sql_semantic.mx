@@ -32,15 +32,15 @@
 
 #define create_string_list() list_create((fdestroy)&GDKfree)
 
-sql_export stmt *semantic(mvc *sql, symbol *sym);
+extern stmt *semantic(mvc *sql, symbol *sym);
 
-sql_export sql_schema *cur_schema(mvc *sql);
-sql_export sql_schema *qname_schema(mvc *sql, dlist *qname);
-sql_export char *qname_table(dlist *qname);
-sql_export tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname);
+extern sql_schema *cur_schema(mvc *sql);
+extern sql_schema *qname_schema(mvc *sql, dlist *qname);
+extern char *qname_table(dlist *qname);
+extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname);
 
-sql_export sql_subtype *supertype(sql_subtype *r, sql_subtype *i);
-sql_export int convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing);
+extern sql_subtype *supertype(sql_subtype *r, sql_subtype *i);
+extern int convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing);
 
 typedef enum {
 	type_equal,
@@ -49,22 +49,22 @@ typedef enum {
 				   the digits/scale/overflow dynamicaly */
 } check_type;
 
-sql_export stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
-sql_export stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
-sql_export stmt *sum_scales(sql_subfunc *f, stmt *ls, stmt *rs);
-sql_export stmt *scale_algebra(sql_subfunc *f, stmt *ls, stmt *rs);
-sql_export stmt *sqlparse_intern(mvc *m, char *query);
-sql_export stmt *scope_sqlparse(mvc *m, scope *scp, char *query);
+extern stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
+extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
+extern stmt *sum_scales(sql_subfunc *f, stmt *ls, stmt *rs);
+extern stmt *scale_algebra(sql_subfunc *f, stmt *ls, stmt *rs);
+extern stmt *sqlparse_intern(mvc *m, char *query);
+extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query);
 
-sql_export stmt *first_subset(stmt *subset);
+extern stmt *first_subset(stmt *subset);
 
-sql_export void sql_add_arg(mvc *sql, atom *v);	/* used in src/server/sql_parser.y */
-sql_export void sql_add_param(mvc *sql, char *name, stmt *s);	/* used in src/server/sql_parser.y */
-sql_export stmt *sql_bind_param(mvc *sql, char *name);
-sql_export atom *sql_bind_arg(mvc *sql, int nr);
+extern void sql_add_arg(mvc *sql, atom *v);	/* used in src/server/sql_parser.y */
+extern void sql_add_param(mvc *sql, char *name, stmt *s);	/* used in src/server/sql_parser.y */
+extern stmt *sql_bind_param(mvc *sql, char *name);
+extern atom *sql_bind_arg(mvc *sql, int nr);
 
-sql_export void sql_destroy_params(mvc *sql);	/* used in backend */
-sql_export void sql_destroy_args(mvc *sql);	/* used in backend */
+extern void sql_destroy_params(mvc *sql);	/* used in backend */
+extern void sql_destroy_args(mvc *sql);	/* used in backend */
 
 #endif /*_SQL_SEMANTIC_H_*/
 

@@ -46,8 +46,8 @@ typedef struct sql_ref {
 	int refcnt;
 } sql_ref;
 
-sqlcommon_export sql_ref *sql_ref_init(sql_ref *r);
-sqlcommon_export int sql_ref_inc(sql_ref *r);
-sqlcommon_export int sql_ref_dec(sql_ref *r);
+extern sql_ref *sql_ref_init(sql_ref *r);
+extern int sql_ref_inc(sql_ref *r);
+extern int sql_ref_dec(sql_ref *r);
 
 #endif /*_MEM_H_*/

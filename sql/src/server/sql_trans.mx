@@ -34,7 +34,7 @@
 #define tr_writable	2
 #define tr_serializable 4
 
-sql_export stmt *transactions(mvc *sql, symbol *sym);
+extern stmt *transactions(mvc *sql, symbol *sym);
 
 #endif /*_SQL_TRANS_H_*/
 
