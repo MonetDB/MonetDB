@@ -395,7 +395,7 @@ static oid temp_create( BAT *b )
 
 static BAT *temp_descriptor( oid b )
 {
-	return BATdescriptor(b);
+	return BATdescriptor((bat)b);
 }
 
 static oid temp_copy( oid b, int clear ) 
