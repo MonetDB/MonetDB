@@ -781,7 +781,7 @@ Mserver epilogue: This is what Mserver says after MapiClient has disconnected.
 [ "monet_mod_hdl",	  10	  ]
 [ "monet_mod_load",	  0	  ]
 [ "monet_mod_nme",	  20	  ]
-[ "monet_mod_use",	  69	  ]
+[ "monet_mod_use",	  47	  ]
 #---------------------------------#
 # BAT:		  monet_acctbl	  #
 # (str)		  (int)		  #

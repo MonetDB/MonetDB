@@ -83,7 +83,7 @@ test = (
         re.compile( r'^synced\(x,[yz]\) := (true|false)$'
                 #dir(): # name                 htype          ttype          count       heat        dirty                      status             kind               refcnt      lrefcnt     plevel      #
                 "|" r'^\[ "[A-Za-z0-9_]+",\t* +"[a-z_]+",\t* +"[a-z_]+",\t* +[0-9]+,\t* +[0-9]+,\t* +"(dirty|clean|diffs)",\t* +"(load|disk)",\t* +"(tran|pers)",\t* +[0-9]+,\t* +[0-9]+,\t* +[0-9]+\t* +\]$'
-                "|" r'^\[ ".+",\t* +0,\t* +"(load|disk)",\t* +"tran",\t* +0\t* +\]$'
+                "|" r'^\[ ".+",\t* +0,\t* +"(load|disk)",\t* +"(tran|pers)",\t* +0\t* +\]$'
                 # tests/from_Twente/Bugs/Arjen_01:
                 "|" r'^\[ "((bat|cur)Stamp|[ht]align(|flushed))",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$'
                 "|" r'^\[ "batId",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+"\t* +\]$'
