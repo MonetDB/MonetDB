@@ -90,6 +90,10 @@ command fetch(b:bat[:any,:any$1], x:lng) :any$1
 address ALGfetch
 comment "Returns the tail value of the BUN at 
 	 x-th position with 0 <= x < b.count";
+command fetch(b:bat[:any,:any$1], x:int) :any$1 
+address ALGfetchint
+comment "Returns the tail value of the BUN at 
+	 x-th position with 0 <= x < b.count";
 
 @+ BAT Selections
 @- positional select
@@ -573,10 +577,12 @@ comment "Produces a new BAT with identical head
 Various operations for splitting BATs into useful fragments.
 
 @- Hash Split
-The commands below is temporarilly postponed
+The commands below is temporarilly postponed, because
+we don;t handle nested bats
+@mil
 command hashsplit( b:bat[:any$1,:any$2] ,
 		   buckects:int ) 
-		:bat[:int,bat[:any$1,:any$2]] 
+		:bat[:int,:bat] 
 address ALGhashsplit
 comment "Split a BAT on tail column according 
 	(hash-value MOD buckets). Returns a 
@@ -586,7 +592,7 @@ comment "Split a BAT on tail column according
 
 command uhashsplit ( b:bat[:any$1,:any$2], 
 		buckets:int ) 
-		:bat[:int,bat[:any$1,:any$2]] 
+		:bat[:int,:bat] 
 address ALGuhashsplit
 comment "Same as hashsplit, but only collect the 
 	head values in the fragments";
@@ -1983,13 +1989,6 @@ str doALGfetch(ptr ret, BAT *b, lng *pos){
         return MAL_SUCCEED;
 }
 
-str ALGfetchoid(int * ret, int *bid, oid *pos){
-	BAT *b;
-	@:getBATdescriptor(ret,bid,b,fetchoid)@
-	CMDfetchoid(ret,b,pos);
-	return MAL_SUCCEED;
-}
-
 str ALGfetch(ptr ret, int *bid, lng *pos){
 	BAT *b;
 	int result= 0;
@@ -1997,6 +1996,16 @@ str ALGfetch(ptr ret, int *bid, lng *pos){
 
 	@:getBATdescriptor(&result,bid,b,fetch);
 	return doALGfetch(ret,b,pos);
+}
+
+str ALGfetchoid(int * ret, int *bid, oid *pos){
+	lng o= *pos;
+	ALGfetch(ret,bid,&o);
+	return MAL_SUCCEED;
+}
+str ALGfetchint(int * ret, int *bid, int *pos){
+	lng o= *pos;
+	return ALGfetch(ret,bid,&o);
 }
 str ALGfetchbat(int * ret, int *bid, int *sid){
         BAT *b, *s, *bn= NULL;

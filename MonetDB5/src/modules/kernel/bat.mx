@@ -35,10 +35,10 @@ is crucial to do table-updates (this would not be permitted in a strict
 algebra).
 
 All commands needed for BAT updates, property management,
-search accellerator management, basic I/O, persistency, and storage options
+search accelerator management, basic I/O, persistence, and storage options
 can be found in this module.
 
-Type parameters are represented by short integers. The MAL frontend
+Type parameters are represented by short integers. The MAL front-end
 defines constants to simplify the mapping from type identifier to value.
 
 All parameters to the modules are passed by reference.
@@ -46,7 +46,7 @@ In particular, this means that string values are passed to the module
 layer as (str *)
 and we have to de-reference them before entering the gdk library.
 (Actual a design error in gdk to differentiate passing int/str)
-This calls for knowlegde on the underlying BAT typs`s
+This calls for knowledge on the underlying BAT types`s
 @= derefStr
 {int _tpe= ATOMstorage(@1->@2type);
  if( _tpe == TYPE_str || _tpe > TYPE_str )
@@ -114,7 +114,7 @@ comment "Puts all BUNs in a BAT in reverse order.
 Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
 These properties can be inspected with the {\tt info(BAT[:any,:any]) :bat[str,str] } c
-ommand:
+command:
 {\small
 \begin{verbatim}
 > car_age.info.print;
@@ -257,8 +257,8 @@ comment "Try to change the update access priviliges
 	 r[ead-only]      - allow only read access.
 	 a[append-only]   - allow reads and update.
 	 w[riteable]      - allow all operations.
-	BATs are updateable by default. On making 
-	a BAT readonly, all subsequent updates 
+	BATs are updatable by default. On making 
+	a BAT read-only, all subsequent updates 
 	fail with an error message.Returns the 
 	BAT itself.";
 command access( b:bat[:any$1,:any$2], mode:int) 
@@ -1568,9 +1568,11 @@ In most cases we pass a BAT identifier, which should be unified
 with a BAT descriptor. Upon failure we can simply abort the function.
 
 @= getBATdescriptor
+/*
 	if( BBPcheck(*@2,"@4")==0)
                 return throwMessage("bat.@4", 
 			"cannot access bat @2 in bbp");
+*/
 	if( *@2 < 0) {
 		/* reverse descriptor should be explicitly loaded */
 		@3=BATdescriptor(*@2); BBPunfix(*@2);
