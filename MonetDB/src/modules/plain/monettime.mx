@@ -582,6 +582,15 @@ proc current_timestamp() { return timestamp(epoch()); }
 proc current_date() { return date(current_timestamp()); }
 proc current_time() { return daytime(current_timestamp()); }
 
+# utility functions (for SQL) for direct extraction of fields from timestamps
+proc year(timestamp t) { return year(date(t)); }
+proc month(timestamp t) { return month(date(t)); }
+proc day(timestamp t) { return day(date(t)); }
+proc hours(timestamp t) { return hours(daytime(t)); }
+proc minutes(timestamp t) { return minutes(daytime(t)); }
+proc seconds(timestamp t) { return seconds(daytime(t)); }
+proc milliseconds(timestamp t) { return milliseconds(daytime(t)); }
+
 # temporary(?) HACK to distinguish type-signatures of 
 # date_sub_sec_interval & date_add_sec_interval (now: date,lng) from those of
 # date_sub_month_interval & addmonth (date,int), 
