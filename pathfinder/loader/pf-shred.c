@@ -69,6 +69,11 @@
 #include <pf_config.h>
 #endif
 
+/* we need this for BerkeleyDB */
+#if HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+
 typedef unsigned int nat;
 
 /**
@@ -243,10 +248,9 @@ nat xml_depth_max;
 node_t *lifo;
 
 nat sp = 0;
-#define PUSH(n) (assert (sp < xml_depth_max + 1),  \
-                 lifo[sp++] = (n))
-#define POP()   (assert (sp > 0), lifo[--sp])
-#define TOP()   (assert (sp > 0), lifo[sp - 1])
+#define PUSH(n) (lifo[sp++] = (n))
+#define POP()   (lifo[--sp])
+#define TOP()   (lifo[sp - 1])
 
 /** 
  * relation handling
@@ -752,7 +756,7 @@ shred_start_element (void *ctx,
         depth = level;
 
     /* does this element have a duplicate tag name? */
-    dup = duplicate (nsloc_db, (char *) t, strlen (t), &(node.prop));
+    dup = duplicate (nsloc_db, (char *) t, strlen ((char *) t), &(node.prop));
 
     /* if not, enter element tag name ns:loc 
      * into prop|ns|loc relation
@@ -944,9 +948,9 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
             tgtins_id++;
        
             write (rels[proptgtins].fd, "\"", sizeof ("\"") - 1);
-            len =  content2rel (proptgtins, (char *) tgt, strlen (tgt));
+            len = content2rel (proptgtins, (char *) tgt, strlen ((char *) tgt));
             write (rels[proptgtins].fd, "\",\"", sizeof ("\",\"") - 1);
-            len += content2rel (proptgtins, (char *) ins, strlen (ins));
+            len += content2rel (proptgtins, (char *) ins, strlen ((char*) ins));
             write (rels[proptgtins].fd, "\"\n", sizeof ("\"\n") - 1);
 
             encoded += rels[proptgtins].bytes + len;
@@ -982,7 +986,7 @@ shred_comment (void *ctx, const xmlChar *c)
     TOP ().size++;
 
     /* does this comment have duplicate comment content? */
-    dup = duplicate (com_db, (char *) c, strlen (c), &(node.prop));
+    dup = duplicate (com_db, (char *) c, strlen ((char *) c), &(node.prop));
         
     /* if not, enter comment node content 
      * into prop|com relation 
@@ -991,7 +995,7 @@ shred_comment (void *ctx, const xmlChar *c)
         com_id++;
 
         write (rels[propcom].fd, "\"", sizeof ("\"") - 1);
-        len = content2rel (propcom, (char *) c, strlen (c));        
+        len = content2rel (propcom, (char *) c, strlen ((char *) c));        
         write (rels[propcom].fd, "\"\n", sizeof ("\"\n") - 1);
 
         encoded += rels[propcom].bytes + len;
