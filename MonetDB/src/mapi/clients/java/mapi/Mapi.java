@@ -1167,6 +1167,7 @@ private void cacheResetInternal()
 	if( cache.fldcnt==null)
 		cache.fldcnt = new int[cache.limit];
 	// set the default for single columns
+	for(int i=1;i<fieldcnt;i++) columns[i]=null;
 	fieldcnt=1;
 	if(columns[0]!= null){
 		columns[0].columntype="str";
