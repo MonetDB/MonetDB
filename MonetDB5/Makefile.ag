@@ -1,0 +1,12 @@
+
+SUBDIRS = src conf doc scripts tests
+
+EXTRA_DIST = rules.mk rules.msc winconfig.h bootstrap deps \
+	     winlibc.h getopt.c getopt1.c getopt.h
+
+EXTRA_HEADERS = config.h
+
+scripts_gif = {
+	DIR = pkgdatadir
+	SOURCES = lady.gif
+}

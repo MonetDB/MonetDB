@@ -1,0 +1,36 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## parallel syntax checks
+#
+#thread b1;
+#	printf("start thread\n");
+#barrier yy;
+#	leave yy;
+#	redo yy;	
+#end	yy;
+#	printf("finish thread\n");
+#end b1;
+#	printf("end of program, wait for child\n");
+#
+function Admin.main():int; #0:(main:int)
+thread b1; #1:(b1:any) jump 9
+    system.printf("start thread\n"); #2:($2:int)<-($3:str)
+barrier yy; #3:(yy:any) jump 7
+    leave yy; #4:(yy:any) jump 7
+    redo yy ; #5:(yy:any) jump 3
+end yy; #6:(yy:any)
+    system.printf("finish thread\n"); #7:($5:int)<-($6:str)
+end b1; #8:(b1:any)
+    system.printf("end of program, wait for child\n"); #9:($7:int)<-($8:str)
+end main; #10:
+create the child 1
+start thread
+finish thread
+end of program, wait for child
+>

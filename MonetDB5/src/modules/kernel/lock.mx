@@ -1,0 +1,128 @@
+@f lock
+@t Lightweight Lock Module
+@v 1.0
+@a Peter Boncz
+@* Introduction
+This module provides simple SMP lock and thread functionality
+as already present in the Monet system.
+
+@* MEL Definitions
+@mal
+atom module lock:ptr;
+
+command create() : lock = LCKcreate
+	comment "Create an unset lock";
+command set(l:lock) = LCKset
+	comment "Try to set a lock; if set, block till it is freed";
+command try(l:lock) : int = LCKtry
+	comment "Try a lock, if free set it, if not return EBUSY";
+command unset(l:lock) = LCKunset
+	comment "Unset a lock";
+command destroy(l:lock) = LCKdestroy
+	comment "Destroy a lock";
+command tostr(l:lock) = lockToStr
+	comment "Overloaded atom function";
+
+@- semaphores
+@mal
+atom module sema:ptr;
+
+command create(init:int ) : sema = SEMAcreate
+	comment "Create an unset sema, with an initial value";
+command down(s:sema) = SEMAdown
+	comment "Decrement the semaphpore if >0; else block";
+command try(s:sema) : int = SEMAtry
+	comment "try the semaphpore";
+command up(s:sema) = SEMAup
+	comment "Increment the semaphore";
+command destroy(s:sema) = SEMAdestroy
+	comment "Destroy a semaphore";
+@{
+@* Implementation
+@c
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ */
+
+#include "monet.h"
+typedef ptr lock;
+typedef ptr sema;
+typedef ptr monet_lock;
+typedef ptr monet_sema;
+
+str LCKcreate(monet_lock *l){
+	*l = MT_create_lock();
+	return MAL_SUCCEED;
+}
+
+str LCKset(int *res, monet_lock *l){
+	MT_set_lock((MT_Lock) *l, "LCKset");
+	return MAL_SUCCEED;
+}
+
+str LCKtry(int* res, monet_lock* l){
+	*res = MT_try_lock((MT_Lock) *l);
+	return MAL_SUCCEED;
+}
+
+str LCKunset(int *res, monet_lock *l){
+	MT_unset_lock((MT_Lock) *l, "unset_lock");
+	return MAL_SUCCEED;
+}
+
+str LCKdestroy(int *res, monet_lock *l){
+	MT_destroy_lock((MT_Lock) *l);
+	return MAL_SUCCEED;
+}
+
+int lockToStr(char **dst, int *len, ptr *src){
+	if( src == ptr_nil){
+		strcpy(*dst,"nil");
+		return 3;
+	}
+	sprintf(*dst,"%o", *src);
+	return strlen(*dst);
+}
+str SEMAcreate(monet_sema *s, int *init){
+	*s = MT_create_sema(*init);
+	return MAL_SUCCEED;
+}
+
+str SEMAup(int *res, monet_sema *s){
+	MT_up_sema((MT_Sema) *s, "SEMAup");
+	return MAL_SUCCEED;
+}
+
+str SEMAtry(int *res, monet_sema *s){
+	*res = MT_try_sema((MT_Sema) *s)?0:EBUSY;
+	return MAL_SUCCEED;
+}
+
+str SEMAdown(int *res, monet_sema *s){
+	MT_down_sema((MT_Sema) *s, "SEMAdown");
+	return MAL_SUCCEED;
+}
+
+str SEMAdestroy(int *res, monet_sema *s){
+	MT_destroy_sema((MT_Sema) *s);
+	return MAL_SUCCEED;
+}
+@}

@@ -1,0 +1,4 @@
+# parsing operations with multi-assignments
+
+(x,y):= point(z:int);
+(initial:str,surname:str):= getName();

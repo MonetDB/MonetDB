@@ -1,0 +1,747 @@
+@f bbp
+@t BAT Buffer Pool
+@v 2.0
+@a M.L.Kersten, P. Boncz
+@* BAT Buffer Pool
+The BBP module implements a box interface over the BAT buffer pool.
+Only BATs are maintained by the box.
+
+The two predominant approaches to use bbp is to access the BBP
+with either bind() or take(). The former merely maps the BAT name
+to the object in the bat buffer pool. (In Monet 4 this binding
+was implicit in the name resolution scheme)
+No guarantees are given on stability and isolation.
+
+A more controlled scheme is to deposit(),take(), release()
+and discard() elements.
+Any BAT B created can be brought under this scheme with the name N.
+The association N->B is only maintained in the box administration
+and not reflected in the BAT descriptor.
+In particular, taking a  BATobject out of the box leads to a private 
+copy to isolate the user from concurrent updates on the underlying store.
+Upon releasing it, the updates are merged with the master copy [todo].
+
+The BBP module does not impose any authorization, replication, localization,
+or fragmentation policy. 
+The default location of the BAT storage is .../dbfarm/bat, which maps
+to a directory on the local file system. 
+
+@+ The Box Interface
+@mal
+module bbp;
+
+command open():void= CMDbbpopen
+comment "Locate the bbp box and open it.";
+
+command close():void= CMDbbpclose
+comment "Close the bbp box.";
+
+command destroy():void= CMDbbpdestroy
+comment "Destroy the box, which is forbidden for casual users";
+
+pattern take(name:str) : bat[any,any] = CMDbbptake
+comment "Load a particular bat from disk and make a private copy";
+
+pattern deposit(name:str,v:bat[any,any]):void = CMDbbpdeposit
+comment "Enter a new bat into the bbp box.";
+
+pattern releaseAll():void = CMDbbpreleaseAll
+comment "Commit updates and release all bats for this client";
+
+pattern release(name:str,val:bat[any,any]):void = CMDbbprelease
+comment "Commit updates and release this BAT.";
+
+pattern toString(name:str):str = CMDbbptoString
+comment "Get the string representation of an element in the box";
+
+pattern discard(name:str):void = CMDbbpdiscard
+comment "Remove the BAT from the box";
+
+pattern iterator(nme:str):lng = CMDbbpiterator
+comment "Locates the next element in the bbp box";
+
+pattern prelude():void = CMDbbpprelude
+comment "Initialize the bbp box";
+
+pattern bind(name:str,loc:str):bat = CMDbbpbindDefinition
+comment "Relate a logical name to a physical BAT in the buffer pool.";
+
+pattern bind(name:str):bat = CMDbbpbind
+comment "Locate the BAT using its logical name, but without
+making a local copy. No guarantees
+are given for consistent reads.";
+
+@+ Dictionary
+BATs in the BAT buffer pool carry a logical name, which in most cases
+equates to the physical name, i.e. the file name.
+The mapping maintained in the bbp box isolates the user from those
+physical names. It contains variable references to elements in the 
+BAT buffer pool.
+
+@mal
+
+command setName( b:bat[any::1,any::2] , s:str) : bat[any::1,any::2] = CMDbbprename
+comment "Give a logical name to a BAT. This can fail with an exception
+if a BAT with name 's' already exists. ";
+
+command getName( b:bat[any,any]) : str = CMDbbpname
+comment "Obtain the logical name of a BAT.";
+
+command setColumn( b:bat[any::1,any::2] , h:str, t:str):bat[any::1,any::2]
+	= CMDbbpsetColumns
+comment "Give both columns of a BAT a new name.";
+
+command setColumn( b:bat[any::1,any::2],t:str):bat[any::1,any::2] = CMDbbpsetColumn
+comment "Give the tail column of a BAT a new name.";
+
+command isTransient( b:BAT) :bit = CMDbbpisTransient
+comment "Returns true if the BAT argument is transient.";
+command setTransient( b:BAT) :bit = CMDbbpsetTransient
+comment "Make the BAT transient.  Returns boolean which indicates if the
+BAT administration has indeed changed.";
+
+command isPersistent( b:BAT) : bit = CMDbbpisPersistent
+comment "Returns true if the BAT argument is persistent.";
+command setPersistent( b:BAT) : bit = CMDbbpsetPersistent
+comment "Make the BAT persistent. Returns boolean to indicate if the
+BAT administration has indeed changed.";
+
+command export(b:bat[any,any],fname:str):int = CMDbbpexport
+comment "Save the bat in Monet tuple format on a file.";
+
+command import(b:bat[any,any],fname:str):int = CMDbbpimport
+comment "Read a bat in Monet tuple format from a file.";
+
+@+ Cache management
+The easiest way to control the elements in the BBP is to explicitly
+load/save the bats.
+@mal
+command save(nme:bat[any,any]) : bit = CMDbbpsave
+comment "Save a BAT to storage, if it was loaded and dirty. 
+Returns whether IO was necessary.
+Please realize that calling this function violates 
+the atomic commit protocol!!";
+
+command isCached(b:bat[any,any]):bit = CMDbbpisCached
+comment "Bat is stored in main memory.";
+
+command setHot(name:str) :void = CMDbbphot
+comment "Makes a BAT very hot for the BBP. The chance of being chosen 
+for swapout is low, afterwards.";
+
+command setCold(nme:str) :void = CMDbbpcold
+comment "Makes a BAT very cold for the CMDbbp. The chance of being chosen 
+for swapout is high, afterwards.";
+
+@- Heap Specific Commands
+BATs are stored in memory in a number of Heap objects. A heap is nothing
+more than a contiguous range of memory. Bats are saved to disk by just writing
+away their image. This approach without pointer swizzling makes it possible 
+to either load an image into an alloced range of memory(STORE\_MEM), or 
+memory-map(STORE\_MMAP) an image into virtual memory.
+
+The heap images of a BAT are stored in the {\tt dbfarm/$DB/bat/} 
+directory.  For each bat X, the following heaps are stored:
+\begin{description}
+\item[X.buns] an array with all the fixed-size parts of all BUNs.
+\item[X.hheap] if the head column contains a variable sized atoms(e.g. str),
+then the fixed-size part of a BUN contains an integer byte-offset into 
+the heap. String values themself are stored in this the X.hheap. 
+\item[X.theap] similar to X.hheap, but for the tail column.
+\item[X.hacc]. On each column, you might create {\em persistent accelerator
+structures}. Monet has two builtin accelerators(index and hash), but they
+are normally constructed on the fly. They are transient. Only hash-tables
+you can be made persistent. User-defined accelerators are always persistent.
+Only one persistent accelerator can exist per head column. It is stored in 
+the X.hacc heap.
+\item[X.tacc] similar to X.hacc, but for the tail column. 
+\end{description}
+
+Each of these heaps can be {\bf compressed} using the unix {\tt compress}
+utility forming a X.ext.Z file. Monet wil automatically decompress it
+upon load. Compressed heaps cannot be memory mapped.
+
+A final file present for each t in the BAT directory is:
+\begin{description}
+\item[X.desc] the BAT descriptor. Stores most of the properties of a BAT.
+\end{description}
+@mal
+command mmap(b:BAT, buns_mode:int, hheap_mode:int, theap_mode:int, 
+		hacc_mode:int, tacc_mode:int) : bit = CMDbbpmmap
+comment "For each individual heap, you can change the allocation mode to 
+ either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.
+ Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save 
+(this has to happen before the heap can be mapped into virtual memory). 
+ These modes are persistent. ";
+
+command madvise(b:BAT, buns_mode:int, hheap_mode:int, theap_mode:int, 
+		hacc_mode:int, tacc_mode:int) : bit = CMDbbpmadvise
+comment "Modern Operating Systems allow users to influence the buffer management
+ policy of virtual memory. This is a crucial feature for database systems,
+ and eliminates the need to reimplement the OS in a database buffer manager.
+ The supported flags are BUF_NORMAL (=0)(the normal adaptive kernel algorithm),
+ BUF_RANDOM(=1)(no page prefetching), BUF_SEQUENTIAL(=2) (prefetch and swapout),
+ BUF_WILLNEED(=3)(load everything with prefetch), BUF_DONTNEED(=4) (swapout).
+ These buffer management modes are not persistent.
+ Returns the BAT operated upon.";
+
+@+ Inspection
+The contents of the BAT buffer pool can be inspected using
+on-the-fly derived BATs with dictionary information.
+@mal
+pattern getObjects(): bat[int,str] = CMDbbpGetObjects
+	comment "Pseudo bat to map a BAT id into its box name";
+
+command check() : lng = check_bbp_size
+comment "Walk the BBP directories, delete leftovers and return total size";
+
+@+ Implementation section
+In most cases we pass a BAT identifier, which should be unified
+with a BAT descriptor. Upon failure we can simply abort the function.
+
+@= getBATdescriptor
+        if( BBPcheck(*@2,"@4")==0) 
+		return throwMessage("bbp.@4","cannot access bat @2 in bbp");
+        @3=(BAT*) BBPgetdesc(*@2);
+        if( @3 == NULL) { *@1 = 0;  
+		return throwMessage("bbp.@4","cannot access descriptor @2");
+        }
+	if( *@2 <0) @3= BATmirror(@3);
+@= chkIdentifier
+	/* generate exception if string is not an identifier */
+        if( isIdentifier(@1))
+                return throwMessage( "bbp.@2","identifier expected");
+
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1(the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright(C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
+
+@c
+#include "bbp.h"
+#include "mal_box.h"
+#include "mal_client.h"
+#include "mal.h"
+
+str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	ValRecord vr;
+	if( openBox("bbp")) return MAL_SUCCEED;
+	return throwMessage( "bbp.prelude","failed to open box");
+}
+@- Operator implementation
+@c
+str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	if(openBox("bbp") != 0) return MAL_SUCCEED;
+	return throwMessage( "bbp.open","failed to open box");
+}
+
+str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	if( closeBox("bbp",TRUE) ==0) return MAL_SUCCEED;
+	return throwMessage( "bbp.close","failed to close 'bbp' box");
+}
+str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	@:OpenBox(destroy)@
+	if( getClient() != mal_clients)
+	return throwMessage( "bbp.destroy","not allowed to destroy 'bbp' box");
+	destroyBox("bbp");
+	return MAL_SUCCEED;
+}
+@-
+Access to a box calls for resolving the first parameter
+to a named box.
+@= OpenBox
+	box= findBox("bbp");
+	if( box ==0) 
+	return throwMessage("bbp.@1","box is not open");
+@-
+@c
+str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	ValPtr v;
+	Box box;
+
+	@:OpenBox(deposit)@
+	name = (str) getArgValue(stk,pci,1);
+	@:chkIdentifier(name,deposit)@
+	v = &stk->stk[pci->argv[2]];
+	if(depositBox(box,name,v) ) 
+	return throwException(MALEXCEPTION,"bbp.deposit",
+		"failed to deposit '%s' into box",name);
+	return MAL_SUCCEED;
+}
+
+str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name, loc;
+	Box box;
+
+	@:OpenBox(bind)@
+	name = (str) getArgValue(stk,pci,1);
+	loc = (str) getArgValue(stk,pci,2);
+	@:chkIdentifier(name,bind)@
+	@:chkIdentifier(loc,bind)@
+	if(bindBAT(box,name,loc) )
+	return throwException(MALEXCEPTION,"bbp.bind",
+		"failed to bind '%s' ",name);
+	return MAL_SUCCEED;
+}
+str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	Box box;
+	ValPtr lhs,rhs;
+	int i= -1, k;
+	char msg[1024];
+	BAT *b;
+
+	lhs= &stk->stk[pci->argv[0]];
+	name = (str) getArgValue(stk,pci,1);
+	@:chkIdentifier(name,bind)@
+	box= findBox("bbp");
+        if(box && (i= findVariable(box->sym, name))>=0){
+		rhs= &box->val->stk[i];
+		VALcopy(lhs,rhs);
+		if( lhs->vtype == TYPE_bat){
+			BAT *b;
+			b= (BAT*) BBPgetdesc(lhs->val.bval);
+			if( b ) BBPfix(b->batCacheid);
+			else return throwMessage("bbp.bind","can not access descriptor");
+		}
+		return MAL_SUCCEED;
+	}
+	i= BBPindex(name);
+	if(i == 0)
+		return throwException(MALEXCEPTION,"bbp.bind",
+					"failed to find '%s' in box",name);
+	b= (BAT*) BBPgetdesc(i);
+	if( b == 0 ) {
+		/* Simple ignore the binding if you can;t find the bat */
+		return MAL_SUCCEED;
+	}
+	lhs->vtype = TYPE_bat;
+	lhs->val.bval= i;
+	BBPfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	Box box;
+	ValPtr v;
+
+	@:OpenBox(take)@
+	name = (str) getArgValue(stk,pci,1);
+	@:chkIdentifier(name,take)@
+	v = &stk->stk[pci->argv[0]];
+	if(takeBox(box,name,v)) 
+	return throwException(MALEXCEPTION,"bbp.take",
+			"failed to take '%s' from box",name);
+	/* make a private copy for this client session */
+	/* use the cheapest copy method */
+	return MAL_SUCCEED;
+}
+
+str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	Box box;
+
+	@:OpenBox(release)@
+        name = (str) getArgValue(stk,pci,1);
+        releaseBox(box,name);
+	/* merge the updates of this BAT with the master copy */
+	return MAL_SUCCEED;
+}
+
+str CMDbbpreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+
+	@:OpenBox(releaseAll)@
+	releaseAllBox(box);
+	/* merge the updates with the master copies */
+	return MAL_SUCCEED;
+}
+
+str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	Box box;
+
+	@:OpenBox(discard)@
+        name = (str) getArgValue(stk,pci,1);
+        if( discardBox(box,name) )
+	return throwException(MALEXCEPTION,"bbp.discard",
+				"failed to discard '%s' ", name);
+	return MAL_SUCCEED;
+}
+str CMDbbptoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	int i;
+	ValPtr v;
+	str nme;
+
+	@:OpenBox(toString)@
+	nme = (str) getArgValue(stk,pci,1);
+	i= findVariable(box->sym,nme);
+	if( i <0)
+		return throwException(MALEXCEPTION,"bbp.toString",
+			"failed to take value '%s' from box",nme);
+	v= &box->val->stk[i];
+	garbageElement(&stk->stk[pci->argv[0]]);
+	if( VALconvert(TYPE_str,v, TRUE) == ILLEGALVALUE) 
+	return throwMessage("bbp.toString","illegal value conversion");
+	VALcopy(&stk->stk[pci->argv[0]], v);
+	return MAL_SUCCEED;
+}
+
+str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	lng *cursor;
+	ValPtr v;
+
+	@:OpenBox(iterator)@
+	cursor= (lng*) getArgValue(stk,pci,0);
+	v= &stk->stk[pci->argv[1]];
+	if( nextBoxElement(box, cursor, v))
+		return throwMessage("bbp.iterator","failed");
+	return MAL_SUCCEED;
+}
+@+ BBP Management, IO
+@c
+#include "bbp.h"
+
+str CMDbbpsetColumns(int *r, int *bid, str *hname, str *tname){
+	BAT *b;
+	@:getBATdescriptor(r,bid,b,setColumns)@
+	BATroles(b, *hname, *tname);
+	*r= b->batCacheid;
+	BBPfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+str CMDbbpsetColumn(int *r, int *bid, str *tname){
+	BAT *b;
+	@:getBATdescriptor(r,bid,b,setColumn)@
+	if(*tname==0) return throwMessage("bbp.setColumn","column name missing");
+	BBPfix(b->batCacheid);
+	BATroles(b,b->hident, *tname);
+	*r= b->batCacheid;
+	return MAL_SUCCEED;
+}
+
+str CMDbbprename(int *retval, int *bid, str *s){
+	BAT *b;
+	int ret;
+	@:getBATdescriptor(retval,bid,b,rename)@
+	ret = BATname(b,*s);
+	*retval = *bid;
+        if (ret == 1) 
+	   return throwException(MALEXCEPTION,"bbp.rename",
+			"identifier expected: %s",*s);
+        else if (ret == BBPRENAME_ILLEGAL)
+	   return throwException(MALEXCEPTION,"bbp.rename",
+			"illegal temporary name: '%s'", *s);
+        else if (ret == BBPRENAME_LONG)
+	   return throwException(MALEXCEPTION,"bbp.rename",
+			"name too long: '%s'", *s);
+        else /* if (ret == BBPRENAME_ALREADY) 
+	   return throwMessage("bbp.rename","renamed already"); */
+	return MAL_SUCCEED;
+}
+
+str CMDbbpname(str *retval, int *bid){
+	BAT *b;
+	@:getBATdescriptor(retval,bid,b,name)@
+	*retval = GDKstrdup(BBPname(b->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str CMDbbpsetPersistent(int *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,setPersistence)@
+	BATpropcheck(b);
+	BATpropcheck(BATmirror(b));
+	*res= b->batPersistence & PERSISTENT;
+	BATmode(b, PERSISTENT);
+        return MAL_SUCCEED;
+}
+str CMDbbpisPersistent(int *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,setPersistence)@
+	BATpropcheck(b);
+	BATpropcheck(BATmirror(b));
+	BATmode(b, PERSISTENT);
+	*res= b->batPersistence & PERSISTENT;
+        return MAL_SUCCEED;
+}
+str CMDbbpsetTransient(int *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,setTransient)@
+	*res= b->batPersistence & TRANSIENT;
+	BATmode(b, TRANSIENT);
+        return MAL_SUCCEED;
+}
+str CMDbbpisTransient(bit *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,setTransient)@
+	*res= b->batPersistence & TRANSIENT;
+        return MAL_SUCCEED;
+}
+str CMDbbpunload(bit *res, str *input) {
+        int bid = ABS(BBPindex(*input));
+	*res = FALSE;
+        if (bid > 0) {
+		BBPfix(bid);
+		*res = BBPunload(bid);
+	}
+        return MAL_SUCCEED;
+}
+str CMDbbpisCached(int *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,isCached)@
+	*res = 0;
+	return throwMessage("bbp.isCached","not yet implemented");
+}
+str CMDbbpload(int *res, str *input) {
+	int bid= BBPindex(*input);
+	*res = bid;
+	if(bid) return MAL_SUCCEED;
+	return throwMessage("bbp.load","loading failed");
+}
+
+str CMDbbphot(str *input) {
+	BBPhot(BBPindex(*input));
+	return MAL_SUCCEED;
+}
+
+str CMDbbpcold(str *input) {
+	BBPcold(BBPindex(*input));
+	return MAL_SUCCEED;
+}
+
+str CMDbbpsave(bit *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,save)@
+	if( *bid <0) b= BATmirror(b);
+	if (b && BATdirty(b)) { 
+		if (BBPsave(b) == 0) *res = TRUE;
+	}
+	BBPunfix(*bid);
+        return MAL_SUCCEED;
+}
+
+
+@= change_heap
+{	int mode = (@2).storage;
+	if (mode == STORE_MMAP && (@2).filename == NULL) 
+		mode = STORE_MEM;  
+	if ((@2).base == NULL || *@1 == int_nil || *@1 == mode) {
+		*@1 = -1;
+	}
+}
+@c
+str CMDbbpmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
+			int *hacc, int *tacc)
+{	BAT *b;
+	@:getBATdescriptor(res,bid,b,mmap)@
+	@:change_heap(bns,(*b->batBuns))@
+	@:change_heap(hhp,b->hheap)@
+	@:change_heap(thp,b->theap)@
+	@:change_heap(hacc,b->haccelerator)@
+	@:change_heap(tacc,b->taccelerator)@
+	if (BATmmap(b, *bns, *hhp, *thp, *hacc, *tacc) == 0) {
+		*res = TRUE;
+		return MAL_SUCCEED;
+	}
+	*res = FALSE;
+	return throwMessage("bbp.mmap","failed");
+}
+
+str CMDbbpmadvise(int *res, int *bid, int *bns, int *hhp, int *thp, 
+		 	        int *hacc, int *tacc)
+{	BAT *b;
+	@:getBATdescriptor(res,bid,b,madvice)@
+	*res= BATmadvise(b, (*bns==int_nil)?-1:*bns, 
+		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp, 
+		(*hacc==int_nil)?-1:*hacc, 
+		(*tacc==int_nil)?-1:*tacc);
+	if(*res) return throwMessage("bbp.advise","failed");
+	return MAL_SUCCEED;
+}
+
+@+ Bulk export/loading
+To simplify conversion between versions and to interface with other 
+applications, we use a simple import/export operation.
+
+The conversion routine assumes space in the buffer for storing the result.
+@{
+@c
+@-
+A BAT can be saved in Monet format using the export command.
+It is of particular use in preparing an ascii version for migration.
+The exported file is saved in the context of the directory
+where the server was started unless an absolute file name was
+presented.
+@c
+str CMDbbpexport(int *ret, int *bid, str *fnme) {
+	BAT *b;
+	FILE	*f = fopen(*fnme, "w");
+	@:getBATdescriptor(ret,bid,b,export)@
+	if (f == NULL) {
+		*ret = 0;
+		return throwException(MALEXCEPTION,"export",
+			"could not open file %s",*fnme);
+	}
+	BATprintf(f,b);
+	fclose(f);
+	*ret = TRUE;
+	return MAL_SUCCEED;
+}
+
+@
+The import command reads a single BAT from an ascii file. It assumes
+a layout compatible with that produced by print or export.
+@c
+str CMDbbpimport(int *ret, int *bid, str *fnme) {
+	BAT *b;
+	int	(*hconvert)(), (*tconvert)();
+	int	bufsize = 2048; /* NIELS: tmp change used to be 1024 */
+	char	*base, *cur, *end;
+	char	*buf = (char *) GDKmalloc(bufsize);
+	ptr	*h = 0, *t = 0;
+	int	lh = 0,	lt = 0;
+	FILE	*fp = fopen(*fnme, "r");
+
+	@:getBATdescriptor(ret,bid,b,import)@
+	hconvert = BATatoms[BAThtype(b)].atomFromStr;
+	tconvert = BATatoms[BATttype(b)].atomFromStr;
+@-
+Open the file. Memory map it to minimize buffering problems.
+@c
+        if (fp == NULL) {
+		return throwException(MALEXCEPTION,"import",
+			"could not open file %s",fnme);
+	} else {
+	    	struct stat st;
+            	fstat(fileno(fp), &st);
+		(void)fclose(fp); 
+            	base = cur = (char*)MT_mmap(*fnme, 0, 0, st.st_size, NULL);
+		end = cur + st.st_size;
+	}
+@-
+Parse a line. Copy it into a buffer. Concat broken lines with a slash. 
+@c
+	while(cur < end) {
+		str dst = buf, src = cur, p = strchr(cur, '\n');
+		int l = p - cur;
+
+		if (!p) {
+			p = end;
+		} else while(src[l-1] == '\\') {
+			@:memcpy@
+			dst += l-1; src += l+1;
+			if ((p = strchr(src, '\n')) == 0) {
+				p = end; break;
+			}
+			l = p - src;
+		} 
+		@:memcpy@
+@= memcpy
+		if (buf+bufsize < dst+l) {
+		        int len = dst - buf;
+			int inc = (dst+l) - buf;
+			buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
+			dst = buf + len;
+		}
+		memcpy(dst, src, l-1);
+@c
+		dst[l] = 0;
+		cur = p+1;
+@-
+Parse the line, and insert a BUN.
+@c
+		for(p = buf; *p && GDKisspace(*p); p++);
+		if (*p == '#') continue;
+@= parsevalue
+	       	for (;*p && ((int) *p) != @2; p++);
+		if (*p) for (p++; *p && GDKisspace(*p); p++);
+       		if (*p == 0){
+			*ret = FALSE;
+		       	return throwException(MALEXCEPTION,"BBPimport",
+					"error in %s",buf);
+       		}
+       		p += @1(p, @3, @4);			
+@c
+		@:parsevalue(hconvert, '[', &lh, &h)@
+		@:parsevalue(tconvert, 44, &lt, &t)@
+		BUNins(b, h, t);
+		
+@-
+Unmap already parsed memory, to keep the memory usage low. 
+@c
+#define MAXBUF 40*MT_pagesize()
+		if (cur - base > MAXBUF) {
+			MT_munmap(base, MAXBUF);
+			base += MAXBUF;
+		} 
+	}
+@-
+Cleanup and exit. Return the filled BAT.
+@c
+	if (h) GDKfree(h);
+	if (t) GDKfree(t);
+	GDKfree(buf);
+	MT_munmap(base, end-base);
+	BBPfix(b->batCacheid);
+	*ret = TRUE;
+	return MAL_SUCCEED;
+}
+@+ BBP status
+The BAT buffer pool datastructures describe the memory resident information
+on the whereabouts of the BATs. The three predominant tables are made accessible
+for inspection. 
+
+The most interesting sysbat for end-users is the BID-> NAME mapping,
+because it provides access to the system guaranteed persistent BAT identifier.
+@= Pseudo
+	if (BBPindex("@1_@2") <= 0)
+        	BATname(b, "@2");
+        BATroles(b,"@1","@2");
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+	
+@c
+str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	BAT*    b;
+        int     i;
+	ValPtr  v;
+	Box 	box;
+	int	*ret;
+
+	@:OpenBox(getObjects)@
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return throwMessage("bbp.getObjects","GDKerror");
+	for(i=0;i<box->sym->vtop;i++){
+		v = &box->val->stk[i];
+		BUNins(b, &v->val.bval, getVarName(box->sym,i));
+	}
+
+	ret = (int *) getArgReference(stk,pci,0);
+	@:Pseudo(bbp,objects)@
+        return MAL_SUCCEED;
+}

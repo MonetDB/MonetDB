@@ -1,0 +1,92 @@
+@t Conformance
+@a M Kersten
+@* Introduction
+The Mil-2-Mal compiler assures conversion of identifiers.
+Since there may be conflicts with user defined identifiers,
+we produce a warning listing at the end of each program with
+the identifier mappings performed.
+
+Note that not all identifiers can be mapped automatically.
+In particuler the following list indicates those requireing
+interventions of the users.
+
+Version 4.3		Version 5.		Comments
+---------------- Alignment with C -----------------------
+			bbpBATrefcnt(bat)
+and( bit,bit)		&&(bit,bit)	
+or(bit,bit)		||(bit,bit)	
+not(bit)		!(bit)
+=(x,y)			==(x,y)
+@* Implementation
+@c
+#include "gdk.h"
+struct{
+	str v4name;
+	str v5name;
+	int used;
+} idmap[]={
+{"synced",		"isSynced",0},
+{"col_name",		"bbp.setColumn",0},
+{"name",		"bbp.setRole",0},
+{"rename",		"bbp.setName",0},
+{"persists",		"bbp.{setPersistent,isPersistent,setTransient,isTransient,isCached}",0},
+{"cold",		"bbp.setCold",0},
+{"hot",			"bbp.setHot",0},
+{"view_bbp_name",	"catalog.bbpNames",0},
+{"view_bbp_refcnt",	"catalog.bbpRefcnt",0},
+{"view_bbp_location",	"catalog.bbpLocation",0},
+{"view_bbp_heat",	"catalog.bbpHeat",0},
+{"view_bbp_dirty",	"catalog.bbpDirty",0},
+{"view_bbp_status",	"catalog.bbpStatus",0},
+{"view_bbp_kind",	"catalog.bbpKind",0},
+{"key",			"bat.setKey,isaKey",0},
+{"set",			"bat.setSet,isaSet",0},
+{"access",		"bat.{setReadMode,setAppendMode,setWriteMode,setAccess}",0},
+{"access",		"bat.{hasReadMode,hasAppendMode,hasWriteMode,hasAccess}",0},
+{"ordered",		"bat.isSorted",0},
+{"seqbase",		"bat.setSequenceBase",0},
+{"batsize",		"bat.bbpBatSize",0},
+{"htype",		"getHeadType",0},
+{"ttype",		"getTailType",0},
+{"enum_create",		"enum.{smallMap,largeMap,map}",0},
+{"enum_load",		"enum.load",0},
+{"enum_table",		"enum.table",0},
+{"enum_sethisto",	"enum.setHistogram",0},
+{"enum_ishisto",	"enum.isHistogram",0},
+{"enum_print",		"enum.printEnum",0},
+{"enum_drop",		"enum.destroy",0},
+{"isenum",		"enum.isEnum",0},
+{"CTgroup",		"group",0},
+{"CTrefine",		"refine",0},
+{"CTderive",		"group",0},
+{"CTregroup",		"regroup",0},
+{"time",		"alarm.time()",0},
+{"epoch",		"alarm.epoch()",0},
+{"ctime",		"alarm.ctime()",0},
+{0,0,0}
+};
+
+str mapid(str n){
+	int i;
+	for(i=0; idmap[i].v4name; i++)
+	if(strcmp(n,idmap[i].v4name)==0){
+		idmap[i].used++;
+		return GDKstrdup(idmap[i].v5name);
+	}
+	return n;
+}
+int ismapped(str n){
+	int i;
+	for(i=0; idmap[i].v4name; i++)
+	if(strcmp(n,idmap[i].v5name)==0){
+		return 1;
+	}
+	return 0;
+}
+void showmappings(){
+	int i;
+	for(i=0; idmap[i].v4name; i++)
+	if( idmap[i].used)
+	fprintf(stdout,"#Identifer '%s' mapped to '%s'\n", 
+		idmap[i].v4name, idmap[i].v5name);
+}

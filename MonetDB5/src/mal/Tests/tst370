@@ -1,0 +1,11 @@
+# experimental code section
+# permit modules and functions to be designated by function parameters
+function z(mod:str,nme:str,title:str):bat;
+        b:= mod.nme();
+        setName(b,title);
+        return b;
+end z;
+
+	r:= z("catalog","bbpNames","names");
+	print(r);
+

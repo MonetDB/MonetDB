@@ -1,0 +1,23 @@
+# functions and rules with variable arguments complicate our live
+
+function pr(format:str,arg:any...):void;
+	i:= -1;
+barrier  b:= iterator.argument(i,arg);
+exit b;
+end pr; 
+
+# how to iterator through a variable list
+function prStr(format:str,arg:str...):void;
+	i:= -1;
+	limit:= Array.getLength(arg);
+barrier  b:= nextElement(i,0,limit);	#elm:= arg[i]
+	elm:= Array.get(arg,i);  #elm:= arg[i]
+	printf("argument ");
+	printf(i);
+	printf(elm);
+exit b;
+end prStr; 
+
+pr("hello",1,true);
+prStr("hello",1,true);
+prStr("hello","quick","brown","fox");

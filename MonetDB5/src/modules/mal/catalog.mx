@@ -1,0 +1,1282 @@
+@f catalog
+@t Monet Catalog
+@a Martin Kersten
+@v 1
+@* Introduction
+This document introduces a series of bats that provide access
+to information stored within the Monet Version 5 internal data structures.
+In all cases, the pseudo BAT operation returns a transient BAT that
+should be garbage collected after being used.
+
+The catalog module combines all views over system resources. 
+They are organized by functional component. 
+Note that retrieval of  and update to properties of
+individual BATs are handled in the corresponding functional module.
+
+The main performance drain would be to use a pseudo BAT directly to
+successively access it components. This can be avoided by first assigning
+the pseudo BAT to a variable.
+
+@* Module Definition 
+The system primitives have been taken over from version 4.
+A database system requires a catalog easily browsable by the
+users to inspect the actual system state, or to administer
+users, programs, etc...
+
+@mal 
+module catalog;
+
+@- MAL interpreter status
+The prime scheme to inspect the MAL interpreter status is to use
+the MAL debugger. However, in case of automatic exception handling
+it helps to be able to obtain BAT versions of the critical information,
+such as symbol table (catalog.var_*),
+stack trace (catalog.stk_where),
+variable values and their binding (catalog.stk_*),
+and the instruction(s) being executed (catalog.mal_stmt).
+The inspection typically occurs in the exception handling part of the
+MAL block.
+@mal
+pattern varType() : bat[str,str] = CATALOGVarType
+	comment "Collect variables types";
+pattern varUsed() : bat[str,str] = CATALOGVarUsed
+	comment "Collect variable used";
+pattern varConstant() : bat[str,str] = CATALOGVarConstant
+	comment "Collect constant variables";
+
+pattern stkDepth():int = CATALOGStkDepth
+	comment "Return the depth of the calling stack.";
+pattern stkFrame(i:int):bat[str,str] = CATALOGStkFrameN
+	comment "Map variable name to its value (as a string).";
+pattern stkFrame():bat[str,str] = CATALOGStkFrame
+	comment "Map variable name to its value (as a string).";
+
+@+ MAL modules and scopes
+Each module forms a separately named scope. Scopes visible to a user
+are relevant for resolving function names.
+
+@mal
+command scopeNames() : bat[void,str] = CATALOGscopeNames
+        comment "Collect bat with all visible scopes" ;
+
+command symbolNames():bat[str,str] = CATALOGsymbolNames
+	comment "Create bat with the module and function pairs";
+command patternNames():bat[str,str] = CATALOGpatternNames
+	comment "Create bat with the module and pattern pairs";
+command commandNames():bat[str,str] = CATALOGcommandNames
+	comment "Create bat with the module and commands pairs";
+command functionNames():bat[str,str] = CATALOGfunctionNames
+	comment "Create bat with the module and function pairs";
+
+pattern symbolDump():bat[void,str] = CATALOGsymbolDump
+comment "Returns a string representation of the current function 
+with typing information attached";
+pattern symbolDefinition():bat[void,str] = CATALOGcurrSymbolDef
+comment "Returns a string representation of the current function";
+command symbolDefinition(mod:str,fcn:str):bat[int,str] = CATALOGsymbolDef
+comment "Returns a string representation of a specific function";
+
+command symbolSignature(mod:str,fcn:str):bat[str,str] = CATALOGsymbolSignature
+comment "Returns the signature(s) of a function";
+
+command symbolType(mod:str,fcn:str):bat[str,str] = CATALOGsymbolType
+comment "Get the return type of a particular function";
+
+command atomNames():bat[int,str] = CATALOGatom_names
+comment "Collect a BAT with the atom names";
+
+@- Kernel Performance Statistics
+The BATs created below are rather expensive views over the
+GDK kernel. They have been retained for backward compatibility.
+
+@mal
+command gdkCPU() : bat[str,int] = CATALOGgdkCPU
+	comment "Global cpu usage information";
+command gdkMemory(): bat[str,int] = CATALOGgdkMem
+	comment "Global memory usage information";
+command gdkIO(): bat[str,int] = CATALOGgdkIO
+	comment "Global IO activity information";
+command gdkBBP(): bat[str,int] = CATALOGgdkBBP
+	comment "Global BBP usage information";
+
+command vmUsage(minsize:lng) : bat[str,lng] = CATALOGvm_usage
+        comment "Get a split-up of how much virtual memory blocks are in use.";
+command memUsage(minsize:lng) : bat[str,lng] = CATALOGmem_usage
+        comment "Get a split-up of how much memory blocks are in use.";
+@- 
+If Monet is compiled with the profiler option, then it is
+possible to analyse the timeings obtained in the context of
+a database query itself.
+For each instruction executed, the profiler keeps track of the number of calls
+and the total time spent in microseconds.
+These statistics are accessed on a <module,function> basis.
+
+@mal
+command profCnt(mod:str,fcn:str):bat[int,int] = CATALOGprofCntModFcn
+comment "Returns the counts measured while profileing the MAL interpreter";
+
+command profTime(mod:str,fcn:str):bat[int,int] = CATALOGprofTime
+comment "Returns the total microseconds measured while profileing 
+the MAL interpreter";
+
+@- MAL database schema
+The database is organized as BATs in the buffer pool.
+Additional tables for ease of inspection and realization of the old-fashioned
+ls(), dir(),... primitives
+@mal
+command bbpHeadType():bat[int,str]= CATALOGbbpTailType
+	comment "BAT listing all head types");
+command bbpTailType():bat[int,str]= CATALOGbbpTailType
+	comment "BAT listing all head types");
+@- BAT buffer pool
+
+@mal
+command bbpNames(): bat[int,str] = CATALOGbbpNames
+	comment "Map a BAT id into its name";
+command bbpCount(): bat[int,lng] = CATALOGbbpCount
+	comment "Map a BAT id into its cardinality";
+command bbpRefcnt(): bat[int,int] = CATALOGbbpRefcnt
+	comment "Map a BAT id into its reference count";
+command bbpLocation(): bat[int,str] = CATALOGbbpLocation
+	comment "Map a BAT id into its disk location";
+command bbpHeat(): bat[int,int] = CATALOGbbpHeat
+	comment "Map a BAT id into its name";
+command bbpDirty(): bat[int,str] = CATALOGbbpDirty
+	comment "Map a BAT id into its dirty/diffs/clean status";
+command bbpStatus(): bat[int,str] = CATALOGbbpStatus
+	comment "Map a BAT id into its disk/load status";
+command bbpKind(): bat[int,str] = CATALOGbbpKind
+	comment "Map a BAT id into its type";
+
+@- MAL runtime status 
+@mal
+command gdkEnv( ): bat[str,str] = CATALOGgdkEnv
+	comment "Pseudo bat to map thread to name";
+command gdkThread( ): bat[int,str] = CATALOGgdkThread
+	comment "Pseudo bat to map thread to name";
+
+@- Monet Client Data
+The client information can be used to inspect the status of
+multiple interacting clients.
+@mal
+command clientNames( ): bat[int,str] = CATALOGclientNames
+	comment "Pseudo bat to map client identifiers to its name";
+command clientLogin( ): bat[int,str] = CATALOGclientLogin
+	comment "Pseudo bat to map client identifiers to their login time";
+command clientInfo( ): bat[int,str] = CATALOGclientInfo
+	comment "Pseudo bat with client attributes ";
+@- Monet help system
+All procedural abstractions may contain a string with commentary text.
+This information is retained in the symbol table for subsequent use.
+Often, it is more appropriate to extract the comments into a BAT
+for subsequent analysis.
+@mal
+command help(k:str):bat[str,str] = CATALOGhelp
+comment "Search the commentary strings for one matching the keyword";
+
+command helpComment(mod:str):bat[str,str] = CATALOGhelpComment
+comment "Collect the commentaries for all routines in a given module";
+command helpComment(mod:str,fcn:str):bat[int,str] = CATALOGhelpComment2
+comment "Obtain the comments for a given function";
+@- Monet enquire
+The old-fashioned enquire operators are defined for backward
+compliance only.
+@mal
+function modules():void;
+        t:= scopeNames();
+        print(t);
+end modules;
+
+function env():void;
+        t:= gdkEnv();
+        print(t);
+end env;
+function environment():void;
+        t:= gdkEnv();
+        print(t);
+end environment;
+function cpu():bat[str,int];
+	v:= gdkCPU();
+        return v;
+end cpu;
+function memory():bat[str,int];
+	v:= gdkMemory();
+        return v;
+end memory;
+function io():bat[str,int];
+	v:= gdkIO();
+        return v;
+end io;
+function bbp():bat[str,int];
+	v:= gdkBBP();
+        return v;
+end bbp;
+
+function dir(b:bat[int,str]):void;
+	atm:= catalog.atomNames();
+	brev:= reverse(b);
+	bm := mirror(brev);
+	h := catalog.bbpHeadType();
+	bHead:= join(brev,h);
+	setName(bHead,"htype");
+	h := catalog.bbpTailType();
+	bTail:= join(brev,h);
+	setName(bTail,"ttype");
+	bcount:= catalog.bbpCount();
+	bCount:= join(brev,bcount);
+	setName(bCount,"count");
+	bheat:= catalog.bbpHeat();
+	bHeat:= join(brev,bheat);
+	setName(bHeat,"heat");
+	bdirty:= catalog.bbpDirty();
+	bDirty:= join(brev,bdirty);
+	setName(bDirty,"dirty");
+	bstatus:= catalog.bbpDirty();
+	bStatus:= join(brev,bstatus);
+	setName(bStatus,"status");
+	bkind:= catalog.bbpKind();
+	bKind:= join(brev,bkind);
+	setName(bKind,"kind");
+	bref:= catalog.bbpRefcnt();
+	bRef:= join(brev,bref);
+	setName(bRef,"refcnt");
+	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
+end dir;
+
+function dir(s:str):void;
+	t:= catalog.bbpNames();
+	tn:= like(t,s);
+	print(tn);
+	dir(tn);
+end dir;
+function dir():void;
+	t:= catalog.bbpNames();
+	dir(t);
+end dir;
+
+function ls():void;
+	nme:= catalog.bbpNames();
+	sc_a := catalog.bbpKind();
+	tc_a := select(sc_a,"persistent");
+	prs:= semijoin(nme,tc_a);
+	uc_a := int(nil);
+	vc_a := reverse(nme);
+	wc_a := select(vc_a,uc_a,-1);
+	xc_a := multiplex.tactics("*",wc_a,-1);
+	rev:= reverse(xc_a);
+	yc_a := setWriteMode(prs);
+	ad_a := setColumn(yc_a,"name");
+	bd_a := replace(ad_a,rev);
+	cd_a := dir(bd_a);
+end ls;
+
+function ls(substr:str):void;
+	dd_a := catalog.bbpNames();
+	nme:= like(dd_a,substr);
+	ed_a := catalog.bbpKind();
+	fd_a := select(ed_a,"persistent");
+	prs:= semijoin(nme,fd_a);
+	gd_a := int(nil);
+	hd_a := reverse(nme);
+	id_a := select(hd_a,gd_a,-1);
+	jd_a := multiplex.tactics("*",id_a,-1);
+	rev:= reverse(jd_a);
+	kd_a := setWriteMode(prs,);
+	ld_a := setColumn(kd_a,"name");
+	md_a := replace(ld_a,rev);
+	nd_a := dir(md_a);
+end ls;
+@+ Implementation
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+#ifdef _CATALOG_H
+#endif _CATALOG_H
+@c
+#include <stdarg.h>
+#include <time.h>
+#include "gdk.h"
+#include "mal_resolve.h"
+#include "mal_client.h"
+#include "mal_function.h"
+#include "monet.h"
+
+@+ Variables and stack information
+The variable information can be turned into a BAT for inspection as well.
+
+@= Pseudo
+        if (BBPindex("view_@1_@2") <= 0)
+                BATname(b, "@2");
+        BATroles(b,"@1","@2");
+        BATmode(b,TRANSIENT);
+        BATfakeCommit(b);
+        *ret = b->batCacheid;
+
+@c
+str CATALOGVarType(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	int i, *ret= (int*) getArgReference(s,p,0);
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+	if (b == 0) return throwMessage("catalog.varType", "failed to create BAT");
+
+	for(i=0 ; i<s->stktop ; i++)
+		BUNins(b,getVarName(m,i),malTypeName(getVarType(m,i)));
+	@:Pseudo(var,type)@
+	return MAL_SUCCEED;
+}
+str CATALOGVarUsed(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	int i, *ret= (int*) getArgReference(s,p,0);
+	BAT *b = BATnew(TYPE_str, TYPE_void, 256);
+	if (b == 0) return throwMessage("catalog.varUsed", "failed to create BAT");
+
+	for(i=0 ; i<s->stktop ; i++)
+	if( isVarUsed(m,i))
+		BUNins(b,getVarName(m,i), &int_nil);
+	@:Pseudo(var,used)@
+	return MAL_SUCCEED;
+}
+str CATALOGVarConstant(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	int i, *ret= (int*) getArgReference(s,p,0);
+	BAT *b = BATnew(TYPE_str, TYPE_void, 256);
+	if (b == 0) return throwMessage("catalog.varConstant", "failed to create BAT");
+
+	for(i=0 ; i<s->stktop ; i++)
+	if(isVarConstant(m,i))
+		BUNins(b,getVarName(m,i),&int_nil);
+	@:Pseudo(var,constant)@
+	return MAL_SUCCEED;
+}
+str CATALOGStkDepth(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	int i=0, *ret= (int*) getArgReference(s,p,0);
+	while(s!= 0){
+		i++;
+		s= s->up;
+	}
+	*ret= i;
+	return MAL_SUCCEED;
+}
+str CATALOGgetFrame(BAT *b, MalBlkPtr mb, MalStkPtr s,int depth){
+	ValPtr v;
+	int i;
+	char *buf=0;
+	if(depth> 0) return CATALOGgetFrame(b,mb,s->up,depth-1);
+	if( s!= 0)
+	for(i=0 ; i<s->stktop ; i++,v++){
+		v= &s->stk[i];
+		ATOMformat(v->vtype, VALget(v), &buf);
+		BUNins(b,getVarName(mb,i),buf);
+	}
+	return MAL_SUCCEED;
+}
+str CATALOGStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	int *ret= (int*) getArgReference(s,p,0);
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+	if (b == 0) return throwMessage("catalog.stkFrame", "failed to create BAT");
+	@:Pseudo(stk,frame)@
+	return CATALOGgetFrame(b,m,s,0);
+}
+str CATALOGStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	int n, *ret= (int*) getArgReference(s,p,0);
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+
+	n= *(int*) getArgReference(s,p,1);
+	if(n<0) return throwMessage("catalog.stkFrame", "illegal depth.");
+	@:Pseudo(stk,frame)@
+	return CATALOGgetFrame(b,m,s,n-1);
+}
+@+ Symbol table 
+Mal symbol table and environment analysis.
+@c
+
+str CATALOGscopeNames(int *ret){
+	Client c;
+	Scope s;
+	int i=0;
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+
+        if (b == 0) return throwMessage("catalog.scopeNames", "failed to create BAT");
+	c= getClient();
+
+	for(s=c->nspace; s; s= s->outer,i++)
+		BUNins(b,&int_nil,s->name);
+
+	@:Pseudo(scope,names)@
+	return MAL_SUCCEED;
+}
+str CATALOGsymbolFind(int *ret,int kind)
+{	Client c;
+	Scope s;
+	Symbol t;
+	int i;
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+
+        if (b == 0) return throwMessage("catalog.symbolFind", "failed to create BAT");
+	c= getClient();
+	s= c->nspace;
+	while(s){
+		for(i=0;s && i<MAXSCOPE;i++)
+		if( s->subscope[i]){
+			for(t= s->subscope[i];t;t=t->peer){
+			InstrPtr sig= getSignature(t);
+			if( kind && kind != sig->token) continue;
+			BUNins(b,sig->modname,sig->fcnname);
+			}
+		}
+		s= s->outer;
+	}
+	@:Pseudo(symbol,name)@
+	return MAL_SUCCEED;
+}
+str CATALOGsymbolNames(int *ret){ return CATALOGsymbolFind(ret,0); }
+str CATALOGfunctionNames(int *ret){ return CATALOGsymbolFind(ret,FUNCTIONsymbol); }
+str CATALOGpatternNames(int *ret){ return CATALOGsymbolFind(ret,PATTERNsymbol); }
+str CATALOGcommandNames(int *ret){ return CATALOGsymbolFind(ret,COMMANDsymbol); }
+
+str CATALOGsymbolDef(int *ret, str *nme, str *fcn)
+{	Symbol s;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+        if(b == 0) return throwMessage("catalog.symbolDefinition", "failed to create BAT");
+	
+	s= findSymbol(*nme,*fcn);
+	while(s){
+		int i;
+		str ps;
+		for(i=0;i<s->def->stop;i++){
+			ps= instruction2str(s->def, getInstrPtr(s->def,i),0);
+			BUNins(b,&i,ps);
+			GDKfree(ps);
+		}
+		s= s->peer;
+	}
+	@:Pseudo(fcn,stmt)@
+	return MAL_SUCCEED;
+}
+str CATALOGsymbolDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
+{	int i, *ret= (int*)getArgReference(stk,p,0);
+	str ps, cm;
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+        if(b == 0) return throwMessage("catalog.symbolDump", "failed to create BAT");
+	
+	for(i=0;i<m->stop;i++){
+		ps= instruction2str(m, getInstrPtr(m,i),1);
+		BUNins(b,&int_nil,ps);
+		GDKfree(ps);
+	}
+	@:Pseudo(fcn,stmt)@
+	return MAL_SUCCEED;
+}
+str CATALOGcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
+{	int i, *ret= (int*)getArgReference(stk,p,0);
+	str ps, cm;
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+        if(b == 0) return throwMessage("catalog.symbolDefinition", "failed to create BAT");
+	
+	for(i=0;i<m->stop;i++){
+		ps= instruction2str(m, getInstrPtr(m,i),0);
+		BUNins(b,&int_nil,ps);
+		GDKfree(ps);
+	}
+	@:Pseudo(fcn,stmt)@
+	return MAL_SUCCEED;
+}
+str CATALOGsymbolSignature(int *ret, str *mod, str *fcn)
+{	Symbol s;
+	str msg;
+	str ps,cm;
+	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+        if (b == 0) return throwMessage("catalog.symbolSignature", "failed to create BAT");
+
+	s= findSymbol(*mod,*fcn);
+	while(s!= NULL){
+		msg= s->def->help;
+		if( msg && idcmp(s->name,*fcn)==0) {
+			ps= instruction2str(s->def, getSignature(s),0);
+			BUNins(b,s->name,ps);
+			GDKfree(ps);
+		}
+		s= s->peer;
+	}
+
+	@:Pseudo(fcn,sig)@
+	return MAL_SUCCEED;
+}
+str CATALOGsymbolType(int *ret, str *mod, str *fcn) 
+{	Symbol s;
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+        if (b == 0) return throwMessage("catalog.symbolType", "failed to create BAT");
+
+	s= findSymbol(*mod,*fcn);
+	while(s!= NULL){
+		if( idcmp(s->name,*fcn)==0) {
+			str t=malTypeName(getDestType(s->def,getSignature(s)));
+			BUNins(b,s->name,t);
+			GDKfree(t);
+		}
+		s= s->peer;
+	}
+	@:Pseudo(fcn,type)@
+	return MAL_SUCCEED;
+}
+str CATALOGhelp(int *ret, str *mod) 
+{	Client cntxt= getClient();
+	Scope m;
+	Symbol s;
+	str msg;
+	int i;
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+        if (b == 0) return throwMessage("catalog.help", "failed to create BAT");
+        return throwMessage("catalog.help", "Search by keyword not yet available");
+
+	m= findScope(cntxt->nspace,*mod);
+	if(m)
+	for(i=0;i<256;i++){
+		s= m->subscope[i];
+		while(s!= NULL){
+			msg= s->def->help;
+			if( msg){
+				BUNins(b,s->name,msg);
+			}
+			s= s->peer;
+		}
+	}
+	@:Pseudo(help,Comment)@
+	return MAL_SUCCEED;
+}
+str CATALOGhelpComment(int *ret, str *mod) 
+{	Client cntxt= getClient();
+	Scope m;
+	Symbol s;
+	str msg;
+	int i;
+
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+        if (b == 0) return throwMessage("catalog.helpComment", "failed to create BAT");
+
+	m= findScope(cntxt->nspace,*mod);
+	if(m)
+	for(i=0;i<256;i++){
+		s= m->subscope[i];
+		while(s!= NULL){
+			msg= s->def->help;
+			if(msg== NULL) msg= str_nil;
+			BUNins(b,s->name,msg);
+			s= s->peer;
+		}
+	}
+	@:Pseudo(help,Comment)@
+	return MAL_SUCCEED;
+}
+str CATALOGhelpComment2(int *ret, str *mod, str *fcn) 
+{	Symbol s;
+	str msg;
+
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+        if (b == 0) return throwMessage("catalog.helpComment", "failed to create BAT");
+
+	s= findSymbol(*mod,*fcn);
+	while(s!= NULL){
+		if(idcmp(s->name,*fcn)==0){
+			msg= s->def->help;
+			if(msg== NULL) msg= str_nil;
+			BUNins(b,s->name,msg);
+		}
+		s= s->peer;
+	}
+	@:Pseudo(help,Comment)@
+	return MAL_SUCCEED;
+}
+
+str CATALOGatom_names(int *ret)
+{	int i;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+        if (b == 0) return throwMessage("catalog.atomNames", "failed to create BAT");
+
+	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(i));
+
+	@:Pseudo(atom,name)@
+	return MAL_SUCCEED;
+}
+@+ BBP status
+The BAT buffer pool datastructures describe the memory resident information
+on the whereabouts of the BATs. The three predominant tables are made accessible
+for inspection. 
+
+The most interesting sysbat for end-users is the BID-> NAME mapping,
+because it provides access to the system guaranteed persistent BAT identifier.
+@= Pseudo
+	if (BBPindex("CATALOG@1_@2") <= 0)
+        	BATname(b, "@2");
+        BATroles(b,"@1","@2");
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+	
+@c
+str CATALOGbbpNames( int *ret){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbpNames", "failed to create BAT");
+
+	BBPlock("CATALOGbbpNames");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+        	if (BBP_logical(i)) { 
+			BUNins(b, &i, BBP_logical(i));
+        		if (BBP_logical(-i)) {
+				int j = -i;
+				BUNins(b, &j, BBP_logical(j));
+			}
+		}
+	}
+	BBPunlock("CATALOGbbpNames");
+	@:Pseudo(bbp,name)@
+        return MAL_SUCCEED;
+}
+str CATALOGbbpCount( int *ret){       
+	BAT	*b,*bn;
+        int     i;
+	lng	l;
+
+        b= BATnew(TYPE_int,TYPE_lng,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbpCount", "failed to create BAT");
+
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+        	if (BBP_logical(i)) { 
+			bn= BATdescriptor(i);
+			if(bn){
+				l= BATcount(bn);
+				BUNins(b, &i, &l);
+			}
+		}
+	}
+	@:Pseudo(bbp,count)@
+        return MAL_SUCCEED;
+}
+@-
+@= headtailProperty
+str CATALOGbbp@2( int *ret){       
+	BAT	*b,*bn;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbp@2", "failed to create BAT");
+
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+        	if (BBP_logical(i)) { 
+			bn= BATdescriptor(i);
+			if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name);
+		}
+	}
+	@:Pseudo(bbp,@2)@
+        return MAL_SUCCEED;
+}
+
+@c
+	@:headtailProperty(htype,HeadType)@
+	@:headtailProperty(ttype,TailType)@
+@-
+The BAT status is redundantly stored in CATALOGbat_info.
+@c
+str CATALOGbbpLocation(int *ret){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbpLocation", "failed to create BAT");
+
+	BBPlock("CATALOGbbpLocation");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+        	if (BBP_logical(i))
+                BUNins(b, &i, BBP_physical(i));
+	}
+	BBPunlock("CATALOGbbpLocation");
+	@:Pseudo(bbp,location)@
+        return MAL_SUCCEED;
+}
+
+
+#define monet_modulesilent (GDKdebug&4096)
+
+
+str CATALOGbbpHeat(int *ret){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_int,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbpHeat", "failed to create BAT");
+
+	BBPlock("CATALOGbbpHeat");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+            if (BBP_cache(i) && !monet_modulesilent) {
+		int heat = BBPheat(i);
+                BUNins(b, &i, &heat);
+	    } else if (BBP_logical(i)) { 
+		int zero = 0;
+                BUNins(b, &i, &zero);
+	    }
+	}
+	BBPunlock("CATALOGbbpHeat");
+	@:Pseudo(bbp,heat)@
+        return MAL_SUCCEED;
+}
+
+@-
+The BAT dirty status: dirty => (mem != disk); diffs = not-committed
+@c
+str CATALOGbbpDirty(int *ret){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbpDirty", "failed to create BAT");
+
+	BBPlock("CATALOGbbpDirty");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+        if (BBP_logical(i)){
+		BAT *bn = BBP_cache(i);
+                BUNins(b, &i, bn?
+				BATdirty(bn)?
+					"dirty":
+					DELTAdirty(bn)?
+						"diffs":
+						"clean":
+				(BBP_status(i)&BBPSWAPPED)?
+					"diffs": 
+					"clean");
+	}}
+	BBPunlock("CATALOGbbpDirty");
+	@:Pseudo(bbp,status)@
+        return MAL_SUCCEED;
+}
+
+@-
+The BAT status is redundantly stored in CATALOGbat_info.
+@c
+str CATALOGbbpStatus(int *ret){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbpStatus", "failed to create BAT");
+
+	BBPlock("CATALOGbbpStatus");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+        if (BBP_logical(i)){
+		char *loc = BBP_cache(i)?"load":"disk";
+                BUNins(b, &i,loc );
+	}}
+	BBPunlock("CATALOGbbpStatus");
+	@:Pseudo(bbp,status)@
+        return MAL_SUCCEED;
+}
+
+str CATALOGbbpKind(int *ret){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbpKind", "failed to create BAT");
+
+	BBPlock("CATALOGbbpKind");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+	if (BBP_logical(i)) {
+	    char *mode = NULL;
+	    if ((BBP_status(i)&BBPDELETED) || !(BBP_status(i)&BBPPERSISTENT)) {
+		mode = "transient";
+	    } else {
+		mode = "persistent";
+	    }
+	    if (mode) BUNins(b, &i, mode);
+	}}
+	BBPunlock("CATALOGbbpKind");
+	@:Pseudo(bbp,kind)@
+        return MAL_SUCCEED;
+}
+
+str CATALOGbbpRefcnt(int *ret){       
+	BAT	 *b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_int,BBPsize);
+        if (b == 0) return throwMessage("catalog.bbpRefcnt", "failed to create BAT");
+
+	BBPlock("CATALOGbbpRefcnt");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+	if (BBP_logical(i)) {
+		int refs = BBP_refs(i);
+		BUNins(b, &i, &refs);
+	}}
+	BBPunlock("CATALOGbbpRefcnt");
+	@:Pseudo(bbp,group)@
+        return MAL_SUCCEED;
+}
+
+@+ GDK
+The old-fashioned BATdump command is replaced by the sys.
+@c
+str CATALOGgdkThread(int *ret){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,THREADS);
+        if (b == 0) return throwMessage("catalog.gdkThread", "failed to create BAT");
+
+        for(i=0; i < THREADS; i++)
+	if( GDKthreads[i].pid) {
+                BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
+	}
+	@:Pseudo(gdk,thread)@
+        return MAL_SUCCEED;
+}
+
+#ifdef HAVE_CATALOG_TIMES_H
+# include <sys/times.h>
+#endif
+
+
+static char* local_itoa(int i){
+        static char buf[32];
+        sprintf(buf,"%d",i);
+        return buf;
+}
+
+str CATALOGgdkEnv(int *ret){
+	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+	char prefix[128];
+        if (b == 0) return throwMessage("catalog.gdkEnv", "failed to create BAT");
+	if( GDKdbfarmStr[0])
+		BUNins(b, "gdk_dbfarm", GDKdbfarmStr);
+	if( GDKdbnameStr[0])
+		BUNins(b, "gdk_dbname", GDKdbnameStr);
+	if( GDKdirStr[0])
+		BUNins(b, "gdk_dbdir", GDKdirStr);
+	if( GDKdistrStr[0])
+		BUNins(b, "gdk_distr", GDKdistrStr);
+        sprintf(prefix, "%dbit%s", sizeof(ptr)*8, GDKarchStr);
+	if(GDKversionStr[0])
+		BUNins(b, "gdk_version", GDKversionStr);
+	if( GDKmonetrcStr[0])
+		BUNins(b, "gdk_monetrc", GDKmonetrcStr); 
+	BUNins(b, "gdk_processid", local_itoa(getpid()));
+	@:Pseudo(gdk,env)@
+        return MAL_SUCCEED;
+}
+
+@+ Monet client data
+Portions of the client record can be directly obtained for
+backward compatibility. The routine clientInfo provides more
+detailed information.
+@c
+str CATALOGclientInfo(int *ret){       
+	Client c= getClient();
+	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+        if (b == 0) return throwMessage("catalog.clientInfo", "failed to create BAT");
+
+	BUNins(b,"user", c->user);
+	BUNins(b,"password", (c->password?c->password:""));
+	BUNins(b,"permission", local_itoa(c->permission));
+	BUNins(b,"language", c->language);
+	BUNins(b,"timer", local_itoa(c->timer));
+	BUNins(b,"trace", local_itoa(c->itrace));
+	@:Pseudo(client,info)@
+	return GDK_FAIL;
+}
+str CATALOGclientNames(int *ret){       
+	int i;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+        if (b == 0) return throwMessage("catalog.clientNames", "failed to create BAT");
+
+        for(i=0; i < MAL_MAXCLIENTS; i++)
+        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user) {
+                BUNins(b, &i, mal_clients[i].user);
+        }
+
+	@:Pseudo(client,name)@
+	return GDK_FAIL;
+}
+str CATALOGclientLogin(int *ret){       
+	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+	int i;
+	char s[26];
+
+        if (b == 0) return throwMessage("catalog.clientLogin", "failed to create BAT");
+        for(i=0; i < MAL_MAXCLIENTS; i++)
+        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user) {
+                time_t logintime=(time_t)mal_clients[i].login;
+
+#ifdef CYGWIN32
+                localtime(&logintime);
+#else
+                struct tm localt;
+                localtime_r(&logintime,&localt);
+#endif
+
+#ifdef HAVE_CTIME_R3
+                asctime_r(&localt,s,26);
+#else
+#ifdef HAVE_CTIME_R
+                asctime_r(&localt,s);
+#else
+                strcpy(s, "no asctime in WIN32");
+#endif
+#endif
+                s[24]=0;
+                BUNins(b, &i, s);
+        }
+
+	@:Pseudo(client,login)@
+	return GDK_FAIL;
+}
+@- Performance
+To obtain a good impression of the Monet performance we need 
+timing information.  The most detailed information is best obtained 
+with the system profiler (gprof) or MAL profiler.
+ 
+However, the direct approach is to enable the user to read the 
+timers maintained internally. 
+This is done with the CPU, IO, MEMORY, and BBP command which 
+displays the elapsed time in seconds, user- and system-cpu time in milliseconds
+since its last invocation and the amount of space in use.  The process 
+identifier is used to differentiate among the possible processes.
+ 
+Note that in multi threaded mode the routine prints the elapsed
+time since the beginning of each process.
+@{
+@c
+str CATALOGprofCntModFcn(int *ret, str *mod, str *fcn){
+	BAT *b;
+	Symbol *s;
+	*ret= 0;
+	return throwMessage("catalog.profCnt", "not yet implemented");
+}
+str CATALOGprofTime(int *ret, str *mod, str *fcn){
+	BAT *b;
+	Symbol *s;
+	*ret= 0;
+	return throwMessage("catalog.profTime", "not yet implemented");
+}
+static int clk = 0;
+static struct tms state;
+
+str CATALOGgdkCPU(int *ret) {
+	int     i;
+	struct tms newst;
+	BAT *b;
+ 
+ 
+	b = BATnew(TYPE_str, TYPE_int, 32);
+	if ( b == 0) return throwMessage("catalog.gdkCpu", "failed to create BAT");
+	if( clk == 0) {
+		clk= time(0);
+		times(&state);
+	}
+	times(&newst);
+	/* store counters, ignore errors */
+	i = time(0) - clk;
+	b = BUNins(b, "elapsed", &i);
+	i= newst.tms_utime *1000/HZ ;
+	b = BUNins(b, "user", &i);
+	i= (newst.tms_utime - state.tms_utime)*1000/HZ;
+	b = BUNins(b, "elapuser", &i);
+	i = newst.tms_stime *1000/HZ;
+	b = BUNins(b, "system", &i);
+	i = (newst.tms_stime - state.tms_stime)*1000/HZ;
+	b = BUNins(b, "elapsystem", &i);
+
+	state = newst; 
+	@:Pseudo(gdk,cpu)@
+	return MAL_SUCCEED;
+}
+@-
+Same observations as to CATALOGgdkCPU()
+@c
+static void *memincr=NULL;
+str CATALOGgdkMem(int *ret) {
+	struct mallinfo m;
+	BAT *b;
+	int i;
+	m = MT_mallinfo();
+ 
+	b = BATnew(TYPE_str, TYPE_int, 32);
+	if ( b == 0) return throwMessage("catalog.gdkMem", "failed to create BAT");
+
+	/* store counters, ignore errors */
+	if (memincr == NULL) {
+		memincr = GDK_mem_start;
+	}
+	i= ((char*) sbrk(0) -  (char*) memincr);
+ 
+	memincr = (char*) sbrk(0);
+	b = BUNins(b, "memincr", &i);
+	b = BUNins(b, "arena", &m.arena);
+	b = BUNins(b, "ordblks", &m.ordblks);
+	b = BUNins(b, "smblks", &m.smblks);
+	b = BUNins(b, "hblkhd", &m.hblkhd);
+	b = BUNins(b, "hblks", &m.hblks);
+	b = BUNins(b, "usmblks", &m.usmblks);
+	b = BUNins(b, "fsmblks", &m.fsmblks);
+	b = BUNins(b, "uordblks", &m.uordblks);
+	b = BUNins(b, "fordblks", &m.fordblks);
+	@:Pseudo(gdk,mem)@
+	return MAL_SUCCEED;
+}
+@= heap
+sz = HEAP@1size(@2);
+if (sz > *minsize) {
+	sprintf(buf, "@3/%s", s); 
+	BUNins(bn, buf, &sz);
+} @3 += sz; tot += sz;
+@c
+
+str CATALOGmem_usage(int *ret, lng *minsize) {
+	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, n=0, sz;
+	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
+	char buf[1024];
+	int i;
+
+	BBPlock("CATALOGmem_usage");
+	for(i=1; i <BBPsize; i++) { 
+		BAT *b = BBP_cache(i);
+		str s = BBP_logical(i);
+		if (s == NULL) {
+			continue;
+		}
+		sz = 0;
+		if (BBP[i].cache)  sz += sizeof(BATstore);
+		if (BBP[i].nme[0]) n += strLen(BBP[i].nme[0]);
+		if (BBP[i].nme[1]) n += strLen(BBP[i].nme[1]);
+		if (BBP[i].path) n += strLen(BBP[i].path);
+		if (b) sz += sizeof(BAT); /* mirror */
+			
+		if (sz > *minsize) {
+			sprintf(buf, "desc/%s", s); 
+			BUNins(bn, buf, &sz);
+		} tot += (lng) sz;
+
+		if (b == NULL || VIEWparent(b)) {
+			continue;
+		}
+		@:heap(mem,b->batBuns,buns)@
+		@:heap(mem,b->hhash_heap,hhsh)@
+		@:heap(mem,b->thash_heap,thsh)@
+		@:heap(mem,b->hidx_heap,hind)@
+		@:heap(mem,b->tidx_heap,tind)@
+		@:heap(mem,&b->hheap,head)@
+		@:heap(mem,&b->theap,tail)@
+		@:heap(mem,&b->haccelerator,hacc)@
+		@:heap(mem,&b->taccelerator,tacc)@
+	} 
+	/* totals per category */
+	if (buns) BUNins(bn, "_tot/buns", &buns);
+	if (head) BUNins(bn, "_tot/head", &head);
+	if (tail) BUNins(bn, "_tot/tail", &tail);
+	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
+	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
+	if (hind) BUNins(bn, "_tot/hind", &hind);
+	if (tind) BUNins(bn, "_tot/tind", &tind);
+	if (hacc) BUNins(bn, "_tot/hacc", &hacc);
+	if (tacc) BUNins(bn, "_tot/tacc", &tacc);
+
+	/* special area 1: BBP rec */
+	sz = BBPlimit*sizeof(BBPrec) + n;
+	if (sz) BUNins(bn, "_tot/bbp", &sz);
+	tot += sz;
+
+/* special area 2: monet context records 
+	DEPRICATED
+	sz = monet_cntxtmax*sizeof(CntxtRec);
+	if (sz) BUNins(bn, "_tot/mil", &sz);
+*/
+	tot += sz;
+	if (tot) BUNins(bn, "_tot/found", &tot);
+	sz = GDKmem_heapsize();
+	if (sz) BUNins(bn, "_tot/sbrk", &sz);
+/*	compilation errors !
+	if (GDK_mem_cursize) BUNins(bn, "_tot/valloc", &GDK_mem_cursize);
+
+*/
+	sz = GDKmem_heapinuse();
+	if (sz) BUNins(bn, "_tot/malloc", &sz);
+	sz = sz + GDK_mem_cursize - tot;
+	if (sz) BUNins(bn, "_tot/malloc_unknown", &sz);
+	sz = GDKmem_cursize();
+	if (sz) BUNins(bn, "_tot/all", &sz);
+	BBPunlock("CATALOGmem_usage");
+
+	*ret = bn->batCacheid;
+	return MAL_SUCCEED;
+}
+
+str CATALOGvm_usage(int *ret, lng *minsize) {
+	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
+	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
+	char buf[1024];
+	int i;
+
+	BBPlock("CATALOGvm_usage");
+	for(i=1; i <BBPsize; i++) {
+		BAT *b = BBP_cache(i);
+		str s = BBP_logical(i);
+		if (s == NULL || b == NULL || VIEWparent(b)) {
+			continue;
+		}
+		@:heap(vm,b->batBuns,buns)@
+		@:heap(vm,b->hhash_heap,hhsh)@
+		@:heap(vm,b->thash_heap,thsh)@
+		@:heap(vm,b->hidx_heap,hind)@
+		@:heap(vm,b->tidx_heap,tind)@
+		@:heap(vm,&b->hheap,head)@
+		@:heap(vm,&b->theap,tail)@
+		@:heap(vm,&b->haccelerator,hacc)@
+		@:heap(vm,&b->taccelerator,tacc)@
+	} 
+	/* totals per category */
+	if (buns) BUNins(bn, "_tot/buns", &buns);
+	if (head) BUNins(bn, "_tot/head", &head);
+	if (tail) BUNins(bn, "_tot/tail", &tail);
+	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
+	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
+	if (hind) BUNins(bn, "_tot/hind", &hind);
+	if (tind) BUNins(bn, "_tot/tind", &tind);
+	if (hacc) BUNins(bn, "_tot/hacc", &hacc);
+	if (tacc) BUNins(bn, "_tot/tacc", &tacc);
+
+	/* special area 1: BBP rec */
+	sz = BBPmaxsize*sizeof(BBPrec);
+	if (sz) BUNins(bn, "_tot/bbp", &sz);
+	tot += sz;
+
+	/* special area 2: monet context records  DEPRICATE
+	sz = monet_cntxtlim*sizeof(CntxtRec);
+	if (sz) BUNins(bn, "_tot/mil", &sz);
+	tot += sz;
+	if (tot) BUNins(bn, "_tot/found", &tot);
+	*/
+
+	/* look at sbkr() to determine how much we missed */
+	sz = GDKvm_cursize();
+	if (sz) BUNins(bn, "_tot/all", &sz);
+	sz -= tot;
+	tot = GDKvm_heapsize();
+	if (sz) BUNins(bn, "_tot/sbrk", &tot);
+	BBPunlock("CATALOGvm_usage");
+
+	*ret = bn->batCacheid;
+	return MAL_SUCCEED;
+}
+
+@-
+Additional information on the process utilization is given by
+the io command. The following information is obtained.
+ 
+@T
+\begin{tabular}{| l| l|}\hline
+maxrss     &the maximum resident set size utilized (in kilobytes).\\
+minflt     &the number of page faults serviced without any I/O\\
+	 &activity; here I/O activity is avoided by "reclaiming" a\\
+ 
+	 &activity; here I/O activity is avoided by "reclaiming" a\\
+	 &page frame from the list of pages awaiting reallocation.\\
+majflt     &the number of page faults serviced that required I/O\\
+	 &activity.\\
+nswap      &the number of times a process was "swapped" out of main\\
+	 &memory\\
+inblock    &the number of times the file system had to perform input.\\
+oublock    &the number of times the file system had to perform output.\\
+nvcsw      &the number of times a context switch resulted due to a\\
+	 &process voluntarily giving up the processor before its\\
+	 &time slice was completed (usually to await availability of\\
+	 &a resource).\\
+nivcsw     &the number of times a context switch resulted due to a\\
+	 &higher priority process becoming runnable or because the\\
+	 &current process exceeded its time slice.\\
+\end{tabular}
+@
+The resource statistics are collected in a BAT. It can then
+be queried. A default listing is produced by the command @%usagecmd@.
+(which should be moved to Monet)
+ 
+The BAT grows. It should be compacted.
+@c
+#ifdef HAVE_SYS_RESOURCE_H
+# include <sys/resource.h>
+#endif
+ 
+str CATALOGgdkIO(int *ret) {
+	struct rusage ru;
+	int i;
+	BAT *b;
+ 
+	getrusage(RUSAGE_SELF, &ru);
+	b = BATnew(TYPE_str, TYPE_int, 32);
+	if (b == 0) return throwMessage("catalog.gdkIO", "failed to create BAT");
+ 
+	/* store counters, ignore errors */
+	i = ru.ru_maxrss; BUNins(b, "maxrss", &i); 
+	i = ru.ru_minflt; BUNins(b, "minflt", &i);
+	i = ru.ru_majflt; BUNins(b, "majflt", &i);
+	i = ru.ru_nswap; BUNins(b, "nswap", &i);
+	i = ru.ru_inblock; BUNins(b, "inblock", &i);
+	i = ru.ru_oublock; BUNins(b, "oublock", &i);
+	i = ru.ru_nvcsw; BUNins(b, "nvcsw", &i);
+	i = ru.ru_nivcsw; BUNins(b, "ninvcsw", &i);
+
+	@:Pseudo(gdk,io)@
+	return MAL_SUCCEED;
+}
+
+str CATALOGgdkBBP(int *ret) {
+	int 	pbat = 0;
+	int	pdisk = 0;
+	int	pheat = 0; 
+	int	i,tmp=0,per=0; 
+	BAT	*b;
+
+	b = BATnew(TYPE_str, TYPE_int, 32);
+	if (b == 0) return throwMessage("catalog.gdkBBP", "failed to create BAT");
+
+	for (i = 1; i < BBPsize; i++) {
+		if (BBP_logical(i)) {
+			pbat++; 
+			if (BBP_cache(i)) {
+				pheat += BBPheat(i); 
+				if (BBP_cache(i)->batPersistence == PERSISTENT)
+					per++;
+				else tmp++;
+			} else {
+				pdisk++; 
+			}
+		}
+	}
+	b = BUNins(b, "bats", &pbat);
+	b = BUNins(b, "tmpbats", &tmp);
+	b = BUNins(b, "perbats", &per);
+	b = BUNins(b, "ondisk", &pdisk);
+	b = BUNins(b, "todisk", &BBPout);
+	b = BUNins(b, "fromdisk", &BBPin);
+
+	@:Pseudo(gdk,bbp)@
+	return MAL_SUCCEED;
+}
+

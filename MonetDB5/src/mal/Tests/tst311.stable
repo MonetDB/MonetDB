@@ -1,0 +1,70 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## squeezer integration in MAL code blocks.
+## the squeezer.access(V) implements a simple pruning of the
+## code to disallow access to a particular function
+## it is also the first function passing a parameter
+##
+## the access() authorization function raises an exception if the
+## current value of V is <= 0 . 
+#
+#	p1:= -1;
+#	s0:= squeezer.access("p1");
+#	c1:= 2;
+#	c2:= +(p1,p1);	# forbidden function
+#	c4:= "should not come here";
+##exception 
+#catch WrongBlock;
+#	printf("entered wrong block\n");
+#exit WrongBlock;
+#
+#catch	IllegalAccess;
+#	printf("catched IllegalAccess\n");
+#exit	IllegalAccess;
+#	print("end of program");
+#
+function Admin.main():int; #0:(main:int)
+    p1 := -1; #1:(p1:int)<-($2:int)
+    s0 := squeezer.access("p1"); #2:(s0:int)<-($4:str)
+    c1 := 2; #3:(c1:int)<-($6:int)
+    c2 := calc.+(p1,p1); #4:(c2:int)<-(p1:int)(p1:int)
+    c4 := "should not come here"; #5:(c4:str)<-($9:str)
+catch WrongBlock; #6:(WrongBlock:str) jump 9
+    system.printf("entered wrong block\n"); #7:($11:int)<-($12:str)
+exit WrongBlock; #8:(WrongBlock:str)
+catch IllegalAccess; #9:(IllegalAccess:str) jump 12
+    system.printf("catched IllegalAccess\n"); #10:($14:int)<-($15:str)
+exit IllegalAccess; #11:(IllegalAccess:str)
+    io.print("end of program"); #12:($16:int)<-($17:str)
+end main; #13:
+entering sqzAccess blocking 1 p1
+    s0 := squeezer.access("p1"); #2:(s0:int)<-($4:str)
+    squeezer.AccessTst(p1); #14:($18:int)<-(p1:int)
+    s0 := squeezer.access("p1"); #2:(s0:int)<-($4:str)
+    squeezer.AccessTst(p1); #15:($19:int)<-(p1:int)
+Modified stmt sequence
+function Admin.main():int; #0:(main:int)
+    p1 := -1; #1:(p1:int)<-($2:int)
+    c1 := 2; #2:(c1:int)<-($6:int)
+    squeezer.AccessTst(p1); #3:($18:int)<-(p1:int)
+    squeezer.AccessTst(p1); #4:($19:int)<-(p1:int)
+    c2 := calc.+(p1,p1); #5:(c2:int)<-(p1:int)(p1:int)
+    c4 := "should not come here"; #6:(c4:str)<-($9:str)
+catch WrongBlock; #7:(WrongBlock:str) jump 9
+    system.printf("entered wrong block\n"); #8:($11:int)<-($12:str)
+exit WrongBlock; #9:(WrongBlock:str)
+catch IllegalAccess; #10:(IllegalAccess:str) jump 12
+    system.printf("catched IllegalAccess\n"); #11:($14:int)<-($15:str)
+exit IllegalAccess; #12:(IllegalAccess:str)
+    io.print("end of program"); #13:($16:int)<-($17:str)
+end main; #14:
+Entering AccessTst with argument -1
+catched IllegalAccess
+[ "end of program" ]
+>

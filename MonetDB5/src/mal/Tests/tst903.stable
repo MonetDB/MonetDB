@@ -1,0 +1,37 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## the multiplex code blocks.
+#
+#b:= new(lng,lng);
+#i:= -1:lng;
+#barrier v:= nextElement(i,0:lng,1000000:lng);
+#	insert(b,i,i);
+#	redo v;
+#exit v;
+#c:= copy(b);
+#t0:= alarm.usec();
+#x:= multiplex.script("+",b,c);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+##printf("multiplex.+ %d\n",d0);
+#
+function Admin.main():int; #0:(main:int)
+    b := mal.new(lng,lng); #1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
+    i := -1; #2:(i:lng)<-($4:lng)
+barrier v := mal.nextElement(i,0,1000000); #3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
+    bat.insert(b,i,i); #4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
+    redo v ; #5:(v:bit) jump 3
+exit v; #6:(v:bit)
+    c := algebra.copy(b); #7:(c:bat[lng,lng])<-(b:bat[lng,lng])
+    t0 := alarm.usec(); #8:(t0:lng)
+    x := multiplex.script("+",b,c); #9:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
+    t1 := alarm.usec(); #10:(t1:lng)
+    d0 := calc.-(t1,t0); #11:(d0:lng)<-(t1:lng)(t0:lng)
+end main; #12:
+>

@@ -1,0 +1,113 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+##Same as tst200, but includes testing of the profiler
+#
+#profiler.setFilter("*","insert");
+#profiler.setFilter("*","print");
+#profiler.openStream("/tmp/MonetProfile.xml");
+#
+#o:=oid(20000000);
+#setoid(o);
+##test basic functionality of the BAT library.
+##focussed on integers
+##it includes insertions,deletions,selections, and joins.
+#
+#b:= new(int,int);
+#printf("#~BeginVariableOutput~#\n"); 
+##binfo:= info(b);
+##err:= print(binfo); 
+#printf("#~EndVariableOutput~#\n");
+#
+#profiler.start();
+#err := insert(b,1,15);
+#err := insert(b,2,4);
+#n0  := int(nil);
+#err := insert(b,3,n0);
+#err := insert(b,4,16);
+#err := insert(b,5,25);
+#err := insert(b,6,36);
+#err := insert(b,7,49);
+#err := insert(b,8,64);
+#err := insert(b,9,n0);
+#err := insert(b,n0,n0);
+#err := insert(b,n0,81);
+#print(b);
+#print(b,b,b);
+#profiler.stop();
+#profiler.closeStream();
+#
+!WARNING: newConstant:int coerced to lng
+function Admin.main():int; #0:(main:int)
+    profiler.setFilter("*","insert"); #1:($1:any)<-($2:str)($3:str)
+    profiler.setFilter("*","print"); #2:($4:any)<-($2:str)($5:str)
+    profiler.openStream("/tmp/MonetProfile.xml"); #3:($6:any)<-($7:str)
+    o := calc.oid(20000000); #4:(o:oid)<-($9:int)
+    calc.setoid(o); #5:($10:oid)<-(o:oid)
+    b := mal.new(int,int); #6:(b:bat[int,int])<-(int:int)(int:int)
+    system.printf("#~BeginVariableOutput~#\n"); #7:($13:int)<-($14:str)
+    system.printf("#~EndVariableOutput~#\n"); #8:($15:int)<-($16:str)
+    profiler.start(); #9:($17:any)
+    err := bat.insert(b,1,15); #10:(err:bat[int,int])<-(b:bat[int,int])($19:int)($20:int)
+    err := bat.insert(b,2,4); #11:(err:bat[int,int])<-(b:bat[int,int])($21:int)($22:int)
+    n0 := calc.int(nil); #12:(n0:int)<-($24:void)
+    err := bat.insert(b,3,n0); #13:(err:bat[int,int])<-(b:bat[int,int])($25:int)(n0:int)
+    err := bat.insert(b,4,16); #14:(err:bat[int,int])<-(b:bat[int,int])($22:int)($26:int)
+    err := bat.insert(b,5,25); #15:(err:bat[int,int])<-(b:bat[int,int])($27:int)($28:int)
+    err := bat.insert(b,6,36); #16:(err:bat[int,int])<-(b:bat[int,int])($29:int)($30:int)
+    err := bat.insert(b,7,49); #17:(err:bat[int,int])<-(b:bat[int,int])($31:int)($32:int)
+    err := bat.insert(b,8,64); #18:(err:bat[int,int])<-(b:bat[int,int])($33:int)($34:int)
+    err := bat.insert(b,9,n0); #19:(err:bat[int,int])<-(b:bat[int,int])($35:int)(n0:int)
+    err := bat.insert(b,n0,n0); #20:(err:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81); #21:(err:bat[int,int])<-(b:bat[int,int])(n0:int)($36:int)
+    io.print(b); #22:($37:int)<-(b:bat[int,int])
+    io.print(b,b,b); #23:($38:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
+    profiler.stop(); #24:($39:any)
+    profiler.closeStream(); #25:($40:void)
+end main; #26:
+#~BeginVariableOutput~#
+#~EndVariableOutput~#
+# Start performance profiling
+#-----------------#
+# BAT:	  tmp_4	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  15	  ]
+[ 2,	  4	  ]
+[ 3,	  nil	  ]
+[ 4,	  16	  ]
+[ 5,	  25	  ]
+[ 6,	  36	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 9,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
+#---------------------------------#
+# BAT:	  t	| t	| t	  #
+# (int)	  (int)	| (int)	| (int)	  #
+#---------------------------------#
+[ 1,	  15,	  15,	  15	  ]
+[ 2,	  4,	  4,	  4	  ]
+[ 3,	  nil,	  nil,	  nil	  ]
+[ 4,	  16,	  16,	  16	  ]
+[ 5,	  25,	  25,	  25	  ]
+[ 6,	  36,	  36,	  36	  ]
+[ 7,	  49,	  49,	  49	  ]
+[ 8,	  64,	  64,	  64	  ]
+[ 9,	  nil,	  nil,	  nil	  ]
+[ nil,	  nil,	  81,	  81	  ]
+[ nil,	  nil,	  81,	  nil	  ]
+[ nil,	  nil,	  nil,	  81	  ]
+[ nil,	  nil,	  nil,	  nil	  ]
+[ nil,	  81,	  81,	  81	  ]
+[ nil,	  81,	  81,	  nil	  ]
+[ nil,	  81,	  nil,	  81	  ]
+[ nil,	  81,	  nil,	  nil	  ]
+# Performance profiling stopped
+>

@@ -1,0 +1,3 @@
+eval("print(1);");
+eval("print(\"hello\");");
+eval("s:=\"goodbye\";print(s);");

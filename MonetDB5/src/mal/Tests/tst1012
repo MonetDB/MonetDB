@@ -1,0 +1,18 @@
+# the first of a series of BBP test cases
+
+bbp.open();
+b:= new(int,int);
+insert(b,1,2);
+bbp.deposit("mysecondbat",b);
+c:= bbp.take("mysecondbat");
+print(c);
+bbp.setPersistent(b);
+x:= bbp.isPersistent(b);
+print(x);
+bbp.close();
+# at the end of the session, the BBP should have discarded
+# the temporary bats of the user
+bbp.open();
+v:= bbp.take("mysecondbat");
+print(v);
+bbp.close();

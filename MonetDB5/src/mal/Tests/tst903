@@ -1,0 +1,14 @@
+# the multiplex code blocks.
+
+b:= new(lng,lng);
+i:= -1:lng;
+barrier v:= nextElement(i,0:lng,1000000:lng);
+	insert(b,i,i);
+	redo v;
+exit v;
+c:= copy(b);
+t0:= alarm.usec();
+x:= multiplex.script("+",b,c);
+t1:= alarm.usec();
+d0:= t1-t0;
+#printf("multiplex.+ %d\n",d0);

@@ -1,0 +1,15 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+#printf("hello world\n");
+#
+function Admin.main():int; #0:(main:int)
+    system.printf("hello world\n"); #1:($1:int)<-($2:str)
+end main; #2:
+hello world
+>

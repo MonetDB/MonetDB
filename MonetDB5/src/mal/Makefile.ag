@@ -1,0 +1,21 @@
+INCLUDES = top_builddir/src/gdk  
+#$(Z_CFLAGS) $(BZ_CFLAGS)
+
+#YFLAGS = -d
+
+MTSAFE
+
+lib_mal = {
+	NAME = mal
+	SOURCES = \
+	mal.mx mal_type.mx mal_instruction.mx mal_box.mx mal_scope.mx \
+	mal_stack.mx mal_import.mx mal_startup.mx mal_interpreter.mx \
+	mal_squeezer.mx mal_iterator.mx mal_resolve.mx mal_function.mx \
+	mal_parser.mx mal_linker.mx mal_debugger.mx mal_atom.mx  \
+	mal_client.mx mal_profiler.mx 
+
+# mal_stream.mx DON'T KNOW
+	HEADERS = h # tab.h
+	LIBS = ../gdk/libbat \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}

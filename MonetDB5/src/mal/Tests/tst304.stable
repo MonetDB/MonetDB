@@ -1,0 +1,40 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## Exceptions can be explicitly raised in a function
+## which requires the exception identifier to be defined.
+#
+#function myException();
+#	IllegalAccess:="new exception";
+#	raise IllegalAccess;
+#	print("should have left function ");
+#end myException;
+function Admin.myException():any; #0 polymorphic:(myException:any)
+    IllegalAccess := "new exception"; #1:(IllegalAccess:str)<-($2:str)
+    raise IllegalAccess; #2:(IllegalAccess:str)
+    io.print("should have left function "); #3:($3:int)<-($4:str)
+end myException; #4:
+#
+#	myException();
+#	print("should not come here");
+##exception block;
+#catch	IllegalAccess;
+#	printf("catched IllegalAccess\n");
+#exit	IllegalAccess;
+#	print("done");
+#
+function Admin.main():int; #0:(main:int)
+    Admin.myException(); #1:($1:any)
+    io.print("should not come here"); #2:($2:int)<-($3:str)
+catch IllegalAccess; #3:(IllegalAccess:str) jump 6
+    system.printf("catched IllegalAccess\n"); #4:($5:int)<-($6:str)
+exit IllegalAccess; #5:(IllegalAccess:str)
+    io.print("done"); #6:($7:int)<-($8:str)
+end main; #7:
+!ERROR: new exceptionMALexception:Admin.myException[4]: propagated
+>

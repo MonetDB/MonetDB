@@ -1,0 +1,774 @@
+@t MAL Type resolution
+@a M. Kersten
+@v 0.0
+@+ MAL type resolution
+@- Type resolution principles.
+The type resolution scheme should be flexible and efficient.
+Given the interpretative nature of many of the MAL instructions,
+when and where type resolution takes place is a critical design issue.
+Performing it too late, i.e. at each instruction, leads to 
+performance problems if we derive the same information over and over again.
+However, many built-in operators handle polymorphic typed objects, 
+so we cannot escape it altogether.
+
+Consider the small illustrative MAL program which we should
+definitely support at the language level.
+@T
+\begin{verbatim}
+function sample(nme:str, val:any):bit;
+   c := 2*3;
+   b := bbp.bind(nme);	#find a BAT
+   h := select(b,val,val);
+   t := count(h);
+   x := print(t);
+   y := print(val);
+end function;
+
+\end{verbatim}
+@-
+The function definition is polymorphic typed on the 2cnd argument,
+it becomes a concrete type upon invocation. 
+
+The first assignment can be type checked during parsing, i.e. TYPE_FIXED, 
+and could even lead to a frozen value. Looking up a BAT leads to
+an element bat[ht,tt] where ht and tt are runtime dependent types.
+We can not typecheck the bat selection. It should be done at runtime,
+i.e. TYPE_DYNAMIC.
+We can check t at compile time, because we only have to assure
+that count() is given a bat argument. This assumes that we can infer
+that 'h' is indeed a BAT, which requires assurance that all 'select'
+operators produce a bat. In general, this is not possible, as a user may
+overload the bind() operation,  which returns a bat[any,any];
+Because print(t) contains an undetermined typed
+argument we should postpone typechecking as well.
+The last print statement can be checked upon function invocation,
+i.e. TYPE_POLYMORPHIC.
+
+Life becomes really complex if the body contains a loop, which changes
+the variable types. For then we also have to keep track of the original
+state of the function. Or alternatively, type checking should consider
+the runtime stack rather than the function definition itself.
+@-
+A few conclusions can be drawn. 1) Every statement should carry a
+flag to indicate whether it has been type-resolved. 
+1a) you can always postpone type checking,
+2) polymorphic functions can be cloned to built a cache of instantiated 
+functions.
+3) we have to call the type-checker potentially at every instruction
+and its result is call specific, this means we have to propagate
+the type through the runtime stack rather than the symbol table,
+4) once the type of a variable is fixed, we should stick to it.
+This precludes loops where the typing scheme changes with each step.
+Instead, such type changes should be factored out algoritmically.
+
+Alternatie solutions.
+A) split the function such that type analysis only occurs at the
+   function call level.
+Disadvantage, it does not work for the example above.
+Moreover, you need to carry too much contextual information.
+
+Choicepoint. We either enforce that the Mal instructions contain the 
+relevant module or we have to provide for a controlled search through
+the collection of all known operations.
+The current policy is to start at the client module level and inspect
+the outer scopes when the symbol is not found. This may lead
+to ambigous behavior though. If a module M imports K for its function K.f()
+then it clashes with L.f() when the initialization script calls for
+import K,L,M. This can be recognized by inspecting the code produced
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
+#ifndef _MAL_RESOLVE_H
+#define _MAL_RESOLVE_H
+
+#include "mal_function.h"
+
+#define DEBUG_MAL_RESOLVE
+#define MAXTYPEVAR	10
+
+mal_export void chkProgram(Scope s, MalBlkPtr mb);
+mal_export void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level);
+mal_export int resolveType(int dsttype, int srctype);
+mal_export int isPolymorphic(malType t);
+mal_export malType getPolyType(malType t, int polytype[MAXTYPEVAR]);
+mal_export int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
+mal_export int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe);
+
+extern str traceFcnName;
+
+#endif /*  _MAL_RESOLVE_H*/
+@+ Function call resolution
+Search the first definition of the operator in the visible scopes
+and check the parameter types.
+For a polymorphic MAL function we make a fully instantiated clone.
+This effectively overloads the MAL procedure.
+It will be prepended to the symbol list as it is more restrictive.
+
+Debugging of this module can be dynamically controlled in the debugger
+by setting the routine of interest.
+@c
+#include "mal_resolve.h"
+str traceFcnName= "___";
+int tracefcn;
+int polyVector[MAXTYPEVAR];
+void polyInit(){
+	int i;
+	for(i=0;i<MAXTYPEVAR;i++) polyVector[i]= TYPE_any;
+}
+@-
+A function may be characterised by its module, i.e. the location to
+start the search. Ommision of the module name implies searching from
+the client layer upward. (cost estimate 4ms/1000calls)
+@c
+malType findFunctionType(Scope scope, MalBlkPtr mb, InstrPtr p){
+	Scope m;
+	Symbol s;
+	InstrPtr sig;
+	int i,j,k,l, polymorphic, unmatched = 0, s1;
+	int foundbutwrong=0;
+	int polytype[MAXTYPEVAR];
+	int returntype[MAXARG];
+
+@-
+Check first for a module specific type checker. It takes
+precedence and should handle all cases. It returns -1
+upon failure, which shortcuts the execution.
+@c
+	if(p->modname && scope->typeChecker &&
+		idcmp(p->modname,scope->name)==0 ){
+		if( (scope->typeChecker)(scope,mb,p,0)>=0)
+			return getArgType(mb,p,0);
+		return -3;
+	}
+@-
+Within a module find the subscope to locate the element in its list
+of symbols.
+@c
+	m= scope;
+	s= m->subscope[getSubScope(p->fcnname)];
+	while(s != NULL){	/* single scope element check */
+	if( idcmp(p->fcnname,s->name ) ){
+		s= s->peer; continue;
+	}
+@-
+Perform a strong type-check on the actual arguments. If it turns
+out to be a polymorphic MAL function, we have to clone it. 
+Provided the actual/formal parameters are compliant throughout
+the function call.
+
+Also look out for variable argument lists. This means that we
+have to keep two iterators, one for the caller (i) and one for
+the callee (k). Since a variable argument only occurs as last,
+we simple avoid an increment when running out of formal arguments.
+
+A call of the form (X1,..., Xi) := f(Y1,....,Yn) can be matched against
+the function signature (B1,...,Bk):= f(A1,...,Am) where i==k , n<=m
+and type(Ai)=type(Yi). Furthermore, the variables Xi obtain their type
+from Bi (or type(Bi)==type(Xi)).
+@c
+	sig = getSignature(s); 
+	if( sig->argc - sig->retc > p->argc - p->retc ){ s= s->peer; continue;}
+@-
+Note that the actual number of arguments may not be less then those
+required formally, because this may screw-up the interaction
+with the underlying implementation, e.g. it receives not enough
+pointers to leaf the result behind.
+@c
+	if( sig->retc != p->retc) { s=s->peer; continue;}
+	if( sig->argc - sig->retc < p->argc - p->retc && !sig->varargs){
+		s=s->peer; continue;}
+	polymorphic = 0;
+	unmatched = 0;
+@-
+The simple case could be taken care of separately to speedup processing
+However, it turned out not to make a big difference.
+The first time we encounter a polymorphic argument in the
+signature, we initialize a type variable table.
+Subsequently, the polymorphic arguments update this table
+and check for any type mismatches that might occur.
+There are at most 2 type variables involved per argument
+due to the limited type nesting permitted.
+@c
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) {
+	printf("-->start matching arguments\n");
+	printInstruction(stdout,mb,p);
+	printf("++> against signature\n");
+	printInstruction(stdout,s->def,sig);
+	printf("\n");
+	}
+#endif
+	for(k=i=p->retc;i<p->argc;i++){
+		int actual = getArgType(mb,p,i);
+		int formal = getArgType(s->def,sig,k);
+		if( sig->polymorphic ){
+			if( polymorphic==0){
+				if(polyVector[0]==0) polyInit();
+				memcpy(polytype,polyVector,sizeof(polyVector));
+				polymorphic++;
+			}
+			if( updateTypeMap(formal, actual, polytype)){
+				unmatched= i; 
+#ifdef DEBUG_MAL_RESOLVE
+			if(tracefcn){
+			printf("sig->polymorphic= %d ispolyarg %d\n",
+				sig->polymorphic,k);
+
+			printf("mismatch %d,%d test %s poly %s\n",
+			i,k, malTypeName(actual),
+			malTypeName(formal));
+			}
+#endif
+				break;
+			}
+			formal= getPolyType(formal,polytype);
+			/* any contraint poly arguments removed */
+		}
+@-
+Any reference to the polytype table is removed. Possibly
+turning a contrainted type into 'any', which matches all types.
+@c
+		if( resolveType( formal,actual)== -1 ){
+			unmatched= i;
+			break;
+		}
+@-
+Take care of variable argument lists.
+@c
+	varargtst: 
+		k++;
+		if(sig->varargs && k == sig->argc ) k--; 
+	}
+@-
+It is possible that you may have to coerce the value to another type.
+We assume that coercions are explicit at the MAL
+level. (e.g. var2:= var0:int). This avoids repeated type analysis
+just before you execute a function.
+At a later stage we may automatically insert such coercion requests.
+@c
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) {
+		 printf("finished param test, %s.%s unmatched=%d polymorphic=%d %d\n",
+			sig->modname,sig->fcnname,
+			unmatched, polymorphic,p==sig);
+		if( polymorphic){
+			for(l=0;l<2*p->argc;l++) 
+			if( polytype[l] != TYPE_any)
+			printf("poly %d %s\n",l,malTypeName(polytype[l]));
+		}
+	}
+#endif
+	if( unmatched) { s= s->peer; continue; }
+@-
+The argument section has been handled, before we finalize the process,
+we should assure that also the target variables have the proper types
+or can inherit them from the signature. The type vector should be
+build separately first, because we may encounter an error later on.
+
+If any of the arguments refer to a constraint type, any::x, then
+the resulting type can not be determined.
+@c
+	s1 = 0;
+	for(i=0; s1 >= 0 && i < p->retc; i++){
+		int actual = getArgType(mb,p,i);
+		int formal = getArgType(s->def,sig,i);
+
+		s1= getPolyType(formal, polytype);
+
+		returntype[i]= resolveType(actual,s1);
+		if( returntype[i]== -1 ){
+			returntype[i]= TYPE_any;
+			s1= -1;
+			GDKerror("type conflict in statement %s.%s[%d]\n",
+				(p->modname?p->modname:""),
+				p->fcnname,getPC(mb,p));
+#ifdef DEBUG_MAL_RESOLVE
+		if(tracefcn){
+			printInstruction(GDKout,mb,p);
+			printInstruction(GDKout,s->def,getSignature(s));
+		}
+#endif
+		}
+	}
+	if(s1<0 && getSignature(s)->token !=PATTERNsymbol) {
+		foundbutwrong++;
+		s= s->peer; continue;
+	}
+@-
+If the return types are correct, copy them in place. Otherwise find
+an other alternative.
+@c
+	if( s1<0) { s= s->peer; continue;}
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) {
+		printf("accepted ");
+		for(i=0;i<p->retc; i++)
+		printf("%s:=%s,",malTypeName(getArgType(mb,p,i)),
+				malTypeName(returntype[i]));
+		printf("\n");
+		printInstruction(stdout,mb,getSignature(s));
+		printInstruction(stdout,mb,p);
+	}
+#endif
+	for(i=0;i<p->retc;i++) 
+		setVarType(mb,p->argv[i],returntype[i]);
+	if(p->modname == 0) p->modname= GDKstrdup(m->name);
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) {
+		printInstruction(stdout,mb,p);
+		printf("Finished matching\n");
+	}
+#endif
+	s1= returntype[0];	/* for those interested */
+	foundbutwrong = 0;
+@-
+If the call refers to a polymorphic function, we
+clone it to arrive at a bounded instance. Polymorphic patterns and
+commands are responsible for type resolution themselves.
+Note that cloning pre-supposes that the function being cloned
+does not contain errors detected earlier in the process.
+@c
+	if( polymorphic){ 
+		if( s->kind!= COMMANDsymbol && s->kind!=PATTERNsymbol ){
+			if( s->def->errors){
+				GDKerror("invalid polymorphic function %s.%s\n",
+						m->name,p->fcnname);
+				return -3;
+			}
+			s = cloneFunction(scope, s, mb,p);
+		}
+	}
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn){
+	printf("found%s definition of '%s.%s' with type %s\n",
+		(polymorphic?" polymorphic":""),
+		m->name,
+		p->fcnname,malTypeName(s1));
+	printInstruction(stdout,mb,getSignature(s));
+	printInstruction(stdout,mb,p);
+	}
+#endif
+@-
+We found the proper function. Copy some properties. In particuler,
+determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
+@c
+	if( p->token == ASSIGNsymbol){
+		switch(getSignature(s)->token){
+		case COMMANDsymbol: 
+			p->token = CMDcall; 
+			p->fcn = getSignature(s)->fcn;
+			break;
+		case RULEsymbol: 
+			p->token = RLRcall; 
+			p->fcn = getSignature(s)->fcn;
+			break;
+		case PATTERNsymbol: 
+			p->token = PATcall; 
+			p->fcn = getSignature(s)->fcn;
+			break;
+		case FUNCTIONsymbol: 
+			p->token = FCNcall; 
+			p->blk = s->def;
+			break;
+		default:
+			showException(mb,getPC(mb,p),"MALresolve",
+					"unexpected token type\n");
+			mb->errors++;
+		}
+	}
+@-
+Since we now know the storage type of the receiving variable, we can
+set the before/after/final-Call functions. Actually, we should set
+up a call for each return value. Instead, we rely in this case
+on a user-supplied function [todo].
+@= chkMultiple
+	if( p->retc != 1)
+		GDKwarning("garbage collection not guaranteed\n");
+@c
+	if(isaBatType(s1)){
+		@:chkMultiple@
+		p->beforeCall= (GDKfcn) batBeforeCall;
+		p->afterCall= (GDKfcn) batAfterCall;
+		p->finalCall= (GDKfcn) batFinalCall;
+	}
+	else if( ATOMstorage(s1)== TYPE_str){
+		@:chkMultiple@
+		p->beforeCall= (GDKfcn)strBeforeCall;
+		p->afterCall= (GDKfcn) strAfterCall;
+		p->finalCall= (GDKfcn) strFinalCall;
+	} 
+	return s1;
+	s= s->peer;
+	} /* while */
+@-
+We haven;t found the correct function.  To ease debugging, we may reveal
+that we found an instruction with the proper arguments, but that clashes
+with one of the target variables.
+@c
+	if( foundbutwrong ){
+		if(m->name)
+		GDKerror("type conflict in assignment of %s.%s\n",
+			m->name,p->fcnname);
+		else
+		GDKerror("type conflict in assignment of %s\n", p->fcnname);
+		printInstruction(GDKout,mb,p);
+	}
+	return -3;
+}
+
+@- Type resolution algorithm.
+Every actual argument of a function call should be type compatible
+with the formal argument, and the function result type should be
+compatible with the destination variable.
+In both cases the 'receiving' variable may not be fully qualified,
+i.e. of type 'any'. The type resolution algorithm creates the concrete
+type for subsequent use.
+@c
+int resolveType(int dsttype, int srctype){  
+	int h1,t1,h2,t2,h3,t3;
+#ifdef DEBUG_MAL_RESOLVE
+	if( tracefcn){
+		printf("resolveType dst %s (%d) %s(%d)\n",
+			malTypeName(dsttype), dsttype,
+			malTypeName(srctype),srctype);
+	}
+#endif
+	if( dsttype == srctype) return dsttype;
+	if( dsttype == TYPE_any) return srctype;
+	if( srctype == TYPE_any) return dsttype;
+	if( isaBatType(dsttype) && isaBatType(srctype) ){
+		h1= getHeadType(dsttype);
+		t1= getTailType(dsttype);
+		h2= getHeadType(srctype);
+		t2= getTailType(srctype);
+
+		h3= -1;
+		if( h1 == TYPE_any) h3= h2;
+		if( h2 == TYPE_any) h3= h1;
+		if( h1 == h2) h3= h1;
+		if(h3 == -1) goto noResolution;
+		t3= -1;
+		if( t1 == TYPE_any) t3= t2;
+		if( t2 == TYPE_any) t3= t1;
+		if( t1 == t2) t3= t1;
+		if(t3 == -1) goto noResolution;
+#ifdef DEBUG_MAL_RESOLVE
+		if( tracefcn){
+			printf("resolveType bat[%s,%s] bat[%s,%s]->bat[%s,%s]\n",
+				malTypeName(h1),malTypeName(t1),
+				malTypeName(h2),malTypeName(t2),
+				malTypeName(h3),malTypeName(t3)
+				);
+		}
+#endif
+		return newBatType(h3,t3);
+	}
+noResolution:
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) printf("Can not be resolved \n");
+#endif
+	return -1;
+}
+
+int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
+	if( getDestType(mb,p) == tpe) return tpe;
+	if( getDestType(mb,p) == TYPE_any) {
+		setDestType(mb,p,tpe);
+		return tpe;
+	}
+	if(p->modname)
+	GDKerror("type conflict in statement %s.%s[%d]\n",
+		p->modname, p->fcnname, getPC(mb,p));
+	else GDKerror("type conflict in statement %s[%d]\n",
+		p->fcnname, getPC(mb,p));
+	printInstruction(GDKout,mb,p);
+	return -1;
+}
+@-
+We try to clear the type check flag by looking up the
+functions. Errors are simply ignored at this point of the game,
+because they may be resolved as part of the calling sequence.
+@c
+void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level){
+	int s1= -1, i,k;
+	char buf[1024];
+	Scope m=0;
+@-
+A function search should inspect all modules unless a specific module
+is given. Preference is given to the lower scopes.
+If we can not find the function, the type check returns unsuccesfully,
+setting the state as TYPE_UNKNOWN. In this case we should issue an error
+message to the user.
+@c
+	if( isaSignature(p) ) {
+		p->typechk = typeKind(mb,p,0);
+		return;
+	}
+	if( p->fcnname){
+#ifdef DEBUG_MAL_RESOLVE
+		tracefcn= idcmp(p->fcnname,traceFcnName)==0;
+#endif
+		m= findScope(scope,p->modname);
+		while(s1<0 && m!= NULL){
+			s1= findFunctionType(m,mb,p);
+			if( p->modname) break;
+			m= m->outer;
+		}
+		if( s1<0 ) {
+			if( ! isaSignature(p) ){ 
+			if(p->modname)
+				GDKerror("'%s.%s' undefined in %s.%s[%d]\n", 
+					p->modname, p->fcnname,scope->name,
+					getInstrPtr(mb,0)->fcnname,getPC(mb,p));
+			else  GDKerror("'%s' undefined in %s.%s[%d]\n", 
+				p->fcnname,scope->name,
+				getInstrPtr(mb,0)->fcnname,getPC(mb,p));
+			}
+			mb->errors++;
+		} else p->typechk = TYPE_FIXED;
+		return;
+	}
+@-
+A function call is only resolved when all the parameters are
+already strongly typed. Alternatively, if we encounter a
+polymorphic argument, we have to postpone type resolution
+until a function clone is being constructed. 
+Polymorphic types require extra checks. In particular, the
+type variables should be bound to the same underlying type.
+If this type check has to be performed each time the instruction
+is being called, we end up with a TYPE_DYNAMIC case.
+@c
+	if( p->typechk == TYPE_UNKNOWN){
+		p->typechk= TYPE_FIXED;
+		for(i=p->retc;i<p->argc;i++){
+			p->typechk= MIN(p->typechk, typeKind(mb,p,i));
+		}
+	}
+	if( p->typechk < level) return;
+@+ Assignment 
+When we arrive here the operator is an assignment.
+The language should also recognize (a,b):=(1,2);
+This is achieved by propagation of the rhs types to the lhs
+variables.
+Furthermore, the constant nil can be a proper value
+assigned to any variable. 
+This case should be recognized separately, because it
+requires a call to a type-specific setToNil() function call.
+@c
+	p->typechk= TYPE_FIXED;
+	for(k=0,i= p->retc; k<p->retc && i<p->argc; i++,k++){
+		int rhs = getArgType(mb,p,i);
+		int lhs = getArgType(mb,p,k);
+
+		if( p->argv[k]<0) {printf("ASSUMPTION VIOLATION\n");abort();}
+		if( lhs == TYPE_any)
+			setVarType(mb,p->argv[k],rhs);
+		else
+		if( lhs != rhs ){
+			str n1 = malTypeName(lhs);
+			str n2 = malTypeName(rhs);
+			int i;
+			snprintf(buf,1024,"type mismatch %s := ",n1);
+			i= strlen(buf);
+			snprintf(buf+i,1024-i,"%s\n",n2);
+			showException(mb,getPC(mb,p),"MALresolve",buf);
+			GDKfree(n1); GDKfree(n2);
+			mb->errors++;
+			p->typechk= TYPE_UNKNOWN;
+			return;
+		}
+	}
+}
+@-
+After the parser finishes, we have to look for semantic errors,
+such as flow of control problems and possible typeing conflicts.
+The nesting of BARRIER, THREAD and CATCH statements with their associated
+flow of control primitives LEAVE and RETRY should form a valid
+hierarchy. Failure to comply is considered a structural error
+and leads to flagging the function as erroneous.
+Also check general conformaty of the ML block structure.
+It should start with a signature and finish with and ENDDEFsymbol
+@c
+int chkProgramIdentifier(MalBlkPtr mb, str nme, int tpe){
+	if( ATOMindex(nme)>0) return TRUE;
+	if( tpe!= TYPE_str ){
+		GDKerror("TYPE ERROR:mod/fcn should be a string\n");
+		mb->errors++;
+	}
+	return FALSE;
+}
+void chkProgram(Scope s, MalBlkPtr mb)
+{
+        InstrPtr p;
+	int i,k, tpe,signature= FALSE, kind= TYPE_FIXED, tst= TRUE;
+
+	for(i=0;i<mb->stop;i++) {
+		p= getInstrPtr(mb,i);
+		if(p== NULL) continue;
+@-
+If any of the arguments is undefined, then postpone
+type checking to a later stage in the process.
+However, the first instruction is always a signature
+and should be checked.
+@c
+		tst= TRUE;
+		if( p->fcnname && (k=findVariable(mb,p->fcnname)) > 0 ){
+			tpe= getVarType(mb,k);
+			tst= tst && chkProgramIdentifier(mb,p->fcnname,tpe);
+		}
+		if(tst &&  p->modname && (k=findVariable(mb,p->modname)) >0 ){
+			tpe= getVarType(mb,k);
+			tst= tst && chkProgramIdentifier(mb,p->modname,tpe);
+		}
+		for(k=p->retc;k<p->argc;k++){
+			int actual = getArgType(mb,p,k);
+			if(actual == TYPE_any ||
+			   isAnyExpression(actual)) tst= FALSE;
+		}
+		if(i==0 || tst) typeChecker(s,mb,p, kind);
+		switch(p->token){
+		case FUNCTIONsymbol: case COMMANDsymbol:
+		case PATTERNsymbol: case HANDLERsymbol:
+			if( i) {
+			str msg=instruction2str(mb,p,TRUE);
+			GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
+			GDKfree(msg);
+			mb->errors++;
+			} else{
+				signature = TRUE;
+				if(p->polymorphic) kind= TYPE_POLYMORPHIC;
+			}
+			break;
+		case EXITsymbol:
+			chkExit(mb,p); break;
+		case CATCHsymbol:
+			chkCatch(mb,p); break;
+		case THREADsymbol:
+			chkThread(mb,p); break;
+		case LEAVEsymbol:
+		case REDOsymbol:
+			chkLabel(mb,p);
+		}
+		if( p->barrier == BARRIERsymbol || p->barrier == THREADsymbol )
+			chkBarrier(mb,p);
+	}
+	if( signature == FALSE){
+		str msg=instruction2str(mb,p,TRUE);
+		GDKerror("SYNTAX ERROR: signature missing\n!%s\n",msg);
+		/* printFunction(stdout,mb);*/
+		GDKfree(msg);
+		mb->errors++;
+	}
+}
+@+ Type analysis
+MAL provides for type variables of the form any::N. This feature
+supports polymorphic types, but also complicates the subsequent
+analysis. A variable typed with any::N not occuring in the function
+header leads to a dynamic typed statement. In principle we have
+to type check the function upon each call.
+@c
+int typeKind(MalBlkPtr mb, InstrPtr p, int i){
+	malType t= getArgType(mb,p,i);
+	if( isAnyExpression(t) || t == TYPE_any) {
+		if( i < getArgCount(mb) )
+			return TYPE_POLYMORPHIC;
+		return TYPE_DYNAMIC;
+	}
+	return TYPE_FIXED;
+}
+int isPolymorphic(malType t){
+	int ret =0;
+	if( t== TYPE_any) ret= 1; else
+	if( isAnyExpression(t)) ret= 1; else
+	if( isaBatType(t)){
+		if( getHeadType(t)==TYPE_any) ret= 1; else
+		if( getTailType(t)==TYPE_any) ret= 1;
+	}
+	return ret;
+}
+@-
+For a polymorphic commands we do not generate a cloned version.
+It suffices to determine the actual return value taking into
+account the type variable constraints.
+@c
+malType getPolyType(malType t,int polytype[MAXTYPEVAR]){
+	int hi,ti,i;
+	int head= TYPE_any, tail = TYPE_any;
+
+	hi = getHeadIndex(t);
+	ti = getTailIndex(t);
+	if( hi == 0)
+		head= getHeadType(t);
+	else head = polytype[hi];
+	if( ti == 0)
+		tail= getTailType(t);
+	else tail = polytype[ti];
+
+	if( isaBatType(t))
+		return newBatType(head,tail);
+	return tail;
+}
+@-
+Each argument is checked for binding of polymorphic arguments.
+This routine assumes that the type index is indeed smaller than MAXARG. 
+(The parser currently enforces a single digit from 1-9 )
+The polymorphic type 'any', i.e. any::0, does never constraint an operation
+it can match with all polymorphic types.
+The routine returns the instanciated formal type for subsequent
+type resolution.
+@c
+int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
+{
+	int h,t;
+
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) printf("updateTypeMap %s %s %s %s %d %d polymorphic?%s\n",
+		malTypeName(formal),
+		malTypeName(actual),
+		malTypeName(getHeadType(actual)),
+		malTypeName(getTailType(actual)),
+		getHeadIndex(formal),
+		getTailIndex(formal),
+		(isAnyExpression(actual)?"yes":"no")
+);
+#endif
+	if( isaBatType(formal)){
+		if(!isaBatType(actual)){
+			if( getTailType(actual) == TYPE_any) t= TYPE_any;
+			else return -1;
+		} else	t= getHeadType(actual);
+
+		if( (h=getHeadIndex(formal)) ){
+			if( polytype[h] == TYPE_any) 
+				polytype[h]= t;
+			if( polytype[h] != t && t!= TYPE_any) return -1;
+		}
+	}
+	if( (h=getTailIndex(formal)) ){
+		t= getTailType(actual);
+		if( isAnyExpression(t)) t= TYPE_any;
+
+		if( polytype[h] == TYPE_any ) polytype[h]=  t;
+		if( polytype[h] != t && t!= TYPE_any) return -1;
+	}
+	return 0;
+
+}

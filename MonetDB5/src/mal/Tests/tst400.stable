@@ -1,0 +1,43 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+#	i:= -1;
+#barrier v1:= nextElement(i,0,2);
+#	print("do something");
+#	redo v1;
+#exit	v1;
+#	printf("left first loop with %s\n",v1);
+#	print("next iteration");
+#	i:= -1;
+#barrier v2:= nextElement(i,0,5,2);
+#	print("do something else");
+#	redo v2;
+#exit	v2;
+#
+function Admin.main():int; #0:(main:int)
+    i := -1; #1:(i:int)<-($2:int)
+barrier v1 := mal.nextElement(i,0,2); #2:(v1:bit)<-(i:int)($4:int)($5:int) jump 6
+    io.print("do something"); #3:($6:int)<-($7:str)
+    redo v1 ; #4:(v1:bit) jump 2
+exit v1; #5:(v1:bit)
+    system.printf("left first loop with %s\n",v1); #6:($8:int)<-($9:str)(v1:bit)
+    io.print("next iteration"); #7:($10:int)<-($11:str)
+    i := -1; #8:(i:int)<-($2:int)
+barrier v2 := mal.nextElement(i,0,5,2); #9:(v2:bit)<-(i:int)($4:int)($13:int)($5:int) jump 13
+    io.print("do something else"); #10:($14:int)<-($15:str)
+    redo v2 ; #11:(v2:bit) jump 9
+exit v2; #12:(v2:bit)
+end main; #13:
+[ "do something" ]
+[ "do something" ]
+left first loop with false
+[ "next iteration" ]
+[ "do something else" ]
+[ "do something else" ]
+[ "do something else" ]
+>

@@ -1,0 +1,7 @@
+	r:=0;
+	l:= r < 1;
+barrier l;
+	r:= r+1;
+	l:= false;
+	redo l;
+exit	l;

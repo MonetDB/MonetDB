@@ -1,0 +1,61 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## the first of a series of BBP test cases
+## make sure you can bind to a BAT through the box
+#
+#bbp.open();
+#b:= new(int,int);
+#insert(b,1,2);
+#bbp.setName(b,"myfirstbat");
+#c:= bbp.bind("myfirstbat");
+#print(c);
+#bbp.close();
+## at the end of the session, the BBP should have discarded
+## the temporary bats of the user
+#bbp.open();
+#v:= bbp.take("myfirstbat");
+#catch MALexception;
+#	print(MALexception);
+#exit MALexception;
+#print(v);
+#x:= bbp.getObjects();
+#print(x);
+#bbp.close();
+##catch MALexception;
+#	#print(MALexception);
+##exit MALexception;
+##print("done");
+#
+function Admin.main():int; #0:(main:int)
+    bbp.open(); #1:($1:void)
+    b := mal.new(int,int); #2:(b:bat[int,int])<-(int:int)(int:int)
+    bat.insert(b,1,2); #3:($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
+    bbp.setName(b,"myfirstbat"); #4:($7:bat[int,int])<-(b:bat[int,int])($8:str)
+    c := bbp.bind("myfirstbat"); #5:(c:bat[any,any])<-($8:str)
+    io.print(c); #6:($10:int)<-(c:bat[any,any])
+    bbp.close(); #7:($11:void)
+    bbp.open(); #8:($12:void)
+    v := bbp.take("myfirstbat"); #9:(v:bat[any,any])<-($8:str)
+catch MALexception; #10:(MALexception:str) jump 13
+    io.print(MALexception); #11:($15:int)<-(MALexception:str)
+exit MALexception; #12:(MALexception:str)
+    io.print(v); #13:($16:int)<-(v:bat[any,any])
+    x := bbp.getObjects(); #14:(x:bat[int,str])
+    io.print(x); #15:($18:int)<-(x:bat[int,str])
+    bbp.close(); #16:($19:void)
+end main; #17:
+#-------------------------#
+# BAT:	  myfirstbat	  #
+# (int)	  (int)		  #
+#-------------------------#
+[ 1,	  2		  ]
+[ "MALexception:Admin.main[9]:bbp.take:failed to take 'myfirstbat' from box\n" ]
+!ERROR: MALexception:Admin.main[13]:io.print:could not access descriptor
+MALexception:Admin.main[17]: propagated
+>

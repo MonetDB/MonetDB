@@ -1,0 +1,58 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## GDK layer should produce exceptions rather then direct warnings
+## or ignoring.
+## a typical case is to try to rename an existing (persistent) bat
+#
+#	b:bat[int,int]:= new(int,int);
+#	setName(b,"mybat");
+#	#setPersistent(b);
+#	setRole(b,"first","second");
+#	print(b);
+#	c:= new(int,str);
+#	setName(c,"mybat");
+#	print(c);
+#	#setPersistent(c);
+#	print(c);
+#	printf("catched anything?\n");
+#catch GDKerror;
+#	printf("Catched the renaming exception\n");
+#exit  GDKerror;
+##get rid of it again
+#	#destroy(b);
+#	#destroy(c);
+#
+function Admin.main():int; #0:(main:int)
+    b := mal.new(int,int); #1:(b:bat[int,int])<-(int:int)(int:int)
+    bbp.setName(b,"mybat"); #2:($3:bat[int,int])<-(b:bat[int,int])($4:str)
+    bat.setRole(b,"first","second"); #3:($5:bat[int,int])<-(b:bat[int,int])($6:str)($7:str)
+    io.print(b); #4:($8:int)<-(b:bat[int,int])
+    c := mal.new(int,str); #5:(c:bat[int,str])<-(int:int)(str:str)
+    bbp.setName(c,"mybat"); #6:($11:bat[int,str])<-(c:bat[int,str])($4:str)
+    io.print(c); #7:($12:int)<-(c:bat[int,str])
+    io.print(c); #8:($13:int)<-(c:bat[int,str])
+    system.printf("catched anything?\n"); #9:($14:int)<-($15:str)
+catch GDKerror; #10:(GDKerror:str) jump 13
+    system.printf("Catched the renaming exception\n"); #11:($17:int)<-($18:str)
+exit GDKerror; #12:(GDKerror:str)
+end main; #13:
+#-----------------#
+# BAT:	  mybat	  #
+# (int)	  (int)	  #
+#-----------------#
+#-----------------#
+# BAT:	  mybat	  #
+# (int)	  (str)	  #
+#-----------------#
+#-----------------#
+# BAT:	  mybat	  #
+# (int)	  (str)	  #
+#-----------------#
+catched anything?
+>

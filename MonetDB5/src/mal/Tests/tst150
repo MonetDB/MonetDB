@@ -1,0 +1,9 @@
+# more complex typechecking, it should not complain at compile time
+command lookup(nme:str):bat[str,str] = CMDlookup;
+function sample(nme:str, val:any):bit;
+   b := lookup(nme); #find a bat
+   h := select(b,val,val);
+   t := count(h);
+   x := print(t);
+   y := print(val);
+end sample;

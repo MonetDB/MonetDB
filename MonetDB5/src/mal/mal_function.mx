@@ -1,0 +1,459 @@
+@t MAL functions
+@a M. Kersten
+@v 0.0
+@+ MAL functions
+MAL functions are represented by MAL instruction lists.
+The first instruction contains the signature.
+
+The representation of the MAL functions is rather traditional,
+using C-structure to collect the necessary information.
+Moreover, we assume that MAL functions are relatively small, up to
+a few hundred of instructions. This assumption makes us to rely on
+linear scans as it comes to locating information of interest.
+
+The information maintained for each MAL function should both
+be geared towards fast execution and to ease symbolic debugging.
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
+html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
+#ifndef _MAL_FCN_H
+#define _MAL_FCN_H
+
+#include "mal_scope.h"
+
+/* #define DEBUG_MAL_FCN */
+/* #define DEBUG_CLONE*/
+
+mal_export Symbol	newFunction(str nme);
+mal_export void		clearFcn(MalBlkPtr m);
+mal_export int getPC(MalBlkPtr mb, InstrPtr p);
+
+mal_export void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
+mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
+mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
+mal_export void	chkExit(MalBlkPtr mb, InstrPtr pp);
+mal_export void chkLabel(MalBlkPtr mb, InstrPtr p);
+mal_export InstrPtr newCall(str modname, str fcnname, int kind);
+mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
+
+#define MALEXCEPTION "MALexception"
+#define throwMessage(Fcn,Msg)	throwException(MALEXCEPTION,Fcn,"%s",Msg)
+
+/*VARARGS*/
+mal_export str throwException(str nme, str fcn, char *format, ...);
+mal_export str	raiseException(MalBlkPtr mb, int pc, str name, str msg);
+mal_export str appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
+mal_export str locateException(MalBlkPtr mb, int pc, str oldmsg);
+mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
+mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
+mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
+
+#endif /*  _MAL_FCN_H*/
+@-
+The MAL functions are constructed incrementally while parsing the source.
+The variable is used to hold the return value.
+@c
+#include "mal_function.h"
+
+Symbol newFunction(str nme){
+	Symbol s;
+	InstrPtr p;
+	MalBlkPtr mb;
+	int i,j;
+
+	s = newSymbol(nme,FUNCTIONsymbol);
+	p = newInstruction(FUNCTIONsymbol);
+	p->fcnname = GDKstrdup(nme);
+	p->argv[0]= newVariable(s->def,GDKstrdup(nme),TYPE_any);
+	pushInstruction(s->def,p);
+	return s;
+}
+InstrPtr newCall(str modname, str fcnname, int kind){
+	InstrPtr p;
+	p= newInstruction(kind);
+	p->modname= GDKstrdup(modname);
+	p->fcnname= GDKstrdup(fcnname);
+	return p;
+}
+@+ Flow of control
+The nesting of BARRIER and CATCH statements with their associated
+flow of control primitives LEAVE, RETRY, and RAISE should form a valid
+hierarchy. Failure to comply is considered a structural error
+and leads to flagging the function as erroneous.
+
+Check barrier should ensure that both exit-points of a block for the
+variable referenced in 'pp' exists. In addition, we should ensure
+proper weaveing of the begin-end pairs. This can simply be checked by
+counting the begin/end pairs. It should balance for every block.
+Currently, the barrier control variables should be of type bit,
+sht, int, or lng. A number zero is interpreted as end of the barrier
+block.
+Finally, the barrier label may not be used in any assigment other
+then the barrier statement itself. It may be read, though.
+
+To speed-up interpretation of the control statements, we also
+include the program-counter in instruction record. This implies
+that any subsequent change to a program, i.e. squeezers,
+should be followed by a call to this procedure.
+
+@c
+int getPC(MalBlkPtr mb, InstrPtr p)
+{	int i;
+	for( i=0;i<mb->stop; i++)
+	if( getInstrPtr(mb,i)==p) return i;
+	return -1;
+}
+@-
+Redo and leave instructions may not appear within a parallel
+block, because the process parent already proceeded 
+@= checkPar
+if(lastFork!= -1) GDKerror("@1 illegal in parallel block\n");
+@c
+int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
+{	int i,j, v, endBlk= -1; 
+	int lastFork = -1;
+
+	v = pp->argv[0];
+	for(i= begBlk+1; i<mb->stop; i++){
+		InstrPtr p= getInstrPtr(mb,i);
+		if( p->barrier==BARRIERsymbol || p->barrier==CATCHsymbol ||
+		    p->barrier== THREADsymbol) {
+			if( p->argv[0] != v){
+				i= chkBrackets(mb,p,i);
+				continue;
+			}
+			GDKerror("recursive block structure %s in %s[%d]\n",
+				getVarName(mb,v), getFcnName(mb),getPC(mb,pp));
+			return i;
+		}  else if(p->barrier && p->barrier != EXITsymbol)
+			printf("unexpected barrier %d\n", i);
+		if( p->barrier == EXITsymbol){
+			if( p->argv[0] == v) {
+				pp->jump = i+1;
+				/* retrofit LEAVE/REDO instructions */
+				/* and check their illegal use in THREAD block*/
+				for(j=begBlk+1; j<i; j++){
+					InstrPtr p1= getInstrPtr(mb,j);
+					if( p1->barrier == THREADsymbol) 
+						lastFork = j;
+					if( p1->barrier == EXITsymbol && 
+					    p1->argv[0]== lastFork)  
+						lastFork = -1;
+					if( p1->token == REDOsymbol && 
+						p1->argv[0]==v ) {
+						p1->jump= begBlk;
+						@:checkPar(REDO)@
+					}
+
+					if(p1->token== LEAVEsymbol &&
+					   p1->argv[0]==v){
+						p1->jump= i+1;
+						@:checkPar(LEAVE)@
+					}
+				}
+				return i;
+			}
+			mb->errors++;
+			GDKerror("exit-label '%s' doesnot match '%s' in %s[%d]\n",
+				getVarName(mb,p->argv[0]),
+				getVarName(mb,v), getFcnName(mb),getPC(mb,p)
+				);
+			return i;
+		} 
+		if( p->argv[0]== v && p != pp){
+			if( p->token== REDOsymbol ){
+				p->jump= begBlk;
+				continue;
+			}
+			if( p->token== LEAVEsymbol) continue;
+			if( pp->token== CATCHsymbol) continue;
+			if( pp->barrier== THREADsymbol) continue;
+			GDKerror("label '%s' is readonly in %s[%d]\n",
+				getVarName(mb,v), getFcnName(mb),getPC(mb,p));
+			mb->errors++;
+		}
+	}
+	GDKerror("begin-label '%s' without exit-label in %s\n", 
+		getVarName(mb,v), getFcnName(mb));
+	mb->errors++;
+	return i;
+}
+void chkCntrl(MalBlkPtr mb, InstrPtr pp)
+{	int i, v;
+
+	v = pp->argv[0];
+	if( v>=0)
+	for(i=0; i<mb->stop;i++){
+		InstrPtr p= getInstrPtr(mb,i);
+		if( pp == p  && p->barrier && p->argv[0] == v){
+			if( p->barrier != EXITsymbol)
+				i = chkBrackets(mb,pp,i);
+		} 
+	}
+}
+void chkBarrier(MalBlkPtr mb, InstrPtr pp)
+{
+	chkCntrl(mb,pp);
+	if( pp->barrier == BARRIERsymbol || pp->barrier == THREADsymbol)
+	if( getArgType(mb,pp,0) != TYPE_bit && getArgType(mb,pp,0)!= TYPE_any 
+	 && getArgType(mb,pp,0) != TYPE_sht && getArgType(mb,pp,0)!= TYPE_lng 
+	 && getArgType(mb,pp,0) != TYPE_int ){
+		GDKerror("barrier '%s' should be of type bit or number in %s[%d]\n",
+			getVarName(mb,pp->argv[0]),
+			getFcnName(mb), getPC(mb,pp));
+	}
+}
+void chkCatch(MalBlkPtr mb, InstrPtr pp)
+{
+	chkCntrl(mb,pp);
+}
+void chkThread(MalBlkPtr mb, InstrPtr pp)
+{
+	chkCntrl(mb,pp);
+}
+@-
+Loose END-statements should also be catched.
+@c
+void chkExit(MalBlkPtr mb, InstrPtr pp)
+{	int i, v;
+	InstrPtr p;
+
+	v = pp->argv[0];
+	if( v>=0)
+	for(i=0; i<mb->stop;i++){
+		p= getInstrPtr(mb,i);
+		if( (p->barrier == BARRIERsymbol ||
+		     p->barrier == CATCHsymbol ||
+		     p->barrier == THREADsymbol) &&
+		     p->argv[0] == v){
+			return;
+		} 
+	}
+	mb->errors++;
+	GDKerror("exit-label '%s' without begin-label in %s[%d]\n", 
+		getVarName(mb,v), getFcnName(mb),getPC(mb,pp));
+}
+@-
+The chkLabel routine assures that REDO, LEAVEs and ENDs are
+properly contained within a single guarded- or iterator- block.
+@c
+void chkLabel(MalBlkPtr mb, InstrPtr pp)
+{	int i,k,n, begBlk = -1;
+
+	k= pp->argv[0];
+	n = getPC(mb,pp);
+	for(i=0; i<mb->stop;i++){
+		InstrPtr p= getInstrPtr(mb,i);
+		if( p->argv[0]==k && 
+		   (p->barrier == BARRIERsymbol ||
+		    p->barrier == CATCHsymbol ||
+		    p->barrier== THREADsymbol)){
+			begBlk = i;
+		}
+		if( p->token == EXITsymbol && p->argv[0]==k) {
+			if( begBlk>=0 && n >=begBlk && n<=i) return;
+			begBlk= -1;
+		}
+	}
+	mb->errors++;
+	GDKerror("label '%s' not in guarded block in %s[%d]\n",
+		getVarName(mb,k), getFcnName(mb), getPC(mb,pp));
+}
+@+ Function cloning
+MAL supports functions defined with type variables.
+Each time such a MAL routine is called, a complete copy of
+the polymorphic routine is generated, whereafter the type
+variables are replaced with concrete types.
+
+Patterns should not be cloned, because the alternative interpretations
+are handled by the underlying code fragments.
+
+The function body should be immediately type checked and if
+a correct clone can be obtained, returns success by
+returning the symbol with the instantiated function.
+
+Beware that polymorphic type variables should be propagated.
+This may imply propagation of a type to a component type of
+a BAT.
+Replace a particular variable, indexed by v
+@c
+void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
+	int i,x;
+#ifdef DEBUG_MAL_FCN
+	printf("replace type variable %d by type %d\n",v,t);
+#endif
+	for(i=0;i<p->argc; i++)
+	if( isPolymorphic(x= getArgType(mb,p,i))) {
+#ifdef DEBUG_MAL_FCN
+		printf(" %d x= %d\n",i,x);
+#endif 
+		if( isaBatType(x)){
+			int head,tail;
+			int hx,tx;
+			head = getHeadType(x);
+			tail = getTailType(x);
+			hx = getHeadIndex(x);
+			tx = getTailIndex(x);
+			if( hx == v && head == TYPE_any){
+				hx =0;
+				head =t;
+			}
+			if( tx == v && tail == TYPE_any){
+				tx= 0;
+				tail = t;
+			}
+			x= newBatType(head,tail);
+			setAnyHeadIndex(x,hx);
+			setAnyTailIndex(x,tx);
+			setArgType(mb,p,i,x);
+		} else
+		if( getTailIndex(x) == v){
+			setArgType(mb,p,i,t);
+		} 
+	}
+}
+@-
+Upon cloning a function we should remove all the polymorphic flags.
+Otherwise we may end up with a recursive clone.
+@c
+Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
+	Symbol new;
+	int i,v;
+	InstrPtr pp;
+
+#ifdef DEBUG_CLONE
+	printf("clone the function %s to scope %s\n",
+			proc->name,scope->name);
+#endif
+	new= newFunction(GDKstrdup(proc->name));
+	new->def = copyMalBlk(proc->def);
+	/* now change the definition of the original proc */
+	pp = getSignature(new);
+	for(i=0;i<pp->argc;i++)
+	if( isPolymorphic(v= getArgType(new->def,pp,i)) ){
+		int t = getArgType(mb,p,i);
+
+		if( isaBatType(t) ){
+			int head,tail;
+			head = getHeadType(t);
+			tail = getTailType(t);
+			replaceTypeVar(new->def, pp, getHeadIndex(v), head);
+			replaceTypeVar(new->def, pp, getTailIndex(v), tail);
+		} else
+			replaceTypeVar(new->def, pp, getTailIndex(v), t);
+	} /* else printf("%d is %d\n",i,getArgType(mb,pp,i));*/
+	/* include the function at the proper place in the scope */
+	insertSymbol(scope,new);
+	/* clear polymorphic */
+	for(i=0;i<new->def->stop;i++) {
+                pp= getInstrPtr(new->def,i);
+		pp->polymorphic= 0;
+	}
+
+	/* check for errors after fixation , TODO*/
+	chkProgram(scope,new->def);
+	if( new->def->errors){
+		GDKerror("Error in cloned function\n");
+		showErrors(getClient());
+		printFunction(GDKout, new->def);
+	}
+#ifdef DEBUG_CLONE
+	printf("newly cloned function added to %s %d \n",scope->name,i);
+	printFunction(stdout,new->def);
+#endif
+	return new;
+}
+@- Exception handling
+@c
+str appendException(MalBlkPtr mb, int pc, str name, str msg,str oldmsg){
+        char buf[4196];
+	int i;
+	str s,fcn;
+
+	s = mb? getModName(mb): "";
+	fcn= mb? getFcnName(mb):"";
+	buf[0]=0;
+	if(oldmsg) snprintf(buf,4196,"%s",oldmsg);
+	i= strlen(buf);
+	if(name) snprintf(buf+i,4196-i,"%s:", name);
+	i= strlen(buf);
+	if(s) snprintf(buf+i,4196-i,"%s.",s);
+	i= strlen(buf);
+	snprintf(buf+i,4196-i,"%s",fcn);
+	i= strlen(buf);
+	snprintf(buf+i,4196-i,"[%d]",pc);
+	i= strlen(buf);
+	if(msg) snprintf(buf+i,4196-i,":%s",msg);
+	i= strlen(buf);
+	if( buf[i-1]!='\n'){ buf[i]='\n'; buf[i+1]=0;}
+        return GDKstrdup(buf);
+}
+str locateException(MalBlkPtr mb, int pc, str oldmsg){
+	str s, msg=0,name=0;
+
+	if( s= strchr(oldmsg,':')){
+		*s =0;
+		name= oldmsg;
+		msg= s+1;
+	} else msg=oldmsg;
+	return appendException(mb,pc,name,msg,0);
+}
+@-
+The linked libraries should use the throwException to signal
+an erroneous situation. It takes the name of MAL exception name
+to be raised.
+@c
+/*VARARGS*/
+str throwException(str nme, str fcn, char *format, ...){
+        char message[GDKMAXERRLEN];
+        int len = strlen(MALexception)+1;
+        va_list ap;
+
+	sprintf(message,"%s:%s:",nme,fcn);
+	len= strlen(message);
+        va_start(ap, format);
+        vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap);
+        va_end(ap);
+
+        return GDKstrdup(message);
+}
+str raiseException(MalBlkPtr mb, int pc, str name, str msg){
+	return appendException(mb,pc,name,msg,"");
+}
+void showException(MalBlkPtr mb, int pc, str name, str msg){
+	str n;
+	n= raiseException(mb,pc,name,msg);
+	GDKerror(n);
+	GDKfree(n);
+}
+@-
+For commands we do not have to clone the routine. We merely have to
+assure that the type-constraints are obeyed. The resulting type
+is returned.
+@c
+malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p){
+	return TYPE_any;
+}
+void printFunction(FILE *fd, MalBlkPtr mb){
+	int i;
+	for(i=0;i<mb->stop;i++)
+	printInstruction(fd,mb, getInstrPtr(mb,i));
+}

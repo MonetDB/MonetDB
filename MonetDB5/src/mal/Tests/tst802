@@ -1,0 +1,11 @@
+# using spaces
+
+u:str:=const.take("user");
+printf("User bound to %s\n",u);
+
+v:int:= const.take("roomnumber");
+
+v:= 123;
+v:= v+1;
+release("roomnumber",v);
+release("roomnumber",v); # failure? done twice or implicit take?

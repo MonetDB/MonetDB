@@ -1,0 +1,24 @@
+
+INCLUDES = top_builddir/src/gdk top_builddir/src/monet \
+	top_builddir/include/atoms \
+	top_builddir/src/mal 
+#$(Z_CFLAGS) $(BZ_CFLAGS)
+
+MTSAFE
+
+# install these libs in the pkglib
+LIBDIR = pkglib
+
+LIBS = {
+	SEP = _
+	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
+		mapi.mx startup.mx mmath.mx lock.mx alarm.mx \
+		batcalc.mx group.mx aggrX3.mx 
+
+	HEADERS = h 
+	SCRIPTS = mal mil ""
+	LIBS = ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+EXTRA_DIST_DIR = Tests

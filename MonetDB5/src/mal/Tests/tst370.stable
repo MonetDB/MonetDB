@@ -1,0 +1,37 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## experimental code section
+## permit modules and functions to be designated by function parameters
+#function z(mod:str,nme:str,title:str):bat;
+#        b:= mod.nme();
+#        setName(b,title);
+#        return b;
+#end z;
+function Admin.z(mod:str,nme:str,title:str):bat[any,any]; #0:(z:bat[any,any])<-(mod:str)(nme:str)(title:str)
+    b := mod.nme(); #1 unknown:(b:any)
+    setName(b,title); #2 unknown:($5:any)<-(b:any)(title:str)
+    return b; #3:(b:any)
+end z; #4:
+#
+#	r:= z("catalog","bbpNames","names");
+#	print(r);
+#
+#
+function Admin.main():int; #0:(main:int)
+    r := Admin.z("catalog","bbpNames","names"); #1:(r:bat[any,any])<-($2:str)($3:str)($4:str)
+    io.print(r); #2:($5:int)<-(r:bat[any,any])
+end main; #3:
+#---------------------------------#
+# BAT:	  names			  #
+# (int)	  (str)			  #
+#---------------------------------#
+[ 1,	  "monet_environment"	  ]
+[ 2,	  "timezones"		  ]
+[ 3,	  "tmp_3"		  ]
+>

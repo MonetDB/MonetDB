@@ -1,0 +1,28 @@
+# the first of a series of BBP test cases
+
+print("Start test");
+bbp.open();
+b:= new(int,int);
+insert(b,1,2);
+bbp.deposit("myfirstbat",b);
+c:= bbp.take("myfirstbat");
+catch MALexception;
+	print(MALexception);
+exit MALexception;
+print(c);
+print("FIRST ROUND");
+bbp.close();
+# at the end of the session, the BBP should have discarded
+# the temporary bats of the user
+bbp.open();
+print("SECOND ROUND");
+y:=bbp.getObjects();
+print(y);
+v:= bbp.take("myfirstbat");
+catch MALexception;
+	print(MALexception);
+exit MALexception;
+print(v);
+x:= catalog.bbpNames();
+print(x);
+bbp.close();

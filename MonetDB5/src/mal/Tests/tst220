@@ -1,0 +1,51 @@
+# a test checking BAT reference counting under various situations
+function steal(bb:bat[any::1,any::2]) :bat[any::1,any::2];
+	i:= getBATrefcnt(bb);
+	printf("enter function refcount =%d\n",i);
+
+	loc:= bb;
+	i:= getBATrefcnt(bb);
+	printf("local in function refcount =%d\n",i);
+
+	return bb;
+end steal; 
+
+	b:= new(int,str);
+	i:= getBATrefcnt(b);
+	printf("refcount =%d\n",i);
+
+	insert(b,1,"bat B");
+	print(b);
+	i:= getBATrefcnt(b);
+	printf("refcount =%d\n",i);
+
+	#handle an alias
+	b2:= b;			
+	i:= getBATrefcnt(b);
+	printf("after assignment refcount =%d\n",i);
+
+	#re-use a bat variable
+	b3:= b;			
+	i:= getBATrefcnt(b);
+	printf("after 2nd assignment refcount =%d\n",i);
+
+	#re-use a bat variable
+	b3:= new(int,str);			
+	i:= getBATrefcnt(b);
+	printf("after 3rd assignment refcount =%d\n",i);
+
+	#re-use a bat variable
+	b4:= select(b,"bat B","bat B");
+	print(b4);
+	i:= getBATrefcnt(b);
+	printf("after 4rd assignment refcount =%d\n",i);
+
+	# remove by assignment
+	b2:= b3;
+	i:= getBATrefcnt(b);
+	printf("after 5rd assignment refcount =%d\n",i);
+
+	printf("call function\n");
+	d:= steal(b);
+	i:= getBATrefcnt(b);
+	printf("return from function refcount =%d\n",i);

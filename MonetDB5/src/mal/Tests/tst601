@@ -1,0 +1,11 @@
+# Testing the box interfaces
+# open de const box and store a constant 
+# This operation should actually be limited to the system administrator
+# who can open any box.
+
+const.open();
+const.deposit("pi",3.147:flt);
+pi:flt := const.take("pi");
+print(pi);
+const.close();	# save the content on persistent store
+print(pi);

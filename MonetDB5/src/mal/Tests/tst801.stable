@@ -1,0 +1,55 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## partial definition of the object space for MIL
+## it is subordinate to the MIL space dealing with persistent bats
+## CONST STORE_MEM   := 0; 
+## CONST STORE_MMAP  := 1; 
+## CONST STORE_COMPR := 2; 
+#
+#module constants;
+#
+##the variables introduced in main are retained as globals
+#function main():void;
+#	deposit("STORE_MEM",0:int);
+#	deposit("STORE_MMAP",1:int);
+#	deposit("STORE_COMPR",2:int);
+#end main;
+function constants.main():void; #0:(main:void)
+    const.deposit("STORE_MEM",0); #1:($1:void)<-($2:str)($3:int)
+    const.deposit("STORE_MMAP",1); #2:($4:void)<-($5:str)($6:int)
+    const.deposit("STORE_COMPR",2); #3:($7:void)<-($8:str)($9:int)
+end main; #4:
+#
+## take uses the 'root' versions.
+#function take(v:str):any;
+#	printf("looking for %s\n",v);
+#	w:= take(v);
+#	return w;
+#end take;
+function constants.take(v:str):any; #0 polymorphic:(take:any)<-(v:str)
+    system.printf("looking for %s\n",v); #1:($2:int)<-($3:str)(v:str)
+    w := constants.take(v); #2:(w:any)<-(v:str)
+    return w; #3:(w:any)
+end take; #4:
+#
+## release is overloaded for testing only
+#function release(v:any):void;
+#	BoxException:= "releasing a constant is forbidden";
+#	raise BoxException;
+#end release;
+function constants.release(v:any):void; #0:(release:void)<-(v:any)
+    BoxException := "releasing a constant is forbidden"; #1:(BoxException:str)<-($3:str)
+    raise BoxException; #2:(BoxException:str)
+end release; #3:
+#
+## accept the definition of a new constant
+#function deposit(v:any,name:str) = space_deposit;
+#
+#
+>

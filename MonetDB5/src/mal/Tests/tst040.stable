@@ -1,0 +1,27 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## Variables names may be identical to type names, but
+## then they also have to bear the same value 
+#
+#str := "hello";
+#int := 1:sht;
+#flt := "wrong";
+#i   := true;
+#
+#
+!ERROR: MALresolve:Admin.main[2]:type mismatch int := sht
+!ERROR: MALresolve:Admin.main[3]:type mismatch flt := str
+function Admin.main():int; #0:(main:int)
+    str := "hello"; #1:(str:str)<-($2:str)
+    int := 1; #2 unknown:(int:int)<-($4:sht)
+    flt := "wrong"; #3 unknown:(flt:flt)<-($6:str)
+    i := true; #4:(i:bit)<-($8:bit)
+end main; #5:
+!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
+>

@@ -1,0 +1,56 @@
+#inspection of the runtime setting
+#it uses the dynamic type analysis scheme
+
+# type error when the type variable numbers are ignored
+#function get(br:bat[any,any],nme:str, title:str):bat;
+function get(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
+	b:= catalog.nme();
+	z:= join(br,b);
+	setColumn(z,title);
+	return z;
+end get;
+# Note the type of the variables will be fixed during the first call
+# Thus, a better schould would be a term rewriter call, which
+# replaces an instruction
+#rule get(Y:bat,N:str)
+function getInt(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
+	b:= catalog.nme();
+	z:= join(br,b);
+	setColumn(z,title);
+	return z;
+end getInt;
+function getLng(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
+	b:= catalog.nme();
+	z:= join(br,b);
+	setColumn(z,title);
+	return z;
+end getLng;
+function dir(b:bat[int,str]):void;
+	atm:= catalog.atomNames();
+	brev:= reverse(b);
+	bm := mirror(brev);
+	bHead:= get(brev,"bbpHeadType","htype");
+	bTail:= get(brev,"bbpTailType","ttype");
+	bCount:= getLng(brev,"bbpCount","count");
+	bHeat:= getInt(brev,"bbpHeat","heat");
+	bDirty:= get(brev,"bbpDirty","dirty");
+	bStatus:= get(brev,"bbpStatus","status");
+	bKind:= get(brev,"bbpKind","kind");
+	bRef:= getInt(brev,"bbpRefcnt","refcnt");
+	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
+end dir;
+
+function dir(s:str):void;
+	t:= catalog.bbpNames();
+	tn:= like(t,s);
+	print(tn);
+	dir(tn);
+end dir;
+b:=new(int,int);
+setColumn(b,"simplemind");
+
+z:= catalog.bbpNames();
+dir(z);
+
+dir("simple");
+

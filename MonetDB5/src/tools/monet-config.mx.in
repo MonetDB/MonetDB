@@ -1,0 +1,87 @@
+@f monet-config
+@sh
+#!@BASH@
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+includedir=@includedir@
+libdir=@libdir@
+
+usage()
+{
+    cat <<EOF
+Usage: monet-config [OPTION]
+
+Known values for OPTION are:
+
+  --prefix=DIR		change monet prefix [default $prefix]
+  --libs		print Mapi library linking information
+  --cflags		print Mapi pre-processor and compiler flags
+  --gdklibs		print gdk linking information
+  --gdkcflags		print gdk pre-processor and compiler flags
+  --help		display this help and exit
+  --version		output version information
+
+NOTE: --gdklibs and --gdkcflags are not to link the gdk library into
+      your application, but are internally used
+EOF
+
+    exit $1
+}
+
+if test $# -eq 0; then
+    usage 1
+fi
+
+cflags=false
+libs=false
+
+while test $# -gt 0; do
+    case "$1" in
+    -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) optarg= ;;
+    esac
+
+    case "$1" in
+    --prefix=*)
+	prefix=$optarg
+	;;
+
+    --prefix)
+	echo $prefix
+	;;
+
+    --version)
+	echo @VERSION@
+	exit 0
+	;;
+
+    --help)
+	usage 0
+	;;
+
+    --cflags)
+       	echo -I @includedir@/gdk @includedir@/tools
+       	;;
+
+    --libs)
+       	echo -L @libdir@ -lMapi
+       	;;
+
+    --gdkcflags)
+       	echo @PTHREAD_INCS@
+       	;;
+
+    --gdklibs)
+       	echo @SOCKET_LIBS@ @MALLOC_LIBS@ @PTHREAD_LIBS@
+       	;;
+
+    *)
+	usage
+	exit 1
+	;;
+    esac
+    shift
+done
+
+exit 0

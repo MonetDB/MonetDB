@@ -1,0 +1,90 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## the first of a series of BBP test cases
+#
+#print("Start test");
+#bbp.open();
+#b:= new(int,int);
+#insert(b,1,2);
+#bbp.deposit("myfirstbat",b);
+#c:= bbp.take("myfirstbat");
+#catch MALexception;
+#	print(MALexception);
+#exit MALexception;
+#print(c);
+#print("FIRST ROUND");
+#bbp.close();
+## at the end of the session, the BBP should have discarded
+## the temporary bats of the user
+#bbp.open();
+#print("SECOND ROUND");
+#y:=bbp.getObjects();
+#print(y);
+#v:= bbp.take("myfirstbat");
+#catch MALexception;
+#	print(MALexception);
+#exit MALexception;
+#print(v);
+#x:= catalog.bbpNames();
+#print(x);
+#bbp.close();
+#
+function Admin.main():int; #0:(main:int)
+    io.print("Start test"); #1:($1:int)<-($2:str)
+    bbp.open(); #2:($3:void)
+    b := mal.new(int,int); #3:(b:bat[int,int])<-(int:int)(int:int)
+    bat.insert(b,1,2); #4:($6:bat[int,int])<-(b:bat[int,int])($7:int)($8:int)
+    bbp.deposit("myfirstbat",b); #5:($9:void)<-($10:str)(b:bat[int,int])
+    c := bbp.take("myfirstbat"); #6:(c:bat[any,any])<-($10:str)
+catch MALexception; #7:(MALexception:str) jump 10
+    io.print(MALexception); #8:($13:int)<-(MALexception:str)
+exit MALexception; #9:(MALexception:str)
+    io.print(c); #10:($14:int)<-(c:bat[any,any])
+    io.print("FIRST ROUND"); #11:($15:int)<-($16:str)
+    bbp.close(); #12:($17:void)
+    bbp.open(); #13:($18:void)
+    io.print("SECOND ROUND"); #14:($19:int)<-($20:str)
+    y := bbp.getObjects(); #15:(y:bat[int,str])
+    io.print(y); #16:($22:int)<-(y:bat[int,str])
+    v := bbp.take("myfirstbat"); #17:(v:bat[any,any])<-($10:str)
+catch MALexception; #18:(MALexception:str) jump 21
+    io.print(MALexception); #19:($24:int)<-(MALexception:str)
+exit MALexception; #20:(MALexception:str)
+    io.print(v); #21:($25:int)<-(v:bat[any,any])
+    x := catalog.bbpNames(); #22:(x:bat[int,str])
+    io.print(x); #23:($27:int)<-(x:bat[int,str])
+    bbp.close(); #24:($28:void)
+end main; #25:
+[ "Start test" ]
+#-----------------#
+# BAT:	  tmp_3	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  2	  ]
+[ "FIRST ROUND" ]
+[ "SECOND ROUND" ]
+#-------------------------#
+# BAT:	  objects	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 3,	  "myfirstbat"	  ]
+#-----------------#
+# BAT:	  tmp_3	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  2	  ]
+#---------------------------------#
+# BAT:	  name			  #
+# (int)	  (str)			  #
+#---------------------------------#
+[ 1,	  "monet_environment"	  ]
+[ 2,	  "timezones"		  ]
+[ 3,	  "tmp_3"		  ]
+[ 4,	  "objects"		  ]
+>
