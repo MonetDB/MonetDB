@@ -95,7 +95,7 @@ macros
 	{int _t = newConstant(mb,TYPE_bit,GDKstrdup(@1),TRUE); 
 		q = pushArgument(mb,q,_t);}
 @= pushNilType
-	{int _t = newConstant(mb,getTypeIndex(@1),GDKstrdup("nil"),TRUE); 
+	{int _t = newConstant(mb,getTypeIndex(@1,strlen(@1)),GDKstrdup("nil"),TRUE); 
 		q = pushArgument(mb,q,_t);}
 @= pushNil
 	{int _t = newConstant(mb,TYPE_any,GDKstrdup("nil"),TRUE); 
@@ -241,6 +241,8 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 		@:pushArg(val)@
         }       break;
 
+@-
+THIS STUFF SHOULD BE RECONSIDERED
 	case st_release: 
 		@:SQLprelude@
 		@:newStmt("sql","release")@
@@ -438,6 +440,8 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 		@:pushStr(s->op2.sval)@
 		@:SQLpostlude@
 	} break;
+END OF OLD STUFF
+@c
 	case st_select: {
 		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
 		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
@@ -506,8 +510,8 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 		}
 		case cmp_lt:
 		/* rewrite [in> to expanded format */
-			@:newStmt("calc",tail_type(s)->type->name)@
-			@:pushNilType(tail_type(s)->type->name)@
+			@:newStmt("calc",tail_type(s)->type->base.name)@
+			@:pushNilType(tail_type(s)->type->base.name)@
 			@:getReturn(k)@
 
 			@:newStmt("algebra","select")@
@@ -544,8 +548,8 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 
 			break;
 		case cmp_lte:
-			@:newStmt("calc",tail_type(s)->type->name)@
-			@:pushNilType(tail_type(s)->type->name)@
+			@:newStmt("calc",tail_type(s)->type->base.name)@
+			@:pushNilType(tail_type(s)->type->base.name)@
 			@:getReturn(k)@
 
 			@:newStmt("algebra","uselect")@
@@ -556,8 +560,8 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 			break;
 		case cmp_gt:
 		/* rewrite <in] to expanded format */
-			@:newStmt("calc",tail_type(s)->type->name)@
-			@:pushNilType(tail_type(s)->type->name)@
+			@:newStmt("calc",tail_type(s)->type->base.name)@
+			@:pushNilType(tail_type(s)->type->base.name)@
 			@:getReturn(k)@
 
 			@:newStmt("algebra","select")@
@@ -594,8 +598,8 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 
 			break;
 		case cmp_gte: 
-			@:newStmt("calc",tail_type(s)->type->name)@
-			@:pushNilType(tail_type(s)->type->name)@
+			@:newStmt("calc",tail_type(s)->type->base.name)@
+			@:pushNilType(tail_type(s)->type->base.name)@
 			@:getReturn(k)@
 
 			@:newStmt("algebra","uselect")@
@@ -1100,7 +1104,7 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 		@:getReturn(r)@
 		@:newStmt("bat","new")@
 		@:pushArgId("void")@
-		@:pushArgId(s->op4.typeval->type->name)@
+		@:pushArgId(s->op4.typeval->type->base.name)@
 		@:getReturn(l)@
 		@:newStmt("bat","seqbase")@
 		@:pushArg(l)@
@@ -1225,10 +1229,14 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 			@:pushArg(s->flag)@
                 }
         } break;
+@-
+OLD STUFF
         case st_senddata: {
 		@:newStmt("sql","senddata")@
 		@:pushArgId("Output")@
         } break;
+end of stuff
+@c
         case st_filter:
                 s->nr = -backend_dumpstmt(m,mb, s->op1.stval, sql);
                 break;
@@ -1274,27 +1282,18 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 
         /* todo */
         case st_basetable:
-        case st_grant:
-        case st_revoke:
         case st_ptable:
         case st_pivot:
-        case st_partial_pivot:
 	case st_relselect:
 
-	case st_assign: 
 	case st_ibat: 
 	case st_idxbat: 
-	case st_idx: 
-	case st_create_view: 
-	case st_create_idx: 
-	case st_create_kc:
-	case st_create_ic:
-	case st_drop_idx:
-	case st_drop_key:
 	case st_uselect: 
 	case st_uselect2: 
 	case st_exception: 
-	case st_export: 
+	case st_sql:
+	case st_predicate:
+	case st_groupby:
                 printf("not implemented stmt\n");
                 assert(0);
 
@@ -1318,10 +1317,10 @@ void backend_dumpproc( backend *be, MalBlkPtr mb, int id, stmt *s )
 			var_ *v = n->data;
 
 			i += snprintf(buf+i, BUFSIZ-i, "%s %s%c", 
-				v->s->op2.typeval->type->name,
+				v->s->op2.typeval->type->base.name,
 				v->name, (n->next)?',':' '
 				);
 		}
 	}
-    	backend_dumpstmt( be->context->mvc, mb, s, be );
+    	backend_dumpstmt( be->context, mb, s, be );
 }
