@@ -261,16 +261,6 @@ An error at this stage normally lead to an abort.
 #define INLINE
 #endif
 
-/* Definitions for Windows/Unix exporting */
-#if defined(WIN32)
-#   if defined(_MSC_VER)
-#       define EXPORT(a) extern __declspec(dllexport) a
-#   endif
-#else
-#   define EXPORT(a) extern a
-#endif
-
-
 #define REGISTER	register
 
 #ifdef __cplusplus

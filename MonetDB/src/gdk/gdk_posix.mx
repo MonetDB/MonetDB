@@ -13,6 +13,8 @@ the WIN32 native platform.
 #ifndef GDK_POSIX_H
 #define GDK_POSIX_H
 
+#include "gdk_system.h"
+
 #ifdef HAVE_CONFIG_H 
 #include "config.h"
 #endif
@@ -99,10 +101,10 @@ extern struct mallinfo MT_mallinfo();
 #define RTLD_NOW	2
 #define RTLD_GLOBAL	4
 
-extern void *dlopen (const char *__file, int __mode);
-extern int dlclose (void *__handle);
-extern void *dlsym (void * __handle, const char * __name);
-extern char *dlerror (void);
+EXPORT( void *dlopen  )(const char *__file, int __mode);
+EXPORT( int dlclose   )(void *__handle);
+EXPORT( void *dlsym   )(void * __handle, const char * __name);
+EXPORT( char *dlerror )(void);
 
 #include <winsock.h>
 extern int MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
@@ -112,7 +114,6 @@ extern int MT_gettimeofday(struct timeval *tv, int *ignore_zone);
 #endif /* GDK_POSIX_H */
 @c
 #include "gdk_posix.h"
-#include "gdk_system.h"
 
 #include <stdio.h>
 #ifdef HAVE_SYS_MMAN_H
@@ -588,6 +589,25 @@ win_closedir (DIR *dir)
   free (dir);
 
   return 0;
+}
+
+void *dlopen(const char *__file, int __mode){
+  HINSTANCE handle = LoadLibrary (__file);
+  return (void*)handle;
+}
+
+int dlclose(void *__handle){
+  HINSTANCE handle = (HINSTANCE)__handle;
+  return FreeLibrary (handle);
+}
+
+void *dlsym(void * __handle, const char * __name){
+  HINSTANCE handle = (HINSTANCE)__handle;
+  return (void*)GetProcAddress (handle, __name);
+}
+
+char *dlerror(void){
+   return GetLastError();
 }
 
 #endif

@@ -13,6 +13,15 @@ functions.
 
 #include <config.h>
 
+/* Definitions for Windows/Unix exporting */
+#if defined(WIN32)
+#   if defined(_MSC_VER)
+#       define EXPORT(a) extern __declspec(dllexport) a
+#   endif
+#else
+#   define EXPORT(a) extern a
+#endif
+
 #if HAVE_UNISTD_H
 # include <unistd.h>     /* io functions */
 #endif
@@ -49,11 +58,11 @@ Define your error reporting routine @%MT_error(str message)@.
 Define your error integer debug flag @%MT_debug@.
 @h
 #define MT_debug	GDKdebug
-extern int GDKdebug;
+EXPORT( int GDKdebug);
 @-
 Define your debug printing stream @%MT_out@.
 @h
-void *THRgetdata	(int);
+EXPORT( void *THRgetdata	)(int);
 #define MT_out		stderr
 
 @- Global Variables
