@@ -1816,8 +1816,8 @@ static void mvc_init_key( struct bm *bm )
 	BAT *key_rkey = mvc_bat(bm, "keys_rkey", TYPE_int);
 	BAT *U_key_id = mvc_bat(bm, "U_keys_id", TYPE_int);
 	BAT *U_key_table = mvc_bat(bm, "U_keys_table_id", TYPE_int);
-	BAT *U_key_tpe = mvc_bat(bm, "U_keys_type", TYPE_str);
-	BAT *U_key_name = mvc_bat(bm, "U_keys_name", TYPE_int);
+	BAT *U_key_tpe = mvc_bat(bm, "U_keys_type", TYPE_int);
+	BAT *U_key_name = mvc_bat(bm, "U_keys_name", TYPE_str);
 	BAT *U_key_rkey = mvc_bat(bm, "U_keys_rkey", TYPE_int);
 	BAT *D_key = mvc_bat(bm, "D_keys", TYPE_oid);
 
@@ -2054,7 +2054,7 @@ int mvc_init(int debug, backend_stack stk)
 		bootstrap_create_column(m, t, "id", "MEDIUMINT");
 		bootstrap_create_column(m, t, "table_id", "MEDIUMINT");
 		bootstrap_create_column(m, t, "type", "MEDIUMINT");
-		bootstrap_create_column(m, t, "name", "MEDIUMINT");
+		bootstrap_create_column(m, t, "name", "VARCHAR");
 		bootstrap_create_column(m, t, "rkey", "MEDIUMINT");
 
 		t = bootstrap_create_table(m, s, "idxs", 0);
