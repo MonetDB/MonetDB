@@ -1200,8 +1200,21 @@ BAT* BATrevert(BAT *b) {
         BUN p,q;
      
         BATcheck(b, "BATrevorder");
+	if (BAThvoid(b)) {
+	  /* otherwise, tail would be placed in reverse order of head */
+	  GDKwarning( "Cannot reverse order on void head.\n" );
+	  return b;
+	}
         ALIGNdel(b, "BATrevorder");
-	BATorder(b);
+	if (BATordered(b)) {
+	  /* ignore the void case here as well */
+	  b->tseqbase = oid_nil;
+	} else {
+	  /* NOTE: a GDK_revorder property would be handy;
+	     now, an already reverse ordered BAT is first going to be ordered,
+	     and then reverse ordered once more! */
+	  BATorder(b);
+	}
         xx = BUNsize(b);
         buf = (char*) GDKmalloc(xx);
         for(p=BUNlast(b)-xx, q=BUNfirst(b); p > q; p -=xx, q+=xx) {
