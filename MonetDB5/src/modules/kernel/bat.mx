@@ -2208,7 +2208,7 @@ str BKCsetName(bit *retval, int *bid, str *s){
 	int id= *bid;
 	BAT *b;
 	@:getBATdescriptor(retval,&id,b,setName)@
-	b= BATdescriptor(*bid);
+	b= BATdescriptor(id);
 	CMDrename(retval, b, *s);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

@@ -173,6 +173,9 @@ comment "Map a BAT into its tail type";
 command getNames() :bat[:int,:str] 	
 address CMDbbpNames
 comment "Map a BAT into its bbp name";
+command getPNames() :bat[:int,:str] 	
+address CMDbbpPNames
+comment "Map a BAT into its bbp physical name";
 command getCount() :bat[:int,:lng] 	
 address CMDbbpCount
 comment "Map a BAT into its cardinality";
@@ -570,7 +573,6 @@ it is simply removed first
 @= Pseudo
 	if (BBPindex("@1_@2") > 0) 
 		BATdelete(BBPdescriptor(BBPindex("@1_@2")));
-	/*BATname(b, "@2");*/
         BATroles(b,"@1","@2");
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
@@ -615,6 +617,21 @@ str CMDbbpNames( int *ret){
 	}
 	BBPunlock("CMDbbpNames");
 	@:Pseudo(bbp,name)@
+        return MAL_SUCCEED;
+}
+str CMDbbpPNames( int *ret){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,BBPsize);
+        if (b == 0) return throwMessage("bbp.getPNames", "failed to create BAT");
+
+	BBPlock("CMDbbpPNames");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+		BUNins(b, &i, BBP_physical(i));
+	}
+	BBPunlock("CMDbbpPNames");
+	@:Pseudo(bbp,pname)@
         return MAL_SUCCEED;
 }
 str CMDbbpCount( int *ret){       
