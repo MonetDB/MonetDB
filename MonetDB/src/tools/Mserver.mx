@@ -320,6 +320,7 @@ capabilities depend on the malloc implementation used at run time.
 		{"dbinit", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
 		{"help", 0, 0, '?'},
+		{"nostalgic", 0, 0, 0},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 0},
 		{0, 0, 0, 0}
@@ -363,6 +364,10 @@ capabilities depend on the malloc implementation used at run time.
 			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
 				monet_listing = 1;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "nostalgic") == 0) {
+				monet_nostalgic = 1;
 				break;
 			}
 			usage(prog);

@@ -248,15 +248,15 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf"																						  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/ufs/sjoerd/src/MonetDB/MonetDB-Stable/Linux/conf/MonetDB.conf"																																				  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"					  ]
-[ "gdk_version",	  "4.5.0"							  ]
-[ "monet_pid",		  "2020"																											  ]
-[ "prefix",		  "/ufs/sjoerd/Monet"																										  ]
-[ "exec_prefix",	  "/ufs/sjoerd/Monet"																										  ]
+[ "gdk_version",	  "4.6.0_rc3"																																											  ]
+[ "monet_pid",		  "28331"																																											  ]
+[ "prefix",		  "/ufs/sjoerd/Monet-Stable"																																									  ]
+[ "exec_prefix",	  "/ufs/sjoerd/Monet-Stable"																																									  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/ufs/sjoerd/src/MonetDB/build/dbfarm"																							  ]
+[ "gdk_dbfarm",		  "/ufs/sjoerd/src/MonetDB/MonetDB-Stable/Linux/dbfarm"																																						  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -264,20 +264,19 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_nostalgic",	  "no"																																												  ]
-[ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs"	  ]
+[ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/MonetDB-Stable/Linux/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/MonetDB-Stable/Linux/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/MonetDB-Stable/Linux/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/MonetDB-Stable/Linux/src/modules/mnetcdf/.libs:/ufs/sjoerd/src/MonetDB/MonetDB-Stable/Linux/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "42525"																											  ]
+[ "mapi_port",		  "40184"																																											  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "50313"																											  ]
+[ "sql_port",		  "53048"																																											  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/build/log"																								  ]
+[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/MonetDB-Stable/Linux/log"																																						  ]
 [ "gdk_embedded",	  "no"								  ]
-[ "monet_cwd",		  "/net/indus/export/scratch1/sjoerd/MonetDB/mTests/tests/suite_08"																				  ]
+[ "monet_cwd",		  "/net/indus/export/scratch1/sjoerd/MonetDB-Stable/mTests/tests/suite_08"																																			  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -307,7 +306,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Oct 29 17:18:44 2004"	  ]
+[ 0,	  "Tue Jan 25 18:09:42 2005"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree

@@ -465,9 +465,6 @@ monet_init(void)
 
 	ll_init();
 
-	if (GDKgetenv_isyes("monet_nostalgic")) {
-		monet_nostalgic = 1;
-	}
 	CNTXTinit();
 	TBL_init();		/* init MIL function table management. */
 	c = initClient(GDKgetenv("monet_admin"), GDKgetenv("monet_prompt"),

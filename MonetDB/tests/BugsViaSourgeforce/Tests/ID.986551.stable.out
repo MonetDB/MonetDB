@@ -12,7 +12,8 @@ stdout of test 'ID.986551` in directory 'tests/BugsViaSourgeforce` itself:
 *"print"(2);
 !ERROR: "*"print"(2);"
 !                    ^
-! can't help you here, sorry.
+! new MIL syntax (>=4.4) requires parentheses for all operators.
+!.
 (*"print")(2);
 [ 2 ]
 quit();
