@@ -196,7 +196,9 @@ void monet_init( opt *set, int setlen)
 	mo_substitute(set, setlen, buf);
 
         /* determine Monet's kernel settings. */
-	if (!GDKinit(dbname, buf,strcasecmp(alloc_map,"yes"))) return ;
+	/* IGNORE now if (!GDKinit(dbname, buf,strcasecmp(alloc_map,"yes")==0)) return ;*/
+	(void) alloc_map;
+	if (!GDKinit(dbname, buf,0)) return ;
 
 @-
 Find duplicate entries in the property list and move
@@ -247,7 +249,7 @@ int main(int argc, char** av) {
 	char buf[BUFSIZ], *prog = *av, *config = NULL;
         opt *set = NULL;
         int i,debug = 0, setlen = 0, listing=0;
-	str dbinit;
+	str dbinit= NULL;
 
 
 @-
@@ -265,8 +267,9 @@ capabilities depend on the malloc implementation used at run time.
 Unlike V4 we ignore the alloc_map advice, which leads to a much
 faster system start.
 @= mallopt
-	printf("malloc optimize\n");
 	if (malloc_init) {
+/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
+/* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
             if (mallopt(M_MXFAST, 192)) {
                 fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
             }
@@ -277,24 +280,6 @@ faster system start.
 #endif
         }
 	malloc_init=0;
-@-
-This stuff is not used anymore
-#ifndef __linux__
-/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
-/* for (Red Hat) Linux (8) unused and fails at least as of glibc-2.2.93-5 */
-            if (mallopt(M_NLBLKS, 16)) {
-                fprintf(stderr, "monet: mallopt(M_NLBLKS,16) fails.\n");
-            }
-#endif
-#ifndef __linux__
-/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
-/* for (Red Hat) Linux (8) unused and fails at least as of glibc-2.2.93-5 */
-            if (mallopt(M_GRAIN, 32)) {
-                fprintf(stderr, "monet: mallopt(M_GRAIN,32) fails.\n");
-
-            }
-#endif
-
 @c
 
 	static struct option long_options[9] =
@@ -313,9 +298,14 @@ This stuff is not used anymore
 #ifdef NATIVE_WIN32
         set_terminate( Mserver_abort );
 #endif
+/* to be activated at some point
+        if (setlocale(LC_CTYPE, "") == NULL){
+                GDKfatal( "cannot set locale\n");
+        }
+*/
 
 #ifdef HAVE_MALLOPT
-        /* @:mallopt@*/
+        @:mallopt@
 #else
         (void) malloc_init; /* still unused */
 #endif
@@ -405,6 +395,11 @@ This stuff is not used anymore
 	i = 0;
 	monet_script = (str*)GDKmalloc( sizeof(str) * (argc+1) );
 	monet_script[i] = NULL;
+	if( dbinit) {
+		monet_script[i] = absolute_path(dbinit);
+		monet_script[i+1] = NULL;
+		i++;
+	}
 	while(optind < argc){
 		monet_script[i] = absolute_path(av[optind]);
 		monet_script[i+1] = NULL;

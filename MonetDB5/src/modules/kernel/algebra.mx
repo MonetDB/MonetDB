@@ -1398,8 +1398,8 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 @= ALGaggregate_implementation
 str ALGmin_@1(@1* res, int *bid) {
         BAT *b;
-	int result;
-	(void) result=0;
+	int result=0;
+	(void) result;
         @:getBATdescriptor(&result,bid,b,min)@
         if( CMDmin_@1(res,b)) return MAL_SUCCEED;
         return throwMessage("algebra.min", "GDKerror");
