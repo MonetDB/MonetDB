@@ -127,8 +127,8 @@ void usage( char *prog ){
 	fprintf(stderr, "usage: %s\n", prog);
 	fprintf(stderr, "[--dbname database_name ]\n" );
 	fprintf(stderr, "[--dbfarm database_directory ]\n" ); 
-	fprintf(stderr, "[-d or --debug [ debug_level ]]\n" );
-	fprintf(stderr, "[-? or --help\n" );
+	fprintf(stderr, "[-d or --debug [debug_level] ]\n" );
+	fprintf(stderr, "[-? or --help ]\n" );
 	fprintf(stderr, "[-c or --config config_file ]\n" );
 	fprintf(stderr, "[-s or --set option=value ]\n" );
 	fprintf(stderr, "script+\n" );
@@ -253,7 +253,7 @@ A grain size of 128 bytes is used to keep overhead low.
                {"dbname", 1, 0, 0},
                {"dbfarm", 1, 0, 0},
                {"debug", 2, 0, 'd'},
-               {"help", 0, 0, 'h'},
+               {"help", 0, 0, '?'},
                {"set", 1, 0, 's'},
                {0, 0, 0, 0}
              };
@@ -300,9 +300,6 @@ A grain size of 128 bytes is used to keep overhead low.
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "gdk_debug", optarg );
 			}
-			break;
-		case 'h':
-			usage(prog);
 			break;
 		case 's': {
 			/* should add option to a list */
