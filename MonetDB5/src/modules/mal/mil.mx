@@ -48,7 +48,7 @@ comment "Close the MIL constant box ";
 pattern destroy():void
 address MILdestroy
 comment "Destroy the MIL box";
-pattern take(name:any):any 
+pattern take(name:str):any 
 address MILtake
 comment "Locate and take the typed value";
 pattern deposit(name:any) :void 		
@@ -76,6 +76,10 @@ pattern prelude():void
 address MILprelude
 comment "Initialize the const box";
 
+pattern line(msg:str):void
+address MILline
+comment "Produce comment for tracking
+	the MIL code produced";
 mil.prelude();
 #theta join operators
 EQ :=0;
@@ -159,6 +163,9 @@ The content of this box my only be changed by the Administrator.
 	GDKfree(msg);
 @c
 #include "mil.h"
+#include "streams.h"
+
+#include "mal_utils.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -236,24 +243,16 @@ str MILtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int tpe;
 
 	@:OpenBox(take)@
-	name = (str) getArgName(mb,pci,1);
+	name = * (str*) getArgReference(stk,pci,1);
 	tpe = (int) getArgType(mb,pci,0);
 	(void)tpe;
 	v = &stk->stk[pci->argv[0]];
 	if(takeBox(box,name,v,tpe)) {
-		box= findBox("bbp");
-		if(box && takeBox(box,name,v,tpe)== 0){
-			/* also keep the copy in the variable */
-			VALcopy(&stk->stk[pci->argv[1]],v);
-			BBPincref(v->val.bval,TRUE);
-			return MAL_SUCCEED;
-		}
 		return throwException(MALEXCEPTION,"mil.take",
 			"failed to take '%s' from box",name);
-	} else {
-		/* also keep the copy in the variable */
-		VALcopy(&stk->stk[pci->argv[1]],v);
-	}
+	} 
+	/* also keep the copy in the variable */
+	VALcopy(&stk->stk[pci->argv[1]],v);
 	return MAL_SUCCEED;
 }
 
@@ -326,6 +325,16 @@ str MILiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	cursor= (lng*) getArgValue(stk,pci,0);
 	v= &stk->stk[pci->argv[1]];
 	nextBoxElement(box, cursor, v);
+	return MAL_SUCCEED;
+}
+
+str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str nme;
+	(void) mb; /* fool compiler */
+	nme = (str) getArgValue(stk,pci,1);
+	unquote(nme);
+	stream_printf(GDKout,"#%s\n",nme);
+        stream_flush(GDKout);
 	return MAL_SUCCEED;
 }
 @}
