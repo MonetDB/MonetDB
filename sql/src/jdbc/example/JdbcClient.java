@@ -649,7 +649,13 @@ public class JdbcClient {
 											} else {
 												data = rdata.toString();
 											}
-											out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
+											if (md.isSigned(j + 1)) {
+												// we have a numeric type here
+												out.print(" " + repeat(' ', Math.max(width[j] - data.length(), 0)) + data +  " |");
+											} else {
+												// something else
+												out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
+											}
 										}
 										out.println();
 									}
