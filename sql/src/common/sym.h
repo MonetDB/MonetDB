@@ -1,7 +1,9 @@
 #ifndef SYM_H
 #define SYM_H
 
-/*#include <config.h>*/
+#ifdef _MSC_VER
+#include <sql_config.h>
+#endif
 
 #ifdef _MSC_VER
 #ifndef LIBSQL

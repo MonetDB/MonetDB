@@ -1,7 +1,9 @@
 #ifndef _MEM_H_ 
 #define _MEM_H_ 
 
-/*#include <config.h>*/
+#ifdef _MSC_VER
+#include <sql_config.h>
+#endif
 
 #include <stdio.h>
 #include <assert.h>
