@@ -428,7 +428,7 @@ on a user-supplied function [todo].
 		p->afterCall= (MALfcn) batAfterCall;
 		p->finalCall= (MALfcn) batFinalCall;
 	}
-	else if( ATOMstorage(s1)== TYPE_str){
+	else if( s1 != TYPE_any && ATOMstorage(s1)== TYPE_str){
 		@:chkMultiple@
 		p->beforeCall= (MALfcn)strBeforeCall;
 		p->afterCall= (MALfcn) strAfterCall;
