@@ -9,9 +9,6 @@
 #undef HAVE_LIBZ
 #undef HAVE_LIBBZ2
 
-/* Define this if you have the getopt library */
-#undef HAVE_LIBGETOPT
-
 /* Define these if you have the respective hardware-counters library */
 #undef HAVE_LIBPPERF	/* Linux <= 2.2 */
 #undef HAVE_LIBPERFCTR	/* Linux >= 2.4 */
