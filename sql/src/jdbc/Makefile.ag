@@ -23,6 +23,8 @@
 
 MTSAFE
 
+SUBDIRS = tests
+
 EXTRA_DIST = manifest benchblockmode.tex jdbcmanual.tex
 
 jar_MonetJDBC = {
