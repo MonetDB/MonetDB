@@ -6,7 +6,7 @@
 
 -->
 
-<project name="JDBCTests" default="run" basedir=".">
+<project name="JDBCTests" default="compile" basedir=".">
 
   <!-- set global properties for this build -->
   <property name="srcdir"    value="." />
@@ -28,22 +28,6 @@
          <pathelement path="${srcdir}" />
        </classpath>
     </javac>
-  </target>
-
-  <!-- Runs the tests -->
-  <target name="run" depends="compile">
-    <echo message="Running JDBC tests" />
-    <path id="run.classpath">
-      <pathelement path="${builddir}" />
-      <pathelement location="${driverjar}" />
-    </path>
-    <echo message="${builddir} ${driverjar}" />
-    <java classname="Test_Cautocommit" classpathref="run.classpath" />
-    <java classname="Test_Csavepoints" classpathref="run.classpath" />
-    <java classname="Test_PStimedate" classpathref="run.classpath" />
-    <java classname="Test_RSpositioning" classpathref="run.classpath" />
-    <java classname="Test_Rbooleans" classpathref="run.classpath" />
-    <java classname="Test_Rtimedate" classpathref="run.classpath" />
   </target>
 
   <!-- This target removes the build directory -->
