@@ -30,6 +30,11 @@ lib__sql = {
 	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONETDB_LIBS) -lbat -lmal -lstream $(MONET5_LIBS)
 }
 
+lib__sql_cache = {
+	DIR = libdir/MonetDB5
+	SOURCES = dummy.c
+}
+
 scripts_mal = {
 	DIR = libdir/MonetDB5
 	SOURCES = sql.mx sql_scenario.mx sql_cache.mx
