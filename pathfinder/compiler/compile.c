@@ -168,9 +168,10 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     /* Call setjmp() before variables are declared;
      * otherwise, some compilers complain about clobbered variables.
      */
-    if (setjmp(PFexitPoint) != 0 ) {
+    int rtrn = 0;
+    if ((rtrn = setjmp(PFexitPoint)) != 0 ) {
         fputs(PFerrbuf, stderr);
-        return ( -1 ); /* EXIT_FAILURE */
+        return ( rtrn<0 ? rtrn : -rtrn ); /* EXIT_FAILURE */
     }
 
  {

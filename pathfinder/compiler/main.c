@@ -501,6 +501,7 @@ int
 main (int argc, char *argv[])
 {
     unsigned int i;
+    int rtrn = -(EXIT_FAILURE);
 
     PFstate_t* status = &PFstate;
 
@@ -687,7 +688,7 @@ main (int argc, char *argv[])
     }
 
     /* Now call the main compiler driver */
-    if ( pf_compile(pfin, stdout, status) < 0 )
+    if ( (rtrn = pf_compile(pfin, stdout, status)) < 0 )
         goto failure;
 
     if ( pfin != stdin )
@@ -696,7 +697,7 @@ main (int argc, char *argv[])
     exit (EXIT_SUCCESS);
 
  failure:
-    exit (EXIT_FAILURE);
+    exit (-rtrn); /*(EXIT_FAILURE)*/
 }
 
 /* vim:set shiftwidth=4 expandtab: */
