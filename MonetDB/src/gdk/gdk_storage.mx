@@ -283,7 +283,7 @@ at commit-time.
 					break;
 				}
 				size -= ret;
-				buf += ret;
+				buf = (void*)((char*)buf + ret);
 			}
 			IODEBUG THRprintf(GDKerr, "fwrite(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", buf, size, fd, err);
 	       	}  else {
