@@ -461,6 +461,8 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
             env['_'+TSTDIR+'_BODY_'] = ["."+TST+".out.html", o]
 
     CreateSrcIndex(env, TST, EXT)
+
+    return max(o,e)
 ### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
 
 def AddSubToHtmlIndex (env, TSTDIR) :
@@ -532,6 +534,7 @@ def find_test_dirs(thisdir) :
 
 def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
+    Fd = -1
     TSTSRCBASE = env['TSTSRCBASE']
     TSTPREF = env['TSTPREF']
     if testdir == TSTSRCBASE:
@@ -593,14 +596,15 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
 
         for TST in testlist:
             os.environ['TST'] = TST
-            tt = RunTest(env, TST, BusyPorts)
+            tt,Ft = RunTest(env, TST, BusyPorts)
             if tt:
                 t = "%7.3f" % tt
             else:
                 t = '-.---'
-            TIMES.append([TSTDIR,TST,t])
+            TIMES.append([TSTDIR,TST,t,Ft])
             td = td + tt
-        TIMES.append([TSTDIR,'',"%7.3f" % td])
+            Fd = max(Fd,Ft)
+        TIMES.append([TSTDIR,'',"%7.3f" % td,Fd])
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
             CreateHtmlIndex(env)
@@ -821,6 +825,7 @@ def StopAt(ATJOB,ME) :
 ### StopAt(ATJOB,ME) #
 
 def RunTest(env, TST, BusyPorts) :
+    Failed = -1
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -878,7 +883,7 @@ def RunTest(env, TST, BusyPorts) :
             #elif os.name == "posix":
         else:
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.milM|.milS|.milC]`")
-        return TX
+        return TX,Failed
 
     MissingMods = CheckMods(env, TST, SERVER)
     MissingBATs = CheckBATs(env, TST, TSTDB)
@@ -944,7 +949,7 @@ def RunTest(env, TST, BusyPorts) :
                 shutil.copy(TSTSRC,TST+EXT)
             else:
                 SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
-                return TX
+                return TX,Failed
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
@@ -1204,9 +1209,9 @@ def RunTest(env, TST, BusyPorts) :
                 timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
-            AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
+            Failed = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
 
-    return TX
+    return TX,Failed
 ### RunTest(env, TST, BusyPorts) #
 
 def CheckPort(host,port) :
@@ -2221,8 +2226,11 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
-        for TSTDIR,TST,tt in TIMES:
+        Failure = [0,0,0,0]
+        for TSTDIR,TST,tt,Ft in TIMES:
             fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+"\n")
+            if TST != '':
+                Failure[Ft] += 1 
         fl.write(":\t%7.3f\n" % t_)
         fl.close()
 
@@ -2233,21 +2241,29 @@ def main(argv) :
 
         test = ( re.compile("^.*<B><I>.*$", re.MULTILINE)
                , re.compile("^.*<B>.*$", re.MULTILINE) )
-        failed = 0
+        Failed = 0
+        for f in Failure[1:]:
+            Failed += f
+        num_tests = 0
+        for f in Failure:
+            num_tests += f
         how = ""
-        for l in fileinput.input(os.path.join(env['TSTTRGBASE'],TSTPREF,"index.head.html")):
-            if   failed<2 and test[0].match(l):
-                failed = 2
-                how = "SIGNIFICANTLY"
-            elif failed<1 and test[1].match(l):
-                failed = 1
-                how = "slightly"
+        what = ""
+        if Failure[-1]:
+            what += "  %3d out of %3d tests could not be executed\n" % (Failure[-1],num_tests)
+        if Failure[1]:
+            how = "slightly"
+            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[1],num_tests,how)
+        if Failure[2]:
+            how = "SIGNIFICANTLY"
+            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[2],num_tests,how)
         STDERR.flush()
-        if failed:
+        if Failed:
             print """\
 
  !ERROR:  Testing FAILED %s ! 
 
+%s
  First, check the testing results in  %s  ! 
 
  Then, fix the problems by: 
@@ -2256,7 +2272,7 @@ def main(argv) :
   - approving test output by Mapprove.py (cf. Mapprove.py -?) 
 
  After that, re-run Mtest. 
-""" % (how, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
+""" % (how, what, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
             sys.exit(1)
         else:
             print """\
