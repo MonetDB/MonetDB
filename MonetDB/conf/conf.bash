@@ -237,8 +237,8 @@ if [ ! -x bootstrap ] ; then
 
 #	# the following is nolonger needed for Monet
 #	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
-#	modpath="${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
-#	libpath="${modpath}:${libpath}"
+#	modpath="${MONET_PREFIX}/lib/Monet"
+#	libpath="${MONET_PREFIX}/lib:${modpath}:${libpath}"
 
 	# remove trailing ':'
 	binpath=`echo "${binpath}" | sed 's|:$||'`
@@ -303,7 +303,7 @@ if [ ! -x bootstrap ] ; then
 	echo "To compile Monet, just execute:"
 	echo -e "\t./bootstrap"
 	echo -e "\tcd ${MONET_BUILD}"
-	echo -e "\t${CONFIGURE}"
+	echo -e "\t${MONET_CONFIGURE}"
 	echo -e "\tmake"
 	echo -e "\tmake install"
 	echo ""
