@@ -314,7 +314,11 @@ init_keywords()
 	keywords_insert("RETURNS", RETURNS );
 	keywords_insert("EXTERNAL", EXTERNAL );
 	keywords_insert("NAME", sqlNAME );
+
+	keywords_insert("PREPARE", PREPARE );
+	keywords_insert("PREP",    PREPARE );
 	keywords_insert("EXECUTE", EXECUTE );
+	keywords_insert("EXEC",    EXECUTE );
 
 	keywords_insert("INDEX", INDEX );
 }

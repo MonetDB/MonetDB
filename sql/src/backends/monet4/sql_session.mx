@@ -348,6 +348,31 @@ int sqlcleanup( mvc *c, int err, int cache)
 	return err;
 }
 
+static int 
+output_prepare( stream *out, cq *q )
+{
+	int i;
+	node *n;
+	char buf[BUFSIZ];
+
+	i = snprintf( buf, BUFSIZ, "%d\n%d\n", q->id, list_length(q->params));
+	if (stream_write(out, buf, i, 1) != 1) {
+		return -1;
+	}
+	for (n = q->params->h; n; n = n->next) {
+		var_ *v = n->data;
+		sql_subtype *t = tail_type(v->s);
+		if (t) {
+			i = snprintf( buf, BUFSIZ, "%s(%d,%d)\n", 
+				t->type->sqlname, t->digits, t->scale);
+			if (stream_write(out, buf, i, 1) != 1) {
+				return -1;
+			}
+		}
+	}
+	return 0;
+}
+
 enum ex_t {
 	ex_none,
 	ex_mil,
@@ -462,29 +487,9 @@ int sqlexecute(backend * be, stream *out )
 
 	scanner_query_processed(&(c->scanner));
 
-	if (q && c->prepare) {
-		int i;
-		node *n;
-		char buf[BUFSIZ];
-		c->prepare = 0; 
-
-		i = snprintf( buf, BUFSIZ, "%d\n%d\n", 
-			q->id, list_length(q->params));
-		if (stream_write(out, buf, i, 1) != 1) {
-			err = -1;
+	if (q && c->mode == m_prepare) {
+		if ( (err = output_prepare( out, q )) ) {
 			return sqlcleanup(c, err, cache);
-		}
-		for (n = q->params->h; n; n = n->next) {
-			var_ *v = n->data;
-			sql_subtype *t = tail_type(v->s);
-			if (t) {
-				i = snprintf( buf, BUFSIZ, "%d(%d,%d)\n", 
-					t->type->sqlname, t->digits, t->scale);
-				if (stream_write(out, buf, i, 1) != 1) {
-					err = -1;
-					return sqlcleanup(c, err, cache);
-				}
-			}
 		}
 	} else if (q && !q->code) {
 		char buf[BUFSIZ];
@@ -661,9 +666,12 @@ query string with "M".
 
 		if (m->trans)
 			pstatus = m->status;
+
 		/* no transaction, reset status */
 		if (!m->trans)
 			m->status = 0;
+
+		m->mode = m_normal;
 
 		err = sqlexecute(sql, out);
 		m->scanner.mode = oldmode;
@@ -784,7 +792,7 @@ command. This means that the SQL client runs under the authentication of
 the DBA.
 @c
 static int
-sendProperty(stream *out, const char *name, const char *value)
+sendProperty(stream *out, char *name, char *value)
 {
 	if (stream_write(out, "[ \"", 1, 3) != 3)
 		return 0;
