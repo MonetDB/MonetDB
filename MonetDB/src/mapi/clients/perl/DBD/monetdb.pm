@@ -32,6 +32,9 @@ use sigtrap;
 $VERSION = '0.03';
 $drh = undef;
 
+require DBD::monetdb::TypeInfo;
+
+
 sub driver {
     return $drh if $drh;
 
@@ -501,11 +504,7 @@ SQL
 }
 
 
-sub type_info_all {
-    my ($dbh) = @_;
-    require DBD::monetdb::TypeInfo;
-    return $DBD::monetdb::TypeInfo::type_info_all;
-}
+*type_info_all = \&DBD::monetdb::TypeInfo::type_info_all;
 
 
 sub tables {
