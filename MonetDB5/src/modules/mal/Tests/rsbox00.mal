@@ -6,6 +6,7 @@ rs := rsbox.create("myid");
 b1 := bbp.new(:void, :str);
 bat.insert(b1, nil, "test1");
 bat.insert(b1, nil, "test2");
+bat.insert(b1, nil, nil:str);
 
 resultset.addColumn(rs, b1, "col1");
 resultset.setProperty(rs, "name", "table1");
@@ -13,6 +14,7 @@ resultset.setProperty(rs, "schema", "sys");
 
 b2 := bbp.new(:void, :int);
 bat.insert(b2, nil, 2);
+bat.insert(b2, nil, nil:int);
 bat.insert(b2, nil, 5);
 
 resultset.addColumn(rs, b2, "col2");
