@@ -3,9 +3,7 @@
 
 #include <config.h>
 
-#ifdef _MSC_VER
 #include <sql_config.h>
-#endif
 
 #include <stdio.h>
 #include <assert.h>
