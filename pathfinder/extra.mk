@@ -24,12 +24,12 @@
 # extra make rules for Pathfinder
 
 %.symbols.h %.c : %.mt
-	$(CP) $< tmp.mt
-	$(TWIG) -t tmp.mt
+	$(LOCKFILE) waiting_for_twig
+	$(TWIG) -t $<
 	mv -f symbols.h $*.symbols.h
-	sed 's/^short\(.*\)=/static short\1=/' walker.c > $@
-	$(RM) -f walker.c
-	$(RM) -f tmp.mt
+	sed 's/^short\(.*\)=/static short\1=/' walker.c > $*.c
+	$(RM) walker.c
+	$(RM) waiting_for_twig
 
 % :: %.m4
 	$(RM) -f $@
