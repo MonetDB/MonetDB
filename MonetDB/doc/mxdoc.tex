@@ -1,6 +1,14 @@
 \documentclass{article}
+\usepackage{html}
 \begin{document}
 \newcommand{\Mx}{{\it M}x }
+\begin{htmlonly}
+\newcommand{\Lc}[1]{\it{\char92#1}}
+\end{htmlonly}
+%begin{latexonly}
+\newcommand{\Lc}[1]{$\backslash #1$}
+%end{latexonly}
+
 \title{Mx documentation tool}
 \author{M.L. Kersten, F. Schippers, C.A. van den Berg, P. Boncz}
 \maketitle
@@ -184,8 +192,8 @@ to HTML, like tables, colors and background.  Since many code uses @T
 opportunistic, \LaTeX-to-HTML translation. This translation
 works for all \LaTeX\ commands, and also bibliographies and EPFS imagery
 ({\em .bib/.eps} files expected in the "." directory). {\bf Beware}:
-\LaTeX\ command definitions with $\backslash def$ and
-$\backslash newcommand$, are not supported, though.
+\LaTeX\ command definitions with \Lc{def} and
+\Lc{newcommand}, are not supported, though.
 
 This process will produce one single -- unstructured -- file. Internal
 URL links are generated only for: 
@@ -318,7 +326,7 @@ consisting of printable character sequences. The definition of @t, @a,
 @v and @d end at the end of the line. 
 
 The sections, subsections and sub-subsections end at the first @
-character. This character is escaped by  $\backslash$@. 
+character. This character is escaped by  \Lc{@}. 
 The section and subsection titles included in the table of contents.
 
 \section{Macros and conditionals}
@@ -342,7 +350,7 @@ several versions of the software in a single \Mx document.
 \begin{tabular}{|l|p{0.5 \linewidth}}
 @= \macro & Defines the macro with the name \macro. In the body @\n is
 used to represent the arguments. A @ character is escaped by
-$\backslash$@.\\
+\Lc{@}.\\
 @:\macro($arg_{1}$,\ldots , $arg_{n}$)@ & Calls the macro with name
 \macro. The optional argument $arg_{i}$ replaces the @i in the macro
 body.\\

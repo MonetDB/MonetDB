@@ -140,7 +140,8 @@ query optimization (i.e. choosing a good algorithms for a particular algebra com
 
 These properties can be inspected with the {\tt info(BAT[any,any]) : BAT[str,str] } command:
 \begin{verbatim}
-> car_age.info.print;
+> var car_age := bat(void,int);
+> car_age.info().print();
 #---------------------------------#
 # BAT:		     tmp_31	  #
 # (str)		     (str)	  #
@@ -431,7 +432,7 @@ and {\tt datavector}. The system variable {\tt monet\_acctbl} contains
 a list of all currently known accelerator types.
 
 \begin{verbatim}
->monet_acctbl.print;
+>monet_acctbl.print();
 #-------------------------#
 # h		| t	  #
 #-------------------------#
