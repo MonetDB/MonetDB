@@ -801,11 +801,15 @@ int hasSameSignature(InstrPtr p, InstrPtr q){
     return TRUE;
 }
 
-int hasSameArguments(InstrPtr p, InstrPtr q)
+int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {   int k;
     for(k=p->retc; k<p->argc;k++)
-    if( q->argv[k]!= p->argv[k])
-        return FALSE;
+    if( q->argv[k]!= p->argv[k]) {
+		if( isConstant(mb,p->argv[k]) && isConstant(mb,q->argv[k]) &&
+			strcmp(getVarLiteral(mb,p->argv[k]), getVarLiteral(mb,q->argv[k])) == 0)
+			continue;
+		return FALSE;
+	}
     return TRUE;
 }
 
@@ -886,13 +890,13 @@ int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
     int i,j;
     for(j=0;j<q->retc; j++)
     for(i=p->retc; i<p->argc;i++)
-    if( p->argv[i]== q->argv[j]) {
+    if( p->argv[i]== q->argv[j] ) {
 #ifdef DEBUG_MAL_OPTIMIZER2
-    if( cntxt->debugoptimizer){
-    stream_printf(GDKout,"Found assignment barrier for \n");
-    printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-    printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-    }
+	if( cntxt->debugoptimizer){
+	stream_printf(GDKout,"Found assignment barrier for \n");
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+	}
 #endif
         return TRUE;
     }
@@ -900,12 +904,12 @@ int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
     if( isUnsafeFunction(mb,q)){
         for(i=p->retc; i<p->argc; i++)
         for(j=q->retc; j<q->argc; j++)
-        if( p->argv[i]== q->argv[j]) {
+        if( p->argv[i]== q->argv[j] ) {
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( cntxt->debugoptimizer){
-    stream_printf(GDKout,"Found overlapping assignment barrier for \n");
-    printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-    }
+	if( cntxt->debugoptimizer){
+	stream_printf(GDKout,"Found overlapping assignment barrier for \n");
+	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+	}
 #endif
             /* TODO check safety property of the argument */
             return TRUE;
@@ -969,12 +973,12 @@ str CXoptimizer(Client cntxt, MalBlkPtr mb, int pc)
             if( safetyBarrier(cntxt,mb,p,q=getInstrPtr(mb,j)) )
                 goto nxtCommonSubExpression;
 #ifdef DEBUG_MAL_OPTIMIZER
-    printf("%d, %d  %d %d ",i,j, hasSameSignature(p,q), hasSameArguments(p,q) );
+    printf("%d, %d  %d %d ",i,j, hasSameSignature(p,q), hasSameArguments(mb,p,q) );
     printf(" :%d %d %d \n", !isUpdated(mb,i), !hasCommonResults(p,q), !hasSideEffects(p));
 
 #endif
             if( hasSameSignature(p,q) && 
-                hasSameArguments(p,q) &&
+                hasSameArguments(mb,p,q) &&
                !isUpdated(mb,i) &&
                !hasCommonResults(p,q) &&
                !hasSideEffects(p) ){
@@ -1008,7 +1012,6 @@ str CXoptimizer(Client cntxt, MalBlkPtr mb, int pc)
     }
     return NULL;
 }
-
 @+ Dead Coder Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. Note that the DCR should
