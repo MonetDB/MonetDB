@@ -837,7 +837,9 @@ salgebra_CMDclusterhash( clusterhash* res, BAT* b) {
   if ( !salgebra_isCached( batId ) ) {
     /* build clusterhash */
     int ret;
+#ifdef DEBUG
     GDKwarning( "Building clusterhash\n" );
+#endif
     ret = salgebra_CHbuild( res, b );
     clusterhashFix( res );
     return ret;

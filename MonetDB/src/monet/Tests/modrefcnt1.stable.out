@@ -1,9 +1,9 @@
 stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 
 
-# 10:19:31 >  
-# 10:19:31 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < modrefcnt1.milM
-# 10:19:31 >  
+# 09:47:56 >  
+# 09:47:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < modrefcnt1.milM
+# 09:47:56 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -20,7 +20,7 @@ stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (int)	  (lock)  #
 #-----------------#
 [ 0 ]
@@ -36,7 +36,7 @@ stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (int)	  (lock)  #
 #-----------------#
 [ 0 ]
@@ -50,15 +50,15 @@ stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-!ERROR: atom 'lock' unknown, in BAT '26'.
-!ERROR: atom 'lock' unknown, in BAT '26'.
+!ERROR: atom 'lock' unknown, in BAT '28'.
+!ERROR: atom 'lock' unknown, in BAT '28'.
 !ERROR: CMDprint_table: operation failed.
-!ERROR: atom 'lock' unknown, in BAT '26'.
-!ERROR: atom 'lock' unknown, in BAT '26'.
+!ERROR: atom 'lock' unknown, in BAT '28'.
+!ERROR: atom 'lock' unknown, in BAT '28'.
 !ERROR: BATcount: BAT required.
 [ 0 ]
 
-# 10:19:32 >  
-# 10:19:32 >  Done.
-# 10:19:32 >  
+# 09:47:57 >  
+# 09:47:57 >  Done.
+# 09:47:57 >  
 

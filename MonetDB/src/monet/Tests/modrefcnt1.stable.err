@@ -1,15 +1,15 @@
 stderr of test 'modrefcnt1` in directory 'src/monet` itself:
 
 
-# 10:19:31 >  
-# 10:19:31 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < modrefcnt1.milM
-# 10:19:31 >  
+# 09:47:56 >  
+# 09:47:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < modrefcnt1.milM
+# 09:47:56 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 14718
+# builtin opt 	monet_pid = 24046
 # builtin opt 	prefix = /ufs/niels/data/monet/Linux
-# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	exec_prefix = NONE
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -25,8 +25,8 @@ stderr of test 'modrefcnt1` in directory 'src/monet` itself:
 # builtin opt 	mapi_debug = 0
 # builtin opt 	sql_port = 45123
 # builtin opt 	sql_debug = 0
-# builtin opt 	sql_api = sql
-# builtin opt 	sql_user = sqladmin
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
 # config opt 	prefix = /ufs/niels/data/monet/Linux
 # config opt 	exec_prefix = ${prefix}
@@ -43,7 +43,7 @@ stderr of test 'modrefcnt1` in directory 'src/monet` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_src_monet
 
-# 10:19:32 >  
-# 10:19:32 >  Done.
-# 10:19:32 >  
+# 09:47:57 >  
+# 09:47:57 >  Done.
+# 09:47:57 >  
 
