@@ -64,6 +64,6 @@ do
 done
 
 (cd $srcdir/scripts/gold; cp README init.mil load.mil $dstdir/doc/www/)
-(cd $srcdir/; cp HowToStart $dstdir/doc/www/)
+(cd $srcdir/; cp HowToStart HowToStart-Win32 $dstdir/doc/www/)
 
 echo '<html><body><h3><a href="mailto:niels@cwi.nl">The SQL frontend is not documented yet</a></h3></body></html>' > $dstdir/doc/www/sql.html

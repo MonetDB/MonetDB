@@ -111,8 +111,9 @@ for f in ['aggrX3', 'aggr', 'alarm', 'algebra', 'arith', 'ascii_io', 'bat',
 for f in ['README', 'init.mil']:
     copyfile(os.path.join(srcdir, 'scripts', 'gold', f),
              os.path.join(dstdir, 'doc', 'www', f))
-copyfile(os.path.join(srcdir, 'HowToStart'),
-         os.path.join(dstdir, 'doc', 'www', 'HowToStart'))
+for f in ['HowToStart', 'HowToStart-Win32']:
+    copyfile(os.path.join(srcdir, f),
+             os.path.join(dstdir, 'doc', 'www', f))
 
 f = open(os.path.join(dstdir, 'doc', 'www', 'sql.html'), 'w')
 f.write('''\
