@@ -1,25 +1,25 @@
 stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 
 
-# 09:31:19 >  
-# 09:31:19 >  Mtimeout -timeout 540 ./tstvoid tstvoid 
-# 09:31:19 >  
+# 14:26:06 >  
+# 14:26:06 >  Mtimeout -timeout 540 ./tstvoid tstvoid 
+# 14:26:06 >  
 
 
-# 09:31:19 >  
-# 09:31:19 >  mkdir -p /ufs/niels/data/monet/Linux/var/dbfarm/Tests_scripts_gold_tstvoid
-# 09:31:19 >  
+# 14:26:06 >  
+# 14:26:06 >  mkdir -p /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm/mTests_scripts_gold_tstvoid
+# 14:26:06 >  
 
 
-# 09:31:19 >  
-# 09:31:19 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid
-# 09:31:19 >  
+# 14:26:06 >  
+# 14:26:06 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=55826 --set sql_port=50670 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
+# 14:26:06 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 14631
-# builtin opt 	prefix = /ufs/niels/data/monet/Linux
-# builtin opt 	exec_prefix = NONE
+# builtin opt 	gdk_version = 4.3.11
+# builtin opt 	monet_pid = 27251
+# builtin opt 	prefix = /ufs/sjoerd/Monet
+# builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -28,7 +28,7 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# builtin opt 	monet_deamon = yes
+# builtin opt 	monet_daemon = yes
 # builtin opt 	host = localhost
 # builtin opt 	mapi_port = 50000
 # builtin opt 	mapi_noheaders = no
@@ -38,9 +38,10 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	prefix = /ufs/sjoerd/Monet
 # config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
 # config opt 	gdk_debug = 0
 # config opt 	gdk_mmap = 33554432
@@ -48,20 +49,26 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # config opt 	monet_prompt = monet>
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# config opt 	monet_deamon = no
+# config opt 	monet_daemon = no
+# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
 # cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs
+# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm
+# cmdline opt 	sql_logdir = /ufs/sjoerd/src/MonetDB/monet-merge/build/log
+# cmdline opt 	mapi_port = 55826
+# cmdline opt 	sql_port = 50670
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = Tests_scripts_gold_tstvoid
+# cmdline opt 	gdk_dbname = mTests_scripts_gold_tstvoid
 
-# 09:31:20 >  
-# 09:31:20 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid
-# 09:31:20 >  
+# 14:26:07 >  
+# 14:26:07 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=55826 --set sql_port=50670 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
+# 14:26:07 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 14638
-# builtin opt 	prefix = /ufs/niels/data/monet/Linux
-# builtin opt 	exec_prefix = NONE
+# builtin opt 	gdk_version = 4.3.11
+# builtin opt 	monet_pid = 27271
+# builtin opt 	prefix = /ufs/sjoerd/Monet
+# builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -70,7 +77,7 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# builtin opt 	monet_deamon = yes
+# builtin opt 	monet_daemon = yes
 # builtin opt 	host = localhost
 # builtin opt 	mapi_port = 50000
 # builtin opt 	mapi_noheaders = no
@@ -80,9 +87,10 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	prefix = /ufs/sjoerd/Monet
 # config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
 # config opt 	gdk_debug = 0
 # config opt 	gdk_mmap = 33554432
@@ -90,20 +98,26 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # config opt 	monet_prompt = monet>
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# config opt 	monet_deamon = no
+# config opt 	monet_daemon = no
+# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
 # cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs
+# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm
+# cmdline opt 	sql_logdir = /ufs/sjoerd/src/MonetDB/monet-merge/build/log
+# cmdline opt 	mapi_port = 55826
+# cmdline opt 	sql_port = 50670
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = Tests_scripts_gold_tstvoid
+# cmdline opt 	gdk_dbname = mTests_scripts_gold_tstvoid
 
-# 09:31:20 >  
-# 09:31:20 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid
-# 09:31:20 >  
+# 14:26:08 >  
+# 14:26:08 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=55826 --set sql_port=50670 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
+# 14:26:08 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 14645
-# builtin opt 	prefix = /ufs/niels/data/monet/Linux
-# builtin opt 	exec_prefix = NONE
+# builtin opt 	gdk_version = 4.3.11
+# builtin opt 	monet_pid = 27290
+# builtin opt 	prefix = /ufs/sjoerd/Monet
+# builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -112,7 +126,7 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# builtin opt 	monet_deamon = yes
+# builtin opt 	monet_daemon = yes
 # builtin opt 	host = localhost
 # builtin opt 	mapi_port = 50000
 # builtin opt 	mapi_noheaders = no
@@ -122,9 +136,10 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	prefix = /ufs/sjoerd/Monet
 # config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
 # config opt 	gdk_debug = 0
 # config opt 	gdk_mmap = 33554432
@@ -132,20 +147,26 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # config opt 	monet_prompt = monet>
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# config opt 	monet_deamon = no
+# config opt 	monet_daemon = no
+# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
 # cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs
+# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm
+# cmdline opt 	sql_logdir = /ufs/sjoerd/src/MonetDB/monet-merge/build/log
+# cmdline opt 	mapi_port = 55826
+# cmdline opt 	sql_port = 50670
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = Tests_scripts_gold_tstvoid
+# cmdline opt 	gdk_dbname = mTests_scripts_gold_tstvoid
 
-# 09:31:21 >  
-# 09:31:21 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid
-# 09:31:21 >  
+# 14:26:09 >  
+# 14:26:09 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=55826 --set sql_port=50670 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
+# 14:26:09 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 14656
-# builtin opt 	prefix = /ufs/niels/data/monet/Linux
-# builtin opt 	exec_prefix = NONE
+# builtin opt 	gdk_version = 4.3.11
+# builtin opt 	monet_pid = 27313
+# builtin opt 	prefix = /ufs/sjoerd/Monet
+# builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -154,7 +175,7 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# builtin opt 	monet_deamon = yes
+# builtin opt 	monet_daemon = yes
 # builtin opt 	host = localhost
 # builtin opt 	mapi_port = 50000
 # builtin opt 	mapi_noheaders = no
@@ -164,9 +185,10 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	prefix = /ufs/sjoerd/Monet
 # config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
 # config opt 	gdk_debug = 0
 # config opt 	gdk_mmap = 33554432
@@ -174,17 +196,23 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # config opt 	monet_prompt = monet>
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# config opt 	monet_deamon = no
+# config opt 	monet_daemon = no
+# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
 # cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs
+# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm
+# cmdline opt 	sql_logdir = /ufs/sjoerd/src/MonetDB/monet-merge/build/log
+# cmdline opt 	mapi_port = 55826
+# cmdline opt 	sql_port = 50670
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = Tests_scripts_gold_tstvoid
+# cmdline opt 	gdk_dbname = mTests_scripts_gold_tstvoid
 
-# 09:31:22 >  
-# 09:31:22 >  sh summary
-# 09:31:22 >  
+# 14:26:09 >  
+# 14:26:09 >  sh summary
+# 14:26:09 >  
 
 
-# 09:31:22 >  
-# 09:31:22 >  Done.
-# 09:31:22 >  
+# 14:26:10 >  
+# 14:26:10 >  Done.
+# 14:26:10 >  
 
