@@ -773,12 +773,19 @@ module(bat_arith);
 module(pcre); # likeselect_pcre
 module(mapi); # mapi_listen 
 
+ascii_io_debug(1);
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
 
 proc SQLclient( Stream s_in, Stream s_out ) : void {
 	fork(sqlclient(s_in, s_out));
+}
+
+proc sql_diff (bat[oid,any::1] b1, bat[oid,any::2] b2) : bat[oid,any::1] {
+	if (count(b2) > 0)
+		return kdiff(b1,b2);
+	return b1;
 }
 
 proc sql_server_start() : void {
