@@ -291,6 +291,7 @@ def am_scripts(fd, var, scripts, am):
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         am['INSTALL'].append(script)
+        am['UNINSTALL'].append(script)
         am['InstallList'].append("\t"+sd+"/"+script+"\n")
 
     am_find_ins(am, scripts)
@@ -315,6 +316,7 @@ def am_headers(fd, var, headers, am):
             fd.write("uninstall-local-%s: \n" % header)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
+            am['UNINSTALL'].append(header)
             am['InstallList'].append("\t"+sd+"/"+header+"\n")
 
     am_find_ins(am, headers)
@@ -323,26 +325,39 @@ def am_headers(fd, var, headers, am):
             am['EXTRA_DIST'].append(src)
 
 def am_doc(fd, var, docmap, am):
+    docdir = "pkgdatadir"
+    if docmap.has_key("DIR"):
+    	docdir = docmap["DIR"][0] # use first name given
+    docdir = am_translate_dir(docdir, am)
 
     name = var[4:]
+    if name[0] == "_":
+        name = name[1:]
 
-    doc_ext = ['pdf', 'ps']
+    doc_ext = ['pdf', 'ps', 'html']
 
     srcs = name+"_DOCS ="
     for target in docmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in doc_ext:
-            #srcs = srcs + " " + am_find_srcs(target, docmap['DEPS'], am)
-            # am_find_srcs returns nothing; IMHO we can simply add target, here ...
             srcs = srcs + " " + target
     fd.write(srcs + "\n")
 
     fd.write("if DOCTOOLS\n")
     fd.write("all-local-%s: $(%s_DOCS)\n" % (name, name))
+    fd.write("install-data-local-%s: $(%s_DOCS)\n" % (name, name))
+    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % docdir)
+    fd.write("\t$(INSTALL) $(%s_DOCS) $(DESTDIR)%s\n" % (name, docdir))
+    fd.write("uninstall-local-%s: \n" % name)
+    fd.write("\tcd $(DESTDIR)%s; $(RM) $(%s_DOCS)\n" % (docdir, name))
     fd.write("else\n")
     fd.write("all-local-%s: \n" % name)
+    fd.write("install-data-local-%s: \n" % name)
+    fd.write("uninstall-local-%s: \n" % name)
     fd.write("endif\n")
     am['ALL'].append(name)
+    am['DATA_INSTALL'].append(name)
+    am['UNINSTALL'].append(name)
 
     am_find_ins(am, docmap)
     am_deps(fd, docmap['DEPS'], "\.o", am)
@@ -359,6 +374,7 @@ def am_binary(fd, var, binmap, am):
                 if script not in am['BIN_SCRIPTS']:
                     am['BIN_SCRIPTS'].append(script)
             am['INSTALL'].append(name)
+            am['UNINSTALL'].append(name)
             am['ALL'].append(name)
             for i in binmap:
                 am['InstallList'].append("\t$(bindir)/"+i+"\n")
@@ -371,6 +387,7 @@ def am_binary(fd, var, binmap, am):
             fd.write("uninstall-local-%s: \n" % name)
             fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n\n" % name)
             am['INSTALL'].append(name)
+            am['UNINSTALL'].append(name)
             am['InstallList'].append("\t$(bindir)/"+name+"\n")
 
             fd.write("all-local-%s: %s\n" % (name, src))
@@ -737,6 +754,7 @@ def am_jar(fd, var, jar, am):
     fd.write("\nendif #HAVE_JAVA\n\n")
 
     am['INSTALL'].append(name+"_jar")
+    am['UNINSTALL'].append(name+"_jar")
     am['InstallList'].append("\t"+jd+"/"+name+".jar\n")
 
     am_find_ins(am, jar)
@@ -782,6 +800,7 @@ def am_java(fd, var, java, am):
     fd.write("\nendif #HAVE_JAVA\n\n")
 
     am['INSTALL'].append(name+"_class")
+    am['UNINSTALL'].append(name+"_class")
     am['InstallList'].append("\t"+jd+"/"+name+".class\n")
 
     am_find_ins(am, java)
@@ -891,6 +910,8 @@ CXXEXT = \\\"cc\\\"
     am['BINS'] = []
     am['BIN_SCRIPTS'] = []
     am['INSTALL'] = []
+    am['DATA_INSTALL'] = []
+    am['UNINSTALL'] = []
     am['HDRS'] = []
     am['LIBDIR'] = "libdir"
     am['ALL'] = []
@@ -945,11 +966,17 @@ CXXEXT = \\\"cc\\\"
         fd.write("install-exec-local-SCRIPTS: \n")
         fd.write("all-local-SCRIPTS: $(bin_SCRIPTS)\n")
 
+    if len(am['UNINSTALL']) > 0:
+        fd.write("uninstall-local:%s\n" % \
+            am_list2string(am['UNINSTALL'], " uninstall-local-", ""))
+
     if len(am['INSTALL']) > 0:
         fd.write("install-exec-local:%s\n" % \
             am_list2string(am['INSTALL'], " install-exec-local-", ""))
-        fd.write("uninstall-local:%s\n" % \
-            am_list2string(am['INSTALL'], " uninstall-local-", ""))
+
+    if len(am['DATA_INSTALL']) > 0:
+        fd.write("install-data-local:%s\n" % \
+            am_list2string(am['DATA_INSTALL'], " install-data-local-", ""))
 
     if len(am['ALL']) > 0:
         fd.write("all-local:%s\n" % \

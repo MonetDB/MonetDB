@@ -50,7 +50,7 @@ mx2swig = re.compile("^@swig[ \t\r\n]+", re.MULTILINE)
 mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
 mx2xsl = re.compile("^@xsl[ \t\r\n]+", re.MULTILINE)
 mx2sh = re.compile("^@sh[ \t\r\n]+", re.MULTILINE)
-mx2tex = re.compile("^@T[ \t\r\n]+", re.MULTILINE)
+mx2tex = re.compile("^@T|-|\+|\*[ \t\r\n]+", re.MULTILINE)
 mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
 
 e_mx = re.compile('^@[^{}]', re.MULTILINE)
@@ -118,7 +118,7 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
 #            'java':     [ '.class' ],
             'tmpmil':   [ '.mil' ],
             'mx.in':    [ '.mx' ],
-            'tex':      [ '.dvi' ],
+            'tex':      [ '.html', '.dvi', '.pdf' ],
             'dvi':      [ '.ps' ],
             'fig':      [ '.eps' ],
             'feps':     [ '.eps' ],
@@ -201,7 +201,7 @@ def readfilepart(f,ext):
                     m = res.start(0)
                     eres = epat.search(buf,res.end(0))
                     if eres is not None:
-                        n = eres.end(0)
+                        n = eres.start(0)
                         buf2 = buf2 + buf[m:n]
                         res = pat.search(buf,n)
                     else:
