@@ -1551,7 +1551,7 @@ BATebv (BAT *b)
 
 /* required by bunfastins macro */
 bunins_failed:
-    BBPreclaim(b);
+    BBPreclaim(ret);
     return NULL;
 }
 
