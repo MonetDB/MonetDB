@@ -1302,7 +1302,7 @@ int TBL_unloadmod(Client client, str module, int level) {
   	/* identify as father
          */
 	while (father->father != -1) {
-		father = monet_clients + client->father; 
+		father = monet_clients + father->father; 
   	}
 
 	if (level==0) TBL_M_lock(father);
@@ -1328,10 +1328,7 @@ Check if it is in use already.
 			goto xit;
 		}
 	}
-	/* it is legal to drop this module 
-         */
-	refcnt = TBL_M_decref(father, mid);
-	if (BUNlocate(TBL_mod_use, &mid, &father) != NULL) 
+	if ((refcnt = TBL_M_decref(father, mid)) > 0 )
 		goto xit;
 
 	/* Go ahead with module drop: first execute the MIL exit script
