@@ -595,11 +595,14 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 		oid k = *(oid*)BUNtloc(kind,pk);
 		str s = (str)BUNtvar(str_value,ps);
 		size_t l = strlen(s) + 1;
-		if (i0 < i) {
-			/* new iter => insert actual_str of previous iter into result */
-			bunfastins(bn, &base, actual_str);
-			len = 0;
-			actual_str[0] = '\0';
+		if ( i0 < i || k == KIND_NODE ) {
+			/* new iter or new node */
+			if (actual_str[0] != '\0') {
+				/* actual_str of (previous) iter is not empty => insert it into result */
+				bunfastins(bn, &base, actual_str);
+				len = 0;
+				actual_str[0] = '\0';
+			}
 			k0 = oid_nil;
 		}
 		if (len+l >= strsize) {
