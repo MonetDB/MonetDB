@@ -541,6 +541,7 @@ def am_mods_to_libs(fd, var, modmap, am):
 
 def am_library(fd, var, libmap, am):
     name = var[4:]
+
     sep = ""
     pref = 'lib'
     if libmap.has_key("NAME"):
@@ -557,6 +558,8 @@ def am_library(fd, var, libmap, am):
     if libname[0] == "_":
         sep = "_"
         libname = libname[1:]
+    if libmap.has_key('SEP'):
+        sep = libmap['SEP'][0]
 
     ld = "libdir"
     if libmap.has_key("DIR"):
@@ -573,7 +576,10 @@ def am_library(fd, var, libmap, am):
         am['NLIBS'].append((pref, libname, sep))
     else:
         am['LIBS'].append((pref, libname, sep))
-        am['InstallList'].append("\t%s/%s%s%s.so\n" % (ld, pref, sep, libname))
+	cond = ''
+	if libmap.has_key('COND'):
+        	cond = '#' + string.join(libmap['COND'], '+')
+        am['InstallList'].append("\t%s/%s%s%s.so%s\n" % (ld, pref, sep, libname, cond))
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
@@ -731,10 +737,10 @@ def am_jar(fd, var, jar, am):
         fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) `$(CYGPATH_WP) $(subst $$,\\$$,$^)`\n")
+    fd.write("\t$(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) `$(CYGPATH_WP) '$(subst $$,\\$$,$^)'`\n")
 
     fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf%s `$(CYGPATH_WP) $@ $(%s_manifest_file) $(subst $$,\\$$,$(%s_class_files))`\n" % (manifest_flag, name, name))
+    fd.write("\t$(JAR) $(JARFLAGS) -cf%s `$(CYGPATH_WP) $@ $(%s_manifest_file) '$(subst $$,\\$$,$(%s_class_files))'`\n" % (manifest_flag, name, name))
 
     fd.write("install-exec-local-%s_jar: %s.jar\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
@@ -780,7 +786,7 @@ def am_java(fd, var, java, am):
         fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) `$(CYGPATH_WP) $(subst $$,\\$$,$^)`\n")
+    fd.write("\t$(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) `$(CYGPATH_WP) '$(subst $$,\\$$,$^)'`\n")
 
     fd.write("install-exec-local-%s_class: %s.class\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)

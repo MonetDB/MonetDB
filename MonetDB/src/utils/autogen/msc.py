@@ -636,6 +636,8 @@ def msc_library(fd, var, libmap, msc):
     if (libname[0] == "_"):
         sep = "_"
         libname = libname[1:]
+    if libmap.has_key('SEP'):
+        sep = libmap['SEP'][0]
 
     lib = "lib"
     ld = "LIBDIR"

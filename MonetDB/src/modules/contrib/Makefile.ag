@@ -30,12 +30,25 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
-		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
+		mel.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
 		bat_mmath.mx bat_cast.mx array.mx color.mx \
 		image.mx txtsim.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
+	WINLIBS = ../../common/libstream ../../gdk/libbat \
+		../../monet/libmonet ../plain/lib_algebra \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+	LDFLAGS = -lm
+}
+
+LIB_mprof = {
+	DIR = pkglibdir
+	SEP = _
+	COND = NOT_WIN32
+	SOURCES = mprof.mx 
+	HEADERS = h proto.h m
 	WINLIBS = ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet ../plain/lib_algebra \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
