@@ -77,9 +77,10 @@ def msc_translate_dir(path,msc):
         dir = "."
     elif (dir == "srcdir"):
         dir = "$(SRCDIR)"
-    elif (dir == "pkglibdir" or dir == "libdir" or \
-          dir == "pkgbindir" or dir == "bindir" or \
-          dir == "pkgdatadir" or dir == "datadir"):
+    elif (dir in ['bindir','sbindir','libexecdir','datadir','sysconfdir',
+                  'sharedstatedir','localstatedir','libdir','infodir',
+                  'mandir','includedir','oldincludedir','pkgdatadir',
+                  'pkglibdir','pkgincludedir']):
         dir = "$("+dir+")"
     if (len(rest) > 0):
         dir = dir+ "\\" + rest
@@ -245,10 +246,14 @@ def msc_scripts(fd, var, scripts, msc):
     sd = msc_translate_dir(sd,msc)
 
     for script in scripts['TARGETS']:
-        fd.write("%s: $(SRCDIR)\\%s\n" % (script,script))
-        #fd.write("\t$(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script) )
-        #fd.write("\tif not exist %s if exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script,script) )
-        fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script) )
+        if os.path.isfile(os.path.join(msc['cwd'],script+'.in')):
+            # TODO
+            # replace this hack by something like configure ...
+            fd.write("%s: $(SRCDIR)\\%s.in\n" % (script,script))
+            fd.write("\tif exist $(SRCDIR)\\%s.in $(CONFIGURE) $(SRCDIR)\\%s.in > %s\n" % (script,script,script) )
+        else:
+            fd.write("%s: $(SRCDIR)\\%s\n" % (script,script))
+            fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script) )
         msc['INSTALL'].append((script,script,'',sd))
 
     #msc_deps(fd,scripts['DEPS'],"\.o",msc)
