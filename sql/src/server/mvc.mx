@@ -2925,6 +2925,15 @@ void mvc_export(stream * s, BAT * order, BAT * bats, char *sep,
 	BBPreclaim(seps);
 }
 
+static void BATappend(BAT *b, BAT *i)
+{
+	size_t cnt = BATcount(b);
+	size_t base = b->hseqbase;
+	assert(i->htype == TYPE_void);
+	BATseqbase(i, base+cnt);
+	BATins(b,i);
+}
+
 int mvc_import_table( mvc *m, stream *s, char *tname, 
 		char *sep, char *rsep, int sz)
 {
@@ -3004,7 +3013,10 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 		if (BATcount(ba) == 0){
 			bm_new_bat(tr->bm, col->bid, in->batCacheid);
 		} else {
-			BATins(ba,in);
+			/* BUG need fixing */
+			BATprint(ba);
+			BATappend(ba,in);
+			BATprint(ba);
 		}
 		BBPunfix(ba->batCacheid);
 		BBPunfix(in->batCacheid);

@@ -11,6 +11,9 @@ fi
 #Bulk-Load into SQL server...
 
 $SQL < VOCschema.sql
+$SQL < VOCinsert.sql
 cat load.sql | sed -e s+PWD+$PWD+ | $SQL 
+
+$SQL < VOCquery.sql
 
 #Cleanup
