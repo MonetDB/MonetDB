@@ -18,6 +18,7 @@
 @f batstr
 @a M.L. Kersten
 @* String multiplexes
+[TODO: property propagations]
 The collection of routines provided here are map operations
 for the atom string primitives. 
 They have been implemented explicitly here, because
@@ -41,9 +42,9 @@ command bytes( s:bat[:any$1,:str] ) :bat[:any$1,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
 
-command chrAt( s:bat[:any$1,:str], index:int) :bat[:any$1,:chr]
-address STRbatChrAt
-comment "String array lookup operation.";
+#command chrAt( s:bat[:any$1,:str], index:int) :bat[:any$1,:chr]
+#address STRbatChrAt
+#comment "String array lookup operation.";
 
 command match(b:bat[:any$1,:str], pat:str):bat[:any$1,:bit]
 address STRbatmatchCst
@@ -55,7 +56,7 @@ comment "Equate a bat of strings against a singleton";
 
 command ==( l:bat[:any$1,:str], r:bat[:any$1,:str]) :bat[:any$1,:bit]
 address STRbatEqual
-comment "Equate a bat of strings against a singleton";
+comment "Equate a bat of strings against each other";
 
 command toLower( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatLower
@@ -150,6 +151,39 @@ comment "Substitute first occurrence of 'src' by
 #endif
 @-
 Let's see how many different versions we need
+@= prepareOperand
+    if( (@1= BATdescriptor(*@2)) == NULL ){
+        return throwMessage("batstr.@3", "Cannot access descriptor");
+    }
+@= prepareOperand2
+    if( (@1= BATdescriptor(*@2)) == NULL ){
+        return throwMessage("batstr.@5", "Cannot access descriptor");
+    }
+    if( (@3= BATdescriptor(*@4)) == NULL ){
+		BBPunfix(@1->batCacheid);
+        return throwMessage("batstr.@5", "Cannot access descriptor");
+    }
+@= prepareResult
+    @1= BATnew(@2->htype,TYPE_@3,BATcount(@2));
+	if( @2->htype== TYPE_void)
+		BATseqbase(@1, @2->hseqbase);
+    if( @1 == NULL){
+        BBPunfix(@2->batCacheid);
+        return throwMessage("batstr.@4", "no space available ");
+    }
+@= prepareResult2
+    @1= BATnew(@2->htype,TYPE_@4,BATcount(@2));
+	if( @2->htype== TYPE_void)
+		BATseqbase(@1, @2->hseqbase);
+    if( @1 == NULL){
+        BBPunfix(@2->batCacheid);
+        BBPunfix(@3->batCacheid);
+        return throwMessage("batstr.@5", "no space available ");
+    }
+@= finalizeResult
+    BBPincref(*@1 = @2->batCacheid,TRUE);
+    BBPunfix(*@1);
+    BBPunfix(@3->batCacheid);
 @= BATstr
 str STRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
@@ -158,17 +192,9 @@ str STRbat@1(int *ret, int *l)
 	@3 x;
 	@4 y;
 
-    if( (b= BATdescriptor(*l)) == NULL ){
-        return throwMessage("batstr.@1", "Cannot access descriptor");
-    }
+	@:prepareOperand(b,l,@1)@
+	@:prepareResult(bn,b,@4,@1)@
 
-    bn= BATnew(b->htype,TYPE_@4,BATcount(b));
-	if( b->htype== TYPE_void)
-		BATseqbase(bn, b->hseqbase);
-    if( bn == NULL){
-        BBPunfix(b->batCacheid);
-        return throwMessage("batstr.@1", "no space available ");
-    }
     BATloopFast(b, p, q, xx) {
         ptr h = BUNhead(b,p);
         x= (@3) BUNtail(b,p);
@@ -178,21 +204,18 @@ str STRbat@1(int *ret, int *l)
         bunfastins(bn, h, &y);
     }
 bunins_failed:
-
-    BBPunfix(b->batCacheid);
-    BBPincref(*ret = bn->batCacheid,TRUE);
-    BBPunfix(*ret);
+	@:finalizeResult(ret,bn,b);
     return MAL_SUCCEED;
 }
 
 @c
 	@:BATstr(Length,STRLength,str,int)@
-	@:BATstr(bytes,STRBytes,str,int)@
-	@:BATstr(lower,STRLower,str,str)@
-	@:BATstr(upper,STRUpper,str,str)@
-	@:BATstr(strio,STRStrip,str,str)@
-	@:BATstr(ltrim,STRLtrim,str,str)@
-	@:BATstr(rtrim,STRRtrim,str,str)@
+	@:BATstr(Bytes,STRBytes,str,int)@
+	@:BATstr(Lower,STRLower,str,str)@
+	@:BATstr(Upper,STRUpper,str,str)@
+	@:BATstr(Strip,STRStrip,str,str)@
+	@:BATstr(Ltrim,STRLtrim,str,str)@
+	@:BATstr(Rtrim,STRRtrim,str,str)@
 @-
 	@:BATstr(unicode,STRFromWChr,str,int)@
 	@:BATstr(charAt,STRChrAt,str,chr)@
@@ -205,17 +228,8 @@ str STRbatEqualCst(int *ret, int *l,str *cst)
 	str x;
 	bit y;
 
-    if( (b= BATdescriptor(*l)) == NULL ){
-        return throwMessage("batstr.@1", "Cannot access descriptor");
-    }
-
-    bn= BATnew(b->htype,TYPE_bit,BATcount(b));
-	if( b->htype== TYPE_void)
-		BATseqbase(bn, b->hseqbase);
-    if( bn == NULL){
-        BBPunfix(b->batCacheid);
-        return throwMessage("batstr.==", "no space available ");
-    }
+	@:prepareOperand(b,l,==)@
+	@:prepareResult(bn,b,bit,==)@
     BATloopFast(b, p, q, xx) {
         ptr h = BUNhead(b,p);
         x= (str) BUNtail(b,p);
@@ -225,10 +239,7 @@ str STRbatEqualCst(int *ret, int *l,str *cst)
         bunfastins(bn, h, &y);
     }
 bunins_failed:
-
-    BBPunfix(b->batCacheid);
-    BBPincref(*ret = bn->batCacheid,TRUE);
-    BBPunfix(*ret);
+	@:finalizeResult(ret,bn,b);
     return MAL_SUCCEED;
 }
 @-
@@ -244,23 +255,10 @@ str STRbatEqual(int *ret, int *l, int *r)
 	BUN o,p,q;
 	int xx,yy;
 
-    if( (left= BATdescriptor(*l)) == NULL ){
-        return throwMessage("batstr.@1", "Cannot access descriptor");
-    }
-    if( (right= BATdescriptor(*r)) == NULL ){
-	BBPunfix(left->batCacheid);
-        return throwMessage("batstr.@1", "Cannot access descriptor");
-    }
+	@:prepareOperand2(left,l,right,r,==)@
 	@:chkSize(left,right,CMDcompare@1)@
+	@:prepareResult2(bn,left,right,bit,==)@
 
-    bn= BATnew(left->htype,TYPE_bit,BATcount(left));
-	if( left->htype== TYPE_void)
-		BATseqbase(bn, left->hseqbase);
-    if( bn == NULL){
-        BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-        return throwMessage("batstr.==", "no space available ");
-    }
     o = BUNfirst(left);
     p = BUNfirst(right);
     q = BUNlast(right);
@@ -277,14 +275,11 @@ str STRbatEqual(int *ret, int *l, int *r)
 	p += xx;
 	r += yy;
     }
-    BBPunfix(left->batCacheid);
     BBPunfix(right->batCacheid);
-    BBPincref(*ret = bn->batCacheid,TRUE);
-    BBPunfix(*ret);
+	@:finalizeResult(ret,bn,left)@
     return MAL_SUCCEED;
 
 bunins_failed:
-
     BBPunfix(left->batCacheid);
     BBPunfix(right->batCacheid);
     BBPunfix(*ret);
@@ -303,10 +298,10 @@ str STRbatmatchCst(int  *ret, int *bid, str *pat){
 	int tpe,xx;
 	BUN p,q;
 	ptr nilptr;
-        int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
-        if( error<0)
-                return throwMessage("str.match",
-					"Compilation of regular expression failed");
+	int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
+	if( error<0)
+		return throwMessage("str.match",
+				"Compilation of regular expression failed");
 
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("batstr.match", "Cannot access descriptor");

@@ -18,6 +18,7 @@
 @f batcalc
 @a M.L. Kersten
 @* BAT calculator
+[TODO: property propagation]
 Many applications require extension of the basic calculator and
 mathematic functions to work on BAT arguments. Although the
 MAL multiplex module contains a command ('multiplex.script')
