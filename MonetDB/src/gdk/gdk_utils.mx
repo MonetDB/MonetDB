@@ -9,7 +9,6 @@ system, memory allocation details, and a basic system logging scheme.
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-gdk_export void GDKenvironment(str db, str monetrc);
 gdk_export str expandFile(str fname);
 gdk_export void GDKlog       (char *format, ...);
 gdk_export void GDKlockHome  ();
@@ -20,6 +19,8 @@ gdk_export lng  GDKusec      ();
 gdk_export int  GDKms        ();
 gdk_export int  GDKcsec      ();
 gdk_export int  GDKsec       ();
+
+gdk_export BAT *GDKenv;
 
 #endif /* _GDK_UTILS_H_ */
 @c
@@ -44,6 +45,8 @@ char	GDKdbnameStr[PATHLENGTH] = { 0 };
 char	GDKdirStr[PATHLENGTH] = { 0 };
 char	GDKdistrStr[PATHLENGTH] = MONET_PREFIX;
 char	GDKmonetrcStr[PATHLENGTH] = { 0 };
+
+BAT 	*GDKenv = NULL;
 @-
 Was Mserver called with -initonly, 
 i.e., by Mcreatedb just to initialize the database?
@@ -239,6 +242,45 @@ we don't need to parse the monetrc file.
 		GDKfatal("GDKenvironment: path to monetrc file too long\n");
 	}
 	strcpy(GDKmonetrcStr,buf);
+}
+
+void GDKenvironment_rescan(str monetrc)
+{
+	char buf[2*PATHLENGTH];
+	FILE *fd= NULL;
+	
+	GDKenv = BATnew(TYPE_str,TYPE_str,100);
+	BATrename(GDKenv, "monet_envirenment");
+	BATmode(GDKenv, TRANSIENT);
+
+	fd = fopen(GDKmonetrcStr,"r");
+	while(fd!=NULL && fgets(buf,2*PATHLENGTH,fd) != NULL){
+		str s,t, val;
+
+		for(s=buf; *s && isspace(*s); s++) ;
+		if( *s=='#') continue;	/* commentary */
+		if( *s== 0) continue;   /* empty line */
+		
+		val = strchr(s,'=');
+		if( val == NULL) {
+			GDKerror("GDKenvironment:syntax error in monetrc\n");
+			continue;
+		}
+		*val=0;
+
+		for(t=s; *t && !isspace(*t); t++) ;
+		*t =0;
+
+		/* skip any leading blancs in the value part */
+		for(val++; *val && isspace(*val) ;val++) ;
+		/* search first blanc, rest is commentary */
+		for(t=val;*t;t++) if( isspace(*t) || *t=='#') break;
+		*t=0;
+
+		BUNins( GDKenv, s, val );
+	}
+	if( fd != NULL) (void) fclose(fd);
+        BATfakeCommit(GDKenv);
 }
 
 @+ System logging
@@ -1001,6 +1043,7 @@ int GDKinit(int argc, char** argv) {
 	BATfakeCommit(GDK_vm_histo);
 	GDK_vm_nallocs = ((int*) GDK_vm_histo->batBuns->base) - 42; 
 #endif
+	GDKenvironment_rescan(monetrc);
 	return 0;
 }
 
