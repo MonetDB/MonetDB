@@ -69,6 +69,7 @@ print "\nstart simple Monet MIL interaction\n";
 	  print "bun:".$aref->[0].",".$aref->[1]."\n";
   }
   # get all rows at once
+  $sth->execute;
   my $tab = $sth->fetchall_arrayref();
   my $r = $#{$tab};		# how to get the array bounds
   my $f = $#{$tab->[0]};	# how to get the array bounds
