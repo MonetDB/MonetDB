@@ -391,13 +391,13 @@ delete the persistent BATS that store the document.",
 PROC import_doc(str flnm, str name) : void :=
 {
     # create doc_name table in case it does not exist
-    var docid;
     if (not(view_bbp_name.reverse.exist("doc_name")))
     {    
         new(oid,str).persists(true).bbpname("doc_name");
         new(oid,int).persists(true).bbpname("doc_height");
-	docid := DOC_BASE;
     }
+    var docid;
+    if (doc_name.count = 0) docid := DOC_BASE;
     else docid := oid(int(doc_name.reverse.fetch(doc_name.count - 1)) + 1);
     
     if (doc_name.reverse.exist(name))
