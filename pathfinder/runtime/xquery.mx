@@ -233,6 +233,7 @@ static void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
                 ctx->dmMode = 0;
         }
         ctx->dmSeparator = "\n";
+        /* ctx->dmSeparator = ",\n"; */
         ctx->ws        = ws;
         ctx->curFRAG   = -1; /* empty, no frag loaded */
         /* initialize with all wsBAT()'s closed */
@@ -548,10 +549,10 @@ static void handle_characters(XqueryCtx* ctx, str ch, str top) {
                         stream_printf(GDKout,"%s\n",ch);
                 }
         } else { /* xmlMode */
-                if ( top )
+                if ( ctx->dmMode && top )
                         stream_printf(GDKout,"%s {\"",top);
                 stream_printf(GDKout,"%s",ch);
-                if ( top )
+                if ( ctx->dmMode && top )
                         stream_printf(GDKout,"\"}");
         }
 }
@@ -994,16 +995,22 @@ int xquery_print_result_main(
         /* */
         seqStart(ctx);
         /* */
+	int cnt = 0; /* loopcounter, used for checking when to print commas. */
         BUN p, q; 
         BATloop(item, p, q) {
                 oid pre = *(oid*)BUNhead(item, p);
                 oid valoid = *(oid*)BUNtail(item, p);
                 int cmbn_frag_kind = *(int*)idxTV(ctx,"kind",kind,pre);
+                if ( cnt++ && ctx->dmMode  ) {
+                        /* should print a separator here */
+                        /* stream_printf(GDKout,"%s",ctx->dmSeparator); */
+                }
                 if ( DEBUG_BAT )
                         stream_printf(GDKout,"## pre=%d\tcbn=%d\tkind=%d\tv_oid=%d\t",pre,cmbn_frag_kind,XTRACT_KIND(cmbn_frag_kind),valoid);
                 /* */
                 switch( XTRACT_KIND(cmbn_frag_kind) ) {
                  case ATTR: {
+			/* xxxxxxxxxxxxxxxxx */
                         stream_printf(GDKout,"<!--attr-not-impl-yet-->\n");
                         break;
                         };
@@ -1056,9 +1063,13 @@ int xquery_print_result_main(
                         fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
                 }
                 if ( ctx->dmMode ) {
-                        /* should print a seperator here */
+                        /* should print a separator here */
                         stream_printf(GDKout,"%s",ctx->dmSeparator);
                 }
+        }
+        if ( ctx->dmMode ) {
+            /* should print a newline here */
+            /* stream_printf(GDKout,"/n"); */
         }
         /* */
         seqEnd(ctx);
