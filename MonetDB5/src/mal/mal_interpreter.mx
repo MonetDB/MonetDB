@@ -165,7 +165,6 @@ void showErrors(){
 		if( cntxt->errbuf[i-1]!='\n') 
 			stream_printf(cntxt->fdout,"\n");
 		*cntxt->errbuf=0;
-		stream_flush(cntxt->fdout);
 	}
 }
 
@@ -256,10 +255,12 @@ constants are referenced in a function (a gain on tst400a of 20% has been
 observed due the small size of the function).
 
 Moreover, we have to copy the result types to the stack for later
-use The stack value is cleared to avoid misinterpretation of left-over
+use. The stack value is cleared to avoid misinterpretation of left-over
 information. In particular, to enable proper dynamic type analysis.
 Since a stack frame may contain values of a previous call,
-we should first remove garbage.
+we should first remove garbage. A problematic case is when
+the variable accepts any type, then we leave it up to the 
+pattern operators to deal with it.
 @c
 	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
 	if( isConstant(mb,i) && isVarUsed(mb,i) ){
@@ -267,8 +268,10 @@ we should first remove garbage.
 		rhs = &getVarConstant(mb,i);
 		VALcopy(lhs,rhs);
 	} else {
+		int tpe= getVarType(mb,i);
 		lhs = &stk->stk[i];
-		lhs->vtype =getGDKtype(getVarType(mb,i));
+		if( tpe != TYPE_any)
+			lhs->vtype =getGDKtype(tpe);
 		if(env == 0 && mbcaller==0)
 			lhs->val.ival =0; 
 	}
@@ -1132,6 +1135,9 @@ we should retain the value stack because it acts as a global variables.
 This situation is indicated by the 'global' in the stack frame. 
 @{
 Upon termination of the session, the stack should be cleared.
+Beware that variables may be know polymorphic, their actual
+type should be saved for variables that recide on a global
+stack frame.
 @c
 void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 { 	int k;
@@ -1141,10 +1147,12 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 			" forceall %d\n",forceall);
 	printStack(GDKout,mb,stk);
 #endif
-	for(k=0;k<mb->vtop; k++) 
-	if(forceall || isTmpVar(mb,k)){
-		garbageElement(&stk->stk[k]);
-		stk->stk[k].vtype= TYPE_int;
+	for(k=0;k<mb->vtop; k++) {
+		if(forceall || isTmpVar(mb,k)){
+			garbageElement(&stk->stk[k]);
+			stk->stk[k].vtype= TYPE_int;
+			stk->stk[k].val.ival= int_nil;
+		}
 	}
 #ifdef STACKTRACE
 	stream_printf(GDKout,"--->stack after garbage collector,"

@@ -23,27 +23,24 @@
 @'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 
 @a M.L. Kersten
-@* Boxed objects
+@* Boxed variables
 Clients sessions often come with a global scope of variable settings.
 Access to these global variables should be easy,
 but they should also provide protection against concurrent update
 when the client wishes to perform parallel processing.
 Likewise, databases, query languages, etc. may define constants and variables
-accessible to all hierarchical related clients.
+accessible, e.g. relational schemas, to a selected user group.
 
 The approach taken is to rely on persistent object spaces
 as pioniered in Lynda and -later- JavaSpaces.
-They are called boxes in Monet and act as managed
-containers for persistent objects.
-In particular, every module comes with a box to store
-constants, global variables, etc., provided it contains
-an implementation of the box interface.
+They are called boxes in Monet and act as managed containers 
+for persistent variables.
 
 Before a client program  can interact with a box, it
 should open it, passing qualifying authorization
 information and parameters to instruct the box-manager
-of the intended use. The built-in boxes are implicitly
-opened when you request for a service.
+of the intended use. A built-in box is implicitly
+opened when you request for its service.
 
 At the end of a session, the box should be closed. Some box-managers
 may implement a lease-scheme to automatically close interaction
@@ -52,24 +49,24 @@ be notified when the last reference to a leased object
 ceases to exist.
 
 A box can be extended with a new object using the function
-deposit(nme:str,v:any). The default implementation silently
-accepts any new definition of the box.
+deposit(name) with name a local variable.
+The default implementation silently accepts any new definition of the box.
+If the variable was known already in the box, its value is overwritten.
 
 A local copy of an object can be obtained using the
-pattern 'take(nme:str):any', where 'nme' denotes the object
+pattern 'take(name,[param])', where name denotes the variable
 of interest. The type of the receiving variable should
 match the one known for the object. Whether an actual 
 copy is produced or a reference to a shared object
 is returned is defined by the box manager.
 
-The object is given back to the box manager calling 'release(nme:str)'
-or 'release(nme:str,newval:any)'.
+The object is given back to the box manager calling 'release(name)'.
 It may update the content of the repository accordingly, release locks,
 and move the value to persistent store. Whatever the semantics
 of the box requires. [The default implementation is a no-op]
 
-Finally, the object manager can be requested to 'discard(nme:str)'
-an object completely.  The default implementation is to reclaim
+Finally, the object manager can be requested to 'discard(name)'
+a variable completely.  The default implementation is to reclaim
 the space in the box.
 
 Concurrency control, replication services, as well as access
@@ -81,27 +78,31 @@ locking scheme, optimistic control, or check-out/check-in scheme.
 In all cases, these management issues are transparant to the
 main thread (=client) of control, which operates on a temporary
 snapshot. For the time being we realize the managers as critical
-code sections, i.e. one client is permitted access to the space
+code sections, i.e. one client is permitted access to the box space
 at a time.
 
 Example: consider the client function:
 @T
 \begin{verbatim}
 function myfcn():void;
-    b:bat[:oid,:int] := bbp.take("mytable");
+    b:bat[:oid,:int] := bbp.take(mytable);
     c:bat[:int,:str] := sql.take("person","age");
     d:= intersect(b,c);
     print(d);
-    u:str:= client.take("user");
+    u:str:= client.take(user);
     print(u);
-    client.release("user");
+    client.release(user);
 end function;
 \end{verbatim}
 
 The function obtains a copy from the local persistent bat space,
 much like bat-names are resolved under MIL semantics. The second
-statement uses the default schema to resolve the location of a
-column. The result bat 'd' is temporary and disappears upon garbage
+statement uses an implementation of take that searches a variable
+of interest using two string properties. It illustrates that
+a box manager is free to extend/overload the predefined scheme, 
+which is geared towards storing MAL variables.
+
+The result bat 'c' is temporary and disappears upon garbage
 collection. The variable 'u' is looked up as the string object user.
 
 Note that bats b and c need be released at some point. In general
@@ -114,12 +115,35 @@ and that subsequent use requires another take() call.
 The box manager bbp is notified of the implicit release and
 can take garbage collection actions.
 
-The type parameters in the target variable of take() enable early type checking
-Failure to find a properly typed object leads to a runtime exception.
-The type indicator for a take instruction may be ommitted, but
-this defers type resolution to execution time, where the type manager
-is called for each unresolved statement.
+The box may be inspected at several times during a scenario run.
+The first time is when the MAL program is type-checked for the
+box operations. Typechecking a take() function is tricky.
+If the argument is a string literal, the box can be queried
+directly for the objects' type.
+If found, its type is matched against the lhs variable. 
+This strategy fails in the situation when at
+runtime the object is subsequently replaced by another 
+typed-instance in the box. We assume this not to happen and
+the exceptions it raises a valuable advice to reconsider
+the programming style.
 
+The type indicator for the destination variable can be used to proceed
+type checking as far as necessary. It avoids multiple type checks
+later on. Failure to find a properly typed object leads 
+to a runtime exception.
+
+The default is to mark the instruction as polymorphic, which means
+that the type is determined at runtime and may propagate thru
+the remainder of the routine.
+
+@+ Authorization
+Each box is [should] have an access control list, which names
+the users having permission to read/write its content.
+The first one to create the box becomes the owner. He may grant/revoke
+access to the box to users on a selective basis.
+[TODO]
+
+@+ Future
 The world of boxes has not been explored deeply yet.
 It is envisioned that it could play a role to import/export
 different objects, e.g.
@@ -164,6 +188,27 @@ from the runtime stack. They should be garbage collected as soon as
 deemed possible to free-up space. By default, temporary results are
 garbage collected before returning from a MAL function.
 
+@+ Polymorphic globals
+The top level interaction keeps a 'box' with global variables,
+i.e. each MAL statement is interpreted in an already initialized
+stack frame.
+This causes the following problems: 1) how to get rid of global variables
+and 2) how to deal with variables that can take 'any' type.
+It is illustrated as follows:
+\begin{verbatim}
+f:= mil.take("GT");
+print(f);
+\end{verbatim}
+When executed in the context of a function, the answer will be
+simple [ 1 ]. The variable type need not be defined, because
+the print operation can handle any type using the concrete
+type associated with f on the stack.
+
+However, when executed interactively, statement by statement,
+the answer printed will be [ 0 ]. The reason is that both
+statements are converted into a function and executed independently.
+Between function calls the variables are reset, i.e. temporary
+variables are removed and others are re-initialized. [check]
 @{
 @h
 #ifndef _MAL_BOX_H
@@ -192,7 +237,7 @@ mal_export int releaseAllBox(Box box);
 
 mal_export int depositBox(Box box, str name, ValPtr val);
 mal_export void insertToBox(Box box, str name, str val);
-mal_export int takeBox(Box box, str name, ValPtr val);
+mal_export int takeBox(Box box, str name, ValPtr val,int tpe);
 mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
@@ -352,7 +397,7 @@ void insertToBox(Box box, str nme, str val){
 Taking an element from a box is only permitted if the type of
 the receiver matches the type of the source.
 @c
-int takeBox(Box box, str name, ValPtr val){
+int takeBox(Box box, str name, ValPtr val, int tpe){
 	int i;
 	ValPtr v;
 	i= findVariable(box->sym, name);
@@ -361,7 +406,9 @@ int takeBox(Box box, str name, ValPtr val){
 #endif
 	if( i<0) return i;
 	v= &box->val->stk[i];
-	if(val->vtype != v->vtype && v->vtype!= TYPE_any){
+	if(val->vtype != v->vtype && 
+	   v->vtype!= TYPE_any && 
+	   tpe!= TYPE_any){
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout,"takeBox:type error %d,%d\n",
 			val->vtype,box->val->stk[i].vtype);
@@ -546,10 +593,11 @@ int saveBox(Box box,int flag){
 				box->name, getVarName(box->sym,i),
 				BBPname(v->val.br.id));
 			} else{
-				stream_printf(f,"%s.deposit(\"%s\",", 
-					box->name, getVarName(box->sym,i));
+				stream_printf(f,"%s := ", getVarName(box->sym,i));
 				ATOMprint(v->vtype,VALptr(v),f);
-				stream_printf(f,":%s);\n", getTypeName(v->vtype));
+				stream_printf(f,":%s;\n", getTypeName(v->vtype));
+				stream_printf(f,"%s.deposit(%s);\n", 
+					box->name, getVarName(box->sym,i));
 			}
 		}
 	} else {

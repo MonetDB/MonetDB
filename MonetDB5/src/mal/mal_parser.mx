@@ -569,7 +569,7 @@ str parseImport(Client cntxt)
 	str modnme=0;
 	int x,y;
 
-	if( ! keyword(cntxt,"use",3)) return 0;
+	if( ! keyword(cntxt,"include",7)) return 0;
 
 	@:parsePath@
 
@@ -1326,6 +1326,8 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  { skipToEnd(cntxt); 
 			    cntxt->blkmode++;
 			    break; }
+		case 'i': if( parseImport(cntxt)) continue;
+			goto allLeft;
 		case 'L':
 		case 'l': /* if( parseLEAVE(cntxt)) break;*/
 			  if( keyword(cntxt,"leave",5))
@@ -1365,7 +1367,6 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				cntrl= THREADsymbol;
 			  }
 			  goto allLeft;
-		case 'u': if( parseImport(cntxt)) continue;
 		case 'Y': case 'y':
 			if( keyword(cntxt,"yield",5)){
 				cntrl= RETURNsymbol;

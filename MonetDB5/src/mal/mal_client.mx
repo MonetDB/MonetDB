@@ -850,6 +850,6 @@ printf("bstreamClient:read block\n"); fflush(stdout);
 	printf("# block receive [%d] %s\n",size,c->input);
 #endif
 	@:sysTrace(c->input)@
-	return size != 0;
+	return size >= 0;
 }
 @}

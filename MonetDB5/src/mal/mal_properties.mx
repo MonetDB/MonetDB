@@ -386,6 +386,7 @@ typedef struct PROPSET{
 } *PropertySet;
 
 mal_export PropertySet newPropertySet();
+mal_export PropertySet cpyPropertySet(PropertySet old);
 mal_export Property fndProperty(PropertySet ps, int first, int last, str nme);
 mal_export void setProperty(PropertySet ps, int idx, str nme, int tpe, ptr val);
 mal_export str propertySet2str(PropertySet ps, int idx);
@@ -401,6 +402,13 @@ PropertySet newPropertySet()
 	ps->refcount=0;
 	ps->maxlist= MAXPROPLIST;
 	for(i=0;i<MAXPROPLIST;i++) ps->prop[i]=0;
+	return ps;
+}
+PropertySet cpyPropertySet(PropertySet old){
+	PropertySet ps;
+	ps= (PropertySet) GDKmalloc(sizeof(struct PROPSET));
+	memcpy((char*)ps, (char*)old, sizeof(struct PROPSET));
+	GDKwarning("Property set copying not finished\n");
 	return ps;
 }
 Property fndProperty(PropertySet ps, int first, int last, str nme){

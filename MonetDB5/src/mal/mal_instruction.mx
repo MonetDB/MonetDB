@@ -625,6 +625,8 @@ void freeMalBlk(MalBlkPtr mb){
 	if( mb->binding) GDKfree(mb->binding);  mb->binding=0;
 	if( mb->help) GDKfree(mb->help); mb->help=0;
 	GDKfree(mb);
+	if(mb->props) GDKfree(mb->props);
+	mb->props= NULL;
 }
 @-
 The routine below should assure that all referenced structures
@@ -664,6 +666,9 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
 	mb->help = old->help?GDKstrdup(old->help): NULL;
 	mb->binding = old->binding?GDKstrdup(old->binding): NULL;
 	mb->errors= old->errors;
+	/* copy the properties as well */
+	if(mb->props)
+		mb->props = cpyPropertySet(old->props);
 	return mb;
 }
 @-
@@ -870,6 +875,7 @@ location of a temporary variable should be flagged as an error.
 int findVariable(MalBlkPtr mb, str name){
 	int i;
 	@:chkTemporary@
+	if( name == NULL) return -1;
 	for(i=mb->vtop-1; i>=0; i--)
 	if(!isTmpVar(mb,i) && idcmp(name, getVarName(mb,i) )==0)
 		return i;
@@ -885,6 +891,7 @@ int findVariableLength(MalBlkPtr mb, str name, int len){
 	int i;
 	int j;
 	@:chkTemporary@
+	if( name == NULL || len == 0) return -1;
 	for(i= mb->vtop-1; i>=0; i--) 
 	if( !isTmpVar(mb,i)){
 		str s = getVarName(mb,i);
@@ -1544,7 +1551,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 	PropertySet ps =0;
 
 	t=s;
-	sprintf(t,"%s ",fcnClass(p));
+	sprintf(t,"%s%s ",(flg?"":"!"),fcnClass(p));
 
 	advance(t);
 	if( moduleId(p)) sprintf(t,"%s.",moduleName(p));
@@ -1621,8 +1628,8 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 
 	len = 8196;
 	s= GDKmalloc(len);
-	s[0]=0;
-	t=s;
+	if(flg) { s[0]=0; t=s; }
+	else { s[0]='!'; s[1]=0; t= s+1; }
 	/* @:performanceData@ */
 	if( isTmpVar(mb, getArg(p,0)) ) {
 		snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,

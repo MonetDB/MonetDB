@@ -229,9 +229,6 @@ char *hlp[]={
 "A few guidelines to maximize usefullness.",
 "- make the type of variables explicit, in particular 'nil'",
 "- upon advice of M2m to remap identifiers, change it in your program directly",
-"- positional arguments, ie $1,$2,..., can not be compiled in isolation",
-"","","Perhaps someone will develop a complete MIL interpreter",
-"on top of the MAL kernel in the future",
 0
 };
 void advice(){

@@ -207,7 +207,13 @@ void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 		if( isTmpVar(mb,i)) {
 			freeVariable(mb,i);
 			mb->var[i]=0;
-			if(glb) garbageElement(&glb->stk[i]);
+			if(glb) {
+				garbageElement(&glb->stk[i]);
+				/* clean stack entry */
+				glb->stk[i].vtype= TYPE_int;
+				glb->stk[i].val.ival= 0;
+				glb->stk[i].len= 0;
+			}
 			i++;
 		} else {
 			if(i!=j){
@@ -366,9 +372,9 @@ str MALengine(Client c){
 	msg= (str) runMAL(c,prg->def,0,c->glb,0);
 	if( msg ){
 		GDKerror(msg);
+		showErrors();
 		if( !c->listing) 
 			printFunction(c->fdout,c->curprg->def, c->listing);
-		showErrors();
 	}
 	resetInstructions(prg->def,1);
 	resetVariables(prg->def,c->glb,0);
