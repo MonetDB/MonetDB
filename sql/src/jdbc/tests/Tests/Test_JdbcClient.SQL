@@ -26,7 +26,5 @@ if [ -f $SQL_BUILD/src/jdbc/tests/${TST}.class ] ; then
 fi
 export CLASSPATH
 
-LANG="en_US.UTF-8"
-export LANG
 
 Mlog -x "java ${TST} \"${URL}\""
