@@ -68,6 +68,8 @@ data Algb = ROWNUM Numb Part Algb
           | OP1    Op ([[Ty]] -> [Ty]) (Item -> Item)         Arg Arg  Algb
           | SUM    Arg Arg Part Algb
           | COUNT  Arg Part Algb
+          | SEQTY1 Arg Arg Part Algb
+          | ALL    Arg Arg Part Algb
           | U      Algb Algb
           | DIFF   Algb Algb
           | DIST   Algb
@@ -184,8 +186,8 @@ instance Show Algb where
 	    sp []         = []
 	    sp ((n,a):ps) = (n ++ ":" ++ a):sp ps
         s (SEL a c)              = "[SEL (" ++ a ++ ")" ++ s c ++ "]"
-        s (TYPE a1 a2 t c)       = "[TYPE (" ++ a1 ++ "," ++ a2 ++ "," ++
-                                   show t ++ ")" ++ s c ++ "]"
+        s (TYPE a1 a2 t c)       = "[TYPE " ++ a1 ++ ":(" ++ a2 ++ ")/" ++
+                                   show t ++ s c ++ "]"
         s (OP2 op _ _ a as c)    = "[" ++ op ++ " " ++ a ++ ":(" ++ 
                                    concat (intersperse "," as) ++  
                                    ")" ++ s c ++ "]"	 
@@ -198,6 +200,16 @@ instance Show Algb where
 	    sp = case p of [] -> ""
 			   as -> "/" ++ concat (intersperse "," as)
         s (COUNT a p c)          = "[COUNT " ++ a ++ sp ++ s c ++ "]"
+	    where
+	    sp = case p of [] -> ""
+			   as -> "/" ++ concat (intersperse "," as)
+        s (SEQTY1 a s' p c)      = "[SEQTY1 " ++ a ++ ":(" ++ s' ++ ")" ++ 
+                                   sp ++ s c ++ "]"
+	    where
+	    sp = case p of [] -> ""
+			   as -> "/" ++ concat (intersperse "," as)
+        s (ALL a s' p c)         = "[ALL " ++ a ++ ":(" ++ s' ++ ")" ++ sp ++ 
+                                   s c ++ "]"
 	    where
 	    sp = case p of [] -> ""
 			   as -> "/" ++ concat (intersperse "," as)
@@ -239,11 +251,15 @@ instance Eq Algb where
     (SEL a c)           == (SEL a' c')              = (a,c) == (a',c')
     (TYPE a1 a2 t c)    == (TYPE a1' a2' t' c')     = 
         (a1,a2,t,c) == (a1',a2',t',c')
-    (OP2 op _ _ a as c) == (OP2 op' _ _ a' as' c') = 
+    (OP2 op _ _ a as c) == (OP2 op' _ _ a' as' c')  = 
 	(op,a,as,c) == (op',a',as',c')
-    (OP1 op _ _ a as c) == (OP1 op' _ _ a' as' c') =
+    (OP1 op _ _ a as c) == (OP1 op' _ _ a' as' c')  =
 	(op,a,as,c) == (op',a',as',c')
     (SUM a s p c)       == (SUM a' s' p' c')        = 
+        (a,s,p,c) == (a',s',p',c')
+    (SEQTY1 a s p c)    == (SEQTY1 a' s' p' c')     = 
+        (a,s,p,c) == (a',s',p',c')
+    (ALL a s p c)       == (ALL a' s' p' c')        = 
         (a,s,p,c) == (a',s',p',c')
     (COUNT a p c)       == (COUNT a' p' c')         = (a,p,c) == (a',p',c')
     (U c1 c2)           == (U c1' c2')              = (c1,c2) == (c1',c2')

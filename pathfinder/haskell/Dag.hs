@@ -78,6 +78,14 @@ dag (SUM a s p c) ts = memo (SUM a s p (DAG n1)) ts1
     where
     (n1, ts1) = dag c ts
 
+dag (SEQTY1 a s p c) ts = memo (SEQTY1 a s p (DAG n1)) ts1
+    where
+    (n1, ts1) = dag c ts
+
+dag (ALL a s p c) ts = memo (ALL a s p (DAG n1)) ts1
+    where
+    (n1, ts1) = dag c ts
+
 dag (COUNT a p c) ts = memo (COUNT a p (DAG n1)) ts1
     where
     (n1, ts1) = dag c ts
@@ -172,7 +180,7 @@ dot a = (concat . intersperse "\n") (
 	node d ("[label=\"\\\\tex[cc][cc]{$\\\\sigma$~(" ++ a ++ ")}\"]") [n1]
 
     algbdot (d, TYPE a1 a2 t (DAG n1)) =
-	node d ("[label=\"TYPE (" ++ a1 ++ "," ++ a2 ++ ")|\"]") [n1]
+	node d ("[label=\"TYPE " ++ a1 ++ ":(" ++ a2 ++ ")/" ++ show t ++ "\"]") [n1]
 
     algbdot (d, OP2 op _ _ a as (DAG n1)) =
 	node d ("[label=\"" ++ op ++ " " ++ a ++ 
@@ -184,6 +192,18 @@ dot a = (concat . intersperse "\n") (
 
     algbdot (d, SUM a s p (DAG n1)) = 
         node d ("[label=\"SUM " ++ a ++ ":(" ++ s ++ ")" ++ sp ++ "\"]") [n1]
+	where
+        sp = case p of [] -> ""
+                       as -> "/" ++ concat (intersperse "," as)
+
+    algbdot (d, SEQTY1 a s p (DAG n1)) = 
+        node d ("[label=\"SEQTY1 " ++ a ++ ":(" ++ s ++ ")" ++ sp ++ "\"]") [n1]
+	where
+        sp = case p of [] -> ""
+                       as -> "/" ++ concat (intersperse "," as)
+
+    algbdot (d, ALL a s p (DAG n1)) = 
+        node d ("[label=\"ALL " ++ a ++ ":(" ++ s ++ ")" ++ sp ++ "\"]") [n1]
 	where
         sp = case p of [] -> ""
                        as -> "/" ++ concat (intersperse "," as)

@@ -30,7 +30,7 @@
 
 --}
 
-module Item (Item (..), unN, unI) where
+module Item (Item (..), unN, unI, unB) where
 
 import Numeric (showFFloat)
 import NumExts (floatToDouble, doubleToFloat)
@@ -105,3 +105,4 @@ instance Eq Item where
 unN, unI :: Item -> Integer
 unI (I x) = x
 unN (N x) = x
+unB (B x) = x

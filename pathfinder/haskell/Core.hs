@@ -40,7 +40,7 @@ import Algb (Algb (..),
              Rel (..), Type,
              schm, attrs, types, extn, idx, proj, keys,
              XPaxis (..), XPkind (..), XPname, XPstep)
-import Item  (Item (..), unN, unI)
+import Item  (Item (..), unN, unI, unB)
 import Ty (Ty (..), tyunion, tycommon)
 import XMark (auction_xml, _elem, _text, _doc)
 import Dag (dag, dot)
@@ -685,9 +685,9 @@ algebra xq = t [] (TBL [("iter",[NAT])] [[O 1]]) xq
         stm = seqtym ty
 		
         loop2 = PROJ [("iter","iter")] (
-                    SEL "type" stm)
+                    SEL "subty" stm)
         loop3 = PROJ [("iter","iter")] (
-                    SEL "res" (_NOT "res" "type" stm))
+                    SEL "res" (_NOT "res" "subty" stm))
 	
         env2 = map lift2 env
 	    where
@@ -714,73 +714,37 @@ algebra xq = t [] (TBL [("iter",[NAT])] [[O 1]]) xq
         -- algebraic implementation of sequence type matching
         seqtym :: SeqTy -> Algb
         seqtym (Item ty) = 
-          U (DIFF (DIST (PROJ [("iter","iter"),("type","type")] (
-                      _AND "type" ["fst","type'"] (
-                          _EQ "fst" ["pos","one"] (
-                              X (TYPE  "type'" "item" ty q1)
-                                (TBL [("one",[NAT])] [[O 1]])))))
-                  )
-                  (X (PROJ [("iter","iter")] (
-                         SEL "res" (_NOT "res" "type" (
-                             DIST (PROJ [("iter","iter"),("type","type")] (
-                                _AND "type" ["fst","type'"] (
-                                    _EQ "fst" ["pos","one"] (
-                                        X (TYPE  "type'" "item" ty q1)
-                                          (TBL [("one",[NAT])] [[O 1]])))))))))
-                     (TBL [("type",[BOOL])] [[B True]])
+          U (X (TBL [("subty",[BOOL])] [[B False]])
+               (DIFF loop 
+                     (PROJ [("iter","iter")]  (TYPE "itemty" "item" ty q1))
                   )
             )
-            (X (DIFF loop (PROJ [("iter","iter")] q1))
-               (TBL [("type",[BOOL])] [[B False]])
-            )
+            (SEQTY1 "subty" "itemty" ["iter"] (TYPE "itemty" "item" ty q1))
+
         seqtym ((:?) ty) = 
-          U (DIFF (DIST (PROJ [("iter","iter"),("type","type")] (
-                      _AND "type" ["fst","type'"] (
-                          _EQ "fst" ["pos","one"] (
-                              X (TYPE  "type'" "item" ty q1)
-                                (TBL [("one",[NAT])] [[O 1]])))))
-                  )
-                  (X (PROJ [("iter","iter")] (
-                         SEL "res" (_NOT "res" "type" (
-                             DIST (PROJ [("iter","iter"),("type","type")] (
-                                _AND "type" ["fst","type'"] (
-                                    _EQ "fst" ["pos","one"] (
-                                        X (TYPE  "type'" "item" ty q1)
-                                          (TBL [("one",[NAT])] [[O 1]])))))))))
-                     (TBL [("type",[BOOL])] [[B True]])
+          U (X (TBL [("subty",[BOOL])] [[B True]])
+               (DIFF loop 
+                     (PROJ [("iter","iter")]  (TYPE "itemty" "item" ty q1))
                   )
             )
-            (X (DIFF loop (PROJ [("iter","iter")] q1))
-               (TBL [("type",[BOOL])] [[B True]])
-            )
+            (SEQTY1 "subty" "itemty" ["iter"] (TYPE "itemty" "item" ty q1))
+
         seqtym ((:+) ty) = 
-          U (DIFF (DIST (PROJ [("iter","iter"),("type","type")] (
-                            TYPE "type" "item" ty q1))
-                  )
-                  (X (PROJ [("iter","iter")] (
-                          SEL "res" (_NOT "res" "type" (
-                               DIST (PROJ [("iter","iter"),("type","type")] (
-                                         TYPE "type" "item" ty q1))))))
-                     (TBL [("type",[BOOL])] [[B True]])
+          U (X (TBL [("subty",[BOOL])] [[B False]])
+               (DIFF loop 
+                     (PROJ [("iter","iter")]  (TYPE "itemty" "item" ty q1))
                   )
             )
-            (X (DIFF loop (PROJ [("iter","iter")] q1))
-               (TBL [("type",[BOOL])] [[B False]])
-            )
+            (ALL "subty" "itemty" ["iter"] (TYPE "itemty" "item" ty q1))
+
         seqtym ((:*) ty) = 
-          U (DIFF (DIST (PROJ [("iter","iter"),("type","type")] (
-                            TYPE "type" "item" ty q1))
-                  )
-                  (X (PROJ [("iter","iter")] (
-                          SEL "res" (_NOT "res" "type" (
-                               DIST (PROJ [("iter","iter"),("type","type")] (
-                                         TYPE "type" "item" ty q1))))))
-                     (TBL [("type",[BOOL])] [[B True]])
+          U (X (TBL [("subty",[BOOL])] [[B True]])
+               (DIFF loop 
+                     (PROJ [("iter","iter")]  (TYPE "itemty" "item" ty q1))
                   )
             )
-            (X (DIFF loop (PROJ [("iter","iter")] q1))
-               (TBL [("type",[BOOL])] [[B True]])
-            )
+            (ALL "subty" "itemty" ["iter"] (TYPE "itemty" "item" ty q1))
+
 
     -- (Seq)
     t env loop (XSEQ e1 e2) = 
@@ -1150,6 +1114,47 @@ eval (SUM a s p c, (pre,frag)) =
 
     res = zipWith (:) (map (sum . map head . map arg) groups)
                       (map (part . head) groups)
+
+eval (SEQTY1 a s p c, (pre,frag)) =
+    (R ((a,[BOOL]):part (schm r)) res, (pre',frag'))
+    where
+    (r, (pre',frag')) = eval (c, (pre,frag))
+
+    groups :: [[Tuple]]
+    groups = group_by p r
+
+    part :: [a] -> [a]
+    part = keys p (attrs (schm r))
+
+    arg :: [a] -> [a]
+    arg = keys [s] (attrs (schm r))
+    
+    res = zipWith (:) (map (ex1 . map head . map arg) groups)
+                      (map (part . head) groups)
+		      
+    ex1 :: [Item] -> Item
+    ex1 [b]   = b
+    ex1 (_:_) = B False
+
+eval (ALL a s p c, (pre,frag)) =
+    (R ((a,[BOOL]):part (schm r)) res, (pre',frag'))
+    where
+    (r, (pre',frag')) = eval (c, (pre,frag))
+
+    groups :: [[Tuple]]
+    groups = group_by p r
+
+    part :: [a] -> [a]
+    part = keys p (attrs (schm r))
+
+    arg :: [a] -> [a]
+    arg = keys [s] (attrs (schm r))
+    
+    res = zipWith (:) (map (all . map head . map arg) groups)
+                      (map (part . head) groups)
+		      
+    all :: [Item] -> Item
+    all = B . foldr1 (&&) . map unB
 
 eval (COUNT a p c, (pre,frag)) =
     (R ((a,[INT]):part (schm r)) res, (pre',frag'))
@@ -2167,19 +2172,18 @@ xqo = XFOR "x" (XSEQ (XDBL 20) (XDBL 10))
                        [XVAR "x"]
                )
 
-q = XDBL 20
-    
+q = XTYPESW XEMPTY ((:*) INT) (XSTR "yes") (XSTR "no")   
 
 main = do
           -- print the original XQuery Core input query
           --print xmark_Q2
           -- print algebra expression (DAG) 
           -- (comment all other lines if you want to use `make ps')
-          --putStr (dot (compile xmark_Q2))
+          putStr (dot (compile q))
           -- print algebra expression (tree)
-          print (compile xmark_Q18)
+          --print (compile xmark_q)
           -- print result of algebraic evaluation 
           --print (evaluate (compile xmark_Q2))
           -- compile and evaluate query, then serialize the result as XML
-          --putStr (serialize xmark_Q2) 
+          putStr (serialize q) 
 

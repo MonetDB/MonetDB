@@ -399,7 +399,7 @@ type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
                     difference (
                         loop,
                         project (itemty, proj ("iter", "iter"))),
-                    lit_tbl (attlist ("subty"), tuple (lit_bln (true)))));
+                    lit_tbl (attlist ("subty"), tuple (lit_bln (false)))));
 
     /*
      * Ocurrence indicator `*' (zero or more items).
@@ -422,7 +422,7 @@ type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
                     difference (
                         loop,
                         project (itemty, proj ("iter", "iter"))),
-                    lit_tbl (attlist ("subty"), tuple (lit_bln (false)))));
+                    lit_tbl (attlist ("subty"), tuple (lit_bln (true)))));
 
     /*
      * We should never reach this point.
