@@ -184,6 +184,7 @@ MMONETERR & Monet error.\\
 @h
 
 #include <monet_utils.h>		
+#include <stream.h>		
 #include <stdio.h>
 
 #define NAMELEN	256
@@ -227,7 +228,8 @@ typedef struct {
     char *querytext; 
     char *tmp;
     char *reply;
-    FILE *from, *to;
+    int socket;
+    stream *from, *to;
 } MsessionStruct;
 
 
@@ -418,6 +420,15 @@ Msession Mdup(Msession mid) {
 	}
 	return m;
 }
+
+int stream_getc(stream *s){
+	char ch;
+	int res = s->read(s,&ch,1,1);
+	if (!res)
+		return EOF;
+	return ch;
+}
+
 Msession Mconnect(char *host, int port, char *username, char *password) {
 	struct hostent *hp;
 	struct sockaddr_in server;
@@ -474,13 +485,14 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	    return(mid);
 	}
 	
-	if((mid->to = fdopen(s,"w"))==(FILE *)NULL) {
+        mid->socket = s;
+	if((mid->to = socket_wastream(s,"w"))==NULL || mid->to->errnr) {
 	    mid->error = MMAPIERR;
 	    sprintf(mid->errortext,"Cannot open file descriptor for socket (\"w\")");
 	    return(mid);
 	}
 
-	if((mid->from = fdopen(s,"r"))==(FILE *)NULL) {
+	if((mid->from = socket_rastream(s,"r"))==NULL || mid->from->errnr) {
 	    mid->error = MMAPIERR;
 	    sprintf(mid->errortext,"Cannot open filedescriptor for socket (\"w\")");
 	    return(mid);
@@ -492,11 +504,11 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	  int c;
 	  strcpy(buf,mid->username);
 	  strcat(buf,"\n");
-	  fprintf(mid->to,buf);
-	  fflush(mid->to);
+	  stream_printf(mid->to,buf);
+	  mid->to->flush(mid->to);
           /* printf("awaiting response from server\n");
 	  fflush(stdout); */
-	  while( !(((c = getc(mid->from)) == 1) || (c == EOF)) ) ;
+	  while( !(((c = stream_getc(mid->from)) == 1) || (c == EOF)) ) ;
 	  if (c == EOF) {
 	    /* perror("! Mapi.Mconnect.connect: "); */
 	    mid->error = MMAPIERR;
@@ -527,7 +539,7 @@ void promptMonet(Msession mid) {
 
 	checkMid(mid,"promptMonet");
 	if( mid->trace) fprintf(stderr,"promptMonet.");
-        for(i=0; (mid->reply[i] = getc(mid->from)) != 1; i++);
+        for(i=0; (mid->reply[i] = stream_getc(mid->from)) != 1; i++);
         mid->reply[i++] = ' ';
         mid->reply[i] = '\0';
 }
@@ -539,8 +551,11 @@ Msession structure. Subsequent access may lead to a crash.
 void Mdisconnect(Msession mid) {
 	checkMid(mid,"Mdisconnect");
 	COUNT(mid,2);
-	(void) fclose(mid->from);
-	(void) fclose(mid->to);
+	(void) mid->from->close(mid->from);
+	(void) mid->from->destroy(mid->from);
+	(void) mid->to->close(mid->to);
+	(void) mid->to->destroy(mid->to);
+	close(mid->socket);
 	(void) free(mid->reply);
 	(void) free(mid->tmp);
 	(void) free(mid->querytext);
@@ -938,18 +953,17 @@ int Mdorequest(Msession mid, char* cmd) {
         if (mid->trace) {
                 printf("Mdorequest:%s", cmd);
         }
-        if (ferror(mid->from) || ferror(mid->to)) {
+        if (mid->from->errnr || mid->to->errnr) {
                 sprintf(mid->errortext, "!communication line broken\n");
 		mid->error= MMONETERR;
                 return mid->error;
         }
-        if (    fputs(cmd, mid->to) == -1 || 
-		fflush(mid->to) == -1) {
+        if (    mid->to->write(mid->to, cmd, strlen(cmd), 1) != 1 ){
                 sprintf(mid->errortext, "!write error on stream\n");
 		mid->error= MMONETERR;
                 return mid->error;
         }
-	fflush(mid->to);
+	mid->to->flush(mid->to);
         return MOK;
 }
 
@@ -965,8 +979,9 @@ char *Mgetreply(Msession mid) {
 	mid->error = MOK;
 	mid->reply[0]=0;
 
-        while (!feof(mid->from) && (ch = getc(mid->from)) != 1) {
-                if (ferror(mid->from)) break;
+        while ((ch = stream_getc(mid->from)) != 1) {
+		if (ch == EOF) break;
+                if (mid->from->errnr) break;
 		if( ch == '\n') break;
                 if (!isprint(ch) && !isspace(ch)) {
                         sprintf(mid->errortext, "!terminating connection\n");
@@ -988,7 +1003,7 @@ char *Mgetreply(Msession mid) {
 	}
 	if( mid->reply[0]=='#' && mid->everything==0) return Mgetreply(mid);
         
-        if (ferror(mid->from)) {
+        if (mid->from->errnr) {
                 sprintf(mid->errortext, "!connection broken\n");
 		mid->error= MMONETERR;
                 return 0;
