@@ -949,7 +949,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 
                 if (s->op4.stval){
 			int file = backend_dumpstmt(sql,mb, s->op4.stval);
-			int codeset,iconv;
+			int codeset;
 			
 			q= newStmt(mb,"str","codeset");
 			codeset= getDestVar(q);
@@ -958,10 +958,12 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushArgument(mb,q,file);
 			q= pushStr(mb,q,"UTF-8");
 			q= pushArgument(mb,q,codeset);
-			iconv= getDestVar(q);
+			file= getDestVar(q);
 
+			/* TODO use a bstream */
 			q= newStmt(mb,"io","open_rastream");
-			iconv= getDestVar(q);
+			q= pushArgument(mb,q,file);
+			file= getDestVar(q);
 
 			q= newStmt(mb,"sql","importTable");
 			q= pushArgument(mb,q,file);
