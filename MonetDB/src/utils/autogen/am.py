@@ -656,7 +656,7 @@ def am_jar(fd, var, jar, am):
     fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
 
     fd.write("\n%s.jar: $(%s_class_files) $(%s_extra_files)\n" % (name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf $@ $(%s_class_files) $(shell ls $(%s_inner_class_files) 2>/dev/null | sed -e 's|\\$$|\\\\$$|g') $(%s_extra_files)\n" % (name, name, name))
+    fd.write("\t$(JAR) $(JARFLAGS) -cf $@ $(%s_extra_files) $(%s_class_files) $(shell ls $(%s_inner_class_files) 2>/dev/null | sed -e 's|\\$$|\\\\$$|g')\n" % (name, name, name))
 
     fd.write("\ninstall-exec-local-%s_jar: %s.jar\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
