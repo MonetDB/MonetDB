@@ -28,22 +28,20 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-[ 8 ]
-13
-4
-6
-2
-6
+[ 6 ]
 quit;
 
-# 15:50:31 >  
-# 15:50:31 >  Mtimeout -timeout 210 sql_aclient  < example-drop.sql
-# 15:50:31 >  
+# 15:39:39 >  
+# 15:39:39 >  Mtimeout -timeout 432 sql_client --port=58607  < example-drop.sql
+# 15:39:39 >  
 
-connecting
-connected
+types 13
+aggr 4
+tables 1
+columns 3
+views 1
 
-# 15:50:31 >  
-# 15:50:31 >  Done.
-# 15:50:31 >  
+# 15:39:39 >  
+# 15:39:39 >  Done.
+# 15:39:39 >  
 

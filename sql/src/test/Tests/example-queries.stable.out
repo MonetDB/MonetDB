@@ -28,32 +28,30 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-[ 8 ]
-13
-4
-6
-2
-6
-10
-0
+[ 6 ]
 quit;
 
 # 15:50:10 >  
-# 15:50:10 >  Mtimeout -timeout 210 sql_aclient  < example-queries.sql
+# 15:50:10 >  Mtimeout -timeout 210 sql_client --port=58607  < example-queries.sql
 # 15:50:10 >  
 
-connecting
-connected
+types 13
+aggr 4
+tables 0
+columns 0
+views 0
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
 8	"texxst"	0.0001
+5 Rows affected
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
 8	"texxst"	0.0001
+5 Rows affected
 
 # 15:50:10 >  
 # 15:50:10 >  Done.

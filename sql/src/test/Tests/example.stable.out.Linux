@@ -28,7 +28,7 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-[ 6 ]
+[ 8 ]
 quit;
 
 # 15:39:17 >  

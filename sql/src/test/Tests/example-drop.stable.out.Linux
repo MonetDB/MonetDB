@@ -1,9 +1,9 @@
-stdout of test 'example` in directory 'src/test` itself:
+stdout of test 'example-drop` in directory 'src/test` itself:
 
 
-# 15:49:45 >  
-# 15:49:45 >  Mtimeout -timeout 480 Mserver -monetrc /var/tmp/manegold.GNU_32-d.6756/monet/.GNU_32-d/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf -db Tests_src_test /var/tmp/manegold.GNU_32-d.6756/sql/src/parser/catalog.mil /var/tmp/manegold.GNU_32-d.6756/sql/src/parser/aserver.mil
-# 15:49:45 >  
+# 15:50:22 >  
+# 15:50:22 >  Mtimeout -timeout 480 Mserver -monetrc /var/tmp/manegold.GNU_32-d.6756/monet/.GNU_32-d/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf -db Tests_src_test /var/tmp/manegold.GNU_32-d.6756/sql/src/parser/catalog.mil /var/tmp/manegold.GNU_32-d.6756/sql/src/parser/aserver.mil
+# 15:50:22 >  
 
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
@@ -28,32 +28,20 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-[ 6 ]
+[ 8 ]
 quit;
 
-# 15:39:17 >  
-# 15:39:17 >  Mtimeout -timeout 432 sql_client --port=58607  < example.sql
-# 15:39:17 >  
+# 15:39:39 >  
+# 15:39:39 >  Mtimeout -timeout 432 sql_client --port=58607  < example-drop.sql
+# 15:39:39 >  
 
 types 13
 aggr 4
-tables 0
-columns 0
-views 0
-1	"test"	0.1
-5	"xtest"	0.9
-9	"testx"	9.1
-0	"texst"	99999.1
-8	"texxst"	0.0001
-5 Rows affected
-1	"test"	0.1
-5	"xtest"	0.9
-9	"testx"	9.1
-0	"texst"	99999.1
-8	"texxst"	0.0001
-5 Rows affected
+tables 1
+columns 3
+views 1
 
-# 15:49:54 >  
-# 15:49:54 >  Done.
-# 15:49:54 >  
+# 15:39:39 >  
+# 15:39:39 >  Done.
+# 15:39:39 >  
 
