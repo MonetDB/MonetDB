@@ -35,6 +35,8 @@
 #include <stream.h>
 #include <stdio.h>
 
+typedef enum { LINE_1,	LINE_N,	BLOCKED	 } prot;
+
 struct scanner {
 	char 	*buf;
 	bstream *rs;
@@ -46,6 +48,7 @@ struct scanner {
 	char yybak;		/* sometimes its needed to write an EOS marker */
 	int as;			/* start of query part of view's etc */
 	int key;
+	prot mode; 		/* which mode (line (1,N), blocked) */
 };
 
 #define QUERY(scanner) ((scanner.rs)?(scanner.rs->buf+scanner.rs->pos):scanner.buf)
@@ -406,6 +409,8 @@ scanner_init( struct scanner *s, bstream *rs, stream *ws )
 	s->yycur = 0;
 
 	s->key = 0;	/* keep a hask key of the query */
+
+	s->mode = LINE_N;
 }
 
 void
@@ -542,7 +547,9 @@ scanner_getc_bs(struct scanner * lc)
 
 	while (b->pos+lc->yycur >= b->len) {
 		int more = 0;
-		if (b->eof) { /* query is not finished ask for more */
+
+		/* query is not finished ask for more */
+		if (b->eof && lc->mode != LINE_1) { 
 			if (stream_write(lc->ws,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
 				stream_flush(lc->ws);
 			b->eof = 0;

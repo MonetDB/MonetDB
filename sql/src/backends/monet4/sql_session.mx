@@ -508,8 +508,7 @@ void sidestepSQL(Cntxt stk, char *cmd){
 
 @c
 int
-sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, 
-	int trace, int blocked )
+sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace )
 {
 	int go = TRUE;
 	char *errbuf;
@@ -519,7 +518,6 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 	int err;
 	int language = 'S';
 
-	(void)blocked;
         sql = backend_create( trace, m );
 
 	/* add myc and Output, Input to the stack */
@@ -599,6 +597,10 @@ in the standard.
 			in->pos = in->len; /* HACK: should use parsed lenght */
 		}
 @c
+		if (language == 's' && m->scanner.mode != BLOCKED) {
+			language = 'S';
+			m->scanner.mode = LINE_1;
+		}
 		if (language != 'S' && language != 'X') {
 			error(out, "!ERROR:Unrecognized language prefix");
 			break;
@@ -836,6 +838,8 @@ These lines should be eaten away into the prompt is encountered.
 
 	rs = bstream_create(in, isa_block_stream(in) ? (128 * BLOCK) : 0);
 	m = mvc_create(1, (backend_stack)stk, rs, out );
+	if (blocked)
+		m->scanner.mode = BLOCKED;
 	schema = mvc_login( m, user, passwd );
 	GDKfree(user);  
 	GDKfree(passwd);
@@ -858,7 +862,7 @@ These lines should be eaten away into the prompt is encountered.
 	@:sendProperty("[ \"language\",	\"sql\"	]\n")@
 	stream_flush(out);
 
-	ret = sqlclient2(m, stk, rs, out, trace, blocked );
+	ret = sqlclient2(m, stk, rs, out, trace );
 	mvc_destroy(m);
 	/* Make sure that the read- (in-) stream is closed first,
 	 * as the related write- (out-) stream closes the shared
