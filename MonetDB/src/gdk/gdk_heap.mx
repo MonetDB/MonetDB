@@ -141,7 +141,7 @@ PROT_NONE, so we can do it.
 */
 		fclose(fp);
 	        GDKfilepath(path,BATDIR,h->filename,NULL);
-		b = MT_mmap(path,h->offset+h->size, MMAP_COPY, totsize, 
+		b = MT_mmap(path, MMAP_COPY, h->offset+h->size, totsize, 
 			    h->base+h->offset+h->size);
 		if ((b == (char*) -1)) {
 			GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n",
