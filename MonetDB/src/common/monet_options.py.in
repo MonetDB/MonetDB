@@ -65,7 +65,7 @@ cmd_options = [
     ('dbname',None,'gdk_dbname','database_name'),
     ('dbfarm',None,'gdk_dbfarm','database_directory'),
     ('debug','d','gdk_debug','debug_level'),
-    ('help','h',None,None),
+    ('help','?',None,None),
     ('set','s',None,'option=value'),
     ]
 
