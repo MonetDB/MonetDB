@@ -69,11 +69,13 @@
     <filter token="MAJORVERSION" value="${major}" />
     <filter token="MINORVERSION" value="${minor}" />
     <filter token="DEF_MPORT" value="${def_mport}" />
+    <filter token="VERSIONSUFFIX" value="${version_suffix}" />
 
      <fail unless="major" message="'major' undefined. Please follow the directions in build.properties."/>
      <fail unless="minor" message="'minor' undefined. Please follow the directions in build.properties."/>
      <fail unless="def_mport" message="'def_mport' undefined. Please follow the directions in build.properties."/>
      <fail unless="enable_debug" message="'enable_debug' undefined. Please follow the directions in build.properties."/>
+     <fail unless="version_suffix" message="'version_suffix' undefined. Please follow the directions in build.properties."/>
 
     <!-- Put a check for the current version here -->
 
@@ -83,7 +85,7 @@
           tofile="${package}/MonetDriver.java"
           filtering="yes" />
 
-    <echo message="Configured build for the ${major}.${minor} edition driver" />
+    <echo message="Configured build for the ${major}.${minor} ${version_suffix} edition driver" />
   </target>
 
 
@@ -94,6 +96,11 @@
       <and>
         <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
       </and>
+    </condition>
+    <condition property="debug" value="false">
+      <not>
+        <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
+      </not>
     </condition>
     <mkdir dir="${builddir}" />
     <mkdir dir="${jardir}" />
