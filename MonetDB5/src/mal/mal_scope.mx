@@ -184,7 +184,7 @@ Scope fixateScope(Scope scope, str nme, int len){
 		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]) 
 			s= scopeJump[(int)(*nme)][(int)(*(nme+1))];
 		while(s != NULL){
-			if( strncmp(nme,s->name,len)== 0 )
+			if( strcmp(nme,s->name)== 0 )
 				return s;
 			s= s->outer;
 		}
