@@ -16,11 +16,13 @@ dnl some dirty hacks
 thread_safe_flag_spec="-D_REENTRANT"
 [ case "$host_os" in
   solaris*)
-    if [ "$CXX" = "CC" ]; then
+    case "$CXX" in
+      CC*) 
 	echo "$CXX=CC"
-      LDFLAGS="$LDFLAGS -z muldefs"
-      thread_safe_flag_spec="-mt"
-    fi
+        LDFLAGS="$LDFLAGS -z muldefs"
+        thread_safe_flag_spec="-mt" ;;
+      *) ;;
+    esac
     LEXLIB=-ll
     ;;
   irix*)
