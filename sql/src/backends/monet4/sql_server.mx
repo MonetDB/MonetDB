@@ -101,7 +101,7 @@ the updates to the persistent versions.
 The results of the SQL queries are assembled in result sets, which
 can be shipped to the front-end for display or exported over a
 stream.
-@c
+@m
 	.COMMAND mvc_result_table( mvc m, int nr_cols, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
 
 	.COMMAND mvc_result_table( mvc m, int nr_cols, BAT[oid,any] order ) : int = mvc_result_table_wrap; "Create structure to cache a table query result" 
