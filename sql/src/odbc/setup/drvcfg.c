@@ -20,29 +20,43 @@ static const char *aHost[] =
 
 int ODBCINSTGetProperties( HODBCINSTPROPERTY hLastProperty )
 {
-	hLastProperty->pNext 				= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
-	hLastProperty 						= hLastProperty->pNext;
+	hLastProperty->pNext 	= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
+	hLastProperty 		= hLastProperty->pNext;
 	memset( hLastProperty, 0, sizeof(ODBCINSTPROPERTY) );
-    hLastProperty->nPromptType			= ODBCINST_PROMPTTYPE_COMBOBOX;
-	hLastProperty->aPromptData			= malloc( sizeof( aHost ) );
+    	hLastProperty->nPromptType	= ODBCINST_PROMPTTYPE_COMBOBOX;
+	hLastProperty->aPromptData	= malloc( sizeof( aHost ) );
 	memcpy( hLastProperty->aPromptData, aHost, sizeof( aHost ) );
 	strncpy( hLastProperty->szName, "Host", INI_MAX_PROPERTY_NAME );
 	strncpy( hLastProperty->szValue, "", INI_MAX_PROPERTY_VALUE );
 
-	hLastProperty->pNext 				= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
-	hLastProperty 						= hLastProperty->pNext;
+	hLastProperty->pNext 	= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
+	hLastProperty 		= hLastProperty->pNext;
+	memset( hLastProperty, 0, sizeof(ODBCINSTPROPERTY) );
+	hLastProperty->nPromptType	= ODBCINST_PROMPTTYPE_TEXTEDIT;
+
+	strncpy( hLastProperty->szName, "Port", INI_MAX_PROPERTY_NAME );
+	strncpy( hLastProperty->szValue, "", INI_MAX_PROPERTY_VALUE );
+
+	hLastProperty->pNext 	= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
+	hLastProperty 		= hLastProperty->pNext;
 	memset( hLastProperty, 0, sizeof(ODBCINSTPROPERTY) );
 	hLastProperty->nPromptType			= ODBCINST_PROMPTTYPE_TEXTEDIT;
 	strncpy( hLastProperty->szName, "Database", INI_MAX_PROPERTY_NAME );
 	strncpy( hLastProperty->szValue, "", INI_MAX_PROPERTY_VALUE );
 
-	hLastProperty->pNext 				= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
-	hLastProperty 						= hLastProperty->pNext;
+	hLastProperty->pNext 	= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
+	hLastProperty 		= hLastProperty->pNext;
 	memset( hLastProperty, 0, sizeof(ODBCINSTPROPERTY) );
 	hLastProperty->nPromptType			= ODBCINST_PROMPTTYPE_TEXTEDIT;
-	strncpy( hLastProperty->szName, "Port", INI_MAX_PROPERTY_NAME );
+	strncpy( hLastProperty->szName, "User", INI_MAX_PROPERTY_NAME );
 	strncpy( hLastProperty->szValue, "", INI_MAX_PROPERTY_VALUE );
 
+	hLastProperty->pNext 	= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
+	hLastProperty 		= hLastProperty->pNext;
+	memset( hLastProperty, 0, sizeof(ODBCINSTPROPERTY) );
+	hLastProperty->nPromptType			= ODBCINST_PROMPTTYPE_TEXTEDIT;
+	strncpy( hLastProperty->szName, "Password", INI_MAX_PROPERTY_NAME );
+	strncpy( hLastProperty->szValue, "", INI_MAX_PROPERTY_VALUE );
 
 	return 1;
 }
