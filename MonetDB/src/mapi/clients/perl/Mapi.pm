@@ -36,8 +36,8 @@ sub new {
   binmode($mapi->{SOCKET},":utf8");
   print "Connection to socket established\n" if ($mapi->{trace});
   bless($mapi,"Mapi");
-  $mapi->doCmd("$user:$passwd\n");
-  print "logged on:$user:$passwd\n" if ($mapi->{trace});
+  $mapi->doCmd("$user:$passwd:$language\n");
+  print "logged on:$user:$passwd:$language\n" if ($mapi->{trace});
 #  print "switch to $language scenario\n";
 #  $mapi->doCmd("sql();") if ($language eq 'sql');
   return $mapi;
@@ -55,7 +55,7 @@ sub clone {
 }
 
 sub mapiport_intern {
-  my $mapiport = 'localhost:50001';
+  my $mapiport = 'localhost:50000';
   $mapiport = $ENV{'MAPIPORT'} if defined($ENV{'MAPIPORT'});
   return $mapiport;
 }
@@ -68,7 +68,7 @@ sub hostname {
 
 sub portnr {
   my ($portnr) = mapiport_intern() =~ /:([^:]*)/;
-  $portnr = 50001 if ($portnr eq '');
+  $portnr = 50000 if ($portnr eq '');
   return $portnr;
 }
 
@@ -204,7 +204,7 @@ sub getReply {
 #     $mapi->getLine() if ($mapi->{BUF} eq "");
     $mapi->getLine();
     my $row= $mapi->{BUF};
-    my $e = index($row,"\001");
+    my $e = index($row,"\001\001");
 #     print "002 not found\n" if ($e == undef);
 #     print "002 not found (-1)\n" if ($e < 0);
     my $n = index($row,"\n");
