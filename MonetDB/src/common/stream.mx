@@ -432,7 +432,7 @@ stream *open_wstream( char *filename ){
 	} 
 #endif
 	{
-		s = open_stream( filename, "ab");
+		s = open_stream( filename, "wb");
 		s->access = ST_WRITE;
 		s->type = ST_BIN;
 		if (s->errnr == NO__ERROR)
@@ -1211,3 +1211,4 @@ void bstream_destroy( bstream *s )
 	free(s->buf);
 	free(s);
 }
+
