@@ -398,10 +398,12 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                         l = BATselect(l, &r_lo, &r_hi); /* sorted, so it will be a slice */
                 }
         }
-       base = BUNindex(r, BUNfirst(r));
+        base = BUNindex(r, BUNfirst(r));
         offset = base - r->hseqbase;
         end = base + BATcount(r);
-        seqbase = *(oid*) BUNhead(l,BUNfirst(l));
+	/* only BUNhead crashes on empty bats with TYPE != virtual oid */
+	seqbase = (l->htype == TYPE_void)?l->hseqbase:
+			(BATcount(l)?*(oid*) BUNhead(l,BUNfirst(l)):oid_nil);
 @
         @:joinestimate(JOIN_EQ, BATfetchjoin(l,r), estimate)@
 @c
@@ -696,7 +698,7 @@ static void IDXthetajoin(BAT *binner, BAT *bouter, BAT *l, BAT *r, int op) {
 	int xx;
 	
 	/* skip nils */
-	while(first <= last && (*cmp)(BUNhead(r,*first),nil) == 0) {
+	while(first < last && (*cmp)(BUNhead(r,*first),nil) == 0) {
 		first++;
 	}
        	switch(op) {
