@@ -84,13 +84,21 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			(void)(*nr)++; s->nr = (*nr)++;
 			break;
 		case cmp_lt:
-		case cmp_lte: /* broken */
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d);\n", 
+			  *nr, l, s->op1.stval->op1.cval->tpe->name, r ); 
+			s->nr = (*nr)++;
+			break;
+		case cmp_lte:
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(%s(nil), s%d);\n", 
 			  *nr, l, s->op1.stval->op1.cval->tpe->name, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_gt:
-		case cmp_gte: /* broken */
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", s%d, %s(nil));\n", 
+			  *nr, l, r, s->op1.stval->op1.cval->tpe->name ); 
+			s->nr = (*nr)++;
+			break;
+		case cmp_gte: 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(s%d, %s(nil));\n", 
 			  *nr, l, r, s->op1.stval->op1.cval->tpe->name ); 
 			s->nr = (*nr)++;
