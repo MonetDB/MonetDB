@@ -926,13 +926,13 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 		} else
 			count = 1;
 		stream_printf(s, "# " SZFMT, count);
-		for (i = 2; i < t->nr_cols; i++)
+		for (i = 1; i < t->nr_cols; i++)
 			stream_write(s, ",\t", 2, 1);
 		stream_write(s, " # tuplecount\n", 14, 1);
 	}
 
 	stream_printf(s, "# %d", t->id);
-	for (i = 2; i < t->nr_cols; i++)
+	for (i = 1; i < t->nr_cols; i++)
 		stream_write(s, ",\t", 2, 1);
 	stream_write(s, " # id\n", 6, 1);
 
