@@ -40,6 +40,7 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "oo7"		  ]
 [ "qt"		  ]
 [ "tpcd"	  ]
+[ "txtsim"	  ]
 [ "vector"	  ]
 [ "wisc"	  ]
 Plain_mods@batloop {
@@ -457,6 +458,20 @@ Module: "tpcd"
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail sum"																  ]
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail sum"																  ]
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail sum"																  ]
+
+Module: "txtsim"
+
+[ 5 ]
+[ 5 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature					help																	  # name
+# str			str		str						str																	  # type
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "editdistance",	  "COMMAND:   ",  "editdistance(str, str) : int",		  "Alias for Levenshtein(str,str)"													  ]
+[ "editdistance2",	  "COMMAND:   ",  "editdistance2(str, str) : int",		  "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2"			  ]
+[ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str) : int",		  "Calculates Levenshtein distance (edit distance) between two strings"									  ]
+[ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str, int, int, int) : int",	  "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)"	  ]
+[ "soundex",		  "COMMAND:   ",  "soundex(str) : str",				  "Soundex function for phonetic matching"												  ]
 
 Module: "vector"
 
