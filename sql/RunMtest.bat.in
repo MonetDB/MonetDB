@@ -9,14 +9,15 @@ goto end
 set builddir=@MONET_BUILD@
 set srcdir=@MONET_SOURCE@
 
-set MOD_PATH=%builddir%\src\backends\@SQL_BACKEND@;@MONET_PREFIX@\lib\MonetDB
+set MOD_PATH=%builddir%\src\backends\@SQL_BACKEND@\.libs;@MONET_PREFIX@\lib\MonetDB
 
 set PATH=%builddir%\src\client;%builddir%\src\tools;@MONET_PREFIX@\bin;@MONET_PREFIX@\lib;%PATH%
+set PATH=%builddir%\src\client\.libs;%builddir%\src\server\.libs;%builddir%\src\odbc\driver\.libs;%builddir%\src\odbc\setup\.libs
 set PATH=%MOD_PATH%;%PATH%
 
 REM execute Mtest.py in the source directory
 cd %srcdir%
 
-call python "@MONET_PREFIX@\bin\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--SQL_PREFIX=%builddir%/src/tools" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--dbfarm=%builddir%/dbfarm" "--sql_logdir=%builddir%/log" %*
+call python "@MONET_PREFIX@\bin\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--SQL_PREFIX=%builddir%\src\tools" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\log" %*
 
 :end

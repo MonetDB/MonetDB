@@ -28,7 +28,7 @@ fi
 
 # enhance PATH with Msql and MonetDB binaries
 PATH="${builddir}/src/client:${builddir}/src/tools:${MONET_PREFIX}/bin:$PATH"
-libpath="${MOD_PATH}:${builddir}/src/client/.libs:${builddir}/src/common/.libs:${builddir}/src/odbc/driver/.libs:${builddir}/src/odbc/setup/.libs"
+libpath="${MOD_PATH}:${builddir}/src/client/.libs:${builddir}/src/server/.libs:${builddir}/src/odbc/driver/.libs:${builddir}/src/odbc/setup/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
 	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"
