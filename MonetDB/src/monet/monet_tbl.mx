@@ -278,11 +278,6 @@ an entering writer goes to sleep on a semaphore ('barrier') and is woken
 up by the last reader. Crucial counter variables are protected by a 
 short-term lock ('protector').
 @c
-#define TBL_set_readlock() 					
-#define TBL_unset_readlock() 					
-#define TBL_set_writelock() 					
-#define TBL_unset_writelock() 					
-/*
 #define TBL_set_readlock() {					\
     MT_set_lock(TBL_writelock, "TBL_set_readlock(writelock)");	\
     MT_set_lock(TBL_protector, "TBL_set_readlock(protector)");	\
@@ -306,7 +301,6 @@ short-term lock ('protector').
     TBL_writer = 0;						\
     MT_unset_lock(TBL_protector, "TBL_unset_writelock(protector)");\
     MT_unset_lock(TBL_writelock, "TBL_unset_writelock");	}
-*/
 
 
 @+ Dynamic Loading  
