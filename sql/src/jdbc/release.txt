@@ -15,12 +15,7 @@ this driver.
 
 - Currently implemented are:
   * java.sql.Driver interface
-    . acceptsURL(java.lang.String url)
-    . connect(java.lang.String url, java.util.Properties info)
-    . getMajorVersion()
-    . getMinorVersion()
-    . jdbcCompliant()
-    . driver works with Java's DriverManager
+    . all methods implemented
   * java.sql.Connection interface
     . clearWarnings()
     . close()
@@ -102,6 +97,8 @@ this driver.
     . getColumnTypeName(int column)
   * java.sql.DatabaseMetaData interface
     . all methods implemented, correctness not guaranteed :)
+  * java.sql.SavePoint interface
+    . all methods implemented
 - Note that Statement's executeUpdate is implemented via executeQuery and does
   NOT return the number of affected rows.
 - The getObject methods do not return all types correct, and currently ignore
