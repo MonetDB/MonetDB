@@ -445,7 +445,7 @@ static INLINE nat append_str2bat(shredCtx* ctx, int idx, str v) {
                 if ( bun ) {
                         oid fo = *(oid*)BUNtail(mb,bun);
                         sb->dupl++;
-                        return (int)fo;
+                        return (nat)fo;
                 }
         }
 #endif /*USE_COMPRESSION*/
@@ -579,6 +579,8 @@ emitnode (node_t node)
         return 1;
 }
 
+#define NEXT_PRE(P)     if ( ! ++P ) { stream_printf(GDKerr,"FATAL_ERROR: NEXT_PRE(): pre too big, use 64bit oid!\n"); exit(0); }
+
 void 
 shred_start_document (void *ctx)
 {
@@ -597,7 +599,7 @@ shred_start_document (void *ctx)
                       .prop  = NIL,
                       .kind  = DOCUMENT
                     }));
-    nnode_pre++;
+    NEXT_PRE(nnode_pre);
 }
 
 
@@ -621,7 +623,8 @@ emitString(shredCtx* ctx, char* s)
 
     (void)ctx;
     /* fill the node */
-    node.pre   = nnode_pre++;
+    node.pre   = nnode_pre;
+    NEXT_PRE(nnode_pre);
     node.size  = 0;
     node.level = level;
     node.kind  = TEXT;
@@ -722,7 +725,8 @@ shred_start_element (void *ctx,
         return;
     }
     /* (1) assign preorder rank (document order), size, level, and kind */
-    node.pre   = nnode_pre++;
+    node.pre   = nnode_pre;
+    NEXT_PRE(nnode_pre);
     node.size  = 0;
     node.level = level;
     node.kind  = ELEMENT;
@@ -845,7 +849,8 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
         return;
     }
 
-    node.pre   = nnode_pre++;
+    node.pre   = nnode_pre;
+    NEXT_PRE(nnode_pre);
     node.size  = 0;
     node.level = level;
     node.kind  = PI;
@@ -874,7 +879,8 @@ shred_comment (void *ctx, const xmlChar *c)
         return;
     }
 
-    node.pre   = nnode_pre++;
+    node.pre   = nnode_pre;
+    NEXT_PRE(nnode_pre);
     node.size  = 0;
     node.level = level;
     node.kind  = COMMENT;

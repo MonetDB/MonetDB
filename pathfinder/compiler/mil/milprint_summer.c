@@ -6577,9 +6577,9 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
             "timer := nil_int;\n"
             "if (rep = tries)\n"
             "{\n"
-/*          "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n"); */
             "timer := time();\n"
-            "xml_print(ws, item, kind, int_values, dbl_values, dec_values, str_values);\n"
+            /* "xml_print(ws, item, kind, int_values, dbl_values, dec_values, str_values);\n" */
+            "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n"
             "timer := time() - timer;\n"
             "timings :+= \"### time for serialization: \" + str(timer) + \" msec\\n\";\n"
             "}\n"
