@@ -44,7 +44,8 @@ def mFilter (FILE, IGNORE) :
 			  + "^Mcreatedb: calling .Mserver -db .* for the first time..$"	+ "|"	\
 			  + "^Mcreatedb: database .* has been initialized succesfully!$"+ "|"	\
 			  + "^connection= .*:[0-9]*$"					+ "|"	\
-			  + "^Connecting to server: localhost:[0-9]*$"				) ,	\
+			  + "^Connecting to server: localhost:[0-9]*$"			+ "|"	\
+			  + "^server listening on port [0-9]*$"				) ,	\
 		re.compile( "^!ERROR: DL_open: Unknown error.$"			+ "|"	\
 			  + "^!ERROR: DL_open: library not found \(STATIC\).$"		) , 	\
 		re.compile( "^!ERROR: TBL_loadmod: module load .* cancelled.$"	) ,	\

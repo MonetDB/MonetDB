@@ -222,7 +222,9 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
 	testS = re.compile("^/"+TST+stableWHAT+"/([^/]*)/")
 	REVt="?"
 	REVs="?"
-	for l in fileinput.input(TSTSRCDIR+os.sep+"CVS"+os.sep+"Entries"):
+	entries = TSTSRCDIR+os.sep+"CVS"+os.sep+"Entries"
+	if os.path.isfile(entries):
+	    for l in fileinput.input(entries):
 		mT = testT.match(l)
 		if mT:
 			REVt=mT.group(1)
@@ -613,6 +615,10 @@ def CheckMods(env, TST, EXT) :
 		for m in "unix", "str", "mapi":
 			if m not in env['TST_MODS']:
 				missing.append(m)
+	if EXT == ".sql":
+		for m in "str", "xtables",  "sqlserver", "ascii_io", "alarm", "unix":
+			if m not in env['TST_MODS']:
+				missing.append(m)
 	return missing
 ### CheckMods(env, TST, EXT) #
 
@@ -668,7 +674,7 @@ def RunTest(env, TST) :
 		EXT = ".milM" ; CALL = "milM"
 	elif os.path.isfile(TST+".milS")  or  os.path.isfile(TST+".milS.src"):
 		EXT = ".milS" ; CALL = "milS"
-	elif os.path.isfile(TST+".milC")  or  os.path.isfile(TST+".milM.src"):
+	elif os.path.isfile(TST+".milC")  or  os.path.isfile(TST+".milC.src"):
 		EXT = ".milC" ; CALL = "milC"
 	elif os.path.isfile(TST+"_s00.milM"):
 		EXT = ".milM" ; CALL = "milMXs"
@@ -678,6 +684,12 @@ def RunTest(env, TST) :
 		EXT = ".milC" ; CALL = "milCXs"
 	elif os.path.isfile(TST+"_p00.milC"):
 		EXT = ".milC" ; CALL = "milCXp"
+	elif os.path.isfile(TST+".sql")   or  os.path.isfile(TST+".sql.src"):
+		EXT = ".sql"  ; CALL = "sql"
+	elif os.path.isfile(TST+"_s00.sql"):
+		EXT = ".sql"  ; CALL = "sqlXs"
+	elif os.path.isfile(TST+"_p00.sql"):
+		EXT = ".sql"  ; CALL = "sqlXp"
 		#TODO:
 		#elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
 		#elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
@@ -723,12 +735,20 @@ def RunTest(env, TST) :
 		#TODO:
 		#elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
 		#SkipTest(env, TST, EXT, "as java is not in $PATH.")
+	elif EXT == ".sql" and  not env['exe']['sql_aclient'][0]:
+		SkipTest(env, TST, EXT, "as sql_aclient is not available.")
+	elif EXT == ".sql" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/parser/catalog.mil")):
+		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/parser/catalog.mil")+" is not available.")
+	elif EXT == ".sql" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/parser/aserver.mil")):
+		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/parser/aserver.mil")+" is not available.")
 	elif MissingMods:
 		SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
 	elif MissingBATs:
 		SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
 	elif CALL == "milCXp":
-		SkipTest(env, TST, EXT, "as multiple clients in parallel are currently not supported by Mtest.")
+		SkipTest(env, TST, EXT, "as multiple MapiClients in parallel are currently not supported by Mtest.")
+	elif CALL == "sqlXp":
+		SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by Mtest.")
 	else:
 		test = re.compile("^"+TST+"(|\..*|_[sp][0-9][0-9]\..*)$")
 		for f in os.listdir(TSTSRCDIR):
@@ -792,15 +812,15 @@ def RunTest(env, TST) :
 			for l in fileinput.input(TST+EXT):
 				if test.match(l):
 					XTIMEOUT = XTIMEOUT + TIMEOUT
-		elif CALL in ["milMXs", "milSXs", "milCXs"]:
+		elif CALL in ["milMXs", "milSXs", "milCXs", "sqlXs"]:
 			test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$")
 			d = os.listdir(os.getcwd())
 			for f in d:
 				if test.match(f):
 					XTIMEOUT = XTIMEOUT + TIMEOUT
-		elif CALL in ["milM", "milS", "milC"]:
+		elif CALL in ["milM", "milS", "milC", "sql"]:
 			XTIMEOUT = XTIMEOUT + TIMEOUT
-		if  CALL in ["milC", "milCXs"]:
+		if  CALL in ["milC", "milCXs", "sql", "sqlXs"]:
 			XTIMEOUT = XTIMEOUT + TIMEOUT + 60
 
 		ME = ""
@@ -886,7 +906,9 @@ def RunTest(env, TST) :
 		testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/")
 		REVo="?"
 		REVe="?"
-		for l in fileinput.input(TSTSRCDIR+os.sep+"CVS"+os.sep+"Entries"):
+		entries = TSTSRCDIR+os.sep+"CVS"+os.sep+"Entries"
+		if os.path.isfile(entries):
+		    for l in fileinput.input(entries):
 			mO = testO.match(l)
 			if mO:
 				REVo=mO.group(1)
@@ -1055,8 +1077,65 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 			TestErr.writelines(q.readlines())
 			q.close()
 		TestErr.flush()
-	#TODO
-	#elif CALL == "milCXp":
+		#TODO
+		#elif CALL == "milCXp":
+	elif CALL in ["sql", "sqlXs"]:
+		TSTs = []
+		if CALL == "sql":
+			X=""
+		else:
+			X="_s[0-9][0-9]"
+		test = re.compile("^"+TST+X+EXT+"$")
+		d = os.listdir(os.getcwd())
+		d.sort()
+		for f in d:
+			if test.match(f):
+				TSTs.append(f)
+		PROLOGUE = ""
+		if os.path.isfile(TST+".prologue"):
+			PROLOGUE = " "+TST+".prologue"
+
+		Srvr = MTO+str(XTO)+" "+exe['Mserver'][1]+" -db "+TSTDB
+		Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/parser/catalog.mil")
+		Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/parser/aserver.mil")
+		Srvr = Srvr+PROLOGUE
+		#-background"
+		Clnt = MTO+str(TOT)+" "+exe['sql_aclient'][1]+" "+PRELUDE+" < "
+
+		SrvrOut = open(TST+".server.out","w")
+		SrvrErr = open(TST+".server.err","w")
+		ClntOut = open(TST+".client.out","w")
+		ClntErr = open(TST+".client.err","w")
+
+		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
+		time.sleep(9)
+
+		for f in TSTs:
+			RunIt(Clnt+f, "", ClntOut, ClntErr)
+
+		if not pSrvrIn.closed:
+			try:
+				pSrvrIn.write('quit;\n')
+				pSrvrIn.close()
+			except IOError:
+				nop = ''
+
+		CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
+
+		for q in [SrvrOut, ClntOut]:
+			n = q.name
+			q.close()
+			q = open(n,'r')
+			TestOut.writelines(q.readlines())
+			q.close()
+		TestOut.flush()
+		for q in [SrvrErr, ClntErr]:
+			n = q.name
+			q.close()
+			q = open(n,'r')
+			TestErr.writelines(q.readlines())
+			q.close()
+		TestErr.flush()
 	TestOut.write(Prompt('Done.')) ; TestOut.flush()
 	TestErr.write(Prompt('Done.')) ; TestErr.flush()
 ### DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) #
@@ -1184,7 +1263,7 @@ def main(argv) :
 	vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX', \
 		'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'     ]
 	if THISFILE == "Mtest.py":
-		vars = vars + ['MONETRC', 'MONET_MOD_PATH', 'MAPIPORT']
+		vars = vars + ['MONETRC', 'MONET_MOD_PATH', 'MAPIPORT', 'SQLPORT']
 
 	# most intuitive (?) default settings
 	dft = {}
@@ -1198,6 +1277,7 @@ def main(argv) :
 		dft['MONETRC']        = "FindMonetConf(env)"
 		dft['MONET_MOD_PATH'] = "env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
 		dft['MAPIPORT']       = "HOST+':'+str(random.randrange(50000,59999,1))"
+		dft['SQLPORT']        = "str(random.randrange(50000,59999,1))"
 	env = {}
 
 	#par = {}
@@ -1368,14 +1448,15 @@ def main(argv) :
 	# check for executables, set their standard options and export them
 	if THISFILE == "Mtest.py":
 		exe = {}
-		exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
-		exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -monetrc '+env['MONETRC']
-		exe['MapiClient'] = CheckExec('MapiClient'), 'MapiClient -everything'
-		exe['Mcreatedb']  = CheckExec('Mcreatedb') , 'Mcreatedb -monetrc '+env['MONETRC']
-		exe['Mdestroydb'] = CheckExec('Mdestroydb'), 'Mdestroydb -monetrc '+env['MONETRC']
-		exe['Mshutdown']  = CheckExec('Mshutdown') , 'Mshutdown'
-		exe['Mdiff']      = CheckExec('Mdiff')     , 'Mdiff'
-		exe['python']     = CheckExec('python')    , 'python'
+		exe['Mtimeout']    = CheckExec('Mtimeout')   , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
+		exe['Mserver']     = CheckExec('Mserver')    , 'Mserver -monetrc '+env['MONETRC']
+		exe['MapiClient']  = CheckExec('MapiClient') , 'MapiClient -everything'
+		exe['Mcreatedb']   = CheckExec('Mcreatedb')  , 'Mcreatedb -monetrc '+env['MONETRC']
+		exe['Mdestroydb']  = CheckExec('Mdestroydb') , 'Mdestroydb -monetrc '+env['MONETRC']
+		exe['Mshutdown']   = CheckExec('Mshutdown')  , 'Mshutdown'
+		exe['Mdiff']       = CheckExec('Mdiff')      , 'Mdiff'
+		exe['python']      = CheckExec('python')     , 'python'
+		exe['sql_aclient'] = CheckExec('sql_aclient'), 'sql_aclient --port '+env['SQLPORT']
 		if not exe['Mtimeout'][0]:
 			exe['Mtimeout'] = '', ''
 		if os.name == "nt":
