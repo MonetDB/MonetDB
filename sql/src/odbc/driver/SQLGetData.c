@@ -20,8 +20,6 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-#include <stdlib.h>		/* for strtoll() & strtoull() on SunOS; doesn't work yet */
-
 SQLRETURN
 SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	   SQLPOINTER pTarget, SQLINTEGER nTargetLength,
@@ -55,7 +53,7 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (nCol <= 0 || nCol > mapi_get_field_count(stmt->hdl)) {
+	if (nCol <= 0 || nCol > stmt->ImplRowDescr->sql_desc_count) {
 		/* 07009 = Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
@@ -68,11 +66,12 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	if (nTargetType == SQL_ARD_TYPE) {
 		ODBCDesc *desc = stmt->ApplRowDescr;
 
-		if (nCol <= desc->sql_desc_count) {
-			ODBCDescRec *rec = &desc->descRec[nCol];
-
-			nTargetType = rec->sql_desc_concise_type;
+		if (nCol > desc->sql_desc_count) {
+			/* 07009: Invalid descriptor index */
+			addStmtError(stmt, "07009", NULL, 0);
+			return SQL_ERROR;
 		}
+		nTargetType = desc->descRec[nCol].sql_desc_concise_type;
 	}
 	return ODBCFetch(stmt, nCol, nTargetType, pTarget, nTargetLength,
 			 pnLengthOrIndicator, pnLengthOrIndicator,
