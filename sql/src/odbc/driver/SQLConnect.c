@@ -38,6 +38,23 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	int port = 0;
 	char *s;
 	Mapi mid;
+	static int setlen;
+	static opt *set = NULL;
+
+	if (set == NULL) {
+		/* one time initialization of configuration options */
+		char *cfg;
+
+		if ((setlen = mo_builtin_settings(&set)) == 0) {
+			/* Memory allocation error */
+			addDbcError(dbc, "HY001", NULL, 0);
+			return SQL_ERROR;
+		}
+		if ((cfg = getenv("MONET_CONFIG")) != NULL)
+			setlen = mo_add_option(&set, setlen, opt_cmdline,
+					       "config", cfg);
+		mo_system_config(&set, setlen);
+	}
 
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
@@ -66,13 +83,13 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	   need to make copies */
 	fixODBCstring(szUID, nUIDLength, addDbcError, dbc);
 	if (nUIDLength == 0) {
-		uid = strdup(mo_find_option(NULL, 0, "sql_user"));
+		uid = strdup(mo_find_option(set, setlen, "sql_user"));
 	} else {
 		uid = dupODBCstring(szUID, (size_t) nUIDLength);
 	}
 	fixODBCstring(szPWD, nPWDLength, addDbcError, dbc);
 	if (nPWDLength == 0) {
-		pwd = mo_find_option(NULL, 0, "sql_passwd");
+		pwd = mo_find_option(set, setlen, "sql_passwd");
 		if (pwd == NULL)
 			pwd = "monetdb";
 		pwd = strdup(pwd);
@@ -83,7 +100,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	if ((s = getenv("SQLPORT")) != NULL)
 		port = atoi(s);
 	if (port == 0) {
-		s = mo_find_option(NULL, 0, "sql_port");
+		s = mo_find_option(set, setlen, "sql_port");
 		port = atoi(s);
 	}
 
@@ -92,7 +109,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	/* Retrieved and checked the arguments.
 	   Now try to open a connection with the server */
 	/* temporarily hold hostname in s */
-	s = mo_find_option(NULL, 0, "host");
+	s = mo_find_option(set, setlen, "host");
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s port=%d\n",
