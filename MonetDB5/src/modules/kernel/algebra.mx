@@ -1332,7 +1332,6 @@ int CMDfind(ptr ret, BAT* b, ptr val){
 
 @- Wrapper
 The remainder of this file contains the wrapper around the V4 code base
-
 The BAT identifiers passed through this module may indicate
 that the 'reverse' view applies. This should be taken into
 account while resolving them.
@@ -1630,7 +1629,7 @@ str ALG@1(int *result, int *bid) {
 	BAT *b,*bn;
 	@:getBATdescriptor(result,bid,b,@1)@
 	*result = 0;
-	bn = @2(b);
+	CMD@1(&bn,b);
 	if( bn ) {
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
@@ -1642,7 +1641,11 @@ str ALG@1(int *result, int *bid) {
 	BAT *b;
 	*result = 0;
 	@:getBATdescriptor(result,bid,b,@1)@
-	*result = @2(b);
+	CMD@1(&bn,b);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return MAL_SUCCEED;
+	}
 	return MAL_SUCCEED;
 }
 @= ALGbinary
