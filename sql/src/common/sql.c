@@ -3509,7 +3509,8 @@ static stmt *sql_update(context * sql, dlist * qname,
 			v = check_types(sql, cl->c->tpe, v);
 
 			if (v->nrcols <= 0)
-				v = stmt_const(s ? first_subset(s) : cl->s, v);
+				v = stmt_const(
+				  stmt_reverse(s ? first_subset(s) : cl->s), v);
 
 			list_append(l, stmt_update(cl->c, v));
 			n = n->next;
