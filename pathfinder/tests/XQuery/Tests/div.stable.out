@@ -10,9 +10,6 @@ stdout of test 'div` in directory 'tests/XQuery` itself:
 # Compiled for i686-suse-linux/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 !ERROR: division by 0 is forbidden
-!ERROR: interpret: no matching MIL operator to 'print_result(str, BAT[void,BAT], int, BAT[void,int], BAT[void,int], BAT[void,dbl], BAT[void,dbl], BAT[void,str])'.
-!MAYBE YOU MEAN:
-!	print_result(str, BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : void
 
 # 23:34:05 >  
 # 23:34:05 >  Done.
