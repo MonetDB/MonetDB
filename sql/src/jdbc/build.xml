@@ -107,7 +107,7 @@
           tofile="${package}/MonetDriver.java"
           filtering="yes" />
 
-    <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} ${JDBC_VER_SUFFIX} edition driver" />
+    <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
   </target>
 
 

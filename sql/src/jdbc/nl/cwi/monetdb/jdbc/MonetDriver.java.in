@@ -35,8 +35,8 @@ import java.net.*;
  * use this driver.
  * <br /><br />
  * This Driver supports MonetDB database URLs. MonetDB URLs are defined as:<br />
- * <tt>jdbc:monetdb://&lt;host&gt;[:&lt;port&gt]/&lt;database&gt;</tt><br />
- * where [:&lt;port&gt] denotes that a port is optional. If not given the default
+ * <tt>jdbc:monetdb://&lt;host&gt;[:&lt;port&gt;]/&lt;database&gt;</tt><br />
+ * where [:&lt;port&gt;] denotes that a port is optional. If not given the default
  * (@JDBC_DEF_PORT@) will be used.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
@@ -47,14 +47,13 @@ public class MonetDriver implements Driver {
 	// Chapter 9.2.1 from Sun JDBC 3.0 specification
 	/** The prefix of a MonetDB url */
 	private static final String MONETURL = "jdbc:monetdb://";
-	// this is a real beta release (we decide not to follow Sun's rule here)
 	/** Major version of this driver */
 	private static final int DRIVERMAJOR = @JDBC_MAJOR@;
 	/** Minor version of this driver */
 	private static final int DRIVERMINOR = @JDBC_MINOR@;
 	/** Version suffix string */
 	private static final String DRIVERVERSIONSUFFIX = "@JDBC_VER_SUFFIX@";
-	// I don't dare to even think of calling it compliant yet ;)
+	// We're not fully compliant, but what we support is compliant
 	/** Whether this driver is JDBC compliant or not */
 	private static final boolean MONETJDBCCOMPLIANT = false;
 
@@ -326,6 +325,6 @@ public class MonetDriver implements Driver {
 	 * @return the version string
 	 */
 	static String getDriverVersion() {
-		return("" + DRIVERMAJOR + "." + DRIVERMINOR + " " + DRIVERVERSIONSUFFIX);
+		return("" + DRIVERMAJOR + "." + DRIVERMINOR + " (" + DRIVERVERSIONSUFFIX + ")");
 	}
 }

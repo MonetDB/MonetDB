@@ -458,11 +458,9 @@ public class JdbcClient {
 				// print welcome message
 				out.println("Welcome to the MonetDB interactive JDBC terminal!");
 				out.println("Database: " + dbmd.getDatabaseProductName() + " " +
-					dbmd.getDatabaseProductVersion() + " (" + dbmd.getDatabaseMajorVersion() +
-					"." + dbmd.getDatabaseMinorVersion() + ")");
+					dbmd.getDatabaseProductVersion());
 				out.println("Driver: " + dbmd.getDriverName() + " " +
-					dbmd.getDriverVersion() + " (" + dbmd.getDriverMajorVersion() +
-					"." + dbmd.getDriverMinorVersion() + ")");
+					dbmd.getDriverVersion());
 				out.println("Type \\q to quit, \\h for a list of available commands");
 				out.println("auto commit mode: on");
 
