@@ -174,7 +174,7 @@ void scheduleClient( str command, bstream *fin, stream *fout)
 	if (!lang) {
 		defaultScenario(c);
 	} else if ((s=setScenario(c, lang)) != NULL){
-		stream_printf(c->fdout,"setScenario: %s\n", s);
+		stream_printf(c->fdout,"!%s\n", s);
 		stream_flush(c->fdout);
 		return;
 	}
