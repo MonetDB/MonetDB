@@ -100,7 +100,7 @@ int main(int argc, char** argv)
     {
       case 0: fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn); break;
       case 1: fprintf(STDERR,"%s and %s differ slightly.\n",old_fn,new_fn); break;
-      case 2: fprintf(STDERR,"%s and %s differ significantly!\n",old_fn,new_fn); break;
+      case 2: fprintf(STDERR,"%s and %s differ SIGNIFICANTLY!\n",old_fn,new_fn); break;
     }
 
   TRACE(fprintf(STDERR,"done.\n"));

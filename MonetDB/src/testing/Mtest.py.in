@@ -34,8 +34,6 @@
 # - produce, keep & reference LOG
 # - add a "grep-like" function and replace "inlined" grep
 #   contains(<file>,<string>)
-# - replace pure boldface (<B>) by red-boldface
-#   (also in Mdiff)
 # - do multi-level prompting?
 # - normalize all path's used
 # - remove one of milM, milS
@@ -279,15 +277,15 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     if   l[:14] == '<!--NoDiffs-->':
         DIFF = "No differences"
     elif l[:17] == '<!--MinorDiffs-->':
-        DIFF = "<B>Minor differences</B>"
+        DIFF = "<FONT COLOR=#ffaa00><B>Minor differences</B></FONT>"
     elif l[:17] == '<!--MajorDiffs-->':
-        DIFF = "<B><I>Major differences</I></B>"
+        DIFF = "<FONT COLOR=#ff0000><B><I>Major differences</I></B></FONT>"
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
         f = open(TST+WHAT+".diff.html","a")
         f.write("\n<!--MajorDiffs-->\n")
         f.close()
-        DIFF = "<B><I>Major differences</I></B>"
+        DIFF = "<FONT COLOR=#ff0000><B><I>Major differences</I></B></FONT>"
     SYSTEM = OSVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
@@ -407,13 +405,14 @@ def CreateSrcIndex (env, TST, EXT) :
 ### CreateSrcIndex (env, TST, EXT) #
 
 def AddHref (TSTDIR, TST, WHAT, diff) :
-    STRING = "<A HREF='."+TST+WHAT+".html' TARGET='"+OSVER+"_"+TSTDIR+"_body'>"+WHAT[1:]+"</A>"
+    A1 = "<A HREF='."+TST+WHAT+".html' TARGET='"+OSVER+"_"+TSTDIR+"_body'>"
+    A2 = "</A>"
     if   diff==2:
-        return "<B><I>"+STRING+"</I></B>"
+        return A1+"<FONT COLOR=#ff0000><B><I>"+WHAT[1:]+"</I></B></FONT>"+A2
     elif diff==1:
-        return "<B>"+STRING+"</B>"
+        return A1+"<FONT COLOR=#ffaa00><B>"+WHAT[1:]+"</B></FONT>"+A2
     else:
-        return "("+STRING+")"
+        return "("+A1+WHAT[1:]+A2+")"
 ### AddHref (TSTDIR, TST, WHAT, diff) #
 
 def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
@@ -445,9 +444,9 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
     if   o==2 or e==2:
-        f.write("<B><I>"+TST+"</I></B>")
+        f.write("<FONT COLOR=#ff0000><B><I>"+TST+"</I></B></FONT>")
     elif o==1 or e==1:
-        f.write("<B>"+TST+"</B>")
+        f.write("<FONT COLOR=#ffaa00><B>"+TST+"</B></FONT>")
     else:
         f.write(TST)
     f.write("</FONT></A><BR>")
@@ -478,7 +477,8 @@ def AddSubToHtmlIndex (env, TSTDIR) :
         os.chdir(os.path.join(TSTTRGBASE,TSTPREF))
         f = open("index.head.html","a")
         f.write("<TD><FONT FACE='helvetica, arial'>")
-        STRING = "<A HREF='"+url(TSTDIR)+"/.index.html' TARGET='"+OSVER+"__body'>"+TSTDIR+"</A>"
+        A1 = "<A HREF='"+url(TSTDIR)+"/.index.html' TARGET='"+OSVER+"__body'>"
+        A2 = "</A>"
         test = ( re.compile("^.*><B><I>.*</I></B><.*$", re.MULTILINE)
                , re.compile("^.*><B>.*</B><.*$", re.MULTILINE) )
         diff = 0
@@ -488,11 +488,11 @@ def AddSubToHtmlIndex (env, TSTDIR) :
             elif diff<1 and test[1].match(l):
                 diff = 1
         if   diff==2:
-            f.write("<B><I>"+STRING+"</I></B>")
+            f.write(A1+"<FONT COLOR=#ff0000><B><I>"+TSTDIR+"</I></B></FONT>"+A2)
         elif diff==1:
-            f.write("<B>"+STRING+"</B>")
+            f.write(A1+"<FONT COLOR=#ffaa00><B>"+TSTDIR+"</B></FONT>"+A2)
         else:
-            f.write("("+STRING+")")
+            f.write("("+A1+TSTDIR+A2+")")
         f.write("</FONT></TD>\n")
         f.close()
         if not env.has_key('__BODY_')  or  \
