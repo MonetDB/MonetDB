@@ -76,12 +76,22 @@ information.
 Configure and Make:
 ===================
 
+Before executing the following steps, make sure that your
+shell-environment (especially variables like "PATH" and
+"LD_LIBRARY_PATH") is setup, thus that the tools listed above can be
+found. 
+("Bash"-users at CWI and DD are welcome to simply 
+  "source conf/conf.bash".
+ This set the proper environment and even provides alias
+ "configure_MonetDB" & "Mtest_MonetDB" for convenience.
+ See conf/conf.bash itself for more details.)
+
 In the top-level directory of MonetDB type the command:
 
  ./bootstrap
 
-Then in any directory (a new empty directory or in the MonetDB top-level
-directory) give the command
+Then in any directory (preferably a *new empty* directory and *not* in the
+MonetDB top-level directory) give the command
 
  .../configure [<options>]
 
