@@ -854,8 +854,16 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "c:l:u:p:P:qh:s:DtTd::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:l:u:p:P:qh:s:DtTd::?", long_options, NULL)) != -1) {
 		switch (c) {
+		case 'b':
+			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
+				linemode = 0;
+			else if (*optarg == 'f' || *optarg == 'F' || *optarg == '0')
+				linemode = 1;
+			else
+				usage(argv[0]);
+			break;
 		case 'c':
 			config = optarg;
 			break;
@@ -910,14 +918,6 @@ main(int argc, char **argv)
 				*eq = '=';
 			break;
 		}
-		case 'b':
-			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
-				linemode = 0;
-			else if (*optarg == 'f' || *optarg == 'F' || *optarg == '0')
-				linemode = 1;
-			else
-				usage(argv[0]);
-			break;
 		case '?':
 			usage(argv[0]);
 		default:
