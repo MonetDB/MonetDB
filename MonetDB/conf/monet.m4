@@ -543,29 +543,47 @@ if test "x$have_hwcounters" != xno; then
 	 AC_CHECK_LIB( perfctr, vperfctr_open , 
 	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr" 
 	    AC_DEFINE(HAVE_LIBPERFCTR, 1, [Define if you have the perfctr library])
-	    have_hwcounters=yes ] ) ,
-        AC_CHECK_HEADERS( libpperf.h,
-	 AC_CHECK_LIB( pperf, start_counters, 
-	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
-	    AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
-	    have_hwcounters=yes ] )
-	)) ;;
+	    have_hwcounters=yes
+	  ]
+         )
+	)
+	if test "x$have_hwcounters" != xyes; then
+        	AC_CHECK_HEADERS( libpperf.h,
+	 	 AC_CHECK_LIB( pperf, start_counters, 
+	  	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
+	    	    AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
+	    	    have_hwcounters=yes
+		  ]
+		 )
+		)
+	fi
+	;;
    solaris*)
 	AC_CHECK_HEADERS( libcpc.h ,
 	 AC_CHECK_LIB( cpc, cpc_access , 
 	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc" 
 	    AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
-	    have_hwcounters=yes ] ) ,
-	AC_CHECK_HEADERS( perfmon.h ,
-	 AC_CHECK_LIB( perfmon, clr_pic , 
-	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
-	    AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
-	    have_hwcounters=yes ] )
-  	)) ;;
+	    have_hwcounters=yes
+	  ]
+	 )
+	)
+	if test "x$have_hwcounters" != xyes; then
+		AC_CHECK_HEADERS( perfmon.h ,
+		 AC_CHECK_LIB( perfmon, clr_pic , 
+		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
+		    AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
+		    have_hwcounters=yes
+		  ]
+		 )
+  		)
+	fi
+	;;
    irix*)
 	AC_CHECK_LIB( perfex, start_counters , 
 	 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex" 
-	   have_hwcounters=yes ] )
+	   have_hwcounters=yes
+	 ]
+	)
  	;;
   esac
   LIBS="$save_LIBS"
