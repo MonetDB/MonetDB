@@ -231,6 +231,7 @@ typedef struct column_t {
 	BAT* bat;				/* BAT that backs this column */
 	BUN bun;				/* a walker variable */
 	str name;				/* the name/id of this column */
+	int(* format) (str*, int*, ptr);	/* formatting used when serialising */
 	str properties[RS_MAX_PROPERTIES];	/* an array of properties */
 	struct column_t* next;	/* the next column in this list */
 } column;
@@ -609,8 +610,8 @@ static str tailWidth(int* retval, BAT* b) {
 /**
  * Helper function that sets a property for a column.  If the
  * maximum property count is reached, an exception is thrown.
- * When setting the width property, with argument str_nil, the
- * width is automatically determined.  The return
+ * When setting the length property, with argument str_nil, the
+ * length is automatically determined.  The return
  * value indicates whether a previous value was overwritten.
  * Typical properties are:
  * 	name		name of the column
@@ -618,7 +619,9 @@ static str tailWidth(int* retval, BAT* b) {
  *	schema		name of the schema this column belongs to
  *	digits		digits of this data type
  *	scale		scale of this data type
- *	width		the maximum width of this column
+ *	length		the maximum width of this column
+ * Note: the name length is used for width due to historical
+ *       (legacy) reasons.
  *
  * @param rs the resultset the column belongs to
  * @param col the column to set the property for
@@ -652,7 +655,7 @@ static str RSsetPropertyInternal(
 		GDKfree(col->properties[n]);
 	}
 	
-	if (strcmp("width", *nme) == 0 && strNil(*val)) {
+	if (strcmp("length", *nme) == 0 && strNil(*val)) {
 		int width;
 		str tmp;
 		char* buf = GDKmalloc(sizeof(char) * 10);
@@ -693,6 +696,8 @@ str RSaddColumn(int* retval, int* handle, int* bat, str* nme) {
         throw("resultset.addColumn", "Cannot access BAT descriptor");
 	if (rs->complete)
 		throw("resultset.addColumn", "Unable to modify a complete ResultSet");
+	if (b->ttype < 0 || b->ttype >= GDKatomcnt)
+		throw("resultset.addColumn", "Illegal BAT tail type");
 
 	/* tell the BBP to leave this BAT alone: it's ours! */
 	BBPfix(b->batCacheid);
@@ -721,8 +726,11 @@ str RSaddColumn(int* retval, int* handle, int* bat, str* nme) {
 	/* set name */
 	col->name = GDKstrdup(*nme);
 	col->bat = b;
+	col->format = BATatoms[b->ttype].atomToStr;
 	/* also add the name to the list of properties */
 	if ((tmp = RSsetPropertyInternal(&pos, rs, col, &name, nme)) == MAL_SUCCEED) return(tmp);
+
+
 
 	*retval = *handle;
 	return(MAL_SUCCEED);
@@ -879,7 +887,7 @@ str RSsetComplete(int* handle) {
  * @returns the number of bytes written
  */
 str RSwriteHeader(int* retval, int* handle) {
-	int bytes = 0, i;
+	int bytes = 0, bt, i;
 	stream* s = GDKout;
 	resultset* rs;
 	column* col;
@@ -895,6 +903,15 @@ str RSwriteHeader(int* retval, int* handle) {
 		throw("resultset.writeHeader", "Error while writing to the stream");
 	}
 	bytes += 3;
+	/* write single value headers */
+@= MX-writeHeaderLineSingleValue
+	if ((bt = stream_printf(s, "# " @1 " # %s\n", @2, @3)) <= 0)
+		throw("resultset.writeHeader", "Error while writing to the stream");
+	bytes += bt;
+@c
+	@:MX-writeHeaderLineSingleValue("%d", rs->type, "querytype")@
+	@:MX-writeHeaderLineSingleValue("%s", rs->id == NULL ? "" : rs->id, "id")@
+	@:MX-writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
 
 	/* serialise the header to the stream */
 @= MX-writeHeaderLine
@@ -902,15 +919,18 @@ str RSwriteHeader(int* retval, int* handle) {
 	if (stream_write(s, "# ", 2, 1) == 1) {
 		bytes += 2;
 		while (col != NULL) {
-			/* write headers */
-			bytes += stream_printf(s, @1, @2);
+			if ((bt = stream_printf(s, @1, @2)) <= 0)
+				throw("resultset.writeHeader", "Error while writing to the stream");
+			bytes += bt;
 			
 			col = col->next;
 
 			/* write column or row separator */
 			if (col == NULL) {
-				bytes += stream_printf(s, "\t# %s\n", @3);
-				} else {
+				if ((bt = stream_printf(s, "\t# %s\n", @3)) <= 0)
+					throw("resultset.writeHeader", "Error while writing to the stream");
+				bytes += bt;
+			} else {
 				if (stream_write(s, ",\t", 2, 1) != 1) {
 					*retval = 0;
 					throw("resultset.writeHeader", "Error while writing to the stream");
@@ -928,8 +948,6 @@ str RSwriteHeader(int* retval, int* handle) {
 		if (rs->propertynames[i] == NULL) break;
 		@:MX-writeHeaderLine("%s", col->properties[i] == NULL ? "" : col->properties[i], rs->propertynames[i])@
 	}
-	@:MX-writeHeaderLine("%d", rs->length, "tuplecount")@
-	@:MX-writeHeaderLine("%s", rs->id == NULL ? "" : rs->id, "id")@
 
 	*retval = bytes;
 	return(MAL_SUCCEED);
@@ -950,12 +968,15 @@ str RSwriteHeader(int* retval, int* handle) {
  * @returns the number of bytes written
  */
 str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
-	int bytes = 0, btmp;
+	int bytes = 0;
 	column* col;
 	resultset* rs;
 	str tmp;
 	stream* s = GDKout;
 	int low = *lower;
+	int t, sz, l;
+	ptr p;
+	char buf[dblStrlen], *addr = buf;   /* use memory from stack */
 	
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
@@ -983,13 +1004,36 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 		bytes += 2;
 		while (col != NULL) {
 			/* write value */
+			t = col->bat->ttype;
+			p = (ptr)BUNtail(col->bat, col->bun);
+			if (col->format && p) {
+				if (t != TYPE_bat && t < TYPE_str) {
+					sz = dblStrlen;
+					l = (*(col->format)) (&addr, &sz, p);
+
+					stream_write(s, buf, l, 1);
+					bytes += l;
+				} else {
+					tmp = NULL;
+					sz = 0;
+					l = (*(col->format)) (&tmp, &sz, p);
+
+					l = stream_write(s, tmp, l, 1);
+					GDKfree(tmp);
+					bytes += l;
+				}
+			} else {
+				stream_write(s, "NULL", 1, 4);
+				bytes += 4;
+			}
+/*
 			btmp = strlen(BUNtail(col->bat, col->bun));
 			if (stream_write(s, BUNtail(col->bat, col->bun), btmp, 1) != 1) {
 				bytes = 0;
 				break;
 			}
 			bytes += btmp;
-			
+*/			
 			/* advance to the next value in the BAT */
 			col->bun = BUNnext(col->bat, col->bun);
 			col = col->next;
@@ -1010,6 +1054,8 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 			}
 		}
 	}
+
+	/* stream_errnr(s) ? */
 
 	*retval = bytes;
 	if (bytes) {

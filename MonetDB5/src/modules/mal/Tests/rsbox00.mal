@@ -12,9 +12,9 @@ resultset.setProperty(rs, "schema", "sys");
 resultset.setProperty(rs, "length", nil:str);
 resultset.setProperty(rs, "type", "varchar");
 
-b2 := bbp.new(:void, :str);
-bat.insert(b2, nil, "2");
-bat.insert(b2, nil, "5");
+b2 := bbp.new(:void, :int);
+bat.insert(b2, nil, 2);
+bat.insert(b2, nil, 5);
 
 resultset.addColumn(rs, b2, "col2");
 resultset.setProperty(rs, "length", "1");
