@@ -12,7 +12,6 @@ LIBS = {
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx aggrX3.mx  algebra2.mx array.mx
-#pcl.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -34,7 +33,6 @@ scripts_mal = {
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx aggrX3.mx  algebra2.mx array.mx
-# pcl.mx
 }
 
 
