@@ -4,7 +4,7 @@ build a simple template module (src/template.mx) for the monet database engine.
 
 Before continuing find (or compile) a monet version 4.3.14 or higher.
 
-Add the bin-directory where monet-config is located to your path. 
+Add the bin-directory where monetdb-config is located to your path. 
 
 run bootstrap in the top directory
 mkdir $ARCH

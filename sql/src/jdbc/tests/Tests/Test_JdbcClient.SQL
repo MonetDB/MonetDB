@@ -8,8 +8,8 @@ if [ -f $SQL_BUILD/src/jdbc/MonetJDBC.jar ] ; then
 	MonetJDBC=$TSTBLDBASE/src/jdbc/MonetJDBC.jar
   elif [ -f $SQL_PREFIX/lib/MonetDB/java/MonetJDBC.jar ] ; then
 	MonetJDBC=$SQL_PREFIX/lib/MonetDB/java/MonetJDBC.jar
-  elif [ -f $MONET_PREFIX/lib/MonetDB/java/MonetJDBC.jar ] ; then
-	MonetJDBC=$MONET_PREFIX/lib/MonetDB/java/MonetJDBC.jar
+  elif [ -f $MONETDB_PREFIX/lib/MonetDB/java/MonetJDBC.jar ] ; then
+	MonetJDBC=$MONETDB_PREFIX/lib/MonetDB/java/MonetJDBC.jar
   else
 	MonetJDBC=$TSTTRGBASE/lib/MonetDB/java/MonetJDBC.jar
 fi

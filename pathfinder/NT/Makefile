@@ -41,10 +41,10 @@ check: $(SRCDIR)\Makefile.msc RunMtest.bat
 install: targetdirs all
 	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc install
 
-$(SRCDIR)\Makefile.msc: $(MONET_PREFIX)\lib\autogen\autogen.py \
-	$(MONET_PREFIX)\lib\autogen\codegen.py \
-	$(MONET_PREFIX)\lib\autogen\msc.py
-	$(CD) $(SRCDIR) && $(PYTHON) $(MONET_PREFIX)\lib\autogen\autogen.py
+$(SRCDIR)\Makefile.msc: $(MONETDB_PREFIX)\lib\autogen\autogen.py \
+	$(MONETDB_PREFIX)\lib\autogen\codegen.py \
+	$(MONETDB_PREFIX)\lib\autogen\msc.py
+	$(CD) $(SRCDIR) && $(PYTHON) $(MONETDB_PREFIX)\lib\autogen\autogen.py
 
 all-msc: pf_config.h
 
