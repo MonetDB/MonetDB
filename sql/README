@@ -16,7 +16,7 @@ Usage
 Start Mserver, and do:
   const MONET_PREFIX := environment.find("exec_prefix");
 
-  source ( MONET_PREFIX + "/share/sql/sqlserver.mil" );
+  source ( MONET_PREFIX + "/share/MonetDB/sqlserver.mil" );
 
 then use sql_client for issueing SQL commands.
 
