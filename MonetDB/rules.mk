@@ -76,7 +76,7 @@ MXFLAGS= -notouch
 	$(DVIPS) $< -o $@
 
 %.eps: %.fig
-	$(FIG2DEV) -L$FIG2DEV_EPS -e $< > $@
+	$(FIG2DEV) -L$(FIG2DEV_EPS) -e $< > $@
 
 %.eps: %.feps
 	$(CP) $< $@
