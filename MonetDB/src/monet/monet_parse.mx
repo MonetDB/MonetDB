@@ -455,6 +455,7 @@ void ll_init(void) {
 	ll_nocommand[(int)'?'] = 1; /* a ? b : c */
         ll_nocommand[(int)':'] = 1; /* b ? a : c ALSO a := ... */
 	ll_nocommand[(int)']'] = 1; /* b@batloop[ a ]() .. */
+	ll_nocommand[(int)'['] = 1; /* b@batloop[ a ]() .. */
 
 	/* operator starter symbols (an operator cannot come after an operator) */
 	ll_nocommand[(int)'<'] = 1; /* a < .. */
@@ -944,7 +945,7 @@ proc_definition:
 	    TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $2, $2, NULL);
             $2->token = TOK_CONSTANT;
             $2->yyval.vtype = TYPE_int;                                       }
-    |   TOK_UNDEF TOK_PROC ';'
+    |   TOK_UNDEF TOK_IDENT ';'
         {   TBL_delproc(ll_client, $2->yyval.val.sval); }
     ;
 
