@@ -9,7 +9,7 @@
 Name: %{name}
 Version: %{version}
 Release: %{release}
-Summary: MonetDB sql database system
+Summary: MonetDB - Monet Database Management System
 Group: System
 Source: %{name}-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
@@ -17,19 +17,22 @@ Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL
 
 %package client
-Summary: MonetDB sql client 
+Summary: MonetDB clients
 Group: System
 
 %package server
-Summary: MonetDB sql server 
+Summary: MonetDB server 
 Group: System 
 
 %package devel
-Summary: MonetDB  server 
+Summary: MonetDB development package 
 Group: System 
 
 %description
-Add the MonetDB description here
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accellerators, SQL- and XML- frontends.
 
 %description client
 Add the MonetDB client description here
@@ -69,6 +72,8 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/share/MonetDB/site_perl/* 
 %{prefix}/share/MonetDB/python/* 
 
+%{prefix}/etc/monet.conf 
+
 %files server
 %defattr(-,monet,monet) 
 %{prefix}/bin/Mserver 
@@ -81,9 +86,6 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 
 %{prefix}/share/MonetDB/mapi.mil 
 %{prefix}/share/MonetDB/tools/* 
-
-%{prefix}/etc/monet.conf 
-
 
 %files devel
 %defattr(-,monet,monet) 
