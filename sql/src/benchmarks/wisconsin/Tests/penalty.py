@@ -1,3 +1,8 @@
+import os
 import time
 
-time.sleep(121)
+if  os.environ['OS'] == "SunOS":
+	time.sleep(222)
+else:
+	time.sleep(66)
+
