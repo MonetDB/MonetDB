@@ -311,8 +311,10 @@ void freeClient(Client c) {
        		TBL_exitclient(c);
 		GDKlog("Mserver: %s session ends", c->user);	
 		(void) fflush(c->fdout); 
-        	(void) fclose(c->fdin);
-        	(void) fclose(c->fdout);
+		if (fileno(c->fdin) != 0){
+        		(void) fclose(c->fdin);
+        		(void) fclose(c->fdout);
+		}
 		GDKfree(c->user); 
 		GDKfree(c->prompt); 
 	} else { 			/* fork() client */
