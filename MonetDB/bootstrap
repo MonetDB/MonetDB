@@ -219,6 +219,8 @@ grep 'ac_cv_prog_cxx_g=yes' configure >/dev/null && cat << "EOF" | patch configu
  else
    ac_cv_prog_cxx_g=no
 EOF
+
+# patch configure to remove config.cache when bootstrap was executed
 grep 'when bootstrap was executed' configure >/dev/null || cat << "EOF" | patch configure
 --- configure	Fri Oct  4 11:38:50 2002
 +++ configure.new	Fri Oct  4 11:38:40 2002
@@ -227,7 +229,7 @@ grep 'when bootstrap was executed' configure >/dev/null || cat << "EOF" | patch 
  # gives unlimited permission to copy, distribute and modify it.
  
 +# when bootstrap was executed, we must remove config.cache
-+if test $0 -nt config.cache; then
++if /usr/bin/test $0 -nt config.cache; then
 +  echo removing config.cache
 +  rm config.cache
 +fi
@@ -235,6 +237,12 @@ grep 'when bootstrap was executed' configure >/dev/null || cat << "EOF" | patch 
  # Defaults:
  ac_help=
  ac_default_prefix=/usr/local
+EOF
+
+# patch configure to run also gcc/gxx with only -g (i.e., w/o -O2) by default
+grep 'CX*FLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
+--- configure	Fri Oct  4 11:38:50 2002
++++ configure.new	Fri Oct  4 11:38:40 2002
 @@ -1293,17 +1299,9 @@
  if test "$ac_test_CFLAGS" = set; then
    CFLAGS="$ac_save_CFLAGS"
