@@ -160,10 +160,11 @@ init_keywords()
 	keywords_insert("DELIMITERS", DELIMITERS );
 	keywords_insert("STDIN", STDIN );
 
-	keywords_insert("TINYINT", TINYINT);
 	keywords_insert("SMALLINT", SMALLINT);
 	keywords_insert("MEDIUMINT", MEDIUMINT);
 	keywords_insert("BIGINT", BIGINT);
+	keywords_insert("INT", sqlINTEGER);
+	keywords_insert("INTEGER", sqlINTEGER);
 	keywords_insert("DEC", sqlDECIMAL);
 	keywords_insert("DECIMAL", sqlDECIMAL);
 	keywords_insert("DECLARE", DECLARE);
@@ -171,6 +172,7 @@ init_keywords()
 	keywords_insert("DESC", DESC);
 	keywords_insert("DISTINCT", DISTINCT);
 	keywords_insert("DOUBLE", sqlDOUBLE);
+	keywords_insert("REAL", sqlREAL);
 	keywords_insert("DROP", DROP);
 	keywords_insert("ESCAPE", ESCAPE);
 	keywords_insert("EXISTS", EXISTS);

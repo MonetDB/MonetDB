@@ -502,7 +502,7 @@ static stmt *
 sql_truncate(sql_subtype * ct, stmt * s )
 {
 	sql_subtype *st = tail_type(s);
-	sql_subtype *it = sql_bind_localtype( "int" );
+	sql_subtype *it = sql_bind_localtype( "bigint" );
 	sql_subfunc *c = NULL;
 	
 	/* atleast we need equal base types */
@@ -528,7 +528,7 @@ dyncheck_types(mvc * sql, sql_subtype * ct, stmt * s )
 	}
 
 	if (!t) {	/* try to convert if needed */
-		sql_subtype *it = sql_bind_localtype( "int" );
+		sql_subtype *it = sql_bind_localtype( "bigint" );
 		sql_subfunc *c;
 
 		c = sql_bind_func_result("convert",st,it,ct);
@@ -549,7 +549,7 @@ dyncheck_types(mvc * sql, sql_subtype * ct, stmt * s )
 			&& ct->digits-ct->scale < st->digits-st->scale) 
 		){
 			stmt *res = NULL;
-			sql_subtype *it = sql_bind_localtype( "int" );
+			sql_subtype *it = sql_bind_localtype( "bigint" );
 			sql_subfunc *c;
 
 			c = sql_bind_func_result("convert",st,it,ct);

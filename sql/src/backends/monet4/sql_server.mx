@@ -593,64 +593,70 @@ int str2@1( @1 *res, str v, int *len ){
 @:str_cast(int)@
 @:str_cast(lng)@
 
-static lng max_values[20] =
-{
-	LL_CONSTANT(1), 				
-	LL_CONSTANT(10),
-	LL_CONSTANT(100),
-	LL_CONSTANT(1000),
-	LL_CONSTANT(10000),
-	LL_CONSTANT(100000),
-	LL_CONSTANT(1000000),
-	LL_CONSTANT(10000000),
-	LL_CONSTANT(100000000),
-	LL_CONSTANT(1000000000),
-	LL_CONSTANT(10000000000),
-	LL_CONSTANT(100000000000),
-	LL_CONSTANT(1000000000000),
-	LL_CONSTANT(10000000000000),
-	LL_CONSTANT(100000000000000),
-	LL_CONSTANT(1000000000000000),
-	LL_CONSTANT(10000000000000000),
-	LL_CONSTANT(100000000000000000),
-	LL_CONSTANT(1000000000000000000),
-	LL_CONSTANT(9000000000000000000)
-};
-
-@= numcast
+@= numcastup
 int @2_2_@1( @1 *res, @2 *v, int *len ){
-	int p = *len;
-	@2 val = *v;
+	int p = *len, inlen = 1;
+	@2 cpyval = *v;
 
-	if (p > 20)
-		p = 20;
-	if (val < 0)
-		val = -val;
-	if (val > max_values[p]){
-		if (*v != @2_nil) {
-			GDKerror("@2_2_@1: value to long for type int(%d)\n",p);
-			return GDK_FAIL;
-		} else {
-			*res = @1_nil;
-			return GDK_SUCCEED;
-		}
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(GDK_SUCCEED);
 	}
-	*res = *v;
+	
+	/* count the number of digits in the input */
+	while(cpyval /= 10) inlen++;
+	if (inlen > p) {
+		GDKerror("@2_2_@1: too many digits (%d > %d)\n", inlen, p);
+		return(GDK_FAIL);
+	}
+
+	/* since the @1 type is bigger than or equal to the @2 type, it will
+	   always fit */
+	*res = (@1)*v;
 	return GDK_SUCCEED;
 }
 @c
-@:numcast(sht,sht)@
-@:numcast(sht,int)@
-@:numcast(sht,lng)@
-@:numcast(sht,dbl)@
-@:numcast(int,sht)@
-@:numcast(int,int)@
-@:numcast(int,lng)@
-@:numcast(int,dbl)@
-@:numcast(lng,sht)@
-@:numcast(lng,int)@
-@:numcast(lng,lng)@
-@:numcast(lng,dbl)@
+@:numcastup(sht,sht)@
+@:numcastup(int,sht)@
+@:numcastup(int,int)@
+@:numcastup(lng,sht)@
+@:numcastup(lng,int)@
+@:numcastup(lng,lng)@
+@= numcastdown
+int @2_2_@1( @1 *res, @2 *v, int *len ){
+	int p = *len, inlen = 1;
+	@2 val = *v, cpyval = val;
+
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(GDK_SUCCEED);
+	}
+	
+	/* count the number of digits in the input */
+	while(cpyval /= 10) inlen++;
+	if (inlen > p) {
+		GDKerror("@2_2_@1: too many digits (%d > %d)\n", inlen, p);
+		return(GDK_FAIL);
+	}
+
+	/* see if the number fits in the data type */
+	if (val >= GDK_@1_min && val <= GDK_@1_max)	{
+		*res = (@1)*v;
+		return GDK_SUCCEED;
+	} else {
+		GDKerror("@2_2_@1: value (%d) exceeds limits of type @1\n",val);
+		return GDK_FAIL;
+	}
+}
+@c
+@:numcastdown(sht,int)@
+@:numcastdown(sht,lng)@
+@:numcastdown(sht,dbl)@
+@:numcastdown(int,lng)@
+@:numcastdown(int,dbl)@
+@:numcastdown(lng,dbl)@
 
 @-
 An SQL session needs a minimal set of modules, shown below.
