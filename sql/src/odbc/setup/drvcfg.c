@@ -39,7 +39,6 @@ ODBCINSTGetProperties(HODBCINSTPROPERTY lastprop)
 	lastprop = lastprop->pNext;
 	memset(lastprop, 0, sizeof(ODBCINSTPROPERTY));
 	lastprop->nPromptType = ODBCINST_PROMPTTYPE_TEXTEDIT;
-
 	strncpy(lastprop->szName, "Port", INI_MAX_PROPERTY_NAME);
 	strncpy(lastprop->szValue, "", INI_MAX_PROPERTY_VALUE);
 

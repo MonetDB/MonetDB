@@ -133,8 +133,10 @@ cleanODBCDescRec(ODBCDesc *desc, ODBCDescRec *rec)
 		if (isAD(desc)) {
 			rec->sql_desc_concise_type = SQL_C_DEFAULT;
 			rec->sql_desc_type = SQL_C_DEFAULT;
-		} else if (isIPD(desc))
+		} else if (isIPD(desc)) {
 			rec->sql_desc_parameter_type = SQL_PARAM_INPUT;
+			rec->sql_desc_nullable = SQL_NULLABLE;
+		}
 	}
 }
 
@@ -174,8 +176,10 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 				desc->descRec[i].sql_desc_type = SQL_C_DEFAULT;
 			}
 		} else if (isIPD(desc)) {
-			for (i = desc->sql_desc_count + 1; i <= count; i++)
+			for (i = desc->sql_desc_count + 1; i <= count; i++) {
 				desc->descRec[i].sql_desc_parameter_type = SQL_PARAM_INPUT;
+				desc->descRec[i].sql_desc_nullable = SQL_NULLABLE;
+			}
 		}
 	}
 	desc->sql_desc_count = count;
@@ -213,4 +217,71 @@ addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno)
 	}
 
 	return &desc->descRec[recno];
+}
+
+SQLUINTEGER
+ODBCDisplaySize(ODBCDescRec *rec)
+{
+	switch (rec->sql_desc_concise_type) {
+	case SQL_CHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_WCHAR:
+	case SQL_WVARCHAR:
+	case SQL_WLONGVARCHAR:
+		return rec->sql_desc_length;
+	case SQL_DECIMAL:
+	case SQL_NUMERIC:
+		return rec->sql_desc_length;
+	case SQL_BIT:
+		return 1;
+	case SQL_TINYINT:
+		return 3;
+	case SQL_SMALLINT:
+		return 5;
+	case SQL_INTEGER:
+		return 10;
+	case SQL_BIGINT:
+		return rec->sql_desc_unsigned ? 20 : 19;
+	case SQL_REAL:
+		return 7;
+	case SQL_FLOAT:
+	case SQL_DOUBLE:
+		return 15;
+	case SQL_TYPE_DATE:
+		return 10;	/* strlen("yyyy-mm-dd") */
+	case SQL_TYPE_TIME:
+		return 12;	/* strlen("hh:mm:ss.fff") */
+	case SQL_TYPE_TIMESTAMP:
+		return 23;	/* strlen("yyyy-mm-dd hh:mm:ss.fff") */
+	case SQL_INTERVAL_SECOND:
+		/* strlen("sss[.fff]") */
+		return rec->sql_desc_datetime_interval_precision + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+	case SQL_INTERVAL_DAY_TO_SECOND:
+		/* strlen("ddd hh:mm:ss[.fff]") */
+		return rec->sql_desc_datetime_interval_precision + 9 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+		/* strlen("hhh:mm:ss[.fff]") */
+		return rec->sql_desc_datetime_interval_precision + 6 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		/* strlen("mmm:ss[.fff]") */
+		return rec->sql_desc_datetime_interval_precision + 3 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+	case SQL_INTERVAL_YEAR:
+	case SQL_INTERVAL_MONTH:
+	case SQL_INTERVAL_DAY:
+	case SQL_INTERVAL_HOUR:
+	case SQL_INTERVAL_MINUTE:
+		return rec->sql_desc_datetime_interval_precision;
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+	case SQL_INTERVAL_DAY_TO_HOUR:
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+		return rec->sql_desc_datetime_interval_precision + 3;
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+		return rec->sql_desc_datetime_interval_precision + 6;
+	case SQL_GUID:
+		/* strlen("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee") */
+		return 36;
+	default:
+		return SQL_NO_TOTAL;
+	}
 }

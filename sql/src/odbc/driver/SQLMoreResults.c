@@ -35,7 +35,18 @@ SQLMoreResults(SQLHSTMT hStmt)
 
 	clearStmtErrors(stmt);
 
-	/* We currently do NOT support multiple result sets,
-	   so there is always no next result set. */
-	return SQL_NO_DATA;
+	switch (mapi_next_result(stmt->hdl)) {
+	case MOK:
+		return SQL_NO_DATA;
+	case MERROR:
+		/* General error */
+		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+		return SQL_ERROR;
+	case MTIMEOUT:
+		/* Communication link failure */
+		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		return SQL_ERROR;
+	default:
+		return ODBCInitResult(stmt);
+	}
 }

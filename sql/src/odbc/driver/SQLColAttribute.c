@@ -72,7 +72,12 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 	rec = stmt->ImplRowDescr->descRec + nCol;
 
 	switch (nFieldIdentifier) {
-	case SQL_DESC_AUTO_UNIQUE_VALUE:
+	case SQL_COLUMN_LENGTH:
+	case SQL_COLUMN_PRECISION:
+	case SQL_COLUMN_SCALE:
+		/* XXX needs to be implemented */
+		break;
+	case SQL_DESC_AUTO_UNIQUE_VALUE: /* SQL_COLUMN_AUTO_INCREMENT */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_auto_unique_value;
 		break;
@@ -86,16 +91,16 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 			   pszValue, nValueLengthMax, pnValueLength,
 			   addStmtError, stmt);
 		break;
-	case SQL_DESC_CASE_SENSITIVE:
+	case SQL_DESC_CASE_SENSITIVE: /* SQL_COLUMN_CASE_SENSITIVE */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_case_sensitive;
 		break;
-	case SQL_DESC_CATALOG_NAME:
+	case SQL_DESC_CATALOG_NAME: /* SQL_COLUMN_QUALIFIER_NAME */
 		copyString(rec->sql_desc_catalog_name,
 			   pszValue, nValueLengthMax, pnValueLength,
 			   addStmtError, stmt);
 		break;
-	case SQL_DESC_CONCISE_TYPE:
+	case SQL_DESC_CONCISE_TYPE: /* SQL_COLUMN_TYPE */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_concise_type;
 		break;
@@ -103,24 +108,22 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		if (pnValue)
 			* (int *) pnValue = stmt->ImplRowDescr->sql_desc_count;
 		break;
-	case SQL_DESC_DISPLAY_SIZE:
+	case SQL_DESC_DISPLAY_SIZE: /* SQL_COLUMN_DISPLAY_SIZE */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_display_size;
 		break;
-	case SQL_DESC_FIXED_PREC_SCALE:
+	case SQL_DESC_FIXED_PREC_SCALE:	/* SQL_COLUMN_MONEY */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_fixed_prec_scale;
 		break;
-	case SQL_COLUMN_NAME:
-	case SQL_DESC_LABEL:
+	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
 		copyString(rec->sql_desc_label,
 			   pszValue, nValueLengthMax, pnValueLength,
 			   addStmtError, stmt);
 		break;
 	case SQL_DESC_LENGTH:
-	case SQL_COLUMN_LENGTH:
 		if (pnValue)
-			* (int *) pnValue = rec->sql_desc_length + 20;
+			* (int *) pnValue = rec->sql_desc_length;
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
 		copyString(rec->sql_desc_literal_prefix,
@@ -162,16 +165,16 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_scale;
 		break;
-	case SQL_DESC_SCHEMA_NAME:
+	case SQL_DESC_SCHEMA_NAME: /* SQL_COLUMN_OWNER_NAME */
 		copyString(rec->sql_desc_schema_name,
 			   pszValue, nValueLengthMax, pnValueLength,
 			   addStmtError, stmt);
 		break;
-	case SQL_DESC_SEARCHABLE:
+	case SQL_DESC_SEARCHABLE: /* SQL_COLUMN_SEARCHABLE */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_searchable;
 		break;
-	case SQL_DESC_TABLE_NAME:
+	case SQL_DESC_TABLE_NAME: /* SQL_COLUMN_TABLE_NAME */
 		copyString(rec->sql_desc_table_name,
 			   pszValue, nValueLengthMax, pnValueLength,
 			   addStmtError, stmt);
@@ -180,7 +183,7 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_type;
 		break;
-	case SQL_DESC_TYPE_NAME:
+	case SQL_DESC_TYPE_NAME: /* SQL_COLUMN_TYPE_NAME */
 		copyString(rec->sql_desc_type_name,
 			   pszValue, nValueLengthMax, pnValueLength,
 			   addStmtError, stmt);
@@ -189,11 +192,11 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_unnamed;
 		break;
-	case SQL_DESC_UNSIGNED:
+	case SQL_DESC_UNSIGNED:	/* SQL_COLUMN_UNSIGNED */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_unsigned;
 		break;
-	case SQL_DESC_UPDATABLE:
+	case SQL_DESC_UPDATABLE: /* SQL_COLUMN_UPDATABLE */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_updatable;
 		break;

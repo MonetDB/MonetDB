@@ -69,20 +69,41 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
    API there are generally three arguments involved: the pointer to a
    buffer, the length of that buffer, and a pointer to where the
    actual string length is to be stored. */
-#define copyString(str, buf, len, lenp, errfunc, hdl)			\
-		do {							\
-			size_t _l;					\
-			if (len < 0) {					\
-				errfunc(hdl, "HY090", NULL, 0);		\
-				return SQL_ERROR;			\
-			}						\
-			_l = str ? strlen((char *) str) : 0;		\
-			if (buf)					\
-				strncpy((char *) buf, str ? (char *) str : "", len); \
-			if (lenp)					\
-				*lenp = _l;				\
-			if (buf == NULL || _l >= len)			\
-				errfunc(hdl, "01004", NULL, 0);		\
-		} while (0)
+#define copyString(str, buf, len, lenp, errfunc, hdl)		\
+	do {							\
+		size_t _l;					\
+		if ((len) < 0) {				\
+			errfunc((hdl), "HY090", NULL, 0);	\
+			return SQL_ERROR;			\
+		}						\
+		_l = (str) ? strlen((char *) (str)) : 0;	\
+		if (buf)					\
+			strncpy((char *) (buf), (str) ? (char *) (str) : "", (len)); \
+		if (lenp)					\
+			*(lenp) = _l;				\
+		if ((buf) == NULL || _l >= (len))		\
+			errfunc((hdl), "01004", NULL, 0);	\
+	} while (0)
+
+/* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and
+   SQL_DESC_TYPE are interdependent and setting one affects the other.
+   Also, setting them affect other fields.  This is all encoded in
+   this table.  If a field is equal to UNAFFECTED, it is (you guessed
+   it) not affected. */
+#define UNAFFECTED	(-1)
+
+struct sql_types {
+	int concise_type;
+	int type;
+	int code;
+	int precision;
+	int datetime_interval_precision;
+	int length;
+	int scale;
+	int radix;
+	int fixed;
+};
+
+extern struct sql_types ODBC_c_types[], ODBC_sql_types[];
 
 #endif /* _H_ODBCUTIL */

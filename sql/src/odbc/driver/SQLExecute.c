@@ -19,43 +19,39 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
-struct msql_types {
+static struct msql_types {
 	char *name;
 	int concise_type;
-	int type;
-	int code;
 } msql_types[] = {
-	{"bigint", SQL_BIGINT, SQL_BIGINT, 0},
-	{"boolean", SQL_BIT, SQL_BIT, 0},
-	{"character", SQL_CHAR, SQL_CHAR, 0},
-	{"date", SQL_TYPE_DATE, SQL_DATETIME, SQL_CODE_DATE},
-	{"decimal", SQL_DECIMAL, SQL_DECIMAL, 0},
-	{"double", SQL_DOUBLE, SQL_DOUBLE, 0},
-	{"float", SQL_FLOAT, SQL_FLOAT, 0},
-	{"int", SQL_INTEGER, SQL_INTEGER, 0},
-	{"mediumint", SQL_INTEGER, SQL_INTEGER, 0},
-	{"month_interval", SQL_INTERVAL_MONTH, SQL_INTERVAL, SQL_CODE_MONTH},
-	{"sec_interval", SQL_INTERVAL_SECOND, SQL_INTERVAL, SQL_CODE_SECOND},
-	{"smallint", SQL_SMALLINT, SQL_SMALLINT, 0},
-	{"time", SQL_TYPE_TIME, SQL_DATETIME, SQL_CODE_TIME},
-	{"timestamp", SQL_TYPE_TIMESTAMP, SQL_DATETIME, SQL_CODE_TIMESTAMP},
-	{"tinyint", SQL_TINYINT, SQL_TINYINT, 0},
-	{"varchar", SQL_CHAR, SQL_CHAR, 0},
-	{"blob", SQL_BINARY, SQL_BINARY, 0},
-	{"datetime", 0, 0, 0},
-	{"oid", SQL_GUID, SQL_GUID, 0},
-	{"table", 0, 0, 0},
-	{"ubyte", SQL_TINYINT, SQL_TINYINT, 0},
-	{0, 0, 0, 0},		/* sentinel */
+	{"bigint", SQL_BIGINT},
+	{"boolean", SQL_BIT},
+	{"character", SQL_CHAR},
+	{"date", SQL_TYPE_DATE},
+	{"decimal", SQL_DECIMAL},
+	{"double", SQL_DOUBLE},
+	{"float", SQL_FLOAT},
+	{"int", SQL_INTEGER},
+	{"mediumint", SQL_INTEGER},
+	{"month_interval", SQL_INTERVAL_MONTH},
+	{"sec_interval", SQL_INTERVAL_SECOND},
+	{"smallint", SQL_SMALLINT},
+	{"time", SQL_TYPE_TIME},
+	{"timestamp", SQL_TYPE_TIMESTAMP},
+	{"tinyint", SQL_TINYINT},
+	{"varchar", SQL_VARCHAR},
+	{"blob", SQL_BINARY},
+	{"datetime", 0},
+	{"oid", SQL_GUID},
+	{"table", 0},
+	{"ubyte", SQL_TINYINT},
+	{0, 0},			/* sentinel */
 };
 
 SQLRETURN
 SQLExecute_(ODBCStmt *stmt)
 {
-	int i = 0;
-	int nrCols;
-	ODBCDescRec *rec;
 	MapiHdl hdl;
 	MapiMsg msg;
 
@@ -91,6 +87,18 @@ SQLExecute_(ODBCStmt *stmt)
 
 	/* now get the result data and store it to our internal data structure */
 
+	return ODBCInitResult(stmt);
+}
+
+SQLRETURN
+ODBCInitResult(ODBCStmt *stmt)
+{
+	int i = 0;
+	int nrCols;
+	ODBCDescRec *rec;
+	MapiHdl hdl;
+
+	hdl = stmt->hdl;
 	/* initialize the Result meta data values */
 	nrCols = mapi_get_field_count(hdl);
 	stmt->currentRow = 0;
@@ -113,32 +121,80 @@ SQLExecute_(ODBCStmt *stmt)
 	rec = stmt->ImplRowDescr->descRec + 1;
 	for (i = 0; i < nrCols; i++) {
 		struct msql_types *p;
+		struct sql_types *tp;
 		char *s;
 
+		rec->sql_desc_auto_unique_value = SQL_FALSE;
+		rec->sql_desc_nullable = SQL_NULLABLE_UNKNOWN;
+		rec->sql_desc_rowver = SQL_FALSE;
+		rec->sql_desc_searchable = SQL_PRED_SEARCHABLE;
+		rec->sql_desc_updatable = SQL_ATTR_READONLY;
+
 		s = mapi_get_name(hdl, i);
-		rec->sql_desc_base_column_name = (SQLCHAR *) strdup(s);
-		rec->sql_desc_label = (SQLCHAR *) strdup(s);
-		rec->sql_desc_name = (SQLCHAR *) strdup(s);
-		rec->sql_desc_display_size = strlen(s) + 2;
+		/* HACK to compensate for generated column names */
+		if (s == NULL || strcmp(s, "single_value") == 0)
+			s = "";
+		if (*s) {
+			rec->sql_desc_unnamed = SQL_NAMED;
+			rec->sql_desc_base_column_name = (SQLCHAR *) strdup(s);
+			rec->sql_desc_label = (SQLCHAR *) strdup(s);
+			rec->sql_desc_name = (SQLCHAR *) strdup(s);
+		} else {
+			rec->sql_desc_unnamed = SQL_UNNAMED;
+			rec->sql_desc_base_column_name = NULL;
+			rec->sql_desc_label = NULL;
+			rec->sql_desc_name = NULL;
+		}
 
 		s = mapi_get_type(hdl, i);
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		for (p = msql_types; p->name; p++) {
 			if (strcmp(p->name, s) == 0) {
-				rec->sql_desc_type = p->type;
-				rec->sql_desc_concise_type = p->concise_type;
-				rec->sql_desc_datetime_interval_code = p->code;
+				for (tp = ODBC_sql_types; tp->concise_type; tp++)
+					if (p->concise_type == tp->concise_type)
+						break;
+				rec->sql_desc_concise_type = tp->concise_type;
+				rec->sql_desc_type = tp->type;
+				rec->sql_desc_datetime_interval_code = tp->code;
+				if (tp->precision != UNAFFECTED)
+					rec->sql_desc_precision = tp->precision;
+				if (tp->datetime_interval_precision != UNAFFECTED)
+					rec->sql_desc_datetime_interval_precision = tp->datetime_interval_precision;
+				if (tp->scale != UNAFFECTED)
+					rec->sql_desc_scale = tp->scale;
+				rec->sql_desc_fixed_prec_scale = tp->fixed;
+				rec->sql_desc_num_prec_radix = tp->radix;
+				rec->sql_desc_unsigned = tp->radix == 0 ? SQL_TRUE : SQL_FALSE;
 				break;
 			}
 		}
 
-		rec->sql_desc_base_table_name = (SQLCHAR *) strdup("tablename");
-		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("Mtype");
-		rec->sql_desc_catalog_name = (SQLCHAR *) strdup("catalog");
-		rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("pre");
-		rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("suf");
-		rec->sql_desc_schema_name = (SQLCHAR *) strdup("schema");
-		rec->sql_desc_table_name = (SQLCHAR *) strdup("table");
+		if (rec->sql_desc_concise_type == SQL_CHAR ||
+		    rec->sql_desc_concise_type == SQL_VARCHAR)
+			rec->sql_desc_case_sensitive = SQL_TRUE;
+		else
+			rec->sql_desc_case_sensitive = SQL_FALSE;
+
+		rec->sql_desc_base_table_name = (SQLCHAR *) strdup("");
+		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("");
+		rec->sql_desc_catalog_name = (SQLCHAR *) strdup("");
+		rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("");
+		rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("");
+		rec->sql_desc_schema_name = (SQLCHAR *) strdup("");
+		rec->sql_desc_table_name = (SQLCHAR *) strdup("");
+
+		/* unused fields */
+		rec->sql_desc_data_ptr = NULL;
+		rec->sql_desc_indicator_ptr = NULL;
+		rec->sql_desc_octet_length_ptr = NULL;
+		rec->sql_desc_parameter_type = 0;
+
+		/* this call must come after other fields have been
+		 * initialized */
+		rec->sql_desc_length = 0;
+		rec->sql_desc_length = ODBCDisplaySize(rec);
+		rec->sql_desc_display_size = rec->sql_desc_length;
+		rec->sql_desc_octet_length = rec->sql_desc_length;
 
 		rec++;
 	}

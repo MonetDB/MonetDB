@@ -5,13 +5,6 @@
 #include "ODBCError.h"
 #include "ODBCDbc.h"
 
-/* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and
-   SQL_DESC_TYPE are interdependent and setting one affects the other.
-   Also, setting them affect other fields.  This is all encoded in
-   this table.  If a field is equal to UNAFFECTED, it is (you guessed
-   it) not affected. */
-#define UNAFFECTED	(-1)
-
 typedef struct {
 	SQLINTEGER sql_desc_auto_unique_value;
 	SQLCHAR *sql_desc_base_column_name;
@@ -87,6 +80,7 @@ ODBCError *getDescError(ODBCDesc *desc);
 void destroyODBCDesc(ODBCDesc *desc);
 void setODBCDescRecCount(ODBCDesc *desc, int count);
 ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
+SQLUINTEGER ODBCDisplaySize(ODBCDescRec *rec);
 
 SQLRETURN ODBCFreeDesc_(ODBCDesc *desc);
 SQLRETURN SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
