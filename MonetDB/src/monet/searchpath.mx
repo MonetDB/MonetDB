@@ -254,24 +254,23 @@ char *MSP_locate_script(char *mod_name) {
     size_t len = strlen(name);
     size_t fulllen = 0;
     char *next_module,*fullname;
+
     MSP_rewind_module_list();
-    for (;;)
-        {
-            next_module=MSP_next_module(MIL_EXT);
-            if (!next_module) break;
-	    fulllen = strlen(next_module);
-            if ( fulllen > len &&
-		 next_module[fulllen-len-1] == DIR_SEP &&
-		 !strcmp(&next_module[fulllen-len],name))
-                {
-                    fullname=(char *)GDKmalloc(fulllen+MIL_EXT_LEN+1);
-                    sprintf(fullname,"%s%s",next_module, MIL_EXT);
-                    GDKfree(next_module);
-                    GDKfree(name);
-                    return fullname;
-                }
-	    GDKfree(next_module);
-        }
+    for (;;) {
+		next_module=MSP_next_module(MIL_EXT);
+		if (!next_module) 
+			break;
+		fulllen = strlen(next_module);
+		if (fulllen > len && next_module[fulllen-len-1] == DIR_SEP &&
+			!strcmp(&next_module[fulllen-len],name)) {
+			fullname=(char *)GDKmalloc(fulllen+MIL_EXT_LEN+1);
+			sprintf(fullname,"%s%s",next_module, MIL_EXT);
+			GDKfree(next_module);
+			GDKfree(name);
+			return fullname;
+		}
+		GDKfree(next_module);
+	}
     GDKfree(name);
     return 0;
 }

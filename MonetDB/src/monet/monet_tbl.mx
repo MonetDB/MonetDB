@@ -1362,6 +1362,7 @@ oid TBL_load_script(TBLinstall *inst, Client client, str module, str *initscript
 		dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
 	} else if ((fullname = MSP_locate_script(module)) != NULL) {
 		*initscript = monet_load_script(fullname, module);
+		GDKfree(fullname);
 		mid = TBL_Install_Info( inst, client->user, module);
 		dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
 	}
