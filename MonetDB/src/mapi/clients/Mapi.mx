@@ -737,8 +737,13 @@ static Mapi mapi_new(void)
 	m->error= MOK;
 	m->errorstr= 0;
 	strcpy(m->hostname,"localhost");
+#ifdef MONET5
 	strcpy(m->language,"mal");
 	m->languageId= LANG_MAL;
+#else
+	strcpy(m->language,"mil");
+	m->languageId= LANG_MIL;
+#endif
 	strcpy(m->username,"anonymous");
 	strcpy(m->password,"unknown");
 	/* default prompt */
@@ -822,8 +827,13 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 		if((def = getenv("MAPIPORT"))!=NULL)
 			port=atoi(def);
 	}
-	if(port==0)
-		port = 50001;	       /* hardwired default */
+	if(port==0) {
+#ifdef MONET5
+		port = 50001;	/* hardwired default */
+#else
+		port = 50000;	/* hardwired default */
+#endif
+	}
 	if(username)
 		strcpy(mid->username,username);
 	if(password==0)

@@ -445,7 +445,11 @@ int main(int ac, char **av)
 	char buf[BUFSIZ];
 	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
 	char *host=NULL;
+#ifdef MONET5
 	char *language = _strdup("mal");
+#else
+	char *language = _strdup("mil");
+#endif
 	int debug = 0, port = 0, setlen = 0, trace = 0;
 	opt *set= NULL;
 
@@ -577,14 +581,12 @@ int main(int ac, char **av)
 	stream_init();
 	if(debug==0){
 		char *nme;
-		snprintf(buf,BUFSIZ,"%s_debug",language);
-		nme=mo_find_option(set, setlen, buf);
+		nme=mo_find_option(set, setlen, "mapi_debug");
 		if(nme) debug= strtol(nme, NULL, 10);
 	}
 	if(port==0){
 		char *nme;
-		snprintf(buf,BUFSIZ,"%s_port",language);
-		nme=mo_find_option(set, setlen, buf);
+		nme=mo_find_option(set, setlen, "mapi_port");
 		if(nme) port= strtol(nme, NULL, 10);
 	}
 
@@ -596,7 +598,7 @@ int main(int ac, char **av)
 	if (!prompt) {
 		if(strcmp(language,"mal")) {
 			char pbuf[256];
-			snprintf(pbuf,256,"%s> ",language);
+			snprintf(pbuf,sizeof(pbuf),"%s> ",language);
 			prompt = _strdup(pbuf);
 		} else
 			prompt = _strdup(">");
@@ -615,7 +617,7 @@ int main(int ac, char **av)
 */
 
 	toConsole = stdout;
-	snprintf(buf,BUFSIZ,"%s:%d",host,port);
+	snprintf(buf,sizeof(buf),"%s:%d",host,port);
 	mid = mapi_connect(buf, user, passwd,0);
 	mid->trace = trace;
 	if (mapi_error(mid)) {
@@ -623,11 +625,13 @@ int main(int ac, char **av)
 		fflush(toConsole);
 		EXIT(2);
 	}
+#ifdef MONET5
 	if( language && strcmp(language,"mal")){
 		char lang[BUFSIZ];
-		snprintf(lang,BUFSIZ,"%s();",language);
+		snprintf(lang,sizeof(lang),"%s();",language);
 		doRequest(mid, lang);				\
 	}
+#endif
 
 
 	if (command) {
