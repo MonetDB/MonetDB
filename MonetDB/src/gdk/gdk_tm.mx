@@ -134,7 +134,7 @@ persistent again.
 int TMabort() {
 	int i; 
 
-	BBPunlock("TMabort");
+	BBPlock("TMabort");
 	for (i = 1; i < BBPsize; i++) { 
 		if (BBP_status(i) & BBPNEW) {
 			BAT *b = BBPcache(i);
