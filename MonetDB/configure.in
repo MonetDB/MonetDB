@@ -213,7 +213,7 @@ if test "x$have_bz" != xno; then
   if test "x$have_bz" = xyes; then
   	save_LIBS="$LIBS"
   	LIBS="$LIBS $BZ_LIBS"
-  	AC_CHECK_LIB(bz2, bzopen, BZ_LIBS="$BZ_LIBS -lbz2"
+  	AC_CHECK_LIB(bz2, BZ2_bzopen, BZ_LIBS="$BZ_LIBS -lbz2"
         	AC_DEFINE(HAVE_LIBBZ2) have_bz=yes, have_bz=no)
   	LIBS="$save_LIBS"
   fi
