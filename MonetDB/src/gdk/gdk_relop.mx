@@ -853,7 +853,7 @@ BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
 	}
 	if (BAThdense(r) == FALSE && BAThordered(r)&1) {
 		/* use the merge-join; it takes care of the rest */
-		mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);
+		bn = mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);
   		ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
 		return bn; 
 	} else if (bn == NULL) {
