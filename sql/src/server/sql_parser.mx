@@ -36,6 +36,8 @@ typedef enum tokens {
 	SQL_CREATE_TABLE,
 	SQL_CREATE_VIEW,
 	SQL_CREATE_ROLE,
+	SQL_CREATE_MODULE,
+	SQL_CREATE_TYPE,
 	SQL_CREATE_FUNC,
 	SQL_CREATE_INDEX,
 	SQL_DROP_SCHEMA,
@@ -211,6 +213,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	table_def
 	view_def
 	role_def
+	module_def
+	type_def
 	func_def
 	index_def
 	all_or_any_predicate
@@ -449,7 +453,7 @@ UNDER WHENEVER
 %token TEMPORARY 
 %token<sval> AS ASC DESC AUTHORIZATION 
 %token CHECK CONSTRAINT CREATE 
-%token PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME
+%token MODULE sqlTYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME
 %token DEFAULT DISTINCT DROP
 %token FOREIGN 
 %token GRANT REVOKE ROLE ADMIN HAVING INTO 
@@ -593,7 +597,16 @@ grant:
 	  dlist_append_int(l, $5);
 	  dlist_append_int(l, $6);
 	  dlist_append_int(l, $7);
-	$$ = _symbol_create_list( SQL_GRANT, l); }
+	$$ = _symbol_create_list( SQL_GRANT, l); 
+	/* grants = $2.grants;
+	   object = $2.object;
+	   privs = select privileges from privileges where object = object;
+	   newprivs = totable(grants)
+	   nwprivs = join(privs, newprivs)
+	   insert into privileges join(privs, newprivs)
+	   update privileges set = newprivs where prives not in privs
+	*/
+	}
 
  |  GRANT authid_list TO grantee_commalist opt_with_admin 
 		opt_from_grantor
@@ -782,7 +795,7 @@ opt_column:
  |   /* empty */ { $$ = 0; }
  ;
 
-create:	role_def | table_def | view_def | func_def | index_def;
+create:	role_def | table_def | view_def | module_def | type_def | func_def | index_def;
 
 index_def:
     CREATE opt_index_type INDEX ident ON qname '(' column_commalist ')' 
@@ -1046,6 +1059,29 @@ opt_column_commalist:
 
 column_commalist_parens:
    '(' column_commalist ')' 	{ $$ = $2; } 
+ ;
+
+module_def:
+    CREATE MODULE 	{ context *c = (context*)parm; 
+			  c->cache = 0; }
+	ident
+			{ dlist *f = dlist_create();
+	  		  	dlist_append_string(f, $4);
+ 			  $$ = _symbol_create_list( SQL_CREATE_MODULE, f ); }
+ ;
+
+/*
+module_end:
+    END ident		
+*/
+
+type_def:
+    CREATE sqlTYPE qname
+    EXTERNAL sqlNAME ident
+			{ dlist *f = dlist_create();
+	  		  	dlist_append_list(f, $3);
+				dlist_append_string(f, $6);
+ 			  $$ = _symbol_create_list( SQL_CREATE_TYPE, f ); }
  ;
 
 func_def:
@@ -1866,7 +1902,7 @@ atom:
 	{ /* replace by argument */
 	  context *c = (context*)parm;
 	  int len = (c->params)?list_length(c->params):0;
-	  if (len < MAXPARAMS-2 && c->qc){
+	  if (len < MAXPARAMS-2 && c->cache){
 	  	char name[BUFSIZ]; 
 	  	AtomNode *an = (AtomNode*)$1;
 	  	sql_subtype *t = sql_dup_subtype(atom_type(an->a));
@@ -2234,6 +2270,7 @@ non_reserved_word:
 | SECOND	{ $$ = _strdup("second"); }
 | ZONE		{ $$ = _strdup("zone"); }
 | sqlNAME	{ $$ = _strdup("name"); }
+| sqlTYPE	{ $$ = _strdup("type"); }
 ;
 
 name_commalist:

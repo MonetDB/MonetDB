@@ -43,6 +43,7 @@
 
 typedef enum stmt_type {
 	st_none,
+	st_load_module,
 	st_var,		/* still needs work */
 	st_assign,		/* still needs work */
 	st_commit,
@@ -185,6 +186,7 @@ typedef struct group {
 sql_export const char * st_type2string(st_type type);
 
 extern stmt *stmt_none();
+extern stmt *stmt_load_module( char *name);
 extern stmt *stmt_assign( char *varname, stmt *val);
 extern stmt *stmt_var( char *varname, sql_subtype *t);
 
@@ -348,6 +350,7 @@ extern group *grp_dup(group * g);
 const char * st_type2string(st_type type) {
 	switch (type) {
 	case st_none:	return "st_none";
+	case st_load_module:	return "st_load_module";
 	case st_commit:		return "st_commit";
 	case st_rollback:	return "st_rollback";
 	case st_release:	return "st_release";
@@ -583,11 +586,6 @@ void stmt_destroy(stmt * s)
 		case st_export:
 	  	case st_find:
 
-	  /* Stefan: this should be here, but then it causes an
-	   * "Mserver: /ufs/manegold/Monet/4.3/sql/src/server/sql_mem.mx:92: sql_ref_dec: Assertion `r->refcnt > 0' failed."
-	   * in test src/benchmarks/tpch/Tests/load ; hence, we move it below until the respective bug is located and fixed.
-	   */
-
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
 			if (s->op2.stval) stmt_destroy(s->op2.stval);
 			if (s->op3.stval) stmt_destroy(s->op3.stval);
@@ -602,6 +600,7 @@ void stmt_destroy(stmt * s)
 			break;
 
 		case st_assign:
+		case st_load_module:
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
 			_DELETE(s->op4.sval);
 			break;
@@ -674,11 +673,6 @@ void stmt_destroy(stmt * s)
 			if (s->op4.stval) stmt_destroy(s->op4.stval);
 			break;
 
-	  /* Stefan: this should be above, but then it causes an
-	  case st_find:
-	   * "Mserver: /ufs/manegold/Monet/4.3/sql/src/server/sql_mem.mx:92: sql_ref_dec: Assertion `r->refcnt > 0' failed."
-	   * in test src/benchmarks/tpch/Tests/load ; hence, we move it here until the respective bug is located and fixed.
-	   */
 	  case st_senddata:	/* pacify compiler */
 			break;
 		}
@@ -692,6 +686,12 @@ void stmt_destroy(stmt * s)
 
 stmt *stmt_none(){
 	return stmt_create(st_none);
+}
+
+stmt *stmt_load_module( char *name ){
+	stmt *s = stmt_create(st_load_module);
+	s->op4.sval = _strdup(name);
+	return s;
 }
 
 stmt *stmt_assign(char *varname, stmt *val){

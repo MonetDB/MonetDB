@@ -4163,6 +4163,20 @@ static stmt *sql_delete(context * sql, dlist * qname, symbol * opt_where)
 	return NULL;
 }
 
+static stmt *create_module(context * sql, char *impl ){
+	(void)sql;
+
+	return stmt_load_module(impl);
+}
+
+static stmt *create_type(context * sql, dlist * qname, char *impl ){
+	char *tname = qname_table(qname);
+	(void)sql;
+
+	sql_create_type(tname, 0, 0, 0, impl);
+	return stmt_none();
+}
+
 static stmt *create_func(context * sql, dlist * qname, dlist *params, sql_subtype *res, char *impl, symbol *body ){
 	char *fname = qname_table(qname);
 	dnode *n;
@@ -4342,6 +4356,23 @@ static stmt *sql_stmt(context * sql, symbol * s)
 	case SQL_REVOKE:
 		printf("%s\n", s->token == SQL_GRANT?"grant":"revoke");
 		sql->mvc->type = Q_SCHEMA;
+		break;
+
+	case SQL_CREATE_MODULE:
+		{
+			dlist *l = s->data.lval;
+			ret = create_module( sql, l->h->data.sval );
+			sql->mvc->type = Q_SCHEMA;
+		}
+		break;
+
+	case SQL_CREATE_TYPE:
+		{
+			dlist *l = s->data.lval;
+			ret = create_type( sql, l->h->data.lval,
+					  l->h->next->data.sval );
+			sql->mvc->type = Q_SCHEMA;
+		}
 		break;
 
 	case SQL_CREATE_FUNC:

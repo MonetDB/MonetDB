@@ -879,7 +879,7 @@ stmt *optimize( context *c, stmt *s ){
 	 * such as schema manipulation, transaction managment, 
 	 * and user authentication.
 	 */
-	case st_none:
+	case st_none: case st_load_module:
 	case st_release: case st_commit: case st_rollback: 
 	case st_schema: case st_table: case st_column: case st_key: 
 	case st_create_schema: case st_drop_schema: 

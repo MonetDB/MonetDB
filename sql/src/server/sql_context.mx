@@ -60,6 +60,7 @@ typedef struct context {
 
 	char 	errstr[ERRSIZE];
 	struct  mvc *mvc;
+	int	cache;  /* some queries should not be cached ! */
 	struct  qc  *qc;
 
 	char 	auth;	/* authorization */
@@ -137,9 +138,8 @@ context *sql_create_context(int debug, int cache, mvc * mvc)
 	c->cnt = 0;
 	c->lineno = 1;
 	c->sym = NULL;
-	c->qc = NULL;
-	if (cache)
-		c->qc = qc_create();
+	c->cache = cache;
+	c->qc = qc_create();
 	c->mvc = mvc;
 	c->errstr[0] = '\0';
 

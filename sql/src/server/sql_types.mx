@@ -145,6 +145,7 @@ sql_export sql_subfunc *sql_bind_func_( char *name, list *ops);
 sql_export sql_subfunc *sql_bind_func_result_( char *name, list *ops, sql_subtype *res);
 sql_export sql_subfunc *sql_dup_func( sql_subfunc *f);
 sql_export void sql_subfunc_destroy( sql_subfunc *f);
+sql_export sql_subfunc *sql_bind_proc( char *name, list *ops );
 
 sql_export sql_func *sql_create_func(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);
 
@@ -405,6 +406,8 @@ sql_subfunc *sql_bind_func_(char *sqlfname, list *ops )
 	node *n = funcs->h;
 	while (n) {
 		sql_func *f = n->data;
+		if (!f->res)
+			continue;
 		if (strcmp(f->name, name) == 0){ 
 		   if (list_cmp(f->ops, ops, (fcmp)&arg_subtype_cmp) == 0){
 			sql_subfunc *fres = NEW(sql_subfunc);
@@ -454,6 +457,8 @@ sql_subfunc *sql_bind_func_result_(char *sqlfname, list *ops, sql_subtype *res )
 	node *n = funcs->h;
 	while (n) {
 		sql_func *f = n->data;
+		if (!f->res)
+			continue;
 		if (strcmp(f->name, name) == 0 &&
 		    subtype_cmp(f->res, res) == 0 &&
 		    list_cmp(f->ops, ops, (fcmp)&arg_subtype_cmp) == 0){
@@ -482,6 +487,35 @@ sql_subfunc *sql_bind_func_result_(char *sqlfname, list *ops, sql_subtype *res )
 	return NULL;
 }
 
+sql_subfunc *sql_bind_proc(char *sqlfname, list *ops )
+{
+	char *name = toLower(sqlfname);
+	node *n = funcs->h;
+	while (n) {
+		sql_func *f = n->data;
+		if (f->res)
+			continue;
+		if (strcmp(f->name, name) == 0 &&
+		    list_cmp(f->ops, ops, (fcmp)&arg_subtype_cmp) == 0){
+			sql_subfunc *fres = NEW(sql_subfunc);
+			_DELETE(name);
+			sql_ref_init( &(fres->ref) );
+			sql_ref_inc( &(f->ref) );
+			fres -> func = f;
+			fres -> res . type = NULL;
+			fres -> res . scale = 0;
+			if (sql_debug){
+				sql_ref_inc( &(fres->ref) );
+				list_append(subfuncs, fres);
+			}
+			return fres;
+		}
+		n = n->next;
+	}
+	_DELETE(name);
+	return NULL;
+}
+
 static void func_destroy(sql_func * t)
 {
 	int ref = 0;
@@ -489,7 +523,7 @@ static void func_destroy(sql_func * t)
 		_DELETE(t->name);
 		if (t->imp) _DELETE(t->imp);
 		if (t->ops) list_destroy(t->ops);
-		sql_subtype_destroy(t->res);
+		if (t->res) sql_subtype_destroy(t->res);
 		_DELETE(t);
 	} else if (sql_end == END_AGGR){
 		printf("#REFCOUNT of func %s %s is wrong %d\n", t->name, t->imp, ref);

@@ -377,11 +377,15 @@ void bm_commit( bm *bm, int tid )
 {
 	BUN p,q;
 	BAT *b = bm->bat_version;
+	BAT *bat_mode = bm_create_bat(TYPE_oid,TYPE_int,BUFSIZ); 
+	int bm_read = BM_READ;
 
 	BATloop(b, p, q){
+	    	oid id = *(oid*)BUNhead(b,p);
 	    	int version = *(int*)BUNtail(b,p);
+
+		BUNins(bat_mode, &id, &bm_read);
 	    	if (tid == version){
-	    		oid id = *(oid*)BUNhead(b,p);
 			bat bid = *(oid*)BUNtail(bm->bat_bid,
 				BUNfnd(bm->bat_bid,&id));
 			BAT *b = bat_descriptor(bid, "bm_commit");
@@ -399,7 +403,10 @@ void bm_commit( bm *bm, int tid )
 	BATfakeCommit(bm->bat_name);
 	BATfakeCommit(bm->bat_bid);
 	BATfakeCommit(bm->bat_lbid);
-	BATfakeCommit(bm->bat_mode);
+	bat_decref(bm->bat_mode->batCacheid, TRUE);
+	bat_destroy(bm->bat_mode);
+	BATfakeCommit(bat_mode);
+	bm->bat_mode = bat_mode;
 }
 
 void bm_abort( bm * bm, int tid )

@@ -300,6 +300,8 @@ void init_keywords()
 	keywords_insert("ROWS", ROWS);
 	keywords_insert("NO", NO);
 
+	keywords_insert("MODULE", MODULE );
+	keywords_insert("TYPE", sqlTYPE );
 	keywords_insert("PROCEDURE", PROCEDURE );
 	keywords_insert("FUNCTION", FUNCTION );
 	keywords_insert("RETURNS", RETURNS );
