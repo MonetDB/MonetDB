@@ -11,10 +11,11 @@ barrier	b:= n>0;
 exit	b;
 end clkticks;
 
-thread 	hdl:bat[int,str];
+thread 	hdl;
+	printf("Start thread with id %d\n",hdl);
 	clkticks(2);
 	printf("About to exit child\n");
-end	hdl;
+exit	hdl;
 	printf("Wait for child to exit too\n");
 	#wait hdl;
 	#printf("child has finished\n");

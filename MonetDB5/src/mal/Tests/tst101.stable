@@ -1,24 +1,22 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ##define the generic addition operator
 ## this should be sufficient to determine outcome
 #
 #function + (L:any::1, R:any::1):any::1 ; end +;
-function Admin.+(L:any::1,R:any::1):any::1; #0 polymorphic:(+:any::1)<-(L:any::1)(R:any::1)
-end +; #1:
+function Admin.+(L:any::1,R:any::1):any::1; #0  dynamic (+:any::1)<-(L:any::1)(R:any::1)
+end +; #1  
 #a:=3+1;
 #b:=3.5+2.7;
 #c:= 7+8;
 #
-function Admin.main():int; #0:(main:int)
-    a := Admin.+(3,1); #1:(a:int)<-($2:int)($3:int)
-    b := Admin.+(3.5,2.7); #2:(b:flt)<-($5:flt)($6:flt)
-    c := Admin.+(7,8); #3:(c:int)<-($8:int)($9:int)
-end main; #4:
+function Admin.main():int; #0  (main:int)
+    a := Admin.+(3,1); #1  (a:int)<-($2:int)($3:int)
+    b := Admin.+(3.5,2.7); #2  (b:flt)<-($5:flt)($6:flt)
+    c := Admin.+(7,8); #3  (c:int)<-($8:int)($9:int)
+end main; #4  
 >

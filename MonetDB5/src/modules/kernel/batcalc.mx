@@ -1,3 +1,26 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @f batcalc
 @t BAT accummulate instructions
 @a M.L. Kersten
@@ -42,8 +65,7 @@ operands.
 command @1(b:bat[any::1,any::2], cst:any::2):bat[any::1,any::2] = CMDbat@3cst
 comment "(BAT,Constant) calculator function with new BAT result";
 
-command @1(a:bat[any::1,any::2],b:bat[any::1,any::2], 
-	   cst:any::2): bat[any::1,any::2] = CMDbataccum@3cst
+command @1(a:bat[any::1,any::2],b:bat[any::1,any::2], cst:any::2): bat[any::1,any::2] = CMDbataccum@3cst
 comment "(BAT,Constant) calculator function with accumulator BAT result";
 
 command @1(b:bat[any::1,any::2], c:bat[any::1,any::2]):bat[any::1,any::2] 
@@ -150,11 +172,11 @@ comment "If-then-else operation to assemble a conditional result ";
 
 @-
 @= ifthenGrp
-command fill(v:@1,b:bat[any,any::1]): bat[@1,any::1] = CMDfillhead_@1
-comment "Fill the head with a constant.";
+command zipper(v:@1,b:bat[any,any::1]): bat[@1,any::1] = CMDfillhead_@1
+comment "Fill the head with a constant, e.g.  [0~b]";
 
-command fill(b:bat[any::1,any], v:@1): bat[any::1,@1] = CMDfilltail_@1
-comment "Fill the tail with a constant.";
+command zipper(b:bat[any::1,any], v:@1): bat[any::1,@1] = CMDfilltail_@1
+comment "Fill the tail with a constant, eg [b~0].";
 
 command ifthen(b:bat[any::1,bit], v:@1): bat[any::1,@1] = CMDifThenCst_@1
 comment "Ifthen operation to assemble a conditional result ";
@@ -198,6 +220,11 @@ comment "Coerce an @1 tail to a bat with a @2 tail.";
 command int(b:bat[any::1,str]):bat[any::1,int] = CMDconvertstr_int
 comment "Coerce an str tail to a bat with a int tail.";
 
+command oid(b:bat[void,any::1]):bat[oid,any::1] = CMDconvertvoid_oid
+comment "Materialize the virtual oid into an oid";
+
+command oid(b:bat[oid,any::1]):bat[oid,any::1] = CMDconvertoid_oid
+comment "Materialize the virtual oid into an oid";
 @- Scientific routines
 The mmath functions are also overloaded to provide for
 the fast execution of expanded code blocks.
@@ -231,26 +258,6 @@ command @1(x:bat[any::1,dbl],y:@2)  :bat[any::1,dbl] = CMDscience_@1;
 @-
 @- Implementation
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 #include "gdk.h"
 #include "math.h"
 #include "mal_squeezer.h"
@@ -799,6 +806,33 @@ str CMDconvertstr_int(int *ret, int *bid){
 		x= (str) BUNtail(b,p);
 		y= x== str_nil? int_nil: strtol(x,NULL,0);
 		bunfastins(bn, h, &y);
+	}
+	BBPfix( *ret= bn->batCacheid);
+	return MAL_SUCCEED;
+}
+str CMDconvertoid_oid(int *ret, int *bid){
+	/* no-op operation */
+	*ret= *bid;
+	return MAL_SUCCEED;
+}
+str CMDconvertvoid_oid(int *ret, int *bid){
+	BAT *b,*bn;
+	int xx;
+	BUN p,q;
+	ptr h,t;
+	oid x;
+	int y;
+
+	@:getBATdescriptor(ret,bid,b,CMDconvertstr_int)@
+
+	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
+	@:tstBat(CMDconvertstr_int)@
+	x= b->hseqbase;
+
+	BATloopFast(b, p, q, xx) {
+		ptr t = BUNtail(b,p);
+		bunfastins(bn, &x,t);
+		x++;
 	}
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;

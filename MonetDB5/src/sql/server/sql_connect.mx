@@ -1,0 +1,306 @@
+@f sql_connect
+@a N. Nes
+@* Connection code
+This small module contains the code to instantiate an SQL client.
+This code strongly depends on the front-end/back-end setup.
+@h
+#ifndef _SQLSERVER_H_
+#define _SQLSERVER_H_
+
+#include <streams.h>
+#include "sql_mvc.h"
+
+#endif /*_SQLSERVER_H_*/
+
+@c
+#include "sql_connect.h"
+#include <statement.h>
+#include <sqlexecute.h>
+#include <mem.h>
+#include <context.h>
+
+
+#include <gdk.h>
+#include "catalog.h"
+#include "context.h"
+#include <sqlexecute.h>
+
+extern catalog *mvc_catalog_create( mvc *m, context *lc );
+
+static int key_cmp( key *k, long *id )
+{
+	if (k && id && k->id == *id)
+		return 0;
+	return 1;
+}
+
+void getschemas( mvc *myc, context *lc, catalog *c, char *schema, char *user ){
+	node *n,*l;
+	list *keys = list_create(NULL);
+
+	if (c->schemas) list_destroy( c->schemas );
+	c->schemas = list_create((fdestroy)&cat_drop_schema);
+	
+	for(l = myc->trans->schemas->h; l; l = l->next){
+	    sql_schema *ns = l->data;
+	    c->cur_schema = cat_create_schema(c, 0, ns->name, user );
+	    list_append( c->schemas, c->cur_schema );
+	    for(n = ns->tables->h; n; n = n->next){
+		sql_table *nt = n->data;
+
+		if (nt->type != tt_view ){
+			node *m;
+	      		table *t = cat_create_table( c, nt->id, c->cur_schema, nt->name, nt->type, NULL );
+			for (m = nt->columns->h; m; m = m->next ){
+				sql_column *col = m->data;
+		  		column *cx = cat_create_column( c, col->id, t, col->name, 
+					sql_dup_subtype(col->type), col->def, col->null );
+			}	
+			if (nt->keys) for (m = nt->keys->h; m; m = m->next ){
+				node *o = NULL;
+				key *nk = NULL;
+				sql_key *k = m->data;
+
+				if (k->type == fkey){
+					sql_fkey *fk = (sql_fkey*)k;
+					o = list_find(keys, &fk->rkey->k.id, 
+							(fcmp)&key_cmp);
+				}
+
+				if (o){
+	    				nk = cat_table_add_key( t, k->type, 
+							k->name, o->data);
+	  				list_remove_node( keys, o); 
+				} else {
+	    				nk = cat_table_add_key( t, k->type, 
+							k->name, NULL);
+					list_append( keys, nk);
+				}
+				nk->id = k->id;
+				for (o = k->columns->h; o; o = o->next){
+					sql_kc *kc = o->data;
+					column *nc = NULL;
+					nc = cat_bind_column(c, t, kc->c->name);
+					assert(nc);
+					cat_key_add_column( nk, nc, kc->trunc);
+				}
+			}
+		} else {
+			int err=0;
+	      		stmt *s = sqlexecute( lc, nt->query,&err);
+			stmt_destroy(s);
+		}
+	    }
+	}
+	c->cur_schema = cat_bind_schema( c, schema );
+}
+
+catalog *mvc_catalog_create( mvc *myc, context *lc )
+{
+	catalog *c = lc->cat;
+	getschemas( myc, lc, c, myc->trans->schema->name, myc->user );
+	return c;
+}
+
+
+int connect_error(stream *in, stream *out, int sock)
+{
+	close_stream(in);
+	close_stream(out);
+	close(sock);
+	return GDK_FAIL;
+}
+
+@-
+@- OLD STUFF V4.3
+@= builtin_operand
+{       int _k = interpret(stk, arg(lt, @1), res);
+        if (_k < 0) {
+                return _k;
+        }
+        @3 = VALconvert(@2, res, 0);
+        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+                return handle_paramerror(res,@1,res->vtype,@2);
+        }
+}
+
+OLD STUFF for V4.3
+int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+	buffer *bbuf;
+	int debug = 0, l = 0, i, sock, *Sock;
+	stmt *s = NULL;
+	char *cmd = NULL, buf[BUFSIZ+1], *errbuf;
+	char *user, *passwd, *schema, *dbname;
+	Variable v;
+
+	mvc *m;
+	stream *in, *out, *ws;
+	context *lc;
+
+  	if (lt->cnt != 1) {
+        	return handle_argerror(res, lt->cnt, 1);
+  	}
+  	@:builtin_operand(0,TYPE_int,Sock)@
+	sock = *Sock;
+
+	out = block_stream( socket_wstream( sock, "SQLSERVER" ));
+	in  = block_stream( socket_rstream( sock, "SQLSERVER" ));
+
+	if ((i = in->read(in, buf, 1, BUFSIZ)) >= BUFSIZ)
+		return connect_error(in, out, sock);
+	buf[i] = 0;
+	/* expect api(sql,debug); */
+	l = strlen("api(sql,");
+	if (i > l+1 )
+		debug = strtol(buf+l,NULL,10);
+
+	i=snprintf(buf, BUFSIZ, "login\n" );
+	out->write(out, buf, 1, i);
+	out->flush(out);
+
+	if ((i = in->read(in, buf, 1, BUFSIZ)) >= BUFSIZ)
+		return connect_error(in, out, sock);
+	buf[i] = 0;
+	/* expect login(user,passwd); */
+	l = strlen("login(");
+	if (i > l+1 ){
+		char *s, *e = strchr(buf+l,',');
+		if (!e) return connect_error(in, out, sock);
+		*e = 0;
+		s = e+1; /* skip comma */
+		e = strrchr(s, ')');
+		if (!e) return connect_error(in, out, sock);
+		*e = 0;
+		user = GDKstrdup(buf+l);
+		passwd = GDKstrdup(s);
+	} else {
+		return connect_error(in, out, sock);
+	}
+
+	m = mvc_create(debug);
+	schema = mvc_login( m, user, passwd );
+	dbname = GDKgetenv("gdk_dbname");
+
+	i = snprintf(buf, BUFSIZ, "%s,%s\n", dbname, schema?schema:"" );
+	out->write(out, buf, 1, i);
+	out->flush(out);
+
+	if (!schema){ 
+		GDKfree(user);
+		GDKfree(passwd);
+		mvc_destroy(m);
+		return connect_error(in, out, sock);
+	}
+
+	lc = NEW(context);
+ 	bbuf = buffer_create( BUFSIZ );
+	ws = buffer_wastream( bbuf, "SQLserver" );
+	sql_init_context( lc, ws, debug, default_catalog_create() );
+	mvc_catalog_create( m, lc );
+
+	/* add myc and Output, Input to the stack */
+	v = VARnew(stk, "myc");
+	v->binding.vtype = TYPE_mvc;
+	v->binding.val.pval = m;
+
+	v = VARnew(stk, "Output");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = out;
+
+	v = VARnew(stk, "Input");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = in;
+
+ 	errbuf = GDKmalloc(GDKMAXERRLEN);
+	GDKsetbuf(errbuf);
+
+	while(TRUE){
+		int size = BUFSIZ + 1, err = 0;
+		char *inbuf = NEW_ARRAY(char, size );
+		int inlen = 0;
+		while ((inlen = in->read(in, inbuf, 1, BUFSIZ)) == BUFSIZ){
+			err = 1;
+		}
+		inbuf[inlen] = '\0';
+
+		if (!inlen || inbuf[0] == EOT)
+			break;
+		if (!err)
+			s = sqlexecute(lc, inbuf, &err);
+		_DELETE(inbuf);
+
+		if (err){ /* output error */
+			stream_writeInt( out, 0 );
+			stream_writeInt( out, 0 );
+			stream_writeInt( out, -1 );
+			out->write( out, lc->errstr, strlen(lc->errstr), 1 );
+			out->flush( out );
+		} else if (s){
+	    		int nr = 1;
+	    		stmt_dump( s, &nr, lc );
+
+			cmd = buffer_get_buf(bbuf);
+	    		lc->out->flush( lc->out );
+
+			if (lc->debug&64){
+				stream_writeInt( out, 0 );
+				stream_writeInt( out, QDEBUG );
+				stream_writeInt( out, lc->debug );
+				out->write( out, cmd, strlen(cmd), 1 );
+				out->flush( out );
+			} else {
+
+			    if (s && s->type == st_copyfrom &&
+				!stmt_copyfrom_files(s)){
+				/*ask_for_data();*/
+				stream_writeInt( out, 0 );
+				stream_writeInt( out, QDATA );
+				stream_writeInt( out, 0 );
+				out->flush( out );
+			    }
+			
+			    {
+				int i;
+				ssize_t status;
+        			res->vtype = TYPE_void; 
+				i = interpret_str( stk, cmd, res);
+
+				if (i < 0){
+					char *errstr = "Mil error";
+					char *buf = GDKerrbuf;
+					stream_writeInt( out, 0 );
+					stream_writeInt( out, mvc_type(m) );
+					stream_writeInt( out, i );
+					out->write( out, errstr, strlen(errstr), 1 );
+					out->write( out, buf, strlen(buf), 1 );
+					buf[0] = 0; /* reset error buf */
+					out->flush( out );
+				} else if ((status=mvc_status(m)) < 0){
+					char *errstr = "Error in result";
+					stream_writeInt( out, 0 );
+					stream_writeInt( out, mvc_type(m) );
+					stream_writeInt( out, status );
+					out->write( out, errstr, strlen(errstr), 1 );
+					out->flush( out );
+				} else if (s->type != st_output) {
+					stream_writeInt( out, 0 );
+					stream_writeInt( out, mvc_type(m) );
+					stream_writeInt( out, status );
+					out->flush( out );
+				}
+			    }
+			} 
+			/* BEWARE to use free instead of _DELETE
+ 			 * as the stream library is build with out libbat 
+ 			 * ie. it cannot use GDKmalloc can be used */
+			if (cmd) free(cmd);
+		}
+		if (s) stmt_destroy(s);
+	}
+	mvc_destroy(m);
+	sql_exit_context( lc );
+	close_stream(in);
+	close_stream(out);
+	close(sock);
+	return GDK_SUCCEED;
+}

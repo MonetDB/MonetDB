@@ -73,7 +73,7 @@ comment "Locates the next element in the boxant box";
 #define _ITERATOR_H
 #endif /* _ITERATOR_H*/
 @c
-#include "monet.h"
+#include "mal_function.h"
 #include "mal_box.h"
 
 str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

@@ -28,25 +28,23 @@ command socket_rastream( socket:int, name:str ) : stream = stream_socket_rastrea
 command socket_wastream( socket:int, name:str ) : stream = stream_socket_wastream
 	comment "open ascii socket stream for writing";
 
-command file_rstream( file:fstream, name:str ) : stream = stream_file_rstream
-	comment "open a file stream for reading";
-command file_wstream( file:fstream, name:str ) : stream = stream_file_wstream
-	comment "open a file stream for writing";
-command file_rastream( file:fstream, name:str ) : stream = stream_file_rastream
-	comment "open ascii file stream for reading";
-command file_wastream( file:fstream, name:str ) : stream = stream_file_wastream
-	comment "open ascii file stream for writing";
-
 command block_stream( s:stream ) : stream = open_block_stream
 	comment "open a block based stream";
 
-command stream_write( s:stream, data:str ) = stream_write_string
+command writeStr( s:stream, data:str ):void = stream_write_string
 	comment "write data on the stream";
+command writeInt( s:stream, data:int ):void = stream_write_int
+	comment "write data on the stream";
+command readStr( s:stream):str = stream_read_str
+	comment "read string data from the stream";
+command readInt( s:stream):str = stream_read_int
+	comment "read integer data from the stream";
 
-command stream_flush( s:stream ) = stream_flush
+
+command flush( s:stream ) = stream_flush
 	comment "flush the stream";
 
-command stream_close( s:stream ) = stream_close_stream 
+command close( s:stream ) = stream_close_stream 
 	"close and destroy the stream s";
 
 @h
@@ -75,103 +73,85 @@ command stream_close( s:stream ) = stream_close_stream
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
 
+#include "gdk.h"
 #include <blob.h>
 #include <io.h>
 
 #endif /*_STREAMS_H_*/
 @c
 #include "streams.h"
-#include "gdk_stream.h"
-#include "monet.h"
+#include "mal_function.h"
 
-str stream_open_rstream( stream *S, str *filename ){
-	if ((*(stream**)S = open_rstream( *filename )) == NULL){
-		return throwMessage("streams.open_rstream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_open_wstream( stream *S, str *filename ){
-	if ((*(stream**)S = open_wstream( *filename )) == NULL){
-		return throwMessage("streams.open_wstream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_open_rastream( stream *S, str *filename ){
-	if ((*(stream**)S = open_rastream( *filename )) == NULL){
-		return throwMessage("streams.open_rastream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_open_wastream( stream *S, str *filename ){
-	if ((*(stream**)S = open_wastream( *filename )) == NULL){
-		return throwMessage("streams.open_wastream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_socket_rstream( stream *S, int *socket, str *name ){
-	if ((*(stream**)S = socket_rstream( *socket, *name )) == NULL){
+
+@-
+@= open_stream
+str stream_open_@1( stream *S, str filename ){
+	stream *s;
+
+	if ((s = open_@1( filename )) == NULL || s->errnr){
+		if (s) s->destroy(s);
+		return throwMessage("stream","Could not open file\n");
+ 	} else {
+		*(stream**)S = s;
+ 		return MAL_SUCCEED;
+ 	}
+ }
+@c
+@:open_stream(rstream)@
+@:open_stream(wstream)@
+@:open_stream(rastream)@
+@:open_stream(wastream)@
+
+@-
+@= open_socket
+str stream_socket_@1( stream *S, int *socket, str name ){
+	stream *s;
+
+	if ((s = socket_@1( *socket, name )) == NULL || s->errnr){
+		if (s) s->destroy(s);
 		return throwMessage("streams.socket_rstream","failed"); 
 	} else {
+		*(stream**)S = s;
 		return MAL_SUCCEED;
-	}
-}
-str stream_socket_wstream( stream *S, int *socket, str *name ){
-	if ((*(stream**)S = socket_wstream( *socket, *name )) == NULL){
-		return throwMessage("streams.socket_rstream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_socket_rastream( stream *S, int *socket, str *name ){
-	if ((*(stream**)S = socket_rastream( *socket, *name )) == NULL){
-		return throwMessage("streams.socket_rastream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_socket_wastream( stream *S, int *socket, str *name ){
-	if ((*(stream**)S = socket_wastream( *socket, *name )) == NULL){
-		return throwMessage("streams.socket_wasstream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_file_rstream( stream *S, fstream *file, str *name ){
-	if ((*(stream**)S = file_rstream( *file, *name )) == NULL){
-		return throwMessage("streams.file_rstream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_file_wstream( stream *S, fstream *file, str *name ){
-	if ((*(stream**)S = file_wstream( *file, *name )) == NULL){
-		return throwMessage("streams.file_wstream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_file_rastream( stream *S, fstream *file, str *name ){
-	if ((*(stream**)S = file_rastream( *file, *name )) == NULL){
-		return throwMessage("streams.file_rastream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
-str stream_file_wastream( stream *S, fstream *file, str *name ){
-	if ((*(stream**)S = file_wastream( *file, *name )) == NULL){
-		return throwMessage("streams.open_wastream","failed"); 
-	} else {
-		return MAL_SUCCEED;
-	}
-}
+ 	}
+ }
+@c
+@:open_socket(rstream)@
+@:open_socket(wstream)@
+@:open_socket(rastream)@
+@:open_socket(wastream)@
 
 str stream_write_string( stream *S, str *data ){
 	stream *s = *(stream**)S;
 	s->write( s, *data, 1, strlen(*data));
+	return MAL_SUCCEED;
+}
+str stream_write_int( stream *S, int *data ){
+	stream *s = *(stream**)S;
+	stream_writeInt(s,*data);
+	return MAL_SUCCEED;
+}
+#define CHUNK (64*1024)
+str stream_read_str( str *res,stream *S){
+	stream *s = *(stream**)S;
+        size_t len = 0;
+        size_t size = CHUNK + 1;
+        char *buf = GDKmalloc(size), *start = buf;
+
+        while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
+                size += CHUNK;
+                buf = GDKrealloc(buf, size);
+                start = buf + size - CHUNK - 1;
+                *start = '\0';
+        }
+        start += len;
+        *start = '\0';
+        *res = buf;
+	return MAL_SUCCEED;
+}
+str stream_read_int( int *data, stream *S){
+	stream *s = *(stream**)S;
+	stream_readInt(s,data);
 	return MAL_SUCCEED;
 }
 

@@ -1,5 +1,28 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @f calc
-@a N.J. Nes, P. Boncz, M. Kersten
+@a N.J. Nes, P. Boncz, M. Kersten, A. de Vries
 @v 2.0
 @t The Arithmetics Module
 @* Introduction
@@ -163,6 +186,7 @@ atomic types and a result type.
 	command %(left:sht, right:int) : int = CALCbinaryMODshtint;
 	command %(left:int, right:int) : int = CALCbinaryMODintint;
 	command %(left:lng, right:int) : int = CALCbinaryMODlngint;
+	command %(left:lng, right:lng) : lng = CALCbinaryMODlnglng;
 	command %(left:int, right:chr) : chr = CALCbinaryMODintchr;
 	command %(left:int, right:sht) : sht = CALCbinaryMODintsht;
 @= mal_calc_ops
@@ -387,10 +411,6 @@ command newoid(incr:int) : oid = CALCnewoidInc
 comment "Reserves a range of consecutive unique OIDs; returns the 
 lowest in range. equivalent to newoid(0,incr)";
 
-command newoid(db:int,incr:int) : oid = CALCnewoidDb
-comment "Reserves a range of consecutive unique OIDs for a specific 
-database; returns the lowest in range.";
-
 command setoid(base:oid) : oid = CALCsetoidInc
 comment "Sets the oid range of consecutive unique OIDs; returns the 
 lowest in range.";
@@ -552,29 +572,6 @@ and handled by the environment.
 For this module this won't be a problem, because we do not change
 the string representations.
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- */
-
 #ifndef __calc_H__
 #define __calc_H__
 
@@ -587,7 +584,8 @@ the string representations.
 @c
 #include "stdlib.h"
 #include "calc.h"
-#include "monet.h"
+#include "mal.h"
+#include "mal_function.h"
 
 /* third param indicates return value if one of the params is nil */ 
 @:c_comp_ops(<,LT)@
@@ -690,6 +688,7 @@ the string representations.
 @:calc_binop(MOD,%,sht,int,int)@
 @:calc_binop(MOD,%,int,int,int)@
 @:calc_binop(MOD,%,lng,int,int)@
+@:calc_binop(MOD,%,lng,lng,lng)@
 @:calc_binop(MOD,%,int,chr,chr)@
 @:calc_binop(MOD,%,int,sht,sht)@
 
@@ -756,9 +755,12 @@ str CALCunarybitNOT(bit *retval, bit *value){
     }
     return MAL_SUCCEED;
 }
-str CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2) {
+str CALCswitchbit(ptr retval, bit *b, ptr v1, ptr v2) {
     register ptr p;
+	return throwMessage("ifthenelse","not yet implemented\n");
+/*
     if (*b == bit_nil) {
+	return MAL_SUCCEED;
 	p = ATOMnilptr(tpe);
     } else if (*b) {
 	p = v1;
@@ -771,6 +773,7 @@ str CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2) {
 	memcpy(retval, p, ATOMsize(tpe)); 
     }
     return MAL_SUCCEED;
+*/
 }
 
 str CALCrandint( int *res ){
@@ -789,7 +792,7 @@ operations.
 
 @= any_binary_minmax
 str CALCbinary@1any(ptr ret, ptr v1, int t, ptr v2){
-	int (*cmp)() = BATatoms[t].atomCmp;
+	int (*cmp)(ptr,ptr) = BATatoms[t].atomCmp;
 	ptr src, nil = ATOMnilptr(t);
 	if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
 		src = nil;
@@ -855,7 +858,7 @@ str CALCcomp@2strstr(bit *retval, str *s1, str *s2){
 	return MAL_SUCCEED;
 }
 str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2){
-	int (*cmp)() = BATatoms[tpe].atomCmp;
+	int (*cmp)(ptr,ptr) = BATatoms[tpe].atomCmp;
 	ptr nil = ATOMnilptr(tpe);
 
 	if ((*cmp)(*v1, nil) == 0 || (*cmp)(*v2, nil) == 0) {
@@ -890,7 +893,7 @@ str CALCcompBetweenstr(bit *retval, str *val, str *low, str *high){
 	return MAL_SUCCEED;
 }
 str CALCcompBetweenany(bit *retval, ptr *val, int tpe, ptr *low, ptr *high){
-	int (*cmp)() = BATatoms[tpe].atomCmp;
+	int (*cmp)(ptr,ptr) = BATatoms[tpe].atomCmp;
 	ptr nilptr = ATOMnilptr(tpe);
 	int val_nil = ((*cmp)(*val,nilptr) == 0);
 	int low_nil = ((*cmp)(*low,nilptr) == 0);
@@ -1075,7 +1078,6 @@ str CALC@2_2_@1(@1 *res, @2 *a)
 
 	@:mal_coercion_impl(lng,oid)@
 	@:mal_coercion_impl(lng,chr)@
-	@:mal_coercion_impl(lng,ptr)@
 	@:mal_coercion_impl(lng,bit)@
 	@:mal_coercion_impl(lng,sht)@
 	@:mal_coercion_impl(lng,int)@
@@ -1125,8 +1127,15 @@ str CALC@2_2_@1(@1 *res, @2 *a)
 	@:mal_coercion_impl(chr,lng)@
 
 	@:mal_coercion_impl(ptr,int)@
-	@:mal_coercion_impl(ptr,lng)@
 
+str CALClng_2_ptr(ptr *res, lng *a)
+{
+	return MAL_SUCCEED;
+}
+str CALCptr_2_lng(lng *res, ptr *a)
+{
+	return MAL_SUCCEED;
+}
 @-
 Old stuff, probably wrong
 	@:mal_coercion_impl2(str,sht,d)@
@@ -1268,14 +1277,6 @@ str CALCnewoidInc(oid *res, int *inc){
 		*res= OIDnew(1);
 	else{
 		*res= OIDnew(*inc);
-	}
-	return MAL_SUCCEED;
-}
-str CALCnewoidDb(oid *res, int *db, int *inc){
-	if( *inc <=0)
-		*res= OIDnewdb(0,1);
-	else{
-		*res= OIDnewdb(*inc,*db);
 	}
 	return MAL_SUCCEED;
 }

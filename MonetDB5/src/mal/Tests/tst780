@@ -1,0 +1,18 @@
+#test debugging of a recursive function
+
+function test(age:int,nme:str):int;
+	printf("simulated error\n");
+	c:= stkDepth();
+	printf("depth %d\n",c);
+	t:= catalog.stkFrame();
+	print(t);
+	d:= symbolDump();
+	print(d);
+	t:= catalog.stkFrame(c);
+	print(t);
+	v:= catalog.varUsed();
+	print(v);
+	w:= catalog.varConstant();
+	print(w);
+end test;
+test(12,"jj");

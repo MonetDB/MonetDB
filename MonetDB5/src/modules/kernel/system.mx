@@ -1,3 +1,26 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @f system
 @t System Information BATs and basic IO
 @a M.L. Kersten, P. Boncz, N.Nes
@@ -36,13 +59,6 @@ command exit():void= SYSquit
 
 command kill(n:int):void =SYSkill
 	comment "remove a client instance";
-
-command check_bbp_size() : lng = check_bbp_size
-        comment "Walk the BBP directories, delete leftovers and return total size";
-
-command mem_printmap() : void = print_mem_map
-        comment "print a map of all memory that is in use";
-
 command mem_cursize() : lng = SYSgetmem_cursize
  	comment "the amount of physical swapspace in KB that is currently in use";
 command mem_maxsize() : lng = SYSgetmem_maxsize
@@ -53,7 +69,7 @@ command vm_cursize() : lng = SYSgetvm_cursize
  	comment "the amount of logical VM space in KB that is currently in use";
 command vm_maxsize() : lng = SYSgetvm_maxsize
  	comment "the maximum usable amount of logical VM space in KB (target only)";
-command vm_maxsize(v:lng) : void = set_vm_maxsize
+command vm_maxsize(v:lng) : void = SYSsetvm_maxsize
  	comment "set the maximum usable amount of physical swapspace in KB";
 @- Printing 
 The routines that inspect the runtime setting are moved out of this area.
@@ -110,6 +126,7 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
+#include <stream.h>
 #endif
  
 str SYSsetListing(int *ret, int *flag) {
@@ -133,7 +150,8 @@ str SYSkill(int *ret, int *k) {
 str SYSquit(int *ret) {
 	Client c;
 	c= getClient();
-	fclose(c->fdin);
+	c->fdin->close(c->fdin);
+	c->fdin= NULL;
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
 }
@@ -158,14 +176,9 @@ str SYSgetvm_maxsize(lng *num) {
 	*num = GDKvm_maxsize();
 	return MAL_SUCCEED;
 }
-str set_vm_maxsize(lng *num) {
-	GDK_vm_maxsize = *num;
+str SYSsetvm_maxsize(lng *num) {
+	GDK_vm_maxsize= *num;
 	return MAL_SUCCEED;
-}
-
-str check_bbp_size(lng *ret) {
-        *ret = BBPdiskscan(NULL);
-        return MAL_SUCCEED;
 }
 
 @-
@@ -179,23 +192,23 @@ This avoids repeated type checking in most cases.
 
 @= escaped
 	switch(*c){
-	case 'n': *ret =  fputc('\n',fd);break;
-	case 't': *ret =  fputc('\t',fd);break;
-	case 'r': *ret =  fputc('\r',fd);break;
-	case '\\': *ret =  fputc('\\',fd);break;
-	default : *ret = fputc('\\',fd);fputc(*c,fd);
+	case 'n': *ret =  stream_printf(fd,"\n");break;
+	case 't': *ret =  stream_printf(fd,"\t");break;
+	case 'r': *ret =  stream_printf(fd,"\r");break;
+	case '\\': *ret =  stream_printf(fd,"\\");break;
+	default : *ret = stream_printf(fd,"\\");stream_printf(fd,"%c",*c);
 	}
 @c
 str SYSprint_str(int *ret, str *s){
-	FILE *fd = GDKout; /* getClient()->fdout;*/
+	stream *fd = GDKout; 
 	str c;
-	if( strNil(*s)) *ret = fputs("nil",fd);
+	if( strNil(*s)) stream_printf(fd,"nil");
 	else {
 		for(c= *s;*c; c++){
 			if( *c=='\\'){
 				c++;
 				@:escaped@
-			} else *ret = fputc(*c,fd);
+			} else stream_printf(fd,"%c",*c);
 		}
 	}
 	return MAL_SUCCEED;
@@ -223,7 +236,7 @@ This to simplify error handling
 			int i=0;
 
 			if(*(c+1)=='%'){ 
-				*ret= fputc(*c,fd);
+				stream_printf(fd,"%c",*c);
 				c++; continue;
 			}
 			while(*c != '@1' && *c && i<1024)
@@ -232,14 +245,14 @@ This to simplify error handling
 			newformat[i]=0;
 			if(*c!= '@1') 
 			return throwMessage("system.print", " format limitation");
-			else  fprintf(fd,newformat,@2);
-		} else fputc(*c,fd);
+			else  stream_printf(fd,newformat,@2);
+		} else stream_printf(fd,"%c",*c);
 	}
 @-
 
 @= printFormatted
 str SYSprint_formatted_@1(int *ret, ptr fmt, @1 *s){
-	FILE *fd = getClient()->fdout;
+	stream *fd = getClient()->fdout;
 	char *format;
 	str c;
 	/* TODO: check format properly !!! including sizes */
@@ -256,7 +269,7 @@ str SYSprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 @-
 String nil testing is slightly different.
 @c
-str SYSprint_formatted_nil(FILE *fd, str format, int *ret){
+str SYSprint_formatted_nil(stream *fd, str format, int *ret){
 	str c;
 	for(c= format;*c; c++){
 		if( *c=='\\'){
@@ -268,20 +281,20 @@ str SYSprint_formatted_nil(FILE *fd, str format, int *ret){
 			int i=0;
 
 			if(*(c+1)=='%'){ 
-				*ret= fputc(*c,fd);
+				stream_printf(fd,"%c",*c);
 				c++; continue;
 			}
 			while( !isalpha(*c) && *c && i<1024)
 				 newformat[i++]= *c++;
 			newformat[i++]='s';
 			newformat[i]=0;
-			fprintf(fd,newformat,"nil");
-		} else fputc(*c,fd);
+			stream_printf(fd,newformat,"nil");
+		} else stream_printf(fd,"%c",*c);
 	}
 	return MAL_SUCCEED;
 }
 str SYSprint_formatted_str(int *ret, ptr fmt, str *s){
-	FILE *fd = getClient()->fdout;
+	stream *fd = getClient()->fdout;
 	char *format;
 	str c;
 	/* TODO: check format properly !!! including sizes */
@@ -296,7 +309,7 @@ str SYSprint_formatted_str(int *ret, ptr fmt, str *s){
 	return MAL_SUCCEED;
 }
 str SYSprint_oid(int *ret, ptr fmt, oid *s){
-	FILE *fd = getClient()->fdout;
+	stream *fd = getClient()->fdout;
 	char *format;
 	str msg,c;
 	int len =50;
@@ -316,7 +329,7 @@ str SYSprint_oid(int *ret, ptr fmt, oid *s){
 	return MAL_SUCCEED;
 }
 str SYSprint_formatted_bit(int *ret, ptr fmt, bit *s){
-	FILE *fd = getClient()->fdout;
+	stream *fd = getClient()->fdout;
 	char *format;
 	str msg;
 	str c;

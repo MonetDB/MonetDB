@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## Testing the box interfaces
 ## open de const box and display its content
 #
@@ -19,25 +17,22 @@
 #exit v;
 #const.close();	# save the content on persistent store
 #
-function Admin.main():int; #0:(main:int)
-    const.open(); #1:($1:void)
-    t := const.take("pi"); #2:(t:flt)<-($3:str)
-    io.print(t); #3:($4:int)<-(t:flt)
-barrier v := const.iterator(nme); #4:(v:lng)<-(nme:str) jump 8
-    io.print(nme); #5:($7:int)<-(nme:str)
-    redo v ; #6:(v:lng) jump 4
-exit v; #7:(v:lng)
-    const.close(); #8:($8:void)
-end main; #9:
+function Admin.main():int; #0  (main:int)
+    const.open(); #1 CONSTopen ($1:void)
+    t := const.take("pi"); #2 CONSTtake (t:flt)<-($3:str)
+    io.print(t); #3 CMDprint_val ($4:int)<-(t:flt)
+barrier v := const.iterator(nme); #4 CONSTiterator (v:lng)<-(nme:str) jump 7
+    io.print(nme); #5 CMDprint_val ($7:int)<-(nme:str)
+    redo v; #6  (v:lng) jump 4
+exit v; #7  (v:lng)
+    const.close(); #8 CONSTclose ($8:void)
+end main; #9  
 [ 3.147 ]
 [ "user" ]
-[ "database" ]
+[ "dbname" ]
 [ "dbfarm" ]
-[ "distribution" ]
-[ "monetrc" ]
-[ "architecture" ]
 [ "version" ]
-[ "environment" ]
+[ "config" ]
 [ "STORE_MEM" ]
 [ "STORE_MMAP" ]
 [ "STORE_COMPR" ]

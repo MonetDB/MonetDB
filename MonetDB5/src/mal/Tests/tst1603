@@ -14,7 +14,7 @@ print(d2);
 #zint:= multiplex.script("/",dint,d2);
 zint:= new(void,decimal);
 setSequenceBase(zint,0@0);
-barrier mloop := mal.bunStream(dint,h:void,B2:decimal);
+barrier mloop := mal.bunStream(dint,h, B2:decimal);
 	print(B2);
 	cr := decimal./(B2,d2);
 	print(cr);

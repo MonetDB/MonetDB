@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## the multiplex code blocks. Testing syntax errors
 #
 #b:= new(lng,lng);
@@ -16,4 +14,10 @@
 !           ^<identifier> or <unary operator> expected
 !ERROR: a:= b [+] b;
 !             ^operator expected
+function Admin.main():int; #0  unknown (main:int)
+    b := new(lng,lng); #1  unknown (b:any)<-(lng:lng)(lng:lng)
+    x := multiplex.+(b,b); #2  unknown (x:any)<-(b:any)(b:any)
+    d; #3  unknown (d:any)
+    a := b; #4  unknown (a:any)<-(b:any)
+end main; #5  unknown 
 >

@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## squeezer integration in MAL code blocks.
 ## the squeezer.access(V) implements a simple pruning of the
 ## code to disallow access to a particular function
@@ -24,32 +22,28 @@
 #exit	IllegalAccess;
 #	print("done");
 #
-function Admin.main():int; #0:(main:int)
-    p1 := 1; #1:(p1:int)<-($2:int)
-    s0 := squeezer.access("p1"); #2:(s0:int)<-($4:str)
-    p2 := p1; #3:(p2:int)<-(p1:int)
-catch IllegalAccess; #4:(IllegalAccess:str) jump 8
-    io.print("should not come here"); #5:($7:int)<-($8:str)
-    p3 := p1; #6:(p3:int)<-(p1:int)
-exit IllegalAccess; #7:(IllegalAccess:str)
-    io.print("done"); #8:($10:int)<-($11:str)
-end main; #9:
+function Admin.main():int; #0  (main:int)
+    p1 := 1; #1  (p1:int)<-($2:int)
+    s0 := squeezer.access("p1"); #2 sqzAccess (s0:int)<-($4:str)
+    p2 := p1; #3  (p2:int)<-(p1:int)
+catch IllegalAccess; #4  (IllegalAccess:str) jump 7
+    io.print("should not come here"); #5 CMDprint_val ($7:int)<-($8:str)
+    p3 := p1; #6  (p3:int)<-(p1:int)
+exit IllegalAccess; #7  (IllegalAccess:str)
+    io.print("done"); #8 CMDprint_val ($10:int)<-($11:str)
+end main; #9  
 entering sqzAccess blocking 1 p1
-    s0 := squeezer.access("p1"); #2:(s0:int)<-($4:str)
-    squeezer.AccessTst(p1); #10:($12:int)<-(p1:int)
-    s0 := squeezer.access("p1"); #2:(s0:int)<-($4:str)
-    squeezer.AccessTst(p1); #11:($13:int)<-(p1:int)
 Modified stmt sequence
-function Admin.main():int; #0:(main:int)
-    p1 := 1; #1:(p1:int)<-($2:int)
-    squeezer.AccessTst(p1); #2:($12:int)<-(p1:int)
-    p2 := p1; #3:(p2:int)<-(p1:int)
-catch IllegalAccess; #4:(IllegalAccess:str) jump 8
-    io.print("should not come here"); #5:($7:int)<-($8:str)
-    squeezer.AccessTst(p1); #6:($13:int)<-(p1:int)
-    p3 := p1; #7:(p3:int)<-(p1:int)
-exit IllegalAccess; #8:(IllegalAccess:str)
-    io.print("done"); #9:($10:int)<-($11:str)
-end main; #10:
+function Admin.main():int; #0  (main:int)
+    p1 := 1; #1  (p1:int)<-($2:int)
+    squeezer.AccessTst(p1); #2 sqzAccessTst ($12:int)<-(p1:int)
+    p2 := p1; #3  (p2:int)<-(p1:int)
+catch IllegalAccess; #4  (IllegalAccess:str) jump 7
+    io.print("should not come here"); #5 CMDprint_val ($7:int)<-($8:str)
+    squeezer.AccessTst(p1); #6 sqzAccessTst ($13:int)<-(p1:int)
+    p3 := p1; #7  (p3:int)<-(p1:int)
+exit IllegalAccess; #8  (IllegalAccess:str)
+    io.print("done"); #9 CMDprint_val ($10:int)<-($11:str)
+end main; #10  
 [ "done" ]
 >

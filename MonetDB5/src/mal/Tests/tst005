@@ -1,7 +1,9 @@
-	r:=0;
-	l:= r < 1;
-barrier l;
-	r:= r+1;
-	l:= false;
-	redo l;
-exit	l;
+# minimal barrier
+barrier	l:=1;
+	print(l);
+exit	l:= 2;
+	print(l);
+barrier m:=3;
+	leave m:= 7;
+exit	m:= 4;
+	print(m);

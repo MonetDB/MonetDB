@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 #s := "hello";
 #i := 1;
 #f := 3.14;
@@ -30,39 +28,39 @@
 #v:= typename(bbt); printf("bat %s\n",v);
 #
 #
-function Admin.main():int; #0:(main:int)
-    s := "hello"; #1:(s:str)<-($2:str)
-    i := 1; #2:(i:int)<-($4:int)
-    f := 3.14; #3:(f:flt)<-($6:flt)
-    c := 'a'; #4:(c:chr)<-($8:chr)
-    b := true; #5:(b:bit)<-($10:bit)
-    bb := mal.new(void,str); #6:(bb:bat[void,str])<-(void:void)(str:str)
-    st := mal.getType(s); #7:(st:int)<-(s:str)
-    system.printf("string %d\n",st); #8:($15:int)<-($16:str)(st:int)
-    it := mal.getType(i); #9:(it:int)<-(i:int)
-    system.printf("int %d\n",it); #10:($18:int)<-($19:str)(it:int)
-    ft := mal.getType(f); #11:(ft:int)<-(f:flt)
-    system.printf("flt %d\n",ft); #12:($21:int)<-($22:str)(ft:int)
-    ct := mal.getType(c); #13:(ct:int)<-(c:chr)
-    system.printf("chr %d\n",ct); #14:($24:int)<-($25:str)(ct:int)
-    bt := mal.getType(b); #15:(bt:int)<-(b:bit)
-    system.printf("bit %d\n",bt); #16:($27:int)<-($28:str)(bt:int)
-    bbt := mal.getType(bb); #17:(bbt:int)<-(bb:bat[void,str])
-    system.printf("bat %d\n",bbt); #18:($30:int)<-($31:str)(bbt:int)
-    v := ""; #19:(v:str)<-($33:str)
-    v := mal.typename(st); #20:(v:str)<-(st:int)
-    system.printf("string %s\n",v); #21:($34:int)<-($35:str)(v:str)
-    v := mal.typename(it); #22:(v:str)<-(it:int)
-    system.printf("int %s\n",v); #23:($36:int)<-($37:str)(v:str)
-    v := mal.typename(ft); #24:(v:str)<-(ft:int)
-    system.printf("flt %s\n",v); #25:($38:int)<-($39:str)(v:str)
-    v := mal.typename(ct); #26:(v:str)<-(ct:int)
-    system.printf("chr %s\n",v); #27:($40:int)<-($41:str)(v:str)
-    v := mal.typename(bt); #28:(v:str)<-(bt:int)
-    system.printf("bit %s\n",v); #29:($42:int)<-($43:str)(v:str)
-    v := mal.typename(bbt); #30:(v:str)<-(bbt:int)
-    system.printf("bat %s\n",v); #31:($44:int)<-($45:str)(v:str)
-end main; #32:
+function Admin.main():int; #0  (main:int)
+    s := "hello"; #1  (s:str)<-($2:str)
+    i := 1; #2  (i:int)<-($4:int)
+    f := 3.14; #3  (f:flt)<-($6:flt)
+    c := 'a'; #4  (c:chr)<-($8:chr)
+    b := true; #5  (b:bit)<-($10:bit)
+    bb := mal.new(void,str); #6 CMDBATnew (bb:bat[void,str])<-(void:void)(str:str)
+    st := mal.getType(s); #7 CMDtype (st:int)<-(s:str)
+    system.printf("string %d\n",st); #8 SYSprint_formatted_int ($15:int)<-($16:str)(st:int)
+    it := mal.getType(i); #9 CMDtype (it:int)<-(i:int)
+    system.printf("int %d\n",it); #10 SYSprint_formatted_int ($18:int)<-($19:str)(it:int)
+    ft := mal.getType(f); #11 CMDtype (ft:int)<-(f:flt)
+    system.printf("flt %d\n",ft); #12 SYSprint_formatted_int ($21:int)<-($22:str)(ft:int)
+    ct := mal.getType(c); #13 CMDtype (ct:int)<-(c:chr)
+    system.printf("chr %d\n",ct); #14 SYSprint_formatted_int ($24:int)<-($25:str)(ct:int)
+    bt := mal.getType(b); #15 CMDtype (bt:int)<-(b:bit)
+    system.printf("bit %d\n",bt); #16 SYSprint_formatted_int ($27:int)<-($28:str)(bt:int)
+    bbt := mal.getType(bb); #17 CMDtype (bbt:int)<-(bb:bat[void,str])
+    system.printf("bat %d\n",bbt); #18 SYSprint_formatted_int ($30:int)<-($31:str)(bbt:int)
+    v := ""; #19  (v:str)<-($33:str)
+    v := mal.typename(st); #20 CMDtypename (v:str)<-(st:int)
+    system.printf("string %s\n",v); #21 SYSprint_formatted_str ($34:int)<-($35:str)(v:str)
+    v := mal.typename(it); #22 CMDtypename (v:str)<-(it:int)
+    system.printf("int %s\n",v); #23 SYSprint_formatted_str ($36:int)<-($37:str)(v:str)
+    v := mal.typename(ft); #24 CMDtypename (v:str)<-(ft:int)
+    system.printf("flt %s\n",v); #25 SYSprint_formatted_str ($38:int)<-($39:str)(v:str)
+    v := mal.typename(ct); #26 CMDtypename (v:str)<-(ct:int)
+    system.printf("chr %s\n",v); #27 SYSprint_formatted_str ($40:int)<-($41:str)(v:str)
+    v := mal.typename(bt); #28 CMDtypename (v:str)<-(bt:int)
+    system.printf("bit %s\n",v); #29 SYSprint_formatted_str ($42:int)<-($43:str)(v:str)
+    v := mal.typename(bbt); #30 CMDtypename (v:str)<-(bbt:int)
+    system.printf("bat %s\n",v); #31 SYSprint_formatted_str ($44:int)<-($45:str)(v:str)
+end main; #32  
 string 11
 int 5
 flt 8

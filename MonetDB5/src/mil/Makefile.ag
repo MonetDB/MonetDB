@@ -1,14 +1,11 @@
 
-INCLUDES = top_builddir/src/gdk  top_builddir/src/monet   $(Z_LIBS) $(BZ_LIBS)
-
-# top_builddir/src/mal
+INCLUDES = -I../common -I../gdk  
 
 YFLAGS = -v -d
 
 bin_M2m = {
 	SOURCES = M2m.mx  mil_parser.mx conformance.mx
-	LIBS = ../gdk/libbat ../monet/libmonet \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)   \
-		$(Z_LIBS) $(BZ_LIBS)
-
+	LIBS = ../common/libmutils ../common/libstream ../gdk/libbat \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

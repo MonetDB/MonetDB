@@ -33,14 +33,15 @@ function dir(b:bat[int,str]):void;
 end dir;
 
 function dir(s:str):void;
+	print("Search directory by name");
 	t:= catalog.bbpNames();
 	tn:= like(t,s);
 	print(tn);
 	dir(tn);
 end dir;
-
+print("start test");
 b:=new(int,int);
-setColumn(b,"simplemind");
+setName(b,"simplemind");
 
 z:= catalog.bbpNames();
 dir(z);

@@ -1,27 +1,27 @@
-INCLUDES =  top_builddir/src/gdk top_builddir/src/monet \
-        top_builddir/include/atoms \
-        top_builddir/src/mal $(Z_CFLAGS) $(BZ_CFLAGS)
+INCLUDES =  -I../../common -I../../gdk \
+        -I../../modules/atoms \
+        -I../../mal $(Z_CFLAGS) $(BZ_CFLAGS)
 
 MTSAFE
 
-# install these libs in the pkglib
-LIBDIR = pkglib
-
 LIBS = {
+	DIR = pkglibdir
 	SEP = _
-	SOURCES = squeezer.mx mal.mx startup.mx box.mx multiplex.mx  \
+	SOURCES = squeezer.mx mal.mx mal_init.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx  streams.mx tcpip.mx catalog.mx ascii_io.mx \
-		threads.mx
+		thread.mx optimizer.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet \
+	LIBS = ../common/libmutils ../common/libstream ../../gdk/libbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 scripts_mal = {
-        DIR = pkgdatadir
-        SOURCES = startup.mal
+	DIR = sysconfdir/MonetDB/mal
+	SOURCES = mal_init.mal tcpip.mal thread.mal io.mal streams.mal \
+		ascii_io.mal enum.mal profiler.mal mal.mal squeezer.mal \
+		multiplex.mal const.mal bbp.mal box.mal catalog.mal optimizer.mal
 }
 
 EXTRA_DIST_DIR = Tests

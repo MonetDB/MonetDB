@@ -1,0 +1,3 @@
+
+SUBDIRS = parser server client  #odbc LINK_STATIC?tools
+

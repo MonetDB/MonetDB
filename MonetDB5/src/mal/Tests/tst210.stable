@@ -1,0 +1,34 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
+## simple renaming of a bat;
+#
+#b:= new(int,int);
+#insert(b,1,1);
+#print(b);
+#setName(b,"myhome");
+#setColumn(b,"first","last");
+#print(b);
+#
+function Admin.main():int; #0  (main:int)
+    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    bat.insert(b,1,1); #2 CMDinsert_bun ($3:bat[int,int])<-(b:bat[int,int])($4:int)($4:int)
+    io.print(b); #3 CMDprint_val ($5:int)<-(b:bat[int,int])
+    bbp.setName(b,"myhome"); #4 CMDbbprename ($6:bat[int,int])<-(b:bat[int,int])($7:str)
+    bbp.setColumn(b,"first","last"); #5 CMDbbpsetColumns ($8:bat[int,int])<-(b:bat[int,int])($9:str)($10:str)
+    io.print(b); #6 CMDprint_val ($11:int)<-(b:bat[int,int])
+end main; #7  
+#-----------------#
+# BAT:	  tmp_4	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  1	  ]
+#-----------------#
+# BAT:	  myhome  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  1	  ]
+>

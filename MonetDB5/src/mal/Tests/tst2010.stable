@@ -1,49 +1,52 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ##The 2000 serie  is focussed on parallelism
 ##we start with a non-parallel version
 #
 #function clkticks(n:int):void;
+#	printf("start clock \n");
 #barrier	b:= n>0;
-#	printf("clock tick\n");
+#	printf("tick\n");
 #	alarm.sleep(2);
 #	n:= n-1;
 #	redo b;
-#end	b;
+#exit	b;
 #end clkticks;
-function Admin.clkticks(n:int):void; #0:(clkticks:void)<-(n:int)
-barrier b := calc.>(n,0); #1:(b:bit)<-(n:int)($3:int) jump 7
-    system.printf("clock tick\n"); #2:($4:int)<-($5:str)
-    alarm.sleep(2); #3:($6:void)<-($7:int)
-    n := calc.-(n,1); #4:(n:int)<-(n:int)($8:int)
-    redo b ; #5:(b:bit) jump 1
-end b; #6:(b:bit)
-end clkticks; #7:
+function Admin.clkticks(n:int):void; #0  (clkticks:void)<-(n:int)
+    system.printf("start clock \n"); #1 SYSprint_str ($2:int)<-($3:str)
+barrier b := calc.>(n,0); #2 CALCcompGTintint (b:bit)<-(n:int)($5:int) jump 7
+    system.printf("tick\n"); #3 SYSprint_str ($6:int)<-($7:str)
+    alarm.sleep(2); #4 CLKsleep ($8:void)<-($9:int)
+    n := calc.-(n,1); #5 CALCbinarySUBintint (n:int)<-(n:int)($10:int)
+    redo b; #6  (b:bit) jump 2
+exit b; #7  (b:bit)
+end clkticks; #8  
 #
-#thread 	hdl:bat[int,str];
+#thread 	hdl;
+#	printf("Start thread with id %d\n",hdl);
 #	clkticks(2);
 #	printf("About to exit child\n");
-#end	hdl;
+#exit	hdl;
 #	printf("Wait for child to exit too\n");
 #	#wait hdl;
 #	#printf("child has finished\n");
 #
-function Admin.main():int; #0:(main:int)
-thread hdl; #1:(hdl:any) jump 5
-    Admin.clkticks(2); #2:($2:void)<-($3:int)
-    system.printf("About to exit child\n"); #3:($4:int)<-($5:str)
-end hdl; #4:(hdl:any)
-    system.printf("Wait for child to exit too\n"); #5:($6:int)<-($7:str)
-end main; #6:
-create the child 1
+function Admin.main():int; #0  (main:int)
+thread hdl; #1  (hdl:int) jump 5
+    system.printf("Start thread with id %d\n",hdl); #2 SYSprint_formatted_int ($2:int)<-($3:str)(hdl:int)
+    Admin.clkticks(2); #3  ($4:void)<-($5:int)
+    system.printf("About to exit child\n"); #4 SYSprint_str ($6:int)<-($7:str)
+exit hdl; #5  (hdl:int)
+    system.printf("Wait for child to exit too\n"); #6 SYSprint_str ($8:int)<-($9:str)
+end main; #7  
 Wait for child to exit too
-clock tick
-clock tick
+Start thread with id 8195
+start clock 
+tick
+tick
 About to exit child
 >

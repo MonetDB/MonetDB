@@ -42,20 +42,16 @@ html
 /* #define DEBUG_MAL_FCN */
 /* #define DEBUG_CLONE*/
 
-mal_export Symbol	newFunction(str nme);
+mal_export Symbol	newFunction(str nme,int kind);
 mal_export void		clearFcn(MalBlkPtr m);
 mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 
-mal_export void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
-mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
-mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
-mal_export void	chkExit(MalBlkPtr mb, InstrPtr pp);
-mal_export void chkLabel(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr newCall(str modname, str fcnname, int kind);
 mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
 
-#define MALEXCEPTION "MALexception"
-#define throwMessage(Fcn,Msg)	throwException(MALEXCEPTION,Fcn,"%s",Msg)
+mal_export Symbol	getSymbol(Scope scope, InstrPtr p);
+mal_export void chkFlow(MalBlkPtr mb);
+mal_export int getBarrierEnvelop(MalBlkPtr mb);
 
 /*VARARGS*/
 mal_export str throwException(str nme, str fcn, char *format, ...);
@@ -63,9 +59,10 @@ mal_export str	raiseException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export str appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
 mal_export str locateException(MalBlkPtr mb, int pc, str oldmsg);
 mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
-mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
-mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
+mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 
+#define MALEXCEPTION "MALexception"
+#define throwMessage(Fcn,Msg)	throwException(MALEXCEPTION,Fcn,"%s",Msg)
 #endif /*  _MAL_FCN_H*/
 @-
 The MAL functions are constructed incrementally while parsing the source.
@@ -73,16 +70,16 @@ The variable is used to hold the return value.
 @c
 #include "mal_function.h"
 
-Symbol newFunction(str nme){
+Symbol newFunction(str nme,int kind){
 	Symbol s;
 	InstrPtr p;
 	MalBlkPtr mb;
 	int i,j;
 
-	s = newSymbol(nme,FUNCTIONsymbol);
-	p = newInstruction(FUNCTIONsymbol);
+	s = newSymbol(nme,kind);
+	p = newInstruction(kind);
 	p->fcnname = GDKstrdup(nme);
-	p->argv[0]= newVariable(s->def,GDKstrdup(nme),TYPE_any);
+	getDestVar(p)= newVariable(s->def,GDKstrdup(nme),TYPE_any);
 	pushInstruction(s->def,p);
 	return s;
 }
@@ -93,11 +90,39 @@ InstrPtr newCall(str modname, str fcnname, int kind){
 	p->fcnname= GDKstrdup(fcnname);
 	return p;
 }
+@-
+Optimizers may be interested in the function definition
+for obtaining properties. Rather then polution of the
+instruction record, we use a lookup function until it
+becomes a performance hindrance.
+@c
+Symbol	getSymbol(Scope scope, InstrPtr p){
+	Scope m;
+	Symbol s;
+
+	for(m= findScope(scope,p->modname); m; m= m->outer)
+        if(idcmp(m->name, p->modname)==0 ) {
+                s= m->subscope[getSubScope(p->fcnname)];
+                for(; s; s= s->peer)
+                if( getSignature(s)->fcn == p->fcn) return s;
+        }
+
+	GDKerror("getSymbol:internal error\n");
+	return 0;
+}
 @+ Flow of control
-The nesting of BARRIER and CATCH statements with their associated
-flow of control primitives LEAVE, RETRY, and RAISE should form a valid
+The nesting of (BARRIER, CATCH) and EXIT statements with their associated
+flow of control primitives LEAVE, REDO and RAISE should form a valid
 hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.
+
+The operands of the LEAVE and REDO operators are either a single
+identifier or an assignment. In the former case, they are simply
+interpreted as  goto statements. If the REDO contains an assignment,
+it overrules the barrier expression, by providing an alternative test.
+If the LEAVE instruction contains an expression, it overrules any
+assignment in the EXIT statement and continues processing directly 
+following the EXIT. These jumps required are set accordingly.
 
 Check barrier should ensure that both exit-points of a block for the
 variable referenced in 'pp' exists. In addition, we should ensure
@@ -106,8 +131,6 @@ counting the begin/end pairs. It should balance for every block.
 Currently, the barrier control variables should be of type bit,
 sht, int, or lng. A number zero is interpreted as end of the barrier
 block.
-Finally, the barrier label may not be used in any assigment other
-then the barrier statement itself. It may be read, though.
 
 To speed-up interpretation of the control statements, we also
 include the program-counter in instruction record. This implies
@@ -121,161 +144,159 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 	if( getInstrPtr(mb,i)==p) return i;
 	return -1;
 }
+
+@h
+#define functionStart(X) ((X)->token == FUNCTIONsymbol || \
+			  (X)->token == COMMANDsymbol || \
+			  (X)->token == STREAMsymbol )
+#define functionExit(X)	 ((X)->token == ENDDEFsymbol)
+
+#define blockStart(X)	((X)->barrier == BARRIERsymbol || \
+		     (X)->barrier == CATCHsymbol ||	\
+		     (X)->barrier == THREADsymbol)
+#define blockExit(X) (X)->barrier == EXITsymbol
+#define blockCntrl(X) ((X)->token== LEAVEsymbol || (X)->token== REDOsymbol ||\
+			((X)->token== ASSIGNsymbol && ( \
+			 (X)->barrier== LEAVEsymbol ||  \
+			 (X)->barrier== REDOsymbol  )) )
+#define assignCntrl(X)	((X)->token== ASSIGNsymbol ||\
+			  (X)->token== CMDcall ||\
+			  (X)->token== PATcall ||\
+			  (X)->token== FCNcall )
+
 @-
-Redo and leave instructions may not appear within a parallel
-block, because the process parent already proceeded 
-@= checkPar
-if(lastFork!= -1) GDKerror("@1 illegal in parallel block\n");
+Checking the control flow structure is done by a single pass over the
+MAL program after the program has been type-checked.
 @c
-int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
-{	int i,j, v, endBlk= -1; 
-	int lastFork = -1;
+#define DEPTH 128
 
-	v = pp->argv[0];
-	for(i= begBlk+1; i<mb->stop; i++){
-		InstrPtr p= getInstrPtr(mb,i);
-		if( p->barrier==BARRIERsymbol || p->barrier==CATCHsymbol ||
-		    p->barrier== THREADsymbol) {
-			if( p->argv[0] != v){
-				i= chkBrackets(mb,p,i);
-				continue;
-			}
-			GDKerror("recursive block structure %s in %s[%d]\n",
-				getVarName(mb,v), getFcnName(mb),getPC(mb,pp));
-			return i;
-		}  else if(p->barrier && p->barrier != EXITsymbol)
-			printf("unexpected barrier %d\n", i);
-		if( p->barrier == EXITsymbol){
-			if( p->argv[0] == v) {
-				pp->jump = i+1;
-				/* retrofit LEAVE/REDO instructions */
-				/* and check their illegal use in THREAD block*/
-				for(j=begBlk+1; j<i; j++){
-					InstrPtr p1= getInstrPtr(mb,j);
-					if( p1->barrier == THREADsymbol) 
-						lastFork = j;
-					if( p1->barrier == EXITsymbol && 
-					    p1->argv[0]== lastFork)  
-						lastFork = -1;
-					if( p1->token == REDOsymbol && 
-						p1->argv[0]==v ) {
-						p1->jump= begBlk;
-						@:checkPar(REDO)@
-					}
-
-					if(p1->token== LEAVEsymbol &&
-					   p1->argv[0]==v){
-						p1->jump= i+1;
-						@:checkPar(LEAVE)@
-					}
-				}
-				return i;
-			}
-			mb->errors++;
-			GDKerror("exit-label '%s' doesnot match '%s' in %s[%d]\n",
-				getVarName(mb,p->argv[0]),
-				getVarName(mb,v), getFcnName(mb),getPC(mb,p)
-				);
-			return i;
-		} 
-		if( p->argv[0]== v && p != pp){
-			if( p->token== REDOsymbol ){
-				p->jump= begBlk;
-				continue;
-			}
-			if( p->token== LEAVEsymbol) continue;
-			if( pp->token== CATCHsymbol) continue;
-			if( pp->barrier== THREADsymbol) continue;
-			GDKerror("label '%s' is readonly in %s[%d]\n",
-				getVarName(mb,v), getFcnName(mb),getPC(mb,p));
-			mb->errors++;
-		}
-	}
-	GDKerror("begin-label '%s' without exit-label in %s\n", 
-		getVarName(mb,v), getFcnName(mb));
-	mb->errors++;
-	return i;
-}
-void chkCntrl(MalBlkPtr mb, InstrPtr pp)
-{	int i, v;
-
-	v = pp->argv[0];
-	if( v>=0)
-	for(i=0; i<mb->stop;i++){
-		InstrPtr p= getInstrPtr(mb,i);
-		if( pp == p  && p->barrier && p->argv[0] == v){
-			if( p->barrier != EXITsymbol)
-				i = chkBrackets(mb,pp,i);
-		} 
-	}
-}
-void chkBarrier(MalBlkPtr mb, InstrPtr pp)
-{
-	chkCntrl(mb,pp);
-	if( pp->barrier == BARRIERsymbol || pp->barrier == THREADsymbol)
-	if( getArgType(mb,pp,0) != TYPE_bit && getArgType(mb,pp,0)!= TYPE_any 
-	 && getArgType(mb,pp,0) != TYPE_sht && getArgType(mb,pp,0)!= TYPE_lng 
-	 && getArgType(mb,pp,0) != TYPE_int ){
-		GDKerror("barrier '%s' should be of type bit or number in %s[%d]\n",
-			getVarName(mb,pp->argv[0]),
-			getFcnName(mb), getPC(mb,pp));
-	}
-}
-void chkCatch(MalBlkPtr mb, InstrPtr pp)
-{
-	chkCntrl(mb,pp);
-}
-void chkThread(MalBlkPtr mb, InstrPtr pp)
-{
-	chkCntrl(mb,pp);
-}
-@-
-Loose END-statements should also be catched.
-@c
-void chkExit(MalBlkPtr mb, InstrPtr pp)
-{	int i, v;
+void chkFlow(MalBlkPtr mb)
+{	int i,j,k, v;
+	int  pc[DEPTH];
+	int  var[DEPTH];
+	InstrPtr stmt[DEPTH];
+	int btop=0;
 	InstrPtr p;
 
-	v = pp->argv[0];
-	if( v>=0)
-	for(i=0; i<mb->stop;i++){
+	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if( (p->barrier == BARRIERsymbol ||
-		     p->barrier == CATCHsymbol ||
-		     p->barrier == THREADsymbol) &&
-		     p->argv[0] == v){
-			return;
-		} 
+		if( blockStart(p) ){
+			if(btop== DEPTH){
+				GDKerror("Too many nested MAL blocks\n");
+				mb->errors++;
+				return;
+			}
+			pc[btop]= i;
+			v= var[btop]= getDestVar(p);
+			stmt[btop]=p;
+
+			for(j=btop-1;j>=0;j--)
+			if( v==var[j]){
+				GDKerror("recursive %s[%d] shields %s[%d]\n",
+					getVarName(mb,v), pc[j],
+					getFcnName(mb),pc[i]);
+				mb->errors++;
+			}
+
+			if( getVarType(mb,v) != TYPE_bit && 
+			    getVarType(mb,v)!= TYPE_any &&
+			    getVarType(mb,v) != TYPE_sht && 
+			    getVarType(mb,v)!= TYPE_lng && 
+			    getVarType(mb,v) != TYPE_int &&
+			    getVarType(mb,v) != TYPE_str ){
+				GDKerror("barrier '%s' should be of type bit or number in %s[%d]\n",
+				getVarName(mb, v), getFcnName(mb), i);
+			}
+			btop++;
+
+		} else  
+		if( blockExit(p) ){
+			v= getDestVar(p);
+			if( btop>0 && var[btop-1] != v){
+				mb->errors++;
+				GDKerror("exit-label '%s' doesnot match '%s' in %s[%d]\n",
+				getVarName(mb,v),
+				getVarName(mb,var[btop-1]),
+				getFcnName(mb),i);
+			}
+			if(btop==0){
+				GDKerror("exit-label '%s' without begin-label in %s[%d]\n",
+				getVarName(mb,v), getFcnName(mb),i);
+				continue;
+			}
+			/* search the matching block */
+			for(j=btop-1;j>=0;j--)
+			if( var[j]==v) break;
+			if(j>=0) btop= j; else btop--;
+
+			/* retrofit LEAVE/REDO instructions */
+			/* and check their illegal use in THREAD block*/
+			stmt[btop]->jump= i;
+			for(k=pc[btop]; k<i; k++){
+			InstrPtr p1= getInstrPtr(mb,k);
+			if( getDestVar(p1)==v ) {
+				if( p1->token == REDOsymbol ) 
+					p1->jump= pc[btop];
+				if(p1->token== LEAVEsymbol )
+					p1->jump= i;
+				/* handle assignments with leave/redo option*/
+				if( assignCntrl(p1) ){
+					if(p1->barrier== LEAVEsymbol )
+						p1->jump= i;
+					if( p1->barrier==REDOsymbol )
+						p1->jump= pc[btop];
+				}
+			}
+			}
+		}  else 
+		if( blockCntrl(p)){
+			v= getDestVar(p);
+			for(j=btop-1;j>=0;j--)
+			if( var[j]==v) break;
+			if(j<0){
+				GDKerror("label '%s' not in guarded block in %s[%d]\n",
+				getVarName(mb,v),getFcnName(mb),i);
+				mb->errors++;
+			}
+		} else
+		if( isaSignature(p) && i ){
+			str msg=instruction2str(mb,p,TRUE);
+                        GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
+                        GDKfree(msg);
+                        mb->errors++;
+		}
 	}
-	mb->errors++;
-	GDKerror("exit-label '%s' without begin-label in %s[%d]\n", 
-		getVarName(mb,v), getFcnName(mb),getPC(mb,pp));
+	for(btop--; btop>=0;btop--)
+	GDKerror("begin '%s' without exit in %s[%d]\n",
+		getVarName(mb,var[btop]),getFcnName(mb),i);
+	p= getInstrPtr(mb,0);
+	if( !isaSignature(p))
+		GDKerror("SYNTAX ERROR: signature missing\n");
 }
 @-
-The chkLabel routine assures that REDO, LEAVEs and ENDs are
-properly contained within a single guarded- or iterator- block.
+A code may contain temporary names for marking barrier blocks.
+Since they are introduced by the compiler, the parser should locate
+them itself when encountering the LEAVE,EXIT,REDO.
+The starting position is mostly the last statement entered.
+Purposely, the nameless envelops searches the name of the last
+unclosed block. All others are ignored.
 @c
-void chkLabel(MalBlkPtr mb, InstrPtr pp)
-{	int i,k,n, begBlk = -1;
-
-	k= pp->argv[0];
-	n = getPC(mb,pp);
-	for(i=0; i<mb->stop;i++){
-		InstrPtr p= getInstrPtr(mb,i);
-		if( p->argv[0]==k && 
-		   (p->barrier == BARRIERsymbol ||
-		    p->barrier == CATCHsymbol ||
-		    p->barrier== THREADsymbol)){
-			begBlk = i;
+int getBarrierEnvelop(MalBlkPtr mb){
+	int i,pc;
+	InstrPtr p;
+	for(pc= mb->stop-2 ; pc>=0; pc--){
+		p= getInstrPtr(mb,pc);
+		if( blockExit(p)){
+			int l= p->argv[0];
+			for(; pc>=0;pc--){
+				p= getInstrPtr(mb,pc);
+				if( blockStart(p) && p->argv[0]==l) break;
+			}
+			continue;
 		}
-		if( p->token == EXITsymbol && p->argv[0]==k) {
-			if( begBlk>=0 && n >=begBlk && n<=i) return;
-			begBlk= -1;
-		}
+		if( blockStart(p) ) return p->argv[0];
 	}
-	mb->errors++;
-	GDKerror("label '%s' not in guarded block in %s[%d]\n",
-		getVarName(mb,k), getFcnName(mb), getPC(mb,pp));
+	return newTmpVariable(mb,TYPE_any);
 }
 @+ Function cloning
 MAL supports functions defined with type variables.
@@ -295,15 +316,15 @@ This may imply propagation of a type to a component type of
 a BAT.
 Replace a particular variable, indexed by v
 @c
-void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
+void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int i,x;
 #ifdef DEBUG_MAL_FCN
-	printf("replace type variable %d by type %d\n",v,t);
+	stream_printf(GDKout,"replace type variable %d by type %d\n",v,t);
 #endif
 	for(i=0;i<p->argc; i++)
 	if( isPolymorphic(x= getArgType(mb,p,i))) {
 #ifdef DEBUG_MAL_FCN
-		printf(" %d x= %d\n",i,x);
+		stream_printf(GDKout," %d x= %d\n",i,x);
 #endif 
 		if( isaBatType(x)){
 			int head,tail;
@@ -340,10 +361,10 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	InstrPtr pp;
 
 #ifdef DEBUG_CLONE
-	printf("clone the function %s to scope %s\n",
+	stream_printf(GDKout,"clone the function %s to scope %s\n",
 			proc->name,scope->name);
 #endif
-	new= newFunction(GDKstrdup(proc->name));
+	new= newFunction(GDKstrdup(proc->name), getSignature(proc)->token );
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 	pp = getSignature(new);
@@ -359,7 +380,7 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 			replaceTypeVar(new->def, pp, getTailIndex(v), tail);
 		} else
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
-	} /* else printf("%d is %d\n",i,getArgType(mb,pp,i));*/
+	} /* else stream_printf(GDKout,"%d is %d\n",i,getArgType(mb,pp,i));*/
 	/* include the function at the proper place in the scope */
 	insertSymbol(scope,new);
 	/* clear polymorphic */
@@ -367,17 +388,23 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
                 pp= getInstrPtr(new->def,i);
 		pp->polymorphic= 0;
 	}
-
+	/* clear type fixations */
+	for(i=0;i< new->def->vtop; i++)
+		new->def->var[i]->fixtype=0;
+	new->def->errors= 0;
 	/* check for errors after fixation , TODO*/
 	chkProgram(scope,new->def);
 	if( new->def->errors){
+		str err;
 		GDKerror("Error in cloned function\n");
+		err= function2str(new->def,LIST_MAL_ALL);
+		GDKerror("%s",err);
+		GDKfree(err);
 		showErrors(getClient());
-		printFunction(GDKout, new->def);
 	}
 #ifdef DEBUG_CLONE
-	printf("newly cloned function added to %s %d \n",scope->name,i);
-	printFunction(stdout,new->def);
+	stream_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);
+	printFunction(GDKout,new->def, LIST_MAL_ALL);
 #endif
 	return new;
 }
@@ -449,11 +476,8 @@ For commands we do not have to clone the routine. We merely have to
 assure that the type-constraints are obeyed. The resulting type
 is returned.
 @c
-malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p){
-	return TYPE_any;
-}
-void printFunction(FILE *fd, MalBlkPtr mb){
+void printFunction(stream *fd, MalBlkPtr mb, int flg){
 	int i;
 	for(i=0;i<mb->stop;i++)
-	printInstruction(fd,mb, getInstrPtr(mb,i));
+	printInstruction(fd,mb, getInstrPtr(mb,i),flg);
 }

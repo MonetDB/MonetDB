@@ -1,24 +1,28 @@
 
-INCLUDES = top_builddir/src/gdk top_builddir/src/monet \
-	top_builddir/include/atoms \
-	top_builddir/src/mal 
-#$(Z_CFLAGS) $(BZ_CFLAGS)
+INCLUDES = -I../../common -I../../gdk \
+	../../../include/atoms \
+	-I../../mal 
 
 MTSAFE
 
-# install these libs in the pkglib
-LIBDIR = pkglib
-
 LIBS = {
+	DIR = pkglibdir
 	SEP = _
 	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
-		mapi.mx startup.mx mmath.mx lock.mx alarm.mx \
+		mapi.mx kernel_init.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx aggrX3.mx 
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet \
+	LIBS = ../common/libmutils ../common/libstream ../../gdk/libbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
+scripts_mal = {
+	DIR = sysconfdir/MonetDB/kernel
+	SOURCES = kernel_init.mal calc.mal bat.mal algebra.mal system.mal \
+		unix.mal mapi.mal mmath.mal lock.mal alarm.mal batcalc.mal \
+		group.mal aggrX3.mal
+}
+
 
 EXTRA_DIST_DIR = Tests

@@ -1,3 +1,26 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @f alarm
 @a M.L. Kersten, P. Boncz
 @t Timers and Timed Interrupts
@@ -65,7 +88,7 @@ The timer is disabled when no timer events are outstanding.
  *		   Peter Boncz <Peter.Boncz@cwi.nl>
  */
 
-#include <monet.h> 
+#include "mal.h"
 #ifdef HAVE_SYS_SIGNAL_H
 # include <sys/signal.h> 
 #endif
@@ -98,6 +121,7 @@ void CLKinitTimer(int sec, int usec){
 A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
 @c
+#ifdef SIGALRM
 MT_Sema CLKalarm(int t, str action){
         int     j;
         int     k; 
@@ -124,11 +148,13 @@ MT_Sema CLKalarm(int t, str action){
         }
         return timer[k].sema; 
 }
+#endif
 @- 
 Once a timer interrupt occurs, we should inspect the timer queue and
 emit a notify signal.
 @c
-void CLKsignal(int nr){
+#ifdef SIGALRM
+static RETSIGTYPE CLKsignal(int nr){
 	int restype;
 	int k=timerTop;
         int t; 
@@ -156,21 +182,30 @@ void CLKsignal(int nr){
                 CLKinitTimer(timer[timerTop-1].alarm_time, 0); 
         }
 }
+#endif
 
 str CLKprelude(){
+#ifdef SIGALRM
         (void) signal(SIGALRM, (void (*)()) CLKsignal);
 	return MAL_SUCCEED;
+#else
+	return throwMessage("alarm.prelude", "SIGALRM not set");
+#endif
 }
 
 str CLKepilogue(){
+#ifdef SIGALRM
 	int k;
-#if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32))
-        (void) sigignore(SIGALRM);
+#if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32) || defined(__MACH__))
+        (void) signal(SIGALRM,SIG_IGN);
 #endif
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action) GDKfree(timer[k].action);
 	}
 	return MAL_SUCCEED;
+#else
+	return throwMessage("alarm.epilogue", "SIGALRM not set");
+#endif
 }
 
 str CLKusec(int *ret){
@@ -184,7 +219,7 @@ str CLKsleep(int *res,int *secs){
         if (*secs < 0) {
                 return throwMessage("alarm.sleep", "negative delay");
         } else {
-		sleep(*secs);
+		MT_sleep_ms(*secs *1000);
 /*
 		MT_Sema s = CLKalarm(*secs+time(0), 0);
 		(void)CLKprelude();
@@ -200,7 +235,11 @@ str CLKsetalarm(int *res, int *secs, str *action){
         if (*secs < 0) {
                 return throwMessage("alarm.setalarm", "negative delay");
         } else {
+#ifdef SIGALRM
                 (void) CLKalarm(*secs+time(0), *action);
+#else
+		return throwMessage("alarm.setalarm", "SIGALRM not set");
+#endif
         }
         return MAL_SUCCEED;
 }

@@ -12,8 +12,8 @@ setoid(o);
 
 b:= new(int,int);
 printf("#~BeginVariableOutput~#\n"); 
-#binfo:= info(b);
-#err:= print(binfo); 
+binfo:= info(b);
+print(binfo); 
 printf("#~EndVariableOutput~#\n");
 
 profiler.start();

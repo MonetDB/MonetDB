@@ -167,6 +167,7 @@ fcn ENUMconv[MAX_ENUM*4+1] = {
 @= block
 int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 	int l; ptr v; 
+	str s;
 	BAT *b = BATdescriptor(ENUMmap[mapid]);
 
 	if (*src == @1_nil) {
@@ -177,7 +178,8 @@ int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 	}
 	if (b->htype != TYPE_str) {
 		fcn tostr = BATatoms[b->htype].atomToStr;
-		return (*tostr)(dst, len, v);
+		l= (*tostr)(dst, len, v);
+		return l;
 	}
 	l = strLen(v);
 	if (*len < l) {
@@ -185,7 +187,7 @@ int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 		*dst = (char*) GDKmalloc(*len = l);
 	}
 	memcpy(*dst, v, l);
-	return l; 
+	return (l-1);  /* return string length excluding eos */
 }
 int enum@1Fromstr(int mapid, str src, int* len, @1** dst){
 	int r, l = 0;
@@ -228,11 +230,11 @@ static int enum@1@2Fromstr(str src, int* len, @2** dst){
 int ENUMatom(int i, BAT *h){
 	str name= h->batId;
 	if (BATcount(h) > 255) {
-		ATOMproperty(name, "storage", (fcn) TYPE_sht); 
+		ATOMproperty(name, "storage", (GDKfcn) TYPE_sht); 
 		ATOMproperty(name, "tostr", ENUMconv[i*4+2]);
 		ATOMproperty(name, "fromstr", ENUMconv[i*4+3]);
 	} else {
-		ATOMproperty(name, "storage", (fcn) TYPE_chr); 
+		ATOMproperty(name, "storage", (GDKfcn) TYPE_chr); 
 		ATOMproperty(name, "tostr", ENUMconv[i*4]);
 		ATOMproperty(name, "fromstr", ENUMconv[i*4+1]);
 	}
@@ -251,11 +253,11 @@ str ENUMreload(int *retval, int bid) {
 		if (ENUMmap[i] == 0) {
 			char *name = h->batId;
 			if (BATcount(h) > 255) {
-				ATOMproperty(name, "storage", (fcn) TYPE_sht); 
+				ATOMproperty(name, "storage", (GDKfcn) TYPE_sht); 
 				ATOMproperty(name, "tostr", ENUMconv[i*4+2]);
 				ATOMproperty(name, "fromstr", ENUMconv[i*4+3]);
 			} else {
-				ATOMproperty(name, "storage", (fcn) TYPE_chr); 
+				ATOMproperty(name, "storage", (GDKfcn) TYPE_chr); 
 				ATOMproperty(name, "tostr", ENUMconv[i*4]);
 				ATOMproperty(name, "fromstr", ENUMconv[i*4+1]);
 			}

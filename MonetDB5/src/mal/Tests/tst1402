@@ -14,3 +14,4 @@ e1:= 13:enum;
 print(e1);
 f1:= 14:fruit;
 print(f1);
+

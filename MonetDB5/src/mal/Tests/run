@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "Initialize database"
+rm -rf /usr/mk/Linux/var/MonetDB/demo/*
+
+for f in  `ls tst??? tst1??? tst2??? tst3???`
+do
+	echo "---->" $f
+	Mserver -c tst.conf $f </dev/null > $f.output
+	diff $f.output $f.stable
+done

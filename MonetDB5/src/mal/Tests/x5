@@ -1,0 +1,3 @@
+barrier ha_a:= true;
+	print("hello");
+exit ha_a;

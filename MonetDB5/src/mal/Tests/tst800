@@ -3,9 +3,9 @@
 # take a local copy
 	v:str := const.take("version");
 	u:str := const.take("user");
-	db:str:= const.take("database");
+	db:str:= const.take("dbname");
 	df:str:= const.take("dbfarm");
-	dd:str:= const.take("distribution");
+#	dd:str:= const.take("distribution");
 #	bb:bat[void,str] := const.take("environment");
 
 # how to obtain a copy of all objects in a space?

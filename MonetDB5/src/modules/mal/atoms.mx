@@ -74,7 +74,7 @@ pattern heap(nme:str):int    = atomsHeap;
 #include "mal_resolve.h"
 #include "mal_stack.h"
 
-#include "monet.h"
+#include "mal_function.h"
 #define DEBUG_MAL_ATOMS 1
 #endif /*  _MAL_ATOMS*/
 

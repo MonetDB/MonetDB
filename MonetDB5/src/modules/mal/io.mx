@@ -66,13 +66,6 @@ atom module bipipe : lng;
 
 module io;
 
-command stdin() : fstream = io_stdin 
-comment "return the input fstream to the database client";
-command stderr() : fstream = io_stderr 
-comment "return the error fstream for the database console";
-command stdout() : fstream = io_stdout 
-comment "return the output fstream for the database client";
-
 command fopen ( filename:str, mode:str ) : fstream = io_fopen 
 comment "See: man fopen. Returns fstream, or fstream(nil) on failure.";
 command freopen ( filename:str, mode:str, f:fstream ) : fstream = io_freopen 
@@ -141,6 +134,8 @@ comment "Print an n-ary table to a file, using order of BAT [1..argc].";
 
 pattern print(val:any):int = CMDprint_val
 	comment "Print a MIL value between square brackets.";
+pattern prompt(val:any):int = CMDprompt_val
+	comment "Print a MIL value between square brackets.";
 pattern printft(val:any):int = CMDprint_ft
 	comment "Select default format ";
 
@@ -186,9 +181,6 @@ quit;
 @{
 @* Implementation Code
 
-@= fileCheck
-#define FILEP_CHECK(fp) if (!fp) \
-		return throwMessage( "io.@1","Incorrect file pointer"); 
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -217,7 +209,7 @@ quit;
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <blob.h>
+#include "blob.h"
 #include "mal.h"
 
 typedef struct {
@@ -226,21 +218,19 @@ typedef struct {
 
 typedef FILE* fstream;
 
+#define fileCheck(fp) if (!fp) \
+	return throwMessage( "io.@1","Incorrect file pointer"); 
 
 
 #endif /* _IO_H_ */
 
 @c
 #include "io.h"
-#include "monet.h"
-
-str io_stdin (fstream *ret) { *ret = GDKin;  return MAL_SUCCEED; }
-str io_stdout(fstream *ret) { *ret = GDKout; return MAL_SUCCEED; }
-str io_stderr(fstream *ret) { *ret = stderr; return MAL_SUCCEED; }
+#include "mal_function.h"
 
 str io_fclose(int *ret, fstream* filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(fclose)@
+   fileCheck(fp)
    if (fclose(fp) < 0) {
 	return throwMessage("io.fclose"," failed");
    }
@@ -249,7 +239,7 @@ str io_fclose(int *ret, fstream* filepp ){
 
 str io_fflush(int *ret, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(fflush)@;
+   fileCheck(fp);
    (void)fflush(fp);
    return MAL_SUCCEED;
 }
@@ -269,7 +259,7 @@ str io_fdpipe(fstream *retval, bipipe* p, bit *up, str *mode){
 
 str io_feof( bit *res, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(feof)@;
+   fileCheck(fp);
    *res = feof(fp)?TRUE:FALSE;
    return MAL_SUCCEED;
 }
@@ -282,7 +272,7 @@ str io_fopen( fstream *res, str *name, str *mode ){
 
 str io_freopen( fstream *res, str *name, str *mode, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(freopen)@;
+   fileCheck(fp);
    *res = freopen(*name,*mode,fp);
    if (!*res) *res = *(fstream*) ATOMnilptr(TYPE_ptr);
    return MAL_SUCCEED;
@@ -302,7 +292,7 @@ str io_fread( blob **res, fstream *filepp, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int err = -1;
    str buf;
-   @:fileCheck(fread)@;
+   fileCheck(fp);
    buf = (str) GDKmalloc( sizeof(int) + *nbytes );
    if ((*res = (blob*) buf) != NULL){
    	err = fread(buf+sizeof(int),1,*nbytes,fp);
@@ -318,7 +308,7 @@ str io_fread( blob **res, fstream *filepp, int *nbytes ){
 str io_fwrite_str(int *ret, fstream *filepp, str *buf, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = strlen(*buf); 
-   @:fileCheck(fwrite_str)@;
+   fileCheck(fp);
    if (*nbytes < n) n = *nbytes;
    if (fwrite(*buf,1,n,fp) < (size_t) n) {
       return throwMessage("io.fwrite_str"," failed");
@@ -330,7 +320,7 @@ str io_fwrite(int *ret, fstream *filepp, blob **b, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = *nbytes;
    str buf = (str) *b;
-   @:fileCheck(fwrite)@;
+   fileCheck(fp);
    if (n> (**b).nitems) {
 	n = MAX(0,(**b).nitems);
 	GDKerror("io_fwrite: blob contains only %d bytes.\n", (**b).nitems);
@@ -343,7 +333,7 @@ str io_fwrite(int *ret, fstream *filepp, blob **b, int *nbytes ){
 
 str io_fseek(int *res, fstream *filepp, int *pos, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(fseek)@;
+   fileCheck(fp);
    *res = fseek(fp, (long)*pos, *nbytes);
    if (*res < 0) {
       return throwMessage("io.fseek"," failed");
@@ -353,7 +343,7 @@ str io_fseek(int *res, fstream *filepp, int *pos, int *nbytes ){
 
 str io_ftell(int *res, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(ftell)@;
+   fileCheck(fp);
    *res = ftell(fp);
    if (*res < 0) {
       throwMessage("io.ftell"," failed");
@@ -384,7 +374,7 @@ int io_fprintf(fstream *filepp, str format,  ...){
         int ret;
         str s;
  
-	FILEP_CHECK(*filepp);
+	fileCheck(*filepp);
         va_start(ap,format);
         ret = monet_sprintf(&s, format, ap);
         va_end(ap);
@@ -410,7 +400,7 @@ int io_fprint(fstream *filepp, ...){
         ptr val; 
 	int type;
  
-	FILEP_CHECK(*filepp);
+	fileCheck(*filepp);
         va_start(ap,filepp);
 
 	val = va_arg (ap,ptr);
@@ -441,7 +431,7 @@ int io_fprint(fstream *filepp, ...){
 
 
 str io_fputs(int *ret, str *s, fstream *filepp ){
-   FILEP_CHECK(*filepp);
+   fileCheck(*filepp);
    if (fputs(*s,*(FILE**)filepp) < 0) {
       return throwMessage("io.fputs"," failed");
    }
@@ -450,7 +440,7 @@ str io_fputs(int *ret, str *s, fstream *filepp ){
 
 str io_fputc(int *ret,int *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(fputc)@;
+   fileCheck(fp);
    if (fputc(*c, fp) < 0)
       return throwMessage("io.fputs"," failed");
    return MAL_SUCCEED;
@@ -458,7 +448,7 @@ str io_fputc(int *ret,int *c, fstream *filepp ){
 
 str io_fgets( str *s, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(fgets)@;
+   fileCheck(fp);
    *s = GDKmalloc( BUFSIZ );
    **s = 0;
    if (fgets(*s, BUFSIZ, fp) <= (char *) 0) {
@@ -474,7 +464,7 @@ str io_fgets( str *s, fstream *filepp ){
 str io_fgetc( chr *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
    int ret;
-   @:fileCheck(fgetc)@;
+   fileCheck(fp);
    ret = (int)fgetc(fp);
    if (ret <= 0) 
       return throwMessage("io.fgetc"," failed");
@@ -491,11 +481,11 @@ The old method in V4 essentially causes a lot of overhead
 because you have to prepare for the worst (e.g. mismatch format
 identifier and argument value)
 @c
-str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str CMDprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl)
 {
-	int tpe = getArgType(mb,pci,1);
-	ptr val = (ptr) getArgReference(stk,pci,1);
-        FILE *fp = GDKout;
+	int tpe = getArgType(mb,pci,indx);
+	ptr val = (ptr) getArgReference(stk,pci,indx);
+        stream *fp = GDKout;
 	if( val==NULL) {
 		ATOMprint(TYPE_str, "nil", GDKout);
 		return MAL_SUCCEED;
@@ -509,12 +499,21 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
 		return MAL_SUCCEED;
 	}
-        fputs("[ ", fp);
+        if(hd) stream_printf(fp,"%s",hd);
 	if( ATOMstorage(tpe) == TYPE_str  || ATOMstorage(tpe)> TYPE_str)
 		ATOMprint(tpe, *(str*)val, fp);
         else  	ATOMprint(tpe, val, fp);
-        fputs(" ]\n", fp);
+        if(tl) stream_printf(fp,"%s",tl);
+	fp->flush(fp);
         return MAL_SUCCEED;
+}
+str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return CMDprintBoth(mb,stk,pci,1,"[ "," ]\n");
+}
+str CMDprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return CMDprintBoth(mb,stk,pci,1,0,0);
 }
 str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -527,6 +526,7 @@ str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tpe == TYPE_str)
 		ATOMprint(TYPE_str, *(str*)val, GDKout);
 	else ATOMprint(tpe, val, GDKout);
+	GDKout->flush(GDKout);
 	return MAL_SUCCEED;
 }
 
@@ -534,7 +534,7 @@ str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 The table printing routine implementations rely on the multiprintf.
 They merely differ in destination and order prerequisite
 @c
-str CMDtableAll(FILE *f, MalBlkPtr mb, MalStkPtr stk, 
+str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
 		  InstrPtr pci, int i, int order, int printhead)
 {
         BAT *piv[MAXPARAMS],*b;
@@ -553,6 +553,7 @@ str CMDtableAll(FILE *f, MalBlkPtr mb, MalStkPtr stk,
         } 
 	/*if(printhead)*/ nbats++;
         BATmultiprintf(f, nbats, piv, printhead, order);
+	f->flush(f);
         return MAL_SUCCEED;
 }
 
@@ -566,17 +567,17 @@ str CMDtable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return CMDtableAll(GDKout,mb,stk,pci,1,0,TRUE);
 }
 str CMDfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	FILE *fp;
+	stream *fp;
 	int order;
 
-	fp= *(FILE **) getArgReference(stk,pci,1);
+	fp= *(stream **) getArgReference(stk,pci,1);
 	order = *(int*) getArgReference(stk,pci,2);
 	return CMDtableAll(fp,mb,stk,pci,3,1,TRUE);
 }
 
 str CMDftable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	FILE *fp;
-	fp= *(FILE **) getArgReference(stk,pci,1);
+	stream *fp;
+	fp= *(stream **) getArgReference(stk,pci,1);
 	return CMDtableAll(fp,mb,stk,pci,2,0,TRUE);
 }
 str CMDttable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

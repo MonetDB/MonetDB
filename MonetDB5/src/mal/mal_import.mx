@@ -33,12 +33,12 @@ html
 #define _MAL_IMPORT_H
 
 #include "mal_client.h"
+#include "mal_session.h"
 
 mal_export void slash_2_dir_sep(str fname);
-mal_export void malImport(Client c, str fname,int listing);
-mal_export void malImportDirect(str fname);
-mal_export FILE *malOpenSource(str fname);
-mal_export void processInput(Client c,MalStkPtr glb);
+mal_export void malImport(Client c, str modname, str libname, int listing);
+mal_export stream *malOpenSource(str fname);
+mal_export str malLoadScript(Client c, str modname);
 mal_export void evalString(Client c, str s, int listing, MalStkPtr stk);
 mal_export void runScript(Client c, str fname, int listing,MalStkPtr stk);
 #endif /*  _MAL_IMPORT_H*/
@@ -60,135 +60,124 @@ void slash_2_dir_sep(str fname){
 	for(s=fname;*s; s++)
 	if( *s== '/') *s= '/';
 }
-FILE *malOpenSource(str fname){
-	FILE *fd= NULL;
+stream *malOpenSource(str fname){
+	stream *fd= NULL;
 	char path[PATHLENGTH];
 
-	strcpy(path,fname);
+	strncpy(path,fname,PATHLENGTH);
         slash_2_dir_sep(path);
-	if ((fd = fopen(path, "r")) == 0) {
+	fd = open_rastream(path);
+	if( fd->errnr== OPEN_ERROR ){
+	    char path2[PATHLENGTH];
 	    /* try to locate the file with 'mal' extension */
-	    snprintf(path,PATHLENGTH, "%s.mal",path);
+	    snprintf(path2,PATHLENGTH, "%s.mal",path);
             if (fname[0] == DIR_SEP) {
-                strcpy(path, path);
-                fd = fopen(path, "r");
+                strncpy(path, path2, PATHLENGTH);
+                fd = open_rastream(path);
             } else {
-	    /* try to locate the file in the module store */
+	    /* try to locate the file in the monet_mal_path store */
 		int i=0;
-                snprintf(path,PATHLENGTH, "%s/mal/",GDKdirStr);
+		strncpy(path,monet_mal_path,PATHLENGTH);
 		i= strlen(path);
-                snprintf(path+i,PATHLENGTH-i, "%s.mal",fname);
+                snprintf(path+i,PATHLENGTH-i, "/%s.mal",fname);
 		slash_2_dir_sep(path);
-                fd = fopen(path, "r");
-		if( fd==NULL){
-		/* try to locate the file in the distribution location */
-			snprintf(path,PATHLENGTH, "%s/src/modules/",GDKdistrStr);
-			i= strlen(path);
-			snprintf(path+i,PATHLENGTH-i, "%s.mal",fname);
-			slash_2_dir_sep(path);
-                	fd = fopen(path, "r");
-		}
+                fd = open_rastream(path);
             }
         }
 	return fd;
 }
+@-
+The malLoadScript routine merely reads the contents of a file into
+the input buffer of the client. It is typically used in situations
+where an intermediate file is used to pass commands around.
+@c
+str malLoadScript(Client c, str modname){
+	stream *fd;
+	size_t rd=0, max=0, len=0;
+	str s;
 
-void malImportDirect(str fname){
-	Client c= getClient();
-	malImport(c,fname,0);
+	c->nxt = c->input = (char *) GDKmalloc(max=16*BLOCKSIZE);
+	c->limit = c->input + max;
+	*c->nxt=0;
+        fd= malOpenSource(modname);
+	if( fd->errnr == OPEN_ERROR)
+                return throwException(MALEXCEPTION,"malImport",
+			"could not open file: %s\n", modname);
+	while(1 ){
+		rd= fd->read(fd, c->nxt, (size_t) 1, (size_t) max);
+		if( rd<=0) { c->input[0]=0; break;}
+		if( rd<max) { c->input[len+rd]=0; break;}
+		len+= max;
+		max= BLOCKSIZE;
+		s= GDKmalloc(len+max+2);
+		if( s == 0)
+			GDKfatal("unable to allocate buffer\n");
+		strncpy(s,c->input,len);
+		GDKfree(c->input);
+		c->input=s;
+		c->nxt= c->input+len;
+		c->limit = c->input +len+ max+2;
+	}
+	c->nxt= c->input;
+
+        fd->close(fd);
+	return NULL;
 }
-void malImport(Client c, str fname,int listing){
-	FILE *fd;
-	long i=0,len;
-	Symbol	prg;
-	str	s;
-	int lines=0;
+
+void processString(Client c)
+{	
+/*
+	runScenario(c);
+*/
+	if( MALparser(c) == 0){
+		if(MALoptimizer(c)==0) 
+			MALengine(c);
+	} else showErrors(c); 
+}
+@-
+Beware that we have to isolate the execution of the source file
+in its own environment. E.g. we have to removed the execution
+state until we are finished.
+@c
+void malImport(Client c, str modname, str libname, int listing){
+	str	s,msg;
 
 	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
 	int oldlisting = c->listing;
 	Scope oldscope = c->nspace;
 	Symbol oldprg = c->curprg;
+	MalStkPtr oldstk = c->glb;
 
-        if ( (fd=fopen(fname,"r"))==0 && (fd= malOpenSource(fname)) == 0) {
-                GDKerror("malImport: could not open file: %s\n", fname);
-                return;
-        }
-        (void) fseek(fd,0L,SEEK_END);
-        len = ftell(fd)+1;
-        (void) fseek(fd,0L,0);
-	c->nxt = c->input = (char *) GDKmalloc(len);
-	c->limit = c->input + len ;
-	if( c->input == 0)
-		GDKfatal("unable to allocate buffer\n");
-
-        i=fread(c->input, 1, len, fd);
-        if( i != len - 1) GDKerror("not enough bytes read \n");
-        fclose(fd);
-        c->input[i] = 0;
-@-
-It makes sense to estimate the number of instructions in the loaded
-file, because it will avoid repeated extend of the MAL block later
-on. In passing, we can also get rid of the NT <cr><lf> combination.
-@c
-	for(s=c->input; *s; s++){
-		if(*s=='\n') lines++;
-		if(*s== 13) *s= ' '; /* get rid of ^M */
+	if( s= malLoadScript(c,modname) ) {
+		stream_printf(getClient()->fdout,"%s\n",s);
+		return;
 	}
-	/* printf("%s:lines encountered %d\n",fname,lines);*/
-
 @-
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
-	loadModuleLibrary(fname);
+	if(libname) {
+		if( s= (str) loadModuleLibrary(libname) ){
+			stream_printf(getClient()->fdout,"%s\n",s);
+			return;
+		}
+	}
 
 	c->listing = listing;
-	resetClientPrg(c);
-	expandMalBlk(c->curprg->def,lines);
-	c->nxt= c->input;
-	if( parseMal(c)) {
-		/* catched errors*/
-		showErrors(c);
-		goto endImport;
-	}
-	/* empty files should be skipped as well */
-	if( c->curprg->def->stop == 1) goto endImport;
+	c->glb =0;
+	initClientPrg(c,"main"); /* create new context */
+	processString(c);
 
-	/* printf("%s:statements %d",fname, c->curprg->def->stop);
-	printf(" variables %d\n",c->curprg->def->vtop); */
-	closeClientPrg(c,TRUE);
-	/* locate the main procedure for the imported file */
-	prg = findSymbolInScope(c->nspace,"main");
-	if( prg && listing) printFunction(c->fdout,prg->def);
-	
-	if( prg){
-		str msg;
-		msg= (str) runMAL(c,prg->def,0,0,0);
-		if( msg ){
-			GDKerror(msg);
-			GDKfree(msg);
-		}
-		showErrors(c);
-		resetMalBlk(prg->def,0);
-	} 
-endImport:
 	/* restore the context */
-	GDKfree(c->input);
+	if( c->input){ GDKfree(c->input); c->input= NULL;}
+	c->glb= oldstk;
 	c->listing = oldlisting;
 	c->input= oldinput;
 	c->limit= oldlimit;
 	c->nxt = oldnxt;
 	c->nspace= oldscope;
-	if(oldprg) stop();
-	if( c->curprg && oldprg) {
-		if(c->curprg->def->stop >1 )
-		printf("assertion violation, no instructions expected %d\n",
-			c->curprg->def->stop);
-		freeSymbol(c->curprg);
-	}
 	c->curprg = oldprg;
 }
-stop(){}
 @+ File and input processing
 A recurring situation is to execute a stream of simple MAL instructions
 stored on a file or comes from standard input. We parse one MAL 
@@ -204,48 +193,7 @@ using the run(file) command.
 A stack frame is initialized to keep track of global variables.
 The nesting of barrier blocks should ensure detection of the end
 of the hierarchy.
-@c
-void processString(Client c,MalStkPtr glb)
-{	str msg;
-	InstrPtr p;
-	MalBlkPtr mb;
 
-	mb= c->curprg->def;
-	if( glb){
-		glb->stktop =mb->vtop;
-		glb->blk = mb;
-	}
-	if( parseMal(c)) {
-		showErrors(c);
-		resetMalBlk(c->curprg->def,glb);
-		return;
-	}
-	if( mb->stop == 1) return; /* nothing added */
-	p= getInstrPtr(mb, mb->stop-1);
-	pushEndInstruction(mb);
-	chkProgram(c->nspace, c->curprg->def);
-	if( mb->errors == 0){
-		msg= (str) runMAL(c,mb,0,glb,0);
-		if( msg ){
-			GDKerror(msg);
-			if( !c->listing) 
-				printFunction(c->fdout,mb);
-			GDKfree(msg);
-		}
-	} 
-	showErrors(c);
-	resetMalBlk(mb,glb);
-	if( glb) glb->cmd= c->itrace?'n':0;
-}
-
-void processInput(Client c,MalStkPtr glb)
-{	
-	while(c->mode > FINISHING && readClient(c,c->prompt)){
-		c->nxt= c->input;
-		processString(c,glb);
-	}
-}
-@-
 Running looks much like an Import operation, except for the execution
 phase. This is performed in the context of an a priori defined
 stack frame. Life becomes a little complicated when the script contains
@@ -254,24 +202,27 @@ a definition.
 @c
 void runScript(Client c, str fname, int listing, MalStkPtr glb)
 {	
-	FILE *fd, *oldinput;
+	stream *fd, *oldinput;
 	int oldlisting= c->listing;
 	int oldmode = c->blkmode;
 	str oldprompt = c->prompt;
+	MalStkPtr oldglb = c->glb;
 
 	oldinput= c->fdin;
 	c->fdin = fd;
 	c->listing = listing;
 	c->blkmode = 0;
 	c->prompt = "";	/* do not produce visible prompts */
-	resetClientPrg(c);
+	c->glb= NULL;
+	initClientPrg(c,"main");
 
 	GDKerror("runScript is not yet defined\n");
 	c->fdin = oldinput;
 	c->listing = oldlisting;
 	c->blkmode = oldmode;
 	c->prompt = oldprompt;
-	(void) fclose(fd);
+	c->glb = oldglb;
+	(void) fd->close(fd);
 }
 void evalString(Client c, str s, int listing, MalStkPtr stk)
 {	
@@ -281,17 +232,20 @@ void evalString(Client c, str s, int listing, MalStkPtr stk)
 	str oldnxt = c->nxt;
 	str oldinput= c->input;
 	str oldlimit = c->limit;
+	MalStkPtr oldglb = c->glb;
+	str msg;
 
 	c->listing = listing;
 	c->blkmode = 0;
 	c->prompt = "";	/* do not produce visible prompts */
 	
-	resetClientPrg(c);
+	initClientPrg(c,"main");
 
 	c->limit = s + strlen(s)+1;
 	c->input = s;
 	c->nxt= c->input;
-	processString(c,NULL);
+	c->glb= NULL;
+	processString(c);
 
 	c->limit= oldlimit;
 	c->nxt= oldnxt;
@@ -299,4 +253,5 @@ void evalString(Client c, str s, int listing, MalStkPtr stk)
 	c->listing = oldlisting;
 	c->blkmode = oldmode;
 	c->prompt = oldprompt;
+	c->glb = oldglb;
 }

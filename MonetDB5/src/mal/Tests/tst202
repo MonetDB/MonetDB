@@ -5,7 +5,7 @@
 	b:bat[int,int]:= new(int,int);
 	setName(b,"mybat");
 	#setPersistent(b);
-	setRole(b,"first","second");
+	setColumn(b,"first","second");
 	print(b);
 	c:= new(int,str);
 	setName(c,"mybat");

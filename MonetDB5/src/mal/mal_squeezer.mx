@@ -3,7 +3,7 @@
 @v 0.0
 @* Introduction
 
-This module contains the framework for inclusion of squeezer code, i.e.
+This module illustrates construction of squeezer code, i.e.
 C-programs geared at optimizing a piece of MAL.
 The squeezer appears at the language level as an ordinary module.
 Each squeezer function has access to the runtime scope of the
@@ -68,8 +68,6 @@ All examples are meant to help identifying the API for squeezer construction.
 #include "mal_resolve.h"
 
 #define DEBUG_MAL_SQUEEZER 1
-mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
-mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
 #endif /*  _MAL_SQUEEZE_H*/
 
@@ -83,70 +81,6 @@ arguments should be handled by the pattern implementation.
 #include "mal_resolve.h"
 #include "mal_client.h"
 
-ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
-	int j=0;
-	ValRecord *v;
-	ptr val = NULL;
-
-	j = pci->argv[k];
-	v= &stk->stk[j];
-	switch(ATOMstorage(v->vtype)){
-	case TYPE_void: val= (ptr) & v->val.ival; break;
-	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: val= (ptr) & v->val.shval; break;
-	case TYPE_bat: val= (ptr) & v->val.br.id; break;
-	case TYPE_int: val= (ptr) & v->val.ival; break;
-	case TYPE_oid: val= (ptr) & v->val.oval; break;
-	case TYPE_ptr: val= (ptr) v->val.pval; break;	/* !! */
-	case TYPE_flt: val= (ptr) & v->val.fval; break;
-	case TYPE_dbl: val= (ptr) & v->val.dval; break;
-	case TYPE_lng: val= (ptr) & v->val.lval; break;
-	case TYPE_str: val= (ptr) v->val.sval; break;	/* !! */
-	default:
-		val= (ptr) v->val.pval; 
-/*		GDKerror("evalParameters:unknown value type\n");*/
-	}
-	return val;
-} 
-@-
-Alternatively, the routines can obtain a reference to a particular
-value. This particularly handy for the squeezers, while the former
-is mostly used to prepare a call to the linked libraries.
-
-@c
-INLINE
-ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k){
-#ifdef STRUCT_ALIGNED
-	return (ptr) & stk->stk[pci->argv[k]].val.ival;
-#else
-	int j=0;
-	ValRecord *v=0;
-	ptr ret = NULL;
-
-	j = pci->argv[k];
-	v= &stk->stk[j];
-
-	switch(ATOMstorage(v->vtype)){
-	case TYPE_void: ret= (ptr) & v->val.ival; break;
-	case TYPE_bit: ret= (ptr) & v->val.cval[0]; break;
-	case TYPE_chr: ret= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: ret= (ptr) & v->val.shval; break;
-	case TYPE_bat: ret= (ptr) & v->val.br.id; break;
-	case TYPE_int: ret= (ptr) & v->val.ival; break;
-	case TYPE_oid: ret= (ptr) & v->val.oval; break;
-	case TYPE_ptr: ret= (ptr) & v->val.pval; break;
-	case TYPE_flt: ret= (ptr) & v->val.fval; break;
-	case TYPE_dbl: ret= (ptr) & v->val.dval; break;
-	case TYPE_lng: ret= (ptr) & v->val.lval; break;
-	case TYPE_str: ret= (ptr) & v->val.sval; break;
-	default:
-		 ret= (ptr) & v->val.pval; 
-		/* GDKerror("eretParameters:unknown value type\n");*/
-	}
-	return ret;
-#endif
-} 
 @-
 The sqzPrepare function simple copies the procedure definition
 sequence to the optimized version, leaving out the call to the
@@ -178,8 +112,8 @@ can update the administration of the MAL block.
 		m->ssize= ssize;
 	}
 #ifdef DEBUG_MAL_SQUEEZER
-	printf("Modified stmt sequence\n");
-	printFunction(stdout,m);
+	stream_printf(GDKout,"Modified stmt sequence\n");
+	printFunction(GDKout,m,LIST_MAL_ALL);
 #endif
 @-
 @= assertSqueeze
@@ -228,7 +162,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 
 	nme = (str) getArgValue(s,p,1);
 	symid= findVariable(m,nme);
-	printf("entering sqzAccess blocking %d %s\n",symid,nme);
+	stream_printf(GDKout,"entering sqzAccess blocking %d %s\n",symid,nme);
 	@:prepareSqueeze(10)@
 	for(i=0;i<stkpc;i++)
 		new[top++]= m->stmt[i];
@@ -237,14 +171,12 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		for(j=0;j<pp->argc;j++)
 		if( pp->argv[j]== symid){
 			/* insert blocking statement */
-printInstruction(stdout,m,p);
 			newstmt= newCall("squeezer","AccessTst",ASSIGNsymbol);
 			setReturnArgument(newstmt, newTmpVariable(m,TYPE_int));
-			pushArgument(m,newstmt, symid);
+			newstmt= pushArgument(m,newstmt, symid);
 			pushInstruction(m,newstmt); /* add to block */
-			typeChecker(getClient()->nspace,m,newstmt, TYPE_FIXED);
+			typeChecker(getClient()->nspace,m,newstmt);
 			/*watch out for overflow , to do!*/
-printInstruction(stdout,m,newstmt);
 			new[top++]= m->stmt[m->stop-1];
 		}
 		/*watch out for overflow , to do!*/
@@ -255,7 +187,7 @@ printInstruction(stdout,m,newstmt);
 	return NULL;
 }
 str sqzAccessTst(void *res, int *v0){
-	printf("Entering AccessTst with argument %d\n",*v0);
+	stream_printf(GDKout,"Entering AccessTst with argument %d\n",*v0);
 	if( *v0 <0) 
 	return raiseException(0,0,"IllegalAccess","something is wrong");
 	return NULL; /* No exception */

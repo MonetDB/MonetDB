@@ -19,6 +19,17 @@ the BAT library.
 
 module mal;
 
+command getScenario():str = CMDgetScenario
+comment "Retrieve current scenario name";
+
+command setScenario(msg:str):str = CMDsetScenario
+comment "Switch to other scenario handler, return previous one";
+
+command mil():void = CMDlanguageMIL
+comment "Switch to processing MIL statements";
+command sql():void = CMDlanguageSQL
+comment "Switch to processing SQL statements";
+
 command raise(msg:str) :str = CMDraise
 comment "Raise an exception labelled with a specific message.";
 
@@ -143,6 +154,13 @@ pattern mdb():void = mdbToggle
 
 command debugmask(i:int):int= CMDdebug
 "Return the debug mask. If a MASK is nonzero, set it to that value.";
+
+command manual(f:str,m:str)= CMDmanual
+comment "Generate a synopsis of a module";
+command manual(m:str)= CMDmanual1
+comment "Generate a synopsis of a module";
+command manual()= CMDmanual0
+comment "Generate a synopsis of a module";
 @+ MAL inspection
 The command below inspect the MAL administration and, therefore,
 can not be included in the kernel library.
@@ -151,6 +169,33 @@ pattern getType(v:any) : int = CMDtype
 comment "Return the type of a value (expression). Returns an type number.";
 
 command typename(v:int): str = CMDtypename;
+
+command getListingDetails():int = CMDgetListingDetails
+comment "capture listing parameter and safe it on the MAL stack";
+
+command setListingDetails(z:int) = CMDsetListingDetails
+comment "Set listing parameter";
+
+@- Debugger display
+A key tool for analysis of the MAL code is being able to dump
+any routine, module. For queries, it is also illustrative to display
+the flow graph.
+@mal
+pattern showFunction(M:any,F:any,full:bit,s:str):void = CMDshowFunction1
+comment "Dump the routine M.F on the file s. The flag indicates the level
+of detail needed";
+pattern showFunction(M:any,F:any,full:bit):void = CMDshowFunction2
+comment "Dump the routine M.F on standard out. The flag indicates the level
+of detail needed";
+pattern showFunction(M:any,F:any):void = CMDshowFunction3
+comment "Dump the routine M.F on standard out.";
+pattern showFunction():void = CMDshowFunction4
+comment "Dump the current routine on standard out.";
+
+
+pattern showFlow(M:any,F:any,s:str):void = CMDshowFlow
+comment "Dump the data flow of the function M.F in a format
+recognizable by the command 'dot' on the file s";
 
 @- Monet module code
 
@@ -162,7 +207,8 @@ function timestamp(secs:lng):timestamp;
         d1:=epoch();
         d2:= secs *1000:lng;
         d3:= d1+d2;
-        return d3;
+	d4:= timestamp(d3);
+        return d4;
 end timestamp;
 function epoch():timestamp
         comment "unix-time (epoch) support: seconds since 1-jan-1970 GMT";
@@ -170,6 +216,7 @@ function epoch():timestamp
         d1:=daytime(0,0,0,0);
         d2:=tzone("GMT");
         d4:=timestamp(d0,d1,d2);
+	return d4;
 end epoch;
 #inline
 function epoch(t:timestamp):lng;
@@ -181,24 +228,24 @@ function epoch(t:timestamp):lng;
         return d1;
 end epoch;
 # rule creation synonyms
-function rule(m:int,d:int,w:int,h:int,min:int):rule;
+function ruleDef(m:int,d:int,w:int,h:int,min:int):rule;
         d0:= h*60;
         d1:= d0+min;
         r:= rule(m,d,w,d1);
         return r;
-end rule;
-function rule(m:int,d:str,w:int,h:int,min:int):rule;
+end ruleDef;
+function ruleDef(m:int,d:str,w:int,h:int,min:int):rule;
         dy:= daynum(d);
         d0:= h*60:int;
         d1:= d0+min;
         r:= rule(m,dy,w,d1);
         return r;
-end rule;
-function rule(m:int,d:str,w:int,min:int):rule;
+end ruleDef;
+function ruleDef(m:int,d:str,w:int,min:int):rule;
         dy:= daynum(d);
         r:= rule(m,dy,w,min);
         return r;
-end rule;
+end ruleDef;
 
 @-
 Some compiled old module load stuff from decimal:
@@ -217,7 +264,7 @@ barrier	ea_a:= or(aa_a,da_a);
 	fa_a := project(b,DECIMAL_NIL);
 	return fa_a;
 #                return project(b, DECIMAL_NIL);
-end	ea_a;
+exit	ea_a;
 barrier	ga_a:= not(ea_a);
 barrier	ha_a:= istenfold(div);
 #        } else if (istenfold(div)) {
@@ -231,12 +278,12 @@ barrier	ha_a:= istenfold(div);
 	return ma_a;
 #                return [setprecision]([addscale](b,dec),prec);
 #        }
-end	ha_a;
-end	ga_a;
+exit	ha_a;
+exit	ga_a;
 	na_a := bulkdivide(b,div,prec);
 	return na_a;
 #        return bulkdivide(b, div, prec); 
-end function;
+end divide;
 #    }
 # 
 function divide(b:bat[any::1,decimal], div:decimal):bat[any::1,decimal];
@@ -250,7 +297,7 @@ barrier	qa_a:= or(oa_a,pa_a);
 	ra_a := project(b,DECIMAL_NIL);
 	return ra_a;
 #                return project(b, DECIMAL_NIL);
-end	qa_a;
+exit	qa_a;
 barrier	sa_a:= not(qa_a);
 barrier	ta_a:= istenfold(div);
 #        } else if (istenfold(div)) {
@@ -264,12 +311,12 @@ barrier	ta_a:= istenfold(div);
 	return ya_a;
 #                return [setscale]([addscale](b,dec),0);
 #        } 
-end	ta_a;
-end	sa_a;
+exit	ta_a;
+exit	sa_a;
 	ab_a := bulkdivide(b,div);
 	return ab_a;
 #        return bulkdivide(b, div);
-end function;
+end divide;
 #    }
 #
 
@@ -311,13 +358,43 @@ pattern source(f:str):void= CMDevalFile
 #include <stdarg.h>
 #include <time.h>
 #include "gdk.h"
+#include "mal.h"
+#include "mal_session.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_function.h"
-#include "monet.h"
 
 @+ BAT declarations
 @c
+str CMDlanguageMIL(str *ret){
+	str msg= MAL_SUCCEED;
+	stream_printf(GDKout,"#Continue as MIL session\n");
+	msg= setScenario(getClient(),"mil");
+	*ret = 0;
+	return msg;
+}
+str CMDlanguageSQL(str *ret){
+	str msg= MAL_SUCCEED;
+	stream_printf(GDKout,"#Continue as SQL session\n");
+	msg= setScenario(getClient(),"sql");
+	*ret = 0;
+	return msg;
+}
+str CMDgetScenario(str *ret){
+	Client c = getClient();
+	if( c->scenario) *ret = GDKstrdup(c->scenario);
+	else *ret= GDKstrdup("nil");
+	return MAL_SUCCEED;
+}
+str CMDsetScenario(str *ret,str *nme){
+	Client c = getClient();
+	str msg= MAL_SUCCEED;
+
+	msg= setScenario(c,*nme);
+	*ret = 0;
+	if( msg== NULL) *ret= GDKstrdup(c->scenario);
+	return msg;
+}
 str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
         int ht, tt, cap=0;
 	int *res;
@@ -330,6 +407,63 @@ str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 
 	return (str) CMDnewBat2(res,&ht,&tt,&cap);
 }
+@+ Display routines
+@= getFunction
+str     modnme= getArgName(mb,p,1);
+str     fcnnme= getArgName(mb,p,2);
+Scope  scope=NULL;
+Symbol s= NULL;
+Client c= getClient();
+
+scope = findScope(c->nspace,modnme);
+if( scope)
+	s= findSymbolInScope(scope,fcnnme);
+
+if( s == NULL)
+	GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
+
+@c
+void CMDshowFunction(MalBlkPtr m, lng flg, stream *f) {
+	printFunction(f,m,flg);
+}
+str CMDshowFunction1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	lng flg= *(lng*) getArgValue(stk,p,3);
+	str fname= (str) getArgValue(stk,p,4);
+	@:getFunction(showFunction)@
+	else { 
+		CMDshowFunction(s->def,LIST_MAL_INSTR,GDKout);
+	}
+	return NULL;
+}
+str CMDshowFunction2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	lng flg= *(lng*) getArgValue(stk,p,3);
+	@:getFunction(showFunction)@
+	else { 
+		CMDshowFunction(s->def,LIST_MAL_INSTR,GDKout);
+	}
+	return NULL;
+}
+str CMDshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	@:getFunction(showFunction)@
+	else { 
+		CMDshowFunction(s->def,(lng) FALSE,GDKout);
+	}
+	return NULL;
+}
+str CMDshowFunction4(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	CMDshowFunction(mb,(lng) FALSE,GDKout);
+	return NULL;
+}
+str CMDshowFlow(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str fname= (str) getArgValue(stk,p,3);
+	@:getFunction(showFunction)@
+	else { 
+		showFlow(s->def,stk,fname);
+	}
+	return NULL;
+}
+
+
 
 @+ Exception implementation
 @c
@@ -438,7 +572,7 @@ str CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BUN p;
 	ValPtr head, tail;
 
-	if( pci->argc != 5) printf("CMDnextElement:exception\n");
+	if( pci->argc != 5) stream_printf(GDKout,"CMDnextElement:exception\n");
 	ret = (bit *) getArgReference(stk,pci,0);
 	cursor = (lng *) getArgReference(stk,pci,1);
 	bid = (int *) getArgReference(stk,pci,2);
@@ -460,7 +594,7 @@ str CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	garbageElement(tail); 
 	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,4),BUNtail(b,p));
-printf("%s",BUNtail(b,p));
+stream_printf(GDKout,"%s",BUNtail(b,p));
 	return MAL_SUCCEED;
 }
 @-
@@ -470,6 +604,10 @@ zero as part of runtime stack initialization. Subsequently,
 it fetches a bun and returns the increment to the control
 variable. If it returns zero the control variable has been reset
 to zero and end of stream has been reached.
+
+The head and tail variables may have to be set to the type
+extracted from the BAT descriptor. If there occurs a type
+error.
 @c
 str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
@@ -480,7 +618,7 @@ str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BUN p;
 	ValPtr head, tail;
 
-	if( pci->argc != 4) printf("exception in nextElement\n");
+	if( pci->argc != 4) stream_printf(GDKout,"exception in nextElement\n");
 	cursor = (lng *) getArgReference(stk,pci,0);
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[2]];
@@ -495,6 +633,10 @@ str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if( *cursor == 0)
 		*cursor = BUNindex(b,BUNfirst(b));
 
+/*
+stream_printf(GDKout,"head type %s\n", malTypeName(getArgType(mb,pci,2)));
+stream_printf(GDKout,"tail type %s\n", malTypeName(getArgType(mb,pci,3)));
+*/
 	/* get head = ... tail = ... */
 	p = BUNptr(b,*cursor);
 	garbageElement(head);
@@ -595,6 +737,15 @@ str CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	*ret= getArgType(mb,pci,1);
 	return MAL_SUCCEED;
 }
+str CMDgetListingDetails(int *ret){
+	*ret = getClient()->listing;
+	return MAL_SUCCEED;
+}
+str CMDsetListingDetails(int *ret, int *l){
+	Client c=getClient();
+	if(c) c->listing= *l;
+	return MAL_SUCCEED;
+}
 @+ Printing
 The print commands are implemented as single instruction rules,
 because they need access to the calling context.
@@ -608,7 +759,7 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
 	ptr val = (ptr) getArgReference(stk,pci,1);
-        FILE *fp = GDKout;
+        stream *fp = GDKout;
 	if( val==NULL) {
 		ATOMprint(TYPE_str, "nil", GDKout);
 		return MAL_SUCCEED;
@@ -622,11 +773,12 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
 		return MAL_SUCCEED;
 	}
-        fputs("[ ", fp);
+        stream_printf(fp,"[ ");
 	if( tpe == TYPE_str)
 		ATOMprint(tpe, *(str*)val, fp);
         else  	ATOMprint(tpe, val, fp);
-        fputs(" ]\n", fp);
+        stream_printf(fp," ]\n");
+	fp->flush(fp);
         return MAL_SUCCEED;
 }
 str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -640,6 +792,7 @@ str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tpe == TYPE_str)
 		ATOMprint(TYPE_str, *(str*)val, GDKout);
 	else ATOMprint(tpe, val, GDKout);
+	GDKout->flush(GDKout);
 	return MAL_SUCCEED;
 }
 
@@ -663,6 +816,7 @@ str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, nbats, piv, flg, order);
+	GDKout->flush(GDKout);
         return MAL_SUCCEED;
 }
 
@@ -692,6 +846,7 @@ str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
+	GDKout->flush(GDKout);
         return MAL_SUCCEED;
 }
 @- Input redirectionrs
@@ -712,7 +867,7 @@ str CMDevalString(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	strcat(src,"\"");
 	strFromStr( src, &len, &buf);
 
-	printf("Eval:%s\n",buf);
+	stream_printf(GDKout,"Eval:%s\n",buf);
 	evalString(getClient(),buf,FALSE,stk);
 	GDKfree(src);
 	GDKfree(buf);
@@ -726,7 +881,7 @@ str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	s= (str) getArgValue(stk,p,1);
 	if( strlen(s)+strlen(c->cwd)+2>=1024){
-		return throwMessage("mal.setCwd","buffer too small");
+		return throwMessage("mal.setCwd","Evaluation buffer too small\n");
 	}
 	buffer[0]=0;
 	if( *s != '/'){
@@ -734,13 +889,28 @@ str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		strcat(buffer,"/");
 	}
 	strcat(buffer,s);
-	printf("run:%s\n",buffer);
-	malImport(getClient(),buffer,FALSE);
+	stream_printf(GDKout,"run:%s\n",buffer);
+	malImport(getClient(),buffer,0,FALSE);
 	return MAL_SUCCEED;
 }
 str CMDdebug(int *ret, int *flg){
 	*ret = GDKdebug;
 	if( *flg) GDKdebug = *flg;
+	return MAL_SUCCEED;
+}
+str CMDmanuel(int *ret, str *fname, str *mod){
+	stream *fs;
+	fs= open_wastream(*fname);
+	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
+	dumpManual(fs, findScope(getClient()->nspace,*mod));
+	return MAL_SUCCEED;
+}
+str CMDmanual1(int *ret, str *mod){
+	dumpManual(GDKout, findScope(getClient()->nspace,*mod));
+	return MAL_SUCCEED;
+}
+str CMDmanual0(int *ret){
+	dumpManual(GDKout, getClient()->nspace);
 	return MAL_SUCCEED;
 }
 str CMDsetCwd(str *ret, str *fnme){

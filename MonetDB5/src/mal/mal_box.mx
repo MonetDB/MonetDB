@@ -34,7 +34,7 @@ should open it, possibly passing qualifying authorization
 information and parameters to instruct the box-manager
 of the intended use.
 
-At the end of a session, the boxes should be closed. Some box-managers
+At the end of a session, the box should be closed. Some box-managers
 may implement a lease-scheme to automatically close interaction
 with a client when the lease runs out.
 
@@ -113,11 +113,11 @@ Nesting boxes (like Russian dolls) is possible. It provides a simple
 inheritance scheme between boxes, but in general will interfere with
 the semantics of each box. Therefore, nesting should be handled explicitly.
 
-@+ Session boxes
+@+ Session box
 The code base introduced here provides a reference case and
 the building blocks for more advanced box management schemes.
 
-Aside from boxes associated with the modules, they can also be created
+Aside from box associated with the modules, they can also be created
 dynamically on behalf of a client. Such boxes are considered private
 and require access by name parameter. 
 At the end of a session they are closed, which means that they are
@@ -138,7 +138,7 @@ system administrator. It will contain global client data, e.g.
 user, language, database, port, and any other session parameter.
 
 The boxes are all collected in the context of the database directory,
-i.e. the directory <GDKdirStr>/boxes
+i.e. the directory <dbfarm>/box
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -190,12 +190,13 @@ mal_export int takeBox(Box box, str name, ValPtr val);
 mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
-mal_export str getName(Box box, lng i);
+mal_export str getBoxNameme(Box box, lng i);
 mal_export str toString(Box box, lng i);
 mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 
-mal_export void printSomeBox(FILE *fd, int k);
-mal_export void printBox(FILE *fd, Box obj);
+mal_export void printSomeBox(stream *fd, int k);
+mal_export void printBox(stream *fd, Box obj);
+mal_export void freeBoxes();
 #endif /* _MAL_BOX_H */
 @-
 The hierarchy of object spaces ends at the root of the tree.
@@ -205,7 +206,7 @@ only.
 	obj= (Box) GDKmalloc(sizeof(BoxRecord));
 	bzero((char*) obj, sizeof(BoxRecord));
 	obj->name= GDKstrdup(name);
-	obj->sym= newMalBlk();
+	obj->sym=  newMalBlk(MAXVARS,MAXSTMTS);
 	obj->val = newGlobalStack(MAXVARS);
 	obj->lock= MT_create_lock();
 @-
@@ -213,35 +214,47 @@ only.
 #include "mal_box.h"
 
 #define MAXSPACES 64	/* >MAXCLIENTS+ max modules !! */
-Box boxes[MAXSPACES];
+Box box[MAXSPACES];
 
 Box newBox(str name){
 	Box obj= 0;
 	int i;
         MT_set_lock(mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
-	printf("create new box '%s'\n",name);
+	stream_printf(GDKout,"create new box '%s'\n",name);
 #endif
 	for(i=0; i<MAXSPACES; i++)
-	if( boxes[i]!= NULL && idcmp(name,boxes[i]->name)==0) {
+	if( box[i]!= NULL && idcmp(name,box[i]->name)==0) {
 		MT_unset_lock(mal_contextLock, "newBox");
 		GDKwarning("newBox:duplicate box definition\n");
-		return boxes[i];
+		return box[i];
 	}
 	for(i=0; i<MAXSPACES; i++)
-	if( boxes[i]== NULL) {
+	if( box[i]== NULL) {
 		@:newBOX@
-		boxes[i]= obj;
+		box[i]= obj;
 		break;
 	}
         MT_unset_lock(mal_contextLock, "newBox");
 	if( i== MAXSPACES)
 		GDKerror("too many boxes\n");
 #ifdef DEBUG_MAL_BOX
-	printf("succeeded at %d\n",i);
+	stream_printf(GDKout,"succeeded at %d\n",i);
 #endif
 	return obj;
 
+}
+void freeBoxes(){
+	int i;
+	for(i=0;i<MAXSPACES;i++)
+	if( box[i]){
+		garbageCollector(box[i]->sym, box[i]->val, TRUE);
+		GDKfree(box[i]->name);
+		freeMalBlk(box[i]->sym);
+		GDKfree(box[i]->val);
+		GDKfree(box[i]);
+		box[i]=0;
+	}
 }
 
 Box findBox(str name){
@@ -249,16 +262,16 @@ Box findBox(str name){
         MT_set_lock(mal_contextLock, "findBox");
 
 	for(i=0; i<MAXSPACES; i++)
-	if( boxes[i]!= NULL && idcmp(name,boxes[i]->name)==0) {
+	if( box[i]!= NULL && idcmp(name,box[i]->name)==0) {
 #ifdef DEBUG_MAL_BOX
-		printf("found the box '%s' %d\n",name,i);
+		stream_printf(GDKout,"found the box '%s' %d\n",name,i);
 #endif
 		MT_unset_lock(mal_contextLock, "findBox");
-		return boxes[i];
+		return box[i];
 	}
         MT_unset_lock(mal_contextLock, "findBox");
 #ifdef DEBUG_MAL_BOX
-	printf("could not find the box '%s' \n",name);
+	stream_printf(GDKout,"could not find the box '%s' \n",name);
 #endif
 	return 0;
 
@@ -284,14 +297,14 @@ void destroyBox(str name){
 
         MT_set_lock(mal_contextLock, "destroyBox");
 	for(i=j=0;i<MAXSPACES;i++){
-		if( idcmp(boxes[j]->name,name) == 0){
-			free(boxes[i]->name);
-			freeMalBlk(boxes[i]->sym);
-			freeStack(boxes[i]->val);
-			boxfile= boxFileName(boxes[i],0);
+		if( idcmp(box[j]->name,name) == 0){
+			free(box[i]->name);
+			freeMalBlk(box[i]->sym);
+			freeStack(box[i]->val);
+			boxfile= boxFileName(box[i],0);
 			unlink(boxfile);
 			GDKfree(boxfile); 
-		} else boxes[i] = boxes[j++];
+		} else box[i] = box[j++];
 	}
         MT_unset_lock(mal_contextLock, "destroyBox");
 
@@ -312,7 +325,7 @@ int depositBox(Box box, str name, ValPtr val){
 	box->val->stktop++;
 	VALcopy(v,val);
 #ifdef DEBUG_MAL_BOX
-	printf("depositBox: entered '%s' at %d type %d\n",
+	stream_printf(GDKout,"depositBox: entered '%s' at %d type %d\n",
 		name,i,v->vtype);
 #endif
 	return 0;
@@ -333,13 +346,14 @@ int takeBox(Box box, str name, ValPtr val){
 	ValPtr v;
 	i= findVariable(box->sym, name);
 #ifdef DEBUG_MAL_BOX
-		printf("takeBox: found '%s' at %d\n",name,i);
+		stream_printf(GDKout,"takeBox: found '%s' at %d\n",name,i);
 #endif
 	if( i<0) return i;
 	v= &box->val->stk[i];
 	if(val->vtype != v->vtype && v->vtype!= TYPE_any){
 #ifdef DEBUG_MAL_BOX
-	printf("takeBox:type error %d,%d\n",val->vtype,box->val->stk[i].vtype);
+	stream_printf(GDKout,"takeBox:type error %d,%d\n",
+			val->vtype,box->val->stk[i].vtype);
 #endif
 		return -1;
 	}
@@ -351,7 +365,7 @@ int takeBox(Box box, str name, ValPtr val){
 		else return -1;
 	}
 #ifdef DEBUG_MAL_BOX
-	printf("takeBox:'%s' from '%s'\n",name,box->name);
+	stream_printf(GDKout,"takeBox:'%s' from '%s'\n",name,box->name);
 #endif
 	return 0;
 }
@@ -373,7 +387,7 @@ int bindBAT(Box box, str name, str location){
 	if( v->val.br.id == 0) return -1;
 	v->vtype= TYPE_bat;
 #ifdef DEBUG_MAL_BOX
-	printf("bindBox:'%s' to '%s' [%d] in '%s'\n",
+	stream_printf(GDKout,"bindBox:'%s' to '%s' [%d] in '%s'\n",
 		name,location,v->val.br.id,box->name);
 #endif
 	return 0;
@@ -383,7 +397,7 @@ int releaseBox(Box box, str name){
 	int i;
 
 #ifdef DEBUG_MAL_BOX
-	printf("releaseBox:%s from %s\n",name,box->name);
+	stream_printf(GDKout,"releaseBox:%s from %s\n",name,box->name);
 #endif
 	i= findVariable(box->sym,name);
 	if( i<0) return i;
@@ -392,7 +406,7 @@ int releaseBox(Box box, str name){
 
 int releaseAllBox(Box box){
 #ifdef DEBUG_MAL_BOX
-	printf("releaseAllBox:%s \n",box->name);
+	stream_printf(GDKout,"releaseAllBox:%s \n",box->name);
 #endif
 	return 0;
 }
@@ -400,7 +414,7 @@ int releaseAllBox(Box box){
 int discardBox(Box box, str name){
 	int i,j;
 #ifdef DEBUG_MAL_BOX
-	printf("discardBox:%s from %s\n",name,box->name);
+	stream_printf(GDKout,"discardBox:%s from %s\n",name,box->name);
 #endif
 	i= findVariable(box->sym,name);
 	if( i<0) return i;
@@ -424,11 +438,11 @@ int nextBoxElement(Box box, lng *cursor, ValPtr v){
 	}
         garbageElement(v);
 	v->vtype= TYPE_str;
-        v->val.pval= getName(box,*cursor);
+        v->val.pval= getBoxNameme(box,*cursor);
 	*cursor= *cursor+1;
 	return 0;
 }
-str getName(Box box, lng i){
+str getBoxNameme(Box box, lng i){
 	str s;
 	s= getVarName(box->sym,i);
 	return GDKstrdup(s);
@@ -441,35 +455,51 @@ The content of a box is saved on a file for subsequent re-use.
 The storage is explicitly in terms of MAL operations.
 For BAT objects, the corresponding object is made persistent.
 Note that the user can not control these operations directly.
+The box container is created if it did not yet exist.
+@= checkDir
+	if( access(boxfile,X_OK) ){
+#ifdef DEBUG_MAL_BOX
+	stream_printf(GDKout,"box directory %s created\n",boxfile);
+#endif
+		mkdir(boxfile,0755);
+		if( access(boxfile,X_OK) ){
+			GDKerror("checkDir:can not create box directory\n");
+			return NULL;
+		}
+	}
 @c
 str boxFileName(Box box, str backup){
 	char boxfile[PATHLENGTH],*s;
 	int i= 0;
-	snprintf(boxfile,PATHLENGTH,"%s/boxes/",GDKdirStr);
+
+	snprintf(boxfile,PATHLENGTH,"%s/%s/box",
+			GDKgetenv("dbfarm"), GDKgetenv("dbname"));
+	@:checkDir@
 	i= strlen(boxfile);
 	if(backup) {
 		snprintf(boxfile+i,PATHLENGTH-i,"/%s/", backup);
+		@:checkDir@
 		i= strlen(boxfile);
 	}
-	snprintf(boxfile+i,PATHLENGTH-i,"%s.box", box->name);
+	snprintf(boxfile+i,PATHLENGTH-i,"/%s.box", box->name);
 	return GDKstrdup(boxfile);
 }
 int saveBox(Box box,int flag){
 	int i, ret=0;
 	ValPtr v;
-	FILE *f;
+	stream *f;
 	str boxfile, boxfilebak;
 
 	boxfile = boxFileName(box,0);
 	boxfilebak = boxFileName(box,"backup");
 
 #ifdef DEBUG_MAL_BOX
-	printf("saveBox:%s\n",boxfile);
+	stream_printf(GDKout,"saveBox:%s\n",boxfile);
 #endif
 	if( access(boxfile,R_OK) == 0){
 		if(access(boxfilebak,R_OK)==0  && unlink(boxfilebak) ) {
 #ifdef DEBUG_MAL_BOX
-			printf("saveBox:can not unlink %s\n",boxfilebak);
+			stream.printf("saveBox:can not unlink %s\n",boxfilebak);
 #endif
 			GDKerror("saveBox:can not unlink backup\n");
 			GDKfree(boxfile); GDKfree(boxfilebak);
@@ -478,7 +508,8 @@ int saveBox(Box box,int flag){
 
 		if( link(boxfile,boxfilebak)) {
 #ifdef DEBUG_MAL_BOX
-			printf("saveBox:%s \n-> %s\n",boxfile,boxfilebak);
+			stream_printf(GDKout,"saveBox:%s \n-> %s\n",
+					boxfile,boxfilebak);
 #endif
 			GDKerror("saveBox:can not link backup\n");
 			GDKfree(boxfile); GDKfree(boxfilebak);
@@ -487,37 +518,35 @@ int saveBox(Box box,int flag){
 		unlink(boxfile);
 	} 
 
-	f= fopen(boxfile,"w");
+	f= open_wastream(boxfile);
 	if(f != NULL){
 #ifdef DEBUG_MAL_BOX
-	printf("saveBox:created %s\n",boxfile);
+	stream_printf(GDKout,"saveBox:created %s\n",boxfile);
 #endif
 		chmod(boxfile, (S_IRUSR | S_IWUSR));
-		/*
-		if( flag) fprintf(f,"%s.open();\n",box->name);
-		else fprintf(f,"box.open(\"%s\");\n",box->name);
-		*/
 		for(i=0;i<box->sym->vtop; i++){
 			v= &box->val->stk[i];
 			if( v->vtype == TYPE_bat ) {
 			BAT *b= (BAT*)BBPgetdesc(v->val.br.id);
 			if( b && b->batPersistence & PERSISTENT)
-			fprintf(f,"%s.bind(\"%s\",\"%s\");\n", 
+			stream_printf(f,"%s.bind(\"%s\",\"%s\");\n", 
 				box->name, getVarName(box->sym,i),
 				BBPname(v->val.br.id));
 			} else{
-				fprintf(f,"%s.deposit(\"%s\",", 
+				stream_printf(f,"%s.deposit(\"%s\",", 
 					box->name, getVarName(box->sym,i));
-				VALprint(f,v);
-				fprintf(f,":%s);\n", malTypeName(v->vtype));
+				ATOMprint(v->vtype,VALptr(v),f);
+				stream_printf(f,":%s);\n", malTypeName(v->vtype));
 			}
 		}
 	} else {
 		GDKerror("saveBox:can not create box file\n");
 		ret= -1;
 	}
-	if(fclose(f) && link(boxfilebak,boxfile) && unlink(boxfilebak) )
-		ret= -1;
+	if(f){
+		f->close(f);
+		if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) ret= -1;
+	}
 	GDKfree(boxfile); GDKfree(boxfilebak);
 	return ret;
 }
@@ -527,16 +556,17 @@ Loading a box is equivalent to reading a script.
 void loadBox(str name){
 	char boxfile[PATHLENGTH];
 	int i=0;
-	snprintf(boxfile,PATHLENGTH,"%s/boxes/",GDKdirStr);
+	snprintf(boxfile,PATHLENGTH,"%s/%s/box/",
+			GDKgetenv("dbfarm"), GDKgetenv("dbname"));
 	i= strlen(boxfile);
 	snprintf(boxfile+i,PATHLENGTH-i,"%s.box",name);
 #ifdef DEBUG_MAL_BOX
-	printf("loadBox:start loading the file %s\n",boxfile);
+	stream_printf(GDKout,"loadBox:start loading the file %s\n",boxfile);
 #endif
 	if( access(boxfile,R_OK)== 0){
-		malImportDirect(boxfile);
+		malImport(getClient(),boxfile,0,0);
 #ifdef DEBUG_MAL_BOX
-		printf("loadBox:loaded the file %s\n",boxfile);
+		stream_printf(GDKout,"loadBox:loaded the file %s\n",boxfile);
 #endif
 	} 
 }
@@ -544,13 +574,13 @@ void loadBox(str name){
 Utilities for the debugger permit dumping of all the object
 spaces.
 @c
-void printBox(FILE *fd, Box obj)
+void printBox(stream *fd, Box obj)
 { printStack(fd,obj->sym,obj->val); }
 
-void printSomeBox(FILE *fd, int k)
+void printSomeBox(stream *fd, int k)
 {
-	if( boxes[k]== 0){
+	if( box[k]== 0){
 		GDKerror("printSomeBox:illegal space id\n");
-	} else printBox(fd,boxes[k]);
+	} else printBox(fd,box[k]);
 }
 

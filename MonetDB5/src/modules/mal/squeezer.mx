@@ -53,7 +53,7 @@ PATTERN propagateConstants():int = sqzPropagateConstants;
 #endif /* _SQUEEZER_H*/
 @c
 #include "squeezer.h"
-#include "monet.h"
+#include "mal_function.h"
 
 str sqzPropagateConstants(int *ret){
 	return throwMessage("squeezer.propagateConstants","not yet implemented");

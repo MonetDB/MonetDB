@@ -15,7 +15,7 @@ insert(b,9,n0);
 insert(b,n0,n0);
 insert(b,n0,81);
 print(b);
-barrier v:= bunStream(b,h:int,t:int);
+barrier v:= bunStream(b,h,t);
 	printf("[ %d,",h);
 	printf("%d]\n",t);
 	redo v;
@@ -37,4 +37,17 @@ barrier v:= bunStream(c,h,ts:str);
 	printf("%s]\n",ts);
 	redo v;
 exit v;
+
+#Testing a loop over string bats
+
+d:= new(str,str);
+insert(d,"one","red");
+insert(d,"two","green");
+print(d);
+barrier w:= bunStream(d,hs:str,ts);
+	printf("[ %s,",hs);
+	printf("%s]\n",ts);
+	redo w;
+exit w;
+
 

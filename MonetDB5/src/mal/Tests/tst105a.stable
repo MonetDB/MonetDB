@@ -1,0 +1,12 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
+## check classification of functions in the proper module
+#
+#module bat;
+function Admin.main():int; #0  unknown (main:int)
+end main; #1  unknown 
+>

@@ -1,0 +1,13 @@
+#profiler.openStream("/tmp/MonetProfile.xml");
+#profiler.start();
+mdb();i:=0; barrier b:= i<1; i:=i+1; print(i); redo b; exit b;
+#profiler.stop();
+#profiler.closeStream();
+
+#mdb();
+#i:=0; 
+#barrier b:= i<1; 
+#i:=i+1; 
+#print(i); 
+#redo b; 
+#exit b;

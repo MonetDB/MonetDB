@@ -1,0 +1,414 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#setoid(oid(20000000));
+#
+## First some procs for convenience: 
+## - xtable_print(group[oid,oid], str, attr1[oid,a1], attr2[oid,a2], ...)
+## 	print group count table 
+## - xtable_realloc(bat, capacity):  bat
+##	allocate more memory and return a copy of a bat
+## - xtable_test(str title, bat x, bat y, bat z)
+##	 major test script on xtable functionality
+# 
+function xtable_print();
+#proc xtable_print := {
+	ca_a := "\n# %s (ct: %d elts, %d groups, %d bytes)\n";
+#    printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
+	2:= bbp.bind("2");
+	3:= bbp.bind("3");
+	da_a := count(3);
+	1:= bbp.bind("1");
+	ea_a := count(1);
+	fa_a := batsize(3);
+	ga_a := printf(ca_a,2,da_a,ea_a,fa_a);
+#                $2, $3.count, $1.count, $3.batsize);
+	ha_a := col_name(1,"count");
+	ia_a := mil.getVarTempRange(4);
+	ja_a := table(ha_a,ia_a);
+#    table($1.col_name("count"), $(4..));
+end function;
+#}
+#
+function xtable_histo_direct();
+#proc xtable_histo_direct := {
+	2:= bbp.bind("2");
+	histo:= histogram(2);
+#    var histo := $2.histogram;
+	ka_a := mil.getVarTempRange(1);
+	la_a := mirror(histo);
+	ma_a := col_name(la_a,"gid");
+	na_a := xtable_print(histo,ka_a,ma_a);
+#    histo.xtable_print($(1..), histo.mirror.col_name("gid"));
+end function;
+#}
+#
+function xtable_histo_remap();
+#proc xtable_histo_remap := {
+	oa_a := new(oid,oid);
+	pa_a := key(oa_a,1);
+	2:= bbp.bind("2");
+	qa_a := reverse(pa_a);
+	map:= insert(qa_a,2);
+#    var map := new(oid,oid).key(true).reverse.insert($2);
+	ra_a := histogram(2);
+	sa_a := mil.getVarTempRange(1);
+	ta_a := col_name(map,"gid");
+	ua_a := join(map,ra_a);
+	va_a := xtable_print(ua_a,sa_a,ta_a);
+#    map.join($2.histogram).xtable_print($(1..), map.col_name("gid"));
+end function;
+#}
+# 
+function xtable_realloc(b:anycap:any):void;
+#proc xtable_realloc(b,cap) := {
+	inf:= info(b);
+#    var inf := b.info;
+	monet_atomtbl:= bbp.bind("monet_atomtbl");
+	wa_a := find(inf,"head");
+	ht:= find(monet_atomtbl,wa_a);
+#    var ht := monet_atomtbl.find(inf.find("head"));
+	xa_a := find(inf,"tail");
+	tt:= find(monet_atomtbl,xa_a);
+#    var tt := monet_atomtbl.find(inf.find("tail"));
+	bn:= new(ht,tt,cap);
+#    var bn := new(ht, tt, cap);
+	ya_a := insert(bn,b);
+#    bn.insert(b);
+barrier	ab_a:= =(ht,void);
+	bb_a := reverse(b);
+	cb_a := fetch(bb_a,0);
+	db_a := seqbase(bn,cb_a);
+#    if (ht = void) bn.seqbase(b.reverse.fetch(0));
+end	ab_a;
+barrier	eb_a:= =(tt,void);
+	fb_a := fetch(b,0);
+	gb_a := seqbase(bn,fb_a);
+#    if (tt = void) bn.seqbase(b.fetch(0));
+end	eb_a;
+	return bn;
+#    return bn;
+end function;
+#}
+# 
+function xtable_test(title:anyx:anyy:anyz:any):void;
+#proc xtable_test(title, x, y, z) := {
+	hb_a := "# xtable_test: %s grouping (%d tuples, %d bytes)\n\n";
+#    printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
+	ib_a := count(x);
+	jb_a := batsize(y);
+	kb_a := batsize(z);
+	lb_a := batsize(x);
+	mb_a := +(jb_a,kb_a);
+	nb_a := +(lb_a,mb_a);
+	ob_a := printf(hb_a,title,ib_a,nb_a);
+#                title, x.count, x.batsize + y.batsize + z.batsize);
+	pb_a := col_name(x,"x");
+	qb_a := col_name(y,"y");
+	rb_a := col_name(z,"z");
+#    x.col_name("x"); y.col_name("y"); z.col_name("z");
+	sb_a := dbl(1.0);
+	tb_a := +(y,sb_a);
+	yy:= col_name(tb_a,"yy");
+#    var yy := [+](y,dbl(1.0)).col_name("yy");
+# 
+	ub_a := slice(x,0,7);
+	vb_a := col_name(ub_a,"x");
+	wb_a := print(vb_a,y,yy,z);
+#    print(x.slice(0,7).col_name("x"),y,yy,z);
+	xb_a := "synced(x,y) := %s\n";
+	yb_a := synced(x,y);
+	ac_a := str(yb_a);
+	bc_a := printf(xb_a,ac_a);
+#    printf("synced(x,y) := %s\n", synced(x,y).str);
+	cc_a := "synced(x,z) := %s\n";
+	dc_a := synced(x,z);
+	ec_a := str(dc_a);
+	fc_a := printf(cc_a,ec_a);
+#    printf("synced(x,z) := %s\n", synced(x,z).str);
+#
+#    # test group 
+	b1:= CTgroup(x);
+#    var b1 := CTgroup(x);
+	gc_a := "group(x)";
+	hc_a := xtable_histo_direct(gc_a,b1,x);
+#    xtable_histo_direct("group(x)", b1, x);
+#
+#    # test derive
+	BAT_WRITE:= bbp.bind("BAT_WRITE");
+	ic_a := CTgroup(b1,y);
+	b1 := access(ic_a,BAT_WRITE);
+#    b1 := CTgroup(b1,y).access(BAT_WRITE);
+	jc_a := "group(x,y)";
+	kc_a := xtable_histo_direct(jc_a,b1,x,y);
+#    xtable_histo_direct("group(x,y)", b1, x, y);
+#
+#    # test orderby
+	lc_a := reverse(x);
+	mc_a := sort(lc_a);
+	nc_a := reverse(mc_a);
+	b2:= CTrefine(nc_a,y);
+#{   var b2 := CTrefine(x.reverse.sort.reverse, y);
+	oc_a := "orderby(x,y)";
+	pc_a := xtable_histo_remap(oc_a,b2,x,y);
+#    xtable_histo_remap("orderby(x,y)", b2, x, y); }
+# 
+#    # test subgroup
+	qc_a := dbl(2.0);
+	rc_a := <=(y,qc_a);
+	sc_a := histogram(b1);
+	tc_a := pump.count(rc_a,b1,sc_a);
+	b2:= col_name(tc_a,"count");
+#{   var b2 := {count}([<=](y,dbl(2.0)),b1,b1.histogram).col_name("count");
+	uc_a := "subhisto(x,y|1-2)";
+	vc_a := mirror(b2);
+	wc_a := col_name(vc_a,"gid");
+	xc_a := xtable_print(b2,uc_a,x,y,wc_a);
+#    b2.xtable_print("subhisto(x,y|1-2)", x, y, b2.mirror.col_name("gid")); }
+	yc_a := dbl(1.0);
+	ad_a := dbl(2.0);
+	bd_a := uselect(y,yc_a,ad_a);
+	b1 := CTsubgroup(b1,y,bd_a);
+#    b1 := CTsubgroup(b1,y, y.uselect(dbl(1.0),dbl(2.0)));
+	cd_a := "group(x,y|1-2)";
+	dd_a := xtable_histo_direct(cd_a,b1,x,y);
+#    xtable_histo_direct("group(x,y|1-2)", b1, x, y);
+#
+#    # test regroup
+	ed_a := CTregroup(b1,z);
+#    CTregroup(b1,z);
+	fd_a := "regroup(x,y,z)";
+	gd_a := xtable_histo_direct(fd_a,b1,x,y,z);
+#    xtable_histo_direct("regroup(x,y,z)", b1, x, y, z);
+#
+#    # test multigroup
+	hd_a := new(bat,void);
+	id_a := insert(hd_a,y,nil);
+	jd_a := insert(id_a,yy,nil);
+	kd_a := CTmultigroup(jd_a);
+	b1 := reverse(kd_a);
+#    b1 := CTmultigroup(new(bat,void).insert(y,nil).insert(yy,nil)).reverse;
+	ld_a := "multigroup(y)";
+	md_a := fetch(b1,0);
+	nd_a := xtable_histo_remap(ld_a,md_a,y);
+#    xtable_histo_remap("multigroup(y)", b1.fetch(0), y); 
+	od_a := "multigroup(yy)";
+	pd_a := fetch(b1,1);
+	qd_a := xtable_histo_remap(od_a,pd_a,yy);
+#    xtable_histo_remap("multigroup(yy)", b1.fetch(1), yy); 
+#
+#    # test multiderive
+	rd_a := new(bat,bat);
+	sd_a := insert(rd_a,y,x);
+	td_a := insert(sd_a,yy,x);
+	ud_a := CTmultiderive(td_a);
+	b1 := reverse(ud_a);
+#    b1 := CTmultiderive(new(bat,bat).insert(y,x).insert(yy,x)).reverse;
+	vd_a := "multigroup(y,x)";
+	wd_a := fetch(b1,0);
+	xd_a := xtable_histo_remap(vd_a,wd_a,y,x);
+#    xtable_histo_remap("multigroup(y,x)", b1.fetch(0), y, x); 
+	yd_a := "multigroup(yy,x)";
+	ae_a := fetch(b1,1);
+	be_a := xtable_histo_remap(yd_a,ae_a,yy,x);
+#    xtable_histo_remap("multigroup(yy,x)", b1.fetch(1), yy, x); 
+#
+#    # test multiregroup
+	ce_a := reverse(b1);
+	de_a := project(ce_a,z);
+	ee_a := CTmultiregroup(de_a);
+	b1 := reverse(ee_a);
+#    b1 := CTmultiregroup(project(b1.reverse,z)).reverse;
+	fe_a := "multiregroup(y,x)";
+	ge_a := fetch(b1,0);
+	he_a := xtable_histo_remap(fe_a,ge_a,y,x,z);
+#    xtable_histo_remap("multiregroup(y,x)", b1.fetch(0), y, x, z); 
+	ie_a := "multiregroup(yy,x)";
+	je_a := fetch(b1,1);
+	ke_a := xtable_histo_remap(ie_a,je_a,yy,x,z);
+#    xtable_histo_remap("multiregroup(yy,x)", b1.fetch(1), yy, x, z); 
+end function;
+#}
+#
+	x := new(oid,chr);
+#x := new(oid,chr);
+	le_a := insert(x,1@0,'a');
+#x.insert(1@0,'a');
+	me_a := insert(x,2@0,'a');
+#x.insert(2@0,'a');
+	ne_a := insert(x,3@0,'b');
+#x.insert(3@0,'b');
+	oe_a := insert(x,4@0,'b');
+#x.insert(4@0,'b');
+	pe_a := insert(x,5@0,'b');
+#x.insert(5@0,'b');
+	qe_a := insert(x,6@0,'b');
+#x.insert(6@0,'b');
+	re_a := insert(x,7@0,'c');
+#x.insert(7@0,'c');
+	se_a := insert(x,8@0,'c');
+#x.insert(8@0,'c');
+# 
+	y := new(oid,dbl);
+#y:= new(oid,dbl);
+	te_a := dbl(1.0);
+	ue_a := insert(y,1@0,te_a);
+#y.insert(1@0,dbl(1.0));
+	ve_a := dbl(2.0);
+	we_a := insert(y,2@0,ve_a);
+#y.insert(2@0,dbl(2.0));
+	xe_a := dbl(2.0);
+	ye_a := insert(y,3@0,xe_a);
+#y.insert(3@0,dbl(2.0));
+	af_a := dbl(2.0);
+	bf_a := insert(y,4@0,af_a);
+#y.insert(4@0,dbl(2.0));
+	cf_a := dbl(2.0);
+	df_a := insert(y,5@0,cf_a);
+#y.insert(5@0,dbl(2.0));
+	ef_a := dbl(3.0);
+	ff_a := insert(y,6@0,ef_a);
+#y.insert(6@0,dbl(3.0));
+	gf_a := dbl(1.0);
+	hf_a := insert(y,7@0,gf_a);
+#y.insert(7@0,dbl(1.0));
+	if_a := dbl(1.0);
+	jf_a := insert(y,8@0,if_a);
+#y.insert(8@0,dbl(1.0));
+# 
+	z := new(oid,str);
+#z:= new(oid,str);
+	kf_a := insert(z,1@0,"c");
+#z.insert(1@0,"c");
+	lf_a := insert(z,2@0,"a");
+#z.insert(2@0,"a");
+	mf_a := insert(z,3@0,"b");
+#z.insert(3@0,"b");
+	nf_a := insert(z,4@0,"c");
+#z.insert(4@0,"c");
+	of_a := insert(z,5@0,"a");
+#z.insert(5@0,"a");
+	pf_a := insert(z,6@0,"a");
+#z.insert(6@0,"a");
+	qf_a := insert(z,7@0,"c");
+#z.insert(7@0,"c");
+	rf_a := insert(z,8@0,"a");
+#z.insert(8@0,"a");
+#
+	sf_a := xtable_test("small hash",x,y,z);
+#xtable_test("small hash", x, y, z);
+# 
+## create vectorized versions
+	tf_a := reverse(x);
+	uf_a := project(tf_a);
+	vf_a := reverse(uf_a);
+	x := copy(vf_a);
+#x := x.reverse.project.reverse.copy;
+	wf_a := reverse(y);
+	xf_a := project(wf_a);
+	yf_a := reverse(xf_a);
+	y := copy(yf_a);
+#y := y.reverse.project.reverse.copy;
+	ag_a := reverse(z);
+	bg_a := project(ag_a);
+	cg_a := reverse(bg_a);
+	z := copy(cg_a);
+#z := z.reverse.project.reverse.copy;
+# 
+## activate voids
+	dg_a := seqbase(x,1@0);
+#x.seqbase(1@0);
+	eg_a := seqbase(y,1@0);
+#y.seqbase(1@0);
+	fg_a := seqbase(z,1@0);
+#z.seqbase(1@0);
+# 
+	gg_a := xtable_test("small vectorized",x,y,z);
+#xtable_test("small vectorized", x, y, z);
+# 
+	hg_a := print("growing vectorized tables from 8 to 512k elements...");
+#print("growing vectorized tables from 8 to 512k elements...");
+	ig_a := *(512,1024);
+	x := xtable_realloc(x,ig_a);
+#x := x.xtable_realloc(512*1024);
+	jg_a := *(512,1024);
+	y := xtable_realloc(y,jg_a);
+#y := y.xtable_realloc(512*1024);
+	kg_a := *(512,1024);
+	z := xtable_realloc(z,kg_a);
+#z := z.xtable_realloc(512*1024);
+	i:= 17;
+#var i := 17;
+barrier	lg_a:= true;
+	i := -(i,1);
+	ng_a := >(i,0);
+barrier	mg_a:= ng_a;
+#while((i := i - 1) > 0) {
+	og_a := copy(x);
+	pg_a := insert(x,og_a);
+#        x.insert(x.copy);
+	qg_a := copy(y);
+	rg_a := insert(y,qg_a);
+#        y.insert(y.copy);
+	sg_a := copy(z);
+	tg_a := insert(z,sg_a);
+#        z.insert(z.copy);
+	ug_a := count(x);
+	vg_a := print(ug_a);
+#        print(x.count);
+redo	lg_a;
+end	mg_a;
+end	lg_a;
+#}
+	wg_a := print("done!");
+#print("done!");
+# 
+	xg_a := xtable_test("big vectorized",x,y,z);
+#xtable_test("big vectorized", x, y, z);
+# 
+## materialize the oids again
+	yg_a := reverse(x);
+	ah_a := oid(yg_a);
+	x := reverse(ah_a);
+#x := [oid](x.reverse).reverse;
+	bh_a := reverse(y);
+	ch_a := oid(bh_a);
+	y := reverse(ch_a);
+#y := [oid](y.reverse).reverse;
+	dh_a := reverse(z);
+	eh_a := oid(dh_a);
+	z := reverse(eh_a);
+#z := [oid](z.reverse).reverse;
+	BAT_WRITE:= bbp.bind("BAT_WRITE");
+	fh_a := access(y,BAT_WRITE);
+#y.access(BAT_WRITE);
+	gh_a := access(z,BAT_WRITE);
+#z.access(BAT_WRITE);
+	hh_a := dbl(nil);
+	ih_a := insert(y,0@0,hh_a);
+#y.insert(0@0,dbl(nil));
+	jh_a := str(nil);
+	kh_a := insert(z,0@0,jh_a);
+#z.insert(0@0,str(nil));
+	lh_a := delete(y,0@0);
+#y.delete(0@0);
+	mh_a := delete(z,0@0);
+#z.delete(0@0);
+# 
+	nh_a := xtable_test("big hash",x,y,z);
+#xtable_test("big hash", x, y, z);
+# 
+## let the Mserver find out that the head columns are equal
+	oh_a := mirror(x);
+	y := join(oh_a,y);
+#y := x.mirror.join(y);
+	ph_a := mirror(x);
+	z := join(ph_a,z);
+#z := x.mirror.join(z);
+# 
+	qh_a := xtable_test("big synced",x,y,z);
+#xtable_test("big synced", x, y, z);
+#

@@ -111,14 +111,14 @@ command TCPepilogue():void= TPCepilogue;
 #ifndef _TCPIP_H_
 #define _TCPIP_H_
 
-#include "monet.h"
+#include "mal_function.h"
 
 extern int conn_find(str host, int port);
 
 @{
 @* Implementation
 @c
-#include <monet.h>
+#include "mal_function.h"
 #include <sys/socket.h>
 #include <sys/types.h>
 /*
@@ -146,7 +146,8 @@ int socket_open(str host, int port, str fcn){
 	struct sockaddr_in a;
 	struct hostent *hp;
 	struct sockaddr *addr = (struct sockaddr *) &a;
- 	int fd, len = sizeof(a);
+ 	int fd;
+	SOCKLEN len = sizeof(a);
 
 	memset(&a, 0, sizeof(a));
 	a.sin_family = AF_INET;
@@ -249,8 +250,24 @@ str atom_name(int tpe) {
 @* Data Structures
 @h
 #define TCPPORT		49153
-#define SOCKPTR		struct sockaddr *
 #define MAX_CONN	256
+
+#ifdef AIX
+#define SOCKPTR struct sockaddr *
+#define SOCKLEN size_t
+#else
+#ifdef __sgi
+#define SOCKPTR void *
+#define SOCKLEN int
+#else
+#define SOCKPTR struct sockaddr *
+#if HAVE_SOCKLEN_T
+#define SOCKLEN socklen_t
+#else
+#define SOCKLEN int
+#endif
+#endif
+#endif
 
 @- TCPlock
 We have a global lock for protecting the cache and connection data structures.
@@ -323,7 +340,7 @@ real deallocation; as this will be done by the last unblocked routine.
 int cache_del(cache_t *c){
 	if (c->val) {
 	    if (c->tpe == TYPE_bat){
-	        BBP_refs((int) c->val)--;
+	        BBP_refs((bat) c->val)--;
 	    } else {
 	        GDKfree(c->val);
 	    }
@@ -347,7 +364,7 @@ int cache_fill(cache_t *c, int tpe, ptr val, int i){
 	if (c->val) {
 	    GDKwarning("cache_fill: replacing the value for %s.\n", c->name);
 	    if (c->tpe == TYPE_bat){
-		BBP_refs((int) c->val)--;
+		BBP_refs((bat) c->val)--;
 	    } else {
 		GDKfree(c->val);
 	    }
@@ -356,7 +373,7 @@ int cache_fill(cache_t *c, int tpe, ptr val, int i){
       	c->tpe = tpe;
       	c->val = val;
 	if (tpe == TYPE_bat) {
-	    BBPfix((int) c->val);
+	    BBPfix((bat) c->val);
 	}
 	if (c->locked) {
 	    if (c->barrier != NULL) MT_up_sema(c->barrier, "cache_fill");
@@ -571,7 +588,8 @@ the standard mechanism.
 'GDKerror' messages have been stored in 'errbuf' (if any)
 @c
 		if (*errbuf) {
- 			int len, fd = connections[i].sock;
+ 			size_t len;
+			int fd = connections[i].sock;
 
 			sprintf(msg, "err:%s:%d\n", nm, strlen(errbuf) + 1);
 			len = strlen(msg);
@@ -701,7 +719,7 @@ fail:		    GDKerror("conn_waiter: illegal %s[%s,%s].\n",nm,line,ht,tt);
 		b->hsorted = hordered;
 		b->tsorted = tordered;
 		DELTAinit(b);
-		BBPcacheit(b, TRUE);
+		BBPcacheit(b);
 		dst = (ptr) b->batCacheid;
 @-
 Read the data for its heaps. A BAT at least consists of a BUN heap.
@@ -749,7 +767,7 @@ Mark the value as totally ready in the cache.
 	    cache_fill(c, tpe, dst, i);
 	}
 	GDKsetbuf(errbuf_bak);
-	fprintf(GDKout, "conn_waiter: lost connection, exiting.\n");
+	stream_printf(GDKout, "conn_waiter: lost connection, exiting.\n");
 	MT_set_lock(TCPlock, "conn_waiter");
 	conn_delete(i);
 	MT_unset_lock(TCPlock, "conn_waiter");
@@ -1052,6 +1070,7 @@ str TCPexport(int *retval, int *conn_id, ptr val, int *tpeinput, str *nameinput)
 	str name= *nameinput;
 	char buf[BIG_MESSAGE], *p;
 	int hdrlen, len = BIG_MESSAGE, fd;
+	size_t batlen;
 	str ret = MAL_SUCCEED;
 
 	if (*conn_id<0 || *conn_id>=MAX_CONN || !connections[*conn_id].me)
@@ -1085,14 +1104,15 @@ str TCPexport(int *retval, int *conn_id, ptr val, int *tpeinput, str *nameinput)
 
 	    hdrlen = strlen(buf);
 	    len = BUNlast(b)-BUNfirst(b);
+            batlen = BUNlast(b)-BUNfirst(b);
 @-
 Small BATs are written in one go, large ones in parts.
 @c
-	    if ((hdrlen + len +  (b->hheap.base?b->hheap.free:0) +
+	    if ((hdrlen + batlen +  (b->hheap.base?b->hheap.free:0) +
 	    			(b->theap.base?b->theap.free:0)) < BIG_MESSAGE) 
 	    {
-	    	int totlen = hdrlen + len;
-	    	memcpy(buf+hdrlen, BUNfirst(b), len);
+	    	int totlen = hdrlen + batlen;
+	    	memcpy(buf+hdrlen, BUNfirst(b), batlen);
 		if (b->hheap.base) {
 	    	    memcpy(buf+totlen, b->hheap.base, b->hheap.free);
 		    totlen += b->hheap.free;
@@ -1104,7 +1124,7 @@ Small BATs are written in one go, large ones in parts.
 		if (socket_write(fd, totlen, buf, "small BAT") == 0)
 			return throwMessage("tcp.export","can not write socket");
 	    } else if (socket_write(fd, strlen(buf), buf, "meta info") == 0 ||
-		socket_write(fd, len, BUNfirst(b), "BUN heap") == 0 ||
+		socket_write(fd, batlen, BUNfirst(b), "BUN heap") == 0 ||
 	        (b->hheap.base && socket_write(fd, 
 			b->hheap.free, b->hheap.base, "head heap") == 0) ||
 	        (b->theap.base && socket_write(fd, 

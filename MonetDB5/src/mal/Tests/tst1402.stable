@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## testing some basic stuff on enums and derived types
 ## Note that derived types can be initialized using
 ## their storage representation. If a string literal
@@ -23,17 +21,18 @@
 #f1:= 14:fruit;
 #print(f1);
 #
-function Admin.main():int; #0:(main:int)
-    e0 := 12; #1:(e0:int)<-($2:int)
-    io.print(e0); #2:($3:int)<-(e0:int)
-    f0 := 11; #3:(f0:int)<-($5:int)
-    io.print(f0); #4:($6:int)<-(f0:int)
-    io.print("conversions"); #5:($7:int)<-($8:str)
-    e1 := 13; #6:(e1:enum)<-($10:enum)
-    io.print(e1); #7:($11:int)<-(e1:enum)
-    f1 := 14; #8:(f1:fruit)<-($13:fruit)
-    io.print(f1); #9:($14:int)<-(f1:fruit)
-end main; #10:
+#
+function Admin.main():int; #0  (main:int)
+    e0 := 12; #1  (e0:int)<-($2:int)
+    io.print(e0); #2 CMDprint_val ($3:int)<-(e0:int)
+    f0 := 11; #3  (f0:int)<-($5:int)
+    io.print(f0); #4 CMDprint_val ($6:int)<-(f0:int)
+    io.print("conversions"); #5 CMDprint_val ($7:int)<-($8:str)
+    e1 := 13; #6  (e1:enum)<-($10:enum)
+    io.print(e1); #7 CMDprint_val ($11:int)<-(e1:enum)
+    f1 := 14; #8  (f1:fruit)<-($13:fruit)
+    io.print(f1); #9 CMDprint_val ($14:int)<-(f1:fruit)
+end main; #10  
 [ 12 ]
 [ 11 ]
 [ "conversions" ]

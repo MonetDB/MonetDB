@@ -45,9 +45,11 @@ typedef int malType;
 #define TMPMARKER '$'
 
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
+#define newVecType(T)  (1<<16 | (((TYPE_void & 0377) <<8) | (T & 0377) ))
 #define getHeadType(X)	((X>>8) & 0377 )
 #define getTailType(X)	((X) & 0377 )
 #define isaBatType(X) 	((X)!=TYPE_any && (1<<16) & (X))
+#define isaVecType(X) 	((X)!=TYPE_any && (1<<16) & (X))
 @-
 Procedure type parameters may be qualified by a formal type term any::I ,
 where I is a small integer. 
@@ -66,7 +68,6 @@ batType (bit 17) headType (16-9) and tailType(8-0)
 The symbol/instruction kinds are introduced here instead of reusing the defines 
 derived from the parser to avoid a loop in the define-structure.
 @h
-#define NOOPsymbol 	20
 #define ASSIGNsymbol 	21
 #define RAISEsymbol 	23
 #define CATCHsymbol 	24
@@ -78,7 +79,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define IMPORTsymbol	30	/* dependency on outer scopes */
 #define COMMANDsymbol   31
 #define FUNCTIONsymbol	32
-#define RULEsymbol	33
+#define STREAMsymbol	37
 #define ENDDEFsymbol	34
 #define THRDsymbol	43
 #define COMMENTsymbol	35	/* propagation of comments */
@@ -86,12 +87,11 @@ derived from the parser to avoid a loop in the define-structure.
 #define SCOPEsymbol	41
 #define PUSHsymbol	42	/* move constant to stack */
 #define PATTERNsymbol   44
-#define HANDLERsymbol     45
 #define THREADsymbol     46
 #define EXITsymbol	47
 
 #define FCNcall		50	/* determines interpreter action*/
-#define RLRcall		51
+#define STRMcall	51
 #define CMDcall		52
 #define THRDcall	53
 #define PATcall		54	/* pattern call */
@@ -103,7 +103,8 @@ mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
 mal_export int	idcmp(str n, str m);
 mal_export str	newTmpName(int i);
-mal_export int isIdentifier(str s);
+mal_export int	isTmpName(str n);
+mal_export int	isIdentifier(str s);
 #endif /* MAL_TYPE_H*/
 @-
 At any point we should be able to construct an ascii representation of
@@ -114,8 +115,8 @@ the type descriptor. Including the variable references.
 str malTypeName(malType tpe)
 {
 #ifdef DEBUG_MAL_TYPE
-	printf("maltype: %d %d %d",tpe,getHeadType(tpe),getTailType(tpe));
-	printf("	: %d\n",isaBatType(tpe));
+	stream_printf((GDKout,"maltype: %d %d %d",tpe,getHeadType(tpe),getTailType(tpe));
+	stream_printf((GDKout,"	: %d\n",isaBatType(tpe));
 #endif
 	if( tpe == TYPE_any ) return GDKstrdup("any");
 	if( isaBatType(tpe)){
@@ -138,20 +139,20 @@ str malTypeName(malType tpe)
 		else
 			snprintf(s,l,"%s]", ATOMname(getTailType(tpe)));
 #ifdef DEBUG_MAL_TYPE
-		printf("%s\n",buf);
+		stream_printf((GDKout,"%s\n",buf);
 #endif
 		return GDKstrdup(buf);
 	} 
 	if( isAnyExpression(tpe) ){
-		char buf[256];
-		strcpy(buf,"any");
+		char buf[PATHLENGTH];
+		strncpy(buf,"any",PATHLENGTH);
 		if( isAnyExpression(tpe)){
-			snprintf(buf+3,253,"::%d",getTailIndex(tpe));
+			snprintf(buf+3,PATHLENGTH-3,"::%d",getTailIndex(tpe));
 		}
 		return GDKstrdup(buf);
 	}
 #ifdef DEBUG_MAL_TYPE
-		printf("Rely on GDK atom %s\n",ATOMname(tpe));
+		stream_printf((GDKout,"Rely on GDK atom %s\n",ATOMname(tpe));
 #endif
 	return GDKstrdup(ATOMname(tpe));
 }
@@ -172,7 +173,7 @@ malType malAnyBatType(malType t1, malType t2){
 malType reverseBatType(malType v){
 	str d1= malTypeName(newBatType(getHeadType(v),getTailType(v))),
 	d2=	malTypeName(newBatType(getTailType(v),getHeadType(v)));
-	printf("reverseBatType %d %s %s",v,d1,d2);
+	stream_printf(GDKout,"reverseBatType %d %s %s",v,d1,d2);
 	GDKfree(d1); GDKfree(d2);
 	return newBatType(getTailType(v),getHeadType(v));
 }
@@ -247,12 +248,12 @@ int idcmp(str n, str m)
 int getTypeIndex(str nme){
 	int i;
 	i= ATOMindex(nme);
-	/*printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
+	/*stream_printf((GDKout,"getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
 	if( idcmp("any",nme)==0 ) return TYPE_any;
 	if( idcmp("bat",nme)==0 ){
-/* printf("found a bat[any,any]\n");*/
+/* stream_printf((GDKout,"found a bat[any,any]\n");*/
 		i = newBatType(TYPE_any,TYPE_any);
-/* printf("isAnyexpression? %d\n", isAnyExpression(i));*/
+/* stream_printf((GDKout,"isAnyexpression? %d\n", isAnyExpression(i));*/
 		return i;
 	}
 	if( i== -GDKatomcnt) i = TYPE_any;
@@ -265,10 +266,11 @@ int getGDKtype(int type){
 }
 str newTmpName(int i){
 	char buf[PATHLENGTH],*s;
-	snprintf(buf,PATHLENGTH,"%c",TMPMARKER);
-	snprintf(buf+1,PATHLENGTH,"%d",i);
+	snprintf(buf,PATHLENGTH,"%c%d",TMPMARKER,i);
 	return GDKstrdup(buf);
 }
+int isTmpName(str n){ return n && *n == TMPMARKER;}
+
 int isIdentifier(str s)
 {
 	if( ! isalpha(*s) ) return -1;

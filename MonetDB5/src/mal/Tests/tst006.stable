@@ -1,0 +1,22 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
+#	r:=0;
+#barrier	l:= r < 1;
+#	r:= r+1;
+#	l:= false;
+#	redo l;
+#exit	l;
+#
+function Admin.main():int; #0  (main:int)
+    r := 0; #1  (r:int)<-($2:int)
+barrier l := calc.<(r,1); #2 CALCcompLTintint (l:bit)<-(r:int)($4:int) jump 6
+    r := calc.+(r,1); #3 CALCbinaryADDintint (r:int)<-(r:int)($4:int)
+    l := false; #4  (l:bit)<-($5:bit)
+    redo l; #5  (l:bit) jump 2
+exit l; #6  (l:bit)
+end main; #7  
+>

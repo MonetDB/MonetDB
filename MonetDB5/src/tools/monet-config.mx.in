@@ -2,10 +2,25 @@
 @sh
 #!@BASH@
 
+pkg=@PACKAGE@
+source=@MONET_SOURCE@
+build=@MONET_BUILD@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-includedir=@includedir@
+
+bindir=@bindir@
+libexecdir=@libexecdir@
+datadir=@datadir@
+sysconfdir=@sysconfdir@
+localstatedir=@localstatedir@
 libdir=@libdir@
+infodir=@infodir@
+mandir=@mandir@
+includedir=@includedir@
+
+pkglibdir=${libdir}/${pkg}
+pkgdatadir=${datadir}/${pkg}
+pkgincludedir=${includedir}/${pkg}
 
 usage()
 {
@@ -14,16 +29,20 @@ Usage: monet-config [OPTION]
 
 Known values for OPTION are:
 
-  --prefix=DIR		change monet prefix [default $prefix]
-  --libs		print Mapi library linking information
-  --cflags		print Mapi pre-processor and compiler flags
-  --gdklibs		print gdk linking information
-  --gdkcflags		print gdk pre-processor and compiler flags
+  --build		print monet build directory
+  --source		print monet source directory
+  --libs		print Monet module linking information
+  --cflags		print Monet module pre-processor and compiler flags
+  --modpath             print default Monet module directory
+  --classpath		print default Monet CLASSPATH
   --help		display this help and exit
   --version		output version information
 
-NOTE: --gdklibs and --gdkcflags are not to link the gdk library into
-      your application, but are internally used
+Install directories ${pkg} was configured to
+  --prefix  --exec-prefix  --bindir  --libexecdir  --datadir
+  --sysconfdir  --localstatedir  --libdir  --infodir
+  --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
+
 EOF
 
     exit $1
@@ -43,12 +62,21 @@ while test $# -gt 0; do
     esac
 
     case "$1" in
-    --prefix=*)
-	prefix=$optarg
-	;;
 
     --prefix)
 	echo $prefix
+	;;
+
+    --exec-prefix)
+	echo $exec-prefix
+	;;
+
+    --build)
+	echo $build
+	;;
+
+    --source)
+	echo $source
 	;;
 
     --version)
@@ -56,25 +84,53 @@ while test $# -gt 0; do
 	exit 0
 	;;
 
+    --*dir)
+        dirname=\$`echo $1 | sed -e 's,^--,,'`
+        dirname=`eval echo $dirname`
+        test -z "$dirname" && exit 1
+        echo $dirname
+        exit 0
+        ;;
+
     --help)
 	usage 0
 	;;
 
+    --includes)
+       	echo \
+		-I\${MONET_INCLUDEDIR} \
+		-I\${MONET_INCLUDEDIR}/common \
+		-I\${MONET_INCLUDEDIR}/gdk \
+	  	-I\${MONET_INCLUDEDIR}/monet \
+	  	-I\${MONET_INCLUDEDIR}/plain \
+	  	-I\${MONET_INCLUDEDIR}/stream \
+	  	-I\${MONET_INCLUDEDIR}/mapi 
+       	;;
+
     --cflags)
-       	echo -I @includedir@/gdk @includedir@/tools
+       	echo \
+		-I$includedir \
+		-I$includedir/common \
+		-I$includedir/gdk \
+		-I$includedir/monet \
+		-I$includedir/plain \
+		-I$includedir/stream \
+		-I$includedir/mapi 
        	;;
 
     --libs)
-       	echo -L @libdir@ -lMapi
+       	echo \
+		-L$libdir \
+		-L$pkglibdir
        	;;
 
-    --gdkcflags)
-       	echo @PTHREAD_INCS@
-       	;;
+    --modpath)
+        echo 	$pkglibdir
+        ;;
 
-    --gdklibs)
-       	echo @SOCKET_LIBS@ @MALLOC_LIBS@ @PTHREAD_LIBS@
-       	;;
+    --classpath)
+        echo 	$pkglibdir/mapi.jar
+        ;;
 
     *)
 	usage

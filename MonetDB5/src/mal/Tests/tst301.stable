@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ##propagate INT exception
 #	IllegalAccess := 1234;
 #	raise IllegalAccess;
@@ -14,13 +12,13 @@
 #	printf("catched %d\n",IllegalAccess);
 #exit IllegalAccess;
 #
-function Admin.main():int; #0:(main:int)
-    IllegalAccess := 1234; #1:(IllegalAccess:int)<-($2:int)
-    raise IllegalAccess; #2:(IllegalAccess:int)
-    io.print("should not come here\n"); #3:($3:int)<-($4:str)
-catch IllegalAccess; #4:(IllegalAccess:int) jump 7
-    system.printf("catched %d\n",IllegalAccess); #5:($5:int)<-($6:str)(IllegalAccess:int)
-exit IllegalAccess; #6:(IllegalAccess:int)
-end main; #7:
+function Admin.main():int; #0  (main:int)
+    IllegalAccess := 1234; #1  (IllegalAccess:int)<-($2:int)
+    raise IllegalAccess; #2  (IllegalAccess:int)
+    io.print("should not come here\n"); #3 CMDprint_val ($3:int)<-($4:str)
+catch IllegalAccess; #4  (IllegalAccess:int) jump 6
+    system.printf("catched %d\n",IllegalAccess); #5 SYSprint_formatted_int ($5:int)<-($6:str)(IllegalAccess:int)
+exit IllegalAccess; #6  (IllegalAccess:int)
+end main; #7  
 catched 1234
 >

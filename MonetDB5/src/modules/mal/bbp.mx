@@ -106,6 +106,9 @@ command setPersistent( b:BAT) : bit = CMDbbpsetPersistent
 comment "Make the BAT persistent. Returns boolean to indicate if the
 BAT administration has indeed changed.";
 
+command isSession( b:BAT) : bit = CMDbbpisSession
+comment "Returns true if the BAT argument is session dependent.";
+
 command export(b:bat[any,any],fname:str):int = CMDbbpexport
 comment "Save the bat in Monet tuple format on a file.";
 
@@ -121,6 +124,14 @@ comment "Save a BAT to storage, if it was loaded and dirty.
 Returns whether IO was necessary.
 Please realize that calling this function violates 
 the atomic commit protocol!!";
+
+command load(name:str) : bat[any,any] = CMDbbptake
+comment "Load a particylar bat from disk";
+
+command unload(name:str) : bit = CMDbbpunload
+comment "Swapout a BAT to disk. Transient BATs can also be swapped out.
+ Returns whether the unload indeed happened. ";
+
 
 command isCached(b:bat[any,any]):bit = CMDbbpisCached
 comment "Bat is stored in main memory.";
@@ -191,9 +202,6 @@ on-the-fly derived BATs with dictionary information.
 @mal
 pattern getObjects(): bat[int,str] = CMDbbpGetObjects
 	comment "Pseudo bat to map a BAT id into its box name";
-
-command check() : lng = check_bbp_size
-comment "Walk the BBP directories, delete leftovers and return total size";
 
 @+ Implementation section
 In most cases we pass a BAT identifier, which should be unified
@@ -424,6 +432,7 @@ str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @+ BBP Management, IO
 @c
 #include "bbp.h"
+#include <stream.h>
 
 str CMDbbpsetColumns(int *r, int *bid, str *hname, str *tname){
 	BAT *b;
@@ -473,32 +482,33 @@ str CMDbbpname(str *retval, int *bid){
 str CMDbbpsetPersistent(int *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
-	BATpropcheck(b);
-	BATpropcheck(BATmirror(b));
-	*res= b->batPersistence & PERSISTENT;
-	BATmode(b, PERSISTENT);
+	*res= (b->batPersistence & PERSISTENT)? FALSE: TRUE;
+	BBPpersistent(*bid, TRUE);
         return MAL_SUCCEED;
 }
 str CMDbbpisPersistent(int *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
-	BATpropcheck(b);
-	BATpropcheck(BATmirror(b));
-	BATmode(b, PERSISTENT);
-	*res= b->batPersistence & PERSISTENT;
+	*res= (b->batPersistence & PERSISTENT)? TRUE:FALSE;
+        return MAL_SUCCEED;
+}
+str CMDbbpisSession(int *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,setPersistence)@
+	*res= (b->batPersistence & PERSISTENT)? TRUE:FALSE;
         return MAL_SUCCEED;
 }
 str CMDbbpsetTransient(int *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setTransient)@
-	*res= b->batPersistence & TRANSIENT;
-	BATmode(b, TRANSIENT);
+	*res= (b->batPersistence & PERSISTENT)? TRUE: FALSE;
+	BBPtransient(*bid, TRUE);
         return MAL_SUCCEED;
 }
 str CMDbbpisTransient(bit *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setTransient)@
-	*res= b->batPersistence & TRANSIENT;
+	*res= (b->batPersistence & TRANSIENT)? TRUE:FALSE;
         return MAL_SUCCEED;
 }
 str CMDbbpunload(bit *res, str *input) {
@@ -599,15 +609,15 @@ presented.
 @c
 str CMDbbpexport(int *ret, int *bid, str *fnme) {
 	BAT *b;
-	FILE	*f = fopen(*fnme, "w");
+	stream	*f = open_wastream(*fnme);
 	@:getBATdescriptor(ret,bid,b,export)@
-	if (f == NULL) {
+	if (f->errnr == OPEN_ERROR) {
 		*ret = 0;
 		return throwException(MALEXCEPTION,"export",
 			"could not open file %s",*fnme);
 	}
 	BATprintf(f,b);
-	fclose(f);
+	f->close(f);
 	*ret = TRUE;
 	return MAL_SUCCEED;
 }

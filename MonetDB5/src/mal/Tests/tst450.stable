@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ##testing the catalog module for help information
 #
 #a:= catalog.atomNames();	print(a);
@@ -17,19 +15,19 @@
 #n:= catalog.helpComment("algebra","insert"); print(n);
 #d:= catalog.symbolDefinition("catalog","dir"); print(d);
 #
-function Admin.main():int; #0:(main:int)
-    a := catalog.atomNames(); #1:(a:bat[int,str])
-    io.print(a); #2:($2:int)<-(a:bat[int,str])
-    m := catalog.scopeNames(); #3:(m:bat[void,str])
-    io.print(m); #4:($4:int)<-(m:bat[void,str])
-    stmt := catalog.symbolDefinition("algebra","select"); #5:(stmt:bat[int,str])<-($6:str)($7:str)
-    sig := catalog.symbolSignature("algebra","select"); #6:(sig:bat[str,str])<-($6:str)($7:str)
-    tpe := catalog.symbolType("algebra","select"); #7:(tpe:bat[str,str])<-($6:str)($7:str)
-    n := catalog.helpComment("algebra","insert"); #8:(n:bat[int,str])<-($6:str)($11:str)
-    io.print(n); #9:($12:int)<-(n:bat[int,str])
-    d := catalog.symbolDefinition("catalog","dir"); #10:(d:bat[int,str])<-($14:str)($15:str)
-    io.print(d); #11:($16:int)<-(d:bat[int,str])
-end main; #12:
+function Admin.main():int; #0  (main:int)
+    a := catalog.atomNames(); #1 CATALOGatom_names (a:bat[int,str])
+    io.print(a); #2 CMDprint_val ($2:int)<-(a:bat[int,str])
+    m := catalog.scopeNames(); #3 CATALOGscopeNames (m:bat[void,str])
+    io.print(m); #4 CMDprint_val ($4:int)<-(m:bat[void,str])
+    stmt := catalog.symbolDefinition("algebra","select"); #5 CATALOGsymbolDef (stmt:bat[int,str])<-($6:str)($7:str)
+    sig := catalog.symbolSignature("algebra","select"); #6 CATALOGsymbolSignature (sig:bat[str,str])<-($6:str)($7:str)
+    tpe := catalog.symbolType("algebra","select"); #7 CATALOGsymbolType (tpe:bat[str,str])<-($6:str)($7:str)
+    n := catalog.helpComment("algebra","insert"); #8 CATALOGhelpComment2 (n:bat[int,str])<-($6:str)($11:str)
+    io.print(n); #9 CMDprint_val ($12:int)<-(n:bat[int,str])
+    d := catalog.symbolDefinition("catalog","dir"); #10 CATALOGsymbolDef (d:bat[int,str])<-($14:str)($15:str)
+    io.print(d); #11 CMDprint_val ($16:int)<-(d:bat[int,str])
+end main; #12  
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
@@ -68,14 +66,18 @@ end main; #12:
 # (void)  (str)		  #
 #-------------------------#
 [ nil,	  "Admin"	  ]
+[ nil,	  "sql"		  ]
+[ nil,	  "mvc"		  ]
+[ nil,	  "sql_server"	  ]
+[ nil,	  "optimizer"	  ]
 [ nil,	  "catalog"	  ]
 [ nil,	  "box"		  ]
 [ nil,	  "bbp"		  ]
 [ nil,	  "const"	  ]
-[ nil,	  "multiplex"	  ]
 [ nil,	  "squeezer"	  ]
 [ nil,	  "profiler"	  ]
 [ nil,	  "mal"		  ]
+[ nil,	  "multiplex"	  ]
 [ nil,	  "enum"	  ]
 [ nil,	  "ascii_io"	  ]
 [ nil,	  "streams"	  ]
@@ -106,7 +108,7 @@ end main; #12:
 [ nil,	  "lock"	  ]
 [ nil,	  "sema"	  ]
 [ nil,	  "unix"	  ]
-[ nil,	  "threads"	  ]
+[ nil,	  "thread"	  ]
 [ nil,	  "tcpip"	  ]
 #-------------------------#
 # BAT:	  Comment	  #

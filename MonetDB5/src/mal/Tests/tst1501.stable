@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 #	x := new(oid,chr);
 #	de_a := insert(x,1@0,'a');
 #	ee_a := insert(x,2@0,'a');
@@ -51,51 +49,51 @@
 #table(o,x,y,z);
 #
 #
-function Admin.main():int; #0:(main:int)
-    x := mal.new(oid,chr); #1:(x:bat[oid,chr])<-(oid:oid)(chr:chr)
-    de_a := bat.insert(x,1@0,'a'); #2:(de_a:bat[oid,chr])<-(x:bat[oid,chr])($5:oid)($6:chr)
-    ee_a := bat.insert(x,2@0,'a'); #3:(ee_a:bat[oid,chr])<-(x:bat[oid,chr])($8:oid)($6:chr)
-    fe_a := bat.insert(x,3@0,'b'); #4:(fe_a:bat[oid,chr])<-(x:bat[oid,chr])($10:oid)($11:chr)
-    ge_a := bat.insert(x,4@0,'b'); #5:(ge_a:bat[oid,chr])<-(x:bat[oid,chr])($13:oid)($11:chr)
-    he_a := bat.insert(x,5@0,'b'); #6:(he_a:bat[oid,chr])<-(x:bat[oid,chr])($15:oid)($11:chr)
-    ie_a := bat.insert(x,6@0,'b'); #7:(ie_a:bat[oid,chr])<-(x:bat[oid,chr])($17:oid)($11:chr)
-    je_a := bat.insert(x,7@0,'c'); #8:(je_a:bat[oid,chr])<-(x:bat[oid,chr])($19:oid)($20:chr)
-    ke_a := bat.insert(x,8@0,'c'); #9:(ke_a:bat[oid,chr])<-(x:bat[oid,chr])($22:oid)($20:chr)
-    y := mal.new(oid,dbl); #10:(y:bat[oid,dbl])<-(oid:oid)(dbl:dbl)
-    le_a := calc.dbl(1.0); #11:(le_a:dbl)<-($26:flt)
-    me_a := bat.insert(y,1@0,le_a); #12:(me_a:bat[oid,dbl])<-(y:bat[oid,dbl])($5:oid)(le_a:dbl)
-    ne_a := calc.dbl(2.0); #13:(ne_a:dbl)<-($29:flt)
-    oe_a := bat.insert(y,2@0,ne_a); #14:(oe_a:bat[oid,dbl])<-(y:bat[oid,dbl])($8:oid)(ne_a:dbl)
-    pe_a := calc.dbl(2.0); #15:(pe_a:dbl)<-($29:flt)
-    qe_a := bat.insert(y,3@0,pe_a); #16:(qe_a:bat[oid,dbl])<-(y:bat[oid,dbl])($10:oid)(pe_a:dbl)
-    re_a := calc.dbl(2.0); #17:(re_a:dbl)<-($29:flt)
-    se_a := bat.insert(y,4@0,re_a); #18:(se_a:bat[oid,dbl])<-(y:bat[oid,dbl])($13:oid)(re_a:dbl)
-    te_a := calc.dbl(2.0); #19:(te_a:dbl)<-($29:flt)
-    ue_a := bat.insert(y,5@0,te_a); #20:(ue_a:bat[oid,dbl])<-(y:bat[oid,dbl])($15:oid)(te_a:dbl)
-    ve_a := calc.dbl(3.0); #21:(ve_a:dbl)<-($38:flt)
-    we_a := bat.insert(y,6@0,ve_a); #22:(we_a:bat[oid,dbl])<-(y:bat[oid,dbl])($17:oid)(ve_a:dbl)
-    xe_a := calc.dbl(1.0); #23:(xe_a:dbl)<-($26:flt)
-    ye_a := bat.insert(y,7@0,xe_a); #24:(ye_a:bat[oid,dbl])<-(y:bat[oid,dbl])($19:oid)(xe_a:dbl)
-    af_a := calc.dbl(1.0); #25:(af_a:dbl)<-($26:flt)
-    bf_a := bat.insert(y,8@0,af_a); #26:(bf_a:bat[oid,dbl])<-(y:bat[oid,dbl])($22:oid)(af_a:dbl)
-    z := mal.new(oid,str); #27:(z:bat[oid,str])<-(oid:oid)(str:str)
-    cf_a := bat.insert(z,1@0,"c"); #28:(cf_a:bat[oid,str])<-(z:bat[oid,str])($47:oid)($48:str)
-    df_a := bat.insert(z,2@0,"a"); #29:(df_a:bat[oid,str])<-(z:bat[oid,str])($50:oid)($51:str)
-    ef_a := bat.insert(z,3@0,"b"); #30:(ef_a:bat[oid,str])<-(z:bat[oid,str])($53:oid)($54:str)
-    ff_a := bat.insert(z,4@0,"c"); #31:(ff_a:bat[oid,str])<-(z:bat[oid,str])($56:oid)($48:str)
-    gf_a := bat.insert(z,5@0,"a"); #32:(gf_a:bat[oid,str])<-(z:bat[oid,str])($58:oid)($51:str)
-    hf_a := bat.insert(z,6@0,"a"); #33:(hf_a:bat[oid,str])<-(z:bat[oid,str])($60:oid)($51:str)
-    if_a := bat.insert(z,7@0,"c"); #34:(if_a:bat[oid,str])<-(z:bat[oid,str])($62:oid)($48:str)
-    jf_a := bat.insert(z,8@0,"a"); #35:(jf_a:bat[oid,str])<-(z:bat[oid,str])($64:oid)($51:str)
-    o := bat.mirror(x); #36:(o:bat[oid,oid])<-(x:bat[oid,chr])
-    io.print(x,y); #37:($66:int)<-(x:bat[oid,chr])(y:bat[oid,dbl])
-    io.table(o,y); #38:($67:int)<-(o:bat[oid,oid])(y:bat[oid,dbl])
-    io.table(o,x,y); #39:($68:int)<-(o:bat[oid,oid])(x:bat[oid,chr])(y:bat[oid,dbl])
-    io.print(x,y,z); #40:($69:int)<-(x:bat[oid,chr])(y:bat[oid,dbl])(z:bat[oid,str])
-    io.table(o,x,y,z); #41:($70:int)<-(o:bat[oid,oid])(x:bat[oid,chr])(y:bat[oid,dbl])(z:bat[oid,str])
-end main; #42:
+function Admin.main():int; #0  (main:int)
+    x := mal.new(oid,chr); #1 CMDBATnew (x:bat[oid,chr])<-(oid:oid)(chr:chr)
+    de_a := bat.insert(x,1@0,'a'); #2 CMDinsert_bun (de_a:bat[oid,chr])<-(x:bat[oid,chr])($5:oid)($6:chr)
+    ee_a := bat.insert(x,2@0,'a'); #3 CMDinsert_bun (ee_a:bat[oid,chr])<-(x:bat[oid,chr])($8:oid)($6:chr)
+    fe_a := bat.insert(x,3@0,'b'); #4 CMDinsert_bun (fe_a:bat[oid,chr])<-(x:bat[oid,chr])($10:oid)($11:chr)
+    ge_a := bat.insert(x,4@0,'b'); #5 CMDinsert_bun (ge_a:bat[oid,chr])<-(x:bat[oid,chr])($13:oid)($11:chr)
+    he_a := bat.insert(x,5@0,'b'); #6 CMDinsert_bun (he_a:bat[oid,chr])<-(x:bat[oid,chr])($15:oid)($11:chr)
+    ie_a := bat.insert(x,6@0,'b'); #7 CMDinsert_bun (ie_a:bat[oid,chr])<-(x:bat[oid,chr])($17:oid)($11:chr)
+    je_a := bat.insert(x,7@0,'c'); #8 CMDinsert_bun (je_a:bat[oid,chr])<-(x:bat[oid,chr])($19:oid)($20:chr)
+    ke_a := bat.insert(x,8@0,'c'); #9 CMDinsert_bun (ke_a:bat[oid,chr])<-(x:bat[oid,chr])($22:oid)($20:chr)
+    y := mal.new(oid,dbl); #10 CMDBATnew (y:bat[oid,dbl])<-(oid:oid)(dbl:dbl)
+    le_a := calc.dbl(1.0); #11 CALCflt_2_dbl (le_a:dbl)<-($26:flt)
+    me_a := bat.insert(y,1@0,le_a); #12 CMDinsert_bun (me_a:bat[oid,dbl])<-(y:bat[oid,dbl])($5:oid)(le_a:dbl)
+    ne_a := calc.dbl(2.0); #13 CALCflt_2_dbl (ne_a:dbl)<-($29:flt)
+    oe_a := bat.insert(y,2@0,ne_a); #14 CMDinsert_bun (oe_a:bat[oid,dbl])<-(y:bat[oid,dbl])($8:oid)(ne_a:dbl)
+    pe_a := calc.dbl(2.0); #15 CALCflt_2_dbl (pe_a:dbl)<-($29:flt)
+    qe_a := bat.insert(y,3@0,pe_a); #16 CMDinsert_bun (qe_a:bat[oid,dbl])<-(y:bat[oid,dbl])($10:oid)(pe_a:dbl)
+    re_a := calc.dbl(2.0); #17 CALCflt_2_dbl (re_a:dbl)<-($29:flt)
+    se_a := bat.insert(y,4@0,re_a); #18 CMDinsert_bun (se_a:bat[oid,dbl])<-(y:bat[oid,dbl])($13:oid)(re_a:dbl)
+    te_a := calc.dbl(2.0); #19 CALCflt_2_dbl (te_a:dbl)<-($29:flt)
+    ue_a := bat.insert(y,5@0,te_a); #20 CMDinsert_bun (ue_a:bat[oid,dbl])<-(y:bat[oid,dbl])($15:oid)(te_a:dbl)
+    ve_a := calc.dbl(3.0); #21 CALCflt_2_dbl (ve_a:dbl)<-($38:flt)
+    we_a := bat.insert(y,6@0,ve_a); #22 CMDinsert_bun (we_a:bat[oid,dbl])<-(y:bat[oid,dbl])($17:oid)(ve_a:dbl)
+    xe_a := calc.dbl(1.0); #23 CALCflt_2_dbl (xe_a:dbl)<-($26:flt)
+    ye_a := bat.insert(y,7@0,xe_a); #24 CMDinsert_bun (ye_a:bat[oid,dbl])<-(y:bat[oid,dbl])($19:oid)(xe_a:dbl)
+    af_a := calc.dbl(1.0); #25 CALCflt_2_dbl (af_a:dbl)<-($26:flt)
+    bf_a := bat.insert(y,8@0,af_a); #26 CMDinsert_bun (bf_a:bat[oid,dbl])<-(y:bat[oid,dbl])($22:oid)(af_a:dbl)
+    z := mal.new(oid,str); #27 CMDBATnew (z:bat[oid,str])<-(oid:oid)(str:str)
+    cf_a := bat.insert(z,1@0,"c"); #28 CMDinsert_bun (cf_a:bat[oid,str])<-(z:bat[oid,str])($47:oid)($48:str)
+    df_a := bat.insert(z,2@0,"a"); #29 CMDinsert_bun (df_a:bat[oid,str])<-(z:bat[oid,str])($50:oid)($51:str)
+    ef_a := bat.insert(z,3@0,"b"); #30 CMDinsert_bun (ef_a:bat[oid,str])<-(z:bat[oid,str])($53:oid)($54:str)
+    ff_a := bat.insert(z,4@0,"c"); #31 CMDinsert_bun (ff_a:bat[oid,str])<-(z:bat[oid,str])($56:oid)($48:str)
+    gf_a := bat.insert(z,5@0,"a"); #32 CMDinsert_bun (gf_a:bat[oid,str])<-(z:bat[oid,str])($58:oid)($51:str)
+    hf_a := bat.insert(z,6@0,"a"); #33 CMDinsert_bun (hf_a:bat[oid,str])<-(z:bat[oid,str])($60:oid)($51:str)
+    if_a := bat.insert(z,7@0,"c"); #34 CMDinsert_bun (if_a:bat[oid,str])<-(z:bat[oid,str])($62:oid)($48:str)
+    jf_a := bat.insert(z,8@0,"a"); #35 CMDinsert_bun (jf_a:bat[oid,str])<-(z:bat[oid,str])($64:oid)($51:str)
+    o := bat.mirror(x); #36 CMDmirror (o:bat[oid,oid])<-(x:bat[oid,chr])
+    io.print(x,y); #37 CMDtable ($66:int)<-(x:bat[oid,chr])(y:bat[oid,dbl])
+    io.table(o,y); #38 CMDttable ($67:int)<-(o:bat[oid,oid])(y:bat[oid,dbl])
+    io.table(o,x,y); #39 CMDttable ($68:int)<-(o:bat[oid,oid])(x:bat[oid,chr])(y:bat[oid,dbl])
+    io.print(x,y,z); #40 CMDtable ($69:int)<-(x:bat[oid,chr])(y:bat[oid,dbl])(z:bat[oid,str])
+    io.table(o,x,y,z); #41 CMDttable ($70:int)<-(o:bat[oid,oid])(x:bat[oid,chr])(y:bat[oid,dbl])(z:bat[oid,str])
+end main; #42  
 #-------------------------#
-# BAT:	  t	| t	  #
+# BAT:	  tmp_4	| tmp_5	  #
 # (oid)	  (chr)	| (dbl)	  #
 #-------------------------#
 [ 1@0,	  'a',	  1	  ]
@@ -107,7 +105,7 @@ end main; #42:
 [ 7@0,	  'c',	  1	  ]
 [ 8@0,	  'c',	  1	  ]
 #-----------------#
-# t	| t	  #
+# tmp_8	| tmp_5	  #
 #-----------------#
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
@@ -118,7 +116,7 @@ end main; #42:
 [ 7@0,	  1	  ]
 [ 8@0,	  1	  ]
 #-------------------------#
-# t	| t	| t	  #
+# tmp_8	| tmp_4	| tmp_5	  #
 #-------------------------#
 [ 1@0,	  'a',	  1	  ]
 [ 2@0,	  'a',	  2	  ]
@@ -129,7 +127,7 @@ end main; #42:
 [ 7@0,	  'c',	  1	  ]
 [ 8@0,	  'c',	  1	  ]
 #---------------------------------#
-# BAT:	  t	| t	| t	  #
+# BAT:	  tmp_4	| tmp_5	| tmp_6	  #
 # (oid)	  (chr)	| (dbl)	| (str)	  #
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]
@@ -141,7 +139,7 @@ end main; #42:
 [ 7@0,	  'c',	  1,	  "c"	  ]
 [ 8@0,	  'c',	  1,	  "a"	  ]
 #---------------------------------#
-# t	| t	| t	| t	  #
+# tmp_8	| tmp_4	| tmp_5	| tmp_6	  #
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]
 [ 2@0,	  'a',	  2,	  "a"	  ]

@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## the multiplex code blocks using CONSTANTS.
 #
 #b:= new(lng,lng);
@@ -19,18 +17,18 @@
 #xz:= multiplex.script("+",b,c);
 #print(xz);
 #
-function Admin.main():int; #0:(main:int)
-    b := mal.new(lng,lng); #1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
-    i := -1; #2:(i:lng)<-($4:lng)
-barrier v := mal.nextElement(i,0,10); #3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
-    bat.insert(b,i,i); #4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
-    redo v ; #5:(v:bit) jump 3
-exit v; #6:(v:bit)
-    io.print(b); #7:($9:int)<-(b:bat[lng,lng])
-    c := 1; #8:(c:int)<-($11:int)
-    xz := multiplex.script("+",b,c); #9:(xz:bat[lng,lng])<-($13:str)(b:bat[lng,lng])(c:int)
-    io.print(xz); #10:($14:int)<-(xz:bat[lng,lng])
-end main; #11:
+function Admin.main():int; #0  (main:int)
+    b := mal.new(lng,lng); #1 CMDBATnew (b:bat[lng,lng])<-(lng:lng)(lng:lng)
+    i := -1; #2  (i:lng)<-($4:lng)
+barrier v := mal.nextElement(i,0,10); #3 lngForloop (v:bit)<-(i:lng)($6:lng)($7:lng) jump 6
+    bat.insert(b,i,i); #4 CMDinsert_bun ($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
+    redo v; #5  (v:bit) jump 3
+exit v; #6  (v:bit)
+    io.print(b); #7 CMDprint_val ($9:int)<-(b:bat[lng,lng])
+    c := 1; #8  (c:int)<-($11:int)
+    xz := multiplex.script("+",b,c); #9 CMDmultiplexScript (xz:bat[lng,lng])<-($13:str)(b:bat[lng,lng])(c:int)
+    io.print(xz); #10 CMDprint_val ($14:int)<-(xz:bat[lng,lng])
+end main; #11  
 #-----------------#
 # BAT:	  tmp_4	  #
 # (lng)	  (lng)	  #

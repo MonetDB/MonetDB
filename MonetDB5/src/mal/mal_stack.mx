@@ -136,7 +136,7 @@ void clearStack(MalStkPtr s){
 
 	for( v= s->stk; i >=0; i--, v++)
 	if (ATOMextern(v->vtype) && v->val.pval) {
-		printf("freeing %s\n",v->val.sval);
+		stream_printf(GDKout,"freeing %s\n",v->val.sval);
                 GDKfree(v->val.pval);
         }
 }

@@ -1,3 +1,26 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @f mapi
 @a N.J. Nes P. Boncz M. Kersten
 @t Monets Simple Internet Interface
@@ -24,18 +47,20 @@ of the client record initialization phase.
 @mal
 module mapi;
 
-command Listen():int  = MAPIlisten_default
+command listen():int  = MAPIlisten_default
 	comment "Start a Mapi server with the default settings.";
-command Listen(port:int, maxusers:int):int = MAPIlisten
+command listen(port:lng):int  = MAPIlisten_port
+	comment "Start a Mapi server with the default settings.";
+command listen(port:int, maxusers:int):int = MAPIlisten
 	comment "Start a Mapi server.";
-command Stop(port:int):bit = MAPIstop
+command stop(port:int):bit = MAPIstop
 	comment "Terminate a listener owned by the client";
-command Stop(name:str):bit = MAPIstopClient
+command stop(name:str):bit = MAPIstopClient
 	comment "Terminate a client";
 
-command Trace(nme:str, flag:bit):void = MAPItrace2
+command trace(nme:str, flag:bit):void = MAPItrace2
 	comment "Trace (on/off) receipt of all messages from a specific user";
-command Trace(flag:bit):void = MAPItrace
+command trace(flag:bit):void = MAPItrace
 	comment "Trace (on/off) receipt of messages for all users";
 
 # initialization code
@@ -91,7 +116,7 @@ command Trace(flag:bit):void = MAPItrace
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
 
-#define DEBUG_MAPI	0
+#define DEBUG_MAPI	1
 
 #endif /* MAPI_H */
 @c
@@ -101,12 +126,14 @@ command Trace(flag:bit):void = MAPItrace
 
 #define SOCKPTR struct sockaddr *
 
-static int mapiSpy= 0;
+static int mapiSpy= 1;
 
 void MAPIlistenThread(int sock)
 {
 	int 	msgsock;
 	do {
+		if(DEBUG_MAPI)
+		printf("wait for next connection\n");
 #ifdef AIX
        		msgsock = accept(sock, 0, (size_t)0);
 #else
@@ -120,26 +147,20 @@ void MAPIlistenThread(int sock)
 	    		}
 		} else if (msgsock > 0) {
 			int i;
-			FILE *fdin= fdopen(msgsock,"r");
+			stream *fdin= socket_rastream(msgsock,"Mserver mapi read");
+			stream *fdout= socket_wastream(msgsock,"Mserver mapi write");
 			char name[MAPIBLKSIZE], *user = name;
 
 			/* get user connection string */
-			if( (i= fread(name,1,MAPIBLKSIZE,fdin)) != MAPIBLKSIZE){
+			if( (i= fdin->read(fdin,name,1,MAPIBLKSIZE)) != MAPIBLKSIZE){
 				GDKerror("Block size error in mapi.mx\n");
-				printf("%d bytes read:%s\n",i,name);
+				printf("%d [%d] bytes read:%s\n",i,MAPIBLKSIZE,name);
 				fflush(stdout);
 				continue;
 			}
-/*
-			for(i=0, *user=fgetc(fdin); i<MAPIBLKSIZE-1 && *user != '\n'; i++){
-				user++;
-				*user = fgetc(fdin);
-			}
-			*user = 0;
-*/
 			if( DEBUG_MAPI) 
-				THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
-			scheduleClient(name, msgsock);
+			THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
+			scheduleClient(GDKstrdup(name),0,0,msgsock,fdin,fdout);
 			if( mapiSpy) traceClient(name, mapiSpy);
 		}
 	} while (1);
@@ -195,7 +216,7 @@ Get the new information for the server socket and start listening.
 	}
 	listen(sock, *maxusers); 
 
-	if( MT_create_thread((MT_Id)&pid, MAPIlistenThread, (void*) sock) <0){
+	if( MT_create_thread((MT_Id *)&pid, MAPIlistenThread, (void*) sock) <0){
 		return throwMessage("mapi.listen", "starting thread failed");
 	}
 	if( DEBUG_MAPI)
@@ -206,13 +227,18 @@ Get the new information for the server socket and start listening.
 	i= strlen(msg);
 	snprintf(msg+i,512-i,"%d\n",*port);
 	}
-	fprintf(GDKout,msg);
+	stream_printf(GDKout,"%s",msg);
 	*ret = TRUE;
 	return MAL_SUCCEED;
 }
 
 str MAPIlisten_default(int *ret){
 	int port = MAPIPORT;
+	int maxusers = MAPIMAXUSERS;
+	return MAPIlisten(ret, &port, &maxusers);
+}
+str MAPIlisten_port(int *ret, int *pid){
+	int port = *pid;
 	int maxusers = MAPIMAXUSERS;
 	return MAPIlisten(ret, &port, &maxusers);
 }

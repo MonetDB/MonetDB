@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 #	x := new(oid,chr);
 #	de_a := insert(x,1@0,'a');
 #	ee_a := insert(x,2@0,'a');
@@ -16,17 +14,17 @@
 #print("result?");
 #	print(y);
 #
-function Admin.main():int; #0:(main:int)
-    x := mal.new(oid,chr); #1:(x:bat[oid,chr])<-(oid:oid)(chr:chr)
-    de_a := bat.insert(x,1@0,'a'); #2:(de_a:bat[oid,chr])<-(x:bat[oid,chr])($5:oid)($6:chr)
-    ee_a := bat.insert(x,2@0,'a'); #3:(ee_a:bat[oid,chr])<-(x:bat[oid,chr])($8:oid)($6:chr)
-    y := mal.new(chr,oid); #4:(y:bat[chr,oid])<-(chr:chr)(oid:oid)
-    xr := bat.reverse(x); #5:(xr:bat[chr,oid])<-(x:bat[oid,chr])
-    io.print(xr); #6:($11:int)<-(xr:bat[chr,oid])
-    bat.insert(y,xr); #7:($12:bat[chr,oid])<-(y:bat[chr,oid])(xr:bat[chr,oid])
-    io.print("result?"); #8:($13:int)<-($14:str)
-    io.print(y); #9:($15:int)<-(y:bat[chr,oid])
-end main; #10:
+function Admin.main():int; #0  (main:int)
+    x := mal.new(oid,chr); #1 CMDBATnew (x:bat[oid,chr])<-(oid:oid)(chr:chr)
+    de_a := bat.insert(x,1@0,'a'); #2 CMDinsert_bun (de_a:bat[oid,chr])<-(x:bat[oid,chr])($5:oid)($6:chr)
+    ee_a := bat.insert(x,2@0,'a'); #3 CMDinsert_bun (ee_a:bat[oid,chr])<-(x:bat[oid,chr])($8:oid)($6:chr)
+    y := mal.new(chr,oid); #4 CMDBATnew (y:bat[chr,oid])<-(chr:chr)(oid:oid)
+    xr := bat.reverse(x); #5 CMDreverse (xr:bat[chr,oid])<-(x:bat[oid,chr])
+    io.print(xr); #6 CMDprint_val ($11:int)<-(xr:bat[chr,oid])
+    bat.insert(y,xr); #7 CMDinsert_bat ($12:bat[chr,oid])<-(y:bat[chr,oid])(xr:bat[chr,oid])
+    io.print("result?"); #8 CMDprint_val ($13:int)<-($14:str)
+    io.print(y); #9 CMDprint_val ($15:int)<-(y:bat[chr,oid])
+end main; #10  
 #-----------------#
 # BAT:	  tmp_4	  #
 # (chr)	  (oid)	  #

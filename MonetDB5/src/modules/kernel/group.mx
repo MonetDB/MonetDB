@@ -188,7 +188,8 @@ The xtables modules relies on further initialization of the
 GDK atom table with the primitives to deal with mapentries en
 indxentry.
 @c
-#include "monet.h"
+#include "mal.h"
+#include "mal_function.h"
 static int TYPE_mapentry;
 static int TYPE_idxentry;
 @-
@@ -232,7 +233,7 @@ hashing.
 #define match_sync(b,p,r) r += yy
 #define match_hash(b,p,r) BUNfndOID(r,b,p); if (r == NULL) continue;
 
-#define declare_atom int any = b->ttype; unsigned int (*hashfcn)() = BATatoms[any].atomHash;
+#define declare_atom int any = b->ttype; unsigned int (*hashfcn)(ptr) = BATatoms[any].atomHash;
 #define declare_simple /* any and hash would otherwise give unused variable warning */
 
 #define htype_sync(b) BAThdense(b)?TYPE_void:TYPE_oid

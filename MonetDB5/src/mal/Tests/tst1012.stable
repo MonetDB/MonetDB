@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## the first of a series of BBP test cases
 #
 #bbp.open();
@@ -16,40 +14,65 @@
 #print(c);
 #bbp.setPersistent(b);
 #x:= bbp.isPersistent(b);
-#print(x);
+#y:= bbp.isSession(b);
+#z:= bbp.isTransient(b);
+#print(x); print(y); print(z); print("");
+#bbp.setTransient(b);
+#x:= bbp.isPersistent(b);
+#y:= bbp.isSession(b);
+#z:= bbp.isTransient(b);
+#print(x); print(y); print(z); print("");
 #bbp.close();
 ## at the end of the session, the BBP should have discarded
 ## the temporary bats of the user
+## aug 02 this does not work, because the transaction is
+## not properly closed. This means that a temporary bat
+##remains in store.
 #bbp.open();
-#v:= bbp.take("mysecondbat");
+##v:= bbp.take("mysecondbat");
 #print(v);
 #bbp.close();
 #
-function Admin.main():int; #0:(main:int)
-    bbp.open(); #1:($1:void)
-    b := mal.new(int,int); #2:(b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,2); #3:($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
-    bbp.deposit("mysecondbat",b); #4:($7:void)<-($8:str)(b:bat[int,int])
-    c := bbp.take("mysecondbat"); #5:(c:bat[any,any])<-($8:str)
-    io.print(c); #6:($10:int)<-(c:bat[any,any])
-    bbp.setPersistent(b); #7:($11:bit)<-(b:bat[int,int])
-    x := bbp.isPersistent(b); #8:(x:bit)<-(b:bat[int,int])
-    io.print(x); #9:($13:int)<-(x:bit)
-    bbp.close(); #10:($14:void)
-    bbp.open(); #11:($15:void)
-    v := bbp.take("mysecondbat"); #12:(v:bat[any,any])<-($8:str)
-    io.print(v); #13:($17:int)<-(v:bat[any,any])
-    bbp.close(); #14:($18:void)
-end main; #15:
+function Admin.main():int; #0  (main:int)
+    bbp.open(); #1 CMDbbpopen ($1:void)
+    b := mal.new(int,int); #2 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    bat.insert(b,1,2); #3 CMDinsert_bun ($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
+    bbp.deposit("mysecondbat",b); #4 CMDbbpdeposit ($7:void)<-($8:str)(b:bat[int,int])
+    c := bbp.take("mysecondbat"); #5 CMDbbptake (c:bat[any,any])<-($8:str)
+    io.print(c); #6 CMDprint_val ($10:int)<-(c:bat[any,any])
+    bbp.setPersistent(b); #7 CMDbbpsetPersistent ($11:bit)<-(b:bat[int,int])
+    x := bbp.isPersistent(b); #8 CMDbbpisPersistent (x:bit)<-(b:bat[int,int])
+    y := bbp.isSession(b); #9 CMDbbpisSession (y:bit)<-(b:bat[int,int])
+    z := bbp.isTransient(b); #10 CMDbbpisTransient (z:bit)<-(b:bat[int,int])
+    io.print(x); #11 CMDprint_val ($15:int)<-(x:bit)
+    io.print(y); #12 CMDprint_val ($16:int)<-(y:bit)
+    io.print(z); #13 CMDprint_val ($17:int)<-(z:bit)
+    io.print(""); #14 CMDprint_val ($18:int)<-($19:str)
+    bbp.setTransient(b); #15 CMDbbpsetTransient ($20:bit)<-(b:bat[int,int])
+    x := bbp.isPersistent(b); #16 CMDbbpisPersistent (x:bit)<-(b:bat[int,int])
+    y := bbp.isSession(b); #17 CMDbbpisSession (y:bit)<-(b:bat[int,int])
+    z := bbp.isTransient(b); #18 CMDbbpisTransient (z:bit)<-(b:bat[int,int])
+    io.print(x); #19 CMDprint_val ($21:int)<-(x:bit)
+    io.print(y); #20 CMDprint_val ($22:int)<-(y:bit)
+    io.print(z); #21 CMDprint_val ($23:int)<-(z:bit)
+    io.print(""); #22 CMDprint_val ($24:int)<-($19:str)
+    bbp.close(); #23 CMDbbpclose ($25:void)
+    bbp.open(); #24 CMDbbpopen ($26:void)
+    io.print(v); #25 CMDprint_val ($27:int)<-(v:any)
+    bbp.close(); #26 CMDbbpclose ($29:void)
+end main; #27  
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_4	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
 [ false ]
-#-----------------#
-# BAT:	  tmp_3	  #
-# (int)	  (int)	  #
-#-----------------#
-[ 1,	  2	  ]
+[ false ]
+[ true ]
+[ "" ]
+[ false ]
+[ false ]
+[ true ]
+[ "" ]
+[ nil ]
 >

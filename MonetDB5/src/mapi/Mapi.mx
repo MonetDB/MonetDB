@@ -190,6 +190,7 @@ MMONETERR & Monet error.\\
 				   this should move to a small wrap library */
 #endif
 #include  <stdio.h>
+#include  <stream.h>
 
 #define NAMELEN	256
 #define ERRLEN	1024
@@ -236,7 +237,7 @@ typedef struct {
     char *querytext; 
     char *tmp;
     char *reply;
-    FILE *from, *to;
+    stream *from, *to;
 } MsessionStruct;
 
 
@@ -383,7 +384,7 @@ Msession Mnewstruct(Msession mid) {
                 printf("Could not allocate buffer space\n");
                 exit(1);
         }
-	m -> trace = 0;
+	m -> trace = 1;
 	m -> everything = 1;
 
 	m->vars[0].ptr=0;
@@ -467,15 +468,16 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	    return(mid);
 	}
 	
-	if((mid->to = fdopen(s,"w"))==(FILE *)NULL) {
+	mid->from = socket_rastream(s,"Mapi client read");
+	if( mid->from->errnr){
 	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"Cannot open file descriptor for socket (\"w\")");
+	    sprintf(mid->errortext,"Cannot open socket for reading");
 	    return(mid);
 	}
-
-	if((mid->from = fdopen(s,"r"))==(FILE *)NULL) {
+	mid->to = socket_wastream(s,"Mapi client write");
+	if( mid->to->errnr){
 	    mid->error = MMAPIERR;
-	    sprintf(mid->errortext,"Cannot open filedescriptor for socket (\"w\")");
+	    sprintf(mid->errortext,"Cannot open socket for writing ");
 	    return(mid);
 	}
 
@@ -486,16 +488,21 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	  strcpy(buf,mid->username);
 	  strcat(buf,"\n");
 	  /* fprintf(mid->to,buf);*/
-	  c= fwrite(buf,1,MAPIBLKSIZE,mid->to);
-	  fflush(mid->to);
+	  if(mid->trace){
+			printf("sending first request [%d]:%s",MAPIBLKSIZE,buf);
+			fflush(stdout);
+	}
+	  c= mid->to->write(mid->to,buf,1,MAPIBLKSIZE);
+	  mid->to->flush(mid->to);
 	  if( c != MAPIBLKSIZE){
 	    mid->error = MMAPIERR;
 	    sprintf(mid->errortext,"Could not send initial bytes %d.",c);
 	    return(mid);
 	  }
-          /* printf("awaiting response from server\n");
-	  fflush(stdout); */
-	  while( !(((c = getc(mid->from)) == PROMPT) || (c == EOF)) ) ;
+          printf("awaiting response from server\n");
+	  fflush(stdout); 
+	  while( !((mid->from->read(mid->from,(char*)&c,1,1)==1 && c == PROMPT) || (c == EOF)) ) 
+		if(mid->trace) printf("got char %d %c\n",c,c);
 	  if (c == EOF) {
 	    /* perror("! Mapi.Mconnect.connect: "); */
 	    mid->error = MMAPIERR;
@@ -524,12 +531,14 @@ subsequent display.
 @c
 void promptMonet(Msession mid) {
         int i;
+	char c;
 
 	checkMid(mid,"promptMonet");
 	if( mid->trace) fprintf(stderr,"promptMonet.");
         for(i=0; mid->reply[i]; i++);
-        for(  ; i<mid->replylength-2 &&
-		 (mid->reply[i] = getc(mid->from)) != PROMPT; i++);
+        for( ;i<mid->replylength-2 && 
+	      mid->from->read(mid->from,(char*)&c,1,1) == 1; i++) 
+		if(c==PROMPT) break; else mid->reply[i]=c;
         mid->reply[i++] = ' ';
         mid->reply[i] = '\0';
 	strcpy(mid->prompt,mid->reply);
@@ -543,8 +552,8 @@ Msession structure. Subsequent access may lead to a crash.
 void Mdisconnect(Msession mid) {
 	checkMid(mid,"Mdisconnect");
 	COUNT(mid,2);
-	(void) fclose(mid->from);
-	(void) fclose(mid->to);
+	(void) mid->from->close(mid->from);
+	(void) mid->to->close(mid->to);
 	(void) free(mid->reply);
 	(void) free(mid->tmp);
 	(void) free(mid->querytext);
@@ -573,15 +582,21 @@ int Msend(Msession mid, char *format, ...) {
 	int i=0;
 	void *ptr;
 
+	checkMid(mid,"MSend");
+
 	va_start(ap,format);
 	for(;;){
 		ptr= va_arg(ap,void*);
 		if( ptr==0) break;
+                if (i == MAXBIND) {
+                        fprintf(stderr,"Mapi Msend called with too many arguments\n");
+                        exit(0);
+                }
+
 		mid->ptrs[i++]= ptr;
 	}
 	va_end(ap);
 
-	checkMid(mid,"MSend");
 	COUNT(mid,3);
 	if( mid->trace) fprintf(stderr,"Msend.");
 	mid->error= MOK;
@@ -611,6 +626,8 @@ int Mbatch(Msession mid, char *format, ...) {
 	va_list pa;
 	void *ptr;
 
+	checkMid(mid,"Mbatch");
+
 	va_start(pa,format);
 	for(;;){
 		ptr= va_arg(pa, void*);
@@ -620,10 +637,9 @@ int Mbatch(Msession mid, char *format, ...) {
 
 	va_end(pa);
 
-	checkMid(mid,"Mbatch");
 	COUNT(mid,7);
 	mid->error= MOK;
-	if ( ((int) strlen(format)) >= QRYLEN){
+	if ( strlen(format) >= QRYLEN){
 		mid->error= MMAPIERR;
 		sprintf(mid->errortext,"Query format too long\n");
 		return mid->error;
@@ -945,7 +961,7 @@ int k,size;
         if (mid->trace) {
                 printf("Mdorequest:%d:%s",size, cmd);
         }
-        if (ferror(mid->from) || ferror(mid->to)) {
+        if (mid->from->error(mid->from) || mid->to->error(mid->to)) {
                 sprintf(mid->errortext, "!communication line broken\n");
 		mid->error= MMONETERR;
                 return mid->error;
@@ -956,22 +972,22 @@ int k,size;
 		if( mid->trace)
 			printf("Mdorequest:multiple blocks: %d\n",
 				 (size-1)/MAPIBLKSIZE+1);
-		if( fwrite(hdr, 1, MAPIBLKSIZE, mid->to) != MAPIBLKSIZE ||
-			fflush(mid->to) == -1) {
+		if( mid->to->write(mid->to,hdr, 1, MAPIBLKSIZE) != MAPIBLKSIZE){
+			mid->to->flush(mid->to);
 			sprintf(mid->errortext, "!write error on stream\n");
 			mid->error= MMONETERR;
 			return mid->error;
 		}
-		fflush(mid->to);
+		mid->to->flush(mid->to);
 	}
 	for(k=0; k<size; k+= MAPIBLKSIZE) 
-	if( fwrite(cmd+k, 1, MAPIBLKSIZE, mid->to) != MAPIBLKSIZE ||
-		fflush(mid->to) == -1) {
+	if( mid->to->write(mid->to,cmd+k, 1, MAPIBLKSIZE) != MAPIBLKSIZE ){
+		mid->to->flush(mid->to);
                 sprintf(mid->errortext, "!write error on stream\n");
 		mid->error= MMONETERR;
                 return mid->error;
 	}
-	fflush(mid->to);
+	mid->to->flush(mid->to);
         return MOK;
 }
 
@@ -988,8 +1004,9 @@ char *Mgetreply(Msession mid) {
 	mid->error = MOK;
 	mid->reply[0]=0;
 
-        while ((ch = getc(mid->from)) != PROMPT) {
-                if (ferror(mid->from)) break;
+        while ( mid->from->read(mid->from,(char*)&ch,1,1) == 1) {
+		if(ch== PROMPT) break;
+                if (mid->from->error(mid->from)) break;
 		if( ch == '\n') break;
                 if (!isprint(ch) && !isspace(ch)) {
                         sprintf(mid->errortext, "!terminating connection\n");
@@ -1018,7 +1035,7 @@ char *Mgetreply(Msession mid) {
 	}
 	if( mid->reply[0]=='#' && mid->everything==0) return Mgetreply(mid);
         
-        if (ferror(mid->from)) {
+        if (mid->from->error(mid->from)) {
                 sprintf(mid->errortext, "!connection broken\n");
 		mid->error= MMONETERR;
                 return 0;

@@ -1,0 +1,13 @@
+@f sql_scenario
+@t SQL catalog management
+@a N. Nes, M.L. Kersten
+@+ Catalog management
+Minimal scenario initialization.
+
+The SQL catalog module MAL initialization part has been derived
+the original MIL file.
+@c
+/* nothing to add */
+@mal
+# nothing special to do
+mvc.init(0);

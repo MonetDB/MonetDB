@@ -44,8 +44,9 @@ This multiplex module comes with a different type checker,
 which enables static type checking of most multiplex operations.
 
 The implementation provided here is meant to retain much of
-the multiplex functionality in Version 4, but only using a
-generic (non-optimized) approach. For each multiplex call
+the multiplex functionality in Version 4.
+For each multiplex call for which there does not exist a fast
+primitive implementation,
 we generate a MAL script on the fly, which is then executed.
 Subsequent improvements should come from massaging the MAL code
 or to derived a fast C-based implementation.
@@ -66,7 +67,7 @@ comment "Generic processor for mutiplexed instructions.";
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * http://www.monetdb.com/Legal/MonetDBLicense-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -91,7 +92,7 @@ comment "Generic processor for mutiplexed instructions.";
 #include "mal_client.h"
 
 #define DEBUG_MULTIPLEX 
-/* #define TRACE_MULTIPLEX   */
+/*#define TRACE_MULTIPLEX   */
 
 mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
@@ -129,6 +130,25 @@ int operatorModifier(str name, str fcnname){
 	} else strcpy(name,fcnname);
 	return inplace;
 }
+int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
+	int dt= getDestType(mb,p);
+	int rt;
+
+	rt= resolveType(dt,tpe);
+	if(rt != -1){
+		setDestType(mb,p,tpe);
+		return rt;
+	}
+	if(p->modname)
+		GDKerror("type conflict in statement %s.%s[%d]\n",
+			p->modname, p->fcnname, getPC(mb,p));
+	else 	GDKerror("type conflict in statement %s[%d]\n",
+			p->fcnname, getPC(mb,p));
+	Client c= getClient();
+	if( c && c->listing &(LIST_MAL_INSTR))
+		printFunction(c->fdout,mb,c->listing);
+	return -1;
+}
 
 int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	MalBlkPtr m, InstrPtr p)
@@ -140,7 +160,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 
 	if( !isVarConstant(mb,pci->argv[1]) || getArgType(mb,pci,1)!=TYPE_str){
 #ifdef DEBUG_MULTIPLEX
-	if( multiplexDebug) printInstruction(stdout,mb,pci);
+	if( multiplexDebug) printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 #endif
 		GDKerror("multiplexType:string constant expected in %s[%d]\n",
 			getFcnName(mb), getPC(mb,pci));
@@ -176,7 +196,7 @@ Constants passed into the multiplex operator are a special case.
 		tt= getArgType(mb,pci,i);
 	    }
 	    k= newVariable(m,newTmpName(i),tt);
-	    pushArgument(m,p,k);
+	    p= pushArgument(m,p,k);
 	}
 	pushInstruction(m,p);
 
@@ -186,11 +206,11 @@ Constants passed into the multiplex operator are a special case.
 		return -1;
 	} 
 
-	typeChecker(getClient()->nspace,m,p,TYPE_FIXED);
+	typeChecker(getClient()->nspace,m,p);
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug && p->typechk== TYPE_UNKNOWN){
 		printf("Can not resolve instruction type\n");
-		printInstruction(stdout,m,p);
+		printInstruction(GDKout,m,p,LIST_MAL_ALL);
 	}
 #endif
 	if( p->typechk == TYPE_UNKNOWN) {
@@ -208,7 +228,7 @@ Constants passed into the multiplex operator are a special case.
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug && i<0){
 		printf("Type conformance on %d failed\n",tpe);
-		printInstruction(stdout,mb,pci);
+		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 	}
 #endif
 	if(i<0) return -1;
@@ -224,9 +244,9 @@ Constants passed into the multiplex operator are a special case.
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug){
 	printf("--> multiplex instruction\n");
-	printInstruction(stdout,m,p);
+	printInstruction(GDKout,m,p,LIST_MAL_ALL);
 	printf("--> modified instruction\n");
-	printInstruction(stdout,mb,pci);
+	printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 	printf("return code %d\n",i);
 	}
 #endif
@@ -252,11 +272,12 @@ calls to the script case as well
 @c
 int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	InstrPtr p;
-	int i,j,olderr;
+	int i,olderr;
 	str operator;
 	Client cntxt= getClient();
 
 	if( idcmp(pci->fcnname,"tactics")) return -1;
+	/* look for constant first argument */
 	if( !isVarConstant(mb,pci->argv[pci->retc])) {
 		GDKfree(pci->fcnname);
 		pci->fcnname= GDKstrdup("script");
@@ -272,7 +293,7 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	delArgument(p,p->retc);
 	olderr= mb->errors;
 	if( cntxt->errbuf) i= strlen(cntxt->errbuf); else i=0;
-	typeChecker(cntxt->nspace,mb,p,TYPE_FIXED);
+	typeChecker(cntxt->nspace,mb,p);
 	if( cntxt->errbuf ) cntxt->errbuf[i] =0;
 	mb->errors= olderr;
 	if(p->typechk == TYPE_UNKNOWN) {
@@ -284,18 +305,20 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 Check out type of the operands for use with batcalc
 @c
 	if( p->modname && idcmp("batcalc",p->modname)==0 && 
-	   batcalcTypeCheck(operator, getArgType(mb,p,0)) < 0){
+	   (i=batcalcTypeCheck(operator, getArgType(mb,p,0))) < 0){
+		/* postpone fixation until datatype is fixed */
+		/* tobe done */
 		pci->fcnname= GDKstrdup("script");
 		freeInstruction(p);
 		return -1;
 	}
 	clrInstruction(pci);
-	moveInstruction(pci,p);
+	oldmoveInstruction(pci,p);
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug){
 	printf("--> modified trial instruction\n");
-	printInstruction(stdout,mb,p);
-	printf("return code %d\n",getArgType(mb,pci,0));
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	printf("return code %s\n",malTypeName(getArgType(mb,pci,0)));
 	}
 #endif
 	freeInstruction(p);
@@ -305,7 +328,7 @@ Check out type of the operands for use with batcalc
 int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci)
 {
 	int i= -1;
-	MalBlkPtr m= newMalBlk();
+	MalBlkPtr m= newMalBlk(MAXVARS,MAXSTMTS);
 	InstrPtr p = newInstruction(ASSIGNsymbol);
 
 	if( idcmp("debug",pci->fcnname)==0){
@@ -370,7 +393,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr retval;
 
 
-	m1 = newMalBlk();
+	m1 = newMalBlk(MAXVARS,MAXSTMTS);
 	p = newInstruction(ASSIGNsymbol);
 	/* perform type analysis  and function resolution */
 	i= multiplexType(getClient()->nspace,mb,pci,m1,p);
@@ -380,7 +403,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	refType = getArgType(m1,p,0);
 
 	if(strcmp(s,p->fcnname) ) assignop= TRUE;
-	m= newMalBlk();
+	m= newMalBlk(MAXVARS,MAXSTMTS);
 
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug){
@@ -415,7 +438,7 @@ find the actule arguments at the proper place of the callee.
 	for(i=1;i<pci->argc;i++){
 		sprintf(name,"A%d",i);
 		k= newVariable(m, GDKstrdup(name), getArgType(mb,pci,i));
-		pushArgument(m,q,k);
+		q= pushArgument(m,q,k);
 		if( i== rIndex) refBat = k;
 	}
 	pushInstruction(m,q);
@@ -528,10 +551,10 @@ find the actule arguments at the proper place of the callee.
 	for(i=2;i<pci->argc;i++)
 	if( isaBatType(getArgType(mb,pci,i)) ){
 		sprintf(name,"B%d",i);
-		pushArgument(m,q,findVariable(m,name));
+		q= pushArgument(m,q,findVariable(m,name));
 	} else{
 		sprintf(name,"A%d",i);
-		pushArgument(m,q, findVariable(m,name));
+		q= pushArgument(m,q, findVariable(m,name));
 	}
 	pushInstruction(m,q);
 
@@ -611,17 +634,26 @@ find the actule arguments at the proper place of the callee.
 #endif
 	@:malInstr(EXIT,k)@	/* end  MALexception; */
 	@:malInstr(REDO,mloop)@	/* redo mloop; */
-	@:malInstr(EXIT,mloop)@	/* end mloop; */
-	@:malInstr(RETURN,resB)@/* return resB; */
+	@:malInstr(EXIT,mloop)@	/* redo mloop; */
+	q= newInstruction(RETURNsymbol);
+	q->argv[0]= resB ;
+	q->argv[1]= resB ;
+	q->argc=2;
+	q->retc=1;
+	pushInstruction(m,q);
 	@:malInstr(END,0)@/* end function ; */
 @-
 It is time to type check the code and request for any optimization.
 @c
 	chkProgram(getClient()->nspace,m);
+	if(m->errors) {
+		printf("# ERROR in multiplex function generated\n");
+		printFunction(GDKout,m, LIST_MAL_ALL);
+	}
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug){
 	printf("# multiplex function generated\n");
-	printFunction(stdout,m);
+	printFunction(GDKout,m, LIST_MAL_ALL);
 	fflush(stdout);
 	}
 #endif
@@ -656,6 +688,7 @@ should be part of the batcalc module itself.
 int batcalcTypeCheck(str operator, int type){
 	int tt= getTailType(type);
 	switch(tt){
+	case TYPE_any: return -2;
 	case TYPE_flt: 
 	case TYPE_dbl: if(idcmp("%",operator)==0) return -1;
 	case TYPE_oid:

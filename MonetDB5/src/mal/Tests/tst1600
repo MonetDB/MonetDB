@@ -632,7 +632,7 @@ barrier	pi_a:= true;
 	si_a := >=(ri_a,0);
 barrier	qi_a:= si_a;
 #while((i :-= 1) >= 0) {
-	zz:= nil:void;
+	zz:= nil;
 	ti_a := insert(int_10K,zz,i);
 #        int_10K.insert(nil,i);
 redo	pi_a;

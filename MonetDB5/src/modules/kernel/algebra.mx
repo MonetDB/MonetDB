@@ -1,3 +1,26 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @f algebra
 @a Peter Boncz, Martin Kersten, Niels Nes
 @v 2.0
@@ -51,9 +74,9 @@ command position(b:bat[any::1,any::2], val:any::1, tval:any::2) : int = CMDposit
 comment "Returns the BAT position e [0.. b.count> of a 'val' in the 
 head column of b.  It gives an error if 'val' does not occur in b. ";
  
-command fetch(b:bat[any,any::1], x:oid) : any::1 = CMDfetchoid;
-command fetch(b:bat[any,any::1], x:lng) : any::1 = CMDfetch;
-command fetch(b:bat[any,any::1], x:int) : any::1 = CMDfetch
+command fetch(b:bat[any,any::1], x:oid) : any::1 = CMDfetchoid
+comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count";
+command fetch(b:bat[any,any::1], x:lng) : any::1 = CMDfetch
 comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count";
 
 @+ BAT Selections
@@ -62,7 +85,9 @@ comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.
 command fetch(b:bat[any::1,any::2], s:bat[int, any] ) : 
 				bat[any::1,any::2] = CMDfetchbat
 comment "Returns a positional selection of b by the integer head values of s";
-
+command fetch(b:bat[any::1,any::2], s:bat[lng, any] ) : 
+				bat[any::1,any::2] = CMDfetchbat
+comment "Returns a positional selection of b by the integer head values of s";
 command fetch(b:bat[any::1,any::2], s:bat[oid, any]) : 
 				bat[any::1,any::2] = CMDfetchbat
 comment "Returns a positional selection of b by the oid head values of s";
@@ -104,6 +129,9 @@ command fragment ( b:bat[any::1,any::2],
 	tlow:any::2, thigh:any::2 ) : 
 				bat[any::1,any::2] = CMDfragment
 comment "Select both on head and tail range.";
+command slice(b:bat[any::1,any::2], x:int, y:int) : 
+				bat[any::1,any::2] =CMDslice
+comment "Return the slice with the BUNs at position x till y.";
 @- random selection 
 @mal
 command sample ( b:bat[any::1,any::2], num:int ) : 
@@ -115,9 +143,6 @@ command like ( b:bat[any::1, str], substr:str) :
 				bat[any::1, str] = CMDlike
 comment "Selects all elements from the input BAT that have 'substr'
 as substring in the tail.";
-command slice(b:bat[any::1,any::2], x:int, y:int) : 
-				bat[any::1,any::2] =CMDslice
-comment "Return the slice with the BUNs at position x till y.";
 @+ BAT copying
 @mal
 command copy( b:bat[any::1,any::2]) : 
@@ -130,10 +155,11 @@ command sort( b:bat[any::1,any::2]) :
 comment "Returns a copy of a BAT sorted on the head column.";
 
 #command sort_ht( b:bat[any::1,any::2]) : bat[any::1, any::2] = CMDsort_ht
-#comment "Returns a sorted copy of a BAT.";
+#comment "Returns a lexicographically sorted copy of a BAT.";
 @- vertical projection
-@mal
-# moved to mal.mx
+This operation has been moved to module mal, because it requires access
+the type identifier for the second argument.
+to the context.
 #pattern project( b:bat[any::1,any], val:any::2) : 
 				#bat[any::1, any::2] = CMDproject
 #comment "Fill the tail column with a constant value.";
@@ -222,6 +248,11 @@ comment "Returns the intersection taken over only the *head* columns of
 two BATs. Results in all BUNs of 'left' that are also in 'right'. Does *not* do 
  double-elimination over the 'left' BUNs, If you want this, use:
  'kintersect(left.kunique,right.kunique)' or: 'kintersect(left,right).kunique'.";
+
+command semijoin( left:bat[void,any::2], right:bat[oid,any] ) :
+				bat[oid,any::2] = CMDsemijoin
+comment "patch to enable semijoin over void/oid columns";
+
 command kintersect ( left:bat[any::1,any::2], right:bat[any::1,any] ) :
 				bat[any::1,any::2] = CMDsemijoin
 comment "Returns the intersection taken over only the *head* columns of 
@@ -269,7 +300,7 @@ Signature Changed: Output tail type incorrect because of soid to coid switch.
 
 @- join(projected out join columns)
 The join collection provided by the GDK kernel.
-
+Note that joins over void columns are handled as if they are oids.
 @mal
 command join( left:bat[any::1,any::2], right:bat[any::2,any::3]) :
                                bat[any::1,any::3] = CMDjoin
@@ -277,6 +308,11 @@ comment "Returns all BUNs, consisting of a head-value from 'left' and
 a tail-value from 'right' for which there are BUNs in 'left'
 and 'right' with equal tail- resp. head-value (i.e. the join
 columns are projected out).";
+
+command join( left:bat[any::1,void], right:bat[oid,any::3]) :
+                               bat[any::1,any::3] = CMDjoin;
+command join( left:bat[any::1,oid], right:bat[void,any::3]) :
+                               bat[any::1,any::3] = CMDjoin;
 
 command fetchjoin ( left:BAT[any::1,any::2],right:BAT[any::2,any::3] ) :
                     BAT[any::1,any::3] = CMDfetchjoin
@@ -305,7 +341,7 @@ not match an head-value in 'inner'.";
 @- { <,<=,=,>=,> } Join
 @mal
 command thetajoin( left:bat[any::1,any::2], right:bat[any::2,any::3], 
-		mode:int) : bat[any::1,any::3] = CMDthetajoin
+		opname:str) : bat[any::1,any::3] = CMDthetajoin
 comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.
 JOIN_EQ is just the same as join(). All other options do merge
 algorithms; either using the fact that they are ordered()
@@ -316,7 +352,7 @@ binary search trees on the join columns. ";
 command theta ( inner_result:bat[any::2,any::2], 
 		outer_result:bat[any::1,any::3],
 		left:bat[any::1,any::2], 
-		right:bat[any::2,any::3], mode:int ) 
+		right:bat[any::2,any::3], opname:str ) 
 				= CMDtheta
 comment "Theta join, just as simple thetajoin(l,r); the difference
 is that it returns two values, which are added to the first params
@@ -385,8 +421,10 @@ These operations examine a BAT, and compute some simple aggregate result
 over it.
 @- BAT size
 @mal
-command count ( b:bat[any,any] ) : lng = CMDcount
+command count ( b:bat[any,any] ) : int = CMDcount
 comment "Return the number of elements currently in a BAT.";
+command topN ( b:bat[any,any], top:lng ) : int = CMDtopN
+comment "Trim all but the top N tuples.";
 @- Histogram on Tail 
 @mal
 command histogram ( b:bat[any,any::2]) : bat[any::2,int] = CMDhistogram
@@ -407,45 +445,71 @@ Implementations a generic Min and Max routines get declared first. The
 {\tt min()} and {\tt max()} routines below catch any tail-type. 
 The type-specific routines defined later are faster, and will 
 override these any implementations.
-@- minimum tail value
 @mal
-command min ( b:bat[any::1,any::2] ): any::2 = CMDBATminimum
-comment "Give the lowest tail value. Error on empty BATs.";
-
-@- maximum tail value
-@mal
-command max ( b:bat[any::1,any::2] ) : any::2 = CMDBATmaximum
-comment "Give the highest tail value. Error on empty BATs.";
-
 command card ( b:bat[any,any] ) : lng = CMDcard
 comment "Return the cardinality of the BAT tail values.";
 
 command size ( b:bat[any,any] ) : int = CMDBATsize
 comment "Return the current size (in number of elements) of a BAT.";
 
-@+ Type-Specific Sum, Max and Min
+@- Default Min and Max
+@T
+Implementations a generic Min and Max routines get declared first. The
+{\tt min()} and {\tt max()} routines below catch any tail-type.
+The type-specific routines defined later are faster, and will
+override these any implementations.
+
+@- minimum tail value
+@mal
+command min(b:bat[any::1,any::2]): any::2 = CMDminany
+	comment "Give the lowest tail value. Error on empty BATs.";
+
+command max(b:bat[any::1,any::2]): any::2 = CMDmaxany
+	comment "Give the highest tail value. Error on empty BATs.";
+@+ Type-Specific Sum, Prod, Max and Min
 @T
 For X $\in$ \{ sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
 macro):
 \begin{itemize}
 \item command sum(bat[any,X] : X, 
+\item command prod(bat[any,X] : X, and 
 \item command max(bat[any,X] : X, and 
 \item command min(bat[any,X] : X. 
 \end{itemize}
+@-
+@= sum_definition
+command sum (b:bat[any,@1] ) : @2 = CMDsum_@1_@2 
+	comment "Gives the sum of all tail values";
+command prod(b:bat[any,@1] ) : @2 = CMDprod_@1_@2 
+	comment "Gives the produc of all tail values";
 @mal
-@:aggregate(avg,"Gives the average of all tail values.")@
-@:aggregate(sum,"Gives the sum of all tail values.")@
-@:aggregate(max,"Give the highest tail value. Error on empty BATs.")@
-@:aggregate(min,"Give the lowest tail value. Error on empty BATs.")@
-
+@:sum_definition(uchr,uchr)@
+@:sum_definition(uchr,sht)@
+@:sum_definition(uchr,int)@
+@:sum_definition(uchr,lng)@
+@:sum_definition(sht,sht)@
+@:sum_definition(sht,int)@
+@:sum_definition(sht,lng)@
+@:sum_definition(int,int)@
+@:sum_definition(int,lng)@
+@:sum_definition(lng,lng)@
+@:sum_definition(flt,flt)@
+@:sum_definition(flt,dbl)@
+@:sum_definition(dbl,dbl)@
+@-
 @= aggregate_definition
 command @1 ( b:bat[any,@2] ) : @2 = CMD@1_@2 comment @3;
 @= aggregate
+@:aggregate_definition(@1,uchr,@2)@
 @:aggregate_definition(@1,sht,@2)@
 @:aggregate_definition(@1,int,@2)@
 @:aggregate_definition(@1,flt,@2)@
 @:aggregate_definition(@1,dbl,@2)@
 @:aggregate_definition(@1,lng,@2)@
+
+@mal
+@:aggregate(max,"Give the highest tail value. Error on empty BATs.")@
+@:aggregate(min,"Give the lowest tail value. Error on empty BATs.")@
 
 @+ Exented selection predicates
 For SQL convenience we provide a serie of interval selectors.
@@ -457,25 +521,25 @@ end between;
 # between Close Open interval
 function betweenCO(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
 	t:= select(b,l,h);
-	tr:= mirror(t);
+	tr:= reverse(t);
 	z:= delete(tr,h);
-	zr:= mirror(z);
-	return z;
+	zr:= reverse(z);
+	return t;
 end betweenCO;
 function betweenOC(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
 	t:= select(b,l,h);
-	tr:= mirror(t);
+	tr:= reverse(t);
 	z:= delete(tr,l);
-	zr:= mirror(z);
-	return z;
+	zr:= reverse(z);
+	return t;
 end betweenOC;
 function betweenOO(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
 	t:= select(b,l,h);
-	tr:= mirror(t);
+	tr:= reverse(t);
 	z:= delete(tr,l);
 	z:= delete(z,h);
-	zr:= mirror(z);
-	return z;
+	zr:= reverse(z);
+	return t;
 end betweenOO;
 @+ Modeling With Properties
 @T
@@ -561,60 +625,156 @@ account while resolving them.
                 return throwMessage("algebra.@4", "cannot access descriptor @2");
 	}
 	if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
+@+ BAT sum operation
+The sum aggregate only works for int and float fields.
+The routines below assumes that the caller knows what type
+is large enough to prevent overflow.
 
+@= sum_implementation
+str CMDsum_@1_@2(@2* res, int *bid) {
+	BAT *b;
+        BUN p,q;
+        int xx;
+        @2 result=@3;
+
+	@:getBATdescriptor(res,bid,b,sum)@
+        BATcheck(b,"BATsum_@1_@2");
+        BATloopFast(b, p, q, xx) {
+                @1 *value = (@1*) BUNtloc(b, p);
+                if (*value == @1_nil) {
+                        result = @2_nil; break;
+                } else {
+                        result += *value;
+                }
+        }
+        *res = result;
+        return MAL_SUCCEED;
+}
+
+@= prod_implementation
+int CMDprod_@1_@2(@2* res, BAT *b) {
+        BUN p,q;
+        int xx;
+        @2 result=@3;
+
+        BATcheck(b,"BATprodInt");
+        BATloopFast(b, p, q, xx) {
+                @1 *value = (@1*) BUNtloc(b, p);
+                if (*value == @1_nil) {
+                        result = @2_nil; break;
+                } else {
+                        result *= *value;
+                }
+        }
+        *res = result;
+        return GDK_SUCCEED;
+}
+
+
+@h
+#ifndef ALGEBRA_H
+#define ALGEBRA_H
+
+#include <gdk.h>
+#include "../atoms/uchr.h"
+#include "mal_function.h"
+
+mal_export ptr BATmax( BAT *b, ptr res );
+mal_export ptr BATmin( BAT *b, ptr res );
+
+#endif
+
+@c
+#include "algebra.h"
+
+
+@:sum_implementation(uchr,uchr,0)@
+@:sum_implementation(uchr,sht,0)@
+@:sum_implementation(uchr,int,0)@
+@:sum_implementation(uchr,lng,0)@
+@:sum_implementation(sht,sht,0)@
+@:sum_implementation(sht,int,0)@
+@:sum_implementation(sht,lng,0)@
+@:sum_implementation(int,int,0)@
+@:sum_implementation(int,lng,0)@
+@:sum_implementation(lng,lng,0)@
+@:sum_implementation(flt,flt,0.0)@
+@:sum_implementation(flt,dbl,0.0)@
+@:sum_implementation(dbl,dbl,0.0)@
+
+@:prod_implementation(uchr,uchr,1)@
+@:prod_implementation(uchr,sht,1)@
+@:prod_implementation(uchr,int,1)@
+@:prod_implementation(uchr,lng,1)@
+@:prod_implementation(sht,sht,1)@
+@:prod_implementation(sht,int,1)@
+@:prod_implementation(sht,lng,1)@
+@:prod_implementation(int,int,1)@
+@:prod_implementation(int,lng,1)@
+@:prod_implementation(lng,lng,1)@
+@:prod_implementation(flt,flt,1.0)@
+@:prod_implementation(flt,dbl,1.0)@
+@:prod_implementation(dbl,dbl,1.0)@
+@-
 @= aggregate_implementation
-str CMDsum_@1(@1* result, int *bid) {
-	BAT *b;
-	@:getBATdescriptor(result,bid,b,sum)@
-	if( BATsum(b, result)) return MAL_SUCCEED;
-	return throwMessage("algebra.sum", "GDKerror");
-}
-str CMDavg_@1(@1* ret, int *bid) {
-	int result=0;
-	BAT *b;
-	@:getBATdescriptor(&result,bid,b,avg)@
-	BATsum(b, &result);
-	if( BATcount(b) ==0) *ret = @1_nil;
-	else *ret = result/BATcount(b);
-	return MAL_SUCCEED;
-}
 str CMDmin_@1(@1* result, int *bid) {
-	BAT *b;
-	@:getBATdescriptor(result,bid,b,min)@
-	if( BATmin(b, result)) return MAL_SUCCEED;
-	return throwMessage("algebra.min", "GDKerror");
+        BAT *b;
+        @:getBATdescriptor(result,bid,b,min)@
+        if( BATmin(b, result)) return MAL_SUCCEED;
+        return throwMessage("algebra.min", "GDKerror");
 }
 str CMDmax_@1(@1* result, int *bid) {
-	BAT *b;
-	@:getBATdescriptor(result,bid,b,max)@
-	if( BATmax(b, result)) return  MAL_SUCCEED;
-	return throwMessage("algebra.max", "GDKerror");
+        BAT *b;
+        @:getBATdescriptor(result,bid,b,max)@
+        if( BATmax(b, result)) return  MAL_SUCCEED;
+        return throwMessage("algebra.max", "GDKerror");
 }
 @c
-#include "monet.h"
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- */
+@:aggregate_implementation(uchr)@
+@:aggregate_implementation(sht)@
+@:aggregate_implementation(int)@
+@:aggregate_implementation(flt)@
+@:aggregate_implementation(dbl)@
+@:aggregate_implementation(lng)@
 
+int CMDminany(ptr result, BAT *b) {
+        if (!ATOMlinear(b->ttype))
+            return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n",
+                        ATOMname(b->ttype));
+        if (ATOMvarsized(b->ttype))
+            return (*(ptr*) result = BATmin(b, NULL))?GDK_SUCCEED:GDK_FAIL;
+        if (BATmin(b, result)) {
+            if (b->ttype == TYPE_bat)
+                *(BAT**) result = BATdescriptor(*(bat*) result);
+            return GDK_SUCCEED;
+        }
+        return GDK_FAIL;
+}
+int CMDmaxany(ptr result, BAT *b) {
+        if (!ATOMlinear(b->ttype))
+            return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n",
+                        ATOMname(b->ttype));
+        if (ATOMvarsized(b->ttype))
+            return (*(ptr*) result = BATmax(b, NULL))?GDK_SUCCEED:GDK_FAIL;
+        if (BATmax(b, result)) {
+            if (b->ttype == TYPE_bat)
+                *(BAT**) result = BATdescriptor(*(bat*) result);
+            return GDK_SUCCEED;
+        }
+        return GDK_FAIL;
+}
+
+
+str CMDtopN(int *res, int *bid, lng *top) {
+        if (BBPcheck(*bid, "BATsize")) {
+                BAT *b = (BAT*) BBPgetdesc(*bid);
+                if (b == NULL) {
+                        *res = int_nil;
+                } else 
+			BATtopN(b, *top);
+        }
+        return MAL_SUCCEED;
+}
 str CMDBATsize(int *res, int *bid) {
         if (BBPcheck(*bid, "BATsize")) {
                 BAT *b = (BAT*) BBPgetdesc(*bid);
@@ -641,12 +801,6 @@ str CMDcard(int *result, int *bid) {
 	*result= BATcount(bn);
 	return MAL_SUCCEED;
 }
-
-@:aggregate_implementation(sht)@
-@:aggregate_implementation(int)@
-@:aggregate_implementation(flt)@
-@:aggregate_implementation(dbl)@
-@:aggregate_implementation(lng)@
 
 str CMDBATminimum(ptr *result, int *bid) {
 	BAT *b;
@@ -691,7 +845,7 @@ str CMDBATmaximum(ptr *result, int *bid) {
 str CMDselect1(int *result, int *bid, ptr value) {
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,select)@
-	@:derefStr(b,h,value);@
+	@:derefStr(b,t,value)@
 	bn = (BAT*) BATselect(b, value, 0);
 	if( bn ) {
 		*result = bn->batCacheid;
@@ -703,7 +857,7 @@ str CMDselect1(int *result, int *bid, ptr value) {
 str CMDuselect1(int *result, int *bid, ptr value) {
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,uselect)@
-	@:derefStr(b,h,value);@
+	@:derefStr(b,t,value)@
 	bn = (BAT*) BATuselect(b, value, 0);
 	if( bn ) {
 		*result = bn->batCacheid;
@@ -715,8 +869,8 @@ str CMDuselect1(int *result, int *bid, ptr value) {
 str CMDselect(int *result, int *bid, ptr low, ptr high) {
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,select)@
-	@:derefStr(b,t,low);@
-	@:derefStr(b,t,high);@
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
 	bn = (BAT*) BATselect(b, low, high);
 	if( bn ) {
 		*result = bn->batCacheid;
@@ -752,25 +906,36 @@ str CMDfragment(int *result, int *bid,
 	}
 	return throwMessage("algebra.fragment", "GDKerror");
 }
-str CMDthetajoin(int *result, int *lid, int *rid, int *mode) {
+
+static int operatorCode(str opname){
+	if(idcmp(opname,"EQ")==0) return 0;
+	if(idcmp(opname,"LT")==0) return -1;
+	if(idcmp(opname,"LE")==0) return -2;
+	if(idcmp(opname,"GT")==0) return 1;
+	if(idcmp(opname,"GE")==0) return 2;
+	GDKerror("Illegal operator code, EQ assumed\n");
+	return 0;
+}
+str CMDthetajoin(int *result, int *lid, int *rid, str *opname) {
 	BAT *left, *right, *bn;
+	int opc= operatorCode(*opname);
 	@:getBATdescriptor(result,lid,left,thetajoin)@
 	@:getBATdescriptor(result,rid,right,thetajoin)@
-	bn = (BAT*) BATthetajoin(left, right, *mode);
+	bn = (BAT*) BATthetajoin(left, right, opc);
 	if( bn ) {
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.thetajoin", "GDKerror");
 }
-str CMDtheta(int *iid, int *oi, int *lid, int *rid, int *mode) {
+str CMDtheta(int *iid, int *oi, int *lid, int *rid, str *opname) {
 	BAT *inner,*outer, *left, *right;
-	int result;
+	int result, opc= operatorCode(*opname);
 	@:getBATdescriptor(&result,iid,inner,theta)@
 	@:getBATdescriptor(&result,oi,outer,theta)@
 	@:getBATdescriptor(&result,lid,left,theta)@
 	@:getBATdescriptor(&result,rid,right,theta)@
-	BATtheta(inner, outer, left, right, *mode);
+	BATtheta(inner, outer, left, right, opc);
 	return MAL_SUCCEED;
 }
 str CMDbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
@@ -1073,7 +1238,7 @@ str CMDlike(int *ret, int *bid, str *k) {
 str CMDslice(int *ret, bat *bid, int *start, int *end){
 	BAT *b, *br;
 	@:getBATdescriptor(ret,bid,b,slice)@
-	br = BATslice(b, start, end);
+	br = BATslice(b, *start, *end);
 	if( br != NULL){
 		*ret= br->batCacheid;
 		return MAL_SUCCEED;
@@ -1123,12 +1288,15 @@ str CMDfetchbat(int * ret, int *bid, int *sid){
 	return throwMessage("algebra.fetchbat", "GDKerror");
 }
 
-@-
-Factor out some common code.
-
+str doCMDfetch(ptr ret, BAT *b, lng *pos){
+	lng i = *pos;
+        if ((i < 0) || (i >= BATcount(b)))
+                return throwMessage("algebra.fetch", " idx out of range");
+        i += BUNindex(b, BUNfirst(b));
+	@:putTail(BUNptr(b,i))@
 @= putTail
 	if (b->theap.base) {
-	    ptr _src = b->theap.base + *(int*) BUNtloc(b,@1);
+	    ptr _src = BUNtvar(b,@1); /*b->theap.base + *(var_t*) BUNtloc(b,@1);*/
 	    int _len = ATOMlen(b->ttype, _src);
 	    ptr _dst = GDKmalloc(_len);
 	    memcpy(_dst, _src, _len);
@@ -1138,8 +1306,8 @@ Factor out some common code.
 	    if (ATOMvarsized(b->ttype)) {
 		memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
 	    } else if (b->ttype == TYPE_bat) {
-		bat bid = *(int*) BUNtloc(b, @1);
-		*(BAT**) ret = BATdescriptor(bid);
+		bat bid = *(bat*) BUNtloc(b, @1);
+		*(bat*) ret = bid;
 		BBPfix(bid);
 	    } else if (_s == 4) {
 		*(int*) ret = *(int*) BUNtail(b, @1);
@@ -1154,31 +1322,25 @@ Factor out some common code.
 	    }
 	}
 @c
-str CMDfetch(ptr ret, int *bid, int *pos){
-	int i = *pos;
+        return MAL_SUCCEED;
+}
+str CMDfetchoid(int * ret, int *bid, oid *pos){
+	BAT *b;
+	@:getBATdescriptor(ret,bid,b,fetchoid)@
+
+	if( b->hseqbase == oid_nil)
+		return throwMessage("algebra.fetchoid",
+			"void lookup on uninitialized column");
+	return doCMDfetch((ptr) ret,b,(((ptr)*pos)-b->hseqbase));
+}
+
+str CMDfetch(ptr ret, int *bid, lng *pos){
 	BAT *b;
 	int result;
 
 	@:getBATdescriptor(&result,bid,b,fetch);
-        if ((i < 0) || (i >= BATcount(b)))
-                return throwMessage("algebra.fetch", " idx out of range");
-        i += BUNindex(b, BUNfirst(b));
-	@:putTail(BUNptr(b,i))@
-        return MAL_SUCCEED;
+	return doCMDfetch(ret,b,pos);
 }
-
-str CMDfetchoid(ptr *ret, int *bid, oid *pos){
-	BAT *b;
-	int newpos;
-	int result;
-
-	@:getBATdescriptor(&result,bid,b,fetchoid);
-	newpos = (int) (*pos - b->hseqbase);
-	if (b->hseqbase == oid_nil) 
-                return throwMessage("algebra.fetchoid", " void lookup on uninitialized column.");
-	return CMDfetch(*ret, bid, &newpos);
-}
-
 str CMDexist(bit *ret, int *bid, ptr val){ 
 	BAT *b;
 	BUN q;

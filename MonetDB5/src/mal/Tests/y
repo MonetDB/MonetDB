@@ -1,0 +1,221 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#- positional arguments, ie $1,$2,..., can not be compiled in isolation
+#
+#
+#Perhaps someone will develop a complete MIL interpreter
+#on top of the MAL kernel in the future
+## Mil compiler Version 1.0)
+## Copyright (c) 1993-2002, CWI. All rights reserved.
+#
+## Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##- positional arguments, ie $1,$2,..., can not be compiled in isolation
+##
+##
+##Perhaps someone will develop a complete MIL interpreter
+##on top of the MAL kernel in the future
+##
+###line 224 "/ufs/mk/monet_5-0/src/modules/atoms/decimal.mx"
+##module(xtables,alarm,decimal,mmath);
+##
+	aa_a := decimal_minrepeat(20);
+#	aa_a := decimal_minrepeat(20);
+##decimal_minrepeat(20);
+##
+##
+##
+###line 230 "/ufs/mk/monet_5-0/src/modules/atoms/decimal.mx"
+	dec_nil := decimal("nil");
+#	dec_nil:= decimal("nil");
+##var   dec_nil := decimal("nil");
+	dec_zero := decimal("-0000000000000000000000000000000000E-8989");
+#	dec_zero:= decimal("-0000000000000000000000000000000000E-8989");
+##var  dec_zero := decimal("-0000000000000000000000000000000000E-8989");
+	dec_tiny := decimal("+0.000000000000000000000000001122");
+#	dec_tiny:= decimal("+0.000000000000000000000000001122");
+##var  dec_tiny := decimal("+0.000000000000000000000000001122");
+	nec_tiny := decimal("-11220000000000E-40");
+#	nec_tiny:= decimal("-11220000000000E-40");
+##var  nec_tiny := decimal("-11220000000000E-40");
+	dec_small := decimal(2244);
+#	dec_small:= decimal(2244);
+##var dec_small := decimal(2244);
+	nec_small := decimal("-22440000000000E-10");
+#	nec_small:= decimal("-22440000000000E-10");
+##var nec_small := decimal("-22440000000000E-10");
+	dec_num := decimal("+4488E15");
+#	dec_num:= decimal("+4488E15");
+##var   dec_num := decimal("+4488E15");
+	nec_num := decimal("-44880000000000E5");
+#	nec_num:= decimal("-44880000000000E5");
+##var   nec_num := decimal("-44880000000000E5"); 
+	dec_big := decimal("+1122E40");
+#	dec_big:= decimal("+1122E40");
+##var   dec_big := decimal("+1122E40");
+	nec_big := decimal("-11220000000000E30");
+#	nec_big:= decimal("-11220000000000E30");
+##var   nec_big := decimal("-11220000000000E30"); 
+	dec_huge := decimal("+22440000000000E9000");
+#	dec_huge:= decimal("+22440000000000E9000");
+##var  dec_huge := decimal("+22440000000000E9000");
+	nec_huge := decimal("-2244E9010");
+#	nec_huge:= decimal("-2244E9010");
+##var  nec_huge := decimal("-2244E9010");
+##
+	bbp:= bbp.bind("bbp");
+	decimal := bind(bbp,"decimal");
+#	decimal:= bbp.bind("decimal");
+	dec_bat := new(str,decimal,10);
+#	dec_bat:= new(str,decimal,10);
+##var dec_bat := new(str,decimal,10);
+	ba_a := insert(dec_bat,"dec_nil",dec_nil);
+#	ba_a := insert(dec_bat,"dec_nil",dec_nil);
+##dec_bat.insert("dec_nil", dec_nil);
+	ca_a := insert(dec_bat,"dec_zero",dec_zero);
+#	ca_a := insert(dec_bat,"dec_zero",dec_zero);
+##dec_bat.insert("dec_zero", dec_zero);
+	da_a := insert(dec_bat,"dec_tiny",dec_tiny);
+#	da_a := insert(dec_bat,"dec_tiny",dec_tiny);
+##dec_bat.insert("dec_tiny", dec_tiny);
+	ea_a := insert(dec_bat,"nec_tiny",nec_tiny);
+#	ea_a := insert(dec_bat,"nec_tiny",nec_tiny);
+##dec_bat.insert("nec_tiny", nec_tiny);
+	fa_a := insert(dec_bat,"dec_small",dec_small);
+#	fa_a := insert(dec_bat,"dec_small",dec_small);
+##dec_bat.insert("dec_small", dec_small);
+	ga_a := insert(dec_bat,"nec_small",nec_small);
+#	ga_a := insert(dec_bat,"nec_small",nec_small);
+##dec_bat.insert("nec_small", nec_small);
+	ha_a := insert(dec_bat,"dec_num",dec_num);
+#	ha_a := insert(dec_bat,"dec_num",dec_num);
+##dec_bat.insert("dec_num", dec_num);
+	ia_a := insert(dec_bat,"nec_num",nec_num);
+#	ia_a := insert(dec_bat,"nec_num",nec_num);
+##dec_bat.insert("nec_num", nec_num);
+	ja_a := insert(dec_bat,"dec_big",dec_big);
+#	ja_a := insert(dec_bat,"dec_big",dec_big);
+##dec_bat.insert("dec_big", dec_big);
+	ka_a := insert(dec_bat,"nec_big",nec_big);
+#	ka_a := insert(dec_bat,"nec_big",nec_big);
+##dec_bat.insert("nec_big", nec_big);
+	la_a := insert(dec_bat,"dec_huge",dec_huge);
+#	la_a := insert(dec_bat,"dec_huge",dec_huge);
+##dec_bat.insert("dec_huge", dec_huge);
+	ma_a := insert(dec_bat,"nec_huge",nec_huge);
+#	ma_a := insert(dec_bat,"nec_huge",nec_huge);
+##dec_bat.insert("nec_huge", nec_huge);
+##
+### test conversion to simple scalars
+	multiplex:= bbp.bind("multiplex");
+	dec_prc := script(multiplex,"getprecision",dec_bat);
+#	dec_prc:= multiplex.script("getprecision",dec_bat);
+##var dec_prc := [getprecision](dec_bat);
+	dec_scl := script(multiplex,"getscale",dec_bat);
+#	dec_scl:= multiplex.script("getscale",dec_bat);
+##var dec_scl := [getscale](dec_bat);
+	dec_flt := flt(dec_bat);
+#	dec_flt:= flt(dec_bat);
+##var dec_flt := [flt](dec_bat);
+	dec_int := int(dec_bat);
+#	dec_int:= int(dec_bat);
+##var dec_int := [int](dec_bat);
+	dec_lng := lng(dec_bat);
+#	dec_lng:= lng(dec_bat);
+##var dec_lng := [lng](dec_bat);
+	dec_dbl := dbl(dec_bat);
+#	dec_dbl:= dbl(dec_bat);
+##var dec_dbl := [dbl](dec_bat);
+##
+	na_a := setColumn(bbp,dec_bat,"value");
+#	na_a := bbp.setColumn(dec_bat,"value");
+##print(dec_bat.col_name("value"), 
+	oa_a := setColumn(bbp,dec_prc,"precision");
+#	oa_a := bbp.setColumn(dec_prc,"precision");
+##      dec_prc.col_name("precision"), 
+	pa_a := setColumn(bbp,dec_scl,"scale");
+#	pa_a := bbp.setColumn(dec_scl,"scale");
+	qa_a := print(na_a,oa_a,pa_a);
+#	qa_a := print(na_a,oa_a,pa_a);
+##      dec_scl.col_name("scale"));
+##
+	ra_a := setColumn(bbp,dec_bat,"value");
+#	ra_a := bbp.setColumn(dec_bat,"value");
+##print(dec_bat.col_name("value"), 
+	sa_a := setColumn(bbp,dec_int,"int");
+#	sa_a := bbp.setColumn(dec_int,"int");
+##      dec_int.col_name("int"), 
+	ta_a := setColumn(bbp,dec_lng,"lng");
+#	ta_a := bbp.setColumn(dec_lng,"lng");
+	ua_a := print(ra_a,sa_a,ta_a);
+#	ua_a := print(ra_a,sa_a,ta_a);
+##      dec_lng.col_name("lng"));
+##
+	va_a := setColumn(bbp,dec_bat,"value");
+#	va_a := bbp.setColumn(dec_bat,"value");
+##print(dec_bat.col_name("value"), 
+	wa_a := setColumn(bbp,dec_flt,"flt");
+#	wa_a := bbp.setColumn(dec_flt,"flt");
+##      dec_flt.col_name("flt"), 
+	xa_a := setColumn(bbp,dec_dbl,"dbl");
+#	xa_a := bbp.setColumn(dec_dbl,"dbl");
+	ya_a := print(va_a,wa_a,xa_a);
+#	ya_a := print(va_a,wa_a,xa_a);
+##      dec_dbl.col_name("dbl"));
+##
+### test reverse conversion
+	ab_a := setColumn(bbp,dec_bat,"decimal");
+#	ab_a := bbp.setColumn(dec_bat,"decimal");
+##print(dec_bat.col_name("decimal"), 
+	bb_a := script(multiplex,"decimal",dec_int);
+#	bb_a := multiplex.script("decimal",dec_int);
+	cb_a := setColumn(bbp,bb_a,"from_int");
+#	cb_a := bbp.setColumn(bb_a,"from_int");
+##      [decimal](dec_int).col_name("from_int"), 
+	db_a := script(multiplex,"decimal",dec_lng);
+#	db_a := multiplex.script("decimal",dec_lng);
+	eb_a := setColumn(bbp,db_a,"from_lng");
+#	eb_a := bbp.setColumn(db_a,"from_lng");
+	fb_a := print(ab_a,cb_a,eb_a);
+#	fb_a := print(ab_a,cb_a,eb_a);
+##      [decimal](dec_lng).col_name("from_lng"));
+##
+	gb_a := setColumn(bbp,dec_bat,"decimal");
+#	gb_a := bbp.setColumn(dec_bat,"decimal");
+##print(dec_bat.col_name("decimal"), 
+	hb_a := script(multiplex,"decimal",dec_flt);
+#	hb_a := multiplex.script("decimal",dec_flt);
+	ib_a := setColumn(bbp,hb_a,"from_flt");
+#	ib_a := bbp.setColumn(hb_a,"from_flt");
+	jb_a := print(gb_a,ib_a);
+#	jb_a := print(gb_a,ib_a);
+##      [decimal](dec_flt).col_name("from_flt"));
+##
+	kb_a := setColumn(bbp,dec_bat,"decimal");
+#	kb_a := bbp.setColumn(dec_bat,"decimal");
+##print(dec_bat.col_name("decimal"), 
+	lb_a := script(multiplex,"decimal",dec_dbl);
+#	lb_a := multiplex.script("decimal",dec_dbl);
+	mb_a := setColumn(bbp,lb_a,"from_dbl");
+#	mb_a := bbp.setColumn(lb_a,"from_dbl");
+	nb_a := print(kb_a,mb_a);
+#	nb_a := print(kb_a,mb_a);
+##      [decimal](dec_dbl).col_name("from_dbl"));
+##
+### test set_scale and set_precision
+	ob_a := setColumn(bbp,dec_bat,"decimal");
+#	ob_a := bbp.setColumn(dec_bat,"decimal");
+##print(dec_bat.col_name("decimal"), 
+	pb_a := script(multiplex,"setscale",dec_bat,0);
+#	pb_a := multiplex.script("setscale",dec_bat,0);

@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## the first of a series of BBP test cases
 ## make sure you can bind to a BAT through the box
 #
@@ -32,24 +30,24 @@
 ##exit MALexception;
 ##print("done");
 #
-function Admin.main():int; #0:(main:int)
-    bbp.open(); #1:($1:void)
-    b := mal.new(int,int); #2:(b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,2); #3:($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
-    bbp.setName(b,"myfirstbat"); #4:($7:bat[int,int])<-(b:bat[int,int])($8:str)
-    c := bbp.bind("myfirstbat"); #5:(c:bat[any,any])<-($8:str)
-    io.print(c); #6:($10:int)<-(c:bat[any,any])
-    bbp.close(); #7:($11:void)
-    bbp.open(); #8:($12:void)
-    v := bbp.take("myfirstbat"); #9:(v:bat[any,any])<-($8:str)
-catch MALexception; #10:(MALexception:str) jump 13
-    io.print(MALexception); #11:($15:int)<-(MALexception:str)
-exit MALexception; #12:(MALexception:str)
-    io.print(v); #13:($16:int)<-(v:bat[any,any])
-    x := bbp.getObjects(); #14:(x:bat[int,str])
-    io.print(x); #15:($18:int)<-(x:bat[int,str])
-    bbp.close(); #16:($19:void)
-end main; #17:
+function Admin.main():int; #0  (main:int)
+    bbp.open(); #1 CMDbbpopen ($1:void)
+    b := mal.new(int,int); #2 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    bat.insert(b,1,2); #3 CMDinsert_bun ($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
+    bbp.setName(b,"myfirstbat"); #4 CMDbbprename ($7:bat[int,int])<-(b:bat[int,int])($8:str)
+    c := bbp.bind("myfirstbat"); #5 CMDbbpbind (c:bat[any,any])<-($8:str)
+    io.print(c); #6 CMDprint_val ($10:int)<-(c:bat[any,any])
+    bbp.close(); #7 CMDbbpclose ($11:void)
+    bbp.open(); #8 CMDbbpopen ($12:void)
+    v := bbp.take("myfirstbat"); #9 CMDbbptake (v:bat[any,any])<-($8:str)
+catch MALexception; #10  (MALexception:str) jump 12
+    io.print(MALexception); #11 CMDprint_val ($15:int)<-(MALexception:str)
+exit MALexception; #12  (MALexception:str)
+    io.print(v); #13 CMDprint_val ($16:int)<-(v:bat[any,any])
+    x := bbp.getObjects(); #14 CMDbbpGetObjects (x:bat[int,str])
+    io.print(x); #15 CMDprint_val ($18:int)<-(x:bat[int,str])
+    bbp.close(); #16 CMDbbpclose ($19:void)
+end main; #17  
 #-------------------------#
 # BAT:	  myfirstbat	  #
 # (int)	  (int)		  #

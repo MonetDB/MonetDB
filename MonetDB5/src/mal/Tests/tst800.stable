@@ -1,19 +1,17 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## Testing global consts defined for all users
 ## It should travers the nested spaces looking for the correct variable
 ## take a local copy
 #	v:str := const.take("version");
 #	u:str := const.take("user");
-#	db:str:= const.take("database");
+#	db:str:= const.take("dbname");
 #	df:str:= const.take("dbfarm");
-#	dd:str:= const.take("distribution");
+##	dd:str:= const.take("distribution");
 ##	bb:bat[void,str] := const.take("environment");
 #
 ## how to obtain a copy of all objects in a space?
@@ -25,27 +23,23 @@
 #	redo b;
 #exit b;
 #
-function Admin.main():int; #0:(main:int)
-    v := const.take("version"); #1:(v:str)<-($2:str)
-    u := const.take("user"); #2:(u:str)<-($4:str)
-    db := const.take("database"); #3:(db:str)<-($6:str)
-    df := const.take("dbfarm"); #4:(df:str)<-($8:str)
-    dd := const.take("distribution"); #5:(dd:str)<-($10:str)
-barrier b := const.iterator(nme); #6:(b:lng)<-(nme:str) jump 12
-    system.printf("%s=",nme); #7:($13:int)<-($14:str)(nme:str)
-    val := const.toString(nme); #8:(val:str)<-(nme:str)
-    system.printf("%s\n",val); #9:($16:int)<-($17:str)(val:str)
-    redo b ; #10:(b:lng) jump 6
-exit b; #11:(b:lng)
-end main; #12:
+function Admin.main():int; #0  (main:int)
+    v := const.take("version"); #1 CONSTtake (v:str)<-($2:str)
+    u := const.take("user"); #2 CONSTtake (u:str)<-($4:str)
+    db := const.take("dbname"); #3 CONSTtake (db:str)<-($6:str)
+    df := const.take("dbfarm"); #4 CONSTtake (df:str)<-($8:str)
+barrier b := const.iterator(nme); #5 CONSTiterator (b:lng)<-(nme:str) jump 10
+    system.printf("%s=",nme); #6 SYSprint_formatted_str ($11:int)<-($12:str)(nme:str)
+    val := const.toString(nme); #7 CONSTtoString (val:str)<-(nme:str)
+    system.printf("%s\n",val); #8 SYSprint_formatted_str ($14:int)<-($15:str)(val:str)
+    redo b; #9  (b:lng) jump 5
+exit b; #10  (b:lng)
+end main; #11  
 user=Admin
-database=demo
-dbfarm=/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-distribution=/ufs/mk/monet_5-0/Linux
-monetrc=/ufs/mk/.monet.conf
-architecture=i686-pc-linux-gnu
+dbname=demo
+dbfarm=/ufs/mk/monet_5/Linux/var/MonetDB
 version=5.0
-environment=unknown yet
+config=/ufs/mk/monet_5/src/mal/Tests/tst.conf
 STORE_MEM=0
 STORE_MMAP=1
 STORE_COMPR=2

@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 #b:=new(int,int);
 #insert(b,0,0);
 #insert(b,1,1);
@@ -17,42 +15,42 @@
 #z:= betweenOC(b,0,2); print(z);
 #z:= betweenOO(b,0,2); print(z);
 #
-function Admin.main():int; #0:(main:int)
-    b := mal.new(int,int); #1:(b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,0,0); #2:($3:bat[int,int])<-(b:bat[int,int])($4:int)($4:int)
-    bat.insert(b,1,1); #3:($5:bat[int,int])<-(b:bat[int,int])($6:int)($6:int)
-    bat.insert(b,2,2); #4:($7:bat[int,int])<-(b:bat[int,int])($8:int)($8:int)
-    bat.insert(b,3,3); #5:($9:bat[int,int])<-(b:bat[int,int])($10:int)($10:int)
-    z := algebra.select(b,0,2); #6:(z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
-    io.print(z); #7:($12:int)<-(z:bat[int,int])
-    z := algebra.betweenCO(b,0,2); #8:(z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
-    io.print(z); #9:($13:int)<-(z:bat[int,int])
-    z := algebra.betweenOC(b,0,2); #10:(z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
-    io.print(z); #11:($14:int)<-(z:bat[int,int])
-    z := algebra.betweenOO(b,0,2); #12:(z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
-    io.print(z); #13:($15:int)<-(z:bat[int,int])
-end main; #14:
+function Admin.main():int; #0  (main:int)
+    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    bat.insert(b,0,0); #2 CMDinsert_bun ($3:bat[int,int])<-(b:bat[int,int])($4:int)($4:int)
+    bat.insert(b,1,1); #3 CMDinsert_bun ($5:bat[int,int])<-(b:bat[int,int])($6:int)($6:int)
+    bat.insert(b,2,2); #4 CMDinsert_bun ($7:bat[int,int])<-(b:bat[int,int])($8:int)($8:int)
+    bat.insert(b,3,3); #5 CMDinsert_bun ($9:bat[int,int])<-(b:bat[int,int])($10:int)($10:int)
+    z := algebra.select(b,0,2); #6 CMDselect (z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
+    io.print(z); #7 CMDprint_val ($12:int)<-(z:bat[int,int])
+    z := algebra.betweenCO(b,0,2); #8  (z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
+    io.print(z); #9 CMDprint_val ($13:int)<-(z:bat[int,int])
+    z := algebra.betweenOC(b,0,2); #10  (z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
+    io.print(z); #11 CMDprint_val ($14:int)<-(z:bat[int,int])
+    z := algebra.betweenOO(b,0,2); #12  (z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
+    io.print(z); #13 CMDprint_val ($15:int)<-(z:bat[int,int])
+end main; #14  
 #-----------------#
-# BAT:	  tmp_4	  #
+# BAT:	  tmp_5	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  1	  ]
 [ 2,	  2	  ]
+#-----------------#
+# BAT:	  tmp_6	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 0,	  0	  ]
+[ 1,	  1	  ]
+#-----------------#
+# BAT:	  tmp_5	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 2,	  2	  ]
+[ 1,	  1	  ]
 #-----------------#
 # BAT:	  tmp_7	  #
-# (int)	  (int)	  #
-#-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-#-----------------#
-# BAT:	  tmp_9	  #
-# (int)	  (int)	  #
-#-----------------#
-[ 2,	  2	  ]
-[ 1,	  1	  ]
-#-----------------#
-# BAT:	  tmp_12  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]

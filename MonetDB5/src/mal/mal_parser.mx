@@ -22,7 +22,7 @@ Unike Monet V4, no module management operations are allowed within the
 context of a procedure. They are considered global commands.
 
 The syntax layout of a MAL program consists of a module name,
-a list of import commands, a list of function/ruler/handler
+a list of import commands, a list of function/pattern/command/stream
 definitions and concludes with the statements to be executed as
 the main body of the program.  All components are optional.
 A commentary may appear anywhere a statement is expected.
@@ -63,7 +63,7 @@ html
 
 #include "mal_import.h"
 
-mal_export int parseMal(Client cntxt);
+mal_export int parseMAL(Client cntxt, Symbol curPrg);
 mal_export void debugParser(int i);
 
 #endif /* _MAL_PARSER_H */
@@ -82,14 +82,14 @@ request and each time we encounter EOL.
 #define NL(X) ((X)=='\n' || (X)=='\r')
 
 int echoInput(Client cntxt){
-	if (cntxt->listing) { 
+	if (cntxt->listing & LIST_INPUT) { 
 		char *c= cntxt->nxt;
-		fputs("#",cntxt->fdout);
+		stream_printf(cntxt->fdout,"#");
 		while(*c && !NL(*c)){
-			fputc(*c++,cntxt->fdout);
+			stream_printf(cntxt->fdout,"%c",*c++);
 		}
-		fputc('\n', cntxt->fdout);
-		fflush(cntxt->fdout);
+		stream_printf(cntxt->fdout,"\n");
+		cntxt->fdout->flush(cntxt->fdout);
 	}
 }
 #define nextChar(X)  (*(X)->nxt?*(X)->nxt++:0)
@@ -99,7 +99,7 @@ INLINE
 void skipComment(Client cntxt) { 
 	char c; 
 	cntxt->nxt++;
-	while (c = *cntxt->nxt) {
+	while (c = currChar(cntxt)) {
 		if(c== '\n') return;
 		if(c== '\r') return;
 		cntxt->nxt++;
@@ -107,8 +107,8 @@ void skipComment(Client cntxt) {
 }
 INLINE
 void skipSpace(Client cntxt){
-	char c; 
-	while ((c= *cntxt->nxt) && isspace(c))cntxt->nxt++;
+	char c;
+	while( strchr(" \t\n\r",*cntxt->nxt)) cntxt->nxt++;
 }
 INLINE
 void advance(Client cntxt, int length){
@@ -142,6 +142,8 @@ int initParser(){
 	idCharacter['_']=1;
 	idCharacter[TMPMARKER]=1;
 }
+#undef isdigit
+#define isdigit(X)  ((X)>='0' && (X)<='9')
 int idLength(Client cntxt){
 	int l;
 	str s= cntxt->nxt;
@@ -152,7 +154,6 @@ int idLength(Client cntxt){
 }
 str idCopy(Client cntxt, int length){
 	str s= GDKmalloc(length+1);
-	if( s== 0) GDKfatal("FATAL:idCopy:");
 	strncpy(s,cntxt->nxt,length);
 	s[length]=0;
 	advance(cntxt,length);
@@ -290,22 +291,10 @@ int cstLength(Client cntxt, int *type)
 {	int i=0;
 	str s= cntxt->nxt;
 
-	if( *s=='f' && strncmp(s,"false",5)==0 && !isalnum(*(s+5)) ){
-		*type = TYPE_bit;
-		return 5;
-	}
-	if( *s== 't' && strncmp(s,"true",4)==0 && !isalnum(*(s+4)) ){
-		*type = TYPE_bit;
-		return 4;
-	}
-	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum(*(s+3)) ){
-		*type = TYPE_void;
-		return 3;
-	}
 	*type = TYPE_int;
 	if( *s == '-') { i++; s++;}
 	if( ! isdigit(*s)) {
-		if( *s!= '.') return 0;
+		if( *s!= '.') goto parseTFN;
 	} 
 	while( isdigit(*s)) { i++; s++;}
 	if( *s == '.'){ i++; s++; 
@@ -321,17 +310,34 @@ int cstLength(Client cntxt, int *type)
 		*type= TYPE_oid;
 		while( isdigit(*s)) { i++; s++;}
 	} 
-	if( *s == 'L' && *(s+1)=='L'){
-		if( *type== TYPE_int) {i+=2; *type = TYPE_lng;}
-		if( *type== TYPE_flt) {i+=2; *type = TYPE_dbl;}
+	if( *s == 'L' ){
+		if( *type== TYPE_int) {i++; *type = TYPE_lng;}
+		if( *type== TYPE_flt) {i++; *type = TYPE_dbl;}
+	}
+	if( *s == 'L' ){
+		if( *type== TYPE_int) {i++; *type = TYPE_lng;}
 	}
 	return i;
+parseTFN:
+	if( *s=='f' && strncmp(s,"false",5)==0 && !isalnum(*(s+5)) ){
+		*type = TYPE_bit;
+		return 5;
+	}
+	if( *s== 't' && strncmp(s,"true",4)==0 && !isalnum(*(s+4)) ){
+		*type = TYPE_bit;
+		return 4;
+	}
+	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum(*(s+3)) ){
+		*type = TYPE_void;
+		return 3;
+	}
+	return 0;
 }
 str cstCopy(Client cntxt, int i){ return idCopy(cntxt,i);}
 
 @-
 Identifiers used as arguments or targets of assignments may be
-qualified with a type. The type should be known before-hand,
+qualified with a type and property list. The type should be known before-hand,
 which essential requires the corresponding module to be loaded first.
 
 The type qualifier can handle array definitions as well. Upon first
@@ -364,8 +370,26 @@ int typeQualifier(Client cntxt)
 				parseError(cntxt,"']' expected\n");
 			if( hd ) GDKfree(hd);
 			if( tl ) GDKfree(tl);
+			skipSpace(cntxt);
 			return i;
 		} 
+		break;
+	case 'v':
+		if(strncmp(cntxt->nxt,"vec[",4)==0){
+			/* parse vec[type] */
+
+			advance(cntxt,4);
+			if( (hd= idCopy(cntxt,idLength(cntxt))) ){
+				ht = getTypeIndex(hd);
+				i= newVecType(ht);
+			}
+			if( nextChar(cntxt) !=']')
+				parseError(cntxt,"']' expected\n");
+			if( hd ) GDKfree(hd);
+			skipSpace(cntxt);
+			return i;
+		}
+		break;
 	default:
 		if( (hd=idCopy(cntxt,idLength(cntxt))) ){
 			ht= getTypeIndex(hd);
@@ -385,6 +409,7 @@ int typeQualifier(Client cntxt)
 					parseError(cntxt,"array ']' expected\n");
 				nextChar(cntxt);
 			}
+			skipSpace(cntxt);
 			return ht;
 		} 
 		parseError(cntxt,"<type identifier> expected\n");
@@ -496,8 +521,8 @@ An import statement is immediately taken into effect. This
 calls for temporary switching the input for a particular client.
 The administration for this is handled by malImport.
 @T
-importStmt : IMPORT identifier \\
-	   : IMPORT string\\
+importStmt : USE identifier \\
+	   : USE string\\
 @c
 int parseImport(Client cntxt)
 {	MalBlkPtr curBlk = 0;
@@ -510,7 +535,7 @@ int parseImport(Client cntxt)
 
 	@:parsePath@
 
-	malImport(cntxt,modname, cntxt->listing);
+	malImport(cntxt,modname,modname, cntxt->listing);
 	GDKfree(modname);
 	skipToEnd(cntxt);
 	return 1;
@@ -521,10 +546,7 @@ out the code in a few text macros. Upon encountering a definition, we
 initialize a MAL instruction container. We should also check for
 non-terminated definitions.
 @T
-defineStmt : FUNCTION
-	: COMMAND functionHdr [COMMENT string] ';'
-	: HANDLER
-	: RULER functionHdr [COMMENT string] ';'
+defineStmt : {FUNCTION COMMAND PATTERN STREAM} functionHdr [COMMENT string] ';'
 
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
 the symbol table and stackframe contains the sequence
@@ -562,13 +584,12 @@ the function definition in a particular module instead of the current one.
 			"function header '(' expected\n");
 	}
 	skipSpace(cntxt);
-	/* curPrg = cntxt->curprg;
-	curBlk = curPrg->def;
-	curInstr = getInstrPtr(curBlk,0); */
 
 	/* temporary suspend capturing statements in main block */
+	if( cntxt->backup && curBlk && curBlk->errors==0) 
+		GDKfatal("mal_parser: unexpected recursion\n");
 	cntxt->backup = cntxt->curprg;
-	cntxt->curprg = newFunction(fnme);
+	cntxt->curprg = newFunction(fnme,kind);
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
@@ -580,9 +601,8 @@ the function definition in a particular module instead of the current one.
 	ch= currChar(cntxt);
 	while( ch !=')' && ch && !NL(ch)){
 		str arg;
+		int varid;
 		@:binding@
-		pushArgument(curBlk,curInstr, newVariable(curBlk,arg,type));
-		skipSpace(cntxt);
 		/* the last argument may be variable length */
 		if( keyphrase(cntxt,"...",3) ){
 			curInstr->varargs++;
@@ -606,20 +626,16 @@ during the final phase reshuffle the return values to the beginning (?)
 	if( currChar(cntxt) != ':') {
 		/* default */
 		setVarType(curBlk,0,TYPE_any);
-	} else { 
-		if( *(cntxt->nxt+1) =='('){
+	} else { nextChar(cntxt); skipSpace(cntxt);
+		if( *(cntxt->nxt) =='('){
 			int retc= curInstr->argc, i1,i2=0;
-			int newarg[MAXARG];
-			nextChar(cntxt); 
 			/* parse multi-target result */
 			nextChar(cntxt);skipSpace(cntxt);
 			ch= currChar(cntxt);
 			while( ch !=')' && ch && !NL(ch)){
 				str arg;
+				int varid;
 				@:binding@
-				pushArgument(curBlk,curInstr, 
-					newVariable(curBlk,arg,type));
-				skipSpace(cntxt);
 				if( (ch=currChar(cntxt)) != ',') {
 					if( ch==')') break;
 					return (MalBlkPtr) parseError(cntxt,
@@ -629,21 +645,23 @@ during the final phase reshuffle the return values to the beginning (?)
 				ch = currChar(cntxt);
 			}
 			/* re-arrange the parameters, results first*/
+			int maxarg= curInstr->maxarg;
+			int *newarg= (int*)GDKmalloc(maxarg*sizeof(int));
 			for(i1= retc; i1<curInstr->argc; i1++)
 				newarg[i2++]= curInstr->argv[i1];
 			curInstr->retc= curInstr->argc-retc;
 			for(i1= 1; i1<retc; i1++)
 				newarg[i2++]= curInstr->argv[i1];
 			curInstr->argc= i2;
-			for(; i2<MAXARG; i2++) newarg[i2]= 0;
-			for(i1=0; i1<MAXARG; i1++) 
+			for(; i2<maxarg; i2++) newarg[i2]= 0;
+			for(i1=0; i1<maxarg; i1++) 
 				curInstr->argv[i1] = newarg[i1];
+			GDKfree(newarg);
 			@:closingBracket@
 		} else {
-			nextChar(cntxt); skipSpace(cntxt);
-			type= melType(cntxt,curInstr);
-			@:propList@
-			setVarType(curBlk,0,type);
+			type= melType(cntxt,curBlk,curInstr,curInstr->argv[0]);
+			/* setVarType(curBlk,0,type);*/
+			@:propList(curInstr->argv[0])@
 		}
 	}
 	
@@ -658,8 +676,10 @@ functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
 	if( nextChar(cntxt) != ':')
 		return (MalBlkPtr) parseError(cntxt,"':' expected\n");
 	skipSpace(cntxt);
-	type= melType(cntxt,curInstr);
-	@:propList@
+	varid= newVariable(curBlk,arg,TYPE_any);
+	curInstr= pushArgument(curBlk,curInstr, varid);
+	type= melType(cntxt,curBlk,curInstr,varid);
+	skipSpace(cntxt);
 @-
 MAL variables are statically/dynamically typed.
 Function and procedure arguments should always be typed.
@@ -675,19 +695,41 @@ may only appear in rules, because the calling context is necessary
 to resolve the actual argument list. Furthermore, we can not 
 assume much about the resulting type structure.
 @T
-melType	: melElm [propList] | bat '[' melElm ',' melElm ']' [propList]\\
+melType	: melElm [propList] | bat '[' melElm [propList]',' melElm [propList]']'\\
 melElm  : identifier | any ['::'digit]\\
 propList : '\{' identifier [ ',' identifier] '\}'\\
 @-
 Variables will later be extended with a property list to enable
-squeezers to make decisions. An example is :(int, key, notnull) for
-a column of a BAT.
+squeezers to make decisions. An example is :int{key, notnull} for
+a column of a BAT. BATs are composed of two components, which leads
+to three possible property list.
+The argument to propList is the variable that owns the properties.
 
 @= propList
 	if( keyphrase1(cntxt,"{")) {
+		char cmd;
 		do{
+			str pname, pvalue;
+			int lt;
+			cmd= currChar(cntxt);
+			if( cmd == '+' || cmd == '-'){
+				advance(cntxt,1);
+			} else cmd='+';
 			l = idLength(cntxt);
-			advance(cntxt,l);
+			if(l){
+			pname= idCopy(cntxt,l);
+			if( keyphrase1(cntxt,"=")){
+				/* eat value away*/
+				skipSpace(cntxt);
+				l = stringLength(cntxt);
+				pvalue= strCopy(cntxt,l);
+			} else pvalue= GDKstrdup("");
+			if( curBlk->var[@1]->props== NULL)
+				curBlk->var[@1]->props= newPropertySet();
+			setProperty(curBlk->var[@1]->props,0,pname,
+					TYPE_str,pvalue);
+			GDKfree(pname); 
+			}
 		} while( keyphrase1(cntxt,","));
 		if( !keyphrase1(cntxt,"}") )
 			/* return (MalBlkPtr) */
@@ -708,20 +750,22 @@ a column of a BAT.
 		curInstr->polymorphic = TRUE;
 	} else {
 		char x;
-		skipSpace(cntxt);
 		l = idLength(cntxt);
 		x = cntxt->nxt[l];
 		cntxt->nxt[l]= 0;
 		type= getTypeIndex(cntxt->nxt);
-		if( type == TYPE_any)
+		if( type == TYPE_any){
 			parseError(cntxt,"Type identifier expected\n");
+			printf("l=%d, tpe= %s\n",l,cntxt->nxt);
+		}
 		cntxt->nxt[l]= x;
 		cntxt->nxt += l;
 	}
 	skipSpace(cntxt);
+	@:propList(varid)@
 @-
 @c
-int melType(Client cntxt, InstrPtr curInstr){
+int melType(Client cntxt,MalBlkPtr curBlk, InstrPtr curInstr, int varid){
 	int type= TYPE_any;
 	int l;
 
@@ -742,11 +786,28 @@ int melType(Client cntxt, InstrPtr curInstr){
 		} else {
 			type = malAnyBatType(TYPE_any,TYPE_any);
 			curInstr->polymorphic = TRUE;
+			@:propList(varid)@
 		}
+	} else
+	if( keyword(cntxt,"vec",3)){
+		/* patch to simulate vectors collections */
+		if( keyphrase1(cntxt,"[")){
+			@:melElement@ 
+			type = newVecType(type);
+			if( !keyphrase1(cntxt,"]")){
+				parseError(cntxt,"']' expected\n");
+			}
+		} else {
+			type = newVecType(TYPE_any);
+			curInstr->polymorphic = TRUE;
+			@:propList(varid)@
+		}
+		skipSpace(cntxt);
 	} else{
 		@:melElement@
 	}
 	skipSpace(cntxt);
+	setVarType(curBlk,varid,type);
 	return type;
 }
 @-
@@ -828,27 +889,30 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	insertSymbol(cntxt->nspace,curPrg);
 	trimMalBlk(curBlk);
 	chkProgram(cntxt->nspace,curBlk);
-	resetClientPrg(cntxt);
+	if( cntxt->backup){
+		cntxt->curprg = cntxt->backup;
+		cntxt->backup = 0;
+	}
 	skipSpace(cntxt);
 	@:externalFcn@
 	@:helpInfo@
 	showErrors(cntxt);
 	if(curBlk && cntxt->listing) 
-		printFunction(stdout, curBlk);
+		printFunction(GDKout, curBlk, cntxt->listing);
 	return curBlk;
 }
 
-MalBlkPtr parseFunction(Client cntxt){
+MalBlkPtr parseFunction(Client cntxt, int kind){
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
 	int l;
 	str fnme=0, modnme=0;
 	char ch;
-	int type, kind= FUNCTIONsymbol;
+	int type;
 
-	if( ! keyword(cntxt,"function",8) ) return 0;
 	@:fcnHeader@
+	/* block is terminated at the END statement */
 	@:helpInfo@
 	return curBlk;
 }
@@ -872,34 +936,39 @@ int parseEnd(Client cntxt)
 		curBlk = curPrg->def;	
 		l = idLength(cntxt);
 		if(l==0) l= operatorLength(cntxt);
-		if(l== strlen(curPrg->name) &&
-		   strncmp(cntxt->nxt, curPrg->name,l)==0){
-			advance(cntxt,l);
-                        pushEndInstruction(curBlk);
-			closeClientPrg(cntxt,TRUE);
-			showit= TRUE;
-		} else {
-			i = findVariableLength(curBlk,cntxt->nxt,l);
-			if( i<0) {
-				v= idCopy(cntxt,l);
-				i= newVariable(curBlk, v, TYPE_str);
-			} else advance(cntxt,l);
-			curInstr = newInstruction(ENDsymbol);
-			curInstr->argv[0]= i;
-			pushInstruction(curBlk,curInstr);
+		if( (l== strlen(curPrg->name) &&
+		     strncmp(cntxt->nxt, curPrg->name,l)==0) ||
+		     l==0){
+			/* its ok */
+		} else 
+		parseError(cntxt,"non matching end label, overruled\n");
+		
+		advance(cntxt,l);
+		pushEndInstruction(curBlk);
+		insertSymbol(cntxt->nspace, cntxt->curprg);
+		trimMalBlk(cntxt->curprg->def);
+		chkProgram(cntxt->nspace, cntxt->curprg->def);
+		if( cntxt->backup){
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
 		}
+		showit= TRUE;
 		skipToEnd(cntxt);
-		if(showit && cntxt->listing) printFunction(stdout, curBlk);
+		if(showit && cntxt->listing) 
+			printFunction(GDKout, curBlk, cntxt->listing);
+		showErrors(cntxt);
 		return 1;
 	}
 	return 0;
 }
 @-
-The control statements are :
+The non-assignment control statements are :
 @T
-cntrl	: (CATCH | REDO | LEAVE | RAISE | RETURN) identifier\\
+cntrl	: (CATCH | RAISE | RETURN) identifier\\
 @= endparseCntrl
 	pushInstruction(curBlk, curInstr);
+	if( *cntxt->nxt != ';')
+		parseError(cntxt,"';' expected\n");
 	skipToEnd(cntxt);
 	return 1;
 @= parseCntrl
@@ -914,104 +983,115 @@ int parse@3(Client cntxt)
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;	
 	curInstr= newInstruction(@3symbol);
-	l = idLength(cntxt);
-	if( l == 0){
-		if( @3symbol != RETURNsymbol ){
-			parseError(cntxt,"'return (' expected\n");
+	l= cstLength(cntxt,&lt);
+	if( l>0){
+		str v= cstCopy(cntxt,l);
+		i= typeQualifier(cntxt);
+		if(i>=0) lt = i;
+		i= newConstant(curBlk,lt,v,TRUE);
+	} else {
+		l = idLength(cntxt);
+		if( l == 0){
+			if( @3symbol != RETURNsymbol ){
+				parseError(cntxt,"'return' expected\n");
+				@:endparseCntrl@
+			}
+			if( currChar(cntxt) != '('){
+				parseError(cntxt,"'(' or 'identifier' expected\n");
+				@:endparseCntrl@
+			}
+			nextChar(cntxt); skipSpace(cntxt);
+			z++; /* parse multiple return arguments */
+			@:parseArguments@
+			curInstr->retc= curInstr->argc;
 			@:endparseCntrl@
-		}
-		if( currChar(cntxt) != '('){
-			parseError(cntxt,"'(' or 'identifier' expected\n");
-			@:endparseCntrl@
-		}
-		nextChar(cntxt); skipSpace(cntxt);
-		z++; /* parse multiple return arguments */
-		@:parseArguments@
-		curInstr->retc= curInstr->argc;
-		@:endparseCntrl@
-	} 
-	i = findVariableLength(curBlk,cntxt->nxt,l);
-	if( i<0){
-		arg= idCopy(cntxt,l);
-		i= newVariable(curBlk, arg, @4);
-	} else advance(cntxt,l); 
-	curInstr->argv[0]= i;
+		} 
+		i = findVariableLength(curBlk,cntxt->nxt,l);
+		if( i<0){
+			arg= idCopy(cntxt,l);
+			i= newVariable(curBlk, arg, @4);
+		} else advance(cntxt,l); 
+	}
+	getDestVar(curInstr) = i;
 	if(@3symbol== CATCHsymbol) curInstr->barrier= CATCHsymbol;
-	if(@3symbol== THREADsymbol) curInstr->barrier= THREADsymbol;
+	if(@3symbol== THREADsymbol) {
+		curInstr->barrier= THREADsymbol;
+		setVarType(curBlk, getDestVar(curInstr),TYPE_int);
+	}
 	skipSpace(cntxt);
-	if( *cntxt->nxt != ';')
-		parseError(cntxt,"';' expected\n");
+	@:propList(i)@
 	@:endparseCntrl@
 }
 @c
 @:parseCntrl("catch", 5,CATCH, TYPE_str)@
-@:parseCntrl("redo", 4,REDO, TYPE_any)@
 @:parseCntrl("raise", 5,RAISE, TYPE_any)@
-@:parseCntrl("return", 6,RETURN, TYPE_any)@
-@:parseCntrl("leave", 5,LEAVE, TYPE_any)@
 @:parseCntrl("thread", 6,THREAD, TYPE_any)@
+@-
+parseCntrl("return", 6,RETURN, TYPE_any)
+The return statements is a special kind of assignment in the sense
+that the target variables are the function return variables.
+By copying those into the assignment structure we ensure that
+a proper type analysis takes place later on.
+@c
+
+int parseRETURN(Client cntxt)
+{	InstrPtr curInstr, sig;
+	MalBlkPtr curBlk;
+	Symbol curPrg;
+	str arg,v;
+	int lt,i,l,z=0;
+
+	curPrg = cntxt->curprg;
+	curBlk = curPrg->def;	
+	curInstr= newInstruction(RETURNsymbol);
+	sig= getInstrPtr(curBlk,0);
+	for(l=0;l<sig->retc;l++)
+		curInstr->argv[l]= sig->argv[l];
+	curInstr->retc= curInstr->argc= l;
+
+	l= cstLength(cntxt,&lt);
+	if( l>0){
+		str v= cstCopy(cntxt,l);
+		i= typeQualifier(cntxt);
+		if(i>=0) lt = i;
+		i= newConstant(curBlk,lt,v,TRUE);
+		curInstr= pushArgument(curBlk,curInstr, i);
+	} else {
+		l = idLength(cntxt);
+		if( l == 0){
+			if( currChar(cntxt) != '('){
+				parseError(cntxt,"'(' or 'identifier' expected\n");
+				@:endparseCntrl@
+			}
+			nextChar(cntxt); skipSpace(cntxt);
+			z= 1; /* funny control to parseArg */
+			curInstr->argc++;
+			@:parseArguments@
+			@:endparseCntrl@
+		} 
+		i = findVariableLength(curBlk,cntxt->nxt,l);
+		if( i<0){
+			arg= idCopy(cntxt,l);
+			i= newVariable(curBlk, arg, TYPE_any);
+		} else advance(cntxt,l); 
+		curInstr= pushArgument(curBlk,curInstr, i);
+	}
+	skipSpace(cntxt);
+	@:propList(i)@
+	@:endparseCntrl@
+}
 @-
 Most instructions are simple assignments, possibly
 modified with a barrier/catch tag.
 @T
-stmt	: tag identifier ':=' expr\\
+stmt	: tag identifier ':=' expr [':' typeQualifier]['{' proplist'}']\\
+	| RETURN expr [':' typeQualifier]['{' proplist'}']
 tag	: BARRIER | CATCH\\
 expr	: fcncall | [factor  operator] factor \\
 factor	: constant | var | type'('constant')'\\
 
-Factors may designate a type variable. In particular
-for bat[T1,T2] this is a little tricky to parse.
-@= factor
-	if( i= cstLength(cntxt,&lt)){
-		v= cstCopy(cntxt,i);
-		i= typeQualifier(cntxt);
-		if(i>=0) lt = i;
-		idx= newConstant(curBlk,lt,v,TRUE);
-	} else
-	if( (v= charCst(cntxt)) ){
-		i= typeQualifier(cntxt);
-		if(i>=0) lt = i; else lt= TYPE_chr;
-		idx= newConstant(curBlk,lt,v,TRUE);
-	} else
-	if( i = stringLength(cntxt) ){
-		str x= strCopy(cntxt,i);
-		i= typeQualifier(cntxt);
-		if(i>=0) lt = i; else lt= TYPE_str;
-		idx= newConstant(curBlk,lt,x,FALSE);
-	} else
-	if( i= idLength(cntxt)){
-		/* parse bat[type,type] */
-		if(i==3 && strncmp(cntxt->nxt,"bat[",4)==0){
-			str hd = 0, tl =0;
-			int ht,tt;
-
-			advance(cntxt,4);
-			if( (hd= idCopy(cntxt,idLength(cntxt))) &&
-			    nextChar(cntxt)==',' &&
-			    (tl= idCopy(cntxt,idLength(cntxt))) ){
-				ht = getTypeIndex(hd);
-				tt = getTypeIndex(tl);
-				i= newBatType(ht,tt);
-				v= malTypeName(i);
-				idx= newVariable(curBlk,v,i);
-			}
-			if( nextChar(cntxt) !=']')
-				parseError(cntxt,"']' expected\n");
-			if( hd ) GDKfree(hd);
-			if( tl ) GDKfree(tl);
-		}else
-		if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
-			v= idCopy(cntxt,i);
-			i= typeQualifier(cntxt);
-			i= i>=0?i: TYPE_any;
-			idx = newVariable(curBlk, v, i);
-		} else advance(cntxt,i);
-	} else { 
-		idx= 0;
-		parseError(cntxt,"<factor> expected\n");
-		pushInstruction(curBlk,curInstr);
-		return;
-	}
+The basic types are also predefined as a variable.
+This makes it easier to communicate types to MAL patterns.
 @-
 The assignment expression is the most complex term recognized.
 @T
@@ -1020,40 +1100,53 @@ assign	: '(' identifier {',' identifier} ')' ':=' expr\\
 expr	: factor \{ operator factor \}\\
 factor	: fcn_call | variable | constant\\
 
+@= GETvariable
+if( (varid=findVariableLength(curBlk,cntxt->nxt,l)) == -1){
+	arg= idCopy(cntxt,l); 
+	varid= newVariable(curBlk,arg,TYPE_any);
+} else {
+	advance(cntxt,l); 
+}
+@-
+Control flow statements may be abreviated
+@= controlFlow
+if( kind == LEAVEsymbol || kind == REDOsymbol || kind == EXITsymbol ){
+	pushInstruction(curBlk,curInstr);
+	if(@1) curInstr->argv[0]= getBarrierEnvelop(curBlk);
+	skipToEnd(cntxt);
+	return;
+}
 @c
+debugParse(){}
 void parseAssign(Client cntxt, int kind)
 {	InstrPtr curInstr;
 	MalBlkPtr curBlk;
 	Symbol curPrg;
-	int z=0, i=0, k=0, lt,rt,l,type;
+	int consumed =0,z=0, i=0, k=0, lt,rt,l,type=TYPE_any, varid;
 	str v, op, arg=0, r;
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = newInstruction(ASSIGNsymbol);
+	curInstr->barrier = kind;
 
-	if( kind== BARRIERsymbol || kind==THREADsymbol || kind== EXITsymbol)
-		curInstr->barrier = kind;
-	if( *cntxt->nxt=='('){
+	/* start the parsing by recognition of the lhs of an assignment */
+	if( currChar(cntxt) == '('){
 		/* parsing multi-assignment */
 		nextChar(cntxt); skipSpace(cntxt);
 		curInstr->argc=0; /*reset to handle pushArg correctly !! */
 		curInstr->retc=0;
 		while(*cntxt->nxt  != ')' && *cntxt->nxt){
-			i= idLength(cntxt);
-			if( i==0) {
+			l= idLength(cntxt);
+			if( l==0) {
 				parseError(cntxt,"<identifier> expected\n"); 
 				pushInstruction(curBlk,curInstr);
 				return;
 			}
-			arg= idCopy(cntxt,i);
-			type = TYPE_any;
-			if( *cntxt->nxt==':' ){
-				nextChar(cntxt);
-				type= melType(cntxt,curInstr);
-			}
-			pushArgument(curBlk,curInstr, 
-				     newVariable(curBlk,arg,type));
+			@:GETvariable@
+			type= typeQualifier(cntxt);
+			if( type>0) setVarType(curBlk,varid,type);
+			curInstr= pushArgument(curBlk,curInstr, varid);
 			z++;
 			curInstr->retc++;
 			if( *cntxt->nxt == ')') break;
@@ -1063,46 +1156,76 @@ void parseAssign(Client cntxt, int kind)
 		curInstr->argc++; /* advance to make pushArgument work */
 		nextChar(cntxt); skipSpace(cntxt);
 
-	}else{ /* assignment to single variable */
-		i= idLength(cntxt);
-		if( i==0) {
-			parseError(cntxt,"<identifier> expected\n"); 
+	}else{ 
+		/* are we dealing with a simple assignment? */
+		l= idLength(cntxt);
+		if( l==0){
+			l= operatorLength(cntxt);
+			if(l) goto startFCNcall;
+			/* we haven't seen an identifier nor an operator */
+			/* control blocks may use implied name */
+			@:controlFlow(1)@
 			pushInstruction(curBlk,curInstr);
+			parseError(cntxt,"<identifier> or <operator> expected\n"); 
 			return;
 		}
-		arg= idCopy(cntxt,i);
-@-
-Every target variable may be typed immediately.
-@c
-		type = TYPE_any;
-		if( *cntxt->nxt==':' && *(cntxt->nxt+1)!='='){
-			nextChar(cntxt);
-			type= melType(cntxt,curInstr);
+		/* Check if we are dealing with an assignment */
+		{	v= cntxt->nxt;
+			advance(cntxt,l);
+			/* first check for type variable */
+			if( *cntxt->nxt==':' && *(cntxt->nxt+1)!='='){
+				cntxt->nxt=v;
+				@:GETvariable@
+				curInstr->argv[0]= varid;
+				type= typeQualifier(cntxt);
+				if( type>0) setVarType(curBlk,varid,type);
+				consumed =1;
+				v= cntxt->nxt;
+			}
+			/* look ahead for assignment operator */
+			if( !keyphrase2(cntxt,":=") ){
+				/* no assignment !! */
+				if( curInstr->barrier){
+					cntxt->nxt=v;
+					if( consumed==0){
+						@:GETvariable@
+						curInstr->argv[0]= varid;
+						curInstr->token= kind;
+						consumed++;
+						v= cntxt->nxt;
+					}
+					if( *cntxt->nxt!=';')
+					parseError(cntxt,"';' expected\n");
+					goto part3;
+				}
+				if( *cntxt->nxt!='(' &&
+				    *cntxt->nxt!='.'){
+					parseError(cntxt,"'.' or '(' expected\n");
+					cntxt->nxt=v;
+					goto part3;
+				}
+				if(consumed==0) cntxt->nxt=v;
+				curInstr->argv[0]= newTmpVariable(curBlk,TYPE_any);
+				goto startFCNcall;
+			} else cntxt->nxt= v;
+		}
+		if( consumed ==0) {
+			cntxt->nxt=v;
+			@:GETvariable@ 
+			curInstr->argv[0]= varid;
 		}
 	}
 
 	/* test destination variable or function call */
-	if( keyphrase2(cntxt,":=") ){
-		if( z==0)
-		curInstr->argv[z]= newVariable(curBlk,arg,type);
-	} else {
-		if( curInstr->barrier) {
-			curInstr->argv[z]= newVariable(curBlk,arg,TYPE_any);
-			curInstr->token= kind;
-			goto part3;
-		}
-		curInstr->argv[z]= newTmpVariable(curBlk,TYPE_any);
-		if( currChar(cntxt) != '.' &&
-		    currChar(cntxt) != '(' ){
-				GDKfree(arg);
-				parseError(cntxt,"'.' or '(' expected\n");
-				pushInstruction(curBlk,curInstr);
-				return;
-		}
-		goto idseen;
+	if( !keyphrase2(cntxt,":=") ){
+		GDKerror("parseAssign:internal error\n");
+		pushInstruction(curBlk,curInstr);
+		return;
 	}
 @-
-Now parse the expression, start with an operand.
+At this stage the LHS part has been parsed and the destination
+variables have been set. Next step is to parse the expression,
+which starts with an operand.
 This code is used in both positions of the expression
 @= term
 	if( i= cstLength(cntxt,&lt)){
@@ -1110,23 +1233,23 @@ This code is used in both positions of the expression
 		i= typeQualifier(cntxt);
 		if(i>=0) lt = i;
 		i= newConstant(curBlk,lt,v,TRUE);
-		pushArgument(curBlk,curInstr,i);
-		goto @1;
-	} 
+		curInstr= pushArgument(curBlk,curInstr,i);
+		@1;
+	} else 
 	if( (v= charCst(cntxt)) ){
 		i= typeQualifier(cntxt);
 		if(i>=0) lt = i; else lt= TYPE_chr;
 		i= newConstant(curBlk,lt,v,TRUE);
-		pushArgument(curBlk,curInstr,i);
-		goto @1;
-	} 
+		curInstr= pushArgument(curBlk,curInstr,i);
+		@1;
+	} else 
 	if( i = stringLength(cntxt) ){
 		v= strCopy(cntxt,i);
 		lt= typeQualifier(cntxt);
 		if(lt<0)lt= TYPE_str;
 		i= newConstant(curBlk,lt,v,FALSE);
-		pushArgument(curBlk,curInstr,i);
-		goto @1;
+		curInstr= pushArgument(curBlk,curInstr,i);
+		@1;
 	}
 @-
 Get arguments for a call, assume a single result.
@@ -1135,8 +1258,22 @@ Get arguments for a call, assume a single result.
 	else curInstr->argc=1;
 	while( currChar(cntxt)!= ')'){
 		int idx;
-		@:factor@
-		pushArgument(curBlk,curInstr,idx);
+		@:term()@ else
+		if( i= idLength(cntxt)){
+			if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
+				v= idCopy(cntxt,i);
+				i= typeQualifier(cntxt);
+				i= i>=0?i: TYPE_any;
+				idx = newVariable(curBlk, v, i);
+			} else advance(cntxt,i);
+			curInstr= pushArgument(curBlk,curInstr,idx);
+		} else 
+		{ 
+			idx= 0;
+			parseError(cntxt,"<factor> expected\n");
+			pushInstruction(curBlk,curInstr);
+			return;
+		}
 		if( currChar(cntxt)==',') keyphrase1(cntxt,",");
 		else 
 		if( currChar(cntxt) != ')'){
@@ -1145,43 +1282,41 @@ Get arguments for a call, assume a single result.
 			break;
 		}
 	}
+	if( currChar(cntxt) ==')') advance(cntxt,1);
+@-
+We have so far the LHS part of an assignment. The remainder is
+either a simple term expression, a multi assignent, or the start 
+of a function call.
 @c
-	@:term(part2)@
-	if( idLength(cntxt)==0 && operatorLength(cntxt)==0) {
+	@:term( goto part2)@
+	l=operatorLength(cntxt);
+	if(l==0 && idLength(cntxt)==0 ) {
 		if( currChar(cntxt)== '('){
+			/* parse multi assignment */
 			nextChar(cntxt);
 			skipSpace(cntxt);
 			@:parseArguments@
 		} else
 		parseError(cntxt,"<identifier> or <unary operator> expected\n");
-		goto part3;
+		skipToEnd(cntxt);
+		pushInstruction(curBlk,curInstr);
+		return;
 	}
-	if( (i=operatorLength(cntxt))) {
-		arg = idCopy(cntxt,i);
-		if( currChar(cntxt) == '('){
-			nextChar(cntxt);
-			curInstr->fcnname = arg;
-			goto getarguments;
-		}
-		if( currChar(cntxt) != '.' &&
-		    currChar(cntxt) != '(') {
-			skipSpace(cntxt);
-			curInstr->fcnname = arg;
-			goto part2b;
-		}
-		goto opseen;
-	}
-	if( (i= operatorLength(cntxt)) || (i=idLength(cntxt))) {
-		arg= idCopy(cntxt,i);
-idseen:
+	if( l || (l=idLength(cntxt))) {
+startFCNcall:
+		{v= cntxt->nxt; advance(cntxt,l);
 		if( currChar(cntxt) != '.' &&
 		    currChar(cntxt) != '(' &&
-		    (isalpha(*arg) || *arg=='_') ) {
-			pushArgumentId(curBlk,curInstr,arg);
+		    (idCharacter[*v]) ){
+			cntxt->nxt=v;
+			@:GETvariable@
+			curInstr= pushArgument(curBlk,curInstr,varid);
 			goto part2;
 		}
+		cntxt->nxt=v;
+		}
 
-opseen:
+		arg= idCopy(cntxt,l);
 		/* continue with parseing a function/operator call */
 		if( currChar(cntxt) == '.'){
 			nextChar(cntxt);
@@ -1201,58 +1336,57 @@ opseen:
 				pushInstruction(curBlk,curInstr);
 				return;
 			}
-getarguments:
 			skipSpace(cntxt);
 		} else if(currChar(cntxt) != '(')
 		{
 			parseError(cntxt,"'(' expected\n");
 			pushInstruction(curBlk,curInstr);
 			return;
-		} else { nextChar(cntxt);
+		} else { 
+			nextChar(cntxt); skipSpace(cntxt);
 			curInstr->fcnname = arg;
 		}
+getarguments:
 
 		@:parseArguments@
+		skipSpace(cntxt);
+		if( currChar(cntxt)!=';')
+			parseError(cntxt,"';' expected\n");
 		goto part3;
 	}
 	
-part2:
+part2:	/* consume <operator><term> part of expression */
 	if( i= operatorLength(cntxt) ){
 		/* operator expression */
 		curInstr->fcnname = idCopy(cntxt,i);
-part2b:
-		if( i = idLength(cntxt)) {
-			/* test variable */
-			if( (k=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
-				v= idCopy(cntxt,i);
-				k= newVariable(curBlk, v, TYPE_any);
-			} else advance(cntxt,i);
-			pushArgument(curBlk,curInstr,k); 
+		if( l = idLength(cntxt)) {
+			@:GETvariable@
+			curInstr= pushArgument(curBlk,curInstr,varid); 
 			goto part3;
 		} 
-		@:term(part3)@
+		@:term( goto part3)@
 		parseError(cntxt,"<term> expected\n");
 		pushInstruction(curBlk,curInstr);
 		return;
 	} else  {
 		skipSpace(cntxt);
-		if( *cntxt->nxt != ';' && *cntxt->nxt!='#')
-		parseError(cntxt,"operator expected\n");
+		if( *cntxt->nxt != ';' && *cntxt->nxt!= '#')
+			parseError(cntxt,"operator expected\n");
 	}
 part3:
 	skipToEnd(cntxt);
 	pushInstruction(curBlk,curInstr);
 }
-int parseMal(Client cntxt){
+int parseMAL(Client cntxt, Symbol curPrg){
 	int kind=0, i;
-	Symbol curPrg= cntxt->curprg;
+	/*Symbol curPrg= cntxt->curprg;*/
 	InstrPtr curInstr;
 
 	echoInput(cntxt);
 	/* here the work takes place */
 	while( currChar(cntxt) && curPrg->def->errors<MAXERRORS){
 		switch( currChar(cntxt)){
-		case '\n': case '\r': case '\f': 
+		case ';': case '\n': case '\r': case '\f': 
 			nextChar(cntxt);
 			echoInput(cntxt);
 			continue;
@@ -1283,13 +1417,16 @@ int parseMal(Client cntxt){
 			  if( parseEnd(cntxt)) break;
 			  goto allLeft;
 		case 'F': case 'f': 
-			  if( parseFunction(cntxt)) break;
+			  if( keyword(cntxt,"function",8) &&
+				parseFunction(cntxt, FUNCTIONsymbol)) break;
 			  goto allLeft;
 		case 'H': case 'h':
 			  if( keyword(cntxt,"handler",5)) 
 			  { skipToEnd(cntxt); break; }
 		case 'L':
-		case 'l': if( parseLEAVE(cntxt)) break;
+		case 'l': /* if( parseLEAVE(cntxt)) break;*/
+			  if( keyword(cntxt,"leave",5))
+				kind= LEAVEsymbol;
 			  goto allLeft;
 		case 'M': case 'm': 
 			  if( parseModule(cntxt, FALSE)) break;
@@ -1301,13 +1438,19 @@ int parseMal(Client cntxt){
 			  }
 			  goto allLeft;
 		case 'R': case 'r': 
-			  if( parseRAISE(cntxt)) break;
-			  if( parseREDO(cntxt)) break;
-			  if( parseRETURN(cntxt)) break;
-			  if( keyword(cntxt,"rule",4) ) {
-				parseCommandPattern(cntxt, RULEsymbol);
-				break;
+			  if( keyword(cntxt,"redo",4)){
+				kind= REDOsymbol;
+				goto allLeft;
 			  }
+			  if( parseRAISE(cntxt)) break;
+			  if( keyword(cntxt,"return",6)){
+				  parseRETURN(cntxt);
+				  break;
+			  }
+			  goto allLeft;
+		case 'S': case 's': 
+			  if( keyword(cntxt,"stream",6) &&
+				parseFunction(cntxt, STREAMsymbol)) break;
 			  goto allLeft;
 		case 't':
 			  if( parseTHREAD(cntxt)) break;

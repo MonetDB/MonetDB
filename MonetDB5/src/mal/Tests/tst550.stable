@@ -1,11 +1,9 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
 ## use of the lock module
 #l:= lock.create();
 #lock.set(l);
@@ -13,11 +11,11 @@
 #lock.unset(l);
 #lock.destroy(l);
 #
-function Admin.main():int; #0:(main:int)
-    l := lock.create(); #1:(l:lock)
-    lock.set(l); #2:($2:any)<-(l:lock)
-    i := lock.try(l); #3:(i:int)<-(l:lock)
-    lock.unset(l); #4:($4:any)<-(l:lock)
-    lock.destroy(l); #5:($5:any)<-(l:lock)
-end main; #6:
+function Admin.main():int; #0  (main:int)
+    l := lock.create(); #1 LCKcreate (l:lock)
+    lock.set(l); #2 LCKset ($2:any)<-(l:lock)
+    i := lock.try(l); #3 LCKtry (i:int)<-(l:lock)
+    lock.unset(l); #4 LCKunset ($4:any)<-(l:lock)
+    lock.destroy(l); #5 LCKdestroy ($5:any)<-(l:lock)
+end main; #6  
 >

@@ -1,3 +1,25 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
 @f catalog
 @t Monet Catalog
 @a Martin Kersten
@@ -98,11 +120,71 @@ command gdkIO(): bat[str,int] = CATALOGgdkIO
 	comment "Global IO activity information";
 command gdkBBP(): bat[str,int] = CATALOGgdkBBP
 	comment "Global BBP usage information";
-
+command mem_printmap() : void = CATALOGprint_mem_map
+        comment "print a map of all memory that is in use";
+@-
+@T
+For each 64KB block in the first 3GB of the virtual memory {\tt mem_printmap()} prints a character:
+\begin{verbatim}
+0-9 - thread stack space of thread <num>
+B - in use for a large BAT heap (i.e. anonymous virtual memory).
+b - free (last usage was B)
+S - in use for a malloc block
+s - free (last usage was S)
+P - in use for the BBP array (i.e. anonymous virtual memory)
+p - free (last usage was P)
+M - in use as memory mapped region
+m - free (last usage was M)
+C - in use as MIL context buffer (i.e. anonymous virtual memory)
+c - free (last usage was M)
+\end{verbatim}
+On Linux, the malloc library appears to be using anonymous virtual memory, which goes unetected.
+If you want to see all your memory in the map, lower the gdk\_mmap threshold in monet.conf to a
+low value (say 64KB).
+@-
+@mal
 command vmUsage(minsize:lng) : bat[str,lng] = CATALOGvm_usage
         comment "Get a split-up of how much virtual memory blocks are in use.";
 command memUsage(minsize:lng) : bat[str,lng] = CATALOGmem_usage
         comment "Get a split-up of how much memory blocks are in use.";
+@-
+@T
+Some explanation of what mem_usage() and vm_usage() display:
+\begin{verbatim}
+> mem_usage.print;
+#------------------------------#
+# BAT:                 tmp_42  #
+# (str)                (lng)   #
+#------------------------------#
+[ "buns/car_category",  400012 ] 100.000 string offsets
+[ "buns/car_town",      400012 ] idem
+[ "buns/car_class",     400012 ] idem
+[ "tail/car_category",  266244 ] string tail heap
+[ "tail/car_town",      266244 ] idem
+[ "tail/car_class",     266244 ] idem
+[ "_tot/buns",         1322996 ] the three bun heaps
+[ "_tot/tail",          967762 ] the three tail heaps
+[ "_tot/head",           70984 ] negligable
+[ "_tot/bbp",            98866 ] BBP metadata structure
+[ "_tot/mil",           102400 ] MIL interpreter stack space
+[ "_tot/found",        2590144 ] buns+head+tail+bbp+mil
+[ "_tot/malloc_heap",  2956048 ] in malloc heap
+[ "_tot/malloc",       2956048 ] total consumed via malloc
+[ "_tot/valloc",        201266 ] total consumed via virtualalloc
+[ "_tot/mem",          3157314 ] total RAM+swap-file consumption
+
+>
+> vm_usage.print;
+#------------------------------#
+# BAT:               tmp_42    #
+# (str)              (lng)     #
+#------------------------------#
+[ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
+[ "_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
+[ "_tot/found",      67108864  ] bbp+mil
+[ "_tot/vm",         71244560  ] total address space consumption
+>
+\end{verbatim}
 @- 
 If Monet is compiled with the profiler option, then it is
 possible to analyse the timeings obtained in the context of
@@ -178,6 +260,39 @@ command helpComment(mod:str):bat[str,str] = CATALOGhelpComment
 comment "Collect the commentaries for all routines in a given module";
 command helpComment(mod:str,fcn:str):bat[int,str] = CATALOGhelpComment2
 comment "Obtain the comments for a given function";
+@- Monet Manual construction
+The manual operations ease offline inspection of the all the Monet function.
+It purposely generates an XML organized file, because we expect external
+tools to massage it further for presentation. The envisioned 
+tagging structure becomes
+@T
+\begin{verbatim}
+<manual>
+  <module>
+    <command name=... signature=... binding=...>
+       <comment>
+       </comment>
+    </command>
+    <pattern name=... signature=... binding=...>
+       <comment>
+       </comment>
+    </command>
+    <function name=... signature=... >
+       <comment>
+       </comment>
+       <body>
+       </body>
+    </command>
+  </module>
+</manual>
+\end{verbatim}
+@-
+command manual(filename:str) = CATALOGmanual
+	comment "Produces a XML-formatted manual over all modules loaded.";
+command manual(modname:str, filename:str) = CATALOGmanModule
+	comment "Produces a XML-formatted manual for a given module.";
+command manual(modname:str, fcnname:str, filename:str) = CATALOGmanModule
+	comment "Produces a XML-formatted manual for a given module component.";
 @- Monet enquire
 The old-fashioned enquire operators are defined for backward
 compliance only.
@@ -187,14 +302,6 @@ function modules():void;
         print(t);
 end modules;
 
-function env():void;
-        t:= gdkEnv();
-        print(t);
-end env;
-function environment():void;
-        t:= gdkEnv();
-        print(t);
-end environment;
 function cpu():bat[str,int];
 	v:= gdkCPU();
         return v;
@@ -312,7 +419,7 @@ end ls;
  *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 #ifdef _CATALOG_H
-#endif _CATALOG_H
+#endif /* _CATALOG_H*/
 @c
 #include <stdarg.h>
 #include <time.h>
@@ -320,7 +427,6 @@ end ls;
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_function.h"
-#include "monet.h"
 
 @+ Variables and stack information
 The variable information can be turned into a BAT for inspection as well.
@@ -828,7 +934,7 @@ str CATALOGbbpRefcnt(int *ret){
 		BUNins(b, &i, &refs);
 	}}
 	BBPunlock("CATALOGbbpRefcnt");
-	@:Pseudo(bbp,group)@
+	@:Pseudo(bbp,lrefcnt)@
         return MAL_SUCCEED;
 }
 
@@ -862,23 +968,7 @@ static char* local_itoa(int i){
 }
 
 str CATALOGgdkEnv(int *ret){
-	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
-	char prefix[128];
-        if (b == 0) return throwMessage("catalog.gdkEnv", "failed to create BAT");
-	if( GDKdbfarmStr[0])
-		BUNins(b, "gdk_dbfarm", GDKdbfarmStr);
-	if( GDKdbnameStr[0])
-		BUNins(b, "gdk_dbname", GDKdbnameStr);
-	if( GDKdirStr[0])
-		BUNins(b, "gdk_dbdir", GDKdirStr);
-	if( GDKdistrStr[0])
-		BUNins(b, "gdk_distr", GDKdistrStr);
-        sprintf(prefix, "%dbit%s", sizeof(ptr)*8, GDKarchStr);
-	if(GDKversionStr[0])
-		BUNins(b, "gdk_version", GDKversionStr);
-	if( GDKmonetrcStr[0])
-		BUNins(b, "gdk_monetrc", GDKmonetrcStr); 
-	BUNins(b, "gdk_processid", local_itoa(getpid()));
+	BAT *b = BATcopy(GDKenv);
 	@:Pseudo(gdk,env)@
         return MAL_SUCCEED;
 }
@@ -896,7 +986,7 @@ str CATALOGclientInfo(int *ret){
 	BUNins(b,"user", c->user);
 	BUNins(b,"password", (c->password?c->password:""));
 	BUNins(b,"permission", local_itoa(c->permission));
-	BUNins(b,"language", c->language);
+	BUNins(b,"scenario", c->scenario);
 	BUNins(b,"timer", local_itoa(c->timer));
 	BUNins(b,"trace", local_itoa(c->itrace));
 	@:Pseudo(client,info)@
@@ -1023,21 +1113,21 @@ str CATALOGgdkMem(int *ret) {
 
 	/* store counters, ignore errors */
 	if (memincr == NULL) {
-		memincr = GDK_mem_start;
+		memincr = (char*)sbrk(0);
 	}
 	i= ((char*) sbrk(0) -  (char*) memincr);
  
 	memincr = (char*) sbrk(0);
-	b = BUNins(b, "memincr", &i);
-	b = BUNins(b, "arena", &m.arena);
-	b = BUNins(b, "ordblks", &m.ordblks);
-	b = BUNins(b, "smblks", &m.smblks);
-	b = BUNins(b, "hblkhd", &m.hblkhd);
-	b = BUNins(b, "hblks", &m.hblks);
-	b = BUNins(b, "usmblks", &m.usmblks);
-	b = BUNins(b, "fsmblks", &m.fsmblks);
-	b = BUNins(b, "uordblks", &m.uordblks);
-	b = BUNins(b, "fordblks", &m.fordblks);
+        b = BUNins(b, "memincr", &i);
+        i = m.arena; b = BUNins(b, "arena", &i);
+        i = m.ordblks; b = BUNins(b, "ordblks", &i);
+        i = m.smblks; b = BUNins(b, "smblks", &i);
+        i = m.hblkhd; b = BUNins(b, "hblkhd", &i);
+        i = m.hblks; b = BUNins(b, "hblks", &i);
+        i = m.usmblks; b = BUNins(b, "usmblks", &i);
+        i = m.fsmblks; b = BUNins(b, "fsmblks", &i);
+        i = m.uordblks; b = BUNins(b, "uordblks", &i);
+        i = m.fordblks; b = BUNins(b, "fordblks", &i);
 	@:Pseudo(gdk,mem)@
 	return MAL_SUCCEED;
 }
@@ -1053,7 +1143,7 @@ str CATALOGmem_usage(int *ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, n=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
-	int i;
+	bat i;
 
 	BBPlock("CATALOGmem_usage");
 	for(i=1; i <BBPsize; i++) { 
@@ -1128,11 +1218,17 @@ str CATALOGmem_usage(int *ret, lng *minsize) {
 	return MAL_SUCCEED;
 }
 
+str CATALOGprint_mem_map() {
+        MT_alloc_print();
+        return MAL_SUCCEED;
+}
+
+
 str CATALOGvm_usage(int *ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
-	int i;
+	bat i;
 
 	BBPlock("CATALOGvm_usage");
 	for(i=1; i <BBPsize; i++) {

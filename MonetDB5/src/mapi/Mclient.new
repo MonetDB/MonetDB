@@ -1,0 +1,464 @@
+@a M. Kersten and Peter Boncz and Niels Nes
+@v 4
+@f Mclient
+@* The Mapi Client interface
+A textual interface to the Monet server using the Mapi library,
+providing command-line MIL access for its users. It is the preferred 
+interface for non-DBAs.
+
+@- ChangeLog
+Feb 2001 we rewrote the Mclient. It now uses the Mapi library
+
+June 1996 we added a little more functionality. In particular,
+it should be possible to connect to a server by providing its
+name only. The corresponding port is searched in the homes file
+and the .gdk_lock file.
+
+Furthermore, it becomes possible to re-connect to a session left
+earlier. (See the Mserver code).
+
+Control directives are '>' to sent output to a file.
+Several textual changes made.
+
+@+ Manual Page
+@T
+The {\tt Mclient} program, provides just as the Mserver console, a
+MIL interface to the Monet server. Unlike the concolse, the {\tt Mclient} 
+program is intended not only or the database administrator, but to all other 
+users. It is more comfortable than the console, since it provides
+a command history and automatic file name completion.
+
+\begin{verbatim}
+Mclient [-port HOST:PORT] [-session KEY] [-debug] [-prelude FILE] [-c single-command]  
+\end{verbatim}
+
+The following options are supported:
+\begin{itemize}
+\item {\em -port.} Connect to Mserver on machine HOST with tcp port PORT. 
+If your MAPIPORT environment variable points to "HOST:PORT" already, you
+can omit this option.
+\item {\em -debug}. Illustrate internalworking.
+\item {\em -prelude.} At the start of the client session, execute --
+before going into command-line mode-- a local file containing MIL statements.
+\item {\em -c.} just execute a one-line MIL command (non-interactive mode).
+\item {\em -session.} re-establish connection  with session identified.
+\end{itemize}
+@
+
+@- Files
+Mclient users should be aware of the Monet initialization script
+stored in the database farm. They are shown below.
+@T
+\begin{tabular}{l l}
+$MONETFARM/$DB/users/$USER/general.mil & general MIL commands executed at start \\
+  & of user session. Only the database administrator can change this file.\\
+$MONETFARM/$DB/users/$USER/prelude.mil & private MIL commands, executed \\
+  & at start of user session. Users can edit this file.\\
+$MONETFARM/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
+  & at end of user session. Users can edit this file.\\
+\end{tabular}
+@
+@{
+@+ Implementation
+@c
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ */
+
+#include "Mapi.h"
+
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <ctype.h> 
+#include <sys/types.h> 
+#include <sys/socket.h> 
+#include <sys/stat.h>
+#include <errno.h> 
+#include <string.h> 
+#include <signal.h> 
+
+#ifdef HAVE_PWD_H
+#include  <pwd.h> 
+#endif
+
+extern int errno;                       /* pass errors  */
+char *program;                          /* my name */
+
+#define EXIT(x)	{ exit(x); }
+#define LINEMODE	23
+#define BLOCKMODE	32
+
+FILE	*toConsole;
+char 	*message	= 0;
+int 	mode		= LINEMODE;
+char*	sentinel 	= "Mclient~sentinel"; 
+int	is_chrsp	= 0;
+
+
+int doRequest(Msession mid, char *buf ){
+	char *rtrn;
+ 
+	if (Mdorequest(mid, buf) != MOK){
+		return 'q';
+	}
+	while(rtrn=Mgetreply(mid)){
+		fprintf(toConsole, "%s\n",rtrn);
+	}
+	/* show any non-\nl terminated response */
+	if(mid->reply[0])
+	fprintf(toConsole, "%s\n",mid->reply);
+	if (Merror(mid)) {
+		return 'q';
+	}
+	return 0;
+}
+@-
+The input for the Monet server is stored in a buffer until
+the forward command is issued.
+In LINEMODE each line is sent and the monitor awaits the prompt
+of the server before continuing
+@c
+#define CHUNK_SIZE	1024
+
+#ifdef HAVE_LIBREADLINE
+#define SEND_MESSAGE(mid)	{					\
+	message[m_index++] = '\n';				\
+	message[m_index] = 0;					\
+	cmd = doRequest(mid, message );				\
+	add_history(start_cmd);					\
+        *message = 0; m_index = 0;				\
+}
+#else
+#define SEND_MESSAGE(mid)	{				\
+	message[m_index++] = '\n';				\
+	message[m_index] = 0;					\
+	cmd = doRequest(mid, message );				\
+        *message = 0; m_index = 0;				\
+}
+#endif
+
+#define GROW_MESSAGE(x)	{					\
+	m_index += x;						\
+       	if (m_size-m_index  < CHUNK_SIZE) {			\
+		message = (char *) realloc(message, m_size*=2);	\
+		memset(message+m_index, 0, m_size-m_index);	\
+	}							\
+}
+
+void clientAccept( Msession mid) {
+	FILE	*fp;
+	char 	*line=0, *start_cmd, *end_cmd;
+	int	n, m_size=CHUNK_SIZE, m_index=0;
+	char	cmd = 0, ch;
+
+	message = (char *) malloc(CHUNK_SIZE);
+
+	while(cmd != 'q') {
+		if (line) {
+			free(line);
+		}
+#ifdef HAVE_LIBREADLINE
+		if (is_chrsp){
+	        	if ((line = (char *) readline(mid->prompt)) == NULL) {
+	               		return;
+			}
+		} else 
+#endif
+		{
+		   	char *buf =(char *)malloc(CHUNK_SIZE);
+	        	if ((line =(char *)fgets(buf,CHUNK_SIZE,stdin))==NULL) {
+			   	free(buf);
+	                	return;
+			}
+		}
+		/* find start and end of the command */
+		for(	start_cmd = line;
+			*start_cmd && isspace(*start_cmd);
+			start_cmd++);
+		/* empty lines are meaningfull in some interpreters, like mdb
+		if (!*start_cmd) {
+			continue;
+		}
+		*/
+		for(	end_cmd = line + strlen(line) - 1; 
+			isspace(*end_cmd);
+			end_cmd--);
+		n = 1 + end_cmd - start_cmd;
+@-
+The Mclient terminal monitor provides common functionality,
+such as directory changes, reading commands from a file, 
+redirection of output to a separate file.
+@c
+		/* is the string a command ? */
+		switch(*start_cmd) {
+		case '\\':
+		        switch(*(start_cmd+1)) {
+		        case 'r': 
+				SEND_MESSAGE(mid);
+		                continue;
+			case 'q':
+				cmd = 'q';
+				continue;
+			case 'b':
+				mode = BLOCKMODE;
+				continue;
+			case 'l':
+				mode = LINEMODE;
+				/*FALLTHRU*/
+		        case 'c':
+				m_index = 0; *message = 0;
+				continue;
+			}
+			break;
+		case '!':
+			system(start_cmd+1);
+			continue;
+		case 'c':
+			if ((start_cmd[1] == 'd') && isspace(start_cmd[2])) {
+			    if (chdir(start_cmd+3)) {
+                                char err[200];
+                                sprintf(err, "chdir: %s", start_cmd+3);
+                                perror(err);
+			    } else {
+				fprintf(toConsole,"chdir to %s\n", start_cmd+3);
+			    }
+			    message[0] = m_index = 0;
+			    continue;
+			}
+			break;
+		case '<':
+			if (fp = fopen(start_cmd+1, "r")) {
+				while (n = fread(message+m_index, 1,
+							 CHUNK_SIZE, fp))
+				{
+					GROW_MESSAGE(n);
+					/* echo to stdout */
+					message[m_index] = 0;
+					fwrite(message+m_index-n, 1, n, stdout); 
+				}
+			}
+			break;
+@-
+The output should be saved in a different file.
+Ommision of a file name or failure to create it, resets
+the output to the stdout. (Also >>)
+@c
+		case '>':
+			if( n==1) {
+				toConsole = stdout;
+				fprintf(toConsole,"Redirect to standard output\n");
+				continue;
+			}
+			if( strcmp(start_cmd+1,"stdout") == 0) {
+				toConsole = stdout;
+				continue;
+			}
+			if( strcmp(start_cmd+1,"stderr") == 0) {
+				toConsole = stderr;
+				continue;
+			}
+			toConsole = fopen(start_cmd+1,"w");
+			if( toConsole == NULL ){
+				toConsole = stdout;
+				fprintf(toConsole,
+				"! Unable to redirect to %s\n", start_cmd+1);
+			} else
+				printf("output switched to %s\n",start_cmd+1);
+			continue;
+@-
+The commands available in the terminal monitor can be obtained
+using its help operator '?'.
+@c
+		case '?':
+			fprintf(toConsole,"?\t - this message\n");
+			fprintf(toConsole,"!\t - shell escape\n");
+			fprintf(toConsole,"<file\t - read input from file\n");
+			fprintf(toConsole,">file\t - save response in file\n");
+			fprintf(toConsole,">\t - response to terminal\n");
+			fprintf(toConsole,"cd\t - change directory \n");
+			fprintf(toConsole,"\\r\t- run the buffered command \n");
+			fprintf(toConsole,"\\c\t- clear the command buffer\n");
+			fprintf(toConsole,"\\l\t- line is immediately sent \n");
+			fprintf(toConsole,"\\q\t- terminate session \n");
+			continue;
+		} 
+		/* copy the line to the end of the message */
+		memcpy(message+m_index, start_cmd, n);
+		GROW_MESSAGE(n);
+		
+		if (mode == LINEMODE) {
+			SEND_MESSAGE(mid);
+	        }
+        } 
+}
+
+void usage() {
+	fprintf(stderr, "Usage: %s [-port host:port] ", program);
+	fprintf(stderr, "[-session key] ");
+ 	fprintf(stderr, "[-prelude  pfile ]\n");
+ 	fprintf(stderr, "[-c command] ");
+ 	fprintf(stderr, "[-help ] \n");
+ 	EXIT(1);
+}
+
+int main(int argc, char **argv) {
+	struct passwd *pwd = getpwuid(getuid());
+	char	*command = 0;
+ 	char	*prelude  = 0;  
+	char	*s = NULL, *port = (char *) getenv("MAPIPORT");
+	int	debug = 0;
+	int	i;
+	struct stat st;
+	char 	user[80];
+	char 	address[80]	= ":50000"; 
+        Msession mid;
+	int	sessionkey	= 0;
+
+	toConsole = stdout;
+	fstat(fileno(stdin),&st);
+
+	if (S_ISCHR(st.st_mode))
+	   is_chrsp = 1;
+	else
+	   is_chrsp = 0;
+
+	program = argv[0];
+        strcpy(user, pwd?pwd->pw_name:"guest");
+	if (!port) port = (char *) getenv("MONETPORT");
+	if (port) strcpy(address, port);
+ 
+	if (argc == 0) {
+		usage();
+	}
+	for(i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			switch(argv[i][1]) {
+			case 'd':
+				debug++;
+				break;
+			case 'p':
+				if (strcmp(argv[i], "-port") == 0) {
+					strcpy(address, argv[++i]);
+				} else if (strcmp(argv[i], "-prelude") == 0) {
+					prelude = argv[++i];
+				}
+				break;
+			case 'h':
+				if (strcmp(argv[i], "-help") == 0) {
+					usage();
+					EXIT(0);
+				}
+				break;
+                       case 's':
+                                if (strcmp(argv[i],"-session") == 0) {
+                                        i++;
+                                        sessionkey= atoi(argv[i]);
+                                }
+                                break;
+       			case 'c':
+		        	command = argv[i];
+				break;
+			default:
+				fprintf(stderr, "unknown argument:%s\n", 
+						argv[i]);
+				usage();
+			}
+		}
+	}
+	MT_init_posix();
+	s = (char *) strchr(address,':');
+	if( s == 0 ){
+		fprintf(toConsole, "address syntax error: %s\n", address);
+		exit(1);
+	}
+	*s = 0;
+	i = atoi(s+1);
+	if (address[0] == '\0'){
+		strcpy(address,"localhost");
+	}
+
+	mid = Mconnect(address,i,user,NULL);
+	fprintf(toConsole,"#connect to %s %d %s\n",address,i,user);
+	mid->trace = debug;
+	if( sessionkey) {
+		sprintf(user,"%s:%d\n",user,sessionkey);
+	}
+	if (Merror(mid)) {
+		Mexplain(mid,toConsole);
+		EXIT(2);
+	}
+ 
+	if (prelude) {
+		int	i,j=0;
+		FILE	*f = fopen(prelude, "r");
+
+		if (!f) {
+			fprintf(toConsole,"unable to open prelude %s.\n", 
+				prelude);
+		} else {
+			char c;
+			char *prev;
+			int len, bufsize = 80;
+			char *buf;
+
+			buf = (char*) malloc(bufsize);
+
+			fseek(f, 0, 2);
+			i = ftell(f);
+			message = (char*) malloc(i+2);
+			fseek(f, 0, 0);
+			fread(message, 1, i, f);
+			if (message[i-1] != '\n')
+				message[i++] = '\n';
+			message[i] = 0;
+			prev = message;
+			for (;*message!=0;message++) {
+				if (*message == '\n') {
+					len = message-prev+1;
+					if (len >= bufsize) {
+						free(buf);
+						bufsize = len+1;
+						buf = (char*) malloc(bufsize);
+					}
+					strncpy(buf, prev, len);
+					buf[len] = 0;
+					doRequest(mid, buf );
+					prev = message+1;
+				}
+			}
+			sprintf(buf, "printf(\"%s\");\n", sentinel);
+@-
+Check basic working of Monet interaction.
+@c
+			doRequest(mid, buf );
+			free(buf);
+		}
+	}
+
+	/* sent a single command to the server */
+	if (command) { 
+		doRequest(mid, command );
+	} else {
+		clientAccept(mid);
+	}
+	return 0;
+}

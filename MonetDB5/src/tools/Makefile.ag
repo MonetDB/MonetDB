@@ -1,29 +1,27 @@
+
 MTSAFE
-INCLUDES = ../gdk ../monet $(PTHREAD_INCS) ../mal
+INCLUDES = ../common ../gdk ../mal $(PTHREAD_INCS) 
 
-GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS) $(Z_LIBS) $(BZ_LIBS)
+CXXFLAGS = $(CFLAGS)
 
-MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) $(Z_LIBS) $(BZ_LIBS)
+GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
+MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
-
-STATIC_MODS =  \
-	../modules/kernel/lib_calc \
-	../modules/kernel/lib_bat ../modules/kernel/lib_algebra \
-	../modules/kernel/lib_system 
-
-EXTRA_DIST = monet-config.mx.in
 
 bin_Mserver = {
-	SOURCES = Mserver.mx 
-	LIBS = ../monet/libmonet STATIC_MODS ../gdk/libbat ../mal/libmal $(MONET_LIBS) $(Z_LIBS) $(BZ_LIBS)
-
+	SOURCES = Mserver.mx  
+	LIBS = ../mal/libmal ../common/libmutils ../gdk/libbat \
+		../sql/parser/libsql \
+		$(MONET_LIBS) $(Z_LIBS) $(BZ_LIBS)
 }
 
-bin_Mdestroydb = bin_Mcreatedb
-BINS = {
-	SOURCES = Mcreatedb.mx 
-	LIBS = ../gdk/libbat ../mal/libmal $(SOCKET_LIBS) $(GDK_LIBS) $(Z_LIBS) $(BZ_LIBS)
-
+scripts_mcsh = {
+	DIR = bindir
+	SOURCES = monet-config.mx.in 
 }
 
-bin_SCRIPTS = monet-config
+scripts_mcbat = {
+	DIR = bindir
+	SOURCES = monet-config.bat.in 
+}
+

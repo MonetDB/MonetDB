@@ -89,6 +89,11 @@ The content of this box my only be changed by the Administrator.
 @= authorize
 	if( !isAuthorized("Admin"))
 		return throwMessage("const.@1","unauthorized access to 'const' box");
+@-
+@= insertBox
+	msg = @2;
+	insertToBox(box,@1,msg);
+	GDKfree(msg);
 @c
 #include "const.h"
 #include "mal.h"
@@ -103,6 +108,7 @@ int isAuthorized(str nme){
 str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	ValRecord vr;
+	str msg;
 	@:authorize(prelude)@
 	box= openBox("const");
 	if( box== 0) 
@@ -110,13 +116,10 @@ str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* if the box was already filled we can skip initialization */
 	if( box->sym->vtop == 0){
 		insertToBox(box,"user",getClient()->user);
-		insertToBox(box,"database",GDKdbnameStr);
-		insertToBox(box,"dbfarm",GDKdirStr);
-		insertToBox(box,"distribution",GDKdistrStr);
-		insertToBox(box,"monetrc",GDKmonetrcStr);
-		insertToBox(box,"architecture",GDKarchStr);
-		insertToBox(box,"version",GDKversionStr);
-		insertToBox(box,"environment","unknown yet");
+		insertToBox(box,"dbname",GDKgetenv("dbname"));
+		insertToBox(box,"dbfarm",GDKgetenv("dbfarm"));
+		insertToBox(box,"version",GDKgetenv("version"));
+		insertToBox(box,"config",GDKgetenv("config"));
 	/* old bat.mx constants */
 		insertToBox(box,"STORE_MEM","0");
 		insertToBox(box,"STORE_MMAP","1");

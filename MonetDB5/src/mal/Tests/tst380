@@ -47,10 +47,12 @@ function dir(s:str):void;
 	dir(tn);
 end dir;
 b:=new(int,int);
-setColumn(b,"simplemind");
+setName(b,"simplemind");
 
 z:= catalog.bbpNames();
+print("Get first directory");
 dir(z);
 
+print("Get second directory");
 dir("simple");
 

@@ -62,22 +62,24 @@ atom module decimal;
 #command  heap()= decimal_heap;
 #command  check()= HEAP_check;
 @-
-The compare() atom routine should become visible at the mal layer
+The compare() atom routines should become visible at the mal layer
 as well.
 @mal
-command =(v:decimal,w:decimal):bit = decimal_EQ
+command =(v:decimal,w:decimal):bit = CMDdecimal_EQ
 	comment "Equality of two decimals";
-command !=(v:decimal,w:decimal):bit = decimal_NEQ
+command !=(v:decimal,w:decimal):bit = CMDdecimal_NEQ
 	comment "Equality of two decimals";
-command <(v:decimal,w:decimal):bit = decimal_LT
+command <(v:decimal,w:decimal):bit = CMDdecimal_LT
 	comment "Equality of two decimals";
-command <=(v:decimal,w:decimal):bit = decimal_LE
+command <=(v:decimal,w:decimal):bit = CMDdecimal_LE
 	comment "Equality of two decimals";
-command >(v:decimal,w:decimal):bit = decimal_GT
+command >(v:decimal,w:decimal):bit = CMDdecimal_GT
 	comment "Equality of two decimals";
-command >=(v:decimal,w:decimal):bit = decimal_GE
+command >=(v:decimal,w:decimal):bit = CMDdecimal_GE
 	comment "Equality of two decimals";
 
+command isnil(v:decimal):bit = CMDdecimal_isnil
+	comment "Nil test for decimal value";
 command decimal (value:void) : decimal = decimal_from_nil
      comment "Translates a nil into a decimal.";
 
@@ -482,12 +484,11 @@ comparison when comparing decimals of the same precision; comparing 8 digits at 
 #ifndef _DECIMAL_H_
 #define _DECIMAL_H_
 
-#include "monet.h"
+#include "mal_function.h"
 #include "mal_box.h"
 
 typedef struct {
-	short scale;
-	unsigned short negative:1, precision:15;
+	int scale:16, negative:1, precision:15;
 	unsigned int num[1]; /* array of digits: 2-digits-per-byte = 8-digits-per-integer */
 	/* array extends beyond boundary */
 } decimal;
@@ -523,7 +524,7 @@ short val_table[10000]; /* 4-digit shorts with numbers from 0000 to 9999 */
 
 #define PRECISION_MAX	16384
 #define SCALE_MAX	16384
-#define SCALE_MIN	-16384
+#define SCALE_MIN	(-16384)
 #define HI(x)		LO((x)>>4)
 #define LO(x)		((x)&15)
 #define MULT(x,y)	mult_table[((x)<<4)+(y)]
@@ -538,8 +539,13 @@ short val_table[10000]; /* 4-digit shorts with numbers from 0000 to 9999 */
 #define SETNUM(d,x,y)	NUM(d,x) = ((y) << POS(x)) | (NUM(d,x) & ~MASK(x)) 
 #define ISNIL(d)	((d)->scale > SCALE_MAX) 
 #define ISZERO(d)	((d)->num[0] == 0) 
-#define NUMLEN(x)	((((x)-1) >> 3) + 1) 
-#define TOTLEN(x)	((NUMLEN(MAX(MIN(PRECISION_MAX,x),1))+1) << 2) 
+
+/* number of ints in num field */
+#define NUMLEN(x)       ((((x)-1) >> 3) + 1)
+
+/* total size in bytes of allocated structure */
+#define TOTLEN(x) (sizeof(decimal)+((NUMLEN(MAX(MIN(PRECISION_MAX,(x)),1))-1)<<2))
+
 #define DECIMAL_AVGSIZE 12
 
 /* materialized constants */
@@ -602,7 +608,7 @@ void decimal_debug(decimal* d, str tag, int check) {
 		}
 		for(x = 0; x < precision; x++) {
 			int val = GETNUM(d,x);
-			*s++ = val + ((val < 10)?'0':('A'-10));
+			*s++ = "0123456789ABCDEF"[GETNUM(d,x)];
 		} x = 0;
 		if (scale != 0) {
 			sprintf(s, "E%d", scale);
@@ -623,12 +629,12 @@ void decimal_debug(decimal* d, str tag, int check) {
 		if (ISZERO(d) && d->precision != 1) {
 			GDKerror("decimal_debug: zero has illegal precision.\n");
 		}
-		if (ISZERO(d) && d->scale != -32768) {
+		if (ISZERO(d) && d->scale != 2*SCALE_MIN) {
 			GDKerror("decimal_debug: zero has illegal scale.\n");
 		}
 		for(y = NUMLEN(precision) << 2; x < y; x++) {
-			int z = GETNUM(d,x);
-			if ((x >= d->precision)?(z != 0):(z < 0 || z > 9)) {
+                        int z = GETNUM(d,x); /* z >= 0 due to GETNUM impl. */
+                        if (x >= d->precision ? z != 0 : z > 9) {
 				GDKerror("decimal_debug: garbage %d at position %d.\n", z, x);
 			} 
 		}
@@ -663,12 +669,12 @@ decimal* decimal_alloc(int precision, int scale, int sign, decimal *d, int *size
 		/* generate a zero */
 		d->num[0] = 0; 
 		d->precision = 1; 
-		d->scale = -32768; 
+		d->scale =  2*SCALE_MIN;
 		d->negative = 0; 	
 	} else {
 		/* generate an decimal with empty number, and set fields */
-		unsigned int *src = ((unsigned int*) d) + 1;
-		unsigned int *dst = (unsigned int*) ((char*) d + len);
+                unsigned int *src = d->num;
+                unsigned int *dst = src + NUMLEN(precision);
 		d->precision = precision;
 		d->scale = scale;	
 		d->negative = sign; 
@@ -761,7 +767,7 @@ The below ADT function implementations are required when adding a new atom type 
 @c
 int decimal_fromstr(str buf, int *len, decimal **ret) {
 	int comma = 0, scale = 0, sign = 0, precision = 0, started = 0, scale_neg = 0; 
-	int c, x = sizeof(int), pos, repeat = 0, *rp = &repeat;
+	int c, x = (int) sizeof(int), pos, repeat = 0, *rp = &repeat;
 	char *base=buf, *cur=buf, *dst, *last=NULL, cpy[PRECISION_MAX];
 
 	dst=cpy;
@@ -1007,12 +1013,12 @@ the shorter digit string to obtain the same effect.
 int decimal_hash(decimal *d) {
 	unsigned int *src = d->num;
 	unsigned int *dst = src + NUMLEN(d->precision);
-	unsigned int y = d->precision + d->scale;
+	hash_t y = d->precision + d->scale;
 	
 	while(src < dst) {
 		int val = *src++;
 		if (val) {
-			int x = ((val & (15 << 28)) >> 28);
+			unsigned int x = ((val & (15 << 28)) >> 28);
 			x = MULT10(x) + ((val & (15 << 24)) >> 24);
 			x = MULT10(x) + ((val & (15 << 20)) >> 20);
 			x = MULT10(x) + ((val & (15 << 16)) >> 16);
@@ -1124,8 +1130,8 @@ str decimal_prelude() {
 	BATatoms[TYPE_decimal].atomConvert= (void(*)()) decimal_convert;
 	BATatoms[TYPE_decimal].atomLen= (int(*)()) decimal_length;
 	BATatoms[TYPE_decimal].atomPut= (void(*)()) decimal_put;
-	BATatoms[TYPE_decimal].atomDel= decimal_del;
-	BATatoms[TYPE_decimal].atomHeap= decimal_heap;
+	BATatoms[TYPE_decimal].atomDel= (int(*)())decimal_del;
+	BATatoms[TYPE_decimal].atomHeap= (int(*)())decimal_heap;
 	BATatoms[TYPE_decimal].atomHeapCheck= HEAP_check;
 	BATatoms[TYPE_decimal].storage= TYPE_decimal;
 	BATatoms[TYPE_decimal].linear= 1;
@@ -1164,6 +1170,11 @@ str decimal_prelude() {
 	}
 
 	/* nil is a normally impossible value; compare identifies it as the smallest decimal */
+        decimal_nil = decimal_create(2,0,0);
+        decimal_nil->scale = 2*SCALE_MAX-1;
+        decimal_nil->negative = 1;
+        SETNUM(decimal_nil,0,10);
+
 
 	decimal_zero = decimal_create(0,0,0);
 	decimal_one = decimal_create(1,0,0);
@@ -1195,6 +1206,7 @@ str decimal_prelude() {
 
 	vr.vtype= TYPE_decimal;
 	vr.len=0;
+	vr.val.pval = 0;
 	d=(decimal**) &vr.val.pval;
 
 	decimal_fromstr("nil",&vr.len,d);
@@ -1435,20 +1447,28 @@ str decimal_to_flt(flt* ret, decimal **valinput) {
 	return MAL_SUCCEED;
 }
 @- Comparison
-@= comparison
-str decimal_@1(int *ret, decimal **v, decimal **w){
+The bunch of atomary operators needed for comparisons
+@= compareImpl
+str CMD@3_@1(int *ret, @3 **v, @3 **w){
 	if( ISNIL(*v) || ISNIL(*w))
 		*ret= bit_nil;
-	else	*ret = decimal_compare(*v,*w) @2 0;
+	else	*ret = @3_compare(*v,*w) @2 0;
 	return MAL_SUCCEED;
 }
+@= compareAll
+	@:compareImpl(EQ,==,@1)@
+	@:compareImpl(NEQ,!=,@1)@
+	@:compareImpl(LT,<,@1)@
+	@:compareImpl(LE,<=,@1)@
+	@:compareImpl(GT,>,@1)@
+	@:compareImpl(GE,>=,@1)@
+
 @c
-	@:comparison(EQ,==)@
-	@:comparison(NEQ,!=)@
-	@:comparison(LT,<)@
-	@:comparison(LE,<=)@
-	@:comparison(GT,>)@
-	@:comparison(GE,>=)@
+	@:compareAll(decimal)@
+str CMDdecimal_isnil(int *ret, decimal **v){
+	*ret= ISNIL(*v);
+	return MAL_SUCCEED;
+}
 @- misc operators
 @c
 /* Returns a decimal whose value is -1 * value. */
@@ -1710,7 +1730,7 @@ str decimal_minus(decimal **ret, decimal **v1input, decimal **v2input) {
 	}
 	/* minus without overflow by subtracting the smaller from the bigger number */
 	xi = decimal_compare(v1,v2);
-	if ((v1->negative == 0 && xi < 0) || (v1->negative == 1 && xi > 0)) {
+	if ((v1->negative == 0 && xi < 0) || (v1->negative != 0 && xi > 0)) {
 		tmp = v2; v2 = v1; v1 = tmp; negative = !negative;
 	}
 	*ret = decimal_copy(v1, v1->precision);

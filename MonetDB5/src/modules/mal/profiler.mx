@@ -104,7 +104,6 @@ its generates a noticable overhead.
  * 
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
-#include "monet.h"
 #include <stdarg.h>
 #include <time.h>
 #include "gdk.h"
@@ -112,7 +111,7 @@ its generates a noticable overhead.
 #include "mal_resolve.h"
 #include "mal_squeezer.h"
 #include "mal_client.h"
-#include "monet.h"
+#include "mal_function.h"
 
 @-
 Using the Monet Performance Profiler is contrainted by the mal_profiler.
@@ -178,14 +177,14 @@ str CMDendPointProfiler(int *res, str *mod, str *fcn){
 str CMDstopProfiler(int *res){
 	Client c= getClient();
 	@:checkProfiler(stop)@
-	fprintf(c->fdout,"# Performance profiling stopped\n");
+	stream_printf(c->fdout,"# Performance profiling stopped\n");
 	stopProfiling();
 	return MAL_SUCCEED;
 }
 str CMDstartProfiler(int *res){
 	Client c= getClient();
 	@:checkProfiler(start)@
-	fprintf(c->fdout,"# Start performance profiling\n");
+	stream_printf(c->fdout,"# Start performance profiling\n");
 	startProfiling();
 	return MAL_SUCCEED;
 }

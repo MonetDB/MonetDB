@@ -19,14 +19,11 @@ The number of clients depends on the permissible open file descriptors.
 
 Client records are linked into a hierarchy, where the top record
 describes system-wide resources, owned by the dba. The next layer
-contains a language specific context, followed by a database schema
-specific context and ending by the user session context.
-Inspection of upper layers is limited as much as possible.
+contains the user session descriptors.
 
 The routines defined below provide management of the client
 administration. Routines dealing with serviceing requests
 are located in mal_startup.
-@{
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -78,23 +75,31 @@ pass the mode to the front-end. Moreover, the prompt can be
 dropped if a single stream of information is expected from the
 server(See mal_profiler.mx).
 
-The user can request server-side compilation as part of the initialization 
-string. 
+The user can request server-side compilation as part of the 
+initialization string. 
 The languages foreseen are SQL, MIL (Monet version 4) and MAL (Monet
-Assembler Language)
+Assembler Language), MDB (Monet DeBugger)
 @h
-#define MALPARSER	1
-#define MILPARSER	2
-#define SQLPARSER	4
-
 typedef struct CLIENT{
 	int	idx;		/* entry in mal_clients */
 	str 	user;		/* user name. */
 	str	password;	/* of user */
 	int	sessionkey;	/* unique key addressed to session */
 	int	permission;	/* access mode */
-	str	language;	/* language indicator */
-	int	itrace;		/* trace execution using interactive mdb */
+@-
+The actions for a client is separated into several stages: parsing,
+strategic optimization, tactial optimization, and execution. 
+The routines to handle them are obtained once the scenario is choosen.
+Each stage carries a state descriptor, but they share the IO state
+description. A backup structure is provided
+to temporarily switch to another scenario. Propagation of the state
+information should be dealt with separately.[TODO]
+@h
+	str	scenario, oldscenario;	/* scenario management */
+	void	*state[5], *oldstate[5];
+	GDKfcn	phase[5], oldphase[5];
+	short	itrace;		/* trace execution using interactive mdb */
+	short 	debugoptimizer;
 	long	timer;		/* trace time in usec */
 @-
 The time interval between requests are maintained. At some point
@@ -112,16 +117,16 @@ The monitor file descriptor can be set to trace the input received
 from a particular client. This facility is used by Mapi to trace
 the interaction on the system console (sysmon). 
 @h
-	FILE	*fdin, *fdout;		/* streams from and to user. */
-	int 	socket;			/* socket with tcp conn. */
+	stream	*fdin, *fdout;		/* streams from and to user. */
+	int	socket;			/* socket based communication */
 	str	input, output, limit;	/* IO buffers + input limit */
 	str	nxt;			/* next unparsed input */
 	str	prompt;			/* acknowledge prompt */
 	int	promptlength;
-	int	blkmode;		/* control reading */
-	short	listing;		/* echo the input */
-	FILE	*sysmon;		/* trace interaction */
-	FILE	*journal;
+	int	blkmode;		/* control block reading */
+	int	listing;		/* listing/trace bit set */
+	stream	*sysmon;		/* trace interaction */
+	stream	*journal;
 	int	mode;			/* FREECLIENT..BLOCKED */
 	str	cwd;			/* working directory of client */
 @-
@@ -143,11 +148,12 @@ to keep track of critical elements.
 	Box		ospace;
 	Symbol		curprg;		/* focus of parser */
 	Symbol		backup;		/* save parsing context */
+	MalStkPtr	glb;		/* global variable stack */
 } *Client, ClientRec;
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 
-mal_export Client	initClient(str nme, str passwd, int socket);
+mal_export Client	initClient(str nme, str passwd, stream *fin, stream *fout);
 mal_export Client	forkClient     (Client c);
 mal_export Client	getClient	();
 mal_export void 	initClientThread(Client c);
@@ -157,8 +163,8 @@ mal_export void 	freeClient	(Client c);
 mal_export int 		readClient	(Client c, str prompt);
 mal_export void 	setClientTrace(Client c, int flag);
 
-#define clientPrompt(X,Msg) if( fputs(Msg,X->fdout) ==EOF) return 0;\
-	if(fflush(X->fdout) || feof(X->fdout)) return 0;
+#define clientPrompt(X,Msg) stream_printf(X->fdout,"%s",Msg);\
+	X->fdout->flush(X->fdout);
 
 #endif /* _MAL_CLIENT_H_ */
 @-
@@ -224,7 +230,7 @@ Client getClient()
 	if( c->mythread == tid) return c;
 
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-	if( c->mythread) printf("client %d\n",c->mythread);
+	if( c->mythread) stream_printf(GDKout,"client %d\n",c->mythread);
 	GDKerror("unexpected call to getClient %d\n" , tid);
 	return NULL;
 }
@@ -233,7 +239,7 @@ Client getClient()
 The arguments are private copies, which should be garbage collected
 upon return;
 @c
-Client initClient(str nme, str passwd, int msgsock){
+Client initClient(str nme, str passwd, stream *fin, stream *fout){
 	Client 	c;
 	Thread t;
 
@@ -244,29 +250,28 @@ Client initClient(str nme, str passwd, int msgsock){
 	}
 
        	c->user = nme; 
-	c->language= GDKstrdup("mal");
+	c->scenario= NULL;
+	c->oldscenario = NULL;
 	c->sessionkey = 0;
 
-	c->fdin = msgsock? fdopen(msgsock, "r"):stdin;
+	c->socket= 0;
+	c->fdin = fin? fin: GDKin;
 	if( c->input == 0) {
 		c->input = (str) GDKmalloc(BLOCKSIZE);
 		c->limit = c->input + BLOCKSIZE;
 	}
-	c->listing = FALSE;
+	c->listing = 0;
 	*c->input = 0;
 	c->nxt = c->input;
 
-	c->fdout = msgsock? fdopen(msgsock, "w"):stdout;
+	c->fdout = fout?fout: GDKout;
 	c->sysmon = c->journal = NULL;
 @-
 The output buffer is currently not used. Beware to garbage
 collect the buffer when in use.
 @c
-/*	c->output = (str) GDKmalloc(BLOCKSIZE);
-	setbuffer(c->fdout, c->output, BLOCKSIZE); */
 	c->output = 0;
- 	c->socket = msgsock;
-	c->blkmode= c->fdin==stdin?0: MAPIBLKSIZE;
+	c->blkmode= c->fdin==GDKin?0: MAPIBLKSIZE;
 	
 	c->nspace = 0;
 	c->curprg = c->backup = 0;
@@ -276,6 +281,7 @@ collect the buffer when in use.
 	c->logout= c->login+c->delay;
 	c->mode = AWAITING;
 	c->itrace = 0;
+	c->debugoptimizer = 0;
 	c->errbuf = 0;
 
 	if( ! isAdministrator(c)){
@@ -303,16 +309,18 @@ void initClientThread(Client c)
 	c->mythread = t=  THRnew(MT_getpid(),c->user);
 	GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
 	c->errbuf = GDKerrbuf;
+	c->errbuf[0]=0;
 @-
 The GDK thread administration should be set to reflect use of
 the proper IO descriptors.
 @c
 	if ( t==0) {
 		GDKerror("Failed to initialize client\n");
-		fflush(c->fdout);
-		(void) fclose(c->fdin);
-		(void) fclose(c->fdout);
-		close(c->socket);
+		c->fdout->flush(c->fdout);
+		(void) c->fdin->close(c->fdin);
+		(void) c->fdin->close(c->fdout);
+		if( c->socket) close(c->socket);
+		c->socket=0;
 		return ;
 	}
 	t->data[1] = c->fdin;
@@ -333,12 +341,12 @@ Client forkClient(Client father){
 	if( father == NULL) return NULL;
 	if (father->father != NULL) father = father->father;
 	if ((son = initClient( GDKstrdup(father->user),
-		GDKstrdup(father->password), father->socket))){
+		GDKstrdup(father->password), father->fdin,father->fdout))){
 		son->fdin= NULL;
 		GDKfree(son->input);
 		son->input = son->limit = NULL;
 		son->father = father;
-		son->language = GDKstrdup(father->language);
+		son->scenario = GDKstrdup(father->scenario);
 		son->prompt = GDKstrdup(father->prompt);
 		son->promptlength= strlen(father->prompt);
 		son->nspace = newScope(NULL, GDKstrdup("Client-child"));
@@ -365,12 +373,12 @@ void freeClient(Client c)
 
 	/* epilogue actions have been done already */
 	if (c->father == NULL) { /* normal client */
-		(void) fclose(c->fdin);
-		(void) fflush(c->fdout); 
-        	(void) fclose(c->fdout);
-		(void) shutdown(c->socket, 2);
+		(void) c->fdin->close(c->fdin);
+		(void) c->fdout->flush(c->fdout); 
+        	(void) c->fdout->close(c->fdout);
+		c->fdout->destroy(c->fdout);
 		c->fdout= c->fdin= NULL;
-		c->socket=0;
+		if( c->socket) close(c->socket); c->socket=0;
 	} 
 	/* forked client also */
 
@@ -385,7 +393,7 @@ void freeClient(Client c)
 	c->input = c->limit= NULL; */
 	if( c->output ) GDKfree(c->output);
 	c->output= NULL;
-	if(c->language) GDKfree(c->language); c->language = NULL;
+	if(c->scenario) GDKfree(c->scenario); c->scenario = NULL;
 	if(c->prompt) GDKfree(c->prompt); c->prompt = NULL;
 	c->promptlength=0;
 	if(c->errbuf){
@@ -461,7 +469,7 @@ work by closing them.
 
 void killClient(Client c){
     if (c && c->user) {
-        Thread  victim = c->mythread;
+        Thread victim = c->mythread;
 	MT_Id tid= victim->tid;
 	MT_Id pid= victim->pid;
 
@@ -472,9 +480,11 @@ void killClient(Client c){
 	GDKwarning("killClient:forcing client to stop ...\n");
 	/* the process may hang upon gaining access to the file descriptors */
 	c->mode= FINISHING;
-	(void) fclose(c->fdin);
-	(void) fclose(c->fdout);
-	(void) shutdown(c->socket, 2);
+	(void) c->fdin->close(c->fdin);
+	(void) c->fdin->close(c->fdout);
+	if( c->socket) close(c->socket); c->socket=0;
+
+	/*c->fdin->destroy(c->fdin);*/
 	GDKwarning("killClient:about to kill process ...\n");
 	sleep(PROCESSTIMEOUT);
 	pthread_kill((pthread_t)(pid-1),SIGKILL);
@@ -482,19 +492,15 @@ void killClient(Client c){
 	GDKwarning("killClient:process killed\n");
     }
 }
-@+ Client input
-The input is read from a stream and stored in the client record
-input buffer. The storage area grows automatically upon need.
-Where the stream is comming from depends on the connectivity mode.
-
+@+ Spying on clients
 To enable tracing interactions from the internet connections,
 the system console can be used as a duplicate echo device.
 @= sysTrace
 if( c->sysmon){
-	fprintf(c->sysmon,"#[%s]",c->user);
-	fprintf(c->sysmon, @1);
-	fputc('\n',c->sysmon);
-	fflush(c->sysmon);
+	stream_printf(c->sysmon,"#[%s]",c->user);
+	stream_printf(c->sysmon, @1);
+	stream_printf(c->sysmon,"\n");
+	c->sysmon->flush(c->sysmon);
 }
 @-
 @c
@@ -514,7 +520,10 @@ void traceAllClients(int flag){
 		else c->sysmon= NULL;
 	}
 }
-@-
+@+ Client input
+The input is read from a stream and stored in the client record
+input buffer. The storage area grows automatically upon need.
+Where the stream is comming from depends on the connectivity mode.
 Set the prompt sequence for the current client to a particular string.
 Beware that this will interfere with the Mapi protocol, which
 requires a prompt string to be enclosed between \001 characters.
@@ -529,16 +538,18 @@ static
 void enlargebuffer(Client c, int newsize){
 	str s;
 	int i;
-	int l;
+	int l,ln;
 
 	/* printf("Buffer enlarged \n");*/
 	l = strlen(c->input);
-	i = c->limit- c->input +BLOCKSIZE;
-	s = (char *) GDKmalloc((unsigned)newsize);
+	ln = c->nxt-c->input;
+	i = c->limit - c->input + newsize;
+	s = (char *) GDKmalloc(i);
 	memcpy(s, c->input, l+1);
 	GDKfree(c->input);
 	c->input = s;
 	c->limit = c->input+i;
+	c->nxt= c->input+ln;
 }
 
 @-
@@ -552,71 +563,76 @@ statementblock is recognized, it is taken into execution.
 
 To simplify misaligned communication with front-ends, we use different
 prompts structures. [think, can we avoid acks]
+@= makespace
+	if( c->limit-s < BLOCKSIZE){
+		enlargebuffer(c, BLOCKSIZE);
+		first= last= s = c->nxt; *s = 0;
+	}
 
 @h
 #define MAPIBLOCKCNT	"#blockcnt:%6d"
 @c
 int readClient(Client c,str prompt){
-	int i,bytes,blocks,len;
+	int i,bytes,free,blocks,len;
 	str  s, last;
-	char *lspace=0;
+	char *first, *lspace=0;
  
 @-
 The next statement block is to be read. Sent a prompt to warn
 the front-end to issue the request.
 @c
- 	last= s = c->input; *s = 0;
-	bytes = c->limit - c->input;
+	first= last= s = c->nxt; *s = 0;
+	@:makespace@
+
 readAgain:
+	bytes = c->limit - c->input;
+	free= c->limit - s-1;	/* reserve null byte */
+	free= free>BLOCKSIZE?BLOCKSIZE:free;
+
 	if(c->promptlength) { clientPrompt(c,prompt);}
-	if( feof(c->fdin) ) return 0;
 @-
 Beware, that in terminal mode you loose backspaceing options.
 Therefore, most interaction should be regulated through the Mclient
 front-end. This will also take care of buffering a request before
 submission. This avoids a significant number of network interactions.
 @c
-	if(c->blkmode && (i=fread(s,1,MAPIBLKSIZE,c->fdin)) != MAPIBLKSIZE){
-		char buf[256];
-		snprintf(buf,256,"Block read failed (%dbytes)\n",i);
-		@:sysTrace(buf)@
-		GDKerror(buf);
-		/* mimick end of session */
-		snprintf(s,MAPIBLKSIZE,"quit;","");
+	if(c->blkmode){
+		if( (i=c->fdin->read(c->fdin,s,1,MAPIBLKSIZE)) != MAPIBLKSIZE){
+			char buf[256];
+			snprintf(buf,256,"Block read failed (%dbytes)\n",i);
+			@:sysTrace(buf)@
+			GDKerror(buf);
+			/* mimick end of session */
+			snprintf(s,MAPIBLKSIZE,"quit;","");
+			return -1;
+		} 
+		for(s=c->input; *s ;s++) {
+			if( *s== 13) *s=' ';
+			if( *s ==' ' || *s=='\t'){
+				if(lspace == 0) lspace= s; 
+			} else lspace =0;
+		}
+		if( lspace ) *lspace=0;
 		return 1;
-	} 
+	}
 @-
 The common approach is to read just one line from the user
 @c
 	if( c->blkmode==0 ){
-		if(fgets(s,bytes,c->fdin) == NULL){
-			if (feof(c->fdin)
-#ifndef WIN32
-			    || (i < 0 && MT_geterrno() != EAGAIN) 
-#endif
-			) {
-				return 0;
-			}
-			MT_seterrno(0);
-			goto readAgain;
+		while( (i= c->fdin->read(c->fdin,s,1,1)) == 1){
+			if(*s== 13) continue; /* WIN32 */
+			if(*s== 0 || *s== '\n') { *s=0; break;}
+			s++;
+			if( s==c->limit-1) { @:makespace@ }
 		}
-		for(i=0; s[i] ;i++) if(s[i]=='\n'){ s[i]=0; break;}
+		if( i<=0) {
+			/* end of stream reached */
+			return -1;
+		}
+	}
 @-
-We might have filled the complete buffer and still not found a new-line.
-Then extend the buffer space and retry.
-@c
-		if (i >= bytes-1 ) {
-			int len = c->limit-c->input;
-			enlargebuffer(c, BLOCKSIZE);
-			s= c->input+len;
-			bytes= BLOCKSIZE;
-			goto readAgain;
-	}	 }
-
-@-
-Check to see if this involves a blocked message. If so, read
-the complete block in one blow. 
-The alternative is to read the next line;
+Check to see if this involves a blocked increment message. If so, read
+the complete block in one blow. The alternative is to read the next line;
 @c
 	if( *last != '#') goto readCompleted;
 	@:sysTrace(c->input)@
@@ -628,7 +644,7 @@ The alternative is to read the next line;
 		bytes= blocks * MAPIBLKSIZE;
 		while( bytes >= c->limit-c->input)
 			enlargebuffer(c, MAPIBLKSIZE);
-		if( fread(last, 1,bytes,c->fdin) != bytes){
+		if( c->fdin->read(c->fdin,last, 1,bytes) != bytes){
 			@:sysTrace("unable to read all bytes\n")@
 			GDKerror("readClient:unable to read all bytes\n");
 			return 0;
@@ -637,17 +653,12 @@ The alternative is to read the next line;
 	}
 readCompleted:
 	/* trim the spaces at the end of the string */
-	for(s=c->input; *s; s++) {
-		if( isspace(*s)){
-			if(lspace == 0) lspace= s; 
+	for(s=first; *s; s++) {
+		if( *s ==' ' || *s=='\t'){
+			if(lspace == 0) lspace= s;
 		} else lspace =0;
-#ifdef WIN32
-		if (s[i] == 13) s[i]=' '; /* filter out ^M */
-#endif
 	}
 	if( lspace ) *lspace=0;
 	@:sysTrace(c->input)@
 	return 1;
 }
-@
-@}

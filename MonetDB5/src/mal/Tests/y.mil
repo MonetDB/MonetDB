@@ -1,0 +1,133 @@
+setoid(oid(20000000));
+# The procedures part of the old prelude
+     PROC groupcount(BAT[oid,bit] sel, BAT[oid,oid] ct, BAT[oid,int] dom) : BAT[oid,int] 
+		return {count}([sel?ct:], dom);
+
+
+# First some procs for convenience: 
+# - xtable_print(group[oid,oid], str, attr1[oid,a1], attr2[oid,a2], ...)
+# 	print group count table 
+# - xtable_realloc(bat, capacity):  bat
+#	allocate more memory and return a copy of a bat
+# - xtable_test(str title, bat x, bat y, bat z)
+#	 major test script on xtable functionality
+ 
+proc xtable_hdr(str nme,bat[oid,any] b1, bat[oid,int] grp):={
+    printf("\n# %s",nme);
+    printf(" (ct: %d elts", b1.count);
+    printf(", %d groups",grp.count);
+    printf(", %d bytes)\n", b1.size());
+}
+
+proc xtable_print(bat[oid,int] grp,str nme, bat[oid,any] b1,bat[oid,any] b2, bat b3) :={
+	xtable_hdr(nme,b1,grp);
+	table(grp.setColumn("count"), b1,b2,b3);
+}
+
+proc xtable_print(bat[oid,int] grp,str nme, bat[oid,any] b1,bat[oid,any] b2, bat b3, bat b4) :={
+	xtable_hdr(nme,b1,grp);
+	table(grp.setColumn("count"), b1,b2,b3,b4);
+}
+
+proc xtable_print(bat[oid,int] grp,str nme, bat[oid,any] b1,bat[oid,any] b2, bat b3, bat b4, bat b5) :={
+	xtable_hdr(nme,b1,grp);
+	table(grp.setColumn("count"), b1,b2,b3,b4,b5);
+}
+
+proc xtable_histo_direct2(str title,bat b1,bat b2):= {
+    var histo := b1.histogram;
+    histo.xtable_print(title,b1,b2, histo.mirror.setColumn("gid"));
+}
+proc xtable_histo_direct3(str title,bat b1,bat b2, bat b3):= {
+    var histo := b1.histogram;
+    histo.xtable_print(title,b1,b2,b3, histo.mirror.setColumn("gid"));
+}
+proc xtable_histo_direct3(str title,bat b1,bat b2, bat b3, bat b4):= {
+    var histo := b1.histogram;
+    histo.xtable_print(title,b1,b2,b3,b4, histo.mirror.setColumn("gid"));
+}
+
+ 
+proc xtable_histo_remap4(str title, bat[oid,oid] b1, 
+	bat[oid,oid] b2, bat[oid,oid] b3) := {
+    var map := new(oid,oid).setKey(true).reverse.insert(b1);
+    map.join(b1.histogram).xtable_print(title,b1,b2,b3, map.setColumn("gid"));
+}
+ 
+proc xtable_realloc(bat b,int cap) := {
+    var inf := b.info;
+    var ht := monet_atomtbl.find(inf.find("head"));
+    var tt := monet_atomtbl.find(inf.find("tail"));
+    var bn := new(ht, tt, cap);
+    bn.insert(b);
+    if (ht = void) bn.setSequenceBase(b.reverse.fetch(0));
+    if (tt = void) bn.setSequenceBase(b.fetch(0));
+    return bn;
+}
+ 
+proc xtable_test(str title, bat[oid,any] x, bat[oid,any] y, bat[oid,any] z) := {
+    printf("# xtable_test: %s ", title);
+    printf("grouping (%d ",x.count);
+    printf("tuples, %d bytes)\n\n", x.size() + y.size() + z.size());
+    x.setColumn("x"); y.setColumn("y"); z.setColumn("z");
+    var yy := [+](y,dbl(1.0)).setColumn("yy");
+ 
+    print(x.slice(0,7).setColumn("x"),y,yy,z);
+    printf("synced(x,y) := %s\n", isSynced(x,y).str);
+    printf("synced(x,z) := %s\n", isSynced(x,z).str);
+
+    # test group 
+    b1:= CTgroup(x);
+    xtable_histo_direct2("group(x)", b1, x);
+
+    # test derive
+    b2:= CTgroup(b1,y);
+	b2.setWriteMode();
+    xtable_histo_direct3("group(x,y)", b2, x, y);
+
+    # test orderby
+{   var b2 := CTrefine(x.reverse.sort.reverse, y);
+    xtable_histo_remap4("orderby(x,y)", b2, x, y); }
+ 
+    # test subgroup
+{   var b3 := groupcount([<=](y,dbl(2.0)),b1,b1.histogram);
+	b3.setColumn("count");
+    b3.xtable_print("subhisto(x,y|1-2)", x, y, b3.mirror.setColumn("gid")); }
+
+    # test regroup
+    CTregroup(b1,z);
+    xtable_histo_direct3("regroup(x,y,z)", b1, x, y, z);
+
+}
+
+x := new(oid,chr);
+x.insert(1@0,'a');
+x.insert(2@0,'a');
+x.insert(3@0,'b');
+x.insert(4@0,'b');
+x.insert(5@0,'b');
+x.insert(6@0,'b');
+x.insert(7@0,'c');
+x.insert(8@0,'c');
+ 
+y:= new(oid,dbl);
+y.insert(1@0,dbl(1.0));
+y.insert(2@0,dbl(2.0));
+y.insert(3@0,dbl(2.0));
+y.insert(4@0,dbl(2.0));
+y.insert(5@0,dbl(2.0));
+y.insert(6@0,dbl(3.0));
+y.insert(7@0,dbl(1.0));
+y.insert(8@0,dbl(1.0));
+ 
+z:= new(oid,str);
+z.insert(1@0,"c");
+z.insert(2@0,"a");
+z.insert(3@0,"b");
+z.insert(4@0,"c");
+z.insert(5@0,"a");
+z.insert(6@0,"a");
+z.insert(7@0,"c");
+z.insert(8@0,"a");
+
+xtable_test("small hash", x, y, z);

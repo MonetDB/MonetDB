@@ -1,28 +1,30 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
-# gdk_dbname:demo
-# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
-# gdk_distr:/ufs/mk/monet_5-0/Linux
-# monetrc:/ufs/mk/.monet.conf
-#	r:=0;
-#	l:= r < 1;
-#barrier l;
-#	r:= r+1;
-#	l:= false;
-#	redo l;
-#exit	l;
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# dbname:demo
+## minimal barrier
+#barrier	l:=1;
+#	print(l);
+#exit	l:= 2;
+#	print(l);
+#barrier m:=3;
+#	leave m:= 7;
+#exit	m:= 4;
+#	print(m);
 #
-!ERROR: label 'l' is readonly in main[5]
-function Admin.main():int; #0:(main:int)
-    r := 0; #1:(r:int)<-($2:int)
-    l := calc.<(r,1); #2:(l:bit)<-(r:int)($4:int)
-barrier l; #3:(l:bit) jump 8
-    r := calc.+(r,1); #4:(r:int)<-(r:int)($4:int)
-    l := false; #5:(l:bit)<-($5:bit)
-    redo l ; #6:(l:bit) jump 3
-exit l; #7:(l:bit)
-end main; #8:
-!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
+function Admin.main():int; #0  (main:int)
+barrier l := 1; #1  (l:int)<-($2:int) jump 3
+    io.print(l); #2 CMDprint_val ($3:int)<-(l:int)
+exit l := 2; #3  (l:int)<-($4:int)
+    io.print(l); #4 CMDprint_val ($5:int)<-(l:int)
+barrier m := 3; #5  (m:int)<-($7:int) jump 7
+    leave m := 7; #6  (m:int)<-($8:int) jump 7
+exit m := 4; #7  (m:int)<-($9:int)
+    io.print(m); #8 CMDprint_val ($10:int)<-(m:int)
+end main; #9  
+[ 1 ]
+[ 2 ]
+[ 7 ]
 >
