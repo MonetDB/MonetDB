@@ -1,5 +1,6 @@
 # Monet Mil to Mal compiler
 include mil_scenario;
+include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -31,8 +32,8 @@ include mil_scenario;
 	la_a := print(ka_a);
 	mil.line("printf(\"#~EndVariableOutput~#\\n\");");
 	ma_a := printf("#~EndVariableOutput~#\n");
-	mil.line("sort_ht(s).print();");
-	na_a := sort_ht(s);
+	mil.line("htsort(s).print();");
+	na_a := algebra.htsort(s);
 	oa_a := print(na_a);
 	mil.line("# right->left shift + right boundary;\n");
 	s := new(nil:int,nil:int);
@@ -52,8 +53,8 @@ include mil_scenario;
 	ya_a := print(xa_a);
 	mil.line("printf(\"#~EndVariableOutput~#\\n\");");
 	ab_a := printf("#~EndVariableOutput~#\n");
-	mil.line("sort_ht(s).print();");
-	bb_a := sort_ht(s);
+	mil.line("htsort(s).print();");
+	bb_a := algebra.htsort(s);
 	cb_a := print(bb_a);
 	mil.line("quit();");
 	db_a := quit();

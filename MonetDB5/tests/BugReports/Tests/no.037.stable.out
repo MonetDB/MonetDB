@@ -74,7 +74,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("# >mem.print;\n");	# 40 MILline ($77:void)<-($78:str)
     mil.line("# !ERROR: atom 'monet_Mallinfo' unknown, in BAT 'mem'.!ERROR: BATprintf: BAT expected\n");	# 41 MILline ($79:void)<-($80:str)
     mil.line("ls();");	# 42 MILline ($81:void)<-($82:str)
-    aa_a := ls();	# 43  unknown (aa_a:any)
+    aa_a := mil_sys_procs.ls();	# 43  (aa_a:void)
     mil.line("mem.print();");	# 44 MILline ($84:void)<-($85:str)
     mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 45 MILline ($86:void)<-($87:str)
     ca_a := io.printf("#~BeginVariableOutput~#\n");	# 46 IOprint_str (ca_a:int)<-($89:str)
@@ -84,7 +84,71 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("quit();");	# 50 MILline ($94:void)<-($95:str)
     ga_a := clients.quit();	# 51 CLTquit (ga_a:void)
 end main;	# 52  
-#
+## >Number:         37\n
+## >Category:       Mserver\n
+## >Synopsis:       built-in bats\n
+## >Confidential:   no\n
+## >Severity:       serious\n
+## >Priority:       high\n
+## >Responsible:    mk\n
+## >State:          feedback\n
+## >Class:          sw-bug\n
+## >Submitter-Id:   unknown\n
+## >Arrival-Date:   Tue Oct  7 17:45:11 1997\n
+## >Originator:     mk\n
+## >Organization:\n
+## >Release:        970101\n
+## >Environment:\n
+## \n
+## >Description:\n
+## \"mem\" is not properly handled (like  \"cpu\")\n
+## \n
+## >ls;\n
+## #---------------------------------------------------------#\n
+## # name          | heat  | status| group | role            #\n
+## #---------------------------------------------------------#\n
+## [ \"car_age\",      0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"car_gender\",   0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"car_price\",    0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"car_category\", 0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"car_city\",     0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"car_damage\",   0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"a_b\",          0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"telephone\",    0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"p_name\",       0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"p_gender\",     0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"p_age\",        0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"p_city\",       0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"p_kind\",       0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"mem\",          0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"io\",           0,      \"disk\", \"h\",    \"t\"             ]\n
+## [ \"cpu\",          0,      \"disk\", \"h\",    \"t\"             ]\n
+## >mem.print;\n
+## !ERROR: atom 'monet_Mallinfo' unknown, in BAT 'mem'.!ERROR: BATprintf: BAT expected\n
+#ls();
+#---------------------------------------------------------------------------------------------------------#
+# tmp_29	tmp_30	tmp_31	tmp_32	heat	dirty		status	kind		refcnt	lrefcnt		  # name
+# str	str	str	lng	int	str		str	str		int	int		  # type
+#---------------------------------------------------------------------------------------------------------#
+#mem.print();
+#printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");
+#~BeginVariableOutput~#
+#---------------------------------#
+# gdk		mem		  # name
+# str		int		  # type
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  2027520	  ]
+[ "ordblks",	  20		  ]
+[ "smblks",	  81		  ]
+[ "hblkhd",	  1052672	  ]
+[ "hblks",	  1		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  2088		  ]
+[ "uordblks",	  1879048	  ]
+[ "fordblks",	  148472	  ]
+#~EndVariableOutput~#
+#quit();
 
 # 17:06:48 >  
 # 17:06:48 >  Done.
