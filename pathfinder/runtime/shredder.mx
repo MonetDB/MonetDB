@@ -36,14 +36,8 @@
  * It is an adapted version of loader/pf_shred where I tried to generate
  * exactly the same BAT's.
  * TODO:
- *      - make the code reentrant, eg. no more changing globals and
- *        static buffers. It will probably become a bit slower so we
- *        first keep it non-reentrant for some time.
  *      - stop the xmlparser more elegant in case of an error. xmlStopParser()
  *        generates a lot of extra confusing 'noise'
- *      - Have a look at the BAT Accelerator usage with a Monet crack. Maybe we 
- *        could win a lot here with some simple recoding.
- *
  */
 
 /* #define DEBUG */
@@ -279,6 +273,11 @@ typedef struct shredBAT {
         } cast;
 } shredBAT;
 
+/*
+ * 
+ */
+#define BAILOUT(C)	{ xmlStopParser(C); SHREDCTX(C)->err=1; return; }
+
 /**
  * XML node stack maximum depth (use `-d' for deeper XML instances)
  */
@@ -331,6 +330,7 @@ typedef struct shredCtxStruct {
 					 */
 	char		workSpace[1024];/* temporary workspace for this session
 					 */
+	int		err;		/* error during shred */
 } shredCtxStruct;
 
 /* the minimal incremental size of a BAT during estimation process */
@@ -765,15 +765,15 @@ shred_start_document (void *xmlCtx)
     NEXT_PRE(shredCtx->nnode_pre);
 }
 
-
 void 
 shred_end_document (void *xmlCtx)
 {
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
     /* pop document node and enter into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,POP(shredCtx)) < 0 )
-        xmlStopParser(xmlCtx);
+    if ( emitnode (shredCtx,POP(shredCtx)) < 0 ) {
+    	BAILOUT(xmlCtx);
+    }
 #ifdef DEBUG
     stream_printf(GDKout,"end_document()\n");
 #endif
@@ -1014,8 +1014,7 @@ shred_start_elementNEW(void *xmlCtx,
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
     if ( handleXmlCharacters (shredCtx) < 0 ) {
-        xmlStopParser(xmlCtx);
-        return;
+        BAILOUT(xmlCtx);
     }
     /* (1) assign preorder rank (document order), size, level, and kind */
     node.pre   = shredCtx->nnode_pre;
@@ -1025,7 +1024,10 @@ shred_start_elementNEW(void *xmlCtx,
     node.kind  = ELEMENT;
 
     /* descend one level */
-    shredCtx->level++;
+    if ( shredCtx->level++ >= xml_depth_max) {
+        stream_printf(GDKerr,"shredder.mx:max document nesting exceeded:(MAX==%d)\n", xml_depth_max);
+        BAILOUT(xmlCtx);
+    }
 
     /* keep track of document depth */
     if (shredCtx->level > shredCtx->depth)
@@ -1035,12 +1037,12 @@ shred_start_elementNEW(void *xmlCtx,
     stream_printf(GDKout," start_element(");
     if (e_uri) stream_printf(GDKout,"uri=%s,",e_uri);
     if (e_pfx) stream_printf(GDKout,"pfx=%s,",e_pfx);
+    stream_printf(GDKout,"lev=%d",node.level);
     stream_printf(GDKout,"loc=%s",e_loc);
     stream_printf(GDKout,")\n");
 #endif
     if ( (node.prop = store_PfxLocNEW(shredCtx,e_uri,e_pfx,e_loc)) == NIL ) {
-        xmlStopParser(xmlCtx);
-        return;
+        BAILOUT(xmlCtx);
     }
 
     /* push node onto node stack: size to be determined later */
@@ -1077,15 +1079,13 @@ shred_start_elementNEW(void *xmlCtx,
                direct_oid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NIL ||
                direct_oid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NIL
             ) {
-                xmlStopParser(xmlCtx);
-                return;
+                BAILOUT(xmlCtx);
             }
 	    int attrType;
 
 	    if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)e_loc,(char*)*atts)) ) {
 	        if ( !handleID_IDREF(shredCtx,(char*)e_loc,node.pre,(char*)a_tag,(char*)a_val,attrType) ) {
-                	xmlStopParser(xmlCtx);
-                	return;
+                	BAILOUT(xmlCtx);
 		}
 	    }
 	    *(xmlChar*)a_end = qiChar;	      /* restore the quote */
@@ -1103,8 +1103,7 @@ shred_start_elementORG(void *xmlCtx,
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
     if ( handleXmlCharacters (shredCtx) < 0 ) {
-        xmlStopParser(xmlCtx);
-        return;
+        BAILOUT(xmlCtx);
     }
     /* (1) assign preorder rank (document order), size, level, and kind */
     node.pre   = shredCtx->nnode_pre;
@@ -1121,8 +1120,7 @@ shred_start_elementORG(void *xmlCtx,
         shredCtx->depth = shredCtx->level;
 
     if ( (node.prop = store_PfxLocORG(shredCtx, (char*) t)) == NIL ) {
-        xmlStopParser(xmlCtx);
-        return;
+        BAILOUT(xmlCtx);
     }
 
     /* push node onto node stack: size to be determined later */
@@ -1141,15 +1139,13 @@ shred_start_elementORG(void *xmlCtx,
                direct_oid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NIL ||
                direct_oid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NIL
             ) {
-                xmlStopParser(xmlCtx);
-                return;
+                BAILOUT(xmlCtx);
             }
 	    int attrType;
 
 	    if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)t,(char*)*atts)) ) {
 	        if ( !handleID_IDREF(shredCtx,(char*)t,node.pre,(char*)*atts,(char*)*(atts + 1),attrType) ) {
-                	xmlStopParser(xmlCtx);
-                	return;
+                	BAILOUT(xmlCtx);
 		}
 	    }
             /* process next attribute */
@@ -1170,8 +1166,7 @@ shred_end_element (void *xmlCtx, const xmlChar *tag)
     (void) tag;
 
     if ( handleXmlCharacters (shredCtx) < 0 ) {
-        xmlStopParser(xmlCtx);
-        return;
+        BAILOUT(xmlCtx);
     }
 
     node = POP(shredCtx);
@@ -1185,8 +1180,9 @@ shred_end_element (void *xmlCtx, const xmlChar *tag)
     TOP(shredCtx).size += node.size + 1;
 
     /* enter element node into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,node) < 0 )
-        xmlStopParser(xmlCtx);
+    if ( emitnode (shredCtx,node) < 0 ) {
+        BAILOUT(xmlCtx);
+    }
 #ifdef DEBUG
     stream_printf(GDKout," end_element(%s)\n",tag);
 #endif
@@ -1238,8 +1234,7 @@ shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
     if ( handleXmlCharacters (shredCtx) < 0 ) {
-        xmlStopParser(xmlCtx);
-        return;
+        BAILOUT(xmlCtx);
     }
 
     node.pre   = shredCtx->nnode_pre;
@@ -1252,12 +1247,15 @@ shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
     TOP(shredCtx).size++;
         
     node.prop = append_str2bat(shredCtx,PROP_TGT,(char*)tgt);
-    if ( node.prop != append_str2bat(shredCtx,PROP_INS,(char*)ins) )
+    if ( node.prop != append_str2bat(shredCtx,PROP_INS,(char*)ins) ) {
         stream_printf(GDKerr,"shredder.mx:shred_pi: tgt-ins sync error\n");
+        BAILOUT(xmlCtx);
+    }
     
     /* enter p-i node into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,node) < 0 )
-        xmlStopParser(xmlCtx);
+    if ( emitnode (shredCtx,node) < 0 ) {
+        BAILOUT(xmlCtx);
+    }
 }
 
 void 
@@ -1267,8 +1265,7 @@ shred_comment (void *xmlCtx, const xmlChar *c)
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
     if ( handleXmlCharacters (shredCtx) < 0 ) {
-        xmlStopParser(xmlCtx);
-        return;
+        BAILOUT(xmlCtx);
     }
 
     node.pre   = shredCtx->nnode_pre;
@@ -1283,8 +1280,9 @@ shred_comment (void *xmlCtx, const xmlChar *c)
     node.prop = append_str2bat(shredCtx,PROP_COM,(char*)c);
 
     /* enter comment node into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,node) < 0 )
-        xmlStopParser(xmlCtx);
+    if ( emitnode (shredCtx,node) < 0 ) {
+        BAILOUT(xmlCtx);
+    }
 }
 
 void 
@@ -1467,7 +1465,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile)
     assert(shredCtx->content_buf);
 
     /* allocate XML node stack */
-    if (! (shredCtx->lifo = (node_t *) malloc (xml_depth_max * sizeof (node_t)))) {
+    if (! (shredCtx->lifo = (node_t *) malloc ((xml_depth_max+1) * sizeof (node_t)))) {
         stream_printf(GDKerr,
                  "!ERROR: cannot allocate XML node stack: %s\n",
                  strerror (errno));
@@ -1475,6 +1473,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile)
         return -1;
     }
     shredCtx->sp = 0; /* initialize stackpointer */
+    shredCtx->err= 0;
 
     /* parse XML input (receive SAX events) */
     if ( !(xmlCtx = xmlCreateFileParserCtxt (xmlFile)) ) {
@@ -1510,6 +1509,9 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile)
     free(shredCtx->content_buf);
 
     /* Check if something has gone wrong durin shred */
+    if ( shredCtx->err ) {
+        return -1;
+    }
     if (! xmlCtx->wellFormed) {
         stream_printf(GDKerr, 
                  "!ERROR: XML input not well-formed.\n");
