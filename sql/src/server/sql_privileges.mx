@@ -356,11 +356,9 @@ int sql_privilege( mvc *m, int auth_id, int obj_id, int priv, int sub )
 
 int table_privs( mvc *m, sql_table *t, int priv )
 {
-	int a;
-
-	if ((a = sql_privilege( m, m->user_id, t->base.id, priv, 0 )) == 0 ||
-	    (a = sql_privilege( m, m->role_id, t->base.id, priv, 0 )) == 0 ||
-	    (a = sql_privilege( m, 1, t->base.id, priv, 0 )) == 0) {
+	if (sql_privilege( m, m->user_id, t->base.id, priv, 0 ) == 0 ||
+	    sql_privilege( m, m->role_id, t->base.id, priv, 0 ) == 0 ||
+	    sql_privilege( m, 1, t->base.id, priv, 0 ) == 0) {
 		return 0;
 	}
 	return 1;
