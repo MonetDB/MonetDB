@@ -162,7 +162,8 @@ a binary search.
 } break;
 @c
 BAT *BATmergejoin(BAT *l, BAT *r) {
-	int i, sporadic, logr=0;
+	int i, sporadic;
+        lng logr = 0;
 	BAT *bn, *reverse = NULL; 
 	ptr nil = ATOMnilptr(r->htype);
 	
@@ -179,7 +180,7 @@ BAT *BATmergejoin(BAT *l, BAT *r) {
 		reverse = BATmirror(l); l = BATmirror(r); r = reverse; 
 	}
 	for(i=BATcount(r); i > 0; logr++) i >>= 1; 
-	sporadic = ((BATtordered(l)&1)==0) || (BATcount(l)*4*logr < BATcount(r));
+	sporadic = ((BATtordered(l)&1)==0) || ((lng)BATcount(l)*4*logr < (lng)BATcount(r));
 
 	if (!(BAThordered(r)&1)) {
 		GDKerror("BATmergejoin: right input is not sorted.\n"); 
@@ -1242,7 +1243,8 @@ The BATsemijoin chooses between various alternatives.
 TODO: this should be moved to MIL.
 @c
 BAT *BATsemijoin(BAT *l, BAT *r) {
-	int reverse1, reverse2, countr, countl, logl, logr, i;
+	int reverse1, reverse2, countr, countl, i;
+        lng logr, logl;
 	BAT *bn, *tmp = NULL;
 	
 	ERRORcheck(l == NULL, "BATsemijoin"); 
@@ -1256,8 +1258,9 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 @c
 	for(logr=4, i=countr=BATcount(r); i > 0; logr++) i >>= 1; 
 	for(logl=4, i=countl=BATcount(l); i > 0; logl++) i >>= 1; 
-	reverse1 = countr < countl && (BAThkey(r) || countr*8 < countl);
-	reverse2 = countr*logl < countl && (BAThkey(r) || countr*(logl+8) < countl);
+	reverse1 = countr < countl && (BAThkey(r) || (lng)countr*8 < (lng)countl);
+	reverse2 = (lng)countr*logl < (lng)countl && (BAThkey(r) 
+                           || (lng)countr*(logl+8) < (lng)countl);
 
         if (ALIGNsynced(l,r)) {
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATrcopy(l);\n");
@@ -1288,7 +1291,7 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 		}
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATbinsemijoin(r, l, l);\n");
 		bn = BATbinsemijoin(r, l, l);
-	} else if (r->hidx_heap && countl*logr < countr) {
+	} else if (r->hidx_heap && (lng)countl*logr < (lng)countr) {
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATidxsemijoin(l, r, l);\n");
 	        bn = BATidxsemijoin(l, r, l);
 	} else if (l->hidx_heap && reverse2) {
