@@ -2372,6 +2372,8 @@ gdk_export int	TMcommit    ();
 gdk_export int	TMabort     (); 
 gdk_export int	TMresume    (str cntxt); 
 gdk_export str	TMcntxt     (); 
+gdk_export int*	TMfakeCommit(); 
+gdk_export void	TMkill      (int *kills); 
 @
 @}
 
