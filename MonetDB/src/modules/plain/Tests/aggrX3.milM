@@ -1,3 +1,0 @@
-module("aggrX3");
-test_aggrX3();
-quit;
