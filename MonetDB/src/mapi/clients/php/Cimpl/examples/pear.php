@@ -23,7 +23,7 @@
 */
 
 // alter this to point at your local PEAR installation (PHP lib dir)
-ini_set("include_path", ".:/ufs/scherpen/local/lib/php");
+ini_set("include_path", "..:/ufs/scherpen/local/lib/php");
 
 require("DB.php");
 
