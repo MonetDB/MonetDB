@@ -124,6 +124,15 @@ as well as in user defined module implementations.
 
 #include "gdk.h"
 
+#ifdef _MSC_VER
+#ifndef LIBMONET
+#define m_export extern __declspec(dllimport) 
+#else
+#define m_export extern __declspec(dllexport) 
+#endif
+#else
+#define m_export extern 
+#endif
 
 #define BUNtailfnd(tp,	bt, bn, vl)                              \
 		  ((bn=BUNfnd(bt, vl))?(tp *) BUNtail(bt,bn):0) 
@@ -178,14 +187,14 @@ typedef struct {
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
 
-extern ValPtr 		VALnew	    ();
-extern ValPtr 		VALset      (ValPtr v, int t, ptr p);
-extern void 		VALempty    (ValPtr v);
-extern ValPtr 		VALcopy	    (ValPtr dst, ValPtr src);
-extern int             VALformat   (char** buf, ValPtr v);
-extern ptr 		VALconvert  (int typ, ValPtr v,int silent);
-extern void            VALclear    (ValPtr v);
-extern int             VALprint    (FILE* fd, ValPtr v);
+m_export ValPtr 		VALnew	    ();
+m_export ValPtr 		VALset      (ValPtr v, int t, ptr p);
+m_export void 		VALempty    (ValPtr v);
+m_export ValPtr 		VALcopy	    (ValPtr dst, ValPtr src);
+m_export int             VALformat   (char** buf, ValPtr v);
+m_export ptr 		VALconvert  (int typ, ValPtr v,int silent);
+m_export void            VALclear    (ValPtr v);
+m_export int             VALprint    (FILE* fd, ValPtr v);
 
 #define ILLEGALVALUE	((ptr)-1)
 #define MAXPARAMS	32
@@ -278,15 +287,15 @@ typedef struct {
 
 @+ Interface functions 
 @h
-extern ptr	monet_init	(int argc, char** argv);
-extern ptr	monet_eval	(str mil_script, int *ret_type);
-extern int	monet_exec	(str mil_script);
-extern void	monet_exit	();
-extern void	monet_hello	();
-extern int	monet_sprintf	(str *dst, str format, va_list ap);
-extern void 	monet_checkbat  (BAT* b, int protect);
-extern int	monet_syscall	(GDKfcn addr, int argc, ValPtr argv);
-extern int	monet_sigerror  (str kind, str name, str extra, 
+m_export ptr	monet_init	(int argc, char** argv);
+m_export ptr	monet_eval	(str mil_script, int *ret_type);
+m_export int	monet_exec	(str mil_script);
+m_export void	monet_exit	();
+m_export void	monet_hello	();
+m_export int	monet_sprintf	(str *dst, str format, va_list ap);
+m_export void 	monet_checkbat  (BAT* b, int protect);
+m_export int	monet_syscall	(GDKfcn addr, int argc, ValPtr argv);
+m_export int	monet_sigerror  (str kind, str name, str extra, 
 				   int argc, ValPtr argv);
 @{
 @- external declarations
@@ -294,15 +303,15 @@ belong to yacc part of monet_parse.mx, but cannot comfortably be
 declared there.
 @h
 /* lexical analyzer */
-extern int     ll_getch        ();
-extern void    ll_init         ();
-extern str     ll_lastline     ();
-extern void    ll_flushbuffer  ();
-extern int     ll_skipcomment  ();
-extern str     ll_getstr       (char *buf, int len, int c);
-extern void    ll_parserror    (str msg);
-extern void    ll_clrids       ();
-extern void    ll_idconflict   (str s);
+m_export int     ll_getch        ();
+m_export void    ll_init         ();
+m_export str     ll_lastline     ();
+m_export void    ll_flushbuffer  ();
+m_export int     ll_skipcomment  ();
+m_export str     ll_getstr       (char *buf, int len, int c);
+m_export void    ll_parserror    (str msg);
+m_export void    ll_clrids       ();
+m_export void    ll_idconflict   (str s);
 @}
 
 @+ Monet Calling Options
@@ -349,42 +358,42 @@ The input file for commands is standard input.
 #include "monet_multiplex.h"
 #include "monet_queue.h"
 
-extern char		monet_cwd[PATHLENGTH];	/* where the server started */
-extern char*		monet_dir;		/* contains homes and mod/usr */
-extern char*		monet_db;		/* contains homes and mod/usr */
-extern char*		monet_prompt;		/* system prompt. */
-extern int		monet_listing;		/* echo input */
-extern int		monet_welcome;		/* display welcome message? */
-extern int		monet_background;	/* set server console is deaf */
-extern MT_Id	 	monet_pid;		/* Thread ID of main thread. */
-extern str		monet_port;             /* Overruling internet port */
-extern int		monet_internet;		/* internet client access? */
-extern int		monet_singlethreaded;	/* in singlethreaded mode? */
-extern int		monet_yaccsilent;	/* shut up yacc for testing */
-extern int		monet_modulesilent;	/* shut up module lines */
-extern str		monet_prelude;		/* prelude file. */
-extern str		monet_script;		/* batch of requests */
-extern str		monet_noAccess;		/* User authentication */
-extern MT_Lock		monet_critical;		/* critical section queue mgmt*/
-extern MT_Lock		monet_parserLock;	/* protects access to yacc/lex*/
-extern MT_Lock		monet_contextLock;	/* protects CNTXT structures */
-extern MT_Lock		monet_voidLock;		/* protects void hack */
-extern MT_Sema		monet_available;	/* worker threads in queue */
-extern MT_Sema		monet_started;		/* internet thread started? */
-extern MT_Sema		monet_forksync;		/* sync semaphore for fork */
+m_export char		monet_cwd[PATHLENGTH];	/* where the server started */
+m_export char*		monet_dir;		/* contains homes and mod/usr */
+m_export char*		monet_db;		/* contains homes and mod/usr */
+m_export char*		monet_prompt;		/* system prompt. */
+m_export int		monet_listing;		/* echo input */
+m_export int		monet_welcome;		/* display welcome message? */
+m_export int		monet_background;	/* set server console is deaf */
+m_export MT_Id	 	monet_pid;		/* Thread ID of main thread. */
+m_export str		monet_port;             /* Overruling internet port */
+m_export int		monet_internet;		/* internet client access? */
+m_export int		monet_singlethreaded;	/* in singlethreaded mode? */
+m_export int		monet_yaccsilent;	/* shut up yacc for testing */
+m_export int		monet_modulesilent;	/* shut up module lines */
+m_export str		monet_prelude;		/* prelude file. */
+m_export str		monet_script;		/* batch of requests */
+m_export str		monet_noAccess;		/* User authentication */
+m_export MT_Lock		monet_critical;		/* critical section queue mgmt*/
+m_export MT_Lock		monet_parserLock;	/* protects access to yacc/lex*/
+m_export MT_Lock		monet_contextLock;	/* protects CNTXT structures */
+m_export MT_Lock		monet_voidLock;		/* protects void hack */
+m_export MT_Sema		monet_available;	/* worker threads in queue */
+m_export MT_Sema		monet_started;		/* internet thread started? */
+m_export MT_Sema		monet_forksync;		/* sync semaphore for fork */
 
-extern int		monet_tokseq;		/* value of TOK_SEQ */
-extern int		monet_tokident;		/* value of TOK_IDENT */
-extern int		monet_tokconstant;	/* value of TOK_CONSTANT */
-extern int		monet_tokbuiltin;	/* value of TOK_BUILTIN */
-extern int		monet_tokcommand;	/* value of TOK_COMMAND */
-extern int		monet_tokoperator;	/* value of TOK_OPERATOR */
-extern int		monet_tokproc;		/* value of TOK_PROC */
-extern int		monet_tokiterator;	/* value of TOK_ITERATOR */
-extern int		monet_tokobject;	/* value of TOK_OBJECT */
+m_export int		monet_tokseq;		/* value of TOK_SEQ */
+m_export int		monet_tokident;		/* value of TOK_IDENT */
+m_export int		monet_tokconstant;	/* value of TOK_CONSTANT */
+m_export int		monet_tokbuiltin;	/* value of TOK_BUILTIN */
+m_export int		monet_tokcommand;	/* value of TOK_COMMAND */
+m_export int		monet_tokoperator;	/* value of TOK_OPERATOR */
+m_export int		monet_tokproc;		/* value of TOK_PROC */
+m_export int		monet_tokiterator;	/* value of TOK_ITERATOR */
+m_export int		monet_tokobject;	/* value of TOK_OBJECT */
 
-extern char 		monet_arch[PATHLENGTH];
-extern char 		monet_version[PATHLENGTH];
+m_export char 		monet_arch[PATHLENGTH];
+m_export char 		monet_version[PATHLENGTH];
 @h
 #endif /* _MONET_H_ */
 @c 

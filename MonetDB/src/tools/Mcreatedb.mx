@@ -111,6 +111,7 @@ extern void initDB(char *home, char *db);
 extern void createDB(char *home);
 extern void localmkdir(str nme);
 extern void destroyDB(str user);
+
 @-
 By default adm and guest are introduced
 @c
@@ -178,15 +179,37 @@ int main(int argc, char **argv) {
 The routine clearDB clears the database directory.
 It simply removes all files that look like Monet files.
 @c
+void localrmdir( char *dirname ){
+	DIR *dir = opendir(dirname);
+	struct dirent *f = NULL;
+
+	while(f=readdir(dir)){
+		if (strcmp(f->d_name, ".") && strcmp(f->d_name, "..")){
+		    struct stat st;
+		    char nm[MAXPATHLEN];
+
+		    sprintf(nm, "%s%c%s", dirname, DIR_SEP, f->d_name );
+		    if ( (stat(nm,&st) == 0)  ){
+			if ( st.st_mode & S_IFDIR  ){
+				localrmdir( nm );
+			} else {
+				unlink(nm);
+			}
+		    }
+		}
+	}
+	closedir(dir);
+	rmdir( dirname );
+}
+
 void destroyDB(str user) {
         char buffer[2048];
 	if (user) {
-        	sprintf(buffer, "rm -rf %s%cusers%c%s;\n", 
-			dbhome, DIR_SEP, user, DIR_SEP); 
+        	sprintf(buffer, "%s%cusers%c%s", dbhome, DIR_SEP,DIR_SEP, user);
 	} else {
-        	sprintf(buffer, "rm -rf %s;\n", dbhome); /* NO MERCY */
+        	sprintf(buffer, "%s", dbhome); /* NO MERCY */
 	}
-        system(buffer);
+	localrmdir(buffer);
 }
 @-
 A Monet database directory should contain a "bat", "log", and "users"
@@ -232,6 +255,46 @@ void localmkdir(str nme) {
 	}	
 }
 
+void copyfile( char *src, char *dst ){
+	int size;
+	char buf[1024];
+	FILE *dfd, *sfd;
+
+	if ((dfd = fopen(dst,"w")) == NULL) {
+		printf("Mcreatedb: could not open(%s)\n", dst);
+		return;
+	}
+	if ((sfd = fopen(src,"r")) == NULL){
+		printf("Mcreatedb: could not open(%s)\n", src);
+		fclose(dfd);
+		return;
+	}
+	while( (size=fread(buf, 1, 1024, sfd)) > 0){
+		fwrite(buf, 1, size, dfd);
+	}
+	fclose(sfd);
+	fclose(dfd);
+}
+
+void cp_script_user( char *user, char *file ){
+	char src[MAXPATHLEN];
+	char dst[MAXPATHLEN];
+	sprintf(src, "%s%cscripts%c%s", 
+		dist, DIR_SEP, DIR_SEP, file);
+	sprintf(dst, "%s%cusers%c%s%c%s", 
+		dbhome, DIR_SEP, DIR_SEP, user, DIR_SEP, file);
+	copyfile(src,dst);
+}
+
+void cp_user( char *script_user, char *user, char *file ){
+	char src[MAXPATHLEN];
+	char dst[MAXPATHLEN];
+	sprintf(src, "%s%cscripts%c%s%c%s", 
+		dist, DIR_SEP, DIR_SEP, script_user, DIR_SEP, file);
+	sprintf(dst, "%s%cusers%c%s%c%s", 
+		dbhome, DIR_SEP, DIR_SEP, user, DIR_SEP, file);
+	copyfile(src,dst);
+}
 
 void createDB(char *home) {	
 	char buffer[4096];
@@ -246,6 +309,10 @@ procedures. They should not be confused by user-defined preludes,
 which are executed after they have successfully gained access.
 @c
 	localmkdir("users");
+	sprintf(buffer,"users%cadm", DIR_SEP);
+	localmkdir(buffer);
+	sprintf(buffer,"users%cguest", DIR_SEP);
+	localmkdir(buffer);
 @-
 By default the 'adm' and 'guest' users are always introduced.
 The former uses a copy of the script files from the Monet home.
@@ -253,14 +320,13 @@ The latter uses the default environment
 @c
 	/* if (*user) */ {
 		char *u,*r; int i;
-		/* copy standard prelude en procs files to local place */
-		sprintf(buffer,
-		    "cp -r %s/scripts/adm %s/scripts/guest %s/users;\ncp %s/scripts/general.mil %s/users/adm; chmod 0755 %s/users/adm %s/users/guest;\nrm -f %s/users/guest/general.mil;\nln -s %s/users/adm/general.mil %s/users/guest/general.mil\n",
-		    dist,dist,dbhome,dist,dbhome,dbhome,dbhome,dbhome,dbhome,dbhome);
-		/* printf("%s\n", buffer);*/
-		for(r=buffer; (r=strchr(r, '\n')) != NULL; *r=' ');
-		system(buffer);
+		cp_user("adm", "adm", "prelude.mil");
+		cp_user("adm", "adm", "epilogue.mil");
+		cp_script_user("adm", "general.mil");
 
+		cp_user("guest", "guest", "prelude.mil");
+		cp_user("guest", "guest", "epilogue.mil");
+		cp_script_user("guest", "general.mil");
 @-
 All users share the general.mil file stored in the 'adm' directory.
 It enforces a common starting environment.
@@ -271,11 +337,9 @@ It enforces a common starting environment.
 			if (strcmp(u, "guest") == 0) continue;
 			sprintf(d, "users%c%s", DIR_SEP, u);
 			localmkdir(d);
-			sprintf(buffer,
-		  	    "cp -r %s/scripts/user/* %s/%s;\nchmod 0755 %s/%s;\nchown -f %s %s/%s/*;\nrm -f %s/%s/general.mil;\nln -s %s/users/adm/general.mil %s/%s/general.mil\n", dist,dbhome,d,dbhome,d,u,dbhome,d,dbhome,d,dbhome,dbhome,d);
-		  	/* printf("%s\n", buffer); */
-			for(r=buffer; (r=strchr(r, '\n')) != NULL; *r=' ');
-		  	system(buffer);
+			cp_user("user", u, "prelude.mil");
+			cp_user("user", u, "epilogue.mil");
+			cp_script_user(u, "general.mil");
 		}
 	}
 }

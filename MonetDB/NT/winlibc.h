@@ -24,7 +24,6 @@
  */
 #include <winsock.h>
 #define sleep(s)
-#ifndef  __cplusplus
 /* first some dummies, later move to pwd.h */
 #define getpwuid(uid) NULL
 #define getuid() 0
@@ -44,6 +43,9 @@ struct passwd {
 #define SIGBUS  SIGSEGV
 #define SIGQUIT	SIGBREAK
 #define SIGHUP  SIGINT
+#define SIGALRM 0
+#define kill(s,sig) 
+#define alarm(x) 0
 
 #define sbrk(x)	0
 
@@ -146,8 +148,11 @@ struct tms
 #define rand_r( _seed ) \
         rand()
 
+#define mrand48  (long)rand()
+#define drand48  (double)rand()
 
-
+/* not for cplusplus else problems with open and close of streams */
+#ifndef  __cplusplus
 #    define getcwd		_getcwd
 #    define getpid		_getpid
 #    define access		_access
@@ -163,35 +168,10 @@ struct tms
 #    define pclose		_pclose
 #    define fdopen		_fdopen
 #endif /*__cplusplus */
-#    define ftruncate(fd, size)	win_ftruncate (fd, size)
-#    define opendir		win_opendir
-#    define readdir		win_readdir
-#    define rewinddir		win_rewinddir
-#    define closedir		win_closedir
-#    define NAME_MAX 255
-struct DIR
-{
-  char    	*dir_name;
-  int       	just_opened;
-  unsigned int  find_file_handle;
-  char		*find_file_data;
-};
-typedef struct DIR DIR;
-struct direct
-{
-  char  d_name[NAME_MAX + 1];
-  int   d_namelen;
-};
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-/* emulation functions */
-extern int	win_ftruncate	(int		 f, unsigned int  size);
-DIR*		win_opendir	(const char	*dirname);
-struct direct*	win_readdir  	(DIR		*dir);
-void		win_rewinddir 	(DIR		*dir);
-int		win_closedir  	(DIR		*dir);
 
 #ifdef __cplusplus
 }

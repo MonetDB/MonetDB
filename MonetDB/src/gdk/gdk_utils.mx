@@ -9,15 +9,15 @@ session initialization are stored within the database.
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-extern void GDKlog       (char *format, ...);
-extern void GDKlockHome  ();
-extern void GDKunlockHome();
-extern int  GDKgetHome   ();
+gdk_export void GDKlog       (char *format, ...);
+gdk_export void GDKlockHome  ();
+gdk_export void GDKunlockHome();
+gdk_export int  GDKgetHome   ();
 
-extern lng  GDKusec      ();
-extern int  GDKms        ();
-extern int  GDKcsec      ();
-extern int  GDKsec       ();
+gdk_export lng  GDKusec      ();
+gdk_export int  GDKms        ();
+gdk_export int  GDKcsec      ();
+gdk_export int  GDKsec       ();
 
 #endif /* _GDK_UTILS_H_ */
 @c
@@ -25,10 +25,6 @@ extern int  GDKsec       ();
 #include "gdk.h"
 #include "gdk_utils.h"
 #include "gdk_posix.h"
-
-#if defined(HAVE_SYS_ERRLIST) && (NEED_SYS_ERRLIST == 1)
-	extern char * sys_errlist[];
-#endif
 
 @-
 Include the generic GDK home management code. This code can be imported
@@ -1223,7 +1219,7 @@ int GDKsyserror(char *format, ...)
 	va_end(ap); 
 	if (err > 0 && err < 1024) {
 		strcat(message, GDKMESSAGE);
-		strcat(message, sys_errlist[err]); 
+		strcat(message, strerror(err)); 
 		strcat(message, "\n"); 
 	}
 	GDKaddbuf(message);

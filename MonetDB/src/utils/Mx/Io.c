@@ -1,16 +1,10 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-/* not available on win32, not needed on Linux, test on Sun/Irix/Aix
-#include <unistd.h>
-*/
 #include "Mx.h"
 #include "MxFcnDef.h"
 #include <sys/types.h>
 #include <sys/stat.h> 
-/* not available on win32, not needed on Linux, test on Sun/Irix/Aix
-#include <sys/time.h>
-*/
 #ifndef WIN32
 #include <utime.h>
 #endif

@@ -50,13 +50,14 @@ In the past, we used integer modulo for hashing, with bucket chains of mean size
 This was show to be inferior to direct hashing with integer anding. The new implementation
 reflects this.
 @h
-extern int	        BAThash      (BAT *b, int *collision);
-extern Heap*		HASHnew      (Hash *h, int tpe, unsigned int size, unsigned int mask);
-extern unsigned int	HASHmask     (int cnt);
-extern BAT*	        HASHprint    (BAT *b);
-extern void	        HASHremove   (BAT *b);
-extern void		HASHdestroy  (BAT *b);
-extern unsigned int	HASHprobe    (Hash *h, ptr v); 
+gdk_export int	        BAThash      (BAT *b, int *collision);
+gdk_export Heap*		HASHnew      (Hash *h, int tpe, unsigned int size, unsigned int mask);
+gdk_export unsigned int	HASHmask     (int cnt);
+gdk_export BAT*	        HASHprint    (BAT *b);
+gdk_export void	        HASHremove   (BAT *b);
+gdk_export void		HASHdestroy  (BAT *b);
+gdk_export unsigned int	HASHprobe    (Hash *h, ptr v); 
+gdk_export int 		HASHlist     (Hash* h, int i) ;
 
 #define mix_sht(X)            (((X)>>7)^(X))
 #define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))
@@ -403,30 +404,30 @@ instead for accelerating range predicates. (TODO)
 @- Binary Index Trees
 @h
 /* type specific binary search implementations */
-extern BUN	IDXfnd_chr       (BAT *b, ptr v);
-extern BUN	IDXfnd_sht       (BAT *b, ptr v);
-extern BUN	IDXfnd_int       (BAT *b, ptr v);
-extern BUN	IDXfnd_flt       (BAT *b, ptr v);
-extern BUN	IDXfnd_lng       (BAT *b, ptr v);
-extern BUN	IDXfnd_dbl       (BAT *b, ptr v);
-extern BUN	IDXfnd_loc       (BAT *b, ptr v);
-extern BUN	IDXfnd_var       (BAT *b, ptr v);
-extern BUN*	IDXfndfirst_chr  (BAT *b, ptr v);
-extern BUN*	IDXfndfirst_sht  (BAT *b, ptr v);
-extern BUN*	IDXfndfirst_int  (BAT *b, ptr v);
-extern BUN*	IDXfndfirst_flt  (BAT *b, ptr v);
-extern BUN*	IDXfndfirst_lng  (BAT *b, ptr v);
-extern BUN*	IDXfndfirst_dbl  (BAT *b, ptr v);
-extern BUN*	IDXfndfirst_loc  (BAT *b, ptr v);
-extern BUN*	IDXfndfirst_var  (BAT *b, ptr v);
-extern BUN*	IDXfndlast_chr   (BAT *b, ptr v);
-extern BUN*	IDXfndlast_sht   (BAT *b, ptr v);
-extern BUN*	IDXfndlast_int   (BAT *b, ptr v);
-extern BUN*	IDXfndlast_flt   (BAT *b, ptr v);
-extern BUN*	IDXfndlast_lng   (BAT *b, ptr v);
-extern BUN*	IDXfndlast_dbl   (BAT *b, ptr v);
-extern BUN*	IDXfndlast_loc   (BAT *b, ptr v);
-extern BUN*	IDXfndlast_var   (BAT *b, ptr v);
+gdk_export BUN	IDXfnd_chr       (BAT *b, ptr v);
+gdk_export BUN	IDXfnd_sht       (BAT *b, ptr v);
+gdk_export BUN	IDXfnd_int       (BAT *b, ptr v);
+gdk_export BUN	IDXfnd_flt       (BAT *b, ptr v);
+gdk_export BUN	IDXfnd_lng       (BAT *b, ptr v);
+gdk_export BUN	IDXfnd_dbl       (BAT *b, ptr v);
+gdk_export BUN	IDXfnd_loc       (BAT *b, ptr v);
+gdk_export BUN	IDXfnd_var       (BAT *b, ptr v);
+gdk_export BUN*	IDXfndfirst_chr  (BAT *b, ptr v);
+gdk_export BUN*	IDXfndfirst_sht  (BAT *b, ptr v);
+gdk_export BUN*	IDXfndfirst_int  (BAT *b, ptr v);
+gdk_export BUN*	IDXfndfirst_flt  (BAT *b, ptr v);
+gdk_export BUN*	IDXfndfirst_lng  (BAT *b, ptr v);
+gdk_export BUN*	IDXfndfirst_dbl  (BAT *b, ptr v);
+gdk_export BUN*	IDXfndfirst_loc  (BAT *b, ptr v);
+gdk_export BUN*	IDXfndfirst_var  (BAT *b, ptr v);
+gdk_export BUN*	IDXfndlast_chr   (BAT *b, ptr v);
+gdk_export BUN*	IDXfndlast_sht   (BAT *b, ptr v);
+gdk_export BUN*	IDXfndlast_int   (BAT *b, ptr v);
+gdk_export BUN*	IDXfndlast_flt   (BAT *b, ptr v);
+gdk_export BUN*	IDXfndlast_lng   (BAT *b, ptr v);
+gdk_export BUN*	IDXfndlast_dbl   (BAT *b, ptr v);
+gdk_export BUN*	IDXfndlast_loc   (BAT *b, ptr v);
+gdk_export BUN*	IDXfndlast_var   (BAT *b, ptr v);
 
 @- 
 Once a BAT is being destroyed, it should also take care of the indices
@@ -833,30 +834,30 @@ value and expands to @`SORTfndlast_chr@5, @`SORTfndlast_sht@5,
 
 @h
 /* type specific binary search implementations */
-extern BUN	SORTfnd_chr      (BAT *b, ptr v);
-extern BUN	SORTfnd_sht      (BAT *b, ptr v);
-extern BUN	SORTfnd_int      (BAT *b, ptr v);
-extern BUN	SORTfnd_flt      (BAT *b, ptr v);
-extern BUN	SORTfnd_lng      (BAT *b, ptr v);
-extern BUN	SORTfnd_dbl      (BAT *b, ptr v);
-extern BUN	SORTfnd_loc      (BAT *b, ptr v);
-extern BUN	SORTfnd_var      (BAT *b, ptr v);
-extern BUN	SORTfndfirst_chr (BAT *b, ptr v);
-extern BUN	SORTfndfirst_sht (BAT *b, ptr v);
-extern BUN	SORTfndfirst_int (BAT *b, ptr v);
-extern BUN	SORTfndfirst_flt (BAT *b, ptr v);
-extern BUN	SORTfndfirst_lng (BAT *b, ptr v);
-extern BUN	SORTfndfirst_dbl (BAT *b, ptr v);
-extern BUN	SORTfndfirst_loc (BAT *b, ptr v);
-extern BUN	SORTfndfirst_var (BAT *b, ptr v);
-extern BUN	SORTfndlast_chr  (BAT *b, ptr v);
-extern BUN	SORTfndlast_sht  (BAT *b, ptr v);
-extern BUN	SORTfndlast_int  (BAT *b, ptr v);
-extern BUN	SORTfndlast_flt  (BAT *b, ptr v);
-extern BUN	SORTfndlast_lng  (BAT *b, ptr v);
-extern BUN	SORTfndlast_dbl  (BAT *b, ptr v);
-extern BUN	SORTfndlast_loc  (BAT *b, ptr v);
-extern BUN	SORTfndlast_var  (BAT *b, ptr v);
+gdk_export BUN	SORTfnd_chr      (BAT *b, ptr v);
+gdk_export BUN	SORTfnd_sht      (BAT *b, ptr v);
+gdk_export BUN	SORTfnd_int      (BAT *b, ptr v);
+gdk_export BUN	SORTfnd_flt      (BAT *b, ptr v);
+gdk_export BUN	SORTfnd_lng      (BAT *b, ptr v);
+gdk_export BUN	SORTfnd_dbl      (BAT *b, ptr v);
+gdk_export BUN	SORTfnd_loc      (BAT *b, ptr v);
+gdk_export BUN	SORTfnd_var      (BAT *b, ptr v);
+gdk_export BUN	SORTfndfirst_chr (BAT *b, ptr v);
+gdk_export BUN	SORTfndfirst_sht (BAT *b, ptr v);
+gdk_export BUN	SORTfndfirst_int (BAT *b, ptr v);
+gdk_export BUN	SORTfndfirst_flt (BAT *b, ptr v);
+gdk_export BUN	SORTfndfirst_lng (BAT *b, ptr v);
+gdk_export BUN	SORTfndfirst_dbl (BAT *b, ptr v);
+gdk_export BUN	SORTfndfirst_loc (BAT *b, ptr v);
+gdk_export BUN	SORTfndfirst_var (BAT *b, ptr v);
+gdk_export BUN	SORTfndlast_chr  (BAT *b, ptr v);
+gdk_export BUN	SORTfndlast_sht  (BAT *b, ptr v);
+gdk_export BUN	SORTfndlast_int  (BAT *b, ptr v);
+gdk_export BUN	SORTfndlast_flt  (BAT *b, ptr v);
+gdk_export BUN	SORTfndlast_lng  (BAT *b, ptr v);
+gdk_export BUN	SORTfndlast_dbl  (BAT *b, ptr v);
+gdk_export BUN	SORTfndlast_loc  (BAT *b, ptr v);
+gdk_export BUN	SORTfndlast_var  (BAT *b, ptr v);
 
 
 @-
@@ -1012,7 +1013,8 @@ BUN SORTfnd@2(BAT *b, ptr v) {
 		((id > ACC_index && BATaccelerators[id].accRepair)?\
       			(*BATaccelerators[id].accRepair)(acc, b):0)
 
-extern int ACC_hash, ACC_index;
+gdk_export int ACC_hash;
+gdk_export int ACC_index;
 
 #endif /* _GDK_SEARCH_H_ */
 @c

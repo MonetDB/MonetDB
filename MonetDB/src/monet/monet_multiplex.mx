@@ -68,13 +68,13 @@ int interpret_multiplex
 
 @- [X?Y:Z]() implementation functions
 @h
-extern int interpret_ifthen    (str *r, bit *b, str t);
-extern int interpret_ifthenelse(str *r, bit *b, str t, str f);
-extern int interpret_ifelse    (str *r, bit *b, str f);
+m_export int interpret_ifthen    (str *r, bit *b, str t);
+m_export int interpret_ifthenelse(str *r, bit *b, str t, str f);
+m_export int interpret_ifelse    (str *r, bit *b, str f);
 
-extern int CMDifthen           (int argc, ValPtr argv);
-extern int CMDifelse           (int argc, ValPtr argv);
-extern int CMDifthenelse       (int argc, ValPtr argv);
+m_export int CMDifthen           (int argc, ValPtr argv);
+m_export int CMDifelse           (int argc, ValPtr argv);
+m_export int CMDifthenelse       (int argc, ValPtr argv);
 
 #endif /* _MONET_SETOP_H_ */
 

@@ -14,15 +14,16 @@ Care is taken not to overload the buffer.
 #ifndef _MONET_DEPARSE_H
 #define _MONET_DEPARSE_H
 
-extern int yytoProlog (YYSTREE t,int cnt);
-extern char* yydeparse(Client c, YYSTREE t, char *buf, char* end);
+#include "monet.h"
+
+m_export int yytoProlog (YYSTREE t,int cnt);
+m_export char* yydeparse(Client c, YYSTREE t, char *buf, char* end);
 
 #endif /* _MONET_DEPARSE_H */
 @-
 To reduce the text produced, it is possible to limit the
 code to a number of characters. This is necessary for debugging.
 @c
-#include "monet.h"
 #include "monet_deparse.h"
 
 char 			yybuffer[4048], *yylim= yybuffer+4048;

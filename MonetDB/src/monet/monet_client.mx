@@ -75,21 +75,24 @@ typedef struct CLIENT{
 	BAT		*events;		/* BAT(str, type-id) */
 } *Client, ClientRec;
 
-extern ClientRec monet_clients[MAXCLIENTS+1];
-extern Client	ll_client;
+m_export ClientRec monet_clients[MAXCLIENTS+1];
+m_export Client	ll_client;
 
-extern Client	initClient     (str name, str prompt, int thread);
-extern Client	forkClient     (Cntxt stk, int thread);
-extern int	closeClient    (Client c, int thread);
-extern void	killClient     (Client c, int thread);
-extern void	scheduleClient (Client c);
-extern int 	acceptClient   (Client c);
-extern int 	readClient     (Client c);
-extern YYSTREE	parseClient    (Client c, int reschedule);
-extern int 	scriptClient   (Client c, str nme, int backup);
-extern int	serveClient    (Cntxt stk, YYSTREE lt, ValPtr res);
-extern str	moduleClient   (Client c, YYSTREE lt, int idents);
-extern int	dropClient     (Client c, YYSTREE lt);
+m_export Client	initClient     (str name, str prompt, int thread);
+m_export Client	forkClient     (Cntxt stk, int thread);
+m_export int	closeClient    (Client c, int thread);
+m_export void	killClient     (Client c, int thread);
+m_export void	scheduleClient (Client c);
+m_export int 	acceptClient   (Client c);
+m_export int 	readClient     (Client c);
+m_export YYSTREE	parseClient    (Client c, int reschedule);
+m_export int 	scriptClient   (Client c, str nme, int backup);
+m_export int	serveClient    (Cntxt stk, YYSTREE lt, ValPtr res);
+m_export str	moduleClient   (Client c, YYSTREE lt, int idents);
+m_export int	dropClient     (Client c, YYSTREE lt);
+
+m_export void lockparser(Client c);
+m_export void unlockparser(Client c);
 
 #endif /* _MONET_CLIENT_H_ */
 @-

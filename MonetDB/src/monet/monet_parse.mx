@@ -398,14 +398,16 @@ str ll_getstr(char *buf, int len, int offending) {
 
 #define YY_NEVER_INTERACTIVE	1		/* bison brain damage evasion */
 
-extern int        ll_modcmds;           /* are "module" cmd or tokens? */
-extern int        ll_resolution;        /* perform ident-->MIL resolution */
-extern Client     ll_client;
-extern int        ll_nlines;            /* current number of string chunks */
-extern int        ll_maxlines;          /* maximum number of string chunks */
-extern str*       ll_lines;             /* string chunks */
+m_export int        ll_modcmds;           /* are "module" cmd or tokens? */
+m_export int        ll_resolution;        /* perform ident-->MIL resolution */
+m_export Client     ll_client;
+m_export int        ll_nlines;            /* current number of string chunks */
+m_export int        ll_maxlines;          /* maximum number of string chunks */
+m_export str*       ll_lines;             /* string chunks */
 
 #define ll_emptychar(x)	((x == 0) || GDKisspace(x))
+
+m_export int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res);
 
 #endif /* _MONET_PARSE_H */
 

@@ -119,7 +119,7 @@ bitvector_set(BAT *b_src, int *bnum)
   }
 
   v   = (lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *v |= 1LL << (*bnum % (sizeof(lng) * 8));
+  *v |= (lng)1 << (*bnum % (sizeof(lng) * 8));
   b_src->batDirty = TRUE;
   return GDK_SUCCEED;
 }
@@ -138,7 +138,7 @@ bitvector_isset(bit *rv, BAT *b_src, int *bnum)
   }
 
   v   = *(lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *rv = v & (1LL << (*bnum % (sizeof(lng) * 8)));
+  *rv = v & ((lng)1 << (*bnum % (sizeof(lng) * 8)));
   return GDK_SUCCEED;
 }
 
@@ -156,7 +156,7 @@ bitvector_clr(BAT *b_src, int *bnum)
   }
 
   v   = (lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *v &= ~(1LL << (*bnum % (sizeof(lng) * 8)));
+  *v &= ~((lng)1 << (*bnum % (sizeof(lng) * 8)));
   b_src->batDirty = TRUE;
   return GDK_SUCCEED;
 }
@@ -175,7 +175,7 @@ bitvector_isclr(bit *rv, BAT *b_src, int *bnum)
   }
 
   v   = *(lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *rv = (v & (1LL << (*bnum % (sizeof(lng) * 8))))? 0: 1;
+  *rv = (v & ((lng)1 << (*bnum % (sizeof(lng) * 8))))? 0: 1;
   return GDK_SUCCEED;
 }
 
@@ -209,7 +209,7 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
       BUNins(*b_dst, atom_nil, (ptr)&bf);
       bf = 0;
     }
-    bf |= (1LL << (*bnum % (sizeof(lng) * 8)));
+    bf |= ((lng)1 << (*bnum % (sizeof(lng) * 8)));
   }
   lastentry++;
   BUNins(*b_dst, atom_nil, (ptr)&bf);
@@ -237,7 +237,7 @@ bitvector_decode(BAT **b_dst, BAT *b_src)
     bf = *(lng *)BUNtail(b_src, p);
     if (bf)
       for (n = 0; n != sizeof(lng) * 8; n++)
-	if (bf & (1LL << n)) {
+	if (bf & ((lng)1 << n)) {
 	  oid _soid = soid + n;
 	  BUNins(*b_dst, (ptr)&entry, (ptr)&_soid);
 	  entry++;

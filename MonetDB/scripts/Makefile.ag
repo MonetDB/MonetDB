@@ -1,1 +1,2 @@
 EXTRA_DIST = README  general.mil  wwwgroup  wwwmake.mil wwwmake
+EXTRA_DIST_DIR = adm guest user gold

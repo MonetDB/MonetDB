@@ -155,7 +155,7 @@ error:		HEAPalloc(&nw, size, 1);
 		memcpy(nw.base, h->base, nw.free=h->free);
 		HEAPfree(h); 
 		if (priv) { /* heap changes mode, rename file on disk */
-			GDKlink(BATDIR, nme, ext, BATDIR, nme, nwext); 
+			GDKmove(BATDIR, nme, ext, BATDIR, nme, nwext); 
 		}
 		*h = nw;
 	} else if (h->filename) { /* mapped file */ 
@@ -328,7 +328,7 @@ int HEAPload(Heap* h, str nme, str ext) {
 	strcat(priv, ".priv");
 	if (fp == NULL) {
 		/* try to move a previous version back */
-		GDKlink(BATDIR, nme, priv, BATDIR, nme, ext); 
+		GDKmove(BATDIR, nme, priv, BATDIR, nme, ext); 
 	} else {
 		ret += fclose(fp);
 	}
@@ -339,8 +339,7 @@ int HEAPload(Heap* h, str nme, str ext) {
 		(void) unlink(path);
 
 		/* rename heap to .priv */
-		ret = GDKlink(BATDIR, nme, ext, BATDIR, nme, priv); 
-		if (ret == 0) ret = GDKunlink(BATDIR, nme, ext);
+		ret = GDKmove(BATDIR, nme, ext, BATDIR, nme, priv); 
 		ext = priv;
 	}
 	IODEBUG {
@@ -385,10 +384,7 @@ int HEAPmove(Heap* h, str o, str n, str ext) {
         if (h->filename) {
                 str priv = (h->storage==STORE_PRIV)?"priv":NULL;
 
-                ret = GDKlink(BATDIR, h->filename, priv, BATDIR, n, ext);
-                if (ret == 0) {
-                        ret = GDKunlink(BATDIR, h->filename, NULL);
-                }
+                ret = GDKmove(BATDIR, h->filename, priv, BATDIR, n, ext);
                 if (ret == 0) { /* rename the heap */
                         str newpath = (str) GDKmalloc(PATHLENGTH);
                         GDKfilepath(newpath, BATDIR, n, ext);
@@ -400,10 +396,7 @@ int HEAPmove(Heap* h, str o, str n, str ext) {
                         h->filename = newpath;
                 }
         } else if (h->base) {
-                ret = GDKlink(BATDIR, o, ext, BATDIR, n, ext);
-                if (ret == 0) {
-                        ret = GDKunlink(BATDIR, o, ext);
-                }
+                ret = GDKmove(BATDIR, o, ext, BATDIR, n, ext);
         }
         return ret;
 }

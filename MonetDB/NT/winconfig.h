@@ -99,9 +99,6 @@
 /* Define this if you have the readline library */
 #undef HAVE_LIBREADLINE 
 
-/* Define this if you have sys_errlist in <stdio.h> */
-#define NEED_SYS_ERRLIST 1
-
 /* Define this if you have ctime_r(time_t*,char *buf,size_t s) */
 /* #undef HAVE_CTIME_R3 */
 
@@ -151,7 +148,7 @@
 #define HAVE_STRDUP 1
 
 /* Define if you have the strerror function.  */
-#define HAVE_STRERROR 1
+#define HAVE_STRERROR 
 
 /* Define if you have the strstr function.  */
 #define HAVE_STRSTR 1
@@ -161,9 +158,6 @@
 
 /* Define if you have the strtol function.  */
 #define HAVE_STRTOL 1
-
-/* Define if you have the sys_errlist function.  */
-#define HAVE_SYS_ERRLIST 1
 
 /* Define if you have the <dirent.h> header file.  */
 #undef HAVE_DIRENT_H 

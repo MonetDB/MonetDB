@@ -1034,7 +1034,7 @@ static int dummy;
 static INLINE
 int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {
 	/* starts with GMT time t, and returns whether it is in the DST for z */
-	lng add = (offset != 0LL) ? offset : (get_offset(z)) * 60000LL;
+	lng add = (offset != (lng)0) ? offset : (get_offset(z)) * (lng)60000;
 	int start_days, start_msecs, end_days, end_msecs, year;
 	rule start, end;
 
@@ -1234,15 +1234,15 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 		   GDKisdigit(s[4]) && GDKisdigit(s[5]) && GDKisdigit(s[pos=7]) &&
 		   ((s[6] == ':' && GDKisdigit(s[8])) || GDKisdigit(s[pos=6])))
 	    {
-		offset = (((s[4] - '0')*10LL + (s[5] - '0'))*60LL + 
-		              (s[pos] - '0')*10LL + (s[++pos] - '0'))*60000LL;
+		offset = (((s[4] - '0')*(lng)10 + (s[5] - '0'))*(lng)60 + 
+		              (s[pos] - '0')*(lng)10 + (s[++pos] - '0'))*(lng)60000;
 		if (s[3] != '-') offset = -offset;
 		s += pos;
 	    } else {
 		/* if no tzone is specified; work with the local */
 		timestamp tmp = **ret;
-		offset = get_offset(&tzone_local) * -60000LL; 
-		if (timestamp_inside(&tmp, &tmp, &tzone_local, -3600000LL)) { 
+		offset = get_offset(&tzone_local) * (lng)-60000; 
+		if (timestamp_inside(&tmp, &tmp, &tzone_local, (lng)-3600000)) { 
 			**ret = tmp; 
 		}
 	    }
@@ -1256,8 +1256,8 @@ int timestamp_tostr(str* buf, int* len, timestamp *val) {
 	char buf1[128], buf2[128], *s, *s1=buf1, *s2=buf2;
 	timestamp tmp = *val;
 
-	if (timestamp_inside(&tmp, val, &tzone_local, 0LL)) { 
-		lng add = 3600000LL; 
+	if (timestamp_inside(&tmp, val, &tzone_local, (lng)0)) { 
+		lng add = (lng)3600000; 
 		timestamp_add(&tmp, &tmp, &add); 
 		off += 60;
 	}
@@ -1628,12 +1628,12 @@ int timestamp_create(timestamp* ret, date *d, daytime* t, tzone *z) {
 	if (*(int*) d == int_nil || *(int*) t == int_nil || *(lng*) z == lng_nil) {
 		*(lng*) ret = lng_nil;
 	} else {
-		lng add = get_offset(z) * -60000LL;
+		lng add = get_offset(z) * (lng)-60000;
 		ret->days = *d;
 		ret->msecs = *t;
 		if (z->dst) {
 			timestamp tmp;
-			if (timestamp_inside(&tmp, ret, z, -3600000LL)) {
+			if (timestamp_inside(&tmp, ret, z, (lng)-3600000)) {
 				*ret = tmp;
 			}
 		}
@@ -1768,8 +1768,8 @@ int timestamp_extract_daytime(daytime* ret, timestamp* t, tzone *z) {
 		*ret = int_nil;
 	} else {
 		timestamp tmp;
-		if (timestamp_inside(&tmp, t, z, 0LL)) {
-			lng add = 3600000LL;
+		if (timestamp_inside(&tmp, t, z, (lng)0)) {
+			lng add = (lng)3600000;
 			timestamp_add(&tmp, &tmp, &add);
 		} 
 		if (*(lng*) &tmp == lng_nil) {
@@ -1791,8 +1791,8 @@ int timestamp_extract_date(date* ret, timestamp *t, tzone *z) {
 		*ret = int_nil;
 	} else { 
 		timestamp tmp;
-		if (timestamp_inside(&tmp, t, z, 0LL)) {
-			lng add = 3600000LL;
+		if (timestamp_inside(&tmp, t, z, (lng)0)) {
+			lng add = (lng)3600000;
 			timestamp_add(&tmp, &tmp, &add);
 		} 
 		if (*(lng*) &tmp == lng_nil) {
@@ -1927,7 +1927,7 @@ int timestamp_inside_dst(bit *ret, timestamp *p, tzone* z) {
 		*ret = int_nil;
 	} else if (z->dst) {
 		timestamp tmp;
-		if (timestamp_inside(&tmp, p, z, 0LL)) {
+		if (timestamp_inside(&tmp, p, z, (lng)0)) {
 			*ret = TRUE;
 		}
 	}

@@ -1,6 +1,7 @@
 
 MEL=$(top_builddir)/src/mel/mel
 MX=$(top_builddir)/src/utils/Mx/Mx
+MXFLAGS= -notouch
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<

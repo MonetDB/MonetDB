@@ -32,7 +32,7 @@ EXPORTS
 	GDKload
 	GDKsave
 	GDKunlink
-	GDKlink
+	GDKmove
 	BATprint
 	BATprintf
 	BATmultiprintf
@@ -287,7 +287,6 @@ EXPORTS
 	BBPrecover
 	BBPdiskscan
 	BBPsync
-	DESCclean
 	BBPin
 	BBPout
 	BBPmaxsize
@@ -305,13 +304,8 @@ EXPORTS
 	GDKms
 	GDKcsec
 	GDKsec
-	gethostname
 	str_smallHeap
-	compress
-	decompress
 	MT_getpid
-	pthread_sema_up
-	pthread_sema_down
 	MT_system_lock
 	_MT_npages
 	_MT_pagesize

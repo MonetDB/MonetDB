@@ -233,6 +233,9 @@ for all processes to terminate properly.
 	if (monet_singlethreaded == 0) {
 	    do {
 		sleep(1);
+	    } while( GDKnrofthreads <= base_nr_threads);
+	    do {
+		sleep(1);
 		PARDEBUG {
 			QMprint(); 
 			printf("#await rest %d > %d\n",  

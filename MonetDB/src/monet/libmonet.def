@@ -81,22 +81,6 @@ EXPORTS
 	QMprintStat
 	QMclearStat
 	qm_profile
-	yylognode
-	yylogexpand
-	yylogstart
-	yylogclean
-	yyexpand
-	yynode
-	yyload
-	yysave
-	yyfree
-	yycopy
-	yyclean
-	yysubstitute_proc
-	yysubstitute_iter
-	yypostprocess
-	yylogout
-	LEXNAME
 	initClient
 	forkClient
 	closeClient
@@ -109,7 +93,6 @@ EXPORTS
 	serveClient
 	moduleClient
 	dropClient
-	yyparse
 	monet_clients
 	ll_client
 	interpret_ifthen
@@ -155,18 +138,6 @@ EXPORTS
 	monet_cntxt
 	monet_cntxtmax
 	monet_cntxtlim
-	yysugar
-	yylval
-	yytext
-	ll_modcmds
-	ll_resolution
-	ll_nlines
-	ll_maxlines
-	ll_lines
-	ll_parblockdepth
-	ll_templates
-	ll_argc
-	ll_ifthenelse
 	lockparser
 	unlockparser
 	yytoProlog

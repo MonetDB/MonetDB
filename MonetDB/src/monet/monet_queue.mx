@@ -63,42 +63,44 @@ typedef struct MEVENT {
 } *Request, RequestRec;
 
 /* request management */
-extern Request	   newRequest  (Cntxt stk, YYSTREE data, int barrier);
-extern void    putkillRequest  ();
-extern void	wakeupRequest  (Request p, MT_Id tid);
-extern void	   putRequest  (Request p);
-extern void	   nxtRequest  (Request p);
-extern Request	   getRequest  (Request barrier);
-extern void	unlinkRequest  (Request q);
-extern void  	   clrRequest  (Request q);	
-extern void         rmRequest  (Request r);
-extern int	handleRequest  (Thread t, Request q, ValPtr res);
-extern void	    doRequest  (Thread t, Request preference);
-extern void	    prRequest  (FILE *fp, Request p);
-extern Request	  thisRequest  ();
-extern Request	   topRequest  (Client c);
+m_export Request	   newRequest  (Cntxt stk, YYSTREE data, int barrier);
+m_export void    putkillRequest  ();
+m_export void	wakeupRequest  (Request p, MT_Id tid);
+m_export void	   putRequest  (Request p);
+m_export void	   nxtRequest  (Request p);
+m_export Request	   getRequest  (Request barrier);
+m_export void	unlinkRequest  (Request q);
+m_export void  	   clrRequest  (Request q);	
+m_export void         rmRequest  (Request r);
+m_export int	handleRequest  (Thread t, Request q, ValPtr res);
+m_export void	    doRequest  (Thread t, Request preference);
+m_export void	    prRequest  (FILE *fp, Request p);
+m_export Request	  thisRequest  ();
+m_export Request	   topRequest  (Client c);
 
-extern Request	qm_first, qm_last;
-extern Request	qm_top, qm_bot;
-extern int	qm_profile;
+m_export Request	qm_first;
+m_export Request	qm_last;
+m_export Request	qm_top;
+m_export Request	qm_bot;
+m_export int	qm_profile;
 
 /* QM queue management */
-extern int	QMenqueue     (Cntxt stk, YYSTREE data, int bar, int kill);
-extern Request	QMrequest     (int qkey);
-extern Request	QMclient      (Request start, Client c);
-extern void	QMwakeup      (int qkey);
-extern int	QMbefore      (int qkey1, int qkey2);
-extern void	QMprint       ();
-extern int	QMopen	      ();
+m_export int	QMenqueue     (Cntxt stk, YYSTREE data, int bar, int kill);
+m_export Request	QMrequest     (int qkey);
+m_export Request	QMclient      (Request start, Client c);
+m_export void	QMwakeup      (int qkey);
+m_export int	QMbefore      (int qkey1, int qkey2);
+m_export void	QMprint       ();
+m_export int	QMopen	      ();
 
 /* QM statistics */
-extern void 	QMtrace       (int flag);
-extern void 	QMmessage     (Request q, str msg);
-extern void 	QMenqueueStat (Request q);
-extern void 	QMexecStat    (Request q);
-extern void 	QMdequeueStat (Request q);
-extern void 	QMprintStat   ();
-extern void 	QMclearStat   ();
+m_export void 	QMtrace       (int flag);
+m_export void 	QMmessage     (Request q, str msg);
+m_export void 	QMenqueueStat (Request q);
+m_export void 	QMexecStat    (Request q);
+m_export void 	QMdequeueStat (Request q);
+m_export void 	QMprintStat   ();
+m_export void 	QMclearStat   ();
 
 #endif /* _MONET_QUEUE_H_ */
 @}

@@ -125,7 +125,9 @@ extern int conn_find(str host, int port);
 #include <stropts.h>
 #endif
 */
+#ifdef HAVE_NETDB_H
 #include <netinet/in.h>
+#endif
 #include "tcpip.h"
 
 extern BAT* BATcreatedesc();

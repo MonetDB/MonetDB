@@ -20,3 +20,5 @@ LIBS = {
 	LIBS = ../../gdk/libbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
+
+EXTRA_DIST_DIR = Tests

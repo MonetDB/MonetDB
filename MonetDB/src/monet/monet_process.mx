@@ -35,17 +35,17 @@ The threads have to update their I/O descriptor before doing I/O.
 #define _MONET_PROCESS_H_
 #include "gdk.h"
 
-extern void	monetInternet ();
+m_export void	monetInternet ();
 
 /* monet standard threads */
-extern void	monetServer	(void *dummy);
-extern void	monetInterpreter(void* status);
-extern void	monetSingle  	(int status);
+m_export void	monetServer	(void *dummy);
+m_export void	monetInterpreter(void* status);
+m_export void	monetSingle  	(int status);
 
 /* interpreter thread handling */
-extern MT_Id	monetFork ();
-extern int	monetAdjustThreads (int i);
-extern int	monetSetChannel (Thread t, FILE* in, FILE* out);
+m_export MT_Id	monetFork ();
+m_export int	monetAdjustThreads (int i);
+m_export int	monetSetChannel (Thread t, FILE* in, FILE* out);
 
 
 #endif /* _MONET_PROCESS_H_ */

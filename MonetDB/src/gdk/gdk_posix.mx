@@ -85,34 +85,53 @@ typedef struct mallinfo mallinfo_t;
 
 /* in order to be sure of madvise and msync modes, pass them to mmap() call as well */
 
-extern void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed);
-extern int   MT_munmap(void* p, size_t off);
-extern int   MT_msync(void* p, size_t len, int mode);
-extern int   MT_madvise(void* p, size_t len, int advise);
+gdk_export void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed);
+gdk_export int   MT_munmap(void* p, size_t off);
+gdk_export int   MT_msync(void* p, size_t len, int mode);
+gdk_export int   MT_madvise(void* p, size_t len, int advise);
 
-extern void *MT_vmalloc(size_t size, size_t *maxsize);
-extern void  MT_vmfree(void *p, size_t size);
-extern void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize);
+gdk_export void *MT_vmalloc(size_t size, size_t *maxsize);
+gdk_export void  MT_vmfree(void *p, size_t size);
+gdk_export void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize);
 
-extern struct mallinfo MT_mallinfo();
+gdk_export struct mallinfo MT_mallinfo();
 
 #ifdef WIN32
 #define RTLD_LAZY	1
 #define RTLD_NOW	2
 #define RTLD_GLOBAL	4
 
-extern void *dlopen  (const char *__file, int __mode);
-extern int dlclose   (void *__handle);
-extern void *dlsym   (void * __handle, const char * __name);
-extern char *dlerror (void);
+gdk_export void *dlopen  (const char *__file, int __mode);
+gdk_export int dlclose   (void *__handle);
+gdk_export void *dlsym   (void * __handle, const char * __name);
+gdk_export char *dlerror (void);
 
-extern int win_ftruncate (int  fd, unsigned int size);
-extern DIR* win_opendir (const char *dirname);
-extern struct direct* win_readdir (DIR *dir);
-extern void win_rewinddir (DIR *dir);
-extern int win_closedir (DIR *dir);
+#    define ftruncate(fd, size)	win_ftruncate (fd, size)
+#    define opendir		win_opendir
+#    define readdir		win_readdir
+#    define rewinddir		win_rewinddir
+#    define closedir		win_closedir
+#    define NAME_MAX 255
+struct DIR
+{
+  char    	*dir_name;
+  int       	just_opened;
+  unsigned int  find_file_handle;
+  char		*find_file_data;
+};
+typedef struct DIR DIR;
+struct direct
+{
+  char  d_name[NAME_MAX + 1];
+  int   d_namelen;
+};
+gdk_export int win_ftruncate (int  fd, unsigned int size);
+gdk_export DIR* win_opendir (const char *dirname);
+gdk_export struct direct* win_readdir (DIR *dir);
+gdk_export void win_rewinddir (DIR *dir);
+gdk_export int win_closedir (DIR *dir);
 
-extern int MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
+gdk_export int MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
 #define gettimeofday(x,y)	MT_gettimeofday(x,y)
 #endif
 
@@ -420,7 +439,7 @@ int win_ftruncate (int  fd, unsigned int size)
   HANDLE hfile;
   unsigned int curpos;
 
-  if (fd >= 0) return -1;
+  if (fd < 0) return -1;
   
   hfile = (HANDLE) _get_osfhandle (fd);
   curpos = SetFilePointer (hfile, 0, NULL, FILE_CURRENT);
@@ -448,11 +467,11 @@ int win_ftruncate (int  fd, unsigned int size)
 
 DIR* win_opendir (const char *dirname)
 {
-  DIR *result;
+  DIR *result = NULL;
   char *mask;
   unsigned int k;
 
-  if (dirname != NULL) return NULL;
+  if (dirname == NULL) return NULL;
 
   result = (DIR*)malloc(sizeof(DIR));
   result->find_file_data = malloc(sizeof(WIN32_FIND_DATA));
@@ -464,7 +483,7 @@ DIR* win_opendir (const char *dirname)
       result->dir_name[k - 1] = '\0';
       k--;
     }
-  mask = malloc(strlen(result->dir_name + 3));
+  mask = malloc(strlen(result->dir_name) + 3);
   sprintf( mask, "%s\\*", result->dir_name);
 
   result->find_file_handle = (unsigned int) FindFirstFile (mask,
@@ -496,7 +515,7 @@ basename (const char    *file_name)
 {
   register char *base;
   
-  if (file_name != NULL) return NULL;
+  if (file_name == NULL) return NULL;
   
   base = strrchr (file_name, '\\');
   if (base)
@@ -513,7 +532,7 @@ struct direct* win_readdir (DIR *dir)
 {
   static struct direct result;
 
-  if (dir != NULL) return NULL;
+  if (dir == NULL) return NULL;
 
   if (dir->just_opened)
     dir->just_opened = FALSE;
@@ -544,12 +563,12 @@ void win_rewinddir (DIR *dir)
 {
   char *mask;
 
-  if (dir != NULL) return;
+  if (dir == NULL) return;
 
   if (!FindClose ((HANDLE) dir->find_file_handle))
     printf("win_rewinddir(): FindClose() failed\n");
 
-  mask = malloc(strlen(dir->dir_name + 3));
+  mask = malloc(strlen(dir->dir_name) + 3);
   sprintf (mask, "%s\\*", dir->dir_name);
   dir->find_file_handle = (unsigned int) FindFirstFile (mask,
 					  (LPWIN32_FIND_DATA) dir->find_file_data);
@@ -571,7 +590,7 @@ void win_rewinddir (DIR *dir)
 
 int win_closedir (DIR *dir)
 {
-  if (dir != NULL) return -1;
+  if (dir == NULL) return -1;
 
   if (!FindClose ((HANDLE) dir->find_file_handle))
     {

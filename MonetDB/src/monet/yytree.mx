@@ -8,27 +8,28 @@ within a YACC environment.
 #ifndef _YYTREE_H_
 #define _YYTREE_H_
 
+#include "monet.h"
+
 #define par_retval	free.batref.id
 #define old_cntxt	yyval.len
 
-extern YYSTREE 		yylognode();
-extern YYSTREE	 	yylogexpand();
-extern void 		yylogstart();
-extern void 		yylogclean();
+m_export YYSTREE 		yylognode();
+m_export YYSTREE	 	yylogexpand();
+m_export void 		yylogstart();
+m_export void 		yylogclean();
 
-extern YYSTREE	 	yyexpand();
-extern YYSTREE 		yynode();
-extern YYSTREE 		yyload();
-extern void 		yysave();
-extern void 		yyfree();
-extern YYSTREE 		yycopy();
-extern void 		yyclean();
-extern YYSTREE 		yysubstitute_proc();
-extern YYSTREE 		yysubstitute_iter();
-extern int 		yypostprocess();
-extern void 		yylogout();
+m_export YYSTREE	 	yyexpand();
+m_export YYSTREE 		yynode();
+m_export YYSTREE 		yyload();
+m_export void 		yysave();
+m_export void 		yyfree();
+m_export YYSTREE 		yycopy();
+m_export void 		yyclean();
+m_export YYSTREE 		yysubstitute_proc();
+m_export YYSTREE 		yysubstitute_iter();
+m_export int 		yypostprocess();
+m_export void 		yylogout();
 @c
-#include "monet.h"
 #include "yytree.h"
 #include <stdio.h> 
 #include <ctype.h> 

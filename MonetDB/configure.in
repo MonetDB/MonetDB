@@ -186,15 +186,6 @@ AC_FUNC_MEMCMP
 AC_CHECK_FUNCS(mkdir rmdir getcwd getopt rlimit)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtol strerror )
 AC_CHECK_FUNCS(gethostname gettimeofday putenv select getpgid)
-AC_TRY_COMPILE( [#include <stdio.h> ], [ int x = sys_errlist[1]; ],
-[ AC_DEFINE(NEED_SYS_ERRLIST,0)], [ AC_DEFINE(NEED_SYS_ERRLIST,1)] )
-AC_TRY_LINK( [#include <stdio.h> ], 
-[ 
-#if (NEED_SYS_ERRLIST == 1)
-	extern char *sys_errlist[];
-#endif
-int x = sys_errlist[1]; ],
-[ AC_DEFINE(HAVE_SYS_ERRLIST,1)] )
 
 AC_CHECK_FUNCS(ctime_r)
 ctime_r3=yes

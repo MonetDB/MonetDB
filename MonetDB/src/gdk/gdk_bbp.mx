@@ -67,42 +67,43 @@ If not, all files in BACKUP/ are moved back to their original location.
 
 #define BBPTRIM_ALL	(1<<30) /* a very large yet non-negative int */
 
-extern int              BBPin;	/* BATs swapped into BBP  */
-extern int              BBPout;	/* BATs swapped out of BBP */
-extern int              BBPsize;
+gdk_export int              BBPin;	/* BATs swapped into BBP  */
+gdk_export int              BBPout;	/* BATs swapped out of BBP */
+gdk_export int              BBPsize;
 
 /* global calls */ 
-extern void BBPinit      ();
-extern void BBPexit      ();
-extern int  BBPdir       ();
-extern int  BBPcountrefs ();
+gdk_export void BBPinit      ();
+gdk_export void BBPexit      ();
+gdk_export int  BBPdir       ();
+gdk_export int  BBPcountrefs ();
  
 /* update interface */ 
-extern void BBPclear     (bat bid, int lock);
-extern int  BBPentry     (str dirname, str batname, int mode);
-extern void BBPcacheit   (BAT *b, int lock);
-extern void BBPuncacheit (bat bid, int lock);
-extern void BBPspin 	 (bat bid, str debug);
-extern int  BBPreclaim   (BAT *b);
-extern int  BBPsave      (BAT *b);
-extern int  BBPrename    (bat bid, str nme);
+gdk_export void BBPclear     (bat bid, int lock);
+gdk_export int  BBPentry     (str dirname, str batname, int mode);
+gdk_export void BBPcacheit   (BAT *b, int lock);
+gdk_export void BBPuncacheit (bat bid, int lock);
+gdk_export void BBPspin 	 (bat bid, str debug);
+gdk_export int  BBPreclaim   (BAT *b);
+gdk_export int  BBPsave      (BAT *b);
+gdk_export int  BBPrename    (bat bid, str nme);
 
 /* query interface */ 
-extern bat  BBPindex     (str nme);
-extern BAT* BBPdescriptor(bat b);
+gdk_export bat  BBPindex     (str nme);
+gdk_export BAT* BBPdescriptor(bat b);
 
 /* swapping interface */ 
-extern void BBPrecover   ();
-extern lng  BBPdiskscan  (str dir);
-extern int  BBPsync      (int commit);
-extern int  BBPfix       (bat b);
-extern int  BBPunfix     (bat b);
+gdk_export void BBPrecover   ();
+gdk_export lng  BBPdiskscan  (str dir);
+gdk_export int  BBPsync      (int commit);
+gdk_export int  BBPfix       (bat b);
+gdk_export int  BBPunfix     (bat b);
 
 #endif /* _GDK_BBP_H_ */
 @
 @c
 #include "gdk_bbp.h"
 #include "gdk_bat.h"
+#include "gdk_storage.h"
 #include "gdk_utils.h"
 
 @- BBP global variables
@@ -304,11 +305,9 @@ void BBPinit() {
 		fclose (fp);
 		ret = unlink(path);
 		THRprintf(GDKerr, "unlink %s = %d\n", path, ret);
-		if (GDKlink(BATDIR,"BBP","dir", BATDIR,"BBP","bak") == 0) {
-		    GDKunlink(BATDIR,"BBP","dir");
-		}
+		ret = GDKmove(BATDIR,"BBP","dir", BATDIR,"BBP","bak"); 
 	}
-	ret = GDKlink(BAKDIR,"BBP","dir", BATDIR,"BBP","dir");
+	ret = GDKmove(BAKDIR,"BBP","dir", BATDIR,"BBP","dir");
 	fp = ret?NULL:GDKfilelocate("BBP", "rb", "dir");
     }
     if (fp == NULL) {
@@ -316,7 +315,7 @@ void BBPinit() {
 	struct stat st;
 	if (stat(path, &st) == 0) {
 		GDKwarning("BBPinit: reverting to dir saved in BBP.bak.\n");
-		ret = GDKlink(BATDIR,"BBP","bak", BATDIR,"BBP","dir");
+		ret = GDKmove(BATDIR,"BBP","bak", BATDIR,"BBP","dir");
 		fp = ret?NULL:GDKfilelocate("BBP", "rb", "dir");
 	}
     }
@@ -1091,7 +1090,6 @@ saved. After a commit succeeds, the BACKUP/ is deleted, hence BAT files could ge
 We still do not want BATsaves to be BBP-locked. Hence we invent a commit readers/writers
 lock. A BBPsync (commit) locks this exclusive; BBPsaves lock this non-exclusive.
 @c
-extern void DESCclean(BAT*);
 
 int BBPsave(BAT* b) {
 	int ret = 0, bid = ABS(b->batCacheid);
@@ -1491,10 +1489,9 @@ static int prepare_sync() {
 	
 static int file_move(str srcdir, str dstdir, str name, str ext) {
 	int ret = 0;
-	ret = GDKlink(srcdir, name, ext, dstdir, name, ext);
+	ret = GDKmove(srcdir, name, ext, dstdir, name, ext);
 	if (ret == 0) {
-		ret = GDKunlink(srcdir, name, ext);
-		if (ret == 0) return 0;
+		return 0;
 	} else {
 		long_str path;
 		struct stat st;
@@ -1523,7 +1520,7 @@ static int heap_move(Heap* hp, str srcdir, str dstdir, str nme, str ext) {
 		struct stat st;
 		GDKfilepath(path, srcdir, nme, ext);
 		if (stat(path, &st)) {
-			if (GDKlink(srcdir, hp->filename, NULL, srcdir, nme, ext)) return -1;
+			if (GDKmove(srcdir, hp->filename, NULL, srcdir, nme, ext)) return -1;
 		}
 	}
 	return file_move(srcdir, dstdir, nme, ext);
@@ -1647,11 +1644,8 @@ int BBPsync(int commit) {
 	if (bbpdirty) {
 		ret = prepare_sync();
 		if (ret == 0) {
-			ret = GDKlink(BATDIR,"BBP","dir", BAKDIR,"BBP","dir");
+			ret = GDKmove(BATDIR,"BBP","dir", BAKDIR,"BBP","dir");
 		}
-		if (ret == 0) {
-			ret = GDKunlink(BATDIR,"BBP","dir");
-		} 
 	}
 	if (ret == 0) {
 		for (i = 1; i < BBPsize; i++) {

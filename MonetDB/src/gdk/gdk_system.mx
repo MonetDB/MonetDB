@@ -13,6 +13,16 @@ functions.
 
 #include <config.h>
 
+#ifdef _MSC_VER
+#ifndef LIBBAT
+#define gdk_export extern __declspec(dllimport) 
+#else
+#define gdk_export extern __declspec(dllexport) 
+#endif
+#else
+#define gdk_export extern 
+#endif
+
 #if HAVE_UNISTD_H
 # include <unistd.h>     /* io functions */
 #endif
@@ -49,124 +59,124 @@ Define your error reporting routine @%MT_error(str message)@.
 Define your error integer debug flag @%MT_debug@.
 @h
 #define MT_debug	GDKdebug
-extern int GDKdebug;
+gdk_export int GDKdebug;
 @-
 Define your debug printing stream @%MT_out@.
 @h
-extern void *THRgetdata	(int);
+gdk_export void *THRgetdata	(int);
 #define MT_out		stderr
 
 @- Global Variables
 The are part of the interface (i.e. you may use them).
 @h
-extern MT_Lock	MT_system_lock;	/* system administration lock */
+gdk_export MT_Lock	MT_system_lock;	/* system administration lock */
 
 @+ Interface Definition
 The routines that are available for use for thread and process management.
 @-
 Init the package. Must be called once before any of the other operations.
 @h
-extern void 	MT_init ();
+gdk_export void 	MT_init ();
 
 @-
 Create a new thread executing 'function' with single parameter 'arg'. 
 May return an error, in which case no thread is created.
 @h
-extern int 	MT_create_thread(MT_Id *t, void (*function)(void *), void *arg);
+gdk_export int 	MT_create_thread(MT_Id *t, void (*function)(void *), void *arg);
 
 @-
 Exit the current thread. The status will be ignored, unless some thread
 wait()-s for you to finish.
 a wait()
 @h
-extern void 	MT_exit_thread(int status);
+gdk_export void 	MT_exit_thread(int status);
 
 @-
 Exit the process. All threads are terminated.
 @h
-extern void 	MT_global_exit(int status);
+gdk_export void 	MT_global_exit(int status);
 
 @-
 Ask your thread id.
 @h
-extern MT_Id 	MT_getpid();
+gdk_export MT_Id 	MT_getpid();
 
 
 @-
 Kill a thread.
 @h
-extern int 	MT_kill_thread(MT_Id t);
+gdk_export int 	MT_kill_thread(MT_Id t);
 
 @-
 Destroy an inter-process lock;
 @h
-extern void	MT_destroy_lock(MT_Lock l);     
+gdk_export void	MT_destroy_lock(MT_Lock l);     
 
 @-
 Create a new thread-lock. Initial status: unset.
 @h
-extern MT_Lock	MT_create_lock();
+gdk_export MT_Lock	MT_create_lock();
 
 @-
 Set a lock. The calling thread in this process blocks till the lock is set.
 @h
-extern void 	MT_set_lock(MT_Lock l, char *name);
+gdk_export void 	MT_set_lock(MT_Lock l, char *name);
  
 @-
 Unset a lock.
 @h
-extern void 	MT_unset_lock(MT_Lock l, char *name);
+gdk_export void 	MT_unset_lock(MT_Lock l, char *name);
  
 @-
 Try a lock. Returns error (EBUSY) if the lock was already 
 set. Else, the lock is set.
 @h
-extern int	MT_try_lock(MT_Lock l);
+gdk_export int	MT_try_lock(MT_Lock l);
 
 @-
 Dump info about the lock named 'name' on stream 'fp'.
 @h
-extern void 	MT_dump_lock(MT_Lock l, FILE *fp, char *name);
+gdk_export void 	MT_dump_lock(MT_Lock l, FILE *fp, char *name);
 
 @- Mthreads Macro Implementations
 
 @-
 Create a counting thread semaphore, set the number of resources.
 @h
-extern MT_Sema	MT_create_sema(int nresources);     
+gdk_export MT_Sema	MT_create_sema(int nresources);     
 
 
 @-
 Destroy a counting thread semaphore;
 @h
-extern void	MT_destroy_sema(MT_Sema s);     
+gdk_export void	MT_destroy_sema(MT_Sema s);     
 
 @-
 Increment a semaphore.
 @h
-extern void	MT_up_sema(MT_Sema s, char *name);
+gdk_export void	MT_up_sema(MT_Sema s, char *name);
  
 @-
 Decrement a semaphore. If it already has value 0, the thread is
 blocked until a decrement is possible again.
 @h
-extern void	MT_down_sema(MT_Sema s, char *name);
+gdk_export void	MT_down_sema(MT_Sema s, char *name);
 
 @-
 Try to decrement a semaphore. If it already has value 0, an error
 (EBUSY) is returned. Else, the semaphore is decremented.
 @h
-extern int 	MT_try_sema(MT_Sema s);
+gdk_export int 	MT_try_sema(MT_Sema s);
 
 @-
 Dump info about the semaphore named 'name' on stream 'fp'.
 @h
-extern void 	MT_dump_sema(MT_Sema s, FILE *fp, char *name);
+gdk_export void 	MT_dump_sema(MT_Sema s, FILE *fp, char *name);
 
 @-
 Check if some process is still alive.
 @h
-extern int 	MT_alive(int pid);
+gdk_export int 	MT_alive(int pid);
 
 @-
 Allocate anonymous virtual memory.
@@ -174,8 +184,8 @@ Allocate anonymous virtual memory.
 #define MT_geterrno()		errno
 #define MT_seterrno(x)		errno=x
 
-extern int _MT_npages;
-extern int _MT_pagesize;
+gdk_export int _MT_npages;
+gdk_export int _MT_pagesize;
  
 #define MT_pagesize()	_MT_pagesize
 #define MT_npages()	_MT_npages
@@ -195,8 +205,8 @@ extern int _MT_pagesize;
 
 typedef sem_t pthread_sema_t;
 
-extern void pthread_sema_up( pthread_sema_t *s );
-extern void pthread_sema_down( pthread_sema_t *s );
+static void pthread_sema_up( pthread_sema_t *s );
+static void pthread_sema_down( pthread_sema_t *s );
 
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 

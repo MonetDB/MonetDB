@@ -22,6 +22,8 @@ system start.
 #define _GDK_STORAGE_H_
 #include "gdk.h"
 
+extern void DESCclean(BAT*);
+
 #endif /* _GDK_STORAGE_H_ */
 @c
 #include "gdk_bat.h"
@@ -181,9 +183,9 @@ int GDKunlink(str dir, str nme, str ext) {
 }
 
 @-
-The UNIX link routine is overloaded to deal with extensions.
+A move routine is overloaded to deal with extensions.
 @c
-int GDKlink(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
+int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 	char	path1[PATHLENGTH]; 
 	char	path2[PATHLENGTH]; 
 	int	ret, t0 = GDKms();
@@ -194,11 +196,13 @@ int GDKlink(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 	GDKfilepath(path1,dir1,nme1,ext1);
 	GDKfilepath(path2,dir2,nme2,ext2);
 
-	ret = link(path1, path2);
+	/*(void)unlink(path2); */
+	ret = rename(path1,path2);
+
 	if (ret) {
-		GDKsyserror("GDKlink(%s,%s)\n", path1, path2);
+		GDKsyserror("GDKmove(%s,%s)\n", path1, path2);
 	}
-	IODEBUG THRprintf(GDKerr, "link %s %s = %d (%dms)\n", path1, path2, ret, GDKms()-t0); 
+	IODEBUG THRprintf(GDKerr, "move %s %s = %d (%dms)\n", path1, path2, ret, GDKms()-t0); 
 	return ret;
 }
 

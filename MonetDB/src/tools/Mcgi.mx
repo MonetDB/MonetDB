@@ -577,7 +577,7 @@ int main(int argc, char **argv) {
     pthread_t kpid;
     pthread_create(&kpid,0,timeoutThread,&ppid);
 
-    rusage ruBefore,ruAfter;
+    struct rusage ruBefore,ruAfter;
 
     getrusage(RUSAGE_SELF,&ruBefore);
     processQuery();

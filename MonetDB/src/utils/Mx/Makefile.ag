@@ -1,8 +1,6 @@
 
 CFLAGS = -DUNIX -DMX_CXX_SUFFIX=$(CXXEXT)
 
-EXTRA_DIST = warning.gif epstogif
-
 bin_Mx = {
 	SOURCES = \
 		Mx.c Index.c Def.c Form.c Tok.c Code.c Display.c Print.c Io.c \
@@ -18,4 +16,4 @@ BINS = {
 	SOURCES = idxmx.c epsffit.c 
 }
 
-EXTRA_DIST = prefixMxFile.c disclaimer.c disclaimer.h idxmx.c epsffit.c 
+EXTRA_DIST = warning.gif epstogif

@@ -292,7 +292,7 @@ table BAT[str,int].
 Note that we really need two locks, because when we insert the clusterhash,
 the atomFix is called and we would end up with a deadlock.
 @c
-static INLINE char* itoa(int i){
+static INLINE char* local_itoa(int i){
   static char buf[32];
   sprintf(buf,"%d",i);
   return buf;
@@ -479,7 +479,7 @@ DICTclear(dict_entry *d, int n) {
 
 str salgebra_CHname( char *ch_basename, int batId ) {
   int l = strlen(ch_basename);
-  char *id = itoa( ABS(batId) );
+  char *id = local_itoa( ABS(batId) );
   int l2 = strLen( id );
   char *n = (char *) GDKmalloc( l + l2 );
   memcpy(n,ch_basename, l);
@@ -820,9 +820,9 @@ salgebra_CMDinfo( BAT** res, clusterhash* ch ) {
   BUNins(bn, "name",  *ch->name );
   BUNins(bn, "bname", ch->bname );
   BUNins(bn, "ttype", ATOMname(ch->bttype) );
-  BUNins(bn, "batId", itoa(ch->b) );
-  BUNins(bn, "perfect", itoa(ch->isPerfect) );
-  BUNins(bn, "refCnt", itoa( salgebra_getRefCnt( ch ) ) );
+  BUNins(bn, "batId", local_itoa(ch->b) );
+  BUNins(bn, "perfect", local_itoa(ch->isPerfect) );
+  BUNins(bn, "refCnt", local_itoa( salgebra_getRefCnt( ch ) ) );
   *res = bn;
   return GDK_SUCCEED;
 }

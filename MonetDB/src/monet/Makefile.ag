@@ -17,4 +17,6 @@ lib_monet = {
 
 }
 
-EXTRA_DIST = libmonet.def monet_tem.mx 
+EXTRA_DIST = libmonet.def monet_tem.mx monet.eps
+EXTRA_DIST_DIR = Tests
+CFLAGS = -DLIBMONET

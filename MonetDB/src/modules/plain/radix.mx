@@ -269,6 +269,12 @@ int uniform(BAT** bn, oid *base, int *size, int *domain) {
 }
 
 #include<math.h>
+#ifndef M_E
+# define M_E		2.7182818284590452354	/* e */
+#endif
+#ifndef M_PI
+# define M_PI		3.14159265358979323846	/* pi */
+#endif  
 
 int normal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mean) {
         unsigned int n=*size, i, d = *domain, r=n;

@@ -1173,7 +1173,7 @@ int decimal_epilogue(){
 int decimal_from_lng(decimal **ret, lng* val) {
 	if (*val == lng_nil) {
 		*ret = decimal_create(-1,0,0);
-	} else if (*val == 0LL) {
+	} else if (*val == (lng)0) {
 		*ret = decimal_create(0,0,0);
 	} else {
 		int x = 0, y = 0, rest, precision = 0, sign = 0;

@@ -291,6 +291,16 @@ def codegen(tree, cwd, topdir):
 	            tree.value(i)['LIBS'].append(l)
 	        else:
 	          tree.value(i)['LIBS'] = d
+	    elif (i == "LIBS"):
+	      for l,d in libs.items():
+		if (tree.value(i).has_key(l)):
+		   for dep in d:
+		     tree.value(i)[l].append(dep)
+		else:
+	          tree.value(i)[l] = d
+	          if (tree.value(i).has_key('LIBS')):
+		     for dep in tree.value(i)['LIBS']:
+		       tree.value(i)[l].append(dep)
 	    else:
 	      for l,d in libs.items():
 	        tree.value(i)[l] = d

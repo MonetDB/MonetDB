@@ -2,6 +2,11 @@
 # This is the location of pthreads for Win32, 
 # see http://sourceware.cygnus.com/pthreads-win32/
 
+pkglibdir = $(TOPDIR)
+pkgbindir = $(TOPDIR)
+libdir = $(TOPDIR)
+bindir = $(TOPDIR)
+
 LIBC_INCS = -I\tmp\pthread
 
 PTHREAD = \tmp\pthread

@@ -80,7 +80,6 @@ in the head of the resulting table; the tail contains the matching IDs.
 @* Implementation
 @c
 #include <math.h>
-#include <sys/time.h>
 #include <unistd.h>
 #include "gdk.h"
 

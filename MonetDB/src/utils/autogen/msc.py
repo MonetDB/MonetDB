@@ -5,17 +5,25 @@ import os
 automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
 script_ext = [ 'mil' ]
 
+def msc_list2string(l,pre,post):
+  res = ""
+  for i in l:
+    res = res + pre + i + post
+  return res
+
 def msc_subdirs(fd, var, values, msc ):
   o = ""
   for v in values:
     o = o + " " + v
   fd.write("%s = %s\n" % (var,o) )
-  fd.write("all-recursive: $(SUBDIRS)\n")
+  fd.write("all-recursive: %s\n" % msc_list2string(values,"","-all ") )
   for v in values:
-    fd.write("\t$(CD) %s && $(MAKE) /f Makefile.msc all\n" % v) 
-  fd.write("install-recursive: $(SUBDIRS)\n")
+    fd.write("%s-all:\n" % v)
+    fd.write("\t$(CD) %s && $(MAKE) /k /f Makefile.msc all\n" % v) 
+  fd.write("install-recursive: %s\n" % msc_list2string(values,"","-install ") )
   for v in values:
-    fd.write("\t$(CD) %s && $(MAKE) /f Makefile.msc install\n" % v) 
+    fd.write("%s-install:\n" % v)
+    fd.write("\t$(CD) %s && $(MAKE) /k /f Makefile.msc install\n" % v) 
 
 def msc_assignment(fd, var, values, msc ):
   o = ""
@@ -54,12 +62,6 @@ def msc_translate_dir(path,msc):
       dir = d+ "\\" + rest
     return regsub.gsub(os.sep, "\\", dir );
 
-def msc_list2string(l,pre,post):
-  res = ""
-  for i in l:
-    res = res + pre + i + post
-  return res
-
 def msc_space_sep_list(l):
   res = ""
   for i in l:
@@ -94,7 +96,8 @@ def msc_find_hdrs(target,deps,hdrs):
       pf = f 
   return pf
 
-def msc_additional_libs(name,sep,type,list, msc):
+def msc_additional_libs(fd,name,sep,type,list, msc):
+    deps = "lib"+sep+name+".dll: "
     if (type == "BIN"):
     	add = name+"_LIBS =" 
     else:
@@ -104,6 +107,8 @@ def msc_additional_libs(name,sep,type,list, msc):
       	add = add + " " + l 
       else:
       	add = add + " " + msc_translate_dir(l,msc) + ".lib"
+	deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
+    fd.write( deps + "\n")
     return add + "\n"
   
 def msc_translate_ext( f ):
@@ -155,7 +160,7 @@ def msc_binary(fd, var, binmap, msc ):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   if (binmap.has_key("LIBS")):
-    fd.write(msc_additional_libs(binname, "", "BIN", binmap["LIBS"],msc))
+    fd.write(msc_additional_libs(fd,binname, "", "BIN", binmap["LIBS"],msc))
 	
   srcs = binname+"_OBJS ="
   for target in binmap['TARGETS']:
@@ -208,9 +213,9 @@ def msc_bins(fd, var, binsmap, msc ):
     msc['BINS'].append(bin)
 	
     if (binsmap.has_key(bin + "_LIBS")):
-      fd.write(msc_additional_libs(bin, "", "BIN", binsmap[bin + "_LIBS"],msc))
+      fd.write(msc_additional_libs(fd,bin,"","BIN", binsmap[bin + "_LIBS"],msc))
     elif (binsmap.has_key("LIBS")):
-      fd.write(msc_additional_libs(bin, "", "BIN", binsmap["LIBS"],msc))
+      fd.write(msc_additional_libs(fd,bin, "", "BIN", binsmap["LIBS"],msc))
 
     srcs = bin+"_OBJS ="
     for target in binsmap['TARGETS']:
@@ -269,7 +274,7 @@ def msc_library(fd, var, libmap, msc ):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   if (libmap.has_key("LIBS")):
-    fd.write(msc_additional_libs(libname, sep, "LIB", libmap["LIBS"],msc))
+    fd.write(msc_additional_libs(fd,libname, sep, "LIB", libmap["LIBS"],msc))
 
   for src in libmap['SOURCES']:
     base,ext = string.split(src,".", 1) 	
@@ -290,6 +295,7 @@ def msc_library(fd, var, libmap, msc ):
         SCRIPTS.append(target)
   fd.write(srcs + "\n")
   ln = "lib" + sep + libname
+  fd.write( ln + ".lib: " + ln + ".dll\n" );
   fd.write( ln + ".dll: " + ln + ".def $(" + ln + "_OBJS) \n" )
   fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /def:%s.def\n\n" % (ln,ln,ln,ln))
 
@@ -328,9 +334,9 @@ def msc_libs(fd, var, libsmap, msc ):
     msc['LIBS'].append(sep+lib)
 	
     if (libsmap.has_key(lib + "_LIBS")):
-      fd.write(msc_additional_libs(lib, sep, "LIB", libsmap[lib + "_LIBS"],msc))
+      fd.write(msc_additional_libs(fd,lib,sep,"LIB",libsmap[lib + "_LIBS"],msc))
     elif (libsmap.has_key("LIBS")):
-      fd.write(msc_additional_libs(lib, sep, "LIB", libsmap["LIBS"],msc))
+      fd.write(msc_additional_libs(fd,lib, sep, "LIB", libsmap["LIBS"],msc))
 
     srcs = "lib"+sep+lib+"_OBJS ="
     for target in libsmap['TARGETS']:
@@ -346,6 +352,7 @@ def msc_libs(fd, var, libsmap, msc ):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
     ln = "lib" + sep + lib
+    fd.write( ln + ".lib: " + ln + ".dll\n" );
     fd.write( ln + ".dll: " + ln + ".def $(" + ln + "_OBJS) \n" )
     fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /def:%s.def\n\n" % (ln,ln,ln,ln))
 
@@ -406,7 +413,7 @@ BIN = C:\\bin
 # Nothing much configurable below
 
 # cl -? describes the options
-CC = cl -G6 -GF -W3 -MD -nologo -GZ -ZI
+CC = cl -GF -W3 -MD -nologo -Zi
 # optimize use -Ox
 
 # No general LDFLAGS needed
