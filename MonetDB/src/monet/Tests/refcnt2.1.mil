@@ -1,0 +1,11 @@
+# inserting a transient BAT into another transient BAT
+# makes the first one persistent... !?
+
+b:=new(int,int);
+b.rename("b");
+a:=new(int,bat);
+a.rename("a");
+a.insert(1,b);
+dir;
+ls;
+quit;   
