@@ -11,9 +11,9 @@
 <p>
 The technical documentation is spread over a number of topics.
 The command line tools are 
-<a href="www/TechDocs/Tools/Mserver/index.html">Mserver</a> 
+<a href="MonetDB/TechDocs/Tools/Mserver/index.html">Mserver</a> 
 and 
-<a href="www/TechDocs/Tools/MapiClient/index.html">MapiClient</a>,
+<a href="MonetDB/TechDocs/Tools/MapiClient/index.html">MapiClient</a>,
 which can be used to establish a session.
 </p>
 <p>
@@ -36,12 +36,12 @@ The technical documentation of MonetDB  is mainly geared
 at application developers
 and those interested in the inner working of the system. 
 The starting point for getting acquainted with the system is to
-read the <a href="www/TechDocs/Core/monet/index.html">architecture overview</a>.
+read the <a href="MonetDB/TechDocs/Core/monet/index.html">architecture overview</a>.
 Although it is rather technically oriented, it creates a general understanding
 of its design and inner working.
 </p>
 <p>
-The User Guide of the Monet Interpreter Language (<a href="www/TechDocs/FrontEnds/mil/index.html">MIL</a>) 
+The User Guide of the Monet Interpreter Language (<a href="MonetDB/TechDocs/FrontEnds/mil/index.html">MIL</a>) 
 explains the algebraic interface of the Monet back-end. 
 Front-ends like the SQL front-end translate high
 level query languages to MIL. 
@@ -54,17 +54,17 @@ Tutorials on SQL syntax and semantics are abundantly available on the web
 and thus not included here.
 </p>
 <p>
-The Monet Extension Language (<a href="www/TechDocs/Core/mel/index.html">MEL</a>)
+The Monet Extension Language (<a href="MonetDB/TechDocs/Core/mel/index.html">MEL</a>)
 is a specification language for creating <em>extension modules</em> that add new 
 algebra-operators and atomic 
 types to MIL. Implementations should be provided separately in C/C++.  
 <br>
 The utility that parses MEL specifications and generates <em>glue code</em> is
-also called <a href="www/TechDocs/Core/mel/mel-tool/index.html">mel</a>.
+also called <a href="MonetDB/TechDocs/Core/mel/mel-tool/index.html">mel</a>.
 </p>
 <p>
 Extension programmers are advised to first study the technical documentation
-of the very <a href="www/TechDocs/Core/gdk/index.html">kernel</a>
+of the very <a href="MonetDB/TechDocs/Core/gdk/index.html">kernel</a>
 to get acquainted with the most important internal data structures and APIs.
 More technical information about MonetDB is availbale on our 
 <a href="http://monetdb.cwi.nl/Research/index.html">website</a>.
@@ -72,7 +72,7 @@ More technical information about MonetDB is availbale on our
 <p>
 Much of this documentation is integrated with the MonetDB
 code using the <em>literate programming</em> tool 
-<a href="www/TechDocs/Core/Mx/index.html">Mx</a>.
+<a href="MonetDB/TechDocs/Core/Mx/index.html">Mx</a>.
 </p>
 <p>
 </p>
@@ -81,14 +81,14 @@ code using the <em>literate programming</em> tool
 The application programmer's interfaces (APIs) have been developed with
 a keen eye on what currently prevails in the database community.
 The native client-server interface of MonetDB is called 
-<a href="www/TechDocs/Core/Modules/mapi/index.html">Mapi</a> (MonetDB API).
+<a href="MonetDB/TechDocs/Core/Modules/mapi/index.html">Mapi</a> (MonetDB API).
 Internally, it is used to implement all other APIs. 
 Mapi is language neutral, it can both be used for MIL and SQL querying. 
 <br>
 There are language bindings for (among others)
-<a href="www/TechDocs/APIs/Mapi/C/index.html">C</a>
+<a href="MonetDB/TechDocs/APIs/Mapi/C/index.html">C</a>
 and
-<a href="www/TechDocs/APIs/Mapi/Java/Documentation/index.html">Java</a>.
+<a href="MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html">Java</a>.
 </p>
 <p>
 Check our website for more information on MonetDB's 
@@ -111,7 +111,7 @@ but often it makes more sense to load the module set as part of a session
 initialization action. Each client has its own set of modules.
 </p>
 <p>
-<a href="www/TechDocs/FrontEnds/mil/index.html#mod_5_0_0">The modules</a>
+<a href="MonetDB/TechDocs/FrontEnds/mil/index.html#mod_5_0_0">The modules</a>
  can be roughly grouped as follows. The <em> algebra, bat, kernel</em>
 contain the binary algebra primitives. 
 The <em> arith, mmath, decimal</em> modules provide various forms of scalar processing.
