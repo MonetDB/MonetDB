@@ -828,8 +828,8 @@ Module: "pcl"
 
 Module: "profiler"
 
-[ 13 ]
-[ 13 ]
+[ 14 ]
+[ 14 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature			help					  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -837,7 +837,8 @@ Module: "profiler"
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",	  "not available"							  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",	  "not available"							  ]
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",	  "not available"							  ]
-[ "getProfilerCount",	  "COMMAND:   ",  "getProfilerCount() : BAT[str,int]",	  "Get a copy of the profiler summary table"				  ]
+[ "getProfilerCount",	  "COMMAND:   ",  "getProfilerCount() : BAT[str,int]",	  "Get a copy of the profiler count summary table"			  ]
+[ "getProfilerTicks",	  "COMMAND:   ",  "getProfilerTicks() : BAT[str,lng]",	  "Get a copy of the profiler ticks summary table"			  ]
 [ "profile",		  "PROC:      ",  "profile() : int",			  "not available"							  ]
 [ "resetProfiler",	  "COMMAND:   ",  "resetProfiler() : void",		  "Set all counters to zero again"					  ]
 [ "setFilter",		  "COMMAND:   ",  "setFilter(str, str) : int",	  "Set the profile filter strings"	  ]
