@@ -24,51 +24,51 @@ a MonetDB client.
 
 @+ The debugger instruction set
 @multitable @columnfractions .2 .8
-@item next      
+@item next
 @tab  Advance to next statement
-@item continue  
+@item continue
 @tab  Continue program being debugged
-@item break         
+@item break
 @tab set breakpoint on current instruction
-@item break @emph{ var}     
+@item break @emph{ var}
 @tab break on assignment to @emph{ var}
-@item call      
+@item call
 @tab execute MAL instruction [todo]
-@item continue  
+@item continue
 @tab to next breakpoint
-@item delete @emph{ var}    
+@item delete @emph{ var}
 @tab remove break point @emph{ var}
-@item step      
+@item step
 @tab advance to next MAL instruction
-@item module    
+@item module
 @tab display the module signatures
-@item finish    
+@item finish
 @tab finish current call
-@item quit      
+@item quit
 @tab leave debugger
-@item list      
+@item list
 @tab list current program block
-@item List      
+@item List
 @tab list with type information
 @item var
 @tab print symbol table [with bindings]
-@item print @emph{ var}     
+@item print @emph{ var}
 @tab display value of a variable
-@item print @emph{ var} @emph{ c}[@emph{ f}] 
+@item print @emph{ var} @emph{ c}[@emph{ f}]
 @tab display BAT chunk c:(c+f)
-@item info @emph{ var}  
+@item info @emph{ var}
 @tab display bat variable properties
-@item run       
+@item run
 @tab restart current procedure
-@item where         
+@item where
 @tab print stack trace
-@item down          
+@item down
 @tab go down the stack
-@item up        
+@item up
 @tab go up the stack
-@item timer         
+@item timer
 @tab micro-second response time
-@item help      
+@item help
 @tab the help message
 @end multitable
 
@@ -159,7 +159,7 @@ int MDBdelay; /* do not immediately react */
 #define skipWord(c,X) 	  skipNonBlanc(c,X); skipBlanc(c,X);
 @-
 Each client has its own breakpoint administration, kept in a global table.
-Although a little space consumptive, it is the easiest to maintain 
+Although a little space consumptive, it is the easiest to maintain
 and much less expensive as reserving debugger space in each instruction.
 @c
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
@@ -168,8 +168,8 @@ char isBreakpoint(Client cntxt, InstrPtr p){
     int i,j;
 
     for(i=0;i<mdbTable[cntxt->idx].brkTop;i++){
-        if( functionId(p) && 
-            strcmp(functionName(p), 
+        if( functionId(p) &&
+            strcmp(functionName(p),
                 mdbTable[cntxt->idx].brkVarName[i])==0)
             return mdbTable[cntxt->idx].brkCmd[i];
         for(j=0;j<p->retc;j++)
@@ -216,7 +216,7 @@ void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name, char cmd
     mdb->brkVar[mdb->brkTop] = getDestVar(p);
     mdb->brkVarName[mdb->brkTop] = GDKstrdup(name);
     mdb->brkCmd[mdb->brkTop] =cmd;
-    if( mdb->brkTop+1< MAXBREAKS) 
+    if( mdb->brkTop+1< MAXBREAKS)
         mdb->brkTop++;
 }
 void mdbShowBreakpoints(Client cntxt)
@@ -270,20 +270,21 @@ Prepare a string for an instruction call. The flag indicates
 a need for position information as well.
 @c
 str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
-    InstrPtr p;
-    char target[BLOCK],buf[BLOCK];
-    int l,k;
+	InstrPtr p;
+	char target[BLOCK],buf[BLOCK];
+	char *nme, nmebuf[PATHLENGTH];
+	int l,k;
 
-    p= getInstrPtr(mb, pc);
-    if( p != NULL){
+	p= getInstrPtr(mb, pc);
+	if( p != NULL){
 		target[0]=0;
 		fillTarget(mb,p,target);
-        if( moduleId(p) && functionId(p)){
-            snprintf(buf,BLOCK,"%s%s.%s(", target,
-                moduleName(p),functionName(p));
-            for(k= p->retc; k<p->argc; k++){
-                str msg=0; 
-                ValPtr v= &stk->stk[p->argv[k]];
+		if( moduleId(p) && functionId(p)){
+			snprintf(buf,BLOCK,"%s%s.%s(", target,
+				moduleName(p),functionName(p));
+			for(k= p->retc; k<p->argc; k++){
+				str msg=0;
+				ValPtr v= &stk->stk[p->argv[k]];
 
 				if( isTmpVar(mb, getArg(p,k)) ) {
 					snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
@@ -291,27 +292,27 @@ str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
 					nme= nmebuf;
 				} else  nme = getArgName(mb,p,k);
 
-                ATOMformat(v->vtype, VALptr(v), &msg);
-                l= strlen(buf);
-                snprintf(buf+l,BLOCK-l,"%s",msg);
-                GDKfree(msg);
-                if( k < p->argc-1 ) {
-                    l= strlen(buf);
-                    snprintf(buf+l,BLOCK-l,",");
-                }
-            }
-            l= strlen(buf);
-            snprintf(buf+l,BLOCK-l,");");
-        } else{
+				ATOMformat(v->vtype, VALptr(v), &msg);
+				l= strlen(buf);
+				snprintf(buf+l,BLOCK-l,"%s",msg);
+				GDKfree(msg);
+				if( k < p->argc-1 ) {
+					l= strlen(buf);
+					snprintf(buf+l,BLOCK-l,",");
+				}
+			}
+			l= strlen(buf);
+			snprintf(buf+l,BLOCK-l,");");
+		} else{
 			strcpy(buf,instruction2str(mb,p,FALSE));
 			strcpy(buf,target);
 		}
-    }
-    if( extra){
-        p= getInstrPtr(mb,0);
-        l= strlen(buf);
-        snprintf(buf+l,BLOCK-l," at #%d in %s", pc, functionName(p));
-    }
+	}
+	if( extra){
+		p= getInstrPtr(mb,0);
+		l= strlen(buf);
+		snprintf(buf+l,BLOCK-l," at #%d in %s", pc, functionName(p));
+	}
     return GDKstrdup(buf);
 }
 void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
@@ -338,7 +339,7 @@ void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         for(k= p->retc; k<p->argc; k++){
 			VarPtr v= getVar(mb, p->argv[k]);
             ValPtr val= &stk->stk[p->argv[k]];
-			if( v->tmpindex == 0) 
+			if( v->tmpindex == 0)
 				stream_printf(cntxt->fdout,"%s=",v->name);
 			else
 				stream_printf(cntxt->fdout,"%c%d=",TMPMARKER,v->tmpindex);
@@ -381,7 +382,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	}
 	oldin= cntxt->fdin;
 	cntxt->fdin= getConsole(cntxt);
-    cntxt->fdin->pos += cntxt->yycur; 
+    cntxt->fdin->pos += cntxt->yycur;
 	cntxt->yycur = 0;
 	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
     do {
@@ -405,14 +406,14 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
     	skipBlanc(cntxt,b);
     	switch(*b){
-    	case 0: 
-			m = 0; 
+    	case 0:
+			m = 0;
 			break;
-    	case 'a': 
-			if( strncmp("atoms",b,5)==0) 
+    	case 'a':
+			if( strncmp("atoms",b,5)==0)
 				showAtoms(out);
         	break;
-    	case 'c': 
+    	case 'c':
 			if( strncmp("call",b,4)==0) {
             	GDKerror("call instruction not yet implemented\n");
             	break;
@@ -421,10 +422,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	skipWord(cntxt,b);
 			m = 0;
 			break;
-    	case 'h': 
-			mdbHelp(out); 
+    	case 'h':
+			mdbHelp(out);
 			break;
-    	case 'q': 
+    	case 'q':
         	stk->cmd= 'q';/* return from this debugger */
         	cntxt->itrace= 0;
         	cntxt->timer= 0;
@@ -443,7 +444,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	} else if( strncmp("scope",b,3)==0){
             	showModuleStatistics(out,cntxt->nspace);
             	break;
-        	} 
+        	}
         	stk->cmd= *b;
 			m = 0;
 			break;
@@ -491,13 +492,13 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
     	case 't': /* trace breakpoint */
         	if( strncmp("type",b,4)==0){
             	skipWord(cntxt,b); skipBlanc(cntxt,b);
-            	if(strchr(b,'\n')) 	
+            	if(strchr(b,'\n'))
                         *strchr(b,'\n')= 0;
            		traceFcnName= GDKstrdup(b);
         	} else if( strncmp("timer",b,5)==0){
             	if( cntxt->timer==0)
                 	cntxt->timer = GDKusec();
-            	else 
+            	else
                         cntxt->timer = 0;
         	}
         	break;
@@ -524,7 +525,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 							}
 						}
 						continue;
-					} 
+					}
             		*fcnname = 0;
             		fcnname ++;
             		fsym= findModule(cntxt->nspace,modnme);
@@ -541,13 +542,13 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 							fs= fs->peer;
 						}
 					}
-        		} else 
+        		} else
         			printStack(out,mb,stk);
         		break;
 			}
     	case 'b':
 			if( strcmp(b,"breakpoints") == 0 ){
-				mdbShowBreakpoints(cntxt); 
+				mdbShowBreakpoints(cntxt);
 				continue;
 			}
 			if( strncmp(b,"break",5) == 0 ) b+=4;
@@ -556,7 +557,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				if( *b && !isspace((int)*b) )
 					/* set breakpoints by name */
 					mdbSetBreakpointName(cntxt,mb,b,'s');
-				 else 
+				 else
 					mdbSetBreakpoint(cntxt,mb,p,getArgName(mb,p,0),'s');
 				continue;
 			}
@@ -577,10 +578,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	}
         	continue;
     	case 'i':
-    	{   
-			int i; 
+    	{
+			int i;
         	char *t;
-        
+
         	skipWord(cntxt,b);
         	t=b;
         	skipNonBlanc(cntxt,t);
@@ -595,21 +596,21 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	continue;
     	}
     	case 'p':
-    	{   
+    	{
 			int i, size=0,first=0;
         	char *t;
-        
+
         	skipWord(cntxt,b);
         	t=b;
         	skipNonBlanc(cntxt,t);
         	*t = 0;
         	/* you can identify a start and length */
-        	t++; 
+        	t++;
 			skipBlanc(cntxt,t);
         	if(isdigit((int)*t)){
             	size= atol(t);
             	skipWord(cntxt,t);
-            	if( isdigit((int)*t)) 
+            	if( isdigit((int)*t))
 					first= atol(t);
         	}
         	/* search the symbol */
@@ -617,12 +618,12 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	if( i<0){
             	stream_printf(out,"%s Symbol not found\n","#mdb ");
             	continue;
-        	} 
+        	}
         	printStackElm(out, mb, getVar(mb,i),stk->stk+i,i,size,first);
         	continue;
     	}
     	case 'u':
-        	if( stk->up == NULL) 
+        	if( stk->up == NULL)
 				break;
         	stream_printf(out,"%s go up the stack\n","#mdb ");
         	stk= stk->up;
@@ -630,7 +631,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	printCall(cntxt,mb,stk,pc);
         	continue;
     	case 'w':
-    	{   
+    	{
 			MalStkPtr w;
         	MalBlkPtr mw=mb;
 			int pci=pc; /*  how to find enclosing pc */
@@ -644,18 +645,18 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	continue;
     	}
 @-
-While debugging it should be possible to inspect the symbol 
+While debugging it should be possible to inspect the symbol
 table using the 'module.function' name. The default is to list all
 signatures satisfying the pattern.
 @c
-    	case 'L': 
+    	case 'L':
     	case 'l': /* list the current code block */
-    	{   
+    	{
 			str modnme, fcnname;
         	Scope fsym;
         	Symbol fs;
         	int i, lstng;
-	
+
         	lstng = /* listing |*/ (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
         	skipWord(cntxt,b);
         	if( *b!= 0){
@@ -675,7 +676,7 @@ signatures satisfying the pattern.
                     	}
                 	}
                 	continue;
-            	} 
+            	}
             	*fcnname = 0;
             	fcnname ++;
             	fsym= findModule(cntxt->nspace,modnme);
@@ -687,7 +688,7 @@ signatures satisfying the pattern.
             	if( displayModule(out,fsym,fcnname,lstng)==0){
                 	stream_printf(out,"%sSymbol '%s.%s' not found\n",
                     	"#mdb ",modnme,fcnname);
-            	} 
+            	}
         	} else {
 				printFunction(out,mb,lstng);
 			}
@@ -724,13 +725,13 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
 		p= getInstrPtr(mb,pc);
         if( isBreakpoint(cntxt,p) ){
             mdbCommand(cntxt,mb,stk,p,pc);
-        } 
+        }
         break;
     case 's': case 'n':
 		p= getInstrPtr(mb,pc);
         mdbCommand(cntxt,mb,stk,p,pc);
         break;
-    case 'r': stk->cmd = 'n'; 
+    case 'r': stk->cmd = 'n';
 	case 'T': ;
     }
     if( cntxt->timer) cntxt->timer = GDKusec();
@@ -813,7 +814,7 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
             stream_printf(f,"Failed to take chunk\n");
         else BATmultiprintf(f,2,&bs,TRUE,0,TRUE);
         BBPunfix(b->batCacheid);
-    } else 
+    } else
     if( isaBatType(n->type) && v){
         BAT *b;
         b= BATdescriptor(v->val.ival);
@@ -864,7 +865,7 @@ if(hp->base){
 h= &b->@1;
 if(h->mask){
         stream_printf(GDKout,"\t@1=%d size=%d\n",h, sizeof(*h));
-        stream_printf(GDKout,"\t@1link=%d size=%d\n",h->link, 
+        stream_printf(GDKout,"\t@1link=%d size=%d\n",h->link,
                 (h->mask+h->lim+1)*sizeof(int));
 }
 @-
@@ -872,7 +873,7 @@ The memProfileVector routine produces a character string to represent
 the usage of memory by BAT information. The characters are interpreted
 as follows:
 .=unused, X=completely used, [0-9]=small elements within the granule
-More then 9 elements makes it full. 
+More then 9 elements makes it full.
 @= setVector
     start= (((long)@1)-min)/granule;
     lim= (((long)@1)-min + @2)/granule;
@@ -890,9 +891,9 @@ str memProfileVector(int cells){
         return GDKstrdup("");
     }
     v= GDKmalloc(cells+1);
-    if( v== 0) 
+    if( v== 0)
         GDKfatal("memProfileVector:malloc failure\n");
-    
+
     for(i=0; i<cells;i++) v[i]='.';
     v[i]=0;
 
@@ -940,7 +941,7 @@ void printBBPinfo(stream *out){
 #endif
 }
 @-
-Some utilities for the debugger 
+Some utilities for the debugger
 @c
 void mdbHelp(stream *f){
     stream_printf(f,"next       -- Advance to next statement\n");
@@ -985,7 +986,7 @@ str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) stk;
 
     cntxt->debugOptimizer= cntxt->debugOptimizer? FALSE: TRUE;
-	if(pci) 
+	if(pci)
 		removeInstruction(mb,pci);
 	return MAL_SUCCEED;
 }
@@ -1030,7 +1031,7 @@ void showOptimizerHistory(){
 	int i;
 	stream *fd= GDKout;
 	for(i=0;i<optTop;i++)
-		stream_printf(fd,"[%d] %s \tactions=%2d time %d usec\n",i, 
+		stream_printf(fd,"[%d] %s \tactions=%2d time %d usec\n",i,
 			optimizerHistory[i].title,
 			optimizerHistory[i].actions,
 			optimizerHistory[i].usec);

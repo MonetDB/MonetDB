@@ -505,15 +505,15 @@ The elements can be obtained using iterator, which returns the name
 of the next element in the box.
 @c
 int nextBoxElement(Box box, lng *cursor, ValPtr v){
-    if( *cursor >= box->sym->vtop){
-        *cursor = -1;
-        return 0;
-    }
-        garbageElement(v);
-    v->vtype= TYPE_str;
-        v->val.pval= getBoxName(box,*cursor);
-    *cursor= *cursor+1;
-    return 0;
+	if( *cursor >= box->sym->vtop){
+		*cursor = -1;
+		return 0;
+	}
+	garbageElement(v);
+	v->vtype= TYPE_str;
+	v->val.pval= getBoxName(box,*cursor);
+	*cursor= *cursor+1;
+	return 0;
 }
 str getBoxName(Box box, lng i){
     str s;
