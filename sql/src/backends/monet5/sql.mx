@@ -144,7 +144,7 @@ address mvc_import_table_wrap
 comment "Import a table from stream s with the 
 	given tuple and seperators (sep/rsep)";
 
-command hash( v:any$1, sh:int ) :int 
+pattern hash( v:any$1, sh:int ) :int 
 address hash_wrap 
 comment "calculate a hash value and shift left";
 
@@ -649,9 +649,22 @@ mvc_export_table_wrap(stream *s, int *res_id, int *offset, int *nr)
 }
 
 str
-hash_wrap(int *res, ptr v, int tpe, int *sh)
+hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
-	*res = (ATOMhash(tpe, v) << (*sh)) & 0xEFFFFFFF;
+	ptr v;
+	int *res, tpe = getArgType(m,p,1);
+	int sh, shtype = getArgType(m,p,2);
+
+	if (shtype != TYPE_int) {
+		assert(0);
+		return throwMessage("sql.hash", "failed");
+	}
+
+	res= (int *) getArgReference(s,p,0);
+	v = getArgReference(s,p,1);
+	sh = *(int*)getArgReference(s,p,2);
+
+	*res = (ATOMhash(tpe, v) << (sh)) & 0xEFFFFFFF;
 	return NULL;
 }
 
