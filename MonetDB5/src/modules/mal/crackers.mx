@@ -177,8 +177,6 @@ typedef struct{
 	Piece *pieces;
 } CrackMap;
 
-extern str initCrackMap(CrackMap *map,int *bid);
-
 #endif /* _CRACKERS_H */
 @-
 During initialization of the crackers structure we already
@@ -249,21 +247,6 @@ void printCrackMap(int bid){
 	for(i=0;i<crackMap[m].freepiece;i++)
 		printCrackMapElement(crackMap[m].pieces,i,bid);
 }
-
-str CRKnew(int *cret, int *bid){
-	int m;
-	(void) cret;
-	m= findCrackMap(*bid);
-	initCrackMap(crackMap+m, bid);
-	stream_printf(GDKout,"crackMap created\n");
-	return MAL_SUCCEED;
-}
-str CRKinfo(int *k, int *bid)
-{	
-	(void) k;
-	printCrackMap(*bid);
-	return MAL_SUCCEED;
-}
 str initCrackMap(CrackMap *map, int *bid){
 	BAT *b;
 	BUN kmin=NULL, vmin=NULL, kmax=NULL, vmax=NULL;
@@ -310,6 +293,21 @@ according to the tail value;
 	if( p == vmax) vmax= vmin;
 	p= BUNlast(b)- BUNsize(b);
 	if(vmax!=p) @:exchange(vmax,p)@
+	return MAL_SUCCEED;
+}
+
+str CRKnew(int *cret, int *bid){
+	int m;
+	(void) cret;
+	m= findCrackMap(*bid);
+	initCrackMap(crackMap+m, bid);
+	stream_printf(GDKout,"crackMap created\n");
+	return MAL_SUCCEED;
+}
+str CRKinfo(int *k, int *bid)
+{	
+	(void) k;
+	printCrackMap(*bid);
 	return MAL_SUCCEED;
 }
 @-
