@@ -721,7 +721,7 @@ if (not(b.exist("smaller_aY")))
   smaller_key.copy.rename("smaller_aY").persists(true).mmap(1);  
 
 if (not(b.exist("larger_key")))
-  bat(void,int,2000000).insert(smaller_key).insert(smaller_key).seqbase(0@0).rename("larger_key").persists(true).mmap(1);
+  bat(void,int,2000000).insert(smaller_key).insert(smaller_key.copy.seqbase(oid(int(smaller_key.seqbase) + smaller_key.count))).rename("larger_key").persists(true).mmap(1);
 if (not(b.exist("larger_b1")))
   larger_key.mirror.copy.rename("larger_b1").persists(true).mmap(1);  
 if (not(b.exist("larger_bZ")))
