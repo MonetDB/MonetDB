@@ -571,6 +571,7 @@ nat content2bat (bat_id_t bat, char *buf, nat len)
 
 void shred_start_document (void *ctx)
 {
+    (void)ctx;
     pre          = 0;   /* next ``node ID'' */
     attribute_id = 0;   /*      attribute ID */
     nsloc_id     = 0;   /*      element tag property ID */
@@ -600,6 +601,7 @@ void shred_start_document (void *ctx)
 void shred_end_document (void *ctx)
 {
     /* dispose virtual root */
+    (void)ctx;
     (void) POP ();
 }
 
@@ -697,6 +699,7 @@ void shred_start_element (void *ctx,
 
     text2bat ();
 
+    (void)ctx;
     /* (1) assign preorder rank (document order), size and level */
     node.pre   = NODE_ID (pre);
     pre++;
@@ -809,6 +812,7 @@ void shred_end_element (void *ctx, const xmlChar *tag)
     char bun[XML_TAG_MAX + 16];
     int  buns;
 
+    (void)ctx; (void)tag;
     text2bat ();
 
     node = POP ();
@@ -844,6 +848,7 @@ void shred_characters (void *ctx, const xmlChar *cs, int n)
 {
     int l = MIN (MONET_STRLEN_MAX - (int) content, n);
     
+    (void)ctx;
     memcpy (&(content_buf[content]), cs, l);
     content += l;
 
@@ -877,6 +882,7 @@ void shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
     int dup;
     nat prop_id;
 
+    (void)ctx;
     pi_nodes++;
 
     text2bat ();
@@ -948,6 +954,7 @@ void shred_comment (void *ctx, const xmlChar *c)
     int dup;
     nat prop_id;
 
+    (void)ctx;
     com_nodes++;
 
     text2bat ();
@@ -1047,8 +1054,9 @@ xmlSAXHandler shredder = {
   ,     (errorSAXFunc) error                    /* error                 */  
   ,     (errorSAXFunc) error                    /* fatalError            */
   ,	0			                /* getParameterEntity    */
-  ,	0//shred_cdata                             /* cdataBlock            */
+  ,	0                                       /* cdataBlock            */
   ,	0			                /* externalSubset        */  
+  ,     0                                       /* initialized           */
 };
 
 

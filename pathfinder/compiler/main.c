@@ -373,9 +373,7 @@
 #include <fcntl.h>
 #include <assert.h>
 
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "pf_config.h"
 
 #if HAVE_GETOPT_H
 #include <getopt.h>
@@ -718,7 +716,7 @@ main (int argc, char *argv[])
      * if this has been requested (via `-l') 
      */
     if (logfn) {
-        if ((logf = fopen (logfn, "a")) < 0) {
+        if ((logf = fopen (logfn, "a")) == NULL) {
             PFoops (OOPS_FATAL,
                     "cannot append to log file `%s': %s",
                     logfn,

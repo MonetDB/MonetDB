@@ -1,5 +1,7 @@
 /* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
 
+#include <gdk.h>
+
 
 /**********************************************************************
  * this file contains functions for result size estimation on XPath 
@@ -188,7 +190,7 @@ PFestimate_pfs(int* res, BAT* ctx, BAT* group_histogram, BAT* group_parents,
     int g_num = BATcount (group_histogram);
     int i;
 
-    float ctx_fac, g_fan, g_probe, fac_p;
+    float ctx_fac, g_fan, g_probe;
     float result = 0, g_res;
 
     int *group_histogram_val = ((int*) BUNfirst (group_histogram))
@@ -397,6 +399,7 @@ PFestimate_anc2 (int* res, BAT* ctx, BAT* level_histogram,
     float result = 0.0;
     float lev_res = 0.0;
 
+    (void)maxdepth;
     /* -------------------- special cases --------------------- */
 
     if (ctx_size == 0)
@@ -439,7 +442,6 @@ PFdistr_anc (BAT** res, BAT* ctx, BAT* prepost, BAT* level, int* maxdepth)
 {
     int j;
 
-    int ctx_size = BATcount(ctx);
     int bunsize = BUNsize(ctx);
     BUN ctx_cur = BUNlast(ctx) - bunsize;
     BUN ctx_last = BUNfirst(ctx);
@@ -607,7 +609,6 @@ PFsample_anc2 (BAT** res, BAT* ctx, BAT* prepost, BAT* level, int* maxdepth)
     int limit1 = ctx_size, limit2 = 0;
     int pre, post;
     int min_post = BATcount(prepost) + 1;
-    float move = 1.0;
     int ctx_level[(*maxdepth) + 1];
     float sample_fac;
 
@@ -705,7 +706,7 @@ PFestimate_anc_tag(int* res, BAT* ctx, BAT* prepost, BAT* level,
 
     float lev_ctx_fac;
     float result = 0.0;
-    float lev_res;
+    float lev_res = 0.0;
     float tag_res;
     int lev_par;
     int lev_size;

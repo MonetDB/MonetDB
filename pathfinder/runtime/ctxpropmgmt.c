@@ -5,6 +5,8 @@
  *                 management
  */
 
+#include "ctxpropmgmt.h"
+
 int
 PFbatcacheid (oid *res, BAT *b)
 {

@@ -5,8 +5,8 @@ prologue {
 /*
  * Type inference (static semantics) and type checking for XQuery core.
  *
- * In this file, a reference to `W3C XQuery' refers to the W3C WD
- * `XQuery 1.0 and XPath 2.0 Formal Semantics', Draft Nov 15, 2002
+ * In this file, a reference to W3C XQuery refers to the W3C WD
+ * XQuery 1.0 and XPath 2.0 Formal Semantics, Draft Nov 15, 2002
  * http://www.w3.org/TR/2002/WD-query-semantics-20021115/
  *
  * $Id$
@@ -24,11 +24,11 @@ prologue {
 /* 
  * m4: let <:(t, t') denote the subtype relationship of types t and t'
  * m4: make __type__( e ) a synonym for (e)->type (e : t)
-define(`__type__',`($1)->type')
-changesyntax(`W<[',`W]',`D:') 
-define(`<:', `PFty_subtype ($1,$2)')
-define(`__type__(',`__type__(')
-define(`)',`)')
+
+changesyntax(W<[,W],D:) 
+
+
+
  */
 
 };
@@ -116,7 +116,7 @@ label Query
       LiteralValue;
 
 Query:           CoreExpr
-    { assert ($$); /* avoid `root' unused warning */ }
+    { assert ($$); /* avoid root unused warning */ }
     ;
 
 CoreExpr:        Atom;
@@ -142,22 +142,22 @@ BindingExpr:     for_ (Var, nil, Atom, CoreExpr)
         PFty_t t1, t2;
         
         /* nil : none */
-        __type__( $2$ ) = PFty_none ();
+        ($2$ )->type = PFty_none ();
         
         /* E |- Atom : t1 */
         tDO ($%2$);
-        t1 = __type__( $3$ );
+        t1 = ($3$ )->type;
         
         /* Var : prime (t1) */
-        __type__( $1$ ) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
+        ($1$ )->type = *PFty_simplify (PFty_prime (PFty_defn (t1)));
         
         /* E[Var : prime (t1)] |- CoreExpr : t2 */
         assert (($1$)->sem.var);
-        __type__( ($1$)->sem.var ) = __type__( $1$ );
+        (($1$)->sem.var )->type = ($1$ )->type;
         tDO ($%3$);
-        t2 = __type__( $4$ );
+        t2 = ($4$ )->type;
         
-        __type__( $$ ) = *PFty_simplify ((PFty_quantifier (PFty_defn (t1))) (t2));
+        ($$ )->type = *PFty_simplify ((PFty_quantifier (PFty_defn (t1))) (t2));
     }
     ;
 
@@ -176,23 +176,23 @@ BindingExpr:     for_ (Var, Var, Atom, CoreExpr)
         
         /* E |- Atom : t1 */
         tDO ($%3$);
-        t1 = __type__( $3$ );
+        t1 = ($3$ )->type;
         
         /* Var2 : xs:integer */
-        __type__( $2$ ) = PFty_xs_integer ();
+        ($2$ )->type = PFty_xs_integer ();
         assert (($2$)->sem.var);
-        __type__( ($2$)->sem.var ) = __type__( $2$ );
+        (($2$)->sem.var )->type = ($2$ )->type;
         
         /* Var1 : prime (t1) */
-        __type__( $1$ ) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
+        ($1$ )->type = *PFty_simplify (PFty_prime (PFty_defn (t1)));
         
         /* E[Var1:prime (t1), Var2:xs:integer] |- CoreExpr : t2 */
         assert (($1$)->sem.var);
-        __type__( ($1$)->sem.var ) = __type__( $1$ );
+        (($1$)->sem.var )->type = ($1$ )->type;
         tDO ($%4$);
-        t2 = __type__( $4$ );
+        t2 = ($4$ )->type;
         
-        __type__( $$ ) = *PFty_simplify ((PFty_quantifier (PFty_defn (t1))) (t2));
+        ($$ )->type = *PFty_simplify ((PFty_quantifier (PFty_defn (t1))) (t2));
     }
     ;
              
@@ -209,15 +209,15 @@ BindingExpr:     let (Var, CoreExpr, CoreExpr)
 
         /* E |- CoreExpr1 : t1 */
         tDO ($%2$); 
-        t1 = __type__( $2$ );
-        __type__( $1$ ) = t1;
+        t1 = ($2$ )->type;
+        ($1$ )->type = t1;
 
         /* E[Var : t1] |- CoreExpr : t2 */
         assert (($1$)->sem.var);
-        __type__( ($1$)->sem.var ) = t1;
+        (($1$)->sem.var )->type = t1;
         tDO ($%3$);
         
-        __type__( $$ ) = __type__( $3$ );
+        ($$ )->type = ($3$ )->type;
     }
     ;
 
@@ -230,12 +230,12 @@ ConditionalExpr: ifthenelse (Atom, CoreExpr, CoreExpr)
          * -------------------------------------------------------
          *  E |- ifthenelse (Atom, CoreExp1, CoreExpr2) : t1 | t2
          */
-        if (PFty_eq (PFty_defn (__type__( $1$ )), PFty_boolean ()))
-            __type__( $$ ) = *PFty_simplify (PFty_choice (__type__( $2$ ), __type__( $3$ )));
+        if (PFty_eq (PFty_defn (($1$ )->type), PFty_boolean ()))
+            ($$ )->type = *PFty_simplify (PFty_choice (($2$ )->type, ($3$ )->type));
         else
             PFoops (OOPS_TYPECHECK, 
                     "if-then-else condition of type %s (expected %s)",
-                    PFty_str (__type__( $1$ )),
+                    PFty_str (($1$ )->type),
                     PFty_str (PFty_boolean ()));
     }
     ;
@@ -250,10 +250,10 @@ SequenceExpr:    seq (Atom, Atom)
          */
         PFty_t t1, t2;
 
-        t1 = __type__( $1$ );
-        t2 = __type__( $2$ );
+        t1 = ($1$ )->type;
+        t2 = ($2$ )->type;
 
-        __type__( $$ ) = *PFty_simplify (PFty_seq (t1, t2));
+        ($$ )->type = *PFty_simplify (PFty_seq (t1, t2));
     }
     ;
 
@@ -268,10 +268,10 @@ TypeswitchExpr:  typeswitch (Atom, cases (CaseBranch, nil), CoreExpr)
          */
         PFty_t t2, t3;
 
-        t2 = __type__( $2.1$ );
-        t3 = __type__( $3$ );
+        t2 = ($2.1$ )->type;
+        t3 = ($3$ )->type;
 
-        __type__( $$ ) = *PFty_simplify (PFty_choice (t2, t3));
+        ($$ )->type = *PFty_simplify (PFty_choice (t2, t3));
     }
     ;
 
@@ -283,7 +283,7 @@ CaseBranch:      case_ (SequenceType, CoreExpr)
          * -------------------------------------------
          *   E |- case (SequenceType, CoreExpr) : t2
          */
-        __type__( $$ ) = __type__( $2$ );
+        ($$ )->type = ($2$ )->type;
     }
     ;
 
@@ -294,7 +294,7 @@ SequenceTypeCast: seqcast (SequenceType, Atom)
          * ---------------------------------------
          *    seqcast (SequenceType, Atom) : t1
          */
-        __type__( $$ ) = __type__( $1$ );
+        ($$ )->type = ($1$ )->type;
     }
     ;
 
@@ -310,11 +310,11 @@ SubtypingProof:  proof (CoreExpr, SequenceType, CoreExpr)
          */
 
         /* perform the <: proof */
-        if (! (PFty_subtype(__type__( $1$ ), __type__( $2$ ))))
+        if (! (PFty_subtype(($1$ )->type, ($2$ )->type)))
             PFoops (OOPS_TYPECHECK,
                     "%s is not a subtype of %s",
-                    PFty_str (__type__( $1$ )),
-                    PFty_str (__type__( $2$ )));
+                    PFty_str (($1$ )->type),
+                    PFty_str (($2$ )->type));
 
         /* remove the successful proof and simply return the guarded
          * expression 
@@ -326,7 +326,7 @@ SubtypingProof:  proof (CoreExpr, SequenceType, CoreExpr)
 SequenceType:    seqtype
     =
     {
-        __type__( $$ ) = ($$)->sem.type;
+        ($$ )->type = ($$)->sem.type;
     }
     ;
 
@@ -353,7 +353,7 @@ LocationSteps:   locsteps (LocationStep, LocationSteps)
          *        MIL mapping possible. All path steps simply
          *        have node* type.
          */
-        __type__( $$ ) = PFty_star (PFty_xs_anyNode ());
+        ($$ )->type = PFty_star (PFty_xs_anyNode ());
     }
     ;
 LocationSteps:   locsteps (LocationStep, Atom)
@@ -363,7 +363,7 @@ LocationSteps:   locsteps (LocationStep, Atom)
          *        MIL mapping possible. All path steps simply
          *        have node* type.
          */
-        __type__( $$ ) = PFty_star (PFty_xs_anyNode ());
+        ($$ )->type = PFty_star (PFty_xs_anyNode ());
     }
     ;
 
@@ -411,20 +411,20 @@ FunctionAppl:    apply (FunctionArgs)
                          var (v2)));
         
         /* type the above piece of core */
-        __type__( core->child[0] )                     = 
-        __type__( core->child[0]->sem.var )            =
-        __type__( core->child[2]->child[1]->child[1] ) = 
-        __type__( core->child[1] )                     = ($$)->sem.fun->ret_ty;
+        (core->child[0] )->type                     = 
+        (core->child[0]->sem.var )->type            =
+        (core->child[2]->child[1]->child[1] )->type = 
+        (core->child[1] )->type                     = ($$)->sem.fun->ret_ty;
         
-        __type__( core )                               =
-        __type__( core->child[2] )                     =
-        __type__( core->child[2]->child[0] )           =
-        __type__( core->child[2]->child[0]->sem.var )  =            
-        __type__( core->child[2]->child[1] )           =                        
-        __type__( core->child[2]->child[1]->child[0] ) =                        
-        __type__( core->child[2]->child[2] )           = t;
+        (core )->type                               =
+        (core->child[2] )->type                     =
+        (core->child[2]->child[0] )->type           =
+        (core->child[2]->child[0]->sem.var )->type  =            
+        (core->child[2]->child[1] )->type           =                        
+        (core->child[2]->child[1]->child[0] )->type =                        
+        (core->child[2]->child[2] )->type           = t;
         
-        /* pass 2: insert `seqcast's to cast actual argument types
+        /* pass 2: insert seqcasts to cast actual argument types
          * to expected formal parameter types (along <:)
          */
         *(PFty_t **) PFarray_add (par_ty) = ($$)->sem.fun->par_ty;
@@ -447,7 +447,7 @@ FunctionArgs:    arg (FunctionArg, FunctionArgs)
 
         tDO ($%2$);
 
-        __type__( $$ ) = __type__( $1$ );
+        ($$ )->type = ($1$ )->type;
     }
     ;
 FunctionArgs:    nil;
@@ -462,13 +462,13 @@ FunctionArg:     Atom
         if (*(PFty_t **) PFarray_top (par_ty)) {
             expected = **(PFty_t **) PFarray_top (par_ty);
 
-            /* insert `seqcast' to cast argument to expected
+            /* insert seqcast to cast argument to expected
              * formal parameter type
              */
             core = seqcast (seqtype (expected), ($$));
 
-            __type__( core )           = 
-            __type__( core->child[0] ) = expected;
+            (core )->type           = 
+            (core->child[0] )->type = expected;
 
             PFlog ("typing arg");
 
@@ -491,7 +491,7 @@ Var:             var_
          *    E |- Var : t
          */
         assert (($$)->sem.var);
-        __type__( $$ ) = __type__( ($$)->sem.var );
+        ($$ )->type = (($$)->sem.var )->type;
     }
     ;
 
@@ -502,7 +502,7 @@ LiteralValue:    lit_str
          * --------------------------
          * Env |- lit_str : xs:string
          */
-        __type__( $$ ) = PFty_xs_string ();
+        ($$ )->type = PFty_xs_string ();
     }
     ;    
 LiteralValue:    lit_int
@@ -512,7 +512,7 @@ LiteralValue:    lit_int
          * ---------------------------
          * Env |- lit_int : xs:integer
          */
-        __type__( $$ ) = PFty_xs_integer ();
+        ($$ )->type = PFty_xs_integer ();
     }
     ;    
 LiteralValue:    lit_dec
@@ -522,7 +522,7 @@ LiteralValue:    lit_dec
          * ---------------------------
          * Env |- lit_dec : xs:decimal
          */
-        __type__( $$ ) = PFty_xs_decimal ();
+        ($$ )->type = PFty_xs_decimal ();
     }
     ;    
 LiteralValue:    lit_dbl
@@ -532,7 +532,7 @@ LiteralValue:    lit_dbl
          * --------------------------
          * Env |- lit_dec : xs:double
          */
-        __type__( $$ ) = PFty_xs_double ();
+        ($$ )->type = PFty_xs_double ();
     }
     ;    
 
@@ -542,7 +542,7 @@ BuiltIns:        root_
          * FIXME: This is just a temporary implementation to
          *        make mapping to MIL possible.
          */
-        __type__( $$ ) = PFty_star (PFty_doc (PFty_xs_anyType ()));
+        ($$ )->type = PFty_star (PFty_doc (PFty_xs_anyType ()));
     }
     ;
 BuiltIns:        true_
@@ -551,7 +551,7 @@ BuiltIns:        true_
          * -------------------------
          * Env |- true_ : xs:boolean
          */
-        __type__( $$ ) = PFty_xs_boolean ();
+        ($$ )->type = PFty_xs_boolean ();
     }
     ;
 BuiltIns:        false_
@@ -560,7 +560,7 @@ BuiltIns:        false_
          * --------------------------
          * Env |- false_ : xs:boolean
          */
-        __type__( $$ ) = PFty_xs_boolean ();
+        ($$ )->type = PFty_xs_boolean ();
     }
     ;
 BuiltIns:        empty_
@@ -569,7 +569,7 @@ BuiltIns:        empty_
          * ------------------
          * Env |- empty_ : ()
          */
-        __type__( $$ ) = PFty_empty ();
+        ($$ )->type = PFty_empty ();
     }
     ;
 

@@ -51,7 +51,7 @@
 #define YYLTYPE PFloc_t
 
 /* #include "XQuery.tab.h" */
-#include "parser/parser.h"
+#include "parser.tab.h"
 
 /* bison 1.33 does not include this line in XQuery.tab.h. So we do it here. */
 extern YYLTYPE yylloc;

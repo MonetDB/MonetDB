@@ -1,4 +1,6 @@
 
+#include "pair.h"
+
 pair PAIRnil = { NULL, NULL };
 
 pair* PAIRnull()

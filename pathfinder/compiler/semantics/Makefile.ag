@@ -1,0 +1,22 @@
+## Process this file with automake to produce Makefile.in
+
+INCLUDES = $(MONET_INCS) ../include
+
+# locally disable "-Werror"
+X_CFLAGS =
+
+lib_semantics = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		functions.c \
+		normalize.c \
+		ns.c \
+		subtyping.c \
+		typecheck.mt \
+		types.c \
+		varscope.c \
+		xquery_fo.c 
+}
+
+EXTRA_DIST = typecheck.mt.m4 typecheck_impl.c.m4 typecheck_impl.c

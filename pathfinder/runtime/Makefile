@@ -1,12 +1,13 @@
-MONET_DIST     ?= $(MONET_PREFIX)/distrib/MonetDB
-MONET_LIBDIR   ?= $(MONET_PREFIX)/lib/MonetDB
-MONET_INCDIR   = $(MONET_PREFIX)/include
-MONET_INCLUDES = -I$(MONET_INCDIR) -I$(MONET_INCDIR)/common -I$(MONET_INCDIR)/gdk -I$(MONET_INCDIR)/monet
 
-MX      = $(MONET_PREFIX)/bin/Mx
+MONET_DIST     = `monet-config --source`
+MONET_LIBDIR   = `monet-config --modpath`
+MONET_INCDIR   = `monet-config --includedir`
+MONET_INCLUDES = `monet-config --cflags`
+
+MX      = Mx
 MXFLAGS = -notouch
 
-MEL         = $(MONET_PREFIX)/bin/mel
+MEL         = mel
 MELINCLUDES = $(MONET_INCLUDES)
 
 INSTALL = install -c

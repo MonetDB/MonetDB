@@ -10,9 +10,7 @@
 /*
  * Include all the information we got from the configure script
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <pf_config.h>
 
 
 #ifndef PATHFINDER_H

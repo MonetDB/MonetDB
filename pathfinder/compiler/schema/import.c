@@ -513,7 +513,6 @@ attributes (void *ctx, const xmlChar **atts)
 {
     PFqname_t qn;
     PFarray_t *attrs;
-    int value;
 
     attrs = PFarray (sizeof (char *));
 
@@ -808,6 +807,7 @@ schema_import_error (xmlParserCtxtPtr ctx, const char *msg, ...)
  */
 static void nop (PFarray_t *unused)
 {
+    (void)unused;
     /* do nothing */
 }
 
@@ -859,6 +859,7 @@ end_list (PFarray_t *unused)
 {
     /*   t   -->   t* 
      */
+    (void)unused;
     push_type (PFty_star (pop_type ()));
 }
 
@@ -874,6 +875,7 @@ combine_all (PFarray_t *unused)
     PFty_t t1;
     PFty_t t2;
 
+    (void)unused;
     t1 = pop_type ();
     t2 = pop_type ();
 
@@ -893,6 +895,7 @@ combine_choice (PFarray_t *unused)
     PFty_t t1;
     PFty_t t2;
 
+    (void)unused;
     t1 = pop_type ();
     t2 = pop_type ();
 
@@ -912,6 +915,7 @@ combine_sequence (PFarray_t *unused)
     PFty_t t1;
     PFty_t t2;
 
+    (void)unused;
     t1 = pop_type ();
     t2 = pop_type ();
 
@@ -930,6 +934,7 @@ combine_atts_partial_type (PFarray_t *unused)
     PFty_t t;
     PFty_t atts;
 
+    (void)unused;
     atts = pop_type ();
     t    = pop_type ();
 
@@ -944,6 +949,7 @@ goto_stack (PFarray_t *unused)
 {
     /*   s   -->   goto(s)
      */
+    (void)unused;
     (void) pop_state ();
     push_state (dfa[state][STACKCOL]);
 }
@@ -957,6 +963,7 @@ end_all_empty (PFarray_t *unused)
     /*   t   -->   none
      *             t
      */
+    (void)unused;
     push_type (PFty_none ());
 }
 
@@ -969,6 +976,7 @@ end_choice_empty (PFarray_t *unused)
     /*   t   -->   none
      *             t
      */
+    (void)unused;
     push_type (PFty_none ());
 }
 
@@ -981,6 +989,7 @@ end_seq_empty (PFarray_t *unused)
     /*   t   -->   empty
      *             t
      */
+    (void)unused;
     push_type (PFty_empty ());
 }
 
@@ -993,6 +1002,7 @@ end_local_complex_type_eps (PFarray_t *unused)
     /*   t   -->   empty
      *             t
      */
+    (void)unused;
     push_type (PFty_empty ());
 }
 
@@ -1763,6 +1773,7 @@ end_anyAttribute (PFarray_t *atts)
 {
     /*  [[ <anyAttribute/> ]]  -->  anyAttribute
      */
+    (void)atts;
     push_type (PFty_xs_anyAttribute ());
 
     /* go to `attribute seen' state */
@@ -1803,6 +1814,7 @@ static xmlSAXHandler schema_import_sax = {
   , 0                                       /* getParameterEntity    */
   , 0                                       /* cdataBlock            */
   , 0                                       /* externalSubset        */
+  , 0                                       /* initialized           */
 };
 
 static action actions [] = {

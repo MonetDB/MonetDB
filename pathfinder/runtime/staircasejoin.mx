@@ -1,3 +1,10 @@
+@f staircasejoin
+@a Torsten Teggy Grust
+@a Maurice van Keulen
+@a Henning Rode
+@t staircasejoin
+
+@c
 /* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
 
 /*******************************************
@@ -5,6 +12,8 @@
 *
 * TODO: Test whether the copy phase can better be replaced by memcpy.
 */
+
+#include <gdk.h>
 
 /* Debug flags */
 const int PF_DEBUG_RESULT_BAT = 1;  /* check size of result BAT */

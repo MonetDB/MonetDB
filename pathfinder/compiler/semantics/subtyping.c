@@ -1729,6 +1729,7 @@ product[5][5] = {
 static PFty_t
 fn_none (PFty_t t)
 {
+    (void)t;
     return PFty_empty ();
 }
 

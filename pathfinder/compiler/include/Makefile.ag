@@ -1,0 +1,9 @@
+EXTRA_DIST = \
+	abssyn.h         env.h        milprint.h   pathfinder.h  twig.h \
+	abssynprint.h    fs.h         milty.h      pfstrings.h   typecheck.h \
+	array.h          func_chk.h   miltype.h    prettyp.h     types.h \
+	core2mil.h       functions.h  normalize.h  qname.h       variable.h \
+	core.h           import.h     ns.h         scope.h       varscope.h \
+	core_mnemonic.h  mem.h        nsres.h      simplify.h    xquery_fo.h \
+	coreprint.h      mildebug.h   oops.h       subtyping.h \
+	daemon.h         mil.h        parser.h     timer.h

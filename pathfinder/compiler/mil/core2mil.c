@@ -1552,6 +1552,7 @@ map_ifthenelse (assgn_fn_t assgn_fn, PFvar_t * v, PFcnode_t * c)
 static PFmnode_t *
 map_typesw (PFvar_t * v, PFcnode_t * c)
 {
+    (void)v; (void)c;
     assert (!"map_typesw() not implemented yet");
     return NULL;
 }

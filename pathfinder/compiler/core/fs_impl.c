@@ -11,9 +11,9 @@
  */
 
 /* m4: make [[ e ]] a synonym for (e)->core (core equivalent of e),
- * see PFpnode_t in `include/abssyn.h'
+ * see PFpnode_t in include/abssyn.h
  */
-define(`__core__',`($1)->core')
+
 
 #include <assert.h>
 #include <string.h>
@@ -79,7 +79,7 @@ static int TWIG_ID[] = {
     [p_is]           is,           /* is (node identity) */
     [p_nis]          nis,          /* isnot (negated node identity) *grin* */
     [p_step]         step,         /* axis step */
-    [p_var]          var,          /* ``real'' scoped variable */
+    [p_var]          var,          /* `real' scoped variable */
     [p_namet]        namet,        /* name test */
     [p_kindt]        kindt,        /* kind test */
     [p_locpath]      locpath,      /* location path */
@@ -296,7 +296,7 @@ PFfs (PFpnode_t *r)
     /* return core equivalent of the root node, i.e.,
      * the core-mapped query
      */
-    core = __core__( rewrite (r, 0) );
+    core = (rewrite (r, 0) )->core;
 
     /* sanity: current function/argument list stacks need to be empty */
     assert (PFarray_empty (funs));

@@ -5,8 +5,8 @@ prologue {
 /*
  * XQuery Formal Semantics: mapping XQuery to XQuery Core.
  *
- * In this file, a reference to `W3C XQuery' refers to the W3C WD
- * `XQuery 1.0 and XPath 2.0 Formal Semantics', Draft Nov 15, 2002
+ * In this file, a reference to W3C XQuery refers to the W3C WD
+ * XQuery 1.0 and XPath 2.0 Formal Semantics, Draft Nov 15, 2002
  * http://www.w3.org/TR/2002/WD-query-semantics-20021115/
  *
  * $Id$
@@ -19,9 +19,9 @@ prologue {
 #include "fs_impl.c"
 
 /* m4: make __core__( e ) a synonym for (e)->core (core equivalent of e),
- * see PFpnode_t in `include/abssyn.h'
+ * see PFpnode_t in include/abssyn.h
  */
-define(`__core__',`($1)->core')
+
 
 /* element/attribute constructor and content
  */
@@ -59,7 +59,7 @@ node  plus         /* binary + */
       is           /* is (node identity) */
       nis          /* isnot (negated node identity) *grin* */
       step         /* axis step */
-      var          /* ``real'' scoped variable */
+      var          /* `real' scoped variable */
       namet        /* name test */
       kindt        /* kind test */
       locpath      /* location path */
@@ -220,11 +220,11 @@ label Query
       Nil_;
 
 Query:		    	xquery (QueryProlog, QueryBody)
-                        { assert ($$);  /* avoid `root unused' warning */ }
+                        { assert ($$);  /* avoid root unused warning */ }
     =
     { 
         /* FIXME: this ignores the QueryProlog */
-        __core__( $$ ) = __core__( $2$ );
+        ($$ )->core = ($2$ )->core;
     }
     ;
 
@@ -251,9 +251,9 @@ ExprSequence:           exprseq (Expr, EmptySequence_)
         PFvar_t *v1 = new_var (0);
         PFvar_t *v2 = new_var (0);
         
-        __core__( $$ ) =
-        let (var (v1), __core__( $1$ ),
-             let (var (v2), __core__( $2$ ),
+        ($$ )->core =
+        let (var (v1), ($1$ )->core,
+             let (var (v2), ($2$ )->core,
                   seq (var (v1), var (v2))));
     }
     ;
@@ -263,9 +263,9 @@ ExprSequence:           exprseq (Expr, ExprSequence)
         PFvar_t *v1 = new_var (0);
         PFvar_t *v2 = new_var (0);
         
-        __core__( $$ ) =
-        let (var (v1), __core__( $1$ ),
-             let (var (v2), __core__( $2$ ),
+        ($$ )->core =
+        let (var (v1), ($1$ )->core,
+             let (var (v2), ($2$ )->core,
                   seq (var (v1), var (v2))));
     }
     ;
@@ -273,7 +273,7 @@ ExprSequence:           exprseq (Expr, ExprSequence)
 EmptySequence_:         empty_seq
     =
     {
-        __core__( $$ ) = empty ();
+        ($$ )->core = empty ();
     }
     ;
 
@@ -287,8 +287,8 @@ OrExpr:                 or (OrExpr, AndExpr)
         PFvar_t *v2 = new_var (0);
         PFfun_t *op_or = function (PFqname (PFns_op, "or"));
 
-        __core__( $$ ) = let (var (v1), ebv (__core__( $1$ )),
-                        let (var (v2), ebv (__core__( $2$ )),
+        ($$ )->core = let (var (v1), ebv (($1$ )->core),
+                        let (var (v2), ebv (($2$ )->core),
                              APPLY (op_or, var (v1), var (v2))));
     }
     ;                           
@@ -301,8 +301,8 @@ AndExpr:                and (AndExpr, FLWRExpr)
         PFvar_t *v2 = new_var (0);
         PFfun_t *op_or = function (PFqname (PFns_op, "and"));
 
-        __core__( $$ ) = let (var (v1), ebv (__core__( $1$ )),
-                        let (var (v2), ebv (__core__( $2$ )),
+        ($$ )->core = let (var (v1), ebv (($1$ )->core),
+                        let (var (v2), ebv (($2$ )->core),
                              APPLY (op_or, var (v1), var (v2))));
     }
     ;                           
@@ -317,11 +317,11 @@ FLWRExpr:               flwr (binds (let (Nil_, Var_, Expr),
     {
         PFvar_t *v = new_var (0);
         
-        __core__( $$ ) =
-        let (__core__( $1.1.2$ ), __core__( $1.1.3$ ),
-             let (var (v), __core__( $2$ ),
+        ($$ )->core =
+        let (($1.1.2$ )->core, ($1.1.3$ )->core,
+             let (var (v), ($2$ )->core,
                   ifthenelse (var (v), 
-                              __core__( $4$ ), empty ())));
+                              ($4$ )->core, empty ())));
     }
     ;
 FLWRExpr:               flwr (binds (let (TypeDeclaration, Var_, Expr), 
@@ -334,13 +334,13 @@ FLWRExpr:               flwr (binds (let (TypeDeclaration, Var_, Expr),
         PFvar_t *v1 = new_var (0);
         PFvar_t *v2 = new_var (0);
 
-        __core__( $$ ) = let (var (v1), __core__( $1.1.3$ ),
-                        let (__core__( $1.1.2$ ), 
-                             proof (var (v1), __core__( $1.1.1$ ), 
-                                    seqcast (__core__( $1.1.1$ ), var (v1))),
-                             let (var (v2), __core__( $2$ ),
+        ($$ )->core = let (var (v1), ($1.1.3$ )->core,
+                        let (($1.1.2$ )->core, 
+                             proof (var (v1), ($1.1.1$ )->core, 
+                                    seqcast (($1.1.1$ )->core, var (v1))),
+                             let (var (v2), ($2$ )->core,
                                   ifthenelse (var (v2),
-                                              __core__( $4$ ),
+                                              ($4$ )->core,
                                               empty ()))));
     }
     ;
@@ -355,15 +355,15 @@ FLWRExpr:               flwr (binds (let (Nil_, Var_, Expr),
         
         PFvar_t *v = new_var (0);
         
-        __core__( $$ ) =
-        let (__core__( $1.1.2$ ), __core__( $1.1.3$ ),
-             let (var (v), __core__( $2$ ),
+        ($$ )->core =
+        let (($1.1.2$ )->core, ($1.1.3$ )->core,
+             let (var (v), ($2$ )->core,
                   ifthenelse (var (v), 
-                              __core__( $4$ ), empty ())));
+                              ($4$ )->core, empty ())));
         
         PFinfo_loc (OOPS_WARN_NOTSUPPORTED,
                     ($3$)->loc,
-                    "`order by' (ignored)");
+                    "order by (ignored)");
     }
     ;
 FLWRExpr:               flwr (binds (let (TypeDeclaration, Var_, Expr), 
@@ -378,18 +378,18 @@ FLWRExpr:               flwr (binds (let (TypeDeclaration, Var_, Expr),
         PFvar_t *v1 = new_var (0);
         PFvar_t *v2 = new_var (0);
 
-        __core__( $$ ) = let (var (v1), __core__( $1.1.3$ ),
-                        let (__core__( $1.1.2$ ), 
-                             proof (var (v1), __core__( $1.1.1$ ), 
-                                    seqcast (__core__( $1.1.1$ ), var (v1))),
-                             let (var (v2), __core__( $2$ ),
+        ($$ )->core = let (var (v1), ($1.1.3$ )->core,
+                        let (($1.1.2$ )->core, 
+                             proof (var (v1), ($1.1.1$ )->core, 
+                                    seqcast (($1.1.1$ )->core, var (v1))),
+                             let (var (v2), ($2$ )->core,
                                   ifthenelse (var (v2),
-                                              __core__( $4$ ),
+                                              ($4$ )->core,
                                               empty ()))));
         
         PFinfo_loc (OOPS_WARN_NOTSUPPORTED,
                     ($3$)->loc,
-                    "``order by'' (ignored)");
+                    "`order by' (ignored)");
     }
     ;
 FLWRExpr:               flwr (binds (bind (Nil_, OptPositionalVar_, 
@@ -404,12 +404,12 @@ FLWRExpr:               flwr (binds (bind (Nil_, OptPositionalVar_,
         PFvar_t *v2 = new_var (0);
         PFvar_t *v3 = new_var (0);
         
-        __core__( $$ ) = let (var (v1), __core__( $1.1.4$ ),
+        ($$ )->core = let (var (v1), ($1.1.4$ )->core,
                         let (var (v2), seq (var (v1), empty ()),
-                             for_ (__core__( $1.1.3$ ), __core__( $1.1.2$ ), var (v2),
-                                   let (var (v3), __core__( $2$ ),
+                             for_ (($1.1.3$ )->core, ($1.1.2$ )->core, var (v2),
+                                   let (var (v3), ($2$ )->core,
                                         ifthenelse (var (v3), 
-                                                    __core__( $4$ ), empty ())))));
+                                                    ($4$ )->core, empty ())))));
     }
     ;
 FLWRExpr:               flwr (binds (bind (TypeDeclaration, OptPositionalVar_,
@@ -425,16 +425,16 @@ FLWRExpr:               flwr (binds (bind (TypeDeclaration, OptPositionalVar_,
         PFvar_t *v3 = new_var (0);
         PFvar_t *v4 = new_var (0);
 
-        __core__( $$ ) =
-        let (var (v1), __core__( $1.1.4$ ),
+        ($$ )->core =
+        let (var (v1), ($1.1.4$ )->core,
              let (var (v2), seq (var (v1), empty ()),
-                  for_ (var (v3), __core__( $1.1.2$ ), var (v2),
-                        let (__core__( $1.1.3$ ),
-                             proof (var (v3), __core__( $1.1.1$ ),
-                                    seqcast (__core__( $1.1.1$ ), var (v3))),
-                             let (var (v4), __core__( $2$ ),
+                  for_ (var (v3), ($1.1.2$ )->core, var (v2),
+                        let (($1.1.3$ )->core,
+                             proof (var (v3), ($1.1.1$ )->core,
+                                    seqcast (($1.1.1$ )->core, var (v3))),
+                             let (var (v4), ($2$ )->core,
                                   ifthenelse (var (v4), 
-                                              __core__( $4$ ), empty ()))))));
+                                              ($4$ )->core, empty ()))))));
     }
     ;
 FLWRExpr:               flwr (binds (bind (Nil_, OptPositionalVar_, 
@@ -451,16 +451,16 @@ FLWRExpr:               flwr (binds (bind (Nil_, OptPositionalVar_,
         PFvar_t *v2 = new_var (0);
         PFvar_t *v3 = new_var (0);
         
-        __core__( $$ ) = let (var (v1), __core__( $1.1.4$ ),
+        ($$ )->core = let (var (v1), ($1.1.4$ )->core,
                         let (var (v2), seq (var (v1), empty ()),
-                             for_ (__core__( $1.1.3$ ), __core__( $1.1.2$ ), var (v1),
-                                   let (var (v3), __core__( $2$ ),
+                             for_ (($1.1.3$ )->core, ($1.1.2$ )->core, var (v1),
+                                   let (var (v3), ($2$ )->core,
                                         ifthenelse (var (v3), 
-                                                    __core__( $4$ ), empty ())))));
+                                                    ($4$ )->core, empty ())))));
         
         PFinfo_loc (OOPS_WARN_NOTSUPPORTED,
                     ($3$)->loc,
-                    "``order by'' (ignored)");
+                    "`order by' (ignored)");
     }
     ;
 FLWRExpr:               flwr (binds (bind (TypeDeclaration, OptPositionalVar_,
@@ -478,20 +478,20 @@ FLWRExpr:               flwr (binds (bind (TypeDeclaration, OptPositionalVar_,
         PFvar_t *v3 = new_var (0);
         PFvar_t *v4 = new_var (0);
         
-        __core__( $$ ) =
-        let (var (v1), __core__( $1.1.4$ ),
+        ($$ )->core =
+        let (var (v1), ($1.1.4$ )->core,
              let (var (v2), seq (var (v1), empty ()),
-                  for_ (var (v3), __core__( $1.1.2$ ), var (v2),
-                        let (__core__( $1.1.3$ ),
-                             proof (var (v3), __core__( $1.1.1$ ),
-                                    seqcast (__core__( $1.1.1$ ), var (v3))),
-                             let (var (v4), __core__( $2$ ),
+                  for_ (var (v3), ($1.1.2$ )->core, var (v2),
+                        let (($1.1.3$ )->core,
+                             proof (var (v3), ($1.1.1$ )->core,
+                                    seqcast (($1.1.1$ )->core, var (v3))),
+                             let (var (v4), ($2$ )->core,
                                   ifthenelse (var (v4), 
-                                              __core__( $4$ ), empty ()))))));
+                                              ($4$ )->core, empty ()))))));
 
         PFinfo_loc (OOPS_WARN_NOTSUPPORTED,
                     ($3$)->loc,
-                    "``order by'' (ignored)");
+                    "`order by' (ignored)");
     }
     ;
 
@@ -509,13 +509,13 @@ TypeDeclaration:        SequenceType;
 OptWhereClause_:        Nil_
     =
     {
-        __core__( $$ ) = true_ ();
+        ($$ )->core = true_ ();
     }
     ;
 OptWhereClause_:        WhereClause
     =
     {
-        __core__( $$ ) = ebv (__core__( $$ ));
+        ($$ )->core = ebv (($$ )->core);
     }
     ;
 
@@ -540,11 +540,11 @@ QuantifiedExpr:         some (binds (bind (Nil_, Nil_, Var_, Expr),
         PFfun_t *fn_not   = function (PFqname (PFns_fn, "not"));
         PFfun_t *fn_empty = function (PFqname (PFns_fn, "empty"));
 
-        __core__( $$ ) = let (var (v1), __core__( $1.1.4$ ),
+        ($$ )->core = let (var (v1), ($1.1.4$ )->core,
                         let (var (v2), 
-                             for_ (__core__( $1.1.3$ ), nil (), 
+                             for_ (($1.1.3$ )->core, nil (), 
                                    var (v1), 
-                                   let (var (v3), ebv (__core__( $2$ )),
+                                   let (var (v3), ebv (($2$ )->core),
                                         ifthenelse (var (v3),
                                                     num (1),
                                                     empty ()))),
@@ -566,13 +566,13 @@ QuantifiedExpr:         some (binds (bind (TypeDeclaration, Nil_, Var_, Expr),
         PFfun_t *fn_not   = function (PFqname (PFns_fn, "not"));
         PFfun_t *fn_empty = function (PFqname (PFns_fn, "empty"));
 
-        __core__( $$ ) = 
-        let (var (v1), __core__( $1.1.4$ ),
+        ($$ )->core = 
+        let (var (v1), ($1.1.4$ )->core,
              let (var (v2), 
-                  for_ (__core__( $1.1.3$ ), nil (), var (v1), 
-                        typeswitch (__core__( $1.1.3$ ),
-                            cases (case_ (__core__( $1.1.1$ ),
-                                          let (var (v3), ebv (__core__( $2$ )),
+                  for_ (($1.1.3$ )->core, nil (), var (v1), 
+                        typeswitch (($1.1.3$ )->core,
+                            cases (case_ (($1.1.1$ )->core,
+                                          let (var (v3), ebv (($2$ )->core),
                                                ifthenelse (var (v3),
                                                            num (1),
                                                            empty ()))),
@@ -580,7 +580,7 @@ QuantifiedExpr:         some (binds (bind (TypeDeclaration, Nil_, Var_, Expr),
                             error_loc (($$)->loc, 
                                        "$%s does not match required type %s",
                                        PFqname_str (($1.1.3$)->sem.var->qname),
-                                       PFty_str (__core__( $1.1.1$ )->sem.type)))),
+                                       PFty_str (($1.1.1$ )->core->sem.type)))),
                   let (var (v4), APPLY (fn_empty, var (v2)),
                        let (var (v5), APPLY (fn_not, var (v4)),
                             var (v5)))));
@@ -599,11 +599,11 @@ QuantifiedExpr:         every (binds (bind (Nil_, Nil_, Var_, Expr),
         PFfun_t *fn_not   = function (PFqname (PFns_fn, "not"));
         PFfun_t *fn_empty = function (PFqname (PFns_fn, "empty"));
 
-        __core__( $$ ) = let (var (v1), __core__( $1.1.4$ ),
+        ($$ )->core = let (var (v1), ($1.1.4$ )->core,
                         let (var (v2), 
-                             for_ (__core__( $1.1.3$ ), nil (), 
+                             for_ (($1.1.3$ )->core, nil (), 
                                    var (v1), 
-                                   let (var (v3), ebv (__core__( $2$ )),
+                                   let (var (v3), ebv (($2$ )->core),
                                         let (var (v4), 
                                              APPLY (fn_not, var (v3)),
                                              ifthenelse (var (v4),
@@ -626,13 +626,13 @@ QuantifiedExpr:         every (binds (bind (TypeDeclaration, Nil_, Var_, Expr),
         PFfun_t *fn_not   = function (PFqname (PFns_fn, "not"));
         PFfun_t *fn_empty = function (PFqname (PFns_fn, "empty"));
 
-        __core__( $$ ) = 
-        let (var (v1), __core__( $1.1.4$ ),
+        ($$ )->core = 
+        let (var (v1), ($1.1.4$ )->core,
              let (var (v2), 
-                  for_ (__core__( $1.1.3$ ), nil (), var (v1), 
-                        typeswitch (__core__( $1.1.3$ ),
-                            cases (case_ (__core__( $1.1.1$ ),
-                                          let (var (v3), ebv (__core__( $2$ )),
+                  for_ (($1.1.3$ )->core, nil (), var (v1), 
+                        typeswitch (($1.1.3$ )->core,
+                            cases (case_ (($1.1.1$ )->core,
+                                          let (var (v3), ebv (($2$ )->core),
                                                let (var (v4), 
                                                     APPLY (fn_not, var (v3)),
                                                     ifthenelse (var (v4),
@@ -642,7 +642,7 @@ QuantifiedExpr:         every (binds (bind (TypeDeclaration, Nil_, Var_, Expr),
                             error_loc (($$)->loc, 
                                        "$%s does not match required type %s",
                                        PFqname_str (($1.1.3$)->sem.var->qname),
-                                       PFty_str (__core__( $1.1.1$ )->sem.type)))),
+                                       PFty_str (($1.1.1$ )->core->sem.type)))),
                   let (var (v5), APPLY (fn_empty, var (v2)),
                        var (v5))));
     }
@@ -659,16 +659,16 @@ TypeswitchExpr:         typeswitch (Expr,
     {
         PFvar_t *v = new_var (0);
 
-        __core__( $$ ) = let (var (v), __core__( $1$ ),
+        ($$ )->core = let (var (v), ($1$ )->core,
                         typeswitch (var (v),
-                                    cases (case_ (__core__( $2.1.1$ ), 
-                                                  let (__core__( $2.1.2$ ), 
-                                                       seqcast (__core__( $2.1.1$ ),
+                                    cases (case_ (($2.1.1$ )->core, 
+                                                  let (($2.1.2$ )->core, 
+                                                       seqcast (($2.1.1$ )->core,
                                                                 var (v)),
-                                                       __core__( $2.1.3$ ))),
+                                                       ($2.1.3$ )->core)),
                                            nil ()),
-                                    let (__core__( $3$ ), var (v),
-                                         __core__( $4$ ))));
+                                    let (($3$ )->core, var (v),
+                                         ($4$ )->core)));
     }
     ;
 
@@ -681,7 +681,7 @@ OptCaseVar_:            Nil_
          */
         PFvar_t *fs_new = new_var (0);
 
-        __core__( $$ ) = var (fs_new);
+        ($$ )->core = var (fs_new);
     }
     ;
 OptCaseVar_:            Var_;
@@ -691,11 +691,11 @@ SingleType:             seq_ty (AtomType)
     {
         switch (($$)->sem.oci) {
         case p_one:
-            __core__( $$ ) = __core__( $1$ );
+            ($$ )->core = ($1$ )->core;
             break;
         case p_zero_or_one:
-            __core__( $$ ) = 
-            seqtype (PFty_opt (__core__( $1$ )->sem.type));
+            ($$ )->core = 
+            seqtype (PFty_opt (($1$ )->core->sem.type));
             break;
         default:
             PFoops (OOPS_FATAL, 
@@ -709,19 +709,19 @@ SequenceType:           seq_ty (ItemType)
     {
         switch (($$)->sem.oci) {
         case p_one:
-            __core__( $$ ) = __core__( $1$ );
+            ($$ )->core = ($1$ )->core;
             break;
         case p_zero_or_one:
-            __core__( $$ ) = 
-            seqtype (PFty_opt (__core__( $1$ )->sem.type));
+            ($$ )->core = 
+            seqtype (PFty_opt (($1$ )->core->sem.type));
             break;
         case p_zero_or_more:
-            __core__( $$ ) = 
-            seqtype (PFty_star (__core__( $1$ )->sem.type));
+            ($$ )->core = 
+            seqtype (PFty_star (($1$ )->core->sem.type));
             break;
         case p_one_or_more:
-            __core__( $$ ) = 
-            seqtype (PFty_plus (__core__( $1$ )->sem.type));
+            ($$ )->core = 
+            seqtype (PFty_plus (($1$ )->core->sem.type));
             break;
         default:
             PFoops (OOPS_FATAL, 
@@ -733,7 +733,7 @@ SequenceType:           seq_ty (ItemType)
 SequenceType:           seq_ty (empty_ty)
     =
     {
-        __core__( $$ ) = seqtype (PFty_empty ());
+        ($$ )->core = seqtype (PFty_empty ());
     }
     ;
 
@@ -743,39 +743,39 @@ ItemType:               node_ty (Nil_)
         switch (($$)->sem.kind) {
         case p_kind_node:
             /* node */
-            __core__( $$ ) = seqtype (PFty_xs_anyNode ());
+            ($$ )->core = seqtype (PFty_xs_anyNode ());
             break;
         case p_kind_comment:
             /* comment */
-            __core__( $$ ) = seqtype (PFty_comm ());
+            ($$ )->core = seqtype (PFty_comm ());
             break;
         case p_kind_text:
             /* text */
-            __core__( $$ ) = seqtype (PFty_text ());
+            ($$ )->core = seqtype (PFty_text ());
             break;
         case p_kind_pi:
             /* processing-instruction */
-            __core__( $$ ) = seqtype (PFty_pi ());
+            ($$ )->core = seqtype (PFty_pi ());
             break;
         case p_kind_doc:
             /* document */
-            __core__( $$ ) = seqtype (PFty_doc (PFty_xs_anyType ()));
+            ($$ )->core = seqtype (PFty_doc (PFty_xs_anyType ()));
             break;
         case p_kind_elem:
             /* element */
-            __core__( $$ ) =
+            ($$ )->core =
             seqtype (PFty_elem (PFqname (PFns_wild, 0), 
                                 PFty_xs_anyType ()));
             break;
         case p_kind_attr:
             /* attribute */
-            __core__( $$ ) = 
+            ($$ )->core = 
             seqtype (PFty_attr (PFqname (PFns_wild, 0), 
                                 PFty_xs_anySimpleType ()));
             break;
         default:
             PFoops (OOPS_FATAL,
-                    "illegal node kind ``%s'' in node type",
+                    "illegal node kind `%s' in node type",
                     p_id[($$)->sem.kind]);
         };
     }  
@@ -794,20 +794,20 @@ ItemType:               node_ty (ElemOrAttrType)
             any = PFty_xs_anySimpleType ();
             break;
         default:
-            PFoops (OOPS_FATAL, "illegal node kind ``%s'' in type",
+            PFoops (OOPS_FATAL, "illegal node kind `%s' in type",
                     p_id[($$)->sem.kind]);
         }
 
         tDO ($%1$);
 
-        __core__( $$ ) = __core__( $1$ );
+        ($$ )->core = ($1$ )->core;
     }
     ;
 ItemType:               item_ty (Nil_)
     =
     {
         /* item */
-        __core__( $$ ) = seqtype (PFty_xs_anyItem ()); 
+        ($$ )->core = seqtype (PFty_xs_anyItem ()); 
     }
     ;
 ItemType:               AtomType;
@@ -815,35 +815,35 @@ ItemType:               untyped_ty (Nil_)
     =
     {
         /* untyped */
-        __core__( $$ ) = seqtype (PFty_untyped ()); 
+        ($$ )->core = seqtype (PFty_untyped ()); 
     }
     ;
 ItemType:               atomval_ty (Nil_)
     =
     {
         /* atomic value */
-        __core__( $$ ) = seqtype (PFty_xs_anySimpleType ()); 
+        ($$ )->core = seqtype (PFty_xs_anySimpleType ()); 
     }
     ;
 
 ElemOrAttrType:         req_ty (req_name, SchemaType)
     =
     {   /* element/attribute qn of type qn */
-        __core__( $$ ) = seqtype (elem_attr ($1$->sem.qname,
-                                       __core__( $2$ )->sem.type));
+        ($$ )->core = seqtype (elem_attr ($1$->sem.qname,
+                                       ($2$ )->core->sem.type));
     }
     ;
 ElemOrAttrType:         req_ty (Nil_, SchemaType)
     =
     {   /* element/attribute of type qn */
-        __core__( $$ ) = seqtype (elem_attr (PFqname (PFns_wild, 0),
-                                       __core__( $2$ )->sem.type));
+        ($$ )->core = seqtype (elem_attr (PFqname (PFns_wild, 0),
+                                       ($2$ )->core->sem.type));
     }
     ;
 ElemOrAttrType:         req_ty (req_name, Nil_)
     =
     {   /* element/attribute qn */
-        __core__( $$ ) = seqtype (elem_attr ($1$->sem.qname, 
+        ($$ )->core = seqtype (elem_attr ($1$->sem.qname, 
                                        any));
     }
     ;
@@ -852,12 +852,12 @@ ElemOrAttrType:         req_ty (req_name, SchemaContext)
     {   /* FIXME: we do not implement schema contexts for now */
 
         /* element/attribute qn context ... */
-        __core__( $$ ) = seqtype (elem_attr ($1$->sem.qname, 
+        ($$ )->core = seqtype (elem_attr ($1$->sem.qname, 
                                        any));
 
         PFinfo_loc (OOPS_WARN_NOTSUPPORTED,
                     ($2$)->loc,
-                    "schema context (assuming content type ``%s'')",
+                    "schema context (assuming content type `%s')",
                     PFty_str (any));
     }
     ;
@@ -868,10 +868,10 @@ SchemaType:             named_ty
         /* is the referenced type a known schema type definition? */
         if (! PFty_schema (PFty_named (($$)->sem.qname)))
             PFoops_loc (OOPS_TYPENOTDEF, ($$)->loc,
-                        "``%s''",
+                        "`%s'",
                         PFqname_str (($$)->sem.qname));
 
-        __core__( $$ ) = seqtype (PFty_named (($$)->sem.qname));
+        ($$ )->core = seqtype (PFty_named (($$)->sem.qname));
     }
     ;
 
@@ -881,10 +881,10 @@ AtomType:               atom_ty (Nil_)
         /* is the referenced type a known schema type? */
         if (! PFty_schema (PFty_named (($$)->sem.qname)))
             PFoops_loc (OOPS_TYPENOTDEF, ($$)->loc,
-                        "``%s''",
+                        "`%s'",
                         PFqname_str (($$)->sem.qname));
 
-        __core__( $$ ) = seqtype (PFty_named (($$)->sem.qname));
+        ($$ )->core = seqtype (PFty_named (($$)->sem.qname));
     }
     ;
 
@@ -894,8 +894,8 @@ IfExpr:                 if_ (Expr, Expr, Expr)
     {
         PFvar_t *v = new_var (0);
 
-        __core__( $$ ) = let (var (v), ebv (__core__( $1$ )),
-                        ifthenelse (var (v), __core__( $2$ ), __core__( $3$ )));
+        ($$ )->core = let (var (v), ebv (($1$ )->core),
+                        ifthenelse (var (v), ($2$ )->core, ($3$ )->core));
                                  
     }
     ;
@@ -906,9 +906,9 @@ InstanceofExpr:         instof (CastableExpr, SequenceType)
     {
         PFvar_t *v = new_var (0);
 
-        __core__( $$ ) = let (var (v), __core__( $1$ ),
+        ($$ )->core = let (var (v), ($1$ )->core,
                         typeswitch (var (v),
-                                    cases (case_ (__core__( $2$ ), true_ ()),
+                                    cases (case_ (($2$ )->core, true_ ()),
                                            nil ()),
                                     false_ ()));
     }
@@ -1017,17 +1017,17 @@ PathExpr:               LocationPath_;
 LocationPath_:          root_
     =
     {
-        __core__( $$ ) = _root ();
+        ($$ )->core = _root ();
     }
     ;
 LocationPath_:          dot
     =
     {
         if (fs_dot)
-            __core__( $$ ) = var (fs_dot);
+            ($$ )->core = var (fs_dot);
         else
             PFoops_loc (OOPS_NOCONTEXT, ($$)->loc,
-                        "``.'' is unbound");
+                        "`.' is unbound");
     }
     ;
 LocationPath_:          locpath (LocationStep_, LocationPath_)
@@ -1035,17 +1035,17 @@ LocationPath_:          locpath (LocationStep_, LocationPath_)
     {
         PFvar_t *v = new_var (0);
 
-        /* This is used to isolate ``location step only'' path
+        /* This is used to isolate `location step only' path
          * expressions, i.e., path expressions of the form
          *
          *       s0/s1/.../sn
          *
          * with the si (i = 0...n) being location steps of the
-         * form axis::node-test (see `LocationStep' label).
+         * form axis::node-test (see LocationStep label).
          * Such paths are subject to (chains of) staircase joins.
          */
-        __core__( $$ ) = let (var (v), __core__( $2$ ), 
-                        locsteps (__core__( $1$ ), var (v)));
+        ($$ )->core = let (var (v), ($2$ )->core, 
+                        locsteps (($1$ )->core, var (v)));
     }
     ;
 LocationPath_:          locpath (LocationStep_, StepExpr)
@@ -1057,10 +1057,10 @@ LocationPath_:          locpath (LocationStep_, StepExpr)
             function (PFqname (PFns_pf, 
                                "distinct-doc-order"));
         
-        __core__( $$ ) =
-        let (var (v1), __core__( $2$ ),
+        ($$ )->core =
+        let (var (v1), ($2$ )->core,
              let (var (v2), APPLY (pf_distinct_doc_order, var (v1)),
-                  locsteps (__core__( $1$ ), var (v2))));
+                  locsteps (($1$ )->core, var (v2))));
     }
     ;
 LocationPath_:          locpath (StepExpr, LocationPath_)
@@ -1078,12 +1078,12 @@ LocationPath_:          locpath (StepExpr, LocationPath_)
         
         tDO ($%1$);
         
-        __core__( $$ ) =
-        let (var (v), __core__( $2$ ),
+        ($$ )->core =
+        let (var (v), ($2$ )->core,
              for_ (var (fs_dot),
                    nil (),
                    var (v),
-                   __core__( $1$ )));
+                   ($1$ )->core));
              
         /* restore $fs:dot */
         fs_dot = dot;
@@ -1108,13 +1108,13 @@ LocationPath_:          locpath (StepExpr, StepExpr)
         
         tDO ($%1$);
         
-        __core__( $$ ) =
-        let (var (v1), __core__( $2$ ),
+        ($$ )->core =
+        let (var (v1), ($2$ )->core,
              let (var (v2), APPLY (pf_distinct_doc_order, var (v1)),
                   for_ (var (fs_dot),
                         nil (),
                         var (v2),
-                        __core__( $1$ ))));
+                        ($1$ )->core)));
              
         /* restore $fs:dot */
         fs_dot = dot;
@@ -1145,11 +1145,11 @@ StepExpr:               pred (PathExpr, Expr)
         /* FIXME: replace int_eq () with core equivalent for
          * integer equality
          */
-        __core__( $$ ) = 
-        let (var (v1), __core__( $1$ ),
+        ($$ )->core = 
+        let (var (v1), ($1$ )->core,
              let (var (v5), seq (var (v1), empty ()),
                   for_ (var(fs_dot), var (fs_position), var(v5),
-                        let (var (v2), __core__( $2$ ),
+                        let (var (v2), ($2$ )->core,
                              let (var (v3), 
                                   typeswitch (var (v2),
                                       cases (case_ (seqtype (PFty_numeric ()),
@@ -1170,7 +1170,7 @@ StepExpr:               pred (PathExpr, Expr)
 LocationStep_:          step (NodeTest)
     =
     {
-        __core__( $$ ) = step (($$)->sem.axis, __core__( $1$ ));
+        ($$ )->core = step (($$)->sem.axis, ($1$ )->core);
     }
     ;
 
@@ -1180,14 +1180,14 @@ NodeTest:               NameTest;
 KindTest:               kindt (Nil_)
     =
     {
-        __core__( $$ ) = kindt (($$)->sem.kind, __core__( $1$ ));
+        ($$ )->core = kindt (($$)->sem.kind, ($1$ )->core);
         
     }
     ;
 KindTest:               kindt (StringLiteral)
     =
     {
-        __core__( $$ ) = kindt (($$)->sem.kind, __core__( $1$ ));
+        ($$ )->core = kindt (($$)->sem.kind, ($1$ )->core);
         
     }
     ;
@@ -1195,7 +1195,7 @@ KindTest:               kindt (StringLiteral)
 NameTest:               namet
     =
     {
-        __core__( $$ ) = namet (($$)->sem.qname);
+        ($$ )->core = namet (($$)->sem.qname);
     } 
     ;
 
@@ -1215,26 +1215,26 @@ NumericLiteral:         DoubleLiteral;
 IntegerLiteral:         lit_int
     =
     {
-        __core__( $$ ) = num (($$)->sem.num);
+        ($$ )->core = num (($$)->sem.num);
     }
     ; 
 DecimalLiteral:         lit_dec
     =
     {
-        __core__( $$ ) = dec (($$)->sem.dec);
+        ($$ )->core = dec (($$)->sem.dec);
     }
     ; 
 DoubleLiteral:          lit_dbl
     =
     {
-        __core__( $$ ) = dbl (($$)->sem.dbl);
+        ($$ )->core = dbl (($$)->sem.dbl);
     }
     ; 
 
 StringLiteral:          lit_str
     =
     {
-        __core__( $$ ) = str (($$)->sem.str);
+        ($$ )->core = str (($$)->sem.str);
     }
     ; 
 
@@ -1250,7 +1250,7 @@ FunctionCall:           apply (FuncArgList_)
         PFarray_del (funs);
         PFarray_del (args);
 
-        __core__( $$ ) = __core__( $1$ );
+        ($$ )->core = ($1$ )->core;
     }
     ;
 
@@ -1258,7 +1258,7 @@ FuncArgList_:           args (Expr, FuncArgList_)
     { TOPDOWN; }
     =
     {
-        /* NB: we are ``casting'' the function argument to `none' here,
+        /* NB: we are `casting' the function argument to none here,
          * the type checker will replace this with the expected argument
          * type.
          *
@@ -1274,13 +1274,13 @@ FuncArgList_:           args (Expr, FuncArgList_)
 
         tDO ($%2$);
        
-        __core__( $$ ) = let (var (v), __core__( $1$ ), __core__( $2$ ));
+        ($$ )->core = let (var (v), ($1$ )->core, ($2$ )->core);
     }
     ;
 FuncArgList_:           Nil_
     =
     {
-        __core__( $$ ) = apply (*(PFfun_t **) PFarray_top (funs),
+        ($$ )->core = apply (*(PFfun_t **) PFarray_top (funs),
                           *(PFcnode_t **) PFarray_top (args));
     }
     ;
@@ -1315,14 +1315,14 @@ OptSchemaLoc_:          StringLiteral;
 Var_:                   var
     =
     {
-        __core__( $$ ) = var (($$)->sem.var);
+        ($$ )->core = var (($$)->sem.var);
     }
     ;
 
 Nil_:                   nil
     =
     {
-        __core__( $$ ) = nil ();
+        ($$ )->core = nil ();
     }
     ;
 

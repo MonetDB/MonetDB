@@ -1,0 +1,1115 @@
+# pathfinder.mx
+#
+# Monet runtime support for the Pathfinder XQuery compiler
+#
+# (c) 2002/2003 University of Konstanz, Database Research Group
+#
+# $Id$
+#
+
+@f pathfinder
+@a Torsten Teggy Grust
+@a Maurice van Keulen
+@a Henning Rode
+@t Runtime Support for the Pathfinder XQuery Compiler
+
+@m
+.MODULE pathfinder;
+
+.ITERATOR docorder (BAT[any,any] b, ptr itr) = CMDbatloop_std;
+"This iterator walks the BUNs of BAT b from first to last.
+ <BAT expression> @ docorder <MIL statement>
+ Variables [$h,$t] are bound to head and tail of the
+ current BUN in the MIL statement.
+ (Added to implement XPath forward axes semantics in the
+ Pathfinder XQuery compiler.)"
+
+.ITERATOR revdocorder (BAT[any,any] b, ptr itr) = PFrevdocorder;
+"This iterator walks the BUNs of BAT b from last to first.
+ <BAT expression> @ revdocorder <MIL statement>
+ Variables [$h,$t] are bound to head and tail of the
+ current BUN in the MIL statement.
+ (Added to implement XPath reverse axes semantics in the
+ Pathfinder XQuery compiler.)"
+
+##############################################################
+# ctxpropmgmt.def : Definitions for context node sequence property
+#                   management
+
+.ATOM ctxprop[1];
+	.TOSTR   = CTXPROPto_str;
+	.FROMSTR = CTXPROPfrom_str;
+	.NULL    = CTXPROPnull;
+.END;
+
+.COMMAND batcacheid(BAT[any,any] b) : oid = PFbatcacheid;
+"PARAMETERS
+  b: a BAT
+DESCRIPTION
+Returns the cache id of BAT b. This ID can be used as a unique
+identifier for the BAT."
+
+.COMMAND ctxprop_get_withpost(ctxprop cp) : bit = CTXPROPget_withpost;
+"Get property 'withpost': whether or not postorder ranks attached."
+
+.COMMAND ctxprop_set_withpost(ctxprop p, bit wp) : void = CTXPROPset_withpost;
+"Set property 'withpost': whether or not postorder ranks attached.
+Returns the modified property."
+
+################################################################
+# pair.def : Monet module definitions for pair ADT
+#
+
+.ATOM pair[8];
+	.TOSTR   = PAIRto_str;
+	.NULL    = PAIRnull;
+.END;
+
+.COMMAND newpair(BAT[any,any], BAT[any,any]) : pair = PAIRnew;
+"Create a new pair of two bats."
+
+.COMMAND clrpair(pair) : void = PAIRclr;
+"Clear a pair. Necessary for BAT reference counting. Before a pair
+variable is going out of scopy (or you do p:=nil), this function has to
+be called. It sets fst and snd to nil."
+
+.COMMAND fst(pair) : BAT[any,any] = PAIRfst;
+"Return the first bat of a pair."
+
+.COMMAND snd(pair) : BAT[any,any] = PAIRsnd;
+"Return the second bat of a pair"
+
+
+.COMMAND estimate_desc(BAT[oid,any] context,
+                       BAT[void,oid] prepost,
+                       BAT[void,chr] level) : int = PFestimate_desc;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  level: void doc_level table
+DESCRIPTION
+result size estimation for descendant steps"
+
+.COMMAND estimate_par(BAT[oid,any] context,
+                      BAT[void,int] group_histogram,
+		      BAT[void,int] parents_of_group,
+		      int doc_size) : int = PFestimate_par;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  group_histogram: number of nodes within each group
+  parents_of_group: number of parents belonging to nodes in that group
+  doc_size: number of nodes with this tag name
+DESCRIPTION
+result size estimation for parent steps"
+
+.COMMAND estimate_par_tag(BAT[oid,any] context,
+                          int tag_size,
+		          int tag_par) : int = PFestimate_par_tag;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  tag_size: number of nodes with that tag name
+  tag_par: number of parents of nodes with that tag name
+DESCRIPTION
+result size estimation for parent steps"
+
+.COMMAND estimate_pfs(BAT[oid,any] context,
+                      BAT[void,int] group_histogram,
+		      BAT[void,int] parents_of_group,
+		      int doc_size) : int = PFestimate_pfs;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  group_histogram: number of nodes within each group
+  parents_of_group: number of parents belonging to nodes in that group
+  doc_size: number of nodes with this tag name
+DESCRIPTION
+result size estimation for preceding-/following-sibling steps"
+
+.COMMAND estimate_pfs_tag(BAT[oid,any] context,
+                          int tag_size,
+		          int tag_par,
+			  int tag_pfs,
+			  int tag_pfs1) : int = PFestimate_pfs_tag;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  tag_size: number of nodes with that tag name
+  tag_par: number of parents of nodes with that tag name
+  tag_pfs: number of preceding-/following-siblings of nodes with that tag name
+  tag_pfs1: sum of all preceding-/following-siblings of all nodes with that tag name
+DESCRIPTION
+result size estimation for preceding-/following-sibling steps"
+
+.COMMAND distr_anc(BAT[oid,any] context,
+                      BAT[void,oid] prepost,
+                      BAT[void,chr] level,
+		      int maxdepth) : BAT[int,void] = PFdistr_anc;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+evaluates level distribution of the ancestor-pruned context set"
+
+.COMMAND sample_anc1(BAT[oid,any] context,
+                      BAT[void,oid] prepost,
+                      BAT[void,chr] level,
+		      int maxdepth) : BAT[int,void] = PFsample_anc1;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+sampling based level distribution model of the ancestor-pruned context set"
+
+.COMMAND sample_anc2(BAT[oid,any] context,
+                      BAT[void,oid] prepost,
+                      BAT[void,chr] level,
+		      int maxdepth) : BAT[int,void] = PFsample_anc2;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+sampling based level distribution model of the ancestor-pruned context set"
+
+.COMMAND histo_anc(BAT[oid,any] context,
+                      BAT[void,int] anc_histo,
+                      int doc_size,
+		      int maxdepth) : BAT[int,void] = PFhisto_anc;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  doc_size: the size of the prepost table
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+histogram based level distribution model of the ancestor-pruned context set"
+
+.COMMAND estimate_anc1(BAT[oid,any] context,
+                      BAT[void,oid] prepost,
+                      BAT[void,chr] level,
+		      BAT[void,int] level_histogram,
+		      BAT[void,int] parents_of_level,
+		      int maxdepth) : int = PFestimate_anc1;
+"PARAMETERS
+  context: context node sequence (preorder rank, postorder rank)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  level_histogram: statistics about distribution of nodes on levels
+  parents_of_level: statistics about the number of parents of all nodes in that level
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+sampling based result size estimation for ancestor steps"
+
+.COMMAND estimate_anc2(BAT[oid,any] context,
+                      BAT[void,int] level_histogram,
+		      BAT[void,int] parents_of_level,
+		      BAT[void,int] pruned_level,
+		      int maxdepth,
+		      int doc_size) : int = PFestimate_anc2;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  level_histogram: statistics about distribution of nodes on levels
+  parents_of_level: statistics about the number of parents of all nodes in that level
+  pruned_level: statistics about the level-distribution ancestor-pruned nodes 
+  maxdepth: maxdepth of xml tree
+  doc_size: the size of the document
+DESCRIPTION
+histogram based size estimation for ancestor steps"
+
+.COMMAND estimate_anc_tag(BAT[oid,any] context,
+                          BAT[void,oid] prepost,
+                          BAT[void,chr] level,
+		          BAT[void,int] level_histogram,
+		          BAT[void,int] parents_of_level,
+			  int maxdepth,
+			  int tag_size,
+			  int tag_par) : int = PFestimate_anc_tag;
+"PARAMETERS
+  context: context node sequence (preorder rank, postorder rank)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  level_histogram: statistics about distribution of nodes on levels
+  parents_of_level: statistics about the number of parents of all nodes in that level
+  maxdepth: maxdepth of xml tree
+  tag_size: number of nodes with this tag name
+  tag_par: number of parents of nodes with this tag name
+DESCRIPTION
+sampling based result size estimation for ancestor steps"
+
+.COMMAND child_lev(BAT[void,chr] doc_level,
+                   BAT[oid,any] context,
+		   int estimation,
+                   int height) : BAT[oid,void] = PFchild_lev;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+child step evaluation from the given context."
+
+.COMMAND parent_lev(BAT[void,chr] doc_level,
+                   BAT[oid,any] context,
+		   int estimation,
+                   int height) : BAT[oid,void] = PFparent_lev;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+parent step evaluation from the given context."
+
+.COMMAND followingsibling_lev(BAT[void,chr] doc_level,
+                   BAT[oid,any] context,
+		   int estimation,
+                   int height) : BAT[oid,void] = PFfollowingsibling_lev;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+following-sibling evaluation from the given context."
+
+.COMMAND precedingsibling_lev(BAT[void,chr] doc_level,
+                   BAT[oid,any] context,
+		   int estimation,
+                   int height) : BAT[oid,void] = PFprecedingsibling_lev;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+preceding-sibling evaluation from the given context."
+
+@:scjbr_cmd(_void_incl,Result includes nodes exactly on the boundary.)@
+@:scjbr_cmd(_void_excl,Result excludes nodes exactly on the boundary.)@
+
+@= scjbr_cmd
+.COMMAND staircasejoin_br@1(BAT[oid,oid] doc,
+                         BAT[oid,oid] context,
+                         int height,
+                         int upperbound) : BAT[oid,void] = PFstaircasejoin_br@1;
+"PARAMETERS
+  doc: document BAT (preorder rank, postorder rank)
+  context: context node sequence (preorder rank, postorder rank)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+doc represents a collection of (x,y) coordinates of nodes where
+each x- and each y-coordinate occurs only once. context represents
+a sub-collection of 'boundary nodes'. For each boundary node,
+staircasejoin uselects all nodes from doc (x-coordinates), which
+have an x-coordinate between the boundary node and the next one (or
+right edge of the xy-plane in case there is no next), and an y-coordinate
+smaller than the y-coordinate of the boundary node. context effectively
+represents a boundary in the xy-plane of doc for which staircasejoin
+uselects the nodes in the bottom-right part. @2"
+@m
+
+.END pathfinder;
+
+
+@h
+#ifndef PATHFINDER_H
+#define PATHFINDER_H
+
+#include <monet.h>
+#include <gdk.h>
+
+#include "pair.h"
+#include "ctxpropmgmt.h"
+
+#include "pathfinder.proto.h"
+
+#endif
+
+@c
+#include <sys/time.h>
+#include "pathfinder.h"
+
+int
+PFrevdocorder(BAT *bat, ptr *itr)
+{
+    Iteration it = *(Iteration *)itr;
+    int i;
+
+    BUN fst = BUNfirst (bat);
+    BUN bun = BUNlast  (bat);
+    int s   = BUNsize  (bat);
+
+    while ((bun -= s) >= fst)
+        if ((i = ITERATE (BUNhead (bat, bun), BUNtail (bat, bun), it)) < 0)
+            return i;
+
+    return GDK_SUCCEED;
+}
+
+@mil
+#############################################
+# docmgmt.mil : Document management functions
+#
+# Each XML-document is stored in a collection of BATs whose name starts
+# with the name of the document. During execution of an XQuery, the
+# 'working set' of documents is copied to a 'global document' represented
+# by the Tdoc* collection of BATs.
+#
+# Each collection contains the following BATs:
+# - prepost : BAT[oid,oid]  Pre/Post-values of nodes
+m4_ifdef(`m4_level',
+`# - level   : BAT[oid,chr]  Pre-value of node/and its level',
+`# - parent  : BAT[oid,oid]  Pre-value of node/Pre-value of its parent')
+# - tag     : BAT[oid,str]  Pre-value of node/Tag name
+#                           Text nodes do not occur in this bat
+# - text    : BAT[oid,str]  Pre-value/Value of text nodes
+# - pi      : BAT[oid,str]  Pre-value/Value of processing instructions
+# - com     : BAT[oid,str]  Pre-value/Value of comment nodes
+# - aname   : BAT[oid,str]  Attribute ID/Name of attribute nodes
+# - avalue  : BAT[oid,str]  Attribute ID/Value of attribute nodes
+# - aowner  : BAT[oid,oid]  Attribute ID/Pre-value of owner
+# These are stored in a doc BAT[str,bat] with the name (left) in the
+# head and the BAT (right) in the tail.
+#
+# Document information
+# - doc_name    : BAT[oid,str]  Document Id/Document name (incl XML)
+# - doc_doc     : BAT[oid,bat]  Document Id/Collection of doc bats
+# - doc_height  : BAT[oid,int]  Document Id/Height of document
+# - Tdoc_rootpre : BAT[oid,oid] Document Id/Pre-value of working document
+# - Tdoc_height : int           Max. height of docs in working set
+
+var Tdoc_prepost;
+m4_ifdef(`m4_level',
+`var Tdoc_level;',
+`var Tdoc_parent;')
+var Tdoc_tag;
+var Tdoc_text;
+var Tdoc_pi;
+var Tdoc_com;
+var Tdoc_aname;
+var Tdoc_avalue;
+var Tdoc_aowner;
+var Tdoc_rootpre;
+var Tdoc_height:=0;
+
+var enumtag_type;
+var enumaname_type;
+
+PROC doc_finalize() : void :=
+{
+	# collect all distinct tag and attribute names
+	alltags := new(oid,str);
+	allnames := new(oid,str);
+	alltags.insert(nil,"globalroot");
+	doc_doc@batloop
+	{
+		docid := $h;
+		doc := $t;
+		s := doc.find("tag").reverse.project(nil).kunique.reverse;
+		alltags := alltags.kunion(s);
+		s := doc.find("aname").reverse.project(nil).kunique.reverse;
+		allnames := allnames.kunion(s);
+	}
+
+	# create enumeration type
+	enumtag_type := enum_create("enumtag", alltags);
+	enumaname_type := enum_create("enumaname", allnames);
+
+	# encode all tag BATs
+	doc_doc@batloop
+	{
+		docid := $h;
+		doc := $t;
+		b := doc.find("tag");
+		doc.replace("tag", [encode](enumtag_type, b));
+		b := doc.find("aname");
+		doc.replace("aname", [encode](enumaname_type, b));
+	}
+m4_ifdef(`m4_level',
+`
+        # shrink size of the level table
+	doc_doc@batloop
+	{
+                docid := $h;
+		doc := $t;
+		b := doc.find("level");
+		doc.replace("level", b.[chr]);
+	}')
+        # generate document statistics
+	doc_doc@batloop
+	{
+                docid := $h;
+		doc := $t;
+	        doc.insert("stats", get_statistics(doc.find("prepost"), 
+		                                   doc.find("level"), 
+						   doc.find("tag")));
+	}
+	
+}
+ADDHELP("doc_finalize", "keulen", "June 5, 2003",
+"After having imported all required documents, it has to be 'finalized', i.e., the tag-BAT is converted into using an enum for tags.",
+"pathfinder");
+
+PROC bat_renum(bat b,int d) : bat :=
+{
+	if (d = 0) { return b; }
+	if (b.info.find("tail") = "void")
+	{
+		bcopy := b.copy;
+		bcopy.reverse.seqbase(oid(int(b.reverse.seqbase()) + d));
+		return bcopy;
+	}
+	else if (b.info.find("head") = "str")
+	{
+		return b.reverse.mark(0@0).reverse.[int].[+](d).[oid].reverse
+			.join(b.mark(0@0).reverse).reverse;
+	}
+	else if (b.info.find("tail") = "chr")
+	{
+		return b.[int].[+](d).[chr];
+	}
+	else
+	{
+	# b.[+](int) does not preserve a possibly present sorted-property
+   	# on the tail of 'b'. This is, however, important for the aowner-BAT.
+   	# The trick with debug masks switches on additional property
+   	# checking (see monet.conf for details), 
+	# which means the result BAT is checked about its
+	# properties. This will re-introduce the sorted-property on the
+	        var ret := b.[int];
+		var orgDebugMask := debugmask();
+		var newDebugMask := or(or(2,8),orgDebugMask);
+		debugmask(newDebugMask);
+		ret := ret.[+](d);
+		debugmask(orgDebugMask);
+		return ret.[oid];
+	}
+}
+
+PROC doc_to_working_set(str name) : void :=
+{
+	docid := doc_name.reverse.find(name);
+	doc := doc_doc.find(docid);
+	doc_prepost := doc.find("prepost");
+
+	grootpre := 0@0;
+	grootpost := Tdoc_prepost.find(grootpre);
+	Trootpre := grootpost;
+	if (Trootpre = 0@0) { Trootpre:=1@0; }
+	Tfirstattr := oid(int(Tdoc_aowner.reverse.max) + 1);
+	if (isnil(Tfirstattr)) { Tfirstattr:=0@0; }
+	Prootpre := 0@0;
+	Prootpost := doc_prepost.find(Prootpre);
+	Pfirstattr := 0@0;
+
+	deltapre := int(Trootpre) - int(Prootpre);
+	deltaattr := int(Tfirstattr) - int(Pfirstattr);
+
+	Tdoc_rootpre.insert(docid,Trootpre);
+	Tdoc_height:=max(Tdoc_height,doc_height.find(docid));
+	
+	Tdoc_prepost.insert(
+		doc_prepost.bat_renum(deltapre)
+			.reverse.bat_renum(deltapre).reverse);
+m4_ifdef(`m4_level',			
+`	Tdoc_level.insert(
+		doc.find("level").bat_renum(1)
+			.reverse.bat_renum(deltapre).reverse);',
+`	Tdoc_parent.insert(Trootpre,grootpre);
+	Tdoc_parent.insert(
+		doc.find("parent").bat_renum(deltapre)
+			.reverse.bat_renum(deltapre).reverse);')
+	Tdoc_tag.insert(
+		doc.find("tag").reverse.bat_renum(deltapre).reverse);
+	Tdoc_text.insert(
+		doc.find("text").reverse.bat_renum(deltapre).reverse);
+	Tdoc_pi.insert(
+		doc.find("pi").reverse.bat_renum(deltapre).reverse);
+	Tdoc_com.insert(
+		doc.find("com").reverse.bat_renum(deltapre).reverse);
+	Tdoc_aname.insert(
+		doc.find("aname").reverse.bat_renum(deltaattr).reverse);
+	Tdoc_avalue.insert(
+		doc.find("avalue").reverse.bat_renum(deltaattr).reverse);
+	Tdoc_aowner.insert(
+		doc.find("aowner").bat_renum(deltapre)
+			.reverse.bat_renum(deltaattr).reverse);
+
+	sb := Tdoc_prepost.seqbase();
+	Tdoc_prepost.seqbase(nil);
+	Tdoc_prepost.replace(grootpre, oid(int(Prootpost) + deltapre + 1));
+	Tdoc_prepost.seqbase(sb);
+}
+ADDHELP("doc_to_working_set", "keulen", "May 28, 2003",
+"Load persistent document into working set.",
+"pathfinder");
+
+PROC import_doc(str flnm, str name, int height) : oid :=
+{
+	printf(">>> Importing '%s' with name '%s' and height '%d'\n",
+		flnm,name,height);
+	docid := new_Pdoc(name,height);
+	doc := doc_doc.find(docid);
+	doc.find("prepost").import(flnm+".prepost");
+m4_ifdef(`m4_level',
+`	doc.find("level").import(flnm+".level");',
+`	doc.find("parent").import(flnm+".parent");')
+	doc.find("tag").import(flnm+".tag");
+	doc.find("text").import(flnm+".text");
+	doc.find("pi").import(flnm+".pi");
+	doc.find("com").import(flnm+".com");
+	doc.find("aname").import(flnm+".@name");
+	doc.find("avalue").import(flnm+".@val");
+	doc.find("aowner").import(flnm+".@owner");
+}
+ADDHELP("import_doc", "keulen", "May 28, 2003",
+"Import files flnm.* generated by xml-loader as persistent document\nwith name and height.","pathfinder");
+
+PROC new_Pdoc(str name, int height) : oid :=
+{
+	if (doc_name.reverse.exist(name))
+	{
+		ERROR("new_Pdoc: Document %s already exists\n",name);
+	}
+	doc:=new(str,bat);
+	doc.insert("prepost",new(void,oid).seqbase(0@0));
+m4_ifdef(`m4_level',	
+`	doc.insert("level",new(void,oid).seqbase(0@0));',
+`	doc.insert("parent",new(void,oid).seqbase(0@0));')
+	doc.insert("tag",new(oid,str));
+	doc.insert("text",new(oid,str));
+	doc.insert("pi",new(oid,str));
+	doc.insert("com",new(oid,str));
+	doc.insert("aname",new(void,str).seqbase(0@0));
+	doc.insert("avalue",new(void,str).seqbase(0@0));
+	doc.insert("aowner",new(void,oid).seqbase(0@0));
+	
+	doc_name.insert(nil,name);
+	doc_doc.insert(nil,doc);
+	doc_height.insert(nil,height);
+
+	return doc_name.reverse.fetch(-(doc_name.count,1));
+}
+ADDHELP("new_Pdoc", "keulen", "May 28, 2003",
+"Create an empty persistent document with name and height.","pathfinder");
+
+PROC Pdoc_init() : void :=
+{
+	new(void,str).persists(true).seqbase(0@0).bbpname("doc_name");
+	new(void,bat).persists(true).seqbase(0@0).bbpname("doc_doc");
+	new(void,int).persists(true).seqbase(0@0).bbpname("doc_height");
+}
+ADDHELP("Pdoc_init", "keulen", "May 28, 2003",
+"Initialize the BATs for storage of persistent documents.","pathfinder");
+
+PROC Tdoc_init() : void :=
+{
+	enumtag_type := enum_load("enumtag");
+	enumaname_type := enum_load("enumaname");
+
+	Tdoc_prepost := new(void,oid).seqbase(0@0);
+m4_ifdef(`m4_level',	
+`	Tdoc_level := new(void,chr).seqbase(0@0);',
+`	Tdoc_parent := new(void,oid).seqbase(1@0);')
+	Tdoc_tag := new(oid,enumtag_type);
+	Tdoc_text := new(oid,str);
+	Tdoc_pi := new(oid,str);
+	Tdoc_com := new(oid,str);
+	Tdoc_aname := new(void,enumaname_type).seqbase(0@0);
+	Tdoc_avalue := new(void,str).seqbase(0@0);
+	Tdoc_aowner := new(void,oid).seqbase(0@0);
+	doc_name := new(void,str).seqbase(0@0);
+	doc_height := new(void,int).seqbase(0@0);
+	Tdoc_rootpre := new(void,oid).seqbase(0@0);
+
+	# global root
+	Tdoc_prepost.insert(0@0,0@0);
+	Tdoc_tag.insert(0@0,encode(enumtag_type,"globalroot"));
+m4_ifdef(`m4_level',	
+`	Tdoc_level.insert(0@0,chr(0));')
+}
+ADDHELP("Tdoc_init", "keulen", "May 28, 2003",
+"Initialize the BATs for storage of the working set of documents.",
+"pathfinder");
+
+
+PROC get_statistics(BAT Tdoc_prepost, BAT Tdoc_level, BAT Tdoc_tag) : BAT[void,BAT] :=
+{
+   var maxdepth := Tdoc_level.max.int;
+   
+   # fan-out groups
+   var parents := parent_lev(Tdoc_level, Tdoc_prepost, maxdepth, Tdoc_level.count);
+   var num_children := new(oid,int);
+   var tmp := new(oid,oid);
+   
+   parents@batloop
+   {
+      tmp.delete;
+      tmp.insert($h,1@0);
+      num_children.insert($h, child_lev(Tdoc_level, tmp, maxdepth, Tdoc_level.count).count);
+   }
+  
+   var group_parents := num_children.reverse.{count}.sort;
+   var group_histogram := group_parents.mark(0@0).reverse;
+   group_parents := group_parents.reverse.mark(0@0).reverse;
+   group_histogram := group_histogram.[*](group_parents);
+   tmp := group_parents.copy;
+   group_parents := tmp;
+
+   # summarized fan-out groups
+   
+   var g_size_limit, g_size, g_par;
+   var gsum_histogram := new(void,int).seqbase(0@0);
+   var gsum_parents := new(void,int).seqbase(0@0);
+   g_size_limit := group_histogram.fetch(0) - 2;
+   g_size := 0;
+   g_par := 0;
+   group_histogram@batloop
+   {
+      g_size :+= $t;
+      g_par :+= group_parents.fetch($h);
+      if (g_size > g_size_limit)
+      {
+         gsum_histogram.insert(nil, g_size);
+	 gsum_parents.insert(nil, g_par);
+	 g_size := 0;
+	 g_par := 0;
+      }
+   }
+   if (g_size > 0)
+   {
+      gsum_histogram.insert(nil, g_size);
+      gsum_parents.insert(nil, g_par);
+   }
+
+   # tag-name groups
+   var upperbound := Tdoc_level.count;
+   var tag_names := Tdoc_tag.reverse.kunique.sort.mirror;
+   var tag_nodes := [select](const Tdoc_tag, tag_names).[sort];
+   var tag_histogram := [count](tag_nodes);
+   var tag_parents := [parent_lev](const Tdoc_level, tag_nodes, maxdepth, upperbound).[count]; 
+   var tag_children := [child_lev](const Tdoc_level, tag_nodes, maxdepth, upperbound).[count];
+   var fs_histogram := [followingsibling_lev](const Tdoc_level, tag_nodes, maxdepth, upperbound).[count];
+   var ps_histogram := [precedingsibling_lev](const Tdoc_level, tag_nodes, maxdepth, upperbound).[count];
+   
+   # tag_histogram.access(BAT_APPEND);
+   # tag_parents.access(BAT_APPEND);
+   # fs_histogram.access(BAT_APPEND);
+   # ps_histogram.access(BAT_APPEND);
+   # 
+   # tag_histogram.insert("*",Tdoc_tag.count);
+   # tag_parents.insert("*",parent_lev(Tdoc_level, Tdoc_tag, maxdepth, upperbound).count);
+   # ps_histogram.insert("*",precedingsibling_lev(Tdoc_level, Tdoc_tag, maxdepth, upperbound).count);
+   # fs_histogram.insert("*",followingsibling_lev(Tdoc_level, Tdoc_tag, maxdepth, upperbound).count);
+   
+   var fs1_histogram := new(enumtag_type,int);
+   var ps1_histogram := new(enumtag_type,int);
+   tmp := new(oid,oid);
+   
+   tag_nodes@batloop
+   {
+       fs := 0;
+       ps := 0;
+       
+       $t@batloop
+       {
+          tmp.delete;
+	  tmp.insert($h,1@0);
+          fs :+= followingsibling_lev(Tdoc_level, tmp, maxdepth, upperbound).count;
+          ps :+= precedingsibling_lev(Tdoc_level, tmp, maxdepth, upperbound).count;
+       }
+       
+       fs1_histogram.insert($h,fs);
+       ps1_histogram.insert($h,ps);
+   }
+  
+   #level groups
+   
+   var nodes_in_level;
+   var level_histogram := new(void,int).seqbase(0@0);
+   var level_parents := new(void,int).seqbase(0@0);
+   
+   #root_level
+   level_histogram.insert(nil, 1);
+   level_parents.insert(nil, 0);
+   
+   var x := 1;
+   while(x <= maxdepth)
+   {
+      nodes_in_level := Tdoc_level.uselect(chr(x));
+      level_histogram.insert(nil, nodes_in_level.count);
+      level_parents.insert(nil, parent_lev(Tdoc_level, nodes_in_level, maxdepth, Tdoc_level.count).count);
+      x :+= 1;
+   }
+
+   # summarized level groups
+   
+   var levelf_histogram := new(void,int).seqbase(0@0);
+   var levelf_parents := new(void,int).seqbase(0@0);
+   var tmp_histogram, tmp_parents;
+   
+   levelf_histogram.insert(nil, -1);
+   levelf_parents.insert(nil, -1);
+      
+   x := 1;
+   while(x < maxdepth)
+   {
+      nodes_in_level := Tdoc_level.uselect(chr(x));
+      tmp_parents := num_children.semijoin(nodes_in_level).reverse.{count}.sort;
+      tmp_histogram := tmp_parents.mark(0@0).reverse;
+      tmp_parents := tmp_parents.reverse.mark(0@0).reverse;
+      tmp_histogram := tmp_histogram.[*](tmp_parents);
+      
+      g_size_limit := tmp_histogram.fetch(0) - 2;
+      g_size := 0;
+      g_par := 0;
+      
+      tmp_histogram@batloop
+      {
+         g_size :+= $t;
+         g_par :+= tmp_parents.fetch($h);
+         if (g_size > g_size_limit)
+         {
+            levelf_histogram.insert(nil, g_size);
+   	    levelf_parents.insert(nil, g_par);
+   	    g_size := 0;
+   	    g_par := 0;
+	    g_size_limit :*= 2;
+         }
+      }
+      if (g_size > 0)
+      {
+         levelf_histogram.insert(nil, g_size);
+         levelf_parents.insert(nil, g_par);
+      }
+      levelf_histogram.insert(nil, tmp_histogram.sum);
+      levelf_parents.insert(nil, tmp_parents.sum);
+      
+      levelf_histogram.insert(nil, -1);
+      levelf_parents.insert(nil, -1);
+      
+      x :+= 1;
+   }
+   
+   # ancestor pruned level histogram
+   var pruned := new(void, oid).seqbase(0@0);
+   var min_post := Tdoc_prepost.fetch(0);
+   Tdoc_prepost@revdocorder()
+   {
+      if ($t < min_post)
+      {
+         pruned.insert(nil, $h);
+         min_post := $t;
+      }	 
+   }
+   pruned := pruned.reverse.mirror.join(Tdoc_level).[sht];
+   var pl_histogram := [uselect](const pruned, level_histogram.reverse.[sht])
+                       .[count].reverse.mark(0@0).reverse.copy;
+
+   #
+   # gathering of all generated statistics
+   # 
+   
+   var stats := new(str,BAT);
+   
+   stats.insert("g_size", group_histogram);
+   stats.insert("g_par", group_parents);
+   stats.insert("gsum_size", gsum_histogram);
+   stats.insert("gsum_par", gsum_parents);
+   stats.insert("tag_size", tag_histogram);
+   stats.insert("tag_par", tag_parents);
+   stats.insert("tag_chl", tag_children);
+   stats.insert("tag_fs", fs_histogram);
+   stats.insert("tag_ps", ps_histogram);
+   stats.insert("tag_fs1", fs1_histogram);
+   stats.insert("tag_ps1", ps1_histogram);
+   stats.insert("pr_lev_size", pl_histogram);
+   # stats.insert("lev_size", level_histogram);
+   # stats.insert("lev_par", level_parents);
+   stats.insert("lev_gsum_size", levelf_histogram);
+   stats.insert("lev_gsum_par", levelf_parents);
+
+   return stats;
+}
+ADDHELP("get_statistics", "rode", "Jul 31, 2003",
+"evaluates document specific statistics for result size estimation on xpath axes.","pathfinder");
+
+
+#############################################
+# xmlprint.mil : Functions for XML-export
+#
+
+PROC xmlprint(BAT[oid,oid] c, bit verbose) : void :=
+{
+    context := new(oid,oid);
+    nodenum := 1;
+
+    if (verbose) { printf("Sequence of %d nodes:\n",c.count); }
+    c@batloop()
+    {
+        if (verbose)
+        {
+            printf("Node %d ",nodenum);
+            if (Tdoc_text.exist($h)) {
+                printf("[text]");
+            } else {
+                printf("[element]");
+            }
+            printf(":\n");
+            if (Tdoc_text.exist($h)) printf("'");
+        }
+
+        if (not(Tdoc_prepost.exist($h)))
+        {
+            ERROR("xmlprint: Non-existing node in context: %d@0\n",$h);
+        }
+        
+        currootpre := $h;
+        currootpost := Tdoc_prepost.find(currootpre);
+
+        context.delete;
+        context.insert(currootpre,nil);
+
+        desc := Tdoc_prepost.fragment(currootpre,nil, nil,currootpost);
+        nodestack := new(oid,str);  # post and tag name
+        lastpost := oid(int(currootpost) + 1);
+
+        desc@batloop()
+        {
+            pre:=$h; post:=$t;
+            tag:=str(nil); txt:=str(nil);
+            if (Tdoc_tag.exist(pre)) {
+                tag:=decode(enumtag_type, Tdoc_tag.find(pre));
+            }
+            if (Tdoc_text.exist(pre)) {
+                txt:=Tdoc_text.find(pre);
+            }
+
+            while (lastpost < post)
+            {
+                toppost := nodestack.reverse.min;
+                poptag := nodestack.find(toppost);
+                nodestack.delete(toppost);
+
+                if (not(isnil(poptag))) { printf("</%s>", poptag); }
+                lastpost:=nodestack.reverse.min;
+            }
+
+            nodestack.insert(post,tag);
+
+            if (not(isnil(tag)))
+            {
+                printf("<%s", tag);
+                attrs := Tdoc_aowner.select(pre);
+                attrs@batloop()
+                {
+                    aname:=decode(enumaname_type, Tdoc_aname.find($h));
+                    aval := Tdoc_avalue.find($h);
+                    printf(" %s=\"%s\"", aname,aval);
+                }
+                printf(">");
+            }
+            else if (not(isnil(txt)))
+            {
+                printf("%s", txt);
+            }
+
+            lastpost := post;
+        }
+        while (nodestack.count > 0)
+        {
+            toppost := nodestack.reverse.min;
+            poptag := nodestack.find(toppost);
+            nodestack.delete(toppost);
+
+            if (not(isnil(poptag))) { printf("</%s>", poptag); }
+            lastpost:=nodestack.reverse.min;
+        }
+        if (verbose and Tdoc_text.exist($h)) printf("'");
+        printf("\n");
+        nodenum+=1;
+    }
+}
+ADDHELP("xmlprint", "keulen", "June 5, 2003",
+"Print each context node as full XML-document.\nc: Nodelist of context (pre-values in head, tail not used)\nverbose: print node ids, etc.",
+"pathfinder");
+
+
+PROC xmlprint(BAT[oid,oid] c) : void :=
+{
+    c.xmlprint(false);
+}
+ADDHELP("xmlprint", "keulen", "June 5, 2003",
+"Print each context node as full XML-document.\nc: Nodelist of context (pre-values in head, tail not used).",
+"pathfinder");
+
+PROC xmlprint() : void :=
+{
+    # Create context with global root.
+    c:=new(oid,oid);
+    c.insert(0@0,nil);
+
+    c.xmlprint(false);
+}
+ADDHELP("xmlprint", "keulen", "June 5, 2003",
+"Print document working set as full XML-document.",
+"pathfinder");
+
+##############################################################
+# ctxpropmgmt.mil : MIL procedures for context node sequence property
+#                   management
+
+var ctxprop_adm := new (oid, ctxprop);
+
+PROC ctxprop_get_withpost(bat b) : bit :=
+{
+    bci := batcacheid(b);
+
+    if (ctxprop_adm.exist(bci)) {
+        return ctxprop_adm.find(bci).ctxprop_get_withpost;
+    }
+    else {
+        return false;
+    }
+}
+
+PROC ctxprop_set_withpost(bat b, bit wp) : bat :=
+{
+    p := ctxprop (nil);
+    p.ctxprop_set_withpost (wp);
+    bci := batcacheid (b);
+
+     if (ctxprop_adm.exist (bci)) {
+         ctxprop_adm.replace (bci,p);
+     }
+     else {
+         ctxprop_adm.insert(bci,p);
+     }
+     return b;
+}
+
+###################################
+# axis.mil : XQuery axis operations
+#
+# This file contains all axis operations of XQuery (more accurately XPath).
+# Except for root, they all take a bat with context nodes (only head is
+# used which contains the pre-values of the nodes) and return a new
+# context. 
+# Each axis operation is implemented using a main function which
+# selects and calls one of the other functions which each implement a
+# particular algorithm.
+#
+
+var SHOW_TIMING:=false;
+
+PROC show_timing(bit st) : void := 
+{
+        SHOW_TIMING:=st;
+}
+ADDHELP("show_timing","keulen","June 10, 2003",
+"Set configuration parameter to show/hide timing information about axis steps.\nst: boolean on/off.",
+"pathfinder");
+
+PROC show_timing() : bit := 
+{
+        return SHOW_TIMING;
+}
+ADDHELP("show_timing","keulen","June 10, 2003",
+"Returns value of configuration parameter to show/hide timing information about axis steps.",
+"pathfinder");
+
+
+### root
+PROC root(str name) : bat :=
+{
+        return root_AlgoBasic(name);
+}
+ADDHELP("root","keulen","June 10, 2003",
+"Returns context sequence with the root node of document with name 'name'.\nname: string with name of document.",
+"pathfinder");
+
+PROC root_AlgoBasic(str name) : bat :=
+{
+        if (SHOW_TIMING) { t0:=time; }
+        docid:=doc_name.reverse.find(name);
+        rootpre:=Tdoc_rootpre.find(docid);
+        context:=new(oid,oid); 
+        context.insert(rootpre,nil);
+        if (SHOW_TIMING)
+        {
+                t1:=time;
+                printf("root(Basic): %dms\n", t1 - t0);
+        }
+        return context;
+}
+ADDHELP("root_AlgoBasic","keulen","June 10, 2003",
+"Implementation of root(name) that uses a basic algorithm: find document id of document with name 'name'; find preorder rank of document id.\nname: string with name of document.",
+"pathfinder");
+
+
+### child
+PROC child(pair ctx) : pair :=
+{
+m4_ifdef(`m4_level',
+` return child_AlgoLevel(ctx);',
+` return child_AlgoParent(ctx);')
+}
+ADDHELP("child","keulen","June 10, 2003",
+"Returns context sequence with all children of nodes in 'ctx'.\nctx: context node sequence.",
+"pathfinder");
+
+PROC child_AlgoParent(bat ctx) : bat :=
+{
+        if (SHOW_TIMING) { t0:=time; }
+        children :=
+                ctx.mirror.join(Tdoc_parent.reverse).reverse.project(nil);
+        if (SHOW_TIMING)
+        {
+                t1:=time;
+                printf("child(Parent): %dms\n", t1 - t0);
+        }
+        return children;
+}
+ADDHELP("child_AlgoParent","keulen","June 10, 2003",
+"Implementation of child(ctx) that uses an algorithm based on a join with the parent BAT.\nctx: context node sequence.",
+"pathfinder");
+
+PROC child_AlgoLevel(bat ctx) : bat :=
+{
+        ERROR("child_AlgoLevel not implemented.\n");
+}
+ADDHELP("child_AlgoLevel","keulen","June 10, 2003",
+"Implementation of child(ctx) that uses an algorithm based on a scan of the level BAT.\nctx: context node sequence.",
+"pathfinder");
+
+### descendant
+PROC descendant(bat ctx) : bat :=
+{
+        return descendant_AlgoScj(ctx);
+}
+ADDHELP("descendant","keulen","August 6, 2003",
+"Returns context sequence with all descendants of nodes in 'ctx'.\nctx: context node sequence.",
+"pathfinder");
+
+PROC descendant_AlgoScj(bat ctx) : bat :=
+{
+        if (SHOW_TIMING) { t0:=time; }
+        ctx_with_post := ctx.mirror.join(Tdoc_prepost);
+        if (SHOW_TIMING) { t1:=time; }
+        descendants :=
+                staircasejoin_br_void_excl(Tdoc_prepost,ctx_with_post,
+                        Tdoc_height,Tdoc_prepost.count);
+        if (SHOW_TIMING)
+        {
+                t2:=time;
+                printf("descendant(Scj): %dms (join:%dms; scj:%dms)\n",
+                        t2 - t0, t1 - t0, t2 - t1);
+        }
+        return descendants;
+}
+ADDHELP("descendant_AlgoScj","keulen","August 6, 2003",
+"Implementation of descendant(ctx) that uses an algorithm based on a staircase join with the document BAT.\nctx: context node sequence.",
+"pathfinder");

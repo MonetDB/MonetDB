@@ -1,0 +1,12 @@
+## Process this file with automake to produce Makefile.in
+
+INCLUDES = $(MONET_INCS) ../include
+
+lib_mil = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		core2mil.c \
+		milprint.c \
+		miltype.c 
+}

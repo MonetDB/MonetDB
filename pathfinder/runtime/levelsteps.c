@@ -1,5 +1,7 @@
 /* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
 
+#include <gdk.h>
+
 /**********************************************************************
  * this file contains all axis step algoritms that work mainly on the
  * level table:
