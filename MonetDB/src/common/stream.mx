@@ -88,27 +88,6 @@ the various underlying storage types.
 
 typedef struct stream stream;
 
-/* #define BACKWARD_COMPATIBLE_STREAM_DEFINITION 1 */
-#ifdef BACKWARD_COMPATIBLE_STREAM_DEFINITION
-struct stream {
-	short byteorder;
-	short access;/* read/write */
-	short type;/* ascii/binary */
-	char *name;
-	union {
-		void *p;
-		int i;
-	} stream_data;
-	int errnr;
-	ssize_t (*read)(stream *s, void *buf, size_t elmsize, size_t cnt);
-	ssize_t (*write)(stream *s, void *buf, size_t elmsize, size_t cnt);
-	void (*close)(stream *s);
-	char *(*error)(stream *s);
-	void (*destroy)(stream *s);
-	void (*flush)(stream *s);
-};
-#endif	/* BACKWARD_COMPATIBLE_STREAM_DEFINITION */
-
 /* some os specific initialization */
 stream_export int stream_init(void);
 
@@ -285,7 +264,6 @@ typedef enum stream_errors {
 #include <io.h>
 #endif
 
-#ifndef BACKWARD_COMPATIBLE_STREAM_DEFINITION
 struct stream {
 	short byteorder;
 	short access;/* read/write */
@@ -303,7 +281,6 @@ struct stream {
 	void (*destroy)(stream *s);
 	void (*flush)(stream *s);
 };
-#endif	/* BACKWARD_COMPATIBLE_STREAM_DEFINITION */
 
 #if !HAVE_DECL_STRDUP
 #ifdef HAVE_STRDUP
