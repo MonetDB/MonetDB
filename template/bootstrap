@@ -53,7 +53,7 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 
 	#Some variables autogen needs to be able to expand
 	#to get the dependencies right.
-	export MONET_INCLUDEDIR=`$MONET_PREFIX/bin/monet-config --includedir`
+	export MONET_INCLUDEDIR=`$MONET_PREFIX/bin/monet-config --pkgincludedir`
 	export MONET_INCS=`$MONET_PREFIX/bin/monet-config --includes`
 
 	AUTOGEN=$MONET_PREFIX/lib/autogen/autogen.py
