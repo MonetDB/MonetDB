@@ -15,6 +15,7 @@ STATIC_MODS = \
 
 smallTOC_SHARED_MODS =	\
 	../mapi/lib_mapi	\
+	../modules/calibrator/lib_calib	\
 	../modules/plain/lib_aggr	\
 	../modules/plain/lib_aggrX3	\
 	../modules/plain/lib_alarm	\

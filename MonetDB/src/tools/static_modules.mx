@@ -10,6 +10,8 @@
 #ifdef STATIC
 /* mapi */
 @:install_module(mapi)@
+/* calibrator */
+@:install_module(calib)@
 /* plain */
 @:install_module(aggr)@
 @:install_module(aggrX3)@
