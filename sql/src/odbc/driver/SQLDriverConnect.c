@@ -20,8 +20,11 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+#ifdef HAVE_STRINGS_H
+#include <strings.h>		/* for strcasecmp */
+#else
 #include <string.h>
-
+#endif
 
 static int
 get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, SQLCHAR **key, SQLCHAR **attr)
