@@ -44,8 +44,13 @@ if [ ! -f configure.ag  -a  ! -x configure ] ; then
 	return 1
 fi
 
+# use the current directory's (base)name to guess, 
+# which of monet, sql, xml, acoi, template, ... we are;
+# allow the basename to be suffixed, e.g., by some 
+# version number (`pwd`=="monet_4-3" => wh_t=="monet", 
+# i.e., cut-off from the first non-letter till the end)
 base="`pwd`"
-wh_t="`basename $base`"
+wh_t="`basename $base | perl -pe 's|^([a-zA-Z]+)([^a-zA-Z].*)?$|$1|'`"
 what="`echo ${wh_t} | tr [:lower:] [:upper:]`"
 
 if [ "${what}" != "MONET" ] ; then
@@ -62,6 +67,7 @@ if [ "${what}" != "MONET" ] ; then
 	fi
 fi
 
+# set generic variables
 eval WHAT_BUILD="\${${what}_BUILD}"
 eval WHAT_PREFIX="\${${what}_PREFIX}"
 
@@ -389,10 +395,12 @@ echo -e "\tcd ${base}"
 echo -e "\tMtest_${wh_t} -r"
 echo ""
 
+# set specific variables
 eval "${what}_BUILD=\"$WHAT_BUILD\" ; export ${what}_BUILD"
 eval "${what}_PREFIX=\"$WHAT_PREFIX\" ; export ${what}_PREFIX"
 eval "${what}_CONFIGURE=\"$WHAT_CONFIGURE\" ; export ${what}_CONFIGURE"
 
+# clean-up temporary variables
 wh_t='' ; unset wh_t
 what='' ; unset what
 WHAT_BUILD='' ; unset WHAT_BUILD
