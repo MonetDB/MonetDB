@@ -32,7 +32,7 @@ autoconf/automake/libtool
 
 standard software development tools
 	To compile MonetDB, you also need to have a the following 
-	standard software developments tools installed and ready for use
+	standard software development tools installed and ready for use
 	on you system:
 	 - a C/C++ compiler (e.g., GNU's gcc/g++)
 	 - a lexical analyzer generator (e.g., "lex" or "flex")
