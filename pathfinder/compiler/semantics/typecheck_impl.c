@@ -286,7 +286,7 @@ overload (PFqname_t qn, PFcnode_t *args)
  * @return return type of @a fn when applied to arguments @a args
  */
 static PFty_t
-specific (PFfun_t *fn, PFcnode_t *args)
+specific (PFfun_t *fn, PFcnode_t *args __attribute__((unused)))
 {
     assert (fn);
     assert (args && (args->kind == c_nil || args->kind == c_arg));

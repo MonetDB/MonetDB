@@ -116,7 +116,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s", n->schema.items[c].name);
 
-            PFarray_printf (dot, ">", n->schema.items[0].name);
+            PFarray_printf (dot, ">");
 
             /* print out first tuple in table, if table is not empty */
             if (n->sem.lit_tbl.count > 0) {

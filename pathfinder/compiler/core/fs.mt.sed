@@ -75,8 +75,8 @@ prologue {
 
 /* element/attribute constructor and content
  */
-PFty_t (*elem_attr) (PFqname_t, PFty_t);
-PFty_t any;
+static PFty_t (*elem_attr) (PFqname_t, PFty_t);
+static PFty_t any;
 
 };
 

@@ -767,7 +767,6 @@ PFcore_constr_elem (PFcnode_t *e1, PFcnode_t *e2)
 
     return PFcore_wire2 (c_elem, e1, e2);
 }
-;
 
 /**
  * Create a new core tree node representing attribute constructor.
@@ -783,7 +782,6 @@ PFcore_constr_attr (PFcnode_t *e1, PFcnode_t *e2)
 
     return PFcore_wire2 (c_attr, e1, e2);
 }
-;
 
 /**
  * Create a new core tree node representing a text, doc, comment or
@@ -819,7 +817,6 @@ PFcore_constr (PFptype_t pkind, PFcnode_t *e)
 
     return PFcore_wire1 (kind, e);
 }
-;
 
 /**
  * Create a new core tree node representing the tagname of an element 
@@ -838,7 +835,6 @@ PFcore_tag (PFqname_t qn)
 
     return core;
 }
-;
 
 /**
  * Resolve a reference to a function name using Pathfinder's function
@@ -1200,7 +1196,7 @@ PFcore_error_loc (PFloc_t loc, const char * msg, ...)
     char         buf[msglen + sizeof ("error at 000,000-999,999: ")];
 
     snprintf (buf, msglen + sizeof ("error at 000,000-999,999: "),
-              "error at %-.3i,%-.3i-%-.3i,%-.3i: %s",
+              "error at %-.3u,%-.3u-%-.3u,%-.3u: %s",
               loc.first_row, loc.first_col, loc.last_row, loc.last_col, msg);
 
     va_start (args, msg);

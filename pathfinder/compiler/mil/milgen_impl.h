@@ -243,9 +243,9 @@ literal (PFalg_atom_t atom)
 {
     switch (atom.type) {
 
-        case aat_int:  return lit_int (atom.val.int_); break;
-        case aat_str:  return lit_str (atom.val.str); break;
-        case aat_node: return lit_oid (atom.val.node); break;
+        case aat_int:  return lit_int (atom.val.int_);
+        case aat_str:  return lit_str (atom.val.str);
+        case aat_node: return lit_oid (atom.val.node);
 
         default:
                        PFoops (OOPS_FATAL,
