@@ -260,17 +260,17 @@ be reset, but also this client should be terminated immediately.
 @c
 int connect_error(stream *in, stream *out)
 {
-	/* Make sure that the read- (in-) stream is closed first,
-	 * as the related write- (out-) stream closes the shared
+	/* Make sure that the write- (out-) stream is closed first,
+	 * as the related read- (in-) stream closes the shared
 	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
 	 */
-	if (in) {
-		stream_close(in);
-		stream_destroy(in);
-	}
 	if (out) {
 		stream_close(out);
 		stream_destroy(out);
+	}
+	if (in) {
+		stream_close(in);
+		stream_destroy(in);
 	}
 	return GDK_FAIL;
 }

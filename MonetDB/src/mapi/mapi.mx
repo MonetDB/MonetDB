@@ -317,14 +317,14 @@ Get the new information for the server socket and start listening.
 				stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
 
-				/* Make sure that the read- (in-) stream is closed first,
-				 * as the related write- (out-) stream closes the shared
+				/* Make sure that the write- (from-) stream is closed first,
+				 * as the related read- (in-) stream closes the shared
 				 * socket; see also src/common/stream.mx:socket_close .
 				 */
-				stream_close(fdin);
-				stream_destroy(fdin);
 				stream_close(fdout);
 				stream_destroy(fdout);
+				stream_close(fdin);
+				stream_destroy(fdin);
 				continue;
 			}
 			GDKfree(name);
@@ -688,14 +688,14 @@ Get the new information for the server socket and start listening.
 				stream_printf(fdout, "MAPIlistenSSL:Failed to init client for user %s\n", name );
 				GDKfree(name);
 
-				/* Make sure that the read- (in-) stream is closed first,
-				 * as the related write- (out-) stream closes the shared
+				/* Make sure that the write- (out-) stream is closed first,
+				 * as the related read- (in-) stream closes the shared
 				 * socket; see also src/common/stream.mx:ssl_close .
 				 */
-				stream_close(fdin);
-				stream_destroy(fdin);
 				stream_close(fdout);
 				stream_destroy(fdout);
+				stream_close(fdin);
+				stream_destroy(fdin);
 				continue;
 			}
 			GDKfree(name);

@@ -1371,19 +1371,19 @@ mapi_lost_connection(Mapi mid)
 	mid->connected = 0;
 	mid->active = 0;
 	/* finish channels */
-	/* Make sure that the read- (from-) stream is closed first,
-	 * as the related write- (to-) stream closes the shared
+	/* Make sure that the write- (to-) stream is closed first,
+	 * as the related read- (from-) stream closes the shared
 	 * socket; see also src/common/stream.mx:socket_close .
 	 */
-	if (mid->from) {
-		stream_close(mid->from);
-		stream_destroy(mid->from);
-		mid->from = 0;
-	}
 	if (mid->to) {
 		stream_close(mid->to);
 		stream_destroy(mid->to);
 		mid->to = 0;
+	}
+	if (mid->from) {
+		stream_close(mid->from);
+		stream_destroy(mid->from);
+		mid->from = 0;
 	}
 }
 
@@ -1395,10 +1395,10 @@ mapi_disconnect(Mapi mid)
 	   sharing the streams */
 	if (mid->next == mid) {
 		/* only (last) element in circular list, so close streams */
-		stream_close(mid->from);
-		stream_destroy(mid->from);
 		stream_close(mid->to);
 		stream_destroy(mid->to);
+		stream_close(mid->from);
+		stream_destroy(mid->from);
 	} else {
 		/* remove from circular list */
 		Mapi m;
