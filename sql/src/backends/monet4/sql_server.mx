@@ -250,7 +250,16 @@ int mvc_init_wrap( int* debug ){
 }
 
 int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
-	mvc_exit();
+	Client c;
+
+        CNTXTclient(stk, &c);
+	while (c->father >= 0) {
+		c = monet_clients + c->father;
+	}
+	/* only exit sql on a global quit */
+	if (c == monet_clients) {
+		mvc_exit();
+	}
 	return CMDquit(stk, lt, res);
 }
 
