@@ -4,47 +4,6 @@
 This interface can be used to open 'non compressed, gzipped, bz2zipped' 
 data files. 
 
-@m
-.MODULE stream;
-.USE io;
-
-    .ATOM stream = ptr;
-    .END;
-
-.COMMAND open_rstream( str filename ) : stream = stream_open_rstream;
-	"open a file stream for reading"
-.COMMAND open_wstream( str filename ) : stream = stream_open_wstream;
-	"open a file stream for writing"
-.COMMAND open_rastream( str filename ) : stream = stream_open_rastream; 
-	"open ascii file stream for reading"
-.COMMAND open_wastream( str filename ) : stream = stream_open_wastream; 
-	"open ascii file stream for writing"
-
-.COMMAND socket_rstream( int socket, str name ) : stream = 
-	stream_socket_rstream; "open a socket stream for reading"
-.COMMAND socket_wstream( int socket, str name ) : stream = 
-	stream_socket_wstream; "open a socket stream for writing"
-.COMMAND socket_rastream( int socket, str name ) : stream = 
-	stream_socket_rastream; "open ascii socket stream for reading"
-.COMMAND socket_wastream( int socket, str name ) : stream = 
-	stream_socket_wastream; "open ascii socket stream for writing"
-
-.COMMAND file_rstream( fstream file, str name ) : stream = 
-	stream_file_rstream; "open a file stream for reading"
-.COMMAND file_wstream( fstream file, str name ) : stream = 
-	stream_file_wstream; "open a file stream for writing"
-.COMMAND file_rastream( fstream file, str name ) : stream = 
-	stream_file_rastream; "open ascii file stream for reading"
-.COMMAND file_wastream( fstream file, str name ) : stream = 
-	stream_file_wastream; "open ascii file stream for writing"
-
-.COMMAND stream_write( stream s, str data ) = stream_write_string;
-	"write data on the stream"
-
-.COMMAND stream_close( stream s ) = stream_close_stream; 
-	"close and destroy the stream s"
-
-.END stream;
 @h
 #ifndef _STREAM_H_
 #define _STREAM_H_
@@ -61,11 +20,11 @@ data files.
  * required for proper conversion on different byte order platforms.
  */
 
-#include <gdk.h>
 #include <ctype.h>
+#include <stdio.h>
 
 typedef struct stream {
-	sht byteorder;
+	short byteorder;
 	char *filename;
 	char *stream_data;
 	int errnr;
@@ -75,10 +34,6 @@ typedef struct stream {
 	char *(*error)( struct stream *s );
 	void (*destroy)( struct stream *s );
 } stream;
-
-#include <blob.h>
-#include <io.h>
-#include "stream.proto.h"
 
 stream *open_rstream( char *filename );
 stream *open_wstream( char *filename );
@@ -113,9 +68,13 @@ stream *file_wastream( FILE *fp, char *name );
 
 #endif /*_STREAM_H_*/
 @c
-#include <gdk.h>
+#include <config.h>
 #include "stream.h"
-#include <stdio.h>
+#include <string.h> 
+#ifdef HAVE_NETDB_H
+# include <netinet/in.h> 
+# include <netdb.h> 
+#endif
 #ifdef HAVE_LIBZ
 	#include <zlib.h>
 #endif
@@ -145,14 +104,14 @@ static void get_extention( char *file, char *ext)
 }
 
 static void stream_destroy( stream *s){
-	GDKfree(s->filename);
-	GDKfree(s);
+	free(s->filename);
+	free(s);
 }
 
 static stream *create_stream( char *filename ){
-	stream *s = (stream*)GDKmalloc(sizeof(stream));
+	stream *s = (stream*)malloc(sizeof(stream));
 	s->byteorder = 1234;
-	s->filename = GDKstrdup(filename); 
+	s->filename = strdup(filename); 
 	s->stream_data = NULL;
 	s->errnr = NO__ERROR;
 	s->destroy = &stream_destroy;
@@ -164,15 +123,15 @@ static char *stream_error( stream *s ){
 	switch(s->errnr){
 	case OPEN_ERROR:
 		sprintf(buf, "Error could not open file %s\n", s->filename );
-		return GDKstrdup(buf);
+		return strdup(buf);
 	case READ_ERROR:
 		sprintf(buf, "Error reading file %s\n", s->filename );
-		return GDKstrdup(buf);
+		return strdup(buf);
 	case WRITE_ERROR:
 		sprintf(buf, "Error writing file %s\n", s->filename );
-		return GDKstrdup(buf);
+		return strdup(buf);
 	}
-	return GDKstrdup("Unkonwn error");
+	return strdup("Unkonwn error");
 }
 
 static int stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
@@ -232,7 +191,7 @@ stream *open_rstream( char *filename ){
 	{
 	  	stream *s = open_stream( filename, "rb");
 		if (s->errnr == NO__ERROR)
-	   		fread( (char*)&s->byteorder, sizeof(sht), 
+	   		fread( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
 		return s;
 	}
@@ -267,7 +226,7 @@ stream *open_wstream( char *filename ){
 	{
 		stream *s = open_stream( filename, "wb");
 		if (s->errnr == NO__ERROR)
-	   		fwrite( (char*)&s->byteorder, sizeof(sht), 
+	   		fwrite( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
 		return s;
 	}
@@ -372,13 +331,13 @@ stream *open_gzstream( char *filename, char *flags ){
 stream *open_gzrstream( char *filename ){
 	stream *s = open_gzstream( filename, "rb");
 	if (s->errnr == NO__ERROR)
-	   gzread( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(sht));
+	   gzread( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(short));
 	return s;
 }
 stream *open_gzwstream( char *filename ){
 	stream *s = open_gzstream( filename, "wb");
 	if (s->errnr == NO__ERROR)
-	   gzwrite( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(sht));
+	   gzwrite( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(short));
 	return s;
 }
 stream *open_gzrastream( char *filename ){
@@ -425,13 +384,13 @@ stream *open_bzstream( char *filename, char *flags ){
 stream *open_bzrstream( char *filename ){
 	stream *s = open_bzstream( filename, "rb");
 	if (s->errnr == NO__ERROR) BZ2_bzread( 
-		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(sht) );
+		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(short) );
 	return s;
 }
 stream *open_bzwstream( char *filename ){
 	stream *s = open_bzstream( filename, "wb");
 	if (s->errnr == NO__ERROR) BZ2_bzwrite( 
-		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(sht) );
+		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(short) );
 	return s;
 }
 stream *open_bzrastream( char *filename ){
@@ -442,6 +401,7 @@ stream *open_bzwastream( char *filename ){
 	stream *s = open_bzstream( filename, "wb");
 	return s;
 }
+#endif
 
 stream *socket_rstream( int socket, char *name ){
 	stream *s = create_stream(name);
@@ -454,7 +414,7 @@ stream *socket_rstream( int socket, char *name ){
 		s->stream_data = (char*)fp;
 
 		if (s->errnr == NO__ERROR)
-	   		fread( (char*)&s->byteorder, sizeof(sht), 
+	   		fread( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
 		return s;
 	}
@@ -473,7 +433,7 @@ stream *socket_wstream( int socket, char *name ){
 		s->stream_data = (char*)fp;
 
 		if (s->errnr == NO__ERROR){
-	   		fwrite( (char*)&s->byteorder, sizeof(sht), 
+	   		fwrite( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
 		}
 		return s;
@@ -522,7 +482,7 @@ stream *file_rstream( FILE *fp, char *name ){
 		s->stream_data = (char*)fp;
 
 		if (s->errnr == NO__ERROR)
-	   		fread( (char*)&s->byteorder, sizeof(sht), 
+	   		fread( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
 		return s;
 	}
@@ -540,7 +500,7 @@ stream *file_wstream( FILE *fp, char *name ){
 		s->stream_data = (char*)fp;
 
 		if (s->errnr == NO__ERROR){
-	   		fwrite( (char*)&s->byteorder, sizeof(sht), 
+	   		fwrite( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
 		}
 		return s;
@@ -575,104 +535,4 @@ stream *file_wastream( FILE *fp, char *name ){
 	}
 	s->errnr = OPEN_ERROR;
 	return s;
-}
-
-#endif
-
-int stream_open_rstream( stream *S, str filename ){
-	if ((*(stream**)S = open_rstream( filename )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_open_wstream( stream *S, str filename ){
-	if ((*(stream**)S = open_wstream( filename )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_open_rastream( stream *S, str filename ){
-	if ((*(stream**)S = open_rastream( filename )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_open_wastream( stream *S, str filename ){
-	if ((*(stream**)S = open_wastream( filename )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_socket_rstream( stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_rstream( *socket, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_socket_wstream( stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_wstream( *socket, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_socket_rastream( stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_rastream( *socket, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_socket_wastream( stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_wastream( *socket, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_file_rstream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_rstream( *file, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_file_wstream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_wstream( *file, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_file_rastream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_rastream( *file, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_file_wastream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_wastream( *file, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-
-int stream_write_string( stream *S, str data ){
-	stream *s = *(stream**)S;
-	s->write( s, data, 1, strlen(data));
-	return GDK_SUCCEED;
-}
-
-int stream_close_stream( stream *S ){
-	stream *s = *(stream**)S;
-	s->close( s );
-	s->destroy( s );
-	return GDK_SUCCEED;
 }

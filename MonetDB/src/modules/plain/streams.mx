@@ -1,0 +1,159 @@
+@f streams
+@a Niels Nes
+@* An simple interface to streams 
+This interface can be used to open 'non compressed, gzipped, bz2zipped' 
+data files. 
+
+@m
+.MODULE streams;
+.USE io;
+
+    .ATOM stream = ptr;
+    .END;
+
+.COMMAND open_rstream( str filename ) : stream = stream_open_rstream;
+	"open a file stream for reading"
+.COMMAND open_wstream( str filename ) : stream = stream_open_wstream;
+	"open a file stream for writing"
+.COMMAND open_rastream( str filename ) : stream = stream_open_rastream; 
+	"open ascii file stream for reading"
+.COMMAND open_wastream( str filename ) : stream = stream_open_wastream; 
+	"open ascii file stream for writing"
+
+.COMMAND socket_rstream( int socket, str name ) : stream = 
+	stream_socket_rstream; "open a socket stream for reading"
+.COMMAND socket_wstream( int socket, str name ) : stream = 
+	stream_socket_wstream; "open a socket stream for writing"
+.COMMAND socket_rastream( int socket, str name ) : stream = 
+	stream_socket_rastream; "open ascii socket stream for reading"
+.COMMAND socket_wastream( int socket, str name ) : stream = 
+	stream_socket_wastream; "open ascii socket stream for writing"
+
+.COMMAND file_rstream( fstream file, str name ) : stream = 
+	stream_file_rstream; "open a file stream for reading"
+.COMMAND file_wstream( fstream file, str name ) : stream = 
+	stream_file_wstream; "open a file stream for writing"
+.COMMAND file_rastream( fstream file, str name ) : stream = 
+	stream_file_rastream; "open ascii file stream for reading"
+.COMMAND file_wastream( fstream file, str name ) : stream = 
+	stream_file_wastream; "open ascii file stream for writing"
+
+.COMMAND stream_write( stream s, str data ) = stream_write_string;
+	"write data on the stream"
+
+.COMMAND stream_close( stream s ) = stream_close_stream; 
+	"close and destroy the stream s"
+
+.END streams;
+@h
+#ifndef _STREAMS_H_
+#define _STREAMS_H_
+
+#include "stream.h"
+#include <blob.h>
+#include <io.h>
+#include "streams.proto.h"
+
+#endif /*_STREAMS_H_*/
+@c
+#include <gdk.h>
+#include "streams.h"
+#include <stdio.h>
+
+int stream_open_rstream( stream *S, str filename ){
+	if ((*(stream**)S = open_rstream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_open_wstream( stream *S, str filename ){
+	if ((*(stream**)S = open_wstream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_open_rastream( stream *S, str filename ){
+	if ((*(stream**)S = open_rastream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_open_wastream( stream *S, str filename ){
+	if ((*(stream**)S = open_wastream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_rstream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_rstream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_wstream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_wstream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_rastream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_rastream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_wastream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_wastream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_file_rstream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_rstream( *file, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_file_wstream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_wstream( *file, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_file_rastream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_rastream( *file, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_file_wastream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_wastream( *file, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+
+int stream_write_string( stream *S, str data ){
+	stream *s = *(stream**)S;
+	s->write( s, data, 1, strlen(data));
+	return GDK_SUCCEED;
+}
+
+int stream_close_stream( stream *S ){
+	stream *s = *(stream**)S;
+	s->close( s );
+	s->destroy( s );
+	return GDK_SUCCEED;
+}

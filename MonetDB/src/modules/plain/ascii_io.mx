@@ -5,7 +5,7 @@
 @m 
 .MODULE ascii_io;
 
-.USE stream;
+.USE streams;
 
 .COMMAND ascii_io_debug( int debug ) = init_ascii_io; ""
 
@@ -110,7 +110,7 @@ proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 #ifndef _ASCII_IO2_H_
 #define _ASCII_IO2_H_
 
-#include <stream.h>
+#include <streams.h>
 #include <ascii_io.proto.h>
 
 extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, int nr );
@@ -122,7 +122,7 @@ extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr 
 #include "ascii_io.h"
 #include "config.h"
 #include <gdk.h>
-#include <stream.h>
+#include <streams.h>
 
 #include <string.h>
 #include <ctype.h>
