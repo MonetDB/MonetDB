@@ -58,3 +58,5 @@ if test "$GCC" = "yes"; then
 	X_CXXFLAGS="$X_CXXFLAGS -Wno-sign-compare"
 fi
 
+dnl We're not building on native Windows.
+AM_CONDITIONAL(NATIVE_WIN32,false)
