@@ -307,8 +307,8 @@ if test "x$enable_optim" = xyes; then
       esac
     else
       case "$host" in
-      i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -tpp6 -axiMK -unroll -ipo -ipo_obj";;
-      ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -tpp2 -mcpu=itanium2 -unroll -ipo -ipo_obj "
+      i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -tpp6 -restrict -axiMK -unroll -ipo -ipo_obj";;
+      ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -tpp2 -restrict -mcpu=itanium2 -unroll -ipo -ipo_obj "
                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
                       dnl  (Mserver produces some incorrect BATpropcheck warnings);
                       dnl  hence, we use only "-O2", here.
