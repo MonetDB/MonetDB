@@ -137,9 +137,6 @@ any client activity.
  (Mserver) still makes the system wait for all active clients to finish,
  before causing a database shutdown."
 
-.BUILTIN shutdown(int status) = CMDshutdown;
-"Immediate database shutdown. Only to be issued by the adm or database owner."
-
 .BUILTIN kill(int clientid) = CMDkill;
 "Kills a client session. Killing the console (clientid = 0) is a system
  shutdown.
@@ -910,42 +907,6 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
 	return 0;
 }
-@-
-A server running in the background should be stopped using 
-the routine @%shutdown@ issued by the database owner.
-The current implementation assumes an emergency stop and
-simply stops the system. 
-Future versions should include a @%stop@ and @%resume@
-command, which blocks any further input  and reactivates them later.
-@c
-int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
-	Client c;
-	CNTXTclient(stk, &c);
-   
-	if (strcmp(c->user, GDKgetenv("monet_admin"))  )
-	{
-		stream_printf(GDKout,"No permission for shutdown; quit.\n");
-		stream_flush(GDKout);
-	} else if (monet_daemon == 1) {
-		stream_printf(GDKout,"Shutdown of server in progress\n");
-		stream_flush(GDKout);
-		monet_running = 0;
-		CMDquit(stk, lt, res);
-		closeClient(monet_clients, TRUE);
-		return 0;
-	} else {
-		int status = 1, *statusp = &status;
-		monet_running = 0;
-        	if (lt->cnt > 0) { 
-            	    @:builtin_operand(0, TYPE_int, statusp)@
-        	}
-		stream_flush(GDKout);
-		stream_destroy(GDKout);
-		MT_global_exit(*statusp);
-	}
-	return CMDquit(stk, lt, res);
-}
-
 @-
 The client prompt can be changed to suite front-ends in their
 communication with the server.
