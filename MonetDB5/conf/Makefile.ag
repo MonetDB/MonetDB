@@ -1,6 +1,6 @@
 EXTRA_DIST = \
 	config.guess config.sub \
-	install-sh mkinstalldirs missing \
+	install-sh missing \
 	ltmain.sh config.h.in \
 	conf.bash MonetDB5.conf.in
 
