@@ -651,6 +651,16 @@ public class MonetStatement implements Statement {
 
 			return(rawr);
 		}
+		
+		void closeResult(int id) throws IllegalStateException {
+			if (state == DEAD) throw
+				new IllegalStateException("CacheThread shutting down or not running");
+
+			synchronized(queryQueue) {
+				queryQueue.add(new RawResults(0, "Xclose " + id));
+				queryQueue.notify();
+			}
+		}
 
 		/**
 		 * Executes the query contained in the given HeaderList, and stores the
@@ -1211,10 +1221,14 @@ public class MonetStatement implements Statement {
 				// result only if we had an ID in the header... Currently
 				// on updates, inserts and deletes there is no header at all
 				if (isSet[3]) {
-					((MonetConnection)getConnection()).sendIndependantCommand("Xclose " + id);
+					// since it is not really critical `when' this command is
+					// executed, we put it on the CacheThread's queue. If we
+					// would want to do it ourselves here, a deadlock situation
+					// may occur if the HeaderList calls us.
+					cachethread.closeResult(id);
 				}
-			} catch (SQLException e) {
-				// too bad, we're probably closed already
+			} catch (IllegalStateException e) {
+				// too late, cache thread is gone or shutting down
 			}
 			closed = true;
 		}
