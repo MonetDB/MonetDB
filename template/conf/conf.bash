@@ -293,7 +293,7 @@ fi
 
 if [ "${os}" = "IRIX64" ] ; then
 	# propper/extended paths on medusa
-	binpath="/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/java/bin:${binpath}"
+	binpath="/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/java/bin:/usr/local/teTeX/bin:${binpath}"
 	if [ -d "${soft32}"  -a  "${BITS}" = "64" ] ; then
 		# some tools are not in ${soft64} on medusa
 		binpath="${soft32}/bin:${binpath}"
@@ -415,7 +415,7 @@ if [ "${what}" != "MONET"  -a  "${WHAT_PREFIX}" != "${MONET_PREFIX}" ] ; then
 	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
 	modpath="${WHAT_PREFIX}/lib/MonetDB"
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
-	mtest_modpath="--monet_mod_path=`${MONET_PREFIX}/bin/monet-config --modpath`:${modpath}"
+	mtest_modpath="--monet_mod_path=${modpath}:`${MONET_PREFIX}/bin/monet-config --modpath`"
 fi
 if [ "${os}" = "IRIX64" ] ; then
 	# IRIX64 requires this to find dependend modules
