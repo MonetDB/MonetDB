@@ -28,6 +28,7 @@ module 'pathfinder'
 [ "combine_string(BAT[any,str]) : str"							  ]
 [ "combine_strings(BAT[oid,str]) : BAT[oid,str]"					  ]
 [ "compress_properties(str) : void"							  ]
+[ "concat(BAT[any,str]) : str"								  ]
 [ "create_ws() : BAT[void,BAT]"								  ]
 [ "delete_all_docs() : void"								  ]
 [ "delete_doc(str) : void"								  ]
