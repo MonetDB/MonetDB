@@ -1,12 +1,16 @@
 stdout of test 'monettime` in directory 'src/modules/plain` itself:
 
-#> Mtest (13:33:32):	other monettime 1200
-#> Mtest (13:33:32):	Mtimeout -timeout 1200 ./monettime monettime
-#> Mlog (13:33:32):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain monettime.mil
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:monettime.mil
+
+# 04:43:13 >  
+# 04:43:13 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.11887/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_src_modules_plain  < monettime.milM
+# 04:43:13 >  
+
+# Monet Database Server V4.3.4
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/monet.GNU_32-d.11887/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_src_modules_plain
+# dbdir:/export/scratch1/monet/tmp/monet.GNU_32-d.11887/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_modules_plain
 
 loaded;
 #---------------------------------#
@@ -24,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #---------------------------------------------------------------------------------------------------------#
 # BAT:	  rule						| month	| weekday	| day	| minutes	  #
 # (str)	  (rule)					| (int)	| (int)		| (int)	| (int)		  #
@@ -166,18 +168,18 @@ Try: modules;                - for other modules.
 # BAT:	  date		| plus1m	| diff	  #
 # (oid)	  (date)	| (date)	| (int)	  #
 #-------------------------------------------------#
-[ 0@0,	  2000-01-01,	  2000-01-30,	  29	  ]
-[ 1@0,	  5000-01-01,	  5000-01-29,	  28	  ]
-[ 2@0,	  1968-02-29,	  1968-03-31,	  31	  ]
-[ 3@0,	  1-03-01,	  1-03-31,	  30	  ]
-[ 4@0,	  -5867411-01-01, -5867411-01-29, 28	  ]
-[ 5@0,	  -768-10-01,	  -768-10-31,	  30	  ]
-[ 6@0,	  5000-11-01,	  5000-12-02,	  31	  ]
-[ 7@0,	  -1999-06-01,	  -1999-07-02,	  31	  ]
+[ 0@0,	  2000-01-01,	  2000-02-01,	  31	  ]
+[ 1@0,	  5000-01-01,	  5000-02-01,	  31	  ]
+[ 2@0,	  1968-02-29,	  1968-03-29,	  29	  ]
+[ 3@0,	  1-03-01,	  1-04-01,	  31	  ]
+[ 4@0,	  -5867411-01-01, -5867411-02-01, 31	  ]
+[ 5@0,	  -768-10-01,	  -768-11-01,	  31	  ]
+[ 6@0,	  5000-11-01,	  5000-12-01,	  30	  ]
+[ 7@0,	  -1999-06-01,	  -1999-07-01,	  30	  ]
 [ 8@0,	  2000-07-14,	  2000-08-14,	  31	  ]
-[ 9@0,	  1999-09-01,	  1999-10-02,	  31	  ]
+[ 9@0,	  1999-09-01,	  1999-10-01,	  30	  ]
 [ 10@0,	  1998-12-01,	  1999-01-01,	  31	  ]
-[ 11@0,	  1953-05-01,	  1953-05-31,	  30	  ]
+[ 11@0,	  1953-05-01,	  1953-06-01,	  31	  ]
 [ 12@0,	  5867411-12-31,  nil,		  nil	  ]
 [ 13@0,	  nil,		  nil,		  nil	  ]
 [ 14@0,	  nil,		  nil,		  nil	  ]
@@ -1774,3 +1776,8 @@ Try: modules;                - for other modules.
 [ 372,	  2001-01-07,	  "sunday",	  2001-01-07 23:59:59.999,	  false,  2001-01-08 03:59:59.999,	  true	  ]
 [ 373,	  2001-01-08,	  "monday",	  2001-01-08 23:59:59.999,	  false,  2001-01-09 03:59:59.999,	  true	  ]
 [ 374,	  2001-01-09,	  "tuesday",	  2001-01-09 23:59:59.999,	  false,  2001-01-10 03:59:59.999,	  true	  ]
+
+# 04:43:14 >  
+# 04:43:14 >  Done.
+# 04:43:14 >  
+
