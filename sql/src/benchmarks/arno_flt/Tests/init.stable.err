@@ -1,48 +1,94 @@
 stderr of test 'init` in directory 'src/benchmarks/arno_flt` itself:
 
 
-# 18:14:45 >  
-# 18:14:45 >  Mtimeout -timeout 1260 Mserver -monetrc /ufs/manegold/_/draco/Monet/4.3/monet/_Linux_GNU_32_d__/share/Monet/monet.Mtest.conf -db Tests_src_benchmarks_arno_flt /ufs/manegold/_/draco/Monet/4.3/sql/_Linux_GNU_32_d__/share/sql/catalog.mil /ufs/manegold/_/draco/Monet/4.3/sql/_Linux_GNU_32_d__/share/sql/sqlserver.mil ; echo  ; echo Over..
-# 18:14:45 >  
+# 06:21:27 >  
+# 06:21:27 >  Mtimeout -timeout 2460 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=40407 --set sql_port=57549 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_arno_flt" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" init.prologue ; echo ; echo Over..
+# 06:21:27 >  
 
-server listening on port 55957
+# builtin opt 	config = ${prefix}/etc/MonetDB.conf
+# builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
+# builtin opt 	gdk_version = 4.3.19
+# builtin opt 	monet_pid = 29805
+# builtin opt 	prefix = /ufs/niels/data/Linux-i686
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mem_bigsize = 33554432
+# builtin opt 	gdk_vm_minsize = 134217728
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
+# builtin opt 	sql_schema = default-schema
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	prefix = /ufs/niels/data/Linux-i686
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_debug = 0
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = monet>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# config opt 	monet_daemon = no
+# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# cmdline opt 	config = /ufs/niels/data/Linux-i686/etc/MonetDB.conf
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /ufs/niels/data/Linux-i686/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/niels/data/Linux-i686/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /ufs/niels/data/Linux-i686/var/MonetDB/log
+# cmdline opt 	mapi_port = 40407
+# cmdline opt 	sql_port = 57549
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = mTests_src_benchmarks_arno_flt
 
-# 18:14:46 >  
-# 18:14:46 >  Mtimeout -timeout 1140 ./init.SQL init 
-# 18:14:46 >  
+# 06:21:28 >  
+# 06:21:28 >  Mtimeout -timeout 2220 ./init.SQL init 
+# 06:21:28 >  
 
 
-# 18:14:46 >  
-# 18:14:46 >  Mtimeout -timeout 60 sql_client --port=55957 < /net/draco.ins.cwi.nl/export/scratch1/manegold/Monet/4.3/sql/src/benchmarks/arno_flt/create_tables.flt.sql
-# 18:14:46 >  
+# 06:21:28 >  
+# 06:21:28 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:28 >  
 
 
-# 18:14:46 >  
-# 18:14:46 >  Mtimeout -timeout 60 sql_client --port=55957 < /net/draco.ins.cwi.nl/export/scratch1/manegold/Monet/4.3/sql/src/benchmarks/arno_flt/Tests/check0.sql
-# 18:14:46 >  
+# 06:21:29 >  
+# 06:21:29 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:29 >  
 
 
-# 18:14:46 >  
-# 18:14:46 >  Mtimeout -timeout 60 sql_client --port=55957 < /net/draco.ins.cwi.nl/export/scratch1/manegold/Monet/4.3/sql/src/benchmarks/arno_flt/insert_MODEL.flt.sql
-# 18:14:46 >  
+# 06:21:29 >  
+# 06:21:29 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:29 >  
 
 
-# 18:14:46 >  
-# 18:14:46 >  Mtimeout -timeout 60 sql_client --port=55957 < /net/draco.ins.cwi.nl/export/scratch1/manegold/Monet/4.3/sql/src/benchmarks/arno_flt/insert_ATOM.flt.sql
-# 18:14:46 >  
+# 06:21:29 >  
+# 06:21:29 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:29 >  
 
 
-# 18:14:47 >  
-# 18:14:47 >  Mtimeout -timeout 60 sql_client --port=55957 < /net/draco.ins.cwi.nl/export/scratch1/manegold/Monet/4.3/sql/src/benchmarks/arno_flt/insert_BOND.flt.sql
-# 18:14:47 >  
+# 06:21:37 >  
+# 06:21:37 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:37 >  
 
 
-# 18:14:49 >  
-# 18:14:49 >  Mtimeout -timeout 60 sql_client --port=55957 < /net/draco.ins.cwi.nl/export/scratch1/manegold/Monet/4.3/sql/src/benchmarks/arno_flt/Tests/check0.sql
-# 18:14:49 >  
+# 06:21:45 >  
+# 06:21:45 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:45 >  
 
 
-# 18:14:49 >  
-# 18:14:49 >  Done.
-# 18:14:49 >  
+# 06:21:47 >  
+# 06:21:47 >  Done.
+# 06:21:47 >  
 
