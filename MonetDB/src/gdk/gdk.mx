@@ -2048,7 +2048,7 @@ gdk_export void 	ACCexit       (BAT *b);
 
 @T
 {\tt \begin{tabular}{|lll|}\hline
-BAT* & BAThash & (BAT *b, size_t masksize)\\
+BAT* & BAThash & (BAT *b, size\_t masksize)\\
 int & BATidx & (BAT *b, BAT *histo)\\
 BAT * & BAThashsplit & (BAT *b, size\_t n, int unary)\\
 BAT * & BATrangesplit & (BAT *b, int n)\\
