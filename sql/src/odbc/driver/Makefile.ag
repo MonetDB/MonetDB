@@ -4,6 +4,7 @@ INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/parser \
 	-I$(MONETDIST)/include/plain \
+	-I$(MONETDIST)/include/plain/stream \
 	-I$(top_builddir)/ \
 	$(ODBC_INCS)
 
