@@ -151,9 +151,11 @@ This module contains a simple interface for internet connections.
 #endif
 
 #ifdef NATIVE_WIN32
-#define s_close closesocket
+#define s_close(s)	closesocket(s)
+#define s_dup(s)	(s)	/* dup doesn't work on sockets */
 #else
-#define s_close close
+#define s_close(s)	close(s)
+#define s_dup(s)	dup(s)
 #endif
 
 #ifdef HAVE_OPENSSL
@@ -293,9 +295,9 @@ Get the new information for the server socket and start listening.
                                 /* printf("mapi:use blocked mode\n");fflush(stdout);*/
                                 *s=0;
                                 fdin= block_stream(stream_rstream(fdin));
-                                fdout= block_stream(socket_wstream(dup(msgsock), "Mserver mapi write"));
+                                fdout= block_stream(socket_wstream(s_dup(msgsock), "Mserver mapi write"));
                         } else
-                                fdout= socket_wastream(dup(msgsock),"Mserver mapi write");
+                                fdout= socket_wastream(s_dup(msgsock),"Mserver mapi write");
 
 			if (fdout == 0){
 				GDKsyserror("CLIENTlisten:fdout problems\n");
@@ -343,7 +345,7 @@ Get the new information for the server socket and start listening.
 			stream *sin, *sout;
 
 			sin = socket_rastream(msgsock, "mapi-r");
-			sout = socket_wastream(dup(msgsock), "mapi-w");
+			sout = socket_wastream(s_dup(msgsock), "mapi-w");
 			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, sin, sout );
 			res.vtype = TYPE_void; 
 			interpret_str( stk, buf, &res);
