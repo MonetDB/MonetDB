@@ -31,7 +31,7 @@ This code strongly depends on the front-end/back-end setup.
 #include "sql_server.h"
 #include <sql_backend.h>
 #include <monet_context.h>
-#include <kernel.h>
+#include <builtin.proto.h>
 #include <str.h>
 
 typedef struct backend {
