@@ -11,7 +11,7 @@ stdout of test 'q18` in directory 'tests/XPath` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XqueryResult>
-<increase>18.00</increase><increase>4.50</increase><increase>4.50</increase><increase>12.00</increase><increase>3.00</increase><increase>3.00</increase><increase>10.50</increase><increase>4.50</increase><increase>33.00</increase><increase>37.50</increase><increase>6.00</increase><increase>30.00</increase><increase>10.50</increase><increase>10.50</increase><increase>27.00</increase><increase>1.50</increase><increase>9.00</increase><increase>9.00</increase><increase>18.00</increase><increase>7.50</increase><increase>33.00</increase><increase>27.00</increase><increase>15.00</increase><increase>15.00</increase>
+<increase>3.00</increase><increase>10.50</increase><increase>9.00</increase>
 </XqueryResult>
 
 # 19:55:35 >  
