@@ -855,9 +855,55 @@ public class MonetResultSet implements ResultSet {
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the normal maximum number of characters allowed as the
 			 *         width of the designated column
+			 * @throws SQLException if there is no such column
 			 */
-			public int getColumnDisplaySize(int column) {
-				return(header.getColumnLengths()[column - 1]);
+			public int getColumnDisplaySize(int column) throws SQLException {
+				int ret;
+				try {
+					ret = header.getColumnLengths()[column - 1];
+				} catch (IndexOutOfBoundsException e) {
+					throw new SQLException("No such column " + column);
+				}
+				
+				// if the display size is zero, try to guess a better size
+				if (ret == 0) {
+					switch (getColumnType(column)) {
+						case Types.NUMERIC:
+						case Types.DECIMAL:
+							ret = 10;
+						break;
+						case Types.BIT: // we don't use type BIT, it's here for completeness
+						case Types.BOOLEAN:
+							ret = 5;	// "false".length();
+						break;
+						case Types.TINYINT:
+						case Types.SMALLINT:
+						case Types.INTEGER:
+							ret = 8;
+						break;
+						case Types.BIGINT:
+							ret = 12;
+						break;
+						case Types.REAL:
+							ret = 10;
+						break;
+						case Types.FLOAT:
+						case Types.DOUBLE:
+							ret = 12;
+						break;
+						case Types.DATE:
+							ret = 10;	// "year-mm-dd".length();
+						break;
+						case Types.TIME:
+							ret = 12;	// "hh:mm:ss.SSS".length();
+						break;
+						case Types.TIMESTAMP:
+							ret = 23;	// date + space + time
+						break;
+					}
+				}
+				
+				return(ret);
 			}
 
 			public String getSchemaName(int column) {return(null);}
