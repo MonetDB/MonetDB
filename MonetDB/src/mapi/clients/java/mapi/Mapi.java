@@ -653,7 +653,7 @@ public int sliceRow(){
 						done=true;
 						break;
 					}
-				} else System.out.print("unexpected ");
+				} 
 				break;
 			default: l++;
 			}
