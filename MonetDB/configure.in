@@ -302,6 +302,7 @@ scripts/user/Makefile
 scripts/guest/Makefile
 tests/Makefile
 Makefile
+src/utils/Mx/epstogif
 src/utils/testing/Mlog
 src/utils/testing/Mfilter
 src/utils/testing/Mtest
