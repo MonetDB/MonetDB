@@ -228,11 +228,20 @@ int blob_tostr(str* tostr,int* l,blob* p)
 	s = *tostr + strlen(*tostr);
 
 	for (i = 0; i < p->nitems; i++) {
-		sprintf(s, "%02X ", (unsigned char) p->data[i]);
-		s += 3;
+		int val = (p->data[i]>>4)&15;
+		*s++ = ' ';
+		if (val >= 10){
+			*s++ = 'A' + val - 10;
+		} else {
+			*s++ = '0' + val;
+		}
+		val = p->data[i]&15;
+		if (val >= 10){
+			*s++ = 'A' + val - 10;
+		} else {
+			*s++ = '0' + val;
+		}
 	}
-	if (s[-1] == ' ')	/* i.e. if i > 0, remove trailing space */
-		s--;
 	*s++ = ')';
 	*s = '\0';
 	return(s - *tostr);
@@ -296,12 +305,40 @@ int blob_fromstr(char* instr,int* l,blob** val)
    */
    for (i = 0; i < nitems; ++i)
    {
-      result->data[i] = (char) strtol(s,&s,16);
-      if (s == 0)
-      {
-	 GDKerror("blob too short \n");
-	 break;
+      char res = 0;
+	
+      if (*s == ' ') 
+	s++; 
+
+      if (*s >= '0' && *s <= '9') {
+	res = *s - '0';
+      } else if (*s >= 'A' && *s <= 'F') {
+	res = 10 + *s - 'A';
+      } else if (*s >= 'a' && *s <= 'f') {
+	res = 10 + *s - 'a';
+      } else {
+	break;
       }
+      s++;
+      res <<= 4;
+      if (*s >= '0' && *s <= '9') {
+	res += *s - '0';
+      } else if (*s >= 'A' && *s <= 'F') {
+	res += 10 + *s - 'A';
+      } else if (*s >= 'a' && *s <= 'f') {
+	res += 10 + *s - 'a';
+      } else {
+	break;
+      }
+      s++;
+      
+      result->data[i] = res;
+   }
+
+   if (i < nitems)
+   {
+	 GDKerror("blob too short \n");
+	 return -1;
    }
 
    s = strchr(s,')');
