@@ -28,7 +28,7 @@ all-recursive: src-recursive
 	..\src\utils\autogen\msc.py
 	cd .. && $(PYTHON) src\utils\autogen\autogen.py
 
-src-recursive: src ../Makefile.msc 
+src-recursive: ../Makefile.msc src
 	cd src && nmake /k /nologo -f Makefile
 
 src:
@@ -39,7 +39,7 @@ install: install-recursive
 
 install-recursive: install-src-recursive
 
-install-src-recursive: src ../Makefile.msc 
+install-src-recursive: ../Makefile.msc src
 	cd src && nmake /k /nologo -f Makefile install
 
 all-msc: config.h unistd.h sys\socket.h
