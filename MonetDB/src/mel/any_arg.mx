@@ -56,6 +56,7 @@ extern AnyArg* anynr_find( int, AnyArg* );
 #endif // _ANYARG_H_
 
 @C
+#include <config.h>
 #include "any_arg.h"
 #include "language.h"
 #include <string.h>

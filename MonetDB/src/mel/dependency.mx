@@ -47,6 +47,7 @@ class Dependency : public Symbol {
 #endif // _DEPENDENCY_H_
 
 @C
+#include <config.h>
 #include "dependency.h"
 #include "language.h"
 #include <string.h>

@@ -23,6 +23,7 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
+#include	<config.h>       
 #include	<stdio.h>
 /* not available on win32, not needed on linux, test on Sun/Irix/aix
 #include 	<pwd.h>

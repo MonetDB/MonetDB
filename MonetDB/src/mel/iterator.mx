@@ -44,6 +44,7 @@ class Iterator : public Command {
 #endif 
 
 @C
+#include <config.h>
 #include "iterator.h"
 #include "ListIterator.h"
 #include "language.h"

@@ -75,6 +75,8 @@ int debugger();
 #endif /* _MONET_GLOBAL_H_ */
 @C
 extern "C" {
+#include <config.h>
+
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
    our definition of new and delete clashes with the one if

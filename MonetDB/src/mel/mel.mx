@@ -154,7 +154,6 @@ For further details look in the code.
 #define YYSTYPE	yystype
 #endif
 
-#include <config.h>
 #include <stdio.h>
 #include "symtable.h"
 #include "symbol.h"
@@ -219,6 +218,7 @@ extern List *dirs;
 #endif
 
 @C
+#include <config.h>
 #include "mel.h"
 #include "mel.tab.h"
 #ifdef HAVE_IOSTREAM
@@ -437,6 +437,7 @@ int main(int argc, char *argv[] ){
 
 @L 
 %{
+#include <config.h>
 #include "mel.h"
 #include "mel.tab.h"
 #include <stdlib.h>
@@ -701,6 +702,7 @@ const char* get_signature(char* fcn){
 }
 @Y
 %{
+#include <config.h>
 #include "mel.h"
 #include <string.h>
 #ifdef HAVE_MALLOC_H

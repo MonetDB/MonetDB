@@ -450,9 +450,9 @@ Some explanation of what mem_usage() and vm_usage() display:
 
 #endif
 @c
+#include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
-#include "gdk.h"
 #include "gdk_bbp.h"
 #include "monet.h"
 #include "monet_context.h"

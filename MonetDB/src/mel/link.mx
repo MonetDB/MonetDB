@@ -32,8 +32,6 @@
 #include "list.h"
 #include <string.h>
 
-#include <config.h>
-
 class Link: public language {
     private:
 	List *monet_mod_path;
@@ -52,6 +50,7 @@ class Link: public language {
 #endif //_LINK_H_
 
 @C
+#include <config.h>
 #include "link.h"
 #include "ListIterator.h"
 #include <string.h>

@@ -120,9 +120,8 @@ This module contains a simple interface for internet connections.
 
 #endif /* MAPI_H */
 @c
-#include <config.h>
-#include "mapi.h"
 #include <monet.h>
+#include "mapi.h"
 #include  <sys/types.h> 
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>

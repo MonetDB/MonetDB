@@ -50,8 +50,8 @@ S       [\t\n ]*
 P       [-!\$%\^\*~+|?<>=/\\]
 %{
 
-#include "monet_tbl.h"
 #include "monet_parse.h"
+#include "monet_tbl.h"
 
 /* only needed for lex (we need  a big yytext array, since comments can
  * be lengthy. For lexis where yytext is a pointer this is not a problem
@@ -537,7 +537,6 @@ parses the grammar, executing the inlined C statements along the way.
 #define YYSTYPE	YYSTREE
 #endif
 
-#include <stdlib.h>
 #include "monet.h"
 #include "monet_client.h"
 #include "monet_parse.h"

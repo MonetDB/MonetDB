@@ -663,13 +663,10 @@ PROC test_ddbench() : void := {
 }
 
 @* Implementation 
-@h
+@c
+#include <monet.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <monet.h>
-
-@c
-#include "ddbench.h"
 #include "streams.h"
 #include "enum.proto.h"
 #include "enum.h"

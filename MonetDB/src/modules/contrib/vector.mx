@@ -65,12 +65,10 @@ Revision History:
 #ifndef __VECTOR_H__
 #define __VECTOR_H__
 
-#include <gdk.h>
-
-
 @* Implementation file
 @c
 
+#include <gdk.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>

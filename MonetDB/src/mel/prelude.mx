@@ -39,6 +39,7 @@ class Prelude : public Symbol {
 #endif // _PRELUDE_H_
 
 @C
+#include <config.h>
 #include "prelude.h"
 #include "language.h"
 #include <string.h>

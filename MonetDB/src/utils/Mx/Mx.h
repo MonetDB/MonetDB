@@ -26,8 +26,6 @@
 /* Debug control
  */
 
-#include <config.h>
-
 #ifdef NATIVE_WIN32
 # include <io.h>
 # include <direct.h>

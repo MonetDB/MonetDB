@@ -290,6 +290,7 @@ The Monet application interface commands are described below.
 They have been developed to ease interaction.
 
 @c
+#include <config.h>
 #include  "Mapi.h"
 
 #ifdef HAVE_UNISTD_H

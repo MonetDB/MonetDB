@@ -32,10 +32,6 @@ server.
 #ifndef _MU_H_
 #define _MU_H_
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef _MSC_VER
 #ifndef LIBMUTILS
 #define mutils_export extern __declspec(dllimport) 

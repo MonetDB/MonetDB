@@ -70,6 +70,7 @@ m_export int	monetSetChannel (Thread t, stream* in, stream* out);
 
 #endif /* _MONET_PROCESS_H_ */
 @c
+#include <config.h>
 #include  <sys/types.h> 
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>

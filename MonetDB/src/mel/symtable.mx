@@ -28,7 +28,6 @@
 #ifndef _SYMTABLE_H_
 #define _SYMTABLE_H_
 
-#include <config.h>
 #include "symbol.h"
 #ifdef HAVE_IOSTREAM
 #include <iostream>
@@ -54,6 +53,7 @@ class Symtable {
 #endif //_SYMTABLE_H_
 
 @C
+#include <config.h>
 #include "symtable.h"
 #include <string.h>
 

@@ -28,7 +28,6 @@
 #ifndef _LANGUAGE_H_
 #define _LANGUAGE_H_
 
-#include <config.h>
 #include "symbol.h"
 #include "symtable.h"
 #include "module.h"

@@ -47,6 +47,7 @@ class AtomArg : public Arg {
 #endif // _ATOMARG_H_
 
 @C
+#include <config.h>
 #include "atom_arg.h"
 #include "language.h"
 #include <string.h>

@@ -61,6 +61,7 @@ values from values and calculate the stats.
 @{
 @* Implementation
 @c
+#include <config.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>

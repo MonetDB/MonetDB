@@ -23,10 +23,6 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include "helpers.h"
 #include <ctype.h>
 #include <stdlib.h>

@@ -74,6 +74,7 @@ The following options are supported:
 /*  (Copyright) 1995-1996 M.L. Kersten, CWI, Amsterdam
 	Monet textual interface monitor.
 */
+#include <config.h>
 #include "Mapi.h"
 
 #include <monet_options.h> 
