@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.io.*;
+import java.util.Properties;
 
 /**
  * This simple example somewhat implements an extended client program for
@@ -14,9 +15,38 @@ import java.io.*;
 
 public class JdbcClient {
 	public static void main(String[] args) throws Exception {
-		// quickly parse the arguments
-		boolean hasFile = false, hasUser = false, hasHost = false, debug = false;
-		String file = "", user = "", host = "";
+		// variables that we use, and their defaults
+		String file = null;
+		String user = System.getProperty("user.name");
+		String pass = null;
+		String host = "localhost";
+		String port = "45123";
+		String database = "default";
+		// we leave checking if this is a valid number to the driver
+
+		// look for a file called .monetdb in the users homedir
+		File pref = new File(System.getProperty("user.home"), ".monetdb");
+		if (pref.exists()) {
+			// the file is there, parse it and set the default settings
+			Properties prop = new Properties();
+			try {
+				FileInputStream in = new FileInputStream(pref);
+				prop.load(in);
+				in.close();
+
+				user = prop.getProperty("username", user);
+				pass = prop.getProperty("password", pass);
+				host = prop.getProperty("hostname", host);
+				port = prop.getProperty("port", port);
+				database = prop.getProperty("database", database);
+			} catch (IOException e) {
+				// ok, then not
+			}
+		}
+
+		// parse the arguments
+		boolean hasFile = false, hasUser = false, hasHost = false,
+				hasPort = false, debug = false;
 		for (int i = 0; i < args.length; i++) {
 			if (!hasFile && args[i].equals("-f") && i + 1 < args.length) {
 				file = args[i + 1];
@@ -24,6 +54,10 @@ public class JdbcClient {
 				hasFile = true;
 			} else if (!hasFile && args[i].startsWith("-f")) {
 				file = args[i].substring(2);
+				if (file.equals("")) {
+					System.out.println("-f needs a filename as argument");
+					System.exit(-1);
+				}
 				hasFile = true;
 			} else if (!hasUser && args[i].equals("-u") && i + 1 < args.length) {
 				user = args[i + 1];
@@ -31,6 +65,7 @@ public class JdbcClient {
 				hasUser = true;
 			} else if (!hasUser && args[i].startsWith("-u")) {
 				user = args[i].substring(2);
+				if (user.equals("")) user = null;
 				hasUser = true;
 			} else if (!hasHost && args[i].equals("-h") && i + 1 < args.length) {
 				host = args[i + 1];
@@ -38,15 +73,30 @@ public class JdbcClient {
 				hasHost = true;
 			} else if (!hasHost && args[i].startsWith("-h")) {
 				host = args[i].substring(2);
+				if (host.equals("")) {
+					System.out.println("-h needs a hostname as argument");
+					System.exit(-1);
+				}
 				hasHost = true;
+			} else if (!hasPort && args[i].equals("-p") && i + 1 < args.length) {
+				port = args[i + 1];
+				i++;
+				hasPort = true;
+			} else if (!hasPort && args[i].startsWith("-p")) {
+				port = args[i].substring(2);
+				if (port.equals("")) {
+					System.out.println("-p needs a port as argument");
+					System.exit(-1);
+				}
+				hasPort = true;
 			} else if (!debug && args[i].equals("-d")) {
 				debug = true;
 			} else if (args[i].equals("--help")) {
-				System.out.println("Usage java -jar examples.jar [-h host[:port]] [-u user] [-f file] [-d]");
+				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user] [-d]");
 				System.out.println("where arguments may be written directly after the option like -hlocalhost.");
-				System.out.println("If no host is given, localhost is assumed. The program will ask for the");
-				System.out.println("username if not given. If no input file is given, an interactive session");
-				System.out.println("is started on the terminal. The -d option creates a debug log.");
+				System.out.println("If no host and port are given, localhost 45123 are assumed. The program will ask");
+				System.out.println("for the username if not given but the -u flag specified. If no input file is given,");
+				System.out.println("an interactive session is started on the terminal. The -d option creates a debug log.");
 				System.exit(-1);
 			} else {
 				System.out.println("Ignoring unknown argument: " + args[i]);
@@ -54,8 +104,8 @@ public class JdbcClient {
 		}
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-		// do we have a username? if not ask for it
-		if (!hasUser) {
+		// do we need to ask for the username?
+		if (hasUser && user == null) {
 			System.out.print("username: ");
 			if ((user = in.readLine()) == null) {
 				System.out.println("Invalid username!");
@@ -64,18 +114,21 @@ public class JdbcClient {
 		}
 
 		// we need the password from the user
-		PasswordField passfield = new PasswordField();
-		String pass = null;
-		try {
-			pass = passfield.getPassword("password: ");
-		} catch(IOException ioe) {
-			System.out.println("Invalid password!");
-			System.exit(-1);
+		if (pass == null) {
+			PasswordField passfield = new PasswordField();
+			try {
+				pass = passfield.getPassword("password: ");
+			} catch(IOException ioe) {
+				System.out.println("Invalid password!");
+				System.exit(-1);
+			}
+			System.out.println("");
 		}
-		System.out.println("");
 
-		// set default host
-		if (!hasHost) host = "localhost";
+		// fixate the hostname
+		if (host.indexOf(":") == -1) {
+			host = host + ":" + port;
+		}
 
 		// make sure the driver is loaded
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
@@ -83,7 +136,7 @@ public class JdbcClient {
 		// request a connection suitable for Monet from the driver manager
 		// note that the database specifier is currently not implemented, for
 		// Monet itself can't access multiple databases.
-		Connection con = DriverManager.getConnection("jdbc:monetdb://" + host + "/default", user, pass);
+		Connection con = DriverManager.getConnection("jdbc:monetdb://" + host + "/" + database, user, pass);
 		DatabaseMetaData dbmd = con.getMetaData();
 
 		BufferedReader fr;

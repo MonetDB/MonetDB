@@ -605,7 +605,7 @@ public class MonetResultSet implements ResultSet {
 	public String getCursorName() throws SQLException {
 		throw new SQLException("Positioned updates not supported for this " +
 							   "cursor (" + tableID + ")");
-		return("" + tableID);
+		//return("" + tableID);
 	}
 
 	/**
@@ -657,8 +657,9 @@ public class MonetResultSet implements ResultSet {
 	 * In our case this is equal to the fetchsize of the parent statement.
 	 *
 	 * @return the current fetch size for this ResultSet object
+	 * @throws SQLException if a database access error occurs
 	 */
-	public int getFetchSize() {
+	public int getFetchSize() throws SQLException {
 		return(statement.getFetchSize());
 	}
 
