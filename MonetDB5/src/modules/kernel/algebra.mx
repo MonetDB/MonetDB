@@ -1399,14 +1399,14 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 str ALGmin_@1(@1* res, int *bid) {
         BAT *b;
 	int result;
-	(void) result;
+	(void) result=0;
         @:getBATdescriptor(&result,bid,b,min)@
         if( CMDmin_@1(res,b)) return MAL_SUCCEED;
         return throwMessage("algebra.min", "GDKerror");
 }
 str ALGmax_@1(@1* res, int *bid) {
         BAT *b;
-	int result;
+	int result=0;
 	(void) result;
         @:getBATdescriptor(&result,bid,b,max)@
         if( CMDmax_@1(res,b)) return MAL_SUCCEED;
@@ -1423,7 +1423,7 @@ str ALGmax_@1(@1* res, int *bid) {
 str ALGminany(ptr result, int *bid) {
         BAT *b;
 	int res;
-	(void) res;
+	(void) res=0;
         @:getBATdescriptor(&res,bid,b,minany)@
 	if( CMDminany(result,b) == GDK_SUCCEED)
 		return MAL_SUCCEED;
