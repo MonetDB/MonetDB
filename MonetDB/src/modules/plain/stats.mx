@@ -180,12 +180,6 @@ static StatOps_t stathistops = {
   (void (*)(Stats_t *))HistogramDispose_m,
 };
 
-#ifdef NATIVE_WIN32
-#define LLFMT "%I64d"
-#else
-#define LLFMT "%lld"
-#endif
-
 int
 stats_new(ptr *_st, str name)
 {

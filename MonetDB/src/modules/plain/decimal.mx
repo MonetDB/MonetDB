@@ -375,11 +375,6 @@ them for corruption.
 char decimal_global_buf[1024];
 #define DECIMAL_DEBUG(d,t,c)	if (GDKdebug&131072) decimal_debug(d,t,c)
 #define FORMAT(f,s)		((sprintf(decimal_global_buf,f,s)||1)?decimal_global_buf:NULL)
-#ifdef NATIVE_WIN32
-#define LLFMT "%I64d"
-#else
-#define LLFMT "%lld"
-#endif
 
 void decimal_debug(decimal* d, str tag, int check) {
 	int x=0, y, precision = d->precision, scale = d->scale;
