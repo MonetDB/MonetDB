@@ -175,7 +175,7 @@ fprintf(stderr,"[PRINT_ARRAY] Axis %d = %d..%d\n",i,minvector[i],maxvector[i]);
             register int  offset;
             offset = *((int*)BUNtail(batptr[0],p)) - minvector[0];
             for(i=1;i<dims;i++) {
-                register ptr p = BUNfnd(batptr[i],o);
+                register BUN p = BUNfnd(batptr[i],o);
                 if(p == NULL) {
                    GDKerror("print_array: Index %d missing for oid %d.\n",i,*o);
                    goto exit_err_full;
@@ -219,7 +219,7 @@ fprintf(stderr,"[");
             offset = (offset * lenvector[i]) + idxvector[i];
         }
         {
-          register ptr p = BUNfnd(val,&arrayindex[offset]);
+          register BUN p = BUNfnd(val,&arrayindex[offset]);
           if(p == NULL) {
             GDKerror("print_array: Value missing for oid %d.\n",
                      arrayindex[offset]);

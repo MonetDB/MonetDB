@@ -807,7 +807,7 @@ does not affect the BATloop [it doesn't!]
 
 #undef  ANTICHECK
 #define ANTICHECK(src, p, chk) {\
-    ptr w,u=BUNh@2(src, p);\
+    BUN w,u=BUNh@2(src, p);\
     hash_t i; \
     int r=0; \
     (void) BATprepareHash(chk);\
