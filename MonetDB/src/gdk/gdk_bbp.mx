@@ -1626,8 +1626,7 @@ columns are those of which the type has an fix/unfix method, or those that have 
 methods. The HeapDelete actions are not always required and therefore the BBPquickdesc
 is parametrized.
 
-Note that BBPquickdesc always returns the descriptor of the absolute bat id,
-care must be taken in case of mirrored bats.
+Note that BBPquickdesc may only be called for positive batids.
 @c
 static int complexatom(str s, int delaccess) {
 	int t = ATOMindex(s);
@@ -1638,7 +1637,12 @@ static int complexatom(str s, int delaccess) {
 }
 
 BAT *BBPquickdesc(bat bid, int delaccess) { 
-        BAT *b = BBP_cache(ABS(bid));
+        BAT *b;
+        if(bid<0) {
+            GDKerror("BBPquickdesc: called with negative batid.\n");
+            return NULL;
+        }
+        b = BBP_cache(bid);
         if (b) {
 		return b; /* already cached */
 	}

@@ -707,7 +707,7 @@ void TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv) {
 		if (argv[i].vtype == TYPE_bat) { 
                         bat bid = argv[i].val.bval;
 			BBPfix(bid);
-		     	b = BBPquickdesc(bid,FALSE); 
+		     	b = BBPquickdesc(ABS(bid),FALSE); 
 			if(b) {
                                 /* swap head/tail types in case of 
                                    mirrored bats.                  */
