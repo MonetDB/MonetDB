@@ -47,7 +47,7 @@ var Static_mods:=Fmod.reverse().kunique().sort().copy();
 table(Static_mods.reverse().col_name(sprintf("%i modules",Static_mods.count())));
 Static_mods@batloop {
 	printf("\nModule: \"%s\"\n\n",$h);
-	FnameM:=kintersect(FnameS,Fmod.select($h));FnameM.col_name("function");
+	var FnameM:=kintersect(FnameS,Fmod.select($h));FnameM.col_name("function");
 	FnameM.count().print(); table(1,FnameM,Ftype,Fsig,Fhelp);
 	All:=All+FnameM.count();
 }

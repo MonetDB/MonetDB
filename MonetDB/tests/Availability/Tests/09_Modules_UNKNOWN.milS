@@ -1,5 +1,6 @@
 setoid(oid(20000000));
 
+var MODULES:=bat("MODULES");
 var Static_fcn:=monet_fcntbl.reverse().copy();
 
 var Fname:=new(oid,str);Fname.col_name("function");

@@ -1,5 +1,7 @@
 setoid(oid(20000000));
 
+var MODULES:=bat("MODULES");
+
 var Static_fcn:=monet_fcntbl.reverse().copy();
 
 var Fname:=new(oid,str);	Fname.col_name("function");
@@ -18,7 +20,7 @@ Plain_mods@batloop {
 
 	var Mod_fcn:=sdiff(monet_fcntbl.reverse(),Static_fcn).reverse();
 	Mod_fcn.sort()@batloop {
-	    addThis:=false;
+	    var addThis:=false;
 	    if (not(monet_fcn_mid.exist($t))) {
 		addThis:=true;
 	    } else {

@@ -10,6 +10,7 @@ stdout of test '09_Modules_UNKNOWN` in directory 'tests/Availability` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
+var MODULES:=bat("MODULES");
 var Static_fcn:=monet_fcntbl.reverse().copy();
 
 var Fname:=new(oid,str);Fname.col_name("function");

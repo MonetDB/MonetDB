@@ -10,6 +10,8 @@ stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
+var MODULES:=bat("MODULES");
+
 var Static_fcn:=monet_fcntbl.reverse().copy();
 
 var Fname:=new(oid,str);	Fname.col_name("function");
@@ -57,7 +59,7 @@ Plain_mods@batloop {
 
 	var Mod_fcn:=sdiff(monet_fcntbl.reverse(),Static_fcn).reverse();
 	Mod_fcn.sort()@batloop {
-	    addThis:=false;
+	    var addThis:=false;
 	    if (not(monet_fcn_mid.exist($t))) {
 		addThis:=true;
 	    } else {
@@ -111,7 +113,7 @@ Module: "aggr"
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature							| help								  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "aggrtst",		  "PROC:      ",  "aggrtst(int, int, str, ..str..) : any",			  "not available"						  ]
+[ "aggrtst",		  "PROC:      ",  "aggrtst(int, int, str, ..str..) : void",			  "not available"						  ]
 [ "card",		  "COMMAND:   ",  "card(BAT[any,any]) : int",					  "return the number of different values in a tail column"	  ]
 [ "card",		  "COMMAND:   ",  "card(BAT[any,any], int) : int",				  "as card(b), but returns nil if card(b) > maxelements"	  ]
 [ "hasNil",		  "COMMAND:   ",  "hasNil(BAT[any,any]) : bit",					  "return if there is a nil value in the tail column"		  ]
@@ -180,7 +182,7 @@ Module: "aggrX3"
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help								  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "aggrtst",		  "PROC:      ",  "aggrtst(int, int, str, ..str..) : any",					  "not available"						  ]
+[ "aggrtst",		  "PROC:      ",  "aggrtst(int, int, str, ..str..) : void",					  "not available"						  ]
 [ "card",		  "PROC:      ",  "card(BAT[any,any]) : int",							  "not available"						  ]
 [ "size",		  "PROC:      ",  "size(BAT[any,bit]) : int",							  "not available"						  ]
 [ "test_aggrX3",	  "PROC:      ",  "test_aggrX3() : void",							  "not available"						  ]
@@ -314,11 +316,11 @@ Module: "ascii_io"
 [ "ascii_io_debug",	  "COMMAND:   ",  "ascii_io_debug(int) : void",								  ""			  ]
 [ "bat_ttype",		  "PROC:      ",  "bat_ttype(BAT[any,any]) : str",							  "not available"	  ]
 [ "dump",		  "COMMAND:   ",  "dump(BAT[void,str], BAT[void,str], BAT[void,BAT], str, int) : void",			  ""			  ]
-[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], BAT[str,BAT], str, int) : any",				  "not available"	  ]
-[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], str, int) : any",						  "not available"	  ]
+[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], BAT[str,BAT], str, int) : void",				  "not available"	  ]
+[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], str, int) : void",						  "not available"	  ]
 [ "dump_format",	  "PROC:      ",  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",					  "not available"	  ]
 [ "dump_seps",		  "PROC:      ",  "dump_seps(BAT[void,BAT]) : BAT[void,str]",						  "not available"	  ]
-[ "export",		  "PROC:      ",  "export(BAT[any,any], str) : any",							  "not available"	  ]
+[ "export",		  "PROC:      ",  "export(BAT[any,any], str) : void",							  "not available"	  ]
 [ "fclose",		  "PROC:      ",  "fclose(Stream) : void",								  "not available"	  ]
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",								  "not available"	  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",								  "not available"	  ]
@@ -328,8 +330,8 @@ Module: "ascii_io"
 [ "load",		  "COMMAND:   ",  "load(BAT[void,str], BAT[void,str], BAT[void,str], str, int) : BAT[str,BAT]",		  ""			  ]
 [ "load_data",		  "PROC:      ",  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",					  "not available"	  ]
 [ "load_format",	  "PROC:      ",  "load_format(str) : BAT[str,BAT]",							  "not available"	  ]
-[ "make_persistent",	  "PROC:      ",  "make_persistent(BAT[str,BAT]) : any",						  "not available"	  ]
-[ "merge_data",		  "PROC:      ",  "merge_data(BAT[str,BAT]) : any",							  "not available"	  ]
+[ "make_persistent",	  "PROC:      ",  "make_persistent(BAT[str,BAT]) : void",						  "not available"	  ]
+[ "merge_data",		  "PROC:      ",  "merge_data(BAT[str,BAT]) : void",							  "not available"	  ]
 [ "output",		  "COMMAND:   ",  "output(BAT[any,any], BAT[void,str], BAT[void,BAT], Stream) : void",			  ""			  ]
 [ "test_ascii_io",	  "PROC:      ",  "test_ascii_io() : void",								  "not available"	  ]
 [ "test_streams",	  "PROC:      ",  "test_streams() : void",								  "not available"	  ]
@@ -518,7 +520,7 @@ Module: "counters"
 [ "event_number",	  "PROC:      ",  "event_number(int) : int",		  "return the number of an event given by name"						  ]
 [ "event_number",	  "PROC:      ",  "event_number(str) : int",		  "not available"									  ]
 [ "init_counters",	  "COMMAND:   ",  "init_counters() : void",		  "initialize counters module\n  (to be used on initial load, only)"			  ]
-[ "profile",		  "PROC:      ",  "profile(str, any, any) : counter",	  "Count events event0 & event1 while executing cmd; return the results as counter."	  ]
+[ "profile",		  "PROC:      ",  "profile(str, str, str) : counter",	  "Count events event0 & event1 while executing cmd; return the results as counter."	  ]
 [ "show_native_events",	  "COMMAND:   ",  "show_native_events() : BAT[int,str]",  "all available events"								  ]
 [ "show_unified_events",  "COMMAND:   ",  "show_unified_events() : BAT[int,str]", "all unified event names"								  ]
 [ "start_count",	  "COMMAND:   ",  "start_count(int, int) : counter",	  "start counters for two events specified by number"					  ]
@@ -633,16 +635,16 @@ Module: "mapi"
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",				  "not available"																					  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",				  "not available"																					  ]
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",				  "not available"																					  ]
-[ "get_mapi_port",	  "PROC:      ",  "get_mapi_port() : any",				  "not available"																					  ]
-[ "listen",		  "PROC:      ",  "listen() : any",					  "Start the Mapi listener on 50000."																			  ]
-[ "listen",		  "PROC:      ",  "listen(int) : any",					  "Start the Mapi listener on <port>."																			  ]
-[ "listen",		  "PROC:      ",  "listen(int, int) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
-[ "listen",		  "PROC:      ",  "listen(int, int, str) : any",			  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
-[ "listen",		  "PROC:      ",  "listen(int, str) : any",				  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
-[ "listen",		  "PROC:      ",  "listen(str) : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "get_mapi_port",	  "PROC:      ",  "get_mapi_port() : void",							  "not available"																																						  ]
+[ "listen",		  "PROC:      ",  "listen() : void",								  "Start the Mapi listener on 50000."																																				  ]
+[ "listen",		  "PROC:      ",  "listen(int) : void",								  "Start the Mapi listener on <port>."																																				  ]
+[ "listen",		  "PROC:      ",  "listen(int, int) : void",							  "Start the Mapi listener on <port> for <maxusers>."																																		  ]
+[ "listen",		  "PROC:      ",  "listen(int, int, str) : void",						  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."																		  ]
+[ "listen",		  "PROC:      ",  "listen(int, str) : void",							  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."																											  ]
+[ "listen",		  "PROC:      ",  "listen(str) : void",								  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."																											  ]
 [ "mapi_listen",	  "BUILTIN:   ",  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
 [ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) ", "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
-[ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : any",			  "not available"																					  ]
+[ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : void",						  "not available"																																						  ]
 [ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",			  "Read a string from <S> until a '1' character."																	  ]
 [ "stream_line",	  "PROC:      ",  "stream_line(Stream) : str",				  "Read a string from <S> until a newline."																		  ]
 [ "stream_strip",	  "PROC:      ",  "stream_strip(Stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
@@ -766,9 +768,9 @@ Module: "monettime"
 [ "addmonths",			  "COMMAND:   ",  "addmonths(date, int) : date",											  "returns the date after a number of months (possibly negative)."					  ]
 [ "addyears",			  "COMMAND:   ",  "addyears(date, int) : date",												  "returns the date after a number of years (possibly negative)."					  ]
 [ "compute",			  "COMMAND:   ",  "compute(rule, int) : date",												  "compute the date from a rule in a certain year (!DS2.2)."						  ]
-[ "current_date",		  "PROC:      ",  "current_date() : any",												  "not available"											  ]
-[ "current_time",		  "PROC:      ",  "current_time() : any",												  "not available"											  ]
-[ "current_timestamp",		  "PROC:      ",  "current_timestamp() : any",												  "not available"											  ]
+[ "current_date",		  "PROC:      ",  "current_date() : date",												  "not available"											  ]
+[ "current_time",		  "PROC:      ",  "current_time() : daytime",												  "not available"											  ]
+[ "current_timestamp",		  "PROC:      ",  "current_timestamp() : timestamp",											  "not available"											  ]
 [ "date",			  "COMMAND:   ",  "date(int, int, int) : date",												  "creates a date from (year,month,day) parameters."							  ]
 [ "date",			  "COMMAND:   ",  "date(timestamp) : date",												  "extracts date from timestamp (in the local timezone)."						  ]
 [ "date",			  "COMMAND:   ",  "date(timestamp, tzone) : date",											  "extracts date from timestamp in a certain tzone (!DS2.2)."						  ]
@@ -1198,16 +1200,16 @@ Module: "xtables"
 [ "CTsubhisto",		  "COMMAND:   ",  "CTsubhisto(BAT[void,bit], BAT[void,oid], BAT[oid,any]) : BAT[oid,int]",	  "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] \n         bats on a previously known domain "																								  ]
 [ "_CTgroup",		  "COMMAND:   ",  "_CTgroup(BAT[oid,any], int, int) : BAT[oid,oid]",				  "Cross tabulation group initialization like CTgroup, but with user\n         provided #bits in hashmask and #distinct values in range."																					  ]
 [ "histogram",		  "COMMAND:   ",  "histogram(BAT[oid,any::1]) : BAT[any::1,int]",				  "compute a histogram on the tail. Optimized for retrieving the\n         already present histogram on a cross-table computed by CTgroup."																					  ]
-[ "orderby_table",	  "PROC:      ",  "orderby_table(str, str, ..BAT[any::1,any]..) : any",				  "not available"																																				  ]
-[ "print",		  "PROC:      ",  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
-[ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
+[ "orderby_table",	  "PROC:      ",  "orderby_table(str, str, ..BAT[any::1,any]..) : void",			  "not available"																																				  ]
+[ "print",		  "PROC:      ",  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",			  "not available"																																				  ]
+[ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",			  "not available"																																				  ]
 [ "test_xtables",	  "PROC:      ",  "test_xtables() : void",							  "not available"																																				  ]
 [ "tunique",		  "COMMAND:   ",  "tunique(BAT[oid,any::1]) : BAT[any::1,void]",				  "get all unique tail values. Optimized for getting all unique\n         oids from a cross-table computed by CTgroup."																								  ]
-[ "xtable_histo_direct",  "PROC:      ",  "xtable_histo_direct(..any..) : any",						  "not available"																																				  ]
-[ "xtable_histo_remap",	  "PROC:      ",  "xtable_histo_remap(..any..) : any",						  "not available"																																				  ]
-[ "xtable_print",	  "PROC:      ",  "xtable_print(..any..) : any",						  "not available"																																				  ]
-[ "xtable_realloc",	  "PROC:      ",  "xtable_realloc(any, any) : any",						  "not available"																																				  ]
-[ "xtable_test",	  "PROC:      ",  "xtable_test(any, any, any, any) : any",					  "not available"																																				  ]
+[ "xtable_histo_direct",  "PROC:      ",  "xtable_histo_direct(..any..) : void",					  "not available"																																				  ]
+[ "xtable_histo_remap",	  "PROC:      ",  "xtable_histo_remap(..any..) : void",						  "not available"																																				  ]
+[ "xtable_print",	  "PROC:      ",  "xtable_print(..any..) : void",						  "not available"																																				  ]
+[ "xtable_realloc",	  "PROC:      ",  "xtable_realloc(BAT[any::1,any::2], int) : BAT[any::1,any::2]",		  "not available"																																				  ]
+[ "xtable_test",	  "PROC:      ",  "xtable_test(str, int, int, int) : void",					  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 

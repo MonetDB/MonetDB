@@ -1,6 +1,6 @@
 setoid(oid(10000000));
 
-MODULES:=new(str,str);
+var MODULES:=new(str,str);
 MODULES.rename("MODULES");
 MODULES.set(TRUE);
 MODULES.persists(TRUE);

@@ -10,6 +10,8 @@ stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
+var MODULES:=bat("MODULES");
+
 PROC mmn() : BAT[oid,str] {
 	 return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
 }

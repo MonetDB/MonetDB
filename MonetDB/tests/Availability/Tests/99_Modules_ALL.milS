@@ -1,5 +1,7 @@
 setoid(oid(20000000));
 
+var MODULES:=bat("MODULES");
+
 PROC mmn() : BAT[oid,str] {
 	 return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
 }
