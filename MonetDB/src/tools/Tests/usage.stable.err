@@ -25,18 +25,19 @@ script+
 
 Usage: MapiClient [ options ]
 Options are:
+ -b t/f      | --blocked=true/false /* blocked mode */
  -d          | --debug=[level]  /* set debug level */
- -h hostname | --host=hostname  /* host to connect to */
- -p portnr   | --port=portnr    /* port to connect to */
- -l language | --language=lang  /* {mal,sql,mil} */
- -u user     | --user=user      /* user id */
- -P passwd   | --passwd=passwd  /* password */
- -e          | --error          /* exit on error */
  -D          | --dump           /* dump sql database */
+ -e          | --error          /* exit on error */
+ -h hostname | --host=hostname  /* host to connect to */
+ -l language | --language=lang  /* {mal,sql,mil} */
+ -P passwd   | --passwd=passwd  /* password */
+ -p portnr   | --port=portnr    /* port to connect to */
  -s stmt     | --statement=stmt /* run single statement */
  -t          | --trace          /* trace Monet interaction */
+ -T          | --time           /* time commands */
+ -u user     | --user=user      /* user id */
  -?          | --help           /* show this usage message */
-             | --blocked=true   /* run in (non-)blocked mode */
 
 # 16:36:12 >  
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient.py -?
