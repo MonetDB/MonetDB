@@ -15,6 +15,7 @@ $SQL < count.sql
 $SQL < c1.sql
 $SQL < c2.sql
 $SQL < c3.sql
+exit;
 $SQL < drop.sql
 
 $SQL < makeTables.sql

@@ -22,6 +22,7 @@ $SQL < count.sql
 cat load.sql | sed -e s+PWD+$PWD+ | $SQL 
 
 $SQL < count.sql
+exit
 
 $SQL < query_1.sql
 $SQL < query_2.sql

@@ -1,5 +1,5 @@
 var mods := new(void,str);
-mods.insert(nil,"sqlserver");
+mods.insert(nil,"sql_server");
 
 mods@batloop{
 	printf("module '%s'\n",$t);
