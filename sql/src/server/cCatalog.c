@@ -187,6 +187,7 @@ oid mvc_create_view( mvc *c, oid tid, oid sid, char *name, char *sql){
 
 oid mvc_create_column( mvc *c, oid cid, oid tid, 
 					char *name, char *sqltype, int seqnr ){
+	char buf[BUFSIZ];
 	BAT *type_sqlr = BATmirror(c->type_sql);
 	bit one = 1;
 	oid ci = BATcount( c->column_name );	
@@ -200,6 +201,10 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 					cid, tid, name, sqltype, seqnr);
 
 	BBPpersistent(b->batCacheid);
+
+	snprintf(buf, BUFSIZ, "sql-%ld-%s-%ld\n", tid, name, cid );
+	BATrename(b, buf);
+
 	BUNins(c->column_id, 	(ptr)&ci, (ptr)&cid );
 	BUNins(c->column_table, 	(ptr)&ci, (ptr)&tid );
 	BUNins(c->column_name, 	(ptr)&ci, (ptr)name );
