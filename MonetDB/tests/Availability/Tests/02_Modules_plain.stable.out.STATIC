@@ -771,8 +771,8 @@ Module: "stats"
 
 Module: "streams"
 
-[ 16 ]
-[ 16 ]
+[ 17 ]
+[ 17 ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature				| help					  #
 #-------------------------------------------------------------------------------------------------------------------------#
@@ -791,6 +791,7 @@ Module: "streams"
 [ "socket_wstream",	  "COMMAND:   ",  "socket_wstream(int, str) : stream",	  "open a socket stream for writing"	  ]
 [ "stream_close",	  "COMMAND:   ",  "stream_close(stream) : void",	  "close and destroy the stream s"	  ]
 [ "stream_flush",	  "COMMAND:   ",  "stream_flush(stream) : void",	  "flush the stream"			  ]
+[ "stream_read",	  "COMMAND:   ",  "stream_read(stream) : str",		  "read data from the stream"		  ]
 [ "stream_write",	  "COMMAND:   ",  "stream_write(stream, str) : void",	  "write data on the stream"		  ]
 
 Module: "tcpip"
