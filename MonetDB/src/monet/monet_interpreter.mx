@@ -236,12 +236,12 @@ Open the scriptfile.
         if ((fd = fopen(ptr, "rb")) == 0) {
             char path[PATHLENGTH];
  
-            if (ptr[0] == '/') {
+            if (ptr[0] == DIR_SEP) {
                 strcpy(path, ptr);
             } else {
-                sprintf(path, "users/%s/%s", c->user, ptr);
+                sprintf(path, "users%c%s%c%s", DIR_SEP, c->user, DIR_SEP, ptr);
                 if( access(path, R_OK) ) {
-                        sprintf(path,"users/guest/%s", ptr);
+                        sprintf(path,"users%cguest%c%s", DIR_SEP, DIR_SEP, ptr);
                 }
             }
             fd = fopen(path, "rb");
@@ -778,7 +778,7 @@ add it to the expansion cache.
 { /* PETER: temporary hack to monitor proc instantiation (2/2) */
 	BUN pp = BUNfnd(yysubst, fcn_nme);
 	if (pp == NULL) {
-		lng one = (1LL << 32) + argv[0].val.ival;
+		lng one = ((lng)1 << 32) + argv[0].val.ival;
 		BUNins(yysubst, fcn_nme, &one); 
 	} else {
 		((int*) BUNtloc(yysubst,pp))[0]++;

@@ -602,7 +602,7 @@ ptr monet_init(int argc, char **argv){
         }
 
         gdk_argv[gdk_argc++] = monet_home_str;
-        sprintf(buf, "%s/homes", monet_dir);
+        sprintf(buf, "%s%chomes", monet_dir, DIR_SEP);
         gdk_argv[gdk_argc++] = buf;
         if (monet_db) {
                 gdk_argv[gdk_argc++] = monet_db_str;

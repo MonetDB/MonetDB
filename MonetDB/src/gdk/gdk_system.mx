@@ -1,7 +1,8 @@
 @f gdk_system
-@+ Pthreads Mthreads Dependencies
+@a Niels Nes, Peter Boncz
+@+ Threads
 @T
-This file contains the Mthreads implementation based on the posix 
+This file contains the threads implementation based on the posix 
 thread library interface, consisting of posix standaard thread 
 functions. 
 
@@ -16,10 +17,6 @@ functions.
 # include <malloc.h>	/* mallopt, mallinfo, and  malloc, free etc. */
 #endif
 
-#ifdef HAVE_SYS_MMAN_H
-# include <sys/mman.h>
-#endif
-
 #if HAVE_UNISTD_H
 # include <unistd.h>     /* io functions */
 #endif
@@ -28,10 +25,6 @@ functions.
 #endif
 
 #include <stdio.h>
-
-#ifndef MAP_NORESERVE
-#define MAP_NORESERVE MAP_PRIVATE
-#endif 
 
 #ifndef HAVE_GETPGID
 #define getpgid __getpgid
@@ -259,10 +252,6 @@ int 	MT_alive(int pid);
 @-
 Allocate anonymous virtual memory.
 @h
-void* 	MT_vmalloc(size_t size, size_t *maxsize);
-void 	MT_vmfree(void* p, size_t size);
-void* 	MT_vmrealloc(void* p, size_t oldsize, size_t newsize, size_t *maxsize);
-
 #define MT_geterrno()		errno
 #define MT_seterrno(x)		errno=x
 #define MT_getpid()		(MT_Id)((int)pthread_self()+1)
@@ -475,135 +464,3 @@ int pid;
 	int st = getpgid(pid);
 	return (st >= 0 && st != ESRCH);
 }
-
-
-#define MT_PAGESIZE(s)	((((s-1)/MT_pagesize())+1)*MT_pagesize())
- 
-
-/*
-#ifdef HAVE_MAP_ANONYMOUS
-
-void *MT_vmalloc(size_t size, size_t *maxsize) {
-        char *q, *r = (char*) -1;
- 
-        size = MT_PAGESIZE(size);
-        *maxsize = MT_PAGESIZE(*maxsize);
-        if (*maxsize > size) {
-                r = (char*) mmap(NULL, *maxsize, PROT_NONE,
-                                MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-        }
-        if (r == (char*) -1) {
-                *maxsize = size;
-                q = (char*) mmap(NULL, size, PROT_READ|PROT_WRITE,
-                                MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-        } else {
-                q = (char*) mmap(r, size, PROT_READ|PROT_WRITE,
-                                MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED, -1, 0);
-        }
-        return (void*) (q == (char*) -1)?NULL:q;
-}
-
- 
-void MT_vmfree(void *p, size_t size) {
-        size = MT_PAGESIZE(size);
-        munmap(p, size);
-}
-
-void *MT_vmrealloc(void *pt, size_t oldsize, size_t newsize, size_t *maxsize) {
-	char *p = (char*)pt;
-        char *q = (char*) -1;
- 
-        oldsize = MT_PAGESIZE(oldsize);
-        newsize = MT_PAGESIZE(newsize);
-        *maxsize = MT_PAGESIZE(*maxsize);
- 
-        if (oldsize > newsize) {
-                munmap(p+oldsize, oldsize-newsize);
-        }
-        if (oldsize >= newsize) {
-                return p;
-        }
-        if (newsize < *maxsize) {
-		q = (char*) mmap(p+oldsize, newsize-oldsize,
-			PROT_READ|PROT_WRITE,
-			MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED, -1, oldsize);
-        }
-        if (q == (char*) -1) {
-                int oldmaxsize = *maxsize;
-                q = p; p = (char*) MT_vmalloc(newsize, maxsize);
-                if (p != NULL) {
-                        memcpy(p, q, oldsize);
-                        MT_vmfree(q, oldmaxsize);
-                }
-        }
-        return p;
-}
-
-#else /* NO MAP_ANONYMOUS */
-
-void *MT_vmalloc(size_t size, size_t *maxsize) {
-	int fd = open("/dev/zero", O_RDWR, 0666);
-	char *q, *r = (char*) -1;
-
-	if (fd < 0) {
-		return NULL;
-	}
-	size = MT_PAGESIZE(size);
-	*maxsize = MT_PAGESIZE(*maxsize);
-	if (*maxsize > size) {
-		r = (char*) mmap(NULL, *maxsize, PROT_NONE,
-				MAP_PRIVATE|MAP_NORESERVE, fd, 0);
-	}
-	if (r == (char*) -1) {
-		*maxsize = size;
-		q = (char*) mmap(NULL, size, PROT_READ|PROT_WRITE, 
-				MAP_PRIVATE, fd, 0);
-	} else {
-		q = (char*) mmap(r, size, PROT_READ|PROT_WRITE, 
-				MAP_PRIVATE|MAP_FIXED, fd, 0);
-	}
-	close(fd);
-	return (void*) (q == (char*) -1)?NULL:q;
-}
-
-void MT_vmfree(void *p, size_t size) {
-	size = MT_PAGESIZE(size);
-	munmap(p, size);
-}
-
-void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize) {
-        char *p=(char*)voidptr;
-	char *q = (char*) -1;
-
-	oldsize = MT_PAGESIZE(oldsize);
-	newsize = MT_PAGESIZE(newsize);
-	*maxsize = MT_PAGESIZE(*maxsize);
-
-	if (oldsize > newsize) {
-		munmap(p+oldsize, oldsize-newsize);
-	} 
-        if (oldsize >= newsize) {
-                return p;
-        }
-	if (newsize < *maxsize) {
-		int fd = open("/dev/zero", O_RDWR, 0666);
-		if (fd >= 0) {
-			q = (char*) mmap(p+oldsize, newsize-oldsize, 
-				PROT_READ|PROT_WRITE, 
-				MAP_PRIVATE|MAP_FIXED, fd, oldsize);
-			close(fd);
-		}
-	}	
-	if (q == (char*) -1) {
-		int oldmaxsize = *maxsize;
-                q = p; p = (char*) MT_vmalloc(newsize, maxsize);
-                if (p != NULL) {
-                        memcpy(p, q, oldsize);
-                        MT_vmfree(q, oldmaxsize);
-                }
-	}
-	return p;
-}
-/*
-#endif /* NO MAP_ANONYMOUS */
-

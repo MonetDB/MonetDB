@@ -804,7 +804,7 @@ BAT* TBL_getdir() {
     while(TRUE) {
             name=MSP_next_module();
             if (!name) break;
-            basename=strrchr(name,'/')+1;
+            basename=strrchr(name,DIR_SEP)+1;
 	    if (strncmp(basename,"lib_",liblen)==0)
 	       basename+=liblen;
             BUNins(b, &i, basename);

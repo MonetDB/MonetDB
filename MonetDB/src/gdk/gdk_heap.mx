@@ -66,6 +66,7 @@ VM is used. The default threshold is 2GB: which means that VM is not
 used in practice.
 @c
 #include "gdk_heap.h"
+#include "gdk_posix.h"
 
 int HEAPalloc(Heap *h, int nitems, int itemsize) {
         h->base = NULL;
@@ -108,6 +109,7 @@ int HEAPextend(Heap *h, int size) {
 		return 0;
 #ifndef NOEXTEND_PRIVMAP
 	} else if (h->storage == STORE_PRIV && size <= h->maxsize) { 
+		long_str path;
 		FILE *fp = (FILE*) GDKfilelocate(h->filename, "rb+", NULL);
 		int totsize = MT_pagesize()*(1+(h->offset+size-1)/MT_pagesize()); 
 		struct stat st;
@@ -131,11 +133,16 @@ As we now that size < maxsize, we know that we have this range
 PROT_NONE, so we can do it.
 @c
 		totsize -=  h->offset + h->size;
+/*
 		b = GDKmmap(h->base+h->offset+h->size, totsize, 
 				PROT_READ|PROT_WRITE, 
 				MAP_PRIVATE|MAP_FIXED, 
 				fileno(fp), h->offset+h->size);
+*/
 		fclose(fp);
+	        GDKfilepath(path,BATDIR,h->filename,NULL);
+		b = MT_mmap(path,h->offset+h->size, MMAP_COPY, totsize, 
+			    h->base+h->offset+h->size);
 		if ((b == (char*) -1)) {
 			GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n",
 					h->filename); goto error;
@@ -197,6 +204,7 @@ and the extra byte-offset is given back for the information of the caller.
 int HEAPsubcopy(Heap* dst, Heap* src, int size, int offset) {
 #ifndef WIN32
 	if ((src->storage&STORE_MMAP) && src->filename) {
+	    long_str path;
 	    FILE *fp = (FILE*) GDKfilelocate(src->filename, "mrb+", NULL);
 
 	    if (fp != NULL) {
@@ -224,16 +232,27 @@ grab everything we can now.
 @c
 #ifdef NOEXTEND_PRIVMAP
 		dst->size = dst->maxsize; /* take it all, now */
+
+		fclose(fp);
+	        GDKfilepath(path,BATDIR,src->filename,NULL);
 #else
+/*
 		b = (char *) GDKmmap((caddr_t) NULL, dst->maxsize,
 			PROT_NONE, MAP_PRIVATE|MAP_NORESERVE
 			,fileno(fp), newoffset);
+*/
+	    	fclose(fp);
+	        GDKfilepath(path,BATDIR,src->filename,NULL);
+		b = (char *) MT_mmap(path, MMAP_COPY, newoffset, dst->maxsize, NULL);	
 		if (b == (char*) -1) b = 0;
 #endif
+/*
 		dst->base = (char *) mmap((caddr_t) b, dst->size, 
 			PROT_READ|PROT_WRITE, MAP_PRIVATE|(b?MAP_FIXED:0), 
 			fileno(fp), newoffset);
 		fclose(fp);
+*/
+		dst->base = (char *) MT_mmap(path, MMAP_COPY, newoffset, dst->size, b);	
 
 		if (dst->base == (char*) -1) {
 			shiftback = 0;
@@ -264,7 +283,7 @@ int HEAPfree(Heap* h) {
                 GDKfree(h->base);
         } else if (h->filename) { /* mapped file, or STORE_PRIV */
                 FILE *fp;
-                int ret = GDKmunmap((caddr_t) h->base, h->maxsize);
+                int ret = MT_munmap(h->base, h->maxsize);
                 if (ret < 0) {
                         GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
                 }

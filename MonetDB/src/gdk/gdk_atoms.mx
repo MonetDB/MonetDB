@@ -484,8 +484,8 @@ The routine atomnil returns a pointer to the nil value representation.
 #define	GDK_flt_max ((flt) 3.402823466E+38F)
 #define	GDK_flt_min (-GDK_flt_max)
 #ifdef HAVE_LONGLONG
-#define	GDK_lng_max ((lng) 9223372036854775807LL)
-#define	GDK_lng_min ((lng) (-9223372036854775807LL-1LL))
+#define	GDK_lng_max ((lng) 9223372036854775807)
+#define	GDK_lng_min ((lng) (-9223372036854775807-(lng)1))
 #else
 #ifdef HAVE__INT64
 #define	GDK_lng_max ((lng) 9223372036854775807i64)
@@ -918,15 +918,15 @@ int lngToStr(char **dst, int *len, lng *src) {
 		strcpy(p, "nil");
 		return 3;
 	} 
-	if (*src < 0LL) {
+	if (*src < (lng)0) {
 		*p++ = '-'; *p = 0;
 	}
-	ll = (*(lng*)src)/100000000000000LL;
+	ll = (*(lng*)src)/(lng)100000000000000;
 	if (ll) {
 		sprintf(p, "%ld", (ll<0)?-ll:ll); 
 		l += strlen(p);
 	}
-	ll = ((*(lng*) src) % 100000000000000LL) / 10000000LL;
+	ll = ((*(lng*) src) % (lng)100000000000000) / (lng)10000000;
 	if (l) {
 		sprintf(p+l, "%07ld", (ll<0)?-ll:ll);	
 	} else if (ll) {
@@ -934,7 +934,7 @@ int lngToStr(char **dst, int *len, lng *src) {
 	}
 @c
 	l += strlen(p+l);
-	ll = (long) ((*(lng*) src) % 10000000LL);
+	ll = (long) ((*(lng*) src) % (lng)10000000);
 	if (l) {
 		sprintf(p+l, "%07ld", (ll<0)?-ll:ll);	
 	} else {

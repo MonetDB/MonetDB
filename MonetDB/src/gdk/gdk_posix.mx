@@ -1,0 +1,297 @@
+@f gdk_posix
+@a Niels Nes, Peter Boncz
+@* System Independent Layer
+
+GDK is built on POSIX. Exceptions are made for memory mapped files and 
+anonynmous
+virtual memory, for which somewhat higher-level functions are defined 
+here.
+
+Most of this file concerns itself with emulation POSIX functionality on 
+the WIN32 native platform.
+@h
+#ifndef GDK_POSIX_H
+#define GDK_POSIX_H
+
+#include <sys/types.h>
+
+#ifndef WIN32
+#define DIR_SEP '/' 
+#define DIR_SEP_STR "/" 
+#else /* WIN32 native */
+#define DIR_SEP '\\' 
+#define DIR_SEP_STR "\\" 
+#endif 
+
+/* the new mmap modes, mimick default MADV_* madvise POSIX constants */
+#define MMAP_NORMAL     	0               /* no further special treatment */
+#define MMAP_RANDOM     	1               /* expect random page references */
+#define MMAP_SEQUENTIAL 	2               /* expect sequential page references */
+#define MMAP_WILLNEED   	3               /* will need these pages */
+#define MMAP_DONTNEED   	4               /* don't need these pages */
+
+#define MMAP_READ		1024		/* region is readable (default if ommitted) */
+#define MMAP_WRITE		2048		/* region may be written into */
+#define MMAP_COPY		4096		/* writable, but changes never reach file */
+#define MMAP_ASYNC		8192		/* asynchronous writes (default if ommitted) */
+#define MMAP_SYNC		16384		/* writing is done synchronously */ 
+
+/* in order to be sure of madvise and msync modes, pass them to mmap() call as well */
+
+extern void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed);
+extern int   MT_munmap(void* p, size_t off);
+extern int   MT_msync(void* p, size_t len, int mode);
+extern int   MT_madvise(void* p, size_t len, int advise);
+
+extern void *MT_vmalloc(size_t size, size_t *maxsize);
+extern void  MT_vmfree(void *p, size_t size);
+extern void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize);
+
+#endif /* GDK_POSIX_H */
+@c
+#include "gdk_posix.h"
+#include "gdk_system.h"
+
+#ifdef HAVE_CONFIG_H 
+#include "config.h"
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
+#define MMAP_ADVISE		7
+#define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
+
+#ifndef WIN32
+
+#ifndef MAP_NORESERVE
+#define MAP_NORESERVE MAP_PRIVATE
+#endif 
+
+#define MT_PAGESIZE(s)  ((((s-1)/MT_pagesize())+1)*MT_pagesize())
+
+void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed){
+	FILE *fp = fopen(path, (mode&MMAP_WRITABLE)?"rb+":"rb" );
+	void *ret = (void*) -1;
+	if (fp) {
+	    ret = mmap(fixed, len, 
+		((mode&MMAP_WRITABLE)?PROT_WRITE:0)|PROT_READ, 
+		((mode&MMAP_COPY)?MAP_PRIVATE:MAP_SHARED)|(fixed?MAP_FIXED:0),
+	        fileno(fp), off);
+	    fclose(fp);
+	    if (ret != (void*) -1 && (mode&MMAP_ADVISE)) {
+		madvise(fixed+off, len, mode&MMAP_ADVISE);
+	    }
+        }
+	return ret;
+}
+
+int MT_munmap(void* p, size_t off) {
+	return munmap(p, off);
+} 
+
+int MT_msync(void* p, size_t len, int mode) {
+	return msync(p, len, (mode&MMAP_SYNC)?MS_SYNC:MS_ASYNC);
+} 
+
+int MT_madvise(void* p, size_t len, int advise) {
+	return madvise(p, len, advise); 
+}
+
+void *MT_vmalloc(size_t size, size_t *maxsize) {
+        int fd = open("/dev/zero", O_RDWR, 0666);
+        char *q, *r = (char*) -1;
+
+        if (fd < 0) {
+                return NULL;
+        }
+        size = MT_PAGESIZE(size);
+        *maxsize = MT_PAGESIZE(*maxsize);
+        if (*maxsize > size) {
+                r = (char*) mmap(NULL, *maxsize, PROT_NONE, 
+				MAP_PRIVATE|MAP_NORESERVE, fd, 0);
+        }
+        if (r == (char*) -1) {
+                *maxsize = size;
+                q = (char*) mmap(NULL, size, PROT_READ|PROT_WRITE, 
+				MAP_PRIVATE, fd, 0);
+        } else {
+                q = (char*) mmap(r, size, PROT_READ|PROT_WRITE, 
+				MAP_PRIVATE|MAP_FIXED, fd, 0);
+        }
+        close(fd);
+        return (void*) (q == (char*) -1)?NULL:q;
+}
+
+void MT_vmfree(void *p, size_t size) {
+        size = MT_PAGESIZE(size);
+        munmap(p, size);
+}
+
+void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize) {
+        char *p=(char*)voidptr;
+        char *q = (char*) -1;
+
+        oldsize = MT_PAGESIZE(oldsize);
+        newsize = MT_PAGESIZE(newsize);
+        *maxsize = MT_PAGESIZE(*maxsize);
+
+        if (oldsize > newsize) {
+                munmap(p+oldsize, oldsize-newsize);
+        }
+        if (oldsize >= newsize) {
+                return p;
+        }
+        if (newsize < *maxsize) {
+                int fd = open("/dev/zero", O_RDWR, 0666);
+                if (fd >= 0) {
+                        q = (char*) mmap(p+oldsize, newsize-oldsize,
+                                PROT_READ|PROT_WRITE,
+                                MAP_PRIVATE|MAP_FIXED, fd, oldsize);
+                        close(fd);
+                }
+        }
+        if (q == (char*) -1) {
+                int oldmaxsize = *maxsize;
+                q = p; p = (char*) MT_vmalloc(newsize, maxsize);
+                if (p != NULL) {
+                        memcpy(p, q, oldsize);
+                        MT_vmfree(q, oldmaxsize);
+                }
+        }
+        return p;
+}
+
+#else /* WIN32 native */
+
+#define DIR_SEP '\\' 
+#define DIR_SEP_STR "\\" 
+
+#define MT_PAGESIZE(s)		(((((s)-1) >> 12) + 1) << 12)
+#define MT_SEGSIZE(s)		((((((s)-1) >> 16) & 65535) + 1) << 16)
+
+void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
+	int mode0 = GENERIC_READ;
+	int mode1 = FILE_SHARE_READ;
+	int mode2 = mode & MMAP_ADVISE;
+	int mode3 = PAGE_READONLY;
+	int mode4 = FILE_MAP_READ;
+        SECURITY_ATTRIBUTES sa;
+        HANDLE h1, h2;
+
+	if (mode & MAP_WRITABLE) {
+		mode0 |= GENERIC_WRITE;
+		mode1 |= FILE_SHARE_WRITE;
+	}
+        if (mode2 == MMAP_RANDOM || mode2 == MMAP_DONTNEED) {
+                mode2 = FILE_FLAG_RANDOM_ACCESS;
+        } else if (mode2 == MMAP_SEQUENTIAL || mode2 == MMAP_WILLNEED) {
+                mode2 = FILE_FLAG_SEQUENTIAL_SCAN;
+        } else {
+                mode2 = FILE_FLAG_NO_BUFFERING;
+        }
+	if (mode & MMAP_SYNC) {
+		mode2 |= FILE_FLAG_WRITE_THROUGH;
+	}
+	if (mode & MMAP_COPY) {
+		mode3 = PAGE_WRITECOPY;
+		mode4 = FILE_MAP_COPY;
+	} else if (mode & MMAP_WRITE) {
+		mode3 = PAGE_READWRITE;
+		mode4 = FILE_MAP_WRITE;
+	}
+        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sa.bInheritHandle = TRUE;
+        sa.lpSecurityDescriptor = 0;
+
+        h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
+        if (h1 == NULL) {
+                return (void*) -1;
+        }
+
+        h2 = CreateFileMapping(h1, &sa, mode3, (off+len) >> 32, (unsigned int) (off+len), NULL);
+        if (h2 == NULL) {
+                CloseHandle(h1);
+                return (void*) -1;
+        }
+	if (fixed) {
+        	ret = MapViewOfFileEx(h2, mode4, off >> 32, (unsigned int) off, len, fixed);
+	} else {
+        	ret = MapViewOfFile(h2, mode4, off >> 32, (unsigned int) off, len);
+ 	}
+        if (ret == NULL) {
+		ret = (void*) -1;
+        }
+        CloseHandle(h1);
+        CloseHandle(h2);
+	return ret;
+}
+
+int MT_munmap(void* p, size_t dummy) {
+	return UnmapViewOfFile(p);
+} 
+
+int MT_msync(void* p, size_t len) {
+	return FlushViewOfFile(p, len);
+} 
+
+int MT_madvise(ptr p, size_t len, int advise) {
+	return 0; /* would -1 be better? */
+}
+
+
+void *MT_vmalloc(size_t size, size_t *maxsize) {
+        void *p, *a = NULL;
+        size = MT_PAGESIZE(size);
+        if (*maxsize < size) {
+                *maxsize = size;
+        }
+        *maxsize = MT_SEGSIZE(*maxsize);
+        if (*maxsize > size) {
+                a = (void*) VirtualAlloc(NULL, *maxsize, MEM_RESERVE, PAGE_NOACCESS);
+                if (a == NULL) {
+                        *maxsize = size;
+                }
+        }
+        p = (void*) VirtualAlloc(a, size, MEM_COMMIT, PAGE_READWRITE);
+        return p;
+}
+
+
+void MT_vmfree(void *p, size_t size) {
+        VirtualFree(p, size, MEM_DECOMMIT);
+        VirtualFree(p, 0, MEM_RELEASE);
+}
+
+void*   MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize) {
+        char *a, *p = (char*) v;
+        size_t oldmaxsize = *maxsize;
+
+        oldsize = MT_PAGESIZE(oldsize);
+        newsize = MT_PAGESIZE(newsize);
+        if(oldsize < newsize) {
+                if (*maxsize < newsize) {
+                        *maxsize = newsize;
+                }
+                a = (char*)VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
+                if (a != p) {
+                        if (a == NULL) {
+                                a = MT_vmalloc(newsize, maxsize);
+                        }
+                        if (a != NULL) {
+                                memcpy(a, p, oldsize);
+                                MT_vmfree(p, oldmaxsize);
+                        }
+                } p = a;
+        } else if (oldsize > newsize) {
+                VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
+        }
+        return p;
+}
+
+#endif

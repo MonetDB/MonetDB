@@ -24,6 +24,7 @@ extern int  GDKsec       ();
 #ifndef GDK_NOLINK
 #include "gdk.h"
 #include "gdk_utils.h"
+#include "gdk_posix.h"
 
 #if defined(HAVE_SYS_ERRLIST) && (NEED_SYS_ERRLIST == 1)
 	extern char * sys_errlist[];
@@ -861,6 +862,7 @@ char *GDKstrdup(char *s) {
 @- virtual memory
 allocations affect only the logical VM resources.
 @c
+/*
 void *GDKmmap(void* addr, size_t len, int prot, int flags, int fd, off_t off) {
         char *ret = mmap(addr, len, prot, flags, fd, off);
         if (ret == (char*) -1) {
@@ -883,6 +885,7 @@ int GDKmunmap(void* addr, size_t len) {
         }
         return ret;
 }
+*/
 
  
 @- VM alloc

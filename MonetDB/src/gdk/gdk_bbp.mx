@@ -675,7 +675,7 @@ str BBPsubdir_recursive(str s, int i) {
 	} i &= 63;
 	*s++ = '0' + (i>>3);
 	*s++ = '0' + (i&7);
-	*s++ = '/';
+	*s++ = DIR_SEP;
 	return s;
 }
 
@@ -1543,7 +1543,7 @@ static int move_bat(str dstdir, BAT *b) {
 	/* determine location dir and physical suffix */ 
         strcpy(srcdir, BATDIR);
         strcat(srcdir, s);
-	s = strrchr(srcdir, '/');
+	s = strrchr(srcdir, DIR_SEP);
 	strcpy(nme, ++s);
 	srcdir[s - srcdir] = 0;
 
@@ -1860,7 +1860,7 @@ lng BBPdiskscan(str parent) {
 		return (lng)-1; /* nothing to do */
 	}
 	while(*src) *dst++ = *src++;
-	*dst++ = '/';
+	*dst++ = DIR_SEP;
 
 	if (parent == NULL) {
 		/* MT unsafe initialisation; TODO: resulve, but is not urgent */

@@ -118,7 +118,7 @@ Find an empty client slot.  The console entry is reserved.
 	char path[MAXPATHLEN];
 	DIR *dirp;
 
-	sprintf(path,"users/%s",nme);
+	sprintf(path,"users%c%s", DIR_SEP, nme);
         if( (dirp=opendir(path))==0) return 0;
 	closedir(dirp);
 
@@ -626,10 +626,10 @@ int scriptClient(Client c, str nme, int backup){
                 GDKerror("scriptClient: No nesting on input\n");
                 return 0;
         }
-	if( nme[0] == '/') {
+	if( nme[0] == DIR_SEP) {
 		strcpy(dir,nme);
 	} else {
-		sprintf(dir, "%s/%s", monet_cwd, nme);
+		sprintf(dir, "%s%c%s", monet_cwd, DIR_SEP, nme);
 	}
         fd = fopen(dir, "r");
         if (fd == 0) {

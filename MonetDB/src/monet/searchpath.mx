@@ -37,23 +37,6 @@ char *MSP_next_module();
 #include <stdlib.h>
 #include <string.h>
 
-#if HAVE_DIRENT_H
-# include <dirent.h>
-# define NAMLEN(dirent) strlen((dirent)->d_name)
-#else
-# define dirent direct
-# define NAMLEN(dirent) (dirent)->d_namlen
-# if HAVE_SYS_NDIR_H
-#  include <sys/ndir.h>
-# endif
-# if HAVE_SYS_DIR_H
-#  include <sys/dir.h>
-# endif
-# if HAVE_NDIR_H
-#  include <ndir.h>
-# endif
-#endif
-
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
@@ -115,7 +98,7 @@ void insert_moddir_recursively(char *name) {
     while((dent=readdir(dirp))!=0)
         {
             if (dent->d_name[0]=='.') continue;
-            sprintf(fullname,"%s/%s",name,dent->d_name);
+            sprintf(fullname,"%s%c%s",name,DIR_SEP,dent->d_name);
             insert_moddir_recursively(fullname);
         }
     closedir(dirp);
@@ -184,8 +167,8 @@ char *MSP_next_module() {
                     suffix[0]='\0';
                     next_module=(char *)GDKmalloc(strlen(current_entry->path)+
                                                strlen(dent->d_name)+2);
-                    sprintf(next_module,"%s/%s", 
-                            current_entry->path, dent->d_name);
+                    sprintf(next_module,"%s%c%s", 
+                            current_entry->path, DIR_SEP, dent->d_name);
                     return(next_module);
                 }
             current_entry=current_entry->next;
@@ -215,7 +198,7 @@ char *MSP_locate_module(char *mod_name) {
             next_module=MSP_next_module();
             if (!next_module) break;
 	    fulllen = strlen(next_module);
-            if ( next_module[fulllen-len-1] == '/' &&
+            if ( next_module[fulllen-len-1] == DIR_SEP &&
 		 !strcmp(&next_module[fulllen-len],name))
                 {
                     fullname=(char *)GDKmalloc(fulllen+4);

@@ -72,14 +72,16 @@ $MONETHOME/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 #include  <ctype.h> 
 #include  <sys/types.h> 
 #include  <sys/socket.h> 
-#include  <netinet/in.h> 
-#include  <netdb.h> 
 #include  <errno.h> 
 #include  <string.h> 
 #include  <signal.h> 
-#include  <sys/wait.h> 
-#include  <pwd.h> 
+#ifdef HAVE_UNISTD_H
 #include  <unistd.h> 
+#endif
+
+#ifdef HAVE_PWD_H
+#include  <pwd.h> 
+#endif
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -91,7 +93,6 @@ $MONETHOME/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 #  include <time.h>
 # endif
 #endif
-
 
 FILE	*fdopen();
 
@@ -672,11 +673,11 @@ int findport(char *dbnme) {
                 return 0;
             }
         }
-        sprintf(homefile, "%s/homes", home);
+        sprintf(homefile, "%s%chomes", home, DIR_SEP);
 
         GDKhomeScan(name, dbnme, homefile);
  
-        strcat(GDKenviron[GDKdir],"/.gdk_lock");
+        strcat(strcat(GDKenviron[GDKdir], DIR_SEP_STR), ".gdk_lock");
         fp = fopen(GDKenviron[GDKdir],"r");
         if (fp == NULL){
                 fprintf(stderr,"! Server '%s' not running\n", dbnme);

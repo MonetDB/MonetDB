@@ -249,7 +249,6 @@ An error at this stage normally lead to an abort.
 #include <config.h>
 #endif
 
-#ifndef BAT32IMAGE
 #ifdef AIX
 #ifndef _H_LOCALEDEF
 #define _H_LOCALEDEF
@@ -308,9 +307,11 @@ char *alloca ();
 # endif
 #endif
 
-#include <assert.h>     
 
+#include "gdk_posix.h"	
 #include "gdk_system.h"	
+
+#include <assert.h>     
 
 #include <sys/types.h> 
 #ifdef HAVE_SYS_FILE_H
@@ -331,6 +332,9 @@ char *alloca ();
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h> 
 #endif
+
+/* TODO: need to look better where to start this */
+#ifndef BAT32IMAGE
 
 #undef MIN
 #undef MAX
@@ -354,10 +358,17 @@ extern int setenv(char *name, char *value, int overwrite);
 
 #define GDKPROP		6	/*	use one spare! */
 #define MONETHOME	"MONETHOME"
+#ifndef WIN32
 #define BATDIR          "bat/"
 #define DELDIR          "bat/DELETE_ME/"
 #define BAKDIR          "bat/BACKUP/"
 #define LEFTDIR         "bat/LEFTOVERS/"
+#else
+#define BATDIR          "bat\\"
+#define DELDIR          "bat\\DELETE_ME\\"
+#define BAKDIR          "bat\\BACKUP\\"
+#define LEFTDIR         "bat\\LEFTOVERS\\"
+#endif
 #define DBLOGFILE	"MonetLog"
 #define dbhome		GDKenviron[GDKdir]
 #define GDKdbname	0

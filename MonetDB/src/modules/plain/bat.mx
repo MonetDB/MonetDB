@@ -1030,8 +1030,8 @@ Open the file. Memory map it to minimize buffering problems.
 	} else {
 	    	struct stat st;
             	fstat(fileno(fp), &st);
-            	base = cur = mmap(NULL, st.st_size, PROT_READ,
-				 MAP_SHARED, fileno(fp), 0);
+		(void)fclose(fp);
+            	base = cur = (char*)MT_mmap(fnme, 0, 0, st.st_size, NULL);
 		end = cur + st.st_size;
 	}
 @-
@@ -1087,7 +1087,7 @@ Unmap already parsed memory, to keep the memory usage low.
 @c
 #define MAXBUF 40*MT_pagesize()
 		if (cur - base > MAXBUF) {
-			munmap(base, MAXBUF);
+			MT_munmap(base, MAXBUF);
 			base += MAXBUF;
 		} 
 	}
@@ -1097,7 +1097,7 @@ Cleanup and exit. Return the filled BAT.
 	if (h) GDKfree(h);
 	if (t) GDKfree(t);
 	GDKfree(buf);
-	munmap(base, end-base);
+	MT_munmap(base, end-base);
 	(void) fclose(fp);
 	BBPfix(b->batCacheid);
 	*ret = b;

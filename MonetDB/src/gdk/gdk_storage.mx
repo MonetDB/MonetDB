@@ -31,6 +31,7 @@ system start.
 #include "gdk_search.h"
 #include "gdk_utils.h"
 #include "gdk_storage.h"
+#include "gdk_posix.h"
 @}
 
 @
@@ -38,7 +39,7 @@ system start.
 @c
 void GDKfilepath(str path, str dir, str name, str ext) {
 	*path = 0;
-	if (dir && *name != '/') {
+	if (dir && *name != DIR_SEP) {
 		strcpy(path, dir);
 		path += strlen(dir); 
 	}
@@ -56,7 +57,7 @@ int GDKcreatedir(char *dir) {
 	int ret = TRUE;
 
 	strcpy(path, dir);
- 	r = strrchr(path, '/');
+ 	r = strrchr(path, DIR_SEP);
         IODEBUG THRprintf(GDKerr, "GDKcreatedir(%s)\n", path);
 	if (r) {
 		DIR *dirp;
@@ -69,7 +70,7 @@ int GDKcreatedir(char *dir) {
 			ret = mkdir(path, 0755);
         		IODEBUG THRprintf(GDKerr, "mkdir %s = %d\n", path, ret);
 		}
- 		*r = '/';
+ 		*r = DIR_SEP;
 	}
 	return !ret;
 }
@@ -230,7 +231,7 @@ Maybe it is better to make use of @%msync()@. But then, we would need to
 bring in a backup mechanism, in which stable images of the BATs are created
 at commit-time.
 @c
-		err = msync(buf, size, MS_ASYNC);
+		err = MT_msync(buf, size, 0);
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
 		IODEBUG THRprintf(GDKerr, "msync(buf %d, size %d, MS_ASYNC) = %d\n", 
@@ -307,8 +308,13 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 	    }
 	} else {
 	    if ((fp = GDKfilelocate(nme, "mrb+", ext)) != NULL) {
+		long_str path; 
+		int tpe = 0;
+		/*
 	        int tpe = (store==STORE_MMAP)?MAP_SHARED:MAP_PRIVATE;
 	        int mod = (PROT_READ|PROT_WRITE);
+		*/
+		int mod = (store==STORE_MMAP)?(MMAP_READ):(MMAP_WRITE);
 	        /* hack for STORE_MMAP & BAT_APPEND. This re-introduces the risk of stray
                  * memory writes into read-only heaps. In order to limit risk we might want 
                  * to only make the last part PROT_WRITE 
@@ -316,7 +322,13 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
  		 */
 		fseek(fp, (long) chunk, SEEK_SET);
                	fputc('\n',fp); fflush(fp);
+	
+		fclose(fp);
+	        GDKfilepath(path,BATDIR,nme,ext);
+		buf = (char *)MT_mmap(path, mod, 0, chunk, (void*)0);	
+		/*
 	       	buf = (char *) GDKmmap((caddr_t) 0, chunk, mod, tpe, fileno(fp),0);
+		*/
 		if (buf == (char *) -1)  {
        	    	    GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
      		    buf = NULL;
@@ -652,7 +664,7 @@ BAT *BATload_intern(bat bid, int lock) {
 }
 
 BAT *BATload(str nme) {
-	str s = strrchr(nme,'/');
+	str s = strrchr(nme,DIR_SEP);
 	int i = BBPindex(s?s+1:nme);
 	BAT *b = BBP_cache(i);
 
