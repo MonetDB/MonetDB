@@ -480,7 +480,7 @@ One day we should introduce the concept of locale, and hook here.
 .END monettime;
 
 @mil
-	module("alarm");
+  	module("alarm");
 
 	# default time creation with zeroed secs and msecs
 	proc "daytime" (int hour) : daytime
