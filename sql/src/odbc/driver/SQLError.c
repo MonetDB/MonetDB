@@ -19,6 +19,9 @@
  **********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCEnv.h"
+#include "ODBCDbc.h"
+#include "ODBCStmt.h"
 
 SQLRETURN
 SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
@@ -29,7 +32,9 @@ SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
 	return SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT :
 			      (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
 			      hStmt ? hStmt : (hDbc ? hDbc : hEnv),
-			      1, /* first recNumber */
+			      (hStmt ? ++((ODBCStmt *)hStmt)->RetrievedErrors :
+			      (hDbc ? ++((ODBCDbc *)hDbc)->RetrievedErrors :
+			       ++((ODBCEnv *)hEnv)->RetrievedErrors)),
 			      szSqlState, pfNativeError, szErrorMsg,
 			      nErrorMsgMax, pcbErrorMsg);
 }

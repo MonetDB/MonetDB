@@ -40,6 +40,7 @@ newODBCEnv(void)
 	assert(env);
 
 	env->Error = NULL;
+	env->RetrievedErrors = 0;
 	env->FirstDbc = NULL;
 	env->Type = ODBC_ENV_MAGIC_NR;
 

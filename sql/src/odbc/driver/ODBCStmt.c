@@ -43,6 +43,7 @@ newODBCStmt(ODBCDbc *dbc)
 
 	stmt->Dbc = dbc;
 	stmt->Error = NULL;
+	stmt->RetrievedErrors = 0;
 
 	stmt->State = INITED;
 	stmt->hdl = mapi_new_handle(dbc->mid);

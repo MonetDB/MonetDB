@@ -36,6 +36,7 @@ typedef struct tODBCDRIVERDBC {
 	struct tODBCDRIVERDBC *next;	/* the linked list of dbc's in this Env */
 
 	ODBCError *Error;	/* pointer to an Error object or NULL */
+	int RetrievedErrors;	/* # of errors already retrieved by SQLError */
 
 	/* connection information */
 	char *DSN;		/* Data source name or NULL */
@@ -112,8 +113,14 @@ ODBCError *getDbcError(ODBCDbc *dbc);
 
 
 /* utility macro to quickly remove any none collected error msgs */
-#define clearDbcErrors(dbc) { assert(dbc); \
-	if (dbc->Error) { deleteODBCErrorList(dbc->Error); dbc->Error = NULL; } }
+#define clearDbcErrors(dbc) do {					\
+				assert(dbc);				\
+				if (dbc->Error) {			\
+					deleteODBCErrorList(dbc->Error); \
+					dbc->Error = NULL;		\
+					dbc->RetrievedErrors = 0;	\
+				}					\
+			} while (0)
 
 
 /*

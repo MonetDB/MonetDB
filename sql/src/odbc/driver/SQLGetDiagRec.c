@@ -25,14 +25,15 @@
 
 SQLRETURN
 SQLGetDiagRec_(SQLSMALLINT handleType,	/* must contain a valid type */
-	       SQLHANDLE handle,      /* must contain a valid handle */
-	       SQLSMALLINT recNumber,  /* must be >= 1 */
+	       SQLHANDLE handle,	/* must contain a valid handle */
+	       SQLSMALLINT recNumber,	/* must be >= 1 */
 	       SQLCHAR *sqlState,	/* may be null */
 	       SQLINTEGER *nativeErrorPtr,/* may be null */
-	       SQLCHAR *messageText,	  /* may be null */
-	       SQLSMALLINT bufferLength,   /* must be >= 0 */
-	       SQLSMALLINT *textLengthPtr)
-{				/* may be null */
+	       SQLCHAR *messageText,	/* may be null */
+	       SQLSMALLINT bufferLength,/* must be >= 0 */
+	       SQLSMALLINT *textLengthPtr/* may be null */
+	)
+{
 	ODBCError *err;
 	SQLRETURN retCode;
 	char *msg;

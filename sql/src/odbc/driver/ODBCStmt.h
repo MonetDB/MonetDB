@@ -84,6 +84,7 @@ typedef struct tODBCDRIVERSTMT {
 	/* Stmt properties */
 	int Type;		/* structure type, used for handle validy test */
 	ODBCError *Error;	/* pointer to an Error object or NULL */
+	int RetrievedErrors;	/* # of errors already retrieved by SQLError */
 	ODBCDbc *Dbc;		/* Connection context */
 	struct tODBCDRIVERSTMT *next;	/* the linked list of stmt's in this Dbc */
 	StatementState State;	/* needed to detect invalid cursor state */
@@ -157,8 +158,14 @@ ODBCError *getStmtError(ODBCStmt *stmt);
 
 
 /* utility macro to quickly remove any none collected error msgs */
-#define clearStmtErrors(stm) { assert(stm); \
-        if (stm->Error) { deleteODBCErrorList(stm->Error); stm->Error = NULL; } }
+#define clearStmtErrors(stm) do {					\
+				assert(stm);				\
+				if (stm->Error) {			\
+					deleteODBCErrorList(stm->Error); \
+					stm->Error = NULL;		\
+					stm->RetrievedErrors = 0;	\
+				}					\
+			} while (0)
 
 
 /*

@@ -31,6 +31,7 @@ typedef struct tODBCDRIVERENV {
 	/* Env properties */
 	int Type;		/* structure type, used for handle validy test */
 	ODBCError *Error;	/* pointer to an Error object or NULL */
+	int RetrievedErrors;	/* # of errors already retrieved by SQLError */
 
 	/* Env children: list of ODBC Connection handles created in this Env */
 	void *FirstDbc;		/* first in list or NULL */
@@ -92,8 +93,14 @@ ODBCError *getEnvError(ODBCEnv *env);
 
 
 /* utility macro to quickly remove any none collected error msgs */
-#define clearEnvErrors(env) { assert(env); \
-	if (env->Error) { deleteODBCErrorList(env->Error); env->Error = NULL; } }
+#define clearEnvErrors(env) do {					\
+				assert(env);				\
+				if (env->Error) {			\
+					deleteODBCErrorList(env->Error); \
+					env->Error = NULL;		\
+					env->RetrievedErrors = 0;	\
+				}					\
+			} while (0)
 
 
 /*

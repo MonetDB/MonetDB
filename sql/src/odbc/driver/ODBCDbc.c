@@ -45,6 +45,7 @@ newODBCDbc(ODBCEnv *env)
 	dbc->Env = env;
 	dbc->next = NULL;
 	dbc->Error = NULL;
+	dbc->RetrievedErrors = 0;
 
 	dbc->DSN = NULL;
 	dbc->UID = NULL;
