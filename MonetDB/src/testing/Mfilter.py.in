@@ -73,6 +73,7 @@ test = (
                 "|" r"^MAPI  = .*@.*:[0-9]*$"
                 "|" r"^Pathfinder (XQuery Compiler|XML Shredder) \(.Revision: .* .\)$"
                 "|" r"^SQL  .* affected$"
+                "|" r"^.*: Symbol .(exit|_setjmp). causes overflow in R_X86_64_PC32 relocation$"
                  ,  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile( r"^!ERROR: DL_open: Unknown error.$"

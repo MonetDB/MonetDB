@@ -127,7 +127,7 @@ if [ ! "${WHAT_PREFIX}" ] ; then
 	WHAT_PREFIX="${WHAT_BUILD}"
 fi
 
-if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
+if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv"  -a  "${os}${COMP}" != "LinuxPGI" ] ; then
 	echo ''
 	echo 'COMP not set to either "GNU" or "ntv" (native) to select the desired compiler.'
 	echo 'Using COMP="GNU" (default).'
@@ -207,6 +207,18 @@ if [ "${os}" = "Linux" ] ; then
 			conf_opts="${conf_opts} --with-gc=${softpath}"
 			;;
 		esac
+	fi
+	if [ "${COMP}" = "PGI" ] ; then
+		# Portland Group compiler on spin
+		cc='pgcc'
+		cxx='pgCC'
+		export PGI=/soft/32/pgi-5.1-3
+		if [ "${BITS}" = "64" ] ; then
+			binpath="${PGI}/linux86-64/5.1/bin:${binpath}"
+		  else
+		  	binpath="${PGI}/linux86/5.1/bin:${binpath}"
+		fi
+		export LM_LICENSE_FILE=${PGI}/license.dat
 	fi
 	if [ "${hw}" = "ia64" ] ; then
 		if [ "${host%.ins.cwi.nl}" = "titan" ] ; then
