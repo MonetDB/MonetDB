@@ -20,7 +20,7 @@ function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
     system.printf("start clock \n");	# 1 SYSprint_str ($2:int)<-($3:str)
 barrier b := calc.>(n,0);	# 2 CALCcompGTintint (b:bit)<-(n:int)($5:int) jump 7
     system.printf("tick\n");	# 3 SYSprint_str ($6:int)<-($7:str)
-    alarm.sleep(2);	# 4 CLKsleep ($8:void)<-($9:int)
+    alarm.sleep(2);	# 4 ALARMsleep ($8:void)<-($9:int)
     n := calc.-(n,1);	# 5 CALCbinarySUBintint (n:int)<-(n:int)($10:int)
     redo b;	# 6  (b:bit) jump 2
 exit b;	# 7  (b:bit)
@@ -43,7 +43,7 @@ thread hdl;	# 1  (hdl:int) jump 5
 exit hdl;	# 5  (hdl:int)
     system.printf("Wait for child to exit too\n");	# 6 SYSprint_str ($8:int)<-($9:str)
 end main;	# 7  
-#Start thread with id 1083538737
+#Start thread with id 1083386673
 start clock 
 tick
 Wait for child to exit too
