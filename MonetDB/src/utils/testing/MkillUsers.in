@@ -2,10 +2,16 @@
 
 PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
 
-if      [ "$1" =       -l   ] ; then  LOCKFILE="$2"      ; shift ; shift
-  elif  [ "$1" != "${1#-l}" ] ; then  LOCKFILE="${1#-l}" ; shift 
-  else                                LOCKFILE="$$"
-fi
+PID=$$
+PPID=""
+LOCKFILE="$$"
+while [ "${1#-}" != "$1" ] ; do
+  if      [ "$1" =       -l   ] ; then  LOCKFILE="$2"      ; shift ; shift
+    elif  [ "$1" != "${1#-l}" ] ; then  LOCKFILE="${1#-l}" ; shift 
+    elif  [ "$1" =       -p   ] ; then  PPID="$2"          ; shift ; shift
+    elif  [ "$1" != "${1#-p}" ] ; then  PPID="${1#-l}"     ; shift 
+  fi
+done
 LOCKFILE=/tmp/.${0##*/}.$LOCKFILE
 
 files="`ls -d $* 2>/dev/null`"
@@ -18,20 +24,28 @@ function  LOG1  () { prompt="\n# `date +%H:%M:%S` >  " ; echo -en "$prompt$promp
 function  LOG2  () {  LOG1 $* ; LOG1 $* >&2 ; }
 function  LOG2x () {  LOG2 $* ; "$@" ; }
 
+cpids=""
+if [ "$PPID" ] ; then
+  cpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$PPID"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$PID"' +[0-9]+ ' | sort +4.0 | awk '{printf "%s ",$2}' | sed 's|  *$||'`"
+  if [ "$cpids" ] ; then
+	cpids="$cpids "
+  fi
+fi
+
 case `uname` in
   Linux)
-	pids1="`fuser $files | cut -d: -f2- | sed 's|[a-z]||g'`"
+	pids1="$cpids`fuser $files | cut -d: -f2- | sed 's|[a-z]||g'`"
 	PS="ps -f $pids1"
 	FUSER="fuser -v"
 	;;
   IRIX|IRIX64)
-  	pids0="`fuser -q $files`"
+  	pids0="`echo $cpids | sed 's| |,|g'``fuser -q $files`"
   	pids1="`echo $pids0 | sed 's|,| |g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
 	;;
   SunOS)
-	pids1="`fuser $files 2>/dev/null`"
+	pids1="$cpids`fuser $files 2>/dev/null`"
 	pids0="`echo $pids1 | sed 's| |,|g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
@@ -45,6 +59,9 @@ if [ "$pids1" ] ; then
 	LOG2x	$PS
 	LOG2x	$FUSER   $files
 	LOG2x	fuser -k $files
+	if [ "$cpids" ] ; then
+		LOG2x   kill $cpids
+	fi
 	sleep 4
 	if [ "`( ps -ef | egrep -w "$pids2" | egrep -v egrep ) 2>/dev/null`" ] ; then
 		LOG2x	kill -9 $pids1

@@ -926,7 +926,7 @@ def RunTest(env, TST) :
 			FILES = TSTTRGDIR+os.sep+TST+" "+TSTTRGDIR+os.sep+TST+".*"
 			for f in ["bat/\\*", '.gdk_lock']:
 				FILES = FILES+" "+env['GDK_DBFARM']+os.sep+TSTDB+os.sep+path(f)
-			WHAT = THISPATH+os.sep+"MkillUsers -l"+ME+" "+FILES+" \\>"+TSTTRGDIR+os.sep+TST+".KILLED.out 2\\>"+TSTTRGDIR+os.sep+TST+".KILLED.err"
+			WHAT = THISPATH+os.sep+"MkillUsers -l"+ME+" -p"+ME+" "+FILES+" \\>"+TSTTRGDIR+os.sep+TST+".KILLED.out 2\\>"+TSTTRGDIR+os.sep+TST+".KILLED.err"
 			WHEN = "now + "+WAIT+" minutes"
 			cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'" 
 			pOut,pIn,pErr = popen2.popen3(cmd)
