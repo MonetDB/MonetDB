@@ -318,13 +318,13 @@ int ll_getch() {
         return ch;
 }
 int ll_getstring(char *buf, int max_size) {
-	int i = max_size;
+	char *start = buf, *end = buf + max_size;
 	char ch;
 
-	while(i > 0){
-        	if (ll_client == 0) {
-                	GDKfatal("no client for lexical.\n");
-        	}
+        if (ll_client == 0) {
+               	GDKfatal("no client for lexical.\n");
+        }
+	while(buf < end){
    		do {
         		ch = *ll_client->cptr;
 		} while (ch == 0 && ll_pop());
@@ -344,12 +344,14 @@ int ll_getstring(char *buf, int max_size) {
 		if(ch){
 	 	    ll_client->cptr++;
 		    *buf++ = ch;
-		    i--;
+			
+		    if (ch == '\n')
+			break;
 		} else {
 		    break;
 		}
 	}
-	return max_size-i;
+	return (buf-start);
 }
 
 
