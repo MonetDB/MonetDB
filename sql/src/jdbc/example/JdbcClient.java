@@ -224,7 +224,7 @@ public class JdbcClient {
 
 		if (((ArrayList)(arg.get("-help"))).get(1) != null) {
 			System.out.print(
-"Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user]\n" +
+"Usage java -jar MonetDB_JDBC.jar [-h host[:port]] [-p port] [-f file] [-u user]\n" +
 "                              [-d [table]] [-X<opt>]\n" +
 "or using long option equivalents --host --port --file --user --dump.\n" +
 "Arguments may be written directly after the option like -p45123.\n" +

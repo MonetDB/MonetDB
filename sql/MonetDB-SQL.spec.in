@@ -86,7 +86,7 @@ rm -rf $RPM_BUILD_ROOT
 %files client
 %defattr(-,monetdb,monetdb) 
 %{prefix}/lib/libMonetODBC*
-%{prefix}/lib/MonetDB/java/MonetJDBC.jar
+%{prefix}/lib/MonetDB/java/MonetDB_JDBC.jar
 %{prefix}/share/sql/python/odbc.py
 %{prefix}/share/sql/python/_odbc.*
 

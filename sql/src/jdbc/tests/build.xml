@@ -11,8 +11,6 @@
   <!-- set global properties for this build -->
   <property name="srcdir"    value="." />
   <property name="builddir"  value="build" />
-  <property name="driverjar" value="../jars/MonetJDBC.jar" />
-
 
   <!-- Prepares the build directory -->
   <target name="prepare">
