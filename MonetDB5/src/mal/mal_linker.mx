@@ -235,11 +235,12 @@ Use the search path provided in the configuration file
             (handle==NULL?errbuf:"failed"):"succeeded");
 #endif
         if(handle == NULL) {
-            strcpy(errbuf, dlerror());
+			snprintf(errbuf,1024,"%d:",modnme);
+            strcat(errbuf, dlerror());
             GDKfree(fullname);
             GDKerror("load error %s\n", errbuf);
             return (str) throwException("loaderException",
-                "loadModuleLibrary",modnme);
+                "loadModuleLibrary",errbuf);
         }
         GDKfree(fullname);
     } else {
