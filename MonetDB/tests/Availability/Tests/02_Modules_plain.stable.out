@@ -508,19 +508,19 @@ Module: "lock"
 
 [ 10 ]
 [ 10 ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help							  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "lock_create",  "COMMAND:   ",  "lock_create() : lock",	  "create an unset lock"				  ]
-[ "lock_destroy", "COMMAND:   ",  "lock_destroy(lock) : void",	  "destroy a lock"					  ]
-[ "lock_set",	  "COMMAND:   ",  "lock_set(lock) : void",	  "try to set a lock; if set, block till it is freed"	  ]
-[ "lock_try",	  "COMMAND:   ",  "lock_try(lock) : int",	  "try a lock, if free set it, if not return EBUSY"	  ]
-[ "lock_unset",	  "COMMAND:   ",  "lock_unset(lock) : void",	  "unset a lock"					  ]
-[ "sema_create",  "COMMAND:   ",  "sema_create(int) : sema",	  "create an unset sema, with an initial value"		  ]
-[ "sema_destroy", "COMMAND:   ",  "sema_destroy(sema) : void",	  "destroy a sema"					  ]
-[ "sema_down",	  "COMMAND:   ",  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"		  ]
-[ "sema_try",	  "COMMAND:   ",  "sema_try(sema) : int",	  "try the semaphpore"					  ]
-[ "sema_up",	  "COMMAND:   ",  "sema_up(sema) : void",	  "increase the semaphore"				  ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help										  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "lock_create",  "COMMAND:   ",  "lock_create() : lock",	  "create an unset lock"							  ]
+[ "lock_destroy", "COMMAND:   ",  "lock_destroy(lock) : void",	  "destroy a lock"								  ]
+[ "lock_set",	  "COMMAND:   ",  "lock_set(lock) : void",	  "try to set a lock; if set, block till it is freed"				  ]
+[ "lock_try",	  "COMMAND:   ",  "lock_try(lock) : int",	  "try a lock, if free set it and return 0, \n\t\tif not return EBUSY"		  ]
+[ "lock_unset",	  "COMMAND:   ",  "lock_unset(lock) : void",	  "unset a lock"								  ]
+[ "sema_create",  "COMMAND:   ",  "sema_create(int) : sema",	  "create an unset sema, with an initial value"					  ]
+[ "sema_destroy", "COMMAND:   ",  "sema_destroy(sema) : void",	  "destroy a sema"								  ]
+[ "sema_down",	  "COMMAND:   ",  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"					  ]
+[ "sema_try",	  "COMMAND:   ",  "sema_try(sema) : int",	  "try the semaphpore, if >0 decrease and return 0, \n\t\tif not return EBUSY"	  ]
+[ "sema_up",	  "COMMAND:   ",  "sema_up(sema) : void",	  "increase the semaphore"							  ]
 
 Module: "logger"
 
