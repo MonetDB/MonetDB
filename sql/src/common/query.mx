@@ -30,14 +30,14 @@
 #define QUERY_H
 
 typedef enum sql_query_t {
-	QEND = 0,
-	QPARSE = 1, 
-	QRESULT = 2,
-	QTABLE = 3,
-	QUPDATE = 4,
-	QDATA = 5, 
-	QCREATE = 6,
-	QDEBUG = 7
+	Q_END = 0,
+	Q_PARSE = 1, 
+	Q_RESULT = 2,
+	Q_TABLE = 3,
+	Q_UPDATE = 4,
+	Q_DATA = 5, 
+	Q_CREATE = 6,
+	Q_DEBUG = 7
 } sql_query_t;
 
 #endif /* QUERY_H */

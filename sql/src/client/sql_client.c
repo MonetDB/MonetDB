@@ -57,7 +57,7 @@ void receive( stream *rs ){
 			}
 		}
 		nRows = status;
-		if (type == QTABLE && nRows > 0){
+		if (type == Q_TABLE && nRows > 0){
 			int nr = bs_read_next(rs,buf,&last);
 	
 			fwrite( buf, nr, 1, stdout );
@@ -66,7 +66,7 @@ void receive( stream *rs ){
 				fwrite( buf, nr, 1, stdout );
 			}
 		}
-		if (type == QTABLE){ /*|| type == QUPDATE){ */
+		if (type == Q_TABLE){ /*|| type == Q_UPDATE){ */
 			if (nRows > 1)
 				printf("%d Rows affected\n", nRows );
 			else if (nRows == 1)

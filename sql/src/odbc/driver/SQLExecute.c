@@ -57,7 +57,7 @@ static char *convert(char *str ){
 
 static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 	int status;
-	if (!stream_readInt(rs, type) || *type == QEND) {
+	if (!stream_readInt(rs, type) || *type == Q_END) {
 		/* 08S01 = Communication link failure */
 		addStmtError(hstmt, "08S01", NULL, 0);
 		return SQL_ERROR;
@@ -178,7 +178,7 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 	if (status == SQL_ERROR)
 		return status;
 
-	if (type == QRESULT && status > 0) { /* header info */
+	if (type == Q_RESULT && status > 0) { /* header info */
 		char *sc, *ec;
 		bstream *bs = bstream_create(rs, BLOCK);
 		int eof = 0;
@@ -262,7 +262,7 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		if (status == SQL_ERROR)
 			return status;
 	}
-	if (type == QTABLE && status > 0) {
+	if (type == Q_TABLE && status > 0) {
 		char *sc, *ec;
 		bstream *bs = bstream_create(rs, BLOCK);
 		int eof = 0;
@@ -310,7 +310,7 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		}
 
 		bstream_destroy(bs);
-	} else if (QUPDATE) {  
+	} else if (Q_UPDATE) {  
 		hstmt->nrRows = nRows;
 		hstmt->ResultRows = NULL;
 	}

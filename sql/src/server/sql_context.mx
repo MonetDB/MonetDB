@@ -121,7 +121,7 @@ int connect_error(stream *in, stream *out, int sock)
 
 int senddata_wrap( Stream *Out ){
 	stream *out = *(stream**)Out;
-	stream_writeInt( out, QDATA );
+	stream_writeInt( out, Q_DATA );
 	stream_writeInt( out, 0 );
 	out->flush( out );
 	return GDK_SUCCEED;
@@ -242,7 +242,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 			out->write( out, lc->errstr, strlen(lc->errstr), 1 );
 			out->flush( out );
 		} else if (s && s->type == st_none){
-			stream_writeInt( out, QUPDATE );
+			stream_writeInt( out, Q_UPDATE );
 			stream_writeInt( out, 0 );
 			out->flush( out );
 		} else if (s){
@@ -271,7 +271,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 */
 
 			if (lc->debug&64){
-				stream_writeInt( out, QDEBUG );
+				stream_writeInt( out, Q_DEBUG );
 				stream_writeInt( out, lc->debug );
 				out->write( out, cmd, strlen(cmd), 1 );
 				out->flush( out );

@@ -1664,7 +1664,7 @@ mvc *mvc_create(int debug)
 	m->trans = NULL;
 	m->trans = trans_dup(gtrans,NULL);
 	m->status = 0;
-	m->type = QPARSE;
+	m->type = Q_PARSE;
 
 	m->result_id = 0;
 	m->results = NULL;
@@ -1682,7 +1682,7 @@ ssize_t mvc_status( mvc *m ){
 
 int mvc_type( mvc *m ){
 	int res = m->type;
-	m->type = QPARSE;
+	m->type = Q_PARSE;
 	return res;
 }
 
@@ -2117,7 +2117,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		log_tend(logger);
 		if (m->debug)
 			fprintf(stderr, "done forwarding changes\n");
-		res = QPARSE;
+		res = Q_PARSE;
 	}
 
 	MT_unset_lock(mvc_lock, "mvc_commit");
@@ -2156,7 +2156,7 @@ int mvc_rollback(mvc * m, int chain, char *name)
 		m->trans = trans_dup(tr,NULL);
 	}
 	m->trans->level = level;
-	m->type = QPARSE;
+	m->type = Q_PARSE;
 	return res;
 }
 
@@ -2165,7 +2165,7 @@ int mvc_rollback(mvc * m, int chain, char *name)
  * */
 int mvc_release(mvc * m, char *name)
 {
-	int res = QPARSE;
+	int res = Q_PARSE;
 	sql_trans *tr = m->trans;
 	sql_trans *p = tr->parent;
 
@@ -2638,7 +2638,7 @@ sql_schema *mvc_create_schema(mvc * m, char *name, char *auth)
 	BUNins(b, (ptr) & rid, (ptr) s->auth); BBPunfix(b->batCacheid);
 
 	sysschema->wtime = s->wtime = tr->wtime = tr->stime;
-	m->type = QCREATE;
+	m->type = Q_CREATE;
 	return s;
 }
 
@@ -2783,7 +2783,7 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, char *name, key_type kt, sql_key
 	bat_destroy(b);
 
 	syskey->wtime = tr->stime;
-	m->type = QCREATE;
+	m->type = Q_CREATE;
 	return nk;
 }
 
@@ -2829,7 +2829,7 @@ sql_key *mvc_create_kc( mvc *m, sql_key *k, sql_column *c /*, extra options such
 	BUNins(b, (ptr) & rid, (ptr) & nr); bat_destroy(b);
 
 	syskc->wtime = tr->stime;
-	m->type = QCREATE;
+	m->type = Q_CREATE;
 	return k;
 }
 
@@ -2949,7 +2949,7 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, table_type type)
 	}
 
 	t->wtime = s->wtime = tr->wtime = tr->stime;
-	m->type = QCREATE;
+	m->type = Q_CREATE;
 	return t;
 }
 
@@ -2984,7 +2984,7 @@ sql_table *mvc_create_view(mvc * m, sql_schema *s, char *name, char *sql)
 	BUNins(b, (ptr)&rid, t->query ); BBPunfix(b->batCacheid);
 
 	systable->wtime = t->wtime = s->wtime = tr->wtime = tr->stime;
-	m->type = QCREATE;
+	m->type = Q_CREATE;
 	return t;
 }
 
@@ -3133,7 +3133,7 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	BUNins(b, (ptr) & rid, (ptr) & col->colnr); BBPunfix(b->batCacheid);
 
 	syscolumn->wtime = tr->stime;
-	m->type = QCREATE;
+	m->type = Q_CREATE;
 	return col;
 }
 
@@ -3286,7 +3286,7 @@ sql_role *mvc_create_role( mvc *m, sql_schema *s, char *name, int grantor )
 	list_append(s->roles, role);
 
 	s->wtime = tr->wtime = tr->stime;
-	m->type = QCREATE;
+	m->type = Q_CREATE;
 	return role;
 }
 
@@ -3482,7 +3482,7 @@ BAT *mvc_import_table( mvc *m, stream *s, char *tname,
         ASCIIdestroy_format( &as );
 	bstream_destroy(bs);
 
-	m->type = QUPDATE;
+	m->type = Q_UPDATE;
 	m->status = cnt;
 	return bats;
 }
@@ -3562,7 +3562,7 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	int i;
 	res_table *t = find_export_table(m, res_id);
 	
-	stream_writeInt( s, QRESULT );
+	stream_writeInt( s, Q_RESULT );
 	stream_writeInt( s, t->nr_cols );
 	stream_writeInt( s, t->id );
 	
@@ -3583,7 +3583,7 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t, char *sep, char *rse
 {
 	int i;
 
-	stream_writeInt( s, QTABLE );
+	stream_writeInt( s, Q_TABLE );
 	stream_writeInt( s, 1 );
 
 	for (i = 0; i < t->nr_cols; i++) 
@@ -3640,7 +3640,7 @@ int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr, char *s
 	if (offset + cnt > BATcount(order))
 		cnt = BATcount(order)-offset;
 
-	stream_writeInt( s, QTABLE );
+	stream_writeInt( s, Q_TABLE );
 	stream_writeInt( s, cnt );
 	
 	if (cnt <= 0){

@@ -110,7 +110,7 @@ int simple_receive( stream *in, stream *out, int debug ){
 	int type = 0, res = 0;
 	int nRows;
 
-	if ((res = stream_readInt(in, &type)) && type != QEND){
+	if ((res = stream_readInt(in, &type)) && type != Q_END){
 		char buf[BLOCK+1], *n = buf;
 		int last = 0;
 		int status;
@@ -125,7 +125,7 @@ int simple_receive( stream *in, stream *out, int debug ){
 			return status;
 		}
 		nRows = status;
-		if (type == QTABLE && nRows > 0){
+		if (type == Q_TABLE && nRows > 0){
 			/* skip rest */
 			int nr = bs_read_next(in,buf,&last);
 	
@@ -133,7 +133,7 @@ int simple_receive( stream *in, stream *out, int debug ){
 				fwrite( buf, nr, 1, stdout );
 			}
 		}
-	} else if (type != QEND){
+	} else if (type != Q_END){
 		return -type;
 	}
 	return nRows;

@@ -240,7 +240,7 @@ static void header_data( stream *rs, stream *out, int nCols, int trace ){
 
 int receive( stream *rs, stream *out, int trace ){
 	int status = 0, type = 0, res = 0;
-	if ((res = stream_readInt(rs, &type)) && type != QEND){
+	if ((res = stream_readInt(rs, &type)) && type != Q_END){
 		char buf[BLOCK+1];
 		int last = 0;
 		int nRows;
@@ -267,7 +267,7 @@ int receive( stream *rs, stream *out, int trace ){
 			return status;
 		}
 		nRows = status;
-		if ((type == QTABLE || type == QDEBUG) && nRows > 0){
+		if ((type == Q_TABLE || type == Q_DEBUG) && nRows > 0){
 			int nr = bs_read_next(rs,buf,&last);
 			char *s;
 	
@@ -283,7 +283,7 @@ int receive( stream *rs, stream *out, int trace ){
 				free(s);
 			}
 		}
-		if (type == QRESULT) {
+		if (type == Q_RESULT) {
 			int i, id;
 			stream_readInt(rs, &id);
 			header_data(rs, out, nRows, trace);
@@ -291,9 +291,9 @@ int receive( stream *rs, stream *out, int trace ){
 			out->write(out, buf, i, 1);
 			out->flush(out);
 			return receive(rs, out, trace);
-		} else if (type == QDATA) {
+		} else if (type == Q_DATA) {
 			status = forward_data(out, trace);
-		} else if (type == QTABLE || type == QUPDATE){
+		} else if (type == Q_TABLE || type == Q_UPDATE){
 			if (nRows > 1)
 				printf("SQL  %d Rows affected\n", nRows );
 			else if (nRows == 1)
@@ -301,10 +301,10 @@ int receive( stream *rs, stream *out, int trace ){
 			else 
 				printf("SQL  no Rows affected\n" );
 		}
-	} else if (type != QEND){
+	} else if (type != Q_END){
 		printf("type %d, %d , %d\n", type, res, rs->errnr);
 	} else {
-		printf("type QEND, %d , %d\n", res, rs->errnr);
+		printf("type Q_END, %d , %d\n", res, rs->errnr);
 	}
 	fflush(stdout);
 	return status;
@@ -482,24 +482,24 @@ static int execute( stream *ws, stream *rs, const char *query)
 	ws->write(ws, (char*)query, strlen(query), 1);
 	ws->flush(ws);
 
-	if (!stream_readInt(rs, &type) || type == QEND) {
+	if (!stream_readInt(rs, &type) || type == Q_END) {
 		return -1;
 	}
 
 	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
 
-	if (type != QRESULT)
+	if (type != Q_RESULT)
 		return -1;
 
 	skip_block(rs);
 
-	if (!stream_readInt(rs, &type) || type == QEND) {
+	if (!stream_readInt(rs, &type) || type == Q_END) {
 		return -1;
 	}
 
 	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
 
-	if (type != QTABLE)
+	if (type != Q_TABLE)
 		return -1;
 
 	return status;
