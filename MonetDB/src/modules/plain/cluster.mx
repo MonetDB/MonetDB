@@ -55,7 +55,7 @@ IDXloop(b, p, q) {
         if (*p) BUNfastins(c, BUNh@1(b, (*p)), BUNt@2(b, (*p)));
 }
 @c
-#include <gdk.h>
+#include "cluster.proto.h"
 
 BAT *BATsort_insert(BAT *c, BAT *b) {
         BUN     *p;

@@ -37,9 +37,7 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-merge 0
-inserted 100000
-#> Mlog (15:05:41):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db scripts_gold_tst100 init.mil
+#> Mlog (12:07:47):	Mtimeout -timeout 210 Mserver -p -modulesilent -yaccsilent -d8 -db scripts_gold_tst100
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for mips-sgi-irix6.5/32bit.

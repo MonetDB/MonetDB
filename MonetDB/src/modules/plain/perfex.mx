@@ -44,6 +44,7 @@ typedef struct {
 } counter;
 @c
 #include "perfex.h"
+#include "perfex.proto.h"
 #if (defined(IRIX) && SIZEOF_LONG==8 && !defined (__GNUC__))
 #include <sys/procfs.h>
 #include <sys/hwperftypes.h>

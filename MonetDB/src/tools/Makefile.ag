@@ -21,21 +21,22 @@ lib_Mapi = {
 }
 
 bin_Mserver = {
-	SOURCES = Mserver.mx initmodules.mx
+	SOURCES = Mserver.mx initmodules.mx 
 	LIBS = ../monet/libmonet STATIC_MODS ../gdk/libbat $(MONET_LIBS)
 }
 
 bin_Mload = {
-	SOURCES = Mload.mx initmodules.mx
+	SOURCES = Mload.mx initmodules.mx 
 	LIBS = ../monet/libmonet STATIC_MODS ../gdk/libbat $(MONET_LIBS)
 }
 
 bin_Mdestroydb = bin_Mcreatedb
 BINS = {
-	SOURCES = Mcreatedb.mx Mdump.mx Mshutdown.mx \
-	          Mrecover.mx Mcgi.mx Mclient.mx 
+	SOURCES = Mcreatedb.mx Mdump.mx Mshutdown.mx Mrecover.mx \
+		  Mcgi.mx Mclient.mx Mapiclient.mx
 	LIBS = libMapi ../gdk/libbat $(MAPI_LIBS)
 	Mclient_LIBS = ../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS) 
+	Mapiclient_LIBS = libMapi ../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS) 
 }
 
 bin_SCRIPTS = monet-config

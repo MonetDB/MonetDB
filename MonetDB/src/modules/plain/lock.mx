@@ -52,9 +52,11 @@ as already present in the Monet system.
 @* Implementation
 @c
 #include <gdk.h>
-
+typedef ptr lock;
+typedef ptr sema;
 typedef ptr monet_lock;
 typedef ptr monet_sema;
+#include "lock.proto.h"
 
 int create_lock(monet_lock *l){
 	*l = MT_create_lock();

@@ -80,11 +80,13 @@ in the head of the resulting table; the tail contains the matching IDs.
 @* Implementation
 @c
 #include <math.h>
+#include <gdk.h>
 #include <unistd.h>
-#include "gdk.h"
 #include <io.h>
+#include <uchr.h>
 #include <bitvector.proto.h>
 #include <stats.proto.h>
+#include <qt.proto.h>
 
 #define HUEBINS		256
 #define GREYSAT		((256 * 20) / 100)

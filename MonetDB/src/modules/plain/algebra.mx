@@ -4,412 +4,12 @@
 @t BAT Algebra
 
 @* Introduction
+[THIS MODULE HAS BEEN PATCHED FOR V5, all Prolog code is removed as well]
 This modules contains the most common algebraic BAT manipulation 
 commands. We call them @#algebra@, because all operations take
 values as parameters, and produce new result values, but  
 @%do not modify their parameters@.
 @
-@
-(MIL is in fact not a clean algebra, but the commands that do modify
-their BAT parameters are isolated in the special 
-@[<a href="bat.html">BAT</a>@ module).
-@{
-@{
-@p
-:- op(900, xfy, ':=').
-:- op(900, fx, '#').
-:- op(600, xfy, div).
-:- arithmetic_function(max/2).
-:- arithmetic_function(min/2).
-:- arithmetic_function(div/2).
-:- arithmetic_function(abs/1).
-
-#(Format) 	:- writef('#'), writef(Format). 
-#(Format, Args) :- writef('#'), writef(Format, Args). 
-false 		:- fail. 
-div(A,B,C)	:- C is float(A)/max(1,B).
-abs(X,A)	:- (X < 0) -> A is -X; A is X.
-max(X,Y,M)	:- float(X) > float(Y), !, M is float(X).
-max(_,Y,M)	:- M is float(Y).
-min(X,Y,M)	:- float(X) < float(Y), !, M is float(X).
-min(_,Y,M)	:- M is float(Y).
-
-cut([],[_]) 	:- true.
-cut([X|R],[X|L]):- cut(R,L).
-@
-BAT reversal clauses.
-@p
-reversed(A)	:- atom(A), !, atom_chars(A,L), last(95,L).
-reversed(A)	:- A < 0.
-mirror(A,B)	:- atom(A), atom_chars(A,C), last(95,C), !, cut(L,C),
-			string_to_list(S,L), string_to_atom(S,B).
-mirror(A,B)	:- atom(A), atom_chars(A,N), !, append(N,[95],L), 
-			string_to_list(S,L), string_to_atom(S,B).
-mirror(A,B)	:- B is -A.
-reverse_bat(A,B):- mirror(B,A).
-@
-Dummy function invocations. Needed to acquint the static prolog compiler
-with these signatures of facts. Will later be filled with the BAT
-properties of our schema and intermediate BATs.
-@p
-type(0,'void')	:- true. /* head type of a BAT */
-size(0,0)	:- true. /* actual size of a BAT */
-sync(0,0)	:- true. /* head sync ID of a BAT */
-keyed(0)	:- true. /* head contains no duplicates */
-hashtab(0)	:- true. /* head column has a hash table */
-idx(0)		:- true. /* head column has a binary index tree */
-acc(0,'dummy')	:- true. /* head column has a persistent accelerator */
-ordered(0)	:- true. /* head column is stored in ascending value order */
-curoid(20174861):- true. /* current OID */
-curbat(1000)	:- true. /* current temporary BAT slot */
-subbat(0,0)	:- true. /* Left BAT is a [head,tail] slice from right BAT */
-sub(0,0)	:- true. /* Left head column is a subset of right head column */
-unique(0,0)	:- true. /* Number of unique values in head column */ 
-max(0,0)	:- true. /* Highest value in head column */
-min(0,0)	:- true. /* Lowest value in head column */
-domain(0,0)	:- true. /* Number of all possible head value instantiations */ 
-big(B)		:- size(B,S), S > 1000000. 
-small(B)	:- big(B), !, fail.
-small(_)	:- true.
-@
-Some simple property equivalence rules.
-@p
-distinct(B,D)	:- (keyed(B),size(B,D)); unique(B,D).
-setunique(B)    :- keyed(B).
-setunique(B)    :- reversed(B), mirror(B,B_r), setunique(B_r).
-size(B,S)       :- reversed(B), mirror(B,B_r), size(B_r, S).
-bname(B,N)	:- reversed(B), mirror(B,B_r), bname(B_r,N).
-subeq(A,B)	:- sync(A,X), sync(B,X).
-subeq(A,B)	:- sub(A,B).
-subcol(A,B)	:- allsub(R,A), !, memberchk(B,R).
-supercol(A,B)	:- subcol(B,A).
-
-allsub(R,X) 	:- allsub(R,[X],[X]).
-allsub(R,[],R) 	:- true.
-allsub(R,[B|T],L) :-
-	setof(X, subeq(B,X), N), subtract(N, L, D),
-	merge_set(D, L, A), merge_set(D, T, C), allsub(R, C, A).
-
-allsuper(R,X) 	:- allsuper(R,[X],[X]).
-allsuper(R,[],R):- true.
-allsuper(R,[B|T],L) :-
-	setof(X, subeq(X,B), N), subtract(N, L, D),
-	merge_set(D, L, A), merge_set(D, T, C), allsuper(R, C, A).
-
-@- Estimation Functions
-This simple cost model works with the uniform distribution assumption.
-It uses a number of formulas to compute estimations of operation
-result sizes. The most important ones are explained by the below
-GNUplot program.
-@gp
-# gnuplot file
-min(x,y,z) = (x<y)?(x<z?x:z):(y<z?y:z)
-max(x,y) = (x<y)?x:y
-
-# Selection With Putting Back:
-#
-# Given a domain of u unique elements, and a x independent selections
-# from it, we have an expected number of unique elements in the 
-# selection of: 	u*(1-((u-1)/u)**x)
- 
-select_est(u,x) =  u*(1-((u-1)/u)**x)
-
-# the reverse problem of estimating the original number 'u' of unique
-# elements from an observed 'select_est(_,x)' result is more 
-# difficult. We use the mean of 'x' and 'x*s/(s-x)' as estimation:
-# (here x denotes the number of observed classes in the selection, s
-#  the selection size. The result value is the original number of 
-#  unique elements).
-
-domain_est(s,x) = (x + x*s/(s-x))/2.
-
-# Selection Without Putting Back:
-#
-# Given a set of u*d elements (consisting of d elements for each 
-# class, and with u classes) and taking at random x elements from this
-# set, how many classes will be represented in the selection?.
-#
-# E[classes](d,u,x) = u - u * ((ud-d)!(ud-s)! / (ud-d-s)!(ud)!)
-
-b(u,d,x) = ((u*d)!) / (ceil(u*d-x)!)
-a(u,d,x) = ((u*d-d)!) /  (ceil(u*d-(d+x))!)
-fcn(u,d,x) = u - ((1.0*u)*a(u,d,x))/b(u,d,x)
-
-# This precise prediction is described by fcn(u,d,x).
-# We want to estimate this by an easy function; with very large
-# domains (as encountered in databases), the multiplications in
-# the faculties quickly get out of hand.
-# We estimate it given f=x/u*d the selectivity, with the
-# p-weighted formula (p = 1/d)
-#  			uf.p + u.(1-p)
-# constrained by two maxima:
-#  u : the selection cannot contain more classes than the original set
-#  x : the selection cannot contain more classes than elements
-# as embodied in remove_est(d,u,x)
-
-remove_est(u,d,x) = min(x,u,u*(x/(u*d)+d-1)/d)
-
-# Finally, with larger numers of doubles (say 8), the function will 
-# resemble independent selection (i.e. selection with putting back).
- 
-est(u,d,x) = (d<8)?remove_est(1.0*u,1.0*d,x):select_est(1.0*u,x)
-
-# demonstrate graphically
-set xrange[0:40]
-plot   fcn(40,1,x),fcn(20,1,x),fcn(10,2,x),fcn(10,4,x),fcn(5,4,x),fcn(5,8,x)
-replot est(40,1,x),est(20,1,x),est(10,2,x),est(10,4,x),est(5,4,x),est(5,8,x)
-@p
-select_est(E,S,D) :- P is float(D-1)/D, E is min(S, ceil(D*float(1 - P**S))).
-remove_est(E,B,F) :- distinct(B,U), size(B,S), D is float(S)/U, D < 8, !, 
-		     E is min(S, min(U, ceil(U*float(F+D-1.0)/D))).
-remove_est(E,B,F) :- distinct(B,U), size(B,S), N is S*F, select_est(E,N,U).
-
-domain_est(S,S,S) :- true, !. 
-domain_est(D,S,U) :- D is (U + U*S/(S-U))/2.
-@
-@}
-@- Column Domain ::= bool d(col) 
-@p
-d(R) := val(F)	:- retractall(domain(R,_)), assert(domain(R,F)).
-d(R) := d(B)	:- domain(B,Y), d(R) := val(Y).
-d(R) := both(B)	:- mirror(R,R_r), mirror(B,B_r), d(R) := d(B), d(R_r) := d(B_r).
-
-@- Column Keyed ::= bool k(col) 
-@p
-k(R) := k(B)    :- keyed(B), (keyed(R); assert(keyed(R))), !.
-k(_) := k(_)    :- true.
-k(R) := false   :- type(R,'void'); retract(keyed(R)).
-k(R) := true    :- assert(keyed(R)), !.
-k(R) := both(B)	:- mirror(B,B_r),mirror(R,R_r), k(R) := k(B), k(R_r) := k(B_r).
-
-@- Column Ordered ::= bool o(col) 
-@p
-o(R) := o(B)    :- ordered(B), !, (ordered(R); assert(ordered(R))).
-o(R) := o(_)    :- type(R,'void'); retractall(ordered(R)).
-o(R) := false   :- type(R,'void'); retractall(ordered(R)).
-o(R) := true    :- ordered(R); assert(ordered(R)).
-o(R) := both(B) :- mirror(B,B_r),mirror(R,R_r), o(R) := o(B), o(R_r) := o(B_r).
-
-@- BAT bun-wise unique ::= bool set(bat)
-@p
-set(R) := set(B):- setunique(B), (setunique(R); assert(setunique(R))).
-set(_) := set(_):- true.
-set(R) := false	:- reverse(R), !, mirror(R,R_r), set(R_r) := false. 
-set(R) := false	:- (setunique(R),retract(setunique(R))); true.
-set(_) := false	:- true.
-set(R) := true	:- reverse(R), !, mirror(R,R_r), set(R_r) := true. 
-set(R) := true	:- (setunique(R); assert(setunique(R))). 
-
-@- Number of Unique elts ::= int u(col) 
-@p
-max(B) := val(M):- retractall(max(B,_)), assert(max(B,M)).
-min(B) := val(M):- retractall(min(B,_)), assert(min(B,M)).
-u(R) := val(F,X,Y)
-		:- retractall(unique(R,_)), Z is ceil(F), assert(unique(R,Z)),
-			min(R) := val(X), max(R) := val(Y).
-u(R,F) := u(B)	:- min(B,Bl),max(B,Bh),remove_est(Ru,B,F),u(R) := val(Ru,Bl,Bh).
-u(R,F) := both(B):- mirror(B, B_r), mirror(R, R_r), 
-			u(R,F) := u(B), u(R_r,F) := u(B_r).
-                        
-@- Sync Identifier ::= oid s(col) 
-@p
-s(R) := val(S)	:- retractall(sync(R,_)), assert(sync(R,S)).
-s(R) := aggr(B) :- sync(B,S), N is (S*3)/2, s(R) := val(N).
-s(R) := both(B)	:- mirror(B,B_r), mirror(R,R_r), 
-			s(R) := s(B), s(R_r) := s(B_r), set(R) := set(B).
-s(R) := s(B)    :- sync(B,S), min(B,L), max(B,H), distinct(B,D), size(B,Y), 
-		      s(R) := val(S), 
-		      k(R) := k(B), 
-		      d(R) := d(B), 
-		      u(R) := val(D,L,H), 
-	  	      o(R) := o(B), newsize(R, Y).
-@+ Atom Interface
-@p
-gdk_prop(atm,equal,bit,chr)	:- true.
-gdk_prop(atm,equal,ptr,int)	:- true.
-gdk_prop(atm,equal,oid,int)	:- true.
-gdk_prop(atm,equal,void,int)	:- true.
-gdk_prop(atm,equal,nil,int)	:- true.
-gdk_prop(atm,fixedsize,T,1)	:- (T=chr;T=bit).
-gdk_prop(atm,fixedsize,T,2)	:- (T=sht).
-gdk_prop(atm,fixedsize,T,4)	:- (T=int;T=flt;T=str).
-gdk_prop(atm,fixedsize,T,8)	:- (T=dbl;T=lng).
-gdk_prop(atm,varsize,str,6)	:- true.
-gdk_prop(atm,varsize,_,0)	:- true.
-gdk_prop(atm,align,T,X)		:- (T=chr;T=sht;T=int;T=lng;T=flt;T=dbl;T=str), 
-				atm_prop(fixedsize,T,X).
-gdk_prop(atm,toint,T,X,X)	:- (T=chr;T=sht;T=int;T=lng;T=flt;T=dbl).
-
-@- Extension example 'str'
-String ranges can be compared to each other in terms of size and 
-overlap by mapping strings to integers. This is simply done
-my multiplying the first 4 characters to an integer (base 96).
-@p
-mult_prefix(R,I,_,0)    :- R is I.
-mult_prefix(R,I,[],X)   :- Y is X-1, mult_prefix(R,(96*I),[],Y).
-mult_prefix(R,I,[C|L],X):- Y is X-1, mult_prefix(R,(96*I+mod(C-32,96)),L,Y).
-gdk_prop(atm,toint,str,X,Y) :- atom_chars(X,L), mult_prefix(Y,0,L,4). 
-
-@- Extension example 'date'.
-A date is a Monet extension atom. In this prolog program they are represented 
-as 3-ary integer lists of format [Year,Month,Day]. Date is implemented there 
-as a derivation from 'int'. This is reflected in the first rule. The second 
-rule specifies how a date can be mapped to an integer. This is done by 
-computing the approximate number of days since the year 0.
-@p
-gdk_prop(atm,equal,date,int) :- true.
-gdk_prop(atm,toint,date,[Y,M,D],I) :- I is (Y*12+M)*31+D.
-
-@+ Accelerator Interface
-@p
-gdk(acc,size,hash,S,X)	:- X is ceil(1.1*S).
-gdk(acc,size,idx,S,S)	:- true.
-
-@{
-acc_prop(A,T,X)	:- gdk_prop(acc,A,T,X).
-atm_prop(A,T,X,Y):- gdk_prop(atm,A,T,X,Y).
-atm_prop(A,T,X)	:- gdk_prop(atm,A,T,X).
-atm_prop(A,T,X,Y):- !, gdk_prop(atm,equal,T,R), atm_prop(A,R,X,Y).
-atm_prop(A,T,X)	:- !, gdk_prop(atm,equal,T,R), atm_prop(A,R,X).
-bun_sz(H,T,X)	:- atm_prop(align,H, Ah), atm_prop(align,T,At), 
-		  	atm_prop(fixedsize,H,Sh), atm_prop(fixedsize,T,St), 
-			A is max(Ah,At),
-		   	X is ceil(float(Sh)/A)*A + ceil(float(St)/A)*A. 
-bat_sz(H,T,S,X) :- bun_sz(H,T,B), atm_prop(varsize,H,Hs), 
-			atm_prop(varsize,T,Ts), X is 1024 + S*(B+Hs+Ts). 
-acc_sz(B,A,T)	:- (acc(B,A)-> acc_prop(size,A,X); A='nil'),
-		   ((A='hash') -> Y=0; (bathash(B),acc_prop(size,hash,Y))),
-		   (idx(B) -> acc_prop(size,idx,Z); Z=0), T is X+Y+Z.
-batsize(B,S)	:- mirror(B,B_r), type(B,H), type(B_r,T), size(B,L),
-		   bat_sz(H,T,L,X), acc_sz(B,S,Y), acc_sz(B_r,S,Z), S is X+Y+Z. 
-@
-BAT functions.
-@p
-newsync(R)      :- !, (curoid(O) -> retractall(curoid(_)); O = 0),
-                        succ(O,S), assert(curoid(S)), s(R) := val(O).
-newbat(R)	:- !, (curbat(R) -> retractall(curbat(_)); R = 1000),
-                        succ(R,N), assert(curbat(N)).
-newsize(R,S)	:- reversed(R), !, mirror(R, R_r), newsize(R_r,S).	
-newsize(R,S)	:- size(R,X), !, retract(size(R,X)), assert(size(R,S)).
-newsize(R,S)	:- assert(size(R,S)).
-
-new(C,'void',T,S,Dh,Dt,Kh,Kt,Oh,Ot) :- !,
-		create(C,'oid',T,S,Dh,Dt,Kh,Kt,Oh,Ot).
-new(C,H,'void',S,Dh,Dt,Kh,Kt,Oh,Ot) :- !, 
-		create(C,H,'oid',S,Dh,Dt,Kh,Kt,Oh,Ot).
-new(C,H,T,S,Dh,Dt,Kh,Kt,Oh,Ot) :- !,
-		create(C,H,T,S,Dh,Dt,Kh,Kt,Oh,Ot). 
-
-create(C,H,T,S,Dh,Dt,Kh,Kt,Oh,Ot) 
-		:- !, M is ceil(S), Mh is ceil(Dh), Mt is ceil(Dt), 
-			mirror(C, Cr), newsize(C,M),
-			newsync(C), newsync(Cr),
-			u(C) := val(Mh,0,Mh), assert(type(C,H)), 
-			u(Cr) := val(Mt,0,Mt), assert(type(Cr,T)),
-			((Kh, assert(keyed(C))); true),
-			((Kt, assert(keyed(Cr))); true),
-			((Oh, assert(ordered(C))); true),
-			((Ot, assert(ordered(Cr))); true).
-
-tmpbat(R,H,T,S)	:- !, newbat(R), Dt is S/10, 
-			new(R, H, T, S, S, Dt, false, false, false, false),
-			prcost('new', R, H, T, S).
- 
-selbat(R,B,P)   :- !, mirror(B,B_r), size(B,S), F is min(1,P), N is S*F, 
-                        type(B,H), type(B_r,T),
-                        tmpbat(R, H, T, N), mirror(R,R_r),
-                        o(R) := both(B), k(R) := both(B), d(R) := both(B),
-                        set(R) := set(B), u(R,F) := both(B),
-                        assert(sub(R,B)), assert(sub(R_r,B_r)),
-                        (setunique(B) -> 
-			   (assert(subbat(R,B)),assert(subbat(R_r,B_r))); true).
-
-lst([T],T,[],_) :- true.
-lst([T|R],T,L,0):- lst(R,[],L,4).
-lst(R,T,[X|L],Y):- Z is Y-1, lst(R,[X|T],L,Z).
-lst(L)		:- lst(N,[],L,4), forall(member(X,N), (writef('\t'), 
-		     forall(member(Y,X),writebat(Y)), writef('\n#'))).
-
-writebat(B)	:- reversed(B), bname(B,N), !, writef('-%15l',[N]).
-writebat(B)	:- bname(B,N), !, writef('%16l',[N]).
-writebat(B)	:- reversed(B), mirror(B,B_r),!, writef('-tmp_%11l',[B_r]).
-writebat(B)	:- writef('tmp_%12l', [B]).
- 
-writecol(_,nil,_,_) :- true.
-writecol(B,_,S,C) :- writef(' %w:',[S]), writecol(B,C).
-writecol(B,C)	:- domain(B,D), sync(B,X), min(B,L), max(B,H),
-		       ((keyed(B), writef(' KEY'))  ; true),
-                       ((ordered(B), writef(' SORTED'))  ; true),
-                       ((hashtab(B), writef(' HASH'))  ; true),
-                           ((idx(B), writef(' IDX'))  ; true),
-                         ((acc(B,A), writef(' ACC=%t', [A]))  ; true),
-		    ((distinct(B,Z), writef(' UNIQUE=%t',[Z]))  ; true),
-		    writef(' DOMAIN=%t SYNC=%t MIN=%t MAX=%t\n#', [D,X,L,H]), 
-		    allsub(Le,B), allsuper(Ge,B), intersection(Le,Ge,E), 
-		    subtract(E,[B],Eq), subtract(Le,E,Lt), 
-		    subtract(Ge,E,G), subtract(G,C,Gt), 
- 		    	(Lt=[]; (writef('    <'), lst(Lt))), 
- 		    	(Eq=[]; (writef('    ='), lst(Eq))), 
- 		    	(Gt=[]; (writef('    >'), lst(Gt))). 
-
-print_bat(B)     :-  mirror(B,B_r), type(B, H), type(B_r, T), 
-		    writef('####### '), writebat(B), writef('\n#'),
-		    (setof(N,subbat(N,B),X); X=[]),
-		    findall(M,(member(R,X),mirror(R,M)),Y), union(X,Y,Z),
-		    writecol(B,H,'head',Z), writecol(B_r,T,'tail',Z),
-		             (X=[]; (writef(' CHILD'), lst(X)) ; true), 
-		    writef('## BAT[%t,%t] : ', [H,T]), 
-                        ((size(B,S), writef(' SIZE=%t',[S])); true),
-                     ((setunique(B), writef(' SET'))  ; true), 
-                      ((subbat(B,F), writef(' FATHER='), writebat(F)); true), 
-		    writef('\n').
-@
-Internal commands.
-@p
-insertbat(Res, B) :- !, mirror(Res,Res_r), mirror(B,B_r), 
-	domain(Res, Rdh), domain(Res_r, Rdt), 
-	domain(B, Bdh), domain(B_r, Bdt), 
-	distinct(Res, Uh), distinct(Res_r,Ut), 
-	size(Res, Rs), size(B,Rb), S is Rs+Rb,
-	domain_est(X,Rs,Uh), select_est(Eh,S,X),
-	domain_est(Y,Rs,Ut), select_est(Et,S,Y), 
-	Dh is max(Rdh, max(Bdh, max(S, max(Rdh, Bdh)))),
-	Dt is max(Rdt, max(Bdt, max(S, max(Rdt, Bdt)))),
-        newsync(B), newsync(B_r), newsize(Res,S),
-	min(B,Bhl), min(Res,Rhl), min(B_r,Btl), min(Res_r,Rtl), 
-	max(B,Bhh), max(Res,Rhh), max(B_r,Bth), max(Res_r,Rth), 
-	Lh is min(Bhl, Rhl), Lt is min(Btl, Rtl),
-	Hh is max(Bhh, Rhh), Ht is max(Bth, Rth),
-  	  u(Res) := val(Eh,Lh,Hh), 
-        u(Res_r) := val(Et,Lt,Ht), 
-	  d(Res) := val(Dh), 
-	d(Res_r) := val(Dt), 
-	  o(Res) := false, 
-        o(Res_r) := false,
-	retractall(sub(B,_)), retractall(subbat(B,_)),
-        #('%t.insertbat(%t)\n', [Res,B]), prcost('insertbat', Res, B).
-
-combine(Res,Left,Right) :- mirror(Right,Right_r), 
-	size(Left, S), joinbat(Res, Left, Right, S),
-	s(Res_r) := s(Right_r), 
-          s(Res) := s(Left), 
-        o(Res_r) := o(Right_r),
-        #('%t := [%t~%t]\n', [Res,Left,Right]),
-	prcost('combine', Res, Left,Right).
-
-hash_check(B)	:- hashtab(B), !.
-hash_check(B)	:- hash_build(B).
-hash_build(B)	:- !,
-	mirror(B,B_r), #('%t.accbuild(hash))\n',[B_r]),
-        assert(hashtab(B)), prcost('hashbuild', B).
- 
-idx_check(B)	:- idx(B), !.
-idx_check(B)	:- idx_build(B).
-idx_build(B)	:- !,
-	mirror(B,B_r), #('%t.accbuild(index))\n',[B_r]),
-        assert(idx(B)), prcost('idxbuild', B).
-@}
-@}
 @* Module Definition 
 @m
 .MODULE algebra;
@@ -441,31 +41,6 @@ that return a BAT.
 
 .COMMAND fetch(BAT[any,any::1] b, oid x) : any::1 = CMDfetchoid; 
 "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
-@p
-@{
-position_batany(B, I) :-
-        #('%d.position(%t)\n', [B,I]), prcost('position', B, I).
-exist_batany(B, V) :- find_batany(B,V).
-
-find_batany(B, V) :-
-	(type(B,'void') -> fetch_batint(B,V);
-	     hashtab(B) -> hash_find(B,V);
-	     ordered(B) -> sort_find(B,V);
-	         idx(B) -> idx_find(B,V);
-          (hash_check(B), hashfind(B,V))). 
-
-/* specific find methods */
-sort_find(B,V) :- !,
-	#('%d.sortfind(%t)\n', [B,V]), prcost('sortfind', B, V).
-idx_find(B,V) :- !,
-	#('%d.idxfind(%t)\n', [B,V]), prcost('idxfind', B, V).
-hash_find(B,V) :- !,
-	#('%d.hashfind(%t)\n', [B,V]), prcost('hashfind', B, V).
-fetch_batint(B, H) :-
-        #('%d.fetch(%t)\n', [B,H]), prcost('fetch', B, H).
-fetch_batoid(B, H) :-
-        #('%d.fetch(%t)\n', [B,H]), prcost('fetch', B, H).
-@}
 @+ BAT Selections
 @- positional select
 @m
@@ -476,17 +51,6 @@ fetch_batoid(B, H) :-
 .COMMAND fetch(BAT[any::1,any::2] b, BAT[oid, any] s) : 
 				BAT[any::1,any::2] = CMDfetchbat; 
 "Returns a positional selection of b by the oid head values of s"
-@p
-@{
-fetch_batbat(Res, B, S) :- 
-	mirror(B,B_r), size(S, X), size(B, Y),
-	F is float(X) div float(Y), selbat(Res, B, F), 
-        #('%t.batloop() %t.insert(%t.fetch($h))\n', [S,Res,B]), 
-      	prcost('bfetch', Res, B, S),
-	mirror(Res,Res_r), s(Res) := s(S), 
-	(ordered(S) -> o(Res_r) := o(B_r); o(Res_r) := false).
-@}
-
 @- range select
 @m
 .COMMAND select ( BAT[any::1,any::2] b, any::2 low, any::2 high) : 
@@ -502,232 +66,61 @@ NOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)
 NOTE 2: as the 'nil' element has no clear place in the ordered domain 
         of values, tuples with 'nil values are NEVER returned by the 
         range select."
-@p
-@{
-select_batanyany(Res, B, Low, Low) :- select_batany(Res, B, Low). 
-
-select_batanyany(Res, B, Low, High) :- 
-	mirror(B,B_r), size(B_r, S), 
-	rng(R,B_r,Low,High), F is float(R) div S, 
-	selbat(Res, B, F), mirror(Res,Res_r), 
-       	u(Res_r) := val(R,Low,High),
-       	(ordered(B_r)	-> sort_select(Res, B, Low, High);
-       	idx(B_r)	->  idx_select(Res, B, Low, High);
-                           scan_select(Res, B, Low, High)).
-
-/* specific select methods */ 
-sort_select(Res, B, Low, High):- !, mirror(B,B_r),
-        #('%t.binsearch(%t,%t).loop %t.insert($t,$h)\n',
-                [B_r,Low,High,Res]), prcost('sortselect', Res, B, Low, High).
- 
-idx_select(Res, B, Low, High):- !, mirror(B,B_r), mirror(Res,Res_r), 
-	  o(Res) := true, 
-        o(Res_r) := false,
-        #('idx(%t).idxloop(%t,%t).loop %t.insert($t,$h)\n',
-                [B_r,Low,High,Res]), prcost('idxselect', Res, B, Low, High).
- 
-scan_select(Res, B, Low, High):- !,
-        #('%t.loop() if (%t <= $t <= %t) %t.insert($t,$h)\n',
-                [B,Low,High,Res]), prcost('scanselect', Res, B, Low, High).
-
-/* rng computes expected number of unique tail elements in a range */
-rng(R,B,nil,nil):- max(B,Max), min(B,Min), rng(R,B,Min,Max).
-rng(R,B,nil,Max):- min(B,Min), rng(R,B,Min,Max).
-rng(R,B,Min,nil):- max(B,Max), rng(R,B,Min,Max).
-rng(R,B,Min,Max):- max(B,Bh), min(B,Bl), type(B,T), 
-			atm_prop(toint,T,Min,Rl), atm_prop(toint,T,Bl,Bmin),
-			atm_prop(toint,T,Max,Rh), atm_prop(toint,T,Bh,Bmax),
-			rng_est(R, B, Rl,Rh, Bmin, Bmax).
-
-/* take good care of extreme cases */
-rng_est(R,B,V,V,L,H) :- V >= L, V =< H, distinct(B,D), size(B,S), R is S/D.
-rng_est(0,_,V,V,_,_) :- true.
-rng_est(D,B,L,H,V,V) :- V >= L, V =< H, distinct(B,D), !.
-rng_est(0,_,_,_,V,V) :- true.
-rng_est(R,B,L,H,V,W) :- distinct(B,D), 
-			Rh is max(min(H,W),V), Rl is min(max(L,V),W), 
-			R is ceil(float(D * abs(Rh-Rl)) / abs(W-V)).
-@}
 @- unary range select
 @m
 .COMMAND uselect ( BAT[any::1,any::2] b, any::2 low, any::2 high) : 
 				BAT[any::1, void] = CMDuselect;
 "Select on tail, returning only the head values. 
  SEE ALSO: select(bat,low,high)."
-@p
-@{
-uselect_batanyany(Res, B, Low, High) :- !,
-	select_batanyany(Res, B, Low, High), !, mirror(Res,Res_r), 
-		retractall(type(Res_r,_)), assert(type(Res_r,'nil')),
-		retractall(sub(Res_r,_)), retractall(subset(Res,B)).
-@}
 @- value select
 @m
 .COMMAND select ( BAT[any::1,any::2] b, any::2 value) :
                                 BAT[any::1, any::2] = CMDselect1; 
 "Select all BUNs of a BAT with a certain tail value. Selection
  on NIL is also possible (it should be properly casted, e.g.: int(nil))."
-@p
-@{
-select_batany(Res, B, Value) :- !, mirror(B,B_r), size(B_r,S),
-	rng(R,B_r,Value,Value), F is float(R) div S,
-        selbat(Res, B, F), mirror(Res,Res_r), 
-        u(Res_r) := val(R,Value,Value), 
-        (hashtab(B_r)	-> hash_select(Res, B, Value);
-        ordered(B_r)	-> sort_select(Res, B, Value, Value);
-        idx(B_r)	->  idx_select(Res, B, Value, Value);
-	big(B)		-> scan_select(Res, B, Value, Value);
-	                   hash_select(Res, B, Value)).
-
-hash_select(Res, B, Value) :- !,
-        mirror(B,B_r), hash_check(B_r), 
-        #('%t.hashloop(%t) %t.insert($t,%t)\n',[B_r,Value,Res,Value]),
-        mirror(Res,Res_r), o(Res) := false, o(Res_r) := false,
-        prcost('hashselect', Res, B, Value).
-@}
 @- unary value select
 @m
 .COMMAND uselect ( BAT[any::1,any::2] b, any::2 value) : 
 				BAT[any::1, void] = CMDuselect1; 
 "Value select, but returning only the head values.
  SEE ALSO: select(bat,val)"
-@p
-@{
-uselect_batany(Res, B, Value) :- !,
-        select_batany(Res, B, Value), !, mirror(Res,Res_r), 
-                retractall(type(Res_r,_)), assert(type(Res_r,'nil')),
-                retractall(sub(Res_r,_)), retractall(subbat(Res,_)).
-@}
 @m
 .COMMAND fragment ( BAT[any::1,any::2] b, 
 	any::1 hlow, any::1 hhigh,
 	any::2 tlow, any::2 thigh) : 
 				BAT[any::1,any::2] = CMDfragment; 
 "Select both on head and tail range."
-@p
-@{
-fragment_batanyanyanyany(Res, B, Hl, Hh, Tl, Th) :- !,
-	mirror(B,B_r),
-        ((Hl=nil, Hh=nil) -> select_batanyany(Res, B_r, Tl, Th);
-         (Tl=nil, Th=nil) -> (select_batanyany(Res_r, B, Hl, Hh), 
-                              mirror(Res_r, Res));
-	 (ordered(B); idx(B)) -> frag(Res, B, Hl, Hh, Tl, Th);
-	 (ordered(B_r); idx(B_r)) -> (frag(Res_r, B_r, Tl, Th, Hl, Hh), 
-				      mirror(Res_r, Res));
-	 frag(Res, B, Hl, Hh, Tl, Th)). 
-
-/* auxiliaries */	
-frag(Res, B, Hl, Hh, Tl, Th) :- mirror(B, B_r), 
-	size(B, Sh), rng(Rh,B,Hl,Hh), 
-	size(B_r, St), rng(Rt,B_r,Tl,Th), 
-	F is (Rh div Sh) * (Rt div St),
-	selbat(Res, B, F), mirror(Res,Res_r), 
-	  u(Res) := val(Rh,Hl,Hh), 
-	u(Res_r) := val(Rt,Tl,Th),
-	(ordered(B) -> sort_frag(Res, B, Hl, Hh, Tl, Th);
-             idx(B) ->  idx_frag(Res, B, Hl, Hh, Tl, Th);
-                       scan_frag(Res, B, Hl, Hh, Tl, Th)).
- 
-/* specific fragmentation algoritms */ 
-sort_frag(Res, B, Hl, Hh, Tl, Th) :- !,
-        #('%t.binsearch(%t,%t).loop()\n', [B,Hl,Hh]),
-        #('     if (in($h,[%t..%t])) $t.insert($h,$t)\n',[Tl,Th,Res]),
-        prcost('sortfrag', Res, B, Hl, Hh, Tl, Th).
- 
-idx_frag(Res, B, Hl, Hh, Tl, Th) :- !,
-        mirror(Res,Res_r), o(Res) := true, o(Res_r) := false,
-        #('%t.idxsearch(%t,%t).loop()\n', [B,Hl,Hh]),
-        #('     if (in($h,[%t..%t])) $t.insert($h,$t)\n',[Tl,Th,Res]),
-        prcost('idxfrag', Res, B, Hl, Hh, Tl, Th).
- 
-scan_frag(Res, B, Hl, Hh, Tl, Th) :- !,
-        #('%t.loop() if (in[%t..%t] and in ($t,[%t..%t]))\n', [B,Hl,Hh,Tl,Th]),
-        #('     %t.insert($h,$t)\n', [Res]),
-        prcost('scanfrag', Res, B, Hl, Hh, Tl, Th).
-@}
 @- random selection 
 @m
 .COMMAND sample ( BAT[any::1,any::2] b, int num) : 
 				BAT[any::1,any::2] = CMDsample; 
 "Produce a random selection of size 'num' from the input BAT."
-@{
-@p
-sample_batint(Res, B, Num) :- size(B, S), 
-	F is float(Num) div S, 
-	selbat(Res, B, F), mirror(Res,Res_r), 
-	  o(Res) := false, 
-	o(Res_r) := false,
-        #('for(i=0; i<%t; i++)\n', [Num]),
-        #('     %t.insert(%t.fetch(rnd()\%%t.count)\n', [B, Res, B]),
-        prcost('sample', Res, B, Num).
-@}
 @- substring select 
 @m
 .COMMAND like ( BAT[any::1, str] b, str substr ) :  
 				BAT[any::1, str] = CMDlike; 
 "Selects all elements from the input BAT that have 'substr'
 as substring in the tail."
-@p
-@{
-like_batstr(Res, B, Substr) :- !,
-        distinct(B,D), size(B, S), N is float(S)/(D*100),
-        selbat(Res, B, N),
-        #('%t.loop() if (strlike($t,%t)) %t.insert($h,$t)\n',[B,Substr,Res]),
-        prcost('like',Res, B, Substr).
-@}
 @- positional select 
 @m
 .COMMAND slice(BAT[any::1,any::2], int x, int y) : 
 				BAT[any::1,any::2] =CMDslice;
 "Return the slice with the BUNs at position x till y."
-@p
-@{
-slice_batintint(Res, B, X, Y) :-
-        size(B, S), F is float(Y-X) div S, 
-        selbat(Res, B, F),
-        #('%t.loop(%t,%t) %t.insert($h,$t)\n',[B,X,Y,Res]), 
-	prcost('slice',Res,B,X,Y).
-@}
 @+ BAT copying
 @m
 .COMMAND copy ( BAT[any::1,any::2] b) : 
 				BAT[any::1, any::2] = CMDcopy; 
 "Returns physical copy of a BAT."
-@p
-@{
-copy_bat(Res, B) :- !,
-        selbat(Res, B, 1),
-        s(Res) := both(B),
-        #('%t.loop() %t.insert($h,$t)\n', [B,Res]), prcost('copy', Res, B).
-@}
 @- sorted copy
 @m
 .COMMAND sort ( BAT[any::1,any::2] b) : 
 				BAT[any::1, any::2] = CMDsort; 
 "Returns a sorted copy of a BAT."
-@p
-@{
-sort_bat(Res,B) :- ordered(B), !, copy_bat(Res, B).
-sort_bat(Res,B) :- !, idx_check(B),
-        selbat(Res, B, 1), mirror(Res,Res_r), 
-	  o(Res) := true, 
-	o(Res_r) := false,
-        #('%t.idxloop() %t.insert($h,$t)\n', [B,Res]), prcost('bsort', Res, B).
-@}
 @- vertical projection
 @m
 .COMMAND project ( BAT[any::1,any] b, any::2 val) : 
 				BAT[any::1, any::2] = CMDproject; 
 "Fill the tail column with a constant value."
-@{
-@p
-project_bat(Res, B) :- !,
-        size(B,S), type(B,H), 
-        tmpbat(Res, H, 'nil', S),
-        s(Res) := both(B),
-        #('%t.loop() %t.insert($h,nil)\n', [B,Res]),
-        prcost('project', Res, B).
-@}
 @+ Sets
 @T
 Sets in Monet can be viewed in two ways:
@@ -783,64 +176,12 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 				BAT[any::1,any::2] = CMDsunique; 
 "Select unique tuples from the input BAT. Double elimination is done over 
  BUNs as a whole (head and tail). Result is a BAT with real set() semantics."
-@p
-@{
-sunique_bat(Res, B) :- setunique(B), !, copy_bat(Res,B).
-sunique_bat(Res, B) :- !, size(B,S), 
-        sunique_estimate(E, B), F is float(E) div S,
-        selbat(res, B, F),
-	u(Res,1) := both(B), 
-        set(Res) := true;
-        (ordered(B) -> merge_sunique(Res, B);   
-                        hash_sunique(Res, B)).
-
-/* axuliliaries */ 
-sunique_estimate(E, B) :- 
-        setunique(B), !, size(B,E).
-sunique_estimate(E, B) :- !,
-        mirror(B,B_r), size(B,S), distinct(B,Dh), distinct(B_r,Dt),
-	select_est(S, S, Dh*Dt), E is max(Dh, max(Dt, E)).
- 
-/* specific tuple-uniqueness operators */ 
-merge_sunique(Res, B) :- !,
-        #('%t.loop() t:=$t; h:=$h', [B]),
-        #('    %t.loop(while($h=h)) if (t=$t) miss;\n', [B]),
-        #('    if (!miss) %s.insert(h,t);\n', [Res]),
-        prcost('mergesunique', Res, B).
- 
-hash_sunique(Res, B) :- !, assert(hashtab(Res)), 
-        #('%t.loop()\n', [B]),
-        #('    if (!%t.hashlookup($h,$t))\n', [Res]),
-        #('        %t.insert($h,$t)\n', [Res]),
-        prcost('hashsunique', Res, B).
-@}
 @- head-unique elements
 @m
 .COMMAND kunique ( BAT[any::1,any::2] b ) : 
 				BAT[any::1,any::2] = CMDkunique; 
 "Select unique tuples from the input BAT. Double elimination is done
  only looking at the head column. Result is a BAT with hkeyed() == true."
-@p
-@{
-kunique_bat(Res,B) :- keyed(B), !, copy_bat(Res,B).
-kunique_bat(Res,B) :- !, size(B,S), 
-        distinct(B,D), F is float(S) div D,
-        selbat(Res, B, F),
-	u(Res,1) := u(B), 
-	  k(Res) := true,
-          s(Res) := aggr(B),
-        (ordered(B) -> merge_kunique(Res, B);
-	                hash_kunique(Res, B)).
- 
-/* specific unique operators */ 
-merge_kunique(Res, B) :- !,
-        #('%t.loop if(%t.next != $h) %t.insert($h,$t)\n', [B,B,Res]),
-        prcost('mergekunique', Res, B).
- 
-hash_kunique(Res, B) :- !, assert(hashtab(Res)), 
-        #('%t.loop if(!%t.hashlookup($h)) %t.insert($h,$t)\n', [B,Res,Res]),
-        prcost('hashkunique', Res, B).
-@}
 @- bun-intersecting elements
 @m
 .COMMAND sintersect ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) : 
@@ -849,31 +190,6 @@ hash_kunique(Res, B) :- !, assert(hashtab(Res)),
  Results in all BUNs of 'left' that are also in 'right'. Does *not* do 
  double-elimination over the 'left' BUNs, If you want this, use:
  'sintersect(left.sunique,right.sunique)' or: 'sintersect(left,right).sunique'."
-
-@p
-@{
-sintersect_batbat(Res, Left, Right) :- !, size(Left, Ls), 
-	sunique_estimate(Re, Right), sunique_estimate(Le, Left),
-        domain_est(D, Ls, Le), F is float(Re) div D,
-        selbat(Res, Left, F),
-        ((ordered(Left), ordered(Right)) -> merge_sintersect(Res, Left, Right);
-	                                     hash_sintersect(Res, Left, Right)).
- 
-/* specific tuple-intersection operators */ 
-merge_sintersect(Res, Left, Right) :- !,
-        #('%t.loop() if (%t.mergefind($h,$t)) %t.insert($h,$t)\n',
-                [Left,Right,Res]),
-        prcost('hashsintersect', Res, Left, Right),
-        ((subbat(Right, Left), keyed(Left)) -> sync(Res) := sync(Left);
-                        subbat(Left, Right) -> sync(Res) := sync(Left); true).
- 
-hash_sintersect(Res, Left, Right) :- !,
-        hash_check(Right), 
-        #('%t.loop() if (%t.hashlookup($h,$t)) %t.insert($h,$t)\n',
-                [Left,Right,Res]),
-        prcost('mergesintersect', Res, Left, Right),
-        (subbat(Left, Right) -> sync(Res) := sync(Left); true).
-@}
 @- head-intersecting elements (a.k.a. semijoin)
 @m
 .COMMAND kintersect ( BAT[any::1,any::2] left, BAT[any::1,any] right) :
@@ -882,61 +198,6 @@ hash_sintersect(Res, Left, Right) :- !,
  Results in all BUNs of 'left' that are also in 'right'. Does *not* do 
  double-elimination over the 'left' BUNs, If you want this, use:
  'kintersect(left.kunique,right.kunique)' or: 'kintersect(left,right).kunique'."
-@p
-@{
-kintersect_batbat(Res, Left, Right) :- 
-	type(Left,'void'), fetch_batbat(Res, Left, Right).
-kintersect_batbat(Res, Left, Right) :- 
-        sync(Left, S), sync(Right, S), !,
-	copy_bat(Res,Left,Right).
-kintersect_batbat(Res, Left, Right) :- !,
-        size(Left, Ls), size(Right, Rs),
-        kintersect_estimate(F, Left, Right),
-        selbat(Res, Left, F), X is Rs/log(Rs), Y is Ls/log(Ls), !,
-        ((keyed(Left), keyed(Right), ordered(Left), Rs<Y) -> 
-			binsrch_kintersect(Res,Right,Left,true);
-            ((ordered(Right),Ls<X) -> 
-			binsrch_kintersect(Res,Left,Right,false);
-		((ordered(Left),ordered(Right)) -> 
-			merge_kintersect(Res,Left,Right);
-	 	    (((big(Right),small(Left)); 
-	              (keyed(Right),(Rs>Ls; hashtab(Left)))) -> 
-			rev_kintersect(Res,Left,Right);
-                        hash_kintersect(Res,Left,Right))))).
-
-/* auxiliaries for kintersect */
-kintersect_estimate(1.0, Left, Right) :- 
-	subcol(Left,Right), !.
-kintersect_estimate(F, Left, Right) :- 
-	subcol(Right,Left), !, 
-	distinct(Left,Ul), distinct(Right,Ur), F is min(1,float(Ur)/max(1,Ul)).
-kintersect_estimate(F, _, Right) :- 
-        distinct(Right,K), domain(Right, E),
-        F is min(1, float(K)/max(1,E)).
-
-/* specific intersection operators */ 
-rev_kintersect(Res, Left, Right) :- !,
-        #('%t.loop() if (%t.first($h))\n', [Right,Right]),
-        #('    %t.hashloop($h) %t.insert($h,$t)\n', [Left,Res]),
-        prcost('revkintersect',Res, Left, Right).
- 
-binsrch_kintersect(Res, Left, Right, Rev) :- !,
-        #('%t.loop if (%t.sort_find($h)) %t.insert($h,$t)\n', [Left,Right,Res]),
-        prcost('binsrchkintersect', Res, Left, Right),
-	(Rev -> (subcol(Left, Right) -> s(Res) := s(Left); true);
-	        (subcol(Left, Right) -> s(Res) := both(Left); true)).
- 
-merge_kintersect(Res, Left, Right) :- !,
-        #('%t.loop if (%t.mergefind($h)) %t.insert($h,$t)\n', [Left,Right,Res]),
-        prcost('mergekintersect', Res, Left, Right),
-	(subcol(Left, Right)               -> s(Res) := both(Left); 
-        (keyed(Left), subcol(Right, Left)) -> s(Res) := s(Right); true).
- 
-hash_kintersect(Res, Left, Right) :- !, hash_check(Right),
-        #('%t.loop if (%t.hashlookup($h)) %t.insert($h,$t)\n',[Left,Right,Res]),
-        prcost('hashkintersect',Res, Left, Right),
-                     (subcol(Left, Right) -> s(Res) := both(Left); true).
-@}
 @- bun-differing elements
 @m
 .COMMAND sdiff ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) : 
@@ -945,26 +206,6 @@ hash_kintersect(Res, Left, Right) :- !, hash_check(Right),
  Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
  'sdiff(left.sunique,right.sunique)' or: 'sdiff(left,right).sunique'."
-
-@{
-@p
-sdiff_batbat(Res, Left, Right) :- !, size(Left, Ls), 
-	sunique_estimate(Re, Right), sunique_estimate(Le, Left),
-        domain_est(D, Ls, Le), 
-        F is max(0, 1-(float(Re) div D)),
-        selbat(Res, Left, F),
-        ((ordered(Left), ordered(Right)) -> merge_sdiff(Res, Left, Right);
-	                                     hash_sdiff(Res, Left, Right)).
- 
-/* specific tuple-difference operators */ 
-merge_sdiff(Res, Left, Right) :- !,
-        #('%t.loop() if (!%t.mergefind($h,$t)) %t.insert($h,$t)\n',
-                [Left,Right,Res]), prcost('mergesdiff', Res, Left, Right).
- 
-hash_sdiff(Res, Left, Right) :- !, hash_check(Right),
-        #('%t.loop() if (!%t.hashlookup($h,$t)) %t.insert($h,$t)\n',
-                [Left,Right,Res]), prcost('hashsdiff',Res, Left, Right).
-@}
 @- head-differing elements
 @m
 .COMMAND kdiff ( BAT[any::1,any::2] left, BAT[any::1,any] right) :
@@ -973,23 +214,6 @@ hash_sdiff(Res, Left, Right) :- !, hash_check(Right),
  Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
  'kdiff(left.kunique,right.kunique)' or: 'kdiff(left,right).kunique'."
-@p
-@{
-kdiff_batbat(Res, Left, Right) :- !,
-	kintersect_estimate(I, Left, Right), F is max(0, 1-I),
-        selbat(Res, Left, F),
-        ((ordered(Left),ordered(Right)) -> merge_kdiff(Res, Left, Right);
-          hash_kdiff(Res, Left, Right)).
-
-/* specific difference operators */ 
-merge_kdiff(Res, Left, Right) :- !,
-        #('%t.loop() if (!%t.mergefind($h)) %t.insert($h,$t)\n',
-                [Left,Right,Res]), prcost('mergekdiff', Res, Left, Right).
- 
-hash_kdiff(Res, Left, Right) :- !, hash_check(Right), 
-        #('%t.loop() if (!%t.hashlookup($h)) %t.insert($h,$t)\n',
-                [Left,Right,Res]), prcost('hashkdiff', Res, Left, Right).
-@}
 @- union on bun
 @m
 .COMMAND sunion ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) : 
@@ -998,17 +222,6 @@ hash_kdiff(Res, Left, Right) :- !, hash_check(Right),
  Results in all BUNs of 'left' that are  not in 'right', plus all BUNs 
  of 'right'. *no* double-elimination is done. If you want this, do: 
  'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'."
-@{
-@p
-sunion_batbat(Res, Left, Right) :- 
-        size(Left, 0), !, copy_bat(Res, Right).
-sunion_batbat(Res, Left, Right) :- 
-        size(Right, 0), !, copy_bat(Res, Left).
-sunion_batbat(Res, Left, Right) :- !,
-        sdiff(Res, Left, Right), insertbat(Res, Right).
-
-/* OMITTED: disjoint ordered(Left,Right) -> ordered(Res) */
-@}
 @- union on head
 @m
 .COMMAND kunion ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) : 
@@ -1017,19 +230,6 @@ sunion_batbat(Res, Left, Right) :- !,
  Results in all BUNs of 'left' that are  not in 'right', plus all BUNs 
  of 'right'. *no* double-elimination is done. If you want this, do: 
  'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'."
-@{
-@p
-kunion_batbat(Res, Left, Right) :- 
-        size(Left, 0), !, copy_bat(Res, Right).
-kunion_batbat(Res, Left, Right) :- 
-        size(Right, 0), !, copy_bat(Res, Left).
-kunion_batbat(Res, Left, Right) :- !,
-        kdiff(Res, Left, Right), 
-	distinct(Res,Dres), distinct(Right,Dright), D is Dres + Dright, 
-	insertbat(Res, Right), d(Res) := val(D).
-
-/*OMITTED: disjoint ordered(Left,Right) -> ordered(Res) */
-@}
 @+ Joins
 The core of every relational engine.
 Signature Changed: Output tail type incorrect because of soid to coid switch. 
@@ -1037,10 +237,6 @@ Signature Changed: Output tail type incorrect because of soid to coid switch.
 .COMMAND semijoin ( BAT[any::1,any::2] left, 
                    BAT[any::1,any] right) :
 				BAT[any::1,any::2] = CMDsemijoin; 
-@p
-@{
-semijoin_batbat(Res,Left,Right) :- kintersect_batbat(Res,Left,Right).
-@}
 @- join (projected out join columns)
 @m
 .COMMAND join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right) :
@@ -1049,97 +245,6 @@ semijoin_batbat(Res,Left,Right) :- kintersect_batbat(Res,Left,Right).
 a tail-value from 'right' for which there are BUNs in 'left'
 and 'right' with equal tail- resp. head-value (i.e. the join
 columns are projected out)."
-@p
-@{
-join_batbat(Res,Left,Right) :- mirror(Left,Left_r), 
-	sync(Left_r,C), sync(Right,C), (keyed(Left_r); keyed(Right)), !, 
-	/* synced join columns */
-	combine(Res,Left,Right).  
-
-join_batbat(Res,Left,Right) :- type(Right, 'void'), 
-	fetch_join(Res,Left,Right).
-join_batbat(Res,Left,Right) :- mirror(Left,Left_r), 
-	mirror(Right,Right_r), type(Left_r, 'void'), 
-        fetch_join(Res_r,Right_r,Left_r), mirror(Res_r,Res).
-
-join_batbat(Res,Left,Right) :- 
-        mirror(Left,Left_r), mirror(Right,Right_r),
-        size(Left,Ls), size(Right,Rs), 
-        (small(Left), (big(Right); (Ls<Rs, \+(hashtab(Right))))), !,
-	/* swap around */
-	join_batbat(Res_r, Right_r, Left_r), mirror(Res_r,Res).
-
-join_batbat(Res,Left,Right) :- !, mirror(Left, Left_r), 
-	join_estimate(S, Left, Right),
-        joinbat(Res, Left, Right, S), 
-	joinprops(Res, Left, Right), 
-        ((ordered(Left_r), ordered(Right)) -> joinsorted(Res, Left, Right);
-	                                       hash_join(Res, Left, Right)).
- 
-/* auxiliaries for join */
-join_estimate(S, Left, Right) :- !, mirror(Left,Left_r),
-        size(Left,Ls), size(Right,Rs),
-        domain(Left_r, Le), domain(Right, Re),
-        S is Ls*(float(Rs)/max(Le,Re)).
-
-joinprops(Res, Left, Right) :- !, mirror(Res,Res_r),
-        mirror(Left,Left_r), mirror(Right,Right_r),
-        (keyed(Right) -> 
-		(k(Res) := k(Left), assert(sub(Res,Left))); true),
-        (keyed(Left_r) -> 
-		(k(Res_r) := k(Right_r), assert(sub(Res_r,Right_r))); true),
-        ((keyed(Right),subcol(Left_r,Right)) -> 
-		s(Res) := s(Left); true),
-        ((keyed(Left_r),subcol(Right,Left_r)) -> s(Res_r) := s(Right_r);
-		(keyed(Left_r) -> (k(Res) := k(Left), k(Res_r) := k(Right_r)); 
-                                  true)).
-
-joinbat(Res, Left, Right, S) :- !, mirror(Left, Left_r), mirror(Right,Right_r),
-        size(Left, Ls), type(Left,H), distinct(Left_r, Ul),
-        size(Right,Rs), type(Right_r,T), distinct(Right, Ur),
-        D is (Ls*Rs)/S, Fl is min(1, float(Ur)/D), Fr is min(1, float(Ul)/D),
-        tmpbat(Res, H, T, S), mirror(Res,Res_r),
-             o(Res) := o(Left),
-             d(Res) := d(Left),
-          u(Res,Fl) := u(Left),
-           d(Res_r) := d(Right_r),
-        u(Res_r,Fr) := u(Right_r).
-
-/* now make sure the biggest is inside */
-joinsorted(Res,Left,Right) :- size(Left,Ls), size(Right,Rs), mirror(Res,Res_r),
-	mirror(Left,Left_r), mirror(Right,Right_r),
-	(Ls<Rs -> merge_join(Res, Left, Right);
-		  merge_join(Res_r, Right_r, Left_r)), 
-        (keyed(Right) -> o(Res_r) := o(Right_r); true),
-        (keyed(Left_r) -> o(Res) := o(Left); true).
-
-/* specific join algorithms */
-fetch_join(Res, Left, Right) :- !, size(Left,S), type(Left,H), 
-	joinbat(Res, Left, Right, S), 
-	joinprops(Res, Left, Right), 
-        #('%t.loop() h:=$h;\n', [Left]),
-        #('    %t.fetch($t) %t.insert(h,$t)\n', [Right,Res]),
-	prcost('bfetch', Res, Left, Right),
-	s(Res) := s(Left), retractall(type(Res,_)), assert(type(Res,H)).
-
-hash_join(Res,Left,Right) :- !,
-        hash_check(Right), 
-        #('%t.loop() h:=$h;\n', [Left]),
-        #('    %t.hashloop($t) %t.insert(h,$t)\n', [Right,Res]),
-        prcost('hashjoin', Res, Left, Right).
-
-merge_join(Res,Left,Right) :- 
-        size(Left,Ls), size(Right,Rs), X is Rs/log(Rs), Ls<X, !,
-        #('%t.loop() h:=$h;\n', [Left]),
-        #('    %t.sort_find($t) %t.insert(h,$t)\n', [Right,Res]),
-        prcost('binsrchjoin', Res, Left, Right).
-
-merge_join(Res,Left,Right) :- !,
-        mirror(Res,Res_r), mirror(Right,Right_r), mirror(Left, Left_r),
-        #('%t.loop() h:=$h;\n', [Left]),
-        #('    %t.mergeloop($t) %t.insert(h,$t)\n', [Right,Res]),
-        prcost('mergejoin', Res, Left, Right).
-@}
 @- Outer Join
 @m
 .COMMAND outerjoin ( BAT[any::1,any::2] outer, BAT[any::2,any::3] inner) :
@@ -1147,18 +252,6 @@ merge_join(Res,Left,Right) :- !,
 "Returns all the result of a join, plus the BUNS formed NIL in
 the tail and the head-values of 'outer' whose tail-value does
 not match an head-value in 'inner'."
-@p
-@{
-outerjoin_batbat(Res, Outer, Inner) :- !, size(Outer, L), 
-	join_estimate(S, Outer, Inner),
-        N is L * (1 + float(S)/max(1,L)), 
-	joinbat(Res, Outer, Inner, N),
-        joinprops(Res, Outer, Inner),
-        #('%t.loop() h:=$h;\n', [Outer]),
-        #('    %t.hashloop($t) %t.insert(h,$t);\n', [Inner,Res]),
-        #('    if (nomatch) %t.insert(h,nil);\n', [Res]),
-        prcost('outerjoin', Res, Outer, Inner).
-@}
 @- { <,<=,=,>=,> } Join
 @m
 .COMMAND thetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, 
@@ -1168,13 +261,6 @@ JOIN_EQ is just the same as join(). All other options do merge
 algorithms; either using the fact that they are ordered()
 already (left on tail, right on head), or by using/creating
 binary search trees on the join columns. "
-@p
-@{
-thetajoin_batbatint(Res, Left, Right, 0)  :- !,
-        join(Res, Left, Right).
-thetajoin_batbatint(Res, Left, Right, Mode)  :- !,
-        theta_batbatbatbatint(_, Res, Left, Right, Mode).
-@}
 @- Theta Join with inner columns
 @m
 .COMMAND theta ( BAT[any::2,any::2] inner_result, 
@@ -1187,64 +273,6 @@ is that it returns two values, which are added to the first params
 'inner_result' and 'outer_result'; 'inner_result' gets all matching
 inner tuples, 'outer_result' the other two (what would have the
 result of thetajoin(l,r))."
-@p
-@{
-/* for the time being, we implement <,> like <= and >= */
-theta_batbatbatbatint(Rin, Rou, Left, Right, -2) :- !,
-        theta_batbatbatbatint(Rin, Rou, Left, Right, -1).
-theta_batbatbatbatint(Rin, Rou, Left, Right, 2) :- !,
-        theta_batbatbatbatint(Rin, Rou, Left, Right, 1).
- 
-theta_batbatbatbatint(Rin, Rou, Left, Right, Mode) :- !,
-        size(Left, Ls), size(Right, Rs),
-        (idx(Right)	->   idx_theta(Rin, Rou, Left, Right);
-         ordered(Right) -> order_theta(Rin, Rou, Left, Right);
-         (idx(Left); ordered(Left); Ls < Rs)
-                        ->  theta_swap(Rou, Rin, Left, Right, Mode);
-	                     idx_theta(Rin, Rou, Left, Right)).
-
-/* auxiliaries for theta join */ 
-theta_swap(Rou, Rin, Left, Right, Mode) :- !,
-        mirror(Left,Left_r), mirror(Right,Right_r), Mode_r is -Mode,
-        theta_batbatbatbatint(Rou_r, Rin_r, Right_r, Left_r, Mode_r),
-        mirror(Rin_r, Rin), mirror(Rou_r, Rou).
-
-theta_result(Rin, Rou, Left, Right) :- !,
-        mirror(Left,Left_r), mirror(Right,Right_r),
-        size(Left, Ls), size(Right, Rs),
-        type(Left, Lh), type(Left_r, Lt),
-        type(Right, Rh), type(Right_r, Rt),
-        N is float(Ls*Rs)/2, Fl is min(1,N/Ls), 
-        M is float(Ls*Rs)/2, Fr is min(1,M/Rs), 
-        tmpbat(Rin, Lh, Rt, N), mirror(Rin, Rin_r),
-        tmpbat(Rou, Lt, Rh, M), mirror(Rou, Rou_r), 
-          u(Rou,Fl) := u(Left), 
-          u(Rin,Fl) := u(Left_r), 
-        u(Rou_r,Fr) := u(Right_r),
-        u(Rin_r,Fr) := u(Right),
-             d(Rou) := d(Left), 
-             d(Rin) := d(Left_r), 
-           d(Rou_r) := d(Right_r),
- 	   d(Rin_r) := d(Right),
-             o(Rou) := o(Left), 
-             o(Rin) := o(Left_r),
-        ((keyed(Left_r), keyed(Right)) ->
-            (k(Rou) := k(Left), 
-           k(Rou_r) := k(Right_r)); true).
-
-/* specific theta join algorithms */ 
-order_theta(Rin, Rou, Left, Right) :- !, 
-	theta_result(Rin, Rou, Left, Right),
-        #('%t.loop() h:=$h, l:=lower($t), h:=higher($t);\n', [Left]),
-        #('    %t.sortloop(l,h) %t.insert(h,$t);\n', [Right,Rou]),
-        prcost('ordertheta', Rin, Rou, Left, Right).
- 
-idx_theta(Rin, Rou, Left, Right) :- !, 
-	theta_result(Rin, Rou, Left, Right), 
-        #('%t.loop() h:=$h, l:=lower($t), h:=higher($t);\n', [Left]),
-        #('    %t.idxloop(l,h) %t.insert(h,$t);\n', [Right,Rou]),
-	idx_check(Right), prcost('idxtheta', Rin, Rou, Left, Right).
-@}
 @- Band Join (approximate match)
 @m
 .COMMAND bandjoin ( BAT[any::1,any::2] outer, 
@@ -1255,18 +283,6 @@ idx_theta(Rin, Rou, Left, Right) :- !,
 the left-tail value is within the range [right-head - minus,
 right-head + plus]\n
 Works only for the builtin numerical types, and their derivates."
-@p
-@{
-bandjoin_batbatanyany(Res, Outer, Inner, Plus, Minus) :-
-        join_estimate(S, Outer, Inner), max(Outer,Max), min(Outer,Min), 
-	Mean is (Max+Min)/2, Low is Mean-Minus, High is Mean+Plus, 
-	rng(R,Outer,Low,High), N is S*R,
-        joinbat(Res, Outer, Inner, N),
-        #('%t.loop() t:=$t; h:=$h\n', [Outer]),
-        #('    %t.loop if (in(t,[$h-Minus,$h+Plus]))\n', [Inner]),
-        #('        %t.insert(h,$t)\n', [Res]),
-        prcost('bandjoin', Res, Outer, Inner, Plus, Minus).
-@}
 @+ OID Introducing Commands
 For relational processing, some operators are necessary to produce newly 
 initiated OID columns, for representing n-ary (intermediary) relations. 
@@ -1281,30 +297,12 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 				BAT[any::1,OID] = CMDmark; 
 "Produces a new BAT with fresh unique dense sequense of OIDs in the tail
  that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
-@p
-@{
-mark_bat(Res, B) :- !, mirror(B,B_r), 
-        size(B,S), type(B,H), type(B_r,T),
-        tmpbat(Res, H, T, S), mirror(Res,Res_r),
-	  k(Res) := true, 
-          o(Res) := true, 
-	  d(Res) := val(S), 
-          u(Res) := val(S,1,S),
-	  s(Res) := val(S), 
-	s(Res_r) := s(B),
-        #('%t.mark\n', B), prcost('mark', Res, B).
-@}
 @- number tail column
 @m
 .COMMAND number( BAT[any::1,any] b ) : 
 				BAT[any::1,int]  = CMDnumber;
 "Produces a new BAT with identical head column, and consecutively
 increasing integers (starting with 0) in the tail column."
-@p
-@{
-number_bat(Res, B) :- !, 
-        mirror(B,B_r), mark_bat(Res_r,B_r), mirror(Res_r,Res).
-@}
 
 @+ BAT fragmentation commands
 Various operations for splitting BATs into useful fragments.
@@ -1320,21 +318,6 @@ their bucket number in the head."
 .COMMAND uhashsplit ( BAT[any::1,any::2] b, int buckets ) :
 			 	BAT[int,BAT[any::1,any::2]] = CMDuhashsplit; 
 "Same as hashsplit, but only collect the head values in the fragments" 
-@p
-@{
-split_hash([],0,_,_) :- true.
-split_hash([C|L],N,B,F) :-
-        selbat(C,B,F), mirror(C, Cr),
-	 o(C) := false, 
-        o(Cr) := false,	
-        M is N-1, split_hash(L,M,B,F).
- 
-hashsplit_batint(Res, B, Buckets) :- F is float(1)/Buckets,
-        split_hash(Res,Buckets,B,F),
-        #('%t.loop()\n', [B]),
-	#('\tnth(%t,\n\t    $h.hash %% Buckets).insert($h,$t)\n', [Res]),
-        prcost('hashsplit', Res, B, Buckets).
-@}
 @- Range Split
 @m
 .COMMAND rangesplit ( BAT[any::1,any::2] b, int ranges ) : 
@@ -1347,25 +330,6 @@ The higher bound of the last range is 'nil'."
 .COMMAND urangesplit ( BAT[any::1,any::2] b, int ranges ) : 
 				BAT[any::2,BAT[any::1,void]] = CMDurangesplit;
 "Same as rangesplit, but only collect the head values in the fragments" 
-@p
-@p
-@{
-split_range([],0,_,_) :- true.
-split_range([C|L],N,B,F) :- !, 
-        selbat(C, B, F), mirror(C,Cr),
-          o(C) := true, mirror(B,Br), distinct(Br,D),
-        ((ordered(B), ordered(Br), 
-         o(Cr) := true, 
-         u(Cr) := val(F*D)); true),
-        M is N-1, split_range(L,M,B,F).
- 
-rangesplit_batint(Res, B, Ranges) :- !, F is float(1)/Ranges,
-        split_range(Res,Ranges,B,F),
-        #('%t.loop() for(i=0; i<%t; i++)\n', [B,Ranges]),
-        #('    if (in[range[i].low, range[i].high)\n'),
-        #('\tnth(%t,\n\t    i).insert($h,$t); break;\n', [Res]),
-        prcost('rangesplit', Res, B, Ranges).
-@}
 
 @+ Common BAT Aggregates
 These operations examine a BAT, and compute some simple aggregate result 
@@ -1375,11 +339,6 @@ over it.
 .COMMAND count ( BAT[any,any] b ) : 
 				int = CMDcount; 
 "Return the number of elements currently in a BAT."
-@p
-@{
-count_bat(B) :- #('%t.count()\n', [B]), prcost('count', B).
-@}
-
 @- Histogram on Tail 
 @m
 .COMMAND histogram ( BAT[any,any::2] b) : 
@@ -1390,30 +349,6 @@ count_bat(B) :- #('%t.count()\n', [B]), prcost('count', B).
 .COMMAND {count} ( BAT[any::2,any] b) : 
 				BAT[any::2,int] = CMDhistogram_rev; 
 "has fast implementation: histogram(bat.reverse)"
-@p
-@{
-histogram_bat(Res,B) :- !, mirror(B,B_r), type(B_r, T), distinct(B_r,K),
-        tmpbat(Res, T, 'int', K), mirror(Res,Res_r), assert(sub(Res,B_r)),
-  	  k(Res) := true, 
-        u(Res,1) := u(B_r), 
-	  d(Res) := d(B_r), 
-        d(Res_r) := val(K), 
-	  o(Res) := o(B_r), 
-          s(Res) := aggr(B_r), 
-        (ordered(B_r) -> merge_histo(Res, B); 
-                          hash_histo(Res, B)).
-
-/* specific histogram implementations */ 
-merge_histo(Res, B) :- !, mirror(B,B_r),
-        #('%t.loop() for(cnt:=0; %t.next=$h; cnt++);\n', [B_r]),
-        #('    %t.insert($h,cnt)\n', [Res]),
-        prcost('mergehisto', Res, B).
- 
-hash_histo(Res, B) :- !, mirror(B,B_r),
-        #('%t.loop() if (cnt := %t.hashlookup($h)) cnt++;\n', [B_r,Res]),
-        #('    %t.insert($h,1)\n', [Res]),
-        prcost('hashhisto', Res, B).
-@}
 
 @- Default Min and Max
 @T
@@ -1433,21 +368,6 @@ Give the lowest tail value. Error on empty BATs."
 .COMMAND max ( BAT[any::1,any::2] b ) 
 			: any::2 = CMDmaxany; "
 Give the highest tail value. Error on empty BATs."
-@p
-@{
-order_minmax(B) :- !,
-        #('%t.fetch(minmax)\n', [B]),
-        prcost('order_minmax', B).
- 
-scan_minmax(B) :- !,
-        #('%t.loop() if ($t <cmp> minmax) minmax := $t\n', [B]),
-        prcost('scan_minmax', B).
- 
-max_bat(B) :- min_bat(B). 
-min_bat(B) :- !, mirror(B,B_r),
-        (ordered(B_r) -> order_minmax(B); 
-                          scan_minmax(B)).
-@}
 @+ Type-Specific Sum, Max and Min
 @T
 For X $\in$ \{ sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
@@ -1938,155 +858,6 @@ echo "============== +"
 awk '{ a += $1 } END { print "TOTAL="a; }' < /tmp/$$
 rm /tmp/$$
 
-@{
-@p
-tpecorr(X,T)    :- atm_prop(fixedsize,T,F),atm_prop(varsize,T,V), X is F+2*V.
-hashfind(X,B)   :- type(B,T), tpecorr(Y,T), X is 4*Y.
-idxfind(X,B)    :- type(B,T), tpecorr(Y,T), size(B,S), X is 2*log(S)*Y.
-sortfind(X,B)   :- type(B,T), tpecorr(Y,T), size(B,S), X is log(S)*Y.
-hashins(X,B)    :- hashfind(Y,B), X is 2*Y.
-idxins(X,B)     :- idxfind(Y,B), X is 2*Y.
-strcmp(20)      :- true.
-mil(100)	:- true.
-
-rw(R,W) :- mil(M), C is ceil(M + 2*(R)+3*(W)), writef('%10r', [C]).
-
-prcost(T,A) :- cost(T,A), 
-	writef('\t# %w(%w);\n', [T,A]).
-prcost(T,A,B) :- cost(T,A,B), size(A,S),
-	writef('\t# %w := %w(%w); [%w]\n', [A,T,B,S]).
-prcost(T,A,B,C) :- cost(T,A,B,C), size(A,S),
-	writef('\t# %w := %w(%w,%w); [%w]\n', [A,T,B,C,S]). 
-prcost(T,A,B,C,D) :- cost(T,A,B,C,D), size(A,S),
-	writef('\t# %w := %w(%w,%w,%w); [%w]\n', [A,T,B,C,D,S]). 
-prcost(T,A,B,C,D,E) :- cost(T,A,B,C,D,E), size(A,S),
-	writef('\t# %w := %w(%w,%w,%w,%w); [%w]\n', [A,T,B,C,D,E,S]). 
-prcost(T,A,B,C,D,E,F) :- cost(T,A,B,C,D,E,F), size(A,S),
-	writef('\t# %w := %w(%w,%w,%w,%w,%w); [%w]\n', [A,T,B,C,D,E,F,S]).
-
-cost('new', R, H, T, S) :-
-        rw(200,1000).
-cost('hashbuild', B) :-
-        size(B, S), hashins(H,B), rw(500+S,50+S*H).
-cost('idxbuild', B) :-
-        size(B, S), idxins(I,B), rw(S,S*I).
- 
-cost('position', B, I) :-
-        rw(5,1).
-cost('fetch', B, I) :-
-        rw(8,1).
-cost('sortfind', B, V) :-
-        sortfind(H,B), rw(H+2,1).
-cost('idxfind', B, V) :-
-        idxfind(H,B), rw(H+2,1).
-cost('hashfind', B, V) :-
-        hashfind(H,B), rw(H+2,1).
- 
-cost('insertbat', Res, B) :-
-        size(B,S), rw(2*S,2*S).
-cost('like', Res, B, Substr) :-
-        size(B,S), size(Res,X), strcmp(C), hashins(H,B), rw(C*S+X*H,X*2).
-cost('slice', Res, B, X, Y) :-
-        size(Res,S), rw(2*S,2*S).
-cost('bsort', Res, B) :-
-        size(B,X), rw(3*X,2*X).
-cost('copy', Res, B) :-
-        size(B,X), rw(2*X,2*X).
-cost('project', Res, B) :-
-        rw(1,1).
-cost('sample', Res, B, Num) :-
-        size(Res,X), rw(2*X,2*X).
-
-cost('bfetch', Res, Left, Right) :- 
-        size(Res,X), rw(2*X,2*X).
-cost('sortselect', Res, B, Low, High) :-
-        size(Res,X), sortfind(F,B), rw(2*F+2*X,2*X).
-cost('idxselect', Res, B, Low, High) :-
-        size(Res,X), idxfind(F,B), rw(2*F+2*X,2*X).
-cost('scanselect', Res, B, Low, High) :-
-        size(B,X), size(Res,Y), rw(2*X,2*Y).
-cost('hashselect', Res, B, Low) :-
-        size(Res,X), hashfind(H,B), rw(X*H,X*2).
- 
-cost('sortfrag', Res, B, Hl, Hh, Tl, Th) :-
-	size(B,S), distinct(B,D), N is float(Hh-Hl)/D, X is min(S, N*S),
-        size(Res,Y), sortfind(F,B), rw(2*F+4*X,X+2*X).
-cost('idxfrag', Res, B, Hl, Hh, Tl, Th) :-
-	size(B,S), distinct(B,D), N is float(Hh-Hl)/D, X is min(S, N*S),
-        size(Res,Y), idxfind(I,B), rw(2*I+4*X,X+2*Y).
-cost('scanfrag', Res, B, Hl, Hh, Tl, Th) :-
-        size(B,X), size(Res,Y), rw(2*X,3*Y).
- 
-cost('mergekdiff', Res, Left, Right) :-
-        size(Left,Ls), size(Right,Rs), size(Res,S), rw(Ls+Rs,2*S).
-cost('hashkdiff', Res, Left, Right) :-
-        size(Left,Ls), size(Res,S), hashfind(H,Right), rw(Ls*H,2*S).
-cost('revkintersect',Res, Left, Right) :-
-        size(Right,Rs), !, size(Res,S), !, hashfind(H,Right), rw(2*Rs*H,2*S).
-cost('mergekintersect', Res, Left, Right) :-
-        size(Left,Ls), size(Right,Rs), size(Res,S), rw(Ls+Rs,2*S).
-cost('binsrchkintersect', Res, Left, Right) :-
-        size(Left,Ls), sortfind(X,Right), size(Res,S), rw(Ls*(1+X),2*S).
-cost('hashkintersect',Res, Left, Right) :-
-        size(Left,Ls), size(Res,S), hashfind(H,Right), rw(Ls*H,2*S).
-cost('mergesintersect', Res, Left, Right) :-
-        size(Left,Ls), size(Right,Rs), size(Res,S), rw(2*(Ls+Rs),2*S).
-cost('hashsintersect', Res, Left, Right) :-
-        size(Left,Ls), size(Res,S), hashfind(H,Right), rw(2*Ls*H,2*S).
-cost('mergekunique', Res, B) :-
-        size(B,X), size(Res,Y), rw(2*X,2*Y).
-cost('hashkunique', Res, B) :-
-        size(B,X), size(Res,Y), hashfind(H,Res), hashins(I,B), rw(X*H,Y*I).
-cost('mergesunique', Res, B) :-
-        size(B,X), size(Res,Y), rw(4*X,2*Y).
-cost('hashsunique', Res, B) :-
-        size(B,X), size(Res,Y), hashfind(H,Res), hashins(I,B), rw(2*(X*H),Y*I).
-cost('mergesdiff', Res, Left, Right) :-
-        size(Left,Ls), size(Right,Rs), size(Res,S), rw(2*(Ls+Rs),2*S).
-cost('hashsdiff',Res, Left, Right) :-
-        size(Left,Ls), size(Res,S), hashfind(H,Right), rw(2*Ls*H,2*S).
- 
-cost('bandjoin', Res, Outer, Inner, Plus, Minus) :-
-        size(Left,Ls), size(Right,Rs), size(Res,X),rw(Ls*Rs,X*2).
-cost('ordertheta',Rin, Rou, Left, Right) :-
-        size(Left,Ls), sortfind(S,Right), size(Rin,X), size(Rou,Y),
-        rw(2*Ls*S,X*2+Y*2).
-cost('idxtheta',Rin, Rou, Left, Right) :-
-        size(Left,Ls), idxfind(I,Right), size(Rin,X), size(Rou,Y),
-        rw(2*Ls*I,X*2+Y*2).
-cost('outerjoin', Res, Left, Right) :-
-        size(Left,Ls), size(Res,X), hashfind(H,Right), rw(Ls*H,X*2).
-cost('hashjoin', Res, Left, Right) :-
-        size(Left,Ls), size(Res,X), hashfind(H,Right), rw(Ls*H,X*2).
-cost('binsrchjoin', Res, Left, Right) :-
-        size(Left,Ls), sortfind(X,Right), size(Res,S), rw(Ls*X+2*S,2*S).
-cost('mergejoin', Res, Left, Right) :-
-        size(Left,Ls), size(Right, Rs), size(Res,X), rw(2*(Ls+Rs),X*2).
- 
-cost('split', Rh, Rt, B) :-
-        size(B,S), rw(2*S,4*S).
-cost('mark', Res, B) :-
-        size(B,S), rw(S,2*S).
-cost('combine', Res, Left, Right) :-
-        size(B,X), rw(2*X,2*X).
-
-cost('hashhisto', Res, B) :-
-        size(B,S), size(Res,X), hashfind(H,Res), hashins(I,B), rw(S*H,X*(2+I)).
-cost('mergehisto', Res, B) :-
-        size(B,S), size(Res,X), rw(S*2,X*2).
-cost('count', B) :-
-        rw(4,1).
-cost('rangesplit', Res, B, Ranges) :-
-        size(B,S), rw(S*2,S*2).
-cost('hashsplit', Res, B, Buckets) :-
-        size(B,S), type(B,T), hashfcn(H,T), rw(S*(2+H),S*2).
- 
-cost('order_minmax', B) :-
-        rw(4,1).
-cost('scan_minmax', B) :-
-        size(B,S), rw(S,1).
- 
-@{
 @* Command Implementations in C
 This module contains just a wrapper implementations; since all described 
 operations are part of the GDK kernel.
@@ -2277,7 +1048,6 @@ int CMDlike(BAT **ret, BAT* b, str s) {
 		if (like(BUNtvar(b, u), t, yy)) 
 		    BUNfastins(c, BUNhloc(b, u), BUNtvar(b, u));
 	}
-	GDKfree(t);
 	c->hsorted = BAThordered(b);
 	c->tsorted = BATtordered(b);
 	*ret = c;
@@ -2390,377 +1160,3 @@ int CMDfind(ptr ret, BAT* b, ptr val){
 	@:putTail(q)@
         return GDK_SUCCEED;
 }
-@}
-@* Example Model Schema Instance 
-@- Schema Creation 
-Declare an extent. 
-@p
-extent(R,S) :- create(R,oid,nil,S,S,0,true,false,true,false),
-			assert(bname(R,R)), d(R) := val(S). 
-@-
-Declare an attribute.
-@p
-attrib(R,N,str,D) :- size(R, S), concat_atom([R,N],'_',A), mirror(A,A_r),
-                        attrib(R,N,str,D,'0','z~',D).
-attrib(R,N,T,D) :- F is float(D), attrib(R,N,T,D,0.0,F,D).
-relation(R,N,E,D) :- concat_atom([R,N],'_',A), size(E,S), F is float(S),
-			attrib(R,N,oid,S,0.0,F,D), 
-			mirror(A,A_r), assert(sub(E,A_r)).
-attrib(R,N,T,D,L,H) :- attrib(R,N,T,D,L,H,D).
-attrib(R,N,T,D,L,H,U) :- size(R, S),
-                        concat_atom([R,N],'_',A), mirror(A,A_r),
-                        concat_atom([R,N],'R',I), mirror(I,I_r),
-                        create(A,void,T,S,S,D,true,false,true,false),
-                        create(I,oid,T,S,S,D,true,false,false,true),
-                        assert(bname(A,A)), assert(bname(I,I)),
-                        u(I_r) := val(U,L,H), u(A_r) := val(U,L,H),
-                        d(A_r) := val(D), d(I_r) := val(D),
-                        s(I) := s(R), s(A) := s(R), newsync(I),
-                        o(I) := false, o(I_r) := true.
-@}
-
-@+ TPCD
-@T
-TPC-D is the most popular benchmark in town these days.
-It was defined by the 
-@[<a href="http://www.tpc.org">Transaction Processing Council</a>@
-to measure performance of decision support systems for
-OLAP queries.  These queries go through massive amounts of
-data and produce higly summarized results. This class of
-query is called 'aggregation' and is typical for OLAP applications. 
-
-The database can be generated in different sizes, in which the 
-'SF' denotes the scaling factor. Possible values are
-1,3,10,30,100. The below prolog will instantiate a TPCD database 
-in the cost model that represents a TPCD Monet database of 'SF' Gigabytes.
-@p
-tpcd(SF) :-
-	Rcard is 5,
-		extent(r, Rcard),
-		attrib(r, name, str, Rcard, 'AFRICA', 'MIDDLE EAST'),
-		attrib(r, comment, str, Rcard),
-	Ncard is 25, 
-		extent(n, Ncard),
-		attrib(n, name, str, Ncard, 'ALGERIA', 'UNITED KINGDOM'),
-		relation(n, region, r, Rcard),
-		attrib(n, comment, str, Ncard),
-	Scard is SF*10000,
-	select_est(X1, Scard, 110000),
-		extent(s, Scard),
-		attrib(s, name, str, Scard),
-		attrib(s, address, str, Scard),
-		relation(s, nation, n, Ncard),
-		attrib(s, phone, str, Scard),
-		attrib(s, acctbal, str, X1, -999.99,9999.99),
-		attrib(s, comment, str, Scard),
-	Ccard is SF*150000,
-		extent(c, Ccard),
-		attrib(c, name, str, Ccard),
-		attrib(c, address, str, Ccard),
-		relation(c, nation, n, Ncard),
-		attrib(c, phone, str, Ccard),
-		attrib(c, acctbal, str, X1, -999.99,9999.99),
-		attrib(c, mktsegment, str, 5, 'AUTOMOBILE', 'MACHINERY'),
-		attrib(c, comment, str, Ccard),
-	Pcard is 200000*SF, 
-	select_est(Y1, Pcard, 32*31*30*29*28),
-	select_est(Y2, Pcard, 6*5*5),
-	select_est(Y3, Pcard, 5*8),
-		extent(p, Pcard),
-		attrib(p, name, str, Y1, 'almond', 'yellow~'),
-		attrib(p, manufacturer,str,5,'Manufacturer#1','Manufacturer#5'),
-		attrib(p, brand, str, 5, 'Brand#11', 'Brand#55'),
-		attrib(p, type, str, Y2, 'ECONOMY','STANDARD'),
-		attrib(p, size, int, 50, 1, 50),
-		attrib(p, container, str, Y3, 'JUMBO', 'WRAP~'),
-		attrib(p, retailprice, flt, 1200, 900.0, 21900.0),
-		attrib(p, comment, str, Pcard),
-	PScard is 4*Pcard, 
-	select_est(Y4, PScard, Scard),
-	select_est(Y5, PScard, 10000),
-	select_est(Y6, PScard, 100000),
-		extent(ps, PScard),
-		relation(ps, part, p, Pcard),
-		relation(ps, supplier, s, Y4),
-		attrib(ps, available, int, Y5, 1, 9999),
-		attrib(ps, cost, flt, Y6, 1.00, 1000.00),
-		attrib(ps, comment, str, PScard),
-	Ocard is Ccard*10,
-	select_est(X3, Ocard, 60000*SF),
-	select_est(X4, Ocard, 2405),
-	select_est(X5, Ocard, 100*SF),
-		extent(o, Ocard),
-		relation(o, customer, c, Ccard),
-		attrib(o, orderstatus, chr, 3, 102,112),
-		attrib(o, totalprice, flt, X3, 810.0, 8560000.0),
-		attrib(o, orderdate, date, X4, [1992,1,1], [1998,7,31]),
-		attrib(o, orderpriority, str, 5, '1-URGENT', '5-LOW'),
-		attrib(o, clerk, str, X5),
-		attrib(o, shippriority, str, 5, '1-URGENT', '5-LOW'),
-		attrib(o, comment, str, Ocard),
-	Lcard is Ocard*4, 
-	select_est(X6, Lcard, Scard),
-	select_est(X7, Lcard, 2526),
-	select_est(X8, Lcard, 2466),
-	select_est(X9, Lcard, 2435),
-		extent(l, Lcard),
-		relation(l, order, o, Ocard),
-		relation(l, part, p, Pcard),
-		relation(l, supply, s, X6),
-		attrib(l, linenumber, int, 7),
-		attrib(l, quantity, int, 50, 1, 50),
-		attrib(l, extendedprice, flt, X3, 900.0, 1095000.0),
-		attrib(l, discount, flt, 11, 0.0, 0.1),
-		attrib(l, tax, flt, 9, 0.00, 0.08),
-		attrib(l, returnflag, chr, 3, 97, 114),
-		attrib(l, linestatus, chr, 2, 102, 111),
-		attrib(l, shipdate, date, X7, [1992,1,1], [1998,11,31]),
-		attrib(l, commitdate, date, X8, [1992,2,1], [1998,10,31]),
-		attrib(l, receiptdate, date, X9, [1992,1,1], [1998,8,31]),
-		attrib(l, shipinstruct, str,4,'COLLECT COD','TAKE BACK RETURN'),
-		attrib(l, shipmode, str, 7, 'AIR', 'TRUCK'),
-		attrib(l, comment, str, Lcard),
-	o(ps_part_) := true, % special TPCD property
-	o(l_order_) := true, % special TPCD property
-	writef('\nMIL COST MODEL 1.0\n',[]).
-
-@+ Q13 join-select order
-@T
-Although the TPCD is a fairly simple benchmark in terms of getting the
-order of algebraic operations right, query 13 presents us with two 
-selections: 
-\begin{itemize}
-\item one on the {\bf order} table, with contains 1.5M tuples, and 
-the attribute selected on ({\bf o\_clerk}) has more than 1000 different values.
-\item another on the {\bf item} table, with contains 6M  tuples, and
-the attribute selected on ({\bf l\_returnflag}) has just 3 different values.
-\end{itemize}
-Both are combined with the join-condition order-id = item-order.  
-So, there are two selections and one join. This leaves a MIL generator
-with two decisions to make: 
-\begin{itemize}
-\item to select on {\bf o\_clerk} first or on {\bf l\_returnflag}. 
-If the different selection attributes are more then one join apart, 
-one could theoretically also start joining two join-indices into a new one
-but this first of all is not possible as query 13 just involves two tables, 
-and secondly it is hardly advisable from a performance point of view.
-\item now one has to move with the selected OIDs to the other 
-table by doing a join or semijoin on {\bf l\_order}. The second decision to make then is to do the second selection, 
-or to semijoin attribute values with the previously selected OIDs, and
-then select on this semijoin. 
-\end{itemize}
-So, in total there are 4 possible approaches to the problem of query 13:
-
-\begin{enumerate}
-\item select(o\_clerk, v1).join(l\_order.reverse).select(l\_returnflag, v2)
-\item select(l\_returnflag, v2).join(l\_order).select(o\_clerk, v1)
-\item semijoin(l\_order.reverse, select(o\_clerk, v1)).join(select(l\_returnflag, v2))
-\item semijoin(l\_order, select(l\_returnflag)).semijoin(select(o\_clerk, v1)
-\end{enumerate}
-The query later needs to go on with OIDs from the {\bf order} table.
-That is why an extra semijoin is done in option 2 and 3 (see below mil 
-scripts). 
-
-@- MIL-Prolog Q13 Scripts
-@f q13_1
-@mil
-tpcd(1),
- uselect_batany(MMuselect_3, o_clerk, '88'), 
-    join_batbat(MMjoin_4, l_order, MMuselect_3), 
-semijoin_batbat(MMsemijoin_5, l_returnflag, MMjoin_4), 
- uselect_batany(MMuselect_7, MMsemijoin_5, 114), 
-    join_batbat(MMjoin_8, l_order_, MMuselect_7). 
-
-@f q13_2
-@mil
-tpcd(1),
- uselect_batany(MMuselect_3, l_returnflag, 114), 
-    join_batbat(MMjoin_4, l_order_, MMuselect_3), 
-semijoin_batbat(MMsemijoin_5, o_clerk, MMjoin_4), 
-   uselect_batany(MMuselect_7, MMsemijoin_5, 88). 
-
-@f q13_3
-@mil
-tpcd(1),
- uselect_batany(MMuselect_7, o_clerk, 88), 
-semijoin_batbat(MMsemijoin_4, l_order_, MMuselect_7), 
- uselect_batany(MMuselect_3, l_returnflag, 114), 
-    join_batbat(MMjoin_5, MMsemijoin_4, MMuselect_3).
-
-@f q13_4
-@mil
-tpcd(1),
- uselect_batany(MMuselect_3, l_returnflag, 114), 
-semijoin_batbat(MMsemijoin_4, l_order, MMuselect_3), 
- uselect_batany(MMuselect_7, o_clerk, 88), 
- reverse_bat(MMsemijoin_4_, MMsemijoin_4),
-semijoin_batbat(MMsemijoin_8, MMsemijoin_4_, MMuselect_7).
-
-@- Results
-@T
-The module computes CPU costs based on (1) result size estimations 
-on the algebraic operands (2) analysis of properties to determine 
-which algorithm was used. Cost currently just represents CPU cost;
-{\bf the model was not yet calibrated}. We just expect it to get
-the orders right, and be relatively near real cost dimensions. 
-{\small\begin{verbatim}
-$ algebra q13_1.mil
-   6090100      # 1000 := scanselect(o_clerk,88,88); [15000]
-   2472973      # -1001 := binsrchjoin(-1000,l_order_); [60000]
-    600100      # 1002 := bfetch(l_returnflag,1001); [60000]
-   1561250      # hashbuild(-1002);
-    760100      # 1003 := hashselect(1002,114); [20000]
-    200100      # 1004 := bfetch(-1003,l_order); [20000]
-============== +
-TOTAL=11684623
-\end{verbatim}}
-
-{\small\begin{verbatim}
-$ algebra q13_2.mil
-  36000100      # 1000 := scanselect(l_returnflag,114,114); [2000000]
-  20000100      # 1001 := bfetch(-1000,l_order); [2000000]
-  15000100      # 1002 := bfetch(o_clerk,-1001); [1500000]
-   8120100      # 1003 := scanselect(1002,88,88); [20000]
-============== +
-TOTAL=79120400
-\end{verbatim}}
-{\small\begin{verbatim}
-$ algebra q13_3.mil
-   6090100      # 1001 := scanselect(o_clerk,88,88); [15000]
-  12390100      # 1002 := mergekintersect(l_order_,1001); [60000]
-  36000100      # 1000 := scanselect(l_returnflag,114,114); [2000000]
-   7164256      # -1003 := binsrchjoin(1002,1000); [20000]
-============== +
-TOTAL=61644556
-\end{verbatim}}
-{\small\begin{verbatim}
-$ algebra q13_4.mil
-  36000100      # 1000 := scanselect(l_returnflag,114,114); [2000000]
-  20000100      # 1001 := bfetch(l_order,1000); [2000000]
-   6090100      # 1002 := scanselect(o_clerk,88,88); [15000]
-   4150100      # 1003 := mergekintersect(-1001,1002); [20000]
-============== +
-TOTAL=66240400
-\end{verbatim}}
-The results show option 1 to be clearly superior. This is due to
-the fact that the select on the {\bf l\_returnflag} returns 30\%
-of the tuples! (this can be concluded from the intermediate result sizes
-that are printed at the end of the line between brackets). It can hence 
-better be postponed.
-
-Observe also that joins are executed as {\bf bfetch} because we use 
-the void type as OID in the TPCD schema (see the attrib() clause).
-
-@- additional optimization
-@T
-Even better results can be obtained if for each attribute 
-{\bf table\_attrib} we maintain an {\em inversion list} 
-named {\bf tableRattrib}. The normal attribute has a void 
-column for the OIDs, and attribute values (in random order), 
-whereas the inversion-list has [oid,value] pairs sorted on 
-the values. This causes value-selects to select a clustered
-region in the BAT:
-@f q13_5
-@mil
-tpcd(1),
-uselect_batany(MMuselect_3, oRclerk, '88'), 
-assert(ordered(MM_uselect)), % no 'sort' prolog-clause present yet
-printbat(MMuselect_3),
-join_batbat(MMjoin_4, l_order, MMuselect_3), printbat(MMjoin_4),
-semijoin_batbat(MMsemijoin_5, l_returnflag, MMjoin_4), printbat(MMsemijoin_5),
-uselect_batany(MMuselect_7, MMsemijoin_5, 114), printbat(MMuselect_7),
-join_batbat(MMjoin_8, l_order_, MMuselect_7), printbat(MMjoin_8).
-
-quit;
-@T
-{\small\begin{verbatim}
-$ algebra q13_5.mil
-    150328      # 1000 := sortselect(oRclerk,88,88); [15000]
-   2472973      # -1001 := binsrchjoin(-1000,l_order_); [60000]
-    600100      # 1002 := bfetch(l_returnflag,1001); [60000]
-   1561250      # hashbuild(-1002);
-    760100      # 1003 := hashselect(1002,114); [20000]
-    200100      # 1004 := bfetch(-1003,l_order); [20000]
-============== +
-TOTAL=5744851
-\end{verbatim}}
-This clearly gives the best performance, and is also easily confimed
-in practice.
-
-
-@{
-@f example.pl
-@- Prolog Run
-@p
-tpcd(1).
-printbat(l_tax).
-select_batanyany(A,l_tax,0.01,0.02), printbat(A). 
-select_batanyany(B,l_tax_,1,100), printbat(B). 
-select_batany(C,l_tax,0.03), printbat(C). 
-select_batany(C,l_tax_,1), printbat(C). 
-fragment_batanyanyanyany(D,l_tax,0,10,0,1), printbat(D). 
-fragment_batanyanyanyany(E,l_tax_,0,1,0,10), printbat(E). 
-sample_batint(F, l_tax, 10), printbat(F).
-like_batstr(G, l_tax, 'll'), printbat(G).
-slice_batintint(H, l_tax, 1000, 1042), printbat(H).
-copy_bat(I, l_tax), printbat(I).
-sort_bat(J, l_tax_), printbat(J).
-project_bat(K, l_tax), printbat(K).
-sunique_bat(L, l_tax), printbat(L).
-kunique_bat(M, l_tax), printbat(M).
-kunique_bat(N, l_tax_), printbat(N).
-sintersect_batbat(O, l_tax_,1001), printbat(O).
-kintersect_batbat(P, l_tax_,1001), printbat(P).
-kintersect_batbat(Q, l_tax,1002), printbat(Q).
-kdiff_batbat(Q, l_tax,1002), printbat(Q).
-sdiff_batbat(R, l_tax,1002), printbat(R).
-join_batbat(S,-1001,-1002), printbat(S).
-join_batbat(T,1001,1002), printbat(T).
-outerjoin_batbat(U,-1001,-1002), printbat(U).
-outerjoin_batbat(V,1001,1002), printbat(V).
-theta_batbatbatbatint(X1,X2,1001,1002,1), printbat(X1), printbat(X2).
-theta_batbatbatbatint(Y1,Y2,-1001,-1002,1), printbat(Y1), printbat(Y2).
-bandjoin_batbatanyany(Z,1001,1002,1,1), printbat(Z).
-@}
-@+ Swami Example 
-@T
-See SIGMOD94 "On The Estimation Of Join Result Sizes" paper
-\begin{verbatim}
-        size | unique 
--------------+---------
-R1.x     100 |     10  
-R2.y    1000 |    100
-R3.z    1000 |   1000 
-\end{verbatim}
-Its trivial example of R1 x R2 x R3 delivers according to the paper
-1000 result tuples, by joining on R1.x=R2.y=R3.z
-
-This is based on (size1 * size2 * size3) / (unique2 * unique3)
-
-The basic point is that when doing R1.x=R3.z we consider the R1.x domain to 
-be 1000, but when doing R1.x=R2.y Swami assumes R1.x to be 100 (local 
-cointainment).  But is it realistic to use different estimates for the domain 
-in different cases? And is it realistic to assume that one column always is a 
-superset of the other?
-
-We might instead deduce that R1.x, R2.y, R3.z stem from the same domain
-of 1000 elements. This means that we get (size1 * size2 * size3) / (domain**2)
-as an estimate, which might be more accurate. That is, we assume R1.x < R3.z
-and R2.y < R3.z but not R1.x < R2.y. If we want to revert back to Swami,
-one could specify the domain of R1.x to be 100 (instead of 1000), so we do 
-get again R1.x < R2.y.  But this is then a choice of the database designer.
-@p
-swami :-
-                extent(r1, 100),
-                attrib(r1, x, int, 1000, 1, 10, 10),
-                extent(r2, 1000),
-                attrib(r2, y, int, 1000, 1, 100, 100),
-                extent(r3, 1000),
-                attrib(r3, z, int, 1000, 1, 1000, 1000),
-        writef('\nMIL COST MODEL 1.0\n',[]).
- 
-/*  mirror(r3_z,X), join_batbat(A,r2_y,X), printbat(A).*/
-/*  mirror(r2_y,X), join_batbat(A,r1_x,X), printbat(A).*/
-/*  semijoin_batbat(B, r2_y, -1000), printbat(B).*/
-/*  mirror(r1_x,X), join_batbat(C,-1001,X), printbat(C).*/
-

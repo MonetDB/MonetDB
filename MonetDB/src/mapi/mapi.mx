@@ -91,9 +91,11 @@ Get the new information for the server socket and start listening.
 		if (msgsock == -1) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("monetServer: accept failed\n");
+				return GDK_FAIL;
 	    		}
 		} else if (msgsock > 0) {
-			char *name = (char*) alloca(1024), *user = name;
+			int i;
+			char *name = (char*) alloca(BUFSIZ), *user = name;
 			FILE *fdin = fdopen(msgsock, "r");
 			FILE *fdout = fdopen(msgsock, "w");
 			Client c;
@@ -107,11 +109,15 @@ Get the new information for the server socket and start listening.
 				continue;
 			}
 			/* get user name */
-			while((*user = fgetc(fdin)) != '\n' && *user) user++;
+			for(i=0, *user=fgetc(fdin); i<BUFSIZ && *user != '\n'; i++){
+				user++;
+				*user = fgetc(fdin);
+			}
 			*user = 0;
 			c = initClient(GDKstrdup(name), GDKstrdup(monet_prompt), TRUE);
 			if (c == 0) {
-				fprintf(fdout, "Failed to init client\n");
+				fprintf(fdout, "Failed to init client for user %s\n", name );
+				fflush(fdout);
 				(void) fclose(fdin);
 				(void) fclose(fdout);
 				close(msgsock);

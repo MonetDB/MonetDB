@@ -441,6 +441,7 @@ these 'sync' OIDs with their own propagation rules.
 @+ Information Functions
 @c
 #include "monet.h"
+#include "bat.proto.h"
 
 int CMDnew(BAT **ret, int *ht, int *tt, int *cap){
 	*ret = BATnew(*ht, *tt, *cap);
@@ -650,10 +651,12 @@ int CMDgetkey(bit *ret, BAT *b) {
 }
 
 int CMDpersists(BAT **r, BAT *input, bit *param) {
+/*
 	if (*param) {
 		BATpropcheck(input);
         	BATpropcheck(BATmirror(input));
 	}
+*/
 	BATmode(*r=input, *param?PERSISTENT:TRANSIENT);
 	BBPfix(input->batCacheid);
         return GDK_SUCCEED;
@@ -914,7 +917,7 @@ int CMDname(str *retval, BAT *b){
 	return GDK_SUCCEED;
 }
 
-int CMDunload(int *res, str input) {
+int CMDunload(bit *res, str input) {
         int bid = ABS(BBPindex(input));
 	*res = FALSE;
         if (bid > 0) {
@@ -934,7 +937,7 @@ int CMDcold(str input) {
 	return GDK_SUCCEED;
 }
 
-int CMDsave(int *res, str input) {
+int CMDsave(bit *res, str input) {
 	int bid = BBPindex(input);
 	BAT *b;
 	*res = FALSE;
@@ -1139,8 +1142,8 @@ int CMDaccpresent(int *retval, BAT* b) {
 			if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0) return i;
 	} break;
 @c
-int CMDhashloop(BAT* b, Iteration *handle, ptr v){
-	Iteration h = *handle;
+int CMDhashloop(BAT* b, ptr *handle, ptr v){
+	Iteration h = *(Iteration*)handle;
 	char *p; 
 	int idx, i;
 
@@ -1174,8 +1177,8 @@ int CMDhashloop(BAT* b, Iteration *handle, ptr v){
 		p += s;
 	}
 @c
-int CMDbatloop(BAT *b, Iteration *handle, int* low, int* high){
-	Iteration h = *handle;
+int CMDbatloop(BAT *b, ptr *handle, int* low, int* high){
+	Iteration h = *(Iteration*)handle;
 	char *p, *q;
 	int i, s = BUNsize(b);
 
@@ -1198,7 +1201,7 @@ int CMDbatloop(BAT *b, Iteration *handle, int* low, int* high){
 	return GDK_SUCCEED;
 }
 
-int CMDbatloop_std(BAT *b, Iteration *h) {
+int CMDbatloop_std(BAT *b, ptr *h) {
 	int low=0, high=BATcount(b)-1;
 	return CMDbatloop(b, h, &low, &high);
 }
