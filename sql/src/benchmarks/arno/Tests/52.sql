@@ -1,0 +1,1 @@
+SELECT MODEL237.is_mutagen, count(distinct MODEL237.model_id ) FROM MODEL MODEL237, ATOM T1008290422250  WHERE MODEL237.model_id=T1008290422250.model_id AND MODEL237.logp='7' group by MODEL237.is_mutagen;

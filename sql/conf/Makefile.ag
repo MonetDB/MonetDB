@@ -1,0 +1,5 @@
+EXTRA_DIST = \
+	config.guess config.sub \
+	install-sh mkinstalldirs missing \
+	ltmain.sh \
+	stamp-h.in config.h.in

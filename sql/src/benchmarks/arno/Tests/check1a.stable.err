@@ -1,0 +1,13 @@
+stderr of test 'check1a` in directory 'src/benchmarks/arno` itself:
+
+
+# 20:24:16 >  
+# 20:24:16 >  Mtimeout -timeout 21 Mserver -monetrc /export/scratch1/manegold/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/share/Monet/monet.Mtest.conf -db Tests_src_benchmarks_arno check1a.prelude < check1a.milM
+# 20:24:16 >  
+
+server listening on port 54321
+
+# 20:24:18 >  
+# 20:24:18 >  Done.
+# 20:24:18 >  
+

@@ -1,0 +1,6 @@
+
+SUBDIRS = conf src 
+
+EXTRA_DIST = rules.mk
+
+EXTRA_HEADERS = sql_config.h

@@ -1,0 +1,18 @@
+stderr of test '08` in directory 'src/benchmarks/arno` itself:
+
+
+# 21:05:00 >  
+# 21:05:00 >  Mtimeout -timeout 102 Mserver -monetrc /export/scratch1/manegold/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/share/Monet/monet.Mtest.conf -db Tests_src_benchmarks_arno /export/scratch1/manegold/Monet/4.3/sql/_Linux_GNU_32_d_--enable-optimize_/share/sql/catalog.mil /export/scratch1/manegold/Monet/4.3/sql/_Linux_GNU_32_d_--enable-optimize_/share/sql/sqlserver.mil ; echo  ; echo Over..
+# 21:05:00 >  
+
+server listening on port 54321
+
+# 21:05:02 >  
+# 21:05:02 >  Mtimeout -timeout 21 sql_client --port=54321  < 08.sql
+# 21:05:02 >  
+
+
+# 21:05:02 >  
+# 21:05:02 >  Done.
+# 21:05:02 >  
+

@@ -1,0 +1,810 @@
+@f sqlserver
+@a N.J. Nes
+@* 
+
+@m
+.MODULE sqlserver;
+	.USE ascii_io,streams;
+
+	.COMMAND isNil( str s ) : bit = isNil_wrap;
+		"isNil(s).."
+
+	.BUILTIN sqlserver_start(int port, str cmd) = sqlserver_start;
+		"start the sql server, calls cmd on each accepted connection"
+
+	.COMMAND socket_close( int s ) = socket_close_wrap;
+		"close a socket"
+
+	.COMMAND socket_dup( int s ) : int = socket_dup_wrap;
+		"dup a socket"
+
+    	.ATOM context = ptr;
+    	.END;
+
+	.ATOM mvc = ptr;
+	.END;
+	.ATOM sql_schema = ptr;
+	.END;
+	.ATOM sql_table = ptr;
+	.END;
+	.ATOM sql_column = ptr;
+	.END;
+	.ATOM sql_key = ptr;
+	.END;
+	
+
+    	.COMMAND sql_create_context( int debug, int opt, stream o, mvc c ) : context = 
+		sql_create_context; "create a context for the sql interpreter"
+
+    	.COMMAND sql_destroy_context( context c ) = 
+		sql_destroy_context; "destroy the sql interpreter context"
+
+	.BUILTIN sqlclient( mvc m,  context *c, stream *in, stream *out ) = 
+		sqlclient;
+		"parse the next sql command and convert this to mil code"
+
+	.COMMAND types_init( int debug ) = types_init_wrap; 
+		"create the types/functions/aggrs"
+
+	.COMMAND types_exit() = types_exit_wrap; 
+		"cleanup the types/funcs/aggrs"
+
+	.COMMAND types_export( stream s ) = types_export_wrap;
+		"export the types/aggrs/functions to the stream s"
+
+	.COMMAND sql_type(str sqlname, str name, str cast ) = 
+		sql_type_wrap; "Add a new sql type"
+
+	.COMMAND sql_aggr(str name, str imp, str atp, str rtp) = 
+		sql_aggr_wrap; "Add a new sql aggregate function"
+
+	.COMMAND sql_func(str name, str imp, str tp1, str tp2, str tp3, str rtp)
+		= sql_func_wrap; "Add a new sql function"
+
+	.COMMAND mvc_init(int debug, str dir_name) = mvc_init_wrap; 
+		"create the global catalog"
+
+	.COMMAND mvc_exit() = mvc_exit_wrap; "cleanup the global catalog"
+
+	.COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
+		"Create multi version catalog"
+
+	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
+		"Destroy multi version catalog"
+
+	.COMMAND mvc_login( mvc m, str schema, str user, str passwd ) : int 
+		= mvc_login_wrap; "database login"
+
+	.COMMAND mvc_status( mvc m ) : int 
+		= mvc_status_wrap; "return the status of the last mvc operation"
+
+	.COMMAND mvc_type( mvc m ) : int 
+		= mvc_type_wrap; "return the type of the last mvc operation"
+
+	.COMMAND mvc_commit( mvc m, int chain, str name ) : int = 
+		mvc_commit_wrap; "Commit transaction/savepoint and chain"
+
+	.COMMAND mvc_rollback( mvc m, int chain, str name ) : int = 
+		mvc_rollback_wrap; "Rollback transaction/savepoint and chain"
+
+	.COMMAND mvc_release( mvc m, str name ) : int = 
+		mvc_release_wrap; "Release the savepoint"
+
+	.COMMAND mvc_set_iso_level( mvc m, int level ) : int = 
+		mvc_set_iso_level_wrap; "Change the isolation level"
+
+	.COMMAND mvc_bind( mvc c, str tname, str cname ) : BAT[any::1,any::2] = 
+		mvc_bind_wrap; "Bind the bat, tname.cname"
+
+	.COMMAND mvc_bind_schema( mvc c, str sname ) : sql_schema = 
+		mvc_bind_schema_wrap; "Bind schema, sname"
+
+	.COMMAND mvc_bind_table( mvc c, sql_schema s, str tname ) : sql_table = 
+		mvc_bind_table_wrap; "Bind table, s.tname"
+
+	.COMMAND mvc_bind_column( mvc c, sql_table t, str cname ) : sql_column = 
+		mvc_bind_column_wrap; "Bind column, t.cname"
+
+	.COMMAND mvc_bind_key( mvc c, sql_table t, ...str... ) : sql_key = 
+		mvc_bind_key_wrap; "Bind key, t.(cols)"
+
+	.COMMAND mvc_drop_schema( mvc c, str name ) = mvc_drop_schema_wrap;
+		"Drop schema"
+
+	.COMMAND mvc_create_schema( mvc c, str name, str auth) : sql_schema = 
+		mvc_create_schema_wrap; "Create schema"
+
+	.COMMAND mvc_drop_table( mvc c, sql_schema s, str name, bit cascade ) = 
+		mvc_drop_table_wrap; "Drop table"
+
+	.COMMAND mvc_create_table( mvc c, sql_schema s, str name, bit temp) : 
+		sql_table = mvc_create_table_wrap; "Create table"
+
+	.COMMAND mvc_create_view( mvc c, sql_schema s, str name, str sql) :
+		sql_table = mvc_create_view_wrap; "Create view"
+
+	.COMMAND mvc_drop_column( mvc c, sql_table t, str name ) = 
+		mvc_drop_column_wrap; "Drop column"
+
+	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int seqnr ) : sql_column = mvc_create_column_wrap; "Create column"
+
+	.COMMAND mvc_not_null( mvc m, sql_column col ) : 
+		sql_column = mvc_not_null_wrap; "Set column not null"
+
+	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
+		sql_column = mvc_default_wrap; "Set column default value"
+
+	.COMMAND mvc_create_key( mvc m, sql_table t, int kt, sql_key *fk ) :
+		sql_key = mvc_create_key_wrap; "Create a table key"
+
+	.COMMAND mvc_key_add_column( mvc m, sql_key k, sql_column *c ) :
+		sql_key = mvc_key_add_column_wrap; "Key add column"
+
+	.COMMAND mvc_fast_insert( mvc c, str val ) : 
+		int = mvc_fast_insert_wrap; 
+		"Fast insert, string format 0,nr_args,(tname,val)*nr_arg,"
+
+	.COMMAND mvc_insert( mvc c, str tname, ...any... ) : 
+		int = mvc_insert_wrap; 
+		"Insert, values in the table with the given table id"
+
+	.COMMAND mvc_delete( mvc c, str tname, BAT[oid,any] rids ) : 
+		int = mvc_delete_wrap; 
+		"Delete, all rows (rids) from the table tname"
+
+	.COMMAND mvc_update( mvc c, str tname, str cname, BAT[oid,any] val ) : 
+		int = mvc_update_wrap; 
+		"Update the value of column, cname in table, tname"
+
+	.COMMAND mvc_export(stream s, BAT order, BAT bats, str sep, str rsep) =
+		mvc_export_wrap; "export a table (in order) to stream s with the given tuple and record seperators (sep/rsep)"
+
+	.COMMAND mvc_import_table( mvc c, stream s, str tname, 
+					str sep, str rsep, int nr) : 
+		int = mvc_import_table_wrap; 
+		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
+
+	.COMMAND mvc_export_schema( mvc c, stream s ) = mvc_export_schema_wrap; 
+		"Export the schema info of the current transaction"
+
+.END sqlserver;
+
+@h
+#ifndef _SQLSERVER_H_
+#define _SQLSERVER_H_
+
+#include <streams.h>
+#include "monet_context.h"
+#include "context.h"
+#include "mvc.h"
+#include "sqlserver.proto.h"
+
+#endif /*_SQLSERVER_H_*/
+
+@c
+#include "sqlserver.h"
+#include <statement.h>
+#include <sqlexecute.h>
+#include "mem.h"
+
+#include  <sys/types.h> 
+#include  <sys/socket.h> 
+
+extern catalog *catalog_create( context *lc, mvc *m);
+
+int isNil_wrap( bit *b, str s)
+{
+	if (s == NULL){
+		*b = FALSE;
+	} else {
+		*b = TRUE;
+	}
+	return GDK_SUCCEED;
+}
+
+
+int sql_create_context( context *res, int *debug, int *opt, stream *ws, mvc *m ){
+	context *lc = NEW(context);
+
+	sql_init_context( lc, *(stream**)ws, *debug, default_catalog_create() );
+	lc->optimize = *opt;
+	catalog_create( lc, *(mvc**)m );
+	lc->cat->cc_getschema( lc->cat, "default-schema", "default-user");
+	*(context**)res = lc;
+	return GDK_SUCCEED;
+}
+
+int sql_destroy_context( context *lc ){
+	sql_exit_context( *(context**)lc );
+	return GDK_SUCCEED;
+}
+
+int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+	char buf[BUFSIZ];
+	int err = 0;
+	stmt *s = NULL;
+	char *cmd = NULL;
+
+	mvc **M, *m;
+	context **C, *lc;
+	stream **In, *in, **Out, *out;
+
+  	if (lt->cnt != 4) {
+        	return handle_argerror(res,lt->cnt,4);
+  	}
+  	@:builtin_operand(0,TYPE_mvc,M)@
+	m = *M;
+  	@:builtin_operand(1,TYPE_context,C)@
+	lc = *C;
+  	@:builtin_operand(2,TYPE_stream,In)@
+	in = *In;
+  	@:builtin_operand(3,TYPE_stream,Out)@
+	out = *Out;
+
+	while(lc->cur != EOF ){
+		s = sqlnext(lc, in, &err);
+		if (err){ /* output error */
+			out->writeInt( out, 0 );
+			out->writeInt( out, 0 );
+			out->writeInt( out, -1 );
+			out->write( out, lc->errstr, strlen(lc->errstr), 1 );
+			out->flush( out );
+		} else if (s){
+	    		int nr = 1;
+	    		stmt_dump( s, &nr, lc );
+
+			cmd = buffer_get_buf(stream_get_buffer( lc->out ));
+	    		lc->out->flush( lc->out );
+			
+			if (cmd && cmd[0] == '0'){ /* return nr of inserts */
+				int res = mvc_fast_insert(m, cmd);
+				out->writeInt( out, 0 );
+				out->writeInt( out, mvc_type(m) );
+				out->writeInt( out, mvc_status(m) );
+				out->flush( out );
+			} else {
+				ValRecord res;
+				ptr val = &res.val.ival;
+        			res.vtype = TYPE_void; 
+				interpret_str( stk, cmd, &res);
+				/*TODO: we need to cleanup val */
+			}
+			if (cmd) _DELETE(cmd);
+		}
+		if (s) stmt_destroy(s);
+	}
+	return GDK_SUCCEED;
+}
+
+int mvc_init_wrap( int* debug, str dir_name){
+	mvc_init(*debug, dir_name);
+	return GDK_SUCCEED;
+}
+int mvc_exit_wrap( ){
+	mvc_exit();
+	return GDK_SUCCEED;
+}
+
+int types_init_wrap( int* debug){
+	types_init(*debug );
+	return GDK_SUCCEED;
+}
+int types_exit_wrap( ){
+	types_exit();
+	return GDK_SUCCEED;
+}
+int types_export_wrap( stream *s ){
+	types_export( *(stream**)s );
+	return GDK_SUCCEED;
+}
+int sql_type_wrap( str sqlname, str name, str cast ){
+	sql_new_type( sqlname, name, cast );
+	return GDK_SUCCEED;
+}
+int sql_aggr_wrap( str name, str imp, str atp, str rtp){
+	sql_new_aggr( name, imp, atp, rtp );
+	return GDK_SUCCEED;
+}
+int sql_func_wrap( str name, str imp, str tp1, str tp2, str tp3, str rtp){
+	sql_new_func( name, imp, tp1, tp2, tp3, rtp );
+	return GDK_SUCCEED;
+}
+
+
+@= builtin_operand
+{       int _k = interpret(stk, arg(lt, @1), res);
+        if (_k < 0) {
+                return _k;
+        }
+        @3 = VALconvert(@2, res, 0);
+        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+                return handle_paramerror(res,@1,res->vtype,@2);
+        }
+}
+@c
+
+int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
+  int port, *Port, sock, fd = 0, server_run = 1;
+  char *cmd, *Cmd;
+  struct sockaddr_in server, client;
+
+  if (lt->cnt != 2) {
+        return handle_argerror(res,lt->cnt,2);
+  }
+  @:builtin_operand(0,TYPE_int,Port)@
+  port = *Port;
+  @:builtin_operand(1,TYPE_str,Cmd)@
+  cmd = _strdup(Cmd);
+
+  sock = socket (AF_INET, SOCK_STREAM, 0);
+  if (sock < 0) {
+    perror ("could not create socket");
+    exit (1);
+  }
+   
+  server.sin_family = AF_INET;
+  server.sin_addr.s_addr = htonl (INADDR_ANY);
+  server.sin_port = htons (port);
+
+  if (bind (sock, (struct sockaddr *) &server, sizeof (server)) < 0) {
+    perror ("could not bind socket");
+    return -1;
+  }
+
+  listen (sock, 5);
+
+  fprintf (stderr, "server listening on port %i\n", port);
+
+  while (monet_running && server_run) {
+    int retval;
+    int client_len = sizeof (client);
+    struct timeval tv;
+    fd_set fds;
+
+    FD_ZERO(&fds);
+    FD_SET(sock, &fds);
+    /* Wait up to five seconds. */
+    tv.tv_sec = 0;
+    tv.tv_usec = 500;
+
+    retval = select(sock+1, &fds, &fds, &fds, &tv);
+    /* Don't rely on the value of tv now! */
+
+    if (retval &&
+        (fd = accept(sock, (struct sockaddr *) &client, &client_len))<0 ){
+      	perror ("accept () failed");
+	break;
+    } else if(retval){
+	ValRecord res;
+	ptr val = &res.val.ival;
+	int cres = 0;
+	char buf[BUFSIZ];
+	
+	snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, fd );
+        res.vtype = TYPE_void; 
+	interpret_str( stk, buf, &res);
+	/*TODO: we need to cleanup val */
+	if ((cres = close(fd)) < 0){
+		fprintf(stderr, "Error closing socket %d\n", cres );
+		return;
+	}
+    }
+  }
+  if (close(sock) < 0){
+	perror("Error closing sock\n");
+  }
+  return 0;
+}
+
+int socket_close_wrap( int *s ){
+	close(*s);
+	return GDK_SUCCEED;
+}
+
+int socket_dup_wrap( int *res, int *s ){
+	*res = dup(*s);
+	return GDK_SUCCEED;
+}
+
+
+int mvc_create_wrap( mvc *res, int *debug ){
+	*(mvc**)res = mvc_create( *debug );
+	return GDK_SUCCEED;
+}
+
+int mvc_destroy_wrap( mvc *c ){
+	mvc_destroy( *(mvc**)c );
+	return GDK_SUCCEED;
+}
+
+int mvc_login_wrap( int *r, mvc *c, str schema, str user, str passwd  ){
+	*r = mvc_login( *(mvc**)c, schema, user, passwd );
+	if (*r != 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+int mvc_status_wrap( int* res, mvc* m ){
+	*res = mvc_status( *(mvc**)m );
+	return GDK_SUCCEED;
+}
+
+int mvc_type_wrap( int* res, mvc* m ){
+	*res = mvc_type( *(mvc**)m );
+	return GDK_SUCCEED;
+}
+
+
+int mvc_commit_wrap( int* res, mvc* m, int* chain, str name){
+	*res = mvc_commit( *(mvc**)m, *chain, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_rollback_wrap( int *res, mvc *m, int *chain, str name ){
+	*res = mvc_rollback( *(mvc**)m, *chain, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_release_wrap( int *res, mvc *m, str name ){
+	*res = mvc_release( *(mvc**)m, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_set_iso_level_wrap( int *res, mvc *m, int *level ){
+	*res = mvc_set_iso_level( *(mvc**)m, *level );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_wrap( BAT** res, mvc* c, str tname, str cname){
+	*res = mvc_bind( *(mvc**)c, tname, cname );
+	BBPfix((*res)->batCacheid );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_schema_wrap( sql_schema* res, mvc* c, str sname){
+	*(sql_schema**)res = mvc_bind_schema( *(mvc**)c, sname );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_table_wrap( sql_table* res, mvc* c, sql_schema *s, str tname){
+	*(sql_table**)res = mvc_bind_table( *(mvc**)c, *(sql_schema**)s, tname);
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_column_wrap( sql_column* res, mvc* c, sql_table *t, str col){
+	*(sql_column**)res = mvc_bind_column( *(mvc**)c, *(sql_table**)t, col);
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_table *t, ...){
+	va_list ap;
+
+	va_start(ap,t);
+	*(sql_key**)res = mvc_bind_key( *(mvc**)c, *(sql_table**)t, ap);
+	va_end(ap);
+	return GDK_SUCCEED;
+}
+
+
+int mvc_create_schema_wrap( sql_schema *s, mvc* c, str name, str auth){
+	*(sql_schema**)s = mvc_create_schema( *(mvc**)c, name, auth );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_schema_wrap( mvc* c, str name){
+	mvc_drop_schema( *(mvc**)c, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_table_wrap( sql_table *res, mvc* c, sql_schema *s, str name, bit* temp){
+	*(sql_table**)res = mvc_create_table( *(mvc**)c, *(sql_schema**)s, name, *temp );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_view_wrap( sql_table *res, mvc* c, sql_schema *s, str name, str sql){
+	*(sql_table**)res = mvc_create_view( *(mvc**)c, *(sql_schema**)s, name, sql );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_table_wrap( mvc* c, sql_schema *s, str name, bit* cascade){
+	mvc_drop_table( *(mvc**)c, *(sql_schema**)s, name, *cascade );
+	return GDK_SUCCEED;
+}
+
+
+int mvc_create_column_wrap( sql_column* res, mvc* c, sql_table *t, 
+		str name, str type, int* seqnr){
+	*(sql_column**)res = 
+	  mvc_create_column( *(mvc**)c, *(sql_table**)t, name, type, *seqnr );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_column_wrap( mvc* c, sql_table *t, str name){
+	mvc_drop_column( *(mvc**)c, *(sql_table**)t, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_not_null_wrap( sql_column* res, mvc* c, sql_column* col){
+	*(sql_column**)res = mvc_not_null( *(mvc**)c, *(sql_column**)col );
+	return GDK_SUCCEED;
+}
+
+int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val){
+	*(sql_column**)res = mvc_default( *(mvc**)c, *(sql_column**)col, val );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table* t, int *kt, sql_key *fk){
+	if (*(ptr*)fk == ptr_nil){
+		*(sql_key**)res = mvc_create_key( *(mvc**)c, *(sql_table**)t, *kt, NULL);
+	} else {
+		*(sql_key**)res = mvc_create_key( *(mvc**)c, *(sql_table**)t, *kt, *(sql_key**)fk);
+	}
+	return GDK_SUCCEED;
+}
+
+int mvc_key_add_column_wrap( sql_key* res, mvc* m, sql_key* k, sql_column *c){
+	*(sql_key**)res = mvc_key_add_column( *(mvc**)m, *(sql_key**)k, *(sql_column**)c);
+	return GDK_SUCCEED;
+}
+
+int mvc_fast_insert_wrap( int *res, mvc* c, str val){
+	*res = mvc_fast_insert( *(mvc**)c, val );
+	return GDK_SUCCEED;
+}
+
+int mvc_insert_wrap( int *res, mvc* c, str tname, ... ){
+	va_list ap;
+
+	va_start(ap,tname);
+	*res = mvc_insert( *(mvc**)c, tname, ap);
+	va_end(ap);
+	return GDK_SUCCEED;
+}
+
+int mvc_delete_wrap( int *res, mvc* c, str tname, BAT *rids ){
+	*res = mvc_delete( *(mvc**)c, tname, rids ); 
+	return GDK_SUCCEED;
+}
+
+int mvc_update_wrap( int *res, mvc* c, str tname, str cname, BAT *v){
+	*res = mvc_update( *(mvc**)c, tname, cname, v ); 
+	return GDK_SUCCEED;
+}
+
+int mvc_export_wrap( stream *s, BAT *order, BAT *bats, str sep, str rsep ){
+	mvc_export( *(stream**)s, order, bats, sep, rsep );
+	return GDK_SUCCEED;
+}
+
+int mvc_import_table_wrap( int *res, mvc *c, stream *s, str tname , str sep, str rsep, int *sz ){
+	*res = mvc_import_table( *(mvc**)c, *(stream**)s, tname, sep, rsep, *sz );
+	return GDK_SUCCEED;
+}
+
+int mvc_export_schema_wrap( mvc *c, stream *s ){
+	mvc_export_schema( *(mvc**)c, *(stream**)s );
+	return GDK_SUCCEED;
+}
+@mil
+module(sqlserver);
+#module(MILsqueezer);
+
+module(str);
+module(alarm);
+module(unix);
+module(ddbench);
+module(aggrX3);
+module(monettime);
+
+const QPARSE := 1;
+const QTABLE := 2;
+const QUPDATE := 3;
+
+proc {min}(val,grp, extent) := {
+	return {min}(grp.reverse.join(val), extent);
+}
+proc {max}(val,grp,extent) := {
+	return {max}(grp.reverse.join(val), extent);
+}
+
+proc default_val( myc, cid, val ) := {
+	return mvc_default( myc, cid, str(val));
+}
+
+proc atom(val):= {
+	return val;
+}
+
+proc avg(BAT b):= {
+	var s := b.sum();
+	return s/b.count();
+}
+
+proc date_sub_sec_interval( date d, int sec ) := {
+	if (sec > 0){
+		return d.adddays( -1 * sec/86400);
+	}
+	return d;
+}
+
+proc date_add_sec_interval( date d, int sec ) := {
+	if (sec > 0){
+		return d.adddays(sec/86400);
+	}
+	return d;
+}
+
+proc date_sub_month_interval( date d, int months ) := {
+	return d.addmonths(months);
+}
+
+proc add(x, y):= return x + y;
+proc sub(x, y):= return x - y;
+proc mul(x, y):= return x * y;
+proc div(x, y):= return x / y;
+proc neg(val):= return -1 * val;
+
+proc sep():= {
+	return "\t";
+}
+
+proc load_seps( BAT[void,BAT] bats, str Sep, str Rsep ) : BAT[void,str] := {
+	var seps := new(void,str); seps.seqbase(oid(0));
+	var id := 0;
+	var cnt := bats.count - 1;
+	bats@batloop(){
+		if (id != cnt) {
+			seps.insert(nil,Sep);
+		} else {
+			seps.insert(nil,Rsep);
+		}
+		id += 1;
+	}
+	return seps;
+}
+
+proc bat_name(b):= return str(b);
+proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
+
+proc input( mvc myc, str tname, str fname, str Sep, str rSep, int sz ):={
+	print(fname);
+	var s := open_rastream( fname );
+	#if (rSep = "newline"){
+	#	rSep := "\n";
+	#}
+	mvc_import_table( myc, s, tname, Sep, rSep, sz );
+	stream_close(s);
+}
+
+Stdout := file_wastream( stdout, "test" );
+
+proc write_output( stream Output, str v ) := {
+	var buf := v + "\n";
+	stream_write(Output, buf );
+}
+
+proc result( stream Output, int Type, int status ) := {
+	stream_writeInt( Output, 0 ); # write not done.
+	stream_writeInt( Output, Type ); # write not done.
+	stream_writeInt( Output, status ); # write not done.
+	stream_flush( Output );
+}
+
+proc ascii_io_output( bat Order, bat bats, stream Output, str Sep ) : int := {
+	var Max := bats.reverse.max();
+	var seps := [ bats ~ const Sep];
+	seps.access(BAT_WRITE);
+	seps.replace(Max, "\n");
+
+	seps := seps.reverse.mark(oid(0));
+	bats := bats.reverse.mark(oid(0));
+	return output( Order, seps.reverse, bats.reverse, Output );
+}
+
+proc server_output( stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void := {
+	var cnt := Order.count();
+	stream_writeInt( Output, 0 ); # write not done.
+	stream_writeInt( Output, QTABLE ); # type TABLE.
+	stream_writeInt( Output, cnt ); # NR records.
+
+	cnt := $0;
+	var bats := new(oid,bat);
+	var id := 0;
+	while((id + 2) < cnt ){
+		bats.insert(oid(id), $(id+3));
+		id :+= 1;
+	}
+	ascii_io_output(Order, bats, Output, "\t");
+	stream_flush( Output );
+}
+
+proc SQLclient_sql( Output, Input, cmd ) := {
+	var myc := mvc_create(0);
+
+	mvc_login( myc, "default-schema", "sqladmin", "nopasswd" );
+
+	var buf := buffer_create( 1024 );
+	var LOutput := buffer_wastream( buf, sprintf("SQLserver-%d", sock ));
+	var c := sql_create_context( 0, 1, LOutput, myc );
+
+	sqlclient( myc, c, Input, Output );
+
+	mvc_destroy( myc );
+	sql_destroy_context( c );
+	stream_close( Output );
+	stream_close( Input );
+}
+
+proc SQLclient_mil( Output, Input, cmd ) := {
+	var myc := mvc_create(0);
+
+	cmd := stream_read( Input );
+	while(length(cmd) > 1){
+		if (cmd.startsWith("0")){
+			mvc_fast_insert(myc, cmd );
+			result(Output, mvc_type(myc), mvc_status(myc));
+	        } else {
+			sqlexecute(cmd, Output );
+		}
+		cmd := stream_read( Input );
+	}
+	mvc_destroy( myc );
+	stream_close( Output );
+	stream_close( Input );
+}
+
+proc SQLclient_thread( int sock ):= {
+
+	var Output := block_stream(
+		socket_wstream( sock, sprintf("SQLserver-%d", sock) ));
+	var Input := block_stream(
+		socket_rstream( sock, sprintf("SQLserver-%d", sock) ));
+
+	var cmd := stream_read( Input ); # info
+	#print(cmd);
+	if (cmd.startsWith("info") = false ){
+		printf("Protocol error: %s\n", cmd);
+		return -1;
+	}
+
+	cmd := stream_read( Input ); # api
+	#print(cmd);
+	if (cmd.startsWith("sql")){
+		SQLclient_sql( Output, Input, cmd );
+	} else {
+		SQLclient_mil( Output, Input, cmd );
+	}
+
+	socket_close( sock );
+	return 0;
+}
+
+proc sqlexecute( str cmd, stream Output ):= {
+	#printf("sqlexecute %s\n", cmd);
+	#scmd := squeeze(cmd,1);
+	#printf("squeezed %s\n", scmd);
+	eval(cmd);
+}
+
+proc SQLclient( int sock ) := {
+	dsock := socket_dup(sock);
+	printf("# [ %d %d ]\n",sock, dsock);
+	SQLclient_thread(dsock).fork();
+}
+
+proc get_sql_port() := {
+	if (monet_envirenment.exist("sql_port")){
+		return int(monet_envirenment.find("sql_port"));
+	}
+	var port := 45123;
+	var sqlport := getenv("SQLPORT");
+	if (length(sqlport) > 0){
+		port := int(sqlport);
+	}
+	return port;
+}
+
+sqlserver_start(get_sql_port(), "SQLclient").fork();
+
+

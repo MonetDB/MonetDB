@@ -1,0 +1,4 @@
+x,",",int
+y,",",int
+z,",",int
+val,"\n",uchr
