@@ -49,7 +49,7 @@ application below illustrates the main operations.
 
 main(int argc, char *argv)
 {
-	Mapi	*dbh;
+	Mapi	dbh;
 
 	dbh = mapi_connect("localhost:50001", "guest", 0, "sql");
 	if (mapi_error(dbh))

@@ -154,8 +154,13 @@ InstallListFd.writelines(InstallList)
 InstallListFd.close()
 
 skip = ["conf/stamp-h", "conf/config.h"]
+prev = ''
 
 def filter(st):
+    global prev
+    if st == prev:
+        return ''
+    prev = st
     if not st in skip:
         return st + '\n'
     return ''
