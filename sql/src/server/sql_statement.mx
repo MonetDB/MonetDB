@@ -151,6 +151,7 @@ typedef struct group {
 
 	stmt *grp;
 	stmt *ext;
+	list *cols; /* list of group by columns */
 } group;
 
 sql_export const char * st_type2string(st_type type);
@@ -260,7 +261,7 @@ extern stmt *stmt_dup( stmt *s );
 
 sql_export void stmt_reset(stmt *s );
 
-extern group *grp_create(stmt * s, group *og );
+extern group *grp_create(stmt * s, group *og, stmt *col );
 extern group *grp_semijoin(group *og, stmt *s );
 extern void grp_destroy(group * g);
 extern group *grp_dup(group * g);
@@ -443,6 +444,8 @@ void grp_destroy( group * g)
 	if (sql_ref_dec(&g->ref) == 0) {
 		stmt_destroy(g->grp);
 		stmt_destroy(g->ext);
+		if (g->cols)
+			list_destroy(g->cols);
 		_DELETE(g);
 	}
 }
@@ -454,15 +457,24 @@ group *grp_dup( group * g)
 	return g;
 }
 
-group *grp_create( stmt *s, group *og )
+group *grp_create( stmt *s, group *og, stmt *col )
 {
 	group *g = NEW(group);
 	sql_ref_init(&g->ref);
+	g->cols = NULL;
 	if (og){
 		g->grp = stmt_derive(stmt_dup(og->grp), s);
+		g->cols = og->cols;
+		og -> cols = NULL;
 		grp_destroy(og);
 	} else {
 		g->grp = stmt_group(s);
+		if (col) 
+			g->cols = list_create(NULL);
+	}
+	if (col) {
+		assert(g->cols);
+		list_append(g->cols, col);
 	}
 	g->ext = stmt_ext(stmt_dup(g->grp));
 	return g;
@@ -479,6 +491,8 @@ group *grp_semijoin( group *og, stmt *s )
 	sql_ref_init(&g->ref);
 	g->grp = stmt_semijoin_tail(stmt_dup(og->grp),s);
 	g->ext = stmt_semijoin(stmt_dup(og->ext),stmt_dup(s));
+	g->cols = og->cols;
+	og->cols = NULL;
 	grp_destroy(og);
 	return g;
 }
@@ -1944,24 +1958,17 @@ sql_column *basecolumn(stmt * st)
 
 stmt *grp_find_groupby_col( group *g , stmt *s )
 {
-	stmt *gs = g->grp;
-        while(gs) {
-		if( gs->type == st_group){
-			stmt *ns = tail_column(gs->op1.stval);
-			if (ns == s)
-				return s;
-			return NULL;
-		} else if( gs->type == st_derive){
-			stmt *ns = tail_column(gs->op2.stval);
-			if (ns == s)
-				return s;
-			gs = gs->op1.stval;
-		/* group maybe filtered by a having */
-		} else if( gs->type == st_reverse || gs->type == st_semijoin) {
-			gs = gs->op1.stval;
-		} else {
-			return NULL;
-		}
+	node *n;
+
+	/* groups built for outer references or implicite groups 
+		can allways find columns */ 
+	if (!g->cols)
+		return s;
+
+        for(n = g->cols->h; n; n = n->next ) {
+		stmt *gs = n->data;
+		if (gs == s)
+			return s;
 	}
 	return NULL;
 }

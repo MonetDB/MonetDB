@@ -843,7 +843,7 @@ static stmt *sets2pivot(list * ll)
 		   list *inserts = create_stmt_list();
 
 		   for( m = pivots->op1.lval->h; m; m = m->next) {
-		   	g = grp_create(stmt_dup(m->data), g);
+		   	g = grp_create(stmt_dup(m->data), g, NULL);
 		   }
 		   u = stmt_reverse( stmt_unique( stmt_reverse( stmt_dup(g->ext) ), NULL));
 		   grp_destroy(g);

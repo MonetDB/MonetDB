@@ -835,10 +835,6 @@ static stmt *sql_aggrop(mvc * sql, scope * scp, symbol * se, group * grp, stmt *
 	return NULL;
 }
 
-#define is_outer_grp(g) (g->grp->type == st_group &&  \
-			 (g->grp->op1.stval->type == st_pivot || \
-			  g->grp->op1.stval->type == st_partial_pivot))
-
 static stmt *sql_column_value(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f)
 {
 	stmt *s = sql_column_ref(sql, scp, se);
@@ -852,8 +848,7 @@ static stmt *sql_column_value(mvc * sql, scope * scp, symbol * se, group * grp, 
 				"Subset not found for value expression");
 
 		s = stmt_join(foundsubset, s, cmp_equal);
-		if (s && grp && f && s->type != st_aggr && 
-			! is_outer_grp(grp) ) {
+		if (s && grp && f && s->type != st_aggr && grp->cols) {
 			if (grp_find_groupby_col(grp, col)) {
 				s = stmt_join(stmt_dup(grp->ext), s, cmp_equal);
 			} else {
@@ -1160,7 +1155,7 @@ stmt *distinct( stmt * s)
 
  	for (n = s->op1.lval->h; n; n = n->next) {
 		stmt *t = n->data;
-		grp = grp_create(stmt_dup(t), grp);
+		grp = grp_create(stmt_dup(t), grp, NULL);
 	}
 
  	for (n = s->op1.lval->h; n; n = n->next) {
@@ -1977,54 +1972,6 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 	return sql_error(sql, 02, "Predicate: time to implement some more");
 }
 
-static stmt *having_condition(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset)
-{
-	if (!sc)
-		return NULL;
-	switch (sc->token) {
-	case SQL_OR:
-		{
-			symbol *lo = sc->data.lval->h->data.sym;
-			symbol *ro = sc->data.lval->h->next->data.sym;
-			stmt *ls = having_condition(sql, scp, lo, grp, subset);
-			stmt *rs = having_condition(sql, scp, ro, grp, subset);
-			if (!ls || !rs)
-				return NULL;
-
-			return stmt_union(ls, rs);
-		}
-		break;
-	case SQL_AND:
-		{
-			symbol *lo = sc->data.lval->h->data.sym;
-			symbol *ro = sc->data.lval->h->next->data.sym;
-			stmt *ls = having_condition(sql, scp, lo, grp, subset);
-			stmt *rs = having_condition(sql, scp, ro, grp, subset);
-			if (!ls || !rs)
-				return NULL;
-
-			return stmt_semijoin(ls, rs);
-		}
-		break;
-	case SQL_COMPARE:
-	case SQL_BETWEEN:
-	case SQL_NOT_BETWEEN:
-	case SQL_LIKE:
-	case SQL_NOT_LIKE:
-	case SQL_IN:
-	case SQL_NOT_IN:
-	case SQL_EXISTS:
-	case SQL_NOT_EXISTS:
-			return sql_logical_exp(sql, scp, sc, grp, subset, sql_where);
-	default:
-		return sql_error(sql, 02, 
-			 "Predicate %s %d: time to implement some more",
-			 token2string(sc->token), sc->token);
-	}
-	return sql_error(sql, 02, "Predicate: time to implement some more");
-}
-
-
 static group *query_groupby_inner(mvc * sql, scope * scp, stmt * c, stmt * subset, group * cur)
 {
 	stmt *s = find_pivot(subset, c->h);
@@ -2032,7 +1979,7 @@ static group *query_groupby_inner(mvc * sql, scope * scp, stmt * c, stmt * subse
 
 	if (s) {
 		stmt *j = stmt_join(s, c, cmp_equal);
-		cur = grp_create(j, cur);
+		cur = grp_create(j, cur, c);
 	}
 
 	if (!cur) {
@@ -2073,7 +2020,7 @@ static group *query_groupby_outers(mvc * sql, scope * scp, stmt * subset)
 		stmt *outer = o->data;
 		stmt *s = find_pivot(subset, outer);
 		if (s) 
-			cur = grp_create(s, cur);
+			cur = grp_create(s, cur, NULL);
 	}
 	return cur;
 }
@@ -2317,7 +2264,8 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	subset = stmt_dup(s);
 	if (sn->having) {
 		if (s) stmt_destroy(s);
-		s = having_condition(sql, scp, sn->having, grp, subset);
+		s = sql_logical_exp(sql, scp, sn->having, 
+					grp, subset, sql_where);
 
 		if (!s){
 			sql_select_cleanup(sql, s, subset, grp);
@@ -2330,7 +2278,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 			/* implicit single group of whole result */
 			grp = grp_create(stmt_const(stmt_dup(subset),
 				stmt_atom(atom_int(sql_dup_subtype(it), 0))), 
-			      NULL);
+			      NULL, NULL);
 		}
 		grp = grp_semijoin(grp, stmt_dup(s));
 	}

@@ -135,7 +135,7 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 		    	for(m = k->columns->h; m; m = m->next){
 				sql_kc *c = m->data;
 				g = grp_create(
-					stmt_dup(inserts[c->c->colnr]->op2.stval),g);
+					stmt_dup(inserts[c->c->colnr]->op2.stval),g, NULL);
 			}
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt));
 			grp_destroy(g);
@@ -470,7 +470,7 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 							st_bat), 
 						upd);
 				}
-				g = grp_create(upd,g);
+				g = grp_create(upd,g, NULL);
 			}
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt));
 			grp_destroy(g);
