@@ -26,6 +26,11 @@ Over..
 # 1 # tuplecount
 # 0 # id
 [ false	]
+# =_current_date # name
+# boolean # type
+# 1 # tuplecount
+# 1 # id
+[ false	]
 
 # 09:13:39 >  
 # 09:13:39 >  Done.

@@ -720,6 +720,7 @@ stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len)
 static stmt *insert_into(mvc * sql, dlist * qname,
 			 dlist * columns, symbol * val_or_q)
 {
+	int inscol = 0;
 	scope *scp;
 	tvar *tv = NULL;
 
@@ -782,36 +783,9 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 				}
 					
 				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins );
+				inscol = c->colnr;
 			}
 
-		}
-		for(i=0; i<len; i++){
-			if (!inserts[i]){
-				node *m;
-				for(m = t->columns.set->h; m; m = m->next){
-					sql_column *c = m->data;
-					if (c->colnr == i) {
-						atom *a = NULL;
-						if (c->def)
-						    a = atom_general(
-						    sql_dup_subtype(c->type), 
-						    _strdup(c->def) );
-						else
-						    a = atom_general(
-						    sql_dup_subtype(c->type), 
-						    NULL );
-						/* no valid default ! */
-						if (!a) {
-							scp = scope_close(scp);
-		
-							cleanup_stmts(inserts, len);
-							return sql_error(sql, 02, 
-				 				"column %s has no valid default value", c->base.name);
-						}
-						inserts[i] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_atom(a));
-					}
-				}
-			}
 		}
 	} else {
 		stmt *s = scope_subquery(sql, NULL, val_or_q);
@@ -842,10 +816,45 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 					return NULL;
 				}
 				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins);
+				inscol = c->colnr;
 			}
 		}
 		if (s) 
 			stmt_destroy(s);
+	}
+	for(i=0; i<len; i++){
+		stmt *ic = inserts[inscol]->op2.stval;
+		if (!inserts[i]){
+			node *m;
+			for(m = t->columns.set->h; m; m = m->next){
+				sql_column *c = m->data;
+				atom *a = NULL;
+				if (c->colnr == i) {
+					stmt *s;
+					if (c->def) {
+					    a = atom_general(
+					    sql_dup_subtype(c->type), 
+					    _strdup(c->def) );
+					} else {
+					    a = atom_general(
+					    sql_dup_subtype(c->type), NULL );
+					}
+					/* no valid default ! */
+					if (!a) {
+						scp = scope_close(scp);
+		
+						cleanup_stmts(inserts, len);
+						return sql_error(sql, 02, 
+				 			"column %s has no valid default value", c->base.name);
+					}
+					s = stmt_atom(a);
+					if (!(ic->key && ic->nrcols == 0)) 
+						s = stmt_const(stmt_dup(ic),s);
+					inserts[i] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), s);
+				}
+			}
+			assert(inserts[i]);
+		}
 	}
 	if (collist != t->columns.set)
 		list_destroy(collist);
@@ -1031,8 +1040,14 @@ static stmt *update_table(mvc * sql, dlist * qname,
 				  stmt_reverse(s ? 
 					first_subset(s) : 
 				  	stmt_cbat(c, stmt_dup(tv->s), RDONLY, st_bat)), v);
+			} else {
+				/* s is a table result ie new oid, original oid 
+			 	* v is a result based on subset s, new oid, val
+			 	* So a join is needed to get original oid, val
+			 	*/
+				v = stmt_join(stmt_reverse(
+					first_subset(s)), v, cmp_equal);
 			}
-
 			updates[c->colnr] = stmt_replace( stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), v);
 			list_append(l, stmt_dup(updates[c->colnr]) );
 			if (t->base.flag != TR_NEW) {

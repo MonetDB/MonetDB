@@ -23,7 +23,7 @@
 
 SWIGFLAGS = -DHAVE_LONG_LONG -I@srcdir@/../include
 INCLUDES = \
-	-I../include \
+	../include \
 	-I@PYTHONINC@ 
 
 _odbc_la_LDFLAGS = -module
