@@ -1624,6 +1624,10 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
 	}
 
 	if (cnt == 0){
+		if (clean || !BATcount(order)) {
+			BBPunfix(order->batCacheid);
+			mvc_clean_result(m, t);
+		}
 		if (stream_errnr(s))
 			return -1;
 		return 0;

@@ -563,6 +563,7 @@ static BAT *col_bind( sql_trans * tr, oid lbid, sql_column *c, int access )
 
 BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 {
+	assert(access != DEL);
 	if (c->bat.ibid) {
 		BAT *i = temp_descriptor(c->bat.ibid);
 
@@ -572,11 +573,16 @@ BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 			
 			void_append_bat(b, i);
 			assert(b->htype == TYPE_void);
+
 			bat_destroy(i);
 			temp_destroy(c->bat.ibid);
 			c->bat.ibid = 0;
+			
+			if (access == UPD) {
+				bat_destroy(b);
+				return col_bind(tr, c->bat.bid, c, access);
+			}
 			i = b;
-			i->batDirty |= 2;
 		}
 		return i;
 	} else {

@@ -103,8 +103,8 @@ static int bm_debug = 0;
 void bat_destroy(BAT *b)
 {
 	if (bm_debug)
-		printf("destroy %d (%d)\n", 
-			b->batCacheid, BBPrefs(b->batCacheid));
+		printf("destroy %d (%d,%d)\n", 
+			b->batCacheid, BBPrefs(b->batCacheid), BBP_lrefs(b->batCacheid));
 	if (b)
 		BBPunfix(b->batCacheid);
 }
@@ -114,7 +114,7 @@ BAT *bat_descriptor(bat bid, char *func)
 	BAT *b = BATdescriptor(bid);
 
 	if (bm_debug)
-		printf("bat_destriptor %s %d (%d)\n", func, bid, BBPrefs(bid));
+		printf("bat_destriptor %s %d (%d,%d)\n", func, bid, BBPrefs(bid), BBP_lrefs(bid));
 	return b;
 }
 
@@ -123,7 +123,7 @@ BAT *bat_copy(BAT *b, char *func)
 	BAT *nb = BATcopy(b);
 
 	if (bm_debug)
-		printf("bat_copy(%s) %d (%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
+		printf("bat_copy(%s) %d (%d,%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid), BBP_lrefs(nb->batCacheid));
 	return nb;
 }
 
@@ -132,7 +132,7 @@ BAT *bat_new(int ht, int tt, size_t size, char *func)
 	BAT *nb = BATnew(ht, tt, size);
 
 	if (bm_debug)
-		printf("bat_new(%s) %d (%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
+		printf("bat_new(%s) %d (%d,0)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
 	nb->batDirty |= 2;
 	return nb;
 }
@@ -140,22 +140,14 @@ BAT *bat_new(int ht, int tt, size_t size, char *func)
 void bat_incref( bat bid, bit flag, char *func)
 {
 	BBPincref(bid,flag);
-	if (bm_debug){
-	    if (flag) 
-		printf("bat_incref(%s) %d l(%d)\n", func, bid, BBP_lrefs(bid));
-	    else
-		printf("bat_incref(%s) %d (%d)\n", func, bid, BBPrefs(bid));
-	}
+	if (bm_debug)
+		printf("bat_incref(%s) %d (%d,%d)\n", func, bid, BBP_refs(bid), BBP_lrefs(bid));
 }
 
 void bat_decref( bat bid, bit flag)
 {
-	if (bm_debug){
-		if (flag) 
-			printf("bat_decref %d l(%d)\n", bid, BBP_lrefs(bid));
-		else
-			printf("bat_decref %d (%d)\n", bid, BBPrefs(bid));
-	}
+	if (bm_debug)
+		printf("bat_decref() %d (%d,%d)\n", bid, BBP_refs(bid), BBP_lrefs(bid));
 	BBPdecref(bid,flag);
 }
 

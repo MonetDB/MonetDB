@@ -525,6 +525,8 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 
 	if (!mvc_set_schema( m, schema)) {
 		_DELETE(schema);
+		if (m->trans)
+			mvc_rollback(m, 0, NULL);
 		return NULL;
 	}
 	mvc_rollback(m, 0, NULL);

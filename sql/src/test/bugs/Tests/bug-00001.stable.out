@@ -115,11 +115,11 @@ Over..
 [ 1006075,	"tables",	1005716,	"select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;",	false,	true,	false,	0	]
 [ 1006084,	"columns",	1005716,	"select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;",	false,	true,	false,	0	]
 [ 1006094,	"users",	1005716,	"select name, fullname, default_schema from sys.db_users;",	false,	true,	false,	0	]
-[ 1009188,	"foo",	1005716,	"",	true,	false,	false,	0	]
-[ 1009326,	"ff",	1005716,	"",	true,	false,	false,	0	]
-[ 1009463,	"c1009462",	1005716,	"",	true,	false,	false,	1	]
-[ 1009507,	"c1009506",	1005716,	"",	true,	false,	false,	1	]
-[ 1009550,	"tables",	1005716,	"",	true,	false,	false,	1	]
+[ 1009176,	"foo",	1005716,	"",	true,	false,	false,	0	]
+[ 1009314,	"ff",	1005716,	"",	true,	false,	false,	0	]
+[ 1009451,	"c1009450",	1005716,	"",	true,	false,	false,	1	]
+[ 1009495,	"c1009494",	1005716,	"",	true,	false,	false,	1	]
+[ 1009538,	"tables",	1005716,	"",	true,	false,	false,	1	]
 # 6 # querytype
 # 7 # querytype
 # 6 # querytype
@@ -193,12 +193,12 @@ Over..
 [ 1006075,	"tables",	1005716,	"select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;",	false,	true,	false,	0	]
 [ 1006084,	"columns",	1005716,	"select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;",	false,	true,	false,	0	]
 [ 1006094,	"users",	1005716,	"select name, fullname, default_schema from sys.db_users;",	false,	true,	false,	0	]
-[ 1009188,	"foo",	1005716,	"",	true,	false,	false,	0	]
-[ 1009326,	"ff",	1005716,	"",	true,	false,	false,	0	]
-[ 1009804,	"s4",	1005716,	"",	true,	false,	false,	0	]
-[ 1010545,	"c1010544",	1005716,	"",	true,	false,	false,	1	]
-[ 1010589,	"c1010588",	1005716,	"",	true,	false,	false,	1	]
-[ 1010632,	"tables",	1005716,	"",	true,	false,	false,	1	]
+[ 1009176,	"foo",	1005716,	"",	true,	false,	false,	0	]
+[ 1009314,	"ff",	1005716,	"",	true,	false,	false,	0	]
+[ 1009792,	"s4",	1005716,	"",	true,	false,	false,	0	]
+[ 1010533,	"c1010532",	1005716,	"",	true,	false,	false,	1	]
+[ 1010577,	"c1010576",	1005716,	"",	true,	false,	false,	1	]
+[ 1010620,	"tables",	1005716,	"",	true,	false,	false,	1	]
 # 6 # querytype
 # 4 # querytype
 #  # table_name
@@ -295,8 +295,8 @@ Over..
 [ "ff",	1,	2,	3	]
 [ "s4",	1,	2,	3	]
 [ "r",	1,	2,	3	]
-[ "c1012508",	1,	2,	3	]
-[ "c1012552",	1,	2,	3	]
+[ "c1012496",	1,	2,	3	]
+[ "c1012540",	1,	2,	3	]
 [ "tables",	1,	2,	3	]
 
 # 16:14:57 >  
