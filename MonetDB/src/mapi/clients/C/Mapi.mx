@@ -682,7 +682,7 @@ typedef struct MapiStruct {
 
 	BlockCache blk;
 	int connected;
-	int active;		/* set when not all rows have been received */
+	struct MapiStatement *active; /* set when not all rows have been received */
 
 	Mapi next;		/* circular list of Mapi's sharing streams */
 
@@ -1099,7 +1099,7 @@ mapi_close_handle(MapiHdl hdl)
 	if (hdl == NULL)
 		return MERROR;
 	if (hdl->tableid >= 0) {
-		hdl->mid->active = 1;
+		hdl->mid->active = hdl;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n",
 				  hdl->tableid) < 0 ||
 		    stream_flush(hdl->mid->to)) {
@@ -1373,7 +1373,7 @@ promptMonet(Mapi mid)
 	*s = 0;
 	i = s - (mid->blk.buf + mid->blk.nxt);
 	mid->blk.nxt += i + 1;
-	mid->active = 0;
+	mid->active = NULL;
 	if (mid->trace)
 		printf("prompt\n");
 }
@@ -1387,7 +1387,7 @@ mapi_lost_connection(Mapi mid)
 {
 	/* TODO: decide what to do with dup'ed entries */
 	mid->connected = 0;
-	mid->active = 0;
+	mid->active = NULL;
 	/* finish channels */
 	/* Make sure that the write- (to-) stream is closed first,
 	 * as the related read- (from-) stream closes the shared
@@ -1610,7 +1610,6 @@ mapi_reconnect(Mapi mid)
 	stream_flush(mid->to);
 	check_stream(mid, mid->to, "Could not send initial byte sequence",
 		     "mapi_reconnect", mid->error);
-	mid->active++;
 	if (mid->blocked) {
 		mid->to = stream_wstream(mid->to);
 		check_stream(mid, mid->to, stream_error(mid->to),
@@ -1648,6 +1647,7 @@ mapi_reconnect(Mapi mid)
 
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);
+	mid->active = hdl;
 	while (mid->error == MOK && mid->active) {
 		mapi_get_row(hdl);
 		if (mapi_error(mid)) {
@@ -1959,7 +1959,7 @@ mapi_prepare_handle(MapiHdl hdl, const char *cmd)
 {
 	mapi_hdl_check(hdl, "mapi_prepare");
 	if (hdl->tableid >= 0) {
-		hdl->mid->active = 1;
+		hdl->mid->active = hdl;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_prepare_handle", hdl->mid->error);
@@ -2172,6 +2172,22 @@ answer_lookahead(MapiHdl hdl)
 	int oldrd;
 	MapiMsg rc;
 
+	oldrd = hdl->cache.reader;
+	rc = mapi_get_row(hdl);
+	hdl->cache.reader = oldrd;
+	if (hdl->mid->trace)
+		printf("answer_lookahead return:%d\n", hdl->mid->error);
+	return rc == MMORE ? MMORE : hdl->mid->error;
+}
+
+static MapiMsg
+read_until_prompt(MapiHdl hdl)
+{
+	/* read until prompt (and cache result) so that a new query
+	   can be sent */
+	int oldrd;
+	MapiMsg rc;
+
 	do {
 		oldrd = hdl->cache.reader;
 		do {
@@ -2183,7 +2199,7 @@ answer_lookahead(MapiHdl hdl)
 			mapi_extend_cache(hdl);
 	} while (hdl->mid->error == MOK && hdl->mid->active && rc == MOK);
 	if (hdl->mid->trace)
-		printf("mapi_query return:%d\n", hdl->mid->error);
+		printf("read_until_prompt return:%d\n", hdl->mid->error);
 	return rc == MMORE ? MMORE : hdl->mid->error;
 }
 
@@ -2196,6 +2212,9 @@ mapi_execute_internal(MapiHdl hdl)
 
 	mapi_hdl_check(hdl, "mapi_execute");
 	mid = hdl->mid;
+	if (mid->active && read_until_prompt(mid->active) != MOK)
+		return MERROR;
+	assert(mid->active == NULL);
 	mapi_param_store(hdl);
 	cmd = hdl->query;
 	size = strlen(cmd) /* null byte */ ;
@@ -2290,7 +2309,7 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 
 	mapi_hdl_check(hdl, "mapi_query_handle");
 	if (hdl->tableid >= 0) {
-		hdl->mid->active = 1;
+		hdl->mid->active = hdl;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_query_handle", hdl->mid->error);
@@ -2344,6 +2363,9 @@ MapiHdl
 mapi_query_prep(Mapi mid)
 {
 	mapi_check0(mid, "mapi_query_prep");
+	if (mid->active && read_until_prompt(mid->active) != MOK)
+		return NULL;
+	assert(mid->active == NULL);
 	if (mid->languageId == LANG_SQL) {
 		/* indicate to server this is a SQL command */
 		stream_write(mid->to, "S", 1, 1);
@@ -2358,6 +2380,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 
 	mapi_hdl_check(hdl, "mapi_query_part");
 	mid = hdl->mid;
+	assert(mid->active == NULL);
 	/* remember the query just for the error messages */
 	if (hdl->query == NULL) {
 		size_t sz = size;
@@ -2473,7 +2496,7 @@ mapi_cache_reset(MapiHdl hdl)
 	mapi_finish_internal(hdl);
 	hdl->rows_affected = 0;
 	hdl->fieldcnt = 0;
-	hdl->mid->active = 1;
+	hdl->mid->active = hdl;
 	for (i = 0; i < hdl->cache.writer; i++)
 		if (hdl->cache.rows[i])
 			hdl->cache.rows[i][0] = 0;
@@ -2512,7 +2535,7 @@ mapi_cache_limit(Mapi mid, int limit)
 		if (stream_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
 		    stream_flush(mid->to))
 			check_stream(mid, mid->to, stream_error(mid->to), "mapi_cache_limit", mid->error);
-		mid->active = 1;
+		mid->active = hdl;
 		mapi_finish_internal(hdl);
 		mapi_close_handle(hdl);
 	}
@@ -2723,7 +2746,7 @@ mapi_fetch_line_internal(MapiHdl hdl, int *wantmore)
 		return hdl->cache.rows[++hdl->cache.reader];
 
 	mid = hdl->mid;
-	if (!mid->active)
+	if (mid->active == NULL)
 		return 0;
 	/* get rid of old buffer space */
 	if (hdl->cache.rowlimit > 0 &&
@@ -2838,9 +2861,9 @@ mapi_fetch_line(MapiHdl hdl)
 	mapi_hdl_check0(hdl, "mapi_fetch_line");
 	reply = mapi_fetch_line_internal(hdl, NULL);
 	if (reply == NULL && hdl->mid->languageId == LANG_SQL &&
-	    !hdl->mid->active && hdl->rows_affected > 0 &&
+	    hdl->mid->active == NULL && hdl->rows_affected > 0 &&
 	    hdl->cache.first + hdl->cache.tuplecount < hdl->rows_affected) {
-		hdl->mid->active = 1;
+		hdl->mid->active = hdl;
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid, hdl->cache.first + hdl->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
@@ -2885,6 +2908,7 @@ empy the row cache.
 /* TODO: need to handle PROMPT2 */
 #define handlePart(sz)							\
 	do {								\
+		mid->blk.buf[mid->blk.nxt + sz] = 0;			\
 		s= strchr(mid->blk.buf+mid->blk.nxt,PROMPTBEG);		\
 		if (s) {						\
 			ptrdiff_t len = s - mid->blk.buf;		\
@@ -2905,7 +2929,6 @@ MapiMsg
 mapi_quick_response(MapiHdl hdl, FILE *fd)
 {
 	char *s;
-	int i;
 	ssize_t k;
 	Mapi mid;
 
@@ -2916,9 +2939,9 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 				     "mapi.response", MERROR);
 
 	/* any left over rows in the cache? */
-	for (i = hdl->cache.reader + 1; i < hdl->cache.writer; i++)
-		fprintf(fd, "%s\n", hdl->cache.rows[i]);
-	if (mid->active == 0)
+	while (hdl->cache.reader + 1 < hdl->cache.writer)
+		fprintf(fd, "%s\n", hdl->cache.rows[++hdl->cache.reader]);
+	if (mid->active == NULL)
 		return 0;
 
 	/* check if you need to send pending information */
@@ -3519,10 +3542,10 @@ mapi_fetch_row(MapiHdl hdl)
 	mapi_hdl_check(hdl, "mapi_fetch_row");
 	if (mapi_get_row(hdl) == MOK)
 		return mapi_slice_row(hdl);
-	if (hdl->mid->languageId == LANG_SQL && !hdl->mid->active &&
+	if (hdl->mid->languageId == LANG_SQL && hdl->mid->active == NULL &&
 	    hdl->rows_affected > 0 &&
 	    hdl->cache.first + hdl->cache.tuplecount < hdl->rows_affected) {
-		hdl->mid->active = 1;
+		hdl->mid->active = hdl;
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid, hdl->cache.first + hdl->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_row", hdl->mid->error);
