@@ -35,7 +35,7 @@ can be found in this module.
 .COMMAND mirror(BAT[any::1,any]) : BAT[any::1,any::1] = CMDmirror;
 "Returns the head-mirror image of a BAT (two head columns)."
 
-.COMMAND convert(BAT[any::1,any::2]) : BAT[any::1,any::2] = CMDconvert;
+.COMMAND convert(BAT[any::1,any::2] ) : BAT[any::1,any::2] = CMDconvert;
 "Convert the contents of a BAT from little-endian to big-endian and vice versa.
  THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PUPOSES ONLY!"
 
@@ -468,7 +468,7 @@ int CMDmirror(BAT **ret, BAT *b){
 }
 
 int CMDconvert(BAT **ret, BAT *b){
-	BATconvert(*ret = b);
+	BATconvert(*ret = b,CONV_HTON);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }

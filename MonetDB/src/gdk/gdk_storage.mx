@@ -658,7 +658,7 @@ BAT *BATload_intern(bat bid, int lock) {
 	BBPcacheit(b, lock);
 
 	if (b->batConvert) {
-		BATconvert(b);
+		BATconvert(b,CONV_HTON);
 	} 
 	if (!DELTAdirty(b)) {
 		ALIGNcommit(b);

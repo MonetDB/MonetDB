@@ -111,7 +111,7 @@ gdk_export void 		strHeap        (Heap* d, int cap);
 gdk_export int		strLen         (str s);
 gdk_export int		strCmp         (str r, str l);
 gdk_export int		strNil         (str s);
-gdk_export void 		strHeapConvert (Heap *h);
+gdk_export void 		strHeapConvert (Heap *h, int directon);
 gdk_export int		strElimDoubles (Heap *h);
 gdk_export int 		strLocate      (Heap *h, str v);
 gdk_export int		strHeapCheck   (Heap *h, HeapRepair *hr);
@@ -552,8 +552,8 @@ from the sets of operations on the father type.
 				BATatoms[t].atomUnfix(v)
 #define ATOMconvert(t,v,d)	if (BATatoms[t].atomConvert)\
 				BATatoms[t].atomConvert(v,d)
-#define ATOMheapConvert(t,hp)	if (BATatoms[t].atomHeapConvert)\
-				BATatoms[t].atomHeapConvert(hp)
+#define ATOMheapConvert(t,hp,d)	if (BATatoms[t].atomHeapConvert)\
+				BATatoms[t].atomHeapConvert(hp,d)
 
 #define CONV_HTON               1
 #define CONV_NTOH               0
@@ -1187,15 +1187,24 @@ int strLocate(Heap *h, str v) {
 }
 
 /* convert the integers in the implicit hash table structure */ 
-void strHeapConvert(Heap *h) {
+void strHeapConvert(Heap *h,int dir) {
 	int *htab = (int*) h->base; 
-	int *l, i, j; 
+	int *l; 
+	int i, j;
 
 	if (ELIMDOUBLES(h))
-	for(i=0; i<STRHASHTABLE; i++) {
+	if (dir == CONV_HTON){
+	    for(i=0; i<STRHASHTABLE; i++) {
+		for (l= htab+i; (j=*l) != 0; l=(int*) (((char*) h->base)+ j)) {
+			*l = normal_int_SWAP(j);
+		}
+	    }
+	} else {
+	    for(i=0; i<STRHASHTABLE; i++) {
 		for (l= htab+i; (j=*l) != 0; l=(int*) (((char*) h->base)+ *l)) {
 			*l = normal_int_SWAP(j);
 		}
+	    }
 	}
 }
 

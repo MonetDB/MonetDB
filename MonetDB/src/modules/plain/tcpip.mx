@@ -1073,7 +1073,7 @@ TCPexport(
    	    BAT* b = (BAT*) val;
 
 #ifndef WORDS_BIGENDIAN
-	    BATconvert(b);
+	    BATconvert(b,CONV_HTON);
 #endif
 	    sprintf(buf, "bat:%s:%d*%d:%s\@%d%s%s:%s\@%d%s%s:%d:%d:", 
 		name, BATcount(b), BUNsize(b), 
@@ -1123,7 +1123,7 @@ Small BATs are written in one go, large ones in parts.
 	        ret = GDK_FAIL;
 	    }
 #ifndef WORDS_BIGENDIAN
-	    BATconvert(b);
+	    BATconvert(b,CONV_NTOH);
 #endif
 	} else if (tpe != TYPE_void) { 
 @- <type>:<name>:<size>

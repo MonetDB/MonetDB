@@ -1430,7 +1430,7 @@ BAT * & BATsave & (BAT *b)\\
 int & BATmmap & (BAT *b, int bn, int hh, int th, int ha, int ta)\\
 int & BATmadvise & (BAT *b, int bn, int hh, int th, int ha, int ta)\\
 int & BATdelete & (BAT *b)\\
-BAT * & BATconvert & (str name)\\
+BAT * & BATconvert & (str name, int direction)\\
 \hline\end{tabular}}
 @-
 A BAT created by @%BATnew@ is considered temporary until one calls the
@@ -1444,7 +1444,8 @@ returns the BAT pointer.
 @
 The @%BATconvert@ converts a BAT that contains data saved on
 hardware with a different byte order (litte endian vs big endian),
-into the correct format.
+into the correct format. Direction is eigther CONV_NTOH or CONV_HTON,
+indication convertion from network to host or host to network format.
 
 @- Heap Storage Modes
 The discrimative storage modes are memory-mapped, compressed, or in 
@@ -1711,7 +1712,7 @@ int & ATOMfix         & (int id, ptr v);\\
 int & ATOMunfix       & (int id, ptr v);\\
 \hline
 int & ATOMheap        & (int id, Heap *hp, int cap);\\
-void& ATOMheapconvert & (int id, Heap *hp);\\
+void& ATOMheapconvert & (int id, Heap *hp, int direction);\\
 int & ATOMheapcheck   & (int id, Heap *hp, HeapRepair *hr);\\
 void& ATOMput         & (int id, Heap *hp, BUN pos\_dst, ptr val\_src);\\
 int & ATOMdel         & (int id, Heap *hp, BUN v\_src);\\
@@ -1841,7 +1842,7 @@ typedef struct {
 	int	(*atomLen)		(ptr atom); 
 	int	(*atomHeap)		(Heap*, int); 
 	/* optional functions */
-	void	(*atomHeapConvert)	(Heap*); 
+	void	(*atomHeapConvert)	(Heap*, int direction); 
 	int	(*atomHeapCheck) 	(Heap*, HeapRepair*); 
 } atomDesc; 
 
