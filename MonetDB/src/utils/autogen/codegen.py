@@ -319,6 +319,9 @@ def do_scan_target(target,targets,deps,incmap,cwd,cache):
         cache[target] = inc_files
 
 def do_scan(targets,deps,incmap,cwd,cache):
+  for target in targets:
+    if not deps.has_key(target):
+      do_scan_target(target,targets,{},incmap,cwd,cache)
   for target,depfiles in deps.items():
     do_scan_target(target,targets,deps,incmap,cwd,cache)
     for target in depfiles:

@@ -111,7 +111,8 @@ def am_find_srcs(target,deps,am):
 	pfb,pfext = split_filename(pf)
 	sfb,sfext = split_filename(deps[pf][0])
 	if (sfext != pfext):
-		am['BUILT_SOURCES'].append(pf)
+  		if (pfext in automake_ext):
+			am['BUILT_SOURCES'].append(pf)
   b,ext = split_filename(pf)
   if (ext in automake_ext):
   	return pf
