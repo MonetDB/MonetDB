@@ -579,7 +579,7 @@ current thread. In particular, if both are run in parallel.
 		TEMpool= BATdel(TEMpool,TEMconsumed);
 	
 		TRGDEBUG {
-			THRprintf(GDKout,"remove events from " PTRFMT "\n", (void *) TEMpool);
+			THRprintf(GDKout,"remove events from " PTRFMT "\n", PTRFMTCAST (void *) TEMpool);
 			BATprint(TEMpool);
 			QMprint();
 		}
@@ -633,11 +633,11 @@ int TEMsatisfied(YYSTREE lt) {
 			fnd = BUNfnd(TEMpool, &evnt);
 		}
 		if ( evnt && ev->yysons[2]) {
-			TRGDEBUG THRprintf(GDKout, "TEMsatisfied ~event %d " PTRFMT "\n",evnt,fnd);
+			TRGDEBUG THRprintf(GDKout, "TEMsatisfied ~event %d " PTRFMT "\n",evnt,PTRFMTCAST fnd);
 			if ( fnd ) return 0;
 		} else	
 		if ( evnt) {
-			TRGDEBUG THRprintf(GDKout, "TEMsatisfied event %d " PTRFMT "\n",evnt,fnd);
+			TRGDEBUG THRprintf(GDKout, "TEMsatisfied event %d " PTRFMT "\n",evnt,PTRFMTCAST fnd);
 			if( fnd == 0 ) return 0;
 		} 	
 @-

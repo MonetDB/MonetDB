@@ -709,7 +709,7 @@ print_address(ptr address)
   dladdr(address,&dlip);
 
   filename = 0; /* strrchr(dlip.dli_fname,'/'); */
-  printf(PTRFMT "\t%s\t%s\n",address,dlip.dli_sname,
+  printf(PTRFMT "\t%s\t%s\n",PTRFMTCAST address,dlip.dli_sname,
 	 filename?filename+1:dlip.dli_fname);
 }
 
@@ -766,7 +766,8 @@ del_mem(BAT *b, mem_t mem)
 			if(idx > 0) {
 				printf("Double deletion of memory " PTRFMT ", "
 				       "size: " SSZFMT ", stack:%d\n",
-				       (void *) mem,((ssize_t *)mem)[-1],idx);
+				       PTRFMTCAST (void *) mem,
+				       ((ssize_t *)mem)[-1],idx);
 				if(mtrace > 1) GDKmprint(&idx);
 			} else {
 				BUNdelete(b,p);
@@ -776,7 +777,7 @@ del_mem(BAT *b, mem_t mem)
 		}
 	}
 	printf("Free of unknown memory " PTRFMT ", size: " SSZFMT "\n",
-		(size_t)mem,((ssize_t *)mem)[-1]);
+		PTRFMTCAST (void *)mem,((ssize_t *)mem)[-1]);
 }
 #else
 int GDKmtrace(bit *enable){ (void)enable; return GDK_SUCCEED; }

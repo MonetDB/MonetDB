@@ -350,15 +350,20 @@ stream_init(void)
 #endif
 /* define printf format for printing pointer values */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-#define PTRFMT "%p"
+#define PTRFMT		"%p"
+#define PTRFMTCAST	/* no cast needed */
 #elif SIZEOF_VOID_P == SIZEOF_INT
-#define PTRFMT "%x"
+#define PTRFMT		"%x"
+#define PTRFMTCAST	(unsigned int)
 #elif SIZEOF_VOID_P == SIZEOF_LONG
-#define PTRFMT "%lx"
+#define PTRFMT		"%lx"
+#define PTRFMTCAST	(unsigned long)
 #elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
-#define PTRFMT "%llx"
+#define PTRFMT		"%llx"
+#define PTRFMTCAST	(unsigned long long)
 #elif SIZEOF_VOID_P == SIZEOF___INT64
-#define PTRFMT "%I64x"
+#define PTRFMT		"%I64x"
+#define PTRFMTCAST	(unsigned __int64)
 #else
 #error no definition for PTRFMT
 #endif
@@ -501,7 +506,7 @@ create_stream(const char *name)
 	s->errnr = NO__ERROR;
 	s->destroy = destroy;
 #ifdef STREAM_DEBUG
-	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", s);
+	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
 #endif
 	return s;
 }
@@ -1408,7 +1413,7 @@ ssl_rstream(SSL *ssl, const char *name)
 {
 	stream *s;
 #ifdef STREAM_DEBUG
-	printf("ssl_rstream " PTRFMT " %s\n", ssl, name);
+	printf("ssl_rstream " PTRFMT " %s\n", PTRFMTCAST ssl, name);
 #endif
 	if ((s = ssl_open(ssl, name)) == NULL)
 		return NULL;
@@ -1424,7 +1429,7 @@ ssl_wstream(SSL *ssl, const char *name)
 {
 	stream *s;
 #ifdef STREAM_DEBUG
-	printf("ssl_wstream " PTRFMT " %s\n", ssl, name);
+	printf("ssl_wstream " PTRFMT " %s\n", PTRFMTCAST ssl, name);
 #endif
 	if ((s = ssl_open(ssl, name)) == NULL)
 		return NULL;
@@ -1441,7 +1446,7 @@ ssl_rastream(SSL *ssl, const char *name)
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("ssl_rastream " PTRFMT " %s\n", ssl, name);
+	printf("ssl_rastream " PTRFMT " %s\n", PTRFMTCAST ssl, name);
 #endif
 	if ((s = ssl_open(ssl, name)) == NULL)
 		return NULL;
@@ -1455,7 +1460,7 @@ ssl_wastream(SSL *ssl, const char *name)
 {
 	stream *s;
 #ifdef STREAM_DEBUG
-	printf("ssl_wastream " PTRFMT " %s\n", ssl, name);
+	printf("ssl_wastream " PTRFMT " %s\n", PTRFMTCAST ssl, name);
 #endif
 	if ((s = ssl_open(ssl, name)) == NULL)
 		return NULL;

@@ -100,7 +100,7 @@ void checklist(YYSTREE t) {
 	    if (t2 == t) {
 		t1 = yyroot;
 		while(t1 != t2) {
-			fprintf(stderr, PTRFMT " ", (void *) t1);
+			fprintf(stderr, PTRFMT " ", PTRFMTCAST (void *) t1);
 			t1 = t1->next;
 		}
 		GDKerror("double present %d!!\n", t);

@@ -767,14 +767,21 @@ the commit tremendously complicated.
 
 #define GDK_STRHASHTABLE	(1<<10)
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
-#define GDK_STRHASHSIZE 	(GDK_STRHASHTABLE << 2)
+#define GDK_STRHASHSIZE 	(GDK_STRHASHTABLE * sizeof(var_t))
 #define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
 #define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)
 #define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
+#if SIZEOF_SIZE_T == SIZEOF_INT
 #define GDK_ELIMPOWER		18	/* makes for a max 256KB hash table 
 					 * ie 256 string bytes per hash bucket 
 				 	 * ~ 16 strings of UP4(8<=len<=11)=12 + 4 bytes 
 					 */
+#else
+#define GDK_ELIMPOWER		19	/* makes for a max 512KB hash table 
+					 * ie 512 string bytes per hash bucket 
+				 	 * ~ 21 strings of UP8(8<=len<=15)=16 + 8 bytes 
+					 */
+#endif
 
 #endif /* _GDK_ATOMS_H_ */
 
@@ -1273,59 +1280,59 @@ int fltFromStr(char* src, int* len, flt **dst)
 @}
 
 @+ String Atom Implementation
-The Built-in type string is funnelled partly through the atom extension
+The Built-in type string is funneled partly through the atom extension
 library. The main reason is to limit the number of built-in types
-in the BAT library kernel. Moreover, an extra indirection for strings is less
-harmfull then for manipulation of, lets' say int.
+in the BAT library kernel. Moreover, an extra indirection for a string is less
+harmful than for manipulation of, e.g. an int.
 
 The internal representation of strings is without escape sequences.
 When the string is printed we should add the escapes back into it.
 
 The current escape policy is that '"' and "'" can be prepended by a
-backslash. Furthermode, the backslash may be followed by three
-digit octal number to denote a character.
+backslash. Furthermore, the backslash may be followed by three
+octal digits to denote a character.
 
 @- Automatic Double Elimination
 
 Because in many typical situations lots of double string values occur
 in tables, the string insertion provides automatic double elimination.
 To do this, a GDK_STRHASHTABLE(=1024) bucket hashtable is hidden in the first 
-4096 bytes of the string heap, consisting of integer offsets of the first 
-string hashing on that bucket in the heap. Furthermore, the first 4 bytes 
+4096 (8192 on 64-bit architectures) bytes of the string heap, consisting of integer offsets of the first 
+string hashing to that bucket in the heap. Furthermore, the first 4(8) bytes 
 before each string in the heap is an integer offset to the next string hashing 
-on the same number.
+to the same number.
 @
 @
 However, in many other situations the cardinality of string columns is large,
-or the string values might even be unique. In this case, our fixed-size hash 
+or the string values might even be unique. In those cases, our fixed-size hash 
 table will start to overflow quickly. Therefore, after the hash table is full
-(this is measured very simplisticly by looking whether the string heap exceeds a 
-heap size = GDK\_ELIMLIMIT -- done this way to keep compatability with old bat images) 
-we flush the hash table. If one views the string heaps as consequent chunks
+(this is measured very simplistically by looking whether the string heap exceeds a 
+heap size = GDK\_ELIMLIMIT -- done this way to keep compatibility with old bat images) 
+we flush the hash table. If one views the string heaps as consecutive chunks
 of size GDK\_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
 There is a macro GDK\_ELIMBASE(offset) that computes the base of the chunk in which
 a certain byte-offset falls.
 @
 @  
 This is a departure from our previous policy of not looking at the hash tables at 
-all after overflow occured. The advantage of the new approach is that if we have 
+all after overflow occurred. The advantage of the new approach is that if we have 
 a value distribution that is skewed (ie some values are very frequent), these 
 values will always be double eliminated, saving a considerable amount of space. 
 Disadvantage of the approach is that we always have to reserve space for the next 
-pointer (4 byte integer offset) that is stored right in front of the string (and 
-consequently have to keep all string chunks and offsets aligned to 4). All this 
+pointer (4(8) byte integer offset) that is stored right in front of the string (and 
+consequently have to keep all string chunks and offsets aligned to 4(8)). All this 
 translates into some wasted space. However, if there are that many different strings 
 that the hash table overflows, the strings must be relatively long and the relative 
 storage overhead should be low.
 @
 @
-Notice that this mechanism enables keeps a certain linear storage property
+Notice that this mechanism enables to keep a certain linear storage property
 in the string heaps. This is important if we want to take a BATslice on a BAT
 by simply loading or mmap()ping slices of the BAT files on disk into memory.
 This is relevant in order to process a very large BAT iteratively by taking slices
-in order top reduce memory consumption. Notice that if there are few different string 
+in order to reduce memory consumption. Notice that if there are few different string 
 values, the hash table has not overflowed, and the string heap size will be small 
-(ie $<$ GDK\_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
+(i.e. $<$ GDK\_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
 If the hash table *has* overflowed, we want to be able to only map a slice of the 
 string heap as well. Now, given that the first string in the BAT-slice is called F1 
 and its heap offset is O1 and the last string in the slice is F2 and its 
@@ -1339,8 +1346,8 @@ GDK_ELIMBASE(F1) .. MAX(GDK_ELIMBASE(F2)+GDK_ELIMLIMIT), O2+strlen(F2))
 @
 The below routine strElimDoubles() can be used to check whether all 
 strings are still being double-eliminated in the original hash-table.
-Only then, we know that unequal offset-integers in the BUN array means
-guarantee different strings in the heap. This optimization is made at some 
+Only then we know that unequal offset-integers in the BUN array means
+guaranteed different strings in the heap. This optimization is made at some 
 points in the GDK. Make sure you check GDK\_ELIMDOUBLES before assuming this!
 @c
 int strElimDoubles(Heap *h) {
@@ -1511,7 +1518,7 @@ int strPut(Heap *h, var_t *dst, str v) {
  	}
 
 	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */ 
-	if (h->free + len > elimlimit) {
+	if (h->free + len >= elimlimit) {
 		memset(h->base, 0, GDK_STRHASHSIZE); 
 	} 
 
