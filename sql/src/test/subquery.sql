@@ -1,4 +1,4 @@
-SET autocommit = true;
+SET auto_commit = true;
 
 CREATE TABLE branches (
   bid int(8) NOT NULL default '0',
