@@ -41,6 +41,9 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	ODBCLOG("SQLPrimaryKeys\n");
 #endif
 
+	(void) szCatalogName;	/* Stefan: unused!? */
+	(void) nCatalogNameLength;	/* Stefan: unused!? */
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -54,7 +57,6 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	}
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 
@@ -86,7 +88,7 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	       "c.name as column_name, "
 	       "kc.ordinal_position as key_seq, "
 	       "k.key_name as pk_name "
-	       "from sys.schemas s, sys.tables t, columns c, keys k, keycolumns kc "
+	       "from schemas s, tables t, columns c, keys k, keycolumns kc "
 	       "where s.id = t.schema_id and t.id = c.table_id and "
 	       "t.id = k.table_id and c.id = kc.column_id and "
 	       "kc.key_id = k.key_id and k.is_primary = 1");

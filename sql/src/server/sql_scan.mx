@@ -347,8 +347,16 @@ find_keyword(char *text)
 	keyword *k = keywords[bucket];
 	while (k) {
 		if (len == k->len) {
-			if (strcmp(k->keyword, text) == 0)
-				return k;
+			if (len < 4) {
+				if (*(short *) k->keyword ==
+				    *(short *) text
+				    && strcmp(k->keyword, text) == 0)
+					return k;
+			} else {
+				if (*(int *) k->keyword == *(int *) text
+				    && strcmp(k->keyword, text) == 0)
+					return k;
+			}
 		}
 		k = k->next;
 	}
@@ -516,7 +524,7 @@ scanner_getc_s(struct scanner * lc)
 }
 
 static INLINE int
-scanner_read_more(struct scanner * lc, int n)
+read_more(struct scanner * lc, int n)
 {
 	bstream *b = lc->rs;
 	int more = 0;
@@ -551,7 +559,7 @@ scanner_getc_bs(struct scanner * lc)
 	int c;
 	int n, m, mask;
 
-	if (scanner_read_more(lc, 1) == EOF)
+	if (read_more(lc, 1) == EOF)
 		return EOF;
 
 	s = (unsigned char*) b->buf + b->pos + lc->yycur++;
@@ -569,7 +577,7 @@ scanner_getc_bs(struct scanner * lc)
 		goto error;
 	}
 
-	if (scanner_read_more(lc, n) == EOF)
+	if (read_more(lc, n) == EOF)
 		return EOF;
 	s = (unsigned char*) b->buf + b->pos + lc->yycur;
 
@@ -648,7 +656,7 @@ scanner_string_bs(mvc * c, int quote)
 		lc->yycur--; /* go back to current (possibly invalid) char */
 		/* long utf8, if correct isn't the quote */
 		if (!cur) {
-			cur = scanner_read_more(lc, 1);
+			cur = read_more(lc, 1);
 		} else {
 			cur = scanner_getc_bs(lc);
 		}
@@ -821,7 +829,6 @@ int scanner_symbol@1(mvc * c, int cur)
 		}
 		utf8_putchar(lc, next); 
 		return scanner_token@1(lc, cur);
-	case '?':
 	case '%':
 	case '+':
 	case '*':

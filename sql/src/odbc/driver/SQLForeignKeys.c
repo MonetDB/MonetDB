@@ -44,6 +44,11 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	ODBCLOG("SQLForeignKeys\n");
 #endif
 
+	(void) szPKCatalogName;	/* Stefan: unused!? */
+	(void) nPKCatalogNameLength;	/* Stefan: unused!? */
+	(void) szFKCatalogName;	/* Stefan: unused!? */
+	(void) nFKCatalogNameLength;	/* Stefan: unused!? */
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -57,10 +62,8 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	}
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szPKCatalogName, nPKCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szPKTableName, nPKTableNameLength, addStmtError, stmt);
-	fixODBCstring(szFKCatalogName, nFKCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szFKTableName, nFKTableNameLength, addStmtError, stmt);
 
@@ -107,7 +110,7 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	       "k.fk_name as fk_name, "
 	       "k.pk_name as pk_name, "
 	       "k.deferrability as deferrability "
-	       "from sys.schemas s, sys.tables t, columns c "
+	       "from schemas s, tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
 

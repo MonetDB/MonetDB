@@ -483,37 +483,37 @@ One day we should introduce the concept of locale, and hook here.
   	module("alarm");
 
 	# default time creation with zeroed secs and msecs
-	proc "daytime" (int hour) : daytime
-		return daytime(hour, 0, 0, 0);
-	proc "daytime" (int hour, int minute) : daytime
-		return daytime(hour, minute, 0, 0);
-	proc "daytime" (int hour, int minute, int second) : daytime
-		return daytime(hour, minute, second, 0);
+	proc "daytime" (int h) : daytime
+		return daytime(h, 0, 0, 0);
+	proc "daytime" (int h, int m) : daytime
+		return daytime(h, m, 0, 0);
+	proc "daytime" (int h, int m, int s) : daytime
+		return daytime(h, m, s, 0);
 
-	proc "[daytime]" (bat[any::1,int] hour) : bat[any::1,daytime]
-		return [daytime](hour, 0, 0, 0);
-	proc "[daytime]" (bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,daytime]
-		return [daytime](hour, minute, 0, 0);
-	proc "[daytime]" (bat[any::1,int] hour, bat[any::1,int] minute, bat[any::1,int] second) : bat[any::1,daytime]
-		return [daytime](hour, minute, second, 0);
+	proc "[daytime]" (bat[any::1,int] h) : bat[any::1,daytime]
+		return [daytime](h, 0, 0, 0);
+	proc "[daytime]" (bat[any::1,int] h, bat[any::1,int] m) : bat[any::1,daytime]
+		return [daytime](h, m, 0, 0);
+	proc "[daytime]" (bat[any::1,int] h, bat[any::1,int] s) : bat[any::1,daytime]
+		return [daytime](h, m, s, 0);
 
 	# rule creation synonyms
-	proc "rule" (int months, int days, int weekdays, int hour, int minute) : rule
-		return rule(months, days, weekdays, (hour * 60) + minute);
-	proc "rule" (int months, str days, int weekdays, int hour, int minute) : rule
-		return rule(months, daynum(days), weekdays, (hour * 60) + minute);
-	proc "rule" (int months, str days, int weekdays, int minute) : rule
-		return rule(months, daynum(days), weekdays, minute);
+	proc "rule" (int m, int d, int w, int h, int m) : rule
+		return rule(m, d, w, (h * 60) + m);
+	proc "rule" (int m, str d, int w, int h, int m) : rule
+		return rule(m, daynum(d), w, (h* 60) + m);
+	proc "rule" (int m, str d, int w, int m) : rule
+		return rule(m, daynum(d), w, m);
 
-	proc "[rule]" (bat[any::1,int] months, bat[any::1,int] days, bat[any::1,int] weekdays, 
-                    bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,rule]
-		return [rule](months, days, weekdays, [+]([*](hour,60),minute));
-	proc "[rule]" (bat[any::1,int] months, bat[any::1,str] days, bat[any::1,int] weekdays, 
-                    bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,rule]
-		return [rule](months, [daynum](days), weekdays, [+]([*](hour,60),minute));
-	proc "[rule]" (bat[any::1,int] months, bat[any::1,str] days, bat[any::1,int] weekdays, 
-                    bat[any::1,int] minute) : bat[any::1,rule]
-		return [rule](months, [daynum](days), weekdays, minute);
+	proc "[rule]" (bat[any::1,int] m, bat[any::1,int] d, bat[any::1,int] w, 
+                    bat[any::1,int] h, bat[any::1,int] m) : bat[any::1,rule]
+		return [rule](m, d, w, [+]([*](h,60),m));
+	proc "[rule]" (bat[any::1,int] m, bat[any::1,str] d, bat[any::1,int] w, 
+                    bat[any::1,int] h, bat[any::1,int] m) : bat[any::1,rule]
+		return [rule](m, [daynum](d), w, [+]([*](h,60),m));
+	proc "[rule]" (bat[any::1,int] m, bat[any::1,str] d, bat[any::1,int] w, 
+                    bat[any::1,int] m) : bat[any::1,rule]
+		return [rule](m, [daynum](d), w, m);
 
         # As a starting point, we provide some standard tzones
 	#
@@ -581,15 +581,6 @@ One day we should introduce the concept of locale, and hook here.
 proc current_timestamp() { return timestamp(epoch()); }
 proc current_date() { return date(current_timestamp()); }
 proc current_time() { return daytime(current_timestamp()); }
-
-# utility functions (for SQL) for direct extraction of fields from timestamps
-proc year(timestamp t) { return year(date(t)); }
-proc month(timestamp t) { return month(date(t)); }
-proc day(timestamp t) { return day(date(t)); }
-proc hours(timestamp t) { return hours(daytime(t)); }
-proc minutes(timestamp t) { return minutes(daytime(t)); }
-proc seconds(timestamp t) { return seconds(daytime(t)); }
-proc milliseconds(timestamp t) { return milliseconds(daytime(t)); }
 
 # temporary(?) HACK to distinguish type-signatures of 
 # date_sub_sec_interval & date_add_sec_interval (now: date,lng) from those of
@@ -977,8 +968,8 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 @+ auxiliary functions
 @c
 
-#define tz_isnil(z)	((* (lng *) (ptr) &z) == lng_nil)
-#define ts_isnil(t)	((* (lng *) (ptr) &t) == lng_nil)
+#define tz_isnil(z)	((* (lng *) &z) == lng_nil)
+#define ts_isnil(t)	((* (lng *) &t) == lng_nil)
 
 static timestamp ts_nil;
 static tzone tz_nil;
@@ -988,10 +979,10 @@ static tzone *tz_nilptr = NULL;
 static void date_prelude(void);
 
 bat* monettime_prelude(void){
-	* (lng *) (ptr) &ts_nil = lng_nil;
+	* (lng *) &ts_nil = lng_nil;
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
 	*ts_nilptr = ts_nil;
-	* (lng *) (ptr) &tz_nil = lng_nil;
+	* (lng *) &tz_nil = lng_nil;
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
 	*tz_nilptr = tz_nil;
 	date_prelude();

@@ -17,16 +17,15 @@
  **********************************************************************/
 
 #include "ODBCGlobal.h"
-#include "ODBCUtil.h"
 #include "ODBCStmt.h"
 
 
 SQLRETURN
-SQLColumnPrivileges(SQLHSTMT hStmt,
-		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		    SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		    SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumnPrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
+		    SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName,
+		    SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName,
+		    SQLSMALLINT nTableNameLength, SQLCHAR *szColumnName,
+		    SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -34,15 +33,19 @@ SQLColumnPrivileges(SQLHSTMT hStmt,
 	ODBCLOG("SQLColumnPrivileges\n");
 #endif
 
+	(void) szCatalogName;		/* Stefan: unused!? */
+	(void) nCatalogNameLength;	/* Stefan: unused!? */
+	(void) szSchemaName;		/* Stefan: unused!? */
+	(void) nSchemaNameLength;	/* Stefan: unused!? */
+	(void) szTableName;		/* Stefan: unused!? */
+	(void) nTableNameLength;	/* Stefan: unused!? */
+	(void) szColumnName;		/* Stefan: unused!? */
+	(void) nColumnNameLength;	/* Stefan: unused!? */
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
-
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
-	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {
@@ -55,23 +58,14 @@ SQLColumnPrivileges(SQLHSTMT hStmt,
 	   VARCHAR	table_cat
 	   VARCHAR	table_schem
 	   VARCHAR	table_name NOT NULL
-	   VARCHAR	column_name NOT NULL
 	   VARCHAR	grantor
 	   VARCHAR	grantee NOT NULL
 	   VARCHAR	privilege NOT NULL
 	   VARCHAR	is_grantable
 	*/
 
-	/* for now return dummy result set */
-	return SQLExecDirect_(stmt,
-			      (SQLCHAR *) "select "
-			      "cast('' as varchar) as table_cat, "
-			      "cast('' as varchar) as table_schem, "
-			      "cast('' as varchar) as table_name, "
-			      "cast('' as varchar) as column_name, "
-			      "cast('' as varchar) as grantor, "
-			      "cast('' as varchar) as grantee, "
-			      "cast('' as varchar) as privilege, "
-			      "cast('' as varchar) as is_grantable "
-			      "where 0 = 1", SQL_NTS);
+	/* IM001 = Driver does not support this function */
+	addStmtError(stmt, "IM001", NULL, 0);
+
+	return SQL_ERROR;
 }

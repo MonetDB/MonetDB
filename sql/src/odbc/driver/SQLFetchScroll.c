@@ -24,11 +24,8 @@
 
 
 SQLRETURN
-SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
-		SQLINTEGER FetchOffset)
+SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 {
-	int LastResultRow;
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -38,116 +35,49 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 
 	/* check statement cursor state, query should be executed */
 	if (stmt->State != EXECUTED) {
-		/* caller should have called SQLExecute or
-		   SQLExecDirect first */
+		/* caller should have called SQLExecute or SQLExecDirect first */
 		/* HY010 = Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
 
-#define RowSetSize	(stmt->ApplRowDescr->sql_desc_array_size)
-	LastResultRow = mapi_get_row_count(stmt->hdl);
-
-	switch (FetchOrientation) {
+	switch (nOrientation) {
 	case SQL_FETCH_NEXT:
-		if (stmt->currentRow >= LastResultRow)
-			return SQL_NO_DATA;
 		break;
 	case SQL_FETCH_FIRST:
-		stmt->currentRow = 0;
+		mapi_seek_row(stmt->hdl, 0, MAPI_SEEK_SET);
 		break;
 	case SQL_FETCH_LAST:
-		if (LastResultRow < RowSetSize)
-			stmt->currentRow = 0;
-		else
-			stmt->currentRow = LastResultRow - RowSetSize;
+		mapi_seek_row(stmt->hdl, -1, MAPI_SEEK_END);
 		break;
 	case SQL_FETCH_PRIOR:
-		if (stmt->previousRow == 0) {
-			stmt->currentRow = 0;
-			return SQL_NO_DATA;
-		}
-		if (stmt->previousRow < RowSetSize) {
-			addStmtError(stmt, "01S06", NULL, 0);
-			stmt->currentRow = 0;
-		}
-		stmt->currentRow = stmt->previousRow - RowSetSize;
+		mapi_seek_row(stmt->hdl, -1, MAPI_SEEK_CUR);
+		break;
+	case SQL_FETCH_ABSOLUTE:
+		mapi_seek_row(stmt->hdl, nOffset - 1, MAPI_SEEK_SET);
 		break;
 	case SQL_FETCH_RELATIVE:
-		if ((stmt->currentRow != 0 || FetchOffset <= 0) &&
-		    (stmt->currentRow != LastResultRow || FetchOffset >= 0)) {
-			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||
-			    (stmt->previousRow == 0 && FetchOffset < 0) ||
-			    (stmt->previousRow > 0 &&
-			     (int) stmt->previousRow + FetchOffset < 0 &&
-			     -FetchOffset > RowSetSize)) {
-				stmt->currentRow = 0;
-				return SQL_NO_DATA;
-			}
-			if (stmt->previousRow > 0 &&
-			    (int) stmt->previousRow + FetchOffset < 0) {
-				stmt->currentRow = 0;
-				addStmtError(stmt, "01S06", NULL, 0);
-				break;
-			}
-			if (stmt->previousRow + FetchOffset >= LastResultRow ||
-			    stmt->currentRow == LastResultRow) {
-				stmt->currentRow = LastResultRow;
-				return SQL_NO_DATA;
-			}
-			stmt->currentRow = stmt->previousRow + FetchOffset;
-			break;
-		}
-		/* fall through */
-	case SQL_FETCH_ABSOLUTE:
-		if (FetchOffset < 0) {
-			if (-FetchOffset <= LastResultRow) {
-				stmt->currentRow = LastResultRow + FetchOffset;
-				break;
-			}
-			stmt->currentRow = 0;
-			if (-FetchOffset > RowSetSize)
-				return SQL_NO_DATA;
-			addStmtError(stmt, "01S06", NULL, 0);
-			break;
-		}
-		if (FetchOffset == 0) {
-			stmt->currentRow = 0;
-			return SQL_NO_DATA;
-		}
-		if (FetchOffset > LastResultRow) {
-			stmt->currentRow = LastResultRow;
-			return SQL_NO_DATA;
-		}
-		stmt->currentRow = FetchOffset - 1;
+		mapi_seek_row(stmt->hdl, nOffset, MAPI_SEEK_CUR);
 		break;
-	case SQL_FETCH_BOOKMARK:
-		/* Optional feature not implemented */
-		addStmtError(stmt, "HYC00", NULL, 0);
-		return SQL_ERROR;
 	default:
-		/* Fetch type out of range */
-		addStmtError(stmt, "HY106", NULL, 0);
+		/* TODO change to unkown Orientation */
+		/* for now return error IM001: driver not capable */
+		addStmtError(stmt, "IM001", NULL, 0);
 		return SQL_ERROR;
 	}
-	mapi_seek_row(stmt->hdl, stmt->currentRow, MAPI_SEEK_SET);
 	if (mapi_error(stmt->Dbc->mid)) {
-		/* Row value out of range (we assume that's the error) */
-		addStmtError(stmt, "HY107", mapi_error_str(stmt->Dbc->mid), 0);
+		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
-
 	return SQLFetch_(stmt);
 }
 
 SQLRETURN
-SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT FetchOrientation,
-	       SQLINTEGER FetchOffset)
+SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFetchScroll\n");
 #endif
 
-	return SQLFetchScroll_((ODBCStmt *) hStmt, FetchOrientation,
-			       FetchOffset);
+	return SQLFetchScroll_((ODBCStmt *) hStmt, nOrientation, nOffset);
 }

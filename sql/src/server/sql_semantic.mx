@@ -49,7 +49,7 @@ sql_export sql_subtype *supertype( sql_subtype *r, sql_subtype *i );
 sql_export int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing);
 sql_export stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s );
 sql_export stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int always);
-sql_export stmt *sum_scales( sql_subfunc *f, stmt *ls, stmt *rs );
+sql_export void sum_scales( sql_subfunc *f, stmt *ls, stmt *rs );
 sql_export stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs );
 sql_export stmt * sqlparse_intern(mvc *m, char *query);
 sql_export stmt * scope_sqlparse(mvc *m, scope *scp, char *query);
@@ -231,21 +231,25 @@ tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname
 
 		stmt *sq = sqlparse_intern(sql, t->query);
 
-		tv = scope_add_table(scp, sq, tname, NULL);
 		for ( n = t->columns.set->h, m = sq->op1.lval->h;
 				n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			stmt *sc = stmt_dup(m->data);
 
 			sc = stmt_alias(sc, c->base.name);
-			sc = stmt_ibat(sc, stmt_dup(sq));
+			c->st = stmt_ibat(sc, stmt_dup(sq));
+		}
+
+		tv = scope_add_table(scp, sq, tname, NULL);
+		for ( n = t->columns.set->h; n; n = n->next) {
+			sql_column *c = n->data;
+			stmt *sc = stmt_dup(c->st);
 			table_add_column(tv, sc, NULL, c->base.name);
 		}
 	} else {
 		stmt *ts;
 
-		tv = scope_add_table(scp, 
-			ts = stmt_basetable(t, tname), tname, t);
+		tv = scope_add_table(scp, ts = stmt_basetable(t), tname, t);
 		for ( n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
 			stmt *sc = stmt_cbat(c, stmt_dup(ts), RDONLY, st_bat);
@@ -265,88 +269,30 @@ static lng scale2value(int scale){
 	return val;
 }
 
-stmt *sum_scales( sql_subfunc *f, stmt *ls, stmt *rs )
-{
+void sum_scales( sql_subfunc *f, stmt *ls, stmt *rs ){
 	if (strcmp(f->func->imp, "*") == 0 && 
 			f->func->res->type->scale == SCALE_FIX){
 		f->res->scale = tail_type(ls)->scale + 
 					tail_type(rs)->scale;
-		f->res->digits = tail_type(ls)->digits + 
-					tail_type(rs)->digits;
-		/* HACK alert: digits should be less then max */
-		if (f->res->digits > 19)
-			f->res->digits = 19;
-		/* sum of digits may mean we need a bigger result type 
- 		 * as the function don't support this we need to
-		 * make bigger input types!
-		 */
-		if (f) {
-			sql_subtype *t = sql_bind_subtype( 
-				f->res->type->sqlname,
-				f->res->digits, f->res->scale );
-			if (subtype_cmp( t, f->res) != 0) {
-				sql_subfunc *c = NULL;
-				
-				c = sql_bind_func_result("convert",
-							  	f->res,NULL,t);
-				if (c) 
-					ls = stmt_unop(ls, c);
-			}
-			sql_subtype_destroy(t);
-		}
 	}
-	return ls;
 }
 
-stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs )
-{
+stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs ){
 	sql_subtype *lt = tail_type(ls);
 	sql_subtype *rt = tail_type(rs);
 
-	/*
-   	 * Decimals are mapped on plain integers. This has impact on the
-  	 * implemantion of division. First the 'dividend' should be large 
-	 * enough to prevent rounding errors. This is solved by a 
-	 * multiplication with the 'scale' of the divisor.
-	 * Second the result type of the division should be equal to the 
-	 * 'dividend', with the maximum scale of the dividend and divisor.
-	 *
-	 * Example 	1.0/0.1 mapped (int 1 dec(1,0) and int 1 dec(2,1))
-	 *				1 * 10 = 10 (scale of divisor)
-	 *				10/1 = 1 dec(1)
-	 */
-
 	if (lt->type->scale == SCALE_FIX && rt->scale){ 
+		sql_subtype *it = sql_bind_localtype( lt->type->base.name );
 		sql_subfunc *c = NULL;
-		int digits = rt->scale + lt->digits;
-		int scale = MAX(lt->scale,rt->scale);
-		int d = 0;
-		/* scale fixing may require a larger type ! */
-		sql_subtype *it = 
-			sql_bind_subtype( lt->type->sqlname, digits, scale  );
-
-		if (scale > lt->scale)
-			d = (scale-lt->scale);
-		f->res->digits = lt->digits;
-		f->res->scale = scale;
 
 		if (strcmp(f->func->imp, "/") == 0){
 			c = sql_bind_func("scale_up",lt,it);
-			if (!c) {
-				c = sql_bind_func_result("convert",lt,NULL,it);
-				if (c) {
-					ls = stmt_unop(ls, c);
-					lt = tail_type(ls);
-					c = sql_bind_func("scale_up",lt,it);
-				}
-			}
 		}
 		if (c){
-			lng val = scale2value(rt->scale+d);
+			lng val = scale2value(rt->scale);
 			atom *a = atom_int(sql_dup_subtype(it), val);
 			ls = stmt_binop(ls, stmt_atom(a), c);
 		}
-		sql_subtype_destroy(it);
 	}
 	return ls;
 }
@@ -412,15 +358,12 @@ stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 			sql_subfunc *c = 
 				sql_bind_func_result("convert",st,NULL,ct);
 			if (c){ 
-				int sc = (ct->type->scale == SCALE_FIX);
-				if (sc &&
-				    ((ct->digits > 0 && ct->scale == 0 && 
+				if ((ct->digits > 0 && ct->scale == 0 && 
 					ct->digits < st->digits) ||
 		    		    (ct->scale > 0 && ct->digits > 0 && 
 					ct->digits-ct->scale < 
-						st->digits-st->scale)) 
+						st->digits-st->scale) 
 				) {
-					stmt_destroy(s);
 					sql_subfunc_destroy(c);
 					return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 				}
@@ -453,12 +396,10 @@ stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 			}
 		}
 		if (!t || subtype_cmp(t, ct) != 0) {
-			stmt_destroy(s);
 			return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 		}
 	} else {
 		assert(0);
-		stmt_destroy(s);
 		return sql_error(sql, 02, "Statement has no type information");
 	}
 	if (st) {
@@ -467,7 +408,6 @@ stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 		    (ct->scale > 0 && ct->digits > 0 
 			&& ct->digits-ct->scale < st->digits-st->scale) 
 		){
-			stmt_destroy(s);
 			return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 		}
 	}
@@ -482,7 +422,7 @@ sql_subtype *supertype( sql_subtype *r, sql_subtype *i )
 	int digits = 0;
 	unsigned int scale = sql_max(i->scale,r->scale);
 
-	if (i->type->base.id > r->type->base.id)
+	if (i->type->nr > r->type->nr)
 		tpe = i->type->sqlname;
 	if (i->digits && r->digits) {
 		if (i->digits > r->digits) {
@@ -506,17 +446,6 @@ sql_subtype *supertype( sql_subtype *r, sql_subtype *i )
 	return sql_bind_subtype(tpe,digits,scale);
 }
 
-int 
-set_type_param( stmt *s, stmt *param ) 
-{
-	sql_subtype *type = tail_type(s);
-
-	if (!s || !param || param->type != st_var)
-		return -1;
-
-	param->op2.typeval = sql_dup_subtype(type);
-	return 0;
-}
 /* convert_types convert both the stmt's L and R such that they get
  * matching types. On failure <0 is returned;
  */
@@ -527,14 +456,7 @@ int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 	sql_subtype *lt = tail_type(ls);
 	sql_subtype *rt = tail_type(rs);
 
-	
-	if (rt && !lt)
-		return set_type_param(rs, ls);
-		
-	if (!rt && lt) 
-		return set_type_param(ls, rs);
-
-	if (rt && lt) {
+	if (rt && lt){
 		sql_subtype *i = lt;
 		sql_subtype *r = rt;
 
@@ -558,11 +480,15 @@ int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 			ls = fix_scale( sql, r, ls, 0, 0);
 			rs = fix_scale( sql, i, rs, 0, 0);
 		}
-		*L = ls;
-		*R = rs;
 		if (!ls || !rs) {
+			if (ls)
+				*L = ls;
+			if (rs)
+				*R = rs;
 			return -1;
 		}
+		*L = ls;
+		*R = rs;
 		return 0;
 	}
 	return -1;

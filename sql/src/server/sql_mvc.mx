@@ -119,6 +119,7 @@ typedef struct sql_column {
 	bit null;
 	char *def;
 
+	struct stmt *st; /* for prepared view's */
 	struct sql_table *t;
 	sql_bat bat;
 
@@ -152,7 +153,9 @@ typedef struct sql_table {
 
 	oid dbid;     	 /* bat with deletes */
 
+	struct stmt *st; /* for prepared view's */
 	struct sql_schema *s;
+
 } sql_table;
 
 typedef struct sql_schema {
@@ -226,7 +229,6 @@ typedef struct mvc {
 	char *user;
 	char *role;
 
-	int prepare;
 	int auto_commit;
 	int reply_size;
 	int debug;
@@ -687,6 +689,8 @@ static void column_destroy(sql_column * c)
 	sql_subtype_destroy(c->type);
 	if (c->def)
 		_DELETE(c->def);
+	if (c->st)
+		stmt_destroy(c->st);
 	_DELETE(c);
 }
 
@@ -700,6 +704,8 @@ static void table_destroy(sql_table * t)
 	cs_destroy( &t->keys );
 	cs_destroy( &t->idxs );
 	cs_destroy( &t->columns );
+	if (t->st)
+		stmt_destroy(t->st);
 	_DELETE(t);
 }
 
@@ -1086,6 +1092,7 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	c->null = *(bit *) bun_find(column_null, lid);
 	c->colnr = *(int *) bun_find(column_number, lid);
 	c->t = t;
+	c->st = NULL;
 
 	if (t->type != tt_view){
 		snprintf(name, BUFSIZ, "%s_%s", t->base.name, c->base.name );
@@ -1147,6 +1154,7 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 
 	t->pkey = NULL;
 	t->s = s;
+	t->st = NULL;
 	t->sz = BUFSIZ;
 
 	cs_init( &t->columns, (fdestroy)&column_destroy );
@@ -1218,13 +1226,20 @@ static sql_type *load_type(sql_trans *tr, sql_module *m, BAT * types, BUN j)
 	BAT *type_scale = sys_bat(tr->bm, "types_scale");
 	BAT *type_radix = sys_bat(tr->bm, "types_radix");
 
-	(void)m;
 	base_init( &t->base, *(sqlid*) bun_find(type_id, lid),
 		TR_OLD, bun_find(type_systemname, lid));
 	t->sqlname = _strdup( (char*) bun_find(type_sqlname, lid));
 	t->digits = *(int*)bun_find(type_digits, lid);
 	t->scale = *(int*)bun_find(type_scale, lid);
 	t->radix = *(int*)bun_find(type_radix, lid);
+	t->nr = cs_size(&m->types);
+
+	if (t->nr) { 
+		sql_type *pt = m->types.set->t->data;
+		t->nr = pt->nr;
+		if (strcmp(pt->sqlname, t->sqlname) != 0)
+			t->nr ++;
+	}
 	t->localtype = ATOMindex(t->base.name);
 
 	bat_destroy(type_id);
@@ -1468,6 +1483,7 @@ static sql_column *column_dup(sql_trans *tr, int flag, sql_column * oc, sql_tabl
 	c->bat.ubid = oc->bat.ubid;
 
 	c->t = t;
+	c->st = NULL;
 
 	if (c->t->type == tt_session) {
 		temp_dup(c->bat.bid);
@@ -1496,6 +1512,7 @@ static sql_table *table_dup(sql_trans *tr, int flag, sql_table * ot, sql_schema 
 		temp_dup(t->dbid);
 
 	t->s = s;
+	t->st = NULL;
 	t->sz = ot->sz;
 
 	if (ot->columns.set) for (n = ot->columns.set->h; n; n = n->next) {
@@ -1545,6 +1562,7 @@ static sql_type *type_dup(sql_trans *tr, int flag, sql_type * ot, sql_module *m)
 	t->digits = ot->digits;
 	t->scale = ot->scale;
 	t->radix = ot->radix;
+	t->nr = ot->nr;
 	t->localtype = ot->localtype;
 	return t;
 }
@@ -2150,12 +2168,14 @@ void mvc_exit()
 void 
 mvc_logmanager()
 {
+/*
 	if (log_changes(logger) < 100)
 		return;
 	MT_set_lock(mvc_lock, "mvc_commit");
 	logger_restart(logger);
 	MT_unset_lock(mvc_lock, "mvc_commit");
 	logger_cleanup(logger);
+*/
 }
 
 ssize_t 
@@ -2280,23 +2300,21 @@ rollforward_changeset_map( sql_trans *tr, changeset *cs, rfdfunc rf )
 static sql_idx *
 rollforward_create_idx( sql_trans *tr, sql_idx *i )
 {
+	char bname[BUFSIZ];
+
+	if (tr->parent != gtrans)
+		return i;
+
 	if (i->bat.bid && i->bat.ubid){
-		char bname[BUFSIZ];
 		BAT *b = bm_lbid2bat( tr->bm, i->bat.bid);
 		BAT *u = bm_lbid2bat( tr->bm, i->bat.ubid);
 	
-		snprintf(bname, BUFSIZ, "%s_%s", 
-				i->t->base.name, i->base.name );
-		i->bat.bid = bm_add_bat(tr->parent->bm, b->batCacheid, bname,0);
-		if (tr->parent == gtrans) 
-			log_bat_persists(logger, b, i->bat.bid, bname); 
+		snprintf(bname, BUFSIZ, "%s_%s", i->t->base.name, i->base.name );
+		i->bat.bid = log_bat_persists(logger, b, bname); 
 		bat_destroy(b);
-
-		snprintf(bname, BUFSIZ, "U_%s_%s", 	
-				i->t->base.name, i->base.name );
-		i->bat.ubid = bm_add_bat(tr->parent->bm, u->batCacheid,bname,0);
-		if (tr->parent == gtrans) 
-			log_bat_persists(logger, u, i->bat.ubid, bname); 
+	
+		snprintf(bname, BUFSIZ, "U_%s_%s", i->t->base.name, i->base.name );
+		i->bat.ubid = log_bat_persists(logger, u, bname); 
 		bat_destroy(u);
 	} else {
 		sql_kc *c = i->columns->h->data;
@@ -2313,29 +2331,28 @@ rollforward_create_column( sql_trans *tr, sql_column *c )
 	char bname[BUFSIZ];
 	BAT *b, *u;
 
-	u = bm_lbid2bat( tr->bm, c->bat.ubid);
-
-	/* only log on toplevel */
+	if (tr->parent != gtrans)
+		return c;
 
 	b = bm_lbid2bat( tr->bm, c->bat.bid);
+	u = bm_lbid2bat( tr->bm, c->bat.ubid);
+
 	snprintf(bname, BUFSIZ, "%s_%s", c->t->base.name, c->base.name );
-	c->bat.bid = bm_add_bat(tr->parent->bm, b->batCacheid, bname, 0);
-	if (tr->parent == gtrans)
-		log_bat_persists(logger, b, c->bat.bid, bname); 
+	c->bat.bid = log_bat_persists(logger, b, bname); 
 	bat_destroy(b);
 
 	snprintf(bname, BUFSIZ, "U_%s_%s", c->t->base.name, c->base.name );
-	c->bat.ubid = bm_add_bat(tr->parent->bm, u->batCacheid, bname, 0);
-	if (tr->parent == gtrans)
-		log_bat_persists(logger, u, c->bat.ubid, bname); 
+	c->bat.ubid = log_bat_persists(logger, u, bname); 
 	bat_destroy(u);
-
 	return c;
 }
 
 static sql_table *
 rollforward_create_table( sql_trans *tr, sql_table *t )
 {
+	if (tr->parent != gtrans)
+		return t;
+
 	if (t->type != tt_view && t->type != tt_temp && 
 	    t->type != tt_session) {
 		char name[BUFSIZ];
@@ -2343,9 +2360,7 @@ rollforward_create_table( sql_trans *tr, sql_table *t )
 		BAT *d = bm_lbid2bat(tr->bm, t->dbid);
 
 		snprintf(name, BUFSIZ, "D_%s", t->base.name );
-		t->dbid = bm_add_bat(tr->parent->bm, d->batCacheid, name, 0);
-		if (tr->parent == gtrans) 
-			log_bat_persists(logger, d, t->dbid, name); 
+		t->dbid = log_bat_persists(logger, d, name); 
 		bat_destroy(d);
 
 		rollforward_changeset_creates( tr, &t->columns, 
@@ -2359,26 +2374,21 @@ rollforward_create_table( sql_trans *tr, sql_table *t )
 static void
 rollforward_drop_column( sql_trans *tr, sql_column *c )
 {
+	if (tr->parent != gtrans)
+		return;
+
 	if (c->bat.bid && c->bat.ubid){
-		if (tr->parent == gtrans) {
-			log_bat_transient(logger, c->bat.bid); 
-			log_bat_transient(logger, c->bat.ubid); 
-		}
-		bm_del_bat(tr->parent->bm, c->bat.bid);
-		bm_del_bat(tr->parent->bm, c->bat.ubid);
+		log_bat_transient(logger, c->bat.bid); 
+		log_bat_transient(logger, c->bat.ubid); 
 	}
 }
 
 static void
 rollforward_drop_idx( sql_trans *tr, sql_idx *i )
 {
-	if (i->bat.bid && i->bat.ubid){
-		if (tr->parent == gtrans) {
-			log_bat_transient(logger, i->bat.bid); 
-			log_bat_transient(logger, i->bat.ubid); 
-		}
-		bm_del_bat(tr->parent->bm, i->bat.bid);
-		bm_del_bat(tr->parent->bm, i->bat.ubid);
+	if (tr->parent == gtrans && i->bat.bid && i->bat.ubid){
+		log_bat_transient(logger, i->bat.bid); 
+		log_bat_transient(logger, i->bat.ubid); 
 	}
 	list_remove_data(i->t->s->idxs, i);
 }
@@ -2399,11 +2409,10 @@ rollforward_drop_key( sql_trans *tr, sql_key *k )
 static void 
 rollforward_drop_table( sql_trans *tr, sql_table *t )
 {
-	if (t->type != tt_view && t->type != tt_temp && 
+	if (tr->parent == gtrans &&
+	    t->type != tt_view && t->type != tt_temp && 
 	    t->type != tt_session) {
-		if (tr->parent == gtrans) 
-			log_bat_transient(logger, t->dbid); 
-		bm_del_bat(tr->parent->bm, t->dbid);
+		log_bat_transient(logger, t->dbid); 
 	} 
 
 	rollforward_changeset_deletes( tr, &t->columns, 
@@ -2797,7 +2806,7 @@ mvc_release(mvc * m, char *name)
 
 	while(tr && (!tr->name || strcmp(tr->name,name) != 0))
 		tr = tr -> parent;
-	if (!tr || !tr->name || strcmp(tr->name,name) != 0) {
+	if (!tr) {
 		GDKerror("release savepoint %s doesn't exists", name);
 		m->status = -1;
 		return -1;
@@ -2873,7 +2882,6 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->role_id = m->user_id = -1;
 	m->schema = m->role = m->user = NULL;
 
-	m->prepare = 0;
 	m->auto_commit = 0;
 	m->reply_size = -1;
 	m->debug = 0;
@@ -3530,6 +3538,7 @@ mvc_create_type(mvc * sql, sql_module *m,
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
+	t->nr = cs_size(&m->types);
 	t->localtype = ATOMindex(t->base.name);
 
 	cs_add( &m->types, t, TR_NEW);
@@ -3633,6 +3642,7 @@ static sql_table *create_table_intern( mvc *m, char *name, table_type type)
 	cs_init( &t->keys, (fdestroy)&key_destroy);
 	t->pkey = NULL;
 	t->dbid = 0;
+	t->st = NULL;
 	t->sz = BUFSIZ;
 	return t;
 }
@@ -4034,6 +4044,7 @@ static sql_column *bootstrap_create_column(mvc * m, sql_table *t, char *name,
 	col->null = 1;
 	col->colnr = cs_size( &t->columns);
 	col->t = t;
+	col->st = NULL;
 	cs_add( &t->columns, col, TR_NEW);
 
 	snprintf(bname, BUFSIZ, "%s_%s", col->t->base.name, col->base.name );
@@ -4090,6 +4101,7 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	col->null = 1;
 	col->colnr = cs_size( &t->columns );
 	col->t = t;
+	col->st = NULL;
 	col->bat.bid = 0;
 	col->bat.ubid = 0;
 	cs_add( &t->columns, col, TR_NEW);

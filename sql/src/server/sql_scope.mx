@@ -60,6 +60,7 @@ typedef struct var_ {
 typedef struct scope {
 	stmt *ptable;		/* result pivot table */
 	list *bases;		/* all used base tables ! */
+	/*list *basetables;	 from part */	
 	list *outers;		/* outer references */
 
 	list *pivots;		/* pivots */
@@ -131,7 +132,6 @@ extern void tvar_destroy(tvar *t);
 #include "sql_scope.h"
 #include <string.h>
 
-
 static void cvar_destroy(cvar *cv) 
 {
 	if (sql_ref_dec( &(cv->ref) ) == 0){
@@ -177,7 +177,8 @@ scope *scope_open(scope * p)
 {
 	scope *s = NEW(scope);
 
-	s->ptable = stmt_ptable( stmt_ptable( NULL ) );
+	s->ptable = stmt_ptable();
+	/*s->basetables = list_create( (fdestroy)&stmt_destroy ); */
 	s->pivots = list_create( (fdestroy)&stmt_destroy );
 	s->ppivots = list_create( (fdestroy)&stmt_destroy );
 	s->outers = list_create( (fdestroy)&stmt_destroy );
@@ -196,6 +197,7 @@ scope *scope_close(scope * s)
 	scope *p = s->p;
 
 	stmt_destroy(s->ptable);
+	/*list_destroy(s->basetables); */
 
 	list_destroy(s->pivots);
 	list_destroy(s->ppivots);
@@ -242,8 +244,9 @@ static int stmt_cmp(stmt *s1, stmt *s2)
 	return (int)(s1-s2);
 }
 
-static void scope_add_table_(scope * scp, stmt *s, int outer )
-{
+static void scope_add_table_(scope * scp, stmt *s, int outer ){
+	
+	/*list_append(scp->basetables, stmt_dup(s));  */
 	if (outer) {
 		if (list_find(scp->outers, s, (fcmp)&stmt_cmp) == NULL)
 			list_append(scp->outers, stmt_dup(s));
@@ -251,7 +254,7 @@ static void scope_add_table_(scope * scp, stmt *s, int outer )
 	list_append(scp->pivots, 
 		stmt_pivot(stmt_dup(s), stmt_dup(scp->ptable)));
 	list_append(scp->ppivots, 
-		stmt_pivot(stmt_dup(s), stmt_dup(ptable_parent(scp->ptable))) );
+		stmt_partial_pivot(stmt_dup(s), stmt_dup(scp->ptable)) );
 }
 
 cvar *table_add_column(tvar * t, stmt * s, 
@@ -353,8 +356,7 @@ static cvar *bind_table_column(list * columns, char *tname, char *cname)
 	return NULL;
 }
 
-static int 
-ambigious_column( list *cols, cvar *cv )
+int ambigious_column( list *cols, cvar *cv )
 {
 	node *n; 
 

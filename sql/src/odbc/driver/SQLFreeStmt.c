@@ -39,7 +39,6 @@ SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
 		/* close cursor, discard result set, set to prepared */
 		setODBCDescRecCount(stmt->ImplRowDescr, 0);
 		stmt->currentRow = 0;
-		stmt->previousRow = 0;
 
 		if (stmt->State == EXECUTED)
 			stmt->State = PREPARED;

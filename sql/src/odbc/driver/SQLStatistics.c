@@ -43,6 +43,9 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	ODBCLOG("SQLStatistics\n");
 #endif
 
+	(void) szCatalogName;	/* Stefan: unused!? */
+	(void) nCatalogNameLength;	/* Stefan: unused!? */
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -55,10 +58,6 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 
 		return SQL_ERROR;
 	}
-
-	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 
 	/* check for valid Unique argument */
 	switch (nUnique) {
@@ -84,6 +83,7 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 
 
 	/* check if a valid (non null, not empty) table name is supplied */
+	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 	if (szTableName == NULL) {
 		/* HY009 = Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
@@ -94,6 +94,8 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
 	}
+
+	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 
 	/* construct the query now */
 	query = malloc(1000 + nTableNameLength + nSchemaNameLength);
@@ -131,7 +133,7 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	       "cast(null as integer) as cardinality, "
 	       "cast(null as integer) as pages, "
 	       "cast(null as varchar) as filter_condition "
-	       "from sys.schemas s, sys.tables t, columns c "
+	       "from schemas s, tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id and "
 	       "t.id = k.table_id");
 	query_end += strlen(query_end);

@@ -45,12 +45,12 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	clearDbcErrors(dbc);
 
 	/* check connection state, should not be connected */
-	if (dbc->Connected) {
+	if (dbc->Connected == 1) {
 		/* 08002 = Connection already in use */
 		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
-	assert(!dbc->Connected);
+	assert(dbc->Connected == 0);
 
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szDataSource, nDataSourceLength, addDbcError, dbc);

@@ -40,14 +40,10 @@ newODBCDbc(ODBCEnv *env)
 	assert(env);
 
 	dbc = (ODBCDbc *) malloc(sizeof(ODBCDbc));
-	if (dbc == NULL) {
-		/* Memory allocation error */
-		addEnvError(env, "HY001", NULL, 0);
-		return NULL;
-	}
 	assert(dbc);
 
 	dbc->Env = env;
+	dbc->next = NULL;
 	dbc->Error = NULL;
 	dbc->RetrievedErrors = 0;
 
@@ -63,9 +59,15 @@ newODBCDbc(ODBCEnv *env)
 
 	dbc->FirstStmt = NULL;
 
-	/* add this dbc to start of the administrative linked dbc list */
-	dbc->next = env->FirstDbc;
-	env->FirstDbc = dbc;
+	/* add this dbc to the administrative linked dbc list */
+	if (env->FirstDbc == NULL) {
+		/* it is the first dbc within this env */
+		env->FirstDbc = dbc;
+	} else {
+		/* add it in front of the list */
+		dbc->next = env->FirstDbc;
+		env->FirstDbc = dbc;
+	}
 
 	dbc->Type = ODBC_DBC_MAGIC_NR;	/* set it valid */
 
@@ -149,7 +151,7 @@ void
 destroyODBCDbc(ODBCDbc *dbc)
 {
 	assert(isValidDbc(dbc));
-	assert(!dbc->Connected);
+	assert(dbc->Connected == 0);
 	assert(dbc->FirstStmt == NULL);
 
 	/* first set this object to invalid */

@@ -43,6 +43,9 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	ODBCLOG("SQLSpecialColumns %d ", nIdentifierType);
 #endif
 
+	(void) szCatalogName;	/* Stefan: unused!? */
+	(void) nCatalogNameLength;	/* Stefan: unused!? */
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -142,7 +145,7 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		       "c.buffer_length as buffer_length, "
 		       "c.decimal_digits as decimal_digits, "
 		       "1 as pseudo_column "
-		       "from sys.schemas s, sys.tables t, "
+		       "from schemas s, tables t, "
 		       " columns c, keys k, keycolumns kc "
 		       "where s.id = t.schema_id and t.id = c.table_id and "
 		       " t.id = k.table_id and c.id = kc.'column' and "
@@ -195,7 +198,7 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		       "1 as buffer_length, "
 		       "cast(0 as smallint) as decimal_digits, "
 		       "cast(0 as smallint) as pseudo_column "
-		       "from sys.schemas s where 0 = 1");
+		       "from schemas s where 0 = 1");
 		query_end += strlen(query_end);
 	}
 

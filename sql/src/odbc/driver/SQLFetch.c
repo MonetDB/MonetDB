@@ -21,9 +21,6 @@
 #include "ODBCStmt.h"
 #include <errno.h>
 #include <time.h>
-#ifdef HAVE_STRINGS_H
-#include <strings.h>		/* for strncasecmp */
-#endif
 
 #if SIZEOF_INT==8
 # define ULL_CONSTANT(val)	(val)
@@ -71,7 +68,7 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 	return 0;
 }
 #endif
-
+		
 /* Parse a number and store in a bignum_t.
    1 is returned if all is well;
    2 is returned if there is loss of precision (i.e. overflow of the value);
@@ -1612,6 +1609,22 @@ SQLFetch_(ODBCStmt *stmt)
 	ODBCDescRec *rec;
 	int i;
 	SQLINTEGER offset;
+	SQLRETURN retval = SQL_SUCCESS;
+
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	assert(stmt->hdl);
+
+	/* check statement cursor state, query should be executed */
+	if (stmt->State != EXECUTED) {
+		/* caller should have called SQLExecute or SQLExecDirect first */
+		/* HY010: Function sequence error */
+		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
 
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
@@ -1633,58 +1646,57 @@ SQLFetch_(ODBCStmt *stmt)
 		}
 	}
 
-	stmt->previousRow = stmt->currentRow;
-	stmt->currentRow++;
-
 	desc = stmt->ApplRowDescr;
 	if (desc->sql_desc_bind_offset_ptr)
 		offset = *desc->sql_desc_bind_offset_ptr;
 	else
 		offset = 0;
 	for (i = 1; i <= desc->sql_desc_count; i++) {
+		SQLRETURN rc;
+
 		rec = &desc->descRec[i];
 		if (rec->sql_desc_data_ptr == NULL)
 			continue;
 		stmt->retrieved = 0;
-		if (ODBCFetch(stmt, i,
-			      rec->sql_desc_concise_type,
-			      rec->sql_desc_data_ptr,
-			      rec->sql_desc_octet_length,
-			      rec->sql_desc_octet_length_ptr,
-			      rec->sql_desc_indicator_ptr,
-			      rec->sql_desc_precision,
-			      rec->sql_desc_scale,
-			      rec->sql_desc_datetime_interval_precision,
-			      offset) == SQL_ERROR)
-			return SQL_ERROR;
+		rc = ODBCFetch(stmt, i,
+			       rec->sql_desc_concise_type,
+			       rec->sql_desc_data_ptr,
+			       rec->sql_desc_octet_length,
+			       rec->sql_desc_octet_length_ptr,
+			       rec->sql_desc_indicator_ptr,
+			       rec->sql_desc_precision,
+			       rec->sql_desc_scale,
+			       rec->sql_desc_datetime_interval_precision,
+			       offset);
+		switch (rc) {
+		case SQL_ERROR:
+			retval = rc;
+			break;
+		case SQL_NO_DATA:
+			if (retval != SQL_ERROR)
+				retval = rc;
+			break;
+		case SQL_SUCCESS_WITH_INFO:
+			if (retval == SQL_SUCCESS)
+				retval = rc;
+			break;
+		case SQL_SUCCESS:
+		default:
+			break;
+		}
 	}
 
-	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+	stmt->currentRow++;
+
+	return SQL_SUCCESS;
 }
 
 SQLRETURN
 SQLFetch(SQLHSTMT hStmt)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFetch\n");
 #endif
 
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
-
-	assert(stmt->hdl);
-
-	/* check statement cursor state, query should be executed */
-	if (stmt->State != EXECUTED) {
-		/* caller should have called SQLExecute or SQLExecDirect first */
-		/* HY010: Function sequence error */
-		addStmtError(stmt, "HY010", NULL, 0);
-		return SQL_ERROR;
-	}
-
-	return SQLFetch_(stmt);
+	return SQLFetch_((ODBCStmt *) hStmt);
 }

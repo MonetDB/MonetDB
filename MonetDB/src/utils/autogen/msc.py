@@ -25,7 +25,7 @@ import string
 import os
 
 #automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
-automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
+automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', '']
 
 def split_filename(f):
     base = f
@@ -42,11 +42,6 @@ def rsplit_filename(f):
         return f[:s], f[s+1:]
     return base, ext
 
-def msc_basename(f):
-    # return basename (i.e. just the file name part) of a path, no
-    # matter which directory separator was used
-    return string.split(string.split(f, '/')[-1], '\\')[-1]
-
 def msc_dummy(fd, var, values, msc):
     res = fd
 
@@ -56,72 +51,65 @@ def msc_list2string(l, pre, post):
         res = res + pre + i + post
     return res
 
-def create_dir(fd, v,n):
-    # Stupid Windows/nmake cannot cope with single-letter directory names;
-    # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
-    if len(v) == 1:
-            vv = '.\\%s' % v
-    else:
-            vv = v
-    fd.write('%s-all: "%s-dir" "%s-Makefile"\n' % (n, n, n))
-    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" all \n' % vv)
-    fd.write('%s-dir: \n\tif not exist "%s" $(MKDIR) "%s"\n' % (n, vv, vv))
-    fd.write('%s-Makefile: "$(SRCDIR)\\%s\\Makefile.msc"\n' % (n, v))
-    fd.write('\t$(INSTALL) "$(SRCDIR)\\%s\\Makefile.msc" "%s\\Makefile"\n' % (v, v))
-    fd.write('%s-check: "%s"\n' % (n, vv))
-    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" check\n' % vv)
-
-    fd.write('%s-install: "$(bindir)" "$(libdir)"\n' % n)
-    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" install\n' % vv)
-
-def empty_dir(fd, n):
-
-    fd.write('%s-all:\n' % (n))
-    fd.write('%s-check:\n' % (n))
-    fd.write('%s-install:\n' % (n))
-
-def create_subdir(fd, dir):
-    res = ""
-    # HACK to keep uncompilable stuff out of Windows makefiles.
-    if dir == 'calibrator':
-        return None
-
-    if string.find(dir, "?") > -1:
-        parts = string.split(dir, "?")
-        if len(parts) == 2:
-            dirs = string.split(parts[1], ":")
-            fd.write("!IFDEF %s\n" % parts[0])
-            if len(dirs) > 0 and string.strip(dirs[0]) != "":
-                create_dir(fd, dirs[0],parts[0])
-            else:
-                empty_dir(fd, parts[0])
-            if len(dirs) > 1 and string.strip(dirs[1]) != "":
-                fd.write("!ELSE\n")
-                create_dir(fd, dirs[1],parts[0])
-            else:
-                fd.write("!ELSE\n")
-                empty_dir(fd, parts[0])
-            fd.write("!ENDIF\n")
-        res = parts[0]
-    else:
-        create_dir(fd, dir,dir)
-        res = dir
-    return res
-
 def msc_subdirs(fd, var, values, msc):
     # to cope with conditional subdirs:
-    dirs = []
-    i = 0
-    nvalues = []
-    for dir in values:
-        i = i + 1
-        val = create_subdir(fd, dir)
-        if val:
-            nvalues.append(val)
-
-    fd.write("all-recursive: %s\n" % msc_list2string(nvalues, '"', '-all" '))
-    fd.write("check-recursive: %s\n" % msc_list2string(nvalues, '"', '-check" '))
-    fd.write("install-recursive: %s\n" % msc_list2string(nvalues, '"', '-install" '))
+    Vals = []
+    for v in values:
+        cond = string.split(v, '?', 1)
+        if len(cond) == 1:
+            # non-conditional => use as is
+            Vals.append(cond[0])
+        else:
+            # conditional => use "then" or "else"
+            thn = string.split(cond[1], ':', 1)
+            # handle "known" conditionals
+            if cond[0] == 'CROSS_COMPILING'  and  len(thn) > 1:
+                # use "else"
+                Vals.append(thn[1])
+            elif cond[0] == 'MONET4':
+                # use "then"
+                Vals.append(thn[0])
+            #else: 
+            #    # "unknown" conditional => use none
+    values = Vals
+    # HACK to keep uncompilable stuff out of Windows makefiles.
+    if 'calibrator' in values:
+        values = values[:]
+        values.remove('calibrator')
+    fd.write("%s = %s\n" % (var, string.join(values)))
+    fd.write("all-recursive: %s\n" % msc_list2string(values, '"', '-all" '))
+    for v in values:
+        # Stupid Windows/nmake cannot cope with single-letter directory names;
+        # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
+        if len(v) == 1:
+            vv = '.\\%s' % v
+        else:
+            vv = v
+        fd.write('%s-all: "%s" "%s\\Makefile"\n' % (v, vv, v))
+        fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" all \n' % vv)
+        fd.write('%s: \n\tif not exist "%s" $(MKDIR) "%s"\n' % (vv, vv, vv))
+        fd.write('%s\\Makefile: "$(SRCDIR)\\%s\\Makefile.msc"\n' % (v, v))
+        fd.write('\t$(INSTALL) "$(SRCDIR)\\%s\\Makefile.msc" "%s\\Makefile"\n' % (v, v))
+    fd.write("check-recursive: %s\n" % msc_list2string(values, '"', '-check" '))
+    for v in values:
+        # Stupid Windows/nmake cannot cope with single-letter directory names;
+        # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
+        if len(v) == 1:
+            vv = '.\\%s' % v
+        else:
+            vv = v
+        fd.write('%s-check: "%s"\n' % (v, vv))
+        fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" check\n' % vv)
+    fd.write("install-recursive: %s\n" % msc_list2string(values, '"', '-install" '))
+    for v in values:
+        # Stupid Windows/nmake cannot cope with single-letter directory names;
+        # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
+        if len(v) == 1:
+            vv = '.\\%s' % v
+        else:
+            vv = v
+        fd.write('%s-install: "$(bindir)" "$(libdir)"\n' % v)
+        fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" install\n' % vv)
 
 def msc_assignment(fd, var, values, msc):
     o = ""
@@ -223,12 +211,12 @@ def msc_find_hdrs(target, deps, hdrs):
             pf = f
     return pf
 
-def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll = '.dll'):
-    deps = pref+sep+name+dll+": "
+def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
+    deps = "lib"+sep+name+".dll: "
     if type == "BIN":
         add = name+"_LIBS ="
     elif type == "LIB":
-        add = pref+sep+name+"_LIBS ="
+        add = "lib"+sep+name+"_LIBS ="
     else:
         add = name + " ="
     for l in list:
@@ -621,19 +609,10 @@ def msc_library(fd, var, libmap, msc):
 
     name = var[4:]
     sep = ""
-    pref = 'lib'
-    dll = '.dll'
     if (libmap.has_key("NAME")):
         libname = libmap['NAME'][0]
     else:
         libname = name
-
-    if libmap.has_key('PREFIX'):
-        if libmap['PREFIX']:
-            pref = libmap['PREFIX'][0]
-        else:
-            pref = ''
-            dll = '.pyd'                # HACK!!!
 
     if (libname[0] == "_"):
         sep = "_"
@@ -641,7 +620,7 @@ def msc_library(fd, var, libmap, msc):
 
     lib = "lib"
     ld = "LIBDIR"
-    if libmap.has_key("DIR"):
+    if (libmap.has_key("DIR")):
         lib = libname
         ld = libmap["DIR"][0] # use first name given
     ld = msc_translate_dir(ld,msc)
@@ -658,10 +637,9 @@ def msc_library(fd, var, libmap, msc):
 
     v = sep + libname
     msc['LIBS'].append(v)
+    msc['INSTALL'].append(('lib'+v,'lib'+v,'.dll','$('+lib+'dir)'))
     if ld != 'LIBDIR':
-        msc['INSTALL'].append((pref+v,pref+v,dll,ld))
-    else:
-        msc['INSTALL'].append((pref+v,pref+v,dll,'$('+lib+'dir)'))
+        fd.write("%sdir = %s\n" % (lib,ld))
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
@@ -675,14 +653,14 @@ def msc_library(fd, var, libmap, msc):
     if libmap.has_key("LIBS"):
         liblist = liblist + libmap["LIBS"]
     if liblist:
-        fd.write(msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc, pref, dll))
+        fd.write(msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc))
 
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
         if ext not in automake_ext:
             msc['EXTRA_DIST'].append(src)
 
-    srcs = pref + sep + libname + "_OBJS ="
+    srcs = "lib" + sep + libname + "_OBJS ="
     for target in libmap['TARGETS']:
         if target == "@LIBOBJS@":
             srcs = srcs + " $(LIBOBJS)"
@@ -702,13 +680,13 @@ def msc_library(fd, var, libmap, msc):
                     if target not in SCRIPTS:
                             SCRIPTS.append(target)
     fd.write(srcs + "\n")
-    ln = pref + sep + libname
-    fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
-    fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln))
-    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n" % (ln, dll, ln, ln))
+    ln = "lib" + sep + libname
+    fd.write(ln + ".lib: " + ln + ".dll\n")
+    fd.write(ln + ".dll: $(" + ln + "_OBJS) \n")
+    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n" % (ln, ln, ln))
     if sep == "_":
         fd.write("\tif not exist .libs $(MKDIR) .libs\n")
-        fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" .libs\\%s%s\n' % (ln, dll, ln, dll, ln, dll))
+        fd.write('\tif exist "%s.dll" $(INSTALL) "%s.dll" .libs\\%s.dll\n' % (ln, ln, ln))
     fd.write("\n")
 
     if SCRIPTS:
@@ -820,120 +798,11 @@ def msc_includes(fd, var, values, msc):
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
-def gen_mkdir(fd, name, d):
-    i = string.rfind(d, '\\')
-    if i >= 0:
-        dir = d[:i]
-        fd.write('%s: %s\n' % (name, dir) ) 
-        fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
-        gen_mkdir(fd, dir,dir)
-    else:
-        fd.write('%s:\n' % name)
-        fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
+def msc_jar(fd, var, values, msc):
+    print "msc doesn't support jars (yet)!"
 
-def msc_jar(fd, var, jar, msc):
-
-    name = var[4:]
-
-    jd = "JAVADIR"
-    if jar.has_key("DIR"):
-        jd = jar["DIR"][0] # use first name given
-    jd = msc_translate_dir(jd, msc)
-
-    for src in jar['SOURCES']:
-        msc['EXTRA_DIST'].append(src)
-
-    fd.write("\n!IFDEF HAVE_JAVA\n\n")
-
-    if jar.has_key("MANIFEST") and len(jar['MANIFEST']) == 1:
-        fd.write("%s_manifest_file= %s\n" % (name, msc_translate_dir(jar['MANIFEST'][0],msc)))
-        manifest_flag='m'
-    else:
-        fd.write("%s_manifest_file= \n" % name)
-        manifest_flag=''
-
-    fd.write("%s_java_files= " % (name))
-    infiles = []
-    for j in jar['SOURCES']:
-        s,ext = rsplit_filename(j)
-        if ext == 'in':
-            fd.write('%s ' % msc_basename(msc_translate_dir(s, msc)))
-            infiles.append(msc_translate_dir(s, msc))
-        else:
-            fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
-    fd.write('\n')
-    for infile in infiles:
-        fd.write('%s: "$(SRCDIR)\\%s.in"\n' % (msc_basename(infile), infile))
-        fd.write('\tif exist "$(SRCDIR)\\%s.in" $(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (infile, infile, msc_basename(infile)))
-
-    fd.write("\n%s_class_files= " % (name))
-    for j in jar['TARGETS']:
-        fd.write('"%s" ' % msc_translate_dir(j,msc))
-
-    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(%s_java_files)\n" % name)
-
-    fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(%s_class_files)\n" % (manifest_flag, name, name))
-
-    fd.write('install_%s: %s.jar %s-dir\n' % (name, name, name))
-    fd.write('\tif exist %s.jar $(INSTALL) %s.jar "%s\\%s.jar"\n' % (name, name, jd, name))
-
-    gen_mkdir(fd, name + '-dir', jd)
-
-    fd.write('%s: %s.jar\n' % (name, name))
-
-    fd.write("\n!ELSE\n\n")
-
-    fd.write('%s:\n' % name)
-
-    fd.write("\n!ENDIF #HAVE_JAVA\n\n")
-
-    msc['SCRIPTS'].append(name)
-
-def msc_java(fd, var, java, msc):
-
-    name = var[5:]
-
-    jd = "JAVADIR"
-    if java.has_key("DIR"):
-        jd = java["DIR"][0] # use first name given
-    jd = msc_translate_dir(jd, msc)
-
-    for src in java['SOURCES']:
-        msc['EXTRA_DIST'].append(src)
-
-    fd.write("\n!IFDEF HAVE_JAVA\n\n")
-
-    fd.write("%s_java_files= " % (name))
-    for j in java['SOURCES']:
-        s,ext = rsplit_filename(j)
-        if ext == 'in':
-            fd.write('%s ' % s)
-        else:
-            fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
-
-    fd.write("\n%s_class_files= " % (name))
-    for j in java['TARGETS']:
-        fd.write('"%s" ' % msc_translate_dir(j,msc))
-
-    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(%s_java_files)\n" % name)
-
-    fd.write('install_%s: $(%s_class_files) %s-dir\n' % (name, name, name))
-    fd.write('\tif exist $(%s_class_files) $(INSTALL) $(%s_class_files) "%s\\$(%s_class_files)"\n' % (name, name, jd, name))
-
-    gen_mkdir(fd, name+'-dir',jd)
-
-    fd.write('%s: $(%s_class_files)\n' % (name, name))
-
-    fd.write("\n!ELSE\n\n")
-
-    fd.write('%s:\n' % name)
-
-    fd.write("\n!ENDIF #HAVE_JAVA\n\n")
-
-    msc['SCRIPTS'].append(name)
+def msc_java(fd, var, values, msc):
+    print "msc doesn't support java (yet)!"
 
 output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
@@ -986,12 +855,9 @@ BIN = C:\\bin
 
 # Nothing much configurable below
 
-# cl -help describes the options
-CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
+# cl -? describes the options
+CC = cl -GF -W3 -MD -nologo -Zi -G6
 # optimize use -Ox
-
-JAVAC = javac
-JAR = jar
 
 # No general LDFLAGS needed
 LDFLAGS = /link
@@ -1002,7 +868,7 @@ MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H -DNDEBUG $(INCLUDES)
 CXXFLAGS = $(CFLAGS) -EHsc
 
 CXXEXT = \\\"cxx\\\"
@@ -1133,12 +999,12 @@ CXXEXT = \\\"cxx\\\"
             fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, ext, src, ext, dir, dst, ext))
             if ext == '.dll':
                 fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', src, '.lib', dir, dst, '.lib'))
-        td = {}
+        td = []
         for (x, y, u, dir) in msc['INSTALL']:
-            if not td.has_key(dir):
+            if td.count(dir) == 0:
                 fd.write('"%s":\n' % dir)
                 fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (dir, dir))
-                td[dir] = 1
+                td.append(dir)
 
     fd.write("install-data:")
     if cwd != topdir and msc['HDRS']:

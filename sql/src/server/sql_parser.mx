@@ -390,7 +390,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	_transaction_mode_list
 
 %type <bval>
-	opt_work
+	opt_trans
 	opt_chain
 	opt_distinct
 	set_distinct
@@ -1138,13 +1138,13 @@ transaction_stmt:
  ;
 
 _transaction_stmt:
-    COMMIT opt_work opt_chain 	
+    COMMIT opt_trans opt_chain 	
 		{ $$ = _symbol_create_int( TR_COMMIT, $3);  }
  |  SAVEPOINT ident 		
 		{ $$ = _symbol_create( TR_SAVEPOINT, $2); }
  |  RELEASE SAVEPOINT ident 	
 		{ $$ = _symbol_create( TR_RELEASE, $3); }
- |  ROLLBACK opt_work opt_chain opt_to_savepoint
+ |  ROLLBACK opt_trans opt_chain opt_to_savepoint
 		{ $$ = _symbol_create_list( TR_ROLLBACK, 
 		   dlist_append_string(
 		   	dlist_append_int(dlist_create(), $3), $4 )); }
@@ -1186,7 +1186,7 @@ iso_level:
  | 	SERIALIZABLE	
  ;
 
-opt_work: /* pure syntax sugar */
+opt_trans: /* pure syntax sugar */
     WORK		{ $$ = 0; }
  |  /* empty */		{ $$ = 0; }
  ;
@@ -1879,7 +1879,6 @@ value_exp:
  |  string_funcs
  |  case_exp	
  |  cast_exp
- |  '?'				{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
  ;
 
 func_ref:
@@ -1923,36 +1922,34 @@ datetime_funcs:
  ;
 
 string_funcs:
-    SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')' 
+    SUBSTRING '(' scalar_exp FROM nonzero FOR intval ')' 
 				{ dlist *l = dlist_create();
 				  dlist *ops = dlist_create();
+				  sql_subtype *t = 
+					sql_bind_subtype("MEDIUMINT", 0, 0);
+
+				  dlist_append_symbol(ops, $3);
+  		  		  dlist_append_symbol(ops, _newAtomNode(
+					atom_int(t, $5 -1 )));
+  		  		  dlist_append_symbol(ops, _newAtomNode(
+					atom_int(sql_dup_subtype(t), $7 )));
+
   		  		  dlist_append_string(l, _strdup("substring"));
-  		  		  dlist_append_symbol(ops, $3);
-  		  		  dlist_append_symbol(ops, $5);
-  		  		  dlist_append_symbol(ops, $7);
-				  dlist_append_list(l, ops);
+  		  		  dlist_append_list(l, ops);
 		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
-  | SUBSTRING '(' scalar_exp ',' scalar_exp ',' scalar_exp ')' 
+  | SUBSTRING '(' scalar_exp FROM nonzero ')' 
 				{ dlist *l = dlist_create();
 				  dlist *ops = dlist_create();
+				  sql_subtype *t = 
+					sql_bind_subtype("MEDIUMINT", 0, 0);
+
+				  dlist_append_symbol(ops, $3);
+  		  		  dlist_append_symbol(ops, _newAtomNode(
+					atom_int(t, $5 -1 )));
+
   		  		  dlist_append_string(l, _strdup("substring"));
-  		  		  dlist_append_symbol(ops, $3);
-  		  		  dlist_append_symbol(ops, $5);
-  		  		  dlist_append_symbol(ops, $7);
-				  dlist_append_list(l, ops);
+  		  		  dlist_append_list(l, ops);
 		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
-  | SUBSTRING '(' scalar_exp FROM scalar_exp ')' 
-				{ dlist *l = dlist_create();
-  		  		  dlist_append_string(l, _strdup("substring"));
-  		  		  dlist_append_symbol(l, $3);
-  		  		  dlist_append_symbol(l, $5);
-		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
-  | SUBSTRING '(' scalar_exp ',' scalar_exp ')' 
-				{ dlist *l = dlist_create();
-  		  		  dlist_append_string(l, _strdup("substring"));
-  		  		  dlist_append_symbol(l, $3);
-  		  		  dlist_append_symbol(l, $5);
-		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("concat"));
@@ -2145,7 +2142,7 @@ literal:
  |  sqlINT   	{ int digits = strlen($1);
 		  int len = sizeof(lng);
 		  lng value, *p = &value; 
-		  sql_subtype *t = sql_bind_subtype("DECIMAL", digits, 0 );
+		  sql_subtype *t = sql_bind_subtype("INT", digits, 0 );
 
 		  lngFromStr($1, &len, &p);
 		  $$ = _newAtomNode( atom_int(t, value)); }
@@ -2303,7 +2300,6 @@ cast_exp:
 cast_value:
 	scalar_exp
  | 	NULLX	 { $$ = _newAtomNode(NULL); }
- ;
 
 case_exp: 
      NULLIF '(' scalar_exp ',' scalar_exp ')' 
@@ -2443,18 +2439,6 @@ data_type:
  | type_alias		{ $$ = sql_bind_subtype($1, 0, 0); }
  | type_alias '(' nonzero ')'
 			{ $$ = sql_bind_subtype($1, $3, 0); }
- | type_alias '(' intval ',' intval ')'
-			{ if ($5 >= $3) {
-				char buf[BUFSIZ]; 
-
-				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
-				yyerror(buf);
-				$$ = NULL;
-				YYABORT;
-			  } else {
-			 	$$ = sql_bind_subtype($1, $3, $5); 
-			  }
-			}
  | IDENT		{ mvc *m = (mvc*)parm;
 			  sql_type *t = mvc_bind_type(m, $1); 
 			  if (!t) {
@@ -2762,10 +2746,10 @@ stmt *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_list	ap; 
 
 	va_start (ap,format); 
-	if (sql->errstr[0] == '\0') 
-		vsnprintf(sql->errstr, ERRSIZE, _(format), ap); 
-	if (!sql->status)
+	if (sql->errstr[0] == '\0') {
 		sql->status = -error_code;
+		vsnprintf(sql->errstr, ERRSIZE, _(format), ap); 
+	}
 	va_end (ap); 
 	return NULL;
 }

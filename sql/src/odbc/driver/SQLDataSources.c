@@ -46,11 +46,6 @@ SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
 
 	clearEnvErrors(env);
 
-	if (env->sql_attr_odbc_version == 0) {
-		addEnvError(env, "HY010", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	/* TODO: implement the requested behavior */
 
 	/* for now always return error: Driver does not support this function */
