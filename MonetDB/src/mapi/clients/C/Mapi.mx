@@ -354,7 +354,12 @@ No conversion takes place.
 Similar to mapi_bind_var(), but now binds a parameter.
 
 \item[MapiMsg mapi_param_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
-Bind to a numeric variable, internally represented by MAPI_INT
+Bind to a numeric variable, internally represented by MAPI_INT.
+
+\item[MapiMsg mapi_param_string(Mapi mid, int fldnr, int sqltype, char *val, int *sizeptr)]:
+Bind to a string variable, internally represented by MAPI_VARCHAR.  The 
+sizeptr parameter points to the length of the string pointed to by val.
+If sizeptr == NULL or *sizeptr == -1, the string is NULL-terminated.
 
 \item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
 A limited number of tuples are pre-fetched after each execute().
@@ -382,7 +387,7 @@ This routine is used in the rare cases that consumption of the
 tuple stream produced should be prematurely terminated. It is automatically
 called when a new query is shipped to the database.
 
-\item[char * mapi_quote(char *name)]:
+\item[char * mapi_quote(char *name, int size)]:
 Strings in the database should be surrounded by double quotes and
 escape of the characters \n,\t,...
 
@@ -567,6 +572,7 @@ typedef struct{
 
 typedef struct {
 	void *inparam;		/* pointer to application variable */
+	int *sizeptr;		/* if string, points to length of string or -1 */
 	int intype;		/* type of application variable */
 	int outtype;		/* type of value */
 	int  precision;
@@ -719,6 +725,7 @@ mapi_export MapiMsg mapi_param(Mapi mid, int fnr, char **ptr);
 mapi_export MapiMsg mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, void *ptr);
 mapi_export MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,
 	int precision, void *ptr);
+mapi_export MapiMsg mapi_param_string(Mapi mid, int fnr, int sqltype, char *ptr, int *sizeptr);
 mapi_export Mapi mapi_mapi(char *host, int port, char *username,
 	char *password, char *lang);
 mapi_export Mapi mapi_connect(char *host, int port, char *username,
@@ -772,7 +779,7 @@ mapi_export int mapi_get_monet_versionId(Mapi mid);
 mapi_export char *mapi_get_table(Mapi mid,int fnr);
 mapi_export char *mapi_get_name(Mapi mid,int fnr);
 mapi_export char *mapi_get_type(Mapi mid,int fnr);
-mapi_export char *mapi_quote(char *msg);
+mapi_export char *mapi_quote(char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 
 mapi_export void mapi_setBlocking(int b);
@@ -1550,9 +1557,22 @@ MapiMsg mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, void *ptr)
 	else
 		return mapi_setError(mid,"Illegal SQL type identifier",
 					"mapi_param_type");
+	mid->bindings[fnr].sizeptr = NULL;
 	mid->bindings[fnr].outtype = sqltype;
 	mid->bindings[fnr].scale= 0;
 	mid->bindings[fnr].precision= 0;
+	return MOK;
+}
+
+MapiMsg mapi_param_string(Mapi mid, int fnr, int sqltype, char *ptr, int *sizeptr)
+{
+	testBinding(mid->error,"mapi_param_type");
+	mid->bindings[fnr].inparam = (void *) ptr;
+	mid->bindings[fnr].intype = MAPI_VARCHAR;
+	mid->bindings[fnr].sizeptr = sizeptr;
+	mid->bindings[fnr].outtype = sqltype;
+	mid->bindings[fnr].scale = 0;
+	mid->bindings[fnr].precision = 0;
 	return MOK;
 }
 
@@ -1726,6 +1746,9 @@ MapiMsg mapi_prepare_array_internal(Mapi mid, char *cmd, char **val)
 		mid->bindings[i].inparam= val[i];
 		mid->bindings[i].intype= MAPI_AUTO;
 		mid->bindings[i].outtype= MAPI_AUTO;
+		mid->bindings[i].sizeptr = NULL;
+		mid->bindings[i].scale= 0;
+		mid->bindings[i].precision= 0;
 	}
 	return ret;
 }
@@ -1871,13 +1894,13 @@ static void mapi_param_store(Mapi mid)
 			case MAPI_CHAR:
 				buf[0] =*(char*)src;
 				buf[1]=0;
-				val= mapi_quote(buf);
+				val= mapi_quote(buf, 1);
 				checkSpace(strlen(val));
 				sprintf(mid->query+k, "'%s'",val);
 				free(val);
 				break;
 			case MAPI_VARCHAR:
-				val= mapi_quote((char*)src);
+				val= mapi_quote((char*)src, mid->bindings[i].sizeptr ? *mid->bindings[i].sizeptr : -1);
 				checkSpace(strlen(val));
 				sprintf(mid->query+k, "'%s'",val);
 				free(val);
@@ -2688,34 +2711,43 @@ char *mapi_unquote(char *msg)
 	return next;
 }
 
-char *mapi_quote(char *msg)
+char *mapi_quote(char *msg, int size)
 {
 	char *s = malloc(strlen(msg) * 2 + 1); /* we absolutely don't need more than this (until we start producing octal escapes */
 	char *t = s;
 
-	while (*msg) {
+	/* the condition is tricky: if initially size < 0, we must
+	   continue until a NULL byte, else, size gives the number of
+	   bytes to be copied */
+	while (size < 0 ? *msg : size > 0) {
+		if (size > 0)
+			size--;
 		switch(*msg){
 		case '\n':
-			*t++= '\\';
-			*t= 'n';
+			*t++ = '\\';
+			*t++ = 'n';
 			break;
 		case '\t':
-			*t++= '\\';
-			*t= 't';
+			*t++ = '\\';
+			*t++ = 't';
 			break;
 		case PLACEHOLDER:
-			*t++= '\\';
-			*t = PLACEHOLDER;
+			*t++ = '\\';
+			*t++ = PLACEHOLDER;
 			break;
 		case '\\':
-			*t++= '\\';
-			*t= '\\';
+			*t++ = '\\';
+			*t++ = '\\';
+			break;
+		case '\0':
+			*t++ = '\\';
+			*t++ = '0';
 			break;
 		default:
-			*t= *msg++;
+			*t++ = *msg;
 			break;
 		}
-		t++;
+		msg++;
 		/* also deal with binaries */
 	}
 	*t=0;
