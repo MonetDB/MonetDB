@@ -6,12 +6,6 @@
 #include <sqlexecute.h>
 #include <mvc.h>
 
-
-typedef struct cc {
-	context *lc;
-	mvc 	*myc;
-} cc;
-
 static int key_cmp( key *k, long *id )
 {
 	if (k && id && k->id == *id)
@@ -19,10 +13,8 @@ static int key_cmp( key *k, long *id )
 	return 1;
 }
 
-static void getschemas( catalog *c, char *schema, char *user ){
+static void getschemas( mvc *myc, context *lc, catalog *c, char *schema, char *user ){
 	node *n,*l;
-	context *lc = ((cc*)c->cc)->lc;
-	mvc *myc = ((cc*)c->cc)->myc;
 	list *keys = list_create(NULL);
 
 	if (c->schemas) list_destroy( c->schemas );
@@ -81,19 +73,9 @@ static void getschemas( catalog *c, char *schema, char *user ){
 	c->cur_schema = cat_bind_schema( c, schema );
 }
 
-static void cc_destroy( catalog *c ){
-	_DELETE(c->cc);
-	c->cc = NULL;
-}
-
-catalog *catalog_create( context *lc, mvc *myc ){
-	cc *CC = NEW(cc);
+catalog *mvc_catalog_create( mvc *myc, context *lc )
+{
 	catalog *c = lc->cat;
-	
-	CC->lc = lc;
-	CC->myc = myc;
-	c->cc = (char*)CC;
-	c->cc_getschemas = &getschemas;
-	c->cc_destroy = &cc_destroy;
+	getschemas( myc, lc, c, myc->trans->schema->name, myc->user );
 	return c;
 }

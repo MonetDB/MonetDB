@@ -247,7 +247,6 @@ catalog *default_catalog_create()
 {
 	catalog *c = NEW(catalog);
 
-	c->cc = NULL;
 	c->schemas = list_create((fdestroy)&schema_destroy);
 	c->cur_schema = NULL;
 
@@ -256,8 +255,6 @@ catalog *default_catalog_create()
 
 void catalog_destroy(catalog * cat)
 {
-	if (cat->cc && cat->cc_destroy)
-		cat->cc_destroy(cat);
 	list_destroy(cat->schemas);
 	_DELETE(cat);
 }

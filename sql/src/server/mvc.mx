@@ -139,6 +139,8 @@ typedef struct mvc {
 	int privileges;
 	int user_id;
 	int role_id;
+	char *user;
+	char *role;
 
 	sql_trans *trans;
 } mvc;
@@ -1396,6 +1398,7 @@ int mvc_set_user( mvc *m, char *user )
 		BAT *auth_priv = mvc_bind(m, "sys", "auths", "privileges", 0 );
 		int priv = *(int*)BUNtail(auth_priv, BUNfnd(auth_priv, lid));
 		m->user_id = m->role_id = id;
+		m->user = _strdup(user);
 		m->privileges = priv;
 		res = 1;
 	}
@@ -1489,6 +1492,7 @@ mvc *mvc_create(int debug)
 
 	m->debug = debug;
 	m->role_id = m->user_id = -1;
+	m->role = m->user = NULL;
 	m->privileges = 0;
 	m->trans = NULL;
 	m->trans = trans_dup(gtrans,NULL);

@@ -4,24 +4,9 @@
 
 @m
 .MODULE sqlserver;
-	.USE ascii_io,streams;
+	.USE ascii_io, streams;
 
 	.PRELUDE = sqlserver_prelude;
-
-	.COMMAND isNil( str s ) : bit = isNil_wrap;
-		"isNil(s).."
-
-	.BUILTIN sqlserver_start(int port, str cmd) = sqlserver_start;
-		"start the sql server, calls cmd on each accepted connection"
-
-	.COMMAND socket_close( int s ) = socket_close_wrap;
-		"close a socket"
-
-	.COMMAND socket_dup( int s ) : int = socket_dup_wrap;
-		"dup a socket"
-
-    	.ATOM context = ptr;
-    	.END;
 
 	.ATOM mvc = ptr;
 	.END;
@@ -34,13 +19,7 @@
 	.ATOM sql_key = ptr;
 	.END;
 	
-    	.COMMAND sql_create_context( int debug, Stream o, mvc c, str schema, str user ) : context = 
-		sql_create_context; "create a context for the sql interpreter"
-
-    	.COMMAND sql_destroy_context( context c ) = 
-		sql_destroy_context; "destroy the sql interpreter context"
-
-	.BUILTIN sqlclient( mvc m,  context c, Stream in, Stream out ) = 
+	.BUILTIN sqlclient( mvc m,  Stream in, Stream out ) = 
 		sqlclient;
 		"parse the next sql command and convert this to mil code"
 
@@ -62,7 +41,8 @@
 	.COMMAND mvc_init(int debug, str dir_name) = mvc_init_wrap; 
 		"create the global catalog"
 
-	.COMMAND mvc_exit() = mvc_exit_wrap; "cleanup the global catalog"
+	.COMMAND mvc_exit() = mvc_exit_wrap; 
+		"cleanup the global catalog"
 
 	.COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
 		"Create multi version catalog"
@@ -107,9 +87,8 @@
 		mvc_bind_obat_wrap; "Bind the oid bat, tname.OID"
 
 	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
-		BAT[any::1,any::2] = 
-		mvc_bind_dbat_wrap; "Bind the table deletes bat, tname.deletes"
-
+		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
+		"Bind the table deletes bat, tname.deletes"
 
 	.COMMAND mvc_bind_schema( mvc c, str sname ) : sql_schema = 
 		mvc_bind_schema_wrap; "Bind schema, sname"
@@ -160,6 +139,10 @@
 		int = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
+@+ void bats
+To prevent void bats to convert to oid bats we need overloaded insert and
+replace commands. 
+@m
 	.COMMAND renumber( BAT[oid,any::1] b1, oid o ) : BAT[oid,any::1] = bat_renumber;
 		"renumber the bat using the offset o"
 
@@ -186,8 +169,7 @@
 #define _SQLSERVER_H_
 
 #include <streams.h>
-#include "monet_context.h"
-#include "context.h"
+#include <monet_context.h>
 #include "mvc.h"
 #include "sqlserver.proto.h"
 
@@ -197,13 +179,13 @@
 #include "sqlserver.h"
 #include <statement.h>
 #include <sqlexecute.h>
-#include "mem.h"
+#include <mem.h>
+#include <context.h>
 #include <kernel.h>
 
-#include  <sys/types.h> 
-#include  <sys/socket.h> 
+//#include  <sys/types.h> 
 
-#include "monet_tbl.h"
+#include <monet_tbl.h>
 
 void sqlserver_prelude(void) {
 	int mid = TBL_module_lookup("streams");
@@ -219,35 +201,22 @@ void sqlserver_prelude(void) {
 	local_ASCIIinput = (BAT* (*)(BAT*, BAT*, BAT*, bstream*, size_t))DL_sym(hdl, "ASCIIinput");
 }
 
-extern catalog *catalog_create( context *lc, mvc *m);
-
-int isNil_wrap( bit *b, str s)
-{
-	if (s == NULL){
-		*b = FALSE;
-	} else {
-		*b = TRUE;
-	}
-	return GDK_SUCCEED;
+@= builtin_operand
+{       int _k = interpret(stk, arg(lt, @1), res);
+        if (_k < 0) {
+                return _k;
+        }
+        @3 = VALconvert(@2, res, 0);
+        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+                return handle_paramerror(res,@1,res->vtype,@2);
+        }
 }
+@c
 
-
-int sql_create_context( context *res, int *debug, Stream *ws, mvc *m, str schema, str user){
-	context *lc = NEW(context);
-
-	sql_init_context( lc, *(stream**)ws, *debug, default_catalog_create() );
-	catalog_create( lc, *(mvc**)m );
-	lc->cat->cc_getschemas( lc->cat, schema, user );
-	*(context**)res = lc;
-	return GDK_SUCCEED;
-}
-
-int sql_destroy_context( context *lc ){
-	sql_exit_context( *(context**)lc );
-	return GDK_SUCCEED;
-}
+extern catalog *mvc_catalog_create( mvc *m, context *lc );
 
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+	buffer *bbuf = buffer_create( BUFSIZ );
 	char buf[BUFSIZ];
 	int err = 0;
 	stmt *s = NULL;
@@ -255,21 +224,23 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	char *errbuf = GDKmalloc(GDKMAXERRLEN);
 
 	mvc **M, *m;
-	context **C, *lc;
-	stream **In, *in, **Out, *out;
+	stream **In, *in, **Out, *out, *ws;
+	context *lc;
 
-  	if (lt->cnt != 4) {
-        	return handle_argerror(res,lt->cnt,4);
+  	if (lt->cnt != 3) {
+        	return handle_argerror(res, lt->cnt, 3);
   	}
   	@:builtin_operand(0,TYPE_mvc,M)@
 	m = *M;
-  	@:builtin_operand(1,TYPE_context,C)@
-	lc = *C;
-  	@:builtin_operand(2,*local_TYPE_Stream,In)@
+  	@:builtin_operand(1,*local_TYPE_Stream,In)@
 	in = *In;
-  	@:builtin_operand(3,*local_TYPE_Stream,Out)@
+  	@:builtin_operand(2,*local_TYPE_Stream,Out)@
 	out = *Out;
 
+	lc = NEW(context);
+	ws = buffer_wastream( bbuf, "SQLserver" );
+	sql_init_context( lc, ws, m->debug, default_catalog_create() );
+	mvc_catalog_create( m, lc );
 
 	GDKsetbuf(errbuf);
 
@@ -285,7 +256,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	    		int nr = 1;
 	    		stmt_dump( s, &nr, lc );
 
-			cmd = buffer_get_buf(stream_get_buffer( lc->out ));
+			cmd = buffer_get_buf(bbuf);
 	    		lc->out->flush( lc->out );
 
 			if (lc->debug&64){
@@ -346,6 +317,8 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 		}
 		if (s) stmt_destroy(s);
 	}
+	mvc_destroy(m);
+	sql_exit_context( lc );
 	return GDK_SUCCEED;
 }
 
@@ -376,102 +349,6 @@ int sql_aggr_wrap( str name, str imp, str atp, str rtp){
 }
 int sql_func_wrap( str name, str imp, str tp1, str tp2, str tp3, str rtp){
 	(void)sql_create_func( name, imp, tp1, tp2, tp3, rtp );
-	return GDK_SUCCEED;
-}
-
-
-@= builtin_operand
-{       int _k = interpret(stk, arg(lt, @1), res);
-        if (_k < 0) {
-                return _k;
-        }
-        @3 = VALconvert(@2, res, 0);
-        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
-                return handle_paramerror(res,@1,res->vtype,@2);
-        }
-}
-@c
-
-int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
-  int port, *Port, sock, fd = 0, server_run = 1;
-  char *cmd, *Cmd;
-  struct sockaddr_in server, client;
-
-  if (lt->cnt != 2) {
-        return handle_argerror(res,lt->cnt,2);
-  }
-  @:builtin_operand(0,TYPE_int,Port)@
-  port = *Port;
-  @:builtin_operand(1,TYPE_str,Cmd)@
-  cmd = _strdup(Cmd);
-
-  sock = socket (AF_INET, SOCK_STREAM, 0);
-  if (sock < 0) {
-    perror ("could not create socket");
-    exit (1);
-  }
-   
-  server.sin_family = AF_INET;
-  server.sin_addr.s_addr = htonl (INADDR_ANY);
-  server.sin_port = htons (port);
-
-  if (bind (sock, (struct sockaddr *) &server, sizeof (server)) < 0) {
-    perror ("could not bind socket");
-    return -1;
-  }
-
-  listen (sock, 5);
-
-  fprintf (stderr, "# server listening on port %i\n", port);
-
-  while (monet_running && server_run) {
-    int retval;
-    socklen_t client_len = sizeof (client);
-    struct timeval tv;
-    fd_set fds;
-
-    FD_ZERO(&fds);
-    FD_SET(sock, &fds);
-    /* Wait up to five seconds. */
-    tv.tv_sec = 0;
-    tv.tv_usec = 500;
-
-    retval = select(sock+1, &fds, &fds, &fds, &tv);
-    /* Don't rely on the value of tv now! */
-
-    if (retval &&
-        (fd = accept(sock, (struct sockaddr *) &client, &client_len))<0 ){
-      	perror ("accept () failed");
-	break;
-    } else if(retval){
-	ValRecord res;
-	ptr val = &res.val.ival;
-	int cres = 0;
-	char buf[BUFSIZ];
-	
-	snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, fd );
-        res.vtype = TYPE_void; 
-	interpret_str( stk, buf, &res);
-	/*TODO: we need to cleanup val */
-	if ((cres = close(fd)) < 0){
-		fprintf(stderr, "Error closing socket %d\n", cres );
-		return;
-	}
-    }
-  }
-  if (close(sock) < 0){
-	perror("Error closing sock\n");
-  }
-  return 0;
-}
-
-int socket_close_wrap( int *s ){
-	close(*s);
-	return GDK_SUCCEED;
-}
-
-int socket_dup_wrap( int *res, int *s ){
-	*res = dup(*s);
 	return GDK_SUCCEED;
 }
 
@@ -699,15 +576,15 @@ int bat_replace_oid_bat_wrap( BAT **res, BAT *o, BAT *d )
 module(str);
 module(uchr);
 module(alarm);
-module(ddbench);
+module(xtables);
 module(aggrX3);
 module(monettime);
 module(sqlserver);
 module(mmath);
 module(decimal);
+module(mapi); # mapi_listen 
 
 var sql_debug := int(monet_environment.find("sql_debug"));
-
 parser_init(sql_debug);
 
 sql_type("OID", 0, 0, 	  	"oid");
@@ -817,7 +694,8 @@ type_sql.insert(dates);
 type_sql@batloop(){ sql_aggr( "min", "min", $t, $t ); }
 type_sql@batloop(){ sql_aggr( "max", "max", $t, $t ); }
 numerical@batloop(){ sql_aggr( "sum", "sum", $t, $t ); }
-numerical@batloop(){ sql_aggr( "avg", "avg", $t, $t ); }
+# avg only outputs doubles
+numerical@batloop(){ sql_aggr( "avg", "avg", $t, "dbl" ); }
 sql_aggr( "count", "count", "", "int" ); 
 
 numerical@batloop(){ sql_func( "sql_sub", "-", $t, $t, "", $t ); }
@@ -1105,11 +983,6 @@ proc atom(val):= {
 	return val;
 }
 
-proc avg(BAT b):= {
-	var s := b.sum();
-	return s/b.count();
-}
-
 proc date_sub_sec_interval( date d, int sec ) := {
 	if (sec > 0){
 		return d.adddays( -1 * sec/86400);
@@ -1231,19 +1104,6 @@ proc server_output( Stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void
 	stream_flush( Output );
 }
 
-proc SQLclient_sql( myc, Output, Input, schema, user, debug ) := {
-	var buf := buffer_create( 8192 );
-	var LOutput := buffer_wastream( buf, sprintf("SQLserver-%d", sock ));
-	var c := sql_create_context( debug, LOutput, myc, schema, user );
-
-	sqlclient( myc, c, Input, Output );
-
-	mvc_destroy( myc );
-	sql_destroy_context( c );
-	stream_close( Output );
-	stream_close( Input );
-}
-
 proc SQLclient_thread( int sock ):= {
 
 	var Output := block_stream(
@@ -1293,8 +1153,10 @@ proc SQLclient_thread( int sock ):= {
 	stream_flush( Output );
 
 	if (schema != ""){
-		SQLclient_sql( myc, Output, Input, schema, user, int(debug) );
+		sqlclient( myc, Input, Output );
 	}
+	stream_close( Output );
+	stream_close( Input );
 
 	socket_close( sock );
 	return 0;
@@ -1326,5 +1188,4 @@ proc get_sql_port() := {
 renameFUNC("quit", "old_quit");
 renameFUNC("new_quit", "quit");
 
-sqlserver_start(get_sql_port(), "SQLclient").fork();
-
+mapi_listen(get_sql_port(), 5, "SQLclient").fork();

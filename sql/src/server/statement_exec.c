@@ -545,7 +545,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_group: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ-len, 
-		  "s%d := s%d.group();\n", -s->nr, l);
+		  "s%d := s%d.CTgroup();\n", -s->nr, l);
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_group_ext: {
@@ -558,7 +558,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ-len, 
-		  "s%d := s%d.group(s%d);\n", -s->nr, l, r);
+		  "s%d := s%d.CTgroup(s%d);\n", -s->nr, l, r);
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_unique: {
@@ -567,7 +567,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			int g = stmt_dump( s->op2.gval->grp, nr, sql );
 
 		  	len += snprintf( buf+len, BUFSIZ-len, 
-			"s%dg := s%d.group(s%d);\n", -s->nr, g, l);
+			"s%dg := s%d.CTgroup(s%d);\n", -s->nr, g, l);
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 			"s%de := s%dg.tunique().mirror();\n", -s->nr, -s->nr);
 		  	len += snprintf( buf+len, BUFSIZ-len, 
