@@ -661,7 +661,7 @@ public class MonetPreparedStatement
 	public void setObject(int parameterIndex, Object x, int targetSqlType)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		setObject(parameterIndex, x, targetSqlType, 0);
 	}
 
 	/**
@@ -679,6 +679,9 @@ public class MonetPreparedStatement
 	 * <br /><br />
 	 * Note that this method may be used to pass database-specific abstract
 	 * data types.
+	 * <br /><br />
+	 * To meet the requirements of this interface, the Java object is
+	 * converted in the driver, instead of using a SQL CAST construct.
 	 *
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the object containing the input parameter value
@@ -698,7 +701,294 @@ public class MonetPreparedStatement
 		int scale)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		// this is according to table B-5
+		if (x instanceof String) {
+			switch (targetSqlType) {
+				case Types.TINYINT:
+				case Types.SMALLINT:
+				case Types.INTEGER:
+				{
+					int val;
+					try {
+						val = Integer.parseInt((String)x);
+					} catch (NumberFormatException e) {
+						val = 0;
+					}
+					setInt(parameterIndex, val);
+				} break;
+				case Types.BIGINT:
+				{
+					long val;
+					try {
+						val = Long.parseLong((String)x);
+					} catch (NumberFormatException e) {
+						val = 0;
+					}
+					setLong(parameterIndex, val);
+				} break;
+				case Types.REAL:
+				case Types.FLOAT:
+				case Types.DOUBLE:
+				{
+					double val;
+					try {
+						val = Double.parseDouble((String)x);
+					} catch (NumberFormatException e) {
+						val = 0;
+					}
+					setDouble(parameterIndex, val);
+				} break;
+				case Types.DECIMAL:
+				case Types.NUMERIC:
+				{
+					BigDecimal val;
+					try {
+						val = new BigDecimal((String)x);
+					} catch (NumberFormatException e) {
+						try {
+							val = new BigDecimal(0.0);
+						} catch (NumberFormatException ex) {
+							throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage());
+						}
+					}
+					val = val.setScale(scale, BigDecimal.ROUND_HALF_UP);
+					setBigDecimal(parameterIndex, val);
+				} break;
+				case Types.BIT:
+				case Types.BOOLEAN:
+					setBoolean(parameterIndex, (Boolean.valueOf((String)x)).booleanValue());
+				break;
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR:
+					setString(parameterIndex, (String)x);
+				break;
+				case Types.BINARY:
+				case Types.VARBINARY:
+				case Types.LONGVARBINARY:
+					setBytes(parameterIndex, ((String)x).getBytes());
+				break;
+				case Types.DATE:
+				{
+					java.sql.Date val;
+					try {
+						val = java.sql.Date.valueOf((String)x);
+					} catch (IllegalArgumentException e) {
+						val = new java.sql.Date(0L);
+					}
+					setDate(parameterIndex, val);
+				} break;
+				case Types.TIME:
+				{
+					Time val;
+					try {
+						val = Time.valueOf((String)x);
+					} catch (IllegalArgumentException e) {
+						val = new Time(0L);
+					}
+					setTime(parameterIndex, val);
+				} break;
+				case Types.TIMESTAMP:
+				{
+					Timestamp val;
+					try {
+						val = Timestamp.valueOf((String)x);
+					} catch (IllegalArgumentException e) {
+						val = new Timestamp(0L);
+					}
+					setTimestamp(parameterIndex, val);
+				} break;
+				default:
+					throw new SQLException("Conversion not allowed");
+			}
+		} else if (x instanceof Number) {
+			Number num = (Number)x;
+			switch (targetSqlType) {
+				case Types.TINYINT:
+					setByte(parameterIndex, num.byteValue());
+				break;
+				case Types.SMALLINT:
+					setShort(parameterIndex, num.shortValue());
+				break;
+				case Types.INTEGER:
+					setInt(parameterIndex, num.intValue());
+				break;
+				case Types.BIGINT:
+					if (x instanceof BigDecimal) {
+						setLong(parameterIndex, ((BigDecimal)x).setScale(scale, BigDecimal.ROUND_HALF_UP).longValue());
+					} else {
+						setLong(parameterIndex, num.longValue());
+					}
+				break;
+				case Types.REAL:
+					setFloat(parameterIndex, num.floatValue());
+				break;
+				case Types.FLOAT:
+				case Types.DOUBLE:
+					setDouble(parameterIndex, num.doubleValue());
+				break;
+				case Types.DECIMAL:
+				case Types.NUMERIC:
+					if (x instanceof BigDecimal) {
+						setBigDecimal(parameterIndex, (BigDecimal)x);
+					} else if (x instanceof BigInteger) {
+						BigDecimal val;
+						try {
+							val = new BigDecimal((BigInteger)x, scale);
+						} catch (NumberFormatException e) {
+							try {
+								val = new BigDecimal(0.0);
+							} catch (NumberFormatException ex) {
+								throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage());
+							}
+						}
+						setBigDecimal(parameterIndex, val);
+					} else {
+						BigDecimal val;
+						try {
+							val = new BigDecimal(num.doubleValue());
+						} catch (NumberFormatException e) {
+							try {
+								val = new BigDecimal(0.0);
+							} catch (NumberFormatException ex) {
+								throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage());
+							}
+						}
+						setBigDecimal(parameterIndex, val);
+					}
+				break;
+				case Types.BIT:
+				case Types.BOOLEAN:
+					if (num.doubleValue() != 0.0) {
+						setBoolean(parameterIndex, true);
+					} else {
+						setBoolean(parameterIndex, false);
+					}
+				break;
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR:
+					setString(parameterIndex, x.toString());
+				break;
+				default:
+					throw new SQLException("Conversion not allowed");
+			}
+		} else if (x instanceof Boolean) {
+			boolean val = ((Boolean)x).booleanValue();
+			switch (targetSqlType) {
+				case Types.TINYINT:
+					setByte(parameterIndex, (byte)(val ? 1 : 0));
+				break;
+				case Types.SMALLINT:
+					setShort(parameterIndex, (short)(val ? 1 : 0));
+				break;
+				case Types.INTEGER:
+					setInt(parameterIndex, (int)(val ? 1 : 0));
+				break;
+				case Types.BIGINT:
+					setLong(parameterIndex, (long)(val ? 1 : 0));
+				break;
+				case Types.REAL:
+					setFloat(parameterIndex, (float)(val ? 1.0 : 0.0));
+				break;
+				case Types.FLOAT:
+				case Types.DOUBLE:
+					setDouble(parameterIndex, (double)(val ? 1.0 : 0.0));
+				break;
+				case Types.DECIMAL:
+				case Types.NUMERIC:
+				{
+					BigDecimal dec;
+					try {
+						dec = new BigDecimal(val ? 1.0 : 0.0);
+					} catch (NumberFormatException e) {
+						throw new SQLException("Internal error: unable to create template BigDecimal: " + e.getMessage());
+					}
+					setBigDecimal(parameterIndex, dec);
+				} break;
+				case Types.BIT:
+				case Types.BOOLEAN:
+					setBoolean(parameterIndex, val);
+				break;
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR:
+					setString(parameterIndex, "" + val);
+				break;
+				default:
+					throw new SQLException("Conversion not allowed");
+			}
+		} else if (x instanceof byte[]) {
+			switch (targetSqlType) {
+				case Types.BINARY:
+				case Types.VARBINARY:
+				case Types.LONGVARBINARY:
+					setBytes(parameterIndex, (byte[])x);
+				break;
+				default:
+					throw new SQLException("Conversion not allowed");
+			}
+		} else if (x instanceof java.sql.Date ||
+				x instanceof Timestamp ||
+				x instanceof Time)
+		{
+			switch (targetSqlType) {
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR:
+					setString(parameterIndex, x.toString());
+				break;
+				case Types.DATE:
+					if (x instanceof Time) {
+						throw new SQLException("Conversion not allowed");
+					} else if (x instanceof java.sql.Date) {
+						setDate(parameterIndex, (java.sql.Date)x);
+					} else if (x instanceof Timestamp) {
+						setDate(parameterIndex, new java.sql.Date(((Timestamp)x).getTime()));
+					}
+				break;
+				case Types.TIME:
+					if (x instanceof Time) {
+						setTime(parameterIndex, (Time)x);
+					} else if (x instanceof java.sql.Date) {
+						throw new SQLException("Conversion not allowed");
+					} else if (x instanceof Timestamp) {
+						setTime(parameterIndex, new Time(((Timestamp)x).getTime()));
+					}
+				break;
+				case Types.TIMESTAMP:
+					if (x instanceof Time) {
+						throw new SQLException("Conversion not allowed");
+					} else if (x instanceof java.sql.Date) {
+						setTimestamp(parameterIndex, new Timestamp(((java.sql.Date)x).getTime()));
+					} else if (x instanceof Timestamp) {
+						setTimestamp(parameterIndex, (Timestamp)x);
+					}
+				break;
+				default:
+					throw new SQLException("Conversion not allowed");
+			}
+		} else if (x instanceof Array) {
+			setArray(parameterIndex, (Array)x);
+		} else if (x instanceof Blob) {
+			setBlob(parameterIndex, (Blob)x);
+		} else if (x instanceof Clob) {
+			setClob(parameterIndex, (Clob)x);
+		} else if (x instanceof Struct) {
+			// I have no idea how to do this...
+			throw new SQLException("Operation currently not supported!");
+		} else if (x instanceof Ref) {
+			setRef(parameterIndex, (Ref)x);
+		} else if (x instanceof java.net.URL) {
+			setURL(parameterIndex, (java.net.URL)x);
+		} else if (x instanceof SQLData) {
+			// do something with:
+			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
+			// needs an SQLOutput stream... bit too far away from reality
+			throw new SQLException("Operation currently not supported!");
+		} else {	// java Class
+			throw new SQLException("Operation currently not supported!");
+		}
 	}
 
 	/**
