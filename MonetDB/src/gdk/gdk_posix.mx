@@ -1101,7 +1101,7 @@ int MT_alloc_register(void *addr, unsigned int size, char mode) {
 #if SIZEOF_LONG==4
         unsigned int p = (unsigned int) addr;
         if (p > 0 && p < 3*((unsigned int) 1024*1024*1024) && size > 0) {
-                unsigned int i, base = ((int) p) >> 16;
+                unsigned int i, base = p >> 16;
                 size = (size-1) >> 16;
                 for(i=0; i<=size; i++)
                         MT_alloc_map[base+i] = (MT_alloc_map[base+i]&128) | mode;
