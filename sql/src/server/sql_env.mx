@@ -23,8 +23,46 @@
 
 @f sql_env
 @a N.J. Nes
-@* Env vars
+@* Environment variables
+The processing setting of the SQL front-end can collect information
+for postprocessing and debugging by setting a flag
+using the SQL construct: 
+SET <variable>=<string> 
+SET <variable>=<boolean>
+SET <variable>=<int>
 
+The SQL engine comes with a limited set of environment variables
+to control its behaviour. 
+The 'debug' variable takes an integer and sets the Mserver global
+debug flag. (See MonetDB documentation.)
+The 'explain' variable currently takes the values 'plan' or
+'performance'. The 'plan' qualifier produces a relational table with
+the plan derived for execution using the applicable backend and
+optimizer schemes. The 'performance' qualifier produces a performance
+trace of the SQL queries for post analysis. It is available in
+the system table called history. Ommission of either qualifier merely
+results in a straight execution of the query.
+
+The 'auto_commit' flag takes a boolean and controls automatic commit
+after a successful SQL execution, or conversely an automatic rollback.
+
+The 'reply_size' limits the number of tuples sent to the front end.
+[It is unclear how the remainder can be obtained within the SQL language
+framework. The reply_size should be replaced by 'limit']
+The 'history' variable is a boolean flag which captures execution information
+of any SQL query in a table for post-analysis.
+
+By default all remaining variables are stored as strings and 
+any type analysis is up to the user. The can be freely used by the
+SQL programmer for inclusion in his queries. [TODO]
+
+The limited number of builtin variables defined above are strongly typed the hard way.
+Moreover, they have a counterpart representation in the MVC structure to ease
+inspection during query processing.
+
+The variables and their type definition are assembled in a system table
+called 'session'.
+@{
 @h
 #ifndef _SQL_ENV_H_
 #define _SQL_ENV_H_
@@ -44,9 +82,7 @@ sql_export int sql_create_env(mvc *sql, sql_schema *s);
 sql_export int sql_create_history(mvc *sql, sql_schema *s);
 
 #endif /* _SQL_ENV_H_ */
-
 @c
-
 #include "sql_env.h"
 #include "sql_bm.h"
 #include "sql_scope.h"
@@ -200,6 +236,10 @@ sql_set_var( mvc *sql, symbol *s )
 		if (!(p=BUNfnd(BATmirror(n), name))) {
 			bat_destroy(n);
 			bat_destroy(t);
+@-
+Any user defined variable should be added to the table.
+They don;t survive session boundaries [?]
+@c
 			return sql_error(sql, 02, 
 				"Unknown session variable, %s\n",
 				name);
@@ -248,7 +288,9 @@ sql_set_var_value( mvc *sql, char *name, char *value )
 	bat_destroy(v);
 	return res;
 }
-
+@-
+Handling of SQL variables is straigtforward.
+@c
 int
 sql_create_var( mvc *m, sql_schema *sys ) 
 {
@@ -328,6 +370,11 @@ sql_create_env( mvc *m, sql_schema *s )
 
 	return 0;
 }
+@-
+The history table contains information on the parsing, optimization,
+and execution time. More detailed information should be obtained using
+the MonetDB kernel profier, e.g. using Mknife
+@c
 
 int
 sql_create_history( mvc *m, sql_schema *s ) 
@@ -337,10 +384,11 @@ sql_create_history( mvc *m, sql_schema *s )
 	mvc_create_column_(m, t, "start", "TIMESTAMP");
 	mvc_create_column_(m, t, "query", "VARCHAR");
 	mvc_create_column_(m, t, "parse", "MEDIUMINT");
-	mvc_create_column_(m, t, "mil", "MEDIUMINT");
+	mvc_create_column_(m, t, "optimize", "MEDIUMINT");
 	mvc_create_column_(m, t, "exec", "MEDIUMINT");
 	mvc_create_column_(m, t, "total", "MEDIUMINT");
 	mvc_create_column_(m, t, "user", "VARCHAR");
 
 	return 0;
 }
+@}
