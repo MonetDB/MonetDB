@@ -1,10 +1,10 @@
 PROC test_mnetcdf() : void := {
     var data,idx1,idx2,ncid,variables,vinfo,input;
     data := new(void,int);
-    data.insert(nil,rand);
-    data.insert(nil,rand);
-    data.insert(nil,rand);
-    data.insert(nil,rand);
+    data.insert(nil,rand());
+    data.insert(nil,rand());
+    data.insert(nil,rand());
+    data.insert(nil,rand());
     seqbase(data,0@0);
     data := [flt](data);
 
