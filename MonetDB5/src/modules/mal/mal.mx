@@ -143,9 +143,9 @@ pattern include(f:str):void= CMDincludeFile
         *ret = b->batCacheid;
 
 @c
+#include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
-#include "gdk.h"
 #include "mal.h"
 #include "mal_scope.h"
 #include "mal_session.h"

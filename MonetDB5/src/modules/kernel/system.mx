@@ -182,9 +182,9 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
         BATfakeCommit(b);
         *ret = b->batCacheid;
 @c
+#include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
-#include "gdk.h"
 #include "mal_stack.h"
 #include "mal_resolve.h"
 #include "mal_function.h"

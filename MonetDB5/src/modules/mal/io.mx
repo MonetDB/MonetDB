@@ -232,6 +232,7 @@ typedef FILE* fstream;
 #endif /* _IO_H_ */
 
 @c
+#include <monetdb_config.h>
 #include "io.h"
 
 str io_fclose(int *ret, fstream* filepp ){

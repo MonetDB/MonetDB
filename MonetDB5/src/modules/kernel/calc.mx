@@ -561,8 +561,8 @@ the string representations.
 
 @{
 @c
-#include "stdlib.h"
 #include "calc.h"
+#include "stdlib.h"
 #include "mal.h"
 #include "mal_function.h"
 

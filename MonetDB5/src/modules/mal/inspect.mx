@@ -120,9 +120,9 @@ pattern mdb():void = mdbToggle
 #ifdef _INSPECT_H
 #endif /* _INSPECT_H*/
 @c
+#include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
-#include "gdk.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_function.h"
