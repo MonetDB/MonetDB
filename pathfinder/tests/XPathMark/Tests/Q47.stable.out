@@ -20,14 +20,12 @@ stdout of test 'Q47` in directory 'tests/XPathMark` itself:
 <watch open_auction="open_auction0"/>
 <watch open_auction="open_auction4"/>
 </watches>
-</person>
-<person id="person4">
+</person><person id="person4">
 <name>Mitch Koyama</name>
 <emailaddress>mailto:Koyama@imag.fr</emailaddress>
 <homepage>http://www.imag.fr/~Koyama</homepage>
 <creditcard>2742 7237 7761 6914</creditcard>
-</person>
-<person id="person5">
+</person><person id="person5">
 <name>Alassane Hogan</name>
 <emailaddress>mailto:Hogan@unl.edu</emailaddress>
 <phone>+0 (762) 44078852</phone>
@@ -35,8 +33,7 @@ stdout of test 'Q47` in directory 'tests/XPathMark` itself:
 <watches>
 <watch open_auction="open_auction4"/>
 </watches>
-</person>
-<person id="person7">
+</person><person id="person7">
 <name>Vasanth Gaudioso</name>
 <emailaddress>mailto:Gaudioso@newpaltz.edu</emailaddress>
 <phone>+0 (756) 51213177</phone>
@@ -53,8 +50,7 @@ stdout of test 'Q47` in directory 'tests/XPathMark` itself:
 <interest category="category0"/>
 <business>No</business>
 </profile>
-</person>
-<person id="person8">
+</person><person id="person8">
 <name>Yeshayahu Soriano</name>
 <emailaddress>mailto:Soriano@att.com</emailaddress>
 <phone>+0 (724) 84384015</phone>
@@ -70,8 +66,7 @@ stdout of test 'Q47` in directory 'tests/XPathMark` itself:
 <interest category="category0"/>
 <business>Yes</business>
 </profile>
-</person>
-<person id="person11">
+</person><person id="person11">
 <name>Leo Zamperoni</name>
 <emailaddress>mailto:Zamperoni@stanford.edu</emailaddress>
 <homepage>http://www.stanford.edu/~Zamperoni</homepage>

@@ -406,6 +406,7 @@ init (opt_t *f)
             "module(\"aggrX3\");\n"
             "module(\"xtables\");\n"
             "module(\"malalgebra\");\n"
+            "module(\"mmath\");\n"
 
 	/*  The tunique_ function is replaced by tuniqueALT in pf_support.mx JF */
         /*  "# the tunique() function needs a little bit help :)\n" */
@@ -5180,6 +5181,104 @@ translateAggregates (opt_t *f, int code, int rc,
 }
 
 /**
+ * translateIntersect translates intersect and except
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param op the string indicating which operation has to 
+ *        be evaluated
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param c the Core expression which is translated next
+ */
+static void
+translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
+{
+    translate2MIL (f, NORMAL, cur_level, counter, L(c));
+    counter++;
+    saveResult (f, counter);
+    translate2MIL (f, NORMAL, cur_level, counter, RL(c));
+
+    /* we have to handle the special cases because
+       otherwise max/min gets problems with empty bats */
+    if (!strcmp(op,"intersect"))
+    {
+        milprintf(f, 
+                "if (or (iter.count() = 0,\n"
+                "        iter%03u.count() = 0)) {\n",
+                counter);
+        translateEmpty(f);
+    }
+    else
+    {
+        milprintf(f, "if (iter%03u.count() = 0) {\n", counter);
+        translateEmpty(f);
+        milprintf(f, 
+                "} else { if (iter.count() = 0) {\n"
+                "var sorting := iter%03u.reverse().sort().reverse();\n"
+                "sorting := sorting.CTrefine(kind%03u);\n"
+                "sorting := sorting.CTrefine(item%03u);\n"
+                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                "iter := sorting.leftfetchjoin(iter%03u);\n"
+                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "item := sorting.leftfetchjoin(item%03u);\n"
+                "kind := sorting.leftfetchjoin(kind%03u);\n"
+                "sorting := nil_oid_oid;\n",
+                counter, counter, counter, counter, counter, counter);
+    }
+
+    milprintf(f,
+            "} else\n"
+            "{ # %s\n"
+            "var min := min (kind%03u.min(), kind.min());\n"
+            "var max := max (kind%03u.max(), kind.max());\n"
+            "var diff := max - min;\n"
+            "var list1 := iter%03u.[lng]();\n"
+            "var list2 := iter.[lng]();\n"
+            "if (diff > 0)\n"
+            "{\n"
+            "    var shift := int(log(dbl(diff))/log(2.0)) + 1;\n"
+            "    list1 := list1.[<<](shift).[or](kind%03u.[-](min).[lng]());\n"
+            "    list2 := list2.[<<](shift).[or](kind.[-](min).[lng]());\n"
+            "}\n"
+            "min := int (min (item%03u.min(), item.min()));\n"
+            "max := int (max (item%03u.max(), item.max()));\n"
+            "diff := max - min;\n"
+            "if (diff > 0)\n"
+            "{\n"
+            "    var shift := int(log(dbl(diff))/log(2.0)) + 1;\n"
+            "    list1 := list1.[<<](shift).[or](item%03u.[lng]().[-](min));\n"
+            "    list2 := list2.[<<](shift).[or](item.[lng]().[-](min));\n"
+            "}\n"
+            "var %s_res := list1.reverse()"
+                               ".k%s(list2.reverse())"
+                               ".kunique()"
+                               ".sort()"
+                               ".reverse()"
+                               ".mark(0@0)"
+                               ".reverse();\n"
+            "iter := %s_res.leftfetchjoin(iter%03u);\n"
+            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "item := %s_res.leftfetchjoin(item%03u);\n"
+            "kind := %s_res.leftfetchjoin(kind%03u);\n"
+            "%s_res := nil_oid_oid;\n"
+            "} # end of %s\n",
+            op, 
+            counter, counter, counter, counter, counter, counter, counter,
+            op, op,
+            op, counter,
+            op, counter,
+            op, counter,
+            op,
+            op);
+
+    if (strcmp(op,"intersect"))
+    {
+        milprintf(f, "}\n");
+    } 
+    deleteResult (f, counter);
+}
+
+/**
  * eval_join_helper prepares the input arguments for the join
  * and therefore gets the values from its containers or casts 
  * them directly from the last location step (special case)
@@ -5945,12 +6044,22 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "sorting := sorting.mark(0@0).reverse();\n"
                 */
                 "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark(1@0);\n"
+                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
                 "item := sorting.leftfetchjoin(item);\n"
                 "kind := sorting.leftfetchjoin(kind);\n"
                 "sorting := nil_oid_oid;\n"
                 "} # end of translate pf:distinct-doc-order (node*) as node*\n"
                );
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"intersect")))
+    {
+        translateIntersect (f, "intersect", cur_level, counter, args);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"except")))
+    {
+        translateIntersect (f, "diff", cur_level, counter, args);
         return NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"true")))
@@ -7409,8 +7518,8 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (L(c));
             simplifyCoreTree (R(c));
 
-            if ((L(c)->kind == c_empty)
-                && (R(c)->kind != c_empty))
+            if ((L(c)->kind == c_empty) &&
+                (R(c)->kind == c_empty))
             {
                 new_node = PFcore_empty ();
                 new_node->type = PFty_empty ();
@@ -7619,8 +7728,16 @@ simplifyCoreTree (PFcnode_t *c)
         case c_apply:
             /* handle the promotable types explicitly by casting them */
             fun = c->sem.fun;
-            if (fun->arity == 1)
-                simplifyCoreTree (DL(c));
+            {
+                unsigned int i = 0;
+                PFcnode_t *tmp = D(c);
+                while (i < fun->arity)
+                {
+                    simplifyCoreTree (L(tmp));
+                    tmp = R(tmp);
+                    i++;
+                }
+            }
 
             if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) && 
                 PFty_subtype(DL(c)->type, fun->ret_ty))
@@ -7707,6 +7824,23 @@ simplifyCoreTree (PFcnode_t *c)
                    one node per iteration or we use scj and therefore don't need
                    to remove duplicates and sort the result */
                 *c = *(DL(c));
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_op, "union")))
+            {
+                PFarray_t *funs = PFenv_lookup (PFfun_env,
+                                                (PFqname (PFns_pf,
+                                                          "distinct-doc-order")));
+
+                new_node = PFcore_seq (DL(c), DRL(c));
+                TY(new_node) = *PFty_simplify (PFty_seq (TY(L(new_node)), TY(R(new_node))));
+
+                R(D(c)) = PFcore_nil ();
+                TY(R(D(c))) = PFty_none ();
+                L(D(c)) = new_node;
+                TY(L(D(c))) = TY(new_node);
+                c->sem.fun = *((PFfun_t **) PFarray_at (funs, 0));
+
+                simplifyCoreTree (c);
             }
             /* concatentation with empty string not needed */
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"concat")) &&

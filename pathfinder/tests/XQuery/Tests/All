@@ -178,6 +178,12 @@ orderby5
 orderby6
 orderby7
 orderby8
+union
+union2
+intersect
+intersect2
+except
+except2
 fn_avg
 fn_min
 fn_max
