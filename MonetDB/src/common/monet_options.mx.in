@@ -100,11 +100,10 @@ mutils_export void mo_free_options( opt *set, int setlen );
 #endif
 
 @c
-#include <config.h>
+#include "monet_options.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "monet_options.h"
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
