@@ -41,10 +41,15 @@ if [ "$PARENT" ] ; then
 fi
 
 BINPATH="$THISPATH"
-if [ "$MONET_PREFIX" ] ; then BINPATH="$BINPATH $MONET_PREFIX/bin" ; fi
-if [  "$ACOI_PREFIX" ] ; then BINPATH="$BINPATH  $ACOI_PREFIX/bin" ; fi
-if [   "$SQL_PREFIX" ] ; then BINPATH="$BINPATH   $SQL_PREFIX/bin" ; fi
-if [   "$XML_PREFIX" ] ; then BINPATH="$BINPATH   $XML_PREFIX/bin" ; fi
+if [    "$MONET_PREFIX" ] ; then BINPATH="$BINPATH    $MONET_PREFIX/bin" ; fi
+if [     "$ACOI_PREFIX" ] ; then BINPATH="$BINPATH     $ACOI_PREFIX/bin" ; fi
+if [      "$SQL_PREFIX" ] ; then BINPATH="$BINPATH      $SQL_PREFIX/bin" ; fi
+if [      "$XML_PREFIX" ] ; then BINPATH="$BINPATH      $XML_PREFIX/bin" ; fi
+if [      "$GIS_PREFIX" ] ; then BINPATH="$BINPATH      $GIS_PREFIX/bin" ; fi
+if [     "$MISQ_PREFIX" ] ; then BINPATH="$BINPATH     $MISQ_PREFIX/bin" ; fi
+if [    "$TIMES_PREFIX" ] ; then BINPATH="$BINPATH    $TIMES_PREFIX/bin" ; fi
+if [  "$PLAYPEN_PREFIX" ] ; then BINPATH="$BINPATH  $PLAYPEN_PREFIX/bin" ; fi
+if [ "$TEMPLATE_PREFIX" ] ; then BINPATH="$BINPATH $TEMPLATE_PREFIX/bin" ; fi
 for b in $BINPATH ; do
 	files="$files `ls $b/* 2>/dev/null | egrep -v '/(M[a-z]*\.py(|\.bat)|'"$THISFILE"')$'`"
 done
