@@ -565,7 +565,6 @@ static BAT *col_bind( sql_trans * tr, oid lbid, sql_column *c, int access )
 
 BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 {
-	assert(access != DEL);
 	if (c->bat.ibid) {
 		BAT *i = temp_descriptor(c->bat.ibid);
 
