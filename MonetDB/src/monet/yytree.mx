@@ -579,17 +579,19 @@ if trees are more than 2-deep.
 		BBPunfix(bid);					\
 	}									\
 	CATCHREF(stk,lt,res)
-#define CATCHREF(stk,lt,res)					\
-	lt->dealloc = res->vtype;				\
-	if (res->vtype != TYPE_bat) {				\
-		lt->free.atmref = res->val.pval;		\
-	} else if (res->val.bval != bat_nil) {						\
-		BAT* _b;					\
-		BBPfix(res->val.bval);				\
-		_b = BBPquickdesc(ABS(res->val.bval),FALSE);	\
-		if (_b) lt->free.batref.stamp = _b->batStamp;	\
-		lt->free.batref.id = res->val.bval;		\
-		BBPunfix(res->val.bval);			\
+#define CATCHREF(stk,lt,res)						\
+	lt->dealloc = res->vtype;					\
+	if (res->vtype != TYPE_bat) {					\
+		lt->free.atmref = res->val.pval;			\
+	} else {							\
+		lt->free.batref.id = res->val.bval;			\
+		if (res->val.bval != bat_nil) {				\
+			BAT* _b;					\
+			BBPfix(res->val.bval);				\
+			_b = BBPquickdesc(ABS(res->val.bval),FALSE);	\
+			if (_b) lt->free.batref.stamp = _b->batStamp;	\
+			BBPunfix(res->val.bval);			\
+		}							\
 	}
 #define CATCHRET(stk,lt,res,x)			\
 	if (x == -TOK_RETURN) {			\
