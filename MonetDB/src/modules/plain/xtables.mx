@@ -1149,7 +1149,31 @@ static
     int
 refine(BAT **res, BAT *b, BAT *a, int rv)
 {
+	str rev = rv ? "_rev" : "";
 	BAT *bn = NULL;
+
+	if (BATcount(b) != BATcount(a)) {
+		GDKerror("CTrefine%s: both BATs must have the same cardinality and their heads must form a 1-1 match.\n", rev);
+		return GDK_FAIL;
+	}
+@(
+	/* checking only the key property is too strict,
+	 * as it might not be set although it does hold;
+	 * exhaustively checking keyness is too expensive;
+	 * hence, we just don't check, and keep our fingers crossed...
+	 */
+	if (!(b->hkey && a->hkey)) {
+		if (a->hkey) {
+			GDKerror("CTrefine%s: head of first BAT is not unique (key);", rev);
+		} else if (b->hkey) {
+			GDKerror("CTrefine%s: head of second BAT is not unique (key);", rev);
+		} else {
+			GDKerror("CTrefine%s: heads of both BATs are not unique (key);", rev);
+		}
+		GDKerror("CTrefine%s: heads of both BATs must be unique (key) to form a 1-1 match.\n", rev);
+		return GDK_FAIL;
+	}
+@)
 
 	if (b->tkey) {		/* if key, no further refinements can take place */
 		bn = BATmark(b, 0);
@@ -1204,10 +1228,11 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			o = *(oid *) BUNhead(b, p);
 			BUNfndOID(r, a, &o);
 			if (r == NULL) {
-				*dst++ = o;
-				*dst++ = id;
-
-				continue;
+				GDKerror("CTrefine%s: value "SZFMT"@0 not found in head of second BAT;\n"
+					 "CTrefine%s: heads of both BATs do not form a 1-1 match.\n", rev, o, rev);
+				BBPreclaim(bn);
+				GDKfree(buf);
+				return GDK_FAIL;
 			}
 			if (cur >= end) {
 				size_t off = (size_t) (cur - buf);
