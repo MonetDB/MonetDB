@@ -121,14 +121,12 @@ char	bname[1024];
 char*	FileName(name)
 char*	name;
 {
-    /* @f /blah/blah indicates an absolute file name, 
-       often used in Makefiles etc. ignore path
-       @f blah/blah indicates a relative path,
-       create sub-directories if necessary
-    */
-    if(name[0]==DIR_SEP || (name[0]=='.' && name[1]==DIR_SEP))
-    	name = (strrchr(name, DIR_SEP)? strrchr(name, DIR_SEP) + 1: name);
-    strcpy(bname,name);
+    char *p;
+    if ((p = strrchr(name, DIR_SEP)) != NULL)
+	p++;
+    else
+	p = name;
+    strcpy(bname,p);
     return bname;
 }
 
@@ -158,18 +156,30 @@ FILE *fmustopen(fname,mode)
 char *fname;
 char *mode;
 {
-    char *p=fname; 
-    char *tmp;
-    if(*p==DIR_SEP) p++;
-    while((tmp=strchr(p,DIR_SEP))!=NULL){
-	struct stat buf;	
-        *tmp='\0';
-        if(stat(fname,&buf)==-1 || !(buf.st_mode&S_IFDIR))
-		if (mkdir(fname,S_IRWXU)==-1)
-			Fatal("fmustopen:","Can't create directory %s\n",fname);
-	p=tmp+1;
-	*tmp=DIR_SEP;
+    char *p = fname; 
+    char *tmp = NULL;
+    struct stat buf;
+
+    while ((p = strrchr(fname, DIR_SEP)) != NULL) {
+	    if (tmp)
+		    *tmp = DIR_SEP;
+	    *p = '\0';
+	    tmp = p;
+	    if (stat(fname, &buf) == 0 && (buf.st_mode & S_IFDIR)) {
+		    *p++ = DIR_SEP;
+		    while ((tmp = strchr(p, DIR_SEP)) != NULL) {
+			    *tmp = '\0';
+			    if (mkdir(fname, S_IRWXU) == -1)
+				    Fatal("fmustopen:", "Can't create directory %s\n", fname);
+			    *tmp++ = DIR_SEP;
+			    p = tmp;
+		    }
+		    tmp = NULL;
+		    break;
+	    }
     }
+    if (tmp)
+	    *tmp = DIR_SEP;
     return fopen(fname,mode);
 
 }
