@@ -15,6 +15,8 @@ stdout of test 'test_00` in directory 'tests/suite_00` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
@@ -350,7 +352,6 @@ end main;	# 136
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
 [ "halign",			  "20000000"	  ]
-[ "halignflushed",		  "20000000"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "0@0"		  ]
@@ -359,7 +360,6 @@ end main;	# 136
 [ "tloc",			  "4"		  ]
 [ "tvarsized",			  "0"		  ]
 [ "talign",			  "20000001"	  ]
-[ "talignflushed",		  "20000001"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
