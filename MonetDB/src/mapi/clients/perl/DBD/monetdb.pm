@@ -346,10 +346,6 @@ sub bind_param {
     my $sth = shift;
     my ($index, $value, $attr) = @_;
     my $type = (ref $attr) ? $attr->{TYPE} : $attr;
-    if ($type != SQL_INTEGER) {
-	my $dbh = $sth->{Database};
-	$value = $dbh->quote($sth, $type);
-    }
     my $params = $sth->FETCH('monetdb_params');
     my $paramtype = $sth->FETCH('monetdb_types');
     #print "converted:".$value." type:".$type."\n";
