@@ -645,8 +645,7 @@ in the standard.
 				break;
 			}
 			if (buf && buf[0] &&
-		 	   (stream_write( out, "\n", 1, 1 ) != 1 ||
-			    stream_write( out, buf, strlen(buf), 1 ) !=1)){
+		 	   (stream_write( out, buf, strlen(buf), 1 ) !=1 )){
 				go = !go;
 				break;
 			}
