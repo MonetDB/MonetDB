@@ -966,7 +966,7 @@ CThistosum(
         BAT *res = BATnew(TYPE_oid,TYPE_int, BATcount(b));
         BUN p,q, qb;
         int xx,i,*z;
-        oid ot,oh, *ohp;
+        oid ot,oh, *ohp, *otp;
 	(void) c;
 	if (res == NULL) {
 		return GDK_FAIL;
@@ -983,7 +983,8 @@ CThistosum(
 		}
 		ot = *(oid *) BUNtloc(b,qb);
 
-		BUNfndOID(qb, res, &ot);
+		otp = &ot;
+		BUNfndOID(qb, res, otp);
 		if( qb == NULL) {
 			BUNins(res, &ot, &i);
 		} else {
@@ -1110,7 +1111,7 @@ int refine(BAT **res, BAT *b, BAT *a, int rv) {
 	struct refine *buf, *cur, *end;
 	int xx;
 	size_t size = DEFAULT_SIZE;
-	oid *dst, o, id = 0;
+	oid *dst, o, *op, id = 0;
 
 	/* create tmp BAT that holds one cluster; estimate required size using sampling */
 	if (BATcount(b) > DEFAULT_SIZE) { 
@@ -1147,7 +1148,8 @@ int refine(BAT **res, BAT *b, BAT *a, int rv) {
 		    	last = p; cur = buf;
 		}
 		o = *(oid*) BUNhead(b,p);
-		BUNfndOID(r, a, &o);
+		op = &o;
+		BUNfndOID(r, a, op);
 		if (r == NULL) {
 			*dst++ = o;
 			*dst++ = id;
