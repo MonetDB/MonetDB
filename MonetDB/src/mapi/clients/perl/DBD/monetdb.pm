@@ -410,7 +410,7 @@ sub execute {
 	    
 	    $sth->{monetdb_data} = \@data;
 	    $sth->{monetdb_rows} = @data;
-	    $sth->STORE(NUM_OF_FIELDS => $numfields);
+	    $sth->STORE(NUM_OF_FIELDS => $numfields) if defined $numfields && !$sth->FETCH('NUM_OF_FIELDS');
 	    $sth->STORE(NAME => \@names);
 
 	    # FIXME: conversion from monet types to DBD sqltypes!
