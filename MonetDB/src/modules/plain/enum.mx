@@ -144,6 +144,7 @@ will even be the case for long 64-bit integers.
 #include "gdk.h"
 #include "streams.h"
 #include "enum.proto.h"
+#include "enum.h"
 
 #define ENUM_CHK(x,y)\
 	     BAT *b;\
