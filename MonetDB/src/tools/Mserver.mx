@@ -243,6 +243,8 @@ At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
 @C
 	if (monet_singlethreaded == 0) {
+		MT_down_sema(monet_main, "Mserver");
+/*
 	    do {
 		sleep(1);
 		PARDEBUG {
@@ -251,6 +253,7 @@ for all processes to terminate properly.
 				GDKnrofthreads,  monet_background);
 		}
 	    } while (GDKnrofthreads > base_nr_threads);
+*/
 	}
 @-
 Peter: for the time being avoid difficult things like dropping everything 
