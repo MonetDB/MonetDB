@@ -242,7 +242,7 @@ Reset_m(Stats_t *st)
 static void
 HistogramReset_m(StatsHistogram_t *st)
 {
-  int n;
+  gdk_uint32 n;
   
   Reset_m((Stats_t *)st);
   for (n = 0; n != st->sh_numbins; n++)

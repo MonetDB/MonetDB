@@ -1019,8 +1019,8 @@ Note that in multi threaded mode the routine prints the elapsed
 time since the beginning of each process.
 @{
 @c
-static int clk = 0;
 #ifndef NATIVE_WIN32
+static time_t clk = 0;
 static struct tms state;
 #endif
 
@@ -1040,7 +1040,7 @@ int view_gdk_cpu(BAT **retval) {
 	}
 	times(&newst);
 	/* store counters, ignore errors */
-	i = time(0) - clk;
+	i = (int) (time(0) - clk);
 	b = BUNins(b, "elapsed", &i);
 	i= newst.tms_utime *1000/HZ ;
 	b = BUNins(b, "user", &i);
@@ -1084,15 +1084,15 @@ int view_gdk_mem(BAT **retval) {
  
 	memincr = MT_heapcur();
 	b = BUNins(b, "memincr", &i);
-	b = BUNins(b, "arena", &m.arena);
-	b = BUNins(b, "ordblks", &m.ordblks);
-	b = BUNins(b, "smblks", &m.smblks);
-	b = BUNins(b, "hblkhd", &m.hblkhd);
-	b = BUNins(b, "hblks", &m.hblks);
-	b = BUNins(b, "usmblks", &m.usmblks);
-	b = BUNins(b, "fsmblks", &m.fsmblks);
-	b = BUNins(b, "uordblks", &m.uordblks);
-	b = BUNins(b, "fordblks", &m.fordblks);
+	i = m.arena; b = BUNins(b, "arena", &i);
+	i = m.ordblks; b = BUNins(b, "ordblks", &i);
+	i = m.smblks; b = BUNins(b, "smblks", &i);
+	i = m.hblkhd; b = BUNins(b, "hblkhd", &i);
+	i = m.hblks; b = BUNins(b, "hblks", &i);
+	i = m.usmblks; b = BUNins(b, "usmblks", &i);
+	i = m.fsmblks; b = BUNins(b, "fsmblks", &i);
+	i = m.uordblks; b = BUNins(b, "uordblks", &i);
+	i = m.fordblks; b = BUNins(b, "fordblks", &i);
 	@:Pseudo(gdk,mem)@
 	return GDK_SUCCEED;
 }
@@ -1134,7 +1134,7 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, n=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
-	int i;
+	bat i;
 
 	BBPlock("get_mem_usage");
 	for(i=1; i <BBPsize; i++) { 
@@ -1207,7 +1207,7 @@ int get_vm_usage(BAT **ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
-	int i;
+	bat i;
 
 	BBPlock("get_vm_usage");
 	for(i=1; i <BBPsize; i++) {
@@ -1335,7 +1335,8 @@ int view_gdk_bbp(BAT **retval) {
 	int 	pbat = 0;
 	int	pdisk = 0;
 	int	pheat = 0; 
-	int	i,tmp=0,per=0; 
+	bat	i;
+	int	tmp=0,per=0; 
 	BAT	*b;
 
 	*retval = b = BATnew(TYPE_str, TYPE_int, 32);

@@ -129,7 +129,7 @@ Once a timer interrupt occurs, we should inspect the timer queue and
 emit a notify signal.
 @c
 #ifdef SIGALRM
-void CLKsignal(int nr){
+static RETSIGTYPE CLKsignal(int nr){
 	int restype;
 	int k=timerTop;
         int t; 

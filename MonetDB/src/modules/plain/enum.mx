@@ -145,7 +145,6 @@ will even be the case for long 64-bit integers.
 #include "streams.h"
 #include "enum.proto.h"
 
-typedef int (*fcn)();
 #define ENUM_CHK(x,y)\
 	     BAT *b;\
 	     int xx;\
@@ -264,13 +263,13 @@ enum_export int enum_load(int *retval, BAT *h) {
 		if (enum_map[i] == 0) {
 			char *name = h->batId;
 			if (BATcount(h) > 255) {
-				ATOMproperty(name, "storage", (fcn) TYPE_sht); 
-				ATOMproperty(name, "tostr", (fcn) enum_conv[i].tosht);
-				ATOMproperty(name, "fromstr", (fcn) enum_conv[i].fromsht);
+				ATOMproperty(name, "storage", (GDKfcn) TYPE_sht); 
+				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht);
+				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromsht);
 			} else {
-				ATOMproperty(name, "storage", (fcn) TYPE_chr); 
-				ATOMproperty(name, "tostr", (fcn) enum_conv[i].tochr);
-				ATOMproperty(name, "fromstr", (fcn) enum_conv[i].fromchr);
+				ATOMproperty(name, "storage", (GDKfcn) TYPE_chr); 
+				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tochr);
+				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromchr);
 			}
 			enum_tpe[i] = *retval = ATOMindex(name);
 			enum_map[i] = h->batCacheid;

@@ -242,7 +242,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	/* set all sums/avgs/counts to zero */
-	/* where necessary, calculate min/max oid with minimal efford */
+	/* where necessary, calculate min/max oid with minimal effort */
 	if (e->htype == TYPE_void) {
 		oid nil = oid_nil;
 		ALGODEBUG THRprintf(GDKout, "init_result(@1): e->htype == TYPE_void, e->hseqbase=%lu\n", (unsigned long) e->hseqbase);
@@ -254,7 +254,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 	} else if (BAThordered(e)&1) {
 		min = *(oid*)BUNhloc(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			int@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
+			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
 		}
 		max = *(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e));
@@ -263,7 +263,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 		oid i;
 		min = max = *(oid*)BUNhloc(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			int@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
+			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
 			i = *(oid*)BUNhloc(e, p);
 			if (i < min) min = i;
@@ -364,8 +364,8 @@ HASHfnd_int for void- and hash-lookups, respectively
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
 	if (@2) { (void) BATprepareHash(bn); }
-	cnt = (int*) GDKmalloc(slots*sizeof(int));
-	memset(cnt, 0, slots*sizeof(int));
+	cnt = (size_t*) GDKmalloc(slots*sizeof(cnt[0]));
+	memset(cnt, 0, slots*sizeof(cnt[0]));
 	/* scan b, adding sums, and incrementing counts */
         bhsb = b->hseqbase;
 	BATloopFast(b, p, q, xx) {
@@ -394,19 +394,19 @@ HASHfnd_int for void- and hash-lookups, respectively
 			if (cnt[h] == 0 || sums[h] == dbl_nil) {
 				*dst = dbl_nil;
 			} else {
-				*dst = sums[h]/cnt[h];
+				*dst = (dbl) (sums[h]/cnt[h]);
 			}
 		}
        		GDKfree(sums);
 	} else {
 		/* sums in-place */
-		int yy = 0;
+		size_t yy = 0;
 		BATloopFast(bn, p, q, xx) {
 			dbl *dst = (dbl*) BUNt@7(bn, p);
 			if (cnt[yy] == 0) {
 				*dst = dbl_nil;
 			} else if (*dst != dbl_nil) {
-				*dst /= cnt[yy];
+				*dst = (dbl) (*dst / cnt[yy]);
 			}
 			yy++;
 		} 
@@ -484,7 +484,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int xx;
 	size_t off = BUNindex(bn,BUNfirst(bn));
-	int *cnt;
+	size_t *cnt;
 	size_t slots, range;
 	oid min, max;
 	dbl zero = (dbl) 0, *sums;
@@ -925,8 +925,8 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
 	if (@2) { (void) BATprepareHash(bn); }
-	cnt = (int*) GDKmalloc(slots*sizeof(int));
-	memset(cnt, 0, slots*sizeof(int));
+	cnt = (size_t*) GDKmalloc(slots*sizeof(cnt[0]));
+	memset(cnt, 0, slots*sizeof(cnt[0]));
 	/* scan b & g, adding sums, and incrementing counts */
 	base = BUNindex(g, BUNfirst(g));
 	offset = (ssize_t) (base - g->hseqbase);
@@ -969,7 +969,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
        		GDKfree(sums);
 	} else {
 		/* sums in-place */
-		int yy = 0;
+		size_t yy = 0;
 		BATloopFast(bn, p, q, xx) {
 			dbl *dst = (dbl*) BUNt@7(bn, p);
 			if (cnt[yy] == 0) {
@@ -1094,7 +1094,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));	
 	int xx;
 	size_t off = BUNindex(bn,BUNfirst(bn));
-	int *cnt;
+	size_t *cnt;
 	size_t range; 
 	oid min, max; 
 	dbl zero = (dbl) 0, *sums;

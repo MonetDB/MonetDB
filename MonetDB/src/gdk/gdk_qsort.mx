@@ -88,7 +88,7 @@ typedef struct {
 	char*		offst;		/* NULL or start of varsized heap */ 
 	int		loc;		/* byte-offset of sort atom in record */
 	int 		shift;		/* log2 if width is a power of two, else -1 */ 
-	int		width;		/* byte-width of record */
+	unsigned	width;		/* byte-width of record */
 } buf_t; 
 
 /* fast arithmetic on the record width */
@@ -313,7 +313,7 @@ void GDKqsort(void *a, void* base, size_t n, int width, int tpe, int loc) {
 	/* init the qsort record */
 	buf.cmp = BATatoms[tpe].atomCmp;
 	buf.offst = base;
-	buf.width = width;
+	buf.width = (unsigned) width;
 	buf.loc = loc;
 	buf.shift = -1;
 	do {

@@ -174,7 +174,8 @@ int socket_open(str host, int port, str fcn){
 	struct sockaddr_in a;
 	struct hostent *hp;
 	struct sockaddr *addr = (struct sockaddr *) &a;
- 	int fd, len = sizeof(a);
+ 	int fd;
+	SOCKLEN len = sizeof(a);
 
 	memset(&a, 0, sizeof(a));
 	a.sin_family = AF_INET;
@@ -381,7 +382,7 @@ real deallocation; as this will be done by the last unblocked routine.
 int cache_del(cache_t *c){
 	if (c->val) {
 	    if (c->tpe == TYPE_bat){
-	        BBP_refs((int) c->val)--;
+	        BBP_refs((bat) c->val)--;
 	    } else {
 	        GDKfree(c->val);
 	    }
@@ -405,7 +406,7 @@ int cache_fill(cache_t *c, int tpe, ptr val, int i){
 	if (c->val) {
 	    GDKwarning("cache_fill: replacing the value for %s.\n", c->name);
 	    if (c->tpe == TYPE_bat){
-		BBP_refs((int) c->val)--;
+		BBP_refs((bat) c->val)--;
 	    } else {
 		GDKfree(c->val);
 	    }
@@ -414,7 +415,7 @@ int cache_fill(cache_t *c, int tpe, ptr val, int i){
       	c->tpe = tpe;
       	c->val = val;
 	if (tpe == TYPE_bat) {
-	    BBPfix((int) c->val);
+	    BBPfix((bat) c->val);
 	}
 	if (c->locked) {
 	    if (c->barrier != NULL) MT_up_sema(c->barrier, "cache_fill");
@@ -453,7 +454,7 @@ int cache_bat(BAT ** retval) {
 	    cache_t *c = *(cache_t**) BUNtloc(cache_idx,p);
 	    char *val = 0, *buf, *atm = atom_name(c->tpe);
 	    if (c->tpe == TYPE_bat) {
-		int bval = (int) c->val;
+		bat bval = (bat) c->val;
 		ATOMformat(c->tpe, &bval, &val);
 	    } else {
 		ATOMformat(c->tpe, c->val, &val);
@@ -631,7 +632,8 @@ the standard mechanism.
 'GDKerror' messages have been stored in 'errbuf' (if any)
 @c
 		if (*errbuf) {
- 			int len, fd = connections[i].sock;
+ 			size_t len;
+			int fd = connections[i].sock;
 
 			sprintf(msg, "err:%s:%lu\n", nm, (unsigned long) strlen(errbuf) + 1);
 			len = strlen(msg);
@@ -1131,6 +1133,7 @@ TCPexport(
 ){
 	char buf[BIG_MESSAGE], *p;
 	int hdrlen, len = BIG_MESSAGE, fd;
+	size_t batlen;
 	int ret = GDK_SUCCEED;
 
 	if (*conn_id<0 || *conn_id>=MAX_CONN || !connections[*conn_id].me) {
@@ -1165,15 +1168,15 @@ TCPexport(
 	    *p++ = '\n'; *p++ = 0;
 
 	    hdrlen = strlen(buf);
-	    len = BUNlast(b)-BUNfirst(b);
+	    batlen = BUNlast(b)-BUNfirst(b);
 @-
 Small BATs are written in one go, large ones in parts.
 @c
-	    if ((hdrlen + len +  (b->hheap.base?b->hheap.free:0) +
+	    if ((hdrlen + batlen +  (b->hheap.base?b->hheap.free:0) +
 	    			(b->theap.base?b->theap.free:0)) < BIG_MESSAGE) 
 	    {
-	    	int totlen = hdrlen + len;
-	    	memcpy(buf+hdrlen, BUNfirst(b), len);
+	    	int totlen = (int) (hdrlen + batlen); /* < BIG_MESSAGE */
+	    	memcpy(buf+hdrlen, BUNfirst(b), batlen);
 		if (b->hheap.base) {
 	    	    memcpy(buf+totlen, b->hheap.base, b->hheap.free);
 		    totlen += b->hheap.free;
@@ -1186,7 +1189,7 @@ Small BATs are written in one go, large ones in parts.
 			ret = GDK_FAIL;
 		}
 	    } else if (socket_write(fd, strlen(buf), buf, "meta info") == 0 ||
-		socket_write(fd, len, BUNfirst(b), "BUN heap") == 0 ||
+		socket_write(fd, batlen, BUNfirst(b), "BUN heap") == 0 ||
 	        (b->hheap.base && socket_write(fd, 
 			b->hheap.free, b->hheap.base, "head heap") == 0) ||
 	        (b->theap.base && socket_write(fd, 
@@ -1293,7 +1296,7 @@ Copy from the cache into the return value.
 	    *(ptr*) retval = (ptr) GDKmalloc(len);
 	    memcpy(*(ptr*) retval, c->val, len);
 	} else if (c->tpe == TYPE_bat) {
-	    *(BAT**) retval = BATdescriptor((int) c->val); 
+	    *(BAT**) retval = BATdescriptor((bat) c->val); 
 	} else {
 	    memcpy(retval, c->val, ATOMsize(c->tpe));
 	}
@@ -1544,7 +1547,7 @@ Init the connection
 Send one BAT.
 @c
 	fprintf(fp, "bat:my_table_name:%d*%d:int=%d:flt=%d:0:0\n", 
-		TABLE_SIZE, sizeof(tuple), 0, sizeof(int));
+		TABLE_SIZE, (int) sizeof(tuple), 0, (int) sizeof(int));
 	fwrite(table, 1, TABLE_SIZE*sizeof(tuple), fp);
 	fflush(fp);
 }

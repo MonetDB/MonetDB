@@ -1073,7 +1073,7 @@ int CMDminany(ptr result, BAT *b) {
 	    return (*(ptr*) result = BATmin(b, NULL))?GDK_SUCCEED:GDK_FAIL;
 	if (BATmin(b, result)) {
 	    if (b->ttype == TYPE_bat) 
-		*(BAT**) result = BATdescriptor(*(int*) result);
+		*(BAT**) result = BATdescriptor(*(bat*) result);
 	    return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
@@ -1086,7 +1086,7 @@ int CMDmaxany(ptr result, BAT *b) {
 	    return (*(ptr*) result = BATmax(b, NULL))?GDK_SUCCEED:GDK_FAIL;
 	if (BATmax(b, result)) {
 	    if (b->ttype == TYPE_bat) 
-		*(BAT**) result = BATdescriptor(*(int*) result);
+		*(BAT**) result = BATdescriptor(*(bat*) result);
 	    return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
@@ -1287,9 +1287,8 @@ int CMDfetchbat(BAT** ret, BAT *b, BAT *s){
 	return (*ret = BATfetch(b, s))?GDK_SUCCEED:GDK_FAIL;
 }
 
-int CMDfetch(ptr ret, BAT *b, int *pos){
-	int i = *pos;
-        if ((i < 0) || ((size_t) i >= BATcount(b))) {
+static int doCMDfetch(ptr ret, BAT *b, size_t i){
+        if (i >= BATcount(b)) {
                 GDKerror("CMDfetch: idx out of range\n");
                 return GDK_FAIL;
         }
@@ -1307,7 +1306,7 @@ int CMDfetch(ptr ret, BAT *b, int *pos){
 	    if (ATOMvarsized(b->ttype)) {
 		memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
 	    } else if (b->ttype == TYPE_bat) {
-		bat bid = *(int*) BUNtloc(b, @1);
+		bat bid = *(bat*) BUNtloc(b, @1);
 		*(BAT**) ret = BATdescriptor(bid);
 		BBPfix(bid);
 	    } else if (_s == 4) {
@@ -1326,13 +1325,16 @@ int CMDfetch(ptr ret, BAT *b, int *pos){
         return GDK_SUCCEED;
 }
 
+int CMDfetch(ptr ret, BAT *b, int *pos){
+	return doCMDfetch(ret, b, (size_t) *pos);
+}
+
 int CMDfetchoid(ptr ret, BAT *b, oid *pos){
-	int newpos = (int) (*pos - b->hseqbase);
 	if (b->hseqbase == oid_nil) {
                 GDKerror("CMDfetchoid: void lookup on uninitialized column.\n");
                 return GDK_FAIL;
         }
-	return CMDfetch(ret, b, &newpos);
+	return doCMDfetch(ret, b, (size_t) (*pos - b->hseqbase));
 }
 
 int CMDexist(bit *ret, BAT* b, ptr val){ 

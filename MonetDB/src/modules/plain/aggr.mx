@@ -232,8 +232,8 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
         GDKfree(sums);
 @c
 @= large_aggr_avg
-	cnt  = (int*) GDKmalloc(BATcount(e)*sizeof(int));
-	memset(cnt, 0, BATcount(e)*sizeof(int));
+	cnt  = (size_t*) GDKmalloc(BATcount(e)*sizeof(size_t));
+	memset(cnt, 0, BATcount(e)*sizeof(size_t));
 	(void) BATprepareHash(bn);
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) BUNhead(b,p);
@@ -258,16 +258,16 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		if (cnt[yy] == 0) {
 			*dst = dbl_nil;
 		} else if (*dst != dbl_nil) {
-			*dst /= cnt[yy];
+			*dst = (dbl) (*dst / cnt[yy]);
 		} yy++;
 	} 
 	GDKfree(cnt);
 @c
 @= small_aggr_avg
 	sums = (dbl*) GDKmalloc(range*sizeof(dbl));
-	cnt  = (int*) GDKmalloc(range*sizeof(int));
+	cnt  = (size_t*) GDKmalloc(range*sizeof(size_t));
 	for (i = 0; i < range; i++) sums[i] = zero;
-	memset(cnt, 0, range*sizeof(int));
+	memset(cnt, 0, range*sizeof(size_t));
 	BATloopFast(b, p, q, xx) {
 		oid h = (*(oid*) BUNhead(b,p)) - min;
 		@1 *t = (@1*) BUN@2(b,p);
@@ -291,7 +291,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		if (cnt[h] == 0 || sums[h] == dbl_nil) {
 			*dst = dbl_nil;
 		} else {
-			*dst = sums[h]/cnt[h];
+			*dst = (dbl) (sums[h]/cnt[h]);
 		}
 	}
         GDKfree(sums);
@@ -353,7 +353,7 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));	
 	int xx;
 	size_t yy = 0, off = BUNindex(bn,BUNfirst(bn));
-	int *cnt;
+	size_t *cnt;
 	oid i, range, min, max; 
 	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
@@ -479,6 +479,10 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 @c
 
 int CMDaggr_count(BAT **ret, BAT *b, BAT *e){
+/* XXX in a large BAT, it is conceivable that there are head elements
+   that occur more often than fits in an "int", so the return BAT
+   should really have a tail type of size_t.
+ */
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	int zero = 0, *cnt;
 	BUN p, q, r;

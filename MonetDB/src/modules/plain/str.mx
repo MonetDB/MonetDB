@@ -472,11 +472,11 @@ int UTF8_strlen(str val) {
 		int c = *s++;
 		pos++;
 		if (c < 0xC0) continue;
-		if ((*(s++)) < 0x80) return int_nil;
+		if (*s++ < 0x80) return int_nil;
 		if (c < 0xE0) continue;
-		if ((*(s++)) < 0x80) return int_nil;
+		if (*s++ < 0x80) return int_nil;
 		if (c < 0xF0) continue;
-		if ((*(s++)) < 0x80) return int_nil;
+		if (*s++ < 0x80) return int_nil;
 	}
 	return pos;
 }
@@ -493,11 +493,11 @@ int UTF8_strpos(str val, str end) {
 		pos++;
 		if (c == 0) return -1;
 		if (c < 0xC0) continue;
-		if ((*(s++)) < 0x80) return -1;
+		if (*s++ < 0x80) return -1;
 		if (c < 0xE0) continue;
-		if ((*(s++)) < 0x80) return -1;
+		if (*s++ < 0x80) return -1;
 		if (c < 0xF0) continue;
-		if ((*(s++)) < 0x80) return -1;
+		if (*s++ < 0x80) return -1;
 	}
 	return pos;
 }
@@ -508,11 +508,11 @@ str UTF8_strtail(str val, int pos) {
 	while(*s && pos-- > 0) {
 		int c = *s++;
 		if (c < 0xC0) continue;
-		if ((*(s++)) < 0x80) return NULL;
+		if (*s++ < 0x80) return NULL;
 		if (c < 0xE0) continue;
-		if ((*(s++)) < 0x80) return NULL;
+		if (*s++ < 0x80) return NULL;
 		if (c < 0xF0) continue;
-		if ((*(s++)) < 0x80) return NULL;
+		if (*s++ < 0x80) return NULL;
 	}
 	return (str) s;
 }
@@ -539,7 +539,8 @@ str UTF8_strtail(str val, int pos) {
 
 int strConcat(str *res, str s, ptr val, int t ){
 	str valstr = NULL;
-	int l1, l2 = 0;
+	size_t l1;
+	int l2 = 0;
 
 	RETURN_NIL_IF(strNil(s)||ATOMcmp(t,val,ATOMnilptr(t))==0,TYPE_str);
 	if (t <= 0) return GDK_FAIL;
@@ -639,9 +640,9 @@ int codeset( str *res ){
 int strIconv( str *res, str org, str f, str t)
 {
 #ifdef HAVE_ICONV
-	int len = strlen(org);
+	size_t len = strlen(org);
 	iconv_t cd = iconv_open( t, f);
-	int size = 4*len; 		/* make sure enough memory is claimed */
+	size_t size = 4*len; 		/* make sure enough memory is claimed */
 	char *r; 
 
 	if (!cd){
@@ -649,7 +650,7 @@ int strIconv( str *res, str org, str f, str t)
 		return GDK_FAIL;
 	}
 	*res = r = GDKmalloc(size); 
-	if ( iconv(cd, &org, &len, &r, &size ) < 0){
+	if (iconv(cd, &org, &len, &r, &size) == (size_t) -1){
 		GDKfree(*res);
 		*res = NULL;
 		GDKerror("String convertion failed from (%s) to (%s)\n", f, t);
@@ -676,11 +677,11 @@ int strChrAt( chr *res, str val, int *at ){
 }
 
 int strPrefix( bit *res, str s, str prefix ){
-	int pl, i;
+	size_t pl, i;
 
 	RETURN_NIL_IF(strNil(s)||strNil(prefix),TYPE_bit);
    	pl = strlen(prefix);
-	if ((int)strlen(s)<pl){
+	if (strlen(s) < pl){
 		*res = 0;
 		return GDK_SUCCEED;
 	}
@@ -695,7 +696,7 @@ int strPrefix( bit *res, str s, str prefix ){
 }
 
 int strSuffix( bit *res, str s, str suffix ){
-	int i, sl, sul;
+	size_t i, sl, sul;
 	RETURN_NIL_IF(strNil(s)||strNil(suffix),TYPE_bit);
    	sl = strlen(s);
    	sul = strlen(suffix);
@@ -755,9 +756,9 @@ int strStrSearch( int *res, str s, str s2 ){
 }
 
 int strReverseStrSearch( int *res, str s, str s2 ){
-	int len, slen;
+	size_t len, slen;
 	char *p, *q;
-	int i;
+	size_t i;
 
 	RETURN_NIL_IF(strNil(s)||strNil(s2),TYPE_int);
 	*res = -1;
@@ -795,7 +796,7 @@ int strReverseChrSearch( int *res, str s, chr *c ){
 
 int strStrip(str *res, str s) {
 	str start = s;
-	int len;
+	size_t len;
 
 	while (GDKisspace(*start))
 		start++;
@@ -822,7 +823,7 @@ int strLtrim(str *res, str s) {
 }
 
 int strRtrim(str *res, str s) {
-	int len = strlen(s);
+	size_t len = strlen(s);
 
 	RETURN_NIL_IF(strNil(s), TYPE_str);
 	while(len > 0 && GDKisspace(s[len-1])) len--;
@@ -832,8 +833,9 @@ int strRtrim(str *res, str s) {
 	return GDK_SUCCEED;
 }
 int strSubstitute(str *res, str s, str src, str dst, bit *g) {
-	int repeat = *g, lsrc = strlen(src), ldst = strlen(dst);
-	int l = strLen(s), n = l + ldst;
+	int repeat = *g;
+	size_t lsrc = strlen(src), ldst = strlen(dst);
+	size_t l = strLen(s), n = l + ldst;
 	str buf, fnd, end; 
 
 	if (repeat && ldst > lsrc) {

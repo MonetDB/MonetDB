@@ -241,10 +241,10 @@ void pcl_exit(){
 
 int pcl_start(BAT *event, int *mode){
 	int clist[PCL_MAX_EVENT_PER_CALL];
-	int res, i = 0, cnt = BATcount(event);
+	int res, i = 0;
 	BUN p,q;
 
-	if (cnt > PCL_MAX_EVENT_PER_CALL){
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
 		GDKwarning("Can only start %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
@@ -266,10 +266,10 @@ int pcl_start(BAT *event, int *mode){
 
 int pcl_start_rates(BAT *event, int *mode){
 	int clist[PCL_MAX_EVENT_PER_CALL];
-	int res, i = 0, cnt = BATcount(event);
+	int res, i = 0;
 	BUN p,q;
 
-	if (cnt > PCL_MAX_EVENT_PER_CALL){
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
 		GDKwarning("Can only start %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
@@ -292,7 +292,8 @@ int pcl_start_rates(BAT *event, int *mode){
 int pcl_stop(BAT **result, BAT *event){
 	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
 	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
-	int res, i = 0, cnt = BATcount(event);
+	int res, i = 0;
+	size_t cnt = BATcount(event);
 	BUN p,q;
 
 	if (cnt > PCL_MAX_EVENT_PER_CALL){
@@ -319,7 +320,8 @@ int pcl_stop(BAT **result, BAT *event){
 int pcl_stop_rates(BAT **result, BAT *event){
 	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
 	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
-	int res, i = 0, cnt = BATcount(event);
+	int res, i = 0;
+	size_t cnt = BATcount(event);
 	BUN p,q;
 
 	if (cnt > PCL_MAX_EVENT_PER_CALL){
@@ -344,26 +346,27 @@ int pcl_stop_rates(BAT **result, BAT *event){
 }
 
 int pcl_query(BAT **result, BAT *event, int *mode){
-	int res, cnt = BATcount(event);
-	int clist[1];
+	int res;
+	size_t cnt = BATcount(event);
+	int clist;
 	BUN p,q;
 
 	*result = BATnew(TYPE_int,TYPE_int,cnt);
 	BATloop(event,p,q){
 		int ev = *(int*)BUNhloc(event,p);
-		clist[0] = ev;
-		res = PCLquery(pcl_desc, clist, 1, *mode);
+		clist = ev;
+		res = PCLquery(pcl_desc, &clist, 1, *mode);
 		BUNins(*result, &ev, &res);
 	}
 	return GDK_SUCCEED;
 }
 
 int pcl_try(bit *result, BAT *event, int *mode){
-	int i, res, cnt = BATcount(event);
+	int i, res;
 	int clist[PCL_MAX_EVENT_PER_CALL];
 	BUN p,q;
 
-	if (cnt > PCL_MAX_EVENT_PER_CALL){
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
 		GDKwarning("Can only start %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;

@@ -1426,7 +1426,7 @@ int THRprintf(stream *s, char *format, ...) {
         va_end (ap);
 @c
 	@:THRprintf_va_vsnprintf@
-	while ((n < 0) || (n >= bfsz-m)) {
+	while (n < 0 || (size_t) n >= bfsz-m) {
 		if (n >= 0)		/* glibc 2.1 */
 			bfsz = m+n+1;	/* precisely what is needed */
 		else			/* glibc 2.0 */

@@ -673,10 +673,11 @@ PROC test_ddbench() : void := {
 #include "streams.h"
 #include "enum.proto.h"
 
-static int estimate(BAT* b, int lo, int hi) {
+static size_t estimate(BAT* b, size_t lo, size_t hi) {
 	BUN p = BUNptr(b, BUNindex(b,BUNfirst(b))+lo);
 	BUN q = BUNptr(b, BUNindex(b,BUNfirst(b))+hi);
-	int xx = BUNsize(b), sum=1;
+	int xx = BUNsize(b);
+	size_t sum=1;
 
 	if (p < BUNfirst(b)) p = BUNfirst(b);
 	if (q >= BUNlast(b)) q = BUNlast(b) - xx;
@@ -685,13 +686,13 @@ static int estimate(BAT* b, int lo, int hi) {
 		sum += *(int*) BUNtloc(b,p);
 		p += xx;
 	}
-	return sum*BATMARGIN;
+	return (size_t) (sum*BATMARGIN);
 }
 
 @= rng_estimate
-	estimate(map, *(unsigned @1*) lo@2, *(unsigned @1*) hi@2)
+	estimate(map, (size_t) *(unsigned @1*) lo@2, (size_t) *(unsigned @1*) hi@2)
 @= val_estimate
-	estimate(map, *(unsigned @1*) v@2, *(unsigned @1*) v@2)
+	estimate(map, (size_t) *(unsigned @1*) v@2, (size_t) *(unsigned @1*) v@2)
 @= check_bitsel
 	if (@2->htype != TYPE_void || @2->ttype != TYPE_bit32 || 
 	    @2->hseqbase != (BAThdense(@3)?@3->hseqbase:@3->halign) ||
@@ -776,7 +777,7 @@ int bit32tobat(BAT** ret, BAT *sel) {
 	*ret = bn = BATnew(TYPE_oid, TYPE_void, size);
 
 	for (;;) {
-		int mask = 1, val = *(cur++);
+		int mask = 1, val = *cur++;
 		do {
 			if (val&mask) BUNfastins(bn, &o, NULL); 
 			if (++o >= last) {
@@ -798,7 +799,7 @@ int bit32semijoin(BAT** ret, BAT *b, BAT* sel) {
 	*ret = bn = BATnew(TYPE_oid, BATttype(b), sel->halign-1);
 
 	for (;;) {
-		int mask = 1, val = *(cur++);
+		int mask = 1, val = *cur++;
 		do {
 			if (val&mask) BUNfastins(bn, BUNhead(b,p),BUNtail(b,p));
 			if ((p += xx) >= q) {
@@ -1696,7 +1697,7 @@ int rngs_oidselect( BAT** res, BAT* b, ...){
 
 	oid o = b->hseqbase;
 	@2 {	
-		int size_estimate = @:@1_estimate(@4,@3)@;
+		size_t size_estimate = @:@1_estimate(@4,@3)@;
 		bn@3 = BATnew(TYPE_oid,TYPE_void,size_estimate);
 		dst@3 = (oid*) BUNfirst(bn@3);
 		last@3 = (oid*) (bn@3->batBuns->base + bn@3->batBuns->size);
@@ -1913,7 +1914,7 @@ int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 }
 @= oidref
 	unsigned @3 *src = (unsigned @3*) BUNfirst(b);
-	int size_estimate = @:@1_estimate(@3)@ * (((float) BATcount(sel))/((float) BATcount(b)));
+	size_t size_estimate = (size_t) (@:@1_estimate(@3)@ * ((float) BATcount(sel)/(float) BATcount(b)));
 	if (@2) {
 		bn = BATnew(TYPE_oid,TYPE_void,size_estimate);
 	} else {

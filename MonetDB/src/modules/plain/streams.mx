@@ -438,7 +438,7 @@ int io_fgets(str *res, Stream *S){
 int io_fputc(int *c, stream *S){
 	stream *s = *(stream**)S;
 	char data[2];
-	data[0] = (char) *(int*) c; 
+	data[0] = (char) *c; 
 	data[1] = 0;
 	s->write( s, data, 1, 1);
 	return GDK_SUCCEED;

@@ -908,9 +908,9 @@ stream *buffer_wastream( buffer *b, char *name ){
 
 typedef struct bs {
 	stream *s;
-	int onr;
-	int inr;
-	int itotal;
+	unsigned onr;
+	unsigned inr;
+	unsigned itotal;
 	int eob; 
 	char out[BLOCK];
 	char in[BLOCK];
@@ -957,16 +957,16 @@ size_t bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 static
 size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	bs *s = (bs*)ss->stream_data;
-	int nr = 0;
+	unsigned nr = 0;
 
 	size_t todo = cnt * elmsize;
-	if (todo < s->itotal - s->inr){
+	if (s->inr + todo < s->itotal) {
 		memcpy( buf, s->in + s->inr, todo );
 
 		s->inr += todo;
 		return cnt;
 	}
-	if (todo >= s->itotal - s->inr ){
+	if (todo + s->inr >= s->itotal) {
 		size_t rest = s->itotal - s->inr;
 		memcpy( buf, s->in + s->inr, rest );
 		buf += rest;
@@ -980,7 +980,7 @@ size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		return cnt - (todo/elmsize);
 	}
 	while (todo >= BLOCK){
-		stream_readInt( s->s, &nr );
+		stream_readInt( s->s, (int *) &nr );
 		s->s->read( s->s, buf, 1, (size_t) nr);
 		buf += nr;
 		todo -= nr;
@@ -990,7 +990,7 @@ size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		}
 	} 
 	if (todo){
-		stream_readInt( s->s, &nr );
+		stream_readInt( s->s, (int *) &nr );
 
 		if (nr < BLOCK)
 			s->eob = 1;
@@ -1189,7 +1189,7 @@ extern int stream_printf( stream *s, const char *format, ...)
 	va_end (ap);
 @c
 	@:stream_printf_va_vsnprintf@
-	while ((i < 0) || (i >= bfsz)) {
+	while (i < 0 || (size_t) i >= bfsz) {
 		if (i >= 0)		/* glibc 2.1 */
 			bfsz = (size_t)i+1; /* precisely what is needed */
 		else			/* glibc 2.0 */

@@ -1146,7 +1146,7 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 		tot += ftab[i];
         }
         for(tot = (flt) (1.0/tot), i=0; i<d; i++) {
-		itab[i] = (int) (n*(ftab[i]*tot));
+		itab[i] = (int) ((flt)n*ftab[i]*tot);
 		r -= itab[i];
 	}
 	itab[m] += r;
@@ -1648,8 +1648,8 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
 	dst[i] = lim[i-1];
 	lim[i] += dst[i];
     }
-    lo_limit = start + MAX((size_t) (0.1*(init-start)), 20*nchunks*BUNsize(bn));
-    hi_limit = MIN(start + (size_t) (0.9*lim[i-1]), end - 32768); 
+    lo_limit = start + MAX((size_t) (0.1*(double)(init-start)), 20*nchunks*BUNsize(bn));
+    hi_limit = MIN(start + (size_t) (0.9*(double)lim[i-1]), end - 32768); 
 
     cur = radix_buns_@1(bn, b, start, init, out, dst, lim, mask, shift, maxbits);
 

@@ -390,7 +390,7 @@ static int align(int n) {
 	return 8;
 }
 
-void ATOMproperty(str id, str property, int (*arg) ()) {
+void ATOMproperty(str id, str property, GDKfcn arg) {
 	int t;
 	MT_set_lock(GDKthreadLock, "ATOMproperty");
 	t = ATOMindex(id); 

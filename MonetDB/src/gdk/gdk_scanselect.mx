@@ -178,12 +178,31 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(int,flt,int)@
 @:HT_bunfastins_typemap(lng,flt,int)@
 @:HT_bunfastins_typemap(any,flt,int)@
-@:HT_bunfastins_typemap(void,dbl,int)@
-@:HT_bunfastins_typemap(chr,dbl,int)@
-@:HT_bunfastins_typemap(sht,dbl,int)@
-@:HT_bunfastins_typemap(int,dbl,int)@
-@:HT_bunfastins_typemap(lng,dbl,int)@
-@:HT_bunfastins_typemap(any,dbl,int)@
+@:HT_bunfastins_typemap(void,dbl,lng)@
+@:HT_bunfastins_typemap(chr,dbl,lng)@
+@:HT_bunfastins_typemap(sht,dbl,lng)@
+@:HT_bunfastins_typemap(int,dbl,lng)@
+@:HT_bunfastins_typemap(lng,dbl,lng)@
+@:HT_bunfastins_typemap(any,dbl,lng)@
+#if SIZEOF_OID == SIZEOF_INT
+@:HT_bunfastins_typemap(void,oid,int)@
+@:HT_bunfastins_typemap(chr,oid,int)@
+@:HT_bunfastins_typemap(sht,oid,int)@
+@:HT_bunfastins_typemap(int,oid,int)@
+@:HT_bunfastins_typemap(lng,oid,int)@
+@:HT_bunfastins_typemap(flt,oid,int)@
+@:HT_bunfastins_typemap(dbl,oid,int)@
+@:HT_bunfastins_typemap(any,oid,int)@
+#else
+@:HT_bunfastins_typemap(void,oid,lng)@
+@:HT_bunfastins_typemap(chr,oid,lng)@
+@:HT_bunfastins_typemap(sht,oid,lng)@
+@:HT_bunfastins_typemap(int,oid,lng)@
+@:HT_bunfastins_typemap(lng,oid,lng)@
+@:HT_bunfastins_typemap(flt,oid,lng)@
+@:HT_bunfastins_typemap(dbl,oid,lng)@
+@:HT_bunfastins_typemap(any,oid,lng)@
+#endif
 @-
 For backward compatibility:
 (also to be move to gdk.mx and gdk_bat.mx, repectively)

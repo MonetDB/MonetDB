@@ -184,7 +184,7 @@ void blob_heap(Heap* heap, size_t capacity)
    HEAP_initialize(heap,capacity,0,(int)sizeof(var_t));
 }
 
-#ifndef ODSTYLE
+#ifndef OLDSTYLE
 int blob_tostr(str* tostr,int* l,blob* p)
 {
 	char* s;
@@ -242,6 +242,13 @@ int blob_fromstr(char* instr,int* l,blob** val)
       *val = (blob *)NULL;
       return(0);
    }
+#if SIZEOF_SIZE_T > SIZEOF_INT
+   if (nitems > 0x7fffffff) {
+      GDKwarning("Blob too large\n");
+      *val = (blob *)NULL;
+      return(0);
+   }
+#endif
    nbytes = blobsize(nitems);
    s = strchr(s,':');
    if (s == NULL)
@@ -289,6 +296,8 @@ int blob_fromstr(char* instr,int* l,blob** val)
 }
 
 #else
+
+/* the code in this branch of the #if is not being maintained */
 
 #define MAXCHAR 127
 #define LINE.LEN 80
@@ -430,7 +439,7 @@ PETER: set the blob size.
 	*(int*) *dst = ut- ((char *)*dst + sizeof(int));
         return l;
 }
-#endif
+#endif /* OLDSTYLE */
 
 int fromblob_idx(str *retval, blob *b, int *index){
 	str s, p = b->data + *index; 
