@@ -5,8 +5,10 @@ stdout of test 'tst2035` in directory 'src/mal` itself:
 # 08:00:00 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2035.mal </dev/null
 # 08:00:00 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# Monet Database Server V4.7.1
+# Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
@@ -58,27 +60,29 @@ end clkticks;	# 6
 #
 function Admin.main():int;	# 0  (main:int)
     counter := 0;	# 1  (counter:int)<-($2:int)
-thread hdl := 0;	# 2  (hdl:int)<-($2:int) jump 10
-    io.print("#start the child");	# 3 IOprint_val ($4:int)<-($5:str)
-    Admin.clkticks(1);	# 4  ($6:void)<-($7:int)
-    counter := calc.+(counter,1);	# 5 CALCbinaryADDintint (counter:int)<-(counter:int)($7:int)
-barrier t := calc.==(counter,2);	# 6 CALCcompEQintint (t:bit)<-(counter:int)($9:int) jump 8
-    leave hdl;	# 7  (hdl:int) jump 10
-exit t;	# 8  (t:bit)
-    redo hdl;	# 9  (hdl:int) jump 3
-exit hdl;	# 10  (hdl:int)
-    io.printf("#Main thread\n");	# 11 IOprint_str ($10:int)<-($11:str)
-barrier wl := true;	# 12  (wl:bit)<-($13:bit) jump 21
-    alarm.sleep(5);	# 13 ALARMsleep ($14:void)<-($15:int)
-    io.printf("#Wait for child to exit %d\n",hdl);	# 14 IOprint_formatted_int ($16:int)<-($17:str)(hdl:int)
-barrier t0 := calc.==(counter,2);	# 15 CALCcompEQintint (t0:bit)<-(counter:int)($9:int) jump 18
-    io.printf("#Child died \n");	# 16 IOprint_str ($19:int)<-($20:str)
-    leave wl;	# 17  (wl:bit) jump 21
-exit t0;	# 18  (t0:bit)
-    alarm.sleep(5);	# 19 ALARMsleep ($21:void)<-($15:int)
-    redo wl;	# 20  (wl:bit) jump 13
-exit wl;	# 21  (wl:bit)
-end main;	# 22  
+thread hdl := 0;	# 2  (hdl:int)<-($2:int) jump 13
+    io.printf("#handle %d\n",hdl);	# 3 IOprint_formatted_int ($4:int)<-($5:str)(hdl:int)
+    io.print("#start the child");	# 4 IOprint_val ($6:int)<-($7:str)
+barrier go := true;	# 5  (go:bit)<-($9:bit) jump 12
+    Admin.clkticks(1);	# 6  ($10:void)<-($11:int)
+    counter := calc.+(counter,1);	# 7 CALCbinaryADDintint (counter:int)<-(counter:int)($11:int)
+barrier t := calc.==(counter,2);	# 8 CALCcompEQintint (t:bit)<-(counter:int)($13:int) jump 10
+    leave go;	# 9  (go:bit) jump 12
+exit t;	# 10  (t:bit)
+    redo go;	# 11  (go:bit) jump 6
+exit go;	# 12  (go:bit)
+exit hdl;	# 13  (hdl:int)
+    io.printf("#Main thread\n");	# 14 IOprint_str ($14:int)<-($15:str)
+barrier wl := true;	# 15  (wl:bit)<-($9:bit) jump 23
+    alarm.sleep(5);	# 16 ALARMsleep ($17:void)<-($18:int)
+barrier t0 := calc.==(counter,2);	# 17 CALCcompEQintint (t0:bit)<-(counter:int)($13:int) jump 20
+    io.printf("#Child died \n");	# 18 IOprint_str ($20:int)<-($21:str)
+    leave wl;	# 19  (wl:bit) jump 23
+exit t0;	# 20  (t0:bit)
+    alarm.sleep(5);	# 21 ALARMsleep ($22:void)<-($18:int)
+    redo wl;	# 22  (wl:bit) jump 16
+exit wl;	# 23  (wl:bit)
+end main;	# 24  
 #Main thread
 [ "#start the child" ]
 
