@@ -256,6 +256,7 @@ void SQLsetDebugger(Client c)
         mvc *m;
         m = ((backend*)c->state[PARSER])->mvc;
 
+        if(m == 0) return;
         printf("SQL debugger %d\n",m->debug);
         if( m->debug == 0) return;
 	q= newInstruction(ASSIGNsymbol);
@@ -307,6 +308,7 @@ str SQLparser(Client c) {
 
         if (!m->trans)
                 mvc_trans(m);
+    printf("SQL debugger: %d\n",m->debug);
 
         if (explainPerformance())
 		T0 = GDKusec();

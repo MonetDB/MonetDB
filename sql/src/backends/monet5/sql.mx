@@ -344,45 +344,45 @@ printf("Re-establish context for client not expected\n");
 
 str mvc_create_wrap(int *ret, int *debug ){
 	mvc *res = mvc_create( *debug,0, NULL,GDKout );
+        (void) ret;
 	@:setContext(res,mvc)@
-	*ret = 0;
 	return MAL_SUCCEED;
 }
 
 str mvc_destroy_wrap(int *ret ){
-	mvc *c;
-	@:getContext(c,mvc)@
-	mvc_destroy( c );
+	mvc *m;
+        (void) ret;
+	@:getContext(m)@
+	mvc_destroy( m );
 	@:setContext(NULL,mvc)@
-	*ret = 0;
 	return MAL_SUCCEED;
 }
 
 str mvc_update_var_wrap( int *ret, str *varname ){
-	mvc *c;
-	@:getContext(c,mvc)@
-	if ( sql_update_var( c, *varname ) != GDK_SUCCEED)
+	mvc *m;
+        (void) ret;
+	@:getContext(m)@
+	if ( sql_update_var( m, *varname ) != GDK_SUCCEED)
 		return throwException(MALEXCEPTION,"mvc_update_var","error");
-	*ret = 0;
 	return MAL_SUCCEED;
 }
 
 
 str mvc_login_wrap(str *r, str *user, str *passwd  ){
-	mvc *c;
-	@:getContext(c,mvc)@
-	*r = mvc_login( c, *user, *passwd );
+	mvc *m;
+	@:getContext(m)@
+	*r = mvc_login( m, *user, *passwd );
 	if (*r != 0)
 		return throwException(MALEXCEPTION,"mvc_login_wrap","error");
 	return MAL_SUCCEED;
 }
 
 str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access){
-	mvc *c;
+	mvc *m;
 	BAT *b;
-	@:getContext(c,mvc)@
+	@:getContext(m)@
 
-	b= mvc_bind( c, *sname, *tname, *cname, *access );
+	b= mvc_bind( m, *sname, *tname, *cname, *access );
 	if (b){
 		*bid= b->batCacheid;
 		return MAL_SUCCEED;
@@ -391,10 +391,10 @@ str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access){
 }
 
 str mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access ){
-	mvc *c;
+	mvc *m;
 	BAT *b;
-	@:getContext(c,mvc)@
-	b = mvc_bind_ubat( c, *sname, *tname, *cname, *access );
+	@:getContext(m)@
+	b = mvc_bind_ubat( m, *sname, *tname, *cname, *access );
 	if (b){
 		*ret= b->batCacheid;
 		return MAL_SUCCEED;
@@ -403,10 +403,10 @@ str mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access
 }
 
 str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
-	mvc *c;
+	mvc *m;
 	BAT *b;
-	@:getContext(c,mvc)@
-	b = mvc_bind_dbat( c, *sname, *tname, *access );
+	@:getContext(m)@
+	b = mvc_bind_dbat( m, *sname, *tname, *access );
 	if (b){
 		*ret= b->batCacheid;
 		return MAL_SUCCEED;
@@ -415,10 +415,10 @@ str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
 }
 
 str mvc_bind_ibat_wrap(int *ret, str *sname, str *tname, str *iname, int *access ){
-	mvc *c;
+	mvc *m;
 	BAT *b;
-	@:getContext(c,mvc)@
-	b = mvc_bind_ibat( c, *sname, *tname, *iname, *access );
+	@:getContext(m)@
+	b = mvc_bind_ibat( m, *sname, *tname, *iname, *access );
 	if (b){
 		*ret= b->batCacheid;
 		return MAL_SUCCEED;
