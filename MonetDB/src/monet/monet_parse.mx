@@ -1213,6 +1213,7 @@ argument_list:
 		GDKwarning("continuing in nostalgic mode.\n");
 		monet_nostalgic=1;
 	    }                                                                 }
+    ;
 
 argument_list_nocheck:
         '(' expressions ')'
@@ -1221,7 +1222,7 @@ argument_list_nocheck:
         {   $$ = (ptr) yysugar(ll_sugarnode);                                 }
     |    /* empty */
 	{   $$ = (ptr) yysugar(ll_sugarnode);                                 }
-
+    ;
 
 expressions:
         { $$ = ll_sugarnode; } param_expression
@@ -1233,7 +1234,7 @@ expressions:
 param_expression:
 	TOK_CONST expression
 	{    $$ = Myylognode(TOK_CONST,0); Myylogexpand($$, $2);              }
-     |  expression
+    |   expression
 	{    $$ = $1;                                                         }
     ;
 
