@@ -1844,6 +1844,13 @@ non_reserved_word:
 | ROLE		{ $$ = _strdup("role"); }
 | NULLX		{ $$ = _strdup("null"); }
 | DEFAULT	{ $$ = _strdup("default"); }
+| YEAR		{ $$ = _strdup("year"); }
+| MONTH		{ $$ = _strdup("month"); }
+| DAY		{ $$ = _strdup("day"); }
+| HOUR		{ $$ = _strdup("hour"); }
+| MINUTE	{ $$ = _strdup("minute"); }
+| SECOND	{ $$ = _strdup("second"); }
+| ZONE		{ $$ = _strdup("zone"); }
 ;
 
 name_commalist:
