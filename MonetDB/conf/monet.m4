@@ -1734,12 +1734,12 @@ if test "x$have_pear" != xno; then
 fi
 if test "x$have_pear" != xno; then
 	AC_MSG_CHECKING(for $PEAR's php_dir)
-	php_peardir="`$PEAR config-get php_dir`"
+	php_peardir="`$PEAR config-get php_dir | grep php_dir`"
 	if test -z "$php_peardir"; then
 		have_pear=no
 		AC_MSG_RESULT(not found)
 	else
-		PHP_PEARDIR="`$PEAR config-get php_dir | sed -e s+php_dir=$php_prefix/++g`"
+		PHP_PEARDIR="`echo "$php_peardir" | sed -e 's+php_dir *= *$php_prefix/++g'`"
 		have_pear=yes
 		AC_MSG_RESULT(\$prefix/$PHP_PEARDIR)
 	fi
