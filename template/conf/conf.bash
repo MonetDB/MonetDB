@@ -183,7 +183,7 @@ fi
 # "our" /soft[64] path
 soft32=/soft/local
 soft64=/soft64/local
-if [ "${BITS}" = "32" ] ; then
+if [ "${BITS}" = "32"  -o  "${os}" = "Linux" ] ; then
 	softpath=${soft32}
   else
 	softpath=${soft64}
