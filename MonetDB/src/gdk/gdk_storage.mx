@@ -716,7 +716,9 @@ BATload_intern(bat i)
 	b->batMaptacc = (char) b->taccelerator.storage;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
+		++b->batSharecnt;
 		BATpropcheck(b, BATPROPS_CHECK);
+		--b->batSharecnt;
 	}
 	return (i < 0) ? BATmirror(b) : b;
 }
