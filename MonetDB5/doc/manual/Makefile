@@ -41,3 +41,13 @@ gdkpdf:
 	)
 	cp ${MONET5_PREFIX}/share/MonetDB5/gdkmanual.pdf /ufs/mk/cwi/public_html 
 	echo "Manual created" 
+modpdf: 
+	-mkdir ${MONET5_PREFIX}/share/MonetDB5
+	mkbdy; cp modulesmanual.texi ${MONET5_PREFIX}/share/MonetDB5
+	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
+	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	pdftex modulesmanual.texi \
+	makeinfo --force --html modulesmanual.texi \
+	)
+	cp ${MONET5_PREFIX}/share/MonetDB5/modulesmanual.pdf /ufs/mk/cwi/public_html 
+	echo "Manual created" 

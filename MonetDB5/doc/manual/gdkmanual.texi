@@ -46,28 +46,27 @@ Last updated: @value{UPDATED}
 @end ifnottex
 
 @node Introduction V5, ,About this manual, Top
-@include Assets/About_this_manual
+@include Assets/About_this_manual_gdk
 
 @include gdk.bdy.texi
-@include gdk_align.bdy.texi
 @include gdk_atoms.bdy.texi
 @include gdk_bat.bdy.texi
 @include gdk_batop.bdy.texi
-@include gdk_bbp.bdy.texi
-@include gdk_delta.bdy.texi
-@include gdk_desc.bdy.texi
-@include gdk_heap.bdy.texi
-@include gdk_posix.bdy.texi
 @include gdk_relop.bdy.texi
 @include gdk_scanselect.bdy.texi
 @include gdk_setop.bdy.texi
 @include gdk_qsort.bdy.texi
 @include gdk_search.bdy.texi
-@include gdk_storage.bdy.texi
-@include gdk_system.bdy.texi
+@include gdk_delta.bdy.texi
 @include gdk_tm.bdy.texi
+@include gdk_desc.bdy.texi
+@include gdk_align.bdy.texi
+@include gdk_storage.bdy.texi
+@include gdk_heap.bdy.texi
+@include gdk_bbp.bdy.texi
+@include gdk_posix.bdy.texi
+@c @include gdk_system.bdy.texi
 @include gdk_utils.bdy.texi
 @include gdk_value.bdy.texi
-
 
 @bye

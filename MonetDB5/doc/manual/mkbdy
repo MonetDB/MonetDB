@@ -22,3 +22,22 @@ do
         Mx -i -B -H1 $f
         mv $b.bdy.texi ${MONET5_PREFIX}/share/MonetDB5
 done
+
+cd ${MONET5_PREFIX}/../src/modules/mal
+ls *mx
+for f in  `ls *.mx`
+do
+	b=`basename $f .mx`
+	echo "---->" $f $b.bdy.texi 
+        Mx -i -B -H1 $f
+        mv $b.bdy.texi ${MONET5_PREFIX}/share/MonetDB5
+done
+cd ${MONET5_PREFIX}/../src/modules/kernel
+ls *mx
+for f in  `ls *.mx`
+do
+	b=`basename $f .mx`
+	echo "---->" $f $b.bdy.texi 
+        Mx -i -B -H1 $f
+        mv $b.bdy.texi ${MONET5_PREFIX}/share/MonetDB5
+done
