@@ -44,11 +44,11 @@ b.print;
 [ ".",		  10	  ]
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
-b.export("/tmp/monet2");
+b.export("monet2");
 b.clear;
 b.count.print;
 [ 0 ]
-b.import("/tmp/monet2");
+b.import("monet2");
 b.print;
 #-------------------------#
 # BAT:		  tmp_25  #
@@ -95,11 +95,11 @@ b.print;
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-b.export("/tmp/monet1");
+b.export("monet1");
 b.clear;
 b.count.print;
 [ 0 ]
-b.import("/tmp/monet1");
+b.import("monet1");
 b.print;
 #-----------------#
 # BAT:	  tmp_26  #
