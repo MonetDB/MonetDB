@@ -332,11 +332,15 @@ int cstLength(Client cntxt, int *type)
 		while( isdigit(*s)) { i++; s++;}
 	} 
 	if( *s == 'L' ){
-		if( *type== TYPE_int) {i++; *type = TYPE_lng;}
-		if( *type== TYPE_flt) {i++; *type = TYPE_dbl;}
+		if( *type== TYPE_int) *type = TYPE_lng;
+		if( *type== TYPE_flt) *type = TYPE_dbl;
+		i++;
+		s++;
 	}
 	if( *s == 'L' ){
-		if( *type== TYPE_int) {i++; *type = TYPE_lng;}
+		i++;
+		if( *type== TYPE_int) *type = TYPE_lng;
+		s++;
 	}
 	return i;
 parseTFN:
