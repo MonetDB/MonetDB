@@ -86,8 +86,7 @@ BAT *BATsort_insert(BAT *c, BAT *b) {
         BATcheck(c, "BATsort: BAT c");
         BATcheck(b, "BATsort: BAT b");
         if (!BATidx(b, NULL)) {
-                GDKfatal("BATsort_insert: failed to make index.\n");
-                return c;
+                return NULL;
         }
         p = IDXfirst(b);
         q = IDXlast(b);
@@ -173,7 +172,10 @@ Now declare the BAT empty.
 	    BAT *bf = BATmirror(bm);
 
 	    if (BAThordered(bf)&1) {
-		BATins(b, bf);
+		if (BATins(b, bf) == NULL) {
+		    BBPreclaim(bn);
+		    return GDK_FAIL;
+		}
 		continue;
 	    }
 @-
@@ -189,7 +191,10 @@ use the hheap and theap of the 'b'.
 @-
 Create a binary index.
 @c
-            BATidx(bf, 0);
+            if (BATidx(bf, 0) == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	    }
 @-
 We will now be inserting. We do not want to modify any head or
 tail heaps, so we must conceal the fact that they exist.
@@ -244,7 +249,7 @@ int CMDacccluster(BAT *b, int *acctype){
 int CMDheapclustercopy(BAT *b, BAT* order){
 	int bunsize;
 	BUN p,q,r;
-	void (*fcn)();
+	var_t (*fcn)();
 	Heap hn;
  
 	BATcheck(b, "CLUSTERcopyheap: BAT 1"); 
@@ -260,7 +265,9 @@ int CMDheapclustercopy(BAT *b, BAT* order){
 	/* alloc && copy the old structures into scratch structures. */
 	bunsize = BUNsize(b);
 	hn.filename = NULL;
-	ATOMheap(b->ttype, &hn, BATcount(b)+1);   
+	if (ATOMheap(b->ttype, &hn, BATcount(b)+1) < 0) {
+		return GDK_FAIL;
+	}
  
 	if (b == order) {
 	     BATloopFast(b, p, q, bunsize) {

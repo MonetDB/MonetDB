@@ -568,7 +568,7 @@ void gen_default_atomops( ostream &o, int op, const Atom &d ){
 	o << "}\n\n";
 	break;
         case OP_PUT     :
-        o << "int " << atom;
+        o << "var_t " << atom;
         o << "_put(Heap *hp, char *dst, char *src ){\n";
         o << "   memcpy(dst, src, " << len << ");\n";
         o << "   return 1;\n";

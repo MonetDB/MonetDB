@@ -377,7 +377,7 @@ void BBPextend(dbl factor, int buildhash) {
 	MT_set_lock(GDKtrimLock, "BBPcacheit");
         BBP_notrim = BBP_getpid();
 	BBP = (BBPrec*) GDKvmrealloc(BBP, BBPlimit*sizeof(BBPrec), newsize*sizeof(BBPrec), 
-				     BBPmaxsize*sizeof(BBPrec), &maxsize); 
+				     BBPmaxsize*sizeof(BBPrec), &maxsize, 1); 
 	if (BBP == NULL) GDKfatal("BBPextend failed\n");
 
     	memset(BBP+BBPlimit, 0, (newsize-BBPlimit)*sizeof(BBPrec));
@@ -913,19 +913,19 @@ used in BBPfree (bat swapped out) and BBPclear (bat destroyed forever).
 void BBPuncacheit(bat i, int unloaddesc) {
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPuncacheit")) {
-		BAT *b = BBPcache(i);
+		BAT *b = (BAT*) BBP_desc(i);
 		if (b) {
-			BATDEBUG {
-				THRprintf(GDKerr, "uncache %d (%s)\n", (int) i, BBP_logical(i)); 
+			if (BBP_cache(i)) {
+				BATDEBUG THRprintf(GDKerr, "uncache %d (%s)\n", (int) i, BBP_logical(i)); 
+				BBP_cache(i) = BBP_cache(-i) = NULL; 
+				BBP_status_off(i, BBPLOADED, "BBPuncacheit");
 			}
 			if (unloaddesc || BBP_desc_count[i&BBPLOCKMASK] > BBP_desc_max) {
 				BBP_desc_count[i&BBPLOCKMASK]--;
-				GDKfree(BBP_desc(i));
 				BBP_desc(i) = NULL;
+				GDKfree(b);
 			}
 		}
-		BBP_cache(i) = BBP_cache(-i) = NULL; 
-		BBP_status_off(i, BBPLOADED, "BBPuncacheit");
 	}
 }
 
@@ -1469,7 +1469,6 @@ int BBPsave(BAT* b) {
 		if (BBP_status(bid) & BBPEXISTING)
 			ret = backup_bat(b);
 		if (ret == 0) {
-			BATreduce(b,0);
 			BBPout++; 
 			ret = (BATsave(b) == NULL);
 			if (ret == 0) {

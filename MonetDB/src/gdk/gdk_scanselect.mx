@@ -101,6 +101,10 @@ in an overall improvement of about factor 4.5.
 #define _GDK_SCANSELECT_H
 #include "gdk.h"
 
+#if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
+#define SKIP_TYPE_EXPANSIONS
+#endif
+
 @- "Tools"
 First, we need some tools. These are the type-expanded replacements
 for some generic marcos from gdk.mx, gdk_bat.mx, and gdk_atom.mx.
@@ -108,8 +112,46 @@ Eventually, they should be moved there to be used in other places as well.
 
 VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 @h
-#define VOIDput(tpe,hp,dst,src)   {}
-#define SIMPLEput(tpe,hp,dst,src) { *(tpe*) (dst) = *(tpe*) (src); }
+#define ATOM_PUT_ALL(tpe,hp,dst,src)\
+	if (tpe == TYPE_chr) {\
+		*(chr*) dst = *(chr*) src;\
+	} else if (tpe == TYPE_sht) {\
+		*(sht*) dst = *(sht*) src;\
+	} else if (tpe == TYPE_int) {\
+		*(int*) dst = *(int*) src;\
+	} else if (tpe == TYPE_lng) {\
+		*(lng*) dst = *(lng*) src;\
+	} else ATOM_PUT_ANY(tpe,hp,dst,src)
+
+#define ATOM_PUT_ANY(tpe,hp,dst,src)\
+	if (tpe == TYPE_bat) {\
+                BBPincref(*(bat*) src, TRUE);\
+		*(bat*) dst = *(bat*) src;\
+	} else if (tpe == TYPE_str) {\
+                if (strPut(hp, (var_t*) dst, (str) src) == 0) {\
+			BBPreclaim(bn);\
+			return NULL;\
+		}\
+	} else {\
+		if (BATatoms[tpe].atomPut) {\
+                	if ((*BATatoms[tpe].atomPut)(hp, (var_t*) dst, (str) src) == 0) {\
+				BBPreclaim(bn);\
+				return NULL;\
+			}\
+		} else {\
+                	memcpy(dst, src, ATOMsize(tpe));\
+		}\
+		ATOMfix(tpe, src);\
+	}
+@h
+#ifdef SKIP_TYPE_EXPANSIONS
+#define ATOM_PUT(tpe,hp,dst,src) ATOM_PUT_ALL(tpe,hp,dst,src)
+#else
+#define ATOM_PUT(tpe,hp,dst,src) ATOM_PUT_ANY(tpe,hp,dst,src)
+#endif
+#define SIMPLE_PUT(tpe,hp,dst,src) { *(tpe*) (dst) = *(tpe*) (src); }
+#define VOID_PUT(tpe,hp,dst,src)   {}
+
 @-
 Type-specific 
 HT_bunfastins_nocheck_noinc, HT_bunfastins_nocheck & HT_bunfastins 
@@ -120,8 +162,8 @@ replacing their generic versions there.
 @h
 @= T_BUNfastins
 #define @1@4_bunfastins_nocheck_noinc(b, p, h, t) {\
-            @2put(@3, &(b)->hheap, BUNhloc(b, p), h);\
-            @5put(@6, &(b)->theap, BUNtloc(b, p), t);\
+            @2_PUT(@3, &(b)->hheap, BUNhloc(b, p), h);\
+            @5_PUT(@6, &(b)->theap, BUNtloc(b, p), t);\
 	}
 #define @1@4_bunfastins_nocheck(b, p, h, t, s) {\
             (b)->batBuns->free += s;\
@@ -131,19 +173,15 @@ replacing their generic versions there.
             REGISTER BUN _p = BUNlast(b);\
             REGISTER int _bunsize = BUNsize(b);\
             if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) {\
-                BATextend((b), BATgrows(b));\
+                if (BATextend((b), BATgrows(b)) == NULL) {\
+			BBPreclaim(bn);\
+			return NULL;\
+		}\
                 _p = BUNlast(b);\
             }\
 	    @1@4_bunfastins_nocheck(b, _p, h, t, _bunsize);\
 	}
 
-/*
-BAT *@1@4_BUNfastins(BAT *b, ptr h, ptr t) {	
-	@1@4_bunfastins(b, h, t);
-	if (!b->batDirty) b->batDirty = TRUE;
-	return b;
-}
-*/
 @-
 Expand on tail type
 @= H_BUNfastins
@@ -234,9 +272,6 @@ An attempt to use labels and goto's to provide "stepping stones" did not
 help.
 Hence, we skip some type-expansions in this very case.
 @c
-#if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
-#define SKIP_TYPE_EXPANSIONS
-#endif
 
 @- The actual BAT_scanselect
 

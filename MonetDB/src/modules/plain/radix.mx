@@ -1325,15 +1325,17 @@ int BATinteger(BAT **ret, BAT* b, int *width) {
 		m->htype = bn->ttype = tpe;
 		bn->batDirty = 1;
 	} else {
-		int xx, yy, buf[256];
-		BUN p, q;
+		int buf[256], xx, yy, zz;
+		BUN p, q, r;
 		bn = BATnew(b->htype, tpe, BATcount(b));
 		if( bn == NULL) return GDK_FAIL;
+		r = BUNfirst(bn);
+		zz = BUNsize(bn);
 		BATloopFast(b, p, q, xx) {
 			for(yy=0; yy < *width; yy++) {
 				buf[yy] = *(int*) BUNtail(b,p);
 			}
-			BUNfastins(bn, BUNhead(b,p), buf); 
+			bunfastins_nocheck(bn, r, BUNhead(b,p), buf, zz); r += zz;
 		}
 		ALIGNsetH(bn, b);
 		bn->tsorted = b->tsorted;
@@ -1344,6 +1346,9 @@ int BATinteger(BAT **ret, BAT* b, int *width) {
 	}
 	*ret = bn;
        	return GDK_SUCCEED;
+bunins_failed:
+	BBPreclaim(bn);
+       	return GDK_FAIL;
 }
 
 int BATpax(BAT **ret, BAT* b) {
@@ -1584,6 +1589,8 @@ BUN radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
 	@1_CHECK(*maxbits, p);
     }
     return src;
+bunins_failed:
+    return NULL;
 }
 @c
 #define lng_CHECK(dst,v) dst = 0 /* dummy */
@@ -1630,6 +1637,8 @@ if (htpe >= TYPE_integer1 && htpe <= TYPE_pax256) {
     }
     *maxbits = 0;
     return src;
+bunins_failed:
+    return NULL;
 }
 
 @= cnt_buns
@@ -1665,7 +1674,7 @@ void cnt_buns_any(BAT *bn, BAT *b, BUN src, BUN end, size_t *cnt,
 }
 
 @= radix_chunk
-void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN out, 
+int radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN out, 
 			size_t *lim, int nbits, int shift, size_t *dst, size_t *cnt, oid *maxbits) 
 {
     BUN lo_limit, hi_limit, cur;
@@ -1695,23 +1704,26 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
     cur = radix_buns_@1(bn, b, start, init, out, dst, lim, mask, shift, maxbits);
 
     /* out of memory in some bucket: sample and continue */
-    if (cur < hi_limit && cur > lo_limit && limits == NULL) {
+    if (cur && cur < hi_limit && cur > lo_limit && limits == NULL) {
         sample_buns(bn, b, start, cur, end, dst, lim, cnt, nchunks); 
 	rearrange_chunks(bn, NULL, mov, out, dst, lim, cnt, nchunks);
         cur = radix_buns_@1(bn, b, cur, end, out, dst, lim, mask, shift, maxbits);
     }
     
     /* out of memory in some bucket: count and finish */
-    if (cur < end) {
-	memset(cnt, 0, nchunks*sizeof(size_t));
-	cnt_buns_@1(bn, b, cur, end, cnt, mask, shift);
-	rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
-        radix_buns_@1(bn, b, cur, end, out, dst, lim, mask, shift, maxbits);
-    } else if (limits) {
-	memset(cnt, 0, nchunks*sizeof(size_t));
-	rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
+    if (cur) {
+	if (cur < end) {
+   	    memset(cnt, 0, nchunks*sizeof(size_t));
+	    cnt_buns_@1(bn, b, cur, end, cnt, mask, shift);
+	    rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
+            radix_buns_@1(bn, b, cur, end, out, dst, lim, mask, shift, maxbits);
+	} else if (limits) {
+	    memset(cnt, 0, nchunks*sizeof(size_t));
+	    rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
+	}
     }
     if (nchunks>512) GDKfree(mov);
+    return cur?0:-1;
 }
 @c
 @:radix_chunk(oid)@
@@ -1720,7 +1732,7 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
 @:radix_chunk(any)@
 
 int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
-    int shift = ABS(*nbits), total_shift;
+    int shift = ABS(*nbits), total_shift, res = 0;
     size_t n;
     size_t cap = BATcount(b);
     int radix[MAXPARAMS], argc = 1, *p;
@@ -1835,14 +1847,15 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 	    size_t *kk = k + h;
 	
 	    if (b->ttype == TYPE_oid) {
-		radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		res = radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
 	    } else if (ATOMstorage(b->ttype) == TYPE_int || ATOMstorage(b->ttype) == TYPE_flt) {
-		radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		res = radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
 	    } else if (ATOMstorage(b->ttype) == TYPE_dbl || ATOMstorage(b->ttype) == TYPE_lng) {
-		radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		res = radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
 	    } else {
-		radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
+		res = radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
 	    }
+	    if (res < 0) break;
 	    while(k < kk) *(k++) += j; /* make relative limits absolute ones */
 	}
 	if (prev != b) BBPreclaim(prev); 
@@ -1850,7 +1863,9 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 
 	GDKfree(dst);
 	GDKfree(cnt);
+	if (res < 0) break;
     }
+    GDKfree(lim);
     ALGODEBUG THRprintf(GDKout, "(argc=%d,total_shift=%d) ",argc,total_shift);
     if (argc >= 0) {
 	bn->tsorted = 0; /* partial radix cluster */
@@ -1862,7 +1877,6 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
         bn->tsorted |= total_shift << 1; /* set radix bits */
     }
 
-    GDKfree(lim);
     if (bn == b) {
 	BBPfix(b->batCacheid);
 	if (limits) {
@@ -1874,7 +1888,11 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     if (limitid) {
 	BBPunfix(limitid);
     }
-    ALGODEBUG THRprintf(GDKout, "%s(%d,%d);\n", bn->batId,(int) bn->batCacheid,BATtordered(bn));
+    ALGODEBUG THRprintf(GDKout, "%s(%d,%d) = %d;\n", bn->batId,(int) bn->batCacheid, BATtordered(bn), res);
+    if (res < 0) {
+	BBPreclaim(bn);
+	return GDK_FAIL;
+    }
     *ret = bn;
     return GDK_SUCCEED;
 }
@@ -2001,7 +2019,7 @@ as the mask and link list for all phash invocations.
             if (_dst >= _end) {\
 		ALGODEBUG THRprintf(GDKout, "phash_join: intfastINSERT: BATextend!\n");\
 		b->batBuns->free = ((BUN) _dst) - b->batBuns->base;\
-                BATextend((b), BATgrows(b));\
+                if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
                 _dst = (int*) (b->batBuns->base + b->batBuns->free);\
                 _end = (int*) (b->batBuns->base + b->batBuns->size);\
             }\
@@ -2014,7 +2032,7 @@ as the mask and link list for all phash invocations.
             REGISTER BUN _p = BUNlast(b);\
             REGISTER int _bunsize = BUNsize(b);\
             if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) {\
-                BATextend((b), BATgrows(b));\
+                if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
                 _p = BUNlast(b);\
             }\
             (b)->batBuns->free += _bunsize;\
@@ -2022,7 +2040,7 @@ as the mask and link list for all phash invocations.
 	    integerCopy((int*) BUNtloc(b,_p), BATmirror(tb), tp, width2, distance2);\
         }
 
-void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, 
+int hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, 
 			BAT* r, BUN rlo, BUN rhi, int rd, int cutoff) 
 {
     int xx;
@@ -2095,6 +2113,9 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
         }
 	bn->batBuns->free = ((BUN) _dst) - bn->batBuns->base;
     }
+    return 0;
+bunins_failed:
+    return -1;
 }
 
 @= hash_join
@@ -2177,7 +2198,7 @@ xit:
     GDKfree(h.hash);
     ALGODEBUG THRprintf(GDKout, "%s(%d);\n", bn->batId,(int)bn->batCacheid);
     *res = bn;
-    return GDK_SUCCEED;
+    return bn?GDK_SUCCEED:GDK_FAIL;
 }}
 
 
@@ -2212,7 +2233,11 @@ if (rd == 0) {
                 y = @1_RADIX(v,rd); 
                 if (y != x) break;
             }
-            hash_join(&h, bn, l, l_cur, l_end, r, r_cur, r_end, *radix, rcut);
+            if (hash_join(&h, bn, l, l_cur, l_end, r, r_cur, r_end, *radix, rcut) < 0) {
+		BBPreclaim(bn);
+		bn = NULL;
+		goto xit;
+	    }
             r_cur = r_end;
         } 
         l_cur = l_end;
@@ -2294,6 +2319,9 @@ int radix_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate) {
         }
     }
     return GDK_SUCCEED;
+bunins_failed:
+    BBPreclaim(bn);
+    return GDK_FAIL;
 }
 
 @= radix_join
@@ -2442,8 +2470,9 @@ int radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier) {
 
     /* init variables for the decluster operation */
     offset = BATcount(b);
-    bn = *res = BATnew(TYPE_void, tpe, offset);
+    bn = BATnew(TYPE_void, tpe, offset);
     if( bn == NULL) return GDK_FAIL;
+    *res = NULL;
     bn->batBuns->free += offset*width;
     bn->tsorted = 0;
     BATseqbase(bn, lim = 0); /* current oid */
@@ -2461,16 +2490,25 @@ int radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier) {
     case TYPE_dbl: @:radix_decluster(lng,simple,tloc)@
     default:       @:radix_decluster(int,atom,tail)@ 
     }
+    *res = bn;
+bunins_failed:
+    GDKfree(cnk);
+
     /* string heaps with double elimination were treated as ints */
     if (any == TYPE_var && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
-        bm->ttype = bn->htype = tpe;
-        bm->tvarsized = bn->hvarsized = 1;
-        strcpy(bn->hatom, ATOMname(tpe));
-        HEAPcopy(&bn->hheap, &b->theap);
+        if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+	    *res = NULL;
+	} else {
+            bm->ttype = bn->htype = tpe;
+            bm->tvarsized = bn->hvarsized = 1;
+            strcpy(bn->hatom, ATOMname(tpe));
+	}
     }
-    GDKfree(cnk);
-	
+    if (*res) {
+	BBPreclaim(bn);
+	return GDK_FAIL;
+    }
     return GDK_SUCCEED;
 }
 
@@ -2677,8 +2715,9 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
     /* init variables for the decluster operation */
     offset1 = BATcount(b);
-    bn = *res = BATnew(TYPE_void, tpe, offset1);
+    bn = BATnew(TYPE_void, tpe, offset1);
     if( bn == NULL) return GDK_FAIL;
+    *res = NULL;
     bn->batBuns->free += offset1*width;
     bn->tsorted = 0;
     BATseqbase(bn, lim = 0); /* current oid */
@@ -2697,16 +2736,25 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     case TYPE_dbl: @:radix_decluster2(lng,simple,tloc)@
     default:       @:radix_decluster2(int,atom,tail)@ 
     }
+    *res = bn;
+bunins_failed:
+    GDKfree(cnk);
+
     /* string heaps with double elimination were treated as ints */
     if (any == TYPE_var && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
-        bm->ttype = bn->htype = tpe;
-        bm->tvarsized = bn->hvarsized = 1;
-        strcpy(bn->hatom, ATOMname(tpe));
-        HEAPcopy(&bn->hheap, &b->theap);
+        if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+	    *res = NULL;
+	} else {
+            bm->ttype = bn->htype = tpe;
+            bm->tvarsized = bn->hvarsized = 1;
+            strcpy(bn->hatom, ATOMname(tpe));
+	}
     }
-    GDKfree(cnk);
-	
+    if (*res) {
+	BBPreclaim(bn);
+	return GDK_FAIL;
+    }
     return GDK_SUCCEED;
 }
 
@@ -2784,6 +2832,7 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     offset1 = BATcount(b);
     bn = *res = BATnew(TYPE_void, tpe, offset1);
     if( bn == NULL) return GDK_FAIL;
+    *res = NULL;
     bn->batBuns->free += offset1*width;
     bn->tsorted = 0;
     BATseqbase(bn, lim = 0); /* current oid */
@@ -2802,16 +2851,25 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     case TYPE_dbl: @:radix_decluster3(lng,simple,tloc)@
     default:       @:radix_decluster3(int,atom,tail)@ 
     }
+    *res = bn;
+bunins_failed:
+    GDKfree(cnk);
+
     /* string heaps with double elimination were treated as ints */
     if (any == TYPE_var && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
-        bm->ttype = bn->htype = tpe;
-        bm->tvarsized = bn->hvarsized = 1;
-        strcpy(bn->hatom, ATOMname(tpe));
-        HEAPcopy(&bn->hheap, &b->theap);
+        if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+	    *res = NULL;
+	} else {
+            bm->ttype = bn->htype = tpe;
+            bm->tvarsized = bn->hvarsized = 1;
+            strcpy(bn->hatom, ATOMname(tpe));
+ 	}
     }
-    GDKfree(cnk);
-	
+    if (*res) {
+	BBPreclaim(bn);
+	return GDK_FAIL;
+    }
     return GDK_SUCCEED;
 }
 
@@ -2872,8 +2930,9 @@ int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
     /* init variables for the decluster operation */
     offset1 = BATcount(b);
-    bn = *res = BATnew(TYPE_void, tpe, offset1);
+    bn = BATnew(TYPE_void, tpe, offset1);
     if( bn == NULL) return GDK_FAIL;
+    *res = NULL;
     bn->batBuns->free += offset1*width;
     bn->tsorted = 0;
     BATseqbase(bn, lim = 0); /* current oid */
@@ -2892,16 +2951,25 @@ int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     case TYPE_dbl: @:radix_decluster4(lng,simple,tloc)@
     default:       @:radix_decluster4(int,atom,tail)@ 
     }
+    *res = bn;
+bunins_failed:
+    GDKfree(cnk);
+
     /* string heaps with double elimination were treated as ints */
     if (any == TYPE_var && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
-        bm->ttype = bn->htype = tpe;
-        bm->tvarsized = bn->hvarsized = 1;
-        strcpy(bn->hatom, ATOMname(tpe));
-        HEAPcopy(&bn->hheap, &b->theap);
+        if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+	    *res = NULL;
+	} else {
+            bm->ttype = bn->htype = tpe;
+            bm->tvarsized = bn->hvarsized = 1;
+            strcpy(bn->hatom, ATOMname(tpe));
+	}
     }
-    GDKfree(cnk);
-	
+    if (*res) {
+	BBPreclaim(bn);
+	return GDK_FAIL;
+    }
     return GDK_SUCCEED;
 }
 
@@ -2968,7 +3036,7 @@ if (@6 || proj->ttype != TYPE_void) {
 
 int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
 	int any = attr->ttype;
-	BAT *bn = *res = BATnew(proj->htype, any, BATcount(proj));
+	BAT *bn = BATnew(proj->htype, any, BATcount(proj));
 	int zz = *shift;
 	size_t xx, yy = 1 << *nbits;
 	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
@@ -2978,6 +3046,8 @@ int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int
 		GDKerror("jivejoin0: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
 		return GDK_FAIL;
 	}
+	*res = NULL;
+
 	/* find the destination byte-offsets using the radix-count bat */
 	for(xx=0; xx<=yy; xx++) cluster[xx] = 0;
 	BATloopFast(radix_count, p, q, xx) {
@@ -3009,6 +3079,12 @@ int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int
 	case TYPE_lng:	@:jivejoin0(lng,SIMPLE,hloc,tloc,r,0)@ 
 	default:	@:jivejoin0(any,ATOM,head,tail,BUNtail(attr,r),1)
 	}
+	*res = bn;
+bunins_failed:
+	if (*res == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 
 	/* restore normality in destination bats */
 	bn->batBuns->free += BATcount(proj)*BUNsize(bn);
@@ -3039,7 +3115,7 @@ if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
 int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
 	int any = attr->ttype;
-	BAT *bn = *res = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
+	BAT *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	size_t xx = bo->batBuns->free, yy = 1 << *nbits;
 	int zz = *shift;
 	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
@@ -3049,6 +3125,8 @@ int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 		GDKerror("jivejoin1: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
 		return GDK_FAIL;
 	}
+	*res = NULL;
+
 	bo->batBuns->free += BATcount(proj)*BUNsize(bo);
 	if (bo->batBuns->free > bo->batBuns->size) {
 		bo->batBuns->free = xx;
@@ -3108,16 +3186,22 @@ int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 		case TYPE_lng:	@:jivejoin1(lng,SIMPLE,hloc,tloc,r,0)@ 
 		default:	@:jivejoin1(any,ATOM,head,tail,BUNtail(attr,r),1)
 	}
+	*res = bn;
+bunins_failed:
 
 	/* restore normality in destination bats */
 	bo->batBuns->base = bobak;
-	bn->batBuns->free += BATcount(proj)*BUNsize(bn);
 	bo->tsorted = *nbits << 1;
-	bn->tsorted = 0;
 	if (proj->hkey) BATkey(BATmirror(bo), TRUE); 
+	BATseqbase(bo, 0);
+	if (*res == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	bn->batBuns->free += BATcount(proj)*BUNsize(bn);
+	bn->tsorted = 0;
 	if (proj->tkey && attr->tkey) BATkey(BATmirror(bn), TRUE); 
 	BATseqbase(bn, 0);
-	BATseqbase(bo, 0);
 	return GDK_SUCCEED;
 } 
 
@@ -3133,7 +3217,7 @@ if (@6 || proj->ttype != TYPE_void) {
 int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
 	int any = attr->ttype;
-	BAT *bn = *res = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
+	BAT *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	BUN p, q, r, bnbak;
 	int xx;
 
@@ -3166,6 +3250,12 @@ int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 		case TYPE_lng:	@:jivejoin2(lng,SIMPLE,hloc,tloc,r,0)@ 
 		default:	@:jivejoin2(any,ATOM,head,tail,BUNtail(attr,r),1)
 	}
+	*res = bn;
+bunins_failed:
+	if (*res == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}	
 
 	/* restore correct properties in bn */
 	bn->batBuns->base = bnbak;

@@ -183,9 +183,8 @@ int HEAPextend(Heap *h, size_t size) {
 		/* try GDKrealloc if the heap size stays within reasonable limits */
 		if (h->filename == NULL || (size < GDK_vm_minsize)) {
         		h->storage = STORE_MEM;
-                	h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize);
-			if (h->base) 
-				return 0;
+                	h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
+			if (h->base) return 0;
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (h->filename && size >= GDK_vm_minsize) {
@@ -214,11 +213,13 @@ int HEAPextend(Heap *h, size_t size) {
 simple: alloc and copy. Notice that we suppose a preallocated dst->filename (or NULL),
 which might be used in HEAPalloc().
 @c
-void HEAPcopy(Heap* dst, Heap* src){
+int HEAPcopy(Heap* dst, Heap* src){
 	if (HEAPalloc(dst, src->size, 1) == 0) {
         	dst->free = src->free;
         	memcpy(dst->base, src->base, src->free);
+		return 0;
 	}
+	return -1;
 }
 
 @- HEAPfree
@@ -550,7 +551,7 @@ void HEAP_initialize(Heap* heap, size_t nbytes, size_t nprivate, int alignment) 
    {
       size_t total = 100 + nbytes + nprivate + sizeof(HEADER) + sizeof(CHUNK);
       total = roundup_8(total);
-      HEAPalloc(heap,total,1);
+      if (HEAPalloc(heap,total,1) < 0) return;
       heap->free = heap->size;
    }
 
@@ -622,8 +623,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
       // Double the size of the heap.
       // TUNE: increase heap by diffent amount.
       */
-      if (HEAPextend(heap, newsize) < 0)
-	assert(0); 
+      if (HEAPextend(heap, newsize) < 0) return 0;
       heap->free = newsize;
       hheader = HEAP_index(heap,0,HEADER);
 

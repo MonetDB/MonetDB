@@ -1233,7 +1233,8 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res)
 int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 {
 	BAT *bn, *b = BBP_cache(val->val.bval);
-	int tpe = ATOMindex(atom);
+	int ok = 0, tpe = ATOMindex(atom);
+	ptr v = NULL;
 	(void) argc;
 
 	if (trivial_cast(tpe,b->ttype)) {
@@ -1241,12 +1242,14 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 	    int dense_bak = b->T->dense;
 	    b->T->dense = FALSE; 	
 	    bn = BATrcopy(b); /* we do not want smart oid->void conversion */
+	    if (bn == NULL) return -1;
 	    b->T->dense = dense_bak; 	
 	    bn->ttype = BATmirror(bn)->htype = tpe;
 	    strcpy(bn->tatom, ATOMname(tpe));
 	} else {
 	    int reduce = 0;
 	    bn = BATnew(b->htype, tpe, BATcount(b));
+	    if (bn == NULL) return -1;
 
 	    /* propagate properties */
 	    bn->hsorted = BAThordered(b);
@@ -1258,24 +1261,26 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		int len = ATOMsize(BATttype(b));
 		BUN q = BUNlast(b);
 		BUN p = BUNfirst(b);
+		BUN r = BUNfirst(bn);
 		int xx = BUNsize(b);
+		int yy = BUNsize(bn);
 	    
 		if (tpe == TYPE_oid && b->ttype == TYPE_void) {
 		    /* void => oid materialization is a special case */
 		    oid curid = b->tseqbase;
 		    BATloopFast(b,p,q,xx) {
-		        BUNfastins(bn, BUNhead(b,p), &curid);
+		        bunfastins_nocheck(bn, r, BUNhead(b,p), &curid, yy); r += yy;
                         if (curid != oid_nil) curid++;
 		    }
 		    ALIGNsetT(bn,b);
 		} else if (tpe == TYPE_str || b->ttype == TYPE_str) {
 		    /* from-string or to-string conversion */
-		    ptr v = GDKmalloc(len);
+		    v = GDKmalloc(len);
 		    if (tpe == TYPE_chr) {
 			/* str => chr: just get first character */
 			BATloopFast(b,p,q,xx) {
 			    /* accidentally works well on NILs */
-			    BUNfastins(bn, BUNhead(b,p), BUNtvar(b,p));
+			    bunfastins_nocheck(bn, r, BUNhead(b,p), BUNtvar(b,p), yy); r += yy;
 			}
 		    } else if (tpe != TYPE_str) {
 			/* str => any: use fromstr ADT routine */
@@ -1283,7 +1288,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BATloopFast(b,p,q,xx) {
 			    /* nil str value will produce a nil atom value */
 			    (*fromstr)(BUNtvar(b,p), &len, &v);
-			    BUNfastins(bn, BUNhead(b,p), v);
+			    bunfastins_nocheck(bn, r, BUNhead(b,p), v, yy); r += yy;
 			}
 		    } else if (b->ttype == TYPE_chr) {
 			/* chr => str: do this efficiently */
@@ -1291,7 +1296,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BATloopFast(b,p,q,xx) {
 			    /* accidentally works well on NILs */
 			    s[1] = *(char*) BUNtloc(b,p); 
-			    BUNfastins(bn, BUNhead(b,p), s);
+			    bunfastins_nocheck(bn, r, BUNhead(b,p), s, yy); r += yy;
 			}
 		    } else {
 			/* any => str: use tostr ADT routine */
@@ -1302,13 +1307,12 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			    ptr t = BUNtail(b,p);
 			    if ((*cmp)(t, nilptr)) {
 			    	(*tostr)((str*)&v, &len, t);
-			    	BUNfastins(bn, BUNhead(b,p), v);
+			    	bunfastins_nocheck(bn, r, BUNhead(b,p), v, yy); r += yy;
 			    } else {
-			    	BUNfastins(bn, BUNhead(b,p), str_nil);
+			    	bunfastins_nocheck(bn, r, BUNhead(b,p), str_nil, yy); r += yy;
 			    }
 			}
 		    }
-		    GDKfree(v);
 		} else {
 		    ptr s;
 
@@ -1331,23 +1335,22 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		    if (s == ILLEGALVALUE || TYPEerror(tpe, res->vtype)) {
 			GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", 
 					ATOMname(b->ttype), ATOMname(tpe));
-			BBPreclaim(bn);
-			return -1;
+			goto bunins_failed;
 		    }
-		    BUNfastins(bn, BUNhead(b,p), s);
+		    bunfastins_nocheck(bn, r, BUNhead(b,p), s, yy); r += yy;
 		    if (ATOMextern(BATttype(b))) {
 			for(p+=xx; p < q; p+=xx) {
 		    	    res->vtype = BATttype(b);
 			    res->val.pval = BUNtail(b,p);
 			    s = VALconvert(tpe, res);
-			    BUNfastins(bn, BUNhead(b,p), s);
+			    bunfastins_nocheck(bn, r, BUNhead(b,p), s, yy); r += yy;
 			} 
 		    } else {
 			for(p+=xx; p < q; p+=xx) {
 		    	    res->vtype = BATttype(b);
 			    memcpy(&res->val.ival, BUNtail(b,p), len);
 			    s = VALconvert(tpe, res);
-			    BUNfastins(bn, BUNhead(b,p), s);
+			    bunfastins_nocheck(bn, r, BUNhead(b,p), s, yy); r += yy;
 			}
 		    }
 		} /* different kind of conversions */
@@ -1355,6 +1358,13 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 	    if ((!bn->tkey) && (!reduce)) {
 		BATkey(BATmirror(bn), b->tkey);
 	    }
+	}
+	ok = 1;
+bunins_failed:
+	if (v) GDKfree(v);
+	if (!ok) {
+	    BBPreclaim(bn);
+	    return -1;
 	}
 	res->vtype = TYPE_bat;
 	res->val.bval = bn->batCacheid;

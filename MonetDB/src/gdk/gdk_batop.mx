@@ -59,8 +59,10 @@ of the srcbat, but testing only once where they reside.
 The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @c
+#define bunins(b,h,t) if (BUNins(b,h,t) == NULL) return NULL;
 BAT *BATins(BAT *b, BAT *n) {
 	ssize_t needed = 0;
+	int fastpath = 0;
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
@@ -83,6 +85,12 @@ BAT *BATins(BAT *b, BAT *n) {
 			if( b == NULL) return b;
 		}
 	}
+	if (b->thash_heap==NULL && b->hacctype==0 && b->tacctype==0 && b->batSet==0 
+	    && (b->hkey&BOUND2BTRUE)==0 && (b->tkey&BOUND2BTRUE)==0 && 
+		(b->hhash_heap==NULL || ATOMstorage(b->htype) == TYPE_int)) 
+	{
+		fastpath = 1;
+	}
 
 	needed = BATcount(n) - (((b)->batBuns->size - (b)->batBuns->free)/BUNsize(b));
   	if (needed > 0){
@@ -91,16 +99,14 @@ BAT *BATins(BAT *b, BAT *n) {
 		size_t grows = BATgrows(b);
 		if (ncap > grows)
 			grows = ncap;
-		BATextend(b, grows); /* allocation hint */ 
+		if (BATextend(b, grows) == NULL) 
+			fastpath = 0;
 	}
 
 	if (b->hidx_heap || b->tidx_heap) {
                 IDXdestroy(b);
 	}
-	if (b->thash_heap==NULL && b->hacctype==0 && b->tacctype==0 && b->batSet==0 
-	    && (b->hkey&BOUND2BTRUE)==0 && (b->tkey&BOUND2BTRUE)==0 && 
-		(b->hhash_heap==NULL || ATOMstorage(b->htype) == TYPE_int))
-	{
+	if (fastpath) {
 		BUN p, q, r = BUNlast(b); 
  		int xx, yy = BUNsize(b);
 
@@ -173,9 +179,11 @@ BAT *BATins(BAT *b, BAT *n) {
 		}
 		b->batDirty = 1;
 	} else {
-		@:updateloop(b,n,BUNins)@
+		@:updateloop(b,n,bunins)@
 	}
 	return b;
+bunins_failed:
+	return NULL;
 }
 
 BAT *BATdel(BAT *b, BAT *n) {
@@ -191,8 +199,7 @@ BAT *BATdel(BAT *b, BAT *n) {
 	return b;
 }
 
-#define _BUNdelHead(b, x, y) BUNdelHead(b, x)
-
+#define bundelhead(b,h,t) BUNdelHead(b,h)
 BAT *BATdelHead(BAT *b, BAT *n) {
 	ERRORcheck(b == NULL, "set:BAT required\n");
 	ERRORcheck(n == NULL, "set:BAT required\n");
@@ -201,13 +208,14 @@ BAT *BATdelHead(BAT *b, BAT *n) {
 	}
         ALIGNdel(b, "BATdelHead");
 	TYPEcheck(b->htype, n->htype);
-	@:updateloop(b,n,_BUNdelHead)@
+	@:updateloop(b,n,bundelhead)@
 	return b;
 }
 @-
 The last in this series is a BATreplace, which replaces all the
 buns mentioned.
 @c
+#define bunreplace(b,h,t) if (BUNreplace(b,h) == NULL) return NULL;
 BAT *BATreplace(BAT *b, BAT *n) {
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
@@ -224,7 +232,7 @@ BAT *BATreplace(BAT *b, BAT *n) {
 The @%BATmark@ operation is normally used to prepare a class of query
 results. Likewise, @%BATnumber@ is heavily used in the SQL front-end.
 @c
-#define BUNmark(bx,	hx, tx) BUNfastins(bn, hx, NULL); 
+#define BUNmark(bx, hx, tx) bunfastins_nocheck(bn, r, hx, NULL, yy); r += yy; 
 BAT *BATmark(BAT *b, oid oid_base) {
         BAT     *bn;
  
@@ -238,13 +246,17 @@ BAT *BATmark(BAT *b, oid oid_base) {
 		if (b->htype == TYPE_void) {
 			oid *base, cur = oid_base; 
 			bn = BATnew(TYPE_void, TYPE_oid, xx=BATcount(b)); 
-			bn->batBuns->free += xx*sizeof(oid);
 			if (bn == NULL) return NULL;
+			bn->batBuns->free += xx*sizeof(oid);
 			for(base=(oid*) BUNfirst(bn); xx--; cur++,base++) 
 				*base = cur; 
 		} else {
+			BUN r;
+			int yy;
 			bn = BATnew(b->htype, TYPE_void, BATcount(b)); 
 			if (bn == NULL) return NULL;
+			r = BUNfirst(bn);
+			yy = BUNsize(bn);
 			@:updateloop(bn,b,BUNmark)@
 		}
 		ALIGNsetH(bn,b);
@@ -254,57 +266,67 @@ BAT *BATmark(BAT *b, oid oid_base) {
 	}
 	BATseqbase(BATmirror(bn), oid_base);
         return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
  
-#define BUNnumber(bx,hx,tx)	BUNfastins(bx, hx, (ptr)&i); i++;
+#define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, yy); r += yy; i++;
 BAT *BATnumber(BAT *b) {
-        int     i = 0;
+        int     i = 0, yy;
         BAT     *bn;
+	BUN	r;
  
         BATcheck(b, "BATnumber");
 	/* assert(BATcount(b) <= MAXINT); */
         bn = BATnew(b->htype, TYPE_int, BATcount(b));
-        if (bn == NULL) {
-                return NULL;
-        }
-	ALIGNsetH(bn,b);
+        if (bn == NULL) return NULL;
+	r = BUNfirst(bn);
+	yy = BUNsize(bn);
         @:updateloop(bn,b,BUNnumber)@
+	ALIGNsetH(bn,b);
 	BATsetaggr(bn, GDK_AGGR_CARD, i);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
         return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
-        BUN p, q;
-        int ngroups = 1, i = 0, xx;
+        BUN p, q, r;
+        int ngroups = 1, i = 0, xx, yy;
         BAT *bn;
 
         BATcheck(b, "BATgroup");
         bn = BATnew(b->htype, TYPE_int, BATcount(b));
-        if (bn == NULL) {
-                return NULL;
-        }
+        if (bn == NULL) return NULL;
+	r = BUNfirst(bn);
+	yy = BUNsize(bn);
 
         ALIGNsetH(bn,b);
    
         BATloopFast(b, p, q, xx) {
-            BUNfastins(bn, BUNhead(b, p), (ptr)&start);
+            bunfastins_nocheck(bn, r, BUNhead(b, p), (ptr)&start, yy); r += yy;
             if(i == grpsize-1) { start += incr; i = 0; ngroups++; } else { i++; }
         }
 	if (i == 0) ngroups--;
 	BATsetaggr(bn, GDK_AGGR_CARD, ngroups);
         bn->hsorted = BAThordered(b);
         bn->tsorted = GDK_SORTED;
-
         return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 BAT* BATconst(BAT *b, int tailtype, ptr v) {
         BAT *bn;
-        BUN p,q;
-        int xx;
+        BUN p, q, r;
+        int xx, yy;
 
+        BATcheck(b, "BATconst");
 	if (BATrestricted(b) == BAT_READ &&
            (tailtype == TYPE_void || (tailtype == TYPE_oid && *(oid*) v == oid_nil)))
 	{
@@ -323,8 +345,10 @@ BAT* BATconst(BAT *b, int tailtype, ptr v) {
 	if (bn == NULL) {
 		return bn; 
 	}
+	r = BUNfirst(bn);
+	yy = BUNsize(bn);
         BATloopFast(b, p, q, xx) {
-		BUNfastins(bn, BUNhead(b,p), v);
+		bunfastins_nocheck(bn, r, BUNhead(b,p), v, yy); r += yy;
 	}
 	ALIGNsetH(bn,b);
 	bn->tsorted = GDK_SORTED;
@@ -333,6 +357,9 @@ BAT* BATconst(BAT *b, int tailtype, ptr v) {
 		BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit*) v == TRUE)?BATcount(b):0);
 	}
         return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 
@@ -360,12 +387,15 @@ by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
 
 /* later to evolve into a more sophisticated aggregate retention system */
 int BATgetaggr(BAT *b, int idx) {
-        int *aggr = b->T->aggr;
+        int *aggr;
+
+        BATcheck(b, "BATgetaggr");
+        aggr = b->T->aggr;
         if (aggr[0] && aggr[0] == (int) b->talign) {
 		if (idx == GDK_AGGR_HASNIL) {
 			if (aggr[1] & GDK_NIL_BIT) {
                 		return (aggr[2] & GDK_NIL_BIT)?TRUE:FALSE;
-}
+			}
 		} else {
 			int val = aggr[idx] & ~GDK_NIL_BIT;
 			if (val != ~GDK_NIL_BIT) {
@@ -377,7 +407,10 @@ int BATgetaggr(BAT *b, int idx) {
 }
 
 int BATsetaggr(BAT *b, int idx, int val) {
-        int *aggr = b->T->aggr;
+        int *aggr;
+
+        BATcheck(b, "BATsetaggr");
+        aggr = b->T->aggr;
         if (aggr[0] == 0 || aggr[0] != (int) b->talign || BATgetaggr(b, idx) != val) {
                 if (b->talign == 0) {
 			b->talign = OIDnew(1);
@@ -414,14 +447,14 @@ hash- and a merge-algorithms.
 @= histoloop_inner
 	if (b->tkey) { yy=1;
 		BATloopFast(b, p, q, xx) 
-			BUNfastins(bn, BUNt@1(b,p), &yy);
+			bunfastins(bn, BUNt@1(b,p), &yy);
 	} else if (!(BATtordered(b)&1)) {
 		BATloopFast(b, p, q, xx) {
 			ptr v =  (ptr) BUNt@1(b,p);
-			(void) BATprepareHash(bn);
+			if (BATprepareHash(bn)) goto bunins_failed;
 			HASHloop@2(bn, bn->hhash, tt, v, r)
 				goto found@3@2; 
-			BUNins(bn, v, &yy);
+			if (BUNins(bn, v, &yy) == NULL) goto bunins_failed;
 			r = BUNlast(bn) - BUNsize(bn);
 found@3@2:		(*(int*) BUNtloc(bn,r))++;
 		}
@@ -433,11 +466,11 @@ found@3@2:		(*(int*) BUNtloc(bn,r))++;
 			if (@3_CMP(v, prev, @4) == 0) {
 				yy++;
 			} else {
-				BUNfastins(bn, prev, &yy);
+				bunfastins(bn, prev, &yy);
 				yy = 1;
 			} prev = v;
 		} 
-		BUNfastins(bn, prev, &yy);
+		bunfastins(bn, prev, &yy);
 	} break;
 @= histoloop
 {	hash_t tt;
@@ -480,10 +513,13 @@ by bulk copying the heap as well
 @c
 	if (tricky) {
 		BAT *bm = BATmirror(bn);
+		if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+bunins_failed:		BBPreclaim(bn);
+			return NULL;
+		}
 		bm->ttype = bn->htype = b->ttype;
 		bm->tvarsized = bn->hvarsized = 1;
 		strcpy(bn->hatom, ATOMname(b->ttype));
-		HEAPcopy(&bn->hheap, &b->theap);
 	}
 	BATkey(bn,TRUE);
 	bn->hsorted = BATtordered(b);
@@ -516,10 +552,12 @@ size_t BATcount_no_nil(BAT *b) {
 	size_t cnt = (size_t)0;
 	BUN p,q;
 	int xx;
-	hash_t tt = b->ttype;
-	ptr nil = ATOMnilptr(tt);
+	hash_t tt;
+	ptr nil;
 
 	BATcheck(b,"BATcnt");
+	tt = b->ttype;
+	nil = ATOMnilptr(tt);
 	switch(ATOMstorage(tt)) {
 	case TYPE_chr:  @:cntloop(simple,loc,chr)@
 	case TYPE_sht:  @:cntloop(simple,loc,sht)@
@@ -566,6 +604,7 @@ BAT *BATslice(BAT *b, size_t l, size_t h) {
         int xx;
 	BAT *bn;
 
+	BATcheck(b, "BATslice");
 	if (h > BATcount(b)) h = BATcount(b);
 	if (h < l) h = l;
         l += BUNindex(b, BUNfirst(b));
@@ -594,7 +633,7 @@ We have to do it: create a new BAT and put everything into it.
 			return bn;
 		}
         	for (xx=BUNsize(b); p<q; p+=xx) {
-                	BUNfastins(bn, BUNhead(b,p), BUNtail(b,p));
+                	bunfastins(bn, BUNhead(b,p), BUNtail(b,p));
         	}
 	}
         bn->H->aggr[0] =  bn->H->aggr[1] = bn->H->aggr[2] = 0;
@@ -610,6 +649,9 @@ We have to do it: create a new BAT and put everything into it.
 		BATseqbase(BATmirror(bn), b->tseqbase+low);
 	}
         return bn;
+bunins_failed:			
+	BBPreclaim(bn);
+	return NULL;
 }
 
 @-  Value Selections
@@ -663,8 +705,12 @@ BAT *BAT_hashselect(BAT *b, BAT *bn, ptr tl) {
 	hash_t i;
 	size_t j;
 
+	BATcheck(b, "BAT_hashselect");
 	BATflipflop(b);
-	(void) BATprepareHash(b);
+	if (BATprepareHash(b)) {
+bunins_failed:	BBPreclaim(bn);
+		return NULL;
+	}
 	while(bn) {
 	    BUN p, q = BUNfirst(bn);
 	    BUN r = (BUN) ((char *) Bunbase(bn) + bn->batBuns->size);
@@ -705,11 +751,11 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
 	}
 	if (b->hvarsized) {
 	    IDXloop(m, x, y) {
-	        BUNfastins(bn, BUNhvar(b, *x), BUNt@2(b, *x)); 
+	        bunfastins(bn, BUNhvar(b, *x), BUNt@2(b, *x)); 
 	    }
 	} else {
 	    IDXloop(m, x, y) {
-	        BUNfastins(bn, BUNhloc(b, *x), BUNt@2(b, *x)); 
+	        bunfastins(bn, BUNhloc(b, *x), BUNt@2(b, *x)); 
 	    }
 	} break;
 @c
@@ -719,8 +765,10 @@ BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi) 
         ptr nil = ATOMnilptr(b->ttype);
         int t = b->ttype; 
         
-        FATALcheck(b->tidx_heap == NULL, "BAT_indexselect: tail-tree expected"); 
-		
+	if (b->tidx_heap == NULL) {
+bunins_failed:	BBPreclaim(bn);
+		return NULL;
+	}
 	switch(ATOMstorage(b->ttype)) {
 	case TYPE_chr:	@:indexselect(chr,loc,simple)@ 
 	case TYPE_sht:	@:indexselect(sht,loc,simple)@ 
@@ -1045,7 +1093,7 @@ BAT* BATsample(BAT *b, size_t size) {
 	cnt = BUNindex(b, BUNfirst(b));
 	for(j=0; j<n ; j++) {
                 BUN p = BUNptr(b, cnt+choice[j]);       
-                BUNfastins(bn, BUNhead(b,p), BUNtail(b,p));
+                bunfastins(bn, BUNhead(b,p), BUNtail(b,p));
 	}
 	GDKfree(choice); /* clean up choice array of BUN positions */
 
@@ -1054,8 +1102,10 @@ BAT* BATsample(BAT *b, size_t size) {
 	bn->tsorted = BATtordered(b);
 	BATkey(bn, b->hkey);
 	BATkey(BATmirror(bn), b->tkey);
-
 	return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 @- Horizontal Fragmentation 
@@ -1132,7 +1182,7 @@ break;
 		ptr v = BUNt@4(b, *i); 
 		if ((!tl || @1_LE(tl, v, @2)) && (!th || @1_LE(v, th, @2)))
 		{
-			BUNfastins(bn, BUNh@3(b, *i), v); 
+			bunfastins(bn, BUNh@3(b, *i), v); 
 		}
 	}
 }
@@ -1221,6 +1271,10 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 
   	ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn; 
+bunins_failed:
+	GDKfree(mark); 
+	BBPreclaim(bn);
+	return NULL;
 }
 
 
@@ -1228,7 +1282,7 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 @{
 @= idxloop
 IDXloop(b, p, q) {
-        if (*p) BUNfastins(c, BUNh@1(b, (*p)), BUNt@2(b, (*p)));
+        if (*p) bunfastins(c, BUNh@1(b, (*p)), BUNt@2(b, (*p)));
 }
 @
 @- sorting 
@@ -1378,7 +1432,7 @@ BAT *part_bat(BAT *b, int ht, int tt, size_t expected_size, int respect_order){
 	i = (int)(HASHprobe(&h,tx)%n); \
 	if ((r = BUNfnd(bx, &i)) != NULL){\
 		bat bid = *(bat*)BUNtloc(bx,r); \
-		BUNfastins(BBPdescriptor(bid), hx, tx);\
+		bunfastins(BBPdescriptor(bid), hx, tx);\
 	}
 
 BAT *BAThashsplit(BAT *b, size_t n, int unary) {
@@ -1404,7 +1458,7 @@ BAT *BAThashsplit(BAT *b, size_t n, int unary) {
 	if( metabat == NULL) return NULL;
 	bn = unary?VIEWhead_(b,b->batRestricted):b;
 	if (n <= 1) {
-	    BUNins(metabat, &i, &bn->batCacheid);
+	    if (BUNins(metabat, &i, &bn->batCacheid) == NULL) goto bunins_failed;
 	} else {
 	    BUN p, q;
 	    for (i = 2; i < (int) n; i*=2)
@@ -1418,7 +1472,7 @@ BAT *BAThashsplit(BAT *b, size_t n, int unary) {
 			BBPreclaim(metabat);
 			return NULL;
 		}
-		BUNins(metabat, &i, &bf->batCacheid); 
+		if (BUNins(metabat, &i, &bf->batCacheid) == NULL) goto bunins_failed; 
 	    }
 	    @:updateloop(metabat,b,BUNhash)@
 	    BATloop(metabat, p, q){
@@ -1427,6 +1481,9 @@ BAT *BAThashsplit(BAT *b, size_t n, int unary) {
 	    }
 	}
 	return metabat; 
+bunins_failed:
+	BBPreclaim(metabat);
+	return NULL;
 }
 
 @- range partitioning
@@ -1513,7 +1570,7 @@ CASE 1: just one bucket.
 This is done without copying b.
 @c
 	if (n <= 1) {
-	    BUNins(metabat, nilval, &bn->batCacheid);
+	    if (BUNins(metabat, nilval, &bn->batCacheid) == NULL) goto bunins_failed;
 
 @- 
 CASE 2: sorted on fragmentation column.
@@ -1536,7 +1593,7 @@ of binary search.
 			h = BUNindex(b,r) - o;
 		}
 		bf = BATslice(bn, l, h); /* produces view bat */
-		BUNins(metabat, seps[yy], &bf->batCacheid); 
+		if (BUNins(metabat, seps[yy], &bf->batCacheid) == NULL) goto bunins_failed; 
 	    }
 
 @- 
@@ -1555,13 +1612,13 @@ achieve totally sorted chunks at the same time.
 			}
 	    		bf = part_bat(bn, BAThtype(bn), BATttype(bn), (size_t)(q-p),FALSE);
 			if (bf == NULL) {
-				BBPreclaim(metabat);
+bunins_failed:			BBPreclaim(metabat);
 				return NULL;
 			}
 		        if (!unary) bf->tsorted = GDK_SORTED; 
-	    		BUNins(metabat, seps[yy], &bf->batCacheid);
+	    		if (BUNins(metabat, seps[yy], &bf->batCacheid) == NULL) goto bunins_failed;
 			IDXloop(m, p, q) {
-				BUNfastins(bf, BUNhead(b, *p), BUNtail(b, *p));
+				bunfastins(bf, BUNhead(b, *p), BUNtail(b, *p));
 			}
 			BBPunfix(bf->batCacheid);
 			p = q + 1;
@@ -1576,7 +1633,7 @@ DELETED: simple walk-through list approach
 		for(yy=0; yy<n-1; yy++) {
 			if (@1_LE(val, seps[yy], @3)) break;
 		}
-		BUNfastins(bats[yy], BUNhead(b,r), val);
+		bunfastins(bats[yy], BUNhead(b,r), val);
 @
 We now use binary search for getting to the right bucket, so
 that this routine also works efficiently on many buckets. 
@@ -1598,7 +1655,7 @@ BATloopFast(b, r, s, xx) {
 			break;
 		}
 	} 
-	BUNfastins(bats[yy], BUNhead(b,r), val);
+	bunfastins(bats[yy], BUNhead(b,r), val);
 } break;
 @c
 	} else {
@@ -1609,7 +1666,7 @@ BATloopFast(b, r, s, xx) {
 			BBPreclaim(metabat);
 			return NULL;
 		}
-		BUNins(metabat, seps[yy], &bats[yy]->batCacheid);
+		if (BUNins(metabat, seps[yy], &bats[yy]->batCacheid) == NULL) goto bunins_failed;
 	    }
             switch(tpe = ATOMstorage(b->ttype)) {
             case TYPE_chr:  @:rangesplit(simple,loc,chr)@

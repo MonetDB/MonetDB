@@ -108,13 +108,14 @@ size_t blobsize(size_t nitems)
    return (sizeof(size_t)+nitems);
 }
 
-void blob_put(Heap* h,var_t* bun,blob* val)
+var_t blob_put(Heap* h,var_t* bun,blob* val)
 {
    char* base;
 
    *bun = HEAP_malloc(h,blobsize(val->nitems));
    base = h->base;
-   memcpy(&base[*bun],(char *)val,blobsize(val->nitems));
+   if (*bun) memcpy(&base[*bun],(char *)val,blobsize(val->nitems));
+   return *bun;
 }
 
 #if 0

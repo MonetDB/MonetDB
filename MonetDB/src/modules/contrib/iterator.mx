@@ -309,13 +309,16 @@ BAT *ITERcollect(ITER *it) {
     ITERloop(it, p, q, xx) {
         if (bn->batBuns->free + yy > bn->batBuns->size) {
             size_t delta = ITERguess(it);
-            BATextend(bn, BATcount(bn) + MAX(100,delta));
+            if (BATextend(bn, BATcount(bn) + MAX(100,delta)) == NULL) goto bunins_failed;
 	    r = BUNlast(bn);
         }
         bunfastins_nocheck(bn, r, BUNhead(it->result,p), BUNtail(it->result,p), xx);
 	r += xx;
     }
     return bn;
+bunins_failed:
+    BBPreclaim(bn);
+    return NULL;
 }
 
 
@@ -885,7 +888,7 @@ the guess() method for estimating the memory resources needed.
 @c
 int iter_collect(BAT **res, iter *input) {
     *res = ITERcollect((ITER*) *input);
-    return GDK_SUCCEED;
+    return *res?GDK_SUCCEED:GDK_FAIL;
 }
 
 @+ count

@@ -1016,7 +1016,7 @@ gdk_export int	HEAPfree    (Heap *h);
 gdk_export int	HEAPextend  (Heap *h, size_t size);
 gdk_export int	HEAPload    (Heap *h, str nme, str ext, int trunc);
 gdk_export int	HEAPsave    (Heap *h, str nme, str ext);
-gdk_export void	HEAPcopy    (Heap *dst, Heap *src);
+gdk_export int	HEAPcopy    (Heap *dst, Heap *src);
 gdk_export size_t HEAPsubcopy (Heap *dst, Heap *src, size_t size, size_t offset);
 gdk_export int	HEAPdelete  (Heap *h, str o, str ext);
 gdk_export size_t HEAPvmsize  (Heap *h);
@@ -1117,7 +1117,6 @@ gdk_export BAT*		BATcreatedesc (int ht, int tt, int heapnames);
 gdk_export int 		BATfree       (BAT *b);
 gdk_export int 		BATelmshift   (BAT *b);
 gdk_export void 		BATsetdims    (BAT *b);
-gdk_export void 		BATreduce     (BAT *b, int percentage);
 gdk_export int  		BBPreclaim    (BAT *b);
 @
 @}
@@ -1205,7 +1204,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
             REGISTER BUN _p = BUNlast(b);\
             REGISTER size_t _bunsize = BUNsize(b);\
             if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) {\
-                BATextend((b), BATgrows(b));\
+                if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
                 _p = BUNlast(b);\
             }\
 	    bunfastins_nocheck(b, _p, h, t, _bunsize);\
@@ -1749,10 +1748,10 @@ int & ATOMconvert     & (int id, ptr v, int direction);\\
 int & ATOMfix         & (int id, ptr v);\\
 int & ATOMunfix       & (int id, ptr v);\\
 \hline
-void& ATOMheap        & (int id, Heap *hp, size\_t cap);\\
+int & ATOMheap        & (int id, Heap *hp, size_t cap);\\
 void& ATOMheapconvert & (int id, Heap *hp, int direction);\\
 int & ATOMheapcheck   & (int id, Heap *hp, HeapRepair *hr);\\
-void& ATOMput         & (int id, Heap *hp, BUN pos\_dst, ptr val\_src);\\
+int & ATOMput         & (int id, Heap *hp, BUN pos\_dst, ptr val\_src);\\
 int & ATOMdel         & (int id, Heap *hp, BUN v\_src);\\
 int & ATOMlen         & (int id, ptr val);\\
 \hline
@@ -1877,7 +1876,7 @@ typedef struct {
 	int	(*atomUnfix)		(ptr atom);
 
 	/* varsized atom-only ADT functions */
-	void	(*atomPut)		(Heap*, var_t* off, ptr src); 
+	var_t	(*atomPut)		(Heap*, var_t* off, ptr src); 
 	void	(*atomDel)		(Heap*, size_t* atom); 
 	int	(*atomLen)		(ptr atom); 
 	void	(*atomHeap)		(Heap*, size_t); 
@@ -1896,7 +1895,7 @@ gdk_export int  ATOMstorage   (int id);
 gdk_export int  ATOMisdescendant (int id, int parentid);
 gdk_export int  ATOMdump      (void);
 
-gdk_export void ATOMheap      (int id, Heap *hp, size_t cap); 
+gdk_export int  ATOMheap      (int id, Heap *hp, size_t cap); 
 gdk_export str  ATOMname      (int id);
 gdk_export int  ATOMlen       (int id, ptr v);
 gdk_export ptr  ATOMnil	  (int id);
@@ -2054,8 +2053,7 @@ gdk_export void 	ACCexit       (BAT *b);
 
 @T
 {\tt \begin{tabular}{|lll|}\hline
-int & BAThash & (BAT *b, int coll)\\
-int & HASHpersist & (BAT *b, bit persist);\\
+BAT* & BAThash & (BAT *b, int coll)\\
 int & BATidx & (BAT *b, BAT *histo)\\
 BAT * & BAThashsplit & (BAT *b, size\_t n, int unary)\\
 BAT * & BATrangesplit & (BAT *b, int n)\\
@@ -2071,10 +2069,6 @@ The hash data structures are currently maintained during update operations..
 The index data structures are discarded upon a modification of the
 underlying BAT.
 @
-The @%HASHpersist@ call can make a hash table persistent. It
-is then not thrown away when the BAT is swapped out, but saved to
-disk. With the mode set to 0, it makes the hash table transcient again. 
-@
 A @%BAT@ can be redistributed over @%n@ buckets using a hash
 function with @%BAThashsplit@. The return value is a list of BAT
 pointers.  Similarly, a range partitioning based on the index is
@@ -2082,10 +2076,8 @@ supported.
 
 @{
 @h
-/*
-gdk_export int	HASHsize      (Hash *h);
-*/
-gdk_export int	BATidx        (BAT *b, BAT *h);
+gdk_export BAT*       BAThash      (BAT *b, int *collision);
+gdk_export BAT*	BATidx        (BAT *b, BAT *h);
 gdk_export BAT*	BAThashsplit  (BAT *b, size_t n, int unary); 
 gdk_export BAT*	BATrangesplit (BAT *b, size_t n, int unary); 
 gdk_export BAT* BAThashjoin   (BAT* l, BAT* r, size_t estimate);
@@ -2124,12 +2116,12 @@ and system information.
 void* & GDKmalloc & (size\_t size)\\
 void* & GDKmallocmax & (size\_t size, size\_t *maxsize, int emergency)\\
 void* & GDKrealloc & (void* pold, size\_t size)\\
-void* & GDKreallocmax & (void* pold, size\_t size, size\_t *maxsize)\\
+void* & GDKreallocmax & (void* pold, size\_t size, size\_t *maxsize, int emergency)\\
 void & GDKfree & (void* blk)\\
 str & GDKstrdup & (str s)\\
 \hline
 void* & GDKvmalloc & (size\_t size, size\_t *maxsize, int emergency)\\
-void* & GDKvmrealloc & (void* pold, size\_t oldsize, size\_t newsize, size\_t oldmax, size\_t *maxsize)\\
+void* & GDKvmrealloc & (void* pold, size\_t oldsize, size\_t newsize, size\_t oldmax, size\_t *maxsize, int emergency)\\
 void & GDKvmfree & (void* blk, size\_t size, size\_t maxsize)\\
 \hline\end{tabular}}
 @
@@ -2163,12 +2155,12 @@ gdk_export size_t 	GDKmem_heapinuse(void);
 gdk_export void* 	GDKmalloc  (size_t size); 
 gdk_export void* 	GDKmallocmax (size_t size, size_t *maxsize, int emergency); 
 gdk_export void* 	GDKrealloc (void* pold, size_t size); 
-gdk_export void* 	GDKreallocmax (void* pold, size_t size, size_t *maxsize); 
+gdk_export void* 	GDKreallocmax (void* pold, size_t size, size_t *maxsize, int emergency); 
 gdk_export void		GDKfree    (void* blk); 
 gdk_export str		GDKstrdup  (const char *s);
 
 gdk_export void*	GDKvmalloc  (size_t size, size_t *maxsize, int emergency);
-gdk_export void*	GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize);
+gdk_export void*	GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize, int emergency);
 gdk_export void		GDKvmfree   (void* blk, size_t size, size_t maxsize);
 @
 @}

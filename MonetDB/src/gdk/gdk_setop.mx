@@ -75,12 +75,12 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 #define FLIPs(l,r)              TRUE
 #define FLIPk(l,r)              FALSE
 
-#define HITintersect(h,t)       BUNfastins(bn,h,t)
+#define HITintersect(h,t)       bunfastins(bn,h,t)
 #define HITdiff(h,t)		
 #define MISSintersect(h,t)
-#define MISSdiff(h,t)           BUNfastins(bn,h,t)
+#define MISSdiff(h,t)           bunfastins(bn,h,t)
 #define ENDintersect(h,t)
-#define ENDdiff(h,t)            for(;p1<q1;p1+=s1) BUNfastins(bn,h,t)
+#define ENDdiff(h,t)            for(;p1<q1;p1+=s1) bunfastins(bn,h,t)
 #define RALIGNdiff(bn,l,r)      FALSE
 #define RALIGNintersect(bn,l,r) ((BAThordered(l)&BAThordered(r)&1) && l->hkey\
                                 && BATcount(bn)==BATcount(r)) 
@@ -100,28 +100,34 @@ Implementation is either merge- or hash-based.
 		for(r=p+xx; (r < q) && (@4 == 0); r+=xx) {
 		    if (HIT@1(t, BUNt@3(b,r))) goto next@2@3@5;
 		}
-		BUNfastins(bn, h, t);
+		bunfastins(bn, h, t);
 next@2@3@5:;
 	}
 @= hashelim
 	zz = BUNindex(bn, BUNfirst(bn));
 	if (!bn->hhash_heap){
 		int one=1; /* using direct hashing (coll. list length=1) */
-		BAThash(bn, &one);
+		if (BAThash(bn, &one) == NULL) {
+			BBPreclaim(bn);
+			return NULL;
+		}
 	}
 	BATloopFast(b, p, q, xx) {
 		ptr h = BUNh@2(b,p);
 		ptr t = BUNt@3(b,p);
 		int ins = 1;
 		hash_t yy;
-		(void) BATprepareHash(bn);
+		if (BATprepareHash(bn)) {
+			BBPreclaim(bn);
+			return NULL;
+		}
 		HASHloop@4(bn, bn->hhash, yy, h, r) {
 		    if (HIT@1(t, BUNt@3(bn,r))) {
 			ins=0; break;
 		    }
 		}
 		if (ins) {
-			BUNfastins(bn, h, t);
+			bunfastins(bn, h, t);
 			if (bn->hhash_heap) HASHins@4(bn->hhash, (hash_t) zz, h);
 			zz++;
 		}
@@ -141,7 +147,8 @@ next@2@3@5:;
 	} else {
 		@:hashelim(@1,@2,loc,@3)@
 	} 
-	return (((int)(ssize_t)cmp) && 0); /* fooling the stupid compiler */
+	(void) cmp;
+	break;
 }
 @= elim_doubles
 	switch(ATOMstorage(b->htype)) {
@@ -161,13 +168,26 @@ next@2@3@5:;
 	    }  
 	}
 @c
-int BATins_kunique(BAT *bn, BAT *b) {
+BAT* BATins_kunique(BAT *bn, BAT *b) {
+	BATcheck(b, "BATins_kunique: src BAT");
 	@:elim_doubles(k)@
+    	return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
-int BATins_sunique(BAT *bn, BAT *b) {
-	BUN fst1 = BUNfirst(bn), last1 = (BUNlast(bn) - BUNsize(bn));
-	BUN fst2 = BUNfirst(b), last2 = (BUNlast(b) - BUNsize(b));
+BAT* BATins_sunique(BAT *bn, BAT *b) {
+	BUN fst1, fst2, last1, last2;
+
+   	BATcheck(b, "BATins_sunique: src BAT");
+   	BATcheck(bn, "BATins_sunique: dst BAT");
+
+	fst1 = BUNfirst(bn);
+	fst2 = BUNfirst(b);
+
+	last1 = (BUNlast(bn) - BUNsize(bn));
+	last2 = (BUNlast(b) - BUNsize(b));
 
 	if (BATcount(b) && (BAThordered(b)&1) && ATOMcmp(b->htype,BUNhead(b,fst2),BUNhead(b,last2)) == 0 &&
 	   (BATcount(bn) == 0 || (ATOMcmp(bn->htype,BUNhead(bn,fst1),BUNhead(b,fst2)) == 0 &&
@@ -185,6 +205,10 @@ int BATins_sunique(BAT *bn, BAT *b) {
 		BATflipflop(bn); BATflipflop(b);
 	}
 	@:elim_doubles(s)@
+   	return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 
@@ -201,17 +225,23 @@ BAT *BATkunique(BAT *b) {
 	} else {
 	    size_t cnt = BATcount(b);
 	    if (cnt > 10000) {
-		BAT *tmp0 = VIEWhead_(b, BAT_WRITE);
-		BAT *tmp1 = BATsample(b, 1000);
-		BAT *tmp2 = BATkunique(tmp1);
-		cnt = (size_t) ((((lng) BATcount(tmp2)) * cnt) / 900);
-		BBPreclaim(tmp0);
-		BBPreclaim(tmp1);
-		BBPreclaim(tmp2);
+		BAT *tmp2=NULL, *tmp1, *tmp0 = VIEWhead_(b, BAT_WRITE);
+		if (tmp0) {
+			tmp1 = BATsample(b, 1000);
+			if (tmp1) {
+				tmp2 = BATkunique(tmp1);
+				if (tmp2) {
+					cnt = (size_t) ((((lng) BATcount(tmp2)) * cnt) / 900);
+					BBPreclaim(tmp2);
+				}
+				BBPreclaim(tmp1);
+			}
+			BBPreclaim(tmp0);
+		}
+		if (tmp2 == NULL) return NULL;
 	    }
 	    bn = BATnew(BAThtype(b), BATttype(b), cnt);
-	    if( bn == NULL) return NULL;
-	    BATins_kunique(bn, b);
+	    if (bn == NULL || BATins_kunique(bn, b) == NULL) return NULL;
 	}
 
 	/* property management */
@@ -245,15 +275,19 @@ BAT *BATsunique (BAT *b) {
 	} else {
 	    size_t cnt = BATcount(b);
 	    if (cnt > 10000) {
-		BAT *tmp1 = BATsample(b, 1000);
-		BAT *tmp2 = BATkunique(tmp1);
-		cnt = BATcount(tmp2) * (cnt/1000);
-		BBPreclaim(tmp1);
-		BBPreclaim(tmp2);
+		BAT *tmp2 = NULL, *tmp1 = BATsample(b, 1000);
+		if (tmp1) {
+			tmp2 = BATkunique(tmp1);
+			if (tmp2) {
+				cnt = BATcount(tmp2) * (cnt/1000);
+				BBPreclaim(tmp2);
+			}
+			BBPreclaim(tmp1);
+		}
+		if (tmp2 == NULL) return NULL;
 	    }
 	    bn = BATnew(BAThtype(b), BATttype(b), cnt);
-	    if( bn == NULL) return NULL;
-	    BATins_sunique(bn, b);
+	    if (bn == NULL || BATins_sunique(bn, b) == NULL) return NULL;
 	}
 
 	/* property management */
@@ -321,7 +355,7 @@ end@2@3:;
 	ptr h, t, t2 = NULL, h2 = hnil;
 
 	ALGODEBUG THRprintf(GDKout, "BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
-	(void) BATprepareHash(r);
+	if (BATprepareHash(r)) goto bunins_failed;
 	BATloopFast(l, p1, q1, s1) {
 	    h = BUNh@2(l, p1);
 	    t = BUNtail(l,p1);
@@ -414,7 +448,7 @@ end@2@3:;
 	} break;
 
 @= batcheck
-int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
+BAT* BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
 	int hash = TRUE, (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
 	ptr hnil, tnil;
 
@@ -459,7 +493,10 @@ int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
 			@:check(@2,loc,loc,((*merge)(h,h2)),@1)@
 	    }
 	}
-	return 0;
+	return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 BAT *BAT@1@2(BAT *l, BAT *r) {
@@ -482,7 +519,9 @@ BAT *BAT@1@2(BAT *l, BAT *r) {
 
 	/* fill result bat bn */
 	ALGODEBUG THRprintf(GDKout, "BAT@1@2: BATins_@1@2(bn, l, r);\n");
-	BATins_@1@2(bn, l, r);
+	if (BATins_@1@2(bn, l, r) == NULL) {
+		return NULL;
+	}
 
 	/* propagate alignment info */
 	if (BATcount(bn)==BATcount(l)) {
@@ -529,22 +568,28 @@ double elimination.
 
 BAT* BATmaterialize_(BAT *b, size_t size){
 	BAT *bn = BATnew(TYPE_oid, ATOMtype(b->ttype), size);
-	BUN p,q; int xx;
-	oid base = b->hseqbase;
+	BUN p,q; 
+	int xx;
+	oid base;
 
+	if (bn == NULL) return NULL;
+	base = b->hseqbase;
 	if (base == oid_nil) {
 		BATloopFast(b,p,q,xx) {
-		    BUNfastins(bn, &base, BUNtail(b,p)); 
+		    bunfastins(bn, &base, BUNtail(b,p)); 
 		}
 	} else {
 		BATloopFast(b,p,q,xx) {
-		    BUNfastins(bn, &base, BUNtail(b,p)); 
+		    bunfastins(bn, &base, BUNtail(b,p)); 
 		    base++;
 		}
 	}
 	ALIGNsetH(bn,b);
 	ALIGNsetT(bn,b);
 	return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 @:union(k)@
@@ -566,14 +611,13 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 	}
 	if (l->htype == TYPE_void) {
 		bn = BATmaterialize_(l, BATcount(l)+BATcount(r));
-		if( bn == NULL) return bn;
 	} else if (l->ttype == TYPE_void) {
 		bn = BATmirror(BATmaterialize_(BATmirror(l), 
 			     		      BATcount(l)+BATcount(r)));
-		if( bn == NULL) return bn;
 	} else {
 		bn = BATcopy(l); 
 	}
+	if( bn == NULL) return NULL;
 
 	hdisjunct = (BAThordered(r)&BAThordered(l)&1) && (ATOMcmp(l->htype, 
 	      BUNhead(l,BUNlast(l)-BUNsize(l)), BUNhead(r,BUNfirst(r))) < 0);
@@ -584,9 +628,13 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 
 	if (!hdisjunct) {
 	      b = r = BAT@1diff(r, bn); 
+	      if (b == NULL) {
+		    BBPreclaim(bn);
+		    return NULL;
+              }
 	}
 	BATloopFast(r,p,q,xx) { 
-		BUNfastins(bn, BUNhead(r,p), BUNtail(r,p));
+		bunfastins(bn, BUNhead(r,p), BUNtail(r,p));
 	}
 	if (b) BBPreclaim(b);
 	ACCremoveall(bn); 
@@ -601,5 +649,8 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 	BATkey(BATmirror(bn), tdisjunct?(l->tkey&&r->tkey):0);
 
 	return bn; 
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 @}

@@ -154,7 +154,7 @@ gdk_export int		strToStr       (str* dst, int* len, str   src);
 gdk_export str		strRead        (str a, stream* s, size_t cnt);
 gdk_export void		strWrite       (str a, stream* s, size_t cnt);
 gdk_export hash_t	strHash        (str s); 
-gdk_export int		strPut         (Heap* b, var_t *off, str src);
+gdk_export var_t	strPut         (Heap* b, var_t *off, str src);
 gdk_export void 	strHeap        (Heap* d, size_t cap);
 gdk_export int		strLen         (const char *s);
 gdk_export int		strCmp         (str l, str r);
@@ -331,7 +331,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(int (*)(ptr, ptr)) strCmp,
 	    	(hash_t (*)(ptr)) strHash,	0,
 		0, 		0,
- 		(void (*)(Heap*, var_t*, ptr)) strPut,		0,
+ 		(var_t (*)(Heap*, var_t*, ptr)) strPut,		0,
  		(int (*)(ptr)) strLen,		strHeap,
  		(void (*)(Heap*, int)) strHeapConvert,	0} ,
 };
@@ -461,7 +461,7 @@ void ATOMproperty(str id, str property, GDKfcn arg) {
 	    } else if (strcmp("convert", property) == 0) {
 		atomset(BATatoms[t].atomConvert, (void (*)(void *,int)) arg); 
 	    } else if (strcmp("put", property) == 0) {
-		atomset(BATatoms[t].atomPut, (void (*)(Heap *,var_t *,void *)) arg); 
+		atomset(BATatoms[t].atomPut, (var_t (*)(Heap *,var_t *,void *)) arg); 
 	    } else if (strcmp("null", property) == 0) {
 		ptr atmnull = ((ptr (*)(void))arg)();
 		atomset(BATatoms[t].atomNull, atmnull); 
@@ -720,10 +720,10 @@ the commit tremendously complicated.
 	} else if (t_ <= TYPE_lng) {			\
 		*(lng *) (P3) = * (lng *) (P4); 	\
 	} else if (t_ == TYPE_str) {			\
-		(void) strPut(P2, (var_t*) (P3), (str) (P4));\
+		if (strPut(P2, (var_t*) (P3), (str) (P4)) == 0) goto bunins_failed;\
 	} else {                                        \
 	    if (BATatoms[t_].atomPut) {			\
-		(*BATatoms[t_].atomPut)(P2, (var_t*) P3, P4);	\
+		if ((*BATatoms[t_].atomPut)(P2, (var_t*) P3, P4) == 0) goto bunins_failed;\
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
@@ -741,8 +741,8 @@ the commit tremendously complicated.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPdecref(*(bat*) (P3), TRUE);		\
 		BBPincref(*(bat*) (P4), TRUE);		\
+		BBPdecref(*(bat*) (P3), TRUE);		\
 		*(bat *) (P3) = *(bat *) (P4); 		\
 	}						\
   } else {						\
@@ -751,18 +751,20 @@ the commit tremendously complicated.
 	} else if (t_ <= TYPE_lng) {			\
 		*(lng *) (P3) = * (lng *) (P4); 	\
 	} else if (t_ == TYPE_str) {			\
-		(void) strPut(P2, (var_t*) (P3), (str) (P4));\
+		if (strPut(P2, (var_t*) (P3), (str) (P4)) == 0) goto bunins_failed;\
+	} else if (BATatoms[t_].atomPut) {		\
+                var_t loc_ = *(var_t*) (P3);            \
+		if ((*BATatoms[t_].atomPut) (P2, &loc_, P4) == 0) goto bunins_failed;\
+                ATOMunfix(t_, P3);                      \
+	        if (BATatoms[t_].atomDel) {		\
+		   ATOMdel(t_, P2,(var_t*) P3);	        \
+	        } 					\
+		*(P3) = loc_;                           \
+                ATOMfix(t_, P4);                        \
 	} else {					\
-            ATOMunfix(t_, P3);                          \
-	    if (BATatoms[t_].atomDel) {		\
-		ATOMdel(t_, P2,(var_t*) P3);		\
-	    } 						\
-	    if (BATatoms[t_].atomPut) {		\
-		(*BATatoms[t_].atomPut) (P2, (var_t*) (P3), P4);\
-	    } else {					\
+                ATOMunfix(t_, P3);                      \
 		memcpy(P3, P4, ATOMsize(P1));		\
-	    }						\
-            ATOMfix(t_, P4);                            \
+                ATOMfix(t_, P4);                        \
 } }     }
 
 #define GDK_STRHASHTABLE	(1<<10)
@@ -792,10 +794,13 @@ int ATOMlen(int t, ptr src) {
 	return (l)?(*l)(src):ATOMsize(t);
 }
 
-void ATOMheap(int t, Heap* hp, size_t cap) {
+int ATOMheap(int t, Heap* hp, size_t cap) {
 	void (*h)(Heap *, size_t) = BATatoms[t].atomHeap;
-	if (h)
+	if (h) {
 		(*h)(hp, cap);
+		if (hp->base == NULL) return -1;
+	}
+	return 0;
 }
 
 int ATOMcmp(int t, ptr l, ptr r) {
@@ -1395,11 +1400,12 @@ void strHeap(Heap *d, size_t cap) {
 
 	cap = MAX(cap, BATTINY);
 	size = (GDK_STRHASHTABLE+1)*sizeof(var_t) + MIN(GDK_ELIMLIMIT, cap*12);
-	HEAPalloc(d, size, 1);
-	d->free = GDK_STRHASHTABLE*sizeof(var_t); 
-	h = (var_t*) d->base; 
-	for (e = h; e < h + GDK_STRHASHTABLE; e++) {
-		*e = 0; 
+	if (HEAPalloc(d, size, 1) >= 0) {
+		d->free = GDK_STRHASHTABLE*sizeof(var_t); 
+		h = (var_t*) d->base; 
+		for (e = h; e < h + GDK_STRHASHTABLE; e++) {
+			*e = 0; 
+		}
 	}
 }
 
@@ -1502,7 +1508,7 @@ void strHeapConvert(Heap *h,int dir) {
 	}
 }
 
-int strPut(Heap *h, var_t *dst, str v) {
+var_t strPut(Heap *h, var_t *dst, str v) {
 	var_t *l;
 	size_t i = GDK_STRLEN(v);
 	hash_t off;
@@ -1516,7 +1522,7 @@ int strPut(Heap *h, var_t *dst, str v) {
 		str x = (str) (h->base + *l + sizeof(var_t)); 
 		if (GDK_STRCMP(v, x) == 0) {
 			*dst = *l + (var_t) sizeof(var_t); /* already in heap; do not insert! */
-			return 0; 
+			return *dst; 
 		}
  	}
 
@@ -1540,18 +1546,13 @@ int strPut(Heap *h, var_t *dst, str v) {
 		size_t newsize  = len + (size_t) hnewsize;
 		assert(newsize);
 
-		/* XXX: if the heap just becomes too big, insert a nil (last var_t bytes are free) */
-		if (newsize > GDK_VM_MAXSIZE) {
-			h->free = h->size;
-			h->base[h->size - sizeof(var_t)] = GDK_chr_min;
-			*dst = h->size - sizeof(var_t);
-			return 0;
-		}
 		if (h->free + len < h->maxsize) {
 			/* if there is reserved space, first use the reserved space */
 			newsize = MIN(newsize,h->maxsize); 
         	}
-		HEAPextend(h, newsize);
+		if (HEAPextend(h, newsize) < 0) {
+			return 0;
+		}
 	}
 
 	/* insert string in hash table and copy into the heap */
@@ -1562,7 +1563,7 @@ int strPut(Heap *h, var_t *dst, str v) {
 	h->free += len;
 	memcpy((char*) l, v, i); 
 
-	return 0; 
+	return *dst; 
 }
 
 @-

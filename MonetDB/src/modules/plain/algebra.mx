@@ -1395,11 +1395,17 @@ int CMDlike(BAT **ret, BAT* b, str s) {
 	if (b->hvarsized) {
 	    BATloopFast(b, u, v, xx) 
 		if (like(BUNtvar(b, u), t, yy)) 
-		    BUNfastins(c, BUNhvar(b, u), BUNtvar(b, u));
+		    if (BUNfastins(c, BUNhvar(b, u), BUNtvar(b, u)) == NULL) {
+			BBPreclaim(c);
+			return GDK_FAIL;
+		    }
 	} else {
 	    BATloopFast(b, u, v, xx) 
 		if (like(BUNtvar(b, u), t, yy)) 
-		    BUNfastins(c, BUNhloc(b, u), BUNtvar(b, u));
+		    if (BUNfastins(c, BUNhloc(b, u), BUNtvar(b, u)) == NULL) {
+			BBPreclaim(c);
+			return GDK_FAIL;
+		    }
 	}
 	c->hsorted = BAThordered(b);
 	c->tsorted = BATtordered(b);

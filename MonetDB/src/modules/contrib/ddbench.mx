@@ -1822,7 +1822,10 @@ if ((GDKdebug&786432)==262144) {
 	if (dst@1 >= last@1) {
 		ssize_t off = ((char*) dst@1) - BUNfirst(bn@1);
 		bn@1->batBuns->free = bn@1->batBuns->size;
-		BATextend(bn@1, BATgrows(bn@1)); 
+		if (BATextend(bn@1, BATgrows(bn@1)) == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL; 
+		}
 		dst@1 = (oid*) (BUNfirst(bn@1) + off);
 		last@1 = (oid*) (bn@1->batBuns->base + bn@1->batBuns->size);
 	}

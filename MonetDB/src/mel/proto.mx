@@ -271,7 +271,7 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* returns a pointer to a nil-" << name << ". */\n\n\n";
 	    break;
         case OP_PUT 	:
-	    o << "void\n";
+	    o << "var_t\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\thp,\t/* INOUT: heap of " << name << "s. */\n";
 	    o << "   var_t*\t\toffset,\t/* OUT: offset from heapbase. */\n";

@@ -843,7 +843,7 @@ First stop to examine its type, and heap sizes.
 		    tsize = atoi(ts);
 		}
 		if (size < 0 || htpe < 0 || ttpe < 0) {
-fail:		    GDKerror("conn_waiter: illegal %s[%s,%s].\n",nm,line,ht,tt);
+fail:		    GDKerror("conn_waiter: illegal %s[%s,%s].\n",tp,ht,tt);
 		    cache_del(c);
 		    continue;
 		}
@@ -857,9 +857,21 @@ fail:		    GDKerror("conn_waiter: illegal %s[%s,%s].\n",nm,line,ht,tt);
 		b->dims.tailtype = ttpe;
 		b->dims.tailloc = toff;
 		b->dims.bunwidth = width;
-		HEAPalloc(b->batBuns, size+3, b->dims.bunwidth);
-		if (hsize) HEAPalloc(&b->hheap, hsize, 1);
-		if (tsize) HEAPalloc(&b->theap, tsize, 1);
+		if (HEAPalloc(b->batBuns, size+3, b->dims.bunwidth) < 0) {
+			BBPclear(b->batCacheid);
+			goto fail;
+		}
+		if (hsize && HEAPalloc(&b->hheap, hsize, 1) < 0) {
+			HEAPfree(b->batBuns);
+			BBPclear(b->batCacheid);
+			goto fail;
+		}
+		if (tsize && HEAPalloc(&b->theap, tsize, 1) < 0) {;
+			HEAPfree(b->batBuns);
+			HEAPfree(&b->hheap);
+			BBPclear(b->batCacheid);
+			goto fail;
+		}
 @= getoid
                 if (ts && (ts = strchr(ts,':'))) {
                         int len = sizeof(oid);

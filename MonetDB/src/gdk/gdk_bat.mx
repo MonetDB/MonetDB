@@ -184,11 +184,21 @@ BAT *BATnewstorage(int ht, int tt, size_t cap) {
 
 	/* alloc the main heaps */
 	hole_padding = MAX((int)sizeof(int),bn->dims.bunwidth)/bn->dims.bunwidth;
-	if( HEAPalloc(bn->batBuns, cap+hole_padding, bn->dims.bunwidth))
+	if (HEAPalloc(bn->batBuns, cap+hole_padding, bn->dims.bunwidth) < 0) {
+		BBPclear(bn->batCacheid);
 		return NULL;
-	ATOMheap(ht,&bn->hheap, cap);
-	ATOMheap(tt,&bn->theap, cap);
-
+	}
+	if (ATOMheap(ht,&bn->hheap, cap) < 0) {
+		HEAPfree(bn->batBuns);
+		BBPclear(bn->batCacheid);
+		return NULL;
+	}
+	if (ATOMheap(tt,&bn->theap, cap) < 0) {
+		HEAPfree(bn->batBuns);
+		HEAPfree(&bn->hheap);
+		BBPclear(bn->batCacheid);
+		return NULL;
+	}
 	DELTAinit(bn);
 	bn->batDirty = TRUE;
 	BBPcacheit(bn);
@@ -217,7 +227,7 @@ BAT *BATnew(int ht, int tt, size_t cap) {
 	cap += 2; 
 
 	b = BATnewstorage(ht, tt, cap); 
-	if(b==NULL) return b;
+	if (b == NULL) return NULL;
 	b->hsorted = (bit) ATOMlinear(ht); 
 	b->tsorted = (bit) ATOMlinear(tt);
 
@@ -231,7 +241,7 @@ BAT *BATtmp(BAT *b, int keys)
 	size_t	cnt;
 	BAT	*bn; 
 
-	BATcheck(b, "BATtmp: BAT pointer required"); 
+	BATcheck(b, "BATtmp: BAT required"); 
 @-
 Remap virtual oids (void) automatically to int (ATOMtype).
 @c
@@ -267,7 +277,7 @@ Likewise, the routine @%BATgrows@ provides a heuristic to enlarge the space.
 @c
 size_t BATguess(BAT *b) {
 	size_t newcap;
-	BATcheck(b,"BATguess");
+	BATcheck(b, "BATguess");
 	newcap = BATcount(b);
 	if( newcap < 10 * BATTINY) return newcap;
 	if( newcap < 50 * BATTINY) return newcap/2;
@@ -304,6 +314,7 @@ Here we merely copy their references into the new administration space.
 @c
 BAT *BATextend(BAT *b, size_t newcap) {
 	size_t	hole_padding, heap_size; 
+	int ret;
 
 	BATcheck(b, "BATextend"); 
 @- 
@@ -326,33 +337,14 @@ extra padding so the first BUN will be (at least) int-aligned.
 	heap_size = BUNsize(b) * (newcap + hole_padding); 
 
 	DELTAsave(b);
-	HEAPextend(b->batBuns, heap_size);
+	ret = HEAPextend(b->batBuns, heap_size);
 	DELTAload(b);
+	if (ret < 0) return NULL;
 
 	IDXdestroy(b); 
 	HASHdestroy(b); 
 
 	return b; 
-}
-
-@-
-Reduce the size of a BAT (presumably before saving)
-The buns heap is saved very efficiently to disk (only what is in use).
-so we do not need to do anything.
-The head and tail heaps are copied, reallocated and inserted.
-For accelerator heaps there is no solution yet..
-
-@c
-void BATreduce(BAT *b, int percentage) {
-	int p = (int) ((100*BUNindex(b, b->batDeleted)) / 
-		(BUNindex(b, b->batBuns->free) - BUNindex(b, b->batDeleted)));
-
-	if (percentage == 0 || p <= percentage) {
-		return;
-	}
-	IODEBUG {
-		THRprintf(GDKerr, "reduce bat %s to %d\n",b->batId, p);
-	}
 }
 @} 
 
@@ -374,6 +366,8 @@ old and build new. The accelerators are only preserved for very small BATs.
 @c
 @{
 BAT *BATclear(BAT *b) {	
+    BATcheck(b, "BATclear");
+    {
 	int hacc, tacc, bs=BUNsize(b);
 	BUN p, q;
 	int voidbat = 0;
@@ -419,6 +413,8 @@ BAT *BATclear(BAT *b) {
 	    BATatoms[b->htype].atomDel == NULL && 
 	    BATatoms[b->ttype].atomDel == NULL)
 	{
+		Heap hh, th;
+
 		/* no stable elements: we do a quick heap clean */
 		/* need to clean heap which keep data even though the
 		   BUNs got removed. This means reinitialize when
@@ -426,12 +422,18 @@ BAT *BATclear(BAT *b) {
 		*/
 		size_t cap = 0;
 		if (b->hheap.free > 0){
-			HEAPfree(&b->hheap);
-			ATOMheap(b->htype, &b->hheap, cap);
+			if (ATOMheap(b->htype, &hh, cap) < 0) return NULL;
 		}
 		if (b->theap.free > 0){
+			if (ATOMheap(b->ttype, &th, cap) < 0) return NULL;
+		}
+		if (b->hheap.free > 0){
 			HEAPfree(&b->theap);
-			ATOMheap(b->ttype, &b->theap, cap);
+			b->hheap = hh;
+		}
+		if (b->theap.free > 0){
+			HEAPfree(&b->hheap);
+			b->hheap = th;
 		}
 	} else {
 		/* do heap-delete of all inserted atoms */
@@ -459,10 +461,13 @@ BAT *BATclear(BAT *b) {
 	if (tacc && BATaccelerators[tacc].accSave) {
 		ACCbuild(tacc, b, &b->taccelerator, 0);
 	}
-	return b; 
+    }
+    return b; 
 }
 
 int BATfree(BAT *b) {
+    BATcheck(b, "BATfree");
+    {
 	/* deallocate all memory for a bat */
 	BATreset(b);
 	ACCunloadall(b);
@@ -472,8 +477,8 @@ int BATfree(BAT *b) {
 	HEAPfree(&b->hheap);
 	GDKfree(BATmirror(b));
 	BBP_cache(-b->batCacheid) = NULL;
-
-	return 0;
+    }
+    return 0;
 }
 
 @}
@@ -545,6 +550,9 @@ copy of the valid BUN sequence.
 		ALIGNset(bn,b);
 	}
 	return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 BAT *BATcopy(BAT *b) {
@@ -653,6 +661,8 @@ BAT *BUNfastins(BAT *b, ptr h, ptr t) {
 	bunfastins(b, h, t);
 	if (!b->batDirty) b->batDirty = TRUE;
 	return b;
+bunins_failed:
+	return NULL;
 }
 
 
@@ -686,9 +696,9 @@ BAT *BUNins(BAT *b, ptr h, ptr t) {
 	    return b;
 	}
 	if ((b->hkey & BOUND2BTRUE) && (p=BUNfnd(b,h))) {
-	    BUNinplace(b, p, h, t); 
+	    if (BUNinplace(b, p, h, t) == NULL) return NULL; 
 	} else if ((b->tkey & BOUND2BTRUE) && (p=BUNfnd(bm,t))) {
-	    BUNinplace(bm, p, t, h); 
+	    if (BUNinplace(bm, p, t, h) == NULL) return NULL; 
 	} else { 
 	    unsigned int bunsize;
 	    size_t i;
@@ -774,6 +784,8 @@ BAT *BUNins(BAT *b, ptr h, ptr t) {
 	    }
 	}
 	return b; 
+bunins_failed:
+	return NULL;
 }
 
 @- BUN Delete
@@ -1002,7 +1014,9 @@ BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t) {
 	} else {
   		/* committed BUN */
 		BUNdelete(b, p); 
-		BUNins(b, h, t); 
+		if (BUNins(b, h, t) == NULL) {
+bunins_failed:		return NULL; 
+		}
 	}
 	return b;
 }
@@ -1039,6 +1053,7 @@ one should use the inline functions to speed-up processing.
 BUN BUNfnd(BAT *b, ptr v) {
 	BUN 	r;
 
+	BATcheck(b, "BUNfnd");
 	if (BAThvoid(b)) {
 		BUNfndVOID(r,b,v);
 		return r; 
@@ -1069,7 +1084,7 @@ if (@1) {
 BUN BUNlocate(BAT *b, ptr x, ptr y) {
 	BUN	p = NULL, q = NULL; 
 	hash_t	h;
-	int	(*cmp)(ptr, ptr);
+	int	xx, (*cmp)(ptr, ptr), (*cmp2)(ptr, ptr);
 
 	BATcheck(b, "BUNlocate: BAT parameter");
 	BATcheck(x, "BUNlocate: value parameter");
@@ -1122,12 +1137,19 @@ BUN BUNlocate(BAT *b, ptr x, ptr y) {
 	/* hash-table lookup */
 	@:swapif(b->thash_heap && b->hhash_heap == NULL)@
 	cmp = BATatoms[b->ttype].atomCmp; 
-	(void) BATprepareHash(b);
-	HASHloop(b, b->hhash, h, x) {
-	    p = BUNptr(b, h); 
-	    if ((*cmp)(y, BUNtail(b, p)) == 0) return p; 
+	if (!BATprepareHash(b)) {
+		HASHloop(b, b->hhash, h, x) {
+			p = BUNptr(b, h); 
+	    		if ((*cmp)(y, BUNtail(b, p)) == 0) return p; 
+		}
 	}
-	return 0; 
+	/* better than to GDKfatal is to do a linear scan */
+	cmp2 = BATatoms[b->htype].atomCmp; 
+	BATloopFast(b, p, q, xx) {
+		if ((*cmp2)(x, BUNhead(b, p)) == 0 &&
+	    	    (*cmp)(y, BUNtail(b, p)) == 0) return p; 
+	}
+	return NULL; 
 }
 
 
@@ -1164,6 +1186,7 @@ size_t BATbuncount (BAT *b)
 }
 
 size_t BATvmsize(BAT *b, int dirty) {
+	BATcheck(b, "BATvmsize");
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk)) dirty = 0;
         return  ((dirty == 0 || b->batDirtybuns)?HEAPvmsize(b->batBuns):0) +
                 ((dirty == 0 || b->batDirtybuns)?HEAPvmsize(b->hhash_heap):0) +
@@ -1177,6 +1200,7 @@ size_t BATvmsize(BAT *b, int dirty) {
 }
 
 size_t BATmemsize(BAT *b, int dirty) {
+	BATcheck(b, "BATmemsize");
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk)) dirty = 0;
         return  ((dirty == 0 || b->batDirtydesc)?sizeof(BATstore):0) +
                 ((dirty == 0 || b->batDirtybuns)?HEAPmemsize(b->batBuns):0) +
@@ -1202,8 +1226,9 @@ association head.
 @{
 @c
 BAT *BATkey(BAT *b, int flag) {
-	bat parent = VIEWparentcol(b);
-
+	bat parent;
+	BATcheck(b, "BATkey");
+	parent = VIEWparentcol(b);
 	if (b->htype == TYPE_void) {
 		if (b->hseqbase == oid_nil && flag == BOUND2BTRUE) {
                         GDKerror("BATkey: nil-column cannot be kept unique.\n");
@@ -1277,7 +1302,6 @@ int BATname(BAT *b, str nme) {
 
 str BATrename(BAT *b, str nme) {
 	int ret = BATname(b, nme); 
-
 	if (ret == 1) {
 		GDKerror("BATrename: identifier expected: %s\n",nme);
 	} else if (ret == BBPRENAME_ALREADY) {
@@ -1286,6 +1310,8 @@ str BATrename(BAT *b, str nme) {
 		GDKerror("BATrename: illegal temporary name: '%s'\n", nme); 
 	} else if (ret == BBPRENAME_LONG) {
 		GDKerror("BATrename: name too long: '%s'\n", nme); 
+	} else if (b == NULL) {
+		GDKerror("BATrename: null BAT\n"); 
 	}
 	return BBPname(b->batCacheid); 
 }
@@ -1387,6 +1413,7 @@ int BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc){
 	}
 @c
 int BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc) {
+        BATcheck(b, "BATmadvise");
 	@:madvise(bns, b->batBuns)@
 	@:madvise(hhp, &b->hheap)@
 	@:madvise(thp, &b->theap)@
@@ -1413,6 +1440,7 @@ static int HEAPcheckmode(Heap *h, int persistent, int unloadable, int writeable)
 
 int BATcheckmodes(BAT *b, int persistent, int unloadable) {
 	int dirty = 0;
+        BATcheck(b, "BATcheckmodes");
 	if (HEAPcheckmode(b->batBuns, persistent, unloadable, b->batRestricted == BAT_WRITE)) {
 		b->batMapbuns = STORE_PRIV;
 		dirty = b->batMapdirty = TRUE;
@@ -1576,7 +1604,6 @@ static int HEAPsetmmap(Heap *hp, int *remap) {
 @c
 BAT *BATsetaccess(BAT *b, int mode) {
 	BATcheck(b, "BATsetaccess"); 
-
 	if (b->batRestricted != mode) {
 	    int m1=0, bak1 = b->batBuns->storage; 
 	    int m2=0, bak2 = b->hheap.storage; 
@@ -1590,7 +1617,7 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	    int remap = FALSE;
 
 	    if (VIEWparent(b) && mode != BAT_READ) {
-		VIEWreset(b);
+		if (VIEWreset(b) == NULL) return NULL;
 	    }  
 	    if (b->batSharecnt && mode != BAT_READ) {
 	        GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", b->batId, b->batSharecnt);
@@ -2007,20 +2034,25 @@ for determining which algebra commands set properties sub-optimally.
 		str nme = BBP_physical(bv->batCacheid);
                 hp->filename = GDKmalloc(strlen(nme)+12);
                 sprintf(hp->filename, "%s.%chash", nme, b->batCacheid>0?'h':'t');
-		HASHnew(&bv->hhash, hp, tpe, yy+lim, HASHmask(lim));
-                bv->hhash_heap = BATmirror(bv)->thash_heap = hp;
+		if (HASHnew(&bv->hhash, hp, tpe, yy+lim, HASHmask(lim)) == NULL) {
+			GDKfree(hp->filename);
+			GDKfree(hp);
+			THRprintf(GDKerr, "BATpropcheck(%s): could allocate hash table for key test\n", BBPname(b->batCacheid));
+		} else {
+                	bv->hhash_heap = BATmirror(bv)->thash_heap = hp;
 
-                switch(ATOMstorage(tpe)) {
-                case TYPE_chr: @:hash_disprove(_chr,loc)@
-                case TYPE_sht: @:hash_disprove(_sht,loc)@
-                case TYPE_int:
-                case TYPE_flt: @:hash_disprove(_int,loc)@
-                case TYPE_lng:
-                case TYPE_dbl: @:hash_disprove(_lng,loc)@
-                default:       @:hash_disprove(,ead)@
+                	switch(ATOMstorage(tpe)) {
+                	case TYPE_chr: @:hash_disprove(_chr,loc)@
+                	case TYPE_sht: @:hash_disprove(_sht,loc)@
+                	case TYPE_int:
+                	case TYPE_flt: @:hash_disprove(_int,loc)@
+                	case TYPE_lng:
+                	case TYPE_dbl: @:hash_disprove(_lng,loc)@
+                	default:       @:hash_disprove(,ead)@
+                	}
+			BATDEBUG THRprintf(GDKerr, "BATpropcheck(%s) : used hashtable of size %d\n", BBPname(b->batCacheid), lim);
                 }
                 BBPreclaim(bv);
-		BATDEBUG THRprintf(GDKerr, "BATpropcheck(%s) : used hashtable of size %d\n", BBPname(b->batCacheid), lim);
             }
           } else {
             isKey = TRUE;

@@ -209,11 +209,10 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
   BUN p, q;
   ptr atom_nil;
 
-  if (b_src->ttype != TYPE_oid) {
+  if (b_src == NULL || b_src->ttype != TYPE_oid || BATorder(b_src) == NULL) {
     GDKerror("[bitvector_encode]: No OID table.\n");
     return GDK_FAIL;
   }
-  (void)BATorder(b_src);
   nbits     = (int *)BUNtail(b_src, BUNlast(b_src));
   *nbits   += 1;
   *b_dst    = BATnew(TYPE_void, TYPE_lng, numentries(*nbits, sizeof(lng) * 8));

@@ -644,7 +644,14 @@ salgebra_CHbuild( clusterhash* ch, BAT* b ) {
   chlen = h->mask + 1;
   ch->dict = (Heap*) GDKmalloc(sizeof(Heap));
   ch->dict->filename = NULL;
-  HEAPalloc(ch->dict, chlen, sizeof(dict_entry));
+  if (HEAPalloc(ch->dict, chlen, sizeof(dict_entry)) < 0) {
+  	MT_unset_lock(salgebra_chashLock[ABS(bid)&BBPLOCKMASK], "CHbuild");
+	GDKfree(ch->bhash);
+	GDKfree(ch->dict);
+	ch->bhash = NULL;
+	ch->dict = NULL;
+	return GDK_FAIL;
+  }
   dict = (dict_entry*) ch->dict->base;
   DICTclear( dict, chlen );
 

@@ -435,7 +435,8 @@ CTbuild_hl(
                 h = BBPdescriptor(histo);
         }
         if (h == NULL) {
-                h = BATorder(BAThistogram(BATmirror(b))); /* DD requires ordered histograms */
+		h = BATorder(BAThistogram(BATmirror(b)));
+		if (h == NULL) return;
                 histo = h->batCacheid;
         } else {
 		if (b->halign == 0) {
@@ -448,7 +449,9 @@ CTbuild_hl(
         		if (BATcount(h) == BATcount(b)) {
                 		ALIGNsetH(h,BATmirror(b));
         		}
-		} else BATorder(h);
+		} else if (BATorder(h) == NULL) {
+			return;
+		}
 	}
 	if (strncmp(BBPname(histo), "tmp_", 4) == 0) {
         	char buf[256], *p=buf+4;
@@ -461,12 +464,15 @@ CTbuild_hl(
         	BBPrename(histo, buf);
 	}
 	h->batStamp = hl_stamp++;  
-        HEAPalloc(hp, sizeof(histolink), 1);
-        hl = (histolink*) hp->base;
-        hl->histogram = histo;
-        if (h->halign == 0) h->halign = OIDnew(1);
-        hl->alignment = h->halign;
-        b->hacctype = ACC_histolink;
+        if (HEAPalloc(hp, sizeof(histolink), 1) >= 0) {
+        	hl = (histolink*) hp->base;
+        	hl->histogram = histo;
+        	if (h->halign == 0) h->halign = OIDnew(1);
+        	hl->alignment = h->halign;
+        	b->hacctype = ACC_histolink;
+	} else if (!histo) {
+		BBPreclaim(h);
+	}
 }
 
 
@@ -524,12 +530,13 @@ CThistogram(
 	if (b->tacctype && b->tacctype != ACC_histolink) {
 		/* another accelerator already exists; leave it */
 		*h = BAThistogram(b);
-		return GDK_SUCCEED;
+		return *h?GDK_SUCCEED:GDK_FAIL;
 	} 
 	if (b->tacctype != ACC_histolink || CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) {
 		if (b->tacctype) 
 			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
 		CTbuild_hl(&b->taccelerator, NULL, BATmirror(b));
+		if (b->taccelerator.base == NULL) return GDK_FAIL;
 	}
 	*h = VIEWcreate(BBPdescriptor(((histolink*) b->taccelerator.base)->histogram));
 	return GDK_SUCCEED;
@@ -545,13 +552,14 @@ CTtunique(
 		BAT *v = VIEWhead(BATmirror(b));
 		*h = BATorder(BATkunique(v));
 		BBPreclaim(v);
-		return GDK_SUCCEED;
+		return *h?GDK_SUCCEED:GDK_FAIL;
 	} 
         if (b->tacctype != ACC_histolink || CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) {
 
 		if (b->tacctype) 
 			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
 		CTbuild_hl(&b->taccelerator, NULL, BATmirror(b));
+		if (b->taccelerator.base == NULL) return GDK_FAIL;
 	}
 	*h = VIEWhead(BBPdescriptor(((histolink*) b->taccelerator.base)->histogram));
 
@@ -721,10 +729,11 @@ BAT *CTgroup_@1_@4_@5( group_params_@5 BAT *b, BAT *bn, map_T *m ){
 	size_t zz, mapsize;
 	mapentry_t entry, *e;
 	BUN p, q, r;
-	BAT *map;
+	BAT *map = NULL;
 	declare_@3
  
 	map_init_@5(map,hash,mask,entry,mapsize); 
+	if (map == NULL) return NULL;
 
 	/* core hash grouping algorithm */
 	BATloopFast(b, p, q, xx) {
@@ -762,6 +771,9 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	bn->tsorted = 0;
 	ALIGNsetH(bn,b);
 	return m?NULL:map2histo(map);
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 } 
 @c
 int tailtype(BAT *b, int str_trick) {
@@ -822,18 +834,28 @@ CTgroup_custom(
 }
 
 @= CTgroupbody
-	BAT *histo, *bn = BATnew(b->htype, TYPE_oid, BATcount(b));
+	BAT *histo = NULL, *bn = BATnew(b->htype, TYPE_oid, BATcount(b));
         declare_mask_@1 
+	if (bn == NULL) {
+		return GDK_FAIL;
+	}
 	/* Poor man's clustered test: sorted & !keyed => clustered  */
 	if ( (b->tsorted) && !(b->tkey) ) {
 	  @:choosegroup@1(tailtype(b,TRUE),bn,NULL,clustered,histo)@
 	} else {
 	  @:choosegroup@1(tailtype(b,TRUE),bn,NULL,unclustered,histo)@
 	}
-
+	if (histo == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	bn->tsorted = 0;
 	ALIGNsetH(bn, b);
 	CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
+	if (bn->taccelerator.base == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	*retval = bn;
 	return GDK_SUCCEED;
 
@@ -877,6 +899,7 @@ BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 	declare_@4
    
 	map_init_STANDARD(map,hash,mask,entry,mapsize); 
+	if (map == NULL) return NULL;
 
 	/* core hash grouping algorithm */
 	BATloopFast(b, p, q, xx) {
@@ -918,6 +941,9 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	}
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base; 
 	return m?NULL:map2histo(map);
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 @c
@@ -949,7 +975,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	}
 @c
 int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
-	BAT *histo, *bn = *retval;
+	BAT *histo = NULL, *bn = *retval;
 	int synced = ALIGNsynced(ct,b);
 
 	/* preprocess/create the result bat 'bn' */
@@ -958,6 +984,9 @@ int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 	} else {
 		int ht = (synced&&BAThdense(b))?TYPE_void:TYPE_oid;
 		bn = BATnew(ht, TYPE_oid,BATcount(b));
+		if (bn == NULL) {
+			return GDK_FAIL;
+		}
 	}
 
 	/* CTderive with correct lookup method (hash,synced) and type */
@@ -974,6 +1003,9 @@ int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 		@:choosederive(hash,unclustered)@
            }
 	}
+	if (histo == NULL) {
+		BBPunfix(bn->batCacheid);
+	}
 
 	/* postprocess the result bat 'bn' */
 	bn->tsorted = 0;
@@ -985,6 +1017,10 @@ int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 	}
 	if (histo) {
 		CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
+		if (bn->taccelerator.base == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 	}
 	*retval = bn;
 	return GDK_SUCCEED;
@@ -1032,7 +1068,9 @@ CThistosum(
         int xx,i,*z;
         oid ot,oh;
 	(void) c;
-
+	if (res == NULL) {
+		return GDK_FAIL;
+	}
 	BATloopFast(b,p,q,xx) {
 		oh = *(oid *) BUNhloc(b,p);
 		i  = *(int *) BUNtloc(b,p);
@@ -1063,20 +1101,24 @@ int CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom) {
 	bit *filter = (bit*) BUNtloc(sel,BUNfirst(sel));
         size_t size=BATcount(dom);
 	int xx, zz;
-	hash_t yy, mask, *hash;
+	hash_t yy, mask, *hash = NULL;
         BUN r, p, q;
-	BAT *bn;
+	BAT *bn = BATnew(TYPE_idxentry, TYPE_int, size);
+	if (bn == NULL) return GDK_FAIL;
 
 	/* we know the domain; go for perfect hashing */
 	for(mask=1; mask<size; mask<<=1);
 	if (mask < 256) mask = 256;
 	hash = (hash_t*) GDKmalloc(sizeof(hash_t)*mask);
+	if (hash == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
         for(yy = 0; yy < mask; yy++) {
         	hash[yy] = 0;
 	} mask--;
 
 	/* insert all values in the hash table, and in bn with count zero */
-	bn = BATnew(TYPE_idxentry, TYPE_int, size);
 	r = BUNfirst(bn);
 	yy = 1;
         BATloopFast(dom, p, q, xx) { 
@@ -1154,7 +1196,7 @@ oid* sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid* dst, oi
 
 static
 int refine(BAT **res, BAT *b, BAT *a, int rv) {
-    BAT *bn;
+    BAT *bn = NULL;
     if (b->tkey) { /* if key, no further refinements can take place */
 	bn = BATmark(b, 0);
     } else {
@@ -1167,20 +1209,29 @@ int refine(BAT **res, BAT *b, BAT *a, int rv) {
 
 	/* create tmp BAT that holds one cluster; estimate required size using sampling */
 	if (BATcount(b) > DEFAULT_SIZE) { 
-		BAT *sample = BATsample(b, DEFAULT_SIZE);
-		BAT *histo = BAThistogram(sample);
-		BATmax(histo,&xx);
-		if (xx > 1) 
-			size = MAX(size, (size_t) (xx*(((float) BATcount(b))/DEFAULT_SIZE)));
-		BBPreclaim(sample);
-		BBPreclaim(histo);
+		BAT *histo = NULL, *sample = BATsample(b, DEFAULT_SIZE);
+		if (sample) {
+			histo = BAThistogram(sample);
+			if (histo) {
+				BATmax(histo,&xx);
+				if (xx > 1) size = MAX(size, (size_t) (xx*(((float) BATcount(b))/DEFAULT_SIZE)));
+				BBPreclaim(histo);
+			}
+			BBPreclaim(sample);
+		}
+		if (histo == NULL) return GDK_FAIL;
 	} 
 	/* create a temporary BAT of the estimated size holding pointers to the a tail atoms */
 	buf = cur = (struct refine*) GDKmalloc(size*sizeof(struct refine));
 	end = buf + size;
+	if (buf == NULL) return GDK_FAIL;
 
         /* create result BAT */
 	bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
+	if (bn == NULL) {
+		GDKfree(buf);
+		return GDK_FAIL;
+	}
 	bn->hsorted = bn->tsorted = FALSE;
 	dst = (oid*) BUNfirst(bn);
 

@@ -655,7 +655,7 @@ typedef struct {
 @c
 vectoridx* vectoridx_new(Heap* hp, BAT *e, int cnt) {
 	vectoridx *vi;
-	HEAPalloc(hp, sizeof(vectoridx)+cnt*sizeof(int),1);
+	if (HEAPalloc(hp, sizeof(vectoridx)+cnt*sizeof(int),1) < 0) return NULL;
 	hp->free = hp->size;
 	vi = (vectoridx*) hp->base;
 	sprintf(vi->extent_name, "%s", e->batId);
@@ -688,11 +688,16 @@ Check things
 	}
 	if (extent->htype != TYPE_oid) {
 	    GDKerror("DVIbuild: illegal extent.\n");
+	    return;
 	}
 @-
 Allocate memory for the index. Fill the structure.
 @c
 	vi = vectoridx_new(hp, extent, BATcount(b));
+	if (vi == NULL) {
+	    GDKerror("DVIbuild: could not allocate vectorindex.\n");
+	    return;
+	}
 	cur = first = (oid*) BUNfirst(extent);
 @-
 Merge-walk through 'b', and 'extent', knowing that both are ordered
@@ -800,7 +805,10 @@ DVbuild(
 @-
 Create a new BAT, which will contain the data vector.
 @c
-	HEAPalloc(hp, sizeof(datavector), 1);
+	if (HEAPalloc(hp, sizeof(datavector), 1) < 0) {
+		GDKerror("could not allocate datavector\n");
+		return;
+	}
 	hp->free = hp->size;
 	v = (datavector*) hp->base;
 	sprintf(v->vector_name, "%s_v", b->batId);
@@ -861,6 +869,10 @@ ordered like 'extent'.
 	bn->hsorted = 1;
 	bn->tsorted = 0;
 	ALIGNsetH(bn, extent); 
+	return;
+bunins_failed:
+	HEAPfree(hp);
+	BBPreclaim(bn);
 }
 
 void

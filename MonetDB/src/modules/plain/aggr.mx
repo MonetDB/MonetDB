@@ -322,7 +322,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 #define SMALL_AGGR_MAX 1024
 
 @= large_aggr_sum
-	(void) BATprepareHash(bn);
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) BUNhead(b,p);
 		@1 *t = (@1*) BUN@2(b,p);
@@ -365,7 +368,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
         GDKfree(sums);
 @c
 @= large_aggr_prod
-	(void) BATprepareHash(bn);
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) BUNhead(b,p);
 		@1 *t = (@1*) BUN@2(b,p);
@@ -410,7 +416,11 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 @= large_aggr_avg
 	cnt  = (size_t*) GDKmalloc(BATcount(e)*sizeof(size_t));
 	memset(cnt, 0, BATcount(e)*sizeof(size_t));
-	(void) BATprepareHash(bn);
+	if (BATprepareHash(bn)) {
+		GDKfree(cnt);
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) BUNhead(b,p);
 		@1 *t = (@1*) BUN@2(b,p);
@@ -489,13 +499,19 @@ int CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e,p), &zero);
+			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
 		}
 		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
 	} else {
 		min = max = *(oid*)BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e,p), &zero);
+			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
 			i = *(oid*)BUNhead(e, p);
 			if (i < min) min = i;
 			else
@@ -530,13 +546,19 @@ int CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e,p), &one);
+			if (BUNfastins(bn, BUNhead(e,p), &one) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
 		}
 		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
 	} else {
 		min = max = *(oid*)BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e,p), &one);
+			if (BUNfastins(bn, BUNhead(e,p), &one) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
 			i = *(oid*)BUNhead(e, p);
 			if (i < min) min = i;
 			else
@@ -589,13 +611,19 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e,p), &zero);
+			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
 		}
 		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
 	} else {
 		min = max = *(oid*)BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e,p), &zero);
+			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
 			i = *(oid*)BUNhead(e, p);
 			if (i < min) min = i;
 			else
@@ -630,7 +658,7 @@ TODO: add ALGODEBUG and optimize further?
 @= arithvar
 int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 	int nElements = BATcount(e);
-	BAT *bn = BATnew(e->htype, BATttype(b), nElements);	
+	BAT *bn = *ret = BATnew(e->htype, BATttype(b), nElements);	
 	int xx, off, idx=0;
 	int *cnt ;
 	dbl *sum ;
@@ -643,17 +671,29 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 	off = BUNindex(e,BUNfirst(e));
 	cnt = (int*) GDKmalloc(nElements*sizeof(int)); 
 	if(cnt == NULL){
-		/* garbage collect to do */
+		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
 	sum = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
 	if(sum == NULL){
-		/* garbage collect to do */
+		BBPreclaim(bn);
+		GDKfree(cnt);
 		return GDK_FAIL;
 	}
 	sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
 	if( sumsquares == NULL){
-		/* garbage collect to do */
+		BBPreclaim(bn);
+		GDKfree(cnt);
+		GDKfree(sum);
+		return GDK_FAIL;
+	}
+
+	/* scan b, adding sums, and incrementing counts */
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		GDKfree(cnt);
+		GDKfree(sum);
+		GDKfree(sumsquares);
 		return GDK_FAIL;
 	}
 
@@ -662,8 +702,6 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 	memset(sum, 0, nElements*sizeof(dbl));
 	memset(sumsquares, 0, nElements*sizeof(dbl));
 
-	/* scan b, adding sums, and incrementing counts */
-	(void) BATprepareHash(e);
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) BUNhead(b,p);
 		if(*h != previousOid) {
@@ -691,23 +729,30 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 	idx = 0;
 	BATloopFast(e, p, q, xx) {
 		if (cnt[idx] == int_nil) {
-			BUNfastins(bn, BUNhead(e,p), &@1_nil);
+			if (BUNfastins(bn, BUNhead(e,p), &@1_nil) == NULL) {
+				*ret = NULL; break;
+			}
 		} else if (cnt[idx] <= 1) {
-			BUNfastins(bn, BUNhead(e,p), &zero);
+			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+				*ret = NULL; break;
+			}
 		} else {
 			dbl avg = (sum[idx] / cnt[idx]);
-			@1 variance = (@1) (sumsquares[idx] / cnt[idx]
-					    - (avg * avg));
-			BUNfastins(bn, BUNhead(e,p), &variance);
+			@1 variance = (@1) (sumsquares[idx] / cnt[idx] - (avg * avg));
+			if (BUNfastins(bn, BUNhead(e,p), &variance) == NULL) {
+				*ret = NULL; break;
+			}
 		}
 		idx++;
 	}
-	bn->hsorted = bn->tsorted = 0;
-	ALIGNsetH(bn, e);
-
 	GDKfree(cnt);
 	GDKfree(sum);
-	*ret = bn;
+	if (!*ret) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	bn->hsorted = bn->tsorted = 0;
+	ALIGNsetH(bn, e);
 	return GDK_SUCCEED;
 }
 @c
@@ -720,7 +765,7 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 
 @= extreme
 int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
+	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr);
 	ptr nil;
 	int xx;
@@ -734,7 +779,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	off = BUNindex(e,BUNfirst(e));
 	extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr)); 
 	if( extremes == NULL) {
-		/* garbage collect */
+		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
 	
@@ -742,7 +787,11 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	memset(extremes, 0, BATcount(e)*sizeof(ptr)); 
 
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
-	(void) BATprepareHash(e);
+	if (BATprepareHash(e)) {
+		BBPreclaim(bn);
+		GDKfree(extremes);
+		return GDK_FAIL;
+	}
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) BUNhead(b,p);
 		ptr t =  BUNtail(b,p);
@@ -762,12 +811,17 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	/* insert the extreme values into the result */
 	BATloopFast(e, p, q, xx) {
 		ptr val = extremes[yy++];
-		BUNfastins(bn, BUNhead(e,p), val?val:nil); 
+		if (BUNfastins(bn, BUNhead(e,p), val?val:nil) == NULL) {
+			*ret = NULL; break;
+		}
 	} 
+	GDKfree(extremes);
+	if (!*ret) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
-	GDKfree(extremes);
-	*ret = bn;
 	return GDK_SUCCEED;
 }
 @c
@@ -775,7 +829,10 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 @:extreme(max,>)@
 
 @= large_aggr_count
-	(void) BATprepareHash(bn);
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) BUNhead(b,p);
 
@@ -834,13 +891,19 @@ int CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e,p), &zero);
+			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
 		}
 		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
 	} else {
 		min = max = *(oid*)BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e,p), &zero);
+			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
 			i = *(oid*)BUNhead(e, p);
 			if (i < min) min = i;
 			else
@@ -882,10 +945,16 @@ int CMDaggr_size(BAT **ret, BAT *b, BAT *e){
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	BATloopFast(e, p, q, xx) {
-		BUNfastins(bn, BUNhead(e,p), &zero);
+		if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 	}
 	/* scan b, and add increment totals for true values */
-	(void) BATprepareHash(bn);
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	BATloopFast(b, p, q, xx) {
 		if (*(bit*) BUNtloc(b,p) == TRUE) {
 			oid *h = (oid*) BUNhead(b,p);
@@ -936,7 +1005,10 @@ if (BATtordered(b)&1) {
 	str nme = BBP_physical(v->batCacheid);
 	hp->filename = (str) GDKmalloc(strlen(nme)+12);
 	sprintf(hp->filename, "%s.%chash", nme, v->batCacheid>0?'h':'t');
-	HASHnew(&v->hhash, hp, any, BATcapacity(b), HASHmask(BATcount(b)));
+	if (HASHnew(&v->hhash, hp, any, BATcapacity(b), HASHmask(BATcount(b))) == NULL) {
+		BBPreclaim(v); 
+		return GDK_FAIL;
+	}
 	v->hhash_heap = BATmirror(v)->thash_heap = hp;
 	cursize = 0; /* start counting unique elements... (at zero) */
 	BATloopFast(b, p, q, xx) {

@@ -371,7 +371,9 @@ int enum_lower(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 		if (p && p > BUNfirst(b))  p -= BUNsize(b);
 		else p = NULL;
 	} else {
-		BATidx(b, NULL);
+		if (BATidx(b, NULL) == NULL) {
+			return GDK_FAIL;
+		}
 		p = (BUN) IDXfndlast(b, src);
 		if (p && p > (BUN) b->hidx.first) p = ((BUN*) p)[-1];
 		else p = NULL;
@@ -403,7 +405,9 @@ int enum_upper(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 	if (BAThordered(b)&1) {
 		p = SORTfndfirst(BATmirror(b), src);
 	} else {
-		BATidx(b,NULL);
+		if (BATidx(b, NULL) == NULL) {
+			return GDK_FAIL;
+		}
 		p = (BUN) IDXfndfirst(b, src);
 		if (p) p = *(BUN*) p;
 	}
@@ -472,7 +476,10 @@ int enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 		} else {
 			idx = (unsigned @2) (BUNindex(b,r) - 1);
 		}
-		BUNfastins(bn, BUNhead(src,p), &idx); 
+		if (BUNfastins(bn, BUNhead(src,p), &idx) == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 	    } 
 	} else {
 	    BATloopFast(src, p, q, xx) {
@@ -482,7 +489,10 @@ int enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 		} else {
 			idx = (unsigned @2) (BUNindex(b,r) - 1);
 		}
-		BUNfastins(bn, BUNhead(src,p), &idx); 
+		if (BUNfastins(bn, BUNhead(src,p), &idx) == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 	    } 
 	} 
 	*dst = bn; 
@@ -545,7 +555,10 @@ int enum_encode_multi(BAT** dst, int *enum_t, BAT *src){
 		} else {
 			w = BUNhead(b, BUNptr(b, 1 + *idx));
 		}
-		BUNfastins(bn, BUNhead(src,p), w); 
+		if (BUNfastins(bn, BUNhead(src,p), w) == NULL) {
+			BBPreclaim(bn);
+	    		return GDK_FAIL;
+		} 
 		
 	} *dst = bn; 
 }

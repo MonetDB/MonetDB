@@ -591,79 +591,91 @@ int CMDmirror(BAT **ret, BAT *b){
 }
 
 int CMDconvert(BAT **ret, BAT *b){
-	BATconvert(*ret = b,CONV_HTON);
+	if (BATconvert(*ret = b,CONV_HTON) == NULL)
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int CMDrevert(BAT **ret, BAT *b){
-	BATrevert(*ret = b);
+	if (BATrevert(*ret = b) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int CMDorder(BAT **ret, BAT *b){
-	BATorder(*ret = b);
+	if (BATorder(*ret = b) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int CMDorder_rev(BAT **ret, BAT *b){
-	BATorder_rev(*ret = b);
+	if (BATorder_rev(*ret = b) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	BUNins(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@);
+	if (BUNins(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDinsert_bat(BAT **r, BAT *b, BAT *s){
-	BATins(*r=b,s);
+	if (BATins(*r=b,s) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	BUNreplace(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@);
+	if (BUNreplace(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDreplace_bat(BAT **r, BAT *b, BAT *s){
-	BATreplace(*r=b,s);
+	if (BATreplace(*r=b,s) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	BUNdel(*r=b,h,t);
+	if (BUNdel(*r=b,h,t) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_head(BAT **r, BAT *b, ptr h) {
-	BUNdelHead(*r=b, @:batconvert(b,h)@);
+	if (BUNdelHead(*r=b, @:batconvert(b,h)@) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_all(BAT **r, BAT *b) {
-	BATclear(*r=b);
+	if (BATclear(*r=b) == NULL) 
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s){
-	BATdel(*r=b,s);
+	if (BATdel(*r=b,s) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
-	BATdelHead(*r=b,s);
+	if (BATdelHead(*r=b,s) == NULL)
+		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
@@ -1203,7 +1215,9 @@ int CMDhashloop(BAT* b, ptr *handle, ptr v){
 	hash_t idx;
 	int i;
 
-	if (!BATprepareHash(b)) 
+	if (BATprepareHash(b)) 
+		return GDK_FAIL; 
+
 	switch(ATOMstorage(BAThtype(b))) {
 	case TYPE_chr:	@:hashiter(_chr)@
 	case TYPE_sht:	@:hashiter(_sht)@
