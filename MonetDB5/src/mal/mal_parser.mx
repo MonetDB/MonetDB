@@ -1029,11 +1029,40 @@ optimizers to make decisions. (See the section on properties).
 			if(keyphrase1(cntxt,"=")) {
 				int i,lt;
 				if( (i= cstLength(cntxt,&lt))){
+					char *nxt= CURRENT(cntxt);
 					switch(lt){
+					case TYPE_sht:
 					case TYPE_int:{
-						int l= strtol(CURRENT(cntxt), NULL,10);
-						int i= (int)l;
-						setVarProperty(curBlk,@1,pname, lt, &i);
+						int l= strtol(nxt, NULL,10);
+						int ival= (int)l;
+						setVarProperty(curBlk,@1,pname, lt, &ival);
+						break;
+						}
+					case TYPE_lng:{
+						lng l= strtol(nxt, NULL,10);
+						setVarProperty(curBlk,@1,pname, lt, &l);
+						break;
+						}
+					case TYPE_dbl:
+					case TYPE_flt:{
+						double l= strtod(nxt,NULL);
+						setVarProperty(curBlk,@1,pname, lt, &l);
+						break;
+						}
+					case TYPE_bit:{
+						int bval;
+						if( strncmp(nxt,"true",4)==0 && i==4)
+							bval= TRUE;
+						else
+						if( strncmp(nxt,"false",5)==0 && i==4)
+							bval= FALSE;
+						else
+						if( strncmp(nxt,"TRUE",4)==0 && i==4)
+							bval= TRUE;
+						else
+						if( strncmp(nxt,"FALSE",4)==0 && i==4)
+							bval= FALSE;
+						setVarProperty(curBlk,@1,pname, lt, &bval);
 						break;
 						}
 					case TYPE_str:
@@ -1043,7 +1072,7 @@ optimizers to make decisions. (See the section on properties).
 					advance(cntxt,i);
 				}
 			} else 
-            setVarProperty(curBlk,@1,pname, TYPE_str,GDKstrdup(""));
+				setVarProperty(curBlk,@1,pname, TYPE_str,GDKstrdup(""));
             GDKfree(pname); 
         } while( keyphrase1(cntxt,","));
         if( !keyphrase1(cntxt,"}") )
