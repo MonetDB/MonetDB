@@ -3,18 +3,18 @@
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-@' 
+@'
 @' Software distributed under the License is distributed on an "AS
 @' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 @' implied. See the License for the specific language governing
 @' rights and limitations under the License.
-@' 
+@'
 @' The Original Code is the Monet Database System.
-@' 
+@'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
+@'
 @' Contributor(s):
 @' 		Martin Kersten <Martin.Kersten@cwi.nl>
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
@@ -55,10 +55,10 @@ int main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh);
 
-	if ((hdl = mapi_query(dbh, "create table emp(name varchar, age int)")) == NULL) 
+	if ((hdl = mapi_query(dbh, "create table emp(name varchar, age int)")) == NULL)
 		die(dbh);
 	mapi_close_handle(hdl);
-	if ((hdl = mapi_query(dbh, "insert into emp values(\"John\", 23)")) == NULL) 
+	if ((hdl = mapi_query(dbh, "insert into emp values(\"John\", 23)")) == NULL)
 		die(dbh);
 	mapi_close_handle(hdl);
 	if ((hdl = mapi_query(dbh, "insert into emp values(\"Mary\", 22)")) == NULL)
@@ -379,7 +379,7 @@ Similar to mapi_bind_var(), but now binds a parameter.
 Bind to a numeric variable, internally represented by MAPI_INT.
 
 \item[MapiMsg mapi_param_string(MapiHdl hdl, int fldnr, int sqltype, char *val, int *sizeptr)]:
-Bind to a string variable, internally represented by MAPI_VARCHAR.  The 
+Bind to a string variable, internally represented by MAPI_VARCHAR.  The
 sizeptr parameter points to the length of the string pointed to by val.
 If sizeptr == NULL or *sizeptr == -1, the string is NULL-terminated.
 
@@ -394,7 +394,7 @@ end of each query sent to the server.
 \item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
 A limited number of tuples are pre-fetched after each execute().
 If maxrows is negative, all rows will be fetched before the
-application is permitted to continue. Once the cache is filled, 
+application is permitted to continue. Once the cache is filled,
 a number of tuples are shuffled to make room for new ones,
 but taking into account non-read elements.
 Filling the cache quicker than reading leads to an error.
@@ -2349,7 +2349,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		strncpy(hdl->query, query, sz);
 		hdl->query[sz] = 0;
 	}
-		
+
 	if (mid->trace) {
 		printf("mapi_query_part:" SZFMT ":%.*s\n", size, size, query);
 	}
@@ -3134,6 +3134,19 @@ unquote(char *msg, char **start, char **next)
 				case 'f':
 					*s = '\f';
 					break;
+				case '0': case '1': case '2': case '3':
+					/* this could be the start of an octal sequence, check it out */
+					if (*(p + 1) && *(p + 2) &&
+						*(p + 1) >= '0' && *(p + 1) <= '7' &&
+						*(p + 2) >= '0' && *(p + 2) <= '7'
+					) {
+						char *tmp = malloc(sizeof(char) * 3 + 1);
+						strncpy(tmp, p, 3);
+						*s = (unsigned char)strtol(tmp, NULL, 8);
+						free(tmp);
+						p += 2;
+						break;
+					}
 				default:
 					*s = *p;
 					break;

@@ -625,7 +625,14 @@ dump_table(Mapi mid, char *tname)
 						putc('t', toConsole);
 						break;
 					default:
-						putc(*s, toConsole);
+						if ((0 < *s && *s < 32) || *s == '\377') {
+							char *tmp = malloc(sizeof(char) * 4 + 1);
+							snprintf(tmp, 4, "\\%03o", (unsigned char)*s);
+							fwrite(tmp, 4, 1, toConsole);
+							free(tmp);
+						} else {
+							putc(*s, toConsole);
+						}
 						break;
 					}
 					s++;
