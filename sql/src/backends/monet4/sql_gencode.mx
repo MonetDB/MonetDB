@@ -108,7 +108,7 @@ static void write_command( backend *sql, char *buf )
 static void write_result( backend *sql, char *buf )
 {
 	if (mvc_debug_on(sql->mvc,1024+2048)) {
-		int l;
+		size_t l;
 		size_t buflen = BUFSIZ;
 		char *v = NEW_ARRAY(char, buflen), *a = buf, *b, *y, z;
 		while (a && (y = strstr(a," := "))) {
@@ -169,7 +169,7 @@ void mvc_dump_1( backend *sql, stmt *s, char *name, int *nr )
 	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf( buf, buflen, 
+	size_t len = snprintf( buf, buflen, 
 		"var s%d := mvc_%s(myc, s%d);\n", 
 		-s->nr, name, o1);
 	assert(len <= buflen);
@@ -183,7 +183,7 @@ void mvc_dump_2( backend *sql, stmt *s, char *name, int *nr )
 	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf( buf, buflen, 
+	size_t len = snprintf( buf, buflen, 
 		"var s%d := mvc_%s(myc, s%d, s%d);\n", 
 		-s->nr, name, o1, o2);
 	assert(len <= buflen);
@@ -198,7 +198,7 @@ void mvc_dump_3( backend *sql, stmt *s, char *name, int *nr )
 	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
 	size_t buflen = strlen(name) + 128;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf( buf, buflen, 
+	size_t len = snprintf( buf, buflen, 
 		"var s%d := mvc_%s(myc, s%d, s%d, s%d);\n", 
 		-s->nr, name, o1, o2, o3);
 	assert(len <= buflen);
@@ -214,7 +214,7 @@ void mvc_dump_4( backend *sql, stmt *s, char *name, int *nr )
 	int o4 = backend_dumpstmt_(s->op4.stval, nr, sql);
 	size_t buflen = strlen(name) + 128;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf( buf, buflen, 
+	size_t len = snprintf( buf, buflen, 
 		"var s%d := mvc_%s(myc, s%d, s%d, s%d, s%d);\n", 
 		-s->nr, name, o1, o2, o3, o4);
 	assert(len <= buflen);
@@ -230,7 +230,7 @@ void mvc_dump_5( backend *sql, stmt *s, char *name, int *nr )
 	int o4 = backend_dumpstmt_(s->op4.stval, nr, sql);
 	size_t buflen = strlen(name) + 128;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf( buf, buflen, 
+	size_t len = snprintf( buf, buflen, 
 		"var s%d := mvc_%s(myc, s%d, s%d, s%d, s%d, %d);\n", 
 		-s->nr, name, o1, o2, o3, o4, s->flag);
 	assert(len <= buflen);
@@ -244,7 +244,8 @@ void mvc_dump_n( backend *sql, stmt *s, char *name, int *nr )
 	char *buf = NEW_ARRAY(char, buflen);
 	node *n;
 
-	int len = snprintf( buf, buflen, "var s%d := mvc_%s(myc", -s->nr, name);
+	size_t len = snprintf( buf, buflen, 
+		"var s%d := mvc_%s(myc", -s->nr, name);
 	assert(len <= buflen);
 	for(n = s->op1.stval->op1.lval->h; n; n = n->next){
 		int o = backend_dumpstmt_(n->data, nr, sql);
@@ -266,7 +267,7 @@ void dump_1( backend *sql, stmt *s, char *name, int *nr )
 	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf( buf, buflen, 
+	size_t len = snprintf( buf, buflen, 
 		"var s%d := s%d.%s;\n", 
 		-s->nr, o1, name);
 	assert(len <= buflen);
@@ -280,7 +281,7 @@ void dump_2( backend *sql, stmt *s, char *name, int *nr )
 	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf( buf, buflen, 
+	size_t len = snprintf( buf, buflen, 
 		"var s%d := %s(s%d, s%d);\n", 
 		-s->nr, name, o1, o2);
 	assert(len <= buflen);
@@ -295,7 +296,7 @@ void dump_3( backend *sql, stmt *s, char *name, int *nr )
 	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf( buf, buflen, 
+	size_t len = snprintf( buf, buflen, 
 		"var s%d := %s(s%d, s%d, s%d);\n", 
 		-s->nr, name, o1, o2, o3);
 	assert(len <= buflen);
@@ -305,7 +306,7 @@ void dump_3( backend *sql, stmt *s, char *name, int *nr )
 
 int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
     char *buf = NULL;
-    int len = 0;
+    size_t len = 0;
     node *n;
 
     assert (*nr);
