@@ -377,7 +377,14 @@ def am_binary(fd, var, binmap, am):
         binname = binmap['NAME'][0]
     else:
         binname = name
-    am['BINS'].append(binname)
+
+    if binmap.has_key("DIR"):
+        bd = binmap["DIR"][0] # use first name given
+	fd.write("%sdir = %s\n" % (binname, am_translate_dir(bd)) ); 
+	fd.write("%s_PROGRAMS =%s\n" % (binname,  binname));
+    else:
+    	am['BINS'].append(binname)
+
     if binmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
         fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % am_assign)
@@ -412,6 +419,7 @@ def am_binary(fd, var, binmap, am):
 
 def am_bins(fd, var, binsmap, am):
 
+    lbins = []
     scripts_ext = []
     if binsmap.has_key('SCRIPTS'):
         scripts_ext = binsmap['SCRIPTS']
@@ -427,7 +435,11 @@ def am_bins(fd, var, binsmap, am):
         bin, ext = split_filename(binsrc)
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(binsrc)
-        am['BINS'].append(bin)
+
+        if binsmap.has_key("DIR"):
+	  lbins.append(bin)
+        else:
+          am['BINS'].append(bin)
 
         if binsmap.has_key(bin + "_LIBS"):
             fd.write(am_additional_libs(bin, "", "BIN", binsmap[bin + "_LIBS"], am))
@@ -450,6 +462,11 @@ def am_bins(fd, var, binsmap, am):
             am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
             fd.write("all-local-%s: $(%s_scripts)\n" % (name, name))
             am['ALL'].append(name)
+
+    if (len(lbins) > 0):
+          bd = binsmap["DIR"][0] # use first name given
+	  fd.write("%sdir = %s\n" % (bin, am_translate_dir(bd, am)) ); 
+	  fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ));
 
     if binsmap.has_key('HEADERS'):
         HDRS = []
