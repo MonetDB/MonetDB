@@ -495,14 +495,15 @@ Module: "blob"
 
 Module: "calib"
 
-[ 3 ]
-[ 3 ]
+[ 4 ]
+[ 4 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help														  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "calib_free",	  "COMMAND:   ",  "calib_free() : void",	  "Frees calibrator allocated resources"									  ]
 [ "calib_info",	  "COMMAND:   ",  "calib_info() : BAT[str,dbl]",  "Gives results of calibrator tests as BAT. \n  First row 'ready' indicates if the tests have been performed "	  ]
 [ "calib_init",	  "COMMAND:   ",  "calib_init(lng, lng) : void",  "Runs calibrator tests with given CPU clock frequency and max memory range"					  ]
+[ "calib_init",	  "PROC:      ",  "calib_init(lng) : void",	  "not available"												  ]
 
 Module: "counters"
 
@@ -725,8 +726,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 104 ]
-[ 104 ]
+[ 105 ]
+[ 105 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature														| help													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -799,6 +800,7 @@ Module: "monettime"
 [ "isnil",			  "COMMAND:   ",  "isnil(date) : bit",													  "date nil test (!DS2.2)"										  ]
 [ "isnil",			  "COMMAND:   ",  "isnil(daytime) : bit",												  "daytime nil test (!DS2.2)"										  ]
 [ "isnil",			  "COMMAND:   ",  "isnil(timestamp) : bit",												  "timestamp nil test (!DS2.2)"										  ]
+[ "local_timezone",		  "PROC:      ",  "local_timezone() : lng",												  "not available"											  ]
 [ "milliseconds",		  "COMMAND:   ",  "milliseconds(daytime) : int",											  "extracts milliseconds from daytime (value between 0 and 999)"					  ]
 [ "milliseconds",		  "PROC:      ",  "milliseconds(timestamp) : int",											  "not available"											  ]
 [ "minutes",			  "COMMAND:   ",  "minutes(daytime) : int",												  "extracts minutes from daytime (value between 0 and 59)"						  ]
