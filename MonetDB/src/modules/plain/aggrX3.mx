@@ -946,7 +946,7 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 		return GDK_FAIL; 
 	} 
 	/* scan b, and increment counts in-place or in cnt-array */
-        bhsb = b->hseqbase;
+        bhsb = b->hseqbase-1;
         btt = b->ttype;
 	if (*ignore_nils) {
 		switch(ATOMstorage(btt)) {
@@ -995,7 +995,7 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) @5;
 
-		@3(r, bn, (oid*)h);
+		@3(r, bn, h);
 		if (r) {
 			@7 {
 				int *dst = (int*) @6;
