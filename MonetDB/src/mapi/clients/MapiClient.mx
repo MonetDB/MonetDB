@@ -3,99 +3,206 @@
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-@' 
+@'
 @' Software distributed under the License is distributed on an "AS
 @' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 @' implied. See the License for the specific language governing
 @' rights and limitations under the License.
-@' 
+@'
 @' The Original Code is the Monet Database System.
-@' 
+@'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.
 @' All Rights Reserved.
-@' 
+@'
 @' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold <Stefan.Manegold@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
 
 @a M. Kersten and Peter Boncz and Niels Nes
-@v 4
+@v 5
 @f MapiClient
-@* The Mapi Client interface
+@* The Mapi Client interface (V4+V5)
 A textual interface to the Monet server using the Mapi library,
 providing command-line MIL access for its users. It is the preferred 
 interface for non-DBAs.
 
-@- ChangeLog
-Feb 2001 we rewrote the Mclient. It now uses the Mapi library
-
-June 1996 we added a little more functionality. In particular,
-it should be possible to connect to a server by providing its
-name only. The corresponding port is searched in the homes file
-and the .gdk_lock file.
-
-Control directives are '>' to sent output to a file.
-Several textual changes made.
-
 @+ Manual Page
 @T
-The {\tt Mapiclient} program, provides just as the Mserver console, a
-MIL interface to the Monet server. Unlike the concolse, the {\tt Mclient} 
+The {\tt Mclient} program provides textual
+interface to the Monet server. Unlike the Mserver console, the {\tt Mclient} 
 program is intended not only or the database administrator, but to all other 
 users. It is more comfortable than the console, since it provides
 a command history and automatic file name completion.
 
 \begin{verbatim}
-Mclient 
-        [--config|-c config] 
-        [--debug|-d [level]] 
-        [--host|-h hostname] 
-        [--port|-p portnr]
-        [--noheaders] 
+Mclient [-h HOST] [-p PORT] [-d] [-e] [-u username] [-P password] [-c single-command]  
 \end{verbatim}
 
 The following options are supported:
 \begin{itemize}
-\item {\em -c|--config}. Config file to read options from.
-\item {\em -d|--debug}. Show debug output.
-\item {\em -h|--host.} The machine to connect to. 
-\item {\em -p|--port.} The port to use . 
-\item {\em    --noheaders}. Print also comment lines received in the result; default is to ignore them.
+\item {\em -h -p} Connect to Mserver on machine HOST with tcp port PORT. 
+\item {\em -d} Debug internalworking.
+\item {\em -c} just execute a one-line command (non-interactive mode).
+\item {\em -u -P} Replace interactive authorization by command line.
+\item{\em -h} A synopsis of the command line options 
+Can be used in scripts, but is insecure.
 \end{itemize}
 @
 
-@
 @{
 @+ Implementation
-@c
-/*  (Copyright) 1995-1996 M.L. Kersten, CWI, Amsterdam
-	Monet textual interface monitor.
-*/
+@h
+#ifndef _Mclient_H_
+#define _Mclient_H_
 #include "Mapi.h"
+#endif /* _Mclient_H_*/
+@c
+#include "Mclient.h"
 
-#include <monet_options.h> 
+#include <monet_options.h>
+#include <stdlib.h> 
 #include <ctype.h> 
 #include <sys/types.h> 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_WINSOCK_H
-# include <winsock.h>
-#endif
+#include <sys/socket.h> 
 #include <sys/stat.h>
 #include <errno.h> 
 #include <string.h> 
-#include <signal.h> 
+/* #include <signal.h> */
 
-#if defined(HAVE_PWD_H) && defined(HAVE_GETPWUID) && defined(HAVE_GETUID)
-#include  <pwd.h> 
+#define _strdup( ptr )    strdup((char*)ptr)
+
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
 #endif
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
+#if !defined(HAVE_SETLOCALE) || \
+    !defined(HAVE_ICONV) || \
+    !defined(HAVE_NL_LANGINFO)
+#	define	NO_LOCALE
+#endif
+
+stream *ws = NULL, *rs = NULL;
+int is_chrsp = 0;
+int exit_on_error =0;
+
+#ifdef HAVE_ICONV
+iconv_t to_utf = NULL;
+iconv_t from_utf = NULL;
+
+char *conv( char *org, iconv_t cd)
+{
+	if (cd){
+		size_t len = strlen(org);
+		size_t size = len * 4;
+		char *buf = malloc(size);
+		char *to = buf;
+		char *from = org;
+
+		if (iconv(cd, &from, &len, &to, &size ) < 0){
+			perror("conv ");
+			fprintf(stderr, "could not convert string %s\n", from );
+			free(buf);
+			exit(1);
+		}
+		*to = 0;
+		return buf;
+	} else {
+		return _strdup(org);
+	}
+}
+#else
+#define conv( org, dummy) _strdup(org)
+#endif
+
+@-
+The login procedure has been improved. The default is to ask for
+user name and password (non-displayed). The log procedure is
+started after it has become clear that a server is available at
+the port indicated. This enables more elaborate authentication
+schemes to be deployed in the future.
+@c
+
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+
+char *
+simple_prompt(const char *prompt, int maxlen, int echo)
+{
+        int        length = 0;
+        char       *destination = NULL;
+        FILE       *termin = NULL, *termout = NULL;
+
+#ifdef HAVE_TERMIOS_H
+        struct termios t_orig, t;
+#endif
+
+        destination = (char *) malloc(maxlen + 2);
+        if (!destination)
+                return NULL;
+
+	termin = fopen("/dev/tty", "r");
+	termout = fopen("/dev/tty", "w");
+
+	if (termin == NULL || termout == NULL){
+		termin = stdin;
+		termout = stderr;
+	}
+
+        if (prompt) {
+                fputs( prompt, termout);
+                fflush(termout);
+        }
+#ifdef HAVE_TERMIOS_H
+        if (!echo) {
+                tcgetattr(fileno(termin), &t);
+                t_orig = t;
+                t.c_lflag &= ~ECHO;
+                tcsetattr(fileno(termin), TCSAFLUSH, &t);
+        }
+#endif
+        if (fgets(destination, maxlen, termin) == NULL)
+                destination[0] = '\0';
+
+        length = strlen(destination);
+        if (length > 0 && destination[length - 1] != '\n') {
+                char	buf[128];
+                int	buflen;
+
+                do
+                {
+                        if (fgets(buf, sizeof(buf), termin) == NULL)
+                                break;
+                        buflen = strlen(buf);
+                } while (buflen > 0 && buf[buflen - 1] != '\n');
+        }
+
+        if (length > 0 && destination[length - 1] == '\n')
+                destination[length - 1] = '\0';
+#ifdef HAVE_TERMIOS_H
+        if (!echo)
+        {
+                tcsetattr(fileno(termin), TCSAFLUSH, &t_orig);
+                fputs("\n", termout);
+                fflush(termout);
+        }
+	if (termin != stdin) fclose(termin);
+	if (termout != stdout) fclose(termout);
+#endif
+        return destination;
+}
+
+extern int errno;                       /* pass errors  */
+char *program;                          /* my name */
 
 #define EXIT(x)	{ exit(x); }
 #define LINEMODE	23
@@ -105,20 +212,27 @@ FILE	*toConsole;
 char 	*message	= 0;
 int 	mode		= LINEMODE;
 char*	sentinel 	= "Mclient~sentinel"; 
-int	is_chrsp	= 0;
 
 
-int doRequest(Msession mid, char *buf ){
+int doRequest(Mapi mid, char *buf ){
 	char *rtrn;
+	int i;
  
-	if (Mdorequest(mid, buf) != MOK){
+/*
+	if (mapi_quick_query(mid, buf,toConsole) != MOK){
+		mapi_explain(mid,stdout);
 		return 'q';
 	}
-	while ((rtrn=Mgetreply(mid)) != 0) {
+	fflush(toConsole);
+*/
+	if (mapi_query(mid, buf) != MOK){
+		mapi_explain(mid,stdout);
+		return 'q';
+	}
+	while(rtrn=mapi_fetch_line(mid)){
 		fprintf(toConsole, "%s\n",rtrn);
 	}
-	fflush(toConsole);
-	if (Merror(mid)) {
+	if (mapi_error(mid)) {
 		return 'q';
 	}
 	return 0;
@@ -132,19 +246,18 @@ of the server before continuing
 #define CHUNK_SIZE	1024
 
 #ifdef HAVE_LIBREADLINE
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #define SEND_MESSAGE(mid)	{					\
-	message[m_index++] = '\n';				\
 	message[m_index] = 0;					\
 	cmd = doRequest(mid, message );				\
 	add_history(start_cmd);					\
         *message = 0; m_index = 0;				\
 }
-
-#include <readline/readline.h>
-#include <readline/history.h>
 #else
 #define SEND_MESSAGE(mid)	{				\
-	message[m_index++] = '\n';				\
 	message[m_index] = 0;					\
 	cmd = doRequest(mid, message );				\
         *message = 0; m_index = 0;				\
@@ -158,12 +271,24 @@ of the server before continuing
 		memset(message+m_index, 0, m_size-m_index);	\
 	}							\
 }
+void showCommands(){
+	fprintf(toConsole,"?\t - this message\n");
+	fprintf(toConsole,"!\t - shell escape\n");
+	fprintf(toConsole,"<file\t - read input from file\n");
+	fprintf(toConsole,">file\t - save response in file\n");
+	fprintf(toConsole,">\t - response to terminal\n");
+	fprintf(toConsole,"cd\t - change directory \n");
+	fprintf(toConsole,"\\r\t- run the buffered command \n");
+	fprintf(toConsole,"\\c\t- clear the command buffer\n");
+	fprintf(toConsole,"\\l\t- line is immediately sent \n");
+	fprintf(toConsole,"\\q\t- terminate session \n");
+}
 
-void clientAccept( Msession mid) {
+void terminalInput( Mapi mid) {
 	FILE	*fp;
 	char 	*line=0, *start_cmd, *end_cmd;
 	int	n, m_size=CHUNK_SIZE, m_index=0;
-	char	cmd = 0;
+	char	cmd = 0, ch;
 
 	message = (char *) malloc(CHUNK_SIZE);
 
@@ -178,20 +303,23 @@ void clientAccept( Msession mid) {
 			}
 		} else 
 #endif
-		{
+		{	int len;
 		   	char *buf =(char *)malloc(CHUNK_SIZE);
 	        	if ((line =(char *)fgets(buf,CHUNK_SIZE,stdin))==NULL) {
 			   	free(buf);
 	                	return;
 			}
+			/* seems some fgets implementations fon't replace 
+			the newline with a EOS marker */
+			len = strlen(line);
+			if( len && line[len-1] == '\n')
+				line[len-1] = '\0';
 		}
 		/* find start and end of the command */
 		for(	start_cmd = line;
 			*start_cmd && isspace(*start_cmd);
 			start_cmd++);
-		if (!*start_cmd) {
-			continue;
-		}
+		/* empty lines are meaningfull in some interpreters, like mdb*/
 		for(	end_cmd = line + strlen(line) - 1; 
 			isspace(*end_cmd);
 			end_cmd--);
@@ -239,9 +367,9 @@ redirection of output to a separate file.
 			}
 			break;
 		case '<':
-			if ((fp = fopen(start_cmd+1, "r")) != 0) {
-				while ((n = fread(message+m_index, 1,
-							 CHUNK_SIZE, fp)) != 0)
+			if (fp = fopen(start_cmd+1, "r")) {
+				while (n = fread(message+m_index, 1,
+							 CHUNK_SIZE, fp))
 				{
 					GROW_MESSAGE(n);
 					/* echo to stdout */
@@ -282,16 +410,7 @@ The commands available in the terminal monitor can be obtained
 using its help operator '?'.
 @c
 		case '?':
-			fprintf(toConsole,"?\t - this message\n");
-			fprintf(toConsole,"!\t - shell escape\n");
-			fprintf(toConsole,"<file\t - read input from file\n");
-			fprintf(toConsole,">file\t - save response in file\n");
-			fprintf(toConsole,">\t - response to terminal\n");
-			fprintf(toConsole,"cd\t - change directory \n");
-			fprintf(toConsole,"\\r\t- run the buffered command \n");
-			fprintf(toConsole,"\\c\t- clear the command buffer\n");
-			fprintf(toConsole,"\\l\t- line is immediately sent \n");
-			fprintf(toConsole,"\\q\t- terminate session \n");
+			showCommands();
 			continue;
 		} 
 		/* copy the line to the end of the message */
@@ -304,129 +423,210 @@ using its help operator '?'.
         } 
 }
 
-void usage(char *prog) {
-	fprintf(stderr, "usage: %s\n", prog);
-	fprintf(stderr, "[-c or --config config_file ]\n" );
-	fprintf(stderr, "[-h or --host hostname ]\n" );
-	fprintf(stderr, "[-p or --port portnr ]\n" );
- 	fprintf(stderr, "[-d or --debug [debug_level] ]\n" );
- 	fprintf(stderr, "[      --noheaders ]\n" );
- 	fprintf(stderr, "[-? or --help ]\n");
- 	EXIT(1);
+void usage( char *prog ){
+        fprintf(stderr, "Mclient\n");
+        fprintf(stderr, "\toptions:\n");
+        fprintf(stderr, "\t\t -d          | --debug=[level]\n");
+        fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
+        fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
+        fprintf(stderr, "\t\t -l language   | --language=lang    /* {mal,sql,mil} */\n");
+        fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
+        fprintf(stderr, "\t\t -P passwd   | --passwd=passwd  /* password */\n");
+        fprintf(stderr, "\t\t -e 	| --error  /* exit on error */\n");
+        fprintf(stderr, "\t\t -s stmt     | --statement=stmt  /* run single statement */\n");
+        fprintf(stderr, "\t\t -t     | --trace  /* trace Monet interaction */\n");
+        exit(-1);
 }
 
 int main(int ac, char **av) {
-	char 	*prog = *av, *config = NULL;
-	opt 	*set = NULL;
-	int     port = 0, debug = 0, setlen = 0;
+	char *prompt= NULL;
+        char buf[BUFSIZ];
+        char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
+        char *login = NULL, *db = NULL, *schema= NULL, *host=NULL;
+	char *language = _strdup("mal");
+	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, trace = 0;
+	opt	*set= NULL;
+ 
+	char	*command = NULL;
 
-#if defined(HAVE_GETPWUID) && defined(HAVE_GETUID)
-	struct passwd *pwd = getpwuid(getuid());
-#endif
-	struct stat st;
-	char 	user[80];
-        Msession mid;
+        struct stat st;
+        Mapi mid;
 
         static struct option long_options[] =
              {
-               {"config", 1, 0, 'c'},
                {"debug", 2, 0, 'd'},
+               {"config", 1, 0, 'c'},
                {"host", 1, 0, 'h'},
                {"port", 1, 0, 'p'},
-               {"help", 0, 0, '?'},
-               {"noheaders", 0, 0, 0},
+               {"passwd", 1, 0, 'P'},
+               {"user", 1, 0, 'u'},
+               {"language", 1, 0, 'l'},
+               {"error", 1, 0, 'e'},
+               {"statement", 1, 0, 's'},
+               {"trace",0, 0, 0},
                {0, 0, 0, 0}
              };
 
-	toConsole = stdout;
-	fstat(fileno(stdin),&st);
+        if (!(setlen = mo_builtin_settings(&set)) )
+                usage(av[0]);
 
-#ifdef HAVE_LIBREADLINE
-	if (S_ISCHR(st.st_mode))
-	   is_chrsp = 1;
-	else
-	   is_chrsp = 0;
-#endif
-
-#if defined(HAVE_GETPWUID) && defined(HAVE_GETUID)
-	strcpy(user, pwd?pwd->pw_name:"guest");
-#else
-	strcpy(user, "guest");
-#endif
- 
-	if (!(setlen = mo_builtin_settings(&set)) )
-                usage(prog);
-
-	for (;;){
+	while(1){
 		int option_index = 0;
 
-                int c = getopt_long( ac, av, "c:d::h:p:?",
-                                long_options, &option_index);
+		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:", 
+				long_options, &option_index);
 
 		if (c == -1)
 			break;
 
 		switch (c){
 		case 0:
-			if (strcmp(long_options[option_index].name, 
-						"noheaders") == 0){
-				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "mapi_noheaders", "yes" );
+			if (strcmp(long_options[option_index].name,
+						"trace") == 0) {
+				trace = 1;
 				break;
 			}
+			/* all other long options are mapped on their short version */
+			printf("option %s", long_options[option_index].name);
+			if (optarg)
+				printf( " with arg %s", optarg );
+			printf("\n");
 			usage(prog);
 			break;
 		case 'c':
-			config = strdup(optarg);
+			config = _strdup(optarg);
 			break;
 		case 'd':
-			debug=1;
 			if (optarg){ 
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "mapi_debug", optarg );
+					opt_cmdline, "debug", optarg );
 			} else {
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "mapi_debug", "1" );
+					opt_cmdline, "debug", "2" );
 			}
+			break;
+		case 'e':
+			exit_on_error=1;
 			break;
 		case 'h':
 			setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "host", optarg );
 			break;
+		case 'l':
+			if (optarg)
+			language= _strdup(optarg);
+			else printf("language argument missing\n");
+			break;
 		case 'p':
+			{char *m= _strdup(optarg);
+			port= strtol(m,NULL,10);
 			setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "mapi_port", optarg );
+					opt_cmdline, "port", m );
+			}
+			break;
+		case 'P':
+			passwd = _strdup(optarg);
+			break;
+		case 's':
+			command= _strdup(optarg);
+			break;
+		case 'u':
+			user = _strdup(optarg);
 			break;
 		case '?':
 			usage(prog);
 		default:
-			fprintf( stderr, 
-			    "ERROR: getopt returned character code 0%o ??\n",c);
+			printf( "?? getopt returned character code 0%o ??\n",c);
 			usage(prog);
 		}
 	}
 
-	if (config){
-		setlen = mo_config_file(&set, setlen, config);
-		free(config);
-	} else {
-		if (!(setlen = mo_system_config(&set, setlen)) )
-			usage(prog);
+	if (optind < ac){
+		printf("some arguments are not parsed by getopt\n");
+		while(optind < ac)
+			printf("%s ", av[optind++]);
+		printf("\n");
+		usage(prog);
+	}
+#ifndef NO_LOCALE
+        if (setlocale(LC_CTYPE, "") == NULL){ /* why is this needed ? */
+                fprintf(stderr, "WARN: cannot set locale\n");
+        } else {
+                char *codeset = NULL;
+                if ((codeset = nl_langinfo(CODESET)) == NULL){
+                        fprintf(stderr, "WARN: cannot get codeset\n");
+                } else {
+                        to_utf = iconv_open("UTF-8", codeset);
+                        from_utf = iconv_open(codeset, "UTF-8" );
+                }
+        }
+#endif
+
+        if (config){
+                setlen = mo_config_file(&set, setlen, config );
+                free(config);
+        } else {
+                if (!(setlen = mo_system_config(&set, setlen)) )
+                        usage(prog);
+        }
+
+        stream_init();
+	if(debug==0){
+		snprintf(buf,BUFSIZ,"%s_debug",language);
+		char *nme=mo_find_option(set, setlen, buf);
+		if(nme) debug= strtol(nme, NULL, 10);
+	}
+	if(port==0){
+		snprintf(buf,BUFSIZ,"%s_port",language);
+		char *nme=mo_find_option(set, setlen, buf);
+		if(nme) port= strtol(nme, NULL, 10);
 	}
 
-	port = strtol(mo_find_option(set, setlen, "mapi_port"), NULL, 10);
-	mid = Mconnect(mo_find_option(set, setlen, "host"), port, user, NULL);
-	mid->everything = 1;
-	if ( strcasecmp(
-		mo_find_option(set, setlen, "mapi_noheaders"), "yes")==0)
-		mid->everything = 0;
+	host= mo_find_option(set, setlen, "host");
+	if (host == NULL) strcpy(host,"localhost");
 
-	if (Merror(mid)) {
-		Mexplain(mid,toConsole);
+
+        prompt = mo_find_option(set, setlen, "prompt");
+        if (!prompt) {
+		if(strcmp(language,"mal")) {
+			char pbuf[256];
+			snprintf(pbuf,256,"%s> ",language);
+			prompt = _strdup(pbuf);
+		} else 	prompt = _strdup(">");
+	}
+
+	fstat(fileno(stdin),&st);
+#ifdef HAVE_LIBREADLINE
+	if (S_ISCHR(st.st_mode))
+	   is_chrsp = 1;
+#endif
+/*
+	if (!user)
+		user = simple_prompt("User: ", BUFSIZ, 1 );
+	if (!passwd)
+		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
+*/
+
+	toConsole = stdout;
+	snprintf(buf,BUFSIZ,"%s:%d",host,port);
+	mid = mapi_connect(buf, user, passwd,0);
+	mid->trace = trace;
+	if (mapi_error(mid)) {
+		mapi_explain(mid,toConsole);
+		fflush(toConsole);
 		EXIT(2);
 	}
+	if( language && strcmp(language,"mal")){
+		char lang[BUFSIZ];
+		snprintf(lang,BUFSIZ,"%s();",language);
+		doRequest(mid, lang);				\
+	}
  
-	clientAccept(mid);
 
+	if (command) { 
+		doRequest(mid, command );
+	} else {
+		terminalInput(mid);
+	}
 	return 0;
 }
