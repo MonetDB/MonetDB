@@ -38,34 +38,72 @@ command getenv(nme:str) :str
 address UNIXgetenv
 comment "Get the environment variable string.";
 
-command setenv(nme:str,val:str,overwrite:int) :bit 
+command setenv(nme:str,val:str) :bit 
 address UNIXsetenv
 comment "Set the environment variable string.";
 
 @{
-@-
-The implementation is relatively straight forward.
+@c
+@- Implementation
+The remainder is a straight forward mapping to the underlying
+facilities
+@c
+#include <gdk.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+/*----------------------------------------------------------------------------
+ * The Basic UNIX commands.
+ */
+
+int unix_getenv(str *res, str varname)
+{
+	char *p = getenv(varname);
+	if(p) *res = GDKstrdup(p);
+	else  *res = GDKstrdup("");
+	return GDK_SUCCEED;
+}
+
+int unix_setenv(bit *res, str varname, str valname)
+{
+#ifdef HAVE_PUTENV		/* prefer POSIX putenv */
+	/* leaks memory when varname value reused */
+	size_t len = strlen(varname) + strlen(valname) + 2;
+	char *envval = GDKmalloc(len);
+	strcpy(envval, varname);
+	strcat(envval, "=");
+	strcat(envval, valname);
+	*res = putenv(envval);
+	/* don't free envval! */
+#else
+#ifdef HAVE_SETENV
+	*res = setenv(varname, valname, TRUE);
+#else
+	*res = -1;
+#endif
+#endif
+	return GDK_SUCCEED;
+}
+
+/*
+Local Variables:
+c-basic-offset: 4
+End:
+*/
+
+
+@- Wrapping
+The remainder simply wraps the old code.
 @c
 #include "mal.h"
-
-str UNIXgetenv(str *res, str *varname)
-{
-	char *p = getenv(*varname);
-	if (p) *res = GDKstrdup(p);
-	else   *res = GDKstrdup("");
+str UNIXgetenv(str *res, str *varname) {
+	unix_getenv(res, *varname);
+	return MAL_SUCCEED;
+}
+str UNIXsetenv(bit *res, str *name, str *value){
+	unix_setenv(res,*name, *value);
 	return MAL_SUCCEED;
 }
 
-str UNIXsetenv(bit *res, str *name, str *value, int *overwrite)
-{
-	*res =0;
-	if (overwrite || getenv(*name) == NULL) {
-		char *p = (char*) GDKmalloc(2+strlen(*name)+strlen(*value));
-		strcpy(p, *name);
-		strcat(p, "=");
-		strcat(p, *value);
-		*res = putenv(p);
-	}
-	return MAL_SUCCEED;
-}
 @}

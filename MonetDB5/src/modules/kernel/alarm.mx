@@ -39,31 +39,31 @@ the cpu clock. They return an integer and string, respectively.
 module alarm;
 
 command sleep(secs:int):void 
-address CLKsleep 
+address ALARMsleep 
 comment "sleep X secs";
 command alarm(secs:int, action:str):void 
-address CLKsetalarm 
+address ALARMsetalarm 
 comment "execute action in X secs";
 command timers() :bat[:str,:str] 
-address CLKtimers
+address ALARMtimers
 comment "give a list of all active timers";
 command usec() :lng 
-address CLKusec
+address ALARMusec
 comment "return cpu microseconds info";
 command time() :int 
-address CLKtime 
+address ALARMtime 
 comment "time in millisecs";
 command epoch() :int 
-address CLKepoch 
+address ALARMepoch 
 comment "current time as unix epoch";
 command ctime() :str 
-address CLKctime 
+address ALARMctime 
 comment "current time as a string";
 command prelude():void
-address CLKprelude 
+address ALARMprelude 
 comment "Initialize alarm module";
 command epilogue():void
-address CLKepilogue 
+address ALARMepilogue 
 comment "Finalize alarm module";
 
 prelude();
@@ -71,51 +71,26 @@ prelude();
 @{
 @* Implementation
 @+ The Clock Interupt Generator
-A clock event generator, called @%timer@, has been added to the kernel.
-It accepts a message @%CLKsetalarm(sec, usec)@, which generates an alarm
+A clock event generator, called @%timer@, has been added to the database kernel.
+It accepts a message @%CLKalarm(sec, usec)@, which generates an alarm
 after the time indicated.
-The timer maintains a small stack of timing events sorted in priority of 
-firing.
+The timer maintains a small stack of timing events sorted in priority of firing.
 The top contains the next timer event to go off.
 The timer is disabled when no timer events are outstanding.
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- */
-
-#include "mal.h"
-#ifdef HAVE_SYS_SIGNAL_H
-# include <sys/signal.h> 
-#endif
+#include <gdk.h> 
+# include <signal.h> 
 #define MAXtimer                200
 
 typedef struct {
-	str action;	/* MAL action (as a string) */
+	str action;	/* MIL action (as a string) */
 	MT_Sema sema;	/* barrier */
 	int alarm_time;	/* time when the alarm goes off */
 } monet_timer_t;
 
 @c
 #include "alarm.h"
-#include "mal_function.h"
+#include <time.h>
 
 static monet_timer_t            timer[MAXtimer]; 
 static int                      timerTop = 0; 
@@ -125,12 +100,14 @@ The timer is awakened by a clock interrupt. The interrupt granularity
 is OS-dependent. The timer should be initialized as long as there
 are outstanding timer events.
 @c
+#ifdef SIGALRM
 void CLKinitTimer(int sec, int usec){
 	int i = sec - time(0);
-	(void) usec; /* fool compiler */
+	(void) usec;
 	TRGDEBUG THRprintf(GDKerr, "CLKinitTimer: set timer to %d secs \n", i); 
         alarm(i);
 }
+#endif
 @- 
 A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
@@ -142,7 +119,8 @@ MT_Sema CLKalarm(int t, str action){
  
 	TRGDEBUG THRprintf(GDKerr, "CLKalarm: push %d \n", t); 
         if (timerTop == MAXtimer) {
-                return throwMessage("alarm.alarm", "timer stack overflow"); 
+                GDKerror("CLKalarm: timer stack overflow\n"); 
+                return 0; 
         }
         for (j = 0; j < timerTop; j++) {
                 if (timer[j].alarm_time > t) break; 
@@ -168,10 +146,16 @@ Once a timer interrupt occurs, we should inspect the timer queue and
 emit a notify signal.
 @c
 #ifdef SIGALRM
+/* HACK to pacify compiler */
+#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))  
+#undef  SIG_ERR /*((__sighandler_t)-1 )*/
+#define SIG_ERR   ((__sighandler_t)-1L)
+#endif
 static RETSIGTYPE CLKsignal(int nr){
+	int restype;
 	int k=timerTop;
         int t; 
-	(void)nr; /* fool compiler */
+	(void) nr;
  
 	if (signal(SIGALRM, CLKsignal) == SIG_ERR) {
 		GDKsyserror("CLKsignal: call failed\n");
@@ -184,9 +168,10 @@ static RETSIGTYPE CLKsignal(int nr){
         while (k-- && t >= timer[k].alarm_time){
 	    if (timer[k].action) {
 		TRGDEBUG THRprintf(GDKerr, "eval(%s)\n", timer[k].action); 
-		GDKwarning("Timer action not activated");
-		/* monet_eval(timer[k].action,&restype);*/
+		(void) restype;/* fool compiler */
+		/*monet_eval(timer[k].action,&restype); */
 		GDKfree(timer[k].action);
+		
 	    } else {
 		MT_up_sema(timer[k].sema, "CLKsignal");
 	    }
@@ -198,79 +183,66 @@ static RETSIGTYPE CLKsignal(int nr){
 }
 #endif
 
-str CLKprelude(){
+bat* CLKprelude(void){
 #ifdef SIGALRM
-        (void) signal(SIGALRM, (void (*)()) CLKsignal);
-	return MAL_SUCCEED;
-#else
-	return throwMessage("alarm.prelude", "SIGALRM not set");
+        (void) signal(SIGALRM, CLKsignal);
 #endif
+	return NULL;
 }
 
-str CLKepilogue(){
-#ifdef SIGALRM
+void CLKepilogue(void){
 	int k;
-#if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32) || defined(__MACH__))
-        (void) signal(SIGALRM,SIG_IGN);
+#if (defined(SIGALRM) && defined(SIG_IGN))
+/* HACK to pacify compiler */
+#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))  
+#undef  SIG_IGN /*((__sighandler_t)1 )*/
+#define SIG_IGN   ((__sighandler_t)1L)
+#endif
+	(void) signal(SIGALRM, SIG_IGN);
 #endif
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action) GDKfree(timer[k].action);
 	}
-	return MAL_SUCCEED;
-#else
-	return throwMessage("alarm.epilogue", "SIGALRM not set");
-#endif
-}
-
-str CLKusec(int *ret){
-        *ret= GDKusec();
-        return MAL_SUCCEED;
 }
 
 
-str CLKsleep(int *res,int *secs)
-{
-	(void) res; /* fool compiler */
+int CMDsleep(int *secs){
 
         if (*secs < 0) {
-                return throwMessage("alarm.sleep", "negative delay");
+                GDKerror("sleep: negative delay\n");
+        	return GDK_FAIL;
         } else {
-		MT_sleep_ms(*secs *1000);
-/*
-		MT_Sema s = CLKalarm(*secs+time(0), 0);
-		(void)CLKprelude();
-                MT_down_sema(s, "CLKsleep"); */ /* block on this */
-/*
-		MT_destroy_sema(s);
-*/
+		MT_sleep_ms(*secs*1000);
         }
-        return MAL_SUCCEED;
+        return GDK_SUCCEED;
 }
  
-str CLKsetalarm(int *res, int *secs, str *action){
-	(void) res; /* fool compiler */
+int CMDalarm(int *secs, str action){
         if (*secs < 0) {
-                return throwMessage("alarm.setalarm", "negative delay");
+                GDKerror("alarm: negative delay\n");
+        	return GDK_FAIL;
         } else {
-#ifdef SIGALRM
-                (void) CLKalarm(*secs+time(0), *action);
+#ifndef SIGALRM
+		GDKerror("alarm: not implemented\n");
+		return GDK_FAIL;
 #else
-		return throwMessage("alarm.setalarm", "SIGALRM not set");
+                (void) CLKalarm(*secs+time(0), action);
 #endif
         }
-        return MAL_SUCCEED;
+        return GDK_SUCCEED;
 }
 @-
-Problem with CLKtimers is that they use static buffers that
+Problem with CMDtimers is that they use static buffers that
 may be overwritten under parallel processing.
 Therefore, the code below is dangerous (!) and the re-entrant code
 should be used. 
 @c
-str CLKtimers(int *res) {
+int CMDtimers(BAT **retval) {
 	char buf[27];
 	int k;
-	BAT *retval = BATnew(TYPE_str, TYPE_str, timerTop);
-	BATroles(retval, "alarm", "action");
+	*retval = BATnew(TYPE_str, TYPE_str, timerTop);
+	if(*retval == NULL) return GDK_FAIL;
+	BATroles(*retval, "alarm", "action");
 	for (k = 0; k < timerTop; k++) {
 #ifdef HAVE_CTIME_R3
 		ctime_r((time_t *) &timer[k].alarm_time,buf,26); 
@@ -282,14 +254,13 @@ str CLKtimers(int *res) {
 #endif
 #endif
 		if( buf)
-		BUNins(retval, buf, 
+		BUNins(*retval, buf, 
 			timer[k].action? timer[k].action:"barrier");
         }
-	*res= retval->batCacheid;
-	return MAL_SUCCEED;
+	return GDK_SUCCEED;
 }
 
-str CLKctime(str *retval){
+int CMDctime(str *retval){
 	time_t t = time(0);
 #ifdef HAVE_CTIME_R3
 	char buf[128];
@@ -302,16 +273,107 @@ str CLKctime(str *retval){
 	*retval = GDKstrdup((char*)ctime(&t));
 #endif
 #endif
+	return GDK_SUCCEED;
+}
+
+int CMDepoch(int *retval) {
+	*retval = time(0);
+	return GDK_SUCCEED;
+}
+
+/* should return lng */
+int CMDusec(int *retval){
+	*retval = (int) GDKusec();
+	return GDK_SUCCEED;
+}
+int CMDtime(int *retval){
+	*retval = GDKms();
+	return GDK_SUCCEED;
+}
+@}
+
+@mil
+PROC test_alarm() : void := {
+	t0 := time();
+	sleep(15);
+	t1 := time();
+	print((t1 - t0) / 1000);
+	alarm(15, "print(\"alarm went off\");" );
+	printf("#~BeginVariableOutput~#\n");
+	timers().print;
+	time.print;
+	usec.print;
+	epoch.print;
+	ctime.print;
+	printf("#~EndVariableOutput~#\n");
+	sleep(16); # wait for alarm
+}
+@- Wrapping
+Wrapping the Version 4 code base
+@c
+#include "mal.h"
+#include "mal_function.h"
+
+void ALARMinitTimer(int sec, int usec){
+	CLKinitTimer(sec, usec);
+}
+
+#ifdef SIGALRM
+MT_Sema ALARMalarm(int t, str *action){
+	CLKalarm(t, *action);
+	return MAL_SUCCEED;
+}
+#endif
+
+#ifdef SIGALRM
+static RETSIGTYPE ALARMsignal(int nr){
+	CLKsignal(nr);
+}
+#endif
+
+str ALARMprelude(){
+#ifdef SIGALRM
+        (void) signal(SIGALRM, (void (*)()) CLKsignal);
+	return MAL_SUCCEED;
+#else
+	return throwMessage("alarm.prelude", "SIGALRM not set");
+#endif
+}
+
+str ALARMepilogue(){
+	CLKepilogue();
 	return MAL_SUCCEED;
 }
 
-str CLKepoch(int *res) {
-	*res = time(0);
+str ALARMusec(int *ret){
+	CMDusec(ret);
 	return MAL_SUCCEED;
 }
 
-str CLKtime(int *res){
-	*res = GDKms();
+str ALARMsleep(int *res,int *secs){
+	(void) res; /* fool compilers */
+	CMDsleep(secs);
+	return MAL_SUCCEED;
+}
+
+str ALARMsetalarm(int *res, int *secs, str *action){
+	(void)res, (void)secs, (void)action; /* foolc compiler */
+	return throwMessage("alarm.setalarm", "not yet implemented");
+}
+str ALARMtimers(int *res){
+	(void)res; /* fool compiler */
+	return throwMessage("alarm.timers", "not yet implemented");
+}
+str ALARMctime(str *res){
+	CMDctime(res);
+	return MAL_SUCCEED;
+}
+str ALARMepoch(int *res){
+	CMDepoch(res);
+	return MAL_SUCCEED;
+}
+str ALARMtime(int *res){
+	CMDtime(res);
 	return MAL_SUCCEED;
 }
 @}
