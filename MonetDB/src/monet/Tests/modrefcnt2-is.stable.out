@@ -33,7 +33,6 @@ stdout of test 'modrefcnt2-is` in directory 'src/monet` itself:
 [ "sema_create(int) : sema"	  ]
 [ "sema_destroy(sema) : void"	  ]
 [ "sema_down(sema) : void"	  ]
-[ "sema_try(sema) : int"	  ]
 [ "sema_up(sema) : void"	  ]
 #-----------------#
 # BAT:	  test	  #
@@ -72,7 +71,6 @@ sigs("lock");
 [ "sema_create(int) : sema"	  ]
 [ "sema_destroy(sema) : void"	  ]
 [ "sema_down(sema) : void"	  ]
-[ "sema_try(sema) : int"	  ]
 [ "sema_up(sema) : void"	  ]
 bat("test").print();
 #-----------------#
@@ -135,7 +133,6 @@ Over..
 [ "sema_create(int) : sema"	  ]
 [ "sema_destroy(sema) : void"	  ]
 [ "sema_down(sema) : void"	  ]
-[ "sema_try(sema) : int"	  ]
 [ "sema_up(sema) : void"	  ]
 
 
@@ -168,7 +165,6 @@ Over..
 [ "sema_create(int) : sema"	  ]
 [ "sema_destroy(sema) : void"	  ]
 [ "sema_down(sema) : void"	  ]
-[ "sema_try(sema) : int"	  ]
 [ "sema_up(sema) : void"	  ]
 #-----------------#
 # BAT:	  test	  #
@@ -206,7 +202,6 @@ Over..
 [ "sema_create(int) : sema"	  ]
 [ "sema_destroy(sema) : void"	  ]
 [ "sema_down(sema) : void"	  ]
-[ "sema_try(sema) : int"	  ]
 [ "sema_up(sema) : void"	  ]
 #---------------------------------#
 # module		usage_count	  # name
@@ -232,7 +227,6 @@ Over..
 [ "sema_create(int) : sema"	  ]
 [ "sema_destroy(sema) : void"	  ]
 [ "sema_down(sema) : void"	  ]
-[ "sema_try(sema) : int"	  ]
 [ "sema_up(sema) : void"	  ]
 
 
