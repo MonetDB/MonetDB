@@ -834,7 +834,7 @@ def GetBitsAndModsAndStatic(env) :
     return rtrn
 ### GetBitsAndModsAndStatic(env) #
 
-def CheckMods(env, TST, SERVER) :
+def CheckMods(env, TST, SERVER, CALL) :
     missing = []
     if os.path.isfile(TST+".modules"):
         for m in fileinput.input(TST+".modules"):
@@ -849,8 +849,12 @@ def CheckMods(env, TST, SERVER) :
         for m in "str", env['SQL_SERVER'], "ascii_io", "alarm", "unix", "xtables", "aggrX3", "monettime", "uchr", "mmath", "mkey":
             if m not in env['TST_MODS']:
                 missing.append(m)
+    if CALL in ["x100", "x100Xs"]:
+        m = "x100"
+        if m not in env['TST_MODS']:
+            missing.append(m)
     return missing
-### CheckMods(env, TST, SERVER) #
+### CheckMods(env, TST, SERVER, CALL) #
 
 def CheckBATs(env, TST, TSTDB) :
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB)
@@ -1009,10 +1013,10 @@ def RunTest(env, TST, BusyPorts) :
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.milM|.milS|.milC|x100]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.milM|.milS|.milC|.x100]`")
         return TX,Failed
 
-    MissingMods = CheckMods(env, TST, SERVER)
+    MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingBATs = CheckBATs(env, TST, TSTDB)
 
     os.chdir(TSTTRGDIR)
