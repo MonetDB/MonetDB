@@ -379,8 +379,8 @@ Module: "tpcd"
 
 Module: "vector"
 
-[ 140 ]
-[ 140 ]
+[ 141 ]
+[ 141 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature							| help												  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -503,6 +503,7 @@ Module: "vector"
 [ "tan",			  "PROC:      ",  "tan(flt) : flt",						  "not available"										  ]
 [ "tanh",			  "PROC:      ",  "tanh(flt) : flt",						  "not available"										  ]
 [ "test_mmath",			  "PROC:      ",  "test_mmath() : void",					  "not available"										  ]
+[ "test_mmath_nan",		  "PROC:      ",  "test_mmath_nan() : void",					  "not available"										  ]
 [ "test_vector",		  "PROC:      ",  "test_vector() : void",					  "not available"										  ]
 [ "todbls",			  "COMMAND:   ",  "todbls(flts) : dbls",					  "Converts vectors of flts to vector of dbls"							  ]
 [ "todbls",			  "COMMAND:   ",  "todbls(ints) : dbls",					  "Converts vectors of ints to vector of dbls"							  ]
