@@ -93,14 +93,16 @@ that you might well find very useful.
 
 @- Monet Variables
 @m
+.BUILTIN view_var_name() : BAT[int,str] = view_var_name; 
+	"Pseudo bat to map variable id to its name."
 .BUILTIN view_var_type() : BAT[int,str] = view_var_type; 
-	"Pseudo bat to gain access to all visible variables"
+	"Pseudo bat to map variable id to its type (as a string)."
 .BUILTIN view_var_kind() : BAT[int,str] = view_var_kind; 
-	"Pseudo bat to map variable name to frozen/liquid"
+	"Pseudo bat to map variable id to frozen/liquid"
 .BUILTIN view_var_constant() : BAT[int,str] = view_var_constant; 
-	"Pseudo bat to map variable name to constant/changeable"
+	"Pseudo bat to map variable id to constant/changeable"
 .BUILTIN view_var_value() : BAT[int,str] = view_var_value; 
-	"Pseudo bat to map variable name to its value (as a string)."
+	"Pseudo bat to map variable id to its value (as a string)."
 
 @- Monet Modules
 @m
@@ -309,7 +311,7 @@ that you might well find very useful.
 	"list all active clients by their number.", "sys"); 
 
     PROC vars() : void := 
-	print(view_var_type, view_var_kind, view_var_constant, view_var_value);
+	table(view_var_name, view_var_type, view_var_kind, view_var_constant, view_var_value);
     ADDHELP("vars", "boncz", "Feb  6 1996", 
         	"list all Monet variables and their values.", "sys"); 
 
@@ -738,6 +740,34 @@ int view_client_tree(BAT **retval){
 The variable information can be turned into a BAT for inspection as well.
 @c
 int
+view_var_name(
+   int          stk,    /* variable context number ("stack"). */
+   YYSTREE      lt,     /* syntax tree of parsed MIL. */
+   ValPtr        res     /* value record for result. */
+){
+        Client  c;
+        Variable v;
+	BAT *b, **retval=&b;
+
+        CNTXTclient(stk, &c);
+
+	b = BATnew(TYPE_ptr,TYPE_str,100);
+	if( b== 0) return -1;
+
+        while(TRUE) {
+		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
+			BUNins(b, &v, v->name); 
+                }
+		if (stk < 0) break;
+                stk = monet_cntxt[stk].outer;
+        } 
+	@:Pseudo(var,type)@
+        res->vtype = TYPE_bat;
+        res->val.bval = BBPcacheid(b);
+	return 0;
+}
+
+int
 view_var_type(
    int          stk,    /* variable context number ("stack"). */
    YYSTREE      lt,     /* syntax tree of parsed MIL. */
@@ -749,12 +779,12 @@ view_var_type(
 
         CNTXTclient(stk, &c);
 
-	b = BATnew(TYPE_str,TYPE_str,100);
+	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
         while(TRUE) {
 		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
-			BUNins(b, v->name, 
+			BUNins(b, &v, 
 			BATatoms[v->binding.vtype].name );
                 }
 		if (stk < 0) break;
@@ -778,12 +808,12 @@ view_var_kind(
 
         CNTXTclient(stk, &c);
 
-	b = BATnew(TYPE_str,TYPE_str,100);
+	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
         while(TRUE) {
 		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
-			BUNins(b, v->name,
+			BUNins(b, &v, 
 			(v->frozen?"frozen":"liquid"));
                 }
 		if (stk < 0) break;
@@ -806,12 +836,12 @@ view_var_constant(
 
         CNTXTclient(stk, &c);
 
-	b = BATnew(TYPE_str,TYPE_str,100);
+	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
         while(TRUE) {
 		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
-			BUNins(b, v->name,
+			BUNins(b, &v, 
 			(v->constant?"constant":"changeable"));
                 }
 		if (stk < 0) break;
@@ -837,7 +867,7 @@ view_var_value(
 
         CNTXTclient(stk, &c);
 
-	b = BATnew(TYPE_str,TYPE_str,100);
+	b = BATnew(TYPE_ptr,TYPE_str,100);
 	if( b== 0) return -1;
 
         while(TRUE) {
@@ -845,9 +875,9 @@ view_var_value(
 			int t = ATOMstorage(v->binding.vtype);
 			ptr p = ATOMextern(t)?v->binding.val.pval:(ptr)&v->binding.val.ival;
                 	if ((*BATatoms[v->binding.vtype].atomToStr)(&buf, &l, p)) {
-				BUNins(b, v->name, buf);
+				BUNins(b, &v, buf);
 			} else {
-				BUNins(b, v->name, str_nil);
+				BUNins(b, &v, str_nil);
 			}
 		}
 		if (stk < 0) break;
