@@ -564,19 +564,20 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} break;
 	case st_copyfrom: {
 		len += snprintf( buf+len, BUFSIZ, 
-			"input(myc, \"%s\", \"%s\",\"%s\");\n", 
+			"input(myc, \"%s\", \"%s\",\"%s\", \"newline\", -1);\n", 
 				s->op1.tval->name, s->op2.sval, s->op3.sval );
 	} break;
 	case st_insert: {
-
-		if (!(sql->optimize & SQL_FAST_INSERT)){
+		stmt *r = s->op2.lval->h->data;
+		if (r->nrcols > 0  /* insert columns */
+		   || (!(sql->optimize & SQL_FAST_INSERT)) ){
 			for( n = s->op2.lval->h ;n; n = n->next ){
 				stmt_dump(n->data, nr, sql);
 			}
 			len += snprintf( buf+len, BUFSIZ, 
 				"mvc_insert(myc, \"%s\"", s->op1.tval->name );
 			for( n = s->op2.lval->h ;n; n = n->next ){
-				stmt *r = n->data;
+				r = n->data;
 				len += snprintf( buf+len, BUFSIZ, 
 					",s%d", r->nr);
 			}
@@ -586,7 +587,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 				      s->op1.tval->name );
 			for( n = s->op2.lval->h ;n; n = n->next ){
 				char *s = NULL;
-				stmt *r = n->data;
+				r = n->data;
 				while(r->type == st_unop){ /* cast */
 					if (strcmp(r->op2.funcval->name,
 							"neg") ==0){
