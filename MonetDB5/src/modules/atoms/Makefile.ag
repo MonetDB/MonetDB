@@ -5,7 +5,7 @@ MTSAFE
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = blob.mx url.mx mtime.mx streams.mx resultset.mx
+	SOURCES = blob.mx url.mx mtime.mx streams.mx 
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -29,7 +29,7 @@ lib__str = {
 #}
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx resultset.mx
+	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx 
 }
 
 #EXTRA_DIST_DIR = Tests
