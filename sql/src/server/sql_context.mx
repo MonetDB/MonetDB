@@ -70,7 +70,7 @@ typedef struct context {
 	struct symbol *sym;
 } context;
 
-sql_export context *sql_create_context(int debug, mvc *m);
+sql_export context *sql_create_context(int debug, int cache, mvc *m);
 sql_export void sql_destroy_context(context * c);
 
 sql_export void cmd_init(context * c);
@@ -124,7 +124,7 @@ int sqlcleanup( context *c, char *cmd, int err)
 	return err;
 }
 
-context *sql_create_context(int debug, mvc * mvc)
+context *sql_create_context(int debug, int cache, mvc * mvc)
 {
 	context *c = NEW(context); 
 
@@ -137,7 +137,9 @@ context *sql_create_context(int debug, mvc * mvc)
 	c->cnt = 0;
 	c->lineno = 1;
 	c->sym = NULL;
-	c->qc = qc_create();
+	c->qc = NULL;
+	if (cache)
+		c->qc = qc_create();
 	c->mvc = mvc;
 	c->errstr[0] = '\0';
 

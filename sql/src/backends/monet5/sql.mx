@@ -286,7 +286,7 @@ str SQLinitClient(Client c){
 		} else {
 			_DELETE(schema);
 		}
-		sql = sql_create_context(0/*debug*/, m);
+		sql = sql_create_context(0/*debug*/, 1/*cache*/, m);
 		be = backend_create( sql );
 
 		c->state[PARSER] = be;

@@ -460,7 +460,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 		GDKfree(schema);
 	}
 
-	sqlc = sql_create_context( debug, m );
+	sqlc = sql_create_context( debug, 1, m );
 	sql = backend_create( trace, reply_size, sqlc );
 
 	/* add myc and Output, Input to the stack */
