@@ -540,6 +540,16 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         		break;
 			}
     	case 'b':
+			if( strcmp(b,"bbp") == 0 ){
+			int i;
+				for(i=1; i < BBPsize; i++)
+				if (BBP_cache(i) && BBP_logical(i)) {
+					stream_printf(out,"[%d] %s lref = %d ref= %d ", i,
+						BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
+					stream_printf(out," dirty=%d \n", BATdirty(BBP_cache(i)) );
+				}
+				continue;
+			}
 			if( strcmp(b,"breakpoints") == 0 ){
 				mdbShowBreakpoints(cntxt);
 				continue;
