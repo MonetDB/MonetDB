@@ -885,8 +885,17 @@ stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * sub
 		return sql_column_value(sql, scp, se, grp, subset, f);
 	case SQL_SELECT:
 		return scope_subquery(sql, scp, se);
-	case SQL_PARAMETER:
-		return sql_error(sql, 02, "Currently no support for '?' parameters\n");
+	case SQL_PARAMETER: {
+		char *n = "param";
+		stmt *s;
+
+		/* TODO: probably need to check if prepare is set
+		   and give an error 
+		 */
+		sql->prepare = 1; 
+		sql_add_param(sql, n, s=stmt_var(_strdup(n), NULL)); 
+		return s;
+	}
 	case SQL_NULL: 
 		return stmt_atom(atom_general(sql_dup_subtype(
 				sql_bind_localtype("str")),NULL));

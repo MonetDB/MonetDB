@@ -100,7 +100,7 @@ extern void logger_restart(struct logger *logger );
 extern int logger_cleanup(struct logger *logger );
 
 extern void log_bat(struct logger* logger, oid lbid, BAT *b);
-extern oid log_bat_persists(struct logger* logger, BAT *b, char *n );
+extern void log_bat_persists(struct logger* logger, BAT *b, oid lbid, char *n );
 extern void log_bat_transient(struct logger* logger, oid lbid );
 extern int  log_changes(struct logger *logger );
 
@@ -559,7 +559,7 @@ Changes made to the BAT descriptor should be stored in the log files.
 Actually, we need to save the descriptor file, perhaps we should simply
 introduce a versioning scheme. 
 @c
-oid log_bat_persists(logger *logger, BAT *b, char *name )
+void log_bat_persists(logger *logger, BAT *b, oid lbid, char *name )
 {
 	char *ha, *ta;
 	int len;
@@ -567,7 +567,6 @@ oid log_bat_persists(logger *logger, BAT *b, char *name )
 	logformat l;
 	int havevoid = 0;
 
-	oid lbid = bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
 	l.flag = SQL_LOG_CREATE;
 	l.nr = 0;
 	logger->changes++;
@@ -591,7 +590,6 @@ oid log_bat_persists(logger *logger, BAT *b, char *name )
 		fprintf(stderr, "Logged new bat %s htype %s ttype %s\n", 
 			name, ha, ta );
 	log_bat(logger, lbid, b);
-	return lbid;
 }
 
 void log_bat_transient(logger *logger, oid lbid ){
@@ -606,7 +604,6 @@ void log_bat_transient(logger *logger, oid lbid ){
 	
         if (logger->debug&1)
 		fprintf(stderr, "Logged destroyed bat %s\n", name);
-	bm_del_bat(logger->bm, lbid);
 }
 
 void log_bat(logger *logger, oid lbid, BAT *b ){

@@ -461,7 +461,32 @@ int sqlexecute(backend * be, stream *out )
 	}
 
 	scanner_query_processed(&(c->scanner));
-	if (q && !q->code) {
+
+	if (q && c->prepare) {
+		int i;
+		node *n;
+		char buf[BUFSIZ];
+		c->prepare = 0; 
+
+		i = snprintf( buf, BUFSIZ, "%d\n%d\n", 
+			q->id, list_length(q->params));
+		if (stream_write(out, buf, i, 1) != 1) {
+			err = -1;
+			return sqlcleanup(c, err, cache);
+		}
+		for (n = q->params->h; n; n = n->next) {
+			var_ *v = n->data;
+			sql_subtype *t = tail_type(v->s);
+			if (t) {
+				i = snprintf( buf, BUFSIZ, "%d(%d,%d)\n", 
+					t->type->sqlname, t->digits, t->scale);
+				if (stream_write(out, buf, i, 1) != 1) {
+					err = -1;
+					return sqlcleanup(c, err, cache);
+				}
+			}
+		}
+	} else if (q && !q->code) {
 		char buf[BUFSIZ];
 		Cntxt procstk = backend_newstack(c->stk);
 		YYSTREE callnode;
@@ -478,7 +503,6 @@ int sqlexecute(backend * be, stream *out )
 			c->status = err;
 			monet4_freecode( callnode, (backend_stack)(ptrdiff_t)procstk, q->id);
 			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
-			
 		}
 	} else if (q) {
 		c->type = q->type;

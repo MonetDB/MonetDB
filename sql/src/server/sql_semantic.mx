@@ -506,6 +506,17 @@ sql_subtype *supertype( sql_subtype *r, sql_subtype *i )
 	return sql_bind_subtype(tpe,digits,scale);
 }
 
+int 
+set_type_param( stmt *s, stmt *param ) 
+{
+	sql_subtype *type = tail_type(s);
+
+	if (!s || !param || param->type != st_var)
+		return -1;
+
+	param->op2.typeval = sql_dup_subtype(type);
+	return 0;
+}
 /* convert_types convert both the stmt's L and R such that they get
  * matching types. On failure <0 is returned;
  */
@@ -515,6 +526,13 @@ int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 	stmt *rs = *R;
 	sql_subtype *lt = tail_type(ls);
 	sql_subtype *rt = tail_type(rs);
+
+	
+	if (rt && !lt)
+		return set_type_param(rs, ls);
+		
+	if (!rt && lt) 
+		return set_type_param(ls, rs);
 
 	if (rt && lt){
 		sql_subtype *i = lt;

@@ -226,6 +226,7 @@ typedef struct mvc {
 	char *user;
 	char *role;
 
+	int prepare;
 	int auto_commit;
 	int reply_size;
 	int debug;
@@ -2279,21 +2280,23 @@ rollforward_changeset_map( sql_trans *tr, changeset *cs, rfdfunc rf )
 static sql_idx *
 rollforward_create_idx( sql_trans *tr, sql_idx *i )
 {
-	char bname[BUFSIZ];
-
-	if (tr->parent != gtrans)
-		return i;
-
 	if (i->bat.bid && i->bat.ubid){
+		char bname[BUFSIZ];
 		BAT *b = bm_lbid2bat( tr->bm, i->bat.bid);
 		BAT *u = bm_lbid2bat( tr->bm, i->bat.ubid);
 	
-		snprintf(bname, BUFSIZ, "%s_%s", i->t->base.name, i->base.name );
-		i->bat.bid = log_bat_persists(logger, b, bname); 
+		snprintf(bname, BUFSIZ, "%s_%s", 
+				i->t->base.name, i->base.name );
+		i->bat.bid = bm_add_bat(tr->parent->bm, b->batCacheid, bname,0);
+		if (tr->parent == gtrans) 
+			log_bat_persists(logger, b, i->bat.bid, bname); 
 		bat_destroy(b);
-	
-		snprintf(bname, BUFSIZ, "U_%s_%s", i->t->base.name, i->base.name );
-		i->bat.ubid = log_bat_persists(logger, u, bname); 
+
+		snprintf(bname, BUFSIZ, "U_%s_%s", 	
+				i->t->base.name, i->base.name );
+		i->bat.ubid = bm_add_bat(tr->parent->bm, u->batCacheid,bname,0);
+		if (tr->parent == gtrans) 
+			log_bat_persists(logger, u, i->bat.ubid, bname); 
 		bat_destroy(u);
 	} else {
 		sql_kc *c = i->columns->h->data;
@@ -2310,28 +2313,29 @@ rollforward_create_column( sql_trans *tr, sql_column *c )
 	char bname[BUFSIZ];
 	BAT *b, *u;
 
-	if (tr->parent != gtrans)
-		return c;
-
-	b = bm_lbid2bat( tr->bm, c->bat.bid);
 	u = bm_lbid2bat( tr->bm, c->bat.ubid);
 
+	/* only log on toplevel */
+
+	b = bm_lbid2bat( tr->bm, c->bat.bid);
 	snprintf(bname, BUFSIZ, "%s_%s", c->t->base.name, c->base.name );
-	c->bat.bid = log_bat_persists(logger, b, bname); 
+	c->bat.bid = bm_add_bat(tr->parent->bm, b->batCacheid, bname, 0);
+	if (tr->parent == gtrans)
+		log_bat_persists(logger, b, c->bat.bid, bname); 
 	bat_destroy(b);
 
 	snprintf(bname, BUFSIZ, "U_%s_%s", c->t->base.name, c->base.name );
-	c->bat.ubid = log_bat_persists(logger, u, bname); 
+	c->bat.ubid = bm_add_bat(tr->parent->bm, u->batCacheid, bname, 0);
+	if (tr->parent == gtrans)
+		log_bat_persists(logger, u, c->bat.ubid, bname); 
 	bat_destroy(u);
+
 	return c;
 }
 
 static sql_table *
 rollforward_create_table( sql_trans *tr, sql_table *t )
 {
-	if (tr->parent != gtrans)
-		return t;
-
 	if (t->type != tt_view && t->type != tt_temp && 
 	    t->type != tt_session) {
 		char name[BUFSIZ];
@@ -2339,7 +2343,9 @@ rollforward_create_table( sql_trans *tr, sql_table *t )
 		BAT *d = bm_lbid2bat(tr->bm, t->dbid);
 
 		snprintf(name, BUFSIZ, "D_%s", t->base.name );
-		t->dbid = log_bat_persists(logger, d, name); 
+		t->dbid = bm_add_bat(tr->parent->bm, d->batCacheid, name, 0);
+		if (tr->parent == gtrans) 
+			log_bat_persists(logger, d, t->dbid, name); 
 		bat_destroy(d);
 
 		rollforward_changeset_creates( tr, &t->columns, 
@@ -2353,21 +2359,26 @@ rollforward_create_table( sql_trans *tr, sql_table *t )
 static void
 rollforward_drop_column( sql_trans *tr, sql_column *c )
 {
-	if (tr->parent != gtrans)
-		return;
-
 	if (c->bat.bid && c->bat.ubid){
-		log_bat_transient(logger, c->bat.bid); 
-		log_bat_transient(logger, c->bat.ubid); 
+		if (tr->parent == gtrans) {
+			log_bat_transient(logger, c->bat.bid); 
+			log_bat_transient(logger, c->bat.ubid); 
+		}
+		bm_del_bat(tr->parent->bm, c->bat.bid);
+		bm_del_bat(tr->parent->bm, c->bat.ubid);
 	}
 }
 
 static void
 rollforward_drop_idx( sql_trans *tr, sql_idx *i )
 {
-	if (tr->parent == gtrans && i->bat.bid && i->bat.ubid){
-		log_bat_transient(logger, i->bat.bid); 
-		log_bat_transient(logger, i->bat.ubid); 
+	if (i->bat.bid && i->bat.ubid){
+		if (tr->parent == gtrans) {
+			log_bat_transient(logger, i->bat.bid); 
+			log_bat_transient(logger, i->bat.ubid); 
+		}
+		bm_del_bat(tr->parent->bm, i->bat.bid);
+		bm_del_bat(tr->parent->bm, i->bat.ubid);
 	}
 	list_remove_data(i->t->s->idxs, i);
 }
@@ -2388,10 +2399,11 @@ rollforward_drop_key( sql_trans *tr, sql_key *k )
 static void 
 rollforward_drop_table( sql_trans *tr, sql_table *t )
 {
-	if (tr->parent == gtrans &&
-	    t->type != tt_view && t->type != tt_temp && 
+	if (t->type != tt_view && t->type != tt_temp && 
 	    t->type != tt_session) {
-		log_bat_transient(logger, t->dbid); 
+		if (tr->parent == gtrans) 
+			log_bat_transient(logger, t->dbid); 
+		bm_del_bat(tr->parent->bm, t->dbid);
 	} 
 
 	rollforward_changeset_deletes( tr, &t->columns, 
@@ -2861,6 +2873,7 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->role_id = m->user_id = -1;
 	m->schema = m->role = m->user = NULL;
 
+	m->prepare = 0;
 	m->auto_commit = 0;
 	m->reply_size = -1;
 	m->debug = 0;
