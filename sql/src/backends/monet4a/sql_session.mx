@@ -365,9 +365,9 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 	}
 
 	if (!err && !(c->debug&64)){
-		ssize_t status;
+		/* ssize_t status; */
 
-		if ((status = mvc_status(c->mvc)) < 0){
+		if ((/*status =*/ mvc_status(c->mvc)) < 0){
 			char *errstr = "Error in result";
 			if ( 
 			/* !stream_writeInt( out, mvc_type(c->mvc) ) || */
@@ -404,7 +404,7 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	int debug = 0, trace = 0, reply_size = 100, sock, *Sock, go = TRUE;
 	ssize_t i=0;
 	char buf[BUFSIZ+1], *errbuf;
-	char *user, *passwd, *schema, *dbname;
+	char *user, *passwd, *schema;
 	int blocked=0;
 	Variable v;
 	mvc *m;
@@ -413,6 +413,7 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	backend *sql;
 	char *prompt= "\001sql>\002\n";
 	int promptlength= strlen(prompt);
+	str w = NULL;
 	/*int firstrequest=1;*/
 
   	if (lt->cnt != 1) {
@@ -491,7 +492,6 @@ These lines should be eaten away into the prompt is encountered.
 	schema = mvc_login( m, user, passwd );
 	GDKfree(user);
 	GDKfree(passwd);
-	dbname = GDKgetenv("gdk_dbname");
 
 	if (!schema){ 
 		char *msg= "!ERROR:Schema authorization error\n";
@@ -504,7 +504,7 @@ These lines should be eaten away into the prompt is encountered.
 		return connect_error(in, out, sock);
 	}
 /* Sent the profile for the client for inspection*/
-	str w= "[ \"version\",	\"4.3\"	]\n";
+	w= "[ \"version\",	\"4.3\"	]\n";
 	if( stream_write(out, w, 1, strlen(w))<0)
 		return connect_error(in,out,sock);
 	w= "[ \"language\",	\"sql\"	]\n";
