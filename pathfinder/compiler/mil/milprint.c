@@ -30,13 +30,13 @@
                     | expression '.join (' expression ')'      <m_join>
                     | expression '.leftjoin (' expression ')'  <m_leftjoin>
                     | expression '.kunion (' expression ')'    <m_kunion>
-                    | expression '.kunique'                    <m_kunique>
-                    | expression '.reverse'                    <m_reverse>
-                    | expression '.mirror'                     <m_mirror>
-                    | expression '.copy'                       <m_copy>
-                    | expression '.sort'                       <m_sort>
                     | expression '.CTrefine (' expression ')'  <m_ctrefine>
-                    | expression '.max'                        <m_max>
+                    | expression '.kunique ()'                 <m_kunique>
+                    | expression '.reverse ()'                 <m_reverse>
+                    | expression '.mirror ()'                  <m_mirror>
+                    | expression '.copy ()'                    <m_copy>
+                    | expression '.sort ()'                    <m_sort>
+                    | expression '.max ()'                     <m_max>
                     | Type '(' expression ')'                  <m_cast>
                     | '[' Type '](' expression ')'             <m_mcast>
                     | '+(' expression ',' expression ')'       <m_add>
@@ -323,7 +323,7 @@ print_expression (PFmil_t * n)
         /* expression : expression '.max' */
         case m_max:
             print_expression (n->child[0]);
-            milprintf (".%s", ID[n->kind]);
+            milprintf (".%s ()", ID[n->kind]);
             break;
 
         /* expression : Type '(' expression ')' */
