@@ -1491,6 +1491,7 @@ non_reserved_word:
 | DATE 		{ $$ = _strdup("date"); }
 | TIME 		{ $$ = _strdup("time"); }
 | TIMESTAMP	{ $$ = _strdup("timestamp"); }
+| PATH		{ $$ = _strdup("path"); }
 ;
 
 name_commalist:
