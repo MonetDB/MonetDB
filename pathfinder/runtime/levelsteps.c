@@ -2,8 +2,10 @@
 
 #include <gdk.h>
 
-/**********************************************************************
- * this file contains all axis step algoritms that work mainly on the
+/**
+ * @file
+ *
+ * This file contains all axis step algoritms that work mainly on the
  * level table:
  *
  * - child step
@@ -11,7 +13,7 @@
  * - following-sibling
  * - preceding-sibling
  * 
- * all 4 algorithms use basically the same approach:
+ * All 4 algorithms use basically the same approach:
  * 
  * - evaluation is done during a single sequential scan of the
  *   level table and the context set
@@ -21,9 +23,37 @@
  * - for context nodes on descendant/ancestor axis a stack is used
  *   to avoid interruption of sequential scanning
  *
- * note: all 4 algorithms need the presence of the complete level table.
+ * @note
+ * All 4 algorithms need the presence of the complete level table.
  * hence, this axis steps do not represent joins on 2 independent sets,
  * as in case of the staircase join.  
+ *
+ *
+ * Copyright Notice:
+ * -----------------
+ *
+ *  The contents of this file are subject to the MonetDB Public
+ *  License Version 1.0 (the "License"); you may not use this file
+ *  except in compliance with the License. You may obtain a copy of
+ *  the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ *
+ *  Software distributed under the License is distributed on an "AS
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ *  implied. See the License for the specific language governing
+ *  rights and limitations under the License.
+ *
+ *  The Original Code is the ``Pathfinder'' system. The Initial
+ *  Developer of the Original Code is the Database & Information
+ *  Systems Group at the University of Konstanz, Germany. Portions
+ *  created by U Konstanz are Copyright (C) 2000-2003 University
+ *  of Konstanz. All Rights Reserved.
+ *
+ *  Contributors:
+ *          Torsten Grust <torsten.grust@uni-konstanz.de>
+ *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
+ *          Jens Teubner <jens.teubner@uni-konstanz.de>
+ *
+ * $Id$
  */
 
 

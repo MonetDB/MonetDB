@@ -1,27 +1,53 @@
 /* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
 
 /**
- * @file array.h
+ * @file
+ *
  * Typed, dynamic arrays: accessing an element at an out-of-bounds index
  * does not yield an error but lets the array grow as needed.
  *
  * Basic interface:
- * -- PFarray (s)       create new array with elements of s bytes length each,
+ *  - PFarray (s)       create new array with elements of s bytes length each,
  *                      set array ``append index'' to 0
- * -- PFarray_at (a, i) address of ith element in array a (a grows as needed)
- * -- PFarray_last (a)  ``append index'': where to append to this array (r/w)
+ *  - PFarray_at (a, i) address of ith element in array a (a grows as needed)
+ *  - PFarray_last (a)  ``append index'': where to append to this array (r/w)
  *
  * More complex operations may be constructed using 
  * the basic interface, e.g.,
- * -- append one element e to array a (available as #PFarray_add):
+ *  - append one element e to array a (available as #PFarray_add):
  *    *(PFarray_at (a, PFarray_last (a)++) = e
- *
- * -- append n elements e1, ..., en, to array a (available as #PFarray_nadd):
+ *    .
+ *  - append n elements e1, ..., en, to array a (available as #PFarray_nadd):
  *    i = PFarray_last (a);
  *    (void) PFarray_at (a, i);
  *    (void) PFarray_at (a, i + (n - 1));
  *    PFarray_last(a) += n;
  *    *(PFarray_at (a, i)) = e1; ...; *(PFarray_at (a, i + (n - 1))) = en;
+ *
+ *
+ * Copyright Notice:
+ * -----------------
+ *
+ *  The contents of this file are subject to the MonetDB Public
+ *  License Version 1.0 (the "License"); you may not use this file
+ *  except in compliance with the License. You may obtain a copy of
+ *  the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ *
+ *  Software distributed under the License is distributed on an "AS
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ *  implied. See the License for the specific language governing
+ *  rights and limitations under the License.
+ *
+ *  The Original Code is the ``Pathfinder'' system. The Initial
+ *  Developer of the Original Code is the Database & Information
+ *  Systems Group at the University of Konstanz, Germany. Portions
+ *  created by U Konstanz are Copyright (C) 2000-2003 University
+ *  of Konstanz. All Rights Reserved.
+ *
+ *  Contributors:
+ *          Torsten Grust <torsten.grust@uni-konstanz.de>
+ *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
+ *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
  */
