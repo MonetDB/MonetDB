@@ -10,9 +10,11 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(20000000);
 
-PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+PROC mmn() : BAT[oid,str] {
+	return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+}
 
-loaded;
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -25,7 +27,7 @@ loaded;
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
-[~mmn()].reverse.sort.print;
+[~mmn()].reverse().sort().print();
 #-------------------------#
 # BAT:		  tmp_30  #
 # (str)		  (void)  #
@@ -39,7 +41,7 @@ loaded;
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "uchr",	  nil	  ]
-[~view_modules].reverse.kunique.sort.print;
+[~view_modules].reverse().kunique().sort().print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -97,7 +99,7 @@ loaded;
 [ "xtables",	  nil	  ]
 
 module("cluster");
-loaded;
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -111,7 +113,7 @@ loaded;
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
-[~mmn()].reverse.sort.print;
+[~mmn()].reverse().sort().print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (void)  #
@@ -131,8 +133,8 @@ loaded;
 # # loaded;
 # # [~mmn()].reverse.sort.print;
 
-fix:=mmn().reverse.copy;
-[fix~].print;
+fix:=mmn().reverse().copy();
+[fix~].print();
 #-------------------------#
 # BAT:		  tmp_30  #
 # (str)		  (void)  #
@@ -148,8 +150,8 @@ fix:=mmn().reverse.copy;
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
 
-others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE).revert;
-[others~].print;
+others:=kdiff(view_modules.reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
+[others~].print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -200,14 +202,14 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 others@batloop{
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
-	loaded;
-	off:=kdiff(mmn().reverse,fix);
-	[off~].print;
+	loaded();
+	off:=kdiff(mmn().reverse(),fix);
+	[off~].print();
 	off@batloop{
 		printf("\n\tdropping %s\n\n",$h);
 	}
 	drop($h);
-	loaded;
+	loaded();
 }
 
 	loading xtables
