@@ -1111,7 +1111,9 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 		BBPunfix(cdb->batCacheid);
 		BBPunfix(cob->batCacheid);
 
-		do {
+		do { /* TODO move the logic for keeping intersections
+			between I_,U_ and D_ empty into the sql2mil 
+			layer */
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
 
@@ -1122,6 +1124,24 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 			BAT *ups = BATalpha(cub);
 			BAT *ins = BATalpha(cb);
 
+			if (BATcount(ds)) {
+				/* if inserted in this transaction
+				   	remove from ins,ups,ds */
+				BAT *ins_del = BATsemijoin(ins,BATmirror(ds));
+				if (BATcount(ins_del)) {
+					BAT *nins = BATkdiff(ins,ins_del);
+					BAT *nds = BATmirror(BATkdiff(
+						BATmirror(ds),ins_del));
+					BAT *nups = BATkdiff(ups,ins_del);
+					BBPunfix(ins->batCacheid);
+					BBPunfix(nds->batCacheid);
+					BBPunfix(nups->batCacheid);
+					ins = nins;
+					ds = nds;
+					ups = nups;
+				}
+				BBPunfix(ins_del->batCacheid);
+			}
 			/* forward inserts */
 			if (BATcount(ins)) {
 
