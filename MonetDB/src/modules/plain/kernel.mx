@@ -768,6 +768,7 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 		fprintf(GDKout,"Shutdown of server in progress\n");
 		fflush(GDKout);
 		closeClient(monet_clients, TRUE);
+		monet_background++; /* last Interpreter thread will wakeup main thread */
 	}
 	return CMDquit(stk, lt, res);
 }
