@@ -239,12 +239,6 @@ Rationale:
 Approach:
 Impact:
 
-@emph{Operator Cost Reduction (OCRoptimizer)}
-Goal: to locate sequences of operators and to replace them with cheaper ones.
-Rationale: based on the actual state of the computation and the richness of
-the supporting libraries there may exists alternative routes to solve a query.
-Approach: Operator rewriting depends on properties. No general technique.
-Impact: high
 
 @emph{Demand Driven Interpreter (DDoptimizer) (tactics)}
 Goal: to use the best interpreter and libraries geared at the task at hand
@@ -255,7 +249,7 @@ possibly in a pipelined fashion. (Vulcano model)
 Approach: merely calls for a different implementation of the core operators
 Impact: high
 
-@emph{Iterator Strength Reduction (ISRoptimizer)}
+@emph{Iterator Strength Reduction (SRoptimizer)}
 Goal: to reduce the cost of iterator execution by moving instructions
 out of the loop.
 Rationale: although iteration at the MAL level should be avoided due to
@@ -264,6 +258,15 @@ forbidden. In that case we should confine the iterator block to the minimal
 work needed.
 Approach: inspect the flowgraph for each iterator and move instructions around.
 Impact: low
+
+@emph{Operator Reduction (ORoptimizer)}
+Goal: to replace operators with cheaper ones.
+Rationale: based on the actual state of the computation and the richness of
+the supporting libraries there may exists alternative routes to solve a query.
+Approach: Operator rewriting depends on properties. No general technique.
+The first implementation looks at calculator expressions such as they
+appear frequently in the RAM compiler.
+Impact: high
 
 @emph{Code Inliner (CIoptimizer)}
 Goal: to reduce the calling depth of the interpreter and to obtain
@@ -317,6 +320,8 @@ them in a preferred order of deployment.
 @tab    Relational expression evaluator. (RXoptimizer)
 @item 
 @tab    Strength Reduction (SRoptimizer)
+@item 
+@tab    Operator Reduction (ORoptimizer)
 
 @item Group B:
 @tab    Common Expression Optimizer (CXoptimizer)
@@ -483,6 +488,7 @@ mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1653,5 +1659,119 @@ str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	GDKfree(stmt);
     return NULL;
+}
+@+ Operator Reduction
+Scientific calculations are pretty expensive in the current kernel,
+because new BATs are created with each operator. We can reduce this 
+memory hunger by detecting opportunities for accumulated processing.
+
+For example, consider the query
+@example
+	t3:= batcalc.*(64,t2);
+	t4:= batcalc,+(t1,t3);
+@end example
+If variable t2 is not used any further, we can re-use its storage space
+and propagate the alias through the remainder of the code.
+@example
+	batcalc.*(t2,64,t2);
+	t4:= batcalc.+(t2,t1,t2);
+@end example
+
+The implementation is straight forward. We only deal with the
+arithmetic operations available in batcalc right now.
+The key decision is to determine whether we may overwrite
+any of the arguments. We assume this is permissible if the argument
+was produced by an operator from the algebra, algebra2, group, aggrX3 modules.
+@c
+int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
+	InstrPtr p;
+	int i,j;
+	for(i=pc-1; i>=stop; i--){
+		p = getInstrPtr(mb,i);
+		if( p->barrier) 
+			return 0;
+		switch( p->token){
+		case FUNCTIONsymbol:
+		case FACTORYsymbol:
+		case COMMANDsymbol:
+		case THREADsymbol:
+		case EXITsymbol:
+		case CATCHsymbol:
+		case RAISEsymbol:
+		case RETURNsymbol:
+		case YIELDsymbol:
+		case ENDsymbol:
+			return 0;
+		}
+		for(j=0;j<p->retc; j++)
+		if( getArg(p,j)== v) {
+			if( moduleName(p) && strcmp(moduleName(p),"batcalc")==0) return 1;
+			if( moduleName(p) && strcmp(moduleName(p),"algebra")==0) return 1;
+			if( moduleName(p) && strcmp(moduleName(p),"aggrX3")==0) return 1;
+			if( moduleName(p) && strcmp(moduleName(p),"group")==0) return 1;
+			if( moduleName(p) && strcmp(moduleName(p),"array")==0) return 1;
+		}
+	}
+	return 1;
+}
+#undef DEBUG_MAL_OPTIMIZER
+#define DEBUG_MAL_OPTIMIZER 1
+str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{   int i,j,a;
+    InstrPtr p;
+    (void) pci; (void) stk;  /* to fool compilers */
+	Scope scope= getClient()->nspace;
+
+    for(i=1; i<mb->stop; i++){
+        VarPtr v;
+        p= getInstrPtr(mb,i);
+		if( moduleName(p)==0 || strcmp(moduleName(p),"batcalc")) continue;
+		if( p->argc== 3) {
+			/* binary operation, check first argument */
+			v= getVar(mb, a =getArg(p,1));
+
+			if( isaBatType(v->type) && v->endLifespan ==i ) {
+				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
+#ifdef DEBUG_MAL_OPTIMIZER
+					stream_printf(GDKout,"found OR candidate\n");
+					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+					pushArgument(mb,p,a);
+					for(j= p->argc-1; j>p->retc; j--)
+						p->argv[j]= p->argv[j-1];
+					p->argv[p->retc]= a;
+					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
+					p->argv[0]= newTmpVariable(mb, TYPE_void);
+					p->typechk= TYPE_UNKNOWN;
+					p->token = ASSIGNsymbol; /* needed to force rebinding */
+					typeChecker(scope,mb,p);
+					continue;
+				}
+			}
+			v= getVar(mb, a =getArg(p,2));
+			if( isaBatType(v->type) && v->endLifespan ==i ) {
+				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
+#ifdef DEBUG_MAL_OPTIMIZER
+					stream_printf(GDKout,"found OR candidate\n");
+					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+					pushArgument(mb,p,a);
+					for(j= p->argc-1; j>p->retc; j--)
+						p->argv[j]= p->argv[j-1];
+					p->argv[p->retc]= a;
+					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
+					p->argv[0]= newTmpVariable(mb, TYPE_void);
+					p->typechk= TYPE_UNKNOWN;
+					p->token = ASSIGNsymbol; /* needed to force rebinding */
+					typeChecker(scope,mb,p);
+					continue;
+				}
+			}
+		}
+    }
+	chkProgram(scope,mb);
+    /* remove the ORoptimizer request */
+	@:optimizerCleanup(pci)@
+    return MAL_SUCCEED;
 }
 @}
