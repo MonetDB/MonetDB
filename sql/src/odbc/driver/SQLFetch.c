@@ -21,6 +21,9 @@
 #include "ODBCStmt.h"
 #include <errno.h>
 #include <time.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>		/* for strncasecmp */
+#endif
 
 #if SIZEOF_INT==8
 # define ULL_CONSTANT(val)	(val)
