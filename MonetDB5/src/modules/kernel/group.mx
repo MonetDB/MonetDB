@@ -413,6 +413,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		if (bn->htype) *dst++ = *(oid*) BUNhead(b,p);
 		*dst++ = m?zz:e->gid;
 	}
+bunins_failed:
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base; 
 	bn->tsorted = 0;
 	ALIGNsetH(bn,b);
@@ -599,6 +600,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		if (bn->htype) *dst++ = *(oid*) BUNhead(b,p);
 		*dst++ = m?zz:e->gid;
 	}
+bunins_failed:
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base; 
 	return m?NULL:map2histo(map);
 }

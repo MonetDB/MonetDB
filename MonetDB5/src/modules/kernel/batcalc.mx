@@ -605,6 +605,7 @@ str CMDcmp@1(int *ret, int *l, int *r)
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
 		p1+= s1;
 	}
+bunins_failed:
 	dst->hsorted= BAThordered(left);
 	BBPfix(*ret = dst->batCacheid);
 	return compareaccum@1(dst,left,right);
@@ -669,8 +670,8 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
 		p1+= s1;
 	}
+bunins_failed:
 	dst->hsorted= BAThordered(left);
-	
 	return CMDcmpaccum@1cst(ret,&dst->batCacheid,l,cst);
 }
 
@@ -741,6 +742,7 @@ str CMDbitbatNOT(int *ret, int *l)
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
 		p1+= s1;
 	}
+bunins_failed:
 	dst->hsorted= BAThordered(left);
 	d= dst->batCacheid;
 	return CMDbitbataccumNOT(ret,&d,l);
@@ -780,6 +782,7 @@ str CMDconvert@1_@2(int *ret, int *bid){
 		y= x== @1_nil? @2_nil: x;
 		bunfastins(bn, h, &y);
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -813,6 +816,7 @@ str CMDconvertstr_int(int *ret, int *bid){
 		y= x== str_nil? int_nil: strtol(x,NULL,0);
 		bunfastins(bn, h, &y);
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -838,6 +842,7 @@ str CMDconvertvoid_oid(int *ret, int *bid){
 		bunfastins(bn, &x,t);
 		x++;
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -883,6 +888,7 @@ str CMDscience_@1(int *ret, int *bid){
 		dbl x= t== dbl_nil? dbl_nil:@1(t);
 		bunfastins(bn, h, &x);
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -903,6 +909,7 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 		dbl x= t== dbl_nil? dbl_nil:@1(t, *d);
 		bunfastins(bn, h, &x);
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -935,6 +942,7 @@ str CMDifThen(int *ret, int *iid, int *tid){
 			bunfastins(bn, h, t);
 		} 
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -962,6 +970,7 @@ str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 			bunfastins(bn, h, eid);
 		} 
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -988,6 +997,7 @@ str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 			bunfastins(bn, h, eid);
 		} 
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1004,6 +1014,7 @@ str CMDfilltail_@1(int *ret, int *iid, ptr *val){
 		ptr v = BUNhead(ib,p);
 		bunfastins(bn, v, val);
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1020,6 +1031,7 @@ str CMDfillhead_@1(int *ret,ptr *val, int *iid){
 		ptr v = BUNtail(ib,p);
 		bunfastins(bn, val,v);
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1065,6 +1077,7 @@ str CMDifThenElse(int *ret, int *iid, int *tid,int *eid){
 			bunfastins(bn, h, t);
 		}
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1098,6 +1111,7 @@ str CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
 			bunfastins(bn, h, t);
 		}
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1131,6 +1145,7 @@ str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
 			bunfastins(bn, h, val);
 		}
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1161,6 +1176,7 @@ str CMDmatchStr(int  *ret, int *bid, str *pat){
 			bunfastins(bn, h, &match);
 		}
 	}
+bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
         return MAL_SUCCEED;
 }

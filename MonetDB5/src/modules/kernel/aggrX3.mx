@@ -1025,7 +1025,7 @@ str CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		(void) h; /* fool compiler */
 		ptr val = extremes[@8];
 		/* trick: using a void head-type, only the tail are (over)written */
-		void@6_bunfastins_nocheck_noinc(bn, r, h, val?val:nil);
+		ATOMput(bn->ttype, &bn->theap, BUNtloc(bn,r), val?val:nil);
 	} 
         GDKfree(extremes);
 @c
@@ -1095,6 +1095,8 @@ str aggrX3_@1_@3_@4(int *retid, int *bid, int *eid){
 	}
 			
 	*retid = bn->batCacheid;
+bunins_failed:
+        if (extremes) GDKfree(extremes);
 	return MAL_SUCCEED;
 }
 @c
@@ -1813,7 +1815,7 @@ str CMDaggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 		(void) h; /*fool compiler */
 		ptr val = extremes[@8];
 		/* trick: using a void head-type, only the tail are (over)written */
-		void@6_bunfastins_nocheck_noinc(bn, r, h, val?val:nil);
+		ATOMput(bn->ttype, &bn->theap, BUNtloc(bn,r), val?val:nil);
 	} 
         GDKfree(extremes);
 @c
@@ -1881,6 +1883,8 @@ str aggrX3_@13_@3_@4(int *ret, BAT *b, BAT *g, BAT *e){
 	}
 			
 	*ret = bn->batCacheid;
+bunins_failed:
+        if (extremes) GDKfree(extremes);
 	return MAL_SUCCEED;
 }
 @c
