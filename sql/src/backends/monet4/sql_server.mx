@@ -48,11 +48,11 @@ for the time being.
 	"Read sql statements from stdin and output results on stdout"
 
 	.COMMAND sqllogmanager() = sqllogmanager;
-		"The log manager takes care off keeping the logs small, ie. it merges the changs into bats and abands the logs"
+		"The log manager takes care of keeping the logs small, ie. it merges the changes into bats and abandons the logs"
 
 @-
 The session is interpreted in the context of a globally
-known catalogue. It is commonly represented by a variable
+known catalog. It is commonly represented by a variable
 in the user context and should be provided to all commands.
 No sanity check is performed on its validity and authorized
 access after being logged in.
@@ -224,9 +224,9 @@ static int builtin_operand( Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int typ
 }
 @-
 The bootstrap method for accessing an SQL database is hardwired.
-An alternative scheme is to collect these statements in a SQL boot file.
+An alternative scheme is to collect these statements in an SQL boot file.
 
-??Where and how is the catalogue defined??
+??Where and how is the catalog defined??
 ?? Which not making the grants part of it??
 @c
 int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
