@@ -35,7 +35,7 @@
 #include <stream.h>
 
 /* version 01.02.00 of catalog */
-#define CATALOG_VERSION 010200
+#define CATALOG_VERSION 10200
 
 #define ISO_READ_UNCOMMITED 1
 #define ISO_READ_COMMITED   2

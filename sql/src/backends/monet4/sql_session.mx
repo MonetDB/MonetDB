@@ -1042,13 +1042,13 @@ These lines should be eaten away into the prompt is encountered.
 		
 	ret = sqlclient2(m, stk, rs, out, trace, 0 );
 	mvc_destroy(m);
-	/* Make sure that the read- (in-) stream is closed first,
-	 * as the related write- (out-) stream closes the shared
+	/* Make sure that the write- (out-) stream is closed first,
+	 * as the related read- (in-) stream closes the shared
 	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
 	 */
 	bstream_destroy(rs);
-	close_stream(in);
 	close_stream(out);
+	close_stream(in);
 	monetSetChannel(sqlthread,bkin,bkout);
 	return ret;
 }
@@ -1082,10 +1082,6 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	ret = sqlclient2(m, stk, rs, out, 0, 1 );
 	mvc_destroy(m);
-	/* Make sure that the read- (in-) stream is closed first,
-	 * as the related write- (out-) stream closes the shared
-	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
-	 */
 	bstream_destroy(rs);
 	return ret;
 }
