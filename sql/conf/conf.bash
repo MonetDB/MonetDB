@@ -56,13 +56,13 @@ if [ ! -x bootstrap ] ; then
 		echo ''
 		echo 'SQL_BUILD not set to specify desired compilation directory.'
 		echo 'Using SQL_BUILD="'${base}/${os}'" (default).'
-		SQL_BUILD="${base}/${os}"
+		export SQL_BUILD="${base}/${os}"
 	fi
 	if [ ! "${SQL_PREFIX}" ] ; then
 		echo ''
 		echo 'SQL_PREFIX not set to specify desired target directory.'
 		echo 'Using SQL_PREFIX="'${SQL_BUILD}'" (default).'
-		SQL_PREFIX="${SQL_BUILD}"
+		export SQL_PREFIX="${SQL_BUILD}"
 	fi
 
 	if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
