@@ -201,6 +201,15 @@ if [ "${os}" = "Linux" ] ; then
 			;;
 		esac
 	fi
+	if [ "${hw}${COMP}${BITS}" = "x86_64ntv64" ] ; then
+		d="`ls -d /soft/64/IntelC* | tail -n1`"
+		if [ "$d"  -a  -d "$d/bin" ] ; then
+			binpath="$d/bin:${binpath}"
+		fi
+		if [ "$d"  -a  -d "$d/lib" ] ; then
+			libpath="$d/lib:${libpath}"
+		fi
+	fi
 	if [ "${COMP}" = "PGI" ] ; then
 		# Portland Group compiler on spin
 		cc='pgcc'
