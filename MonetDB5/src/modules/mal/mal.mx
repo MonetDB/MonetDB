@@ -59,21 +59,18 @@ collection.
 
 command nextElement(i:flt, first:flt, last:flt, step:flt):bit = fltForloopStep; 
 command nextElement(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep; 
-command nextElement(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep; 
 command nextElement(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep; 
 command nextElement(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep; 
 command nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep
 comment "This routine provides an iterator over a scalar domain.
          The step size is dependent on the underlying type."; 
 
-command nextElement(i:chr, first:chr, last:chr):bit = chrForloop; 
+command nextElement(i:chr, first:chr, last:chr ):bit = chrForloop; 
 command nextElement(i:sht, first:sht, last:sht):bit = shtForloop; 
 command nextElement(i:lng, first:lng, last:lng):bit = lngForloop; 
 command nextElement(i:int, first:int, last:int):bit = intForloop
 comment "This routine provides an iterator over a scalar domain.
-         A default, type-specific step size is assumed."; 
-
-
+         The step size is dependent on the underlying type."; 
 @- Monet help system
 All procedural abstractions may contain a string with commentary text.
 This information is retained in the symbol table for subsequent use.
@@ -83,10 +80,8 @@ for subsequent analysis.
 command help(k:str):bat[str,str] = CMDhelp
 comment "Search the commentary strings for one matching the keyword";
 
-command helpComment(mod:str):bat[str,str] = CMDhelpComment
-comment "Collect the commentaries for all routines in a given module";
-command helpComment(mod:str,fcn:str):bat[int,str] = CMDhelpComment2
-comment "Obtain the comments for a given function";
+command help(mod:str,fcn:str):bat[int,str] = CMDhelpComment2
+comment "Collect the comments for a given function pattern";
 @- Monet Manual construction
 The manual operations ease offline inspection of the all the Monet function.
 It purposely generates an XML organized file, because we expect external
@@ -123,15 +118,6 @@ command manual(mod:str)= CMDmanual1
 comment "Generate a synopsis of a module";
 command manual()= CMDmanual0
 comment "Produces a XML-formatted manual over all modules loaded.";
-
-@+ MAL inspection
-The command below inspect the MAL administration and, therefore,
-can not be included in the kernel library.
-@mal
-pattern getType(v:any) : int = CMDtype
-comment "Return the type of a value (expression). Returns an type number.";
-
-command typename(v:int): str = CMDtypename;
 
 @- Monet module code
 
@@ -521,30 +507,6 @@ str CMDhelp(int *ret, str *mod)
 	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }
-str CMDhelpComment(int *ret, str *mod) 
-{	Client cntxt= getClient();
-	Scope m;
-	Symbol s;
-	str msg;
-	int i;
-
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-        if (b == 0) return throwMessage("catalog.helpComment", "failed to create BAT");
-
-	m= findScope(cntxt->nspace,*mod);
-	if(m)
-	for(i=0;i<256;i++){
-		s= m->subscope[i];
-		while(s!= NULL){
-			msg= s->def->help;
-			if(msg== NULL) msg= str_nil;
-			BUNins(b,s->name,msg);
-			s= s->peer;
-		}
-	}
-	@:Pseudo(help,Comment)@
-	return MAL_SUCCEED;
-}
 str CMDhelpComment2(int *ret, str *mod, str *fcn) 
 {	Symbol s;
 	str msg;
@@ -565,14 +527,62 @@ str CMDhelpComment2(int *ret, str *mod, str *fcn)
 	return MAL_SUCCEED;
 }
 
-str CMDtypename(str *ret, int *tpe){
-        *ret = malTypeName(*tpe);
-        return MAL_SUCCEED;
-}
-str CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-        int *ret;
-        ret= (int*) getArgReference(stk,pci,0);
-        *ret= getArgType(mb,pci,1);
-        return MAL_SUCCEED;
+@+ MAL iterator code
+This module contains the framework for the construction of iterators.
+Iterators enumerate elements in a collection defined by a few paramaters,
+e.g. a lower/upper bound, or a bat. An iterator is initialized in the first
+call by recognizing that the control variable lies outside the intended
+collection.
+
+Iterators appear as ordinary function calls in the MAL code and
+always return a boolean, to indicate that an element is available for
+consumption. Initialization of the iterator representation depends
+on its kind.
+
+The state of the iterator should be encoded in its arguments, which
+may be modified as a side-effect of calling the iterator.
+[we may need to include R/W information in the typing scheme]
+@+ Foreach iterators
+The most common class of iterators encountered in a programming
+environment is the for-loop. It contains a for-loop variable,
+a starting point and a limit. Changing the for-loop variable
+within the for-loop body is considered bad code and should be avoided
+to simplify data-flow analysis.
+
+We assume that the range boundaries comply with the underlying domain.
+
+@= forloopRange
+int @1Forloop(bit *res, @1 *i, @1 *first, @1 *last){
+        @1 v = *i;
+        if( v < *first || v >= *last)
+                *i = *first;
+        else    *i = ++v;
+        *res= *i < *last;
+        return 0;
 }
 
+@= forloopStep
+int @1ForloopStep(bit *res, @1 *i, @1 *first, @1 *last, @1 *step){
+	@1 v = *i;
+	if( v < *first || v >= *last) 
+		*i = *first;
+	else	*i = v + *step;
+	*res= *i >= *first && *i < *last;
+	return 0;
+}
+@c
+
+@:forloopRange(lng)@
+@:forloopRange(chr)@
+@:forloopRange(int)@
+@:forloopRange(sht)@
+
+@:forloopStep(lng)@
+@:forloopStep(int)@
+@:forloopStep(sht)@
+@:forloopStep(flt)@
+@:forloopStep(dbl)@
+
+@-
+There are a few atomairy storage types we have to introduce here:
+OID, str, void, bit, ptr

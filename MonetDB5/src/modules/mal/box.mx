@@ -50,10 +50,10 @@ pattern take(bname:str,name:str):any = BOXtake
 comment "Locates the typed value in the boxant box";
 
 pattern deposit(bname:str,name:str,v:any):void = BOXdeposit
-comment "Enter a new value into the boxant box";
+comment "Enter a new value into the box";
 
 pattern releaseAll(bname:str,):void = BOXreleaseAll
-comment "Release all boxants for this client";
+comment "Release all objects for this client";
 
 pattern release(bname:str,name:str,val:any):void = BOXrelease
 comment "Release the BAT from the client pool";
@@ -68,7 +68,7 @@ pattern discard(bname:str,name:str):void = BOXdiscard
 comment "Release the BAT from the client pool";
 
 pattern iterator(nme:str):lng = BOXiterator
-comment "Locates the next element in the boxant box";
+comment "Locates the next element in the box";
 @-
 @+ Dummy code 
 @h

@@ -152,10 +152,10 @@ str CLTLogin(int *ret){
 }
 
 str CLTsetDebug(int *ret, int *flg){
-	fprintf(GDKout,"Not yet implemented");
+	printf("Not yet implemented");
 	return MAL_SUCCEED;
 }
 str CLTclearDebug(int *ret, int *flg){
-	fprintf(GDKout,"Not yet implemented");
+	printf("Not yet implemented");
 	return MAL_SUCCEED;
 }

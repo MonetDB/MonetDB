@@ -104,9 +104,6 @@ A pattern block may be required to make the proper translation to
 the BAT library.
 @mal
 
-pattern bat(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
-comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
-
 pattern new(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
 comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
 
@@ -114,9 +111,6 @@ pattern new(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
 comment "Creates a new empty BAT, directly allocating for 'size' elements.";
 
 pattern new(ht:any::1, tt:any::2, size:lng) : bat[any::1,any::2] = CMDBATnew
-comment "Creates a new empty BAT, directly allocating for 'size' elements.";
-
-pattern bat(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
 comment "Creates a new empty BAT, directly allocating for 'size' elements.";
 
 @+ Algebraic operators
@@ -159,40 +153,6 @@ comment "return the BUN head value using the cursor.";
 
 pattern getTail(b:bat[any,any::1],i:lng):any::1 = CMDgetTail
 comment "return the BUN tail value using the cursor.";
-
-@+ BAT iterator
-
-@mal
-command batIterator(i:lng,b:bat[any,any]):bit = CMDnextElement_lng
-comment "A BATloop iterator uses an integer cursor to keep track of its
-        position in the underlying table.
-        The head and tail elements can be obtained using the getHead and
-        getTail functions, which are to be defined for all atomary types.";
-
-pattern batIterator(i:lng,b:bat[any::1,any::2],h:any::1,t:any::2):bit
-        = CMDnextElement
-comment "Iterate over the elements of a BAT using a cursor.";
-
-pattern bunStream(b:bat[any::1,any::2],h:any::1,t:any::2):lng
-         = CMDbunStream
-comment "Produce a stream of buns for subsequent processing.";
-
-command hashloop(i:int, p:ptr, b:bat[any,any]):bit = CMDhashloop
-comment "Iterate over the elements of a BAT using its hash index.
-Each call we set 'i' to denote the next element";
-@-
-The head and tail values can be extracted using the cursor,
-but is often more effective due to overhead involved in
-location of the underlying BAT.
-The generic solutions are also provided as patterns, because this
-trims the number of function signatures in the symbol table.
-@mal
-pattern getHead(b:bat[any::1,any],i:lng):any::1 = CMDgetHead
-comment "return the BUN head value using the cursor.";
-
-pattern getTail(b:bat[any,any::1],i:lng):any::1 = CMDgetTail
-comment "return the BUN tail value using the cursor.";
-
 
 @- BAT buffer pool
 The following list of operations permits inspection of the
@@ -345,6 +305,11 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
+@-
+Moving BATs in/out of the box also involves
+checking the type already known for possible misfits.
+Therefore, we need access to the runtime context.
+@c
 str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
@@ -359,6 +324,7 @@ str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			"failed to take '%s' from box",name);
 	/* make a private copy for this client session */
 	/* use the cheapest copy method */
+	printf("bbp.take not yet fully implemented\n");
 	return MAL_SUCCEED;
 }
 
@@ -370,6 +336,7 @@ str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         name = (str) getArgValue(stk,pci,1);
         releaseBox(box,name);
 	/* merge the updates of this BAT with the master copy */
+	printf("bbp.release not yet fully implemented\n");
 	return MAL_SUCCEED;
 }
 
@@ -379,6 +346,7 @@ str CMDbbpreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:OpenBox(releaseAll)@
 	releaseAllBox(box);
 	/* merge the updates with the master copies */
+	printf("bbp.releaseAll not yet fully implemented\n");
 	return MAL_SUCCEED;
 }
 
@@ -391,6 +359,7 @@ str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         if( discardBox(box,name) )
 	return throwException(MALEXCEPTION,"bbp.discard",
 				"failed to discard '%s' ", name);
+	printf("bbp.discard not yet fully implemented\n");
 	return MAL_SUCCEED;
 }
 str CMDbbptoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

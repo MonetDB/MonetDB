@@ -77,8 +77,6 @@ or to derived a fast C-based implementation.
 @mal
 module multiplex check = CMDmultiplexTypeCheck;
 
-command debug(b:bit):void = CMDmultiplexDebug
-comment "Set the dynamic debugging flag for the multiplex processor";
 pattern tactics(CMD:str, a:any...):any = CMDmultiplexScript
 comment "Tactical optimizer for multiplexed instructions.";
 
