@@ -352,9 +352,9 @@ the proper IO descriptors.
 	if ( t==0) {
 		GDKerror("Failed to initialize client\n");
 		resetProfiler(c->fdout);
-		c->fdout->flush(c->fdout);
-		(void) c->fdin->close(c->fdin);
-		(void) c->fdin->close(c->fdout);
+		stream_flush(c->fdout);
+		(void) stream_close(c->fdin);
+		(void) stream_close(c->fdout);
 		if( c->socket) close(c->socket);
 		c->socket=0;
 		return ;
@@ -411,14 +411,14 @@ void freeClient(Client c)
 	/* epilogue actions have been done already */
 	if (c->father == NULL) { /* normal client */
 		if(c->fdin){
-			(void) c->fdin->close(c->fdin);
-			(void) c->fdin->destroy(c->fdin);
+			(void) stream_close(c->fdin);
+			(void) stream_destroy(c->fdin);
 		}
 		if( c->fdout){
 			resetProfiler(c->fdout);
-			(void) c->fdout->flush(c->fdout); 
-			(void) c->fdout->close(c->fdout);
-			(void) c->fdout->destroy(c->fdout);
+			(void) stream_flush(c->fdout); 
+			(void) stream_close(c->fdout);
+			(void) stream_destroy(c->fdout);
 		}
 		c->fdout= c->fdin= NULL;
 		if( c->socket) close(c->socket); c->socket=0;
@@ -528,12 +528,12 @@ void killClient(Client c){
 	GDKwarning("killClient:forcing client to stop ...\n");
 	/* the process may hang upon gaining access to the file descriptors */
 	c->mode= FINISHING;
-	(void) c->fdout->flush(c->fdout);
-	(void) c->fdin->close(c->fdin);
-	(void) c->fdin->destroy(c->fdin); c->fdin= NULL;
+	(void) stream_flush(c->fdout);
+	(void) stream_close(c->fdin);
+	(void) stream_destroy(c->fdin); c->fdin= NULL;
 	resetProfiler(c->fdout);
-	(void) c->fdout->close(c->fdout);
-	(void) c->fdout->destroy(c->fdout); c->fdout= NULL;
+	(void) stream_close(c->fdout);
+	(void) stream_destroy(c->fdout); c->fdout= NULL;
 	if( c->socket) close(c->socket); c->socket=0;
 
 	GDKwarning("killClient:about to kill process ...\n");
@@ -557,11 +557,11 @@ void cleanupClients(){
 		if( c->user){ GDKfree(c->user); c->user=0;}
 		if( c->password){ GDKfree(c->password); c->password=0;}
 		if( c->fdin){
-			(void) c->fdin->destroy(c->fdin); c->fdin= NULL;
+			(void) stream_destroy(c->fdin); c->fdin= NULL;
 		}
 		if( c->fdout){
 			resetProfiler(c->fdout);
-			(void) c->fdout->destroy(c->fdout); c->fdout= NULL;
+			(void) stream_destroy(c->fdout); c->fdout= NULL;
 		}
 	}
 }
@@ -617,7 +617,7 @@ if( c->sysmon){
 	stream_printf(c->sysmon,"#[%s]",c->user);
 	stream_printf(c->sysmon, @1);
 	stream_printf(c->sysmon,"\n");
-	c->sysmon->flush(c->sysmon);
+	stream_flush(c->sysmon);
 }
 @-
 @c
@@ -702,7 +702,7 @@ the front-end to issue the request.
 					(prompt?prompt:c->prompt));
 		if(!isAdministrator(c))
 			stream_printf(c->fdout,"\002\n");
-		c->fdout->flush(c->fdout);
+		stream_flush(c->fdout);
 	}
 @c
 int streamClient(Client c, str prompt){
@@ -723,7 +723,7 @@ int streamClient(Client c, str prompt){
 #ifdef MAL_CLIENT_DEBUG
 	printf("# simple stream received:");
 #endif
-	while( (i= c->fdin->read(c->fdin,s,1,1)) == 1){
+	while( (i= stream_read(c->fdin,s,1,1)) == 1){
 #ifdef MAL_CLIENT_DEBUG
 		printf("%c",*s);
 		fflush(stdout);
@@ -763,7 +763,7 @@ int bstreamClient(Client c, str prompt){
 printf("bstreamClient:read block\n"); fflush(stdout);
 #endif
 
-        while ((len = c->fdin->read(c->fdin, s, 1, BLOCK)) == BLOCK){
+        while ((len = stream_read(c->fdin, s, 1, BLOCK)) == BLOCK){
                 size += len;
 		s[len]=0;
 		if( (c->limit-c->input) - size < BLOCK+1){

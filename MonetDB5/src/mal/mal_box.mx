@@ -512,7 +512,7 @@ int saveBox(Box box,int flag){
 	if( access(boxfile,R_OK) == 0){
 		if(access(boxfilebak,R_OK)==0  && unlink(boxfilebak) ) {
 #ifdef DEBUG_MAL_BOX
-			stream.printf("saveBox:can not unlink %s\n",boxfilebak);
+			stream_printf(GDKout,"saveBox:can not unlink %s\n",boxfilebak);
 #endif
 			GDKerror("saveBox:can not unlink backup\n");
 			GDKfree(boxfile); GDKfree(boxfilebak);
@@ -557,7 +557,7 @@ int saveBox(Box box,int flag){
 		ret= -1;
 	}
 	if(f){
-		f->close(f);
+		stream_close(f);
 		if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) ret= -1;
 	}
 	GDKfree(boxfile); GDKfree(boxfilebak);

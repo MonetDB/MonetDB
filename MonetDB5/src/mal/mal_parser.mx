@@ -94,7 +94,7 @@ void echoInput(Client cntxt){
 			stream_printf(cntxt->fdout,"%c",*c++);
 		}
 		stream_printf(cntxt->fdout,"\n");
-		cntxt->fdout->flush(cntxt->fdout);
+		stream_flush(cntxt->fdout);
 	}
 }
 #define nextChar(X)  (*(X)->nxt?*(X)->nxt++:0)

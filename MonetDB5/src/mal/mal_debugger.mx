@@ -549,7 +549,7 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
 		printTraceCall(cntxt,mb,stk,p);
 	}
 	if( cntxt->timer) cntxt->timer = GDKusec();
-	cntxt->fdout->flush(cntxt->fdout);
+	stream_flush(cntxt->fdout);
 }
 @+ Utilities
 DUmping a stack on a file is primarilly used for debugging.

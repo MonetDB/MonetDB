@@ -70,7 +70,7 @@ stream *malOpenSource(str fname){
 	strncpy(path,fname,PATHLENGTH);
         slash_2_dir_sep(path);
 	fd = open_rastream(path);
-	if( fd->errnr== OPEN_ERROR ){
+	if( stream_errnr(fd)== OPEN_ERROR ){
 	    char path2[PATHLENGTH];
 	    /* try to locate the file with 'mal' extension */
 	    snprintf(path2,PATHLENGTH, "%s.mal",path);
@@ -103,13 +103,13 @@ str malLoadScript(Client c, str modname){
 	c->limit = c->input + max;
 	*c->nxt=0;
         fd= malOpenSource(modname);
-	if( fd->errnr == OPEN_ERROR){
-		fd->destroy(fd);
+	if( stream_errnr(fd) == OPEN_ERROR){
+		stream_destroy(fd);
                 return throwException(MALEXCEPTION,"malImport",
 			"could not open file: %s\n", modname);
 	}
 	while(1 ){
-		rd= fd->read(fd, c->nxt, (size_t) 1, (size_t) max);
+		rd= stream_read(fd, c->nxt, (size_t) 1, (size_t) max);
 		if( rd<=0) { c->input[0]=0; break;}
 		if( rd<max) { c->input[len+rd]=0; break;}
 		len+= max;
@@ -125,8 +125,8 @@ str malLoadScript(Client c, str modname){
 	}
 	c->nxt= c->input;
 
-        fd->close(fd);
-	fd->destroy(fd);
+        stream_close(fd);
+	stream_destroy(fd);
 	return NULL;
 }
 
@@ -241,8 +241,8 @@ void runScript(Client c, str fname, int listing, MalStkPtr glb)
 	c->blkmode = oldblkmode;
 	c->prompt = oldprompt;
 	c->glb = oldglb;
-	(void) fd->close(fd);
-	(void) fd->destroy(fd);
+	(void) stream_close(fd);
+	(void) stream_destroy(fd);
 }
 void callString(Client c, str s, int listing)
 {	

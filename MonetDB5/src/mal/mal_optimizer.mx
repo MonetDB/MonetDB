@@ -1295,7 +1295,7 @@ void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
 		}
 	}
 	stream_printf(f,"}\n");
-	if(f!= GDKout) f->close(f);
+	if(f!= GDKout) stream_close(f);
 }
 @
 Summarization of the data flow dependencies can be modelled as a dependency graph.

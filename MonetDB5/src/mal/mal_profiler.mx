@@ -226,7 +226,7 @@ produce a correct tuple format for the front-end.
 		fprintf(stderr,X)
 #define log2(X,Y,Z) stream_printf(eventstream,X,Y,Z);\
 		fprintf(stderr,X,Y)
-#define flushLog() eventstream->flush(eventstream);\
+#define flushLog() stream_flush(eventstream);\
 		fflush(stderr);
 
 #ifdef MALprofiler
@@ -616,7 +616,7 @@ inspect the properties of BATs and their propagation.
 
 	log0("</event>\n");
 	MT_unset_lock(profileLock,"profileLock");
-	eventstream->flush(eventstream);
+	stream_flush(eventstream);
 #endif
 }
 
@@ -647,7 +647,7 @@ str openProfilerStream(){
 str closeProfilerStream(){
 	Client c= getClient();
 	if( offlineProfiling) log0("</MonetProfile>\n");
-	if( eventstream != c->fdout) eventstream->close(eventstream);
+	if( eventstream != c->fdout) stream_close(eventstream);
 	malProfileMode = FALSE;
 	eventstream = NULL;
 	return MAL_SUCCEED;
@@ -689,7 +689,7 @@ fprintf(stderr,"start Profiling\n");
 }
 str stopProfiling(){
 fprintf(stderr,"stop Profiling\n");
-	eventstream->flush(eventstream);
+	stream_flush(eventstream);
 	malProfileMode= FALSE;
 	return MAL_SUCCEED;
 }
