@@ -118,5 +118,5 @@ sql_func( "substring", "string", "VARCHAR", "INTEGER", "INTEGER", "VARCHAR");
 sql_func( "strconcat", "+", "VARCHAR", "VARCHAR", "", "VARCHAR");
 
 var sql_log_dir := view_gdk_env.find("gdk_dir");
-mvc_init(1,sql_log_dir);
+mvc_init(0,sql_log_dir);
 
