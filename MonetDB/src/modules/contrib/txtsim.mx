@@ -241,7 +241,7 @@ levenshteinbasic2_impl (int *result, str s, str t)
 static int  Code[] = {0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0, 
                       1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2};
 
-inline char
+static inline char
 SCode(unsigned char c)
 {
     if (c == 95) return(2); /* german sz */

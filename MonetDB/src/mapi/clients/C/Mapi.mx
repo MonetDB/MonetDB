@@ -2329,7 +2329,6 @@ static char *
 read_line(Mapi mid)
 {
 	char *reply, *s;
-	ssize_t k;
 
 	if (mid->active == NULL)
 		return 0;
@@ -2381,7 +2380,7 @@ read_line(Mapi mid)
 			/* fetch one more line */
 			len = 0;
 			s = mid->blk.buf + n;
-			while ((k = stream_read(mid->from, s, 1, 1)) == 1) {
+			while (stream_read(mid->from, s, 1, 1) == 1) {
 				len++;
 				if (*s == '\n')
 					break;
