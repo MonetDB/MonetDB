@@ -551,7 +551,7 @@ typedef __int64 gdk_int64;
 #endif
 
 /* define printf formats for printing size_t and ssize_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__)
 #define SZFMT "%zu"
 #define SSZFMT "%zd"
 #elif SIZEOF_SIZE_T == SIZEOF_INT
@@ -568,7 +568,7 @@ typedef __int64 gdk_int64;
 #endif
 
 /* define printf formats for printing ptrdiff_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__)
 #define PDFMT "%td"
 #elif SIZEOF_PTRDIFF_T == SIZEOF_INT
 #define PDFMT "%d"
