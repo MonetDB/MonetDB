@@ -2127,6 +2127,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		if (BUNlast(db) > db->batInserted) {
 			bm_new_bat( ttr->bm, tt->dbid, db);
+			BATsetaccess(db, BAT_READ);
 			if (ttr == gtrans)
 				ok = log_bat(logger, tt->dbid, db);
 		} else {
@@ -2189,13 +2190,16 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 					renewed = 1;
 				}
 				bm_new_bat( ttr->bm, oc->bat.ubid, ups);
+				BATsetaccess(ups, BAT_READ);
 				void_replace_bat(cur, ups);
 				if (ok == SQL_OK && ttr == gtrans) 
 					ok = log_bat(logger, oc->bat.ubid, ups);
 			}
 			bat_destroy(ups);
-			if (renewed)
+			if (renewed) {
 				bm_new_bat( ttr->bm, oc->bat.bid, cur);
+				BATsetaccess(cur, BAT_READ);
+			}
 			bat_destroy(cur);
 
 			if (cc->base.rtime)
@@ -2225,6 +2229,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			
 				if (BUNlast(ins) > ins->batInserted) {
 					bm_new_bat( ttr->bm, oi->bat.bid, ins);
+					BATsetaccess(ins, BAT_READ);
 					if (ttr == gtrans)
 					     ok = log_bat(logger, oi->bat.bid, ins);
 				} else if (db) {
@@ -2234,11 +2239,13 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 
 					void_delete_bat(cur, db, 1);
 					bm_new_bat( ttr->bm, oi->bat.bid, cur);
+					BATsetaccess(cur, BAT_READ);
 					bat_destroy(cur);
 				}
 				bat_destroy(ins);
 				if (BUNlast(ups) > ups->batInserted) {
 					bm_new_bat( ttr->bm, oi->bat.ubid, ups);
+					BATsetaccess(ups, BAT_READ);
 					if (ttr == gtrans)
 					    ok = log_bat(logger, oi->bat.ubid, ups);
 				}
