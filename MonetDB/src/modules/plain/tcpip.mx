@@ -386,7 +386,7 @@ static int cache_del(cache_t *c)
 {
 	if (c->tpe == TYPE_bat) {
 	    if (c->val.bval)
-	        BBP_refs(c->val.bval)--;
+	    	BBPdecref(c->val.bval, TRUE);
 	} else if (c->val.pval) {
 	        GDKfree(c->val.pval);
 	}
@@ -410,7 +410,7 @@ static int cache_fill(cache_t *c, int tpe, union cache_t_val val, int i)
 	if (c->tpe == TYPE_bat ? c->val.bval != 0 : c->val.pval != 0) {
 	    GDKwarning("cache_fill: replacing the value for %s.\n", c->name);
 	    if (c->tpe == TYPE_bat){
-		BBP_refs((bat) c->val.bval)--;
+	    	BBPdecref(c->val.bval, TRUE);
 	    } else {
 		GDKfree(c->val.pval);
 	    }
@@ -419,7 +419,7 @@ static int cache_fill(cache_t *c, int tpe, union cache_t_val val, int i)
       	c->tpe = tpe;
       	c->val = val;
 	if (tpe == TYPE_bat) {
-	    BBPfix(c->val.bval);
+	    BBPincref(c->val.bval, TRUE);
 	}
 	if (c->locked) {
 	    if (c->barrier != NULL) MT_up_sema(c->barrier, "cache_fill");
@@ -747,7 +747,8 @@ the standard mechanism.
 #endif
 
 		if (res.vtype == TYPE_bat) {
-		    val = (ptr) BBPdescriptor(res.val.bval);
+		    /* TCPexport needs the BAT in memory */
+		    val = (ptr) BATdescriptor(res.val.bval);
 		} else if (ATOMextern(res.vtype)) {
 		    val = res.val.pval;
 		} else if (res.vtype == TYPE_void) {
@@ -764,6 +765,8 @@ Rpc request get a value back; mil requests not.
 @-
 All said and done, now we clean up any returned values.
 @c
+		if (res.vtype == TYPE_bat)
+			BBPunfix(res.val.bval);
 		VALclear(&res);
 		continue;
 	    }
