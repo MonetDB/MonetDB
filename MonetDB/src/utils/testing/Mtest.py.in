@@ -575,7 +575,7 @@ def runtest(env, TST) :
 
 	os.chdir(TSTTRGDIR)
 
-	NotOnNT = ["src/modules/plain/salgebra", "tests/by_Peter/tst_priv"]
+	NotOnNT = ["src/modules/plain/salgebra", "tests/by_Peter/tst_priv", "src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
 	ReqMshdn = [".milC"]
 	if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
 		SkipTest(env, TST, EXT, "as it currently crashes/hangs on NT.")
