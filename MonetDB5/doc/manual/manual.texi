@@ -44,7 +44,8 @@ Last updated: @value{UPDATED}
 --- System overview ---
 * About this manual::
 * Introduction::
-* Session scenarios::
+* The main features of MonetDB ::
+* The history of MonetDB::
 * MonetDB Assembler Language::
 
 --- Introduction ---
@@ -53,10 +54,12 @@ Last updated: @value{UPDATED}
 * Architecture overview:: 
 * MAL Synopsis:: 
 * MAL interpretation:: 
+* Session management::
 
 --- Session management ---
-* Scenario Interpretation::
+* Scenarios::
 * Scenario Administration::
+* Client Administration::
 
 --- The SQL front-end ---
 
@@ -76,7 +79,6 @@ Last updated: @value{UPDATED}
 * Bootstrap::
 * Modules::
 * MAL interpreter::
-* Client administration::
 * Atom types::
 * Type resolution::
 * Boxed variables::
@@ -95,14 +97,16 @@ Last updated: @value{UPDATED}
 @end ifnottex
 
 @include Assets/About_this_manual
+@include Assets/History
+@include Assets/Features
 
-@node Introduction, Session scenarios, About this manual , Top
+@node Introduction, MonetDB Assembler Language, About this manual , Top
 @include mal.bdy.texi
-
-@node Session scenarios, MonetDB Assembler Language ,Introduction, Top
 @include mal_scenario.bdy.texi
+@include mal_client.bdy.texi
+@include mal_session.bdy.texi
 
-@node MonetDB Assembler Language , Function definitions, Session scenarios, Top
+@node MonetDB Assembler Language , Function definitions, Introduction, Top
 @include mal_instruction.bdy.texi
 @include mal_parser.bdy.texi
 
@@ -118,15 +122,11 @@ Last updated: @value{UPDATED}
 @node Modules , MAL interpreter ,Bootstrap, Top
 @include mal_import.bdy.texi
 
-@node MAL interpreter, Client administration, Modules, Top
+@node MAL interpreter, Atom types, Modules, Top
 @include mal_interpreter.bdy.texi
 @include mal_stack.bdy.texi
 
-@node Client administration, Atom types,MAL interpreter, Top
-@include mal_client.bdy.texi
-@include mal_session.bdy.texi
-
-@node Atom types, Type resolution,Client administration, Top
+@node Atom types, Type resolution,MAL interpreter, Top
 @include mal_atom.bdy.texi
 
 @node Type resolution, Boxed variables, Atom types, Top
