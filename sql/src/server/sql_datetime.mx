@@ -153,9 +153,9 @@ char *datetime_field(itype f)
 	case ihour:
 		return "hour";
 	case imin:
-		return "min";
+		return "minute";
 	case isec:
-		return "sec";
+		return "second";
 	}
 	return "year";
 }
