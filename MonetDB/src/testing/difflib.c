@@ -112,9 +112,9 @@ int oldnew2u_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
       sprintf(command,"%s %s %s.cp > nul",COPY,new_fn,new_fn);
       SYSTEM(command);
 
-      sprintf(command,"%s %s -d -u%i %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+      sprintf(command,"%s %s -a -d -u%i %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
     #else
-      sprintf(command,"%s %s -d -u%i %s %s > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+      sprintf(command,"%s %s -a -d -u%i %s %s > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
     #endif
 
       SYSTEM(command);
@@ -249,7 +249,7 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
 
 /*
       sprintf(command,
-              "%s -d -u%i %s %s | egrep -v '^(@@ \\-|\\+\\+\\+ |\\-\\-\\- |[ \\+\\-]@\\+\\-)' >> %s",
+              "%s -a -d -u%i %s %s | egrep -v '^(@@ \\-|\\+\\+\\+ |\\-\\-\\- |[ \\+\\-]@\\+\\-)' >> %s",
               DIFF,MAX(l[0],l[1]),fn[0],fn[1],wc_diff_fn);
       r=system(command);
       TRACE(fprintf(STDERR,"%s => %i\n",command,r));
@@ -262,11 +262,11 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
       SYSTEM(command);
 
       sprintf(command,
-              "%s -d -u%i %s.cp %s.cp > %s",
+              "%s -a -d -u%i %s.cp %s.cp > %s",
               DIFF,MAX(l[0],l[1]),fn[0],fn[1],pipe_fn);
 #else
       sprintf(command,
-              "%s -d -u%i %s %s > %s",
+              "%s -a -d -u%i %s %s > %s",
               DIFF,MAX(l[0],l[1]),fn[0],fn[1],pipe_fn);
 #endif
 
