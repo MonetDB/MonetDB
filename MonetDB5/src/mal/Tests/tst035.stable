@@ -17,22 +17,22 @@
 #b:=b;
 #i:= getBATrefcnt(b); print(i);
 #
-function Admin.main():int; #0  (main:int)
-    z := "hello world"; #1  (z:str)<-($2:str)
-    io.print(z); #2 CMDprint_val ($3:int)<-(z:str)
-    z := z; #3  (z:str)<-(z:str)
-    io.print(z); #4 CMDprint_val ($4:int)<-(z:str)
-    io.print("done"); #5 CMDprint_val ($5:int)<-($6:str)
-    b := bbp.new(:int,:int); #6 CMDBATnew (b:bat[int,int])<-($8:int)($9:int)
-    i := bat.getBATrefcnt(b); #7 getBATrefcnt (i:int)<-(b:bat[int,int])
-    io.print(i); #8 CMDprint_val ($11:int)<-(i:int)
-    b := b; #9  (b:bat[int,int])<-(b:bat[int,int])
-    i := bat.getBATrefcnt(b); #10 getBATrefcnt (i:int)<-(b:bat[int,int])
-    io.print(i); #11 CMDprint_val ($12:int)<-(i:int)
-    b := b; #12  (b:bat[int,int])<-(b:bat[int,int])
-    i := bat.getBATrefcnt(b); #13 getBATrefcnt (i:int)<-(b:bat[int,int])
-    io.print(i); #14 CMDprint_val ($13:int)<-(i:int)
-end main; #15  
+function Admin.main():int;	# 0  (main:int)
+    z := "hello world";	# 1  (z:str)<-($2:str)
+    io.print(z);	# 2 CMDprint_val ($3:int)<-(z:str)
+    z := z;	# 3  (z:str)<-(z:str)
+    io.print(z);	# 4 CMDprint_val ($4:int)<-(z:str)
+    io.print("done");	# 5 CMDprint_val ($5:int)<-($6:str)
+    b := bbp.new(:int,:int);	# 6 CMDBATnew (b:bat[int,int])<-($8:int)($9:int)
+    i := bat.getBATrefcnt(b);	# 7 getBATrefcnt (i:int)<-(b:bat[int,int])
+    io.print(i);	# 8 CMDprint_val ($11:int)<-(i:int)
+    b := b;	# 9  (b:bat[int,int])<-(b:bat[int,int])
+    i := bat.getBATrefcnt(b);	# 10 getBATrefcnt (i:int)<-(b:bat[int,int])
+    io.print(i);	# 11 CMDprint_val ($12:int)<-(i:int)
+    b := b;	# 12  (b:bat[int,int])<-(b:bat[int,int])
+    i := bat.getBATrefcnt(b);	# 13 getBATrefcnt (i:int)<-(b:bat[int,int])
+    io.print(i);	# 14 CMDprint_val ($13:int)<-(i:int)
+end main;	# 15  
 [ "hello world" ]
 [ "hello world" ]
 [ "done" ]

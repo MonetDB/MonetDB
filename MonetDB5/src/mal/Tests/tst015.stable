@@ -23,23 +23,23 @@
 #exit	c;
 #
 #
-function Admin.main():int; #0  (main:int)
-    b := true; #1  (b:bit)<-($2:bit)
-barrier b; #2  (b:bit) jump 4
-    system.printf("1 Correctly entered barrier\n"); #3 SYSprint_str ($3:int)<-($4:str)
-exit b; #4  (b:bit)
-    b := false; #5  (b:bit)<-($5:bit)
-barrier b; #6  (b:bit) jump 8
-    system.printf("1 Incorrectly entered barrier\n"); #7 SYSprint_str ($6:int)<-($7:str)
-exit b; #8  (b:bit)
-    i := 1; #9  (i:int)<-($9:int)
-barrier c := calc.==(i,1); #10 CALCcompEQintint (c:bit)<-(i:int)($9:int) jump 12
-    system.printf("2 Correctly entered barrier\n"); #11 SYSprint_str ($11:int)<-($12:str)
-exit c; #12  (c:bit)
-barrier c := calc.==(i,0); #13 CALCcompEQintint (c:bit)<-(i:int)($13:int) jump 15
-    system.printf("2 Incorrectly entered barrier\n"); #14 SYSprint_str ($14:int)<-($15:str)
-exit c; #15  (c:bit)
-end main; #16  
+function Admin.main():int;	# 0  (main:int)
+    b := true;	# 1  (b:bit)<-($2:bit)
+barrier b;	# 2  (b:bit) jump 4
+    system.printf("1 Correctly entered barrier\n");	# 3 SYSprint_str ($3:int)<-($4:str)
+exit b;	# 4  (b:bit)
+    b := false;	# 5  (b:bit)<-($5:bit)
+barrier b;	# 6  (b:bit) jump 8
+    system.printf("1 Incorrectly entered barrier\n");	# 7 SYSprint_str ($6:int)<-($7:str)
+exit b;	# 8  (b:bit)
+    i := 1;	# 9  (i:int)<-($9:int)
+barrier c := calc.==(i,1);	# 10 CALCcompEQintint (c:bit)<-(i:int)($9:int) jump 12
+    system.printf("2 Correctly entered barrier\n");	# 11 SYSprint_str ($11:int)<-($12:str)
+exit c;	# 12  (c:bit)
+barrier c := calc.==(i,0);	# 13 CALCcompEQintint (c:bit)<-(i:int)($13:int) jump 15
+    system.printf("2 Incorrectly entered barrier\n");	# 14 SYSprint_str ($14:int)<-($15:str)
+exit c;	# 15  (c:bit)
+end main;	# 16  
 1 Correctly entered barrier
 2 Correctly entered barrier
 >

@@ -25,6 +25,6 @@ e:= "hello";	print(e);
 e:= str(nil);	print(e);
 e:= str("nil");	print(e);
 
-f:= 'a';	print(f);
+f:= 'Z';	print(f);
 f:= chr(nil);	print(f);
 f:= chr("X");	print(f);

@@ -14,24 +14,24 @@
 #	redo l;
 #exit	l;
 #end pl;
-function Admin.pl(i:str):int; #0  (pl:int)<-(i:str)
-    L := "something"; #1  (L:str)<-($3:str)
-    r := 0; #2  (r:int)<-($5:int)
-barrier l := calc.==(r,0); #3 CALCcompEQintint (l:bit)<-(r:int)($5:int) jump 8
-    y := r; #4  (y:int)<-(r:int)
-    r := calc.+(r,1); #5 CALCbinaryADDintint (r:int)<-(r:int)($8:int)
-    leave l; #6  (l:bit) jump 8
-    redo l; #7  (l:bit) jump 3
-exit l; #8  (l:bit)
-end pl; #9  
+function Admin.pl(i:str):int;	# 0  (pl:int)<-(i:str)
+    L := "something";	# 1  (L:str)<-($3:str)
+    r := 0;	# 2  (r:int)<-($5:int)
+barrier l := calc.==(r,0);	# 3 CALCcompEQintint (l:bit)<-(r:int)($5:int) jump 8
+    y := r;	# 4  (y:int)<-(r:int)
+    r := calc.+(r,1);	# 5 CALCbinaryADDintint (r:int)<-(r:int)($8:int)
+    leave l;	# 6  (l:bit) jump 8
+    redo l;	# 7  (l:bit) jump 3
+exit l;	# 8  (l:bit)
+end pl;	# 9  
 #a:= "hello";
 #z:= pl(a);
 #print("done");
 #
-function Admin.main():int; #0  (main:int)
-    a := "hello"; #1  (a:str)<-($2:str)
-    z := Admin.pl(a); #2  (z:int)<-(a:str)
-    io.print("done"); #3 CMDprint_val ($4:int)<-($5:str)
-end main; #4  
+function Admin.main():int;	# 0  (main:int)
+    a := "hello";	# 1  (a:str)<-($2:str)
+    z := Admin.pl(a);	# 2  (z:int)<-(a:str)
+    io.print("done");	# 3 CMDprint_val ($4:int)<-($5:str)
+end main;	# 4  
 [ "done" ]
 >

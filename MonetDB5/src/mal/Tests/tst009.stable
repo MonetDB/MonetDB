@@ -8,11 +8,11 @@
 #call("print(\"hello\");");
 #call("s:=\"goodbye\";print(s);");
 #
-function Admin.main():int; #0  (main:int)
-    mal.call("print(1);"); #1 CMDcallString ($1:void)<-($2:str)
-    mal.call("print(\"hello\");"); #2 CMDcallString ($3:void)<-($4:str)
-    mal.call("s:=\"goodbye\";print(s);"); #3 CMDcallString ($5:void)<-($6:str)
-end main; #4  
+function Admin.main():int;	# 0  (main:int)
+    mal.call("print(1);");	# 1 CMDcallString ($1:void)<-($2:str)
+    mal.call("print(\"hello\");");	# 2 CMDcallString ($3:void)<-($4:str)
+    mal.call("s:=\"goodbye\";print(s);");	# 3 CMDcallString ($5:void)<-($6:str)
+end main;	# 4  
 [ 1 ]
 [ "hello" ]
 [ "goodbye" ]

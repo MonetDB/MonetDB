@@ -11,8 +11,8 @@
 #
 !ERROR: 'point' undefined in Admin.main[1]
 !ERROR: 'getName' undefined in Admin.main[2]
-function Admin.main():int; #0  (main:int)
-    (x,y):=point(z); #1  unknown (x:any)(y:any)<-(z:int)
-    (initial,surname):=getName(); #2  unknown (initial:str)(surname:str)
-end main; #3  
+function Admin.main():int;	# 0  (main:int)
+    (x,y):=point(z);	# 1  unknown (x:any)(y:any)<-(z:int)
+    (initial,surname):=getName();	# 2  unknown (initial:str)(surname:str)
+end main;	# 3  
 >

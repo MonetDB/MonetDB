@@ -19,37 +19,37 @@
 #print("b1 becomes"); print(b1);
 #print("hb1 becomes"); print(hb1);
 #
-function Admin.main():int; #0  (main:int)
-    x := bbp.new(:oid,:chr); #1 CMDBATnew (x:bat[oid,chr])<-($2:oid)($3:chr)
-    de_a := bat.insert(x,1@0,'a'); #2 CMDinsert_bun (de_a:void)<-(x:bat[oid,chr])($5:oid)($6:chr)
-    ee_a := bat.insert(x,2@0,'a'); #3 CMDinsert_bun (ee_a:void)<-(x:bat[oid,chr])($8:oid)($6:chr)
-    fe_a := bat.insert(x,3@0,'b'); #4 CMDinsert_bun (fe_a:void)<-(x:bat[oid,chr])($10:oid)($11:chr)
-    ge_a := bat.insert(x,4@0,'b'); #5 CMDinsert_bun (ge_a:void)<-(x:bat[oid,chr])($13:oid)($11:chr)
-    he_a := bat.insert(x,5@0,'b'); #6 CMDinsert_bun (he_a:void)<-(x:bat[oid,chr])($15:oid)($11:chr)
-    ie_a := bat.insert(x,6@0,'b'); #7 CMDinsert_bun (ie_a:void)<-(x:bat[oid,chr])($17:oid)($11:chr)
-    je_a := bat.insert(x,7@0,'c'); #8 CMDinsert_bun (je_a:void)<-(x:bat[oid,chr])($19:oid)($20:chr)
-    ke_a := bat.insert(x,8@0,'c'); #9 CMDinsert_bun (ke_a:void)<-(x:bat[oid,chr])($22:oid)($20:chr)
-    io.print("group x"); #10 CMDprint_val ($23:int)<-($24:str)
-    io.print(x); #11 CMDprint_val ($25:int)<-(x:bat[oid,chr])
-    (hb1,b1):=group.group(x); #12 CTgroup (hb1:bat[chr,int])(b1:bat[oid,oid])<-(x:bat[oid,chr])
-    io.print("b1 becomes"); #13 CMDprint_val ($28:int)<-($29:str)
-    io.print(b1); #14 CMDprint_val ($30:int)<-(b1:bat[oid,oid])
-    io.print("hb1 becomes"); #15 CMDprint_val ($31:int)<-($32:str)
-    io.print(hb1); #16 CMDprint_val ($33:int)<-(hb1:bat[chr,int])
-end main; #17  
+function Admin.main():int;	# 0  (main:int)
+    x := bbp.new(:oid,:chr);	# 1 CMDBATnew (x:bat[oid,chr])<-($2:oid)($3:chr)
+    de_a := bat.insert(x,1@0,'a');	# 2 CMDinsert_bun (de_a:void)<-(x:bat[oid,chr])($5:oid)($6:chr)
+    ee_a := bat.insert(x,2@0,'a');	# 3 CMDinsert_bun (ee_a:void)<-(x:bat[oid,chr])($8:oid)($6:chr)
+    fe_a := bat.insert(x,3@0,'b');	# 4 CMDinsert_bun (fe_a:void)<-(x:bat[oid,chr])($10:oid)($11:chr)
+    ge_a := bat.insert(x,4@0,'b');	# 5 CMDinsert_bun (ge_a:void)<-(x:bat[oid,chr])($13:oid)($11:chr)
+    he_a := bat.insert(x,5@0,'b');	# 6 CMDinsert_bun (he_a:void)<-(x:bat[oid,chr])($15:oid)($11:chr)
+    ie_a := bat.insert(x,6@0,'b');	# 7 CMDinsert_bun (ie_a:void)<-(x:bat[oid,chr])($17:oid)($11:chr)
+    je_a := bat.insert(x,7@0,'c');	# 8 CMDinsert_bun (je_a:void)<-(x:bat[oid,chr])($19:oid)($20:chr)
+    ke_a := bat.insert(x,8@0,'c');	# 9 CMDinsert_bun (ke_a:void)<-(x:bat[oid,chr])($22:oid)($20:chr)
+    io.print("group x");	# 10 CMDprint_val ($23:int)<-($24:str)
+    io.print(x);	# 11 CMDprint_val ($25:int)<-(x:bat[oid,chr])
+    (hb1,b1):=group.group(x);	# 12 CTgroup (hb1:bat[chr,int])(b1:bat[oid,oid])<-(x:bat[oid,chr])
+    io.print("b1 becomes");	# 13 CMDprint_val ($28:int)<-($29:str)
+    io.print(b1);	# 14 CMDprint_val ($30:int)<-(b1:bat[oid,oid])
+    io.print("hb1 becomes");	# 15 CMDprint_val ($31:int)<-($32:str)
+    io.print(hb1);	# 16 CMDprint_val ($33:int)<-(hb1:bat[chr,int])
+end main;	# 17  
 [ "group x" ]
 #-----------------#
 # BAT:	  tmp_4	  #
 # (oid)	  (chr)	  #
 #-----------------#
-[ 1@0,	  'a'	  ]
-[ 2@0,	  'a'	  ]
-[ 3@0,	  'b'	  ]
-[ 4@0,	  'b'	  ]
-[ 5@0,	  'b'	  ]
-[ 6@0,	  'b'	  ]
-[ 7@0,	  'c'	  ]
-[ 8@0,	  'c'	  ]
+[ 1@0,	  a	  ]
+[ 2@0,	  a	  ]
+[ 3@0,	  b	  ]
+[ 4@0,	  b	  ]
+[ 5@0,	  b	  ]
+[ 6@0,	  b	  ]
+[ 7@0,	  c	  ]
+[ 8@0,	  c	  ]
 [ "b1 becomes" ]
 #-----------------#
 # BAT:	  tmp_5	  #

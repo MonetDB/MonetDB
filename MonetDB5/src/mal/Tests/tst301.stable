@@ -12,13 +12,13 @@
 #	printf("catched %d\n",IllegalAccess);
 #exit IllegalAccess;
 #
-function Admin.main():int; #0  (main:int)
-    IllegalAccess := 1234; #1  (IllegalAccess:int)<-($2:int)
-    raise IllegalAccess; #2  (IllegalAccess:int)
-    io.print("should not come here\n"); #3 CMDprint_val ($3:int)<-($4:str)
-catch IllegalAccess; #4  (IllegalAccess:int) jump 6
-    system.printf("catched %d\n",IllegalAccess); #5 SYSprint_formatted_int ($5:int)<-($6:str)(IllegalAccess:int)
-exit IllegalAccess; #6  (IllegalAccess:int)
-end main; #7  
+function Admin.main():int;	# 0  (main:int)
+    IllegalAccess := 1234;	# 1  (IllegalAccess:int)<-($2:int)
+    raise IllegalAccess;	# 2  (IllegalAccess:int)
+    io.print("should not come here\n");	# 3 CMDprint_val ($3:int)<-($4:str)
+catch IllegalAccess;	# 4  (IllegalAccess:int) jump 6
+    system.printf("catched %d\n",IllegalAccess);	# 5 SYSprint_formatted_int ($5:int)<-($6:str)(IllegalAccess:int)
+exit IllegalAccess;	# 6  (IllegalAccess:int)
+end main;	# 7  
 catched 1234
 >

@@ -26,20 +26,20 @@
 #	#destroy(b);
 #	#destroy(c);
 #
-function Admin.main():int; #0  (main:int)
-    b := bbp.new(:int,:int); #1 CMDBATnew (b:bat[int,int])<-($2:int)($3:int)
-    bat.setName(b,"mybat"); #2 CMDsetName ($4:bat[int,int])<-(b:bat[int,int])($5:str)
-    bat.setColumn(b,"first","second"); #3 CMDsetColumns ($6:bat[int,int])<-(b:bat[int,int])($7:str)($8:str)
-    io.print(b); #4 CMDprint_val ($9:int)<-(b:bat[int,int])
-    c := bbp.new(:int,:str); #5 CMDBATnew (c:bat[int,str])<-($11:int)($12:str)
-    bat.setName(c,"mybat"); #6 CMDsetName ($13:bat[int,str])<-(c:bat[int,str])($5:str)
-    io.print(c); #7 CMDprint_val ($14:int)<-(c:bat[int,str])
-    io.print(c); #8 CMDprint_val ($15:int)<-(c:bat[int,str])
-    system.printf("catched anything?\n"); #9 SYSprint_str ($16:int)<-($17:str)
-catch GDKerror; #10  (GDKerror:str) jump 12
-    system.printf("Catched the renaming exception\n"); #11 SYSprint_str ($19:int)<-($20:str)
-exit GDKerror; #12  (GDKerror:str)
-end main; #13  
+function Admin.main():int;	# 0  (main:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[int,int])<-($2:int)($3:int)
+    bat.setName(b,"mybat");	# 2 CMDsetName ($4:bat[int,int])<-(b:bat[int,int])($5:str)
+    bat.setColumn(b,"first","second");	# 3 CMDsetColumns ($6:bat[int,int])<-(b:bat[int,int])($7:str)($8:str)
+    io.print(b);	# 4 CMDprint_val ($9:int)<-(b:bat[int,int])
+    c := bbp.new(:int,:str);	# 5 CMDBATnew (c:bat[int,str])<-($11:int)($12:str)
+    bat.setName(c,"mybat");	# 6 CMDsetName ($13:bat[int,str])<-(c:bat[int,str])($5:str)
+    io.print(c);	# 7 CMDprint_val ($14:int)<-(c:bat[int,str])
+    io.print(c);	# 8 CMDprint_val ($15:int)<-(c:bat[int,str])
+    system.printf("catched anything?\n");	# 9 SYSprint_str ($16:int)<-($17:str)
+catch GDKerror;	# 10  (GDKerror:str) jump 12
+    system.printf("Catched the renaming exception\n");	# 11 SYSprint_str ($19:int)<-($20:str)
+exit GDKerror;	# 12  (GDKerror:str)
+end main;	# 13  
 #-----------------#
 # BAT:	  mybat	  #
 # (int)	  (int)	  #

@@ -29,12 +29,12 @@ tablet.setColumnDecimal(0,3,1);
 tablet.setColumnNull(1,"unknown");
 tablet.display(b1,b2);
 
-#sn := str(nil);
-#tablet.setTableBracket("<rowset>","</rowset>");
-#tablet.setRowBracket("<row>","</row>");
-#tablet.setColumnBracket(0,"<age>","</age>");
-#tablet.setColumnBracket(1,"<title>","</title>");
-#tablet.page(b1,b2);
+sn := str(nil);
+tablet.setTableBracket("<rowset>","</rowset>");
+tablet.setRowBracket("<row>","</row>");
+tablet.setColumnBracket(0,"<age>","</age>");
+tablet.setColumnBracket(1,"<title>","</title>");
+tablet.page(b1,b2);
 
 #leftover typeing
 #function someone(i:any...);

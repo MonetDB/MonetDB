@@ -12,14 +12,14 @@
 #exit 	k:=11;
 #	print(k);
 #
-function Admin.main():int; #0  (main:int)
-barrier k := 12; #1  (k:int)<-($2:int) jump 5
-    io.print(k); #2 CMDprint_val ($3:int)<-(k:int)
-    leave k; #3  (k:int) jump 5
-    io.print("not possible"); #4 CMDprint_val ($4:int)<-($5:str)
-exit k := 11; #5  (k:int)<-($6:int)
-    io.print(k); #6 CMDprint_val ($7:int)<-(k:int)
-end main; #7  
+function Admin.main():int;	# 0  (main:int)
+barrier k := 12;	# 1  (k:int)<-($2:int) jump 5
+    io.print(k);	# 2 CMDprint_val ($3:int)<-(k:int)
+    leave k;	# 3  (k:int) jump 5
+    io.print("not possible");	# 4 CMDprint_val ($4:int)<-($5:str)
+exit k := 11;	# 5  (k:int)<-($6:int)
+    io.print(k);	# 6 CMDprint_val ($7:int)<-(k:int)
+end main;	# 7  
 [ 12 ]
 [ 11 ]
 >

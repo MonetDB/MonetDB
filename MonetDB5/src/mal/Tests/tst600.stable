@@ -18,18 +18,18 @@
 #box.close("chest");
 #
 #
-function Admin.main():int; #0  (main:int)
-    box.open("chest"); #1 BOXopen ($1:void)<-($2:str)
-    box.deposit("chest","pi",3.417); #2 BOXdeposit ($3:void)<-($2:str)($4:str)($5:flt)
-    f := box.take("chest","pi"); #3 BOXtake (f:flt)<-($2:str)($4:str)
-    io.print(f); #4 CMDprint_val ($7:int)<-(f:flt)
-    f := calc.+(f,1.0); #5 CALCbinaryADDfltflt (f:flt)<-(f:flt)($8:flt)
-    box.release("chest","pi",f); #6 BOXrelease ($9:void)<-($2:str)($4:str)(f:flt)
-    g := box.take("chest","pi"); #7 BOXtake (g:flt)<-($2:str)($4:str)
-    io.print(g); #8 CMDprint_val ($11:int)<-(g:flt)
-    box.discard("chest","pi"); #9 BOXdiscard ($12:void)<-($2:str)($4:str)
-    box.close("chest"); #10 BOXclose ($13:void)<-($2:str)
-end main; #11  
+function Admin.main():int;	# 0  (main:int)
+    box.open("chest");	# 1 BOXopen ($1:void)<-($2:str)
+    box.deposit("chest","pi",3.417);	# 2 BOXdeposit ($3:void)<-($2:str)($4:str)($5:flt)
+    f := box.take("chest","pi");	# 3 BOXtake (f:flt)<-($2:str)($4:str)
+    io.print(f);	# 4 CMDprint_val ($7:int)<-(f:flt)
+    f := calc.+(f,1.0);	# 5 CALCbinaryADDfltflt (f:flt)<-(f:flt)($8:flt)
+    box.release("chest","pi",f);	# 6 BOXrelease ($9:void)<-($2:str)($4:str)(f:flt)
+    g := box.take("chest","pi");	# 7 BOXtake (g:flt)<-($2:str)($4:str)
+    io.print(g);	# 8 CMDprint_val ($11:int)<-(g:flt)
+    box.discard("chest","pi");	# 9 BOXdiscard ($12:void)<-($2:str)($4:str)
+    box.close("chest");	# 10 BOXclose ($13:void)<-($2:str)
+end main;	# 11  
 [ 3.41700006 ]
 [ 3.41700006 ]
 >

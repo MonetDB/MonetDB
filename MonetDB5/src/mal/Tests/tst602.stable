@@ -17,16 +17,16 @@
 #exit v;
 #const.close();	# save the content on persistent store
 #
-function Admin.main():int; #0  (main:int)
-    const.open(); #1 CONSTopen ($1:void)
-    t := const.take("pi"); #2 CONSTtake (t:flt)<-($3:str)
-    io.print(t); #3 CMDprint_val ($4:int)<-(t:flt)
-barrier v := const.iterator(nme); #4 CONSTiterator (v:lng)<-(nme:str) jump 7
-    io.print(nme); #5 CMDprint_val ($7:int)<-(nme:str)
-    redo v; #6  (v:lng) jump 4
-exit v; #7  (v:lng)
-    const.close(); #8 CONSTclose ($8:void)
-end main; #9  
+function Admin.main():int;	# 0  (main:int)
+    const.open();	# 1 CONSTopen ($1:void)
+    t := const.take("pi");	# 2 CONSTtake (t:flt)<-($3:str)
+    io.print(t);	# 3 CMDprint_val ($4:int)<-(t:flt)
+barrier v := const.iterator(nme);	# 4 CONSTiterator (v:lng)<-(nme:str) jump 7
+    io.print(nme);	# 5 CMDprint_val ($7:int)<-(nme:str)
+    redo v;	# 6  (v:lng) jump 4
+exit v;	# 7  (v:lng)
+    const.close();	# 8 CONSTclose ($8:void)
+end main;	# 9  
 [ 3.14700007 ]
 [ "user" ]
 [ "dbname" ]

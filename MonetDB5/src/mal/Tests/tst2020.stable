@@ -16,18 +16,18 @@
 #exit b1;
 #	printf("end of program, wait for child\n");
 #
-function Admin.main():int; #0  (main:int)
-thread b1; #1  (b1:int) jump 8
-    system.printf("start thread\n"); #2 SYSprint_str ($2:int)<-($3:str)
-barrier yy; #3  (yy:any) jump 6
-    leave yy; #4  (yy:any) jump 6
-    redo yy; #5  (yy:any) jump 3
-exit yy; #6  (yy:any)
-    system.printf("finish thread\n"); #7 SYSprint_str ($5:int)<-($6:str)
-exit b1; #8  (b1:int)
-    system.printf("end of program, wait for child\n"); #9 SYSprint_str ($7:int)<-($8:str)
-end main; #10  
+function Admin.main():int;	# 0  (main:int)
+thread b1;	# 1  (b1:int) jump 8
+    system.printf("start thread\n");	# 2 SYSprint_str ($2:int)<-($3:str)
+barrier yy;	# 3  (yy:any) jump 6
+    leave yy;	# 4  (yy:any) jump 6
+    redo yy;	# 5  (yy:any) jump 3
+exit yy;	# 6  (yy:any)
+    system.printf("finish thread\n");	# 7 SYSprint_str ($5:int)<-($6:str)
+exit b1;	# 8  (b1:int)
+    system.printf("end of program, wait for child\n");	# 9 SYSprint_str ($7:int)<-($8:str)
+end main;	# 10  
+end of program, wait for child
 start thread
 finish thread
-end of program, wait for child
 >

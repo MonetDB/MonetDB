@@ -11,11 +11,11 @@
 #	s:= inspect.getStackTrace();
 #	print(s);
 #end level;
-function Admin.level():void; #0  (level:void)
-    io.print("dubble depth\n"); #1 CMDprint_val ($1:int)<-($2:str)
-    s := inspect.getStackTrace(); #2 INSPECTStkTrace (s:bat[void,str])
-    io.print(s); #3 CMDprint_val ($4:int)<-(s:bat[void,str])
-end level; #4  
+function Admin.level():void;	# 0  (level:void)
+    io.print("dubble depth\n");	# 1 CMDprint_val ($1:int)<-($2:str)
+    s := inspect.getStackTrace();	# 2 INSPECTStkTrace (s:bat[void,str])
+    io.print(s);	# 3 CMDprint_val ($4:int)<-(s:bat[void,str])
+end level;	# 4  
 #function test(age:int,nme:str):int;
 #	d:= inspect.getStackDepth();
 #	printf("stack depth %d\n",d);
@@ -28,23 +28,23 @@ end level; #4
 #	print(t);
 #	level();
 #end test;
-function Admin.test(age:int,nme:str):int; #0  (test:int)<-(age:int)(nme:str)
-    d := inspect.getStackDepth(); #1 INSPECTStkDepth (d:int)
-    system.printf("stack depth %d\n",d); #2 SYSprint_formatted_int ($4:int)<-($5:str)(d:int)
-    system.printf("simulated error\n"); #3 SYSprint_str ($6:int)<-($7:str)
-    f := inspect.getCode(); #4 INSPECTcodeDump (f:bat[void,str])
-    io.print(f); #5 CMDprint_val ($9:int)<-(f:bat[void,str])
-    t := inspect.getStackFrame(); #6 INSPECTStkFrame (t:bat[str,str])
-    io.print(t); #7 CMDprint_val ($11:int)<-(t:bat[str,str])
-    t := inspect.getStackFrame(d); #8 INSPECTStkFrameN (t:bat[str,str])<-(d:int)
-    io.print(t); #9 CMDprint_val ($12:int)<-(t:bat[str,str])
-    Admin.level(); #10  ($13:void)
-end test; #11  
+function Admin.test(age:int,nme:str):int;	# 0  (test:int)<-(age:int)(nme:str)
+    d := inspect.getStackDepth();	# 1 INSPECTStkDepth (d:int)
+    system.printf("stack depth %d\n",d);	# 2 SYSprint_formatted_int ($4:int)<-($5:str)(d:int)
+    system.printf("simulated error\n");	# 3 SYSprint_str ($6:int)<-($7:str)
+    f := inspect.getCode();	# 4 INSPECTcodeDump (f:bat[void,str])
+    io.print(f);	# 5 CMDprint_val ($9:int)<-(f:bat[void,str])
+    t := inspect.getStackFrame();	# 6 INSPECTStkFrame (t:bat[str,str])
+    io.print(t);	# 7 CMDprint_val ($11:int)<-(t:bat[str,str])
+    t := inspect.getStackFrame(d);	# 8 INSPECTStkFrameN (t:bat[str,str])<-(d:int)
+    io.print(t);	# 9 CMDprint_val ($12:int)<-(t:bat[str,str])
+    Admin.level();	# 10  ($13:void)
+end test;	# 11  
 #test(12,"jj");
 #
-function Admin.main():int; #0  (main:int)
-    Admin.test(12,"jj"); #1  ($1:int)<-($2:int)($3:str)
-end main; #2  
+function Admin.main():int;	# 0  (main:int)
+    Admin.test(12,"jj");	# 1  ($1:int)<-($2:int)($3:str)
+end main;	# 2  
 stack depth 2
 simulated error
 #---------------------------------------------------------#

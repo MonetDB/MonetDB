@@ -16,14 +16,14 @@
 #const.close();	# save the content on persistent store
 #print(pi);
 #
-function Admin.main():int; #0  (main:int)
-    const.open(); #1 CONSTopen ($1:void)
-    const.deposit("pi",3.147); #2 CONSTdeposit ($2:void)<-($3:str)($4:flt)
-    pi := const.take("pi"); #3 CONSTtake (pi:flt)<-($3:str)
-    io.print(pi); #4 CMDprint_val ($6:int)<-(pi:flt)
-    const.close(); #5 CONSTclose ($7:void)
-    io.print(pi); #6 CMDprint_val ($8:int)<-(pi:flt)
-end main; #7  
+function Admin.main():int;	# 0  (main:int)
+    const.open();	# 1 CONSTopen ($1:void)
+    const.deposit("pi",3.147);	# 2 CONSTdeposit ($2:void)<-($3:str)($4:flt)
+    pi := const.take("pi");	# 3 CONSTtake (pi:flt)<-($3:str)
+    io.print(pi);	# 4 CMDprint_val ($6:int)<-(pi:flt)
+    const.close();	# 5 CONSTclose ($7:void)
+    io.print(pi);	# 6 CMDprint_val ($8:int)<-(pi:flt)
+end main;	# 7  
 [ 3.14700007 ]
 [ 3.14700007 ]
 >

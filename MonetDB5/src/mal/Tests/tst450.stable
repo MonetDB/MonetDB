@@ -15,19 +15,19 @@
 #n:= mal.help("algebra","insert"); print(n);
 #d:= inspect.getDefinition("inspect","dir"); print(d);
 #
-function Admin.main():int; #0  (main:int)
-    a := inspect.getAtoms(); #1 INSPECTatom_names (a:bat[int,str])
-    io.print(a); #2 CMDprint_val ($2:int)<-(a:bat[int,str])
-    m := inspect.getModules(); #3 INSPECTmoduleNames (m:bat[void,str])
-    io.print(m); #4 CMDprint_val ($4:int)<-(m:bat[void,str])
-    stmt := inspect.getDefinition("algebra","select"); #5 INSPECTsymbolDef (stmt:bat[int,str])<-($6:str)($7:str)
-    sig := inspect.getSignature("algebra","select"); #6 INSPECTsymbolSignature (sig:bat[str,str])<-($6:str)($7:str)
-    tpe := inspect.getType("algebra","select"); #7 INSPECTsymbolType (tpe:bat[str,str])<-($6:str)($7:str)
-    n := mal.help("algebra","insert"); #8 CMDhelpComment2 (n:bat[int,str])<-($6:str)($11:str)
-    io.print(n); #9 CMDprint_val ($12:int)<-(n:bat[int,str])
-    d := inspect.getDefinition("inspect","dir"); #10 INSPECTsymbolDef (d:bat[int,str])<-($14:str)($15:str)
-    io.print(d); #11 CMDprint_val ($16:int)<-(d:bat[int,str])
-end main; #12  
+function Admin.main():int;	# 0  (main:int)
+    a := inspect.getAtoms();	# 1 INSPECTatom_names (a:bat[int,str])
+    io.print(a);	# 2 CMDprint_val ($2:int)<-(a:bat[int,str])
+    m := inspect.getModules();	# 3 INSPECTmoduleNames (m:bat[void,str])
+    io.print(m);	# 4 CMDprint_val ($4:int)<-(m:bat[void,str])
+    stmt := inspect.getDefinition("algebra","select");	# 5 INSPECTsymbolDef (stmt:bat[int,str])<-($6:str)($7:str)
+    sig := inspect.getSignature("algebra","select");	# 6 INSPECTsymbolSignature (sig:bat[str,str])<-($6:str)($7:str)
+    tpe := inspect.getType("algebra","select");	# 7 INSPECTsymbolType (tpe:bat[str,str])<-($6:str)($7:str)
+    n := mal.help("algebra","insert");	# 8 CMDhelpComment2 (n:bat[int,str])<-($6:str)($11:str)
+    io.print(n);	# 9 CMDprint_val ($12:int)<-(n:bat[int,str])
+    d := inspect.getDefinition("inspect","dir");	# 10 INSPECTsymbolDef (d:bat[int,str])<-($14:str)($15:str)
+    io.print(d);	# 11 CMDprint_val ($16:int)<-(d:bat[int,str])
+end main;	# 12  
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
@@ -56,15 +56,16 @@ end main; #12
 [ 21,	  "rule"	  ]
 [ 22,	  "fixed_16_4"	  ]
 [ 23,	  "fixed_8_4"	  ]
-[ 24,	  "fstream"	  ]
-[ 25,	  "bipipe"	  ]
-[ 26,	  "stream"	  ]
+[ 24,	  "stream"	  ]
+[ 25,	  "fstream"	  ]
+[ 26,	  "bipipe"	  ]
 [ 27,	  "enum"	  ]
 #-------------------------#
 # BAT:	  names		  #
 # (void)  (str)		  #
 #-------------------------#
 [ nil,	  "Admin"	  ]
+[ nil,	  "sql"		  ]
 [ nil,	  "optimizer"	  ]
 [ nil,	  "inspect"	  ]
 [ nil,	  "box"		  ]
@@ -74,11 +75,11 @@ end main; #12
 [ nil,	  "mal"		  ]
 [ nil,	  "multiplex"	  ]
 [ nil,	  "enum"	  ]
-[ nil,	  "ascii_io"	  ]
-[ nil,	  "streams"	  ]
 [ nil,	  "fstream"	  ]
 [ nil,	  "bipipe"	  ]
 [ nil,	  "io"		  ]
+[ nil,	  "tablet"	  ]
+[ nil,	  "streams"	  ]
 [ nil,	  "clients"	  ]
 [ nil,	  "mapi"	  ]
 [ nil,	  "aggrX3"	  ]

@@ -11,12 +11,12 @@
 #u:= new(:int,:str);
 #print(t,u);
 #
-function Admin.main():int; #0  (main:int)
-    t := bbp.new(:int,:str); #1 CMDBATnew (t:bat[int,str])<-($2:int)($3:str)
-    bat.setColumn(t,"first"); #2 CMDsetColumn ($4:bat[int,str])<-(t:bat[int,str])($5:str)
-    u := bbp.new(:int,:str); #3 CMDBATnew (u:bat[int,str])<-($7:int)($8:str)
-    io.print(t,u); #4 CMDtable ($9:int)<-(t:bat[int,str])(u:bat[int,str])
-end main; #5  
+function Admin.main():int;	# 0  (main:int)
+    t := bbp.new(:int,:str);	# 1 CMDBATnew (t:bat[int,str])<-($2:int)($3:str)
+    bat.setColumn(t,"first");	# 2 CMDsetColumn ($4:bat[int,str])<-(t:bat[int,str])($5:str)
+    u := bbp.new(:int,:str);	# 3 CMDBATnew (u:bat[int,str])<-($7:int)($8:str)
+    io.print(t,u);	# 4 CMDtable ($9:int)<-(t:bat[int,str])(u:bat[int,str])
+end main;	# 5  
 #-------------------------#
 # BAT:	  first	| tmp_5	  #
 # (int)	  (str)	| (str)	  #

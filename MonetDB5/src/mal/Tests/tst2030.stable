@@ -14,14 +14,14 @@
 #	redo b;
 #exit	b;
 #end clkticks;
-function Admin.clkticks(n:int):void; #0  (clkticks:void)<-(n:int)
-barrier b := calc.>(n,0); #1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
-    system.printf("clock tick %d\n",n); #2 SYSprint_formatted_int ($4:int)<-($5:str)(n:int)
-    alarm.sleep(5); #3 CLKsleep ($6:void)<-($7:int)
-    n := calc.-(n,1); #4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
-    redo b; #5  (b:bit) jump 1
-exit b; #6  (b:bit)
-end clkticks; #7  
+function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
+barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
+    system.printf("clock tick %d\n",n);	# 2 SYSprint_formatted_int ($4:int)<-($5:str)(n:int)
+    alarm.sleep(5);	# 3 CLKsleep ($6:void)<-($7:int)
+    n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
+    redo b;	# 5  (b:bit) jump 1
+exit b;	# 6  (b:bit)
+end clkticks;	# 7  
 #
 #thread 	hdl;	# synchronize through a boolean
 #	clkticks(2);
@@ -29,13 +29,13 @@ end clkticks; #7
 #printf("Main thread\n");
 #printf("Wait for child to exit\n");
 #
-function Admin.main():int; #0  (main:int)
-thread hdl; #1  (hdl:int) jump 3
-    Admin.clkticks(2); #2  ($2:void)<-($3:int)
-exit hdl; #3  (hdl:int)
-    system.printf("Main thread\n"); #4 SYSprint_str ($4:int)<-($5:str)
-    system.printf("Wait for child to exit\n"); #5 SYSprint_str ($6:int)<-($7:str)
-end main; #6  
+function Admin.main():int;	# 0  (main:int)
+thread hdl;	# 1  (hdl:int) jump 3
+    Admin.clkticks(2);	# 2  ($2:void)<-($3:int)
+exit hdl;	# 3  (hdl:int)
+    system.printf("Main thread\n");	# 4 SYSprint_str ($4:int)<-($5:str)
+    system.printf("Wait for child to exit\n");	# 5 SYSprint_str ($6:int)<-($7:str)
+end main;	# 6  
 clock tick 2
 Main thread
 Wait for child to exit

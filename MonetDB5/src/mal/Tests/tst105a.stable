@@ -9,10 +9,10 @@
 #module bat;
 #command new(h:any::1,t:any::2):bat[any::1,any::2]= GDKbatnew;
 !ERROR: address of 'GDKbatnew' not found
-command Admin.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew; #0  dynamic (new:bat[any::1,any::2])<-(h:any::1)(t:any::2)
+command Admin.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew;	# 0  dynamic (new:bat[any::1,any::2])<-(h:any::1)(t:any::2)
 #
 #b:= bat.new(:str,:int);
-function Admin.main():int; #0  unknown (main:int)
-    b := bat.new(:str,:int); #1  unknown (b:any)<-($2:str)($3:int)
-end main; #2  unknown 
+function Admin.main():int;	# 0  unknown (main:int)
+    b := bat.new(:str,:int);	# 1  unknown (b:any)<-($2:str)($3:int)
+end main;	# 2  unknown 
 >

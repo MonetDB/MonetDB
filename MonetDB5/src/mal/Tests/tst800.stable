@@ -23,18 +23,18 @@
 #	redo b;
 #exit b;
 #
-function Admin.main():int; #0  (main:int)
-    v := const.take("version"); #1 CONSTtake (v:str)<-($2:str)
-    u := const.take("user"); #2 CONSTtake (u:str)<-($4:str)
-    db := const.take("dbname"); #3 CONSTtake (db:str)<-($6:str)
-    df := const.take("dbfarm"); #4 CONSTtake (df:str)<-($8:str)
-barrier b := const.iterator(nme); #5 CONSTiterator (b:lng)<-(nme:str) jump 10
-    system.printf("%s=",nme); #6 SYSprint_formatted_str ($11:int)<-($12:str)(nme:str)
-    val := const.toString(nme); #7 CONSTtoString (val:str)<-(nme:str)
-    system.printf("%s\n",val); #8 SYSprint_formatted_str ($14:int)<-($15:str)(val:str)
-    redo b; #9  (b:lng) jump 5
-exit b; #10  (b:lng)
-end main; #11  
+function Admin.main():int;	# 0  (main:int)
+    v := const.take("version");	# 1 CONSTtake (v:str)<-($2:str)
+    u := const.take("user");	# 2 CONSTtake (u:str)<-($4:str)
+    db := const.take("dbname");	# 3 CONSTtake (db:str)<-($6:str)
+    df := const.take("dbfarm");	# 4 CONSTtake (df:str)<-($8:str)
+barrier b := const.iterator(nme);	# 5 CONSTiterator (b:lng)<-(nme:str) jump 10
+    system.printf("%s=",nme);	# 6 SYSprint_formatted_str ($11:int)<-($12:str)(nme:str)
+    val := const.toString(nme);	# 7 CONSTtoString (val:str)<-(nme:str)
+    system.printf("%s\n",val);	# 8 SYSprint_formatted_str ($14:int)<-($15:str)(val:str)
+    redo b;	# 9  (b:lng) jump 5
+exit b;	# 10  (b:lng)
+end main;	# 11  
 user=Admin
 dbname=demo
 dbfarm=/ufs/mk/monet_5/Linux/var/MonetDB

@@ -9,8 +9,8 @@
 #a:=b;	#b not yet defined
 #b:=c;	#c undefined
 #
-function Admin.main():int; #0  (main:int)
-    a := b; #1  (a:any)<-(b:any)
-    b := c; #2  (b:any)<-(c:any)
-end main; #3  
+function Admin.main():int;	# 0  (main:int)
+    a := b;	# 1  (a:any)<-(b:any)
+    b := c;	# 2  (b:any)<-(c:any)
+end main;	# 3  
 >

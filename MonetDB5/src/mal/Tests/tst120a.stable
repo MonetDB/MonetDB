@@ -6,7 +6,7 @@
 # dbname:demo
 #module top;
 #function first(i:sht):sht; end first;
-function top.first(i:sht):sht; #0  (first:sht)<-(i:sht)
-end first; #1  
+function top.first(i:sht):sht;	# 0  (first:sht)<-(i:sht)
+end first;	# 1  
 #
 >

@@ -11,11 +11,11 @@
 #barrier  b:= iterator.argument(i,arg);
 #exit b;
 #end pr; 
-function Admin.pr(format:str,arg:any...):void; #0  (pr:void)<-(format:str)(arg:any)
-    i := -1; #1  (i:int)<-($4:int)
-barrier b := iterator.argument(i,arg); #2  unknown (b:any)<-(i:int)(arg:any) jump 3
-exit b; #3  (b:any)
-end pr; #4  
+function Admin.pr(format:str,arg:any...):void;	# 0  (pr:void)<-(format:str)(arg:any)
+    i := -1;	# 1  (i:int)<-($4:int)
+barrier b := iterator.argument(i,arg);	# 2  unknown (b:any)<-(i:int)(arg:any) jump 3
+exit b;	# 3  (b:any)
+end pr;	# 4  
 #
 ## how to iterator through a variable list
 #function prStr(format:str,arg:str...):void;
@@ -28,16 +28,16 @@ end pr; #4
 #	printf(elm);
 #exit b;
 #end prStr; 
-function Admin.prStr(format:str,arg:str...):void; #0  (prStr:void)<-(format:str)(arg:str)
-    i := -1; #1  (i:int)<-($4:int)
-    limit := Array.getLength(arg); #2  unknown (limit:int)<-(arg:str)
-barrier b := mal.nextElement(i,0,limit); #3 intForloop (b:bit)<-(i:int)($7:int)(limit:int) jump 8
-    elm := Array.get(arg,i); #4  unknown (elm:str)<-(arg:str)(i:int)
-    system.printf("argument "); #5 SYSprint_str ($9:int)<-($10:str)
-    printf(i); #6  unknown ($11:any)<-(i:int)
-    system.printf(elm); #7 SYSprint_str ($12:int)<-(elm:str)
-exit b; #8  (b:bit)
-end prStr; #9  
+function Admin.prStr(format:str,arg:str...):void;	# 0  (prStr:void)<-(format:str)(arg:str)
+    i := -1;	# 1  (i:int)<-($4:int)
+    limit := Array.getLength(arg);	# 2  unknown (limit:int)<-(arg:str)
+barrier b := mal.nextElement(i,0,limit);	# 3 intForloop (b:bit)<-(i:int)($7:int)(limit:int) jump 8
+    elm := Array.get(arg,i);	# 4  unknown (elm:str)<-(arg:str)(i:int)
+    system.printf("argument ");	# 5 SYSprint_str ($9:int)<-($10:str)
+    printf(i);	# 6  unknown ($11:any)<-(i:int)
+    system.printf(elm);	# 7 SYSprint_str ($12:int)<-(elm:str)
+exit b;	# 8  (b:bit)
+end prStr;	# 9  
 !ERROR: 'Array.getLength' undefined in Admin.prStr[2]
 !ERROR: 'Array.get' undefined in Admin.prStr[4]
 !ERROR: 'printf' undefined in Admin.prStr[6]
@@ -48,17 +48,17 @@ end prStr; #9
 #
 !ERROR: 'iterator.argument' undefined in Admin.pr[2]
 !ERROR: Error in cloned function
-!ERROR: function Admin.pr(format:str,arg:int...):int; #0  (arg:int)<-(format:str)(arg:int)
-    i := -1; #1  (i:int)<-($4:int)
-barrier b := iterator.argument(i,arg); #2  unknown (b:any)<-(i:int)(arg:int) jump 3
-exit b; #3  (b:any)
-end pr; #4  
+!ERROR: function Admin.pr(format:str,arg:int...):int;	# 0  (arg:int)<-(format:str)(arg:int)
+    i := -1;	# 1  (i:int)<-($4:int)
+barrier b := iterator.argument(i,arg);	# 2  unknown (b:any)<-(i:int)(arg:int) jump 3
+exit b;	# 3  (b:any)
+end pr;	# 4  
 !ERROR: 'Admin.pr' undefined in Admin.main[1]
 !ERROR: 'prStr' undefined in Admin.main[2]
 !ERROR: 'prStr' undefined in Admin.main[3]
-function Admin.main():int; #0  (main:int)
-    Admin.pr("hello",1,true); #1  ($1:void)<-($2:str)($3:int)($4:bit)
-    prStr("hello",1,true); #2  unknown ($5:any)<-($2:str)($3:int)($4:bit)
-    prStr("hello","quick","brown","fox"); #3  unknown ($6:any)<-($2:str)($7:str)($8:str)($9:str)
-end main; #4  
+function Admin.main():int;	# 0  (main:int)
+    Admin.pr("hello",1,true);	# 1  ($1:void)<-($2:str)($3:int)($4:bit)
+    prStr("hello",1,true);	# 2  unknown ($5:any)<-($2:str)($3:int)($4:bit)
+    prStr("hello","quick","brown","fox");	# 3  unknown ($6:any)<-($2:str)($7:str)($8:str)($9:str)
+end main;	# 4  
 >

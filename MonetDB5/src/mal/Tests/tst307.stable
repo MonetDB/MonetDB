@@ -13,13 +13,13 @@
 #	print("catched the exception");
 #exit MALexception;
 #
-function Admin.main():int; #0  (main:int)
-    b := bbp.new(:int,:int); #1 CMDBATnew (b:bat[int,int])<-($2:int)($3:int)
-    z := algebra.find(b,0); #2 CMDfind (z:int)<-(b:bat[int,int])($5:int)
-    io.print("should not come here anymore"); #3 CMDprint_val ($6:int)<-($7:str)
-catch MALexception; #4  (MALexception:str) jump 6
-    io.print("catched the exception"); #5 CMDprint_val ($9:int)<-($10:str)
-exit MALexception; #6  (MALexception:str)
-end main; #7  
+function Admin.main():int;	# 0  (main:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[int,int])<-($2:int)($3:int)
+    z := algebra.find(b,0);	# 2 CMDfind (z:int)<-(b:bat[int,int])($5:int)
+    io.print("should not come here anymore");	# 3 CMDprint_val ($6:int)<-($7:str)
+catch MALexception;	# 4  (MALexception:str) jump 6
+    io.print("catched the exception");	# 5 CMDprint_val ($9:int)<-($10:str)
+exit MALexception;	# 6  (MALexception:str)
+end main;	# 7  
 [ "catched the exception" ]
 >

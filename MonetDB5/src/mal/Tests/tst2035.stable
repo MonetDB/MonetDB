@@ -14,14 +14,14 @@
 #	redo b;
 #exit	b;
 #end clkticks;
-function Admin.clkticks(n:int):void; #0  (clkticks:void)<-(n:int)
-barrier b := calc.>(n,0); #1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
-    system.printf("clock tick %d\n",n); #2 SYSprint_formatted_int ($4:int)<-($5:str)(n:int)
-    alarm.sleep(5); #3 CLKsleep ($6:void)<-($7:int)
-    n := calc.-(n,1); #4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
-    redo b; #5  (b:bit) jump 1
-exit b; #6  (b:bit)
-end clkticks; #7  
+function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
+barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
+    system.printf("clock tick %d\n",n);	# 2 SYSprint_formatted_int ($4:int)<-($5:str)(n:int)
+    alarm.sleep(5);	# 3 CLKsleep ($6:void)<-($7:int)
+    n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
+    redo b;	# 5  (b:bit) jump 1
+exit b;	# 6  (b:bit)
+end clkticks;	# 7  
 #
 #thread 	hdl:=0;	# synchronize through a counter
 #	hdl:= hdl+1;
@@ -47,25 +47,25 @@ end clkticks; #7
 #
 !ERROR: thread 	hdl:=0;	# synchronize through a counter
 !       	       	  ^';' expected
-function Admin.main():int; #0  unknown (main:int)
-thread hdl; #1  unknown (hdl:int)
-    hdl := +(hdl,1); #2  unknown (hdl:int)<-(hdl:int)($2:int)
-    printf("hdl %d\n",hdl); #3  unknown ($3:any)<-($4:str)(hdl:int)
-barrier t := ==(hdl,2); #4  unknown (t:any)<-(hdl:int)($6:int)
-    leave hdl; #5  unknown (hdl:int)
-exit t; #6  unknown (t:any)
-    printf("Redo thread\n"); #7  unknown ($7:any)<-($8:str)
-    redo hdl; #8  unknown (hdl:int)
-exit hdl; #9  unknown (hdl:int)
-    printf("Main thread\n"); #10  unknown ($9:any)<-($10:str)
-barrier wl := true; #11  unknown (wl:any)<-($12:bit)
-    printf("Wait for child to exit %d\n",hdl); #12  unknown ($13:any)<-($14:str)(hdl:int)
-barrier t0 := ==(hdl,2); #13  unknown (t0:any)<-(hdl:int)($6:int)
-    printf("Child died \n"); #14  unknown ($16:any)<-($17:str)
-    leave wl; #15  unknown (wl:any)
-exit t0; #16  unknown (t0:any)
-    alarm.sleep(1); #17  unknown ($18:any)<-($2:int)
-    redo wl; #18  unknown (wl:any)
-exit wl; #19  unknown (wl:any)
-end main; #20  unknown 
+function Admin.main():int;	# 0  unknown (main:int)
+thread hdl;	# 1  unknown (hdl:int)
+    hdl := +(hdl,1);	# 2  unknown (hdl:int)<-(hdl:int)($2:int)
+    printf("hdl %d\n",hdl);	# 3  unknown ($3:any)<-($4:str)(hdl:int)
+barrier t := ==(hdl,2);	# 4  unknown (t:any)<-(hdl:int)($6:int)
+    leave hdl;	# 5  unknown (hdl:int)
+exit t;	# 6  unknown (t:any)
+    printf("Redo thread\n");	# 7  unknown ($7:any)<-($8:str)
+    redo hdl;	# 8  unknown (hdl:int)
+exit hdl;	# 9  unknown (hdl:int)
+    printf("Main thread\n");	# 10  unknown ($9:any)<-($10:str)
+barrier wl := true;	# 11  unknown (wl:any)<-($12:bit)
+    printf("Wait for child to exit %d\n",hdl);	# 12  unknown ($13:any)<-($14:str)(hdl:int)
+barrier t0 := ==(hdl,2);	# 13  unknown (t0:any)<-(hdl:int)($6:int)
+    printf("Child died \n");	# 14  unknown ($16:any)<-($17:str)
+    leave wl;	# 15  unknown (wl:any)
+exit t0;	# 16  unknown (t0:any)
+    alarm.sleep(1);	# 17  unknown ($18:any)<-($2:int)
+    redo wl;	# 18  unknown (wl:any)
+exit wl;	# 19  unknown (wl:any)
+end main;	# 20  unknown 
 >

@@ -13,18 +13,18 @@
 #	raise IllegalAccess;
 #	print("should have left function ");
 #end myException;
-function Admin.myException():any; #0  dynamic (myException:any)
-    IllegalAccess := "new exception"; #1  (IllegalAccess:str)<-($2:str)
-    raise IllegalAccess; #2  (IllegalAccess:str)
-    io.print("should have left function "); #3 CMDprint_val ($3:int)<-($4:str)
-end myException; #4  
+function Admin.myException():any;	# 0  dynamic (myException:any)
+    IllegalAccess := "new exception";	# 1  (IllegalAccess:str)<-($2:str)
+    raise IllegalAccess;	# 2  (IllegalAccess:str)
+    io.print("should have left function ");	# 3 CMDprint_val ($3:int)<-($4:str)
+end myException;	# 4  
 #
 #	myException();
 #	print("should not come here");
 #
-function Admin.main():int; #0  (main:int)
-    Admin.myException(); #1  ($1:any)
-    io.print("should not come here"); #2 CMDprint_val ($2:int)<-($3:str)
-end main; #3  
+function Admin.main():int;	# 0  (main:int)
+    Admin.myException();	# 1  ($1:any)
+    io.print("should not come here");	# 2 CMDprint_val ($2:int)<-($3:str)
+end main;	# 3  
 !ERROR: new exceptionMALexception:Admin.myException[4]: propagated
 >

@@ -15,22 +15,22 @@
 #redo	b;
 #exit	b;
 #end clkticks;
-function Admin.clkticks(n:int):void; #0  (clkticks:void)<-(n:int)
-barrier b := calc.>(n,0); #1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
-    system.printf("clock tick\n"); #2 SYSprint_str ($4:int)<-($5:str)
-    alarm.sleep(2); #3 CLKsleep ($6:void)<-($7:int)
-    n := calc.-(n,1); #4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
-    redo b; #5  (b:bit) jump 1
-exit b; #6  (b:bit)
-end clkticks; #7  
+function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
+barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
+    system.printf("clock tick\n");	# 2 SYSprint_str ($4:int)<-($5:str)
+    alarm.sleep(2);	# 3 CLKsleep ($6:void)<-($7:int)
+    n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
+    redo b;	# 5  (b:bit) jump 1
+exit b;	# 6  (b:bit)
+end clkticks;	# 7  
 #
 #mdb('T');
 #clkticks(2);
 #
-function Admin.main():int; #0  (main:int)
-    inspect.mdb('T'); #1 mdbSetCmd ($1:void)<-($2:chr)
-    Admin.clkticks(2); #2  ($3:void)<-($4:int)
-end main; #3  
+function Admin.main():int;	# 0  (main:int)
+    inspect.mdb('T');	# 1 mdbSetCmd ($1:void)<-($2:chr)
+    Admin.clkticks(2);	# 2  ($3:void)<-($4:int)
+end main;	# 3  
 #Monet Debugger on
 #mdb     Admin.clkticks(2)
 #mdb barrier b := calc.>(2,0)

@@ -15,14 +15,14 @@
 #	print(MALexception);
 #exit MALexception;
 #
-function Admin.main():int; #0  (main:int)
-    bbp.open(); #1 CMDbbpopen ($1:void)
-    c := bbp.take("myfirstbat"); #2 CMDbbptake (c:bat[any,any])<-($3:str)
-    io.print(c); #3 CMDprint_val ($4:int)<-(c:bat[any,any])
-    bbp.close(); #4 CMDbbpclose ($5:void)
-catch MALexception; #5  (MALexception:str) jump 7
-    io.print(MALexception); #6 CMDprint_val ($7:int)<-(MALexception:str)
-exit MALexception; #7  (MALexception:str)
-end main; #8  
+function Admin.main():int;	# 0  (main:int)
+    bbp.open();	# 1 CMDbbpopen ($1:void)
+    c := bbp.take("myfirstbat");	# 2 CMDbbptake (c:bat[any,any])<-($3:str)
+    io.print(c);	# 3 CMDprint_val ($4:int)<-(c:bat[any,any])
+    bbp.close();	# 4 CMDbbpclose ($5:void)
+catch MALexception;	# 5  (MALexception:str) jump 7
+    io.print(MALexception);	# 6 CMDprint_val ($7:int)<-(MALexception:str)
+exit MALexception;	# 7  (MALexception:str)
+end main;	# 8  
 [ "MALexception:Admin.main[2]:bbp.take:failed to take 'myfirstbat' from box\n" ]
 >

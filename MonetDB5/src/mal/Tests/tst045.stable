@@ -11,11 +11,11 @@
 #function dummy();
 #	pi:=0:int;
 #end dummy;
-function Admin.dummy():any; #0  dynamic (dummy:any)
-    pi := 0; #1  (pi:int)<-($2:int)
-end dummy; #2  
+function Admin.dummy():any;	# 0  dynamic (dummy:any)
+    pi := 0;	# 1  (pi:int)<-($2:int)
+end dummy;	# 2  
 #
-function Admin.main():int; #0  (main:int)
-    pi := 3.147; #1  (pi:flt)<-($2:flt)
-end main; #2  
+function Admin.main():int;	# 0  (main:int)
+    pi := 3.147;	# 1  (pi:flt)<-($2:flt)
+end main;	# 2  
 >

@@ -10,9 +10,9 @@
 #
 !ERROR: printi;
 !             ^'.' or '(' expected
-function Admin.main():int; #0  unknown (main:int)
-    i := 32; #1  unknown (i:any)<-($2:int)
-    $3; #2  unknown ($3:any)
-    print(i); #3  unknown ($4:any)<-(i:any)
-end main; #4  unknown 
+function Admin.main():int;	# 0  unknown (main:int)
+    i := 32;	# 1  unknown (i:any)<-($2:int)
+    $3;	# 2  unknown ($3:any)
+    print(i);	# 3  unknown ($4:any)<-(i:any)
+end main;	# 4  unknown 
 >

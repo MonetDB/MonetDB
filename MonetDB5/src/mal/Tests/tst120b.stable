@@ -6,11 +6,11 @@
 # dbname:demo
 #module bottom;
 #function first(i:str):int; c:=1; end first;
-function bottom.first(i:str):int; #0  (first:int)<-(i:str)
-    c := 1; #1  (c:int)<-($3:int)
-end first; #2  
+function bottom.first(i:str):int;	# 0  (first:int)<-(i:str)
+    c := 1;	# 1  (c:int)<-($3:int)
+end first;	# 2  
 #function second(i:str):int; end second;
-function bottom.second(i:str):int; #0  (second:int)<-(i:str)
-end second; #1  
+function bottom.second(i:str):int;	# 0  (second:int)<-(i:str)
+end second;	# 1  
 #
 >

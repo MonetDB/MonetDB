@@ -10,10 +10,10 @@
 #	raise IllegalAccess;
 #	print("should not come here\n");
 #
-function Admin.main():int; #0  (main:int)
-    IllegalAccess := 1234; #1  (IllegalAccess:int)<-($2:int)
-    raise IllegalAccess; #2  (IllegalAccess:int)
-    io.print("should not come here\n"); #3 CMDprint_val ($3:int)<-($4:str)
-end main; #4  
+function Admin.main():int;	# 0  (main:int)
+    IllegalAccess := 1234;	# 1  (IllegalAccess:int)<-($2:int)
+    raise IllegalAccess;	# 2  (IllegalAccess:int)
+    io.print("should not come here\n");	# 3 CMDprint_val ($3:int)<-($4:str)
+end main;	# 4  
 !ERROR: IllegalAccess:Admin.main[4]: propagated
 >

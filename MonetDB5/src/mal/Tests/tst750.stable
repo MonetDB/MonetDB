@@ -10,17 +10,17 @@
 #	k:= 1+c;
 #	print(k);
 #end test;
-function Admin.test(b:bat[any::1,any::2],c:any::2):int; #0  (test:int)<-(b:bat[any::1,any::2])(c:any::2)
-    k := +(1,c); #1  unknown (k:any)<-($4:int)(c:any::2)
-    io.print(k); #2 CMDprint_val ($5:int)<-(k:any)
-end test; #3  
+function Admin.test(b:bat[any::1,any::2],c:any::2):int;	# 0  (test:int)<-(b:bat[any::1,any::2])(c:any::2)
+    k := +(1,c);	# 1  unknown (k:any)<-($4:int)(c:any::2)
+    io.print(k);	# 2 CMDprint_val ($5:int)<-(k:any)
+end test;	# 3  
 #
 #b:=new(:int,:int);
 #test(b,2);
 #
-function Admin.main():int; #0  (main:int)
-    b := bbp.new(:int,:int); #1 CMDBATnew (b:bat[int,int])<-($2:int)($3:int)
-    Admin.test(b,2); #2  ($4:int)<-(b:bat[int,int])($5:int)
-end main; #3  
+function Admin.main():int;	# 0  (main:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[int,int])<-($2:int)($3:int)
+    Admin.test(b,2);	# 2  ($4:int)<-(b:bat[int,int])($5:int)
+end main;	# 3  
 [ 3 ]
 >

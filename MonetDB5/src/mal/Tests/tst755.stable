@@ -11,23 +11,23 @@
 #	k:= 1+"wrong";
 #	print(k);
 #end test;
-function Admin.test(b:bat[any::1,any::2],c:any::2):int; #0  (test:int)<-(b:bat[any::1,any::2])(c:any::2)
-    k := +(1,"wrong"); #1  unknown (k:any)<-($4:int)($5:str)
-    io.print(k); #2 CMDprint_val ($6:int)<-(k:any)
-end test; #3  
+function Admin.test(b:bat[any::1,any::2],c:any::2):int;	# 0  (test:int)<-(b:bat[any::1,any::2])(c:any::2)
+    k := +(1,"wrong");	# 1  unknown (k:any)<-($4:int)($5:str)
+    io.print(k);	# 2 CMDprint_val ($6:int)<-(k:any)
+end test;	# 3  
 #
 #c:=new(:int,:str);
 #test(c,"hello");
 #
 !ERROR: '+' undefined in Admin.test[1]
 !ERROR: Error in cloned function
-!ERROR: function Admin.test(b:bat[int,str],c:str):str; #0  (c:str)<-(b:bat[int,str])(c:str)
-    k := +(1,"wrong"); #1  unknown (k:any)<-($4:int)($5:str)
-    io.print(k); #2 CMDprint_val ($6:int)<-(k:any)
-end test; #3  
+!ERROR: function Admin.test(b:bat[int,str],c:str):str;	# 0  (c:str)<-(b:bat[int,str])(c:str)
+    k := +(1,"wrong");	# 1  unknown (k:any)<-($4:int)($5:str)
+    io.print(k);	# 2 CMDprint_val ($6:int)<-(k:any)
+end test;	# 3  
 !ERROR: 'Admin.test' undefined in Admin.main[2]
-function Admin.main():int; #0  (main:int)
-    c := bbp.new(:int,:str); #1 CMDBATnew (c:bat[int,str])<-($2:int)($3:str)
-    Admin.test(c,"hello"); #2  ($4:int)<-(c:bat[int,str])($5:str)
-end main; #3  
+function Admin.main():int;	# 0  (main:int)
+    c := bbp.new(:int,:str);	# 1 CMDBATnew (c:bat[int,str])<-($2:int)($3:str)
+    Admin.test(c,"hello");	# 2  ($4:int)<-(c:bat[int,str])($5:str)
+end main;	# 3  
 >

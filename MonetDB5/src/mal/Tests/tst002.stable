@@ -16,12 +16,12 @@
 !ERROR: 'false' is a reserved identifier
 !ERROR: 'barrier' is a reserved identifier
 !ERROR: 'barrier' is a reserved identifier
-function Admin.main():int; #0  unknown (main:int)
-    23; #1  unknown ($1:any)<-($2:int)
-    24; #2  unknown ($3:any)<-($4:int)
-barrier true; #3  unknown ($5:any)<-($6:bit)
-    b := true; #4  unknown (b:any)<-($6:bit)
-    b := false; #5  unknown (b:any)<-($8:bit)
-exit $9; #6  unknown ($9:any)
-end main; #7  unknown 
+function Admin.main():int;	# 0  unknown (main:int)
+    23;	# 1  unknown ($1:any)<-($2:int)
+    24;	# 2  unknown ($3:any)<-($4:int)
+barrier true;	# 3  unknown ($5:any)<-($6:bit)
+    b := true;	# 4  unknown (b:any)<-($6:bit)
+    b := false;	# 5  unknown (b:any)<-($8:bit)
+exit $9;	# 6  unknown ($9:any)
+end main;	# 7  unknown 
 >

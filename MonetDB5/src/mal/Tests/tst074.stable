@@ -8,16 +8,16 @@
 #function swap(x:str):str;
 #	return x;
 #end swap;
-function Admin.swap(x:str):str; #0  (swap:str)<-(x:str)
-    return x; #1  (swap:str)<-(x:str)
-end swap; #2  
+function Admin.swap(x:str):str;	# 0  (swap:str)<-(x:str)
+    return x;	# 1  (swap:str)<-(x:str)
+end swap;	# 2  
 #
 #x:= swap("world hello");
 #print(x);
 #
-function Admin.main():int; #0  (main:int)
-    x := Admin.swap("world hello"); #1  (x:str)<-($2:str)
-    io.print(x); #2 CMDprint_val ($3:int)<-(x:str)
-end main; #3  
+function Admin.main():int;	# 0  (main:int)
+    x := Admin.swap("world hello");	# 1  (x:str)<-($2:str)
+    io.print(x);	# 2 CMDprint_val ($3:int)<-(x:str)
+end main;	# 3  
 [ "world hello" ]
 >

@@ -49,35 +49,35 @@
 !ERROR: exit-label 'F' without begin-label in main[21]
 !ERROR: exit-label 'A' without begin-label in main[28]
 !ERROR: begin 'unfinished' without exit in main[31]
-function Admin.main():int; #0  (main:int)
-barrier L := 1; #1  (L:int)<-($2:int) jump 4
-    leave Z; #2  (Z:any)
-    redo L; #3  (L:int) jump 1
-exit L; #4  (L:int)
-    redo L; #5  (L:int)
-    leave X; #6  (X:int)
-    redo A; #7  (A:int)
-barrier X := 1; #8  (X:int)<-($2:int) jump 12
-    leave L; #9  (L:int)
-    leave X; #10  (X:int) jump 12
-    redo L; #11  (L:int)
-exit X; #12  (X:int)
-barrier A := 1; #13  (A:int)<-($2:int) jump 20
-barrier B := 1; #14  (B:int)<-($2:int) jump 16
-    redo A; #15  (A:int)
-exit B; #16  (B:int)
-barrier C := 1; #17  (C:int)<-($2:int) jump 19
-    leave A; #18  (A:int)
-exit C; #19  (C:int)
-exit B; #20  (B:int)
-exit F; #21  (F:any)
-barrier D := 1; #22  (D:int)<-($2:int) jump 25
-    leave D; #23  (D:int) jump 25
-    redo D; #24  (D:int) jump 22
-exit D; #25  (D:int)
-barrier D := 2; #26  (D:int)<-($10:int) jump 27
-exit D; #27  (D:int)
-exit A; #28  (A:int)
-barrier unfinished := 1; #29  (unfinished:int)<-($2:int)
-    f := 1; #30  (f:int)<-($2:int)
+function Admin.main():int;	# 0  (main:int)
+barrier L := 1;	# 1  (L:int)<-($2:int) jump 4
+    leave Z;	# 2  (Z:any)
+    redo L;	# 3  (L:int) jump 1
+exit L;	# 4  (L:int)
+    redo L;	# 5  (L:int)
+    leave X;	# 6  (X:int)
+    redo A;	# 7  (A:int)
+barrier X := 1;	# 8  (X:int)<-($2:int) jump 12
+    leave L;	# 9  (L:int)
+    leave X;	# 10  (X:int) jump 12
+    redo L;	# 11  (L:int)
+exit X;	# 12  (X:int)
+barrier A := 1;	# 13  (A:int)<-($2:int) jump 20
+barrier B := 1;	# 14  (B:int)<-($2:int) jump 16
+    redo A;	# 15  (A:int)
+exit B;	# 16  (B:int)
+barrier C := 1;	# 17  (C:int)<-($2:int) jump 19
+    leave A;	# 18  (A:int)
+exit C;	# 19  (C:int)
+exit B;	# 20  (B:int)
+exit F;	# 21  (F:any)
+barrier D := 1;	# 22  (D:int)<-($2:int) jump 25
+    leave D;	# 23  (D:int) jump 25
+    redo D;	# 24  (D:int) jump 22
+exit D;	# 25  (D:int)
+barrier D := 2;	# 26  (D:int)<-($10:int) jump 27
+exit D;	# 27  (D:int)
+exit A;	# 28  (A:int)
+barrier unfinished := 1;	# 29  (unfinished:int)<-($2:int)
+    f := 1;	# 30  (f:int)<-($2:int)
 >

@@ -14,16 +14,16 @@
 #exit	m:= 4;
 #	print(m);
 #
-function Admin.main():int; #0  (main:int)
-barrier l := 1; #1  (l:int)<-($2:int) jump 3
-    io.print(l); #2 CMDprint_val ($3:int)<-(l:int)
-exit l := 2; #3  (l:int)<-($4:int)
-    io.print(l); #4 CMDprint_val ($5:int)<-(l:int)
-barrier m := 3; #5  (m:int)<-($7:int) jump 7
-    leave m; #6  (m:int) jump 7
-exit m := 4; #7  (m:int)<-($8:int)
-    io.print(m); #8 CMDprint_val ($9:int)<-(m:int)
-end main; #9  
+function Admin.main():int;	# 0  (main:int)
+barrier l := 1;	# 1  (l:int)<-($2:int) jump 3
+    io.print(l);	# 2 CMDprint_val ($3:int)<-(l:int)
+exit l := 2;	# 3  (l:int)<-($4:int)
+    io.print(l);	# 4 CMDprint_val ($5:int)<-(l:int)
+barrier m := 3;	# 5  (m:int)<-($7:int) jump 7
+    leave m;	# 6  (m:int) jump 7
+exit m := 4;	# 7  (m:int)<-($8:int)
+    io.print(m);	# 8 CMDprint_val ($9:int)<-(m:int)
+end main;	# 9  
 [ 1 ]
 [ 2 ]
 [ 4 ]

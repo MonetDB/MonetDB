@@ -12,11 +12,11 @@
 #	redo v1;
 #exit	v1;
 #
-function Admin.main():int; #0  (main:int)
-    i := ' '; #1  (i:chr)<-($2:chr)
-barrier v1 := mal.nextElement(i,'A','C'); #2 chrForloop (v1:bit)<-(i:chr)($4:chr)($5:chr) jump 5
-    v := "do something"; #3  (v:str)<-($7:str)
-    redo v1; #4  (v1:bit) jump 2
-exit v1; #5  (v1:bit)
-end main; #6  
+function Admin.main():int;	# 0  (main:int)
+    i := ' ';	# 1  (i:chr)<-($2:chr)
+barrier v1 := mal.nextElement(i,'A','C');	# 2 chrForloop (v1:bit)<-(i:chr)($4:chr)($5:chr) jump 5
+    v := "do something";	# 3  (v:str)<-($7:str)
+    redo v1;	# 4  (v1:bit) jump 2
+exit v1;	# 5  (v1:bit)
+end main;	# 6  
 >
