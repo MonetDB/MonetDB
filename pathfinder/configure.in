@@ -21,25 +21,31 @@
 #         Jens Teubner <jens.teubner@uni-konstanz.de>
 #
 
-dnl Process this file with autoconf to produce a configure script
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(loader/pf-shred.c)
+AC_CONFIG_AUX_DIR(conf)
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+AH_TOP([#include "sysdefs.h"])
+AH_BOTTOM([#include "stddef.h"])
 
-AC_INIT(pathfinder, 0.1)
-AM_CONFIG_HEADER(config.h)
+dnl ----------------------
+AM_INIT_AUTOMAKE("pathfinder", 0.1, [no-define])
+AM_CONFIG_HEADER(pf_config.h:conf/config.h.in)
 
-dnl Make automake produce all object files in same directory as the
-dnl corresponding source file
-AM_INIT_AUTOMAKE([subdir-objects])
+HOST=[$target]
+AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
-dnl We need a C compiler and make it produce its object files in the
-dnl same directory as the source file
-AC_PROG_CC
+dnl Check for Monet
+AM_MONET_COMPILER()
+AM_MONET_TOOLS()
+AM_MONET_OPTIONS()
+AM_MONET_LIBS()
+AM_MONET_CLIENT(4.3.13)
+if test "x$have_monet" != xyes; then
+	AC_MSG_ERROR(Monet is not found.)
+fi
 AM_PROG_CC_C_O
-dnl We also need the C preprocessor later on
-AC_PROG_CPP
-
-dnl We need lex and yacc
-AM_PROG_LEX
-AC_PROG_YACC
 
 dnl And we need twig, otherwise stop here.
 AC_CHECK_PROGS(TWIG, twig)
@@ -66,35 +72,35 @@ if test "x$M4" = "x"; then
                  ftp://ftp.seindal.dk/pub/rene/gnu/])
 fi
 
-AC_MSG_CHECKING([if m4 understands changesyntax])
+dnl AC_MSG_CHECKING([if m4 understands changesyntax])
 
-[cat >conftest.m4 <<_ACEOF
-changesyntax(\`W<[',\`W]',\`D:')
-define(\`[[',\`__(')
-define(\`]]',\`)__')
-[[ foo ]]
-_ACEOF]
-echo "$as_me:$LINENO: $M4 < conftest.m4 > conftest.m4.result" >&5
-eval $M4 < conftest.m4 > conftest.m4.result
-diff conftest.m4.result - <<_ACEOF
+dnl [cat >conftest.m4 <<_ACEOF
+dnl changesyntax(\`W<[',\`W]',\`D:')
+dnl define(\`[[',\`__(')
+dnl define(\`]]',\`)__')
+dnl [[ foo ]]
+dnl _ACEOF]
+dnl echo "$as_me:$LINENO: $M4 < conftest.m4 > conftest.m4.result" >&5
+dnl eval $M4 < conftest.m4 > conftest.m4.result
+dnl diff conftest.m4.result - <<_ACEOF
 
 
 
-__( foo )__
-_ACEOF
-have_m4=$?
-rm -f conftest.m4 conftest.m4.result
+dnl __( foo )__
+dnl _ACEOF
+dnl have_m4=$?
+dnl rm -f conftest.m4 conftest.m4.result
 
-if test x$have_m4 = "x0"; then
-    AC_MSG_RESULT([yes])
-fi
+dnl if test x$have_m4 = "x0"; then
+    dnl AC_MSG_RESULT([yes])
+dnl fi
 
-if test x$have_m4 != "x0"; then
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Your m4 macro processor does not understand the
-                 changesyntax extension. Please install a more current
-                 version of m4, at least 1.4o.])
-fi
+dnl if test x$have_m4 != "x0"; then
+dnl    AC_MSG_RESULT([no])
+dnl    AC_MSG_ERROR([Your m4 macro processor does not understand the
+dnl                 changesyntax extension. Please install a more current
+dnl                 version of m4, at least 1.4o.])
+dnl fi
 dnl (end of m4 checks)
 
 dnl
@@ -283,15 +289,22 @@ AC_SUBST(LIBDB_CFLAGS, $LIBDB_CFLAGS)
 AC_SUBST(LIBDB_LIBS, $LIBDB_LIBS)
 AC_SUBST(LIBDB_LDADD, $LIBDB_LDADD)
 
-
-dnl
-dnl To build the Pathfinder runtime for MonetDB, we need, of course,
-dnl a MonetDB installation.
-dnl
-
-
-AC_PROG_INSTALL
-AC_OUTPUT(Makefile               \
-          compiler/Makefile      \
-          loader/Makefile        \
-         )
+dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
+CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"
+AC_OUTPUT(
+Makefile
+RunMtest
+compiler/Makefile
+conf/Makefile
+loader/Makefile
+runtime/Makefile
+compiler/core/Makefile
+compiler/daemon/Makefile
+compiler/debug/Makefile
+compiler/mem/Makefile
+compiler/mil/Makefile
+compiler/parser/Makefile
+compiler/schema/Makefile
+compiler/semantics/Makefile
+)
