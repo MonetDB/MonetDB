@@ -1009,7 +1009,7 @@ salgebra_CMDdestroy( str chname ) {
   return GDK_SUCCEED;
 }
 
-int
+void
 salgebra_prelude() {
   int i = 0;
 #ifdef DEBUG
@@ -1031,7 +1031,6 @@ GDKwarning( "salgebra prelude!\n" );
   clusterhash_nil.b = *( (bat*) ATOMnilptr(TYPE_bat) );
   clusterhash_nil.hv = *( (bat*) ATOMnilptr(TYPE_bat) );
   clusterhash_nil.tv = *( (bat*) ATOMnilptr(TYPE_bat) );
-  return GDK_SUCCEED;
 }
 
 /* 
@@ -1080,8 +1079,8 @@ salgebra_CMDdrop() {
   return GDK_SUCCEED;
 }
  
-int 
-salgebra_epilogue() {
+void
+salgebra_epilogue(void) {
   int i = 0;
 #ifdef DEBUG
   GDKwarning("salgebra epilogue!\n");
@@ -1091,7 +1090,6 @@ salgebra_epilogue() {
   for( i=0; i<=BBPLOCKMASK; i++ ) {
     MT_destroy_lock( salgebra_chashLock[i] ); 
   }
-  return GDK_SUCCEED;
 }
 
 @}

@@ -413,14 +413,14 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	o << "   oid mid = TBL_Install_Info( inst, user, \"" << d.Name();	
 	o << "\");\n";
 
-	l = new install_prelude();
+	l = new install();
+	print_list( o, d.Deps(), l );
+	o << "\n";
 	print_list( o, d.Defs(), l );
 	o << "\n";
 	delete(l);
 
-	l = new install();
-	print_list( o, d.Deps(), l );
-	o << "\n";
+	l = new install_prelude();
 	print_list( o, d.Defs(), l );
 	o << "\n";
 	delete(l);
@@ -1067,12 +1067,12 @@ ostream &forward::gen_var_arg( ostream &o, const VarArg & ){
 }
 
 ostream &protoize::gen_prelude( ostream &o, const Prelude &d ){
-	 o << "extern int " << d.Name() << "();\n\n";
+	 o << "extern void " << d.Name() << "(void);\n\n";
 	 return o; 
 }
 
 ostream &protoize::gen_epilogue( ostream &o, const Epilogue &d ){
-	 o << "extern int " << d.Name() << "();\n\n";
+	 o << "extern void " << d.Name() << "(void);\n\n";
 	 return o; 
 }
 

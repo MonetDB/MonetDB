@@ -1118,11 +1118,11 @@ void decimal_put(Heap* h, int* bun, decimal* val) {
 
 @- operator implementations
 @c
-int decimal_prelude() {
+void decimal_prelude(void) {
 	int x, y, z, r, s=0;
 
 	if (decimal_nil) {
-		return GDK_SUCCEED;
+		return;
 	}
 	/* setup the lookup tables; our alorithms never do %10 and /10 (expensive operators) */
 	for(x=0; x < 10; x++) {
@@ -1180,10 +1180,9 @@ int decimal_prelude() {
 	decimal_dbl_max = decimal_copy(decimal_dbl_min, decimal_dbl_min->precision);
 	decimal_dbl_max->negative = 0;
 
-	return GDK_SUCCEED;
 }
 
-int decimal_epilogue(){
+void decimal_epilogue(void){
 	GDKfree(decimal_nil);
 	GDKfree(decimal_zero);
 	GDKfree(decimal_one);
@@ -1196,7 +1195,6 @@ int decimal_epilogue(){
 	GDKfree(decimal_dbl_min);
 	GDKfree(decimal_dbl_max);
 	decimal_nil = NULL;
-	return GDK_SUCCEED;
 }
 
 /* Translates a long into a decimal (no overflow possible). */

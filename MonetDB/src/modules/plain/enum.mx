@@ -253,7 +253,7 @@ static int fromstr@1@2(str src, int* len, @2** dst){
 	return r;
 }
 @c
-int enum_load(int *retval, BAT *h) {
+enum_export int enum_load(int *retval, BAT *h) {
 	int i;
 
 	MT_set_lock(enum_lock, "enum_load");
@@ -543,7 +543,7 @@ int enum_decode_multi(BAT** dst, int *enum_t, BAT *src){
 	return GDK_SUCCEED;
 }
 
-int enum_table(BAT** dst, int *enum_t) { 
+enum_export int enum_table(BAT** dst, int *enum_t) { 
 	ENUM_CHK(*enum_t, "enum_table");
 	BBPfix(b->batCacheid);
 	*dst = b;
@@ -562,7 +562,7 @@ int isenum(bit* ret, int* tpe) {
 	return GDK_SUCCEED;
 }
 
-int enum_sethisto(int* enum_t, BAT* column) {
+enum_export int enum_sethisto(int* enum_t, BAT* column) {
 	ENUM_CHK(*enum_t, "enum_table");
 	if (column->halign == 0) {
 		column->halign = OIDnew(1);
@@ -578,12 +578,11 @@ int enum_ishisto(bit* ret, int* enum_t, BAT* column) {
 	return GDK_SUCCEED;
 }
 
-int enum_prelude() {
+void enum_prelude(void) {
 	enum_lock = MT_create_lock();
-	return GDK_SUCCEED;
 }
 
-int enum_epilogue() {
+void enum_epilogue(void) {
 	int xx;
 	MT_destroy_lock(enum_lock);
 	for(xx=0; xx<MAX_ENUM; xx++)  {
@@ -591,7 +590,6 @@ int enum_epilogue() {
 			BBPunfix(enum_map[xx]);
 		}
 	}
-	return GDK_SUCCEED;
 }
 
 

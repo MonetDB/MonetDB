@@ -250,13 +250,12 @@ int logger_backupfile(str log){
 
 static int sz = 0;
 
-int logger_end(){
+void logger_end(void){
 	if (logger_debug&64)
 		fprintf(stderr, "logger_end %d\n", sz);
 
 	if (logger_fp)
 		fclose(logger_fp);
-	return GDK_SUCCEED;
 }
 
 typedef struct logf {

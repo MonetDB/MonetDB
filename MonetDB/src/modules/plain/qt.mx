@@ -253,8 +253,22 @@ now()
 #endif
 }
 
-int
-qt_prelude() 
+static int (*local_stats_histogram_new)(ptr *, str, int *, int *, lng *);
+static int (*local_stats_add)(ptr *, lng *);
+static int (*local_stats_report)(ptr *, str);
+static int (*local_stats_del)(ptr *);
+static int (*local_bitvector_allocate)(BAT **, int *, bit *);
+static int (*local_bitvector_and)(BAT **, BAT *, BAT *);
+static int (*local_bitvector_count)(int *, BAT *);
+static int (*local_bitvector_decode)(BAT **, BAT *);
+static int (*local_bitvector_print)(BAT *);
+static int (*local_bitvector_set)(BAT *, int *);
+#include "monet_tbl.h"
+m_export ptr TBL_module_handle(int);
+m_export int TBL_module_lookup(str);
+
+void
+qt_prelude(void)
 {
   zid_t lid;
   int n;
@@ -263,6 +277,23 @@ qt_prelude()
 
   levels = (qtlevel_t *)GDKmalloc(nlevels * sizeof(qtlevel_t));
   assert(levels);
+
+  {
+    int mid = TBL_module_lookup("stats");
+    ptr hdl = TBL_module_handle(mid);
+    local_stats_histogram_new = (int (*)(ptr *, str, int *, int *, lng *)) DL_sym(hdl, "stats_histogram_new");
+    local_stats_add = (int (*)(ptr *, lng *)) DL_sym(hdl, "stats_add");
+    local_stats_report = (int (*)(ptr *, str)) DL_sym(hdl, "stats_report");
+    local_stats_del = (int (*)(ptr *)) DL_sym(hdl, "stats_del");
+    mid = TBL_module_lookup("bitvector");
+    hdl = TBL_module_handle(mid);
+    local_bitvector_allocate = (int (*)(BAT **, int *, bit *)) DL_sym(hdl, "bitvector_allocate");
+    local_bitvector_and = (int (*)(BAT **, BAT *, BAT *)) DL_sym(hdl, "bitvector_and");
+    local_bitvector_count = (int (*)(int *, BAT *)) DL_sym(hdl, "bitvector_count");
+    local_bitvector_decode = (int (*)(BAT **, BAT *)) DL_sym(hdl, "bitvector_decode");
+    local_bitvector_print = (int (*)(BAT *)) DL_sym(hdl, "bitvector_print");
+    local_bitvector_set = (int (*)(BAT *, int *)) DL_sym(hdl, "bitvector_set");
+  }
 
   for (lid = n = 0; n != nlevels; n++) {
     levels[n].lvl_sid     = lid;
@@ -360,11 +391,11 @@ qt_prelude()
   }
 
   crossuniq = (int)(now() / S(1));
-  return GDK_SUCCEED;
+  return;
 }
 
-int 
-qt_epilogue() 
+void
+qt_epilogue(void)
 {
   int n;
 
@@ -372,7 +403,7 @@ qt_epilogue()
   for (n = 0; n != NCROSSES; n++)
     if (crosses[n].c_crossid > 0) {
       MT_unset_lock(qt_lock, "qt_epilogue");
-      return GDK_FAIL;
+      return;
     }
   MT_destroy_lock(qt_lock);
 
@@ -381,7 +412,6 @@ qt_epilogue()
     GDKfree(levels[n].lvl_xytoid);
   }
   GDKfree(levels);
-  return GDK_SUCCEED;
 }
 
 int
@@ -818,7 +848,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
     BUNfastins(r_ids, (ptr)&soid, (ptr)&i);
     if (st_bunins[0]) {
       t = (now() - t) / MS(1);
-      stats_add(&st_bunins[0], &t);
+      (*local_stats_add)(&st_bunins[0], &t);
     }
 
     if (debug)
@@ -840,14 +870,14 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
       BUNins(r_images, (ptr)&soid, (ptr)ioid);
       if (st_bunins[1]) {
 	t = (now() - t) / MS(1);
-	stats_add(&st_bunins[1], &t);
+	(*local_stats_add)(&st_bunins[1], &t);
       }
 
       if (st_bunins[2]) t = now();
       BUNins(r_ncolors, (ptr)&soid, (ptr)&ncolors);
       if (st_bunins[2]) {
 	t = (now() - t) / MS(1);
-	stats_add(&st_bunins[2], &t);
+	(*local_stats_add)(&st_bunins[2], &t);
       }
       soid++;
     }
@@ -863,7 +893,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
 
   if (st_search) {
     delta = (now() - delta) / MS(1);
-    rv = stats_add(&st_search, &delta);
+    rv = (*local_stats_add)(&st_search, &delta);
     if (rv != GDK_SUCCEED) return rv;
   }
   return GDK_SUCCEED;
@@ -918,7 +948,7 @@ match(direction_t direction, gdk_int16 *features, zid_t id,
     BUNfastins(r_ids, (ptr)&soid, (ptr)&pid);
     if (st_bunins[0]) {
       t = (now() - t) / MS(1);
-      (void)stats_add(&st_bunins[0], &t);
+      (void)(*local_stats_add)(&st_bunins[0], &t);
     }
     id = nid;
   }
@@ -1008,7 +1038,7 @@ match(direction_t direction, gdk_int16 *features, zid_t id,
     BUNfastins(r_ids, (ptr)&soid, (ptr)&pid);
     if (st_bunins[0]) {
       t = (now() - t) / MS(1);
-      (void)stats_add(&st_bunins[0], &t);
+      (void)(*local_stats_add)(&st_bunins[0], &t);
     }
 
     (*ncolors)++;
@@ -1041,7 +1071,7 @@ match(direction_t direction, gdk_int16 *features, zid_t id,
       BUNfastins(r_ids, (ptr)&soid, (ptr)&npid);
       if (st_bunins[0]) {
 	t = (now() - t) / MS(1);
-	(void)stats_add(&st_bunins[0], &t);
+	(void)(*local_stats_add)(&st_bunins[0], &t);
       }
     }
 
@@ -1092,7 +1122,7 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum,
       BATdestroy(ir_wclusters[n]);
 
     initial = 0;
-    if (bitvector_allocate(&ir_wclusters[n], &nimages, &initial) !=
+    if ((*local_bitvector_allocate)(&ir_wclusters[n], &nimages, &initial) !=
 	GDK_SUCCEED) {
       GDKerror("[qt_ir_cluster]: Cannot create bit vector\n");
       return GDK_FAIL;
@@ -1102,7 +1132,7 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum,
 	     (n / NIRBINS) % NIRBINS, n % NIRBINS);
     (void)BATrename(ir_wclusters[n], cname);
 
-    if (bitvector_allocate(&ir_nclusters[n], &nimages, &initial) != 
+    if ((*local_bitvector_allocate)(&ir_nclusters[n], &nimages, &initial) != 
 	GDK_SUCCEED) {
       GDKerror("[qt_ir_cluster]: Cannot create bit vector\n");
       return GDK_FAIL;
@@ -1240,7 +1270,7 @@ publish(BAT **clusters, int c0, int c1, int c2, int image)
 {
   int rv;
 
-  rv = bitvector_set(clusters[c0 * NIRBINS * NIRBINS + 
+  rv = (*local_bitvector_set)(clusters[c0 * NIRBINS * NIRBINS + 
 			     c1 * NIRBINS + c2], &image);
   assert(rv == GDK_SUCCEED);
 }
@@ -1271,14 +1301,14 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
   /* Analyze the spot and select the right bit-fields.  Allocate an 
      empty result bit field with all images selected */
   initial = 1;
-  if (bitvector_allocate(&bv, nimages, &initial) != GDK_SUCCEED) {
+  if ((*local_bitvector_allocate)(&bv, nimages, &initial) != GDK_SUCCEED) {
     GDKerror("[qt_cross_pre_select]: Cannot allocate empty bit vector of size %d\n",
 	     *nimages);
     c->c_refs--;
     return GDK_FAIL;
   }
 
-  bitvector_count(&nbits, bv);
+  (*local_bitvector_count)(&nbits, bv);
   printf("qt_cross_pre_select: nimages %d\n", nbits);
 
   if (*cspace != ColorSpace_IR_12 || c->c_cspace != *cspace || 
@@ -1289,20 +1319,20 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
     /* No candidates, all images are candidates */
     GDKwarning("qt_cross_pre_select: Warning: no cache\n");
 
-    rv = bitvector_decode(candidates, bv);
+    rv = (*local_bitvector_decode)(candidates, bv);
     BATdelete(bv);
     c->c_refs--;
     return rv;
   }
 
   if (debug)
-    bitvector_print(bv);
+    (*local_bitvector_print)(bv);
   /* For the horizontal colors ... */
   for (n = c->c_hlength - 1; n >= 2; n--) {
     bv_cluster = ir_wclusters[c->c_hstring[n] * NIRBINS * NIRBINS +
 			     c->c_hstring[n - 1] * NIRBINS + 
 			     c->c_hstring[n - 2]];
-    if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+    if ((*local_bitvector_and)(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
       c->c_refs--;
       return GDK_FAIL;
     }
@@ -1310,7 +1340,7 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
     bv = _bv;
 
     if (1) {
-      bitvector_count(&nbits, bv);
+      (*local_bitvector_count)(&nbits, bv);
       printf("qt_cross_pre_select: (horizontal n %d) nimages %d\n", n, nbits);
     }
   }
@@ -1323,7 +1353,7 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
     bv_cluster = ir_nclusters[c->c_vstring[n] * NIRBINS * NIRBINS +
 			     c->c_vstring[n - 1] * NIRBINS + 
 			     c->c_vstring[n - 2]];
-    if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+    if ((*local_bitvector_and)(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
       c->c_refs--;
       return GDK_FAIL;
     }
@@ -1331,7 +1361,7 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
     bv = _bv;
 
     if (1) {
-      bitvector_count(&nbits, bv);
+      (*local_bitvector_count)(&nbits, bv);
       printf("qt_cross_pre_select: (vertical n %d) nimages %d\n", n, nbits);
     }
   }
@@ -1339,7 +1369,7 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
   /* The bitvector now describes all images that may be relevant. 
      Decode the bit vector and return the oids of the relevant images.
   */
-  rv = bitvector_decode(candidates, bv);
+  rv = (*local_bitvector_decode)(candidates, bv);
   BATdelete(bv);
   c->c_refs--;
   return rv;
@@ -1371,14 +1401,14 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
   /* Analyze the spot and select the right bit-fields.  Allocate an 
      empty result bit field with all images selected */
   initial = 1;
-  if (bitvector_allocate(&bv, nimages, &initial) != GDK_SUCCEED) {
+  if ((*local_bitvector_allocate)(&bv, nimages, &initial) != GDK_SUCCEED) {
     GDKerror("[qt_pre_select]: Cannot allocate empty bit vector of size %d\n",
 	     *nimages);
     c->c_refs--;
     return GDK_FAIL;
   }
 
-  bitvector_count(&nbits, bv);
+  (*local_bitvector_count)(&nbits, bv);
   printf("qt_pre_select: nimages %d\n", nbits);
 
   if (*cspace != ColorSpace_IR_12 || c->c_cspace != *cspace || 
@@ -1389,14 +1419,14 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
     /* No candidates, all images are candidates */
     GDKwarning("qt_pre_select: Warning: no cache\n");
 
-    rv = bitvector_decode(candidates, bv);
+    rv = (*local_bitvector_decode)(candidates, bv);
     BATdelete(bv);
     c->c_refs--;
     return rv;
   }
 
   if (debug)
-    bitvector_print(bv);
+    (*local_bitvector_print)(bv);
 
   /* The horizontal color transitions */
   for (y = 0; y != c->c_spot_h; y++) {
@@ -1418,7 +1448,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 	    bv_cluster = ir_wclusters[colors[2] * NIRBINS * NIRBINS +
 				     colors[1] * NIRBINS + colors[0]];
 	    
-	    if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+	    if ((*local_bitvector_and)(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
 	      c->c_refs--;
 	      return GDK_FAIL;
 	    }
@@ -1431,7 +1461,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 	    cindex = 2;
 
 	    if (1) {
-	      bitvector_count(&nbits, bv);
+	      (*local_bitvector_count)(&nbits, bv);
 	      printf("qt_pre_select: (horizontal y %d, x %d) nimages %d\n",
 		     y, x, nbits);
 	    }
@@ -1450,7 +1480,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
       bv_cluster = ir_wclusters[colors[2] * NIRBINS * NIRBINS +
 			       colors[1] * NIRBINS + colors[0]];
 	    
-      if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+      if ((*local_bitvector_and)(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
 	c->c_refs--;
 	return GDK_FAIL;
       }
@@ -1480,7 +1510,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 	    bv_cluster = ir_nclusters[colors[2] * NIRBINS * NIRBINS +
 				     colors[1] * NIRBINS + colors[0]];
 	    
-	    if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+	    if ((*local_bitvector_and)(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
 	      c->c_refs--;
 	      return GDK_FAIL;
 	    }
@@ -1493,7 +1523,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 	    cindex = 2;
 
 	    if (1) {
-	      bitvector_count(&nbits, bv);
+	      (*local_bitvector_count)(&nbits, bv);
 	      printf("qt_pre_select: (vertical x %d, y %d) nimages %d\n",
 		     x, y, nbits);
 	    }
@@ -1512,7 +1542,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
       bv_cluster = ir_nclusters[colors[2] * NIRBINS * NIRBINS +
 			       colors[1] * NIRBINS + colors[0]];
 	    
-      if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+      if ((*local_bitvector_and)(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
 	c->c_refs--;
 	return GDK_FAIL;
       }
@@ -1526,7 +1556,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
   /* The bitvector now describes all images that may be relevant. 
      Decode the bit vector and return the oids of the relevant images.
   */
-  rv = bitvector_decode(candidates, bv);
+  rv = (*local_bitvector_decode)(candidates, bv);
   BATdelete(bv);
   c->c_refs--;
   return rv;
@@ -1717,53 +1747,53 @@ qt_stats(int *mode, str outfile)
     lo = 0;
 
     if (st_search == NULL)
-      rv = stats_histogram_new(&st_search, "qt_search", &bins, &binwidth, &lo);
+      rv = (*local_stats_histogram_new)(&st_search, "qt_search", &bins, &binwidth, &lo);
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[0] == NULL)
-      rv = stats_histogram_new(&st_bunins[0], "bunins_ids", 
+      rv = (*local_stats_histogram_new)(&st_bunins[0], "bunins_ids", 
 			       &bins, &binwidth, &lo);
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[1] == NULL)
-      rv = stats_histogram_new(&st_bunins[1], "bunins_images",
+      rv = (*local_stats_histogram_new)(&st_bunins[1], "bunins_images",
 			       &bins, &binwidth, &lo);
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[2] == NULL)
-      rv = stats_histogram_new(&st_bunins[2], "bunins_ncolors",
+      rv = (*local_stats_histogram_new)(&st_bunins[2], "bunins_ncolors",
 			       &bins, &binwidth, &lo);
     if (rv != GDK_SUCCEED) return rv;
     break;
   case 1:
     if (st_search)
-      rv = stats_report(&st_search, outfile);
+      rv = (*local_stats_report)(&st_search, outfile);
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[0])
-      rv = stats_report(&st_bunins[0], outfile);
+      rv = (*local_stats_report)(&st_bunins[0], outfile);
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[1])
-      rv = stats_report(&st_bunins[1], outfile);
+      rv = (*local_stats_report)(&st_bunins[1], outfile);
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[2])
-      rv = stats_report(&st_bunins[2], outfile);
+      rv = (*local_stats_report)(&st_bunins[2], outfile);
     if (rv != GDK_SUCCEED) return rv;
     break;
   case 2:
     if (st_search) {
-      rv = stats_del(&st_search);
+      rv = (*local_stats_del)(&st_search);
       st_search = NULL;
     }
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[0]) {
-      rv = stats_del(&st_bunins[0]);
+      rv = (*local_stats_del)(&st_bunins[0]);
       st_bunins[0] = NULL;
     }
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[1]) {
-      rv = stats_del(&st_bunins[1]);
+      rv = (*local_stats_del)(&st_bunins[1]);
       st_bunins[1] = NULL;
     }
     if (rv != GDK_SUCCEED) return rv;
     if (st_bunins[2]) {
-      rv = stats_del(&st_bunins[2]);
+      rv = (*local_stats_del)(&st_bunins[2]);
       st_bunins[2] = NULL;
     }
     if (rv != GDK_SUCCEED) return rv;
@@ -1774,5 +1804,4 @@ qt_stats(int *mode, str outfile)
   }
   return GDK_SUCCEED;
 }
-
 @}

@@ -521,7 +521,7 @@ int TBL_M_cinstalled(Client client, int mid) {
   return (!!(BUNlocate(BATmirror(TBL_mod_use), &client, &mid)));
 }
 
-#define BATfakeAbort(b)	if (b) ((b)->batInserted = BUNfirst(b))
+#define BATfakeAbort(b)	((b) && ((b)->batInserted = BUNfirst(b)))
 
 int TBL_M_lock(Client c) {
   dlPRINT("  -->TBL_M_lock\n");
@@ -1031,37 +1031,33 @@ saved on disk so no commit is needed.
 oid TBL_M_load(TBLinstall *inst, Client client, str module) {
   ptr hdl;
   int mid = 0;
+  char mod_init_name[PATHLENGTH];
+  int (*mod_init)();
 
   dlFPRINTF(GDKerr, "  TBL_M_load(%s)\n", module);
   if (!(hdl = TBL_openmod(client, module))) {
     GDKerror("TBL_loadmod: module load %s cancelled.\n", module);
     return 0;
   }
-  if (hdl) {
-    char mod_init_name[PATHLENGTH];
-    int	(*mod_init)();
 
-    sprintf(mod_init_name, "%s_Module_Install", module);
-    mod_init = (int(*)())DL_sym(hdl, mod_init_name);
-    if (mod_init != NULL) {
-      dlFPRINTF(GDKerr, "    Calling %s\n", mod_init_name);
-      mid= (*mod_init)(inst, client->user);
-      if (mid == 0 ) {
-	/* Not ok, an error is returned! */
-	/* we should bail out! */
-	GDKerror("TBL_M_load: %s_Module_Install experienced an error!\n", module);
-	DL_close(hdl);
-	return 0;
-      }
-    } else {  /* is not a "module" */
-      dlFPRINTF(GDKerr, "    No function %s\n", mod_init_name);
-    }
-  }    
-  if (!hdl) {
-    GDKerror("TBL_M_load: module %s does not exist.\n", module);
+  sprintf(mod_init_name, "%s_Module_Install", module);
+  mod_init = (int(*)())DL_sym(hdl, mod_init_name);
+  if (mod_init == NULL) {
+    dlFPRINTF(GDKerr, "    No function %s\n", mod_init_name);
+    GDKerror("TBL_M_load: %s not a module.\n", module);
     return 0;
   }
-  
+
+  dlFPRINTF(GDKerr, "    Calling %s\n", mod_init_name);
+  mid = (*mod_init)(inst, client->user);
+  if (mid == 0 ) {
+    /* Not ok, an error is returned! */
+    /* we should bail out! */
+    GDKerror("TBL_M_load: %s_Module_Install experienced an error!\n", module);
+    DL_close(hdl);
+    return 0;
+  }
+
   BUNdelHead(TBL_mod_hdl, &mid);
   BUNins(TBL_mod_hdl, &mid, &hdl);
   dlPRINT("TBL_M_load: Everything is ok, let's return...\n");

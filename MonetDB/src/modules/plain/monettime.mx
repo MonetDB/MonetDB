@@ -896,17 +896,15 @@ static tzone tz_nil = {0,12,0,0,0};
 static timestamp *ts_nilptr = NULL;
 static tzone *tz_nilptr = NULL;
 
-int monettime_prelude(){
+void monettime_prelude(void){
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
 	*ts_nilptr = ts_nil;
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
 	*tz_nilptr = tz_nil;
-	return GDK_SUCCEED;
 }
-int monettime_epilogue(){
+void monettime_epilogue(void){
 	GDKfree(ts_nilptr);
 	GDKfree(tz_nilptr);
-	return GDK_SUCCEED;
 }
 
 timestamp*
@@ -1569,7 +1567,7 @@ int tzone_tostr(str* buf, int* len, tzone *z) {
 
 @+ operator implementations
 @c
-int date_prelude() {
+void date_prelude(void) {
 	MONTHS[0] = str_nil;
 	DAYS[0] = str_nil;
 	NODAYS[0] = int_nil; 
@@ -1577,7 +1575,6 @@ int date_prelude() {
 	DATE_MIN = (date) todate(1,1,YEAR_MIN);
 	tzone_local.dst = 0;
 	set_offset(&tzone_local, 0);
-	return GDK_SUCCEED;
 }
 
 int oldduration(int *ndays, str s) {

@@ -611,12 +611,12 @@ ostream &proto::gen_any_arg( ostream &o, const AnyArg &d ){
 
 ostream &proto::gen_prelude( ostream &o, const Prelude &d ){
    	 o << "/* The prelude function */\n";
-	 o << "int " << d.Name() << "();\n\n";
+	 o << "void " << d.Name() << "(void);\n\n";
 	 return o; 
 }
 
 ostream &proto::gen_epilogue( ostream &o, const Epilogue &d ){
    	 o << "/* The epilogue function */\n";
-	 o << "int " << d.Name() << "();\n\n";
+	 o << "void " << d.Name() << "(void);\n\n";
 	 return o; 
 }

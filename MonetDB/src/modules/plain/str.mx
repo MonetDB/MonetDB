@@ -392,7 +392,7 @@ static unsigned short UTF8_upper[UTF8_CONVERSIONS] = {
 
 static BAT *UTF8_toupperBat = NULL, *UTF8_tolowerBat;
 
-int strPrelude() {
+void strPrelude(void) {
 	if (!UTF8_toupperBat) {
 		int i = UTF8_CONVERSIONS; 
 		UTF8_toupperBat = BATnew(TYPE_int, TYPE_int, UTF8_CONVERSIONS);
@@ -404,12 +404,10 @@ int strPrelude() {
 		UTF8_tolowerBat = BATmirror(UTF8_toupperBat);
 		BATname(UTF8_toupperBat, "monet_unicode_case");
 	}
-	return GDK_SUCCEED;
 }
 
-int strEpilogue() {
+void strEpilogue(void) {
 	if (UTF8_toupperBat) BBPunfix(UTF8_toupperBat->batCacheid);
-	return GDK_SUCCEED;
 }
 
 @= UTF8_CONV

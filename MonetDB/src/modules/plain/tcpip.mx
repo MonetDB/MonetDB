@@ -863,17 +863,16 @@ Init the global structures.
 @c
 int listeners=0, ports[256] = {0};
 
-int TCPprelude(){
+void TCPprelude(void){
 	TCPlock = MT_create_lock();
 	cache_idx = BATnew(TYPE_str, TYPE_ptr, 1000);
 	BBPrename(cache_idx->batCacheid, "tcpip_idx");
-	return GDK_SUCCEED;
 }
 
 @+ prelude
 Cleanup the global structures.
 @c
-int TCPepilogue(){
+void TCPepilogue(void){
 	int i = 0, j = listeners;
 @-
 kill all listening threads.
@@ -900,7 +899,6 @@ close all connections, and destroy our global structures.
 	BBPreclaim(cache_idx);
 	MT_unset_lock(TCPlock, "TCPepilogue");
 	MT_destroy_lock(TCPlock);
-	return GDK_SUCCEED;
 }
 
 @* Listener Implementation

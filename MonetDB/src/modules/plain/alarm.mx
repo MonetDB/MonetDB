@@ -158,14 +158,13 @@ void CLKsignal(int nr){
 }
 #endif
 
-int CLKprelude(){
+void CLKprelude(void){
 #ifdef SIGALRM
-        (void) signal(SIGALRM, (void (*)()) CLKsignal);
+        (void) signal(SIGALRM, CLKsignal);
 #endif
-	return GDK_SUCCEED;
 }
 
-int CLKepilogue(){
+void CLKepilogue(void){
 	int k;
 #ifdef SIGALRM
 #if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32))
@@ -175,7 +174,6 @@ int CLKepilogue(){
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action) GDKfree(timer[k].action);
 	}
-	return GDK_SUCCEED;
 }
 
 
