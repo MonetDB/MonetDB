@@ -286,6 +286,7 @@ A grain size of 128 bytes is used to keep overhead low.
                {"debug", 2, 0, 'd'},
                {"help", 0, 0, '?'},
                {"set", 1, 0, 's'},
+               {"trace", 0, 0, 0},
                {0, 0, 0, 0}
              };
 
@@ -318,6 +319,11 @@ A grain size of 128 bytes is used to keep overhead low.
 						"dbfarm") == 0){
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "gdk_dbfarm", optarg );
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+						"trace") == 0) {
+				monet_listing = 1;
 				break;
 			}
 			usage(prog);
