@@ -40,8 +40,9 @@
 #include "oops.h"
 #include "subtyping.h"
 
-/* add some timing results for the code */
+/* add some timing results for the code 
 #define TIMINGS 1
+ * */
 #define WITH_SCRIPT 0
 
 static void
