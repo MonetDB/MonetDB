@@ -122,6 +122,8 @@ col_bind(sql_trans *tr, oid lbid, sql_column *c, int access)
 				fprintf(stderr, "new bat for column %s.%s\n", c->t->base.name, c->base.name);
 			b = bat_lcopy(b, "col_bind");
 			c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+			if (access == UPD)
+				c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 			bm_new_bat(tr->bm, lbid, b);
 
 			b->batDirty |= 2;

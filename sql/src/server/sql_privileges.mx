@@ -495,9 +495,9 @@ sql_create_privileges(mvc *m, sql_schema *s)
 
 	/* now the authorisation related tables */
 	t = mvc_create_table(m, s, "db_users", 1, 1, 0, -1);
-	mvc_create_column_(m, t, "name", "varchar", 0);
-	mvc_create_column_(m, t, "passwd", "varchar", 0);
-	mvc_create_column_(m, t, "fullname", "varchar", 0);
+	mvc_create_column_(m, t, "name", "clob", 0);
+	mvc_create_column_(m, t, "passwd", "clob", 0);
+	mvc_create_column_(m, t, "fullname", "clob", 0);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 
 	t = mvc_create_table(m, s, "user_role", 1, 1, 0, -1);
@@ -511,7 +511,7 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	/* all roles and users are in the auths table */
 	t = mvc_create_table(m, s, "auths", 1, 1, 0, -1);
 	mvc_create_column_(m, t, "id", "int", 9);
-	mvc_create_column_(m, t, "name", "varchar", 0);
+	mvc_create_column_(m, t, "name", "clob", 0);
 	mvc_create_column_(m, t, "grantor", "int", 9);
 
 	t = mvc_create_table(m, s, "privileges", 1, 1, 0, -1);
@@ -527,8 +527,8 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	sql_create_user_id(m, USER_MONETDB, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
 
 	t = mvc_create_view(m, s, "users", "select name, fullname, default_schema from sys.db_users;", 1, 1);
-	mvc_create_column_(m, t, "name", "varchar", 0);
-	mvc_create_column_(m, t, "fullname", "varchar", 0);
+	mvc_create_column_(m, t, "name", "clob", 0);
+	mvc_create_column_(m, t, "fullname", "clob", 0);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 
 	pub = ROLE_PUBLIC;

@@ -804,11 +804,11 @@ grantee:
 /* DOMAIN, ASSERTION, CHARACTER SET, TRANSLATION, TRIGGER */
 
 alter:
-   ALTER TABLE qname ADD add_table_element
+   ALTER TABLE qname ADD opt_column add_table_element
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
-	  dlist_append_symbol(l, $5);
+	  dlist_append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
 
