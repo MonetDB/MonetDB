@@ -747,7 +747,7 @@ typedef struct {
 	bit		headvarsized; 	/* varsized(>0) or fixedsized(0). */
 	bit		tailvarsized; 	/* varsized(>0) or fixedsized(0). */
 	sht		bunshift;	/* log2 of bunwidth */
-	unsigned short	bunwidth;	/* byte-with of BUN array */
+	unsigned short	bunwidth;	/* byte-width of BUN array */
 	oid		hseq;		/* start of dense head sequence */
 	oid		tseq;		/* start of dense tail sequence */
 } Dimensions; 
