@@ -53,6 +53,9 @@
 #	define	NO_LOCALE
 #endif
 
+/* if on exit when there is a SQL error */
+int exit_on_error = 0;
+
 stream *ws = NULL, *rs = NULL;
 int is_chrsp = 0;
 
@@ -90,6 +93,7 @@ void usage( char *prog ){
 	fprintf(stderr, "Msql\n");
 	fprintf(stderr, "\toptions:\n");
 	fprintf(stderr, "\t\t -d          | --debug=[level]\n"); 
+	fprintf(stderr, "\t\t -e          | --error          /* exit on a SQL error */\n");
 	fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
 	fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
@@ -125,9 +129,9 @@ static char *sql_readline( char *prompt ){
 }
 
 
-static void receive( stream *rs, stream *out, int debug );
+static int receive( stream *rs, stream *out, int debug );
 
-static void forward_data(stream *out, int debug)
+static int forward_data(stream *out, int debug)
 	/* read from stdin */
 {
 	int done = 0;
@@ -162,7 +166,8 @@ static void forward_data(stream *out, int debug)
 	out->flush(out);
 	if (debug) fflush(stdout);
 
-	receive(rs, out, debug);
+	return receive(rs, out, debug);
+		
 }
 
 static int column_info( char *buf, int len, Msql_col *cols, int cur ){
@@ -235,13 +240,12 @@ static void header_data( stream *rs, stream *out, int nCols, int debug ){
 	free(cols);
 }
 
-void receive( stream *rs, stream *out, int debug ){
-	int flag = 0, res = 0;
+int receive( stream *rs, stream *out, int debug ){
+	int status = 0, flag = 0, res = 0;
 	if ((res = stream_readInt(rs, &flag)) && flag != COMM_DONE){
 		char buf[BLOCK+1];
 		int last = 0;
 		int type;
-		int status;
 		int nRows;
 
 		stream_readInt(rs, &type);
@@ -264,6 +268,8 @@ void receive( stream *rs, stream *out, int debug ){
 				free(s);
 			}
 			fprintf( stdout, "\n");
+			if (exit_on_error)
+				return status;
 		}
 		nRows = status;
 		if ((type == QTABLE || type == QDEBUG) && nRows > 0){
@@ -284,9 +290,9 @@ void receive( stream *rs, stream *out, int debug ){
 		}
 		if (type == QHEADER) {
 			header_data(rs, out, nRows, debug);
-			receive(rs, out, debug);
+			status = receive(rs, out, debug);
 		} else if (type == QDATA) {
-			forward_data(out, debug);
+			status = forward_data(out, debug);
 		} else if (type == QTABLE || type == QUPDATE){
 			if (nRows > 1)
 				printf("SQL  %d Rows affected\n", nRows );
@@ -299,6 +305,8 @@ void receive( stream *rs, stream *out, int debug ){
 		printf("flag %d, %d , %d\n", res, flag, rs->errnr);
 	}
 	fflush(stdout);
+
+	return 0;
 }
 
 static int ins = 0;
@@ -376,8 +384,11 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug, int trace ){
 			ws->flush( ws );
 		}
 
-		for (; cmdcnt > 0; cmdcnt--)
-			receive(rs, ws, debug);
+		for (; cmdcnt > 0; cmdcnt--) {
+			int status = receive(rs, ws, debug);
+			if (status < 0)
+				exit(status);
+		}
 	}
 	
 	i = snprintf(buf, BUFSIZ, "COMMIT;\n" );
@@ -746,6 +757,7 @@ main(int ac, char **av)
 	static struct option long_options[] =
              {
                {"debug", 2, 0, 'd'},
+               {"error", 0, 0, 'e'},
 	       {"dump", 2, 0, 'D'},
 	       {"config", 1, 0, 'c'},
                {"host", 1, 0, 'h'},
@@ -762,7 +774,7 @@ main(int ac, char **av)
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:", 
+		int c = getopt_long( ac, av, "c:d::eDh:p:P:u:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -793,6 +805,9 @@ main(int ac, char **av)
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "sql_debug", "2" );
 			}
+			break;
+		case 'e':
+			exit_on_error = 1;
 			break;
 		case 'D':
 			if (optarg){ 
