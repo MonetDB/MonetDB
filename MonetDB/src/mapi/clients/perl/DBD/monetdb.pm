@@ -274,6 +274,63 @@ SQL
 }
 
 
+sub foreign_key_info {
+    my($dbh, $c1, $s1, $t1, $c2, $s2, $t2) = @_;
+    my $sql = <<'SQL';
+select cast( null         as varchar  ) as uk_table_cat
+     , cast( uks."name"   as varchar  ) as uk_table_schem
+     , cast( ukt."name"   as varchar  ) as uk_table_name
+     , cast( ukc."column" as varchar  ) as uk_column_name
+     , cast( null         as varchar  ) as fk_table_cat
+     , cast( fks."name"   as varchar  ) as fk_table_schem
+     , cast( fkt."name"   as varchar  ) as fk_table_name
+     , cast( fkc."column" as varchar  ) as fk_column_name
+     , cast( fkc."nr" + 1 as smallint ) as ordinal_position
+     , cast( 3            as smallint ) as update_rule    -- SQL_NO_ACTION
+     , cast( 3            as smallint ) as delete_rule    -- SQL_NO_ACTION
+     , cast( fkk."name"   as varchar  ) as fk_name
+     , cast( ukk."name"   as varchar  ) as uk_name
+     , cast( 7            as smallint ) as deferability   -- SQL_NOT_DEFERRABLE
+     , case  ukk."type"
+         when 0 then cast('PRIMARY'   as varchar )
+         when 1 then cast('UNIQUE'    as varchar )
+         else        cast( ukk."type" as varchar )
+       end                              as unique_or_primary
+  from sys."schemas"    uks
+     , sys."tables"     ukt
+     , sys."keys"       ukk
+     , sys."keycolumns" ukc
+     , sys."schemas"    fks
+     , sys."tables"     fkt
+     , sys."keys"       fkk
+     , sys."keycolumns" fkc
+ where ukt."schema_id"  = uks."id"
+   and ukk."table_id"   = ukt."id"
+   and ukc."id"         = ukk."id"
+   and fkt."schema_id"  = fks."id"
+   and fkk."table_id"   = fkt."id"
+   and fkc."id"         = fkk."id"
+-- and ukk."type"      IN ( 0, 1 )
+-- and fkk."type"       = 2
+-- and fkk."rkey"       > -1
+   and fkk."rkey"       = ukk."id"
+   and fkc."nr"         = ukc."nr"
+SQL
+    my @bv = ();
+    $sql .= qq(   and uks."name"       = ?\n), push @bv, $s1 if $s1;
+    $sql .= qq(   and ukt."name"       = ?\n), push @bv, $t1 if $t1;
+    $sql .= qq(   and fks."name"       = ?\n), push @bv, $s2 if $s2;
+    $sql .= qq(   and fkt."name"       = ?\n), push @bv, $t2 if $t2;
+    $sql .= qq(   and ukk."type"       = 0\n)                if $t1 && !$t2;
+    $sql .= " order by uk_table_schem, uk_table_name, fk_table_schem, fk_table_name, ordinal_position\n";
+    my $sth = $dbh->prepare($sql) or return;
+    $sth->execute(@bv) or return;
+    $dbh->set_err(0,"Catalog parameter '$c1' ignored") if defined $c1;
+    $dbh->set_err(0,"Catalog parameter '$c2' ignored") if defined $c2;
+    return $sth;
+}
+
+
 sub type_info_all {
     my ($dbh) = @_;
     require DBD::monetdb::TypeInfo;
