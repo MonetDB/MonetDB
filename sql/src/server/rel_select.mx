@@ -31,7 +31,7 @@
 #define sql_search 2
 #define sql_sel   3
 
-sql_export sql_rel *rel_selects(mvc *sql, symbol *sym);
+extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 
 #endif /*_REL_SELECT_H_*/
 @c

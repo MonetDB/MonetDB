@@ -29,7 +29,7 @@
 #include "sql_relation.h"
 #include <stdarg.h>
 
-sql_export sql_rel *rel_semantic(mvc *sql, symbol *sym);
+extern sql_rel *rel_semantic(mvc *sql, symbol *sym);
 
 #endif /*_REL_SEMANTIC_H_*/
 
