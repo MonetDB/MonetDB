@@ -831,9 +831,12 @@ buffer *buffer_create( size_t size ){
 }
 
 char *buffer_get_buf( buffer *b ){
-	char *r = malloc(b->pos+1);
-	memcpy(r,b->buf,b->pos);
+	char *r = b->buf;
+
 	r[b->pos] = '\0';
+	b->buf = malloc(BUFSIZ);
+	b->len = BUFSIZ;
+	b->pos = 0;
 	return r;
 }
 
