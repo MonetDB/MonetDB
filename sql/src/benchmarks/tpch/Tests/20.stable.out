@@ -63,7 +63,7 @@ Over..
 #----------------------
 #| s_name | s_address |
 #----------------------
-"Supplier#000000013"	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"
+[ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
 SQL  1 Row affected
 
 # 16:41:41 >  

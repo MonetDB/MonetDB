@@ -35,7 +35,7 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #-----------
 #| revenue |
 #-----------
-1193053.2253
+[ 1193053.2253	]
 SQL  1 Row affected
 
 # 20:04:53 >  

@@ -38,24 +38,24 @@ SQL  no Rows affected
 #-------------
 #| count_val |
 #-------------
-6
+[ 6	]
 SQL  1 Row affected
 #     8: -- 6
 #     8: select count(val) from test;
 #--------------------
 #| count_no_nil_val |
 #--------------------
-5
+[ 5	]
 SQL  1 Row affected
 #     9: -- 5
 #     9: select count(*) from test group by val;
 #-------------
 #| count_val |
 #-------------
-2
-2
-1
-1
+[ 2	]
+[ 2	]
+[ 1	]
+[ 1	]
 SQL  4 Rows affected
 #    10: --        1 
 #    10: --        2 
@@ -65,10 +65,10 @@ SQL  4 Rows affected
 #--------------------
 #| count_no_nil_val |
 #--------------------
-2
-2
-1
-0
+[ 2	]
+[ 2	]
+[ 1	]
+[ 0	]
 SQL  4 Rows affected
 #    11: --        0 
 #    11: --        2 

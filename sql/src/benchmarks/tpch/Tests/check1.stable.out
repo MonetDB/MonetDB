@@ -24,49 +24,49 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #-------------------
 #| count_c_custkey |
 #-------------------
-1500
+[ 1500	]
 SQL  1 Row affected
 #     2: 1 select count(*) from nation;
 #---------------------
 #| count_n_nationkey |
 #---------------------
-25
+[ 25	]
 SQL  1 Row affected
 #     3: 1 select count(*) from orders;
 #--------------------
 #| count_o_orderkey |
 #--------------------
-15000
+[ 15000	]
 SQL  1 Row affected
 #     4: 1 select count(*) from partsupp;
 #--------------------
 #| count_ps_partkey |
 #--------------------
-8000
+[ 8000	]
 SQL  1 Row affected
 #     5: 1 select count(*) from part;
 #-------------------
 #| count_p_partkey |
 #-------------------
-2000
+[ 2000	]
 SQL  1 Row affected
 #     6: 1 select count(*) from region;
 #---------------------
 #| count_r_regionkey |
 #---------------------
-5
+[ 5	]
 SQL  1 Row affected
 #     7: 1 select count(*) from supplier;
 #-------------------
 #| count_s_suppkey |
 #-------------------
-100
+[ 100	]
 SQL  1 Row affected
 #     8: 1 select count(*) from lineitem;
 #--------------------
 #| count_l_orderkey |
 #--------------------
-60175
+[ 60175	]
 SQL  1 Row affected
 
 # 19:03:02 >  

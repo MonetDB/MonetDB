@@ -42,7 +42,7 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #--------------
 #| avg_yearly |
 #--------------
-0.00
+[ 0.00	]
 SQL  1 Row affected
 
 # 16:41:37 >  

@@ -948,8 +948,8 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 
 static int mvc_export_row( mvc *m, stream *s, res_table *t ) 
 {
-	char *sep = "\t";
-	char *rsep = "\n";
+	char *sep = ",\t";
+	char *rsep = "\t]\n";
 
 	int i, res = 0;
 
@@ -958,6 +958,7 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 	    !stream_writeInt( s, 1 ))
 		res = -1;
 
+	stream_write(s, "[ ", strlen("[ "), 1);
 	for (i = 0; res == 0 && i < t->nr_cols; i++) 
 	{
 		res_col *c = t->cols+i;
@@ -989,8 +990,8 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 
 int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
 {
-	char *sep = "\t";
-	char *rsep = "\n";
+	char *sep = ",\t";
+	char *rsep = "\t]\n";
 
 	ascii as;
         ascii_io *fmt;
@@ -1026,7 +1027,7 @@ int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
 	
 	if (cnt <= 0)
 		return stream_flush(s);
-	as.nr_attrs = t->nr_cols;
+	as.nr_attrs = t->nr_cols +1; /* for the leader */
 	as.nr = cnt;
 	as.offset = offset;
 	fmt = as.format =
@@ -1034,25 +1035,30 @@ int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
 
 	memset(fmt, 0, (as.nr_attrs+1)*sizeof(ascii_io));
 
+        fmt[0].c= NULL;
+        fmt[0].sep = _strdup("[ ");
+        fmt[0].seplen = (int) strlen( fmt[0].sep );
+
 	for (i = 0; i < t->nr_cols; i++) 
 	{
+		int ii = i + 1;
 		res_col *c = t->cols+i;
 		if (!c->b) 
 			break;
 
-		fmt[i].c = BATdescriptor(c->b);
-		fmt[i].name = NULL;
-                fmt[i].sep = (i<(t->nr_cols-1))?_strdup(sep):_strdup(rsep);
-                fmt[i].seplen = (int) strlen( fmt[i].sep );
-		fmt[i].type = ATOMname(fmt[i].c->ttype);
-		fmt[i].adt = fmt[i].c->ttype;
-                fmt[i].tostr = &ASCIIadt_toStr;
-                fmt[i].frstr = &ASCIIadt_frStr;
-                fmt[i].extra = NULL;
+		fmt[ii].c = BATdescriptor(c->b);
+		fmt[ii].name = NULL;
+                fmt[ii].sep = (i<(t->nr_cols-1))?_strdup(sep):_strdup(rsep);
+                fmt[ii].seplen = (int) strlen( fmt[ii].sep );
+		fmt[ii].type = ATOMname(fmt[ii].c->ttype);
+		fmt[ii].adt = fmt[ii].c->ttype;
+                fmt[ii].tostr = &ASCIIadt_toStr;
+                fmt[ii].frstr = &ASCIIadt_frStr;
+                fmt[ii].extra = NULL;
 		if (c->type->type->scale == SCALE_FIX){
-			fmt[i].tostr = &dec_tostr;
-			fmt[i].frstr = &dec_frstr;
-			fmt[i].extra = (void*)(ptrdiff_t)c->type->scale;
+			fmt[ii].tostr = &dec_tostr;
+			fmt[ii].frstr = &dec_frstr;
+			fmt[ii].extra = (void*)(ptrdiff_t)c->type->scale;
 		}
 	}
 	if (i == t->nr_cols)

@@ -24,12 +24,12 @@ SQL  connected to database mTests_src_benchmarks_arno using schema sys
 #--------------------------------------
 #| is_mutagen | lumo | count_model_id |
 #--------------------------------------
-"T"	-1	9
-"T"	-2	18
-"T"	-3	3
-"F"	-1	13
-"T"	-4	1
-"F"	-2	7
+[ "T",	-1,	9	]
+[ "T",	-2,	18	]
+[ "T",	-3,	3	]
+[ "F",	-1,	13	]
+[ "T",	-4,	1	]
+[ "F",	-2,	7	]
 SQL  6 Rows affected
 
 # 22:11:56 >  

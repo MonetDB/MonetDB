@@ -24,8 +24,8 @@ SQL  connected to database mTests_src_benchmarks_arno using schema sys
 #-------------------------------
 #| is_mutagen | count_model_id |
 #-------------------------------
-"T"	35
-"F"	5
+[ "T",	35	]
+[ "F",	5	]
 SQL  2 Rows affected
 
 # 22:11:36 >  

@@ -24,17 +24,17 @@ SQL  connected to database mTests_src_benchmarks_arno using schema sys
 #--------------------------------------
 #| is_mutagen | logp | count_model_id |
 #--------------------------------------
-"T"	4	8
-"F"	1	4
-"F"	2	21
-"F"	4	5
-"T"	3	9
-"T"	5	8
-"F"	3	13
-"T"	6	1
-"F"	7	2
-"F"	0	1
-"T"	2	3
+[ "T",	4,	8	]
+[ "F",	1,	4	]
+[ "F",	2,	21	]
+[ "F",	4,	5	]
+[ "T",	3,	9	]
+[ "T",	5,	8	]
+[ "F",	3,	13	]
+[ "T",	6,	1	]
+[ "F",	7,	2	]
+[ "F",	0,	1	]
+[ "T",	2,	3	]
 SQL  11 Rows affected
 
 # 22:10:43 >  

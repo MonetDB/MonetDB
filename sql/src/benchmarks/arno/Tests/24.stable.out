@@ -24,13 +24,13 @@ SQL  connected to database mTests_src_benchmarks_arno using schema sys
 #--------------------------------------
 #| is_mutagen | logp | count_model_id |
 #--------------------------------------
-"T"	4	35
-"T"	5	27
-"T"	3	31
-"T"	7	3
-"T"	2	12
-"T"	6	14
-"T"	1	3
+[ "T",	4,	35	]
+[ "T",	5,	27	]
+[ "T",	3,	31	]
+[ "T",	7,	3	]
+[ "T",	2,	12	]
+[ "T",	6,	14	]
+[ "T",	1,	3	]
 SQL  7 Rows affected
 
 # 22:09:50 >  

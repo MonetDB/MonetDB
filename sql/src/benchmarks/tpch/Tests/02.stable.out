@@ -68,10 +68,10 @@ Over..
 #--------------------------------------------------------------------------------------
 #| s_acctbal | s_name | n_name | p_partkey | p_mfgr | s_address | s_phone | s_comment |
 #--------------------------------------------------------------------------------------
-4186.95	"Supplier#000000077"	"GERMANY"	249	"Manufacturer#4"	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY"	"17-281-345-4863"	"blithely pending accounts ru"
-1883.37	"Supplier#000000086"	"ROMANIA"	1015	"Manufacturer#4"	"J1fgg5QaqnN"	"29-903-665-7065"	"slyly pending requests wake car"
-1687.81	"Supplier#000000017"	"ROMANIA"	1634	"Manufacturer#2"	"c2d,ESHRSkK3WYnxpgw6aOqN0q"	"29-601-884-9219"	"slyly pending deposits boost quickly."
-287.16	"Supplier#000000052"	"ROMANIA"	323	"Manufacturer#4"	"WCk XCHYzBA1dvJDSol4ZJQQcQN,"	"29-974-934-4713"	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"
+[ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
+[ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
+[ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
+[ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
 SQL  4 Rows affected
 
 # 16:40:59 >  
