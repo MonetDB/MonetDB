@@ -1875,7 +1875,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		n = todo < s->itotal ? todo : s->itotal;
 		while (n > 0) {
 			ssize_t m = s->s->read(s->s, buf, 1, n);
-			if (m < 0) {
+			if (m <= 0) {
 				ss->errnr = READ_ERROR;
 				return -1;
 			}
