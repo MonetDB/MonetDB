@@ -511,16 +511,17 @@ extern void script_concat( int );
 
 YY_DIGIT    	[0-9]
 YY_LETTER    	[_a-zA-Z]
-YY_SPACE    	[\t\n ]*
+YY_SPACE    	[\t\n ]
+YY_SPACES    	[\t\n ]*
 %%
 (".LOAD"|".load")	  { script_start(); BEGIN LOAD;			}
 (".DROP"|".drop")	  { script_start(); BEGIN DROP;			}
-<LOAD>{YY_SPACE}(".END"|".end")	  	  { 
+<LOAD>{YY_SPACES}(".END"|".end")	  	  { 
 			    yylval.s = script;
 			    script = NULL;
 			    script_len = script_nr = 0;
 			    BEGIN INITIAL; return MEL_LOAD; 		}
-<DROP>{YY_SPACE}(".END"|".end")	  	  { 
+<DROP>{YY_SPACES}(".END"|".end")	  	  { 
 			    yylval.s = script;
 			    script = NULL;
 			    script_len = script_nr = 0;
@@ -626,7 +627,7 @@ YY_SPACE    	[\t\n ]*
 			while ((*p = yyinput()) != '\n') p++; 
 			check_lineno(line); return yylex();	      	}
 "#"		{     while (yyinput() != '\n'); return yylex();	}
-{YY_SPACE}		;
+{YY_SPACES}		;
 .		{ 	fprintf(stderr, "discarding '%c'\n", yytext[0]);}
 %%
 int str = 0, esc = 0, chr = 0;
