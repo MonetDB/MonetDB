@@ -108,7 +108,9 @@ comment "return the BUN tail value using the cursor.";
 To enable ease of debugging and performance monitoring, the MAL interpreter
 comes with a hardwired gdb-like text-based debugger.
 @mal
-pattern mdb():void = MDBmdb
+pattern mdb(b:bit):void = mdbToggle
+	comment "Start interactive debugger";
+pattern mdb():void = mdbToggle
 	comment "Start interactive debugger";
 
 @-

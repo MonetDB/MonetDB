@@ -22,6 +22,7 @@ use "mal/profiler";
 use "mal/squeezer"; 
 use "mal/multiplex";
 use "mal/const"; 
+use "mal/bbp";
 use "mal/box"; 
 @-
 In practice, we have to introduce different startup for each

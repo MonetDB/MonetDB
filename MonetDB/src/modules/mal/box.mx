@@ -102,10 +102,10 @@ Access to a box calls for resolving the first parameter
 to a named box.
 @= OpenBox
 	name = (str) getArgValue(stk,pci,1);
-	box= openBox(name);
+	box= findBox(name);
 	if( box ==0) 
 	return (int) raiseException(mb,stk->pc,"boxException",
-		"failed to open box\n");
+		"box is not open\n");
 @-
 @c
 int CMDbox_deposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
