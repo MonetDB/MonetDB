@@ -1,7 +1,7 @@
 %define name MonetDB
 %define major_version 4
 %define minor_version 3
-%define sublevel 4
+%define sublevel 5
 %define release 1
 %define version %{major_version}.%{minor_version}.%{sublevel}
 %define prefix /usr
@@ -41,6 +41,7 @@ Requires: %{name}-client
 %description devel
 Add the MonetDB devel description here
 Requires: %{name}-server
+Requires: epsffit
 
 
 %prep
@@ -62,8 +63,8 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %files client
 %defattr(-,monet,monet) 
 %{prefix}/bin/MapiClient 
-%{prefix}/lib/libMapi.so 
-%{prefix}/lib/libstream.so 
+%{prefix}/lib/libMapi.so* 
+%{prefix}/lib/libstream.so*
 
 %{prefix}/share/MonetDB/site_perl/* 
 %{prefix}/share/MonetDB/python/* 
@@ -76,9 +77,9 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/bin/Mshutdown
 %{prefix}/bin/monet-config
 
-%{prefix}/lib/libbat.so 
-%{prefix}/lib/libmonet.so
-%{prefix}/lib/MonetDB/*.so 
+%{prefix}/lib/libbat.so*
+%{prefix}/lib/libmonet.so*
+%{prefix}/lib/MonetDB/*.so* 
 %{prefix}/share/MonetDB/monet.conf 
 %{prefix}/share/MonetDB/general.mil 
 %{prefix}/share/MonetDB/mapi.mil 
@@ -98,7 +99,6 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/bin/Mx 
 %{prefix}/bin/prefixMxFile 
 %{prefix}/bin/idxmx 
-%{prefix}/bin/epsffit 
 
 %{prefix}/share/MonetDB/monet.Mprofile.conf 
 %{prefix}/share/MonetDB/Mprofile-commands.lst 

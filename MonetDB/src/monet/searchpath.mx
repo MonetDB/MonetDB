@@ -112,7 +112,7 @@ void parse_mod_path() {
     char *mod_path = getenv(MONET_MSP);
     char *default_path = alloca(strlen(GDKdistrStr)+32);
     
-    sprintf(default_path, "%s%clib%cMonet", GDKdistrStr, DIR_SEP, DIR_SEP);
+    sprintf(default_path, "%s%clib%c%s", GDKdistrStr, DIR_SEP, DIR_SEP, PACKAGE);
 /*
     if (!mod_path) mod_path = getenv("LD_LIBRARY_PATH");
 */
