@@ -100,13 +100,8 @@ s*)	LINK="s";;
 *)
 	echo ''
 	echo 'LINK not set to either "dynamic" or "static" to select the desired way of linking.'
-	if [ "${os}${COMP}" = "Linuxntv" ] ; then
-		echo 'Using LINK="static" (default for Intel compiler on Linux).'
-		LINK="s"
-	  else
-		echo 'Using LINK="dynamic" (default).'
-		LINK="d"
-	fi
+	echo 'Using LINK="dynamic" (default).'
+	LINK="d"
 	;;
 esac
 
@@ -155,20 +150,7 @@ fi
 
 if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv" ] ; then
-		if [ -f /opt/intel/licenses/l_cpp.lic  -a  -f /opt/intel/compiler50/ia32/bin/iccvars.sh ] ; then
-			# "ntv" on Linux means IntelC++-5.0.1 ("icc")
-			# source /opt/intel/compiler50/ia32/bin/iccvars.sh
-			IA32ROOT=/opt/intel/compiler50/ia32 ; export IA32ROOT
-			INTEL_FLEXLM_LICENSE=/opt/intel/licenses ; export INTEL_FLEXLM_LICENSE
-			libpath="${IA32ROOT}/lib:${libpath}"
-			binpath="${IA32ROOT}/bin:${binpath}"
-		  else
-			# "ntv" on Linux means IntelC++-5.0.1 ("icc")
-			# source /soft/IntelC++-5.0.1/bin/iccvars.sh
-			IA32ROOT=/soft/IntelC++-5.0.1 ; export IA32ROOT
-			INTEL_FLEXLM_LICENSE=/soft/IntelC++-5.0.1/licenses ; export INTEL_FLEXLM_LICENSE
-			libpath="${IA32ROOT}/lib:${libpath}"
-		fi
+		libpath="/soft/IntelC++-6.0-020312Z/lib:${libpath}"
 		cc="icc"
 		cxx="icc"
 		if [ "${what}" = "MONET" ] ; then
