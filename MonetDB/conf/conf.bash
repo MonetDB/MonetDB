@@ -237,7 +237,6 @@ if [ ! -x bootstrap ] ; then
 		libpath="${softpath}/lib:${libpath}"
 		# "our" libs/tools in ${softpath}
 		conf_opts="${conf_opts} --with-readline=${softpath}"
-		conf_opts="${conf_opts} --with-getopt=${softpath}"
 		conf_opts="${conf_opts} --with-z=${softpath}"
 		conf_opts="${conf_opts} --with-bz2=${softpath}"
 	fi

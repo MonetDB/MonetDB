@@ -254,7 +254,6 @@ if ( ! -x bootstrap ) then
 		set libpath = "${softpath}/lib:${libpath}"
 		# "our" libs/tools in ${softpath}
 		set conf_opts = "${conf_opts} --with-readline=${softpath}"
-		set conf_opts = "${conf_opts} --with-getopt=${softpath}"
 		set conf_opts = "${conf_opts} --with-z=${softpath}"
 		set conf_opts = "${conf_opts} --with-bz2=${softpath}"
 	endif
