@@ -201,9 +201,11 @@ AC_TRY_COMPILE( [#include <time.h> ],
 [ AC_DEFINE(HAVE_CTIME_R3) ], [ ctime_r3=no ])
 AC_MSG_RESULT($ctime_r3)
 
-if [ enable_static=yes ]; then
+[
+if [ "$enable_static" = "yes" ]; then
 	CFLAGS="$CFLAGS -DSTATIC"
 fi
+]
 
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(CFLAGS)
