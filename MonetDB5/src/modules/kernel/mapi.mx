@@ -80,7 +80,7 @@ command trace(flag:bit):void = MAPItrace
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
 
-/*#define DEBUG_MAPI	1 */
+#define DEBUG_MAPI	1 
 
 #endif /* MAPI_H */
 @c
@@ -98,13 +98,9 @@ void MAPIlistenThread(int sock)
 	do {
 #ifdef DEBUG_MAPI
 		printf("wait for next connection\n");
+		fflush(stdout);
 #endif
-#ifdef AIX
-       		msgsock = accept(sock, 0, (size_t)0);
-#else
-       		msgsock = accept(sock, 0, (int *)0);
-#endif
-
+       		msgsock = accept(sock, (SOCKPTR) 0, (size_t *)0);
 		if (msgsock == -1) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("monetServer: accept failed\n");
@@ -112,38 +108,28 @@ void MAPIlistenThread(int sock)
 	    		}
 		} else if (msgsock > 0) {
 			int i;
-			stream *fdin= socket_rastream(msgsock,"Mserver mapi read");
+			stream *fdin= block_stream(socket_rstream(msgsock,"Mserver mapi read"));
 			stream *fdout= socket_wastream(msgsock,"Mserver mapi write");
-			char command[MAPIBLKSIZE],*s;
+			char *command= (char*) GDKmalloc(BLOCK),*s;
 			char *user = command, *passwd= NULL;
 			int skey=0;
 
-			/* get user connection string */
-			if( (i= fdin->read(fdin,command,1,MAPIBLKSIZE)) != MAPIBLKSIZE){
+#ifdef DEBUG_MAPI_2
+			printf("mapi:About to read block\n");
+			fflush(stdout);
+#endif
+			/* Get at most 1 BLOCK with identity information*/
+			if( (i= fdin->read(fdin,command,1,BLOCK)) < 0){
 				GDKerror("Block size error in mapi.mx\n");
-				printf("%d [%d] bytes read:%s\n",i,MAPIBLKSIZE,command);
+				printf("%d [%d] bytes read:%s\n",i,BLOCK,command);
 				fflush(stdout);
 				continue;
 			}
-@-
-The first line received from any client contains the string
-	name:passwd:sessionkey
-@c
-#ifdef DEBUG_MAPI
+#ifdef DEBUG_MAPI_2
 			printf("mapi:Client accepted %s\n", command);
+			fflush(stdout);
 #endif
-			s= strchr(command,'\n');
-			if(s) *s=0;
-			s= strchr(command,':');
-			if(s){
-			    *s= 0; s++; passwd=s;
-			    s= strchr(s,':');
-			    if(s){
-			            *s= 0; s++;
-				    skey= strtol(s,NULL,10);
-			    }
-			}
-			scheduleClient(GDKstrdup(user),passwd,msgsock,fdin,fdout);
+			scheduleClient(command,msgsock,fdin,fdout);
 		}
 	} while (1);
 }
