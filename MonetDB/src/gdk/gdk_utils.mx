@@ -270,6 +270,11 @@ int BATSIGinit(void) {
 	(void) signal(SIGCHLD, BATSIGchild); 
 #endif
 #ifdef SIGPIPE
+/* HACK to pacify compiler */
+#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))  
+#undef  SIG_IGN /*((__sighandler_t)1 )*/
+#define SIG_IGN   ((__sighandler_t)1L)
+#endif
 	(void) signal(SIGPIPE, SIG_IGN);
 #endif
 #ifdef SIGHUP
