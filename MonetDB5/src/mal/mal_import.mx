@@ -179,11 +179,8 @@ that we are in 'definition mode' 2) this requires (too) carefull
 typing by the user, because he can not make an typeing error
 
 Therefore, all compound code fragments should be loaded and executed
-using the run(file) command.
-
-A stack frame is initialized to keep track of global variables.
-The nesting of barrier blocks should ensure detection of the end
-of the hierarchy.
+using the run(file) and callString command. It will parse the complete
+file into a MAL program block and execute it.
 
 Running looks much like an Import operation, except for the execution
 phase. This is performed in the context of an a priori defined
