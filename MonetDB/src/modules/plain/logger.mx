@@ -1,0 +1,371 @@
+@f logger
+@t Transactions
+@a N. J. Nes
+@v 1.0
+@T
+@* Introduction
+In the philosophy of Monet, transaction management overhead should only
+be paid when necessary. Transaction management is for this purpose 
+implemented as a module. This module, once loaded, takes care of writing
+the commited changes, to a transaction log. The log may reside on the
+same system and therefor the writes are done to disk but could also
+reside on an other system and the the changes are flushed through
+the network.  
+
+@* Module Definition
+@m
+.MODULE logger;
+
+@- global transaction management
+@m
+.COMMAND backuphost(str host, int port) = logger_backuphost;
+	"Use the host,port to backup changes to"
+.COMMAND backupfile(str filename ) = logger_backupfile;
+	"Backup to the given file"
+
+.COMMAND commit() = logger_commit;
+	"commit on all BATs to the log"
+
+.COMMAND update() = logger_update;
+	"update the all BATs using the log"
+
+.COMMAND logger_debug( int level ) = logger_set_debug;
+	"Set the level of debuging"
+
+.EPILOGUE = logger_end;
+
+.END logger;
+@{
+@* Implementation Code 
+@c
+#include <gdk.h>
+#include <sys/stat.h>
+
+int   logger_debug = 0;
+
+char *logger_host = NULL;
+int   logger_port = 0;
+
+char *logger_file = NULL;
+FILE *logger_fp = NULL;
+
+int logger_backuphost(str host, int *port){
+	if (logger_debug&1)
+		fprintf(stderr, "logger_backuphost %s %d\n", host, *port );
+
+	logger_host = GDKstrdup(host);
+	logger_port = *port;
+	return GDK_SUCCEED; 
+}
+
+int logger_backupfile(str filename ){
+	if (logger_debug&1)
+		fprintf(stderr, "logger_backupfile %s\n", filename );
+
+	logger_file = GDKstrdup(filename);
+
+	if (logger_fp) 
+		fclose(logger_fp);
+
+	logger_fp = fopen(logger_file,"a"); /* append */
+
+	if (logger_fp) 
+		return GDK_SUCCEED; 
+	else 
+		return GDK_FAIL;
+}
+
+static int sz = 0;
+
+int logger_end(){
+	if (logger_debug&64)
+		fprintf(stderr, "logger_end %d\n", sz);
+
+	if (logger_fp)
+		fclose(logger_fp);
+	return GDK_SUCCEED;
+}
+
+void logger_bat(BAT *b){
+	if (logger_debug&2 && 
+	    (b->batInserted < BUNlast(b) || b->batDeleted < b->batHole))
+		fprintf(stderr, "logger_bat %s\n", b->batId);
+
+	if (logger_fp){
+		BUN	p; 
+		char	ins = 1;
+		int nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
+		if (nr){
+			fwrite(&b->batCacheid, sizeof(int), 1, logger_fp);
+			fwrite(&ins, sizeof(char), 1, logger_fp);
+			fwrite(&nr, sizeof(int), 1, logger_fp);
+		}
+		for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
+			int s1,s2;
+			ptr h = BUNhead(b,p);
+			ptr t = BUNtail(b,p);
+			fwrite(h, s1=ATOMlen(b->htype,h),1,logger_fp);
+			fwrite(t, s2=ATOMlen(b->ttype,t),1,logger_fp);
+			sz += (s1+s2);
+		}
+		nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
+		ins = 0;
+		if (nr){
+			printf("%d del %d\n", b->batCacheid, nr );
+			fwrite(&b->batCacheid, sizeof(int), 1, logger_fp);
+			fwrite(&ins, sizeof(char), 1, logger_fp);
+			fwrite(&nr, sizeof(int), 1, logger_fp);
+		}
+		for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)) {
+			int s1,s2;
+			ptr h = BUNhead(b,p);
+			ptr t = BUNtail(b,p);
+			fwrite(h, s1=ATOMlen(b->htype,h),1,logger_fp);
+			fwrite(t, s2=ATOMlen(b->ttype,t),1,logger_fp);
+			sz += (s1+s2);
+		}
+	}
+}
+
+static BAT *dirty_bat(int i) {
+	if (logger_debug&4)
+		fprintf(stderr, "dirty_bat %d\n", i);
+
+	if (BBP_logical(i)) {
+		BAT *b;
+		BBPspin(i, "dirty_bat");
+		b = BBP_cache(i);
+		if (b != NULL) {
+			if ((b->batPersistence&PERSISTENT) && BATdirty(b)) {
+				return b; /* the bat is loaded, persistent and dirty */
+			}
+		} else if (BBP_status(i)&BBPSWAPPED) { 
+		  	b = (BAT*) BBPquickdesc(i, TRUE);
+			if (b && b->batDirtydesc) {
+				return b; /* only the desc is loaded & dirty */
+			}
+		}
+	}
+	return NULL;
+}
+
+int logger_commit(){
+	int i;
+	/* first build the buffer with data to write
+         * then write to file, host
+         */
+	if (logger_debug&1)
+		fprintf(stderr, "logger_commit\n");
+
+	BBPlock("logger_commit");
+	for (i = 1; i < BBPsize; i++) {
+		BAT *b = dirty_bat(i);
+		if (b) logger_bat(b); 
+	}
+	if (logger_fp) fflush(logger_fp);
+
+	for (i = 1; i < BBPsize; i++) {
+		BAT *b = dirty_bat(i);
+		if (b) BATfakeCommit(b); 
+	}
+	BBPunlock("logger_commit");
+
+	return GDK_SUCCEED; 
+}
+
+int logger_update() { 
+	/* first try the file */
+	/* else get it from the backup server. */
+	int i;
+	struct stat st;
+	char *buf, *p, *end;
+
+	if (logger_debug&1)
+		fprintf(stderr, "logger_update\n");
+
+	if (logger_fp) 
+		fclose(logger_fp);
+	logger_fp = fopen(logger_file,"r+"); 
+	fstat(fileno(logger_fp),&st);
+	buf = p = GDKmalloc(st.st_size);
+	fread(p, st.st_size, 1, logger_fp);
+	end = p + st.st_size;
+
+/*	BBPlock("logger_commit"); */
+	while(p<end){
+		bat id;	
+		char ins;
+		int nr;
+		BAT *b;
+
+		memcpy(&id, p, sizeof(int)); p += sizeof(int);
+		memcpy(&ins, p, sizeof(char)); p += sizeof(char);
+		memcpy(&nr, p, sizeof(int)); p += sizeof(int);
+		b = BATdescriptor(id); 
+		if (b){
+			for(; nr>0 && p<end; nr--){
+				int s1 = ATOMlen(b->htype, p);
+				int s2 = ATOMlen(b->ttype, p+s1);
+				if (ins)
+					BUNins( b, p, p+s1 );
+				else
+					BUNdel( b, p, p+s1 );
+				p += s1;
+				p += s2;
+		    	}
+		} else {
+			fprintf(stderr,"bat missing %d\n", id);
+		}
+	}
+	for (i = 1; i < BBPsize; i++) {
+		BAT *b = dirty_bat(i);
+		if (b) BATfakeCommit(b); 
+	}
+/*	BBPunlock("logger_commit"); */
+
+	if (buf) GDKfree(buf);
+	return GDK_SUCCEED; 
+}
+
+
+int logger_set_debug( int *l){
+	logger_debug = *l;
+	return GDK_SUCCEED; 
+}
+@}
+
+@mil
+module(alarm);
+
+proc pbat(name, acc) := {
+        b := new(void,int);
+        b.seqbase(oid(0));
+        b.rename(name);
+        b.persists(true);
+        if (int(acc) >= 0){
+                b.reverse.accbuild(acc);
+        }
+        return b;
+}
+
+proc logger_create() := {
+	b0 := pbat("b0",-1);
+	b1 := pbat("b1",hash);
+	b2 := pbat("b2",index);
+
+	b0.count.print;
+	b1.count.print;
+	b2.count.print;
+	commit;
+}
+
+proc logger_insert(bit useLogger) := {
+	if (useLogger){
+		module("logger");
+
+		logger_debug(64);
+		backupfile("/tmp/logger.log");
+	}
+
+	t0 := time();
+	var i := 0;
+	while (i < 50000){
+		i += 1;
+	}
+	t := time(); print(t-t0); t0 := t;
+	
+	i := 0;
+	while (i < 50000){
+		b0.insert(nil,i);
+		i += 1;
+	}
+	commit;
+
+	t := time(); print(t-t0); t0 := t;
+	i := 0;
+	while (i < 50000){
+		b0.insert(nil,i);
+		commit;
+		i += 1;
+	}
+
+	t := time(); print(t-t0); t0 := t;
+	i := 0;
+	while (i < 50000){
+		b1.insert(nil,i);
+		i += 1;
+	}
+	commit;
+	
+	t := time(); print(t-t0); t0 := t;
+	i := 0;
+	while (i < 50000){
+		b1.insert(nil,i);
+		commit;
+		i += 1;
+	}
+	
+	t := time(); print(t-t0); t0 := t;
+	i := 0;
+	while (i < 50000){
+		b2.insert(nil,i);
+		i += 1;
+	}
+	commit;
+	
+	t := time(); print(t-t0); t0 := t;
+	i := 0;
+	while (i < 50000){
+		b2.insert(nil,i);
+		commit;
+		i += 1;
+	}
+	t := time(); print(t-t0); t0 := t;
+
+	b0.count.print;
+	b1.count.print;
+	b2.count.print;
+}
+
+proc logger_update() := {
+	module("logger");
+
+	logger_debug(1);
+	backupfile("/tmp/logger.log");
+	
+	t0 := time();
+	update();
+	t := time(); print(t-t0); t0 := t;
+
+	b0.count.print;
+	b1.count.print;
+	b2.count.print;
+}
+
+@sh
+#!/bin/sh
+
+rm /tmp/logger.log
+Mdestroydb -db logger
+Mcreatedb -db logger -user $USER
+
+Mserver -db logger -prelude logger.mil << EOF
+logger_create;
+quit;
+EOF
+
+Mserver -db logger -prelude logger.mil << EOF
+logger_insert(true);
+quit;
+EOF
+
+Mserver -db logger -prelude logger.mil << EOF
+logger_update;
+quit;
+EOF
+
+# now with out logger
+Mserver -db logger -prelude logger.mil << EOF
+logger_insert(false);
+quit;
+EOF
