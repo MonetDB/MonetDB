@@ -40,3 +40,4 @@ HAVE_JAVA?unicode_varchar-bug-sf-1041324_JdbcClient
 unique-bug-sf-1043512
 # like-bug-sf-1043521  # covered by like_tests
 drop_foreignkey_selfreferencing
+HAVE_JAVA?except-union-intersect-bug-sf-1146079
