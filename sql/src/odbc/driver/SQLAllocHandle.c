@@ -27,19 +27,11 @@
 #include "ODBCDbc.h"
 #include "ODBCStmt.h"
 #include "ODBCError.h"
-#include "stream.h"
-
-static int odbc_init = 0;
 
 SQLRETURN
 SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle,
 		SQLHANDLE *pnOutputHandle)
 {
-	if (!odbc_init) {
-		odbc_init = 1;
-		stream_init();
-	}
-
 	/* Check parameters nHandleType and nInputHandle */
 	if (nInputHandle == NULL && nHandleType != SQL_HANDLE_ENV) {
 		/* can not set an error message because the handle is NULL */
