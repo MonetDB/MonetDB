@@ -506,6 +506,7 @@ int conn_find(str host, int port) {
 	int i;
 	for(i=0; i < MAX_CONN; i++) 
 	    if (connections[i].port == port &&
+		connections[i].me == -1 &&
 		strcmp(connections[i].hostname, host) == 0) break;
 	return i;
 }
