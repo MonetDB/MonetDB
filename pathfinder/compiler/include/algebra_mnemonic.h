@@ -115,8 +115,20 @@
 /* element-constructing operator */
 #define element(a,b,c)    PFalg_element ((a),(b),(c))
 
+/* attribute-constructing operator */
+#define attribute(a,b,c)  PFalg_attribute ((a),(b),(c))
+
 /* text node-constructing operator */
 #define textnode(a,b)     PFalg_textnode ((a),(b))
+
+/* document node-constructing operator */
+#define docnode(a,b)      PFalg_docnode ((a),(b))
+
+/* comment-constructing operator */
+#define comment(a,b)      PFalg_comment ((a),(b))
+
+/* processing instruction-constructing operator */
+#define processi(a,b)     PFalg_processi ((a),(b))
 
 #define cast_item(o)      PFalg_cast_item (o)
 

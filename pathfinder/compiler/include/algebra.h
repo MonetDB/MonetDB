@@ -209,7 +209,11 @@ enum PFalg_op_kind_t {
     , aop_count            /**< (partitioned) row counting operator */
     , aop_distinct         /**< duplicate elimination operator */
     , aop_element          /**< element-constructing operator */
+    , aop_attribute        /**< attribute-constructing operator */
     , aop_textnode         /**< text node-constructing operator */
+    , aop_docnode          /**< document node-constructing operator */
+    , aop_comment          /**< comment-constructing operator */
+    , aop_processi         /**< processing instruction-constructing operator */
     , aop_seqty1           /**< test for exactly one type occurrence in one
                                 iteration (Pathfinder extension) */
     , aop_all              /**< test if all items in an iteration are true */
@@ -574,8 +578,21 @@ PFalg_op_t * PFalg_distinct (PFalg_op_t *n);
 PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tags,
                             PFalg_op_t *cont);
 
+/** Constructor for attribute operators. */
+PFalg_op_t * PFalg_attribute (PFalg_op_t *doc, PFalg_op_t *tags,
+			      PFalg_op_t *cont);
+
 /** Constructor for text node operators. */
 PFalg_op_t * PFalg_textnode (PFalg_op_t *doc, PFalg_op_t *cont);
+
+/** Constructor for document node operators. */
+PFalg_op_t * PFalg_docnode (PFalg_op_t *doc, PFalg_op_t *cont);
+
+/** Constructor for comment operators. */
+PFalg_op_t * PFalg_comment (PFalg_op_t *doc, PFalg_op_t *cont);
+
+/** Constructor for processing instruction operators. */
+PFalg_op_t * PFalg_processi (PFalg_op_t *doc, PFalg_op_t *cont);
 
 /** Cast nat to int. */
 PFalg_op_t * PFalg_cast_item (PFalg_op_t *o);

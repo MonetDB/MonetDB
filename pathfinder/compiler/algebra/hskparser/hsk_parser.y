@@ -148,7 +148,7 @@ rownum  :    LSQBR ROWNUM LBRACK item COLON braclist RBRACK operator RSQBR
 
 project :   LSQBR PROJ LBRACK projlist RBRACK operator RSQBR
             {
-              /* [¶ (old_attr:new_attr, ...) operator] */
+              /* [¶ (new_attr:old_attr, ...) operator] */
               $$=PFalg_project_ ($6, PFarray_last ($4),
 				 ((PFalg_proj_t *) $4->base));
             }
@@ -157,7 +157,7 @@ project :   LSQBR PROJ LBRACK projlist RBRACK operator RSQBR
 projlist:   projitem
             {
               /* Comma-separated list of (renamed) projection items
-	       * (old_attr1:new_attr1, old_attr2:new_attr2, ...).
+	       * (new_attr1:old_attr1, new_attr2:old_attr2, ...).
 	       */
               proj_arr = PFarray (sizeof (PFalg_proj_t));
               *((PFalg_proj_t *) PFarray_add (proj_arr)) = $1;
@@ -166,7 +166,7 @@ projlist:   projitem
         |   projlist COMMA projitem
             {
               /* Comma-separated list of (renamed) projection items
-	       * (old_attr1:new_attr1, old_attr2:new_attr2, ...).
+	       * (new_attr1:old_attr1, new_attr2:old_attr2, ...).
 	       */
               *((PFalg_proj_t *) PFarray_add ($1)) = $3;
               $$=$1;
@@ -206,7 +206,7 @@ joincond:   LBRACK item EQUAL item RBRACK
 scjoin  :   LSQBR SCJOIN xpath operator operator RSQBR
             {
               /* [/| axis::kind_test operator operator] */
-              $$=scjoin ($4, $5, $3);
+              $$=scjoin ($5, $4, $3);
             }
         ;
 

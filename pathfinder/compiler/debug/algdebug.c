@@ -76,7 +76,11 @@ char *a_id[]  = {
     , [aop_count]            = "COUNT"
     , [aop_distinct]         = "DISTINCT"         /* indian red */
     , [aop_element]          = "ELEM"             /* lawn green */
+    , [aop_attribute]        = "ATTR"             /* lawn green */
     , [aop_textnode]         = "TEXT"             /* lawn green */
+    , [aop_docnode]          = "DOC"              /* lawn green */
+    , [aop_comment]          = "COMMENT"          /* lawn green */
+    , [aop_processi]         = "PI"               /* lawn green */
     , [aop_seqty1]           = "SEQTY1"
     , [aop_all]              = "ALL"
 };
@@ -147,7 +151,11 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         , [aop_count]          = "grey"
         , [aop_distinct]       = "indianred"
         , [aop_element]        = "lawngreen"
+        , [aop_attribute]      = "lawngreen"
         , [aop_textnode]       = "lawngreen"
+        , [aop_docnode]        = "lawngreen"
+        , [aop_comment]        = "lawngreen"
+        , [aop_processi]       = "lawngreen"
         , [aop_seqty1]         = "grey"
         , [aop_all]            = "grey"
     };
@@ -408,7 +416,11 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_serialize:
         case aop_distinct:
         case aop_element:
+        case aop_attribute:
         case aop_textnode:
+        case aop_docnode:
+        case aop_comment:
+        case aop_processi:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
     }
@@ -623,7 +635,11 @@ alg_pretty (PFalg_op_t *n)
         case aop_count:
         case aop_distinct:
         case aop_element:
+        case aop_attribute:
         case aop_textnode:
+        case aop_docnode:
+        case aop_comment:
+        case aop_processi:
             break;
 
     }

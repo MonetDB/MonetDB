@@ -2177,7 +2177,7 @@ main = do
           -- (comment all other lines if you want to use `make ps')
           --putStr (dot (compile xmark_Q2))
           -- print algebra expression (tree)
-          print (compile q)
+          print (compile xmark_Q18)
           -- print result of algebraic evaluation 
           --print (evaluate (compile xmark_Q2))
           -- compile and evaluate query, then serialize the result as XML

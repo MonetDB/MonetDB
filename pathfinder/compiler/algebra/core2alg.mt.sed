@@ -144,6 +144,7 @@ label Query
       FunctionArgs
       BuiltIns
       LiteralValue
+      LiteralString
       ConstructorExpr
       TagName
 ;
@@ -527,7 +528,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
         /* save old environment */
         old_env = env;
 
-        /* update the environment for translation of e2 TODO: eliminate empty_doc*/
+        /* update the environment for translation of e2 */
         env = PFarray (sizeof (PFalg_env_t));
 
         for (i = 0; i < PFarray_last (old_env); i++) {
@@ -554,7 +555,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
                                 "res"),
                         proj ("iter", "iter"));
 
-        /* update the environment for translation of e3 TODO: eliminate empty_doc*/
+        /* update the environment for translation of e3 */
         env = PFarray (sizeof (PFalg_env_t));
 
         for (i = 0; i < PFarray_last (old_env); i++) {
@@ -793,12 +794,287 @@ KindTest:        kind_attr (nil)
     }
     ;
 
-ConstructorExpr: elem (TagName, CoreExpr);
-ConstructorExpr: attr (TagName, CoreExpr);
-ConstructorExpr: text (CoreExpr);
-ConstructorExpr: doc (CoreExpr);
-ConstructorExpr: comment (lit_str);
-ConstructorExpr: pi (lit_str);
+ConstructorExpr: elem (TagName, CoreExpr)
+    =
+    {
+        /*
+         * CoreExpr (q2) evaluates to a sequence of nodes. TagName (q1)
+         * is the name of a new node which becomes the common root of
+         * the constructed nodes.
+         *
+         * env, loop: e1 => q1, doc (q1)
+         * env, loop: e2 => q2, doc (q2)
+         *
+         * n = element (doc (q2), q1, q2)
+         * ------------------------------------------------------------------
+         * env, loop: element e1 {e2} =>
+         *                                               pos
+         * result:    (proj_iter,item:pre (roots (n))) x -----
+         *                                                1
+         *                                                          zero
+         *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+         *                                                            0
+         *
+         * doc:        proj_pre,size,level,kind,prop,frag (n)
+         */
+        PFalg_op_t *elem = element ([[ $2$ ]].doc,
+                                    [[ $1$ ]].result,
+                                    [[ $2$ ]].result);
+
+        [[ $$ ]] = (struct  PFalg_pair_t) {
+                 .result = cross (project (
+                                      select_ (
+                                          eq (cross (elem,
+                                                     lit_tbl (
+                                                         attlist ("zero"),
+                                                         tuple (
+                                                             lit_int (0)))),
+                                              "res","level","zero"),
+                                          "res"),
+                                      proj ("iter", "iter"),
+                                      proj ("item", "pre")),
+                                  lit_tbl (attlist ("pos"),
+                                           tuple (lit_nat (1)))),
+                 .doc = project (elem,
+                                 proj ("pre", "pre"),
+                                 proj ("size", "size"),
+                                 proj ("level", "level"),
+                                 proj ("kind", "kind"),
+                                 proj ("prop", "prop"),
+                                 proj ("frag", "frag")) };
+    }
+    ;
+
+ConstructorExpr: attr (TagName, CoreExpr)
+    =
+    {
+        /*
+         * CoreExpr (q2) evaluates to a sequence of attributes. TagName
+         * (q1) is the name of a new node which becomes the common root
+         * of the constructed attributes.
+         *
+         * env, loop: e1 => q1, doc (q1)
+         * env, loop: e2 => q2, doc (q2)
+         *
+         * n = attribute (doc (q2), q1, q2)
+         * ------------------------------------------------------------------
+         * env, loop: attribute e1 {e2} =>
+         *                                               pos
+         * result:    (proj_iter,item:pre (roots (n))) x -----
+         *                                                1
+         *                                                          zero
+         *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+         *                                                            0
+         *
+         * doc:        proj_pre,size,level,kind,prop,frag (n)
+         */
+        PFalg_op_t *attr = attribute ([[ $2$ ]].doc,
+                                      [[ $1$ ]].result,
+                                      [[ $2$ ]].result);
+
+        [[ $$ ]] = (struct  PFalg_pair_t) {
+                 .result = cross (project (
+                                      select_ (
+                                          eq (cross (attr,
+                                                     lit_tbl (
+                                                         attlist ("zero"),
+                                                         tuple (
+                                                             lit_int (0)))),
+                                              "res","level","zero"),
+                                          "res"),
+                                      proj ("iter", "iter"),
+                                      proj ("item", "pre")),
+                                  lit_tbl (attlist ("pos"),
+                                           tuple (lit_nat (1)))),
+                 .doc = project (attr,
+                                 proj ("pre", "pre"),
+                                 proj ("size", "size"),
+                                 proj ("level", "level"),
+                                 proj ("kind", "kind"),
+                                 proj ("prop", "prop"),
+                                 proj ("frag", "frag")) };
+    }
+    ;
+
+ConstructorExpr: text (CoreExpr)
+    =
+    {
+        /*
+         * env, loop: e => q, doc (q)
+         *
+         * n = textnode (doc (q), q)
+         * ------------------------------------------------------------------
+         * env, loop: textnode e =>
+         *                                               pos
+         * result:    (proj_iter,item:pre (roots (n))) x -----
+         *                                                1
+         *                                                          zero
+         *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+         *                                                            0
+         *
+         * doc:        proj_pre,size,level,kind,prop,frag (n)
+         */
+        PFalg_op_t *textnode = textnode ([[ $1$ ]].doc,
+                                         [[ $1$ ]].result);
+
+        [[ $$ ]] = (struct  PFalg_pair_t) {
+                 .result = cross (project (
+                                      select_ (
+                                          eq (cross (textnode,
+                                                     lit_tbl (
+                                                         attlist ("zero"),
+                                                         tuple (
+                                                             lit_int (0)))),
+                                              "res","level","zero"),
+                                          "res"),
+                                      proj ("iter", "iter"),
+                                      proj ("item", "pre")),
+                                  lit_tbl (attlist ("pos"),
+                                           tuple (lit_nat (1)))),
+                 .doc = project (textnode,
+                                 proj ("pre", "pre"),
+                                 proj ("size", "size"),
+                                 proj ("level", "level"),
+                                 proj ("kind", "kind"),
+                                 proj ("prop", "prop"),
+                                 proj ("frag", "frag")) };
+    }
+    ;
+
+ConstructorExpr: doc (CoreExpr)
+    =
+    {
+        /*
+         * env, loop: e => q, doc (q)
+         *
+         * n = textnode (doc (q), q)
+         * ------------------------------------------------------------------
+         * env, loop: docnode e =>
+         *                                               pos
+         * result:    (proj_iter,item:pre (roots (n))) x -----
+         *                                                1
+         *                                                          zero
+         *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+         *                                                            0
+         *
+         * doc:        proj_pre,size,level,kind,prop,frag (n)
+         */
+        PFalg_op_t *docnode = docnode ([[ $1$ ]].doc,
+                                       [[ $1$ ]].result);
+
+        [[ $$ ]] = (struct  PFalg_pair_t) {
+                 .result = cross (project (
+                                      select_ (
+                                          eq (cross (docnode,
+                                                     lit_tbl (
+                                                         attlist ("zero"),
+                                                         tuple (
+                                                             lit_int (0)))),
+                                              "res","level","zero"),
+                                          "res"),
+                                      proj ("iter", "iter"),
+                                      proj ("item", "pre")),
+                                  lit_tbl (attlist ("pos"),
+                                           tuple (lit_nat (1)))),
+                 .doc = project (docnode,
+                                 proj ("pre", "pre"),
+                                 proj ("size", "size"),
+                                 proj ("level", "level"),
+                                 proj ("kind", "kind"),
+                                 proj ("prop", "prop"),
+                                 proj ("frag", "frag")) };
+    }
+    ;
+
+ConstructorExpr: comment (lit_str)
+    =
+    {
+        /*
+         * env, loop: e => q, doc (q)
+         *
+         * n = comment (doc (q), q)
+         * ------------------------------------------------------------------
+         * env, loop: docnode e =>
+         *                                               pos
+         * result:    (proj_iter,item:pre (roots (n))) x -----
+         *                                                1
+         *                                                          zero
+         *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+         *                                                            0
+         *
+         * doc:        proj_pre,size,level,kind,prop,frag (n)
+         */
+        PFalg_op_t *comment = comment ([[ $1$ ]].doc,
+                                       [[ $1$ ]].result);
+
+        [[ $$ ]] = (struct  PFalg_pair_t) {
+                 .result = cross (project (
+                                      select_ (
+                                          eq (cross (comment,
+                                                     lit_tbl (
+                                                         attlist ("zero"),
+                                                         tuple (
+                                                             lit_int (0)))),
+                                              "res","level","zero"),
+                                          "res"),
+                                      proj ("iter", "iter"),
+                                      proj ("item", "pre")),
+                                  lit_tbl (attlist ("pos"),
+                                           tuple (lit_nat (1)))),
+                 .doc = project (comment,
+                                 proj ("pre", "pre"),
+                                 proj ("size", "size"),
+                                 proj ("level", "level"),
+                                 proj ("kind", "kind"),
+                                 proj ("prop", "prop"),
+                                 proj ("frag", "frag")) };
+    }
+    ;
+
+ConstructorExpr: pi (lit_str)
+    =
+    {
+        /*
+         * env, loop: e => q, doc (q)
+         *
+         * n = processi (doc (q), q)
+         * ------------------------------------------------------------------
+         * env, loop: docnode e =>
+         *                                               pos
+         * result:    (proj_iter,item:pre (roots (n))) x -----
+         *                                                1
+         *                                                          zero
+         *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+         *                                                            0
+         *
+         * doc:        proj_pre,size,level,kind,prop,frag (n)
+         */
+        PFalg_op_t *pi = processi ([[ $1$ ]].doc,
+                                   [[ $1$ ]].result);
+
+        [[ $$ ]] = (struct  PFalg_pair_t) {
+                 .result = cross (project (
+                                      select_ (
+                                          eq (cross (pi,
+                                                     lit_tbl (
+                                                         attlist ("zero"),
+                                                         tuple (
+                                                             lit_int (0)))),
+                                              "res","level","zero"),
+                                          "res"),
+                                      proj ("iter", "iter"),
+                                      proj ("item", "pre")),
+                                  lit_tbl (attlist ("pos"),
+                                           tuple (lit_nat (1)))),
+                 .doc = project (pi,
+                                 proj ("pre", "pre"),
+                                 proj ("size", "size"),
+                                 proj ("level", "level"),
+                                 proj ("kind", "kind"),
+                                 proj ("prop", "prop"),
+                                 proj ("frag", "frag")) };
+    }
+    ;
 
 TagName:         tag;
 TagName:         CoreExpr;
@@ -947,7 +1223,9 @@ Atom:            var_
 
 Atom:            LiteralValue;
 
-LiteralValue:    lit_str
+LiteralValue:    LiteralString;
+
+LiteralString:    lit_str
     =
     {
         /*

@@ -1716,13 +1716,40 @@ PFalg_op_t * PFalg_distinct (PFalg_op_t *n)
 
 /** Constructor for element operators.
  *
- * @a doc is the document table, @a tags constructs the elements'
+ * @a doc is the current document, @a tag constructs the elements'
  * tag names, and @a cont is the content of the tags.
  */
-PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tags,
+PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tag,
 			    PFalg_op_t *cont)
 {
-    PFalg_op_t *ret = alg_op_wire3 (aop_element, doc, tags, cont);
+    PFalg_op_t *ret = alg_op_wire3 (aop_element, doc, tag, cont);
+    int i;
+
+    /* set result schema */
+    ret->schema.count = doc_schm.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < doc_schm.count; i++)
+        ret->schema.items[i] = doc_schm.items[i];
+
+
+    ret->schema.items[ret->schema.count-1].name = "iter";
+    ret->schema.items[ret->schema.count-1].type = aat_nat;
+
+    return ret;
+}
+
+
+/** Constructor for attribute operators.
+ *
+ * @a doc is the current document, @a tag constructs the attributes'
+ * names, and @a cont is the content of the attributes.
+ */
+PFalg_op_t * PFalg_attribute (PFalg_op_t *doc, PFalg_op_t *tag,
+			    PFalg_op_t *cont)
+{
+    PFalg_op_t *ret = alg_op_wire3 (aop_attribute, doc, tag, cont);
     int i;
 
     /* set result schema */
@@ -1743,12 +1770,87 @@ PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tags,
 
 /** Constructor for text content operators.
  *
- * @a doc is the document table and @a cont is the text content of
+ * @a doc is the current document and @a cont is the text content of
  * the node.
  */
 PFalg_op_t * PFalg_textnode (PFalg_op_t *doc, PFalg_op_t *cont)
 {
     PFalg_op_t *ret = alg_op_wire2 (aop_textnode, doc, cont);
+    int i;
+
+    /* set result schema */
+    ret->schema.count = doc_schm.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < doc_schm.count; i++)
+        ret->schema.items[i] = doc_schm.items[i];
+
+    ret->schema.items[ret->schema.count-1].name = "iter";
+    ret->schema.items[ret->schema.count-1].type = aat_nat;
+
+    return ret;
+}
+
+
+/** Constructor for document node operators.
+ *
+ * @a doc is the current document and @a cont is the content of
+ * the node.
+ */
+PFalg_op_t * PFalg_docnode (PFalg_op_t *doc, PFalg_op_t *cont)
+{
+    PFalg_op_t *ret = alg_op_wire2 (aop_docnode, doc, cont);
+    int i;
+
+    /* set result schema */
+    ret->schema.count = doc_schm.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < doc_schm.count; i++)
+        ret->schema.items[i] = doc_schm.items[i];
+
+    ret->schema.items[ret->schema.count-1].name = "iter";
+    ret->schema.items[ret->schema.count-1].type = aat_nat;
+
+    return ret;
+}
+
+
+/** Constructor for comment operators.
+ *
+ * @a doc is the current document and @a cont is the content of
+ * the comment.
+ */
+PFalg_op_t * PFalg_comment (PFalg_op_t *doc, PFalg_op_t *cont)
+{
+    PFalg_op_t *ret = alg_op_wire2 (aop_comment, doc, cont);
+    int i;
+
+    /* set result schema */
+    ret->schema.count = doc_schm.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < doc_schm.count; i++)
+        ret->schema.items[i] = doc_schm.items[i];
+
+    ret->schema.items[ret->schema.count-1].name = "iter";
+    ret->schema.items[ret->schema.count-1].type = aat_nat;
+
+    return ret;
+}
+
+
+/** Constructor for processing instruction operators.
+ *
+ * @a doc is the current document and @a cont is the content of
+ * the processing instruction.
+ */
+PFalg_op_t * PFalg_processi (PFalg_op_t *doc, PFalg_op_t *cont)
+{
+    PFalg_op_t *ret = alg_op_wire2 (aop_processi, doc, cont);
     int i;
 
     /* set result schema */

@@ -1085,10 +1085,11 @@ find_subexp (PFalg_op_t *new)
 	 * separate instances of the element(s)
 	 */
         case aop_element:
-	    return new;
-
-	/* the same applies to text node constructors */
+        case aop_attribute:
         case aop_textnode:
+        case aop_docnode:
+        case aop_comment:
+        case aop_processi:
 	    return new;
 
         case aop_seqty1:
