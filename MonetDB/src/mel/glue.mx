@@ -1261,8 +1261,10 @@ ostream &install_fcntbl::gen_var_arg( ostream &o, const VarArg &d ){
 
 ostream &install::gen_load( ostream &o, const Load &d ){
 	char buf[1024+1];
-	int nr,i,len = strlen(d.Name());
+	int nr,i,len = strlen(d.Name())+1;
 	
+	if (len <= 1)
+		return o;
 	
 //	 o << "      TBL_Install_LoadMIL( mid, \"" << d.Name() << "\");\n";
 	 o << "      { char *s = alloca(" << (len+1) << ");\n";
