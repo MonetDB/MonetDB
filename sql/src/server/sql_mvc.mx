@@ -2639,7 +2639,7 @@ sql_schema *mvc_create_schema(mvc * m, char *name, char *auth)
 	BUNins(b, (ptr) & rid, (ptr) s->auth); BBPunfix(b->batCacheid);
 
 	sysschema->wtime = s->wtime = tr->wtime = tr->stime;
-	m->type = Q_CREATE;
+	m->type = Q_SCHEMA;
 	return s;
 }
 
@@ -2784,7 +2784,7 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, char *name, key_type kt, sql_key
 	bat_destroy(b);
 
 	syskey->wtime = tr->stime;
-	m->type = Q_CREATE;
+	m->type = Q_SCHEMA;
 	return nk;
 }
 
@@ -2830,7 +2830,7 @@ sql_key *mvc_create_kc( mvc *m, sql_key *k, sql_column *c /*, extra options such
 	BUNins(b, (ptr) & rid, (ptr) & nr); bat_destroy(b);
 
 	syskc->wtime = tr->stime;
-	m->type = Q_CREATE;
+	m->type = Q_SCHEMA;
 	return k;
 }
 
@@ -2950,7 +2950,7 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, table_type type)
 	}
 
 	t->wtime = s->wtime = tr->wtime = tr->stime;
-	m->type = Q_CREATE;
+	m->type = Q_SCHEMA;
 	return t;
 }
 
@@ -2985,7 +2985,7 @@ sql_table *mvc_create_view(mvc * m, sql_schema *s, char *name, char *sql)
 	BUNins(b, (ptr)&rid, t->query ); BBPunfix(b->batCacheid);
 
 	systable->wtime = t->wtime = s->wtime = tr->wtime = tr->stime;
-	m->type = Q_CREATE;
+	m->type = Q_SCHEMA;
 	return t;
 }
 
@@ -3134,7 +3134,7 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	BUNins(b, (ptr) & rid, (ptr) & col->colnr); BBPunfix(b->batCacheid);
 
 	syscolumn->wtime = tr->stime;
-	m->type = Q_CREATE;
+	m->type = Q_SCHEMA;
 	return col;
 }
 
@@ -3287,7 +3287,7 @@ sql_role *mvc_create_role( mvc *m, sql_schema *s, char *name, int grantor )
 	list_append(s->roles, role);
 
 	s->wtime = tr->wtime = tr->stime;
-	m->type = Q_CREATE;
+	m->type = Q_SCHEMA;
 	return role;
 }
 
