@@ -1122,7 +1122,7 @@ oid TBL_load_script(TBLinstall *inst, Client client, str module, str *initscript
 }
 
 int TBL_M_client_install(Client client, oid mid) {
-	char *nme, s[80], *usr = client->user;
+	char *nme, s[80];
 	BAT *fcn_mid = BATmirror(TBL_fcn_mid);
 	hash_t i;
 	int aid, j;
@@ -1294,7 +1294,6 @@ oid TBL_loadmod(Client client, str module, str parmod, int level, str *initstr) 
 	TBLinstall inst;
 	int loaded = 0;
 	int cinstalled = 0;
-	int used = 0;
 
 	/* handles */
 	oid mid = 0;
@@ -1325,7 +1324,6 @@ Lets do the things in the right order, see above!
 			mid = TBL_M_load(&inst, client, module); /* generates a mid! */
 		} else {
 			mid = TBL_load_script(&inst, client, module, initstr);	
-			used = 1; /* Script is now loaded, ie not need for M_initscript */
 		}
 		loaded = (mid != 0);
 	}
@@ -1338,9 +1336,7 @@ Lets do the things in the right order, see above!
 			TBL_Insert_Depend(pmid, module );
 		}
 		dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
-		if (cinstalled) { 
-			used = 1;
-		} else {
+		if (!cinstalled) { 
 			dlPRINT("TBL_loadmod: loaded but not installed! Installing...\n");
 			cinstalled = TBL_M_client_install(client, mid);
 			dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
@@ -1466,7 +1462,7 @@ int TBL_unloadmod(Client client, str module, int level) {
 	BAT *fcn_mid = BATmirror(TBL_fcn_mid);
 	BAT *b, *fcntbl = BATmirror(client->fcntbl); 
        	char s[80], *nme, *r;
-	int refcnt = 0, aid;
+	int refcnt = 0;
 	oid fid, mid; 
 	hash_t i;
 	int j, maccs=80, mtpes=80, naccs=0, ntpes=0;
@@ -2273,14 +2269,12 @@ void TBL_delproc(Client client, str nme, str mod, oid pid, int lock) {
 	  BBPreclaim(tb);
 
 	  BATloopFast(bb, p, q, xx) {
-	    BUN s;
 	    int cnt;
 	    pid = *(oid*) BUNhloc(bb, p);
-	    s = BUNfnd(cb, &pid);
-	    cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
+	    cnt = *(int*)BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
 
 	    if (cnt == 1){
-		YYSTREE *x = (YYSTREE*) BUNtloc(TBL_fcn_imp,BUNfnd(TBL_fcn_imp,&pid));
+		YYSTREE *x = (YYSTREE*) BUNtloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
 
 		if (x && *x) {
 	    		/* free disguised name */

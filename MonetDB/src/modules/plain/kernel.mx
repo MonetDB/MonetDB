@@ -364,14 +364,13 @@ int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
         while (lt && ret >= 0) {
 	        int i; 
                 for(i = 0; i < lt->cnt; i++)  {
-		    int ret1 = 0;
 		    ValRecord res1;
 		    str initstr = NULL;
         	    str mod;
 
                     if (!lt->yysons[i]) 
 			continue;
-		    ret1 = interpret(c->stk, lt->yysons[i], &res1);
+		    (void) interpret(c->stk, lt->yysons[i], &res1);
 		    if (ret < 0 || res1.vtype != TYPE_str) {
 			   GDKerror("module: illegal argument.\n");
 			   return GDK_FAIL;

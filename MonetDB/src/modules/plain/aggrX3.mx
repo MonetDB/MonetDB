@@ -1088,6 +1088,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	base = BUNindex(g, BUNfirst(g));
 	offset = (ssize_t) (base - g->hseqbase);
 	end = base + BATcount(g);
+	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
 	BATloopFast(b, p, q, xx) {
 		@6 *t = (@6*) BUNtloc(b,p);
@@ -1157,6 +1158,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	base = BUNindex(g, BUNfirst(g));
 	offset = (ssize_t) (base - g->hseqbase);
 	end = base + BATcount(g);
+	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
 	BATloopFast(b, p, q, xx) {
 		@6 *t = (@6*) BUNtloc(b,p);
@@ -1225,6 +1227,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	base = BUNindex(g, BUNfirst(g));
 	offset = (ssize_t) (base - g->hseqbase);
 	end = base + BATcount(g);
+	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
 	BATloopFast(b, p, q, xx) {
 		@6 *t = (@6*) BUNt@7(b,p);

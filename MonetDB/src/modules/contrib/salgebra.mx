@@ -373,6 +373,7 @@ clusterhashFix( clusterhash *ch ) {
   int refCnt = 0;
   if ( clusterhashIsNil( ch ) ) return 0;
   refCnt = salgebra_incRefCnt( ch );
+  (void) refCnt;		/* keep compiler happy */
 #ifdef DEBUG
 printf( "Fix ch for batId %d = %d\n", ABS(ch->b), refCnt );
 #endif
@@ -865,7 +866,6 @@ salgebra_CMDinfo( BAT** res, clusterhash* ch ) {
 
 int
 salgebra_CMDrename( clusterhash* ch, str name ) {    
-  BUN bun;
   BAT *ncrev = NULL;
   int batId = ABS(ch->b);
 
@@ -873,7 +873,7 @@ salgebra_CMDrename( clusterhash* ch, str name ) {
 
   MT_set_lock(salgebra_cacheLock, "rename");
   ncrev = BATmirror( salgebra_namecache );
-  if ( (bun = BUNfnd( ncrev, name )) ) {
+  if (BUNfnd(ncrev, name)) {
     GDKerror( "A clusterhash with name %s already exists.\n", name );
     MT_unset_lock(salgebra_cacheLock, "rename");
     return GDK_FAIL;

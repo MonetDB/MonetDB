@@ -160,15 +160,17 @@ will even be the case for long 64-bit integers.
 #include "enum.proto.h"
 #include "enum.h"
 
-#define ENUM_CHK(x,y)\
-	     BAT *b;\
-	     int xx;\
-	     for(xx=0; xx<MAX_ENUM; xx++)\
-		if (enum_tpe[xx] == x) break;\
-	     if ((xx>=MAX_ENUM) || ((b=BBPdescriptor(enum_map[xx])) == NULL)) {\
-	 	GDKerror("%s: illegal enum type.\n",y);\
-		return GDK_FAIL; \
-	     }
+#define ENUM_CHK(x,y)									\
+		BAT *b;									\
+		int xx;									\
+		for(xx=0; xx<MAX_ENUM; xx++)						\
+			if (enum_tpe[xx] == (x))					\
+				break;							\
+		if ((xx>=MAX_ENUM) || ((b=BBPdescriptor(enum_map[xx])) == NULL)) {	\
+			GDKerror("%s: illegal enum type.\n", (y));			\
+			return GDK_FAIL;						\
+		}									\
+		(void) b;	/* keep compilers happy */
 
 #define MAX_ENUM 80
 

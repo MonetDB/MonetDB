@@ -769,6 +769,10 @@ static int interpret_@1_array(
 	bulkerror_t bulkerror;
 	BUN dst;
 
+	/* keep compilers happy */
+	ah = 0; (void) ah;
+	hdff = 0; (void) hdff;
+
 	@:arrayinit(1)@
 	if (argc>=3) {
 		@:arrayinit(2)@
