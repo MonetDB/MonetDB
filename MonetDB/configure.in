@@ -301,6 +301,7 @@ src/gdk/Makefile
 src/monet/Makefile
 src/modules/Makefile 
 src/modules/plain/Makefile
+src/modules/mapi/Makefile
 src/tools/Makefile
 src/tools/monet-config.mx
 conf/Makefile
