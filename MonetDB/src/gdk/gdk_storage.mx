@@ -351,7 +351,7 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 		fclose(fp); fp = NULL;
 	        GDKfilepath(path,BATDIR,nme,ext);
 		buf = (char *)GDKmmap(path, mod, (off_t)0, chunk, (void*)0);	
-		if (buf == (char *) -1)  {
+		if (buf == (char *) -1L)  {
        	    	    GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
      		    buf = NULL;
 		}

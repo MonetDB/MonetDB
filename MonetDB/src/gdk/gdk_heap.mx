@@ -147,7 +147,7 @@ PROT_NONE, so we can do it.
 	        GDKfilepath(path,BATDIR,h->filename,NULL);
 		b = GDKmmap(path, MMAP_COPY, (off_t) (h->offset+h->size), totsize, 
 			    h->base+h->offset+h->size);
-		if ((b == (char*) -1)) {
+		if ((b == (char*) -1L)) {
 			GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n",
 					h->filename); goto error;
 		}
@@ -239,11 +239,11 @@ grab everything we can now.
 
 #else
 		b = (char *) GDKmmap(path, MMAP_COPY, (off_t) newoffset, dst->maxsize, NULL);	
-		if (b == (char*) -1) b = 0;
+		if (b == (char*) -1L) b = 0;
 #endif
 		dst->base = (char *) GDKmmap(path, MMAP_COPY, (off_t) newoffset, dst->size, b);	
 
-		if (dst->base == (char*) -1) {
+		if (dst->base == (char*) -1L) {
 			shiftback = 0;
 			GDKsyserror("HEAPsubcopy: mmap private on %s failed.\n",
 				   dst->filename);

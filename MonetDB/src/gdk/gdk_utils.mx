@@ -964,14 +964,14 @@ allocations affect only the logical VM resources.
 @c
 void *GDKmmap(char* path, int mode, off_t off, size_t len, void *fixed) {
         void *ret = MT_mmap(path, mode, off, len, fixed);
-        if (ret == (void*) -1) {
+        if (ret == (void*) -1L) {
                 GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
                 ret = MT_mmap(path, mode, off, len, fixed);
-                if (ret != (void*) -1) {
+                if (ret != (void*) -1L) {
                     THRprintf(GDKerr, "GDKmmap: recovery ok. Continuing..\n");
                 }
         }
-        if (ret != (void*) -1) {
+        if (ret != (void*) -1L) {
                 MT_alloc_register(ret, len, 'M');
                 GDKmeminc((size_t) 0, len);
         }

@@ -127,16 +127,16 @@ BAT, and vice versa.
                 (@2)->type = normal_int_@5(((@4))->type);
                  (@2)->lim = normal_sizet_@5(((@4))->lim);
                 (@2)->mask = normal_hasht_@5(((@4))->mask);
-                (@2)->hash = (hash_t *) ((@4)->hash?-1:0);
-                (@2)->link = (hash_t *) ((@4)->link?-1:0);
+                (@2)->hash = (hash_t *) ((@4)->hash?-1L:0);
+                (@2)->link = (hash_t *) ((@4)->link?-1L:0);
 
 @= IDX_ALL
-                (@2)->root = (Tnode *) ((@4)->root?-1:0);
-               (@2)->stack = (Tnode *) ((@4)->stack?-1:0);
-                (@2)->free = (Tnode *) ((@4)->free?-1:0);
-                (@2)->base = (BUN *) ((@4)->base?-1:0);
-               (@2)->first = (BUN *) ((@4)->first?-1:0);
-                (@2)->last = (BUN *) ((@4)->last?-1:0);
+                (@2)->root = (Tnode *) ((@4)->root?-1L:0);
+               (@2)->stack = (Tnode *) ((@4)->stack?-1L:0);
+                (@2)->free = (Tnode *) ((@4)->free?-1L:0);
+                (@2)->base = (BUN *) ((@4)->base?-1L:0);
+               (@2)->first = (BUN *) ((@4)->first?-1L:0);
+                (@2)->last = (BUN *) ((@4)->last?-1L:0);
 
 @= Heap_ALL
               (@2)->offset = normal_sizet_@5(((@4))->offset);
@@ -144,8 +144,8 @@ BAT, and vice versa.
                 (@2)->free = normal_sizet_@5(((@4))->free);
                 (@2)->size = normal_sizet_@5(((@4))->size);
              (@2)->storage = short_int_@5(((@4))->storage);
-                (@2)->base = (str) ((@4)->base?-1:0);
-            (@2)->filename = (str) ((@4)->filename?-1:0);
+                (@2)->base = (str) ((@4)->base?-1L:0);
+            (@2)->filename = (str) ((@4)->filename?-1L:0);
 
 @= BUNrec_ALL
         @:Heap_ALL(@1,&(@2)->buns,@3,&(@4)->buns,@5)@

@@ -277,14 +277,14 @@ char* MT_heapcur(void){
 
 void* MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed){
 	FILE *fp = fopen(path, (mode&MMAP_WRITABLE)?"rb+":"rb" );
-	void *ret = (void*) -1;
+	void *ret = (void*) -1L;
 	if (fp) {
 	    ret = mmap(fixed, len, 
 		((mode&MMAP_WRITABLE)?PROT_WRITE:0)|PROT_READ, 
 		((mode&MMAP_COPY)?MAP_PRIVATE:MAP_SHARED)|(fixed?MAP_FIXED:0),
 	        fileno(fp), off);
 	    fclose(fp);
-	    if (ret != (void*) -1 && (mode&MMAP_ADVISE)) {
+	    if (ret != (void*) -1L && (mode&MMAP_ADVISE)) {
 		(void)madvise(fixed+off, len, mode&MMAP_ADVISE);
 	    }
         }
@@ -396,7 +396,7 @@ void* MT_mmap(char *path, int mode, off_t off, size_t len, void* fixed) {
         if (h1 == INVALID_HANDLE_VALUE) {
 		GDKsyserror("MT_mmap: CreateFile('%s', %d, %d, &sa, %d, %d, NULL) failed\n",
 		                              path, mode0, mode1, OPEN_ALWAYS, mode2);
-                return (void*) -1;
+                return (void*) -1L;
         }
 
         h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((__int64)off+(__int64)len) >> 32) & 0xFFFFFFFFi64), (DWORD) ((off+len) & 0xFFFFFFFFi64), NULL);
@@ -404,7 +404,7 @@ void* MT_mmap(char *path, int mode, off_t off, size_t len, void* fixed) {
 		GDKsyserror("MT_mmap: CreateFileMapping(%x, &sa, %d, %d, %u, NULL) failed\n",
 		                        h1, mode3, (DWORD) ((((__int64)off+(__int64)len) >> 32) & 0xFFFFFFFFi64), (DWORD) ((off+len) & 0xFFFFFFFFi64));
                 CloseHandle(h1);
-                return (void*) -1;
+                return (void*) -1L;
         }
 	if (fixed) {
         	ret = MapViewOfFileEx(h2, mode4, off >> 32, (unsigned int) off, len, fixed);
@@ -414,7 +414,7 @@ void* MT_mmap(char *path, int mode, off_t off, size_t len, void* fixed) {
         if (ret == NULL) {
 		GDKsyserror("MT_mmap: MapViewOfFile%s(%x, %d, %d, %u, %d, %x) failed\n",
 		            h2, (fixed?"Ex":""), mode4, off >> 32, (unsigned int) off, len, fixed);
-		ret = (void*) -1;
+		ret = (void*) -1L;
         }
         CloseHandle(h1);
         CloseHandle(h2);
@@ -826,7 +826,7 @@ int *win_errno(void){
 
 void *MT_vmalloc(size_t size, size_t *maxsize) {
         int fd = open("/dev/zero", O_RDWR, 0666);
-        char *q, *r = (char*) -1;
+        char *q, *r = (char*) -1L;
 
         if (fd < 0) {
                 return NULL;
@@ -837,7 +837,7 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
                 r = (char*) mmap(NULL, *maxsize, PROT_NONE, 
 				MMAP_FLAGS|MAP_NORESERVE, MMAP_FD, 0);
         }
-        if (r == (char*) -1) {
+        if (r == (char*) -1L) {
                 *maxsize = size;
                 q = (char*) mmap(NULL, size, PROT_READ|PROT_WRITE, 
 				MMAP_FLAGS, MMAP_FD, 0);
@@ -846,7 +846,7 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 				MMAP_FLAGS|MAP_FIXED, MMAP_FD, 0);
         }
         close(fd);
-        return (void*) ((q == (char*) -1)?NULL:q);
+        return (void*) ((q == (char*) -1L)?NULL:q);
 }
 
 void MT_vmfree(void *p, size_t size) {
@@ -856,7 +856,7 @@ void MT_vmfree(void *p, size_t size) {
 
 void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize) {
         char *p=(char*)voidptr;
-        char *q = (char*) -1;
+        char *q = (char*) -1L;
 
         oldsize = MT_PAGESIZE(oldsize);
         newsize = MT_PAGESIZE(newsize);
@@ -877,7 +877,7 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
                         close(fd);
                 }
         }
-        if (q == (char*) -1) {
+        if (q == (char*) -1L) {
                 size_t oldmaxsize = *maxsize;
                 q = p; p = (char*) MT_vmalloc(newsize, maxsize);
                 if (p != NULL) {
@@ -1179,7 +1179,7 @@ static void MT_alloc_init(void) {
 #endif
 		close(fd);
 		if (q != p) mode |= 128;
-		if (q != (char*) -1) munmap(q, MT_VMUNITSIZE);
+		if (q != (char*) -1L) munmap(q, MT_VMUNITSIZE);
 #endif
                 MT_alloc_map[i] = mode;
         }
