@@ -1,0 +1,8 @@
+# Testing global constants defined for all users
+	b:= mal.bind(str,"version");
+	u:= mal.bind(str,"user");
+	a:= mal.bind(str,"gdk_dbname");
+	a:= mal.bind(str,"gdk_dbfarm");
+	a:= mal.bind(str,"gdk_dbdir");
+	a:= mal.bind(str,"gdk_distr");
+	v:= mal.bind(bat[void,str],"environment");
