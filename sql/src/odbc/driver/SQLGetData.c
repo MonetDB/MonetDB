@@ -32,10 +32,10 @@
  *
  **********************************************************************/
 
-#include <stdlib.h>	/* for strtoll() & strtoull() on SunOS; doesn't work yet */
-
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+
+#include <stdlib.h>	/* for strtoll() & strtoull() on SunOS; doesn't work yet */
 
 SQLRETURN SQLGetData(
 	SQLHSTMT	hStmt,

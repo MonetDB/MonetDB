@@ -78,9 +78,9 @@ extern int bm_lbid2mode(struct bm *bm, oid lbid);
 
 #endif /*_SQL_BM_H_*/
 @c
+#include "sql_mem.h"
 #include "sql_bm.h"
 #include "stream.h"
-#include "sql_mem.h"
 
 typedef struct bm {
 	/* Store oids to circumvent trouble with reference counting */

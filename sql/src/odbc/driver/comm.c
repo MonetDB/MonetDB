@@ -23,7 +23,9 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
+#include <mem.h>
 #include "comm.h"
+
 #include <stdlib.h>
 #include <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
@@ -50,8 +52,6 @@
 #include <string.h>
 #include <stream.h>
 
-#include <mem.h>
-#include "comm.h"
 #include "ODBCStmt.h"
 
 /* returns a socket descriptor (>= 0) or an error code (< 0) */

@@ -452,7 +452,7 @@ stmt *eliminate_semijoin(stmt *s)
 		}
 		if (match2) {
 			/* semijoin( f(x), select(x,..) )  =>  select( f(x), .. ) */
-			stmt *ns;
+			stmt *ns = NULL;
 			switch(s2->type){
 			case st_select:
 			case st_uselect:

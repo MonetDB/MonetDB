@@ -2,9 +2,6 @@
 #include <mem.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef _MSC_VER
-#include <sql_config.h>
-#endif
 
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>

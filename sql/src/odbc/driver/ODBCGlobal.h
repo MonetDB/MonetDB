@@ -48,8 +48,10 @@
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
 #define MONETDB_SERVER_NAME  "MonetDB"
 
-#include <config.h>
-#include <sql_config.h>
+/* MonetDB / SQL frontend include files */
+#include <mem.h>	/* for ??() */
+#include <query.h>	/* for ??() */
+#include "comm.h"	/* for ??() */
 
 /* standard ODBC driver include files */
 #include <sqltypes.h>	/* ODBC C typedefs */
@@ -61,11 +63,6 @@
 
 /* standard ODBC driver installer & configurator include files */
 #include <odbcinst.h>		/* ODBC installer definitions and prototypes */
-
-/* MonetDB / SQL frontend include files */
-#include "comm.h"	/* for ??() */
-#include <mem.h>	/* for ??() */
-#include <query.h>	/* for ??() */
 
 /* standard C include files */
 #include <string.h>	/* for strcpy() etc. */

@@ -9,7 +9,6 @@
  * -----------------------------------------------
  * Peter Harvey		- pharvey@codebydesign.com
  **************************************************/
-#include <sql_config.h>
 #include <mem.h>
 #include <drvcfg.h>
 #include <string.h>	/* for memset(), memcpy(), strncpy() */
