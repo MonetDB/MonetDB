@@ -53,6 +53,10 @@ command ==( l:bat[:any$1,:str], r:str) :bat[:any$1,:bit]
 address STRbatEqualCst
 comment "Equate a bat of strings against a singleton";
 
+command ==( l:bat[:any$1,:str], r:bat[:any$1,:str]) :bat[:any$1,:bit]
+address STRbatEqual
+comment "Equate a bat of strings against a singleton";
+
 command toLower( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatLower
 comment "Convert a string to lower case.";
@@ -69,13 +73,9 @@ comment "Strip whitespaces from start of a string.";
 command rtrim( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatRtrim
 comment "Strip whitespaces from end of a string.";
+
 @-
 not now
-command ==( l:bat[:any$1,:str], r:bat[:any$1,:str]) :bat[:any$1,:str]
-address STRbatEqual
-comment "Equate a bat of strings against a singleton";
-
-
 command string(b:bat[:void,:str],offset:int) :bat[:void,:str]
 address STRbatTail
 comment "Return the tail s[offset..n] of a string s[0..n].";
@@ -139,7 +139,7 @@ comment "Substitute first occurrence of 'src' by
 #include "ctype.h"
 #include <string.h>
 #include "mal_exception.h"
-#include "../atoms/str.h"
+#include "str.h"
 #include <regex.h>
 
 #ifdef HAVE_LANGINFO_H
@@ -159,7 +159,7 @@ str STRbat@1(int *ret, int *l)
 	@4 y;
 
     if( (b= BATdescriptor(*l)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
+        return throwMessage("batstr.@1", "Cannot access descriptor");
     }
 
     bn= BATnew(b->htype,TYPE_@4,BATcount(b));
@@ -206,7 +206,7 @@ str STRbatEqualCst(int *ret, int *l,str *cst)
 	bit y;
 
     if( (b= BATdescriptor(*l)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
+        return throwMessage("batstr.@1", "Cannot access descriptor");
     }
 
     bn= BATnew(b->htype,TYPE_bit,BATcount(b));
@@ -231,6 +231,65 @@ bunins_failed:
     BBPunfix(*ret);
     return MAL_SUCCEED;
 }
+@-
+A general assumption in all cases is the bats are synchronized on their
+head column. This is not checked and may be mis-used to deploy the
+implementation for shifted window arithmetic as well.
+@= chkSize
+	if( BATcount(@1) != BATcount(@2) )
+	return throwMessage("batcalc.@3", "requires bats of identical size");
+@c
+str STRbatEqual(int *ret, int *l, int *r)
+{   BAT *bn, *left, *right;
+	BUN o,p,q;
+	int xx,yy;
+
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batstr.@1", "Cannot access descriptor");
+    }
+    if( (right= BATdescriptor(*r)) == NULL ){
+	BBPunfix(left->batCacheid);
+        return throwMessage("batstr.@1", "Cannot access descriptor");
+    }
+	@:chkSize(left,right,CMDcompare@1)@
+
+    bn= BATnew(left->htype,TYPE_bit,BATcount(left));
+	if( left->htype== TYPE_void)
+		BATseqbase(bn, left->hseqbase);
+    if( bn == NULL){
+        BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+        return throwMessage("batstr.==", "no space available ");
+    }
+    o = BUNfirst(left);
+    p = BUNfirst(right);
+    q = BUNlast(right);
+    xx = BUNsize(left);
+    yy = BUNsize(right);
+    while(p<q) {
+	bit y = TRUE;
+        ptr h = BUNhead(left,o);
+        ptr tl = BUNtail(left,o);
+        ptr tr = BUNtail(right,p);
+	if(tl == 0 || tr == 0 || strcmp(tl,tr) != 0)
+		y = FALSE;
+        bunfastins(bn, h, &y);
+	p += xx;
+	r += yy;
+    }
+    BBPunfix(left->batCacheid);
+    BBPunfix(right->batCacheid);
+    BBPincref(*ret = bn->batCacheid,TRUE);
+    BBPunfix(*ret);
+    return MAL_SUCCEED;
+
+bunins_failed:
+
+    BBPunfix(left->batCacheid);
+    BBPunfix(right->batCacheid);
+    BBPunfix(*ret);
+    return throwMessage("batstr.==", "bunins failed");
+}
 @c
 str
 STRbattostr(int *ret, int *bid){
@@ -250,7 +309,7 @@ str STRbatmatchCst(int  *ret, int *bid, str *pat){
 					"Compilation of regular expression failed");
 
     if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.match", "Cannot access descriptor");
+        return throwMessage("batstr.match", "Cannot access descriptor");
     }
 	bn= BATnew(BAThtype(b), TYPE_bit, BATcount(b));
 

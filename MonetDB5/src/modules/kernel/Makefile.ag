@@ -1,6 +1,7 @@
 
-INCLUDES = $(MONETDB_INCS) \
-	-I../../../include/atoms \
+INCLUDES = \
+	-I../atoms \
+	$(MONETDB_INCS) \
 	-I../../mal $(HWCOUNTERS_INCS) $(PCL_FLAGS)
 
 MTSAFE
