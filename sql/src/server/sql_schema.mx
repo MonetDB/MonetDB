@@ -626,32 +626,24 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	} else if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
 		return sql_error(sql, 02, "Current user %s doesn't have CREATE VIEW AS BATS privileges", sql->user);
 	} else {
-		/* todo move to bat store 
-		   sql_table *t = mvc_create_view(sql, ss, name, NULL, 0, 1);
-		   dnode *n = column_spec->h;
+		char *err = NULL;
+		sql_table *t = mvc_create_view(sql, ss, name, NULL, 0, 1);
+		dnode *n = column_spec->h;
+		int nr = 0, i = 0;
+		char **names = NULL;
 
-		   for (; n; n = n->next ) {
-		   char *cname = n->data.sval;
-		   bat bid = BBPindex(cname);
-		   BAT *b;
-		   sql_subtype *tp;
+		for (; n; n = n->next ) 
+			nr++;
+		names = NEW_ARRAY(char*,nr);
+		for (n = column_spec->h; n; n = n->next, i++ )
+			names[i] = n->data.sval;
 
-		   if (!bid) 
-		   return sql_error(sql, 02, "Create view as bats,"
-		   " bat %s does not exist", cname);
-		   b = BATdescriptor(bid);
-		   if (b->htype != TYPE_void || b->hseqbase != 0) {
-		   bat_destroy(b);
-		   return sql_error(sql, 02, "Create view as bats,"
-		   " bat %s does not have a void head or head seqbase 0", 
-		   cname);
-		   }
-		   tp = sql_bind_localtype(ATOMname(b->ttype));
-		   tp = sql_dup_subtype(tp);
-		   mvc_create_column_bat(sql, t, cname, tp, b, NULL );  
-		   bat_destroy(b);
-		   }
-		 */
+		if ((err = sql_view_on_bats(sql->trans, t, names, nr)) != NULL){
+			sql_error(sql, 02, err);
+			GDKfree(err);
+			sql_trans_drop_table(sql->trans, t->s, t->base.name, 0);
+			return NULL;
+		}
 		return stmt_none();
 	}
 	return NULL;

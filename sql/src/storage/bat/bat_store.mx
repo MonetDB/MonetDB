@@ -2899,6 +2899,83 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 	return t;
 }
 
+static
+sql_column *
+create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT *bb, BAT *u)
+{
+	char bname[BUFSIZ];
+	sql_column *col = NEW(sql_column);
+	sql_schema *syss = find_schema(tr, "sys");
+	sql_table *syscolumn = find_table(syss, t->persists ? "pcolumns" : "tcolumns");
+
+	base_init(&col->base, OIDnew(1), TR_NEW, name);
+	col->type = tpe;
+	col->def = NULL;
+	col->null = 1;
+	col->colnr = cs_size(&t->columns);
+	col->t = t;
+	col->bat.bid = 0;
+	col->bat.ibid = 0;
+	col->bat.ubid = 0;
+
+	cs_add(&t->columns, col, TR_NEW);
+
+	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+
+	if (bb) {
+		snprintf(bname, BUFSIZ, "%s_%s", col->t->base.name, col->base.name);
+		if (t->persists && !t->clear)
+			col->bat.bid = bm_add_bat(tr->bm, bb->batCacheid, bname, 0);
+		else
+			col->bat.bid = temp_create(bb);
+	}
+
+	if (u) {
+		snprintf(bname, BUFSIZ, "U_%s_%s", col->t->base.name, col->base.name);
+		if (t->persists && !t->clear)
+			col->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0);
+		else
+			col->bat.ubid = temp_create(u);
+	}
+
+	table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type->type->sqlname, &col->type->digits, &col->type->scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr);
+
+	syscolumn->base.wtime = syscolumn->s->base.wtime = tr->stime;
+	return col;
+}
+
+char *
+sql_view_on_bats(sql_trans *tr, sql_table *t, char **names, int nr)
+{
+	int i;
+	char err[BUFSIZ];
+
+	for ( i = 0; i<nr; i++ ) {
+		bat bid = BBPindex(names[i]);
+		BAT *b;
+		sql_subtype *tp;
+
+		if (!bid) {
+			snprintf(err, BUFSIZ, "Create view as bats,"
+		   		" bat %s does not exist", names[i]);
+			return _strdup(err);
+		}
+		b = BATdescriptor(bid);
+		if (b->htype != TYPE_void || b->hseqbase != 0) {
+		   	bat_destroy(b);
+			snprintf(err, BUFSIZ, "Create view as bats,"
+		   	" bat %s does not have a void head or head seqbase 0", 
+		   	names[i]);
+			return _strdup(err);
+		}
+		tp = sql_bind_localtype(ATOMname(b->ttype));
+		tp = sql_dup_subtype(tp);
+		create_column_bat(tr, t, names[i], tp, b, NULL );  
+		bat_destroy(b);
+	}
+	return NULL;
+}
+
 void
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int cascade)
 {
@@ -3039,51 +3116,6 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 		}
 	}
 	return sz;
-}
-
-static
-sql_column *
-create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT *bb, BAT *u)
-{
-	char bname[BUFSIZ];
-	sql_column *col = NEW(sql_column);
-	sql_schema *syss = find_schema(tr, "sys");
-	sql_table *syscolumn = find_table(syss, t->persists ? "pcolumns" : "tcolumns");
-
-	base_init(&col->base, OIDnew(1), TR_NEW, name);
-	col->type = tpe;
-	col->def = NULL;
-	col->null = 1;
-	col->colnr = cs_size(&t->columns);
-	col->t = t;
-	col->bat.bid = 0;
-	col->bat.ibid = 0;
-	col->bat.ubid = 0;
-
-	cs_add(&t->columns, col, TR_NEW);
-
-	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-
-	if (bb) {
-		snprintf(bname, BUFSIZ, "%s_%s", col->t->base.name, col->base.name);
-		if (t->persists && !t->clear)
-			col->bat.bid = bm_add_bat(tr->bm, bb->batCacheid, bname, 0);
-		else
-			col->bat.bid = temp_create(bb);
-	}
-
-	if (u) {
-		snprintf(bname, BUFSIZ, "U_%s_%s", col->t->base.name, col->base.name);
-		if (t->persists && !t->clear)
-			col->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0);
-		else
-			col->bat.ubid = temp_create(u);
-	}
-
-	table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type->type->sqlname, &col->type->digits, &col->type->scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr);
-
-	syscolumn->base.wtime = syscolumn->s->base.wtime = tr->stime;
-	return col;
 }
 
 sql_column *

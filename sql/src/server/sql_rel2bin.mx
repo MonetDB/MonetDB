@@ -932,7 +932,7 @@ rel2bin(mvc *c, stmt *s)
 	}
 
 	case st_bat:
-		if (s->flag == RDONLY) {
+		if (s->flag == RDONLY && s->op1.cval->t->table) {
 			return stmt_diff(stmt_dup(s), stmt_reverse(stmt_tbat(s->op1.cval->t, RDONLY)));
 		}
 		/* fall through */

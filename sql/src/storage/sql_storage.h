@@ -43,6 +43,7 @@ extern void sql_trans_drop_schema(sql_trans *tr, char *sname);
 
 extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, bit persists, bit clear, int sz);
 extern sql_table *sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, bit persists);
+extern char *sql_view_on_bats(sql_trans *tr, sql_table *t, char **batnames, int cnt);
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int cascade);
 extern size_t sql_trans_clear_table(sql_trans *tr, sql_table *t);
 
