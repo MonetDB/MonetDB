@@ -433,7 +433,6 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 		statement *s = NULL;
 		if (!l->h->next->next->data.sym){
 		    	table *t = ((var*)scp->vars->h->data.sval)->t;
-			/* TODO if subset etc */
 		    	s = statement_column( t->columns->h->data.cval);
 		} else {
 		    	s = scalar_exp( sql, scp, l->h->next->next->data.sym, 
@@ -447,11 +446,6 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 				  	(char*)column_type(s) );
 		if (a){
 			if (group){
-			  	column *c = basecolumn(s);
-			  	statement *foundsubset = 
-					find_subset(subset, c->table);
-				s = statement_join(foundsubset, s,
-						cmp_equal);
 			  return statement_aggr(s, a, group);
 			} else {
 			  return statement_aggr(s, a, NULL);
