@@ -232,7 +232,7 @@ void MT_init() {
                 _MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
         {
-#ifdef HAVE_RLIMIT
+#ifdef HAVE_GETRLIMIT
 #ifdef HAVE_SYS_RESOURCE_H
                 #include <sys/resource.h>
 #endif
