@@ -129,6 +129,40 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(void *)
 
 
+dnl Seems like the compiler on SunOS 5.8 cannot cope with the
+dnl __attribute__ specifications that can give compilers additional
+dnl hints about a function (style of variable argument list, functions
+dnl that never return, etc.)
+AC_MSG_CHECKING([if your compiler understands `__attribute__'])
+
+AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+#include <stdlib.h>
+
+void foo (void) __attribut__ ((noreturn));
+
+void foo (void) { exit (0); }
+
+]],
+[[ foo (); ]]
+),
+[AC_DEFINE([HAVE_FUNCTION_ATTRIBUTES], 1,
+  [Does your compiler support function attributes (__attribute__)?])
+AC_MSG_RESULT(yes)],
+AC_MSG_RESULT(no))
+
+AH_VERBATIM([__attribute__],
+[ /* If the compiler does not support function attributes via __attribute__,
+     we just define __attribute__(a) to nothing. */
+#if HAVE_FUNCTION_ATTRIBUTES != 1
+#define __attribute__(a)
+#endif
+])
+
+dnl [AC_DEFINE([ __attribute__(a) ],,
+dnl            [Compiler does not understand __attribute__.])
+
+
+
 dnl The user may enter a location of the libxml2 library on the command line
 dnl (with `--with-libxml2=DIR) or disable the libxml2 support.
 dnl
