@@ -1919,9 +1919,11 @@ literal:
  |  SESSION_USER     
 		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0);
 		   $$ = _newAtomNode( atom_string(t, $1)); }
- |  intval   
-		{ sql_subtype *t = sql_bind_subtype("MEDIUMINT", 0, 0 );
-		  $$ = _newAtomNode( atom_int(t, $1)); }
+
+ |  sqlINT   	{ int digits = strlen($1);
+		  long value = strtol($1,&$1,10); 
+		  sql_subtype *t = sql_bind_subtype("MEDIUMINT", digits, 0 );
+		  $$ = _newAtomNode( atom_int(t, value)); }
  |  INTNUM   
 		{ char *s = strip_extra_zeros($1);
 		  char *dot = strchr(s, '.');

@@ -646,21 +646,21 @@ void sqltypeinit()
 	STR = *t++ = sql_create_type("STRING", 0, 0, 0, 	"str");
 
 	/* INT(n) n <= 2 -> TINYINT
-		  n <= 5 -> SMALLINT
+		  n <= 4 -> SMALLINT
 		  n <= 9 -> MEDIUMINT
 		  n <= 19 -> BIGINT
 	*/
 
 	numerical = t;
 	*t++ = sql_create_type("TINYINT", 2, 0, 2, 	"sht"); /* sht as sum(uchr) isn't implemented */
-	*t++ = sql_create_type("SMALLINT", 5, 0, 2,	"sht");
+	*t++ = sql_create_type("SMALLINT", 4, 0, 2,	"sht");
 	INT = *t++ = sql_create_type("MEDIUMINT", 9, 0, 2,	"int");
 	*t++ = sql_create_type("INTEGER", 9, 0, 2,	"int");
 	*t++ = sql_create_type("NUMBER",  9, 0, 2,	"int");
 	*t++ = sql_create_type("BIGINT", 19, 0, 2,	"lng");
 
 	/*sql_type("INT", 2, 0, 2, 		"uchr"); */
-	*t++ = sql_create_type("INT", 5, 0, 2,		"sht");
+	*t++ = sql_create_type("INT", 4, 0, 2,		"sht");
 	*t++ = sql_create_type("INT", 9, 0, 2,		"int");
 	*t++ = sql_create_type("INT", 19, 0, 2,		"lng");
 

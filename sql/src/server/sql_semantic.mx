@@ -579,9 +579,16 @@ static stmt *check_types(context * sql, sql_subtype * ct, stmt * s )
 		}
 		if (!t) {	/* try to convert if needed */
 			sql_subfunc *c = sql_bind_func_result("convert",st,NULL,ct);
-			if (c)
+			if (c){ 
+				if (ct->digits > 0){
+					if (ct->digits < st->digits){
+						sql_subfunc_destroy(c);
+						return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
+					}
+				}
 				return fix_scale(sql, ct, stmt_unop(s, c), 1,
 					(st->type->scale == SCALE_FIX));
+			}
 		}
 		if (!t || subtype_cmp(t, ct) != 0) {
 			return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
