@@ -7,10 +7,7 @@
 #ifndef _searchpath_H
 #define _searchpath_H
 
-/* name of the environment variable */
-#define MONET_MSP	"MONET_MOD_PATH"
-
-#include <gdk.h>
+#include <monet_utils.h>
 #include "monet.h"
 
 #ifndef SO_EXT
