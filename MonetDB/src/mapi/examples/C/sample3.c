@@ -79,7 +79,8 @@ int main(int argc, char **argv)
 
 	/* Interpret the cache as a two-dimensional array */
 	for (i = 0; i < rows; i++) {
-		if (mapi_seek_row(hdl, i, MAPI_SEEK_SET))
+		if (mapi_seek_row(hdl, i, MAPI_SEEK_SET) ||
+		    mapi_fetch_row(hdl) == 0)
 			break;
 		for (j = 0; j < mapi_get_field_count(hdl); j++) {
 			printf("%s=%s ", mapi_get_name(hdl, j), mapi_fetch_field(hdl, j));
