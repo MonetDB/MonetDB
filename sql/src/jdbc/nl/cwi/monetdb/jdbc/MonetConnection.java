@@ -813,7 +813,6 @@ public class MonetConnection extends Thread implements Connection {
 	/** Whether this CacheThread is still running, executing or waiting */
 	private int state = WAIT;
 
-
 	public void run() {
 		while(state != DEAD) {
 			Object cur;
@@ -975,23 +974,29 @@ public class MonetConnection extends Thread implements Connection {
 				String tmpLine;
 				Header hdr = null;
 				RawResults rawr = null;
-				int lastState = MonetSocket.EMPTY;
+				int lastState = MonetSocket.UNKNOWN;
 				do {
 					tmpLine = monet.readLine();
 					if (monet.getLineType() == MonetSocket.ERROR) {
 						// store the error message in the Header object
 						hdrl.addError(tmpLine.substring(1));
-					} else if (monet.getLineType() == MonetSocket.HEADER) {
-						if (hdr == null) {
-							hdr = new Header(
-								this,
-								hdrl.cachesize,
-								hdrl.maxrows,
-								hdrl.rstype,
-								hdrl.rsconcur
-							);
-							rawr = null;
+					} else if (monet.getLineType() == MonetSocket.SOHEADER) {
+						// close previous if set
+						if (hdr != null) {
+							hdr.complete();
+							hdrl.addHeader(hdr);
 						}
+
+						// create new header
+						hdr = new Header(
+							this,
+							hdrl.cachesize,
+							hdrl.maxrows,
+							hdrl.rstype,
+							hdrl.rsconcur
+						);
+						rawr = null;
+					} else if (monet.getLineType() == MonetSocket.HEADER) {
 						hdr.addHeader(tmpLine);
 					} else if (monet.getLineType() == MonetSocket.RESULT) {
 						// complete the header info and add to list
@@ -1004,9 +1009,9 @@ public class MonetConnection extends Thread implements Connection {
 							hdr = null;
 						}
 						rawr.addRow(tmpLine);
-					} else if (monet.getLineType() == MonetSocket.EMPTY) {
-						// empty, will mean Monet stopped somehow (crash?)
-						hdrl.addError("Unknown linetype: " + tmpLine);
+					} else if (monet.getLineType() == MonetSocket.UNKNOWN) {
+						// unknown, will mean a protocol violation
+						hdrl.addError("Protocol violation: unknown linetype for line: " + tmpLine);
 					}
 				} while ((lastState = monet.getLineType()) != MonetSocket.PROMPT1);
 				// catch resultless headers
@@ -1061,12 +1066,12 @@ public class MonetConnection extends Thread implements Connection {
 						rawr.addError(tmpLine.substring(1));
 					} else if (monet.getLineType() == MonetSocket.HEADER) {
 						rawr.addError("Unexpected header found");
-					} else if (monet.getLineType() == MonetSocket.EMPTY) {
-						rawr.addError("Unexpected end of stream, Mserver still alive?");
+					} else if (monet.getLineType() == MonetSocket.UNKNOWN) {
+						rawr.addError("Protocol violation, unknown line type for line: " + tmpLine);
 					}
 				} while (monet.getLineType() != MonetSocket.PROMPT1);
 			} catch (IOException e) {
-				rawr.addError(e.toString());
+				rawr.addError("Unexpected end of stream, Mserver still alive? " + e.toString());
 			}
 		}
 	}
@@ -1226,6 +1231,8 @@ public class MonetConnection extends Thread implements Connection {
 		private int tuplecount;
 		/** The table ID of this result */
 		private int id;
+		/** The query type of this `result' */
+		private int queryType;
 		/** A Map of result blocks (chunks of size fetchSize/cacheSize) */
 		private Map resultBlocks;
 
@@ -1264,7 +1271,7 @@ public class MonetConnection extends Thread implements Connection {
 		 * @param rsc the ResultSet concurrency to use
 		 */
 		Header(MonetConnection parent, int cs, int mr, int rst, int rsc) {
-			isSet = new boolean[4];
+			isSet = new boolean[5];
 			resultBlocks = new HashMap();
 			cachethread = parent;
 			cacheSize = cs;
@@ -1282,7 +1289,7 @@ public class MonetConnection extends Thread implements Connection {
 		 * @throws SQLException if the header cannot be parsed or is unknown
 		 */
 		void addHeader(String tmpLine) throws SQLException {
-			int pos = tmpLine.lastIndexOf("#");
+			int pos = tmpLine.indexOf("#", 1);
 			if (pos == -1) {
 				throw new SQLException("Illegal header: " + tmpLine);
 			}
@@ -1304,6 +1311,8 @@ public class MonetConnection extends Thread implements Connection {
 				setTupleCount(values[0]);
 			} else if (name.equals("id")) {
 				setID(values[0]);
+			} else if (name.equals("querytype")) {
+				setQueryType(values[0]);
 			} else {
 				throw new SQLException("Unknown header: " + name);
 			}
@@ -1364,6 +1373,23 @@ public class MonetConnection extends Thread implements Connection {
 		}
 
 		/**
+		 * Sets the querytype header and updates the bitmask
+		 *
+		 * @param id a string representing the query type of
+		 *           this `result'
+		 * @throws SQLException if the given string is not a parseable
+		 *                      number
+		 */
+		void setQueryType(String queryType) throws SQLException {
+			try {
+				this.queryType = Integer.parseInt(queryType);
+			} catch (NumberFormatException e) {
+				throw new SQLException("QueryType " + queryType + " is not a number!");
+			}
+			isSet[4] = true;
+		}
+
+		/**
 		 * Adds the given RawResults to this Header at the given block
 		 * position.
 		 *
@@ -1389,7 +1415,8 @@ public class MonetConnection extends Thread implements Connection {
 				if (!isSet[1]) error += "type header missing\n";
 				if (!isSet[2]) error += "tuplecount header missing\n";
 				if (!isSet[3]) error += "id header missing\n";
-				if (!(isSet[0] && isSet[1] && isSet[2] && isSet[3]))
+				if (!isSet[4]) error += "querytype header missing\n";
+				if (!(isSet[0] && isSet[1] && isSet[2] && isSet[3] && isSet[4]))
 					throw new SQLException(error);
 
 				if (maxRows != 0)
@@ -1440,6 +1467,15 @@ public class MonetConnection extends Thread implements Connection {
 		 */
 		int getID() {
 			return(id);
+		}
+
+		/**
+		 * Returns the query type for this `result'
+		 *
+		 * @return the query type for this `result'
+		 */
+		int getQueryType() {
+			return(queryType);
 		}
 
 		/**

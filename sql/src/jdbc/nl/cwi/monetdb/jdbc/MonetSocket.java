@@ -38,8 +38,9 @@ class MonetSocket {
 	/** The type of the last line read */
 	protected int lineType;
 
-	/** "there is currently no line" is represented by EMPTY */
-	final static int EMPTY = 0;
+	/** "there is currently no line", or the the type is unknown is
+	    represented by UNKNOWN */
+	final static int UNKNOWN = 0;
 	/** a line starting with ! indicates ERROR */
 	final static int ERROR = 1;
 	/** a line starting with # indicates HEADER */
@@ -50,6 +51,19 @@ class MonetSocket {
 	final static int PROMPT1 = 4;
 	/** a line which matches the pattern of prompt2 is a PROMPT2 */
 	final static int PROMPT2 = 5;
+	/** a line starting with #- indicates the start of a header block */
+	final static int SOHEADER = 6;
+
+
+
+	// Monet prompts
+	/** MAPI PROMPT1 */
+	final static String prompt1 = "" + (char)1 + (char)1;
+	/** MAPI PROMPT2 */
+	final static String prompt2 = "" + (char)1 + (char)2;
+	/** MAPI start of header */
+	final static String START_OF_HEADER = "#-";
+
 
 	MonetSocket(String host, int port) throws IOException {
 		con = new Socket(host, port);
@@ -88,7 +102,7 @@ class MonetSocket {
 		toMonet.write(data);
 		// reset the lineType variable, since we've sent data now and the last
 		// line isn't valid anymore
-		lineType = EMPTY;
+		lineType = UNKNOWN;
 
 		// it's a bit nasty if an exception is thrown from the log,
 		// but ignoring it can be nasty as well, so it is decided to
@@ -131,34 +145,18 @@ class MonetSocket {
 	 * @throws IOException if reading from the stream fails
 	 */
 	public synchronized String readLine() throws IOException {
-		String line;
-		do {
-			line = fromMonet.readLine();
+		String line = fromMonet.readLine();
 
-			// it's a bit nasty if an exception is thrown from the log,
-			// but ignoring it can be nasty as well, so it is decided to
-			// let it go so there is feedback about something going wrong
-			if (debug) {
-				log.write(">> " + line + "\n");
-				log.flush();
-			}
-		} while (line != null && line.length() == 0);
+		// it's a bit nasty if an exception is thrown from the log,
+		// but ignoring it can be nasty as well, so it is decided to
+		// let it go so there is feedback about something going wrong
+		if (debug) {
+			log.write(">> " + line + "\n");
+			log.flush();
+		}
 
 		if (line != null) {
-			switch (line.charAt(0)) {
-				case '!': lineType = ERROR; break;
-				case '#': lineType = HEADER; break;
-				case '[': lineType = RESULT; break;
-				default:
-					if (MonetDriver.prompt1.equals(line)) {
-						lineType = PROMPT1;	// prompt1 found
-					} else if (MonetDriver.prompt2.equals(line)) {
-						lineType = PROMPT2;	// prompt2 found
-					} else {
-						lineType = EMPTY;	// unknown :-(
-					}
-				break;
-			}
+			lineType = getLineType(line);
 		} else {
 			throw new IOException("End of stream reached");
 		}
@@ -167,10 +165,41 @@ class MonetSocket {
 	}
 
 	/**
+	 * Returns the type of the string given.
+	 * This method assumes a non-null string
+	 *
+	 * @param line the string to examine
+	 * @return the type of the given string
+	 */
+	int getLineType(String line) {
+		// return unknown if the line is empty, will force error on higher level
+		if (line.length() == 0) return(UNKNOWN);
+
+		switch (line.charAt(0)) {
+			case '!': return(ERROR);
+			case '#':
+				if (START_OF_HEADER.equals(line)) {
+					return(SOHEADER);
+				} else {
+					return(HEADER);
+				}
+			case '[': return(RESULT);
+			default:
+				if (prompt1.equals(line)) {
+					return(PROMPT1);	// prompt1 found
+				} else if (prompt2.equals(line)) {
+					return(PROMPT2);	// prompt2 found
+				} else {
+					return(UNKNOWN);	// unknown :-(
+				}
+		}
+	}
+
+	/**
 	 * getLineType returns the type of the last line read
 	 *
 	 * @return an integer representing the kind of line this is, one of the
-	 *         following constants: EMPTY, HEADER, ERROR, PROMPT, RESULT
+	 *         following constants: UNKNOWN, HEADER, ERROR, PROMPT, RESULT
 	 */
 	public int getLineType() {
 		return(lineType);

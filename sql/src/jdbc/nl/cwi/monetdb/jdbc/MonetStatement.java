@@ -55,6 +55,19 @@ public class MonetStatement implements Statement {
 	/** The concurrency of the ResultSet to produce */
 	private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
 
+	/** Query types (copied from sql_query.mx) */
+	final static int Q_END = 0;
+	final static int Q_PARSE = 1;
+	final static int Q_RESULT = 2;
+	final static int Q_TABLE = 3;
+	final static int Q_UPDATE = 4;
+	final static int Q_DATA = 5;
+	final static int Q_SCHEMA = 6;
+	final static int Q_TRANS = 7;
+	final static int Q_DEBUG = 8;
+	final static int Q_DEBUGP = 9;
+
+
 	/**
 	 * MonetStatement constructor which checks the arguments for validity, tries
 	 * to set up a socket to Monet and attempts to login.
@@ -328,12 +341,10 @@ public class MonetStatement implements Statement {
 		// we default to keep current result, which requires no action
 		header = lastHeaderList.getNextHeader();
 
-		if (header == null) {
-			// no resultset
-			return(false);
-		} else {
-			return(true);
-		}
+		if (header != null && header.getQueryType() == Q_TABLE) return(true);
+
+		// no resultset, or update header
+		return(false);
 	}
 
 	public int getQueryTimeout() {return(-1);}
@@ -347,7 +358,7 @@ public class MonetStatement implements Statement {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ResultSet getResultSet() throws SQLException{
-		if (header == null) return(null);
+		if (header == null || header.getQueryType() != Q_TABLE) return(null);
 
 		try {
 			return(new MonetResultSet(
@@ -390,11 +401,22 @@ public class MonetStatement implements Statement {
 	 *
 	 * @return the current result as an update count; -1 if the current result
 	 *         is a ResultSet object or there are no more results
+	 * @throws SQLException if a database access error occurs
 	 */
-	public int getUpdateCount() {
-		// there is currently no way to get the update count, so this is fixed
-		// on -1 for now :(
-		return(-1);
+	public int getUpdateCount() throws SQLException {
+		if (header == null || header.getQueryType() != Q_UPDATE) return(-1);
+
+		String tmpLine = header.getLine(0);
+		int ret = -1;
+		try {
+			ret = Integer.parseInt(tmpLine.substring(1, tmpLine.length() - 1).trim());
+		} catch (NumberFormatException e) {
+			throw new SQLException("Server sent unparsable update count: " + tmpLine);
+		}
+		// close the header, we got all it's information by now
+		header.close();
+
+		return(ret);
 	}
 
 	/**

@@ -90,7 +90,7 @@ class MonetSocketBlockMode extends MonetSocket {
 
 		// reset the lineType variable, since we've sent data now and the last
 		// line isn't valid anymore
-		lineType = EMPTY;
+		lineType = UNKNOWN;
 
 		// it's a bit nasty if an exception is thrown from the log,
 		// but ignoring it can be nasty as well, so it is decided to
@@ -219,25 +219,8 @@ class MonetSocketBlockMode extends MonetSocket {
 		// remove from the buffer, including newline
 		readBuffer.delete(0, nl + 1);
 
-		if (line.length() != 0) {
-			switch (line.charAt(0)) {
-				case '!': lineType = ERROR; break;
-				case '#': lineType = HEADER; break;
-				case '[': lineType = RESULT; break;
-				default:
-					if (MonetDriver.prompt1.equals(line)) {
-						lineType = PROMPT1;	// prompt1 found
-					} else if (MonetDriver.prompt2.equals(line)) {
-						lineType = PROMPT2;	// prompt2 found
-					} else {
-						lineType = EMPTY;	// unknown :-(
-					}
-				break;
-			}
-		} else {
-			// I really think empty lines should not be sent by the server
-			throw new IOException("MonetBadTasteException: it sent us an empty line");
-		}
+		lineType = getLineType(line);
+
 		return(line);
 	}
 

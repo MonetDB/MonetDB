@@ -45,12 +45,6 @@ public class MonetDriver implements Driver {
 	/** Do we connect with blockmode by default or not */
 	private static final String BLOCKMODE = "@JDBC_DEF_BLOCKMODE@";
 
-	// Monet prompts
-	/** MAPI PROMPT1 */
-	final static String prompt1 = "" + (char)1 + (char)1;
-	/** MAPI PROMPT2 */
-	final static String prompt2 = "" + (char)1 + (char)2;
-
 
 	// initialize this class: register it at the DriverManager
 	// Chapter 9.2 from Sun JDBC 3.0 specification
