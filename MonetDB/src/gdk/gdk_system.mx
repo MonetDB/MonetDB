@@ -237,7 +237,7 @@ gdk_export size_t _MT_pagesize;
 # include <sys/resource.h>
 #endif
 
-#ifdef _AIX
+#if defined(_AIX) || defined(__APPLE_CC__)
 typedef struct {
 	int cnt;
 	pthread_mutex_t mutex;
@@ -433,7 +433,7 @@ void MT_dump_lock (MT_Lock l, FILE *fp, char* name) {
 	fprintf(fp, "%s: MT_dump_lock() not implemented.\n", name);
 }
 
-#ifdef _AIX
+#if defined(_AIX) || defined(__APPLE_CC__)
 static void 
 pthread_sema_init( pthread_sema_t *s, int flag, int nresources ) 
 {
