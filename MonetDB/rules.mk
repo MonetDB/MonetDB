@@ -14,12 +14,7 @@ MXFLAGS= -notouch
 %.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
 
-%.tab.c: %.y
-	$(YACC) $(YFLAGS) $*.y
-	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
-	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-
-%.tab.h: %.y
+%.tab.c %.tab.h: %.y
 	$(YACC) $(YFLAGS) $*.y
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
@@ -38,13 +33,8 @@ MXFLAGS= -notouch
 %.yy: %.mx
 	$(MX) $(MXFLAGS) -x Y $< 
 
-%.tab.cc: %.yy
+%.tab.cc %.tab.h: %.yy
 	$(YACC) $(YFLAGS) $*.yy
-	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
-	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-
-%.tab.h: %.yy
-	$(YACC) $(YFLAGS) -d $*.yy
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
 
