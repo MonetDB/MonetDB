@@ -503,3 +503,38 @@ fi ]
 AC_MSG_RESULT($INSTALL_BACKUP)
 AC_SUBST(INSTALL_BACKUP)
 ])
+
+AC_DEFUN(AM_MONET_CLIENT,[
+
+dnl Check for options and libraries
+AM_MONET_COMPILER()
+AM_MONET_OPTIONS()
+AM_MONET_LIBS()
+
+dnl Checks for programs.
+AC_PROG_INSTALL()
+AM_PROG_LEX()
+AC_PROG_YACC()
+AC_DISABLE_STATIC()
+AC_ENABLE_SHARED()
+AM_PROG_LIBTOOL()
+dnl AC_PROG_CC_STDC()
+AC_PROG_LN_S()
+AC_CHECK_PROG(RM,rm,rm -f)
+AC_CHECK_PROG(MV,mv,mv -f)
+AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
+
+dnl check for Monet and some basic utilities
+AM_MONET($1)
+AC_PATH_PROG(MX,Mx,$MONET_PREFIX/bin:$PATH)
+AC_PATH_PROG(MEL,mel,$MONET_PREFIX/bin:$PATH)
+
+dnl to shut up automake (.m files are used for mel not for objc)
+AC_CHECK_TOOL(OBJC,objc)
+
+#AM_DEPENDENCIES(CC)
+#AM_DEPENDENCIES(CXX)
+
+dnl Checks for header files.
+AC_HEADER_STDC()
+])
