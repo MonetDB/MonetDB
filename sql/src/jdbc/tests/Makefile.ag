@@ -41,9 +41,9 @@ java_Test_Rbooleans = {
 	SOURCES = Test_Rbooleans.java
 }
 
-java_Test_RSpositioning = {
+java_Test_Rpositioning = {
 	DIR = pkglibdir/Tests
-	SOURCES = Test_RSpositioning.java
+	SOURCES = Test_Rpositioning.java
 }
 
 java_Test_Rtimedate = {

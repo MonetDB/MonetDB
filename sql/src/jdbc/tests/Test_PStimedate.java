@@ -3,8 +3,7 @@ import java.sql.*;
 public class Test_PStimedate {
 	public static void main(String[] args) throws Exception {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-		//nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
-		Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
+		Connection con = DriverManager.getConnection(args[0]);
 		Statement stmt = con.createStatement();
 		PreparedStatement pstmt;
 		ResultSet rs = null;
@@ -12,7 +11,7 @@ public class Test_PStimedate {
 
 		con.setAutoCommit(false);
 		// >> false: auto commit was just switched off
-		System.out.println("false\t" + con.getAutoCommit());
+		System.out.println("0. false\t" + con.getAutoCommit());
 
 		try {
 			stmt.executeUpdate("CREATE TABLE table_Test_PStimedate (t time, ts timestamp, d date)");
@@ -25,7 +24,7 @@ public class Test_PStimedate {
 
 		try {
 			pstmt = con.prepareStatement("INSERT INTO table_Test_PStimedate VALUES (?, ?, ?)");
-			System.out.print("empty call...");
+			System.out.print("1. empty call...");
 			try {
 				// should fail (no arguments given)
 				pstmt.execute();
@@ -36,26 +35,26 @@ public class Test_PStimedate {
 				System.out.println(" failed :)");
 			}
 
-			System.out.print("inserting a record...");
+			System.out.print("2. inserting a record...");
 			java.util.Date d = new java.util.Date();
 			pstmt.setTime(1, new java.sql.Time(d.getTime()));
 			pstmt.setTimestamp(2, new java.sql.Timestamp(d.getTime()));
 			pstmt.setDate(3, new java.sql.Date(d.getTime()));
 
 			pstmt.executeUpdate();
-			System.out.println(" done");
-			System.out.print("closing PreparedStatement...");
+			System.out.println(" passed :)");
+			System.out.print("3. closing PreparedStatement...");
 			pstmt.close();
-			System.out.println(" done");
+			System.out.println(" passed :)");
 
-			System.out.print("selecting record...");
+			System.out.print("4. selecting record...");
 			pstmt = con.prepareStatement("SELECT * FROM table_Test_PStimedate");
 			rs = pstmt.executeQuery();
-			System.out.println(" done");
+			System.out.println(" passed :)");
 
 			while (rs.next()) {
 				for (int j = 1; j <= 3; j++) {
-					System.out.print("retrieving...");
+					System.out.print((j + 4) + ". retrieving...");
 					java.util.Date x = (java.util.Date)(rs.getObject(j));
 					boolean matches = false;
 					if (x instanceof Time) {

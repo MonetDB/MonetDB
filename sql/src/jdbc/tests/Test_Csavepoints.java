@@ -3,18 +3,17 @@ import java.sql.*;
 public class Test_Csavepoints {
 	public static void main(String[] args) throws Exception {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-		//nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
-		Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
+		Connection con = DriverManager.getConnection(args[0]);
 		Statement stmt = con.createStatement();
 		ResultSet rs = null;
 		//DatabaseMetaData dbmd = con.getMetaData();
 
 		// >> true: auto commit should be on by default
-		System.out.println("true\t" + con.getAutoCommit());
+		System.out.println("0. true\t" + con.getAutoCommit());
 
 		// savepoints require a non-autocommit connection
 		try {
-			System.out.print("savepoint...");
+			System.out.print("1. savepoint...");
 			con.setSavepoint();
 			System.out.println("PASSED :(");
 			System.out.println("ABORTING TEST!!!");
@@ -26,23 +25,23 @@ public class Test_Csavepoints {
 
 		con.setAutoCommit(false);
 		// >> true: auto commit should be on by default
-		System.out.println("false\t" + con.getAutoCommit());
+		System.out.println("0. false\t" + con.getAutoCommit());
 
 		try {
-			System.out.print("savepoint...");
+			System.out.print("2. savepoint...");
 			Savepoint sp1 = con.setSavepoint();
 			System.out.println("passed :)");
 
 			stmt.executeUpdate("CREATE TABLE table_Test_Csavepoints ( id int, PRIMARY KEY (id) )");
 
-			System.out.print("savepoint...");
+			System.out.print("3. savepoint...");
 			Savepoint sp2 = con.setSavepoint("empty table");
 			System.out.println("passed :)");
 
 			rs = stmt.executeQuery("SELECT id FROM table_Test_Csavepoints");
 			int i = 0;
 			int items = 0;
-			System.out.print("table " + items + " items");
+			System.out.print("4. table " + items + " items");
 			while (rs.next()) {
 				System.out.print(", " + rs.getString("id"));
 				i++;
@@ -59,14 +58,14 @@ public class Test_Csavepoints {
 			stmt.executeUpdate("INSERT INTO table_Test_Csavepoints VALUES (2)");
 			stmt.executeUpdate("INSERT INTO table_Test_Csavepoints VALUES (3)");
 
-			System.out.print("savepoint...");
+			System.out.print("5. savepoint...");
 			Savepoint sp3 = con.setSavepoint("three values");
 			System.out.println("passed :)");
 
 			rs = stmt.executeQuery("SELECT id FROM table_Test_Csavepoints");
 			i = 0;
 			items = 3;
-			System.out.print("table " + items + " items");
+			System.out.print("6. table " + items + " items");
 			while (rs.next()) {
 				System.out.print(", " + rs.getString("id"));
 				i++;
@@ -79,14 +78,14 @@ public class Test_Csavepoints {
 			}
 			System.out.println(" passed :)");
 
-			System.out.print("release...");
+			System.out.print("7. release...");
 			con.releaseSavepoint(sp1);
 			System.out.println("passed :)");
 
 			rs = stmt.executeQuery("SELECT id FROM table_Test_Csavepoints");
 			i = 0;
 			items = 3;
-			System.out.print("table " + items + " items");
+			System.out.print("8. table " + items + " items");
 			while (rs.next()) {
 				System.out.print(", " + rs.getString("id"));
 				i++;
@@ -99,14 +98,14 @@ public class Test_Csavepoints {
 			}
 			System.out.println(" passed :)");
 
-			System.out.print("rollback...");
+			System.out.print("9. rollback...");
 			con.rollback(sp2);
 			System.out.println("passed :)");
 
 			rs = stmt.executeQuery("SELECT id FROM table_Test_Csavepoints");
 			i = 0;
 			items = 0;
-			System.out.print("table " + items + " items");
+			System.out.print("10. table " + items + " items");
 			while (rs.next()) {
 				System.out.print(", " + rs.getString("id"));
 				i++;
