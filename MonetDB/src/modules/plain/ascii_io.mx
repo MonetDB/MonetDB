@@ -722,7 +722,9 @@ int ASCIIload_file( ascii *as, bstream *b ){
 		}
 	}
 	as->nr = i;
-	return res;
+	if (res < 0)
+		return res;
+	return as->nr;
 }
 
 static
