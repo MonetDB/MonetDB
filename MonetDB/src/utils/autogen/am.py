@@ -383,8 +383,10 @@ def am_binary(fd, var, binmap, am):
 
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
-	fd.write("%sdir = %s\n" % (binname, am_translate_dir(bd)) ); 
-	fd.write("%s_PROGRAMS =%s\n" % (binname,  binname));
+        bd = am_translate_dir(bd)
+	fd.write("%sdir = %s\n" % (binname, bd))
+	fd.write("%s_PROGRAMS =%s\n" % (binname,  binname))
+        am['InstallList'].append("\t%s/%s\n" % (bd, binname))
     else:
     	am['BINS'].append(binname)
 
@@ -468,8 +470,11 @@ def am_bins(fd, var, binsmap, am):
 
     if (len(lbins) > 0):
           bd = binsmap["DIR"][0] # use first name given
-	  fd.write("%sdir = %s\n" % (bin, am_translate_dir(bd, am)) ); 
-	  fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ));
+          bd = am_translate_dir(bd, am)
+	  fd.write("%sdir = %s\n" % (bin, bd)) 
+	  fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ))
+          for bn in lbins:
+              am['InstallList'].append("\t%s/%s\n" % (bd, bn))
 
     if binsmap.has_key('HEADERS'):
         HDRS = []
