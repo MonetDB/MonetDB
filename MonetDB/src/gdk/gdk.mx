@@ -1207,9 +1207,15 @@ gdk_export BAT*		BATreplace (BAT *b, BAT *n);
 gdk_export BUN 		BUNlocate  (BAT *b, ptr left, ptr right); 
 gdk_export BUN 		BUNfnd     (BAT *b, ptr left); 
 
-#define BUNfndVOID(p,b,v) {\
-	REGISTER size_t _i = BUNindex((b),BUNfirst((b))) + (*(oid*) (v) - (b)->hseqbase);\
-        p = BUNptr((b), _i);  if (p < BUNfirst(b) || p >= BUNlast(b)) p = NULL; }
+#define BUNfndVOID(p,b,v) \
+	if ((*(oid*) (v) == oid_nil) != ((b)->hseqbase == oid_nil)) {\
+		/* (v == ni) XOR (seqbase == nil) ! */\
+		/* What about (v == nil) AND (seqbase == nil) ? */\
+		p = NULL;\
+	} else {\
+		REGISTER size_t _i = BUNindex((b),BUNfirst((b))) + (*(oid*) (v) - (b)->hseqbase);\
+        	p = BUNptr((b), _i);  if (p < BUNfirst(b) || p >= BUNlast(b)) p = NULL;\
+	}
 #if SIZEOF_OID == SIZEOF_INT
 #define BUNfndOID(p,b,v) \
 	if (BAThdense(b)) {\

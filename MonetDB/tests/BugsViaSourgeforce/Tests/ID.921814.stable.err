@@ -52,11 +52,7 @@ stderr of test 'ID.921814` in directory 'tests/BugsViaSourgeforce` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_BugsViaSourgeforce
 
-!ERROR: CMDfind: value not found.
-!ERROR: CMDfind: operation failed.
-!ERROR: print(param 1): evaluation error.
-
-# 16:41:59 >  
-# 16:41:59 >  Done.
-# 16:41:59 >  
+# 22:15:22 >  
+# 22:15:22 >  Done.
+# 22:15:22 >  
 
