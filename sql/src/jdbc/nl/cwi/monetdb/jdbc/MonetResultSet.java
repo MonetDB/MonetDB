@@ -185,10 +185,16 @@ public class MonetResultSet implements ResultSet {
 		tmpLine = tmpLine.substring(1, tmpLine.length() - 2);
 
 		// extract separate fields by examining string, char for char
-		boolean inString = false;
+		boolean inString = false, escaped = false;
 		int cursor = 0, column = 0, i = 0;
 		for (; i < tmpLine.length(); i++) {
 			switch(tmpLine.charAt(i)) {
+				case '\'':
+					escaped = !escaped;
+				break;
+				default:
+					escaped = false;
+				break;
 				case '"':
 					/**
 					 * If all strings are wrapped between two quotes, a \" can
@@ -203,12 +209,12 @@ public class MonetResultSet implements ResultSet {
 					 */
 					if (!inString) {
 						inString = true;
-					} else if (i > 0 &&
-						(tmpLine.charAt(i - 1) != '\\' ||
-						(i > 1 && tmpLine.charAt(i - 1) == '\\' && tmpLine.charAt(i - 2) == '\\')))
-					{
+					} else if (!escaped) {
 						inString = false;
 					}
+
+					// reset escaped flag
+					escaped = false;
 				break;
 				case '\t':
 					if (!inString &&
@@ -219,6 +225,9 @@ public class MonetResultSet implements ResultSet {
 							tmpLine.substring(cursor, i - 1).trim();
 						cursor = i + 1;
 					}
+
+					// reset escaped flag
+					escaped = false;
 				break;
 			}
 		}
@@ -234,10 +243,14 @@ public class MonetResultSet implements ResultSet {
 			} else 	if (result[i].startsWith("\"") && result[i].endsWith("\"")) {
 				result[i] = result[i].substring(1, result[i].length() - 1);
 				// now unescape (see Monet source src/gdk/gdk_atoms.mx (strFromStr))
+				result[i] = result[i].replaceAll("\\\\\\\\", "\\\\");	// \
 				result[i] = result[i].replaceAll("\\\\\"", "\\\"");		// "
+				result[i] = result[i].replaceAll("\\\\\'", "\\\'");		// '
+				result[i] = result[i].replaceAll("\\\\r", "\\r");		// \r
 				result[i] = result[i].replaceAll("\\\\n", "\\n");		// \n
 				result[i] = result[i].replaceAll("\\\\t", "\\t");		// \t
-				result[i] = result[i].replaceAll("\\\\([0-3][0-7]{2})", "\\0\\1");	// \377 octal
+			// the thing below will not work
+			//	result[i] = result[i].replaceAll("\\\\([0-3][0-7]{2})", "\\0\\1");	// \377 octal
 			}
 		}
 

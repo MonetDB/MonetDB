@@ -1200,15 +1200,14 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		return(false);
 	}
 
-	/*
+	/**
 	 * Is a data definition statement within a transaction ignored?
 	 *
 	 * @return true if so
 	 * @exception SQLException if a database access error occurs
 	 */
-	public boolean dataDefinitionIgnoredInTransactions() throws SQLException
-	{
-		return false;
+	public boolean dataDefinitionIgnoredInTransactions() {
+		return(false);
 	}
 
 	/**
