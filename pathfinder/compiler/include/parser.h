@@ -40,9 +40,8 @@
 /**
  * Parse an XQuery coming in on stdin (or whatever stdin might have
  * been dup'ed to)
- * @return error code indicating successful or failed parse
  */
-PFrc_t PFparse (PFpnode_t **r);
+void PFparse (PFpnode_t **);
 
 #endif   /* PARSER_H */
 

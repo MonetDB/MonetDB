@@ -36,6 +36,8 @@
 #ifndef MILTY_H
 #define MILTY_H
 
+#include "pathfinder.h"
+
 /** Simple Monet types (oid, void, bit, int, dbl,...) */
 typedef enum PFmty_simpl_t PFmty_simpl_t;
 

@@ -36,18 +36,7 @@
 #ifndef DAEMON_H
 #define DAEMON_H
 
-#include <sys/stat.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <errno.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <string.h>
-
-#include "pathfinder.h"
-
-PFrc_t PFdaemonize (int port);
+void PFdaemonize (int port);
 
 #endif
 

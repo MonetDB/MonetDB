@@ -36,8 +36,6 @@
 #ifndef NS_H
 #define NS_H
 
-#include "pathfinder.h"
-
 /** representation of an XML Namespace */
 typedef struct PFns_t PFns_t;
 
@@ -67,12 +65,16 @@ struct PFns_t {
  * XML NS that are predefined for any query (may be used without
  * prior declaration) in XQuery, see W3C XQuery, 4.1
  */
-/** Predefined Namespace 'xml' for any query */
+/** Predefined namespace `xml' for any query */
 extern PFns_t PFns_xml;
-/** Predefined Namespace 'xs' (XML Schema) for any query */
+/** Predefined namespace `xs' (XML Schema) for any query */
 extern PFns_t PFns_xs; 
-/** Predefined Namespace 'xsi' (XML Schema Instance) for any query */
+/** Predefined namespace `xsi' (XML Schema Instance) for any query */
 extern PFns_t PFns_xsi;
+/** Predefined namespace `xdt' (XPath Data Types) for any query */
+extern PFns_t PFns_xdt;
+/** Predefined namespace `local' (XQuery Local Functions) for any query */
+extern PFns_t PFns_local;
 
 /**
  * XQuery default function namespace (fn:..., this may be overridden 

@@ -60,16 +60,14 @@
 /* atoi, atof, strtoul */
 #include <stdlib.h>
 #include <string.h>
-
-/* assert */
 #include <assert.h>
+
+#include "pathfinder.h"
 
 /* import XQuery token and abstract syntax definitions */
 #include "abssyn.h"
-
 /* PFarray_t */
 #include "array.h"
-
 /* PFstrdup */
 #include "mem.h"
 
@@ -720,9 +718,6 @@ _                                 ({S}|{ExprComment})+
                                   }
 "item"                            { gotoState (DEFAULT);
                                     yield (item);
-                                  }
-"untyped"                         { gotoState (DEFAULT);
-                                    yield (untyped);
                                   }
 "atomic"{_}"value"                { gotoState (DEFAULT);
                                     yield (atomic_value);

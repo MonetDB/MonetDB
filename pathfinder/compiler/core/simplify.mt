@@ -32,6 +32,8 @@ prologue {
  * $Id$	
  */
 
+#include "pathfinder.h"
+
 /* Auxiliary routines related to the formal semantics are located
  * in this separate included file to facilitate automated documentation
  * via doxygen.

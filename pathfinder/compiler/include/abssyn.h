@@ -34,8 +34,6 @@
 #ifndef ABSSYN_H
 #define ABSSYN_H
 
-#include "pathfinder.h"
-
 /* PFqname_t */
 #include "qname.h"    
 
@@ -116,7 +114,6 @@ enum PFptype_t {
   p_node_ty,      /**< node type */
   p_item_ty,      /**< item type */
   p_atom_ty,      /**< named atomic type */
-  p_untyped_ty,   /**< untyped type */
   p_atomval_ty,   /**< atomic value type */
   p_named_ty,     /**< named type */ 
   p_req_ty,       /**< required type */

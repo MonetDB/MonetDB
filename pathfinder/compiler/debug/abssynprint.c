@@ -36,7 +36,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "pathfinder.h"
 #include "abssynprint.h"
+
+#include "mem.h"
+#include "oops.h"
 #include "abssyn.h"
 #include "prettyp.h"
 #include "pfstrings.h"
@@ -104,7 +108,6 @@ char *p_id[]  = {
     , [p_node_ty]             "node_ty"
     , [p_item_ty]             "item_ty"                                     
     , [p_atom_ty]             "atom_ty"
-    , [p_untyped_ty]          "untyped_ty"                                 
     , [p_atomval_ty]          "atomval_ty"                                 
     , [p_named_ty]            "named_ty"
     , [p_req_ty]              "req_ty"                                     
@@ -361,7 +364,7 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
  * @param f file to dump into
  * @param t root of abstract syntax tree
  */
-PFrc_t
+void
 PFabssyn_dot (FILE *f, PFpnode_t *root)
 {
     if (root) {
@@ -370,8 +373,6 @@ PFabssyn_dot (FILE *f, PFpnode_t *root)
         abssyn_dot (f, root, "node0");
         fprintf (f, "}\n");
     }
-
-    return OOPS_OK;
 }
 
 /**
@@ -500,7 +501,7 @@ abssyn_pretty (PFpnode_t *n)
  * @param f file to dump into
  * @param t root of abstract syntax tree
  */
-PFrc_t
+void
 PFabssyn_pretty (FILE *f, PFpnode_t *t)
 {
     PFprettyprintf ("%c", START_BLOCK);
@@ -510,8 +511,6 @@ PFabssyn_pretty (FILE *f, PFpnode_t *t)
     (void) PFprettyp (f);
 
     fputc ('\n', f);
-
-    return OOPS_OK;
 }
 
 

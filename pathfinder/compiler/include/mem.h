@@ -39,8 +39,6 @@
 /* size_t */
 #include <stddef.h>
 
-#include "pathfinder.h"
-
 /**
  * A dynamic buffer that can grow as more space as needed
  * (see #PFneed).

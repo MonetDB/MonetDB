@@ -67,28 +67,40 @@
  * $Id$
  */
 
-/* assert */
-#include <assert.h>
 
-/* strcmp */
+#include <assert.h>
 #include <string.h>
 
+#include "pathfinder.h"
 #include "ns.h"
+
 #include "nsres.h"
+#include "oops.h"
 
 /*
  * XML NS that are predefined for any query (may be used without
  * prior declaration) in XQuery, see W3C XQuery, 4.1
  */
-/** Predefined Namespace 'xml' for any query */
-PFns_t PFns_xml = { .ns  = "xml", 
-		    .uri = "http://www.w3.org/XML/1998/namespace" };
-/** Predefined Namespace 'xs' (XML Schema) for any query */
-PFns_t PFns_xs  = { .ns  = "xs",  
-	      	    .uri = "http://www.w3.org/2001/XMLSchema" };
-/** Predefined Namespace 'xsi' (XML Schema Instance) for any query */
-PFns_t PFns_xsi = { .ns  = "xsi", 
-		    .uri = "http://www.w3.org/2001/XMLSchema-instance" };
+/** Predefined namespace `xml' for any query */
+PFns_t PFns_xml = 
+    { .ns  = "xml", 
+      .uri = "http://www.w3.org/XML/1998/namespace" };
+/** Predefined namespace `xs' (XML Schema) for any query */
+PFns_t PFns_xs  = 
+    { .ns  = "xs",  
+      .uri = "http://www.w3.org/2001/XMLSchema" };
+/** Predefined namespace `xsi' (XML Schema Instance) for any query */
+PFns_t PFns_xsi = 
+    { .ns  = "xsi", 
+      .uri = "http://www.w3.org/2001/XMLSchema-instance" };
+/** Predefined namespace `xdt' (XPath Data Types) for any query */
+PFns_t PFns_xdt = 
+    { .ns  = "xdt",
+      .uri = "http://www.w3.org/2003/11/xpath-datatypes" };
+/** Predefined namespace `local' (XQuery Local Functions) for any query */
+PFns_t PFns_local = 
+    { .ns  = "local",
+      .uri = "http://www.w3.org/2003/11/xquery-local-functions" };
 
 /**
  * XQuery default function namespace (fn:...).
@@ -106,6 +118,7 @@ PFns_t PFns_fn  = { .ns  = "fn",
  */
 PFns_t PFns_op  = { .ns  = "op",  
 		    .uri = "http://www.w3.org/2002/08/xquery-operators" };
+
 
 /** 
  * Pathfinder's own internal NS (pf:...).

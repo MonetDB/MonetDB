@@ -33,7 +33,6 @@
 #ifndef SIMPLIFY_H
 #define SIMPLIFY_H
 
-#include "pathfinder.h"
 #include "core.h"
 
 

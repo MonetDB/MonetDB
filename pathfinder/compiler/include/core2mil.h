@@ -37,13 +37,11 @@
 #ifndef CORE2MIL_H
 #define CORE2MIL_H
 
-#include "pathfinder.h"
 #include "core.h"
 #include "mil.h"
 
 /** Map core expression @a c to a MIL program @a m. */
-PFrc_t PFcore2mil (PFcnode_t * c, PFmnode_t ** m);
-
+void PFcore2mil (PFcnode_t *, PFmnode_t **);
 
 #endif   /* CORE2MIL_H */
 

@@ -49,7 +49,7 @@
                               |          +- string
                               |          
                               |           
-                              +- untyped   +- comm
+                              |            +- comm
                               |            |
                               |            +- p-i
                               |            |
@@ -94,9 +94,11 @@
        [[ xs:anyType ]]               = item*
        [[ xs:anyItem ]]               = item
        [[ xs:anyNode ]]               = node
-       [[ xs:anySimpleType ]]         = atomic
+       [[ xs:anySimpleType ]]         = atomic*
        [[ xs:anyElement ]]            = elem * { [[ xs:anyType ]] }
        [[ xs:anyAttribute ]]          = attr * { [[ xs:anySimpleType ]] }
+       [[ xdt:untypedAtomic ]]        = atomic
+       [[ xdt:untypedAny ]]           = node*
        [[ qn ]]                       = [[ named qn ]]
        [[ empty ]]                    = ()
        [[ node ]]                     = node
@@ -105,7 +107,6 @@
        [[ text ]]                     = text
        [[ document ]]                 = doc { elem { item* }* }
        [[ item ]]                     = item
-       [[ untyped ]]                  = untyped
        [[ element ]]                  = elem * { item* }
        [[ attribute ]]                = attr * { atomic }
        [[ element qn ]]               = elem qn { item* }
@@ -149,7 +150,6 @@ enum PFtytype_t {
   ty_all,                      /**< t&t                         */
   ty_item,                     /**< item                        */
                                /** ---subtypes of item below--- */
-  ty_untyped,                  /**< untyped                     */
   ty_atomic,                   /**< atomic                      */
                                /** --subtypes of atomic below-- */
   ty_numeric,                  /**< numeric                     */
@@ -203,7 +203,6 @@ struct PFty_t {
 PFty_t PFty_none (void);
 PFty_t PFty_empty (void);
 PFty_t PFty_item (void);
-PFty_t PFty_untyped (void);
 PFty_t PFty_atomic (void);
 PFty_t PFty_numeric (void);
 PFty_t PFty_node (void);
@@ -252,6 +251,11 @@ PFty_t PFty_xs_anySimpleType (void);
 PFty_t PFty_xs_anyElement (void);
 PFty_t PFty_xs_anyAttribute (void);
 
+/**
+ * XPath data types
+ */
+PFty_t PFty_xdt_untypedAtomic (void);
+PFty_t PFty_xdt_untypedAny (void);
 
 /**
  * The XML Schema symbol spaces.
@@ -265,7 +269,7 @@ extern PFenv_t *PFattrgroup_defns;
 
 void PFty_import (PFty_t, PFty_t);
 PFty_t *PFty_schema (PFty_t);
-void PFty_xs_builtins (void);
+void PFty_predefined (void);
 
 /**
  * Unfold all named type references in a (recursive) type.

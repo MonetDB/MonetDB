@@ -31,6 +31,7 @@
  * $Id$
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -39,6 +40,8 @@
 
 #include "pathfinder.h"
 #include "oops.h"
+
+#include "mem.h"
 
 /**
  * This specifices a mapping from error codes (OOPS_*, see oops.h)
@@ -73,10 +76,11 @@ static char *oops_msg[] = {
     ,[-OOPS_WARN_VARREUSE]      "warning: variable reuse"
 };
 
-/** Maximum length of error message strings (messages will be
+/** 
+ * Maximum length of error message strings (messages will be
  *  truncated if necessary) 
  */
-#define OOPS_SIZE   256
+#define OOPS_SIZE   1024
 
 /**
  * Log message to compiler log file. This function actually does the
@@ -99,10 +103,10 @@ log (const char *msg, va_list msgs)
     anow[strlen (anow) - 1] = '\0';
 
     n = snprintf (buf, OOPS_SIZE, "%s: ", anow);
-    write (fileno (stderr), buf, n);
+    write (fileno (stderr), buf, n < OOPS_SIZE ? n : OOPS_SIZE - 1);
     
     n = vsnprintf (buf, OOPS_SIZE, msg, msgs);
-    write (fileno (stderr), buf, n);
+    write (fileno (stderr), buf, n < OOPS_SIZE ? n : OOPS_SIZE - 1);
 
     write (fileno (stderr), "\n", 1);
 }

@@ -32,22 +32,17 @@
  * $Id$
  */
 
-/*
- * Include all the information we got from the configure script
- */
-#include <pf_config.h>
-
-
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
+
+#if HAVE_CONFIG_H
+#include <pf_config.h>
+#endif
 
 #ifndef NULL
 /** Make sure we have NULL available */
 #define NULL 0
 #endif
-
-/* FILE */
-#include <stdio.h>
 
 /* boolean type `bool' and constants `true', `false' */
 #include <stdbool.h>
@@ -105,12 +100,6 @@ struct PFloc_t {
   unsigned int last_row;     /**< row number in which location ends. */
   unsigned int last_col;     /**< column number in which location ends. */
 };
-
-/* stack-based error handling */
-#include "oops.h"
-
-/* garbage collected memory handling */
-#include "mem.h"
 
 #endif
 

@@ -31,10 +31,21 @@
  * $Id$
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <errno.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <string.h>
+
+#include "pathfinder.h"
 #include "daemon.h"
 
-/* exit () */
-#include <stdlib.h>
+#include "oops.h"
 
 /**
  * Try to clean up if we are terminated via kill(2).
@@ -48,10 +59,8 @@ terminate (int sig)
 
 /** 
  * Turn ourselves into a daemon. 
- * @return return code OK if daemonizing went allright, otherwise
- * an indication of the failure
  */
-static PFrc_t
+void
 daemonize (void)
 {
     int child;
@@ -125,8 +134,6 @@ in_background:
 
     /* trap forced termination */
     signal (SIGTERM, terminate);
-
-    return OOPS_OK;
 }
 
 
@@ -138,9 +145,8 @@ in_background:
  *
  * @param port TCP port to listen on
  * @retval client socket file descriptor associated with new client connection
- * @return error code
  */
-static PFrc_t
+void
 new_instance (int port, int *client)
 {
     struct sockaddr_in localhost;
@@ -202,7 +208,7 @@ new_instance (int port, int *client)
                 (void) PFoops (OOPS_NOTICE, "query was sent from @ %s", 
                                inet_ntoa (client_addr.sin_addr));
 
-                return OOPS_OK;
+                break;
 
             default:
                 /* this is the parent: continue to listen */
@@ -219,25 +225,21 @@ new_instance (int port, int *client)
  * bound to the incoming query client's TCP socket.  
  *
  * @param port TCP port to listen on for incoming queries 
- * @return return code indicating successful creation of 
- * a new compiler instance or failure
  */
-PFrc_t PFdaemonize (int port)
+void
+PFdaemonize (int port)
 {
-    PFrc_t rc;
     int client;
 
     /* check for unprivileged TCP port */
     if (port < 1024) 
-        return OOPS_NOSERVICE;
+        PFoops (OOPS_NOSERVICE, "port %d is unusable for us", port);
 
     /* try to enter daemon state */
-    if ((rc = daemonize ()))
-        return rc;
+    daemonize ();
 
     /* wait for incoming query and create new compiler instance */
-    if ((rc = new_instance (port, &client)))
-        return rc;
+    new_instance (port, &client);
 
     /* bind stdin/stdout to incoming socket fd */
     if (dup2 (client, fileno (stdin)) < 0) 
@@ -247,8 +249,6 @@ PFrc_t PFdaemonize (int port)
     if (dup2 (client, fileno (stdout)) < 0) 
         PFoops (OOPS_FATAL, "dæmon cannot establish its output: %s",
                 strerror (errno));
-
-    return OOPS_OK;
 }
 
 

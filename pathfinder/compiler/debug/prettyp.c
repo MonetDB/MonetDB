@@ -39,10 +39,13 @@
 #include <ctype.h>
 #include <assert.h>
 
+#include "pathfinder.h"
+#include "prettyp.h"
+
+#include "oops.h"
+#include "mem.h"
 /* PFarray_t */
 #include "array.h"
-
-#include "prettyp.h"
 
 /**
  * buffer to collect material to be pretty-printed later

@@ -36,9 +36,7 @@
 #ifndef MILTYPE_H
 #define MILTYPE_H
 
-#include "pathfinder.h"
-#include "oops.h"
-/* #include "milty.h" */
+#include "milty.h"
 #include "core.h"
 
 /** Find MIL implementation type corresponding to XQuery type */

@@ -36,8 +36,6 @@
 #ifndef TYPECHECK_H
 #define TYPECHECK_H
 
-#include "pathfinder.h"
-
 /* PFcnode_t */
 #include "core.h"
 

@@ -486,14 +486,17 @@
  *
  */
 
+#include <stdio.h>
+#include <assert.h>
+#include <string.h>
+
+#include "pathfinder.h"
 #include "core2mil.h"
+
 #include "miltype.h"
 #include "subtyping.h"
-
-/* make assert() available */
-#include <assert.h>
-/* memcpy */
-#include <string.h>
+#include "mem.h"
+#include "oops.h"
 
 #define wildcard(qname) \
  ((qname).loc == NULL && (qname).ns.ns == NULL && (qname).ns.uri == NULL)
@@ -2235,7 +2238,7 @@ core2mil (assgn_fn_t assgn_fn, PFvar_t * v, PFcnode_t * c)
 }
 
 /** Map core expression @a c to a MIL program @a m. */
-PFrc_t
+void
 PFcore2mil (PFcnode_t * c, PFmnode_t ** m)
 {
     PFvar_t * v;
@@ -2266,8 +2269,6 @@ PFcore2mil (PFcnode_t * c, PFmnode_t ** m)
     *m = comm_seq (*m, wire1_ (m_print, var (v)));
 
     assert (*m);
-
-    return OOPS_OK;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

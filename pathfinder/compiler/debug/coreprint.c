@@ -36,15 +36,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* PFstate */
 #include "pathfinder.h"
+#include "coreprint.h"
+
+#include "mem.h"
+/* PFcnode_t */
 #include "core.h"
 /* PFty_str */
 #include "types.h"
 /* PFesc_string */
 #include "pfstrings.h"
 
-#include "coreprint.h"
 #include "prettyp.h"
 
 /** Node names to print out for all the abstract syntax tree nodes. */

@@ -42,6 +42,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "pathfinder.h"
 #include "simplify.h"
 
 /** twig-generated node identifiers */

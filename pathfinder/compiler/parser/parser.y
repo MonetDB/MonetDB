@@ -39,10 +39,12 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "pathfinder.h"
+#include "abssyn.h"
+
 /* PFarray_t */
 #include "array.h"
-
-#include "abssyn.h"
+#include "oops.h"
 
 /** root node of the parse tree */
 static PFpnode_t *root;
@@ -351,7 +353,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token type_QName                       "type QName"
 %token typeswitch_lparen                "typeswitch ("
 %token union_                           "union"
-%token untyped                          "untyped"
 %token validate                         "validate"
 %token validate_lbrace                  "validate {"
 %token where                            "where"
@@ -1426,8 +1427,6 @@ ItemType                    : ElemAtt_
                               { ($$ = p_wire1 (p_atom_ty, @$, nil (@$)))
                                   ->sem.qname = $1; 
                               }
-                            | "untyped"
-                              { $$ = p_wire1 (p_untyped_ty, @$, nil (@$)); }
                             | "atomic value"
                               { $$ = p_wire1 (p_atomval_ty, @$, nil (@$)); }
                             ;
@@ -2008,9 +2007,8 @@ void yyerror (const char *s)
 /**
  * Parse an XQuery coming in on stdin (or whatever stdin might have
  * been dup'ed to)
- * @return error code indicating successful or failed parse
  */
-PFrc_t
+void
 PFparse (PFpnode_t **r)
 {
 #if YYDEBUG
@@ -2025,8 +2023,6 @@ PFparse (PFpnode_t **r)
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
     *r = root;
-
-    return OOPS_OK;
 }
 
 

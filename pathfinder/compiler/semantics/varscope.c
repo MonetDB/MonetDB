@@ -77,11 +77,13 @@
 
 #include <assert.h>
 
-#include "variable.h"
+#include "pathfinder.h"
 #include "varscope.h"
 
+#include "variable.h"
 /* PFscope_t */
 #include "scope.h"
+#include "oops.h"
 
 /** Create variable environment used for scoping */
 static PFscope_t *var_env;
@@ -404,9 +406,8 @@ scope (PFpnode_t *n)
  * function returns an error code. An error can also be returned due to
  * other errors, like out of memory errors.
  * @param root Pointer to the parse tree root node
- * @return Status code.
  */
-PFrc_t
+void
 PFvarscope (PFpnode_t * root)
 {
     var_env = PFscope ();
@@ -416,8 +417,6 @@ PFvarscope (PFpnode_t * root)
     if (scoping_failed)
         PFoops (OOPS_UNKNOWNVAR,
                 "erroneous variable references reported above");
-
-    return OOPS_OK;
 }
 
 

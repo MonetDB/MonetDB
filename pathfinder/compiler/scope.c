@@ -43,13 +43,15 @@
 
 #include <assert.h>
 
+#include "pathfinder.h"
 #include "scope.h"
 
 /* PFarray_t */
 #include "array.h"
-
 /* PFqname_t */
 #include "qname.h"
+#include "mem.h"
+#include "oops.h"
 
 /** 
  * marks a new scope on undo stack (this needs to be different from

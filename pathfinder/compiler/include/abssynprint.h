@@ -36,18 +36,18 @@
 #ifndef ABSSYNPRINT_H
 #define ABSSYNPRINT_H
 
-/* FILE, ... */
+/* FILE */
 #include <stdio.h>
 
-/* node, ... */
+/* PFpnode_t */
 #include "abssyn.h"
 
 /** Node names to print out for all the abstract syntax tree nodes. */
 extern char *p_id[];
 
-PFrc_t PFabssyn_dot (FILE *f, PFpnode_t *root);
+void PFabssyn_dot (FILE *f, PFpnode_t *root);
 
-PFrc_t PFabssyn_pretty (FILE *f, PFpnode_t *root);
+void PFabssyn_pretty (FILE *f, PFpnode_t *root);
 
 #endif
 

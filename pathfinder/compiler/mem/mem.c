@@ -33,15 +33,14 @@
  * $Id$
  */
 
-/* strncpy */
 #include <string.h>
-
-/* exit */
 #include <stdlib.h>
-
 #include <assert.h>
 
+#include "pathfinder.h"
 #include "mem.h"
+
+#include "oops.h"
 
 /** undefine this for production code (GC warning messages) */
 #define GC_DEBUG

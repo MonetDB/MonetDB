@@ -35,17 +35,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* PFstate */
 #include "pathfinder.h"
-#include "mil.h"
-#include "pfstrings.h"
-
 #include "mildebug.h"
+
+#include "mil.h"
+#include "mem.h"
+#include "pfstrings.h"
 #include "prettyp.h"
 
 /** Node names to print out for all the MIL tree nodes. */
 char *m_id[]  = {
-
     [m_assgn]                 "assgn"
   , [m_comm_seq]              "comm_seq"
   , [m_print]                 "print"
@@ -150,7 +149,7 @@ mil_dot (FILE *f, PFmnode_t *n, char *node)
  * @param f file to dump into
  * @param t root of abstract syntax tree
  */
-PFrc_t
+void
 PFmil_dot (FILE *f, PFmnode_t *root)
 {
     if (root) {
@@ -158,8 +157,6 @@ PFmil_dot (FILE *f, PFmnode_t *root)
         mil_dot (f, root, "node0");
         fprintf (f, "}\n");
     }
-
-    return OOPS_OK;
 }
 
 /**
@@ -217,9 +214,8 @@ mil_pretty (PFmnode_t *n)
  *
  * @param f file to dump into
  * @param t root of MIL tree
- * @return status code
  */
-PFrc_t
+void
 PFmil_pretty (FILE *f, PFmnode_t *t)
 {
     PFprettyprintf ("%c", START_BLOCK);
@@ -229,8 +225,6 @@ PFmil_pretty (FILE *f, PFmnode_t *t)
     (void) PFprettyp (f);
 
     fputc ('\n', f);
-
-    return OOPS_OK;
 }
 
 

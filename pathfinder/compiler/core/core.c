@@ -39,20 +39,22 @@
  * $Id$
  */
 
+#include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
+#include "pathfinder.h"
 /* PFcore_t */
 #include "core.h"
 
 /* PFvar_t */
 #include "variable.h"
-
 /* PFarray_t */
 #include "array.h"
-
 /* PFpnode_t */
 #include "abssyn.h"
+#include "mem.h"
+#include "oops.h"
 
 /** 
  * Allocates a new core tree leaf and initializes its kind.

@@ -36,7 +36,7 @@
 #ifndef PRETTYP_H
 #define PRETTYP_H
 
-#include "pathfinder.h"
+#include <stdio.h>
 
 /** Support for colored pretty printing */
 #define PFBLACK       '\xf0'

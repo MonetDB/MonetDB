@@ -45,23 +45,22 @@
 
 #include <assert.h>
 
+#include "pathfinder.h"
+#include "types.h"
 
 /* PFty_eq */
 #include "subtyping.h"
-
-#include "types.h"
-
 /* PFqname () */
 #include "qname.h"
-
 /* PFns_xs */
 #include "ns.h"
-
 /* PFarray_t */
 #include "array.h"
-
 /* PFenv_t */
 #include "env.h"
+#include "mem.h"
+#include "oops.h"
+
 
 /**
  * The XML Schema Symbol Spaces (see XML Schema, Part 1, 2.5):
@@ -88,7 +87,7 @@ PFty_none (void)
 {
     PFty_t t = { .type  = ty_none,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -100,7 +99,7 @@ PFty_empty (void)
 {
     PFty_t t = { .type  = ty_empty,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
     
@@ -112,31 +111,20 @@ PFty_item (void)
 {
     PFty_t t = { .type  = ty_item,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
     return t;
 }
 		     
-PFty_t 
-PFty_untyped (void)
-{
-    PFty_t t = { .type  = ty_untyped,
-		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
-		 .child = { 0 } 
-    };
-
-    return t;
-}
 		     
 PFty_t 
 PFty_atomic (void)
 {
     PFty_t t = { .type  = ty_atomic,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -148,7 +136,7 @@ PFty_numeric (void)
 {
     PFty_t t = { .type  = ty_numeric,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -160,7 +148,7 @@ PFty_node (void)
 {
     PFty_t t = { .type  = ty_node,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -172,7 +160,7 @@ PFty_text (void)
 {
     PFty_t t = { .type  = ty_text,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -184,7 +172,7 @@ PFty_pi (void)
 {
     PFty_t t = { .type  = ty_pi,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -196,7 +184,7 @@ PFty_comm (void)
 {
     PFty_t t = { .type  = ty_comm,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -208,7 +196,7 @@ PFty_integer (void)
 {
     PFty_t t = { .type  = ty_integer,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -220,7 +208,7 @@ PFty_decimal (void)
 {
     PFty_t t = { .type = ty_decimal,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -232,7 +220,7 @@ PFty_double (void)
 {
     PFty_t t = { .type = ty_double,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -244,7 +232,7 @@ PFty_string (void)
 {
     PFty_t t = { .type = ty_string,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -256,7 +244,7 @@ PFty_boolean (void)
 {
     PFty_t t = { .type = ty_boolean,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = NULL,           /* no sensible symbol space*/
+                 .sym_space = 0,           
 		 .child = { 0 } 
     };
 
@@ -374,7 +362,7 @@ PFty_opt (PFty_t t)
 {
     PFty_t ty = { .type  = ty_opt,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     };
 
@@ -390,7 +378,7 @@ PFty_plus (PFty_t t)
 {
     PFty_t ty = { .type  = ty_plus,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     };
 
@@ -406,7 +394,7 @@ PFty_star (PFty_t t)
 {
     PFty_t ty = { .type  = ty_star,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     };
 
@@ -424,7 +412,7 @@ PFty_seq (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_seq,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     };
 
@@ -444,7 +432,7 @@ PFty_choice (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_choice,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     };
 
@@ -464,7 +452,7 @@ PFty_all (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_all,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     };
 
@@ -482,7 +470,7 @@ PFty_elem (PFqname_t qn, PFty_t t)
 {
     PFty_t ty = { .type  = ty_elem,
 		  .name  = qn,
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     };  
 
@@ -498,7 +486,7 @@ PFty_attr (PFqname_t qn, PFty_t t)
 {
     PFty_t ty = { .type  = ty_attr,
 		  .name  = qn,
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     }; 
 
@@ -514,7 +502,7 @@ PFty_doc (PFty_t t)
 {
     PFty_t ty = { .type  = ty_doc,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
-                  .sym_space = NULL,           /* no sensible symbol space*/
+                  .sym_space = 0,           
 		  .child = { 0, 0 }
     }; 
 
@@ -586,11 +574,11 @@ PFty_xs_anyNode (void)
     return PFty_node ();
 }
 
-/** type xs:anySimpleType = atomic */
+/** type xs:anySimpleType = atomic* */
 PFty_t
 PFty_xs_anySimpleType (void)
 {
-    return PFty_atomic ();
+    return PFty_star (PFty_atomic ());
 }
 
 /** type xs:anyElement = elem * { xs:anyType } */
@@ -610,6 +598,20 @@ PFty_xs_anyAttribute (void)
     PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
 
     return PFty_attr (wild, PFty_xs_anySimpleType ());
+}
+
+/** type xdt:untypedAtomic = atomic */
+PFty_t
+PFty_xdt_untypedAtomic (void)
+{
+    return PFty_atomic ();
+}
+
+/** type xdt:untypedAny = node* */
+PFty_t
+PFty_xdt_untypedAny (void)
+{
+    return PFty_star (PFty_node ());
 }
 
 /* ...................................................................... */
@@ -777,7 +779,6 @@ static char* ty_id[] = {
     , [ty_choice ]     " | "
     , [ty_all    ]     " & "
     , [ty_item   ]     "item"
-    , [ty_untyped]     "untyped"
     , [ty_atomic ]     "atomic"
     , [ty_numeric]     "numeric"
     , [ty_integer]     "integer"
@@ -805,13 +806,15 @@ static char* ty_id[] = {
  *       &   |  0
  */
 static int ty_prec[] = {
-    [ty_opt   ]     3
+     [ty_opt   ]     3
     ,[ty_plus  ]     3
     ,[ty_star  ]     3
     ,[ty_seq   ]     2
     ,[ty_choice]     1
     ,[ty_all   ]     0
 };
+
+#include <stdio.h>
 
 static void
 ty_printf (PFarray_t *s, const char *fmt, ...)
@@ -858,7 +861,7 @@ ty_str (PFty_t t, int prec)
     case ty_elem:
     case ty_attr:
 	if (PFty_wildcard (t)) {
-	case ty_doc:
+    case ty_doc:
 	    ty_printf (s, "%s { %s }",
 		       ty_id[t.type],
 		       ty_str (*(t.child[0]), 0));
@@ -971,34 +974,35 @@ PFty_schema (PFty_t t)
 }
 
 /** 
- * XML Schema `xs:...' types built into XQuery
+ * Pre-defined XML Schema/XQuery types
  * (see W3C XQuery, 2.4 Types).
  */
-static struct { char *loc; PFty_t (*fn) (void); } xs_builtins[] = { 
-    { .loc = "integer",       .fn = PFty_xs_integer       },
-    { .loc = "string",        .fn = PFty_xs_string        },
-    { .loc = "boolean",       .fn = PFty_xs_boolean       },
-    { .loc = "decimal",       .fn = PFty_xs_decimal       },
-    { .loc = "double",        .fn = PFty_xs_double        },
-    { .loc = "anyType",       .fn = PFty_xs_anyType       },
-    { .loc = "anyItem",       .fn = PFty_xs_anyItem       },
-    { .loc = "anyNode",       .fn = PFty_xs_anyNode       },
-    { .loc = "anySimpleType", .fn = PFty_xs_anySimpleType },
-    { .loc = "anyElement",    .fn = PFty_xs_anyElement    },
-    { .loc = "anyAttribute",  .fn = PFty_xs_anyAttribute  },
+static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] = 
+{ 
+    { .ns = &PFns_xs,  .loc = "integer",       .fn = PFty_xs_integer        },
+    { .ns = &PFns_xs,  .loc = "string",        .fn = PFty_xs_string         },
+    { .ns = &PFns_xs,  .loc = "boolean",       .fn = PFty_xs_boolean        },
+    { .ns = &PFns_xs,  .loc = "decimal",       .fn = PFty_xs_decimal        },
+    { .ns = &PFns_xs,  .loc = "double",        .fn = PFty_xs_double         },
+    { .ns = &PFns_xs,  .loc = "anyType",       .fn = PFty_xs_anyType        },
+    { .ns = &PFns_xs,  .loc = "anyItem",       .fn = PFty_xs_anyItem        },
+    { .ns = &PFns_xs,  .loc = "anyNode",       .fn = PFty_xs_anyNode        },
+    { .ns = &PFns_xs,  .loc = "anySimpleType", .fn = PFty_xs_anySimpleType  },
+    { .ns = &PFns_xs,  .loc = "anyElement",    .fn = PFty_xs_anyElement     },
+    { .ns = &PFns_xs,  .loc = "anyAttribute",  .fn = PFty_xs_anyAttribute   },
+    { .ns = &PFns_xdt, .loc = "untypedAtomic", .fn = PFty_xdt_untypedAtomic },
+    { .ns = &PFns_xdt, .loc = "untypedAny",    .fn = PFty_xdt_untypedAny    },
     /* end of built-in XML Schema type list */
-    { .loc = 0,               .fn = 0                     }
+    { .ns = 0,        .loc = 0,               .fn = 0                     }
 };
 
 
 /**
- * Register the XML Schema built-in types `xs:...' in the Pathfinder
- * schema type environment.
- *
- * @return status code
+ * Register the XML Schema/XQuery predefined types `xs:...' and `xdt:...' 
+ * in the Pathfinder schema type environment.
  */
 void
-PFty_xs_builtins (void)
+PFty_predefined (void)
 {
     PFty_t t;
     unsigned int n;
@@ -1010,14 +1014,14 @@ PFty_xs_builtins (void)
     PFgroup_defns     = PFenv ();
     PFattrgroup_defns = PFenv ();
 
-    for (n = 0; xs_builtins[n].loc; n++) {
-	/* construct the type definition with name`xs:...' */
-        t = PFty_named (PFqname (PFns_xs, xs_builtins[n].loc));
+    for (n = 0; predefined[n].loc; n++) {
+	/* construct the type definition with name ns:loc */
+        t = PFty_named (PFqname (*(predefined[n].ns), predefined[n].loc));
 
 	/* enter the type and its definition into its XML Schema
          * symbol space 
          */
-        PFty_import (t, xs_builtins[n].fn ());
+        PFty_import (t, predefined[n].fn ());
     }
 }
 

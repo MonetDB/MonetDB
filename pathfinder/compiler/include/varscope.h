@@ -39,7 +39,7 @@
 #include "abssyn.h"
 
 /* Check variable scoping rules */
-PFrc_t PFvarscope (PFpnode_t *);
+void PFvarscope (PFpnode_t *);
 
 #endif  /* VARSCOPE_H */
 

@@ -53,15 +53,12 @@
  */
 
 #include <assert.h>
-
-/* qsort */
 #include <stdlib.h>
 
+#include "pathfinder.h"
 #include "env.h"
-
 /* PFqname_t */
 #include "qname.h"
-
 /* PFarray_t */
 #include "array.h"
 

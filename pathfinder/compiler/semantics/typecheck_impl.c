@@ -37,13 +37,12 @@
 
 #include <assert.h>
 
-#include "subtyping.h"
-
+#include "pathfinder.h"
 #include "typecheck.h"
 
+#include "subtyping.h"
 /* PFcnode_t */
 #include "core.h"
-
 /** twig-generated node type identifiers */
 #include "typecheck.symbols.h"
 

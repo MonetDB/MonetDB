@@ -397,7 +397,7 @@
 #include <fcntl.h>
 #include <assert.h>
 
-#include "pf_config.h"
+#include "pathfinder.h"
 
 #if HAVE_GETOPT_H
 #include <getopt.h>
@@ -468,7 +468,6 @@ static const char
 
 #endif
 
-#include "pathfinder.h"
 #include "parser.h"       /* parsing XQuery syntax */
 #include "abssyn.h"
 #include "varscope.h"     /* variable scoping */
@@ -490,8 +489,8 @@ static const char
 #include "typecheck.h"    /* type inference and check */
 #include "core2mil.h"     /* mapping core --> MIL */
 #include "milprint.h"     /* create string representation of MIL tree */
-
-#include "subtyping.h"
+#include "oops.h"
+#include "mem.h"
 
 /* GC_max_retries, GC_gc_no */
 #include "gc.h"
@@ -581,7 +580,6 @@ main (int argc, char *argv[])
     PFcnode_t *croot  = 0;
     PFmnode_t *mroot  = 0;
     PFarray_t *mil_program = 0;
-    PFrc_t rc;
 
     /* fd of the log file (if present) */
     int logf = 0;
@@ -618,7 +616,7 @@ main (int argc, char *argv[])
         
         switch (c) {
         case 'h':
-            printf ("Pathfinder Compiler, revision $Revision$ ($Date$)\n");
+            printf ("Pathfinder XQuery Compiler ($Revision$, $Date$)\n");
             printf ("(c) University of Konstanz, DBIS group\n\n");
             printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
             printf ("  Reads from standard input if FILE is omitted.\n\n");
@@ -664,13 +662,7 @@ main (int argc, char *argv[])
         case 'd':
             PFstate.daemon = true;
 
-            if ((rc = PFdaemonize (atoi (optarg)))) {
-                PFoops (rc, 
-                        "dæmon cannot listen on port `%s': %s",
-                        optarg,
-                        strerror (errno));
-                goto failure;
-            }
+            PFdaemonize (atoi (optarg));
             break;
         
         case 'l': 
@@ -797,8 +789,7 @@ main (int argc, char *argv[])
   
     /* Invoke parser on stdin (or whatever stdin has been dup'ed to) 
      */
-    if (PFparse (&proot))
-        goto failure;
+    PFparse (&proot);
 
     tm = PFtimer_stop (tm);
     if (PFstate.timing)
@@ -827,8 +818,7 @@ main (int argc, char *argv[])
 
     /* Check variable scoping and replace QNames by PFvar_t pointers 
      */
-    if (PFvarscope (proot))
-        goto failure;
+    PFvarscope (proot);
   
     /* Load built-in XQuery F&O into function environment 
      */
@@ -849,10 +839,10 @@ main (int argc, char *argv[])
 
     tm = PFtimer_start ();
 
-    /* Load XML Schema built-in types into type enviroment 
+    /* Load XML Schema/XQuery predefined types into the type environment
      */
-    PFty_xs_builtins ();
-
+    PFty_predefined ();
+    
     /* XML Schema import 
      */
     PFschema_import (proot);
@@ -938,8 +928,7 @@ main (int argc, char *argv[])
 
     /* Map core to MIL 
      */
-    if (PFcore2mil (croot, &mroot))
-        goto failure;
+    PFcore2mil (croot, &mroot);
 
     tm = PFtimer_stop (tm);
     if (PFstate.timing)

@@ -34,8 +34,6 @@
 #ifndef OOPS_H
 #define OOPS_H
 
-#include "pathfinder.h"
-
 /**
  * If you add error codes here, remember to update
  * the #oops_msg[] table in file oops.c!

@@ -34,7 +34,14 @@
  * $Id$
  */
 
-/** Escape all newlines and double quotes in string @a in */
-char * PFesc_string (char *in);
+#ifndef PFSTRINGS_H
+#define PFSTRING_H
+
+/** 
+ * Escape all newlines and double quotes in string @a in 
+ */
+char *PFesc_string (char *);
+
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

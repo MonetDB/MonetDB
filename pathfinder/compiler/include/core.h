@@ -36,8 +36,6 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include "pathfinder.h"
-
 /* PFvar_t */
 #include "variable.h"
 

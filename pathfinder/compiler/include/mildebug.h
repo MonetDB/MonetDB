@@ -45,9 +45,9 @@
 
 extern char *m_id[];
 
-PFrc_t PFmil_dot (FILE *f, PFmnode_t *root);
+void PFmil_dot (FILE *f, PFmnode_t *root);
 
-PFrc_t PFmil_pretty (FILE *f, PFmnode_t *root);
+void PFmil_pretty (FILE *f, PFmnode_t *root);
 
 #endif     /* MILDEBUG_H */
 

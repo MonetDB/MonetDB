@@ -33,6 +33,9 @@ prologue {
  * $Id$
  */
 
+#include "pathfinder.h"
+#include "abssyn.h"
+
 /*
  * Include all function declarations and definitions that reside
  * in a separate file to document them nicely with doxygen.
@@ -40,8 +43,6 @@ prologue {
  */
 #include "norm_impl.c"
 
-/* nil (), wire*() */
-#include "abssyn.h"
 
 };
 
@@ -106,7 +107,6 @@ node  plus         /* binary + */
       node_ty      /* node type */
       item_ty      /* item type */
       atom_ty      /* named atomic type */
-      untyped_ty   /* untyped type */
       atomval_ty   /* atomic value type */
       named_ty     /* named type */ 
       req_ty       /* required type */
@@ -609,7 +609,6 @@ ItemType:               ElemAtt_;
 ItemType:               node_ty (nil);
 ItemType:               item_ty (nil);
 ItemType:               atom_ty (nil);
-ItemType:               untyped_ty (nil);
 ItemType:               atomval_ty (nil);
 
 ElemAtt_:               node_ty (OptElemOrAttrType_);

@@ -38,10 +38,9 @@
 #define FUNCTIONS_H
 
 #include "pathfinder.h"
-
 /* PFty_t */
 #include "types.h"
-
+/* PFenv_t */
 #include "env.h"
 
 /** Data structure to hold information about XQuery functions.  */

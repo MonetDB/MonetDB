@@ -33,7 +33,9 @@
  * $Id$
  */
 
+#include "pathfinder.h"
 #include "miltype.h"
+
 #include "milty.h"
 #include "types.h"
 #include "subtyping.h"

@@ -35,8 +35,6 @@
  * $Id$
  */
 
-#include "func_chk.h"
-#include "functions.h"
 
 #include <stdlib.h>
 /* variable argument list for func_add_var() */
@@ -44,7 +42,13 @@
 #include <string.h>
 #include <assert.h>
 
+#include "pathfinder.h"
+#include "functions.h"
+
+#include "func_chk.h"
 #include "types.h"
+#include "oops.h"
+#include "mem.h"
 
 /* add a single user-defined function definition to the list */
 static void add_ufun (PFpnode_t *n);
@@ -342,7 +346,7 @@ PFfun_new (PFqname_t qn,
     if (ret_ty)
         n->ret_ty  = *ret_ty;
     else
-        n->ret_ty = PFty_untyped ();
+        n->ret_ty = PFty_star (PFty_item ());
 
     return n;
 }

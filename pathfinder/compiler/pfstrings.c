@@ -36,6 +36,9 @@
 #include <string.h>
 
 #include "pathfinder.h"
+#include "pfstrings.h"
+
+#include "mem.h"
 
 /**
  * Escape all newlines and quotes in string @a in by a backslash.

@@ -40,14 +40,13 @@
  */
 
 #include "pathfinder.h"
+#include "variable.h"
 
 /** PFqname_t */
 #include "qname.h"
-
 /** PFty_none () */
 #include "types.h"
-
-#include "variable.h"
+#include "mem.h"
 
 /**
  * Allocate a new @a PFvar_t struct to hold a variable with name @a varname,

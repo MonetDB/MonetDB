@@ -37,12 +37,11 @@
 #include <string.h>
 
 #include "pathfinder.h"
-
-/* PFqname_t */
 #include "qname.h"
 
 /* PFns_t */
 #include "ns.h"
+#include "mem.h"
 
 /** 
  * Compare two QNames and return integer less than, greater than

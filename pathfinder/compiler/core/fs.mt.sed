@@ -127,7 +127,6 @@ node  plus         /* binary + */
       node_ty      /* node type */
       item_ty      /* item type */
       atom_ty      /* named atomic type */
-      untyped_ty   /* untyped type */
       atomval_ty   /* atomic value type */
       named_ty     /* named type */ 
       req_ty       /* required type */
@@ -848,13 +847,6 @@ ItemType:               item_ty (Nil_)
     }
     ;
 ItemType:               AtomType;
-ItemType:               untyped_ty (Nil_)
-    =
-    {
-        /* untyped */
-        [[ $$ ]] = seqtype (PFty_untyped ()); 
-    }
-    ;
 ItemType:               atomval_ty (Nil_)
     =
     {

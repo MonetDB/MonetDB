@@ -34,8 +34,10 @@
 
 #include <string.h>
 
+#include "pathfinder.h"
 #include "abssyn.h"
 
+#include "mem.h"
 
 /** 
  * Allocates a new parse tree leaf and initializes 

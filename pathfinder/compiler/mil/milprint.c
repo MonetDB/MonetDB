@@ -94,9 +94,13 @@
 
 #include <stdio.h>
 #include <assert.h>
+
+#include "pathfinder.h"
 #include "milprint.h"
+
 #include "array.h"
 #include "pfstrings.h"
+#include "oops.h"
 
 /**
  * Denotes an illegal value for a PFmty_simpl_t. This is used in
