@@ -1,12 +1,12 @@
 stdout of test 'load` in directory 'src` itself:
 
 
-# 20:09:17 >  
-# 20:09:17 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src  < load.milS
-# 20:09:17 >  
+# 21:09:18 >  
+# 21:09:18 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src  < load.milS
+# 21:09:18 >  
 
 # Monet Database Server V4.3.9
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 var mods := new(void,str);
 mods.insert(nil,"sqlserver");
@@ -36,9 +36,12 @@ loading module 'sqlserver'
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
+[ "sqlserver",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 dropping module 'sqlserver'
@@ -55,7 +58,7 @@ dropping module 'sqlserver'
 
 quit;
 
-# 20:09:17 >  
-# 20:09:17 >  Done.
-# 20:09:17 >  
+# 21:09:19 >  
+# 21:09:19 >  Done.
+# 21:09:19 >  
 

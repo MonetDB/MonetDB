@@ -195,6 +195,10 @@ extern int mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rs
 extern int void_insert_bat( BAT *b, BAT *u);
 extern int void_append_bat( BAT *b, BAT *u);
 
+static int* local_TYPE_Stream;
+static size_t (*local_ASCIIoutput)(BAT*, BAT*, BAT*, stream*);
+static BAT* (*local_ASCIIinput)(BAT*, BAT*, BAT*, bstream*, size_t);
+
 #endif /*__MVC_H*/
 @c
 
@@ -2891,7 +2895,7 @@ void mvc_export(stream * s, BAT * order, BAT * bats, char *sep,
 
 	i = snprintf(buf, BUFSIZ, "%d\n", BATcount(order));
 	s->write(s, buf, i, 1);
-	ASCIIoutput(order, seps, bats, s);
+	(*local_ASCIIoutput)(order, seps, bats, s);
 	BBPreclaim(seps);
 }
 
@@ -2964,7 +2968,7 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 		BUNins(tpes, (ptr)&nil, ATOMname(b->ttype));
 		BBPunfix(b->batCacheid);
 	}
-	inss = ASCIIinput( nmes, seps, tpes, bs, sz);
+	inss = (*local_ASCIIinput)( nmes, seps, tpes, bs, sz);
 	bstream_destroy(bs);
 	if (!inss)
 		return -1;

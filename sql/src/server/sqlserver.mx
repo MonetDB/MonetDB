@@ -6,6 +6,8 @@
 .MODULE sqlserver;
 	.USE ascii_io,streams;
 
+	.PRELUDE = sqlserver_prelude;
+
 	.COMMAND isNil( str s ) : bit = isNil_wrap;
 		"isNil(s).."
 
@@ -201,6 +203,22 @@
 #include  <sys/types.h> 
 #include  <sys/socket.h> 
 
+#include "monet_tbl.h"
+
+void sqlserver_prelude(void) {
+	int mid = TBL_module_lookup("streams");
+	ptr hdl = TBL_module_handle(mid);
+	local_TYPE_Stream = (int*)DL_sym(hdl, "TYPE_Stream");
+
+	mid = TBL_module_lookup("ascii_io");
+	hdl = TBL_module_handle(mid);
+	local_ASCIIoutput = (size_t (*)(BAT*, BAT*, BAT*, stream*))DL_sym(hdl, "ASCIIoutput");
+
+	mid = TBL_module_lookup("ascii_io");
+	hdl = TBL_module_handle(mid);
+	local_ASCIIinput = (BAT* (*)(BAT*, BAT*, BAT*, bstream*, size_t))DL_sym(hdl, "ASCIIinput");
+}
+
 extern catalog *catalog_create( context *lc, mvc *m);
 
 int isNil_wrap( bit *b, str s)
@@ -246,9 +264,9 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	m = *M;
   	@:builtin_operand(1,TYPE_context,C)@
 	lc = *C;
-  	@:builtin_operand(2,TYPE_Stream,In)@
+  	@:builtin_operand(2,*local_TYPE_Stream,In)@
 	in = *In;
-  	@:builtin_operand(3,TYPE_Stream,Out)@
+  	@:builtin_operand(3,*local_TYPE_Stream,Out)@
 	out = *Out;
 
 	while(lc->cur != EOF ){
@@ -671,7 +689,6 @@ module(alarm);
 module(ddbench);
 module(aggrX3);
 module(monettime);
-module(ascii_io); # HACK: should not be necessary...
 module(sqlserver);
 module(mmath);
 module(decimal);
