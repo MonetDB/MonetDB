@@ -5,7 +5,7 @@ LEX=flex
 
 # This is the location of pthreads for Win32, 
 # see http://sourceware.cygnus.com/pthreads-win32/
-PTHREAD = D:\Pthreads
+PTHREAD = C:\Pthreads
 PTHREAD_LIBS = $(PTHREAD)\pthread.lib
 PTHREAD_INCS = -I$(PTHREAD) 
 
