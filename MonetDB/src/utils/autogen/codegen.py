@@ -273,6 +273,8 @@ def do_dep_rules(deps,cwd,cache):
           df,de = split_filename(d)
 	  if (de == dep and df+new not in cache[target]):
       	    cache[target].append(df+new)
+      else:
+      	  cache[target].append(tf+new)
 
 # scan for includes and match against the known deps and include map.
 def do_scan(targets,deps,incmap,cwd,cache):
