@@ -3,8 +3,9 @@
 import re
 import sys
 import fileinput
+import os
 
-prefix=sys.argv[1]
+prefix=os.path.abspath(sys.argv[1])
 
 subs = [
     ('@exec_prefix@',       "@prefix@"),
