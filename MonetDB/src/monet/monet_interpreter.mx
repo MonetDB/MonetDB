@@ -1035,12 +1035,13 @@ int interpret_while(int	stk, YYSTREE lt, ValPtr res)
 			RETURN(i);
 		}
 	}
+	i = 0;
 xit:	CLEANUP(arg(lt,0));
         if (reuse < 0) {
                 monet_cntxt[stk].reuse = reuse;
                 CNTXTfree1(stk);
         }
-	return 0;
+	return i;
 }
 
 @- Identifier Interpretation
