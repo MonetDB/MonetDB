@@ -258,7 +258,8 @@ void	PrIndex(void)
 {
 int	it;
 
-	if (TEXIMODE && bodymode==0) {
+	if (TEXIMODE ) {
+            if( bodymode == 0)
 		PrCmd("@c index table implicit\n");
 		return;
 	}
