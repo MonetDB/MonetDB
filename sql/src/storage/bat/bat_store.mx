@@ -1572,7 +1572,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "radix", "int", 9);
 		bootstrap_create_column(tr, t, "bits", "int", 9);
 		bootstrap_create_column(tr, t, "module_id", "int", 9);
-
+/*
 		t = bootstrap_create_table(tr, s, "sequences", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
@@ -1582,7 +1582,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "stop", "bigint", 19);
 		bootstrap_create_column(tr, t, "step", "bigint", 19);
 		bootstrap_create_column(tr, t, "called", "boolean", 0);
-
+*/
 		if (sql_trans_commit(tr) != SQL_OK)
 			fprintf(stderr, "Cannot commit initial transaction\n");
 		sql_trans_destroy(tr);
