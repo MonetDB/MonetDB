@@ -14,13 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
-@' Contributor(s):
-@'              Martin Kersten <Martin.Kersten@cwi.nl>
-@'              Peter Boncz <Peter.Boncz@cwi.nl>
-@'              Niels Nes <Niels.Nes@cwi.nl>
-@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
-@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 
 @a M.L. Kersten
 @* Boxed variables
@@ -129,22 +122,23 @@ the programming style.
 
 The type indicator for the destination variable should be
 provided to proceed with proper type checking as far as necessary. 
-It avoids multiple type checks later on. 
+It avoids multiple type checks later on and can resolve overloaded
+function selection. 
 Failure to find a properly typed object leads to a runtime exception
 or assuming the wrong type.
 
-[todo and improve] For example, the code fragment
+For example, the code fragment
 
 \begin{verbatim}
 M := mil.take("M_PI_2");
 b:= sin(M);
 \end{verbatim}
 
-leads to a polymorphic type check for M. It is marked as TYPE_any.
-This may cause an unwanted
-resolution, because currently batcalc.sin(:bat) would be a permissible
+leads to a polymorphic type check for M. It is marked as TYPE\_any.
+This may cause an unwanted resolution later on, because 
+currently batcalc.sin(:bat) would be a permissible
 operation, because a BAT input matched against any
-[todo and improve]
+[todo improve, the rhs is too permissive]
 
 The default is to mark the instruction as polymorphic, which means
 that the type is determined at runtime and may propagate thru
@@ -265,6 +259,7 @@ mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
 mal_export str getBoxName(Box box, lng i);
+mal_export str getBoxNames(int *bid);
 mal_export str toString(Box box, lng i);
 mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 
@@ -528,6 +523,17 @@ str getBoxName(Box box, lng i){
 str toString(Box box, lng i){
 	(void) box; (void) i; /* fool the compiler */
 	return GDKstrdup("");
+}
+str getBoxNames(int *bid){
+	BAT *b;
+	int i;
+	b = BATnew(TYPE_int,TYPE_str,(size_t) MAXSPACES);
+	for(i=0; i<MAXSPACES; i++)
+	if( box[i]!= NULL ){
+		BUNins(b,&i, box[i]->name);
+	}
+	BBPfix(*bid = b->batCacheid);
+	return MAL_SUCCEED;
 }
 @+ Persistency
 The content of a box is saved on a file for subsequent re-use.
