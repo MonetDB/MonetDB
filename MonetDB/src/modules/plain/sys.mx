@@ -66,7 +66,7 @@ that you might well find very useful.
 .COMMAND mem_colormap() : void = print_color_map;
         "print a color map of all memory that is in use"
 @T
-For each 64KB block in the first 3GB of the virtual memory {\tt mem\_printmap()} prints a character:
+For each 64KB block in the first 3GB of the virtual memory {\tt mem_printmap()} prints a character:
 \begin{verbatim}
 0-9 - thread stack space of thread <num>
 B - in use for a large BAT heap (i.e. anonymous virtual memory).
@@ -109,7 +109,7 @@ low value (say 64KB).
 .COMMAND vm_usage(lng minsize) : BAT[str,lng] = get_vm_usage;
 	"get a split-up of how much virtual memory blocks are in use."
 @T
-Some explanation of what mem\_usage() and vm\_usage() display:
+Some explanation of what mem_usage() and vm_usage() display:
 \begin{verbatim}
 > mem_usage.print;
 #------------------------------#
@@ -173,14 +173,6 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	"List the values of all environment variables"
 .COMMAND view_gdk_thread( ): BAT[int,str] = view_gdk_thread; 
 	"Pseudo bat to map thread to name"
-@- ATOM table status
-@m
-.COMMAND view_atom_name() : BAT[int,str] = view_atom_name;
-	"Global type table names"
-.COMMAND view_atom_align() : BAT[int,int] = view_atom_align;
-	"Global type table alignment property"
-.COMMAND view_atom_size() : BAT[int,int] = view_atom_size;
-	"Global type table sizement property"
 
 @- Monet Client Data
 @m
@@ -296,9 +288,24 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	"list all loaded modules, and the number of active users.", "sys"); 
 
     PROC atoms():void :={
-	table(1,view_atom_name.col_name("atom type"),
-		view_atom_size.col_name("size"),
-		view_atom_align.col_name("alignment"));
+	nme:= new(void,str); nme.seqbase(0@0); 
+	sze:= new(void,str); sze.seqbase(0@0); 
+	aln:= new(void,str); aln.seqbase(0@0);
+	monet_mod_atm@batloop(){
+		var i:= search($t,'=');
+		var j:= search($t,',');
+		nme.insert(nil,$t.string(0,i));
+		var k:= j - 1;
+		sze.insert(nil,$t.string(i+1,k-i));
+		if(j>0){
+		aln.insert(nil,$t.string(j+1,$t.length-j));
+		} else {
+		aln.insert(nil,$t.string(i+1,$t.length-i));
+		}
+	}
+	table(1,nme.col_name("atom type"),
+		sze.col_name("size"),
+		aln.col_name("alignment"));
     }
     PROC sigs(str modname) : void := {
 	var modname2;
@@ -733,53 +740,6 @@ view_gdk_thread(
 	@:Pseudo(gdk,thread)@
         return GDK_SUCCEED;
 }
-int
-view_atom_name(
-   BAT**        retval  /* put pointer to BAT[int,str] record here. */
-){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_str,GDKatomcnt*2);
-        if (b == 0) return GDK_FAIL;
-
-        for(i=0; i < GDKatomcnt; i++)
-                BUNins(b, &i, BATatoms[i].name);
-	@:Pseudo(atom,name)@
-        return GDK_SUCCEED;
-}
-int
-view_atom_align(
-   BAT**        retval  /* put pointer to BAT[int,str] record here. */
-){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_int,GDKatomcnt*2);
-        if (b == 0) return GDK_FAIL;
-
-        for(i=0; i < GDKatomcnt; i++)
-                BUNins(b, &i, &BATatoms[i].align);
-	@:Pseudo(atom,align)@
-        return GDK_SUCCEED;
-}
-int
-view_atom_size(
-   BAT**        retval  /* put pointer to BAT[int,str] record here. */
-){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_int,GDKatomcnt*2);
-        if (b == 0) return GDK_FAIL;
-
-        for(i=0; i < GDKatomcnt; i++){
-		int z= BATatoms[i].size;
-                BUNins(b, &i, &z);
-	}
-	@:Pseudo(atom,size)@
-        return GDK_SUCCEED;
-}
 
 int view_gdk_env(	
 	BAT **retval
@@ -859,7 +819,6 @@ int view_client_tree(BAT **retval){
 	char buf[4096]; 
 	int i; 
 
-        if (b == 0) return GDK_FAIL;
         for (i = 0; i < MAXCLIENTS; i++) 
             if (monet_clients[i].mode != FINISHED) {
 		Client c = monet_clients + i;
@@ -1248,7 +1207,6 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	char buf[1024];
 	bat i;
 
-	if( bn == NULL) return GDK_FAIL;
 	BBPlock("get_mem_usage");
 	for(i=1; i <BBPsize; i++) { 
 		BAT *b = BBP_cache(i);
@@ -1337,7 +1295,6 @@ int get_vm_usage(BAT **ret, lng *minsize) {
 	char buf[1024];
 	bat i;
 
-	if( bn == NULL) return GDK_FAIL;
 	BBPlock("get_vm_usage");
 	for(i=1; i <BBPsize; i++) {
 		BAT *b = BBP_cache(i);
@@ -1503,7 +1460,6 @@ int view_gdk_mem_histo(BAT **retval) {
 	BAT *b = BATnew(TYPE_lng, TYPE_lng, GDK_HISTO_MAX_BIT);
 #ifdef GDK_MEM_KEEPHISTO
 	int i;
-	if( b == NULL) return GDK_FAIL;
 	for (i = 3; i < GDK_HISTO_MAX_BIT - 1; i++) {
 		lng j = 1 << i;
 		lng v = (lng) GDK_nmallocs[i]
@@ -1518,7 +1474,6 @@ int view_gdk_vm_histo(BAT **retval) {
 	BAT *b = BATnew(TYPE_lng, TYPE_lng, GDK_HISTO_MAX_BIT);
 #ifdef GDK_VM_KEEPHISTO
 	int i;
-	if( b == NULL) return GDK_FAIL;
 	for (i = 12; i < GDK_HISTO_MAX_BIT - 1; i++) {
 		lng j = 1 << i;
 		lng v = (lng) GDK_vm_nallocs[i]

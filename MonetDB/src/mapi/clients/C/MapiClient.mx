@@ -56,15 +56,8 @@ The following options are supported:
  -t          & --trace          & trace Monet interaction \\
  -T          & --time           & time commands \\
  -u user     & --user=user      & user id \\
- -H          & --history        & load/save cmdline history (default off) \\
  -?          & --help           & show this usage message \\
-\end{tabular}
-
-Calling "MapiClient -l sql" establishes a SQL connection with an
-Mserver server running on the local machine. The default user
-'monetdb' is used, which provides administrative rights.
-To protect your database you may want to introduce another DBA name and
-limit the access permisions of 'monetdb' to the level of a guest account.
+\end{itemize}
 @
 
 @{
@@ -84,7 +77,6 @@ limit the access permisions of 'monetdb' to the level of a guest account.
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "ReadlineTools.h"
 #endif
 
 #ifndef S_ISCHR
@@ -603,9 +595,7 @@ dump_table(Mapi mid, char *tname)
 
 		for(i = 0; i < cnt; i++) {
 			s = mapi_fetch_field(hdl, i);
-			if (s == NULL)
-				fputs("NULL", toConsole);
-			else if (string[i]) {
+			if (string[i]) {
 				/* write double-quoted string with
 				   certain characters escaped */
 				putc('"', toConsole);
@@ -807,7 +797,6 @@ usage(const char *prog)
 	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
 	fprintf(stderr, " -T          | --time           /* time commands */\n");
 	fprintf(stderr, " -u user     | --user=user      /* user id */\n" );
-	fprintf(stderr, " -H          | --history        /* load/save cmdline history (default off) */\n" );
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
 	exit(-1);
 }
@@ -835,9 +824,8 @@ main(int argc, char **argv)
 	int guest = 0;
 	int linemode = 1;
 	int c;
-	Mapi mid;
 	int quiet = 0;
-	int save_history = 0;
+	Mapi mid;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
 		{"config", 1, 0, 'c'},
@@ -852,7 +840,6 @@ main(int argc, char **argv)
 		{"time", 0, 0, 'T'},
 		{"trace", 0, 0, 't'},
 		{"user", 1, 0, 'u'},
-		{"history", 0, 0, 'H'},
 		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
@@ -865,16 +852,8 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:l:u:p:P:qHh:s:DtTd::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "c:l:u:p:P:qh:s:DtTd::?", long_options, NULL)) != -1) {
 		switch (c) {
-		case 'b':
-			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
-				linemode = 0;
-			else if (*optarg == 'f' || *optarg == 'F' || *optarg == '0')
-				linemode = 1;
-			else
-				usage(argv[0]);
-			break;
 		case 'c':
 			config = optarg;
 			break;
@@ -929,8 +908,13 @@ main(int argc, char **argv)
 				*eq = '=';
 			break;
 		}
-		case 'H':
-			save_history = 1;
+		case 'b':
+			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
+				linemode = 0;
+			else if (*optarg == 'f' || *optarg == 'F' || *optarg == '0')
+				linemode = 1;
+			else
+				usage(argv[0]);
 			break;
 		case '?':
 			usage(argv[0]);
@@ -1006,10 +990,6 @@ main(int argc, char **argv)
 		optind++;
 	}
 
-#ifdef HAVE_LIBREADLINE
-	init_readline(mid, language, save_history);
-#endif
-
 	if (command) {
 		c = doRequest(mid, command);
 	} else {
@@ -1026,11 +1006,6 @@ main(int argc, char **argv)
 		}
 		c = doFileByLines(mid, stdin, prompt, linemode);
 	}
-
-#ifdef HAVE_LIBREADLINE
-	deinit_readline();
-#endif
-
 	mapi_disconnect(mid);
 	return c;
 }

@@ -847,7 +847,6 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
@@ -864,11 +863,8 @@ others@batloop{
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
-[ "alarm",	  nil	  ]
 
 	dropping monettime
-
-	dropping alarm
 
 #BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
