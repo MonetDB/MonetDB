@@ -1135,7 +1135,7 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
                         end = OP_PUT;
                 }
                 Atom *cmp_atom = (Atom*)&d;
-                for( int i = OP_TOSTR; i < end; i++ ){
+                for( int i = OP_FIX; i < end; i++ ){
                         int found = 0;
                         Ops *s = cmds[i];
                         if (s){
@@ -1148,7 +1148,7 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
                         if (!found && (d.type() || d.parent())){
 				continue;
 			}
-                        if (!found && d.isFixed()){
+                        if (!found && d.isFixed() && i > OP_UNFIX){
                                 atom_property(o, d.Name(),
                                         Atomops::string(i));
                                 o << "(ptr)&";

@@ -32,6 +32,8 @@
 #include "list.h"
 
 enum atom_ops_t {
+	OP_FIX,
+	OP_UNFIX,
 	OP_TOSTR,
 	OP_FROMSTR,
 	OP_READ,
@@ -40,8 +42,6 @@ enum atom_ops_t {
 	OP_HASH,
 	OP_NULL,
 	OP_CONVERT,
-	OP_FIX,
-	OP_UNFIX,
 	OP_PUT,
 	OP_LEN,
 	OP_DEL, 

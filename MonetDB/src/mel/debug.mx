@@ -92,7 +92,7 @@ ostream &debug::gen_atom( ostream &o, const Atom &d ){
 
 	if (d.cmds()){
 	   	Ops **cmds = d.cmds();
-	   	for( int i = OP_TOSTR; i <= OP_HEAP; i++ ){  
+	   	for( int i = OP_FIX; i <= OP_NEQUAL; i++ ){  
 			Ops *s = cmds[i];
 			if (s)
 				s->print( this, o );

@@ -126,7 +126,7 @@ ostream &html::gen_atom( ostream &o, const Atom &d ){
 	o << "<ul>\n"; 
 	if (d.cmds()){
 	   	Ops **cmds = d.cmds();
-	   	for( int i = OP_TOSTR; i <= OP_HEAP; i++ ){  
+	   	for( int i = OP_FIX; i <= OP_NEQUAL; i++ ){  
 			Ops *s = cmds[i];
 			if (s)
 				s->print( this, o );
@@ -140,6 +140,8 @@ ostream &html::gen_atomops( ostream &o, const Atomops &d ){
 	
 	o << "<li>";
 	switch( d.operation() ){
+        case OP_FIX 	: o << "FIX     = " << d.Name() << ";\n"; break;
+        case OP_UNFIX 	: o << "UNFIX   = " << d.Name() << ";\n"; break;
 	case OP_TOSTR 	: o << "TOSTR   = " << d.Name() << ";\n"; break;
         case OP_FROMSTR : o << "FROMSTR = " << d.Name() << ";\n"; break;
 	case OP_READ 	: o << "READ    = " << d.Name() << ";\n"; break;
@@ -150,8 +152,6 @@ ostream &html::gen_atomops( ostream &o, const Atomops &d ){
         case OP_DEL 	: o << "DEL     = " << d.Name() << ";\n"; break;
         case OP_HASH 	: o << "HASH    = " << d.Name() << ";\n"; break;
         case OP_NULL 	: o << "NULL    = " << d.Name() << ";\n"; break;
-        case OP_FIX 	: o << "FIX     = " << d.Name() << ";\n"; break;
-        case OP_UNFIX 	: o << "UNFIX   = " << d.Name() << ";\n"; break;
         case OP_PUT 	: o << "PUT     = " << d.Name() << ";\n"; break;
         case OP_LEN 	: o << "LENGTH  = " << d.Name() << ";\n"; break;
         case OP_HEAP 	: o << "HEAP    = " << d.Name() << ";\n"; break;
