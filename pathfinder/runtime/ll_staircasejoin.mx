@@ -304,19 +304,19 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     while (fst_BUN < max_BUN)
     {
         BAT *iter_tmp = NULL, *ctx_tmp = NULL;
-        oid    fst_iter = *(oid*)BUNtloc(iter_bat, fst_BUN);
+        oid    fst_iter = *(oid*)BUNtail(iter_bat, fst_BUN);
         oid    lst_iter = oid_nil;
         oid    max_iter = fst_iter + chunk_size;
         size_t lst_idx  = fst_idx  + 1;
         BUN    lst_BUN  = fst_BUN  + bun_size;
 
 	/* FIXME/TODO: use binary search (SORTfndfirst/SORTfndlast) on [fst_BUN,max_BUN] ? */
-        while (lst_BUN < max_BUN && *(oid*)BUNtloc(iter_bat, lst_BUN) < max_iter)
+        while (lst_BUN < max_BUN && *(oid*)BUNtail(iter_bat, lst_BUN) < max_iter)
         {
             lst_BUN += bun_size;
             lst_idx++;
         }
-        lst_iter = *(oid*)BUNtloc(iter_bat, lst_BUN - bun_size);
+        lst_iter = *(oid*)BUNtail(iter_bat, lst_BUN - bun_size);
 
         iter_tmp = iter_chunk = BATslice(iter_bat, fst_idx, lst_idx);
         ctx_tmp  = ctx_chunk  = BATslice(ctx_bat,  fst_idx, lst_idx);
@@ -424,12 +424,12 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
     iter_bun = BUNfirst(iter_bat);
     ctx_bun = BUNfirst(ctx_bat);
     ctx_last = BUNlast(ctx_bat);
-    ctx = *(oid*)BUNtloc(ctx_bat,ctx_bun);
+    ctx = *(oid*)BUNtail(ctx_bat,ctx_bun);
 
 @= getnextctx
     iter_bun += iter_bunsize;
     ctx_bun += ctx_bunsize;
-    ctx = *(oid*)BUNtloc(ctx_bat,ctx_bun);
+    ctx = *(oid*)BUNtail(ctx_bat,ctx_bun);
 @
 @= pushctx
     si_C new_stack_item;
@@ -502,7 +502,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
         for (cur_bun = stack[stack_top-1].first;
              cur_bun <= stack[stack_top-1].last;
              cur_bun += iter_bunsize) {
-            bunfastins(res,  (oid*)BUNtloc(iter_bat,cur_bun), &pre);
+            bunfastins(res,  (oid*)BUNtail(iter_bat,cur_bun), &pre);
         }
     }
 @
@@ -517,7 +517,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
     BATkey(res,trivial); /* might be TRUE in some more cases... */
     res->tdense = trivial;
     res->tsorted = GDK_SORTED;
-    BATkey(res,trivial); /* might be TRUE in some more cases... */
+    BATkey(BATmirror(res),trivial); /* might be TRUE in some more cases... */
 }
     *result = res;    
     return GDK_SUCCEED;
@@ -610,14 +610,14 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     iter_bun = BUNfirst(iter_bat);
     ctx_bun = BUNfirst(ctx_bat);
     ctx_last = BUNlast(ctx_bat);
-    ctx = *(oid*)BUNtloc(ctx_bat,ctx_bun);
-    iter_idx = *(oid*)BUNtloc(iter_bat,iter_bun) - fst_iter;
+    ctx = *(oid*)BUNtail(ctx_bat,ctx_bun);
+    iter_idx = *(oid*)BUNtail(iter_bat,iter_bun) - fst_iter;
 
 @= getnextctx_D
     iter_bun += iter_bunsize;
     ctx_bun += ctx_bunsize;
-    ctx = *(oid*)BUNtloc(ctx_bat,ctx_bun);
-    iter_idx = *(oid*)BUNtloc(iter_bat,iter_bun) - fst_iter;
+    ctx = *(oid*)BUNtail(ctx_bat,ctx_bun);
+    iter_idx = *(oid*)BUNtail(iter_bat,iter_bun) - fst_iter;
 @
 @= pushctx_D
     if (!onstack_get(iter_idx)) {
@@ -714,7 +714,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
             BATkey(tmp_res[i],trivial);
             tmp_res[i]->tdense = FALSE;
             tmp_res[i]->tsorted = GDK_SORTED;
-            BATkey(tmp_res[i],trivial); /* might be TRUE in some more cases... */
+            BATkey(BATmirror(tmp_res[i]),trivial); /* might be TRUE in some more cases... */
             res = BATins(res, tmp_res[i]);
             if (res == NULL) {
                 GDKerror("ll_descendant: BATins failed.\n");
