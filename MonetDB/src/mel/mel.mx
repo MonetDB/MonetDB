@@ -220,9 +220,14 @@ extern List *dirs;
 @C
 #include "mel.h"
 #include "mel.tab.h"
+#ifdef HAVE_IOSTREAM
 #include <iostream>
 #include <fstream>
 using namespace std;
+#else
+#include <iostream.h>
+#include <fstream.h>
+#endif
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -746,8 +751,12 @@ const char* get_signature(char* fcn){
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
+#ifdef HAVE_IOSTREAM
 #include <iostream>
 using namespace std;
+#else
+#include <iostream.h>
+#endif
 
 #include "FileInfo.h"
 #include "module.h"

@@ -28,9 +28,19 @@
 #ifndef _SYMBOL_H_
 #define _SYMBOL_H_
 
+#ifdef HAVE_IOSTREAM
 #include <iostream>
+#else
+#include <iostream.h>
+#endif
+#ifdef HAVE_CSTDIO
 #include  <cstdio>
+#else
+#include <stdio.h>
+#endif
+#if defined(HAVE_IOSTREAM) || defined(HAVE_CSTDIO)
 using namespace std;
+#endif
 #include  "list.h"
 
 class language;
