@@ -12,7 +12,7 @@ test_20
 test_35
 test_40
 test_50
-test_55
+#test_55 contains vars()
 #test_60 uses nested bat semantics
 test_65
 test_70
