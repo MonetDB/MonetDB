@@ -9855,18 +9855,6 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     milprintf(f, "\n\n# MIL-PROCS GENERATED FROM XQUERY FUNCTIONS\n");
 
-    opt_output(f, OPT_SEC_EPILOGUE);
-
-    if (status->timing) 
-        milprintf(f, "drop(\"alarm\");\n");
-
-    milprintf(f,
-            "drop(\"pathfinder\");\n"
-            "drop(\"aggrX3\");\n"
-            "drop(\"xtables\");\n"
-            "drop(\"malalgebra\");\n"
-            "drop(\"mmath\");\n");
-
     /* define working set and all other MIL context (global vars for the query) */
     opt_output(f, OPT_SEC_QUERY);
     milprintf(f, "\n\n# MAIN MIL QUERY\n{");
@@ -9946,6 +9934,19 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
     }
 
     milprintf(f, "}\n\n# MIL EPILOGUE\n");
+
+    opt_output(f, OPT_SEC_EPILOGUE);
+
+    if (status->timing) 
+        milprintf(f, "drop(\"alarm\");\n");
+
+    milprintf(f,
+            "drop(\"pathfinder\");\n"
+            "drop(\"aggrX3\");\n"
+            "drop(\"xtables\");\n"
+            "drop(\"malalgebra\");\n"
+            "drop(\"mmath\");\n");
+
     opt_close(f, prologue, query, epilogue);
     return NULL;
 }

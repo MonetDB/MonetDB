@@ -419,7 +419,7 @@ void opt_mil(opt_t *o, char* milbuf) {
 		}
 
 		/* separate MIL statements by replacing last char with 0 */
-		if (*p != ':') {
+		if (*p && *p != ':') {
 			o->stmts[curstmt].delchar = *p;
 			*p++ = 0; 
 		}
