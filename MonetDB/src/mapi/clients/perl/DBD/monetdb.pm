@@ -398,6 +398,9 @@ sub execute {
     my $statement = $sth->{Statement};
     my $dbh = $sth->{Database};
 
+    $sth->STORE('Active', 0 );  # we don't need to call $sth->finish because
+                                # mapi_query_handle() calls finish_handle()
+
     $sth->bind_param($_, $bind_values[$_-1]) or return for 1 .. @bind_values;
 
     my $params = $sth->{monetdb_params};
@@ -439,6 +442,7 @@ sub execute {
 #   $sth->STORE('TYPE'         , \@types     );  # TODO: monetdb2dbi
 #   $sth->STORE('PRECISION'    , \@precisions);  # TODO
 #   $sth->STORE('NULLABLE'     , \@nullables );  # TODO
+    $sth->STORE('Active', 1 );
 
     $sth->{monetdb_rows} = 0;
 
@@ -448,9 +452,12 @@ sub execute {
 
 sub fetch {
     my ($sth) = @_;
+    return $sth->set_err(-900,'Statement handle not marked as Active')
+      unless $sth->FETCH('Active');
     my $hdl = $sth->{monetdb_hdl};
     my $field_count = MapiLib::mapi_fetch_row($hdl);
     unless ( $field_count ) {
+        $sth->STORE('Active', 0 );
         my $mapi = $sth->{Database}{monetdb_connection};
         my $err = MapiLib::mapi_error($mapi);
         $sth->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
@@ -479,7 +486,7 @@ sub finish {
         my $err = MapiLib::mapi_error($mapi) || -1;
         return $sth->set_err($err, MapiLib::mapi_error_str($mapi));
     }
-    return $sth->SUPER::finish;
+    return $sth->SUPER::finish;  # sets Active off
 }
 
 
