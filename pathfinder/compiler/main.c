@@ -949,9 +949,11 @@ main (int argc, char *argv[])
     /*
      * generate temporary MIL Code (summer branch version)
      */
+
     if (PFstate.summer_branch) {
         tm = PFtimer_start ();
         PFprintMILtemp (stdout, croot);
+        tm = PFtimer_stop (tm);
 
         if (PFstate.timing)
             PFlog ("MIL code output:\t %s", PFtimer_str (tm));
