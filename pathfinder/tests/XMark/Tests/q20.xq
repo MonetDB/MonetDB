@@ -24,3 +24,4 @@ let $auction := doc("auctionG.xml") return
     }
   </na>
 </result>
+
