@@ -1018,6 +1018,7 @@ void sqltypeinit()
 		sql_create_aggr("max", "max", ts[i], ts[i]);
 		sql_create_func("sql_min","min", ts[i], ts[i], ts[i],SCALE_FIX);
 		sql_create_func("sql_max","max", ts[i], ts[i], ts[i],SCALE_FIX);
+		sql_create_func3("ifthenelse","ifthenelse", BIT, ts[i], ts[i], ts[i], SCALE_NONE);
 	}
 
 	for(t=numerical; t < decimals; t++){
