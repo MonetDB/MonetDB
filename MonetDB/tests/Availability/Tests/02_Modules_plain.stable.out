@@ -707,6 +707,7 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND: ",	  "terminate() : void",			  "stop a TCP/IP server"																				  ]
 [ "terminate",	  "COMMAND: ",	  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND: ",	  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
+!WARNING: TCPepilogue: terminate 0 listeners
 
 Module: "tpcd"
 
