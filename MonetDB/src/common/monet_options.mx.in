@@ -120,14 +120,38 @@ mutils_export void mo_free_options( opt *set, int setlen );
 #ifdef HAVE_STRDUP
 extern char *strdup(const char *);
 #else
-#define strdup(s)	strcpy(malloc(strlen(s)),(s))
+#define strdup(s)	strcpy(malloc(strlen(s)+1),(s))
 #endif
 #endif
+
+/* these two are used of the set parameter passed into functions is NULL */
+static int default_setlen = 0;
+static opt *default_set = NULL;
+
+static int mo_default_set(opt **Set, int setlen)
+{
+	char *config;
+
+	if (*Set == NULL) {
+		if (default_set == NULL) {
+			default_setlen = mo_builtin_settings(&default_set);
+			config = getenv("MONET_CONFIG");
+			if (config)
+				default_setlen = mo_config_file(&default_set, default_setlen, config);
+			else
+				default_setlen = mo_system_config(&default_set, default_setlen);
+		}
+		*Set = default_set;
+		setlen = default_setlen;
+	}
+	return setlen;
+}
 
 void mo_print_options(opt *set, int setlen)
 {
 	int i = 0;
 
+	setlen = mo_default_set(&set, setlen);
 	for( i = 0; i<setlen; i++){
 		if(set[i].kind == opt_builtin){
 			fprintf(stderr, 
@@ -156,6 +180,8 @@ char *mo_find_option( opt *set, int setlen, const char *name )
 {
 	opt *o = NULL;
 	int i;
+
+	setlen = mo_default_set(&set, setlen);
 	for(i=0; i<setlen; i++){
 		if (strcmp(set[i].name,name) == 0)
 			if (!o || o->kind < set[i].kind)
@@ -168,6 +194,8 @@ char *mo_find_option( opt *set, int setlen, const char *name )
 void mo_substitute( opt *set, int setlen, char *val )
 {
 	char *q = NULL;
+
+	setlen = mo_default_set(&set, setlen);
 	while( (q = strchr(val, '$')) != NULL ){
 		if ( strncmp(q,"${exec_prefix}",strlen("${exec_prefix}")) == 0){
 			char val2[BUFSIZ];
@@ -193,8 +221,17 @@ int mo_config_file(opt **Set, int setlen, char *file )
 {
         char buf[BUFSIZ];
         FILE *fd= NULL;
-	opt *set = *Set;
+	opt *set;
 
+	if (Set == NULL) {
+		if (default_set == NULL) {
+			set = NULL;
+			setlen = mo_default_set(&set, 0);
+		}
+		Set = &default_set;
+		setlen = default_setlen;
+	}
+	set = *Set;
         fd = fopen(file,"r");
 	if (fd == NULL){
 		fprintf(stderr, "Could not open file %s\n", file );
@@ -222,7 +259,7 @@ int mo_config_file(opt **Set, int setlen, char *file )
 			;
                 *t =0;
 
-                /* skip any leading blancs in the value part */
+                /* skip any leading blanks in the value part */
                 for(val++; *val && isspace((int)(*val)) ;val++)
 			;
 
@@ -271,6 +308,14 @@ int mo_system_config( opt **Set, int setlen)
 {
 	char config[BUFSIZ];
 
+	if (Set == NULL) {
+		if (default_set == NULL) {
+			opt *set = NULL;
+			setlen = mo_default_set(&set, 0);
+		}
+		Set = &default_set;
+		setlen = default_setlen;
+	}
 	snprintf(config,BUFSIZ,"@Qsysconfdir@%cmonet.conf", DIR_SEP);
 	mo_substitute(*Set, setlen, config);
 	return mo_config_file(Set, setlen, config );
@@ -280,10 +325,16 @@ int mo_system_config( opt **Set, int setlen)
 int mo_builtin_settings(opt **Set)
 {
 	int i = 0;
-	opt *set = (opt*)malloc(sizeof(opt)*25 /*MUST MATCH # OPTIONS BELOW*/);
+	opt *set;
 	char buf[BUFSIZ];
 
-	if (!set) return 0;
+	if (Set == NULL)
+		return 0;
+
+#define N_OPTIONS	25	/*MUST MATCH # OPTIONS BELOW*/
+	set = malloc(sizeof(opt) * N_OPTIONS);
+	if (set == NULL)
+		return 0;
 
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_arch");
@@ -395,7 +446,7 @@ int mo_builtin_settings(opt **Set)
 		"@Qlocalstatedir@%c@PACKAGE@%clog", DIR_SEP, DIR_SEP);
 	set[i].value = strdup(buf);
 	i++;
-	assert(i==25);
+	assert(i==N_OPTIONS);
 	*Set = set;
 	return i;
 }
@@ -403,7 +454,17 @@ int mo_builtin_settings(opt **Set)
 int mo_add_option( opt **Set, int setlen, 
 		opt_kind kind, const char *name, const char *value )
 {
-	opt *set = (opt*)realloc(*Set,(setlen+1)*sizeof(opt));
+	opt *set;
+
+	if (Set == NULL) {
+		if (default_set == NULL) {
+			set = NULL;
+			setlen = mo_default_set(&set, 0);
+		}
+		Set = &default_set;
+		setlen = default_setlen;
+	}
+	set = (opt*)realloc(*Set,(setlen+1)*sizeof(opt));
 	set[setlen].kind = kind;
 	set[setlen].name = strdup(name);
 	set[setlen].value = strdup(value);
@@ -414,6 +475,13 @@ int mo_add_option( opt **Set, int setlen,
 void mo_free_options( opt *set, int setlen )
 {
 	int i;
+
+	if (set == NULL) {
+		set = default_set;
+		setlen = default_setlen;
+		default_set = NULL;
+		default_setlen = 0;
+	}
 	for(i=0; i<setlen; i++){
 		if(set[i].name) free(set[i].name);
 		if(set[i].value) free(set[i].value);
