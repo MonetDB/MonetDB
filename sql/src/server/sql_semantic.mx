@@ -2976,10 +2976,9 @@ static stmt *table_foreign_key( mvc * sql, char *name, symbol * s, stmt * ss, st
 			/* use tmp columns to find col nm */
 			stmt *c = find_column_stmt(columns, nm );
 
-			if (!c && t) {
-				/* if table allready exists use it to find nm */
-				if (mvc_bind_column(sql, t, nm))
-				    c = stmt_bind_column( stmt_dup(ts), nm );
+			/* if table allready exists use it to find nm */
+			if (!c && t && mvc_bind_column(sql, t, nm)) {
+				c = stmt_bind_column( stmt_dup(ts), nm );
 			}
 			if (!c){
 				if (res) stmt_destroy(res);
@@ -2999,6 +2998,8 @@ static stmt *table_foreign_key( mvc * sql, char *name, symbol * s, stmt * ss, st
 static stmt *table_constraint_type( mvc * sql, char *name, symbol * s, stmt * ss, stmt *ts, char *tname, list* columns )
 {
 	stmt *res = NULL;
+	sql_table *t = mvc_bind_table( sql, cur_schema(sql), tname );
+
 	switch(s->token){
 		case SQL_UNIQUE: 
 		case SQL_PRIMARY_KEY:
@@ -3011,7 +3012,10 @@ static stmt *table_constraint_type( mvc * sql, char *name, symbol * s, stmt * ss
 				char *nm = nms->data.sval;
 				stmt *c = find_column_stmt(columns, nm);
 
-				if (!c){
+				if (!c && t && mvc_bind_column(sql, t, nm)) {
+					c = stmt_bind_column( stmt_dup(ts), nm );
+				}
+				if (!c) {
 					return sql_error(sql, 02, "Table %s has no column %s\n", tname, nm);
 				}
 				ks = stmt_create_kc( ks, nm );
