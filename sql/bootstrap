@@ -74,6 +74,13 @@ find . -name .incs.\* \-exec rm {} \;
 rm -rf autom4*.cache
 
 
+# temporarly create fake-configure.in to give autoconf-wrappers a hint, which version we need:
+cat << "EOF" > configure.in
+AC_PREREQ(2.53)
+AC_INIT(src/utils/Mx/Mx.h)
+EOF
+
+
 REQ_AM_VERSION="1.5"
 NEW_AM_VERSION="1.7"
 AM_VERSION=`automake --version 2>/dev/null | sed -n -e '/^automake/{s/.* //g;s/-.*//g;p;q;}'`
