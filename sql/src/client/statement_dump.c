@@ -211,7 +211,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_unique: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse.kunique().reverse;\n", *nr, l);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().kunique().reverse();\n", *nr, l);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_order: {
@@ -222,7 +222,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				s->flag?"desc":"asc");
 				*/
 		len += snprintf( buf+len, BUFSIZ, 
-			"s%d := s%d.reverse.sort.reverse();\n", *nr, l );
+			"s%d := s%d.reverse().sort().reverse();\n", *nr, l );
 		s->nr = (*nr)++;
 	} 	break;
 	case st_reorder: {
