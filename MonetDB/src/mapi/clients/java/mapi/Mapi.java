@@ -320,7 +320,7 @@ throws MapiException
 			traceLog.println("setup socket "+host+":"+port);
 		socket   = new Socket( host, port );
 		fromMonet= new BufferedReader(
-			new InputStreamReader(socket.getInputStream()));
+			new InputStreamReader(socket.getInputStream(),java.nio.charset.Charset.forName("UTF-8")));
 		//fromMonet= new DataInputStream(socket.getInputStream());
 		toMonet= new DataOutputStream(socket.getOutputStream());
 		connected = true;
@@ -602,7 +602,16 @@ public String unescapeMILstr(String str) {
 			dst[d++] = (unescape?'\t':'t');
 			break;
 		default:
-			dst[d++] = src[s];
+			if (unescape
+			&&  src[s  ] >= '0' && src[s  ] <= '3'
+			&&  (s+1 < src.length)
+			&&  src[s+1] >= '0' && src[s+1] <= '7'
+			&&  (s+2 < src.length)
+			&&  src[s+2] >= '0' && src[s+2] <= '7') {
+				dst[d++] = (char)Integer.parseInt(new String(src,s,3),8);
+				s += 2;
+			} else
+				dst[d++] = src[s];
 		}
 		unescape = false;
 	}
