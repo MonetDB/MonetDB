@@ -2497,8 +2497,9 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 		/* XXX: what to do for the columns which are not listed */
 		dnode *n = columns->h;
 		collist = list_create();
-		/* first add the id colunm */
+		/* first add the id colunm 
 		list_append_column( collist, t->columns->h->data.cval ); 
+		 * */
 		while(n){
 			column *c = cat_bind_column(cat, t, n->data.sval );
 			if (c){
