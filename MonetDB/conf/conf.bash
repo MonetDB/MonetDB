@@ -310,9 +310,9 @@ if [ "${os}" = "IRIX64" ] ; then
 fi
 
 if [ "${os}" = "AIX" ] ; then
-	# paths on beluga
+	# paths on beluga & solo
 	mypath=""
-	for d in "/usr/local/bin" "/usr/local/tgcc-2.95.3/bin" "/usr/vac/bin" "/usr/vacpp/bin" "/opt/freeware/bin" "/usr/java131/jre/bin" "/usr/java131/bin" "/usr/ccs/bin" "/usr/ucb" "/usr/bin" "/usr/dt/bin" "/usr/bin/X11" "/usr/lpp/X11/bin" ; do
+	for d in "/opt/freeware/bin" "/usr/bin" "/usr/local/bin" "/usr/local/tgcc-2.95.3/bin" "/usr/vac/bin" "/usr/vacpp/bin" "/usr/java131/jre/bin" "/usr/java131/bin" "/usr/java130/jre/bin" "/usr/java130/bin" "/usr/ccs/bin" "/usr/ucb" "/usr/dt/bin" "/usr/bin/X11" "/usr/lpp/X11/bin" ; do
 		if [ -d ${d} ] ; then
 			mypath="${mypath}${d}:"
 		fi
@@ -495,7 +495,7 @@ if [ "${libpath}" ] ; then
 		fi
 		echo " DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}"
 	fi
-	if [ "${os}" = "AIX" ] ; then
+	if [ "${os}" = "AIX"  -a  "${host%.ddi.nl}" = "beluga" ] ; then
 		if [ "${LIBPATH}" ] ; then
 			# prepend new libpath to existing LIBPATH, if LIBPATH doesn't contain libpath, yet
 			case ":${LIBPATH}:" in
