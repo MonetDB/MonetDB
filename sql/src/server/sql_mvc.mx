@@ -2645,23 +2645,12 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				} else {
 					bat_destroy(ocur);
 				}
-			/* write but read, ie append/update the current */
 			} else if (oc->base.wtime > cc->base.wtime) { 
-				BAT *ocur = bm_lbid2bat( ttr->bm, oc->bat.bid);
-
-				if (BATcount(ocur)){
-					BAT *i = BATalpha(ins);
-
-					printf("append\n");
-					/* void union ? */
-					cur = bat_lcopy(ocur, "rollforward");
-					void_append_bat(cur, ins);
-					assert(cur->htype == TYPE_void);
-					bat_destroy(ins);
-					bat_destroy(i);
-				} else { 
-					bat_destroy(ocur);
-				}
+				/* write without read, ie append 
+				 * are handled by the special insert bat,
+				 * so we should not arrive here 
+				 */
+				assert(0);
 			}
 			if (BUNlast(cur) > cur->batInserted) {
 				renewed = 1;
@@ -2805,7 +2794,11 @@ static int validate_tables(sql_schema * s, sql_schema * os)
 				/* read or write after t's write */
 				if (c->base.wtime &&
 				    (c->base.wtime < oc->base.rtime
-				     || c->base.wtime < oc->base.wtime)) {
+				     /* allow for late appends, ie 
+	                              * wtime but no rtime 
+				      */
+				     || (c->base.wtime < oc->base.wtime && 
+					 c->base.rtime))) {
 					return 0;
 				}
 				/* commited write before t's read */
@@ -3190,7 +3183,7 @@ mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
 	c = find_column(t, cname);
 	b = bind_bat(tr, c, access);
 
-	if (!access)  /* read access */
+	if (access != INS) /* read access or update/deletes */
 		c->base.rtime = t->base.rtime = 
 				s->base.rtime = tr->rtime = tr->stime;
 	assert(b->htype == TYPE_void && b->hseqbase == 0);
@@ -3215,7 +3208,7 @@ mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access )
 	c = find_column(t, cname);
 	b = bind_ubat(tr, c, access);
 
-	if (!access)  /* read access */
+	if (access != INS) /* read access or update/deletes */
 		c->base.rtime = t->base.rtime = tr->rtime = tr->stime;
 	return b;
 }
@@ -3236,7 +3229,7 @@ mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
 	assert(t);
 	b = bind_dbat(tr, t, access);
 
-	if (!access)  /* read access */
+	if (access != INS) /* read access or update/deletes */
 		t->base.rtime = tr->rtime = tr->stime;
 	assert(b->htype == TYPE_void && b->hseqbase == 0);
 	return b;
@@ -3259,7 +3252,7 @@ mvc_bind_ibat(mvc * m, char *sname, char *tname, char *iname, int access )
 	assert(t);
 	b = bind_idx(tr, i, access);
 
-	if (!access)  /* read access */
+	if (access != INS) /* read access or update/deletes */
 		i->base.rtime = t->base.rtime = tr->rtime = tr->stime;
 	assert(b->htype == TYPE_void && b->hseqbase == 0);
 	return b;

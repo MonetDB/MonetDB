@@ -621,6 +621,29 @@ void sidestepMil(Cntxt stk, char *cmd){
 
 #define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
 
+int handle_error(mvc *m, stream *out, int pstatus) 
+{
+	int go = 1;
+	char *buf = GDKerrbuf;
+
+	/* transaction allready broken */
+	if (m->type != Q_TRANS && pstatus < 0) { 
+		if (stream_write( out, TRANS_ABORTED, sizeof(TRANS_ABORTED)-1, 1 ) != 1 ){
+			go = !go;
+		}
+	} else {
+		if (error(out, m->errstr) < 0 || 
+		    (buf && buf[0] && 
+		    (stream_write( out, buf, strlen(buf), 1) != 1))) {
+			go = !go;
+		}
+	}
+	/* reset error buffers */
+	m->errstr[0] = 0;
+	buf[0] = 0;
+	return go;
+}
+
 @c
 int
 sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
@@ -668,13 +691,6 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 			if (in->eof || !isa_block_stream(in->s)) {
 				language = 0;
 
-				if (stream_write(out,PROMPT1,sizeof(PROMPT1)-1,1) != 1 ||
-				    stream_flush(out)) {
-					go = FALSE;
-					break;
-				}
-				in->eof = 0;
-
 				/* auto_commit on end of statement */
 				if (m->auto_commit && m->trans) {
 	   				if (m->cache && 
@@ -684,9 +700,19 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 						if (m->qc) qc_destroy(m->qc);
 						m->qc = qc_create();
 					}
-					mvc_commit(m, 0, NULL);
+					if (mvc_commit(m, 0, NULL) < 0) {
+						go = handle_error(m, out, pstatus);
+						if (!go) 
+							break;
+					}
 				}
 
+				if (stream_write(out,PROMPT1,sizeof(PROMPT1)-1,1) != 1 ||
+				    stream_flush(out)) {
+					go = FALSE;
+					break;
+				}
+				in->eof = 0;
 			}
 			if ((rd = bstream_next(in)) <= 0) {
 				if (rd == 0 && language != 0 && in->eof) {
@@ -754,8 +780,6 @@ query string with "M".
 		m->scanner.mode = oldmode;
 
 		if (err){ /* output error */
-			char *buf = GDKerrbuf;
-
 			if (m->auto_commit && m->trans) {
 				/* rollback and skip rest */
 				mvc_rollback(m, 0, NULL);
@@ -763,24 +787,7 @@ query string with "M".
 				if (m->qc) qc_destroy(m->qc);
 				m->qc = qc_create();
 			}
-
-			/* transaction allready broken */
-			if (m->type != Q_TRANS && pstatus < 0) { 
-				if (stream_write( out, TRANS_ABORTED, sizeof(TRANS_ABORTED)-1, 1 ) != 1 ){
-					go = !go;
-					break;
-				}
-			} else {
-				if (error(out, m->errstr) < 0 ||
-				   (buf && buf[0] && (stream_write(
-					out, buf, strlen(buf), 1) != 1))) {
-					go = !go;
-					break;
-				}
-			}
-			/* reset error buffers */
-			m->errstr[0] = 0;
-			buf[0] = 0;
+			go = handle_error(m, out, pstatus);
 		}
 	}
 
