@@ -1,5 +1,5 @@
 <h2> The Gold Demo Database</h2> <p>
-MonetDB has paid a pivotal role in the development of datamining
+MonetDB has played a pivotal role in the development of datamining
 applications at DataDistilleries (now SPSS).
 During its course of development we used a small mock-up database
 to study performance issues.
@@ -10,7 +10,7 @@ The steps below should help you understand some of the basics in
 using MonetDB.
 </p>
 <h4>Creating the database:</h4> <p>
-We suppose you have configured and succesfully installed MonetDB
+We suppose you have configured and successfully installed MonetDB
 in a directory $MONETDB_PREFIX. 
 Make sure $MONETDB_PREFIX/bin is in your PATH and type:
 <pre>
@@ -19,7 +19,7 @@ $ mkdir $MONETDB_PREFIX/var/MonetDB/dbfarm/gold
 So, creating a database is nothing more than creating a directory in the 
 'dbfarm' directory (the default dbfarm is $MONETDB_PREFIX/var/MonetDB/dbfarm)
 This manual step is only meant as an illustration, because when the
-environment variables are set, type the following would produce
+environment variables are set, typing the following would produce
 the same effects and produces a message that the database has been initialized.
 <pre>
 $ Mserver --dbname=gold
@@ -29,13 +29,13 @@ $ Mserver --dbname=gold
 # Visit http://monetdb.cwi.nl for further information.
 monet&gt;
 </pre>
-Note that the actual output may slightly differ, depending on
+Note that the actual output may differ slightly, depending on
 the version downloaded and the system it runs on.
-A different dbfarm location can be choosen and passed to
+A different dbfarm location can be chosen and passed to
 Mserver with the --dbfarm=&lt;dir&gt; command line switch.
 </p>
 <h4>Loading the database:</h4> <p>
-A small MIL script is provided to quickly populating the database.
+A small MIL script is provided to quickly populate the database.
 It uses a compressed file with tuples to be inserted and a format
 file for the database loader.
 <pre>
@@ -43,14 +43,14 @@ $ export TSTTRGDIR=`pwd`
 $ Mserver --dbname=gold &lt; load.mil
 </pre>
 </p>
-<h4>Create two supportive tables:</h4>
+<h4>Create two supporting tables:</h4>
 <p>
 The database is now loaded. A few more tables are constructed
 for subsequent processing. 
-Don;t bother the output layout, because this script is
+Don't disturb the output layout, because this script is
 also used every night as part of the intensive testing machinery.
 It suffices to note that we now have a skewed insurance
-database with 100K entries, half of which has claimed damage.
+database with 100K entries, half of which with claimed damage.
 <pre>
 $ Mserver --dbname=gold &lt; init.mil
 </pre>
@@ -73,8 +73,8 @@ $ sh summary
 <h3>Virtual OID Demo</h3>
 <p>
 A key feature to gain tremendous speed in this application domain
-is its ability to deal with virtual OIDs. They do not require
-storage space, but can be used to speed-up processing significantly.
+is the ability to deal with virtual OIDs. They do not require
+storage space, but can be used to speed up processing significantly.
 In order to use the virtual oid features, first create a vectorized 
 database with the void.mil script. Make sure that you have the 
 'str' and 'enum' modules installed!
