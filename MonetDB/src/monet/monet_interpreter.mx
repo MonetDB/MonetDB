@@ -2012,7 +2012,6 @@ void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, 
 	}
 	if(eventstream==NULL || stream_errnr(eventstream)){
 		MT_unset_lock(profilerLock, "onlineProfilerEvent");
-		fprintf(stderr,"event stream lost\n");
 			eventstream=NULL;
 			return;
 	}
