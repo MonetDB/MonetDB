@@ -66,6 +66,7 @@ html
 #include "mal_instruction.h"
 mal_export void malAtomDefinition(str name,int tpe);
 mal_export int malAtomProperty(MalBlkPtr mb, InstrPtr pci);
+mal_export int malAtomArray(int tpe, int idx);
 
 #endif /*  _MAL_ATOM_H*/
 @+
@@ -172,4 +173,30 @@ void malAtomDefinition(str name, int tpe){
 		(char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
 	strcpy(BATatoms[i].name, name);
 	BATatoms[i].storage= tpe;
+}
+
+int malAtomArray(int tpe, int size){
+	int i;
+	char name[IDLENGTH];
+	str nme;
+
+	nme = malTypeName(tpe);
+	printf("enter a new array type definition %s %d\n", nme,size);
+	snprintf(name,IDLENGTH,"%s_%d", nme,size);
+	GDKfree(nme);
+	if(strlen(name) >= IDLENGTH){
+		GDKerror("Atom name '%s' too long\n", name);
+		return;
+	}
+printf("new type name %s\n",name);
+	ATOMproperty(name,"",  (int (*)()) 0);
+	i= ATOMindex(name);
+	memcpy((char*)(BATatoms+i),
+		(char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
+	strcpy(BATatoms[i].name, name);
+	BATatoms[i].storage= tpe;
+	BATatoms[i].size *= size;
+	BATatoms[i].linear = FALSE;
+printf("new type %d\n",i);
+	return i;
 }

@@ -356,7 +356,11 @@ str cstCopy(Client cntxt, int i){ return idCopy(cntxt,i);}
 @-
 Identifiers used as arguments or targets of assignments may be
 qualified with a type. The type should be known before-hand,
-which essential requirs the corresponding module to be loaded first.
+which essential requires the corresponding module to be loaded first.
+
+The type qualifier can handle array definitions as well. Upon first
+encounter they are added as a special type to the atomary type
+table.
 @c
 int typeQualifier(Client cntxt)
 {	
@@ -390,6 +394,22 @@ int typeQualifier(Client cntxt)
 		if( (hd=idCopy(cntxt,idLength(cntxt))) ){
 			ht= getTypeIndex(hd);
 			if( hd) GDKfree(hd);
+			skipBlanc2(cntxt);
+			/* parse the array bound */
+			if( currChar(cntxt)=='['){
+				int cl,tpe,size;
+				str v;
+				advance(cntxt,1);
+				cl= cstLength(cntxt,&tpe);
+				if( cl==0 || tpe != TYPE_int)
+				parseError("integer constant expected\n");
+				v=cstCopy(cntxt,cl);
+				size= (int) strtol(v,NULL,0);
+				ht= malAtomArray(ht,size);
+				if(currChar(cntxt)!=']')
+					parseError(cntxt,"array ']' expected\n");
+				nextChar(cntxt);
+			}
 			return ht;
 		} 
 		parseError(cntxt,"<type identifier> expected\n");
@@ -484,6 +504,7 @@ Atom storage may be defined in terms of an existing type.
 		if( currChar(cntxt)==':') {
 			tpe= typeQualifier(cntxt);
 		} else tpe= TYPE_int;
+		/* test for arrays TODO */
 		malAtomDefinition(modname,tpe);
 	}
 	if( findScope(cntxt->nspace,modname) != NULL)

@@ -736,8 +736,9 @@ and converted to the internal storage structure.
 		/* printf("extended type storage %s\n", ATOMname(tp)); */
 		if( BATatoms[type].atomFromStr== 0) {
 		s= malTypeName(type);
-		GDKerror("newConstant:no string coercion function %s\n", s);
+		GDKerror("newConstant:no string coercion for '%s'\n", s);
 		GDKfree(s);
+		break;
 		}
 #ifdef STRUCT_ALIGNED
 		vr->vtype= type;

@@ -329,7 +329,7 @@ signatures satisfying the pattern.
 			if( fcnname == NULL){
 				fsym= findScope(cntxt->nspace,modname);
 				if( fsym==0) {
-					fprintf(out,"%sscope not found\n",
+					fprintf(out,"%smodule not found\n",
 							MDBmarker);
 					continue;
 				}
@@ -346,7 +346,7 @@ signatures satisfying the pattern.
 			fcnname ++;
 			fsym= findScope(cntxt->nspace,modname);
 			if( fsym==0) {
-				fprintf(out,"%sscope not found\n",MDBmarker);
+				fprintf(out,"%smodule not found\n",MDBmarker);
 				continue;
 			}
 			/* display the overloaded symbol definition */

@@ -76,7 +76,7 @@ mal_export void freeStack(MalStkPtr stk);
 				  getStkRecord(S,P,I)->val.sval :\
 				  getStkRecord(S,P,I)->val.pval )
 #define getStkType(S,P,I)	(S)->stk[(P)->argv[I]].vtype
-
+#define setStkType(S,P,I,T)	(S)->stk[(P)->argv[I]].vtype = T
 #endif /* _MAL_STACK_H_ */
 @-
 The clearStack operation throws away any space occupied by variables
