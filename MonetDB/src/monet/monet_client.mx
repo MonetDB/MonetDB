@@ -506,8 +506,8 @@ int readClient(Client c)
 			stream_flush(fd);
 		}
 		if (blocked) {
-			/* read to end of block (recognized by a
-			   partially fulfilled read request) */
+			/* read to end of block (recognized by an
+			   empty read) */
 			ssize_t nsize;
 			do {
 				nsize = c->limit - c->top;
@@ -515,9 +515,9 @@ int readClient(Client c)
 				if (stream_errnr(c->fdin) || i < 0)
 					return 0;
 				c->top += i;
-				if (i == nsize)
+				if (c->limit - c->top <= 1)
 					enlargebuffer(c);
-			} while (i == nsize);
+			} while (i > 0);
 		} else {
 			/* read to end of line */
 			do {
@@ -526,7 +526,7 @@ int readClient(Client c)
 				if (c->top > c->input && c->top[-1] == '\r')
 					c->top--;
 #endif
-				if (c->top >= c->limit-1)
+				if (c->limit - c->top <= 1)
 					enlargebuffer(c);
 				i = stream_read(c->fdin, c->top, 1, 1);
 				if (stream_errnr(c->fdin))
