@@ -33,11 +33,11 @@ a novel database system under development since 1993 at the
 
 When you start reading this, you are supposed to have downloaded Monet from   
 @[<a href="http://sourceforge.net/projects/monetdb/">sourceforge</a>@ and succesfully compiled following
-the instructions in the file @[<a href="www/HowToStart">HowToStart</a>@ (for Unix) or 
-@[<a href="www/HowToStart-Win32.txt">HowToStart-Win32.txt</a>@ (for Windows). \\
+the instructions in the file @[<a href="../../../GetGoing/Setup/MonetDB/Unix/index.html">HowToStart</a>@ (for Unix) or 
+@[<a href="../../../GetGoing/Setup/MonetDB/Windows/index.html">HowToStart-Win32.txt</a>@ (for Windows). \\
 
 After reading this document,
-the next step to take is to study the @[<a href="mil.html">MIL Reference Manual</a>@.
+the next step to take is to study the @[<a href="../mil/index.html">MIL Reference Manual</a>@.
 
 @+ Background
 @T
@@ -110,7 +110,7 @@ Monet has been applied succesfully to
 
 \begin{center}
 {\epsfxsize=0.55\textwidth
-\epsffile{monet.eps}
+\epsffile{monet.feps}
 \label{fig1}{\em Front-end/Back-end Architecture}}\\
 @-
 @T
@@ -140,9 +140,9 @@ or native XML data) and allowing to use querying paradigms other than SQL only
 In this architecture, Monet is the {\bf back-end}, which is accessed by multiple 
 {\bf front-ends} such as an SQL-frontend, and XML-frontend or even a Data 
 Mining tool).  The intermediate language with which these components talk to each 
-other is called the @[<a href="mil.html">Monet Interpreter Language</a>@ (MIL).
+other is called the @[<a href="../mil/index.html">Monet Interpreter Language</a>@ (MIL).
 
-Currently, the only freely available front-end is the @[<a href="www/sql.html">SQL frontend</a>@.
+Currently, the only freely available front-end is the @[<a href="../sql/index.html">SQL frontend</a>@.
 Work on a distibution of the XML front-end (so succesfully benchmarked in 
 @[<a href="http://monetdb.cwi.nl/xml/">XMark</a>@) is progressing. For the ODMG 
 front-end, there are no release plans, as it is owned by 
@@ -203,9 +203,9 @@ A second difference with I/O caching is that the CPU-cache is not fully associat
 cannot be programmed as cache-replacement happens automatically in hardware with (typically)
 a LRU algorithm.
 
-In the @[<a href="www/modules/radix.html">radix</a>@ module, you find the basic radix-cluster and 
+In the @[<a href="../../Modules/radix/index.html">radix</a>@ module, you find the basic radix-cluster and 
 radix-decluster operations for generic cache-conscious query processing in Monet. Coming
-with Monet is also a @[<a href="www/modules/calib.html">calibrator module</a>@ that automatically extracts all
+with Monet is also a @[<a href="../../Modules/calib/index.html">calibrator module</a>@ that automatically extracts all
 relevant hardware characterstics, allowing to make cache-conscious query procssing
 work on any platform and configuration. 
 \\
@@ -260,8 +260,8 @@ The code is configured with the standard GNU tools (autoconf, automake, configur
 in principle a build on any Posix platform should be as simple as {\tt ./bootstrap; ./configure; make all install}. 
 As Microsoft Windows lacks configure, the Monet distribution comes with pre-built Windows
 {\tt monetdb\_config.h}, such that making becomes {\tt cd NT; make; make -f Makefile.msc all install}. 
-More details and requirements are explained in the file @[<a href="www/HowToStart">HowToStart</a>@ (for Unix users)
-respectively @[<a href="www/HowToStart-Win32.txt">HowToStart-Win32.txt</a>@ (for Windows users).
+More details and requirements are explained in the file @[<a href="../../../GetGoing/Setup/MonetDB/Unix/index.html">HowToStart</a>@ (for Unix users)
+respectively @[<a href="../../../GetGoing/Setup/MonetDB/Windows/index.html">HowToStart-Win32.txt</a>@ (for Windows users).
 Both files are located in the root of the source distribution.
 
 Monet is an open database system that can be extended with new {\bf types} (e.g. point,polygons)
@@ -310,13 +310,13 @@ to the indications in the file @[<a href="www/HowToStart">HowToStart</a>@ resp.
 @T
 The Monet system consists of the following utilities:
 \begin{description}
-\item[@[<a href="www/Mserver.html">Mserver</a>@]
+\item[@[<a href="../../Mserver.html">Mserver</a>@]
 	to start a Monet server instance.
-\item[@[<a href="www/MapiClient.html">MapiClient</a>@]
+\item[@[<a href="../../MapiClient.html">MapiClient</a>@]
 	to establish a client-session with command-line history.
-\item[@[<a href="www/mel.html">mel</a>@]
+\item[@[<a href="../mel/index.html">mel</a>@]
 	to parse Monet extension module specifications and generate wrapper and header code.
-\item[@[<a href="www/sql.html">sql</a>@]
+\item[@[<a href="../sql/index.html">sql</a>@]
 	to compile SQL programs into MIL.
 \end{description}
 
@@ -325,16 +325,16 @@ The Monet system consists of the following utilities:
 There are no Monet-specific environmnet variables (any more).  The paths you want to 
 set only have to do with being able to conveniently start the Monet server.\\
 
-After succesfull {\tt make install}, the  Monet binaries are located in the {\tt @[<a href="../bin">bin/</a>@} 
+After succesfull {\tt make install}, the  Monet binaries are located in the {\tt bin/} 
 subdirectory of your installation directory. Unless you are system administrator
 and installed in the (default) {\tt /usr/local}, you may find it
-convenient to add this {\tt @[<a href="../bin">bin/</a>@} directory to your {\tt PATH} 
+convenient to add this {\tt bin/} directory to your {\tt PATH} 
 environment variable.\\
 
 If you compiled with dynamic libraries (which is default - but static compilation 
-is also possible), the @[<a href="www/Mserver.html">Mserver</a>@ Monet server, depends on a number 
+is also possible), the @[<a href="../../Mserver.html">Mserver</a>@ Monet server, depends on a number 
 of {\small .so} libraries that need to be found. Therefore, you might need to
-this {\tt @[<a href="../lib">lib/</a>@} directory to your {\tt LD\_LIBRARY\_PATH}.\\
+this {\tt lib/} directory to your {\tt LD\_LIBRARY\_PATH}.\\
 
 However, in (the most common) case that you compiled Monet yourself, you actually do not 
 have to set the library path, as during compilation the prefixed path is compiled
@@ -356,7 +356,7 @@ If this is not done explicitly, Monet looks for a {\tt monet.conf} in the local 
 The third possibility, a {\tt .monet.conf} in your home directory is the most common approach 
 taken by Monet users.\\
 
-If you are new to using Monet, you may start with the {\tt @[<a href="../etc/monet.conf">etc/monet.conf</a>@} that
+If you are new to using Monet, you may start with the {\tt etc/monet.conf} that
 is generated by the {\tt make} which already contains your compilation
 and installation paths, copy it to {\tt \$HOME/.monet.conf} and start editing it.\\
 
@@ -364,10 +364,10 @@ In the following, we discuss the file format of {\tt monet.conf} in detail.
 
 @- Server Settings
 @T
-The below displays the most important settings for the Monet server (@[<a href="www/Mserver.html">Mserver</a>@). \\ 
+The below displays the most important settings for the Monet server (@[<a href="../../Mserver.html">Mserver</a>@). \\ 
 
 Notice that all settings in the configuration file can be overriden on the command-line
-of @[<a href="www/Mserver.html">Mserver</a>@ with the option {\tt -s option=value} or {\tt -$$-set option=value}.
+of @[<a href="../../Mserver.html">Mserver</a>@ with the option {\tt -s option=value} or {\tt -$$-set option=value}.
 \begin{verbatim}
 prefix=/usr/local
 exec_prefix=${prefix}
@@ -383,7 +383,7 @@ monet_deamon=no			# if yes, there is no interactive server console
 
 Most commonly, you would adapt {\tt prefix} to you installation directory,
 and {\tt gdk\_dbname} to your most commonly used database instance. This will 
-basically enable you to start @[<a href="www/Mserver.html">Mserver</a>@ without any command-line parameters.\\
+basically enable you to start @[<a href="../../Mserver.html">Mserver</a>@ without any command-line parameters.\\
 
 If {\tt prefix} is set correctly, you will in general not need to adapt 
 {\tt exec\_prefix} and {\tt monet\_mod\_path} (where Monet looks for {\tt lib/}
@@ -393,7 +393,7 @@ The {\tt gdk\_dbfarm} variable holds the directory in which one or more database
 instances can have their data. That is, each database is a subdirectory of the
 dbfarm. The name of the database is the name of the subdirectory. Creating
 and removing a database is as simple as creating/destroying a directory in the
-filesystem, with any utility you like. The {\tt -$$-dbfarm PATH} option of @[<a href="www/Mserver.html">Mserver</a>@,
+filesystem, with any utility you like. The {\tt -$$-dbfarm PATH} option of @[<a href="../../Mserver.html">Mserver</a>@,
 which expects an {\bf absolute} path {\tt PATH} allows to quickly override the 
 {\tt gdk\_dbfarm} from the configuration file. \\
 
@@ -407,8 +407,8 @@ The {\tt gdk\_debug} and {\tt gdk\_mmap} options are for expert users only.
 They allow to give extensive trace output during MIL execution resp. to
 control where bulk memory is allocated from (malloc or virtual memory).\\
 
-Finally, if you do not access @[<a href="www/Mserver.html">Mserver</a>@ interactively or only via the
-@[<a href="www/MapiClient.html">MapiClient</a>@, you might want to start @[<a href="www/Mserver.html">Mserver</a>@ as a background daemon,
+Finally, if you do not access @[<a href="../../Mserver.html">Mserver</a>@ interactively or only via the
+@[<a href="../../MapiClient.html">MapiClient</a>@, you might want to start @[<a href="../../Mserver.html">Mserver</a>@ as a background daemon,
 which means that it won't start a MIL interpreter thread that reads
 from {\tt stdin} and outputs to {\tt stdout} and {\tt stderr}.
 
@@ -421,23 +421,23 @@ mapi_noheaders=no		# show all the mil output
 mapi_debug=0			# The mapi debug level		
 \end{verbatim}
 
-The @[<a href="www/MapiClient.html">MapiClient</a>@ tool allows you (and multiple concurrent clients) to 
-access an @[<a href="www/Mserver.html">Mserver</a>@ with MIL, as opposed to the default interpreter that 
-@[<a href="www/Mserver.html">Mserver</a>@ starts on {\tt stdin}/{\tt stdout}/{\tt stderr}. 
-@[<a href="www/MapiClient.html">MapiClient</a>@ is slightly more
+The MapiClient tool allows you (and multiple concurrent clients) to 
+access an Mserver with MIL, as opposed to the default interpreter that 
+Mserver starts on {\tt stdin}/{\tt stdout}/{\tt stderr}. 
+MapiClient is slightly more
 comfortable to work with as it provides command-line history.\\
 
-Notice that you can only @[<a href="www/MapiClient.html">MapiClient</a>@ into an 
-@[<a href="www/Mserver.html">Mserver</a>@ if the server
-has loaded the @[<a href="www/modules/mapi.html">mapi</a>@ module and issued a {\tt listen()} command. An example
+Notice that you can only MapiClient into an 
+Mserver if the server
+has loaded the @[<a href="../../Modules/mapi/index.html">mapi</a>@ module and issued a {\tt listen()} command. An example
 of how this works will be given below in the interactive MIL session.\\
 
-Suffice it to say now that @[<a href="www/MapiClient.html">MapiClient</a>@ needs to know the machine name and 
-TCP port where an @[<a href="www/Mserver.html">Mserver</a>@ is listening. These options can be given to
-@[<a href="www/MapiClient.html">MapiClient</a>@ with the {\tt -h HOSTNAME} / {\tt -$$-host HOSTNAME} and 
+Suffice it to say now that MapiClient needs to know the machine name and 
+TCP port where an Mserver is listening. These options can be given to
+MapiClient with the {\tt -h HOSTNAME} / {\tt -$$-host HOSTNAME} and 
 {\tt -p PORTNO} / {\tt -$$-port PORTNO} command line options. Default values,
 though, can be put in your monet configuration file, such that you will
-be able to start @[<a href="www/MapiClient.html">MapiClient</a>@ without command-line parameters.
+be able to start MapiClient without command-line parameters.
 
 @- SQL Frontend Settings
 @T
@@ -451,8 +451,7 @@ It is urgently needed to document everything that has to do with the SQL fronten
 @T
 In this scenario, we use the 'gold' example of data mining/OLAP access to a car
 insurance database, which you can find in the {\tt src/gold/} subdirectory of 
-the Monet distribution.  Please consult the @[<a href="www/README">README</a>@
-for all the details.\\
+the Monet distribution.  Please consult the README file for all the details.\\
 
 Go to the top-level source directory and do the following (where \$PREFIX is the 
 directory where you successfully performed a {\tt make install}).
@@ -465,8 +464,8 @@ $ Mserver --dbname=gold < load.mil
 $ Mserver --dbname=gold < init.mil
 \end{verbatim}
 
-The {\tt @[<a href="www/load.mil">load.mil</a>@} and {\tt @[<a href="www/init.mil">init.mil</a>@} are MIL scripts that create database tables and fill
-them with the @[<a href="www/modules/ascii_io.html">bulk loader</a>@.\\
+The {\tt load.mil} and {\tt init.mil} are MIL scripts that create database tables and fill
+them with the @[<a href="../../Modules/ascii_io/index.html">bulk loader</a>@.\\
 
 We then proceed to start a Monet server on the newly created 'gold' database:
 
@@ -480,7 +479,7 @@ monet>
 
 Monet answers with a prompt, waiting for MIL commands.\\
 
-We now load the modules {\tt @[<a href="www/modules/mapi.html">mapi</a>@} (client MIL access) and {\tt @[<a href="www/modules/xtables.html">xtables</a>@}
+We now load the modules {\tt @[<a href="../../Modules/mapi/index.html">mapi</a>@} (client MIL access) and {\tt @[<a href="../../Modules/xtables/index.html">xtables</a>@}
 (for cross-tabulation):
 
 \begin{verbatim}
@@ -488,12 +487,12 @@ We now load the modules {\tt @[<a href="www/modules/mapi.html">mapi</a>@} (clien
 > fork(listen(45678));
 \end{verbatim}
 
-The {\tt @[<a href="www/modules/mapi.html">listen(port)</a>@} command from the {\tt @[<a href="www/modules/mapi.html">mapi</a>@} module starts a client
-listener. As this command blocks, it is executed as a parameter to {\tt @[<a href="www/modules/kernel.html#mod_2_3_1">fork()</a>@}
+The {\tt @[<a href="../../Modules/mapi/index.html">listen(port)</a>@} command from the {\tt @[<a href="../../Modules/mapi/index.html">mapi</a>@} module starts a client
+listener. As this command blocks, it is executed as a parameter to {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_1">fork()</a>@}
 which forks off a separate MIL client that runs in the background.
 
-We now open a new window and start the @[<a href="www/MapiClient.html">MapiClient</a>@ telling it to connect
-to the same port number we passed to {\tt @[<a href="www/modules/mapi.html">listen()</a>@} on the local machine. This
+We now open a new window and start the @[<a href="../../MapiClient.html">MapiClient</a>@ telling it to connect
+to the same port number we passed to {\tt @[<a href="../../Modules/mapi/index.html">listen()</a>@} on the local machine. This
 will establish a MIL session with the Monet server, so we get a prompt:
 
 @[<a name="ls">@;
@@ -513,10 +512,10 @@ $ MapiClient --host localhost --port 45678
 [ "car_pos",      "oid",  "str",  50000,  0,      "clean",        "disk", "pers", 0,      1,            ]
 >
 \end{verbatim}
-A common command is {\tt @[<a href="www/modules/sys.html#mod_2_1_0">ls()</a>@} which lists all persistent BATs. You can pass a 
+A common command is {\tt @[<a href="../../Modules/sys/index.html#mod_2_1_0">ls()</a>@} which lists all persistent BATs. You can pass a 
 string parameter that restricts the list to BATs whose names start with that string (so, {\tt ls("car");} would
-have given the same result in the example of the @[<a href="www/README">car insurance example database</a.@). 
-There is also a similar command {\tt  @[<a href="www/modules/sys.html#mod_2_1_0">dir()</a>@} which lists {\em all} BATs instead 
+have given the same result in the example of the car insurance example database). 
+There is also a similar command {\tt  @[<a href="../../Modules/sys/index.html#mod_2_1_0">dir()</a>@} which lists {\em all} BATs instead 
 of only the persistent ones.\\ 
 
 The {\tt ls();} showed that the car insurance table consists of 7 attributes ({\tt age}, {\tt carprice}, {\tt category},
@@ -614,7 +613,7 @@ columns are projected out).
 >
 \end{verbatim}
 
-Finally, the MIL session is closed with a {\tt  @[<a href="www/modules/kernel.html#mod_2_3_1">quit</a>@}:
+Finally, the MIL session is closed with a {\tt  @[<a href="../../modules/kernel/index.html#mod_2_3_1">quit</a>@}:
 
 \begin{verbatim}
 >quit;
@@ -624,7 +623,7 @@ This concludes our quick tour of Monet.
 
 @* Memory Management in Monet 
 @T
-This section documents some of the memory tuning options in the @[<a href="www/Mserver.html">Mserver</a>@. It is intended for 
+This section documents some of the memory tuning options in the @[<a href="../../Mserver.html">Mserver</a>@. It is intended for 
 experienced Monet users, how have studied and worked with @[<a href="mil.html">MIL</a>.
 
 @+ The Bat Buffer Pool (BBP)
@@ -633,16 +632,16 @@ The BBP is the pool of BATs in existence in a Monet database. The BAT buffer poo
 or cold on disk. BATs may have three modes: 
 \begin{description}
 \item[{\tt persistent}] may be cached in RAM but always resides on disk permanently.
-\item[{\tt transient}] may be cached in RAM or reside on disk until the end of the @[<a href="www/Mserver.html">Mserver</a>@ session. However,
+\item[{\tt transient}] may be cached in RAM or reside on disk until the end of the @[<a href="../../Mserver.html">Mserver</a>@ session. However,
 as soon as the BAT ceases to have any references pointing to it, it is freed from RAM and removed from disk.
 \item[{\tt session}] like a transient BAT. However, if a session bat does not have any references it may be kept
-cached in RAM until the end of the @[<a href="www/Mserver.html">Mserver</a>@ session, if there is room in the BBP cache. The BBP uses 
+cached in RAM until the end of the @[<a href="../../Mserver.html">Mserver</a>@ session, if there is room in the BBP cache. The BBP uses 
 a LRU algorithm to unload/destroy BATs when space is needed.
 \end{description}
-The BAT mode is set with the {\tt @[<a href="www/modules/bat.html#mod_2_0_5">persists</a>@} command. Session-BATs can 
-be released  in the cache with {\tt @[<a href="www/modules/bat.html#mod_2_0_5">release(BAT):lng</a>@} that returns an 
+The BAT mode is set with the {\tt @[<a href="../../Modules/bat/index.html#mod_2_0_5">persists</a>@} command. Session-BATs can 
+be released  in the cache with {\tt @[<a href="../../Modules/bat/index.html#mod_2_0_5">release(BAT):lng</a>@} that returns an 
 identifier that can later be used to speculatively trying to retrieve it again with 
-{\tt @[<a href="www/modules/bat.html#mod_2_0_5">resurrect(lng):BAT</a>@} command.
+{\tt @[<a href="../../modules/bat/index.html#mod_2_0_5">resurrect(lng):BAT</a>@} command.
 
 The {\tt @[<a target="_self" href="#ls">ls()</a>@} and {\tt @[<a target="_self" href="#ls">dir()</a>@} 
 commands list three kinds of references individually for each BAT:
@@ -660,8 +659,8 @@ A logical reference will not prevent a BAT from being unloaded, but will prevent
 Making a BAT persistent, will increment its lrefcnt by one (and making it transient decreses it by one).
 \end{description}
 
-The BBP LRU policy is steerable by applications using the {\tt @[<a href="www/modules/bat.html#mod_2_0_5">hot(BAT)</a>@} and
-{\tt @[<a href="www/modules/bat.html#mod_2_0_5">cold(BAT)</a>@} commands that decrease resp. increase the likelyhood that
+The BBP LRU policy is steerable by applications using the {\tt @[<a href="../../Modules/bat/index.html#mod_2_0_5">hot(BAT)</a>@} and
+{\tt @[<a href="../../Modules/bat/index.html#mod_2_0_5">cold(BAT)</a>@} commands that decrease resp. increase the likelyhood that
 a BAT is unloaded when Monet is in need of resources.
 
 @+ Memory Limitations
@@ -703,9 +702,9 @@ from RAM+swapfile. Whether the space is taken from malloced memory or from vallo
 by comparing the heap-size to the {\tt gdk_mmap} threshold in the monet configuration file.  
 
 BATs are allocated from memory mapped memory only if that has been requested explicitly with the 
-{\tt @[<a href="www/modules/bat.html#mod_2_0_6">mmap()</a>@} command. For each of the possibly five heaps,
+{\tt @[<a href="../../Modules/bat/index.html#mod_2_0_6">mmap()</a>@} command. For each of the possibly five heaps,
 a {\tt STORE\_MEM} or {\tt STORE\_MMAP} can be specified. Whether Monet uses normal memory
-mapped files or {\em privately} mapped files depends on the {\tt @[<a href="www/modules/bat.html#mod_2_0_3">access()</a>@}
+mapped files or {\em privately} mapped files depends on the {\tt @[<a href="../../Modules/bat/index.html#mod_2_0_3">access()</a>@}
 mode of the BAT (only {\tt BAT\_WRITE} leads to privately mapped files).\\
 
 @+ Memory Tuning
@@ -724,34 +723,34 @@ a 64-bits system is due to lack of resources. \\
 
 Most memory resource problems in Monet are easily avoidable by minimizing your open BAT
 references (as discussed above) and making you access patterns cache friendly (see the 
-@[<a href="www/modules/radix.html">radix module</a>@. Additionally, you are able to tune the 
+@[<a href="../../Modules/radix/index.html">radix module</a>@. Additionally, you are able to tune the 
 buffer management policy of Monet to the capabilities of your hardware platform
 as described in the following.\\
 
 Monet provides two tuning thresholds that steer the beavior of the BBP LRU algorithm:
 \begin{description}
 \item[mem] the physical resource limit.  The maximum is set with 
-{\tt @[<a href="www/modules/sys.html#mod_2_0_1">mem_maxsize(lng)</a>@} command, where the default
+{\tt @[<a href="../../Modules/sys/index.html#mod_2_0_1">mem_maxsize(lng)</a>@} command, where the default
 is 80 percent of the RAM+swap-file size of the system. The current usage of physical resources
-can be retrieved with {\tt @[<a href="www/modules/sys.html#mod_2_0_1">mem_curize():lng</a>@}.
+can be retrieved with {\tt @[<a href="../../modules/sys/index.html#mod_2_0_1">mem_curize():lng</a>@}.
 \item[vm] the virtual memory address space consumption limit.  The maximum is set with 
-{\tt @[<a href="www/modules/sys.html#mod_2_0_1">vm_maxsize(lng)</a>@} command, where the default
+{\tt @[<a href="../../Modules/sys/index.html#mod_2_0_1">vm_maxsize(lng)</a>@} command, where the default
 is 80 percent of the RAM+swap-file size of the system. The current usage of virtual address
-space can be retrieved with {\tt @[<a href="www/modules/sys.html#mod_2_0_1">vm_curize():lng</a>@}.
+space can be retrieved with {\tt @[<a href="../../Modules/sys/index.html#mod_2_0_1">vm_curize():lng</a>@}.
 \end{description}
 
 A particular problem that can occur on 32-bits systems is when it seems that the virtual address
 space is not yet exhausted, but an allocation of some large block fails anyway.  This tends 
 to be caused by {\em virtual address space fragmentation} and can be monitored with
-{\tt @[<a href="www/modules/sys.html#mod_2_0_1">mem_printmap():lng</a>@}. Other commands of interest
-are {\tt @[<a href="www/modules/sys.html#mod_2_0_1">mem_usage(lng minsize) : BAT[str,lng]</a>@} 
-and {\tt @[<a href="www/modules/sys.html#mod_2_0_1">vm_usage(lng minsize) : BAT[str,lng]</a>@} 
+{\tt @[<a href="../../Modules/sys/index.html#mod_2_0_1">mem_printmap():lng</a>@}. Other commands of interest
+are {\tt @[<a href="../../Modules/sys/index.html#mod_2_0_1">mem_usage(lng minsize) : BAT[str,lng]</a>@} 
+and {\tt @[<a href="../../Modules/sys/index.html#mod_2_0_1">vm_usage(lng minsize) : BAT[str,lng]</a>@} 
 that give detailed overviews of where the various kinds of memory are used.
 
 Debug-mask 4 causes regular printing of memory resource consumption. It can either be set
 from the {\tt @[<a href="../etc/monet.conf">monet.conf</a>@} file, the
-@[<a href="www/Mserver.html">Mserver</a>@ command line, or while running with
-the @[<a href="www/modules/kernel.html#mod_2_4_2">debugmask()</a>@ operator. 
+@[<a href="../../Mserver.html">Mserver</a>@ command line, or while running with
+the @[<a href="../../Modules/kernel/index.html#mod_2_4_2">debugmask()</a>@ operator. 
 
 @* Copyright Notice
 @T

@@ -21,23 +21,30 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SUBDIRS = src conf scripts tests 
+pkg=@PACKAGE@
+source=@MONET_SOURCE@
+build=@MONET_BUILD@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 
-EXTRA_DIST = rules.mk bootstrap lady.gif configure.ag RunMtest.in RunMtest.bat.in RunMapprove.in RunMapprove.bat.in sysdefs.h.in MonetDB.spec MonetDB.spec.in
-EXTRA_DIST_DIR = NT
+bindir=@bindir@
+libexecdir=@libexecdir@
+datadir=@datadir@
+sysconfdir=@sysconfdir@
+localstatedir=@localstatedir@
+libdir=@libdir@
+infodir=@infodir@
+mandir=@mandir@
+includedir=@includedir@
 
-EXTRA_HEADERS = monetdb_config.h sysdefs.h
+pkgincludedir=${includedir}/${pkg}
+pkglibdir=${libdir}/${pkg}
 
-scripts_gif = {
-	DIR = pkgdatadir
-	SOURCES = lady.gif
-}
+modpath=${pkglibdir}
+classpath=${pkglibdir}/java/mapi.jar
 
-headers_pc = {
-	HEADERS = pc
-	SOURCES	= MonetDB.pc.in
-	DIR = libdir/pkgconfig
-}
-
-TESTS = RunMtest
-TESTS_ENVIRONMENT = $(SHELL)
+Name: ${pkg}
+Description: A database management system developed from a main-memory perspective.
+Version: @VERSION@
+Cflags: -I${pkgincludedir} -I${pkgincludedir}/common -I${pkgincludedir}/gdk -I${pkgincludedir}/monet -I${pkgincludedir}/plain -I${pkgincludedir}/contrib -I${pkgincludedir}/mapi
+Libs: -L${libdir} -L${pkglibdir}
