@@ -24,7 +24,7 @@
 EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh mkinstalldirs missing \
-	ltmain.sh stamp-h.in config.h.in \
+	ltmain.sh config.h.in \
 	monet.m4 conf.bash monet.conf.in
 
 scripts_m4 = {
