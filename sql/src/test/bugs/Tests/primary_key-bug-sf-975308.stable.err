@@ -60,7 +60,7 @@ stderr of test 'primary_key-bug-sf-975308` in directory 'src/test/bugs` itself:
 
 MAPI  = monetdb@pictor:56479
 QUERY = CREATE TABLE test (
-ERROR = !Create Table name test already in use
+ERROR = !CREATE TABLE: name test already in use
 MAPI  = monetdb@pictor:56479
 QUERY = INSERT INTO test values( 2,3 );
 ERROR = !current transaction is aborted (please ROLLBACK)
