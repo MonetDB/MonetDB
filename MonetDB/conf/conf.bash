@@ -30,6 +30,9 @@
 #	COMP="GNU"	or	COMP="ntv"
 #	BITS="32"	or	BITS="64"
 #	LINK="dynamic"	or	LINK="static"
+#	DEBUG="somevalue" 	or not set
+#	OPTIMIZE="somevalue"	or not set
+#	INSTRUMENT="somevalue"	or not set
 #
 # (If not or wrongly set, "GNU 32 dynamic" is used as default.)
 #
@@ -268,6 +271,18 @@ if [ "${cxx}" != "g++" ] ; then
 fi
 if [ "${BITS}" = "64" ] ; then
 	conf_opts="${conf_opts} --with-bits=${BITS}"
+fi
+
+if [ "${DEBUG}" ] ; then
+	conf_opts="${conf_opts} --enable-debug"
+fi
+
+if [ "${OPTIMIZE}" ] ; then
+	conf_opts="${conf_opts} --enable-optimize"
+fi
+
+if [ "${INSTRUMENT}" ] ; then
+	conf_opts="${conf_opts} --enable-instrument"
 fi
 
 if [ "${what}" != "MONET" ] ; then
