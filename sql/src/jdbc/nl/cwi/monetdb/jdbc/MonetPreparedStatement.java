@@ -46,7 +46,7 @@ public class MonetPreparedStatement
 	 */
 	MonetPreparedStatement(
 		MonetSocket monet,
-		Connection connection,
+		MonetConnection connection,
 		int resultSetType,
 		int resultSetConcurrency,
 		String prepareQuery)
@@ -470,7 +470,11 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		synchronized(MonetConnection.mDate) {
+			MonetConnection.mDate.setCalendar(cal);
+			setValue(parameterIndex, "'" +
+			         MonetConnection.mDate.format(x) + "'");
+		}
 	}
 
 	/**
@@ -731,7 +735,11 @@ public class MonetPreparedStatement
 	public void setTime(int parameterIndex, Time x, Calendar cal)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		synchronized(MonetConnection.mTime) {
+			MonetConnection.mTime.setCalendar(cal);
+			setValue(parameterIndex, "'" +
+			         MonetConnection.mTime.format(x) + "'");
+		}
 	}
 
 	/**
@@ -767,7 +775,11 @@ public class MonetPreparedStatement
 	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		synchronized(MonetConnection.mTimestamp) {
+			MonetConnection.mTimestamp.setCalendar(cal);
+			setValue(parameterIndex, "'" +
+			         MonetConnection.mTimestamp.format(x) + "'");
+		}
 	}
 
 	/**
@@ -831,6 +843,8 @@ public class MonetPreparedStatement
 	/**
 	 * Transforms the prepare query into a simple SQL query by replacing
 	 * the ?'s with the given column contents.
+	 * Mind that the JDBC specs allow `reuse' of a value for a column over
+	 * multiple executes.
 	 *
 	 * @return the simple SQL string for the prepare query
 	 * @throws SQLException if not all columns are set

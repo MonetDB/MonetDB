@@ -39,7 +39,7 @@ public class MonetStatement implements Statement {
 	/** A socket connection to Mserver */
 	private MonetSocket monet;
 	/** The parental Connection object */
-	private Connection connection;
+	private MonetConnection connection;
 	/** The last HeaderList object this Statement produced */
 	private HeaderList lastHeaderList;
 	/** The last Header that this object uses */
@@ -73,7 +73,7 @@ public class MonetStatement implements Statement {
 	 */
 	MonetStatement(
 		MonetSocket monet,
-		Connection connection,
+		MonetConnection connection,
 		int resultSetType,
 		int resultSetConcurrency)
 		throws SQLException, IllegalArgumentException
@@ -709,7 +709,7 @@ public class MonetStatement implements Statement {
 					// set the reply size for this query. If it is set to 0 we get a
 					// prompt after the server sent it's header
 					try {
-						((MonetConnection)connection).setReplySize(
+						connection.setReplySize(
 							maxRows != 0 ? Math.min(maxRows, cacheSize) : cacheSize);
 					} catch (SQLException e) {
 						hdrl.addError(e.getMessage());

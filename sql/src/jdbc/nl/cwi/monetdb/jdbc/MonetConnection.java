@@ -4,6 +4,7 @@ import java.sql.*;
 import java.util.*;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.text.SimpleDateFormat;
 
 /**
  * A Connection suitable for the Monet database
@@ -58,6 +59,18 @@ public class MonetConnection implements Connection {
 
 	/** The number of results we receive from the server at once */
 	private int curReplySize = -1;	// the server by default uses -1 (all)
+
+	/* only parse the date patterns once, use multiple times */
+	/** Format of a timestamp used by Mserver */
+	final static SimpleDateFormat mTimestamp =
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	/** Format of a time used by Mserver */
+	final static SimpleDateFormat mTime =
+		new SimpleDateFormat("HH:mm:ss.SSS");
+	/** Format of a date used by Mserver */
+	final static SimpleDateFormat mDate =
+		new SimpleDateFormat("yyyy-MM-dd");
+
 
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the current

@@ -1160,17 +1160,6 @@ public class MonetResultSet implements ResultSet {
 		return(getString(findColumn(columnName)));
 	}
 
-	/* only parse the date pattern once, use it multiple times */
-	/** Format of a timestamp returned by Mserver */
-	private final static SimpleDateFormat mTimestamp =
-		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-	/** Format of a time returned by Mserver */
-	private final static SimpleDateFormat mTime =
-		new SimpleDateFormat("HH:mm:ss.SSS");
-	/** Format of a date returned by Mserver */
-	private final static SimpleDateFormat mDate =
-		new SimpleDateFormat("yyyy-MM-dd");
-
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
 	/**
 	 * Helper method which returns a java.util.Date for columns of type
@@ -1217,14 +1206,20 @@ public class MonetResultSet implements ResultSet {
 					return(new java.util.Date(0L));
 
 				case Types.DATE:
-					mDate.setCalendar(cal);
-					return(mDate.parse(monetDate));
+					synchronized(MonetConnection.mDate) {
+						MonetConnection.mDate.setCalendar(cal);
+						return(MonetConnection.mDate.parse(monetDate));
+					}
 				case Types.TIME:
-					mTime.setCalendar(cal);
-					return(mTime.parse(monetDate));
+					synchronized(MonetConnection.mTime) {
+						MonetConnection.mTime.setCalendar(cal);
+						return(MonetConnection.mTime.parse(monetDate));
+					}
 				case Types.TIMESTAMP:
-					mTimestamp.setCalendar(cal);
-					return(mTimestamp.parse(monetDate));
+					synchronized(MonetConnection.mTimestamp) {
+						MonetConnection.mTimestamp.setCalendar(cal);
+						return(MonetConnection.mTimestamp.parse(monetDate));
+					}
 			}
 		} catch(java.text.ParseException e) {
 			return(new java.sql.Date(0L));
