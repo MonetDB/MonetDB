@@ -266,7 +266,16 @@ int math_unary@1(dbl *res , dbl *a ) {
    if (*a == dbl_nil) {
 	*res = dbl_nil;
    } else {
+	errno = 0;
 	@2_unary( a, res );
+	if (errno == EDOM) {
+		GDKerror("Negative argument is not allowed");
+		return GDK_FAIL;
+	}
+	if (errno == ERANGE) {
+		GDKerror("Range error");
+		return GDK_FAIL;
+	}
    }
    return(GDK_SUCCEED);
 }
