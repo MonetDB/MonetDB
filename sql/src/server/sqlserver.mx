@@ -488,6 +488,25 @@ module(mapi); # mapi_listen
 
 mvc_init(int(monet_environment.find("sql_debug")));
 
+proc cnt (bat b) : int {
+	n := (*monet_atomtbl.reverse.find(b.ttype))("nil");
+	return count(b.kdiff(b.uselect(n)));
+}
+proc {cnt} (bat v, bat e) {
+	var n := (*monet_atomtbl.reverse.find(v.ttype))("nil");
+	var c := {count}(v,e);
+	var nils := v.select(n);
+	var nc := {count}(nils,e);
+	return [-](c,nc);
+}
+proc {cnt} (bat v, bat g, bat e) {
+	var n := (*monet_atomtbl.reverse.find(v.ttype))("nil");
+	var c := {count}(v,g,e);
+	var nils := v.select(n);
+	var nc := {count}(g.reverse.join(nils),e);
+	return [-](c,nc);
+}
+
 const QPARSE := 1;
 const QTABLE := 2;
 const QUPDATE := 3;
@@ -537,12 +556,12 @@ proc server_output( Stream Output, any Order, any val, ..any.. ) : void := {
 	stream_writeInt( Output, QTABLE ); # type TABLE.
 	stream_writeInt( Output, 1 ); # NR records.
 
-	cnt := $0;
+	Cnt := $0;
 	var p := str(val);
 	if (type(val) = str)
 		p := "\"" + val + "\"";
 	var id := 3;
-	while(id < cnt ){
+	while(id < Cnt ){
 		if (type($(id+1)) != str)
  			p := p + "\t" + str($(id+1));
 		else
@@ -555,15 +574,15 @@ proc server_output( Stream Output, any Order, any val, ..any.. ) : void := {
 }
 
 proc server_output( Stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void := {
-	var cnt := Order.count();
+	var Cnt := Order.count();
 	stream_writeInt( Output, 0 ); # write not done.
 	stream_writeInt( Output, QTABLE ); # type TABLE.
-	stream_writeInt( Output, cnt ); # NR records.
+	stream_writeInt( Output, Cnt ); # NR records.
 	
-	cnt := $0;
+	Cnt := $0;
 	var bats := new(oid,bat);
 	var id := 0;
-	while((id + 2) < cnt ){
+	while((id + 2) < Cnt ){
 		bats.insert(oid(id), $(id+3));
 		id :+= 1;
 	}

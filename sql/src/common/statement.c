@@ -1087,6 +1087,7 @@ sql_subtype *tail_type(stmt * st)
 	case st_select2:
 	case st_unique:
 	case st_union:
+	case st_append:
 	case st_replace:
 	case st_mark:
 	case st_alias:
@@ -1185,6 +1186,7 @@ stmt *tail_column(stmt * st)
 	case st_group:
 	case st_group_ext:
 	case st_union:
+	case st_append:
 	case st_unique:
 	case st_pivot:
 		return tail_column(st->op1.stval);
@@ -1279,6 +1281,7 @@ char *column_name(stmt * st)
 		return column_name(st->op2.stval);
 	case st_ibat:
 	case st_union:
+	case st_append:
 	case st_mark:
 	case st_select:
 	case st_select2:
@@ -1325,6 +1328,7 @@ char *table_name(stmt * st)
 	case st_derive:
 		return table_name(st->op2.stval);
 	case st_union:
+	case st_append:
 	case st_mark:
 	case st_select:
 	case st_select2:

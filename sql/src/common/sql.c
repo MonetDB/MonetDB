@@ -858,13 +858,14 @@ static stmt *sql_aggrop(context * sql, scope * scp, symbol * se, group * grp, st
 	sql_aggr *a = NULL;
 	int distinct = l->h->next->data.ival;
 	stmt *s = NULL;
+	char *aggrstr = l->h->data.sval;
 	if (!l->h->next->next->data.sym) {	/* count(*) case */
 		cvar *cv;
-		if (strcmp(l->h->data.sval, "count") != 0) {
+		if (strcmp(aggrstr, "count") != 0) {
 			return sql_error(sql, 02, "Aggregate: Cannot do a %s(*)", l->h->data.sval);
 		}
 		if (grp) {
-			a = sql_bind_aggr(l->h->data.sval, NULL);
+			a = sql_bind_aggr(aggrstr, NULL); 
 			return stmt_aggr(stmt_dup(grp->grp), grp_dup(grp), a);
 		}
 		cv = scope_first_column(scp);
@@ -878,6 +879,10 @@ static stmt *sql_aggrop(context * sql, scope * scp, symbol * se, group * grp, st
 			s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
 		}
 	} else {
+		/* use cnt as nils shouldn't to be counted */
+		if (strcmp(aggrstr, "count") == 0) {
+			aggrstr = "cnt";
+		}
 		/* the values which are aggregated together, no grp should
 		 * be given there to optain the values */
 		s = sql_value_exp(sql, scp, l->h->next->next->data.sym, /*grp*/ NULL, subset);
@@ -888,7 +893,7 @@ static stmt *sql_aggrop(context * sql, scope * scp, symbol * se, group * grp, st
 	}
 	if (!s)
 		return NULL;
-	a = sql_bind_aggr(l->h->data.sval, tail_type(s));
+	a = sql_bind_aggr(aggrstr, tail_type(s));
 	if (a) {
 		return stmt_aggr(s, grp_dup(grp), a);
 	} else {
@@ -1181,14 +1186,14 @@ static stmt *sql_join_
 			cvar *cs = t->columns->h->data;
 			/* we need to add the missing oid's */
 			ld = stmt_diff(stmt_dup(cs->s), stmt_reverse(stmt_dup(fs1)));
-			ld = stmt_mark(stmt_reverse(ld), -1);
+			ld = stmt_mark(stmt_reverse(ld), 0);
 		}
 		t = tv2;
 		if (jointype == jt_right || jointype == jt_full) {
 			cvar *cs = t->columns->h->data;
 			/* we need to add the missing oid's */
 			rd = stmt_diff(stmt_dup(cs->s), stmt_reverse(stmt_dup(fs2)));
-			rd = stmt_mark(stmt_reverse(rd), -1);
+			rd = stmt_mark(stmt_reverse(rd), 0);
 		}
 		l1 = create_stmt_list();
 		t = tv1;
@@ -1213,14 +1218,14 @@ static stmt *sql_join_
 			     n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_union(stmt_dup(m->data), stmt_join (stmt_dup(ld), stmt_dup(cs->s), cmp_equal)));
+				list_append(l2, stmt_append(stmt_dup(m->data), stmt_join (stmt_dup(ld), stmt_dup(cs->s), cmp_equal)));
 			}
 			t = tv2;
 			for (n = t->columns->h; n;
 			     n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_union(stmt_dup(m->data), stmt_const (stmt_dup(ld), stmt_atom (atom_general (tail_type(cs->s), NULL)))));
+				list_append(l2, stmt_append(stmt_dup(m->data), stmt_const (stmt_dup(ld), stmt_atom (atom_general (tail_type(cs->s), NULL)))));
 			}
 			list_destroy(l1);
 			l1 = l2;
@@ -1233,14 +1238,14 @@ static stmt *sql_join_
 			     n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_union(stmt_dup(m->data), stmt_const (stmt_dup(rd), stmt_atom (atom_general (tail_type(cs->s), NULL)))));
+				list_append(l2, stmt_append(stmt_dup(m->data), stmt_const (stmt_dup(rd), stmt_atom (atom_general (tail_type(cs->s), NULL)))));
 			}
 			t = tv2;
 			for (n = t->columns->h; n;
 			     n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_union(stmt_dup(m->data), stmt_join (stmt_dup(rd), stmt_dup(cs->s), cmp_equal)));
+				list_append(l2, stmt_append(stmt_dup(m->data), stmt_join (stmt_dup(rd), stmt_dup(cs->s), cmp_equal)));
 			}
 			list_destroy(l1);
 			l1 = l2;

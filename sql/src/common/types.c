@@ -438,6 +438,7 @@ void sqltypeinit()
 		sql_aggr_cmd("avg","avg",numerical[i].t, "dbl");
 	}
 
+	sql_aggr_cmd( "cnt", "cnt", "", "int" ); 
 	sql_aggr_cmd( "count", "count", "", "int" ); 
 
 	for(i=0; numerical[i].h; i++){
