@@ -894,7 +894,7 @@ typedef struct {
 	BUN inserted;		/* start of inserted elements */
 } BUNrec;
 
-typedef struct {
+typedef struct PROPrec {
 	ValRecord v;
 	short_str name;
 	struct PROPrec *next;	/* simple chain of properties */
