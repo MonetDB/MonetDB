@@ -1,70 +1,5 @@
 /* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
-
 /**
- * @file
- *
- * Convert the internal representation of a MIL programm into a
- * string.
- *
- * MIL printing is done following a very simple grammar for MIL:
- *
- * @verbatim
- 
-   statements       : statements statements                    <m_comm_seq>
-                    | 'if' condition '{' statements '}'        <m_ifthenelse>
-                         [ 'else {' statements '}' ]
-                    | Variable '@batloop'                      <m_batloop>
-                    | statement ';'                            <otherwise>
-
-   statement        : Variable ':=' expression                 <m_assgn>
-                    | 'print (' expression ')'                 <m_print>
-                    | Variable '.insert (' expression ')'      <m_insert>
-                    | 'error (' expression ')'                 <m_error>
-
-   expression       : Variable                                 <m_var>
-                    | literal                                  <m_lit_*, m_nil>
-                    | 'new (' type ',' type ')'                <m_new>
-                    | expression '.seqbase (' expression ')'   <m_seqbase>
-                    | expression '.fetch (' expression ')'     <m_fetch>
-                    | '$t'                                     <m_tail>
-                    | Type '(' expression ')'                  <m_cast>
-                    | '[' Type '] (' expression ')'            <m_fcast>
-                    | 'not (' expression ')'                   <m_not>
-                    | 'isnil (' expression ')'                 <m_isnil>
-                    | expression '.insert (' expression ')'    <m_insert>
-                    | expression '+' expression                <m_plus>
-                    | expression '=' expression                <m_equals>
-                    | expression '||' expresssion              <m_or>
-                    | 'count (' expression ')'                 <m_count>
-                    | 'error (' expression ')'                 <m_error>
-                    | 'ifthenelse (' expression ','
-                                     expression ','
-                                     expression ')'            <m_ifthenelse_>
-                    | FunctionName '(' argument_list ')'       <m_apply>
-
-   condition        : '(' expression ')'
-
-   argument_list    : <empty>                                  <m_nil>
-                    | expression remaining_args                <m_args>
-
-   remaining_args   : <empty>                                  <m_nil>
-                    | ',' expression remaining_args            <m_args>
-
-   literal          : IntegerLiteral                           <m_lit_int>
-                    | BooleanLiteral                           <m_lit_bit>
-                    | StringLiteral                            <m_lit_str>
-                    | DoubleLiteral                            <m_lit_dbl>
-                    | OidLiteral                               <m_lit_oid>
-                    | 'nil'                                    <m_nil>
-
-@endverbatim
- *
- * Grammar rules are reflected by @c print_* functions in this file.
- * Depending on the current MIL tree node kind (see enum values
- * in brackets above), the corresponding sub-rule is chosen (i.e.
- * the corresponding sub-routine is called).
- *
- *
  * Copyright Notice:
  * -----------------
  *
@@ -107,697 +42,6 @@
 /* inserted for PFmalloc in temporary MILprint */
 #include "mem.h"
 
-/**
- * Denotes an illegal value for a PFmty_simpl_t. This is used in
- * conjunction with milprintf() to correctly start the first color
- * change and terminate the last one.
- */
-#define ILLEGAL_TY 99
-
-/** The string we print to */
-static PFarray_t *out = NULL;
-
-/* forward declarations for left sides of grammar rules */
-static void milprintf (PFmty_t, char *, ...)
-    __attribute__ ((format (printf, 2, 3)));
-static void print_statements (PFmnode_t *);
-static void print_statement (PFmnode_t *);
-static void print_variable (PFmnode_t *);
-static void print_expression (PFmnode_t *);
-static void print_condition (PFmnode_t *);
-static void print_argument_list (PFmnode_t *);
-static void print_remaining_args (PFmnode_t *);
-static void print_literal (PFmnode_t *);
-static void print_type (PFmnode_t *);
-
-/** map types to their type names */
-static char * mty2str[] = {
-      [mty_oid]   "oid"
-    , [mty_void]  "void"
-    , [mty_bit]   "bit"
-    , [mty_int]   "int"
-    , [mty_dbl]   "dbl"
-    , [mty_str]   "str"
-    , [mty_node]  "oid"
-    , [mty_item]  "oid"
-};
-
-static char *cast[8][8] = {
-/* oid   void  bit         int         str         dbl        node  item   */
- { NULL, NULL, NULL,       NULL,       NULL,       NULL,      NULL, NULL }
-,{ NULL, NULL, NULL,       NULL,       NULL,       NULL,      NULL, NULL }
-,{ NULL, NULL, "",         "bit_int",  "bit_str",  "bit_dbl", NULL, "bit_item" }
-,{ NULL, NULL, "int_bit",  "",         "int_str",  "int_dbl", NULL, "int_item" }
-,{ NULL, NULL, "str_bit",  "str_int",  "",         "str_dbl", NULL, "str_item" }
-,{ NULL, NULL, "dbl_bit",  "dbl_int",  "dbl_str",  "",        NULL, "dbl_item" }
-,{ NULL, NULL, NULL,       NULL,       NULL,       NULL,      "",   "node_item"}
-,{ NULL, NULL, "item_bit", "item_int", "item_str", "item_dbl","item_node", ""  }
-};
-
-/** Strings to send to turn on a certain color, depending on output type */
-static char* start_color[3][8] = {
-    [output_xterm] {
-                [mty_oid]     "\033[30m"    /* black */
-              , [mty_void]    "\033[30m"    /* black */
-              , [mty_bit]     "\033[33m"    /* yellow */
-              , [mty_int]     "\033[34m"    /* blue */
-              , [mty_str]     "\033[32m"    /* green */
-              , [mty_dbl]     "\033[36m"    /* cyan */
-              , [mty_node]    "\033[31m"    /* red */
-              , [mty_item]    "\033[35m"    /* pink */
-    }
-  , [output_html] {
-                [mty_oid]     "<font color='black'>"      /* black */
-              , [mty_void]    "<font color='black'>"      /* black */
-              , [mty_bit]     "<font color='yellow'>"     /* yellow */
-              , [mty_int]     "<font color='blue'>"       /* blue */
-              , [mty_str]     "<font color='lime'>"       /* green */
-              , [mty_dbl]     "<font color='aqua'>"       /* cyan */
-              , [mty_node]    "<font color='red'>"        /* red */
-              , [mty_item]    "<font color='fuchsia'>"    /* pink */
-    }
-  , [output_monet] {
-                [mty_oid]     ""   /* black */
-              , [mty_void]    ""   /* black */
-              , [mty_bit]     ""   /* yellow */
-              , [mty_int]     ""   /* blue */
-              , [mty_str]     ""   /* green */
-              , [mty_dbl]     ""   /* cyan */
-              , [mty_node]    ""   /* red */
-              , [mty_item]    ""   /* pink */
-    }
-};
-
-/** Strings to send to turn off a certain color, depending on output type */
-static char* end_color[3][8] = {
-    [output_xterm] {
-                [mty_oid]     ""    /* black */
-              , [mty_void]    ""    /* black */
-              , [mty_bit]     ""    /* yellow */
-              , [mty_int]     ""    /* blue */
-              , [mty_str]     ""    /* green */
-              , [mty_dbl]     ""    /* cyan */
-              , [mty_node]    ""    /* red */
-              , [mty_item]    ""    /* pink */
-    }
-  , [output_html] {
-                [mty_oid]     "</font>"   /* black */
-              , [mty_void]    "</font>"   /* black */
-              , [mty_bit]     "</font>"   /* yellow */
-              , [mty_int]     "</font>"   /* blue */
-              , [mty_str]     "</font>"   /* green */
-              , [mty_dbl]     "</font>"   /* cyan */
-              , [mty_node]    "</font>"   /* red */
-              , [mty_item]    "</font>"   /* pink */
-    }
-  , [output_monet] {
-                [mty_oid]     ""   /* black */
-              , [mty_void]    ""   /* black */
-              , [mty_bit]     ""   /* yellow */
-              , [mty_int]     ""   /* blue */
-              , [mty_str]     ""   /* green */
-              , [mty_dbl]     ""   /* cyan */
-              , [mty_node]    ""   /* red */
-              , [mty_item]    ""   /* pink */
-    }
-};
-
-/** Strings to send to turn on printing in bold, depending on output type */
-static char* start_boldness[3][2] = {
-    [output_xterm] {
-                [mty_simple]     ""
-              , [mty_sequence]   "\033[1m"
-    }
-  , [output_html] {
-                [mty_simple]     ""
-              , [mty_sequence]   "<b>"
-    }
-  , [output_monet] {
-                [mty_simple]     ""
-              , [mty_sequence]   ""
-    }
-};
-
-/** Strings to send to turn off printing in bold, depending on output type */
-static char* end_boldness[3][2] = {
-    [output_xterm] {
-                [mty_simple]     ""
-              , [mty_sequence]   "\033[m\017"
-    }
-  , [output_html] {
-                [mty_simple]     ""
-              , [mty_sequence]   "</b>"
-    }
-  , [output_monet] {
-                [mty_simple]     ""
-              , [mty_sequence]   ""
-    }
-};
-
-
-#ifdef NDEBUG
-#define debug_output
-#else
-/**
- * In our debug versions we want to have meaningful error messages when
- * generating MIL output failed. So we print the MIL script as far as
- * we already generated it.
- */
-#define debug_output \
-  PFinfo (OOPS_FATAL, "I encountered problems while generating MIL output."); \
-  PFinfo (OOPS_FATAL, "This is how far I was able to generate the script:");\
-  fprintf (stderr, "%s", (char *) out->base);
-#endif
-
-
-/**
- * Implementation of the grammar rules for `statements'.
- *
- * @param n MIL tree node
- */
-static void
-print_statements (PFmnode_t * n)
-{
-    switch (n->kind) {
-
-        /* statements : 'if' condition statements 'else' statements */
-        case m_ifthenelse:
-            milprintf (n->mty, "if ");
-            print_condition (n->child[0]);
-            milprintf (n->mty, " {\n");
-            print_statements (n->child[1]);
-            if (n->child[2]->kind != m_nil) {
-                milprintf (n->mty, "} else {\n");
-                print_statements (n->child[2]);
-            }
-            milprintf (n->mty, "}\n");
-            break;
-
-        /* statements : statements statements */
-        case m_comm_seq:
-            print_statements (n->child[0]);
-            print_statements (n->child[1]);
-            break;
-
-        /* statements : variable '@batloop {' statements '}' */
-        case m_batloop:
-            print_variable (n->child[0]);
-            milprintf (n->mty, "@batloop {\n");
-            print_statements (n->child[1]);
-            milprintf (n->mty, "}\n");
-            break;
-
-        /* statements : statement ';' */
-        default:
-            print_statement (n);
-            milprintf (n->mty, ";\n");
-            break;
-    }
-}
-
-/**
- * Implementation of the grammar rules for `statement'.
- *
- * @param n MIL tree node
- */
-static void
-print_statement (PFmnode_t * n)
-{
-    switch (n->kind) {
-
-        /* statement : variable ':=' expression */
-        case m_assgn:
-            print_variable (n->child[0]);
-            milprintf (n->mty, " := ");
-            print_expression (n->child[1]);
-            break;
-
-        /* statement : 'print (' expression ')' */
-        case m_print:
-            milprintf (n->mty, "print (");
-            print_expression (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* statement : variable '.insert (' expression ')' */
-        case m_insert:
-            print_variable (n->child[0]);
-            milprintf (n->mty, ".insert (");
-            print_expression (n->child[1]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* statement : 'error (' expression ')' */
-        case m_error:
-            milprintf (n->mty, "error (");
-            print_expression (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        default:
-            debug_output;     /* Print MIL code so far when in debug mode. */
-            PFoops (OOPS_FATAL, "Illegal MIL tree. MIL printer skrewed up.");
-    }
-}
-
-/**
- * Create MIL script output for variables.
- *
- * To make variable names really unique, we use the local part of
- * the variable's name and append its memory address. (Actually, the
- * memory address itself is unique, but scripts are easier to debug
- * if we can find out the original variable name.)
- *
- * @param n MIL tree node
- */
-static void
-print_variable (PFmnode_t * n)
-{
-    if (n->kind != m_var) {
-        debug_output;     /* Print MIL code so far when in debug mode. */
-        PFoops (OOPS_FATAL, "Illegal MIL tree. Expected a variable "
-                            "and got something different.");
-    }
-
-    milprintf (n->mty, "%s_%x", n->sem.var->qname.loc,
-                                (size_t) n->sem.var);
-}
-
-/**
- * Implementation of the grammar rules for `statement'.
- *
- * @param n MIL tree node
- */
-static void
-print_expression (PFmnode_t * n)
-{
-    switch (n->kind) {
-
-        /* expression : Variable */
-        case m_var:
-            print_variable (n);
-            break;
-
-        /* expression : literal */
-        case m_lit_int:
-        case m_lit_bit:
-        case m_lit_str:
-        case m_lit_dbl:
-        case m_lit_oid:
-        case m_nil:
-            print_literal (n);
-            break;
-
-        /* expression : 'new (' type ',' type ')' */
-        case m_new:
-            milprintf (n->mty, "new (");
-            print_type (n->child[0]);
-            milprintf (n->mty, ", ");
-            print_type (n->child[1]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : expression '.seqbase (' expression ')' */
-        case m_seqbase:
-            print_expression (n->child[0]);
-            milprintf (n->mty, ".seqbase (");
-            print_expression (n->child[1]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : expression '.fetch (' expression ')' */
-        case m_fetch:
-            print_expression (n->child[0]);
-            milprintf (n->mty, ".fetch (");
-            print_expression (n->child[1]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : '$t' */
-        case m_tail:
-            milprintf (n->mty, "$t");
-            break;
-
-        /* expression : type '(' expression ')' */
-        case m_cast:
-            /* milprintf (n->mty, "%s (", mty2str[n->mty.ty]); */
-            milprintf (n->mty, "%s (", cast[n->child[0]->mty.ty][n->mty.ty]);
-            print_expression (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : '[' type '] (' expression ')' */
-        case m_fcast:
-            /* milprintf (n->mty, "[%s] (", mty2str[n->mty.ty]); */
-            milprintf (n->mty, "[%s] (", cast[n->child[0]->mty.ty][n->mty.ty]);
-            print_expression (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : 'not (' expression ')' */
-        case m_not:
-            milprintf (n->mty, "not (");
-            print_expression (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : 'isnil (' expression ')' */
-        case m_isnil:
-            milprintf (n->mty, "isnil (");
-            print_expression (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : expression '.insert (' expression ')' */
-        case m_insert:
-            print_expression (n->child[0]);
-            milprintf (n->mty, ".insert (");
-            print_expression (n->child[1]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : expression '+' expression */
-        case m_plus:
-            print_expression (n->child[0]);
-            milprintf (n->mty, " + ");
-            print_expression (n->child[1]);
-            break;
-
-        /* expression : expression '=' expression */
-        case m_equals:
-            print_expression (n->child[0]);
-            milprintf (n->mty, " = ");
-            print_expression (n->child[1]);
-            break;
-
-        /* expression : expression '||' expression */
-        case m_or:
-            print_expression (n->child[0]);
-            milprintf (n->mty, " || ");
-            print_expression (n->child[1]);
-            break;
-
-        /* expression : 'count (' expression ')' */
-        case m_count:
-            milprintf (n->mty, "count (");
-            print_expression (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : 'error (' expression ')' */
-        case m_error:
-            milprintf (n->mty, "error (");
-            print_expression (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : 'ifthenelse (' expression ','
-         *                             expression ','
-         *                             expression ')' */
-        case m_ifthenelse_:
-            milprintf (n->mty, "ifthenelse (");
-            print_expression (n->child[0]);
-            milprintf (n->mty, ", ");
-            print_expression (n->child[1]);
-            milprintf (n->mty, ", ");
-            print_expression (n->child[2]);
-            milprintf (n->mty, ")");
-            break;
-
-        /* expression : FunctionName '(' argument_list ')' */
-        case m_apply:
-            milprintf (n->mty, "%s (", PFqname_str (n->sem.fun->qname));
-            print_argument_list (n->child[0]);
-            milprintf (n->mty, ")");
-            break;
-
-        default:
-            debug_output;     /* Print MIL code so far when in debug mode. */
-            PFoops (OOPS_FATAL, "Illegal MIL tree. MIL printer skrewed up.");
-    }
-}
-
-/**
- * Implementation of the grammar rules for `condition'.
- *
- * @param n MIL tree node
- */
-static void
-print_condition (PFmnode_t * n)
-{
-    /* condition : '(' expression ')' */
-    milprintf (n->mty, "(");
-    print_expression (n);
-    milprintf (n->mty, ")");
-}
-
-/**
- * Implementation of the grammar rules for `argument_list'
- *
- * @param n MIL tree node
- */
-static void
-print_argument_list (PFmnode_t * n)
-{
-    switch (n->kind) {
-
-        case m_nil:
-            break;
-
-        case m_args:
-            print_expression (n->child[0]);
-            print_remaining_args (n->child[1]);
-            break;
-
-        default:
-            debug_output;     /* Print MIL code so far when in debug mode. */
-            PFoops (OOPS_FATAL, "Illegal MIL tree. MIL printer skrewed up.");
-    }
-}
-
-/**
- * Implementation of grammar rules for `remaining_args'
- *
- * @param n MIL tree node
- */
-static void
-print_remaining_args (PFmnode_t * n)
-{
-    switch (n->kind) {
-
-        case m_nil:
-            break;
-
-        case m_args:
-            milprintf (n->mty, ", ");
-            print_expression (n->child[0]);
-            print_remaining_args (n->child[1]);
-            break;
-
-        default:
-            debug_output;     /* Print MIL code so far when in debug mode. */
-            PFoops (OOPS_FATAL, "Illegal MIL tree. MIL printer skrewed up.");
-    }
-}
-
-/**
- * Implementation of the grammar rules for `literal'.
- *
- * @param n MIL tree node
- */
-static void
-print_literal (PFmnode_t * n)
-{
-    switch (n->kind) {
-
-        /* literal : IntegerLiteral */
-        case m_lit_int:
-            milprintf (n->mty, "%i", n->sem.num);
-            break;
-
-        /* literal : BooleanLiteral */
-        case m_lit_bit:
-            milprintf (n->mty, n->sem.tru ? "true" : "false");
-            break;
-
-        /* literal : StringLiteral */
-        case m_lit_str:
-            milprintf (n->mty, "\"%s\"", PFesc_string (n->sem.str));
-            break;
-
-        /* literal : DoubleLiteral */
-        case m_lit_dbl:
-            milprintf (n->mty, "%g", n->sem.dbl);
-            break;
-
-        /* literal : OidLiteral */
-        case m_lit_oid:
-            milprintf (n->mty, "%i@0", n->sem.o);
-            break;
-
-        /* literal : 'nil' */
-        case m_nil:
-            milprintf (n->mty, "nil");
-            break;
-
-        default:
-            debug_output;     /* Print MIL code so far when in debug mode. */
-            PFoops (OOPS_FATAL, "Illegal MIL tree, literal expected. "
-                                "MIL printer skrewed up.");
-    }
-}
-
-/**
- * Create MIL script output for MIL types (usually in new() statements).
- *
- * @param n MIL tree node
- */
-static void
-print_type (PFmnode_t * n)
-{
-    if (n->kind != m_type) {
-        debug_output;     /* Print MIL code so far when in debug mode. */
-        PFoops (OOPS_FATAL, "Illegal MIL tree, MIL type specifier expected. "
-                            "MIL printer skrewed up.");
-    }
-
-    milprintf (n->mty, "%s", mty2str[n->sem.mty.ty]);
-}
-
-
-
-
-/**
- * output a single chunk of MIL code to the output character
- * array @a out. Uses @c printf style syntax.
- * @param fmt printf style format string, followed by an arbitrary
- *            number of arguments, according to format string
- */
-static void
-milprintf (PFmty_t mty, char * fmt, ...)
-{
-    va_list args;
-    static PFmty_t current_mty = { .ty = ILLEGAL_TY, .quant = 0 };
-
-    assert (out);
-
-    /* set color accordingly */
-    if (!(current_mty.ty == mty.ty && current_mty.quant == mty.quant)) {
-        if (current_mty.ty != ILLEGAL_TY) {
-            if (PFarray_printf (out,
-                        "%s%s",
-                        end_boldness[PFstate.output_type][current_mty.quant],
-                        end_color[PFstate.output_type][current_mty.ty]) == -1)
-                PFoops (OOPS_FATAL, "unable to print MIL output");
-        }
-        if (mty.ty != ILLEGAL_TY) {
-            if (PFarray_printf (out,
-                        "%s%s",
-                        start_color[PFstate.output_type][mty.ty],
-                        start_boldness[PFstate.output_type][mty.quant]) == -1)
-                PFoops (OOPS_FATAL, "unable to print MIL output");
-        }
-        current_mty = mty;
-    }
-
-    /* print actual string */
-    va_start (args, fmt);
-
-    if (PFarray_vprintf (out, fmt, args) == -1) 
-        PFoops (OOPS_FATAL, "unable to print MIL output");
-
-    va_end (args);
-}
-
-
-/**
- * Convert the internal representation of a MIL program into a
- * string representation that can serve as an input to Monet.
- * 
- * @param m   The MIL tree to print
- * @return Dynamic (character) array holding the generated MIL script.
- */
-PFarray_t *
-PFmil_gen (PFmnode_t * m)
-{
-    out = PFarray (sizeof (char));
-
-    /* `statements' is the top rule of our grammar */
-    print_statements (m);
-
-    /* correctly reset all color changes */
-    milprintf ((PFmty_t) { .ty = ILLEGAL_TY, .quant = 0}, "\n");
-
-    /*
-     * on Xterms we actually do not reset any color, but just set
-     * new ones. Although this is certainly a hack, this command
-     * resets the terminal color to black.
-     */
-    if (PFstate.output_type == output_xterm)
-        PFarray_printf (out, "\033[30m");
-
-    return out;
-}
-
-/**
- * Print the generated MIL script in @a milprg to the output stream
- * @a stream, while indenting it nicely.
- *
- * Most characters of the MIL script will be output 1:1 (using fputc).
- * If we encounter a newline, we add spaces according to our current
- * indentation level. If we see curly braces, we increase or decrease
- * the indentation level. Spaces are not printed immediately, but
- * `buffered' (we only increment the counter @c spaces for that).
- * If we see an opening curly brace, we can `redo' some of these
- * spaces to make the opening curly brace be indented less than the
- * block it surrounds.
- *
- * @param stream The output stream to print to (usually @c stdout)
- * @param milprg The dynamic (character) array holding the MIL script.
- */
-void
-PFmilprint (FILE *stream, PFarray_t * milprg)
-{
-    char         c;              /* the current character  */
-    unsigned int pos;            /* current position in input array */
-    unsigned int spaces = 0;     /* spaces accumulated in our buffer */
-    unsigned int indent = 0;     /* current indentation level */
-
-    for (pos = 0; (c = *((char *) PFarray_at (milprg, pos))) != '\0'; pos++) {
-
-        switch (c) {
-
-            case '\n':                     /* print newline and spaces       */
-                fputc ('\n', stream);      /* according to indentation level */
-                spaces = indent;
-                break;
-
-            case ' ':                      /* buffer spaces                  */
-                spaces++;
-                break;
-
-            case '}':                      /* `undo' some spaces when we see */
-                                           /* an opening curly brace         */
-                spaces = spaces > INDENT_WIDTH ? spaces - INDENT_WIDTH : 0;
-                indent -= 2 * INDENT_WIDTH;
-                /* Double indentation, as we will reduce indentation when
-                 * we fall through next. */
-
-            case '{':
-                indent += INDENT_WIDTH;
-                /* fall through */
-
-            default:
-                while (spaces > 0) {
-                    spaces--;
-                    fputc (' ', stream);
-                }
-                fputc (c, stream);
-                break;
-        }
-    }
-}
-
 /* ============================================================================ */
 /* ====================                                        ================ */
 /* ====================  added MIL Hack ouput (iter|pos|item)  ================ */
@@ -809,16 +53,6 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     /* 'counter' is the number of saved intermediate results */
     static unsigned int counter = 0;
 
-/* different kind types */
-#define NODE 'n'
-#define ATTR 'a'
-#define QNAME 'q'
-#define BOOL 'b'
-#define INT 'i'
-#define DBL 'd'
-#define DEC 'e'
-#define STR 's'
-
     static void
     translate2MIL (PFcnode_t *c);
 
@@ -827,19 +61,15 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     {
         printf("# init ()\n");
         /* pathfinder functions (scj, doc handling) are made visible */
-        /* modules already loaded by the Mserver */
         printf("# module(\"pathfinder\");\n");
+        printf("# module(\"pf_support\");\n");
         printf("# module(\"aggrX3\");\n");
         printf("# module(\"xtables\");\n");
         printf("# module(\"malalgebra\");\n");
 
         /* for debugging purposes "foo.xml" is loaded */
-        printf("doc_to_working_set(\"foo.xml\");\n");
-        printf("var TattrID_attr := Tattr_own.mirror;\n");
-        printf("TattrID_attr.access(BAT_APPEND).seqbase(0@0);\n");
-        printf("var TattrID_pre := Tattr_own.copy;\n");
-        printf("TattrID_pre.access(BAT_APPEND).seqbase(0@0);\n");
-
+        printf("var ws := create_ws();\n");
+        printf("ws := add_doc(ws, \"foo.xml\");\n");
         /* the first loop is initialized */
         printf("var loop000 := bat(void,oid).seqbase(0@0);\n");
         printf("loop000.insert(0@0, 1@0);\n");
@@ -866,7 +96,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 
         /* variable binding for loop-lifting of the empty sequence */
         printf("var empty_bat := bat(void,oid).seqbase(0@0);\n");
-        printf("var empty_kind_bat := bat(void,chr).seqbase(0@0);\n");
+        printf("var empty_kind_bat := bat(void,int).seqbase(0@0);\n");
 
         /* variables for (intermediate) results */
         printf("var iter;\n");
@@ -875,7 +105,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("var kind;\n");
         
         /* variable for empty scj */
-        printf("var empty_res_bat := bat(oid,oid);\n");
+        printf("var empty_res_bat := bat(void,bat);\n");
 
         /* boolean mapping */
         printf("var bool_map := bat(bit,oid).insert(false,0@0).insert(true,1@0);\n");
@@ -898,76 +128,132 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("var output_item := bat(oid, str);\n");
 
         /* gets string values for string kind */ 
-        printf("var temp1_str := kind.ord_select('%c');\n", STR);
+        printf("var temp1_str := kind.get_type(STR);\n");
         printf("temp1_str := temp1_str.mirror.leftfetchjoin(item);\n");
         printf("temp1_str := temp1_str.leftfetchjoin(str_values);\n");
         printf("output_item.insert(temp1_str);\n");
         printf("temp1_str := nil;\n");
 
-        printf("var temp1_node := kind.ord_select('%c');\n", NODE);
-        printf("var oid_pre := temp1_node.mirror.leftfetchjoin(item);\n");
-        printf("temp1_node := [str](oid_pre);\n");
-        printf("temp1_node := temp1_node.[+](\" (node) name: \");\n");
-        printf("temp1_node := temp1_node.[+](oid_pre.leftfetchjoin(Tpre_prop).leftfetchjoin(Tprop_loc));\n");
-        printf("temp1_node := temp1_node.[+](\"; size: \");\n");
-        printf("temp1_node := temp1_node.[+](oid_pre.leftfetchjoin(Tpre_size));\n");
-        printf("temp1_node := temp1_node.[+](\"; level: \");\n");
-        printf("temp1_node := temp1_node.[+]([int](oid_pre.leftfetchjoin(Tpre_level)));\n");
+        printf("var temp1_node := kind.get_type(NODE).mark(0@0).reverse;\n");
+        printf("var backup_oids := temp1_node.reverse;\n");
+        printf("var temp1_frag := temp1_node.leftfetchjoin(kind).get_fragment;\n");
+        printf("var oid_pre := temp1_node.leftfetchjoin(item);\n");
+        printf("{\n"
+               "var oid_kind := mposjoin(oid_pre, temp1_frag, ws.fetch(PRE_KIND));\n"
+               "var oid_elems := oid_kind.ord_uselect(ELEMENT).mark(0@0).reverse;\n"
+               "var oid_texts := oid_kind.ord_uselect(TEXT).mark(0@0).reverse;\n"
+               "var e_pres := oid_elems.leftfetchjoin(oid_pre);\n"
+               "var e_frags := oid_elems.leftfetchjoin(temp1_frag);\n"
+               "var t_pres := oid_texts.leftfetchjoin(oid_pre);\n"
+               "var t_frags := oid_texts.leftfetchjoin(temp1_frag);\n");
+
+        printf("temp1_node := [str](e_pres);\n"
+               "temp1_node := temp1_node.[+](\" of frag: \");\n"
+               "temp1_node := temp1_node.[+](e_frags.[str]);\n"
+               "temp1_node := temp1_node.[+](\" (node) name: \");\n"
+               "temp1_node := temp1_node.[+](mposjoin(mposjoin(e_pres, e_frags, ws.fetch(PRE_PROP)), "
+                                                     "mposjoin(e_pres, e_frags, ws.fetch(PRE_FRAG)), "
+                                                     "ws.fetch(QN_LOC)));\n"
+               "temp1_node := temp1_node.[+](\"; size: \");\n"
+               "temp1_node := temp1_node.[+](mposjoin(e_pres, e_frags, ws.fetch(PRE_SIZE)));\n"
+               "temp1_node := temp1_node.[+](\"; level: \");\n"
+               "temp1_node := temp1_node.[+]([int](mposjoin(e_pres, e_frags, ws.fetch(PRE_LEVEL))));\n");
+
+        printf("var temp2_node := [str](t_pres);\n"
+               "temp2_node := temp2_node.[+](\" of frag: \");\n"
+               "temp2_node := temp2_node.[+](t_frags.[str]);\n"
+               "temp2_node := temp2_node.[+](\" (text-node) value: '\");\n"
+               "temp2_node := temp2_node.[+](mposjoin(mposjoin(t_pres, t_frags, ws.fetch(PRE_PROP)), "
+                                                     "mposjoin(t_pres, t_frags, ws.fetch(PRE_FRAG)), "
+                                                     "ws.fetch(PROP_TEXT)));\n"
+               "temp2_node := temp2_node.[+](\"'; level: \");\n"
+               "temp2_node := temp2_node.[+]([int](mposjoin(t_pres, t_frags, ws.fetch(PRE_LEVEL))));\n");
+
+        printf("if (oid_elems.count = 0) temp1_node := temp2_node;\n"
+               "else if (oid_texts.count != 0) {\n"
+               "var res_mu := merged_union(oid_elems, oid_texts, "
+                                          "temp1_node.reverse.mark(0@0).reverse, "
+                                          "temp2_node.reverse.mark(0@0).reverse);\n"
+               "temp1_node := res_mu.fetch(1);\n"
+               "}\n"
+               "}\n");
         printf("oid_pre := nil;\n");
-        printf("output_item.insert(temp1_node);\n");
+        printf("temp1_frag := nil;\n");
+        printf("output_item.insert(backup_oids.leftfetchjoin(temp1_node));\n");
+        printf("backup_oids := nil;\n");
         printf("temp1_node := nil;\n");
 
-        printf("var temp1_attr := kind.ord_select('%c');\n", ATTR);
-        printf("var oid_attrID := temp1_attr.mirror.leftfetchjoin(item);\n");
-        printf("temp1_attr := [str](oid_attrID);\n");
+        printf("var temp1_attr := kind.get_type(ATTR).mark(0@0).reverse;\n");
+        printf("backup_oids := temp1_attr.reverse;\n");
+        printf("var temp1_frag := temp1_attr.leftfetchjoin(kind).get_fragment;\n");
+        printf("var oid_attr := temp1_attr.leftfetchjoin(item);\n");
+        printf("temp1_attr := [str](oid_attr);\n");
         printf("temp1_attr := temp1_attr.[+](\" (attr) owned by: \");\n");
-        printf("temp1_attr := temp1_attr.[+](oid_attrID.leftfetchjoin(TattrID_pre));\n");
+        printf("var owner_str := oid_attr.mposjoin(temp1_frag, ws.fetch(ATTR_OWN)).[str];\n"
+               "{\n"
+               "var nil_bool := owner_str.[isnil];\n"
+               "var no_owner_str := nil_bool.ord_uselect(true).mark(0@0).reverse;\n"
+               "var with_owner_str := nil_bool.ord_uselect(false).mark(0@0).reverse;\n"
+               "var res_mu := merged_union(with_owner_str, no_owner_str, "
+                                          "with_owner_str.leftfetchjoin(owner_str), "
+                                          "no_owner_str.project(\"nil\"));\n"
+               "owner_str := res_mu.fetch(1);\n"
+               "if (owner_str.count != temp1_attr.count) "
+               "ERROR (\"thinking error in attribute output printing\");\n"
+               "}\n");
+        printf("temp1_attr := temp1_attr.[+](owner_str);\n");
+        printf("temp1_attr := temp1_attr.[+](\" of frag: \");\n");
+        printf("temp1_attr := temp1_attr.[+](oid_attr.mposjoin(temp1_frag, ws.fetch(ATTR_FRAG)));\n");
         printf("temp1_attr := temp1_attr.[+](\"; \");\n");
-        printf("var oid_attr := oid_attrID.leftfetchjoin(TattrID_attr);\n");
-        printf("oid_attrID := nil;\n");
-        printf("temp1_attr := temp1_attr.[+](oid_attr.leftfetchjoin(Tattr_loc));\n");
+        printf("temp1_attr := temp1_attr.[+](mposjoin(mposjoin(oid_attr, temp1_frag, ws.fetch(ATTR_QN)), "
+                                                     "mposjoin(oid_attr, temp1_frag, ws.fetch(ATTR_FRAG)), "
+                                                     "ws.fetch(QN_LOC)));\n");
         printf("temp1_attr := temp1_attr.[+](\"='\");\n");
-        printf("temp1_attr := temp1_attr.[+](oid_attr.leftfetchjoin(Tattr_val));\n");
+        printf("temp1_attr := temp1_attr.[+](mposjoin(mposjoin(oid_attr, temp1_frag, ws.fetch(ATTR_PROP)), "
+                                                     "mposjoin(oid_attr, temp1_frag, ws.fetch(ATTR_FRAG)), "
+                                                     "ws.fetch(PROP_VAL)));\n");
         printf("temp1_attr := temp1_attr.[+](\"'\");\n");
         printf("oid_attr := nil;\n");
-        printf("output_item.insert(temp1_attr);\n");
+        printf("temp1_frag := nil;\n");
+        printf("output_item.insert(backup_oids.leftfetchjoin(temp1_attr));\n");
+        printf("backup_oids := nil;\n");
         printf("temp1_attr := nil;\n");
 
-        printf("var temp1_qn := kind.ord_select('%c');\n", QNAME);
-        printf("var oid_qnID := temp1_qn.mirror.leftfetchjoin(item);\n");
+        printf("var temp1_qn := kind.get_type(QNAME).mirror;\n");
+        printf("var oid_qnID := temp1_qn.leftfetchjoin(item);\n");
         printf("temp1_qn := [str](oid_qnID);\n");
         printf("temp1_qn := temp1_qn.[+](\" (qname) '\");\n");
-        printf("temp1_qn := temp1_qn.[+](oid_qnID.leftfetchjoin(Tprop_ns));\n");
+        printf("temp1_qn := temp1_qn.[+](oid_qnID.leftfetchjoin(ws.fetch(QN_NS).fetch(WS)));\n");
         printf("temp1_qn := temp1_qn.[+](\":\");\n");
-        printf("temp1_qn := temp1_qn.[+](oid_qnID.leftfetchjoin(Tprop_loc));\n");
+        printf("temp1_qn := temp1_qn.[+](oid_qnID.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS)));\n");
         printf("temp1_qn := temp1_qn.[+](\"'\");\n");
         printf("oid_qnID := nil;\n");
         printf("output_item.insert(temp1_qn);\n");
         printf("temp1_qn := nil;\n");
 
         printf("var bool_strings := bat(oid,str).insert(0@0,\"false\").insert(1@0,\"true\");\n");
-        printf("var temp1_bool := kind.ord_select('%c');\n", BOOL);
+        printf("var temp1_bool := kind.get_type(BOOL);\n");
         printf("temp1_bool := temp1_bool.mirror.leftfetchjoin(item);\n");
         printf("temp1_bool := temp1_bool.leftfetchjoin(bool_strings);\n");
         printf("bool_strings := nil;\n");
         printf("output_item.insert(temp1_bool);\n");
         printf("temp1_bool := nil;\n");
 
-        printf("var temp1_int := kind.ord_select('%c');\n", INT);
+        printf("var temp1_int := kind.get_type(INT);\n");
         printf("temp1_int := temp1_int.mirror.leftfetchjoin(item);\n");
         printf("temp1_int := temp1_int.leftfetchjoin(int_values);\n");
         printf("temp1_int := [str](temp1_int);\n");
         printf("output_item.insert(temp1_int);\n");
         printf("temp1__int := nil;\n");
 
-        printf("var temp1_dbl := kind.ord_select('%c');\n", DBL);
+        printf("var temp1_dbl := kind.get_type(DBL);\n");
         printf("temp1_dbl := temp1_dbl.mirror.leftfetchjoin(item);\n");
         printf("temp1_dbl := temp1_dbl.leftfetchjoin(dbl_values);\n");
         printf("temp1_dbl := [str](temp1_dbl);\n");
         printf("output_item.insert(temp1_dbl);\n");
         printf("temp1_dbl := nil;\n");
 
-        printf("var temp1_dec := kind.ord_select('%c');\n", DEC);
+        printf("var temp1_dec := kind.get_type(DEC);\n");
         printf("temp1_dec := temp1_dec.mirror.leftfetchjoin(item);\n");
         printf("temp1_dec := temp1_dec.leftfetchjoin(dec_values);\n");
         printf("temp1_dec := [str](temp1_dec);\n");
@@ -978,21 +264,67 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("print (iter, pos, item, kind);\n");
         printf("print (output_item);\n");
         */
-        printf("print(\"result\");\n");
+        printf("printf(\"====================\\n\");\n");
+        printf("printf(\"====== result ======\\n\");\n");
+        printf("printf(\"====================\\n\");\n");
         printf("print (iter, pos, output_item);\n");
         printf("output_item := nil;\n");
 
-        printf("print(\"attributes\");\n");
-        printf("if (TattrID_attr.count < 100) {\n");
-        printf("        TattrID_attr.leftfetchjoin(Tattr_loc).print(TattrID_pre, TattrID_attr);\n");
-        printf("} else {\n");
-        printf("        TattrID_attr.count.print;\n");
+        printf("printf(\"====================\\n\");\n");
+        printf("printf(\"=== working set ====\\n\");\n");
+        printf("printf(\"====================\\n\");\n");
+        printf("if (ws.fetch(PRE_SIZE).count < 5) {\n");
+        printf("printf(\"- loaded documents -\\n\");\n");
+        printf("ws.fetch(DOC_LOADED).print;\n");
+        printf("i := 0;\n");
+        printf("while (i < ws.fetch(PRE_SIZE).count) {\n");
+        printf("        if (i = 0) print(\"WS\");\n");
+        printf("        else ws.fetch(DOC_LOADED).fetch(oid(i)).print;\n");
+        printf("        printf(\"---- attributes ----\\n\");\n");
+        printf("        if (ws.fetch(ATTR_OWN).fetch(i).count < 100) {\n");
+        printf("                print(ws.fetch(ATTR_OWN).fetch(i), "
+                                     "mposjoin(ws.fetch(ATTR_QN).fetch(i), "
+                                              "ws.fetch(ATTR_FRAG).fetch(i), "
+                                              "ws.fetch(QN_LOC)));\n");
+        printf("        } else {\n");
+        printf("                print(ws.fetch(ATTR_OWN).fetch(i).count);\n");
+        printf("        }\n");
+        printf("        printf(\"----- elements -----\\n\");\n");
+        printf("        if (ws.fetch(PRE_SIZE).fetch(i).count < 100) {\n");
+        /* have to handle TEXT and ELEMENT nodes different because
+           otherwise fetch causes error */
+        printf("                ws.fetch(PRE_KIND).fetch(i).access(BAT_READ);\n"
+               "                var elems := ws.fetch(PRE_KIND).fetch(i).ord_uselect(ELEMENT).mark(0@0).reverse;\n"
+               "                var e_props := elems.leftfetchjoin(ws.fetch(PRE_PROP).fetch(i));\n"
+               "                var e_frags := elems.leftfetchjoin(ws.fetch(PRE_FRAG).fetch(i));\n"
+               "                var e_qns := mposjoin(e_props, e_frags, ws.fetch(QN_LOC));\n"
+               "                e_props := nil;\n"
+               "                e_frags := nil;\n"
+               "                var texts := ws.fetch(PRE_KIND).fetch(i).ord_uselect(TEXT).mark(0@0).reverse;\n"
+               "                t_names := texts.project(\"(TEXT)\");\n"
+               "                var res_mu := merged_union(elems, texts, e_qns, t_names);\n"
+               "                elems := nil;\n"
+               "                texts := nil;\n"
+               "                ws.fetch(PRE_KIND).fetch(i).access(BAT_WRITE);\n"
+               "                e_qns := nil;\n"
+               "                t_names := nil;\n"
+               "                var names := res_mu.fetch(0).reverse.leftfetchjoin(res_mu.fetch(1));\n");
+        printf("                print(ws.fetch(PRE_SIZE).fetch(i), "
+                                     "ws.fetch(PRE_LEVEL).fetch(i).[int], "
+                                     "names);\n");
+        printf("        } else {\n");
+        printf("                print(ws.fetch(PRE_SIZE).fetch(i).count);\n");
+        printf("        }\n");
+        printf("i :+= 1;\n");
         printf("}\n");
-        printf("print(\"working set\");\n");
-        printf("if (Tpre_size.count < 100) {\n");
-        printf("        Tpre_prop.leftfetchjoin(Tprop_loc).print(Tpre_level.[int], Tpre_size);\n");
         printf("} else {\n");
-        printf("        Tpre_size.count.print;\n");
+        printf("printf(\"to much content in the WS to print it for debugging purposes\\n\");\n");
+        printf("if (ws.fetch(DOC_LOADED).count > 25) \n"
+               "printf(\"(number of loaded documents: %%i)\\n\", ws.fetch(DOC_LOADED).count);\n"
+               "else {\n"
+               "printf(\"- loaded documents -\\n\");\n"
+               "ws.fetch(DOC_LOADED).print;\n"
+               "}\n");
         printf("}\n");
         printf("} # end of print_output ()\n");
     }
@@ -1086,56 +418,13 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("        item := item%03u;\n", i);
         printf("        kind := kind%03u;\n", i);
         printf("} else if (iter%03u.count != 0)\n",i);
- //       /* translation follows exactly the description in the XQuery for SQL Hosts paper */
         printf("{ # translateSeq (counter)\n");
         printf("var merged_result := merged_union (iter%03u, iter, item%03u, item, kind%03u, kind);\n", i, i, i, i);
- //       printf("merged_result.print;\n");
- //       printf("print (merged_result.fetch(0), merged_result.fetch(1), merged_result.fetch(2), merged_result.fetch(3));\n");
         printf("iter := merged_result.fetch(0);\n");
         printf("item := merged_result.fetch(1);\n");
         printf("kind := merged_result.fetch(2);\n");
         printf("merged_result := nil;\n");
         printf("pos := iter.mark_grp(iter.reverse.project(1@0));\n");
-
- //       /* bind the second argument of the sequence to xxx2 and the first argument to xxx1 */
- //       printf("var iter2 := iter; var pos2 := pos; var item2 := item; var kind2 := kind;\n");
- //       printf("var iter1 := iter%03u; var pos1 := pos%03u; var item1 := item%03u; var kind1 := kind%03u;\n", i, i, i, i);
- //
- //       /* add the ord column to the tables and save in temp1 the end of the first table */
- //       printf("var ord1 := iter1.project(1@0); var ord2 := iter2.project(2@0); var temp1 := count(iter1); temp1 := oid(temp1);\n");
- //
- //       /* insertion of the second table in the first table (for all 5 columns) */
- //       printf("iter1 := iter1.reverse.mark(0@0).reverse; iter2 := iter2.reverse.mark(0@0).reverse;");
- //       printf("iter2 := iter2.seqbase(temp1); iter1.access(BAT_APPEND); iter1.insert(iter2); iter1.access(BAT_READ);\n");
- //
- //       printf("ord1 := ord1.reverse.mark(0@0).reverse; ord2 := ord2.reverse.mark(0@0).reverse;");
- //       printf("ord2 := ord2.seqbase(temp1); ord1.access(BAT_APPEND); ord1.insert(ord2); ord1.access(BAT_READ);\n");
- //
- //       printf("pos1 := pos1.reverse.mark(0@0).reverse; pos2 := pos2.reverse.mark(0@0).reverse;");
- //       printf("pos2 := pos2.seqbase(temp1); pos1.access(BAT_APPEND); pos1.insert(pos2); pos1.access(BAT_READ);\n");
- //
- //       printf("item1 := item1.reverse.mark(0@0).reverse; item2 := item2.reverse.mark(0@0).reverse;");
- //       printf("item2 := item2.seqbase(temp1); item1.access(BAT_APPEND); item1.insert(item2); item1.access(BAT_READ);\n");
- //
- //       printf("kind1 := kind1.reverse.mark(0@0).reverse; kind2 := kind2.reverse.mark(0@0).reverse;");
- //       printf("kind2 := kind2.seqbase(temp1); kind1.access(BAT_APPEND); kind1.insert(kind2); kind1.access(BAT_READ);\n");
- //
- //       /* create a sorting (sort by iter, ord, pos) for the table */
- //       printf("temp1 := iter1.reverse; temp1 := temp1.sort; temp1 := temp1.reverse;");
- //       printf("temp1 := temp1.CTrefine(ord1); temp1 := temp1.CTrefine(pos1);");
- //       printf("temp1 := temp1.mark(0@0); temp1 := temp1.reverse;\n");
-
- //       /* map sorting to every column */
- //       printf("iter := temp1.join(iter1);");
- //       printf("pos := temp1.mark(1@0);");
- //       printf("item := temp1.join(item1);");
- //       printf("kind := temp1.join(kind1);\n");
- //
- //       /* clean up the temporary variables */
- //       printf("iter1 := nil; pos1 := nil; item1 := nil; ord1 := nil; kind1 := nil;");
- //       printf("iter2 := nil; pos2 := nil; item2 := nil; ord2 := nil; kind2 := nil;");
- //       printf("temp1 := nil;\n");
-
         printf("} # end of translateSeq (counter)\n");
     }
 
@@ -1299,7 +588,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("v_vid%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n", act_level);
         printf("v_pos%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n", act_level);
         printf("v_item%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n", act_level);
-        printf("v_kind%03u := bat(void,chr).seqbase(0@0).access(BAT_APPEND);\n", act_level);
+        printf("v_kind%03u := bat(void,int).seqbase(0@0).access(BAT_APPEND);\n", act_level);
     }
 
     /**
@@ -1349,14 +638,14 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
      * @param kind the kind of the item
      */
     static void
-    translateConst (char kind)
+    translateConst (char *kind)
     {
         printf("# translateConst (kind)\n");
         printf("iter := loop%03u;\n",act_level);
         printf("iter := iter.reverse.mark(0@0).reverse;\n");
         printf("pos := iter.project(1@0);\n");
         printf("item := iter.project(itemID);\n");
-        printf("kind := iter.project('%c');\n", kind);
+        printf("kind := iter.project(%s);\n", kind);
     }
 
     /**
@@ -1372,42 +661,59 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         {
                 printf("{ # attribute axis\n");
                 /* get all unique iter|item combinations */
-                printf("var iter_item := iter.reverse.leftfetchjoin(item).unique;\n");
+                printf("var unq := CTgroup(iter).CTgroup(item)"
+                                 ".CTgroup(kind).tunique.mark(0@0).reverse;\n");
                 /* if unique destroys the order a sort is needed */
                 /* printf("iter_item := iter_item.sort;\n"); */
 
-                printf("var iter_oid := iter_item.mark(0@0);\n");
-                printf("var oid_item := iter_item.reverse.mark(0@0).reverse;\n");
-                printf("iter_item := nil;\n");
+                printf("var oid_iter := unq.leftfetchjoin(iter);\n");
+                printf("var oid_item := unq.leftfetchjoin(item);\n");
+                printf("var oid_frag := unq.leftfetchjoin(kind.get_fragment);\n");
+                printf("unq := nil;\n");
 
-                printf("var temp1 := TattrID_pre.reverse;\n");
-                printf("var oid_attrID := oid_item.leftjoin(temp1);\n");
+                printf("var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n");
+                printf("oid_item := nil;\n");
+                printf("oid_frag := temp1.mark(0@0).reverse.leftfetchjoin(oid_frag);\n");
+                printf("var oid_attr := temp1.reverse.mark(0@0).reverse;\n");
+                printf("oid_iter := temp1.mark(0@0).reverse.leftfetchjoin(oid_iter);\n");
                 printf("temp1 := nil;\n");
 
                 /* kind test could be necessary if qnames are saved together
                    (see tagname test for other axis) */
                 if (ns)
                 {
-                        printf("temp1 := oid_attrID.leftfetchjoin(TattrID_attr);\n");
-                        printf("temp1 := temp1.leftfetchjoin(Tattr_ns);\n");
-                        printf("temp1 := temp1.[=](\"%s\").ord_select(true);\n", ns);
-                        printf("temp1 := temp1.mirror;\n");
-                        printf("oid_attrID := temp1.leftjoin(oid_attrID);\n");
+                        printf("temp1 := mposjoin(mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN)), "
+                                                 "mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG)), "
+                                                 "ws.fetch(QN_NS));\n");
+                        printf("temp1 := temp1.ord_uselect(\"%s\");\n", ns);
+                        printf("temp1 := temp1.mark(0@0).reverse;\n");
+                        printf("oid_attr := temp1.leftfetchjoin(oid_attr);\n");
+                        printf("oid_frag := temp1.leftfetchjoin(oid_frag);\n");
+                        printf("oid_iter := temp1.leftfetchjoin(oid_iter);\n");
                         printf("temp1 := nil;\n");
                 }
                 if (loc)
                 {
-                        printf("temp1 := oid_attrID.leftfetchjoin(TattrID_attr);\n");
-                        printf("temp1 := temp1.leftfetchjoin(Tattr_loc);\n");
-                        printf("temp1 := temp1.[=](\"%s\").ord_select(true);\n", loc);
-                        printf("temp1 := temp1.mirror;\n");
-                        printf("oid_attrID := temp1.leftjoin(oid_attrID);\n");
+                        printf("temp1 := mposjoin(mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN)), "
+                                                 "mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG)), "
+                                                 "ws.fetch(QN_LOC));\n");
+                        printf("temp1 := temp1.ord_uselect(\"%s\");\n", loc);
+                        printf("temp1 := temp1.mark(0@0).reverse;\n");
+                        printf("oid_attr := temp1.leftfetchjoin(oid_attr);\n");
+                        printf("oid_frag := temp1.leftfetchjoin(oid_frag);\n");
+                        printf("oid_iter := temp1.leftfetchjoin(oid_iter);\n");
                         printf("temp1 := nil;\n");
                 }
 
-                printf("iter_item := iter_oid.leftjoin(oid_attrID);\n");
-                printf("res_scj := iter_item;\n");
-                printf("iter_item := nil;\n");
+                /* add '.reverse.mark(0@0).reverse' to be sure that the head of 
+                   the results is void */
+                printf("res_scj := bat(void,bat).seqbase(0@0);\n");
+                printf("res_scj.insert(nil, oid_iter.reverse.mark(0@0).reverse);\n");
+                printf("oid_iter := nil;\n");
+                printf("res_scj.insert(nil, oid_attr.reverse.mark(0@0).reverse);\n");
+                printf("oid_attr := nil;\n");
+                printf("res_scj.insert(nil, oid_frag.reverse.mark(0@0).reverse);\n");
+                printf("oid_frag := nil;\n");
                 printf("temp1 := nil;\n");
 
                 printf("} # end of attribute axis\n");
@@ -1426,130 +732,40 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                 {
                         printf("res_scj := ");
                         printf("loop_lifted_%s_step", axis);
-                        printf("_with_kind_test_joined(iter,item,%s);\n", kind);
+                        printf("_with_kind_test_joined("
+                               "iter, item, kind.get_fragment, ws, %s);\n", kind);
+                }
+                else if (ns && loc)
+                {
+                        printf("res_scj := ");
+                        printf("loop_lifted_%s_step", axis);
+                        printf("_with_nsloc_test_joined("
+                               "iter, item, kind.get_fragment, "
+                               "ws, \"%s\", \"%s\");\n", ns, loc);
                 }
                 else if (loc)
                 {
-                        printf("var propID := Tprop_loc;\n");
-                        printf("propID := propID.ord_uselect(\"%s\");\n", loc);
-                        if (ns)
-                        {
-                        printf("propID := propID.mirror;\n");
-                        printf("propID := propID.leftfetchjoin(Tprop_ns);\n");
-                        printf("propID := propID.ord_uselect(\"%s\");\n", ns);
-                        }
-                        printf("if (propID.count != 0)\n");
                         printf("res_scj := ");
                         printf("loop_lifted_%s_step", axis);
-                        printf("_with_tagname_test_joined(iter,item,propID);\n");
-                        
-                        printf("propID := nil;\n");
+                        printf("_with_loc_test_joined("
+                               "iter, item, kind.get_fragment, "
+                               "ws, \"%s\");\n", loc);
                 }
                 else if (ns)
                 {
-                        printf("var propID := Tprop_ns;\n");
-                        printf("propID := propID.ord_uselect(\"%s\");\n", ns);
-                        printf("if (propID.count != 0)\n");
                         printf("res_scj := ");
                         printf("loop_lifted_%s_step", axis);
-                        printf("_with_tagname_test_joined(iter,item,propID);\n");
-                        
-                        printf("propID := nil;\n");
+                        printf("_with_ns_test_joined("
+                               "iter, item, kind.get_fragment, "
+                               "ws, \"%s\");\n", ns);
                 }
                 else
                 {
                         printf("res_scj := ");
-                        printf("loop_lifted_%s_step_joined(iter,item);\n",axis);
+                        printf("loop_lifted_%s_step_joined("
+                               "iter, item, kind.get_fragment, ws);\n", axis);
                 }
 
-        //      /* creates the two output tables, which are joined the result of the scj */
-        //      printf("pruned_input := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
-        //      printf("ctx_dn := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
-        //                                                                                                                                              
-        //      /* whis works only if tagnames are saved unique */
-        //      /* tagname is tested before the step:
-        //         - if name is not found, path is will not be evaluated
-        //         - else: tagnames are already looked up and only a 
-        //           node comparison (join) is needed as refinement step */
-        //      printf("var propID := Tprop_loc;\n");
-        //      if (loc)
-        //      {
-        //              printf("propID := propID.uselect(\"%s\");\n", loc);
-        //      }
-        //      if (ns)
-        //      {
-        //              printf("propID := propID.mirror;\n");
-        //              printf("propID := propID.join(Tprop_ns);\n");
-        //              printf("propID := propID.uselect(\"%s\");\n", ns);
-        //      }
-        //      if (loc || ns)
-        //      {
-        //              printf("if (propID.count != 0) { # node axis\n");
-        //      }
-        //      else
-        //              printf("{ # node axis\n");
-        //
-        //      printf("var offset := 0;\n");
-        //
-        //      /* FIXME: in case iter is not sorted do it to be sure ?!? */
-        //      printf("var sorting := iter.reverse.sort.reverse.mark(0@0).reverse;\n");
-        //      printf("iter := sorting.join(iter);\n");
-        //      printf("item := sorting.join(item);\n");
-        //      printf("sorting := nil;\n");
-        //
-        //      /* create a bat containing the number of iter rows, with the
-        //         iter as head value and the number of items (this iter has) in the tail */
-        //      printf("var uniqueIter_count := {count}(iter.reverse, iter.tunique);\n");
-        //      printf("uniqueIter_count := uniqueIter_count.[-](1);\n");
-        //
-        //      printf("var temp1_scj;\n");
-        //      printf("var seqb;\n");
-        //
-        //      /* iterate over all iters */
-        //      printf("uniqueIter_count@batloop ()\n");
-        //      printf("{\n");
-        //              /* get blocks of ctx-nodes per iter and sort them by pre value*/
-        //              printf("temp1_scj := item.slice(offset, offset + int($t)).reverse.sort;\n");
-        //              /* execute the SCJ */
-        //              printf("temp1_scj := temp1_scj.%s;\n", axis);
-        //
-        //              /* add kind and tagname test inline */
-        //              if (kind)
-        //              {
-        //                      printf("temp1_scj := temp1_scj.mirror.join(Tpre_kind);\n");
-        //                      printf("temp1_scj := temp1_scj.[=](%s).select(true);\n", kind);
-        //              }
-        //              if (ns || loc)
-        //              {
-        //                      printf("temp1_scj := temp1_scj.mirror.join(Tpre_prop);\n");
-        //                      printf("temp1_scj := temp1_scj.join(propID);\n");
-        //                      printf("temp1_scj := temp1_scj.mirror.join(Tpre_kind);\n");
-        //                      printf("temp1_scj := temp1_scj.[=](ELEMENT).select(true);\n");
-        //              }
-        //
-        //              printf("seqb := count (ctx_dn);\n");
-        //              printf("seqb := oid (seqb);\n");
-        //              printf("temp1_scj := temp1_scj.mark(seqb).reverse;\n");
-        //              printf("ctx_dn.insert(temp1_scj);\n");
-        //
-        //              printf("temp1_scj := temp1_scj.project($h);\n");
-        //              printf("pruned_input.insert(temp1_scj);\n");
-        //
-        //              printf("offset := offset + $t + 1;\n");
-        //      printf("}\n");
-        //
-        //      printf("propID := nil;\n");
-        //      printf("offset := nil;\n");
-        //      printf("temp1_scj := nil;\n");
-        //      printf("seqb := nil;\n");
-        //      printf("uniqueIter_count := nil;\n");
-        //      printf("iter := nil;\n");
-        //      printf("item := nil;\n");
-        //
-        //      printf("} # end of node axis\n");
-        //
-        //      printf("ctx_dn.access(BAT_READ);\n");
-        //      printf("pruned_input.access(BAT_READ);\n");
         }
     }
 
@@ -1566,10 +782,11 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("var res_scj := empty_res_bat;");
 
         /* make this path step only for nodes */
-        printf("var sel_ls := kind.ord_uselect('%c');\n", NODE);
+        printf("var sel_ls := kind.get_type(NODE);\n");
         printf("sel_ls := sel_ls.mark(0@0).reverse;\n");
         printf("item := sel_ls.leftfetchjoin(item);\n");
         printf("iter := sel_ls.leftfetchjoin(iter);\n");
+        printf("kind := sel_ls.leftfetchjoin(kind);\n");
         printf("sel_ls := nil;\n");
 
         switch (c->kind)
@@ -1659,13 +876,13 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         }
 
         /* res_scj = iter|item bat */
-        printf("iter := res_scj.mark(0@0).reverse;\n");
-        printf("pos := iter.mark_grp(iter.reverse.project(1@0));\n");
-        printf("item := res_scj.reverse.mark(0@0).reverse;\n");
+        printf("iter := res_scj.fetch(0);\n");
+        printf("pos := iter.mark_grp(iter.tunique.project(1@0));\n");
+        printf("item := res_scj.fetch(1);\n");
         if (!strcmp (axis, "attribute"))
-                printf("kind := res_scj.mark(0@0).reverse.project('%c');\n", ATTR);
+                printf("kind := res_scj.fetch(2).get_kind(ATTR);\n");
         else
-                printf("kind := res_scj.mark(0@0).reverse.project('%c');\n", NODE);
+                printf("kind := res_scj.fetch(2).get_kind(NODE);\n");
 
         printf("res_scj := nil;\n");
         printf("} # end of translateLocsteps (c)\n");
@@ -1705,7 +922,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("item := ints_cE.leftjoin(int_values.reverse);\n");
         printf("ints_cE := nil;\n");
         /* change kind information to int */
-        printf("kind := kind.project('%c');\n", INT);
+        printf("kind := kind.project(INT);\n");
         printf("} # end of createEnumeration ()\n");
     }
 
@@ -1720,23 +937,31 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 
         /* FIXME: is it possible to have more than one kind */
         /* test if the name consists only of QNames */
-        printf("var qnames := kind.ord_uselect('%c');\n", QNAME);
+/*
+        printf("var qnames := kind.get_type(QNAME);\n");
         printf("var all_s2q := kind.count;\n");
         printf("var qn_s2q := qnames.count;\n");
 
 
         printf("if (all_s2q != qn_s2q) {\n");
 
-        printf("        var nodes := kind.ord_uselect('%c');\n", NODE);
-        printf("        nodes := nodes.mirror.leftfetchjoin(item);\n");
-        printf("        nodes := nodes.leftfetchjoin(Tpre_kind);\n");
-        printf("        var textNodes := nodes.ord_uselect(TEXT);\n");
+        printf("        var nodes := kind.get_type(NODE).mark(0@0).reverse;\n");
+        printf("        var original_oid := nodes;\n");
+        printf("        nodes := nodes.leftfetchjoin(item);\n");
+        printf("        var frags := nodes.leftfetchjoin(kind).get_fragment;\n");
+        printf("        var temp_s2q := mposjoin(nodes, frags, ws.fetch(PRE_KIND));\n");
+        printf("        temp_s2q := temp_s2q.ord_uselect(TEXT).mark(0@0).reverse;\n");
+        printf("        original_oid := temp_s2q.leftfetchjoin(original_oid);\n");
+        printf("        var textNodes := temp_s2q.leftfetchjoin(nodes);\n");
+        printf("        frags := temp_s2q.leftfetchjoin(frags);\n");
         printf("        var tN_s2q := textNodes.count;\n");
+        printf("        temp_s2q := nil;\n");
         printf("        if (nodes.count != tN_s2q)\n");
         printf("           ERROR (\"no nodes except textnodes allowed in Qname conversion\");\n");
         printf("        nodes := nil;\n");
-
-        printf("        var strings_s2q := kind.ord_uselect('%c');\n", STR);
+*/
+        printf("        var strings_s2q := kind.ord_uselect(STR);\n");
+/*
         printf("        var added := strings_s2q.count + qn_s2q + tN_s2q;\n");
         printf("        if (all_s2q != added) ");
         printf(                 "ERROR (\"only strings, text nodes and qnames can be");
@@ -1745,17 +970,19 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("        tN_s2q := nil;\n");
         printf("        added := nil;\n");
         printf("        qn_s2q := nil;\n");
+*/
         /* end of kind testing */
-
-        printf("        textNodes := textNodes.mirror.leftfetchjoin(item);\n");
-        printf("        textNodes := textNodes.leftfetchjoin(Tpre_prop);\n");
-        printf("        textNodes := textNodes.leftfetchjoin(Tprop_text);\n");
-
+/*
+        printf("        textNodes := mposjoin(mposjoin(textNodes, frags, ws.fetch(PRE_PROP)), "
+                                             "mposjoin(textNodes, frags, ws.fetch(PRE_FRAG)), "
+                                             "ws.fetch(PROP_TEXT));\n");
+*/
         printf("        var oid_oid := strings_s2q.mark(0@0).reverse;\n");
         printf("        strings_s2q := nil;\n");
         /* get all the unique strings */
         printf("        var oid_item := oid_oid.leftfetchjoin(item);\n");
         /* FIXME: is the copy next line really needed? */
+
         printf("        var oid_item_backup := oid_item.copy;\n");
         printf("        oid_item := oid_item.tunique.mark(0@0).reverse;\n");
         printf("        var oid_str := oid_item.leftfetchjoin(str_values);\n");
@@ -1763,32 +990,39 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 
         /* string name is only translated into local name, because
            no URIs for the namespace are available */
-        printf("        var prop_name := Tprop_ns.ord_uselect(\"\");\n");
+        printf("        var prop_name := ws.fetch(QN_NS).fetch(WS).ord_uselect(\"\");\n");
 
-        printf("        prop_name := Tprop_loc.semijoin(prop_name);\n");
+        printf("        prop_name := prop_name.mirror.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n");
 
-        /* find all strings which are not in the Tprop_loc bat */
+        /* find all strings which are not in the qnames of the WS */
+/*
         printf("        oid_str := oid_str.union(textNodes.tunique.reverse);\n");
+*/
         printf("        var str_oid := oid_str.reverse.kdiff(prop_name.reverse);\n");
         printf("        oid_str := nil;\n");
         printf("        prop_name := nil;\n");
-        printf("        oid_str := str_oid.mark(oid(Tprop_loc.count)).reverse;\n");
+        printf("        oid_str := str_oid.mark(oid(ws.fetch(QN_LOC).fetch(WS).count)).reverse;\n");
         printf("        str_oid := nil;\n");
         /* add the strings as local part of the qname into the working set */
-        printf("        Tprop_loc.insert(oid_str);\n");
+        printf("        ws.fetch(QN_LOC).fetch(WS).insert(oid_str);\n");
         printf("        oid_str := oid_str.project(\"\");\n");
-        printf("        Tprop_ns.insert(oid_str);\n");
+        printf("        ws.fetch(QN_NS).fetch(WS).insert(oid_str);\n");
         printf("        oid_str := nil;\n");
 
         /* get all the possible matching names from the updated working set */
-        printf("        prop_name := Tprop_ns.ord_uselect(\"\");\n");
-        printf("        prop_name := Tprop_loc.semijoin(prop_name);\n");
+        printf("        prop_name := ws.fetch(QN_NS).fetch(WS).ord_uselect(\"\");\n");
+        printf("        prop_name := prop_name.mirror.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n");
 
         printf("        oid_str := oid_oid.leftfetchjoin(oid_item_backup);\n");
         printf("        oid_oid := nil;\n");
         printf("        oid_str := oid_str.leftfetchjoin(str_values);\n");
         printf("        oid_item_backup := nil;\n");
-        printf("        oid_str := merged_union(textNodes.reverse, oid_str.reverse).reverse;\n");
+/*
+        printf("        var res_mu := merged_union(textNodes.mark(0@0).reverse.leftfetchjoin(original_oid), "
+                                               "oid_str.mark(0@0).reverse, "
+                                               "textNodes, oid_str);\n");
+        printf("        oid_str := res_mu.fetch(1);\n");
+*/
         /* get property ids for each string */
         printf("        var oid_prop := oid_str.leftjoin(prop_name.reverse);\n");
         printf("        oid_str := nil;\n");
@@ -1797,21 +1031,33 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
            which were before strings */
         /* FIXME: see fixme above: if only one kind is possible 
            this is overhead */
+/*
         printf("        if (qnames.count = 0)\n");
         printf("                item := oid_prop;\n");
         printf("        else {\n");
+*/
         /* qnames and newly generated qnames are merged (first 2 parameters are
            the oids for the sorting) */
-        printf("                item := merged_union "
-                                        "(qnames.reverse,"
-                                        " oid_prop.reverse).reverse;\n");
+/*
+        printf("                item := merged_union(res_mu.fetch(0), "
+                                                    "qnames.mark(0@0).reverse, "
+                                                    "oid_prop.reverse.mark(0@0).reverse, "
+                                                    "qnames.reverse.mark(0@0).reverse)"
+                                                    ".fetch(1);\n");
+*/
+/* after removing everything now adding one extra line */
+        printf("item := oid_prop;\n");
         printf("                item := item.reverse.mark(0@0).reverse;\n");
+/*
         printf("                ");
         printf("        }\n");
+*/
+        printf("        kind := item.project(QNAME);\n");
         printf("        oid_prop := nil;\n");
+/*
         printf("        qnames := nil;\n");
         printf("}\n");
-
+*/
         printf("} # end of getQName ()\n");
     }
 
@@ -1826,18 +1072,19 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                "var root_level;\n"
                "var root_size;\n"
                "var root_kind;\n"
+               "var root_frag;\n"
                "var root_prop;\n");
 
         /* attr */ printf("var preNew_preOld;\n");
-        /* attr */ printf("var attrIDs := kind.ord_uselect('%c');\n", ATTR);
-        /* attr */ printf("attrIDs := attrIDs.mirror;\n");
-        /* attr */ printf("attrIDs := attrIDs.leftfetchjoin(item);\n");
-        /* attr */ printf("attrIDs := attrIDs.reverse;\n");
-        /* attr */ printf("attrIDs := attrIDs.leftfetchjoin(iter);\n");
-        /* attr */ printf("attrIDs := attrIDs.reverse;\n");
+        /* attr */ printf("var preNew_frag;\n");
+        /* attr */ printf("var attr := kind.get_type(ATTR).mark(0@0).reverse;\n");
+        /* attr */ printf("var attr_iter := attr.leftfetchjoin(iter);\n");
+        /* attr */ printf("var attr_item := attr.leftfetchjoin(item);\n");
+        /* attr */ printf("var attr_frag := attr.leftfetchjoin(kind).get_fragment;\n");
+        /* attr */ printf("attr := nil;\n");
 
         /* in a first version only nodes are handled */
-        printf("var nodes := kind.ord_uselect('%c');\n", NODE);
+        printf("var nodes := kind.get_type(NODE);\n");
         /* if no nodes are found we jump right to the end and only
            have to execute the stuff for the root construction */
         printf("if (nodes.count != 0) {\n");
@@ -1845,6 +1092,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("var oid_oid := nodes.mark(0@0).reverse;\n"
                "nodes := nil;\n"
                "var node_items := oid_oid.leftfetchjoin(item);\n"
+               "var node_frags := oid_oid.leftfetchjoin(kind).get_fragment;\n"
                /* set iter to a distinct list and therefore don't
                   prune any node */
                "var iter_input := oid_oid.mirror;\n");
@@ -1852,52 +1100,76 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         /* get all subtree copies */
         printf("var res_scj := "
                "loop_lifted_descendant_or_self_step_unjoined"
-               "(iter_input,node_items);\n");
+               "(iter_input, node_items, node_frags, ws);\n");
 
         printf("iter_input := nil;\n");
         /* variables for the result of the scj */
         printf("var pruned_input := res_scj.fetch(0);\n"
-               "var ctx_dn := res_scj.fetch(1);\n"
+                /* pruned_input comes as ctx|iter */
+               "var ctx_dn_item := res_scj.fetch(1);\n"
+               "var ctx_dn_frag := res_scj.fetch(2);\n"
                "res_scj := nil;\n"
         /* res_ec is the iter|dn table resulting from the scj */
-               "var res_ec := pruned_input.reverse.leftjoin(ctx_dn);\n");
+               "var res_item := pruned_input.reverse.leftjoin(ctx_dn_item);\n"
+        /* create content_iter as sorting argument for the merged union */
+               "var content_void := res_item.mark(0@0).reverse;\n"
+               "var content_iter := content_void.leftfetchjoin(oid_oid).leftfetchjoin(iter);\n"
+               "content_void := nil;\n"
+        /* only the dn_items and dn_frags from the joined result are needed
+           in the following (getting the values for content_size, 
+           content_prop, ...) and the input for a mposjoin has to be void */
+               "res_item := res_item.reverse.mark(0@0).reverse;\n"
+               "var res_frag := pruned_input.reverse.leftjoin(ctx_dn_frag);\n"
+               "res_frag := res_frag.reverse.mark(0@0).reverse;\n");
+
+        /* create subtree copies for all bats except content_level */
+        printf("var content_size := mposjoin(res_item, res_frag, "
+                                            "ws.fetch(PRE_SIZE));\n"
+               "var content_prop := mposjoin(res_item, res_frag, "
+                                            "ws.fetch(PRE_PROP));\n"
+               "var content_kind := mposjoin(res_item, res_frag, "
+                                            "ws.fetch(PRE_KIND));\n"
+               "var content_frag := mposjoin(res_item, res_frag, "
+                                            "ws.fetch(PRE_FRAG));\n");
+
+        /* attr */ /* content_pre is needed for attribute subtree copies */
+        /* attr */ printf("var content_pre := res_item;\n");
+        /* attr */ printf("res_item := nil;\n");
+        /* attr */ printf("res_frag := nil;\n");
 
         /* change the level of the subtree copies */
         /* get the level of the content root nodes */
         /* - unique is needed, if pruned_input has more than once an ctx value
            - join with iter between pruned_input and item is not needed, because
            in this case pruned_input has the void column as iter value */
-        printf("nodes := pruned_input.leftfetchjoin(node_items).unique;\n"
-               "var contentRoot_level := nodes.leftfetchjoin(Tpre_level);\n"
+        printf("nodes := pruned_input.kunique;\n" /* creates unique ctx-node list */
+               "var temp_ec_item := nodes.reverse.mark(0@0).reverse;\n"
+               "temp_ec_item := temp_ec_item.leftfetchjoin(node_items);\n"
+               "var temp_ec_frag := nodes.reverse.mark(0@0).reverse;\n"
+               "temp_ec_frag := temp_ec_frag.leftfetchjoin(node_frags);\n"
+               "nodes := nodes.mark(0@0);\n"
+               "var contentRoot_level := mposjoin(temp_ec_item, "
+                                                 "temp_ec_frag, "
+                                                 "ws.fetch(PRE_LEVEL));\n"
+               "contentRoot_level := nodes.leftfetchjoin(contentRoot_level);\n"
+               "temp_ec_item := nil;\n"
+               "temp_ec_frag := nil;\n"
                "nodes := nil;\n"
-               "var content_level := ctx_dn.leftfetchjoin(Tpre_level);\n"
+
+               "temp_ec_item := ctx_dn_item.reverse.mark(0@0).reverse;\n"
+               "temp_ec_frag := ctx_dn_frag.reverse.mark(0@0).reverse;\n"
+               "nodes := ctx_dn_item.mark(0@0);\n"
+               "var content_level := mposjoin(temp_ec_item, temp_ec_frag, "
+                                             "ws.fetch(PRE_LEVEL));\n"
+               "content_level := nodes.leftfetchjoin(content_level);\n"
                "content_level := content_level.[-](contentRoot_level);\n"
                "contentRoot_level := nil;\n"
                "content_level := content_level.[+](chr(1));\n"
         /* join is made after the multiplex, because the level has to be change only
            once for each dn-node. With the join the multiplex is automatically
            expanded */
-               "content_level := pruned_input.reverse.leftjoin(content_level);\n");
-
-        /* create subtree copies for the other bats */
-        printf("var content_size := res_ec.leftfetchjoin(Tpre_size);\n"
-               "var content_prop := res_ec.leftfetchjoin(Tpre_prop);\n"
-               "var content_kind := res_ec.leftfetchjoin(Tpre_kind);\n");
-
-        /* attr */ /* content_pre is needed for attribute subtree copies */
-        /* attr */ printf("var content_pre := res_ec;\n");
-        /* attr */ printf("content_pre := content_pre.reverse.mark(0@0).reverse;\n");
-        /* attr */ printf("res_ec := nil;\n");
-
-        /* create content_iter as sorting argument for the merged union */
-        printf("var content_void := content_level.mark(0@0).reverse;\n"
-               "var content_iter := content_void.leftfetchjoin(oid_oid).leftfetchjoin(iter);\n"
-               "content_void := nil;");
-
-        printf("content_level := content_level.reverse.mark(0@0).reverse;\n"
-               "content_size := content_size.reverse.mark(0@0).reverse;\n"
-               "content_prop := content_prop.reverse.mark(0@0).reverse;\n"
-               "content_kind := content_kind.reverse.mark(0@0).reverse;\n");
+               "content_level := pruned_input.reverse.leftjoin(content_level);\n"
+               "content_level := content_level.reverse.mark(0@0).reverse;\n");
 
         /* printing output for debugging purposes */
         /*
@@ -1909,15 +1181,14 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         /* get the maximum level of the new constructed nodes
            and set the maximum of the working set */
         printf("{\n");
-        printf("var height := content_level.max + 1;\n");
-        printf("Theight := max(Theight, height);\n");
+        printf("var height := int(content_level.max) + 1;\n");
+        printf("ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), height));\n");
         printf("height := nil;\n");
         printf("}\n");
 
         /* calculate the sizes for the root nodes */
-        printf("var contentRoot_size := node_items.leftfetchjoin(Tpre_size).[+](1);\n"
-        /* following line does the same like the line above
-               "contentRoot_size := {count}(pruned_input.reverse.leftjoin(ctx_dn),node_items);\n" */
+        printf("var contentRoot_size := mposjoin(node_items, node_frags, "
+                                                "ws.fetch(PRE_SIZE)).[+](1);\n"
                "var size_oid := contentRoot_size.reverse;\n"
                "contentRoot_size := nil;\n"
                "size_oid := size_oid.leftfetchjoin(oid_oid);\n"
@@ -1935,12 +1206,14 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("root_level := iter_size.project(chr(0));\n"
                "root_size := iter_size;\n"
                "root_kind := iter_size.project(ELEMENT);\n"
-               "root_prop := iter%03u.reverse.leftfetchjoin(item%03u);\n", i, i);
+               "root_prop := iter%03u.reverse.leftfetchjoin(item%03u);\n"
+               "root_frag := iter_size.project(WS);\n", i, i);
 
         printf("root_level := root_level.reverse.mark(0@0).reverse;\n"
                "root_size := root_size.reverse.mark(0@0).reverse;\n"
                "root_kind := root_kind.reverse.mark(0@0).reverse;\n"
                "root_prop := root_prop.reverse.mark(0@0).reverse;\n"
+               "root_frag := root_frag.reverse.mark(0@0).reverse;\n"
                "var root_iter := iter_size.mark(0@0).reverse;\n"
                "iter_size := nil;\n");
 
@@ -1958,7 +1231,8 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("var merged_result := merged_union ("
                "root_iter, content_iter, root_size, content_size, "
                "root_level, content_level, root_kind, content_kind, "
-               "root_prop, content_prop, root_pre, content_pre);\n");
+               "root_prop, content_prop, root_frag, content_frag, "
+               "root_pre, content_pre);\n");
         printf("root_iter := nil;\n"
                "content_iter := nil;\n"
                "root_size := merged_result.fetch(1);\n"
@@ -1969,7 +1243,9 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                "content_kind := nil;\n"
                "root_prop := merged_result.fetch(4);\n"
                "content_prop := nil;\n"
-               "root_pre := merged_result.fetch(5);\n"
+               "root_frag := merged_result.fetch(5);\n"
+               "content_frag := nil;\n"
+               "root_pre := merged_result.fetch(6);\n"
                "content_pre := nil;\n"
                "merged_result := nil;\n");
         /* printing output for debugging purposes */
@@ -1992,34 +1268,38 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("root_size := item%03u.project(0);\n", i);
         printf("root_kind := item%03u.project(ELEMENT);\n", i);
         printf("root_prop := item%03u;\n", i);
+        printf("root_frag := item%03u.project(WS);\n", i);
 
-        /* attr */ printf("preNew_preOld := item%03u;\n", i);
+        /* attr */ printf("preNew_preOld := item%03u.project(nil);\n", i);
         /* attr */ printf("preNew_preOld := preNew_preOld.reverse.mark(0@0).reverse;\n");
-        /* attr */ printf("preNew_preOld := preNew_preOld.project(nil);\n");
 
         printf("root_level := root_level.reverse.mark(0@0).reverse;\n"
                "root_size := root_size.reverse.mark(0@0).reverse;\n"
                "root_kind := root_kind.reverse.mark(0@0).reverse;\n"
-               "root_prop := root_prop.reverse.mark(0@0).reverse;\n");
+               "root_prop := root_prop.reverse.mark(0@0).reverse;\n"
+               "root_frag := root_frag.reverse.mark(0@0).reverse;\n");
 
         printf("} # end of else in 'if (nodes.count != 0)'\n");
 
         /* set the offset for the new created trees */
         printf("{\n"
-               "var seqb := count(Tpre_size);\n"
+               "var seqb := count(ws.fetch(PRE_SIZE).fetch(WS));\n"
                "seqb := oid(seqb);\n"
                "root_level.seqbase(seqb);\n"
                "root_size.seqbase(seqb);\n"
                "root_kind.seqbase(seqb);\n"
                "root_prop.seqbase(seqb);\n"
+               "root_frag.seqbase(seqb);\n"
                /* get the new pre values */
         /* attr */ "preNew_preOld.seqbase(seqb);\n"
+        /* attr */ "preNew_frag := root_frag;\n"
                "}\n");
         /* insert the new trees into the working set */
-        printf("Tpre_level.insert(root_level);\n"
-               "Tpre_size.insert(root_size);\n"
-               "Tpre_kind.insert(root_kind);\n"
-               "Tpre_prop.insert(root_prop);\n");
+        printf("ws.fetch(PRE_LEVEL).fetch(WS).insert(root_level);\n"
+               "ws.fetch(PRE_SIZE).fetch(WS).insert(root_size);\n"
+               "ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);\n"
+               "ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);\n"
+               "ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);\n");
 
         /* printing output for debugging purposes */
         /*
@@ -2035,19 +1315,18 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("root_level := nil;\n"
                "root_size := nil;\n"
                "root_prop := nil;\n"
-               "root_kind := nil;\n");
+               "root_kind := nil;\n"
+               "root_frag := nil;\n");
 
-        /* adding the new constructed roots to the Tdoc_pre table, that a
-           following (preceding) step can check the fragment boundaries */
-        printf("{ # adding new fragments to the Tdoc_pre and Tdoc_name table\n"
-               "var seqb := Tdoc_pre.count;\n"
+        /* adding the new constructed roots to the WS_FRAG bat of the working
+           set, that a following (preceding) step can check the fragment
+           boundaries */
+        printf("{ # adding new fragments to the WS_FRAG bat\n"
+               "var seqb := ws.fetch(WS_FRAG).count;\n"
                "seqb := oid(seqb);\n"
                "var new_pres := roots.reverse.mark(seqb).reverse;\n"
                "seqb := nil;\n"
-               "Tdoc_pre.insert(new_pres);\n"
-               /* Tdoc_name is also needed because, they should be aligned for
-                  doc_to_working_set(str) */
-               "Tdoc_name.insert(new_pres.project(str(nil)));\n"
+               "ws.fetch(WS_FRAG).insert(new_pres);\n"
                "new_pres := nil;\n"
                "}\n");
 
@@ -2057,65 +1336,101 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("iter := iter%03u;\n", i);
         printf("pos := roots.mark(0@0);\n");
         printf("item := roots;\n");
-        printf("kind := roots.project('%c');\n", NODE);
+        printf("kind := roots.project(NODE);\n");
 
         /* attr translation */
-        /* actual there are two variables bound:
+        /* actually there are three variables bound:
            preNew_preOld - for mapping new attributes to new pre values
+           preNew_frag - to save the fragments, where the old pre values are from
            attrIDs - the content root attributes
         */
         /* 1. step: add subtree copies of attributes */
         printf("{ # create attribute subtree copies\n");
-        printf("var preOld_attrIDOld := TattrID_pre.reverse;\n");
-        printf("var preNew_attrIDOld := preNew_preOld.leftjoin(preOld_attrIDOld);\n");
-        printf("preNew_preOld := nil;\n");
-        printf("preOld_attrIDOld := nil;\n");
-        printf("var preNew_attr := preNew_attrIDOld.leftfetchjoin(TattrID_attr);\n");
-        printf("preNew_attrIDOld := nil;\n");
-        printf("var seqb := oid(TattrID_pre.count);\n");
-        printf("var attrIDNew_preNew := preNew_attr.mark(seqb).reverse;\n");
-        printf("var attrIDNew_attr := preNew_attr.reverse.mark(seqb).reverse;\n");
+        /* get the attributes of the subtree copy elements */
+        /* because also nil values from the roots are used for matching
+           and 'select(nil)' inside mvaljoin gives back all the attributes
+           not bound to a pre value first all root pre values have to
+           be thrown out */
+        printf("var content_preNew_preOld := preNew_preOld.ord_select(nil,nil);\n"
+               "var oid_preOld := content_preNew_preOld.reverse.mark(0@0).reverse;\n"
+               "var oid_preNew := content_preNew_preOld.mark(0@0).reverse;\n"
+               "var oid_frag := oid_preNew.leftfetchjoin(preNew_frag);\n");
+        printf("var temp_attr := mvaljoin(oid_preOld, oid_frag, ws.fetch(ATTR_OWN));\n");
+        printf("oid_preOld := nil;\n");
+        printf("oid_attr := temp_attr.reverse.mark(0@0).reverse;\n");
+        printf("oid_frag := temp_attr.mark(0@0).reverse.leftfetchjoin(oid_frag);\n");
+        printf("oid_preNew := temp_attr.mark(0@0).reverse.leftfetchjoin(oid_preNew);\n");
+        printf("temp_attr := nil;\n");
+
+        printf("var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count);\n");
+
+        /* get the values of the QN/OID offsets for the reference to the
+           string values */
+        printf("var attr_qn := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN));\n");
+        printf("attr_qn.seqbase(seqb);\n");
+        printf("var attr_oid := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_PROP));\n");
+        printf("attr_oid.seqbase(seqb);\n");
+        printf("oid_preNew.seqbase(seqb);\n");
+        printf("oid_frag.seqbase(seqb);\n");
         printf("seqb := nil;\n");
-        printf("preNew_attr := nil;\n");
-        printf("TattrID_pre.insert(attrIDNew_preNew);\n");
-        printf("attrIDNew_preNew := nil;\n");
-        printf("TattrID_attr.insert(attrIDNew_attr);\n");
-        printf("attrIDNew_attr := nil;\n");
+        
+        /* insert into working set WS the attribute subtree copies 
+           only 'offsets' where to find strings are copied 
+           (QN/FRAG, OID/FRAG) */
+        printf("ws.fetch(ATTR_QN).fetch(WS).insert(attr_qn);\n");
+        printf("ws.fetch(ATTR_PROP).fetch(WS).insert(attr_oid);\n");
+        printf("ws.fetch(ATTR_OWN).fetch(WS).insert(oid_preNew);\n");
+        printf("ws.fetch(ATTR_FRAG).fetch(WS).insert(oid_frag);\n");
+
         printf("} # end of create attribute subtree copies\n");
+
         /* 2. step: add attribute bindings of new root nodes */
         printf("{ # create attribute root entries\n");
-        printf("var seqb := oid(TattrID_pre.count);\n");
-        /* use iter & attrIDs + iter & newPre to create new attributes with 
-           their corresponding pre values */
-        printf("var iter_attr := attrIDs.leftfetchjoin(TattrID_attr);\n");
-        printf("attrIDs := nil;\n");
+        /* use iter, qn and frag to find unique combinations */
+        printf("var unq_attrs := CTgroup(attr_iter)"
+                                ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN)))"
+                                ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG)))"
+                                ".tunique;\n");
         /* test uniqueness */
-        printf("if (iter_attr.count != iter_attr.unique.count)\n"
+        printf("if (unq_attrs.count != attr_iter.count)\n"
                "{\n"
                "   if (item%03u.count > 0)\n"
                "      ERROR (\"attributes are not unique in element"
                " construction of '%%s' within each iter\",\n"
-               "             item%03u.leftfetchjoin(Tprop_loc).fetch(0));\n"
+               "             item%03u.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS)).fetch(0));\n"
                "   else\n"
                "     ERROR (\"attributes are not unique in element"
                " construction within each iter\");\n"
                "}\n", i, i);
-        printf("var iter_oid := iter%03u.reverse;\n", i);
-        printf("var attr_oid := iter_attr.reverse.leftjoin(iter_oid);\n");
-        printf("iter_oid := nil;\n");
-        printf("iter_attr := nil;\n");
-        printf("var attr_pre := attr_oid.leftfetchjoin(roots);\n");
-        printf("roots := nil;\n");
-        /* add them to TattrID_attr and TattrID_pre */
-        printf("var seqb := oid(TattrID_pre.count);\n");
-        printf("var attrIDNew_pre := attr_pre.reverse.mark(seqb).reverse;\n");
-        printf("var attrIDNew_attr := attr_pre.mark(seqb).reverse;\n");
+
+        /* insert it into the WS after everything else */
+        printf("var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count);\n");
+        /* get old QN reference and copy it into the new attribute */
+        printf("var attr_qn := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN));\n"
+               "attr_qn.seqbase(seqb);\n");
+        /* get old OID reference and copy it into the new attribute */
+        printf("var attr_oid := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PROP));\n"
+               "attr_oid.seqbase(seqb);\n");
+        /* get the iters and their corresponding new pre value (roots) and
+           multiply them for all the attributes */
+        printf("var attr_own := iter%03u.reverse.leftfetchjoin(roots);\n"
+               "roots := nil;\n"
+               "attr_own := attr_iter.leftjoin(attr_own);\n"
+               "attr_iter := nil;\n"
+               "attr_own := attr_own.reverse.mark(seqb).reverse;\n", i);
+        /* use the old FRAG values as reference */
+        printf("attr_frag.seqbase(seqb);\n");
         printf("seqb := nil;\n");
-        printf("pre_attr := nil;\n");
-        printf("TattrID_pre.insert(attrIDNew_pre);\n");
-        printf("attrIDNew_pre := nil;\n");
-        printf("TattrID_attr.insert(attrIDNew_attr);\n");
-        printf("attrIDNew_attr := nil;\n");
+
+        printf("ws.fetch(ATTR_QN).fetch(WS).insert(attr_qn);\n"
+               "attr_qn := nil;\n");
+        printf("ws.fetch(ATTR_PROP).fetch(WS).insert(attr_oid);\n"
+               "attr_oid := nil;\n");
+        printf("ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);\n"
+               "attr_own := nil;\n");
+        printf("ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_frag);\n"
+               "attr_frag := nil;\n");
+
         printf("} # end of create attribute root entries\n");
 
         /* printing output for debugging purposes */
@@ -2143,38 +1458,45 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                 /* FIXME: doesn't work with actual attribute representation */
                 /* FIXME: only works with strings - no error handling */
                 printf("{ # translate fn:doc (string?) as document?\n");
-                printf("var docs := item.tunique.reverse;\n");
+                printf("var docs := item.tunique.mark(0@0).reverse;\n");
                 printf("docs := docs.leftfetchjoin(str_values);\n");
-                printf("docs := docs.reverse.kdiff(Tdoc_name.reverse).reverse;\n");
+                printf("var frag := docs;\n");
+                printf("docs := docs.reverse.kdiff(ws.fetch(DOC_LOADED).reverse).mark(0@0).reverse;\n");
                 printf("docs@batloop () {\n");
-                printf("doc_to_working_set($t);\n");
+                printf("ws := add_doc(ws, $t);\n");
                 printf("}\n");
                 printf("docs := nil;\n");
-                printf("item := item.leftfetchjoin(str_values);\n");
-                printf("item := item.leftjoin(Tdoc_name.reverse);\n");
-                printf("item := item.leftfetchjoin(Tdoc_pre);\n");
-                printf("item := item.reverse.mark(0@0).reverse;\n");
-                printf("kind := kind.project('%c');\n", NODE);
+                printf("frag := frag.leftjoin(ws.fetch(DOC_LOADED).reverse);\n");
+                printf("frag := frag.reverse.mark(0@0).reverse;\n");
+                printf("kind := get_kind(frag, NODE);\n");
+                printf("item := kind.project(0@0);\n");
                 printf("} # end of translate fn:doc (string?) as document?\n");
         }
         else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"distinct-doc-order")))
         {
                 translate2MIL (args->child[0]);
                 printf("{ # translate pf:distinct-doc-order (node*) as node*\n");
-                printf("kind := kind.ord_uselect('%c');\n", NODE);
-                printf("item := kind.mirror.leftfetchjoin(item);\n");
-                printf("var item_iter := item.reverse.leftfetchjoin(iter);\n");
-                printf("item_iter := item_iter.unique;\n");
-                printf("iter := item_iter.reverse.mark(0@0).reverse;\n");
-                printf("item := item_iter.mark(0@0).reverse;\n");
-                printf("item_iter := nil;\n");
+                /* this shouldn't be necessary because we already have only nodes
+                printf("var temp_ddo := kind.get_type(NODE).mark(0@0).reverse;\n");
+                printf("iter := temp_ddo.leftfetchjoin(iter);\n");
+                printf("item := temp_ddo.leftfetchjoin(item);\n");
+                printf("var frag := temp_ddo.leftfetchjoin(kind).get_fragment;\n");
+                printf("temp_ddo := nil;\n");
+                */
+                printf("var temp_ddo := CTgroup(iter).CTgroup(item).CTgroup(kind);\n");
+                printf("temp_ddo := temp_ddo.tunique.mark(0@0).reverse;\n");
+                printf("iter := temp_ddo.leftfetchjoin(iter);\n");
+                printf("item := temp_ddo.leftfetchjoin(item);\n");
+                printf("kind := temp_ddo.leftfetchjoin(kind);\n");
+                printf("temp_ddo := nil;\n");
                 printf("var sorting := iter.reverse.sort.reverse;\n");
+                printf("sorting := sorting.CTrefine(kind);");
                 printf("sorting := sorting.CTrefine(item);");
                 printf("sorting := sorting.mark(0@0).reverse;\n");
                 printf("iter := sorting.leftfetchjoin(iter);\n");
                 printf("pos := iter.mark(1@0);\n");
                 printf("item := sorting.leftfetchjoin(item);\n");
-                printf("kind := iter.project('%c');\n", NODE);
+                printf("kind := sorting.leftfetchjoin(kind);\n");
                 printf("sorting := nil;\n");
                 printf("} # end of translate pf:distinct-doc-order (node*) as node*\n");
         }
@@ -2197,7 +1519,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                 /* get the oids for the integers */
                 printf("item := iter_count.leftjoin(int_values.reverse);\n");
                 printf("item := item.reverse.mark(0@0).reverse;\n"); 
-                printf("kind := iter.project('%c');\n", INT);
+                printf("kind := iter.project(INT);\n");
                 printf("iter_count := nil;\n");
                 printf("} # end of translate fn:count (item*) as integer\n");
         }
@@ -2212,7 +1534,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                 printf("iter := iter_bool.mark(0@0).reverse;\n");
                 printf("pos := iter.project(1@0);\n");
                 printf("item := iter_bool.reverse.mark(0@0).reverse;\n");
-                printf("kind := iter.project('%c');\n", BOOL);
+                printf("kind := iter.project(BOOL);\n");
                 printf("iter_bool := nil;\n");
                 printf("} # end of translate fn:empty (item*) as boolean\n");
         }
@@ -2237,11 +1559,11 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                 printf("kind := iter.leftfetchjoin(kind);\n");
                 printf("test := test.mirror;\n");
                 printf("test := test.leftjoin(kind);\n");
-                printf("var str_test := test.ord_uselect('%c');\n", STR);
-                printf("var int_test := test.ord_uselect('%c');\n", INT);
-                printf("var dbl_test := test.ord_uselect('%c');\n", DBL);
-                printf("var dec_test := test.ord_uselect('%c');\n", DEC);
-                printf("var bool_test := test.ord_uselect('%c');\n", BOOL);
+                printf("var str_test := test.ord_uselect(STR);\n");
+                printf("var int_test := test.ord_uselect(INT);\n");
+                printf("var dbl_test := test.ord_uselect(DBL);\n");
+                printf("var dec_test := test.ord_uselect(DEC);\n");
+                printf("var bool_test := test.ord_uselect(BOOL);\n");
                 printf("test := nil;\n");
                 printf("str_test := str_test.mirror;\n");
                 printf("int_test := int_test.mirror;\n");
@@ -2282,7 +1604,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                 printf("iter := trues.mark(0@0).reverse;\n");
                 printf("pos := iter.project(1@0);\n");
                 printf("item := trues.reverse.mark(0@0).reverse;\n");
-                printf("kind := iter.project('%c');\n", BOOL);
+                printf("kind := iter.project(BOOL);\n");
                 printf("trues := nil;\n");
                 printf("} # end of translate fn:boolean (item*) as boolean\n");
                 
@@ -2299,49 +1621,71 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     {
         PFlog("first short version of attribute constructor: can only handle one string or integer per iter");
         printf("{ # loop_liftedAttrConstr (int i)\n");
-        printf("var temp_int := kind.ord_uselect('%c');\n", INT);
-        printf("temp_int := temp_int.mirror;\n");
+        printf("var temp_int := kind.ord_uselect(INT);\n");
+        printf("temp_int := temp_int.mark(0@0).reverse;\n");
+        printf("var oid_int := temp_int;\n");
         printf("temp_int := temp_int.leftfetchjoin(item);\n");
         printf("temp_int := temp_int.leftfetchjoin(int_values);\n");
         printf("temp_int := temp_int.[str];\n");
-        printf("var temp_str := kind.ord_uselect('%c');\n", STR);
-        printf("temp_str := temp_str.mirror;\n");
+        printf("var temp_str := kind.ord_uselect(STR);\n");
+        printf("temp_str := temp_str.mark(0@0).reverse;\n");
+        printf("var oid_str := temp_str;\n");
         printf("temp_str := temp_str.leftfetchjoin(item);\n");
         printf("temp_str := temp_str.leftfetchjoin(str_values);\n");
-        printf("var temp_node := kind.ord_uselect('%c');\n", NODE);
-        printf("temp_node := temp_node.mirror;\n");
+        printf("var temp_node := kind.get_type(NODE);\n");
+        printf("temp_node := temp_node.mark(0@0).reverse;\n");
         /* FIXME: small test */
         printf("var test := {count}(iter.reverse,iter.tunique);\n"
                "if (test.count != test.sum) ERROR (\"more than 1 argument in attribute constructor\");\n");
 
-        printf("temp_node := temp_node.leftfetchjoin(item);\n");
-        printf("temp_node := temp_node.leftfetchjoin(Tpre_kind);\n");
-        printf("temp_node := temp_node.ord_uselect(TEXT);\n");
-        printf("temp_node := temp_node.mirror;\n");
-        printf("temp_node := temp_node.leftfetchjoin(item);\n");
-        printf("temp_node := temp_node.leftfetchjoin(Tpre_prop);\n");
-        printf("temp_node := temp_node.leftfetchjoin(Tprop_text);\n");
-        printf("item := merged_union (temp_str.reverse, temp_int.reverse);\n");
-        printf("item := merged_union (item, temp_node.reverse).reverse;\n");
+        printf("var temp_nitem := temp_node.leftfetchjoin(item);\n");
+        printf("var temp_nfrag := temp_node.leftfetchjoin(kind).get_fragment;\n");
+        printf("var temp_kind := mposjoin(temp_nitem, "
+                                         "temp_nfrag, "
+                                         "ws.fetch(PRE_KIND));\n");
+        printf("temp_kind := temp_kind.ord_uselect(TEXT);\n");
+        printf("temp_kind := temp_kind.mark(0@0).reverse;\n");
+        printf("temp_node := temp_kind.leftfetchjoin(temp_node);\n");
+        printf("temp_nitem := temp_kind.leftfetchjoin(temp_nitem);\n");
+        printf("temp_nfrag := temp_kind.leftfetchjoin(temp_nfrag);\n");
+        printf("temp_kind := nil;\n");
+        printf("var temp_text := mposjoin(mposjoin(temp_nitem, temp_nfrag, ws.fetch(PRE_PROP)), "
+                                         "mposjoin(temp_nitem, temp_nfrag, ws.fetch(PRE_FRAG)), "
+                                         "ws.fetch(PROP_TEXT));\n");
+        printf("var res_mu := merged_union (oid_str, oid_int, temp_str, temp_int);\n");
+        printf("res_mu := merged_union (res_mu.fetch(0), temp_node, "
+                                       "res_mu.fetch(1), temp_text);\n");
+        printf("var attr_val := res_mu.fetch(1);\n");
+        printf("temp_str := nil;\n");
+        printf("oid_str := nil;\n");
+        printf("temp_int := nil;\n");
+        printf("oid_int := nil;\n");
+        printf("temp_text := nil;\n");
+        printf("temp_nitem := nil;\n");
+        printf("temp_nfrag := nil;\n");
+        printf("temp_node := nil;\n");
+        printf("res_mu := nil;\n");
 
-        printf("var seqb := int(Tattr_loc.reverse.max) + 1;\n");
-        printf("seqb := oid(seqb);\n");
-        printf("item := item.reverse.mark(0@0).reverse;\n");
-        printf("item.seqbase(seqb);\n");
-        printf("item%03u := item%03u.leftfetchjoin(Tprop_loc);\n", i, i);
-        printf("item%03u.seqbase(seqb);\n");
-        printf("Tattr_loc.insert(item%03u);\n", i);
-        printf("Tattr_ns.insert(item.project(\"\"));\n");
-        printf("Tattr_val.insert(item);\n");
-        printf("item := item.mirror;\n");
-        printf("seqb := oid(TattrID_attr.count);\n");
-        printf("item.seqbase(seqb);\n");
-        printf("TattrID_attr.insert(item);\n");
-        printf("TattrID_pre.insert(item.mark(nil));\n");
+        /* FIXME: rewrite attribute constructor to handle everything */
+        printf("if (attr_val.count != item%03u.count) "
+               "ERROR (\"number of values and qnames doesn't fit\");\n", i);
+        printf("var seqb := oid(ws.fetch(ATTR_OWN).fetch(WS).count);\n");
+        printf("var seqb_text := oid(ws.fetch(PROP_VAL).fetch(WS).count);\n");
+        /* attr_val contains attribute values */
+        printf("attr_val.seqbase(seqb_text);\n");
+        printf("ws.fetch(PROP_VAL).fetch(WS).insert(attr_val);\n");
+        printf("var attr_oid := attr_val.seqbase(seqb).mark(seqb_text);\n");
+        printf("ws.fetch(ATTR_PROP).fetch(WS).insert(attr_oid);\n");
+        /* itemXXX contains the references to the
+           new created qnames in the WS */
+        printf("item%03u.seqbase(seqb);\n", i);
+        printf("ws.fetch(ATTR_QN).fetch(WS).insert(item%03u);\n", i);
+        printf("ws.fetch(ATTR_FRAG).fetch(WS).insert(item%03u.project(WS));\n", i);
+        printf("ws.fetch(ATTR_OWN).fetch(WS).insert(item%03u.mark(nil));\n", i);
 
-        printf("item := item.mirror;\n");
+        printf("item := item%03u.mirror;\n", i);
         printf("item.seqbase(0@0);\n");
-        printf("kind := kind.project('%c');\n", ATTR);
+        printf("kind := kind.project(ATTR);\n");
         printf("} # end of loop_liftedAttrConstr (int i)\n");
     }
 
@@ -2349,42 +1693,43 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     loop_liftedTextConstr (void)
     {
         /* expects exactly one string for each iter */
-        printf("if (iter.tunique.count != kind.uselect('%c').count) ", STR);
+        printf("if (iter.tunique.count != kind.uselect(STR).count) ");
         printf("ERROR (\"Text Constructor awaits exactly one string for each iter\");\n");
 
         printf("{ # adding new strings to text node content and create new nodes\n"
                "var oid_str := item.leftfetchjoin(str_values);\n"
-               "var seqb := oid(Tprop_text.count);\n"
+               "var seqb := oid(ws.fetch(PROP_TEXT).fetch(WS).count);\n"
                "var oid_oid := oid_str.mark(seqb);\n"
                "oid_str.seqbase(seqb);\n"
                "seqb := nil;\n"
-               "Tprop_text.insert(oid_str);\n"
+               "ws.fetch(PROP_TEXT).fetch(WS).insert(oid_str);\n"
                "oid_str := nil;\n"
-               "seqb := oid(Tpre_kind.count);\n"
+               "seqb := oid(ws.fetch(PRE_KIND).fetch(WS).count);\n"
                "var newPre_prop := oid_oid.reverse.mark(seqb).reverse;\n"
-               "Tpre_prop.insert(newPre_prop);\n"
-               "Tpre_size.insert(newPre_prop.project(0));\n"
-               "Tpre_level.insert(newPre_prop.project(chr(0)));\n"
-               "Tpre_kind.insert(newPre_prop.project(TEXT));\n"
+               "ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);\n"
+               "ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));\n"
+               "ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));\n"
+               "ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));\n"
+               "ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));\n"
                "newPre_prop := nil;\n"
                "item := item.mark(seqb);\n"
                "seqb := nil;\n"
-               "kind := kind.project('%c');\n"
-               "}\n", NODE);
+               "kind := kind.project(NODE);\n"
+               "}\n");
 
-        /* adding the new constructed roots to the Tdoc_pre table, that a
-           following (preceding) step can check the fragment boundaries */
-        printf("{ # adding new fragments to the Tdoc_pre and Tdoc_name table\n"
-               "var seqb := Tdoc_pre.count;\n"
+        /* adding the new constructed roots to the WS_FRAG bat of the working
+           set, that a following (preceding) step can check the fragment
+           boundaries */
+        printf("{ # adding new fragments to the WS_FRAG bat\n"
+               "var seqb := ws.fetch(WS_FRAG).count;\n"
                "seqb := oid(seqb);\n"
                "var new_pres := item.reverse.mark(seqb).reverse;\n"
                "seqb := nil;\n"
-               "Tdoc_pre.insert(new_pres);\n"
-               /* Tdoc_name is also needed because, they should be aligned for
-                  doc_to_working_set(str) */
-               "Tdoc_name.insert(new_pres.project(str(nil)));\n"
+               "ws.fetch(WS_FRAG).insert(new_pres);\n"
                "new_pres := nil;\n"
-               "Theight := max(Theight, 1);\n"
+               /* get the maximum level of the new constructed nodes
+                  and set the maximum of the working set */
+               "ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), 1));\n"
                "}\n");
     }
 
@@ -2661,22 +2006,21 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                             ns = "";
 
                         printf("{\n");
-                        printf("var propID := Tprop_ns.select(\"%s\");\n", ns);
-                        printf("var temp2 := Tprop_loc.select(\"%s\");\n", loc);
-                        printf("propID := propID.semijoin(temp2);\n");
-                        printf("temp2 := nil;\n");
+                        printf("var propID := ws.fetch(QN_NS).fetch(WS).ord_uselect(\"%s\").mirror;\n", ns);
+                        printf("propID := propID.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n");
+                        printf("propID := propID.ord_uselect(\"%s\");\n", loc);
                         printf("var itemID;\n");
 
                         printf("if (propID.count = 0) {\n");
                         /* perhaps max is better to get boundary then count 
                            (if seqbase is not 0@0 or if head is not void) */
-                        printf("         itemID := oid(Tprop_loc.count);\n");
-                        printf("         Tprop_ns.insert (itemID,\"%s\");\n", ns);
-                        printf("         Tprop_loc.insert (itemID,\"%s\");\n", loc);
+                        printf("         itemID := oid(ws.fetch(QN_LOC).fetch(WS).count);\n");
+                        printf("         ws.fetch(QN_NS).fetch(WS).insert (itemID,\"%s\");\n", ns);
+                        printf("         ws.fetch(QN_LOC).fetch(WS).insert (itemID,\"%s\");\n", loc);
                         printf("} else ");
                         printf(         "itemID := propID.reverse.fetch(0);\n");
                         /* translateConst needs a bound variable itemID */
-                        translateConst (QNAME);
+                        translateConst ("QNAME");
                         printf("propID := nil;\n");
                         printf("itemID := nil;\n");
                         printf("}\n");
@@ -2708,7 +2052,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                                PFesc_string (c->sem.str));
                         printf("itemID := itemID.reverse.fetch(0);\n");
                         /* translateConst needs a bound variable itemID */
-                        translateConst(STR);
+                        translateConst("STR");
                         printf("itemID := nil;\n");
                         printf("}\n");
                         break;
@@ -2720,7 +2064,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                                c->sem.num);
                         printf("itemID := itemID.reverse.fetch(0);\n");
                         /* translateConst needs a bound variable itemID */
-                        translateConst(INT);
+                        translateConst("INT");
                         printf("itemID := nil;\n");
                         printf("}\n");
                         break;
@@ -2732,7 +2076,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                                c->sem.dec);
                         printf("itemID := itemID.reverse.fetch(0);\n");
                         /* translateConst needs a bound variable itemID */
-                        translateConst(DEC);
+                        translateConst("DEC");
                         printf("itemID := nil;\n");
                         printf("}\n");
                         break;
@@ -2744,7 +2088,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                                c->sem.dbl);
                         printf("itemID := itemID.reverse.fetch(0);\n");
                         /* translateConst needs a bound variable itemID */
-                        translateConst(DBL);
+                        translateConst("DBL");
                         printf("itemID := nil;\n");
                         printf("}\n");
                         break;
@@ -2752,7 +2096,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                         printf("{\n");
                         printf("var itemID := 1@0;\n");
                         /* translateConst needs a bound variable itemID */
-                        translateConst(BOOL);
+                        translateConst("BOOL");
                         printf("itemID := nil;\n");
                         printf("}\n");
                         break;
@@ -2760,7 +2104,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                         printf("{\n");
                         printf("var itemID := 0@0;\n");
                         /* translateConst needs a bound variable itemID */
-                        translateConst(BOOL);
+                        translateConst("BOOL");
                         printf("itemID := nil;\n");
                         printf("}\n");
                         break;
@@ -2770,7 +2114,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                         printf("{\n");
                         printf("var itemID := 0@0;\n");
                         /* translateConst needs a bound variable itemID */
-                        translateConst(NODE);
+                        translateConst("NODE");
                         printf("itemID := nil;\n");
                         printf("}\n");
                         break;
@@ -2957,10 +2301,10 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 
         /* print result in iter|pos|item representation */
         print_output ();
-        printf("clear_working_set();\n");
 
         if (counter) PFoops (OOPS_FATAL, 
-                             "wrong number of saveResult() and \
-deleteResult() calls in milprint.c");
+                             "wrong number of saveResult() and "
+                             "deleteResult() calls in milprint.c");
+        printf("printf(\"mil-programm without crash finished :)\\n\");\n");
     }
 /* vim:set shiftwidth=4 expandtab: */
