@@ -957,7 +957,13 @@ stream *socket_rstream( int socket, const char *name )
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR){
 		int sz = sizeof(short);
-		if (read( socket, (void*)&s->byteorder, sz) < sz)
+		int rz = 0;
+#ifdef NATIVE_WIN32
+		rz = recv( socket, (void*)&s->byteorder, sz, 0 );
+#else
+		rz = read( socket, (void*)&s->byteorder, sz );
+#endif
+		if (rz < sz)
 			s->errnr = READ_ERROR;
 	}
 	return s;
@@ -974,7 +980,13 @@ stream *socket_wstream( int socket, const char *name )
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR){
 		int sz = sizeof(short);
-	   	if (write( socket, (void*)&s->byteorder, sz) < sz)
+		int wz = 0;
+#ifdef NATIVE_WIN32
+		wz = send( socket, (void*)&s->byteorder, sz, 0 );
+#else
+		wz = write( socket, (void*)&s->byteorder, sz );
+#endif
+	   	if (wz < sz)
 			s->errnr = WRITE_ERROR;
 	}
 	return s;
