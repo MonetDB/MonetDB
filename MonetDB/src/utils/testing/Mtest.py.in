@@ -46,14 +46,14 @@ def Usage () :
 Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
 ''')
 
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		print("""\
  -I<exp> : ignore lines matching <exp> during diff (default: -I'"""+dftIGNORE+"""')
  -c<num> : use <num> lines of context during diff (default: -c1)
  -a<num> : accuracy for diff: 0=lines, 1=words, 2=chars (default: -a1)
 """)
 
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		print('''\
  -t<sec> : timeout: kill (hanging) tests after <sec> seconds;
             -t0 means no timeout (default: -t600)
@@ -483,7 +483,7 @@ def PerformDir(env, testdir, testlist) :
 	TSTBLDDIR = env['TSTBLDBASE']+os.sep+TSTDIR+TSTSUFF
 	TSTTRGDIR = env['TSTTRGBASE']+os.sep+TSTPREF+os.sep+TSTDIR
 
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		if os.name == "nt":
 			TSTDB = TSTPREF+"_"+regsub.gsub("\\\\","_",TSTDIR)
 		else:
@@ -515,7 +515,7 @@ def PerformDir(env, testdir, testlist) :
 	os.environ['RELSRCDIR'] = env['RELSRCDIR']
 	os.environ['RELBLDDIR'] = env['RELBLDDIR']
 
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		if os.path.exists(env['GDK_DBFARM']+os.sep+TSTDB):
 			if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db "+TSTDB, ""):
 				Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
@@ -542,7 +542,7 @@ def PerformDir(env, testdir, testlist) :
 			td = td + tt
 		TIMES.append([TSTDIR,'',"%7.3f" % td])
 
-		if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+		if THISFILE in ["Mtest.py", "Mprofile.py"]:
 			CreateHtmlIndex(env)
 			AddSubToHtmlIndex(env, TSTDIR)
 
@@ -644,23 +644,23 @@ printf("\\nModules: ");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.ku
 	return env['TST_BITS'], env['TST_MODS'], env['TST_STATIC']
 ### GetBitsAndModsAndStatic(env) #
 
-def CheckMods(env, TST, EXT) :
+def CheckMods(env, TST, SERVER) :
 	missing = []
 	if os.path.isfile(TST+".modules"):
 		for m in fileinput.input(TST+".modules"):
 			m = string.strip(m)
 			if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
 					missing.append(m)
-	if EXT == ".milC":
+	if SERVER == "MAPI":
 		for m in "unix", "str", "mapi":
 			if m not in env['TST_MODS']:
 				missing.append(m)
-	if EXT == ".sql":
+	if SERVER == "SQL":
 		for m in "str", "xtables",  "sqlserver", "ascii_io", "alarm", "unix":
 			if m not in env['TST_MODS']:
 				missing.append(m)
 	return missing
-### CheckMods(env, TST, EXT) #
+### CheckMods(env, TST, SERVER) #
 
 def CheckBATs(env, TST, TSTDB) :
 	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db "+TSTDB)
@@ -704,39 +704,49 @@ def RunTest(env, TST) :
 	os.chdir(TSTSRCDIR)
 
 	TX = 0
-	EXT = "" ; CALL = ""
-	x = isexecutable(TST)
+	EXT = "" ; CALL = "" ; SERVER = ""
+	x  = isexecutable(TST)
+	xS = isexecutable(TST+".SQL")
+	xM = isexecutable(TST+".MAPI")
 	if   x[0]:
-		EXT = x[1]    ; CALL = "other"
-	elif os.path.isfile(TST+".py")    or  os.path.isfile(TST+".py.src"):
-		EXT = ".py"   ; CALL = "python"
-	elif os.path.isfile(TST+".milM")  or  os.path.isfile(TST+".milM.src"):
-		EXT = ".milM" ; CALL = "milM"
-	elif os.path.isfile(TST+".milS")  or  os.path.isfile(TST+".milS.src"):
-		EXT = ".milS" ; CALL = "milS"
-	elif os.path.isfile(TST+".milC")  or  os.path.isfile(TST+".milC.src"):
-		EXT = ".milC" ; CALL = "milC"
+		EXT = x[1]          ; CALL = "other"
+	elif xS[0]:
+		EXT = ".SQL"+xS[1]  ; CALL = "other"  ; SERVER = "SQL"
+	elif xM[0]:
+		EXT = ".MAPI"+xM[1] ; CALL = "other"  ; SERVER = "MAPI"
+	elif os.path.isfile(TST+".py")          or  os.path.isfile(TST+".py.src"):
+		EXT = ".py"         ; CALL = "python"
+	elif os.path.isfile(TST+".SQL"+".py")   or  os.path.isfile(TST+".SQL"+".py.src"):
+		EXT = ".SQL.py"     ; CALL = "python" ; SERVER = "SQL"
+	elif os.path.isfile(TST+".MAPI"+".py")  or  os.path.isfile(TST+".MAPI"+".py.src"):
+		EXT = ".MAPI.py"    ; CALL = "python" ; SERVER = "MAPI"
+	elif os.path.isfile(TST+".milM")        or  os.path.isfile(TST+".milM.src"):
+		EXT = ".milM"       ; CALL = "milM"
+	elif os.path.isfile(TST+".milS")        or  os.path.isfile(TST+".milS.src"):
+		EXT = ".milS"       ; CALL = "milS"
+	elif os.path.isfile(TST+".milC")        or  os.path.isfile(TST+".milC.src"):
+		EXT = ".milC"       ; CALL = "milC"   ; SERVER = "MAPI"
 	elif os.path.isfile(TST+"_s00.milM"):
-		EXT = ".milM" ; CALL = "milMXs"
+		EXT = ".milM"       ; CALL = "milMXs"
 	elif os.path.isfile(TST+"_s00.milS"):
-		EXT = ".milS" ; CALL = "milSXs"
+		EXT = ".milS"       ; CALL = "milSXs"
 	elif os.path.isfile(TST+"_s00.milC"):
-		EXT = ".milC" ; CALL = "milCXs"
+		EXT = ".milC"       ; CALL = "milCXs" ; SERVER = "MAPI"
 	elif os.path.isfile(TST+"_p00.milC"):
-		EXT = ".milC" ; CALL = "milCXp"
-	elif os.path.isfile(TST+".sql")   or  os.path.isfile(TST+".sql.src"):
-		EXT = ".sql"  ; CALL = "sql"
+		EXT = ".milC"       ; CALL = "milCXp" ; SERVER = "MAPI"
+	elif os.path.isfile(TST+".sql")         or  os.path.isfile(TST+".sql.src"):
+		EXT = ".sql"        ; CALL = "sql"    ; SERVER = "SQL"
 	elif os.path.isfile(TST+"_s00.sql"):
-		EXT = ".sql"  ; CALL = "sqlXs"
+		EXT = ".sql"        ; CALL = "sqlXs"  ; SERVER = "SQL"
 	elif os.path.isfile(TST+"_p00.sql"):
-		EXT = ".sql"  ; CALL = "sqlXp"
+		EXT = ".sql"        ; CALL = "sqlXp"  ; SERVER = "SQL"
 		#TODO:
 		#elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
 		#elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
 		#elif [ -f "${TST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+TST+" "+EXT
 		#elif [ -f "$TST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+TST+" "+EXT
 	else:
-		EXT = ""      ; CALL = ""
+		EXT = ""      ; CALL = ""  ; SERVER = ""
 		if os.name == "nt":
 			ErrMsg("test missing: '"+TSTSRCDIR+os.sep+TST+".(exe|com|bat|cmd|py|milM|milS|milC)`")
 			#TODO:
@@ -745,7 +755,7 @@ def RunTest(env, TST) :
 			ErrMsg("test missing: '"+TSTSRCDIR+os.sep+TST+"[.py|.milM|.milS|.milC]`")
 		return TX
 
-	MissingMods = CheckMods(env, TST, EXT)
+	MissingMods = CheckMods(env, TST, SERVER)
 	MissingBATs = CheckBATs(env, TST, TSTDB)
 
 	os.chdir(TSTTRGDIR)
@@ -756,16 +766,16 @@ def RunTest(env, TST) :
 	#	"src/modules/plain/salgebra", "tests/by_Peter/tst_priv", \
 	#	"scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2",	\
 	#	"tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
-	ReqMshdn = [".milC"]
+	ReqMshdn = ["MAPI"]
 	if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
 		SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
-	elif EXT in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
+	elif SERVER in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
 		SkipTest(env, TST, EXT, "as Mshutdown is not available.")
+	elif SERVER == "MAPI" and  not os.path.isfile(env['MONET_PREFIX']+path("/share/Monet/mapi.mil")):
+		SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")+" is not available.")
 	elif EXT == ".milC" and  not env['exe']['MapiClient'][0]:
 		SkipTest(env, TST, EXT, "as MapiClient is not available.")
-	elif EXT == ".milC" and  not os.path.isfile(env['MONET_PREFIX']+path("/share/Monet/mapi.mil")):
-		SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")+" is not available.")
-	elif EXT == ".py"   and  not env['exe']['python'][0]:
+	elif CALL == "python"  and  not env['exe']['python'][0]:
 		SkipTest(env, TST, EXT, "as python is not available.")
 		#TODO:
 		#elif EXT == ".milC":
@@ -775,12 +785,12 @@ def RunTest(env, TST) :
 		#TODO:
 		#elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
 		#SkipTest(env, TST, EXT, "as java is not in $PATH.")
+	elif SERVER == "SQL" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/server/catalog.mil")):
+		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/server/catalog.mil")+" is not available.")
+	elif SERVER == "SQL" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/server/sqlserver.mil")):
+		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/server/sqlserver.mil")+" is not available.")
 	elif EXT == ".sql" and  not env['exe']['sql_client'][0]:
 		SkipTest(env, TST, EXT, "as sql_client is not available.")
-	elif EXT == ".sql" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/parser/catalog.mil")):
-		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/parser/catalog.mil")+" is not available.")
-	elif EXT == ".sql" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/parser/aserver.mil")):
-		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/parser/aserver.mil")+" is not available.")
 	elif MissingMods:
 		SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
 	elif MissingBATs:
@@ -856,28 +866,29 @@ def RunTest(env, TST) :
 			TIMEOUTED = TIMEOUTED+"|"+string.upper(v)
 		test = re.compile("^.*("+TIMEOUTED+").*$")
 		TIMEOUT = par['TIMEOUT']
-		XTIMEOUT = 0
-		if   CALL == "other"  or  CALL == "python":
-			XTIMEOUT = XTIMEOUT + 60
+		CTIMEOUT = 0
+		if   CALL in ["other", "python"]:
+			CTIMEOUT = CTIMEOUT + 60
 			for l in fileinput.input(TST+EXT):
 				if test.match(l):
-					XTIMEOUT = XTIMEOUT + TIMEOUT
+					CTIMEOUT = CTIMEOUT + TIMEOUT
 		elif CALL in ["milMXs", "milSXs", "milCXs", "sqlXs"]:
 			test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$")
 			d = os.listdir(os.getcwd())
 			for f in d:
 				if test.match(f):
-					XTIMEOUT = XTIMEOUT + TIMEOUT
+					CTIMEOUT = CTIMEOUT + TIMEOUT
 		elif CALL in ["milM", "milS", "milC", "sql"]:
-			XTIMEOUT = XTIMEOUT + TIMEOUT
-		if  CALL in ["milC", "milCXs", "sql", "sqlXs"]:
-			XTIMEOUT = XTIMEOUT + TIMEOUT + 60
+			CTIMEOUT = CTIMEOUT + TIMEOUT
+		STIMEOUT = CTIMEOUT
+		if  SERVER in ["MAPI", "SQL"]:
+			STIMEOUT = STIMEOUT + TIMEOUT + 60
 
 		ME = ""
 		ATJOB = ""
 		if os.name != "nt":
 			ME = str(os.getpid())
-			WAIT = str(int(XTIMEOUT / 60) + 2)
+			WAIT = str(int(STIMEOUT / 60) + 2)
 			FILES = TSTTRGDIR+os.sep+TST+" "+TSTTRGDIR+os.sep+TST+".*"
 			for f in ["bat/\\*", '.gdk_lock']:
 				FILES = FILES+" "+env['GDK_DBFARM']+os.sep+TSTDB+os.sep+path(f)
@@ -904,7 +915,7 @@ def RunTest(env, TST) :
 		TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
 
 		t0 = time.time()
-		DoIt (env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT)
+		DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT)
 		t1 = time.time()
 		TX = t1 - t0
 		STDOUT.write(" %7.3fs\n" % TX)
@@ -952,7 +963,7 @@ def RunTest(env, TST) :
 		TestOut.close()
 		TestErr.close()
 
-		if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+		if THISFILE in ["Mtest.py", "Mprofile.py"]:
 			os.system("python "+THISPATH+os.sep+"Mfilter.py "+par['IGNORE']+" "+TST+STABLEout+" "+TST+STABLEerr+" "+TST+".test.out "+TST+".test.err")
 			if os.name == "nt":
 				time.sleep(1)
@@ -1033,7 +1044,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr) :
 	CollectIt(pOut, pErr, TestOut, TestErr)
 ### RunIt(cmd, TestIn, TestOut, TestErr) #
 
-def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT) :
 	STDERR.flush()
 	STDOUT.write(time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE+" ...")
 	STDOUT.flush()
@@ -1042,17 +1053,45 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 	if exe['Mtimeout'][0]:
 		MTO = "Mtimeout -timeout "
 		TOT = TIMEOUT
-		XTO = XTIMEOUT
+		STO = STIMEOUT
+		CTO = CTIMEOUT
 	else:
 		MTO = ""
 		TOT = ""
-		XTO = ""
+		STO = ""
+		CTO = ""
+
+	if SERVER in ["MAPI", "SQL"]:
+		PROLOGUE = ""
+		if os.path.isfile(TST+".prologue"):
+			PROLOGUE = " "+TST+".prologue"
+
+		Srvr = MTO+str(STO)+" "+exe['Mserver'][1]+" -db "+TSTDB
+		if SERVER == "MAPI":
+			Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")
+		else:
+			Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/server/catalog.mil")
+			Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/server/sqlserver.mil")
+		Srvr = Srvr+PROLOGUE
+		#-background"
+
+		SrvrOut = open(TST+".server.out","w")
+		SrvrErr = open(TST+".server.err","w")
+		ClntOut = open(TST+".client.out","w")
+		ClntErr = open(TST+".client.err","w")
+
+		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
+		time.sleep(9)
+	else:
+		ClntOut = TestOut
+		ClntErr = TestErr
+		
 	if   CALL == "other":
-		cmd = MTO+str(XTO)+" ."+os.sep+TST+" "+TST+" "+PRELUDE
-		RunIt(cmd, "", TestOut, TestErr)
+		cmd = MTO+str(CTO)+" ."+os.sep+TST+EXT+" "+TST+" "+PRELUDE
+		RunIt(cmd, "", ClntOut, ClntErr)
 	elif CALL == "python":
-		cmd = MTO+str(XTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
-		RunIt(cmd, "", TestOut, TestErr)
+		cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
+		RunIt(cmd, "", ClntOut, ClntErr)
 	elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
 		cmd = MTO+str(TOT)+" "+exe['Mserver'][1]
 		cmd = cmd+" -db "+TSTDB+" "+PRELUDE+" < "
@@ -1065,7 +1104,7 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 		d.sort()
 		for f in d:
 			if test.match(f):
-				RunIt(cmd+f, "", TestOut, TestErr)
+				RunIt(cmd+f, "", ClntOut, ClntErr)
 	elif CALL in ["milC", "milCXs"]:
 		TSTs = []
 		if CALL == "milC":
@@ -1078,60 +1117,11 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 		for f in d:
 			if test.match(f):
 				TSTs.append(f)
-		PROLOGUE = ""
-		if os.path.isfile(TST+".prologue"):
-			PROLOGUE = " "+TST+".prologue"
 
-		Srvr = MTO+str(XTO)+" "+exe['Mserver'][1]+" -db "+TSTDB
-		Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")
-		Srvr = Srvr+PROLOGUE
-		#-background"
 		Clnt = MTO+str(TOT)+" "+exe['MapiClient'][1]+" "+PRELUDE+" < "
-		Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
-
-		SrvrOut = open(TST+".server.out","w")
-		SrvrErr = open(TST+".server.err","w")
-		ClntOut = open(TST+".client.out","w")
-		ClntErr = open(TST+".client.err","w")
-		ShwnOut = open(TST+".shutdown.out","w")
-		ShwnErr = open(TST+".shutdown.err","w")
-
-		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
-		time.sleep(9)
-
 		for f in TSTs:
 			RunIt(Clnt+f, "", ClntOut, ClntErr)
 		
-		#TODO:
-		#Clnt = MTO+str(TOT)+" "+exe['MapiClient'][1]
-		#RunIt(Clnt, "shutdown;\n", ClntOut, ClntErr)
-
-		RunIt(Shwn, "", ShwnOut, ShwnErr)
-
-		if not pSrvrIn.closed:
-			try:
-				pSrvrIn.write('printf("\\n! Mserver still running after Mshutdown. Quitting now. !\\n");\n')
-				pSrvrIn.write('quit;\n')
-				pSrvrIn.close()
-			except IOError:
-				nop = ''
-
-		CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
-
-		for q in [SrvrOut, ClntOut, ShwnOut]:
-			n = q.name
-			q.close()
-			q = open(n,'r')
-			TestOut.writelines(q.readlines())
-			q.close()
-		TestOut.flush()
-		for q in [SrvrErr, ClntErr, ShwnErr]:
-			n = q.name
-			q.close()
-			q = open(n,'r')
-			TestErr.writelines(q.readlines())
-			q.close()
-		TestErr.flush()
 		#TODO
 		#elif CALL == "milCXp":
 	elif CALL in ["sql", "sqlXs"]:
@@ -1146,30 +1136,22 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 		for f in d:
 			if test.match(f):
 				TSTs.append(f)
-		PROLOGUE = ""
-		if os.path.isfile(TST+".prologue"):
-			PROLOGUE = " "+TST+".prologue"
 
-		Srvr = MTO+str(XTO)+" "+exe['Mserver'][1]+" -db "+TSTDB
-		Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/parser/catalog.mil")
-		Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/parser/aserver.mil")
-		Srvr = Srvr+PROLOGUE
-		#-background"
 		Clnt = MTO+str(TOT)+" "+exe['sql_client'][1]+" "+PRELUDE+" < "
-
-		SrvrOut = open(TST+".server.out","w")
-		SrvrErr = open(TST+".server.err","w")
-		ClntOut = open(TST+".client.out","w")
-		ClntErr = open(TST+".client.err","w")
-
-		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
-		time.sleep(9)
-
 		for f in TSTs:
 			RunIt(Clnt+f, "", ClntOut, ClntErr)
 
+	if SERVER in ["MAPI", "SQL"]:
+		if SERVER == "MAPI":
+			Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
+			ShwnOut = open(TST+".shutdown.out","w")
+			ShwnErr = open(TST+".shutdown.err","w")
+			RunIt(Shwn, "", ShwnOut, ShwnErr)
+
 		if not pSrvrIn.closed:
 			try:
+				if SERVER == "MAPI":
+					pSrvrIn.write('printf("\\n! Mserver still running after Mshutdown. Quitting now. !\\n");\n')
 				pSrvrIn.write('quit;\n')
 				pSrvrIn.close()
 			except IOError:
@@ -1177,23 +1159,30 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 
 		CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
 
-		for q in [SrvrOut, ClntOut]:
+		if SERVER == "MAPI":
+			AllOut = [SrvrOut, ClntOut, ShwnOut]
+			AllErr = [SrvrErr, ClntErr, ShwnErr]
+		else:
+			AllOut = [SrvrOut, ClntOut]
+			AllErr = [SrvrErr, ClntErr]
+		for q in AllOut:
 			n = q.name
 			q.close()
 			q = open(n,'r')
 			TestOut.writelines(q.readlines())
 			q.close()
 		TestOut.flush()
-		for q in [SrvrErr, ClntErr]:
+		for q in AllErr:
 			n = q.name
 			q.close()
 			q = open(n,'r')
 			TestErr.writelines(q.readlines())
 			q.close()
 		TestErr.flush()
+
 	TestOut.write(Prompt('Done.')) ; TestOut.flush()
 	TestErr.write(Prompt('Done.')) ; TestErr.flush()
-### DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) #
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT) #
 
 def Check(command, input) :
 	pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")
@@ -1337,7 +1326,7 @@ def main(argv) :
 
 	vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX', \
 		'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'     ]
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		vars = vars + ['MONETRC', 'MONET_MOD_PATH', 'MAPIPORT', 'SQLPORT']
 	if THISFILE == "Mprofile.py":
 		vars = vars + ['CMDLST']
@@ -1350,7 +1339,7 @@ def main(argv) :
 	dft['TSTSRCBASE']     = "env['MONET_SOURCE']"
 	dft['TSTBLDBASE']     = "env['MONET_BUILD']"
 	dft['TSTTRGBASE']     = "env['MONET_PREFIX']"	# or os.getcwd() ?
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		dft['MONETRC']        = "FindMonetConf(env)"
 		dft['MONET_MOD_PATH'] = "env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
 		dft['MAPIPORT']       = "HOST+':'+str(random.randrange(50000,59999,1))"
@@ -1360,11 +1349,11 @@ def main(argv) :
 	env = {}
 
 	#par = {}
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		par['IGNORE']    = '-I"'+dftIGNORE+'"'
 		par['CONTEXT']   = '-c1'
 		par['ACCURACY']  = 1
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		par['TIMEOUT']   = 600
 	if THISFILE == "Mapprove.py":
 		par['EXTENSION'] = ['out', 'err']
@@ -1381,9 +1370,9 @@ def main(argv) :
 	# commandline options overrule environment
 	shortOpts = "?hr"
 	longOpts  = ["help", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX="]
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		shortOpts = shortOpts + "I:c:a:"
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		shortOpts = shortOpts + "t:"
 		longOpts  = longOpts  + ["monetrc=", "MONETRC="]
 	if THISFILE == "Mprofile.py":
@@ -1460,7 +1449,7 @@ def main(argv) :
 			#TODO:
 			# make sure, that PATHs ar absolute
 
-	if ( THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py" )  and  not env['MONETRC']:
+	if ( THISFILE in ["Mtest.py", "Mprofile.py"] )  and  not env['MONETRC']:
 		Usage()
 		ErrXit("No .monet.["+string.split(THISFILE,'.')[0]+".]conf found!")
 
@@ -1497,12 +1486,12 @@ def main(argv) :
 	#	print(v+" = "+str(env[v]))
 	#STDOUT.flush()
 
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		env['GDK_DBFARM'] = path(ReadFromMonetConf(env, "gdk_dbfarm"))
 
 	# export and display env
 	STDERR.flush()
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		vars_ = vars + ['GDK_DBFARM']
 	else: # THISFILE == "Mapprove.py"
 		vars_ = vars
@@ -1513,7 +1502,7 @@ def main(argv) :
 
 	# set/extend PATH & LD_LIBRARY_PATH
 	bp = env['MONET_PREFIX']+os.sep+"bin"
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		lp = env['MONET_MOD_PATH']
 	else: # THISFILE == "Mapprove.py"
 		lp = ""
@@ -1535,7 +1524,7 @@ def main(argv) :
 		os.chdir(env['TSTSRCBASE'])
 
 	# check for executables, set their standard options and export them
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		exe = {}
 		exe['Mtimeout']    = CheckExec('Mtimeout')   , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
 		exe['Mserver']     = CheckExec('Mserver')    , 'Mserver -monetrc '+env['MONETRC']
@@ -1545,7 +1534,7 @@ def main(argv) :
 		exe['Mshutdown']   = CheckExec('Mshutdown')  , 'Mshutdown'
 		exe['Mdiff']       = CheckExec('Mdiff')      , 'Mdiff'
 		exe['python']      = CheckExec('python')     , 'python'
-		exe['sql_client']  = CheckExec('sql_client') , 'sql_client --port '+env['SQLPORT']
+		exe['sql_client']  = CheckExec('sql_client') , 'sql_client --port='+env['SQLPORT']
 		if not exe['Mtimeout'][0]:
 			exe['Mtimeout'] = '', ''
 		if os.name == "nt":
@@ -1644,7 +1633,7 @@ def main(argv) :
 		Warn("No tests found!")
 		sys.exit(1)
 
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 
 		if os.name == "nt":
 			n = THISPATH+os.sep+"MkillNT."
@@ -1680,7 +1669,7 @@ def main(argv) :
 		for d in testdirs:
 			t_ = t_ + PerformDir(env, d, [])
 
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		fn = env['TSTTRGBASE']+os.sep+TSTPREF+os.sep+"times."
 		fl = open(fn+"lst","w")
 		for TSTDIR,TST,tt in TIMES:
@@ -1688,7 +1677,7 @@ def main(argv) :
 		fl.write(":\t%7.3f\n" % t_)
 		fl.close()
 
-	if THISFILE == "Mtest.py"  or  THISFILE == "Mprofile.py":
+	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		env['TSTDIR'] = ""
 		env['TSTTRGDIR'] = env['TSTTRGBASE']+os.sep+TSTPREF
 		CreateHtmlIndex(env)

@@ -31,10 +31,10 @@ have changed since my proposal.
 
 - Each test named TST consists of
   + a test script which is ONE of the following:
-    * an arbitrary executable (e.g., a shell script)       (TST)
-       on Windows, executables must be ".(exe|com)"        (TST.(exe|com))
-                   and scripts must be ".(bat|cmd)"        (TST.(bat|cmd))
-    * a Python script                                      (TST.py)
+    * an arbitrary executable (e.g., a shell script)       (TST)           (~)
+       on Windows, executables must be ".(exe|com)"        (TST.(exe|com)) (~)
+                   and scripts must be ".(bat|cmd)"        (TST.(bat|cmd)) (~)
+    * a Python script                                      (TST.py)        (~)
     * a MIL script to be executed by Mserver               (TST.milM) (',^)
     * a MIL script to be executed by Mserver -single       (TST.milS) (',^)
        (-single has been removed, so .milM & .milS are
@@ -43,6 +43,15 @@ have changed since my proposal.
       (MapiClient is currently not supported on Windows)
     * a SQL script to be executed by sql_client            (TST.sql)  (",^)
       (each SQL statments must be given in a single line)
+   (~) In case the name of an arbitrary executable or Python script is
+        suffixed with ".MAPI" (i.e., TST.MAPI[.(exe|com|bat|cmd|py)]),
+        Mtest.py starts an Mserver with a MAPI-listerner on MAPIPORT
+        in the background before executing the test. The test can then
+        connect via MAPI (on MAPIPORT) to that Mserver.
+       Similar, with suffix ".SQL", an Mserver with an SQL-listener on
+        SQLPORT is started.
+       In both cases, Mtest.py stops the Mserver again, once the test has
+        finished.
    (') For Mserver, if several files are present named
         TST_sXX.mil(M|S) (XX={00,01,...,99})
         these are executed by subsequently calling Mserver
@@ -64,7 +73,7 @@ have changed since my proposal.
      (optional)                                            (TST.prelude)
   + for MapiClient- & sql_client- tests, a MIL script to be used as
      prologue for Mserver, i.e., a script that is executed by Mserver after
-     mapi.mil/catalog.mil+aserver.mil, but before (the first)
+     mapi.mil/catalog.mil+sqlserver.mil, but before (the first)
      MapiClient/sql_client connects to Mserver
      (optional)                                            (TST.prologue)
   + a file that contains a list of modules (one per line)
@@ -89,10 +98,15 @@ have changed since my proposal.
   * python TST.py [TST.prelude]
   * Mserver -db TSTDB [TST.prelude] < TST.mil(M|S)
   * Mserver -db TSTDB $MONET_PREFIX/share/Monet/mapi.mil [TST.prologue] -background &
-    MapiClient [-prelude TST.prelude] < TST[_(s|p)XX].milC
+         MapiClient [-prelude TST.prelude] < TST[_(s|p)XX].milC
+     or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
+     or  python TST.py [TST.prelude]
     Mshutdown
-  * Mserver -db TSTDB $TSTSRCBASE/src/parser/catalog.mil $TSTSRCBASE/src/parser/aserver.mil [TST.prologue] -background &
-    sql_client < TST[_(s|p)XX].sql
+  * Mserver -db TSTDB $TSTSRCBASE/src/server/catalog.mil $TSTSRCBASE/src/server/sqlserver.mil [TST.prologue] -background &
+         sql_client < TST[_(s|p)XX].sql
+     or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
+     or  python TST.py [TST.prelude]
+
   (On Unix, all M<tool>'s are started with "Mtimeout -timeout TIMEOUT
    M<tool> ..." to kill (probably) hanging M<tool>'s after a certain
    timeout. The default TIMEOUT value is 600 seconds, i.e. 10 minutes.
@@ -105,7 +119,7 @@ have changed since my proposal.
   (MapiClient is called with "-everything".
    See "MapiClient -help" for details.)
 
-  (sql_client is called with "--port $SQLPORT".)
+  (sql_client is called with "--port=$SQLPORT".)
 
 
 - Mtest.py uses three directory trees based at TSTSRCBASE, TSTBLDBASE, and
@@ -220,7 +234,7 @@ have changed since my proposal.
 	MDESTROYDB	"$MTIMEOUT Mdestroydb -monetrc $MONETRC"
 	MSHUTDOWN	"$MTIMEOUT Mshutdown"
 	MDIFF		"$MTIMEOUT Mdiff"
-	SQL_CLIENT	"$MTIMEOUT sql_client"
+	SQL_CLIENT	"$MTIMEOUT sql_client --port=$SQLPORT"
 	TST		name of the current test
   	TSTDB		name of default test database, unique for each directory
 	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
