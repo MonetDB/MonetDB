@@ -1069,11 +1069,7 @@ main(int argc, char **argv)
 {
 	opt *set = NULL;
 	int setlen;
-#ifdef MONET5
-	char *language = "mal";
-#else
 	char *language = "mil";
-#endif
 	int port = 0;
 	char *user = NULL;
 	char *passwd = NULL;
@@ -1083,6 +1079,7 @@ main(int argc, char **argv)
 	int trace = 0;
 	int guest = 1;
 	int linemode = 1;
+	int monet5 = 0;
 	int c;
 	Mapi mid;
 	int quiet = 0;
@@ -1114,7 +1111,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:l:u:p:P:qHh:s:DtTd::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:l:u:p:P:qHh:s:DtTd::?5", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
@@ -1180,6 +1177,9 @@ main(int argc, char **argv)
 		case 'H':
 			save_history = 1;
 			break;
+		case '5':
+			monet5 = 1;
+			break;
 		case '?':
 			usage(argv[0]);
 		default:
@@ -1217,7 +1217,10 @@ main(int argc, char **argv)
 			passwd = simple_prompt("Password ", BUFSIZ, 0, "monetdb");
 	}
 
-	mid = mapi_connect(host, port, user, passwd, language);
+	if (monet5)
+		mid = mapi_connect(host, port, user, passwd, "mal");
+	else
+		mid = mapi_connect(host, port, user, passwd, language);
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);
@@ -1234,13 +1237,12 @@ main(int argc, char **argv)
 	}
 	mapi_trace(mid, trace);
 
-#ifdef MONET5
-	if (strcmp(language, "mal") != 0) {
+	if (monet5 && strcmp(language, "mal") != 0) {
 		char buf[1024];
 		snprintf(buf, sizeof(buf), "%s();", language);
 		doRequest(mid, buf);
+		printf("started senario %s\n", language);
 	}
-#endif
 
 	if (dodump && strcmp(language, "sql") == 0) {
 		c = dump_tables(mid);
