@@ -69,23 +69,23 @@ main(int argc, char **argv)
 	SQLHANDLE env;
 	SQLHANDLE dbc;
 	SQLHANDLE stmt;
-	SQLCHAR *host = "Default";
-	SQLCHAR *user = "monetdb";
-	SQLCHAR *pass = "monetdb";
+	SQLCHAR *host = (SQLCHAR*)"Default";
+	SQLCHAR *user = (SQLCHAR*)"monetdb";
+	SQLCHAR *pass = (SQLCHAR*)"monetdb";
 	SQLRETURN ret;
 	int i;
 	SQLSMALLINT f1;
-	SQLCHAR f2[30];
+	char f2[30];
 	SQLDOUBLE f3;
 	SQL_DATE_STRUCT f4;
 	SQL_TIME_STRUCT f5;
 
 	if (argc > 1)
-		host = argv[1];
+		host = (SQLCHAR*)argv[1];
 	if (argc > 2)
-		user = argv[2];
+		user = (SQLCHAR*)argv[2];
 	if (argc > 3)
-		pass = argv[3];
+		pass = (SQLCHAR*)argv[3];
 	if (argc > 4 || *host == '-') {
 		fprintf(stderr, "Usage: %s [ host [ user [ password ] ] ]\n",
 			argv[0]);
@@ -106,7 +106,7 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
 
-	ret = SQLExecDirect(stmt,
+	ret = SQLExecDirect(stmt, (SQLCHAR*)
 			    "CREATE TABLE test (\n"
 			    "   i INT(11) DEFAULT '0' NOT NULL,\n"
 			    "   s VARCHAR,\n"
@@ -122,7 +122,8 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
 
-	ret = SQLPrepare(stmt, "INSERT INTO test VALUES (?, ?, ?, ?, ?)",
+	ret = SQLPrepare(stmt, (SQLCHAR*)
+			 "INSERT INTO test VALUES (?, ?, ?, ?, ?)",
 			 SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare");
 
@@ -162,7 +163,7 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
 
-	ret = SQLPrepare(stmt, "SELECT * FROM test", SQL_NTS);
+	ret = SQLPrepare(stmt, (SQLCHAR*)"SELECT * FROM test", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare");
 
 	ret = SQLBindCol(stmt, 1, SQL_C_SSHORT, &f1, sizeof(f1), NULL);
