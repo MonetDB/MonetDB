@@ -206,10 +206,13 @@ have changed since my proposal.
 	TSTSRCBASE	$MONET_SOURCE				base of test source tree
 	TSTBLDBASE	$MONET_BUILD				base of extracted test tree
 	TSTTRGBASE	$MONET_PREFIX				base for test output
-	MAPICLIENT	MapiClient --port=$MAPIPORT		mapi-client program call
-	SQLCLIENT	sql_client --port=$SQLPORT		sql-client program call
+	MAPICLIENT	MapiClient				mapi-client program	`)
+	SQLCLIENT	sql_client				sql-client program	`)
 	MAPIPORT	<random-port-number>			the MAPI port
 	SQLPORT		<random-port-number>			the SQL port
+
+    `) Alternative Mapi- & SQL- client programs need to accept (or ignore)
+       "--config=", "--host=", & "--port=" options.
 
     The following variables are currently still used legacy, but they will disappear soon...
 	MONET_MOD_PATH	$MONET_PREFIX/lib;MONET_PREFIX/lib/Monet

@@ -124,8 +124,8 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         print '''\
- --MAPICLIENT=<mapi-client program call>
- --SQLCLIENT=<sql-client program call>
+ --MAPICLIENT=<mapi-client program>
+ --SQLCLIENT=<sql-client program>
  --MAPIPORT=<port-no.>
  --SQLPORT=<port-no.>
          : overrule defaults:
@@ -688,6 +688,16 @@ MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModule
             #if s:
             #       env['TST_STATIC'] = "1"
             #       os.environ['TST_STATIC'] = env['TST_STATIC']
+        if not env['TST_BITS']:
+            Warn("Checking for Bits failed!")
+        if not env['TST_MODS']:
+            Warn("Checking for Modules failed!")
+        if not env['TST_BITS'] or not env['TST_MODS']:
+            STDERR.write(qOut)
+            STDERR.write("\n")
+            STDERR.write(qErr)
+            STDERR.write("\n")
+            STDERR.flush()
     else:
         Warn("No output from Mserver when checking for Bits & Modules!?")
         if qErr:
@@ -1062,7 +1072,7 @@ def RunTest(env, TST, BusyPorts) :
         TestErr.close()
 
         timeout = 0
-        mto = re.compile("^!Mtimeout: Timeout: ", re.MULTILINE)
+        mto = re.compile("^!(Mtimeout:)? Timeout:", re.MULTILINE)
         for l in fileinput.input(TestErr.name):
             if mto.match(l):
                 timeout = 1
@@ -1657,8 +1667,8 @@ def main(argv) :
         dft['setGDK_DBFARM'] = "'--dbfarm '+env['GDK_DBFARM']"
         dft['MAPIPORT']       = "str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
-        dft['SQLCLIENT']      = "'sql_client --port='+env['SQLPORT']"
-        dft['MAPICLIENT']     = "'MapiClient --port='+env['MAPIPORT']"
+        dft['SQLCLIENT']      = "'sql_client'"	# --port='+env['SQLPORT']"
+        dft['MAPICLIENT']     = "'MapiClient'"	# --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
     env = {}
@@ -1667,7 +1677,10 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         par['IGNORE']    = '-I"'+dftIGNORE+'"'
         par['CONTEXT']   = '-C1'
-        par['ACCURACY']  = 1
+        if os.name == "nt":
+            par['ACCURACY'] = 0
+        else:
+            par['ACCURACY'] = 1
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         par['TIMEOUT']   = 60
     if THISFILE == "Mapprove.py":
@@ -1933,11 +1946,11 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         exe['Mserver']     = CheckExec('Mserver')      , 'Mserver --config=%s --debug=%s %s %s --set monet_prompt=' % (env['MONET_CONF'], env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
-        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py --config=%s --set mapi_port=%s' % (env['MONET_CONF'], env['MAPIPORT'])
+        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py --config=%s --host=%s --port=%s' % (env['MONET_CONF'], HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
-        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s --config=%s' % (env['MAPICLIENT'], env['MONET_CONF'])
-        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , env['SQLCLIENT']
+        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s --config=%s --host=%s --port=%s' % (env['MAPICLIENT'], env['MONET_CONF'], HOST, env['MAPIPORT'])
+        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -2115,6 +2128,7 @@ def main(argv) :
 
  After that, re-run Mtest. 
 """ % os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html")
+            sys.exit(1)
         else:
             print """\
 
@@ -2122,6 +2136,7 @@ def main(argv) :
 
  If necessary, you can checkin your modifications, now. 
 """
+            sys.exit(0)
 
     if THISFILE == "Mapprove.py":
         print """\
