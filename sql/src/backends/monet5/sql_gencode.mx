@@ -921,10 +921,9 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:pushArg(r)@
 		@:SQLpostlude@
 	} break;
-	case st_alias:
-	case st_column_alias: {
+	case st_alias: 
 		s->nr = - backend_dumpstmt(sql,mb, s->op1.stval);
-	} break;
+		break;
 	case st_set: 
 	case st_list: {
 		for (n = s->op1.lval->h; n; n = n->next ){

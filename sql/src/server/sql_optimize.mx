@@ -247,8 +247,7 @@ stmt_push_down_head(stmt * join, stmt * select)
 		stmt_destroy(select);
 		stmt_destroy(join);
 		return stmt_relselect(l);
-	} else if (join->type == st_bat || join->type == st_ibat || 
-			join->type == st_column_alias){
+	} else if (join->type == st_bat || join->type == st_ibat){
 		return stmt_semijoin(join, select);
 	} else {
 		printf("= TODO: common/optimize.c: push down head %s\n", st_type2string(join->type));
@@ -980,7 +979,7 @@ stmt *optimize( mvc *c, stmt *s ){
 	case st_group: case st_group_ext: case st_derive: case st_unique: 
 	case st_limit: case st_order: case st_reorder: case st_ordered: 
 
-	case st_ibat: case st_alias: case st_column_alias: 
+	case st_ibat: case st_alias: 
 	case st_output: 
 	case st_append: case st_insert: case st_replace: 
 	case st_exception: case st_predicate:

@@ -1005,6 +1005,16 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0;
 	int l;
 
+	if (v == @1_nil) {
+		if (*len < 4){
+			if (*Buf) GDKfree(*Buf);
+			*len = 4;
+			*Buf = GDKmalloc(*len);
+		}
+		strcpy(*Buf, "nil");
+		return 3;
+	}
+		
 	if (v<0) v = -v;
 
 	buf[cur--] = 0;

@@ -1059,7 +1059,7 @@ void sqltypeinit()
 	}
 
 
-	/* convert string to temporal */
+	/* convert string to temporal and misc */
 	for(t=strings; t < numerical; t++){
 	  sql_type **u;
 	  for(u=dates; u < end; u++){

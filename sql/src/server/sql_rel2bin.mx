@@ -85,7 +85,6 @@ static stmt *tail_column(stmt * st)
 
 		return tail_column(st->op1.stval);
 
-	case st_column_alias:
 	case st_ibat:
 	case st_bat:
 		return st;
@@ -163,7 +162,6 @@ static stmt *head_column(stmt * st)
 	case st_reljoin:
 		return head_column(st->op1.lval->h->data);
 
-	case st_column_alias:
 	case st_ibat:
 	case st_bat:
 		return st;
@@ -230,9 +228,6 @@ static sql_column *basecolumn(stmt * st)
 	case st_bat:
 		return st->op1.cval;
 
-	case st_column_alias: /* required to avoid cyclic calls */
-		printf("= TODO: basecolumn(%d=%s) -> NULL !?\n",
-			st->type, st_type2string(st->type) );
 	/* intermediate bat (result of view etc) has no direct base column */
 	case st_ibat:
 		return NULL;
@@ -785,7 +780,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_group: case st_group_ext: case st_derive: case st_unique: 
 	case st_limit: case st_order: case st_reorder: case st_ordered: 
 
-	case st_alias: case st_column_alias: 
+	case st_alias: 
 	case st_ibat: 
 	case st_output: 
 	case st_append: case st_insert: case st_replace: 

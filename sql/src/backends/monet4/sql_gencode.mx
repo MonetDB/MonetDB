@@ -882,7 +882,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		break;
 	}
 	case st_alias: 
-	case st_column_alias: 
 		s->nr = - backend_dumpstmt_( s->op1.stval, nr, sql );
 		break;
 	case st_set: 

@@ -888,6 +888,19 @@ tokenize@1(mvc * c, int cur)
 @:scanner(_bs)@
 @:scanner(_s)@
 
+int valid_ident(const char *s)
+{
+	if (*s != '_' && !isalpha((int)*s))
+		return 0;
+	s++;
+	while(*s != '"'){
+		if (*s != '_' && !isalnum((int)*s))
+			return 0;
+		s++;
+	}
+	return 1;
+}
+
 int 
 sqllex(YYSTYPE * yylval, void *parm)
 {
@@ -925,7 +938,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 	    token == aTYPE || token == ALIAS || token == aMODULE )
 		yylval->sval = _strdup(yylval->sval);
 	if (token == STRING) {
-		if (*yylval -> sval == '"')
+		if (*yylval -> sval == '"' && valid_ident(yylval->sval+1))
 			token = IDENT;
 		yylval->sval = sql_strdup(yylval->sval);
 	}

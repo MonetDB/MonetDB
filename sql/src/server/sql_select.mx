@@ -267,7 +267,7 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 		     d && m; 
 		     d = d->next, m = m->next) {
 			stmt *st = m->data;
-			stmt *sc = stmt_ibat(stmt_alias(stmt_dup(st), d->data.sval), stmt_dup(sq));
+			stmt *sc = stmt_ibat(stmt_alias(stmt_dup(st), tname, d->data.sval), stmt_dup(sq));
 
 			table_add_column(tv, sc, tname, d->data.sval);
 		}
@@ -302,10 +302,14 @@ static tvar *sql_subquery_optname(mvc * sql, scope * scp,
 {
 	SelectNode *sn = (SelectNode*)query;
 	stmt *sq = scope_subquery(sql, NULL, query);
+	char *tname = NULL;
 
 	if (!sq)
 		return NULL;
-
+	
+	if (sn->name && sn->name->token == SQL_NAME) 
+		tname = sn->name->data.lval->h->data.sval;
+	
 	/* create a table from a single value subquery result */
 	if (sq->key && sq->nrcols == 0) {
 		list *l = create_stmt_list();
@@ -316,7 +320,10 @@ static tvar *sql_subquery_optname(mvc * sql, scope * scp,
 			char *cname = column_name(nsq);
 	        	stmt *temp = stmt_temp( sql_dup_subtype(tail_type(nsq) ));
                 	nsq = stmt_append(temp, nsq);
-			nsq = stmt_alias(nsq, cname);
+			if (tname)
+				nsq = stmt_alias(nsq, tname, cname);
+			else
+				nsq = stmt_alias(nsq, table_name(nsq), cname);
 			list_append(l, nsq);
 		}
 		stmt_destroy(sq);
@@ -1239,7 +1246,7 @@ static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int dist, dlist *cols,
 				}
 				ls = stmt_append(ls, stmt_dup(rc->s));
 				/* the alias keeps the column name around */
-				ls = stmt_alias(ls, lc->cname);
+				ls = stmt_alias(ls, NULL, lc->cname);
 				list_append(unions, ls );
 		}
 	/* TODO cols length 0 see natural join
@@ -1261,6 +1268,16 @@ static stmt *sql_union(mvc * sql, scope * scp, symbol * q)
 	dlist *corresponding = n->next->next->data.lval;
 	symbol *tab_ref2 = n->next->next->next->data.sym;
 	return sql_union_(sql, scp, tab_ref1, dist, corresponding, tab_ref2 );
+}
+
+static stmt *scope_union(mvc * sql, symbol *q) 
+{
+	scope *nscp = scope_open(NULL);
+	stmt *tq = sql_union(sql, nscp, q);
+	if (!tq) 
+		return NULL;
+	(void)scope_close(nscp);
+	return tq;
 }
 
 static stmt *sql_cross(mvc * sql, scope * scp, symbol * q)
@@ -1310,6 +1327,16 @@ static stmt *sql_cross(mvc * sql, scope * scp, symbol * q)
 		return stmt_list(rl);
 	}
 	return NULL;
+}
+
+static stmt *scope_cross(mvc * sql, symbol * q)
+{
+	scope *nscp = scope_open(NULL);
+	stmt *tq = sql_cross(sql, nscp, q);
+	if (!tq) 
+		return NULL;
+	(void)scope_close(nscp);
+	return tq;
 }
 
 static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
@@ -1425,7 +1452,7 @@ column_exp( mvc * sql, scope * scp, symbol * column_e, group * grp,
 		return NULL;
 	/* AS name */
 	if (s && l->h->next->data.sval) {
-		s = stmt_alias(s, l->h->next->data.sval);
+		s = stmt_alias(s, table_name(s), l->h->next->data.sval);
 		scope_add_alias(scp, stmt_dup(s), l->h->next->data.sval);
 	}
 	return s;
@@ -2648,28 +2675,28 @@ selects(mvc * sql, symbol * s)
 		sql->type = Q_TABLE;
 		break;
 	case SQL_CROSS:
-		ret = sql_cross(sql, NULL, s);
+		ret = scope_cross(sql, s);
 		/* add output stmt */
 		if (ret) 
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_UNION:
-		ret = sql_union(sql, NULL, s);
+		ret = scope_union(sql, s);
 		/* add output stmt */
 		if (ret) 
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_EXCEPT:
-		ret = sql_union(sql, NULL, s);
+		ret = scope_union(sql, s);
 		/* add output stmt */
 		if (ret) 
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_INTERSECT:
-		ret = sql_union(sql, NULL, s);
+		ret = scope_union(sql, s);
 		/* add output stmt */
 		if (ret) 
 			ret = stmt_output(ret);
