@@ -688,7 +688,7 @@ type_sql.insert(dates);
 type_sql@batloop(){ sql_aggr( "min", "min", $t, $t ); }
 type_sql@batloop(){ sql_aggr( "max", "max", $t, $t ); }
 # sum has special output types
-numerical@batloop(){ sql_aggr( "sum", "sum", $t, $h ); }
+numerical@batloop(){ sql_aggr( "sum", "sum_" + $h, $t, $h ); }
 # avg only outputs doubles
 numerical@batloop(){ sql_aggr( "avg", "avg", $t, "dbl" ); }
 sql_aggr( "count", "count", "", "int" ); 

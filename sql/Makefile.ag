@@ -2,5 +2,9 @@
 SUBDIRS = conf src 
 
 EXTRA_DIST = rules.mk
+EXTRA_DIST_DIR = NT
 
 EXTRA_HEADERS = sql_config.h
+
+TESTS = RunMtest
+TESTS_ENVIRONMENT = $(SHELL)

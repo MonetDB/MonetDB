@@ -15,16 +15,29 @@
 
 #include <string.h>
 
+#ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
+#endif
+#ifdef HAVE_ICONV_H
 #include <iconv.h>
+#endif
+#ifdef HAVE_LOCALE_H
 #include <locale.h>
+#endif
 
 #define SQL_DUMP 1
 #define MIL_DUMP 2
 
+#if !defined(HAVE_SETLOCALE) || \
+    !defined(HAVE_ICONV) || \
+    !defined(HAVE_NL_LANGINFO)
+#	define	NO_LOCALE
+#endif
+
 stream *ws = NULL, *rs = NULL;
 int is_chrsp = 0;
 
+#ifdef HAVE_ICONV
 iconv_t to_utf = NULL;
 iconv_t from_utf = NULL;
 
@@ -49,6 +62,9 @@ char *conv( char *org, iconv_t cd)
 		return _strdup(org);
 	}
 }
+#else
+#define conv( org, dummy) _strdup(org)
+#endif
 
 
 void usage( char *prog ){
@@ -778,6 +794,7 @@ main(int ac, char **av)
 		usage(prog);
 	}
 
+#ifndef NO_LOCALE 
 	if (setlocale(LC_CTYPE, "") == NULL){ /* why is this needed ? */
 		fprintf(stderr, "WARN: cannot set locale\n");
 	} else {
@@ -789,7 +806,7 @@ main(int ac, char **av)
 			from_utf = iconv_open(codeset, "UTF-8" );
 		}
 	}
-
+#endif
 
 	if (config){
 		setlen = mo_config_file(&set, setlen, config );
@@ -879,8 +896,10 @@ main(int ac, char **av)
 	ws->close(ws);
 	ws->destroy(ws);
 
+#ifndef NO_LOCALE 
 	if (to_utf) iconv_close(to_utf);
 	if (from_utf) iconv_close(from_utf);
+#endif
 
 	mo_free_options(set,setlen);
 	return 0;

@@ -1,5 +1,9 @@
 
-INCLUDES = ../include
+INCLUDES = \
+	../include \
+	$(MONET_INCS) \
+	-I$(top_builddir)/ 
+
 DEFS = @DEFS@
 
 lib_MonetODBCs = {
