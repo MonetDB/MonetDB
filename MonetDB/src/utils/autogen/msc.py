@@ -429,7 +429,7 @@ def msc_binary(fd, var, binmap, msc):
 
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
-	fd.write("%sdir = %s\n" % (binname, msc_translate_dir(bd)) ); 
+	fd.write("%sdir = %s\n" % (binname, msc_translate_dir(bd,msc)) ); 
     else:
 	fd.write("%sdir = $(bindir)\n" % (binname) ); 
 
@@ -501,7 +501,7 @@ def msc_bins(fd, var, binsmap, msc):
 
         if binsmap.has_key("DIR"):
             bd = binsmap["DIR"][0] # use first name given
-	    fd.write("%sdir = %s\n" % (bin, msc_translate_dir(bd)) ); 
+	    fd.write("%sdir = %s\n" % (bin, msc_translate_dir(bd,msc)) ); 
         else:
 	    fd.write("%sdir = $(bindir)\n" % (bin) ); 
 
