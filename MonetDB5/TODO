@@ -44,10 +44,6 @@ table. This can reduce the number of malloc/free calls significantly.
 Optimizer
 - the lifespan analyses should take care of nested blocks
 
-- The garbage control is too complicated and consumes too much power.
-  before/after calls are only focussed on the first destination argument.
-  the patch into the direction of symbol table lookup made it worse
-
 API issues
 - Mapi access to sql client should be set
 - Japi should be aligned with latest Mapi 
@@ -64,6 +60,11 @@ V4 issues
 Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
+
+20050228 The garbage control is too complicated and consumes too much power.
+  before/after calls are only focussed on the first destination argument.
+  the patch into the direction of symbol table lookup made it worse
+  Garbage collector redone.
 
 20041220 Split inpection module into mdb+inspect
 20041216 A function may carry an address, to enable JIT
