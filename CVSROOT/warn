@@ -13,15 +13,6 @@ MonetDB/conf/conf.bash
 sql/bootstrap
 sql/rules.mk
 sql/conf/conf.bash
-xml/bootstrap
-xml/rules.mk
-xml/conf/conf.bash
-gis/bootstrap
-gis/rules.mk
-gis/conf/conf.bash
-acoi/bootstrap
-acoi/rules.mk
-acoi/conf/conf.bash
 template/bootstrap
 template/rules.mk
 template/conf/conf.bash
@@ -31,7 +22,7 @@ EOF
 WARNING:
 
 The file "$dir/$f" should be kept identical in
-monet, sql, xml, gis, acoi, and template!
+MonetDB, monet5, sql, xml, acoi, gis, template, playpen, misq, times100, pruning!
 EOF
     fi
 done
