@@ -21,18 +21,18 @@ var t:= k100_unique1.select(10,10);
 t.count().print(); k100_unique1.count().print();
 [ 1 ]
 [ 100000 ]
-var u:= t.copy;
+var u:= t.copy();
 #cpu.print();
 
-var z:= t.reverse.join(k100_unique1);
+var z:= t.reverse().join(k100_unique1);
 z.print();
 #-----------------#
 # BAT:	  tmp_32  #
 # (int)	  (int)	  #
 #-----------------#
 [ 10,	  10	  ]
-#cpu.print;
-z:= k100_unique1.reverse.join(u);
+#cpu.print();
+z:= k100_unique1.reverse().join(u);
 #cpu.print();
 z.print();
 #-----------------#

@@ -4,16 +4,16 @@ debugmask(or(DBGMSK,131072));
 module(decimal);
 
 var d:=decimal("nil");
-d.print;
+d.print();
 d:=decimal(int(nil));
-d.print;
+d.print();
 d:=decimal("0");
-d.print;
+d.print();
 d:=decimal(0);
-d.print;
+d.print();
 d:=decimal("1");
-d.print;
+d.print();
 d:=decimal(1);
-d.print;
+d.print();
 
-quit;
+quit();

@@ -1,4 +1,4 @@
-dumpPers.print;
-dumpPers2.print;
-page_description.print;
-quit;
+dumpPers.print();
+dumpPers2.print();
+page_description.print();
+quit();

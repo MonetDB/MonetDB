@@ -23,7 +23,7 @@ VAR datafile := TSTTRGDIR + "/ascii_io3.load";
 
 VAR idxbat := load(namebat, sepbat, typebat, datafile, len);
 
-idxbat.find("tmpdocs").print;
+idxbat.find("tmpdocs").print();
 #-----------------------------------------#
 # h	tmp_31				  # name
 # void	str				  # type
@@ -48,7 +48,7 @@ idxbat.find("tmpdocs").print;
 [ 17@0,	  ""				  ]
 [ 18@0,	  "IA073-000474-B024-239"	  ]
 
-quit;
+quit();
 
 # 16:43:38 >  
 # 16:43:38 >  Done.

@@ -4,10 +4,10 @@ var MODULES:=new(str,str);
 MODULES.rename("MODULES");
 MODULES.set(TRUE);
 MODULES.persists(TRUE);
-MODULES.save;
-MODULES.commit;
+MODULES.save();
+MODULES.commit();
 
-view_modules.reverse.kunique.sort@batloop { MODULES.insert($h,"UNKNOWN"); }
+view_modules.reverse().kunique().sort()@batloop { MODULES.insert($h,"UNKNOWN"); }
 
 MODULES.replace("aggr",      "plain");
 MODULES.replace("aggrX3",    "plain");
@@ -82,17 +82,19 @@ MODULES.replace("TransTest", "odmgTest");
 #MODULES.replace("opengis",   "geometry");
 #MODULES.replace("tdcel",     "geometry");
 
-PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+PROC mmn() : BAT[oid,str] {
+	return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+}
 
 mmn()@batloop { MODULES.replace($t,"static"); }
 
 #MODULES.delete("CC_Test");
 #MODULES.delete("Test");
 
-MODULES.save;
-MODULES.commit;
+MODULES.save();
+MODULES.commit();
 
-MODULES.sort.print;
+MODULES.sort().print();
 
-commit;
+commit();
 

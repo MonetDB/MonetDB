@@ -86,14 +86,14 @@ Too many bugs.
 
 @= milsum
   PROC {csum}( BAT[oid,@1] b): BAT[oid,@1] {
-    IF ( b.ordered )
+    IF ( b.ordered() )
       RETURN {_csum}( b );
     ELSE
       RETURN {sum}( b );
   }
   ADDHELP("{csum}", "arjen", "Jul 18 2000",
           "Choose a different implementation if b is sorted on head.", 
-          mod);
+          mod());
 @mil
 @:milsum(sht)@
 @:milsum(int)@

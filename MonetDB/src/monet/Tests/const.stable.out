@@ -40,7 +40,7 @@ bb.seqbase(0@0);
 
 aaa := nil;
 
-quit;
+quit();
 
 # 18:26:25 >  
 # 18:26:25 >  Done.

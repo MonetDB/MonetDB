@@ -66,10 +66,34 @@ F_WARN = 1
 F_ERROR = 2
 
 FAILURES = {
-	F_SKIP  : "F_SKIP",
-	F_OK    : "F_OK",
-	F_WARN  : "F_WARN",
-	F_ERROR : "F_ERROR"
+    F_SKIP  : "F_SKIP",
+    F_OK    : "F_OK",
+    F_WARN  : "F_WARN",
+    F_ERROR : "F_ERROR"
+}
+
+CONDITIONALS = {
+    # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
+    # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    # MonetDB:
+    'CROSS_COMPILING'  : "@CROSS_COMPILING_FALSE@",
+    'DOCTOOLS'         : "@DOCTOOLS_FALSE@",
+    'HAVE_JAVA'        : "@HAVE_JAVA_FALSE@",
+    'HAVE_MONET5'      : "@HAVE_MONET5_FALSE@",
+    'HAVE_MONET'       : "@HAVE_MONET_FALSE@",
+    'HAVE_PERL'        : "@HAVE_PERL_FALSE@",
+    'HAVE_PERL_SWIG'   : "@HAVE_PERL_SWIG_FALSE@",
+    'HAVE_PHP'         : "@HAVE_PHP_FALSE@",
+    'HAVE_PYTHON'      : "@HAVE_PYTHON_FALSE@",
+    'HAVE_PYTHON_SWIG' : "@HAVE_PYTHON_SWIG_FALSE@",
+    'HAVE_SWIG'        : "@HAVE_SWIG_FALSE@",
+    'LINK_STATIC'      : "@LINK_STATIC_FALSE@",
+    'NOT_WIN32'        : "@NOT_WIN32_FALSE@",
+    'PROFILING'        : "@PROFILING_FALSE@",
+    # SQL:
+    'MONET4'           : "@MONET4_FALSE@",
+    'MONET5'           : "@MONET5_FALSE@",
+    'NATIVE_WIN32'     : "@NATIVE_WIN32_FALSE@",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -843,10 +867,14 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         TSTDB = ""
 
     if not testlist:
-        for tst in fileinput.input(os.path.join(TSTSRCDIR,"All")):
-            tst = tst.strip()
-            if tst  and  tst[0] != "#":
-                testlist.append(tst)
+        for tc in fileinput.input(os.path.join(TSTSRCDIR,"All")):
+            tc = tc.strip()
+            if tc  and  tc[0] != "#":
+                if tc.find('?') > -1:
+                    cond,tst = tc.split('?')
+                else:
+                    cond,tst = None,tc
+                testlist.append((tst,cond))
     if not testlist:
         Warn("No tests found in '"+TSTSRCDIR+"`; skipping directory!")
         return td
@@ -899,9 +927,9 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             os.makedirs(TSTTRGDIR)
 
         body = []
-        for TST in testlist:
+        for TST,COND in testlist:
             os.environ['TST'] = TST
-            tt, FtOut, FtErr, bodyline = RunTest(env, TST, BusyPorts)
+            tt, FtOut, FtErr, bodyline = RunTest(env, TST, BusyPorts, COND)
             if tt:
                 t = "%7.3f" % tt
             else:
@@ -929,7 +957,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             Warn("Output directory '"+TSTTRGDIR+"` missing; skipping directory!")
             return td
 
-        for TST in testlist:
+        for TST,COND in testlist:
             td = td + ApproveOutput(env, TST)
 
     return td, elem
@@ -1002,7 +1030,7 @@ def ApproveOutput (env, TST) :
             else:
                 print "No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM)
             os.remove(patch+".0")
-            
+
             thefile = os.path.split(stableOUTPUT)[1]
             dir,file = os.path.split(stableOUT)
             test = re.compile('^%s.*$' % re.escape(file))
@@ -1052,7 +1080,7 @@ def GetBitsAndModsAndStatic(env) :
             {
                 # print a list of all modules found
                 # "Modules: mod1, mod2, ..."
-                var MODs := kunion(bat("monet_mod_nme").reverse().mark(oid(nil)),view_modules.reverse.mark(oid(nil))).kunique;
+                var MODs := kunion(bat("monet_mod_nme").reverse().mark(oid(nil)),view_modules.reverse().mark(oid(nil))).kunique();
                 printf("\\nModules: ");
                 var x := "";
                 MODs@batloop{
@@ -1094,7 +1122,7 @@ def GetBitsAndModsAndStatic(env) :
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
         if not env['TST_MODS']:
-    	    if env['VERSION'] >= 49900:
+            if env['VERSION'] >= 49900:
                 Warn("Monet5: Check, whether required modules do exist, is not possible, yet!")
                 env['TST_MODS'].append("")
             else:
@@ -1240,7 +1268,7 @@ def StableOutErr(env,par,TST,OS,RELEASE) :
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,OS,RELEASE) #
 
-def RunTest(env, TST, BusyPorts) :
+def RunTest(env, TST, BusyPorts, COND) :
     Failed = -1
     FailedOut = -1
     FailedErr = -1
@@ -1328,7 +1356,11 @@ def RunTest(env, TST, BusyPorts) :
     #[ "tests/BugReports/no.147", "tests/by_Peter/recursion" ]
     ReqMshdn = ["MAPI"]
 
-    if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
+    if   COND and not CONDITIONALS.has_key(COND):
+        elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
+    elif COND and not CONDITIONALS[COND]:
+        elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
+    elif os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
@@ -1603,8 +1635,8 @@ def RunTest(env, TST, BusyPorts) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-	    if timeout: # test run timed out, expect major differences! 
-		ACCURACYout = 0
+            if timeout: # test run timed out, expect major differences!
+                ACCURACYout = 0
             while timedout and ACCURACYout >= 0:
                 if ACCURACYout == 0:
                     MDIFF = MDIFF0
@@ -1627,8 +1659,8 @@ def RunTest(env, TST, BusyPorts) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-	    if timeout: # test run timed out, expect major differences! 
-		ACCURACYerr = 0
+            if timeout: # test run timed out, expect major differences!
+                ACCURACYerr = 0
             while timedout and ACCURACYerr >= 0:
                 if ACCURACYerr == 0:
                     MDIFF = MDIFF0
@@ -2111,7 +2143,7 @@ def Check(command, input) :
     test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
                        r"^!WARNING: monet_checkbat: "                                        "|"
                        r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
-                       r"^!WARNING: BBPdir: initializing BBP.",                               
+                       r"^!WARNING: BBPdir: initializing BBP.",
                        re.MULTILINE)
     noErr = []
     for l in qOut+qErr:
@@ -2273,7 +2305,7 @@ def MonetDBVersion():
         (x,y,z) = res.split('.',2)
         return ((int(x)*100) + int(y)) * 100 + int(z);
     except:
-	pass
+        pass
     return 0
 
 _MonetConfigDict = {
@@ -2634,7 +2666,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','MAPI_MIL','SQL_SERVER','SQL_SERVER_MIL'] 
+        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','MAPI_MIL','SQL_SERVER','SQL_SERVER_MIL']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -2863,10 +2895,10 @@ def main(argv) :
         Failure = [0,0,0,0]
         for TSTDIR,TST,tt,FtOut,FtErr in TIMES:
             fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+
-			"\t"+FAILURES[FtOut]+
-			"\t"+FAILURES[FtErr]+"\n")
+                        "\t"+FAILURES[FtOut]+
+                        "\t"+FAILURES[FtErr]+"\n")
             if TST != '':
-                Failure[max(FtOut,FtErr)] += 1 
+                Failure[max(FtOut,FtErr)] += 1
         fl.write(":\t%7.3f\n" % t_)
         fl.close()
 
@@ -2895,25 +2927,25 @@ def main(argv) :
         if Failed:
             print """\
 
- !ERROR:  Testing FAILED %s ! 
+ !ERROR:  Testing FAILED %s !
 
 %s
- First, check the testing results in  %s  ! 
+ First, check the testing results in  %s  !
 
- Then, fix the problems by: 
-  - fixing sources and test scripts 
-  - fixing stable output by hand 
-  - approving test output by Mapprove.py (cf. Mapprove.py -?) 
+ Then, fix the problems by:
+  - fixing sources and test scripts
+  - fixing stable output by hand
+  - approving test output by Mapprove.py (cf. Mapprove.py -?)
 
- After that, re-run Mtest. 
+ After that, re-run Mtest.
 """ % (how, what, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
             sys.exit(1)
         else:
             print """\
 
- No differences encountered during testing. 
+ No differences encountered during testing.
 
- If necessary, you can checkin your modifications, now. 
+ If necessary, you can checkin your modifications, now.
 """
             sys.exit(0)
 

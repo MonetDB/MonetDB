@@ -27,31 +27,31 @@ b.insert(-5,-5);
 b.insert( 6, n);
 b.insert(-7,-7);
 
-kintersect(a,b).print;
+kintersect(a,b).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
 #-----------------#
 [ 6,	  nil	  ]
-kintersect(b,a).print;
+kintersect(b,a).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
 #-----------------#
 [ 6,	  nil	  ]
 
-sintersect(a,b).print;
+sintersect(a,b).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
 #-----------------#
-sintersect(b,a).print;
+sintersect(b,a).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
 #-----------------#
 
-kdiff(a,b).print;
+kdiff(a,b).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
@@ -62,7 +62,7 @@ kdiff(a,b).print;
 [ nil,	  nil	  ]
 [ 5,	  5	  ]
 [ 7,	  7	  ]
-kdiff(b,a).print;
+kdiff(b,a).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
@@ -74,7 +74,7 @@ kdiff(b,a).print;
 [ -5,	  -5	  ]
 [ -7,	  -7	  ]
 
-sdiff(a,b).print;
+sdiff(a,b).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
@@ -86,7 +86,7 @@ sdiff(a,b).print;
 [ 5,	  5	  ]
 [ 6,	  nil	  ]
 [ 7,	  7	  ]
-sdiff(b,a).print;
+sdiff(b,a).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type

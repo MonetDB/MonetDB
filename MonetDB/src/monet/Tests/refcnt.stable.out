@@ -25,8 +25,8 @@ a.rename("a");
 a.persists(true);
 !ERROR: BATmode: BAT type implies that a[int,BAT] cannot be made persistent.
 a.insert(1,b);
-commit;
-quit;   
+commit();
+quit();   
  restart gives correct refcnt b from 0 to 1 
  since b is part of a and persistent expected refcnt should be 2 
 
@@ -42,9 +42,9 @@ ls;
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-------------------------------------------------------------------------------------------------#
 [ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-bat("a").print;
+bat("a").print();
 !ERROR: print(param 1): invalid BAT.
-bat("b").print;
+bat("b").print();
 #-----------------#
 # BAT:	  b	  #
 # (int)	  (int)	  #
@@ -53,8 +53,8 @@ bat("b").print;
 bat("a").persists(false); 
 !ERROR: persists(param 1): invalid BAT.
 bat("b").persists(false); 
-commit;
-quit;   
+commit();
+quit();
 
 # 15:28:47 >  
 # 15:28:47 >  Done.

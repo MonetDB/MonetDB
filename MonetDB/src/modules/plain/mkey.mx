@@ -159,7 +159,7 @@ could be replaced by partitioned hash-join with radix-cluster/decluster.
 # Stefan Manegold:
 # Temporary HACK: don't do any sorting
 proc ds_sort(BAT[any::1, any::2] b, bit x) : BAT[any::1, any::2] {
-  return b.sort;
+  return b.sort();
 }
 
 proc rotate_xor_hash(int h, int nbits, any v) : int {
@@ -175,8 +175,8 @@ proc "[:rotate_xor_hash=]"(BAT[any::1,int] h, int nbits, BAT[any::1,any] b) : BA
 }
 
 proc ds_hash(BAT[bat,any] keys) : BAT[oid,int] {
-  var nbits := 1 + (31 / keys.count);
-  var fst := keys.reverse.fetch(0);
+  var nbits := 1 + (31 / keys.count());
+  var fst := keys.reverse().fetch(0);
   var res := [hash](fst).access(BAT_WRITE);
   var filter := [isnil](fst).access(BAT_WRITE);
 
@@ -221,32 +221,32 @@ proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
     # The sort is added by Peter Boncz, so that for large bats the merge-join algorithms 
     # can be used (thus avoiding random access pattern of the hash-join)
 
-    if (keys.count <= 1) {
-      l := keys.reverse.fetch(0).ds_sort(false);
+    if (keys.count() <= 1) {
+      l := keys.reverse().fetch(0).ds_sort(false);
       r := keys.fetch(0).ds_sort(false);
     } else {
       l := ds_hash(keys).ds_sort(true);
-      r := ds_hash(keys.reverse).ds_sort(true);
+      r := ds_hash(keys.reverse()).ds_sort(true);
     }
 
     # create the link
-    res := join(l, r.reverse);
+    res := join(l, r.reverse());
   }
 
   # make sure the result is sorted conveniently
-  res := res.reverse.ds_sort(true).reverse;
+  res := res.reverse().ds_sort(true).reverse();
 
   # multi-attribute key joins must be filtered on false hits
-  if (keys.count > 1) {
-    var cnt := res.count;
+  if (keys.count() > 1) {
+    var cnt := res.count();
     var lo := 0;
     var hi := JOIN_BULK_SIZE;
-    var res_l := res.mark(0@0).reverse;
-    var res_r := res.reverse.mark(0@0).reverse;
+    var res_l := res.mark(0@0).reverse();
+    var res_r := res.reverse().mark(0@0).reverse();
     var sel := bat(void, bit, cnt);
 
     while(lo < cnt) {
-      var h := keys.reverse.fetch(0);
+      var h := keys.reverse().fetch(0);
       var t := keys.fetch(0);
       var p_l := res_l.slice(lo, hi - 1);
       var p_r := res_r.slice(lo, hi - 1);
@@ -255,13 +255,13 @@ proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
       keys@batloop() if (str($h) != str(h)) {
         [:and=](p_sel, ds_eq(p_l, $h, p_r, $t));
       }
-      sel.insert(p_sel.reverse.mark(nil).reverse);
+      sel.insert(p_sel.reverse().mark(nil).reverse());
       lo := hi; hi :+= JOIN_BULK_SIZE;
     }
 
     sel := sel.seqbase(0@0).uselect(true);
-    if (sel.count != res.count) {
-      res := res.fetch([int](sel.reverse).reverse);
+    if (sel.count() != res.count()) {
+      res := res.fetch([int](sel.reverse()).reverse());
     }
   }
   return res;

@@ -422,7 +422,7 @@ test_radix();
 [ nil,	  62	  ]
 [ nil,	  63	  ]
 [ nil,	  64	  ]
-quit;
+quit();
 
 # 12:59:51 >  
 # 12:59:51 >  Done.

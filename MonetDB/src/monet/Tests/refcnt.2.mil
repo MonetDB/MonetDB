@@ -1,8 +1,8 @@
 ls;
-bat("a").print;
-bat("b").print;
+bat("a").print();
+bat("b").print();
 # tidy up
 bat("a").persists(false); 
 bat("b").persists(false); 
-commit;
-quit;   
+commit();
+quit();

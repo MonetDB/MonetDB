@@ -29,8 +29,8 @@ v1.insert(nil,"a");
 v1.insert(nil,"");
 v1.print();
 
-var v2 := v1.reverse.kunique.reverse;
-var v3 := v2.reverse.sort.reverse;
+var v2 := v1.reverse().kunique().reverse();
+var v3 := v2.reverse().sort().reverse();
 v3.print();
 
 var v4 := new(void,str);
@@ -46,10 +46,10 @@ v4.print();
 
 var v5 := v4.reverse().kunique().reverse();
 var v6 := v5.reverse().sort().reverse();
-v6.print;
+v6.print();
 
 var v7 := v4.reverse().mark(0@0).reverse();
-v7.print;
+v7.print();
 
 var v8 := v7.reverse().kunique().reverse();
 var v9 := v8.reverse().sort().reverse();

@@ -12,7 +12,7 @@ stdout of test 'tcpip1` in directory 'src/modules/plain` itself:
 var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);
-x.sort.print;
+x.sort().print();
 #-----------------#
 # BAT:	  tmp_38  #
 # (void)  (oid)	  #
@@ -22,7 +22,7 @@ x.sort.print;
 c.export(x, "x");
  
 var y := import("x", true);
-y.print;
+y.print();
 #-----------------#
 # BAT:	  tmp_38  #
 # (oid)	  (oid)	  #
@@ -30,7 +30,7 @@ y.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  0@0	  ]
 
-quit;
+quit();
 
 # 16:46:06 >  
 # 16:46:06 >  Done.

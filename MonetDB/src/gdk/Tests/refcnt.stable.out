@@ -8,10 +8,10 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-PROC tmp() : void := {
+PROC tmp() : void {
         var sts := view_bbp_status;
         var nme := view_bbp_name.access(BAT_WRITE).col_name("name");
-        var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+        var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
         nme.replace(rev).table(view_bbp_heat, sts.col_name("status"),
                 view_bbp_kind, view_bbp_refcnt);
 }
@@ -36,7 +36,7 @@ PROC createBAT(str name) : bat[int,int] {
 	RETURN res;
 }
 
-tmp;
+tmp();
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| refcnt  #
 #---------------------------------------------------------#
@@ -75,16 +75,16 @@ top.rename("top");
 
 addBAT(top,"one");
 addBAT(top,"two");
-tmp;
+tmp();
 
 delBAT(top,"one");
-tmp;
+tmp();
 
 VAR i := new(oid,str);
 i.insert(oid(10),"ten");
 i.insert(oid(20),"twenty");
 VAR res := [createBAT](i);
-tmp;
+tmp();
 
 top := nil;
 res := nil;
@@ -197,7 +197,7 @@ res := nil;
 #  at the delete from bat("top")
 #- bat("ten") and bat("twenty") still exist, due to creation during multiplex
 #  operation (?)
-tmp;
+tmp();
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| refcnt  #
 #---------------------------------------------------------#
@@ -228,7 +228,7 @@ tmp;
 [ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
-quit;
+quit();
 
 # 18:20:33 >  
 # 18:20:33 >  Done.

@@ -23,7 +23,7 @@ a.insert(nil,5);
 a.insert(nil,8);
 a.insert(nil,3);
 a.seqbase(oid(10));
-a.print;
+a.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (int)	  #
@@ -40,7 +40,7 @@ a.print;
 [ 19@0,	  3	  ]
 
 var b := a.copy().access(BAT_WRITE).delete(oid(15));
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (int)	  #
@@ -57,7 +57,7 @@ b.print;
 
 print("simple slice");
 [ "simple slice" ]
-b.slice(2,5).print;
+b.slice(2,5).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (int)	  #
@@ -66,7 +66,7 @@ b.slice(2,5).print;
 [ 13@0,	  2	  ]
 [ 14@0,	  8	  ]
 [ 19@0,	  3	  ]
-a.slice(2,5).print;
+a.slice(2,5).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (int)	  #
@@ -78,18 +78,18 @@ a.slice(2,5).print;
 
 print("negative start slice");
 [ "negative start slice" ]
-b.slice(-1,5).print;
+b.slice(-1,5).print();
 !ERROR: CMDslice: start position of slice should >= 0
 !ERROR: CMDslice: operation failed.
 !ERROR: print(param 1): evaluation error.
-a.slice(-1,5).print;
+a.slice(-1,5).print();
 !ERROR: CMDslice: start position of slice should >= 0
 !ERROR: CMDslice: operation failed.
 !ERROR: print(param 1): evaluation error.
 
 print("over end slice");
 [ "over end slice" ]
-b.slice(5,10).print;
+b.slice(5,10).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (int)	  #
@@ -98,7 +98,7 @@ b.slice(5,10).print;
 [ 16@0,	  4	  ]
 [ 17@0,	  5	  ]
 [ 18@0,	  8	  ]
-a.slice(5,9).print;
+a.slice(5,9).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (int)	  #
@@ -109,7 +109,7 @@ a.slice(5,9).print;
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
 
-quit;
+quit();
 
 # 17:06:20 >  
 # 17:06:20 >  Done.

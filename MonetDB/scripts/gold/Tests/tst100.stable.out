@@ -43,7 +43,7 @@ t.persists(true);
 t.rename("car_pos");
 t.count().print();
 [ 50000 ]
-printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); t.sample(2).print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  tmp_31	  #
@@ -57,7 +57,7 @@ t.persists(true);
 t.rename("car_neg");
 t.count().print();
 [ 50000 ]
-printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); t.sample(2).print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  tmp_33	  #

@@ -14,4 +14,4 @@ printf("X%-3.2sX\n", "A");
 printf("X%-3.2sX\n", "AB");
 printf("X%-3.2sX\n", "ABC");
 printf("X%-3.2sX\n", "ABCD");
-quit;
+quit();

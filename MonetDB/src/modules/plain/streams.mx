@@ -120,9 +120,9 @@ data files.
 
 	# backward compatibility with old io module (alas: seek has gone..)
 	const EOF := -1;
-	proc fputs(str buf, Stream s):void		stream_write(s, buf);
-	proc fclose(Stream s):void 			stream_close(s);
-	proc fflush(Stream s):void 			stream_flush(s);
+	proc fputs(str buf, Stream s):void		{stream_write(s, buf);}
+	proc fclose(Stream s):void 			{stream_close(s);}
+	proc fflush(Stream s):void 			{stream_flush(s);}
 	proc fopen(str filename, str mode) : Stream {
 		if (mode.startsWith("r")) {
 			return open_rastream(filename);

@@ -18,7 +18,7 @@ test_blob();
 [ (12: 48 65 6C 6C 6F 20 57 6F 72 6C 64 00) ]
 [ "Hello World" ]
 
-quit;
+quit();
 
 # 17:05:13 >  
 # 17:05:13 >  Done.

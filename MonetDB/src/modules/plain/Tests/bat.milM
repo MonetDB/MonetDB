@@ -8,23 +8,23 @@ testje.insert(2,"twee");
 testje.insert(3,"drie");
 
 printf("* Example BAT\n");
-testje.print;
+testje.print();
 
 var deltest := new(int,str);
 deltest.insert(1,"one");
 
 printf("\n* deleteBuns: Delete the exact BUN\n");
-deltest.print;
+deltest.print();
 testje.deleteBuns(deltest);
-testje.print;
+testje.print();
 
 deltest := new(int,int);
 deltest.insert(2,2);
 deltest.insert(3,3);
 
 printf("\n* delete: Delete the BUNs with corresponding head values\n");
-deltest.print;
+deltest.print();
 testje.delete(deltest);
-testje.print;
+testje.print();
 
-quit;
+quit();

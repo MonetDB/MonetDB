@@ -20,9 +20,9 @@ printf("> var _MMnilcast_5 := new(oid,oid).import(ttd+\"/BATkey.x.data\").rename
 printf("> var indexList1 := new(oid,oid).import(ttd+\"/BATkey.y.data\").rename(\"indexList1\"); \n");
 > var indexList1 := new(oid,oid).import(ttd+"/BATkey.y.data").rename("indexList1"); 
 	  var indexList1 := new(oid,oid).import(ttd+"/BATkey.y.data").rename("indexList1");
-printf("> _MMnilcast_5.print; \n");
-> _MMnilcast_5.print; 
-	  _MMnilcast_5.print;
+printf("> _MMnilcast_5.print(); \n");
+> _MMnilcast_5.print(); 
+	  _MMnilcast_5.print();
 #-------------------------#
 # BAT:	  _MMnilcast_5	  #
 # (void)  (oid)		  #
@@ -30,9 +30,9 @@ printf("> _MMnilcast_5.print; \n");
 [ 0@0,	  10@0		  ]
 [ 1@0,	  11@0		  ]
 [ 2@0,	  12@0		  ]
-printf("> indexList1.print; \n");
-> indexList1.print; 
-	  indexList1.print;
+printf("> indexList1.print(); \n");
+> indexList1.print(); 
+	  indexList1.print();
 #-------------------------#
 # BAT:	  indexList1	  #
 # (oid)	  (oid)		  #
@@ -44,9 +44,9 @@ printf("> indexList1.print; \n");
 printf("> var _MMjoin_13 := join(_MMnilcast_5,indexList1).rename(\"_MMjoin_13\"); \n");
 > var _MMjoin_13 := join(_MMnilcast_5,indexList1).rename("_MMjoin_13"); 
 	  var _MMjoin_13 := join(_MMnilcast_5,indexList1).rename("_MMjoin_13");
-printf("> _MMjoin_13.print; \n");
-> _MMjoin_13.print; 
-	  _MMjoin_13.print;
+printf("> _MMjoin_13.print(); \n");
+> _MMjoin_13.print(); 
+	  _MMjoin_13.print();
 #-------------------------#
 # BAT:	  _MMjoin_13	  #
 # (oid)	  (void)	  #
@@ -58,9 +58,9 @@ printf("> _MMjoin_13.print; \n");
 printf("> var _MMcastnil_14 := _MMjoin_13.mark(0@0).rename(\"_MMcastnil_14\"); \n");
 > var _MMcastnil_14 := _MMjoin_13.mark(0@0).rename("_MMcastnil_14"); 
 	  var _MMcastnil_14 := _MMjoin_13.mark(0@0).rename("_MMcastnil_14");
-printf("> _MMcastnil_14.print; \n");
-> _MMcastnil_14.print; 
-	  _MMcastnil_14.print;
+printf("> _MMcastnil_14.print(); \n");
+> _MMcastnil_14.print(); 
+	  _MMcastnil_14.print();
 #-------------------------#
 # BAT:	  _MMcastnil_14	  #
 # (oid)	  (void)	  #
@@ -69,14 +69,14 @@ printf("> _MMcastnil_14.print; \n");
 [ 0@0,	  1@0		  ]
 [ 1@0,	  2@0		  ]
 [ 2@0,	  3@0		  ]
-printf("> var _MMnilcast_15 := _MMjoin_13.reverse.mark(0@0).reverse.rename(\"_MMnilcast_15\"); \n");
-> var _MMnilcast_15 := _MMjoin_13.reverse.mark(0@0).reverse.rename("_MMnilcast_15"); 
-	  var _MMnilcast_15 := _MMjoin_13.reverse.mark(0@0).reverse.rename("_MMnilcast_15");
+printf("> var _MMnilcast_15 := _MMjoin_13.reverse().mark(0@0).reverse().rename(\"_MMnilcast_15\"); \n");
+> var _MMnilcast_15 := _MMjoin_13.reverse().mark(0@0).reverse().rename("_MMnilcast_15"); 
+	  var _MMnilcast_15 := _MMjoin_13.reverse().mark(0@0).reverse().rename("_MMnilcast_15");
 printf("# Here, _MMnilcast_15 gets incorrectly marked haligned with it parent _MMjoin_13.\n");
 # Here, _MMnilcast_15 gets incorrectly marked haligned with it parent _MMjoin_13.
-printf("> _MMnilcast_15.print; \n");
-> _MMnilcast_15.print; 
-	  _MMnilcast_15.print;
+printf("> _MMnilcast_15.print(); \n");
+> _MMnilcast_15.print(); 
+	  _MMnilcast_15.print();
 #-------------------------#
 # BAT:	  _MMnilcast_15	  #
 # (void)  (void)	  #
@@ -88,9 +88,9 @@ printf("> _MMnilcast_15.print; \n");
 printf("> orderList1 := new(oid,int).import(ttd+\"/BATkey.z.data\").rename(\"orderList1\"); \n");
 > orderList1 := new(oid,int).import(ttd+"/BATkey.z.data").rename("orderList1"); 
 	  var orderList1 := new(oid,int).import(ttd+"/BATkey.z.data").rename("orderList1");
-printf("> orderList1.print; \n");
-> orderList1.print; 
-	  orderList1.print;
+printf("> orderList1.print(); \n");
+> orderList1.print(); 
+	  orderList1.print();
 #-------------------------#
 # BAT:	  orderList1	  #
 # (oid)	  (int)		  #
@@ -104,9 +104,9 @@ printf("> var _MMjoin_44 := join(_MMnilcast_15,orderList1).rename(\"_MMjoin_44\"
 	  var _MMjoin_44 := join(_MMnilcast_15,orderList1).rename("_MMjoin_44");
 printf("# Due to the erroneous halign setting, BATkey(_MMnilcast_15,TRUE) is wrongly propagated to _MMjoin_13.\n");
 # Due to the erroneous halign setting, BATkey(_MMnilcast_15,TRUE) is wrongly propagated to _MMjoin_13.
-printf("> _MMjoin_44.print;  \n");
-> _MMjoin_44.print;  
-	  _MMjoin_44.print; 
+printf("> _MMjoin_44.print();  \n");
+> _MMjoin_44.print();  
+	  _MMjoin_44.print(); 
 #-------------------------#
 # BAT:	  _MMjoin_44	  #
 # (void)  (int)		  #
@@ -115,9 +115,9 @@ printf("> _MMjoin_44.print;  \n");
 [ 1@0,	  2		  ]
 [ 2@0,	  3		  ]
 [ 3@0,	  4		  ]
-printf("> _MMcastnil_14.print; \n");
-> _MMcastnil_14.print; 
-	  _MMcastnil_14.print;
+printf("> _MMcastnil_14.print(); \n");
+> _MMcastnil_14.print(); 
+	  _MMcastnil_14.print();
 #-------------------------#
 # BAT:	  _MMcastnil_14	  #
 # (oid)	  (void)	  #
@@ -135,9 +135,9 @@ printf("# (correctly) propagates the (wrong) key property from _MMjoin_13 to _MM
 # (correctly) propagates the (wrong) key property from _MMjoin_13 to _MMcastnil_14.
 printf("# Finally, BATpropcheck (correctly) detects that _MMcastnil_14 is \"incorrectly marked keyed\".\n");
 # Finally, BATpropcheck (correctly) detects that _MMcastnil_14 is "incorrectly marked keyed".
-printf("> _MMreverse_49.print;  \n");
-> _MMreverse_49.print;  
-	  _MMreverse_49.print; 
+printf("> _MMreverse_49.print();  \n");
+> _MMreverse_49.print();  
+	  _MMreverse_49.print(); 
 #-------------------------#
 # BAT:	  _MMreverse_49	  #
 # (void)  (oid)		  #
@@ -147,7 +147,7 @@ printf("> _MMreverse_49.print;  \n");
 [ 2@0,	  1@0		  ]
 [ 3@0,	  2@0		  ]
 	  
-quit;
+quit();
 
 # 17:04:45 >  
 # 17:04:45 >  Done.

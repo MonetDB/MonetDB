@@ -186,7 +186,7 @@ query BATs.
 TODO: 
   * loading module in both server and client does not work
       it can hang in BBPtrim if you access 
-        ch_cache.info.find("batCacheid").print;
+        ch_cache.info().find("batCacheid").print;
       in client and server and load module in both
   * use of local_itoa implementation causes memory leak in info
 \end{verbatim}
@@ -246,13 +246,13 @@ build the cluster hash from the enum.
     print( bat("ch_namecache"), bat("ch_refcnt"), bat("ch_cache") );
   }
   ADDHELP("CHdir", "arjen", "Jul 18 2000",
-	  "List the clusterhash dictionary.", mod);
+	  "List the clusterhash dictionary.", mod());
 
   PROC select( clusterhash ch, any::1 v ): BAT[oid,any::1] {
     RETURN ch.uselect( v ).project(v);
   }
   ADDHELP("select", "arjen", "Jun 16 2000",
-	  "Select using a clusterhash uselect plus a cast.", mod);
+	  "Select using a clusterhash uselect plus a cast.", mod());
 
 @{
 @* Implementation Code
@@ -1061,7 +1061,7 @@ PROC test_salgebra() : void {
 	printf( "Created clusterhash %s\n", str(ch) );
 
 	var ch_2 := clusterhash( "ti" );
-	ch_2.info.print();
+	ch_2.info().print();
 	ch_2 := nil;
 
 	var tj := new( oid, str );
@@ -1072,8 +1072,8 @@ PROC test_salgebra() : void {
 	#ch2 := clusterhash( tj.mark(nil).reverse() );
 	#ch2.rename("tjrev");
 
-	ch.info.print();
-	#ch2.info.print();
+	ch.info().print();
+	#ch2.info().print();
 
 	CHdir();
 

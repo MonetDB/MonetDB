@@ -23,7 +23,7 @@ test_alarm();
 [ "Fri Mar 12 10:02:23 2004\n" ]
 #~EndVariableOutput~#
 [ "alarm went off" ]
-quit;
+quit();
 
 # 10:02:38 >  
 # 10:02:38 >  Done.

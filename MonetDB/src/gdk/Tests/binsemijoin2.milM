@@ -10,10 +10,10 @@ while (i<12) { left.insert(nil,oid(i)); i:+=1; }
 i:=0;
 while (i<200) { right.insert(oid(i*2),nil); i:+=1; }
 
-left.print;
-right.print;
+left.print();
+right.print();
 
-right.order;
-right.print;
+right.order();
+right.print();
 
-left.semijoin(right).print;
+left.semijoin(right).print();

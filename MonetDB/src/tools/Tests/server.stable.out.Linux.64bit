@@ -64,7 +64,7 @@ Start of MIL prelude.
 [ "environment() : BAT[str,str]"							  ]
 [ "exit() : void"									  ]
 [ "head(BAT[any,any]) : str"								  ]
-[ "help() : <predefinition>"								  ]
+[ "help() : void"									  ]
 [ "help(str) : void"									  ]
 [ "help_sig(oid) : void"								  ]
 [ "help_tpe(int) : str"									  ]
@@ -892,7 +892,7 @@ procs();
 [ "environment() : BAT[str,str]"							  ]
 [ "exit() : void"									  ]
 [ "head(BAT[any,any]) : str"								  ]
-[ "help() : <predefinition>"								  ]
+[ "help() : void"									  ]
 [ "help(str) : void"									  ]
 [ "help_sig(oid) : void"								  ]
 [ "help_tpe(int) : str"									  ]
@@ -1204,7 +1204,7 @@ view_gdk_bbp().print();
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
-view_var_name.reverse.join(view_var_constant()).print();
+view_var_name().reverse().join(view_var_constant()).print();
 #-----------------------------------------#
 # BAT:			  tmp_32	  #
 # (str)			  (str)		  #
@@ -1268,7 +1268,7 @@ view_var_name.reverse.join(view_var_constant()).print();
 [ "monet_atomtbl",	  "constant"	  ]
 [ "monet_acctbl",	  "constant"	  ]
 [ "monet_fcntbl",	  "constant"	  ]
-view_var_name.reverse.join(view_var_kind()).print();
+view_var_name().reverse().join(view_var_kind()).print();
 #-----------------------------------------#
 # BAT:			  tmp_29	  #
 # (str)			  (str)		  #
@@ -1332,7 +1332,7 @@ view_var_name.reverse.join(view_var_kind()).print();
 [ "monet_atomtbl",	  "frozen"	  ]
 [ "monet_acctbl",	  "frozen"	  ]
 [ "monet_fcntbl",	  "frozen"	  ]
-view_var_name.reverse.join(view_var_type()).print();
+view_var_name().reverse().join(view_var_type()).print();
 #---------------------------------#
 # BAT:			  tmp_32  #
 # (str)			  (str)	  #

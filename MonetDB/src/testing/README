@@ -288,7 +288,7 @@ have changed since my proposal.
   ignored during Mdiff.
   
   MIL Example:
-	printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n);
+	printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\n);
 
 
 - A tool Mapprove.py is provided to copy the recent output from

@@ -51,11 +51,11 @@ Misc_mods@batloop {
 	drop($h);
 	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse());
 
-	Fnts.count().print;
+	Fnts.count().print();
 	Fnts.reverse().sort().reverse()@batloop {
 		FnameS.insert($h,Fname.find($h));
 	}
-	FnameS.count().print; table(1,FnameS,Ftype,Fsig,Fhelp);
+	FnameS.count().print(); table(1,FnameS,Ftype,Fsig,Fhelp);
 
 	Fname.delete();
 	FnameS.delete();

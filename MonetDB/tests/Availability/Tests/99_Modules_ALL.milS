@@ -6,7 +6,7 @@ PROC mmn() : BAT[oid,str] {
 	 return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
 }
 
-#All_mods:=MODULES.sort.copy;
+#All_mods:=MODULES.sort().copy();
 module("cluster");
 # # module(Meta);
 var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();

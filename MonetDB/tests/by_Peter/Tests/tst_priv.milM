@@ -14,7 +14,7 @@ while(i < 100) {
 
 bat("a").mmap(1,1,1,1,1);
 unload("a");
-bat("a").info.reverse().select("theap.storage").reverse().print();
+bat("a").info().reverse().select("theap.storage").reverse().print();
 
 [int](bat("a").mirror());
 var e := [str]([int](bat("a").mirror()));
@@ -23,13 +23,13 @@ bat("a").insert(e);
 debugmask(9);
 
 #bat("a").mmap(1,1,1,1,1);
-bat("a").info.reverse().select("theap.storage").reverse().print();
+bat("a").info().reverse().select("theap.storage").reverse().print();
 e := [str]([int](bat("a").mirror()));
 debugmask(49);
 bat("a").insert(e);
 debugmask(9);
 
-bat("a").info.reverse().select("theap.storage").reverse().print();
+bat("a").info().reverse().select("theap.storage").reverse().print();
 bat("a").insert(nil,"make dirty..");
 commit();
 

@@ -10,7 +10,7 @@ var Fhelp:=new(oid,str);Fhelp.col_name("help");
 var Fnts:=new(oid,str);
 
 var Geometry_mods:=MODULES.select("geometry").sort().copy();
-table(Geometry_mods.reverse().col_name(sprintf("%i modules",Geometry_mods.count)));
+table(Geometry_mods.reverse().col_name(sprintf("%i modules",Geometry_mods.count())));
 Geometry_mods@batloop {
 	var The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
@@ -55,7 +55,7 @@ Geometry_mods@batloop {
 	Fnts.reverse().sort().reverse()@batloop {
 		FnameS.insert($h,Fname.find($h));
 	}
-	FnameS.count.print(); table(1,FnameS,Ftype,Fsig,Fhelp);
+	FnameS.count().print(); table(1,FnameS,Ftype,Fsig,Fhelp);
 
 	Fname.delete();
 	FnameS.delete();

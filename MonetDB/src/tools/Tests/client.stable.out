@@ -81,7 +81,7 @@ Start of MIL script.
 [ "fputs(str, Stream) : void"								  ]
 [ "get_mapi_port() : void"								  ]
 [ "head(BAT[any,any]) : str"								  ]
-[ "help() : <predefinition>"								  ]
+[ "help() : void"									  ]
 [ "help(str) : void"									  ]
 [ "help_sig(oid) : void"								  ]
 [ "help_tpe(int) : str"									  ]

@@ -753,44 +753,49 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 
 @mil
 
-proc uniform(int s, int d) : bat[oid,int] return uniform(0@0,s,d); 
-proc uniform(int s) : bat[oid,int] return uniform(s,s); 
-proc normal(int s, int d, int v, int m) : bat[oid,int] return normal(0@0,s,d,v,m); 
-proc normal(oid base, int s, int d, int v) : bat[oid,int] return normal(base,s,d,v,d/2); 
-proc normal(int s, int d, int v) : bat[oid,int] return normal(0@0,s,d,v); 
-proc normal(oid base, int s, int d) : bat[oid,int] return normal(0@0,s,d,d/10); 
-proc normal(int s, int d) : bat[oid,int] return normal(0@0,s,d); 
-proc normal(int s) : bat[oid,int] return normal(s,s); 
+proc uniform(int s, int d) : bat[oid,int] { return uniform(0@0,s,d); }
+proc uniform(int s) : bat[oid,int] { return uniform(s,s); }
+proc normal(int s, int d, int v, int m) : bat[oid,int] { return normal(0@0,s,d,v,m); }
+proc normal(oid base, int s, int d, int v) : bat[oid,int] { return normal(base,s,d,v,d/2); }
+proc normal(int s, int d, int v) : bat[oid,int] { return normal(0@0,s,d,v); }
+proc normal(oid base, int s, int d) : bat[oid,int] { return normal(0@0,s,d,d/10); }
+proc normal(int s, int d) : bat[oid,int] { return normal(0@0,s,d); }
+proc normal(int s) : bat[oid,int] {return normal(s,s); }
 proc radix_cluster(bat[any::1,any::2] b, int radix1, ..int..) : 
-	bat[any::1,any::2] return radix_cluster(b, "tmp_0", 1.0, $(2..)); 
+	bat[any::1,any::2] { return radix_cluster(b, "tmp_0", 1.0, $(2..)); }
 proc radix_cluster(bat[any::1,any::2] b, str limits, int radix1, ..int..) : 
-	bat[any::1,any::2] return radix_cluster(b, limits, 1.0, $(3..)); 
+	bat[any::1,any::2] { return radix_cluster(b, limits, 1.0, $(3..)); }
 proc radix_cluster(bat[any::1,any::2] b, flt perc, int radix1, ..int..) : 
-	bat[any::1,any::2] return radix_cluster(b, "tmp_0", perc, $(3..)); 
+	bat[any::1,any::2] { return radix_cluster(b, "tmp_0", perc, $(3..)); }
 proc radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
-	return radix_join(l,r, min(l.reverse.radix_bits, r.radix_bits), 1);
+	{return radix_join(l,r, min(l.reverse().radix_bits(), r.radix_bits()), 1);}
 proc radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int b) : bat[any::1,any::3]
-	return radix_join(l,r, b, 1);
+	{return radix_join(l,r, b, 1);}
 proc phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
-	return phash_join(l,r, min(l.reverse.radix_bits, r.radix_bits), 1, r.key);
-proc radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt) : bat[void,any::1] 
+	{ return phash_join(l,r, min(l.reverse().radix_bits(), r.radix_bits()), 1, r.key());}
+proc radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt) : bat[void,any::1] {
 	return radix_decluster(b,radix_cnt,4);
-proc "[integer]"(bat[any::1,int] b) : bat[any::1,integer1]
+}
+proc "[integer]"(bat[any::1,int] b) : bat[any::1,integer1]{
         return [integer](b, 1);
-proc pax_blocksize() : int 
+}
+proc pax_blocksize() : int {
 	return pax_blocksize(int(nil));
+}
 
-proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int nbits) : bat[any::1,any::3] return phash_join_new(l,r,nbits,1,false);
+proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int nbits) : bat[any::1,any::3] { return phash_join_new(l,r,nbits,1,false);}
 
-proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) : bat[any::1,any::3] return phash_join(l, r, radix, hitrate, cutoff);
+proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) : bat[any::1,any::3] { return phash_join(l, r, radix, hitrate, cutoff);}
 
 var CACHE_SIZE := 256*1024;
 proc CACHE_LINES() : int { return CACHE_SIZE/32; }
 
-proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits, int stride) : BAT[void,any::1] 
+proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits, int stride) : BAT[void,any::1] {
 	return posjoin(c, v, radixbits, stride, 512);
-proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits) : BAT[void,any::1] 
+}
+proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits) : BAT[void,any::1] {
 	return posjoin(c, v, radixbits, 128);
+}
 
 proc log2(int i) : int {
   var n := 0;
@@ -828,15 +833,15 @@ proc radix_cluster2(BAT[void,oid] b, int npasses, int nbits, int nignore) : BAT[
 proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
   var right_batsize := right.batsize();
 
-  if (not(left.reverse.ordered) and right_batsize > CACHE_SIZE) {
+  if (not(left.reverse().ordered()) and right_batsize > CACHE_SIZE) {
     var nbits := 1 + log2(right_batsize/CACHE_SIZE);
-    var nignore := max(0, (1 + log2(right.count)) - nbits);
+    var nignore := max(0, (1 + log2(right.count())) - nbits);
     var npasses := 1 + (nbits + 1) / log2(CACHE_LINES);
 
     var cluster := left.radix_cluster2(npasses, nbits, nignore); 
     var borders := cluster.radix_count(nignore, nbits); 
-    var cluster_values := cluster.reverse.mark(0@0).reverse;
-    var cluster_ids := cluster.mark(0@0).reverse;
+    var cluster_values := cluster.reverse().mark(0@0).reverse();
+    var cluster_ids := cluster.mark(0@0).reverse();
     cluster_values := cluster_values.join(right); 
     var ret := radix_decluster2(cluster_ids, cluster_values, borders, 8);
     return ret;
@@ -848,10 +853,10 @@ proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
 PROC test_radix() : void {
 	var Bu := uniform(99);
 	Bu.mark(nil).print();
-	Bu.reverse.mark(nil).sort.reverse.print();
+	Bu.reverse().mark(nil).sort().reverse().print();
 	var Bn := normal(99);
 	Bn.mark(nil).print();
-	Bn.reverse.mark(nil).sort.reverse.print();
+	Bn.reverse().mark(nil).sort().reverse().print();
 }
 
  
@@ -860,27 +865,27 @@ PROC test_radix() : void {
 
 module("alarm");
 
-var b := view_bbp_name.reverse;
+var b := view_bbp_name.reverse();
 
 # create data tables
 if (not(b.exist("smaller_key")))
-  uniform(1000000,1000000).reverse.mark(0@0).reverse.rename("smaller_key").persists(true).mmap(1);
+  uniform(1000000,1000000).reverse().mark(0@0).reverse().rename("smaller_key").persists(true).mmap(1);
 if (not(b.exist("smaller_a1")))
-  smaller_key.mirror.copy.rename("smaller_a1").persists(true).mmap(1);  
+  smaller_key.mirror().copy().rename("smaller_a1").persists(true).mmap(1);  
 if (not(b.exist("smaller_aY")))
-  smaller_key.copy.rename("smaller_aY").persists(true).mmap(1);  
+  smaller_key.copy().rename("smaller_aY").persists(true).mmap(1);  
 
 if (not(b.exist("larger_key")))
-  bat(void,int,2000000).insert(smaller_key).insert(smaller_key.copy.seqbase(oid(int(smaller_key.seqbase) + smaller_key.count))).rename("larger_key").persists(true).mmap(1);
+  bat(void,int,2000000).insert(smaller_key).insert(smaller_key.copy().seqbase(oid(int(smaller_key.seqbase()) + smaller_key.count()))).rename("larger_key").persists(true).mmap(1);
 if (not(b.exist("larger_b1")))
-  larger_key.mirror.copy.rename("larger_b1").persists(true).mmap(1);  
+  larger_key.mirror().copy().rename("larger_b1").persists(true).mmap(1);  
 if (not(b.exist("larger_bZ")))
-  larger_key.copy.rename("larger_bZ").persists(true).mmap(1);  
+  larger_key.copy().rename("larger_bZ").persists(true).mmap(1);  
 
 if (not(b.exist("smaller_all")))
-   [integer]([int]([integer](smaller_key,1).reverse),16).reverse.rename("smaller_all").persists(true).mmap(1);
+   [integer]([int]([integer](smaller_key,1).reverse()),16).reverse().rename("smaller_all").persists(true).mmap(1);
 if (not(b.exist("larger_all")))
-   [integer]([int]([integer](larger_key,1).reverse),16).reverse.rename("larger_all").persists(true).mmap(1);
+   [integer]([int]([integer](larger_key,1).reverse()),16).reverse().rename("larger_all").persists(true).mmap(1);
 
 # 0) SQL benchmark query
 # ======================
@@ -907,9 +912,9 @@ cluster_smaller := radix_cluster(smaller_key, 4, 3);
 #
 # As we have 2M tuples with max value 2000000, we need to cluster on 21 bits (7+7+7) in order to achieve radix-sort.
 #
-res_join := phash_join(cluster_larger, cluster_smaller.reverse, 7, 2, false).reverse.radix_cluster(7,7,7).reverse;
+res_join := phash_join(cluster_larger, cluster_smaller.reverse(), 7, 2, false).reverse().radix_cluster(7,7,7).reverse();
 #2.7
-res_larger_sorted := res_join.mark(0@0).reverse; 
+res_larger_sorted := res_join.mark(0@0).reverse(); 
 
 # no longer needed
 cluster_larger := 0;
@@ -928,7 +933,7 @@ res_larger_sorted := 0;
 # cardinality of 2M, we create 64 chunks by partial radix-cluster on 6 bits. The maximum value is 1M, hence there 
 # are 20 significant bits, so we ignore the lower 20-6=14 bits.
 #
-res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-14,6); 
+res_smaller_clustered := res_join.reverse().mark(0@0).reverse().radix_cluster(-14,6); 
 #589
 #344
 
@@ -948,7 +953,7 @@ res_aY := join(res_smaller_clustered, smaller_aY).radix_decluster(borders_smalle
 res_smaller_clustered := 0;
 
 print(res_b1.slice(1000000,1000100).col_name("b1"), res_bZ.col_name("bZ"), res_a1.col_name("a1"), res_aY.col_name("aY"));
-print(res_b1.count);
+print(res_b1.count());
 
 # no longer needed
 res_a1 := 0;
@@ -959,34 +964,34 @@ res_bZ := 0;
 # 2) cache-conscious-relational-join-strategy 
 # ===========================================
 
-smaller_view := [integer](smaller_all.reverse, 2).reverse;
-larger_view := [integer](larger_all.reverse, 2).reverse;
+smaller_view := [integer](smaller_all.reverse(), 2).reverse();
+larger_view := [integer](larger_all.reverse(), 2).reverse();
 
 # the inner relation will be 12+8 = 24 bytes wide, we have 128KB of cache hence can have chunk sizes of 5000.
 # given an inner relation size of 1M tuples, this leads to  256 clusters of 4096, hence 8 bytes.
 cluster_smaller := radix_cluster(smaller_view, 4, 4);
 cluster_larger := radix_cluster(larger_view, 4, 4);
-res_join := phash_join(cluster_larger, cluster_smaller.reverse, 8, 2, false);
+res_join := phash_join(cluster_larger, cluster_smaller.reverse(), 8, 2, false);
 
 # no longer needed
 cluster_smaller := 0;
 cluster_larger := 0;
  
 print(res_join.slice(1000000,1000100));
-res_join.count.print;
+res_join.count().print();
 
 # alternatively, we try without clustering
-res_join := phash_join(larger_view, smaller_view.reverse, 0, 2, false);
+res_join := phash_join(larger_view, smaller_view.reverse(), 0, 2, false);
 
 print(res_join.slice(1000000,1000100));
-res_join.count.print;
+res_join.count().print();
 
-larger_view := [integer](larger_all.reverse, 2).reverse.copy;
-smaller_view := [integer](smaller_all.reverse, 2).reverse;
-res_join := phash_join(larger_view, smaller_view.reverse, 0, 2, false);
+larger_view := [integer](larger_all.reverse(), 2).reverse().copy();
+smaller_view := [integer](smaller_all.reverse(), 2).reverse();
+res_join := phash_join(larger_view, smaller_view.reverse(), 0, 2, false);
 
 print(res_join.slice(1000000,1000100));
-res_join.count.print;
+res_join.count().print();
 
 
 quick test
@@ -994,16 +999,16 @@ quick test
 
 module(radix,alarm,pcl);
 
-var b := view_bbp_name.reverse;
+var b := view_bbp_name.reverse();
 if (not(b.exist("res_join")))
   uniform(30000000,10000000).[oid].rename("res_join").persists(true).mmap(1);
 if (not(b.exist("tab_attr")))
-  uniform(10000000).[oid].reverse.mark(0@0).reverse.rename("tab_attr").persists(true).mmap(1);
+  uniform(10000000).[oid].reverse().mark(0@0).reverse().rename("tab_attr").persists(true).mmap(1);
 
-var available := pcl_query(pcl_events.reverse.project(nil).reverse,1).select(0).project(nil).reverse.select(10,55).reverse;
+var available := pcl_query(pcl_events.reverse().project(nil).reverse(),1).select(0).project(nil).reverse().select(10,55).reverse();
 
 proc tst(bat[oid,oid] res_join, int nbits) {
-    var res_smaller_clustered := res_join.reverse.mark(0@0).reverse;
+    var res_smaller_clustered := res_join.reverse().mark(0@0).reverse();
     var skip := 24 - nbits;
     if (nbits > 7) {
     	res_smaller_clustered := res_smaller_clustered.radix_cluster(-1 * skip, nbits - nbits/2, nbits/2);
@@ -1011,22 +1016,22 @@ proc tst(bat[oid,oid] res_join, int nbits) {
     	res_smaller_clustered := res_smaller_clustered.radix_cluster(-1 * skip, nbits);
     }
     borders_smaller := res_smaller_clustered.radix_count(skip, nbits);
-    cl_new := res_smaller_clustered.mark(0@0).reverse; 
-    cl_old := res_smaller_clustered.reverse.mark(0@0).reverse; 
+    cl_new := res_smaller_clustered.mark(0@0).reverse(); 
+    cl_old := res_smaller_clustered.reverse().mark(0@0).reverse(); 
 
-    t := time; cl_tmp := join(cl_old, tab_attr); print(time - t);
+    t := time(); cl_tmp := join(cl_old, tab_attr); print(time() - t);
 
     var res_a1;
     available@batloop() {
     	var e := bat(void,int).insert(nil,$h);
         CATCH(pcl_start(e,1));
-        t := time; res_a1 := radix_decluster2(cl_new, cl_tmp, borders_smaller, 32);
-        printf("% 6dms === % 15lld %s\n",  time - t, pcl_stop(e).mark(0@0).reverse.find(0@0), pcl_events.reverse.find($h));
+        t := time(); res_a1 := radix_decluster2(cl_new, cl_tmp, borders_smaller, 32);
+        printf("% 6dms === % 15lld %s\n",  time() - t, pcl_stop(e).mark(0@0).reverse().find(0@0), pcl_events.reverse().find($h));
     }
-    res_a1.slice(3343424, 3343444).print;
+    res_a1.slice(3343424, 3343444).print();
 }
 
-res_join.reverse.mark(0@0).reverse.join(tab_attr).slice(3343424, 3343444).print;
+res_join.reverse().mark(0@0).reverse().join(tab_attr).slice(3343424, 3343444).print();
 
 tst(res_join,1);
 tst(res_join,13);
@@ -1041,24 +1046,24 @@ module(alarm,radix);
 proc log2(int n) : int { var ret := 0; while((n :/= 2) > 0) ret :+= 1; return ret; }
 
 proc jivetest(BAT[oid,oid] proj, BAT[void,any] attr, int nbits) {
-	var shift := max(0, 1 + log2(attr.count) - nbits);
+	var shift := max(0, 1 + log2(attr.count()) - nbits);
 	var mask := ((1 << nbits) - 1) << shift;
-	var cnt := [>>]([and]([int](proj), mask), shift).histogram.sort;
-	cnt.sum.print;
-	var b1, b3, b2 := bat(void,oid,1+proj.count);
-	{ var t := time; b1 := jivejoin1(b2, proj, attr, cnt, shift, nbits); print(time - t); }
-	var c := b2.mirror.[int].[and](mask).[>>](shift); 
-	c.slice(0,7).print;
-	c.histogram.max.print;
-	{ var t := time; b3 := b2.jivejoin2(attr); print(time - t); }
-	b1.count.print;
-	b1.slice(0,7).print;
-	b3.count.print;
-	b3.slice(0,7).print;
-	b1.slice(200,220).reverse.join(b3).print;
+	var cnt := [>>]([and]([int](proj), mask), shift).histogram().sort();
+	cnt.sum().print();
+	var b1, b3, b2 := bat(void,oid,1+proj.count());
+	{ var t := time(); b1 := jivejoin1(b2, proj, attr, cnt, shift, nbits); print(time() - t); }
+	var c := b2.mirror().[int].[and](mask).[>>](shift); 
+	c.slice(0,7).print();
+	c.histogram().max().print();
+	{ var t := time(); b3 := b2.jivejoin2(attr); print(time() - t); }
+	b1.count().print();
+	b1.slice(0,7).print();
+	b3.count().print();
+	b3.slice(0,7).print();
+	b1.slice(200,220).reverse().join(b3).print();
 }
 
-var proj := [oid](smaller_aY).reverse.mirror.copy;
+var proj := [oid](smaller_aY).reverse().mirror().copy();
 var attr_integer16 := [integer](smaller_aY,16);
 var attr_int16 := [IntX](attr_integer16);
 var attr_int := smaller_aY;
@@ -1068,13 +1073,13 @@ jivetest(proj, attr_int16, 12);
 jivetest(proj, attr_int, 12);
 
 var cnt := radix_count2(proj, 8, 12);
-var b2 := bat(void,oid,proj.count);
+var b2 := bat(void,oid,proj.count());
 var b1 := jivejoin1(b2, proj, attr_int, cnt, 8, 12); 
-b2.slice(0,30).print;
-var b3 := radix_cluster(b2, cnt.bbpname, 1.0, -1, 7); 
-b3.info.find("tsorted").print;
-var b4 := radix_cluster(b2, cnt.bbpname, 1.0, 1, 7); 
-b4.info.find("tsorted").print;
+b2.slice(0,30).print();
+var b3 := radix_cluster(b2, cnt.bbpname(), 1.0, -1, 7); 
+b3.info().find("tsorted").print();
+var b4 := radix_cluster(b2, cnt.bbpname(), 1.0, 1, 7); 
+b4.info().find("tsorted").print();
 radix_cluster(attr_int,  
 
 @-

@@ -27,13 +27,13 @@ a.mark(nil).print();
 # (int)	  (void)  #
 #-----------------#
 [ 1,	  nil	  ]
-a.mark(nil).reverse.print();
+a.mark(nil).reverse().print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (void)  (int)	  #
 #-----------------#
 [ nil,	  1	  ]
-[oid](a.mark(nil)).reverse.print();
+[oid](a.mark(nil)).reverse().print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (oid)	  (int)	  #
@@ -45,13 +45,13 @@ a.seqbase(100@0);
 !	seqbase(BAT[void,any::1], oid) : BAT[void,any::1]
 !	seqbase(BAT[void,any::1]) : oid
 !	seqbase(BAT[oid,any::1]) : oid
-[oid](a.mark(nil)).reverse.print();
+[oid](a.mark(nil)).reverse().print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (int)	  #
 #-----------------#
 [ nil,	  1	  ]
-[oid](a.mark(nil)).reverse.copy.print();
+[oid](a.mark(nil)).reverse().copy().print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (oid)	  (int)	  #

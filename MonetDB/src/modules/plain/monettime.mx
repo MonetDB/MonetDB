@@ -485,37 +485,49 @@ One day we should introduce the concept of locale, and hook here.
 	CONST monettime_tzones := bat("monettime_tzones");
 
 	# default time creation with zeroed secs and msecs
-	proc "daytime" (int hour) : daytime
+	proc "daytime" (int hour) : daytime {
 		return daytime(hour, 0, 0, 0);
-	proc "daytime" (int hour, int minute) : daytime
+	}
+	proc "daytime" (int hour, int minute) : daytime {
 		return daytime(hour, minute, 0, 0);
-	proc "daytime" (int hour, int minute, int second) : daytime
+	}
+	proc "daytime" (int hour, int minute, int second) : daytime {
 		return daytime(hour, minute, second, 0);
+	}
 
-	proc "[daytime]" (bat[any::1,int] hour) : bat[any::1,daytime]
+	proc "[daytime]" (bat[any::1,int] hour) : bat[any::1,daytime] {
 		return [daytime](hour, 0, 0, 0);
-	proc "[daytime]" (bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,daytime]
+	}
+	proc "[daytime]" (bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,daytime] {
 		return [daytime](hour, minute, 0, 0);
-	proc "[daytime]" (bat[any::1,int] hour, bat[any::1,int] minute, bat[any::1,int] second) : bat[any::1,daytime]
+	}
+	proc "[daytime]" (bat[any::1,int] hour, bat[any::1,int] minute, bat[any::1,int] second) : bat[any::1,daytime] {
 		return [daytime](hour, minute, second, 0);
+	}
 
 	# rule creation synonyms
-	proc "rule" (int months, int days, int weekdays, int hour, int minute) : rule
+	proc "rule" (int months, int days, int weekdays, int hour, int minute) : rule{
 		return rule(months, days, weekdays, (hour * 60) + minute);
-	proc "rule" (int months, str days, int weekdays, int hour, int minute) : rule
+	}
+	proc "rule" (int months, str days, int weekdays, int hour, int minute) : rule{
 		return rule(months, daynum(days), weekdays, (hour * 60) + minute);
-	proc "rule" (int months, str days, int weekdays, int minute) : rule
+	}
+	proc "rule" (int months, str days, int weekdays, int minute) : rule{
 		return rule(months, daynum(days), weekdays, minute);
+	}
 
 	proc "[rule]" (bat[any::1,int] months, bat[any::1,int] days, bat[any::1,int] weekdays, 
-                    bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,rule]
+                    bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,rule]{
 		return [rule](months, days, weekdays, [+]([*](hour,60),minute));
+	}
 	proc "[rule]" (bat[any::1,int] months, bat[any::1,str] days, bat[any::1,int] weekdays, 
-                    bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,rule]
+                    bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,rule]{
 		return [rule](months, [daynum](days), weekdays, [+]([*](hour,60),minute));
+	}
 	proc "[rule]" (bat[any::1,int] months, bat[any::1,str] days, bat[any::1,int] weekdays, 
-                    bat[any::1,int] minute) : bat[any::1,rule]
+                    bat[any::1,int] minute) : bat[any::1,rule]{
 		return [rule](months, [daynum](days), weekdays, minute);
+	}
 
         # As a starting point, we provide some standard tzones
 	#
@@ -555,32 +567,41 @@ One day we should introduce the concept of locale, and hook here.
 
 	tzone_local(TIMEZONE("West/Europe"));
 
-	proc local_timezone () : lng 
+	proc local_timezone () : lng {
 		return lng(minutes(tzone_local())*60);
+	}
 
-	proc "[date]" (bat[any::1,timestamp] t) : bat[any::1,date]
+	proc "[date]" (bat[any::1,timestamp] t) : bat[any::1,date]{
 		return [date](t, tzone_local());
-	proc "[daytime]" (bat[any::1,timestamp] t) : bat[any::1,daytime]
+	}
+	proc "[daytime]" (bat[any::1,timestamp] t) : bat[any::1,daytime]{
 		return [daytime](t, tzone_local());
-	proc "[timestamp]" (bat[any::1,date] d, bat[any::1,daytime] t) : bat[any::1,timestamp]
+	}
+	proc "[timestamp]" (bat[any::1,date] d, bat[any::1,daytime] t) : bat[any::1,timestamp]{
 		return [timestamp](d, t, tzone_local());
+	}
 
 	# unix-time (epoch) support: seconds since 1-jan-1970 GMT
 	const EPOCH := timestamp(date(1970,1,1),daytime(0,0,0,0),tzone("GMT"));
 
-	proc timestamp(int secs) : timestamp
+	proc timestamp(int secs) : timestamp{
 		return EPOCH.add(lng(secs) * lng(1000));
-	proc epoch(timestamp t) : int 
+	}
+	proc epoch(timestamp t) : int {
 		return int(diff(t, EPOCH)/lng(1000));
+	}
 
-	proc [timestamp](bat[any::1,int] secs) : bat[any::1,timestamp]
+	proc [timestamp](bat[any::1,int] secs) : bat[any::1,timestamp]{
 		return [add](EPOCH, [*]([lng](secs),lng(1000)));
-	proc [epoch](bat[any::1,timestamp] t) : bat[any::1,int]
+	}
+	proc [epoch](bat[any::1,timestamp] t) : bat[any::1,int]{
 		return [int]([/]([diff](t, EPOCH), lng(1000)));
+	}
 
-	proc msecs(int d, int h, int m, int s, int ms) : lng
+	proc msecs(int d, int h, int m, int s, int ms) : lng{
 		return lng(ms) + (lng(1000) * (lng(s) + (lng(60) * (lng(m) + 
                                     (lng(60) * (lng(h) + (lng(24) * lng(d))))))));
+	}
 
 	# some utilities for the SQL front-end
 proc current_timestamp() : timestamp { return timestamp(epoch()); }
@@ -600,10 +621,12 @@ proc milliseconds(timestamp t) : int { return milliseconds(daytime(t)); }
 # date_sub_sec_interval & date_add_sec_interval (now: date,lng) from those of
 # date_sub_month_interval & addmonth (date,int), 
 # and thus enable proper function binding in SQL.
-proc date_sub_sec_interval( date d, lng s ) : date 
+proc date_sub_sec_interval( date d, lng s ) : date {
 	return date_sub_sec_interval( d, int(s) );
-proc date_add_sec_interval( date d, lng s ) : date 
+	}
+proc date_add_sec_interval( date d, lng s ) : date {
 	return date_add_sec_interval( d, int(s) );
+	}
 
 @+ Test Script
 

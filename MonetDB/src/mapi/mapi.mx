@@ -56,32 +56,32 @@ This module contains a simple interface for internet connections.
 	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
-		mod);
+		mod());
 
 	PROC listen(int port, int maxusers) : void { listen(port,maxusers,""); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.",
-		mod);
+		mod());
 
 	PROC listen(int port, str cmd) : void { listen(port,5,cmd); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
-		mod);
+		mod());
 
 	PROC listen(int port) : void { listen(port,5,""); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.",
-		mod);
+		mod());
 
 	PROC listen(str cmd) : void { listen(50000,5,cmd); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
-		mod);
+		mod());
 
 	PROC listen() : void { listen(50000,5,""); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.",
-		mod);
+		mod());
 
 	PROC stream_strip(Stream s,str stop) : str {
 		VAR res := stream_until(s,stop);
@@ -93,21 +93,21 @@ This module contains a simple interface for internet connections.
 	}
 	ADDHELP("stream_strip", "windhouw", "June  22 2001",
 		"Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string.",
-		mod);
+		mod());
 
 	PROC mapi_stream_read(Stream s) : str {
 		RETURN stream_strip(s,(""+chr(1)));
 	}
 	ADDHELP("mapi_stream_read", "windhouw", "June  22 2001",
 		"Read a string from <S> until a '\1' character.",
-		mod);
+		mod());
 
 	PROC stream_line(Stream s) : str {
 		RETURN stream_strip(s,sprintf("%c",chr(10)));
 	}
 	ADDHELP("stream_line", "windhouw", "June  22 2001",
 		"Read a string from <S> until a newline.",
-		mod);
+		mod());
 @{
 @h
 #ifndef MAPI_H
@@ -791,9 +791,9 @@ proc get_mapi_port() : void {
 
 proc mapi_server(int port, int nr) : void {
         var l := listen(port, nr);
-	quit;
+	quit();
 }
 
-if (mod = "main"){
+if (mod() = "main"){
 	fork(mapi_server(get_mapi_port(),5));
 }

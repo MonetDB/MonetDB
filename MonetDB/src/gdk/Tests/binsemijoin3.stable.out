@@ -26,22 +26,22 @@ while (i<450000) { right.insert(oid(i*2),nil); i:+=1; }
 debugmask(dbgmsk);
 right.insert(0@0,nil); # make sure right is unordered.
 
-left.count.print;
+left.count().print();
 [ 12000 ]
-right.count.print;
+right.count().print();
 [ 450001 ]
 
-right.ordered.print;
+right.ordered().print();
 [ false ]
-var tm0 := time;
+var tm0 := time();
 var res := left.semijoin(right);
-var tm1 := time;
+var tm1 := time();
 
-printf("# Done (%d results) ... elapsed time: %d ms\n", res.count, tm1 - tm0);
-# Done (6000 results) ... elapsed time: 34 ms
-res.count.print;
+printf("# Done (%d results) ... elapsed time: %d ms\n", res.count(), tm1 - tm0);
+# Done (6000 results) ... elapsed time: 22 ms
+res.count().print();
 [ 6000 ]
-res.slice(0,20).print;
+res.slice(0,20).print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
@@ -68,24 +68,24 @@ res.slice(0,20).print;
 [ 38@0,	  38@0	  ]
 [ 40@0,	  40@0	  ]
 
-tm0 := time;
-right.order;
-tm1 := time;
+tm0 := time();
+right.order();
+tm1 := time();
 
-printf("# %d BUNs ordered in %d ms\n", right.count, tm1 - tm0);
-# 450001 BUNs ordered in 199 ms
-right.count.print;
+printf("# %d BUNs ordered in %d ms\n", right.count(), tm1 - tm0);
+# 450001 BUNs ordered in 103 ms
+right.count().print();
 [ 450001 ]
 
-right.ordered.print;
+right.ordered().print();
 [ true ]
-tm0 := time;
+tm0 := time();
 res := left.semijoin(right);
-tm1 := time;
+tm1 := time();
 
-printf("# Done (%d results) ... elapsed time: %d ms\n", res.count, tm1 - tm0);
-# Done (6000 results) ... elapsed time: 13 ms
-res.slice(0,20).print;
+printf("# Done (%d results) ... elapsed time: %d ms\n", res.count(), tm1 - tm0);
+# Done (6000 results) ... elapsed time: 9 ms
+res.slice(0,20).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (oid)	  #
@@ -111,7 +111,7 @@ res.slice(0,20).print;
 [ 36@0,	  36@0	  ]
 [ 38@0,	  38@0	  ]
 [ 40@0,	  40@0	  ]
-res.count.print;
+res.count().print();
 [ 6000 ]
 quit();
 

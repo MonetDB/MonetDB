@@ -16,7 +16,7 @@ VAR datafile := TSTTRGDIR + "/ascii_io2.load";
 
 VAR idxbat := load(namebat, sepbat, typebat, datafile, len);
 
-idxbat.find("tmpdocs").print;
-idxbat.find("tmpterms").print;
+idxbat.find("tmpdocs").print();
+idxbat.find("tmpterms").print();
 
-quit;
+quit();

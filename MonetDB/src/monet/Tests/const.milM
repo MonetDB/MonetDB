@@ -12,4 +12,4 @@ bb.seqbase(0@0);
 
 aaa := nil;
 
-quit;
+quit();

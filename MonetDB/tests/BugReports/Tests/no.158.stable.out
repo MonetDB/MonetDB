@@ -17,20 +17,20 @@ stdout of test 'no.158` in directory 'tests/BugReports` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 module("unix");
-test1.print;
+test1.print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
 source(sprintf("%s/no.158.source.mil",getenv("TSTTRGDIR")));
-test2.print;
+test2.print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  2	  ]
-quit;
+quit();
 
 # 17:07:25 >  
 # 17:07:25 >  Done.

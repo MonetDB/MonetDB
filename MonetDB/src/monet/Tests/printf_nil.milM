@@ -6,4 +6,4 @@ printf("%lf\n",dbl(nil) );
 
 printf("%+5.4f and %s\n", flt(nil), str(nil) );
 
-quit;
+quit();

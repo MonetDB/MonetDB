@@ -520,8 +520,9 @@ CONST GE := 2;
     ADDHELP("ADDHELP", "boncz", "Feb  6 1996",
     "provide helpful info on a command (author, date, help-text).", "algebra");
 
-    PROC clear(bat[any::1,any::2] b) : bat[any::1,any::2] 
-		return b.delete;
+    PROC clear(bat[any::1,any::2] b) : bat[any::1,any::2] {
+		return b.delete();
+	}
     ADDHELP("clear", "boncz", "Mar  6 1996",
         "Backward compatibility. Does a b.delete()", "algebra");
 
@@ -529,46 +530,55 @@ CONST GE := 2;
 The MIL described in the journal paper needs the below constructs
 that for the moment are defined as procs.
 @mil 
-    PROC semijoin(bat[any::1,any::2] l, bat[any::1,any] r) : bat[any::1,any::2] 
+    PROC semijoin(bat[any::1,any::2] l, bat[any::1,any] r) : bat[any::1,any::2] {
  		return kintersect(l,r);
+	}
     ADDHELP("semijoin", "boncz", "Nov  1 1998",
 	    "semijoin is a synonym of kintersect.", "algebra");
 
-    PROC unique(bat[any::1,any::2] b) : bat[any::1,any::2] 
+    PROC unique(bat[any::1,any::2] b) : bat[any::1,any::2] {
 		return sunique(b);
+	}
     ADDHELP("unique", "boncz", "Apr  6 1997",
             "backward compatibility: use sunique() explicitly.", "algebra");
 
-    PROC diff(bat[any::1,any::2] b1, bat[any::1,any::2] b2)  : bat[any::1,any::2] 
+    PROC diff(bat[any::1,any::2] b1, bat[any::1,any::2] b2)  : bat[any::1,any::2] {
 		return sdiff(b1,b2);
+   }
     ADDHELP("diff", "boncz", "Apr  6 1997",
             "backward compatibility: use sdiff() explicitly.", "algebra");
 
-    PROC intersect(bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2] 
+    PROC intersect(bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2] {
 		return sintersect(b1,b2); 
+   }
     ADDHELP("intersect", "boncz", "Apr  6 1997",
              "backward compatibility: use sintersect() explicitly.", "algebra");
 
-    PROC union(bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2]  
+    PROC union(bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2]  {
 		return sunion(b1,b2);
+   }
     ADDHELP("union", "boncz", "Feb  6 1996",
             "backward compatibility: use sunion() explicitly.", "algebra");
 
-    PROC project(bat[any::1,any] b) : bat[any::1,void] 
+    PROC project(bat[any::1,any] b) : bat[any::1,void] {
 		return b.project(nil);
+    }
 
-    PROC join (BAT[any::1,any::2] left, BAT[any::2,any::3] right) : BAT[any::1,any::3] 
+    PROC join (BAT[any::1,any::2] left, BAT[any::2,any::3] right) : BAT[any::1,any::3] {
 		return join(left, right, lng(nil));
+    }
 
-    PROC outerjoin (BAT[any::1,any::2] left, BAT[any::2,any::3] right) : BAT[any::1,any::3] 
+    PROC outerjoin (BAT[any::1,any::2] left, BAT[any::2,any::3] right) : BAT[any::1,any::3] {
 		return outerjoin(left, right, lng(nil));
+    }
 
-    PROC join(bat[any::1,any::2] l, bat[any::2,any::3] r, str fcn, ..any..) : bat[any::1,any::3] 
+    PROC join(bat[any::1,any::2] l, bat[any::2,any::3] r, str fcn, ..any..) : bat[any::1,any::3] {
   		return join(l, r, lng(nil), fcn, $(4..));
+    }
    
     PROC new( BAT a, BAT b, int sz ) : BAT {
-        var ht := a.htype;
-        var tt := b.ttype;
+        var ht := a.htype();
+        var tt := b.ttype();
         if ((ht = tt) and (ht = void)) {
                 if (not(isnil(b.reverse().seqbase()))) {
                         tt := oid;
@@ -645,16 +655,16 @@ that for the moment are defined as procs.
             s := [startsWith](b, pat.string(0, idx)).[ifthen](b);
             b := s.[string](0, idx);
         }
-        while((idx :+=1) < pat.length) {
-            pat := pat.string(idx, pat.length-idx);
+        while((idx :+=1) < pat.length()) {
+            pat := pat.string(idx, pat.length()-idx);
             idx := pat.search('%');
             if (idx < 0) {
-                if (pat.length > 0) {
+                if (pat.length() > 0) {
                     b := [endsWith](b,pat).[ifthen](b);
                 } break;
             }
             s := b.[search](pat.string(0, idx)).select(0,int(nil));
-            b := b.[string](s, [-](b.semijoin(s).[length], s));
+            b := b.[string](s, [-](b.semijoin(s).[length](), s));
         }
         return b.mark(nil);
     }
@@ -663,8 +673,8 @@ that for the moment are defined as procs.
     {
         if ($0 = 3) {
             var val := $3;
-            if (val.type = b.ttype) {    
-                var nilval := nil.cast(val.type); 
+            if (val.type() = b.ttype()) {    
+                var nilval := nil.cast(val.type()); 
                 if (fcn = "=") {
                     return b.select(val);
                 } else if (fcn = "<=") {
@@ -706,7 +716,7 @@ that for the moment are defined as procs.
     {
         if ($0 = 3) {
             var val := $3;
-            if (val.type = b.ttype) {    
+            if (val.type() = b.ttype()) {    
                 if (fcn = "!=") {
                     return b.mil_select("=", val);
                 } else if (fcn = ">=") {
@@ -749,8 +759,9 @@ that for the moment are defined as procs.
     ADDHELP("rev_select", "boncz", "Aug  6 1998",
             "(value OP column) select rather than (column OP value)","algebra");
 
-    PROC tunique (bat[any,any::1] b) : bat[any::1,void]
+    PROC tunique (bat[any,any::1] b) : bat[any::1,void] {
 	return b.reverse().mark(nil).kunique();
+   }
 
     PROC sort_ht (bat[any::1,any::2] B) : bat[any::1,any::2] 
     {

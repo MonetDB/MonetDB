@@ -77,7 +77,7 @@ nonreversible toUpper/toLower at u1fbe
 nonreversible toLower/toUpper at u2126
 nonreversible toLower/toUpper at u212a
 nonreversible toLower/toUpper at u212b
-quit;
+quit();
 
 # 14:57:35 >  
 # 14:57:35 >  Done.

@@ -284,11 +284,11 @@ PROC test_alarm() : void {
 	print((t1 - t0) / 1000);
 	alarm(15, "print(\"alarm went off\");" );
 	printf("#~BeginVariableOutput~#\n");
-	timers().print;
-	time().print;
-	usec().print;
-	epoch().print;
-	ctime().print;
+	timers().print();
+	time().print();
+	usec().print();
+	epoch().print();
+	ctime().print();
 	printf("#~EndVariableOutput~#\n");
 	sleep(16); # wait for alarm
 }

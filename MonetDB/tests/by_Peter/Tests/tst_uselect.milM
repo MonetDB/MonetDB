@@ -22,7 +22,7 @@ var size := 10000;
 while(size <= 1000000) {
     var perc := 0;
     while(perc <= 100) {
-	  var m := debugmask;
+	  var m := debugmask();
  	  debugmask(2);
           var b := genbat(size, perc);
           debugmask(m);

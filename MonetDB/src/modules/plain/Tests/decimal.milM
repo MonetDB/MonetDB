@@ -53,7 +53,7 @@ print(dec_bat.col_name("value"),
   dec_flt.col_name("flt"), 
   dec_dbl.col_name("dbl"));
 
-# test reverse conversion
+# test reverse() conversion
 print(dec_bat.col_name("decimal"), 
   [decimal](dec_int).col_name("from_int"), 
   [decimal](dec_lng).col_name("from_lng"));
@@ -80,10 +80,10 @@ print(dec_bat.col_name("decimal"),
   [addscale](dec_bat,5).col_name("addscale(5)"));
 
 # test binary operators
-var dec_zero := project(dec_bat.reverse,0@0).reverse;
-var dec_cart := join(dec_zero.reverse,dec_zero);
-var dec_bat1 := dec_cart.reverse.mark(0@0).reverse;
-var dec_bat2 := dec_cart.mark(0@0).reverse;
+var dec_zero := project(dec_bat.reverse(),0@0).reverse();
+var dec_cart := join(dec_zero.reverse(),dec_zero);
+var dec_bat1 := dec_cart.reverse().mark(0@0).reverse();
+var dec_bat2 := dec_cart.mark(0@0).reverse();
 var dec_raise := [-]([getprecision](dec_bat1),10);
 var dec_prec := [-]([getprecision](dec_bat1),1);
 
@@ -155,33 +155,33 @@ print(dec_bat.col_name("decimal"),
   dec_neg.col_name("[-]"));
 
 # test sorting
-dec_bat.reverse.sort.reverse.col_name("sorted dec").print;
-dec_abs.reverse.sort.reverse.col_name("sorted abs(dec)").print;
+dec_bat.reverse().sort().reverse().col_name("sorted dec").print();
+dec_abs.reverse().sort().reverse().col_name("sorted abs(dec)").print();
 
 # test hash-join
-dec_abs.join(dec_abs.reverse).sort_ht.print;
+dec_abs.join(dec_abs.reverse()).sort_ht().print();
 
 # logical test
 
 # performance test
 # compare group, join and sort int vs decimal for 10.000, 100.000 and 1M tuples 
 
-proc int(int i) : int return i;
+proc int(int i) : int { return i;}
 
 proc pow(int base, int raise) : int {
     return int(pow(dbl(base),dbl(raise)));
 }
 
 proc arith_perftest(bat[any::1,any::2] b, any::2 div, str s) : void {
-  var t := time, reduce := [/](b,div); printf("[/](%s) = %dms\n", s, time-t);
-  t := time; printf("join(%s=%d) = %d ms\n", s, join(b,b.reverse).count, time - t);
-  t := time; printf("group(%s=%d) = %d ms\n", s, CTgroup(reduce).tunique.count, time - t);
-  t := time; printf("[*](%s=%d) = %d ms\n", s, [*](b,div).count, time - t);
-  t := time; printf("[-](%s=%d) = %d ms\n", s, [-](b,b).count, time - t);
-  t := time; printf("[+](%s=%d) = %d ms\n", s, [+](b,b).count, time - t);
-  if (b.count < 1000000) {
-     t := time; printf("[pow](%s=%d) = %d ms\n", s, [pow](b,[int](reduce)).count, time - t);
-     t := time; b.reverse.sort; printf("sort(%s) = %d ms\n", s, time - t);
+  var t := time(), reduce := [/](b,div); printf("[/](%s) = %dms\n", s, time()-t);
+  t := time(); printf("join(%s=%d) = %d ms\n", s, join(b,b.reverse()).count(), time() - t);
+  t := time(); printf("group(%s=%d) = %d ms\n", s, CTgroup(reduce).tunique().count(), time() - t);
+  t := time(); printf("[*](%s=%d) = %d ms\n", s, [*](b,div).count(), time() - t);
+  t := time(); printf("[-](%s=%d) = %d ms\n", s, [-](b,b).count(), time() - t);
+  t := time(); printf("[+](%s=%d) = %d ms\n", s, [+](b,b).count(), time() - t);
+  if (b.count() < 1000000) {
+     t := time(); printf("[pow](%s=%d) = %d ms\n", s, [pow](b,[int](reduce)).count(), time() - t);
+     t := time(); b.reverse().sort(); printf("sort(%s) = %d ms\n", s, time() - t);
   }
 }
 
@@ -223,4 +223,4 @@ printf("#~BeginVariableOutput~#\n"); arith_perftest(int_1M, 10001, "int_1M"); pr
 var dec_1M := [decimal](int_1M);
 printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_1M, decimal("10001"), "dec_1M"); printf("#~EndVariableOutput~#\n");
 
-quit;
+quit();

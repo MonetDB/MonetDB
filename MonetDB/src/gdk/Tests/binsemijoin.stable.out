@@ -35,24 +35,24 @@ b.insert(1,7);
 b.insert(1,8);
 b.insert(1,9);
 
-var c:=b.reverse.[oid].reverse;
-var d:=a.reverse;
+var c:=b.reverse().[oid]().reverse();
+var d:=a.reverse();
 
-a.print;
+a.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
-d.print;
+d.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (void)  #
 #-----------------#
 [ 0,	  0@0	  ]
 [ 1,	  1@0	  ]
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -77,7 +77,7 @@ b.print;
 [ 1,	  7	  ]
 [ 1,	  8	  ]
 [ 1,	  9	  ]
-c.print;
+c.print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (int)	  #
@@ -103,7 +103,7 @@ c.print;
 [ 1@0,	  8	  ]
 [ 1@0,	  9	  ]
 
-b.semijoin(d).print;
+b.semijoin(d).print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -128,7 +128,7 @@ b.semijoin(d).print;
 [ 1,	  7	  ]
 [ 1,	  8	  ]
 [ 1,	  9	  ]
-d.semijoin(b).print;
+d.semijoin(b).print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (oid)	  #
@@ -136,7 +136,7 @@ d.semijoin(b).print;
 [ 0,	  0@0	  ]
 [ 1,	  1@0	  ]
 
-c.semijoin(a).print;
+c.semijoin(a).print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (int)	  #
@@ -161,7 +161,7 @@ c.semijoin(a).print;
 [ 1@0,	  7	  ]
 [ 1@0,	  8	  ]
 [ 1@0,	  9	  ]
-a.semijoin(c).print;
+a.semijoin(c).print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (int)	  #

@@ -1778,7 +1778,7 @@ test_monettime();
 [ true ]
 [ nil ]
 [ true ]
-quit;
+quit();
 
 # 17:06:10 >  
 # 17:06:10 >  Done.
