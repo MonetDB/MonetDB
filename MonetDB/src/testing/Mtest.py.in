@@ -941,7 +941,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                 t = '-.---'
             TIMES.append([TSTDIR,TST,t,FtOut,FtErr])
             td = td + tt
-            FdOut = max(FdErr,FtOut)
+            FdOut = max(FdOut,FtOut)
             FdErr = max(FdErr,FtErr)
             if bodyline is not None:
                 body.append(bodyline)
@@ -1171,6 +1171,10 @@ def CheckMods(env, TST, SERVER, CALL) :
         m = "x100"
         if m not in env['TST_MODS']:
             missing.append(m)
+    if CALL in ["pf", "pfXs"]:
+        for m in "pathfinder", "pf_support":
+            if m not in env['TST_MODS']:
+                missing.append(m)
     return missing
 ### CheckMods(env, TST, SERVER, CALL) #
 
@@ -1329,6 +1333,10 @@ def RunTest(env, TST, BusyPorts, COND) :
         EXT = ".x100"       ; CALL = "x100"   ; SERVER = "MAPI"
     elif os.path.isfile(TST+"_s00.x100")     or  os.path.isfile(TST+"_s00.x100.src"):
         EXT = ".x100"       ; CALL = "x100Xs" ; SERVER = "MAPI"
+    elif os.path.isfile(TST+".xq")           or  os.path.isfile(TST+".xq.src"):
+        EXT = ".xq"         ; CALL = "pf"
+    elif os.path.isfile(TST+"_s00.xq")       or  os.path.isfile(TST+"_s00.xq.src"):
+        EXT = ".xq"         ; CALL = "pfXs"
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
         #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
@@ -1337,11 +1345,11 @@ def RunTest(env, TST, BusyPorts, COND) :
     else:
         EXT = CALL = SERVER = ""
         if os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|milM|milS|milC|sql|x100)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|milM|milS|milC|sql|x100|xq)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.milM|.milS|.milC|.sql|.x100]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.milM|.milS|.milC|.sql|.x100|.xq]`")
         return TX,Failed,Failed,elem
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
@@ -1481,13 +1489,13 @@ def RunTest(env, TST, BusyPorts, COND) :
                     else:
                         TOx = 1
                     CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
-        elif CALL in ["milMXs", "milSXs", "milCXs", "sqlXs", "x100Xs"]:
+        elif CALL in ["milMXs", "milSXs", "milCXs", "sqlXs", "x100Xs", "pfXs"]:
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "milM", "milS", "milC", "sql", "x100"]:
+        elif CALL in ["mal", "milM", "milS", "milC", "sql", "x100", "pf"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
@@ -1958,9 +1966,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         elif CALL == "python":
             cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
             RunIt(cmd, "", ClntOutFile, ClntErrFile)
-        elif CALL in ["mal", "milM", "milS", "milMXs", "milSXs"]:
+        elif CALL in ["mal", "milM", "milS", "milMXs", "milSXs", "pf", "pfXs"]:
             cmd = '%s%s %s%s --dbname=%s %s ' % (MTO, str(TOT), exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
-            if CALL in ["mal", "milM", "milS"]:
+            if CALL in ["mal", "milM", "milS", "pf"]:
                 X=""
             else:
                 X="_s[0-9][0-9]"
@@ -1969,7 +1977,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             d.sort()
             for f in d:
                 if test.match(f):
-                    if CALL == "mal":
+                    if CALL in ["pf", "pfXs"]:
+                        RunIt("pf %s | %s --dbinit='module(pathfinder,pf_support);'" % (f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
+                    elif CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     elif env['VERSION'] >= 49900:
                         RunIt("M2m %s | %s" % (f,cmd), "", ClntOutFile, ClntErrFile)

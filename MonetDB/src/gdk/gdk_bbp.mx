@@ -311,7 +311,8 @@ actions are to go on unlocked while other entries in the BBP may be modified).
 @c
 static MT_Id locked_by = 0;
 
-static MT_Id BBP_getpid(void){
+static INLINE
+MT_Id BBP_getpid(void){
 	MT_Id x = MT_getpid();
 	return x;
 }
@@ -704,7 +705,6 @@ bat BBPindex(str nme) {
 }
 
 BATstore* BBPgetdesc(bat i) {
-        MT_Id pid = BBP_getpid();
 	BAT *b = NULL;
 
 	if (i < 0) i = -i;
@@ -730,16 +730,18 @@ BATstore* BBPgetdesc(bat i) {
 			}
 		}
     		if (b == NULL && nme) { 
+			int lock = locked_by?BBP_getpid() != locked_by:1; 
+
                 	b = (BAT*) BATloaddesc(nme);
 			if (b == NULL) {
 				GDKerror("BBPgetdesc: deleting illegal bat(%d) %s\n", i, nme);
 				BBPclear(i);
 			} else if (BBP_desc(i) == NULL) {
-				if (pid != locked_by) 
+				if (lock)
 					MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPgetdesc");
 				BBP_desc(i) = (BATstore*) b;
 				BBP_desc_count[i&BBPLOCKMASK]++;
-				if (pid != locked_by) 
+				if (lock)
 					MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPgetdesc");
                         }
 		}
@@ -802,14 +804,13 @@ void BBPgetsubdir(str s, bat i) {
 }
 
 bat BBPinsert(BAT *b) {
-	MT_Id pid = BBP_getpid();
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
 	long_str dirname;
 	bat i;
 	
 	/* ciritical section: get a new BBP entry */ 	
-        if (pid != locked_by) {
+        if (lock)
                 MT_set_lock(GDKcacheLock, "BBPinsert");
-        }
 
 	/* find an empty slot */
 	if (BBP_free <= 0) {
@@ -819,9 +820,8 @@ bat BBPinsert(BAT *b) {
 	i = BBP_free; 
 	BBP_free = BBP_next(BBP_free);
 
-        if (pid != locked_by) {
+        if (lock)
                 MT_unset_lock(GDKcacheLock, "BBPinsert");
-        }
 	/* rest of the work outside the lock , as GDKstrdup/GDKmalloc may trigger a BBPtrim */
 
 	/* fill in basic BBP fields for the new bat */
@@ -831,7 +831,7 @@ bat BBPinsert(BAT *b) {
 	if (++BBP_curstamp < 0) BBP_curstamp = 0;
         b->batCacheid = i;
         b->batStamp = BBP_curstamp;
-        b->creator_tid = pid;
+        b->creator_tid = BBP_getpid();
 
 	BBP_status_set(i, 0, "BBPentry");
 	BBP_cache(i) = NULL;
@@ -850,7 +850,7 @@ bat BBPinsert(BAT *b) {
 }
 
 void BBPcacheit(BAT* b) {
-	MT_Id pid = BBP_getpid();
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
         bat i = 0;
 	int mode;
         BAT *bm = (BAT*) GDKmalloc(sizeof(BAT)); /* alloc before lock to prevent trim problems */
@@ -861,9 +861,8 @@ void BBPcacheit(BAT* b) {
         } else {
                 i = BBPinsert(b); /* bat was not previously entered */
         }
-        if (pid != locked_by) {
+        if (lock)
                 MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit");
-        }
 	mode = (BBP_status(i) | BBPLOADED) & ~BBPWAITING;
 	BBP_status_set(i, mode, "BBPcacheit");
         BBP_lastused(i) = BBPLASTUSED(GDKstamp() + ((mode==BBPLOADED)?150:0));
@@ -901,9 +900,8 @@ void BBPcacheit(BAT* b) {
         BBP_cache(i) = b;
         BBP_cache(-i) = bm;
 
-        if (pid != locked_by) {
+        if (lock)
                 MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit");
-        }
 }
 
 @
@@ -933,11 +931,11 @@ void BBPuncacheit(bat i, int unloaddesc) {
 @%BBPclear@ removes a BAT from the BBP directory forever.
 @c
 void BBPclear(bat i) {
-	MT_Id pid = BBP_getpid();
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
 
 	if (BBPcheck(i, "BBPclear")) {
 		i = ABS(i);
-		if (pid != locked_by) 
+		if (lock)
 			MT_set_lock(GDKcacheLock, "BBPclear"); 
 		BATDEBUG {
 			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBP_logical(i)); 
@@ -960,7 +958,7 @@ void BBPclear(bat i) {
 		BBP_lrefs(i) = 0; 
 		BBP_next(i) = BBP_free;	
 		BBP_free = i;
-		if (pid != locked_by) 
+		if (lock)
 			MT_unset_lock(GDKcacheLock, "BBPclear"); 
 	}
 }
@@ -1072,7 +1070,7 @@ void BBPspin(bat i, str s, int event) {
 }
 
 int BBPincref(bat i, int logical) {
-	int lock = (BBP_getpid() != locked_by); 
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
 	int refs = 0;
 
 	if (i == bat_nil) {
@@ -1108,7 +1106,7 @@ int BBPincref(bat i, int logical) {
 }
 
 void BBPshare(bat parent) {
-	int lock = (BBP_getpid() != locked_by); 
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
 	int fix = 0;
 	if (parent < 0) 
 		parent = -parent;
@@ -1170,7 +1168,7 @@ int decref(bat i, int logical, int lock) {
 }
 
 int BBPdecref(bat i, int logical) {
-	int lock = (BBP_getpid() != locked_by); 
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
 	if (BBPcheck(i, "BBPdecref") == 0) {
 		return -1;
 	}
@@ -1181,7 +1179,7 @@ int BBPdecref(bat i, int logical) {
 
 
 void BBPunshare(bat parent) {
-	int lock = (BBP_getpid() != locked_by); 
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
 	if (parent < 0) 
 		parent = -parent;
 	if (lock) 
@@ -1224,11 +1222,11 @@ Return values:
  1 = unload failed (due to write-to-disk failure)
 @c
 int BBPreclaim(BAT* b) {
-	MT_Id pid = BBP_getpid();
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
 	bat i = ABS(b->batCacheid);
 	int ret = 0;
 
-	if (pid != locked_by)
+	if (lock)
 		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
 
 	BATDEBUG THRprintf(GDKerr, 
@@ -1245,7 +1243,7 @@ int BBPreclaim(BAT* b) {
 		BBP_refs(b->batCacheid) = 0;
 		BBP_unload_on(i, "BBPreclaim"); 
 	}
-	if (pid != locked_by)
+	if (lock)
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
 
 	/* BBPfree potentially saves the BAT. Do this after releasing the short-term lock */
@@ -1268,15 +1266,15 @@ BAT *BBPdescriptor(bat i) {
 	}
 	assert( BBP_refs(i) );
 	if ((b = BBP_cache(i)) == NULL) {
-		MT_Id pid = BBP_getpid();
+		int lock = locked_by?BBP_getpid() != locked_by:1; 
 
-		if (pid != locked_by)
+		if (lock)
 			MT_set_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 		while (BBP_status(j) & BBPWAITING) { /* wait for bat to be loaded by other thread */
-			if (pid != locked_by)
+			if (lock)
 				MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 			BBPspin(j, "BBPdescriptor", BBPWAITING);
-			if (pid != locked_by)
+			if (lock)
 				MT_set_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 		}
 		if (BBP_logical(j)) {
@@ -1286,7 +1284,7 @@ BAT *BBPdescriptor(bat i) {
 				BBP_status_on(j, BBPLOADING, "BBPdescriptor");
 			}
 		}
-		if (pid != locked_by)
+		if (lock)
 			MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 	}
 	if (load) {
@@ -1433,20 +1431,20 @@ that want to save or unload this BAT must spin lock on the BBP_status field.
 extern void DESCclean(BAT*);
 
 int BBPsave(BAT* b) {
-	MT_Id pid = BBP_getpid();
+	int lock = locked_by?BBP_getpid() != locked_by:1; 
 	bat bid = ABS(b->batCacheid);
 	int ret = 0;
 
-	if (pid != locked_by)
+	if (lock)
 		MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 	if (BBP_lrefs(bid) == 0 || !BATdirty(b)) {
 		/* do nothing */
-		if (pid != locked_by)
+		if (lock)
 			MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 	} else if (BBP_status(bid)&BBPSAVING) {
 		/* wait until save in other thread completes */
 		BBPspin(bid, "BBPsave", BBPSAVING);
-		if (pid != locked_by)
+		if (lock)
 			MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 	} else {
 		/* save it */	
@@ -1460,7 +1458,7 @@ int BBPsave(BAT* b) {
 			flags |= BBPTMP;
 		}
 		BBP_status_on(bid, flags, "BBPsave");
-		if (pid != locked_by)
+		if (lock)
 			MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 
 		IODEBUG THRprintf(GDKerr, "save %s\n", b->batId); 
@@ -1863,23 +1861,23 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 }
 
 void BBPhot(bat i) {
-	MT_Id pid = BBP_getpid();
 	if (i < 0) i = -i;
         if (BBPcheck(i, "BBPhot")) {
-		if (pid != locked_by)
+		int lock = locked_by?BBP_getpid() != locked_by:1; 
+		if (lock)
 			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPhot");
 		BBP_lastused(i) = BBPLASTUSED(GDKstamp() + 30000);
-		if (pid != locked_by)
+		if (lock)
 			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPhot");
         }
 }
 
 void BBPcold(bat i) {
-	MT_Id pid = BBP_getpid();
 	if (i < 0) i = -i;
         if (BBPcheck(i, "BBPcold")) {
+		int lock = locked_by?BBP_getpid() != locked_by:1; 
 		MT_set_lock(GDKtrimLock, "BBPcold");
-		if (pid != locked_by)
+		if (lock)
 			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcold");
 		/* make very cold and insert on top of trim list */
                 BBP_lastused(i) = 0;
@@ -1889,7 +1887,7 @@ void BBPcold(bat i) {
 			bbptrim[bbptrimmax].next = bbptrimfirst;
 			bbptrimfirst = bbptrimmax;
 		}
-		if (pid != locked_by)
+		if (lock)
 			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcold");
 		MT_unset_lock(GDKtrimLock, "BBPcold");
         }
