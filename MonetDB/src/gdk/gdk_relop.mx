@@ -400,13 +400,15 @@ The aftermath -- property setting -- is relatively straightforward here.
         /* not (yet?) completely typ-optimized ! */
         ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3): discovered non-density, resuming with non-void head\n");
         bn = BATnew(BAThtype(l), ATOMtype(tpe), BATcount(l));
+        dst = BUNfirst(bn);
+        zz = BUNsize(bn);
         BATloopFast(l, l_cur, l_end, xx) {
                 yy = offset + *(unsigned int*) BUNtail(l,l_cur);
                 if (yy < base || yy >= end) {
                         continue;
                 }
                 r_cur = BUNptr(r, yy);
-		ATOMput(bn->htype, &bn->hheap, (int*) BUNhloc(bn, dst), BUNtail(l, l_cur));
+		ATOMput(bn->htype, &bn->hheap, (int*) BUNhloc(bn, dst), BUNhead(l, l_cur));
 		@3put(  @2,        &bn->theap, (int*) BUNtloc(bn, dst), BUN@1(  r, r_cur));
                 dst += zz;
         }    	
