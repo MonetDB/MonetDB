@@ -399,7 +399,7 @@ static sql_table *create_table_intern(mvc * sql, sql_schema * schema,
 				  char *name, char *query, stmt * sq, table_type type)
 {
 	node *m;
-	sql_table *table = mvc_create_table(sql, schema, name, type);
+	sql_table *table = mvc_create_table(sql, schema, name, type, -1);
 	(void) query; /* Stefan: unused!? */
 
        	for ( m = sq->op1.lval->h; m; m = m->next ) {
@@ -3063,7 +3063,7 @@ static stmt *table_element(mvc * sql, symbol * s, stmt *ss, stmt * ts, char *tna
 }
 
 static stmt *create_table(mvc * sql, stmt * ss,
-			int temp, dlist * qname, dlist * columns)
+			int temp, dlist * qname, dlist * columns, int size)
 {
 	char *name = qname_table(qname);
 
@@ -3075,7 +3075,7 @@ static stmt *create_table(mvc * sql, stmt * ss,
 		char buf[BUFSIZ];
 
 		table_type type = (temp)?tt_session:tt_base; 
-		stmt *ts = stmt_create_table(ss, name, type);
+		stmt *ts = stmt_create_table(ss, name, type, size);
 		list *new_columns = list_append(create_stmt_list(), ts);
 		list *tmp_columns = list_create((fdestroy)&destroy_tmp_col);
 		dnode *n;
@@ -3156,8 +3156,8 @@ static stmt *create_schema(mvc * sql, dlist * auth_name, dlist * schema_elements
 				st = create_table(sql, stmt_dup(st),
 						  l->h->data.ival,
 						  l->h->next->data.lval,
-						  l->h->next->next->data.
-						  lval);
+						  l->h->next->next->data.lval,
+						  l->h->next->next->next->data.ival);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
 				st = create_view(sql, stmt_dup(st),
@@ -4771,7 +4771,9 @@ static stmt *sql_stmt(mvc * sql, symbol * s)
 			ret = create_table(sql, ss,
 					   l->h->data.ival,
 					   l->h->next->data.lval,
-					   l->h->next->next->data.lval);
+					   l->h->next->next->data.lval,
+					   l->h->next->next->next->data.ival
+					   );
 			sql->type = Q_SCHEMA;
 		}
 		break;

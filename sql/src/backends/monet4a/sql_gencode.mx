@@ -343,7 +343,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		mvc_dump_3( sql, s, "create_view", nr );
 		break;
 	case st_create_table: 
-		mvc_dump_3( sql, s, "create_table", nr );
+		mvc_dump_4( sql, s, "create_table", nr );
 		break;
 	case st_drop_table: 
 		mvc_dump_3( sql, s, "drop_table", nr );

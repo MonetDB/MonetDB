@@ -149,6 +149,7 @@ typedef struct sql_table {
 	sql_base base;
 	table_type type;
 	char *query;
+	int sz;
 
 	changeset columns;
 	changeset idxs;
@@ -306,7 +307,7 @@ sql_export void mvc_drop_schema( mvc *c, char *name );
 sql_export sql_schema *mvc_create_schema( mvc *c, char *name, char *auth);
 sql_export void mvc_drop_table( mvc *c, sql_schema *s, char *name, int cascade );
 sql_export sql_table *mvc_create_view( mvc *c, sql_schema *s, char *name, char *sql);
-sql_export sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, table_type type);
+sql_export sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, table_type type, int sz);
 sql_export void mvc_drop_column( mvc *c, sql_table *t, char *name );
 sql_export sql_column *mvc_create_column( mvc *c, sql_table *t, char *name, char *type, int type_digits, int type_scale );
 sql_export sql_column *mvc_null( mvc *c, sql_column *col, int flag );
@@ -1130,6 +1131,7 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	t->pkey = NULL;
 	t->s = s;
 	t->st = NULL;
+	t->sz = BUFSIZ;
 
 	cs_init( &t->columns, (fdestroy)&column_destroy );
 	cs_init( &t->idxs, (fdestroy)&idx_destroy );
@@ -1426,6 +1428,7 @@ static sql_table *table_dup(sql_trans *tr, sql_table * ot, sql_schema *s)
 
 	t->s = s;
 	t->st = NULL;
+	t->sz = ot->sz;
 
 	if (ot->columns.set) for (n = ot->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -1910,25 +1913,25 @@ int mvc_init(int debug, backend_stack stk)
 		bootstrap_create_column(m, t, "systemname", "VARCHAR",0,0);
 
 		/* now the authorisation related tables */
-		t = mvc_create_table(m, s, "users", tt_system );
+		t = mvc_create_table(m, s, "users", tt_system, -1 );
 		mvc_create_column(m, t, "name", "VARCHAR",0,0);
 		mvc_create_column(m, t, "passwd", "VARCHAR",0,0);
 		mvc_create_column(m, t, "fullname", "VARCHAR",0,0);
 		mvc_create_column(m, t, "default_schema", "MEDIUMINT",0,0);
 
-		t = mvc_create_table(m, s, "user_role", tt_system );
+		t = mvc_create_table(m, s, "user_role", tt_system, -1 );
 		mvc_create_column(m, t, "login_id", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "role_id", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "grantor", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "admin", "MEDIUMINT",0,0);
 
 		/* all roles and users are in the auths table */
-		t = mvc_create_table(m, s, "auths", tt_system );
+		t = mvc_create_table(m, s, "auths", tt_system, -1 );
 		mvc_create_column(m, t, "id", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "name", "VARCHAR",0,0);
 		mvc_create_column(m, t, "grantor", "MEDIUMINT",0,0);
 
-		t = mvc_create_table(m, s, "privileges", tt_system );
+		t = mvc_create_table(m, s, "privileges", tt_system, -1 );
 		mvc_create_column(m, t, "obj_id", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "auth_id", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "privileges", "MEDIUMINT",0,0);
@@ -3281,6 +3284,7 @@ static sql_table *create_table_intern( mvc *m, char *name, table_type type)
 	t->pkey = NULL;
 	t->dbid = 0;
 	t->st = NULL;
+	t->sz = BUFSIZ;
 	return t;
 }
 
@@ -3429,16 +3433,15 @@ mvc_create_idx( mvc * m, sql_table *t, char *name, idx_type it )
 	/* create void,int bat to keep the hash values */
 	if (it == join_idx){
 		BAT *u;
-		int cnt = BUFSIZ; 
 		char bname[BUFSIZ];
 
-		b = bat_new( TYPE_void, TYPE_oid, cnt, "mvc_create_idx" );
+		b = bat_new( TYPE_void, TYPE_oid, t->sz, "mvc_create_idx" );
 		BATseqbase(b,0);
 		snprintf(bname, BUFSIZ, "%s_%s", ni->t->base.name, ni->base.name );
 		ni->bat.bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
 		bat_destroy(b);
 
-		u = bat_new( TYPE_oid, TYPE_oid, cnt, "mvc_create_idx" );
+		u = bat_new( TYPE_oid, TYPE_oid, t->sz, "mvc_create_idx" );
 		snprintf(bname, BUFSIZ, "U_%s_%s", ni->t->base.name, ni->base.name );
 		ni->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0);
 		bat_destroy(u);
@@ -3475,16 +3478,15 @@ sql_idx *mvc_create_ic( mvc *m, sql_idx *i, sql_column *c /*, extra options such
 
 	if (!i->bat.bid && i->type == unique && list_length(i->columns) > 1){
 		BAT *u;
-		int cnt = BUFSIZ; 
 		char bname[BUFSIZ];
 
-		b = bat_new( TYPE_void, TYPE_int, cnt, "mvc_create_ic" );
+		b = bat_new( TYPE_void, TYPE_int, i->t->sz, "mvc_create_ic" );
 		BATseqbase(b,0);
 		snprintf(bname, BUFSIZ, "%s_%s", i->t->base.name, i->base.name );
 		i->bat.bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
 		bat_destroy(b);
 
-		u = bat_new( TYPE_oid, TYPE_int, cnt, "mvc_create_ic" );
+		u = bat_new( TYPE_oid, TYPE_int, i->t->sz, "mvc_create_ic" );
 		snprintf(bname, BUFSIZ, "U_%s_%s", i->t->base.name, i->base.name );
 		i->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0);
 		bat_destroy(u);
@@ -3554,7 +3556,7 @@ static sql_table *bootstrap_create_table(mvc * m, sql_schema *s, char *name, tab
 	return t;
 }
 
-sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, table_type type)
+sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, table_type type, int sz)
 {
 	sql_trans *tr = m->trans;
 	sql_table *t = create_table_intern(m, name, type);
@@ -3568,12 +3570,14 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, table_type type)
 	t->dbid = 0;
 	t->query = _strdup("");
 	t->s = s;
+	t->sz = sz;
+	if (sz < 0)
+		t->sz = BUFSIZ;
 	cs_add( &s->tables, t, TR_NEW);
 
 	if (t->type != tt_temp && t->type != tt_session){
 		char bname[BUFSIZ];
-		int cnt = BUFSIZ;
- 		BAT *b = bat_new( TYPE_void, TYPE_oid, cnt, "mvc_create_table");
+ 		BAT *b = bat_new( TYPE_void, TYPE_oid, t->sz, "mvc_create_table");
 
 		BATseqbase(b, 0);
 		snprintf(bname, BUFSIZ, "D_%s", t->base.name );
@@ -3776,7 +3780,7 @@ sql_column *mvc_create_column(mvc * m, sql_table *t, char *name,
 	sql_subtype *tpe = sql_bind_subtype(sqltype, type_digits, type_scale);
 
 	char *typename;
-	int type, cnt = BUFSIZ;
+	int type; 
 	BAT *u, *b;
 
 	if (!tpe) return NULL;
@@ -3790,8 +3794,8 @@ sql_column *mvc_create_column(mvc * m, sql_table *t, char *name,
 
 	if (t->type != tt_view && t->type != tt_temp && 
 	    t->type != tt_session){ 
-		b = bat_new( TYPE_void, type, cnt, "mvc_create_column" );
- 		u = bat_new( TYPE_oid, type, cnt, "mvc_create_column" );
+		b = bat_new( TYPE_void, type, t->sz, "mvc_create_column" );
+ 		u = bat_new( TYPE_oid, type, t->sz, "mvc_create_column" );
 
 		if (!b || !u){
 			if (b) BBPreclaim(b);

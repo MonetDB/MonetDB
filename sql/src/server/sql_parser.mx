@@ -820,12 +820,13 @@ role_def:
  ;
 
 table_def:
-    CREATE opt_temp TABLE qname table_content_source opt_on_commit
+    CREATE opt_temp TABLE qname table_content_source opt_on_commit opt_nr
 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $2);
 	  dlist_append_list(l, $4);
 	  dlist_append_list(l, $5);
+	  dlist_append_int(l, $6);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 

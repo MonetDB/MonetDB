@@ -149,7 +149,7 @@ for the time being.
 	.COMMAND mvc_drop_table( mvc c, sql_schema s, str name, int cascade ) = 
 		mvc_drop_table_wrap; "Drop table"
 
-	.COMMAND mvc_create_table( mvc c, sql_schema s, str name, int type) : 
+	.COMMAND mvc_create_table( mvc c, sql_schema s, str name, int type, int sz) : 
 		sql_table = mvc_create_table_wrap; "Create table"
 
 	.COMMAND mvc_create_view( mvc c, sql_schema s, str name, str sql) :
@@ -457,8 +457,8 @@ int mvc_drop_schema_wrap( mvc* c, str name){
 	return GDK_SUCCEED;
 }
 
-int mvc_create_table_wrap( sql_table *res, mvc* c, sql_schema *s, str name, int* type){
-	*(sql_table**)res = mvc_create_table( *(mvc**)c, *(sql_schema**)s, name, (table_type)*type );
+int mvc_create_table_wrap( sql_table *res, mvc* c, sql_schema *s, str name, int* type, int *sz){
+	*(sql_table**)res = mvc_create_table( *(mvc**)c, *(sql_schema**)s, name, (table_type)*type, *sz );
 	return GDK_SUCCEED;
 }
 

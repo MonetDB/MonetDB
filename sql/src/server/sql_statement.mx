@@ -218,7 +218,7 @@ extern stmt *stmt_create_schema( char *name, char *auth );
 extern stmt *stmt_drop_schema( char *name, int dropaction);
 
 extern stmt *stmt_create_view( stmt *s, char * name, char *query );
-extern stmt *stmt_create_table( stmt *s, char * name, table_type type );
+extern stmt *stmt_create_table( stmt *s, char * name, table_type type, int sz );
 extern stmt *stmt_drop_table( stmt *s, char * name, int drop_action);
 
 extern stmt *stmt_create_column( stmt *t, char *name, char *type, int type_digits, int type_scale );
@@ -838,12 +838,13 @@ stmt *stmt_create_view(stmt *schema, char * name, char * query)
 	return s;
 }
 
-stmt *stmt_create_table(stmt *schema, char * name, table_type type)
+stmt *stmt_create_table(stmt *schema, char * name, table_type type, int size)
 {
 	stmt *s = stmt_create(st_create_table);
 	s->op1.stval = schema;
 	s->op2.stval = stmt_atom_string(name);
 	s->op3.stval = stmt_atom_int(type);
+	s->op4.stval = stmt_atom_int(size);
 	return s;
 }
 
