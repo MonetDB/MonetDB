@@ -16,8 +16,9 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 [ "bat",	  2		  ]
 [ "kernel",	  2		  ]
 [ "lock",	  1		  ]
-[ "mapi",	  2		  ]
-[ "str",	  4		  ]
+[ "main",	  2	  ]
+[ "mapi",	  1	  ]
+[ "str",	  2	  ]
 [ "streams",	  2		  ]
 [ "sys",	  2		  ]
 [ "trans",	  2		  ]
@@ -32,46 +33,48 @@ Ready.
 
 Over..
 
-# 09:44:52 >  
-# 09:44:52 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=59367 < modrefcnt2_s00.milC
-# 09:44:52 >  
+# 00:36:39 >  
+# 00:36:39 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/monet.GNU_32-d.18879/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf" --host=draco --port=58803 < modrefcnt2_s00.milC
+# 00:36:39 >  
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "algebra",	  2		  ]
-[ "arith",	  2		  ]
-[ "bat",	  2		  ]
-[ "kernel",	  2		  ]
+[ "algebra",	  3	  ]
+[ "arith",	  3	  ]
+[ "bat",	  3	  ]
+[ "kernel",	  3	  ]
 [ "lock",	  2		  ]
-[ "mapi",	  2		  ]
-[ "str",	  4		  ]
-[ "streams",	  2		  ]
-[ "sys",	  2		  ]
-[ "trans",	  2		  ]
+[ "main",	  3	  ]
+[ "mapi",	  1	  ]
+[ "str",	  3	  ]
+[ "streams",	  3	  ]
+[ "sys",	  3	  ]
+[ "trans",	  3	  ]
 #-----------------#
 # BAT:	  test	  #
 # (int)	  (lock)  #
 #-----------------#
 [ 0 ]
 
-# 09:44:52 >  
-# 09:44:52 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=59367 < modrefcnt2_s01.milC
-# 09:44:52 >  
+# 00:36:39 >  
+# 00:36:39 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/monet.GNU_32-d.18879/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf" --host=draco --port=58803 < modrefcnt2_s01.milC
+# 00:36:39 >  
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "algebra",	  2		  ]
-[ "arith",	  2		  ]
-[ "bat",	  2		  ]
-[ "kernel",	  2		  ]
+[ "algebra",	  3	  ]
+[ "arith",	  3	  ]
+[ "bat",	  3	  ]
+[ "kernel",	  3	  ]
 [ "lock",	  1		  ]
-[ "mapi",	  2		  ]
-[ "str",	  4		  ]
-[ "streams",	  2		  ]
-[ "sys",	  2		  ]
-[ "trans",	  2		  ]
+[ "main",	  3	  ]
+[ "mapi",	  1	  ]
+[ "str",	  3	  ]
+[ "streams",	  3	  ]
+[ "sys",	  3	  ]
+[ "trans",	  3	  ]
 #-----------------#
 # BAT:	  test	  #
 # (int)	  (lock)  #
