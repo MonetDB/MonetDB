@@ -375,11 +375,16 @@ dnl  default javac flags
 JAVACFLAGS="$JAVACFLAGS -g:none -O"
 AC_SUBST(JAVACFLAGS)
 
-bits=32
 AC_ARG_WITH(bits,
 	AC_HELP_STRING([--with-bits=BITS],
+		[obsolete: use --enable-bits instead]),
+	AC_MSG_ERROR([argument --with-bits is obsolete: use --enable-bits instead]))
+
+bits=32
+AC_ARG_ENABLE(bits,
+	AC_HELP_STRING([--enable-bits=BITS],
 		[specify number of bits (32 or 64)]), [
-case $withval in
+case $enableval in
 32)	case "$host" in
 	ia64*)	AC_ERROR([we do not support 32 bits on $host, yet]);;
 	esac
@@ -389,9 +394,9 @@ case $withval in
 	x86_64*--icc*) AC_ERROR([$CC on $host does not support 64 bits]);;
 	esac
 	;;
-*)	AC_ERROR(--with-bits argument must be either 32 or 64);;
+*)	AC_ERROR(--enable-bits argument must be either 32 or 64);;
 esac
-bits=$withval
+bits=$enableval
 ])
 if test "$bits" = "64"; then
 	dnl  Keep in mind how to call the 32-bit compiler.
@@ -446,6 +451,15 @@ yes-*-linux*-x86_64*-*)
 	CC="$CC -tp=k8-$bits"
 	CXX="$CXX -tp=k8-$bits"
 	;;
+esac
+
+AC_ARG_ENABLE(int_oid,
+	AC_HELP_STRING([--enable-int-oid],
+		[use int as base type for oid instead of size_t]),
+	enable_int_oid=$enableval,
+	enable_int_oid=no)
+case $enable_int_oid in
+yes)	AC_DEFINE(INT_OID, 1, [Define if int should be use as base type for oid]);;
 esac
 
 dnl some dirty hacks
