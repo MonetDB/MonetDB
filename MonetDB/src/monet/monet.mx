@@ -456,13 +456,12 @@ Client monet_init(void){
 		monet_nostalgic = 1;
 	}
 	CNTXTinit();
-        TBL_init(); /* init MIL function table management. */
-        c = initClient(
-		GDKstrdup(GDKgetenv("monet_admin")), 
-		GDKstrdup(GDKgetenv("monet_prompt")), /*DD:TRUE*/FALSE);
-        if (c == 0) monet_exit(1);
+	TBL_init(); /* init MIL function table management. */
+	c = initClient( GDKgetenv("monet_admin"), GDKgetenv("monet_prompt"), 
+		/*DD:TRUE*/FALSE);
+	if (c == 0) monet_exit(1);
 	c->login = time(0);
-        TBL_initclient(c, NULL); /* register user 'adm' for a function table. */
+	TBL_initclient(c, NULL); /* register user 'adm' for a function table. */
 @-
 Make constants for important language tokens
 @c
@@ -487,7 +486,7 @@ str monet_load_script(str file, str mod)
 {
 	FILE *fp = NULL;
 	size_t i = 0, totlen = 8192;
-        char *buf, *p;
+	char *buf, *p;
 	char *mpop = "module_pop();\n";
 #ifdef HAVE_FSTAT
 	struct stat statb;
@@ -496,10 +495,10 @@ str monet_load_script(str file, str mod)
 @-
 Open the scriptfile.
 @c
-        if ((fp = fopen(file, "r")) == 0) {
-                GDKerror("monet_load_script: could not open file: %s (%s)\n", file, mod?mod:"main");
-                return NULL;
-        }
+	if ((fp = fopen(file, "r")) == 0) {
+		GDKerror("monet_load_script: could not open file: %s (%s)\n", file, mod?mod:"main");
+		return NULL;
+	}
 @-
 Read the entire file, realloc if necessary.
 @c
@@ -518,17 +517,16 @@ Read the entire file, realloc if necessary.
 		i = snprintf(p, totlen, "module_push(\"%s\");\n", mod);
 		p += i;
 	}
-	/* if the fstat call above worked, we should not need to enter
-	   the loop */
-        while ((i+=fread(p, 1, totlen-i, fp)) == totlen) {
+	/* if the fstat call above worked, we should not need to enter the loop */
+	while ((i+=fread(p, 1, totlen-i, fp)) == totlen) {
 		size_t len = totlen;
 		totlen += 8192;
 		p = GDKrealloc(buf, totlen);
 		buf = p;
 		p += len;
-        }
+	}
 	buf[i] = 0;
-        fclose(fp);
+	fclose(fp);
 	/* normalize line endings: replace CR-LF by space LF,
 	   replace bare CR by LF */
 	for (p = strchr(buf, '\r'); p; p = strchr(p, '\r')) {
@@ -551,7 +549,7 @@ Read the entire file, realloc if necessary.
 		i += l;
 	}
 
-        buf[i] = 0;
+	buf[i] = 0;
 	return buf;
 }
 
