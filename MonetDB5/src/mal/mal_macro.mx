@@ -50,8 +50,9 @@ of two join operations and,
 when found, it is replaced by the call to joinPath.
 
 The current implementation is limited to finding a consecutive
-sequence. It may be extended in the future to consider the
-flow of control as well.
+sequence, ending in a return-statement. The latter is needed to
+properly embed the result in the enclosed environment.
+It may be extended in the future to consider the flow of control as well.
 
 After both operations the flow of control structure has to be
 checked and fort contraction we also have to resolve the new
@@ -67,6 +68,27 @@ equivalence of a function body as an occurrence in another one.
 
 The optimizers work on a specific symbol, module or act on all
 known symbols.
+
+@- Known issues. 
+The functions subject to expansion or contraction should be
+checked on 'proper' behavior.
+
+The current implementation is extremely limited. 
+The MCoptimizer does not recognize use of intermediate results 
+outside the block being contracted. This should be checked and
+blocks the replacement, unless the intermediates are part of
+the return list.
+Likewise, we assume here that the block has a single return
+statement, which is also the last one to be executed.
+
+The MEoptimizer can not deal with calls controlled by a barrier.
+It would often require a rewrite of several other statements
+as well.
+Similar, the original target list should be properly merged
+with the new block. In particular, the return statement
+provides the handle to move the results into the variables
+expecting the outcome of the function call.
+
 @{
 @+ Implementation section
 @h
@@ -354,7 +376,7 @@ to assess which result to retain.
 @c
 int replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc){
     int i,j,k,lim;
-    InstrPtr p,q;
+    InstrPtr p,q,rq;
     int *cvar, *mvar;
     int ctop=0, mtop=0;
 
@@ -381,19 +403,25 @@ int replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc){
     q = copyInstruction(getInstrPtr(mc,0));  /* the signature */
     q->token = ASSIGNsymbol;
     mb->stmt[pc]= q;
-    for(i=0;i<q->retc; i++)
-        q->argv[i]= p->argv[i];
-    for(i=q->retc;i<q->argc; i++){
+    for(i=q->retc;i<q->argc; i++)
         for(j=0; j<ctop; j++)
         if( q->argv[i] == cvar[j]){
             q->argv[i] = mvar[j];
             break;
         }
-    }
+    rq= getInstrPtr(mb,mb->stop-2);
+    if( rq->token != RETURNsymbol)
+        GDKerror("wrong token %d\n",rq->token);
+    for(i=0;i<rq->retc; i++)
+        for(j=0; j<ctop; j++)
+        if( rq->argv[i] == cvar[j]){
+            rq->argv[i] = mvar[j];
+            break;
+        }
     freeInstruction(p);
 
-    /* shift the rest */
-    k= mc->stop-2;
+    /* strip signature, return, and end statements */
+    k= mc->stop-3;
     for(i=pc+1; i< pc+k; i++) 
         freeInstruction(mb->stmt[i]);
     for(i=pc+k ; i<mb->stop; i++)
@@ -410,7 +438,8 @@ str ORCAMprocessor(MalBlkPtr mb, Symbol t){
 #ifdef DEBUG_MAL_MACRO
     printf("calling the ORCAM processor\n");
 #endif
-    for(i=1; i<mb->stop- mc->stop+2; i++)
+    /* strip signature, return, and end statements */
+    for(i=1; i<mb->stop- mc->stop+3; i++)
     if( malFcnMatch(mc,mb,i)){
 #ifdef DEBUG_MAL_MACRO
     printf("found match for %s at %d \n",t->name,i);

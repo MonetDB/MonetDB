@@ -10,7 +10,8 @@ stdout of test 'tst103` in directory 'src/mal` itself:
 #
 #function f(a:any$1, b:any$2):bat[:any$2,:any$1] ; end f;
 function Admin.f(a:any$1,b:any$2):bat[:any$2,:any$1];	# 0  dynamic (f:bat[:any$2,:any$1])<-(a:any$1)(b:any$2)
-end f;	# 1  
+    return f := bbp.new(:any$2,:any$1);	# 1 CMDBATnew (f:bat[:any$2,:any$1])<-($3:any$2)($4:any$1)
+end f;	# 2  
 #
 #a:= f(1,"hello");
 #b:= f(1,"world");

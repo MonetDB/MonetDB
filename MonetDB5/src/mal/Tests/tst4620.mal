@@ -25,6 +25,7 @@ function algebra.joinPath( a:bat[:any$1,:any$2],
                 c:bat[:any$3,:any4]):bat[:any$1,:any$4];
     z:= join(a,b);
     zz:= join(z,c);
+    return zz;
 end joinPath;
 
 optimizer.MCoptimizer("algebra","joinPath");

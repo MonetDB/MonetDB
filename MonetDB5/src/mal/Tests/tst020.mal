@@ -1,4 +1,4 @@
-function pl(i:str):int;
+function pl(i:str);
 	L:= "something";
 	r:=0;
 barrier l:= r == 0;

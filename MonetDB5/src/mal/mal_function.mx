@@ -154,6 +154,7 @@ void chkFlow(MalBlkPtr mb)
     int  var[DEPTH];
     InstrPtr stmt[DEPTH];
     int btop=0;
+    int retseen=0;
     InstrPtr p;
 
     for(i= 0; i<mb->stop; i++){
@@ -251,10 +252,12 @@ void chkFlow(MalBlkPtr mb)
                 if(ps->typechk == TYPE_FIXED)
                 for(i=0;i<p->retc; i++)
                 if( resolveType(getArgType(mb,ps,i), getArgType(mb,p,i)) == -1){
-                    GDKerror("type mismatch at argument %d\n",i);
+                    GDKerror("%s type mismatch at target %d\n",
+                        (p->token==RETURNsymbol?"RETURN":"YIELD"),i);
                     mb->errors++;
                 }
             }
+            retseen = 1;
             break;
         default:
             if( isaSignature(p) && i ){
@@ -283,6 +286,10 @@ void chkFlow(MalBlkPtr mb)
     p= getInstrPtr(mb,0);
     if( !isaSignature(p))
         GDKerror("SYNTAX ERROR: signature missing\n");
+    if( retseen == 0 && idcmp(functionName(p),"main") &&
+        getArgType(mb,p,0)!= TYPE_void && getArgType(mb,p,0)!= TYPE_any &&
+        (p->token==FUNCTIONsymbol || p->token==FACTORYsymbol))
+        GDKerror("%s missing\n", p->token== FUNCTIONsymbol?"return":"yield");
 }
 @-
 A code may contain temporary names for marking barrier blocks.
@@ -348,11 +355,11 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
             tail = getTailType(x);
             hx = getHeadIndex(x);
             tx = getTailIndex(x);
-            if( hx == v && head == TYPE_any){
+            if(v && hx == v && head == TYPE_any){
                 hx =0;
                 head =t;
             }
-            if( tx == v && tail == TYPE_any){
+            if(v && tx == v && tail == TYPE_any){
                 tx= 0;
                 tail = t;
             }

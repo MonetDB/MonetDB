@@ -31,18 +31,12 @@ end tst2;	# 2
 ##The call to tst2 fails at runtime
 #tst2(b);
 #
-!ERROR: 'bat.insert' undefined in Admin.tst2[1]
-!ERROR: Error in cloned function
-!ERROR: function Admin.tst2(b:bat[:int,:int]):void;	# 0  (tst2:void)<-(b:bat[:int,:int])
-!ERROR:     bat.insert(b,"hello",1);	# 1 BKCinsert_bun ($2:void)<-(b:bat[:int,:int])($3:str)($4:int)
-!ERROR: end tst2;	# 2  
-!ERROR: 'Admin.tst2' undefined in Admin.main[2]
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
     Admin.tst2(b);	# 2  ($4:void)<-(b:bat[:int,:str])
 end main;	# 3  
->
-# 18:26:04 >  
-# 18:26:04 >  Done.
-# 18:26:04 >  
+
+# 15:40:44 >  
+# 15:40:44 >  Done.
+# 15:40:44 >  
 

@@ -7,4 +7,5 @@ function sample(nme:str, val:any):bit;
    t := count(h);
    x := print(t);
    y := print(val);
+   return sample:=true;
 end sample;

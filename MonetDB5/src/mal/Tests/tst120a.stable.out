@@ -9,6 +9,7 @@ stdout of test 'tst120a` in directory 'src/mal` itself:
 #module top;
 #function first(i:sht):sht; end first;
 function top.first(i:sht):sht;	# 0  (first:sht)<-(i:sht)
-end first;	# 1  
+    return first := 0:sht;	# 1  (first:sht)<-($2:sht)
+end first;	# 2  
 #
 >

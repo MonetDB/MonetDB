@@ -22,7 +22,7 @@ function Admin.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
     w := "hello";	# 2  (w:str)<-($5:str)
     return w;	# 3  (w:str)
 end welcome;	# 4  
-!ERROR: type mismatch at argument 0
+
 #
 #function welcome0(lim:int):str;
 #    i:= 2;

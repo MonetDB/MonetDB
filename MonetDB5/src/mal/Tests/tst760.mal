@@ -1,6 +1,6 @@
 # Polymorphic function tests
 # Catching a dynamic error
-function test(b:bat[:any,:any$2],c:any$2):int;
+function test(b:bat[:any,:any$2],c:any$2);
 	k:= 1+c;
 	print(k);
 end test;

@@ -29,7 +29,8 @@ function Admin.sample(nme:str,val:any):bit;	# 0  (sample:bit)<-(nme:str)(val:any
     t := algebra.count(h);	# 4 ALGcount_bat (t:lng)<-(h:bat[:any,:any])
     x := io.print(t);	# 5 IOprint_val (x:int)<-(t:lng)
     y := io.print(val);	# 6 IOprint_val (y:int)<-(val:any)
-end sample;	# 7  
+    return sample := true;	# 7  (sample:bit)<-($11:bit)
+end sample;	# 8  
 #
 >
 # 18:26:04 >  
