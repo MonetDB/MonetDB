@@ -57,15 +57,15 @@ def msc_subdirs(fd, var, values, msc):
     for v in values:
         cond = string.split(v, '?', 1)
         if len(cond) == 1:
-                # non-conditional => use as is
-                Vals.append(cond[0])
+            # non-conditional => use as is
+            Vals.append(cond[0])
         else:
-        	# conditional => use "then" or "else"
-                thn = string.split(cond[1], ':', 1)
-                if cond[0] == 'CROSS_COMPILING'  and  len(thn) > 1:
-                        Vals.append(thn[1])
-                elif cond[0] == 'MONET4':
-                        Vals.append(thn[0])
+            # conditional => use "then" or "else"
+            thn = string.split(cond[1], ':', 1)
+            if cond[0] == 'CROSS_COMPILING'  and  len(thn) > 1:
+                Vals.append(thn[1])
+            elif cond[0] == 'MONET4':
+                Vals.append(thn[0])
     values = Vals
     # HACK to keep uncompilable stuff out of Windows makefiles.
     if 'calibrator' in values:
@@ -337,13 +337,13 @@ def msc_deps(fd, deps, objext, msc):
             if ext == "proto.h":
                 fd.write(getsrc)
                 fd.write('\t$(MEL) $(INCLUDES) -o "%s" -proto "%s.m"\n' % (t, b))
-	    if ext == "mil":
-		fd.write(getsrc)
-		if b+".tmpmil" in deplist:
-			fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "$@"\n' % (b))
-			fd.write('\ttype "%s.tmpmil" >> "$@"\n' % (b))
-                        fd.write("\tif not exist .libs $(MKDIR) .libs\n")
-                        fd.write('\tif exist "%s.mil" $(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b, b))
+            if ext == "mil":
+                fd.write(getsrc)
+                if b+".tmpmil" in deplist:
+                    fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "$@"\n' % (b))
+                    fd.write('\ttype "%s.tmpmil" >> "$@"\n' % (b))
+                    fd.write("\tif not exist .libs $(MKDIR) .libs\n")
+                    fd.write('\tif exist "%s.mil" $(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b, b))
             if ext in ("obj", "glue.obj", "tab.obj", "yy.obj"):
                 target, name = msc_find_target(tar, msc)
                 if name[0] == '_':
@@ -374,11 +374,11 @@ def msc_scripts(fd, var, scripts, msc):
     sd = msc_translate_dir(sd, msc)
 
     for script in scripts['TARGETS']:
-	s,ext2 = rsplit_filename(script)
-	if not ext2 in ext:
-		continue
-	if (script, script, '', sd) in msc['INSTALL']:
-		continue
+        s,ext2 = rsplit_filename(script)
+        if not ext2 in ext:
+            continue
+        if (script, script, '', sd) in msc['INSTALL']:
+            continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
             inf = '$(SRCDIR)\\%s.in' % script
             if inf not in msc['_IN']:
@@ -463,9 +463,9 @@ def msc_binary(fd, var, binmap, msc):
 
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
-	fd.write("%sdir = %s\n" % (binname, msc_translate_dir(bd,msc)) ); 
+        fd.write("%sdir = %s\n" % (binname, msc_translate_dir(bd,msc)) ); 
     else:
-	fd.write("%sdir = $(bindir)\n" % (binname) ); 
+        fd.write("%sdir = $(bindir)\n" % (binname) ); 
 
     msc['BINS'].append(binname)
 
@@ -535,9 +535,9 @@ def msc_bins(fd, var, binsmap, msc):
 
         if binsmap.has_key("DIR"):
             bd = binsmap["DIR"][0] # use first name given
-	    fd.write("%sdir = %s\n" % (bin, msc_translate_dir(bd,msc)) ); 
+            fd.write("%sdir = %s\n" % (bin, msc_translate_dir(bd,msc)) ); 
         else:
-	    fd.write("%sdir = $(bindir)\n" % (bin) ); 
+            fd.write("%sdir = $(bindir)\n" % (bin) ); 
 
         msc['BINS'].append(bin)
 

@@ -94,7 +94,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
-code_gen = { 'm':       [ '.proto.h', '.glue.c', '.mil' ],
+code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'odl':      [ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
             'y':        [ '.tab.c', '.tab.h' ],
             'tab.c':    [ '.tab.o' ],
@@ -110,7 +110,7 @@ code_gen = { 'm':       [ '.proto.h', '.glue.c', '.mil' ],
             'i':        [ '_wrap.c' ],
             'glue.c':   [ '.glue.o' ],
 #            'java':     [ '.class' ],
-	    'tmpmil':	[ '.mil' ],
+            'tmpmil':   [ '.mil' ],
             'mx.in':    [ '.mx' ],
             'tex':      [ '.dvi' ],
             'dvi':      [ '.ps' ],
@@ -239,9 +239,9 @@ def do_code_gen(targets, deps, code_map):
                     newtarget = base + newext
                     ntargets.append(newtarget)
                     if deps.has_key(newtarget):
-			if (f not in deps[newtarget]):
-                        	deps[newtarget].append(f)
-		    else:
+                        if (f not in deps[newtarget]):
+                            deps[newtarget].append(f)
+                    else:
                         deps[newtarget] = [ f ]
             else:
                 ntargets.append(f)

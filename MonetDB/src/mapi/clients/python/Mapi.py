@@ -40,7 +40,7 @@ class server:
 
         self.cmd_intern(user+'\n')
         self.result()
-	self.getprompt()
+        self.getprompt()
         if trace > 0:
             print 'connected ', self.socket
 
@@ -60,7 +60,7 @@ class server:
         if trace > 0:
             print result.encode('utf-8')
         if self.prompt == result :
-		return result
+            return result
         self.getprompt()
         return result
 
@@ -79,9 +79,9 @@ class server:
 
             str = str + self.buffer[0:idx]
             self.buffer = self.buffer[idx+1:]
-	    n = string.find(str,"\n");
-	    if n >= 0:
-		str = str[n+1:]
+            n = string.find(str,"\n");
+            if n >= 0:
+                str = str[n+1:]
             if trace > 1:
                 print str
             try:

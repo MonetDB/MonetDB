@@ -265,14 +265,14 @@ def am_scripts(fd, var, scripts, am):
         am['EXTRA_DIST'].append(src)
 
     for script in scripts['TARGETS']:
-	s,ext2 = rsplit_filename(script)
-	if not ext2 in ext:
-		continue
-	name = "script_" + script
+        s,ext2 = rsplit_filename(script)
+        if not ext2 in ext:
+            continue
+        name = "script_" + script
         if name not in am['BIN_SCRIPTS']:
             am['BIN_SCRIPTS'].append(name)
-	else:
-	    continue
+        else:
+            continue
         fd.write("script_%s: %s\n" % (script, script))
         fd.write("\tchmod a+x $<\n")
         if sd == "$(sysconfdir)":
@@ -391,11 +391,11 @@ def am_binary(fd, var, binmap, am):
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
         bd = am_translate_dir(bd)
-	fd.write("%sdir = %s\n" % (binname, bd))
-	fd.write("%s_PROGRAMS =%s\n" % (binname,  binname))
+        fd.write("%sdir = %s\n" % (binname, bd))
+        fd.write("%s_PROGRAMS =%s\n" % (binname,  binname))
         am['InstallList'].append("\t%s/%s\n" % (bd, binname))
     else:
-    	am['BINS'].append(binname)
+        am['BINS'].append(binname)
 
     if binmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
@@ -452,9 +452,9 @@ def am_bins(fd, var, binsmap, am):
             am['EXTRA_DIST'].append(binsrc)
 
         if binsmap.has_key("DIR"):
-	  lbins.append(bin)
+            lbins.append(bin)
         else:
-          am['BINS'].append(bin)
+            am['BINS'].append(bin)
 
         if binsmap.has_key(bin + "_LIBS"):
             fd.write(am_additional_libs(bin, "", "BIN", binsmap[bin + "_LIBS"], am))
@@ -484,8 +484,8 @@ def am_bins(fd, var, binsmap, am):
     if (len(lbins) > 0):
           bd = binsmap["DIR"][0] # use first name given
           bd = am_translate_dir(bd, am)
-	  fd.write("%sdir = %s\n" % (bin, bd)) 
-	  fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ))
+          fd.write("%sdir = %s\n" % (bin, bd)) 
+          fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ))
           for bn in lbins:
               am['InstallList'].append("\t%s/%s\n" % (bd, bn))
 
@@ -529,9 +529,9 @@ def am_library(fd, var, libmap, am):
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
     if libmap.has_key('NOINST'):
-    	am['NLIBS'].append((libname, sep))
+        am['NLIBS'].append((libname, sep))
     else:
-    	am['LIBS'].append((libname, sep))
+        am['LIBS'].append((libname, sep))
         am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libmap.has_key('MTSAFE'):
@@ -914,10 +914,10 @@ CXXEXT = \\\"cc\\\"
         if os.path.exists(".incs.in"):
             incs = ".incs.in"
         if len(name) > 0:
-        	fd.write("%sincludedir = $(pkgincludedir)/%s\n" % (name, name))
+            fd.write("%sincludedir = $(pkgincludedir)/%s\n" % (name, name))
 	else:
-		name="top"
-        	fd.write("%sincludedir = $(pkgincludedir)\n" % (name))
+            name="top"
+            fd.write("%sincludedir = $(pkgincludedir)\n" % (name))
         fd.write("%sinclude_HEADERS = %s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
 
     fd.write('''
