@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-964165` in directory 'src/test/bugs` itself:
+stdout of test 'cast_varchar2int-bug-sf-964165` in directory 'src/test/bugs` itself:
 
 
 # 13:21:20 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:21:21 >  
-# 13:21:21 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < bug-sf-964165.sql
+# 13:21:21 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < cast_varchar2int-bug-sf-964165.sql
 # 13:21:21 >  
 
 # 6 # querytype

@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-960672` in directory 'src/test/bugs` itself:
+stdout of test 'innerjoin_between-bug-sf-960672` in directory 'src/test/bugs` itself:
 
 
 # 13:21:18 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:21:19 >  
-# 13:21:19 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < bug-sf-960672.sql
+# 13:21:19 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < innerjoin_between-bug-sf-960672.sql
 # 13:21:19 >  
 
 # 6 # querytype

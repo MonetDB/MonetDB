@@ -1,13 +1,13 @@
-stderr of test 'bug-sf-964165` in directory 'src/test/bugs` itself:
+stderr of test 'innerjoin_between-bug-sf-960672` in directory 'src/test/bugs` itself:
 
 
-# 21:35:21 >  
-# 21:35:21 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=43695 --set sql_port=58600 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 21:35:21 >  
+# 10:12:36 >  
+# 10:12:36 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=49963 --set sql_port=52702 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 10:12:36 >  
 
 # builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.3.17
-# builtin opt 	monet_pid = 28700
+# builtin opt 	monet_pid = 20455
 # builtin opt 	prefix = /ufs/niels/data/Linux-i686
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -47,17 +47,17 @@ stderr of test 'bug-sf-964165` in directory 'src/test/bugs` itself:
 # cmdline opt 	monet_mod_path = /ufs/niels/data/Linux-i686/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /ufs/niels/data/Linux-i686/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/niels/data/Linux-i686/var/MonetDB/log
-# cmdline opt 	mapi_port = 43695
-# cmdline opt 	sql_port = 58600
+# cmdline opt 	mapi_port = 49963
+# cmdline opt 	sql_port = 52702
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
-# 21:35:24 >  
-# 21:35:24 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=58600  < bug-sf-964165.sql
-# 21:35:24 >  
+# 10:12:39 >  
+# 10:12:39 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=52702  < innerjoin_between-bug-sf-960672.sql
+# 10:12:39 >  
 
 
-# 21:35:25 >  
-# 21:35:25 >  Done.
-# 21:35:25 >  
+# 10:12:40 >  
+# 10:12:40 >  Done.
+# 10:12:40 >  
 
