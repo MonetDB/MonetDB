@@ -102,7 +102,6 @@ monet\_critical          & monet.mx      & {\em created  }\\
 monet\_contextLock       & monet.mx      & {\em created  }\\
                 & CNTXTfree     & monet\_cntxt monet\_cntxtcur\\
                 & CNTXTnew      & monet\_cntxt monet\_cntxtcur\\
-                & CNTXTreserve  & monet\_cntxt monet\_cntxtcur\\
                 & VARnew        & monet\_cntxt\\\hline
 monet\_parserLock        & monet\_init    & {\em created  }\\
                 & parserEntry & ll\_client and parser\\
