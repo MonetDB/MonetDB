@@ -42,6 +42,7 @@ Try: modules;                - for other modules.
 [ "bitset",	  "plain"	  ]
 [ "bitvector",	  "plain"	  ]
 [ "blob",	  "plain"	  ]
+[ "calib",	  "plain"	  ]
 [ "cluster",	  "plain"	  ]
 [ "counters",	  "plain"	  ]
 [ "ddbench",	  "plain"	  ]
@@ -82,13 +83,13 @@ ls;
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  45,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "MODULES",	  "str",  "str",  46,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
 
 dir;
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  45,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "MODULES",		  "str",  "str",  46,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
@@ -137,6 +138,7 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "bitset"		  ]
 [ "bitvector"		  ]
 [ "blob"		  ]
+[ "calib"		  ]
 [ "cluster"		  ]
 [ "counters"		  ]
 [ "ddbench"		  ]

@@ -58,6 +58,7 @@ malalgebra: loading... done.
   ddbench: loading... done.
  counters: loading... done.
   cluster: loaded.
+    calib: loading... done.
      blob: loaded.
 bitvector: loaded.
    bitset: loading... done.
@@ -83,6 +84,7 @@ bat_arith: loading... done.
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
+[ "calib"	  ]
 [ "cluster"	  ]
 [ "counters"	  ]
 [ "ddbench"	  ]

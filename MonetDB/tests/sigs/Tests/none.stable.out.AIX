@@ -64,6 +64,7 @@ Try: modules;                - for other modules.
 [ "bitset",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
+[ "calib",	  nil	  ]
 [ "cluster",	  nil	  ]
 [ "ddbench",	  nil	  ]
 [ "decimal",	  nil	  ]

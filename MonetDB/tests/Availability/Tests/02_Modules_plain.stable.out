@@ -39,6 +39,7 @@ Try: modules;                - for other modules.
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
+[ "calib"	  ]
 [ "cluster"	  ]
 [ "counters"	  ]
 [ "ddbench"	  ]
@@ -287,6 +288,17 @@ Module: "blob"
 [ "toblob",	  "COMMAND:   ",  "toblob(str) : blob",		  "store a string as a blob."													  ]
 [ "tostr",	  "COMMAND:   ",  "tostr(blob) : str",		  "get the bytes from blob as a string, till the first 0 byte\n         or the end of the blob"					  ]
 [ "tostr",	  "COMMAND:   ",  "tostr(blob, int) : str",	  "get the bytes from blob as a string, starting at byte 'index'\n         till the first 0 byte or the end of the blob."	  ]
+
+Module: "calib"
+
+[ 3 ]
+[ 3 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help														  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "calib_free",	  "COMMAND:   ",  "calib_free() : void",	  "Frees calibrator allocated resources"									  ]
+[ "calib_info",	  "COMMAND:   ",  "calib_info() : BAT[str,dbl]",  "Gives results of calibrator tests as BAT. \n  First row 'ready' indicates if the tests have been performed "	  ]
+[ "calib_init",	  "COMMAND:   ",  "calib_init(lng, lng) : void",  "Runs calibrator tests with given CPU clock frequency and max memory range"					  ]
 
 Module: "cluster"
 

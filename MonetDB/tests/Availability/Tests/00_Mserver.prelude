@@ -20,6 +20,7 @@ MODULES.replace("bat_arith", "plain");
 MODULES.replace("bitset",    "plain");
 MODULES.replace("bitvector", "plain");
 MODULES.replace("blob",      "plain");
+MODULES.replace("calib",     "plain");
 MODULES.replace("cluster",   "plain");
 MODULES.replace("counters",  "plain");
 MODULES.replace("ddbench",   "plain");

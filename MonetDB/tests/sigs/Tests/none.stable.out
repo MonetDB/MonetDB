@@ -64,6 +64,7 @@ Try: modules;                - for other modules.
 [ "bitset",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
+[ "calib",	  nil	  ]
 [ "cluster",	  nil	  ]
 [ "counters",	  nil	  ]
 [ "ddbench",	  nil	  ]
@@ -165,6 +166,7 @@ Try: modules;                - for other modules.
 [ "decimal",	  nil	  ]
 [ "ddbench",	  nil	  ]
 [ "counters",	  nil	  ]
+[ "calib",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "bitset",	  nil	  ]
@@ -1211,6 +1213,41 @@ Try: modules;                - for other modules.
 [ "counters",	  nil	  ]
 
 	dropping counters
+
+#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading calib
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "calib",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "calib",	  nil	  ]
+
+	dropping calib
 
 #---------------------------------#
 # module	| usage_count	  #
