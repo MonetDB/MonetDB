@@ -172,7 +172,7 @@ main(int ac, char **av)
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "ac::dh:p:u:", 
+		int c = getopt_long( ac, av, "a:c:d::h:p:u:", 
 				long_options, &option_index);
 
 		if (c == -1)
