@@ -672,6 +672,7 @@ static int mapi_slice_row(Mapi mid);
 static int mapi_setError(Mapi mid, char *msg, char *action);
 static char * mapi_fetch_line_internal(Mapi mid);
 static MapiMsg mapi_finish_internal(Mapi mid);
+static void mapi_lost_connection();
 
 #ifndef HAVE_GETLOGIN
 #define getlogin() "win32"
@@ -690,12 +691,10 @@ if there may occur confusion on the status of the error flag.
 @c
 void mapi_clrError(Mapi mid)
 {
-	if( mid->error){
-		if(mid->errorstr) free(mid->errorstr);
-		mid->action=0;
-		mid->error=0;
-	}
-
+	if(mid->errorstr) free(mid->errorstr);
+	mid->action=0;	/* contains references to constants */
+	mid->error=0;
+	mid->errorstr=0;
 }
 
 MapiMsg mapi_trace(Mapi mid, int flag)
@@ -1003,6 +1002,15 @@ static void promptMonet(Mapi mid)
 Disconnection from the server leads to removal of the
 Mapi structure. Subsequent access may lead to a crash.
 @c
+static void mapi_lost_connection(Mapi mid){
+	mapi_setError(mid,"Lost connection with server",
+		"mapi_fetch_line");
+	mid->connected= 0;
+	/* finish channels */
+	if( mid->to){ (void) mid->to->close(mid->to); mid->to =0;}
+	if( mid->from){ (void) mid->from->close(mid->from); mid->from =0;}
+}
+
 MapiMsg mapi_disconnect(Mapi mid)
 {
 	int i;
@@ -1024,8 +1032,8 @@ MapiMsg mapi_disconnect(Mapi mid)
 		return mapi_setError(mid,"Warning: multiple connections open",
 					"mapi_disconnect");
 	}
-	(void) mid->from->close(mid->from);
-	(void) mid->to->close(mid->to);
+	(void) mid->from->close(mid->from); mid->from =0;
+	(void) mid->to->close(mid->to); mid->to =0;
 	return mapi_setError(mid,"Connection closed", "mapi_disconnect");
 }
 MapiMsg mapi_reconnect(Mapi mid){
@@ -1144,9 +1152,11 @@ MapiMsg mapi_explain(Mapi mid, FILE *fd)
 	fprintf(fd,"MAPI  = %s\@%s:%d\n",
 		mid->username, mid->hostname, mid->port);
 	if( mid->action) fprintf(fd,"ACTION= %s\n", mid->action);
-	if( mid->query)
-		fprintf(fd,"QUERY = %s%c", mid->query,
-			(strchr(mid->query,'\n')?'\0':'\n'));
+	if( mid->query) {
+		if( strchr(mid->query,'\n'))
+			fprintf(fd,"QUERY = %s", mid->query);
+		else	fprintf(fd,"QUERY = %s\n", mid->query);
+	}
 	if( mid->error)
 		fprintf(fd,"ERROR = %s\n",mid->errorstr);
 	fflush(fd);
@@ -1542,11 +1552,11 @@ It simply retrieves the next line and stores it in the row cache.
 The field anchor structure is prepared for subsequent use by
 mapi_fetch_row.
 The content received is analysed further by mapi_getRow()
+
 @= endofsession
 		if( len==0){
 			mid->blk.eos=1;
-			mapi_setError(mid,"Lost connection with server",
-				"mapi_fetch_line");
+			mapi_lost_connection(mid);
 			return 0;
 		}
 @c
@@ -1610,10 +1620,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 		/* fetch one more block */
 		len = mid->from->read(mid->from, mid->blk.buf+n,
 					1, BLOCK);
-		/* if(len>=0) */ /* Stefan: len is size_t, hence unsigned, hence always >=0 ... !? */
-			mid->blk.buf[n+len]=0;
-		if( len == 0)
-			mid->blk.eos=1;
+		mid->blk.buf[n+len]=0;
 		@:endofsession@
 #else
 		/* fetch one more line */

@@ -230,7 +230,6 @@ int doRequest(Mapi mid, char *buf )
 	}
 	if (mapi_error(mid)) {
 		mapi_explain(mid,stdout);
-		return 0;
 	}
 	return 0;
 }
