@@ -131,6 +131,14 @@ mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra);
 
 mal_export void printBBPinfo(stream *out);
+
+mal_export void resetOptimizerDebugger();
+mal_export void optimizerDebug(MalBlkPtr mb, str name,int actions,long usec);
+mal_export str optimizeMALBlock(MalBlkPtr mb);
+mal_export void showOptimizerStep(int i,int flg);
+mal_export void showOptimizerHistory();
+mal_export str debugOptimizers(MalBlkPtr mb,MalStkPtr stk, InstrPtr pci);
+
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
 Before the interpreter is allowed to proceed we give control
@@ -143,10 +151,10 @@ to the user to alter the trace/debugger options.
 #include "mal_scope.h"      /* for showModuleStatistics() */
 #include "mal_parser.h"
 
+
 #define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; }
 #define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; }
 #define skipWord(c,X) 	  skipNonBlanc(c,X); skipBlanc(c,X);
-
 @-
 Each client has its own breakpoint administration, kept in a global table.
 Although a little space consumptive, it is the easiest to maintain 
@@ -274,6 +282,14 @@ str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
             for(k= p->retc; k<p->argc; k++){
                 str msg=0; 
                 ValPtr v= &stk->stk[p->argv[k]];
+				char *nme, nmebuf[1024];
+
+				if( isTmpVar(mb, getArg(p,k)) ) {
+					snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
+						getVarTmp(mb, getArg(p,k)));
+					nme= nmebuf;
+				} else  nme = getArgName(mb,p,k);
+
                 ATOMformat(v->vtype, VALptr(v), &msg);
                 l= strlen(buf);
                 snprintf(buf+l,BLOCK-l,"%s",msg);
@@ -323,6 +339,8 @@ void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
             ValPtr val= &stk->stk[p->argv[k]];
 			if( v->tmpindex == 0) 
 				stream_printf(cntxt->fdout,"%s=",v->name);
+			else
+				stream_printf(cntxt->fdout,"%c%d=",TMPMARKER,v->tmpindex);
             ATOMprint(val->vtype,VALptr(val),cntxt->fdout);
             if( k < p->argc-1 ) stream_printf(cntxt->fdout,", ");
             }
@@ -674,6 +692,16 @@ signatures satisfying the pattern.
 			}
         	continue;
     	}
+		case 'o': case 'O': /* optimizer steps */
+		{ 	int flg= *b == 'o'? LIST_MAL_INSTR:LIST_MAL_ALL;
+			int idx;
+			skipWord(cntxt,b);
+			if( *b ){
+				idx= atoi(b);
+				showOptimizerStep(idx,flg);
+			} else showOptimizerHistory();
+			break;
+		}
     	case 'r': /* reset program counter */
         	stream_printf(out,"%srestart with current stack\n","#mdb ");
         	stk->cmd= 'r';
@@ -926,6 +954,7 @@ void mdbHelp(stream *f){
     stream_printf(f,"list <fcn> -- list current program block\n");
     stream_printf(f,"List <fcn> -- list with type information\n");
     stream_printf(f,"var  <fcn>  -- print symbol table for module\n");
+    stream_printf(f,"optimizer <idx>  -- display program after optimizer step\n");
     stream_printf(f,"print <var>    -- display value of a variable\n");
     stream_printf(f,"print <var> <cnt>[<first>] -- display BAT chunk\n");
     stream_printf(f,"info <var>     -- display bat variable properties\n");
@@ -935,5 +964,74 @@ void mdbHelp(stream *f){
     stream_printf(f,"up         -- go up the stack\n");
     stream_printf(f,"timer      -- produce micro-second response time\n");
     stream_printf(f,"help       -- this message\n");
+}
+@+ Optimizer debugging
+The modular approach to optimize a MAL program brings with it the
+need to check individual steps. Two options come to mind. If in
+debug mode we could stop after each optimizer action for inspection.
+Alternatively, we keep a history of all MAL program versions for
+aposteriori analysis.
+
+The latter is implemented first.
+@{
+A global stack is used for simplity, later we may have to
+make it thread safe by assigning it to a client record.
+@c
+int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
+
+str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Client cntxt= getClient();
+	(void) stk;
+
+    cntxt->debugOptimizer= cntxt->debugOptimizer? FALSE: TRUE;
+	if(pci) 
+		removeInstruction(mb,pci);
+	return MAL_SUCCEED;
+}
+
+#define MAXSTEPS 128
+struct{
+	str title;
+	int actions;
+	long usec;
+	MalBlkPtr mb;
+} optimizerHistory[MAXSTEPS];
+static int optTop;
+
+void optimizerDebug(MalBlkPtr mb, str name, int actions,long usec){
+	Client c= getClient();
+	if( !c->itrace ) return;
+	if( optTop+1 == MAXSTEPS) return;
+	optimizerHistory[optTop].title= GDKstrdup(name);
+	optimizerHistory[optTop].actions= actions;
+	optimizerHistory[optTop].usec= usec;
+	optimizerHistory[optTop].mb = copyMalBlk(mb);
+	optTop++;
+}
+void resetOptimizerDebugger(){
+	int i;
+	if( optTop){
+		/* garbage collect */
+		for(i=0;i<optTop; i++){
+			freeMalBlk(optimizerHistory[i].mb);
+			GDKfree(optimizerHistory[i].title);
+		}
+	}
+	optTop=0;
+}
+void showOptimizerStep(int i,int flg){
+	if( i<optTop) {
+		stream_printf(GDKout,"%s\n",optimizerHistory[i].title);
+		printFunction(GDKout,optimizerHistory[i].mb,flg);
+	}
+}
+void showOptimizerHistory(){
+	int i;
+	stream *fd= GDKout;
+	for(i=0;i<optTop;i++)
+		stream_printf(fd,"[%d] %s \tactions=%2d time %d usec\n",i, 
+			optimizerHistory[i].title,
+			optimizerHistory[i].actions,
+			optimizerHistory[i].usec);
 }
 @}
