@@ -1424,7 +1424,7 @@ fi
 if test "x$have_bz2" != xno; then
 	save_LDFLAGS="$LDFLAGS"
 	LDFLAGS="$LDFLAGS $BZ_LIBS"
-	AC_CHECK_LIB(bz2, nc_open, BZ_LIBS="$BZ_LIBS -lbz2",
+	AC_CHECK_LIB(bz2, BZ2_bzopen, BZ_LIBS="$BZ_LIBS -lbz2",
 		[ if test "x$have_bz2" = xyes; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
 	LDFLAGS="$save_LDFLAGS"
 fi
