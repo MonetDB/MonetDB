@@ -291,10 +291,10 @@ void mccBody(stream *f,MalBlkPtr mb){
     for(i=1; i<mb->stop; i++){
         p= getInstrPtr(mb,i);
         if( p->barrier== EXITsymbol )
-            stream_printf(f,"\nEXIT_%d:\n",i);
+            stream_printf(f,"EXIT_%d:\n",i);
 
         if( p->barrier== CATCHsymbol ){
-            stream_printf(f,"\nCATCH_%d:\n",i);
+            stream_printf(f,"CATCH_%d:\n",i);
             stream_printf(f,"if( ");
             mccVar(f,mb,getArg(p,0));
             stream_printf(f," == MAL_SUCCEED) goto EXIT_%d;\n",p->jump);
@@ -317,20 +317,28 @@ void mccBody(stream *f,MalBlkPtr mb){
         if( p->barrier)
         switch(p->barrier){
         case BARRIERsymbol:
-            stream_printf(f,"\n\tif( !( ");
+            stream_printf(f,"\tif( !( ");
             mccEntry(f,mb,getArg(p,0));
-            stream_printf(f,") ) goto EXIT_%d; ",p->jump);
-            stream_printf(f,"\nBARRIER_%d:\n",i+1);
+            stream_printf(f,") ) goto EXIT_%d;\n",p->jump);
+            stream_printf(f,"BARRIER_%d:\n",i+1);
             break;
+        case RETURNsymbol:
+            for(j=0;j< p->retc; j++){
+                stream_printf(f,"\tVALcopy(&");
+                mccVar(f,mb, getArg(getInstrPtr(mb,0),j));
+                stream_printf(f,", &");
+                mccVar(f,mb,getArg(p,j));
+                stream_printf(f,");\n");
+            }
+            stream_printf(f,"\treturn Xmsg;\n");
         case CATCHsymbol:
         case EXITsymbol:
             break;
         case LEAVEsymbol:
         case REDOsymbol:
-            stream_printf(f,"\n\tif(  ");
+            stream_printf(f,"\tif(  ");
             mccEntry(f,mb,getArg(p,0));
-            stream_printf(f," ) goto BARRIER_%d; ",p->jump);
-            break;
+            stream_printf(f," ) goto BARRIER_%d;\n",p->jump);
             break;
         default:
             stream_printf(f,"/* case not yet covered: %d */\n",p->barrier);
