@@ -115,9 +115,9 @@ ValPtr VALcopy(ValPtr d, ValPtr s){
 	} else {
 		ptr p = s->val.pval;
 		d->vtype = s->vtype;
-		d->val.pval = GDKmalloc(s->len);
-		d->len = s->len;
-		memcpy(d->val.pval, p, s->len);
+		d->len = ATOMlen(d->vtype,p);
+		d->val.pval = GDKmalloc(d->len);
+		memcpy(d->val.pval, p, d->len);
 	}
 	return d;
 }
