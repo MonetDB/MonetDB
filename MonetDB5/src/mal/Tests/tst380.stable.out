@@ -20,10 +20,10 @@ stdout of test 'tst380` in directory 'src/mal` itself:
 #	return z;
 #end get;
 function Admin.get(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (get:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
-    b := bbp.nme();	# 1  unknown (b:any)
-    z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
-    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:void)<-(z:bat[:any,:any])(title:str)
-    return z;	# 4  (z:bat[:any,:any])
+    b := bbp.nme();	# 1  unknown (b:bat[:int,:str])
+    z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:str])<-(br:bat[:any$1,:any$2])(b:bat[:int,:str])
+    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:str])<-(z:bat[:any,:str])(title:str)
+    return z;	# 4  (z:bat[:any,:str])
 end get;	# 5  
 ## Note the type of the variables will be fixed during the first call
 #	b:= bbp.nme();
@@ -32,10 +32,10 @@ end get;	# 5
 #	return z;
 #end getInt;
 function Admin.getInt(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getInt:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
-    b := bbp.nme();	# 1  unknown (b:any)
-    z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
-    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:void)<-(z:bat[:any,:any])(title:str)
-    return z;	# 4  (z:bat[:any,:any])
+    b := bbp.nme();	# 1  unknown (b:bat[:int,:int])
+    z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:int])<-(br:bat[:any$1,:any$2])(b:bat[:int,:int])
+    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:int])<-(z:bat[:any,:int])(title:str)
+    return z;	# 4  (z:bat[:any,:int])
 end getInt;	# 5  
 #function getLng(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 #	b:= bbp.nme();
@@ -44,10 +44,10 @@ end getInt;	# 5
 #	return z;
 #end getLng;
 function Admin.getLng(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getLng:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
-    b := bbp.nme();	# 1  unknown (b:any)
-    z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
-    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:void)<-(z:bat[:any,:any])(title:str)
-    return z;	# 4  (z:bat[:any,:any])
+    b := bbp.nme();	# 1  unknown (b:bat[:int,:lng])
+    z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:lng])<-(br:bat[:any$1,:any$2])(b:bat[:int,:lng])
+    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:lng])<-(z:bat[:any,:lng])(title:str)
+    return z;	# 4  (z:bat[:any,:lng])
 end getLng;	# 5  
 #function dir(b:bat[:int,:str]):void;
 #	atm:= inspect.getAtomNames();
@@ -103,7 +103,7 @@ end dir;	# 5
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.setName(b,"simplemind");	# 2 BKCsetName ($4:void)<-(b:bat[:int,:int])($5:str)
+    bat.setName(b,"simplemind");	# 2 BKCsetName ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:str)
     z := bbp.getNames();	# 3 CMDbbpNames (z:bat[:int,:str])
     io.print("Get first directory");	# 4 IOprint_val ($7:int)<-($8:str)
     Admin.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])
@@ -138,8 +138,7 @@ end main;	# 8
 # tmp_6	tmp_25		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
 # int	str		str	str	lng	int	str		str	str		int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 13,	  "simplemind",	  "int",  "int",  0,	  280,	  "dirty",	  "load", "transient",	  0		  ]
-#
+[ 13,	  "simplemind",	  "int",  "int",  0,	  270,	  "dirty",	  "load", "transient",	  0		  ]
 
 # 11:28:52 >  
 # 11:28:52 >  Done.

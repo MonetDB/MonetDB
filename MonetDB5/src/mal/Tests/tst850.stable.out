@@ -22,19 +22,19 @@ stdout of test 'tst850` in directory 'src/mal` itself:
 #	print(b);
 #
 function Admin.main():int;	# 0  (main:int)
-    t := bbp.new(:int,:str);	# 1 CMDBATnew (t:bat[:int,:str])<-($2:int)($3:str)
-    bat.insert(t,1,"hello world");	# 2 BKCinsert_bun ($4:void)<-(t:bat[:int,:str])($5:int)($6:str)
-    bat.insert(t,2,"sleep well");	# 3 BKCinsert_bun ($7:void)<-(t:bat[:int,:str])($8:int)($9:str)
-    b := multiplex.script("startsWith",t,"");	# 4  (b:bat[:int,:bit])<-($11:str)(t:bat[:int,:str])($12:str)
-    io.print(b);	# 5 IOprint_val ($13:int)<-(b:bat[:int,:bit])
-end main;	# 6  
+    t := bbp.new(:void,:str);	# 1 CMDBATnew (t:bat[:void,:str])<-($2:void)($3:str)
+    bat.setSequenceBase(t,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:str])<-(t:bat[:void,:str])($5:oid)
+    bat.insert(t,nil,"hello world");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(t:bat[:void,:str])($7:void)($8:str)
+    bat.insert(t,nil,"sleep well");	# 4 BKCinsert_bun ($9:bat[:void,:str])<-(t:bat[:void,:str])($7:void)($10:str)
+    b := multiplex.script("startsWith",t,"");	# 5  (b:bat[:void,:bit])<-($12:str)(t:bat[:void,:str])($13:str)
+    io.print(b);	# 6 IOprint_val ($14:int)<-(b:bat[:void,:bit])
+end main;	# 7  
 #-----------------#
 # h	tmp_5	  # name
 # int	bit	  # type
 #-----------------#
-[ 1,	  true	  ]
-[ 2,	  true	  ]
-#
+[ 0@0,	  true	  ]
+[ 0@0,	  true	  ]
 
 # 14:43:54 >  
 # 14:43:54 >  Done.
