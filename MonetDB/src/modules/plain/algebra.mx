@@ -683,7 +683,7 @@ that for the moment are defined as procs.
 		var wasper;
 		var spat := "", c;
 		var len, i;
-		var escaped;
+		var escaped := false;
 
 		# preprocess the pattern, remove redundant % and make sure
 		# %_ can be handled by replacing it with _%
@@ -699,8 +699,8 @@ that for the moment are defined as procs.
 		# most people to have PCRE installed.  Here we replace % and _
 		# with two characters which are (hopefully) not used in the
 		# input string.
-		var percent := "\x01";
-		var underscore := "\x02";
+		var percent := "\001";
+		var underscore := "\002";
 		
 		# main optimisation and escape char handling loop
 		len := length(pat);
@@ -732,6 +732,8 @@ that for the moment are defined as procs.
 						} else {
 							spat :+= percent;
 						}
+					} else {
+						spat :+= percent;
 					}
 				}
 				escaped := false;
