@@ -343,10 +343,6 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
         SECURITY_ATTRIBUTES sa;
         HANDLE h1, h2;
 
-	CHECKDEBUG PROPDEBUG
-		THRprintf(GDKerr,"MT_mmap('%s', %d, %d, %d, %x)\n",
-		                        path, mode, off, len, fixed);
-
 	if (mode & MMAP_WRITABLE) {
 		mode0 |= GENERIC_WRITE;
 		mode1 |= FILE_SHARE_WRITE;
