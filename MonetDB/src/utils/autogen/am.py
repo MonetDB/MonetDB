@@ -211,8 +211,7 @@ def am_additional_libs(name, sep, type, list, am):
     for l in list:
         if l[0] in ("-", "$", "@"):
             add = add + " " + l
-        elif type != 'LIB' or \
-             os.path.basename(string.replace(l, '/', os.sep))[:4] != 'lib_':
+        else:
             add = add + " " + am_translate_dir(l, am) + ".la"
     return add + "\n"
 

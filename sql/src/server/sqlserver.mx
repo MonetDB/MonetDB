@@ -4,9 +4,7 @@
 
 @m
 .MODULE sqlserver;
-	.USE ascii_io, streams;
-
-	.PRELUDE = sqlserver_prelude;
+	.USE ascii_io;
 
 	.ATOM mvc = ptr;
 	.END;
@@ -182,21 +180,6 @@ replace commands.
 #include <mem.h>
 #include <context.h>
 #include <kernel.h>
-#include <monet_tbl.h>
-
-void sqlserver_prelude(void) {
-	int mid = TBL_module_lookup("streams");
-	ptr hdl = TBL_module_handle(mid);
-	local_TYPE_Stream = (int*)DL_sym(hdl, "TYPE_Stream");
-
-	mid = TBL_module_lookup("ascii_io");
-	hdl = TBL_module_handle(mid);
-	local_ASCIIoutput = (size_t (*)(BAT*, BAT*, BAT*, stream*))DL_sym(hdl, "ASCIIoutput");
-
-	mid = TBL_module_lookup("ascii_io");
-	hdl = TBL_module_handle(mid);
-	local_ASCIIinput = (BAT* (*)(BAT*, BAT*, BAT*, bstream*, size_t))DL_sym(hdl, "ASCIIinput");
-}
 
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
@@ -228,9 +211,9 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
   	}
   	@:builtin_operand(0,TYPE_mvc,M)@
 	m = *M;
-  	@:builtin_operand(1,*local_TYPE_Stream,In)@
+  	@:builtin_operand(1,TYPE_Stream,In)@
 	in = *In;
-  	@:builtin_operand(2,*local_TYPE_Stream,Out)@
+  	@:builtin_operand(2,TYPE_Stream,Out)@
 	out = *Out;
 
 	lc = NEW(context);

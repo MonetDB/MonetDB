@@ -584,8 +584,6 @@ work only on void BATs with enum tails.
     }
 .END;
 
-.PRELUDE = ddbench_prelude;
-
 .END ddbench;
 @* Test Script
 @mil
@@ -674,22 +672,6 @@ ors@batloop() print($t);
 #include "streams.h"
 #include "enum.proto.h"
 
-static int (*local_enum_load)(int *, BAT *);
-static int (*local_enum_table)(BAT **, int *);
-static int (*local_enum_chktpe)(int);
-static int (*local_enum_sethisto)(int *, BAT *);
-#include "monet_tbl.h"
-
-void ddbench_prelude(void)
-{
-	oid mid = TBL_module_lookup("enum");
-	ptr hdl = TBL_module_handle(mid);
-	local_enum_load = (int (*)(int *, BAT *)) DL_sym(hdl, "enum_load");
-	local_enum_table = (int (*)(BAT **, int *)) DL_sym(hdl, "enum_table");
-	local_enum_chktpe = (int (*)(int)) DL_sym(hdl, "enum_chktpe");
-	local_enum_sethisto = (int (*)(int *, BAT *)) DL_sym(hdl, "enum_sethisto");
-}
-
 static int estimate(BAT* b, int lo, int hi) {
 	BUN p = BUNptr(b, BUNindex(b,BUNfirst(b))+lo);
 	BUN q = BUNptr(b, BUNindex(b,BUNfirst(b))+hi);
@@ -727,7 +709,7 @@ static int estimate(BAT* b, int lo, int hi) {
 		return GDK_FAIL;
 	}
 @= check_enumbat
-	if (!(*local_enum_chktpe)(@2->ttype)) {
+	if (!enum_chktpe(@2->ttype)) {
 		GDKerror("@1: attribute tail column is not enum.\n");
 		return GDK_FAIL;
 	}
@@ -868,7 +850,7 @@ int enum_view( BAT** res, BAT* b){
 	BAT *histo;
 	int tpe = b->ttype;
 
-	if (!(*local_enum_table)(&histo, &tpe)) {
+	if (!enum_table(&histo, &tpe)) {
         	return GDK_FAIL;
 	}
 	if (ATOMsize(b->ttype) == 1) {
@@ -925,8 +907,8 @@ int enum_group( BAT** res, BAT* ct, BAT* b){
 	@:check_enumbat(enum_group,ct)@
 	@:check_enumbat(enum_group,b)@
 
-	(*local_enum_table)(&histo_ct, &ctpe);
-	(*local_enum_table)(&histo_b, &btpe);
+	enum_table(&histo_ct, &ctpe);
+	enum_table(&histo_b, &btpe);
 	card_c = BATcount(histo_ct);
 	card_b = BATcount(histo_b);
 	for(log_c=0, pow_c=1; pow_c < card_c; pow_c<<=1, log_c++);
@@ -1000,7 +982,7 @@ nils are not handled properly $=>$ they are treated as normal values
 	histo->batBuns->free += BUNsize(histo)*pow_c*card_b;
 	sprintf(buf, "enum_%d", histo->batCacheid);
 	BBPrename(histo->batCacheid, buf);	
-	(*local_enum_load)(&new_enum_tpe, histo);
+	enum_load(&new_enum_tpe, histo);
 	*res = bn = BATnew(TYPE_void, new_enum_tpe, BATcount(b));
 	BATseqbase(bn, baseoid);
 	rp = (unsigned @3*) BUNfirst(bn);
@@ -1028,7 +1010,7 @@ nils are not handled properly $=>$ they are treated as normal values
 	histo->batBuns->free -= BUNsize(histo)*(pow_c*card_b - histo_entry);
 	bn->batBuns->free += sizeof(@3)*BATcount(b);
 	histo->tsorted = bn->tsorted = 0;
-	(*local_enum_sethisto)(&new_enum_tpe, BATmirror(bn));
+	enum_sethisto(&new_enum_tpe, BATmirror(bn));
 }
 
 @+ fetch-joins on enumerated oids.
@@ -1048,7 +1030,7 @@ int @1( BAT** res, BAT* b1, BAT* b2){
 		GDKerror("@1: first param not BAT@2dense.\n");
 		return GDK_FAIL;
 	}	
-	if ((!(*local_enum_table)(&map, &xx)) || map->htype != TYPE_oid) {
+	if ((!enum_table(&map, &xx)) || map->htype != TYPE_oid) {
 		GDKerror("@1: head of second BAT should be enumerated oid.\n");
 		return GDK_FAIL;
 	}
@@ -1681,11 +1663,11 @@ int rngs_oidselect( BAT** res, BAT* b, ...){
 {	int tpe=b->ttype;
 	BAT *map;
 
-	if (!(*local_enum_chktpe)(b->ttype)) {
+	if (!enum_chktpe(b->ttype)) {
 		GDKerror("oidselect: attribute tail column is not enum.\n");
 		return GDK_FAIL;
 	}
-	(*local_enum_table)(&map, &tpe);
+	enum_table(&map, &tpe);
 	/* if (BUNsize(b) == ATOMsize(b->ttype)) { 
 		if (ATOMstorage(b->ttype) == TYPE_chr) {
 			@:oidsel(@1,@2,@3,char,1)@
@@ -1913,7 +1895,7 @@ int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 
 	@:check_oidsel(subsel_oid,sel)@
 	@:check_enumbat(subsel_oid,b)@
-	(*local_enum_table)(&map, &tpe);
+	enum_table(&map, &tpe);
 
 	if (ATOMstorage(b->ttype) == TYPE_chr) {
 		@:oidref(@1,@2,char)@
@@ -2008,7 +1990,7 @@ int bits_subhisto( BAT** res, BAT* b, ...){
 	@:check_enumbat(@1_subhisto,b)@
 
 	/* initialization */
-	(*local_enum_table)(&map, &xx);
+	enum_table(&map, &xx);
 	@2 {
 		size_t xx = BATcount(map);
 		cnt@3 = (int*) GDKmalloc(xx<<2);
