@@ -271,15 +271,14 @@ void receive( stream *rs, stream *out, int debug ){
 
 int parse_line( const unsigned char *line )
 {
+	int len = 0;
 	int ins = 0;
 	int esc = 0;
 	int cnt = 0;
 
 	while (isspace(*line)) line++;
 
-	if (*line && *line == '-' && line[1] == '-')
-		return 0;
-	for(;*line != 0; line++){
+	for(;*line != 0; line++, len++){
 		if (esc){
 			while (isdigit(*line)) 
 				line++;
@@ -290,6 +289,13 @@ int parse_line( const unsigned char *line )
 			esc = 1;
 		} else if (*line == '\''){
 			ins = 1;
+		/* skip comments */
+		} else if (!ins && len && 
+			 ((*line == '-' && line[-1] == '-') || *line =='#') ){
+			while(*line && *line != '\n') line++;
+		} else if (!ins && len && *line == '*' && line[-1] == '/'){
+			while(*line && *line != '/' && line[-1] != '*') line++;
+		/* count command's */
 		} else if (!ins && *line == ';'){
 			cnt++;
 		/* next checks are to skip long utf8 charachters */

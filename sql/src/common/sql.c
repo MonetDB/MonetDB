@@ -3585,9 +3585,12 @@ static stmt *sql_delete(context * sql, dlist * qname, symbol * opt_where)
 		list_append(l, stmt_insert(
 				stmt_tbat(tv->s->op1.tval, INS, st_dbat), 
 				stmt_reverse(v), 0));
+		/* switched of as its not used and insert first needs code
+		 * to fill this bat 
 		list_append(l, stmt_replace(
 				stmt_tbat(tv->s->op1.tval, DEL, st_obat), 
 				stmt_dup(v)));
+				*/
 		for(n = t->columns->h; n; n = n->next){
 			column *c = n->data;
 			stmt *v = stmt_const( stmt_reverse( first_subset(s)), 

@@ -895,11 +895,6 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_result: {
 		stmt *k = s->op1.stval;
 		int l =  stmt_dump( k, nr, sql );
-		/*
-		len = snprintf( buf, BUFSIZ,
-			"result(Output,mvc_type(myc),mvc_status(myc));\n",l);
-		dump(sql,buf,len,-s->nr);
-		*/
 	} break;
 
 	}
