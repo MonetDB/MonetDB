@@ -40,22 +40,20 @@ else
   MONET_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monet,
-	AC_HELP_STRING([--with-monet=DIR], [monet is installed in DIR]),
-	have_monet="$withval")
+[  --with-monet=DIR     monet is installed in DIR], have_monet="$withval")
 if test "x$have_monet" != xno; then
   MPATH="$withval/bin:$PATH"
   AC_PATH_PROG(MONET_CONFIG,monet-config,,$MPATH)
 
   if test "x$MONET_CONFIG" != x; then
-    AC_MSG_CHECKING(whether MonetDB version $MONET_REQUIRED_VERSION or newer is installed) 
+    AC_MSG_CHECKING(for Monet >= $MONET_REQUIRED_VERSION) 
     MONETVERS=`$MONET_CONFIG --version`
     if test MONET_VERSION_TO_NUMBER(echo $MONETVERS) -ge MONET_VERSION_TO_NUMBER(echo $MONET_REQUIRED_VERSION); then
       have_monet=yes
-      AC_MSG_RESULT($have_monet: found version $MONETVERS)
     else
       have_monet=no
-      AC_MSG_RESULT($have_monet: found only version $MONETVERS)
     fi
+    AC_MSG_RESULT($have_monet -> $MONETVERS found)
   fi
 
   if test "x$have_monet" != xyes; then
@@ -83,7 +81,7 @@ AC_SUBST(MONET_MOD_PATH)
 AC_SUBST(MONET_PREFIX)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
-]) dnl AC_DEFUN AM_MONET
+])
 
 AC_DEFUN(AM_MONET_COMPILER,
 [
@@ -105,8 +103,8 @@ icc_ver=""
 gcc_ver=""
 
 AC_ARG_WITH(gcc,
-	AC_HELP_STRING([--with-gcc=<compiler>], [which C compiler to use])
-AC_HELP_STRING([--without-gcc], [do not use GCC]), [
+[  --with-gcc=<compiler>   which C compiler to use
+  --without-gcc           do not use GCC], [
 	case $withval in
 	yes)	CC=gcc CXX=g++;;
 	no)	case $host_os-$host in
@@ -137,7 +135,7 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 	esac])
 
 AC_ARG_WITH(gxx,
-	AC_HELP_STRING([--with-gxx=<compiler>], [which C++ compiler to use]), [
+[  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
 	*)	CXX=$withval
@@ -183,22 +181,17 @@ yes-*-*)
 	dnl  platforms.  Here's what we found working so far...
 	case "$gcc_ver-$host_os" in
 	*-solaris*)
-		AC_DEFINE(__EXTENSIONS__, 1, [Compiler flags])
+		CFLAGS="$CFLAGS -D__EXTENSIONS__"
+		CXXFLAGS="$CXXFLAGS -D__EXTENSIONS__"
 		;;
 	*-irix*|*-cygwin*|*-darwin*|2.*-*)
 		;;
-	3.3*-*)
-		AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		CFLAGS="$CFLAGS -std=c99"
+	3.3*-*)	
+		CFLAGS="$CFLAGS -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=600"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	3.*-*)	
-		AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		CFLAGS="$CFLAGS -ansi -std=c99"
+		CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=600"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	esac
@@ -312,14 +305,9 @@ AC_SUBST(X_CFLAGS)
 AC_SUBST(X_CXXFLAGS)
 AC_SUBST(NO_X_CFLAGS)
 
-dnl  default javac flags
-JAVACFLAGS="$JAVACFLAGS -g:none -O"
-AC_SUBST(JAVACFLAGS)
-
 bits=32
 AC_ARG_WITH(bits,
-	AC_HELP_STRING([--with-bits=BITS],
-		[specify number of bits (32 or 64)]), [
+[  --with-bits=<#bits>     specify number of bits (32 or 64)],[
 case $withval in
 32)	case "$host" in
 	ia64*)	AC_ERROR([we do not support 32 bits on $host, yet]);;
@@ -434,15 +422,13 @@ AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
 AC_SUBST(NO_OPTIMIZE_FILES)
 
+have_java=auto
 JAVA_VERSION=""
 JAVA="java"
 JAVAC="javac"
 JAR="jar"
 AC_ARG_WITH(java,
-	AC_HELP_STRING([--with-java=DIR],
-		[javac and jar are installed in DIR/bin]),
-	have_java="$withval",
-	have_java=auto)
+[  --with-java=DIR     javac and jar are installed in DIR/bin], have_java="$withval")
 if test "x$have_java" != xno; then
   JPATH=$PATH
   if test "x$have_java" != xauto; then
@@ -494,7 +480,7 @@ AC_SUBST(JAR)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 
-]) dnl AC_DEFUN AM_MONET_COMPILER
+])
 
 AC_DEFUN(AM_MONET_TOOLS,[
 
@@ -553,51 +539,6 @@ AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
-AC_ARG_WITH(python,
-	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	PYTHON="$withval",
-	PYTHON=python)
-if test "x$PYTHON" != xno; then
-  case "$PYTHON" in
-  yes|auto)
-    PYTHON=python;;
-  esac
-  case `"$PYTHON" -c 'import sys; print sys.version[[:3]]'` in
-  2.*) ;;
-  *) PYTHON=no;;
-  esac
-fi
-if test "x$PYTHON" != xno; then
-  PYTHONINC=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()'`
-  AC_SUBST(PYTHONINC)
-fi
-AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$PYTHON" != xno)
-
-AC_ARG_WITH(swig,
-	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
-	SWIG="$withval",
-	SWIG=swig)
-if test "x$SWIG" != xno; then
-  case "$SWIG" in
-  yes|auto)
-    SWIG=swig;;
-  esac
-  # we want the right version...
-  case `$SWIG -version 2>&1` in
-  *Version\ 1.3.2*)
-    # ...and it must support -outdir
-    case `$SWIG -help 2>&1` in
-    *-outdir*) ;;
-    *) SWIG=no;;
-    esac ;;
-  *) SWIG=no;;
-  esac
-fi
-AC_SUBST(SWIG)
-dnl SWIG is useless without Python
-AM_CONDITIONAL(HAVE_SWIG, test "x$SWIG" != xno -a "x$PYTHON" != xno)
-
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
 
@@ -607,16 +548,14 @@ AC_CHECK_TOOL(OBJC,objc)
 dnl Checks for header files.
 AC_HEADER_STDC()
 
-]) dnl AC_DEFUN AM_MONET_TOOLS
+])
 
 AC_DEFUN(AM_MONET_OPTIONS,
 [
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
-	AC_HELP_STRING([--enable-debug],
-		[enable full debugging [default=no]]),
-	enable_debug=$enableval,
-	enable_debug=no)
+[  --enable-debug          enable full debugging [default=off]],
+  enable_debug=$enableval, enable_debug=no)
 if test "x$enable_debug" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -626,12 +565,8 @@ if test "x$enable_debug" = xyes; then
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     CXXFLAGS=" $CXXFLAGS "
     CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
-    JAVACFLAGS=" $JAVACFLAGS "
-    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-    dnl  add "-g"
     CFLAGS="$CFLAGS -g"
     CXXFLAGS="$CXXFLAGS -g"
-    JAVACFLAGS="$JAVACFLAGS -g"
     case "$GCC-$host_os" in
       yes-aix*)
         CFLAGS="$CFLAGS -gxcoff"
@@ -643,20 +578,17 @@ fi
 
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
-	AC_HELP_STRING([--enable-assert],
-		[enable assertions in the code [default=yes]]),
-	enable_assert=$enableval,
-	enable_assert=yes)
+[  --enable-assert         enable assertions in the code [default=on]],
+  enable_assert=$enableval, enable_assert=yes)
 if test "x$enable_assert" = xno; then
-  AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
+  CPPFLAGS="$CPPFLAGS -DNDEBUG"
 fi
 
 dnl --enable-optimize
 NO_INLINE_CFLAGS=""
 AC_ARG_ENABLE(optimize,
-	AC_HELP_STRING([--enable-optimize],
-		[enable extra optimization [default=no]]),
-	enable_optim=$enableval, enable_optim=no)
+[  --enable-optimize       enable extra optimization [default=off]],
+  enable_optim=$enableval, enable_optim=no)
 if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -670,10 +602,7 @@ if test "x$enable_optim" = xyes; then
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     CXXFLAGS=" $CXXFLAGS "
     CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
-    JAVACFLAGS=" $JAVACFLAGS "
-    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
-    JAVACFLAGS="$JAVACFLAGS -g:none -O"
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host-$gcc_ver" in
@@ -753,10 +682,8 @@ AC_SUBST(NO_INLINE_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
-	AC_HELP_STRING([--enable-warning],
-		[enable extended compiler warnings [default=no]]),
-	enable_warning=$enableval,
-	enable_warning=no)
+[  --enable-warning           enable extended compiler warnings [default=off]],
+  enable_warning=$enableval, enable_warning=no)
 if test "x$enable_warning" = xyes; then
   dnl  Basically, we disable/overule X_C[XX]FLAGS, i.e., "-Werror" and some "-Wno-*".
   dnl  All warnings should be on by default (see above).
@@ -777,14 +704,13 @@ fi
 dnl --enable-profile
 need_profiling=no
 AC_ARG_ENABLE(profile,
-	AC_HELP_STRING([--enable-profile], [enable profiling [default=no]]),
-	enable_prof=$enableval,
-	enable_prof=no)
+[  --enable-profile        enable profiling [default=off]],
+  enable_prof=$enableval, enable_prof=no)
 if test "x$enable_prof" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
   else
-    AC_DEFINE(PROFILE, 1, [Compiler flag])
+    CFLAGS="$CFLAGS -DPROFILE"
     need_profiling=yes
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -pg"
@@ -796,15 +722,13 @@ AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 dnl --enable-instrument
 need_instrument=no
 AC_ARG_ENABLE(instrument,
-	AC_HELP_STRING([--enable-instrument],
-		[enable instrument [default=no]]),
-	enable_instrument=$enableval,
-	enable_instrument=no)
+[  --enable-instrument        enable instrument [default=off]],
+  enable_instrument=$enableval, enable_instrument=no)
 if test "x$enable_instrument" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
   else
-    AC_DEFINE(PROFILE, 1, [Compiler flag])
+    CFLAGS="$CFLAGS -DPROFILE"
     need_instrument=yes
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -finstrument-functions -g"
@@ -840,7 +764,7 @@ fi
 AC_SUBST(SHARED_LIBS)
 AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
-]) dnl AC_DEFUN AM_MONET_OPTIONS
+])
 
 AC_DEFUN(AM_MONET_LIBS,
 [
@@ -849,9 +773,8 @@ have_pthread=auto
 PTHREAD_LIBS=""
 PTHREAD_INCS=""
 AC_ARG_WITH(pthread,
-	AC_HELP_STRING([--with-pthread=DIR],
-		[pthread library is installed in DIR]), 
-	have_pthread="$withval")
+[  --with-pthread=DIR     pthread library is installed in DIR], 
+	[have_pthread="$withval"])
 if test "x$have_pthread" != xno; then
   if test "x$have_pthread" != xauto; then
     PTHREAD_LIBS="-L$withval/lib"
@@ -892,9 +815,8 @@ have_readline=auto
 READLINE_LIBS=""
 READLINE_INCS=""
 AC_ARG_WITH(readline,
-	AC_HELP_STRING([--with-readline=DIR],
-		[readline library is installed in DIR]), 
-	have_readline="$withval")
+[  --with-readline=DIR     readline library is installed in DIR], 
+	[have_readline="$withval"])
 if test "x$have_readline" != xno; then
   if test "x$have_readline" != xauto; then
     READLINE_LIBS="-L$withval/lib"
@@ -933,9 +855,8 @@ have_openssl=no
 OPENSSL_LIBS=""
 OPENSSL_INCS=""
 AC_ARG_WITH(openssl,
-	AC_HELP_STRING([--with-openssl=DIR],
-		[OpenSSL library is installed in DIR]), 
-	have_openssl="$withval")
+[  --with-openssl=DIR     OpenSSL library is installed in DIR], 
+	[have_openssl="$withval"])
 if test "x$have_openssl" != xno; then
   if test "x$have_openssl" != xauto; then
     OPENSSL_LIBS="-L$withval/lib"
@@ -1000,9 +921,7 @@ have_z=auto
 Z_CFLAGS=""
 Z_LIBS=""
 AC_ARG_WITH(z,
-	AC_HELP_STRING([--with-z=DIR],
-		[z library is installed in DIR]),
-	have_z="$withval")
+[  --with-z=DIR     z library is installed in DIR], have_z="$withval")
 if test "x$have_z" != xno; then
   if test "x$have_z" != xauto; then
     Z_CFLAGS="-I$withval/include"
@@ -1035,9 +954,7 @@ have_bz=auto
 BZ_CFLAGS=""
 BZ_LIBS=""
 AC_ARG_WITH(bz2,
-	AC_HELP_STRING([--with-bz2=DIR],
-		[bz2 library is installed in DIR]),
-	have_bz="$withval")
+[  --with-bz2=DIR     bz2 library is installed in DIR], have_bz="$withval")
 if test "x$have_bz" != xno; then
   if test "x$have_bz" != xauto; then
     BZ_CFLAGS="-I$withval/include"
@@ -1078,9 +995,8 @@ have_hwcounters=auto
 HWCOUNTERS_LIBS=""
 HWCOUNTERS_INCS=""
 AC_ARG_WITH(hwcounters,
-	AC_HELP_STRING([--with-hwcounters=DIR],
-		[hwcounters library is installed in DIR]), 
-	have_hwcounters="$withval")
+[  --with-hwcounters=DIR     hwcounters library is installed in DIR], 
+	[have_hwcounters="$withval"])
 if test "x$have_hwcounters" != xno; then
   if test "x$have_hwcounters" != xauto; then
     HWCOUNTERS_LIBS="-L$withval/lib"
@@ -1172,9 +1088,7 @@ have_pcl=auto
 PCL_CFLAGS=""
 PCL_LIBS=""
 AC_ARG_WITH(pcl,
-	AC_HELP_STRING([--with-pcl=DIR],
-		[pcl library is installed in DIR]),
-	have_pcl="$withval")
+[  --with-pcl=DIR     pcl library is installed in DIR], have_pcl="$withval")
 if test "x$have_pcl" != xno; then
   if test "x$have_pcl" != xauto; then
     PCL_CFLAGS="-I$withval/include"
@@ -1243,7 +1157,6 @@ size_t iconv();
 fi
 AC_SUBST(ICONV_LIBS)   
 
-AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
 AC_CHECK_PROG(LATEX,latex,latex)
 AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
 AC_CHECK_PROG(DVIPS,dvips,dvips)
@@ -1280,29 +1193,9 @@ fi ]
 AC_MSG_RESULT($INSTALL_BACKUP)
 AC_SUBST(INSTALL_BACKUP)
 
-PHP_INCS=
-AC_ARG_WITH(php,
-	AC_HELP_STRING([--with-php=DIR], [php.h is installed in DIR/include]),
-	have_php="$withval",
-	have_php=auto)
-if test "x$have_php" != xno; then
-  if test "x$have_php" != xauto; then
-    PHP_INCS="-I$withval/include"
-  fi
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $PHP_INCS"
-  AC_CHECK_HEADER(php.h, have_php=yes, have_php=no)
-  CPPFLAGS="$save_CPPFLAGS"
-fi
-if test $have_php != yes; then
-  PHP_INCS=
-fi
-AC_SUBST(PHP_INCS)
-AM_CONDITIONAL(HAVE_PHP, test $have_php = yes)
-
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
-]) dnl AC_DEFUN AM_MONET_LIBS
+])
 
 AC_DEFUN(AM_MONET_CLIENT,[
 
@@ -1312,4 +1205,4 @@ MPATH="$MONET_PREFIX/bin:$PATH"
 AC_PATH_PROG(MX,Mx$EXEEXT,,$MPATH)
 AC_PATH_PROG(MEL,mel$EXEEXT,,$MPATH)
 
-]) dnl AC_DEFUN AM_MONET_CLIENT
+])

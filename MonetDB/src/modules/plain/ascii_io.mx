@@ -302,9 +302,7 @@ ptr bun_tail(BAT *b, size_t nr){
 
 BAT *void_bat_create(int adt, size_t nr) {
 	BAT *b = BATnew(TYPE_void,adt,nr);
-	/* check for correct structures */
-	if( b== NULL) return b;
-	if( BATmirror(b)) BATseqbase(b,0);
+	BATseqbase(b,0);
 	return b;
 }
 
@@ -381,11 +379,6 @@ size_t create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 		fmt[p].seplen = (int) strlen( fmt[p].sep );
 		fmt[p].type = (char*)bun_tail(types, p);
 		fmt[p].adt = ATOMindex( fmt[p].type );
-		if (fmt[p].adt < 0) {
-			GDKerror("load_format: %s has unknown type %s (using str instead).\n", 
-					fmt[p].name, fmt[p].name );
-			fmt[p].adt = TYPE_str;
-		}
 		fmt[p].tostr = &ASCIIadt_toStr;
 		fmt[p].frstr = &ASCIIadt_frStr;
 		fmt[p].extra = NULL;
@@ -486,10 +479,6 @@ int ASCIIcreate_bats( ascii *as ){
 
 	for (i=0; i<as->nr_attrs; i++){
 		fmt[i].c = void_bat_create(fmt[i].adt,as->nr);
-		if (!fmt[i].c) {
-			GDKerror("Failed to create bat of size %d\n", as->nr);
-			return -1;
-		}
 	}
 	return 0;
 }
@@ -500,7 +489,6 @@ BAT *ASCIIcollect_bats( ascii *as ){
 	size_t i;
 	size_t cnt = BATcount(fmt[0].c);
 
-	if( bats == NULL) return NULL;
 	for (i=0; i<as->nr_attrs; i++){
 		BUNins(bats,(ptr)fmt[i].name, (ptr)&fmt[i].c->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
@@ -563,19 +551,14 @@ insert_val( ascii_io *fmt, char *s, char *e, char quote )
 	if (quote){
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
-		if (!s) {
-			GDKwarning("quote '%c' expected but not found in \"%s\"\n", quote, s);
+		if (!s) 
 			return 1;
-		}
 		s++;
 		e = rfind_quote(e, quote);
 		*e = 0;
 	} else if (e>s) {
 		s = lstrip(s);
 		e = rstrip(e);
-	}
-	if (e<s) {
-		e = s;
 	}
 	adt = fmt->frstr( fmt->extra, fmt->adt, s, e );
 	
@@ -688,13 +671,11 @@ insert_line( ascii *as, char *line )
 static int
 ascii_io_error(stream *s)
 {
-	if (!stream_errnr(GDKerr)) {
-		char *err = stream_error(s);
+	char *err = stream_error(s);
 
-		stream_printf( GDKerr, "Stream error %s\n", err);
-		/* use free as stream allocates out side GDK */
-		if (err) free(err);
-	}
+	stream_printf( GDKerr, "Stream error %s\n", err);
+	/* use free as stream allocates out side GDK */
+	if (err) free(err);
 	return -1;
 }
 
@@ -789,8 +770,8 @@ static INLINE int
 read_more(bstream * in, stream * out, int n)
 {
 	if (out) {
-		do {
 		/* query is not finished ask for more */
+		while (in->len <= in->pos) {
 			if (in->eof || !isa_block_stream(in->s) ) { 
 				if (out && stream_write(out,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
 					stream_flush(out);
@@ -799,7 +780,7 @@ read_more(bstream * in, stream * out, int n)
 			/* we need more query text */
 			if (bstream_next( in ) < 0) 
 				return EOF;
-		} while (in->len <= in->pos); 
+		}
 	} else {
 		bstream_read( in, n );
 	}
@@ -832,6 +813,10 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 			char *e = strstr( s, sep );
 			if (e){
 				*e = '\0';
+				if ((e-s) <= 1){ /* empty line indicates eof */
+					b->eof = 1;
+					break;
+				}
 				if (insert_line(as, s ) < 0){
 					s = e + seplen;
 					b->pos = (s-b->buf);

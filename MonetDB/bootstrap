@@ -185,23 +185,11 @@ test -f conf/ltmain.sh || $LIBTOOLIZE -c -f;
 test -f conf/ltconfig && perl -i -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
 
 
-# in case automake was installed after libtool:
-# give aclocal a hint, where to find libtool.m4
-LT_M4_DIR=""
-d="`type -p $LIBTOOL | sed 's|/bin/'"$LIBTOOL"'$||'`/share/aclocal"
-if [ -d "$d" ] ; then
-	LT_M4_DIR="-I $d"
-fi
+# in case autmake was installed after libtool:
+# give aclocal a hint, where to find libtool.m4 
+LT_M4_DIR="`type -p $LIBTOOL | sed 's|/bin/'"$LIBTOOL"'$||'`/share/aclocal"
 
-# make sure, aclocal finds pkg.m4 even if pkg-config is not installed in /usr/;
-# requires that location of pkg-config is in PATH
-PKG_M4_DIR=""
-d="`type -p pkg-config | sed 's|/bin/pkg-config$||'`/share/aclocal"
-if [ -d "$d" ] ; then
-	PKG_M4_DIR="-I $d"
-fi
-
-aclocal -I . -I conf $LT_M4_DIR $PKG_M4_DIR $CONFDIR
+aclocal -I . -I conf -I "$LT_M4_DIR" $CONFDIR
 
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)

@@ -624,7 +624,7 @@ int TBL_M_unlock(Client c) {
 	 * (2) then rehash => last-defined first in hash-list
 	 */
 	BATorder(BATmirror(c->fcntbl));
-	if (BATprepareHash(c->fcntbl)) assert(0);	
+	(void) BATprepareHash(c->fcntbl);	
     	BATfakeCommit(c->fcntbl);
     }
     BATfakeCommit(c->acctbl);
@@ -665,7 +665,7 @@ static int getparams(oid fid, str argv[]) {
 	int j = 0;
 	BUN p;
 
-	if (BATprepareHash(TBL_fcn_pro)) assert(0);	
+	(void) BATprepareHash(TBL_fcn_pro);
 	HASHloop_oid(TBL_fcn_pro, TBL_fcn_pro->hhash, i, &fid, p) {
 		*(t++) = (str) BUNtvar(TBL_fcn_pro, p); 
 		j++;
@@ -916,16 +916,13 @@ Obtains a list of modules by looking at what files are present in the
 module directory.
 @c
 BAT* TBL_getdir(void) {
+    BAT *b = BATnew(TYPE_int, TYPE_str, 100);
+    int i = 0;
+   
 #ifndef STATIC 
     char *name,*basename;
     size_t liblen = strlen("lib");
-#endif
-    BAT *b = BATnew(TYPE_int, TYPE_str, 100);
-    int i = 0;
-  
-    if (b == NULL) return NULL;  
 
-#ifndef STATIC 
     MSP_rewind_module_list();
     for (;;) {
             name=MSP_next_module(".mil");
@@ -933,13 +930,13 @@ BAT* TBL_getdir(void) {
             basename=strrchr(name,DIR_SEP)+1;
 	    if (strncmp(basename,"lib",liblen)==0)
 	       basename+=liblen;
-            if (BUNins(b, &i, basename) == NULL) assert(0);
+            BUNins(b, &i, basename);
             i++;
     }
 #else 
     for(i=0; i<DL_TABLE_MAXLIBS; i++)  
     	if (DL_mod[i] != NULL) {
-            if (BUNins(b, &i, DL_mod[i]+1) == NULL) assert(0);
+            BUNins(b, &i, DL_mod[i]+1);
         }
 #endif
     return b;
@@ -987,10 +984,10 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 
 	mid = TBL_oid++;
 
-	if (BUNins(TBL_mod_nme, &mid, name) == NULL) assert(0);
+	BUNins(TBL_mod_nme, &mid, name);
 	{
 		int zero = 0;
-		if (BUNins(TBL_mod_cnt, &mid, &zero) == NULL) assert(0);
+		BUNins(TBL_mod_cnt, &mid, &zero);
 	}
   	return mid;
 }
@@ -1001,7 +998,7 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 @T
 While MIL procs are typically introduced by MIL modules, they can be typed in at anytime 
 in a MIL session (not belonging to any specific module). They are represented as parsed
-MIL trees, with their root in TBL\_fcn\_imp and shared in all client fcntbl-s. As a consequence, 
+MIL trees, with their root in TBL_fcn_imp and shared in all client fcntbl-s. As a consequence, 
 we must do indiviual refcounting for them (i.e. they cannot use the module refcnt mechanism). 
 
 The following rules apply:
@@ -1017,14 +1014,14 @@ gets this proc as expected.
 void TBL_incproc(oid pid) {
 	int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
 	cnt++;
-	if (BUNreplace(TBL_fcn_cnt, &pid, &cnt) == NULL) assert(0);
+	BUNreplace(TBL_fcn_cnt, &pid, &cnt);
 }
 
 void TBL_decproc(oid pid) {
 	int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
 	if (cnt > 1) {
 		cnt--;
-		if (BUNreplace(TBL_fcn_cnt, &pid, &cnt) == NULL) assert(0);
+		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
 	} else {
 		/* remove last reference: free MIL tree, remove from TBL structures */
 		YYSTREE *x = (YYSTREE*) BUNtloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
@@ -1070,7 +1067,7 @@ void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYS
 	TBL_fcn_pro_size++;
 	if (body == sig) {
 		/* forward definitions will never actually match */
-		if (BUNins(TBL_fcn_pro, &pid, "<predefinition>") == NULL) assert(0);  
+		BUNins(TBL_fcn_pro, &pid, "<predefinition>");  
 	} else {
 		sht anynum, *any1 = NULL, *any2 = NULL;
 		char returntpe[128];
@@ -1115,7 +1112,7 @@ void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYS
 
 		/* insert a signature in TBL_fcn_pro */
 		if (sig == NULL) {
-			if (BUNins(TBL_fcn_pro, &pid, "*any") == 0) assert(0); 
+			BUNins(TBL_fcn_pro, &pid, "*any"); 
 		} else {
 			YYSTREE cur=sig;
 			for(j=1; cur; cur=cur->overflow) {
@@ -1154,7 +1151,7 @@ void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYS
 							*(p++) = ')'; *(p++) = 0; 
 						}
 					}
-					if (BUNins(TBL_fcn_pro, &pid, tpenme) == NULL) assert(0); 
+					BUNins(TBL_fcn_pro, &pid, tpenme); 
 				}
 			}
 		} 
@@ -1162,18 +1159,18 @@ void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYS
 			if (any1 && *any1 < 1024) PROC_TYPE1(body) = 4096;
 			if (any2 && *any2 < 1024) PROC_TYPE2(body) = 4096;
 		}
-		if (BUNins(TBL_fcn_pro, &pid, returntpe) == NULL) assert(0); 
+		BUNins(TBL_fcn_pro, &pid, returntpe); 
 	}
 	j = 1; /* initial reference count */
 	if (mod) {
-		if (BUNins(TBL_mod_proc, mod, &pid) == NULL) assert(0);
+		BUNins(TBL_mod_proc, mod, &pid);
 		j++; /* extra reference if it belongs to a module */
 	}
-	if (BUNins(TBL_fcn_cnt, &pid, &j) == NULL) assert(0);
-	if (BUNins(TBL_fcn_nme, &pid, nme) == NULL) assert(0);
-	if (BUNins(TBL_fcn_imp, &pid, &body) == NULL) assert(0);
-	if (BUNins(TBL_fcn_tpe, &pid, &tpe) == NULL) assert(0);
-	if (BUNins(client->fcntbl, nme, &pid) == NULL) assert(0);
+	BUNins(TBL_fcn_cnt, &pid, &j);
+	BUNins(TBL_fcn_nme, &pid, nme);
+	BUNins(TBL_fcn_imp, &pid, &body);
+	BUNins(TBL_fcn_tpe, &pid, &tpe);
+	BUNins(client->fcntbl, nme, &pid);
 
 	/* use this space only once, so disguise name str as a ptr */
 	body->yyval.vtype = TYPE_ptr; 
@@ -1191,13 +1188,13 @@ and for the module it was defined in.
 void TBL_delproc(Client client, str nme) {
 	int i;
 	TBL_M_lock(client);
-	if (BATprepareHash(client->fcntbl)) assert(0);	
+	(void) BATprepareHash(client->fcntbl);
 	HASHloop_str(client->fcntbl, client->fcntbl->hhash, i, nme) {
 		BUN p = BUNptr(client->fcntbl, i);
 		oid pid = *(oid*) BUNtloc(client->fcntbl, p);
 		if (*(int*) BUNtloc(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
 			TBL_decproc(pid);
-			if (BUNdelete(client->fcntbl, p) == NULL) assert(0);
+			BUNdelete(client->fcntbl, p);
 		}
 	}
 	TBL_M_unlock(client);
@@ -1213,7 +1210,6 @@ static BAT *TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int 
 	char buf[128], *user = client->user;
 	Variable v;
 
-	if (b == NULL) GDKfatal("TBL_create: could not allocate.");
 	if (hmode) BATkey(b,hmode);
 	if (tmode) BATkey(BATmirror(b),tmode);
 
@@ -1285,7 +1281,7 @@ Since the BBP will no longer store these tables only creation is needed
  	@:TBL_create(fcn,imp,oid,ptr,600,BOUND2BTRUE,FALSE)@	
  	@:TBL_create(fcn,tpe,oid,int,600,BOUND2BTRUE,FALSE)@	
  	@:TBL_create(fcn,mid,oid,oid,600,BOUND2BTRUE,FALSE)@	
-	if (BATprepareHash(TBL_fcn_mid)) assert(0);	
+	(void) BATprepareHash(BATmirror(TBL_fcn_mid));
  	@:TBL_create(fcn,sig,oid,str,100,BOUND2BTRUE,FALSE)@	
  	@:TBL_create(fcn,dsc,oid,str,500,BOUND2BTRUE,FALSE)@	
  	@:TBL_create(fcn,aut,oid,str,500,BOUND2BTRUE,FALSE)@	
@@ -1349,8 +1345,8 @@ oid TBL_M_load(TBLinstall *inst, Client client, str module) {
 		DL_close(hdl);
 		return 0;
 	}
-	if (BUNdelHead(TBL_mod_hdl, &mid) == NULL) assert(0);
-	if (BUNins(TBL_mod_hdl, &mid, &hdl) == NULL) assert(0);
+	BUNdelHead(TBL_mod_hdl, &mid);
+	BUNins(TBL_mod_hdl, &mid, &hdl);
 	dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
 	return mid;
 }
@@ -1382,7 +1378,7 @@ int TBL_M_client_install(Client client, oid mid) {
 
 	/* Install all atoms in user atomtbl.
 	 */
-	if (BATprepareHash(TBL_mod_atm)) assert(0); 
+	(void) BATprepareHash(TBL_mod_atm); 
 	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, &mid, r) {
 		nme = (char *) BUNtail(TBL_mod_atm, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
@@ -1390,13 +1386,13 @@ int TBL_M_client_install(Client client, oid mid) {
 		if ((aid = ATOMindex(s)) < 0) {
 			GDKerror("TBL_M_client_install: atom '%s' unknown.\n", s);
 		} else {
-			if (BUNins(client->atomtbl, s, &aid) == NULL) assert(0);
+			BUNins(client->atomtbl, s, &aid);
 		}
 	}
 
 	/* Install all accelerators in user acctble
 	 */
-	if (BATprepareHash(TBL_mod_acc)) assert(0); 
+	(void) BATprepareHash(TBL_mod_acc); 
 	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, &mid, r) {
 		nme = (char *) BUNtail(TBL_mod_acc, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
@@ -1404,17 +1400,17 @@ int TBL_M_client_install(Client client, oid mid) {
 		if ((aid = ACCindex(s)) < 0) {
 			GDKerror("TBL_M_client_instal: accelerator '%s' unknown.\n", s);
 		} else {
-			if (BUNins(client->acctbl, s, &aid) == NULL) assert(0);
+			BUNins(client->acctbl, s, &aid);
 		}
 	}
 
 	/* Install all functions and operations in user fcntbl.
 	 */
-	if (BATprepareHash(fcn_mid)) assert(0);
-	assert(fcn_mid->hhash_heap);
+	(void) BATprepareHash(fcn_mid);
 	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
 		fid = * (oid *) BUNtail(fcn_mid, r);
-		if (BUNins(client->fcntbl, BUNtailfnd(char, TBL_fcn_nme, r, &fid), &fid) == NULL) assert(0);
+		BUNins(client->fcntbl, 
+			BUNtailfnd(char, TBL_fcn_nme, r, &fid), &fid);
 	}
 	return 1;
 }
@@ -1479,9 +1475,9 @@ int TBL_M_incref(Client client, oid mid) {
     	int cid = client - monet_clients;
 	int i = TBL_M_countref(mid);
 
-	if (BUNins(TBL_mod_use, &mid, &cid) == NULL) assert(0);
+	BUNins(TBL_mod_use, &mid, &cid);
 	i++;
-	if (BUNreplace(TBL_mod_cnt, &mid, &i) == NULL) assert(0);
+	BUNreplace(TBL_mod_cnt, &mid, &i);
 	dlFPRINTF(GDKerr, "  TBL_M_incref = %d\n", i);
 
 	return 1;
@@ -1495,13 +1491,12 @@ int TBL_M_decref(Client client, oid mid) {
 		GDKwarning("TBL_M_decref: mod(" SZFMT ") cannot decrease refcnt\n", (size_t) mid);
 	} else {
 		BUN p = BUNlocate(TBL_mod_use, &mid, &cid);
-		assert(p);
-		if (BUNdelete(TBL_mod_use, p) == NULL) assert(0);
+		BUNdelete(TBL_mod_use, p);
 		if (--i == 0) {
-			if (BUNdelHead(TBL_mod_nme, &mid) == NULL) assert(0);
-			if (BUNdelHead(TBL_mod_cnt, &mid) == NULL) assert(0);
+			BUNdelHead(TBL_mod_nme, &mid);
+			BUNdelHead(TBL_mod_cnt, &mid);
 		} else {
-			if (BUNreplace(TBL_mod_cnt, &mid, &i) == NULL) assert(0);
+			BUNreplace(TBL_mod_cnt, &mid, &i);
 		}
 	}
 	dlFPRINTF(GDKerr, "  TBL_M_decref = %d\n", i);
@@ -1719,7 +1714,7 @@ static int unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int na
 			BBP_status_on(bid, BBPUNLOADING, "TBL_unloadmod");
 		}
 	}
-	if (BUNdelHead(TBL_mod_drop, &mid) == NULL) assert(0);
+	BUNdelHead(TBL_mod_drop, &mid);
 	BBPunlock("drop"); /* others can try to load BATs again */
 	return 0; 
 }
@@ -1781,7 +1776,7 @@ Check if it is in use already.
 preparation phase (only meaningful for C-modules) */
 @c
 	/* find out which atoms and accelerators belong to it */
-	if (BATprepareHash(TBL_mod_atm)) assert(0); 
+	(void) BATprepareHash(TBL_mod_atm); 
 	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, &mid, r) {
 		nme = (char *) BUNtail(TBL_mod_atm, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
@@ -1792,7 +1787,7 @@ preparation phase (only meaningful for C-modules) */
 		if (ntpes == mtpes) 
 			tpes = (int*) GDKrealloc(tpes, (mtpes*=2)*sizeof(int));
 	}
-	if (BATprepareHash(TBL_mod_acc)) assert(0); 
+	(void) BATprepareHash(TBL_mod_acc); 
 	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, &mid, r) {
 		nme = (char *) BUNtail(TBL_mod_acc, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
@@ -1820,27 +1815,27 @@ drop will go through;
 		/* LOGICAL DROP */
 		if (*module != '_') {
 			/* decrease references to MIL procs and remove from client fcntbl */
-			if (BATprepareHash(TBL_mod_proc)) assert(0);
+			(void) BATprepareHash(TBL_mod_proc);
 			HASHloop_str(TBL_mod_proc, TBL_mod_proc->hhash, j, module) {
 				fid = *(oid*) BUNtloc(TBL_mod_proc,BUNptr(TBL_mod_proc, j));
 				BUNfndOID(r, fcntbl, &fid);
 				if (r) {
 					TBL_decproc(fid);
-					if (BUNdelete(fcntbl, r) == NULL) assert(0);
+					BUNdelete(fcntbl, r);
 				}
 			}
 		} else {
 			/* delete all the C-modules's atoms, accelerators and functions */
 			for(j=0; j<ntpes; j++)
-				if (BUNdelHead(BATmirror(father->atomtbl), tpes+j) == NULL) assert(0);
+				BUNdelHead(BATmirror(father->atomtbl), tpes+j);
 			for(j=0; j<naccs; j++)
-				if (BUNdelHead(BATmirror(father->acctbl), accs+j) == NULL) assert(0);
+				BUNdelHead(BATmirror(father->acctbl), accs+j);
 
-			if (BATprepareHash(fcn_mid)) assert(0);
+			(void) BATprepareHash(fcn_mid);
 			HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
 				fid = * (oid *) BUNtail(fcn_mid, r);
 				BUNfndOID(r,fcntbl, &fid);
-				if (r && BUNdelete(fcntbl, r) == NULL) assert(0);
+				if (r) BUNdelete(fcntbl, r);
 			}
 		}
 	}
@@ -1849,7 +1844,7 @@ drop will go through;
 		/* PHYSICAL DROP */
 		if (*module != '_') {
 			/* MIL-modules kill the procs they introduced as well as the load-script variables */	
-			if (BATprepareHash(TBL_mod_proc)) assert(0);
+			BATprepareHash(TBL_mod_proc);
 			HASHloop_str(TBL_mod_proc, TBL_mod_proc->hhash, j, module) {
 				oid pid = *(oid*) BUNtloc(TBL_mod_proc,BUNptr(TBL_mod_proc, j));
 				if ((r = BUNfnd(TBL_fcn_nme, &pid)) != NULL) {
@@ -1859,13 +1854,13 @@ drop will go through;
 					TBL_decproc(pid);
 				}
 			} 
-			if (BATprepareHash(TBL_mod_var)) assert(0);
+			BATprepareHash(TBL_mod_var);
 			HASHloop_str(TBL_mod_var, TBL_mod_var->hhash, j, module) {
 				p = BUNptr(TBL_mod_var, j);
 				VARdel(client->stk, *(ptr*) BUNtloc(TBL_mod_var,p));
 			}
-			if (BUNdelHead(TBL_mod_proc, module) == NULL) assert(0);
-			if (BUNdelHead(TBL_mod_var, module) == NULL) assert(0);
+			BUNdelHead(TBL_mod_proc, module);
+			BUNdelHead(TBL_mod_var, module);
 	    	} else {
 			/* C-module: call C epilogue, dlcose, drop dependencies and deinstall it */
 			BAT *b2 = BAT_select(TBL_fcn_mid, &mid, &mid, FALSE);
@@ -1878,7 +1873,7 @@ drop will go through;
 				sprintf(mod_del_name, "%s_Module_Delete", module);
 				addr = (int (*)(void)) DL_sym(hdl, mod_del_name);
 				if (addr != NULL) (*addr)();
-				if (BUNdelete(TBL_mod_hdl, p) == NULL) assert(0);
+				BUNdelete(TBL_mod_hdl, p);
 				DL_close(hdl);
 			}		
 
@@ -1888,7 +1883,7 @@ drop will go through;
 			}
 			BBPreclaim(b2);
 		}
-		if (BUNdelHead(TBL_mod_dep, &mid) == NULL) assert(0);
+		BUNdelHead(TBL_mod_dep, &mid);
 	}
 
 	/* drop all dependency modules */
@@ -1989,7 +1984,7 @@ int TBL_normal_resolve(str name, int argc, ValPtr argv,
 Try to resolve the function to an address.
 @c
 	TBL_set_readlock();
-	if (BATprepareHash(fcntbl)) assert(0);
+	(void) BATprepareHash(fcntbl);
 	if (TBL_checkparams_init(&pt, argc, argv, atomtbl) < 0) {
 		TBL_unset_readlock();
 		return TBL_RESOLVE_NOTPE;
@@ -2252,7 +2247,6 @@ int TBL_setaggr_resolve(str nme, int argc, ValPtr argv,
             }
         }
         tmp = BATnew(BATttype(b), BATttype(b), 1);
-	if (tmp == NULL) return TBL_setaggr_cleanup(-4, b, extent);
         param[1].vtype = TYPE_bat;
         param[1].val.bval = tmp->batCacheid;
  
@@ -2318,7 +2312,7 @@ void TBL_printsigs(str s, int stk, str nme) {
         CNTXTclient(stk, &c);
         b = c->fcntbl;
 	TBL_set_readlock();
-	if (BATprepareHash(b) == 0) 
+	(void) BATprepareHash(b);
 	HASHloop_str(b, b->hhash, i, nme) {
 		BUN p = BUNptr(b, i);
 		oid fid = *(oid*) BUNtloc(b, p);
@@ -2363,7 +2357,7 @@ void *TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv){
         CNTXTclient(stk, &c);
  
 	TBL_set_readlock();
-	if (BATprepareHash(c->fcntbl) == 0)
+	(void) BATprepareHash(c->fcntbl);
 	if (TBL_checkparams_init(&pt, argc, argv, BATmirror(c->atomtbl)) >= 0)
 		HASHloop_str(c->fcntbl, c->fcntbl->hhash, i, name) 
 	{
@@ -2482,40 +2476,26 @@ void TBL_initclient(Client client, Client father) {
 	 	 * with the standard types.
 	 	 */
 		client->acctbl = TBL_create(client, "acctbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, BOUND2BTRUE);
-		i = ACC_hash; 
-		if (BUNins(client->acctbl, "hash", &i) == NULL) assert(0);
-		i = ACC_index;
-		if (BUNins(client->acctbl, "index", &i) == NULL) assert(0);
+		i = ACC_hash; BUNins(client->acctbl, "hash", &i);
+		i = ACC_index;BUNins(client->acctbl, "index", &i);
 
 		/* Create the client atom-table, and fill it 
 	 	 * with the standard types.
 	 	 */
 		client->atomtbl = TBL_create(client, "atomtbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, 0);
-		i = TYPE_void;
-		if (BUNins(client->atomtbl, "void", &i) == NULL) assert(0);
-		i = TYPE_bit; 
-		if (BUNins(client->atomtbl, "bit", &i) == NULL) assert(0);
-		i = TYPE_chr; 
-		if (BUNins(client->atomtbl, "chr", &i) == NULL) assert(0);
-		i = TYPE_sht; 
-		if (BUNins(client->atomtbl, "sht", &i) == NULL) assert(0);
-		i = TYPE_bat; 
-		if (BUNins(client->atomtbl, "bat", &i) == NULL) assert(0);
-		if (BUNins(client->atomtbl, "BAT", &i) == NULL) assert(0);
-		i = TYPE_int; 
-		if (BUNins(client->atomtbl, "int", &i) == NULL) assert(0);
-		i = TYPE_oid; 
-		if (BUNins(client->atomtbl, "oid", &i) == NULL) assert(0);
-		i = TYPE_ptr; 
-		if (BUNins(client->atomtbl, "ptr", &i) == NULL) assert(0);
-		i = TYPE_flt; 
-		if (BUNins(client->atomtbl, "flt", &i) == NULL) assert(0);
-		i = TYPE_dbl; 
-		if (BUNins(client->atomtbl, "dbl", &i) == NULL) assert(0);
-		i = TYPE_lng; 
-		if (BUNins(client->atomtbl, "lng", &i) == NULL) assert(0);
-		i = TYPE_str; 
-		if (BUNins(client->atomtbl, "str", &i) == NULL) assert(0);
+		i = TYPE_void;BUNins(client->atomtbl, "void", &i);
+		i = TYPE_bit; BUNins(client->atomtbl, "bit", &i);
+		i = TYPE_chr; BUNins(client->atomtbl, "chr", &i);
+		i = TYPE_sht; BUNins(client->atomtbl, "sht", &i);
+		i = TYPE_bat; BUNins(client->atomtbl, "bat", &i);
+		      	BUNins(client->atomtbl, "BAT", &i);
+		i = TYPE_int; BUNins(client->atomtbl, "int", &i);
+		i = TYPE_oid; BUNins(client->atomtbl, "oid", &i);
+		i = TYPE_ptr; BUNins(client->atomtbl, "ptr", &i);
+		i = TYPE_flt; BUNins(client->atomtbl, "flt", &i);
+		i = TYPE_dbl; BUNins(client->atomtbl, "dbl", &i);
+		i = TYPE_lng; BUNins(client->atomtbl, "lng", &i);
+		i = TYPE_str; BUNins(client->atomtbl, "str", &i);
 	}
 	TBL_M_unlock(client);
 
@@ -2547,13 +2527,7 @@ void TBL_exitclient(Client client) {
 
 	/* Unload all loaded modules in reverse loading order. */
 	bn = BATselect(TBL_mod_use, &cid, &cid);
-	assert(bn);
-	b = BATsort(bn);
-	assert(b);
-	b = BATsetaccess(b, BAT_WRITE);
-	assert(b);
-	b = BATrevert(b);
-	assert(b);
+	b = BATrevert(BATsetaccess(BATsort(bn), BAT_WRITE));
 	BATloopFast(b, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(b,p); 
 	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &cid)) {
@@ -2588,7 +2562,7 @@ It is called one time for each module that it is dependent on.
 
 static void TBL_Insert_Depend( oid mid, str name ) {
 	if (BUNlocate(TBL_mod_dep, &mid, name) == NULL) {
-		if (BUNins(TBL_mod_dep, &mid, name) == NULL) assert(0);  
+		BUNins(TBL_mod_dep, &mid, name);  
 	}
 }
 
@@ -2617,10 +2591,10 @@ TBL_Install_Atom(
 	dlFPRINTF(GDKerr, "  TBL_Install_Atom(%s)\n", name);
 	if ((size == 0) && (align == 0)) { /* fixed */
 		sprintf(extended, "%s=*", name);
-		if (BUNins(TBL_mod_atm, &mid, extended) == NULL) assert(0);
+		BUNins(TBL_mod_atm, &mid, extended);
 	} else {
 		sprintf(extended, "%s=%d,%d", name, size, ABS(align));
-		if (BUNins(TBL_mod_atm, &mid, extended) == NULL) assert(0);
+		BUNins(TBL_mod_atm, &mid, extended);
 	}
 	GDKfree(extended);
 }
@@ -2630,7 +2604,7 @@ TBL_Install_Atom(
 void 
 TBL_Install_Accelerator(oid mid, str name) {
 	dlFPRINTF(GDKerr, "  TBL_Install_Accelerator(%s)\n", name);
-	if (BUNins(TBL_mod_acc, &mid, name) == NULL) assert(0);
+	BUNins(TBL_mod_acc, &mid, name);
 }
 
 @- TBL_Install_Functions
@@ -2678,38 +2652,38 @@ TBL_Install_Function(
 	if (name[0] == 'b' && name[1] =='a' && name[2] == 't' && name[3] == 0) {
 		name = "BAT"; /* sorry */ 
 	}
-	if (BUNins(TBL_fcn_nme, &fid, name) == NULL) assert(0); /* or &name */
-	if (BUNins(TBL_fcn_fcn, &fid, &orig) == NULL) assert(0); /* correct??? */
-	if (BUNins(TBL_fcn_tpe, &fid, &tpe) == NULL) assert(0);
-	if (BUNins(TBL_fcn_mid, &fid, &mid) == NULL) assert(0);
-	if (BUNins(TBL_fcn_dsc, &fid, help) == NULL) assert(0);
-	if (BUNins(TBL_fcn_aut, &fid, author) == NULL) assert(0);
-	if (BUNins(TBL_fcn_dat, &fid, date) == NULL) assert(0);
-	if (BUNins(TBL_fcn_cnt, &fid, &zero) == NULL) assert(0);
+	BUNins(TBL_fcn_nme, &fid, name); /* or &name */
+	BUNins(TBL_fcn_fcn, &fid, &orig); /* correct??? */
+	BUNins(TBL_fcn_tpe, &fid, &tpe);
+	BUNins(TBL_fcn_mid, &fid, &mid);
+	BUNins(TBL_fcn_dsc, &fid, help);
+	BUNins(TBL_fcn_aut, &fid, author);
+	BUNins(TBL_fcn_dat, &fid, date);
+	BUNins(TBL_fcn_cnt, &fid, &zero);
 @-
 We want to save pointer to the real function
 for example use in a different interpreter 
 if (orig) BUNins(TBL_fcn_org, &fid, &orig); 
 Its done in TBL_unpacked()
 @c
-	if (pack_imp && BUNins(TBL_fcn_imp, &fid, &pack_imp) == NULL) assert(0);
-	if (signature && BUNins(TBL_fcn_sig, &fid, signature) == NULL) assert(0);
+	if (pack_imp) BUNins(TBL_fcn_imp, &fid, &pack_imp);
+	if (signature) BUNins(TBL_fcn_sig, &fid, signature);
 	TBL_fcn_pro_size++;
 
 	return fid;
 }
 
 void TBL_Deinstall_Function(oid pid) {
-	if (BUNdelHead(TBL_fcn_nme, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_fcn, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_mid, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_imp, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_tpe, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_sig, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_dsc, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_aut, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_dat, &pid) == NULL) assert(0);
-	if (BUNdelHead(TBL_fcn_cnt, &pid) == NULL) assert(0);
+	BUNdelHead(TBL_fcn_nme, &pid);
+	BUNdelHead(TBL_fcn_fcn, &pid);
+	BUNdelHead(TBL_fcn_mid, &pid);
+	BUNdelHead(TBL_fcn_imp, &pid);
+	BUNdelHead(TBL_fcn_tpe, &pid);
+	BUNdelHead(TBL_fcn_sig, &pid);
+	BUNdelHead(TBL_fcn_dsc, &pid);
+	BUNdelHead(TBL_fcn_aut, &pid);
+	BUNdelHead(TBL_fcn_dat, &pid);
+	BUNdelHead(TBL_fcn_cnt, &pid);
 
 	/* periodically clean up TBL_fcn_pro */
 	if (BATcount(TBL_fcn_nme)+100 < TBL_fcn_pro_size) {
@@ -2717,13 +2691,11 @@ void TBL_Deinstall_Function(oid pid) {
 		BUN p, q, r;
 		int xx;
 
-		if (BATclear(TBL_fcn_pro) == NULL) {
-			assert(0);
-		}
+		BATclear(TBL_fcn_pro);
 		BATloopFast(b, p, q, xx) {
 			oid pid = *(oid*) BUNhead(b,p);
 			BUNfndOID(r, TBL_fcn_nme, &pid);
-			if (r && BUNfastins(TBL_fcn_pro, &pid, BUNtvar(b,p)) == NULL) assert(0);
+			if (r) BUNfastins(TBL_fcn_pro, &pid, BUNtvar(b,p));
 		}
 		TBL_fcn_pro->hsorted = TBL_fcn_pro->tsorted = 0; 
 		BBPreclaim(b);
@@ -2734,7 +2706,7 @@ void TBL_Deinstall_Function(oid pid) {
 /* Called after _Function */
 void TBL_Install_Function_Vararg(oid fid, str tpe) {
 	dlFPRINTF(GDKerr, "    TBL_Install_Function_Vararg(" SZFMT ",%s)\n", (size_t) fid, tpe);
-	if (BUNins(TBL_fcn_pro, &fid, tpe) == NULL) assert(0);
+	BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
 
@@ -2742,13 +2714,13 @@ void TBL_Install_Function_Vararg(oid fid, str tpe) {
    This one would have to be called several times, once for each argument */
 void TBL_Install_Function_Arg(oid fid, str tpe) {
 	dlFPRINTF(GDKerr, "    TBL_Install_Function_Arg(" SZFMT ",%s)\n", (size_t) fid, tpe);
-	if (BUNins(TBL_fcn_pro, &fid, tpe) == NULL) assert(0);
+	BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
 /* After _Arg */
 void TBL_Install_Function_Res(oid fid, str tpe) {
 	dlFPRINTF(GDKerr, "    TBL_Install_Function_Res(" SZFMT ",%s)\n", (size_t) fid, tpe);
-	if (BUNins(TBL_fcn_pro, &fid, tpe) == NULL) assert(0);
+	BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
 /* Use the output of the prelude function to register BAT hotfixes required by the module */
@@ -2757,13 +2729,13 @@ void TBL_Install_DropRefs(oid mid, bat* batrefs) {
 		return;
 	while(*batrefs) {
 		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(" SZFMT ",%s)\n", (size_t) mid, BBP_logical(*batrefs));
-		if (BUNins(TBL_mod_drop, &mid, batrefs) == NULL) assert(0); 
+		BUNins(TBL_mod_drop, &mid, batrefs); 
 		batrefs++;
 	}
 }
 
 void TBL_Install_MilVar(Client client, str mod, ptr v) {
 	TBL_M_lock(client);
-	if (BUNins(TBL_mod_var, mod, &v) == NULL) assert(0);
+	BUNins(TBL_mod_var, mod, &v);
 	TBL_M_unlock(client);
 }

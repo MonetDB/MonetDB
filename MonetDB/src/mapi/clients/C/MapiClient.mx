@@ -36,35 +36,24 @@ interface to the Monet server. Unlike the Mserver console, the {\tt MapiClient}
 program is intended not only for the database administrator, but to all other
 users. It is more comfortable than the console, since it provides
 a command history and automatic file name completion.
-The default authorization for SQL interaction is the user 'monetdb'.
 
 \begin{verbatim}
-MapiClient [options] [inputfile+]
+MapiClient [-h HOST] [-p PORT] [-d] [-e] [-u username] [-P password] [inputfile+]
 \end{verbatim}
 
 The following options are supported:
-\begin{tabular} {l l l}
- -b t/f      & --blocked=true/false& blocked mode \\
- -d          & --debug=[level]  & set debug level \\
- -D          & --dump           & dump sql database \\
- -e          & --error          & exit on error \\
- -h hostname & --host=hostname  & host to connect to \\
- -l language & --language=lang  & {mal,sql,mil} \\
- -P passwd   & --passwd=passwd  & password \\
- -p portnr   & --port=portnr    & port to connect to \\
- -s stmt     & --statement=stmt & run single statement \\
- -t          & --trace          & trace Monet interaction \\
- -T          & --time           & time commands \\
- -u user     & --user=user      & user id \\
- -H          & --history        & load/save cmdline history (default off) \\
- -?          & --help           & show this usage message \\
-\end{tabular}
-
-Calling "MapiClient -l sql" establishes a SQL connection with an
-Mserver server running on the local machine. The default user
-'monetdb' is used, which provides administrative rights.
-To protect your database you may want to introduce another DBA name and
-limit the access permisions of 'monetdb' to the level of a guest account.
+\begin{itemize}
+\item {\em -h -p} Connect to Mserver on machine HOST with tcp port PORT.
+\item {\em -d} Debug internal working.
+\item {\em -c} Use a different configuration script
+\item {\em -s} Execute a single statement
+\item {\em -u -P} Replace interactive authorization by command line.
+\item{\em -b true/false} run in (non-)blocked mode
+\item{\em -h} A synopsis of the command line options
+Can be used in scripts, but is insecure.
+\item{\em -trace} produces a trace of the interaction with the server
+\item{\em -T} produce response timings
+\end{itemize}
 @
 
 @{
@@ -84,7 +73,6 @@ limit the access permisions of 'monetdb' to the level of a guest account.
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "ReadlineTools.h"
 #endif
 
 #ifndef S_ISCHR
@@ -153,10 +141,16 @@ doRequest(Mapi mid, const char *buf)
 {
 	MapiHdl hdl;
 
-	if ((hdl = mapi_quick_query(mid, buf, toConsole)) == NULL) {
+	if ((hdl = mapi_query(mid, buf)) == NULL) {
 		mapi_explain(mid, stderr);
 		return 1;
 	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_quick_response(hdl, toConsole);
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
@@ -603,9 +597,7 @@ dump_table(Mapi mid, char *tname)
 
 		for(i = 0; i < cnt; i++) {
 			s = mapi_fetch_field(hdl, i);
-			if (s == NULL)
-				fputs("NULL", toConsole);
-			else if (string[i]) {
+			if (string[i]) {
 				/* write double-quoted string with
 				   certain characters escaped */
 				putc('"', toConsole);
@@ -715,7 +707,7 @@ dump_tables(Mapi mid)
 }
 
 static char *
-simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
+simple_prompt(const char *prompt, int maxlen, int echo)
 {
 	int length = 0;
 	char *destination = NULL;
@@ -744,9 +736,7 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 	}
 
 	if (prompt) {
-		if( def)
-			fprintf(termout,"%s(%s):",prompt,def);
-		else	fprintf(termout,"%s:",prompt);
+		fputs(prompt, termout);
 		fflush(termout);
 	}
 #ifdef HAVE_TERMIOS_H
@@ -785,7 +775,6 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 	if (termout != stdout)
 		fclose(termout);
 #endif
-	if( destination[0]==0 && def) strcpy(destination,def);
         return destination;
 }
 
@@ -802,17 +791,13 @@ usage(const char *prog)
 	fprintf(stderr, " -l language | --language=lang  /* {mal,sql,mil} */\n");
 	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
 	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
-	fprintf(stderr, " -q          | --quiet          /* don't print welcome message */\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
 	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
 	fprintf(stderr, " -T          | --time           /* time commands */\n");
 	fprintf(stderr, " -u user     | --user=user      /* user id */\n" );
-	fprintf(stderr, " -H          | --history        /* load/save cmdline history (default off) */\n" );
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
 	exit(-1);
 }
-
-#define SQLdefaultPort 45123 	/* hardwired SQL default */
 
 int
 main(int argc, char **argv)
@@ -832,12 +817,9 @@ main(int argc, char **argv)
 	char *command = NULL;
 	int dodump = 0;
 	int trace = 0;
-	int guest = 0;
 	int linemode = 1;
 	int c;
 	Mapi mid;
-	int quiet = 0;
-	int save_history = 0;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
 		{"config", 1, 0, 'c'},
@@ -852,8 +834,6 @@ main(int argc, char **argv)
 		{"time", 0, 0, 'T'},
 		{"trace", 0, 0, 't'},
 		{"user", 1, 0, 'u'},
-		{"history", 0, 0, 'H'},
-		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
@@ -865,30 +845,18 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:l:u:p:P:qHh:s:DtTd::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "c:l:u:p:P:h:s:DtTd::?", long_options, NULL)) != -1) {
 		switch (c) {
-		case 'b':
-			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
-				linemode = 0;
-			else if (*optarg == 'f' || *optarg == 'F' || *optarg == '0')
-				linemode = 1;
-			else
-				usage(argv[0]);
-			break;
 		case 'c':
 			config = optarg;
 			break;
 		case 'l':
-			guest= !( user!= NULL || passwd!=NULL);
-			if(guest && port==0) port= SQLdefaultPort;
 			language = optarg;
 			break;
 		case 'u':
-			guest= 0;
 			user = optarg;
 			break;
 		case 'P':
-			guest= 0;
 			passwd = optarg;
 			break;
 		case 'h':
@@ -901,9 +869,6 @@ main(int argc, char **argv)
 			break;
 		case 's':
 			command = optarg;
-			break;
-		case 'q':
-			quiet = 1;
 			break;
 		case 'D':
 			dodump = 1;
@@ -929,8 +894,13 @@ main(int argc, char **argv)
 				*eq = '=';
 			break;
 		}
-		case 'H':
-			save_history = 1;
+		case 'b':
+			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
+				linemode = 0;
+			else if (*optarg == 'f' || *optarg == 'F' || *optarg == '0')
+				linemode = 1;
+			else
+				usage(argv[0]);
 			break;
 		case '?':
 			usage(argv[0]);
@@ -962,12 +932,10 @@ main(int argc, char **argv)
 	}
 
 	if (strcmp(language, "sql") == 0) {
-		if (guest) user= "monetdb"; else
 		if (user == NULL)
-			user = simple_prompt("User ", BUFSIZ, 1, "monetdb");
-		if (guest) passwd= "monetdb"; else
+			user = simple_prompt("User: ", BUFSIZ, 1);
 		if (passwd == NULL)
-			passwd = simple_prompt("Password ", BUFSIZ, 0, "monetdb");
+			passwd = simple_prompt("Password: ", BUFSIZ, 0);
 	}
 
 	mid = mapi_connect(host, port, user, passwd, language);
@@ -978,12 +946,6 @@ main(int argc, char **argv)
 	if (mapi_error(mid)) {
 		mapi_explain(mid, stderr);
 		exit(2);
-	}
-	if (!quiet) {
-		char *motd = mapi_get_motd(mid);
-
-		if (motd)
-			printf("%s", motd);
 	}
 	mapi_trace(mid, trace);
 
@@ -1006,31 +968,26 @@ main(int argc, char **argv)
 		optind++;
 	}
 
-#ifdef HAVE_LIBREADLINE
-	init_readline(mid, language, save_history);
-#endif
-
 	if (command) {
 		c = doRequest(mid, command);
 	} else {
 		struct stat statb;
 		char *prompt = NULL;
-		char promptbuf[16];
 
 		if (fstat(fileno(stdin), &statb) == 0 &&
 		    S_ISCHR(statb.st_mode)) {
-			/* reading from terminal, prepare prompt */
-			sprintf(promptbuf, "%.*s>",
-				(int) sizeof(promptbuf) - 2, language);
-			prompt = promptbuf;
+			prompt = mo_find_option(set, setlen, "prompt");
+			if (prompt == NULL) {
+#ifdef MONET5
+				if (strcmp(language, "mal") == 0)
+					prompt = "mal>";
+				else
+#endif
+					prompt = ">";
+			}
 		}
 		c = doFileByLines(mid, stdin, prompt, linemode);
 	}
-
-#ifdef HAVE_LIBREADLINE
-	deinit_readline();
-#endif
-
 	mapi_disconnect(mid);
 	return c;
 }
