@@ -665,10 +665,7 @@ MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModule
 ''')
     ##module("NoModule");
     pIn.close()
-    qOut = pOut.readlines()
-    qErr = pErr.readlines()
-    pOut.close()
-    pErr.close()
+    qOut, qErr = ReadMultiple([pOut, pErr])
     env['TST_BITS'] = ""
     env['TST_MODS'] = []
     env['TST_STATIC'] = ""
@@ -676,7 +673,7 @@ MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModule
         tbs = re.compile("^# compiled for .*/([63][42]bit); (.*) linked", re.MULTILINE)
         tm = re.compile("^Modules: (.*)$", re.MULTILINE)
         #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
-        for l in qOut:
+        for l in string.split(qOut, '\n'):
             bs = tbs.match(l)
             if bs:
                 env['TST_BITS'] = bs.group(1)
@@ -694,7 +691,7 @@ MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModule
     else:
         Warn("No output from Mserver when checking for Bits & Modules!?")
         if qErr:
-            STDERR.writelines(qErr)
+            STDERR.write(qErr)
             STDERR.write("\n")
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
@@ -725,21 +722,18 @@ def CheckBATs(env, TST, TSTDB) :
 BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s\'%s\'",x,$t);x:=",";}printf("\\n");quit;
 ''')
     pIn.close()
-    qOut = pOut.readlines()
-    qErr = pErr.readlines()
-    pOut.close()
-    pErr.close()
+    qOut, qErr = ReadMultiple([pOut, pErr])
     TST_BATS = []
     if qOut:
         tb = re.compile("^BATs: (.*)$", re.MULTILINE)
-        for l in qOut:
+        for l in string.split(qOut, '\n'):
             b = tb.match(l)
             if b:
                 TST_BATS = eval(b.group(1))
     else:
         Warn("No output from Mserver when checking for Bats!?")
         if qErr:
-            STDERR.writelines(qErr)
+            STDERR.write(qErr)
             STDERR.write("\n")
             STDERR.flush()
 
@@ -755,12 +749,8 @@ BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s\'%s\'",x,$
 def StartAt(cmd) :
     pOut,pIn,pErr = popen2.popen3(cmd)
     pIn.close()
-    ATJOB = string.strip(pOut.readline())
-    pOut.readlines()
-    pErr.readlines()
-    pOut.close()
-    pErr.close()
-    return ATJOB
+    qOut, qErr = ReadMultiple([pOut, pErr])
+    return string.strip(string.split(qOut, '\n', 1)[0])
 ### StartAt(cmd) #
 
 def StopAt(ATJOB,ME) :
@@ -1234,12 +1224,20 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
     return pIn, pOut, pErr
 ### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
-def CollectIt(pOut, pErr, TestOut, TestErr) :
-    if os.name == "nt":
-        TestOut.writelines(pOut.readlines())
-        TestErr.writelines(pErr.readlines())
+def ReadMultiple(inpipes, outpipes = None):
+    if outpipes is None:
+        outbuffers = [''] * len(inpipes)
     else:
-        readlist = [pOut, pErr]
+        outbuffers = None
+    if os.name == 'nt':
+        for i in range(len(inpipes)):
+            p = inpipes[i]
+            if outpipes is None:
+                outbuffers[i] = inpipes[i].read()
+            else:
+                outpipes[i].write(inpipes[i].read())
+    else:
+        readlist = inpipes[:]
         while readlist:
             readers, dummy1, dummy2 = select.select(readlist, [], [])
             todelete = []
@@ -1247,16 +1245,24 @@ def CollectIt(pOut, pErr, TestOut, TestErr) :
                 data = os.read(r.fileno(), 1024)
                 if not data:
                     todelete.append(r)
-                elif r is pOut:
-                    TestOut.write(data)
-                elif r is pErr:
-                    TestErr.write(data)
+                else:
+                    for i in range(len(inpipes)):
+                        if r is inpipes[i]:
+                            if outpipes is None:
+                                outbuffers[i] = outbuffers[i] + data
+                            else:
+                                outpipes[i].write(data)
             for r in todelete:
                 readlist.remove(r)
-    TestOut.flush()
-    TestErr.flush()
-    pOut.close()
-    pErr.close()
+                r.close()
+    if outpipes is not None:
+        for p in outpipes:
+            p.flush()
+    return outbuffers
+### ReadMultiple(inpipes, outpipes = None) #
+
+def CollectIt(pOut, pErr, TestOut, TestErr) :
+    ReadMultiple([pOut, pErr], [TestOut, TestErr])
 ### CollectIt(pOut, pErr, TestOut, TestErr) #
 
 def RunIt(cmd, TestIn, TestOut, TestErr) :
@@ -1406,6 +1412,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             ShwnOut = open(TST+".shutdown.out","w")
             ShwnErr = open(TST+".shutdown.err","w")
             RunIt(Shwn, "", ShwnOut, ShwnErr)
+            time.sleep(0.5)             # give it time to actually shut down
 
         try:
             if SERVER == "MAPI":
@@ -1451,29 +1458,27 @@ def Check(command, input) :
     pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")
     pIn.write(input)
     pIn.close()
-    qOut = pOut.readlines()
-    qErr = pErr.readlines()
-    rOut = pOut.close()
-    rErr = pErr.close()
-    rOutErr = ( rOut or rErr )
-    if not rOutErr:
-        for l in qOut+qErr:
-            if l[0] == "!":
-                if ( len(l) < 24  or  
-                   ( l[:24] != "!WARNING: BATpropcheck: " and 
-                     l[:26] != "!WARNING: monet_checkbat: " and 
-                     l[:59] != "!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock." and 
-                     l[:35] != "!WARNING: BBPdir: initializing BBP." ) ) :
-                    rOutErr = 1
-    if rOutErr:
-        ErrMsg("'"+command+"` failed:")
-        if qOut  and  len(qOut[-1]) >= 8  and  qOut[-1][:8] == "! Exit 1":
-            qErr.append(qOut.pop())
-        STDERR.writelines(qOut)
-        STDERR.writelines(qErr)
-        STDERR.write("\n")
-        STDERR.flush()
-        #sys.exit(1)
+    qOut, qErr = ReadMultiple([pOut, pErr])
+    qOut = string.split(qOut, '\n')
+    qErr = string.split(qErr, '\n')
+    rOutErr = 0
+    for l in qOut+qErr:
+        if l[:1] == "!" and \
+               (len(l) < 24  or  
+                (l[:24] != "!WARNING: BATpropcheck: " and 
+                 l[:26] != "!WARNING: monet_checkbat: " and 
+                 l[:59] != "!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock." and 
+                 l[:35] != "!WARNING: BBPdir: initializing BBP.")):
+            ErrMsg("'"+command+"` failed:")
+            if qOut and len(qOut[-1]) >= 8 and qOut[-1][:8] == "! Exit 1":
+                qErr.append(qOut.pop())
+            for l in qOut+qErr:
+                STDERR.write(l)
+                STDERR.write("\n")
+            STDERR.write("\n")
+            STDERR.flush()
+            #sys.exit(1)
+            break
     return rOutErr
 ### Check(command, input) #
 
