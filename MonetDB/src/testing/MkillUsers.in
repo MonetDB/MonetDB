@@ -50,6 +50,15 @@ if [     "$MISQ_PREFIX" ] ; then BINPATH="$BINPATH     $MISQ_PREFIX/bin" ; fi
 if [    "$TIMES_PREFIX" ] ; then BINPATH="$BINPATH    $TIMES_PREFIX/bin" ; fi
 if [  "$PLAYPEN_PREFIX" ] ; then BINPATH="$BINPATH  $PLAYPEN_PREFIX/bin" ; fi
 if [ "$TEMPLATE_PREFIX" ] ; then BINPATH="$BINPATH $TEMPLATE_PREFIX/bin" ; fi
+if [    "$MONET_BUILD" ] ; then BINPATH="$BINPATH    $MONET_BUILD/src/tools    $MONET_BUILD/src/tools/.libs" ; fi
+if [     "$ACOI_BUILD" ] ; then BINPATH="$BINPATH     $ACOI_BUILD/src/tools     $ACOI_BUILD/src/tools/.libs" ; fi
+if [      "$SQL_BUILD" ] ; then BINPATH="$BINPATH      $SQL_BUILD/src/tools      $SQL_BUILD/src/tools/.libs" ; fi
+if [      "$XML_BUILD" ] ; then BINPATH="$BINPATH      $XML_BUILD/src/tools      $XML_BUILD/src/tools/.libs" ; fi
+if [      "$GIS_BUILD" ] ; then BINPATH="$BINPATH      $GIS_BUILD/src/tools      $GIS_BUILD/src/tools/.libs" ; fi
+if [     "$MISQ_BUILD" ] ; then BINPATH="$BINPATH     $MISQ_BUILD/src/tools     $MISQ_BUILD/src/tools/.libs" ; fi
+if [    "$TIMES_BUILD" ] ; then BINPATH="$BINPATH    $TIMES_BUILD/src/tools    $TIMES_BUILD/src/tools/.libs" ; fi
+if [  "$PLAYPEN_BUILD" ] ; then BINPATH="$BINPATH  $PLAYPEN_BUILD/src/tools  $PLAYPEN_BUILD/src/tools/.libs" ; fi
+if [ "$TEMPLATE_BUILD" ] ; then BINPATH="$BINPATH $TEMPLATE_BUILD/src/tools $TEMPLATE_BUILD/src/tools/.libs" ; fi
 for b in $BINPATH ; do
 	files="$files `ls $b/* 2>/dev/null | egrep -v '/(M[a-z]*\.py(|\.bat)|'"$THISFILE"')$'`"
 done
