@@ -1588,7 +1588,7 @@ char * mapi_fetch_line(Mapi mid)
 					1, BLOCK);
 		/* if(len>=0) */ /* Stefan: len is size_t, hence unsigned, hence always >=0 ... !? */
 			mid->blk.buf[n+len]=0;
-		if( len != BLOCK)
+		if( len == 0)
 			mid->blk.eos=1;
 		@:endofsession@
 #else
