@@ -1,0 +1,61 @@
+@f M2M
+@a M.L. Kersten
+@v 1.0
+@* Standalone MIL parser
+
+This small program is primarilly meant to perform a
+syntax check on MIL programs. 
+Input is obtained from a file argument.
+
+The underlying parser
+is to be included in the Mclient front-end or
+the applications at a later stage.
+
+@c
+#include <gdk.h>
+
+extern int yyparse();
+
+main(int argc,char ** argv)
+{
+	
+	FILE *fd;
+	int i =1;
+	int len, totlen;
+	char *ptr,*buf;
+	char cwd[PATHLENGTH];
+
+	if( argc ==1){
+		printf("usage:M2M <file.mil>\n");
+		exit(-1);
+	}
+
+        if (getcwd(cwd, PATHLENGTH-1)  == NULL ){
+                perror("pwd");
+                printf("mil_init: could not determine current directory\n");
+        }
+
+	GDKinit(argc,argv);
+	for(i=1;i<argc && argv[i][0]==0; i++) ;
+
+	sprintf(buf,"%s/%s",cwd,argv[i]);
+	fd = fopen(buf,"rb");
+	if (fd == 0) {
+		printf("M2M: could not open file: %s\n", argv[1]);
+		exit (-1);
+	}
+	i = 0; len = totlen = 8*8192;
+	ptr = buf = (char *) GDKmalloc(totlen);
+
+	while((i+=fread(ptr, 1, len , fd)) == totlen) {
+		len = totlen; totlen *= 2;
+		ptr = GDKmalloc(totlen);
+		memcpy(ptr, buf, len);
+		GDKfree(buf);
+		buf = ptr; ptr += len;
+	}
+	fclose(fd);
+	buf[i] = 0;
+	mil_push(buf);	/*no need to copy here */
+	yyparse();
+}
