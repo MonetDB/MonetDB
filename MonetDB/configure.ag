@@ -39,38 +39,45 @@ AC_DEFINE_UNQUOTED(MONET_PREFIX, "$prefix", [directory prefix])
 # MONET_BUILD and MONET_SOURCE are *only* used for monet-config
 # MONET_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
+
+# The Q versions of various variables are used in places where \'s
+# need to be escapes with an extra \.  Configure does not support \'s
+# in path names, so there is no need to do anything special here
+# except set the variables.  The command to set them in case we do
+# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
 MONET_BUILD=[`pwd`]
 AC_SUBST(MONET_BUILD)
-QMONET_BUILD=`echo "$MONET_BUILD" | sed 's/\\\\/\\\\\\\\/g'`
+QMONET_BUILD="$MONET_BUILD"
 AC_SUBST(QMONET_BUILD)
 MONET_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(MONET_SOURCE)
-QMONET_SOURCE=`echo "$MONET_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`
+QMONET_SOURCE="$MONET_SOURCE"
 AC_SUBST(QMONET_SOURCE)
 
-Qprefix=`echo "$prefix" | sed 's/\\\\/\\\\\\\\/g'`
+Qprefix="$prefix"
 AC_SUBST(Qprefix)
-Qexec_prefix=`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`
+# exec_prefix is created very late, so let make do the expansion
+Qexec_prefix='${exec_prefix}'
 AC_SUBST(Qexec_prefix)
-Qsrcdir=`echo "$srcdir" | sed 's/\\\\/\\\\\\\\/g'`
+Qsrcdir="$srcdir"
 AC_SUBST(Qsrcdir)
-Qlocalstatedir=`echo "$localstatedir" | sed 's/\\\\/\\\\\\\\/g'`
+Qlocalstatedir="$localstatedir"
 AC_SUBST(Qlocalstatedir)
-Qlibdir=`echo "$libdir" | sed 's/\\\\/\\\\\\\\/g'`
+Qlibdir="$libdir"
 AC_SUBST(Qlibdir)
-Qsysconfdir=`echo "$sysconfdir" | sed 's/\\\\/\\\\\\\\/g'`
+Qsysconfdir="$sysconfdir"
 AC_SUBST(Qsysconfdir)
-Qbindir=`echo "$bindir" | sed 's/\\\\/\\\\\\\\/g'`
+Qbindir="$bindir"
 AC_SUBST(Qbindir)
-Qlibexecdir=`echo "$libexecdir" | sed 's/\\\\/\\\\\\\\/g'`
+Qlibexecdir="$libexecdir"
 AC_SUBST(Qlibexecdir)
-Qdatadir=`echo "$datadir" | sed 's/\\\\/\\\\\\\\/g'`
+Qdatadir="$datadir"
 AC_SUBST(Qdatadir)
-Qmandir=`echo "$mandir" | sed 's/\\\\/\\\\\\\\/g'`
+Qmandir="$mandir"
 AC_SUBST(Qmandir)
-Qincludedir=`echo "$includedir" | sed 's/\\\\/\\\\\\\\/g'`
+Qincludedir="$includedir"
 AC_SUBST(Qincludedir)
-Qinfodir=`echo "$infodir" | sed 's/\\\\/\\\\\\\\/g'`
+Qinfodir="$infodir"
 AC_SUBST(Qinfodir)
 
 AM_MONET_COMPILER()
@@ -85,7 +92,7 @@ mac*)	DIRSEP=":";
 	;;
 esac
 AC_SUBST(DIRSEP)
-QDIRSEP=`echo "$DIRSEP" | sed 's/\\\\/\\\\\\\\/g'`
+QDIRSEP="$DIRSEP"
 AC_SUBST(QDIRSEP)
 
 dnl systems checks
