@@ -324,13 +324,13 @@ Start of MIL server prelude.
 [ 25,	  "load"  ]
 [ 26,	  "load"  ]
 [ 27,	  "load"  ]
-#-----------------------------------------#
-# BAT:	  tree				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  "printf(\"\\nReady.\\n\")"	  ]
-[ 1,	  "print(view_client_tree())"	  ]
-[ 2,	  "listen(get_mapi_port(),5)"	  ]
+#-------------------------------------------------#
+# BAT:	  tree					  #
+# (int)	  (str)					  #
+#-------------------------------------------------#
+[ 0,	  "printf(\"\\nReady.\\n\")"		  ]
+[ 1,	  "print(view_client_tree())"		  ]
+[ 2,	  "mapi_server(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -1017,13 +1017,13 @@ Start of MIL script.
 [ 25,	  "load"  ]
 [ 26,	  "load"  ]
 [ 27,	  "load"  ]
-#-----------------------------------------#
-# BAT:	  tree				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  "printf(\"\\nReady.\\n\")"	  ]
-[ 1,	  "print(view_client_tree())"	  ]
-[ 2,	  "listen(get_mapi_port(),5)"	  ]
+#-------------------------------------------------#
+# BAT:	  tree					  #
+# (int)	  (str)					  #
+#-------------------------------------------------#
+[ 0,	  "printf(\"\\nReady.\\n\")"		  ]
+[ 1,	  "print(view_client_tree())"		  ]
+[ 2,	  "mapi_server(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #

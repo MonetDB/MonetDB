@@ -113,6 +113,7 @@ Start of MIL server prelude.
 [ "ls() : void"										  ]
 [ "ls(str) : void"									  ]
 [ "madvise(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "mapi_server(int, int) : any"								  ]
 [ "mem_usage() : BAT[str,lng]"								  ]
 [ "mem_usage(int) : BAT[str,lng]"							  ]
 [ "memory() : BAT[str,int]"								  ]
@@ -367,13 +368,13 @@ Start of MIL server prelude.
 [ 25,	  "load"  ]
 [ 26,	  "load"  ]
 [ 27,	  "load"  ]
-#-----------------------------------------#
-# BAT:	  tree				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  "printf(\"\\nReady.\\n\")"	  ]
-[ 1,	  "print(view_client_tree())"	  ]
-[ 2,	  "listen(get_mapi_port(),5)"	  ]
+#-------------------------------------------------#
+# BAT:	  tree					  #
+# (int)	  (str)					  #
+#-------------------------------------------------#
+[ 0,	  "printf(\"\\nReady.\\n\")"		  ]
+[ 1,	  "print(view_client_tree())"		  ]
+[ 2,	  "mapi_server(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -592,17 +593,17 @@ Start of MIL server prelude.
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  631,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_dsc",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  558,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  631,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_mid",	  "oid",  "oid",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  631,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1579,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1582,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  631,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcntbl",	  "str",  "oid",  631,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  632,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
@@ -613,7 +614,7 @@ Start of MIL server prelude.
 [ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "tmp_24",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_26",		  "str",  "oid",  631,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_26",		  "str",  "oid",  632,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "tmp_27",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
@@ -889,6 +890,7 @@ Start of MIL script.
 [ "ls() : void"										  ]
 [ "ls(str) : void"									  ]
 [ "madvise(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
+[ "mapi_server(int, int) : any"								  ]
 [ "mem_usage() : BAT[str,lng]"								  ]
 [ "mem_usage(int) : BAT[str,lng]"							  ]
 [ "memory() : BAT[str,int]"								  ]
@@ -1143,13 +1145,13 @@ Start of MIL script.
 [ 25,	  "load"  ]
 [ 26,	  "load"  ]
 [ 27,	  "load"  ]
-#-----------------------------------------#
-# BAT:	  tree				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  "printf(\"\\nReady.\\n\")"	  ]
-[ 1,	  "print(view_client_tree())"	  ]
-[ 2,	  "listen(get_mapi_port(),5)"	  ]
+#-------------------------------------------------#
+# BAT:	  tree					  #
+# (int)	  (str)					  #
+#-------------------------------------------------#
+[ 0,	  "printf(\"\\nReady.\\n\")"		  ]
+[ 1,	  "print(view_client_tree())"		  ]
+[ 2,	  "mapi_server(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -1368,17 +1370,17 @@ Start of MIL script.
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  631,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_dsc",	  "oid",  "str",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  558,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  631,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_mid",	  "oid",  "oid",  602,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  631,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1579,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1582,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  631,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcntbl",	  "str",  "oid",  631,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  632,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  632,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
@@ -1389,7 +1391,7 @@ Start of MIL script.
 [ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "tmp_24",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_26",		  "str",  "oid",  631,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_26",		  "str",  "oid",  632,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "tmp_27",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
