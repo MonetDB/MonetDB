@@ -754,7 +754,7 @@ static void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
         if ( from == 0 ) /* first BUN, because of 1..n/0..n-1 problem */
                 p = BUNfirst(b);
         else
-                BUNfndOID(p, b,&from);
+                BUNfndOID(p, b, (ptr)(&from));
         for(q = BUNlast(b); p<q; p = BUNnext(b, p)) {
                 oid pre = *(oid*)BUNhead(b, p);
                 do {

@@ -1643,13 +1643,13 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	hash_t h;
 	BUN r;
 	b = BATmirror(b);
-	HASHloop_oid(b, b->hhash, h, &p, r) {
+	HASHloop_oid(b, b->hhash, h, (ptr)(&p), r) {
 		oidoid_bunfastins(bn,&base,BUNtail(b,r)); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 	}
 @= sort_only
 	BUN rp, rq;
 	int bs;
-	SORTloop_oid(b, rp, rq, &p, &p, bs) {
+	SORTloop_oid(b, rp, rq, (ptr)(&p), (ptr)(&p), bs) {
 		oidoid_bunfastins(bn,&base,BUNhead(b,rp)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 	}
 @= scan_only
