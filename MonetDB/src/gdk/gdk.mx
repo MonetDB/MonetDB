@@ -1401,7 +1401,7 @@ BAT * & BATclear & (BAT *b)\\
 BAT * & BATcopy & (BAT *b)\\
 BAT * & BATrcopy & (BAT *b)\\
 BAT * & BATmark & (BAT *b, oid base)\\
-BAT * & BATmark_grp & (BAT *b, BAT *g)\\
+BAT * & BATmark\_grp & (BAT *b, BAT *g)\\
 BAT * & BATnumber & (BAT *b)\\
 \hline
 BAT * & BATmirror & (BAT *b)\\

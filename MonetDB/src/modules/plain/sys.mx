@@ -66,7 +66,7 @@ that you might well find very useful.
 .COMMAND mem_colormap() : void = print_color_map;
         "print a color map of all memory that is in use"
 @T
-For each 64KB block in the first 3GB of the virtual memory {\tt mem_printmap()} prints a character:
+For each 64KB block in the first 3GB of the virtual memory {\tt mem\_printmap()} prints a character:
 \begin{verbatim}
 0-9 - thread stack space of thread <num>
 B - in use for a large BAT heap (i.e. anonymous virtual memory).
@@ -109,7 +109,7 @@ low value (say 64KB).
 .COMMAND vm_usage(lng minsize) : BAT[str,lng] = get_vm_usage;
 	"get a split-up of how much virtual memory blocks are in use."
 @T
-Some explanation of what mem_usage() and vm_usage() display:
+Some explanation of what mem\_usage() and vm\_usage() display:
 \begin{verbatim}
 > mem_usage.print;
 #------------------------------#

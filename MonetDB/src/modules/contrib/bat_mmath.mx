@@ -37,7 +37,7 @@ Only the dbl type is supported.
 @m
 .MODULE bat_mmath;
 
-@t
+@T
 \begin{verbatim}
 	signatures
 	@1:	dbl			arithmetic type

@@ -27,7 +27,7 @@
 @T
 This is a memory/cpu performance measurement tool for 
 the followingprocessor (families).
-\begin{tabuler}{l}
+\begin{tabular}{l}
 MIPS R10000/R12000 (IP27)\\
 Sun UltraSparcI/II (sun4u)\\ 
 Intel Pentium (i586/P5) \\
@@ -44,7 +44,7 @@ libcpc (Solaris >= 8) for UltraSparcI/II,
 @[<a href="http://qso.lanl.gov/~mpg/pperf.html"> libpperf </a>@ 
 (Linux-i?86 <= 2.2), by M. Patrick Goda and Michael S. Warren,
 @[<a href="http://www.csd.uu.se/~mikpe/linux/perfctr/"> libperfctr </a>@
-(Linux-i?86 >= 2.4), by M. Pettersson for Pentiums & Athlons.
+(Linux-i?86 >= 2.4), by M. Pettersson for Pentiums \& Athlons.
 @[<a href="http://www.hpl.hp.com/research/linux/perfmon/"> libpfm</a>@
 (Linux-ia64 >= 2.4), by HP for Itanium[2].
 

@@ -134,7 +134,7 @@ qsort is macro expanded in four dimensions:
 \begin{description}
 \item[direction:2] 
 	L: from lesser to greater is standard.
-	G: from greater to lesser is the _rev version of quicksort.
+	G: from greater to lesser is the \_rev version of quicksort.
 \item[type:7] 
 	in order to factor out a type-specific check, or a function call for each 
 	value comparison, we separate different qsort implementations by the comparision 

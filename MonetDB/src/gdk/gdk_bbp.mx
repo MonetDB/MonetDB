@@ -1596,7 +1596,7 @@ bats and will more quickly find fresh unload candidates).
 We also refined the swap criterium. If the BBPtrim was initiated due to:
 - too much descriptors: small bats are unloaded first (from LRU cold to hot)  
 - too little memory: big bats are unloaded first (from LRU cold to hot).
-Unloading-first is enforced by subtracting 2^31 from the stamp in the
+Unloading-first is enforced by subtracting $2^31$ from the stamp in the
 field where the candidates are sorted on.
 @c
 #define BBPMAXTRIM 40000

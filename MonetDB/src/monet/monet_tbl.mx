@@ -1001,7 +1001,7 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 @T
 While MIL procs are typically introduced by MIL modules, they can be typed in at anytime 
 in a MIL session (not belonging to any specific module). They are represented as parsed
-MIL trees, with their root in TBL_fcn_imp and shared in all client fcntbl-s. As a consequence, 
+MIL trees, with their root in TBL\_fcn\_imp and shared in all client fcntbl-s. As a consequence, 
 we must do indiviual refcounting for them (i.e. they cannot use the module refcnt mechanism). 
 
 The following rules apply:

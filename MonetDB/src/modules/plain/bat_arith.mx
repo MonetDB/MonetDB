@@ -35,7 +35,7 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 @m
 .MODULE bat_arith;
 
-@t
+@T
 \begin{verbatim}
 	signatures
 	@1:	sht, int, lng, flt, dbl	arithmetic type

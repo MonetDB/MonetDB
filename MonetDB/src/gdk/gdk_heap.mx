@@ -35,7 +35,7 @@ be allocated in various ways (discriminated by the heap->storage field):
 small (or rather: not huge) heaps are allocated with GDKmalloc.
 Notice that GDKmalloc may redirect big requests to anonymous
 virtual memory to prevent {\em memory fragmentation} in the 
-malloc library (see gdk_utils.mx). 
+malloc library (see gdk\_utils.mx). 
 
 \item[STORE\_MMAP: read-only mapped region]
 this is a file on disk that is mapped into virtual memory.   
@@ -56,21 +56,21 @@ occur. This is the only way to make writing to mmap()-ed regions safe.
 On huge requests, we now open a X.priv file and memory map it (STORE\_MMAP).
 This is done for heaps of new BATs: these are writable (non-readonly), but 
 are non-persistent (yet). Such BATs may be made persistent later on, of course.
-Thus, the commit protocol BBPsync/heap_move (gdk_bbp.mx) actually does
-not check anymore for hp->storage == STORE_PRIV, but rather for a .priv suffix 
-in hp->filename. Thus, persistent STORE_MMAP/.priv heaps are saved with
+Thus, the commit protocol BBPsync/heap\_move (gdk\_bbp.mx) actually does
+not check anymore for hp->storage == STORE\_PRIV, but rather for a .priv suffix 
+in hp->filename. Thus, persistent STORE\_MMAP/.priv heaps are saved with
 by explictly writing a separate full file X to disk (this is expensive, though!).
 
 Related to this is saving BAT descriptors. These contain hp->storage fields that 
 reflect how the heap should be loaded the *next* time the BAT is re-loaded (may differ
-from the *current* mode). In the case of persistent, writable STORE_MMAP
-bats (with a X.priv file), we set the `future-storage' to STORE_PRIV. Thus, after
+from the *current* mode). In the case of persistent, writable STORE\_MMAP
+bats (with a X.priv file), we set the `future-storage' to STORE\_PRIV. Thus, after
 surviving their first commit, any re-load of the BAT will put it in its safe
-storage mapping (STORE_PRIV). This is in DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
+storage mapping (STORE\_PRIV). This is in DESCsetmodes/HEAPcheckmode (gdk\_storage.mx).
 
 Another hairy heap issue is changing the BAT readonly/writable state. This 
 sometimes implies flushing heaps to disk and even re-loading them with a new 
-storage mode.  This is discussed in detail in BATsetaccess (gdk_bat.mx).
+storage mode.  This is discussed in detail in BATsetaccess (gdk\_bat.mx).
 @c
 #include "gdk.h"
 
