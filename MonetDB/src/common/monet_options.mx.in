@@ -1,0 +1,320 @@
+@f monet_options
+@a N.J. Nes
+@* A simple option handling library
+@T
+The monet server and clients make use of command line options and a (possibly)
+shared config file. With this library a set (represented by set,setlen) of
+options is created. An option is stored as name and value strings with a
+special flag indicating the origin of the options, (builtin, system config
+file, special config file or command line option). 
+
+@h
+#ifndef _MO_H_
+#define _MO_H_
+
+typedef enum opt_kind
+{
+	opt_builtin,
+	opt_systemconfig,
+	opt_config,
+	opt_cmdline
+} opt_kind;
+
+typedef struct opt 
+{
+	opt_kind  kind; 
+	char *name;
+	char *value;
+} opt;
+
+#ifdef _MSC_VER
+#ifndef LIBOPT
+#define mo_export extern __declspec(dllimport) 
+#else
+#define mo_export extern __declspec(dllexport) 
+#endif
+#else
+#define mo_export extern 
+#endif
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* mo_print_options will print the option set on stderr */
+mo_export void mo_print_options(opt *set, int setlen);
+
+/* mo_find_option, finds the option with the given name in the option set
+	(set,setlen). */
+
+mo_export char *mo_find_option( opt *set, int setlen, char *name );
+
+/* the option values can contain ${prefix} and ${exec_prefix}, these will
+   be substituted using the mo_substitute function */
+mo_export void mo_substitute( opt *set, int setlen, char *name );
+
+/* mo_config_file adds all options int the given config file, to the current
+   options set  (returns the new setlen) */
+mo_export int mo_config_file( opt **Set, int setlen, char *file, opt_kind kind);
+
+
+/* mo_system_config will add the options from the system config file
+   (returns the new setlen) */
+mo_export int mo_system_config( opt **Set, int setlen);
+
+/* mo_builtin_settings, will place the builtin settings into a new
+   option set (returns the length of this set). */ 
+mo_export int mo_builtin_settings( opt **Set );
+
+/* mo_add_option will add a single option to the option set 
+   (returns new length) */
+mo_export int mo_add_option( opt **Set, int setlen, 
+		opt_kind kind, char *name, char *value );
+
+/* mo_free_options will free the resouces take by the options set */
+mo_export void mo_free_options( opt *set, int setlen );
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
+@c
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <stdio.h>
+#include <string.h>
+#include "monet_options.h"
+
+#ifdef NATIVE_WIN32
+#define DIR_SEP '\\' 
+#else
+#define DIR_SEP '/' 
+#endif
+
+void mo_print_options(opt *set, int setlen)
+{
+	int i = 0;
+
+	for( i = 0; i<setlen; i++){
+		switch(set[i].kind){
+		case opt_builtin:
+			fprintf(stderr, 
+				"builtin opt \t%s = %s\n", 
+				set[i].name, set[i].value);
+			break;
+		case opt_systemconfig:
+			fprintf(stderr,
+				"system opt \t%s = %s\n", 
+				set[i].name, set[i].value);
+			break;
+		case opt_config:
+			fprintf(stderr,
+				"config opt \t%s = %s\n", 
+				set[i].name, set[i].value);
+			break;
+		case opt_cmdline:
+			fprintf(stderr,
+				"cmdline opt \t%s = %s\n", 
+				set[i].name, set[i].value);
+			break;
+		default: 
+			fprintf(stderr, "error: unknown kind (%d)\n", 
+				set[i].kind );
+		}
+	}
+}
+
+
+char *mo_find_option( opt *set, int setlen, char *name )
+{
+	opt *o = NULL;
+	int i;
+	for(i=0; i<setlen; i++){
+		if (strcmp(set[i].name,name) == 0)
+			if (!o || o->kind < set[i].kind)
+				o = set+i;
+	}
+	if (o) return o->value;
+	return NULL;
+}
+
+void mo_substitute( opt *set, int setlen, char *val )
+{
+	char *q = NULL;
+	while( (q = strchr(val, '$')) != NULL ){
+		if ( strncmp(q,"${exec_prefix}",strlen("${exec_prefix}")) == 0){
+			char val2[BUFSIZ];
+			char *p = mo_find_option(set, setlen, "exec_prefix");
+			char *t = strchr(q,'}');
+			if (!t || !p) return ;
+			*q = '\0';
+			snprintf(val2,BUFSIZ,"%s%s%s", val, p, t+1 );
+			strncpy(val,val2,BUFSIZ);
+		} else if ( strncmp(q,"${prefix}",strlen("${prefix}")) == 0){
+			char val2[BUFSIZ];
+			char *p = mo_find_option(set, setlen, "prefix");
+			char *t = strchr(q,'}');
+			if (!t || !p) return ;
+			*q = '\0';
+			snprintf(val2,BUFSIZ,"%s%s%s", val, p, t+1 );
+			strncpy(val,val2,BUFSIZ);
+		}
+	}
+}
+
+int mo_config_file(opt **Set, int setlen, char *file, opt_kind kind )
+{
+        char buf[BUFSIZ];
+        FILE *fd= NULL;
+	opt *set = *Set;
+
+        fd = fopen(file,"r");
+        while(fd!=NULL && fgets(buf,BUFSIZ,fd) != NULL){
+		char *s, *t, *val;
+
+                for(s=buf; *s && isspace(*s); s++) ;
+                if( *s == '#') continue;  /* commentary */
+                if( *s == 0) continue;   /* empty line */
+                
+                val = strchr(s,'=');
+                if( val == NULL) {
+                        fprintf(stderr, 
+				"mo_config_file: syntax error in %s\n", file);
+			fclose(fd);
+			exit(1);
+                }
+                *val=0;
+
+                for(t=s; *t && !isspace(*t); t++) ;
+                *t =0;
+
+                /* skip any leading blancs in the value part */
+                for(val++; *val && isspace(*val) ;val++) ;
+                /* search first blanc, rest is commentary */
+                for(t=val;*t;t++) if( isspace(*t) || *t=='#') break;
+                *t=0;
+
+		set = (opt*)realloc(set,(setlen+1)*sizeof(opt));
+		set[setlen].kind = kind;
+		set[setlen].name = strdup(s);
+		set[setlen].value = strdup(val);
+		setlen++;
+
+        }
+	if (fd == NULL){
+		fprintf(stderr, "Could not open file %s\n", file );
+	}
+        if( fd != NULL) (void) fclose(fd);
+	*Set = set;
+	return setlen;
+}
+
+int mo_system_config( opt **Set, int setlen)
+{
+	char config[BUFSIZ];
+
+	snprintf(config,BUFSIZ,"@sysconfdir@%cmonet.conf", DIR_SEP);
+	mo_substitute(*Set, setlen, config);
+	return mo_config_file(Set, setlen, config, opt_systemconfig );
+}
+	
+
+int mo_builtin_settings(opt **Set)
+{
+	int i = 0;
+	opt *set = (opt*)malloc(sizeof(opt)*14);
+
+	if (!set) return 0;
+
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_arch");
+	set[i].value = (char*)malloc(BUFSIZ);
+        snprintf(set[i].value,BUFSIZ, "%dbit%s", sizeof(char*)*8, HOST);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_version");
+	set[i].value = (char*)strdup(VERSION);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("monet_pid");
+	set[i].value = (char*)malloc(BUFSIZ);
+        snprintf(set[i].value,BUFSIZ, "%d", getpid());
+	i++;
+
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("prefix");
+	set[i].value = (char*)malloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,"@prefix@", DIR_SEP);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("exec_prefix");
+	set[i].value = (char*)malloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,"@exec_prefix@", DIR_SEP);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_dbname");
+	set[i].value = strdup("tst");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_dbfarm");
+	set[i].value = (char*)malloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,"@localstatedir@%c@PACKAGE@", DIR_SEP);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_debug");
+	set[i].value = strdup("8");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_mmap");
+	set[i].value = strdup("32M");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("monet_admin");
+	set[i].value = strdup("adm");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("monet_prompt");
+	set[i].value = strdup(">");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("monet_welcome");
+	set[i].value = strdup("yes");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("monet_mod_path");
+	set[i].value = (char*)malloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,"@libdir@%c@PACKAGE@", DIR_SEP);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("monet_deamon");
+	set[i].value = strdup("yes");
+	i++;
+	
+	*Set = set;
+	return i;
+}
+
+int mo_add_option( opt **Set, int setlen, 
+		opt_kind kind, char *name, char *value )
+{
+	opt *set = (opt*)realloc(*Set,(setlen+1)*sizeof(opt));
+	set[setlen].kind = opt_cmdline;
+	set[setlen].name = strdup(name);
+	set[setlen].value = strdup(value);
+	*Set = set;
+	return setlen+1;
+}
+
+void mo_free_options( opt *set, int setlen )
+{
+	int i;
+	for(i=0; i<setlen; i++){
+		free(set[i].name);
+		free(set[i].value);
+	}
+	free(set);
+}

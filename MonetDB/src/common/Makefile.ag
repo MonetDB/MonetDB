@@ -1,0 +1,13 @@
+## Process this file with automake to produce Makefile.in
+
+MTSAFE
+
+EXTRA_DIST = getopt.h
+
+lib_mutils = { 
+	NAME = mutils
+	SOURCES = \
+		monet_options.mx.in
+	HEADERS = h
+	LIBS = @LIBOBJS@
+}
