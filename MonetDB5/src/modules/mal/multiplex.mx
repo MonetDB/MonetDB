@@ -114,9 +114,9 @@ c tails and stores it in b. This case is detected by operatorModifier().
 #include "multiplex.h"
 #define REALLY_REALLY_BIG	2000000000
 
-/* #define DEBUG_MULTIPLEX */
-/* #define TRACE_MULTIPLEX */
-static int multiplexDebug = 0;
+/*#define DEBUG_MULTIPLEX */
+/*#define TRACE_MULTIPLEX  */
+static int multiplexDebug = 0; 
 
 static int batcalcTypeCheck(str operator, int type);
 
@@ -486,14 +486,14 @@ code construction.
 	pushInstruction(m,q);
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int i,k,l,mloop,refBat=0,resB,refType,cr;
+	int i,k,l,mloop,refBat=0,resB,refType,cr,fcnid;
 	int nilVar=0 /*, mvar*/;
 	str ret= MAL_SUCCEED;
 	int hvar,tvar, rIndex=0;
 #ifdef DEBUG_MULTIPLEX
 	int assignop = FALSE;
 #endif
-	char name[128];
+	char name[128],fcnname[128];
 	str s= (str) getArgValue(stk,pci,1);
 	MalBlkPtr m,m1;
 	InstrPtr q,p;
@@ -539,9 +539,9 @@ in the new mal block.
 
 	/* function multiplex(A1,....,An):bat[ht,tt] */
 	q= newInstruction(FUNCTIONsymbol);
-	sprintf(name,"multiplex%d",fcnnr++);
-	setFunctionId(q, GDKstrdup(name));
-	q->argv[0]= newVariable(m,GDKstrdup(name), refType);
+	sprintf(fcnname,"multiplex%d",fcnnr++);
+	setFunctionId(q, GDKstrdup(fcnname));
+	fcnid= q->argv[0]= newVariable(m,GDKstrdup(fcnname), refType);
 @-
 Beware, the operator constant (arg=1) is passed along as well,
 because in the end we issue a recursive function call that should
@@ -732,9 +732,9 @@ find the actual arguments at the proper place of the callee.
 	pushInstruction(m,q);
 	/* z:= inspect.stkFrame(); print(z) */
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("inspect"));
+	setModuleId(q, GDKstrdup("mdb"));
 	setFunctionId(q, GDKstrdup("getStackFrame"));
-	q->argv[0]= zz= newTmpVariable(m,newBatType(TYPE_str,TYPE_str));
+	q->argv[0]= zz= newVariable(m,GDKstrdup("stkFrame"),newBatType(TYPE_str,TYPE_str));
 	q->argc=1;
 	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
@@ -777,6 +777,7 @@ find the actual arguments at the proper place of the callee.
 	q->retc=1;
 	pushInstruction(m,q);
 	q= newInstruction(ENDsymbol);
+	q->argv[0]=fcnid;
 	pushInstruction(m,q);
 @-
 It is time to type check the code and request for any optimization.
@@ -799,10 +800,10 @@ execute the new routine and to return its value.
 Upon exit, we set the return value of the enclosing instruction
 and leave it up to the interpreter to deal with exception handling.
 @c
-        retval=  &stk->stk[pci->argv[0]];
-        garbageElement(retval);
+	retval=  &stk->stk[pci->argv[0]];
+	garbageElement(retval);
 	stk->pcup = getPC(mb,pci);
-        ret= runMAL(getClient(),m,1,mb,stk,pci);
+	ret= runMAL(getClient(),m,1,mb,stk,pci);
 @-
 It is tempting to retain the function in the namespace of
 the client. However, this complicates the administration, e.g.
@@ -844,4 +845,5 @@ int batcalcTypeCheck(str operator, int type){
 #endif
 	return ret;
 }
+
 @}
