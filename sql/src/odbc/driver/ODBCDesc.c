@@ -147,7 +147,7 @@ getDescError(ODBCDesc *desc)
 }
 
 static void
-cleanODBCDescRec(ODBCDescRec *rec)
+cleanODBCDescRec(ODBCDesc *desc, ODBCDescRec *rec)
 {
 	if (rec->sql_desc_base_column_name)
 		free(rec->sql_desc_base_column_name);
@@ -172,6 +172,13 @@ cleanODBCDescRec(ODBCDescRec *rec)
 	if (rec->sql_desc_type_name)
 		free(rec->sql_desc_type_name);
 	memset(rec, 0, sizeof(*rec));
+	if (desc) {
+		if (isAD(desc)) {
+			rec->sql_desc_concise_type = SQL_C_DEFAULT;
+			rec->sql_desc_type = SQL_C_DEFAULT;
+		} else if (isIPD(desc))
+			rec->sql_desc_parameter_type = SQL_PARAM_INPUT;
+	}
 }
 
 void
@@ -186,7 +193,7 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 		int i;
 
 		for (i = count + 1; i <= desc->sql_desc_count; i++)
-			cleanODBCDescRec(&desc->descRec[i]);
+			cleanODBCDescRec(NULL, &desc->descRec[i]);
 	}
 	if (count == 0) {
 		assert(desc->descRec != NULL);
@@ -197,7 +204,8 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 		desc->descRec = malloc((count + 1) * sizeof(*desc->descRec));
 	} else {
 		assert(desc->sql_desc_count > 0);
-		desc->descRec = realloc(desc->descRec, (count + 1) * sizeof(*desc->descRec));
+		desc->descRec = realloc(desc->descRec,
+					(count + 1) * sizeof(*desc->descRec));
 	}
 	if (count > desc->sql_desc_count) {
 		int i;
@@ -240,22 +248,11 @@ addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno)
 	assert(desc);
 	assert(recno > 0);
 
-	if (desc->descRec == NULL) {
-		assert(desc->sql_desc_count == 0);
-		desc->descRec = malloc((recno + 1) * sizeof(*desc->descRec));
-		memset(desc->descRec, 0, (recno + 1) * sizeof(*desc->descRec));
-		desc->sql_desc_count = recno;
-	} else if (desc->sql_desc_count < recno) {
+	if (recno < desc->sql_desc_count)
+		setODBCDescRecCount(desc, recno);
+	else {
 		assert(desc->descRec != NULL);
-		assert(desc->sql_desc_count > 0);
-		desc->descRec = realloc(desc->descRec,
-					(recno + 1) * sizeof(*desc->descRec));
-		memset(desc->descRec + desc->sql_desc_count + 1, 0,
-		       (recno - desc->sql_desc_count) * sizeof(*desc->descRec));
-		desc->sql_desc_count = recno;
-	} else {
-		assert(desc->descRec != NULL);
-		cleanODBCDescRec(&desc->descRec[recno]);
+		cleanODBCDescRec(desc, &desc->descRec[recno]);
 	}
 
 	return &desc->descRec[recno];
