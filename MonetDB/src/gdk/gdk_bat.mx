@@ -432,6 +432,7 @@ BAT *BATclear(BAT *b) {
 
 int BATfree(BAT *b) {
 	/* deallocate all memory for a bat */
+	b->GDKversion = -1;
 	BATreset(b);
 	ACCunloadall(b);
         DELTAsave(b); /* convert to disk format */

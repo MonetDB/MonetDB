@@ -302,7 +302,6 @@ BAT* BATloaddesc(str nme) {
         b->U = &dst->U;
         b->batBuns = &b->U->buns;
 	b->batId = dst->fullid;
-	b->batDirtyflushed = b->batDirty?TRUE:FALSE;
 	b->batCopiedtodisk = 1;
         b->batElmshift = BATelmshift(b);
 	b->batConvert = conv;

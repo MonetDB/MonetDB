@@ -165,12 +165,17 @@ int TMcommit(void) {
 			if (b){
 				if (BBP_status(bid) & BBPPERSISTENT) {
 					if (i > cur) BATcommit(b);
-				} else if (BBP_status(bid) & BBPDELETED) {
+				} else if (BBP_status(bid) & BBPDELETED &&
+					   BBP_lrefs(bid) == 0 && 
+					   BBP_refs(bid) == 1) {
 					BBPclean(b);
+					BATdelete(b);
+					BBPclear(bid);
 					if (i > cur){
 						cur = i;
 						i = 1; /* restart */
 					}
+					continue;
 				}
 			}
 			BBPunfix(bid);

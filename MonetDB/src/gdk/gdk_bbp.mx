@@ -818,6 +818,7 @@ int BBPtransient(bat i, int trans) {
 			THRprintf(GDKerr, "trans(%d) %d (%s) refs(%d,%d)\n", 
 			trans, i, BBP_logical(i), BBP_lrefs(i), BBP_plevel(i)); 
 		}
+		assert( (BBP_refs(i) +  BBP_lrefs(i)) > 0);
 		if (pid != locked_by)
 	    		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPtransient"); 
 		if (BBP_lrefs(i) > 0) BBP_lrefs(i)--;
@@ -844,6 +845,8 @@ int BBPtransient(bat i, int trans) {
 			    BBP_refs(i)++; /* make sure its not trimmed */
 			    if ((b = (BAT*) BBPquickdesc(i, TRUE)) != NULL) {
 				bat bid = b->batCacheid;
+				if (!VIEWparent(b))
+        				assert (b->batSharecnt == 0);
 				BBPclean(b);
 				BATdelete(b); /* was swapped out to disk; remove files */
 				BBPclear(bid); /* de-register from BBP */
@@ -924,10 +927,8 @@ void BBPuncacheit(bat i) {
 			BATDEBUG {
 				THRprintf(GDKerr, "uncache %d (%s)\n", i, BBP_logical(i)); 
 			}
-			if (b->batMapdirty && !VIEWparent(b)) {
-				GDKfree(b);
-				BBP_desc(i) = NULL; 
-			}
+			GDKfree(b);
+			BBP_desc(i) = NULL; 
 		}
 		BBP_cache(i) = BBP_cache(-i) = NULL; 
 		BBP_status_off(i, BBPUNLOADING|BBPLOADED, "BBPuncacheit");
@@ -1124,6 +1125,7 @@ int BBPunfix(bat i) {
 	if (i < 0) i = -i;
 	if (pid != locked_by) 
 		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix"); 
+	assert( (BBP_refs(i) +  BBP_lrefs(i)) > 0);
 	refs = --BBP_refs(i);
 	if (refs < 0) {
 		GDKwarning("BBPunfix: bat(%d) has refcnt %d\n", i,refs);
@@ -1498,6 +1500,10 @@ int BBPfree(BAT *b) {
 		assert (b && BBP_refs(bid)); 
 		return 0;
 	}
+
+	if (!parent)
+        	assert (b->batSharecnt == 0);
+
 	if (BBP_lrefs(bid) > 0) {
 		/* write dirty BATs before being unloaded */
 		int ret = BBPsave(b);
