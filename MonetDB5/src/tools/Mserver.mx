@@ -116,7 +116,7 @@ extern int optind;
 void Mserver_abort() {
         fprintf(stderr,"\n! Mserver_abort() was called by terminate(). !\n");
         fflush(stderr);
-        MT_global_exit(1);
+        MT_global_exit(0);
 }
 #endif
 void usage( char *prog ){
@@ -129,7 +129,7 @@ void usage( char *prog ){
         fprintf(stderr, "[-c or --config config_file ]\n" );
         fprintf(stderr, "[-s or --set option=value ]\n" );
         fprintf(stderr, "script+\n" );
-        exit(-1);
+        exit(0);
 }
 
 @-
@@ -442,7 +442,6 @@ Time to execute the script files. Start with the init command[todo]
         initClientPrg(mal_clients,"main");
         serveClient(mal_clients);
 
-	assert(0);	/* should not come here */
 	MT_global_exit(0);  
 	return 0; 
 }
