@@ -547,7 +547,7 @@ with lower priority
 @c
 int parseMILexpr(Client cntxt, MalBlkPtr currBlk){
 	InstrPtr currInstr;
-	int i,stk[32],priority[32], top, lhs, rhs;
+	int i,stk[32],priority[32], top, lhs;
 	str operator,ostk[32];
 
 	top= 0;
@@ -566,7 +566,7 @@ int parseMILexpr(Client cntxt, MalBlkPtr currBlk){
 		priority[top]= 1; /* refine later */
 
 		skipSpace(cntxt);
-		stk[++top]= rhs= parseMILfactor(cntxt,currBlk);
+		stk[++top]= parseMILfactor(cntxt,currBlk);
 		@:exprCode(top-1, TRUE)@
 	} while(1);
 	@:exprCode(top,FALSE)@
@@ -898,6 +898,9 @@ int parseMILtype(Client cntxt,str tnme){
 			if( currChar(cntxt) != ']')
 				parseError(cntxt,"',' expected\n");
 			advance(cntxt,1);
+			/* TODO also use the head and tail types */
+			(void)ht;
+			(void)tt;
 		}
 	} 
 	return tpe;

@@ -13,12 +13,9 @@ The underlying parser is to be included in a Mapi-mil front-end or
 the applications at a later stage.
 
 @c
-#ifndef _M2M_H
-#define _M2M_H
 #include "mal_config.h"
 #include "monet_options.h"
 #include "mil_compiler.h"	/* for mil_push() */
-#endif
 
 void prelude();
 void advice();

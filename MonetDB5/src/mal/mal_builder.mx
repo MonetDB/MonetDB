@@ -96,7 +96,7 @@ pushLng(MalBlkPtr mb, InstrPtr q, long val)
 	int _t; 
 	char bufi[BUFSIZ];
 
-	snprintf(bufi,BUFSIZ,"%d",val);
+	snprintf(bufi,BUFSIZ,"%ld",val);
 	_t= newConstant(mb,TYPE_lng,GDKstrdup(bufi),TRUE); 
 	return pushArgument(mb,q,_t);
 }

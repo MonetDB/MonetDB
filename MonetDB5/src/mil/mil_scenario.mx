@@ -187,7 +187,6 @@ parser.
 str MILparser(Client c) {
 	MalBlkRecord oldstate;
 	lng T0 = 0;
-	int err = 0;
 	str msg = MAL_SUCCEED;
 	MILbackend be= c->state[PARSER];
 	InstrPtr p;
@@ -207,7 +206,7 @@ str MILparser(Client c) {
 	oldstate= *c->curprg->def;
 
 	prepareMalBlk(c->curprg->def, CURRENT(c));
-	if( ( err= parseMILprg(c, c->curprg->def)) || c->curprg->def->errors  ){
+	if( parseMILprg(c, c->curprg->def) || c->curprg->def->errors  ){
 		@:restoreState(0)@
 		return throwMessage("MILparser","Parser errors\n");
 	} 
@@ -252,13 +251,13 @@ Programs that pass the parsing and semantic checks can be taken into
 execution.
 @c
 str MILengine(Client c) {
-	str msg =MAL_SUCCEED;
-	MalStkPtr oldglb= c->glb;
+	lng T0;
+	str msg = MAL_SUCCEED;
+	MalStkPtr oldglb = c->glb;
 	MILbackend be = (MILbackend ) c->state[PARSER];
 	MalBlkRecord oldstate;
-	oldstate.stop = 0;
-	lng T0;
 
+	oldstate.stop = 0;
 	if(c->curprg->def== 0 )
 		return throwMessage("MILengine","Program contains errors\n");
 #ifdef MIL_SCENARIO_DEBUG

@@ -396,9 +396,9 @@ void HASHinfoProfile(Hash *h, str s){
     int i;
     snprintf(buf,MAXPATHLEN,"%s=\"\" mask=\"", s);
     i= strlen(buf);
-    snprintf(buf+i,MAXPATHLEN-i,"%d\" lim=\"", h->mask);
+    snprintf(buf+i,MAXPATHLEN-i, SZFMT "\" lim=\"", h->mask);
     i= strlen(buf);
-    snprintf(buf+i,MAXPATHLEN-i,"%d\"", h->lim);
+    snprintf(buf+i,MAXPATHLEN-i, SZFMT "\"", h->lim);
     log0(buf);
 }
 void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
