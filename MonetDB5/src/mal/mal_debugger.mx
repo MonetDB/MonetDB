@@ -17,10 +17,10 @@
 
 @a M.L. Kersten
 @* The MAL debugger
-To enable ease of debugging and performance monitoring, the MAL interpreter
+To ease debugging and performance monitoring, the MAL interpreter
 comes with a gdb-like text-based debugger.
 The debugger can be entered at any time using the call mdb() against
-a MAL console.
+a MonetDB client.
 
 @+ The debugger instruction set
 @multitable @columnfractions .2 .8
@@ -41,7 +41,7 @@ a MAL console.
 @item step      
 @tab advance to next MAL instruction
 @item module    
-@tab display the module [scopes] 
+@tab display the module signatures
 @item finish    
 @tab finish current call
 @item quit      
@@ -72,18 +72,31 @@ a MAL console.
 @tab the help message
 @end multitable
 
-@+ Breakpoint tables
+@+ Breakpoints
 A powerful mechanism for debugging a program is to set breakpoints.
-In MAL the breakpoints are designated by the <module>.<variable> name.
-As soon as the variable recieves a new valued the breakpoint effectuated.
-@-
-The breakpoints are maintained in a system-wide global table. 
-Although a little space consumptive, it is the easiest to maintain 
-and much less expensive as reserving debugger space in each instruction.
+In MAL they are designated by the <operator> or <variable> name.
+As soon as the variable recieves a new value  or the operation
+is called the debugger is activated.
+
+@+ Embedded debugger calls
+Part of the debugger functionality can also be controlled using
+MAL instructions. For, the debugger can be (de-)activated using the
+corresponding mdb() instruction with a boolean argument.
+The debugger is only activated when the user can direct its execution
+from the client interface. Otherwise, there is no proper input channel
+and the debugger will run in trace mode.
+
+A particular operation can be traced using the command
+setTrace(<modulename>,<operation>,<on/off>).
+Likewise, breackpoints can be set and cleared on operations and variables
+to escape to the debugger.
+
+The debugger flag setTimer(<on/off>) enables tracing the micro-seconds
+spent on each instruction.
 @{
 @- Compilation control
 Being able to debug comes at a price.
-The debugger options can be turned of at compile time using the 
+It should be possible to turn off the feature at compile time.
 
 @h
 #ifndef _MAL_DEBUGGER_H
@@ -91,6 +104,8 @@ The debugger options can be turned of at compile time using the
 
 #include "mal_scenario.h"
 #include "mal_client.h"
+
+#define MAL_DEBUGGER 	/* debugger is active */
 
 #define MAXBREAKS 32
 
@@ -126,6 +141,15 @@ to the user to alter the trace/debugger options.
 #include "mal_scope.h"      /* for showModuleStatistics() */
 #include "mal_parser.h"
 
+#define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; }
+#define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; }
+#define skipWord(c,X) 	  skipNonBlanc(c,X); skipBlanc(c,X);
+
+@-
+Each client has its own breakpoint administration, kept in a global table.
+Although a little space consumptive, it is the easiest to maintain 
+and much less expensive as reserving debugger space in each instruction.
+@c
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
 char isBreakpoint(Client cntxt, InstrPtr p){
@@ -148,11 +172,8 @@ or specific operation.
 @c
 void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
     int i,j,cnt=0;
-    char *c=name;
     InstrPtr p;
 
-    while(*c && (isalnum((int)*c) || *c=='$' || *c=='_')) c++;
-    *c = 0;
     for(i=0;i<mb->stop; i++){
         p= getInstrPtr(mb,i);
         if( functionId(p) && strcmp(functionName(p),name) == 0 ){
@@ -170,9 +191,15 @@ void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
     if(cnt == 0)
     stream_printf(cntxt->fdout,"breakpoint on '%s' not set\n", name);
 }
-
+@-
+A breakpoint should be set once for each combination
+@c
 void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name, char cmd)
 {   mdbState mdb= mdbTable + cntxt->idx;
+	int i;
+	for(i=0;i<mdb->brkTop; i++)
+	if( mdb->brkBlock[i] == mb &&
+    	strcmp(mdb->brkVarName[i], name)==0 ) return;
     mdb->brkBlock[mdb->brkTop] = mb;
     mdb->brkVar[mdb->brkTop] = getDestVar(p);
     mdb->brkVarName[mdb->brkTop] = GDKstrdup(name);
@@ -224,10 +251,6 @@ void mdbClrBreakpointName(Client cntxt, str name)
     }
     mdb->brkTop = j;
 }
-
-#define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; }
-#define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; }
-#define skipWord(c,X) 	  skipNonBlanc(c,X); skipBlanc(c,X);
 
 @-
 The instruction call stack is the most common command.
@@ -328,9 +351,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
     do {
 		if (cntxt->phase[READER]) {
- 			if(  (*cntxt->phase[READER])(cntxt) ) 
+ 			if(  (*cntxt->phase[READER])(cntxt) ) {
         		    break;
-		} else if (readClient(cntxt, cntxt -> prompt) <= 0) {
+			}
+		} else if ( readClient(cntxt, cntxt -> prompt) <= 0) {
         	break;
 		}
     	b = CURRENT(cntxt);
@@ -397,7 +421,6 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         		}
 
         		skipWord(cntxt,b);
-        		skipBlanc(cntxt,b);
         		if(*b){
             		modnme=b;
 					fcnname= strchr(b,'.');
@@ -448,7 +471,6 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         		Symbol fs;
         		int i;
 				skipWord(cntxt,b);
-        		skipBlanc(cntxt,b);
 				if( *b!= 0){
 					modnme=b;
 					fcnname= strchr(b,'.');
@@ -488,21 +510,19 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         		break;
 			}
     	case 'b':
-        	if( strncmp(b,"bbp",3)==0){
-            	printBBPinfo(out);
-            	continue;
-        	}
-        	skipWord(cntxt,b);
-        	if(*b==0) { 
-                        mdbShowBreakpoints(cntxt); 
-                        continue;
-                }
-        	if( !isspace((int)*b) && *b != 0){
-            	/* set breakpoints by name */
-            	mdbSetBreakpointName(cntxt,mb,b,'s');
-        	} else {
-            	mdbSetBreakpoint(cntxt,mb,p,getArgName(mb,p,0),'s');
-        	}
+			if( strcmp(b,"breakpoints") == 0 ){
+				mdbShowBreakpoints(cntxt); 
+				continue;
+			}
+			if( strcmp(b,"breakpoint") == 0 || isspace((int)b[1]) ){
+				skipWord(cntxt,b);
+				if( *b && !isspace((int)*b) )
+					/* set breakpoints by name */
+					mdbSetBreakpointName(cntxt,mb,b,'s');
+				 else 
+					mdbSetBreakpoint(cntxt,mb,p,getArgName(mb,p,0),'s');
+				continue;
+			}
         	continue;
     	case 'd':
         	if( strncmp(b,"down",2)==0 && stk->down!= NULL){
@@ -676,12 +696,12 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
         }
         break;
     case 'T':
-        stream_printf(cntxt->fdout,"#mdb ");
         if( cntxt->timer){
             long n= GDKusec();
             long l= n - cntxt->timer;
             stream_printf(cntxt->fdout,"%s[%-3d usec]\n","#mdb ",l);
         }
+        stream_printf(cntxt->fdout,"#mdb ");
         printTraceCall(cntxt,mb,stk,p);
     }
     if( cntxt->timer) cntxt->timer = GDKusec();
