@@ -42,7 +42,8 @@ if [ ! -f configure.ag  -a  ! -x configure ] ; then
 fi
 
 base="`pwd`"
-what="`basename $base | tr [:lower:] [:upper:]`"
+wh_t="`basename $base`"
+what="`echo ${wh_t} | tr [:lower:] [:upper:]`"
 
 if [ "${what}" != "MONET" ] ; then
 	if [ ! "${MONET_PREFIX}" ] ; then
@@ -52,6 +53,7 @@ if [ "${what}" != "MONET" ] ; then
 		echo ''
 		echo 'Could not find Monet installation.'
 		echo ''
+		wh_t='' ; unset wh_t
 		what='' ; unset what
 		return 1
 	fi
@@ -348,6 +350,10 @@ fi
 # for convenience: store the complete configure-call in ${what}_CONFIGURE
 WHAT_CONFIGURE="${base}/configure ${conf_opts} --prefix=${WHAT_PREFIX}"
 echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
+eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
+eval "alias configure_${wh_t}"
+eval "alias Mtest_${wh_t}='Mtest.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
+eval "alias Mtest_${wh_t}"
 
 mkdir -p ${WHAT_BUILD}
 
@@ -355,15 +361,20 @@ echo ""
 echo "To compile ${what}, just execute:"
 echo -e "\t./bootstrap"
 echo -e "\tcd ${WHAT_BUILD}"
-echo -e "\t${WHAT_CONFIGURE}"
+echo -e "\tconfigure_${wh_t}"
 echo -e "\tmake"
 echo -e "\tmake install"
+echo ""
+echo "Then, to test ${what}, just execute:"
+echo -e "\tcd ${base}"
+echo -e "\tMtest_${wh_t} -r"
 echo ""
 
 eval "${what}_BUILD=\"$WHAT_BUILD\" ; export ${what}_BUILD"
 eval "${what}_PREFIX=\"$WHAT_PREFIX\" ; export ${what}_PREFIX"
 eval "${what}_CONFIGURE=\"$WHAT_CONFIGURE\" ; export ${what}_CONFIGURE"
 
+wh_t='' ; unset wh_t
 what='' ; unset what
 WHAT_BUILD='' ; unset WHAT_BUILD
 WHAT_PREFIX='' ; unset WHAT_PREFIX
