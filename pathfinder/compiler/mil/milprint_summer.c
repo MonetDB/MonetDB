@@ -40,8 +40,30 @@
 #include "oops.h"
 #include "subtyping.h"
 
+/* FIXME: throw this out asap */
+#include "coreprint.h"
+
 static void
 translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c);
+
+/**
+ * Test if two types are castable into each other
+ *
+ * @param t1 the type from which it is casted
+ * @param t2 the type to which it is casted
+ * @return the result of the castable test
+ */
+static bool
+castable (PFty_t t1, PFty_t t2)
+{
+    t2 = PFty_defn (t2);
+    if (t2.type == ty_choice ||
+        (t2.type == ty_opt && (PFty_child (t2)).type == ty_choice))
+        return false;
+    else
+        return (PFty_subtype (t1, PFty_opt (PFty_atomic ())) &&
+                PFty_subtype (t2, PFty_opt (PFty_atomic ())));
+}
 
 /**
  * init introduces the initial MIL variables
@@ -93,7 +115,9 @@ init (FILE *f)
 
              /* variable binding for loop-lifting of the empty sequence */
             "var empty_bat := bat(void,oid).seqbase(0@0);\n"
+            "empty_bat.access(BAT_READ);\n"
             "var empty_kind_bat := bat(void,int).seqbase(0@0);\n"
+            "empty_kind_bat.access(BAT_READ);\n"
 
              /* variables for (intermediate) results */
             "var iter;\n"
@@ -135,7 +159,7 @@ print_output (FILE *f)
             "temp1_str := nil;\n"
   
             /* gets the node information for node kind */
-            "var temp1_node := kind.get_type(NODE).mark(0@0).reverse;\n"
+            "var temp1_node := kind.get_type(ELEM).mark(0@0).reverse;\n"
             "var backup_oids := temp1_node.reverse;\n"
             "var temp1_frag := temp1_node.leftfetchjoin(kind).get_fragment;\n"
             "var oid_pre := temp1_node.leftfetchjoin(item);\n"
@@ -275,20 +299,20 @@ print_output (FILE *f)
             "print (output_item);\n"
             */
             /* prints the result in a readable way */
-            "printf(\"====================\\n\");\n"
-            "printf(\"====== result ======\\n\");\n"
-            "printf(\"====================\\n\");\n"
+            "printf(\"#====================#\\n\");\n"
+            "printf(\"#====== result ======#\\n\");\n"
+            "printf(\"#====================#\\n\");\n"
             "print (iter, pos, output_item);\n"
             "output_item := nil;\n"
   
             /* prints the documents and the working set if 
                they have not to much elements/attributes and if
                there are not to many */
-            "printf(\"====================\\n\");\n"
-            "printf(\"=== working set ====\\n\");\n"
-            "printf(\"====================\\n\");\n"
+            "printf(\"#====================#\\n\");\n"
+            "printf(\"#=== working set ====#\\n\");\n"
+            "printf(\"#====================#\\n\");\n"
             "if (ws.fetch(PRE_SIZE).count < 5) {\n"
-            "printf(\"- loaded documents -\\n\");\n"
+            "printf(\"#- loaded documents -#\\n\");\n"
             "ws.fetch(DOC_LOADED).print;\n"
             "i := 0;\n"
             "while (i < ws.fetch(PRE_SIZE).count) {\n"
@@ -315,7 +339,13 @@ print_output (FILE *f)
             "                e_props := nil;\n"
             "                e_frags := nil;\n"
             "                var texts := ws.fetch(PRE_KIND).fetch(i).ord_uselect(TEXT).mark(0@0).reverse;\n"
-            "                t_names := texts.project(\"(TEXT)\");\n"
+            "                var t_props := texts.leftfetchjoin(ws.fetch(PRE_PROP).fetch(i));\n"
+            "                var t_frags := texts.leftfetchjoin(ws.fetch(PRE_FRAG).fetch(i));\n"
+            "                var t_qns := mposjoin(t_props, t_frags, ws.fetch(PROP_TEXT));\n"
+            "                t_props := nil;\n"
+            "                t_frags := nil;\n"
+            "                t_names := texts.project(\"(TEXT) '\").[+](t_qns)[+](\"'\");\n"
+            "                t_names := t_names.reverse.mark(0@0).reverse;\n"
             "                var res_mu := merged_union(elems, texts, e_qns, t_names);\n"
             "                elems := nil;\n"
             "                texts := nil;\n"
@@ -332,11 +362,11 @@ print_output (FILE *f)
             "i :+= 1;\n"
             "}\n"
             "} else {\n"
-            "printf(\"to much content in the WS to print it for debugging purposes\\n\");\n"
+            "print(\"to much content in the WS to print it for debugging purposes\");\n"
             "if (ws.fetch(DOC_LOADED).count > 25) \n"
-            "printf(\"(number of loaded documents: %%i)\\n\", ws.fetch(DOC_LOADED).count);\n"
+            "printf(\"# (number of loaded documents: %%i) #\\n\", ws.fetch(DOC_LOADED).count);\n"
             "else {\n"
-            "printf(\"- loaded documents -\\n\");\n"
+            "printf(\"#- loaded documents -#\\n\");\n"
             "ws.fetch(DOC_LOADED).print;\n"
             "}\n"
             "}\n"
@@ -794,7 +824,7 @@ translateConst (FILE *f, int act_level, char *kind)
 static void
 loop_liftedSCJ (FILE *f, char *axis, char *kind, char *ns, char *loc)
 {
-    /* iter|pos|item input contains only nodes (kind=NODE) */
+    /* iter|pos|item input contains only nodes (kind=ELEM) */
     fprintf(f, "# loop_liftedSCJ (axis, kind, ns, loc)\n");
 
     if (!strcmp (axis, "attribute"))
@@ -925,7 +955,10 @@ translateLocsteps (FILE *f, PFcnode_t *c)
             "var res_scj := empty_res_bat;"
   
             /* make this path step only for nodes */
-            "var sel_ls := kind.get_type(NODE);\n"
+            "var sel_ls := kind.get_type(ELEM);\n"
+            "if (sel_ls.count != kind.count)\n"
+            "    ERROR(\"location step only allows "
+                 "nodes as input parameter\");\n"
             "sel_ls := sel_ls.mark(0@0).reverse;\n"
             "item := sel_ls.leftfetchjoin(item);\n"
             "iter := sel_ls.leftfetchjoin(iter);\n"
@@ -972,7 +1005,7 @@ translateLocsteps (FILE *f, PFcnode_t *c)
             axis = "attribute";
             break;
         default:
-            PFoops (OOPS_FATAL, "illegal XPath axis in MIL-translation");
+            PFoops (OOPS_FATAL, "XPath axis is not supported in MIL-translation");
     }
 
     switch (c->child[0]->kind)
@@ -1028,7 +1061,7 @@ translateLocsteps (FILE *f, PFcnode_t *c)
     if (!strcmp (axis, "attribute"))
             fprintf(f, "kind := res_scj.fetch(2).get_kind(ATTR);\n");
     else
-            fprintf(f, "kind := res_scj.fetch(2).get_kind(NODE);\n");
+            fprintf(f, "kind := res_scj.fetch(2).get_kind(ELEM);\n");
 
     fprintf(f,
             "res_scj := nil;\n"
@@ -1049,9 +1082,6 @@ translateLocsteps (FILE *f, PFcnode_t *c)
 static void
 addValues (FILE *f, char *tablename, char *varname)
 {
-    /* FIXME: it's not 100% sure, that order is not changed and so
-              mark could have a negative effect and switch values */
-    /* add the values */
     fprintf(f, "%s.seqbase(nil);\n", tablename);
     fprintf(f, "%s := %s.reverse.mark(nil).reverse;\n", varname, varname);
     fprintf(f, "%s.insert(%s);\n", tablename, varname);
@@ -1073,8 +1103,8 @@ createEnumeration (FILE *f)
 {
     fprintf(f,
             "{ # createEnumeration ()\n"
-    /* the head of item has to be void with the seqbase 0@0 */
-            "var ints_cE := item.mirror.[int];\n"
+            /* the head of item has to be void */
+            "var ints_cE := item.mark(1@0).[int];\n"
            );
     addValues (f, "int_values", "ints_cE");
     fprintf(f,
@@ -1149,7 +1179,7 @@ castQName (FILE *f)
                which were before strings */
             "if (counted_qn = 0)\n"
             /* the only possible input kind is string -> oid_oid=void|void */
-            "    item := oid_prop;\n"
+            "    item := oid_prop.reverse.mark(0@0).reverse;\n"
             "else {\n"
             /* qnames and newly generated qnames are merged 
                (first 2 parameters are the oids for the sorting) */
@@ -1200,12 +1230,12 @@ loop_liftedElemConstr (FILE *f, int i)
 
             /* FIXME: remove this test if textnodes are added automatically */
             "if (kind.count != "
-                "(kind.get_type(NODE).count + kind.get_type(ATTR).count))\n"
+                "(kind.get_type(ELEM).count + kind.get_type(ATTR).count))\n"
             "    ERROR (\"there can be only nodes and attributes in element "
             "construction\");\n"
             /* there can be only nodes and attributes - everything else
                should cause an error */
-            "var nodes := kind.get_type(NODE);\n"
+            "var nodes := kind.get_type(ELEM);\n"
             /* if no nodes are found we jump right to the end and only
                have to execute the stuff for the root construction */
             "if (nodes.count != 0) {\n"
@@ -1468,7 +1498,7 @@ loop_liftedElemConstr (FILE *f, int i)
             "iter := iter%03u;\n"
             "pos := roots.mark(1@0);\n"
             "item := roots;\n"
-            "kind := roots.project(NODE);\n",
+            "kind := roots.project(ELEM);\n",
             i);
 
  /* attr */ /* attr translation */
@@ -1486,9 +1516,11 @@ loop_liftedElemConstr (FILE *f, int i)
             "var oid_frag := oid_preNew.leftfetchjoin(preNew_frag);\n"
             "var temp_attr := mvaljoin(oid_preOld, oid_frag, ws.fetch(ATTR_OWN));\n"
             "oid_preOld := nil;\n"
-            "oid_attr := temp_attr.reverse.mark(0@0).reverse;\n"
-            "oid_frag := temp_attr.mark(0@0).reverse.leftfetchjoin(oid_frag);\n"
-            "oid_preNew := temp_attr.mark(0@0).reverse.leftfetchjoin(oid_preNew);\n"
+            "var oid_attr := temp_attr.reverse.mark(0@0).reverse;\n"
+            "oid_frag := temp_attr.reverse.leftfetchjoin(oid_frag);\n"
+            "oid_frag := oid_frag.reverse.mark(0@0).reverse;\n"
+            "oid_preNew := temp_attr.reverse.leftfetchjoin(oid_preNew);\n"
+            "oid_preNew := oid_preNew.reverse.mark(0@0).reverse;\n"
             "temp_attr := nil;\n"
 
             "var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count);\n"
@@ -1693,7 +1725,7 @@ loop_liftedTextConstr (FILE *f)
             "newPre_prop := nil;\n"
             "item := item.mark(seqb);\n"
             "seqb := nil;\n"
-            "kind := kind.project(NODE);\n"
+            "kind := kind.project(ELEM);\n"
             "}\n"
 
             /* adding the new constructed roots to the WS_FRAG bat of the
@@ -1864,88 +1896,46 @@ evaluateCastBlock (FILE *f, char *original_type, char *table, char *target_type)
 }
 
 /**
- * evaluateCastAttrBlock casts attributes to the given target_type type
+ * evaluateCast casts from a given type to the target_type type
  *
  * @param f the Stream the MIL code is printed to
- * @param target_type is the type to which it is casted
+ * @param ori_table the table of values for the original values
+ * @param ori_name the name of the input type
+ * @param cast_type the actual mil cast information
+ * @param cast_table the table of values for the casted values
+ * @param cast_type_test the mil type of the casted values to
+ *        test for casts which have produced nil values
+ * @param cast_name the name of the cast type
+ * @param cast_kind the kind of the casted result
  */
 static void
-evaluateCastAttrBlock (FILE *f, char *target_type)
+evaluateCast (FILE *f,
+              char *ori_table,
+              char *ori_name,
+              char *cast_type,
+              char *cast_table,
+              char *cast_type_test,
+              char *cast_name,
+              char *cast_kind)
 {
-    fprintf(f,
-            "var _attr := kind.get_type(ATTR);\n"
-            "oid_oid := _attr.mark(0@0).reverse;\n"
-            "_attr := oid_oid.leftfetchjoin(item);\n"
-            "frag := oid_oid.leftfetchjoin(kind).get_fragment;\n"
-            "_attr := mposjoin(mposjoin(_attr, frag, ws.fetch(ATTR_PROP)), "
-                              "mposjoin(_attr, frag, ws.fetch(ATTR_FRAG)), "
-                              "ws.fetch(PROP_VAL));\n"
-            "_attr := _attr.%s;\n"
-            "res_mu := merged_union(_oid, oid_oid, _val, _attr);\n"
-            "oid_oid := nil;\n"
-            "_attr := nil;\n"
-            "_oid := res_mu.fetch(0);\n"
-            "_val := res_mu.fetch(1);\n",
-            target_type);
-}
+    if (ori_table)
+        fprintf(f, "item := item.leftfetchjoin (%s);\n", ori_table);
 
-/**
- * evaluateCastElemBlock casts elements to the given target_type type
- * by first applying the (inlined) typed-value function to get
- * the values of the nodes before the actual casting
- *
- * @param f the Stream the MIL code is printed to
- * @param target_type is the type to which it is casted
- */
-static void
-evaluateCastElemBlock (FILE *f, char *target_type)
-{
     fprintf(f,
-            /* for elements call dm:typed-value */
-            "var _elem := kind.get_type(NODE);\n"
-            "if (_elem.count != 0)\n"
-            "{\n"
-            "oid_oid := _elem.mark(0@0).reverse;\n"
-            "_elem := oid_oid.leftfetchjoin(item);\n"
-            "frag := oid_oid.leftfetchjoin(kind).get_fragment;\n"
-            /* to get all text nodes a scj is performed */
-            "var res_scj := "
-            "loop_lifted_descendant_or_self_step_with_kind_test_unjoined"
-            "(oid_oid, _elem, frag, ws, TEXT);\n"
-            "oid_oid := nil;\n"
-            /* variables for the result of the scj */
-            "var pruned_input := res_scj.fetch(0);\n"
-            /* pruned_input comes as ctx|iter */
-            "var ctx_dn_item := res_scj.fetch(1);\n"
-            "var ctx_dn_frag := res_scj.fetch(2);\n"
-            "res_scj := nil;\n"
-            /* combine pruned_input and ctx|dn */
-            "pruned_input := pruned_input.reverse.leftjoin(ctx_dn_item.mark(0@0));\n"
-            "_elem := ctx_dn_item.reverse.mark(0@0).reverse;\n"
-            "frag := ctx_dn_frag.reverse.mark(0@0).reverse;\n"
-            "ctx_dn_item := nil;\n"
-            "ctx_dn_frag := nil;\n"
-            /* get the string values of the text nodes */
-            "_elem := mposjoin(mposjoin(_elem, frag, ws.fetch(PRE_PROP)), "
-                              "mposjoin(_elem, frag, ws.fetch(PRE_FRAG)), "
-                              "ws.fetch(PROP_TEXT));\n"
-            "frag := nil;\n"
-            /* for the result of the scj join with the string values */
-            "_elem := pruned_input.leftfetchjoin(_elem);\n"
-            "pruned_input := nil;\n"
-            /* FIXME: calls really expensive function */
-            /* per iteration the strings are concatenated */
-            "_elem := _elem.combine_strings();\n"
-            "oid_oid := _elem.mark(0@0).reverse;\n"
-            "_elem := _elem.reverse.mark(0@0).reverse;\n"
-            "_elem := _elem.%s;\n"
+            "item := item.%s;\n"
+            "if (item.ord_uselect(%s(nil)).count != 0)\n"
+            "    ERROR (\"couldn't cast all values from %s to %s\");\n",
+            cast_type, cast_type_test, ori_name, cast_name);
 
-            "res_mu := merged_union(_oid, oid_oid, _val, _elem);\n"
-            "_elem := nil;\n"
-            "_oid := res_mu.fetch(0);\n"
-            "_val := res_mu.fetch(1);\n"
-            "}\n",
-            target_type);
+    if (cast_table)
+        addValues (f, cast_table, "item");
+    else
+        fprintf(f, "item := item.leftjoin(bool_map);\n");
+
+    fprintf(f,
+            "item := item.reverse.mark(0@0).reverse;\n"
+            "kind := kind.project(%s);\n",
+            cast_kind);
 }
 
 /**
@@ -1957,42 +1947,47 @@ evaluateCastElemBlock (FILE *f, char *target_type)
  * @param f the Stream the MIL code is printed to
  */
 static void
-translateCast2INT (FILE *f)
+translateCast2INT (FILE *f, PFty_t input_type)
 {
-    fprintf(f,
-            /* FIXME: is this to restrictive at this point. Can for example a sequence
-                      with two nodes, whose typed-value is empty for both casted to int? */
-            "if (iter.tunique.count != iter.count)\n"
-            "    ERROR (\"cast to integer can only transform singleton sequences\");\n"
-            "if (kind.ord_uselect(QNAME).count != 0)\n"
-            "    ERROR (\"can't cast qname to integer\");\n"
+    if (PFty_eq (input_type, PFty_integer ()));
+    else if (PFty_eq (input_type, PFty_decimal ()))
+        evaluateCast (f, "dec_values", "decimal",
+                      "[int]", "int_values", "int", "integer", "INT");
+    else if (PFty_eq (input_type, PFty_double ()))
+        evaluateCast (f, "dbl_values", "double",
+                      "[int]", "int_values", "int", "integer", "INT");
+    else if (PFty_eq (input_type, PFty_string ()) ||
+             PFty_eq (input_type, PFty_untypedAtomic ()))
+        evaluateCast (f, "str_values", "string",
+                      "[int]", "int_values", "int", "integer", "INT");
+    else if (PFty_eq (input_type, PFty_boolean ()))
+        evaluateCast (f, 0, "boolean",
+                      "[int]", "int_values", "int", "integer", "INT");
+    else /* handles the choice type */
+    {
+        fprintf(f,
+                "var _oid; var _val; var oid_oid; "
+                "var part_val; var frag; var res_mu;\n"
+ 
+                "_oid := kind.ord_uselect(INT);\n"
+                "_oid := _oid.mark(0@0).reverse;\n"
+                "_val := _oid.leftfetchjoin(item);\n"
+                "_val := _val.leftfetchjoin(int_values);\n");
+ 
+        evaluateCastBlock (f, "BOOL", 0, "[int]");
+        evaluateCastBlock (f, "DEC", "dec_values", "[int]");
+        evaluateCastBlock (f, "DBL", "dbl_values", "[int]");
+        evaluateCastBlock (f, "STR", "str_values", "[int]");
 
-            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
-
-            "_oid := kind.ord_uselect(INT);\n"
-            "_oid := _oid.mark(0@0).reverse;\n"
-            "_val := _oid.leftfetchjoin(item);\n"
-            "_val := _val.leftfetchjoin(int_values);\n");
-
-    evaluateCastBlock (f, "BOOL", 0, "[int]");
-    evaluateCastBlock (f, "DEC", "dec_values", "[int]");
-    evaluateCastBlock (f, "DBL", "dbl_values", "[int]");
-    evaluateCastBlock (f, "STR", "str_values", "[int]");
-    evaluateCastAttrBlock (f, "[int]");
-    evaluateCastElemBlock (f, "[int]");
-
-    fprintf(f,
-            "if (_val.ord_uselect(int(nil)).count != 0)\n"
-            "    ERROR (\"couldn't cast all values to integer\");\n");
-
-    addValues(f, "int_values", "_val");
-    fprintf(f,
-            /* create a new void, because typed-value could have been empty 
-               and so _val, can be less than the original item values */
-            "iter := _oid.leftfetchjoin(iter);\n"
-            "pos := _oid.project(1@0);\n"
-            "item := _val.reverse.mark(0@0).reverse;\n"
-            "kind := _oid.project(INT);\n");
+        fprintf(f,
+                "if (_val.ord_uselect(int(nil)).count != 0)\n"
+                "    ERROR (\"couldn't cast all values to integer\");\n");
+ 
+        addValues(f, "int_values", "_val");
+        fprintf(f,
+                "item := _val.reverse.mark(0@0).reverse;\n"
+                "kind := _oid.project(INT);\n");
+    }
 }
 
 /**
@@ -2004,42 +1999,46 @@ translateCast2INT (FILE *f)
  * @param f the Stream the MIL code is printed to
  */
 static void
-translateCast2DEC (FILE *f)
+translateCast2DEC (FILE *f, PFty_t input_type)
 {
-    fprintf(f,
-            /* FIXME: is this to restrictive at this point. Can for example a sequence
-                      with two nodes, whose typed-value is empty for both casted to int? */
-            "if (iter.tunique.count != iter.count)\n"
-            "    ERROR (\"cast to decimal can only transform singleton sequences\");\n"
-            "if (kind.ord_uselect(QNAME).count != 0)\n"
-            "    ERROR (\"can't cast qname to decimal\");\n"
-
-            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
-
-            "_oid := kind.ord_uselect(DEC);\n"
-            "_oid := _oid.mark(0@0).reverse;\n"
-            "_val := _oid.leftfetchjoin(item);\n"
-            "_val := _val.leftfetchjoin(dec_values);\n");
-
-    evaluateCastBlock (f, "BOOL", 0, "[dbl]");
-    evaluateCastBlock (f, "INT", "int_values", "[dbl]");
-    evaluateCastBlock (f, "DBL", "dbl_values", "[dbl]");
-    evaluateCastBlock (f, "STR", "str_values", "[dbl]");
-    evaluateCastAttrBlock (f, "[dbl]");
-    evaluateCastElemBlock (f, "[dbl]");
-
-    fprintf(f,
-            "if (_val.ord_uselect(dbl(nil)).count != 0)\n"
-            "    ERROR (\"couldn't cast all values to decimal\");\n");
-
-    addValues(f, "dec_values", "_val");
-    fprintf(f,
-            /* create a new void, because typed-value could have been empty 
-               and so _val, can be less than the original item values */
-            "iter := _oid.leftfetchjoin(iter);\n"
-            "pos := _oid.project(1@0);\n"
-            "item := _val.reverse.mark(0@0).reverse;\n"
-            "kind := _oid.project(DEC);\n");
+    if (PFty_eq (input_type, PFty_integer ()))
+        evaluateCast (f, "int_values", "integer",
+                      "[dbl]", "dec_values", "dbl", "decimal", "DEC");
+    else if (PFty_eq (input_type, PFty_decimal ()));
+    else if (PFty_eq (input_type, PFty_double ()))
+        evaluateCast (f, "dbl_values", "double",
+                      "[dbl]", "dec_values", "dbl", "decimal", "DEC");
+    else if (PFty_eq (input_type, PFty_string ()) ||
+             PFty_eq (input_type, PFty_untypedAtomic ()))
+        evaluateCast (f, "str_values", "string",
+                      "[dbl]", "dec_values", "dbl", "decimal", "DEC");
+    else if (PFty_eq (input_type, PFty_boolean ()))
+        evaluateCast (f, 0, "boolean",
+                      "[dbl]", "dec_values", "dbl", "decimal", "DEC");
+    else /* handles the choice type */ 
+    {
+        fprintf(f,
+                "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+ 
+                "_oid := kind.ord_uselect(DEC);\n"
+                "_oid := _oid.mark(0@0).reverse;\n"
+                "_val := _oid.leftfetchjoin(item);\n"
+                "_val := _val.leftfetchjoin(dec_values);\n");
+ 
+        evaluateCastBlock (f, "BOOL", 0, "[dbl]");
+        evaluateCastBlock (f, "INT", "int_values", "[dbl]");
+        evaluateCastBlock (f, "DBL", "dbl_values", "[dbl]");
+        evaluateCastBlock (f, "STR", "str_values", "[dbl]");
+ 
+        fprintf(f,
+                "if (_val.ord_uselect(dbl(nil)).count != 0)\n"
+                "    ERROR (\"couldn't cast all values to decimal\");\n");
+ 
+        addValues(f, "dec_values", "_val");
+        fprintf(f,
+                "item := _val.reverse.mark(0@0).reverse;\n"
+                "kind := _oid.project(DEC);\n");
+    }
 }
 
 /**
@@ -2051,42 +2050,46 @@ translateCast2DEC (FILE *f)
  * @param f the Stream the MIL code is printed to
  */
 static void
-translateCast2DBL (FILE *f)
+translateCast2DBL (FILE *f, PFty_t input_type)
 {
-    fprintf(f,
-            /* FIXME: is this to restrictive at this point. Can for example a sequence
-                      with two nodes, whose typed-value is empty for both casted to int? */
-            "if (iter.tunique.count != iter.count)\n"
-            "    ERROR (\"cast to double can only transform singleton sequences\");\n"
-            "if (kind.ord_uselect(QNAME).count != 0)\n"
-            "    ERROR (\"can't cast qname to double\");\n"
-
-            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
-
-            "_oid := kind.ord_uselect(DBL);\n"
-            "_oid := _oid.mark(0@0).reverse;\n"
-            "_val := _oid.leftfetchjoin(item);\n"
-            "_val := _val.leftfetchjoin(dbl_values);\n");
-
-    evaluateCastBlock (f, "BOOL", 0, "[dbl]");
-    evaluateCastBlock (f, "DEC", "dec_values", "[dbl]");
-    evaluateCastBlock (f, "INT", "int_values", "[dbl]");
-    evaluateCastBlock (f, "STR", "str_values", "[dbl]");
-    evaluateCastAttrBlock (f, "[dbl]");
-    evaluateCastElemBlock (f, "[dbl]");
-
-    fprintf(f,
-            "if (_val.ord_uselect(dbl(nil)).count != 0)\n"
-            "    ERROR (\"couldn't cast all values to double\");\n");
-
-    addValues(f, "dbl_values", "_val");
-    fprintf(f,
-            /* create a new void, because typed-value could have been empty 
-               and so _val, can be less than the original item values */
-            "iter := _oid.leftfetchjoin(iter);\n"
-            "pos := _oid.project(1@0);\n"
-            "item := _val.reverse.mark(0@0).reverse;\n"
-            "kind := _oid.project(DBL);\n");
+    if (PFty_eq (input_type, PFty_integer ()))
+        evaluateCast (f, "int_values", "integer",
+                      "[dbl]", "dbl_values", "dbl", "double", "DBL");
+    else if (PFty_eq (input_type, PFty_decimal ()))
+        evaluateCast (f, "dec_values", "decimal",
+                      "[dbl]", "dbl_values", "dbl", "double", "DBL");
+    else if (PFty_eq (input_type, PFty_double ()));
+    else if (PFty_eq (input_type, PFty_string ()) || 
+             PFty_eq (input_type, PFty_untypedAtomic ()))
+        evaluateCast (f, "str_values", "string",
+                      "[dbl]", "dbl_values", "dbl", "double", "DBL");
+    else if (PFty_eq (input_type, PFty_boolean ()))
+        evaluateCast (f, 0, "boolean",
+                      "[dbl]", "dbl_values", "dbl", "double", "DBL");
+    else /* handles the choice type */ 
+    {
+        fprintf(f,
+                "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+ 
+                "_oid := kind.ord_uselect(DBL);\n"
+                "_oid := _oid.mark(0@0).reverse;\n"
+                "_val := _oid.leftfetchjoin(item);\n"
+                "_val := _val.leftfetchjoin(dbl_values);\n");
+ 
+        evaluateCastBlock (f, "BOOL", 0, "[dbl]");
+        evaluateCastBlock (f, "DEC", "dec_values", "[dbl]");
+        evaluateCastBlock (f, "INT", "int_values", "[dbl]");
+        evaluateCastBlock (f, "STR", "str_values", "[dbl]");
+ 
+        fprintf(f,
+                "if (_val.ord_uselect(dbl(nil)).count != 0)\n"
+                "    ERROR (\"couldn't cast all values to double\");\n");
+ 
+        addValues(f, "dbl_values", "_val");
+        fprintf(f,
+                "item := _val.reverse.mark(0@0).reverse;\n"
+                "kind := _oid.project(DBL);\n");
+    }
 }
 
 /**
@@ -2098,42 +2101,46 @@ translateCast2DBL (FILE *f)
  * @param f the Stream the MIL code is printed to
  */
 static void
-translateCast2STR (FILE *f)
+translateCast2STR (FILE *f, PFty_t input_type)
 {
-    fprintf(f,
-            /* FIXME: is this to restrictive at this point. Can for example a sequence
-                      with two nodes, whose typed-value is empty for both casted to int? */
-            "if (iter.tunique.count != iter.count)\n"
-            "    ERROR (\"cast to string can only transform singleton sequences\");\n"
-            "if (kind.ord_uselect(QNAME).count != 0)\n"
-            "    ERROR (\"can't cast qname to string\");\n"
-
-            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
-
-            "_oid := kind.ord_uselect(STR);\n"
-            "_oid := _oid.mark(0@0).reverse;\n"
-            "_val := _oid.leftfetchjoin(item);\n"
-            "_val := _val.leftfetchjoin(str_values);\n");
-
-    evaluateCastBlock (f, "BOOL", 0, "[str]");
-    evaluateCastBlock (f, "DEC", "dec_values", "[str]");
-    evaluateCastBlock (f, "DBL", "dbl_values", "[str]");
-    evaluateCastBlock (f, "INT", "int_values", "[str]");
-    evaluateCastAttrBlock (f, "[str]");
-    evaluateCastElemBlock (f, "[str]");
-
-    fprintf(f,
-            "if (_val.ord_uselect(str(nil)).count != 0)\n"
-            "    ERROR (\"couldn't cast all values to string\");\n");
-
-    addValues(f, "str_values", "_val");
-    fprintf(f,
-            /* create a new void, because typed-value could have been empty 
-               and so _val, can be less than the original item values */
-            "iter := _oid.leftfetchjoin(iter);\n"
-            "pos := _oid.project(1@0);\n"
-            "item := _val.reverse.mark(0@0).reverse;\n"
-            "kind := _oid.project(STR);\n");
+    if (PFty_eq (input_type, PFty_integer ()))
+        evaluateCast (f, "int_values", "integer",
+                      "[str]", "str_values", "str", "string", "STR");
+    else if (PFty_eq (input_type, PFty_decimal ()))
+        evaluateCast (f, "dec_values", "decimal",
+                      "[str]", "str_values", "str", "string", "STR");
+    else if (PFty_eq (input_type, PFty_double ()))
+        evaluateCast (f, "dbl_values", "double",
+                      "[str]", "str_values", "str", "string", "STR");
+    else if (PFty_eq (input_type, PFty_string ()) ||
+             PFty_eq (input_type, PFty_untypedAtomic ()));
+    else if (PFty_eq (input_type, PFty_boolean ()))
+        evaluateCast (f, 0, "boolean",
+                      "[str]", "str_values", "str", "string", "STR");
+    else /* handles the choice type */ 
+    {
+        fprintf(f,
+                "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+ 
+                "_oid := kind.ord_uselect(STR);\n"
+                "_oid := _oid.mark(0@0).reverse;\n"
+                "_val := _oid.leftfetchjoin(item);\n"
+                "_val := _val.leftfetchjoin(str_values);\n");
+ 
+        evaluateCastBlock (f, "BOOL", 0, "[str]");
+        evaluateCastBlock (f, "DEC", "dec_values", "[str]");
+        evaluateCastBlock (f, "DBL", "dbl_values", "[str]");
+        evaluateCastBlock (f, "INT", "int_values", "[str]");
+ 
+        fprintf(f,
+                "if (_val.ord_uselect(str(nil)).count != 0)\n"
+                "    ERROR (\"couldn't cast all values to string\");\n");
+ 
+        addValues(f, "str_values", "_val");
+        fprintf(f,
+                "item := _val.reverse.mark(0@0).reverse;\n"
+                "kind := _oid.project(STR);\n");
+    }
 }
 
 /**
@@ -2145,41 +2152,45 @@ translateCast2STR (FILE *f)
  * @param f the Stream the MIL code is printed to
  */
 static void
-translateCast2BOOL (FILE *f)
+translateCast2BOOL (FILE *f, PFty_t input_type)
 {
-    fprintf(f,
-            /* FIXME: is this to restrictive at this point. Can for example a sequence
-                      with two nodes, whose typed-value is empty for both casted to int? */
-            "if (iter.tunique.count != iter.count)\n"
-            "    ERROR (\"cast to boolean can only transform singleton sequences\");\n"
-            "if (kind.ord_uselect(QNAME).count != 0)\n"
-            "    ERROR (\"can't cast qname to boolean\");\n"
-
-            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
-
-            "_oid := kind.ord_uselect(BOOL);\n"
-            "_oid := _oid.mark(0@0).reverse;\n"
-            "_val := _oid.leftfetchjoin(item);\n"
-            "_val := _val.leftfetchjoin(bool_map.reverse);\n");
-
-    evaluateCastBlock (f, "INT", "int_values", "[bit]");
-    evaluateCastBlock (f, "DEC", "dec_values", "[bit]");
-    evaluateCastBlock (f, "DBL", "dbl_values", "[bit]");
-    evaluateCastBlock (f, "STR", "str_values", "[!=](\"\")");
-    evaluateCastAttrBlock (f, "[!=](\"\")");
-    evaluateCastElemBlock (f, "[!=](\"\")");
-
-    fprintf(f,
-            "if (_val.ord_uselect(bit(nil)).count != 0)\n"
-            "    ERROR (\"couldn't cast all values to boolean\");\n");
-
-    fprintf(f,
-            /* create a new void, because typed-value could have been empty 
-               and so _val, can be less than the original item values */
-            "iter := _oid.leftfetchjoin(iter);\n"
-            "pos := _oid.project(1@0);\n"
-            "item := _val.leftjoin(bool_map);\n"
-            "kind := _oid.project(BOOL);\n");
+    if (PFty_eq (input_type, PFty_integer ()))
+        evaluateCast (f, "int_values", "integer",
+                      "[!=](\"\")", 0, "bit", "boolean", "BOOL");
+    else if (PFty_eq (input_type, PFty_decimal ()))
+        evaluateCast (f, "dec_values", "decimal",
+                      "[!=](\"\")", 0, "bit", "boolean", "BOOL");
+    else if (PFty_eq (input_type, PFty_double ()))
+        evaluateCast (f, "dbl_values", "double",
+                      "[!=](\"\")", 0, "bit", "boolean", "BOOL");
+    else if (PFty_eq (input_type, PFty_string ()) ||
+             PFty_eq (input_type, PFty_untypedAtomic ()))
+        evaluateCast (f, "str_values", "string",
+                      "[!=](\"\")", 0, "bit", "boolean", "BOOL");
+    else if (PFty_eq (input_type, PFty_boolean ()));
+    else /* handles the choice type */ 
+    {
+        fprintf(f,
+                "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+ 
+                "_oid := kind.ord_uselect(BOOL);\n"
+                "_oid := _oid.mark(0@0).reverse;\n"
+                "_val := _oid.leftfetchjoin(item);\n"
+                "_val := _val.leftfetchjoin(bool_map.reverse);\n");
+ 
+        evaluateCastBlock (f, "INT", "int_values", "[bit]");
+        evaluateCastBlock (f, "DEC", "dec_values", "[bit]");
+        evaluateCastBlock (f, "DBL", "dbl_values", "[bit]");
+        evaluateCastBlock (f, "STR", "str_values", "[!=](\"\")");
+ 
+        fprintf(f,
+                "if (_val.ord_uselect(bit(nil)).count != 0)\n"
+                "    ERROR (\"couldn't cast all values to boolean\");\n");
+ 
+        fprintf(f,
+                "item := _val.leftjoin(bool_map);\n"
+                "kind := _oid.project(BOOL);\n");
+    }
 }
 
 /**
@@ -2193,43 +2204,47 @@ translateCast2BOOL (FILE *f)
 static void
 translateCast (FILE *f, int act_level, PFcnode_t *c)
 {
-    PFty_t type_ = c->sem.type;
-    int optional = 0;
+    PFty_t cast_type = PFty_defn (c->child[0]->sem.type);
+    PFty_t input_type = PFty_defn (c->child[1]->type);
+    int cast_optional = 0;
     
-    type_ = PFty_defn (type_);
-
-    if (type_.type == ty_opt || type_.type == ty_star)
+    if (cast_type.type == ty_opt)
     {
-        type_ = PFty_child (type_);
-        optional = 1;
+        cast_type = PFty_child (cast_type);
+        cast_optional = 1;
     }
 
-    switch (type_.type)
+    if (input_type.type == ty_opt) 
+        input_type = PFty_child (input_type);
+
+    switch (cast_type.type)
     {
         case ty_boolean:
-            translateCast2BOOL (f);
+            translateCast2BOOL (f, input_type);
             break;
         case ty_integer:
-            translateCast2INT (f);
+            translateCast2INT (f, input_type);
             break;
         case ty_decimal:
-            translateCast2DEC (f);
+            translateCast2DEC (f, input_type);
             break;
         case ty_double:
-            translateCast2DBL (f);
+            translateCast2DBL (f, input_type);
             break;
         case ty_untypedAtomic:
         case ty_string:
-            translateCast2STR (f);
+            translateCast2STR (f, input_type);
             break;
         default:
-            PFlog("cast to type '%s' ignored",
-                  PFty_str(optional?PFty_opt(type_):type_));
+            PFoops (OOPS_TYPECHECK,
+                    "can't cast type '%s' to type '%s'",
+                    PFty_str(c->child[1]->type),
+                    PFty_str(c->child[0]->sem.type));
             break;
     }
 
-    if (!optional)
-        testCastComplete (f, act_level, type_);
+    if (!cast_optional)
+        testCastComplete (f, act_level, c->child[0]->sem.type);
 }
 
 /**
@@ -2307,7 +2322,7 @@ static void
 translateOperation (FILE *f, int act_level, int counter, 
                     char *operator, PFcnode_t *args)
 {
-    PFty_t type_ = args->type;
+    PFty_t expected = args->type;
 
     /* translate the subtrees */
     translate2MIL (f, act_level, counter, args->child[0]);
@@ -2316,33 +2331,33 @@ translateOperation (FILE *f, int act_level, int counter,
     translate2MIL (f, act_level, counter, args->child[1]->child[0]);
 
     /* evaluate the operation */
-    if (PFty_eq(type_, PFty_integer()))
+    if (PFty_eq(expected, PFty_integer()))
     {
         evaluateOp (f, counter, operator, "int_values");
     }
-    else if (PFty_eq(type_, PFty_double()))
+    else if (PFty_eq(expected, PFty_double()))
     {
         evaluateOp (f, counter, operator, "dbl_values");
     }
-    else if (PFty_eq(type_, PFty_decimal()))
+    else if (PFty_eq(expected, PFty_decimal()))
     {
         evaluateOp (f, counter, operator, "dec_values");
     }
-    else if (PFty_eq(type_, PFty_opt(PFty_integer())))
+    else if (PFty_eq(expected, PFty_opt(PFty_integer())))
     {
         evaluateOpOpt (f, counter, operator, "int_values", "INT");
     }
-    else if (PFty_eq(type_, PFty_opt(PFty_double())))
+    else if (PFty_eq(expected, PFty_opt(PFty_double())))
     {
         evaluateOpOpt (f, counter, operator, "dbl_values", "DBL");
     }
-    else if (PFty_eq(type_, PFty_opt(PFty_decimal())))
+    else if (PFty_eq(expected, PFty_opt(PFty_decimal())))
     {
         evaluateOpOpt (f, counter, operator, "dec_values", "DEC");
     }
     else
-        PFlog("thinking error: first argument is of type %s",
-              PFty_str(type_));
+        PFlog("thinking error: result type '%s' is not supported",
+              PFty_str(expected));
 
     /* clear the intermediate result of the second subtree */
     deleteResult (f, counter);
@@ -2429,7 +2444,7 @@ static void
 translateComparison (FILE *f, int act_level, int counter, 
                     char *comp, PFcnode_t *args)
 {
-    PFty_t type_ = args->type;
+    PFty_t expected = args->type;
 
     /* translate the subtrees */
     translate2MIL (f, act_level, counter, args->child[0]);
@@ -2438,51 +2453,380 @@ translateComparison (FILE *f, int act_level, int counter,
     translate2MIL (f, act_level, counter, args->child[1]->child[0]);
 
     /* evaluate the comparison */
-    if (PFty_eq(type_, PFty_integer()))
+    if (PFty_eq(expected, PFty_integer()))
     {
         evaluateComp (f, counter, comp, "int_values");
     }
-    else if (PFty_eq(type_, PFty_double()))
+    else if (PFty_eq(expected, PFty_double()))
     {
         evaluateComp (f, counter, comp, "dbl_values");
     }
-    else if (PFty_eq(type_, PFty_decimal()))
+    else if (PFty_eq(expected, PFty_decimal()))
     {
         evaluateComp (f, counter, comp, "dec_values");
     }
-    else if (PFty_eq(type_, PFty_boolean()))
+    else if (PFty_eq(expected, PFty_boolean()))
     {
         evaluateComp (f, counter, comp, 0);
     }
-    else if (PFty_eq(type_, PFty_string()))
+    else if (PFty_eq(expected, PFty_string()))
     {
         evaluateComp (f, counter, comp, "str_values");
     }
-    else if (PFty_eq(type_, PFty_opt(PFty_integer())))
+    else if (PFty_eq(expected, PFty_opt(PFty_integer())))
     {
         evaluateCompOpt (f, counter, comp, "int_values");
     }
-    else if (PFty_eq(type_, PFty_opt(PFty_double())))
+    else if (PFty_eq(expected, PFty_opt(PFty_double())))
     {
         evaluateCompOpt (f, counter, comp, "dbl_values");
     }
-    else if (PFty_eq(type_, PFty_opt(PFty_decimal())))
+    else if (PFty_eq(expected, PFty_opt(PFty_decimal())))
     {
         evaluateCompOpt (f, counter, comp, "dec_values");
     }
-    else if (PFty_eq(type_, PFty_opt(PFty_boolean())))
+    else if (PFty_eq(expected, PFty_opt(PFty_boolean())))
     {
         evaluateCompOpt (f, counter, comp, 0);
     }
-    else if (PFty_eq(type_, PFty_opt(PFty_string())))
+    else if (PFty_eq(expected, PFty_opt(PFty_string())))
     {
         evaluateCompOpt (f, counter, comp, "str_values");
     }
     else
         PFlog("thinking error: first argument is of type %s",
-              PFty_str(type_));
+              PFty_str(expected));
 
     /* clear the intermediate result of the second subtree */
+    deleteResult (f, counter);
+}
+
+/**
+ * combine_strings concatenates all the strings of each iter
+ * and adds the newly created strings to the string container
+ * 'str_values'
+ *
+ * @param f the Stream the MIL code is printed to
+ */
+static void
+combine_strings (FILE *f)
+{
+    fprintf(f,
+            "{ # combine_strings\n"
+            "var iter_item := iter.reverse.leftfetchjoin(item);\n"
+            "var iter_str := iter_item.leftfetchjoin(str_values);\n"
+            "iter_str := iter_str.combine_strings;\n"
+            "iter := iter_str.mark(0@0).reverse;\n"
+            "pos := iter.mark(1@0);\n"
+            "kind := iter.project(STR);\n");
+    addValues (f, "str_values", "iter_str");
+    fprintf(f,
+            "item := iter_str.reverse.mark(0@0).reverse;\n"
+            "} # end of combine_strings\n");
+}
+
+/**
+ * typed_value gets the string value(s) of a node or an attribute
+ * if the boolean tv is set to true for a node a list of untyped
+ * values (internally handled as strings) is the new intermediate
+ * result. Otherwise the values are concatenated to one string
+ * (string-value function).
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param tv the boolean indicating wether typed-value or
+ *        string-value is called
+ */
+static void
+typed_value (FILE *f, bool tv)
+{
+    /* to avoid executing to much code there are three cases:
+       - only elements
+       - only attributes
+       - elements and attributes 
+       This makes of course the code listed here bigger :) */
+    fprintf(f,
+            "{ # typed-value\n"
+            /* save input iters to return empty string for rows
+               which had no text content */
+            "var input_iter := iter;\n"
+            "var kind_elem := kind.get_type(ELEM);\n"
+            /* only elements */
+            "if (kind_elem.count = kind.count)\n"
+            "{\n"
+                "var frag := kind.get_fragment;\n"
+                /* to get all text nodes a scj is performed */
+                "var res_scj := "
+                "loop_lifted_descendant_or_self_step_with_kind_test_unjoined"
+                "(iter, item, frag, ws, TEXT);\n"
+                "oid_oid := nil;\n"
+                /* variables for the result of the scj */
+                "var pruned_input := res_scj.fetch(0);\n"
+                /* pruned_input comes as ctx|iter */
+                "var ctx_dn_item := res_scj.fetch(1);\n"
+                "var ctx_dn_frag := res_scj.fetch(2);\n"
+                "res_scj := nil;\n"
+                /* combine pruned_input and ctx|dn */
+                "pruned_input := pruned_input.reverse.leftjoin(ctx_dn_item.mark(0@0));\n"
+                "item := ctx_dn_item.reverse.mark(0@0).reverse;\n"
+                "frag := ctx_dn_frag.reverse.mark(0@0).reverse;\n"
+                "ctx_dn_item := nil;\n"
+                "ctx_dn_frag := nil;\n"
+                /* get the string values of the text nodes */
+                "item := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
+                                 "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
+                                 "ws.fetch(PROP_TEXT));\n"
+                "frag := nil;\n"
+                /* for the result of the scj join with the string values */
+                "var iter_item := pruned_input.leftfetchjoin(item);\n");
+    if (!tv)
+        fprintf(f,"iter_item := iter_item.{concat};\n");
+
+    fprintf(f,
+                "pruned_input := nil;\n"
+                "iter := iter_item.mark(0@0).reverse;\n"
+                "item := iter_item.reverse.mark(0@0).reverse;\n"
+            "}\n"
+            "else\n"
+            "{\n"
+                "var kind_attr := kind.get_type(ATTR);\n"
+                /* only attributes */
+                "if (kind_attr.count = kind.count)\n"
+                "{\n"
+                    "var frag := kind.get_fragment;\n"
+                    "item := mposjoin(mposjoin(item, frag, ws.fetch(ATTR_PROP)), "
+                                     "mposjoin(item, frag, ws.fetch(ATTR_FRAG)), "
+                                     "ws.fetch(PROP_VAL));\n"
+                "}\n"
+                "else\n"
+                "{\n"
+                    /* handles attributes and elements */
+                    /* get attribute string values */
+                    "kind_attr := kind_attr.mark(0@0).reverse;\n"
+                    "var item_attr := kind_attr.leftfetchjoin(item);\n"
+                    "var iter_attr := kind_attr.leftfetchjoin(iter);\n"
+                    "var frag := kind_attr.leftfetchjoin(kind).get_fragment;\n"
+                    "var item_attr_str "
+                        ":= mposjoin(mposjoin(item_attr, frag, ws.fetch(ATTR_PROP)), "
+                                    "mposjoin(item_attr, frag, ws.fetch(ATTR_FRAG)), "
+                                    "ws.fetch(PROP_VAL));\n"
+                    "item_attr := nil;\n"
+                    /* get element string values */
+                    "kind_elem := kind_elem.mark(0@0).reverse;\n"
+                    "frag := kind_elem.leftfetchjoin(kind).get_fragment;\n"
+                    "item := kind_elem.leftfetchjoin(item);\n"
+                    "iter := kind_elem.leftfetchjoin(iter);\n"
+                    /* to get all text nodes a scj is performed */
+                    "var res_scj := "
+                    "loop_lifted_descendant_or_self_step_with_kind_test_unjoined"
+                    "(iter, item, frag, ws, TEXT);\n"
+                    "oid_oid := nil;\n"
+                    /* variables for the result of the scj */
+                    "var pruned_input := res_scj.fetch(0);\n"
+                    /* pruned_input comes as ctx|iter */
+                    "var ctx_dn_item := res_scj.fetch(1);\n"
+                    "var ctx_dn_frag := res_scj.fetch(2);\n"
+                    "res_scj := nil;\n"
+                    /* combine pruned_input and ctx|dn */
+                    "pruned_input := pruned_input.reverse.leftjoin(ctx_dn_item.mark(0@0));\n"
+                    "item := ctx_dn_item.reverse.mark(0@0).reverse;\n"
+                    "frag := ctx_dn_frag.reverse.mark(0@0).reverse;\n"
+                    "ctx_dn_item := nil;\n"
+                    "ctx_dn_frag := nil;\n"
+                    /* get the string values of the text nodes */
+                    "item := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
+                                     "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
+                                     "ws.fetch(PROP_TEXT));\n"
+                    "frag := nil;\n"
+                    /* for the result of the scj join with the string values */
+                    "var iter_item := pruned_input.leftfetchjoin(item);\n"
+                    "iter := iter_item.mark(0@0).reverse;\n"
+                    "item := iter_item.reverse.mark(0@0).reverse;\n"
+                    /* merge strings from element and attribute */
+                    "var res_mu := merged_union (iter, iter_attr, item, item_attr_str);\n"
+                    "iter := res_mu.fetch(0);\n"
+                    "item := res_mu.fetch(1);\n"
+                    "iter_item := iter.reverse.leftfetchjoin(item);\n");
+    if (!tv)
+        fprintf(f,  "iter_item := iter_item.{concat};\n");
+
+    fprintf(f,
+                    "pruned_input := nil;\n"
+                    "iter := iter_item.mark(0@0).reverse;\n"
+                    "item := iter_item.reverse.mark(0@0).reverse;\n"
+                "}\n"
+            "}\n");
+
+    addValues (f, "str_values", "item");
+    fprintf(f,
+            "item := item.reverse.mark(0@0).reverse;\n"
+            /* adds empty strings if an element had no string content */
+            "if (iter.count != input_iter.count)\n"
+            "{\n"
+            "var difference := input_iter.reverse.kdiff(iter.reverse);\n"
+            "difference := difference.mark(0@0).reverse;\n"
+            "var res_mu := merged_union(iter, difference, item, "
+                                       "difference.project(EMPTY_STRING));\n"
+            "item := res_mu.fetch(1);\n"
+            "iter := item.mark(1@0);\n"
+            "}\n"
+            "pos := iter.mark_grp(iter.tunique.project(1@0));\n"
+            "kind := iter.project(STR);\n"
+            "} # end of typed-value\n");
+}
+
+/**
+ * the loop lifted version of fn_data searches only for 
+ * values, which are not atomic and calles string-value
+ * for them and combines the both sort of types in the end
+ *
+ * @param f the Stream the MIL code is printed to
+ */
+static void
+fn_data (FILE *f)
+{
+    fprintf(f,
+            /* split atomic from node types */
+            "var atomic := kind.get_type_atomic;\n"
+            "atomic := atomic.mark(0@0).reverse;\n"
+            "var iter_atomic := atomic.leftfetchjoin(iter);\n"
+            "var pos_atomic := atomic.leftfetchjoin(pos);\n"
+            "var item_atomic := atomic.leftfetchjoin(item);\n"
+            "var kind_atomic := atomic.leftfetchjoin(kind);\n"
+
+            "var node := kind.get_type_node;\n"
+            "node := node.mark(0@0).reverse;\n"
+            "var iter_node := node.leftfetchjoin(iter);\n"
+            "iter := node.mirror;\n"
+            "pos := node.leftfetchjoin(pos);\n"
+            "item := node.leftfetchjoin(item);\n"
+            "kind := node.leftfetchjoin(kind);\n");
+    typed_value (f, false);
+    fprintf(f,
+            /* every input row of typed-value gives back exactly
+               one output row - therefore a mapping is not necessary */
+            "var res_mu := merged_union (node, atomic, "
+                                        "iter_node, iter_atomic, "
+                                        "item, item_atomic, "
+                                        "kind, kind_atomic);\n"
+            "iter := res_mu.fetch(1);\n"
+            "item := res_mu.fetch(2);\n"
+            "kind := res_mu.fetch(3);\n"
+            "pos := iter.mark_grp(iter.tunique.project(1@0));\n");
+}
+
+/**
+ * is2ns is the translation of the item-sequence-to-node-sequence
+ * function. It does basically four steps. The first step is to
+ * get all text-nodes and every other nodes, as well as all other
+ * atomic nodes. The second step calls 'translateCast2STR' for
+ * the atomic nodes. The third step is to generate new text-nodes
+ * where all the rules for building the content of an element
+ * are applied within a function 'combine-text-string'. The fourth
+ * step is to create text-nodes out of it and combine the other
+ * nodes and the attributes with them.
+ *
+ */
+static void
+is2ns (FILE *f, int counter, PFty_t input_type)
+{
+    counter++;
+    saveResult (f, counter);
+    fprintf(f,
+            "iter := iter%03u;\n"
+            "pos := pos%03u;\n"
+            "item := item%03u;\n"
+            "kind := kind%03u;\n"
+            /* get all text-nodes */
+            "var elem := kind.get_type(ELEM);\n"
+            "elem := elem.mark(0@0).reverse;\n"
+            "var kind_elem := elem.leftfetchjoin(kind);\n"
+            "var frag_elem := kind_elem.get_fragment;\n"
+            "var item_elem := elem.leftfetchjoin(item);\n"
+            "var kind_node := mposjoin (item_elem, frag_elem, ws.fetch(PRE_KIND));\n"
+            "var text := kind_node.ord_uselect(TEXT).mark(0@0).reverse;\n"
+            "var item_text := text.leftfetchjoin(item_elem);\n"
+            "var frag_text := text.leftfetchjoin(frag_elem);\n"
+            "var text_str := mposjoin (mposjoin (item_elem, frag_elem, ws.fetch(PRE_PROP)), "
+                                      "mposjoin (item_elem, frag_elem, ws.fetch(PRE_FRAG)), "
+                                      "ws.fetch(PROP_TEXT));\n"
+            "var str_text := text_str.reverse.leftfetchjoin(text);\n"
+            "var texts := str_text.leftfetchjoin(elem).reverse;\n"
+            "var texts_order := texts.mark(0@0).reverse;\n"
+            "texts := texts.reverse.mark(0@0).reverse;\n"
+            /* 2@0 is text node constant for combine_text_string */
+            "var texts_const := texts.project(2@0);\n"
+
+            /* get all other nodes and create empty strings for them */
+            "var nodes := kind_node.[!=](TEXT).ord_uselect(true).project(\"\");\n"
+            "nodes := nodes.reverse.leftfetchjoin(elem).reverse;\n"
+            "var nodes_order := nodes.mark(0@0).reverse;\n"
+            "var nodes_item := nodes_order.leftfetchjoin(item);\n"
+            "nodes := nodes.reverse.mark(0@0).reverse;\n"
+            /* 1@0 is node constant for combine_text_string */
+            "var nodes_const := nodes.project(1@0);\n"
+
+            "var res_mu_is2ns := merged_union (nodes_order, texts_order, "
+                                              "nodes, texts, "
+                                              "nodes_const, texts_const);\n"
+            "var input_order := res_mu_is2ns.fetch(0);\n"
+            "var input_str := res_mu_is2ns.fetch(1);\n"
+            "var input_const := res_mu_is2ns.fetch(2);\n"
+
+            /* get all the atomic values and cast them to string */
+            "var atomic := kind.get_type_atomic;\n"
+            "atomic := atomic.mark(0@0).reverse;\n"
+            "var iter_atomic := atomic.leftfetchjoin(iter);\n"
+            "iter := atomic.mirror;\n"
+            "pos := atomic.leftfetchjoin(pos);\n"
+            "item := atomic.leftfetchjoin(item);\n"
+            "kind := atomic.leftfetchjoin(kind);\n",
+            counter, counter, counter, counter);
+    translateCast2STR (f, input_type);
+    fprintf(f,
+            "res_mu_is2ns := merged_union (input_order, atomic, "
+                                          "input_str, item.leftfetchjoin(str_values), "
+                                          /* 3@0 is string constant for combine_text_string */
+                                          "input_const, item.project(3@0));\n"
+            "input_order := res_mu_is2ns.fetch(0);\n"
+            "input_str := res_mu_is2ns.fetch(1);\n"
+            "input_const := res_mu_is2ns.fetch(2);\n"
+            "var input_iter := input_order.leftfetchjoin(iter%03u);\n"
+            "var result_size := iter%03u.tunique.count + nodes.count + 1;\n"
+            /* apply the rules for the content of element construction */
+            "var result_str := combine_text_string "
+                              "(input_iter, input_const, input_str, result_size);\n"
+            "var result_order := result_str.mark(0@0).reverse;\n"
+            "result_order := result_order.leftfetchjoin(input_order);\n"
+            "result_str := result_str.reverse.mark(0@0).reverse;\n",
+            counter, counter);
+    /* instead of adding the values first to string, then create new text nodes
+       before making subtree copies in the element construction a new type text
+       nodes could be created, which saves only the offset of the string in the
+       text-node table and has a different handling in the element construction.
+       At least some copying of strings could be avoided :) */
+    addValues (f, "str_values", "result_str");
+    fprintf(f,
+            "iter := result_order;\n"
+            "pos := result_order.mark(1@0);\n"
+            "item := result_str.reverse.mark(0@0).reverse;\n"
+            "kind := result_order.project(STR);\n");
+    loop_liftedTextConstr (f); 
+    fprintf(f,
+            "res_mu_is2ns := merged_union (iter, nodes_order, "
+                                          "item, nodes_order.leftfetchjoin(item%03u), "
+                                          "kind, nodes_order.leftfetchjoin(kind%03u));\n"
+            "var attr := kind%03u.get_type(ATTR).mark(0@0).reverse;\n"
+            "var iter_attr := attr.leftfetchjoin(iter%03u);\n"
+            "var item_attr := attr.leftfetchjoin(item%03u);\n"
+            "var kind_attr := attr.leftfetchjoin(kind%03u);\n"
+            "res_mu_is2ns := merged_union (res_mu_is2ns.fetch(0), iter_attr, "
+                                          "res_mu_is2ns.fetch(1), item_attr, "
+                                          "res_mu_is2ns.fetch(2), kind_attr);\n"
+            "iter := res_mu_is2ns.fetch(0);\n"
+            "item := res_mu_is2ns.fetch(1);\n"
+            "kind := res_mu_is2ns.fetch(2);\n"
+            "pos := iter.mark_grp(iter.tunique.project(1@0));\n",
+            counter, counter, counter, counter, counter, counter);
     deleteResult (f, counter);
 }
 
@@ -2516,7 +2860,7 @@ translateFunction (FILE *f, int act_level, int counter,
                 "var frag := item.leftfetchjoin(str_values);\n"
                 "frag := frag.leftjoin(ws.fetch(DOC_LOADED).reverse);\n"
                 "frag := frag.reverse.mark(0@0).reverse;\n"
-                "kind := get_kind(frag, NODE);\n"
+                "kind := get_kind(frag, ELEM);\n"
                 "item := kind.project(0@0);\n"
                 "} # end of translate fn:doc (string?) as document?\n"
                );
@@ -2527,7 +2871,7 @@ translateFunction (FILE *f, int act_level, int counter,
         fprintf(f,
                 "{ # translate pf:distinct-doc-order (node*) as node*\n"
                 /* FIXME: is this right? */
-                "if (kind.count != kind.get_type(NODE).count) "
+                "if (kind.count != kind.get_type(ELEM).count) "
                 "ERROR (\"function pf:distinct-doc-order expects only nodes\");\n"
                 /* delete duplicates */
                 "var temp_ddo := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
@@ -2667,43 +3011,17 @@ translateFunction (FILE *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        fprintf(f,
-                /* for elements call dm:typed-value */
-                "frag := kind.get_fragment;\n"
-                /* to get all text nodes a scj is performed */
-                "var res_scj := "
-                "loop_lifted_descendant_or_self_step_with_kind_test_unjoined"
-                "(iter, item, frag, ws, TEXT);\n"
-                "oid_oid := nil;\n"
-                /* variables for the result of the scj */
-                "var pruned_input := res_scj.fetch(0);\n"
-                /* pruned_input comes as ctx|iter */
-                "var ctx_dn_item := res_scj.fetch(1);\n"
-                "var ctx_dn_frag := res_scj.fetch(2);\n"
-                "res_scj := nil;\n"
-                /* combine pruned_input and ctx|dn */
-                "pruned_input := pruned_input.reverse.leftjoin(ctx_dn_item.mark(0@0));\n"
-                "item := ctx_dn_item.reverse.mark(0@0).reverse;\n"
-                "frag := ctx_dn_frag.reverse.mark(0@0).reverse;\n"
-                "ctx_dn_item := nil;\n"
-                "ctx_dn_frag := nil;\n"
-                /* get the string values of the text nodes */
-                "item := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
-                                 "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
-                                 "ws.fetch(PROP_TEXT));\n"
-                "frag := nil;\n"
-                /* for the result of the scj join with the string values */
-                "var iter_item := pruned_input.leftfetchjoin(item);\n"
-                "pruned_input := nil;\n"
-                /* FIXME: calls really expensive function */
-                /* per iteration the strings are concatenated */
-                "iter_item := iter_item.combine_strings();\n"
-                "iter := iter_item.mark(0@0).reverse;\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n"
-                "item := iter_item.reverse.mark(0@0).reverse;\n");
-        addValues (f, "str_values", "item");
-        fprintf(f, "item := item.reverse.mark(0@0).reverse;\n");
+        typed_value (f, true);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"string-value")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        typed_value (f, false);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"data")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fn_data (f);
     }
     /* calculation functions just call an extra function with
        their operator argument to avoid code duplication */
@@ -2732,8 +3050,8 @@ translateFunction (FILE *f, int act_level, int counter,
         /* the semantics of idiv are a normal div operation
            followed by a cast to integer */
         translateOperation (f, act_level, counter, "/", args);
-        translateCast2INT (f);
-        testCastComplete(f, act_level, PFty_integer());
+        translateCast2INT (f, args->type);
+        testCastComplete(f, act_level, PFty_integer ());
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"eq")))
     {
@@ -2759,6 +3077,20 @@ translateFunction (FILE *f, int act_level, int counter,
     {
         translateComparison (f, act_level, counter, "<", args);
     }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_pf,"item-sequence-to-node-sequence")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        is2ns (f, counter, args->type);
+    }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_pf,"item-sequence-to-untypedAtomic")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fn_data (f);
+        translateCast2STR (f, args->type);
+        combine_strings (f);
+    }
     else 
     {
         PFlog("function %s is not supported and therefore ignored",
@@ -2771,9 +3103,6 @@ translateFunction (FILE *f, int act_level, int counter,
     }
 }
 
-static int noConstructor (PFcnode_t *);
-static void unfold_let (PFcnode_t *, PFcnode_t *, PFvar_t *);
-
 /**
  * translate2MIL prints the MIL-expressions, for the following
  * core nodes:
@@ -2784,11 +3113,11 @@ static void unfold_let (PFcnode_t *, PFcnode_t *, PFvar_t *);
  * (tests: c_namet, c_kind_node, ...)
  * c_ifthenelse,
  * (constructors: c_elem, ...)
+ * c_typesw, c_cases, c_case, c_seqtype, c_seqcast
  *
  * the following list is not supported so far:
  * c_nil
  * c_apply, c_arg,
- * c_typesw, c_cases, c_case, c_seqtype, c_seqcast
  * c_error, c_root
  *
  * @param f the Stream the MIL code is printed to
@@ -2801,58 +3130,28 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
 {
     char *ns, *loc;
     int bool_res;
-    PFty_t cast_type;
 
     assert(c);
     switch (c->kind)
     {
         case c_var:
-                translateVar(f, act_level, c);
-                break;
+            translateVar(f, act_level, c);
+            break;
         case c_seq:
-            if ((c->child[0]->kind == c_empty)
-                && (c->child[1]->kind != c_empty))
-                translateEmpty (f);
-            else if (c->child[0]->kind == c_empty)
-                translate2MIL (f, act_level, counter, c->child[1]);
-            else if (c->child[1]->kind == c_empty)
-                translate2MIL (f, act_level, counter, c->child[0]);
-            else
-            {
-                translate2MIL (f, act_level, counter, c->child[0]);
-                counter++;
-                saveResult (f, counter);
+            translate2MIL (f, act_level, counter, c->child[0]);
+            counter++;
+            saveResult (f, counter);
 
-                translate2MIL (f, act_level, counter, c->child[1]);
+            translate2MIL (f, act_level, counter, c->child[1]);
 
-                translateSeq (f, counter);
-                deleteResult (f, counter);
-            }
+            translateSeq (f, counter);
+            deleteResult (f, counter);
             break;
         case c_let:
             if (c->child[0]->sem.var->used)
             {
-                /* small optimization, which substitutes the variable
-                   of the let expression, which contains no constructors
-                   and is used only once */
-                if ((c->child[0]->sem.var->used == 1) &&
-                    noConstructor (c->child[1]))
-                {
-                    /* test if content of the let clause is only its
-                       variable bounded and substitutes let clause 
-                       completely then */
-                    if ((c->child[2] == c_var) &&
-                        (c->child[2]->sem.var == c->child[0]->sem.var))
-                        c->child[2] = c->child[1];
-                    else
-                        unfold_let (c->child[2], c->child[1], 
-                                    c->child[0]->sem.var);
-                }
-                else
-                {
-                    translate2MIL (f, act_level, counter, c->child[1]);
-                    insertVar (f, act_level, c->child[0]->sem.var->vid);
-                }
+                translate2MIL (f, act_level, counter, c->child[1]);
+                insertVar (f, act_level, c->child[0]->sem.var->vid);
             }
 
             translate2MIL (f, act_level, counter, c->child[2]);
@@ -2950,10 +3249,10 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             break;
         case c_elem:
             translate2MIL (f, act_level, counter, c->child[0]);
-
             if (c->child[0]->kind != c_tag)
+            {
                 castQName (f);
-
+            }
             counter++;
             saveResult (f, counter);
 
@@ -2966,7 +3265,9 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             translate2MIL (f, act_level, counter, c->child[0]);
 
             if (c->child[0]->kind != c_tag)
+            {
                 castQName (f);
+            }
 
             counter++;
             saveResult (f, counter);
@@ -3017,13 +3318,6 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             loop_liftedTextConstr (f);
             break;
         case c_lit_str:
-            /* the value of the string is looked up in the 
-               str_values table. If it already exists the oid
-               is given back else it is inserted and a new
-               oid is created */
-            /* FIXME: if insert of nil also deletes the void head
-               of str_values then it has to handled like a bat
-               insert */
             fprintf(f,
                     "{\n"
                     "str_values.seqbase(nil);\n"
@@ -3040,9 +3334,6 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
                     "}\n");
             break;
         case c_lit_int:
-            /* FIXME: if insert of nil also deletes the void head
-               of int_values then it has to handled like a bat
-               insert */
             fprintf(f,
                     "{\n"
                     "int_values.seqbase(nil);\n"
@@ -3058,9 +3349,6 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
                     "}\n");
             break;
         case c_lit_dec:
-            /* FIXME: if insert of nil also deletes the void head
-               of dec_values then it has to handled like a bat
-               insert */
             fprintf(f,
                     "{\n"
                     "dec_values.seqbase(nil);\n"
@@ -3076,9 +3364,6 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
                     "}\n");
             break;
         case c_lit_dbl:
-            /* FIXME: if insert of nil also deletes the void head
-               of dbl_values then it has to handled like a bat
-               insert */
             fprintf(f,
                     "{\n"
                     "dbl_values.seqbase(nil);\n"
@@ -3124,10 +3409,10 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
                     "{\n"
                     "var itemID := 0@0;\n");
             /* translateConst needs a bound variable itemID */
-            translateConst(f, act_level, "NODE");
+            translateConst(f, act_level, "ELEM");
             fprintf(f,
                     "kind := kind.project(ws.fetch(FRAG).fetch(0))"
-                    ".get_kind(NODE);\n"
+                    ".get_kind(ELEM);\n"
                     "itemID := nil;\n"
                     "}\n");
             break;
@@ -3136,68 +3421,14 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             break;
         case c_seqcast:
             translate2MIL (f, act_level, counter, c->child[1]);
-            /* debugging information */
-            /*
-            PFlog("input type: %s",
-                  PFty_str (c->child[1]->type));
-            PFlog("cast type: %s",
-                  PFty_str (c->child[0]->sem.type));
-            */
-
-            /* throws away casts if input type is subtype of
-               cast type and cast type without quantifier is
-               the same type like the input type */
-            cast_type = c->child[0]->sem.type;
-            if (cast_type.type == ty_opt || 
-                cast_type.type == ty_star ||
-                cast_type.type == ty_plus)
-                cast_type = PFty_child (cast_type);
-            /*
-            if (PFty_subtype (c->child[1]->type, c->child[0]->sem.type) &&
-                PFty_subtype (cast_type, c->child[1]->type))
-            */
-            if (PFty_eq (c->child[1]->type, c->child[0]->sem.type) ||
-                PFty_eq (cast_type, c->child[1]->type))
-            {
-                break;
-            }
-            else if (PFty_promotable (c->child[1]->type, c->child[0]->sem.type))
-            {
-                translateCast (f, act_level, c->child[0]);
-            }
-            else
-                PFoops (OOPS_TYPECHECK,
-                        "cast from '%s' to '%s' not allowed",
-                        PFty_str (c->child[1]->type),
-                        PFty_str (c->child[0]->sem.type));
-
+            translateCast (f, act_level, c);
             break;
         case c_apply:
             translateFunction (f, act_level, counter, 
                                c->sem.fun->qname, c->child[0]);
             break;
         case c_typesw:
-            /* prunes the typeswitches where the branch is already
-               known at compiletime and reports error otherwise */
-            cast_type = c->child[1]->child[0]->child[0]->sem.type;
-
-            if (PFty_subtype (c->child[0]->type, cast_type))
-            {
-                PFlog("typeswitch removed: ``%s'' is subtype of ``%s''",
-                      PFty_str(c->child[0]->type), PFty_str(cast_type));
-                translate2MIL (f, act_level, counter,
-                               c->child[1]->child[0]->child[1]);
-            }
-            else if (PFty_disjoint (c->child[0]->type, cast_type))
-            {
-                PFlog("typeswitch removed: ``%s'' is disjoint from ``%s''",
-                      PFty_str(c->child[0]->type), PFty_str(cast_type));
-                translate2MIL (f, act_level, counter, c->child[2]);
-            }
-            else
-                PFoops (OOPS_TYPECHECK,
-                        "couldn't solve typeswitch at compile time");
-            break;
+            PFlog("typeswitch occured");
         case c_nil:
             PFlog("nil occured");
         default: 
@@ -3229,28 +3460,384 @@ noConstructor (PFcnode_t *c)
 }
 
 /**
- * unfold_let searches through a tree c and expands every use of the
- * variable var through the substitute tree
+ * Walk core tree @a e and replace occurrences of variable @a v
+ * by core tree @a a (i.e., compute e[a/v]).
  *
- * @param c the tree, where the variable is searched
- * @param substitute the subtree, which is inserted instead of the variable
- * @param var the variable, which will be substituted
+ * @note Only copies the single node @a a for each occurence of
+ *       @a v. Only use this function if you
+ *       - either call it only with atoms @a a,
+ *       - or copy @a a at most once (i.e. @a v occurs at most
+ *         once in @a e).
+ *       Otherwise we might come into deep trouble as children
+ *       of @a e would have more than one parent afterwards...
+ *
+ * @param v variable to replace
+ * @param a core tree to insert for @a v
+ * @param e core tree to walk over
+ * @return modified core tree
  */
 static void
-unfold_let (PFcnode_t *c, PFcnode_t *substitute, PFvar_t *var)
+replace_var (PFvar_t *v, PFcnode_t *a, PFcnode_t *e)
 {
-    int i;
-    for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+  unsigned short int i;
+                                                                                                                                                             
+  assert (v && a && e);
+                                                                                                                                                             
+  if (e->kind == c_var && e->sem.var == v)
+      *e = *a;
+  else
+      for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
+          replace_var (v, a, e->child[i]);
+}
+
+/**
+ * var_is_used tests how often a variable is used in a tree
+ * and gives back the number of usages.
+ *
+ * @param v variable to replace
+ * @param e core tree to walk over
+ */
+static int
+var_is_used (PFvar_t *v, PFcnode_t *e)
+{
+  int i;
+  int usage = 0;
+
+  assert (v && e);
+
+  if (e->kind == c_var && e->sem.var == v)
+      return 1;
+  else
+      for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
+          usage += var_is_used (v, e->child[i]);
+
+  return usage;
+}
+
+/**
+ * simplifyCoreTree walks over a given tree and simplifies
+ * some core nodes and appends extra information (e.g.
+ * fake functions like 'item_sequence_to_node_sequence')
+ *
+ * @param c core tree to walk over
+ * @return modified core tree
+ */
+static void
+simplifyCoreTree (PFcnode_t *c)
+{
+    unsigned int i;
+    PFfun_t *fun;
+    PFcnode_t *new_node;
+    PFty_t expected, opt_expected;
+    PFty_t cast_type, input_type, opt_cast_type;
+
+    assert(c);
+    switch (c->kind)
     {
-        if ((c->child[i]->kind == c_var) && 
-            (c->child[i]->sem.var == var))
-        {
-            c->child[i] = substitute;
-        }
-        else
-        {
-            unfold_let (c->child[i], substitute, var);
-        }
+        case c_var:
+            break;
+        case c_seq:
+            /* prunes every empty node in the sequence construction */
+            simplifyCoreTree (c->child[0]);
+            simplifyCoreTree (c->child[1]);
+
+            if ((c->child[0]->kind == c_empty)
+                && (c->child[1]->kind != c_empty))
+            {
+                new_node = PFcore_empty ();
+                new_node->type = PFty_empty ();
+                *c = *new_node;
+            }
+            else if (c->child[0]->kind == c_empty)
+                *c = *(c->child[1]);
+            else if (c->child[1]->kind == c_empty)
+                *c = *(c->child[0]);
+            break;
+        case c_let:
+            if ((i = var_is_used (c->child[0]->sem.var, c->child[2])))
+            {
+                simplifyCoreTree (c->child[1]);
+                simplifyCoreTree (c->child[2]);
+                /* removes let statements, which are used only once and contain
+                   no constructor */
+                if (i == 1 &&
+                    noConstructor (c->child[1]))
+                {
+                    replace_var (c->child[0]->sem.var, c->child[1], c->child[2]);
+                    *c = *(c->child[2]);
+                    simplifyCoreTree (c);
+                }
+                /* remove all let statements, which are only bound to a literal
+                   or another variable */
+                else if (c->child[1]->kind == c_lit_str ||
+                         c->child[1]->kind == c_lit_int ||
+                         c->child[1]->kind == c_lit_dec ||
+                         c->child[1]->kind == c_lit_dbl ||
+                         c->child[1]->kind == c_true ||
+                         c->child[1]->kind == c_false ||
+                         c->child[1]->kind == c_empty ||
+                         c->child[1]->kind == c_var)
+                {
+                    replace_var (c->child[0]->sem.var, c->child[1], c->child[2]);
+                    *c = *(c->child[2]);
+                    simplifyCoreTree (c);
+                }
+                /* remove let statements, whose body contains only
+                   the bound variable */
+                else if (c->child[2]->kind == c_var && 
+                         c->child[2]->sem.var == c->child[0]->sem.var)
+                {
+                    *c = *(c->child[1]);
+                }
+            }
+            /* removes let statement, which are not used */
+            else
+            {
+                *c = *(c->child[2]);
+                simplifyCoreTree (c);
+            }
+            break;
+        case c_for:
+            simplifyCoreTree (c->child[2]);
+            simplifyCoreTree (c->child[3]);
+            input_type = PFty_defn(c->child[2]->type);
+
+            if (c->child[3]->kind == c_var && 
+                c->child[3]->sem.var == c->child[0]->sem.var)
+            {
+                *c = *(c->child[2]);
+            }
+            /* removes for expressions, which loop only over one literal */
+            /* FIXME: doesn't work if the following type is possible here:
+                      '(integer, decimal)?' */
+            else if (PFty_subtype (input_type, PFty_opt (PFty_item ())) &&
+                     input_type.type != ty_plus &&
+                     input_type.type != ty_star &&
+                     input_type.type != ty_choice &&
+                     input_type.type != ty_all &&
+                     input_type.type != ty_seq)
+            {
+                /* if for expression contains a positional variable
+                   and it is used it it replaced by the integer 0 */
+                if (c->child[1]->kind == c_var)
+                {
+                    new_node = PFcore_num (0);
+                    new_node->type = PFty_integer ();
+                    replace_var (c->child[1]->sem.var, new_node, c->child[3]);
+                }
+
+                if (PFty_eq (input_type, PFty_empty ()))
+                {
+                    new_node = PFcore_empty ();
+                    new_node->type = PFty_empty ();
+                    *c = *new_node;
+                }
+                else if (PFty_subtype (input_type, PFty_opt (PFty_atomic ())))
+                {
+                    replace_var (c->child[0]->sem.var, c->child[2], c->child[3]);
+                    *c = *(c->child[3]);
+                }
+                else 
+                {
+                    new_node = PFcore_let (c->child[0],
+                                           c->child[2],
+                                           c->child[3]);
+                    new_node->type = c->child[3]->type;
+                    new_node->child[0]->type = c->child[1]->type;
+                    *c = *new_node;
+                }
+                simplifyCoreTree (c);
+            }
+            /* remove for expression, whose body contains only
+                   the bound variable */
+            break;
+        case c_seqcast:
+            simplifyCoreTree (c->child[1]);
+            /* debugging information */
+            /*
+            PFlog("input type: %s",
+                  PFty_str (c->child[1]->type));
+            PFlog("cast type: %s",
+                  PFty_str (c->child[0]->sem.type));
+            */
+            cast_type = c->child[0]->sem.type;
+            input_type = c->child[1]->type;
+            opt_cast_type = cast_type;
+
+            if (cast_type.type == ty_opt)
+                opt_cast_type = PFty_child (cast_type);
+
+            /* if casts are nested only the most outest
+               cast has to be evaluated */
+            if (c->child[1]->kind == c_seqcast)
+            {
+                assert (c->child[1]->child[1]);
+                c->child[1] = c->child[1]->child[1];
+                input_type = c->child[1]->type;
+            }
+
+            /* removes casts which are not necessary:
+               - if types are the same
+               - if the cast type has only a additional
+                 occurence indicator compared to the
+                 input type */
+            if (PFty_eq (input_type, cast_type) ||
+                PFty_eq (input_type, opt_cast_type) ||
+                (cast_type.type == ty_opt &&
+                 PFty_eq (input_type, PFty_empty ())))
+            {
+                *c = *(c->child[1]);
+            }
+            /* tests if a type is castable */
+            else if (castable (input_type, cast_type));
+            else if (!PFty_subtype (input_type, cast_type))
+                PFoops (OOPS_TYPECHECK,
+                        "can't cast type '%s' to type '%s'",
+                        PFty_str(input_type),
+                        PFty_str(cast_type));
+            else
+            {
+                *c = *(c->child[1]);
+                PFlog ("cast from '%s' to '%s' ignored",
+                       PFty_str (input_type),
+                       PFty_str (cast_type));
+            }
+            break;
+        case c_typesw:
+            /* prunes the typeswitches where the branch is already
+               known at compiletime and reports error otherwise */
+            cast_type = c->child[1]->child[0]->child[0]->sem.type;
+
+            if (PFty_subtype (c->child[0]->type, cast_type))
+            {
+                PFlog("typeswitch removed: ``%s'' is subtype of ``%s''",
+                      PFty_str(c->child[0]->type), PFty_str(cast_type));
+                *c = *(c->child[1]->child[0]->child[1]);
+            }
+            else if (PFty_disjoint (c->child[0]->type, cast_type))
+            {
+                PFlog("typeswitch removed: ``%s'' is disjoint from ``%s''",
+                      PFty_str(c->child[0]->type), PFty_str(cast_type));
+                *c = *(c->child[2]);
+            }
+            else
+                PFoops (OOPS_TYPECHECK,
+                        "couldn't solve typeswitch at compile time;"
+                        " don't know if '%s' is subtype of '%s'",
+                        PFty_str(c->child[0]->type), PFty_str(cast_type));
+        
+            simplifyCoreTree (c);
+            break;
+        case c_apply:
+            /* handle the promotable types explicitly by casting them */
+            fun = c->sem.fun;
+
+            c = c->child[0];
+            for (i = 0; i < fun->arity; i++, c = c->child[1])
+            {
+                expected = (fun->par_ty)[i];
+
+                if (expected.type == ty_opt ||
+                    expected.type == ty_star ||
+                    expected.type == ty_plus)
+                    opt_expected = PFty_child (expected);
+                else
+                    opt_expected = expected;
+
+                if (PFty_subtype (opt_expected, PFty_atomic ()) &&
+                    !PFty_eq (c->child[0]->type, expected))
+                {
+                    c->child[0] = PFcore_seqcast (PFcore_seqtype (expected),
+                                                  c->child[0]);
+                    /* type new code, to avoid multiple casts */
+                    c->type                     =
+                    c->child[0]->type           =
+                    c->child[0]->child[0]->type = expected;
+                    simplifyCoreTree (c->child[0]);
+                }
+            }
+            break;
+        case c_elem:
+            fun = PFcore_function 
+                       (PFqname (PFns_pf,
+                                 "item-sequence-to-node-sequence"));
+
+            simplifyCoreTree (c->child[0]);
+            simplifyCoreTree (c->child[1]);
+            /* adds the 'item-sequence-to-node-sequence' function
+               if the content of the element contains other things
+               than nodes */
+            if (!PFty_subtype (c->child[1]->type, PFty_star (PFty_node ())))
+            {
+                /* we are lucky that input is node atomic -
+                   if so apply would have generated a bunch of 
+                   untyped core nodes */
+                new_node = PFcore_apply (fun,
+                                         PFcore_arg (c->child[1],
+                                                     PFcore_nil ()));
+                new_node->type = PFty_star (PFty_node ());
+                new_node->child[0]->type = c->child[1]->type;
+                c->child[1] = new_node;
+            }
+            break;
+        case c_attr:
+            fun = PFcore_function
+                       (PFqname (PFns_pf,
+                                 "item-sequence-to-untypedAtomic"));
+
+            simplifyCoreTree (c->child[0]);
+            simplifyCoreTree (c->child[1]);
+            /* adds the 'item-sequence-to-untypedAtomic' function
+               if the content of the attribute contains other things
+               than a string */
+            if (!PFty_subtype (c->child[1]->type, PFty_opt (PFty_string ())) &&
+                !PFty_subtype (c->child[1]->type, PFty_opt (PFty_untypedAtomic ())))
+            {
+                /* we are lucky that input is node atomic -
+                   if so apply would have generated a bunch of 
+                   untyped core nodes */
+                new_node = PFcore_apply (fun,
+                                         PFcore_arg (c->child[1],
+                                                     PFcore_nil ()));
+                new_node->type = PFty_untypedAtomic ();
+                new_node->child[0]->type = c->child[1]->type;
+                c->child[1] = new_node;
+            }
+            break;
+        case c_text:
+            fun = PFcore_function
+                       (PFqname (PFns_pf,
+                                 "item-sequence-to-untypedAtomic"));
+
+            simplifyCoreTree (c->child[0]);
+            /* substitutes empty text nodes by empty nodes */
+            if (c->child[0]->kind == c_empty)
+                *c = *(PFcore_empty ());
+            /* adds the 'item-sequence-to-untypedAtomic' function
+               if the content of the text contains other things
+               than a string */
+            else if (!PFty_subtype (c->child[0]->type,
+                                    PFty_opt (PFty_string ())) &&
+                     !PFty_subtype (c->child[0]->type,
+                                    PFty_opt (PFty_untypedAtomic ())))
+            {
+                /* we are lucky that input is node atomic -
+                   if so apply would have generated a bunch of 
+                   untyped core nodes */
+                new_node = PFcore_apply (fun,
+                                         PFcore_arg (c->child[0],
+                                                     PFcore_nil ()));
+                /* normally the type would be untypedAtomic, but
+                   strings and untypedAtomic are handled the same */
+                new_node->type = PFty_string ();
+                new_node->child[0]->type = c->child[0]->type;
+                c->child[0] = new_node;
+            }
+            break;
+        default: 
+            for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+                simplifyCoreTree (c->child[i]);
+            break;
     }
 }
 
@@ -3400,6 +3987,18 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
     *(int *) PFarray_add (counter) = 0; 
     *(int *) PFarray_add (counter) = 0; 
 
+    /* resolves nodes, which are not supported and prunes 
+       code which is node needed (e.g. casts, let-bindings) */
+    fprintf(stdout, "# Core tree before simplification:\n");
+    PFcore_pretty (stdout, c);
+
+    simplifyCoreTree (c);
+
+    fprintf(stdout, "\n# Core tree after simplification:\n");
+    PFcore_pretty (stdout, c);
+    fprintf(stdout, "\n");
+
+
     /* some bats and module get initialized, variables get bound */
     init (f);
 
@@ -3408,7 +4007,7 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
        and vu_vid */
     fprintf(f,
             "{\n"
-            "var_usage := bat(oid,oid);\n");/* [vid, fid] */
+            "var_usage := bat(oid,oid);\n"); /* [vid, fid] */
     append_lev (f, c, way, counter);
     /* the contents of var_usage will be sorted by fid and
        then refined (sorted) by vid */
@@ -3426,12 +4025,14 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
             "sorting := nil;\n"
             "}\n");
 
+
     /* recursive translation of the core tree */
     translate2MIL (f, 0, 0, c);
 
     /* print result in iter|pos|item representation */
     print_output (f);
 
-    fprintf(f, "printf(\"mil-programm without crash finished :)\\n\");\n");
+    fprintf(f, "print(\"mil-programm without crash finished :)\");\n");
+
 }
 /* vim:set shiftwidth=4 expandtab: */
