@@ -106,7 +106,7 @@ void ErrXit(char *format, ...) {
 	exit(1);
 }
 
-caliblng round(calibdbl x)
+caliblng cround(calibdbl x)
 {
 	return (caliblng)(x + 0.5);
 }

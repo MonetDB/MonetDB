@@ -32,9 +32,9 @@ void printCPU(cacheInfo *cache, caliblng MHz, caliblng delay)
 	FILE	*fp = stderr;
 		
 	fprintf(fp, "CPU loop + L1 access:    ");
-	fprintf(fp, " %6.2f ns = %3ld cy\n", NSperIt(cache->latency1[0]), round(CYperIt(cache->latency1[0])));
+	fprintf(fp, " %6.2f ns = %3ld cy\n", NSperIt(cache->latency1[0]), cround(CYperIt(cache->latency1[0])));
 	fprintf(fp, "             ( delay:    ");
-	fprintf(fp, " %6.2f ns = %3ld cy )\n", NSperIt(delay),            round(CYperIt(delay)));
+	fprintf(fp, " %6.2f ns = %3ld cy )\n", NSperIt(delay),            cround(CYperIt(delay)));
 	fprintf(fp, "\n");
 	fflush(fp);
 }
@@ -58,8 +58,8 @@ void printCache(cacheInfo *cache, AssoInfo *Asso, caliblng MHz)
 		}
 		fprintf(fp, " %3ld bytes ", cache->linesize[l + 1]);
 		fprintf(fp, "    %3ld-way    ", Asso->entries[l]);
-		fprintf(fp, " %6.2f ns = %3ld cy " , NSperIt(cache->latency2[l + 1] - cache->latency2[l]), round(CYperIt(cache->latency2[l + 1] - cache->latency2[l])));
-		fprintf(fp, " %6.2f ns = %3ld cy\n", NSperIt(cache->latency1[l + 1] - cache->latency1[l]), round(CYperIt(cache->latency1[l + 1] - cache->latency1[l])));
+		fprintf(fp, " %6.2f ns = %3ld cy " , NSperIt(cache->latency2[l + 1] - cache->latency2[l]), cround(CYperIt(cache->latency2[l + 1] - cache->latency2[l])));
+		fprintf(fp, " %6.2f ns = %3ld cy\n", NSperIt(cache->latency1[l + 1] - cache->latency1[l]), cround(CYperIt(cache->latency1[l + 1] - cache->latency1[l])));
 	}
 	fprintf(fp, "\n");
 	fflush(fp);
@@ -86,9 +86,9 @@ void printTLB(TLBinfo *TLB, caliblng MHz)
 		} else {
 			fprintf(fp, "  %3ld KB  ", TLB->pagesize[l + 1] / 1024);
 		}
-		fprintf(fp, " %6.2f ns = %3ld cy ", NSperIt(TLB->latency2[l + 1] - TLB->latency2[l]), round(CYperIt(TLB->latency2[l + 1] - TLB->latency2[l])));
+		fprintf(fp, " %6.2f ns = %3ld cy ", NSperIt(TLB->latency2[l + 1] - TLB->latency2[l]), cround(CYperIt(TLB->latency2[l + 1] - TLB->latency2[l])));
 /*
-		fprintf(fp, " %6.2f ns = %3ld cy" , NSperIt(TLB->latency1[l + 1] - TLB->latency1[l]), round(CYperIt(TLB->latency1[l + 1] - TLB->latency1[l])));
+		fprintf(fp, " %6.2f ns = %3ld cy" , NSperIt(TLB->latency1[l + 1] - TLB->latency1[l]), cround(CYperIt(TLB->latency1[l + 1] - TLB->latency1[l])));
 */
 		fprintf(fp, "\n");
 	}
@@ -121,10 +121,10 @@ void printAsso(AssoInfo *Asso, caliblng MHz)
 		} else {
 			fprintf(fp, "  %3ld KB  ", Asso->pagesize[l + 1] / 1024);
 		}
-		fprintf(fp, " %6.2f ns = %3ld cy ", NSperIt(Asso->latency2[l + 1] - Asso->latency2[l]), round(CYperIt(Asso->latency2[l + 1] - Asso->latency2[l])));
+		fprintf(fp, " %6.2f ns = %3ld cy ", NSperIt(Asso->latency2[l + 1] - Asso->latency2[l]), cround(CYperIt(Asso->latency2[l + 1] - Asso->latency2[l])));
 +*/
 /*
-		fprintf(fp, " %6.2f ns = %3ld cy" , NSperIt(Asso->latency1[l + 1] - Asso->latency1[l]), round(CYperIt(Asso->latency1[l + 1] - Asso->latency1[l])));
+		fprintf(fp, " %6.2f ns = %3ld cy" , NSperIt(Asso->latency1[l + 1] - Asso->latency1[l]), cround(CYperIt(Asso->latency1[l + 1] - Asso->latency1[l])));
 */
 		fprintf(fp, "\n");
 	}

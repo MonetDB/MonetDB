@@ -41,7 +41,7 @@ void plotCache(cacheInfo *cache, caliblng **result, caliblng MHz, char *fn, FILE
 	if ( ( log10(yh) - log10((caliblng)NSperIt(result[yy][1] - delay)) ) > ( log10((caliblng)NSperIt(result[1][1]  - delay)) - log10(yl) ) )	top = 1;
 	fprintf(fp, "# Calibrator v%s\n", VERSION);
 	fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
-	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), round(CYperIt(delay)));
+	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
 	fprintf(fp, " set term postscript portrait enhanced\t# PS\n");
 	fprintf(fp, " set output '%s.ps'\t# PS\n", fn);
 	fprintf(fp, " set title '");
@@ -102,16 +102,16 @@ void plotCache(cacheInfo *cache, caliblng **result, caliblng MHz, char *fn, FILE
 	fprintf(fp, ")\n");
 	fprintf(fp, "set y2tics");
 	for (l = 0, s = " ("; l <= cache->levels; l++, s = ", ") {
-		if (!delay)	fprintf(fp, "%s'(%ld)' %f", s, round(CYperIt(cache->latency1[l] - delay)), NSperIt(cache->latency1[l] - delay));
-			else	fprintf(fp, "%s'(%ld)' %f", s, round(CYperIt(cache->latency2[l] - delay)), NSperIt(cache->latency2[l] - delay));
+		if (!delay)	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(cache->latency1[l] - delay)), NSperIt(cache->latency1[l] - delay));
+			else	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(cache->latency2[l] - delay)), NSperIt(cache->latency2[l] - delay));
 	}
 	for (y = 1; y <= yh; y *= 10) {
 		fprintf(fp, "%s'%1.4g' %ld", s, (calibdbl)(y * MHz) / 1000.0, y);
 	}
 	fprintf(fp, ")\n");
 	for (l = 0; l <= cache->levels; l++) {
-		if (!delay)	z = (calibdbl)round(CYperIt(cache->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
-			else	z = (calibdbl)round(CYperIt(cache->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
+		if (!delay)	z = cround(CYperIt(cache->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
+			else	z = cround(CYperIt(cache->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
 		fprintf(fp, " set label %ld '(%1.4g)  ' at %f,%f right\t# PS\n" , l + 2, z, xl, z);
 		fprintf(fp, "#set label %ld '(%1.4g)'   at %f,%f right\t# GIF\n", l + 2, z, xl, z);
 		fprintf(fp, "set arrow %ld from %f,%f to %f,%f nohead lt 0\n", l + 2, xl, z, xh, z);
@@ -148,7 +148,7 @@ void plotTLB(TLBinfo *TLB, caliblng **result, caliblng MHz, char *fn, FILE *fp, 
 	if ( ( log10(yh) - log10((caliblng)NSperIt(result[yy][1] - delay)) ) > ( log10((caliblng)NSperIt(result[1][1]  - delay)) - log10(yl) ) )	top = 1;
 	fprintf(fp, "# Calibrator v%s\n", VERSION);
 	fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
-	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), round(CYperIt(delay)));
+	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
 	fprintf(fp, " set term postscript portrait enhanced\t# PS\n");
 	fprintf(fp, " set output '%s.ps'\t# PS\n", fn);
 	fprintf(fp, " set title '");
@@ -209,16 +209,16 @@ void plotTLB(TLBinfo *TLB, caliblng **result, caliblng MHz, char *fn, FILE *fp, 
 	fprintf(fp, "%s'<L1>' %ld)\n", s, TLB->mincachelines);
 	fprintf(fp, "set y2tics");
 	for (l = 0, s = " ("; l <= TLB->levels; l++, s = ", ") {
-		if (!delay)	fprintf(fp, "%s'(%ld)' %f", s, round(CYperIt(TLB->latency1[l] - delay)), NSperIt(TLB->latency1[l] - delay));
-			else	fprintf(fp, "%s'(%ld)' %f", s, round(CYperIt(TLB->latency2[l] - delay)), NSperIt(TLB->latency2[l] - delay));
+		if (!delay)	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(TLB->latency1[l] - delay)), NSperIt(TLB->latency1[l] - delay));
+			else	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(TLB->latency2[l] - delay)), NSperIt(TLB->latency2[l] - delay));
 	}
 	for (y = 1; y <= yh; y *= 10) {
 		fprintf(fp, "%s'%1.4g' %ld", s, (calibdbl)(y * MHz) / 1000.0, y);
 	}
 	fprintf(fp, ")\n");
 	for (l = 0; l <= TLB->levels; l++) {
-		if (!delay)	z = (calibdbl)round(CYperIt(TLB->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
-			else	z = (calibdbl)round(CYperIt(TLB->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
+		if (!delay)	z = cround(CYperIt(TLB->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
+			else	z = cround(CYperIt(TLB->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
 		fprintf(fp, " set label %ld '(%1.4g)  ' at %f,%f right\t# PS\n" , l + 2, z, xl, z);
 		fprintf(fp, "#set label %ld '(%1.4g)'   at %f,%f right\t# GIF\n", l + 2, z, xl, z);
 		fprintf(fp, "set arrow %ld from %f,%f to %f,%f nohead lt 0\n", l + 2, xl, z, xh, z);
@@ -255,7 +255,7 @@ void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *f
 	if ( ( log10(yh) - log10((caliblng)NSperIt(result[yy][1] - delay)) ) > ( log10((caliblng)NSperIt(result[1][1]  - delay)) - log10(yl) ) )	top = 1;
 	fprintf(fp, "# Calibrator v%s\n", VERSION);
 	fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
-	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), round(CYperIt(delay)));
+	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
 	fprintf(fp, " set term postscript portrait enhanced\t# PS\n");
 	fprintf(fp, " set output '%s.ps'\t# PS\n", fn);
 	fprintf(fp, " set title '");
@@ -320,8 +320,8 @@ void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *f
 	s = " (";
 /*+
 	for (l = 0; l <= Asso->levels; l++, s = ", ") {
-		if (!delay)	fprintf(fp, "%s'(%ld)' %f", s, round(CYperIt(Asso->latency1[l] - delay)), NSperIt(Asso->latency1[l] - delay));
-			else	fprintf(fp, "%s'(%ld)' %f", s, round(CYperIt(Asso->latency2[l] - delay)), NSperIt(Asso->latency2[l] - delay));
+		if (!delay)	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(Asso->latency1[l] - delay)), NSperIt(Asso->latency1[l] - delay));
+			else	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(Asso->latency2[l] - delay)), NSperIt(Asso->latency2[l] - delay));
 	}
 +*/
 	for (l = 1; l <= cache->levels; l++, s = ", ") {
@@ -334,8 +334,8 @@ void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *f
 	fprintf(fp, ")\n");
 /*+
 	for (l = 0; l <= Asso->levels; l++) {
-		if (!delay)	z = (calibdbl)round(CYperIt(Asso->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
-			else	z = (calibdbl)round(CYperIt(Asso->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
+		if (!delay)	z = cround(CYperIt(Asso->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
+			else	z = cround(CYperIt(Asso->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
 		ll += 1;
 		fprintf(fp, " set label %ld '(%1.4g)  ' at %f,%f right\t# PS\n" , ll, z, xl, z);
 		fprintf(fp, "#set label %ld '(%1.4g)'   at %f,%f right\t# GIF\n", ll, z, xl, z);
@@ -343,8 +343,8 @@ void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *f
 	}
 +*/
 	for (l = 1; l <= cache->levels; l++) {
-		if (!delay)	z = (calibdbl)round(CYperIt(cache->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
-			else	z = (calibdbl)round(CYperIt(cache->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
+		if (!delay)	z = cround(CYperIt(cache->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
+			else	z = cround(CYperIt(cache->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
 		ll += 1;
 		fprintf(fp, " set label %ld '<L%ld>  ' at %f,%f right\t# PS\n" , ll, l, xl, z);
 		fprintf(fp, "#set label %ld '<L%ld>'   at %f,%f right\t# GIF\n", ll, l, xl, z);

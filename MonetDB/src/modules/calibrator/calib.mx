@@ -154,11 +154,11 @@ int CMDcalib_info(BAT **retval)
 /* cpu info */
 	val=NSperIt(calibInfo->cache->latency1[0]);
 	b=BUNins(b, "cpuloop ns", &val);
-	val=round(CYperIt(calibInfo->cache->latency1[0]));
+	val=cround(CYperIt(calibInfo->cache->latency1[0]));
 	b=BUNins(b, "cpuloop cc", &val);
 	val=NSperIt(calibInfo->delayC);
 	b=BUNins(b, "cpu delay ns", &val);
-	val=round(CYperIt(calibInfo->delayC));
+	val=cround(CYperIt(calibInfo->delayC));
 	b=BUNins(b, "cpu delay cc", &val);
 /* cache info */
 	val=cache->levels;
@@ -178,13 +178,13 @@ int CMDcalib_info(BAT **retval)
 		val=NSperIt(cache->latency2[l+1] - cache->latency2[l]);
 		b=BUNins(b, fld, &val);
 		sprintf(fld, "cache %d miss-latency cc", l+1);
-		val=round(CYperIt(cache->latency2[l+1] - cache->latency2[l]));
+		val=cround(CYperIt(cache->latency2[l+1] - cache->latency2[l]));
 		b=BUNins(b, fld, &val);
 		sprintf(fld, "cache %d replace-time ns", l+1);
 		val=NSperIt(cache->latency1[l+1] - cache->latency1[l]);
 		b=BUNins(b, fld, &val);
 		sprintf(fld, "cache %d replace-time cc", l+1);
-		val=round(CYperIt(cache->latency1[l+1] - cache->latency1[l]));
+		val=cround(CYperIt(cache->latency1[l+1] - cache->latency1[l]));
 		b=BUNins(b, fld, &val);
 	}
 /* TLB info */
@@ -202,7 +202,7 @@ int CMDcalib_info(BAT **retval)
 		val=NSperIt(TLB->latency2[l+1] - TLB->latency2[l]);
 		b=BUNins(b, fld, &val);
 		sprintf(fld, "TLB %d miss-latency cc", l+1);
-		val=round(CYperIt(TLB->latency2[l+1] - TLB->latency2[l]));
+		val=cround(CYperIt(TLB->latency2[l+1] - TLB->latency2[l]));
 		b=BUNins(b, fld, &val);
 	}
 	return GDK_SUCCEED;
