@@ -707,7 +707,7 @@ view_bbp_lrefcnt(
 		BUNins(b, &i, &lrefcnt);
 	}}
 	BBPunlock("view_bbp_lrefcnt");
-	@:Pseudo(bbp,plevel)@
+	@:Pseudo(bbp,lrefcnt)@
         return GDK_SUCCEED;
 }
 
