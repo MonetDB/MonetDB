@@ -193,6 +193,29 @@ mal_export str STRStrip(str *res, str *arg1) ;
 mal_export str STRLtrim(str *res, str *arg1) ;
 mal_export str STRRtrim(str *res, str *arg1) ;
 mal_export str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g) ;
+
+mal_export int strConcat(str *res, str s, ptr val, int t);
+mal_export int strLength(int *res, str s);
+mal_export int strBytes(int *res, str s);
+mal_export int strTail(str *res, str s, int *offset);
+mal_export int strSubString(str *res, str s, int *offset, int *length);
+mal_export int strPrefix(bit *res, str s, str prefix);
+mal_export int strLower(str *res, str s);
+mal_export int strUpper(str *res, str s);
+mal_export int strSuffix(bit *res, str s, str suffix);
+mal_export int strStrSearch(int *res, str s, str s2);
+mal_export int strReverseStrSearch(int *res, str s, str s2);
+mal_export int strStrip(str *res, str s);
+mal_export int strLtrim(str *res, str s);
+mal_export int strRtrim(str *res, str s);
+mal_export int strChrSearch(int *res, str s, chr *c);
+mal_export int strReverseChrSearch(int *res, str s, chr *c);
+mal_export int strFromWChr(str *res, int *c);
+mal_export int strWChrAt(int *res, str val, int *at);
+mal_export int strChrAt(chr *res, str val, int *at);
+mal_export int codeset(str *res);
+mal_export int strIconv(str *res, str org, str f, str t);
+mal_export int strSubstitute(str *res, str s, str src, str dst, bit *g);
 #endif /* __string_H__ */
 @}
 
