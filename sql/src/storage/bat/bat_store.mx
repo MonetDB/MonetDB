@@ -489,7 +489,8 @@ load_key(sql_trans *tr, BAT *keys, BUN j, sql_table *t)
 		BAT *keys = BATselect(key_rkey, (ptr) &nk->base.id, (ptr) &nk->base.id);
 
 		BATloop(keys, p, q) {
-			sqlid fkey = *(sqlid *) BUNhead(keys, p);
+			ptr fkey_lid = (sqlid *) BUNhead(keys, p);
+			sqlid fkey = *(sqlid *) bun_find(key_id, fkey_lid);
 			node *n = list_find(t->s->keys, &fkey, (fcmp) &key_cmp);
 
 			if (n) {

@@ -128,7 +128,7 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 		 * SQL_NO_NULLS? */
 		"when false then cast(%d as smallint) end as nullable, "
 		"cast('' as varchar(1)) as remarks, "
-		"cast('' as varchar(1)) as column_def, "
+		"c.\"default\" as column_def, "
 		"cast(0 as smallint) as sql_data_type, "
 		"cast(0 as smallint) as sql_datetime_sub, "
 		"case c.\"type\" when 'varchar' then cast(c.\"type_digits\" as integer) else cast(NULL as integer) end as char_octet_length, "
