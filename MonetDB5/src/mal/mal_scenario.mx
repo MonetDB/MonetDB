@@ -398,6 +398,9 @@ void runScenario(Client c){
 		@:runPhase(TACTICS)@
 		@:runPhase(ENGINE)@
 	}
+#ifdef MAL_SCENARIO_DEBUG
+	printf("About to terminate scenario\n");
+#endif
 }
 
 @+ MAL scenario initialization

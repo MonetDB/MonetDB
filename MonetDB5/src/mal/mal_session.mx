@@ -134,7 +134,15 @@ void scheduleClient(str user, str passwd, str api, int socket, stream *fin, stre
 	mode = strchr(user,'\n');
 	if( mode) *mode =0;
 	c= initClient(GDKstrdup(user),NULL,fin,fout);
-	c->nspace= newScope(NULL,GDKstrdup(user));
+	if( c->nspace){
+		GDKfree(c->nspace->name);
+		c->nspace->name= GDKstrdup(user);
+	} else{
+		c->nspace = newScope(NULL, GDKstrdup(user));
+		c->nspace->outer = mal_scope;
+	}
+
+	/* c->nspace= newScope(NULL,GDKstrdup(user));*/
 	c->nspace->outer = mal_scope;
 	c->sessionkey = key;
 	c->socket= socket;
@@ -144,7 +152,7 @@ void scheduleClient(str user, str passwd, str api, int socket, stream *fin, stre
 	if( (i= MT_create_thread(&p, serveClient, (void *)c)) < 0) {
 		GDKerror("initClient: can not fork new client\n");
 		return;
-	} else printf("Client thread for %s started\n",user);
+	} 
 }
 @+ Client services
 After the client initialization has been finished, we

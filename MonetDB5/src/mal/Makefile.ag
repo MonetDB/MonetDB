@@ -7,7 +7,7 @@ lib_mal = {
 	SOURCES = \
 	mal.mx mal_type.mx mal_instruction.mx mal_box.mx mal_scope.mx \
 	mal_stack.mx mal_import.mx mal_session.mx mal_interpreter.mx \
-	mal_iterator.mx mal_resolve.mx mal_function.mx \
+	mal_resolve.mx mal_function.mx \
 	mal_parser.mx mal_linker.mx mal_debugger.mx mal_atom.mx  \
 	mal_client.mx mal_profiler.mx mal_scenario.mx \
 	mal_namespace.mx mal_properties.mx mal_optimizer.mx scenario_init.mx

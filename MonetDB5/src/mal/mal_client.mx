@@ -1,4 +1,27 @@
-@a M. L. Kersten, P. Boncz
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
+@a M. L. Kersten
 @v 5.0
 @* Monet Client Interface
 Clients gain access to the Monet server through a internet connection
@@ -25,31 +48,12 @@ The routines defined below provide management of the client
 administration. Routines dealing with serviceing requests
 are located in mal_startup.
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- */
-
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
 #define bitset int
+
+/* #define MAL_CLIENT_DEBUG */
+
 #include "mal_resolve.h"
 #include "mal.h"
 
@@ -223,6 +227,9 @@ Client newClient(){
 		return NULL;
 	}
 	c->idx= c - mal_clients;
+#ifdef MAL_CLIENT_DEBUG
+	printf("New client created %d\n",c-mal_clients);
+#endif
 	return c;
 }
 @-
@@ -284,7 +291,8 @@ collect the buffer when in use.
 	c->output = 0;
 	c->blkmode= c->fdin==GDKin?0: MAPIBLKSIZE;
 	
-	c->nspace = 0;
+	if(c->nspace==0)
+		c->nspace = newScope(NULL, GDKstrdup("guest"));
 	c->curprg = c->backup = 0;
 
 	c->father = NULL;
@@ -360,7 +368,8 @@ Client forkClient(Client father){
 		son->scenario = GDKstrdup(father->scenario);
 		son->prompt = GDKstrdup(father->prompt);
 		son->promptlength= strlen(father->prompt);
-		son->nspace = newScope(NULL, GDKstrdup("Client-child"));
+		/* reuse the scopes wherever possible */
+		son->nspace->name= GDKstrdup("Client-child");
 		son->nspace->outer = mal_scope;
 	}
         return son;
@@ -384,9 +393,15 @@ void freeClient(Client c)
 
 	/* epilogue actions have been done already */
 	if (c->father == NULL) { /* normal client */
-		(void) c->fdin->close(c->fdin);
-		(void) c->fdout->flush(c->fdout); 
-        	(void) c->fdout->close(c->fdout);
+		if(c->fdin){
+			(void) c->fdin->close(c->fdin);
+			(void) c->fdin->destroy(c->fdin);
+		}
+		if( c->fdout){
+			(void) c->fdout->flush(c->fdout); 
+			(void) c->fdout->close(c->fdout);
+			(void) c->fdout->destroy(c->fdout);
+		}
 		c->fdout= c->fdin= NULL;
 		if( c->socket) close(c->socket); c->socket=0;
 	} 
@@ -394,15 +409,7 @@ void freeClient(Client c)
 
 	if( c->curprg ) freeSymbol(c->curprg);
 	c->curprg= 0;
-	if( !isAdministrator(c) && c->nspace){
-		freeScope(c->nspace);
-		c->nspace=0;
-	}
-	/* causes an ERROR, reuse it 
-	if( c->input ) GDKfree(c->input);
-	c->input = c->limit= NULL; */
-	if( c->output ) GDKfree(c->output);
-	c->output= NULL;
+	/* re-use input/output buffers */
 	if(c->scenario) GDKfree(c->scenario); c->scenario = NULL;
 	if(c->prompt) GDKfree(c->prompt); c->prompt = NULL;
 	c->promptlength=0;
@@ -413,10 +420,10 @@ void freeClient(Client c)
 	}
 	c->father = 0;
 	c->login = c->delay = c->logout = 0;
-	c->mode = FREECLIENT;
-	THRdel(c->mythread);
+	/* THRdel(c->mythread);*/
 	c->mythread= 0;
 	GDKfree(c->user); c->user = NULL;
+	c->mode = FREECLIENT;
 }
 
 @-
@@ -434,6 +441,9 @@ raised has already lost its file descriptors.
 void closeClient(Client c) {
 	Client k;
 
+#ifdef MAL_DEBUG_CLIENT
+	printf("closeClient %d\n",c-mal_clients);
+#endif
 	/* kill living background clients */
 	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
 		if ((k->mode > FINISHING) && (k->father == c)) 
@@ -443,7 +453,7 @@ void closeClient(Client c) {
 	/* free resources of a single thread */
 	if( !isAdministrator(c)) {
 		freeClient(c);
-		MT_exit_thread(0);
+		/* MT_exit_thread(0);*/
 		return;
 	} 
 
@@ -479,19 +489,25 @@ work by closing them.
 
 void killClient(Client c){
     if (c && c->user) {
+#ifdef MAL_DEBUG_CLIENT
+	printf("killClient %d\n",c-mal_clients);
+#endif
         Thread victim = c->mythread;
 	MT_Id tid= victim->tid;
 	MT_Id pid= victim->pid;
 
-	if( victim == THRgettid()){
+	if( victim == (Thread) THRgettid()){
 		GDKerror("killClient: attempt to perform process suicide.\n");
 		return;
 	}
 	GDKwarning("killClient:forcing client to stop ...\n");
 	/* the process may hang upon gaining access to the file descriptors */
 	c->mode= FINISHING;
+	(void) c->fdin->flush(c->fdout);
 	(void) c->fdin->close(c->fdin);
-	(void) c->fdin->close(c->fdout);
+	(void) c->fdin->destroy(c->fdin); c->fdin= NULL;
+	(void) c->fdout->close(c->fdout);
+	(void) c->fdout->destroy(c->fdout); c->fdout= NULL;
 	if( c->socket) close(c->socket); c->socket=0;
 
 	GDKwarning("killClient:about to kill process ...\n");
@@ -517,6 +533,9 @@ void traceClient(str nme, int flag){
 	Client c;
         for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
 	if( c->user && strcmp(c->user,nme)==0){
+#ifdef MAL_CLIENT_DEBUG
+	printf("trace client %d\n",c-mal_clients);
+#endif
 		if( flag) c->sysmon= mal_clients[0].fdout;
 		else c->sysmon= NULL;
 	}
@@ -593,6 +612,9 @@ the front-end to issue the request.
 	first= last= s = c->nxt; *s = 0;
 	@:makespace@
 
+#ifdef MAL_CLIENT_DEBUG
+	printf("# readClient %s\n",c->user);
+#endif
 readAgain:
 	bytes = c->limit - c->input;
 	free= c->limit - s-1;	/* reserve null byte */
@@ -612,7 +634,7 @@ submission. This avoids a significant number of network interactions.
 			@:sysTrace(buf)@
 			GDKerror(buf);
 			/* mimick end of session */
-			snprintf(s,MAPIBLKSIZE,"quit;","");
+			snprintf(s,MAPIBLKSIZE,"quit();");
 			return 0;
 		} 
 		for(s=c->input; *s ;s++) {
@@ -622,6 +644,10 @@ submission. This avoids a significant number of network interactions.
 			} else lspace =0;
 		}
 		if( lspace ) *lspace=0;
+#ifdef MAL_CLIENT_DEBUG
+	printf("# received %s\n",c->input);
+#endif
+		@:sysTrace(c->input)@
 		return 1;
 	}
 @-
@@ -668,6 +694,9 @@ readCompleted:
 		} else lspace =0;
 	}
 	if( lspace ) *lspace=0;
+#ifdef MAL_CLIENT_DEBUG
+	printf("# received %s\n",c->input);
+#endif
 	@:sysTrace(c->input)@
 	return 1;
 }
