@@ -33,6 +33,10 @@ The routines below are linked with the kernel by default
 
 MODULE optimizer;
 
+pattern optimize(mod:any, fcn:any)
+address QOToptimize
+comment "Optimize a specific operation";
+
 pattern CXoptimizer():str 
 address QOTCXoptimizer;
 pattern CXoptimizer(mod:any, fcn:any):str 
@@ -63,7 +67,7 @@ pattern RRoptimizer(mod:any, fcn:any):str
 address QOTRRoptimizerCALL
 comment "Reversal idempotency removal";
 
-pattern debugOptimizers():void 
+pattern setDebug():void 
 address QOTdebugOptimizers;
 
 pattern showFlowGraph(M:any,F:any,s:str):void 
@@ -95,6 +99,17 @@ address QOTMCoptimizerSymbol
 comment "Inliner of a specific function";
 
 @-
+The remaining operations are used to debug portions of the optimizer.
+@mal
+pattern RXemptyBAT(:bat[:any,:any])
+address RXemptyBAT
+comment "The argument is as an empty BAT";
+
+pattern RXalignedBATs(:bat[:any,:any]...)
+address RXalignedBATs
+comment "Consider the BATs aligned";
+
+@-
 The remainder of this file contains dynamic optimization
 routines, i.e. those not covered by the current backend.
 The most important one is the multi-path join, which should
@@ -118,8 +133,7 @@ comment "Evaluate a join path.";
 #include "mal_optimizer.h"
 
 str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) stk; /* fool compiler */
-	debugOptimizers(getClient(),mb,getPC(mb,pci));
+	debugOptimizers(mb,stk,pci);
 	return NULL;
 }
 @-
@@ -142,16 +156,15 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	else
 		printf("#@1optimizer %s.%s\n",modnme,fcnnme);
 	setLifespan(s->def);
-        @1optimizer(c,s->def,0);
+	@1optimizer(s->def,0,0);
 	if(c->listing) printFunction(GDKout,s->def,c->listing);
 
-	removeInstruction(mb, getPC(mb,p));
+	removeInstruction(mb, p);
 	return NULL;
 }
 str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void)stk; /* fool compiler */
 	setLifespan(mb);
-	@1optimizer(getClient(),mb, getPC(mb,pci));
+	@1optimizer(mb, stk, pci);
 	return NULL;
 }
 @c
@@ -161,10 +174,22 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(SP)@
 	@:QOTC(RR)@
 
+str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str modnme= getArgName(mb,pci,1);
+	str fcnnme= getArgName(mb,pci,2);
+	Symbol s;
+	(void) stk;
+	s = findMALSymbol(modnme,fcnnme);
+	if( s == NULL)
+		return throwMessage("optimizer.optimize","operation not found\n");
+	removeInstruction(mb,pci);
+	return optimizeMALBlock(s->def);
+}
+
 str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-        str fname= (str) getArgValue(stk,p,3);
-	str     modnme= getArgName(mb,p,1);
-	str     fcnnme= getArgName(mb,p,2);
+	str fname= (str) getArgValue(stk,p,3);
+	str modnme= getArgName(mb,p,1);
+	str fcnnme= getArgName(mb,p,2);
 	Scope  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
