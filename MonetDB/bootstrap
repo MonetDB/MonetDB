@@ -1,13 +1,39 @@
 #!/usr/bin/env bash
 
+# ! this file should be kept identical in !
+# ! monet, sql, xml, acoi                 !
+
 # helps bootstrapping Monet, when checked out from CVS
 # requires GNU autoconf, automake and libtool
 # this is not meant to go into the distributions
 
+if [ -x src/utils/autogen/autogen.py ] ; then
+	AUTOGEN=src/utils/autogen/autogen.py 
+ elif [ "$1" != ""  -a  -x "$1" ] ; then
+	AUTOGEN=$1
+ else
+	if [ ! "$MONET_PREFIX"  -a  "$MONETDIST" ] ; then
+		MONET_PREFIX=$MONETDIST
+	fi
+	if [ "$MONET_PREFIX" = "" ]; then
+		which monet-config > /dev/null 2>&1
+		ERROR=$?
+		if [ $ERROR -eq 0 ]; then
+			MONET_PREFIX=`monet-config --prefix`
+		else
+			echo "!ERROR: requires MONET_PREFIX to be set or monet-config in your PATH"
+			exit 1
+		fi
+	fi
+	AUTOGEN=$MONET_PREFIX/lib/autogen/autogen.py
+fi
+
+find . -name .cache\* \-exec rm {} \;
+
 REQ_AM_VERSION="1.4"
 AM_VERSION=`automake --version | grep '^automake' | sed -e 's|.*)||g' -e 's| ||g' -e 's|-.*||g'`
-_REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+_REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
 if [ $_AM_VERSION -gt $_REQ_AM_VERSION ]; then
 	echo "automake $AM_VERSION is newer then $REQ_AM_VERSION"
@@ -15,12 +41,27 @@ elif [ $_AM_VERSION -lt $_REQ_AM_VERSION ]; then
 	echo "automake $AM_VERSION is older then $REQ_AM_VERSION"
 fi
 
-find . -name .cache\* \-exec rm {} \;
-src/utils/autogen/autogen.py `pwd` $_AM_VERSION
+$AUTOGEN `pwd` $_AM_VERSION
+
 cat configure.ag > configure.in
 echo "AC_OUTPUT(" >> configure.in
 cat acout.in  >> configure.in
 echo ")" >> configure.in
+
+REQ_LT_VERSION="1.4"
+LT_VERSION=`libtool --version | sed -e 's|([^)]*)||g' | sed -e 's|ltmain.sh||g' | sed -e 's| ||g'`
+_LT_VERSION=`echo $LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+_REQ_LT_VERSION=`echo $REQ_LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+
+if [ $_LT_VERSION -gt $_REQ_LT_VERSION ]; then
+	echo "libtool $LT_VERSION is newer than $REQ_LT_VERSION"
+elif [ $_LT_VERSION -lt $_REQ_LT_VERSION ]; then
+	echo "libtool $LT_VERSION is older than $REQ_LT_VERSION"
+	echo "using conf/*.1.4"
+	for i in ltmain.sh ltconfig config.guess config.sub ; do
+		cp conf/$i.1.4 conf/$i
+	done
+fi
 
 test -f conf/ltmain.sh || libtoolize -c -f; 
 
@@ -59,6 +100,7 @@ perl -i.bak -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
 # patch aclocal.m4: 
 # correct switch for Intel compiler on Linux (icc)
 # to pass options to the linker (ld) is -Qoption,ld,
+#grep 'lt_cv_prog_cc_can_build_shared' aclocal.m4 >/dev/null && 
 cat << "EOF" | patch aclocal.m4
 --- aclocal.m4~	Wed Jan 16 20:34:17 2002
 +++ aclocal.m4	Wed Jan 16 20:37:55 2002
@@ -81,14 +123,14 @@ autoheader
 automake -a -c
 
 # dirty hack, needed because automake 1.4 generates the wrong dependency
-#echo "mel_tab.h: mel_tab.cc" >> src/mel/Makefile.in
-perl -i.bak -p -e  's/tab\.hh/tab.h/g' src/mel/Makefile.in
+#test -f src/mel/Makefile.in && echo "mel_tab.h: mel_tab.cc" >> src/mel/Makefile.in
+#test -f src/mel/Makefile.in && perl -i.bak -p -e 's/tab\.hh/tab.h/g' src/mel/Makefile.in
 
 #autoupdate
 autoconf
 
 # patch configure to cope with Intel's C/C++ compiler for Linux ("icc")
-cat << "EOF" | patch configure
+grep 'ac_cv_prog_cc_g=yes' configure >/dev/null && cat << "EOF" | patch configure
 --- configure~	Wed May 23 20:46:51 2001
 +++ configure	Wed May 23 20:49:57 2001
 @@ -1075,7 +1075,7 @@
@@ -100,6 +142,10 @@ cat << "EOF" | patch configure
    ac_cv_prog_cc_g=yes
  else
    ac_cv_prog_cc_g=no
+EOF
+grep 'ac_cv_prog_cxx_g=yes' configure >/dev/null && cat << "EOF" | patch configure
+--- configure~	Wed May 23 20:46:51 2001
++++ configure	Wed May 23 20:49:57 2001
 @@ -1218,7 +1218,7 @@
    echo $ac_n "(cached) $ac_c" 1>&6
  else

@@ -1,3 +1,8 @@
+echo ''
+echo '! conf/conf.csh is not maintained anymore and will disappear soon.      !'
+echo '! If possible, use conf/conf.bash, instead.                             !'
+echo '! Please contact Stefan.Manegold@cwi.nl if you still need conf/conf.csh !'
+echo ''
 #
 # This script is supposed to be "sourced" in the top-level directory of the
 # checked-out Monet source tree (referred to as BASE in the remainder). 
