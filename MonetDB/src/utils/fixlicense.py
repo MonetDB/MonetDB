@@ -206,7 +206,7 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
     g.close()
     try:
         st = os.stat(file)
-        os.chmod(file + '.new', stat.s_IMODE(st.st_mode))
+        os.chmod(file + '.new', stat.S_IMODE(st.st_mode))
     except OSError:
         pass
     try:
