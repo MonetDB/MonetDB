@@ -901,7 +901,10 @@ CXXEXT = \\\"cc\\\"
         if os.path.exists(".incs.in"):
             incs = ".incs.in"
         if len(name) > 0:
-            fd.write("%sincludedir = $(includedir)/%s\n" % (name, name))
+        	fd.write("%sincludedir = $(pkgincludedir)/%s\n" % (name, name))
+	else:
+		name="top"
+        	fd.write("%sincludedir = $(pkgincludedir)\n" % (name))
         fd.write("%sinclude_HEADERS = %s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
 
     fd.write('''
