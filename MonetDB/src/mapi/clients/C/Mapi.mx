@@ -2752,11 +2752,11 @@ mapi_fetch_line_internal(MapiHdl hdl, int *wantmore)
 		printf("text:%s\n", mid->blk.buf + mid->blk.nxt);
 	}
 	if (mid->blk.buf[mid->blk.nxt] == PROMPTBEG) {
-		promptMonet(mid);
-		if (mid->blk.buf[mid->blk.nxt + 1] == PROMPT2[1]) {
+		if (strncmp(mid->blk.buf + mid->blk.nxt, PROMPT2, sizeof(PROMPT2) - 1) == 0) {
 			assert(wantmore);
 			*wantmore = 1;
 		}
+		promptMonet(mid);
 		return 0;
 	}
 	/* we have a complete line in the buffer */
@@ -2839,6 +2839,7 @@ mapi_quick_query(), otherwise we are forced to first
 empy the row cache.
 
 @c
+/* TODO: need to handle PROMPT2 */
 #define handlePart(sz)							\
 	do {								\
 		s= strchr(mid->blk.buf+mid->blk.nxt,PROMPTBEG);		\
