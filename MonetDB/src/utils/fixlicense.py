@@ -14,7 +14,7 @@
 # The Original Code is the Monet Database System.
 # 
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2003 CWI.
+# Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
 # 
 # Contributor(s):
@@ -64,7 +64,7 @@ license = [
     'The Original Code is the Monet Database System.',
     '',
     'The Initial Developer of the Original Code is CWI.',
-    'Portions created by CWI are Copyright (C) 1997-2003 CWI.',
+    'Portions created by CWI are Copyright (C) 1997-2004 CWI.',
     'All Rights Reserved.',
     '',
     'Contributor(s):',
