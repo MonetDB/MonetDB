@@ -1515,10 +1515,10 @@ str GRPsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
 
         /* scan b, and add values to sums in-place */
         if (range > SMALL_AGGR_MAX) {
-                ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_sum\n",range,SMALL_AGGR_MAX);
+                ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_sum\n",range,SMALL_AGGR_MAX);
                 @:large_aggr_sum(@1,@2)@
         } else {
-                ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
+                ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
                 @:small_aggr_sum(@1,@2)@
         }
         *retval = bn->batCacheid;

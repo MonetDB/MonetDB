@@ -132,6 +132,11 @@ command count(b:bat[:oid,:any],
 	nonils:bit) :bat[:oid,:int] 
 address AX3aggrX3_count3
 comment "grouped count";
+command count(b:bat[:oid,:any], 
+	g:bat[:oid,:oid], 
+	e:bat[:oid,:any]) :bat[:oid,:int] 
+address AX3aggrX3_count3Nils
+comment "grouped count";
 
 command size(b:bat[:oid,:bit], 
 	e:bat[:oid,:any]) :bat[:oid,:int] 
@@ -1015,7 +1020,6 @@ int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	*ret = bn;
 	return GDK_SUCCEED;
 }
-
 @- Size
 @c
 int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
@@ -2156,6 +2160,10 @@ str AX3aggrX3_count3(int *retid,int *bid, int *gid, int *eid, bit *ignore_nils){
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_prod3","GDKerror");
+}
+str AX3aggrX3_count3Nils(int *retid,int *bid, int *gid, int *eid){
+        bit ignore_nils=0;
+	return AX3aggrX3_count3(retid,bid,gid,eid,&ignore_nils);
 }
 @-
 @}
