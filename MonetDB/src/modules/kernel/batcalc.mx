@@ -195,6 +195,9 @@ comment "Coerce an @1 tail to a bat with a @2 tail.";
 	@:coerceList(flt)@
 	@:coerceList(dbl)@
 
+command int(b:bat[any::1,str]):bat[any::1,int] = CMDconvertstr_int
+comment "Coerce an str tail to a bat with a int tail.";
+
 @- Scientific routines
 The mmath functions are also overloaded to provide for
 the fast execution of expanded code blocks.
@@ -778,6 +781,28 @@ str CMDconvert@1_@2(int *ret, int *bid){
 	@:coercionImpList(lng)@
 	@:coercionImpList(flt)@
 	@:coercionImpList(dbl)@
+str CMDconvertstr_int(int *ret, int *bid){
+	BAT *b,*bn;
+	int xx;
+	BUN p,q;
+	ptr h,t;
+	str x;
+	int y;
+
+	@:getBATdescriptor(ret,bid,b,CMDconvertstr_int)@
+
+	bn= newBATresult(b, TYPE_int);
+	@:tstBat(CMDconvertstr_int)@
+
+	BATloopFast(b, p, q, xx) {
+		ptr h = BUNhead(b,p);
+		x= (str) BUNtail(b,p);
+		y= x== str_nil? int_nil: strtol(x,NULL,0);
+		bunfastins(bn, h, &y);
+	}
+	BBPfix( *ret= bn->batCacheid);
+	return MAL_SUCCEED;
+}
 @- Implementations of scientific functions
 @c
 	@:scienceFcnImpl(asin)@

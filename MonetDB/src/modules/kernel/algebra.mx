@@ -443,6 +443,35 @@ command @1 ( b:bat[any,@2] ) : @2 = CMD@1_@2 comment @3;
 @:aggregate_definition(@1,dbl,@2)@
 @:aggregate_definition(@1,lng,@2)@
 
+@+ Exented selection predicates
+For SQL convenience we provide a serie of interval selectors.
+@mal
+function between(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
+	return select(b,l,h);
+end function;
+# between Close Open interval
+function betweenCO(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
+	t:= select(b,l,h);
+	tr:= mirror(t);
+	z:= delete(tr,h);
+	zr:= mirror(z);
+	return z;
+end function;
+function betweenOC(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
+	t:= select(b,l,h);
+	tr:= mirror(t);
+	z:= delete(tr,l);
+	zr:= mirror(z);
+	return z;
+end function;
+function betweenOO(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
+	t:= select(b,l,h);
+	tr:= mirror(t);
+	z:= delete(tr,l);
+	z:= delete(z,h);
+	zr:= mirror(z);
+	return z;
+end function;
 @+ Modeling With Properties
 @T
 The Monet kernel performs {\em run-time optimizations}. To choose between

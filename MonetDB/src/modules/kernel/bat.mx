@@ -64,11 +64,16 @@ comment "Produce a BAT containing info about a BAT in [attribute,value] format.
  It contains all properties of the BAT record. See the BAT documentation in
  GDK for more information.";
  
-command getCapacity ( bid:bat[any,any] ) : lng = CMDgetCapacity
+command getCapacity ( b:bat[any,any] ) : lng = CMDgetCapacity
 comment "Returns the current allocation size (in max number of elements) of a BAT.";
 
-command getType ( bid:bat[any,any] ) : int = CMDgetType
-comment "Returns the type of the head column of a BAT, as an integer type number.";
+command getHeadType ( b:bat[any,any] ) : int = CMDgetHeadType
+comment "Returns the type of the head column of a BAT, 
+as an integer type number.";
+ 
+command getTailType( b:bat[any,any] ) : int = CMDgetTailType
+comment "Returns the type of the tail column of a BAT, 
+as an integer type number.";
  
 command getRole ( bid:bat[any,any] ) : str = CMDgetRole
 comment "Returns the rolename of the head column of a BAT.";
@@ -103,13 +108,13 @@ comment "Try to change the update access priviliges to this BAT. Mode:
  subsequent updates fail with an error message.
  Returns the BAT itself.";
 
-command setAppendMode( b:bat[any,any]) : int = CMDsetAppendMode
+command setAppendMode( b:bat[any::1,any::2]):bat[any::1,any::2] =CMDsetAppendMode
 comment "Change access privilige of BAT to append only";
 
-command setReadMode( b:bat[any,any]) : int = CMDsetReadMode
+command setReadMode( b:bat[any::1,any::2]) : bat[any::1,any::2] = CMDsetReadMode
 comment "Change access privilige of BAT to read only";
 
-command setWriteMode( b:bat[any,any]) : int = CMDsetWriteMode
+command setWriteMode( b:bat[any::1,any::2]):bat[any::1,any::2] = CMDsetWriteMode
 comment "Change access privilige of BAT to read and write";
 
 command getAccess( b:bat[any,any]):chr = CMDgetAccess
@@ -178,8 +183,10 @@ command delete(b:bat[any::1, any::2], h:any::1)
 				: bat[any::1,any::2] = CMDdelete_head
 comment "Delete all BUNs with a certain head value.";
 
-command delete(b:bat[any::1, any::2]) 
-				: bat[any::1,any::2] = CMDdelete_all
+command clear(b:bat[any::1, any::2]) : bat[any::1,any::2] = CMDdelete_all
+comment "Delete all BUNs in a BAT.";
+
+command delete(b:bat[any::1, any::2]) : bat[any::1,any::2] = CMDdelete_all
 comment "Delete all BUNs in a BAT.";
 
 command delete(b:bat[any::1, any::2], src:bat[any::1,any]) 
@@ -261,6 +268,9 @@ command cold(nme:str) :void = CMDcold
 comment "Makes a BAT very cold for the BBP. The chance of being choses 
 for swapout is big, afterwards.  Returns the BAT itself.";
 
+command cold(b:BAT) :void = CMDcoldBAT;
+command hot(b:BAT) :void = CMDhotBAT;
+
 @- Heap Specific Commands
 @T
 BATs are stored in memory in a number of Heap objects. A heap is nothing
@@ -307,6 +317,9 @@ comment "For each individual heap, you can change the allocation mode to
  (this has to happen before the heap can be mapped into virtual memory). 
  These modes are persistent. ";
 
+command mmap(b:BAT, mode:int): bit = CMDmmap2
+comment "Alias for mmap(b,mode,mode,mode,mode,mode)";
+
 command madvise(b:BAT, buns_mode:int, hheap_mode:int, theap_mode:int, 
 		hacc_mode:int, tacc_mode:int) : bit = CMDmadvise
 comment "Modern Operating Systems allow users to influence the buffer management
@@ -317,6 +330,9 @@ comment "Modern Operating Systems allow users to influence the buffer management
  BUF_WILLNEED (load everything with prefetch), BUF_DONTNEED (swapout).
  These buffer management modes are not persistent.
  Returns the BAT operated upon.";
+
+command madvise(b:BAT, mode:int):bit = CMDmadvise2
+comment "alias for madvise(b,mode,mode,mode,mode,mode)";
 
 @- ASCII import, export
 The below commands load and save a BAT from/to an ASCII dump. These
@@ -397,6 +413,19 @@ these 'sync' OIDs with their own propagation rules.
 @mal
 command isSynced (b1:bat[any,any], b2:bat[any,any]) : bit = CMDisSynced
 comment "Tests whether two BATs are synced or not. ";
+
+@- Constants
+The following constants have not been integrated in the code base
+@mal
+#Constants have been added to mal/const.mx prelude
+#    STORE_MEM   := 0;     # load into GDKmalloced memory
+#    STORE_MMAP  := 1;     # mmap() into virtual memory
+#    STORE_COMPR := 2;     # currently not implemented this way
+#    BUF_NORMAL    := 0;   # No further special treatment
+#    BUF_RANDOM    := 1;   # Expect random page references
+#    BUF_SEQUENTIAL:= 2;   # Expect sequential page references
+#    BUF_WILLNEED  := 3;   # Will need these pages
+#    BUF_DONTNEED  := 4;   # Don't need these pages
 
 @{
 @{
@@ -668,10 +697,16 @@ str CMDgetCapacity(lng *res, int *bid) {
 	return MAL_SUCCEED;
 }
 
-str CMDgetType(int *res, int *bid) {
+str CMDgetHeadType(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDgetType)@
+	@:getBATdescriptor(res,bid,b,CMDgetHeadType)@
 	*res = (*bid > 0)?BAThtype(b):BATttype(b);
+	return MAL_SUCCEED;
+}
+str CMDgetTailType(int *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,CMDgetTailType)@
+	*res = (*bid > 0)?BATttype(b):BAThtype(b);
 	return MAL_SUCCEED;
 }
 str CMDgetRole(str *res, int *bid) {
@@ -1106,13 +1141,25 @@ str CMDload(int *res, str *input) {
 	return throwMessage("CMDunload: file name missing");
 }
 
-str CMDhot(str *input) {
+str CMDhot(int *res, str *input) {
 	BBPhot(BBPindex(*input));
 	return MAL_SUCCEED;
 }
 
-str CMDcold(str *input) {
+str CMDcold(int *res, str *input) {
 	BBPcold(BBPindex(*input));
+	return MAL_SUCCEED;
+}
+str CMDcoldBAT(int *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,CMDisCached)@
+	BBPcold(b->batCacheid);
+	return MAL_SUCCEED;
+}
+str CMDhotBAT(int *res, int *bid) {
+	BAT *b;
+	@:getBATdescriptor(res,bid,b,CMDisCached)@
+	BBPhot(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1166,6 +1213,9 @@ str CMDmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 	*res= FALSE;
 	return throwMessage("CMDmmap: failed");
 }
+str CMDmmap2(int *res, int *bid, int *bns){
+	return CMDmmap(res,bid,bns,bns,bns,bns,bns);
+}
 
 str CMDmadvise(int *res, int *bid, int *bns, int *hhp, int *thp, 
 		 	        int *hacc, int *tacc)
@@ -1177,6 +1227,9 @@ str CMDmadvise(int *res, int *bid, int *bns, int *hhp, int *thp,
 		(*tacc==int_nil)?-1:*tacc);
 	if( *res) return throwMessage("CMDmadvise: failed");
 	return MAL_SUCCEED;
+}
+str CMDmadvise2(int *res,  int *bid, int *mode){
+	return CMDmadvise(res,bid,mode,mode,mode,mode,mode);
 }
 
 @+ Bulk export/loading

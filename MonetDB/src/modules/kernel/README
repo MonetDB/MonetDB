@@ -1,8 +1,0 @@
-The modules contained in the Kernel should not include any
-code that requires analysis of the MAL instruction structure.
-This way, we can link it with applications more easily.
-(provided we define such routines as throwException)
-
-As a consequence several 'old-fashioned' MIL constructs, e.g.
-new(type1,type2) and print(type_any) are moved to the mal-service
-layer.

@@ -17,23 +17,26 @@ the cpu clock. They return an integer and string, respectively.
 @mal
 module alarm;
 
-command sleep(secs:int):void = CMDsleep comment "sleep X secs";
-command alarm(secs:int, action:str):void = CMDalarm 
+command sleep(secs:int):void = CLKsleep comment "sleep X secs";
+command alarm(secs:int, action:str):void = CLKsetalarm 
 comment "execute action in X secs";
-command timers() : bat[str,str] = CMDtimers
+command timers() : bat[str,str] = CLKtimers
 comment "give a list of all active timers";
-command time() : int = CMDtime comment "time in millisecs";
-command epoch() : int = CMDepoch comment "current time as unix epoch";
-command ctime() : str = CMDctime comment "current time as a string";
+command usec() : lng = CLKusec
+comment "return cpu microseconds info";
+command time() : int = CLKtime comment "time in millisecs";
+command epoch() : int = CLKepoch comment "current time as unix epoch";
+command ctime() : str = CLKctime comment "current time as a string";
 command prelude():void= CLKprelude comment "Initialize alarm module";
 command epilogue():void= CLKepilogue comment "Finalize alarm module";
 
+prelude();
 
 @{
 @* Implementation
 @+ The Clock Interupt Generator
 A clock event generator, called @%timer@, has been added to the kernel.
-It accepts a message @%CLKalarm(sec, usec)@, which generates an alarm
+It accepts a message @%CLKsetalarm(sec, usec)@, which generates an alarm
 after the time indicated.
 The timer maintains a small stack of timing events sorted in priority of 
 firing.
@@ -170,11 +173,16 @@ str CLKepilogue(){
 	return MAL_SUCCEED;
 }
 
+str CLKusec(int *ret){
+        *ret= GDKusec();
+        return MAL_SUCCEED;
+}
 
-str CMDsleep(int *res,int *secs){
+
+str CLKsleep(int *res,int *secs){
 
         if (*secs < 0) {
-                return throwMessage("CMDsleep: negative delay");
+                return throwMessage("CLKsleep: negative delay");
         } else {
 		sleep(*secs);
 /*
@@ -188,21 +196,21 @@ str CMDsleep(int *res,int *secs){
         return MAL_SUCCEED;
 }
  
-str CMDalarm(int *res, int *secs, str *action){
+str CLKsetalarm(int *res, int *secs, str *action){
         if (*secs < 0) {
-                return throwMessage("CMDalarm: negative delay");
+                return throwMessage("CLKsetalarm: negative delay");
         } else {
                 (void) CLKalarm(*secs+time(0), *action);
         }
         return MAL_SUCCEED;
 }
 @-
-Problem with CMDtimers is that they use static buffers that
+Problem with CLKtimers is that they use static buffers that
 may be overwritten under parallel processing.
 Therefore, the code below is dangerous (!) and the re-entrant code
 should be used. 
 @c
-str CMDtimers(int *res) {
+str CLKtimers(int *res) {
 	char buf[27];
 	int k;
 	BAT *retval = BATnew(TYPE_str, TYPE_str, timerTop);
@@ -225,7 +233,7 @@ str CMDtimers(int *res) {
 	return MAL_SUCCEED;
 }
 
-str CMDctime(str *retval){
+str CLKctime(str *retval){
 	time_t t = time(0);
 #ifdef HAVE_CTIME_R3
 	char buf[128];
@@ -241,12 +249,12 @@ str CMDctime(str *retval){
 	return MAL_SUCCEED;
 }
 
-str CMDepoch(int *res) {
+str CLKepoch(int *res) {
 	*res = time(0);
 	return MAL_SUCCEED;
 }
 
-str CMDtime(int *res){
+str CLKtime(int *res){
 	*res = GDKms();
 	return MAL_SUCCEED;
 }

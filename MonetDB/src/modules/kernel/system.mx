@@ -3,7 +3,7 @@
 @a M.L. Kersten, P. Boncz, N.Nes
 @v 2.0
 @* Introduction
-This document introduces a series of pseudo bats that provide access
+This document introduces a series of bats that provide access
 to information stored within the Monet Version 5 internal data structures.
 In all cases, the pseudo BAT operation returns a transient BAT that
 should be garbage collected after being used.
@@ -21,79 +21,6 @@ The system primitives have been taken over from version 4.
 @mal
 module system;
 
-@- Performance Statistics
-The BATs created below are rather expensive views over the
-GDK kernel. They have been retained for backward compatibility.
-
-@mal
-command view_gdk_cpu() : bat[str,int] = VIEWgdk_cpu
-	comment "Global cpu usage info";
-command usec() : lng = SYSusec
-	comment "return cpu microseconds info";
-command view_gdk_memory(): bat[str,int] = VIEWgdk_mem
-	comment "Global memory usage info";
-command view_gdk_io(): bat[str,int] = VIEWgdk_io
-	comment "Global IO activityinfo";
-command view_gdk_bbp(): bat[str,int] = VIEWgdk_bbp
-	comment "Global BBP usage info";
-
-command mem_printmap() : void = print_mem_map
-        comment "print a map of all memory that is in use";
-command mem_cursize() : lng = get_mem_cursize
- 	comment "the amount of physical swapspace in KB that is currently in use";
-command mem_maxsize() : lng = get_mem_maxsize
- 	comment "the maximum usable amount of physical swapspace in KB (target only)";
-command mem_maxsize(v:lng) : void = set_mem_maxsize
- 	comment "set the maximum usable amount of physical swapspace in KB";
-command vm_cursize() : lng = get_vm_cursize
- 	comment "the amount of logical VM space in KB that is currently in use";
-command vm_maxsize() : lng = get_vm_maxsize
- 	comment "the maximum usable amount of logical VM space in KB (target only)";
-command vm_maxsize(v:lng) : void = set_vm_maxsize
- 	comment "set the maximum usable amount of physical swapspace in KB";
-command mem_usage(minsize:lng) : bat[str,lng] = get_mem_usage
-	comment "get a split-up of how much memory blocks are in use.";
-command vm_usage(minsize:lng) : bat[str,lng] = get_vm_usage
-	comment "get a split-up of how much virtual memory blocks are in use.";
-
-@- BAT Buffer Pool Status
-@mal
-command view_bbp_name(): bat[int,str] = VIEWbbp_name
-	comment "Pseudo bat to map a BAT id into its name";
-command view_bbp_refcnt(): bat[int,int] = VIEWbbp_refcnt
-	comment "Pseudo bat to map a BAT id into its reference count";
-command view_bbp_location(): bat[int,str] = VIEWbbp_location
-	comment "Pseudo bat to map a BAT id into its disk location";
-command view_bbp_heat(): bat[int,int] = VIEWbbp_heat
-	comment "Pseudo bat to map a BAT id into its name";
-command view_bbp_dirty(): bat[int,str] = VIEWbbp_dirty
-	comment "Pseudo bat to map a BAT id into its dirty/diffs/clean status";
-command view_bbp_status(): bat[int,str] = VIEWbbp_status
-	comment "Pseudo bat to map a BAT id into its disk/load status";
-command view_bbp_kind(): bat[int,str] = VIEWbbp_kind
-	comment "Pseudo bat to map a BAT id into its type";
-
-command check_bbp_size() : lng = check_bbp_size
-	comment "Walk the BBP directories, delete leftovers and return total size";
-
-@- GDK status 
-@mal
-command view_gdk_env( ): bat[str,str] = VIEWgdk_env
-	comment "Pseudo bat to map thread to name";
-command view_gdk_thread( ): bat[int,str] = VIEWgdk_thread
-	comment "Pseudo bat to map thread to name";
-
-@- Monet Client Data
-The client information can be used to inspect the status of
-multiple interacting clients.
-@mal
-command view_client_name( ): bat[int,str] = VIEWclient_name
-	comment "Pseudo bat to map client identifiers to its name";
-command view_client_login( ): bat[int,str] = VIEWclient_login
-	comment "Pseudo bat to map client identifiers to their login time";
-command view_client_info( ): bat[int,str] = VIEWclient_info
-	comment "Pseudo bat with client attributes ";
-
 @-
 The properties of the Client record can be obtained for inspection.
 Only the listing property can be dynamically set.
@@ -104,50 +31,30 @@ command set_client_listing(b:bit):void= SYSsetListing
 	comment "Turn on/off echoing of MAL instructions";
 command quit():void= SYSquit
 	comment "Terminate the server"'
+command exit():void= SYSquit
+	comment "Terminate the server"'
 
 command kill(n:int):void =SYSkill
 	comment "remove a client instance";
-@- Monet modules and scopes
-Each module forms a separately named scope. Scopes visible to a user
-are relevant for resolving function names. 
-More information about the database contents will be collected
-in a new module, called dictionary, later on.
 
-@mal
-command view_scope_names() : bat[int,str] = VIEWscope_names
-	comment "Pseudo bat with all currently visible scopes" ;
-command view_scope_sig(nme:str) : bat[int,str] = VIEWscope_sig
-	comment "Pseudo bat with signatures associated with a scope";
+command check_bbp_size() : lng = check_bbp_size
+        comment "Walk the BBP directories, delete leftovers and return total size";
 
-command view_fcn_stmt(mod:str,fcn:str):bat[int,str] = VIEWfcn_stmt
-comment "Returns a string representation of all instructions of a function";
+command mem_printmap() : void = print_mem_map
+        comment "print a map of all memory that is in use";
 
-command view_fcn_sig(mod:str,fcn:str):str = VIEWfcn_sig
-comment "Returns the function signature function";
-
-command view_fcn_type(mod:str,fcn:str):str = VIEWfcn_type
-comment "Provides the return type of a particular function";
-
-command view_atom_names():bat[int,str] = VIEWatom_names
-comment "Provides a BAT with the atom names";
-
-@- MAL performance profileing
-If Monet is compiled with the profiler option, then it is
-possible to analyse the timeings obtained in the context of
-a database query itself.
-For each instruction executed, the profiler keeps track of the number of calls
-and the total time spent in microseconds.
-These statistics are accessed on a <module,function> basis.
-
-@mal
-command view_prof_cnt(mod:str,fcn:str):bat[int,int] = VIEWprof_cnt
-comment "Returns the counts measured while profileing the MAL interpreter";
-
-command view_prof_time(mod:str,fcn:str):bat[int,int] = VIEWprof_time
-comment "Returns the total microseconds measured while profileing 
-the MAL interpreter";
-
-
+command mem_cursize() : lng = SYSgetmem_cursize
+ 	comment "the amount of physical swapspace in KB that is currently in use";
+command mem_maxsize() : lng = SYSgetmem_maxsize
+ 	comment "the maximum usable amount of physical swapspace in KB (target only)";
+command mem_maxsize(v:lng) : void = set_mem_maxsize
+ 	comment "set the maximum usable amount of physical swapspace in KB";
+command vm_cursize() : lng = SYSgetvm_cursize
+ 	comment "the amount of logical VM space in KB that is currently in use";
+command vm_maxsize() : lng = SYSgetvm_maxsize
+ 	comment "the maximum usable amount of logical VM space in KB (target only)";
+command vm_maxsize(v:lng) : void = set_vm_maxsize
+ 	comment "set the maximum usable amount of physical swapspace in KB";
 @- Printing 
 The routines that inspect the runtime setting are moved out of this area.
 
@@ -162,7 +69,6 @@ command printf(format:str,val:flt):int = SYSprint_formatted_flt;
 command printf(format:str,val:dbl):int = SYSprint_formatted_dbl;
 command printf(val:str):int = SYSprint_str;
 command printf(format:str,val:str):int = SYSprint_formatted_str;
-
 @{
 @* Implementation Code
 @h
@@ -208,304 +114,6 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
 # include <sys/times.h>
 #endif
  
-#define PARAM(x)        (argv+x)
-#define RETVAL          (argv)
-
-static char* local_itoa(int i){
-        static char buf[32];
-        sprintf(buf,"%d",i);
-        return buf;
-}
-
-@+ BBP status
-The BAT buffer pool datastructures describe the memory resident information
-on the whereabouts of the BATs. The three predominant tables are made accessible
-for inspection. 
-
-The most interesting sysbat for end-users is the BID-> NAME mapping,
-because it provides access to the system guaranteed persistent BAT identifier.
-@= Pseudo
-	if (BBPindex("VIEW@1_@2") <= 0)
-        	BATname(b, "@2");
-        BATroles(b,"@1","@2");
-	BATmode(b,TRANSIENT);
-	BATfakeCommit(b);
-	*ret = b->batCacheid;
-	
-@c
-str VIEWbbp_name( int *ret){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_str,BBPsize);
-        if (b == 0) return throwMessage("VIEWbbp_name:GDKerror");
-
-	BBPlock("VIEWbbp_name");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-        	if (BBP_logical(i)) { 
-			BUNins(b, &i, BBP_logical(i));
-        		if (BBP_logical(-i)) {
-				int j = -i;
-				BUNins(b, &j, BBP_logical(j));
-			}
-		}
-	}
-	BBPunlock("VIEWbbp_name");
-	@:Pseudo(bbp,name)@
-        return MAL_SUCCEED;
-}
-
-@-
-The BAT status is redundantly stored in VIEWbat_info.
-@c
-str VIEWbbp_location(int *ret){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_str,BBPsize);
-        if (b == 0) return throwMessage("VIEWbbp_location:GDKerror");
-
-	BBPlock("VIEWbbp_location");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-        	if (BBP_logical(i))
-                BUNins(b, &i, BBP_physical(i));
-	}
-	BBPunlock("VIEWbbp_location");
-	@:Pseudo(bbp,location)@
-        return MAL_SUCCEED;
-}
-
-
-#define monet_modulesilent (GDKdebug&4096)
-
-str SYSusec(int *ret){       
-	*ret= GDKusec();
-	return MAL_SUCCEED;
-}
-
-str VIEWbbp_heat(int *ret){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_int,BBPsize);
-        if (b == 0) return throwMessage("VIEWbbp_heat:GDKerror");
-
-	BBPlock("VIEWbbp_heat");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-            if (BBP_cache(i) && !monet_modulesilent) {
-		int heat = BBPheat(i);
-                BUNins(b, &i, &heat);
-	    } else if (BBP_logical(i)) { 
-		int zero = 0;
-                BUNins(b, &i, &zero);
-	    }
-	}
-	BBPunlock("VIEWbbp_heat");
-	@:Pseudo(bbp,heat)@
-        return MAL_SUCCEED;
-}
-
-@-
-The BAT dirty status: dirty => (mem != disk); diffs = not-committed
-@c
-str VIEWbbp_dirty(int *ret){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_str,BBPsize);
-        if (b == 0) return throwMessage("VIEWbbp_dirty:GDKerror");
-
-	BBPlock("VIEWbbp_dirty");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-        if (BBP_logical(i)){
-		BAT *bn = BBP_cache(i);
-                BUNins(b, &i, bn?
-				BATdirty(bn)?
-					"dirty":
-					DELTAdirty(bn)?
-						"diffs":
-						"clean":
-				(BBP_status(i)&BBPSWAPPED)?
-					"diffs": 
-					"clean");
-	}}
-	BBPunlock("VIEWbbp_dirty");
-	@:Pseudo(bbp,status)@
-        return MAL_SUCCEED;
-}
-
-@-
-The BAT status is redundantly stored in VIEWbat_info.
-@c
-str VIEWbbp_status(int *ret){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_str,BBPsize);
-        if (b == 0) return throwMessage("VIEWbbp_status:GDKerror");
-
-	BBPlock("VIEWbbp_status");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-        if (BBP_logical(i)){
-		char *loc = BBP_cache(i)?"load":"disk";
-                BUNins(b, &i,loc );
-	}}
-	BBPunlock("VIEWbbp_status");
-	@:Pseudo(bbp,status)@
-        return MAL_SUCCEED;
-}
-
-str VIEWbbp_kind(int *ret){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_str,BBPsize);
-        if (b == 0) return throwMessage("VIEWbbp_kind:GDKerror");
-
-	BBPlock("VIEWbbp_kind");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-	if (BBP_logical(i)) {
-	    char *mode = NULL;
-	    if ((BBP_status(i)&BBPDELETED) || !(BBP_status(i)&BBPPERSISTENT)) {
-		mode = "transient";
-	    } else {
-		mode = "persistent";
-	    }
-	    if (mode) BUNins(b, &i, mode);
-	}}
-	BBPunlock("VIEWbbp_kind");
-	@:Pseudo(bbp,kind)@
-        return MAL_SUCCEED;
-}
-
-str VIEWbbp_refcnt(int *ret){       
-	BAT	 *b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_int,BBPsize);
-        if (b == 0) return throwMessage("VIEWbbp_refcnt:GDKerror");
-
-	BBPlock("VIEWbbp_refcnt");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-	if (BBP_logical(i)) {
-		int refs = BBP_refs(i);
-		BUNins(b, &i, &refs);
-	}}
-	BBPunlock("VIEWbbp_refcnt");
-	@:Pseudo(bbp,group)@
-        return MAL_SUCCEED;
-}
-
-@+ GDK
-The old-fashioned BATdump command is replaced by the sys.
-@c
-str VIEWgdk_thread(int *ret){       
-	BAT*    b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_str,THREADS);
-        if (b == 0) return throwMessage("VIEWgdk_thread:GDKerror");
-
-        for(i=0; i < THREADS; i++)
-	if( GDKthreads[i].pid) {
-                BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
-	}
-	@:Pseudo(gdk,thread)@
-        return MAL_SUCCEED;
-}
-
-str VIEWgdk_env(int *ret){
-	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
-	char prefix[128];
-        if (b == 0) return throwMessage("VIEWgdk_env:GDKerror");
-	if( GDKdbfarmStr[0])
-		BUNins(b, "gdk_dbfarm", GDKdbfarmStr);
-	if( GDKdbnameStr[0])
-		BUNins(b, "gdk_dbname", GDKdbnameStr);
-	if( GDKdirStr[0])
-		BUNins(b, "gdk_dbdir", GDKdirStr);
-	if( GDKdistrStr[0])
-		BUNins(b, "gdk_distr", GDKdistrStr);
-        sprintf(prefix, "%dbit%s", sizeof(ptr)*8, GDKarchStr);
-	if(GDKversionStr[0])
-		BUNins(b, "gdk_version", GDKversionStr);
-	if( GDKmonetrcStr[0])
-		BUNins(b, "gdk_monetrc", GDKmonetrcStr); 
-	BUNins(b, "gdk_processid", local_itoa(getpid()));
-	@:Pseudo(gdk,env)@
-	return MAL_SUCCEED;
-}
-
-str check_bbp_size(lng *ret) {
-	*ret = BBPdiskscan(NULL);
-	return MAL_SUCCEED;
-}
-
-@+ Monet client data
-Portions of the client record can be directly obtained for
-backward compatibility. The routine client_info provides more
-detailed information.
-@c
-str VIEWclient_info(int *ret){       
-	Client c= getClient();
-	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
-        if (b == 0) return throwMessage("VIEWclient_info:GDKerror");
-
-	BUNins(b,"user", c->user);
-	BUNins(b,"password", (c->password?c->password:""));
-	BUNins(b,"permission", local_itoa(c->permission));
-	BUNins(b,"language", c->language);
-	BUNins(b,"timer", local_itoa(c->timer));
-	BUNins(b,"trace", local_itoa(c->itrace));
-	@:Pseudo(client,info)@
-	return GDK_FAIL;
-}
-str VIEWclient_name(int *ret){       
-	int i;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
-        if (b == 0) return throwMessage("VIEWclient_name:GDKerror");
-
-        for(i=0; i < MAL_MAXCLIENTS; i++)
-        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user) {
-                BUNins(b, &i, mal_clients[i].user);
-        }
-
-	@:Pseudo(client,name)@
-	return GDK_FAIL;
-}
-str VIEWclient_login(int *ret){       
-	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
-	int i;
-	char s[26];
-
-        if (b == 0) return throwMessage("VIEWclient_login:GDKerror");
-        for(i=0; i < MAL_MAXCLIENTS; i++)
-        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user) {
-                time_t logintime=(time_t)mal_clients[i].login;
-
-#ifdef CYGWIN32
-                localtime(&logintime);
-#else
-                struct tm localt;
-                localtime_r(&logintime,&localt);
-#endif
-
-#ifdef HAVE_CTIME_R3
-                asctime_r(&localt,s,26);
-#else
-#ifdef HAVE_CTIME_R
-                asctime_r(&localt,s);
-#else
-                strcpy(s, "no asctime in WIN32");
-#endif
-#endif
-                s[24]=0;
-                BUNins(b, &i, s);
-        }
-
-	@:Pseudo(client,login)@
-	return GDK_FAIL;
-}
 str SYSsetListing(int *ret, int *flag) {
 	Client c;
 	c= getClient();
@@ -531,211 +139,12 @@ str SYSquit(int *ret) {
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
 }
-@+ Symbol table 
-@c
-static char any_str[] = "any";
 
-str VIEWscope_names(int *ret){
-	Client c;
-	Scope s;
-	int i=0;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-
-        if (b == 0) return throwMessage("VIEWscope_names:GDKerror");
-	c= getClient();
-
-	for(s=c->nspace; s; s= s->outer,i++){
-		BUNins(b,&i,s->name);
-	}
-
-	@:Pseudo(scope,names)@
-	return MAL_SUCCEED;
-}
-str VIEWscope_sig(int *ret,str *nme)
-{	Client c;
-	Scope s;
-	Symbol t;
-	int i;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-
-        if (b == 0) return throwMessage("VIEWscope_sig:GDKerror");
-	c= getClient();
-	s= findScope(c->nspace, *nme);
-	for(i=0;s && i<MAXSCOPE;i++)
-	if( s->subscope[i]){
-		for(t= s->subscope[i];t;t=t->peer){
-		char buf[8194];
-		fcnDefinition(t->def, getSignature(t),buf);
-		BUNins(b,&i,buf);
-		}
-	}
-	@:Pseudo(scope,sig)@
-	return MAL_SUCCEED;
-}
-str VIEWfcn_stmt(int *ret, str *nme, str *fcn)
-{	
-	Symbol s;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if (b == 0) return throwMessage("VIEWfcn_stmt:GDKerror");
-	
-	s= findSymbol(*nme,*fcn);
-	if(s){
-		int i;
-		str ps;
-		for(i=0;i<s->def->stop;i++){
-			ps= instruction2str(s->def, getInstrPtr(s->def,i),0);
-			ps[strlen(ps)-1]=0; 
-			BUNins(b,&i,ps);
-			GDKfree(ps);
-		}
-
-	}
-	@:Pseudo(fcn,stmt)@
-	return MAL_SUCCEED;
-}
-str VIEWfcn_sig(int *ret, str *mod, str *fcn)
-{	str ps;
-	Symbol s;
-	int i=0;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
-        if (b == 0) return throwMessage("VIEWfcn_sig:GDKerror");
-
-	s= findSymbol(*mod,*fcn);
-	if(s){
-		ps= instruction2str(s->def, getSignature(s),0);
-		ps[strlen(ps)-1]=0; 
-		BUNins(b,&i,ps);
-		GDKfree(ps);
-	}
-
-	@:Pseudo(fcn,sig)@
-	return MAL_SUCCEED;
-}
-str VIEWfcn_type(int *ret, str *mod, str *fcn) 
-{
-	Symbol s;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if (b == 0) return throwMessage("VIEWfcn_type:GDKerror");
-	return throwMessage("VIEWfcn_type:not yet implemented");
-
-	s= findSymbol(*mod,*fcn);
-	if(s){
-	}
-	@:Pseudo(fcn,type)@
-	return MAL_SUCCEED;
-}
-
-str VIEWatom_names(int *ret)
-{
-	int i;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if (b == 0) return throwMessage("VIEWatom_names:GDKerror");
-
-	for(i=0;i<GDKatomcnt;i++)
-		BUNins(b,&i,ATOMname(i));
-
-	@:Pseudo(atom,name)@
-	return MAL_SUCCEED;
-}
-@- Performance
-To obtain a good impression of the Monet performance we need 
-timing information.  The most detailed information is best obtained 
-with the system profiler (gprof) or MAL profiler.
- 
-However, the direct approach is to enable the user to read the 
-timers maintained internally. 
-This is done with the CPU, IO, MEMORY, and BBP command which 
-displays the elapsed time in seconds, user- and system-cpu time in milliseconds
-since its last invocation and the amount of space in use.  The process 
-identifier is used to differentiate among the possible processes.
- 
-Note that in multi threaded mode the routine prints the elapsed
-time since the beginning of each process.
-@{
-@c
-str VIEWprof_cnt(int *ret, str *mod, str *fcn){
-	BAT *b;
-	Symbol *s;
-	*ret= 0;
-	return throwMessage("VIEWprof_cnt:not yet implemented");
-}
-str VIEWprof_time(int *ret, str *mod, str *fcn){
-	BAT *b;
-	Symbol *s;
-	*ret= 0;
-	return throwMessage("VIEWprof_time:not yet implemented");
-}
-static int clk = 0;
-static struct tms state;
-
-str VIEWgdk_cpu(int *ret) {
-	int     i;
-	struct tms newst;
-	BAT *b;
- 
- 
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if ( b == 0) return throwMessage("VIEWgdk_cpu:GDKerror");
-	if( clk == 0) {
-		clk= time(0);
-		times(&state);
-	}
-	times(&newst);
-	/* store counters, ignore errors */
-	i = time(0) - clk;
-	b = BUNins(b, "elapsed", &i);
-	i= newst.tms_utime *1000/HZ ;
-	b = BUNins(b, "user", &i);
-	i= (newst.tms_utime - state.tms_utime)*1000/HZ;
-	b = BUNins(b, "elapuser", &i);
-	i = newst.tms_stime *1000/HZ;
-	b = BUNins(b, "system", &i);
-	i = (newst.tms_stime - state.tms_stime)*1000/HZ;
-	b = BUNins(b, "elapsystem", &i);
-
-	state = newst; 
-	@:Pseudo(gdk,cpu)@
-	return MAL_SUCCEED;
-}
-@-
-Same observations as to VIEWgdk_cpu()
-@c
-static void *memincr=NULL;
-str VIEWgdk_mem(int *ret) {
-	struct mallinfo m;
-	BAT *b;
-	int i;
-	m = MT_mallinfo();
- 
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if ( b == 0) return throwMessage("GDKerror");
-
-	/* store counters, ignore errors */
-	if (memincr == NULL) {
-		memincr = GDK_mem_start;
-	}
-	i= ((char*) sbrk(0) -  (char*) memincr);
- 
-	memincr = (char*) sbrk(0);
-	b = BUNins(b, "memincr", &i);
-	b = BUNins(b, "arena", &m.arena);
-	b = BUNins(b, "ordblks", &m.ordblks);
-	b = BUNins(b, "smblks", &m.smblks);
-	b = BUNins(b, "hblkhd", &m.hblkhd);
-	b = BUNins(b, "hblks", &m.hblks);
-	b = BUNins(b, "usmblks", &m.usmblks);
-	b = BUNins(b, "fsmblks", &m.fsmblks);
-	b = BUNins(b, "uordblks", &m.uordblks);
-	b = BUNins(b, "fordblks", &m.fordblks);
-	@:Pseudo(gdk,mem)@
-	return MAL_SUCCEED;
-}
-
-str get_mem_cursize(lng *num) {
+str SYSgetmem_cursize(lng *num) {
 	*num = GDKmem_cursize();
 	return MAL_SUCCEED;
 }
-str get_mem_maxsize(lng *num) {
+str SYSgetmem_maxsize(lng *num) {
 	*num = GDKmem_maxsize();
 	return MAL_SUCCEED;
 }
@@ -743,11 +152,11 @@ str set_mem_maxsize(lng *num) {
 	GDK_mem_maxsize = *num;
 	return MAL_SUCCEED;
 }
-str get_vm_cursize(lng *num) {
+str SYSgetvm_cursize(lng *num) {
 	*num = GDKvm_cursize();
 	return MAL_SUCCEED;
 }
-str get_vm_maxsize(lng *num) {
+str SYSgetvm_maxsize(lng *num) {
 	*num = GDKvm_maxsize();
 	return MAL_SUCCEED;
 }
@@ -756,243 +165,9 @@ str set_vm_maxsize(lng *num) {
 	return MAL_SUCCEED;
 }
 
-@= heap
-sz = HEAP@1size(@2);
-if (sz > *minsize) {
-	sprintf(buf, "@3/%s", s); 
-	BUNins(bn, buf, &sz);
-} @3 += sz; tot += sz;
-@c
-
-str get_mem_usage(int *ret, lng *minsize) {
-	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, n=0, sz;
-	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
-	char buf[1024];
-	int i;
-
-	BBPlock("get_mem_usage");
-	for(i=1; i <BBPsize; i++) { 
-		BAT *b = BBP_cache(i);
-		str s = BBP_logical(i);
-		if (s == NULL) {
-			continue;
-		}
-		sz = 0;
-		if (BBP[i].cache)  sz += sizeof(BATstore);
-		if (BBP[i].nme[0]) n += strLen(BBP[i].nme[0]);
-		if (BBP[i].nme[1]) n += strLen(BBP[i].nme[1]);
-		if (BBP[i].path) n += strLen(BBP[i].path);
-		if (b) sz += sizeof(BAT); /* mirror */
-			
-		if (sz > *minsize) {
-			sprintf(buf, "desc/%s", s); 
-			BUNins(bn, buf, &sz);
-		} tot += (lng) sz;
-
-		if (b == NULL || VIEWparent(b)) {
-			continue;
-		}
-		@:heap(mem,b->batBuns,buns)@
-		@:heap(mem,b->hhash_heap,hhsh)@
-		@:heap(mem,b->thash_heap,thsh)@
-		@:heap(mem,b->hidx_heap,hind)@
-		@:heap(mem,b->tidx_heap,tind)@
-		@:heap(mem,&b->hheap,head)@
-		@:heap(mem,&b->theap,tail)@
-		@:heap(mem,&b->haccelerator,hacc)@
-		@:heap(mem,&b->taccelerator,tacc)@
-	} 
-	/* totals per category */
-	if (buns) BUNins(bn, "_tot/buns", &buns);
-	if (head) BUNins(bn, "_tot/head", &head);
-	if (tail) BUNins(bn, "_tot/tail", &tail);
-	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
-	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
-	if (hind) BUNins(bn, "_tot/hind", &hind);
-	if (tind) BUNins(bn, "_tot/tind", &tind);
-	if (hacc) BUNins(bn, "_tot/hacc", &hacc);
-	if (tacc) BUNins(bn, "_tot/tacc", &tacc);
-
-	/* special area 1: BBP rec */
-	sz = BBPlimit*sizeof(BBPrec) + n;
-	if (sz) BUNins(bn, "_tot/bbp", &sz);
-	tot += sz;
-
-/* special area 2: monet context records 
-	DEPRICATED
-	sz = monet_cntxtmax*sizeof(CntxtRec);
-	if (sz) BUNins(bn, "_tot/mil", &sz);
-*/
-	tot += sz;
-	if (tot) BUNins(bn, "_tot/found", &tot);
-	sz = GDKmem_heapsize();
-	if (sz) BUNins(bn, "_tot/sbrk", &sz);
-/*	compilation errors !
-	if (GDK_mem_cursize) BUNins(bn, "_tot/valloc", &GDK_mem_cursize);
-
-*/
-	sz = GDKmem_heapinuse();
-	if (sz) BUNins(bn, "_tot/malloc", &sz);
-	sz = sz + GDK_mem_cursize - tot;
-	if (sz) BUNins(bn, "_tot/malloc_unknown", &sz);
-	sz = GDKmem_cursize();
-	if (sz) BUNins(bn, "_tot/all", &sz);
-	BBPunlock("get_mem_usage");
-
-	*ret = bn->batCacheid;
-	return MAL_SUCCEED;
-}
-
-str get_vm_usage(int *ret, lng *minsize) {
-	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
-	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
-	char buf[1024];
-	int i;
-
-	BBPlock("get_vm_usage");
-	for(i=1; i <BBPsize; i++) {
-		BAT *b = BBP_cache(i);
-		str s = BBP_logical(i);
-		if (s == NULL || b == NULL || VIEWparent(b)) {
-			continue;
-		}
-		@:heap(vm,b->batBuns,buns)@
-		@:heap(vm,b->hhash_heap,hhsh)@
-		@:heap(vm,b->thash_heap,thsh)@
-		@:heap(vm,b->hidx_heap,hind)@
-		@:heap(vm,b->tidx_heap,tind)@
-		@:heap(vm,&b->hheap,head)@
-		@:heap(vm,&b->theap,tail)@
-		@:heap(vm,&b->haccelerator,hacc)@
-		@:heap(vm,&b->taccelerator,tacc)@
-	} 
-	/* totals per category */
-	if (buns) BUNins(bn, "_tot/buns", &buns);
-	if (head) BUNins(bn, "_tot/head", &head);
-	if (tail) BUNins(bn, "_tot/tail", &tail);
-	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
-	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
-	if (hind) BUNins(bn, "_tot/hind", &hind);
-	if (tind) BUNins(bn, "_tot/tind", &tind);
-	if (hacc) BUNins(bn, "_tot/hacc", &hacc);
-	if (tacc) BUNins(bn, "_tot/tacc", &tacc);
-
-	/* special area 1: BBP rec */
-	sz = BBPmaxsize*sizeof(BBPrec);
-	if (sz) BUNins(bn, "_tot/bbp", &sz);
-	tot += sz;
-
-	/* special area 2: monet context records  DEPRICATE
-	sz = monet_cntxtlim*sizeof(CntxtRec);
-	if (sz) BUNins(bn, "_tot/mil", &sz);
-	tot += sz;
-	if (tot) BUNins(bn, "_tot/found", &tot);
-	*/
-
-	/* look at sbkr() to determine how much we missed */
-	sz = GDKvm_cursize();
-	if (sz) BUNins(bn, "_tot/all", &sz);
-	sz -= tot;
-	tot = GDKvm_heapsize();
-	if (sz) BUNins(bn, "_tot/sbrk", &tot);
-	BBPunlock("get_vm_usage");
-
-	*ret = bn->batCacheid;
-	return MAL_SUCCEED;
-}
-
-@-
-Additional information on the process utilization is given by
-the io command. The following information is obtained.
- 
-@T
-\begin{tabular}{| l| l|}\hline
-maxrss     &the maximum resident set size utilized (in kilobytes).\\
-minflt     &the number of page faults serviced without any I/O\\
-	 &activity; here I/O activity is avoided by "reclaiming" a\\
- 
-	 &activity; here I/O activity is avoided by "reclaiming" a\\
-	 &page frame from the list of pages awaiting reallocation.\\
-majflt     &the number of page faults serviced that required I/O\\
-	 &activity.\\
-nswap      &the number of times a process was "swapped" out of main\\
-	 &memory\\
-inblock    &the number of times the file system had to perform input.\\
-oublock    &the number of times the file system had to perform output.\\
-nvcsw      &the number of times a context switch resulted due to a\\
-	 &process voluntarily giving up the processor before its\\
-	 &time slice was completed (usually to await availability of\\
-	 &a resource).\\
-nivcsw     &the number of times a context switch resulted due to a\\
-	 &higher priority process becoming runnable or because the\\
-	 &current process exceeded its time slice.\\
-\end{tabular}
-@
-The resource statistics are collected in a BAT. It can then
-be queried. A default listing is produced by the command @%usagecmd@.
-(which should be moved to Monet)
- 
-The BAT grows. It should be compacted.
-@c
-#ifdef HAVE_SYS_RESOURCE_H
-# include <sys/resource.h>
-#endif
- 
-str VIEWgdk_io(int *ret) {
-	struct rusage ru;
-	int i;
-	BAT *b;
- 
-	getrusage(RUSAGE_SELF, &ru);
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0) return throwMessage("VIEWgdk_io:GDKerror");
- 
-	/* store counters, ignore errors */
-	i = ru.ru_maxrss; BUNins(b, "maxrss", &i); 
-	i = ru.ru_minflt; BUNins(b, "minflt", &i);
-	i = ru.ru_majflt; BUNins(b, "majflt", &i);
-	i = ru.ru_nswap; BUNins(b, "nswap", &i);
-	i = ru.ru_inblock; BUNins(b, "inblock", &i);
-	i = ru.ru_oublock; BUNins(b, "oublock", &i);
-	i = ru.ru_nvcsw; BUNins(b, "nvcsw", &i);
-	i = ru.ru_nivcsw; BUNins(b, "ninvcsw", &i);
-
-	@:Pseudo(gdk,io)@
-	return MAL_SUCCEED;
-}
-
-str VIEWgdk_bbp(int *ret) {
-	int 	pbat = 0;
-	int	pdisk = 0;
-	int	pheat = 0; 
-	int	i,tmp=0,per=0; 
-	BAT	*b;
-
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0) return throwMessage("VIEWgdk_bbp:GDKerror");
-
-	for (i = 1; i < BBPsize; i++) {
-		if (BBP_logical(i)) {
-			pbat++; 
-			if (BBP_cache(i)) {
-				pheat += BBPheat(i); 
-				if (BBP_cache(i)->batPersistence == PERSISTENT)
-					per++;
-				else tmp++;
-			} else {
-				pdisk++; 
-			}
-		}
-	}
-	b = BUNins(b, "bats", &pbat);
-	b = BUNins(b, "tmpbats", &tmp);
-	b = BUNins(b, "perbats", &per);
-	b = BUNins(b, "ondisk", &pdisk);
-	b = BUNins(b, "todisk", &BBPout);
-	b = BUNins(b, "fromdisk", &BBPin);
-
-	@:Pseudo(gdk,bbp)@
-	return MAL_SUCCEED;
+str check_bbp_size(lng *ret) {
+        *ret = BBPdiskscan(NULL);
+        return MAL_SUCCEED;
 }
 
 @-
