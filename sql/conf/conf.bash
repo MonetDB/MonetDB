@@ -42,7 +42,7 @@ if [ ! -x ${MONET_PREFIX}/bin/monet-config ] ; then
 fi
 
 
-if [ ! -x bootstrap ] ; then
+if [ ! -f configure.ag  -a  ! -x configure ] ; then
 	echo ''
 	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out sql source tree.'
 	echo ''
@@ -232,7 +232,8 @@ if [ ! -x bootstrap ] ; then
 
 	# the following is still needed for SQL
 	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
-	modpath="${SQL_PREFIX}/lib/sql"
+	package="`egrep -h '^(AM_INIT_AUTOMAKE|PACKAGE).".*"' configure* | head -1 | perl -pe 's/^(AM_INIT_AUTOMAKE|PACKAGE)."(.*)".*$/$2/'`"
+	modpath="${SQL_PREFIX}/lib/$package"
 	libpath="${SQL_PREFIX}/lib:${modpath}:${libpath}"
 
 	# remove trailing ':'
