@@ -141,7 +141,7 @@ extern int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a);
 
 #endif
 @c
-#include "bulk_io.h"
+#include "ascii_io.h"
 
 #include <string.h>
 #include <ctype.h>

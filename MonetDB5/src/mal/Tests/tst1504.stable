@@ -16,12 +16,12 @@
 #
 function Admin.main():int; #0  (main:int)
     x := bbp.new(oid,chr); #1 CMDBATnew (x:bat[oid,chr])<-(oid:oid)(chr:chr)
-    de_a := bat.insert(x,1@0,'a'); #2 CMDinsert_bun (de_a:bat[oid,chr])<-(x:bat[oid,chr])($5:oid)($6:chr)
-    ee_a := bat.insert(x,2@0,'a'); #3 CMDinsert_bun (ee_a:bat[oid,chr])<-(x:bat[oid,chr])($8:oid)($6:chr)
+    de_a := bat.insert(x,1@0,'a'); #2 CMDinsert_bun (de_a:void)<-(x:bat[oid,chr])($5:oid)($6:chr)
+    ee_a := bat.insert(x,2@0,'a'); #3 CMDinsert_bun (ee_a:void)<-(x:bat[oid,chr])($8:oid)($6:chr)
     y := bbp.new(chr,oid); #4 CMDBATnew (y:bat[chr,oid])<-(chr:chr)(oid:oid)
     xr := bat.reverse(x); #5 CMDreverse (xr:bat[chr,oid])<-(x:bat[oid,chr])
     io.print(xr); #6 CMDprint_val ($11:int)<-(xr:bat[chr,oid])
-    bat.insert(y,xr); #7 CMDinsert_bat ($12:bat[chr,oid])<-(y:bat[chr,oid])(xr:bat[chr,oid])
+    bat.insert(y,xr); #7 CMDinsert_bat ($12:void)<-(y:bat[chr,oid])(xr:bat[chr,oid])
     io.print("result?"); #8 CMDprint_val ($13:int)<-($14:str)
     io.print(y); #9 CMDprint_val ($15:int)<-(y:bat[chr,oid])
 end main; #10  

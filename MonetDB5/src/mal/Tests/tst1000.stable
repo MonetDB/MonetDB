@@ -16,7 +16,7 @@
 #
 function Admin.main():int; #0  (main:int)
     b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,2); #2 CMDinsert_bun ($3:bat[int,int])<-(b:bat[int,int])($4:int)($5:int)
+    bat.insert(b,1,2); #2 CMDinsert_bun ($3:void)<-(b:bat[int,int])($4:int)($5:int)
     bat.setName(b,"mybat"); #3 CMDsetName ($6:bat[int,int])<-(b:bat[int,int])($7:str)
     c := bbp.bind("mybat"); #4 CMDbbpbind (c:bat[any,any])<-($7:str)
     io.print(c); #5 CMDprint_val ($9:int)<-(c:bat[any,any])

@@ -104,18 +104,18 @@ end main; #7
 #---------------------------------------------------------------------------------------------------------------------------------#
 # bbp	| tmp_8			| htype	| ttype		| count	| heat	| dirty		| status	| kind		| refcnt  #
 #---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  30,	  52,	  "dirty",	  "dirty",	  "transient",	  4	  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  685,	  52,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  52,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  52,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 1,	  "monet_environment",	  "str",  "str",	  30,	  151,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 2,	  "monet_unicode_case",	  "int",  "int",	  685,	  152,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 4,	  "simplemind",		  "int",  "int",	  0,	  38,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ "Search directory by name" ]
 #-------------------------#
-# BAT:	  tmp_22	  #
+# BAT:	  tmp_21	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 4,	  "simplemind"	  ]
 #-----------------------------------------------------------------------------------------------------------------#
-# tmp_22| tmp_19	| htype	| ttype	| count	| heat	| dirty		| status	| kind		| refcnt  #
+# tmp_21| tmp_20	| htype	| ttype	| count	| heat	| dirty		| status	| kind		| refcnt  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  53,	  "dirty",	  "dirty",	  "transient",	  5	  ]
+[ 4,	  "simplemind",	  "int",  "int",  0,	  194,	  "dirty",	  "dirty",	  "transient",	  5	  ]
 >

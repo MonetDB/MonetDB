@@ -117,14 +117,14 @@ barrier sj_a := true; #6  (sj_a:bit)<-($11:bit) jump 14
     uj_a := i; #8  (uj_a:lng)<-(i:lng)
     vj_a := calc.>=(uj_a,0); #9 CALCcompGElngint (vj_a:bit)<-(uj_a:lng)($15:int)
 barrier tj_a := vj_a; #10  (tj_a:bit)<-(vj_a:bit) jump 13
-    xj_a := bat.insert(int_1M,nil,i); #11 CMDinsert_bun (xj_a:bat[void,lng])<-(int_1M:bat[void,lng])($18:void)(i:lng)
+    xj_a := bat.insert(int_1M,nil,i); #11 CMDinsert_bun (xj_a:void)<-(int_1M:bat[void,lng])($18:void)(i:lng)
     redo sj_a; #12  (sj_a:bit) jump 6
 exit tj_a; #13  (tj_a:bit)
 exit sj_a; #14  (sj_a:bit)
     t := alarm.time(); #15 CLKtime (t:int)
     ug_a := bat.reverse(int_1M); #16 CMDreverse (ug_a:bat[lng,void])<-(int_1M:bat[void,lng])
     vg_a := algebra.join(int_1M,ug_a); #17 CMDjoin (vg_a:bat[void,void])<-(int_1M:bat[void,lng])(ug_a:bat[lng,void])
-    wg_a := algebra.count(vg_a); #18 CMDcount (wg_a:int)<-(vg_a:bat[void,void])
+    wg_a := algebra.count(vg_a); #18 CMDcount_bat (wg_a:int)<-(vg_a:bat[void,void])
     xg_a := system.printf("count %d = ",wg_a); #19 SYSprint_formatted_int (xg_a:int)<-($24:str)(wg_a:int)
     x := alarm.time(); #20 CLKtime (x:int)
     yg_a := calc.-(x,t); #21 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
@@ -132,7 +132,7 @@ exit sj_a; #14  (sj_a:bit)
     t := alarm.time(); #23 CLKtime (t:int)
     ug_a := bat.reverse(int_1M); #24 CMDreverse (ug_a:bat[lng,void])<-(int_1M:bat[void,lng])
     vg_a := algebra.join(int_1M,ug_a); #25 CMDjoin (vg_a:bat[void,void])<-(int_1M:bat[void,lng])(ug_a:bat[lng,void])
-    wg_a := algebra.count(vg_a); #26 CMDcount (wg_a:int)<-(vg_a:bat[void,void])
+    wg_a := algebra.count(vg_a); #26 CMDcount_bat (wg_a:int)<-(vg_a:bat[void,void])
     xg_a := system.printf("count %d = ",wg_a); #27 SYSprint_formatted_int (xg_a:int)<-($24:str)(wg_a:int)
     x := alarm.time(); #28 CLKtime (x:int)
     yg_a := calc.-(x,t); #29 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
@@ -140,7 +140,7 @@ exit sj_a; #14  (sj_a:bit)
     t := alarm.time(); #31 CLKtime (t:int)
     ug_a := bat.reverse(int_1M); #32 CMDreverse (ug_a:bat[lng,void])<-(int_1M:bat[void,lng])
     vg_a := algebra.join(int_1M,ug_a); #33 CMDjoin (vg_a:bat[void,void])<-(int_1M:bat[void,lng])(ug_a:bat[lng,void])
-    wg_a := algebra.count(vg_a); #34 CMDcount (wg_a:int)<-(vg_a:bat[void,void])
+    wg_a := algebra.count(vg_a); #34 CMDcount_bat (wg_a:int)<-(vg_a:bat[void,void])
     xg_a := system.printf("count %d = ",wg_a); #35 SYSprint_formatted_int (xg_a:int)<-($24:str)(wg_a:int)
     x := alarm.time(); #36 CLKtime (x:int)
     yg_a := calc.-(x,t); #37 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
@@ -148,7 +148,7 @@ exit sj_a; #14  (sj_a:bit)
     t := alarm.time(); #39 CLKtime (t:int)
     ug_a := bat.reverse(int_1M); #40 CMDreverse (ug_a:bat[lng,void])<-(int_1M:bat[void,lng])
     vg_a := algebra.join(int_1M,ug_a); #41 CMDjoin (vg_a:bat[void,void])<-(int_1M:bat[void,lng])(ug_a:bat[lng,void])
-    wg_a := algebra.count(vg_a); #42 CMDcount (wg_a:int)<-(vg_a:bat[void,void])
+    wg_a := algebra.count(vg_a); #42 CMDcount_bat (wg_a:int)<-(vg_a:bat[void,void])
     xg_a := system.printf("count %d = ",wg_a); #43 SYSprint_formatted_int (xg_a:int)<-($24:str)(wg_a:int)
     x := alarm.time(); #44 CLKtime (x:int)
     yg_a := calc.-(x,t); #45 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
@@ -162,14 +162,14 @@ barrier sj_b := true; #51  (sj_b:bit)<-($11:bit) jump 59
     uj_b := i; #53  (uj_b:lng)<-(i:lng)
     vj_b := calc.>=(uj_b,0); #54 CALCcompGElngint (vj_b:bit)<-(uj_b:lng)($15:int)
 barrier tj_b := vj_b; #55  (tj_b:bit)<-(vj_b:bit) jump 58
-    xj_b := bat.insert(M2,i,i); #56 CMDinsert_bun (xj_b:bat[lng,lng])<-(M2:bat[lng,lng])(i:lng)(i:lng)
+    xj_b := bat.insert(M2,i,i); #56 CMDinsert_bun (xj_b:void)<-(M2:bat[lng,lng])(i:lng)(i:lng)
     redo sj_b; #57  (sj_b:bit) jump 51
 exit tj_b; #58  (tj_b:bit)
 exit sj_b; #59  (sj_b:bit)
     t := alarm.time(); #60 CLKtime (t:int)
     ug_b := bat.reverse(M2); #61 CMDreverse (ug_b:bat[lng,lng])<-(M2:bat[lng,lng])
     vg_b := algebra.join(M2,ug_b); #62 CMDjoin (vg_b:bat[lng,lng])<-(M2:bat[lng,lng])(ug_b:bat[lng,lng])
-    wg_b := algebra.count(vg_b); #63 CMDcount (wg_b:int)<-(vg_b:bat[lng,lng])
+    wg_b := algebra.count(vg_b); #63 CMDcount_bat (wg_b:int)<-(vg_b:bat[lng,lng])
     xg_b := system.printf("count %d = ",wg_b); #64 SYSprint_formatted_int (xg_b:int)<-($24:str)(wg_b:int)
     x := alarm.time(); #65 CLKtime (x:int)
     yg_b := calc.-(x,t); #66 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
@@ -177,7 +177,7 @@ exit sj_b; #59  (sj_b:bit)
     t := alarm.time(); #68 CLKtime (t:int)
     ug_b := bat.reverse(M2); #69 CMDreverse (ug_b:bat[lng,lng])<-(M2:bat[lng,lng])
     vg_b := algebra.join(M2,ug_b); #70 CMDjoin (vg_b:bat[lng,lng])<-(M2:bat[lng,lng])(ug_b:bat[lng,lng])
-    wg_b := algebra.count(vg_b); #71 CMDcount (wg_b:int)<-(vg_b:bat[lng,lng])
+    wg_b := algebra.count(vg_b); #71 CMDcount_bat (wg_b:int)<-(vg_b:bat[lng,lng])
     xg_b := system.printf("count %d = ",wg_b); #72 SYSprint_formatted_int (xg_b:int)<-($24:str)(wg_b:int)
     x := alarm.time(); #73 CLKtime (x:int)
     yg_b := calc.-(x,t); #74 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
@@ -185,7 +185,7 @@ exit sj_b; #59  (sj_b:bit)
     t := alarm.time(); #76 CLKtime (t:int)
     ug_b := bat.reverse(M2); #77 CMDreverse (ug_b:bat[lng,lng])<-(M2:bat[lng,lng])
     vg_b := algebra.join(M2,ug_b); #78 CMDjoin (vg_b:bat[lng,lng])<-(M2:bat[lng,lng])(ug_b:bat[lng,lng])
-    wg_b := algebra.count(vg_b); #79 CMDcount (wg_b:int)<-(vg_b:bat[lng,lng])
+    wg_b := algebra.count(vg_b); #79 CMDcount_bat (wg_b:int)<-(vg_b:bat[lng,lng])
     xg_b := system.printf("count %d = ",wg_b); #80 SYSprint_formatted_int (xg_b:int)<-($24:str)(wg_b:int)
     x := alarm.time(); #81 CLKtime (x:int)
     yg_b := calc.-(x,t); #82 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
@@ -193,7 +193,7 @@ exit sj_b; #59  (sj_b:bit)
     t := alarm.time(); #84 CLKtime (t:int)
     ug_b := bat.reverse(M2); #85 CMDreverse (ug_b:bat[lng,lng])<-(M2:bat[lng,lng])
     vg_b := algebra.join(M2,ug_b); #86 CMDjoin (vg_b:bat[lng,lng])<-(M2:bat[lng,lng])(ug_b:bat[lng,lng])
-    wg_b := algebra.count(vg_b); #87 CMDcount (wg_b:int)<-(vg_b:bat[lng,lng])
+    wg_b := algebra.count(vg_b); #87 CMDcount_bat (wg_b:int)<-(vg_b:bat[lng,lng])
     xg_b := system.printf("count %d = ",wg_b); #88 SYSprint_formatted_int (xg_b:int)<-($24:str)(wg_b:int)
     x := alarm.time(); #89 CLKtime (x:int)
     yg_b := calc.-(x,t); #90 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
@@ -286,10 +286,10 @@ end main; #94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 382 ms
-count 1000000 = 289 ms
-count 1000000 = 290 ms
-count 1000000 = 289 ms
+count 1000000 = 416 ms
+count 1000000 = 322 ms
+count 1000000 = 322 ms
+count 1000000 = 323 ms
 #-------------------------------------------------#
 # BAT:				  tmp_6		  #
 # (str)				  (str)		  #
@@ -310,9 +310,9 @@ count 1000000 = 289 ms
 [ "void_cnt",			  "0"		  ]
 [ "hsorted",			  "65"		  ]
 [ "hident",			  "h"		  ]
-[ "hdense",			  "0"		  ]
-[ "hseqbase",			  "nil"		  ]
-[ "hkey",			  "0"		  ]
+[ "hdense",			  "1"		  ]
+[ "hseqbase",			  "0@0"		  ]
+[ "hkey",			  "1"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
 [ "halign",			  "1000124"	  ]
@@ -333,11 +333,11 @@ count 1000000 = 289 ms
 [ "batStamp",			  "33"		  ]
 [ "curStamp",			  "34"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
-[ "batDirtydesc",		  "clean"	  ]
+[ "batDirtydesc",		  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "8000008"	  ]
-[ "batBuns.size",		  "8400024"	  ]
-[ "batBuns.maxsize",		  "8466432"	  ]
+[ "batBuns.size",		  "8421072"	  ]
+[ "batBuns.maxsize",		  "8486912"	  ]
 [ "batBuns.storage",		  "anonymous vm"  ]
 [ "batBuns.filename",		  "no file"	  ]
 [ "batBuns.offset",		  "0"		  ]
@@ -375,10 +375,10 @@ count 1000000 = 289 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 325 ms
-count 1000000 = 218 ms
-count 1000000 = 220 ms
-count 1000000 = 218 ms
+count 1000000 = 445 ms
+count 1000000 = 332 ms
+count 1000000 = 336 ms
+count 1000000 = 334 ms
 #-------------------------------------------------#
 # BAT:				  tmp_8		  #
 # (str)				  (str)		  #
@@ -401,11 +401,11 @@ count 1000000 = 218 ms
 [ "hident",			  "h"		  ]
 [ "hdense",			  "0"		  ]
 [ "hseqbase",			  "nil"		  ]
-[ "hkey",			  "0"		  ]
+[ "hkey",			  "1"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000184"	  ]
-[ "halignflushed",		  "1000184"	  ]
+[ "halign",			  "1000190"	  ]
+[ "halignflushed",		  "1000190"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -413,20 +413,20 @@ count 1000000 = 218 ms
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "8"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000185"	  ]
-[ "talignflushed",		  "1000185"	  ]
+[ "talign",			  "1000191"	  ]
+[ "talignflushed",		  "1000191"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1000001"	  ]
-[ "batStamp",			  "63"		  ]
-[ "curStamp",			  "64"		  ]
+[ "batStamp",			  "66"		  ]
+[ "curStamp",			  "68"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
-[ "batDirtydesc",		  "clean"	  ]
+[ "batDirtydesc",		  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "16000016"	  ]
-[ "batBuns.size",		  "16800048"	  ]
-[ "batBuns.maxsize",		  "16867328"	  ]
+[ "batBuns.size",		  "16842144"	  ]
+[ "batBuns.maxsize",		  "16908288"	  ]
 [ "batBuns.storage",		  "anonymous vm"  ]
 [ "batBuns.filename",		  "no file"	  ]
 [ "batBuns.offset",		  "0"		  ]

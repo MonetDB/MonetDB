@@ -52,7 +52,7 @@ function Admin.main():int; #0  (main:int)
     l := Admin.three(1,2,3); #2  (l:int)<-($2:int)($4:int)($5:int)
     p := Admin.pow(1,2); #3  (p:int)<-($2:int)($4:int)
     b := bbp.new(int,int); #4 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,1); #5 CMDinsert_bun ($9:bat[int,int])<-(b:bat[int,int])($2:int)($2:int)
+    bat.insert(b,1,1); #5 CMDinsert_bun ($9:void)<-(b:bat[int,int])($2:int)($2:int)
     z := multiplex.script("three",b,2,3); #6 CMDmultiplexScript (z:bat[int,int])<-($11:str)(b:bat[int,int])($4:int)($5:int)
     z := multiplex.script("one",b); #7 CMDmultiplexScript (z:bat[int,int])<-($12:str)(b:bat[int,int])
     z := multiplex.script("pow",b,2); #8 CMDmultiplexScript (z:bat[int,int])<-($13:str)(b:bat[int,int])($4:int)
@@ -63,7 +63,7 @@ end main; #10
 [ 1 ]
 [ 1 ]
 #-----------------#
-# BAT:	  tmp_5	  #
+# BAT:	  tmp_7	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]

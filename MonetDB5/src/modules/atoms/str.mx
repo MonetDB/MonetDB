@@ -217,7 +217,7 @@ substitute("A.B.C",".","\\.",true).print;
     var v := " " + s;
     if (s.chrAt(3) != 't') printf("bug1 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
     if (s.chrAt(5) != 'j') printf("bug2 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
-    if (i < 256) {
+    if (i < 128) {
       if (isnil(s.chrAt(4))) {
         printf("char %d is nil\n", i);
       } else if (s.chrAt(4) != chr(i)) {
@@ -688,10 +688,10 @@ str STRChrAt( chr *res, str *arg1, int *at ){
 	str val= *arg1;
 	int v;
         STRWChrAt(&v, &val, at);
-        if (v < 0 || v > 255) {
-                *res = chr_nil;
+        if (0 <= v  || v <= 127) {
+                *res = (chr) (v);
         } else {
-                *res = (chr) (v & 0xFF);
+                *res = chr_nil;
         }
 
 	return MAL_SUCCEED;

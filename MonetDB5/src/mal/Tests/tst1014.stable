@@ -29,7 +29,7 @@ function Admin.test():any; #0  dynamic (test:any)
     io.print(x); #4 CMDprint_val ($5:int)<-(x:bat[int,str])
     io.print("test"); #5 CMDprint_val ($6:int)<-($2:str)
     b := bbp.new(int,int); #6 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,2); #7 CMDinsert_bun ($9:bat[int,int])<-(b:bat[int,int])($10:int)($11:int)
+    bat.insert(b,1,2); #7 CMDinsert_bun ($9:void)<-(b:bat[int,int])($10:int)($11:int)
     bbp.deposit("myfirstbat",b); #8 CMDbbpdeposit ($12:void)<-($13:str)(b:bat[int,int])
     c := bbp.take("myfirstbat"); #9 CMDbbptake (c:bat[any,any])<-($13:str)
     io.print(c); #10 CMDprint_val ($15:int)<-(c:bat[any,any])
@@ -64,5 +64,10 @@ bbp.take not yet fully implemented
 #-----------------#
 [ 1,	  2	  ]
 [ "continue" ]
-!ERROR: MALexception:bbp.take:failed to take 'myfirstbat' from box
+bbp.take not yet fully implemented
+#-----------------#
+# BAT:	  tmp_5	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  2	  ]
 >

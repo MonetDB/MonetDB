@@ -21,7 +21,7 @@
 #
 !ERROR: MALresolve:Admin.main[5]:type mismatch sht := lng
 !ERROR: MALresolve:Admin.main[6]:type mismatch lng := sht
-!ERROR: type conflict in statement .new[7]
+!ERROR: MALresolve:Admin.main[7]:type mismatch bat[str,int] := bat[int,int]
 !ERROR: 'new' undefined in Admin.main[7]
 !ERROR: MALresolve:Admin.main[8]:type mismatch flt := str
 function Admin.main():int; #0  (main:int)

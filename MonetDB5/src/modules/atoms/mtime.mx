@@ -826,16 +826,15 @@ typedef struct {
 The comparison implementations are relatively straightforward.
 @= compareImpl
 str CMD@3_@1(int *ret, @3 *v, @3 *w){
-/*
-        if( ISNIL(*v) || ISNIL(*w))
+        if( *v== @3_nil || *w== @3_nil)
                 *ret= bit_nil;
-        else    *ret = @3_compare(*v,*w) @2 0;
-*/
-        return throwMessage("mtime","@1(@3,@3) not yet implemented\n");
+        else    *ret = *v @2 *w;
+	return MAL_SUCCEED;
 }
 @= compareAll
 str CMD@1_isnil(int *ret, @1 *v){
-        return throwMessage("mtime","isnil(@1) not yet implemented\n");
+	*ret= *v == @1_nil;
+	return MAL_SUCCEED;
 }
         @:compareImpl(EQ,==,@1)@
         @:compareImpl(NEQ,!=,@1)@
@@ -846,7 +845,6 @@ str CMD@1_isnil(int *ret, @1 *v){
 @c
 	@:compareAll(date)@
 	@:compareAll(daytime)@
-	@:compareAll(timestamp)@
 
 
 @- rule
@@ -996,6 +994,8 @@ str CMDtime_prelude(){
 	str s2="first sunday from end of october@02:00";
 
 	date_prelude();
+	ts_nil.days= date_nil;
+	ts_nil.msecs= daytime_nil;
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
 	*ts_nilptr = ts_nil;
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
@@ -1197,7 +1197,7 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2)) 
 
-#define ts_isnil(t) ((t).days == -1 && (t).msecs == -1)
+#define ts_isnil(t) ((t).days == date_nil && (t).msecs == daytime_nil)
 #define tz_isnil(z) ((z).dst == (z).off2 == (z).dst_start == (z).dst_end == 1 \
 			&& (z).off1 == 12 )
 
@@ -2126,6 +2126,62 @@ str timestamp_inside_dst(bit *ret, timestamp *p, tzone* z) {
 		}
 	}
 	return MAL_SUCCEED;
+}
+int CMDtimestamp_isnil(bit *retval, timestamp *val) {
+	*retval = ts_isnil(*val);
+	return GDK_SUCCEED;
+}
+
+int CMDtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days == val2->days && val1->msecs == val2->msecs;
+	return GDK_SUCCEED;
+}
+
+int CMDtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days != val2->days || val1->msecs != val2->msecs;
+	return GDK_SUCCEED;
+}
+
+int CMDtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days < val2->days ||
+			  (val1->days == val2->days && val1->msecs < val2->msecs);
+	return GDK_SUCCEED;
+}
+
+int CMDtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days < val2->days ||
+			  (val1->days == val2->days && val1->msecs <= val2->msecs);
+	return GDK_SUCCEED;
+}
+
+int CMDtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days > val2->days ||
+			  (val1->days == val2->days && val1->msecs > val2->msecs);
+	return GDK_SUCCEED;
+}
+
+int CMDtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2) {
+	if (ts_isnil(*val1) || ts_isnil(*val2))
+		*retval = bit_nil;
+	else
+		*retval = val1->days > val2->days ||
+			  (val1->days == val2->days && val1->msecs >= val2->msecs);
+	return GDK_SUCCEED;
 }
 str rule_create_fromstr(rule *ret, str *s){
 	int len = 0;

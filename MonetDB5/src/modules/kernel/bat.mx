@@ -265,11 +265,11 @@ comment "Insert all BUNs of the second BAT into the first. This
 case should be removed, because it is a hack for SQL";
 
 command insert(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
-				: bat[any::1,any::2] = CMDinsert_bat
+				: void = CMDinsert_bat
 comment "Insert all BUNs of the second BAT into the first.";
 
 command insert(b:bat[any::1, any::2], h:any::1, t:any::2) 
-				: bat[any::1,any::2] = CMDinsert_bun
+				: void = CMDinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
 
 command replace(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
@@ -312,29 +312,29 @@ comment "inplace replace values on the given locations";
 
 #end SQL enhancement
 
-command destroy(b:bat):void = CMDdestroy_bat
+command destroy(s:str,immediately:bit):void = CMDdestroy_bat
 comment "Schedule bat for removal upon session commit";
 
 command delete(b:bat[any::1, any::2], h:any::1, t:any::2) 
-				: bat[any::1,any::2] = CMDdelete_bun
+				: void = CMDdelete_bun
 comment "Delete one specific BUN.";
 
 command delete(b:bat[any::1, any::2], h:any::1) 
-				: bat[any::1,any::2] = CMDdelete_head
+				: void = CMDdelete_head
 comment "Delete all BUNs with a certain head value.";
 
-command clear(b:bat[any::1, any::2]) : bat[any::1,any::2] = CMDdelete_all
+command clear(b:bat[any::1, any::2]) : void = CMDdelete_all
 comment "Delete all BUNs in a BAT.";
 
-command delete(b:bat[any::1, any::2]) : bat[any::1,any::2] = CMDdelete_all
+command delete(b:bat[any::1, any::2]) : void = CMDdelete_all
 comment "Delete all BUNs in a BAT.";
 
 command delete(b:bat[any::1, any::2], src:bat[any::1,any]) 
-				: bat[any::1,any::2] = CMDdelete_bat_head
+				: void = CMDdelete_bat_head
 comment "Delete from the first BAT all BUNs with a head value that is in the second.";
 
 command deleteBuns(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
-				: bat[any::1,any::2] = CMDdelete_bat_bun
+				: void = CMDdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN in the second.";
 
 command getAlpha(b:bat[any::1,any::2]):bat[any::1,any::2] = CMDgetAlpha
@@ -386,13 +386,6 @@ command setPersistent( b:BAT) : bit = CMDsetPersistent
 comment "Make the BAT persistent.  Returns boolean which indicates if the
 BAT administration has indeed changed.";
 
-command release(b:BAT[any,any] ) : lng = CMDrelease
-comment "Change the BAT mode to session and return a unique numerical ID 
-for the BAT";
-
-#command resurrect(id:str ) :bit = CMDresurrect
-#comment "Try to get back a session BAT from its ID.";
-
 command save(nme:bat[any,any]) : bit = CMDsave2;
 
 command save(nme:str) : bit = CMDsave
@@ -417,7 +410,7 @@ comment "Makes a BAT very hot for the BBP. The chance of being chosen
 for swapout is small, afterwards.  Returns the BAT itself.";
 
 command heat(name:str) :lng = CMDheat
-comment "Obtain the heat of BAT";
+comment "Return the current BBP heat (LRU stamp)";
 
 command setCold(nme:str) :void = CMDcold
 comment "Makes a BAT very cold for the BBP. The chance of being choses 
@@ -711,6 +704,7 @@ str CMDnewBat2(int *res, int *ht, int *tt, size_t *cap){
 	b = BATnew(*ht,*tt,*cap);
 	if( b){
 		*res= b->batCacheid;
+		BBPincref(b->batCacheid,TRUE);
 		return MAL_SUCCEED;
 	}
 	return  throwMessage("bat.new", "GDKerror");
@@ -796,8 +790,6 @@ str CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@); 
-	BBPfix(b->batCacheid);
-	*r = b->batCacheid;
 	return MAL_SUCCEED;
 } 
 
@@ -806,8 +798,6 @@ str CMDinsert_bat(int *r, int *bid, int *sid){
 	@:getBATdescriptor2(r,bid,b,insert)@
 	@:getBATdescriptor2(r,sid,s,insert)@
 	BATins(b,s);
-	BBPfix(b->batCacheid);
-	*r = b->batCacheid;
 	return MAL_SUCCEED;
 } 
 
@@ -832,14 +822,22 @@ str CMDreplace_bat(int *r, int *bid, int *sid){
 	return MAL_SUCCEED;
 } 
 
-str CMDdestroy_bat(int *r, int *bid) {
-	BAT *b;
-	@:getBATdescriptor2(r,bid,b,delete)@
-	BATpropcheck(b);
-	BATpropcheck(BATmirror(b));
-	BATmode(b, TRANSIENT);
-	if( BATdestroy(b))
-		return throwMessage("bat.destroy", "failed in bbp");
+str CMDdestroy_bat(int *r,str *input, int *immediately) {
+	int bid= BBPindex(*input);
+	*r= FALSE;
+        if (bid ) {
+                BBPfix(bid);
+                if (BBPindex(*input) == bid) {
+                        BAT *b = BBPquickdesc(ABS(bid), FALSE);
+                        if (*immediately == FALSE) {
+                                b->batKeeparound = 1;
+                                b->batDirtydesc = 1;
+                        }
+                        BATmode(b, TRANSIENT);
+                        *r = TRUE;
+                }
+                BBPunfix(bid);
+        }
 	*r = TRUE;
 	return MAL_SUCCEED;
 } 
@@ -849,8 +847,6 @@ str CMDdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	BUNdel(b,h,t);
-	BBPfix(b->batCacheid);
-	*r = b->batCacheid;
 	return MAL_SUCCEED;
 } 
 
@@ -859,8 +855,6 @@ str CMDdelete_head(int *r, int *bid, ptr h) {
 	@:getBATdescriptor2(r,bid,b,delete)@
 	@:derefStr(b,h,h)@
 	BUNdelHead(b, @:batconvert(b,h)@);
-	BBPfix(b->batCacheid);
-	*r = b->batCacheid;
 	return MAL_SUCCEED;
 } 
 
@@ -868,8 +862,6 @@ str CMDdelete_all(int *r, int *bid) {
 	BAT *b;
 	@:getBATdescriptor2(r,bid,b,delete)@
 	BATclear(b);
-	BBPfix(b->batCacheid);
-	*r = b->batCacheid;
 	return MAL_SUCCEED;
 } 
 
@@ -878,8 +870,6 @@ str CMDdelete_bat_bun(int *r, int *bid, int *sid){
 	@:getBATdescriptor2(r,bid,b,delete)@
 	@:getBATdescriptor2(r,sid,s,delete)@
 	BATdel(b,s);
-	BBPfix(b->batCacheid);
-	*r = b->batCacheid;
 	return MAL_SUCCEED;
 } 
 
@@ -888,8 +878,6 @@ str CMDdelete_bat_head(int *r, int *bid, int *sid){
 	@:getBATdescriptor2(r,bid,b,delete)@
 	@:getBATdescriptor2(r,sid,s,delete)@
 	BATdelHead(b,s);
-	BBPfix(b->batCacheid);
-	*r = b->batCacheid;
 	return MAL_SUCCEED;
 } 
 /* The SQL frontend uses void-head bats */
@@ -1102,43 +1090,53 @@ str CMDgetDelta(int *r, int *bid) {
 All property operators should ensure exclusive access to the BAT
 descriptor.
 @c
+/* descriptors may be unloaded by BBPtrim, so secure them with a hotfix while in use */
+static BAT* lock_desc(bat bid) {
+        BBPfix(bid);
+        return (BAT*) BBPgetdesc(bid);
+}
+
+static void unlock_desc(bat bid) {
+        BBPunfix(bid);
+}
+
 str CMDgetCapacity(lng *res, int *bid) {
         if (BBPcheck((bat)*bid, "CMDcapacity")) {
-                BAT *b = (BAT*) BBPgetdesc((bat)*bid);
+                BAT *b = (BAT*) lock_desc((bat)*bid);
 		BBPfix(*bid);
                 if (b == NULL) {
                         *res = lng_nil;
                 } else {
                         *res = (lng) BATcapacity(b);
                 }
-		BBPunfix(*bid);
+		unlock_desc(*bid);
         }
 	return MAL_SUCCEED;
 }
 
 str CMDgetHeadType(int *res, int *bid) {
         if (BBPcheck((bat)*bid, "CMDhtype")) {
-                BAT *b = (BAT*) BBPgetdesc((bat)*bid);
+                BAT *b = (BAT*) lock_desc((bat)*bid);
 		BBPfix(*bid);
                 if (b == NULL) {
                         *res = TYPE_void;
                 } else {
                         *res = ((bat)*bid > 0)?BAThtype(b):BATttype(b);
                 }
-		BBPunfix(*bid);
+		unlock_desc(*bid);
         }
 	return MAL_SUCCEED;
 }
 str CMDgetTailType(int *res, int *bid) {
         if (BBPcheck((bat)*bid, "CMDttype")) {
-                BAT *b = (BAT*) BBPgetdesc((bat)*bid);
+                BAT *b = (BAT*) lock_desc((bat)*bid);
 		BBPfix(*bid);
                 if (b == NULL) {
                         *res = TYPE_void;
                 } else {
                         *res = ((bat)*bid > 0)?BATttype(b):BAThtype(b);
                 }
-		BBPunfix(*bid);
+		unlock_desc(*bid);
         }
 	return MAL_SUCCEED;
 }
@@ -1199,7 +1197,7 @@ str CMDgetkey(bit *ret, int *bid) {
 		*ret = TRUE;
 	} else {
 		if (!b->hkey) {
-			BATpropcheck(b);
+			BATpropcheck(b, BATPROPS_ALL);
 		}
 		*ret = b->hkey?TRUE:FALSE;
 	}
@@ -1209,46 +1207,29 @@ str CMDgetkey(bit *ret, int *bid) {
 str CMDsetPersistent(int *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
-	BBPpersistent(*bid, TRUE);
+	BATmode(b, PERSISTENT);
 	*res = TRUE;
         return MAL_SUCCEED;
 }
 str CMDisPersistent(int *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
-	*res= (b->batPersistence & PERSISTENT)? TRUE:FALSE;
+	*res= (b->batPersistence == PERSISTENT)? TRUE:FALSE;
         return MAL_SUCCEED;
 }
 str CMDsetTransient(int *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setTransient)@
-	BBPtransient(*bid, TRUE);
+	BATmode(b, TRANSIENT);
 	*res= TRUE;
         return MAL_SUCCEED;
 }
 str CMDisTransient(bit *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setTransient)@
-	*res= b->batPersistence & TRANSIENT;
+	*res= b->batPersistence == TRANSIENT;
         return MAL_SUCCEED;
 }
-
-str CMDrelease(lng *res, int *bid) {
-	BAT *b;
-        int *p = (int*) res;
-	@:getBATdescriptor(res,bid,b,release)@
-        BATmode(b, SESSION);
-        p[0] = b->batCacheid;
-        p[1] = (int) b->batStamp;
-        return MAL_SUCCEED;
-}
-
-str CMDresurrectStr(int *res, str *id) {
-	/* *res= BBPresurrect(*id);
-        return *res?MAL_SUCCEED:	*/
-	return throwMessage("bat.resurrect","not yet implemented\n");
-}
-
 
 @-
 @= accessMode
@@ -1644,7 +1625,7 @@ str CMDcoldBAT(int *res, int *bid) {
 str CMDheat(int *res, str *input) {
 	int bid = BBPindex(*input);
 	if (bid) {
-		/* *res = BBP_lastused(bid) & 0x7fffffff;*/
+		*res = BBP_lastused(bid) & 0x7fffffff;
 	}
  	return throwMessage("bat","heat not yet implemented\n");
  }

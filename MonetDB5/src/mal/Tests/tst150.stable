@@ -17,7 +17,7 @@ command Admin.lookup(nme:str):bat[str,str] = CMDlookup; #0  (lookup:bat[str,str]
 function Admin.sample(nme:str,val:any):bit; #0  (sample:bit)<-(nme:str)(val:any)
     b := Admin.lookup(nme); #1 CMDlookup (b:bat[str,str])<-(nme:str)
     h := algebra.select(b,val,val); #2 CMDselect (h:bat[str,str])<-(b:bat[str,str])(val:any)(val:any)
-    t := algebra.count(h); #3 CMDcount (t:int)<-(h:bat[str,str])
+    t := algebra.count(h); #3 CMDcount_bat (t:int)<-(h:bat[str,str])
     x := io.print(t); #4 CMDprint_val (x:int)<-(t:int)
     y := io.print(val); #5 CMDprint_val (y:int)<-(val:any)
 end sample; #6  
@@ -29,7 +29,7 @@ end sample; #6
 !ERROR: function Admin.sample(nme:str,val:int):int; #0  (val:int)<-(nme:str)(val:int)
     b := Admin.lookup(nme); #1 CMDlookup (b:bat[str,str])<-(nme:str)
     h := algebra.select(b,val,val); #2 CMDselect (h:bat[str,str])<-(b:bat[str,str])(val:int)(val:int)
-    t := algebra.count(h); #3 CMDcount (t:int)<-(h:bat[str,str])
+    t := algebra.count(h); #3 CMDcount_bat (t:int)<-(h:bat[str,str])
     x := io.print(t); #4 CMDprint_val (x:int)<-(t:int)
     y := io.print(val); #5 CMDprint_val (y:int)<-(val:int)
 end sample; #6  

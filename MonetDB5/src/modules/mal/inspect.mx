@@ -98,8 +98,10 @@ A key tool for analysis of the MAL code is being able to dump
 any routine, module. For queries, it is also illustrative to display
 the flow graph.
 @mal
-pattern showFunction(M:any,F:any):void = INSPECTshowFunction3
-comment "Dump the routine M.F on standard out.";
+pattern showFunction():void = INSPECTshowFunction3
+comment "Dump the current routine on standard out.";
+#pattern showFunction(M:any,F:any):void = INSPECTshowFunction3
+#comment "Dump the routine M.F on standard out.";
 
 @+ The Monet Debugger interface
 To enable ease of debugging and performance monitoring, the MAL interpreter

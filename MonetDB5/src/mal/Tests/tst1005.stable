@@ -35,7 +35,7 @@
 function Admin.main():int; #0  (main:int)
     bbp.open(); #1 CMDbbpopen ($1:void)
     b := bbp.new(int,int); #2 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,2); #3 CMDinsert_bun ($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
+    bat.insert(b,1,2); #3 CMDinsert_bun ($4:void)<-(b:bat[int,int])($5:int)($6:int)
     bat.setName(b,"myfirstlocalbat"); #4 CMDsetName ($7:bat[int,int])<-(b:bat[int,int])($8:str)
     c := bbp.bind("myfirstbat"); #5 CMDbbpbind (c:bat[any,any])<-($10:str)
     io.print(c); #6 CMDprint_val ($11:int)<-(c:bat[any,any])

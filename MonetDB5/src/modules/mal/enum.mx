@@ -130,11 +130,12 @@ Note that we have to build the table with pre-instantiated
 function references, because there is no easy way from the GDK layer
 to access the enum administration.
 @= enumCheck
-     for(xx=0; xx<MAX_ENUM; xx++)\
-	if (ENUMtpe[xx] == @1) break;\
-     if ((xx>MAX_ENUM) || ((b=BATdescriptor(ENUMmap[xx])) == NULL)) {\
-	return throwException(MALEXCEPTION,"enum.@2","illegal enum type.");\
+     for(xx=0; xx<MAX_ENUM; xx++)
+	if (ENUMtpe[xx] == @1) break;
+     if ((xx>MAX_ENUM) || ((b=BBPdescriptor(ENUMmap[xx])) == NULL)) {
+	return throwException(MALEXCEPTION,"enum.@2","illegal enum type.");
      }
+     (void)b;	/* keep compilers happy */
 @c
 #include "gdk.h"
 #include "mal_client.h"

@@ -71,6 +71,12 @@ command group(attr:bat[{void,oid},any::1]
 @mal
 module group;
 
+command group(b:BAT[any::1, any], start:int, incr:int, grpsize:int):BAT[any::1, int] = CTgroup0
+	comment "Produces a new BAT with identical head column, and in the tail 
+	column groups of equally valued integers within each group. Parameters: 
+	a start group value, group number increment, group size.";
+
+
 command group(attr:bat[any::2,any::1] ) 
 	:(histo:bat[any::1,int], grp:bat[any::2,oid]) = CTgroup
 comment "Cross tabulation group initialization.
@@ -445,6 +451,15 @@ Generate both 'normal' CTgroup and parameterized CTgroups.
 #define declare_mask_STANDARD	/* fixed */
 #define declare_mask_CUSTOM 	int mask = (1 << *N) - 1;
 
+str CTgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize) {
+	BAT *result, *b;
+	@:getBATdescriptor(ret,bid,b,CTgroup0)@
+        result = BATgroup(b, *start, *incr, *grpsize);
+	if( result== 0) return throwMessage("CTgroup0","Failed to group");
+	*ret= b->batCacheid;
+	return MAL_SUCCEED;
+}
+
 str CTgroup(int *rethisto, int *retbid, int *bid)
 {
 	@:CTgroupbody(STANDARD)@
@@ -453,10 +468,10 @@ str CTgroup(int *rethisto, int *retbid, int *bid)
 	ALIGNsetH(bn, b);
 
 	*retbid = bn->batCacheid;
-	BBPfix(*retbid);
+	/* BBPfix(*retbid);*/
 	if(histo){
 		*rethisto = histo->batCacheid;
-		BBPfix(*rethisto);
+		/* BBPfix(*rethisto);*/
 	}
 	return MAL_SUCCEED;
 }
@@ -475,8 +490,8 @@ str CTgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 
 	*retbid = bn->batCacheid;
 	*rethisto = histo? histo->batCacheid: 0;
-	BBPfix(*retbid);
-	if(histo) BBPfix(*rethisto);
+	/* BBPfix(*retbid);*/
+	/* if(histo) BBPfix(*rethisto);*/
 	return MAL_SUCCEED;
 }
 
@@ -667,7 +682,7 @@ str CTregroup(int* retid, int* ctid, int* bid) {
 	@:chkHeader(ct,CTregroup)@
 	@:getBATdescriptor(retid,bid,b,derive)@
 	@:chkHeader(b,CTregroup)@
-	BBPfix(ct->batCacheid);
+	/* BBPfix(ct->batCacheid);*/
 	retval= & dummy;
 	ret= regroup(retval, ct, b, tailtype(b, TRUE), NULL);
 	if( ret== MAL_SUCCEED) *retid= dummy->batCacheid;

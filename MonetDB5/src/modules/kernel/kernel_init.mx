@@ -11,6 +11,7 @@ The dependency among the modules require some care.
 All modules are put into a linked list, which is traversed
 in a lifo order to search for a matching signature.
 @mal
+#use "kernel/pcl";
 use "kernel/unix";
 use "kernel/lock";
 use "kernel/alarm";

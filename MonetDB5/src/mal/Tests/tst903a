@@ -1,8 +1,8 @@
 # the multiplex code blocks.
 
-b:= mal.new(void,lng);
+b:= new(void,lng);
 i:= -1L;
-barrier v:= nextElement(i,0L,16000000L);
+barrier v:= nextElement(i,0L,1000000L);
 	k:= rand();
 	l:= lng(i);
 	bat.insert(b,nil,i);
@@ -104,12 +104,12 @@ cnt:= count(s);
 printf(" count %d\n",cnt);
 cnt:= count(z9);
 t0:= alarm.usec();
-x:= multiplex.script("+",b,c);
-t1:= alarm.usec();
-d0:= t1-t0;
-printf("multiplex.script(+) %d\n",d0);
-t0:= alarm.usec();
-x:= multiplex.tactics("+",b,c);
-t1:= alarm.usec();
-d0:= t1-t0;
-printf("multiplex.tactics(+) %d\n",d0);
+#x:= multiplex.script("+",b,c);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+#printf("multiplex.script(+) %d\n",d0);
+#t0:= alarm.usec();
+#x:= multiplex.tactics("+",b,c);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+#printf("multiplex.tactics(+) %d\n",d0);

@@ -710,7 +710,7 @@ str SYSbbpStatistics(int *ret) {
 		if (BBP_logical(i)) {
 			pbat++; 
 			if (BBP_cache(i)) {
-				pheat += BBPheat(i); 
+				pheat += BBP_lastused(i); 
 				if (BBP_cache(i)->batPersistence == PERSISTENT)
 					per++;
 				else tmp++;

@@ -1,7 +1,7 @@
 
 INCLUDES = -I../../common -I../../gdk \
 	../../../include/atoms \
-	-I../../mal 
+	-I../../mal $(HWCOUNTERS_INCS) $(PCL_FLAGS)
 
 MTSAFE
 
@@ -10,7 +10,7 @@ LIBS = {
 	SEP = _
 	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
 		mapi.mx kernel_init.mx mmath.mx lock.mx alarm.mx \
-		batcalc.mx group.mx aggrX3.mx mkey.mx
+		batcalc.mx group.mx mkey.mx aggrX3.mx pcl.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -21,7 +21,7 @@ scripts_mal = {
 	DIR = sysconfdir/MonetDB/kernel
 	SOURCES = kernel_init.mal calc.mal bat.mal algebra.mal system.mal \
 		unix.mal mapi.mal mmath.mal lock.mal alarm.mal batcalc.mal \
-		group.mal aggrX3.mal mkey.mal
+		group.mal aggrX3.mal mkey.mal pcl.mx
 }
 
 

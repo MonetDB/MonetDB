@@ -34,7 +34,7 @@
 function Admin.main():int; #0  (main:int)
     bbp.open(); #1 CMDbbpopen ($1:void)
     b := bbp.new(int,int); #2 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,2); #3 CMDinsert_bun ($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
+    bat.insert(b,1,2); #3 CMDinsert_bun ($4:void)<-(b:bat[int,int])($5:int)($6:int)
     bbp.deposit("mysecondbat",b); #4 CMDbbpdeposit ($7:void)<-($8:str)(b:bat[int,int])
     c := bbp.take("mysecondbat"); #5 CMDbbptake (c:bat[any,any])<-($8:str)
     io.print(c); #6 CMDprint_val ($10:int)<-(c:bat[any,any])
@@ -61,11 +61,11 @@ bbp.take not yet fully implemented
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
-[ false ]
+[ true ]
 [ false ]
 [ "" ]
 [ false ]
-[ false ]
+[ true ]
 [ "" ]
 [ nil ]
 >

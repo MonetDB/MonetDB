@@ -23,9 +23,9 @@
 #
 function Admin.main():int; #0  (main:int)
     b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,1); #2 CMDinsert_bun ($3:bat[int,int])<-(b:bat[int,int])($4:int)($4:int)
-    bat.insert(b,2,4); #3 CMDinsert_bun ($5:bat[int,int])<-(b:bat[int,int])($6:int)($7:int)
-    bat.insert(b,3,9); #4 CMDinsert_bun ($8:bat[int,int])<-(b:bat[int,int])($9:int)($10:int)
+    bat.insert(b,1,1); #2 CMDinsert_bun ($3:void)<-(b:bat[int,int])($4:int)($4:int)
+    bat.insert(b,2,4); #3 CMDinsert_bun ($5:void)<-(b:bat[int,int])($6:int)($7:int)
+    bat.insert(b,3,9); #4 CMDinsert_bun ($8:void)<-(b:bat[int,int])($9:int)($10:int)
     io.print(b); #5 CMDprint_val ($11:int)<-(b:bat[int,int])
     f := batcalc.flt(b); #6 CMDconvertint_flt (f:bat[int,flt])<-(b:bat[int,int])
     io.print(f); #7 CMDprint_val ($13:int)<-(f:bat[int,flt])

@@ -42,6 +42,5 @@ use "atoms/str";
 use "atoms/url";
 use "atoms/uchr";
 use "atoms/mtime";
-use "atoms/decimal";
 @-
 @c

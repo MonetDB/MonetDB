@@ -160,6 +160,8 @@ extern BAT* BATcreatedesc();
 
 extern str TCPterminate(int *ret, int	*port);
 extern str TCPexport(int *retval, int *conn_id, ptr val, int *tpename, str *nameinput);
+extern int conn_findByThread(MT_Id pid);
+extern int conn_write(int conn_id, int len, char *src, char *msg);
 @+ Auxiliary Functions
 @- Socket Management
 Some basic routines to open a remote socket, and to read
@@ -218,23 +220,32 @@ int socket_write(int fd, int len, char *src, char *msg){
 	    GDKsyserror("socket_write: %s(%d) returned %d.\n", msg, len, ret);
 	    return FALSE;
 	}
+	if( GDKdebug & 655356) {
+		THRprintf(GDKerr,"send:%s:%s\n",src,len);
+	}
 	return TRUE;
 }
 
-char* socket_gets(int fd, char *buf, int len){
-	char *end;
-	int n;
+int socket_gets(int fd, char **buf, int *len){
+	char *s= *buf, *end= *buf+*len;
 
-	for(end = buf + len; buf < end; buf++) {
-	    n = read(fd, buf,1);
-	    if (n <= 0) {
-		GDKsyserror("socket_gets: ");
-		return NULL;
-	    }
-	    if (*buf == '\n') break; 
+	while(TRUE){
+		if( s == end){
+			int oldlen= *len;
+			*len *=2;
+			*buf= GDKrealloc(*buf,*len);
+			s = *buf +oldlen;
+			end= *buf + *len;
+		}
+		if( read(fd,s,1) <= 0) {
+			GDKsyserror("socket_gets:");
+			return FALSE;
+		}
+		if( *s== '\n' ) break;
+		++s;	
 	} 
-	*buf = 0;
-	return buf;
+	*s = 0;
+	return TRUE;
 }
 
 @- MIL Types
@@ -291,6 +302,7 @@ str atom_name(int tpe) {
 #endif
 #endif
 #endif
+#endif /*TCPIP_H */
 
 @- TCPlock
 We have a global lock for protecting the cache and connection data structures.
@@ -312,30 +324,33 @@ BAT *cache_idx = 0;
 @- Cache Items
 We cache a list of BATs or other values in non-volatile storage.
 @h
+union cache_t_val{
+	ptr pval;
+	bat bval;
+};
 typedef struct {
 	str	name;	/* name of the cached item */
 	int 	conn;	/* conn nr from which it was retrieved, -1 if not */
 	int 	locked; /* #locked processes trying to import this item */
 	int	tpe;	/* MIL value type */
-	ptr	val;	/* NULL or the cached BAT */
+	union cache_t_val	val;	/* NULL or the cached BAT */
 	MT_Sema barrier;/* barrier to make imports wait on the BAT */ 
 	str	errbuf; /* error message if any */
 } cache_t;
 
-#endif /*_TCPIP_H_*/
 
 @- new cache item
 Create a new empty cache item. Since it does not yet contain a value,
 we lock it, so a subsequent lock (caused by @%TCPimport@) will block.
 The lock will be unset when the value arrives.
 @c
-cache_t *cache_new(str name){
+static cache_t *cache_new(str name){
 	BUN q = BUNlast(cache_idx);
 	cache_t *c = (cache_t*) GDKmalloc(sizeof(cache_t));
 	BUNins(cache_idx, name, &c); 
 	c->name = (str) BUNhvar(cache_idx, q);
 	c->locked = 0;
-	c->val = NULL;
+	c->val.pval = NULL;
 	c->tpe = TYPE_void;
 	c->conn = -1;
 	c->errbuf = NULL;
@@ -347,7 +362,7 @@ cache_t *cache_new(str name){
 This means returning the lock, freeing the storage, and removing the
 cache record from the @%cache_idx@ BAT.
 @c
-int cache_free(cache_t *c){
+static int cache_free(cache_t *c){
 	if (c->barrier != NULL) {
 		MT_destroy_sema(c->barrier);
 	}
@@ -360,15 +375,11 @@ Care must be taken here. You might want to destroy the reference,
 but some @%TCPimports@ may be blocked on it. In this case, we defer
 real deallocation; as this will be done by the last unblocked routine.
 @c
-int cache_del(cache_t *c){
-	if (c->val) {
-	    if (c->tpe == TYPE_bat){
-	        BBP_refs((bat) c->val)--;
-	    } else {
-	        GDKfree(c->val);
-	    }
-	}
-	c->val = NULL;
+static int cache_del(cache_t *c){
+	if( c->tpe== TYPE_bat){
+		if (c->val.bval) BBP_refs(c->val.bval)--;
+	} else if(c->val.pval) GDKfree(c->val.pval);
+	c->val.pval = NULL;
 	c->tpe = TYPE_void;
 	c->conn = -1;
 	if (!c->locked) {
@@ -382,21 +393,21 @@ int cache_del(cache_t *c){
 and it can be placed in its cache record. We can unlock the lock.
 A blocked @%TCPimport@ (if any) can now proceed.
 @c
-int cache_fill(cache_t *c, int tpe, ptr val, int i){
+static int cache_fill(cache_t *c, int tpe, ptr val, int i){
 	MT_set_lock(TCPlock, "cache_fill");
-	if (c->val) {
+	if( c->tpe== TYPE_bat? c->val.bval: c->val.pval!=0){
 	    GDKwarning("cache_fill: replacing the value for %s.\n", c->name);
 	    if (c->tpe == TYPE_bat){
-		BBP_refs((bat) c->val)--;
+		BBP_refs((bat) c->val.bval)--;
 	    } else {
-		GDKfree(c->val);
+		GDKfree(c->val.pval);
 	    }
 	}
     	c->conn = i;
       	c->tpe = tpe;
-      	c->val = val;
+      	c->val.pval = val;
 	if (tpe == TYPE_bat) {
-	    BBPfix((bat) c->val);
+	    BBPfix(c->val.bval);
 	}
 	if (c->locked) {
 	    if (c->barrier != NULL) MT_up_sema(c->barrier, "cache_fill");
@@ -407,7 +418,7 @@ int cache_fill(cache_t *c, int tpe, ptr val, int i){
 
 @- look for a named value in the cache
 @c
-cache_t* cache_find(str name) {
+static cache_t* cache_find(str name) {
 	BUN q = BUNfnd(cache_idx, name);
 	if (q) return *(cache_t**) BUNtloc(cache_idx, q);
 	return cache_new(name);
@@ -435,9 +446,10 @@ str cache_bat(int * retval) {
 	    cache_t *c = *(cache_t**) BUNtloc(cache_idx,p);
 	    char *val = 0, *buf, *atm = atom_name(c->tpe);
 	    if (c->tpe == TYPE_bat) {
-		ATOMformat(c->tpe, &c->val, &val);
+		bat bval = c->val.bval;
+		ATOMformat(c->tpe, &bval, &val);
 	    } else {
-		ATOMformat(c->tpe, c->val, &val);
+		ATOMformat(c->tpe, c->val.pval, &val);
 	    }
 	    buf = (str) GDKmalloc(strlen(atm)+5+strlen(val));
 	    sprintf(buf, "%s(\"%s\")", atm, val); 
@@ -451,7 +463,7 @@ str cache_bat(int * retval) {
 
 @- cache error handling
 @c
-int cache_error(cache_t *c){
+static int cache_error(cache_t *c){
 	str p,q,r = c->errbuf;
 	do {
 	    	p = strchr(r,'\n');
@@ -498,6 +510,15 @@ conn_t connections[MAX_CONN] = { {0, "", 0, 0, (Thread) 0}, };
 
 @- look for a certain connection
 @c
+int conn_findByThread(MT_Id pid){
+	int i;
+	MT_set_lock(TCPlock,"TcPopen");
+	for(i=0; i< MAX_CONN; i++)
+		if( connections[i].waiter && connections[i].waiter->pid == pid)
+			break;
+	MT_unset_lock(TCPlock,"TCPopen");
+	return i==MAX_CONN? -1 : i;
+}
 int conn_find(str host, int port) {
 	int i;
 	for(i=0; i < MAX_CONN; i++) 
@@ -529,6 +550,16 @@ int conn_kill(int i) {
 	return 0;
 }
 
+int conn_write(int conn_id, int len, char *src, char *msg){
+        if(socket_write(connections[conn_id].sock,len,src,msg))
+                return TRUE;
+        MT_set_lock(TCPlock, "TCPopen");
+        conn_delete(conn_id);
+        MT_unset_lock(TCPlock, "TCPopen");
+        return FALSE;
+}
+
+
 @- close all connections
 @c
 int conn_closeall(){
@@ -542,6 +573,27 @@ int conn_closeall(){
 	return 1;
 }
 
+#define NM_LEN 80
+#define MAX_LINE 64
+static int
+TCPraise(int fd, str name)
+{
+        char *errbuf = GDKerrbuf;
+        if (errbuf && *errbuf && *errbuf != *str_nil) {
+                int errlen = strlen(errbuf);
+                int msglen;
+                char *msg = (char*) alloca(errlen+NM_LEN+32);
+                sprintf(msg, "err:%s:%d\n", name, errlen + 1);
+                msglen = strlen(msg);
+                memcpy(msg+msglen, errbuf, errlen+1);
+                *errbuf = '\0';
+                if (GDKdebug&65536) {
+                        THRprintf(GDKerr, "send err:%s\n", msg);
+                }
+                socket_write(fd, msglen+errlen+1, msg,"error msg");
+        }
+        return GDK_SUCCEED;
+}
 
 @- the connection waiter
 @T
@@ -564,26 +616,37 @@ The evaluation identifier is also used for generating error messages.
 #define M_TCPIP_ALIGN(n,b) ((b)?(b)*(1+(((n)-1)/(b))):n)
 
 void conn_waiter(void * vi){
-	int i=(int)vi;
-	Thread thr = THRnew(MT_getpid(), "conn_waiter");
-	int fd = connections[i].sock;
-	char line[16384], nm[80];
-	char msg[4096], errbuf[GDKMAXERRLEN], *errbuf_bak = GDKerrbuf;
+    int i=(int)vi;
+    Thread thr = THRnew(MT_getpid(), "conn_waiter");
 
-	connections[i].waiter = thr;
+    GDKsyserror("TCPexport not implemented\n");
+ }
+@+ OLDSTUFF
+    if (thr) {
+      int fd = connections[i].sock;
+      Client monetClient = forkClient(0, 1);
+      connections[i].waiter = thr;
+
+      if(monetClient) {
+        int lineLength = MAX_LINE;
+        char *line = GDKmalloc(lineLength), nm[NM_LEN];
+        char errbuf[GDKMAXERRLEN], *errbuf_bak = GDKerrbuf;
+
 	GDKsetbuf(errbuf);
+        monetClient->socket = -1;
+        monetClient->login = time(0);
 
-	while(socket_gets(fd, line, 16384)) {
+	while(socket_gets(fd, &line, &lineLength)) {
 	     char *p, *r, *q, *tp = line;
 	     int tpe = TYPE_bat;
 	     cache_t *c; 
-	     ptr dst;
+	     union cache_t_val dst;
 
 @- Command Evaluation
 In this case, we execute the MIL script. If errors occur, be send
 back the error messages. If a result is wanted, we export this using
 the standard mechanism.
-@c
+@-OLDSTUFF
 	    p = strchr(line,'\n');
 	    if (p != NULL) *p = 0;
 	    if ((q = strchr(tp, ':')) == NULL || 
@@ -595,34 +658,46 @@ the standard mechanism.
 		THRprintf(GDKerr, "%s:%s:%s\n", tp, nm, p);
 	    }
 	    if (strcmp(tp, "mil") == 0) {
+                int asynchronous  = (strncmp(nm, "arpc", 4) == 0);
 	        int expect_return = (strncmp(nm, "rpc", 3) == 0);
 		ValRecord res;
 		ptr val = &res.val.ival;
 		res.vtype = TYPE_void;
-
-#define RETURN_PREFIX "return " 
-		if (expect_return) {
-			p -= strlen(RETURN_PREFIX); 
-			strncpy(p, RETURN_PREFIX, strlen(RETURN_PREFIX));
-		}
 		*errbuf = '\0';
-		/*interpret_str(0, p, &res);   0=>fork off the ADM cntxt */
+
+		if (asynchronous) {
+			int plen = strlen(p);
+			char *tmp = (char*) alloca(plen+256);
+			p[plen-1] = '\0'; /* remove trailing ';' */
+			sprintf(tmp,"export(%d,%s,\"%s\").enqueue.wakeup;", i,p,nm);
+			interpret_str(monetClient->stk, tmp, &res);
+		} else {
+#define RETURN_PREFIX "return " 
+			if (expect_return) {
+				p -= strlen(RETURN_PREFIX); 
+				strncpy(p, RETURN_PREFIX, strlen(RETURN_PREFIX));
+			}
+			*errbuf = '\0';
+			interpret_str(0, p, &res);  /* 0=>fork off the ADM cntxt */
+		}
 @-
 'GDKerror' messages have been stored in 'errbuf' (if any)
-@c
+@-OLDSTUFF
+#ifndef DDIPATCH
 		if (*errbuf) {
+			char msg[16384];
  			size_t len;
 			int fd = connections[i].sock;
 
-			sprintf(msg, "err:%s:%d\n", nm, strlen(errbuf) + 1);
+			snprintf(msg, 16384, "err:%s:%lu\n", nm, (unsigned long) strlen(errbuf) + 1);
 			len = strlen(msg);
 			memcpy(msg+len, errbuf, strlen(errbuf)+1);
 	    		socket_write(fd, len+strlen(errbuf)+1, msg,"error msg");
-printf("ERROR: %s \n", msg );
 		}
+#endif
 
 		if (res.vtype == TYPE_bat) {
-		    val = (ptr) BATdescriptor(res.val.bval);
+		    val = (ptr) BBPdescriptor(res.val.bval);
 		} else if (ATOMextern(res.vtype)) {
 		    val = res.val.pval;
 		} else if (res.vtype == TYPE_void) {
@@ -630,30 +705,31 @@ printf("ERROR: %s \n", msg );
 		}
 @-
 Rpc request get a value back; mil requests not.
-@c
+@-OLDSTUFF
 	        if (expect_return) {
-			int xx;
-		    TCPexport(&xx,&i, val, &res.vtype, (str*)&nm); 
+		    TCPexport(&i, val, res.vtype, nm); 
+		} else {
+		    TCPraise(fd,nm);
 		}
 @-
 All said and done, now we clean up any returned values.
-@c
+@-OLDSTUFF
 		VALclear(&res);
 		continue;
 	    }
 
 @- Receiving Values
 Insert an empty value into the cache.
-@c
+@-OLDSTUFF
 	    MT_set_lock(TCPlock, "conn_waiter");
-	    c = cache_find((str)nm);
+	    c = cache_find(nm);
 	    if (c->val) c = cache_new(nm);
 	    MT_unset_lock(TCPlock, "conn_waiter");
 
 @- err:<name>:<len>
 Name is the id of a 'mil' request. 
 The errormessage is stored in the 'errbuf' field of the cache item.
-@c
+@-OLDSTUFF
 	    if (strcmp(tp, "err") == 0) {
 		int len = atoi(p);
                 c->errbuf = (char*) GDKmalloc(len);
@@ -670,7 +746,7 @@ The errormessage is stored in the 'errbuf' field of the cache item.
 @- bat:<name>:<cnt>*<width>:<htype>\@<off>[+][k]:<ttype>\@<off>[+][k]:
 	<hheap>:<theap>:<halign>:<talign>:<oidbase>
 First stop to examine its type, and heap sizes.
-@c
+@-OLDSTUFF
 	    if (strcmp(tp, "bat") == 0) {
 	 	int hsize, tsize, htpe=-1, ttpe=-1, hoff=0, toff;
 		int size=-1, width, hordered=0, tordered=0, h_key=0, t_key=0;
@@ -735,7 +811,7 @@ fail:		    GDKerror("conn_waiter: illegal %s[%s,%s].\n",nm,line,ht,tt);
                         oid *dst = &(@1);
                         OIDfromStr(++ts, &len, &dst);
                 }
-@c
+@-OLDSTUFF
 		@:getoid(b->halign)@
 		@:getoid(b->talign)@
 		@:getoid(batSeqbase)@
@@ -747,12 +823,12 @@ fail:		    GDKerror("conn_waiter: illegal %s[%s,%s].\n",nm,line,ht,tt);
 @-
 Read the data for its heaps. A BAT at least consists of a BUN heap.
 For variable sized atoms, there may be a head and/or tail heap.
-@c
+@-OLDSTUFF
 		if ((!socket_read(fd,size*BUNsize(b),BUNfirst(b),"BUN heap"))|| 
 		    (b->hheap.base && 
 			!socket_read(fd, hsize, b->hheap.base, "head heap")) ||
 		    (b->theap.base && 
-			!socket_read(fd, tsize, b->theap.base, "tail heap"))) 
+                       !socket_read(fd, tsize, b->theap.base, "tail heap")))
 		{
 		    BBPreclaim(b);
 		    goto fail;
@@ -771,11 +847,11 @@ For variable sized atoms, there may be a head and/or tail heap.
 #ifndef WORDS_BIGENDIAN
 	    	BATconvert(b,CONV_NTOH);
 #endif
-		BATpropcheck(b);
-		BATpropcheck(BATmirror(b));
+		BATpropcheck(b, BATPROPS_ALL);
+		BATpropcheck(BATmirror(b), BATPROPS_ALL);
 
 @- Atomic Value Receive
-@c
+@-OLDSTUFF
 	    } else if ((tpe = atom_type(tp)) > 0) {
 		int len = atoi(p);
 		dst = (char*) GDKmalloc(len);
@@ -786,15 +862,20 @@ For variable sized atoms, there may be a head and/or tail heap.
 	    }
 @-
 Mark the value as totally ready in the cache.
-@c
+@-OLDSTUFF
 	    cache_fill(c, tpe, dst, i);
 	}
 	GDKsetbuf(errbuf_bak);
+	GDKfree(line);
+	closeClient(monetClient, 1);
 	stream_printf(GDKout, "conn_waiter: lost connection, exiting.\n");
-	MT_set_lock(TCPlock, "conn_waiter");
-	conn_delete(i);
-	MT_unset_lock(TCPlock, "conn_waiter");
-	THRdel(thr);
+      }
+      THRdel(thr);
+    }
+    MT_set_lock(TCPlock, "conn_waiter");
+    conn_delete(i);
+    MT_unset_lock(TCPlock, "conn_waiter");
+    MT_exit_thread(0);
 }
 @- insert a new connection
 also involves forking a waiter thread
@@ -804,13 +885,19 @@ int conn_insert(str host, int port, int me, int sock) {
 	for(i=0; connections[i].me; i++);
 	if (i == MAX_CONN) {
 	    GDKerror("conn_insert: too many connections\n");
+	    i = -1;
 	} else {
 	    MT_Id t = 0;
 	    connections[i].me = me;
 	    connections[i].port = port;
 	    connections[i].sock = sock;
-	    strcpy(connections[i].hostname, host);
-	    MT_create_thread(&t, conn_waiter, (void*)i);
+            connections[i].waiter = (Thread)0;
+            strcpy(connections[i].hostname, host);
+            if (me != -1 && MT_create_thread(&t, conn_waiter, (void*)i) != 0) {
+                connections[i].me = 0;
+                i = -1;
+            }
+
 	}
 	return i;
 }
@@ -902,7 +989,11 @@ Start a TCP/IP server
 str TCPlisten(int *ret, int *port){
 	struct sockaddr_in server;
 	int msgsock = -1, sock = socket(AF_INET, SOCK_STREAM, 0);
-	int port_no=0, i, length = sizeof(server), on=1;
+	int port_no=0, i, on=1;
+	SOCKLEN length = (SOCKLEN) sizeof(server);
+	int lineLength = MAX_LINE;
+	char *p, *line = GDKmalloc(lineLength);
+
 @-
 Administrate yourself
 @c
@@ -915,7 +1006,7 @@ Administrate yourself
 create the socket
 @c
 	if (sock < 0) {
-		return throwMessage("tcp.serve"," creation of stream socket failed\n");
+		return throwMessage("tcp_ip","creation of stream socket failed");
 	}
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
@@ -925,28 +1016,29 @@ create the socket
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
 	if (bind(sock, (SOCKPTR) &server, length) < 0) {
 	    GDKsyserror("TCPlisten(%d): binding to socket failed.\n", *port);
-	} else if (getsockname(sock, (SOCKPTR) &server, 
-#ifdef AIX
-	(size_t*)
-#endif
-	&length) < 0) 
-	    return throwException(MALEXCEPTION,"tcp.listen",
-		"(%d) getting socket name.\n", *port);
-	if (listen(sock, 5) < 0)
-	    return throwException(MALEXCEPTION,"tcp.listen",
-		"(%d): getting socket name\n", *port);
-	while ((msgsock = accept(sock, (SOCKPTR)0, 
-#ifdef AIX
-	(size_t *)
-#else
-	(int *)
-#endif
-	0)) > 0) {
- 	    char *p, line[1024];
+	} else if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
+	    GDKsyserror("TCPlisten(%d): getting socket name.\n", *port);
+	} else if (listen(sock, 5) < 0) {
+	    GDKsyserror("TCPlisten(%d): getting socket name\n", *port);
+	} else while ((msgsock = accept(sock, (SOCKPTR)0, (SOCKLEN *) 0)) > 0) {
 @- 
 the listener heard something...
 @c
-	    if (socket_gets(msgsock, line, 1024) == NULL){
+#ifdef SO_KEEPALIVE
+	    { int opt = 0; 
+	    setsockopt(msgsock, SOL_SOCKET, SO_KEEPALIVE, (char *) &opt,
+		       sizeof(opt)); }
+#endif
+#ifdef IPTOS_THROUGHPUT
+	    { int tos = IPTOS_THROUGHPUT; 
+	    setsockopt(msgsock, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos)); }
+#endif
+#ifdef TCP_NODELAY
+	    { int nodelay = 1;
+	    setsockopt(msgsock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
+		       sizeof(nodelay)); }
+#endif
+	    if (socket_gets(msgsock, &line, &lineLength) == 0){
 		close(msgsock);
 		continue;
 	    } else if (strncmp(line, "stop", 4) == 0) {
@@ -972,6 +1064,7 @@ a new connection is born
 	MT_unset_lock(TCPlock, "TCPlisten");
 	shutdown(sock,2); 
 	socket_close(sock);
+	GDKfree(line);
 	return MAL_SUCCEED;
 }
 
@@ -984,15 +1077,19 @@ str TCPlisten_default(int *ret){
 @+ terminate(int)
 Stop a TCP/IP server
 @c
+static char TCPhostname[128] = { 0 };
+static char* hostname(void) {
+        if (!*TCPhostname) gethostname(TCPhostname, 128);
+        return TCPhostname;
+}
+
 str TCPterminate(int *ret, int	*port){
-	char host [BUFSIZ];
-	int t = gethostname(host, BUFSIZ );
-	int fd = socket_open(host, *port, "TCPterminate");
-	if (fd) {
-	    write(fd, "stop\n", 5);
-	    return MAL_SUCCEED;
-	}
-	socket_close(fd);
+        int fd = socket_open(hostname(), *port, "TCPterminate");
+        if (fd) {
+            socket_write(fd, 5, "stop\n", "TCPterminate");
+            return MAL_SUCCEED;
+        }
+        socket_close(fd);
 	return throwMessage("tcp.terminate","failed to send 'stop'");
 }
 
@@ -1055,7 +1152,7 @@ In the meantime, the other way round might have gotten through.  If so, use it.
 We really initiated a new connection
 @c
 	    *retval = conn_insert(host, port, -1, fd);
-	    sprintf(buf, "%s\n", host);
+	    sprintf(buf, "%s\n", hostname());
 	    if (send(fd, buf, strlen(buf), 0) != (int) strlen(buf)) {
 		conn_delete(*retval);
 		MT_unset_lock(TCPlock, "TCPopen");
@@ -1099,6 +1196,9 @@ str TCPexport(int *retval, int *conn_id, ptr val, int *tpeinput, str *nameinput)
 	if (*conn_id<0 || *conn_id>=MAX_CONN || !connections[*conn_id].me)
 	    return throwMessage("tcp.export"," invalid connection.");
  	fd = connections[*conn_id].sock;
+
+	TCPraise(fd,name);
+
 	if (tpe == TYPE_bat) {
 @- bat:<name>:<cnt>*<width>:<htype>\@<off>[+][k]:<ttype>\@<off>[+][k]:
 	<hheap>:<theap>:<halign>:<talign>:<oidbase>
@@ -1208,7 +1308,7 @@ Lookup or create (if it did not exist) a cache item by this name.
 @c
 	MT_set_lock(TCPlock, "TCPimport");
 	c = cache_find(*name);
-	if (c->val) goto get_direct;
+	if (c->val.pval) goto get_direct;
 	if (c->locked++ == 0 && c->barrier == NULL) {
 		c->barrier = MT_create_sema(0);
 	}
@@ -1233,7 +1333,7 @@ get_direct:
 @-
 check whether we really have a value
 @c
-	if (c->conn == -1 || c->val == NULL) {
+	if (c->conn == -1 || c->val.pval == NULL) {
 	    if (c->locked == 0) cache_free(c);
 	    MT_unset_lock(TCPlock, "TCPimport");
 	    return throwMessage("tcp.import","connection lost");
@@ -1244,13 +1344,13 @@ Copy from the cache into the return value.
         *rettpe = c->tpe;
 
 	if (ATOMextern(c->tpe)) {
-	    int len = ATOMlen(c->tpe, c->val); 
+	    int len = ATOMlen(c->tpe, c->val.pval); 
 	    *(ptr*) retval = (ptr) GDKmalloc(len);
-	    memcpy(*(ptr*) retval, c->val, len);
+	    memcpy(*(ptr*) retval, c->val.pval, len);
 	} else if (c->tpe == TYPE_bat) {
-	    *(BAT**) retval = BATdescriptor((int) c->val); 
+	    *(BAT**) retval = BATdescriptor((int) c->val.bval); 
 	} else {
-	    memcpy(retval, c->val, ATOMsize(c->tpe));
+	    memcpy(retval, c->val.pval, ATOMsize(c->tpe));
 	}
 	if (*remove) {
 	    cache_del(c);

@@ -300,13 +300,12 @@ The compilation mode for both V5 and V4.3.7 is CFLAGS=-O2
 command: time Mserver -c perf.conf TST </dev/null >/dev/null
 		orion(2x1.4Mh load 0)	
 base		 0.29/0.14/0.16			
-tst400a		 0.45/0.31/0.14	1M loop	 	
+tst400a		 0.50/0.31/0.18	1M loop	 	
 tst400a2	 0.59/0.42/0.17	1M loop inc	
-tst400bHuge 	 1.87/1.51/0.35	100k count (io)	
-tst400cHuge	 5.11/3.94/1.18	100k insert(io)	
+tst400bHuge 	 1.16/0.93/0.23	100k count (io)	
+tst400cHuge	 1.43/1.13/0.27	100k insert(io)	
 tst400d		 1.35/1.06/0.29	1M insert tuple 
 tst400e		 1.33/0.97/0.16	1M incr fcn     
 
 tst901a		 1.8/1.4/0.4	[+] call	
 tst901b		 4.4/4.1/0.27	[+] call	
-The stream package introduced in this period is not properly used.
