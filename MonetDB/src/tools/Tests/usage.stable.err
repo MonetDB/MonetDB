@@ -38,11 +38,15 @@ usage: MapiClient
 Usage: MapiClient.py [ options ]
 Options are:
 -c or --config config_file
---dbname database_name
---dbfarm database_directory
--d or --debug debug_level
+	read options from the given file
 -? or --help
+	print usage message
 -s or --set option=value
+	set a named options
+--host hostname
+	host to connect to (default: localhost)
+--port port
+	port to connect to (default: 50000)
 
 # 11:56:27 >  
 # 11:56:27 >  Mtimeout -timeout 60 Mshutdown.py -?
@@ -51,11 +55,15 @@ Options are:
 Usage: Mshutdown.py [ options ]
 Options are:
 -c or --config config_file
---dbname database_name
---dbfarm database_directory
--d or --debug debug_level
+	read options from the given file
 -? or --help
+	print usage message
 -s or --set option=value
+	set a named options
+--host hostname
+	host to connect to (default: localhost)
+--port port
+	port to connect to (default: 50000)
 
 # 11:56:28 >  
 # 11:56:28 >  Done.

@@ -126,31 +126,33 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 [ 0,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-#---------------------------------------------------------------------------------------------------------#
-# BAT:			  monet_environment								  #
-# (str)			  (str)										  #
-#---------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
-[ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "10079469"									  ]
-[ "gdk_dbname",		  "Tests_tests_suite_02"							  ]
-[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
-[ "gdk_debug",		  "10"										  ]
-[ "gdk_mmap",		  "33554432"									  ]
-[ "monet_admin",	  "adm"										  ]
-[ "monet_prompt",	  ""										  ]
-[ "monet_welcome",	  "yes"										  ]
-[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
-[ "monet_deamon",	  "no"										  ]
-[ "host",		  "localhost"									  ]
-[ "mapi_port",		  "50000"									  ]
-[ "mapi_noheaders",	  "no"										  ]
-[ "mapi_debug",		  "0"										  ]
-[ "sql_port",		  "45123"									  ]
-[ "sql_debug",		  "0"										  ]
-[ "sql_api",		  "sql"										  ]
-[ "sql_user",		  "sqladmin"									  ]
-[ "sql_schema",		  "default-schema"								  ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment										  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3.5"											  ]
+[ "monet_pid",		  "13148"											  ]
+[ "prefix",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp"		  ]
+[ "exec_prefix",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp"		  ]
+[ "gdk_dbname",		  "Tests_tests_suite_02"									  ]
+[ "gdk_dbfarm",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"												  ]
+[ "gdk_mmap",		  "33554432"											  ]
+[ "monet_admin",	  "adm"												  ]
+[ "monet_prompt",	  ""												  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_mod_path",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"												  ]
+[ "host",		  "localhost"											  ]
+[ "mapi_port",		  "50000"											  ]
+[ "mapi_noheaders",	  "no"												  ]
+[ "mapi_debug",		  "0"												  ]
+[ "sql_port",		  "45123"											  ]
+[ "sql_debug",		  "0"												  ]
+[ "sql_api",		  "sql"												  ]
+[ "sql_user",		  "sqladmin"											  ]
+[ "sql_schema",		  "default-schema"										  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#

@@ -1,16 +1,9 @@
 stdout of test 'test_55` in directory 'tests/suite_00` itself:
 
 
-# 06:08:40 >  
-# 06:08:40 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_suite_00  < test_55.milS
-# 06:08:40 >  
-
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
-# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
-# dbname:Tests_tests_suite_00
-# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_suite_00
+# 01:15:59 >  
+# 01:15:59 >  Mtimeout -timeout 60 Mserver --config=/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_suite_00  < test_55.milS
+# 01:15:59 >  
 
 #-----------------#
 # BAT:	  tmp_24  #
@@ -40,19 +33,19 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ "dummy",		  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 1,	  1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_environment",	  "str",  "str",  21,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  507,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_environment",	  "str",  "str",  23,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  543,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  543,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  543,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  508,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  543,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1427,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcntbl",	  "str",  "oid",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
