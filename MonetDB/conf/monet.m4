@@ -101,11 +101,23 @@ AC_ARG_WITH(gcc,
   --without-gcc           do not use GCC], [
 	case $withval in
 	no)	CC=cc CXX=CC;;
-	yes)	CC=gcc CXX=g++;;
-	icc)	CC=icc CXX=icpc LDFLAGS="$LDFLAGS -i_dynamic"
-		dnl Let warning #140 "too many arguments in function call"
-		dnl become an error to make configure tests work properly.
-		CFLAGS="$CFLAGS -we140" CXXFLAGS="$CXXFLAGS -we140";;
+	yes|gcc)	
+		CC=gcc CXX=g++
+		CFLAGS="$CFLAGS -Werror-implicit-function-declaration"
+		CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
+		;;
+	[[Ii]]ntel|icc|ecc)
+		case $host in
+		i?86*)	CC=icc CXX=icpc;;
+		ia64*)	CC=ecc CXX=ecpc;;
+		esac
+	 	LDFLAGS="$LDFLAGS -i_dynamic"
+		dnl  Let warning #140 "too many arguments in function call"
+		dnl  become an error to make configure tests work properly.
+		CFLAGS="$CFLAGS -we140" CXXFLAGS="$CXXFLAGS -we140"
+		dnl  Let warning #266 "function declared implicitly" become an error.
+		CFLAGS="$CFLAGS -we266" CXXFLAGS="$CXXFLAGS -we266"
+		;;
 	*)	CC=$withval;;
 	esac])
 
@@ -113,10 +125,21 @@ AC_ARG_WITH(gxx,
 [  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
-	icpc)	CXX=icpc LDFLAGS="$LDFLAGS -i_dynamic"
-		dnl Let warning #140 "too many arguments in function call"
-		dnl become an error to make configure tests work properly.
-		CXXFLAGS="$CXXFLAGS -we140";;
+	g++)	CXX=g++
+		CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
+		;;
+	[[Ii]]ntel|icpc|ecpc)
+		case $host in
+		i?86*)	CXX=icpc;;
+		ia64*)	CXX=ecpc;;
+		esac
+	 	LDFLAGS="$LDFLAGS -i_dynamic"
+		dnl  Let warning #140 "too many arguments in function call"
+		dnl  become an error to make configure tests work properly.
+		CXXFLAGS="$CXXFLAGS -we140"
+		dnl  Let warning #266 "function declared implicitly" become an error.
+		CXXFLAGS="$CXXFLAGS -we266"
+		;;
 	*)	CXX=$withval;;
 	esac])
 
@@ -356,8 +379,8 @@ if test "x$enable_warning" = xyes; then
     CXXFLAGS="$CXXFLAGS -Wall -ansi -pedantic -Wno-long-long -Wno-unused-function"
   else
     case "$host_os" in
-    linux*) CFLAGS="$CFLAGS -w2 -Wall -ansi -c99-"
-            CXXFLAGS="$CXXFLAGS -w2 -Wall -ansi -c99-"
+    linux*) CFLAGS="$CFLAGS -w2 -Wall -ansi -c99"
+            CXXFLAGS="$CXXFLAGS -w2 -Wall -ansi -c99"
             ;;
     esac
   fi
