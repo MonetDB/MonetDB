@@ -522,7 +522,7 @@ BAT *BATsave(BAT *bd) {
 		if (remap) {
 			b->batBuns->free -= remap*BUNsize(b);
 			b->batBuns->base += remap*BUNsize(b);
-			bd->batDirtydesc = TRUE; /* offsets will change in the bat descriptor */
+			b->batDirtydesc = TRUE; /* offsets will change in the bat descriptor */
 			bd->batMapdirty = TRUE; /* flush descriptor after unload */
 		}
 	}
