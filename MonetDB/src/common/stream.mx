@@ -409,7 +409,7 @@ stream *open_rastream( char *filename ){
 	} 
 #endif
 	{
-		s = open_stream( filename, "rb");
+		s = open_stream( filename, "r");
 		s->type = ST_ASCII;
 		return s;
 	}
@@ -443,7 +443,7 @@ stream *open_wastream( char *filename ){
 	} 
 #endif
 	{
-		s = open_stream( filename, "wb");
+		s = open_stream( filename, "w");
 		s->access = ST_WRITE;
 		s->type = ST_ASCII;
 		return s;
