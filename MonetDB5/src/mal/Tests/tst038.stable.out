@@ -33,7 +33,7 @@ end tst2;	# 2
 #
 !ERROR: 'bat.insert' undefined in Admin.tst2[1]
 !ERROR: Error in cloned function
-!ERROR: function Admin.tst2(b:bat[:int,:int]):bat[:int,:int];	# 0  (b:bat[:int,:int])<-(b:bat[:int,:int])
+!ERROR: function Admin.tst2(b:bat[:int,:int]):void;	# 0  (tst2:void)<-(b:bat[:int,:int])
 !ERROR:     bat.insert(b,"hello",1);	# 1 BKCinsert_bun ($2:void)<-(b:bat[:int,:int])($3:str)($4:int)
 !ERROR: end tst2;	# 2  
 !ERROR: 'Admin.tst2' undefined in Admin.main[2]

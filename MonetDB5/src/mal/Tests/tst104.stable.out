@@ -16,9 +16,9 @@ command Admin.f(a:any$1,b:bat[:any$2,:any$1],c:any$2):any address dummy;	# 0  dy
 #b:= new(:str,:int);
 #a:= f(1,b,"hello");
 #
+!ERROR: 'Admin.f' undefined in Admin.main[2]
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:str,:int);	# 1 CMDBATnew (b:bat[:str,:int])<-($2:str)($3:int)
-    a := Admin.f(1,b,"hello");	# 2 dummy unknown (a:any)<-($5:int)(b:bat[:str,:int])($6:str)
+    a := Admin.f(1,b,"hello");	# 2  unknown (a:any)<-($5:int)(b:bat[:str,:int])($6:str)
 end main;	# 3  
-!ERROR: MALexception:Admin.main[2]:address of function missing
 >

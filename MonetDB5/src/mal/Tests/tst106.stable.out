@@ -16,8 +16,9 @@ command Admin.f(a:any$1,b:any$2,c:any$1):bat[:any$1,:any$2] address f;	# 0  dyna
 #a:= f(1,2,1);
 #
 !ERROR: 'f' undefined in Admin.main[1]
+!ERROR: 'Admin.f' undefined in Admin.main[2]
 function Admin.main():int;	# 0  (main:int)
     b := f(1,2,"help");	# 1  unknown (b:any)<-($2:int)($3:int)($4:str)
-    a := Admin.f(1,2,1);	# 2 f unknown (a:bat[:int,:int])<-($2:int)($3:int)($2:int)
+    a := Admin.f(1,2,1);	# 2  unknown (a:bat[:int,:int])<-($2:int)($3:int)($2:int)
 end main;	# 3  
 >

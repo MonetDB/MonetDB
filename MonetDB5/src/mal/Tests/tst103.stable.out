@@ -19,7 +19,7 @@ end f;	# 1
 #
 function Admin.main():int;	# 0  (main:int)
     a := Admin.f(1,"hello");	# 1  (a:bat[:str,:int])<-($2:int)($3:str)
-    b := Admin.f(1,"world");	# 2  (b:int)<-($2:int)($5:str)
+    b := Admin.f(1,"world");	# 2  (b:bat[:str,:int])<-($2:int)($5:str)
     c := Admin.f(1.0,-3);	# 3  (c:bat[:int,:flt])<-($7:flt)($8:int)
     d := Admin.f(true,false);	# 4  (d:bat[:bit,:bit])<-($10:bit)($11:bit)
 end main;	# 5  

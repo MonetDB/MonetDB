@@ -23,7 +23,7 @@ end test;	# 3
 #
 !ERROR: '+' undefined in Admin.test[1]
 !ERROR: Error in cloned function
-!ERROR: function Admin.test(b:bat[:int,:str],c:str):str;	# 0  (c:str)<-(b:bat[:int,:str])(c:str)
+!ERROR: function Admin.test(b:bat[:int,:str],c:str):int;	# 0  (test:int)<-(b:bat[:int,:str])(c:str)
 !ERROR:     k := +(1,"wrong");	# 1  unknown (k:any)<-($4:int)($5:str)
 !ERROR:     io.print(k);	# 2 IOprint_val ($6:int)<-(k:any)
 !ERROR: end test;	# 3  
