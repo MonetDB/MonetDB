@@ -71,6 +71,7 @@ getDBname() 	&       Get current database name
 getTable()    	&       Get current table name
 getColumnCount()& 	Number of columns in current row
 getColumnName()	& 	Get columns name
+getColumnType()	& 	Get columns type
 getRowCount() 	&       Number of lines in cache or -1
 getTupleCount()	&       Number of tuples in cache or -1
 gotError()    	&       Test for error occurrence
@@ -121,6 +122,7 @@ import java.applet.Applet;
 import java.applet.*;
 import java.io.*;
 import java.net.Socket;
+import java.util.regex.*;
 
 public class Mapi 
 {
@@ -198,6 +200,8 @@ public class Mapi
 	private BufferedReader fromMonet;
 	private DataOutputStream traceLog;
 	
+	/* Monet 4.3 header type info regexp */
+	private static Pattern p = Pattern.compile("^.*?\\((.+?)\\).*$");
 
 private void check(String action){
 	if( !connected) setError("Connection lost",action);
@@ -737,6 +741,12 @@ public synchronized String getColumnName(int i){
 	check("getColumnName");
 	if(i<fieldcnt && columns[i]!= null && columns[i].columnname!= null)
 		return columns[i].columnname;
+	return "";
+}
+public synchronized String getColumnType(int i){
+	check("getColumnType");
+	if(i<fieldcnt && columns[i]!= null && columns[i].columntype!= null)
+		return columns[i].columntype;
 	return "";
 }
 public synchronized int getRowCount(){
@@ -1347,31 +1357,54 @@ private void keepProp(String name, String colname){
 // analyse the header row, but make sure it is restored in the end.
 // Note that headers received contains an addition column with
 // type information. It should be ignored while reading the tuples.
-private void headerDecoder(){
+private void headerDecoder() {
 	String line= cache.rows[cache.reader];
-	if( trace) System.out.println("header:"+line);
+	if (trace)
+		System.out.println("header:"+line);
 	int etag= line.lastIndexOf("#");
-	if( etag==0 || etag== line.length()) return;
+	if(etag==0 || etag== line.length())
+		return;
 	String tag= line.substring(etag);
-
 
 	cache.rows[cache.reader]="[ "+cache.rows[cache.reader].substring(1,etag);
 	int cnt= sliceRow();
-	if(trace) System.out.println("columns "+cnt);
+	if (trace)
+		System.out.println("columns "+cnt);
 	extendColumns(cnt);
-	if( tag.equals("# name") ){
-		for(int i=0;i<cnt;i++){
+	if (tag.equals("# name")) {
+		for (int i=0;i<cnt;i++) {
 			if(columns[i]==null) columns[i]= new Column();
 			String s= columns[i].columnname= fetchField(i);
 		}
-	} else	
-	if( tag.equals("# type") ){
-		for(int i=0;i<cnt;i++){
-			if(columns[i]==null) columns[i]= new Column();
-			String s= columns[i].columntype= fetchField(i);
+	} else if (tag.equals("# type")) {
+		for(int i=0;i<cnt;i++) {
+			String type = fetchField(i);
+			if (columns[i]==null)
+				columns[i] = new Column();
+			columns[i].columntype = type;
+			if (trace)
+				System.out.println("column["+i+"].type="+columns[i].columntype);
 		}
-	} else	
-	if( trace) System.out.println("Unrecognized header tag "+tag);
+	} else if (line.startsWith("# (")) {
+		/* extract Monet 4.3 type info */
+		String  s = line;
+		Matcher m = p.matcher(s);
+		int i = 0;
+		while (m.matches()) {
+			/* found the first type */
+			if (columns[i]==null)
+				columns[i] = new Column();
+			columns[i].columntype = m.group(1);
+			if (trace)
+				System.out.println("(4.3)column["+i+"].type="+columns[i].columntype);
+			i++;
+
+			/* look in the remainder for more types */
+			s = s.substring(m.end(1));
+			m.reset(s);
+		}
+	} else if (trace)
+		System.out.println("Unrecognized header tag "+tag);
 	//REST LATER
 
 	cache.rows[cache.reader]= line;
