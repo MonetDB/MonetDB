@@ -23,12 +23,12 @@ stdout of test 'tst602` in directory 'src/mal` itself:
 #mil.close();	# save the content on persistent store
 #
 function Admin.main():int;	# 0  (main:int)
-    mil.open();	# 1 MILopen ($1:void)
+    mil.open();	# 1 MILopen ($31:void)
 barrier (v,nme):= mil.iterator();	# 2 MILnewIterator (v:lng)(nme:str) jump 5
-    io.print(nme);	# 3 IOprint_val ($4:int)<-(nme:str)
+    io.print(nme);	# 3 IOprint_val ($34:int)<-(nme:str)
     redo (v,nme):= mil.iterator();	# 4 MILnewIterator (v:lng)(nme:str) jump 3
 exit v;	# 5  (v:lng)
-    mil.close();	# 6 MILclose ($5:void)
+    mil.close();	# 6 MILclose ($35:void)
 end main;	# 7  
 [ "EQ" ]
 [ "LT" ]
