@@ -27,7 +27,7 @@ INCLUDES = ../common ../gdk ../monet $(PTHREAD_INCS)
 CXXFLAGS = $(CFLAGS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
-MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) $(ICONV_LIBS)
+MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
 STATIC_MODS = \
 	../modules/plain/lib_algebra ../modules/plain/lib_arith \
