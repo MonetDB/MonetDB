@@ -23,7 +23,7 @@
 
 INCLUDES = \
 	../include \
-	../../common \
+	../../client \
 	$(MONET_INCS) 
 
 DEFS = @DEFS@
