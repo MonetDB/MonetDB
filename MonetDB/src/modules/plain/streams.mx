@@ -38,8 +38,14 @@ data files.
 .COMMAND file_wastream( fstream file, str name ) : stream = 
 	stream_file_wastream; "open ascii file stream for writing"
 
+.COMMAND block_stream( stream s ) : stream = 
+	open_block_stream; "open a block based stream"
+
 .COMMAND stream_write( stream s, str data ) = stream_write_string;
 	"write data on the stream"
+
+.COMMAND stream_flush( stream s ) = stream_flush;
+	"flush the stream"
 
 .COMMAND stream_close( stream s ) = stream_close_stream; 
 	"close and destroy the stream s"
@@ -148,6 +154,11 @@ int stream_file_wastream( stream *S, fstream *file, str name ){
 int stream_write_string( stream *S, str data ){
 	stream *s = *(stream**)S;
 	s->write( s, data, 1, strlen(data));
+	return GDK_SUCCEED;
+}
+
+int stream_flush( stream *S ){
+	stream *s = *(stream**)S;
 	s->flush( s );
 	return GDK_SUCCEED;
 }
@@ -157,4 +168,12 @@ int stream_close_stream( stream *S ){
 	s->close( s );
 	s->destroy( s );
 	return GDK_SUCCEED;
+}
+
+int open_block_stream( stream *S, stream *is ){
+	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
 }
