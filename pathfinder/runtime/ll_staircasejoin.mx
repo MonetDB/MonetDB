@@ -239,7 +239,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     {
         GDKerror("%s: CTrefine failed.\n", name);
     }
-    else if ((b3 = BATmirror(BATmark(b2, (oid)0))) == NULL)
+    else if ((b3 = BATmirror(BATmark(BATsetaccess(b2, BAT_READ), (oid)0))) == NULL)
     {
         GDKerror("%s: mark failed.\n", name);
     }
@@ -271,6 +271,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
      * @2: head-out
      * @3: tail-out
      */
+    @1 = BATsetaccess(@1, BAT_READ);
     if ((@2 = BATmirror(BATmark(@1, (oid)0))) == NULL)
     {
         GDKerror("%s: head-mark failed.\n", name);
