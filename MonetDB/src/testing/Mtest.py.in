@@ -51,7 +51,6 @@ import fileinput
 import popen2
 import shutil
 import re
-import string
 import random
 import time
 import socket
@@ -60,6 +59,151 @@ import select
 #import getpass
 import Mfilter
 import prof
+
+# a bunch of classes to help with generating (X)HTML files
+class _Encode:
+    # mix-in class for encoding text and attribute values so that they
+    # don't get interpreted as something else by the browser
+    def encode(self, data, attr):
+        map = [('&', '&amp;'),          # MUST be first
+               ('<', '&lt;'),
+               ('>', '&gt;'),
+               (None, None),
+               # following chars only translated in attr values (attr is True)
+               ('"', '&quot;'),
+               ('\t', '&#9;'),
+               ('\n', '&#10;'),
+               ('\r', '&#13;'),
+               ]
+        for c, tr in map:
+            if c is None:
+                if not attr:
+                    break
+                continue
+            data = data.replace(c, tr)
+        return data
+
+class Element(_Encode):
+    # class to represent an (X)HTML element with its attributes and
+    # children
+
+    # inline elements, we do not add newlines to the contents of these
+    # elements
+    inline = ['tt','i','b','big','small','em','strong','dfn','code',
+              'samp','kbd','var','cite','abbr','acronym','a','img',
+              'object','br','script','map','q','sub','sup','span',
+              'bdo','input','select','textarea','label','button','font']
+    # empty elements
+    empty = ['link', 'basefont', 'br', 'area', 'img', 'param', 'hr',
+             'input', 'col', 'frame', 'isindex', 'base', 'meta', ]
+    xml = True                          # write XHTML instead of HTML
+
+    def __init__(self, tag, attrdict = None, *children):
+        self.tag = tag
+        if attrdict is None:
+            attrdict = {}
+        self.attrdict = attrdict
+        if children is None:
+            children = []
+        self.isempty = tag.lower() in self.empty
+        if self.isempty:
+            if children:
+                raise ValueError("empty element can't have children")
+            self.children = None
+        else:
+            self.children = list(children)
+
+    def __str__(self):
+        # string representation of the element with its children
+        s = ['<%s' % self.tag]
+        for name, value in sorted(self.attrdict.items()):
+            s.append(' %s="%s"' % (name, self.encode(value, True)))
+        if self.children or (not self.xml and not self.isempty):
+            s.append('>')
+            for c in self.children:
+                s.append(str(c))
+            s.append('</%s>' % self.tag)
+        elif self.xml:
+            s.append('/>')
+        else:
+            s.append('>')               # empty HTML element
+        return ''.join(s)
+
+    def write(self, f, newline = False):
+        # write the element with its children to a file
+        # if newline is set, add newlines at strategic points
+        if self.tag.lower() == 'html':
+            # before we write the DOCTYPE we should really check
+            # whether the document conforms...
+            if self.xml:
+                f.write('<!DOCTYPE html PUBLIC '
+                        '"-//W3C//DTD XHTML 1.0 Transitional//EN"\n'
+                        '                      '
+                        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n')
+            else:
+                f.write('<!DOCTYPE html PUBLIC '
+                        '"-//W3C//DTD HTML 4.01 Transitional//EN"\n'
+                        '                      '
+                        '"http://www.w3.org/TR/html4/loose.dtd">\n')
+        inline = self.tag.lower() in self.inline
+        f.write('<%s' % self.tag)
+        for name, value in sorted(self.attrdict.items()):
+            f.write(' %s="%s"' % (name, self.encode(value, True)))
+        if self.children or (not self.xml and not self.isempty):
+            if not inline:
+                for c in self.children:
+                    if not isinstance(c, Element):
+                        inline = True
+                        break
+            f.write('>')
+            if newline and not inline:
+                f.write('\n')
+            for c in self.children:
+                c.write(f, newline and not inline)
+            f.write('</%s>' % self.tag)
+        elif self.xml:
+            f.write('/>')
+        else:
+            f.write('>')                # empty HTML element
+        if newline:
+            f.write('\n')
+
+    def addchild(self, child):
+        self.children.append(child)
+
+    def addchildren(self, children):
+        for child in children:
+            self.children.append(child)
+
+    def inschild(self, index, child):
+        self.children.insert(index, child)
+
+class Text(_Encode):
+    # class to represent text in (X)HTML
+    def __init__(self, text = '', raw = False):
+        self.text = text
+        self.raw = raw
+
+    def __str__(self):
+        if self.raw:
+            return self.text
+        return self.encode(self.text, False)
+
+    def write(self, f, newline = False):
+        f.write(str(self))
+        if newline and not self.raw:
+            f.write('\n')
+
+class Comment:
+    # class to represent an (X)HTML comment (not currently used)
+    def __init__(self, text):
+        self.text = text
+
+    def __str__(self):
+        return '<!--%s-->' % self.text
+
+    def write(self, f, newline = False):
+        f.write(str(self))
 
 def _configure(str):
     # expand configure variables in str and return result
@@ -101,7 +245,7 @@ def _configure(str):
     while '$' in str and changed:
         changed = False
         for key, val in config:
-            nstr = string.replace(str, key, val)
+            nstr = str.replace(key, val)
             changed = changed or str != nstr
             str = nstr
     return str
@@ -113,6 +257,21 @@ import monet_options
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
+
+black = 'black'                         # #000000
+white = 'white'                         # #ffffff
+red = 'red'                             # #ff0000
+lime = 'lime'                           # #00ff00
+green = '#00aa00'
+darkgreen = '#005500'
+orange = '#ffaa00'
+stylesheet = Element('style', None, Text('''
+.error   { font-weight: bold; font-style: italic; color: red; }
+.warning { font-weight: bold; color: orange; }
+.good    {  }
+.header  { font-family: helvetica, arial; text-align: center; }
+.black   { color: black; }
+'''))
 
 TIMES = []
 
@@ -175,12 +334,12 @@ def startswith(str,pre) :
 
 import urllib
 ##def path(str) :
-##    return string.replace(str, '/', os.sep)
+##    return str.replace('/', os.sep)
 path = urllib.url2pathname
 ### path(str) #
 
 ##def url(str) :
-##    return string.replace(str, os.sep, '/')
+##    return str.replace(os.sep, '/')
 url = urllib.pathname2url
 ### url(str) #
 
@@ -193,7 +352,7 @@ def try_open(path, mode) :
     return f
 ###  try_open(path, mode) #
 
-def CreateHtmlIndex (env) :
+def CreateHtmlIndex (env, *body) :
     TSTDIR=env['TSTDIR']
     TSTTRGBASE=env['TSTTRGBASE']
     TSTTRGDIR=env['TSTTRGDIR']
@@ -203,65 +362,81 @@ def CreateHtmlIndex (env) :
     else:
         INDEX="index"
 
-    if os.path.isfile(os.path.join(TSTTRGDIR,INDEX+".head.html")):
+    if body:
         BACK = os.getcwd()
         os.chdir(TSTTRGDIR)
 
-        f = open(INDEX+".head.html","r")
-        BODY = f.readlines()
-        f.close()
-        f = open(INDEX+".head.html","w")
-        f.write("""\
-<HTML>
-<HEAD><TITLE>%s</TITLE></HEAD>
-<BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
-<CENTER>
-<TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=3>
-<TR>
-<TH ALIGN=CENTER><FONT FACE='helvetica, arial'>
-""" % HTMLTITLE)
         if TSTDIR:
-            f.write("""\
-<A HREF='%s%s/%s' TARGET='%s%s_%s_body'><FONT COLOR=#000000>%s</FONT></A><BR>
-""" % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D, OSVER, TSTDIR, TSTDIR))
-            #TODO ?
-            #<A HREF='.$THISFILE.Slave.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000><I>(log)</I></FONT></A>
+            header = Element('a',
+                             {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
+                              'target': '%s%s_%s_body' % (URLSUFFIX_D, OSVER, TSTDIR),
+                              'class': 'black'},
+                             Text(TSTDIR))
         else:
-            f.write("<FONT COLOR=#000000>%s</FONT>" % OSVER)
-            #TODO ?
-            #f.write("""\
-                        #<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
-                        #""")
-        f.write("</FONT></TH>\n")
-        for l in BODY:
-            f.write(l)
-        f.write("</TR>\n")
-        f.write("</TABLE>\n")
-        f.write("</CENTER>\n")
-        f.write("</BODY>\n")
-        f.write("</HTML>\n")
+            header = Element('span', {'class': 'black'},
+                             Text(OSVER))
+        tr = Element('tr', {},
+                     Element('th', {'class': 'header'},
+                             header))
+        tr.addchildren(body)
+        html = Element('html', {},
+                       Element('head', {},
+                               Element('title', {},
+                                       Text(HTMLTITLE)),
+                               stylesheet),
+                       Element('body',
+                               {'bgcolor': white,
+                                'text': black,
+                                'link': green,
+                                'vlink': darkgreen,
+                                'alink': lime},
+                               Element('center', {},
+                                       Element('table',
+                                               {'align': 'abscenter',
+                                                'border': '1',
+                                                'cellspacing': '0',
+                                                'cellpadding': '3'},
+                                               tr))))
+        f = open(INDEX+".head.html","w")
+        html.write(f, True)
         f.close()
 
         if TSTDIR:
             ROWS="72"
         else:
             ROWS="54"
+        html = Element('html', {},
+                       Element('head', {},
+                               Element('title', {}, Text(HTMLTITLE))),
+                       Element('frameset',
+                               {'rows': '%s,*' % ROWS,
+                                'frameborder': 'yes',
+                                'border': '1',
+                                'bordercolor': white,
+                                'marginwidth': '0',
+                                'marginheight': '0'},
+                               Element('frame',
+                                       {'src': '%s.head.html' % INDEX,
+                                        'scrolling': 'auto',
+                                        'name': '%s_%s_head' % (OSVER, TSTDIR),
+                                        'frameborder': 'yes',
+                                        'bordercolor': white,
+                                        'marginwidth': '0',
+                                        'marginheight': '0'}),
+                               Element('frame',
+                                       {'src': url(env['_'+TSTDIR+'_BODY_'][0]),
+                                        'scrolling': 'auto',
+                                        'name': '%s_%s_body' % (OSVER, TSTDIR),
+                                        'frameborder': 'yes',
+                                        'bordercolor': white,
+                                        'marginwidth': '0',
+                                        'marginheight': '0'})))
         f = open(INDEX+".html","w")
-        f.write("""\
-<HTML>
-<HEAD><TITLE>%s</TITLE></HEAD>
-<FRAMESET ROWS='%s,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='%s.head.html' SCROLLING=auto NAME='%s_%s_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='%s' SCROLLING=auto NAME='%s_%s_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-</FRAMESET>
-</HTML>
-""" % (HTMLTITLE, ROWS, INDEX, OSVER, TSTDIR,
-       url(env['_'+TSTDIR+'_BODY_'][0]),
-       OSVER, TSTDIR))
+        html.write(f, True)
         f.close()
         env['_'+TSTDIR+'_BODY_'] = ["",0]
         os.chdir(BACK)
-### CreateHtmlIndex (env) #
+### CreateHtmlIndex (env, *body) #
 
 def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     WHAT = stableWHAT[7:11]
@@ -284,17 +459,21 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     for l in fileinput.input(TST+WHAT+".diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
-        DIFF = "No differences"
+        diffclass = 'good'
+        difftext = 'No differences'
     elif l[:17] == '<!--MinorDiffs-->':
-        DIFF = "<FONT COLOR=#ffaa00><B>Minor differences</B></FONT>"
+        diffclass = 'warning'
+        difftext = 'Minor differences'
     elif l[:17] == '<!--MajorDiffs-->':
-        DIFF = "<FONT COLOR=#ff0000><B><I>Major differences</I></B></FONT>"
+        diffclass = 'error'
+        difftext = 'Major differences'
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
         f = open(TST+WHAT+".diff.html","a")
         f.write("\n<!--MajorDiffs-->\n")
         f.close()
-        DIFF = "<FONT COLOR=#ff0000><B><I>Major differences</I></B></FONT>"
+        diffclass = 'error'
+        difftext = 'Major differences'
     SYSTEM = OSVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
@@ -306,65 +485,121 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
         d.sort()
         rows = ""
         frames = ""
+        frameset = Element('frameset',
+                           {'frameborder': 'yes',
+                            'border': '1',
+                            'bordercolor': white,
+                            'marginwidth': '0',
+                            'marginheight': '0'})
         for f in d:
             if test.match(f):
                 rows = rows+",*"
-                frames = frames + "<FRAME SRC='"+f+"' SCROLLING=auto FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>\n"
+                frameset.addchild(Element('frame',
+                                          {'src': f,
+                                           'scrolling': 'auto',
+                                           'frameborder': 'yes',
+                                           'bordercolor': white,
+                                           'marginwidth': '0',
+                                           'marginheight': '0'}))
         if rows:
             xWHAT = ".prof-"+WHAT[1:]
             rows = "*"+rows
-            frames = "<FRAME SRC='"+TST+WHAT+".diff.html' SCROLLING=auto FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>\n"+frames
+            frameset.inschild(0, Element('frame',
+                                         {'src': TST+WHAT+'.diff.html',
+                                          'scrolling': 'auto',
+                                          'frameborder': 'yes',
+                                          'bordercolor': white,
+                                          'marginwidth': '0',
+                                          'marginheight': '0'}))
+            frameset.attrdict['rows'] = rows
+            html = Element('html', {},
+                           Element('head', {}.
+                                   Element('title', {}, Text(HTMLTITLE))),
+                           frameset)
             f = open(TST+xWHAT+".diff.html","w")
-            f.write("""\
-<HTML>
-<HEAD><TITLE>%s</TITLE></HEAD>
-<FRAMESET ROWS='%s' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-%s
-</FRAMESET>
-</HTML>
-""" % (HTMLTITLE, rows, frames))
+            html.write(f, True)
             f.close()
 
+    html = Element('html', {},
+                   Element('head', {},
+                           Element('title', {}, Text(HTMLTITLE)),
+                           stylesheet),
+                   Element('frameset', {'rows': '42,*',
+                                        'frameborder': 'yes',
+                                        'border': '1',
+                                        'bordercolor': white,
+                                        'marginwidth': '0',
+                                        'marginheight': '0'},
+                           Element('frame',
+                                   {'src': '.%s%s.head.html' % (TST, WHAT),
+                                    'scrolling': 'auto',
+                                    'name': '%s_%s_%s_%s_head' % (OSVER, TSTDIR, TST, WHAT[1:]),
+                                    'frameborder': 'yes',
+                                    'bordercolor': white,
+                                    'marginwidth': '0',
+                                    'marginheight': '0'}),
+                           Element('frame',
+                                   {'src': '%s%s.diff.html' % (TST, xWHAT),
+                                    'scrolling': 'auto',
+                                    'name': '%s_%s_%s_%s_body' % (OSVER, TSTDIR, TST, WHAT[1:]),
+                                    'frameborder': 'yes',
+                                    'bordercolor': white,
+                                    'marginwidth': '0',
+                                    'marginheight': '0'})))
     f = open(".%s%s.html" % (TST, WHAT),"w")
-    f.write("""\
-<HTML>
-<HEAD><TITLE>%s</TITLE></HEAD>
-<FRAMESET ROWS='42,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='.%s%s.head.html' SCROLLING=auto NAME='%s_%s_%s_%s_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='%s%s.diff.html' SCROLLING=auto NAME='%s_%s_%s_%s_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-</FRAMESET>
-</HTML>
-""" % (HTMLTITLE, TST, WHAT, OSVER, TSTDIR, TST, WHAT[1:], TST, xWHAT, OSVER, TSTDIR, TST, WHAT[1:]))
+    html.write(f, True)
     f.close()
     f = open(".%s%s.head.html" % (TST, WHAT),"w")
-    f.write("""\
-<HTML>
-<HEAD><TITLE>%(title)s</TITLE></HEAD>
-<BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
-<CENTER>
-<FONT FACE='helvetica, arial'>
-%(system)s
-<A HREF='%(tst)s%(xwhat)s.diff.html' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>%(diff)s</A>
-between
-<A HREF='%(tst)s%(stablewhat)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>%(stablewhat1)s (r%(revs)s)</A>
-and
-<A HREF='%(tst)s.test%(what)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>test%(what)s</A>
-of
-<A HREF='%(tst)s%(ext)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>%(tst)s%(ext)s (r%(revt)s)</A>
-in
-<A HREF='./' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>%(tstdir)s</A>
-(<A HREF='%(urlprefix)s%(urltstdir)s/%(tstsuff)s%(urlsuffix)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>CVS</A>,
- <A HREF='%(urlrelsrcdir)s' TARGET='%(osver)s_%(tstdir)s_%(tst)s_%(what1)s_body'>SRC</A>""" % {'title':HTMLTITLE, 'system':SYSTEM, 'tst':TST, 'xwhat':xWHAT, 'osver':OSVER, 'tstdir':TSTDIR, 'what1':WHAT[1:], 'diff':DIFF, 'stablewhat':stableWHAT, 'stablewhat1':stableWHAT[1:], 'revs':REVs, 'what':WHAT, 'ext':EXT, 'revt':REVt, 'urlprefix':URLPREFIX, 'urltstdir':url(TSTDIR), 'tstsuff':TSTSUFF, 'urlsuffix':URLSUFFIX_D, 'urlrelsrcdir':url(env['RELSRCDIR'])})
+    target = '%s_%s_%s_%s_body' % (OSVER, TSTDIR, TST, WHAT[1:])
+    text = Element('div', {'class': 'header'},
+                   Text(SYSTEM),
+                   Text(' '),
+                   Element('a', {'href': '%s%s.diff.html' % (TST, xWHAT),
+                                 'target': target,
+                                 'class': diffclass},
+                           Text(difftext)),
+                   Text(' between '),
+                   Element('a', {'href': '%s%s' % (TST, stableWHAT),
+                                 'target': target},
+                           Text('%s (r%s)' % (stableWHAT[1:], REVs))),
+                   Text(' and '),
+                   Element('a', {'href': '%s.test%s' % (TST, WHAT),
+                                 'target': target},
+                           Text('test%s' % WHAT)),
+                   Text(' of '),
+                   Element('a', {'href': TST + EXT, 'target': target},
+                           Text('%s%s (r%s)' % (TST, EXT, REVt))),
+                   Text(' in '),
+                   Element('a', {'href': './', 'target': target},
+                           Text(TSTDIR)),
+                   Text(' ('),
+                   Element('a', {'href': '%s%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D),
+                                 'target': target},
+                           Text('cvs')),
+                   Text(', '),
+                   Element('a', {'href': url(env['RELSRCDIR']),
+                                 'target': target},
+                           Text('src')))
     for d in env['RELBLDDIR'], os.path.dirname(env['RELBLDDIR']), env['RELBLDBASE']:
         if os.path.isdir(d):
-            f.write(""",
- <A HREF='%s' TARGET='%s_%s_%s_%s_body'>BLD</A>""" % (url(d), OSVER, TSTDIR, TST, WHAT[1:]))
-    f.write(""").
-</FONT>
-</CENTER>
-</BODY>
-</HTML>
-""")
+            text.addchild(Text(', '))
+            text.addchild(Element('a', {'href': url(d), 'target': target},
+                                  Text('BLD')))
+    text.addchild(Text(')'))
+    html = Element('html', {},
+                   Element('head', {},
+                           Element('title', {},
+                                   Text(HTMLTITLE)),
+                           stylesheet),
+                   Element('body',
+                           {'bgcolor': white,
+                            'text': black,
+                            'link': green,
+                            'vlink': darkgreen,
+                            'alink': lime},
+                           text))
+
+    html.write(f, True)
     f.close()
 #TODO?
 # <A HREF='.Mtest.Slave.Log.OutErr' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>LOG</A>).
@@ -374,54 +609,82 @@ def CreateSrcIndex (env, TST, EXT) :
     TSTSRCDIR = env['TSTSRCDIR']
     TSTDIR    = env['TSTDIR']
 
+    html = Element('html', {},
+                   Element('head', {},
+                           Element('title', {}, Text(HTMLTITLE))),
+                   Element('frameset',
+                           {'rows': '54,*',
+                            'frameborder': 'yes',
+                            'border': '1',
+                            'bordercolor': white,
+                            'marginwidth': '0',
+                            'marginheight': '0'},
+                           Element('frame',
+                                   {'src': '.%s.src.index.head.html' % TST,
+                                    'scrolling': 'auto',
+                                    'name': '%s_%s_%s_head' % (OSVER, TSTDIR, TST),
+                                    'frameborder': 'yes',
+                                    'bordercolor': white,
+                                    'marginwidth': '0',
+                                    'marginheight': '0'}),
+                           Element('frame',
+                                   {'src': '%s%s/%s/%s%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F),
+                                    'scrolling': 'auto',
+                                    'name': '%s_%s_%s_body' % (OSVER, TSTDIR, TST),
+                                    'frameborder': 'yes',
+                                    'bordercolor': white,
+                                    'marginwidth': '0',
+                                    'marginheight': '0'})))
     f = open("."+TST+".src.index.html","w")
-    f.write("""\
-<HTML>
-<HEAD><TITLE>%s</TITLE></HEAD>
-<FRAMESET ROWS='54,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='.%s.src.index.head.html' SCROLLING=auto NAME='%s_%s_%s_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-<FRAME SRC='%s%s/%s/%s%s%s'
-  SCROLLING=auto NAME='%s_%s_%s_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
-</FRAMESET>
-</HTML>
-""" % (HTMLTITLE, TST, OSVER, TSTDIR, TST, URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F, OSVER, TSTDIR, TST))
+    html.write(f, True)
     f.close()
-    f = open("."+TST+".src.index.head.html","w")
-    f.write("""\
-<HTML>
-<HEAD><TITLE>%s</TITLE></HEAD>
-<BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
-<CENTER>
-<TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=3>
-<TR>
-<TH ALIGN=CENTER><FONT FACE='helvetica, arial'>%s</FONT></TH>
-""" % (HTMLTITLE, TST))
+
+    tr = Element('tr', {},
+                 Element('th', {'class': 'header'},
+                         Text(TST)))
     for s in os.listdir(TSTSRCDIR):
         if len(s) >= len(TST)  and  s[:len(TST)] == TST:
-            f.write("""\
-<TD><FONT FACE='helvetica, arial'>
-  <A HREF='%s%s/%s/%s%s'
-    TARGET='%s_%s_%s_body'>%s</A></FONT></TD>
-""" % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F, OSVER, TSTDIR, TST, s))
-    f.write("""\
-</TR>
-</TABLE>
-</CENTER>
-</BODY>
-</HTML>
-""")
+            tr.addchild(Element('td', {'class': 'header'},
+                                Element('a',
+                                        {'href': '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F),
+                                         'target': '%s_%s_%s_body' % (OSVER, TSTDIR, TST)},
+                                        Text(s))))
+    html = Element('html', {},
+                   Element('head', {},
+                           Element('title', {},
+                                   Text(HTMLTITLE)),
+                           stylesheet),
+                   Element('body',
+                           {'bgcolor': white,
+                            'text': black,
+                            'link': green,
+                            'vlink': darkgreen,
+                            'alink': lime},
+                           Element('center', {},
+                                   Element('table',
+                                           {'align': 'abscenter',
+                                            'border': '1',
+                                            'cellspacing': '0',
+                                            'cellpadding': '3'},
+                                           tr))))
+    f = open("."+TST+".src.index.head.html","w")
+    html.write(f, True)
     f.close()
 ### CreateSrcIndex (env, TST, EXT) #
 
-def AddHref (TSTDIR, TST, WHAT, diff) :
-    A1 = "<A HREF='."+TST+WHAT+".html' TARGET='"+OSVER+"_"+TSTDIR+"_body'>"
-    A2 = "</A>"
-    if   diff==2:
-        return A1+"<FONT COLOR=#ff0000><B><I>"+WHAT[1:]+"</I></B></FONT>"+A2
-    elif diff==1:
-        return A1+"<FONT COLOR=#ffaa00><B>"+WHAT[1:]+"</B></FONT>"+A2
+def AddHref (href, target, linktext, diff) :
+    if   diff == 2:
+        klass = 'error'
+    elif diff == 1:
+        klass = 'warning'
     else:
-        return "("+A1+WHAT[1:]+A2+")"
+        klass = 'good'
+    a = Element('a', {'href': href, 'target': target, 'class': klass},
+                Text(linktext))
+    if klass == 'good':
+        return [Text('('), a, Text(')')]
+    else:
+        return [a]
 ### AddHref (TSTDIR, TST, WHAT, diff) #
 
 def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
@@ -430,8 +693,6 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
     CreateTstWhatXhtml(env, TST, STABLEout, EXT)
     CreateTstWhatXhtml(env, TST, STABLEerr, EXT)
 
-    f = open(".index.head.html","a")
-    f.write("<TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='."+TST+".src.index.html' TARGET='"+OSVER+"_"+TSTDIR+"_body'><FONT COLOR=#000000>")
     for l in fileinput.input(TST+".out.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
@@ -460,18 +721,26 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = 2
-    if   o==2 or e==2:
-        f.write("<FONT COLOR=#ff0000><B><I>"+TST+"</I></B></FONT>")
-    elif o==1 or e==1:
-        f.write("<FONT COLOR=#ffaa00><B>"+TST+"</B></FONT>")
+    if o == 2 or e == 2:
+        tstclass = 'error'
+    elif o == 1 or e == 1:
+        tstclass = 'warning'
     else:
-        f.write(TST)
-    f.write("</FONT></A><BR>")
-    f.write(AddHref(TSTDIR, TST, ".out", o))
-    f.write("&nbsp;|&nbsp;")
-    f.write(AddHref(TSTDIR, TST, ".err", e))
-    f.write("</FONT></TD>\n")
-    f.close()
+        tstclass = 'good'
+
+    td = Element('td', {'class': 'header'},
+                 Element('a', {'href': '.%s.src.index.html' % TST,
+                               'target': '%s_%s_body' % (OSVER, TSTDIR),
+                               'class': tstclass},
+                         Text(TST)),
+                 Element('br'))
+    td.addchildren(AddHref('.%s%s.html' % (TST, '.out'),
+                           '%s_%s_body' % (OSVER, TSTDIR),
+                           'out', o))
+    td.addchild(Text("&nbsp;|&nbsp;", raw = True))
+    td.addchildren(AddHref('.%s%s.html' % (TST, '.err'),
+                           '%s_%s_body' % (OSVER, TSTDIR),
+                           'err', e))
     if not env.has_key('_'+TSTDIR+'_BODY_')  or  \
        not env['_'+TSTDIR+'_BODY_'][0]  or  \
        ( (not env['_'+TSTDIR+'_BODY_'][1])  and  (o or e) ):
@@ -482,61 +751,46 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 
     CreateSrcIndex(env, TST, EXT)
 
-    return max(o,e)
+    return max(o,e), td
 ### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
 
-def AddSubToHtmlIndex (env, TSTDIR) :
+def AddSubToHtmlIndex (env, TSTDIR, diff) :
     TSTTRGBASE = env['TSTTRGBASE']
     TSTPREF = env['TSTPREF']
 
-    if os.path.isfile(os.path.join(TSTTRGBASE,TSTPREF,TSTDIR,".index.html")):
-        BACK = os.getcwd()
-        os.chdir(os.path.join(TSTTRGBASE,TSTPREF))
-        f = open("index.head.html","a")
-        f.write("<TD><FONT FACE='helvetica, arial'>")
-        A1 = "<A HREF='"+url(TSTDIR)+"/.index.html' TARGET='"+OSVER+"__body'>"
-        A2 = "</A>"
-        test = ( re.compile("^.*><B><I>.*</I></B><.*$", re.MULTILINE)
-               , re.compile("^.*><B>.*</B><.*$", re.MULTILINE) )
-        diff = 0
-        for l in fileinput.input(os.path.join(TSTDIR,".index.head.html")):
-            if   diff<2 and test[0].match(l):
-                diff = 2
-            elif diff<1 and test[1].match(l):
-                diff = 1
-        if   diff==2:
-            f.write(A1+"<FONT COLOR=#ff0000><B><I>"+TSTDIR+"</I></B></FONT>"+A2)
-        elif diff==1:
-            f.write(A1+"<FONT COLOR=#ffaa00><B>"+TSTDIR+"</B></FONT>"+A2)
-        else:
-            f.write("("+A1+TSTDIR+A2+")")
-        f.write("</FONT></TD>\n")
-        f.close()
-        if not env.has_key('__BODY_')  or  \
-           not env['__BODY_'][0]  or  \
-           ( (not env['__BODY_'][1])  and  diff ):
-            env['__BODY_'] = [TSTDIR+"/.index.html", diff]
-        os.chdir(BACK)
-### AddSubToHtmlIndex (env, TSTDIR) #
+    td = Element('td', {'class': 'header'})
+    td.addchildren(AddHref('%s/.index.html' % url(TSTDIR), '%s__body' % OSVER,
+                           TSTDIR, diff))
+    if not env.has_key('__BODY_')  or  \
+       not env['__BODY_'][0]  or  \
+       ( (not env['__BODY_'][1])  and  diff ):
+        env['__BODY_'] = [TSTDIR+"/.index.html", diff]
+    return td
+### AddSubToHtmlIndex (env, TSTDIR, diff) #
 
 def SkipTest(env, TST, EXT, REASON) :
     TSTDIR = env['TSTDIR']
-    TEXT="Skipping test "+TST+EXT+" "+REASON
+    TEXT = "Skipping test %s%s %s" % (TST, EXT, REASON)
     Warn(TEXT)
     f = open("."+TST+".SKIPPED","w")
-    f.write("\n"+THISFILE+"  Warning:  %s\n\n" % TEXT)
+    f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
     f.close()
-    f = open(".index.head.html","a")
-    f.write("""\
-<TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='.%(tst)s.src.index.html' TARGET='%(osver)s_%(tstdir)s_body'><FONT COLOR=#000000>
-%(tst)s</FONT></A><BR><A HREF='.%(tst)s.SKIPPED' TARGET='%(osver)s_%(tstdir)s_body'>(skipped)</A></FONT></TD>
-""" % {'tst':TST, 'osver':OSVER, 'tstdir':TSTDIR})
-    f.close()
+    target = '%s_%s_body' % (OSVER, TSTDIR)
+    td = Element('td', {'class': 'header'},
+                 Element('a', {'href': '.%s.src.index.html' % TST,
+                               'target': target,
+                               'class': 'black'},
+                         Text(TST)),
+                 Element('br'),
+                 Element('a', {'href': '.%s.SKIPPED' % TST,
+                               'target': target},
+                         Text('(skipped)')))
     if not env.has_key('_'+TSTDIR+'_BODY_')  or  \
        not env['_'+TSTDIR+'_BODY_'][0]  or  \
        not env['_'+TSTDIR+'_BODY_'][1]:
         env['_'+TSTDIR+'_BODY_'] = ["."+TST+".SKIPPED", 1]
     CreateSrcIndex(env, TST, EXT)
+    return td
 ### SkipTest(env, TST, EXT, REASON) #
 
 def find_test_dirs(thisdir) :
@@ -567,13 +821,13 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     TSTTRGDIR = os.path.normpath(os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR))
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        TSTDB = TSTPREF+"_"+string.replace(TSTDIR, os.sep, '_')
+        TSTDB = TSTPREF+"_"+TSTDIR.replace(os.sep, '_')
     else: # THISFILE == "Mapprove.py"
         TSTDB = ""
 
     if not testlist:
         for tst in fileinput.input(os.path.join(TSTSRCDIR,"All")):
-            tst = string.strip(tst)
+            tst = tst.strip()
             if tst  and  tst[0] != "#":
                 testlist.append(tst)
     if not testlist:
@@ -585,8 +839,8 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     env['TSTSRCDIR'] = TSTSRCDIR
     env['TSTBLDDIR'] = TSTBLDDIR
     env['TSTTRGDIR'] = TSTTRGDIR
-    env['RELSRCDIR'] = os.path.join(((os.pardir+os.sep)*(len(string.split(TSTDIR,os.sep))+1))+env['RELSRCBASE'],TSTDIR,TSTSUFF)
-    env['RELBLDDIR'] = os.path.join(((os.pardir+os.sep)*(len(string.split(TSTDIR,os.sep))+1))+env['RELBLDBASE'],TSTDIR,TSTSUFF)
+    env['RELSRCDIR'] = os.path.join(((os.pardir+os.sep)*(len(TSTDIR.split(os.sep))+1))+env['RELSRCBASE'],TSTDIR,TSTSUFF)
+    env['RELBLDDIR'] = os.path.join(((os.pardir+os.sep)*(len(TSTDIR.split(os.sep))+1))+env['RELBLDBASE'],TSTDIR,TSTSUFF)
     os.environ['TSTDB']     = TSTDB
     os.environ['TSTDIR']    = TSTDIR
     os.environ['TSTSRCDIR'] = TSTSRCDIR
@@ -600,6 +854,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
+    elem = None
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR':
             LogDBdir = os.path.join(env[LogDBvar],TSTDB)
@@ -626,9 +881,10 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
 
+        body = []
         for TST in testlist:
             os.environ['TST'] = TST
-            tt,Ft = RunTest(env, TST, BusyPorts)
+            tt, Ft, bodyline = RunTest(env, TST, BusyPorts)
             if tt:
                 t = "%7.3f" % tt
             else:
@@ -636,11 +892,13 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             TIMES.append([TSTDIR,TST,t,Ft])
             td = td + tt
             Fd = max(Fd,Ft)
+            if bodyline is not None:
+                body.append(bodyline)
         TIMES.append([TSTDIR,'',"%7.3f" % td,Fd])
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
-            CreateHtmlIndex(env)
-            AddSubToHtmlIndex(env, TSTDIR)
+            CreateHtmlIndex(env, *body)
+            elem = AddSubToHtmlIndex(env, TSTDIR, Fd)
 
         # HACK: remove large data-/input- files to save disk space
         for f in 'tcpip2.init.bat', 'ascii_io.4MBload', 'test100k', 'no.145.k100_unique1', 'test_00.k100_unique1', 'VOCrightpages.xml', 'VOCleftpages.xml':
@@ -656,7 +914,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         for TST in testlist:
             td = td + ApproveOutput(env, TST)
 
-    return td
+    return td, elem
 ### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
@@ -685,7 +943,7 @@ def ApproveOutput (env, TST) :
             else: # WHAT == 'err'
                 w = 1
             stableOUTPUT = TSTSRCDIRTST+StableOutErr(env,par,TSTSRCDIRTST,OS,RELEASE)[w]
-            SYSTEM = string.split(stableOUTPUT, WHAT)[-1]
+            SYSTEM = stableOUTPUT.split(WHAT)[-1]
 
         if os.path.isfile(testOUTPUT):
 #                       print "Approving "+testOUTPUT+" -> "+stableOUTPUT
@@ -714,7 +972,7 @@ def ApproveOutput (env, TST) :
                         else:
                             f.write(l[:1]+'\n')
                             as = 'Skipping'
-                        Warn('%s new (error) message: "%s"' % (as,string.replace(l, os.linesep, '')))
+                        Warn('%s new (error) message: "%s"' % (as,l.replace(os.linesep, '')))
                         sem = 1
                 f.flush()
                 f.close()
@@ -766,7 +1024,7 @@ def GetBitsAndModsAndStatic(env) :
     TSTPREF = env['TSTPREF']
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF)
     pOut,pIn,pErr = popen2.popen3(cmd)
-    if string.split("@VERSION@",".")[0] == '5':
+    if "@VERSION@".split(".", 1)[0] == '5':
         pIn.write('''\
             quit();
         ''')
@@ -800,7 +1058,7 @@ def GetBitsAndModsAndStatic(env) :
         tbs = re.compile("^# Compiled for .*/([63][42]bit); (.*) linked", re.MULTILINE)
         tm = re.compile("^Modules: (.*)$", re.MULTILINE)
         #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
-        for l in string.split(qOut, '\n'):
+        for l in qOut.split('\n'):
             bs = tbs.match(l)
             if bs:
                 env['TST_BITS'] = bs.group(1)
@@ -818,7 +1076,7 @@ def GetBitsAndModsAndStatic(env) :
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
         if not env['TST_MODS']:
-            if string.split("@VERSION@",".")[0] == '5':
+            if "@VERSION@".split(".", 1)[0] == '5':
                 Warn("Monet5: Check, whether required modules do exist, is not possible, yet!")
                 env['TST_MODS'].append("")
             else:
@@ -847,7 +1105,7 @@ def CheckMods(env, TST, SERVER, CALL) :
     missing = []
     if os.path.isfile(TST+".modules"):
         for m in fileinput.input(TST+".modules"):
-            m = string.strip(m)
+            m = m.strip()
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "MAPI":
@@ -868,7 +1126,7 @@ def CheckMods(env, TST, SERVER, CALL) :
 def CheckBATs(env, TST, TSTDB) :
     missing = []
 
-    if string.split("@VERSION@",".")[0] == '5':
+    if "@VERSION@".split(".", 1)[0] == '5':
         Warn("Monet5: Check, whether required BATs do exist, is not possible, yet!")
         return missing
 
@@ -897,7 +1155,7 @@ def CheckBATs(env, TST, TSTDB) :
     TST_BATS = []
     if qOut:
         tb = re.compile("^BATs: (.*)$", re.MULTILINE)
-        for l in string.split(qOut, '\n'):
+        for l in qOut.split('\n'):
             b = tb.match(l)
             if b:
                 TST_BATS = eval(b.group(1))
@@ -911,7 +1169,7 @@ def CheckBATs(env, TST, TSTDB) :
 
     if os.path.isfile(TST+".BATs"):
         for b in fileinput.input(TST+".BATs"):
-            b = string.strip(b)
+            b = b.strip()
             if b  and  b[0] != "#"  and  b not in TST_BATS:
                 missing.append(b)
     return missing
@@ -921,7 +1179,7 @@ def StartAt(cmd) :
     pOut,pIn,pErr = popen2.popen3(cmd)
     pIn.close()
     qOut, qErr = ReadMultiple([pOut, pErr])
-    return string.strip(string.split(qOut, '\n', 1)[0])
+    return qOut.split('\n', 1)[0].strip()
 ### StartAt(cmd) #
 
 def StopAt(ATJOB,ME) :
@@ -973,6 +1231,7 @@ def RunTest(env, TST, BusyPorts) :
     TSTTRGDIR = env['TSTTRGDIR']
     TSTTRGBASE = env['TSTTRGBASE']
     os.chdir(TSTSRCDIR)
+    elem = None
 
     TX = 0
     EXT = CALL = SERVER = ""
@@ -1030,7 +1289,7 @@ def RunTest(env, TST, BusyPorts) :
             #elif os.name == "posix":
         else:
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.milM|.milS|.milC|.sql|.x100]`")
-        return TX,Failed
+        return TX,Failed,elem
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingBATs = CheckBATs(env, TST, TSTDB)
@@ -1050,46 +1309,46 @@ def RunTest(env, TST, BusyPorts) :
     ReqMshdn = ["MAPI"]
 
     if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
-        SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
+        elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
-        SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
+        elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
     elif SERVER in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
-        SkipTest(env, TST, EXT, "as Mshutdown is not available.")
+        elem = SkipTest(env, TST, EXT, "as Mshutdown is not available.")
     elif SERVER == "MAPI" and  not env['MAPI_MIL']:
-        SkipTest(env, TST, EXT, "as 'mapi.mil' is not available.")
+        elem = SkipTest(env, TST, EXT, "as 'mapi.mil' is not available.")
         #elif SERVER == "MAPI" and  os.name == "nt":
-        #SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
+        #elem = SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
-        SkipTest(env, TST, EXT, "as "+string.split(env['MAPICLIENT'])[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".x100" and  not env['exe']['X100_Client'][0]:
-        SkipTest(env, TST, EXT, "as "+string.split(env['X100CLIENT'])[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['X100CLIENT'].split(None, 1)[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
-        SkipTest(env, TST, EXT, "as python is not available.")
+        elem = SkipTest(env, TST, EXT, "as python is not available.")
         #TODO:
         #elif EXT == ".milC":
-        #SkipTest(env, TST, EXT, "as MapiClient-tests are temporary not supported by "+THISFILE+".")
+        #elem = SkipTest(env, TST, EXT, "as MapiClient-tests are temporary not supported by "+THISFILE+".")
         ##elif EXT == ".milC"  and  os.name == "nt":
-        ###SkipTest(env, TST, EXT, "as MapiClient is currently not working on WindowsNT.")
+        ###elem = SkipTest(env, TST, EXT, "as MapiClient is currently not working on WindowsNT.")
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
-        #SkipTest(env, TST, EXT, "as java is not in $PATH.")
+        #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.")
     elif SERVER == "SQL" and  not env['SQL_SERVER_MIL']:
-        SkipTest(env, TST, EXT, "as %s.mil is not available." % env['SQL_SERVER'])
+        elem = SkipTest(env, TST, EXT, "as %s.mil is not available." % env['SQL_SERVER'])
     elif EXT == ".sql" and  not env['exe']['SQL_client'][0]:
-        SkipTest(env, TST, EXT, "as "+string.split(env['SQLCLIENT'])[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['SQLCLIENT'].split(None, 1)[0]+" is not available.")
     elif MissingMods:
-        SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
+        elem = SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
     elif MissingBATs:
-        SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
+        elem = SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
     elif CALL == "milCXp":
-        SkipTest(env, TST, EXT, "as multiple MapiClients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple MapiClients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "sqlXp":
-        SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif SERVER in BusyPorts:
         if SERVER == "SQL":
-            SkipTest(env, TST, EXT, "as SQLPORT=%s and/or MAPIPORT=%s are not available." % (env['SQLPORT'],env['MAPIPORT']))
+            elem = SkipTest(env, TST, EXT, "as SQLPORT=%s and/or MAPIPORT=%s are not available." % (env['SQLPORT'],env['MAPIPORT']))
         else:
-            SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
+            elem = SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in os.listdir(RELSRCDIR):
@@ -1097,18 +1356,18 @@ def RunTest(env, TST, BusyPorts) :
                 SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = open(TST+EXT+".src","r")
-            TSTSRC = os.path.expandvars(path(string.strip(f.readline())))
+            TSTSRC = os.path.expandvars(path(f.readline().strip()))
             f.close()
             if os.path.isfile(TSTSRC):
                 SymlinkOrCopy(TSTSRC,TST+EXT)
             else:
-                SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
-                return TX,Failed
+                elem = SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
+                return TX,Failed,elem
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
                 f = open(ff,"r")
-                TSTSRC = os.path.expandvars(path(string.strip(f.readline())))
+                TSTSRC = os.path.expandvars(path(f.readline().strip()))
                 f.close()
                 if os.path.isfile(TSTSRC):
                     SymlinkOrCopy(TSTSRC,ff[:-4])
@@ -1142,12 +1401,12 @@ def RunTest(env, TST, BusyPorts) :
 
         TIMEOUTED = "Mtimeout"
         for v in env['exe'].keys():
-            TIMEOUTED = TIMEOUTED+"|"+string.upper(v)
+            TIMEOUTED = TIMEOUTED+"|"+v.upper()
         test = re.compile("^[^#]*("+TIMEOUTED+")[^#]*(# ([0-9]+)x|#.*)?$", re.MULTILINE)
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
             for f in fileinput.input(TST+".timeout"):
-                TOf = int(string.strip(f))
+                TOf = int(f.strip())
                 if TOf > 1:
                     TIMEOUT = TIMEOUT * TOf
         if env['exe']['Mtimeout'][0]:
@@ -1221,7 +1480,7 @@ def RunTest(env, TST, BusyPorts) :
 
         if os.name != "nt" and sys.platform != 'cygwin':
             StopAt(ATJOB1,ME)
-            os.system(string.replace(string.replace(WHAT, '\\', ''), " -p"+ME+" ", ' '))
+            os.system(WHAT.replace('\\', '').replace(" -p"+ME+" ", ' '))
         else:
             while os.path.exists(os.path.join(TSTTRGBASE,".KILLED.lck")):
                 time.sleep(1)
@@ -1352,9 +1611,9 @@ def RunTest(env, TST, BusyPorts) :
                 timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
-            Failed = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
+            Failed, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
 
-    return TX,Failed
+    return TX,Failed,elem
 ### RunTest(env, TST, BusyPorts) #
 
 def CheckPort(host,port) :
@@ -1424,16 +1683,16 @@ def CheckSocket2(env,SERVER,SrvrErr) :
         os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
         op = 'port=%d' % port
         np = 'port=%s' % env[SERVER+'PORT']
-        env['exe']['Mserver']     = env['exe']['Mserver'][0]    , string.replace(env['exe']['Mserver'][1]    , op, np)
-        env['exe']['Mshutdown']   = env['exe']['Mshutdown'][0]  , string.replace(env['exe']['Mshutdown'][1]  , op, np)
-        env['exe']['Mapi_Client'] = env['exe']['Mapi_Client'][0], string.replace(env['exe']['Mapi_Client'][1], op, np)
-        env['exe']['SQL_client']  = env['exe']['SQL_client'][0] , string.replace(env['exe']['SQL_client'][1] , op, np)
-        env['exe']['X100_Client']  = env['exe']['X100_Client'][0] , string.replace(env['exe']['X100_Client'][1] , op, np)
-        os.environ['MSERVER']     = string.replace(os.environ['MSERVER']    , op, np)
-        os.environ['MSHUTDOWN']   = string.replace(os.environ['MSHUTDOWN']  , op, np)
-        os.environ['MAPI_CLIENT'] = string.replace(os.environ['MAPI_CLIENT'], op, np)
-        os.environ['SQL_CLIENT']  = string.replace(os.environ['SQL_CLIENT'] , op, np)
-        os.environ['X100_CLIENT']  = string.replace(os.environ['X100_CLIENT'] , op, np)
+        env['exe']['Mserver']     = env['exe']['Mserver'][0]      , env['exe']['Mserver'][1].replace(op, np)
+        env['exe']['Mshutdown']   = env['exe']['Mshutdown'][0]    , env['exe']['Mshutdown'][1].replace(op, np)
+        env['exe']['Mapi_Client'] = env['exe']['Mapi_Client'][0]  , env['exe']['Mapi_Client'][1].replace(op, np)
+        env['exe']['SQL_client']  = env['exe']['SQL_client'][0]   , env['exe']['SQL_client'][1].replace(op, np)
+        env['exe']['X100_Client']  = env['exe']['X100_Client'][0] , env['exe']['X100_Client'][1].replace(op, np)
+        os.environ['MSERVER']     = os.environ['MSERVER'].replace(op, np)
+        os.environ['MSHUTDOWN']   = os.environ['MSHUTDOWN'].replace(op, np)
+        os.environ['MAPI_CLIENT'] = os.environ['MAPI_CLIENT'].replace(op, np)
+        os.environ['SQL_CLIENT']  = os.environ['SQL_CLIENT'].replace(op, np)
+        os.environ['X100_CLIENT']  = os.environ['X100_CLIENT'].replace(op, np)
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 ! Using new %sPORT=%s !
@@ -1651,7 +1910,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if test.match(f):
                     if CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
-                    elif string.split("@VERSION@",".")[0] == '5':
+                    elif "@VERSION@".split(".", 1)[0] == '5':
                         RunIt("M2m %s | %s" % (f,cmd), "", ClntOutFile, ClntErrFile)
                     else:
                         RunIt(cmd+"< "+f, "", ClntOutFile, ClntErrFile)
@@ -1823,8 +2082,8 @@ def Check(command, input) :
     except IOError, (IOerrNo, IOerrStr):
         Warn("Closing input pipe in Check failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     qOut, qErr = ReadMultiple([pOut, pErr])
-    qOut = string.split(qOut, '\n')
-    qErr = string.split(qErr, '\n')
+    qOut = qOut.split('\n')
+    qErr = qErr.split('\n')
     test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
                        r"^!WARNING: monet_checkbat: "                                        "|"
                        r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
@@ -1855,7 +2114,7 @@ def Check(command, input) :
 ### Check(command, input) #
 
 def CheckExec(cmd) :
-    for p in string.split(os.environ['PATH'],os.pathsep):
+    for p in os.environ['PATH'].split(os.pathsep):
         x = isexecutable(os.path.join(p,cmd))
         if x[0]:
             return os.path.join(p,cmd+x[1])
@@ -1870,7 +2129,7 @@ def SetExecEnv(exe,verbose) :
     if verbose:
         STDERR.flush()
     for v in exe.keys():
-        V = string.upper(v)
+        V = v.upper()
         if  v != 'Mtimeout':
             os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
         elif exe[v][0]:
@@ -1926,18 +2185,18 @@ elif os.environ.has_key('COMPUTERNAME'):
     HOST = os.environ['COMPUTERNAME']
 else:
     HOST = "BATMAN"
-HOST = string.split(HOST,'.')[0]
+HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 
 if os.name == "nt":
     OS    = "WindowsNT"
     RELEASE = "5.0"
 else:
-    OS    = string.split(os.uname()[0],"_NT-")[0]
+    OS    = os.uname()[0].split("_NT-", 1)[0]
     if OS == "AIX":
         RELEASE = os.uname()[3]+"."+os.uname()[2]
     else:
-        RELEASE = string.split(os.uname()[2],"(")[0]
+        RELEASE = os.uname()[2].split("(", 1)[0]
 OSVER = OS+RELEASE
 os.environ['OS'] = OS
 os.environ['OSVER'] = OSVER
@@ -1991,7 +2250,7 @@ def GetMonetConfig(arg) :
 ##    qOut = pOut.readlines()
 ##    pOut.close()
 ##    if len(qOut):
-##        value = string.strip(qOut[0])
+##        value = qOut[0].strip()
 ##    return value
 ### GetMonetConfig(arg) #
 
@@ -2295,7 +2554,7 @@ def main(argv) :
         RELBLDBASE = os.curdir
     else:
         TSTBASE = os.path.dirname(os.path.commonprefix([env['TSTSRCBASE'],env['TSTBLDBASE'],env['TSTTRGBASE']]))
-        RELBASE = ((os.pardir+os.sep)*len(string.split(env['TSTTRGBASE'][len(TSTBASE+os.sep):],os.sep)))
+        RELBASE = ((os.pardir+os.sep)*len(env['TSTTRGBASE'][len(TSTBASE+os.sep):].split(os.sep)))
         RELSRCBASE = RELBASE+env['TSTSRCBASE'][len(TSTBASE):]
         RELBLDBASE = RELBASE+env['TSTBLDBASE'][len(TSTBASE):]
     env['RELSRCBASE'] = RELSRCBASE
@@ -2381,9 +2640,9 @@ def main(argv) :
         exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
-        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
-        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
-        exe['X100_Client'] = CheckExec(string.split(env['X100CLIENT'])[0]), '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['Mapi_Client'] = CheckExec(env['MAPICLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['SQL_client']  = CheckExec(env['SQLCLIENT'].split(None, 1)[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
+        exe['X100_Client'] = CheckExec(env['X100CLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -2405,7 +2664,7 @@ def main(argv) :
             #TODO:
             #else:
                 # WARNING/ERROR
-        elif string.find(args[0], os.sep) != -1:
+        elif args[0].find(os.sep) != -1:
             ErrXit("'"+args[0]+"` is neither a valid directory in "+os.getcwd()+" nor a valid test-name!")
         elif args[0] != "All":
             #TODO:
@@ -2423,7 +2682,7 @@ def main(argv) :
             i = i + 1
         if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
             while i < len(args):
-                if string.find(args[i], os.sep) == -1:
+                if args[i].find(os.sep) == -1:
                     #TODO:
                     # check, whether args[i] in All
                     testlist.append(args[i])
@@ -2528,24 +2787,30 @@ def main(argv) :
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
         for v in 'OS', 'RELEASE', 'TST_BITS', 'TST_STATIC':
-            w = string.replace(v,'TST_','')
+            w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
 
     STDERR.flush()
     t_ = 0
+    body = []
     if len(testdirs) == 1:
         if testlist:
             tsts = "tests "+str(testlist)
         else:
             tsts = "all tests"
         print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
-        t_ = PerformDir(env, testdirs[0], testlist, BusyPorts)
+        t_, elem = PerformDir(env, testdirs[0], testlist, BusyPorts)
+        if elem is not None:
+            body.append(elem)
     else:
         testdirs.sort()
         print "\nRunning all tests in directories %s.\n" % str(testdirs)
         for d in testdirs:
-            t_ = t_ + PerformDir(env, d, [], BusyPorts)
+            t, elem = PerformDir(env, d, [], BusyPorts)
+            t_ = t_ + t
+            if elem is not None:
+                body.append(elem)
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
@@ -2561,10 +2826,8 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         env['TSTDIR'] = ""
         env['TSTTRGDIR'] = os.path.join(env['TSTTRGBASE'],TSTPREF)
-        CreateHtmlIndex(env)
+        CreateHtmlIndex(env, *body)
 
-        test = ( re.compile("^.*<B><I>.*$", re.MULTILINE)
-               , re.compile("^.*<B>.*$", re.MULTILINE) )
         Failed = 0
         for f in Failure[1:]:
             Failed += f
