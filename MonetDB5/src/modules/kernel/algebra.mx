@@ -2100,9 +2100,8 @@ str ALGmarkHead(int *result, int *bid, oid *base) {
     }
 	if( CMDmark(&bn,b,base)== GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
-		bn= BATreverse(b);
 		bn = BATsetaccess(bn,1);
-		BBPincref(*result = bn->batCacheid, TRUE);
+		BBPincref(*result = -bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
 	}
@@ -2116,9 +2115,8 @@ str ALGmarkHead_default(int *result, int *bid) {
     }
 	if( CMDmark_default(&bn,b)== GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
-		bn= BATreverse(b);
 		bn = BATsetaccess(bn,1);
-		BBPincref(*result = bn->batCacheid, TRUE);
+		BBPincref(*result = -bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
 	}
