@@ -467,6 +467,25 @@ case $enable_oid32 in
 yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 64-bit architecture]);;
 esac
 
+
+dnl find out, whether the C compiler is C99 compliant
+AC_MSG_CHECKING([if your compiler is C99 compliant])
+have_c99=no
+AC_RUN_IFELSE(AC_LANG_PROGRAM(,
+[[
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+return 0;
+#else
+return 1;
+#endif
+]]
+),
+[AC_DEFINE([HAVE_C99], 1, [Is your compiler C99 compliant?])
+have_c99=yes
+AC_MSG_RESULT(yes)],
+AC_MSG_RESULT(no))
+
+
 dnl some dirty hacks
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
