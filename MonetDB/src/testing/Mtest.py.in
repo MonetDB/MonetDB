@@ -184,12 +184,15 @@ def startswith(str,pre) :
     return not ((len(str) < len(pre)) or (str[:len(pre)] != pre))
 ### startswith(str,pre) #
 
-def path(str) :
-    return string.replace(str, '/', os.sep)
+import urllib
+##def path(str) :
+##    return string.replace(str, '/', os.sep)
+path = urllib.url2pathname
 ### path(str) #
 
-def url(str) :
-    return string.replace(str, os.sep, '/')
+##def url(str) :
+##    return string.replace(str, os.sep, '/')
+url = urllib.pathname2url
 ### url(str) #
 
 def CreateHtmlIndex (env) :
@@ -1147,7 +1150,7 @@ def RunTest(env, TST, BusyPorts) :
             while timedout and ACCURACYerr >= 0:
                 if ACCURACYerr == 0:
                     MDIFF = MDIFF0
-                timedout = os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -A'+str(ACCURACYerr)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
+                timedout = os.system('%s %s %s -A%s -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], str(ACCURACYerr), REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
             AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
@@ -1175,7 +1178,7 @@ def randomPort(l,h) :
     rpt = 0
     while rpt < repeat:
         port = random.randrange(l,h,1)
-        if CheckPort(host,port)[0] == 1:
+        if CheckPort(host,port)[0]:
             rpt = rpt + 1
         else:
             break
@@ -1194,10 +1197,11 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
     rpt = 0
     while rpt < repeat:
         busy, Serrno, Serrstr = CheckPort(host,port)
-        if busy == 1:
+        if busy:
             rpt = rpt + 1
-            Smsg =      "\n! Socket-Check failed for "+SERVER+"server on <"+host+":"+str(port)+"> with #"+str(Serrno)+"; '"+Serrstr+"' !"
-            Smsg = Smsg+"\n! Waiting "+str(wait)+" seconds (%d/%d) ... " % (rpt,repeat)
+            Smsg = """
+! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
+! Waiting %d seconds (%d/%d) ... """ % (SERVER, host, port, Serrno, Serrstr, wait, rpt, repeat)
             STDERR.write(Smsg)
             STDERR.flush()
             SrvrErr.write(Smsg)
@@ -1267,7 +1271,7 @@ def Log() :
 
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     ATJOB2 = ""
-    LogLine = env['TSTDIR']+os.sep+TST+EXT+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
+    LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
     STDERR.flush()
     STDOUT.write(prompt()+LogLine)
     STDOUT.flush()
@@ -1598,7 +1602,7 @@ def ReadFromMonetConf(env, var) :
 
 def GetMonetConfig(arg) :
     value = ""
-    #pOut,pIn = popen2.popen2(THISPATH+os.sep+'monet-config '+arg)
+    #pOut,pIn = popen2.popen2(os.path.join(THISPATH,'monet-config')+' '+arg)
     pOut,pIn = popen2.popen2('monet-config '+arg)
     pIn.close()
     qOut = pOut.readlines()
@@ -1636,7 +1640,7 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONET_CONF']     = "FindMonetConf(env)"
-        dft['MONET_MOD_PATH'] = "''"   #"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'MonetDB'"
+        dft['MONET_MOD_PATH'] = "''"   #"os.path.join(env['MONET_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONET_PREFIX'],'lib','MonetDB')"
         dft['setMONET_MOD_PATH'] = "'--set monet_mod_path='+env['MONET_MOD_PATH']"
         dft['setGDK_DBFARM'] = "'--dbfarm '+env['GDK_DBFARM']"
         dft['MAPIPORT']       = "str(randomPort(50000,59999))"
@@ -1877,7 +1881,7 @@ def main(argv) :
     STDOUT.flush()
 
     ## set/extend PATH & LD_LIBRARY_PATH
-    #bp = ""        #env['MONET_PREFIX']+os.sep+"bin"
+    #bp = ""        #os.path.join(env['MONET_PREFIX'],"bin")
     #if THISFILE in ["Mtest.py", "Mprofile.py"]:
     #       lp = env['MONET_MOD_PATH']
     #else: # THISFILE == "Mapprove.py"
@@ -1911,12 +1915,12 @@ def main(argv) :
     # check for executables, set their standard options and export them
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
-        exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver --config='+env['MONET_CONF']+' --debug='+env['GDK_DEBUG']+' '+env['setMONET_MOD_PATH']+' '+env['setGDK_DBFARM']+' --set monet_prompt='
-        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py --set mapi_port='+env['MAPIPORT']
+        exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver --config=%s --debug=%s %s %s --set monet_prompt=' % (env['MONET_CONF'], env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
+        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py --config=%s --set mapi_port=%s' % (env['MONET_CONF'], env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
-        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), env['MAPICLIENT']
+        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s --config=%s' % (env['MAPICLIENT'], env['MONET_CONF'])
         exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , env['SQLCLIENT']
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
@@ -2043,7 +2047,7 @@ def main(argv) :
         for S in 'MAPI', 'SQL':
             port = int(env[S+'PORT'])
             busy, Serrno, Serrstr = CheckPort(host,port)
-            if busy == 1:
+            if busy:
                 Warn("Skipping %s tests as %sPORT=%s is not available (Error #%d: '%s')!" % (S,S,env[S+'PORT'],Serrno,Serrstr))
                 BusyPorts.append(S)
 
