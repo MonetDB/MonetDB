@@ -1,12 +1,15 @@
 stdout of test 'test_55` in directory 'tests/suite_00` itself:
 
 
-# 01:15:59 >  
-# 01:15:59 >  Mtimeout -timeout 60 Mserver --config=/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_suite_00  < test_55.milS
-# 01:15:59 >  
+# 13:41:37 >  
+# 13:41:37 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_suite_00  < test_55.milS
+# 13:41:37 >  
 
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------#
-# BAT:	  tmp_24  #
+# BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -21,7 +24,7 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #-------------------------#
-# BAT:	  tmp_23	  #
+# BAT:	  tmp_25	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 0,	  <tmp_27>	  ]
@@ -34,18 +37,18 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_environment",	  "str",  "str",  23,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  543,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  543,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  543,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  508,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  543,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1427,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  544,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  573,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  544,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  544,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  509,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  573,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  544,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  573,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1435,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_fcntbl",	  "str",  "oid",  571,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  573,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  573,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
@@ -60,8 +63,7 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ "tmp_28",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1	  ]
 [ "tmp_29",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1	  ]
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_25>"		  ]
 [ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
@@ -89,7 +91,7 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
 [ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -123,7 +125,7 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
 
-# 06:08:40 >  
-# 06:08:40 >  Done.
-# 06:08:40 >  
+# 13:41:37 >  
+# 13:41:37 >  Done.
+# 13:41:37 >  
 
