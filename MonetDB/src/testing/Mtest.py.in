@@ -1668,11 +1668,11 @@ def FindCmdLst(env) :
 
 def ReadFromMonetConf(env, var) :
     value = ""
-    test = re.compile("^\s*"+var+"\s*=\s*([^#\s]+)", re.MULTILINE)
+    test = re.compile("^\s*"+var+"\s*=\s*([^#\n]+)", re.MULTILINE)
     for l in fileinput.input(env['MONET_CONF']):
         m = test.match(l)
         if m:
-            value = m.group(1)
+            value = string.replace(string.strip(m.group(1)), '"', '')
     test = re.compile("^[^\${}]*\${([^}]+)}", re.MULTILINE)
     m = test.match(value)
     while m:
