@@ -2229,7 +2229,7 @@ gdk_export MT_Lock		GDKswapLock[BBPLOCKMASK+1];
 gdk_export MT_Lock		GDKidxLock[BBPLOCKMASK+1]; 
 gdk_export MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
 gdk_export MT_Lock		GDKunloadLock; 
-gdk_export MT_Lock		GDKunloadBarrier; 
+gdk_export MT_Cond		GDKunloadCond; 
 gdk_export MT_Lock		GDKcacheLock; 
 gdk_export MT_Lock		GDKtrimLock; 
 gdk_export MT_Lock		GDKtmLock; 

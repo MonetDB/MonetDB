@@ -294,14 +294,14 @@ actions are to go on unlocked while other entries in the BBP may be modified).
 
 #define BBP_unload_on(bid, nme) {						\
 		MT_set_lock(GDKunloadLock, nme);				\
-		BBPunloadCnt++ == 0;						\
+		BBPunloadCnt++;							\
 		MT_unset_lock(GDKunloadLock, nme);				\
 		BBP_status_on(bid, BBPUNLOADING, nme);				}
 
 #define BBP_unload_off(bid, nme) {						\
 		BBP_status_off(bid, BBPUNLOADING, nme);				\
 		MT_set_lock(GDKunloadLock, nme);				\
-		if (--BBPunloadCnt == 0) MT_signal_cond(unloadCond, nme);	\
+		if (--BBPunloadCnt == 0) MT_signal_cond(GDKunloadCond, nme);	\
 		assert(BBPunloadCnt >= 0);					\
 		MT_unset_lock(GDKunloadLock, nme);				}
 @c
@@ -314,7 +314,6 @@ MT_Id BBP_getpid(void){
 }
 
 static int BBPunloadCnt=0; 
-static MT_Cond unloadCond = NULL;
 
 void BBPlock(str nme) {
 	int i;
@@ -328,18 +327,19 @@ void BBPlock(str nme) {
 	/* wait for all pending unloads to finish */
 	MT_set_lock(GDKunloadLock, nme);				
 	if (BBPunloadCnt > 0)
-		MT_wait_cond(unloadCond, GDKunloadLock, nme);
+		MT_wait_cond(GDKunloadCond, GDKunloadLock, nme);
+	MT_unset_lock(GDKunloadLock, nme);				
 }
 
 void BBPunlock(str nme) {
 	int i;
+
+	locked_by = 0;
+	BBP_notrim = 0;
 	for(i=BBPLOCKMASK; i>=0;  i--)
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], nme);
 	MT_unset_lock(GDKcacheLock, nme);
-	BBP_notrim = 0;
-	locked_by = 0;
 	MT_unset_lock(GDKtrimLock, nme);
-	MT_unset_lock(GDKunloadLock, nme);				
 }
 
 
@@ -440,7 +440,6 @@ void BBPinit(void) {
 	char	path[1024];
 	int     max_stamp = 0, min_stamp = 0x7fffffff;
      
-	unloadCond = MT_create_cond();
 	/* try to obtain a BBP.dir */
 	GDKfilepath(path, BATDIR, "BBP", "bak");
 	if (recover) {
