@@ -641,7 +641,7 @@ def msc_library(fd, var, libmap, msc):
 
     lib = "lib"
     ld = "LIBDIR"
-    if (libmap.has_key("DIR")):
+    if libmap.has_key("DIR"):
         lib = libname
         ld = libmap["DIR"][0] # use first name given
     ld = msc_translate_dir(ld,msc)
@@ -658,9 +658,10 @@ def msc_library(fd, var, libmap, msc):
 
     v = sep + libname
     msc['LIBS'].append(v)
-    msc['INSTALL'].append((pref+v,pref+v,dll,'$('+lib+'dir)'))
     if ld != 'LIBDIR':
-        fd.write("%sdir = %s\n" % (lib,ld))
+        msc['INSTALL'].append((pref+v,pref+v,dll,ld))
+    else:
+        msc['INSTALL'].append((pref+v,pref+v,dll,'$('+lib+'dir)'))
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
@@ -985,8 +986,8 @@ BIN = C:\\bin
 
 # Nothing much configurable below
 
-# cl -? describes the options
-CC = cl -GF -W3 -MD -nologo -Zi -G6
+# cl -help describes the options
+CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
 # optimize use -Ox
 
 JAVAC = javac
@@ -1132,12 +1133,12 @@ CXXEXT = \\\"cxx\\\"
             fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, ext, src, ext, dir, dst, ext))
             if ext == '.dll':
                 fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', src, '.lib', dir, dst, '.lib'))
-        td = []
+        td = {}
         for (x, y, u, dir) in msc['INSTALL']:
-            if td.count(dir) == 0:
+            if not td.has_key(dir):
                 fd.write('"%s":\n' % dir)
                 fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (dir, dir))
-                td.append(dir)
+                td[dir] = 1
 
     fd.write("install-data:")
     if cwd != topdir and msc['HDRS']:
