@@ -27,7 +27,7 @@ Over..
 # 22:17:15 >  
 
 0. false	false
-0. 4 columns:	4
+0. 4 columns:	5
 1.	mTests_src_jdbc_tests
 	java.lang.Integer
 	11
@@ -92,6 +92,23 @@ Over..
 	true
 	false
 	false
+5.	mTests_src_jdbc_tests
+	java.lang.String
+	11
+	myclob
+	myclob
+	1111
+	clob
+	table_test_rmetadata
+	false
+	false
+	false
+	false
+	true
+	true
+	false
+	false
+5.	(null)
 5.	(null)
 5.	(null)
 5.	(null)
@@ -99,6 +116,7 @@ Over..
 6.	java.lang.Integer is an instance of java.lang.Integer
 6.	java.lang.Double is an instance of java.lang.Double
 6.	java.lang.Boolean is an instance of java.lang.Boolean
+6.	java.lang.String is an instance of java.lang.String
 6.	java.lang.String is an instance of java.lang.String
 
 # 22:17:15 >  
