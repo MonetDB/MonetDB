@@ -648,6 +648,7 @@ int view_gdk_env(
 ){
 	BAT *b = *retval = GDKenv;
 	if (b == 0) return GDK_FAIL;
+	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
