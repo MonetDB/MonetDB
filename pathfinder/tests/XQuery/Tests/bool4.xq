@@ -1,0 +1,1 @@
+boolean(boolean(1))
