@@ -3,12 +3,15 @@
 @a Niels Nes
 @d 12/01/2001
 @m 
-.module ascii_io;
+.MODULE ascii_io;
+
+.USE stream;
 
 .COMMAND ascii_io_debug( int debug ) = init_ascii_io; ""
 
 .COMMAND load( BAT[void,str] names, BAT[void,str] seps, BAT[void,str] types, str datafile, int nr ) : BAT[str,bat] = ascii_io_load; ""
 .COMMAND dump( BAT[void,str] names, BAT[void,str] seps, BAT[void,bat] bats, str datafile, int nr ) = ascii_io_dump; ""
+.COMMAND output( BAT[any,any] order, BAT[void,str] seps, BAT[void,bat] bats, stream s ) = ascii_io_output; ""
 
 .LOAD
 
@@ -32,8 +35,8 @@ proc load_data( BAT[str,BAT] fmt, str data, int nr ) : BAT[str,BAT] := {
 proc make_persistent( BAT[str,BAT] bats ) := {
 	if (bats.exist("key")){
 		var keybat := bats.find("key");
-		bats := bats.diff(bats.reverse.select("key").reverse);
-		bats@batloop(){
+		var nbats := bats.diff(bats.reverse.select("key").reverse);
+		nbats@batloop(){
 			var b := keybat.reverse().join($t);
 			b.rename($h);
 			b.persists(true);
@@ -107,6 +110,7 @@ proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 #ifndef _ASCII_IO2_H_
 #define _ASCII_IO2_H_
 
+#include <stream.h>
 #include <ascii_io.proto.h>
 
 extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, int nr );
@@ -124,12 +128,13 @@ extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr 
 #include <ctype.h>
 
 typedef struct ascii_io_t {
-	char *name;
-	char *sep;
-	int seplen;
-	char *type;
-	int  adt;
-	BAT *c;
+	char* name;
+	char* sep;
+	int   seplen;
+	char* type;
+	int   adt;
+	BAT*  c;
+	ptr   p;
 } ascii_io;
 
 typedef struct ascii_load_t {
@@ -401,6 +406,26 @@ int dump_line( ascii_io *fmt, stream *fd, int nr_attrs, int id ){
 	return 0;
 }
 
+static INLINE
+int output_line( ascii_io *fmt, stream *fd, int nr_attrs, ptr id ){
+	char *str;
+	int i;
+	for( i = 0; i<nr_attrs; i++){
+		fmt[i].p = BUNfnd( fmt[i].c, id );
+		if (fmt[i].p == 0)
+			break;
+	}
+	if ( i == nr_attrs ){
+	    for( i = 0; i<nr_attrs; i++){
+		str = ADT_toStr(fmt[i].adt, (char*)BUNtail(fmt[i].c,fmt[i].p));
+		(void)fd->write( fd, str, 1, strlen(str) );
+		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
+		GDKfree(str);
+	    }
+	}
+	return 0;
+}
+
 #define SIZE 1*1024*1024
 static
 int load_file( ascii *as, stream *fd ){
@@ -456,6 +481,23 @@ int dump_file( ascii *as, stream *fd ){
 	return 0;
 }
 
+static
+int output_file( ascii *as, BAT *order, stream *fd ){
+	BUN p,q;
+        int i = 0;
+	as->nr = BATcount(order);
+	
+	BATloop( order, p, q){
+		ptr h = BUNhead(order, p);
+		if (output_line( as->format, fd, as->nr_attrs, h ) < 0)
+			return -1;
+		i++;
+		if (ascii_io_debug && (i%1000000) == 0)
+			fprintf(stderr, "dumped %d lines\n", i);
+        } 
+	return i;
+}
+
 BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, 
 		 char *datafile, int nr ){
 	BAT *bats = NULL;
@@ -500,6 +542,18 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats,
 	}
 	destroy_format( &as );
 }
+int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s ){
+	ascii as;
+
+	as.nr_attrs = 0;
+	as.nr = -1;
+	if (create_dumpformat( &as, NULL, seps, bats) >= 0 && 
+	    assign_BATs( &as, bats ) >=  0){
+		output_file( &as, order, s ); 
+	}
+	destroy_format( &as );
+	return as.nr;
+}
 
 int init_ascii_io(int *debug){
 	ascii_io_debug = *debug;
@@ -515,6 +569,10 @@ int ascii_io_load( BAT **bats, BAT *names, BAT* seps, BAT* types, str datafile, 
 }
 int ascii_io_dump( BAT *names, BAT* seps, BAT* bats, str datafile, int *nr){
 	ASCIIdump( names, seps, bats, datafile, *nr );
+	return GDK_SUCCEED;
+}
+int ascii_io_output( BAT *order, BAT* seps, BAT* bats, stream *s ){
+	ASCIIoutput( order, seps, bats, s );
 	return GDK_SUCCEED;
 }
 

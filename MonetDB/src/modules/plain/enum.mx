@@ -76,11 +76,11 @@ will even be the case for long 64-bit integers.
 .COMMAND enum_ishisto(int tpe, BAT[any,any] b) : bit = enum_ishisto;
  "returns whether enum_table(tpe) is a histogram on b's head column"
 
-.COMMAND enum_print(stream fp, BAT[any,int] b1, BAT[any,any] b2, 
+.COMMAND enum_print(fstream fp, BAT[any,int] b1, BAT[any,any] b2, 
                                BAT[any,any] b3) = enum_print2;
  "quick file print of 3 synced bats, and int tail and two enumerated strings"
 
-.COMMAND enum_print(stream fp, BAT[any,int] b1, 
+.COMMAND enum_print(fstream fp, BAT[any,int] b1, 
                                BAT[any,any] b2) = enum_print1;
  "quick file print of 2 synced bats, an int and enumerated string tail"
 

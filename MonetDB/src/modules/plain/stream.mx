@@ -3,7 +3,48 @@
 @* An simple interface to streams 
 This interface can be used to open 'non compressed, gzipped, bz2zipped' 
 data files. 
-TODO add same for sockets
+
+@m
+.MODULE stream;
+.USE io;
+
+    .ATOM stream = ptr;
+    .END;
+
+.COMMAND open_rstream( str filename ) : stream = stream_open_rstream;
+	"open a file stream for reading"
+.COMMAND open_wstream( str filename ) : stream = stream_open_wstream;
+	"open a file stream for writing"
+.COMMAND open_rastream( str filename ) : stream = stream_open_rastream; 
+	"open ascii file stream for reading"
+.COMMAND open_wastream( str filename ) : stream = stream_open_wastream; 
+	"open ascii file stream for writing"
+
+.COMMAND socket_rstream( int socket, str name ) : stream = 
+	stream_socket_rstream; "open a socket stream for reading"
+.COMMAND socket_wstream( int socket, str name ) : stream = 
+	stream_socket_wstream; "open a socket stream for writing"
+.COMMAND socket_rastream( int socket, str name ) : stream = 
+	stream_socket_rastream; "open ascii socket stream for reading"
+.COMMAND socket_wastream( int socket, str name ) : stream = 
+	stream_socket_wastream; "open ascii socket stream for writing"
+
+.COMMAND file_rstream( fstream file, str name ) : stream = 
+	stream_file_rstream; "open a file stream for reading"
+.COMMAND file_wstream( fstream file, str name ) : stream = 
+	stream_file_wstream; "open a file stream for writing"
+.COMMAND file_rastream( fstream file, str name ) : stream = 
+	stream_file_rastream; "open ascii file stream for reading"
+.COMMAND file_wastream( fstream file, str name ) : stream = 
+	stream_file_wastream; "open ascii file stream for writing"
+
+.COMMAND stream_write( stream s, str data ) = stream_write_string;
+	"write data on the stream"
+
+.COMMAND stream_close( stream s ) = stream_close_stream; 
+	"close and destroy the stream s"
+
+.END stream;
 @h
 #ifndef _STREAM_H_
 #define _STREAM_H_
@@ -35,14 +76,16 @@ typedef struct stream {
 	void (*destroy)( struct stream *s );
 } stream;
 
+#include <blob.h>
+#include <io.h>
+#include "stream.proto.h"
+
 stream *open_rstream( char *filename );
 stream *open_wstream( char *filename );
 /* open in ascii stream in read mode */
 stream *open_rastream( char *filename ); 
 /* open in ascii stream in write mode*/
 stream *open_wastream( char *filename ); 
-
-stream *open_socket( int sock, char *sockname );
 
 #ifdef HAVE_LIBZ
 stream *open_gzrstream( char *filename );
@@ -57,6 +100,16 @@ stream *open_bzwstream( char *filename );
 stream *open_bzrastream( char *filename );
 stream *open_bzwastream( char *filename );
 #endif
+
+stream *socket_rstream( int socket, char *name );
+stream *socket_wstream( int socket, char *name );
+stream *socket_rastream( int socket, char *name );
+stream *socket_wastream( int socket, char *name );
+
+stream *file_rstream( FILE *fp, char *name );
+stream *file_wstream( FILE *fp, char *name );
+stream *file_rastream( FILE *fp, char *name );
+stream *file_wastream( FILE *fp, char *name );
 
 #endif /*_STREAM_H_*/
 @c
@@ -129,7 +182,9 @@ static int stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	return fwrite( buf, elmsize, cnt, (FILE*)s->stream_data);
 }
 static void stream_close( stream *s ){
-	fclose( (FILE*)s->stream_data);
+	FILE *fp = (FILE*)s->stream_data;
+	if (fp != stdin && fp != stdout && fp != stderr)
+		fclose( fp );
 }
 static stream *open_stream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
@@ -147,35 +202,6 @@ static stream *open_stream( char *filename, char *flags ){
 	return s;
 }
 
-static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
-	size = read( (int)s->stream_data, buf, size );
-	if (size) return size/elmsize;
-	return 0;
-}
-static int socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
-	size = write( (int)s->stream_data, buf, size );
-	if (size) return size/elmsize;
-	return 0;
-}
-static void socket_close( stream *s ){
-	close( (int)s->stream_data); 
-}
-static stream *open_socket( int socket, char *sockname ){
-	stream *s = create_stream(sockname);
-
-	s->read  = &socket_read;
-	s->write = &socket_write;
-	s->close = &socket_close;
-	s->error = &stream_error;
-	if (socket != 0){ 
-		s->stream_data = (char*)socket;
-		return s;
-	}
-	s->errnr = OPEN_ERROR;
-	return s;
-}
 stream *open_rstream( char *filename ){
   	char    ext[EXT_LEN];
 
@@ -416,4 +442,237 @@ stream *open_bzwastream( char *filename ){
 	stream *s = open_bzstream( filename, "wb");
 	return s;
 }
+
+stream *socket_rstream( int socket, char *name ){
+	stream *s = create_stream(name);
+	FILE *fp = fdopen( socket, "rb" );
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+
+		if (s->errnr == NO__ERROR)
+	   		fread( (char*)&s->byteorder, sizeof(sht), 
+						1, (FILE*)s->stream_data);
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
+stream *socket_wstream( int socket, char *name ){
+	stream *s = create_stream(name);
+	FILE *fp = fdopen( socket, "wb" );
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+
+		if (s->errnr == NO__ERROR){
+	   		fwrite( (char*)&s->byteorder, sizeof(sht), 
+						1, (FILE*)s->stream_data);
+		}
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
+stream *socket_rastream( int socket, char *name ){
+	stream *s = create_stream(name);
+	FILE *fp = fdopen( socket, "r" );
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
+stream *socket_wastream( int socket, char *name ){
+	stream *s = create_stream(name);
+	FILE *fp = fdopen( socket, "w" );
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
+stream *file_rstream( FILE *fp, char *name ){
+	stream *s = create_stream(name);
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+
+		if (s->errnr == NO__ERROR)
+	   		fread( (char*)&s->byteorder, sizeof(sht), 
+						1, (FILE*)s->stream_data);
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
+stream *file_wstream( FILE *fp, char *name ){
+	stream *s = create_stream(name);
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+
+		if (s->errnr == NO__ERROR){
+	   		fwrite( (char*)&s->byteorder, sizeof(sht), 
+						1, (FILE*)s->stream_data);
+		}
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
+stream *file_rastream( FILE *fp, char *name ){
+	stream *s = create_stream(name);
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
+stream *file_wastream( FILE *fp, char *name ){
+	stream *s = create_stream(name);
+	s->read  = &stream_read;
+	s->write = &stream_write;
+	s->close = &stream_close;
+	s->error = &stream_error;
+	if (fp != NULL){ 
+		s->stream_data = (char*)fp;
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
 #endif
+
+int stream_open_rstream( stream *S, str filename ){
+	if ((*(stream**)S = open_rstream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_open_wstream( stream *S, str filename ){
+	if ((*(stream**)S = open_wstream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_open_rastream( stream *S, str filename ){
+	if ((*(stream**)S = open_rastream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_open_wastream( stream *S, str filename ){
+	if ((*(stream**)S = open_wastream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_rstream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_rstream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_wstream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_wstream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_rastream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_rastream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_wastream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_wastream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_file_rstream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_rstream( *file, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_file_wstream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_wstream( *file, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_file_rastream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_rastream( *file, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_file_wastream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_wastream( *file, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+
+int stream_write_string( stream *S, str data ){
+	stream *s = *(stream**)S;
+	s->write( s, data, 1, strlen(data));
+	return GDK_SUCCEED;
+}
+
+int stream_close_stream( stream *S ){
+	stream *s = *(stream**)S;
+	s->close( s );
+	s->destroy( s );
+	return GDK_SUCCEED;
+}
