@@ -279,12 +279,12 @@ int NumEvents = 0, NoEvent = 0;
     { 10 , 10 , (str) &chr_nil   , "bank_conflicts"                         , 0x0A , 0 } , /* P5_BANK_CONFLICTS        , "bank_conflicts"        , 10 , 10 , P5_BANK_CONFLICTS                              , */
     { 11 , 11 , (str) &chr_nil   , "misaligned_data_memory_references"      , 0x0B , 0 } , /* P5_MISAL_MEM_REF         , "misal_mem_ref"         , 11 , 11 , P5_MISALIGNED_DATA_MEMORY_OR_IO_REFERENCES     , */
     { 12 , 12 , (str) &chr_nil   , "code_reads"                             , 0x0C , 0 } , /* P5_CODE_READ             , "code_read"             , 12 , 12 , P5_CODE_READ                                   , */
-    { 13 , 13 , (str) &chr_nil   , "code_TLB_misses"                        , 0x0D , 0 } , /* P5_CODE_TLB_MISS         , "code_tlb_miss"         , 13 , 13 , P5_CODE_TLB_MISS                               , */
-    { 14 , 14 , (str) &chr_nil   , "code_cache_misses"                      , 0x0E , 0 } , /* P5_CODE_CACHE_MISS       , "code_cache_miss"       , 14 , 14 , P5_CODE_CACHE_MISS                             , */
+    { 13 , 13 , "iTLB_misses"    , "code_TLB_misses"                        , 0x0D , 0 } , /* P5_CODE_TLB_MISS         , "code_tlb_miss"         , 13 , 13 , P5_CODE_TLB_MISS                               , */
+    { 14 , 14 , "L1_inst_misses" , "code_cache_misses"                      , 0x0E , 0 } , /* P5_CODE_CACHE_MISS       , "code_cache_miss"       , 14 , 14 , P5_CODE_CACHE_MISS                             , */
     { 15 , 15 , (str) &chr_nil   , "segment_register_loaded"                , 0x0F , 0 } , /* P5_SEG_REG_LOAD          , "seg_reg_load"          , 15 , 15 , P5_ANY_SEGMENT_REGISTER_LOADED                 , */
     { 16 , 16 , (str) &chr_nil   , "segment_descriptor_cache_accesses"      , 0x10 , 0 } , /* P5_SEG_DESC_CACHE_ACCS   , "seg_desc_cache_accs"   , 16 , -1 , 0                                              , */
     { 17 , 17 , (str) &chr_nil   , "segment_descriptor_cache_hits"          , 0x11 , 0 } , /* P5_SEG_DESC_CACHE_HIT    , "seg_desc_cache_hit"    , 17 , -1 , 0                                              , */
-    { 18 , 18 , (str) &chr_nil   , "branches"                               , 0x12 , 0 } , /* P5_BRANCHES              , "branches"              , 18 , 16 , P5_BRANCHES                                    , */
+    { 18 , 18 , "branches"       , "branches"                               , 0x12 , 0 } , /* P5_BRANCHES              , "branches"              , 18 , 16 , P5_BRANCHES                                    , */
     { 19 , 19 , (str) &chr_nil   , "BTB_hits"                               , 0x13 , 0 } , /* P5_BTB_HITS              , "btb_hits"              , 19 , 17 , P5_BTB_HITS                                    , */
     { 20 , 20 , (str) &chr_nil   , "taken_branches_or_BTB_hits"             , 0x14 , 0 } , /* P5_BRANCH_OR_BTB_HIT     , "branch_or_btb_hit"     , 20 , 18 , P5_TAKEN_BRANCH_OR_BTB_HIT                     , */
     { 21 , 21 , (str) &chr_nil   , "pipeline_flushes"                       , 0x15 , 0 } , /* P5_PIPELINE_FLUSH        , "pipeline_flush"        , 21 , 19 , P5_PIPELINE_FLUSHES                            , */
@@ -342,8 +342,8 @@ int NumEvents = 0, NoEvent = 0;
     {  3 ,  3 , (str) &chr_nil   , "number_of_M_lines_evicted_from_the_DCU"                 , 0x47 , 0   } , /* P6_DCU_M_LINES_OUT               , "dcu_m_lines_out"               , P6_DCU_M_LINES_OUT               , */
     {  4 ,  4 , (str) &chr_nil   , "number_of_cycles_while_DCU_miss_outstanding"            , 0x48 , 0   } , /* P6_DCU_MISS_OUTSTANDING          , "dcu_miss_outstanding"          , P6_DCU_MISS_OUTSTANDING          , */
     {  5 ,  5 , (str) &chr_nil   , "number_of_non/cachable_instruction_fetches"             , 0x80 , 0   } , /* P6_IFU_IFETCH                    , "ifu_ifetch"                    , P6_IFU_FETCH                     , */
-    {  6 ,  6 , (str) &chr_nil   , "number_of_instruction_fetch_misses"                     , 0x81 , 0   } , /* P6_IFU_IFETCH_MISS               , "ifu_ifetch_miss"               , P6_IFU_FETCH_MISS                , */
-    {  7 ,  7 , (str) &chr_nil   , "number_of_ITLB_misses"                                  , 0x85 , 0   } , /* P6_ITLB_MISS                     , "itlb_miss"                     , P6_ITLB_MISS                     , */
+    {  6 ,  6 , "L1_inst_misses" , "number_of_instruction_fetch_misses"                     , 0x81 , 0   } , /* P6_IFU_IFETCH_MISS               , "ifu_ifetch_miss"               , P6_IFU_FETCH_MISS                , */
+    {  7 ,  7 , "iTLB_misses"    , "number_of_ITLB_misses"                                  , 0x85 , 0   } , /* P6_ITLB_MISS                     , "itlb_miss"                     , P6_ITLB_MISS                     , */
     {  8 ,  8 , (str) &chr_nil   , "cycles_instruction_fetch_pipe_is_stalled"               , 0x86 , 0   } , /* P6_IFU_MEM_STALL                 , "ifu_mem_stall"                 , P6_IFU_MEM_STALL                 , */
     {  9 ,  9 , (str) &chr_nil   , "cycles_instruction_length_decoder_is_stalled"           , 0x87 , 0   } , /* P6_ILD_STALL                     , "ild_stall"                     , P6_ILD_STALL                     , */
     { 10 , 10 , (str) &chr_nil   , "number_of_L2_instruction_fetches"                       , 0x28 , 0xF } , /* P6_L2_IFETCH                     , "l2_ifetch"                     , P6_L2_IFETCH                     , */
@@ -392,10 +392,10 @@ int NumEvents = 0, NoEvent = 0;
     { 53 , 53 , (str) &chr_nil   , "number_of_hardware_interrupts_received"                 , 0xc8 , 0   } , /* P6_HW_INT_RX                     , "hw_int_rx"                     , P6_HW_INT_RX                     , */
     { 54 , 54 , (str) &chr_nil   , "cycles_interrupts_are_disabled"                         , 0xc6 , 0   } , /* P6_CYCLES_INT_MASKED             , "cycles_int_masked"             , P6_CYCLES_INT_MASKED             , */
     { 55 , 55 , (str) &chr_nil   , "cycles_interrupts_are_disabled_with_pending_interrupts" , 0xc7 , 0   } , /* P6_CYCLES_INT_PENDING_AND_MASKED , "cycles_int_pending_and_masked" , P6_CYCLES_INT_PENDING_AND_MASKED , */
-    { 56 , 56 , (str) &chr_nil   , "number_of_branch_instructions_retired"                  , 0xc4 , 0   } , /* P6_BR_INST_RETIRED               , "br_inst_retired"               , P6_BR_INST_RETIRED               , */
-    { 57 , 57 , (str) &chr_nil   , "number_of_mispredicted_bracnhes_retired"                , 0xc5 , 0   } , /* P6_BR_MISS_PRED_RETIRED          , "br_miss_pred_retired"          , P6_BR_MISS_PRED_RETIRED          , */
-    { 58 , 58 , (str) &chr_nil   , "number_of_taken_branches_retired"                       , 0xc9 , 0   } , /* P6_BR_TAKEN_RETIRED              , "br_taken_retired"              , P6_BR_TAKEN_RETIRED              , */
-    { 59 , 59 , (str) &chr_nil   , "number_of_taken_mispredictions_branches_retired"        , 0xca , 0   } , /* P6_BR_MISS_PRED_TAKEN_RET        , "br_miss_pred_taken_ret"        , P6_BR_MISS_PRED_TAKEN_RET        , */
+    { 56 , 56 , "branches"       , "number_of_branch_instructions_retired"                  , 0xc4 , 0   } , /* P6_BR_INST_RETIRED               , "br_inst_retired"               , P6_BR_INST_RETIRED               , */
+    { 57 , 57 , "branch_misses"  , "number_of_mispredicted_branches_retired"                , 0xc5 , 0   } , /* P6_BR_MISS_PRED_RETIRED          , "br_miss_pred_retired"          , P6_BR_MISS_PRED_RETIRED          , */
+    { 58 , 58 , "Tbranches"      , "number_of_taken_branches_retired"                       , 0xc9 , 0   } , /* P6_BR_TAKEN_RETIRED              , "br_taken_retired"              , P6_BR_TAKEN_RETIRED              , */
+    { 59 , 59 , "Tbranch_misses" , "number_of_taken_mispredictions_branches_retired"        , 0xca , 0   } , /* P6_BR_MISS_PRED_TAKEN_RET        , "br_miss_pred_taken_ret"        , P6_BR_MISS_PRED_TAKEN_RET        , */
     { 60 , 60 , (str) &chr_nil   , "number_of_branch_instructions_decoded"                  , 0xe0 , 0   } , /* P6_BR_INST_DECODED               , "br_inst_decoded"               , P6_BR_INST_DECODED               , */
     { 61 , 61 , (str) &chr_nil   , "number_of_branches_that_miss_the_BTB"                   , 0xe2 , 0   } , /* P6_BTB_MISSES                    , "btb_misses"                    , P6_BTB_MISSES                    , */
     { 62 , 62 , (str) &chr_nil   , "number_of_bogus_branches"                               , 0xe4 , 0   } , /* P6_BR_BOGUS                      , "br_bogus"                      , P6_BR_BOGUS                      , */
@@ -420,14 +420,14 @@ int NumEvents = 0, NoEvent = 0;
     {  7 ,  7 , (str) &chr_nil   , "Misaligned data references"                                            , 0x47 , 0    } , /* K7_MISALIGN_MEM_REF                , "misalign_mem_ref"                ,  7 ,  9 , K7_MISALIGNED_DATA_REFERENCES                                 , */
     {  8 ,  8 , (str) &chr_nil   , "Instruction cache fetches"                                             , 0x80 , 0    } , /* K7_IFU_IFETCH                      , "ifu_ifetch"                      ,  8 , 18 , K7_INSTRUCTION_CACHE_FETCHES                                  , */
     {  9 ,  9 , (str) &chr_nil   , "Instruction cache misses"                                              , 0x81 , 0    } , /* K7_IFU_IFETCH_MISS                 , "ifu_ifetch_miss"                 ,  9 , 19 , K7_INSTRUCTION_CACHE_MISSES                                   , */
-    { 10 , 10 , (str) &chr_nil   , "L1 ITLB misses (and L2 ITLB hits)"                                     , 0x84 , 0    } , /* K7_ITLB1_MISSES_PROPER             , "ITLB1_misses_proper"             , 10 , 22 , K7_L1_ITLB_MISSES                                             , */
+    { 10 , 10 , "iTLB_misses"    , "L1 ITLB misses (and L2 ITLB hits)"                                     , 0x84 , 0    } , /* K7_ITLB1_MISSES_PROPER             , "ITLB1_misses_proper"             , 10 , 22 , K7_L1_ITLB_MISSES                                             , */
     { 11 , 11 , (str) &chr_nil   , "(L1 and) L2 ITLB misses"                                               , 0x85 , 0    } , /* K7_ITLB2_MISSES                    , "ITLB2_misses"                    , 11 , 23 , K7_L2_ITLB_MISSES                                             , */
     { 12 , 12 , (str) &chr_nil   , "Retired instructions (includes exceptions, interrupts, resyncs)"       , 0xC0 , 0    } , /* K7_INST_RETIRED                    , "inst_retired"                    , 12 , 28 , K7_RETIRED_INSTRUCTIONS                                       , */
     { 13 , 13 , (str) &chr_nil   , "Retired Ops"                                                           , 0xC1 , 0    } , /* K7_UOPS_RETIRED                    , "uops_retired"                    , 13 , 29 , K7_RETIRED_OPS                                                , */
-    { 14 , 14 , (str) &chr_nil   , "Retired branches (conditional, unconditional, exceptions, interrupts)" , 0xC2 , 0    } , /* K7_BR_INST_RETIRED                 , "br_inst_retired"                 , 14 , 30 , K7_RETIRED_BRANCHES                                           , */
-    { 15 , 15 , (str) &chr_nil   , "Retired branches mispredicted"                                         , 0xC3 , 0    } , /* K7_BR_MISS_PRED_RETIRED            , "br_miss_pred_retired"            , 15 , 31 , K7_RETIRED_BRANCHES_MISPREDICTED                              , */
-    { 16 , 16 , (str) &chr_nil   , "Retired taken branches"                                                , 0xC4 , 0    } , /* K7_BR_TAKEN_RETIRED                , "br_taken_retired"                , 16 , 32 , K7_RETIRED_TAKEN_BRANCHES                                     , */
-    { 17 , 17 , (str) &chr_nil   , "Retired taken branches mispredicted"                                   , 0xC5 , 0    } , /* K7_BR_MISS_PRED_TAKEN_RET          , "br_miss_pred_taken_ret"          , 17 , 33 , K7_RETIRED_TAKEN_BRANCHES_MISPREDICTED                        , */
+    { 14 , 14 , "branches"       , "Retired branches (conditional, unconditional, exceptions, interrupts)" , 0xC2 , 0    } , /* K7_BR_INST_RETIRED                 , "br_inst_retired"                 , 14 , 30 , K7_RETIRED_BRANCHES                                           , */
+    { 15 , 15 , "branch_misses"  , "Retired branches mispredicted"                                         , 0xC3 , 0    } , /* K7_BR_MISS_PRED_RETIRED            , "br_miss_pred_retired"            , 15 , 31 , K7_RETIRED_BRANCHES_MISPREDICTED                              , */
+    { 16 , 16 , "Tbranches"      , "Retired taken branches"                                                , 0xC4 , 0    } , /* K7_BR_TAKEN_RETIRED                , "br_taken_retired"                , 16 , 32 , K7_RETIRED_TAKEN_BRANCHES                                     , */
+    { 17 , 17 , "Tbranch_misses" , "Retired taken branches mispredicted"                                   , 0xC5 , 0    } , /* K7_BR_MISS_PRED_TAKEN_RET          , "br_miss_pred_taken_ret"          , 17 , 33 , K7_RETIRED_TAKEN_BRANCHES_MISPREDICTED                        , */
     { 18 , 18 , (str) &chr_nil   , "Retired far control transfers"                                         , 0xC6 , 0    } , /* K7_FAR_CTRTF_RETIRED               , "far_ctrtf_retired"               , 18 , 34 , K7_RETIRED_FAR_CONTROL_TRANSFERS                              , */
     { 19 , 19 , (str) &chr_nil   , "Retired resync branches (only non-control transfer branches counted)"  , 0xC7 , 0    } , /* K7_BR_RESYNC_RETIRED               , "br_resync_retired"               , 19 , 35 , K7_RETIRED_RESYNC_BRANCHES                                    , */
     { 20 , 20 , (str) &chr_nil   , "Interrupts masked cycles (IF=0)"                                       , 0xCD , 0    } , /* K7_CYCLES_INT_MASKED               , "cycles_int_masked"               , 20 , 39 , K7_INTERRUPTS_MASKED_CYCLES                                   , */
@@ -465,46 +465,46 @@ int NumEvents = 0, NoEvent = 0;
     { 52 , 52 , (str) &chr_nil   , "Breakpoint matches for DR1"                                            , 0xDD , 0    } , /* K7_brk_pnt_DR1                     , "brk_pnt_DR1"                     , 52 , 54 , K7_BREAKPOINT_MATCHES_FOR_DR1                                 , */
     { 53 , 53 , (str) &chr_nil   , "Breakpoint matches for DR2"                                            , 0xDE , 0    } , /* K7_brk_pnt_DR2                     , "brk_pnt_DR2"                     , 53 , 55 , K7_BREAKPOINT_MATCHES_FOR_DR2                                 , */
     { 54 , 54 , (str) &chr_nil   , "Breakpoint matches for DR3"                                            , 0xDF , 0    } , /* K7_brk_pnt_DR3                     , "brk_pnt_DR3"                     , 54 , 56 , K7_BREAKPOINT_MATCHES_FOR_DR3                                 , */
-    { 55 , 55 , (str) &chr_nil   , "Instruction cache refills from L2"                                     , 0x82 , 0    } , /* 0                                  , "IC_REFILLS_FROM_L2"              , -1 , 20 , K7_INSTRUCTION_CACHE_REFILLS_FROM_L2                          , */
-    { 56 , 56 , (str) &chr_nil   , "Instruction cache refills from System"                                 , 0x83 , 0    } , /* 0                                  , "IC_REFILLS_FROM_SYSTEM"          , -1 , 21 , K7_INSTRUCTION_CACHE_REFILLS_FROM_SYSTEM                      , */
+    { 55 , 55 , "L1_inst_misses" , "Instruction cache refills from L2"                                     , 0x82 , 0    } , /* 0                                  , "IC_REFILLS_FROM_L2"              , -1 , 20 , K7_INSTRUCTION_CACHE_REFILLS_FROM_L2                          , */
+    { 56 , 56 , "L2_inst_misses" , "Instruction cache refills from System"                                 , 0x83 , 0    } , /* 0                                  , "IC_REFILLS_FROM_SYSTEM"          , -1 , 21 , K7_INSTRUCTION_CACHE_REFILLS_FROM_SYSTEM                      , */
     { 29 , 29 , (str) &chr_nil   , (str) &chr_nil                                                          , 0x76 , 0    } };
 
  #elif ( defined(HW_IRIX64) && defined(HW_IP27) ) /* R10k, R12k */      
                                                                         
   #define X_NUMEVENTS 32                                                
   event_t X_event[X_NUMEVENTS+1] = {                                    
-   {  0 , 16 , "cycles"         , "cycles" } ,
-   {  1 , -1 , (str) &chr_nil   , "instructions" } ,
-   {  2 , -1 , (str) &chr_nil   , "loads" } ,
-   {  3 , -1 , (str) &chr_nil   , "stores" } ,
-   {  4 , -1 , (str) &chr_nil   , "cond_stores" } ,
-   {  5 , -1 , (str) &chr_nil   , "cond_stores_fail" } ,
-   {  6 , -1 , (str) &chr_nil   , "branches_resolved" } ,
-   {  7 , -1 , (str) &chr_nil   , "L2_writebacks" } ,
-   {  8 , -1 , (str) &chr_nil   , "L2_ECCerrors" } ,
-   {  9 , -1 , (str) &chr_nil   , "L1_ins_misses" } ,
-   { 10 , -1 , (str) &chr_nil   , "L2_ins_misses" } ,
-   { 11 , -1 , (str) &chr_nil   , "L2_ins_mispredicts" } ,
-   { 12 , -1 , (str) &chr_nil   , "interventions_reqs" } ,
-   { 13 , -1 , (str) &chr_nil   , "invalidations_reqs" } ,
-   { 14 , -1 , (str) &chr_nil   , "func_completion_cycles" } ,
-   { 15 , 17 , (str) &chr_nil   , "instructions_grad" } ,
-   {  0 , 16 , "cycles"         , "cycles" } ,
-   { 15 , 17 , (str) &chr_nil   , "instructions_grad" } ,
-   { -1 , 18 , (str) &chr_nil   , "loads_grad" } ,
-   { -1 , 19 , (str) &chr_nil   , "stores_grad" } ,
-   { -1 , 20 , (str) &chr_nil   , "cond_stores_grad" } ,
-   { -1 , 21 , (str) &chr_nil   , "fp_ops_grad" } ,
-   { -1 , 22 , (str) &chr_nil   , "L1_writebacks" } ,
-   { -1 , 23 , "TLB_misses"     , "TLB_misses" } ,
-   { -1 , 24 , (str) &chr_nil   , "branches_mispredict" } ,
-   { -1 , 25 , "L1_data_misses" , "L1_data_misses" } ,
-   { -1 , 26 , "L2_data_misses" , "L2_data_misses" } ,
-   { -1 , 27 , (str) &chr_nil   , "L2_data_mispredicts" } ,
-   { -1 , 28 , (str) &chr_nil   , "intervention_hits" } ,
-   { -1 , 29 , (str) &chr_nil   , "invalidation_hits" } ,
-   { -1 , 30 , (str) &chr_nil   , "L2_clean_excl" } ,
-   { -1 , 31 , (str) &chr_nil   , "L2_shared_excl" } ,
+   {  0 , -1 , "cycles"         , "Cycles" } ,	/* "cycles" */
+   {  1 , -1 , (str) &chr_nil   , "Decoded instructions" } ,	/* "instructions" */
+   {  2 , -1 , (str) &chr_nil   , "Decoded loads" } ,	/* "loads" */
+   {  3 , -1 , (str) &chr_nil   , "Decoded stores" } ,	/* "stores" */
+   {  4 , -1 , (str) &chr_nil   , "Miss handling table occupancy" } ,	/* "cond_stores" */
+   {  5 , -1 , (str) &chr_nil   , "Failed store conditionals" } ,	/* "cond_stores_fail" */
+   {  6 , -1 , "branches"       , "Resolved conditional branches" } ,	/* "branches_resolved" */
+   {  7 , -1 , (str) &chr_nil   , "Quadwords written back from secondary cache" } ,	/* "L2_writebacks" */
+   {  8 , -1 , (str) &chr_nil   , "Correctable secondary cache data array ECC errors" } ,	/* "L2_ECCerrors" */
+   {  9 , -1 , "L1_inst_misses" , "Primary (L1) instruction cache misses" } ,	/* "L1_ins_misses" */
+   { 10 , -1 , "L2_inst_misses" , "Secondary (L2) instruction cache misses" } ,	/* "L2_ins_misses" */
+   { 11 , -1 , (str) &chr_nil   , "Instruction misprediction from L2 cache way prediction table" } ,	/* "L2_ins_mispredicts" */
+   { 12 , -1 , (str) &chr_nil   , "External interventions" } ,	/* "interventions_reqs" */
+   { 13 , -1 , (str) &chr_nil   , "External invalidations" } ,	/* "invalidations_reqs" */
+   { 14 , -1 , (str) &chr_nil   , "ALU/FPU progress cycles (==0)" } ,	/* "func_completion_cycles" */
+   { 15 , -1 , (str) &chr_nil   , "Graduated instructions" } ,	/* "instructions_grad" */
+   { -1 , 16 , (str) &chr_nil   , "Executed prefetch instructions" } ,	/* "cycles" */
+   { -1 , 17 , (str) &chr_nil   , "Prefetch primary data cache misses" } ,	/* "instructions_grad" */
+   { -1 , 18 , (str) &chr_nil   , "Graduated loads" } ,	/* "loads_grad" */
+   { -1 , 19 , (str) &chr_nil   , "Graduated stores" } ,	/* "stores_grad" */
+   { -1 , 20 , (str) &chr_nil   , "Graduated store conditionals" } ,	/* "cond_stores_grad" */
+   { -1 , 21 , (str) &chr_nil   , "Graduated floating-point instructions" } ,	/* "fp_ops_grad" */
+   { -1 , 22 , (str) &chr_nil   , "Quadwords written back from primary data cache" } ,	/* "L1_writebacks" */
+   { -1 , 23 , "TLB_misses"     , "TLB misses" } ,	/* "TLB_misses" */
+   { -1 , 24 , "branch_misses"  , "Mispredicted branches" } ,	/* "branches_mispredict" */
+   { -1 , 25 , "L1_data_misses" , "Primary data cache misses" } ,	/* "L1_data_misses" */
+   { -1 , 26 , "L2_data_misses" , "Secondary data cache misses" } ,	/* "L2_data_misses" */
+   { -1 , 27 , (str) &chr_nil   , "Data misprediction from secondary cache way prediction table" } ,	/* "L2_data_mispredicts" */
+   { -1 , 28 , (str) &chr_nil   , "State of intervention hits in secondary cache (L2)" } ,	/* "intervention_hits" */
+   { -1 , 29 , (str) &chr_nil   , "State of invalidation hits in secondary cache" } ,	/* "invalidation_hits" */
+   { -1 , 30 , (str) &chr_nil   , "Store/prefetch exclusive to clean block in secondary cache" } ,	/* "L2_clean_excl" */
+   { -1 , 31 , (str) &chr_nil   , "Store/prefetch exclusive to shared block in secondary cache" } ,	/* "L2_shared_excl" */
    { 00 , 16 , (str) &chr_nil   , (str) &chr_nil } };
 
  #elif ( defined(HW_SunOS) && defined(HW_sun4u) ) /* UltraSparc I&II */
@@ -525,7 +525,7 @@ int NumEvents = 0, NoEvent = 0;
    {  1 , 13 , (str) &chr_nil   , "INSTR_CNT"        , LIB_SunOS( PCR_S0_INSTR_CNT                    , "Instr_cnt"          ) } ,
    {  2 , -1 , (str) &chr_nil   , "STALL_IC_MISS"    , LIB_SunOS( PCR_S0_STALL_IC_MISS                , "Dispatch0_IC_miss"  ) } ,
    {  3 , -1 , (str) &chr_nil   , "STALL_STORBUF"    , LIB_SunOS( PCR_S0_STALL_STORBUF                , "Dispatch0_storeBuf" ) } ,
-   {  4 , 16 , (str) &chr_nil   , "IC_REF"           , LIB_SunOS( PCR_S0_IC_REF                       , "IC_ref"             ) } ,
+   {  4 , 16 , "L1_inst_misses" , "IC_REF"           , LIB_SunOS( PCR_S0_IC_REF                       , "IC_ref"             ) } ,
    {  5 , 17 , "L1_data_misses" , "DC_READ"          , LIB_SunOS( PCR_S0_DC_READ                      , "DC_rd"              ) } ,
    {  6 , 18 , (str) &chr_nil   , "DC_WRITE"         , LIB_SunOS( PCR_S0_DC_WRITE                     , "DC_wr"              ) } ,
    {  7 , -1 , (str) &chr_nil   , "STALL_LOAD"       , LIB_SunOS( PCR_S0_STALL_LOAD                   , "Load_use"           ) } ,
@@ -537,7 +537,7 @@ int NumEvents = 0, NoEvent = 0;
    {  1 , 13 , (str) &chr_nil   , "INSTR_CNT"        , LIB_SunOS( PCR_S1_INSTR_CNT                    , "Instr_cnt"          ) } ,
    { -1 , 14 , (str) &chr_nil   , "STALL_MISPRED"    , LIB_SunOS( PCR_S1_STALL_MISPRED                , "Dispatch0_mispred"  ) } ,
    { -1 , 15 , (str) &chr_nil   , "STALL_FPDEP"      , LIB_SunOS( PCR_S1_STALL_FPDEP                  , "Dispatch0_FP_use"   ) } ,
-   {  4 , 16 , (str) &chr_nil   , "IC_HIT"           , LIB_SunOS( PCR_S1_IC_HIT                       , "IC_hit"             ) } ,
+   {  4 , 16 , "L1_inst_misses" , "IC_HIT"           , LIB_SunOS( PCR_S1_IC_HIT                       , "IC_hit"             ) } ,
    {  5 , 17 , "L1_data_misses" , "DC_READ_HIT"      , LIB_SunOS( PCR_S1_DC_READ_HIT                  , "DC_rd_hit"          ) } ,
    {  6 , 18 , (str) &chr_nil   , "DC_WRITE_HIT"     , LIB_SunOS( PCR_S1_DC_WRITE_HIT                 , "DC_wr_hit"          ) } ,
    { -1 , 19 , (str) &chr_nil   , "LOAD_STALL_RAW"   , LIB_SunOS( PCR_S1_LOAD_STALL_RAW               , "Load_use_RAW"       ) } ,
@@ -630,7 +630,7 @@ int init_counters() {
         if (!monet_modulesilent)
             GDKwarning("init_counters: vperfctr_open failed: %s.\n",strerror(errno));
     } else {
-        if (vperfctr_info(Self,&Info) < 0) {
+        if (vperfctr_info(Self,&Info) != 0) {
             if (!monet_modulesilent)
                 GDKwarning("init_counters: vperfctr_info failed: %s.\n",strerror(errno));
         } else {
@@ -654,9 +654,13 @@ int init_counters() {
                 break;
             }
         }
-        if (vperfctr_unlink(Self) < 0) {
+        if (vperfctr_stop(Self) != 0) {
             if (!monet_modulesilent)
-                GDKwarning("init_counters: vperfctr_unlink failed: %s.\n",strerror(errno));
+                fprintf(stderr,"init_counters: vperfctr_stop failed: %s.\n",strerror(errno));
+        }
+        if (vperfctr_unlink(Self) != 0) {
+            if (!monet_modulesilent)
+                fprintf(stderr,"init_counters: vperfctr_unlink failed: %s.\n",strerror(errno));
         }
         vperfctr_close(Self);
     }
@@ -759,7 +763,7 @@ int start_count(counter *retval, int *event0, int *event1) {
             control.cpu_control.evntsel[1] = P6_K7_cesr1.word;
             break;
         }
-        if ((rtrn = vperfctr_control(Self, &control)) < 0) {
+        if ((rtrn = vperfctr_control(Self, &control)) != 0) {
             GDKerror("start_count: vperfctr_control failed with return value %d, errno %d.\n", 
                      rtrn,errno);
             perror("! start_count/vperfctr_control");
@@ -872,13 +876,13 @@ int stop_count(counter *retval, counter *c) {
         count0 = (lng)after.pmc[0] - c->count0;
         count1 = (lng)after.pmc[1] - c->count1;
         clocks = (lng)after.tsc    - c->clocks;
-        if ((rtrn = vperfctr_stop(Self)) < 0) {
+        if ((rtrn = vperfctr_stop(Self)) != 0) {
             GDKerror("start_count: vperfctr_stop failed with return value %d, errno %d.\n", 
                      rtrn,errno);
             perror("! start_count/vperfctr_stop");
             return GDK_FAIL;
         }
-        if ((rtrn = vperfctr_unlink(Self)) < 0) {
+        if ((rtrn = vperfctr_unlink(Self)) != 0) {
             GDKerror("start_count: vperfctr_unlink failed with return value %d, errno %d.\n", 
                      rtrn,errno);
             perror("! start_count/vperfctr_unlink");
