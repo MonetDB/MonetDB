@@ -1406,11 +1406,7 @@ into a TEMPLATE, to avoid resolving it again.
 	} else {
 		value = arg(lt,0)->yyval.val.pval;
 	}	
-@-
-We cannot destroy the old value now, since it may be used
-in the expression ('a := a + 1'), so: save its reference.
 @c
-	oldvalue = *value;
 @-
 Evaluate the expression, and assign the value. Increment refcnt, 
 if it is a bat-expression.
@@ -1424,7 +1420,7 @@ Variables with frozen type may lead to type errors
 						act->name);
                 return -1;
         }
-
+	oldvalue = *value;
 	VALcopy(value, res);
        	if (i >= 0) {
 		ATOMfix(res->vtype, VALptr(res));
