@@ -2202,7 +2202,7 @@ gdk_export void   GDKvsnprintf(char *buf, int maxlen, const char* format, va_lis
 #define GDKvsnprintf(buf, maxlen, format, ap) vsnprintf(buf, maxlen, format, ap)
 #endif
 
-gdk_export void     GDKaddbuf   (char* msg);
+gdk_export void	GDKaddbuf   (const char* msg);
 gdk_export int	GDKwarning  (const char* format, ... );
 gdk_export int	GDKerror    (const char* format, ... );
 gdk_export int	GDKsyserror (const char* format, ... );
