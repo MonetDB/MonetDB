@@ -30,11 +30,17 @@ if [ ! -x bootstrap ] ; then
 	  else	libpath=""
 	fi
 
+	if [ ! "${BUILD}" ] ; then
+		echo ''
+		echo 'BUILD not set to specify desired compilation directory.'
+		echo 'Using BUILD="'${base}/${os}'" (default).'
+		BUILD="${base}/${os}"
+	fi
 	if [ ! "${PREFIX}" ] ; then
 		echo ''
 		echo 'PREFIX not set to specify desired target directory.'
-		echo 'Using PREFIX="'${base}/${os}'" (default).'
-		PREFIX="${base}/${os}"
+		echo 'Using PREFIX="'${BUILD}/${os}'" (default).'
+		PREFIX="${BUILD}/${os}"
 	fi
 	if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
 		echo ''
@@ -113,7 +119,7 @@ if [ ! -x bootstrap ] ; then
 	echo ""
 	echo "To compile Monet, just execute:"
 	echo -e "\t./bootstrap"
-	echo -e "\tcd ${PREFIX}"
+	echo -e "\tcd ${BUILD}"
 	echo -e "\t${CONFIGURE}"
 	echo -e "\tmake"
 	echo -e "\tmake install"
