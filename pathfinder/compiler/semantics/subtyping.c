@@ -538,6 +538,7 @@ name_eq (PFty_t *t1, PFty_t *t2)
     switch (t1->type) {
     case ty_elem:
     case ty_attr:
+    case ty_pi:
         /* a match against a wildcards always succeeds */
         if (PFty_wildcard (*t2))
             return true;
@@ -672,6 +673,12 @@ ty_eq (PFty_t *t1, PFty_t *t2)
 	else
 	    return ty_eq (t1->child[0], t2->child[0]) &&
 		(PFqname_eq (t1->name, t2->name) == 0);
+
+    case ty_pi:
+        if (PFty_wildcard (*t1) && PFty_wildcard (*t2))
+            return true;
+        else
+            return (PFqname_eq (t1->name, t2->name) == 0);
 
     default:
 	return true;
@@ -1173,7 +1180,7 @@ char hierarchy[ty_types][ty_types] = {
     ,[ty_attr   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,_,0,0,0,0 }
     ,[ty_doc    ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,_,0,0,0 }
     ,[ty_text   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0 }
-    ,[ty_pi     ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0 }
+    ,[ty_pi     ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,_,0 }
     ,[ty_comm   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1 }
 };
 
@@ -1226,7 +1233,7 @@ char promotable[ty_types][ty_types] = {
     ,[ty_attr   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,_,0,0,0,0 }
     ,[ty_doc    ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,_,0,0,0 }
     ,[ty_text   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0 }
-    ,[ty_pi     ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0 }
+    ,[ty_pi     ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,_,0 }
     ,[ty_comm   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1 }
 };
 
@@ -1279,7 +1286,7 @@ char intersect[ty_types][ty_types] = {
     ,[ty_attr   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,_,1,1,1,1 }
     ,[ty_doc    ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,_,0,0,0 }
     ,[ty_text   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0 }
-    ,[ty_pi     ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0 }
+    ,[ty_pi     ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,_,0 }
     ,[ty_comm   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1 }
 };
 
@@ -1831,7 +1838,8 @@ data_on (PFty_t t)
         default:
             if (PFty_subtype (t, PFty_atomic ()))
                 return t;
-            else if (PFty_subtype (t, PFty_choice (PFty_comm (), PFty_pi ())))
+            else if (PFty_subtype (t, PFty_choice (PFty_comm (),
+                                                   PFty_pi (NULL))))
                 return PFty_xs_string ();
             else if (PFty_subtype (t, PFty_xs_anyElement ())) {
                 PFty_t t1 = PFty_data_on (content (t));

@@ -192,7 +192,9 @@ struct PFty_t {
   PFty_t      *child[PFTY_MAXCHILD]; /**< type constructor arguments */
 };
 
-#define PFty_wildcard(ty) (((ty).type == ty_elem || (ty).type == ty_attr) && \
+#define PFty_wildcard(ty) (((ty).type == ty_elem            \
+                            || (ty).type == ty_attr         \
+                            || (ty).type == ty_pi) &&       \
                            PFQNAME_WILDCARD ((ty).name))
 
 /**
@@ -207,7 +209,7 @@ PFty_t PFty_untypedAtomic (void);
 PFty_t PFty_numeric (void);
 PFty_t PFty_node (void);
 PFty_t PFty_text (void);
-PFty_t PFty_pi (void);
+PFty_t PFty_pi (char *);
 PFty_t PFty_comm (void);
 PFty_t PFty_integer (void);
 PFty_t PFty_string (void);

@@ -517,7 +517,7 @@ reduce (PFcnode_t * p, int goalnt)
                  */
                 if (PFty_subtype (TY(LL(p)),
                                   PFty_star (PFty_choice (PFty_comm (),
-                                                          PFty_pi ())))) {
+                                                          PFty_pi (NULL))))) {
                     p->sem.fun = function (PFqname (PFns_pf, "string-value"));
                     rewritten = true;
                     break;

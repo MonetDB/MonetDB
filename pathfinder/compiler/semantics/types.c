@@ -192,12 +192,12 @@ PFty_text (void)
 }
 
 PFty_t 
-PFty_pi (void)
+PFty_pi (char *target)
 {
     PFty_t t = { .type  = ty_pi,
-		 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = 0,           
-		 .child = { 0 } 
+		 .name  = { .ns = PFns_wild, .loc = target },
+                 .sym_space = 0,
+		 .child = { 0 }
     };
 
     return t;
@@ -729,16 +729,16 @@ PFty_defn (PFty_t t)
 
 /**
  * Return QName of an element or attribute type (`element qn { type }').
- * If this function is called with a type that is neither an element
- * nor an attribute, a runtime error will be raised.
+ * Processing instructions may carry a target specifier. Target
+ * names are treated like QNames, with a wildcard namespace.
  *
- * @param t type that must be either an `element qn { ... }'
- *          or an `attribute qn { ... }' type
+ * @param t type that must be either an `element qn { ... }',
+ *          an `attribute qn { ... }', or a `processing-instruction qn' type
  */
 PFqname_t
 PFty_qname (PFty_t t)
 {
-    assert (t.type == ty_elem || t.type == ty_attr);
+    assert (t.type == ty_elem || t.type == ty_attr || t.type == ty_pi);
     
     return t.name;
 }
@@ -904,6 +904,12 @@ ty_str (PFty_t t, int prec)
 		   PFqname_str (t.name),
 		   ty_str (*(t.child[0]), 0));
 	break;
+
+    case ty_pi:
+        ty_printf (s, "%s %s {}",
+                   ty_id[t.type],
+                   PFty_wildcard (t) ? "*" : PFqname_str (t.name));
+        break;
 
     default:
 	ty_printf (s, "%s", ty_id[t.type]);

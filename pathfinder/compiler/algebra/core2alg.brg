@@ -1630,7 +1630,7 @@ locstep_dummy (PFalg_axis_t axis, PFty_t seqty)
     else if (PFty_subtype (seqty, PFty_text ())) {
         ret->sem.scjoin.kind = node_kind_text;
     }
-    else if (PFty_subtype (seqty, PFty_pi ())) {
+    else if (PFty_subtype (seqty, PFty_pi (NULL))) {
         /* FIXME: support processing-instructions with target specification */
         ret->sem.scjoin.kind = node_kind_pi;
     }

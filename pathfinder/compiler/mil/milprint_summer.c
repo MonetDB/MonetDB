@@ -1358,8 +1358,9 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
     {
         loop_liftedSCJ (f, axis, "TEXT", 0, 0);
     }
-    else if (PFty_eq (in_ty, PFty_pi ()))
+    else if (PFty_eq (in_ty, PFty_pi (NULL)))
     {
+        /* FIXME: Consider target specifier in processing instructions */
         loop_liftedSCJ (f, axis, "PI", 0, 0);
     }
     else if (PFty_subtype (in_ty, PFty_doc (PFty_xs_anyType ())))

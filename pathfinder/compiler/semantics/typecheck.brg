@@ -750,7 +750,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           pi (CoreExpr) */
         case 42:
-            TY(p) = PFty_pi ();
+            TY(p) = PFty_pi (NULL);
             break;
 
         /* CoreExpr:           ordered (CoreExpr) */
