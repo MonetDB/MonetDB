@@ -3738,7 +3738,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB Installer"
         "ProductCode" = "8:{1B4BCA1E-ADC5-42F2-A994-935BB08CF00D}"
-        "PackageCode" = "8:{18490632-A1B3-4369-B8E3-31A0E5CD30FC}"
+        "PackageCode" = "8:{162AD155-E73C-499D-BA1C-B3C2078709A2}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
@@ -3987,6 +3987,54 @@
             "Attributes" = "3:1"
                 "Dialogs"
                 {
+                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_0B4498977A154C4C981D9976A99D4D16"
+                    {
+                    "Sequence" = "3:110"
+                    "DisplayName" = "8:License Agreement"
+                    "UseDynamicProperties" = "11:TRUE"
+                    "IsDependency" = "11:FALSE"
+                    "SourcePath" = "8:<VsdDialogDir>\\VsdAdminLicenseDlg.wid"
+                        "Properties"
+                        {
+                            "BannerBitmap"
+                            {
+                            "Name" = "8:BannerBitmap"
+                            "DisplayName" = "8:#1001"
+                            "Description" = "8:#1101"
+                            "Type" = "3:8"
+                            "ContextData" = "8:Bitmap"
+                            "Attributes" = "3:4"
+                            "Setting" = "3:2"
+                            "Value" = "8:_AC29CD7FEBB140C3B47B5BE945C9EC98"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "EulaText"
+                            {
+                            "Name" = "8:EulaText"
+                            "DisplayName" = "8:#1008"
+                            "Description" = "8:#1108"
+                            "Type" = "3:6"
+                            "ContextData" = "8:"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:2"
+                            "Value" = "8:_A74355525BF5457AAF5034986FF2F495"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "Sunken"
+                            {
+                            "Name" = "8:Sunken"
+                            "DisplayName" = "8:#1007"
+                            "Description" = "8:#1107"
+                            "Type" = "3:5"
+                            "ContextData" = "8:4;True=4;False=0"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:0"
+                            "Value" = "3:4"
+                            "DefaultValue" = "3:4"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                        }
+                    }
                     "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_7DF879B0718B4821B4776418831AF7DB"
                     {
                     "Sequence" = "3:100"
