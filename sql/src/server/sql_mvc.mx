@@ -1597,10 +1597,14 @@ static sql_trans *trans_dup(backend_stack stk, sql_trans *ot, char *newname ){
 
 	cs_init( &t->modules, (fdestroy)&module_destroy );
 	cs_init( &t->schemas, (fdestroy)&schema_destroy );
-	if (newname)
-		t->name = _strdup(newname);
-	else 
-		t->name = NULL;
+	t->name = NULL;
+	if (newname) {
+		if (ot->name)
+			_DELETE(ot->name);
+		ot->name = _strdup(newname);
+	} else {
+		ot->name = NULL;
+	}
 
 	if (ot->modules.set) for (n = ot->modules.set->h; n; n = n->next) {
 		cs_add( &t->modules, module_dup(t, TR_OLD, n->data, t), TR_OLD);
@@ -2265,8 +2269,16 @@ rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts,
 			sql_base *tb = tbn->data;
 			if (rollforward_deletes) 
 				rollforward_deletes(tr, tb);
-			list_remove_data(ts->set, tb);
-			ts->set->destroy(tb);
+			if (ts->nelm == tbn)
+				ts->nelm = tbn->next;
+			if (tr->parent != gtrans) {
+				if (!ts->dset)
+					ts->dset = list_create(ts->destroy);
+				list_move_data(ts->set, ts->dset, tb);
+			} else {
+				list_remove_data(ts->set, tb);
+				ts->set->destroy(tb);
+			}
 		}
 	}
 	/* changes to the existing bases */
@@ -2555,10 +2567,17 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
 
-			BAT *ins = cc->bat.ibid?
-					temp_descriptor(cc->bat.ibid):
+			if (!cc->base.wtime){
+				n = n->next;
+				m = m->next;
+				continue;
+			}
+
+			BAT *ins, *ups;
+
+			ins  = cc->bat.ibid?temp_descriptor(cc->bat.ibid):
 					bm_lbid2bat( tr->bm, cc->bat.bid);
-			BAT *ups = bm_lbid2bat( tr->bm, cc->bat.ubid);
+			ups = bm_lbid2bat( tr->bm, cc->bat.ubid);
 
                 	oc->base.rtime = cc->base.rtime;
                 	oc->base.wtime = cc->base.wtime;
@@ -2579,9 +2598,15 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (ttr == gtrans)
 				log_bat(logger, oc->bat.bid, ins);
 			bat_destroy(ins);
-			if (BUNlast(ups) > ups->batInserted)
+			if (BUNlast(ups) > ups->batInserted) {
+				BAT *cur = bm_lbid2bat( 
+					ttr->bm, oc->bat.bid);
+
 				bm_new_bat( ttr->bm, oc->bat.ubid, ups->batCacheid );
-			if (ttr == gtrans)
+				void_replace_bat(cur, ups);
+				bat_destroy(cur);
+			}
+			if (ttr == gtrans) 
 				log_bat(logger, oc->bat.ubid, ups);
 			bat_destroy(ups);
 
@@ -2669,8 +2694,7 @@ static int validate_tables(sql_schema * s, sql_schema * os)
 		sql_table *t = n->data;
 		sql_table *ot = find_table(os, t->base.name);
 
-		if ((ot && ot->table) || 
-		    (t->table && t->base.wtime == 0 && t->base.rtime == 0)) {
+		if (ot && ot->table && t->table) {
 			for (o = t->columns.set->h, p = ot->columns.set->h;
 			     o && p; o = o->next, p = p->next) {
 				sql_column *c = o->data;
@@ -2871,6 +2895,7 @@ mvc_rollback(mvc * m, int chain, char *name)
 		while(!tr->name || strcmp(tr->name,name) != 0)
 	       		tr = trans_destroy(tr);
 		m->trans = tr; /* restart at savepoint */
+		chain = 1;
 	} else {
 		while(tr->parent) 
 	       		tr = trans_destroy(tr);
@@ -2881,7 +2906,8 @@ mvc_rollback(mvc * m, int chain, char *name)
 		m->trans = trans_dup(tr->stk, tr,NULL);
 		m->trans->level = level;
 		m->trans->schema = find_schema(m->trans, schema);
-		sql_session(m); 
+		if (tr->parent)
+			sql_session(m); 
 		MT_unset_lock(mvc_lock, "trans_dup");
 	} else {
 		m->trans = NULL;
@@ -2916,8 +2942,8 @@ mvc_release(mvc * m, char *name)
 		tr = trans_destroy(tr);
 	}
 	if (tr->name && strcmp(tr->name, name) == 0) {
-		rollforward_trans(tr);
-		tr = trans_destroy(tr);
+		_DELETE(tr->name);
+		tr->name = NULL;
 	}
 
 	m->trans = tr; /* restart at savepoint */
