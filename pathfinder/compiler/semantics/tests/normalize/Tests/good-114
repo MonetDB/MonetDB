@@ -1,8 +1,0 @@
-#!/bin/bash
-
-pf -s2 <<'EOT'
-declare variable $a := ();
-
-$a
-EOT
-echo $?

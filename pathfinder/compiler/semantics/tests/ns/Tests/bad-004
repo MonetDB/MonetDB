@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s3 <<'EOT'
-let $a as foo:bar := 42 return 17
-EOT
-echo $?

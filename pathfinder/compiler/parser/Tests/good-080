@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-declare namespace foo = 'http://www.foo.bar/';
-/element(foo:bar, foo:baz)
-EOT
-echo $?

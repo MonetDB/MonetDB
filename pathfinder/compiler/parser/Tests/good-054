@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-<a b="foo" c="bar" />
-EOT
-echo $?
