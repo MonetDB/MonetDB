@@ -2123,9 +2123,6 @@ gdk_export		size_t	GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export		size_t 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
 gdk_export		size_t 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
 
-#define GDKvm_maxsize()		GDK_vm_maxsize		/* BBPunload threshold for VM address space usage */
-#define GDKvm_minsize()		GDK_vm_minsize		/* minimum size for a VM heap */
-
 gdk_export size_t	GDKmem_inuse(void); /* RAM/swapmem that Monet is really using now */
 gdk_export size_t	GDKmem_cursize(void); /* RAM/swapmem that Monet has claimed from OS */
 gdk_export size_t	GDKvm_cursize(void); /* current Monet VM address space usage */

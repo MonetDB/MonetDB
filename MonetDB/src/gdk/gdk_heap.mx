@@ -114,7 +114,7 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
  		h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
 		h->maxsize = (1 + (h->maxsize >> 16)) << 16;
 	}
-	if (h->filename == NULL || (h->size < GDKvm_minsize())) {
+	if (h->filename == NULL || (h->size < GDK_vm_minsize)) {
         	h->storage = STORE_MEM;
                 h->base = (char *) GDKmallocmax(h->size, &h->maxsize);
 	}
@@ -180,14 +180,14 @@ int HEAPextend(Heap *h, size_t size) {
 		}
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
-		if (h->filename == NULL || (size < GDKvm_minsize())) {
+		if (h->filename == NULL || (size < GDK_vm_minsize)) {
         		h->storage = STORE_MEM;
                 	h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize);
 			if (h->base) 
 				return 0;
 		}
 		/* too big: convert it to a disk-based temporary heap */
-		if (h->filename && size >= GDKvm_minsize()) {
+		if (h->filename && size >= GDK_vm_minsize) {
 			FILE *fp;
 
 			h->filename = NULL;
@@ -268,7 +268,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	h->filename = NULL;
 
         if (h->storage&STORE_MMAP) {
-		if (h->size < GDKvm_minsize()) {
+		if (h->size < GDK_vm_minsize) {
 			/* legacy 1: some old repositories have wrong mmap modes => correct during load */
                 	h->storage = STORE_MEM; /* don't scatter memory in too small mmap-files */
 			desc_status = 1; /* modified descriptor */
