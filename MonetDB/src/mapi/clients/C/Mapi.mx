@@ -512,7 +512,7 @@ Forcefully shuffle the cache making room for new rows.  It ignores the
 read counter, so rows may be lost.
 
 \item[char * mapi\_quote(const char *str, int size)]:
-Escape special characters such as {\\}n, {\\}t in str with
+Escape special characters such as $\backslash$n, $\backslash$t in str with
 backslashes.  The returned value is a newly allocated string which
 should be freed by the caller.
 
