@@ -902,12 +902,10 @@ void sqltypeinit()
 	numerical = t;
 
 	OID = *t++ = sql_create_type("OID", 9, 0, 10, 1, 	"oid");
-			   /*sql_create_type("TINYINT",   2, SCALE_FIX, 2, 1, "uchr"); */
-	      *t++ = sql_create_type("SMALLINT",  4, SCALE_FIX, 2, 1, "sht");
-	INT = *t++ = sql_create_type("INT",       9, SCALE_FIX, 2, 1, "int");
-	sql_create_alias(INT->sqlname, "INT4");
-	LNG = *t++ = sql_create_type("BIGINT",   19, SCALE_FIX, 2, 1, "lng");
-	sql_create_alias(LNG->sqlname, "INT8");
+			   /*sql_create_type("TINYINT",   2, SCALE_FIX, 10, 1, "uchr"); */
+	      *t++ = sql_create_type("SMALLINT",  4, SCALE_FIX, 10, 1, "sht");
+	INT = *t++ = sql_create_type("INT",       9, SCALE_FIX, 10, 1, "int");
+	LNG = *t++ = sql_create_type("BIGINT",   19, SCALE_FIX, 10, 1, "lng");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
