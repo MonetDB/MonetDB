@@ -490,6 +490,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
             mS = testS.match(l)
             if mS:
                 REVs=mS.group(1)
+    l = ''
     for l in fileinput.input(TST+WHAT+".diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
