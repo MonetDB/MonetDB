@@ -1011,14 +1011,23 @@ static void date_prelude(void);
 
 bat* monettime_prelude(void)
 {
-	lng ts_nil = lng_nil;
-	lng tz_nil = lng_nil;
+	union {
+		lng nilval;
+		timestamp ts;
+	} ts_nil;
+	union {
+		lng nilval;
+		tzone tz;
+	} tz_nil;
+
+	ts_nil.nilval = lng_nil;
+	tz_nil.nilval = lng_nil;
 
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
-	*ts_nilptr = *(timestamp*) (&ts_nil);
+	*ts_nilptr = ts_nil.ts;
 
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
-	*tz_nilptr = *(tzone*) (&tz_nil);
+	*tz_nilptr = tz_nil.tz;
 
 	date_prelude();
 	return NULL;
