@@ -1097,7 +1097,7 @@ others@batloop{
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
-[ "streams",	  2		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
@@ -1107,8 +1107,8 @@ others@batloop{
 #-------------------------#
 [ "ddbench",	  nil	  ]
 [ "xtables",	  nil	  ]
-[ "streams",	  nil	  ]
 [ "enum",	  nil	  ]
+[ "streams",	  nil	  ]
 
 	dropping ddbench
 
@@ -1116,10 +1116,10 @@ others@batloop{
 	dropping xtables
 
 
-	dropping streams
-
-
 	dropping enum
+
+
+	dropping streams
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1325,6 +1325,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -1366,7 +1367,6 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1386,6 +1386,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1401,7 +1402,6 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -1458,9 +1458,6 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "main",	  1		  ]
-[ "main",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
