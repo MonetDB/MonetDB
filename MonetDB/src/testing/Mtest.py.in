@@ -433,6 +433,10 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
         o = 2
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
+        ff = open(TST+WHAT+".out.diff.html","a")
+        ff.write("\n<!--MajorDiffs-->\n")
+        ff.close()
+        o = 2
     for l in fileinput.input(TST+".err.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
@@ -443,6 +447,10 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
         e = 2
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
+        ff = open(TST+WHAT+".err.diff.html","a")
+        ff.write("\n<!--MajorDiffs-->\n")
+        ff.close()
+        e = 2
     if   o==2 or e==2:
         f.write("<FONT COLOR=#ff0000><B><I>"+TST+"</I></B></FONT>")
     elif o==1 or e==1:
