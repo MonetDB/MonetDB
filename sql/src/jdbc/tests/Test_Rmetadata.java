@@ -38,23 +38,23 @@ public class Test_Rmetadata {
 			// all NULLs
 			stmt.executeUpdate("INSERT INTO table_Test_Rmetadata VALUES (NULL, NULL,            NULL,           NULL)");
 			// all filled in
-			stmt.executeUpdate("INSERT INTO table_Test_Rmetadata VALUES (2,    3.0,             true,           'A string'");
+			stmt.executeUpdate("INSERT INTO table_Test_Rmetadata VALUES (2   , 3.0,             true,           'A string')");
 
 			rs = stmt.executeQuery("SELECT * FROM table_Test_Rmetadata");
 			rsmd = rs.getMetaData();
 
 			System.out.println("0. 4 columns:\t" + rsmd.getColumnCount());
 			for (int col = 1; col <= rsmd.getColumnCount(); col++) {
-				System.out.println("" + col + ".\t" + rsmd.getCatalogName(col));
+				System.out.println("" + col); // + ".\t" + rsmd.getCatalogName(col));	: not yet impl.
 				System.out.println("\t" + rsmd.getColumnClassName(col));
 				System.out.println("\t" + rsmd.getColumnDisplaySize(col));
 				System.out.println("\t" + rsmd.getColumnLabel(col));
 				System.out.println("\t" + rsmd.getColumnName(col));
 				System.out.println("\t" + rsmd.getColumnType(col));
 				System.out.println("\t" + rsmd.getColumnTypeName(col));
-				System.out.println("\t" + rsmd.getPrecision(col));
-				System.out.println("\t" + rsmd.getScale(col));
-				System.out.println("\t" + rsmd.getSchemaName(col));
+		//		System.out.println("\t" + rsmd.getPrecision(col));	: not yet impl.
+		//		System.out.println("\t" + rsmd.getScale(col));	: not yet impl.
+		//		System.out.println("\t" + rsmd.getSchemaName(col));	: not yet impl.
 				System.out.println("\t" + rsmd.getTableName(col));
 				System.out.println("\t" + rsmd.isAutoIncrement(col));
 				System.out.println("\t" + rsmd.isCaseSensitive(col));
@@ -63,7 +63,7 @@ public class Test_Rmetadata {
 				System.out.println("\t" + rsmd.isNullable(col));
 				System.out.println("\t" + rsmd.isReadOnly(col));
 				System.out.println("\t" + rsmd.isSearchable(col));
-				System.out.println("\t" + rsmd.isSigned(col));
+		//		System.out.println("\t" + rsmd.isSigned(col));	: not yet impl.
 				System.out.println("\t" + rsmd.isWritable(col));
 			}
 
@@ -84,6 +84,7 @@ public class Test_Rmetadata {
 	}
 
 	private static String isInstance(Object obj, String type) {
+		if (obj == null) return("(null)");
 		try {
 			Class c = Class.forName(type);
 			if (obj.getClass() == c) {
