@@ -292,12 +292,6 @@ int sqlcleanup( mvc *c, int err, int cache)
                 c->sym = NULL;
         }
         scanner_query_processed(&(c->scanner));
-        if (c->auto_commit && c->trans) {
-                if (err)
-                        mvc_rollback(c, 0, NULL);
-                else
-                        mvc_commit(c, 0, NULL);
-        }
         return err;
 }
 

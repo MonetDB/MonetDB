@@ -779,7 +779,6 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
 		} else  {
-			/*q= newStmt(mb,"multiplex", s->op4.funcval->func->imp); */
 			q= newStmt(mb, NULL, s->op4.funcval->func->imp);
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
