@@ -504,7 +504,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT type,
 	if (lenp)
 		*lenp = SQL_NULL_DATA;
 
-	if (strcmp(data, "nil") == 0) {
+	if (data == NULL) {
 		if (nullp == NULL) {
 			addStmtError(stmt, "22002", NULL, 0);
 			return SQL_ERROR;
