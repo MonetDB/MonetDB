@@ -621,7 +621,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             AddSubToHtmlIndex(env, TSTDIR)
 
 	# HACK: remove large data-/input- files to save disk space
-        for f in 'tcpip2.init.bat', 'ascii_io.4MBload', 'test100k', 'no.145.k100_unique1', 'test_00.k100_unique1':
+        for f in 'tcpip2.init.bat', 'ascii_io.4MBload', 'test100k', 'no.145.k100_unique1', 'test_00.k100_unique1', 'VOCrightpages.xml', 'VOCleftpages.xml':
             p = os.path.join(TSTTRGDIR,f)
             if os.path.isfile(p):
                 os.remove(p)
