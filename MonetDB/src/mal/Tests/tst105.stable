@@ -23,5 +23,6 @@ function bat2.main():int;	#0:void (main:int)
 	b := bat2.new(str,int);	#2:BAT (b:bat[str,int])(str:str)(int:int)
 	c := bat2.new(str,int);	#3:BAT (c:bat[str,int])(str:str)(int:int)
 end function;	#4:void 
-!ERROR: MALexception:bat2.main[1]:address of function missing
+!ERROR: MALexception:bat2.main[5]:propagated
+MALexception:bat2.main[1]:address of function missing
 >

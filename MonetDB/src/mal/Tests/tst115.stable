@@ -51,5 +51,7 @@ function Admin.main():int;	#0:void (main:int)
 	c := 3;	#5:int (c:int)($7:int)
 	d := doitTwice("wrong");	#6 unknown:void (d:int)($8:str)
 end function;	#7:void 
-!ERROR: MALexception:Admin.doitTwice[3]:address of function missing
+!ERROR: MALexception:Admin.main[8]:propagated
+MALexception:Admin.doitTwice[6]:propagated
+MALexception:Admin.doitTwice[3]:address of function missing
 >

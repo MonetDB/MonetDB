@@ -54,5 +54,7 @@ function Admin.main():int;	#0:void (main:int)
 	prStr("hello",1,true);	#2 unknown:void ($5:any)($2:str)($3:int)($4:bit)
 	Admin.prStr("hello","quick","brown","fox");	#3:oid ($6:void)($2:str)($7:str)($8:str)($9:str)
 end function;	#4:void 
-!ERROR: MALexception:Admin.main[2]:Instruction type not fixed
+!ERROR: MALexception:Admin.main[5]:propagated
+MALexception:Admin.pr[5]:propagated
+MALexception:Admin.pr[2]:Instruction type not fixed
 >

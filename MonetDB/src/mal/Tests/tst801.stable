@@ -51,5 +51,6 @@ function Admin.main():void;	#0:void (main:void)
 	deposit("STORE_MMAP",1);	#2 unknown:void ($4:any)($5:str)($6:int)
 	deposit("STORE_COMPR",2);	#3 unknown:void ($7:any)($8:str)($9:int)
 end function;	#4:void 
-!ERROR: MALexception:Admin.main[1]:Instruction type not fixed
+!ERROR: MALexception:Admin.main[5]:propagated
+MALexception:Admin.main[1]:Instruction type not fixed
 >

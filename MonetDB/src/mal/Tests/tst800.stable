@@ -40,5 +40,6 @@ space_take not yet implemented
 space_take not yet implemented
 space_takeAny not yet implemented
 space_takeAny not yet implemented
-!ERROR: MALexception:Admin.main[6]:Instruction type not fixed
+!ERROR: MALexception:Admin.main[12]:propagated
+MALexception:Admin.main[6]:Instruction type not fixed
 >

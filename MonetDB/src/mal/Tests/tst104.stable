@@ -20,5 +20,6 @@ function Admin.main():int;	#0:void (main:int)
 	b := bat.new(str,int);	#1:BAT (b:bat[str,int])(str:str)(int:int)
 	a := Admin.f(1,b,"hello");	#2:void (a:any)($5:int)(b:bat[str,int])($6:str)
 end function;	#3:void 
-!ERROR: MALexception:Admin.main[2]:address of function missing
+!ERROR: MALexception:Admin.main[4]:propagated
+MALexception:Admin.main[2]:address of function missing
 >

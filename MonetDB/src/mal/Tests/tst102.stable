@@ -19,5 +19,6 @@ function Admin.main():int;	#0:void (main:int)
 	a := +(1,"hello");	#1 unknown:void (a:any)($2:int)($3:str)
 	b := arith.+(3.5,1);	#2:flt (b:flt)($5:flt)($2:int)
 end function;	#3:void 
-!ERROR: MALexception:Admin.main[1]:Instruction type not fixed
+!ERROR: MALexception:Admin.main[4]:propagated
+MALexception:Admin.main[1]:Instruction type not fixed
 >
