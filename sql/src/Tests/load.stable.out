@@ -11,7 +11,7 @@ stdout of test 'load` in directory 'src` itself:
 var mods := new(void,str);
 mods.insert(nil,"sql_server");
 
-loaded;
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -23,13 +23,13 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-mods@batloop{
+mods@batloop(){
 	printf("loading module '%s'\n",$t);
 	module($t);
-	loaded;
+	loaded();
 	printf("dropping module '%s'\n",$t);
 	drop($t);
-	loaded;
+	loaded();
 }
 loading module 'sql_server'
 #---------------------------------#
@@ -71,7 +71,7 @@ dropping module 'sql_server'
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-quit;
+quit();
 
 # 21:25:53 >  
 # 21:25:53 >  Done.

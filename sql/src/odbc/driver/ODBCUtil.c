@@ -67,7 +67,7 @@ static int utf8chkmsk[] = {
 	0x0000f800,
 	0x001f0000,
 	0x03e00000,
-	0x7c000000,
+	0x7c000000
 };
 #define LEAD_OFFSET		(0xD800 - (0x10000 >> 10))
 #define SURROGATE_OFFSET	(0x10000 - (0xD800 << 10) - 0xDC00)

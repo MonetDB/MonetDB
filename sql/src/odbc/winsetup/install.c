@@ -26,7 +26,7 @@ static char *InstallDLLs[] = {
 	"libMapi.dll",
 	"libstream.dll",
 	"libmutils.dll",
-	NULL,
+	NULL
 };
 #define DriverDLL	(InstallDLLs[0])
 #define DriverDLLs	(InstallDLLs[1])

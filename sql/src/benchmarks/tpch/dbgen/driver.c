@@ -187,7 +187,7 @@ tdef tdefs[] =
 	{"nation.tbl", "nation table", NATIONS_MAX, hd_nation,
 		{pr_nation, ld_nation}, NO_LFUNC, vrf_nation, NONE, 0},
 	{"region.tbl", "region table", NATIONS_MAX, hd_region,
-		{pr_region, ld_region}, NO_LFUNC, vrf_region, NONE, 0},
+		{pr_region, ld_region}, NO_LFUNC, vrf_region, NONE, 0}
 };
 
 int *pids;

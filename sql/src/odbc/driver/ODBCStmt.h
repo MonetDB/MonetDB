@@ -40,7 +40,7 @@ enum StatementState {
 	EXECUTED0,
 	EXECUTED1,
 	FETCHED,
-	EXTENDEDFETCHED,
+	EXTENDEDFETCHED
 };
 
 typedef struct tODBCDRIVERSTMT {

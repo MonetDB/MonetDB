@@ -165,7 +165,7 @@ static struct SQLStateMsg {
 	{"IM013", "Trace file error"},
 	{"IM014", "Invalid name of File DSN"},
 	{"IM015", "Corrupt file data source"},
-	{0, 0},
+	{0, 0}
 };
 
 #ifndef ODBCDEBUG

@@ -239,7 +239,7 @@ void dump_1( backend *sql, stmt *s, char *name, int *nr )
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
 	size_t len = snprintf( buf, buflen, 
-		"var s%d := s%d.%s;\n", 
+		"var s%d := s%d.%s();\n", 
 		-s->nr, o1, name);
 	assert(len <= buflen);
 	dump(sql,buf,len,-s->nr);
@@ -368,7 +368,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		assert(len <= buflen);
 		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf( buf+len, buflen-len, 
-				"s%d.info.print();", -s->nr);
+				"s%d.info().print();", -s->nr);
 			assert(len <= buflen);
 		}
 		/*dump(sql,buf,len,-s->nr);*/
@@ -401,7 +401,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		assert(len <= buflen);
 		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf( buf+len, buflen-len, 
-					 "s%d.info.print();\n", -s->nr);
+					 "s%d.info().print();\n", -s->nr);
 			assert(len <= buflen);
 		}
 		dump(sql,buf,len,-s->nr);
@@ -431,7 +431,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		assert(len <= buflen);
 		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf( buf+len, buflen-len, 
-					 "s%d.info.print();\n", -s->nr);
+					 "s%d.info().print();\n", -s->nr);
 			assert(len <= buflen);
 		}
 		dump(sql,buf,len,-s->nr);
@@ -694,7 +694,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 	  	} 
 		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf(buf +len, BUFSIZ-len, 
-				"s%d.info.print;\n", -s->nr);
+				"s%d.info().print();\n", -s->nr);
 		}
 		dump(sql,buf,len,-s->nr);
 		_DELETE(buf);
@@ -723,7 +723,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 			"var s%dg := s%d.CTgroup(s%d);\n", -s->nr, g, l);
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 			"var s%de := s%dg.tunique().mirror();\n", -s->nr, -s->nr);
-			/*"var s%de := s%dg.reverse.kunique.mirror;\n", -s->nr, -s->nr);*/
+			/*"var s%de := s%dg.reverse().kunique().mirror();\n", -s->nr, -s->nr);*/
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 			"var s%d := s%d.semijoin(s%de);\n", -s->nr, l, -s->nr );
 		} else {

@@ -34,7 +34,7 @@ PTHREAD_INCS = "-I$(PTHREAD)\include"
 
 # not need to edit beyond here..
 
-pkg = MonetDB
+pkg = sql
 exec_prefix = $(prefix)
 
 bindir = $(exec_prefix)\bin

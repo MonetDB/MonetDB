@@ -1,14 +1,14 @@
 var mods := new(void,str);
 mods.insert(nil,"sql_server");
 
-loaded;
-mods@batloop{
+loaded();
+mods@batloop(){
 	printf("loading module '%s'\n",$t);
 	module($t);
-	loaded;
+	loaded();
 	printf("dropping module '%s'\n",$t);
 	drop($t);
-	loaded;
+	loaded();
 }
 
-quit;
+quit();

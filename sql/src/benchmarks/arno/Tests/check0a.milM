@@ -1,2 +1,2 @@
-ls;
-quit;
+ls();
+quit();
