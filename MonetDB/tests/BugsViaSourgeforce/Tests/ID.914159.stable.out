@@ -14,6 +14,10 @@ PROC crash()
 }
 
 crash();
+!ERROR: interpret: unresolved reference.
+!ERROR: print(param 1): evaluation error.
+
+
 
 
 # 22:18:31 >  
