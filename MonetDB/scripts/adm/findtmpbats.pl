@@ -32,6 +32,7 @@ sub readBBP ($) {
     my @fs = split /,\s+/;
     $bats{$fs[3]}++;
   }
+  close BBP;
 }
 
 sub checkBBP ($) {
