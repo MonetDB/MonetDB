@@ -59,7 +59,9 @@ sets the default filters.
 	"Set the profile filter strings"
 
 .COMMAND getProfilerCount(): BAT[str,int] = getProfilerCountCMD;
-	"Get a copy of the profiler summary table"
+	"Get a copy of the profiler count summary table"
+.COMMAND getProfilerTicks(): BAT[str,lng] = getProfilerTicksCMD;
+	"Get a copy of the profiler ticks summary table"
 .COMMAND resetProfiler(): void = resetProfilerCMD;
 	"Set all counters to zero again"
 .END profiler;
@@ -156,6 +158,16 @@ int getProfilerCountCMD(BAT **res){
 	BAT *bn;
 	*res = NULL;
 	bn = getProfilerCount();
+	if( bn) {
+		BBPfix( bn->batCacheid);
+		*res= bn;
+	}
+	return GDK_SUCCEED;
+}
+int getProfilerTicksCMD(BAT **res){
+	BAT *bn;
+	*res = NULL;
+	bn = getProfilerTicks();
 	if( bn) {
 		BBPfix( bn->batCacheid);
 		*res= bn;
