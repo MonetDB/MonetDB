@@ -1105,7 +1105,7 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
         if (a){
 		Atom *p = d.parent();
                 atom_property( o, d.Name(), "storage" );
-                o << "ATOMindex(\"";
+                o << "(ssize_t)ATOMindex(\"";
                 if (p->type()){ 
                         o << p->type()->toString();
                 } else
@@ -1114,15 +1114,15 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
         }
         if (d.type()){
                 atom_property( o, d.Name(), "storage" );
-                o << "ATOMindex(\"" << d.type()->toString() << "\"));\n";
+                o << "(ssize_t)ATOMindex(\"" << d.type()->toString() << "\"));\n";
         }
         if (!a && !t && d.isFixed()){
                 atom_property( o, d.Name(), "size" );
-                o << " (ptr)";
+                o << " (ssize_t)";
                 print_size( o, d.size(), d.type(), d.Name());
                 o << ");\n";
                 atom_property( o, d.Name(), "align" );
-                o << " (ptr)";
+                o << " (ssize_t)";
                 print_align( o, d.size(), d.align(), d.type(), d.Name());
                 o << ");\n";
         }
@@ -1161,7 +1161,7 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
                 }
                 if (cmp_atom->cmds()[OP_NEQUAL]) {
                 	atom_property(o, d.Name(), "linear" );
-                	o << "(ptr) 0);\n";
+                	o << "(ssize_t) 0);\n";
 		}
         } else if (d.isFixed() && !d.type() && !d.parent()){
                 for( int i = OP_TOSTR; i < OP_PUT; i++ ){

@@ -426,7 +426,7 @@ void ATOMproperty(str id, str property, GDKfcn arg) {
 	} else if (strcmp("align", property) == 0) {
 		BATatoms[t].align = (int) (ssize_t) arg; 
 	} else if (strcmp("storage", property) == 0) {
-	    	int tpe = (int)(ssize_t) arg;
+	    	int tpe = (int) (ssize_t) arg;
 	    	BATatoms[t] = BATatoms[tpe]; /* copy from example */
 	    	BATatoms[t].storage = tpe;
 	    	strcpy(BATatoms[t].name, id); /* restore name */ 

@@ -280,11 +280,11 @@ enum_export int enum_load(int *retval, BAT *h) {
 		if (enum_map[i] == 0) {
 			char *name = h->batId;
 			if (BATcount(h) < 256) {
-				ATOMproperty(name, "storage", (GDKfcn) TYPE_chr); 
+				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_chr); 
 				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tochr);
 				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromchr);
 			} else if (BATcount(h) < 65536) {
-				ATOMproperty(name, "storage", (GDKfcn) TYPE_sht); 
+				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_sht); 
 				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht);
 				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromsht);
 			} else {
