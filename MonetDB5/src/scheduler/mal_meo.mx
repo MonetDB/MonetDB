@@ -39,12 +39,14 @@ To set the stage, consider the following MAL snippet
 	u:= f("something");
 	w:= +(p,4);
 	v:= sum(w);
+barrier z:= count(p);
+	...
 @end example
 Assume that after this block p is not used anymore.
 To reduce resource contention a decision should be taken
 at statement p. Let's look at those decisions in more detail.
 
-If the product p is expected to become large, we have to break r and/or s
+If the product p is expected to become large, we have to break R and/or S
 into pieces, such that their partial result satisfies our limits. 
 The chopper module provides the necessary functionality for this.
 
@@ -67,18 +69,23 @@ barrier (b2,sf):= chopper.newChunkIterator(s,1024);
 	u:= f("something");
 	w:= +(p,4);
 	v:= sum(w);
+barrier z:= count(p);
+	...
 redo (b2,sf):= chopper.hasMoreChunks(s,1024);
 redo (b1,rf):= chopper.hasMoreChunks(r,1024);
 exit b2;
 exit b1;
 @end example
 To make this work, the function f() should be moved out of the way,
-e.g. by pushing it out of the loop or be it determined side-effect free.
+e.g. by pushing it out of the loop, or determine it is side-effect free.
 Moving can be done when there is no interference with the other statements. 
 This property often occurs in the optimizer framework and can be checked.
 
-The update statement now also becomes dependent on a partial result and all
-code depending on it should be moved into the loop.
+The update statement +(p,4) now also becomes dependent on 
+a partial result and all code depending on it should be moved into the body
+of the iterations.
+The underlying action involves an exchange operator, which should be
+aware of the nested structure of the program.
 
 @+ Optimization issues
 Once a target operation has been isolated for chopping it up
