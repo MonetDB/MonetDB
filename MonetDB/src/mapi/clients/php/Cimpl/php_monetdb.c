@@ -300,7 +300,10 @@ PHP_FUNCTION(monetdb_connect)
 		convert_to_string_ex(z_password);
 		password = Z_STRVAL_PP(z_password);
 	}
-	
+	// Provide the default SQL port in case it isnt given
+	if (!z_port && z_language && !strcasecmp(language, "sql"))
+		port = 45123;
+
 	//~ printf("MON: Connecting to: hostname=%s port=%d username=%s password=%s language=%s\n",
 		//~ hostname, port, username, password, language);
 	
@@ -410,7 +413,7 @@ PHP_FUNCTION(monetdb_query)
 	if (mapi_error(conn)) {
 		mapi_close_handle(handle);
 		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, 
-			"Mapi Error #%d", mapi_error(conn));
+			"Mapi Error #%d: %s", mapi_error(conn), mapi_error_str(conn));
 		RETURN_FALSE ;
 	}
 	//~ printf("MON: successfull, handle=%p\n", handle);
