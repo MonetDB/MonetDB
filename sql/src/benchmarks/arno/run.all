@@ -13,6 +13,8 @@ echo "insert ATOMs"
 $SQL < insert_ATOM.int.sql    
 echo "insert MODELs"
 $SQL < insert_MODEL.int.sql
+echo "check0"
+$SQL < check0.sql
 echo "queries"
 $SQL < queries_depth2.sql
 
