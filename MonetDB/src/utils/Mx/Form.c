@@ -144,8 +144,8 @@ again:  switch( d->d_dir ){
 	    PrEnv(E_TEXT); PrRule(0);
 	    if(WWWMODE){
 		int env = pr_env;
-		PrCmd("<a name=\""); PrCmd(d->d_cmd); PrCmd("\"><b><font size=\"-1\">");
-		PrCmd(d->d_cmd);PrCmd(" ::=</font></b>");
+		PrCmd("<a name=\""); PrCmd(d->d_cmd); PrCmd("\"><b>");
+		PrCmd(d->d_cmd);PrCmd(" ::=</b>");
 		PrEnv(env);
 	    }
 	    else {
@@ -346,25 +346,25 @@ void	FormTitle(void)
 		
 	if( *mx_title ){
 		PrCmd(TEXMODE? "\\title{" : WWWMODE ? 
-			"<center><h1><font size=\"+3\"><p>" : ".TL\n\\s+2");
+			"<center><h1>" : ".TL\n\\s+2");
 		PrText(mx_title);
 		if( mx_version && *mx_version ){
 			PrCmd(TEXMODE? "\\\\\nVersion\\ " : WWWMODE ?
-				"</font></h1><h2><p><font size=\"+2\">" : "\n.sp\n\\fIVersion ");
+				"</h1><h2>" : "\n.sp\n\\fIVersion ");
 			PrText(mx_version);
 		}
-		PrCmd(TEXMODE? "}\n" : WWWMODE ? "<p></font></h2></center>\n" : 
+		PrCmd(TEXMODE? "}\n" : WWWMODE ? "</h2></center>\n" : 
 						"\\s-2\n");
 	}
 	if( *mx_author ){
 		PrCmd(TEXMODE? "\\author{" : WWWMODE ? 
-			"<center><h3><font size=\"+1\"><p>" :".AU\n\\s+1");
+			"<center><h3>" :".AU\n\\s+1");
 		PrText(mx_author);
-		PrCmd(TEXMODE? "}\n" :WWWMODE? "<p></font></h3></center>":"\\s-1\n");
+		PrCmd(TEXMODE? "}\n" :WWWMODE? "</h3></center>":"\\s-1\n");
 	}
 	if( mx_date && *mx_date ){
 		PrCmd(TEXMODE? "\\date{" : WWWMODE ? 
-                        "<center><h3><font size=\"+1\"><p>" : "\n\\fBDate\\fP");
+                        "<center><h3>" : "\n\\fBDate\\fP");
 		PrText(mx_date);
 		PrCmd(TEXMODE? "}\n" :WWWMODE? "<p></font></h3></center>":"\n");
 	}
@@ -426,7 +426,7 @@ void	FormMod(char *str, int mod)
 	if TEXMODE {
 		PrCmd("\\vfill\\clearpage\\section{"); 
 	} else if WWWMODE {
-		PrCmd("<hr size=5 noshade><hr size=5 noshade><br><br>");
+		PrCmd("<hr size=1 noshade><hr size=1 noshade><br><br>");
 		PrCmd("<a name=mod_"); PrNum(wwwmod=mod); PrCmd("_0_0>\n<h2>"); 
 		PrNum(mod); PrChr(' ');  
 		wwwpar = 1;
@@ -448,7 +448,7 @@ void	FormSec(char *str, int mod, int sec)
 	if TEXMODE {
 		PrCmd("\\subsection{");
 	} else if WWWMODE {
-                PrCmd("<hr size=5 noshade><br><a name=mod_");
+                PrCmd("<hr size=1 noshade><br><a name=mod_");
 		PrNum(wwwmod=mod);PrChr('_');
 		PrNum(wwwsec=sec);PrCmd("_0>\n<h4>"); wwwpar = 1;
 		PrNum(mod);PrChr('.'); PrNum(sec);PrChr(' ');

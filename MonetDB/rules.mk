@@ -168,5 +168,19 @@ $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 
 SUFFIXES-local: $(BUILT_SOURCES)
 
-html:
+$(prefix)/doc/Mx/mxdoc.tex:  $(top_srcdir)/doc/mxdoc.tex
+	-@mkdir -p $(prefix)/doc/Mx
+	cp $(top_srcdir)/doc/mxdoc.tex $(prefix)/doc/Mx
+
+$(prefix)/doc/Mx/mxdoc.aux:  $(prefix)/doc/Mx/mxdoc.tex
+	(cd doc/Mx; latex mxdoc.tex; latex mxdoc.tex)
+
+html:	$(prefix)/doc/Mx/mxdoc.aux
+	latex2html -ascii_mode -noimages -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc/Mx $(prefix)/doc/Mx/mxdoc.tex
+	-@mkdir -p $(prefix)/doc/MapiJava
+	lynx -source http://monetdb.cwi.nl/MonetDB.css > $(prefix)/doc/MapiJava/MonetDB.css
+	javadoc -d $(prefix)/doc/MapiJava -stylesheetfile $(prefix)/doc/MapiJava/MonetDB.css\
+		$(top_srcdir)/src/mapi/clients/java/MapiClient.java       		\
+	        $(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java        		\
+	        $(top_srcdir)/src/mapi/clients/java/mapi/MapiException.java
 	python $(top_srcdir)/doc/mkdoc.py $(top_srcdir) $(prefix)

@@ -212,4 +212,3 @@ MonetDB.  In the latter case, you need to tell configure via
 "--with-XYZ=<DIR>" where to find packages XYZ on your machine. 
 configure then looks for the respective header files in <DIR>/include,
 and for the respective libraries in <DIR>/lib.
-

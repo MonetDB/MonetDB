@@ -1,15 +1,30 @@
 The Gold Demo Database
 ======================
 
-Here you find the files and tests for a Data mining benchmark database
+The scripts/gold subdirectory of the MonetDB diustribution contains the files 
+and tests for a Data mining benchmark database
+
+Creating the database:
+=====================
+
+We suppose you have configured and succesfully made and installed Monet
+in a directory $MONETDB_PREFIX. Make sure $MONETDB_PREFIX/bin is in your PATH.
+
+$ mkdir $MONETDB_PREFIX/var/MonetDB/dbfarm/gold
+$
+
+So, creating a database is nothing more than creating a directory in the 
+'dbfarm' directory (the default dbfarm is $MONETDB_PREFIX/var/MonetDB/dbfarm)
+
+A different dbfarm location can be chosen and can then be passed to
+Msever with the --dbfarm <dir> command line switch.
+
  
 Loading the database:
 =====================
 
-$ mkdir -p `monet-config --localstatedir`/dbfarm/gold
 $ export TSTTRGDIR=`pwd`
 $ Mserver --dbname=gold < load.mil
-$ 
 
 Create the two supportive tables:
 =================================

@@ -116,16 +116,16 @@ char *keyword[] =  {
         "huge", "Huge", "def", "renewcommand", "newcommand", "~sentinel~" };
 
 char *translation[] =  {
-	"<hr noshade size=3>\n", "<hr noshade size=3>\n", "<br>", "<p>\n", 
+	"<hr noshade size=1>\n", "<hr noshade size=1>\n", "<br>", "<p>\n", 
 	"<p>", "\\", "<b>&#183;</b>", "||", "&#183;", "&#183;&#183;", "..", 
 	"&#163;", "&#169;", "&#167;", "&#172;", "&#182;", "&#215;", "&#230;", 
 	"&#189;", "&#160;", "<br><br>", "<br><p><br>", "&#60;=", "&#62;=", 
 	"&#247;", "&#177;", "&#60;&#60;", "&#62;&#62;", "|", 
-	" <font size=\"-1\"><i>and</i></font> ",
-	" <font size=\"-1\"><i>or</i></font> ", "~", "", "<li>", 
+	" <i>and</i> ",
+	" <i>or</i> ", "~", "", "<li>", 
 	"&#160;&#160;&#160;&#160;", "&#160;&#160;&#160;&#160;", 
 	"font size=\"-2\"", "font size=\"-1\"", "h2", "h3", "h4", "a href=\"", 
-	"font size=\"+3\"", "font size=\"+2\"", "font size=\"+1\"", "i", 
+	"h1", "h3", "h2", "i", 
 	"font size=\"-1\"", "", "", "", "", "", "", "table", "table", "tt", "i",
         "b", "center", "ul", "dl", "pre", "ol", "-4", "-2", "-1", "-1", "-1", 
         "+0", "+1", "+2", "+3", "+4", "","","", "", 0 }; 
@@ -628,7 +628,7 @@ mathon:				math=1; ofile_puts("<i>");
 			} else if (i >= TYPE_TITLE) {
 			    sprintf(nextstack,"</%s></center>",translation[i]);
 			} else {
-			    sprintf(nextstack,"</%s><p>",translation[i]);
+			    sprintf(nextstack,"</%s>",translation[i]);
 			}
 		    }
 		}
@@ -663,13 +663,13 @@ mathon:				math=1; ofile_puts("<i>");
 						str, file);
 				    system(cmd);
 				}
-				ofile_printf( "<p><img src=\"%s\" align=center><br>\n",file+strlen(outputdir)+1);
+				ofile_printf( "<img src=\"%s\" align=center><br>\n",file+strlen(outputdir)+1);
 			}
 			if (i == TYPE_DRAWPSFIG) {
 			      while(p3<latexend && !*p3) p3++;
 			      if (p3 >= latexend) continue;
 			      for(p4=str; (*p4++ = *p3) != 0; *p3++ = 0);
-			      ofile_printf( "<center><em>%s</em></center><p>\n",
+			      ofile_printf( "<center><em>%s</em></center>\n",
 									str);
 		        }
 			continue;

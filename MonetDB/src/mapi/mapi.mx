@@ -110,6 +110,7 @@ This module contains a simple interface for internet connections.
 	ADDHELP("stream_line", "windhouw", "June  22 2001",
 		"Read a string from <S> until a newline.",
 		mod);
+@{
 @h
 #ifndef MAPI_H
 #define MAPI_H
@@ -803,7 +804,8 @@ int socket_dup_wrap(int *res, int *s)
 #endif
 	return GDK_SUCCEED;
 }
-
+@}
+@- daemon initialization
 @mil
 proc get_mapi_port() := {
 	if (monet_environment.exist("mapi_port")){
