@@ -1370,6 +1370,7 @@ joined_table:
 join_type:
     INNER			{ $$ = 0; }
   | outer_join_type OUTER 	{ $$ = 1 + $1; }
+  | outer_join_type 		{ $$ = 1 + $1; }
   ;
 
 outer_join_type:
