@@ -344,7 +344,7 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 #ifdef PTHREAD_CREATE_DETACHED
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 #endif
-        pthread_attr_setstacksize(&attr, 1024*1024);
+        pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
 	ret = pthread_create(&newt, &attr, (void *(*)(void *)) f, arg);
         if (ret == 0) *t = (MT_Id) (((int) newt) + 1); /* use pthread-id + 1 */
 #ifdef HAVE_PTHREAD_SIGMASK
