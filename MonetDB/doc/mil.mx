@@ -872,8 +872,9 @@ In the new @[<a href="../../Core/Modules/aggrX3/index.html">aggrX3 module</a>@ y
 parameters. At this moment this, tertiary aggregate is defined only for the most
 common aggregate functions, while the binary pump works for all aggregates (including
 your own MIL-procs). In the tertiary pump, the first (left) parameter of the binary pump
-is split by column into two BATs with a synced void head columns, where the tail of the
-first contains the original head column, and the tail of the second the original tail
+is split by column into two BATs with a synced void head columns, 
+where the tail of the
+first contains the original tail column, and the tail of the second the original head
 column. The rationale for this new kind of aggregate is that many applications first
 compute these separate void-bats before joining them together, while the fact that both
 are synced and void makes this unnecessary (as lookup across both BATs is easy).
