@@ -13,6 +13,6 @@ lib__sql = {
 }
 
 scripts_mal = {
-	DIR = libdir/MonetDB
+	DIR = libdir/MonetDB/sql
 	SOURCES = sql.mx sql_scenario.mx sql_server.mx
 }

@@ -41,7 +41,7 @@ address SQLlanguage
 comment "Switch to processing SQL statements";
 
 command sql(cmd:str):void 
-address mvc_sql_wrap
+address SQLstatement
 comment "Execute a single sql statement";
 
 command header(i:int) 
@@ -55,7 +55,7 @@ comment "Rename a table column";
 
 pattern output(a:any...)
 address SQLoutput;
-pattern output(a:bat[any,any]...)
+pattern output(a:bat[:any,:any]...)
 address SQLoutputBats
 comment "Overloading of the core print routines to obtain proper layout";
 
@@ -72,7 +72,7 @@ prepended by the 'sql.' module name.
 The original code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
-command createCatalog( debug:int ) : void 
+command createCatalog( debug:int ) :void 
 address mvc_create_wrap
 comment "Create multi version catalog";
 
@@ -288,7 +288,7 @@ typedef struct backend{
 	MalBlkPtr code;
 } backend;
 
-/* #define _SQL_SCENARIO_DEBUG  */
+#define _SQL_SCENARIO_DEBUG 
 sql_export str SQLexitClient(Client c);
 sql_export str SQLinitClient(Client c);
 sql_export str SQLexit(Client c);
@@ -407,6 +407,14 @@ str SQLlanguage(str *ret){
         msg= setScenario(getClient(),"sql");
         *ret = 0;
         return msg;
+}
+
+str SQLstatement(int *ret, str *cmd){
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"execute sql:%s\n",*cmd);
+#endif
+	*ret= 0;
+	return MAL_SUCCEED;
 }
 str SQLreader(Client c){
 	int cnt, oldcnt,eof=0;
@@ -588,7 +596,7 @@ str SQLparser(Client c) {
 	/* code should be in the be structure */
 	if ( (err = sqlexecute(be, GDKout)) ){
 #ifdef _SQL_SCENARIO_DEBUG
-		printf("continue parser from:%s", w);
+		printf("continue parser from:%s", c->nxt);
 #endif
 		stream_printf(c->fdout,"#%s\n", be->context->errstr);
 		*be->context->errstr=0;
@@ -633,7 +641,7 @@ str SQLengine(Client c) {
 
 	if( c->curprg->def->errors)
 		return throwMessage("SQLengine","Program contains errors\n");
-#ifdef _SQL_SCENARIO_DEBUG
+#ifdef SQL_SCENARIO_DEBUG
 	printf("Ready to execute SQL statement\n");
 #endif
 	c->glb= 0;
