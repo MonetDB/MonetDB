@@ -525,7 +525,7 @@ view_bbp_dirty(
 					"clean");
 	}}
 	BBPunlock("view_bbp_dirty");
-	@:Pseudo(bbp,status)@
+	@:Pseudo(bbp,dirty)@
         return GDK_SUCCEED;
 }
 
@@ -596,7 +596,7 @@ view_bbp_refcnt(
 		BUNins(b, &i, &refs);
 	}}
 	BBPunlock("view_bbp_refcnt");
-	@:Pseudo(bbp,group)@
+	@:Pseudo(bbp,refcnt)@
         return GDK_SUCCEED;
 }
 
@@ -618,7 +618,7 @@ view_bbp_persistlevel(
 		BUNins(b, &i, &plevel);
 	}}
 	BBPunlock("view_bbp_persistlevel");
-	@:Pseudo(bbp,group)@
+	@:Pseudo(bbp,plevel)@
         return GDK_SUCCEED;
 }
 
