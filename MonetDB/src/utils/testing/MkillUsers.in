@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
 
