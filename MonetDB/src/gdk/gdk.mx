@@ -1862,7 +1862,7 @@ typedef struct {
 	int	(*atomFromStr)		(str s, int* len, ptr* dst); 
 	int	(*atomToStr)		(str* s, int* len, ptr src); 
 	void	*(*atomRead)		(ptr a, stream* s, size_t cnt); 
-	void	(*atomWrite)		(ptr a, stream* s, size_t cnt); 
+	int	(*atomWrite)		(ptr a, stream* s, size_t cnt); 
 	int	(*atomCmp)		(ptr v1, ptr v2); 
 	hash_t	(*atomHash)		(ptr v); 
 	/* optional functions */ 

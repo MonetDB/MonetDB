@@ -641,8 +641,8 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 	l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
 	logger->changes += l.nr;
 	if (l.nr){
-		void (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
-		void (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
+		int (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
+		int (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
 	    	l.flag = SQL_LOG_INSERT;
 		log_write_format( logger, &l );
 		log_write_string(logger, name);
@@ -666,8 +666,8 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 	l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
 	logger->changes += l.nr;
 	if (l.nr){
-		void (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
-		void (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
+		int (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
+		int (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
 	    	l.flag = SQL_LOG_DELETE;
 		log_write_format( logger, &l);
 		log_write_string(logger, name);
