@@ -32,7 +32,7 @@ ostream &depend::gen_module( ostream &o, const Module &d ){
 	if (d.Deps()){
 		ListIterator *iter = d.Deps()->iterator();
 		Symbol *s = NULL;
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 			o << d.filename() << ": ";
 			s->print( this, o );
 		}

@@ -109,9 +109,9 @@ language::gen_list( ostream &o, List *l, const char* sep){
 	if (l){
 		ListIterator *iter = l->iterator();
 		Symbol *s = NULL;
-		if(iter->next((void*)s))
+		if(iter->next((void**)&s))
 			s->print( this, o );
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 			o << sep;
 			s->print( this, o );
 		}

@@ -118,7 +118,7 @@ char *FileInfo::find_module( char *name, List *dir_list ){
 		delete fn;
 		char *dir = NULL;
 		ListIterator *iter = dir_list->iterator();
-		while (iter->next((void*)dir)){
+		while (iter->next((void**)&dir)){
 			fn = new_filename( dir, name, ".m" );
 			fp = fopen(fn, "r" );
 			if (fp){

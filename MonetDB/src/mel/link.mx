@@ -119,7 +119,7 @@ ostream &Link::gen_dependency( ostream &o, const Dependency &d ){
 		int  ldirlen = 0;
 		ListIterator *li = monet_mod_path->iterator();
 		char *dir;
-		while(li->next((void*)dir)){
+		while(li->next((void**)&dir)){
 			int mlen = matchlen(dir, d.filename());
 			if (mlen >= ldirlen){
 				ldirlen = mlen;

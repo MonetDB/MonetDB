@@ -65,7 +65,7 @@ ostream &html::gen_module( ostream &o, const Module &d ){
 	if (d.Deps()){
 		ListIterator *iter = d.Deps()->iterator();
 		Symbol *s = NULL;
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 			s->print( this, o );
 		}
 	}
@@ -75,7 +75,7 @@ ostream &html::gen_module( ostream &o, const Module &d ){
 	if (d.Defs()){
 		ListIterator *iter = d.Defs()->iterator();
 		Symbol *s = NULL;
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 			s->print( this, o );
 		}
 	}
@@ -180,7 +180,7 @@ ostream &html::gen_command( ostream &o, const Command &d ){
 	if (d.args()){
 		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 			s->print( this, o );
 		}
 	}
@@ -218,7 +218,7 @@ ostream &html::gen_iterator( ostream &o, const Iterator &d ){
 	if (d.args()){
 		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 			s->print( this, o );
 		}
 	}

@@ -295,7 +295,7 @@ ostream &proto::gen_acc( ostream &o, const Acc &d ){
 	acc = (char*)d.Name();
 	if (d.args()){
 		ListIterator *iter = d.args()->iterator();
-		iter->next((void*)acc_arg);
+		iter->next((void**)&acc_arg);
 	}
 	
 	o << mod_export << " int\tACC_" << d.Name() << ";\n\n\n";
@@ -442,9 +442,9 @@ ostream &proto::gen_command( ostream &o, const Command &d ){
 		}
 		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		if (iter->next((void*)s))
+		if (iter->next((void**)&s))
 			s->print( this, o );
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 		   	o << ", ";
 			s->print( this, o );
 		}
@@ -490,9 +490,9 @@ ostream &proto::gen_iterator( ostream &o, const Iterator &d ){
 	if (d.args()){
 		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		if (iter->next((void*)s))
+		if (iter->next((void**)&s))
 			s->print( this, o );
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 		   	o << ", ";
 			s->print( this, o );
 		}

@@ -40,14 +40,14 @@ ostream &debug::gen_module( ostream &o, const Module &d ){
 //	if (d.Deps()){
 //		ListIterator *iter = d.Deps()->iterator();
 //		Symbol *s = NULL;
-//		while(iter->next((void*)s)){
+//		while(iter->next((void**)&s)){
 //			s->print( this, o );
 //		}
 //	}
 	if (d.Defs()){
 		ListIterator *iter = d.Defs()->iterator();
 		Symbol *s = NULL;
-		while(iter->next((void*)s)){
+		while(iter->next((void**)&s)){
 			s->print( this, o );
 		}
 	}

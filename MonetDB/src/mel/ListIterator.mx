@@ -14,10 +14,10 @@ class ListIterator {
 	  _cur = 0;	
  	}
 
-	int next( void* &obj )
+	int next( void** obj )
 	{
 		if (_cur < _nr) {
-			obj = _base[_cur++];
+			*obj = _base[_cur++];
 			return 1;
 		}
 		return 0;
