@@ -1691,6 +1691,7 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 		decimal *d = (decimal*) BUNtvar(b,BUNfirst(b));
 		yy = TOTLEN(d->precision+1);
 	}
+	hp.filename = NULL;
 	HEAP_initialize_compact(&hp, MAX(10,xx)*yy, 0, 0, (int (*)(ptr)) decimal_length);
 
 	/* create chunk and multiplication table just once for all invocations */
