@@ -109,10 +109,8 @@ int oldnew2u_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
     #ifdef NATIVE_WIN32
       sprintf(command,"%s %s %s.cp > nul",COPY,old_fn,old_fn);
       SYSTEM(command);
-      Sleep(1000);
       sprintf(command,"%s %s %s.cp > nul",COPY,new_fn,new_fn);
       SYSTEM(command);
-      Sleep(1000);
 
       sprintf(command,"%s %s -d -u%i %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
     #else
@@ -260,10 +258,8 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
 #ifdef NATIVE_WIN32
       sprintf(command,"%s %s %s.cp > nul",COPY,fn[0],fn[0]);
       SYSTEM(command);
-      Sleep(1000);
       sprintf(command,"%s %s %s.cp > nul",COPY,fn[1],fn[1]);
       SYSTEM(command);
-      Sleep(1000);
 
       sprintf(command,
               "%s -d -u%i %s.cp %s.cp > %s",
