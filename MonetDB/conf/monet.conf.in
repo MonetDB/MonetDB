@@ -15,7 +15,7 @@ gdk_debug=0			# debug
 gdk_mmap=33554432		# memory chucks of size >= 32M will be mmaped
 gdk_alloc_map=yes		# for 32 bit systems try claim 3G of (virtual) memory
 				# set to "no" to run Mserver with valgrind;
-				# also, you need to tell valgrind to use 8-alignment, hence:
+				# also, you need to tell valgrind to use 8-byte alignment, hence:
 				# "valgrind --alignment=8 Mserver --set gdk_alloc_map=no ..."
 
 #gdk_debug=0		     1 = thread-specific debug output
