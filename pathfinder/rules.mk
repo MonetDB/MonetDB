@@ -28,6 +28,7 @@
 
 CP=cp
 MV=mv
+HIDE=1
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<
@@ -140,16 +141,13 @@ MV=mv
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.tex: %.mx
-	cat $< > /tmp/doc.mx
-	$(MX) -1 -H$(HIDE) -t /tmp/doc.mx 
-	$(MV) doc.tex $@
-	$(RM) /tmp/doc.mx
+	$(MX) -1 -H$(HIDE) -t $< 
 
 %.html: %.mx
-	cat $< > /tmp/doc.mx
-	$(MX) -1 -H$(HIDE) -w /tmp/doc.mx 
-	$(MV) doc.html $@
-	$(RM) /tmp/doc.mx
+	$(MX) -1 -H$(HIDE) -w $<
+
+%.html: %.tex
+	$(LATEX2HTML) -split 0 -noimages -rootdir ./ -norooted -noinfo -nosubdir  $<
 
 %.pdf: %.tex
 	$(PDFLATEX) $< 
