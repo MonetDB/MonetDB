@@ -1455,14 +1455,14 @@ map_singleton_for (PFvar_t * v, PFcnode_t * c)
 static PFmnode_t *
 map_sequence_for (assgn_fn_t assgn_fn, PFvar_t * v, PFcnode_t * c)
 {
-    PFvar_t   * w   = NULL;    /* newly created variable for mapping */
+  /*PFvar_t   * w   = NULL;*/  /* newly created variable for mapping */ /* StM: unused! */
     PFvar_t   * x   = c->child[0]->sem.var; /* bind variable */
     PFvar_t   * p   = NULL;    /* positional variable (if available) */
     PFmnode_t * ret = NULL;    /* return expression */
     PFmnode_t * tail = NULL;   /* $t (tail) */
 
     /* allocate variable w */
-    w = new_var (c->child[3]->impl_ty);
+    /*w = new_var (c->child[3]->impl_ty);*/ /* StM: unused! */
 
     /* construct expressiont `$t' (Monet's tail function) and set its type */
     tail = leaf_ (m_tail);

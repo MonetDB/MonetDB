@@ -375,7 +375,7 @@ print_variable (PFmnode_t * n)
     }
 
     milprintf (n->mty, "%s_%x", n->sem.var->qname.loc,
-                                (unsigned int) n->sem.var);
+                                (size_t) n->sem.var);
 }
 
 /**

@@ -276,8 +276,8 @@ receive (void)
     case END_BLOCK:
         return &end_block;
     default:
-        if (isspace (*s)) {
-            while (isspace (*((char *) PFarray_add (collect))))
+        if (isspace ((int)(*s))) {
+            while (isspace ((int)(*((char *) PFarray_add (collect)))))
                 ;
             PFarray_last (collect)--;
             return &blank;
@@ -288,7 +288,7 @@ receive (void)
             /* a string, s marks it start, e marks its end */
             do 
                 e = (char *) PFarray_add (collect);
-            while (*e && ! isspace (*e) && *e != START_BLOCK && *e != END_BLOCK);
+            while (*e && ! isspace ((int)(*e)) && *e != START_BLOCK && *e != END_BLOCK);
             PFarray_last (collect)--;
 
             /* copy the string and return it */

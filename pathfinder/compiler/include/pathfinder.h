@@ -45,7 +45,13 @@
 #endif
 
 /* boolean type `bool' and constants `true', `false' */
+#ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
+#elif !defined(HAVE_BOOL)
+#define bool    char
+#define true    (char)1
+#define false   (char)0
+#endif
 
 /** Compilation phases */
 typedef enum PFphases_t PFphases_t;

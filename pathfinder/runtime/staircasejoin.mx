@@ -51,7 +51,8 @@ const int PF_SOFTWARE_PREFETCH = 128;
   __asm__ __volatile__ ("prefetchnta %0" \
                         : \
                         : \
-                        "m" (*(((char*)(((unsigned int)(addr))&~0x7f)))))
+                        "m" (*(((char*)(size_t)(((unsigned int)(size_t)(addr))&~0x7f)))))
+                            /* StM: extended casting to pacify 64-bit compilers */
 
 
 /*******************************************************************/

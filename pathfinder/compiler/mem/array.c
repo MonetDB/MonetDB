@@ -71,7 +71,7 @@
  * size (in bytes) allocated whenever a fresh array is allocated or
  * an out-of-bounds index has been accessed 
  */
-#define ACHUNK 2048
+#define ACHUNK 2048U
 
 /**
  * Create a fresh dynamic array, prepared to hold elements of byte size
@@ -130,7 +130,9 @@ PFarray_at (PFarray_t *a, unsigned int i)
   }
 
   /* return address of requested index position i */
-  return a->base + i * a->esize;
+  /* (explicite casting to avoid void-pointer
+      arithmetic, which as some compilers don't like) */
+  return (void*)((char*)(a->base) + i * a->esize);
 }
 
 /**
@@ -164,7 +166,9 @@ PFarray_nadd (PFarray_t *a, unsigned int n)
   PFarray_last (a) += n;
 
   /* return address of first index position i */
-  return a->base + i * a->esize;
+  /* (explicite casting to avoid void-pointer
+      arithmetic, which as some compilers don't like) */
+  return (void*)((char*)(a->base) + i * a->esize);
 }
 
 /**

@@ -388,8 +388,14 @@
  * Netherlands</a>.
  */
 
+#if HAVE_CONFIG_H
+#include <pf_config.h>
+#endif
+
 #include <stdlib.h>
+#ifdef HAVE_LIBGEN_H
 #include <libgen.h>
+#endif
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -520,7 +526,7 @@ static char *progname = 0;
  * modify its argument (according to the manpage). To avoid modifying
  * @c argv[0] we make a copy first and store it here.
  */
-static char *pathname = 0;
+/*static char *pathname = 0;*/ /* StM: unused! */
 
 /**
  * Print abstract syntax tree in dot notation or prettyprinted,
@@ -595,8 +601,12 @@ main (int argc, char *argv[])
      * Determine basename(argv[0]) and dirname(argv[0]) on *copies*
      * of argv[0] as both functions may modify their arguments.
      */
+#ifdef HAVE_BASENAME
     progname = basename (PFstrdup (argv[0]));
-    pathname = dirname (PFstrdup (argv[0]));
+#else
+    progname = PFstrdup (argv[0]);
+#endif
+    /*pathname = dirname (PFstrdup (argv[0]));*/ /* StM: unused! */
 
     /* getopt-based command line parsing */
     while (true) {

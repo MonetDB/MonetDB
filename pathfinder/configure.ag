@@ -120,6 +120,24 @@ fi
 dnl Check for GNU Getopt
 AC_CHECK_HEADERS([getopt.h])
 
+dnl Check for stdbool.h
+AC_CHECK_HEADERS([stdbool.h])
+
+dnl Check for type bool
+AC_CHECK_TYPES(bool)
+
+dnl Check for type socklen_t
+AC_CHECK_TYPE(socklen_t, AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]), , [#include <sys/types.h>
+#include <sys/socket.h>])
+
+dnl Check for libgen.h and function basename
+AC_CHECK_HEADERS([libgen.h])
+AC_CHECK_FUNCS(basename)
+
+dnl Check some sizes
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(void *)
+
 
 dnl The user may enter a location of the libxml2 library on the command line
 dnl (with `--with-libxml2=DIR) or disable the libxml2 support.

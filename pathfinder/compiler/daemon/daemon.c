@@ -47,6 +47,12 @@
 
 #include "oops.h"
 
+#if HAVE_SOCKLEN_T
+#define SOCKLEN socklen_t
+#else
+#define SOCKLEN size_t
+#endif
+
 /**
  * Try to clean up if we are terminated via kill(2).
  */
@@ -60,6 +66,11 @@ terminate (int sig)
 /** 
  * Turn ourselves into a daemon. 
  */
+/* HACK to pacify picky Intel compiler on Linux64 */
+#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))  
+#undef  SIG_IGN /*((__sighandler_t)1 )*/
+#define SIG_IGN   ((__sighandler_t)1L)
+#endif
 void
 daemonize (void)
 {
@@ -153,7 +164,7 @@ new_instance (int port, int *client)
 
     /* client address information */
     struct sockaddr_in client_addr;
-    socklen_t          client_addrlen = sizeof (client_addr);
+    SOCKLEN            client_addrlen = sizeof (client_addr);
 
     /* rebind to already bound TCP ports */
     int reuse = 1;

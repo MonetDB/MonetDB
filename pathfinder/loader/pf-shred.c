@@ -99,7 +99,9 @@ nat tgtins_id;
 
 
 #include <stdlib.h>
+#ifdef HAVE_LIBGEN_H
 #include <libgen.h>
+#endif
 #include <stdarg.h>
 #include <signal.h>
 #include <assert.h>
