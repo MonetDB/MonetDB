@@ -33,11 +33,11 @@ The routines below are linked with the kernel by default
 
 MODULE optimizer;
 
-command optimizer_prelude()
+command prelude()
 address optimizer_prelude
 comment "Initialize the optimizer";
 
-optimizer_prelude();
+optimizer.prelude();
 
 pattern optimize(mod:any, fcn:any)
 address QOToptimize
