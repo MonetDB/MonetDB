@@ -216,6 +216,18 @@ kernel libraries, e.g. bat.mx
 #ifndef _SQL_SERVER_H_
 #define _SQL_SERVER_H_
 
+#include <sql_mem.h>
+
+#ifdef _MSC_VER
+#ifndef LIBSQL_SERVER
+#define sql_server_export extern __declspec(dllimport)
+#else
+#define sql_server_export extern __declspec(dllexport)
+#endif
+#else
+#define sql_server_export extern
+#endif
+
 #include <streams.h>
 #include <ascii_io.h>
 #include <monet_context.h>

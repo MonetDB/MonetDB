@@ -399,9 +399,6 @@ typedef int ssize_t;
 /* Host identifier */
 #define HOST "i686-pc-win32"
 
-/* Name of package */
-#define PACKAGE "sql"
-
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""
 
@@ -460,9 +457,6 @@ typedef int ssize_t;
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
-
-/* Version number of package */
-#define VERSION "2.0"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32

@@ -64,7 +64,7 @@ static int atom_debug = 0;
 atom *atom_int(sql_subtype * tpe, lng val)
 {
 	if (tpe->type->localtype == TYPE_dbl || tpe->type->localtype == TYPE_flt){
-		return atom_float( tpe, val);
+		return atom_float( tpe, (double)val);
 	} else {
 		atom *a = NEW(atom);
 		a->isnull = 0;
@@ -72,10 +72,10 @@ atom *atom_int(sql_subtype * tpe, lng val)
 		a->data.vtype = tpe->type->localtype;
 		switch(ATOMstorage(a->data.vtype)){
 		case TYPE_sht:
-			a->data.val.shval = val;
+			a->data.val.shval = (sht)val;
 			break;
 		case TYPE_int:
-			a->data.val.ival = val;
+			a->data.val.ival = (int)val;
 			break;
 		case TYPE_lng:
 			a->data.val.lval = val;

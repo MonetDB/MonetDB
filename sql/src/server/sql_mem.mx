@@ -39,7 +39,7 @@
 #include <assert.h>
 
 #ifdef _MSC_VER
-#ifndef LIBSQL
+#ifndef LIBSQLSERVER
 #define sql_export extern __declspec(dllimport)
 #else
 #define sql_export extern __declspec(dllexport)

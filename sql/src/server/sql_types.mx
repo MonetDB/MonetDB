@@ -41,7 +41,7 @@ sql_export list *types;
 #define SCALE_ADD	3
 #define SCALE_SUB	4
 
-#define max(i1,i2) ((i1)<(i2))?(i2):(i1)
+#define sql_max(i1,i2) ((i1)<(i2))?(i2):(i1)
 
 typedef struct sql_type {
 	sql_ref ref;

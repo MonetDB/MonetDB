@@ -653,12 +653,12 @@ static int convert_types(context * sql, stmt ** L, stmt ** R, int scale_fixing )
 			/* first find super type */
 			char *tpe = r->type->sqlname;
 			int digits = 0;
-			int scale = max(i->scale,r->scale);
+			int scale = sql_max(i->scale,r->scale);
 			sql_subtype *super;
 			if (lt->type->nr > rt->type->nr)
 				tpe = i->type->sqlname;
 			if (i->digits && r->digits)
-				digits = max(i->digits,r->digits);
+				digits = sql_max(i->digits,r->digits);
 
 			super = sql_bind_subtype(tpe,digits,scale);
 			if (scale_fixing){
