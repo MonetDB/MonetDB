@@ -176,7 +176,7 @@ main(int ac, char **av)
 {
 	char buf[BUFSIZ];
 	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
-	char *login = NULL, *schema = NULL;
+	char *login = NULL, *db = NULL, *schema = NULL;
 	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, res = 0;
 	opt 	*set = NULL;
 	context lc;
@@ -289,13 +289,21 @@ main(int ac, char **av)
 	i = snprintf(buf, BUFSIZ, "login(%s,%s);\n", user, passwd );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
-	/* read schema */
-	schema = readblock( rs );
-	if (schema){
-		char *s = strrchr(schema, '\n');
-		if (s) *s = '\0';
+	/* read database, schema */
+	db = readblock( rs );
+	if (db){
+		char *s = strrchr(db, ',');
+		if (s){ 
+			*s = '\0';
+			schema = s+1;
+			s = strrchr(schema, '\n');
+			if (s){ 
+				*s = '\0';
+			}
+		}
 	}
 	if (strlen(schema) > 0){
+		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
 
 		if (debug&64) fprintf(stdout, buf );
 
@@ -323,7 +331,7 @@ main(int ac, char **av)
 	       		ws->destroy(ws);
 		}
 	}
-	if (schema) free(schema);
+	if (db) free(db); /* db + schema */
 	if (user) free(user);
 	if (passwd) free(passwd);
 

@@ -1157,8 +1157,9 @@ proc SQLclient_thread( int sock ):= {
 
 	var myc := mvc_create(int(debug));
 	var schema := mvc_login( myc, user, passwd );
+	var db := environment.find("gdk_dbname");
 
-	stream_write( Output, schema + "\n");
+	stream_write( Output, db + "," + schema + "\n");
 	stream_flush( Output );
 
 	if (schema != ""){
