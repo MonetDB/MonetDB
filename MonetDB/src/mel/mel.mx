@@ -61,7 +61,7 @@ should be compiled to an object file.
 \item The next step is gluing this to Monet. For this the {\tt -glue}
 option will generate the necessary wrapper functions to connect the
 user defined functions to the Monet kernel and to update the monet
-function atom and accelerator tables. 
+function and atom tables. 
 
 \item The generated file should also be compiled. 
 
@@ -156,7 +156,6 @@ For further details look in the code.
 
 #include "ops.h"
 #include "atomops.h"
-#include "accops.h"
 #include "type_arg.h"
 
 #include <stdlib.h>
@@ -276,8 +275,6 @@ const char *token2str( int token ){
         case MEL_OPERATOR1  : return "operator1";
 	case MEL_ATOM	    : return "atom";
 	case MEL_ATOMOP	    : return "atom TODO";
-	case MEL_ACC	    : return "accelerator";
-	case MEL_ACCOP	    : return "accelerator TODO";
 	case MEL_ANY	    : return "any";
 	case MEL_BAT	    : return "BAT";
 	case MEL_TYPE	    : return "builtin type";
@@ -590,18 +587,6 @@ YY_SPACES    	[\t\n ]*
 (".LENGTH"|".length")	  { yylval.i = OP_LEN; return MEL_ATOMOP; 	}
 (".HEAP"|".heap")	  { yylval.i = OP_HEAP; return MEL_ATOMOP; 	}
 (".CHECK"|".check")	  { yylval.i = OP_CHECK; return MEL_ATOMOP; 	}
-(".ACCELERATOR"|".accelerator") { return MEL_ACC;      		        }
-(".INSERT"|".insert")	  { yylval.i = OP_INSERT; return MEL_ACCOP; 	}
-(".DELETE"|".delete")	  { yylval.i = OP_DELETE; return MEL_ACCOP; 	}
-(".MOVE"|".move")	  { yylval.i = OP_MOVE; return MEL_ACCOP; 	}
-(".BUILD"|".build")	  { yylval.i = OP_BUILD; return MEL_ACCOP; 	}
-(".DESTROY"|".destroy")	  { yylval.i = OP_DESTROY; return MEL_ACCOP; 	}
-(".ABORT"|".abort")	  { yylval.i = OP_ABORT; return MEL_ACCOP; 	}
-(".COMMIT"|".commit")	  { yylval.i = OP_COMMIT; return MEL_ACCOP; 	}
-(".SAVE"|".save")	  { yylval.i = OP_SAVE; return MEL_ACCOP; 	}
-(".CLUSTER"|".cluster")	  { yylval.i = OP_CLUSTER; return MEL_ACCOP; 	}
-(".TRAVERSE"|".traverse") { yylval.i = OP_TRAVERSE; return MEL_ACCOP; 	}
-(".REPAIR"|".repair")	  { yylval.i = OP_REPAIR; return MEL_ACCOP;      }
 
 ("ANY"|"any") 		  { return MEL_ANY;     			}
 ("BAT"|"bat")		  { return MEL_BAT;     			}
@@ -746,8 +731,6 @@ using namespace std;
 #include "dependency.h"
 #include "atom.h"
 #include "atomops.h"
-#include "acc.h"
-#include "accops.h"
 #include "command.h"
 #include "operator.h"
 #include "builtin.h"
@@ -769,8 +752,8 @@ extern char* script;
 %token MEL_FIXEDATOM MEL_ATOM MEL_USE MEL_ATOMOP MEL_STRING MEL_IDENTIFIER
 %token MEL_USED
 %token MEL_NUMBER
-%token MEL_ANY MEL_BAT MEL_TYPE MEL_VOID MEL_BUILTIN MEL_OBJECT MEL_ACC
-%token MEL_ACCOP MEL_VARARGS MEL_SEP MEL_ITERATOR 
+%token MEL_ANY MEL_BAT MEL_TYPE MEL_VOID MEL_BUILTIN MEL_OBJECT
+%token MEL_VARARGS MEL_SEP MEL_ITERATOR 
 %token '=' ';' ':' ',' '(' ')'
 %%
 module:
@@ -883,7 +866,6 @@ ne_definitions:
 
 definition:
    	atomdef
-   |	accdef
    |	command
    |	iterator
    |	builtin
@@ -1104,35 +1086,6 @@ atomop:
       { $$.op = new Atomops( MEL_ATOMOP, $3.s, $1.i ); }
     ;
 
-accdef:
-	MEL_ACC ident
-	'(' args ')' ';'
-     	accops
-	MEL_END ';'
-      { $$.sym = new Acc( MEL_ACC, $2.s, $4.l, $7.a ); }
-    ;
-
-accops:
-	ne_accops
-   |	/* empty */
-      { $$.a = NULL; }
-    ;
-
-ne_accops:
-	ne_accops accop
-       { $$.a = $1.a;
-         if ($2.op)
-	 	$$.a[$2.op->operation()] = $2.op; }
-    |	accop
-       { $$.a = new Ops*[20]; for( int i =0; i<20;i++) $$.a[i] = NULL;
-         if ($1.op)
-	 	$$.a[$1.op->operation()] = $1.op; }
-    ;
-
-accop:
-   	MEL_ACCOP '=' ident ';'
-      { $$.op = new Accops( MEL_ACCOP, $3.s, $1.i ); }
-    ;
 
 parentatom:
    	ident

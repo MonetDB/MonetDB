@@ -27,7 +27,7 @@
 @+ The glue Class
 The glue class generates the code which glues extensions to Monet. It
 generates the install and delete functions for the module and type check
-and unpack functions for the commands/operators. For atoms and accelerators
+and unpack functions for the commands/operators. For atoms 
 the properties are set. It inherits form language so only the code
 generation methods needed have to be re-implemented.
 
@@ -147,7 +147,6 @@ generates forward definitions for the user defined functions and types.
 class protoize: public glue {
     public:
 	ostream &gen_atom( ostream &o, const Atom &m );
-	ostream &gen_acc( ostream &o, const Acc &m );
 
 	ostream &gen_prelude( ostream &o, const Prelude &m );
 	ostream &gen_epilogue( ostream &o, const Epilogue &m );
@@ -159,7 +158,6 @@ generates export definitions
 class exports: public glue {
     public:
 	ostream &gen_atom( ostream &o, const Atom &m );
-	ostream &gen_acc( ostream &o, const Acc &m );
 };
 
 @+ forward 
@@ -192,11 +190,8 @@ class install: public glue {
     public:
 	ostream &gen_dependency( ostream &o, const Dependency &m );
 	ostream &gen_atom( ostream &o, const Atom &m );
-	ostream &gen_acc( ostream &o, const Acc &m );
-	ostream &gen_accops( ostream &o, const Accops &m );
 
     public:
-	char *acc;
 	char *atom;
 };
 class install_fcntbl: public glue {
@@ -229,7 +224,6 @@ its reference count will be decreased.
 class deinstall: public glue {
     public:
 	ostream &gen_atom( ostream &o, const Atom &m );
-	ostream &gen_acc( ostream &o, const Acc &m );
 
 	ostream &gen_epilogue( ostream &o, const Epilogue &m );
 };
@@ -245,8 +239,6 @@ class typecheck: public glue {
     public:
 	ostream &gen_atom( ostream &o, const Atom &m );
 	ostream &gen_atomops( ostream &o, const Atomops &m );
-	ostream &gen_acc( ostream &o, const Acc &m );
-	ostream &gen_accops( ostream &o, const Accops &m );
 };
 
 class tpchk_bat_type: public glue {
@@ -987,16 +979,6 @@ ostream &exports::gen_atom( ostream &o, const Atom &d ){
 	return o;
 }
 
-ostream &protoize::gen_acc( ostream &o, const Acc &d ){
-	o << "typedef ptr " << d.Name() << ";\n";
-	return o;
-}
-
-ostream &exports::gen_acc( ostream &o, const Acc &d ){
-	o << "extern int ACC_" << d.Name() << ";\n";
-	return o;
-}
-
 ostream &forward::gen_command( ostream &o, const Command &d ){
    	o << "extern int " << d.fcn() << "_unpack" << d.Id();
 	o << "( int, ValPtr argv );\n";
@@ -1184,27 +1166,6 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
         return o;
 }
 
-ostream &install::gen_acc( ostream &o, const Acc &d ){
-	o << "   TBL_Install_Accelerator( mid, \"" << d.Name() << "\");\n";
-	
-	acc = (char*)d.Name();
-	if (d.cmds()){
-	   	Ops **cmds = d.cmds();
-	   	for( int i = OP_INSERT; i <= OP_MOVE; i++ ){  
-			Ops *s = cmds[i];
-			if (s) s->print( this, o );
-		}
-	}
-	o << "   BATaccelerators[ACC_" << d.Name() << " = ACCindex(\"" <<d.Name()<< "\")].deleting = 0;\n";
-   	return o;
-}
-
-ostream &install::gen_accops( ostream &o, const Accops &d ){
-   	o << "   ACCproperty(\"" << acc << "\", \"";
-	o << d.toString() << "\", (ptr)" << d.Name() << ");\n";
-	return o;
-}
-
 #include <stdio.h>
 
 ostream &install_fcntbl::gen_command( ostream &o, const Command &d) {
@@ -1330,11 +1291,6 @@ ostream &deinstall::gen_atom( ostream &o, const Atom &d ){
    	return o;
 }
 
-ostream &deinstall::gen_acc( ostream &o, const Acc &d ){
-   	o << "   ACCdelete(ACC_" << d.Name() << ");\n";
-   	return o;
-}
-
 ostream &deinstall::gen_epilogue( ostream &o, const Epilogue &d ){
 	 o << "   " <<   d.Name() << "();\n";
 	 return o; 
@@ -1449,60 +1405,6 @@ ostream &typecheck::gen_atomops( ostream &o, const Atomops &d ){
         case OP_HCONVERT 	:
 		o << "extern void " << fcn;
 		o << "( Heap *hp );\n";
-		break;
-	}
-#else
-	(void)d;
-#endif
-	return o;
-}
-
-ostream &typecheck::gen_acc( ostream &o, const Acc &d ){
-	o << "int ACC_" << d.Name() << ";\n\n";
-	
-	if (d.cmds()){
-	   	Ops **cmds = d.cmds();
-	   	for( int i = OP_INSERT; i <= OP_MOVE; i++ ){  
-			Ops *s = cmds[i];
-			if (s)
-				s->print( this, o );
-		}
-	}
-	return o;
-}
-
-ostream &typecheck::gen_accops( ostream &o, const Accops &d ){
-#if 0
-	char *fcn = d.Name();
-   	switch(d.operation()){
-	case OP_INSERT:
-	case OP_DELETE:
-     		o << "extern void " << fcn;
-     		o << "( Heap* hp, var_t idx, BAT* bn, char* atom );\n";
-		break;
-	case OP_BUILD:
-     		o << "extern void " << fcn;
-     		o << "( Heap* hp, int param, BAT* bn );\n";
-		break;
-	case OP_DESTROY:
-	case OP_ABORT:
-	case OP_COMMIT:
-	case OP_SAVE:
-	case OP_CLUSTER:
-     		o << "extern void " << fcn;
-     		o << "( Heap* hp, BAT* bn );\n";
-		break;
-	case OP_TRAVERSE:
-     		o << "extern int " << fcn;
-     		o << "( Heap* hp, var_t idx, void **hdl, BAT* bn );\n";
-		break;
-	case OP_REPAIR:
-     		o << "extern int " << fcn;
-     		o << "( Heap* hp, BAT* bn );\n";
-		break;
-	case OP_MOVE:
-     		o << "extern void " << fcn;
-     		o << "( Heap* hp, var_t frm, var_t to, BAT* bn, ptr val );\n";
 		break;
 	}
 #else

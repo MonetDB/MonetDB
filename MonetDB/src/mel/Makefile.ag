@@ -22,8 +22,8 @@ bin_mel = {
 	SOURCES = \
 	FileInfo.mx      atomops.mx     mil.mx       list.mx      prelude.mx \
 	ListIterator.mx  bat_arg.mx     epilogue.mx  var_arg.mx   proto.mx \
-	acc.mx           builtin.mx     glue.mx      mel.mx       symbol.mx \
-	accops.mx        command.mx     html.mx      module.mx    symtable.mx \
+	builtin.mx     glue.mx      mel.mx       symbol.mx \
+	command.mx     html.mx      module.mx    symtable.mx \
 	any_arg.mx       debug.mx       iterator.mx  object.mx    type_arg.mx \
 	atom.mx          depend.mx      language.mx  operator.mx  use.mx \
 	atom_arg.mx      dependency.mx  link.mx      ops.mx

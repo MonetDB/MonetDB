@@ -28,8 +28,6 @@
 #include "dependency.h"
 #include "atom.h"
 #include "atomops.h"
-#include "acc.h"
-#include "accops.h"
 #include "command.h"
 #include "operator.h"
 #include "builtin.h"
@@ -78,12 +76,6 @@ class language {
 		return o;
 	}
 	virtual ostream & gen_atomops(ostream & o, const Atomops &) {
-		return o;
-	}
-	virtual ostream & gen_acc(ostream & o, const Acc &) {
-		return o;
-	}
-	virtual ostream & gen_accops(ostream & o, const Accops &) {
 		return o;
 	}
 	virtual ostream & gen_command(ostream & o, const Command &) {

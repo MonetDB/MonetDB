@@ -35,8 +35,6 @@ class proto:public language {
 	ostream & gen_module(ostream & o, const Module & m);
 	ostream & gen_atom(ostream & o, const Atom & m);
 	ostream & gen_atomops(ostream & o, const Atomops & m);
-	ostream & gen_acc(ostream & o, const Acc & m);
-	ostream & gen_accops(ostream & o, const Accops & m);
 	ostream & gen_command(ostream & o, const Command & m);
 	ostream & gen_operator(ostream & o, const Operator & m);
 	ostream & gen_builtin(ostream & o, const Builtin & m);
@@ -52,8 +50,6 @@ class proto:public language {
 
       private:
 	const Atom *atom;
-	char *acc;
-	Symbol *acc_arg;
 	int result;
 };
 
@@ -357,151 +353,6 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    break;
 	}
 	return o; 
-}
-
-ostream &proto::gen_acc( ostream &o, const Acc &d ){
-	acc = (char*)d.Name();
-	if (d.args()){
-		ListIterator *iter = d.args()->iterator();
-		iter->next((void**)&acc_arg);
-	}
-	
-	o << mod_export << " int\tACC_" << d.Name() << ";\n\n\n";
-	
-	if (d.cmds()){
-	   	Ops **cmds = d.cmds();
-	   	for( int i = OP_INSERT; i <= OP_MOVE; i++ ){  
-			Ops *s = cmds[i];
-			if (s)
-				s->print( this, o );
-		}
-	}
-	return o; 
-}
-
-ostream &proto::gen_accops( ostream &o, const Accops &d ){
-   switch (d.operation()){
-    case OP_INSERT: 
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   var_t\tidx,\t/* IN: BUNindex() of value. */\n";
-     o << "   BAT*\t\tbn,\t/* IN: BAT with accelerated head column. */\n";
-     o << "   ";
-     if (acc_arg->Token() == MEL_ATOM)
-     	o << ((AtomArg*)acc_arg)->arg()->Name() << "\t\t*Atm";
-     else if (acc_arg->Token() == MEL_ANY)
-	o << "void \t\t*Atm";
-     else
-     	acc_arg->print( this, o );
-     o << "\t/* IN: atomic value that was inserted. */\n);";
-     o << "\n\t/* INSERT: insert an atom at BUN position 'idx' */\n\n\n";
-     break;
-    case OP_DELETE:
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   var_t\tidx,\t/* IN: BUNindex() of value. */\n";
-     o << "   BAT*\t\tbn,\t/* IN: BAT with accelerated head column. */\n";
-     o << "   ";
-     if (acc_arg->Token() == MEL_ATOM)
-     	o << ((AtomArg*)acc_arg)->arg()->Name() << "\t\t*Atm";
-     else if (acc_arg->Token() == MEL_ANY)
-	o << "void \t\t*Atm";
-     else
-     	acc_arg->print( this, o );
-     o << "\t/* IN: atomic value that was deleted. */\n);";
-     o << "\n\t/* DELETE: delete an atom from BUN position 'idx' */\n\n\n";
-     break;
-    case OP_BUILD:
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap */\n";
-     o << "   int*\t\tparam,\t/* an extra parameter */\n";
-     o << "   BAT*\t\tbn\t/* IN: BAT with head-column. */\n);";
-     o << "\n\t/* BUILD: build a search accelerator on the head */\n\n\n";
-     break;
-    case OP_DESTROY:
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head column. */\n);";
-     o << "\n\t/* DESTROY: destroy " << acc;
-     o << " accelerator on the head */\n\n\n";
-     break;
-    case OP_ABORT:
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head column. */\n);";
-     o << "\n\t/* ABORT: rearrange " << acc;
-     o << " accelerator after abort */\n\n\n";
-     break;
-    case OP_COMMIT:
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
-     o << "\n\t/* COMMIT: rearrange " << acc;
-     o << " accelerator after commit */\n\n\n";
-     break;
-    case OP_SAVE:
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
-     o << "\n\t/* SAVE: rearrange " << acc;
-     o << " accelerator before saving */\n\n\n";
-     break;
-    case OP_CLUSTER:
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
-     o << "\n\t/* CLUSTER: rearrange " << acc;
-     o << " accelerator after abort */\n\n\n";
-     break;
-    case OP_TRAVERSE:
-     o << mod_export;
-     o << " int\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc<< " accelerator heap. */\n";
-     o << "   var_t\tidx,\t/* IN: future BUNindex() OUT: oldpos. */\n";
-     o << "   void**\thdl,\t/* INOUT: ";
-     acc_arg->print( this, o );
-     o << " iteration record. */\n";
-     o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
-     o << "\n\t/* TRAVERSE: traverse " <<acc<< " accelerator;\n";
-     o << "\t * on the first call, a context record should be created.\n";
-     o << "\t * on the last call, it should be destroyed.\n";
-     o << "\t * select the next atom in " << acc;
-     o << " order; remap it to 'idx'.\n\t */\n";
-     o << "\t/* returns: (are there more nodes 2bvisited?)   */\n\n\n";
-     break;
-    case OP_REPAIR:
-     o << mod_export;
-     o << " int\n";
-     o << d.Name() << "(\n";
-     o << "   Heap*\thp,\t/* INOUT: " << acc << " accelerator heap. */\n";
-     o << "   BAT*\t\tbn\t/* IN: BAT with accelerated head colum. */\n);";
-     o << "\n\t/* CHECK&REPAIR: " << acc << " accelerator. */\n\n\n";
-     break;
-    case OP_MOVE:
-     o << mod_export;
-     o << " void\n";
-     o << d.Name() << "(\n";
-     o << "  Heap *acc, var_t from, var_t to, BAT *b, ptr val );\n";
-     break;
-   }
-   return o; 
 }
 
 ostream &proto::gen_command( ostream &o, const Command &d ){
