@@ -298,7 +298,7 @@ Start of MIL script.
 #-----------------------------------------#
 [ 0,	  ""				  ]
 [ 1,	  "print(view_client_tree())"	  ]
-[ 2,	  "listen(get_monet_port(),5)"	  ]
+[ 2,	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -535,7 +535,7 @@ Start of MIL script.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      4,         1,   running,         0, "listen(get_monet_port(),5#"    ]
+#[      4,         1,   running,         0, "listen(get_mapi_port(),5#"    ]
 #[     53,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff97720.
 unknown(1)#"                   ]
 #[     58,         2,   running,        57, "queue()#"                      ]
@@ -545,7 +545,7 @@ unknown(1)#"                   ]
 #---------------------------------------------------------------------------------#
 [ "adm",	  "Mon Jan 22 05:38:39 2001",	  ""				  ]
 [ "monet",	  "Mon Jan 22 05:38:46 2001",	  "clients()"			  ]
-[ "adm",	  "Mon Jan 22 05:38:39 2001",	  "listen(get_monet_port(),5)"	  ]
+[ "adm",	  "Mon Jan 22 05:38:39 2001",	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
@@ -1156,7 +1156,7 @@ Start of MIL script.
 #-----------------------------------------#
 [ 0,	  ""				  ]
 [ 1,	  "print(view_client_tree())"	  ]
-[ 2,	  "listen(get_monet_port(),5)"	  ]
+[ 2,	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -1402,7 +1402,7 @@ Start of MIL script.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      4,         1,   running,         0, "listen(get_monet_port(),5#"    ]
+#[      4,         1,   running,         0, "listen(get_mapi_port(),5#"    ]
 #[     89,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff97720.
 unknown(1)#"                   ]
 #[    144,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
@@ -1414,7 +1414,7 @@ unknown(1)#"                   ]
 #---------------------------------------------------------------------------------#
 [ "adm",	  "Mon Jan 22 05:38:39 2001",	  ""				  ]
 [ "monet",	  "Mon Jan 22 05:39:09 2001",	  "clients()"			  ]
-[ "adm",	  "Mon Jan 22 05:38:39 2001",	  "listen(get_monet_port(),5)"	  ]
+[ "adm",	  "Mon Jan 22 05:38:39 2001",	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #

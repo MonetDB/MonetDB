@@ -475,7 +475,7 @@ Module: "kernel"
 [ "quit",	  "BUILTIN: ",	  "quit() or CTRL-D ",									  "Terminates a session. Terminating the console\n (Mserver) still makes the system wait for all active clients to finish,\n before causing a database shutdown."																																											  ]
 [ "runon",	  "BUILTIN: ",	  "runon(STATEMENT, int threadno) ",							  "A statement can be designated to a particular thread \n using the runon command."																																																					  ]
 [ "setoid",	  "BUILTIN: ",	  "setoid(oid base) : oid ",								  "Sets the oid range of consecutive unique OIDs; returns the lowest in range."																																																						  ]
-[ "shutdown",	  "BUILTIN: ",	  "shutdown() ",									  "Immediate database shutdown. Only to be issued by the adm or database owner."																																																					  ]
+[ "shutdown",	  "BUILTIN: ",	  "shutdown(int status) ",								  "Immediate database shutdown. Only to be issued by the adm or database owner."																																																					  ]
 [ "source",	  "BUILTIN: ",	  "source(str mil_file) : any ",							  "Read and evaluate a MIL-script from a file. Relative paths start from\n the database directory"																																																			  ]
 [ "threadcnt",	  "BUILTIN: ",	  "threadcnt(int inc) : int ",								  "Increases or decreases the number of active interpreter threads.\n returns the number of active threads."																																																		  ]
 [ "threadid",	  "BUILTIN: ",	  "threadid() : int ",									  "Returns your the id of the thread running your MIL interpreter."																																																							  ]
