@@ -442,7 +442,7 @@ set the garbagge collection flag.
     if(isaBatType(s1)){
         garbageControl(mb,getArg(p,0)) = TRUE;
     }
-    else if( !isPolyType(s1)  && ATOMstorage(s1)== TYPE_str){
+    else if( !isPolyType(s1)  && s1< TYPE_any && s1>=0 && ATOMstorage(s1)== TYPE_str){
         garbageControl(mb,getArg(p,0)) = TRUE;
     } 
 @c
