@@ -407,11 +407,11 @@ static struct option long_options[] = {
     { "timing",                       no_argument,    NULL, 'T' },
     { "print-algebra",                no_argument,    NULL, 'a' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
+    { "debug",                     optional_argument, NULL, 'd' },
     { "help",                         no_argument,    NULL, 'h' },
     { "print-mil-algebra",            no_argument,    NULL, 'm' },
     { "print-parse-tree",             no_argument,    NULL, 'p' },
     { "quiet",                        no_argument,    NULL, 'q' },
-    { "debug",                     required_argument, NULL, 'd' },
     { "stop-after",                required_argument, NULL, 's' },
     { "typing",                       no_argument,    NULL, 't' },
     { NULL,                           no_argument,    NULL, 0 }
@@ -527,10 +527,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTachmpqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTacd::hmpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTachmpqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTacd::hmpqrs:t");
 #endif
 
         if (c == -1)
