@@ -35,7 +35,7 @@
 #include "array.h"
 #include "oops.h"
 
-static PFarray_t *subexps = NULL;
+static PFarray_t *subexps[ma_MAX];
 
 static bool
 subexp_eq (PFma_op_t *a, PFma_op_t *b)
@@ -73,6 +73,7 @@ subexp_eq (PFma_op_t *a, PFma_op_t *b)
                     && (a->sem.new.ttype == b->sem.new.ttype);
 
         case ma_insert:
+        case ma_bun:
         case ma_seqbase:
         case ma_project:
         case ma_reverse:
@@ -80,6 +81,7 @@ subexp_eq (PFma_op_t *a, PFma_op_t *b)
         case ma_ctrefine:
         case ma_join:
         case ma_leftjoin:
+        case ma_cross:
         case ma_mirror:
         case ma_kunique:
         case ma_mark_grp:
@@ -89,9 +91,19 @@ subexp_eq (PFma_op_t *a, PFma_op_t *b)
         case ma_oid:
         case ma_moid:
         case ma_mint:
+        case ma_mstr:
+        case ma_mdbl:
+        case ma_mbit:
         case ma_madd:
+        case ma_msub:
+        case ma_mmult:
+        case ma_mdiv:
         case ma_serialize:
+        case ma_ser_args:
             return true;
+
+        case ma_MAX:
+            break;
     }
 
     PFoops (OOPS_FATAL, "Error in MIL Algebra CSE.");
@@ -108,12 +120,12 @@ ma_cse (PFma_op_t *n)
         n->child[i] = ma_cse (n->child[i]);
 
     /* See if we already saw that subexpression */
-    for (i = 0; i < PFarray_last (subexps); i++)
-        if (subexp_eq (n, *((PFma_op_t **) PFarray_at (subexps, i))))
-            return *((PFma_op_t **) PFarray_at (subexps, i));
+    for (i = 0; i < PFarray_last (subexps[n->kind]); i++)
+        if (subexp_eq (n, *((PFma_op_t **) PFarray_at (subexps[n->kind], i))))
+            return *((PFma_op_t **) PFarray_at (subexps[n->kind], i));
 
     /* If not, add it to the list */
-    *((PFma_op_t **) PFarray_add (subexps)) = n;
+    *((PFma_op_t **) PFarray_add (subexps[n->kind])) = n;
 
     return n;
 }
@@ -121,7 +133,10 @@ ma_cse (PFma_op_t *n)
 PFma_op_t *
 PFma_cse (PFma_op_t *n)
 {
-    subexps = PFarray (sizeof (PFma_op_t *));
+    unsigned int i;
+
+    for (i = 0; i < ma_MAX; i++)
+        subexps[i] = PFarray (sizeof (PFma_op_t *));
 
     return ma_cse (n);
 }

@@ -54,6 +54,7 @@ static char *ma_id[] = {
                                     
     , [ma_new]          = "new"
     , [ma_insert]       = "insert"
+    , [ma_bun]          = "bun"
     , [ma_seqbase]      = "seqbase"
     , [ma_project]      = "project"
     , [ma_reverse]      = "reverse"
@@ -71,8 +72,15 @@ static char *ma_id[] = {
     , [ma_oid]          = "oid"
     , [ma_moid]         = "[oid]"
     , [ma_mint]         = "[int]"
+    , [ma_mstr]         = "[str]"
+    , [ma_mdbl]         = "[dbl]"
+    , [ma_mbit]         = "[bit]"
     , [ma_madd]         = "[+]"
+    , [ma_msub]         = "[-]"
+    , [ma_mmult]        = "[*]"
+    , [ma_mdiv]         = "[/]"
     , [ma_serialize]    = "serialize"
+    , [ma_ser_args]     = "ser_args"
 
 };
 
@@ -95,6 +103,7 @@ static char *color[] = {
                                     
     , [ma_new]          = "grey"
     , [ma_insert]       = "grey"
+    , [ma_bun]          = "grey"
     , [ma_seqbase]      = "grey"
     , [ma_project]      = "grey"
     , [ma_reverse]      = "grey"
@@ -112,9 +121,16 @@ static char *color[] = {
     , [ma_oid]          = "grey"
     , [ma_moid]         = "grey"
     , [ma_mint]         = "grey"
+    , [ma_mstr]         = "grey"
+    , [ma_mdbl]         = "grey"
+    , [ma_mbit]         = "grey"
     , [ma_madd]         = "grey"
+    , [ma_msub]         = "grey"
+    , [ma_mmult]        = "grey"
+    , [ma_mdiv]         = "grey"
 
     , [ma_serialize]    = "grey"
+    , [ma_ser_args]     = "grey"
 
 };
 
@@ -225,6 +241,13 @@ ma_dot (PFarray_t *dot, PFma_op_t *n, char *node)
     }
 }
 
+static void
+clear_node_ids (PFma_op_t *n)
+{
+    n->node_id = 0;
+    for (unsigned int i = 0; i < MILALGEBRA_MAXCHILD && n->child[i]; i++)
+        clear_node_ids (n->child[i]);
+}
 
 /**
  * Dump algebra tree in AT&T dot format
@@ -236,6 +259,8 @@ ma_dot (PFarray_t *dot, PFma_op_t *n, char *node)
 void
 PFma_dot (FILE *f, PFma_op_t *root)
 {
+    clear_node_ids (root);
+
     if (root) {
         /* initialize array to hold dot output */
         PFarray_t *dot = PFarray (sizeof (char));

@@ -97,6 +97,7 @@ wire2 (enum PFma_kind_t kind, PFma_type_t t,
     return ret;
 }
 
+#if 0
 /**
  * Generic constructor to create a new MIL algebra tree node with
  * two children.
@@ -186,6 +187,7 @@ wire7 (enum PFma_kind_t kind, PFma_type_t t,
 
     return ret;
 }
+#endif
 
 static PFma_op_t *
 lit_val (PFma_val_t v)
@@ -281,7 +283,14 @@ PFma_insert (const PFma_op_t *n,
     assert (tvalue->type.kind == type_atom
             && demote (n->type.ty.bat.ttype) == demote (tvalue->type.ty.atom));
 
-    return wire3 (ma_insert, n->type, n, hvalue, tvalue);
+    return wire2 (ma_insert,
+                  n->type,
+                  n,
+                  wire2 (ma_bun,
+                         (PFma_type_t) { .kind = type_none },
+                         hvalue,
+                         tvalue));
+
 }
 
 /**
@@ -393,8 +402,8 @@ PFma_join (const PFma_op_t *left, const PFma_op_t *right)
                   (PFma_type_t) {
                       .kind = type_bat,
                       .ty = { .bat = {
-                                  .htype = left->type.ty.bat.htype,
-                                  .ttype = demote (left->type.ty.bat.ttype) }
+                                  .htype = demote (left->type.ty.bat.htype),
+                                  .ttype = demote (right->type.ty.bat.ttype) }
                   } },
                   left,
                   right);
@@ -413,8 +422,8 @@ PFma_leftjoin (const PFma_op_t *left, const PFma_op_t *right)
                   (PFma_type_t) {
                       .kind = type_bat,
                       .ty = { .bat = {
-                                  .htype = left->type.ty.bat.htype,
-                                  .ttype = demote (left->type.ty.bat.ttype) }
+                                  .htype = demote (left->type.ty.bat.htype),
+                                  .ttype = demote (right->type.ty.bat.ttype) }
                   } },
                   left,
                   right);
@@ -434,7 +443,7 @@ PFma_cross (const PFma_op_t *left, const PFma_op_t *right)
                       .kind = type_bat,
                       .ty = { .bat = {
                                   .htype = demote (left->type.ty.bat.htype),
-                                  .ttype = demote (left->type.ty.bat.ttype) }
+                                  .ttype = demote (right->type.ty.bat.ttype) }
                   } },
                   left,
                   right);
@@ -602,7 +611,47 @@ PFma_mint (const PFma_op_t *n)
 }
 
 PFma_op_t *
-PFma_madd (const PFma_op_t *n1, const PFma_op_t *n2)
+PFma_mstr (const PFma_op_t *n)
+{
+    assert (n->type.kind == type_bat);
+
+    return wire1 (ma_mstr,
+                  (PFma_type_t) {
+                      .kind = type_bat,
+                      .ty = { .bat = { .htype = n->type.ty.bat.htype,
+                                       .ttype = m_str } } },
+                  n);
+}
+
+PFma_op_t *
+PFma_mdbl (const PFma_op_t *n)
+{
+    assert (n->type.kind == type_bat);
+
+    return wire1 (ma_mdbl,
+                  (PFma_type_t) {
+                      .kind = type_bat,
+                      .ty = { .bat = { .htype = n->type.ty.bat.htype,
+                                       .ttype = m_dbl } } },
+                  n);
+}
+
+PFma_op_t *
+PFma_mbit (const PFma_op_t *n)
+{
+    assert (n->type.kind == type_bat);
+
+    return wire1 (ma_mbit,
+                  (PFma_type_t) {
+                      .kind = type_bat,
+                      .ty = { .bat = { .htype = n->type.ty.bat.htype,
+                                       .ttype = m_bit } } },
+                  n);
+}
+
+static PFma_op_t *
+multiplexed_arithmetic (enum PFma_kind_t kind,
+                        const PFma_op_t *n1, const PFma_op_t *n2)
 {
     assert (n1->type.kind == type_bat || n2->type.kind == type_bat);
     assert (
@@ -612,7 +661,7 @@ PFma_madd (const PFma_op_t *n1, const PFma_op_t *n2)
 
     if (n1->type.kind == type_bat)
         return
-            wire2 (ma_madd,
+            wire2 (kind,
                    (PFma_type_t) {
                        .kind = type_bat,
                        .ty = {
@@ -626,7 +675,7 @@ PFma_madd (const PFma_op_t *n1, const PFma_op_t *n2)
                    n1, n2);
     else
         return
-            wire2 (ma_madd,
+            wire2 (kind,
                    (PFma_type_t) {
                        .kind = type_bat,
                        .ty = {
@@ -640,8 +689,29 @@ PFma_madd (const PFma_op_t *n1, const PFma_op_t *n2)
                    n1, n2);
 }
 
+PFma_op_t *
+PFma_madd (const PFma_op_t *n1, const PFma_op_t *n2)
+{
+    return multiplexed_arithmetic (ma_madd, n1, n2);
+}
 
+PFma_op_t *
+PFma_msub (const PFma_op_t *n1, const PFma_op_t *n2)
+{
+    return multiplexed_arithmetic (ma_msub, n1, n2);
+}
 
+PFma_op_t *
+PFma_mmult (const PFma_op_t *n1, const PFma_op_t *n2)
+{
+    return multiplexed_arithmetic (ma_mmult, n1, n2);
+}
+
+PFma_op_t *
+PFma_mdiv (const PFma_op_t *n1, const PFma_op_t *n2)
+{
+    return multiplexed_arithmetic (ma_mdiv, n1, n2);
+}
 
 PFma_op_t *PFma_serialize (const PFma_op_t *pos,
                            const PFma_op_t *item_int,
@@ -651,8 +721,25 @@ PFma_op_t *PFma_serialize (const PFma_op_t *pos,
                            const PFma_op_t *item_bln,
                            const PFma_op_t *item_node)
 {
-    return wire7 (ma_serialize,
-                  (PFma_type_t) { .kind = type_none },
-                  pos,
-                  item_int, item_str, item_dec, item_dbl, item_bln, item_node);
+    return
+        wire2 (ma_serialize,
+               (PFma_type_t) { .kind = type_none },
+               pos,
+               wire2 (ma_ser_args,
+                      (PFma_type_t) { .kind = type_none },
+                      item_int,
+                      wire2 (ma_ser_args,
+                             (PFma_type_t) { .kind = type_none },
+                             item_str,
+                             wire2 (ma_ser_args,
+                                    (PFma_type_t) { .kind = type_none },
+                                    item_dec,
+                                    wire2 (ma_ser_args,
+                                           (PFma_type_t) { .kind = type_none },
+                                           item_dbl,
+                                           wire2 (ma_ser_args,
+                                                  (PFma_type_t)
+                                                      { .kind = type_none },
+                                                  item_bln,
+                                                  item_node))))));
 }

@@ -9,6 +9,8 @@
 #ifndef MIL_H
 #define MIL_H
 
+#include "pathfinder.h"
+
 /** maximum number of children of a MIL tree node */
 #define MIL_MAXCHILD 7
 

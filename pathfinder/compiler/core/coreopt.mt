@@ -241,6 +241,22 @@ OptVar:          nil;
 
 SequenceExpr:    seq (Atom, Atom);
 
+SequenceExpr:    seq (empty_, Atom)
+    { REWRITE; }
+    =
+    {
+        return $2$;
+    }
+    ;
+
+SequenceExpr:    seq (Atom, empty_)
+    { REWRITE; }
+    =
+    {
+        return $1$;
+    }
+    ;
+
 PathExpr:        LocationSteps;
 PathExpr:        LocationStep;
 

@@ -45,6 +45,22 @@
 	$(M4) $< >$@
 	chmod =r $@
 
+%.c : %.brg
+	$(RM) -f $@
+	$(top_srcdir)/burg/burg -I -p PF$* $< -o $@
+	chmod =r $@
+
+#
+# If Burg fails, it will still produce some output. If somebody
+# invoked `make' again compilation will produce strange results
+# with these corrupt .c files. We thus advise `make' to delete
+# them on error.
+#
+.DELETE_ON_ERROR: $(top_srcdir)/compiler/mil/ma_gen.c \
+                  $(top_srcdir)/compiler/mil/ma_opt.c \
+                  $(top_srcdir)/compiler/mil/milgen.c
+
+
 # Some files need to be preprocessed with the stream editor `sed'.
 # The required sed expressions are contained in the source files
 # themselves; they carry a special marker that we use during the

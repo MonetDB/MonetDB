@@ -31,36 +31,48 @@
 
 #include "mil.h"
 
-#define MILALGEBRA_MAXCHILD 7
+#define MILALGEBRA_MAXCHILD 2
 
 enum PFma_kind_t {
-      ma_lit_oid
-    , ma_lit_int
-    , ma_lit_dbl
-    , ma_lit_str
-    , ma_lit_bit
+      ma_lit_oid  =  1
+    , ma_lit_int  =  2
+    , ma_lit_dbl  =  3
+    , ma_lit_str  =  4
+    , ma_lit_bit  =  5
 
-    , ma_new         /**< new BAT constructor */
-    , ma_insert      /**< add BUN to a BAT */
-    , ma_seqbase     /**< set seqbase for BAT with void head */
-    , ma_project     /**< MIL project() operator */
-    , ma_reverse     /**< MIL reverse() operator */
-    , ma_sort        /**< MIL sort() operator */
-    , ma_ctrefine    /**< CTrefine() operator: refine sorting */
-    , ma_join        /**< Join tow BATs */
-    , ma_leftjoin    /**< Join and keep order of left argument */
-    , ma_cross       /**< Cross product */
-    , ma_mirror      /**< mirror(): copy head into tail */
-    , ma_kunique     /**< kunique(): Eliminate duplicates, look at heads only */
-    , ma_mark_grp    /**< mark_grp(): grouped row-numbering */
-    , ma_mark        /**< mark() generate ascending (oid) values */
-    , ma_count       /**< count number of BUNs */
-    , ma_append      /**< append BAT to another one */
-    , ma_oid         /**< cast atomic value to oid */
-    , ma_moid        /**< Multiplexed cast to oid */
-    , ma_mint        /**< Multiplexed cast to int */
-    , ma_madd       /**< Multiplexed arithmetic plus */
-    , ma_serialize   /**< this will be the root node of our MIL algebra tree */
+    , ma_new      =  6   /**< new BAT constructor */
+    , ma_insert   =  7   /**< add BUN to a BAT */
+    , ma_bun      =  8   /**< Binary UNit (a pair of atomic values) */
+
+    , ma_seqbase  =  9   /**< set seqbase for BAT with void head */
+    , ma_project  = 10   /**< MIL project() operator */
+    , ma_reverse  = 11   /**< MIL reverse() operator */
+    , ma_sort     = 12   /**< MIL sort() operator */
+    , ma_ctrefine = 13   /**< CTrefine() operator: refine sorting */
+    , ma_join     = 14   /**< Join tow BATs */
+    , ma_leftjoin = 15   /**< Join and keep order of left argument */
+    , ma_cross    = 16   /**< Cross product */
+    , ma_mirror   = 17   /**< mirror(): copy head into tail */
+    , ma_kunique  = 18   /**< kunique(): Eliminate dupl., look at heads only */
+    , ma_mark_grp = 19   /**< mark_grp(): grouped row-numbering */
+    , ma_mark     = 20   /**< mark() generate ascending (oid) values */
+    , ma_count    = 21   /**< count number of BUNs */
+    , ma_append   = 22   /**< append BAT to another one */
+    , ma_oid      = 23   /**< cast atomic value to oid */
+    , ma_moid     = 24   /**< Multiplexed cast to oid */
+    , ma_mint     = 25   /**< Multiplexed cast to int */
+    , ma_mstr     = 26   /**< Multiplexed cast to str */
+    , ma_mdbl     = 27   /**< Multiplexed cast to dbl */
+    , ma_mbit     = 28   /**< Multiplexed cast to bit */
+    , ma_madd     = 29   /**< Multiplexed arithmetic plus */
+    , ma_msub     = 30   /**< Multiplexed arithmetic subtraction */
+    , ma_mmult    = 31   /**< Multiplexed arithmetic multiplication */
+    , ma_mdiv     = 32   /**< Multiplexed arithmetic division */
+
+    , ma_serialize = 33  /**< will be the root node of our MIL algebra tree */
+    , ma_ser_args  = 34  /**< serialization arguments */
+
+    , ma_MAX       = 35  /**< keep this always at the end */
 };
 
 
@@ -112,6 +124,7 @@ struct PFma_op_t {
     char              *varname;  /**< BAT name the result is assigned to */
     union PFma_sem_t   sem;      /**< semantic content */
     unsigned int       node_id;  /**< ID for AT&T dot printing */
+    unsigned int       state_label;
     struct PFma_op_t  *child[MILALGEBRA_MAXCHILD];
 };
 
@@ -144,7 +157,13 @@ PFma_op_t *PFma_append (const PFma_op_t *, const PFma_op_t *);
 PFma_op_t *PFma_oid (const PFma_op_t *);
 PFma_op_t *PFma_moid (const PFma_op_t *);
 PFma_op_t *PFma_mint (const PFma_op_t *);
+PFma_op_t *PFma_mstr (const PFma_op_t *);
+PFma_op_t *PFma_mdbl (const PFma_op_t *);
+PFma_op_t *PFma_mbit (const PFma_op_t *);
 PFma_op_t *PFma_madd (const PFma_op_t *, const PFma_op_t *);
+PFma_op_t *PFma_msub (const PFma_op_t *, const PFma_op_t *);
+PFma_op_t *PFma_mmult (const PFma_op_t *, const PFma_op_t *);
+PFma_op_t *PFma_mdiv (const PFma_op_t *, const PFma_op_t *);
 
 PFma_op_t *PFma_serialize (const PFma_op_t *pos,
                            const PFma_op_t *item_int,

@@ -23,7 +23,7 @@
 #         Jens Teubner <jens.teubner@uni-konstanz.de>
 #
 
-SUBDIRS = conf compiler loader runtime
+SUBDIRS = conf burg compiler loader runtime
 
 EXTRA_DIST = rules.mk RunMtest.in
 EXTRA_DIST_DIR = NT

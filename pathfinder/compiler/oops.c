@@ -72,6 +72,7 @@ static char *oops_msg[] = {
     ,[-OOPS_TYPEREDEF]          "duplicate type names in one symbol space"
     ,[-OOPS_TYPECHECK]          "type error"
     ,[-OOPS_SCHEMAIMPORT]       "XML Schema import"
+    ,[-OOPS_BURG]               "tree matching"
     ,[-OOPS_WARNING]            "warning" /* only warnings below */
     ,[-OOPS_WARN_NOTSUPPORTED]  "warning: unsupported feature"
     ,[-OOPS_WARN_VARREUSE]      "warning: variable reuse"

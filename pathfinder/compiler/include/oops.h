@@ -61,6 +61,7 @@ typedef enum {
     , OOPS_TYPEREDEF = -18          /**< dup type names in one symbol space */
     , OOPS_TYPECHECK = -19          /**< type error */
     , OOPS_SCHEMAIMPORT = -20       /**< XML Schema import */
+    , OOPS_BURG = -21               /**< Error during burg tree matching */
     , OOPS_WARNING = -100           /**< only warnings below */
     , OOPS_WARN_NOTSUPPORTED = -101 /**< unsupported feature */
     , OOPS_WARN_VARREUSE = -102     /**< variable reuse */

@@ -63,7 +63,13 @@
 #define oid(a)         PFma_oid (a)
 #define moid(a)        PFma_moid (a)
 #define mint(a)        PFma_mint (a)
+#define mstr(a)        PFma_mstr (a)
+#define mdbl(a)        PFma_mdbl (a)
+#define mbit(a)        PFma_mbit (a)
 #define madd(a,b)      PFma_madd ((a), (b))
+#define msub(a,b)      PFma_msub ((a), (b))
+#define mmult(a,b)     PFma_mmult ((a), (b))
+#define mdiv(a,b)      PFma_mdiv ((a), (b))
 
 #endif  /* MILALGEBRA_MNEMONIC_H */
 
