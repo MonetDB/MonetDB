@@ -138,7 +138,7 @@ SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 	}
 
 	/* construct the query now */
-	query = (char *) malloc(1000);
+	query = (char *) malloc(1200);
 	assert(query);
 
 	/* SQLGetTypeInfo returns a table with the following columns:
