@@ -483,7 +483,7 @@ int sqlexecute(backend * be, stream *out )
 	 * and on schema changes 
 	 */
 	if (c->cache &&
-	   ( c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id > 10)) {
+	   ( c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id > 100)) {
 		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}

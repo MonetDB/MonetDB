@@ -593,7 +593,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_ibat: 
 	case st_output: 
 	case st_append: case st_insert: case st_replace: 
-	case st_exception:
+	case st_exception: case st_predicate:
 
 	case st_aggr: 
 	case st_op: case st_unop: case st_binop: case st_Nop:

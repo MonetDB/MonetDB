@@ -122,6 +122,7 @@ typedef enum stmt_type {
 	st_insert,
 	st_replace,
 	st_exception,
+	st_predicate,
 
 	st_group_ext,
 	st_group,
@@ -308,6 +309,7 @@ extern stmt *stmt_replace(stmt * c, stmt * values);
 
 /* raise exception incase the condition (cond) holds */
 extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
+extern stmt *stmt_predicate(stmt *cond, stmt *def/*allways done*/, stmt *s /* done if cond is true */);
 
 extern stmt *stmt_const(stmt * s, stmt * val);
 extern stmt *stmt_mark(stmt * s, int id);
@@ -432,6 +434,7 @@ const char * st_type2string(st_type type) {
 	case st_insert:	return "st_insert";
 	case st_replace:	return "st_replace";
 	case st_exception:	return "st_exception";
+	case st_predicate:	return "st_predicate";
 	case st_group_ext:	return "st_group_ext";
 	case st_group:	return "st_group";
 	case st_derive:	return "st_derive";
@@ -595,7 +598,7 @@ void stmt_destroy(stmt * s)
 		case st_unique:
 		case st_alias: case st_column_alias:
 		case st_append: case st_insert: case st_replace:
-		case st_exception:
+		case st_exception: case st_predicate:
 		case st_partial_pivot: case st_pivot:
 	  	case st_find:
 	  	case st_exist:
@@ -1605,6 +1608,20 @@ stmt *stmt_exception(stmt * cond, char *errstr, int errcode )
 	s->nrcols = 0;
 	return s;
 }
+
+stmt *stmt_predicate(stmt *cond, stmt *def/*allways done*/, stmt *ss /* done if cond is true */)
+{
+	stmt *s = stmt_create(st_predicate);
+	s->op1.stval = cond;
+	s->op2.stval = def;
+	s->op3.stval = ss;
+	s->key = ss->key;
+	s->nrcols = ss->nrcols;
+	s->h = stmt_dup(ss->h);
+	s->t = stmt_dup(ss->t);
+	return s;
+}
+
 
 stmt *stmt_op(sql_subfunc * op)
 {

@@ -2178,6 +2178,11 @@ static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, s
 			return res;
 		}
 		break;
+	case SQL_ATOM: {
+			AtomNode *an = (AtomNode*)sc;
+			/* TRUE or FALSE */
+			return stmt_atom(atom_dup(an->a));
+		} break;
 	default:
 		return sql_error(sql, 02, 
 			 "Predicate %s %d: time to implement some more",
@@ -2710,15 +2715,22 @@ static stmt *create_view(mvc * sql, stmt * ss,
 		return sql_error(sql, 02, "Create View name %s already in use", name);
 	} else {
 		char buf[BUFSIZ];
+		stmt *sq, *stct = NULL;
+		SelectNode *sn = (SelectNode*)query;
 
-		stmt *stct = NULL;
-		stmt *sq = sql_subquery(sql, NULL, query);
-		char *subquery = QUERY(sql->scanner) + sql->scanner.as;
+		char *subquery;
 		list *l;
 
+		if (sn->limit >= 0) {
+			(void) sql_error( sql, 01, 
+				"Limit not supported for views" );
+			return NULL;
+		}
+ 		sq = sql_subquery(sql, NULL, query);
 		if (!sq)
 			return NULL;
 
+ 		subquery = QUERY(sql->scanner) + sql->scanner.as;
  		l = create_stmt_list();
 		if (column_spec) {
 			dnode *n = column_spec->h;
@@ -3045,10 +3057,12 @@ sql_subtype *find_column_type( list *columns, char *name)
 	return NULL;
 }
 
-static stmt *create_column(mvc * sql, symbol * s, stmt * ss, stmt * ts, list *columns )
+static stmt *create_column(mvc * sql, symbol * s, stmt * ss, stmt * ts, 
+	char *tname, list *columns )
 {
 	dlist *l = s->data.lval;
 	char *cname = l->h->data.sval;
+	sql_table *t = mvc_bind_table( sql, cur_schema(sql), tname );
 	sql_subtype *ctype = l->h->next->data.typeval;
 	dlist *opt_list = NULL; 
 	stmt *res = NULL;
@@ -3064,6 +3078,42 @@ static stmt *create_column(mvc * sql, symbol * s, stmt * ss, stmt * ts, list *co
 		l = list_append( l, cs );
 		list_append(columns, create_tmp_col(cname, cs, ctype) );
 		column_options(sql, opt_list, l, ss, stmt_dup(ts), stmt_dup(cs), cname, ctype);
+		if (t) { /* search default value */
+			stmt *d = 0;
+			stmt *null = 0;
+			node *n;
+			for (n = l->h; n && !(d && null) ; n = n ->next) {
+				stmt *s = n->data;
+				if (s->type == st_default) 
+					d = s; 
+				if (s->type == st_null) 
+					null = s; 
+			}
+			if (d) {
+				if (!d->op2.stval->op1.aval->data.val.pval && 
+				    null &&
+				    null->op2.stval->op1.aval->data.val.ival==1)
+				{
+					list_destroy(l);
+					return sql_error(sql, 02, 
+			 			"Default value is NULL, but column has NOT NULL constraint\n" );
+				}
+				/* todo remove completely the double layer
+				 * for schema changes !
+				 */
+				list_append(l,
+					stmt_append(
+					 stmt_ibat(stmt_dup(cs), stmt_dup(ts)),
+					 stmt_const(
+					  stmt_cbat(
+					   mvc_first_column(sql, t), 
+					   stmt_dup(ts), 0, st_bat), 
+					  stmt_dup(d->op2.stval) )));
+			} else {
+				list_destroy(l);
+				return sql_error(sql, 02, "No Default value for alter table add\n" );
+			}
+		}
 		res = stmt_list(l);
 	}
 
@@ -3201,10 +3251,10 @@ static stmt *table_element(mvc * sql, symbol * s, stmt *ss, stmt * ts, char *tna
 
 	switch (s->token) {
 	case SQL_COLUMN:
-		res = create_column(sql, s, ss, ts, columns);
+		res = create_column(sql, s, ss, ts, tname, columns);
 		break;
 	case SQL_CONSTRAINT:
-		res = table_constraint(sql, s, ss, ts, tname,columns);
+		res = table_constraint(sql, s, ss, ts, tname, columns);
 		break;
 	case SQL_COLUMN_OPTIONS:
 		{

@@ -98,10 +98,19 @@ int param_cmp( var_ *v1, var_ *v2 )
 {
 	sql_subtype *t1 = tail_type(v1->s);
 	sql_subtype *t2 = tail_type(v2->s);
+	int res;
 
 	if (t1->scale != t2->scale)
 		return -1;
-	return subtype_cmp(t1,t2);
+        res = subtype_cmp(t1,t2);
+	if (res)
+		return -1;
+        if ((t1->digits > 0 && t1->scale == 0 && t1->digits < t2->digits) ||
+            (t1->scale > 0 && t1->digits > 0 && 
+	     t1->digits-t1->scale < t2->digits-t2->scale)) {
+		return -1;
+	}
+	return 0;
 }
 
 int param_list_cmp( list *l1, list *l2 )

@@ -44,6 +44,64 @@ sql_server_export void backend_dumpproc( backend *be, int id, stmt *s );
 #include <sql_gencode.h>
 #include <string.h>
 
+void stmt_reset( stmt *s )
+{
+	s->nr = 0;
+	switch (s->type) {
+		case st_diff: case st_intersect: case st_union:
+		case st_join: case st_outerjoin:
+		case st_derive:
+		case st_unique:
+		case st_alias: case st_column_alias:
+		case st_append: case st_insert: case st_replace:
+		case st_exception: case st_predicate:
+		case st_partial_pivot: case st_pivot:
+	  	case st_find:
+	  	case st_exist:
+		case st_sql:
+		case st_temp:
+		case st_aggr:
+		case st_op: case st_unop: case st_binop: case st_Nop:
+
+		case st_release: case st_commit: case st_rollback:
+		case st_schema: case st_table: case st_column: case st_key:
+		case st_idx:
+		case st_create_module: case st_drop_module:
+		case st_create_type: case st_drop_type:
+		case st_create_func: case st_drop_func:
+		case st_create_schema: case st_drop_schema:
+		case st_create_view: case st_create_table: case st_drop_table:
+		case st_create_column: case st_null: case st_default:
+		case st_create_key: case st_create_kc:
+		case st_drop_key: case st_drop_idx: 
+		case st_create_idx: case st_create_ic:
+		case st_create_user: case st_drop_user:
+		case st_create_role: case st_drop_role:
+		case st_grant_role: case st_revoke_role:
+
+		case st_const: case st_mark:
+		case st_reverse: case st_mirror:
+		case st_limit: case st_order: case st_reorder:
+		case st_ordered: case st_output:
+
+		case st_ibat:
+		case st_group: case st_group_ext:
+
+		case st_filter:
+		case st_select: case st_select2:
+		case st_uselect: case st_uselect2:
+		case st_semijoin:
+
+		case st_bulkinsert:
+
+		if (s->op1.stval) stmt_reset(s->op1.stval);
+		if (s->op2.stval) stmt_reset(s->op2.stval);
+		if (s->op3.stval) stmt_reset(s->op3.stval);
+		default:
+			break;
+	}
+}
+
 sql_server_export int backend_dumpstmt_( stmt *s, int *nr, backend *sql );
 @(
 		if (mvc_debug_on(c->mvc,8192)) {
@@ -1043,6 +1101,23 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		  "if (bit(s%d)){ ERROR(s%d); }\n", l, r);
 		dump(sql,buf,len,-s->nr);
 		_DELETE(buf);
+		break;
+	}
+	case st_predicate: {
+		int pred = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int e, def = backend_dumpstmt_( s->op2.stval, nr, sql );
+		buf = NEW_ARRAY(char, BUFSIZ+1);
+		len = snprintf( buf, BUFSIZ, "if (s%d){\n", pred);
+		write_part(sql,buf,len);
+		e = backend_dumpstmt_( s->op3.stval, nr, sql );
+		stmt_reset(s->op3.stval);
+		len = snprintf( buf, BUFSIZ, "s%d := s%d;\n}\n", def, e);
+		write_part(sql,buf,len);
+		/* make sure right variable is used later */
+		len = snprintf( buf, BUFSIZ, "s%d := s%d;\n", -s->nr, def);
+		write_part(sql,buf,len);
+		_DELETE(buf);
+		break;
 	}
 	case st_alias: 
 	case st_column_alias: 

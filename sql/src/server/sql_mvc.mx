@@ -285,6 +285,7 @@ sql_export sql_module *mvc_bind_module( mvc *c, char *mname );
 sql_export sql_schema *mvc_bind_schema( mvc *c, char *sname );
 sql_export sql_table *mvc_bind_table( mvc *c, sql_schema *s, char *tname );
 sql_export sql_column *mvc_bind_column( mvc *c, sql_table *t, char *cname );
+sql_export sql_column *mvc_first_column( mvc *c, sql_table *t );
 sql_export sql_idx *mvc_bind_idx( mvc *c, sql_schema *s, char *iname );
 sql_export sql_key *mvc_bind_key( mvc *c, sql_schema *s, char *kname );
 extern sql_key *mvc_bind_ukey( sql_table *t, list *cols );
@@ -596,6 +597,12 @@ cs_find_name(changeset * cs, char *name)
 	return list_find_name(cs->set, name);
 }
 
+static node *
+cs_first_node(changeset *cs)
+{
+	return cs->set->h;
+}
+
 static BAT *sys_bat( struct bm *bm, char *name ) {
 	oid lbid = bm_find_bat(bm, name);
 	BAT *b = bm_lbid2bat(bm, lbid);
@@ -776,6 +783,13 @@ find_column_node(sql_table * t, char *cname)
 static sql_column *find_column(sql_table * t, char *cname)
 {
 	node *n = find_column_node(t, cname );
+	if (n) return n->data;
+	return NULL;
+}
+
+static sql_column *first_column(sql_table * t)
+{
+	node *n = cs_first_node(&t->columns);
 	if (n) return n->data;
 	return NULL;
 }
@@ -2669,6 +2683,8 @@ mvc_destroy(mvc * m)
 {
 	sql_trans *tr;
 
+	if (mvc_debug)
+		fprintf(stderr, "mvc_destroy\n");
 	if (m->results){
 		res_table *r = m->results, *t;
 		for(t=r; t; t=r){ 
@@ -2834,6 +2850,23 @@ mvc_bind_column(mvc * m, sql_table * t, char *cname )
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_column %s.%s\n", t->base.name, cname);
+
+	return c;
+}
+
+sql_column *
+mvc_first_column( mvc *m, sql_table *t )
+{
+	sql_column *c = first_column(t);
+
+	(void)m;
+	if (!c)
+		return NULL;
+	c->base.rtime = t->base.rtime;
+
+	if (mvc_debug)
+		fprintf(stderr, "mvc_first_column %s.%s\n", 
+			t->base.name, c->base.name);
 
 	return c;
 }
