@@ -386,7 +386,6 @@ str SQLexit(Client c){
 	return MAL_SUCCEED;
 }
 str SQLinitClient(Client c){
-	backend *sql;
 	mvc *m;
 	str schema;
 
@@ -397,8 +396,7 @@ str SQLinitClient(Client c){
 		return throwMessage("SQLinitClient",
 			"Catalogue not available\n");
 	}
-	sql = (backend*) c->state[PARSER];
-	if( sql == 0){
+	if( (backend*) c->state[PARSER] == 0){
 		m = mvc_create(0, 0, NULL, c->fdout);
 		/* replace user name with client record setting later on */
 		schema = mvc_login(m, "monetdb", "monetdb");
@@ -407,9 +405,7 @@ str SQLinitClient(Client c){
 		} else {
 			_DELETE(schema);
 		}
-		sql = backend_create(0/*debug*/, m);
-
-		c->state[PARSER] = (void*) sql;
+		c->state[PARSER] = (void*) backend_create(0/*debug*/, m);
 		c->state[OPTIMIZE] = m;
 	} else {
 		m = c->state[OPTIMIZE];
@@ -418,25 +414,20 @@ str SQLinitClient(Client c){
 	return MAL_SUCCEED;
 }
 str SQLexitClient(Client c){
-	mvc *m;
-	backend *sql;
-
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout,"SQLexitClient\n");
 #endif
-	sql = (backend*) c->state[PARSER];
-	m = (mvc *) c->state[OPTIMIZE];
 	if( SQLinitialized == FALSE){
 		return throwMessage("SQLinitClient",
 			"Catalogue not available\n");
 	}
-	if(sql && m){
-		mvc_destroy(m);
-		backend_destroy(sql);
+	if((backend*) c->state[PARSER] && (mvc *) c->state[OPTIMIZE]){
+		mvc_destroy((mvc *) c->state[OPTIMIZE]);
+		backend_destroy((backend*) c->state[PARSER]);
 		/* files are already closed */
-		
+		c->state[OPTIMIZE]= NULL;
+		c->state[PARSER]= NULL;
 	}
-	clrScenario(c);
 	return MAL_SUCCEED;
 }
 str SQLlanguage(str *ret){
@@ -482,7 +473,7 @@ str SQLreader(Client c){
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"SQL blk:%s\n",c->input);
 #endif
-	if(eof==0) {
+	if(eof==0 || strncmp(c->nxt,"quit",4)==0) {
 		c->mode= FINISHING;
 		return throwMessage("SQLreader","end of SQL input\n");
 	}
