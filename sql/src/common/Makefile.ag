@@ -14,6 +14,6 @@ lib_sql = {
 		statement.c statement.h statement2xml.c \
 		atom.c atom.h mem.h string.c \
 		datetime.c datetime.h var.h scope.c scope.h context.h
-	WINLIBS = $(MONET_PREFIX)\src\gdk\libbat.lib
+	WINLIBS = $(MONET_LIBS) -lbat
 	HEADERS = h tab.h
 }
