@@ -168,8 +168,8 @@ static RETSIGTYPE CLKsignal(int nr){
         while (k-- && t >= timer[k].alarm_time){
 	    if (timer[k].action) {
 		TRGDEBUG THRprintf(GDKerr, "eval(%s)\n", timer[k].action); 
-		(void) restype;/* fool compiler */
-		/*monet_eval(timer[k].action,&restype); */
+		(void) restype;
+		/* monet_eval(timer[k].action,&restype);*/
 		GDKfree(timer[k].action);
 		
 	    } else {
@@ -209,7 +209,7 @@ void CLKepilogue(void){
 int CMDsleep(int *secs){
 
         if (*secs < 0) {
-                GDKerror("sleep: negative delay\n");
+                GDKerror("CMDsleep: negative delay\n");
         	return GDK_FAIL;
         } else {
 		MT_sleep_ms(*secs*1000);
@@ -219,11 +219,11 @@ int CMDsleep(int *secs){
  
 int CMDalarm(int *secs, str action){
         if (*secs < 0) {
-                GDKerror("alarm: negative delay\n");
+                GDKerror("CMDalarm: negative delay\n");
         	return GDK_FAIL;
         } else {
 #ifndef SIGALRM
-		GDKerror("alarm: not implemented\n");
+		GDKerror("CMDalarm: not implemented\n");
 		return GDK_FAIL;
 #else
                 (void) CLKalarm(*secs+time(0), action);
@@ -293,18 +293,18 @@ int CMDtime(int *retval){
 @}
 
 @mil
-PROC test_alarm() : void := {
-	t0 := time();
+PROC test_alarm() : void {
+	var t0 := time();
 	sleep(15);
-	t1 := time();
+	var t1 := time();
 	print((t1 - t0) / 1000);
 	alarm(15, "print(\"alarm went off\");" );
 	printf("#~BeginVariableOutput~#\n");
-	timers().print;
-	time.print;
-	usec.print;
-	epoch.print;
-	ctime.print;
+	timers().print();
+	time().print();
+	usec().print();
+	epoch().print();
+	ctime().print();
 	printf("#~EndVariableOutput~#\n");
 	sleep(16); # wait for alarm
 }
