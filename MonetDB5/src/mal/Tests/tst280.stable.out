@@ -44,22 +44,21 @@ function Admin.tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int];	# 0  
     bat.setSequenceBase(resB,0@0);	# 3 BKCsetSequenceBase ($7:any)<-(resB:bat[:void,:int])($8:oid)
     lim := algebra.count(A2);	# 4 ALGcount_bat (lim:lng)<-(A2:bat[:void,:int])
     io.printf("count %d\n",lim);	# 5 IOprint_formatted_lng ($10:int)<-($11:str)(lim:lng)
-    m := -1;	# 6  (m:lng)<-($13:lng)
-    l := calc.lng(lim);	# 7 CALClng2lng (l:lng)<-(lim:lng)
-barrier mloop := mal.nextElement(m,0,l,1);	# 8 lngForloopStep (mloop:bit)<-(m:lng)($16:lng)(l:lng)($17:lng) jump 19
-    io.printf("loopindex %d\n",m);	# 9 IOprint_formatted_lng ($18:int)<-($19:str)(m:lng)
-    B2 := algebra.fetch(A2,m);	# 10 ALGfetch (B2:int)<-(A2:bat[:void,:int])(m:lng)
-    io.printf("B2 value %d\n",B2);	# 11 IOprint_formatted_int ($21:int)<-($22:str)(B2:int)
-    B3 := algebra.fetch(A3,m);	# 12 ALGfetch (B3:int)<-(A3:bat[:void,:int])(m:lng)
-    io.printf("B3 value %d\n",B3);	# 13 IOprint_formatted_int ($24:int)<-($25:str)(B3:int)
-    cr := Admin.pow(B2,B3);	# 14  (cr:int)<-(B2:int)(B3:int)
-    bat.insert(resB,nil,cr);	# 15 BKCinsert_bun ($27:void)<-(resB:bat[:void,:int])($28:void)(cr:int)
-    redo mloop := mal.nextElement(m,0,l,1);	# 16 lngForloopStep (mloop:bit)<-(m:lng)($16:lng)(l:lng)($17:lng) jump 9
-catch MALexception;	# 17  (MALexception:any) jump 18
-exit MALexception;	# 18  (MALexception:any)
-exit mloop;	# 19  (mloop:bit)
-    return resB;	# 20  (resB:bat[:void,:int])
-end tst;	# 21  
+    l := calc.lng(lim);	# 6 CALClng2lng (l:lng)<-(lim:lng)
+barrier (mloop,m):= mal.newRange(0);	# 7 RNGnewRange_lng (mloop:bit)(m:lng)<-($15:lng) jump 18
+    io.printf("loopindex %d\n",m);	# 8 IOprint_formatted_lng ($16:int)<-($17:str)(m:lng)
+    B2 := algebra.fetch(A2,m);	# 9 ALGfetch (B2:int)<-(A2:bat[:void,:int])(m:lng)
+    io.printf("B2 value %d\n",B2);	# 10 IOprint_formatted_int ($19:int)<-($20:str)(B2:int)
+    B3 := algebra.fetch(A3,m);	# 11 ALGfetch (B3:int)<-(A3:bat[:void,:int])(m:lng)
+    io.printf("B3 value %d\n",B3);	# 12 IOprint_formatted_int ($22:int)<-($23:str)(B3:int)
+    cr := Admin.pow(B2,B3);	# 13  (cr:int)<-(B2:int)(B3:int)
+    bat.insert(resB,nil,cr);	# 14 BKCinsert_bun ($25:void)<-(resB:bat[:void,:int])($26:void)(cr:int)
+    redo (mloop,m):= mal.nextElement(1,l);	# 15 RNGnextElement_lng (mloop:bit)(m:lng)<-($27:lng)(l:lng) jump 8
+catch MALexception;	# 16  (MALexception:any) jump 17
+exit MALexception;	# 17  (MALexception:any)
+exit (mloop,m);	# 18  (mloop:bit)(m:lng)
+    return resB;	# 19  (resB:bat[:void,:int])
+end tst;	# 20  
 #
 #	b := new(:void,:int);
 #	setSequenceBase(b,0@0);

@@ -1,10 +1,9 @@
 # simple iterator loop test
 
-	i:= -1:lng;
 	b:= new(:int,:int);
-barrier v:= nextElement(i,0:lng,1000000:lng,1:lng);
+barrier (v,i):= newRange(0:lng);
 	z:= bat.insert(b,1,1);
-	redo v:= nextElement(i,0:lng,1000000:lng,1:lng);
-exit	v;
+	redo (v,i):= nextElement(1:lng,1000000:lng);
+exit	(v,i);
 	c:= count(b);
 	print(c);

@@ -20,15 +20,14 @@ stdout of test 'tst905` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
-    i := -1;	# 2  (i:lng)<-($5:lng)
-barrier v := mal.nextElement(i,0,10,1);	# 3 lngForloopStep (v:bit)<-(i:lng)($7:lng)($8:lng)($9:lng) jump 6
-    bat.insert(b,i,i);	# 4 BKCinsert_bun ($10:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo v := mal.nextElement(i,0,10,1);	# 5 lngForloopStep (v:bit)<-(i:lng)($7:lng)($8:lng)($9:lng) jump 4
-exit v;	# 6  (v:bit)
-    c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    x := multiplex.script("+",b,c);	# 8  (x:bat[:lng,:lng])<-($13:str)(b:bat[:lng,:lng])(c:bat[:lng,:lng])
-    io.print(x);	# 9 IOprint_val ($14:int)<-(x:bat[:lng,:lng])
-end main;	# 10  
+barrier (v,i):= mal.newRange(0);	# 2 RNGnewRange_lng (v:bit)(i:lng)<-($6:lng) jump 5
+    bat.insert(b,i,i);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    redo (v,i):= mal.nextElement(1,10);	# 4 RNGnextElement_lng (v:bit)(i:lng)<-($8:lng)($9:lng) jump 3
+exit (v,i);	# 5  (v:bit)(i:lng)
+    c := algebra.copy(b);	# 6 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
+    x := multiplex.script("+",b,c);	# 7  (x:bat[:lng,:lng])<-($12:str)(b:bat[:lng,:lng])(c:bat[:lng,:lng])
+    io.print(x);	# 8 IOprint_val ($13:int)<-(x:bat[:lng,:lng])
+end main;	# 9  
 #-----------------#
 # h	tmp_5	  # name
 # lng	lng	  # type

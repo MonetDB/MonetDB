@@ -1,13 +1,12 @@
 # the multiplex code blocks.
 
 b:= new(:void,:lng);
-i:= -1:lng;
-barrier v:= nextElement(i,0:lng,1000000:lng);
+barrier (go,i):= newRange(0:lng);
 	k:= rand();
 	l:= lng(k);
 	insert(b,nil,l);
-	redo v:= nextElement(i,0:lng,1000000:lng);
-exit v;
+	redo (go,i):= nextElement(1:lng,1000000:lng);
+exit (go,i);
 #setReadMode(b);
 mx:= max(b); 
 #printf("max %d",mx);

@@ -1,12 +1,10 @@
-	i:= -1;
-barrier v1:= nextElement(i,0,2);
+barrier (v1,i):= newRange(0);
 	print("do something");
-	redo v1:= nextElement(i,0,2);
-exit	v1;
+	redo (v1,i):= nextElement(1,2);
+exit	(v1,i);
 	printf("left first loop with %s\n",v1);
 	print("next iteration");
-	i:= -1;
-barrier v2:= nextElement(i,0,5,2);
+barrier (v2,i):= newRange(0);
 	print("do something else");
-	redo v2:= nextElement(i,0,5,2);
-exit	v2;
+	redo (v2,i):= nextElement(2,5);
+exit	(v2,i);

@@ -30,24 +30,23 @@ stdout of test 'tst902` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
-    i := -1;	# 2  (i:lng)<-($5:lng)
-barrier v := mal.nextElement(i,0,10,1);	# 3 lngForloopStep (v:bit)<-(i:lng)($7:lng)($8:lng)($9:lng) jump 6
-    bat.insert(b,i,i);	# 4 BKCinsert_bun ($10:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo v := mal.nextElement(i,0,10,1);	# 5 lngForloopStep (v:bit)<-(i:lng)($7:lng)($8:lng)($9:lng) jump 4
-exit v;	# 6  (v:bit)
-    c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    d := bbp.new(:lng,:lng);	# 8 CMDBATnew (d:bat[:lng,:lng])<-($13:lng)($14:lng)
-barrier (w,h,t):= chopper.newIterator(b);	# 9 CHPbunIterator (w:lng)(h:lng)(t:lng)<-(b:bat[:lng,:lng]) jump 17
-    B1 := algebra.find(b,h);	# 10 ALGfind (B1:lng)<-(b:bat[:lng,:lng])(h:lng)
-    B2 := algebra.find(c,h);	# 11 ALGfind (B2:lng)<-(c:bat[:lng,:lng])(h:lng)
-    t := calc.+(B1,B2);	# 12 CALCbinaryADDlnglng (t:lng)<-(B1:lng)(B2:lng)
-    bat.insert(d,h,t);	# 13 BKCinsert_bun ($20:void)<-(d:bat[:lng,:lng])(h:lng)(t:lng)
-    redo (w,h,t):= chopper.hasMoreElements(b);	# 14 CHPbunHasMoreElements (w:lng)(h:lng)(t:lng)<-(b:bat[:lng,:lng]) jump 10
-catch GDKerror;	# 15  (GDKerror:any) jump 16
-exit GDKerror;	# 16  (GDKerror:any)
-exit w;	# 17  (w:lng)
-    io.print(d);	# 18 IOprint_val ($22:int)<-(d:bat[:lng,:lng])
-end main;	# 19  
+barrier (k,v):= mal.newRange(0);	# 2 RNGnewRange_lng (k:bit)(v:lng)<-($6:lng) jump 5
+    bat.insert(b,v,v);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:lng,:lng])(v:lng)(v:lng)
+    redo (k,v):= mal.nextElement(1,10);	# 4 RNGnextElement_lng (k:bit)(v:lng)<-($8:lng)($9:lng) jump 3
+exit (k,v);	# 5  (k:bit)(v:lng)
+    c := algebra.copy(b);	# 6 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
+    d := bbp.new(:lng,:lng);	# 7 CMDBATnew (d:bat[:lng,:lng])<-($12:lng)($13:lng)
+barrier (w,h,t):= chopper.newIterator(b);	# 8 CHPbunIterator (w:lng)(h:lng)(t:lng)<-(b:bat[:lng,:lng]) jump 16
+    B1 := algebra.find(b,h);	# 9 ALGfind (B1:lng)<-(b:bat[:lng,:lng])(h:lng)
+    B2 := algebra.find(c,h);	# 10 ALGfind (B2:lng)<-(c:bat[:lng,:lng])(h:lng)
+    t := calc.+(B1,B2);	# 11 CALCbinaryADDlnglng (t:lng)<-(B1:lng)(B2:lng)
+    bat.insert(d,h,t);	# 12 BKCinsert_bun ($19:void)<-(d:bat[:lng,:lng])(h:lng)(t:lng)
+    redo (w,h,t):= chopper.hasMoreElements(b);	# 13 CHPbunHasMoreElements (w:lng)(h:lng)(t:lng)<-(b:bat[:lng,:lng]) jump 9
+catch GDKerror;	# 14  (GDKerror:any) jump 15
+exit GDKerror;	# 15  (GDKerror:any)
+exit w;	# 16  (w:lng)
+    io.print(d);	# 17 IOprint_val ($21:int)<-(d:bat[:lng,:lng])
+end main;	# 18  
 #-----------------#
 # h	tmp_5	  # name
 # lng	lng	  # type

@@ -1,13 +1,12 @@
 # the multiplex code blocks.
 
 b:= new(:void,:lng);
-i:= -1L;
-barrier v:= nextElement(i,0L,1000000L);
+barrier (v,i):= nextElement(0L);
 	k:= rand();
 	l:= lng(i);
 	bat.insert(b,nil,i);
-	redo v;
-exit v;
+	redo (v,i):= nextElement(1L,1000000L);
+exit (v,i);
 #setReadMode(b);
 mx:= max(b); 
 #printf("max %d",mx);

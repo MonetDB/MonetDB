@@ -16,9 +16,9 @@ stdout of test 'tst402` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     i := ' ';	# 1  (i:chr)<-($2:chr)
-barrier v1 := mal.nextElement(i,'A','C');	# 2 chrForloop (v1:bit)<-(i:chr)($4:chr)($5:chr) jump 5
-    v := "do something";	# 3  (v:str)<-($7:str)
-    redo v1 := mal.nextElement(i,'A','C');	# 4 chrForloop (v1:bit)<-(i:chr)($4:chr)($5:chr) jump 3
-exit v1;	# 5  (v1:bit)
+barrier (v1,i):= mal.newRange('A');	# 2 RNGnewRange_chr (v1:bit)(i:chr)<-($4:chr) jump 5
+    v := "do something";	# 3  (v:str)<-($6:str)
+    redo (v1,i):= mal.nextElement(1,'C');	# 4 RNGnextElement_chr (v1:bit)(i:chr)<-($7:int)($8:chr) jump 3
+exit (v1,i);	# 5  (v1:bit)(i:chr)
 end main;	# 6  
 >

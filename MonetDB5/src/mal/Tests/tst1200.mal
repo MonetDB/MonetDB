@@ -216,6 +216,7 @@ print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 #      [start_dst](tzone_bat).setColumn("start_dst"),
 	od_a := multiplex.script("end_dst",tzone_bat);
 	setColumn(od_a,"end_dst");
+print("print(kd_a,md_a,od_a)");
 	qd_a := print(kd_a,md_a,od_a);
 #      [end_dst](tzone_bat).setColumn("end_dst"));
 #
@@ -315,6 +316,7 @@ print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 	we_a := multiplex.script("monthname",ve_a);
 	xe_a := multiplex.script("monthnum",we_a);
 	ye_a := setColumn(xe_a,"monthnum");
+	print("print(date_bat,oe_a,qe_a,te_a,xe_a)");
 	af_a := print(date_bat,oe_a,qe_a,te_a,xe_a);
 #      [monthnum]([monthname]([month](date_bat))).setColumn("monthnum"));
 #
@@ -329,6 +331,7 @@ print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 #      date_addyears.setColumn("min100y"),
 	df_a := multiplex.script("diff",date_addyears,date_bat);
 	setColumn(df_a,"diff");
+	print("print(date_bat,date_addyears,df_a)");
 	ff_a := print(date_bat,date_addyears,df_a);
 #      [diff](date_addyears, date_bat).setColumn("diff"));
 #
@@ -338,6 +341,7 @@ print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 #      date_addmonths.setColumn("plus1m"),
 	if_a := multiplex.script("diff",date_addmonths,date_bat);
 	setColumn(if_a,"diff");
+	print(" print(date_bat,date_addmonths,if_a)");
 	kf_a := print(date_bat,date_addmonths,if_a);
 #      [diff](date_addmonths, date_bat).setColumn("diff"));
 #
@@ -490,12 +494,14 @@ print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #      [date](timestamp_bat,tzone_bat).setColumn("date"),
 	oh_a := multiplex.script("daytime",timestamp_bat,tzone_bat);
 	setColumn(oh_a,"daytime");
+	print("print(timestamp_bat,mh_a,oh_a)");
 	print(timestamp_bat,mh_a,oh_a);
 #      [daytime](timestamp_bat,tzone_bat).setColumn("daytime"));
 #
 	rh_a := setColumn(timestamp_bat,"timestamp");
 #print(timestamp_bat.setColumn("timestamp"),
 	timezones:= bbp.bind("timezones");
+	print("print(timezones)");
 	print(timezones);
 	sh_a:tzone := algebra.find(timezones,"Wake Island");
 	th_a := multiplex.script("date",timestamp_bat,sh_a);
@@ -510,6 +516,7 @@ print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #      [date](timestamp_bat,algebra.find(timezones,"American Samoa")).setColumn("American Samoa"),
 	bi_a:tzone := algebra.find(timezones,"American Samoa");
 	ci_a := multiplex.script("daytime",timestamp_bat,bi_a);
+	print("print(timestamp_bat,th_a,wh_a,yh_a,ci_a)");
 	di_a := print(timestamp_bat,th_a,wh_a,yh_a,ci_a);
 #      [daytime](timestamp_bat,algebra.find(timezones,"American Samoa")));
 #
@@ -536,6 +543,7 @@ print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	qi_a := lng(pi_a);
 	ri_a := /(ni_a,qi_a);
 	si_a := setColumn(ri_a,"diff");
+	print("print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a)");
 	ti_a := print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a);
 #	[/]([diff](timestamp_plus, timestamp_minus),lng(60*60*1000)).setColumn("diff"));
 #
@@ -563,6 +571,7 @@ print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	gj_a:tzone := algebra.find(timezones,"Andes/Brazil");
 	hj_a := multiplex.script("dst",timestamp_bra,gj_a);
 	ij_a := setColumn(hj_a,"dst");
+	print("print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a)");
 	jj_a := print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a);
 #	[dst](timestamp_bra,algebra.find(timezones,"Andes/Brazil")).setColumn("dst"));
 #

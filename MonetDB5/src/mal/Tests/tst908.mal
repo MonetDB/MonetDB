@@ -11,9 +11,8 @@ end perftst;
 
 
 b:= new(:lng,:lng);
-i:= -1:lng;
-barrier v:= nextElement(i,0:lng,10:lng,1:lng);
+barrier (v,i):= newRange(0:lng);
         insert(b,i,i);
-        redo v:= nextElement(i,0:lng,10:lng,1:lng);
-exit v;
+        redo (v,i):= nextElement(1:lng,10:lng);
+exit (v,i);
 perftst(b,1:lng);

@@ -20,19 +20,17 @@ stdout of test 'tst400` in directory 'src/mal` itself:
 #exit	v2;
 #
 function Admin.main():int;	# 0  (main:int)
-    i := -1;	# 1  (i:int)<-($2:int)
-barrier v1 := mal.nextElement(i,0,2);	# 2 intForloop (v1:bit)<-(i:int)($4:int)($5:int) jump 5
-    io.print("do something");	# 3 IOprint_val ($6:int)<-($7:str)
-    redo v1 := mal.nextElement(i,0,2);	# 4 intForloop (v1:bit)<-(i:int)($4:int)($5:int) jump 3
-exit v1;	# 5  (v1:bit)
-    io.printf("left first loop with %s\n",v1);	# 6 IOprint_formatted_bit ($8:int)<-($9:str)(v1:bit)
-    io.print("next iteration");	# 7 IOprint_val ($10:int)<-($11:str)
-    i := -1;	# 8  (i:int)<-($2:int)
-barrier v2 := mal.nextElement(i,0,5,2);	# 9 intForloopStep (v2:bit)<-(i:int)($4:int)($13:int)($5:int) jump 12
-    io.print("do something else");	# 10 IOprint_val ($14:int)<-($15:str)
-    redo v2 := mal.nextElement(i,0,5,2);	# 11 intForloopStep (v2:bit)<-(i:int)($4:int)($13:int)($5:int) jump 10
-exit v2;	# 12  (v2:bit)
-end main;	# 13  
+barrier (v1,i):= mal.newRange(0);	# 1 RNGnewRange_int (v1:bit)(i:int)<-($3:int) jump 4
+    io.print("do something");	# 2 IOprint_val ($4:int)<-($5:str)
+    redo (v1,i):= mal.nextElement(1,2);	# 3 RNGnextElement_int (v1:bit)(i:int)<-($6:int)($7:int) jump 2
+exit (v1,i);	# 4  (v1:bit)(i:int)
+    io.printf("left first loop with %s\n",v1);	# 5 IOprint_formatted_bit ($8:int)<-($9:str)(v1:bit)
+    io.print("next iteration");	# 6 IOprint_val ($10:int)<-($11:str)
+barrier (v2,i):= mal.newRange(0);	# 7 RNGnewRange_int (v2:bit)(i:int)<-($3:int) jump 10
+    io.print("do something else");	# 8 IOprint_val ($13:int)<-($14:str)
+    redo (v2,i):= mal.nextElement(2,5);	# 9 RNGnextElement_int (v2:bit)(i:int)<-($7:int)($15:int) jump 8
+exit (v2,i);	# 10  (v2:bit)(i:int)
+end main;	# 11  
 [ "do something" ]
 [ "do something" ]
 left first loop with false

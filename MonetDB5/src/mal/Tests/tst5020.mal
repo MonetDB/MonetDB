@@ -1,12 +1,11 @@
 # determine basic costs for cracking a larger table.
 b:= new(:int,:int);
-i:= -1:int;
-barrier v:= nextElement(i,0:int,1000000:int);
+barrier (v,i):= newRange(0:int);
         k:= rand();
         l:= int(k);
         insert(b,l,l);
-        redo v:= nextElement(i,0:int,1000000:int);
-exit v;
+        redo (v,i):= nextElement(1:int,1000000:int);
+exit (v,i);
 #setReadMode(b);
 mx:= max(b);
 printf("max %d",mx);

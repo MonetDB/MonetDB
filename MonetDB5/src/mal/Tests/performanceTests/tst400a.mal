@@ -1,7 +1,6 @@
 # simple iterator loop test
 
-	i:= -1:lng;
-barrier v:= nextElement(i,0:lng,1000000:lng,1:lng);
-	redo v:= nextElement(i,0:lng,1000000:lng,1:lng);
-exit	v;
+barrier (b,v):= newRange(0:lng);
+	redo (b,v):= nextElement(1:lng,1000000:lng);
+exit	(b,v);
 print("end of loop");

@@ -1,7 +1,7 @@
 # testing the simple iterators on builtin types
 
 	i:= ' ':chr;
-barrier v1:= nextElement(i,'A','C');
+barrier (v1,i):= newRange('A');
 	v:= "do something";
-	redo v1:= nextElement(i,'A','C');
-exit	v1;
+	redo (v1,i):= nextElement(1,'C');
+exit	(v1,i);

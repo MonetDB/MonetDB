@@ -704,211 +704,220 @@ function Admin.main():int;	# 0  (main:int)
     bat.setColumn(md_a,"start_dst");	# 121 BKCsetColumn ($214:void)<-(md_a:bat[:oid,:rule])($213:str)
     od_a := multiplex.script("end_dst",tzone_bat);	# 122  (od_a:bat[:oid,:rule])<-($216:str)(tzone_bat:bat[:oid,:tzone])
     bat.setColumn(od_a,"end_dst");	# 123 BKCsetColumn ($217:void)<-(od_a:bat[:oid,:rule])($216:str)
-    qd_a := io.print(kd_a,md_a,od_a);	# 124 IOtable (qd_a:int)<-(kd_a:bat[:oid,:int])(md_a:bat[:oid,:rule])(od_a:bat[:oid,:rule])
-    date_00 := mtime.date(2000,01,01);	# 125 MTIMEdate_create (date_00:date)<-($220:int)($221:int)($221:int)
-    date_01 := mtime.date("5000-JAN-01");	# 126 MTIMEdate_fromstr (date_01:date)<-($223:str)
-    date_02 := mtime.date("1968-FEBR-29");	# 127 MTIMEdate_fromstr (date_02:date)<-($225:str)
-    date_03 := mtime.date("1-MARCH-01");	# 128 MTIMEdate_fromstr (date_03:date)<-($227:str)
-    date_04 := mtime.date("-5867411-JAN-1");	# 129 MTIMEdate_fromstr (date_04:date)<-($229:str)
-    date_05 := mtime.date("-768/octobe/01");	# 130 MTIMEdate_fromstr (date_05:date)<-($231:str)
-    date_06 := mtime.date("5000\\novembe\\01");	# 131 MTIMEdate_fromstr (date_06:date)<-($233:str)
-    date_07 := mtime.date("-1999/jun/01");	# 132 MTIMEdate_fromstr (date_07:date)<-($235:str)
-    date_08 := mtime.date("2000-jul-14");	# 133 MTIMEdate_fromstr (date_08:date)<-($237:str)
-    date_09 := mtime.date("1999-sept-01");	# 134 MTIMEdate_fromstr (date_09:date)<-($239:str)
-    date_10 := mtime.date("1998-decemBeR-01");	# 135 MTIMEdate_fromstr (date_10:date)<-($241:str)
-    date_11 := mtime.date("1953 may                01");	# 136 MTIMEdate_fromstr (date_11:date)<-($243:str)
-    date_12 := mtime.date("5867411-DEC-31");	# 137 MTIMEdate_fromstr (date_12:date)<-($245:str)
-    date_13 := mtime.date(1996,13,1);	# 138 MTIMEdate_create (date_13:date)<-($247:int)($248:int)($249:int)
-    date_14 := mtime.date("999999999999999999999-01-01");	# 139 MTIMEdate_fromstr (date_14:date)<-($251:str)
-    date_15 := mtime.date("1999-JANUARI-01");	# 140 MTIMEdate_fromstr (date_15:date)<-($253:str)
-    date_16 := mtime.date("1999-FEBR-29");	# 141 MTIMEdate_fromstr (date_16:date)<-($255:str)
-    date_17 := mtime.date("-1-DECEMBER-0");	# 142 MTIMEdate_fromstr (date_17:date)<-($257:str)
-    date_18 := mtime.date("5000\novembe\31");	# 143 MTIMEdate_fromstr (date_18:date)<-($259:str)
-    date_19 := mtime.date("nil");	# 144 MTIMEdate_fromstr (date_19:date)<-($261:str)
-    date_20 := mtime.date("1999-sept-31");	# 145 MTIMEdate_fromstr (date_20:date)<-($263:str)
-    date_bat := bbp.new(:oid,:date);	# 146 CMDBATnew (date_bat:bat[:oid,:date])<-($265:oid)($266:date)
-    bat.insert(date_bat,00@0,date_00);	# 147 BKCinsert_bun ($267:void)<-(date_bat:bat[:oid,:date])($268:oid)(date_00:date)
-    bat.insert(date_bat,01@0,date_01);	# 148 BKCinsert_bun ($269:void)<-(date_bat:bat[:oid,:date])($270:oid)(date_01:date)
-    bat.insert(date_bat,02@0,date_02);	# 149 BKCinsert_bun ($271:void)<-(date_bat:bat[:oid,:date])($272:oid)(date_02:date)
-    bat.insert(date_bat,03@0,date_03);	# 150 BKCinsert_bun ($273:void)<-(date_bat:bat[:oid,:date])($274:oid)(date_03:date)
-    bat.insert(date_bat,04@0,date_04);	# 151 BKCinsert_bun ($275:void)<-(date_bat:bat[:oid,:date])($276:oid)(date_04:date)
-    bat.insert(date_bat,05@0,date_05);	# 152 BKCinsert_bun ($277:void)<-(date_bat:bat[:oid,:date])($278:oid)(date_05:date)
-    bat.insert(date_bat,06@0,date_06);	# 153 BKCinsert_bun ($279:void)<-(date_bat:bat[:oid,:date])($280:oid)(date_06:date)
-    bat.insert(date_bat,07@0,date_07);	# 154 BKCinsert_bun ($281:void)<-(date_bat:bat[:oid,:date])($282:oid)(date_07:date)
-    bat.insert(date_bat,08@0,date_08);	# 155 BKCinsert_bun ($283:void)<-(date_bat:bat[:oid,:date])($284:oid)(date_08:date)
-    bat.insert(date_bat,09@0,date_09);	# 156 BKCinsert_bun ($285:void)<-(date_bat:bat[:oid,:date])($286:oid)(date_09:date)
-    bat.insert(date_bat,10@0,date_10);	# 157 BKCinsert_bun ($287:void)<-(date_bat:bat[:oid,:date])($288:oid)(date_10:date)
-    bat.insert(date_bat,11@0,date_11);	# 158 BKCinsert_bun ($289:void)<-(date_bat:bat[:oid,:date])($290:oid)(date_11:date)
-    bat.insert(date_bat,12@0,date_12);	# 159 BKCinsert_bun ($291:void)<-(date_bat:bat[:oid,:date])($292:oid)(date_12:date)
-    bat.insert(date_bat,13@0,date_13);	# 160 BKCinsert_bun ($293:void)<-(date_bat:bat[:oid,:date])($294:oid)(date_13:date)
-    bat.insert(date_bat,14@0,date_14);	# 161 BKCinsert_bun ($295:void)<-(date_bat:bat[:oid,:date])($296:oid)(date_14:date)
-    bat.insert(date_bat,15@0,date_15);	# 162 BKCinsert_bun ($297:void)<-(date_bat:bat[:oid,:date])($298:oid)(date_15:date)
-    bat.insert(date_bat,16@0,date_16);	# 163 BKCinsert_bun ($299:void)<-(date_bat:bat[:oid,:date])($300:oid)(date_16:date)
-    bat.insert(date_bat,17@0,date_17);	# 164 BKCinsert_bun ($301:void)<-(date_bat:bat[:oid,:date])($302:oid)(date_17:date)
-    bat.insert(date_bat,18@0,date_18);	# 165 BKCinsert_bun ($303:void)<-(date_bat:bat[:oid,:date])($304:oid)(date_18:date)
-    bat.insert(date_bat,19@0,date_19);	# 166 BKCinsert_bun ($305:void)<-(date_bat:bat[:oid,:date])($306:oid)(date_19:date)
-    bat.insert(date_bat,20@0,date_20);	# 167 BKCinsert_bun ($307:void)<-(date_bat:bat[:oid,:date])($308:oid)(date_20:date)
-    ne_a := bat.setColumn(date_bat,"date");	# 168 BKCsetColumn (ne_a:void)<-(date_bat:bat[:oid,:date])($310:str)
-    oe_a := multiplex.script("year",date_bat);	# 169  (oe_a:bat[:oid,:int])<-($312:str)(date_bat:bat[:oid,:date])
-    pe_a := bat.setColumn(oe_a,"year");	# 170 BKCsetColumn (pe_a:void)<-(oe_a:bat[:oid,:int])($312:str)
-    qe_a := multiplex.script("day",date_bat);	# 171  (qe_a:bat[:oid,:int])<-($315:str)(date_bat:bat[:oid,:date])
-    re_a := bat.setColumn(qe_a,"day");	# 172 BKCsetColumn (re_a:void)<-(qe_a:bat[:oid,:int])($315:str)
-    se_a := multiplex.script("month",date_bat);	# 173  (se_a:bat[:oid,:int])<-($318:str)(date_bat:bat[:oid,:date])
-    te_a := multiplex.script("monthname",se_a);	# 174  (te_a:bat[:oid,:str])<-($320:str)(se_a:bat[:oid,:int])
-    ue_a := bat.setColumn(te_a,"monthname");	# 175 BKCsetColumn (ue_a:void)<-(te_a:bat[:oid,:str])($320:str)
-    ve_a := multiplex.script("month",date_bat);	# 176  (ve_a:bat[:oid,:int])<-($318:str)(date_bat:bat[:oid,:date])
-    we_a := multiplex.script("monthname",ve_a);	# 177  (we_a:bat[:oid,:str])<-($320:str)(ve_a:bat[:oid,:int])
-    xe_a := multiplex.script("monthnum",we_a);	# 178  (xe_a:bat[:oid,:int])<-($325:str)(we_a:bat[:oid,:str])
-    ye_a := bat.setColumn(xe_a,"monthnum");	# 179 BKCsetColumn (ye_a:void)<-(xe_a:bat[:oid,:int])($325:str)
-    af_a := io.print(date_bat,oe_a,qe_a,te_a,xe_a);	# 180 IOtable (af_a:int)<-(date_bat:bat[:oid,:date])(oe_a:bat[:oid,:int])(qe_a:bat[:oid,:int])(te_a:bat[:oid,:str])(xe_a:bat[:oid,:int])
-    date_addyears := multiplex.script("addyears",date_bat,-100);	# 181  (date_addyears:bat[:oid,:date])<-($329:str)(date_bat:bat[:oid,:date])($330:int)
-    date_addmonths := multiplex.script("addmonths",date_bat,1);	# 182  (date_addmonths:bat[:oid,:date])<-($332:str)(date_bat:bat[:oid,:date])($333:int)
-    bat.setColumn(date_bat,"date");	# 183 BKCsetColumn ($334:void)<-(date_bat:bat[:oid,:date])($310:str)
-    bat.setColumn(date_addyears,"min100y");	# 184 BKCsetColumn ($335:void)<-(date_addyears:bat[:oid,:date])($336:str)
-    df_a := multiplex.script("diff",date_addyears,date_bat);	# 185  (df_a:bat[:oid,:int])<-($338:str)(date_addyears:bat[:oid,:date])(date_bat:bat[:oid,:date])
-    bat.setColumn(df_a,"diff");	# 186 BKCsetColumn ($339:void)<-(df_a:bat[:oid,:int])($338:str)
-    ff_a := io.print(date_bat,date_addyears,df_a);	# 187 IOtable (ff_a:int)<-(date_bat:bat[:oid,:date])(date_addyears:bat[:oid,:date])(df_a:bat[:oid,:int])
-    bat.setColumn(date_bat,"date");	# 188 BKCsetColumn ($341:void)<-(date_bat:bat[:oid,:date])($310:str)
-    bat.setColumn(date_addmonths,"plus1m");	# 189 BKCsetColumn ($342:void)<-(date_addmonths:bat[:oid,:date])($343:str)
-    if_a := multiplex.script("diff",date_addmonths,date_bat);	# 190  (if_a:bat[:oid,:int])<-($338:str)(date_addmonths:bat[:oid,:date])(date_bat:bat[:oid,:date])
-    bat.setColumn(if_a,"diff");	# 191 BKCsetColumn ($345:void)<-(if_a:bat[:oid,:int])($338:str)
-    kf_a := io.print(date_bat,date_addmonths,if_a);	# 192 IOtable (kf_a:int)<-(date_bat:bat[:oid,:date])(date_addmonths:bat[:oid,:date])(if_a:bat[:oid,:int])
-    date_seq := bbp.new(:int,:date);	# 193 CMDBATnew (date_seq:bat[:int,:date])<-($348:int)($349:date)
-    i := -375;	# 194  (i:int)<-($351:int)
-barrier lf_a := true;	# 195  (lf_a:bit)<-($353:bit) jump 203
-    i := calc.+(i,1);	# 196 CALCbinaryADDintint (i:int)<-(i:int)($333:int)
-    of_a := calc.<(i,375);	# 197 CALCcompLTintint (of_a:bit)<-(i:int)($355:int)
-barrier mf_a := of_a;	# 198  (mf_a:bit)<-(of_a:bit) jump 202
-    pf_a := mtime.adddays(date_00,i);	# 199 MTIMEdate_adddays (pf_a:date)<-(date_00:date)(i:int)
-    bat.insert(date_seq,i,pf_a);	# 200 BKCinsert_bun ($358:void)<-(date_seq:bat[:int,:date])(i:int)(pf_a:date)
-    redo lf_a;	# 201  (lf_a:bit) jump 196
-exit mf_a;	# 202  (mf_a:bit)
-exit lf_a;	# 203  (lf_a:bit)
-    rf_a := bat.setColumn(date_seq,"date");	# 204 BKCsetColumn (rf_a:void)<-(date_seq:bat[:int,:date])($360:str)
-    sf_a := multiplex.script("weekofyear",date_seq);	# 205  (sf_a:bat[:int,:int])<-($362:str)(date_seq:bat[:int,:date])
-    tf_a := bat.setColumn(sf_a,"weekofyear");	# 206 BKCsetColumn (tf_a:void)<-(sf_a:bat[:int,:int])($362:str)
-    uf_a := multiplex.script("dayofweek",date_seq);	# 207  (uf_a:bat[:int,:int])<-($365:str)(date_seq:bat[:int,:date])
-    vf_a := multiplex.script("dayname",uf_a);	# 208  (vf_a:bat[:int,:str])<-($367:str)(uf_a:bat[:int,:int])
-    wf_a := bat.setColumn(vf_a,"dayofweek");	# 209 BKCsetColumn (wf_a:void)<-(vf_a:bat[:int,:str])($365:str)
-    xf_a := multiplex.script("dayofweek",date_seq);	# 210  (xf_a:bat[:int,:int])<-($365:str)(date_seq:bat[:int,:date])
-    yf_a := multiplex.script("dayname",xf_a);	# 211  (yf_a:bat[:int,:str])<-($367:str)(xf_a:bat[:int,:int])
-    ag_a := multiplex.script("daynum",yf_a);	# 212  (ag_a:bat[:int,:int])<-($372:str)(yf_a:bat[:int,:str])
-    bg_a := bat.setColumn(ag_a,"num");	# 213 BKCsetColumn (bg_a:void)<-(ag_a:bat[:int,:int])($374:str)
-    cg_a := multiplex.script("dayofyear",date_seq);	# 214  (cg_a:bat[:int,:int])<-($376:str)(date_seq:bat[:int,:date])
-    dg_a := bat.setColumn(cg_a,"dayofyear");	# 215 BKCsetColumn (dg_a:void)<-(cg_a:bat[:int,:int])($376:str)
-    io.print("date_seq,sf_a,vf_a,ag_a,cg_a");	# 216 IOprint_val ($378:int)<-($379:str)
-    eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);	# 217 IOtable (eg_a:int)<-(date_seq:bat[:int,:date])(sf_a:bat[:int,:int])(vf_a:bat[:int,:str])(ag_a:bat[:int,:int])(cg_a:bat[:int,:int])
-    daytime_00 := mtime.daytime(23,59,59,999);	# 218 MTIMEdaytime_create (daytime_00:daytime)<-($382:int)($383:int)($383:int)($384:int)
-    daytime_01 := mtime.daytime("23:59");	# 219 MTIMEdaytime_fromstr (daytime_01:daytime)<-($386:str)
-    daytime_02 := mtime.daytime("00:00");	# 220 MTIMEdaytime_fromstr (daytime_02:daytime)<-($388:str)
-    daytime_03 := mtime.daytime("23:59:59");	# 221 MTIMEdaytime_fromstr (daytime_03:daytime)<-($390:str)
-    daytime_04 := mtime.daytime("00:00:00.000");	# 222 MTIMEdaytime_fromstr (daytime_04:daytime)<-($392:str)
-    daytime_05 := mtime.daytime("00:00:00");	# 223 MTIMEdaytime_fromstr (daytime_05:daytime)<-($394:str)
-    daytime_06 := mtime.daytime("00:00:00:001");	# 224 MTIMEdaytime_fromstr (daytime_06:daytime)<-($396:str)
-    daytime_07 := mtime.daytime("03:49:02.999");	# 225 MTIMEdaytime_fromstr (daytime_07:daytime)<-($398:str)
-    daytime_08 := mtime.daytime("20:48:42:999");	# 226 MTIMEdaytime_fromstr (daytime_08:daytime)<-($400:str)
-    daytime_09 := mtime.daytime("17:53:38:999");	# 227 MTIMEdaytime_fromstr (daytime_09:daytime)<-($402:str)
-    daytime_10 := mtime.daytime("13:15:34:999");	# 228 MTIMEdaytime_fromstr (daytime_10:daytime)<-($404:str)
-    daytime_11 := mtime.daytime("07:34:27.999");	# 229 MTIMEdaytime_fromstr (daytime_11:daytime)<-($406:str)
-    daytime_12 := mtime.daytime("23:59:59:999");	# 230 MTIMEdaytime_fromstr (daytime_12:daytime)<-($408:str)
-    daytime_13 := mtime.daytime("01:00:03.999");	# 231 MTIMEdaytime_fromstr (daytime_13:daytime)<-($410:str)
-    daytime_14 := mtime.daytime("23:59:59.999");	# 232 MTIMEdaytime_fromstr (daytime_14:daytime)<-($412:str)
-    daytime_15 := mtime.daytime(24,59,59,999);	# 233 MTIMEdaytime_create (daytime_15:daytime)<-($414:int)($383:int)($383:int)($384:int)
-    daytime_16 := mtime.daytime(23,60,59,999);	# 234 MTIMEdaytime_create (daytime_16:daytime)<-($416:int)($417:int)($418:int)($419:int)
-    daytime_17 := mtime.daytime(23,59,60,999);	# 235 MTIMEdaytime_create (daytime_17:daytime)<-($416:int)($418:int)($417:int)($419:int)
-    daytime_18 := mtime.daytime(23,59,60,1000);	# 236 MTIMEdaytime_create (daytime_18:daytime)<-($416:int)($418:int)($417:int)($422:int)
-    daytime_19 := mtime.daytime("nil");	# 237 MTIMEdaytime_fromstr (daytime_19:daytime)<-($424:str)
-    daytime_bat := bbp.new(:oid,:daytime);	# 238 CMDBATnew (daytime_bat:bat[:oid,:daytime])<-($426:oid)($427:daytime)
-    bat.insert(daytime_bat,00@0,daytime_00);	# 239 BKCinsert_bun ($428:void)<-(daytime_bat:bat[:oid,:daytime])($429:oid)(daytime_00:daytime)
-    bat.insert(daytime_bat,01@0,daytime_01);	# 240 BKCinsert_bun ($430:void)<-(daytime_bat:bat[:oid,:daytime])($431:oid)(daytime_01:daytime)
-    bat.insert(daytime_bat,02@0,daytime_02);	# 241 BKCinsert_bun ($432:void)<-(daytime_bat:bat[:oid,:daytime])($433:oid)(daytime_02:daytime)
-    bat.insert(daytime_bat,03@0,daytime_03);	# 242 BKCinsert_bun ($434:void)<-(daytime_bat:bat[:oid,:daytime])($435:oid)(daytime_03:daytime)
-    bat.insert(daytime_bat,04@0,daytime_04);	# 243 BKCinsert_bun ($436:void)<-(daytime_bat:bat[:oid,:daytime])($437:oid)(daytime_04:daytime)
-    bat.insert(daytime_bat,05@0,daytime_05);	# 244 BKCinsert_bun ($438:void)<-(daytime_bat:bat[:oid,:daytime])($439:oid)(daytime_05:daytime)
-    bat.insert(daytime_bat,06@0,daytime_06);	# 245 BKCinsert_bun ($440:void)<-(daytime_bat:bat[:oid,:daytime])($441:oid)(daytime_06:daytime)
-    bat.insert(daytime_bat,07@0,daytime_07);	# 246 BKCinsert_bun ($442:void)<-(daytime_bat:bat[:oid,:daytime])($443:oid)(daytime_07:daytime)
-    bat.insert(daytime_bat,08@0,daytime_08);	# 247 BKCinsert_bun ($444:void)<-(daytime_bat:bat[:oid,:daytime])($445:oid)(daytime_08:daytime)
-    bat.insert(daytime_bat,09@0,daytime_09);	# 248 BKCinsert_bun ($446:void)<-(daytime_bat:bat[:oid,:daytime])($447:oid)(daytime_09:daytime)
-    bat.insert(daytime_bat,10@0,daytime_10);	# 249 BKCinsert_bun ($448:void)<-(daytime_bat:bat[:oid,:daytime])($449:oid)(daytime_10:daytime)
-    bat.insert(daytime_bat,11@0,daytime_11);	# 250 BKCinsert_bun ($450:void)<-(daytime_bat:bat[:oid,:daytime])($451:oid)(daytime_11:daytime)
-    bat.insert(daytime_bat,12@0,daytime_12);	# 251 BKCinsert_bun ($452:void)<-(daytime_bat:bat[:oid,:daytime])($453:oid)(daytime_12:daytime)
-    bat.insert(daytime_bat,13@0,daytime_13);	# 252 BKCinsert_bun ($454:void)<-(daytime_bat:bat[:oid,:daytime])($455:oid)(daytime_13:daytime)
-    bat.insert(daytime_bat,14@0,daytime_14);	# 253 BKCinsert_bun ($456:void)<-(daytime_bat:bat[:oid,:daytime])($457:oid)(daytime_14:daytime)
-    bat.insert(daytime_bat,15@0,daytime_15);	# 254 BKCinsert_bun ($458:void)<-(daytime_bat:bat[:oid,:daytime])($459:oid)(daytime_15:daytime)
-    bat.insert(daytime_bat,16@0,daytime_16);	# 255 BKCinsert_bun ($460:void)<-(daytime_bat:bat[:oid,:daytime])($461:oid)(daytime_16:daytime)
-    bat.insert(daytime_bat,17@0,daytime_17);	# 256 BKCinsert_bun ($462:void)<-(daytime_bat:bat[:oid,:daytime])($463:oid)(daytime_17:daytime)
-    bat.insert(daytime_bat,18@0,daytime_18);	# 257 BKCinsert_bun ($464:void)<-(daytime_bat:bat[:oid,:daytime])($465:oid)(daytime_18:daytime)
-    bat.insert(daytime_bat,19@0,daytime_19);	# 258 BKCinsert_bun ($466:void)<-(daytime_bat:bat[:oid,:daytime])($467:oid)(daytime_19:daytime)
-    bat.setColumn(daytime_bat,"daytime");	# 259 BKCsetColumn ($468:void)<-(daytime_bat:bat[:oid,:daytime])($469:str)
-    bh_a := multiplex.script("hours",daytime_bat);	# 260  (bh_a:bat[:oid,:int])<-($471:str)(daytime_bat:bat[:oid,:daytime])
-    bat.setColumn(bh_a,"hours");	# 261 BKCsetColumn ($472:void)<-(bh_a:bat[:oid,:int])($471:str)
-    dh_a := multiplex.script("minutes",daytime_bat);	# 262  (dh_a:bat[:oid,:int])<-($474:str)(daytime_bat:bat[:oid,:daytime])
-    bat.setColumn(dh_a,"minutes");	# 263 BKCsetColumn ($475:void)<-(dh_a:bat[:oid,:int])($474:str)
-    fh_a := multiplex.script("seconds",daytime_bat);	# 264  (fh_a:bat[:oid,:int])<-($477:str)(daytime_bat:bat[:oid,:daytime])
-    bat.setColumn(fh_a,"seconds");	# 265 BKCsetColumn ($478:void)<-(fh_a:bat[:oid,:int])($477:str)
-    hh_a := multiplex.script("milliseconds",daytime_bat);	# 266  (hh_a:bat[:oid,:int])<-($480:str)(daytime_bat:bat[:oid,:daytime])
-    bat.setColumn(hh_a,"milliseconds");	# 267 BKCsetColumn ($481:void)<-(hh_a:bat[:oid,:int])($480:str)
-    io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");	# 268 IOprint_val ($482:int)<-($483:str)
-    jh_a := io.print(daytime_bat,bh_a,dh_a,fh_a,hh_a);	# 269 IOtable (jh_a:int)<-(daytime_bat:bat[:oid,:daytime])(bh_a:bat[:oid,:int])(dh_a:bat[:oid,:int])(fh_a:bat[:oid,:int])(hh_a:bat[:oid,:int])
-    kh_a := multiplex.script("timestamp",date_bat,daytime_bat,tzone_bat);	# 270  (kh_a:bat[:oid,:timestamp])<-($486:str)(date_bat:bat[:oid,:date])(daytime_bat:bat[:oid,:daytime])(tzone_bat:bat[:oid,:tzone])
-    timestamp_bat := kh_a;	# 271  (timestamp_bat:bat[:oid,:timestamp])<-(kh_a:bat[:oid,:timestamp])
-    bat.setWriteMode(kh_a);	# 272 BKCsetWriteMode ($488:void)<-(kh_a:bat[:oid,:timestamp])
-    bat.setColumn(timestamp_bat,"timestamp");	# 273 BKCsetColumn ($489:void)<-(timestamp_bat:bat[:oid,:timestamp])($486:str)
-    mh_a := multiplex.script("date",timestamp_bat,tzone_bat);	# 274  (mh_a:bat[:oid,:date])<-($491:str)(timestamp_bat:bat[:oid,:timestamp])(tzone_bat:bat[:oid,:tzone])
-    bat.setColumn(mh_a,"date");	# 275 BKCsetColumn ($492:void)<-(mh_a:bat[:oid,:date])($491:str)
-    oh_a := multiplex.script("daytime",timestamp_bat,tzone_bat);	# 276  (oh_a:bat[:oid,:daytime])<-($469:str)(timestamp_bat:bat[:oid,:timestamp])(tzone_bat:bat[:oid,:tzone])
-    bat.setColumn(oh_a,"daytime");	# 277 BKCsetColumn ($494:void)<-(oh_a:bat[:oid,:daytime])($469:str)
-    io.print(timestamp_bat,mh_a,oh_a);	# 278 IOtable ($495:int)<-(timestamp_bat:bat[:oid,:timestamp])(mh_a:bat[:oid,:date])(oh_a:bat[:oid,:daytime])
-    rh_a := bat.setColumn(timestamp_bat,"timestamp");	# 279 BKCsetColumn (rh_a:void)<-(timestamp_bat:bat[:oid,:timestamp])($486:str)
-    timezones := bbp.bind("timezones");	# 280 CMDbbpbind (timezones:bat[:any,:any])<-($498:str)
-    io.print(timezones);	# 281 IOprint_val ($499:int)<-(timezones:bat[:any,:any])
-    sh_a := algebra.find(timezones,"Wake Island");	# 282 ALGfind (sh_a:tzone)<-(timezones:bat[:any,:any])($501:str)
-    th_a := multiplex.script("date",timestamp_bat,sh_a);	# 283  (th_a:bat[:oid,:date])<-($491:str)(timestamp_bat:bat[:oid,:timestamp])(sh_a:tzone)
-    uh_a := bat.setColumn(th_a,"Wake Island");	# 284 BKCsetColumn (uh_a:void)<-(th_a:bat[:oid,:date])($501:str)
-    vh_a := algebra.find(timezones,"Wake Island");	# 285 ALGfind (vh_a:tzone)<-(timezones:bat[:any,:any])($501:str)
-    wh_a := multiplex.script("daytime",timestamp_bat,vh_a);	# 286  (wh_a:bat[:oid,:daytime])<-($506:str)(timestamp_bat:bat[:oid,:timestamp])(vh_a:tzone)
-    xh_a := algebra.find(timezones,"American Samoa");	# 287 ALGfind (xh_a:tzone)<-(timezones:bat[:any,:any])($508:str)
-    yh_a := multiplex.script("date",timestamp_bat,xh_a);	# 288  (yh_a:bat[:oid,:date])<-($491:str)(timestamp_bat:bat[:oid,:timestamp])(xh_a:tzone)
-    ai_a := bat.setColumn(yh_a,"American Samoa");	# 289 BKCsetColumn (ai_a:void)<-(yh_a:bat[:oid,:date])($508:str)
-    bi_a := algebra.find(timezones,"American Samoa");	# 290 ALGfind (bi_a:tzone)<-(timezones:bat[:any,:any])($508:str)
-    ci_a := multiplex.script("daytime",timestamp_bat,bi_a);	# 291  (ci_a:bat[:oid,:daytime])<-($506:str)(timestamp_bat:bat[:oid,:timestamp])(bi_a:tzone)
-    di_a := io.print(timestamp_bat,th_a,wh_a,yh_a,ci_a);	# 292 IOtable (di_a:int)<-(timestamp_bat:bat[:oid,:timestamp])(th_a:bat[:oid,:date])(wh_a:bat[:oid,:daytime])(yh_a:bat[:oid,:date])(ci_a:bat[:oid,:daytime])
-    ei_a := calc.*(60,1000);	# 293 CALCbinaryMULintint (ei_a:int)<-($515:int)($516:int)
-    fi_a := calc.*(60,ei_a);	# 294 CALCbinaryMULintint (fi_a:int)<-($515:int)(ei_a:int)
-    gi_a := calc.*(23,fi_a);	# 295 CALCbinaryMULintint (gi_a:int)<-($519:int)(fi_a:int)
-    hi_a := calc.lng(gi_a);	# 296 CALCint2lng (hi_a:lng)<-(gi_a:int)
-    timestamp_plus := multiplex.script("add",timestamp_bat,hi_a);	# 297  (timestamp_plus:bat[:oid,:timestamp])<-($522:str)(timestamp_bat:bat[:oid,:timestamp])(hi_a:lng)
-    ii_a := calc.*(-60,1000);	# 298 CALCbinaryMULintint (ii_a:int)<-($524:int)($516:int)
-    ji_a := calc.lng(ii_a);	# 299 CALCint2lng (ji_a:lng)<-(ii_a:int)
-    timestamp_minus := multiplex.script("add",timestamp_bat,ji_a);	# 300  (timestamp_minus:bat[:oid,:timestamp])<-($522:str)(timestamp_bat:bat[:oid,:timestamp])(ji_a:lng)
-    ki_a := bat.setColumn(timestamp_bat,"timestamp");	# 301 BKCsetColumn (ki_a:void)<-(timestamp_bat:bat[:oid,:timestamp])($528:str)
-    li_a := bat.setColumn(timestamp_plus,"plus23");	# 302 BKCsetColumn (li_a:void)<-(timestamp_plus:bat[:oid,:timestamp])($530:str)
-    mi_a := bat.setColumn(timestamp_minus,"min1");	# 303 BKCsetColumn (mi_a:void)<-(timestamp_minus:bat[:oid,:timestamp])($532:str)
-    ni_a := multiplex.script("diff",timestamp_plus,timestamp_minus);	# 304  (ni_a:bat[:oid,:lng])<-($534:str)(timestamp_plus:bat[:oid,:timestamp])(timestamp_minus:bat[:oid,:timestamp])
-    oi_a := calc.*(60,1000);	# 305 CALCbinaryMULintint (oi_a:int)<-($515:int)($516:int)
-    pi_a := calc.*(60,oi_a);	# 306 CALCbinaryMULintint (pi_a:int)<-($515:int)(oi_a:int)
-    qi_a := calc.lng(pi_a);	# 307 CALCint2lng (qi_a:lng)<-(pi_a:int)
-    ri_a := batcalc./(ni_a,qi_a);	# 308 CMDbatDIVcst (ri_a:bat[:oid,:lng])<-(ni_a:bat[:oid,:lng])(qi_a:lng)
-    si_a := bat.setColumn(ri_a,"diff");	# 309 BKCsetColumn (si_a:void)<-(ri_a:bat[:oid,:lng])($534:str)
-    ti_a := io.print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a);	# 310 IOtable (ti_a:int)<-(timestamp_bat:bat[:oid,:timestamp])(timestamp_plus:bat[:oid,:timestamp])(timestamp_minus:bat[:oid,:timestamp])(ri_a:bat[:oid,:lng])
-    ui_a := algebra.find(timezones,"West/Europe");	# 311 ALGfind (ui_a:tzone)<-(timezones:bat[:any,:any])($542:str)
-    timestamp_eur := multiplex.script("timestamp",date_seq,daytime_00,ui_a);	# 312  (timestamp_eur:bat[:int,:timestamp])<-($528:str)(date_seq:bat[:int,:date])(daytime_00:daytime)(ui_a:tzone)
-    vi_a := algebra.find(timezones,"Andes/Brazil");	# 313 ALGfind (vi_a:tzone)<-(timezones:bat[:any,:any])($545:str)
-    timestamp_bra := multiplex.script("timestamp",date_seq,daytime_00,vi_a);	# 314  (timestamp_bra:bat[:int,:timestamp])<-($528:str)(date_seq:bat[:int,:date])(daytime_00:daytime)(vi_a:tzone)
-    wi_a := bat.setColumn(date_seq,"date");	# 315 BKCsetColumn (wi_a:void)<-(date_seq:bat[:int,:date])($548:str)
-    xi_a := multiplex.script("dayofweek",date_seq);	# 316  (xi_a:bat[:int,:int])<-($550:str)(date_seq:bat[:int,:date])
-    yi_a := multiplex.script("dayname",xi_a);	# 317  (yi_a:bat[:int,:str])<-($552:str)(xi_a:bat[:int,:int])
-    aj_a := bat.setColumn(yi_a,"day");	# 318 BKCsetColumn (aj_a:void)<-(yi_a:bat[:int,:str])($554:str)
-    bj_a := bat.setColumn(timestamp_eur,"West/Europe");	# 319 BKCsetColumn (bj_a:void)<-(timestamp_eur:bat[:int,:timestamp])($542:str)
-    cj_a := algebra.find(timezones,"West/Europe");	# 320 ALGfind (cj_a:tzone)<-(timezones:bat[:any,:any])($542:str)
-    dj_a := multiplex.script("dst",timestamp_eur,cj_a);	# 321  (dj_a:bat[:int,:bit])<-($558:str)(timestamp_eur:bat[:int,:timestamp])(cj_a:tzone)
-    ej_a := bat.setColumn(dj_a,"dst");	# 322 BKCsetColumn (ej_a:void)<-(dj_a:bat[:int,:bit])($558:str)
-    fj_a := bat.setColumn(timestamp_bra,"Andes/Brazil");	# 323 BKCsetColumn (fj_a:void)<-(timestamp_bra:bat[:int,:timestamp])($545:str)
-    gj_a := algebra.find(timezones,"Andes/Brazil");	# 324 ALGfind (gj_a:tzone)<-(timezones:bat[:any,:any])($545:str)
-    hj_a := multiplex.script("dst",timestamp_bra,gj_a);	# 325  (hj_a:bat[:int,:bit])<-($558:str)(timestamp_bra:bat[:int,:timestamp])(gj_a:tzone)
-    ij_a := bat.setColumn(hj_a,"dst");	# 326 BKCsetColumn (ij_a:void)<-(hj_a:bat[:int,:bit])($558:str)
-    jj_a := io.print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a);	# 327 IOtable (jj_a:int)<-(date_seq:bat[:int,:date])(yi_a:bat[:int,:str])(timestamp_eur:bat[:int,:timestamp])(dj_a:bat[:int,:bit])(timestamp_bra:bat[:int,:timestamp])(hj_a:bat[:int,:bit])
-end main;	# 328  
+    io.print("print(kd_a,md_a,od_a)");	# 124 IOprint_val ($218:int)<-($219:str)
+    qd_a := io.print(kd_a,md_a,od_a);	# 125 IOtable (qd_a:int)<-(kd_a:bat[:oid,:int])(md_a:bat[:oid,:rule])(od_a:bat[:oid,:rule])
+    date_00 := mtime.date(2000,01,01);	# 126 MTIMEdate_create (date_00:date)<-($222:int)($223:int)($223:int)
+    date_01 := mtime.date("5000-JAN-01");	# 127 MTIMEdate_fromstr (date_01:date)<-($225:str)
+    date_02 := mtime.date("1968-FEBR-29");	# 128 MTIMEdate_fromstr (date_02:date)<-($227:str)
+    date_03 := mtime.date("1-MARCH-01");	# 129 MTIMEdate_fromstr (date_03:date)<-($229:str)
+    date_04 := mtime.date("-5867411-JAN-1");	# 130 MTIMEdate_fromstr (date_04:date)<-($231:str)
+    date_05 := mtime.date("-768/octobe/01");	# 131 MTIMEdate_fromstr (date_05:date)<-($233:str)
+    date_06 := mtime.date("5000\\novembe\\01");	# 132 MTIMEdate_fromstr (date_06:date)<-($235:str)
+    date_07 := mtime.date("-1999/jun/01");	# 133 MTIMEdate_fromstr (date_07:date)<-($237:str)
+    date_08 := mtime.date("2000-jul-14");	# 134 MTIMEdate_fromstr (date_08:date)<-($239:str)
+    date_09 := mtime.date("1999-sept-01");	# 135 MTIMEdate_fromstr (date_09:date)<-($241:str)
+    date_10 := mtime.date("1998-decemBeR-01");	# 136 MTIMEdate_fromstr (date_10:date)<-($243:str)
+    date_11 := mtime.date("1953 may                01");	# 137 MTIMEdate_fromstr (date_11:date)<-($245:str)
+    date_12 := mtime.date("5867411-DEC-31");	# 138 MTIMEdate_fromstr (date_12:date)<-($247:str)
+    date_13 := mtime.date(1996,13,1);	# 139 MTIMEdate_create (date_13:date)<-($249:int)($250:int)($251:int)
+    date_14 := mtime.date("999999999999999999999-01-01");	# 140 MTIMEdate_fromstr (date_14:date)<-($253:str)
+    date_15 := mtime.date("1999-JANUARI-01");	# 141 MTIMEdate_fromstr (date_15:date)<-($255:str)
+    date_16 := mtime.date("1999-FEBR-29");	# 142 MTIMEdate_fromstr (date_16:date)<-($257:str)
+    date_17 := mtime.date("-1-DECEMBER-0");	# 143 MTIMEdate_fromstr (date_17:date)<-($259:str)
+    date_18 := mtime.date("5000\novembe\31");	# 144 MTIMEdate_fromstr (date_18:date)<-($261:str)
+    date_19 := mtime.date("nil");	# 145 MTIMEdate_fromstr (date_19:date)<-($263:str)
+    date_20 := mtime.date("1999-sept-31");	# 146 MTIMEdate_fromstr (date_20:date)<-($265:str)
+    date_bat := bbp.new(:oid,:date);	# 147 CMDBATnew (date_bat:bat[:oid,:date])<-($267:oid)($268:date)
+    bat.insert(date_bat,00@0,date_00);	# 148 BKCinsert_bun ($269:void)<-(date_bat:bat[:oid,:date])($270:oid)(date_00:date)
+    bat.insert(date_bat,01@0,date_01);	# 149 BKCinsert_bun ($271:void)<-(date_bat:bat[:oid,:date])($272:oid)(date_01:date)
+    bat.insert(date_bat,02@0,date_02);	# 150 BKCinsert_bun ($273:void)<-(date_bat:bat[:oid,:date])($274:oid)(date_02:date)
+    bat.insert(date_bat,03@0,date_03);	# 151 BKCinsert_bun ($275:void)<-(date_bat:bat[:oid,:date])($276:oid)(date_03:date)
+    bat.insert(date_bat,04@0,date_04);	# 152 BKCinsert_bun ($277:void)<-(date_bat:bat[:oid,:date])($278:oid)(date_04:date)
+    bat.insert(date_bat,05@0,date_05);	# 153 BKCinsert_bun ($279:void)<-(date_bat:bat[:oid,:date])($280:oid)(date_05:date)
+    bat.insert(date_bat,06@0,date_06);	# 154 BKCinsert_bun ($281:void)<-(date_bat:bat[:oid,:date])($282:oid)(date_06:date)
+    bat.insert(date_bat,07@0,date_07);	# 155 BKCinsert_bun ($283:void)<-(date_bat:bat[:oid,:date])($284:oid)(date_07:date)
+    bat.insert(date_bat,08@0,date_08);	# 156 BKCinsert_bun ($285:void)<-(date_bat:bat[:oid,:date])($286:oid)(date_08:date)
+    bat.insert(date_bat,09@0,date_09);	# 157 BKCinsert_bun ($287:void)<-(date_bat:bat[:oid,:date])($288:oid)(date_09:date)
+    bat.insert(date_bat,10@0,date_10);	# 158 BKCinsert_bun ($289:void)<-(date_bat:bat[:oid,:date])($290:oid)(date_10:date)
+    bat.insert(date_bat,11@0,date_11);	# 159 BKCinsert_bun ($291:void)<-(date_bat:bat[:oid,:date])($292:oid)(date_11:date)
+    bat.insert(date_bat,12@0,date_12);	# 160 BKCinsert_bun ($293:void)<-(date_bat:bat[:oid,:date])($294:oid)(date_12:date)
+    bat.insert(date_bat,13@0,date_13);	# 161 BKCinsert_bun ($295:void)<-(date_bat:bat[:oid,:date])($296:oid)(date_13:date)
+    bat.insert(date_bat,14@0,date_14);	# 162 BKCinsert_bun ($297:void)<-(date_bat:bat[:oid,:date])($298:oid)(date_14:date)
+    bat.insert(date_bat,15@0,date_15);	# 163 BKCinsert_bun ($299:void)<-(date_bat:bat[:oid,:date])($300:oid)(date_15:date)
+    bat.insert(date_bat,16@0,date_16);	# 164 BKCinsert_bun ($301:void)<-(date_bat:bat[:oid,:date])($302:oid)(date_16:date)
+    bat.insert(date_bat,17@0,date_17);	# 165 BKCinsert_bun ($303:void)<-(date_bat:bat[:oid,:date])($304:oid)(date_17:date)
+    bat.insert(date_bat,18@0,date_18);	# 166 BKCinsert_bun ($305:void)<-(date_bat:bat[:oid,:date])($306:oid)(date_18:date)
+    bat.insert(date_bat,19@0,date_19);	# 167 BKCinsert_bun ($307:void)<-(date_bat:bat[:oid,:date])($308:oid)(date_19:date)
+    bat.insert(date_bat,20@0,date_20);	# 168 BKCinsert_bun ($309:void)<-(date_bat:bat[:oid,:date])($310:oid)(date_20:date)
+    ne_a := bat.setColumn(date_bat,"date");	# 169 BKCsetColumn (ne_a:void)<-(date_bat:bat[:oid,:date])($312:str)
+    oe_a := multiplex.script("year",date_bat);	# 170  (oe_a:bat[:oid,:int])<-($314:str)(date_bat:bat[:oid,:date])
+    pe_a := bat.setColumn(oe_a,"year");	# 171 BKCsetColumn (pe_a:void)<-(oe_a:bat[:oid,:int])($314:str)
+    qe_a := multiplex.script("day",date_bat);	# 172  (qe_a:bat[:oid,:int])<-($317:str)(date_bat:bat[:oid,:date])
+    re_a := bat.setColumn(qe_a,"day");	# 173 BKCsetColumn (re_a:void)<-(qe_a:bat[:oid,:int])($317:str)
+    se_a := multiplex.script("month",date_bat);	# 174  (se_a:bat[:oid,:int])<-($320:str)(date_bat:bat[:oid,:date])
+    te_a := multiplex.script("monthname",se_a);	# 175  (te_a:bat[:oid,:str])<-($322:str)(se_a:bat[:oid,:int])
+    ue_a := bat.setColumn(te_a,"monthname");	# 176 BKCsetColumn (ue_a:void)<-(te_a:bat[:oid,:str])($322:str)
+    ve_a := multiplex.script("month",date_bat);	# 177  (ve_a:bat[:oid,:int])<-($320:str)(date_bat:bat[:oid,:date])
+    we_a := multiplex.script("monthname",ve_a);	# 178  (we_a:bat[:oid,:str])<-($322:str)(ve_a:bat[:oid,:int])
+    xe_a := multiplex.script("monthnum",we_a);	# 179  (xe_a:bat[:oid,:int])<-($327:str)(we_a:bat[:oid,:str])
+    ye_a := bat.setColumn(xe_a,"monthnum");	# 180 BKCsetColumn (ye_a:void)<-(xe_a:bat[:oid,:int])($327:str)
+    io.print("print(date_bat,oe_a,qe_a,te_a,xe_a)");	# 181 IOprint_val ($329:int)<-($330:str)
+    af_a := io.print(date_bat,oe_a,qe_a,te_a,xe_a);	# 182 IOtable (af_a:int)<-(date_bat:bat[:oid,:date])(oe_a:bat[:oid,:int])(qe_a:bat[:oid,:int])(te_a:bat[:oid,:str])(xe_a:bat[:oid,:int])
+    date_addyears := multiplex.script("addyears",date_bat,-100);	# 183  (date_addyears:bat[:oid,:date])<-($333:str)(date_bat:bat[:oid,:date])($334:int)
+    date_addmonths := multiplex.script("addmonths",date_bat,1);	# 184  (date_addmonths:bat[:oid,:date])<-($336:str)(date_bat:bat[:oid,:date])($337:int)
+    bat.setColumn(date_bat,"date");	# 185 BKCsetColumn ($338:void)<-(date_bat:bat[:oid,:date])($312:str)
+    bat.setColumn(date_addyears,"min100y");	# 186 BKCsetColumn ($339:void)<-(date_addyears:bat[:oid,:date])($340:str)
+    df_a := multiplex.script("diff",date_addyears,date_bat);	# 187  (df_a:bat[:oid,:int])<-($342:str)(date_addyears:bat[:oid,:date])(date_bat:bat[:oid,:date])
+    bat.setColumn(df_a,"diff");	# 188 BKCsetColumn ($343:void)<-(df_a:bat[:oid,:int])($342:str)
+    io.print("print(date_bat,date_addyears,df_a)");	# 189 IOprint_val ($344:int)<-($345:str)
+    ff_a := io.print(date_bat,date_addyears,df_a);	# 190 IOtable (ff_a:int)<-(date_bat:bat[:oid,:date])(date_addyears:bat[:oid,:date])(df_a:bat[:oid,:int])
+    bat.setColumn(date_bat,"date");	# 191 BKCsetColumn ($347:void)<-(date_bat:bat[:oid,:date])($348:str)
+    bat.setColumn(date_addmonths,"plus1m");	# 192 BKCsetColumn ($349:void)<-(date_addmonths:bat[:oid,:date])($350:str)
+    if_a := multiplex.script("diff",date_addmonths,date_bat);	# 193  (if_a:bat[:oid,:int])<-($342:str)(date_addmonths:bat[:oid,:date])(date_bat:bat[:oid,:date])
+    bat.setColumn(if_a,"diff");	# 194 BKCsetColumn ($352:void)<-(if_a:bat[:oid,:int])($342:str)
+    io.print(" print(date_bat,date_addmonths,if_a)");	# 195 IOprint_val ($353:int)<-($354:str)
+    kf_a := io.print(date_bat,date_addmonths,if_a);	# 196 IOtable (kf_a:int)<-(date_bat:bat[:oid,:date])(date_addmonths:bat[:oid,:date])(if_a:bat[:oid,:int])
+    date_seq := bbp.new(:int,:date);	# 197 CMDBATnew (date_seq:bat[:int,:date])<-($357:int)($358:date)
+    i := -375;	# 198  (i:int)<-($360:int)
+barrier lf_a := true;	# 199  (lf_a:bit)<-($362:bit) jump 207
+    i := calc.+(i,1);	# 200 CALCbinaryADDintint (i:int)<-(i:int)($337:int)
+    of_a := calc.<(i,375);	# 201 CALCcompLTintint (of_a:bit)<-(i:int)($364:int)
+barrier mf_a := of_a;	# 202  (mf_a:bit)<-(of_a:bit) jump 206
+    pf_a := mtime.adddays(date_00,i);	# 203 MTIMEdate_adddays (pf_a:date)<-(date_00:date)(i:int)
+    bat.insert(date_seq,i,pf_a);	# 204 BKCinsert_bun ($367:void)<-(date_seq:bat[:int,:date])(i:int)(pf_a:date)
+    redo lf_a;	# 205  (lf_a:bit) jump 200
+exit mf_a;	# 206  (mf_a:bit)
+exit lf_a;	# 207  (lf_a:bit)
+    rf_a := bat.setColumn(date_seq,"date");	# 208 BKCsetColumn (rf_a:void)<-(date_seq:bat[:int,:date])($348:str)
+    sf_a := multiplex.script("weekofyear",date_seq);	# 209  (sf_a:bat[:int,:int])<-($370:str)(date_seq:bat[:int,:date])
+    tf_a := bat.setColumn(sf_a,"weekofyear");	# 210 BKCsetColumn (tf_a:void)<-(sf_a:bat[:int,:int])($370:str)
+    uf_a := multiplex.script("dayofweek",date_seq);	# 211  (uf_a:bat[:int,:int])<-($373:str)(date_seq:bat[:int,:date])
+    vf_a := multiplex.script("dayname",uf_a);	# 212  (vf_a:bat[:int,:str])<-($375:str)(uf_a:bat[:int,:int])
+    wf_a := bat.setColumn(vf_a,"dayofweek");	# 213 BKCsetColumn (wf_a:void)<-(vf_a:bat[:int,:str])($373:str)
+    xf_a := multiplex.script("dayofweek",date_seq);	# 214  (xf_a:bat[:int,:int])<-($373:str)(date_seq:bat[:int,:date])
+    yf_a := multiplex.script("dayname",xf_a);	# 215  (yf_a:bat[:int,:str])<-($375:str)(xf_a:bat[:int,:int])
+    ag_a := multiplex.script("daynum",yf_a);	# 216  (ag_a:bat[:int,:int])<-($380:str)(yf_a:bat[:int,:str])
+    bg_a := bat.setColumn(ag_a,"num");	# 217 BKCsetColumn (bg_a:void)<-(ag_a:bat[:int,:int])($382:str)
+    cg_a := multiplex.script("dayofyear",date_seq);	# 218  (cg_a:bat[:int,:int])<-($384:str)(date_seq:bat[:int,:date])
+    dg_a := bat.setColumn(cg_a,"dayofyear");	# 219 BKCsetColumn (dg_a:void)<-(cg_a:bat[:int,:int])($384:str)
+    io.print("date_seq,sf_a,vf_a,ag_a,cg_a");	# 220 IOprint_val ($386:int)<-($387:str)
+    eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);	# 221 IOtable (eg_a:int)<-(date_seq:bat[:int,:date])(sf_a:bat[:int,:int])(vf_a:bat[:int,:str])(ag_a:bat[:int,:int])(cg_a:bat[:int,:int])
+    daytime_00 := mtime.daytime(23,59,59,999);	# 222 MTIMEdaytime_create (daytime_00:daytime)<-($390:int)($391:int)($391:int)($392:int)
+    daytime_01 := mtime.daytime("23:59");	# 223 MTIMEdaytime_fromstr (daytime_01:daytime)<-($394:str)
+    daytime_02 := mtime.daytime("00:00");	# 224 MTIMEdaytime_fromstr (daytime_02:daytime)<-($396:str)
+    daytime_03 := mtime.daytime("23:59:59");	# 225 MTIMEdaytime_fromstr (daytime_03:daytime)<-($398:str)
+    daytime_04 := mtime.daytime("00:00:00.000");	# 226 MTIMEdaytime_fromstr (daytime_04:daytime)<-($400:str)
+    daytime_05 := mtime.daytime("00:00:00");	# 227 MTIMEdaytime_fromstr (daytime_05:daytime)<-($402:str)
+    daytime_06 := mtime.daytime("00:00:00:001");	# 228 MTIMEdaytime_fromstr (daytime_06:daytime)<-($404:str)
+    daytime_07 := mtime.daytime("03:49:02.999");	# 229 MTIMEdaytime_fromstr (daytime_07:daytime)<-($406:str)
+    daytime_08 := mtime.daytime("20:48:42:999");	# 230 MTIMEdaytime_fromstr (daytime_08:daytime)<-($408:str)
+    daytime_09 := mtime.daytime("17:53:38:999");	# 231 MTIMEdaytime_fromstr (daytime_09:daytime)<-($410:str)
+    daytime_10 := mtime.daytime("13:15:34:999");	# 232 MTIMEdaytime_fromstr (daytime_10:daytime)<-($412:str)
+    daytime_11 := mtime.daytime("07:34:27.999");	# 233 MTIMEdaytime_fromstr (daytime_11:daytime)<-($414:str)
+    daytime_12 := mtime.daytime("23:59:59:999");	# 234 MTIMEdaytime_fromstr (daytime_12:daytime)<-($416:str)
+    daytime_13 := mtime.daytime("01:00:03.999");	# 235 MTIMEdaytime_fromstr (daytime_13:daytime)<-($418:str)
+    daytime_14 := mtime.daytime("23:59:59.999");	# 236 MTIMEdaytime_fromstr (daytime_14:daytime)<-($420:str)
+    daytime_15 := mtime.daytime(24,59,59,999);	# 237 MTIMEdaytime_create (daytime_15:daytime)<-($422:int)($391:int)($391:int)($392:int)
+    daytime_16 := mtime.daytime(23,60,59,999);	# 238 MTIMEdaytime_create (daytime_16:daytime)<-($424:int)($425:int)($426:int)($427:int)
+    daytime_17 := mtime.daytime(23,59,60,999);	# 239 MTIMEdaytime_create (daytime_17:daytime)<-($424:int)($426:int)($425:int)($427:int)
+    daytime_18 := mtime.daytime(23,59,60,1000);	# 240 MTIMEdaytime_create (daytime_18:daytime)<-($424:int)($426:int)($425:int)($430:int)
+    daytime_19 := mtime.daytime("nil");	# 241 MTIMEdaytime_fromstr (daytime_19:daytime)<-($432:str)
+    daytime_bat := bbp.new(:oid,:daytime);	# 242 CMDBATnew (daytime_bat:bat[:oid,:daytime])<-($434:oid)($435:daytime)
+    bat.insert(daytime_bat,00@0,daytime_00);	# 243 BKCinsert_bun ($436:void)<-(daytime_bat:bat[:oid,:daytime])($437:oid)(daytime_00:daytime)
+    bat.insert(daytime_bat,01@0,daytime_01);	# 244 BKCinsert_bun ($438:void)<-(daytime_bat:bat[:oid,:daytime])($439:oid)(daytime_01:daytime)
+    bat.insert(daytime_bat,02@0,daytime_02);	# 245 BKCinsert_bun ($440:void)<-(daytime_bat:bat[:oid,:daytime])($441:oid)(daytime_02:daytime)
+    bat.insert(daytime_bat,03@0,daytime_03);	# 246 BKCinsert_bun ($442:void)<-(daytime_bat:bat[:oid,:daytime])($443:oid)(daytime_03:daytime)
+    bat.insert(daytime_bat,04@0,daytime_04);	# 247 BKCinsert_bun ($444:void)<-(daytime_bat:bat[:oid,:daytime])($445:oid)(daytime_04:daytime)
+    bat.insert(daytime_bat,05@0,daytime_05);	# 248 BKCinsert_bun ($446:void)<-(daytime_bat:bat[:oid,:daytime])($447:oid)(daytime_05:daytime)
+    bat.insert(daytime_bat,06@0,daytime_06);	# 249 BKCinsert_bun ($448:void)<-(daytime_bat:bat[:oid,:daytime])($449:oid)(daytime_06:daytime)
+    bat.insert(daytime_bat,07@0,daytime_07);	# 250 BKCinsert_bun ($450:void)<-(daytime_bat:bat[:oid,:daytime])($451:oid)(daytime_07:daytime)
+    bat.insert(daytime_bat,08@0,daytime_08);	# 251 BKCinsert_bun ($452:void)<-(daytime_bat:bat[:oid,:daytime])($453:oid)(daytime_08:daytime)
+    bat.insert(daytime_bat,09@0,daytime_09);	# 252 BKCinsert_bun ($454:void)<-(daytime_bat:bat[:oid,:daytime])($455:oid)(daytime_09:daytime)
+    bat.insert(daytime_bat,10@0,daytime_10);	# 253 BKCinsert_bun ($456:void)<-(daytime_bat:bat[:oid,:daytime])($457:oid)(daytime_10:daytime)
+    bat.insert(daytime_bat,11@0,daytime_11);	# 254 BKCinsert_bun ($458:void)<-(daytime_bat:bat[:oid,:daytime])($459:oid)(daytime_11:daytime)
+    bat.insert(daytime_bat,12@0,daytime_12);	# 255 BKCinsert_bun ($460:void)<-(daytime_bat:bat[:oid,:daytime])($461:oid)(daytime_12:daytime)
+    bat.insert(daytime_bat,13@0,daytime_13);	# 256 BKCinsert_bun ($462:void)<-(daytime_bat:bat[:oid,:daytime])($463:oid)(daytime_13:daytime)
+    bat.insert(daytime_bat,14@0,daytime_14);	# 257 BKCinsert_bun ($464:void)<-(daytime_bat:bat[:oid,:daytime])($465:oid)(daytime_14:daytime)
+    bat.insert(daytime_bat,15@0,daytime_15);	# 258 BKCinsert_bun ($466:void)<-(daytime_bat:bat[:oid,:daytime])($467:oid)(daytime_15:daytime)
+    bat.insert(daytime_bat,16@0,daytime_16);	# 259 BKCinsert_bun ($468:void)<-(daytime_bat:bat[:oid,:daytime])($469:oid)(daytime_16:daytime)
+    bat.insert(daytime_bat,17@0,daytime_17);	# 260 BKCinsert_bun ($470:void)<-(daytime_bat:bat[:oid,:daytime])($471:oid)(daytime_17:daytime)
+    bat.insert(daytime_bat,18@0,daytime_18);	# 261 BKCinsert_bun ($472:void)<-(daytime_bat:bat[:oid,:daytime])($473:oid)(daytime_18:daytime)
+    bat.insert(daytime_bat,19@0,daytime_19);	# 262 BKCinsert_bun ($474:void)<-(daytime_bat:bat[:oid,:daytime])($475:oid)(daytime_19:daytime)
+    bat.setColumn(daytime_bat,"daytime");	# 263 BKCsetColumn ($476:void)<-(daytime_bat:bat[:oid,:daytime])($477:str)
+    bh_a := multiplex.script("hours",daytime_bat);	# 264  (bh_a:bat[:oid,:int])<-($479:str)(daytime_bat:bat[:oid,:daytime])
+    bat.setColumn(bh_a,"hours");	# 265 BKCsetColumn ($480:void)<-(bh_a:bat[:oid,:int])($479:str)
+    dh_a := multiplex.script("minutes",daytime_bat);	# 266  (dh_a:bat[:oid,:int])<-($482:str)(daytime_bat:bat[:oid,:daytime])
+    bat.setColumn(dh_a,"minutes");	# 267 BKCsetColumn ($483:void)<-(dh_a:bat[:oid,:int])($482:str)
+    fh_a := multiplex.script("seconds",daytime_bat);	# 268  (fh_a:bat[:oid,:int])<-($485:str)(daytime_bat:bat[:oid,:daytime])
+    bat.setColumn(fh_a,"seconds");	# 269 BKCsetColumn ($486:void)<-(fh_a:bat[:oid,:int])($485:str)
+    hh_a := multiplex.script("milliseconds",daytime_bat);	# 270  (hh_a:bat[:oid,:int])<-($488:str)(daytime_bat:bat[:oid,:daytime])
+    bat.setColumn(hh_a,"milliseconds");	# 271 BKCsetColumn ($489:void)<-(hh_a:bat[:oid,:int])($488:str)
+    io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");	# 272 IOprint_val ($490:int)<-($491:str)
+    jh_a := io.print(daytime_bat,bh_a,dh_a,fh_a,hh_a);	# 273 IOtable (jh_a:int)<-(daytime_bat:bat[:oid,:daytime])(bh_a:bat[:oid,:int])(dh_a:bat[:oid,:int])(fh_a:bat[:oid,:int])(hh_a:bat[:oid,:int])
+    kh_a := multiplex.script("timestamp",date_bat,daytime_bat,tzone_bat);	# 274  (kh_a:bat[:oid,:timestamp])<-($494:str)(date_bat:bat[:oid,:date])(daytime_bat:bat[:oid,:daytime])(tzone_bat:bat[:oid,:tzone])
+    timestamp_bat := kh_a;	# 275  (timestamp_bat:bat[:oid,:timestamp])<-(kh_a:bat[:oid,:timestamp])
+    bat.setWriteMode(kh_a);	# 276 BKCsetWriteMode ($496:void)<-(kh_a:bat[:oid,:timestamp])
+    bat.setColumn(timestamp_bat,"timestamp");	# 277 BKCsetColumn ($497:void)<-(timestamp_bat:bat[:oid,:timestamp])($494:str)
+    mh_a := multiplex.script("date",timestamp_bat,tzone_bat);	# 278  (mh_a:bat[:oid,:date])<-($499:str)(timestamp_bat:bat[:oid,:timestamp])(tzone_bat:bat[:oid,:tzone])
+    bat.setColumn(mh_a,"date");	# 279 BKCsetColumn ($500:void)<-(mh_a:bat[:oid,:date])($499:str)
+    oh_a := multiplex.script("daytime",timestamp_bat,tzone_bat);	# 280  (oh_a:bat[:oid,:daytime])<-($477:str)(timestamp_bat:bat[:oid,:timestamp])(tzone_bat:bat[:oid,:tzone])
+    bat.setColumn(oh_a,"daytime");	# 281 BKCsetColumn ($502:void)<-(oh_a:bat[:oid,:daytime])($477:str)
+    io.print("print(timestamp_bat,mh_a,oh_a)");	# 282 IOprint_val ($503:int)<-($504:str)
+    io.print(timestamp_bat,mh_a,oh_a);	# 283 IOtable ($505:int)<-(timestamp_bat:bat[:oid,:timestamp])(mh_a:bat[:oid,:date])(oh_a:bat[:oid,:daytime])
+    rh_a := bat.setColumn(timestamp_bat,"timestamp");	# 284 BKCsetColumn (rh_a:void)<-(timestamp_bat:bat[:oid,:timestamp])($494:str)
+    timezones := bbp.bind("timezones");	# 285 CMDbbpbind (timezones:bat[:any,:any])<-($508:str)
+    io.print("print(timezones)");	# 286 IOprint_val ($509:int)<-($510:str)
+    io.print(timezones);	# 287 IOprint_val ($511:int)<-(timezones:bat[:any,:any])
+    sh_a := algebra.find(timezones,"Wake Island");	# 288 ALGfind (sh_a:tzone)<-(timezones:bat[:any,:any])($513:str)
+    th_a := multiplex.script("date",timestamp_bat,sh_a);	# 289  (th_a:bat[:oid,:date])<-($499:str)(timestamp_bat:bat[:oid,:timestamp])(sh_a:tzone)
+    uh_a := bat.setColumn(th_a,"Wake Island");	# 290 BKCsetColumn (uh_a:void)<-(th_a:bat[:oid,:date])($513:str)
+    vh_a := algebra.find(timezones,"Wake Island");	# 291 ALGfind (vh_a:tzone)<-(timezones:bat[:any,:any])($513:str)
+    wh_a := multiplex.script("daytime",timestamp_bat,vh_a);	# 292  (wh_a:bat[:oid,:daytime])<-($518:str)(timestamp_bat:bat[:oid,:timestamp])(vh_a:tzone)
+    xh_a := algebra.find(timezones,"American Samoa");	# 293 ALGfind (xh_a:tzone)<-(timezones:bat[:any,:any])($520:str)
+    yh_a := multiplex.script("date",timestamp_bat,xh_a);	# 294  (yh_a:bat[:oid,:date])<-($499:str)(timestamp_bat:bat[:oid,:timestamp])(xh_a:tzone)
+    ai_a := bat.setColumn(yh_a,"American Samoa");	# 295 BKCsetColumn (ai_a:void)<-(yh_a:bat[:oid,:date])($520:str)
+    bi_a := algebra.find(timezones,"American Samoa");	# 296 ALGfind (bi_a:tzone)<-(timezones:bat[:any,:any])($520:str)
+    ci_a := multiplex.script("daytime",timestamp_bat,bi_a);	# 297  (ci_a:bat[:oid,:daytime])<-($518:str)(timestamp_bat:bat[:oid,:timestamp])(bi_a:tzone)
+    io.print("print(timestamp_bat,th_a,wh_a,yh_a,ci_a)");	# 298 IOprint_val ($525:int)<-($526:str)
+    di_a := io.print(timestamp_bat,th_a,wh_a,yh_a,ci_a);	# 299 IOtable (di_a:int)<-(timestamp_bat:bat[:oid,:timestamp])(th_a:bat[:oid,:date])(wh_a:bat[:oid,:daytime])(yh_a:bat[:oid,:date])(ci_a:bat[:oid,:daytime])
+    ei_a := calc.*(60,1000);	# 300 CALCbinaryMULintint (ei_a:int)<-($529:int)($530:int)
+    fi_a := calc.*(60,ei_a);	# 301 CALCbinaryMULintint (fi_a:int)<-($529:int)(ei_a:int)
+    gi_a := calc.*(23,fi_a);	# 302 CALCbinaryMULintint (gi_a:int)<-($533:int)(fi_a:int)
+    hi_a := calc.lng(gi_a);	# 303 CALCint2lng (hi_a:lng)<-(gi_a:int)
+    timestamp_plus := multiplex.script("add",timestamp_bat,hi_a);	# 304  (timestamp_plus:bat[:oid,:timestamp])<-($536:str)(timestamp_bat:bat[:oid,:timestamp])(hi_a:lng)
+    ii_a := calc.*(-60,1000);	# 305 CALCbinaryMULintint (ii_a:int)<-($538:int)($530:int)
+    ji_a := calc.lng(ii_a);	# 306 CALCint2lng (ji_a:lng)<-(ii_a:int)
+    timestamp_minus := multiplex.script("add",timestamp_bat,ji_a);	# 307  (timestamp_minus:bat[:oid,:timestamp])<-($536:str)(timestamp_bat:bat[:oid,:timestamp])(ji_a:lng)
+    ki_a := bat.setColumn(timestamp_bat,"timestamp");	# 308 BKCsetColumn (ki_a:void)<-(timestamp_bat:bat[:oid,:timestamp])($542:str)
+    li_a := bat.setColumn(timestamp_plus,"plus23");	# 309 BKCsetColumn (li_a:void)<-(timestamp_plus:bat[:oid,:timestamp])($544:str)
+    mi_a := bat.setColumn(timestamp_minus,"min1");	# 310 BKCsetColumn (mi_a:void)<-(timestamp_minus:bat[:oid,:timestamp])($546:str)
+    ni_a := multiplex.script("diff",timestamp_plus,timestamp_minus);	# 311  (ni_a:bat[:oid,:lng])<-($548:str)(timestamp_plus:bat[:oid,:timestamp])(timestamp_minus:bat[:oid,:timestamp])
+    oi_a := calc.*(60,1000);	# 312 CALCbinaryMULintint (oi_a:int)<-($529:int)($530:int)
+    pi_a := calc.*(60,oi_a);	# 313 CALCbinaryMULintint (pi_a:int)<-($529:int)(oi_a:int)
+    qi_a := calc.lng(pi_a);	# 314 CALCint2lng (qi_a:lng)<-(pi_a:int)
+    ri_a := batcalc./(ni_a,qi_a);	# 315 CMDbatDIVcst (ri_a:bat[:oid,:lng])<-(ni_a:bat[:oid,:lng])(qi_a:lng)
+    si_a := bat.setColumn(ri_a,"diff");	# 316 BKCsetColumn (si_a:void)<-(ri_a:bat[:oid,:lng])($548:str)
+    io.print("print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a)");	# 317 IOprint_val ($554:int)<-($555:str)
+    ti_a := io.print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a);	# 318 IOtable (ti_a:int)<-(timestamp_bat:bat[:oid,:timestamp])(timestamp_plus:bat[:oid,:timestamp])(timestamp_minus:bat[:oid,:timestamp])(ri_a:bat[:oid,:lng])
+    ui_a := algebra.find(timezones,"West/Europe");	# 319 ALGfind (ui_a:tzone)<-(timezones:bat[:any,:any])($558:str)
+    timestamp_eur := multiplex.script("timestamp",date_seq,daytime_00,ui_a);	# 320  (timestamp_eur:bat[:int,:timestamp])<-($542:str)(date_seq:bat[:int,:date])(daytime_00:daytime)(ui_a:tzone)
+    vi_a := algebra.find(timezones,"Andes/Brazil");	# 321 ALGfind (vi_a:tzone)<-(timezones:bat[:any,:any])($561:str)
+    timestamp_bra := multiplex.script("timestamp",date_seq,daytime_00,vi_a);	# 322  (timestamp_bra:bat[:int,:timestamp])<-($542:str)(date_seq:bat[:int,:date])(daytime_00:daytime)(vi_a:tzone)
+    wi_a := bat.setColumn(date_seq,"date");	# 323 BKCsetColumn (wi_a:void)<-(date_seq:bat[:int,:date])($564:str)
+    xi_a := multiplex.script("dayofweek",date_seq);	# 324  (xi_a:bat[:int,:int])<-($566:str)(date_seq:bat[:int,:date])
+    yi_a := multiplex.script("dayname",xi_a);	# 325  (yi_a:bat[:int,:str])<-($568:str)(xi_a:bat[:int,:int])
+    aj_a := bat.setColumn(yi_a,"day");	# 326 BKCsetColumn (aj_a:void)<-(yi_a:bat[:int,:str])($570:str)
+    bj_a := bat.setColumn(timestamp_eur,"West/Europe");	# 327 BKCsetColumn (bj_a:void)<-(timestamp_eur:bat[:int,:timestamp])($558:str)
+    cj_a := algebra.find(timezones,"West/Europe");	# 328 ALGfind (cj_a:tzone)<-(timezones:bat[:any,:any])($558:str)
+    dj_a := multiplex.script("dst",timestamp_eur,cj_a);	# 329  (dj_a:bat[:int,:bit])<-($574:str)(timestamp_eur:bat[:int,:timestamp])(cj_a:tzone)
+    ej_a := bat.setColumn(dj_a,"dst");	# 330 BKCsetColumn (ej_a:void)<-(dj_a:bat[:int,:bit])($574:str)
+    fj_a := bat.setColumn(timestamp_bra,"Andes/Brazil");	# 331 BKCsetColumn (fj_a:void)<-(timestamp_bra:bat[:int,:timestamp])($561:str)
+    gj_a := algebra.find(timezones,"Andes/Brazil");	# 332 ALGfind (gj_a:tzone)<-(timezones:bat[:any,:any])($561:str)
+    hj_a := multiplex.script("dst",timestamp_bra,gj_a);	# 333  (hj_a:bat[:int,:bit])<-($574:str)(timestamp_bra:bat[:int,:timestamp])(gj_a:tzone)
+    ij_a := bat.setColumn(hj_a,"dst");	# 334 BKCsetColumn (ij_a:void)<-(hj_a:bat[:int,:bit])($574:str)
+    io.print("print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a)");	# 335 IOprint_val ($580:int)<-($581:str)
+    jj_a := io.print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a);	# 336 IOtable (jj_a:int)<-(date_seq:bat[:int,:date])(yi_a:bat[:int,:str])(timestamp_eur:bat[:int,:timestamp])(dj_a:bat[:int,:bit])(timestamp_bra:bat[:int,:timestamp])(hj_a:bat[:int,:bit])
+end main;	# 337  
 [ "rule_bat,na_a,pa_a,ra_a,ta_a" ]
 #---------------------------------------------------------------------------------------------------------#
 # h	rule						month	weekday		day	minutes		  # name
@@ -979,6 +988,7 @@ end main;	# 328
 [ 12@0,	  GMT+01:00												  ]
 [ 13@0,	  nil													  ]
 [ 15@0,	  nil													  ]
+[ "print(kd_a,md_a,od_a)" ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # h	minutes		start_dst					end_dst						  # name
 # oid	int		rule						rule						  # type
@@ -998,6 +1008,7 @@ end main;	# 328
 [ 12@0,	  60,		  nil,						  nil						  ]
 [ 13@0,	  nil,		  nil,						  nil						  ]
 [ 15@0,	  nil,		  nil,						  nil						  ]
+[ "print(date_bat,oe_a,qe_a,te_a,xe_a)" ]
 #---------------------------------------------------------------------------------#
 # h	date		year		day	monthname	monthnum		  # name
 # oid	date		int		int	str		int		  # type
@@ -1023,6 +1034,7 @@ end main;	# 328
 [ 18@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
 [ 19@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
 [ 20@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
+[ "print(date_bat,date_addyears,df_a)" ]
 #-------------------------------------------------#
 # h	date		min100y		diff	  # name
 # oid	date		date		int	  # type
@@ -1048,6 +1060,7 @@ end main;	# 328
 [ 18@0,	  nil,		  nil,		  nil	  ]
 [ 19@0,	  nil,		  nil,		  nil	  ]
 [ 20@0,	  nil,		  nil,		  nil	  ]
+[ " print(date_bat,date_addmonths,if_a)" ]
 #-------------------------------------------------#
 # h	date		plus1m		diff	  # name
 # oid	date		date		int	  # type
@@ -1852,6 +1865,7 @@ end main;	# 328
 [ 17@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
 [ 18@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
 [ 19@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
+[ "print(timestamp_bat,mh_a,oh_a)" ]
 #-------------------------------------------------------------------------#
 # h	timestamp			date		daytime		  # name
 # oid	timestamp			date		daytime	  # type
@@ -1870,13 +1884,8 @@ end main;	# 328
 [ 11@0,	  1953-04-30 07:35:27.999,	  1953-05-01,	  07:34:27.999	  ]
 [ 12@0,	  5867411-12-31 22:59:59.999,	  5867411-12-31,  23:59:59.999	  ]
 [ 13@0,	  nil,				  nil,		  nil		  ]
-[ 14@0,	  nil,				  nil,		  nil		  ]
 [ 15@0,	  nil,				  nil,		  nil		  ]
-[ 16@0,	  nil,				  nil,		  nil		  ]
-[ 17@0,	  nil,				  nil,		  nil		  ]
-[ 18@0,	  nil,				  nil,		  nil		  ]
-[ 19@0,	  nil,				  nil,		  nil		  ]
-[ 20@0,	  nil,				  nil,		  nil		  ]
+[ "print(timezones)" ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # h			timezones											  # name
 # str			tzone												  # type
@@ -1905,6 +1914,7 @@ end main;	# 328
 [ "Central/USA",	  GMT-06:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01]	  ]
 [ "Mountain/USA",	  GMT-07:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01]	  ]
 [ "Alaska/USA",		  GMT-09:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01]	  ]
+[ "print(timestamp_bat,th_a,wh_a,yh_a,ci_a)" ]
 #---------------------------------------------------------------------------------------------------------#
 # h	timestamp			Wake Island	tmp_66		American Samoa	tmp_68		  # name
 # oid	timestamp			date		daytime	date		daytime	  # type
@@ -1923,13 +1933,8 @@ end main;	# 328
 [ 11@0,	  1953-04-30 07:35:27.999,	  1953-04-30,	  19:35:27.999,	  1953-04-29,	  20:35:27.999	  ]
 [ 12@0,	  5867411-12-31 22:59:59.999,	  nil,		  nil,		  5867411-12-31,  11:59:59.999	  ]
 [ 13@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
-[ 14@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
 [ 15@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
-[ 16@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
-[ 17@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
-[ 18@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
-[ 19@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
-[ 20@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
+[ "print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a)" ]
 #-----------------------------------------------------------------------------------------------------------------#
 # h	timestamp			plus23				min1				diff	  # name
 # oid	timestamp			timestamp			timestamp			lng	  # type
@@ -1948,13 +1953,8 @@ end main;	# 328
 [ 11@0,	  1953-04-30 07:35:27.999,	  1953-05-01 06:35:27.999,	  1953-04-30 07:34:27.999,	  23	  ]
 [ 12@0,	  5867411-12-31 22:59:59.999,	  nil,				  5867411-12-31 22:58:59.999,	  nil	  ]
 [ 13@0,	  nil,				  nil,				  nil,				  nil	  ]
-[ 14@0,	  nil,				  nil,				  nil,				  nil	  ]
 [ 15@0,	  nil,				  nil,				  nil,				  nil	  ]
-[ 16@0,	  nil,				  nil,				  nil,				  nil	  ]
-[ 17@0,	  nil,				  nil,				  nil,				  nil	  ]
-[ 18@0,	  nil,				  nil,				  nil,				  nil	  ]
-[ 19@0,	  nil,				  nil,				  nil,				  nil	  ]
-[ 20@0,	  nil,				  nil,				  nil,				  nil	  ]
+[ "print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a)" ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # h	date		day		West/Europe			dst	Andes/Brazil			dst	  # name
 # int	date		str		timestamp			bit	timestamp			bit	  # type

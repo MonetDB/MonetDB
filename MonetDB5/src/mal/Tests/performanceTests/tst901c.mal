@@ -2,12 +2,11 @@
 profiler.setFilter("*","*");
 b:= new(:lng,:lng);
 t0:= alarm.usec();
-i:= -1:lng;
 t0:= alarm.usec();
-barrier v:= nextElement(i,0:lng,1000000:lng);
+barrier (v,i):= newRange(0:lng);
 	insert(b,i,i);
-	redo v;
-end v;
+	redo (v,i):= nextElement(1:lng,1000000:lng);
+end (v,i);
 t1:= alarm.usec();
 c:= copy(b);
 t2:= alarm.usec();

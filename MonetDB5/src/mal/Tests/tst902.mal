@@ -1,11 +1,11 @@
 # what is the overhead of MAL in multiplex situations
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
 b:= new(:lng,:lng);
-i:= -1:lng;
-barrier v:= nextElement(i,0:lng,10:lng,1:lng);
-	insert(b,i,i);
-	redo v:= nextElement(i,0:lng,10:lng,1:lng);
-exit v;
+barrier (k,v):= newRange(0:lng);
+	insert(b,v,v);
+	redo (k,v):= nextElement(1:lng,10:lng);
+exit (k,v);
+
 c:= copy(b);
 
 d:= new(:lng,:lng);

@@ -4,14 +4,13 @@ res:= x100.newVector(uint,N);
 col:= x100.newVector(uint,N);
 sel:= x100.newVector(uint,N);
 
-i:= -1L;
-barrier v:= nextElement(i,0L,N);
+barrier (v,i):= newRange(0L);
 	insert(res,nil,0:uint);
 	ju:= uint(i);
 	insert(col,nil,ju);
 	insert(sel,nil,ju);
-	redo v;
-exit v;
+	redo (v,i):= nextElement(1L,N);
+exit (v,i);
 print(res);
 print(col);
 print(sel);
