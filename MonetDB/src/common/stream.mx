@@ -500,8 +500,7 @@ static ssize_t file_read( stream *s, void *buf, size_t elmsize, size_t cnt )
 
 static ssize_t file_write( stream *s, void *buf, size_t elmsize, size_t cnt )
 {
-	size_t res = fwrite( buf, elmsize, cnt, (FILE*)s->stream_data.p);
-	return res;
+	return (ssize_t) fwrite( buf, elmsize, cnt, (FILE*)s->stream_data.p);
 }
 
 static void file_close( stream *s )
@@ -860,6 +859,8 @@ static ssize_t socket_write( stream *s, void *buf, size_t elmsize, size_t cnt )
 	ssize_t sz;
 
 	assert(!s->errnr);
+	if (size == 0)
+		return cnt;
 #ifdef NATIVE_WIN32
 	sz = send( s->stream_data.i, buf, size, 0 );
 #else
@@ -1050,6 +1051,8 @@ static ssize_t ssl_write(stream *s, void *buf, size_t elmsize, size_t cnt)
 	assert(s->stream_data.p);
 	ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
 	assert(ssl);
+	if (size == 0)
+		return cnt;	/* nothing to do */
 	for (;;) {
 		int nr, err;
 
@@ -1393,7 +1396,7 @@ static ssize_t buffer_write( stream *s, void *buf, size_t elmsize, size_t cnt )
 	}
 	memcpy(b->buf + b->pos, buf, size);
 	b->pos += size;
-	return size;
+	return cnt;
 }
 
 static void buffer_close( stream *s )
