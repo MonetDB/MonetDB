@@ -966,8 +966,10 @@ typedef struct {
 tzone tzone_local;
 @h
 #include "monettime.proto.h" /* generated definitions by mel */
-extern void fromdate(int n, int* d, int* m, int* y);
-extern void fromtime(int n, int *hour, int *min, int *sec, int *msec);
+monettime_export void fromdate(int n, int* d, int* m, int* y);
+monettime_export void fromtime(int n, int *hour, int *min, int *sec, int *msec);
+
+monettime_export int daytime_tz_fromstr(str buf, int *len, daytime **ret);
 
 #ifdef __cplusplus
 }
@@ -1358,6 +1360,44 @@ int daytime_fromstr(str buf, int *len, daytime **ret) {
 	/* handle semantic error here (returns nil in that case) */
 	**ret = totime(hour,min,sec,msec);
 	return pos;
+}
+
+int daytime_tz_fromstr(str buf, int *len, daytime **ret) 
+{
+	str s = buf;
+	int pos = daytime_fromstr(s, len, ret);
+	lng val, offset = 0;
+	daytime mtime = 24*60*60*1000;
+
+	if (!*ret || **ret == daytime_nil)
+		return pos;
+
+	s = buf + pos;
+	pos = 0;
+	while(GDKisspace(*s)) s++;
+	/* incase of gmt we need to add the time zone */
+	if (fleximatch(s, "gmt", 0) == 3) {
+		s += 3;
+	}
+	if ((s[0] == '-' || s[0] == '+') &&
+	     GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos=4]) &&
+	   ((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos=3]))) {
+		offset = (((s[1] - '0')*(lng)10 + (s[2] - '0'))*(lng)60 + 
+		          (s[pos] - '0')*(lng)10 + (s[pos+1] - '0'))*(lng)60000;
+		pos++;
+		if (s[0] != '-') offset = -offset;
+		s += pos;
+	} else {
+		/* if no tzone is specified; work with the local */
+		offset = get_offset(&tzone_local) * (lng)-60000; 
+	}
+	val = **ret + offset;
+	if (val < 0) 
+		val = mtime + val;
+	if (val > mtime) 
+		val = val - mtime;
+	**ret = (daytime)val;
+	return (int) (s-buf);
 }
 
 int daytime_tostr(str* buf, int* len, daytime *val) {
