@@ -64,7 +64,7 @@ end l;
 	fb_a := setColumn(eb_a,"refcnt");
 	gb_a := table(1,fa_a,la_a,ra_a,ua_a,wa_a,ya_a,bb_a,db_a,fb_a);
 #		view_bbp_refcnt().setColumn("refcnt"));
-end function;
+end dir;
 #    }
 #
 function dir():void;
@@ -83,7 +83,7 @@ function dir():void;
 	ob_a := replace(nme,rev);
 	pb_a := dir(ob_a);
 #	dir(nme.replace(rev));
-end function;
+end dir;
 #    }
 function dir(substr:str):void;
 #    PROC dir(str substr) : void := {
@@ -101,7 +101,7 @@ function dir(substr:str):void;
 	xb_a := replace(nme,rev);
 	yb_a := dir(xb_a);
 #        dir(nme.replace(rev));
-end function;
+end dir;
 #    }
 #
 function dir_leaks(#    proc dir_leaks() {
@@ -144,7 +144,7 @@ end	mc_a;
 #        }
 	rc_a := dir(b3);
 #        dir(b3);
-end function;
+end dir_leaks;
 #    }
 #
 function ls():void;
@@ -166,7 +166,7 @@ function ls():void;
 	bd_a := replace(ad_a,rev);
 	cd_a := dir(bd_a);
 #	dir(prs.setWriteMode().setColumn("name").replace(rev));
-end function;
+end ls;
 #    }
 function ls(substr:str):void;
 #    PROC ls(str substr) : void := {
@@ -188,7 +188,7 @@ function ls(substr:str):void;
 	md_a := replace(ld_a,rev);
 	nd_a := dir(md_a);
 #	dir(prs.setWriteMode().setColumn("name").replace(rev));
-end function;
+end ls;
 #    }
 #
 #Identifer 'view_bbp_name' mapped to 'bbp.getNames'

@@ -41,7 +41,7 @@ function load_format(fmt:str):bat[str,bat];
 	pa_a := load(names,seps,types,fmt,1000);
 	return pa_a;
 #	return load(names, seps, types, fmt, 1000);
-end function;
+end load_format;
 #}
 #
 function load_data(fmt:bat[str,bat], data:str, nr:int):bat[str,bat];
@@ -55,7 +55,7 @@ function load_data(fmt:bat[str,bat], data:str, nr:int):bat[str,bat];
 	qa_a := load(names,seps,types,data,nr);
 	return qa_a;
 #	return load(names, seps, types, data, nr);
-end function;
+end load_data;
 #}
 #
 function make_persistent(bats:bat[str,bat]):void;
@@ -95,7 +95,7 @@ end	bb_a;
 #		}
 end	ab_a;
 #	}
-end function;
+end make_persistent;
 #}
 #
 function merge_data(bats:bat[str,bat]):void;
@@ -135,7 +135,7 @@ end	mb_a;
 #		}
 end	lb_a;
 #	}
-end function;
+end merge_data;
 #}
 #
 function dump_seps(bats:bat[void,bat]):bat[void,str];
@@ -169,7 +169,7 @@ end	rb_a;
 #	}
 	return seps;
 #	return seps;
-end function;
+end dump_seps;
 #}
 #
 function bat_ttype(b:bat):str;
@@ -180,7 +180,7 @@ function bat_ttype(b:bat):str;
 	yb_a := find(xb_a,wb_a);
 	return yb_a;
 #	return monet_atomtbl.reverse.find(b.ttype);
-end function;
+end bat_ttype;
 #}
 #
 function dump_format(bats:bat[void,bat], fmt:str):bat[str,bat];
@@ -234,7 +234,7 @@ function dump_format(bats:bat[void,bat], fmt:str):bat[str,bat];
 	wc_a := join(vc_a,fmtbats);
 	return wc_a;
 #	return names.reverse.join(fmtbats);
-end function;
+end dump_format;
 #}
 #
 function dump_data(fmt:bat[str,bat], data:str, cnt:int):void;
@@ -257,7 +257,7 @@ end	yc_a;
 #	}
 	ad_a := dump(names,seps,bats,data,cnt);
 #	dump( names, seps, bats, data, cnt );
-end function;
+end dump_data;
 #}
 #
 #Identifer 'rename' mapped to 'bbp.setName'
