@@ -336,7 +336,7 @@ str INSPECTgetDefinition(int *ret, str *nme, str *fcn)
         if(b == 0) return throwMessage("inspect.getDefinition", 
 					"failed to create BAT");
 	
-	s= findSymbol(*nme,*fcn);
+	s= findMALSymbol(*nme,*fcn);
 	while(s){
 		int i;
 		str ps;
@@ -386,7 +386,7 @@ str INSPECTgetSignature(int *ret, str *mod, str *fcn)
         if (b == 0) return throwMessage("inspect.getSignature", 
 					"failed to create BAT");
 
-	s= findSymbol(*mod,*fcn);
+	s= findMALSymbol(*mod,*fcn);
         if (s == 0) 
 		return throwMessage("inspect.getSignature", 
 			"failed to find <module>.<function>");
@@ -419,7 +419,7 @@ str INSPECTsymbolType(int *ret, str *mod, str *fcn)
         if (b == 0) return throwMessage("inspect.getType", 
 					"failed to create BAT");
 
-	s= findSymbol(*mod,*fcn);
+	s= findMALSymbol(*mod,*fcn);
         if (s == 0) 
 		return throwMessage("inspect.getSignature", 
 			"failed to find <module>.<function>");
@@ -625,7 +625,7 @@ str INSPECThelp2(int *ret, str *mod, str *fcn)
         if (b == 0) 
 		return throwMessage("reference.helpComment", "failed to create BAT");
 
-	s= findSymbol(*mod,*fcn);
+	s= findMALSymbol(*mod,*fcn);
 	while(s!= NULL){
 		if(idcmp(s->name,*fcn)==0){
 			msg= s->def->help;

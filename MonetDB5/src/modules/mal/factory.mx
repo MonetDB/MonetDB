@@ -130,7 +130,7 @@ str FCTshutdown(int *ret, str *mod, str *fcn)
 {
     Symbol s;
     (void) ret;
-    s= findSymbol(*mod,*fcn);
+    s= findMALSymbol(*mod,*fcn);
     if( s == NULL) 
         return throwMessage("factory.shutdown","Factory not found");
     shutdownFactory(s->def);
