@@ -1,5 +1,5 @@
 
-EXTRA_DIST =  Mtest.in Mlog.in Mfilter.in MkillUsers.in Mlimit.c
+EXTRA_DIST =  Mtest.py.in Mlog.in Mfilter.py.in MkillUsers.in Mlimit.c
 
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
@@ -9,5 +9,4 @@ bin_Mtimeout = {
 	SOURCES = Mtimeout.c
 }
 
-bin_SCRIPTS = Mtest Mlog Mfilter MkillUsers
-bin_Mapprove = bin_Mtest
+bin_SCRIPTS = Mtest.py Mlog Mfilter.py MkillUsers
