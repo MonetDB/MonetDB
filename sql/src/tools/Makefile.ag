@@ -33,34 +33,6 @@ smallTOC_SHARED_MODS =	\
 	\
 	../server/lib_sqlserver
 
-nonSQL_MODS = \
-	-l_bitset	\
-	-l_bitvector	\
-	-l_cluster	\
-	-l_decimal	\
-	-l_lock	\
-	-l_malalgebra	\
-	-l_mmath	\
-	-l_mprof	\
-	-l_oo7	\
-	-l_radix	\
-	-l_salgebra	\
-	-l_stats	\
-	-l_tcpip	\
-	-l_tpcd	\
-	-l_url	\
-	-l_wisc	\
-	-l_logger	\
-	-l_qt
-
-largeTOC_SHARED_MODS =	\
-	-l_vector	\
-	-l_counters	\
-	-l_iterator
-
-CONFLICT_MODS =	\
-	-l_perfex
-
 EXTRA_DIST = static_modules.mx 
 
 bin_Mserver = {
