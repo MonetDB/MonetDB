@@ -23,76 +23,22 @@ Over..
 
 # 6 # querytype
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 1 # id
 [ 1	]
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 2 # id
 [ 1	]
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 3 # id
 [ 1	]
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 4 # id
 [ 1	]
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 5 # id
 [ 1	]
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 6 # id
 [ 1	]
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 7 # id
 [ 1	]
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 8 # id
 [ 1	]
 # 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 9 # id
 [ 1	]
 # 7 # querytype
 # 3 # querytype

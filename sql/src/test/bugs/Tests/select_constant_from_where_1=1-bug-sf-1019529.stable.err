@@ -57,12 +57,12 @@ stderr of test 'select_constant_from_where_1=1-bug-sf-1019529` in directory 'src
 # 13:45:16 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57322  < select_constant_from_where_1=1-bug-sf-1019529.sql
 # 13:45:16 >  
 
-MAPI  = monetdb@stem:55383
+MAPI  = monetdb@pictor:58900
 QUERY = select name, count(*) from ptables;
 ERROR = !single value in column expression
-MAPI  = monetdb@stem:55383
+MAPI  = monetdb@pictor:58900
 QUERY = select 1, count(*) where 0=1;
-ERROR = !Column expression Symbol(36)->token = Column no output
+ERROR = !column expression symbol(36)->token = Column no output
 
 # 13:45:16 >  
 # 13:45:16 >  Done.

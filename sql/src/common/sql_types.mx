@@ -960,24 +960,24 @@ sqltypeinit()
 	/**t++ = sql_create_type("UBYTE", 2, 0, 2, 8, 1,		"uchr");*/
 
 	strings = t;
-	*t++ = sql_create_type("CHAR", 0, 0, 0, 0, 1, "str");
+	*t++ = sql_create_type("CHAR",    0, 0, 0, 0, 1, "str");
 	*t++ = sql_create_type("VARCHAR", 0, 0, 0, 0, 0, "str");
-	*t++ = sql_create_type("CLOB", 0, 0, 0, 0, 0, "str");
+	*t++ = sql_create_type("CLOB",    0, 0, 0, 0, 0, "str");
 
 	numerical = t;
 
 	OID = *t++ = sql_create_type("OID", 9, 0, 10, 31, 1, "oid");
 	/*sql_create_type("TINYINT",   2, SCALE_FIX, 10,  8, 1, "uchr"); */
-	*t++ = sql_create_type("SMALLINT", 4, SCALE_FIX, 10, 16, 1, "sht");
-	INT = *t++ = sql_create_type("INT", 9, SCALE_FIX, 10, 32, 1, "int");
-	LNG = *t++ = sql_create_type("BIGINT", 19, SCALE_FIX, 10, 64, 1, "lng");
+	      *t++ = sql_create_type("SMALLINT", 4, SCALE_FIX, 10, 16, 1, "sht");
+	INT = *t++ = sql_create_type("INT",      9, SCALE_FIX, 10, 32, 1, "int");
+	LNG = *t++ = sql_create_type("BIGINT",  19, SCALE_FIX, 10, 64, 1, "lng");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
 	   s scale indicates nr of digits after the dot .) */
 	/*#sql_type("DECIMAL", 2, SCALE_FIX, 10, 8,             "uchr"); */
-	*t++ = sql_create_type("DECIMAL", 4, SCALE_FIX, 10, 16, 0, "sht");
-	*t++ = sql_create_type("DECIMAL", 9, SCALE_FIX, 10, 32, 0, "int");
+	*t++ = sql_create_type("DECIMAL",  4, SCALE_FIX, 10, 16, 0, "sht");
+	*t++ = sql_create_type("DECIMAL",  9, SCALE_FIX, 10, 32, 0, "int");
 	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 64, 0, "lng");
 
 	/* float(n) (n indicates precision of atleast n digits) */
