@@ -1466,8 +1466,16 @@ get_direct:
 check whether we really have a value
 @c
 	if (c->conn == -1 || (c->tpe == TYPE_bat ? c->val.bval == 0 : c->val.pval == 0)) {
+	    str msg;
 	    if (c->locked == 0) cache_free(c);
 	    MT_unset_lock(TCPlock, "TCPimport");
+	    if (c->conn == -1)
+	        msg = "c->conn == -1";
+	    else if (c->tpe == TYPE_bat)
+	        msg = "c->val.bval == 0";
+	    else
+	        msg = "c->val.pval == 0";
+	    GDKerror("TCPimport failed due to '%s'.\n", msg);
 	    return GDK_FAIL;
 	}
 @-
