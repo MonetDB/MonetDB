@@ -41,6 +41,7 @@ sql_export stmt *schemas( mvc * sql, symbol * sym);
 
 @c
 
+#include "sql_config.h"
 #include "sql_schema.h"
 #include "sql_parser.h"
 #include "sql_scope.h"

@@ -46,6 +46,7 @@ sql_export stmt *transactions( mvc * sql, symbol * sym);
 
 @c
 
+#include "sql_config.h"
 #include "sql_trans.h"
 #include "sql_parser.h"
 #include "sql_env.h"

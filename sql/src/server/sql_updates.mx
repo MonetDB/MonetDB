@@ -45,6 +45,7 @@ sql_export stmt *sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s );
 #endif /*_SQL_UPDATES_H_*/
 @c
 
+#include "sql_config.h"
 #include "sql_updates.h"
 #include "sql_parser.h"
 #include "sql_scope.h"
