@@ -206,6 +206,16 @@ if [ "${os}" = "Linux" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 		fi
 	fi
+	if [ "${hw}" = "ia64" ] ; then
+		# specific settings for our Itanium2 "demo" system
+		binpath="/soft/python2/bin:${binpath}"
+		if [ "${COMP}" = "ntv" ] ; then
+			binpath="/opt/intel/compiler70/ia64/bin:${binpath}"
+		  else
+			binpath="/soft/gcc-3.2.1/bin:${binpath}"
+			libpath="/soft/gcc-3.2.1/lib:${libpath}"
+		fi
+	fi
 fi
 
 if [ "${os}" = "SunOS" ] ; then
