@@ -18,6 +18,6 @@ do
 		-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
 		-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/ig' \
 		-e 's/\s+([^\s]+)::int8\b/ cast(\1 as bigint)/ig' \
-		-e 's/\s+([^\s]+)::(\w+)\b/ cast(\1 as \2)/ig' \
+		-e 's/\s+([^\s]+)::(\w+(\([0-9]+(,[0-9]+))\)?)\b/ cast(\1 as \2)/ig' \
 		${dirin}/${file} > ${dirout}/${file}
 done
