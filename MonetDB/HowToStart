@@ -36,19 +36,19 @@ to work properly. They are set to convenient defaults upon first use:
 	BUILD=BASE/`uname`
 	PREFIX=BUILD
 
-You can overrule this default by selecting your desired build and 
-target directory and setting the variables in your shell before
-continuing.
+You can overrule this default by selecting your desired build and target
+directory and setting the variables in your shell before continuing.
 
-Likewise, the Monet development system needs the identity of the
-desired compiler ("GNU" or "ntv" (native)) and the desired
-binary type (32bit or 64bit). You can do this by setting
-the following environment variables:
+Likewise, the Monet development system needs the identity of the desired
+compiler ("GNU" or "ntv" (native)), the desired binary type (32bit or
+64bit), and whether binarys should be linked dynamically or statically. 
+You can do this by setting the following environment variables:
 
 	COMP="GNU"	or	COMP="ntv"
 	BITS="32"	or	BITS="64"
+	LINK="dynamic"	or	LINK="static"
 
-If not or wrongly set,  COMP=GNU BITS=32 are used as default.
+If not or wrongly set,  COMP=GNU BITS=32 LINK=dynamic  are used as default.
 
 After that, you need to set your (architecture dependent) environment to be
 able to compile Monet-4.2. The easiest way to do so, is to
@@ -61,9 +61,9 @@ in BASE. These scripts look for the preset environment variables to adopt to
 you preferences.
 
 Depending on the architecture your currently working on, and depending on
-your settings for COMP, BITS, BUILD, and PREFIX, conf/conf.{ba,c}sh setup
-the environment as needed by configure. Among others, these script take care
-of 
+your settings for COMP, BITS, LINK, BUILD, and PREFIX, conf/conf.{ba,c}sh
+setup the environment as needed by configure. Among others, these script
+take care of
  - setting the proper PATH & LD_LIBRARY_PATH,
  - choosing the proper C/C++ compiler calls (i.e., setting command name and
    flags in CC & CXX).

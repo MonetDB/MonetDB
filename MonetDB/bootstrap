@@ -30,5 +30,28 @@ perl -i.bak -p -e  's/tab\.hh/tab.h/g' src/mel/Makefile.in
 #autoupdate
 autoconf
 
+cat << "EOF" | patch configure
+--- configure~	Wed May 23 20:46:51 2001
++++ configure	Wed May 23 20:49:57 2001
+@@ -1075,7 +1075,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.c
+-if test -z "`${CC-cc} -g -c conftest.c 2>&1`"; then
++if test -z "`${CC-cc} -g -c conftest.c 2>&1 | grep -v '^conftest.c:$'`"; then
+   ac_cv_prog_cc_g=yes
+ else
+   ac_cv_prog_cc_g=no
+@@ -1218,7 +1218,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.cc
+-if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
++if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | grep -v '^conftest.cc:$'`"; then
+   ac_cv_prog_cxx_g=yes
+ else
+   ac_cv_prog_cxx_g=no
+EOF
+
 exit 0
 

@@ -42,12 +42,14 @@
 @:install_module(streams)@
 
 @:install_module(qt)@
-/* conflicts */
-/*
+#ifndef smallTOC
 @:install_module(vector)@
 @:install_module(counters)@
 
 @:install_module(iterator)@
+#endif
+/* conflicts */
+/*
 @:install_module(perfex)@
 */
 #endif

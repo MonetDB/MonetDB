@@ -1323,7 +1323,7 @@ int timestamp_tostr(str* buf, int* len, timestamp *val) {
 	return s - *buf;
 }
 
-str count(int i) {
+str count1(int i) {
 	static char buf[16];
 	if (i <= 0) {
 		return "(illegal number)";
@@ -1348,10 +1348,10 @@ int rule_tostr(str* buf, int* len, rule *r) {
 	} else if (r->weekday == WEEKDAY_ZERO) {
 		sprintf(*buf, "%s %d\@%02d:%02d", MONTHS[r->month], r->day - DAY_ZERO, hours, minutes);
 	} else if (r->weekday > WEEKDAY_ZERO && r->day > DAY_ZERO) {
-		sprintf(*buf, "%s %s from start of %s\@%02d:%02d", count(r->day - DAY_ZERO), 
+		sprintf(*buf, "%s %s from start of %s\@%02d:%02d", count1(r->day - DAY_ZERO), 
 			DAYS[r->weekday - WEEKDAY_ZERO], MONTHS[r->month], hours, minutes);
 	} else if (r->weekday > WEEKDAY_ZERO && r->day < DAY_ZERO) {
-		sprintf(*buf, "%s %s from end of %s\@%02d:%02d", count(DAY_ZERO - r->day), 
+		sprintf(*buf, "%s %s from end of %s\@%02d:%02d", count1(DAY_ZERO - r->day), 
 			DAYS[r->weekday - WEEKDAY_ZERO], MONTHS[r->month], hours, minutes);
 	} else if (r->day > DAY_ZERO) {
 		sprintf(*buf, "first %s on or after %s %d\@%02d:%02d", DAYS[WEEKDAY_ZERO - r->weekday], 

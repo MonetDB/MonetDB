@@ -69,7 +69,8 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
  -x<ext> : consider only output files *.<ext><sys> (<ext> = 'out' or 'err')
             (default: <ext> = 'out' & 'err')
  -s<sys> : consider only output files *.<ext><sys> 
-            (<sys> = '', '.'''+OS+"', '."+OSVER+"', or '."+OSVER+'''.(32|64)bit' )
+            (<sys> = '', '.'''+OS+"', '."+OSVER+"', '."+OSVER+'''.(32|64)bit,'
+                     or any of these plus suffix '.STATIC')
             (default: <sys> = '')
  -r      : proceed in subdirectories as well (implies 'All`)
 ''')
@@ -558,38 +559,48 @@ def isexecutable(TST) :
 	return [ 0, "" ]
 ### isexecutable(TST) #
 
-def GetBitsAndMods(env) :
+def GetBitsAndModsAndStatic(env) :
 	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db Tests")
 	pIn.write('''\
 printf("\\nModules: ");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.kunique@batloop{printf("%s'%s'",x,$h);x:=",";}printf("\\n");quit;
 ''')
+	##module("NoModule");
 	pIn.close()
 	qOut = pOut.readlines()
 	qErr = pErr.readlines()
 	pOut.close()
 	pErr.close()
+	env['TST_BITS'] = ""
+	env['TST_MODS'] = []
+	env['TST_STATIC'] = ""
 	if qOut:
-		tb = re.compile("^# compiled for .*/([63][42]bit)")
+		tbs = re.compile("^# compiled for .*/([63][42]bit); (.*) linked")
 		tm = re.compile("^Modules: (.*)$")
+		#ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$")
 		for l in qOut:
-			b = tb.match(l)
-			if b:
-				env['TST_BITS'] = b.group(1)
+			bs = tbs.match(l)
+			if bs:
+				env['TST_BITS'] = bs.group(1)
 				os.environ['TST_BITS'] = env['TST_BITS']
+				if bs.group(2) == "statically":
+					env['TST_STATIC'] = "1"
+					os.environ['TST_STATIC'] = env['TST_STATIC']
 			m = tm.match(l)
 			if m:
 				env['TST_MODS'] = eval(m.group(1))
+			#s = ts.match(l)
+			#if s:
+			#	env['TST_STATIC'] = "1"
+			#	os.environ['TST_STATIC'] = env['TST_STATIC']
 	else:
 		Warn("No output from Mserver when checking for Bits & Modules!?")
 		if qErr:
 			STDERR.writelines(qErr)
 			STDERR.write("\n")
 			STDERR.flush()
-		env['TST_BITS'] = ""
-		env['TST_MODS'] = []
 	os.environ['TST_MODS'] = str(env['TST_MODS'])
-	return env['TST_BITS'], env['TST_MODS']
-### GetBitsAndMods(env) #
+	return env['TST_BITS'], env['TST_MODS'], env['TST_STATIC']
+### GetBitsAndModsAndStatic(env) #
 
 def CheckMods(env, TST, EXT) :
 	missing = []
@@ -688,8 +699,9 @@ def RunTest(env, TST) :
 	os.chdir(TSTTRGDIR)
 
 	NotOnNT = \
-		["src/modules/plain/salgebra", "tests/by_Peter/tst_priv", "src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
-	#,	\
+		["src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
+	#\
+	#	"src/modules/plain/salgebra", "tests/by_Peter/tst_priv", \
 	#	"scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2",	\
 	#	"tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
 	ReqMshdn = [".milC"]
@@ -733,17 +745,31 @@ def RunTest(env, TST) :
 				return TX
 
 		BITS = env['TST_BITS']
+		if env['TST_STATIC']:
+			STATIC = ".STATIC"
+		else:
+			STATIC = ""
+		STABLEout = ""
 		for e in "."+OSVER+"."+BITS , "."+OSVER , "."+OS , "":
-			E = ".stable.out"+e
-			if os.path.isfile(TST+E)  or  not e:
-				STABLEout = E
+			for s in STATIC , "":
+				es = e+s
+				E = ".stable.out"+es
+				if os.path.isfile(TST+E)  or  not es:
+					STABLEout = E
+					break
+			if STABLEout:
 				break
 		if not os.path.isfile(TST+STABLEout):
 			open(TST+STABLEout,"w").close()
+		STABLEerr = ""
 		for e in "."+OSVER+"."+BITS , "."+OSVER , "."+OS , "":
-			E = ".stable.err"+e
-			if os.path.isfile(TST+E)  or  not e:
-				STABLEerr = E
+			for s in STATIC , "":
+				es = e+s
+				E = ".stable.err"+es
+				if os.path.isfile(TST+E)  or  not es:
+					STABLEerr = E
+					break
+			if STABLEerr:
 				break
 		if not os.path.isfile(TST+STABLEerr):
 			open(TST+STABLEerr,"w").close()
@@ -825,10 +851,11 @@ def RunTest(env, TST) :
 		for (x,p) in [("out",TestOut),("err",TestErr)]:
 			f = n+x
 			if os.name == "nt":
-				t = TSTTRGBASE+os.sep+f
-				if os.path.isfile(t):
-					shutil.copy(t,".")
-					os.remove(t)
+				for t in TSTTRGBASE+os.sep+f, TSTTRGBASE+os.sep+".KILLED."+x:
+					if os.path.isfile(t):
+						shutil.copy(t,f)
+						os.remove(t)
+						break
 			if os.path.isfile(f):
 				for l in fileinput.input(f):
 					p.write("! "+l)
@@ -1224,9 +1251,13 @@ def main(argv) :
 				ErrXit("Extension (-x) must be one of: 'out', 'err' !")
 			par['EXTENSION'] = [a]
 		elif o == "-s":
-			if a not in ('', '.'+OS, '.'+OSVER, '.'+OSVER+'.32bit', '.'+OSVER+'.64bit'):
+			XTS = []
+			for xts in ('', '.'+OS, '.'+OSVER, '.'+OSVER+'.32bit', '.'+OSVER+'.64bit'):
+				XTS.append(xts)
+				XTS.append(xts+'.STATIC')
+			if a not in XTS:
 				Usage()
-				ErrXit("System (-s) must be one of:  '', '."+OS+"', '."+OSVER+"', '."+OSVER+".32bit', '."+OSVER+".64bit' !")
+				ErrXit("System (-s) must be one of: "+str(XTS)[1:-1]+" !")
 			par['SYSTEM'] = a
 		# Mtest.py & Mapprove.py
 		elif len(o) > 2  and  o[:2] == "--"  and  string.upper(o[2:]) in vars:
@@ -1453,7 +1484,7 @@ def main(argv) :
 			sys.exit(1)
 		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]   +" -db Tests", "quit;\n"):
 			sys.exit(1)
-		GetBitsAndMods(env)
+		GetBitsAndModsAndStatic(env)
 		STDERR.flush()
 		print("Bits: ", env['TST_BITS'])
 		print("Modules: ", env['TST_MODS'])

@@ -455,7 +455,8 @@ output_funcs = { 'SUBDIRS': am_assignment,
 		 'SCRIPTS' : am_scripts,
 		 'CFLAGS' : am_cflags,
 		 'CXXFLAGS' : am_cflags,
-		 'SHARED_MODS' : am_mods_to_libs,
+		 'smallTOC_SHARED_MODS' : am_mods_to_libs,
+		 'largeTOC_SHARED_MODS' : am_mods_to_libs,
 		}
 
 

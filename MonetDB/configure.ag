@@ -111,6 +111,7 @@ if test "x$enable_optim" = xyes; then
       esac     
     else
       case "$host" in
+      i*86-*-*)       CFLAGS="$CFLAGS -O3 -tpp6 -axiMK -unroll -wp_ipo -ipo_obj";;
       *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
                       LDFLAGS="$LDFLAGS -IPA"
                       ;;
@@ -155,7 +156,7 @@ if test "x$enable_instrument" = xyes; then
   CFLAGS="$CFLAGS -DPROFILE"
   need_instrument=yes
   if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -finstrument-fucntions -g"
+    CFLAGS="$CFLAGS -finstrument-functions -g"
   fi
 fi
 
@@ -371,7 +372,16 @@ SHARED_LIBS=''
 [
 if [ "$enable_static" = "yes" ]; then
 	CFLAGS="$CFLAGS -DSTATIC"
-	SHARED_LIBS='$(SHARED_LIBS)'
+	SHARED_LIBS='$(smallTOC_SHARED_LIBS)'
+	case "$host_os" in
+	aix*)	CFLAGS="$CFLAGS -DsmallTOC";;
+	*)	SHARED_LIBS="$SHARED_LIBS "'$(largeTOC_SHARED_LIBS)';;
+	esac
+	if test "x$GCC" != xyes; then
+		case "$host_os" in
+		irix*)	SHARED_LIBS="$SHARED_LIBS -lm";;
+		esac
+	fi
 fi
 ]
 

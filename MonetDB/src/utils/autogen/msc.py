@@ -537,7 +537,8 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
 		 'MTSAFE' : msc_mtsafe,
 		 'CFLAGS' : msc_cflags,
 		 'CXXFLAGS' : msc_cflags,
-		 'SHARED_MODS' : msc_mods_to_libs,
+		 'smallTOC_SHARED_MODS' : msc_mods_to_libs,
+		 'largeTOC_SHARED_MODS' : msc_mods_to_libs,
 		}
 
 def output(tree, cwd, topdir):
