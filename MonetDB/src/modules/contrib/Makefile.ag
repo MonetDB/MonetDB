@@ -33,7 +33,7 @@ LIBS = {
 		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
 		bat_mmath.mx bat_cast.mx array.mx color.mx \
-		image.mx
+		image.mx txtsim.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	WINLIBS = ../../common/libstream ../../gdk/libbat \
@@ -50,7 +50,7 @@ doc_libs = {
 		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
 		bat_mmath.mx bat_cast.mx array.mx color.mx \
-		image.mx
+		image.mx txtsim.mx
 }
 
 scripts_mil = {
@@ -60,7 +60,7 @@ scripts_mil = {
 		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
 		bat_mmath.mx bat_cast.mx array.mx color.mx \
-		image.mx
+		image.mx txtsim.mx
 }
 
 EXTRA_DIST_DIR = Tests
