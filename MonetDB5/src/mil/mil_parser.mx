@@ -52,6 +52,7 @@ typedef struct YYSRECORD{
 	char * 	val;
  } yystype, *yystypeptr;
 
+#define YYERROR_VERBOSE
 #define YYSTYPE yystype
 extern YYSTYPE yylval;
 #define GDKerror(M) 	printf("%s",M) 
