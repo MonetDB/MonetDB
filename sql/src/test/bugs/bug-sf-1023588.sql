@@ -3,13 +3,13 @@
 SET auto_commit=true;
 
 CREATE TABLE trimtest (
-        number  integer(9),
+        number  integer,
         number_sup      char(1),
-        trip    integer(9),
+        trip    integer,
         trip_sup        char(1),
         boatname        varchar(50),
         master  varchar(50),
-        tonnage integer(9),
+        tonnage integer,
         type_of_boat    varchar(30),
         built   varchar(15),
         bought  varchar(15),
@@ -22,7 +22,7 @@ CREATE TABLE trimtest (
         cape_departure  varchar(15),
         arrival_date    varchar(15),
         arrival_harbour varchar(30),
-        next_voyage     integer(9),
+        next_voyage     integer
         particulars     varchar(530)
 );
 
