@@ -728,19 +728,19 @@ def RunTest(env, TST) :
 		EXT = ".milS"       ; CALL = "milS"
 	elif os.path.isfile(TST+".milC")        or  os.path.isfile(TST+".milC.src"):
 		EXT = ".milC"       ; CALL = "milC"   ; SERVER = "MAPI"
-	elif os.path.isfile(TST+"_s00.milM"):
+	elif os.path.isfile(TST+"_s00.milM")    or  os.path.isfile(TST+"_s00.milM.src"):
 		EXT = ".milM"       ; CALL = "milMXs"
-	elif os.path.isfile(TST+"_s00.milS"):
+	elif os.path.isfile(TST+"_s00.milS")    or  os.path.isfile(TST+"_s00.milS.src"):
 		EXT = ".milS"       ; CALL = "milSXs"
-	elif os.path.isfile(TST+"_s00.milC"):
+	elif os.path.isfile(TST+"_s00.milC")    or  os.path.isfile(TST+"_s00.milC.src"):
 		EXT = ".milC"       ; CALL = "milCXs" ; SERVER = "MAPI"
-	elif os.path.isfile(TST+"_p00.milC"):
+	elif os.path.isfile(TST+"_p00.milC")    or  os.path.isfile(TST+"_p00.milC.src"):
 		EXT = ".milC"       ; CALL = "milCXp" ; SERVER = "MAPI"
 	elif os.path.isfile(TST+".sql")         or  os.path.isfile(TST+".sql.src"):
 		EXT = ".sql"        ; CALL = "sql"    ; SERVER = "SQL"
-	elif os.path.isfile(TST+"_s00.sql"):
+	elif os.path.isfile(TST+"_s00.sql")     or  os.path.isfile(TST+"_s00.sql.src"):
 		EXT = ".sql"        ; CALL = "sqlXs"  ; SERVER = "SQL"
-	elif os.path.isfile(TST+"_p00.sql"):
+	elif os.path.isfile(TST+"_p00.sql")     or  os.path.isfile(TST+"_p00.sql.src"):
 		EXT = ".sql"        ; CALL = "sqlXp"  ; SERVER = "SQL"
 		#TODO:
 		#elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
@@ -818,7 +818,7 @@ def RunTest(env, TST) :
 			else:
 				SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
 				return TX
-		test = re.compile("^.*\.src$")
+		test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$")
 		for ff in os.listdir(TSTTRGDIR):
 			if test.match(ff) and not os.path.isfile(ff[:-4]):
 				f = open(ff,"r")
