@@ -17,7 +17,7 @@
 
 MTSAFE
 
-INCLUDES = -I../common $(PTHREAD_INCS)
+INCLUDES = -I../common $(PTHREAD_INCS) $(LIBGC_CFLAGS)
 
 NO_INLINE_FILES = gdk_scanselect.mx gdk_relop.mx
 
@@ -33,7 +33,7 @@ lib_gdk = {
 	HEADERS = h
 	LIBS = ../common/libmutils ../common/libstream \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS)
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(LIBGC_LIBS) $(LIBGC_LDADD)
 }
 
 #doc_gdk = {

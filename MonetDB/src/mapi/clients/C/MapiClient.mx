@@ -143,7 +143,7 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark) {
-		fprintf(toConsole, "%s %d.%03d msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
+		fprintf(toConsole, "%s % 7d.%03d msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
 	}
 }
@@ -1155,7 +1155,11 @@ usage(const char *prog)
 	exit(-1);
 }
 
-#define SQLdefaultPort 45123	/* hardwired SQL default */
+/* hardwired defaults, only used if monet environment cannot be found */
+#define XQuerydefaultMode "dm"	
+#define XQuerydefaultPort 45789	
+#define SQLdefaultPort 45123	
+#define MILdefaultPort 50000	
 
 int
 main(int argc, char **argv)
@@ -1301,15 +1305,26 @@ main(int argc, char **argv)
 	setlen = mo_system_config(&set, setlen);
 
 	if (port == 0) {
-		char *s;
+		char *s = "mapi_port";
+                int p = MILdefaultPort;
 
-		if (strcmp(language, "sql") == 0)
+		if (strcmp(language, "sql") == 0) {
 			s = "sql_port";
-		else
-			s = "mapi_port";
-		if ((s = mo_find_option(set, setlen, s)) != NULL)
+			p = SQLdefaultPort;
+		} else if (strcmp(language, "xquery") == 0) {
+			s = "xquery_port";
+			p = XQuerydefaultPort;
+		}
+		if ((s = mo_find_option(set, setlen, s)) != NULL) {
 			port = strtol(s, NULL, 10);
+		} else {
+			port = p;
+		}
 	}
+
+	if (strcmp(language, "xquery") == 0 && command == NULL) {
+		command = mo_find_option(set, setlen, "xquery_output");
+        }
 
 	if (host == NULL) {
 		host = mo_find_option(set, setlen, "host");
@@ -1327,13 +1342,19 @@ main(int argc, char **argv)
 		else if (passwd == NULL)
 			passwd = simple_prompt("Password ", BUFSIZ, 0, "monetdb");
 	}
-
 	mid = mapi_connect(host, port, user, passwd, language);
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);
 	}
 	if (strcmp(language, "xquery") == 0) {
+		/* xquery options are passed via the command string (becomes first line of query) */
+		char *c = command?command:XQuerydefaultMode;
+		char *t = strstr(c,"timing-")?"":mark?"timing-":"";
+		char *d = strstr(c,"debug-")?"":trace?"debug-":"";
+		char *m = strstr(c,"-mapi")?"":"-mapi";
+		command = (char*) malloc(strlen(c)+20); 
+		sprintf(command, "%s%s%s%s", t,d,c,m);
 		mapi_noexplain(mid, "!");
 	}
 	if (mapi_error(mid)) {

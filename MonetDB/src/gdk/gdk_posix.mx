@@ -53,6 +53,17 @@ the WIN32 native platform.
 #include <winsock.h>		/* for timeval */
 #endif
 
+/* threads and gc redirects */ 
+#include <pthread.h>
+#ifdef HAVE_GC
+#define GC_PTHREADS 1
+#include <gc.h>
+#include <gc_local_alloc.h>
+#ifndef NATIVE_WIN32
+#include <gc_pthread_redirects.h>
+#endif
+#endif
+
 #ifdef NATIVE_WIN32
 #include <io.h>
 #include <direct.h>
@@ -346,7 +357,6 @@ static int do_not_use_posix_fadvise = 0;
 MT_mmap_t MT_mmap_tab[MT_MMAP_BUFSIZE];
 int MT_mmap_first = -1, MT_mmap_free = 0;
 
-#include <pthread.h>
 pthread_mutex_t MT_mmap_lock;
 
 static void

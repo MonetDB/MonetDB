@@ -106,6 +106,19 @@ sql_debug=0
 # Place to store SQL transaction logs
 sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log
 
+# XQuery Interface Section
+#=========================
+
+# default port to address an Mserver for a xquery session
+xquery_port=45789
+
+#output mode "dm" = pretty printed, 
+#            "xml" = enforce XML with enclosing <XQueryResult> tags
+xquery_output=dm                          
+
+#limit the document cache on disk to 100MB
+xquery_cacheMB=100                      
+
 # Profile Interface Section
 #====================================
 # for 32 bit systems try to claim 3G of (virtual) memory;
