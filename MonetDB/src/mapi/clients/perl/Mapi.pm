@@ -32,6 +32,9 @@ sub new {
 	my $mapi = {};
 
 	$mapi->{trace} = 0;
+	if ($mapi->{trace}) {
+	  print "new:$server,$user,$passwd,$language\n";
+	}
 	$mapi->{SERVER} = $server;
 	$mapi->{USER} = $user;
 	$mapi->{LANG} = $language;
@@ -45,10 +48,10 @@ sub new {
 	bless($mapi,"Mapi");
 	$mapi->doCmd("$user:$passwd\n");
 	print "logged on:$user:$passwd\n";
-	print "switch to $language scenario\n";
-	if( $language eq 'sql'){
-		$mapi->doCmd("sql();");
-	}
+# 	print "switch to $language scenario\n";
+# 	if( $language eq 'sql'){
+# 		$mapi->doCmd("sql();");
+# 	}
 	return $mapi;
 }
 
@@ -56,6 +59,9 @@ sub new {
 sub clone {
 	my ($mapi,$src)= @_;
 	bless($mapi,"Mapi");
+	if ($mapi->{trace}) {
+	  print "cloning\n";
+	}
 	$mapi->{SERVER} = $src->{SERVER};
 	$mapi->{USER} = $src->{USER};
 	$mapi->{SOCKET} = $src->{SOCKET};
@@ -65,6 +71,7 @@ sub clone {
 sub mapiport_intern {
   my $mapiport = 'localhost:50001';
   $mapiport = $ENV{'MAPIPORT'} if defined($ENV{'MAPIPORT'});
+  return $mapiport;
 }
 
 sub hostname {
@@ -81,8 +88,11 @@ sub portnr {
 
 sub disconnect {
 	my ($mapi) = @_;
+	if ($mapi->{trace}) {
+	  print "disconnect\n";
+	}
 	$mapi->wrapup();
-	$mapi->doRequest("quit();\n");
+# 	$mapi->doRequest("quit();\n");
 	$mapi->{SOCKET}->close;
 	if( $mapi->{trace} ) { print "Disconnected from server\n";}
 }
@@ -90,19 +100,23 @@ sub disconnect {
 sub showState {
 	my ($mapi) = @_;
 	if( $mapi->{trace} ) {
-	print "mapi.error :".$mapi->{error}."\n";
-	print "mapi.errstr:".$mapi->{errstr}."\n";
-	print "mapi.active:".$mapi->{active}."\n";
-	print "mapi.BUF[".length($mapi->{BUF})."]:".$mapi->{BUF}."\n";
+	  print "mapi.error :".$mapi->{error}."\n";
+	  print "mapi.errstr:".$mapi->{errstr}."\n";
+	  print "mapi.active:".$mapi->{active}."\n";
+	  print "mapi.BUF[".length($mapi->{BUF})."]:".$mapi->{BUF}."\n";
 	}
 }
 
 sub resetState{
-    my ($mapi) = @_;
-	$mapi->{errstr}="";
-	$mapi->{error}=0;
-	$mapi->{active}=0;	
+  my ($mapi) = @_;
+  if ($mapi->{trace}) {
+    print "resetState\n";
+  }
+  $mapi->{errstr}="";
+  $mapi->{error}=0;
+  $mapi->{active}=0;	
 }
+
 #packge the request and ship it, the back-end reads blocks!
 sub doRequest {
 	my($mapi,$cmd) = @_;
@@ -111,10 +125,12 @@ sub doRequest {
 	}
 	#my($missing) = 256 - length($cmd) % 256;
 	#my($blk) = $cmd . ' ' x $missing; 
-	if( index($cmd,"\n") <0){
-		$cmd= "$cmd\n";
+	$cmd =~ s/\n/ /g;
+	$cmd .= "\n";
+	if ($mapi->{LANG} eq 'sql') {
+	  $cmd = "S" . $cmd;
 	}
-	$mapi->{SOCKET}->send( $cmd ) 
+	$mapi->{SOCKET}->send( $cmd )
 		|| die "!ERROR can't send $cmd: $!";
 }
 
@@ -188,8 +204,17 @@ sub getLine {
 		print "getLine start $i\n";
 	}
 	while ( index($buf,"\n") <0 ) {
-		$mapi->{SOCKET}->recv($buf,256)
-		|| die "!ERROR can't receive: $!";
+		$mapi->{SOCKET}->recv($buf,256);
+#		|| die "!ERROR can't receive: $!";
+		if (length($buf) == 0) {
+		  if ($mapi->{trace}) {
+		    print "received empty\n";
+		  }
+		  last;
+		}
+		if($mapi->{trace}) {
+		  print "received:".$buf."\n";
+		}
 		$mapi->{BUF} = "$mapi->{BUF}$buf";
 	}
 	if($mapi->{trace}) {
@@ -199,6 +224,9 @@ sub getLine {
 sub getReply {
 	my ($mapi)= @_;
  	my $doit =1;
+	if ($mapi->{trace}) {
+	  print "getReply\n";
+	}
 	#return 0 if $mapi->active == 0;
 	#if( $mapi->active == undef || $mapi->active == 0) {
 		#return 0;
@@ -245,8 +273,12 @@ sub getReply {
 sub doCmd {
 	my($mapi,$cmd) = @_;
 	my $res;
+	if ($mapi->{trace}) {
+	  print "doCmd: ".$cmd."\n";
+	}
 	$mapi->resetState();
-	$mapi->doRequest($cmd);
+	$mapi->{SOCKET}->send( $cmd )
+		|| die "!ERROR can't send $cmd: $!";
 	# ignore all answers except error messages
 	while( $mapi->getReply()){
 		if($mapi->{trace}){ print "getAnswer:".$res."\n";}
