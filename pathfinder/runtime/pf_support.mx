@@ -255,6 +255,10 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
         }
     }
     var join_order := leftthetajoin(l, r, mode);
+
+    # avoid error (lng(max(bat(oid,oid))) = nil)
+    if (join_order.count() = 0) { return join_order; }
+
     var snd_iter := join_order.reverse().mark(0@0).reverse();
     var fst_iter := join_order.mark(0@0).reverse();
     var sorting := fst_iter.CTrefine(snd_iter); # this may hurt
