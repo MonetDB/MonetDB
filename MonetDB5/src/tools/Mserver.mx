@@ -145,6 +145,8 @@ void monet_hello(opt *set, int setlen) {
 	printf("# config:%s\n", GDKgetenv("gdk_config"));
 	printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
 	printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
+	printf("# Visit http://monetdb.cwi.nl for further information.\n");
+
     }
 }
 
@@ -295,7 +297,7 @@ This stuff is not used anymore
 
 @c
 
-	static struct option long_options[8] =
+	static struct option long_options[9] =
              {
                {"config", 1, 0, 'c'},
                {"dbname", 1, 0, 0},
@@ -304,6 +306,7 @@ This stuff is not used anymore
                {"debug", 2, 0, 'd'},
                {"help", 0, 0, '?'},
                {"set", 1, 0, 's'},
+               {"trace", 0, 0, 't'},
                {0, 0, 0, 0}
              };
 
@@ -328,7 +331,7 @@ This stuff is not used anymore
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( argc, av, "c:d::?s:", 
+		int c = getopt_long( argc, av, "c:d:t::?s:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -381,6 +384,8 @@ This stuff is not used anymore
 					optarg);
 			}
 		 } break;
+		case 't': /* trace option, currently ignored */
+			break;
 		case '?':
 			usage(prog);
 		default:
@@ -432,5 +437,4 @@ Time to execute the script files. Start with the init command[todo]
 	MT_global_exit(0);  
 	return 0; 
 }
-
 @}
