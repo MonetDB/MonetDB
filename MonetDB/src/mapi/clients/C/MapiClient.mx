@@ -517,7 +517,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				return 1;
 			}
 		}
-		if ((length == 0 || line[length - 1] == '\n') && linemode) {
+		if ((line == NULL ||
+		     (length > 0 && line[length - 1] == '\n')) &&
+		    linemode) {
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
@@ -557,7 +559,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 					fprintf(toConsole, "%s\n", reply);
 			} while ((rc = mapi_next_result(hdl)) == 1);
 			if (rc == MMORE &&
-			    (length > 0 || mapi_query_done(hdl) != MOK))
+			    (line != NULL || mapi_query_done(hdl) != MOK))
 				continue; /* get more data */
 
 			switch (mapi_error(mid)) {
