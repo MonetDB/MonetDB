@@ -66,7 +66,5 @@
 
 /* SQL */
 @:install_module(sqlserver)@
-@:install_module(sql)@
-@:install_module(mvc)@
 
 #endif

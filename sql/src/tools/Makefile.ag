@@ -29,9 +29,7 @@ smallTOC_SHARED_MODS =	\
 	-l_ascii_io	\
 	-l_streams	\
 	\
-	../server/lib_sqlserver	\
-	../client/lib_sql	\
-	../server/lib_mvc
+	../server/lib_sqlserver
 
 nonSQL_MODS = \
 	-l_bitset	\
