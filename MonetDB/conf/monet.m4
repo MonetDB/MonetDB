@@ -587,8 +587,8 @@ fi
 
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
-[  --enable-assert         enable assertions in the code [default=on]],
-  enable_assert=$enableval, enable_assert=yes)
+[  --enable-assert         enable assertions in the code [default=off]],
+  enable_assert=$enableval, enable_assert=no)
 if test "x$enable_assert" = xno; then
   CPPFLAGS="$CPPFLAGS -DNDEBUG"
 fi
