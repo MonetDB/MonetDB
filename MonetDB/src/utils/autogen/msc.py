@@ -18,6 +18,60 @@
 import string
 import os
 
+# the text that is put at the top of every generated Makefile.msc
+MAKEFILE_HEAD = '''
+## Use: nmake -f makefile.msc install
+
+# Nothing much configurable below
+
+# cl -help describes the options
+!IFDEF USE_MINGW
+CC = gcc -mwindows -std=c99
+ARCHIVER = ar cr
+!ELSE
+!IFDEF DEBUG
+CC = cl -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
+!ELSE
+CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
+!ENDIF
+ARCHIVER = lib
+!ENDIF
+# optimize use -Ox
+RC = rc
+
+JAVAC = javac
+JAR = jar
+
+# No general LDFLAGS needed
+!IFDEF USE_MINGW
+LDFLAGS =
+OUTPUTEXE = -o 
+OUTPUTOBJ = -o 
+OUTPUTLIB =
+LDFLAGS2 =
+O = o
+!ELSE
+LDFLAGS = /link
+OUTPUTEXE = -Fe
+OUTPUTOBJ = -Fo
+OUTPUTLIB = /out:
+LDFLAGS2 = /subsystem:console /NODEFAULTLIB:LIBC
+O = obj
+!ENDIF
+INSTALL = copy
+# TODO
+# replace this hack by something like configure ...
+MKDIR = mkdir
+ECHO = echo
+CD = cd
+
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
+CXXFLAGS = $(CFLAGS) -EHsc
+
+CXXEXT = \\\"cxx\\\"
+
+'''
+
 #automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
 automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
 
@@ -972,54 +1026,7 @@ def output(tree, cwd, topdir):
 
     fd = open(os.path.join(cwd, 'Makefile.msc'), "w")
 
-    fd.write('''
-## Use: nmake -f makefile.msc install
-
-# Nothing much configurable below
-
-# cl -help describes the options
-!IFDEF USE_MINGW
-CC = gcc -mwindows -std=c99
-ARCHIVER = ar cr
-!ELSE
-CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
-ARCHIVER = lib
-!ENDIF
-# optimize use -Ox
-RC = rc
-
-JAVAC = javac
-JAR = jar
-
-# No general LDFLAGS needed
-!IFDEF USE_MINGW
-LDFLAGS =
-OUTPUTEXE = -o 
-OUTPUTOBJ = -o 
-OUTPUTLIB =
-LDFLAGS2 =
-O = o
-!ELSE
-LDFLAGS = /link
-OUTPUTEXE = -Fe
-OUTPUTOBJ = -Fo
-OUTPUTLIB = /out:
-LDFLAGS2 = /subsystem:console /NODEFAULTLIB:LIBC
-O = obj
-!ENDIF
-INSTALL = copy
-# TODO
-# replace this hack by something like configure ...
-MKDIR = mkdir
-ECHO = echo
-CD = cd
-
-CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
-CXXFLAGS = $(CFLAGS) -EHsc
-
-CXXEXT = \\\"cxx\\\"
-
-''')
+    fd.write(MAKEFILE_HEAD)
 
     if not tree.has_key('INCLUDES'):
         tree.add('INCLUDES', [])
