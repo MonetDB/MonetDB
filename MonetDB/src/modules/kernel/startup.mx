@@ -7,13 +7,13 @@ They are loaded using one operation, namely 'use "kernel/startup"'
 Additional modules can be selectively loaded later.
 
 @mal
+use "atoms/startup";
 use "kernel/unix";
 use "kernel/lock";
 use "kernel/mmath";
 use "kernel/bat";
-use "kernel/arith";
 use "kernel/algebra";
+use "kernel/calc";
 use "kernel/system";
 use "kernel/mapi";
-use "kernel/str";
 @-

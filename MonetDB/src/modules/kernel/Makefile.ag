@@ -8,8 +8,8 @@ LIBDIR = pkglib
 
 LIBS = {
 	SEP = _
-	SOURCES = arith.mx bat.mx algebra.mx system.mx unix.mx \
-		mapi.mx str.mx startup.mx mmath.mx lock.mx
+	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
+		mapi.mx startup.mx mmath.mx lock.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
