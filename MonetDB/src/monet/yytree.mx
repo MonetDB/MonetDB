@@ -532,6 +532,9 @@ if (x->dealloc) {\
 				PROPDEBUG monet_checkbat(_b, FALSE);\
 			} else if (_b->batStamp > 0) {\
 				CHECKDEBUG monet_checkbat(_b, BATcount(_b) > 0);\
+				if (BATcount(_b) > 0) {\
+					BATsetaccess(_b, BAT_READ);\
+				}\
 				_b->batStamp = -_b->batStamp;\
 			}\
 			if (always || _newbat) {\

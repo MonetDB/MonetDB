@@ -986,7 +986,15 @@ we can skip checking, as we can assume the reverse column will get checked.
         	BATpropcheck(BATmirror(b));
         }
         BATpropcheck(b);
-        if (protect) BATsetaccess(b, BAT_READ);
+/*
+ * StM: moved to CATCHVAL in yytree.mx, so it get's executed with GDKdebug=0, too.
+ *
+        if (protect) {
+		PROPDEBUG if (BATgetaccess(b) != BAT_READ)
+        		GDKwarning("monet_checkbat: setting BAT %s BAT_READ.\n",b->batId);
+		BATsetaccess(b, BAT_READ);
+	}
+*/
         BATDEBUG {
                 _t2 = GDKms() - _t1; _t3 += _t2;
                 THRprintf(GDKerr, "check %s = %d (tot %d)\n", b->batId,_t2,_t3);
