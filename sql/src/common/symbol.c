@@ -322,5 +322,6 @@ symbol *newAtomNode(context *c, atom * data)
 
 static void AtomNode_destroy(AtomNode *a)
 {
-	atom_destroy(a->a);
+	if (a->a)
+		atom_destroy(a->a);
 }

@@ -145,7 +145,11 @@ SQLRETURN SQLConnect(
 				if (s){ 
 					*s = '\0';
 				}
+				schema = GDKstrdup(schema);
 			}
+		}
+		if (db != NULL) {
+			free(db);
 		}
 		if (schema && strlen(schema) > 0) {
 			/* all went ok, store the connection info */
@@ -204,6 +208,5 @@ SQLRETURN SQLConnect(
 	if (host != NULL) {
 		GDKfree(host);
 	}
-
 	return rc;
 }

@@ -116,5 +116,5 @@ SQLRETURN Fetch(SQLHSTMT hStmt)
 }
 SQLRETURN SQLFetch(SQLHSTMT hStmt)
 {
-	Fetch( hStmt );
+	return Fetch( hStmt );
 }

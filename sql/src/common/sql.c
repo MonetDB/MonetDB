@@ -2915,7 +2915,7 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss, stmt * ts, stmt
 		break;
 	case SQL_ATOM: {
 			AtomNode *an = (AtomNode*)s;
-			if (!an->a){
+			if (!an || !an->a){
 				res = stmt_default(cs, stmt_atom(atom_general(c->tpe,NULL)));
 			} else {
 				res = stmt_default(cs, stmt_atom(atom_dup(an->a)));

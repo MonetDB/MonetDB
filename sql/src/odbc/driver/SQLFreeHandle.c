@@ -148,5 +148,5 @@ SQLRETURN SQLFreeHandle(
 	SQLSMALLINT	handleType,
 	SQLHANDLE	handle )
 {
-	FreeHandle( handleType, handle);
+	return FreeHandle( handleType, handle);
 }

@@ -100,5 +100,5 @@ SQLRETURN SQLFreeStmt(
 	SQLHSTMT	handle,
 	SQLUSMALLINT	option )
 {
-	FreeStmt(handle, option);
+	return FreeStmt(handle, option);
 }

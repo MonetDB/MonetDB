@@ -160,5 +160,5 @@ SQLRETURN  SQLAllocHandle(
 	SQLHANDLE	nInputHandle,	/* type to be allocated */
 	SQLHANDLE *	pnOutputHandle )/* ptr for allocated handle struct */
 {
-	AllocHandle( nHandleType, nInputHandle, pnOutputHandle );
+	return AllocHandle( nHandleType, nInputHandle, pnOutputHandle );
 }

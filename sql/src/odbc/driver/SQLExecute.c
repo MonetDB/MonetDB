@@ -37,7 +37,7 @@
 
 static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 	int flag, status;
-	if (stream_readInt(rs, &flag) && flag == COMM_DONE) {
+	if (!stream_readInt(rs, &flag) || flag == COMM_DONE) {
 		/* 08S01 = Communication link failure */
 		addStmtError(hstmt, "08S01", NULL, 0);
 		return SQL_ERROR;
@@ -119,12 +119,14 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 	if (status == SQL_ERROR)
 		return status;
 
-	if (type == QHEADER) {
+	if (type == QHEADER && status > 0) { /* header info */
 		char *sc, *ec;
 		bstream *bs = bstream_create(rs, BLOCK);
 		int eof = 0;
 		int cur = 1;
 		ColumnHeader *pCol = NULL;
+
+		fprintf(stderr, "QHEADER %d\n", status);
 
 		nCols = status;
 
@@ -196,10 +198,12 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		if (status == SQL_ERROR)
 			return status;
 	}
-	if (type == QTABLE) {
+	if (type == QTABLE && status > 0) {
 		char *sc, *ec;
 		bstream *bs = bstream_create(rs, BLOCK);
 		int eof = 0;
+
+		fprintf(stderr, "QTABLE %d\n", status);
 
 		nRows = status;
 
@@ -224,8 +228,10 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 					ec = bs->buf + bs->len; 
 					while (sc < ec && *sc != '\t' && *sc != '\n') 
 						sc++;
-					if (sc >= ec) 
+					if (sc >= ec){
+						bstream_destroy(bs);
 						return SQL_ERROR;
+					}
 				}
 				*sc = '\0';
 				if (*s == '\"' && *(sc-1) == '\"'){
@@ -240,11 +246,11 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 				sc++;
 			}
 		}
+
 		bstream_destroy(bs);
-	} else {
-		/* HY000 = General Error */
-		addStmtError(hstmt, "HY000", "Result type was not QTABLE", 0);
-		return SQL_ERROR;
+	} else if (QUPDATE) {  
+		hstmt->nrRows = nRows;
+		hstmt->ResultRows = NULL;
 	}
 
 	} /* end of "get result data" code block */
