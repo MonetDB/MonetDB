@@ -438,7 +438,16 @@ public class MonetConnection extends Thread implements Connection {
 		return(closed);
 	}
 
-	public boolean isReadOnly() {return(false);}
+	/**
+	 * Retrieves whether this Connection object is in read-only mode.  MonetDB
+	 * currently doesn't support updateable result sets.
+	 *
+	 * @return true if this Connection object is read-only; false otherwise
+	 */
+	public boolean isReadOnly() {
+		return(true);
+	}
+
 	public String nativeSQL(String sql) {return(null);}
 	public CallableStatement prepareCall(String sql) {return(null);}
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) {return(null);}

@@ -875,9 +875,40 @@ public class MonetResultSet implements ResultSet {
 			}
 
 			public String getCatalogName(int column) {return(null);}
-			public boolean isReadOnly(int column) {return(false);}
-			public boolean isWritable(int column) {return(false);}
-			public boolean isDefinitelyWritable(int column) {return(false);}
+
+			/**
+			 * Indicates whether the designated column is definitely not
+			 * writable.  MonetDB does not support cursor updates, so
+			 * nothing is writable.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 */
+			public boolean isReadOnly(int column) {
+				return(true);
+			}
+
+			/**
+			 * Indicates whether it is possible for a write on the designated
+			 * column to succeed.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 */
+			public boolean isWritable(int column) {
+				return(false);
+			}
+
+			/**
+			 * Indicates whether a write on the designated column will
+			 * definitely succeed.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 */
+			public boolean isDefinitelyWritable(int column) {
+				return(false);
+			}
 
 			public String getColumnClassName(int column) {return(null);}
 

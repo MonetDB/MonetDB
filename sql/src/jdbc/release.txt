@@ -16,7 +16,7 @@ intend to use this driver.  If you feel some features are missing, please let
 us know at our sourceforge feature request page:
 http://sourceforge.net/tracker/?group_id=56967&atid=482471
 
-Feel free to file bugs, when they appear at our sourceforge bug page as well.
+Feel free to file bugs, when they appear, at our sourceforge bug page as well.
 
 
 Currently implemented:
@@ -28,10 +28,10 @@ Currently implemented:
     - nativeSQL (there is no query parsing for JDBC escapes yet)
     - prepareCall (CallableStatement not supported)
     - prepareStatement with more than just an SQL prepare statement
-	- getCatalog/setCatalog (there is no catalog management yet)
-	- getHoldability/setHoldability (close/hold cursors over commit is not
-	  configurable)
-	- isReadOnly/setReadOnly (updatable result sets are not supported at all)
+    - getCatalog/setCatalog (there is no catalog management yet)
+    - getHoldability/setHoldability (close/hold cursors over commit is not
+      configurable)
+    - isReadOnly/setReadOnly (updatable result sets are not supported at all)
 
     NOTE: be sure to check for warnings after setting concurrencies or
           isolation levels; MonetDB currently does not support anything else
@@ -75,9 +75,6 @@ Currently implemented:
       - getPrecision
       - getScale
       - getCatalogName
-      - isReadOnly
-      - isWritable
-      - isDefinitelyWritable
       - getColumnClassName
   * java.sql.DatabaseMetaData interface
   * java.sql.SavePoint interface
