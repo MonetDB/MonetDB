@@ -2983,10 +2983,11 @@ gdk_export ValPtr	VALnew		();
 gdk_export ptr	VALconvert	(int typ, ValPtr t, int silent);
 gdk_export int	VALformat	(char **buf, ValPtr res);
 gdk_export int	VALprint	(FILE *fd, ValPtr res);
-gdk_export ValPtr	VALcopy		(ValPtr dst, ValPtr src);
+gdk_export ValPtr VALcopy		(ValPtr dst, ValPtr src);
 gdk_export void	VALempty	(ValPtr v);
 gdk_export void	VALclear	(ValPtr v);
-gdk_export ValPtr	VALset		(ValPtr v, int t, ptr p);
+gdk_export ValPtr VALset		(ValPtr v, int t, ptr p);
+gdk_export ValPtr VALinit(ValPtr d, int tpe, ptr s);
 gdk_export void	*VALget		(ValPtr v);
 gdk_export int   VALsprintf   (str *dst, str format, va_list ap);
 

@@ -115,6 +115,33 @@ ValPtr VALcopy(ValPtr d, ValPtr s){
 	return d;
 }
 @-
+Moving a value from a BUN into a value record, making proper copies
+on the way.
+@c
+ValPtr VALinit(ValPtr d, int tpe, ptr s){
+	if (ATOMextern(tpe) == 0) {
+		d->vtype= tpe;
+		memcpy(&d->val.ival, s, ATOMlen(tpe,s));
+	} else 
+	if (s == 0) {
+		GDKwarning("VALcopy: copying null %s.\n", ATOMname(tpe)); 
+		d->vtype = TYPE_void;
+	} else if (tpe == TYPE_str) {
+		d->vtype = TYPE_str;
+		d->val.sval = GDKstrdup(s);
+		d->len = strLen(s);
+	} else {
+		GDKwarning("VALcopy: not yet supported %s.\n", ATOMname(tpe)); 
+		d->vtype = TYPE_void;
+		/* ptr p = s->val.pval;
+		d->vtype = tpe;
+		d->val.pval = GDKmalloc(s->len);
+		d->len = s->len;
+		memcpy(d->val.pval, p, s->len); */
+	}
+	return d;
+}
+@-
 VALprint shows the contents of a value record, but without
 expanding the BAT contents.
 @c
