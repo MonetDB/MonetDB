@@ -15,6 +15,8 @@ use "kernel/mmath";
 use "kernel/bat";
 use "kernel/algebra";
 use "kernel/calc";
+use "kernel/batcalc";
 use "kernel/system";
+use "kernel/group";
 use "kernel/mapi";
 @-

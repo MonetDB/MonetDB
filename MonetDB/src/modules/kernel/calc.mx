@@ -1077,7 +1077,9 @@ int @1FromStrImpl(@1 *ret, str *val){
 	return GDK_SUCCEED;
 }
 int @1ToStrImpl(str *ret, @1 *val){
-	int l=strlen(*ret);
+	int l=0;
+
+	if(*ret) l=strlen(*ret);
 	(void) @1ToStr(ret,&l,val);
 	return GDK_SUCCEED;
 }

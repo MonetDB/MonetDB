@@ -129,9 +129,8 @@ command sort( b:bat[any::1,any::2]) :
 				bat[any::1, any::2] = CMDsort
 comment "Returns a copy of a BAT sorted on the head column.";
 
-command sort_ht( b:bat[any::1,any::2]) : 
-				bat[any::1, any::2] = CMDsort_ht
-comment "Returns a sorted copy of a BAT.";
+#command sort_ht( b:bat[any::1,any::2]) : bat[any::1, any::2] = CMDsort_ht
+#comment "Returns a sorted copy of a BAT.";
 @- vertical projection
 @mal
 command project ( b:bat[any::1,any], val:any::2) : 
@@ -365,16 +364,17 @@ command count ( b:bat[any,any] ) : int = CMDcount
 comment "Return the number of elements currently in a BAT.";
 @- Histogram on Tail 
 @mal
-command histogram ( b:bat[any,any::2]) : 
-				bat[any::2,int] = CMDhistogram
+command histogram ( b:bat[any,any::2]) : bat[any::2,int] = CMDhistogram
 comment "Produce a BAT containing the histogram of the tail values.
  bat.histogram() ::= {count}(bat.reverse)";
 
 @-
-command out of order right now.
+command out of order right now. Should become an optimization pattern
+group.count -> histogram(bat.reverse)
 command {count} ( b:bat[any::2,any]) : 
 				bat[any::2,int] = CMDhistogram_rev
-comment "has fast implementation: histogram(bat.reverse)";
+comment "Count the number of groups.
+ It has fast implementation: histogram(bat.reverse)";
 
 @- Default Min and Max
 @T
@@ -707,6 +707,7 @@ Let cut this text down with some Mx macro's
 int CMD@1(int *result, int *bid) {
 	BAT *b,*bn;
 	@:batcheck2(result,bid,b,"CMD@1")@
+	*result = 0;
 	bn = (BAT*) @2(b);
 	if( bn ) {
 		*result = bn->batCacheid;
@@ -717,6 +718,7 @@ int CMD@1(int *result, int *bid) {
 @= unaryint
 int CMD@1(int *result, int *bid) {
 	BAT *b;
+	*result = 0;
 	@:batcheck2(result,bid,b,"CMD@1")@
 	*result = (int) @2(b);
 	return GDK_SUCCEED;
@@ -724,6 +726,7 @@ int CMD@1(int *result, int *bid) {
 @= binary
 int CMD@1(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn;
+	*result = 0;
 	@:batcheck2(result,lid,left,"CMD@1")@
 	@:batcheck2(result,rid,right,"CMD@1")@
 	bn = (BAT*) @2(left, right);
@@ -736,6 +739,7 @@ int CMD@1(int *result, int *lid, int *rid) {
 @= binaryint
 int CMD@1(int *result, int* bid, int *param) {
 	BAT *b, *bn;
+	*result = 0;
 	@:batcheck2(result,bid,b,"CMD@1")@
 	bn = @2(b, *param);
 	if( bn ) {
@@ -748,7 +752,6 @@ int CMD@1(int *result, int* bid, int *param) {
 @:unaryint(count, BATcount)@
 @:unary(histogram, BAThistogram)@
 @:unary(sort, BATsort)@
-@:unary(sort_ht, BATsort_ht)@
 @:unary(number, BATnumber)@
 @:unary(copy, BATcopy)@
 @:unary(kunique, BATkunique)@
@@ -903,8 +906,16 @@ int CMDlike(int *ret, int *bid, str *k) {
 
 @- BAT slice
 @c
-int CMDslice(BAT **retval, BAT *b, int *start, int *end){
-	return (*retval = BATslice(b, start, end))?GDK_SUCCEED:GDK_FAIL;
+int CMDslice(int *ret, bat *bid, int *start, int *end){
+	BAT *b, *br;
+	@:batcheck2(ret,bid,b,"CMDslice")@
+	br = BATslice(b, start, end);
+	if( br != NULL){
+		*ret= br->batCacheid;
+		return GDK_SUCCEED;
+	}
+	*ret =0;
+	return GDK_FAIL;
 }
 
 @- BUN Get/Fetch

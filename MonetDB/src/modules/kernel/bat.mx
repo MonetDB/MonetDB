@@ -40,7 +40,7 @@ command reverse(b:bat[any::1,any::2]) : bat[any::2,any::1] = CMDreverse
 comment "Returns the reverse view of a BAT (head is tail and tail is head).
  BEWARE:  no copying is involved; input and output refer to the same object!";
 
-command mirror(b:bat[any::1,any::2]) : bat[any::2,any::1] = CMDmirror
+command mirror(b:bat[any::1,any]) : bat[any::1,any::1] = CMDmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 
 command convert(b:bat[any::1,any::2] ) : bat[any::1,any::2] = CMDconvert

@@ -53,7 +53,7 @@ or to derived a fast C-based implementation.
 @mal
 module multiplex check = CMDmultiplexTypeCheck;
 
-pattern script(CMD:str, a:any[]):any = CMDmultiplexScript
+pattern script(CMD:str, a:any...):any = CMDmultiplexScript
 comment "Generic processor for mutiplexed instructions.";
 
 @h

@@ -420,8 +420,10 @@ int CMDbbp_discard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         name = (str) getArgValue(stk,pci,1);
         if( discardBox(box,name) == GDK_FAIL){
                 char msg[1024];
-                snprintf(msg,1024,"failed to discard '%s' from box '%s'\n",
-			name, box->name);
+		int i;
+                snprintf(msg,1024,"failed to discard '%s' ", name);
+		i=strlen(msg);
+                snprintf(msg+i,1024-i,"from box '%s'\n", box->name);
                 return (int) raiseException(mb,stk->pc,"bbpException",msg);
         }
 	return GDK_SUCCEED;

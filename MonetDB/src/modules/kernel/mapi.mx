@@ -204,7 +204,11 @@ Get the new information for the server socket and start listening.
 	if( DEBUG_MAPI)
 		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
 	gethostname(host,512);
-	snprintf(msg,512,"#Ready to accept connections on %s:%d\n",host,*port);
+	{int i;
+	snprintf(msg,512,"#Ready to accept connections on %s:",host);
+	i= strlen(msg);
+	snprintf(msg+i,512-i,"%d\n",*port);
+	}
 	fprintf(GDKout,msg);
 	*ret = TRUE;
 	return GDK_SUCCEED;

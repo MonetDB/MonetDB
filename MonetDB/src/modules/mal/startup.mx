@@ -17,7 +17,6 @@ the function resolution scheme.
 use "mal/enum";
 use "kernel/startup";
 use "mal/io";
-use "mal/batcalc";
 use "mal/mal";
 use "mal/profiler";
 use "mal/squeezer"; 

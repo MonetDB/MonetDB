@@ -17,6 +17,7 @@ client group or database.
 use "atoms/blob";
 use "atoms/str";
 use "atoms/url";
+use "atoms/uchr";
 use "atoms/monettime";
 @-
 @h

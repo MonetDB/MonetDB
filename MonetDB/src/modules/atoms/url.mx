@@ -540,27 +540,36 @@ int url_new3(str *url, str *protocol, str *server, str *file){
 	str Protocol;
 	str Server;
 	str File;
-	int l;
+	int l,i;
 
 	l= GDK_STRLEN(*file)+ GDK_STRLEN(*server)+GDK_STRLEN(*protocol)+10;
 	*url= (str) GDKmalloc(l);
-	snprintf(*url,l,"%s://%s/%s",*protocol,*server,*file);
+	snprintf(*url,l,"%s://",*protocol);
+	i= strlen(*url);
+	snprintf(*url+i,l-i,"%s",*server);
+	i= strlen(*url);
+	snprintf(*url+i,l-i,"/%s",*file);
 	return GDK_SUCCEED;
 }
 
 int url_new4(str *url, str *protocol, str *server, int *port, str *file){
 	str Protocol;
-	int Port;
 	str Server;
 	str File;
-	int l;
+	int l,i;
 
 	if( GDK_STRNIL(file)) File="";
 	if( GDK_STRNIL(server)) Server="";
 	if( GDK_STRNIL(protocol)) Protocol="";
 	l= strlen(File)+ strlen(Server)+strlen(Protocol)+20;
 	*url= (str) GDKmalloc(l);
-	snprintf(*url,l,"%s://%s:%d/%s",Protocol,Server,Port,File);
+	snprintf(*url,l,"%s://",*Protocol);
+	i= strlen(*url);
+	snprintf(*url+i,l-i,"%s",*Server);
+	i= strlen(*url);
+	snprintf(*url+i,l-i,":%d",*port);
+	i= strlen(*url);
+	snprintf(*url+i,l-i,"/%s",*File);
 	return GDK_SUCCEED;
 }
 @+ Utilities
