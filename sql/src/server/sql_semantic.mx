@@ -3304,7 +3304,7 @@ insert_check_fkey( context * sql, stmt **inserts, sql_key *k, stmt *idx_inserts 
 	if (inserts[0]->op2.stval->key){
 		s = stmt_binop( 
 			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
-			stmt_atom(atom_int(it,1)), ne);
+			stmt_atom(atom_int(sql_dup_subtype(it),1)), ne);
 	} else {
 		/* reljoin.count <> inserts[col1].count */
 		s = stmt_binop( 
@@ -4074,7 +4074,7 @@ sql_delete_idxs(context * sql, sql_table *t, stmt *vals, list *l)
 
 		assert(it);
 		v = stmt_const( stmt_reverse( first_subset(vals)), 
-			stmt_atom(atom_general(it, NULL)));
+			stmt_atom(atom_general(sql_dup_subtype(it), NULL)));
 		list_append(l, stmt_replace( stmt_idxbat(i, 1), v));
 	}
 	return res;
