@@ -286,7 +286,7 @@ struct stream {
 #ifdef HAVE_STRDUP
 extern char *strdup(const char *);
 #else
-#define strdup(s)	strcpy(malloc(strlen(s)),(s))
+#define strdup(s)	strcpy(malloc(strlen(s)+1),(s))
 #endif
 #endif
 
