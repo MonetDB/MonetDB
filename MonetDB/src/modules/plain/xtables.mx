@@ -1149,15 +1149,40 @@ static
     int
 refine(BAT **res, BAT *b, BAT *a, int rv)
 {
+	str rev = rv ? "_rev" : "";
 	BAT *bn = NULL;
+
+	if (BATcount(b) != BATcount(a)) {
+		GDKerror("CTrefine%s: both BATs must have the same cardinality and their heads must form a 1-1 match.\n", rev);
+		return GDK_FAIL;
+	}
+@(
+	/* checking only the key property is too strict,
+	 * as it might not be set although it does hold;
+	 * exhaustively checking keyness is too expensive;
+	 * hence, we just don't check, and keep our fingers crossed...
+	 */
+	if (!(b->hkey && a->hkey)) {
+		if (a->hkey) {
+			GDKerror("CTrefine%s: head of first BAT is not unique (key);", rev);
+		} else if (b->hkey) {
+			GDKerror("CTrefine%s: head of second BAT is not unique (key);", rev);
+		} else {
+			GDKerror("CTrefine%s: heads of both BATs are not unique (key);", rev);
+		}
+		GDKerror("CTrefine%s: heads of both BATs must be unique (key) to form a 1-1 match.\n", rev);
+		return GDK_FAIL;
+	}
+@)
 
 	if (b->tkey) {		/* if key, no further refinements can take place */
 		bn = BATmark(b, 0);
 	} else {
 		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
-		BUN p, q, r, last = BUNfirst(b), base = a->theap.base ? NULL : a->batBuns->base;
+		BUN p, q, r, last = BUNfirst(b), base = a->theap.base ? NULL : a->batBuns->base, this = NULL;
 		struct refine *buf, *cur, *end;
-		int xx;
+		bit a_void = (a->ttype == TYPE_void);
+		int xx, tpe = a_void ? TYPE_oid : a->ttype;
 		size_t size = DEFAULT_SIZE;
 		oid *dst, o, id = 0;
 
@@ -1183,46 +1208,77 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		end = buf + size;
 		if (buf == NULL)
 			return GDK_FAIL;
+		if (a_void) {
+			base = this = (BUN) GDKmalloc(size * sizeof(oid));
+			if (base == NULL) {
+				GDKfree(buf);
+				return GDK_FAIL;
+			}
+		}
 
 		/* create result BAT */
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
 		if (bn == NULL) {
 			GDKfree(buf);
+			if (a_void)
+				GDKfree(base);
 			return GDK_FAIL;
 		}
 		bn->hsorted = bn->tsorted = FALSE;
 		dst = (oid *) BUNfirst(bn);
 
+		if (a_void) {
+			@:refine_loop(@:refine_void_1@,@:refine_void_2@,GDKfree(base);,this = base;)@
+		} else {
+			@:refine_loop(r += a->tloc;)@
+		}
+@= refine_void_2
+	off = (size_t) (this - base);
+	base = (BUN) GDKrealloc(base, size * sizeof(oid));
+	this = base + off;
+@= refine_void_1
+	/* TYPE_void: BUNtail(b,p) = (BUN)BUNtpos(b,p) */
+	*(oid*)this = *(oid*)(BUN)BUNtpos(a, r);
+	r = this;
+@= refine_loop
 		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
 		BATloopFast(b, p, q, xx) {
 			if ((*cmp) (BUNtail(b, last), BUNtail(b, p))) {
-				dst = sort_flush(buf, (size_t) (cur - buf), a->ttype, base ? base : a->theap.base, dst, &id, rv);
+				dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap.base, dst, &id, rv);
 
 				last = p;
 				cur = buf;
+				@4
 			}
 			o = *(oid *) BUNhead(b, p);
 			BUNfndOID(r, a, &o);
 			if (r == NULL) {
-				*dst++ = o;
-				*dst++ = id;
-
-				continue;
+				GDKerror("CTrefine%s: value "SZFMT"@0 not found in head of second BAT;\n"
+					 "CTrefine%s: heads of both BATs do not form a 1-1 match.\n", rev, o, rev);
+				BBPreclaim(bn);
+				GDKfree(buf);
+				@3
+				return GDK_FAIL;
 			}
 			if (cur >= end) {
 				size_t off = (size_t) (cur - buf);
 				buf = (struct refine *) GDKrealloc(buf, (size *= 2) * sizeof(struct refine));
 				end = buf + size;
 				cur = buf + off;
+				@2
 			}
-			r += a->tloc;
+			@1
 			cur->off = base ? (var_t) (r - base) : *(var_t *) r;
 			cur->o = o;
 			cur++;
+			this += sizeof(oid);
 		}
-		dst = sort_flush(buf, (size_t) (cur - buf), a->ttype, base ? base : a->theap.base, dst, &id, rv);
+@c
+		dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap.base, dst, &id, rv);
 
 		GDKfree(buf);
+		if (a_void)
+			GDKfree(base);
 		bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 		bn->tsorted = GDK_SORTED;
 	}

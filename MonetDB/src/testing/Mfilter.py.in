@@ -178,6 +178,8 @@ test = (
                 # Tokens & messages depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                     r'^ERROR = !ERROR (?:syntax|parse) error at token \([0-9]+\) in statement: ',
+                    r'^(?:syntax|parse) error, ',
+                    r': at \([0-9]+,[0-9]+\-[0-9]+,[0-9]+\):',
 ##                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
 ##                    r'^IPO: using IR for .*$',
 ##                    r'^IPO: performing single-file optimizations$',
