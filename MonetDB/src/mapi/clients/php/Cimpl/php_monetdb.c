@@ -929,9 +929,7 @@ PHP_FUNCTION(monetdb_ping)
 PHP_FUNCTION(monetdb_free_result)
 {
 	zval **z_handle=NULL ;
-	int id = -1;
 	MapiHdl handle;
-	int i ;
 	
 	if ((ZEND_NUM_ARGS()!=1) || (zend_get_parameters_ex(1, &z_handle)==FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -940,7 +938,7 @@ PHP_FUNCTION(monetdb_free_result)
 	if (Z_TYPE_PP(z_handle)==IS_RESOURCE && Z_LVAL_PP(z_handle)==0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, id, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
 
 	zend_list_delete(Z_LVAL_PP(z_handle));
 	RETURN_TRUE;

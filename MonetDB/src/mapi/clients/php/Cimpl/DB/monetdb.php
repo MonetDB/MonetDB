@@ -282,23 +282,13 @@ class DB_monetdb extends DB_common
     function freeResult($result)
     {
         if (is_resource($result)) {
-            return monetdb_free_result($result);
+            unset($this->row[(int)$result]);
+            unset($this->num_rows[(int)$result]);
+            $this->affected = 0;
+	    return true;
+            // return @monetdb_free_result($result);
         }
-
-        $result = (int)$result; // $result is a prepared query handle
-        if (!isset($this->prepare_tokens[$result])) {
-            return false;
-        }
-
-        $copy = $this->prepare_types;
-        unset($copy[$result]);
-        $this->prepare_types = $copy;
-
-        $copy = $this->prepare_tokens;
-        unset($copy[$result]);
-        $this->prepare_tokens = $copy;
-
-        return true;
+        return false;
     }
 
     // }}}
@@ -429,7 +419,7 @@ class DB_monetdb extends DB_common
 
     function errorNative()
     {
-        return monetdb_errno($this->connection);
+        return @monetdb_errno($this->connection);
     }
 
     // }}}
@@ -517,26 +507,6 @@ class DB_monetdb extends DB_common
 
     // }}}
 
-    // {{{ quote()
-    /**
-    * Quote the given string so it can be safely used within string delimiters
-    * in a query.
-    * @param $string mixed Data to be quoted
-    * @return mixed "NULL" string, quoted string or original data
-    */
-    function quote($str = null)
-    {
-        switch (strtolower(gettype($str))) {
-            case 'null':
-                return 'NULL';
-            case 'integer':
-                return $str;
-            case 'string':
-            default:
-                return "'".monetdb_escape_string($str)."'";
-        }
-    }
-    // }}}
     // {{{ modifyQuery()
 
     function modifyQuery($query, $subject = null)
@@ -563,7 +533,7 @@ class DB_monetdb extends DB_common
             $errno = $this->errorCode(monetdb_errno($this->connection));
         }
         if (defined("MONETDB_DEBUG") && MONETDB_DEBUG) {
-            echo "<p><strong>MonetDB Error ($errno) raised:</strong> " . monetdb_error($this->connection);
+            echo "<p><strong>MonetDB Error ($errno) raised:</strong> " . @monetdb_error($this->connection);
         }
         return $this->raiseError($errno, null, null, null,
                                  @monetdb_errno($this->connection) . " ** " .
@@ -581,8 +551,8 @@ class DB_monetdb extends DB_common
         $res = array();
         for ($i=0; $i<monetdb_num_fields($result); $i++) {
             $row = array();
-            $row["name"] = monetdb_field_name($i, $result);
-            $row["type"] = monetdb_field_type($i, $result);
+            $row["name"] = @monetdb_field_name($i, $result);
+            $row["type"] = @monetdb_field_type($i, $result);
             $res[] = $row;
         }
     } else
@@ -627,7 +597,7 @@ class DB_monetdb extends DB_common
     /**
      * Move the internal monetdb result pointer to the next available result
      *
-     * @param a valid fbsql result resource
+     * @param a valid monetdb result resource
      *
      * @access public
      *
@@ -635,16 +605,88 @@ class DB_monetdb extends DB_common
      */
     function nextResult($result)
     {
-        return false;
+        return @monetdb_next_result($result)==1;
     }
 
     // }}}
 
-    // TODO:
-    // free()
 
-    // quoteIdentifier()
-    // quoteSmart()
+    // {{{ quote()
+
+    /**
+     * @deprecated  Deprecated in release 1.6.0
+     * @internal
+     */
+    function quote($str) {
+        return $this->quoteSmart($str);
+    }
+
+    // }}}
+
+    // {{{ quoteSmart()
+
+    /**
+     * Format input so it can be safely used in a query
+     *
+     * @param mixed $in  data to be quoted
+     *
+     * @return mixed Submitted variable's type = returned value:
+     *               + null = the string <samp>NULL</samp>
+     *               + boolean = string <samp>TRUE</samp> or <samp>FALSE</samp>
+     *               + integer or double = the unquoted number
+     *               + other (including strings and numeric strings) =
+     *                 the data escaped according to MySQL's settings
+     *                 then encapsulated between single quotes
+     *
+     * @internal
+     */
+    function quoteSmart($in)
+    {
+        if (is_int($in) || is_double($in)) {
+            return $in;
+        } elseif (is_bool($in)) {
+            return $in ? 'TRUE' : 'FALSE';
+        } elseif (is_null($in)) {
+            return 'NULL';
+        } else {
+            return "'" . $this->escapeSimple($in) . "'";
+        }
+    }
+    // }}}
+
+    /**
+     * Escape a string according to the current DBMS's standards
+     *
+     * @param string $str  the string to be escaped
+     *
+     * @return string  the escaped string
+     *
+     * @internal
+     */
+    function escapeSimple($str) {
+        return str_replace("'", "''", str_replace('\\', '\\\\', @monetdb_escape_string($str)));
+    }
+
+    // {{{ quoteIdentifier()
+
+    /**
+     * Quote a string so it can be safely used as a table / column name
+     *
+     * Quoting style depends on which database driver is being used.
+     *
+     * @param string $str  identifier name to be quoted
+     *
+     * @return string  quoted identifier string
+     *
+     * @since 1.6.0
+     * @access public
+     */
+    function quoteIdentifier($str)
+    {
+        return '"' . str_replace('"', '\\"', $str) . '"';
+    }
+
+    // }}}
     
     
 }
