@@ -633,7 +633,7 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
  command just detects consecutive chunks where (1) the tail values have the same specified
  radix-bits and (2) the head values are ascending"
 
-.COMMAND radix_count2(bat[oid,oid] b, int shift, int radix) : bat[int,int] = radix_count2;
+.COMMAND radix_count2(bat[any,oid] b, int shift, int radix) : bat[int,int] = radix_count2;
 "generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail 
 the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift"
 
@@ -1759,13 +1759,13 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 	    int *kk = k + h;
 	
 	    if (b->ttype == TYPE_oid) {
-		radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else if (ATOMstorage(b->ttype) == TYPE_int || ATOMstorage(b->ttype) == TYPE_flt) {
-		radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else if (ATOMstorage(b->ttype) == TYPE_dbl || ATOMstorage(b->ttype) == TYPE_lng) {
-		radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else {
-		radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
+		radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits);
 	    }
 	    while(k < kk) *(k++) += j; /* make relative limits absolute ones */
 	}
