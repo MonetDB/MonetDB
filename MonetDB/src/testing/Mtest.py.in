@@ -892,9 +892,13 @@ def RunTest(env, TST, BusyPorts) :
     #       "src/modules/plain/salgebra", "tests/by_Peter/tst_priv", \
     #       "scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2", \
     #       "tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
+    NotOnCYG = [ "tests/BugReports/no.147", "tests/by_Peter/recursion" ]
     ReqMshdn = ["MAPI"]
+
     if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
         SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
+    elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
+        SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
     elif SERVER in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
         SkipTest(env, TST, EXT, "as Mshutdown is not available.")
     elif SERVER == "MAPI" and  not env['MAPI_MIL']:
@@ -1653,11 +1657,11 @@ if os.name == "nt":
     OS    = "WindowsNT"
     OSVER = OS+"5.0"
 else:
-    OS    = os.uname()[0]
+    OS    = string.split(os.uname()[0],"_NT-")[0]
     if OS == "AIX":
         OSVER = OS+os.uname()[3]+"."+os.uname()[2]
     else:
-        OSVER = OS+os.uname()[2]
+        OSVER = OS+string.split(os.uname()[2],"(")[0]
 os.environ['OS'] = OS
 os.environ['OSVER'] = OSVER
 

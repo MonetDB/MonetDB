@@ -105,7 +105,7 @@ modpath=""
 mtest_modpath=""
 conf_opts=""
 
-os="`uname`"
+os="`uname | sed 's|_NT-.*$||'`"
 
 # check for not or incorrectly set variables (${what}_BUILD, ${what}_PREFIX, COMP, BITS, LINK)
 
@@ -244,6 +244,14 @@ if [ "${os}" = "IRIX64" ] ; then
 	fi
 fi
 
+if [ "${os}" = "CYGWIN" ] ; then
+	# automake 1.6.2 & autconf 2.53a don't seem to work in our case,
+	# hence let's fallback to automake 1.4-p5 & autoconf 2.13;
+	# (actually the wrapper should do this automatically depending on the
+	# contents of configure.in/.ac ...)
+	binpath="/usr/autotool/stable/bin:${binpath}"
+fi
+
 ## gathered from old scripts, but not used anymore/yet
 #if [ "${os}" = "AIX" ] ; then
 #	# rs6000.ddi.nl
@@ -266,8 +274,8 @@ fi
 #	conf_opts="${conf_opts} --with-pthread=/tmp"
 #fi
 
-if [ "${os}" != "Linux" ] ; then
-	# on Linux, /soft/local is identical with /usr/local
+if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN" ] ; then
+	# on Linux & CYGWIN, /soft/local is identical with /usr/local
 	# prepend ${softpath} to ${binpath} & ${libpath}
 	binpath="${softpath}/bin:${binpath}"
 	libpath="${softpath}/lib:${libpath}"
