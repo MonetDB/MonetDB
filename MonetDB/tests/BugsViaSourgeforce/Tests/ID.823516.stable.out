@@ -19,95 +19,7 @@ b.access(BAT_READ);
 # Create a view bat
 var c := b.select(int(nil), int(nil)).rename("c");
 
-print(b.info(),c.info());
-#-----------------------------------------------------------------#
-# BAT:				  tmp_30	| tmp_31	  #
-# (str)				  (str)		| (str)		  #
-#-----------------------------------------------------------------#
-[ "version",			  "980714",	  "980714"	  ]
-[ "batId",			  "b",		  "c"		  ]
-[ "batCacheid",			  "29",		  "28"		  ]
-[ "batParentid",		  "0",		  "29"		  ]
-[ "batSharecnt",		  "1",		  "1"		  ]
-[ "head",			  "oid",	  "oid"		  ]
-[ "tail",			  "int",	  "int"		  ]
-[ "batPersistence",		  "transient",	  "transient"	  ]
-[ "batRestricted",		  "read-only",	  "read-only"	  ]
-[ "batRefcnt",			  "2",		  "1"		  ]
-[ "batLRefcnt",			  "1",		  "1"		  ]
-[ "batDirty",			  "dirty",	  "dirty"	  ]
-[ "batSet",			  "0",		  "0"		  ]
-[ "void_tid",			  "0",		  "0"		  ]
-[ "void_cnt",			  "0",		  "0"		  ]
-[ "hsorted",			  "65",		  "65"		  ]
-[ "hident",			  "h",		  "h"		  ]
-[ "hdense",			  "1",		  "1"		  ]
-[ "hseqbase",			  "1@0",	  "1@0"		  ]
-[ "hkey",			  "1",		  "1"		  ]
-[ "hloc",			  "0",		  "0"		  ]
-[ "hvarsized",			  "0",		  "0"		  ]
-[ "halign",			  "1002771",	  "1002771"	  ]
-[ "halignflushed",		  "1002764",	  "1002764"	  ]
-[ "tident",			  "t",		  "t"		  ]
-[ "tdense",			  "0",		  "0"		  ]
-[ "tseqbase",			  "0@0",	  "0@0"		  ]
-[ "tsorted",			  "65",		  "65"		  ]
-[ "tkey",			  "1",		  "1"		  ]
-[ "tloc",			  "4",		  "4"		  ]
-[ "tvarsized",			  "0",		  "0"		  ]
-[ "talign",			  "1002770",	  "1002770"	  ]
-[ "talignflushed",		  "1002765",	  "1002765"	  ]
-[ "batInserted",		  "1",		  "1"		  ]
-[ "batDeleted",			  "0",		  "0"		  ]
-[ "batHole",			  "0",		  "0"		  ]
-[ "top",			  "4",		  "4"		  ]
-[ "batStamp",			  "-168",	  "-169"	  ]
-[ "lastUsed",			  "3116",	  "3163"	  ]
-[ "keepAround",			  "0",		  "0"		  ]
-[ "curStamp",			  "170",	  "173"		  ]
-[ "batCopiedtodisk",		  "0",		  "0"		  ]
-[ "batDirtydesc",		  "dirty",	  "dirty"	  ]
-[ "batDirtybuns",		  "clean",	  "clean"	  ]
-[ "batBuns.free",		  "32",		  "32"		  ]
-[ "batBuns.size",		  "424",	  "32"		  ]
-[ "batBuns.maxsize",		  "424",	  "32"		  ]
-[ "batBuns.storage",		  "malloced",	  "malloced"	  ]
-[ "batBuns.filename",		  "29.buns",	  "29.buns"	  ]
-[ "batBuns.offset",		  "0",		  "0"		  ]
-[ "hheapdirty",			  "clean",	  "clean"	  ]
-[ "hheap.free",			  "0",		  "0"		  ]
-[ "hheap.size",			  "0",		  "0"		  ]
-[ "hheap.maxsize",		  "0",		  "0"		  ]
-[ "hheap.storage",		  "absent",	  "absent"	  ]
-[ "hheap.filename",		  "29.hheap",	  "29.hheap"	  ]
-[ "hheap.offset",		  "0",		  "0"		  ]
-[ "theapdirty",			  "clean",	  "clean"	  ]
-[ "theap.free",			  "0",		  "0"		  ]
-[ "theap.size",			  "0",		  "0"		  ]
-[ "theap.maxsize",		  "0",		  "0"		  ]
-[ "theap.storage",		  "absent",	  "absent"	  ]
-[ "theap.filename",		  "29.theap",	  "29.theap"	  ]
-[ "theap.offset",		  "0",		  "0"		  ]
-[ "hacctype",			  "null",	  "null"	  ]
-[ "haccdirty",			  "clean",	  "clean"	  ]
-[ "haccCopiedtodisk",		  "0",		  "0"		  ]
-[ "haccelerator.free",		  "0",		  "0"		  ]
-[ "haccelerator.size",		  "0",		  "0"		  ]
-[ "haccelerator.maxsize",	  "0",		  "0"		  ]
-[ "haccelerator.storage",	  "absent",	  "absent"	  ]
-[ "haccelerator.filename",	  "no file",	  "no file"	  ]
-[ "haccelerator.offset",	  "0",		  "0"		  ]
-[ "tacctype",			  "null",	  "null"	  ]
-[ "taccdirty",			  "clean",	  "clean"	  ]
-[ "taccCopiedtodisk",		  "0",		  "0"		  ]
-[ "taccelerator.free",		  "0",		  "0"		  ]
-[ "taccelerator.size",		  "0",		  "0"		  ]
-[ "taccelerator.maxsize",	  "0",		  "0"		  ]
-[ "taccelerator.storage",	  "absent",	  "absent"	  ]
-[ "taccelerator.filename",	  "no file",	  "no file"	  ]
-[ "taccelerator.offset",	  "0",		  "0"		  ]
-[ "head_index",			  "absent",	  "absent"	  ]
-[ "tail_index",			  "absent",	  "absent"	  ]
+# print(b.info(),c.info());
 
 # save the list of BATs
 var pre  := view_bbp_name().copy().rename("pre");
@@ -140,23 +52,23 @@ var post := view_bbp_name().copy().rename("post");
 
 # both the original BAT and the view BAT
 # are gone. correct.
-kdiff(pre,post).print();
+kdiff(pre,post).reverse().mark(nil).reverse().print();
 #-----------------#
 # h	tmp_29	  # name
 # int	str	  # type
 #-----------------#
-[ 28,	  "c"	  ]
-[ 29,	  "b"	  ]
+[ nil,	  "b"	  ]
+[ nil,	  "c"	  ]
 
 # the post BAT is new. correct.
 # the histogram-accellerator BAT of the view 
 # didn't get removed and is still there. Wrong!
-kdiff(post,pre).print();
+kdiff(post,pre).reverse().mark(nil).reverse().print();
 #-----------------#
 # h	tmp_29	  # name
 # int	str	  # type
 #-----------------#
-[ 30,	  "pre"	  ]
+[ nil,	  "pre"	  ]
 quit();
 
 # 17:26:11 >  

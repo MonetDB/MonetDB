@@ -9,7 +9,7 @@ b.access(BAT_READ);
 # Create a view bat
 var c := b.select(int(nil), int(nil)).rename("c");
 
-print(b.info(),c.info());
+# print(b.info(),c.info());
 
 # save the list of BATs
 var pre  := view_bbp_name().copy().rename("pre");
@@ -23,14 +23,14 @@ c.histogram().print();
 c := 0;
 b := 0;
 
-# check, which BATs still exist
+# check which BATs still exist
 var post := view_bbp_name().copy().rename("post");
 
 # both the original BAT and the view BAT
 # are gone. correct.
-kdiff(pre,post).print();
+kdiff(pre,post).reverse().mark(nil).reverse().print();
 
 # the post BAT is new. correct.
 # the histogram-accellerator BAT of the view 
 # didn't get removed and is still there. Wrong!
-kdiff(post,pre).print();
+kdiff(post,pre).reverse().mark(nil).reverse().print();
