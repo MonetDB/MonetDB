@@ -44,6 +44,9 @@ extern int mvc_export_result( mvc *c, stream *s, int res_id );
 extern int mvc_export_table( mvc *c, stream *s, int res_id, int offset, int nr);
 extern BAT *mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rsep, int nr);
 
+extern void monet4_freestack( backend_stack stk );
+extern void monet4_freecode( backend_code code );
+
 #endif /*_SQL_SESSION_H_*/
 @c
 #include "sql_session.h"
@@ -132,7 +135,7 @@ Cntxt backend_newstack( Cntxt stk )
 	return procstk;
 }
 
-void backend_freestack( backend_stack stk )
+void monet4_freestack( backend_stack stk )
 {
 	Cntxt procstk = (Cntxt)(ptrdiff_t)stk;
 
@@ -140,7 +143,7 @@ void backend_freestack( backend_stack stk )
 	CNTXTfree1(procstk);
 }
 
-void backend_freecode( backend_code code )
+void monet4_freecode( backend_code code )
 {
 	YYSTREE procnode = (YYSTREE)code;
 	if (code){

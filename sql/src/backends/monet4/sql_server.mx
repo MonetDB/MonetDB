@@ -244,6 +244,7 @@ kernel libraries, e.g. bat.mx
 #include <algebra.h>
 
 int mvc_init_wrap( int* debug ){
+	backend_init( &monet4_freestack, &monet4_freecode );
 	mvc_init(*debug );
 	return GDK_SUCCEED;
 }
