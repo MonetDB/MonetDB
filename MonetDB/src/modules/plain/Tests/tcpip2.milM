@@ -1,9 +1,0 @@
-var test1 := bat(oid, oid);
-test1.import(TSTTRGDIR + "/tcpip2.init.bat");
-test1.kunique.count.print;
-c.export(test1, "test1");
-
-var test2 := import("test1", true);
-test2.kunique.count.print;
-
-quit;
