@@ -1,1 +1,1 @@
-configure --disable-shared
+../configure --prefix=`pwd`
