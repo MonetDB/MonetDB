@@ -85,9 +85,9 @@ MALfcn getLocalObjectFile(str fcnname){
     char nme[MAXPATHLEN];
 
     snprintf(nme,MAXPATHLEN,"./%s.so",fcnname);
-    printf("attempt to load function %s\n",nme);
+    /* printf("attempt to load function %s\n",nme);*/
     handle = dlopen(nme, mode);
-    printf("loaded ? %s\n",(handle!=0?"yes":"no"));
+    /* printf("loaded ? %s\n",(handle!=0?"yes":"no"));*/
     if( handle)
         return (MALfcn) dlsym(handle,fcnname);
     return 0;

@@ -478,7 +478,6 @@ elements in the value stack.
     case COMMANDsymbol:
     case FUNCTIONsymbol:
     case FACTORYsymbol:
-        GDKerror("unexpected symbol in interpreter\n");
         break;
     case ENDDEFsymbol: 
         if( getInstrPtr(mb,0)->token == FACTORYsymbol)

@@ -1148,8 +1148,6 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
         }
         nme = idCopy(cntxt,i);
         curInstr->fcn = getAddress(nme);
-printf("parse the address %s %d\n", nme, curInstr->fcn);
-printInstruction(GDKout,curBlk,curInstr,LIST_MAL_ALL);
         skipSpace(cntxt);
     }
     /* block is terminated at the END statement */
