@@ -1434,7 +1434,6 @@ gdk_export BAT*		BATclear  (BAT *b);
 gdk_export BAT*		BATcopy   (BAT *b); 
 gdk_export BAT*		BATrcopy  (BAT *b); 
 gdk_export BAT*		BATmark   (BAT *b, oid base); 
-gdk_export BAT*		BATmark_grp   (BAT *b, BAT *g); 
 gdk_export BAT*		BATnumber (BAT *b); 
 gdk_export BAT*		BATgroup (BAT *b, int start, int incr, int grpsize); 
 @-
