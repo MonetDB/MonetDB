@@ -82,7 +82,7 @@ extern int  keyword_exists(char *text);
 #include <ctype.h>
 #include <stdlib.h>
 
-#define HASH_SIZE 128
+#define HASH_SIZE 512
 #define HASH_MASK (HASH_SIZE-1)
 
 typedef struct keyword {
@@ -165,6 +165,10 @@ init_keywords()
 	keywords_insert("DELIMITERS", DELIMITERS );
 	keywords_insert("STDIN", STDIN );
 
+	keywords_insert("TINYINT", TINYINT);
+	keywords_insert("SMALLINT", SMALLINT);
+	keywords_insert("MEDIUMINT", MEDIUMINT);
+	keywords_insert("BIGINT", BIGINT);
 	keywords_insert("DEC", sqlDECIMAL);
 	keywords_insert("DECIMAL", sqlDECIMAL);
 	keywords_insert("DECLARE", DECLARE);
@@ -956,7 +960,10 @@ sqllex(YYSTYPE * yylval, void *parm)
 			lc->yynext = next;
 	}
 
-	lc->key ^= token;
+	/* Don't include literals in the calculation of the key */
+	if (token != STRING && token != sqlINT &&
+	    token != INTNUM && token != APPROXNUM && token != NULLX)
+		lc->key ^= token;
 
 	return token;
 }

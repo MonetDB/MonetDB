@@ -62,6 +62,7 @@ typedef enum tokens {
 	SQL_USER,
 	SQL_PATH,
 	SQL_CHARSET,
+	SQL_SCHEMA,
 	SQL_TABLE,
 	SQL_CASE,
 	SQL_CAST,
@@ -426,6 +427,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
 	CHARACTER VARYING sqlDECIMAL sqlFLOAT 
+	TINYINT SMALLINT MEDIUMINT BIGINT
 	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
@@ -541,25 +543,25 @@ set:
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET sqlSESSION AUTHORIZATION ident	
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("VARCHAR", strlen($4), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($4), 0 ); 
 			dlist_append_string(l, _strdup("current_user") );
 			dlist_append_symbol(l, _newAtomNode( atom_string(t,$4)) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET SCHEMA ident	
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("VARCHAR", strlen($3), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($3), 0 ); 
 			dlist_append_string(l, _strdup("current_schema") );
 			dlist_append_symbol(l, _newAtomNode( atom_string(t,$3)) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET user '=' ident	
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("VARCHAR", strlen($4), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($4), 0 ); 
 			dlist_append_string(l, _strdup("current_user") );
 			dlist_append_symbol(l, _newAtomNode( atom_string(t,$4)) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET ROLE ident	
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("VARCHAR", strlen($3), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($3), 0 ); 
 			dlist_append_string(l, _strdup("current_role") );
 			dlist_append_symbol(l, _newAtomNode( atom_string(t,$3)) );
 			$$ = _symbol_create_list( SQL_SET, l); }
@@ -1390,7 +1392,21 @@ atom_commalist:
 
 insert_atom:
     scalar_exp	
- |  NULLX		{ $$ = _symbol_create(SQL_NULL, NULL ); }
+ |  NULLX		
+	{ /* replace by argument */
+	  mvc *m = (mvc*)parm;
+	  int len = (m->args)?list_length(m->args):0;
+	  if (len < MAXPARAMS-2 && m->cache){
+		atom *a = atom_general( sql_dup_subtype(
+				sql_bind_localtype("str")), NULL);
+
+	  	sql_add_arg( m, a);
+ 	  	$$ = _symbol_create_list( SQL_COLUMN, 
+			dlist_append_int(dlist_create(), len)); 
+	   } else {
+ 		$$ = _symbol_create(SQL_NULL, NULL ); 
+	   } 
+	}
  ;
 
 opt_distinct:
@@ -2097,21 +2113,17 @@ atom:
     literal	
 	{ /* replace by argument */
 	  mvc *m = (mvc*)parm;
-	  int len = (m->params)?list_length(m->params):0;
+	  int len = (m->args)?list_length(m->args):0;
 	  if (len < MAXPARAMS-2 && m->cache){
-	  	char name[BUFSIZ]; 
 	  	AtomNode *an = (AtomNode*)$1;
-	  	sql_subtype *t = sql_dup_subtype(atom_type(an->a));
 
-	  	snprintf(name, BUFSIZ, "A%d", len);
-	  	sql_add_param( m, _strdup(name), stmt_var(_strdup(name), t) );
-	  	sql_add_arg( m, atom_dup(an->a));
-	  	/* we miss use SQL_COLUMN also for param's, maybe 
-	     	change SQL_COLUMN to SQL_IDENT */
- 	  	$$ = _symbol_create_list( SQL_COLUMN, dlist_append_string(dlist_create(), _strdup(name))); 
-		m->scanner.key ^= t->type->localtype;
-
+	  	sql_add_arg( m, an->a);
+		an->a = NULL;
 		symbol_destroy($1);
+	  	/* we miss use SQL_COLUMN also for param's, maybe 
+	     		change SQL_COLUMN to SQL_IDENT */
+ 	  	$$ = _symbol_create_list( SQL_COLUMN, 
+			dlist_append_int(dlist_create(), len)); 
 	   } else {
 		$$ = $1;
 	   }
@@ -2250,21 +2262,35 @@ user:
 literal:
     string
 		{  char *s = sql2str($1);
-		   sql_subtype *t = sql_bind_subtype("VARCHAR", strlen(s), 0 ); 
+		   int len = strlen(s);
+		   sql_subtype *t = sql_bind_subtype("CHAR", len, 0 ); 
 		   $$ = _newAtomNode( atom_string(t, s)); }
-
  |  user 
 		{  mvc *m = (mvc*)parm;
-		   sql_subtype *t = sql_bind_subtype("VARCHAR", strlen(m->user),0);
+		   sql_subtype *t = sql_bind_subtype("CHAR", strlen(m->user),0);
 		   $$ = _newAtomNode( atom_string(t, _strdup(m->user))); }
 
- |  sqlINT   	{ int digits = strlen($1);
-		  int len = sizeof(lng);
+ |  sqlINT   	{ int digits = strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value; 
-		  sql_subtype *t = sql_bind_subtype("DECIMAL", digits, 0 );
+		  sql_subtype *t;
 
-		  lngFromStr($1, &len, &p);
-		  $$ = _newAtomNode( atom_int(t, value)); }
+		  if (digits <= 19)
+		  	t = sql_bind_subtype("INT", digits, 0 );
+		  else 
+			err = 1;
+
+		  if (err) {
+			char buf[BUFSIZ]; 
+
+			snprintf(buf, BUFSIZ, "incorrect integer value (%s)", $1);
+			yyerror(buf);
+			$$ = NULL;
+			YYABORT;
+		  } else {
+		  	lngFromStr($1, &len, &p);
+		  	$$ = _newAtomNode( atom_int(t, value)); 
+		  }
+		}
  |  INTNUM   
 		{ char *s = strip_extra_zeros($1);
 		  char *dot = strchr(s, '.');
@@ -2524,17 +2550,17 @@ nonzero:
 	;
 
 data_type:
-    CHARACTER opt_var	{ if ($2 == 0)
-				$$ = sql_bind_subtype("CHARACTER", 0, 0); 
-			  else
-				$$ = sql_bind_subtype("VARCHAR", 0, 0); 
-			}
+    CHARACTER opt_var	{ $$ = sql_bind_subtype("VARCHAR", 0, 0); }
  |  CHARACTER opt_var '(' nonzero ')'	
-			{ if ($2 == 0)
-				$$ = sql_bind_subtype("CHARACTER", $4, 0); 
-			  else
+			{ if ($2)
 				$$ = sql_bind_subtype("VARCHAR", $4, 0); 
+			  else
+				$$ = sql_bind_subtype("CHAR", $4, 0); 
 			}
+ |  TINYINT		{ $$ = sql_bind_subtype("INT", 2, 0); }
+ |  SMALLINT		{ $$ = sql_bind_subtype("INT", 4, 0); }
+ |  MEDIUMINT		{ $$ = sql_bind_subtype("INT", 9, 0); }
+ |  BIGINT		{ $$ = sql_bind_subtype("INT", 19, 0); }
  |  sqlDECIMAL		{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
  |  sqlDECIMAL '(' nonzero ')'	
 			{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
@@ -2578,7 +2604,7 @@ data_type:
 				$$ = sql_bind_subtype("DOUBLE", $3, $5); 
 			  }
 			}
- |  sqlDOUBLE PRECISION	{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
+ | sqlDOUBLE PRECISION	{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  | datetime_type
  | interval_type		
  | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
@@ -2700,39 +2726,38 @@ name_commalist:
  ;
 
 intval:
-	sqlINT		{ $$ = strtol($1,&$1,10); }
- |	IDENT		{ 
-	  			mvc *m = (mvc*)parm;
-				char *name = $1; 
-				char *v, *t; 
-				sql_subtype *tpe;
+	sqlINT	{ $$ = strtol($1,&$1,10); }
+ |	IDENT	{ mvc *m = (mvc*)parm;
+		  char *name = $1; 
+		  char *v, *t; 
+		  sql_subtype *tpe;
 
-				if (!(v = sql_get_var(m, name))) {
-					char buf[BUFSIZ]; 
+		  if (!(v = sql_get_var(m, name))) {
+			char buf[BUFSIZ]; 
 
-					snprintf(buf, BUFSIZ, "Constant (%s) unknown", $1);
-					yyerror(buf);
-					_DELETE($1); 
-					$$ = 0;
-					YYABORT;
-				}
-				t = sql_get_type(m, name);
-				tpe = sql_bind_subtype(t, 0, 0);
-				_DELETE($1); 
-				if (tpe->type->localtype == TYPE_lng ||
-				    tpe->type->localtype == TYPE_int ||
-				    tpe->type->localtype == TYPE_sht ) {
-					$$ = strtol(v,&v,10); 
-				} else {
-					char buf[BUFSIZ]; 
+			snprintf(buf, BUFSIZ, "Constant (%s) unknown", $1);
+			yyerror(buf);
+			_DELETE($1); 
+			$$ = 0;
+			YYABORT;
+		  }
+		  t = sql_get_type(m, name);
+		  tpe = sql_bind_subtype(t, 0, 0);
+		  _DELETE($1); 
+		  if (tpe->type->localtype == TYPE_lng ||
+		      tpe->type->localtype == TYPE_int ||
+		      tpe->type->localtype == TYPE_sht ) {
+			$$ = strtol(v,&v,10); 
+		  } else {
+			char buf[BUFSIZ]; 
 
-					snprintf(buf, BUFSIZ, "Constant (%s) has wrong type (number expected)", $1);
-					yyerror(buf);
-					$$ = 0;
-					YYABORT;
-				}
-				sql_subtype_destroy(tpe);
-			}
+			snprintf(buf, BUFSIZ, "Constant (%s) has wrong type (number expected)", $1);
+			yyerror(buf);
+			$$ = 0;
+			YYABORT;
+		  }
+		  sql_subtype_destroy(tpe);
+		}
  ;
 
 string:
@@ -2829,6 +2854,8 @@ char *token2string(int token)
 		return "Path";
 	case SQL_CHARSET:
 		return "Char Set";
+	case SQL_SCHEMA:
+		return "Schema";
 	case SQL_TABLE:
 		return "Table";
 	case SQL_COLUMN:

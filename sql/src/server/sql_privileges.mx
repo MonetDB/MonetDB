@@ -45,6 +45,7 @@ table or column level) overwrite privileges on higher levels.
 #define PRIV_EXECUTE 16
 #define PRIV_GRANT 32
 
+extern int schema_privs( mvc *m, sql_schema *t, int privs );
 extern int table_privs( mvc *m, sql_table *t, int privs );
 
 extern int sql_privilege( mvc *m, int auth_id, int obj_id, int privs, int sub );
@@ -293,11 +294,11 @@ int sql_privilege_( mvc *m, int auth_id, int obj_id, int priv, int sub )
  	BAT *priv_obj = mvc_bind( m, "sys", "privileges", "obj_id", RDONLY);
  	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", RDONLY);
  	BAT *priv_priv = mvc_bind( m, "sys", "privileges", "privileges", RDONLY);
- 	BAT *priv_hier = mvc_bind( m, "sys", "privileges", "hierarchy", RDONLY);
 	int res = 0;
 	
 	BAT *b1,*b2 = BATselect(priv_obj, &obj_id, &obj_id );
 
+	(void)sub;
 	b1 = BATsemijoin(priv_auth, b2);
 	bat_destroy(b2);
 	b2 = BATselect( b1, &auth_id, &auth_id );
@@ -308,22 +309,13 @@ int sql_privilege_( mvc *m, int auth_id, int obj_id, int priv, int sub )
 	bat_destroy(b1);
 
 	if (BATcount(b2) == 1){
-		if (sub){
-			oid id = *(oid*)BUNhead(b2,BUNfirst(b2));
-			int hier = *(int*)BUNtail(priv_hier, 
-						BUNfnd(priv_hier, &id));
-			if (hier)
-				res = priv;
-		} else {
-			res = priv;
-		}
+		res = priv;
 	}
 	bat_destroy(b2);
 
 	bat_destroy(priv_obj);
 	bat_destroy(priv_auth);
 	bat_destroy(priv_priv);
-	bat_destroy(priv_hier);
 	return res;
 }
 
@@ -333,6 +325,16 @@ int sql_privilege( mvc *m, int auth_id, int obj_id, int priv, int sub )
 		return 1;
 	return sql_privilege_(m, auth_id, obj_id, priv, sub);
 	
+}
+
+int schema_privs( mvc *m, sql_schema *s, int priv )
+{
+	if (sql_privilege( m, m->user_id, s->base.id, priv, 0 ) == 0 ||
+	    sql_privilege( m, m->role_id, s->base.id, priv, 0 ) == 0 ||
+	    sql_privilege( m, 1, s->base.id, priv, 0 ) == 0) {
+		return 0;
+	}
+	return 1;
 }
 
 int table_privs( mvc *m, sql_table *t, int priv )
@@ -352,9 +354,8 @@ int sql_grantable_( mvc *m, int grantorid, int obj_id, int privs, int sub )
  	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", RDONLY);
  	BAT *priv_priv = mvc_bind( m, "sys", "privileges", "privileges", RDONLY);
  	BAT *priv_allowed = mvc_bind( m, "sys", "privileges", "grantable", RDONLY);
- 	BAT *priv_hier = mvc_bind( m, "sys", "privileges", "hierarchy", RDONLY);
-	
 	BAT *b1,*b2 = BATselect(priv_obj, &obj_id, &obj_id );
+	(void)sub;
 
 	b1 = BATsemijoin(priv_auth, b2);
 	bat_destroy(b2);
@@ -369,14 +370,8 @@ int sql_grantable_( mvc *m, int grantorid, int obj_id, int privs, int sub )
 		int allowed = *(int*)BUNtail(priv_allowed, 
 						BUNfnd(priv_allowed, &id));
 		/* switch of priv bit */
-		if (allowed && !sub)
+		if (allowed)
 			privs = (privs & ~priv); 
-		if (sub && allowed){
-			int hier = *(int*)BUNtail(priv_hier, 
-						BUNfnd(priv_hier, &id));
-			if (hier)
-				privs = (privs & ~priv); 
-		}
 	}
 	bat_destroy(b1);
 
@@ -384,7 +379,6 @@ int sql_grantable_( mvc *m, int grantorid, int obj_id, int privs, int sub )
 	bat_destroy(priv_auth);
 	bat_destroy(priv_priv);
 	bat_destroy(priv_allowed);
-	bat_destroy(priv_hier);
 	if (privs != 0)
 		return 0;
 	return 1;

@@ -216,9 +216,9 @@ set_var( mvc *sql, char *name, symbol *val, char *typename )
 
 	/* find variable */
  	ctype = sql_bind_subtype(typename, 0, 0);
-	v = check_types(sql, ctype, v);
+	v = check_types(sql, ctype, v, type_equal);
 	sql_subtype_destroy(ctype);
-	if (!v || (v = check_types(sql, c->type, v)) == NULL) {
+	if (!v || (v = check_types(sql, c->type, v, type_equal)) == NULL) {
 		return NULL;
 	}
 	st = sql_compare(sql, scope_bind(scp, NULL, "name"), 
@@ -377,14 +377,14 @@ sql_session( mvc *m )
 	BUNins(n, (ptr) &h, "debug" );
 	snprintf(buf, BUFSIZ, "%d", m->debug );
 	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "mediumint");
+	BUNins(T, (ptr) &h, "int");
 	BUNins(a, (ptr) &h, &rw);
 	h++;
 
 	BUNins(n, (ptr) &h, "reply_size" );
 	snprintf(buf, BUFSIZ, "%d", m->reply_size );
 	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "mediumint");
+	BUNins(T, (ptr) &h, "int");
 	BUNins(a, (ptr) &h, &rw);
 	h++;
 
@@ -450,10 +450,10 @@ sql_create_env( mvc *m, sql_schema *s )
 	sql_table *t;
 
 	t = mvc_create_table(m, s, "sessions", 1, 1, 1, -1 );
-	mvc_create_column_(m, t, "name", "VARCHAR");
-	mvc_create_column_(m, t, "value", "VARCHAR");
-	mvc_create_column_(m, t, "type", "VARCHAR");
-	mvc_create_column_(m, t, "access", "MEDIUMINT");
+	mvc_create_column_(m, t, "name", "VARCHAR", 0);
+	mvc_create_column_(m, t, "value", "VARCHAR", 0);
+	mvc_create_column_(m, t, "type", "VARCHAR", 0);
+	mvc_create_column_(m, t, "access", "INT", 9);
 	/* access 0 	read/write
 		  1	via sql_privileges (role/user) 	
 				ie set session authorization bla
@@ -462,8 +462,8 @@ sql_create_env( mvc *m, sql_schema *s )
 	 */
 
 	t = mvc_create_table(m, s, "env", 1, 1, 0, -1 );
-	mvc_create_column_(m, t, "name", "VARCHAR");
-	mvc_create_column_(m, t, "value", "VARCHAR");
+	mvc_create_column_(m, t, "name", "VARCHAR", 0);
+	mvc_create_column_(m, t, "value", "VARCHAR", 0);
 
 	n = mvc_bind( m, "sys", "env", "name", 1 );
 	v = mvc_bind( m, "sys", "env", "value", 1 );
@@ -492,13 +492,13 @@ sql_create_history( mvc *m, sql_schema *s )
 {
 	sql_table *t = mvc_create_table(m, s, "history", 1, 1, 0, -1 );
 
-	mvc_create_column_(m, t, "start", "TIMESTAMP");
-	mvc_create_column_(m, t, "query", "VARCHAR");
-	mvc_create_column_(m, t, "parse", "MEDIUMINT");
-	mvc_create_column_(m, t, "optimize", "MEDIUMINT");
-	mvc_create_column_(m, t, "exec", "MEDIUMINT");
-	mvc_create_column_(m, t, "total", "MEDIUMINT");
-	mvc_create_column_(m, t, "user", "VARCHAR");
+	mvc_create_column_(m, t, "start", "TIMESTAMP", 0);
+	mvc_create_column_(m, t, "query", "VARCHAR", 0);
+	mvc_create_column_(m, t, "parse", "INT", 9);
+	mvc_create_column_(m, t, "optimize", "INT", 9);
+	mvc_create_column_(m, t, "exec", "INT", 9);
+	mvc_create_column_(m, t, "total", "INT", 9);
+	mvc_create_column_(m, t, "user", "VARCHAR", 0);
 
 	return 0;
 }

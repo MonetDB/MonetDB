@@ -38,6 +38,8 @@ typedef struct atom {
 	ValRecord data;
 } atom;
 
+#define atom_null(a) a->isnull
+
 extern atom *atom_int(sql_subtype * tpe, lng val);
 extern atom *atom_string(sql_subtype * tpe, char *val);
 extern atom *atom_float(sql_subtype * tpe, double val);

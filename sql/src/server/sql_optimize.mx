@@ -1053,6 +1053,7 @@ stmt *optimize( mvc *c, stmt *s ){
 			/* filter statements */
 			f = filter_pivots(parent->op1.lval, 
 					ptable_statements(s)->op1.lval );
+			stmt_destroy(parent); 
 			np = optimize(c, f);
 			stmt_destroy(f);
 			s->optimized = np->optimized = 1;

@@ -64,11 +64,12 @@ stmt *output_value(stmt *s )
 static stmt *insert_value(mvc * sql, scope * scp, sql_column * c, symbol * s)
 {
 	if (s->token == SQL_NULL) {
-		return stmt_atom(atom_general(sql_dup_subtype(c->type), NULL));
+		atom *a = atom_general(sql_dup_subtype(c->type), NULL);
+		return stmt_atom(a);
 	} else {
 		stmt *n = NULL;
 		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL, sql_sel);
-		if (!a || !(n = check_types(sql, c->type, a))) {
+		if (!a || !(n = check_types(sql, c->type, a, type_dyncheck))) {
 			return NULL;
 		}
 		return n;
@@ -149,8 +150,8 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr("sum", tail_type(ss));
 			count_sum = stmt_binop( 
-				check_types(sql, lt, stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt))),
-				check_types(sql, lt, stmt_aggr(ss, NULL, sum)), 
+				check_types(sql, lt, stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), type_equal),
+				check_types(sql, lt, stmt_aggr(ss, NULL, sum), type_equal), 
 				sql_dup_func(ne));
 
 			/* combine results */
@@ -492,7 +493,7 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 			sum = sql_bind_aggr("sum", tail_type(ss));
 			count_sum = stmt_binop( 
 				stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), 
-				check_types(sql, it, stmt_aggr(ss, NULL, sum)) , 
+				check_types(sql, it, stmt_aggr(ss, NULL, sum), type_equal) , 
 				sql_dup_func(ne));
 
 			/* combine results */
@@ -836,8 +837,7 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 			return NULL;
 		}
 		if (list_length(s->op1.lval) != list_length(collist)) {
-			if (s) 
-				stmt_destroy(s);
+			stmt_destroy(s);
 			scp = scope_close(scp);
 			cleanup_stmts(inserts, len);
 			return sql_error(sql, 02, 
@@ -848,9 +848,9 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 			for (n = s->op1.lval->h, m = collist->h;
 			     n && m; n = n->next, m = m->next) {
 				sql_column *c = m->data;
-				stmt *ins = check_types(sql, c->type, 	
-					stmt_dup(n->data));
+				stmt *ins = check_types(sql, c->type, 	stmt_dup(n->data), type_dyncheck);
 				if (!ins){
+					stmt_destroy(s);
 					scp = scope_close(scp);
 					cleanup_stmts(inserts, len);
 					return NULL;
@@ -1069,7 +1069,7 @@ static stmt *sql_update_table(mvc * sql, sql_schema *schema, char *tname,
 					sql_dup_subtype(c->type), NULL));
 
 			if (!v || 
-		           (v = check_types(sql, c->type, v)) == NULL){
+		           (v = check_types(sql, c->type, v, type_dyncheck)) == NULL){
 				stmt_destroy(s);
 				list_destroy(l);
 				cleanup_stmts(updates, len);

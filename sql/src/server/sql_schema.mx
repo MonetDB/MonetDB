@@ -196,7 +196,7 @@ grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 		int allowed = sql_grantable( sql, grantor, t->s->base.id, all, 1);
 
 		if (!allowed)
-			allowed = sql_grantable( sql, grantor, t->base.id, all,0);
+			allowed = sql_grantable( sql, grantor, t->base.id, all, 0);
 		if (!allowed){
 			list_destroy(l);
 			return sql_error(sql, 02, 
@@ -1142,6 +1142,10 @@ create_table(mvc * sql, sql_schema * ss,
 	if (mvc_bind_table(sql, ss, name)) {
 		return sql_error(sql, 02, 
 			"Create Table name %s already in use", name);
+	} else if (!schema_privs(sql, ss, PRIV_INSERT)){
+		return sql_error(sql, 02, 
+			"User is not allowed to create tables in schema %s", 
+			ss->base.name);
 	} else {
 		char buf[BUFSIZ];
 

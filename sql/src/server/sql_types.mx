@@ -72,8 +72,9 @@ typedef struct sql_type {
 	char *sqlname;
 	unsigned int digits;
 	unsigned int scale; /* indicates how scale is used in functions */
-	unsigned int radix;
 	int localtype; 	/* localtype, need for coersions */
+	unsigned char radix;
+	unsigned char fixed;
 } sql_type;
 
 typedef struct sql_alias {
@@ -87,6 +88,7 @@ typedef struct sql_subtype {
 	sql_type *type;
 	unsigned int digits;
 	unsigned int scale;
+	unsigned char fixed;
 } sql_subtype;
 
 typedef struct sql_aggr {
@@ -159,7 +161,7 @@ sql_export void sql_subtype_destroy( sql_subtype *t );
 sql_export int type_cmp( sql_type *t1, sql_type *t2);
 sql_export int subtype_cmp( sql_subtype *t1, sql_subtype *t2);
 
-sql_export sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned int radix, char *name );
+sql_export sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char fixed, char *name );
 
 sql_export sql_arg *sql_create_arg( char *name, sql_subtype *t );
 sql_export void arg_destroy( sql_arg *a );
@@ -252,7 +254,8 @@ sql_subtype *sql_create_subtype( sql_type *t, unsigned int digits, unsigned int 
 	res->type = t;
 	res->digits = digits?digits:t->digits;
 	res->scale = scale;
-	if (sql_debug){
+	res->fixed = t->fixed;
+	if (sql_debug) {
 		sql_ref_inc( &(res->ref) );
 		list_append( subtypes,  res);
 	}
@@ -719,7 +722,7 @@ char *sql_bind_alias( char *alias )
 }
 
 
-sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned int radix, char *name)
+sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char fixed, char *name)
 {
 	sql_type *t = NEW(sql_type);
 
@@ -727,8 +730,9 @@ sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale
 	t->sqlname = toLower(sqlname);
 	t->digits = digits;
 	t->scale = scale;
-	t->radix = radix;
 	t->localtype = ATOMindex(t->base.name);
+	t->radix = radix;
+	t->fixed = fixed;
 	if (!keyword_exists(t->sqlname))
 		keywords_insert(t->sqlname, aTYPE);
 	list_append(types, t);
@@ -914,49 +918,45 @@ void sqltypeinit()
 	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP; 
 
  	t = ts;
-	*t++ = sql_create_type("TABLE", 0, 0, 0, 	 	"bat");
+	*t++ = sql_create_type("TABLE", 0, 0, 0, 1, 	 	"bat");
 
 	misc = t;
-	BIT = *t++ = sql_create_type("BOOLEAN", 0, 0, 2,	"bit");
+	BIT = *t++ = sql_create_type("BOOLEAN", 0, 0, 2, 1,	"bit");
 	sql_create_alias(BIT->sqlname, "BOOL");
-	*t++ = sql_create_type("UBYTE", 2, 0, 2,		"uchr");
+	/**t++ = sql_create_type("UBYTE", 2, 0, 2, 1,		"uchr");*/
 
 	strings = t;
-	T = *t++ = sql_create_type("CHARACTER", 0, 0, 0, 	"str");
-	sql_create_alias(T->sqlname, "CHAR");
-	T = *t++ = sql_create_type("VARCHAR", 	0, 0, 0, 	"str");
+	T = *t++ = sql_create_type("CHAR", 	0, 0, 0, 1, 	"str");
+	sql_create_alias(T->sqlname, "CHARACTER");
+	T = *t++ = sql_create_type("VARCHAR", 	0, 0, 0, 0, 	"str");
 	sql_create_alias(T->sqlname, "TEXT");
 	sql_create_alias(T->sqlname, "TINYTEXT");
 	sql_create_alias(T->sqlname, "STRING");
 	sql_create_alias(T->sqlname, "CLOB");
 
-	/* INT(n) n <= 2 -> TINYINT
-		  n <= 4 -> SMALLINT
-		  n <= 9 -> MEDIUMINT
-		  n <= 19 -> BIGINT
+	/* Following types are translated by the parser
+	   INT(n) n <= 2 <- TINYINT
+		  n <= 4 <- SMALLINT
+		  n <= 9 <- MEDIUMINT
+		  n <= 19 <- BIGINT
 	*/
 
 	numerical = t;
-	*t++ = sql_create_type("TINYINT", 2, 0, 10, 	"sht"); /* sht as sum(uchr) isn't implemented */
-	*t++ = sql_create_type("SMALLINT", 4, 0, 10,	"sht");
-	INT = *t++ = sql_create_type("MEDIUMINT", 9, 0, 10,	"int");
-	OID = *t++ = sql_create_type("OID", 9, 0, 10, 	  	"oid");
-	sql_create_alias(INT->sqlname, "INTEGER");
-	sql_create_alias(INT->sqlname, "NUMBER");
-	*t++ = sql_create_type("BIGINT", 19, 0, 10,	"lng");
 
-	/*sql_type("INT", 2, 0, 10, 		"uchr"); */
-	*t++ = sql_create_type("INT", 4, 0, 10,		"sht");
-	*t++ = sql_create_type("INT", 9, 0, 10,		"int");
-	LNG = *t++ = sql_create_type("INT", 19, 0, 10,	"lng");
+	OID = *t++ = sql_create_type("OID", 9, 0, 10, 1, 	"oid");
+	/*sql_type("INT", 2, SCALE_FIX, 10, 1, 		"uchr"); */
+	*t++ = sql_create_type("INT", 4, SCALE_FIX, 10, 1,		"sht");
+	INT = *t++ = sql_create_type("INT", 9, SCALE_FIX, 10, 1,	"int");
+	LNG = *t++ = sql_create_type("INT", 19, SCALE_FIX, 10, 1,	"lng");
+	sql_create_alias(INT->sqlname, "INTEGER");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
 			s scale indicates nr of digits after the dot .) */
-	/*#sql_type("DECIMAL", 2, 1, 10, 		"uchr"); */
-	T = *t++ = sql_create_type("DECIMAL", 4, 1, 10,		"sht");
-	*t++ = sql_create_type("DECIMAL", 9, 1, 10,		"int");
-	*t++ = sql_create_type("DECIMAL", 19, 1, 10,		"lng");
+	/*#sql_type("DECIMAL", 2, SCALE_FIX, 10, 		"uchr"); */
+	T = *t++ = sql_create_type("DECIMAL", 4, SCALE_FIX, 10, 1,	"sht");
+	*t++ = sql_create_type("DECIMAL", 9, SCALE_FIX, 10, 1,		"int");
+	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 1,		"lng");
 
 	sql_create_alias(T->sqlname, "NUMERIC");
 
@@ -967,20 +967,20 @@ void sqltypeinit()
 	/* this requires a type definition */
 
 	floats = t;
-	T = *t++ = sql_create_type("FLOAT", 23, 2, 2, 	"flt");
+	T = *t++ = sql_create_type("FLOAT", 23, 2, 2, 1, 	"flt");
 	sql_create_alias(T->sqlname, "REAL");
-	*t++ = sql_create_type("FLOAT", 51, 2, 2, 	"dbl");
-	DBL = *t++ = sql_create_type("DOUBLE", 51, 2, 2, 	"dbl");
+	*t++ = sql_create_type("FLOAT", 51, 2, 2, 1, 	"dbl");
+	DBL = *t++ = sql_create_type("DOUBLE", 51, 2, 2, 1, 	"dbl");
 
 	dates = t;
-	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 0, 0, 10, 	"int");
-	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 	"lng");
-	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, 		"date");
-	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 		"daytime");
-	*t++ = sql_create_type("DATETIME", 0, 0, 0, 		"timestamp");
-	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0,0, 		"timestamp");
+	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 0, 0, 10, 1, 	"int");
+	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 1, 	"lng");
+	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, 1, 	"date");
+	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 1, 	"daytime");
+	*t++ = sql_create_type("DATETIME", 0, 0, 0, 1, 		"timestamp");
+	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0, 0, 1,"timestamp");
 
-	*t++ = sql_create_type("BLOB", 0, 0, 0, "blob");
+	*t++ = sql_create_type("BLOB", 0, 0, 0, 0, "blob");
 	end = t;
 	*t = NULL;
 
@@ -1049,7 +1049,9 @@ void sqltypeinit()
 		/* convert from misc types to strings and numericals and vs */
 	  	for(u=strings; u < dates; u++) {
 	      		sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
+	      		sql_create_func("convert", (*u)->base.name, *t, INT, *u, SCALE_FIX );
 	      		sql_create_func("convert", (*t)->base.name, *u, NULL, *t, SCALE_FIX );
+	      		sql_create_func("convert", (*t)->base.name, *u, INT, *t, SCALE_FIX );
 		}
 	}
 
@@ -1069,13 +1071,15 @@ void sqltypeinit()
 		sql_create_func("abs", "abs", *t, NULL, *t, SCALE_FIX );
 		sql_create_func("sign", "sign", *t, NULL, *t, SCALE_FIX );
 		sql_create_func("power", "pow", *t, INT, *t, SCALE_FIX );
-	  	sql_create_func("truncate", "trunc", *t, INT, *t, SCALE_NONE);
-	  	sql_create_func("round", "round", *t, INT, *t, SCALE_NONE);
 	  	sql_create_func("degrees", "deg", *t, NULL, *t, SCALE_NONE);
 	  	sql_create_func("radians", "rad", *t, NULL, *t, SCALE_NONE);
 		/* scale fixing for all numbers */
 	      	sql_create_func("scale_up", "*", *t, lt->type, *t, SCALE_NONE );
 	      	sql_create_func("scale_down", "round", *t, lt->type, *t, SCALE_NONE );
+	}
+	for(t=decimals; t < dates; t++){
+	  	sql_create_func("truncate", "trunc", *t, INT, *t, SCALE_NONE);
+	  	sql_create_func("round", "round", *t, INT, *t, SCALE_NONE);
 	}
 	sql_create_func("pi", "pi", NULL, NULL, *t, SCALE_NONE);
 
@@ -1083,8 +1087,10 @@ void sqltypeinit()
 	for(t=numerical; t < dates; t++){
 	  sql_type **u;
 	  for(u=numerical; u < dates; u++){
-	    if (*t != *u)
+	    if (*t != *u) {
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
+	      	sql_create_func("convert", (*u)->base.name, *t, INT, *u, SCALE_FIX );
+	    }
 	    sql_create_func("scale_up", "*", *u, *t, *t, SCALE_NONE );
 	  }
 	}
@@ -1093,8 +1099,10 @@ void sqltypeinit()
 	for(t=strings; t < numerical; t++){
 	  sql_type **u;
 	  for(u=strings; u < numerical; u++){
-	    if (*t != *u)
+	    if (*t != *u) {
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
+	    }
+	    sql_create_func("convert", (*u)->base.name, *t, INT, *u, SCALE_FIX );
 	  }
 	}
 
@@ -1106,6 +1114,7 @@ void sqltypeinit()
 
 		snprintf(buf,50,"cast2%s", (*u)->base.name);
 	      	sql_create_func("convert", buf, *t, NULL, *u, SCALE_FIX );
+	      	sql_create_func("convert", buf, *t, INT, *u, SCALE_FIX );
 	  }
 	}
 
@@ -1116,6 +1125,7 @@ void sqltypeinit()
 	  for(u=dates; u < end; u++){
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
 	      	sql_create_func("convert", (*t)->base.name, *u, NULL, *t, SCALE_FIX );
+	      	sql_create_func("convert", (*t)->base.name, *u, INT, *t, SCALE_FIX );
 	  }
 	}
 
@@ -1136,6 +1146,7 @@ void sqltypeinit()
 	  sql_type **u;
 	  for(u=strings; u < numerical; u++){
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX);
+	      	sql_create_func("convert", (*u)->base.name, *t, INT, *u, SCALE_FIX);
 	  }
 	}
 	for(t=floats; t < dates; t++){
@@ -1212,7 +1223,7 @@ void sqltypeinit()
 	  sql_create_func3( "substring", "substring", *t, INT, INT, *t, SCALE_NONE);
 	  sql_create_func( "like", "like", *t, *t, BIT, SCALE_NONE);
 	  sql_create_func( "not_like", "not_like", *t, *t, BIT, SCALE_NONE);
-	  sql_create_func( "trunc", "trunc", *t, INT, *t, SCALE_NONE);
+	  sql_create_func( "truncate", "stringleft", *t, INT, *t, SCALE_NONE);
 	  sql_create_func( "concat", "+", *t, *t, *t, DIGITS_ADD);
 	  sql_create_func( "ascii", "ascii", *t, NULL, INT, SCALE_NONE);
 	  sql_create_func( "code", "unicode", INT, NULL, *t, SCALE_NONE);

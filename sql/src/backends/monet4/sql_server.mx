@@ -145,6 +145,20 @@ stream.
 	.COMMAND cast2dbl( str v, int digits, int scale ) : dbl = trunc2dbl; 
 		"cast to dbl"
 
+	.COMMAND "str"( any v, int digits ) : str = str_cast;
+		"cast to string and check for overflow"
+	.COMMAND "sht"( str v, int digits ) : sht = str2sht;
+		"cast to short and check for overflow"
+	.COMMAND "int"( str v, int digits ) : int = str2int;
+		"cast to short and check for overflow"
+	.COMMAND "lng"( str v, int digits ) : lng = str2lng;
+		"cast to short and check for overflow"
+	.COMMAND "sht"( int v, int digits ) : sht = int_2_sht;
+		"cast to short and check for overflow"
+	.COMMAND "sht"( lng v, int digits ) : sht = lng_2_sht;
+		"cast to short and check for overflow"
+	.COMMAND "int"( lng v, int digits ) : int = lng_2_int;
+		"cast to int and check for overflow"
 .END sql_server;
 
 @-
@@ -497,6 +511,105 @@ int cast2@1( @1 *res, str val )
 @:cast(lng)@
 @:cast(flt)@
 @:cast(dbl)@
+
+int str_cast( str *res, ptr v, int tpe, int *len ){
+	int sz = *len + 1;
+	char *r = GDKmalloc(sz);
+
+	if (tpe != TYPE_str) {
+		sz = BATatoms[tpe].atomToStr(&r, &sz, v); 
+	} else {
+		sz = strlen(v);
+		if (sz <= *len) {
+			strncpy(r, v, sz);
+			r[sz] = 0;
+		}
+	}
+	if (sz > *len){
+		GDKfree(r);
+		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
+			GDKerror("str_cast: value to long for type (var)char(%d)\n",*len);
+			return GDK_FAIL;
+		} else {
+			*res = GDKstrdup(str_nil);
+			return GDK_SUCCEED;
+		}
+	}
+	*res = r;
+	return GDK_SUCCEED;
+}
+
+@= str_cast
+int str2@1( @1 *res, str v, int *len ){
+	int slen = strlen(v); 
+
+	if (slen > *len || slen > 5) {
+		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
+			GDKerror("str2@1: value to long for type int(%d)\n",*len);
+			return GDK_FAIL;
+		} else {
+			*res = @1_nil;
+			return GDK_SUCCEED;
+		}
+	}
+	if (ATOMfromstr(TYPE_@1, (ptr)res, &slen, v) <=0 || *res == @1_nil) {
+		GDKerror("str2@1: incorrect int(%d) value\n", *len);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+@c
+@:str_cast(sht)@
+@:str_cast(int)@
+@:str_cast(lng)@
+
+static lng max_values[20] =
+{
+	0,
+	1,
+	10,
+	100,
+	1000,
+	10000,
+	100000,
+	1000000,
+	10000000,
+	100000000,
+	1000000000,
+	10000000000,
+	100000000000,
+	1000000000000,
+	10000000000000,
+	100000000000000,
+	1000000000000000,
+	10000000000000000,
+	100000000000000000
+};
+
+@= numcast
+int @2_2_@1( @1 *res, @2 *v, int *len ){
+	int p = *len;
+
+	if (p > 19)
+		p = 19;
+	if (*v > max_values[p]){
+		if (*v != @2_nil) {
+			GDKerror("@2_2_@1: value to long for type int(%d)\n",p);
+			return GDK_FAIL;
+		} else {
+			*res = @1_nil;
+			return GDK_SUCCEED;
+		}
+	}
+	*res = *v;
+	return GDK_SUCCEED;
+}
+@c
+@:numcast(sht,int)@
+@:numcast(sht,lng)@
+@:numcast(int,lng)@
+
 @-
 An SQL session needs a minimal set of modules, shown below.
 The MIL procs should also be moved to the kernel, despite the

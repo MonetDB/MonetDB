@@ -61,7 +61,7 @@ typedef struct cq {
 	struct cq *next;	/* link them into a queue */
 	int	type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,..*/
 	symbol 	*s;		/* the SQL parse tree */
-	list 	*params;
+	list 	*params;	/* list of parameter types */
 	backend_stack	stk;	/* V4 state information */
 	backend_code 	code;	/* V4 state information */
 	int 	id;		/* cache identity */
@@ -118,10 +118,8 @@ void qc_destroy( qc *cache )
 	_DELETE(cache);
 }
 
-int param_cmp( var_ *v1, var_ *v2 )
+int param_cmp( sql_subtype *t1, sql_subtype *t2 )
 {
-	sql_subtype *t1 = tail_type(v1->s);
-	sql_subtype *t2 = tail_type(v2->s);
 	int res;
 
 	if (t1->scale != t2->scale)
@@ -137,18 +135,21 @@ int param_cmp( var_ *v1, var_ *v2 )
 	return 0;
 }
 
-int param_list_cmp( list *l1, list *l2 )
+int param_list_cmp( list *typelist, list *atomlist )
 {
 	node *n1, *n2;
 
-	if (l1 == l2) 
+	if (typelist == atomlist) 
 		return 0;
-	if (!l1 || !l2 || list_length(l1) != list_length(l2))
+	if (!typelist || !atomlist || 
+	     list_length(typelist) != list_length(atomlist))
 		return -1;
-	for (n1 = l1->h, n2 = l2->h; n1; n1 = n1->next, n2 = n2->next ){
-		var_ *v1 = n1->data;
-		var_ *v2 = n2->data;
-		if (param_cmp(v1,v2) != 0)
+	for (n1 = typelist->h, n2 = atomlist->h; n1; 
+		n1 = n1->next, n2 = n2->next ){
+		sql_subtype *t1 = n1->data;
+		atom *a2 = n2->data;
+		/* NULL values match any type */
+		if (!atom_null(a2) && param_cmp(t1,a2->tpe) != 0)
 			return -1;
 	}
 	return 0;
@@ -171,7 +172,6 @@ cq *qc_match( qc *cache, symbol *s, list *params, int key )
 
 	for (q = cache->q; q; q = q->next ){
 	    	if (q->key == key){
-		/*if (list_cmp(q->params, params, (fcmp)&param_cmp) == 0 */
 			if (param_list_cmp(q->params, params) == 0 
 				 && symbol_cmp(q->s, s) == 0){
 				return q;
@@ -183,10 +183,16 @@ cq *qc_match( qc *cache, symbol *s, list *params, int key )
 
 cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type )
 {
+	node *m;
 	cq *n = NEW(cq);
 	n->id = cache->id++;
 	n->s = s;
-	n->params = params;
+	
+	n->params = list_create((fdestroy)&sql_subtype_destroy);
+	if (params) for (m = params->h; m; m = m->next) {
+		atom *a = m->data;
+		list_append(n->params, sql_dup_subtype(a->tpe));
+	}
 	n->next = cache->q;
 	n->stk = 0;
 	n->code = NULL;

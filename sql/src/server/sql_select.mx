@@ -179,7 +179,10 @@ static stmt *sql_column_ref(mvc * sql, scope * scp, symbol * column_r)
 	assert(column_r->token == SQL_COLUMN
 	       && column_r->type == type_list);
 
-	if (dlist_length(l) == 1) {
+	if (dlist_length(l) == 1 && l->h->type == type_int) {
+		return stmt_varnr(l->h->data.ival, 
+		     sql_dup_subtype(sql_bind_arg(sql, l->h->data.ival)->tpe));
+	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 
 		if (strcasecmp(name, "rowid") == 0){
@@ -540,7 +543,7 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 		}
 		restype = tpe;
 
-		if (!result || !(result = check_types(sql, restype, result))) {
+		if (!result || !(result = check_types(sql, restype, result, type_equal))) {
 			list_destroy(conds);
 			list_destroy(results);
 			return NULL;
@@ -572,7 +575,7 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 		else 
 			result = stmt_semijoin(result, cond);
 		
-		if (! (result = check_types(sql, restype, result)) ) {
+		if (! (result = check_types(sql, restype, result, type_equal)) ) {
 			list_destroy(conds);
 			list_destroy(results);
 			stmt_destroy(res);
@@ -617,7 +620,7 @@ sql_cast(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f)
 	stmt *l = sql_value_exp(sql, scp, s, grp, subset, f);
 
 	if (l) 
-		return check_types(sql, tpe, l);
+		return check_types(sql, tpe, l, type_cast);
 	return NULL;
 }
 
@@ -655,7 +658,7 @@ static stmt *sql_Nop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * su
 				sql_arg *a = m->data;
 				stmt *op = stmt_dup(n->data);
 
-				op = check_types(sql, a->type, op);
+				op = check_types(sql, a->type, op, type_equal);
 				if (!op) {
 					list_destroy(nsl);
 					nsl = NULL;
@@ -672,13 +675,6 @@ static stmt *sql_Nop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * su
 		return sql_error(sql, 02, "operator: %s unknown", l->data.sval);
 	}
 	return NULL;
-}
-
-static int digits_sum( stmt *ls, stmt *rs )
-{
-	sql_subtype *lt = tail_type(ls);
-	sql_subtype *rt = tail_type(rs);
-	return lt->digits + rt->digits;
 }
 
 static stmt *
@@ -701,22 +697,23 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 		if (f->func->res->scale == SCALE_FIX){
 			ls = fix_scale( sql, t2, ls, 0, 0);
 			rs = fix_scale( sql, t1, rs, 0, 0);
-		}
-		if (f->func->res->scale == SCALE_SUB)
+		} else if (f->func->res->scale == SCALE_SUB) {
 			ls = scale_algebra( f, ls, rs);
-		if (f->func->res->scale == SCALE_ADD)
+		} else if (f->func->res->scale == SCALE_ADD) {
 			ls = sum_scales( f, ls, rs);
-		if (f->func->res->scale == DIGITS_ADD) 
-			f->res->digits = digits_sum(ls, rs);
+		} else if (f->func->res->scale == DIGITS_ADD) {
+			f->res->digits = t1->digits + t2->digits;
+		}
 		return stmt_binop(ls, rs, f);
 	} else {
+		int digits = t1->digits + t2->digits;
 
 		if ( (f = sql_bind_member(fname, t1, 2)) != NULL) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->next->data;
 
-			rs = check_types(sql, a->type, rs);
+			rs = check_types(sql, a->type, rs, type_equal);
 			if (rs) 
 				return stmt_binop(ls, rs, f);
 		} else if (convert_types( sql, &ls, &rs, 0) >= 0) {
@@ -728,13 +725,13 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 				if (f->func->res->scale == SCALE_FIX){
 					ls = fix_scale( sql, t2, ls, 0, 0);
 					rs = fix_scale( sql, t1, rs, 0, 0);
-				}
-				if (f->func->res->scale == SCALE_SUB)
+				} else if (f->func->res->scale == SCALE_SUB) {
 					ls = scale_algebra( f, ls, rs);
-				if (f->func->res->scale == SCALE_ADD)
+				} else if (f->func->res->scale == SCALE_ADD) {
 					ls = sum_scales( f, ls, rs);
-				if (f->func->res->scale == DIGITS_ADD) 
-					f->res->digits = digits_sum(ls, rs);
+				} else if (f->func->res->scale == DIGITS_ADD) {
+					f->res->digits = digits;
+				}
 				return stmt_binop(ls, rs, f);
 			}
 		}
@@ -807,7 +804,7 @@ sql_unop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int fs
 	 */
 	if (!f && (f = sql_find_func(fname, 1)) != NULL ) {
 		sql_arg *a = f->func->ops->h->data;
-		rs = check_types(sql, a->type, rs);
+		rs = check_types(sql, a->type, rs, type_equal);
 		if (!rs) {
 			sql_subfunc_destroy(f);
 			f = NULL;
@@ -1858,8 +1855,8 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 			if (!ls || !rs1 || !rs2)
 				return NULL;
 			ct = tail_type(ls);
-			rs1 = check_types(sql, ct, rs1);
-			rs2 = check_types(sql, ct, rs2);
+			rs1 = check_types(sql, ct, rs1, type_equal);
+			rs2 = check_types(sql, ct, rs2, type_equal);
 			if (symmetric) {
 				stmt *tmp = NULL;
 				sql_subfunc *min = sql_bind_func("min", tail_type(rs1), tail_type(rs2));
@@ -1919,7 +1916,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 		if (dlist_length(ro->data.lval) == 2) {
 			symbol *es = ro->data.lval->h->next->data.sym;
 			e = sql_value_exp(sql, scp, es, grp, subset, f );
-			if (!check_types(sql, st, e) ){
+			if ((e = check_types(sql, st, e, type_equal)) == NULL){
 				return sql_error(sql, 02, 
 					"Wrong type used with LIKE ESCAPE statment, should be string" );
 			}
@@ -1928,7 +1925,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 			return sql_error(sql, 02, 
 			    "LIKE with escapes, is currently not supported");
 		}
-		if (!check_types(sql, st, a) ){
+		if ((a = check_types(sql, st, a, type_equal)) == NULL){
 			return sql_error(sql, 02, 
 			    "Wrong type used with LIKE stmt, should be string");
 		}
@@ -1984,7 +1981,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 					symbol *sval = n->data.sym;
 					stmt *v = sql_value_exp(sql, scp, sval, NULL, NULL, f); 
 					temp = stmt_append(temp, 
-						check_types(sql, ct, v) );
+						check_types(sql, ct, v, type_equal) );
 				}
 				if (sc->token == SQL_IN){
 					/* predicate case ? */
@@ -2206,7 +2203,7 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 			t = stmt_append( t, stmt_bool(1));
 			found = 0;
 		}
-		if (!(s = check_types(sql, bt, s))) 
+		if (!(s = check_types(sql, bt, s, type_equal))) 
 			return NULL;
 		s = stmt_select(t, s, cmp_equal);
 		if (!found)
@@ -2367,7 +2364,8 @@ static stmt *query_orderby(mvc * sql, symbol * orderby, stmt * s )
 				return NULL;
 			}
 		} else {
-			return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
+			return sql_error(sql, 02, 
+				"order not of type SQL_COLUMN\n");
 		}
 		o = o->next;
 	}
