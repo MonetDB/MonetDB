@@ -46,6 +46,7 @@ mal_export void initClientPrg(Client cntxt, str nme);
 mal_export void scheduleClient(str command, stream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
+mal_export str MALexitClient(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
 mal_export void resetInstructions(MalBlkPtr mb, int start);
@@ -84,6 +85,8 @@ The 'main' procedure is typically cleaned between successive external
 messages except for its variables, which are considerd global.
 This storage container is re-used when during the previous call
 nothing was added.
+At the end of the session we have to garbage collect the BATs
+introduced.
 @c
 
 void initClientPrg(Client cntxt, str nme){
@@ -245,7 +248,6 @@ The scenarios are run until we finally close the last one.
 		if( c->mode == FINISHING) break;
 		resetScenario(c);
 	} while(c->scenario);
-        garbageCollector(c->curprg->def,c->glb,0);
 
 	if( c->mode > FINISHING){
 		if( isAdministrator(c)){
@@ -275,10 +277,16 @@ table may have grown in size.
 	resetInstructions(c->curprg->def,oldstate.stop);
 	resetVariables(c->curprg->def, c->glb, oldstate.vtop);
 @c
+str MALexitClient(Client c){
+        garbageCollector(c->curprg->def,c->glb,TRUE);
+	return 0;
+}
 str MALreader(Client c){
 	c->nxt= c->input;
 	*c->nxt=0;
-	if( readClient(c,c->prompt)>0 ) return 0;
+	if( readClient(c,c->prompt)>0 ) {
+		return 0;
+	}
 	c->mode = FINISHING;
 	return 0;
 }

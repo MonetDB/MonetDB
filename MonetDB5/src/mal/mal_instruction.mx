@@ -1858,8 +1858,8 @@ void strFinalCall(ValPtr v){
 void batBeforeCall(ValPtr v, ValPtr bak){
 	if( v->vtype== TYPE_bat)
 		bak->val.bval= v->val.bval;
-	/* else stream_printf(GDKout,"batBeforeCall:unexpected BAT value\n");
-	   it was garbage for sure */
+	else stream_printf(GDKout,"batBeforeCall:unexpected BAT value\n");
+	   /* it was garbage for sure */
 }
 @-
 After the expression has been evaluated we can release any
@@ -1869,24 +1869,40 @@ This code base assumes no concurrent actions on the same BAT,
 otherwise dangling pointers could be created.
 @c
 void batAfterCall(ValPtr v, ValPtr bak){
-	if(v->vtype!= TYPE_bat) return; /* not ready yet 
-		stream_printf(GDKout,"batAfterCall:unexpected BAT value\n"); */
+	if(v->vtype!= TYPE_bat) {
+		/* not ready yet  */
+		stream_printf(GDKout,"batAfterCall:unexpected BAT value\n");
+		return;
+	}
 	if( v->val.bval == bak->val.bval) return;
 	if( v->val.bval){
+	/* int bid= ABS(v->val.bval);
+	   printf("reference counting: %d lrefs=%d refs=%d",
+		bid, BBP_lrefs(bid),BBP_refs(bid)); */
 		BBPincref(v->val.bval,TRUE);
-		batFinalCall(bak);
+		if( BBP_refs(v->val.bval) )
+			BBPunfix(v->val.bval);
 	}
+	if( bak->val.bval)
+		BBPdecref(bak->val.bval,TRUE);
 }
 @- 
 When the logical reference count drops to zero
 we can decrement the physical refcount as well.
 @c
 void batFinalCall(ValPtr v){ 
-	if(v->val.bval && BBP_lrefs(v->val.bval))
+	int bid= ABS(v->val.bval);
+	/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
+		bid, BBP_lrefs(bid),BBP_refs(bid));*/
+	if(bid )
 	{       
-		if( BBP_lrefs(v->val.bval) == 1 && BBP_refs(v->val.bval))
-			BBPdecref(v->val.bval,FALSE);
-		BBPdecref(v->val.bval,TRUE);
+		/* logical references do not count from here*/
+		/* watch out for built-ins */
+		if( BBP_refs(bid))
+			BBPunfix(v->val.bval);
+		else 
+		if( BBP_lrefs(bid) )
+			BBPdecref(bid,TRUE);
 		v->val.bval =0;
 	}
 #ifdef DEBUG_MAL_INTERPRETER

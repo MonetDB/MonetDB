@@ -667,8 +667,9 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 		b= BATdescriptor(v->val.ival);
 		if(b){
 			/* ignore ref count of this call */
-			stream_printf(f," count=%d refs=%d",
-				BATcount(b),BBP_refs(b->batCacheid-1));
+			stream_printf(f," count=%d lrefs=%d refs=%d",
+				BATcount(b),BBP_lrefs(b->batCacheid-1),
+				BBP_refs(b->batCacheid-1));
 			BBPunfix(b->batCacheid);
 		}
 	}

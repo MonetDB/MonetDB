@@ -163,7 +163,10 @@ mal_export str setScenario(Client c, str nme);
 #include "mal_linker.h"	 /* for getAddress() */
 
 struct SCENARIO scenarioRec[MAXSCEN]={
-{"mal",	0,0,0,0,0,0,0,0,
+{"mal",	0,0,
+	0,0,
+	0,0,
+	"MALexitClient",0,
 	"MALreader", 	0,0,
 	"MALparser",	0, 0,
 	"MALoptimizer",	0, 0,
@@ -424,13 +427,15 @@ or alignment of the request with concurrent actions (e.g. transaction
 coordination).
 @{
 @= runPhase
+#ifdef MAL_SCENARIO_DEBUG
+	stream_printf(GDKout,"start @1\n");
+#endif
 	if(c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
 		/* error occurred */
 #ifdef MAL_SCENARIO_DEBUG
-		stream_printf(c->fdout,"Error in @1 phase\n");
+		stream_printf(GDKout,"Error in @1 phase\n");
 		if( c->mode > FINISHING && c->nxt!=c->input)
-			stream_printf(c->fdout,"%s",msg);
-		c->fdout->flush(c->fdout);
+			stream_printf(GDKout,"%s",msg);
 #endif
 		GDKfree(msg); msg=0;
 		continue;
@@ -458,7 +463,12 @@ have to call the scenario exit.
 	for(c1 = mal_clients; c1 < mal_clients+MAL_MAXCLIENTS; c1++) 
 	if( c1->scenario && strcmp(c->scenario,c1->scenario)==0) cnt++;
 
-	if(c->phase[EXITCLIENT] ) (*c->phase[EXITCLIENT])(c);
+	if(c->phase[EXITCLIENT] ){
+#ifdef MAL_SCENARIO_DEBUG
+		printf("Calling client exit function \n");
+#endif
+		(*c->phase[EXITCLIENT])(c);
+	}
 	if(cnt==1){
 		exitScenario(c);
 	}

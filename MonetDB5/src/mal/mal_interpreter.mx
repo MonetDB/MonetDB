@@ -1133,7 +1133,7 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 			" forceall %d\n",forceall);
 	printStack(GDKout,mb,stk);
 #endif
-	for(k=0;k<mb->vtop-1; k++) 
+	for(k=0;k<mb->vtop; k++) 
 	if(forceall || isTmpVar(mb,k)){
 		garbageElement(&stk->stk[k]);
 		stk->stk[k].vtype= TYPE_int;
@@ -1155,6 +1155,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	ValRecord backup;
 	backup.vtype= TYPE_int;
 	backup.val.ival= 0;
+	(void) backup.vtype;
 
 #ifdef STACKTRACE
 	stream_printf(GDKout,"--->release BAT %d \n", bid);
@@ -1170,7 +1171,6 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	}
 	BBPdecref(bid,TRUE);	/* one more because batAfterCall is still in progress */
 	if( BBP_lrefs(bid) == 0){
-		printf("free the bat as well");
 		BBPunfix(bid);
 	}
 #ifdef STACKTRACE
