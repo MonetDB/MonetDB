@@ -39,7 +39,7 @@ function Admin.main():int;	# 0  (main:int)
     io.print(mx);	# 12 CMDprint_val ($22:int)<-(mx:int)
     mi := algebra.min(b);	# 13 ALGmin_int (mi:int)<-(b:bat[:int,:int])
     io.print(mi);	# 14 CMDprint_val ($24:int)<-(mi:int)
-    cr := aggrX3.card(b);	# 15 CMDcard_unlimited (cr:lng)<-(b:bat[:int,:int])
+    cr := algebra.card(b);	# 15 ALGcard (cr:lng)<-(b:bat[:int,:int])
     io.print(cr);	# 16 CMDprint_val ($26:int)<-(cr:lng)
 end main;	# 17  
 #-----------------#

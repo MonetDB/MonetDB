@@ -289,10 +289,10 @@ end main;	# 94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 6 = 282 ms
-count 7 = 212 ms
-count 8 = 212 ms
-count 9 = 212 ms
+count 1000000 = 284 ms
+count 1000000 = 213 ms
+count 1000000 = 212 ms
+count 1000000 = 212 ms
 #-------------------------------------------------#
 # h				tmp_10		  # name
 # str				str		  # type
@@ -381,10 +381,10 @@ count 9 = 212 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 12 = 289 ms
-count 13 = 212 ms
-count 14 = 207 ms
-count 15 = 213 ms
+count 1000000 = 372 ms
+count 1000000 = 216 ms
+count 1000000 = 219 ms
+count 1000000 = 263 ms
 #-------------------------------------------------#
 # h				tmp_16		  # name
 # str				str		  # type
