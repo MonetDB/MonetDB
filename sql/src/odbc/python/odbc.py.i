@@ -951,6 +951,25 @@ static PyObject *ErrorObject;
 		return NULL;						\
 	}
 %}
+%exception SQLAllocHandle {
+	$action
+	CheckResult(result, arg1, arg2)
+}
+%exception SQLAllocEnv {
+	$action
+	if (result == SQL_ERROR || result == SQL_INVALID_HANDLE) {
+		PyErr_SetString(ErrorObject, "Invalid handle");
+		return NULL;
+	}
+}
+%exception SQLAllocConnect {
+	$action
+	CheckResult(result, SQL_HANDLE_ENV, arg1)
+}
+%exception SQLAllocStmt {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
 %exception SQLCancel {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)

@@ -44,6 +44,11 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		if (!isValidEnv(env))
 			return SQL_INVALID_HANDLE;
 
+		if (env->sql_attr_odbc_version == 0) {
+			addEnvError(env, "HY010", NULL, 0);
+			return SQL_ERROR;
+		}
+
 		/* check if no associated connections are still active */
 		if (env->FirstDbc != NULL) {
 			/* There are allocated connections */

@@ -35,10 +35,7 @@ typedef struct tODBCDRIVERENV {
 
 	/* Env children: list of ODBC Connection handles created in this Env */
 	void *FirstDbc;		/* first in list or NULL */
-	enum {
-		ODBC_2,
-		ODBC_3,
-	} ODBCVersion;
+	SQLINTEGER sql_attr_odbc_version;
 } ODBCEnv;
 
 
@@ -90,9 +87,9 @@ ODBCError *getEnvError(ODBCEnv *env);
 /* utility macro to quickly remove any none collected error msgs */
 #define clearEnvErrors(env) do {					\
 				assert(env);				\
-				if (env->Error) {			\
-					deleteODBCErrorList(&env->Error); \
-					env->RetrievedErrors = 0;	\
+				if ((env)->Error) {			\
+					deleteODBCErrorList(&(env)->Error); \
+					(env)->RetrievedErrors = 0;	\
 				}					\
 			} while (0)
 

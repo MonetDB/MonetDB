@@ -48,6 +48,11 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 			return SQL_INVALID_HANDLE;
 		clearEnvErrors(env);
 
+		if (env->sql_attr_odbc_version == 0) {
+			addEnvError(env, "HY010", NULL, 0);
+			return SQL_ERROR;
+		}
+
 		/* Currently commit/rollback of all connections within
 		   this environment handle is NOT implemented. */
 		/* report error HYC00 = Optional feature not implemented */

@@ -12,16 +12,17 @@
 ODBCDesc *
 newODBCDesc(ODBCDbc *dbc)
 {
-	ODBCDesc *desc = malloc(sizeof(ODBCDesc));
+	ODBCDesc *desc;
 
-	assert(desc);
 	assert(dbc);
 
+	desc = malloc(sizeof(ODBCDesc));
 	if (desc == NULL) {
 		/* HY001: Memory allocation error */
 		addDbcError(dbc, "HY001", NULL, 0);
 		return NULL;
 	}
+	assert(desc);
 
 	desc->Dbc = dbc;
 	desc->Error = NULL;

@@ -44,7 +44,7 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 
 	switch (Attribute) {
 	case SQL_ATTR_ODBC_VERSION:
-		* (SQLINTEGER *) Value = env->ODBCVersion == ODBC_3 ? SQL_OV_ODBC3 : SQL_OV_ODBC2;
+		* (SQLINTEGER *) Value = env->sql_attr_odbc_version;
 		break;
 	case SQL_ATTR_OUTPUT_NTS:
 		* (SQLINTEGER *) Value = SQL_TRUE;

@@ -35,19 +35,38 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 
 	(void) StringLength;	/* Stefan: unused!? */
 
+	/* global attribute */
+	if (Attribute == SQL_ATTR_CONNECTION_POOLING && env == NULL) {
+		switch ((SQLUINTEGER) (size_t) Value) {
+		case SQL_CP_OFF:
+		case SQL_CP_ONE_PER_DRIVER:
+		case SQL_CP_ONE_PER_HENV:
+			break;
+		default:
+			return SQL_INVALID_HANDLE;
+		}
+		return SQL_SUCCESS;
+	}
+
 	if (!isValidEnv(env))
 		return SQL_INVALID_HANDLE;
 
 	clearEnvErrors(env);
 
+	/* can only set environment attributes if no connection handle
+	   has been allocated */
+	if (env->FirstDbc != NULL) {
+		/* Function sequence error */
+		addEnvError(env, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+
 	switch (Attribute) {
 	case SQL_ATTR_ODBC_VERSION:
 		switch ((SQLINTEGER) (ssize_t) Value) {
 		case SQL_OV_ODBC3:
-			env->ODBCVersion = ODBC_3;
-			break;
 		case SQL_OV_ODBC2:
-			env->ODBCVersion = ODBC_2;
+			env->sql_attr_odbc_version = (SQLINTEGER) (ssize_t) Value;
 			break;
 		default:
 			/* HY024: Invalid attribute value */
@@ -55,11 +74,29 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 			return SQL_ERROR;
 		}
 		break;
+	case SQL_ATTR_OUTPUT_NTS:
+		switch ((SQLINTEGER) (ssize_t) Value) {
+		case SQL_TRUE:
+			break;
+		case SQL_FALSE:
+			/* Optional feature not implemented */
+			addEnvError(env, "HYC00", NULL, 0);
+			return SQL_ERROR;
+		default:
+			/* Invalid attribute/option identifier */
+			addEnvError(env, "HY092", NULL, 0);
+			return SQL_ERROR;
+		}
+		break;
+	case SQL_ATTR_CP_MATCH:
+		/* Optional feature not implemented */
+		addEnvError(env, "HYC00", NULL, 0);
+		return SQL_ERROR;
+	case SQL_ATTR_CONNECTION_POOLING:
+		/* not valid with non-NULL environment handle parameter */
 	default:
-		/* TODO: implement this function and corresponding behavior */
-
-		/* for now return error IM001: driver not capable */
-		addEnvError(env, "IM001", NULL, 0);
+		/* Invalid attribute/option identifier */
+		addEnvError(env, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
 

@@ -101,6 +101,10 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
+	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION,
+			    (SQLPOINTER) (size_t) SQL_OV_ODBC3, 0);
+	check(ret, SQL_HANDLE_ENV, env, "SQLSetEnvAttr");
+
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
 	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle");
 
@@ -108,9 +112,11 @@ main(int argc, char **argv)
 			 (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
 
-/* 	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT, */
-/* 				(SQLPOINTER) (size_t) SQL_AUTOCOMMIT_OFF, 0); */
-/* 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr"); */
+#ifdef WITHOUT_AUTO_COMMIT
+	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
+				(SQLPOINTER) (size_t) SQL_AUTOCOMMIT_OFF, 0);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
+#endif
 
 	/* create a test table to be filled with values */
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
