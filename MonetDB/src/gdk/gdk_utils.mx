@@ -263,7 +263,6 @@ RETSIGTYPE BATSIGcrash(int nr) {
 }
 
 int BATSIGinit(void) {
-	(void) signal(SIGINT,  BATSIGabort); 
 #ifdef SIGBUS
 	(void) signal(SIGBUS,  BATSIGcrash); 
 #endif
