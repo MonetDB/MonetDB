@@ -139,10 +139,11 @@ YYSTREE yynode( int tok, int val) {
 	    ATOMextern((@1)->yyval.vtype))
 	{
 		GDKfree((@1)->yyval.val.pval);
+		(@1)->yyval.val.pval = 0;
 	}
   	MT_set_lock(monet_critical, "yykill");
-	@1->nfree = nfree;
-	nfree = @1;
+	(@1)->nfree = nfree;
+	nfree = (@1);
         MT_unset_lock(monet_critical, "yykill");
 @
 
@@ -512,27 +513,30 @@ expansion, rather than a direct function call to @%yycleanup()@. Due
 to the recursive nature of the trees, it will of course come to recursion 
 if trees are more than 2-deep.
 @h
-#define GARBAGE(x)\
-if (x->dealloc) {\
-    if (x->dealloc == TYPE_bat) {\
-      if (x->free.batref.id != bat_nil){\
-	BAT* _b = BATdescriptor(x->free.batref.id);\
-        if (_b == NULL) {\
-		GDKerror("yyclean: BAT %d GONE\n", x->free.batref.id);\
-	} else if (ABS(x->free.batref.stamp) != ABS(_b->batStamp)) {\
-		GDKerror("yyclean: BAT %d OVERWRITTEN (stamp %d != %d)\n", x->free.batref.id,\
-			BBPdescriptor(x->free.batref.id)->batStamp, x->free.batref.stamp);\
-	} else {\
-		ATOMunfix(x->dealloc, &x->free.batref.id);\
-	}\
-	BBPunfix(x->free.batref.id); \
-      }\
-    } else {\
-	ATOMunfix(x->dealloc, x->free.atmref);\
-	if (ATOMextern(x->dealloc)) GDKfree(x->free.atmref);\
-    }\
-    x->dealloc = 0;\
-}
+#define GARBAGE(x)								   \
+	if (x->dealloc) {							   \
+	    if (x->dealloc == TYPE_bat) {					   \
+	      if (x->free.batref.id != bat_nil){				   \
+		BAT* _b;							   \
+		BBPfix(x->free.batref.id);					   \
+		_b = BBPquickdesc(ABS(x->free.batref.id),FALSE);		   \
+		if (_b == NULL) {						   \
+			GDKerror("yyclean: BAT %d GONE\n", x->free.batref.id);	   \
+		} else if (ABS(x->free.batref.stamp) != ABS(_b->batStamp)) {	   \
+			GDKerror("yyclean: BAT %d OVERWRITTEN (stamp %d != %d)\n", \
+ 				x->free.batref.id,				   \
+				_b->batStamp, x->free.batref.stamp);		   \
+		} else {							   \
+			ATOMunfix(x->dealloc, &x->free.batref.id);		   \
+		}								   \
+		BBPunfix(x->free.batref.id);					   \
+	      }									   \
+	    } else {								   \
+		ATOMunfix(x->dealloc, x->free.atmref);				   \
+		if (ATOMextern(x->dealloc)) GDKfree(x->free.atmref);		   \
+	    }									   \
+	    x->dealloc = 0;							   \
+	}
 
 #define CLEANUP(x)	switch(((YYSTREE) x)->token) {\
 	case TOK_SEQ:        break;\
@@ -555,46 +559,44 @@ if (x->dealloc) {\
          }\
          GARBAGE(((YYSTREE) x));\
 }
-#define CATCHVAL(stk,lt,res,always)\
-	if (ATOMextern(res->vtype)) {\
-		lt->dealloc = res->vtype;\
-		lt->free.atmref = res->val.pval;\
-	} else if (res->vtype == TYPE_bat) {\
-		bat bid = res->val.bval; \
-		BAT* _b = BBPdescriptor(res->val.bval);\
-		if (_b != NULL) {\
-			int _newbat = (_b->batStamp > stamp);\
-			if (_newbat == FALSE) {\
-				PROPDEBUG monet_checkbat(_b, FALSE);\
-			} else if (_b->batStamp > 0) {\
-				CHECKDEBUG monet_checkbat(_b, BATcount(_b) > 0);\
-				if (BATcount(_b) > 0) {\
-					BATsetaccess(_b, BAT_READ);\
-				}\
-				_b->batStamp = -_b->batStamp;\
-			}\
-			if (always || _newbat) {\
- 				lt->dealloc = TYPE_bat;\
-				lt->free.batref.id = res->val.bval;\
-				lt->free.batref.stamp = _b->batStamp;\
-				BATDEBUG printf("# batstamp(%d) = %d\n",\
-					 _b->batCacheid, _b->batStamp);\
-			}\
-		}\
-		assert((BBP_refs(bid) + BBP_lrefs(bid)) >= 1); \
-		BBPpersistent(res->val.bval, FALSE); \
-		BBPunfix(res->val.bval); \
+#define CATCHVAL(stk,lt,res)							\
+	if (res->vtype == TYPE_bat) {						\
+		bat bid = res->val.bval;					\
+		BAT* _b = BBPdescriptor(bid);				\
+		assert(_b != NULL);						\
+		if (_b->batStamp <= stamp) {					\
+			PROPDEBUG monet_checkbat(_b, FALSE);			\
+		} else if (_b->batStamp > 0) {					\
+			CHECKDEBUG monet_checkbat(_b, BATcount(_b) > 0);	\
+			if (BATcount(_b) > 0) {					\
+				BATsetaccess(_b, BAT_READ);			\
+			}							\
+			_b->batStamp = -_b->batStamp;				\
+		}								\
+		BATDEBUG printf("# batstamp(%d) = %d\n",			\
+			 _b->batCacheid, _b->batStamp);				\
+		BBPincref(bid, TRUE);					\
+		BBPunfix(bid);					\
+	}									\
+	CATCHREF(stk,lt,res)
+#define CATCHREF(stk,lt,res)						\
+	lt->dealloc = res->vtype;					\
+	if (res->vtype != TYPE_bat) {					\
+		lt->free.atmref = res->val.pval;			\
+	} else {							\
+		lt->free.batref.id = res->val.bval;			\
+		if (res->val.bval != bat_nil) {				\
+			BAT* _b;					\
+			BBPfix(res->val.bval);				\
+			_b = BBPquickdesc(ABS(res->val.bval),FALSE);	\
+			if (_b) lt->free.batref.stamp = _b->batStamp;	\
+			BBPunfix(res->val.bval);			\
+		}							\
 	}
-#define CATCHRET(stk,lt,res,x)\
-	if (x == -TOK_RETURN) {\
-		lt->dealloc = res->vtype;\
-		lt->free.atmref = res->val.pval;\
-		if (res->vtype == TYPE_bat) {\
-		    BAT* _b = BATdescriptor(res->val.bval);\
-		    if (_b) lt->free.batref.stamp = _b->batStamp;\
-		    BBPunfix(res->val.bval); \
-		}\
-		x = 0;\
+#define CATCHRET(stk,lt,res,x)			\
+	if (x == -TOK_RETURN) {			\
+		CATCHREF(stk,lt,res);		\
+		x=0;				\
 	}
 #define CATCHERR(stk,lt,res,x,fcn)\
 	if (x == -TOK_BREAK) {\

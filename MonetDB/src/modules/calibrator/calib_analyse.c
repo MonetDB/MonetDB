@@ -434,7 +434,7 @@ AssoInfo* analyzeAsso(caliblng **result1, caliblng **result2, caliblng shift, ca
 {
 	caliblng	X, x, y, xx, yy, spots, lastspots, stride, level, a, l, limit = 0, top, n;
 	caliblng	last[LENPLATEAU], time1, time2, lasttime1, lasttime2;
-	calibdbl	diff;
+	/*calibdbl	diff;*/
 	AssoInfo *draft, *Asso;
 
 	if (!(draft = (AssoInfo*)malloc(4 * sizeof(AssoInfo))))

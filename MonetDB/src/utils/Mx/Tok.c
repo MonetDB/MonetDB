@@ -23,6 +23,7 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
+#include	<config.h>       
 #include	<stdio.h>
 #include	<ctype.h>
 #include        <stdlib.h>

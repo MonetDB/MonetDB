@@ -26,10 +26,6 @@
 #ifndef DIFFLIB_H
 #define DIFFLIB_H
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef NATIVE_WIN32
 #define STDERR stdout
 #else

@@ -42,6 +42,7 @@ class depend: public language {
 #endif //_DEPEND_H_
 
 @C
+#include <config.h>
 #include "depend.h"
 #include "ListIterator.h"
 

@@ -172,6 +172,8 @@ Return 0 on l==r, < 0 iff l < r, >0 iff l > r
 @c
 #include "gdk.h"
 
+#include <math.h>		/* for INFINITY and NAN */
+
 int chrCmp(chr* l, chr* r) { return simple_CMP(l,r,chr); }
 int shtCmp(sht* l, sht* r) { return simple_CMP(l,r,sht); }
 int intCmp(int* l, int* r) { return simple_CMP(l,r,int); }
@@ -192,19 +194,19 @@ hash_t lngHash(lng *v) { return (hash_t) mix_int(((unsigned int*) v)[0]^((unsign
 INLINE void shtConvert(sht* s) { *s = short_int_SWAP(*s); }
 INLINE void intConvert(int* s) { *s = normal_int_SWAP(*s); }
 INLINE void lngConvert(lng* s) { *s = long_long_SWAP(*s); }
-INLINE int  batFix(bat* b)     { return BBPpersistent(*b,FALSE); }
-INLINE int  batUnfix(bat* b)   { return BBPtransient(*b,FALSE); }
+INLINE int  batFix(bat* b)     { return BBPincref(*b,TRUE); }
+INLINE int  batUnfix(bat* b)   { return BBPdecref(*b,TRUE); }
 
 atomDesc BATatoms[MAXATOMS] = {
   { "void",
 #if SIZEOF_OID == SIZEOF_INT
-  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 1, (ptr) &int_nil, 
+  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 0, 1, (ptr) &int_nil, 
 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) voidRead, (void (*)(void *, stream *, size_t)) voidWrite,
  		(int (*)(ptr, ptr)) intCmp,
  		(hash_t (*)(ptr)) intHash, 	0,
 #else
-  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 1, (ptr) &lng_nil, 
+  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 0, 1, (ptr) &lng_nil, 
 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) voidRead, (void (*)(void *, stream *, size_t)) voidWrite,
  		(int (*)(ptr, ptr)) lngCmp,
@@ -214,7 +216,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},			
-  { "bit",  	TYPE_chr, 1, sizeof(bit), sizeof(@`bit@7), 0, (ptr) &chr_nil, 
+  { "bit",  	TYPE_chr, 1, sizeof(bit), sizeof(@`bit@7), 0, 0, (ptr) &chr_nil, 
 		(int (*)(str, int*, ptr*)) bitFromStr,	(int (*)(str*, int*, ptr)) bitToStr,
 		(void *(*)(void *, stream *, size_t)) bitRead, (void (*)(void *, stream*, size_t)) bitWrite,
  		(int (*)(ptr, ptr)) chrCmp,
@@ -223,7 +225,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		0,			0,
  		0,			0,
  		0,			0},
-  { "chr",  	TYPE_chr, 1, sizeof(chr), sizeof(@`chr@7), 0, (ptr) &chr_nil, 
+  { "chr",  	TYPE_chr, 1, sizeof(chr), sizeof(@`chr@7), 0, 0, (ptr) &chr_nil, 
 		(int (*)(str, int*, ptr*)) @`chrFromStr@5,	(int (*)(str*, int*, ptr)) @`chrToStr@5,
 		(void *(*)(void *, stream *, size_t)) chrRead, (void (*)(void *, stream*, size_t)) chrWrite,
 	 	(int (*)(ptr, ptr)) chrCmp,
@@ -232,7 +234,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		0,			0,
  		0,			0,
  		0,			0},
-  { "sht",	TYPE_sht, 1, sizeof(sht), sizeof(@`sht@7), 0, (ptr) &sht_nil,
+  { "sht",	TYPE_sht, 1, sizeof(sht), sizeof(@`sht@7), 0, 0, (ptr) &sht_nil,
 		(int (*)(str, int*, ptr*)) @`shtFromStr@5,	(int (*)(str*, int*, ptr)) @`shtToStr@5,
 		(void *(*)(void *, stream *, size_t)) shtRead, (void (*)(void *, stream*, size_t)) shtWrite,
  		(int (*)(ptr, ptr)) shtCmp,		
@@ -241,16 +243,16 @@ atomDesc BATatoms[MAXATOMS] = {
 		0,			0,
  		0,			0,
  		0,			0},
-  { "BAT",  	TYPE_int, 1, sizeof(bat), sizeof(@`bat@7), 0, (ptr) &int_nil,
+  { "BAT",  	TYPE_int, 1, sizeof(bat), sizeof(@`bat@7), 0, 0, (ptr) &int_nil,
  		(int (*)(str, int*, ptr*)) batFromStr,	(int (*)(str*, int*, ptr)) batToStr,
 		(void *(*)(void *, stream *, size_t)) batRead, (void (*)(void *, stream*, size_t)) batWrite,
  		(int (*)(ptr, ptr)) intCmp, 		
  		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
 		(int (*)(ptr)) batFix,		(int (*)(ptr)) batUnfix,
- 		(void (*)(Heap*, var_t*, ptr)) BATpersistent,	(void (*)(Heap*, var_t*)) BATtransient,
+ 		0,			0,
  		0,			0,
  		0,			0},
-  { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, 
+  { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, 0, (ptr) &int_nil, 
 		(int (*)(str, int*, ptr*)) intFromStr,	(int (*)(str*, int*, ptr)) @`intToStr@5,
 		(void *(*)(void *, stream *, size_t)) intRead, (void (*)(void *, stream*, size_t)) intWrite,
 	 	(int (*)(ptr, ptr)) intCmp,		
@@ -261,13 +263,13 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0},
   { "oid",
 #if SIZEOF_OID == SIZEOF_INT
-    		TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &int_nil, 
+    		TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, 0, (ptr) &int_nil, 
  		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) intRead, (void (*)(void *, stream*, size_t)) intWrite,
  		(int (*)(ptr, ptr)) intCmp,		
  		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
 #else
-	  	TYPE_lng, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &lng_nil, 
+	  	TYPE_lng, 1, sizeof(oid), sizeof(@`oid@7), 0, 0, (ptr) &lng_nil, 
  		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) lngRead, (void (*)(void *, stream*, size_t)) lngWrite,
  		(int (*)(ptr, ptr)) lngCmp,		
@@ -279,13 +281,13 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0},
   { "ptr",
 #if SIZEOF_VOID_P == SIZEOF_INT
-		TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &int_nil,
+		TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &int_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
 	 	(int (*)(ptr, ptr)) intCmp,		
 		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,	
 #else /* SIZEOF_VOID_P == SIZEOF_LONG */
-  		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil,
+  		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &lng_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
 	 	(int (*)(ptr, ptr)) lngCmp,		
@@ -295,7 +297,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		0, 		0,
  		0,			0,
  		0,			0},
-  { "flt",  	TYPE_flt, 1, sizeof(flt), sizeof(@`flt@7), 0, (ptr) &flt_nil, 
+  { "flt",  	TYPE_flt, 1, sizeof(flt), sizeof(@`flt@7), 0, 0, (ptr) &flt_nil, 
 		(int (*)(str, int*, ptr*)) @`fltFromStr@5,	(int (*)(str*, int*, ptr)) @`fltToStr@5,
 		(void *(*)(void *, stream *, size_t)) fltRead, (void (*)(void *, stream*, size_t)) fltWrite,
 	 	(int (*)(ptr, ptr)) fltCmp,		
@@ -304,7 +306,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
-  { "dbl",  	TYPE_dbl, 1, sizeof(dbl), sizeof(@`dbl@7), 0, (ptr) &dbl_nil, 
+  { "dbl",  	TYPE_dbl, 1, sizeof(dbl), sizeof(@`dbl@7), 0, 0, (ptr) &dbl_nil, 
 		(int (*)(str, int*, ptr*)) @`dblFromStr@5,	(int (*)(str*, int*, ptr)) @`dblToStr@5,
 		(void *(*)(void *, stream *, size_t)) dblRead, (void (*)(void *, stream*, size_t)) dblWrite,
 		(int (*)(ptr, ptr)) dblCmp,		
@@ -313,7 +315,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
-  { "lng",  	TYPE_lng, 1, sizeof(lng), sizeof(@`lng@7), 0, (ptr) &lng_nil, 
+  { "lng",  	TYPE_lng, 1, sizeof(lng), sizeof(@`lng@7), 0, 0, (ptr) &lng_nil, 
 		(int (*)(str, int*, ptr*)) lngFromStr,	(int (*)(str*, int*, ptr)) lngToStr,
 		(void *(*)(void *, stream *, size_t)) lngRead, (void (*)(void *, stream*, size_t)) lngWrite,
  		(int (*)(ptr, ptr)) lngCmp,		
@@ -322,7 +324,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
-  { "str",  	TYPE_str, 1, sizeof(var_t), sizeof(var_t), 1, (ptr) &chr_nil,
+  { "str",  	TYPE_str, 1, sizeof(var_t), sizeof(var_t), 0, 1, (ptr) &chr_nil,
 		(int (*)(str, int*, ptr*)) strFromStr, (int (*)(str*, int*, ptr)) strToStr,
 		(void *(*)(void *, stream *, size_t)) strRead, (void (*)(void *, stream*, size_t)) strWrite,
 		(int (*)(ptr, ptr)) strCmp,
@@ -407,9 +409,10 @@ void ATOMproperty(str id, str property, GDKfcn arg) {
 	    BATatoms[t].align = sizeof(int); /* default */
 	    BATatoms[t].linear = 1; /* default */
 	    BATatoms[t].storage = t;  /* default */
+	    BATatoms[t].deleting = 1; /* not yet usable */
 	}
 	if (strcmp("size", property) == 0) {
-	    if (arg) {
+	    if ((int) (long) arg) {
 		BATatoms[t].size = (int) (long) arg; 
 		BATatoms[t].varsized = 0; 
 		BATatoms[t].align = align((int) (long) arg); 
@@ -549,18 +552,35 @@ The current policy is to use the smallest value in any ordered domain.
 The routine atomnil returns a pointer to the nil value representation.
 @{
 @h
-#define	GDK_chr_max ((chr) 127)
-#define	GDK_chr_min ((chr) -128)
-#define	GDK_sht_max ((sht) 32767)
-#define	GDK_sht_min ((sht) -32768)
-#define	GDK_int_max ((int) 2147483647)
-#define	GDK_int_min ((int) (-2147483647-1))
-#define	GDK_flt_max ((flt) 3.402823466E+38F)
-#define	GDK_flt_min (-GDK_flt_max)
-#define	GDK_lng_max (LL_CONSTANT( 9223372036854775807))
-#define	GDK_lng_min (LL_CONSTANT(-9223372036854775807)-LL_CONSTANT(1))
-#define	GDK_dbl_max ((dbl) 1.7976931348623157E+308)
-#define	GDK_dbl_min (-GDK_dbl_max)
+#include <limits.h>		/* for *_MIN and *_MAX */
+#include <float.h>		/* for FLT_MAX and DBL_MAX */
+
+#ifndef LLONG_MAX
+#ifdef LONGLONG_MAX
+#define LLONG_MAX LONGLONG_MAX
+#define LLONG_MIN LONGLONG_MIN
+#else
+#define LLONG_MAX LL_CONSTANT(9223372036854775807)
+#define LLONG_MIN (-LL_CONSTANT(9223372036854775807) - LL_CONSTANT(1))
+#endif
+#endif
+
+#define GDK_bit_max ((bit) 1)
+#define GDK_bit_min ((bit) 0)
+#define GDK_chr_max ((chr) SCHAR_MAX)
+#define GDK_chr_min ((chr) SCHAR_MIN)
+#define GDK_sht_max ((sht) SHRT_MAX)
+#define GDK_sht_min ((sht) SHRT_MIN)
+#define GDK_int_max INT_MAX
+#define GDK_int_min INT_MIN
+#define GDK_flt_max ((flt) FLT_MAX)
+#define GDK_flt_min (-GDK_flt_max)
+#define GDK_lng_max ((lng) LLONG_MAX)
+#define GDK_lng_min ((lng) LLONG_MIN)
+#define GDK_dbl_max ((dbl) DBL_MAX)
+#define GDK_dbl_min (-GDK_dbl_max)
+/* GDK_oid_max see below */
+#define GDK_oid_min ((oid) 0)
 
 /* representation of the nil */
 gdk_export chr		chr_nil; 	
@@ -581,8 +601,10 @@ gdk_export str		str_nil;
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_OID == SIZEOF_INT
 #define oid_nil	((oid) int_nil)
+#define GDK_oid_max ((oid) GDK_int_max)
 #else
 #define oid_nil	((oid) lng_nil)
+#define GDK_oid_max ((oid) GDK_lng_max)
 #endif
 #define void_nil	oid_nil
 @c
@@ -655,7 +677,11 @@ from the sets of operations on the father type.
 #define CONV_NTOH               0
 
 @- 
-Recursive BATs are a special case. You should modify their reference count.
+In case that atoms are added to a bat, their logical reference count
+should be incremented (and decremented if deleted). Notice that BATs 
+with atomic types that have logical references (e.g. BATs of BATs but 
+also BATs of ODMG odSet) can never be persistent, as this would make
+the commit tremendously complicated.
 @h
 #define ATOMput(P1, P2, P3, P4)				\
 { int t_ = (P1);                                 	\
@@ -668,10 +694,10 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPpersistent(*(bat*) (P4),TRUE);	\
+		BBPincref(*(bat*) (P4), TRUE);		\
 		*(bat *) (P3) = * (bat *) (P4); 	\
 	}						\
-} else {						\
+  } else {						\
 	if (t_ <= TYPE_flt) {				\
 		*(int *) (P3) = *(int *) (P4); 		\
 	} else if (t_ <= TYPE_lng) {			\
@@ -684,6 +710,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
+           ATOMfix(t_, P4);                            \
 } }    }
 
 #define ATOMreplace(P1,	P2, P3, P4)			\
@@ -697,8 +724,8 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPtransient(*(bat*) (P3), TRUE);	\
-		BBPpersistent(*(bat*) (P4), TRUE);	\
+		BBPdecref(*(bat*) (P3), TRUE);		\
+		BBPincref(*(bat*) (P4), TRUE);		\
 		*(bat *) (P3) = *(bat *) (P4); 		\
 	}						\
   } else {						\
@@ -709,6 +736,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_str) {			\
 		(void) strPut(P2, (var_t*) (P3), (str) (P4));\
 	} else {					\
+            ATOMunfix(t_, P3);                          \
 	    if (BATatoms[t_].atomDel) {		\
 		ATOMdel(t_, P2,(var_t*) P3);		\
 	    } 						\
@@ -717,6 +745,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
+            ATOMfix(t_, P4);                            \
 } }     }
 
 #define GDK_STRHASHTABLE	(1<<10)
@@ -1014,7 +1043,7 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 		for(q=p; num10(*p); p++) {
 			base = mult10(base) + base10(*p);
 		}
-		if (q-p > @2  || (q-p == @2 && strncmp(q,"@3",@2) > 0)) {
+		if (p-q > @2  || (p-q == @2 && strncmp(q,"@3",@2) > 0)) {
 			error = 1; /* overflow */
 		}
 		if (sizeof(@1) == 8 && p[0] == 'L' && p[1] == 'L') {
@@ -1078,8 +1107,7 @@ int lngToStr(char **dst, int *len, lng *src) {
 	}
 	ll = ll/LL_CONSTANT(100000000000000);
 	if (ll) {
-		sprintf(p, "%ld", (ll<0)?-ll:ll); 
-		l += strlen(p);
+		l += sprintf(p, "%ld", (ll<0)?-ll:ll); 
 	}
 	ll = (*src % LL_CONSTANT(100000000000000)) / LL_CONSTANT(10000000);
 	if (l) {
@@ -1130,38 +1158,74 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 @:atom_io(ptr,Lng,lng)@
 #endif
 
-int dblFromStr(char* src, int* len, dbl **dst) {
+int dblFromStr(char* src, int* len, dbl **dst)
+{
 	char *p = src;
-	dbl d = strtod(src, &p); 	
+	double d;
 
 	/* alloc memory */
 	@:atommem(dbl,sizeof(dbl))@
 
-	if (p == src || d > GDK_dbl_max || d <= GDK_dbl_min) {
+	/* on overflow, strtod returns HUGE_VAL and sets errno to
+	   ERANGE; on underflow, it returns 0 and also sets errno to
+	   ERANGE.  We accept 0, but not HUGE_VAL. */
+	errno = 0;
+	d = strtod(src, &p);
+	if (p == src || (errno == ERANGE && d != 0)) {
 		**dst = dbl_nil; /* default return value is nil */
+		p = src;
 	} else {
-		**dst = d;
+		**dst = (dbl) d;
 	}
 	return (int) (p-src);
 }
-@:atomtostr(dbl,%g,double)@
+@:atomtostr(dbl,%.17g,double)@
 @:atom_io(dbl,Lng,lng)@
 
-int fltFromStr(char* src, int* len, flt **dst) {
+#if HAVE_STRTOF && !HAVE_DECL_STRTOF
+extern float strtof(const char *, char **);
+#endif
+
+int fltFromStr(char* src, int* len, flt **dst)
+{
 	char *p = src;
-	dbl d = strtod(src, &p); 	
+#ifdef HAVE_STRTOF
+	float d;
+#else
+	double d;
+#endif
 
 	/* alloc memory */
 	@:atommem(flt,sizeof(flt))@
 
-	if (p == src || d > GDK_flt_max || d <= GDK_flt_min) {
+	/* on overflow, strtof returns HUGE_VALF and sets errno to
+	   ERANGE; on underflow, it returns 0 and also sets errno to
+	   ERANGE.  We accept 0, but not HUGE_VALF. */
+	errno = 0;
+#ifdef HAVE_STRTOF
+	d = strtof(src, &p);
+	if (p == src || (errno == ERANGE && d != 0)
+#ifdef INFINITY
+	    || d == INFINITY
+#endif
+#ifdef NAN
+	    || d == NAN
+#endif
+		)
+#else
+	d = strtod(src, &p);
+	if (p == src || (errno == ERANGE && d != 0) ||
+	    d <= GDK_flt_min || d > GDK_flt_max)
+#endif
+	{
 		**dst = flt_nil; /* default return value is nil */
+		p = src;
 	} else {
 		**dst = (flt) d;
 	}
 	return (int) (p-src);
 }
-@:atomtostr(flt,%g,float)@
+@:atomtostr(flt,%.9g,float)@
 @:atom_io(flt,Int,int)@
 @}
 
@@ -1182,7 +1246,7 @@ digit octal number to denote a character.
 
 Because in many typical situations lots of double string values occur
 in tables, the string insertion provides automatic double elimination.
-To do this, a GDK_STRHASHTABLE(=1024) bucketet hashtable is hidden in the first 
+To do this, a GDK_STRHASHTABLE(=1024) bucket hashtable is hidden in the first 
 4096 bytes of the string heap, consisting of integer offsets of the first 
 string hashing on that bucket in the heap. Furthermore, the first 4 bytes 
 before each string in the heap is an integer offset to the next string hashing 
@@ -1410,7 +1474,18 @@ int strPut(Heap *h, var_t *dst, str v) {
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
 	if (h->free + len >= h->size) {
-		size_t newsize = len + (size_t)((dbl)h->size*BATMARGIN);
+		/* Something really strange happens here, In a special case
+		   (Pentium II Klamath, gcc version 2.96 20000731,
+		   GNU assembler version 2.10.90 using BFD version 2.10.0.18)
+		   the fldl instruction to load BATMARGIN goes SOMETIMES
+		   (but reproducable) wrong (the register is filled with
+		   -NaN iso 1.5 (BATMARGIN)). So replaced this code:
+		   size_t newsize = len + h->size * BATMARGIN;
+		*/
+		float batmargin = (float) BATMARGIN;
+		float hnewsize  = h->size * batmargin;
+		size_t newsize  = len + (size_t) hnewsize;
+		assert(newsize);
 
 		/* XXX: if the heap just becomes too big, insert a nil (last var_t bytes are free) */
 		if (newsize > GDK_VM_MAXSIZE) {

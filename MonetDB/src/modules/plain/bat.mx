@@ -196,7 +196,7 @@ newly created BATs to be checked. You must realize that finding out that a colum
 
 By default, both bits in the {\tt debugmask} are off, which gives fastest performance.
 @m
-.COMMAND count ( int bid ) : lng = CMDsize;
+.COMMAND count ( int bid ) : lng = CMDcount_bat;
 "Returns the current size (in number of elements) of a BAT."
 
 .COMMAND capacity ( int bid ) : lng = CMDcapacity;
@@ -313,12 +313,11 @@ allocated arena gets to be large, BATs may be swapped out.
 "Make the BAT persistent (mode = TRUE), transient (mode = FALSE).
  or session (mode = bit(nil)). Returns the BAT itself." 
 
-.COMMAND release( BAT[any,any] ) : lng = CMDrelease;
-"Change the BAT mode to session and return a unique numerical ID for the BAT"
+.COMMAND destroy(str nme, bit immediately) : bit = CMDdestroy;
+"Destroys the BAT."
 
-.COMMAND resurrect( lng id ) : BAT[any,any] = CMDresurrect;
-"Try to get back a session BAT from its ID. Gives an ERROR if it was removed from the BAT cache. 
- USAGE: if (isnil(CATCH(b := resurrect(id))) { #found } else { #not found }." 
+.COMMAND resurrect( str name ) : bit = CMDresurrect;
+"Try to get back a session BAT from its name"
 
 .COMMAND save(str nme) : bit = CMDsave;
 "Save a BAT to storage, if it was loaded and dirty. Returns whether IO was necessary.
@@ -335,6 +334,10 @@ allocated arena gets to be large, BATs may be swapped out.
 .COMMAND cold(str nme) : void = CMDcold;
 "Makes a BAT very cold for the BBP. The chance of being choses for swapout is 
  big, afterwards.  Returns the BAT itself."
+
+.COMMAND heat(str nme) : int = CMDheat;
+"returns the current BBP heat (LRU stamp)"
+
 
 @- Heap Specific Commands
 @T
@@ -504,15 +507,12 @@ these 'sync' OIDs with their own propagation rules.
     CONST BAT_APPEND := 2;      # allow reads and insertions of new elements.
     CONST BAT_WRITE  := 0;      # allow reads, insertions, and updates.
 
-    PROC destroy(bat[any,any] b) : any {
-        b.persists(false);
-        return nil;
-    }
 
-    PROC destroy(str s) : any {
-        var b := bat(s);
-        return b.destroy;
-    }
+    PROC destroy(str s) : bit 
+        return destroy(s,true);
+
+    PROC destroy(bat[any,any] b) : bit
+        return destroy(str(b),true);
 
     PROC capacity(bat[any,any] b) : lng 
 	return capacity(int(b));
@@ -660,9 +660,20 @@ int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
 	return GDK_SUCCEED;
 } 
 
-int CMDsize(lng *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDsize")) {
-		BAT *b = (BAT*) BBPgetdesc((bat) *bid);
+
+/* descriptors may be unloaded by BBPtrim, so secure them with a hotfix while in use */
+static BAT* lock_desc(bat bid) {
+	BBPfix(bid);
+	return (BAT*) BBPgetdesc(bid);
+}
+
+static void unlock_desc(bat bid) {
+	BBPunfix(bid);
+}
+
+int CMDcount_bat(lng *res, int *bid) {
+	if (BBPcheck((bat) *bid, "CMDcount_bat")) {
+		BAT *b = lock_desc((bat) *bid);
 		if (b == NULL) {
 			*res = lng_nil;
 		} else if (BBP_cache((bat) *bid)) {
@@ -671,42 +682,46 @@ int CMDsize(lng *res, int *bid) {
 			/* BAT not loaded */
 			*res = (lng) ((b->batBuns->free - (b->batHole - b->batBuns->base))/BUNsize(b) - 1);
 		}
+		unlock_desc(*bid);
 	}
 	return GDK_SUCCEED;
 }
 
 int CMDcapacity(lng *res, int *bid) {
 	if (BBPcheck((bat) *bid, "CMDcapacity")) {
-		BAT *b = (BAT*) BBPgetdesc((bat) *bid);
+		BAT *b = lock_desc((bat) *bid);
 		if (b == NULL) {
 			*res = lng_nil;
 		} else {
 			*res = (lng) BATcapacity(b);
 		}
+		unlock_desc(*bid);
 	}
 	return GDK_SUCCEED;
 }
 
 int CMDhtype(int *res, int *bid) {
 	if (BBPcheck((bat) *bid, "CMDhtype")) {
-		BAT *b = (BAT*) BBPgetdesc((bat) *bid);
+		BAT *b = lock_desc((bat) *bid);
 		if (b == NULL) {
 			*res = TYPE_void;
 		} else {
 			*res = *bid > 0 ? BAThtype(b) : BATttype(b);
 		}
+		unlock_desc(*bid);
 	}
 	return GDK_SUCCEED;
 }
 
 int CMDttype(int *res, int *bid) {
 	if (BBPcheck((bat) *bid, "CMDttype")) {
-		BAT *b = (BAT*) BBPgetdesc((bat) *bid);
+		BAT *b = lock_desc((bat) *bid);
 		if (b == NULL) {
 			*res = TYPE_void;
 		} else {
 			*res = *bid > 0 ? BATttype(b) : BAThtype(b);
 		}
+		unlock_desc(*bid);
 	}
 	return GDK_SUCCEED;
 }
@@ -737,7 +752,7 @@ int CMDgetkey(bit *ret, BAT *b) {
 		*ret = TRUE;
 	} else {
 		if (!b->hkey) {
-			BATpropcheck(b);
+			BATpropcheck(b, BATPROPS_ALL);
 		}
 		*ret = b->hkey?TRUE:FALSE;
 	}
@@ -750,18 +765,28 @@ int CMDpersists(BAT **r, BAT *input, bit *param) {
         return GDK_SUCCEED;
 }
 
-int CMDrelease(lng *id, BAT *b) {
-	int *p = (int*) id;
-	BATmode(b, SESSION);
-	p[0] = (int) b->batCacheid;
-	p[1] = b->batStamp; 
-	return GDK_SUCCEED;
+int CMDdestroy(bit *res, str input, bit *immediately) {
+        int bid = BBPindex(input);
+        *res = FALSE;
+        if (bid ) {
+                BBPfix(bid);
+		if (BBPindex(input) == bid) {
+			BAT *b = BBPquickdesc(ABS(bid), FALSE);
+			if (*immediately == FALSE) {
+				b->batKeeparound = 1;
+				b->batDirtydesc = 1;
+			}
+			BATmode(b, TRANSIENT);
+			*res = TRUE;
+		}
+                BBPunfix(bid);
+        }
+        return GDK_SUCCEED;
 }
 
-int CMDresurrect(BAT **res, lng *id) {
-	int *p = (int*) id;
-	*res = BBPresurrect((bat) p[0], p[1]);
-	return *res?GDK_SUCCEED:GDK_FAIL;
+int CMDresurrect(bit *r, str nme) {
+        *r = BBPresurrect(nme);
+        return GDK_SUCCEED;
 }
 
 int CMDsetaccess(BAT **r, BAT *input, int *param) {
@@ -869,11 +894,11 @@ int CMDinfo(BAT **retval, BAT *b){
 		return GDK_FAIL;
 	*retval = bn;
  
-	if (b->batPersistence & PERSISTENT) {
+	if (b->batPersistence == PERSISTENT) {
 		strcpy(mode, "persistent");
-	} else if (b->batPersistence & SESSION) {
+	} else if (b->batPersistence == SESSION) {
 		strcpy(mode, "session");
-	} else if (b->batPersistence & TRANSIENT) {
+	} else if (b->batPersistence == TRANSIENT) {
 		strcpy(mode, "transient");
 	} else {
 		strcpy(mode, "unknown");
@@ -1037,8 +1062,11 @@ int CMDunload(bit *res, str input) {
         bat bid = ABS(BBPindex(input));
 	*res = FALSE;
         if (bid > 0) {
+		BAT *b;
 		BBPfix(bid);
-		*res = BBPunload(bid);
+		b = BBP_cache(bid);
+		if (b && b->batPersistence == SESSION) BATmode(b, TRANSIENT);
+		*res = BBPunfix(bid) == 0;
 	}
         return GDK_SUCCEED;
 }
@@ -1050,6 +1078,14 @@ int CMDhot(str input) {
 
 int CMDcold(str input) {
 	BBPcold(BBPindex(input));
+	return GDK_SUCCEED;
+}
+
+int CMDheat(int *res, str input) {
+	int bid = BBPindex(input);
+	if (bid) {
+		*res = BBP_lastused(bid) & 0x7fffffff;
+	}
 	return GDK_SUCCEED;
 }
 

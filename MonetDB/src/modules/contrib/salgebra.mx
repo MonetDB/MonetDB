@@ -236,19 +236,12 @@ build the cluster hash from the enum.
 .COMMAND rename( clusterhash ch, str name ): void = salgebra_CMDrename;
   "Try to name ch; fail upon error."
 
-.COMMAND CHinit(): void = salgebra_CMDinit;
-  "Initialize the module"
-.COMMAND CHdrop(): void = salgebra_CMDdrop;
-  "Drop the module"
-
 .PRELUDE = salgebra_prelude;
 .EPILOGUE = salgebra_epilogue;
 
 .END salgebra;
 
 @mil
-  CHinit();
-
   PROC CHdir():void :=
     print( ch_namecache, ch_refcnt, ch_cache );
   ADDHELP("CHdir", "arjen", "Jul 18 2000",
@@ -258,10 +251,6 @@ build the cluster hash from the enum.
     RETURN [ch.uselect( v )~const v];
   ADDHELP("select", "arjen", "Jun 16 2000",
 	  "Select using a clusterhash uselect plus a cast.", mod);
-
-proc drop_salgebra() := {
-  CHdrop();
-}
 
 @{
 @* Implementation Code
@@ -350,9 +339,9 @@ MT_Lock		salgebra_chashLock[BBPLOCKMASK+1];
 MT_Lock		salgebra_cacheLock; 
 MT_Lock		salgebra_refcntLock; 
 
-bat salgebra_cache;
-bat salgebra_namecache;
-bat salgebra_refcnt;
+BAT* salgebra_cache;
+BAT* salgebra_namecache;
+BAT* salgebra_refcnt;
 
 @+ MEL required functions
 @T
@@ -384,6 +373,7 @@ clusterhashFix( clusterhash *ch ) {
   int refCnt = 0;
   if ( clusterhashIsNil( ch ) ) return 0;
   refCnt = salgebra_incRefCnt( ch );
+  (void) refCnt;		/* keep compiler happy */
 #ifdef DEBUG
 printf( "Fix ch for batId %d = %d\n", ABS(ch->b), refCnt );
 #endif
@@ -420,15 +410,14 @@ str
 clusterhashName( int batId ) {
   BUN bun;
   str result;
-  BAT *namecache = BBPdescriptor( salgebra_namecache );
   /* find ch in dictionary */
   MT_set_lock(salgebra_cacheLock, "clusterhashName");
-  if (! ( bun = BUNfnd( namecache, &batId )) ) {
+  if (! ( bun = BUNfnd( salgebra_namecache, &batId )) ) {
     MT_unset_lock(salgebra_cacheLock, "clusterhashName");
     GDKwarning( "Inconsistency in clusterhash repository...\n" );
     return NULL;
   }
-  result = (str) BUNtail( namecache, bun );
+  result = (str) BUNtail( salgebra_namecache, bun );
   MT_unset_lock(salgebra_cacheLock, "clusterhashName");
   return result;
 }
@@ -458,9 +447,7 @@ clusterhashByName( clusterhash *res, char *chname  ) {
   BUN bun;
   int batId;
   clusterhash *ch = NULL;
-  BAT *cache = BBPdescriptor( salgebra_cache );
-  BAT *namecache = BBPdescriptor( salgebra_namecache );
-  BAT *ncrev = BATmirror( namecache );
+  BAT *ncrev = BATmirror( salgebra_namecache );
   /* find ch in dictionary */
   MT_set_lock(salgebra_cacheLock, "clusterhashByName");
   if (! ( bun = BUNfnd( ncrev, chname )) ) {
@@ -470,7 +457,7 @@ clusterhashByName( clusterhash *res, char *chname  ) {
     return GDK_FAIL;
   }
   batId = *(int*) BUNtail( ncrev, bun );
-  if (! (ch = (clusterhash*) BUNtail( cache, BUNfnd( cache, &batId ) ) ) ) {
+  if (! (ch = (clusterhash*) BUNtail( salgebra_cache, BUNfnd( salgebra_cache, &batId ) ) ) ) {
     MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
     GDKerror( "Inconsistency in clusterhash repository...\n" );
     clusterhashNil( res );
@@ -525,7 +512,7 @@ DICTclustersize(clusterhash* ch, ptr v){
 
 static INLINE void 
 DICTclear(dict_entry *d, int n) {
-  unsigned int i;
+  int i;
   for ( i = 0; i < n; i++ ) { d[i].s = d[i].e = -1; }
 }
 
@@ -573,42 +560,39 @@ salgebra_CHadmin( clusterhash* ch ) {
 }
 
 /* should we indeed protect the insert with a lock? */
-@= cacheManHeader
 void
-salgebra_@1It( clusterhash* ch ) {
+salgebra_cacheIt( clusterhash* ch ) {
   int refCnt = 0;
   char *name = NULL;
   int bid = ABS( ch->b );
-  BAT *cache = BBPdescriptor( salgebra_cache );
-  BAT *namecache = BBPdescriptor( salgebra_namecache );
-  BAT *refcnt = BBPdescriptor( salgebra_refcnt );
-@c
-@:cacheManHeader(cache)@
+
   name = salgebra_CHadmin( ch );
   MT_set_lock(salgebra_cacheLock, "cacheIt");
   MT_set_lock(salgebra_refcntLock, "cacheIt");
-  BUNins( refcnt, &bid, &refCnt );
+  BUNins( salgebra_refcnt, &bid, &refCnt );
   MT_unset_lock(salgebra_refcntLock, "cacheIt");
-  BUNins( cache, &bid, ch );
-  BUNins( namecache, &bid, name );
+  BUNins( salgebra_cache, &bid, ch );
+  BUNins( salgebra_namecache, &bid, name );
   MT_unset_lock(salgebra_cacheLock, "cacheIt");
 }
 
-@:cacheManHeader(uncache)@
-  MT_set_lock(salgebra_cacheLock, "cacheIt");
-  BUNdelHead( namecache, &bid );
-  BUNdelHead( cache, &bid );
-  MT_set_lock(salgebra_refcntLock, "cacheIt");
-  BUNdelHead( refcnt, &bid );
-  MT_unset_lock(salgebra_refcntLock, "cacheIt");
-  MT_unset_lock(salgebra_cacheLock, "cacheIt");
+void
+salgebra_uncacheIt( clusterhash* ch ) {
+  int bid = ABS( ch->b );
+
+  MT_set_lock(salgebra_cacheLock, "uncacheIt");
+  BUNdelHead( salgebra_namecache, &bid );
+  BUNdelHead( salgebra_cache, &bid );
+  MT_set_lock(salgebra_refcntLock, "uncacheIt");
+  BUNdelHead( salgebra_refcnt, &bid );
+  MT_unset_lock(salgebra_refcntLock, "uncacheIt");
+  MT_unset_lock(salgebra_cacheLock, "uncacheIt");
 }
 
 int
 salgebra_isCached( int batId ) {
   int bid = ABS( batId );
-  BAT *cache = BBPdescriptor( salgebra_cache );
-  BUN chbun = BUNfnd( cache, &bid );
+  BUN chbun = BUNfnd( salgebra_cache, &bid );
   return chbun?TRUE:FALSE;
 }
 
@@ -619,11 +603,10 @@ salgebra_@1RefCnt( clusterhash *ch ) {
   int refCnt = 0;
   int batId = ABS( ch->b );
   BUN chbun = NULL;
-  BAT *refcnts = BBPdescriptor( salgebra_refcnt );
   MT_set_lock( salgebra_refcntLock, "@1RefCnt" );
-  chbun = BUNfnd( refcnts, &batId );
+  chbun = BUNfnd( salgebra_refcnt, &batId );
   ERRORcheck( !chbun, "Inconsistency in clusterhash repository...\n" );
-  refCnt = @2*( (int *) BUNtail( refcnts, chbun ) );
+  refCnt = @2*( (int *) BUNtail( salgebra_refcnt, chbun ) );
   MT_unset_lock( salgebra_refcntLock, "@1RefCnt" );
   return refCnt;
 }
@@ -727,7 +710,7 @@ salgebra_CHbuild( clusterhash* ch, BAT* b ) {
 
   if ( !( ch->isPerfect = isPerfect ) ) {
     /* set tv := join( hv.reverse, b ).reverse.seqbase(0@0); */
-    tv = BATjoin( BATmirror( hv ), b );
+    tv = BATjoin( BATmirror( hv ), b, oid_nil );
     tv = BATmirror( tv );
     ch->tv = BBPcacheid( tv );
   }
@@ -827,7 +810,6 @@ if ( clusterhashIsNil( ch ) ) {
 
 int 
 salgebra_CMDclusterhash( clusterhash* res, BAT* b) {
-  BAT *cache;
   int batId;
   clusterhash *ch;
 
@@ -845,9 +827,8 @@ salgebra_CMDclusterhash( clusterhash* res, BAT* b) {
     return ret;
   }
   /* retrieve ch from the dictionary */
-  cache = BBPdescriptor( salgebra_cache );
   MT_set_lock(salgebra_cacheLock, "CMDclusterhash");
-  ch = (clusterhash*) BUNtail( cache, BUNfnd( cache, &batId ) );
+  ch = (clusterhash*) BUNtail( salgebra_cache, BUNfnd( salgebra_cache, &batId ) );
   memcpy( res, ch, clusterhash_size() );
   MT_unset_lock(salgebra_cacheLock, "CMDclusterhash");
   clusterhashFix( res );
@@ -885,22 +866,20 @@ salgebra_CMDinfo( BAT** res, clusterhash* ch ) {
 
 int
 salgebra_CMDrename( clusterhash* ch, str name ) {    
-  BUN bun;
-  BAT *namecache = NULL, *ncrev = NULL;
+  BAT *ncrev = NULL;
   int batId = ABS(ch->b);
 
   @:CHECKnil(error,FAIL)@
 
   MT_set_lock(salgebra_cacheLock, "rename");
-  namecache = BBPdescriptor( salgebra_namecache );
-  ncrev = BATmirror( namecache );
-  if ( (bun = BUNfnd( ncrev, name )) ) {
+  ncrev = BATmirror( salgebra_namecache );
+  if (BUNfnd(ncrev, name)) {
     GDKerror( "A clusterhash with name %s already exists.\n", name );
     MT_unset_lock(salgebra_cacheLock, "rename");
     return GDK_FAIL;
   }
-  BUNdelHead( namecache, &batId );
-  BUNins( namecache, &batId, name );
+  BUNdelHead( salgebra_namecache, &batId );
+  BUNins( salgebra_namecache, &batId, name );
   MT_unset_lock(salgebra_cacheLock, "rename");
   return GDK_SUCCEED;
 }
@@ -1005,8 +984,9 @@ salgebra_CMDdestroy( str chname ) {
   return GDK_SUCCEED;
 }
 
-void
+bat*
 salgebra_prelude(void) {
+  static bat buf[2];
   int i = 0;
 #ifdef DEBUG
 GDKwarning( "salgebra prelude!\n" );
@@ -1018,69 +998,36 @@ GDKwarning( "salgebra prelude!\n" );
   salgebra_cacheLock = MT_create_lock();
   salgebra_refcntLock = MT_create_lock();
 
-  salgebra_cache = *( (bat*) ATOMnilptr(TYPE_bat) );
-  salgebra_namecache = *( (bat*) ATOMnilptr(TYPE_bat) );
-  salgebra_refcnt = *( (bat*) ATOMnilptr(TYPE_bat) );
+  salgebra_cache = BATnew( TYPE_int, TYPE_clusterhash, 10 );
+  BBPrename(BBPcacheid(salgebra_cache), "ch_cache");
+
+  salgebra_namecache = BATnew( TYPE_int, TYPE_str, 10 );
+  BBPrename( BBPcacheid(salgebra_namecache), "ch_namecache");
+
+  salgebra_refcnt = BATnew( TYPE_int, TYPE_int, 10 );
+  BBPrename(BBPcacheid(salgebra_refcnt), "ch_refcnt");
 
   clusterhash_nil.bttype = int_nil;
   clusterhash_nil.isPerfect = int_nil;
   clusterhash_nil.b = *( (bat*) ATOMnilptr(TYPE_bat) );
   clusterhash_nil.hv = *( (bat*) ATOMnilptr(TYPE_bat) );
   clusterhash_nil.tv = *( (bat*) ATOMnilptr(TYPE_bat) );
+
+  buf[0] = BBPcacheid(salgebra_cache);
+  buf[1] = 0;
+  return buf;
 }
 
-/* 
-   create cache pool
-   NOTE: ugly place engineering-wise; but, it cannot go into the prelude
-   as it is called <EM>before</EM> TYPE_clusterhash is known 
- */
-@= newcache
-bat@1 = BATnew( TYPE_@2, TYPE_@3, 10 );
-salgebra_@1 = BBPcacheid( bat@1 );
-BBPrename( salgebra_@1, "ch_@1" );
-BBPfix( salgebra_@1 );
-@c
-int
-salgebra_CMDinit(void) {
-  BAT *batcache = NULL, *batnamecache = NULL, *batrefcnt = NULL;
-#ifdef DEBUG
-  GDKwarning("salgebra init!\n");
-#endif
-
-  MT_set_lock( salgebra_cacheLock, "Init" );
-  if (salgebra_cache != *((bat*) BATatoms[TYPE_bat].atomNull)) {
-    GDKerror( "Module was already initialized!\n" );
-    MT_unset_lock( salgebra_cacheLock, "Init" );
-    return GDK_FAIL;
-  }
-
-  @:newcache(cache,int,clusterhash)@
-  @:newcache(namecache,int,str)@
-  @:newcache(refcnt,int,int)@
-
-  MT_unset_lock( salgebra_cacheLock, "Init" );
-  return GDK_SUCCEED;
-}
-
-int
-salgebra_CMDdrop(void) {
-#ifdef DEBUG
-  GDKwarning("salgebra drop!\n");
-#endif
-  MT_set_lock( salgebra_cacheLock, "Drop" );
-  BBPunfix( salgebra_namecache );
-  BBPunfix( salgebra_cache );
-  BBPunfix( salgebra_refcnt );
-  MT_unset_lock( salgebra_cacheLock, "Drop" );
-  return GDK_SUCCEED;
-}
- 
 void
 salgebra_epilogue(void) {
   int i = 0;
 #ifdef DEBUG
   GDKwarning("salgebra epilogue!\n");
 #endif
+  BBPunfix(BBPcacheid(salgebra_namecache));
+  BBPunfix(BBPcacheid(salgebra_cache));
+  BBPunfix(BBPcacheid(salgebra_refcnt));
+
   MT_destroy_lock( salgebra_cacheLock );
   MT_destroy_lock( salgebra_refcntLock );
   for( i=0; i<=BBPLOCKMASK; i++ ) {

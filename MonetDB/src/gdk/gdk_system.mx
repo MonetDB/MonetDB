@@ -34,8 +34,6 @@ functions.
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
 
-#include <monet_utils.h>
-
 #ifdef _MSC_VER
 #ifndef LIBGDK
 #define gdk_export extern __declspec(dllimport) 

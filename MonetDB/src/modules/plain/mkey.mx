@@ -384,7 +384,7 @@ int CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b) {
 	    dst = (int*) (((BUN) dst) + yy);
 	}
     } else {
-	unsigned int (*hash)(ptr) = BATatoms[b->ttype].atomHash;
+	hash_t (*hash)(ptr) = BATatoms[b->ttype].atomHash;
     	BUN p, q;
 	BATloopFast(b, p, q, xx) {
 	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ (*hash)(BUNtail(b,p));

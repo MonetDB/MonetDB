@@ -122,6 +122,16 @@ decimal columns is their use as foreign key on tables imported from another DBMS
       leading zero, in which case a zero-padded number of width N1 is produced. 
       If the plus at start is specified, positive numbers start with a plus. "
 
+@- comparison
+@m
+.COMMAND isnil(decimal) : bit = decimal_isnil;         "decimal nil test (!DS2.2)"
+.OPERATOR (decimal) "="  (decimal) : bit = decimal_eq; "decimal equality test (!DS2.2)"
+.OPERATOR (decimal) "!=" (decimal) : bit = decimal_ne; "decimal non-equality test (!DS2.2)"
+.OPERATOR (decimal) "<"  (decimal) : bit = decimal_lt; "decimal smaller-than test (!DS2.2)"
+.OPERATOR (decimal) ">"  (decimal) : bit = decimal_gt; "decimal greater-than test (!DS2.2)"
+.OPERATOR (decimal) "<=" (decimal) : bit = decimal_le; "decimal smaller-or-equal test (!DS2.2)"
+.OPERATOR (decimal) ">=" (decimal) : bit = decimal_ge; "decimal greater-or-equal test (!DS2.2)"
+
 @- arithmetic
 All operators return a result decimal whose value is exactly the value of the operation, 
 when applied to the value of both decimal arguments. Only for division this is not possible; 
@@ -195,6 +205,8 @@ These commands are internal to the procedures in the load section.
 	"returns whether decimal is an exact multiple of 10 (!DS2.2)."
 .COMMAND decimal_minrepeat(int x) : void = decimal_setminrepeat;
 	"set number of repeating characters after which to condense decimals (!DS2.2)."
+
+
 
 .PRELUDE = decimal_prelude;
 .EPILOGUE = decimal_epilogue;
@@ -277,8 +289,7 @@ comparison when comparing decimals of the same precision; comparing 8 digits at 
 #define _DECIMAL_H_
 
 typedef struct {
-	short scale;
-	unsigned short negative:1, precision:15;
+	int scale:16, negative:1, precision:15;
 	unsigned int num[1]; /* array of digits: 2-digits-per-byte = 8-digits-per-integer */
 	/* array extends beyond boundary */
 } decimal;
@@ -557,7 +568,10 @@ The below ADT function implementations are required when adding a new atom type 
 int decimal_fromstr(str buf, int *len, decimal **ret) {
 	int comma = 0, scale = 0, sign = 0, precision = 0, started = 0, scale_neg = 0; 
 	int c, x = (int) sizeof(int), pos, repeat = 0, *rp = &repeat;
-	char *base=buf, *cur=buf, *dst, *last=NULL, cpy[PRECISION_MAX];
+	char *base=buf, *cur=buf, *dst, cpy[PRECISION_MAX];
+#if 0
+	char *last=NULL;
+#endif
 
 	dst=cpy;
 	
@@ -598,9 +612,11 @@ int decimal_fromstr(str buf, int *len, decimal **ret) {
 			} 
 			if ((dst - cpy) < PRECISION_MAX) {
 				*dst++ = c; /* copy digit into buffer */
+#if 0
 				if (c != '0') {
 					last = dst;
 				}
+#endif
 			}
 			precision++;
 		}
@@ -624,13 +640,15 @@ int decimal_fromstr(str buf, int *len, decimal **ret) {
 		if (precision > 0) precision = 0; /* force zero */ 
 		cpy[0] = '0';
 	} 
+#if 0
 /* delete trailing zeros 
 	else if (last && precision > 0) {
 		precision -= dst - last;
 		comma -= dst - last;
 	}
 */
-	
+#endif
+
 	/* allocate the decimal. invalid parameters will produce a nil */
 	*ret =  decimal_alloc(precision, scale-comma, sign, *ret, len);
 	if (!ISNIL(*ret)) {
@@ -895,11 +913,11 @@ void decimal_put(Heap* h, var_t* bun, decimal* val) {
 
 @- operator implementations
 @c
-void decimal_prelude(void) {
+bat* decimal_prelude(void) {
 	int x, y, z, r, s=0;
 
 	if (decimal_nil) {
-		return;
+		return NULL;
 	}
 	/* setup the lookup tables; our alorithms never do %10 and /10 (expensive operators) */
 	for(x=0; x < 10; x++) {
@@ -957,6 +975,7 @@ void decimal_prelude(void) {
 	decimal_dbl_max = decimal_copy(decimal_dbl_min, decimal_dbl_min->precision);
 	decimal_dbl_max->negative = 0;
 
+	return NULL;
 }
 
 void decimal_epilogue(void){
@@ -972,6 +991,28 @@ void decimal_epilogue(void){
 	GDKfree(decimal_dbl_min);
 	GDKfree(decimal_dbl_max);
 	decimal_nil = NULL;
+}
+
+@= decimal_cmp
+int decimal_@1(bit *ret, decimal *v1, decimal *v2) {
+        if (decimal_compare(v1, decimal_nil) && decimal_compare(v2, decimal_nil)) {
+                *ret = (decimal_compare(v1, v2) @2 0);
+        } else {
+                *ret = bit_nil;
+        }
+        return GDK_SUCCEED;
+}
+@c
+@:decimal_cmp(eq,==)@
+@:decimal_cmp(ne,!=)@
+@:decimal_cmp(lt,<)@
+@:decimal_cmp(gt,>)@
+@:decimal_cmp(le,<=)@
+@:decimal_cmp(ge,>=)@
+
+int decimal_isnil(bit *ret, decimal *v1) {
+        *ret = (decimal_compare(v1, decimal_nil) == 0);
+        return GDK_SUCCEED;
 }
 
 /* Translates a long into a decimal (no overflow possible). */
@@ -1392,7 +1433,7 @@ int decimal_minus(decimal **ret, decimal *v1, decimal *v2) {
 	}
 	/* minus without overflow by subtracting the smaller from the bigger number */
 	x = decimal_compare(v1,v2);
-	if ((v1->negative == 0 && x < 0) || (v1->negative == 1 && x > 0)) {
+	if ((v1->negative == 0 && x < 0) || (v1->negative != 0 && x > 0)) {
 		tmp = v2; v2 = v1; v1 = tmp; negative = !negative;
 	}
 	*ret = decimal_copy(v1, v1->precision);

@@ -88,7 +88,6 @@ Too many bugs.
 
 /* nothing much */
 
-gdk_export BAT* BAThashjoin(BAT* l, BAT* r);
 
 #endif /* __MALALGEBRA_H__ */
 
@@ -102,9 +101,9 @@ BATmalfetchjoin(BAT *l, BAT *r) {
   int lfetch = (BATtdense(l) && ATOMstorage(r->htype) <= ATOMstorage(TYPE_oid));
 
   if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
-    return BATfetchjoin(l, r);
+    return BATfetchjoin(l, r, oid_nil);
   } else if (rfetch) {
-    return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l)));
+    return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), oid_nil));
   }
   GDKerror( "Cannot perform fetchjoin.\n");
   return NULL;
@@ -117,15 +116,15 @@ BATmalhashjoin(BAT *l, BAT *r) {
   size_t rsize = r->batBuns->size + (r->hheap.base?r->hheap.size:0) + 
 				    (r->theap.base?r->theap.size:0);
   if (rsize < lsize) {
-    return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)));
+    return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l),oid_nil));
   }
-  return BAThashjoin(l,r);
+  return BAThashjoin(l,r,oid_nil);
 }
 
 /* don't reorder! */
 BAT*
 BATmallrhashjoin(BAT *l, BAT *r) {
-  return BAThashjoin(l,r);
+  return BAThashjoin(l,r,oid_nil);
 }
 
 BAT*
@@ -142,12 +141,12 @@ BATmalmergejoin(BAT *l, BAT *r) {
     return NULL;    
   }
 */
-  return BATmergejoin(l,r);
+  return BATmergejoin(l,r,oid_nil);
 }
 
 BAT*
 BATmalindexjoin(BAT *l, BAT *r) {
-  return BATthetajoin(l,r,JOIN_EQ);
+  return BATthetajoin(l,r,JOIN_EQ,oid_nil);
 }
 
 @= joincmd

@@ -45,38 +45,38 @@ h.print;
 # BAT:	  tmp_25	  #
 # (int)	  (BAT)		  #
 #-------------------------#
-[ 0,	  <tmp_28>	  ]
-[ 1,	  <tmp_29>	  ]
-[ 2,	  <tmp_30>	  ]
+[ 0,	  <tmp_30>	  ]
+[ 1,	  <tmp_31>	  ]
+[ 2,	  <tmp_32>	  ]
 dir("tmp");
-#-------------------------------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
-#-----------------------------------------------------------------------------------------------------------------#
-[ "tmp_26",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1,		  0	  ]
-[ "tmp_27",	  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1,		  0	  ]
-[ "tmp_28",		  "int",  "int",  8,	  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "tmp_29",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "tmp_30",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
+#---------------------------------------------------------------------------------------------------------#
+# name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
+#---------------------------------------------------------------------------------------------------------#
+[ "tmp_28",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_29",	  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_30",	  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_31",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_32",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 h.find(0).rename("dummy");
 dir("dummy");
-#-------------------------------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "dummy",		  "int",  "int",  8,	  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
+#---------------------------------------------------------------------------------------------------------#
+# name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
+#---------------------------------------------------------------------------------------------------------#
+[ "dummy",	  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 dir("tmp");
-#-------------------------------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
-#-----------------------------------------------------------------------------------------------------------------#
-[ "tmp_26",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1,		  0	  ]
-[ "tmp_27",	  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1,		  0	  ]
-[ "tmp_29",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "tmp_30",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
+#---------------------------------------------------------------------------------------------------------#
+# name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
+#---------------------------------------------------------------------------------------------------------#
+[ "tmp_28",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_29",	  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_31",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_32",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 vars;
 #-----------------------------------------------------------------------------------------#
 # type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_27>"		  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_28>"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -108,32 +108,9 @@ vars;
 [ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
 [ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
 [ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 quit;
 
 # 11:48:45 >  

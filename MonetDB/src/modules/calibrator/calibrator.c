@@ -116,7 +116,7 @@ int main(int ac, char **av)
 	caliblng MHz, maxrange;
 	struct fullInfo *caliInfo;
 
-	fprintf(stdout,"\nCalibrator v%s\n(by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n", VERSION);
+	fprintf(stdout,"\nCalibrator v%s\n(by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n", CALIB_VERSION);
 	fflush(stdout);
 
 	if (ac < 4) ErrXit("usage: '%s <MHz> <size>[k|M|G] <filename>`", av[0]);

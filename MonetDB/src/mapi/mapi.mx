@@ -107,6 +107,7 @@ This module contains a simple interface for internet connections.
 @h
 #ifndef MAPI_H
 #define MAPI_H
+#define BLOCKED
 
 #include <streams.h>
 #include <monet_context.h>
@@ -120,9 +121,8 @@ This module contains a simple interface for internet connections.
 
 #endif /* MAPI_H */
 @c
-#include <config.h>
-#include "mapi.h"
 #include <monet.h>
+#include "mapi.h"
 #include  <sys/types.h> 
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
@@ -160,7 +160,7 @@ This module contains a simple interface for internet connections.
         if (_k < 0) {
                 return _k;
         }
-        @3 = VALconvert(@2, res, 0);
+        @3 = VALconvert(@2, res);
         if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
                 return handle_paramerror(res,@1,res->vtype,@2);
         }
@@ -184,13 +184,13 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	if (lt->cnt != 3) {
 		return handle_argerror(res,lt->cnt,3);
 	}
-
 	@:builtin_operand(0,TYPE_int,Port)@
 	port = *Port;
 	@:builtin_operand(1,TYPE_int,Maxusers)@
 	maxusers = *Maxusers;
 	@:builtin_operand(2,TYPE_str,Cmd)@
 	cmd = GDKstrdup(Cmd);
+	res->vtype = TYPE_void;
 
 	port = (port?port:MAPIPORT);
 	maxusers = (maxusers?maxusers:MAPIMAXUSERS);
@@ -258,41 +258,55 @@ Get the new information for the server socket and start listening.
 			continue;
 		}
 		if (STREQ(cmd,"")) {
-			int i, mpl;
-			char *name = (char*) GDKmalloc(BUFSIZ), *user = name;
+			int i=0, mpl;
+			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
 			char *mp, *nmp;
+			int blocked=0;
 			stream *fdin = socket_rastream(msgsock, "mapi-r");
-			stream *fdout = socket_wastream(msgsock, "mapi-w");
+			stream *fdout= NULL;
 			Client c;
 
 			if (fdin == 0){
 				GDKsyserror("CLIENTlisten:fdin problems\n");
 				continue;
 			}
+			/* get user name */
+			fdin->read(fdin, user, 1, 1);
+			for(i=0; i<BLOCK && *user != '\n'; i++){
+				user++;
+				fdin->read(fdin, user, 1, 1);
+			}
+                        /* printf("mapi:Client accepted %s\n", name);*/
+                        fflush(stdout);
+                        s= strrchr(name,':');
+                        blocked= s && strncmp(s,":blocked",8)==0;
+                        if( blocked){
+                                /* printf("mapi:use blocked mode\n");*/
+                                fflush(stdout);
+                                *s=0;
+                                fdin= block_stream(socket_rstream(msgsock,"Mserver mapi read"));
+                                fdout= block_stream(socket_wstream(msgsock,"Mserver mapi write"));
+                        }else
+                                fdout= socket_wastream(msgsock,"Mserver mapi write");
+
 			if (fdout == 0){
 				GDKsyserror("CLIENTlisten:fdout problems\n");
 				continue;
 			}
-			/* get user name */
-			fdin->read(fdin, user, 1, 1);
-			for(i=0; i<BUFSIZ && *user != '\n'; i++){
-				user++;
-				fdin->read(fdin, user, 1, 1);
-			}
 			*user = 0;
 			mp = GDKgetenv("monet_prompt");
 			mpl = strlen(mp);
-			nmp = GDKmalloc(mpl +3);
+			nmp = GDKmalloc(mpl +4);
 			nmp[0] = '\1';
 			strncpy(nmp+1,mp,mpl);
 			nmp[mpl+1] = '\1';
-			nmp[mpl+2] = '\0';
+			nmp[mpl+2] = '\n';
+			nmp[mpl+3] = '\0';
 			c = initClient(name, nmp, FALSE);
 			GDKfree(nmp);
 			if (c == 0) {
 				stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
-				fdout->flush(fdout);
 
 				fdout->close(fdout);
 				fdout->destroy(fdout);
@@ -308,7 +322,7 @@ Get the new information for the server socket and start listening.
 			c->fdin = fdin;
 			c->fdout = fdout;
 			c->mode = BLOCKMODE;
-			monet_cntxt[c->stk].outer = CNTXTcopy(stk);
+			CNTXTcopy(stk,c);
 			TBL_initclient(c, father);
 			(void)monetFork();
 			scheduleClient(c);

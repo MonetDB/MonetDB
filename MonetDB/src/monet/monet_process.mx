@@ -58,10 +58,7 @@ The threads have to update their I/O descriptor before doing I/O.
 #define _MONET_PROCESS_H_
 #include "gdk.h"
 
-m_export void	monetInternet (void);
-
 /* monet standard threads */
-m_export void	monetServer	(void *dummy);
 m_export void	monetInterpreter(void *dummy);
 m_export void	monetSingle  	(int status);
 
@@ -73,15 +70,14 @@ m_export int	monetSetChannel (Thread t, stream* in, stream* out);
 
 #endif /* _MONET_PROCESS_H_ */
 @c
-#include  <sys/types.h> 
+#include "monet.h"
+
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
-#include "monet.h"
-
 @+ Monet Single Threaded
 The single threaded code is large copied from @%monetInterpreter@.
 @c
@@ -108,19 +104,25 @@ void monetSingle(int status){
 @-
 This will be dropped when everything works ok.
 @c
-void monetInterpreter(void* dummy){
+void monetInterpreter(void* status){
 	Thread	t;
 
 	t = THRnew(MT_getpid(), "Interpreter");
-	MT_up_sema(monet_forksync, "monetInterpreter");
-	PARDEBUG THRprintf(GDKerr, "monetInterpreter(dummy)\n" );
-	if (!monet_threads) monet_threads++;
+	if (t) {
+		monet_threads++;
+		MT_up_sema(monet_forksync, "monetInterpreter");
+		PARDEBUG THRprintf(GDKerr, "monetInterpreter()\n" );
 
-	doRequest(t,0);
-	MT_set_lock(monet_critical, "monetInterpreter");
- 	monet_threads--;
-	MT_unset_lock(monet_critical, "monetInterpreter");
-	THRdel(t);
+		doRequest(t,0);
+		MT_set_lock(monet_critical, "monetInterpreter");
+		THRdel(t);
+ 		monet_threads--;
+		MT_unset_lock(monet_critical, "monetInterpreter");
+	} else {
+		if (status)
+			* (int *) status = -1;
+		MT_up_sema(monet_forksync, "monetInterpreter");
+	}
        	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
 	MT_exit_thread(0);
 }
@@ -149,16 +151,18 @@ MT_Id monetFork(void) {
 	MT_Id p = 0;
 
 	if (!monet_singlethreaded) {
+		int status = 0;
 		MT_set_lock(monet_critical, "monetFork");
 		/* exclusive access to monet_forksync barrier
 	 	 * and monet_threads counter. */
-		if (MT_create_thread(&p, monetInterpreter, 0) < 0) {
+		if (MT_create_thread(&p, monetInterpreter, &status) < 0) {
 			GDKsyserror("monetFork:failed\n");
-			MT_unset_lock(monet_critical, "monetFork");
-			return (MT_Id)-1;
-		} 
-		MT_down_sema(monet_forksync, "monetFork");
- 		monet_threads++;
+			p = (MT_Id)-1;
+		} else {
+			MT_down_sema(monet_forksync, "monetFork");
+			if (status)
+				p = (MT_Id)-1;
+		}
 		MT_unset_lock(monet_critical, "monetFork");
 	}
 	return p;

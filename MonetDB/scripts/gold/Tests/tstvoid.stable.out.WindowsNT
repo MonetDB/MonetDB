@@ -140,30 +140,30 @@ if (not(view_bbp_name.reverse.exist("void_age"))) {
 }
 
 ls;
-#---------------------------------------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype		| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
-#---------------------------------------------------------------------------------------------------------------------------------#
-[ "age_t",		  "int",  "int",	  46,	  0,	  "dirty",	  "load", "pers", 1,	  1,		  1	  ]
-[ "car_age",		  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1,		  1	  ]
-[ "car_carprice",	  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1,		  1	  ]
-[ "car_category",	  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1,		  1	  ]
-[ "car_class",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "car_gender",		  "oid",  "chr",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1,		  1	  ]
-[ "car_neg",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "car_pos",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "car_town",		  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1,		  1	  ]
-[ "carprice_t",		  "int",  "int",	  9,	  0,	  "dirty",	  "load", "pers", 1,	  1,		  1	  ]
-[ "category_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1,		  1	  ]
-[ "class_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1,		  1	  ]
-[ "town_t",		  "str",  "int",	  10,	  0,	  "dirty",	  "load", "pers", 1,	  1,		  1	  ]
-[ "void_age",		  "oid",  "age_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "void_carprice",	  "oid",  "carprice_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "void_category",	  "oid",  "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "void_class",		  "oid",  "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "void_gender",	  "oid",  "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "void_neg",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "void_pos",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
-[ "void_town",		  "oid",  "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1,		  1	  ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# name			| htype	| ttype		| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "age_t",		  "int",  "int",	  46,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "car_age",		  "oid",  "int",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_carprice",	  "oid",  "int",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_category",	  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_class",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_gender",		  "oid",  "chr",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1		  ]
+[ "car_neg",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_pos",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_town",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "carprice_t",		  "int",  "int",	  9,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "category_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "class_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "town_t",		  "str",  "int",	  10,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "void_age",		  "oid",  "age_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_carprice",	  "oid",  "carprice_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_category",	  "oid",  "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_class",		  "oid",  "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_gender",	  "oid",  "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_neg",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_pos",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_town",		  "oid",  "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 commit;
 quit;
 

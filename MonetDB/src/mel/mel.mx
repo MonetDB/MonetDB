@@ -154,7 +154,6 @@ For further details look in the code.
 #define YYSTYPE	yystype
 #endif
 
-#include <config.h>
 #include <stdio.h>
 #include "symtable.h"
 #include "symbol.h"
@@ -219,6 +218,7 @@ extern List *dirs;
 #endif
 
 @C
+#include <config.h>
 #include "mel.h"
 #include "mel.tab.h"
 #ifdef HAVE_IOSTREAM
@@ -279,8 +279,6 @@ const char *token2str( int token ){
 	case MEL_TYPE	    : return "builtin type";
 	case MEL_VARARGS    : return "...";
 	case MEL_SEP        : return "::";
-	case MEL_LOAD       : return "load";
-	case MEL_DROP       : return "drop";
 	case MEL_NUMBER     : return "number";
         }
         return "default";
@@ -439,6 +437,7 @@ int main(int argc, char *argv[] ){
 
 @L 
 %{
+#include <config.h>
 #include "mel.h"
 #include "mel.tab.h"
 #include <stdlib.h>
@@ -533,37 +532,16 @@ int script_len = 0;
 char *script = NULL;
 
 extern void script_start( );
-extern void script_concat( int );
 %}
 %p 3400
 %a 2300
 %e 2000
-%x LOAD
-%x DROP
 
 YY_DIGIT    	[0-9]
 YY_LETTER    	[_a-zA-Z]
 YY_SPACE    	[\t\n ]
 YY_SPACES    	[\t\n ]*
 %%
-(".LOAD"|".load")	  { script_start(); BEGIN LOAD;			}
-(".DROP"|".drop")	  { script_start(); BEGIN DROP;			}
-<LOAD>{YY_SPACES}(".END"|".end")	  	  {
-			    yylval.s = script;
-			    script = NULL;
-			    script_len = script_nr = 0;
-			    BEGIN INITIAL; return MEL_LOAD; 		}
-<DROP>{YY_SPACES}(".END"|".end")	  	  {
-			    yylval.s = script;
-			    script = NULL;
-			    script_len = script_nr = 0;
-			    BEGIN INITIAL; return MEL_DROP; 		}
-<LOAD,DROP>"#line"        { char line[1024], *p=line;
-                            while ((*p = yyinput()) != '\n') p++;
-                            check_lineno(line); return yylex();         }
-<LOAD,DROP>{YY_SPACE}     { script_concat( yytext[0] );                 }
-<LOAD,DROP>.              { script_concat( yytext[0] );                 }
-
 (".iterator"|".ITERATOR") { return MEL_ITERATOR; 		  	}
 (".module"|".MODULE")	  { return MEL_MODULE; 		     		}
 (".USE"|".use")		  { return MEL_USE;				}
@@ -674,33 +652,6 @@ void script_start(){
 	script[0] = '\0';
 }
 
-
-void script_concat( int c ){
-
-        if (script_nr+3 > script_len){
-                script_len *= 2;
-                char *new_script = new char [script_len];
-                strncpy( new_script, script, script_nr );
-                delete(script);
-                script = new_script;
-        }
-        switch(c){
-           case '\n': script[script_nr++] = '\\';
-                      script[script_nr++] = 'n';
-                      break;
-           case '\t':
-                      script[script_nr++] = '\\';
-                      script[script_nr++] = 't';
-                      break;
-           case '"' :
-           case '\\' : script[script_nr++] = '\\';
-                /* beware needs also default */
-           default:
-                      script[script_nr++] = c;
-        }
-        script[script_nr] = '\0';
-}
-
 int char_concat(char c) {
    	if (script_nr+10 > script_len){
 		script_len *= 2;
@@ -751,6 +702,7 @@ const char* get_signature(char* fcn){
 }
 @Y
 %{
+#include <config.h>
 #include "mel.h"
 #include <string.h>
 #ifdef HAVE_MALLOC_H
@@ -789,8 +741,6 @@ using namespace std;
 #include "any_arg.h"
 #include "prelude.h"
 #include "epilogue.h"
-#include "load.h"
-#include "drop.h"
 
 extern char* script;
 %}
@@ -800,7 +750,7 @@ extern char* script;
 %token MEL_USED
 %token MEL_NUMBER
 %token MEL_ANY MEL_BAT MEL_TYPE MEL_VOID MEL_BUILTIN MEL_OBJECT MEL_ACC
-%token MEL_ACCOP MEL_VARARGS MEL_SEP MEL_ITERATOR MEL_LOAD MEL_DROP
+%token MEL_ACCOP MEL_VARARGS MEL_SEP MEL_ITERATOR 
 %token '=' ';' ':' ',' '(' ')'
 %%
 module:
@@ -923,10 +873,6 @@ definition:
       { $$.sym = new Prelude( MEL_PRELUDE, $3.s ); 	}
    |	MEL_EPILOGUE '=' ident ';'
       { $$.sym = new Epilogue( MEL_EPILOGUE, $3.s ); 	}
-   |    MEL_LOAD ';'
-      { $$.sym = new Load( MEL_LOAD, $1.s ); 		}
-   |    MEL_DROP ';'
-      { $$.sym = new Drop( MEL_DROP, $1.s ); 		}
     ;
 
 iterator:

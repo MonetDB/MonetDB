@@ -217,10 +217,8 @@ All code should pass the wakeupRequest point.
 int sem=0; char mybuf[16000], *myp = mybuf;
 
 void wakeupRequest(Request p, MT_Id tid){
-	if( p->ev_process== 0 || p->ev_process== tid){
-		p->ev_status = EVPENDING;
-		MT_up_sema(monet_available, "wakeupRequest");
-	}
+	p->ev_status = EVPENDING;
+	MT_up_sema(monet_available, "wakeupRequest");
 }
  
 void putRequest(Request p){
@@ -526,7 +524,7 @@ void doRequest(Thread t, Request preference){
         res.vtype= TYPE_void;
         res.val.ival = 0;
         while (status == 0) {
-                q = (Request) getRequest(preference);
+                q = getRequest(preference);
                 status = handleRequest(t, q, &res);
                 if (preference &&  q == preference) break;
         }

@@ -39,6 +39,7 @@
  * outputs PostScript.
  */
 
+#include <config.h>       
 #include "Mx.h"
 #include <stdio.h>
 #include <stdlib.h>

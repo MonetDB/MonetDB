@@ -137,8 +137,6 @@ Some explanation of what mem_usage() and vm_usage() display:
 	"Pseudo bat to map a BAT id into its name"
 .COMMAND view_bbp_refcnt(): BAT[int,int] = view_bbp_refcnt; 
 	"Pseudo bat to map a BAT id into its reference count"
-.COMMAND view_bbp_persistlevel(): BAT[int,int] = view_bbp_persistlevel; 
-	"Pseudo bat to map a BAT id into its persistency level"
 .COMMAND view_bbp_lrefcnt(): BAT[int,int] = view_bbp_lrefcnt; 
 	"Pseudo bat to map a BAT id into its logical reference count"
 .COMMAND view_bbp_location(): BAT[int,str] = view_bbp_location; 
@@ -264,9 +262,13 @@ Some explanation of what mem_usage() and vm_usage() display:
     ADDHELP("modules", "boncz", "Aug 14 1997",
 	"list all installed modules, plus owner and db restrictions", "sys"); 
 	
-    PROC loaded() : void := table(1,
-	monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)).reverse.sort.reverse.col_name("module"), 
-	monet_mod_cnt.copy.col_name("usage_count"));
+    PROC loaded() : void {
+        var hidden := monet_mod_nme.semijoin(monet_mod_nme.[startsWith]("_").uselect(true));
+	var mods := monet_mod_nme.kdiff(hidden).access(BAT_WRITE);
+        var disappeared := hidden.reverse.kdiff([+]("_",mods).reverse).reverse;
+	table(1, mods.insert(disappeared).reverse.sort.reverse.col_name("module"), 
+                 monet_mod_cnt.copy.col_name("usage_count"));
+    }
     ADDHELP("loaded", "boncz", "Feb  6 1996", 
 	"list all loaded modules, and the number of active users.", "sys"); 
 
@@ -308,8 +310,7 @@ Some explanation of what mem_usage() and vm_usage() display:
 		view_bbp_status.col_name("status"),
 		view_bbp_kind.col_name("kind"), 
 		view_bbp_refcnt.col_name("refcnt"),
-		view_bbp_lrefcnt.col_name("lrefcnt"),
-		view_bbp_persistlevel.col_name("plevel"));
+		view_bbp_lrefcnt.col_name("lrefcnt"));
     }
 
     PROC dir() : void := {
@@ -379,7 +380,8 @@ Some explanation of what mem_usage() and vm_usage() display:
 	"list all active clients by their number.", "sys"); 
 
     PROC vars() : void := 
-	table(view_var_name, view_var_type, view_var_kind, view_var_constant, view_var_value);
+	table(view_var_name.kdiff([startsWith](view_var_name, ".").uselect(true)), 
+              view_var_type, view_var_kind, view_var_constant, view_var_value);
     ADDHELP("vars", "boncz", "Feb  6 1996", 
         	"list all Monet variables and their values.", "sys"); 
 
@@ -448,9 +450,9 @@ Some explanation of what mem_usage() and vm_usage() display:
 
 #endif
 @c
+#include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
-#include "gdk.h"
 #include "gdk_bbp.h"
 #include "monet.h"
 #include "monet_context.h"
@@ -552,7 +554,7 @@ view_bbp_heat(
 	BBPlock("view_bbp_heat");
         for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
             if (BBP_cache(i) && !monet_modulesilent) {
-		int heat = BBPheat(i);
+		int heat = BBP_lastused(i);
                 BUNins(b, &i, &heat);
 	    } else if (BBP_logical(i)) { 
 		int zero = 0;
@@ -668,27 +670,6 @@ view_bbp_refcnt(
         return GDK_SUCCEED;
 }
 
-
-int
-view_bbp_persistlevel(
-   BAT**        retval  /* put pointer to BAT[int,str] record here. */
-){       
-	BAT	 *b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_int,BBPsize);
-        if (b == 0) return GDK_FAIL;
-
-	BBPlock("view_bbp_persistlevel");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-	if (BBP_logical(i)) {
-		int plevel = BBP_plevel(i);
-		BUNins(b, &i, &plevel);
-	}}
-	BBPunlock("view_bbp_persistlevel");
-	@:Pseudo(bbp,plevel)@
-        return GDK_SUCCEED;
-}
 
 int
 view_bbp_lrefcnt(
@@ -851,7 +832,7 @@ view_var_name(
 	@:Pseudo(var,type)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
-	BBPpersistent(res->val.bval, FALSE);
+	BBPincref(res->val.bval, TRUE);
 	BBPunfix(res->val.bval);
 	return 0;
 }
@@ -882,7 +863,7 @@ view_var_type(
 	@:Pseudo(var,type)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
-	BBPpersistent(res->val.bval, FALSE);
+	BBPincref(res->val.bval, TRUE);
 	BBPunfix(res->val.bval);
 	return 0;
 }
@@ -913,7 +894,7 @@ view_var_kind(
 	@:Pseudo(var,type_status)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
-	BBPpersistent(res->val.bval, FALSE);
+	BBPincref(res->val.bval, TRUE);
 	BBPunfix(res->val.bval);
 	return 0;
 }
@@ -943,7 +924,7 @@ view_var_constant(
 	@:Pseudo(var,value_status)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
-	BBPpersistent(res->val.bval, FALSE);
+	BBPincref(res->val.bval, TRUE);
 	BBPunfix(res->val.bval);
 	return 0;
 }
@@ -981,7 +962,7 @@ view_var_value(
 	@:Pseudo(var,value_value)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
-	BBPpersistent(res->val.bval, FALSE);
+	BBPincref(res->val.bval, TRUE);
 	BBPunfix(res->val.bval);
 	return 0;
 }
@@ -1116,7 +1097,7 @@ int get_mem_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_mem_maxsize(lng *num) {
-	GDK_mem_maxsize = *num;
+	GDK_mem_maxsize = (size_t) *num;
 	return GDK_SUCCEED;
 }
 int get_vm_cursize(lng *num) {
@@ -1128,7 +1109,7 @@ int get_vm_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_vm_maxsize(lng *num) {
-	GDK_vm_maxsize = *num;
+	GDK_vm_maxsize = (size_t) *num;
 	return GDK_SUCCEED;
 }
 
@@ -1356,7 +1337,7 @@ int view_gdk_bbp(BAT **retval) {
 		if (BBP_logical(i)) {
 			pbat++; 
 			if (BBP_cache(i)) {
-				pheat += BBPheat(i); 
+				pheat += BBP_lastused(i); 
 				if (BBP_cache(i)->batPersistence == PERSISTENT)
 					per++;
 				else tmp++;

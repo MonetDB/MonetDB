@@ -39,10 +39,12 @@ view_bbp_name.print;
 [ 19,	  "monet_mod_use"	  ]
 [ 20,	  "monet_mod_load"	  ]
 [ 21,	  "monet_mod_drop"	  ]
-[ 22,	  "monet_fcntbl"	  ]
-[ 23,	  "monet_acctbl"	  ]
-[ 24,	  "monet_atomtbl"	  ]
-[ 25,	  "monet_unicode_case"	  ]
+[ 22,	  "monet_mod_proc"	  ]
+[ 23,	  "monet_mod_var"	  ]
+[ 24,	  "adm_fcntbl"		  ]
+[ 25,	  "adm_acctbl"		  ]
+[ 26,	  "adm_atomtbl"		  ]
+[ 27,	  "monet_unicode_case"	  ]
 
 # Pseudo bat to map a BAT id into its refcnt
 view_bbp_refcnt.print;
@@ -50,7 +52,7 @@ view_bbp_refcnt.print;
 # BAT:	  refcnt  #
 # (int)	  (int)	  #
 #-----------------#
-[ 1,	  2	  ]
+[ 1,	  1	  ]
 [ 2,	  1	  ]
 [ 3,	  1	  ]
 [ 4,	  1	  ]
@@ -75,6 +77,8 @@ view_bbp_refcnt.print;
 [ 23,	  1	  ]
 [ 24,	  1	  ]
 [ 25,	  1	  ]
+[ 26,	  1	  ]
+[ 27,	  1	  ]
 
 # Pseudo bat to map a BAT id into its disk location
 view_bbp_location.print;
@@ -107,6 +111,8 @@ view_bbp_location.print;
 [ 23,	  "23"		  ]
 [ 24,	  "24"		  ]
 [ 25,	  "25"		  ]
+[ 26,	  "26"		  ]
+[ 27,	  "27"		  ]
 
 # Pseudo bat to map a BAT id into its heat
 view_bbp_heat.print;
@@ -139,6 +145,8 @@ view_bbp_heat.print;
 [ 23,	  0	  ]
 [ 24,	  0	  ]
 [ 25,	  0	  ]
+[ 26,	  0	  ]
+[ 27,	  0	  ]
 
 # Pseudo bat to map a BAT id into its dirty status
 view_bbp_dirty.print;
@@ -171,6 +179,8 @@ view_bbp_dirty.print;
 [ 23,	  "dirty"	  ]
 [ 24,	  "dirty"	  ]
 [ 25,	  "dirty"	  ]
+[ 26,	  "dirty"	  ]
+[ 27,	  "dirty"	  ]
 
 # Pseudo bat to map a BAT id into its disk/loaded/dirty status
 view_bbp_status.print;
@@ -203,6 +213,8 @@ view_bbp_status.print;
 [ 23,	  "load"  ]
 [ 24,	  "load"  ]
 [ 25,	  "load"  ]
+[ 26,	  "load"  ]
+[ 27,	  "load"  ]
 
 # Pseudo bat to map a BAT id into its type
 view_bbp_kind.print;
@@ -235,6 +247,8 @@ view_bbp_kind.print;
 [ 23,	  "tran"  ]
 [ 24,	  "tran"  ]
 [ 25,	  "tran"  ]
+[ 26,	  "tran"  ]
+[ 27,	  "tran"  ]
 
 # Pseudo bat with statistics on the use of BAT buffer pool
 "view_bbp_info".print;
@@ -254,31 +268,31 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOu
 # (str)			  (str)							  #
 #---------------------------------------------------------------------------------#
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"				  ]
-[ "gdk_version",	  "4.3.5"						  ]
-[ "monet_pid",		  "21271"						  ]
-[ "prefix",		  "/var/tmp/MonetDB/_PREFIX_d_"				  ]
-[ "exec_prefix",	  "/var/tmp/MonetDB/_PREFIX_d_"				  ]
-[ "gdk_dbname",		  "Tests_tests_suite_08"				  ]
-[ "gdk_dbfarm",		  "/var/tmp/MonetDB/_PREFIX_d_/var/dbfarm"		  ]
+[ "gdk_version",	  "4.3.13"																																										  ]
+[ "monet_pid",		  "25534"																																										  ]
+[ "prefix",		  "/var/tmp/monet.GNU_32-d.8885/monet/.GNU_32-d/Linux2.4.18-18perfctrsmp"																																		  ]
+[ "exec_prefix",	  "/var/tmp/monet.GNU_32-d.8885/monet/.GNU_32-d/Linux2.4.18-18perfctrsmp"																																		  ]
+[ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/dbfarm"																																			  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mmap",		  "33554432"						  ]
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB"		  ]
-[ "monet_deamon",	  "no"							  ]
+[ "monet_mod_path",	  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/plain/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/contrib/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/calibrator/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/mapi/.libs"	  ]
+[ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "50000"						  ]
+[ "mapi_port",		  "55056"																																										  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "45123"						  ]
+[ "sql_port",		  "51161"																																										  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_api",		  "sql(default-schema)"					  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "default-schema"					  ]
-[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
-[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.7275/monet/Linux2.4.18-18perfctrsmp/mTests/tests/suite_08"																																	  ]
+[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
+[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/mTests/tests/suite_08"																																	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -308,7 +322,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login.print; printf("#~EndVaria
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Wed Sep 11 17:09:14 2002"	  ]
+[ 0,	  "Thu Aug 14 00:40:06 2003"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree

@@ -261,14 +261,12 @@ number of physical IOs.
 
 @+ MIL Initializations
 @m
-.COMMAND pmStart() = pmStart_impl; "Initializes the mprof bats"
-.COMMAND pmExit() = pmExit_impl; "Removes the Mprof bats"
+.PRELUDE = pmStart_impl; 
+.EPILOGUE = pmExit_impl; 
 
 .END mprof;
 
 @mil
-    pmStart();
-
     # The code below collects the differences 
     # subsequently we can print the information
     proc pmPrint :={
@@ -351,9 +349,6 @@ number of physical IOs.
 	RETURN Mallinfo("(0,0,0,0,0,0,0,0)");
     }
 
-proc drop_mprof() := {
-    pmExit();
-}
 
 @+ Old mil implementation
 USER:= environment.find("owner");
@@ -494,15 +489,6 @@ typedef struct mallinfo Mallinfo;
 typedef struct rusage Rusage;	
 
 #include "mprof.proto.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-	extern int pmStart_impl(void);
-	extern int pmExit_impl(void);
-#ifdef __cplusplus
-}
-#endif
 
 #endif /*MPROF_H*/
 @-
@@ -1128,9 +1114,9 @@ static BAT *Mprof_option_bat;
 The Mprof\_oid is used for fast unique numbers . The Mprof\_count is used
 for numbering the intervals. 
 @c
-static int Mprof_oid;
-static int Mprof_count;
-static int Mprof_init;
+static int Mprof_oid = 0;
+static int Mprof_count = 0;
+static int Mprof_init = 0;
 
 #define MprofOK (Mprof_init == 13)
 
@@ -1153,36 +1139,46 @@ void pmBat(BAT **keep, str name, int typ1, int typ2){
 	(void)BATprepareHash(b);
 }
 
-int
-pmStart_impl(void){
-pmBat(&Mprof_name_bat,    "mprof_name",     TYPE_int, TYPE_str);
-pmBat(&Mprof_interval_bat,"mprof_interval", TYPE_int, TYPE_int);
-pmBat(&Mprof_tag_bat,     "mprof_tag",      TYPE_int, TYPE_str);
-pmBat(&Mprof_Bclk_bat,    "mprof_Bclk",     TYPE_int, TYPE_int);
-pmBat(&Mprof_Eclk_bat,    "mprof_Eclk",     TYPE_int, TYPE_int);
-pmBat(&Mprof_Bcpu_bat,    "mprof_Bcpu",     TYPE_int, TYPE_Tms);
-pmBat(&Mprof_Bio_bat,     "mprof_Bio",      TYPE_int, TYPE_Rusage);
-pmBat(&Mprof_Bmem_bat,    "mprof_Bmem",     TYPE_int, TYPE_Mallinfo);
-pmBat(&Mprof_Ecpu_bat,    "mprof_Ecpu",     TYPE_int, TYPE_Tms);
-pmBat(&Mprof_Eio_bat,     "mprof_Eio",      TYPE_int, TYPE_Rusage);
-pmBat(&Mprof_Emem_bat,    "mprof_Emem",     TYPE_int, TYPE_Mallinfo);
-pmBat(&Mprof_pair_bat,    "mprof_pair",     TYPE_str, TYPE_str);
-pmBat(&Mprof_option_bat,  "mprof_option",   TYPE_str, TYPE_str);
-if( ! MprofOK) (void) pmExit_impl();
-	Mprof_count=0;
-	Mprof_oid=0;
+bat *pmStart_impl(void){
+	static bat buf[7];
+
+	pmBat(&Mprof_name_bat,    "mprof_name",     TYPE_int, TYPE_str);
+	pmBat(&Mprof_interval_bat,"mprof_interval", TYPE_int, TYPE_int);
+	pmBat(&Mprof_tag_bat,     "mprof_tag",      TYPE_int, TYPE_str);
+	pmBat(&Mprof_Bclk_bat,    "mprof_Bclk",     TYPE_int, TYPE_int);
+	pmBat(&Mprof_Eclk_bat,    "mprof_Eclk",     TYPE_int, TYPE_int);
+	pmBat(&Mprof_Bcpu_bat,    "mprof_Bcpu",     TYPE_int, TYPE_Tms);
+	pmBat(&Mprof_Bio_bat,     "mprof_Bio",      TYPE_int, TYPE_Rusage);
+	pmBat(&Mprof_Bmem_bat,    "mprof_Bmem",     TYPE_int, TYPE_Mallinfo);
+	pmBat(&Mprof_Ecpu_bat,    "mprof_Ecpu",     TYPE_int, TYPE_Tms);
+	pmBat(&Mprof_Eio_bat,     "mprof_Eio",      TYPE_int, TYPE_Rusage);
+	pmBat(&Mprof_Emem_bat,    "mprof_Emem",     TYPE_int, TYPE_Mallinfo);
+	pmBat(&Mprof_pair_bat,    "mprof_pair",     TYPE_str, TYPE_str);
+	pmBat(&Mprof_option_bat,  "mprof_option",   TYPE_str, TYPE_str);
+
+	if (!MprofOK) (void) pmExit_impl();
+
+	buf[0] = Mprof_Bcpu_bat->batCacheid; 
+	buf[1] = Mprof_Bio_bat->batCacheid; 
+	buf[2] = Mprof_Bmem_bat->batCacheid; 
+	buf[3] = Mprof_Ecpu_bat->batCacheid; 
+	buf[4] = Mprof_Eio_bat->batCacheid; 
+	buf[5] = Mprof_Emem_bat->batCacheid; 
+	buf[6] = 0;
+
 	if (BATcount(Mprof_name_bat)>0)
 		BATmax(BATmirror(Mprof_name_bat),&Mprof_oid);
 	if (BATcount(Mprof_interval_bat)>0)
 		BATmax(Mprof_interval_bat,&Mprof_count);
-	return GDK_SUCCEED;
+	
+	return buf;
 }
 @-
 Explicit termination of the mprof session leads to forced removal of the 
 BATs.
 @c
 
-int
+void
 pmExit_impl(void){
 	Mprof_init = 0;
 	BBPunfix(Mprof_name_bat->batCacheid);
@@ -1215,7 +1211,6 @@ pmExit_impl(void){
 
 	Mprof_count=0;
 	Mprof_oid=0;
-	return GDK_SUCCEED;
 }
 
 int

@@ -21,7 +21,7 @@ c.print;
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_26>	  ]
+[ 2,	  <tmp_28>	  ]
 
 printf("#~BeginVariableOutput~#\n"); c.find(1).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -30,9 +30,9 @@ printf("#~BeginVariableOutput~#\n"); c.find(1).print; printf("#~EndVariableOutpu
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  25	  ]
+[ "user",	  17	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  29	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 c.print;
@@ -41,21 +41,21 @@ c.print;
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_26>	  ]
+[ 2,	  <tmp_28>	  ]
 c.find(2).print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_26>	  ]
+[ 2,	  <tmp_28>	  ]
 c.print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_26>	  ]
+[ 2,	  <tmp_28>	  ]
 quit;
 
 # 06:09:11 >  

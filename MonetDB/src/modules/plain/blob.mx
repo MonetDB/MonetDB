@@ -93,9 +93,6 @@ typedef struct blob
 
 #endif /* __BLOB_H__ */
 @c
-#include <stdlib.h>
-#include <string.h>
-
 #include <gdk.h>
 
 #include "blob.h"

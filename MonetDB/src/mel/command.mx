@@ -72,6 +72,7 @@ class Command : public Symbol {
 #endif 
 
 @C
+#include <config.h>
 #include "command.h"
 #include "ListIterator.h"
 #include "language.h"

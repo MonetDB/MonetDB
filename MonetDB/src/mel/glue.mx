@@ -56,6 +56,7 @@ class glue: public language {
 #endif //_GLUE_H_
 
 @C 
+#include <config.h>
 #include "glue.h"
 #include "ListIterator.h"
 #include "mel.h"
@@ -196,9 +197,6 @@ class install: public glue {
 	ostream &gen_atom( ostream &o, const Atom &m );
 	ostream &gen_acc( ostream &o, const Acc &m );
 	ostream &gen_accops( ostream &o, const Accops &m );
-
-	ostream &gen_load( ostream &o, const Load &m );
-	ostream &gen_drop( ostream &o, const Drop &m );
 
     public:
 	char *acc;
@@ -420,15 +418,16 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	o << "\n";
 	delete(l);
 
+	o << "    TBL_Install_Functions( mid, " << modulename 
+	  << "_fcns, user, " << modulename << "_compile_time );\n";
+
+	/* execute prelude as *last* step */
 	l = new install_prelude();
 	print_list( o, d.Defs(), l );
 	o << "\n";
 	delete(l);
 
-	o << "    TBL_Install_Functions( mid, " << modulename 
-	  << "_fcns, user, " << modulename << "_compile_time );\n";
-	o << "   return mid;\n";
-	o << "}\n\n";
+	o << "   return mid;\n}\n\n";
 
 	l = new deinstall(); 
 	o << "int _" << d.Name() << "_Module_Delete( str user ){\n";
@@ -777,7 +776,7 @@ ostream &unpack_setresult::gen_type_arg( ostream &o, const TypeArg &d ){
 	case TYPE_SHT: o << "shval = sht_nil;\n"; break;
 	case TYPE_INT: o << "ival = int_nil;\n"; break;
 	case TYPE_PTR: o << "pval = ptr_nil;\n"; break;
-	case TYPE_OID: o << "ival = (int)oid_nil;\n"; break;
+	case TYPE_OID: o << "oval = oid_nil;\n"; break;
 	case TYPE_FLT: o << "fval = flt_nil;\n"; break;
 	case TYPE_DBL: o << "dval = dbl_nil;\n"; break;
 	case TYPE_LNG: o << "lval = lng_nil;\n"; break;
@@ -1171,7 +1170,7 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
                         o << ");\n";
                 }
         }
-        o << "   TYPE_" << d.Name() << " = ATOMindex(\"" <<d.Name()<< "\");\n";
+        o << "   BATatoms[TYPE_" << d.Name() << " = ATOMindex(\"" <<d.Name()<< "\")].deleting = 0;\n";
         return o;
 }
 
@@ -1186,7 +1185,7 @@ ostream &install::gen_acc( ostream &o, const Acc &d ){
 			if (s) s->print( this, o );
 		}
 	}
-	o << "   ACC_" << d.Name() << " = ACCindex(\"" <<d.Name()<< "\");\n";
+	o << "   BATaccelerators[ACC_" << d.Name() << " = ACCindex(\"" <<d.Name()<< "\")].deleting = 0;\n";
    	return o;
 }
 
@@ -1310,49 +1309,8 @@ ostream &install_fcntbl::gen_var_arg( ostream &o, const VarArg &d ){
 	return o;
 }
 
-ostream &install::gen_load( ostream &o, const Load &d ){
-	char buf[1024+1];
-	size_t nr,i,len = strlen(d.Name())+1;
-	
-	if (len <= 1)
-		return o;
-	
-//	 o << "      TBL_Install_LoadMIL( mid, \"" << d.Name() << "\");\n";
-	 o << "      { char *s = alloca(" << (len+1) << ");\n";
-	// C is required to do at least 509 bytes in a string
-	// don't push it, use 500 instead
-	 nr = 500;
-	 for(i=0;i < len; i+=nr){
-		if ((i+nr) > len)
-			nr = len - i;
-		if (*(d.Name()+i+nr-1) == '\\'){
-			nr--;
-		}
-	 	memcpy(buf,d.Name()+i,nr);
-		buf[nr] = '\0';
-		if (i != 0)
-	 	  o << "        memcpy((s+strlen(s)),\"" << buf  << "\"," << nr << ");\n";
-		else
-	 	  o << "        memcpy(s,\"" << buf  << "\"," << nr << ");\n";
-		// The two memcpy's above used to be strncpy's;
-		// however, with both GNU's gcc 3.2.1 and Intel's ecc 7.0,
-		// the second strncpy strangely did not always work correctly.
-		// With memcpy, everything seems to work correctly.
-		// As we know the exact length of each string-fragment to copy, and
-		// as the final segment is null-terminated within the length to copy,
-		// memcpy should just work as "well" as strncpy, here.
-	 }
-	 o << "      TBL_Install_LoadMIL( mid, s); }\n";
-	 return o; 
-}
-
-ostream &install::gen_drop( ostream &o, const Drop &d ){
-	 o << "      TBL_Install_DropMIL( mid, \"" << d.Name() << "\");\n";
-	 return o; 
-}
-
 ostream &install_prelude::gen_prelude( ostream &o, const Prelude &d ){
-	 o << "   " <<   d.Name() << "();\n";
+	 o << "   TBL_Install_DropRefs(mid, " <<   d.Name() << "());\n";
 	 return o; 
 }
 

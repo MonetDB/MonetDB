@@ -30,8 +30,6 @@
 #ifndef _searchpath_H
 #define _searchpath_H
 
-#include <monet_utils.h>
-#include "monet.h"
 #include <gdk_storage.h>
 
 #ifndef SO_EXT
@@ -55,6 +53,7 @@ char *MSP_next_module(char *);
 
 #endif
 @c
+#include "monet.h"
 #include "searchpath.h"
 
 #ifdef HAVE_SYS_PARAM_H

@@ -336,7 +336,7 @@ if (lt->cnt != @1) {
 	if (_k < 0) {
 		return _k;
 	}
-	@3 = VALconvert(@2, res, 0);
+	@3 = VALconvert(@2, res);
 	if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
 		return handle_paramerror(res,@1,res->vtype,@2);
 	} 
@@ -364,14 +364,13 @@ int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
         while (lt && ret >= 0) {
 	        int i; 
                 for(i = 0; i < lt->cnt; i++)  {
-		    int ret1 = 0;
 		    ValRecord res1;
 		    str initstr = NULL;
         	    str mod;
 
                     if (!lt->yysons[i]) 
 			continue;
-		    ret1 = interpret(c->stk, lt->yysons[i], &res1);
+		    (void) interpret(c->stk, lt->yysons[i], &res1);
 		    if (ret < 0 || res1.vtype != TYPE_str) {
 			   GDKerror("module: illegal argument.\n");
 			   return GDK_FAIL;
@@ -869,7 +868,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 		monet_running = 0;
 		/*
 		freeClient(c);
-		monet_exit();
+		monet_exit(*statusp);
 		*/
 		GDKout->destroy(GDKout);
 		MT_global_exit(*statusp);

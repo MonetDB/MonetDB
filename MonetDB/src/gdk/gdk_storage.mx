@@ -185,7 +185,9 @@ only be in one state.
 @c
 int GDKunlink(str dir, str nme, str ext) {
 	char path[MAXPATHLEN];
-	int err, t0 = GDKms();
+	int err, t0;
+
+	IODEBUG t0 = GDKms();
 
 	if ((nme == NULL) || (*nme == 0) ) {
 		return -1; 
@@ -209,7 +211,9 @@ A move routine is overloaded to deal with extensions.
 int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 	char	path1[PATHLENGTH]; 
 	char	path2[PATHLENGTH]; 
-	int	ret, t0 = GDKms();
+	int	ret, t0;
+
+	IODEBUG t0 = GDKms();
 
 	if ((nme1 == NULL) || (*nme1 == 0) ) {
 		return -1; 
@@ -272,7 +276,7 @@ at commit-time.
 		}
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
-			if (write(fd, buf, size)  != size) {
+			if (write(fd, buf, size) != (ssize_t) size) {
 				err = -1;
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
@@ -396,6 +400,17 @@ it returns the BAT pointer.
 Notice that the BAT may have been declared as (de) compressed.
 In that case, we should change the disk layout structure with care.
 @c
+static int DESCatom(str nme) {
+	int tpe = ATOMindex(nme);
+	if (tpe < 0 || BATatoms[tpe].deleting) return -1;
+	return tpe;
+}
+static int DESCacc(str nme) {
+	int tpe = ACCindex(nme);
+	if (tpe < 0 || BATaccelerators[tpe].deleting) return -1;
+	return tpe;
+}
+
 static BAT *DESCload(int i) {
 	str s, nme = BBP_physical(i);
 	BATstore *bs;
@@ -408,14 +423,14 @@ static BAT *DESCload(int i) {
 	if (bs == NULL) return 0;	
 	b = &bs->B;
     
-	if ((*b->hatom && ((b->htype = ATOMindex(s=b->hatom)) < 0)) ||
-            (*b->tatom && ((b->ttype = ATOMindex(s=b->tatom)) < 0))) 
+	if ((*b->hatom && ((b->htype = DESCatom(s=b->hatom)) < 0)) ||
+            (*b->tatom && ((b->ttype = DESCatom(s=b->tatom)) < 0))) 
 	{
                 GDKerror("atom '%s' unknown, in BAT '%s'.\n",s,nme);
                 return 0;
 	}
-    	b->hacctype = (b->hacctype && *b->haccname)?ACCindex(b->haccname):0;
-    	b->tacctype = (b->tacctype && *b->taccname)?ACCindex(b->taccname):0;
+    	b->hacctype = (b->hacctype && *b->haccname)?DESCacc(b->haccname):0;
+    	b->tacctype = (b->tacctype && *b->taccname)?DESCacc(b->taccname):0;
     	if (b->hacctype < 0) {
                 GDKwarning("accelerator '%s' unknown, in BAT '%s'.\n",	
 			b->haccname, nme); *b->haccname = 0; b->hacctype = 0;
@@ -430,6 +445,12 @@ static BAT *DESCload(int i) {
 	b->void_cnt = 0;
 	/* mil shouldn't mess with just loaded bats */
 	if (b->batStamp > 0) b->batStamp = -b->batStamp;
+
+	/* reconstruct mode from BBP status (BATmode doesn't flush descriptor, so loaded mode may be stale) */
+	b->batPersistence = (BBP_status(b->batCacheid)&BBPTMP)?TRANSIENT:
+               (BBP_status(b->batCacheid)&(BBPNEW|BBPPERSISTENT))?PERSISTENT:SESSION;
+	b->batCopiedtodisk = 1;
+
 	return b;
 }
 
@@ -499,8 +520,8 @@ void DESCclean(BAT* b) {
 #define PERSISTENT_TYPE(fcn, col, tpe)\
 	if (tpe != TYPE_bat && (BATatoms[tpe].atomUnfix||BATatoms[tpe].atomFix)) {\
 		GDKerror("%s: %s[%s,%s] has transient %s type.\n", \
-		    fcn, b->batId, ATOMname(b->htype), ATOMname(b->ttype), col);\
-		return b;\
+		    fcn, BBP_logical(b->batCacheid), ATOMname(b->htype), ATOMname(b->ttype), col);\
+		return NULL;\
 	}
 
 BAT *BATsave(BAT *bd) {
@@ -510,8 +531,12 @@ BAT *BATsave(BAT *bd) {
 	BAT *b = bd;
 	
 	BATcheck(b, "BATsave"); 
-	if (VIEWparent(b) || !BATdirty(b)) {
-		return b; 
+	if (VIEWparent(b)) {
+		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BBP_logical(b->batCacheid), BBP_logical(VIEWparent(b)));
+		return NULL;
+	}
+	if (!BATdirty(b)) {
+		return b;
 	}
 	if (b->batCacheid < 0) {
 		b = BATmirror(b);
@@ -519,8 +544,8 @@ BAT *BATsave(BAT *bd) {
 	if (!DELTAdirty(b)) ALIGNcommit(b);
 	if (!b->halign) b->halign = OIDnew(1);
 	if (!b->talign) b->talign = OIDnew(1);
-	PERSISTENT_TYPE("@1", "head", ATOMstorage(b->htype));
-	PERSISTENT_TYPE("@1", "tail", ATOMstorage(b->ttype));
+	PERSISTENT_TYPE("BATsave", "head", ATOMstorage(b->htype));
+	PERSISTENT_TYPE("BATsave", "tail", ATOMstorage(b->ttype));
 
 	/* copy the descriptor to a local variable in order to let our messing in
 	 * the BAT descriptor not affect other threads that only read it. */
@@ -708,7 +733,7 @@ BAT *BATload_intern(bat i) {
 	b->batMaptacc = (char) b->taccelerator.storage;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug&2)) || (GDKdebug&8)) {
-		BATpropcheck_(b,TRUE); 
+		BATpropcheck(b, BATPROPS_CHECK); 
 	}
 	return (i<0)?BATmirror(b):b; 	
 }
@@ -1095,7 +1120,7 @@ Print the table header and then the multijoin.
 @-
 Cleanup.
 @c
-	(void) s->flush(s);
+	s->flush(s);
         for(j=0; j <= argc; j++) {
 		if (c[j].buf) GDKfree(c[j].buf);
 	}
