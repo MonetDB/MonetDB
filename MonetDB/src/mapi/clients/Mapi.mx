@@ -309,6 +309,11 @@ They have been developed to ease interaction.
 # endif
 #endif
 
+#ifdef NATIVE_WIN32
+char user_name = "win32";
+#define cuserid(x) 	user_name
+#endif
+
 /* taken from gdk.mx */
 #define TYPE_void	0		
 #define TYPE_bit	1		

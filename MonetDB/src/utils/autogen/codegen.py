@@ -545,9 +545,12 @@ def codegen(tree, cwd, topdir, incdirsmap):
             if i[0:4] == "bin_" or i == "BINS":
                 targets = do_code_gen(targets,deps,bin_code_gen)
             do_deps(targets,deps,includes,incmap,cwd,incdirsmap)
-            libs = do_libs(deps)
             v["TARGETS"] = targets
             v["DEPS"] = deps
+
+    for i,v in tree.items():
+        if type(v) is type({}) and v.has_key("SOURCES"):
+            libs = do_libs(deps)
 
             if i[0:4] == "lib_":
                 lib = i[4:] + "_LIBS"
@@ -557,7 +560,8 @@ def codegen(tree, cwd, topdir, incdirsmap):
                     d = libs[lib]
                     if not v.has_key('LIBS'):
                         v['LIBS'] = []
-                    v['LIBS'].extend(d)
+		    if (d not in v['LIBS']):
+                    	v['LIBS'].extend(d)
             elif i == "LIBS":
                 for l,d in libs.items():
                     n,dummy = string.split(l,"_",1)

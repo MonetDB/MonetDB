@@ -267,6 +267,8 @@ def msc_deps(fd,deps,objext, msc):
                 fd.write( "\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t,b) )
             if (ext == "obj" or ext == "glue.obj" or ext == "tab.obj" or ext == "yy.obj"):
                 target,name = msc_find_target(tar,msc)
+		if (name[0] == '_'):
+			name = name[1:] 
                 if (target == "LIB"):
                     d,dext = split_filename(deplist[0])
                     if (dext == "c" or dext == "glue.c"):

@@ -980,9 +980,12 @@ time since the beginning of each process.
 @{
 @c
 static int clk = 0;
+#ifndef NATIVE_WIN32
 static struct tms state;
+#endif
 
 int view_gdk_cpu(BAT **retval) {
+#ifndef NATIVE_WIN32
 	int     i;
 	struct tms newst;
 	BAT *b;
@@ -1009,12 +1012,13 @@ int view_gdk_cpu(BAT **retval) {
 
 	state = newst; 
 	@:Pseudo(gdk,cpu)@
+#endif
 	return GDK_SUCCEED;
 }
 @-
 Same observations as to view_gdk_cpu()
 @c
-static void *memincr=NULL;
+static char *memincr=NULL;
 int view_gdk_mem(BAT **retval) {
 	struct mallinfo m;
 	BAT *b;
@@ -1026,11 +1030,11 @@ int view_gdk_mem(BAT **retval) {
 
 	/* store counters, ignore errors */
 	if (memincr == NULL) {
-		memincr = GDK_mem_start;
+		memincr = MT_heapbase;
 	}
-	i= ((char*) sbrk(0) -  (char*) memincr);
+	i= (MT_heapcur() - memincr);
  
-	memincr = (char*) sbrk(0);
+	memincr = MT_heapcur();
 	b = BUNins(b, "memincr", &i);
 	b = BUNins(b, "arena", &m.arena);
 	b = BUNins(b, "ordblks", &m.ordblks);
@@ -1250,6 +1254,7 @@ The BAT grows. It should be compacted.
 #endif
  
 int view_gdk_io(BAT **retval) {
+#ifndef NATIVE_WIN32
 	struct rusage ru;
 	int i;
 	BAT *b;
@@ -1269,6 +1274,7 @@ int view_gdk_io(BAT **retval) {
 	i = ru.ru_nivcsw; BUNins(b, "ninvcsw", &i);
 
 	@:Pseudo(gdk,io)@
+#endif 
 	return GDK_SUCCEED;
 }
 

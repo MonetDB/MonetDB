@@ -429,7 +429,7 @@ void killClient(Client c, int thread){
 			MT_Id victim = t->pid;
 			THRdel(t);
 	        	MT_kill_thread(victim);
-			sleep(1);
+			MT_sleep_ms(1000); /* why is this needed, isn't MTsafe*/
 			monetFork();
 		}
 	    	rmRequest(q); clrRequest(q);

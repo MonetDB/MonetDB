@@ -357,7 +357,6 @@ the memory consumption.
 #define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 #define MAX_BIT         ((int) (sizeof(long)<<3))
 @c
-	 ptr	GDK_mem_start = NULL; 
 volatile lng	GDK_mem_cursize = LL_CONSTANT(0);
 	 lng	GDK_mem_maxsize = LL_CONSTANT(0);
 	 lng	GDK_mem_bigsize = GDK_MEM_BIGSIZE;
@@ -376,7 +375,7 @@ volatile int*	GDK_nmallocs = GDK_nmallocbuf;
 #endif
 
 lng GDKmem_heapsize() {
-	lng heapsize = (((char*) sbrk(0)) - ((char*) GDK_mem_start));
+	lng heapsize = (MT_heapcur() - MT_heapbase);
 	return (lng) SEG_SIZE(heapsize,MT_VMUNITLOG);
 }
 
@@ -877,9 +876,6 @@ int GDKinit(char *dbname, char *dbfarm) {
 #endif
 #endif
 
-	if (GDK_mem_start == NULL) {
-		GDK_mem_start = (ptr) sbrk(0); 
-	}
 	GDKthreadLock = MT_create_lock(); 
 	for(i=0; i<= BBPLOCKMASK; i++) {
 		GDKstatusLock[i] = MT_create_lock(); 
@@ -1044,7 +1040,7 @@ int GDKgetHome() {
 	if (MT_system_lock==NULL) return 0;
 	while ((GDKlockFile = fopen(GDKLOCK, "r+")) == NULL) {
 		GDKerror("GDKgetHome: PANIC on open %s. sleep(1)\n", GDKLOCK);
-		sleep(1);
+		MT_sleep_ms(1000);
 	}
 	if (MT_lockf(GDKLOCK, F_TLOCK, 4, 1) < 0){
 		GDKwarning("GDKgetHome: blocking on lock '%s'.\n", GDKLOCK);

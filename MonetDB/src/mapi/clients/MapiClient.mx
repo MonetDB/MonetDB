@@ -331,10 +331,12 @@ int main(int ac, char **av) {
 	toConsole = stdout;
 	fstat(fileno(stdin),&st);
 
+#ifdef HAVE_LIBREADLINE
 	if (S_ISCHR(st.st_mode))
 	   is_chrsp = 1;
 	else
 	   is_chrsp = 0;
+#endif
 
 #if defined(HAVE_GETPWUID) && defined(HAVE_GETUID)
 	strcpy(user, pwd?pwd->pw_name:"guest");

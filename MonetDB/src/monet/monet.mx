@@ -290,10 +290,7 @@ declared there.
 m_export int     ll_getch        ();
 m_export void    ll_init         ();
 m_export str     ll_lastline     ();
-m_export void    ll_flushbuffer  ();
-m_export int     ll_skipcomment  ();
 m_export str     ll_getstr       (char *buf, int len, int c);
-m_export void    ll_parserror    (str msg);
 m_export void    ll_clrids       ();
 m_export void    ll_idconflict   (str s);
 @}

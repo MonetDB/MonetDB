@@ -47,6 +47,10 @@ system start.
 
 extern void DESCclean(BAT*);
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
+
 #endif /* _GDK_STORAGE_H_ */
 @c
 #include "gdk_bat.h"
@@ -292,9 +296,6 @@ at commit-time.
 	} else if (fd >= 0) {
 		err |= close(fd); 
 	} else if (mode != STORE_MMAP) {
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 1024
-#endif
                 char buf[MAXPATHLEN];
 		GDKfilepath(buf,BATDIR,nme,ext);
 		GDKerror("GDKsave: could not open: name=%s, ext=%s, mode %d\n", 

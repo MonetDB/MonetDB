@@ -122,6 +122,8 @@ void ll_flushbuffer() {
 	  while(GDKisspace(offend)) offend = input(); \
 	  unput(offend); \
 	  r = TBL_search(s, token, hint&&(offend == '(')); }
+
+static int ll_skipcomment();
 %}
 %p 3400
 %a 2300
@@ -339,6 +341,7 @@ int ll_getch() {
         if (ch) ll_client->cptr++;
         return ch;
 }
+
 int ll_getstring(char *buf, int max_size) {
 	char *start = buf, *end = buf + max_size;
 	char ch;
@@ -471,6 +474,11 @@ m_export str*       ll_lines;             /* string chunks */
 
 m_export int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res);
 
+
+m_export void ll_flushbuffer();
+m_export int ll_getstring(char *buf, int max_size);
+m_export int ll_push(str s);
+
 #endif /* _MONET_PARSE_H */
 
 @- Global variables for YACC 
@@ -523,8 +531,14 @@ parses the grammar, executing the inlined C statements along its way.
 #include <stdlib.h>
 #include "monet.h"
 #include "monet_client.h"
+#include "monet_parse.h"
+
 
 #define YYDEBUG	0
+
+static void ll_parserror(str msg);
+
+extern int yylex();
 
 #undef yyerror
 #define yyerror(X)	{ ll_parserror(NULL);  }

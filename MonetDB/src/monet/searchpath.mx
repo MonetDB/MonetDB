@@ -32,6 +32,7 @@
 
 #include <monet_utils.h>
 #include "monet.h"
+#include <gdk_storage.h>
 
 #ifndef SO_EXT
 #define SO_EXT ".so"

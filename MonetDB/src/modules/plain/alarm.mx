@@ -175,7 +175,7 @@ int CMDsleep(int *secs){
                 GDKerror("sleep: negative delay\n");
         	return GDK_FAIL;
         } else {
-		sleep(*secs);
+		MT_sleep_ms(*secs*1000);
 /*
 		MT_Sema s = CLKalarm(*secs+time(0), 0);
 		(void)CLKprelude();

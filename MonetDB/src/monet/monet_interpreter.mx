@@ -263,11 +263,6 @@ Open the scriptfile.
  
             if (ptr[0] == DIR_SEP) {
                 strcpy(path, ptr);
-            } else {
-                sprintf(path, "users%c%s%c%s", DIR_SEP, c->user, DIR_SEP, ptr);
-                if( access(path, R_OK) ) {
-                        sprintf(path,"users%cguest%c%s", DIR_SEP, DIR_SEP, ptr);
-                }
             }
             fd = fopen(path, "rb");
         }

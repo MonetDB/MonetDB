@@ -501,7 +501,7 @@ ostream &proto::gen_builtin( ostream &o, const Builtin &d ){
    	o << "/* Builtin " << d.Name() <<  "\n";
 	o << " * " << d.hlp() << "\n";
 	o << " */\n";
-	o << "int " << d.fcn() << "( Cntxt stk, YYSTREE lt, ValPtr res );\n\n";
+	o << mod_export << " int " << d.fcn() << "( Cntxt stk, YYSTREE lt, ValPtr res );\n\n";
  	return o; 
 }
 

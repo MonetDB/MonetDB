@@ -124,6 +124,9 @@ gdk_export int MT_alloc_print();
 /* in order to be sure of madvise and msync modes, pass them to mmap() call as well */
 
 /* a hook function to add any initialization required for the MT_ functionality */
+gdk_export char *MT_heapbase;
+gdk_export char *MT_heapcur();
+
 gdk_export void MT_init_posix();
 
 gdk_export void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed);
@@ -235,13 +238,17 @@ static void MT_alloc_init();
 #define MMAP_ADVISE		7
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
 
+char* MT_heapbase = NULL;
+
 #ifndef NATIVE_WIN32
 
-char* MT_membase = NULL;
-
 void MT_init_posix(){
-	MT_membase = (char*) sbrk(0);
+	MT_heapbase = (char*) sbrk(0);
 	MT_alloc_init();
+}
+
+char* MT_heapcur(){
+	return (char*) sbrk(0);
 }
 
 void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed){
@@ -281,7 +288,7 @@ MT_mallinfo(){
 	memset(&_ret, 0, sizeof(_ret));
 #endif
 	if (_ret.uordblks + _ret.fordblks > _ret.arena) {
-		MT_alloc_register(MT_membase, _ret.arena, 'H');
+		MT_alloc_register(MT_heapbase, _ret.arena, 'H');
 	}
 	return _ret;
 }
@@ -317,6 +324,8 @@ void MT_init_posix(){
 	WSADATA w;
 	int sockopt = SO_SYNCHRONOUS_NONALERT;
 
+	MT_heapbase = 0;
+
 	_set_sbh_threshold(MT_SMALLBLOCK);
 	if (WSAStartup(0x0101, &w) != 0){
 		GDKerror("MT_init: winsock initialisation failed %d\n", 
@@ -329,6 +338,10 @@ void MT_init_posix(){
 		WSACleanup();
 	}
 	MT_alloc_init();
+}
+
+char* MT_heapcur(){
+	return (char*)0;
 }
 
 void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
@@ -974,7 +987,7 @@ int MT_lockf(char *filename, int mode, size_t off, int len) {
 }
 
 void MT_sleep_ms(unsigned int ms) {
-        sleep(ms);
+        Sleep(ms);
 }
 
 
