@@ -211,6 +211,9 @@ proc bulkload( tab, file, Sep, Rsep, sze ):= {
 	var lid := table_name.reverse().find( tab );
 	var tid := table_id.find( lid );
         var columns := column_name.semijoin(column_table.select(tid));
+        var idcol := columns.semijoin(
+		column_number.semijoin(columns).select(-1));
+	columns := columns.diff(idcol);
 	var bats := column_bat.semijoin(columns);
 	bats := column_number.reverse().join(bats).sort();
 	bats := bats.reverse().mark(oid(0)).reverse();
@@ -223,6 +226,14 @@ proc bulkload( tab, file, Sep, Rsep, sze ):= {
 	var t := names.join(res);
 	var x := bats.reverse().join(t);
 	x@batloop(){ $h.insert($t); }
+	var idbat := column_bat.semijoin(idcol).fetch(0);
+	var i := x.reverse().fetch(0).count();
+	var id := int(newoid(i));
+	while(i>0){
+		idbat.insert(nil,oid(id));
+		i := i - 1;
+		id := id + 1;
+	}
 }
 Stdout := file_wastream( stdout, "test" );
 

@@ -2,7 +2,7 @@
 set -x
 
 if [ $# -lt 1 ]; then
-	echo "usage load directory with data"
+	echo "usage load directory-with-data"
 	exit 1
 fi
 
