@@ -34,11 +34,10 @@ This code strongly depends on the front-end/back-end setup.
 #ifndef _SQL_SESSION_H_
 #define _SQL_SESSION_H_
 
+#include "sql_server.h"
 #include <sql_backend.h>
 #include <monet_context.h>
 #include <kernel.h>
-
-extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
 
 extern int mvc_export_result( mvc *c, stream *s, int res_id );
 extern int mvc_export_table( mvc *c, stream *s, int res_id, int offset, int nr);
