@@ -17,3 +17,4 @@ cat load.sql | sed -e s+PWD+$PWD+ | $SQL
 $SQL < VOCquery.sql
 
 #Cleanup
+$SQL < VOCdrop.sql
