@@ -7,55 +7,34 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("# >Number:         35\n");
-	mil.line("# >Category:       Monet_SGI");
 	mil.line("# >Category:       Monet_SGI\n");
-	mil.line("# >Synopsis:       BATloop semantics");
 	mil.line("# >Synopsis:       BATloop semantics\n");
-	mil.line("# >Confidential:   no");
 	mil.line("# >Confidential:   no\n");
-	mil.line("# >Severity:       serious");
 	mil.line("# >Severity:       serious\n");
-	mil.line("# >Priority:       high");
 	mil.line("# >Priority:       high\n");
-	mil.line("# >Responsible:    mk");
 	mil.line("# >Responsible:    mk\n");
-	mil.line("# >State:          feedback");
 	mil.line("# >State:          feedback\n");
-	mil.line("# >Class:          sw-bug");
 	mil.line("# >Class:          sw-bug\n");
-	mil.line("# >Submitter-Id:   unknown");
 	mil.line("# >Submitter-Id:   unknown\n");
-	mil.line("# >Arrival-Date:   Tue Sep 30 20:45:03 1997");
 	mil.line("# >Arrival-Date:   Tue Sep 30 20:45:03 1997\n");
-	mil.line("# >Originator:     mk");
 	mil.line("# >Originator:     mk\n");
-	mil.line("# >Organization:");
 	mil.line("# >Organization:\n");
-	mil.line("# >Release:        970101");
 	mil.line("# >Release:        970101\n");
-	mil.line("# >Environment:");
 	mil.line("# >Environment:\n");
-	mil.line("# SGI");
 	mil.line("# SGI\n");
-	mil.line("# >Description:");
 	mil.line("# >Description:\n");
-	mil.line("# Since yesterday the semantics has changed\?");
 	mil.line("# Since yesterday the semantics has changed\?\n");
-	mil.line("# > b:= view_bbp_name;");
 	mil.line("# > b:= view_bbp_name;\n");
-	mil.line("# > b@batloop(){ printf(\"%s\\n\",$t);}");
 	mil.line("# > b@batloop(){ printf(\"%s\\n\",$t);}\n");
-	mil.line("# !ERROR: interpret: no matching iterator to 'batloop(bat[int,str], ptr)'.");
 	mil.line("# !ERROR: interpret: no matching iterator to 'batloop(bat[int,str], ptr)'.\n");
-	mil.line("");
 	mil.line("var b:= view_bbp_name();");
 	b := bbp.getNames();
 	mil.line("b@batloop(){ printf(\"%s\\n\",$t);}");
 barrier	aa_a := bunStream(b,aa_aH,aa_aT);
 	ba_a := printf("%s\n",aa_aT);
-redo	aa_a;
+redo	aa_a := bunStream(b,aa_aH,aa_aT);
 exit	aa_a;
 	mil.line("quit();");
 	ca_a := quit();

@@ -7,47 +7,27 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("# >Number:         16\n");
-	mil.line("# >Category:       MIL");
 	mil.line("# >Category:       MIL\n");
-	mil.line("# >Synopsis:       MIL: sample, does not handle empty BAT");
 	mil.line("# >Synopsis:       MIL: sample, does not handle empty BAT\n");
-	mil.line("# >Confidential:   no");
 	mil.line("# >Confidential:   no\n");
-	mil.line("# >Severity:       serious");
 	mil.line("# >Severity:       serious\n");
-	mil.line("# >Priority:       medium");
 	mil.line("# >Priority:       medium\n");
-	mil.line("# >Responsible:    boncz");
 	mil.line("# >Responsible:    boncz\n");
-	mil.line("# >State:          closed");
 	mil.line("# >State:          closed\n");
-	mil.line("# >Class:          sw-bug");
 	mil.line("# >Class:          sw-bug\n");
-	mil.line("# >Submitter-Id:   unknown");
 	mil.line("# >Submitter-Id:   unknown\n");
-	mil.line("# >Arrival-Date:   Wed Jul 16 15:00:00 1997");
 	mil.line("# >Arrival-Date:   Wed Jul 16 15:00:00 1997\n");
-	mil.line("# >Originator:     jonas");
 	mil.line("# >Originator:     jonas\n");
-	mil.line("# >Organization:");
 	mil.line("# >Organization:\n");
-	mil.line("# >Release:        970101");
 	mil.line("# >Release:        970101\n");
-	mil.line("# >Environment:");
 	mil.line("# >Environment:\n");
-	mil.line("# general/IRIX monet3.0.6");
 	mil.line("# general/IRIX monet3.0.6\n");
-	mil.line("# >Description:");
 	mil.line("# >Description:\n");
-	mil.line("# >a := new(int, int);");
 	mil.line("# >a := new(int, int);\n");
-	mil.line("# >a.sample(1).print;");
 	mil.line("# >a.sample(1).print;\n");
-	mil.line("# !FATAL GDKmalloc called with size 0");
 	mil.line("# !FATAL GDKmalloc called with size 0\n");
-	mil.line("");
 	mil.line("var a := new(int, int);");
 	a := new(nil:int,nil:int);
 	mil.line("a.sample(1).print();");

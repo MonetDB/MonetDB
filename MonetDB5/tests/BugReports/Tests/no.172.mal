@@ -7,20 +7,16 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("# this used to hang because the no longer persistent\n");
-	mil.line("# this used to hang because the no longer persistent");
 	mil.line("# bat got the BBPUNLOADING status but can only be done\n");
-	mil.line("# bat got the BBPUNLOADING status but can only be done");
 	mil.line("# with refs()==0 and lrefs()==0 \n");
-	mil.line("# with refs()==0 and lrefs()==0 ");
 	mil.line("");
 	aa_a := new(nil:int,nil:int);
 	abat := persists(aa_a,true);
 	mil.line("var abat := bat(int,int).persists(true);");
 	ba_a := commit();
 	mil.line("# met of zonder 'abat := nil;'\n");
-	mil.line("# met of zonder 'abat := nil;'");
 	mil.line("");
 	ca_a := getName(abat);
 	t_3 := new(ca_a);
@@ -29,7 +25,6 @@
 	mil.line("persists(t_3,false);");
 	ea_a := commit();
 	mil.line("## Hang:\n");
-	mil.line("## Hang:");
 	fa_a := print(t_3);
 	mil.line("");
 	ga_a := quit();

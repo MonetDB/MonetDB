@@ -7,17 +7,15 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("# [t_i, n_i]\n");
-	mil.line("w.histogram().print();");
 	w:= mil.take("w");
 	ca_a := histogram(w);
 	da_a := print(ca_a);
 	mil.line("#split w in twee tabellen\n");
-	mil.line("var docid := new( void, oid );");
 	docid := new(nil:void,nil:oid);
 	mil.line("var tid := new( void, str );");
 	tid := new(nil:void,nil:str);
@@ -60,7 +58,6 @@
 	xa_a := group(docid,tid);
 	ya_a := print(xa_a);
 	mil.line("# t_i, tf_ij\n");
-	mil.line("join( tidx.reverse(), CTgroup( docid, tid ).histogram()).print();");
 	ab_a := reverse(tidx);
 	bb_a := group(docid,tid);
 	cb_a := histogram(bb_a);
@@ -79,7 +76,6 @@
 	nb_a := join(kb_a,mb_a);
 	ob_a := print(nb_a);
 	mil.line("# d_j, max tf_j\n");
-	mil.line("var djtfij := new( oid, int );");
 	djtfij := new(nil:oid,nil:int);
 	mil.line("djtfij.insert( join( docid.reverse(), CTgroup( docid, tid ).histogram() ) );");
 	pb_a := reverse(docid);
@@ -91,9 +87,7 @@
 	ub_a := group.max(djtfij);
 	vb_a := print(ub_a);
 	mil.line("# This way it works. However, if I do not do an explicit new and insert,\n");
-	mil.line("# then the server crashes as follows:");
 	mil.line("# then the server crashes as follows:\n");
-	mil.line("");
 	mil.line("var djtfijx :=join( docid.reverse(), CTgroup( docid, tid ).histogram() );");
 	wb_a := reverse(docid);
 	xb_a := group(docid,tid);

@@ -1,34 +1,36 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-## reduced size to limit runtime
+#use the "mil_schema" for additional support routines
+	mil.line("# reduced size to limit runtime\n");
 	N := 10000;
-#VAR N  := 10000;	#1000000;
+	mil.line("#1000000;\n");
 	Li := 100;
-#VAR Li := 100;		#1000;
+	mil.line("#1000;\n");
 	Lj := 1000;
-#
-	aa_a := reverse(bbp.getNames,);
+	mil.line("#1000;\n");
+	mil.line("");
+	aa_a := reverse(bbp.getNames);
 	ba_a := exist(aa_a,"a");
 barrier	ca_a := not(ba_a);
-#if (not(view_bbp_name.reverse().exist("a"))) {
+	mil.line("if (not(view_bbp_name.reverse().exist(\"a\"))) {");
 	da_a := commit();
-#	commit();
-	ea_a := new(:void,:dbl,N);
+	mil.line("\tcommit();");
+	ea_a := new(nil:void,nil:dbl,N);
 	a := bat.setName(ea_a,"a");
-#	var a := bat(void,dbl,N).rename("a");
+	mil.line("\tvar a := bat(void,dbl,N).rename(\"a\");");
 	i := 0;
-#	var i := 0;
+	mil.line("\tvar i := 0;");
 barrier	fa_a := true;
 barrier	ga_a := <(i,N);
-!ERROR: "	while(i < N) a.insert(nil,dbl(i :+= 1));"
-!        																^
+!ERROR: "	var i := 0;"
+!        																													^
 ! syntax error, unexpected TOK_IDENT, expecting '{'.
 #Identifer 'rename' mapped to 'bat.setName'
 #Identifer 'view_bbp_name' mapped to 'bbp.getNames'
