@@ -1,6 +1,5 @@
 # The 4000 series deals with strategic optimizer constructs
 # common subexpression evaluation
-include optimizer;
 optimizer.setDebug();
 optimizer.commonExpressionRemoval();
 optimizer.aliasRemoval();

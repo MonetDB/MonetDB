@@ -317,7 +317,7 @@ end f1;	# 123
 !ERROR: 't48' may not be used before being set in f1[65]
 !ERROR: 't82' may not be used before being set in f1[83]
 !ERROR: 't82' may not be used before being set in f1[83]
-Optimizer FToptimizer failed
+Optimizer factorize optimizer failed
 factory Admin.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t1 := bbp.bind("TREC2003_test_priors_8x32318");	# 1 CMDbbpbind (t1:bat[:void,:dbl])<-($3:str)
     t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid (t2:bat[:void,:int])<-($5:int)($6:int)($7:int)($8:int)

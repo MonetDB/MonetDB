@@ -1,0 +1,136 @@
+stdout of test 'part00` in directory 'src/optimizer` itself:
+
+
+# 19:28:42 >  
+# 19:28:42 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=47702 --set sql_port=58423 --set monet_prompt= --trace --dbname=mTests_src_optimizer  part00.mal </dev/null
+# 19:28:42 >  
+
+# Monet Database Server V4.7.1
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+##testing the partition optimizer
+#
+#a1:= new(:void,:int);
+#setSequenceBase(a1,0@0);
+#a2:= new(:void,:int);
+#setSequenceBase(a2,10@0);
+#a3:= new(:void,:int);
+#setSequenceBase(a3,20@0);
+#
+#barrier (go,i):= newRange(0);
+#	insert(a1,nil,i);
+#	insert(a2,nil,i);
+#	insert(a3,nil,i);
+#	redo (go,i):= nextElement(1,10);
+#exit (go,i);
+##print(a1);
+##print(a2);
+##print(a3);
+#
+#
+## add it to the BAT partition table
+#partitions.deposit(a1);
+#partitions.deposit(a1,a2);
+#partitions.deposit(a1,a3);
+#partitions.dump();
+#
+#function qry(a:bat[:void,:any]);
+#	print("hello");
+#	print(a);
+#end qry;
+function Admin.qry(a:bat[:void,:any]):void;	# 0  (qry:void)<-(a:bat[:void,:any])
+    io.print("hello");	# 1 IOprint_val ($2:int)<-($3:str)
+    io.print(a);	# 2 IOprint_val ($4:int)<-(a:bat[:void,:any])
+end qry;	# 3  
+#
+#optimizer.partitionedQuery("Admin","qry");
+#showFunction("Admin","qry");
+#print("run experiment");
+#qry(a1);
+#
+variable replacement 'a' instructions 1-3  lifespan 2-2
+function Admin.main():int;	# 0  (main:int)
+    a1 := bbp.new(:void,:int);	# 1 CMDBATnew (a1:bat[:void,:int])<-($2:void)($3:int)
+    bat.setSequenceBase(a1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a1:bat[:void,:int])($5:oid)
+    a2 := bbp.new(:void,:int);	# 3 CMDBATnew (a2:bat[:void,:int])<-($7:void)($8:int)
+    bat.setSequenceBase(a2,10@0);	# 4 BKCsetSequenceBase ($9:bat[:void,:int])<-(a2:bat[:void,:int])($10:oid)
+    a3 := bbp.new(:void,:int);	# 5 CMDBATnew (a3:bat[:void,:int])<-($12:void)($13:int)
+    bat.setSequenceBase(a3,20@0);	# 6 BKCsetSequenceBase ($14:bat[:void,:int])<-(a3:bat[:void,:int])($15:oid)
+barrier (go,i):= mal.newRange(0);	# 7 RNGnewRange_int (go:bit)(i:int)<-($18:int) jump 12
+    bat.insert(a1,nil,i);	# 8 BKCinsert_bun ($19:bat[:void,:int])<-(a1:bat[:void,:int])($20:void)(i:int)
+    bat.insert(a2,nil,i);	# 9 BKCinsert_bun ($21:bat[:void,:int])<-(a2:bat[:void,:int])($20:void)(i:int)
+    bat.insert(a3,nil,i);	# 10 BKCinsert_bun ($22:bat[:void,:int])<-(a3:bat[:void,:int])($20:void)(i:int)
+    redo (go,i):= mal.nextElement(1,10);	# 11 RNGnextElement_int (go:bit)(i:int)<-($23:int)($24:int) jump 8
+exit (go,i);	# 12  (go:bit)(i:int)
+    partitions.deposit(a1);	# 13 BPTdeposit ($25:void)<-(a1:bat[:void,:int])
+    partitions.deposit(a1,a2);	# 14 BPTdeposit2 ($26:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
+    partitions.deposit(a1,a3);	# 15 BPTdeposit2 ($27:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
+    partitions.dump();	# 16 BPTdump ($28:void)
+    mdb.showFunction("Admin","qry");	# 17 MDBshowFunction3 ($32:void)<-($30:str)($31:str)
+    io.print("run experiment");	# 18 IOprint_val ($33:int)<-($34:str)
+    Admin.qry(a1);	# 19  ($35:void)<-(a1:bat[:void,:int])
+end main;	# 20  
+ptop=3 plimit=1024
+[0] bid=13 pid=13 f=0, l=9
+[1] bid=13 pid=14 f=10, l=19
+[2] bid=13 pid=15 f=20, l=-2147483648
+function Admin.qry(a:bat[:void,:any]):void;
+    io.print("hello");
+barrier ($5,$6):= partitions.newIterator(a);
+    io.print($6);
+    redo ($5,$6):= partitions.hasMoreElements(a);
+exit ($5,$6);
+end qry;
+[ "run experiment" ]
+[ "hello" ]
+#-----------------#
+# h	tmp_13	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
+#-----------------#
+# h	tmp_14	  # name
+# void	int	  # type
+#-----------------#
+[ 10@0,	  0	  ]
+[ 11@0,	  1	  ]
+[ 12@0,	  2	  ]
+[ 13@0,	  3	  ]
+[ 14@0,	  4	  ]
+[ 15@0,	  5	  ]
+[ 16@0,	  6	  ]
+[ 17@0,	  7	  ]
+[ 18@0,	  8	  ]
+[ 19@0,	  9	  ]
+#-----------------#
+# h	tmp_15	  # name
+# void	int	  # type
+#-----------------#
+[ 20@0,	  0	  ]
+[ 21@0,	  1	  ]
+[ 22@0,	  2	  ]
+[ 23@0,	  3	  ]
+[ 24@0,	  4	  ]
+[ 25@0,	  5	  ]
+[ 26@0,	  6	  ]
+[ 27@0,	  7	  ]
+[ 28@0,	  8	  ]
+[ 29@0,	  9	  ]
+
+# 19:28:42 >  
+# 19:28:42 >  Done.
+# 19:28:42 >  
+

@@ -396,7 +396,7 @@ end qry1;	# 111
 !ERROR: multiplexType:script[98]: at least one BAT argument required
 !ERROR: 'aggrX3.count' undefined in Admin.qry1[99]
 !ERROR: 'sql.output' undefined in Admin.qry1[110]
-Optimizer ARoptimizer failed
+Optimizer aliasRemoval optimizer failed
 function Admin.qry1():void;	# 0  (qry1:void)
     V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 1 mvc_bind_wrap (V3:any)<-($2:str)($3:str)($4:str)($5:int)
     V8 := sql.bind_dbat("sys","lineitem",0);	# 2 mvc_bind_dbat_wrap (V8:any)<-($2:str)($3:str)($5:int)
@@ -717,7 +717,7 @@ end qry1;	# 180
 !ERROR: multiplexType:script[154]: at least one BAT argument required
 !ERROR: 'aggrX3.count' undefined in Admin.qry1[155]
 !ERROR: 'sql.output' undefined in Admin.qry1[168]
-Optimizer GCoptimizer failed
+Optimizer garbageCollector optimizer failed
 function Admin.qry1():void;	# 0  (qry1:void)
     V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 1 mvc_bind_wrap (V3:any)<-($2:str)($3:str)($4:str)($5:int)
     V8 := sql.bind_dbat("sys","lineitem",0);	# 2 mvc_bind_dbat_wrap (V8:any)<-($2:str)($3:str)($5:int)
