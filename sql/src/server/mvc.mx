@@ -1443,7 +1443,6 @@ static void create_column(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_c
 
 	snprintf(bname, BUFSIZ, "%s_%s", gt->name, gc->name );
 	gc->bid = log_bat_persists(logger, b, bname); 
-	BATroles(b, gt->name, gc->name );
 	BBPunfix(b->batCacheid);
 
 	snprintf(bname, BUFSIZ, "U_%s_%s", gt->name, gc->name );
@@ -2725,7 +2724,6 @@ sql_column *mvc_create_column(mvc * m, sql_table *t, char *name,
 
 	BATseqbase(b,0);
 	res = mvc_create_column_bat(m, t, name, sqltype, type_size, type_digits, seqnr, b, u);
-	BATroles(b, t->name, name );
 	bat_destroy(b);
 	bat_destroy(u);
 

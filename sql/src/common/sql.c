@@ -2433,7 +2433,7 @@ static stmt *sql_simple_select(context * sql, scope * scp, dlist * selection)
 
 static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel )
 {
-	list *rl;
+	list *rl = NULL;
 	stmt *s = NULL;
 
 	stmt *order = NULL, *subset = NULL;
@@ -2566,20 +2566,30 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 
 	rl = create_stmt_list();
 	if (sn->selection) {
-		dnode *n = sn->selection->h;
+		list *sl = create_stmt_list();
+		dnode *n;
+		node *m;
+		int nrcols = 0;
 
-		while (n) {
+		for (n = sn->selection->h; n; n = n->next ){
 			stmt *cs = sql_column_exp(sql, scp, n->data.sym, grp, subset);
 			if (!cs){
+				list_destroy(sl);
 				list_destroy(rl);
 				sql_select_cleanup(sql, s, subset, grp);
 				return sql_error( sql, 02, "Subquery result missing");
 			}
 
+			list_append(sl, cs);
+			if (nrcols < cs->nrcols)
+				nrcols = cs->nrcols;
+		}
+
+		for (m = sl->h; m; m = m->next){
+			stmt *cs = m->data; 
 			/* t1.* */
 			if (cs->type == st_list && n->data.sym->token == SQL_TABLE){
 				list_merge(rl, cs->op1.lval, (fdup)&stmt_dup);
-				stmt_destroy(cs);
 			} else if (cs->type == st_list) {	/* subquery */
 				if (list_length(cs->op1.lval) == 1) {	/* single value */
 					stmt *ss = subset->op1.lval->h->data;
@@ -2587,23 +2597,21 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					ss = stmt_dup(ss);
 					cs1 = stmt_dup(cs1);
 					list_append(rl, stmt_join (ss, cs1, cmp_all));
-					stmt_destroy(cs);
 				} else {	/* referenced variable(s) (can only be 2) */
 					stmt *ids = cs->op1.lval->h->next->data;
 					stmt *ss = find_subset(subset, ids->t);
 					ids = stmt_dup(ids);
 					list_append(rl, stmt_outerjoin( stmt_outerjoin(ss, stmt_reverse (ids), cmp_equal), stmt_dup(cs->op1.lval->h->data), cmp_equal));
-					stmt_destroy(cs);
 				}
-			} else if (cs->nrcols == 0){
+			} else if (cs->nrcols == 0 && nrcols > 0){
 				stmt *ss = first_subset(subset);
-				cs = stmt_const(ss,cs);
+				cs = stmt_const(ss,stmt_dup(cs));
 				list_append(rl, cs);
 			} else {
-				list_append(rl, cs);
+				list_append(rl, stmt_dup(cs));
 			}
-			n = n->next;
 		}
+		list_destroy(sl);
 	} else {
 		/* select * from tables */
 		if (toplevel) {

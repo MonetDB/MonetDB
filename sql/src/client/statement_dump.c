@@ -656,16 +656,9 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			"s%d := {%s}(s%d, s%d, s%d);\n", 
 				-s->nr, s->op2.aggrval->imp, l, g, e);
 		} else {
-			(*nr)++;
 			len += snprintf( buf+len, BUFSIZ-len, 
 				"s%d := s%d.%s();\n", 
-				*nr, l, s->op2.aggrval->imp );
-			len += snprintf( buf+len, BUFSIZ-len, 
-				"s%d := new(oid,%s);\n"
-				, -s->nr, s->op2.aggrval->res->type->name );
-			len += snprintf( buf+len, BUFSIZ-len, 
-				"s%d.insert(oid(0),s%d);\n"
-				, -s->nr, *nr );
+				-s->nr, l, s->op2.aggrval->imp );
 		}
 		dump(sql,buf,len,-s->nr);
 	} 	break;
@@ -740,7 +733,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
-	case st_alias: 
+	case st_alias: {
+		int l = stmt_dump( s->op1.stval, nr, sql );
+		len = snprintf( buf, BUFSIZ, 
+			"s%d := roles(s%d, \"%s\", \"%s\");\n",
+		  	-s->nr, l, s->op2.sval, s->op2.sval );
+		dump(sql,buf,len,-s->nr);
+	} break;
 	case st_column_alias: 
 		s->nr = - stmt_dump( s->op1.stval, nr, sql );
 		break;
@@ -864,9 +863,11 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_result: {
 		stmt *k = s->op1.stval;
 		int l =  stmt_dump( k, nr, sql );
+		/*
 		len = snprintf( buf, BUFSIZ,
 			"result(Output,mvc_type(myc),mvc_status(myc));\n",l);
 		dump(sql,buf,len,-s->nr);
+		*/
 	} break;
 
 	}

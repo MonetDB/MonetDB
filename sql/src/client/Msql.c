@@ -15,7 +15,7 @@
 stream *ws = NULL, *rs = NULL;
 
 void usage( char *prog ){
-	fprintf(stderr, "sql_client\n");
+	fprintf(stderr, "Msql\n");
 	fprintf(stderr, "\toptions:\n");
 	fprintf(stderr, "\t\t -d          | --debug=[level]\n"); 
 	fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");

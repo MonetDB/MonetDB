@@ -911,8 +911,7 @@ stmt *stmt_aggr(stmt * op1, sql_aggr * op, group * grp)
 		s->h = stmt_dup(grp->grp->h);
 		s->key = 1;
 	} else {
-		s->nrcols = 1;	/* aggr's again lead to tables, 
-				   with a single value */
+		s->nrcols = 0;	
 		s->key = 1;
 		s->h = stmt_dup(op1->h);
 	}

@@ -71,8 +71,8 @@ typedef enum stmt_type {
 	st_triop,
 	st_aggr,
 	st_exists,
-	st_alias,
 	st_column_alias,
+	st_alias,
 	st_set,
 	st_sets,
 	/* used internally only */
