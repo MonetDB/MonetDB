@@ -43,6 +43,42 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_GCC_TRADITIONAL
 
+bits=32
+AC_ARG_WITH(bits,
+[  --with-bits=<#bits>     specify number of bits (32 or 64)],[
+case $withval in
+32)	;;
+64)	case "$host_os" in
+	linux*)	AC_ERROR([Linux does not support 64 bits]);;
+	esac
+	;;
+*)	AC_ERROR(--with-bits argument must be either 32 or 64);;
+esac
+bits=$withval
+])
+case "$GCC-$host_os-$bits" in
+yes-solaris*-64)
+	case `$CC -v 2>&1` in
+	*'gcc version 3.'*)	;;
+	*)	AC_ERROR([need GCC version 3.X for 64 bits]);;
+	esac
+	CC="$CC -m$bits"
+	CXX="$CXX -m$bits"
+	;;
+-solaris*-64)
+	CC="$CC -xarch=v9"
+	CXX="$CXX -xarch=v9"
+	;;
+yes-irix*-64)
+	CC="$CC -mabi=$bits"
+	CXX="$CXX -mabi=$bits"
+	;;
+-irix*-64)
+	CC="$CC -$bits"
+	CXX="$CXX -$bits"
+	;;
+esac
+
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
 dnl some dirty hacks
