@@ -333,7 +333,7 @@ yes-aix*-64)
 	AR="ar -X64"
 	NM="nm -X64 -B"
 	;;
-yes-linux*-x86_64*-64)
+yes-linux*-x86_64*-*)
 	CC="$CC -m$bits"
 	CXX="$CXX -m$bits"
 	;;
