@@ -135,75 +135,6 @@ stmt *stmt_uselect_select(stmt * s)
 }
 
 
-@(
-@' replaced by "shrink_select_ranges()"
-
-stmt *range_select( stmt *s1, stmt *s2 )
-{
-	sql_column *c1, *c2;
-
-	if (s1->type != s2->type || s1->type != st_select){
-		return stmt_semijoin(stmt_dup(s1),stmt_dup(s2));
-	}
-
-	/* check if range optimization is possible */
-	if (s1->flag >= cmp_equal || s2->flag >= cmp_equal)
-		return stmt_semijoin(stmt_dup(s1),stmt_dup(s2));
-
-	if (s1->flag > s2->flag) /* comp_type order is >,>=,<=,< */
-		return range_select(s2, s1);
-
-	if (s1->flag >= cmp_lte || s2->flag <= cmp_gte ) /* comp_type order is >,>=,<=,< */
-		return stmt_semijoin(stmt_dup(s1),stmt_dup(s2));
-
-	c1 = basecolumn(s1);
-	c2 = basecolumn(s2);
-	if (c1 == c2){
-		int cmp1 = s1->flag;
-		int cmp2 = s2->flag;
-		int cmpX = -1;
-
-		if (cmp1 == cmp_gt && cmp2 == cmp_lt){
-			cmpX = 0;
-		} else if (cmp1 == cmp_gt && cmp2 == cmp_lte){
-			cmpX = 1;
-		} else if (cmp1 == cmp_gte && cmp2 == cmp_lt){
-			cmpX = 2;
-		} else if (cmp1 == cmp_gte && cmp2 == cmp_lte){
-			cmpX = 3;
-		}
-		return stmt_select2(
-			stmt_dup(s1->op1.stval),
-			stmt_dup(s1->op2.stval),
-			stmt_dup(s2->op2.stval),
-			cmpX);
-	}
-	return stmt_semijoin(stmt_dup(s1),stmt_dup(s2));
-}
-
-list *distill_range_selects(list *sels)
-{
-	node *n1, *n2;
-	for ( n1 = sels->h; n1; n1 = n1->next){
-		stmt *s1 = n1->data;
-		if (s1->type == st_select && s1->flag < cmp_equal){
-			for ( n2 = n1->next; n2; n2 = n2->next){
-				stmt *s2 = n2->data;
-				if (s2->type == st_select && s2->flag < cmp_equal
-				     && basecolumn(s1) == basecolumn(s2)         ){
-					stmt *rs = range_select(s1,s2);
-					sels = list_prepend(sels,rs);
-					n1 = list_remove_node(sels,n1);
-					n2 = list_remove_node(sels,n2);
-					break;
-				}
-			}
-		}
-	}
-	return sels;
-}
-@)
-
 list *shrink_select_ranges(list *oldsels)
 {
 	/* find minimal ranges for selects per column on one table */
@@ -394,6 +325,7 @@ stmt *eliminate_semijoin(stmt *s)
 	stmt *s1, *s2;
 	sql_column *bc1, *bc2;
 
+	assert(s->type == st_semijoin);
 	s1 = s->op1.stval;
 	s2 = s->op2.stval;
 	bc1 = basecolumn(s1);
@@ -473,10 +405,36 @@ stmt *eliminate_semijoin(stmt *s)
 	}
 	return stmt_dup(s);
 }
+ 
+stmt *eliminate_reverse(stmt *s)
+{
+	stmt *os = s->op1.stval, *ns;
+
+	assert(s->type == st_reverse);
+	switch (os->type){
+	case st_reverse:
+		/* reverse(reverse(x)) => x */
+		ns = os->op1.stval; break;
+	case st_mirror:
+		/* reverse(mirror(x)) => mirror(x) */
+		ns = os; break;
+	default:
+		ns = s;
+	}
+	return stmt_dup(ns);
+}
 
 
 stmt *rel2bin( mvc *c, stmt *s )
 {
+	assert(!(s->optimized < 2 && s->rewritten));
+	if (s->optimized >= 2) {
+		if (s->rewritten) 
+			return stmt_dup(s->rewritten);
+		else
+			return stmt_dup(s);
+	}
+
 	switch(s->type){
 	/* first just return those statements which we cannot optimize,
 	 * such as schema manipulation, transaction managment, 
@@ -509,29 +467,27 @@ stmt *rel2bin( mvc *c, stmt *s )
 		return stmt_dup(s);
 
 	case st_reljoin: {
-		if (s->optimized > 1) 
-			return stmt_dup(s);
 
-	{	node *n1, *n2;
+		list *l1 = create_stmt_list();
+		list *l2 = create_stmt_list();
+		node *n1, *n2;
+		stmt *res;
 
 		for(n1 = s->op1.lval->h, n2 = s->op2.lval->h; n1 && n2; n1 = n1->next, n2 = n2->next ){
-			stmt *nn1 = rel2bin(c, n1->data);
-			stmt *nn2 = rel2bin(c, n2->data);
-
-			stmt_destroy(n1->data);
-			stmt_destroy(n2->data);
-			n1->data = nn1;
-			n2->data = nn2;
+			list_append(l1, rel2bin(c, n1->data));
+			list_append(l2, rel2bin(c, n2->data));
 		}
-		s->optimized = 2;
-		return stmt_dup(s);
-	}}
+		res = stmt_reljoin2(l1, l2);
+		s->optimized = res->optimized = 2;
+		if (res != s) {
+			s->rewritten = stmt_dup(res);
+		}
+		return res;
+	}
 
 	case st_relselect: {
-		if (s->optimized > 1) 
-			return stmt_dup(s);
 
-	{	stmt *res;
+		stmt *res;
 		node *n;
 		list * l = create_stmt_list();
 
@@ -540,51 +496,57 @@ stmt *rel2bin( mvc *c, stmt *s )
 		}
 		if (list_length(l) == 1){
 			res = stmt_dup(l->h->data);
-@(
-@' replaced by "shrink_select_ranges()"
-		} else if (list_length(l) == 2){
-			res = range_select(l->h->data, l->h->next->data);
-@)
 		} else {
-@(
-@' replaced by "shrink_select_ranges()"
-			l = distill_range_selects(l);
-@)
 			if (!(c->debug&4096)) {
 				l = shrink_select_ranges(l);
 			}
 			res = (stmt*)list_reduce(l, (freduce)&stmt_semijoin, (fdup)&stmt_dup );
 		}
 		list_destroy(l);
-
-		res->optimized = 2;
+		s->optimized = res->optimized = 2;
+		if (res != s) {
+			s->rewritten = stmt_dup(res);
+		}
 		return res;
-	}}
+	}
 
 	case st_semijoin: {
-		if (s->optimized > 1) 
-			return stmt_dup(s);
-	{
+	
 		stmt *os, *ns;
 
-		os = s->op1.stval;
-	       	s->op1.stval = rel2bin(c, os);
-		stmt_destroy(os);
-
-		os = s->op2.stval;
-	       	s->op2.stval = rel2bin(c, os);
-		stmt_destroy(os);
-
+		os = stmt_semijoin(
+			rel2bin(c, s->op1.stval),
+			rel2bin(c, s->op2.stval));
 		if (!(c->debug&4096)) {
-			ns = eliminate_semijoin(s);
+			ns = eliminate_semijoin(os);
 		} else {
-			ns = stmt_dup(s);
+			ns = stmt_dup(os);
 		}
-		
-		ns->optimized = 2;
+		stmt_destroy(os);
+		s->optimized = ns->optimized = 2;
+		if (ns != s) {
+			s->rewritten = stmt_dup(ns);
+		}
 		return ns;
-	}}
+	}
 
+	case st_reverse: {
+	
+		stmt *os, *ns;
+
+		os = stmt_reverse(rel2bin(c, s->op1.stval));
+		if ( (c->debug&4096)) {
+			ns = eliminate_reverse(os);
+		} else {
+			ns = stmt_dup(os);
+		}
+		stmt_destroy(os);
+		s->optimized = ns->optimized = 2;
+		if (ns != s) {
+			s->rewritten = stmt_dup(ns);
+		}
+		return ns;
+	}
 
 	case st_temp:
 	case st_filter: 
@@ -592,7 +554,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_uselect: case st_uselect2: 
 	case st_diff: case st_intersect: case st_union: case st_outerjoin:
 	case st_join: 
-	case st_mirror: case st_reverse: case st_const: case st_mark: 
+	case st_mirror: case st_const: case st_mark: 
 	case st_group: case st_group_ext: case st_derive: case st_unique: 
 	case st_limit: case st_order: case st_reorder: case st_ordered: 
 
@@ -605,38 +567,37 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_aggr: 
 	case st_op: case st_unop: case st_binop: case st_Nop:
 
-		if (s->optimized > 1) 
-			return stmt_dup(s);
-
 		if (s->op1.stval){
-			stmt *os = s->op1.stval;
-		       	stmt *ns = rel2bin(c, os);
-			s->op1.stval = ns;
+			stmt *os, *ns;
+			os = s->op1.stval;
+		       	ns = rel2bin(c, os);
+			assert(ns != s);
 			stmt_destroy(os);
+			s->op1.stval = ns;
 		}
 		if (s->op2.stval){
 			stmt *os = s->op2.stval;
 		       	stmt *ns = rel2bin(c, os);
-			s->op2.stval = ns;
+			assert(ns != s);
 			stmt_destroy(os);
+			s->op2.stval = ns;
 		}
 		if (s->op3.stval){
 			stmt *os = s->op3.stval;
 		       	stmt *ns = rel2bin(c, os);
-			s->op3.stval = ns;
+			assert(ns != s);
 			stmt_destroy(os);
+			s->op3.stval = ns;
 		}
 		s->optimized = 2;
 		return stmt_dup(s);
 
 	case st_list: {
+
 		stmt *res = NULL;
 		node *n;
 		list *l = s->op1.lval;
 		list *nl = NULL;
-
-		if (s->optimized > 1) 
-			return stmt_dup(s);
 
 		nl = create_stmt_list();
 		for(n = l->h; n; n = n->next ){
@@ -644,11 +605,15 @@ stmt *rel2bin( mvc *c, stmt *s )
 			list_append(nl, ns);
 		}
 		res = stmt_list(nl);
-		res->optimized = 2;
+		s->optimized = res->optimized = 2;
+		if (res != s) {
+			s->rewritten = stmt_dup(res);
+		}
 		return res;
 	} 
 
 	case st_bat: case st_ubat: 
+
 		s->optimized = 2;
 		return stmt_dup(s);
 

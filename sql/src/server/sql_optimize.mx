@@ -874,6 +874,14 @@ static stmt *find_pivot(stmt * subset, stmt * t)
 stmt *optimize( mvc *c, stmt *s ){
 	stmt *res = s;
 
+	assert(!(s->optimized < 1 && s->rewritten));
+	if (s->optimized >= 1) {
+		if (s->rewritten) 
+			return stmt_dup(s->rewritten);
+		else
+			return stmt_dup(s);
+	}
+
 	switch(s->type){
 	/* first just return those statements which we cannot optimize,
 	 * such as schema manipulation, transaction managment, 
@@ -906,38 +914,40 @@ stmt *optimize( mvc *c, stmt *s ){
 		return stmt_dup(s);
 
 	case st_reljoin: {
-		if (s->optimized) 
-			return stmt_dup(s);
 
-	{	node *n1, *n2;
+		list *l1 = create_stmt_list();
+		list *l2 = create_stmt_list();
+		node *n1, *n2;
+		stmt *res;
 
 		for(n1 = s->op1.lval->h, n2 = s->op2.lval->h; n1 && n2; n1 = n1->next, n2 = n2->next ){
-			stmt *nn1 = optimize(c, n1->data);
-			stmt *nn2 = optimize(c, n2->data);
-
-			stmt_destroy(n1->data);
-			stmt_destroy(n2->data);
-			n1->data = nn1;
-			n2->data = nn2;
+			list_append(l1, optimize(c, n1->data));
+			list_append(l2, optimize(c, n2->data));
 		}
-		s->optimized = 1;
-		return stmt_dup(s);
-	}}
+		res = stmt_reljoin2(l1, l2);
+		s->optimized = res->optimized = 1;
+		if (res != s) {
+			s->rewritten = stmt_dup(res);
+		}
+		return res;
+	}
 
 	case st_relselect: {
-		if (s->optimized) 
-			return stmt_dup(s);
 
-	{	node *n;
+		list *l = create_stmt_list();
+		node *n;
+		stmt *res;
 
 		for(n = s->op1.lval->h; n; n = n->next ){
-			stmt *nn = optimize(c, n->data);
-			stmt_destroy(n->data);
-			n->data = nn;
+			list_append(l, optimize(c, n->data));
 		}
-		s->optimized = 1;
-		return stmt_dup(s);
-	}}
+		res = stmt_relselect(l);
+		s->optimized = res->optimized = 1;
+		if (res != s) {
+			s->rewritten = stmt_dup(res);
+		}
+		return res;
+	}
 
 	case st_temp:
 	case st_filter: 
@@ -958,24 +968,24 @@ stmt *optimize( mvc *c, stmt *s ){
 	case st_aggr: 
 	case st_op: case st_unop: case st_binop: case st_Nop:
 
-		if (s->optimized) 
-			return stmt_dup(s);
-
 		if (s->op1.stval){
 			stmt *os = s->op1.stval;
 		       	stmt *ns = optimize(c, os);
+			assert(ns != s);
 			s->op1.stval = ns;
 			stmt_destroy(os);
 		}
 		if (s->op2.stval){
 			stmt *os = s->op2.stval;
 		       	stmt *ns = optimize(c, os);
+			assert(ns != s);
 			s->op2.stval = ns;
 			stmt_destroy(os);
 		}
 		if (s->op3.stval){
 			stmt *os = s->op3.stval;
 		       	stmt *ns = optimize(c, os);
+			assert(ns != s);
 			s->op3.stval = ns;
 			stmt_destroy(os);
 		}
@@ -983,13 +993,11 @@ stmt *optimize( mvc *c, stmt *s ){
 		return stmt_dup(s);
 
 	case st_list: {
+
 		stmt *res = NULL;
 		node *n;
 		list *l = s->op1.lval;
 		list *nl = NULL;
-
-		if (s->optimized) 
-			return stmt_dup(s);
 
 		nl = create_stmt_list();
 		for(n = l->h; n; n = n->next ){
@@ -997,17 +1005,23 @@ stmt *optimize( mvc *c, stmt *s ){
 			list_append(nl, ns);
 		}
 		res = stmt_list(nl);
-		res->optimized = 1;
+		s->optimized = res->optimized = 1;
+		if (res != s) {
+			s->rewritten = stmt_dup(res);
+		}
 		return res;
 	} 
 
 	case st_bat: case st_ubat: 
+
 		s->optimized = 1;
 		return stmt_dup(s);
 
 	case st_pivot: {
+
 		stmt *ns = optimize(c, s->op2.stval); /* optimize ptable */
 		stmt *np = find_pivot(ns, s->t);
+		stmt_destroy(ns);
 
 		stmt *filter = 
 			op_stmt2filter(stmt_dup(s->op2.stval->op3.stval));
@@ -1016,29 +1030,43 @@ stmt *optimize( mvc *c, stmt *s ){
 			np = stmt_semijoin(np, optimize(c, filter));
 			stmt_destroy(filter);
 		}
-		stmt_destroy(ns);
+		s->optimized = np->optimized = 1;
+		if (np != s) {
+			s->rewritten = stmt_dup(np);
+		}
 		return np;
 	}
+	
 	case st_partial_pivot: {
+	
 		stmt *ns = optimize(c, s->op2.stval); /* optimize ptable */
 		stmt *np = find_pivot(ns, s->t);
 		stmt_destroy(ns);
+		s->optimized = np->optimized = 1;
+		if (np != s) {
+			s->rewritten = stmt_dup(np);
+		}
 		return np;
 	}
-	case st_ptable:
-		if (!s->op4.stval){ /* use op4 to store the new ptable */
-			stmt *pivots = op_stmt2pivot(stmt_dup(s->op3.stval));
-			/* also optimize the pivots */
-			stmt *t = optimize(c, pivots);
-			assert(!s->op4.stval);
-			s->op4.stval = t;
-			assert(s->op4.stval);
-			stmt_destroy(pivots);
+	
+	case st_ptable: {
+
+		stmt *pivots = op_stmt2pivot(stmt_dup(s->op3.stval));
+		/* also optimize the pivots */
+		stmt *np = optimize(c, pivots);
+		assert(np);
+		stmt_destroy(pivots);
+		s->optimized = np->optimized = 1;
+		if (np != s) {
+			s->rewritten = stmt_dup(np);
 		}
-		return stmt_dup(s->op4.stval);
+		return np;
+	}
+
 	case st_set: case st_sets: 
 	default:
 		assert(0); 	/* these should have been rewriten by now */
 	}
 	return res;
 }
+
