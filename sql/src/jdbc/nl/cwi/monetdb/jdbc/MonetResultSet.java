@@ -865,7 +865,35 @@ public class MonetResultSet implements ResultSet {
 			public boolean isSearchable(int column) {return(false);}
 			public boolean isCurrency(int column) {return(false);}
 			public int isNullable(int column) {return(columnNullableUnknown);}
-			public boolean isSigned(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+
+			/**
+			 * Indicates whether values in the designated column are signed
+			 * numbers.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 */
+			public boolean isSigned(int column) throws SQLException {
+				// we can hardcode this, based on the colum type
+				switch (getColumnType(column)) {
+					case Types.NUMERIC:
+					case Types.DECIMAL:
+					case Types.TINYINT:
+					case Types.SMALLINT:
+					case Types.INTEGER:
+					case Types.BIGINT:
+					case Types.REAL:
+					case Types.FLOAT:
+					case Types.DOUBLE:
+						return(true);
+					case Types.BIT: // we don't use type BIT, it's here for completeness
+					case Types.BOOLEAN:
+					case Types.DATE:
+					case Types.TIME:
+					case Types.TIMESTAMP:
+						return(false);
+				}
+			}
 
 			/**
 			 * Indicates the designated column's normal maximum width in
