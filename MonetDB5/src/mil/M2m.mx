@@ -75,7 +75,7 @@ int main(int argc,char ** av)
         }
 
 	if (!(setlen = mo_builtin_settings(&set)) )
-		usage(prog);
+		usage();
 
 	while(1){
 		int option_index = 0;
@@ -100,7 +100,7 @@ int main(int argc,char ** av)
 					opt_cmdline, "gdk_dbfarm", optarg );
 				break;
 			}
-			usage(prog);
+			usage();
 			break;
 		case 'c':
 			if( *optarg!='/' && *optarg !='.') {
@@ -129,11 +129,11 @@ int main(int argc,char ** av)
 			}
 		 } break;
 		case '?':
-			usage(prog);
+			usage();
 		default:
 			fprintf( stderr, 
 			    "ERROR: getopt returned character code 0%o ??\n",c);
-			usage(prog);
+			usage();
 		}
 	}
 
@@ -152,7 +152,7 @@ int main(int argc,char ** av)
 		free(config);
 	} else {
 		if (!(setlen = mo_system_config(&set, setlen)) )
-			usage(prog);
+			usage();
 	}
 
 	i = 0;
