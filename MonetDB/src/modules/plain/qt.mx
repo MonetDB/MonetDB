@@ -264,6 +264,18 @@ qt_prelude()
       }
     }
   }
+/*
+  for (n = 0; n != nlevels; n++) {
+	int m;
+	for (m = 0; m != levels[n].lvl_nid; m++)
+	  printf("%d %d (%d,%d) %d\n", 
+		n,
+		levels[n].lvl_nid_dir,
+		levels[n].lvl_idtoxy[m].id_x,
+		levels[n].lvl_idtoxy[m].id_y,
+		levels[n].lvl_sid + levels[n].lvl_xytoid[m]);
+  }
+*/
 
   /* Load the clusters from stable storage */
   if ((ir_wclusters[0] = BATload("IR_W_0_0_0")) != NULL) {

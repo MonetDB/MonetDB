@@ -2,8 +2,10 @@
 INCLUDES = top_builddir/src/gdk top_builddir/src/monet
 MTSAFE
 
+# install these libs in the pkglib
+LIBDIR = pkglib
+
 LIBS = {
-	NAME = plain
 	SEP = _
 	SOURCES = \
 		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
@@ -13,6 +15,6 @@ LIBS = {
 		perfex.mx qt.mx radix.mx salgebra.mx stats.mx str.mx \
 		sys.mx tcpip.mx temporal.mx tpcd.mx trans.mx uchr.mx \
 		unix.mx url.mx vector.mx wisc.mx xtables.mx
-	HEADERS = h m
+	HEADERS = h proto.h m
 	SCRIPTS = mil
 }
