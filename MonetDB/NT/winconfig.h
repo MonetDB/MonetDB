@@ -131,7 +131,7 @@
 
 /* Define if you have the putenv function.  */
 #define HAVE_SETENV 1
-#undef HAVE_PUTENV 
+#define HAVE_PUTENV 1
 
 /* Define if you have the rlimit function.  */
 /* #undef HAVE_RLIMIT */
@@ -255,6 +255,16 @@
 
 #undef HAVE_LONGLONG
 #define HAVE__INT64
+
+#define HAVE_SNPRINTF 1
+#define snprintf _snprintf
+#define HAVE_VSNPRINTF 1
+#define vsnprintf _vsnprintf
+
+#define HAVE_STRCASECMP 1
+#define strcasecmp(x,y) stricmp(x,y)
+
+#define HAVE_FSTAT 1
 
 /* dirty hack */
 #include <winlibc.h>

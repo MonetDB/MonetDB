@@ -27,7 +27,7 @@
 /* first some dummies, later move to pwd.h */
 #define getpwuid(uid) NULL
 #define getuid() 0
-#define cuserid() "monet"
+#define cuserid(x) "monet"
 struct passwd {
   char *pw_name;	/* Username.  */
   char *pw_passwd;	/* Password.  */
@@ -68,7 +68,7 @@ struct passwd {
 #define S_ISCHR(mode)		1
 
 #define link rename
-#define setenv SetEnvironmentVariableA
+#define setenv(n,v,o) SetEnvironmentVariableA(n,v)
 #define RUSAGE_SELF = 1
 
 /* Structure which says how much of each resource has been used.  */

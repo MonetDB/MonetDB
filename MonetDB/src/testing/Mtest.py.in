@@ -851,8 +851,8 @@ def RunTest(env, TST, BusyPorts) :
         SkipTest(env, TST, EXT, "as Mshutdown is not available.")
     elif SERVER == "MAPI" and  not env['MAPI_MIL']:
         SkipTest(env, TST, EXT, "as 'mapi.mil' is not available.")
-    elif SERVER == "MAPI" and  os.name == "nt":
-        SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
+        #elif SERVER == "MAPI" and  os.name == "nt":
+        #SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
         SkipTest(env, TST, EXT, "as "+string.split(env['MAPICLIENT'])[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
@@ -1031,6 +1031,8 @@ def RunTest(env, TST, BusyPorts) :
 
         if os.name != "nt":
             StopAt(ATJOB1,ME)
+        else:
+            time.sleep(1)
 
         killed = 0
         n = TST+".KILLED."
@@ -1228,20 +1230,24 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
 ### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
 def CollectIt(pOut, pErr, TestOut, TestErr) :
-    readlist = [pOut, pErr]
-    while readlist:
-        readers, dummy1, dummy2 = select.select(readlist, [], [])
-        todelete = []
-        for r in readers:
-            data = os.read(r.fileno(), 1024)
-            if not data:
-                todelete.append(r)
-            elif r is pOut:
-                TestOut.write(data)
-            elif r is pErr:
-                TestErr.write(data)
-        for r in todelete:
-            readlist.remove(r)
+    if os.name == "nt":
+        TestOut.writelines(pOut.readlines())
+        TestErr.writelines(pErr.readlines())
+    else:
+        readlist = [pOut, pErr]
+        while readlist:
+            readers, dummy1, dummy2 = select.select(readlist, [], [])
+            todelete = []
+            for r in readers:
+                data = os.read(r.fileno(), 1024)
+                if not data:
+                    todelete.append(r)
+                elif r is pOut:
+                    TestOut.write(data)
+                elif r is pErr:
+                    TestErr.write(data)
+            for r in todelete:
+                readlist.remove(r)
     TestOut.flush()
     TestErr.flush()
     pOut.close()

@@ -46,19 +46,6 @@ server.
 #define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
 #define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
 
-@- vsnprintf, snprintf, strcasecmp
-@h
-#ifndef HAVE_VSNPRINTF
-#define vsnprintf(buf,size,format,ap) vsprintf(buf,format,ap)
-#endif
-
-#ifndef HAVE_SNPRINTF
-#define snprintf(buf,size,format,ap) sprintf(buf,format,ap)
-#endif
-
-#ifndef HAVE_STRCASECMP
-#define strcasecmp(x,y) stricmp(x,y)
-#endif
 
 #ifdef HAVE_NETDB_H
 # include <netinet/in.h> 
