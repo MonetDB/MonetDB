@@ -47,6 +47,7 @@ All_mods@batloop {
     mprof: loading... done.
 monettime: loading... done.
     mmath: loaded.
+     mkey: loading... done.
       mel: loading... done.
      mapi: loading... done.
 malalgebra: loading... done.
@@ -99,6 +100,7 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 [ "malalgebra"	  ]
 [ "mapi"	  ]
 [ "mel"		  ]
+[ "mkey"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "mprof"	  ]

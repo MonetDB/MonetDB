@@ -35,6 +35,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "malalgebra",	  "contrib"	  ]
 [ "mapi",	  "plain"	  ]
 [ "mel",	  "contrib"	  ]
+[ "mkey",	  "plain"	  ]
 [ "mmath",	  "plain"	  ]
 [ "monettime",	  "plain"	  ]
 [ "mprof",	  "contrib"	  ]
@@ -62,13 +63,13 @@ ls;
 #-----------------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  44,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
+[ "MODULES",	  "str",  "str",  45,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
 
 dir;
 #-------------------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #-------------------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  44,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
+[ "MODULES",		  "str",  "str",  45,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  14,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
 [ "monet_environment",	  "str",  "str",  25,	  0,	  "dirty",	  "load", "tran", 2,	  0,	  0	  ]
@@ -132,6 +133,7 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "malalgebra"		  ]
 [ "mapi"		  ]
 [ "mel"			  ]
+[ "mkey"		  ]
 [ "mmath"		  ]
 [ "monettime"		  ]
 [ "mprof"		  ]
