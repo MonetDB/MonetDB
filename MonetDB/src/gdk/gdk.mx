@@ -266,6 +266,7 @@ BUN-manipulation GDK primitives.
 
 @+ Interface Files
 @T
+\label{GDK Interface}
 In this section we summarize the user interface to the GDK library.
 It consist of a header file (gdk.h) and an object library (gdklib.a),
 which implements the required functionality. The header file must be
@@ -658,6 +659,7 @@ typedef struct {
 
 @+ Binary Association Tables
 @T
+\label{Binary Association Tables}
 Having gone to the previous preliminary definitions, we will
 now introduce the structure of Binary Association Tables (BATs)
 in detail. They are the basic storage unit on which GDK is modelled.
@@ -1019,7 +1021,7 @@ gdk_export size_t HEAPsubcopy (Heap *dst, Heap *src, size_t size, size_t offset)
 gdk_export int	HEAPdelete  (Heap *h, str o, str ext);
 gdk_export size_t HEAPvmsize  (Heap *h);
 gdk_export size_t HEAPmemsize (Heap *h);
-@
+@}
 @- Internal HEAP Chunk Management
 @T
 Heaps are used in BATs to store data for variable-size atoms.
@@ -1029,8 +1031,8 @@ atoms in this heap. A standard implementation is provided here.
 {\tt \begin{tabular}{|lll|}\hline
 void & HEAP\_initialize  & (Heap* h, size\_t nbytes, size\_t nprivate, int align )\\
 void & HEAP\_destroy     & (Heap* h)\\
-int  & HEAP\_malloc      & (Heap* heap, size_t nbytes)\\
-void & HEAP\_free        & (Heap *heap, size_t block)\\
+int  & HEAP\_malloc      & (Heap* heap, size\_t nbytes)\\
+void & HEAP\_free        & (Heap *heap, size\_t block)\\
 int  & HEAP\_private     & (Heap* h)\\
 void & HEAP\_printstatus & (Heap* h)\\
 void & HEAP\_check       & (Heap* h)\\
@@ -1079,15 +1081,14 @@ gdk_export void HEAP_init        (Heap *heap, int tpe);
 gdk_export int  HEAP_mmappable   (Heap *heap);  
 
 #define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
+
 @}
-
-
 @- BAT construction 
 @T
 {\tt \begin{tabular}{|lll|}\hline
-BAT * & BATnew & (int headtype, int tailtype, size_t cap)   \\
+BAT * & BATnew & (int headtype, int tailtype, size\_t cap)   \\
 BAT * & BATtmp & (BAT *b, int mode)\\
-BAT * & BATextend & (BAT *b, size_t newcap)\\
+BAT * & BATextend & (BAT *b, size\_t newcap)\\
 \hline\end{tabular}}
 @
 A temporary BAT is instantiated using @%BATnew@ with the type aliases of
@@ -1291,8 +1292,8 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 @- BAT properties 
 @T
 {\tt \begin{tabular}{|lll|}\hline
-size_t & BATcount & (BAT *b)\\
-size_t & BATbuncount & (BAT *b)\\
+size\_t & BATcount & (BAT *b)\\
+size\_t & BATbuncount & (BAT *b)\\
 str & BATrename & (BAT *b; str nme)\\
 BAT * & BATkey & (BAT *b; int onoff)\\
 BAT * & BATset & (BAT *b; int onoff)\\
@@ -1556,9 +1557,9 @@ gdk_export int	BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, in
 @T
 {\tt \begin{tabular}{|lll|}\hline
 BAT * & BATsort & (BAT *b)\\
-BAT * & BATsort_rev & (BAT *b)\\
+BAT * & BATsort\_rev & (BAT *b)\\
 BAT * & BATorder & (BAT *b)\\
-BAT * & BATorder_rev & (BAT *b)\\
+BAT * & BATorder\_rev & (BAT *b)\\
 BAT * & BATrevert & (BAT *b)\\
 int & BATordered & (BAT *b)\\
 \hline\end{tabular}}
@@ -1610,6 +1611,7 @@ gdk_export void GDKqsort_rev (void *a, void* base, size_t n, int width, int tpe,
 
 @+ BAT Buffer Pool
 @T
+\label{BAT Buffer Pool}
 {\tt \begin{tabular}{|lll|}\hline
 int & BBPfix & (bat bi)\\
 int & BBPunfix & (bat bi)\\
@@ -1720,6 +1722,7 @@ gdk_export BAT* BBPquickdesc  (bat b, int delaccess);
 
 @+ GDK Extensibility
 @T
+\label{GDK Extensibility}
 GDK can be extended with new atoms, search accelerators and storage
 modes.
 
@@ -1746,7 +1749,7 @@ int & ATOMconvert     & (int id, ptr v, int direction);\\
 int & ATOMfix         & (int id, ptr v);\\
 int & ATOMunfix       & (int id, ptr v);\\
 \hline
-void& ATOMheap        & (int id, Heap *hp, size_t cap);\\
+void& ATOMheap        & (int id, Heap *hp, size\_t cap);\\
 void& ATOMheapconvert & (int id, Heap *hp, int direction);\\
 int & ATOMheapcheck   & (int id, Heap *hp, HeapRepair *hr);\\
 void& ATOMput         & (int id, Heap *hp, BUN pos\_dst, ptr val\_src);\\
@@ -1909,7 +1912,7 @@ gdk_export ptr  ATOMdup	  (int id, ptr val);
 @T
 {\tt \begin{tabular}{|lll|}\hline
 oid  &  OIDseed & (oid seed);\\ 
-oid  &  OIDnew  & (size_t inc);\\
+oid  &  OIDnew  & (size\_t inc);\\
 \hline\end{tabular}}
 
 OIDs are special kinds of unsigned integers because the system
@@ -2006,6 +2009,7 @@ These functions are just wrappers for the operations one has to
 provide for a user-defined search accelerator, with the accelerator id
 as a preappended parameter.
 @
+@{
 @h 
 typedef struct {
 	char		name[IDLENGTH]; 
@@ -2044,6 +2048,7 @@ gdk_export void 	ACCunloadall  (BAT *b);
 gdk_export void 	ACCexit       (BAT *b);
 */
 @
+@}
 
 @- Builtin Accelerator Functions
 
@@ -2052,7 +2057,7 @@ gdk_export void 	ACCexit       (BAT *b);
 int & BAThash & (BAT *b, int coll)\\
 int & HASHpersist & (BAT *b, bit persist);\\
 int & BATidx & (BAT *b, BAT *histo)\\
-BAT * & BAThashsplit & (BAT *b, size_t n, int unary)\\
+BAT * & BAThashsplit & (BAT *b, size\_t n, int unary)\\
 BAT * & BATrangesplit & (BAT *b, int n)\\
 \hline\end{tabular}}
 @
@@ -2109,6 +2114,7 @@ and READONLY (cd-rom) storage.
 
 @+ GDK Utilities
 @T
+\label{GDK Utilities}
 Interfaces for memory management, error handling, thread management
 and system information.
 
@@ -2219,7 +2225,6 @@ gdk_export int	GDKsyserror (const char* format, ... );
 gdk_export int	GDKfatal    (const char* format, ... );
 gdk_export int	GDKerrorCount ();
 @
-@{
 @h
 #define BBPLOCKMASK     7
 
@@ -2378,6 +2383,7 @@ static INLINE BAT* BATmirror(REGISTER BAT *b) {
 
 @+ Transaction Management
 @T
+\label{Transaction Management}
 {\tt \begin{tabular}{|lll|}\hline
 int & TMnew & (str cntxt)\\
 int & TMcommit & (str cntxt)\\
@@ -2458,9 +2464,9 @@ gdk_export BAT*	BATdelta      (BAT *b);
 gdk_export BAT*	BATfakeCommit (BAT *b);
 
 @}
-
 @+ BAT Alignment and BAT views
 @T
+\label{BAT Alignment}
 {\tt \begin{tabular}{|lll|}\hline
 int  & ALIGNsynced  & (BAT* b1, BAT* b2)\\
 int  & ALIGNsync    & (BAT *b1, BAT *b2)\\
@@ -2474,7 +2480,7 @@ bat  & VIEWparent   & (BAT *b)\\
 BAT* & VIEWhead     & (BAT *b)\\
 BAT* & VIEWcombine  & (BAT *b)\\
 BAT* & VIEWreset    & (BAT *b)\\
-BAT* & BATmaterialize    & (BAT *b, size_t size)\\
+BAT* & BATmaterialize    & (BAT *b, size\_t size)\\
 \hline\end{tabular}}
 @
 Alignments of two columns of a BAT means that the system knows
@@ -2577,25 +2583,26 @@ gdk_export int      ALIGNsetH       (BAT *b1, BAT *b2);
 
 @+ BAT Iterators
 @T
+\label{BAT Iterators}
 {\tt \begin{tabular}{|lll|}\hline
 BATloop & (BAT *b; BUN p, BUN q)\\
 BATloopDEL & (BAT *b; BUN p; BUN q; int dummy)\\
 DELloop & (BAT *b; BUN p, BUN q, int dummy)\\
 \hline
-HASHloop & (BAT *b; Hash *h, size_t dummy; ptr value)\\
-HASHloop\_bit & (BAT *b; Hash *h, size_t idx; bit *value, BUN w)\\
-HASHloop\_chr & (BAT *b; Hash *h, size_t idx; char *value, BUN w)\\
-HASHloop\_sht & (BAT *b; Hash *h, size_t idx; sht *value, BUN w)\\
-HASHloop\_bat & (BAT *b; Hash *h, size_t idx; bat *value, BUN w)\\
-HASHloop\_ptr & (BAT *b; Hash *h, size_t idx; ptr *value, BUN w)\\
-HASHloop\_int & (BAT *b; Hash *h, size_t idx; int *value, BUN w)\\
-HASHloop\_oid & (BAT *b; Hash *h, size_t idx; oid *value, BUN w)\\
-HASHloop\_flt & (BAT *b; Hash *h, size_t idx; flt *value, BUN w)\\
-HASHloop\_lng & (BAT *b; Hash *h, size_t idx; lng *value, BUN w)\\
-HASHloop\_dbl & (BAT *b; Hash *h, size_t idx; dbl *value, BUN w)\\
-HASHloop\_str & (BAT *b; Hash *h, size_t idx; str value, BUN w)\\
-HASHlooploc & (BAT *b; Hash *h, size_t idx; ptr value, BUN w)\\
-HASHloopvar & (BAT *b; Hash *h, size_t idx; ptr value, BUN w)\\
+HASHloop & (BAT *b; Hash *h, size\_t dummy; ptr value)\\
+HASHloop\_bit & (BAT *b; Hash *h, size\_t idx; bit *value, BUN w)\\
+HASHloop\_chr & (BAT *b; Hash *h, size\_t idx; char *value, BUN w)\\
+HASHloop\_sht & (BAT *b; Hash *h, size\_t idx; sht *value, BUN w)\\
+HASHloop\_bat & (BAT *b; Hash *h, size\_t idx; bat *value, BUN w)\\
+HASHloop\_ptr & (BAT *b; Hash *h, size\_t idx; ptr *value, BUN w)\\
+HASHloop\_int & (BAT *b; Hash *h, size\_t idx; int *value, BUN w)\\
+HASHloop\_oid & (BAT *b; Hash *h, size\_t idx; oid *value, BUN w)\\
+HASHloop\_flt & (BAT *b; Hash *h, size\_t idx; flt *value, BUN w)\\
+HASHloop\_lng & (BAT *b; Hash *h, size\_t idx; lng *value, BUN w)\\
+HASHloop\_dbl & (BAT *b; Hash *h, size\_t idx; dbl *value, BUN w)\\
+HASHloop\_str & (BAT *b; Hash *h, size\_t idx; str value, BUN w)\\
+HASHlooploc & (BAT *b; Hash *h, size\_t idx; ptr value, BUN w)\\
+HASHloopvar & (BAT *b; Hash *h, size\_t idx; ptr value, BUN w)\\
 \hline
 SORTloop& (BAT *b,p,q,tl,th,s) \\
 \hline
@@ -2810,13 +2817,15 @@ position after the  last occurence of that value.
 
 
 @+ Common BAT Operations
+@T
+\label{Common BAT Operations}
 Much used, but not necessarily kernel-operations on BATs.
 
 @- BAT aggregates
 @T
 {\tt \begin{tabular}{|lll|}\hline
 BAT* & BAThistogram & (BAT *b)\\
-BAT* & BATsample& (BAT* b,size_t n)\\
+BAT* & BATsample& (BAT* b,size\_t n)\\
 \hline\end{tabular}}
 @
 The routine @%BAThistogram@ produces a new BAT with a frequency distribution
@@ -2859,21 +2868,22 @@ We use {\bf output->halign = NOID\_AGGR(input->halign)} for the
 {\bf output = \{X\}(input)} case, and
 {\bf output->align = NOID\_MULT(input1->align,input2->halign)} for 
 the fetch. 
+@{
 @h
 #define AGGR_MAGIC	111
 #define NOID(x)		((oid)(x))
 #define NOID_AGGR(x)	NOID_MULT(AGGR_MAGIC,x)
 #define NOID_MULT(x,y)	NOID( (lng)(y)*(lng)(x) )
+
+
 @}
-
-
 @- BAT relational operators
 @T
 {\tt \begin{tabular}{|lll|}\hline
-BAT * & BATjoin & (BAT *l, BAT *r, size_t estimate)\\
-BAT * & BATouterjoin & (BAT *l, BAT *r, size_t estimate)\\
+BAT * & BATjoin & (BAT *l, BAT *r, size\_t estimate)\\
+BAT * & BATouterjoin & (BAT *l, BAT *r, size\_t estimate)\\
 BAT * & BATbandjoin & (BAT *l, BAT *r, ptr c1, ptr c2)\\
-BAT * & BATthetajoin & (BAT *l, BAT *r, int mode, size_t estimate)\\
+BAT * & BATthetajoin & (BAT *l, BAT *r, int mode, size\_t estimate)\\
 BAT * & BATsemijoin & (BAT *l, BAT *r)\\
 BAT * & BATselect & (BAT *b, ptr tl, ptr th)\\
 BAT * & BATfragment & (BAT *b, ptr l, ptr h, ptr L, ptr H)\\

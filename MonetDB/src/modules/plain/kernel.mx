@@ -28,7 +28,7 @@
 
 @* Introduction
 Apart from its grammatical structure, described in the
-@[<a href="../../mil.html">MIL Manual</a>@ MIL is just a set 
+@[<a href="../../Services/mil/index.html">MIL Manual</a>@ MIL is just a set 
 of commands. When MIL is bootstrapped, this set of commands 
 is the empty set. 
 
@@ -36,10 +36,10 @@ Commands are introduced by extension modules.
 This module is loaded at server startup, and is always
 present. The commands it defines are of type BUILTIN and
 cannot be overloaded. Several other modules are loaded
-on startup( @[<a href="bat.html">BAT Manipulation</a>@,
-@[<a href="algebra.html">BAT Algebra</a>@,
-@[<a href="sys.html">System Information</a>@,
-@[<a href="arith.html">Basic Arithmetic</a>@), but
+on startup( @[<a href="../bat/index.html">BAT Manipulation</a>@,
+@[<a href="../algebra/index.html">BAT Algebra</a>@,
+@[<a href="../sys/index.html">System Information</a>@,
+@[<a href="../arith/index.html">Basic Arithmetic</a>@), but
 their commands @%can@ be overloaded.
 
 This module

@@ -30,7 +30,7 @@
 @* Introduction
 The primary interface
 of Monet is called MIL, the Monet Interpreter Language (see the
-@[<a href="mil.html">MIL Reference Manual</a>@ for an exhaustive
+@[<a href="../mil/index.html">MIL Reference Manual</a>@ for an exhaustive
 description.
 @-
 MIL is an interpreted scripting language, designed as an intermediate 
@@ -85,7 +85,7 @@ interface for implementing extensions.
 
 Checking and installing your MEL extension modules is done   
 using the 
-@[<a href=" ../mel/index.html">mel utility</a>@.
+@[<a href="mel-tool/index.html">mel utility</a>@.
 @T
 It checks the MEL syntax, and depending on the switch:
 \begin{description}
@@ -104,7 +104,7 @@ for each command or operator, MEL generates internal functions
 that perform type checking and parameter packing between the
 Monet's internal structures, and the simple parameter passing
 convention that module implementors must adhere to (see 
-@[<a target="\_self" href="\#mod\_3\_4\_0">Section 3.4</a>@).
+@[<a target="_self" href="#mod_3_4_0">Section 3.4</a>@).
 \item[-html] generates simple html summary of the module's 
 functionality.
 \end{description}
@@ -361,7 +361,7 @@ varsizeADTops:
 \end{verbatim}} 
 
 Above we show the ADT interface that needs to be implemented.
-In  @[<a target="\_self" href="\#mod\_3\_2\_0">Section 3.2</a>@).
+In  @[<a target="_self" href="#mod_3_2_0">Section 3.2</a>@).
 we will discuss the details (exact semantics
 and parameter conventions) for them.
 
@@ -447,7 +447,7 @@ newlines.
 
 The exact way in which a command implementation in C will get 
 passed its parameters and what it is expected to return is discussed
-in @[<a target="\_self" href="\#mod\_3\_4\_0">Section 3.4</a>@.
+in @[<a target="_self" href="#mod_3_4_0">Section 3.4</a>@.
 
 @- Command Signatures
 @T
@@ -527,7 +527,7 @@ signature ::=
 \end{verbatim}} 
 
 Above we show the ADT interface that needs to be implemented.
-In @[<a target="\_self" href="\#mod\_3\_2\_0">Section 3.2</a>@ we will discuss 
+In @[<a target="_self" href="#mod_3_2_0">Section 3.2</a>@ we will discuss 
 the details (exact semantics and parameter conventions) for them.
 
 Monet will recognize each new accelerators as MIL keywords. 
@@ -569,7 +569,7 @@ iterator ::=
 
 In the C implementation, the programmer has to invoke MIL 
 execution on the block using some special magic. Details 
-are discussed in @[<a target="\_self" href="\#mod\_3\_6\_0">Section 3.6</a>@.
+are discussed in @[<a target="_self" href="#mod_3_6_0">Section 3.6</a>@.
 
 @- Free-form Primitives
 @T
@@ -667,7 +667,7 @@ Of special interest is the section on how
 
 @- Monet
 Monet (see the 
-@[<a href="../../monet.html">The Monet Document</a>@), 
+@[<a href="../../monet/index.html">The Monet Document</a>@), 
 is a threaded execution system built on top of GDK.
 Its specific features will only be used by extension programmers 
 delving in the more complex extension possibilities (builtins,
@@ -679,12 +679,12 @@ As discussed earlier, atoms are covered behind an ADT interface
 to GDK. The ADT interface required for implementing variable-size atoms 
 is a superset of that of of fixed-size atoms as discussed in this section. 
 The specifics for variable-size atoms are discussed in 
-@[<a target="\_self" href="\#mod\_3\_3\_0">the next section</a>@.
+@[<a target="_self" href="#mod_3_3_0">the next section</a>@.
 
 You are strongly urged to look at the 
 @[<a href="../gdk/index.html#mod_1_5_1">ATOM</a>@ and
 @[<a href="../gdk/index.html#mod_1_3_2">HEAP</a>@ sections 
-of the GDK Document and the @[<a href="../gdk\_atoms/index.html">gdk\_atoms</a>@ 
+of the GDK Document and the @[<a href="../gdk_atoms/index.html">gdk\_atoms</a>@ 
 file, as prereading material.
 
 We will use the fictitious  user-defined atoms called {\small\tt point} 
@@ -984,11 +984,11 @@ an integer offset into that heap.
 Fixed- and variable-size atoms are essentially treated in
 the same way. Monet just requires them to consist of contiguous
 range of memory. You can use the 
-@[<a href="../gdk\_atoms/index.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
+@[<a href="../gdk_atoms/index.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
 macro to inquire for the length of the region. For fixed-size
 atoms, this will always yield the same value, that can be
 statically looked up with the 
-@[<a href="../gdk\_atoms/index.html#mod_1_2_2">ATOMsize(tpe): int</a>@
+@[<a href="../gdk_atoms/index.html#mod_1_2_2">ATOMsize(tpe): int</a>@
 macro as well.
 
 The following example MEL definition:
@@ -1036,7 +1036,7 @@ Any-parameters that occur in a BAT signature, like {\small\tt BAT[any::1,int]}
 are an exception to the rules. If the any-type is untagged or free, one 
 would expect the extra type integer to be passed. Because one can always 
 inquire about the head- and tail-type of a 
-@[<href="../gdk/inex.html#mod_1_3_1">BAT</a>@ with the
+@[<href="../gdk/index.html#mod_1_3_1">BAT</a>@ with the
 @[<a href="../gdk/index.html#mod_1_3_5">BAThtype(bat) : int</a>@ and
 @[<a href="../gdk/index.html#mod_1_3_5">BATttype(bat) : int</a>@ 
 macros, Monet does *not* pass extra integer parameters to specify
