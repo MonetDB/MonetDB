@@ -1164,6 +1164,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 			RunIt(Clnt+f, "", ClntOut, ClntErr)
 
 	if SERVER in ["MAPI", "SQL"]:
+		if os.path.isfile(TST+".epilogue"):
+			EPILOGUE = open(TST+".epilogue",'r')
+			pSrvrIn.writelines(EPILOGUE.readlines())
+			pSrvrIn.flush()
+			EPILOGUE.close()
+
 		if SERVER == "MAPI":
 			Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
 			ShwnOut = open(TST+".shutdown.out","w")
