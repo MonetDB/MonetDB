@@ -1207,7 +1207,7 @@ argument_list:
     |    /* empty */
 	{   $$ = (ptr) yysugar(ll_sugarnode);                                 
             if (!monet_nostalgic) {
-		GDKerror("new MIL syntax (>=4.4) requires parenthesis for all operators.\n");
+		GDKerror("new MIL syntax (>=4.4) requires parentheses for all operators.\n");
 		GDKwarning("continuing in nostalgic mode.\n");
 		monet_nostalgic=1;
 	    }                                                                 }

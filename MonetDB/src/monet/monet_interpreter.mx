@@ -1069,7 +1069,7 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res)
 	lt->yyval.len = 1+strlen(lt->yyval.val.sval);
 	i = interpret(stk, lt, res);
 	if (i >= 0 && !monet_nostalgic) {
-                GDKerror("new MIL syntax (>=4.4) requires parenthesis for all operators.\n");
+                GDKerror("new MIL syntax (>=4.4) requires parentheses for all operators.\n");
                 GDKwarning("continuing in nostalgic mode.\n");
 		monet_nostalgic=1;
 	}
