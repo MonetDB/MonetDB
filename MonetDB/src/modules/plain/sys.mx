@@ -63,6 +63,8 @@ that you might well find very useful.
 
 .COMMAND mem_printmap() : void = print_mem_map;
         "print a map of all memory that is in use"
+.COMMAND mem_colormap() : void = print_color_map;
+        "print a color map of all memory that is in use"
 @T
 For each 64KB block in the first 3GB of the virtual memory {\tt mem_printmap()} prints a character:
 \begin{verbatim}
@@ -1483,6 +1485,10 @@ int format_fcn_sig(str *sig, oid *fid){
 
 int print_mem_map() {
         MT_alloc_print();
+        return GDK_SUCCEED;
+}
+int print_color_map() {
+        MT_alloc_table();
         return GDK_SUCCEED;
 }
 @
