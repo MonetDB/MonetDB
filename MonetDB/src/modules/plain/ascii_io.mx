@@ -671,11 +671,13 @@ insert_line( ascii *as, char *line )
 static int
 ascii_io_error(stream *s)
 {
-	char *err = stream_error(s);
+	if (!stream_errnr(GDKerr)) {
+		char *err = stream_error(s);
 
-	stream_printf( GDKerr, "Stream error %s\n", err);
-	/* use free as stream allocates out side GDK */
-	if (err) free(err);
+		stream_printf( GDKerr, "Stream error %s\n", err);
+		/* use free as stream allocates out side GDK */
+		if (err) free(err);
+	}
 	return -1;
 }
 

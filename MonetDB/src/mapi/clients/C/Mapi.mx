@@ -2922,14 +2922,16 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 		return 0;
 
 	/* check if you need to send pending information */
-	k = strlen(mid->blk.buf + mid->blk.nxt);
-	handlePart(k);
+	if ((k = strlen(mid->blk.buf + mid->blk.nxt)) > 0)
+		handlePart(k);
 
 	mid->blk.eos = 0;
 	mid->blk.nxt = 0;
 	if (mid->blocked) {
-		while ((k = stream_read(mid->from, mid->blk.buf, 1, BLOCK)) > 0)
-			handlePart(k);
+		while ((k = stream_read(mid->from, mid->blk.buf, 1, BLOCK)) >= 0) {
+			if (k > 0)
+				handlePart(k);
+		}
 		check_stream(mid, mid->from, "Connection terminated",
 			     "mapi_quick_response", mid->error);
 	} else {
