@@ -868,10 +868,10 @@ unknown(1)#"                   ]
 [ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL script.
-MAPI  = anonymous@draco:53708
+MAPI  = anonymous@draco:59482
 ACTION= mapi_fetch_line
 QUERY = quit();
- ERROR = Lost connection with server
+ERROR = Lost connection with server
 
 # 18:27:59 >  
 # 18:27:59 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708 < multiClientSeq_s01.milC
@@ -1729,10 +1729,10 @@ unknown(1)#"                   ]
 [ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL script.
-MAPI  = anonymous@draco:53708
+MAPI  = anonymous@draco:59482
 ACTION= mapi_fetch_line
 QUERY = quit();
- ERROR = Lost connection with server
+ERROR = Lost connection with server
 
 # 18:28:00 >  
 # 18:28:00 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
