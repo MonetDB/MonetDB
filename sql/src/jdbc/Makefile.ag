@@ -38,3 +38,13 @@ jar_MonetJDBC = {
 	          example/JdbcClient.java
 	MANIFEST = srcdir/manifest
 }
+
+doc_jdbc = {
+	DIR = datadir/MonetDB/docs/SQL/jdbc/
+	SOURCES = jdbcmanual.tex 
+}
+
+doc_bench = {
+	DIR = datadir/MonetDB/docs/SQL/jdbc/
+	SOURCES = benchblockmode.tex
+}

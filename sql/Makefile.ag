@@ -12,5 +12,10 @@ headers_pc = {
 	DIR = libdir/pkgconfig
 }
 
+doc_sql = {
+	DIR = datadir/MonetDB/docs/SQL
+	SOURCES = SQLfeatures.tex
+}
+
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
