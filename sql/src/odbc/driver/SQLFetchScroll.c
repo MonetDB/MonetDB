@@ -33,6 +33,8 @@ SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 
 	clearStmtErrors(stmt);
 
+	assert(stmt->hdl);
+
 	/* check statement cursor state, query should be executed */
 	if (stmt->State != EXECUTED) {
 		/* caller should have called SQLExecute or SQLExecDirect first */
@@ -45,19 +47,19 @@ SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 	case SQL_FETCH_NEXT:
 		break;
 	case SQL_FETCH_FIRST:
-		mapi_seek_row(stmt->Dbc->mid, 0, MAPI_SEEK_SET);
+		mapi_seek_row(stmt->hdl, 0, MAPI_SEEK_SET);
 		break;
 	case SQL_FETCH_LAST:
-		mapi_seek_row(stmt->Dbc->mid, -1, MAPI_SEEK_END);
+		mapi_seek_row(stmt->hdl, -1, MAPI_SEEK_END);
 		break;
 	case SQL_FETCH_PRIOR:
-		mapi_seek_row(stmt->Dbc->mid, -1, MAPI_SEEK_CUR);
+		mapi_seek_row(stmt->hdl, -1, MAPI_SEEK_CUR);
 		break;
 	case SQL_FETCH_ABSOLUTE:
-		mapi_seek_row(stmt->Dbc->mid, nOffset - 1, MAPI_SEEK_SET);
+		mapi_seek_row(stmt->hdl, nOffset - 1, MAPI_SEEK_SET);
 		break;
 	case SQL_FETCH_RELATIVE:
-		mapi_seek_row(stmt->Dbc->mid, nOffset, MAPI_SEEK_CUR);
+		mapi_seek_row(stmt->hdl, nOffset, MAPI_SEEK_CUR);
 		break;
 	default:
 		/* TODO change to unkown Orientation */

@@ -27,16 +27,12 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	   SQLINTEGER *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	Mapi mid;
 	int mapitype;
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
 	assert(stmt->Dbc);
-
-	mid = stmt->Dbc->mid;
-	assert(mid);
 
 	clearStmtErrors(stmt);
 
@@ -129,7 +125,7 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		return SQL_ERROR;
 	}
 
-	mapi_bind_var(stmt->Dbc->mid, nCol - 1, mapitype, pTargetValue);
+	mapi_bind_var(stmt->hdl, nCol - 1, mapitype, pTargetValue);
 
 	return SQL_SUCCESS;
 }

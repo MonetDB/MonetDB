@@ -51,11 +51,11 @@ SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 	case SQL_DROP:
 		return SQLFreeHandle(SQL_HANDLE_STMT, handle);
 	case SQL_UNBIND:
-		mapi_clear_bindings(stmt->Dbc->mid);
+		mapi_clear_bindings(stmt->hdl);
 		ODBCfreebindcol(stmt);
 		return SQL_SUCCESS;
 	case SQL_RESET_PARAMS:
-		mapi_clear_params(stmt->Dbc->mid);
+		mapi_clear_params(stmt->hdl);
 		return SQL_SUCCESS;
 	default:
 		addStmtError(stmt, "HY092", NULL, 0);

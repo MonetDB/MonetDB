@@ -32,16 +32,14 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DATA
 	void *dst = pTarget;
 	int dstsz;
 	char *strptr;
-	Mapi mid;
 	SQLRETURN ret = SQL_SUCCESS;
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
 	assert(stmt->Dbc);
-
-	mid = stmt->Dbc->mid;
-	assert(mid);
+	assert(stmt->Dbc->mid);
+	assert(stmt->hdl);
 
 	clearStmtErrors(stmt);
 
@@ -58,7 +56,7 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DATA
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (nCol <= 0 || nCol > mapi_get_field_count(mid)) {
+	if (nCol <= 0 || nCol > mapi_get_field_count(stmt->hdl)) {
 		/* 07009 = Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
@@ -149,9 +147,9 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DATA
 	}
 
 	if (dst != NULL) {
-		mapi_store_field(mid, nCol - 1, mapitype, dst);
-		if (mapi_error(mid)) {
-			if (strcmp(mapi_error_str(mid), "Field value is nil") == 0) {
+		mapi_store_field(stmt->hdl, nCol - 1, mapitype, dst);
+		if (mapi_error(stmt->Dbc->mid)) {
+			if (strcmp(mapi_error_str(stmt->Dbc->mid), "Field value is nil") == 0) {
 				if (pnLengthOrIndicator) {
 					*pnLengthOrIndicator = SQL_NULL_DATA;
 					return SQL_SUCCESS;
@@ -161,7 +159,7 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DATA
 				}
 			}
 			addStmtError(stmt, "HY000",
-				     mapi_error_str(mid), 0);
+				     mapi_error_str(stmt->Dbc->mid), 0);
 			return SQL_ERROR;
 		}
 	}

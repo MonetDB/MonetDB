@@ -67,60 +67,60 @@ SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 		   sizeof(long)==8, SQLINTEGER is typedef'ed as int,
 		   otherwise as long, but on those other systems, long
 		   and int are the same size, so the cast works */
-		rc = mapi_param_string(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_string(stmt->hdl, ParameterNumber - 1,
 				       ParameterType, ParameterValuePtr,
 				       (int *) StrLen_or_IndPtr);
 		break;
 	case SQL_C_SSHORT:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_SHORT, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_USHORT:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_USHORT, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_SLONG:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_LONG, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_ULONG:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_ULONG, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_STINYINT:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_TINY, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_UTINYINT:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_UTINY, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_SBIGINT:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_LONGLONG, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_UBIGINT:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_ULONGLONG, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_FLOAT:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_FLOAT, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_DOUBLE:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_DOUBLE, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_TYPE_DATE:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_DATE, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_TYPE_TIME:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_TIME, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_TYPE_TIMESTAMP:
-		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
 				     MAPI_DATETIME, ParameterType, ParameterValuePtr);
 		break;
 	case SQL_C_DEFAULT:

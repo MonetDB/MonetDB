@@ -47,7 +47,7 @@ SQLRowCount(SQLHSTMT hStmt, SQLINTEGER *pnRowCount)
 	}
 
 	/* We can now set the "number of result set rows" value */
-	*pnRowCount = mapi_get_row_count(stmt->Dbc->mid);
+	*pnRowCount = mapi_get_row_count(stmt->hdl);
 
 	return SQL_SUCCESS;
 }

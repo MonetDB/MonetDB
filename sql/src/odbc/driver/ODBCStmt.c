@@ -39,11 +39,14 @@ newODBCStmt(ODBCDbc *dbc)
 	assert(stmt);
 
 	assert(dbc);
+	assert(dbc->mid);
 
 	stmt->Dbc = dbc;
 	stmt->Error = NULL;
 
 	stmt->State = INITED;
+	stmt->hdl = mapi_new_handle(dbc->mid);
+	assert(stmt->hdl);
 
 	stmt->nrCols = 0;
 	stmt->ResultCols = NULL;
@@ -215,9 +218,9 @@ destroyODBCStmt(ODBCStmt *stmt)
 	/* cleanup own managed data */
 	deleteODBCErrorList(stmt->Error);
 
-	mapi_clear_bindings(stmt->Dbc->mid);
 	ODBCfreebindcol(stmt);
-	mapi_clear_params(stmt->Dbc->mid);
+	if (stmt->hdl)
+		mapi_close_handle(stmt->hdl);
 
 	ODBCfreeResultCol(stmt);
 

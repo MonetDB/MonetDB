@@ -45,7 +45,7 @@ SQLExecute(SQLHSTMT hStmt)
 	ODBCStmt *hstmt = (ODBCStmt *) hStmt;
 	int i = 0;
 	ColumnHeader *pCol;
-	Mapi mid;
+	MapiHdl hdl;
 
 	if (!isValidStmt(hstmt))
 		return SQL_INVALID_HANDLE;
@@ -63,25 +63,26 @@ SQLExecute(SQLHSTMT hStmt)
 	assert(hstmt->ResultCols == NULL);
 
 	assert(hstmt->Dbc);
-	mid = hstmt->Dbc->mid;
-	assert(mid);
+	assert(hstmt->Dbc->mid);
+	hdl = hstmt->hdl;
+	assert(hdl);
 
 	/* Have the server execute the query */
-	if (mapi_execute(mid) != MOK) {
+	if (mapi_execute(hdl) != MOK) {
 		/* 08S01 Communication link failure */
-		addStmtError(hstmt, "08S01", mapi_error_str(mid), 0);
+		addStmtError(hstmt, "08S01", mapi_error_str(hstmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
 
 	/* now get the result data and store it to our internal data structure */
 
 	/* initialize the Result meta data values */
-	hstmt->nrCols = mapi_get_field_count(mid);
+	hstmt->nrCols = mapi_get_field_count(hdl);
 	hstmt->currentRow = 0;
 	hstmt->retrieved = 0;
 	hstmt->currentCol = 0;
 
-	if (hstmt->nrCols == 0 && mapi_get_row_count(mid) == 0) {
+	if (hstmt->nrCols == 0 && mapi_get_row_count(hdl) == 0) {
 		hstmt->State = PREPARED;
 		return SQL_SUCCESS;
 	}
@@ -93,13 +94,13 @@ SQLExecute(SQLHSTMT hStmt)
 		struct sql_types *p;
 		char *s;
 
-		s = mapi_get_name(mid, i);
+		s = mapi_get_name(hdl, i);
 		pCol->pszSQL_DESC_BASE_COLUMN_NAME = strdup(s);
 		pCol->pszSQL_DESC_LABEL = strdup(s);
 		pCol->pszSQL_DESC_NAME = strdup(s);
 		pCol->nSQL_DESC_DISPLAY_SIZE = strlen(s) + 2;
 
-		s = mapi_get_type(mid, i);
+		s = mapi_get_type(hdl, i);
 		pCol->pszSQL_DESC_TYPE_NAME = strdup(s);
 		for (p = sql_types; p->name; p++) {
 			if (strcmp(p->name, s) == 0) {

@@ -87,6 +87,7 @@ typedef struct tODBCDRIVERSTMT {
 	ODBCDbc *Dbc;		/* Connection context */
 	struct tODBCDRIVERSTMT *next;	/* the linked list of stmt's in this Dbc */
 	StatementState State;	/* needed to detect invalid cursor state */
+	MapiHdl hdl;
 
 	unsigned int nrCols;	/* nr of result output columns */
 	ColumnHeader *ResultCols;	/* 1+nrCols (0 not used) */

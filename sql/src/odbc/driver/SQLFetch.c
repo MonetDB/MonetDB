@@ -32,6 +32,8 @@ SQLFetch(SQLHSTMT hStmt)
 
 	clearStmtErrors(stmt);
 
+	assert(stmt->hdl);
+
 	/* check statement cursor state, query should be executed */
 	if (stmt->State != EXECUTED) {
 		/* caller should have called SQLExecute or SQLExecDirect first */
@@ -43,7 +45,7 @@ SQLFetch(SQLHSTMT hStmt)
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
 
-	if (mapi_fetch_row(stmt->Dbc->mid) == 0)
+	if (mapi_fetch_row(stmt->hdl) == 0)
 		return SQL_NO_DATA;
 
 	for (i = 0; i < stmt->maxbindings; i++) {

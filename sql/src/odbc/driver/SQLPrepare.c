@@ -60,7 +60,7 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 	/* we need a null-terminated string, so allocate a copy */
 	query = dupODBCstring(szSqlStr, nSqlStrLength);
-	ret = mapi_prepare(stmt->Dbc->mid, query);
+	ret = mapi_prepare_handle(stmt->hdl, query);
 	free(query);
 	if (ret != MOK) {
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
