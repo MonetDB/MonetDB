@@ -31,6 +31,8 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -42,7 +44,6 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#include "pathfinder.h"
 #include "daemon.h"
 
 #include "oops.h"

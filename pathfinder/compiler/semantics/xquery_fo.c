@@ -40,9 +40,10 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "xquery_fo.h"
 
 #include "ns.h"

@@ -34,9 +34,10 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <string.h>
 
-#include "pathfinder.h"
 #include "qname.h"
 
 /* PFns_t */

@@ -39,11 +39,12 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
-#include "pathfinder.h"
 /* PFcore_t */
 #include "core.h"
 

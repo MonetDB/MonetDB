@@ -67,11 +67,11 @@
  * $Id$
  */
 
+#include "pathfinder.h"
 
 #include <assert.h>
 #include <string.h>
 
-#include "pathfinder.h"
 #include "ns.h"
 
 #include "nsres.h"

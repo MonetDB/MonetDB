@@ -56,11 +56,12 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "array.h"
 
 /* PFmalloc, PFrealloc */

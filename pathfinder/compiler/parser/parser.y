@@ -35,11 +35,12 @@
  */
 
 %{
+#include "pathfinder.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
-#include "pathfinder.h"
 #include "abssyn.h"
 
 /* PFarray_t */

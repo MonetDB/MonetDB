@@ -36,7 +36,7 @@ prologue {
  *
  * $Id$
  */
-  
+
 /*
  * Auxiliary routines related to type checking are located in this separate
  * included file to facilitate automated documentation via doxygen.
