@@ -20,7 +20,65 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+#include <strings.h>
 
+
+static int
+get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, SQLCHAR **key, SQLCHAR **attr)
+{
+	SQLCHAR *p;
+	size_t len;
+
+	*key = *attr = NULL;
+
+	p = *conn;
+	if (!**conn)
+		return 0;
+	while (*nconn > 0 && **conn && **conn != '=' && **conn != ';') {
+		(*conn)++;
+		(*nconn)--;
+	}
+	if (*nconn == 0 || !**conn || **conn == ';')
+		return 0;
+	len = *conn - p;
+	*key = malloc(len + 1);
+	strncpy(*key, p, len);
+	(*key)[len] = 0;
+	(*conn)++;
+	(*nconn)--;
+	p = *conn;
+
+	if (*nconn > 0 && **conn == '{' && strcasecmp(*key, "DRIVER") == 0) {
+		(*conn)++;
+		(*nconn)--;
+		p++;
+		while (*nconn > 0 && **conn && **conn != '}') {
+			(*conn)++;
+			(*nconn)--;
+		}
+		len = *conn - p;
+		*attr = malloc(len + 1);
+		strncpy(*attr, p, len);
+		(*attr)[len] = 0;
+		(*conn)++;
+		(*nconn)--;
+		/* should check that *nconn == 0 || **conn == ';' */
+	} else {
+		while (*nconn > 0 && **conn && **conn != ';') {
+			(*conn)++;
+			(*nconn)--;
+		}
+		len = *conn - p;
+		*attr = malloc(len + 1);
+		strncpy(*attr, p, len);
+		(*attr)[len] = 0;
+	}
+	if (*nconn > 0 && **conn) {
+		(*conn)++;
+		(*nconn)--;
+	}
+	return 1;
+}
 
 SQLRETURN
 SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
@@ -29,15 +87,15 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		 SQLUSMALLINT nDriverCompletion)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	SQLCHAR *key, *attr;
+	char *dsn = 0, *uid = 0, *pwd = 0;
+	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLDriverConnect ");
 #endif
 
 	(void) hWnd;		/* Stefan: unused!? */
-	(void) szConnStrOut;	/* Stefan: unused!? */
-	(void) cbConnStrOutMax;	/* Stefan: unused!? */
-	(void) pnConnStrOut;	/* Stefan: unused!? */
 
 	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
@@ -71,16 +129,85 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		return SQL_ERROR;
 	}
 
-	/* TODO: finish implementation */
+	while (get_key_attr(&szConnStrIn, &nConnStrIn, &key, &attr)) {
+		if (strcasecmp(key, "DSN") == 0 && dsn == NULL)
+			dsn = (char *) attr;
+		else if (strcasecmp(key, "UID") == 0 && uid == NULL)
+			uid = (char *) attr;
+		else if (strcasecmp(key, "PWD") == 0 && pwd == NULL)
+			pwd = (char *) attr;
+		else
+			free(attr);
+		free(key);
+	}
 
-	/* TODO: check szConnStrIn, parse it and retrieve the different settings */
-	/* ";"-separated list of (attribute-keyword "=" attribute-value) */
+	if (dsn && strlen(dsn) > SQL_MAX_DSN_LENGTH) {
+		/* IM010 = Data source name too long */
+		addDbcError(dbc, "IM010", NULL, 0);
+		rc = SQL_ERROR;
+	} else {
+		rc = SQLConnect_(hDbc, dsn, SQL_NTS, uid, SQL_NTS,
+				 pwd, SQL_NTS);
+	}
 
-	/* TODO: next call (an internal version of) SQLConnect() */
+	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+		int n;
 
+		if (szConnStrOut == NULL)
+			cbConnStrOutMax = -1;
+		if (cbConnStrOutMax > 0) {
+			n = snprintf(szConnStrOut, cbConnStrOutMax, "DSN=%s;",
+				     dsn ? dsn : "DEFAULT");
+			/* some snprintf's return -1 if buffer too small */
+			if (n < 0)
+				n = cbConnStrOutMax + 1; /* make sure it becomes < 0 */
+			cbConnStrOutMax -= n;
+			szConnStrOut += n;
+		} else {
+			cbConnStrOutMax = -1;
+		}
+		if (uid) {
+			if (cbConnStrOutMax > 0) {
+				n = snprintf(szConnStrOut, cbConnStrOutMax,
+					     "UID=%s;", uid);
+				if (n < 0)
+					n = cbConnStrOutMax + 1;
+				cbConnStrOutMax -= n;
+				szConnStrOut += n;
+			} else {
+				cbConnStrOutMax = -1;
+			}
+		}
+		if (pwd) {
+			if (cbConnStrOutMax > 0) {
+				n = snprintf(szConnStrOut, cbConnStrOutMax,
+					     "PWD=%s;", pwd);
+				if (n < 0)
+					n = cbConnStrOutMax + 1;
+				cbConnStrOutMax -= n;
+				szConnStrOut += n;
+			} else {
+				cbConnStrOutMax = -1;
+			}
+		}
 
-	/* For now just report "not supported" and return error */
-	/* IM001 = Driver does not support this function */
-	addDbcError(dbc, "IM001", NULL, 0);
-	return SQL_ERROR;
+		/* calculate how much space was needed */
+		if (pnConnStrOut)
+			*pnConnStrOut = strlen(dsn ? dsn : "DEFAULT") + 5 +
+				(uid ? strlen(uid) + 5 : 0) +
+				(pwd ? strlen(pwd) + 5 : 0);
+
+		/* if it didn't fit, say so */
+		if (cbConnStrOutMax < 0) {
+			addDbcError(dbc, "01004", NULL, 0);
+			rc = SQL_SUCCESS_WITH_INFO;
+		}
+	}
+	if (dsn)
+		free(dsn);
+	if (uid)
+		free(uid);
+	if (pwd)
+		free(pwd);
+	return rc;
 }
