@@ -17,8 +17,8 @@ user=monetdb
 password=monetdb
 EOF
 
-LC_CTYPE="en_US.UTF-8"
-export LC_CTYPE
+LANG="en_US.UTF-8"
+export LANG
 
 Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/../bug-sf-1041324_weird-char.sql"
 	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $SQLPORT -f $RELSRCDIR/../unicode_varchar-bug-sf-1041324.sql 
