@@ -279,7 +279,6 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
         pthread_attr_setstacksize(&attr, 1024*1024);
-        pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);  
 	ret = pthread_create((pthread_t*)t, &attr, (void*(*)(void*))f, arg);
         if (ret == 0) (*(int*)t)++; /* use pthread-id + 1 */
 	MT_thread_sigmask(&orig_mask, NULL);
