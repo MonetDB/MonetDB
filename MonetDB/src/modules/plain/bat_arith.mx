@@ -126,7 +126,7 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 }
 int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
 	REGISTER @1 *bp, *bq, *bnp;
-	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+	@1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2](v,b=%s);\n",b->batId);
@@ -161,7 +161,7 @@ int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
 }
 int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
 	REGISTER @1 *bp, *bq, *bnp;
-	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+	@1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@2](v,b=%s);\n",b->batId);
