@@ -627,9 +627,13 @@ public class JdbcClient {
 									for (; rs.next(); count++) {
 										out.print("|");
 										for (int j = 0; j < width.length; j++) {
-											String data = (rs.getObject(j + 1)).toString();
-								//			String data = rs.getString(j + 1);
-											if (data == null) data = "<NULL>";
+											Object rdata = rs.getObject(j + 1);
+											String data;
+											if (rdata == null) {
+												data = "<NULL>";
+											} else {
+												data = rdata.toString();
+											}
 											out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
 										}
 										out.println();
