@@ -258,13 +258,13 @@ int interpret_file(Cntxt stk, YYSTREE lt, ValPtr res){
 @-
 Open the scriptfile.
 @c
-        if ((fd = fopen(ptr, "rb")) == 0) {
+        if ((fd = fopen(ptr, "r")) == 0) {
             char path[PATHLENGTH];
  
             if (ptr[0] == DIR_SEP) {
                 strcpy(path, ptr);
             }
-            fd = fopen(path, "rb");
+            fd = fopen(path, "r");
         }
         if (fd == 0) {
                 GDKerror("interpret_file: could not open file: %s\n", ptr);
@@ -285,13 +285,6 @@ Read the entire file, realloc if necessary.
         }
         fclose(fd);
         buf[i] = 0;
-#ifdef WIN32
-{       char *dst = buf, *src = buf;
-        do {
-                if (*src != 13) *dst++ = *src;
-        } while(*src++);
-}       /* delete ^M characters */
-#endif
         i = interpret_str(stk, buf, res);
         GDKfree(buf);
         return i;
