@@ -97,11 +97,22 @@ def portnr():
 		p = 50000
 	return p
 
+def user():
+	try: 
+		p = environ['USER']
+	except:
+		try: 
+			p = environ['USERNAME']
+		except:
+			p = ''
+
+	return p
+
 
 if __name__ == '__main__':
 	import fileinput;
 
-	s = server( 'localhost', 50000, 'niels')
+	s = server( hostname(), portnr(), user())
 	fi = fileinput.FileInput()
 	sys.stdout.write( s.prompt )
 	line= fi.readline()

@@ -32,3 +32,8 @@ scripts_pl = {
 	DIR = pkgdatadir/site_perl
 	SOURCES = Mapi.pm MapiClient.pl
 }
+
+scripts_py = {
+	DIR = pkgdatadir/python
+	SOURCES = Mapi.py
+}
