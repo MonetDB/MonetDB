@@ -23,7 +23,7 @@ bug-sf-960672
 bug-sf-964165
 bug-sf-976963
 bug-sf-975308
-bug-sf-978043
+insert_into_select-bug-sf-978043
 union-bug-sf-978045
 object_name-bug-sf-985242
 view_join-bug-sf-990096
