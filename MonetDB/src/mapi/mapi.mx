@@ -373,20 +373,19 @@ int socket_dup_wrap( int *res, int *s ){
 }
 
 @mil
+proc get_mapi_port() := {
+	if (monet_environment.exist("mapi_port")){
+		return int(monet_environment.find("mapi_port"));
+	}
+	ERROR("mapi_port is set\n");
+}
+
+proc mapi_server(int port, int nr) := {
+        var l := listen(port, nr);
+        printf("!ERROR: listen(%d,%d) failed ... exiting\n", port, nr);
+	quit;
+}
+
 if (mod = "main"){
-	module(str,mapi);
-
-	proc get_mapi_port() := {
-		if (monet_environment.exist("mapi_port")){
-			return int(monet_environment.find("mapi_port"));
-		}
-		ERROR("mapi_port is set\n");
-	}
-
-	proc mapi_server(int port, int nr) := {
-	        var l := listen(port, nr);
-	        printf("!ERROR: listen(%d,%d) failed ... exiting\n", port, nr);
-		quit;
-	}
 	fork(mapi_server(get_mapi_port(),5));
 }
