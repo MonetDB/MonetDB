@@ -8,7 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.regex.*;
 
 /**
- * A Connection suitable for the Monet database
+ * A Connection suitable for the Monet database.
  * <br /><br />
  * This connection represents a connection (session) to a Monet database. SQL
  * statements are executed and results are returned within the context of a

@@ -5,7 +5,7 @@ import java.io.*;
 import java.util.*;
 
 /**
- * A Statement suitable for the Monet database
+ * A Statement suitable for the Monet database.
  * <br /><br />
  * The object used for executing a static SQL statement and returning the
  * results it produces.<br />
@@ -192,23 +192,27 @@ public class MonetStatement implements Statement {
 
 		List counts = new ArrayList();
 		String error = null;
-		try {
-			boolean type = execute(batch.toString());
-			int count = -1;
-			if (!type) count = getUpdateCount();
-			do {
-				if (type) {
-					addWarning("Batch query produced a ResultSet!  Ignoring, " +
-							"setting update count to value " + SUCCESS_NO_INFO);
-					counts.add(new Integer(SUCCESS_NO_INFO));
-				} else if (count >= 0) {
-					counts.add(new Integer(count));
-				}
-			} while ((type = getMoreResults()) ||
-					(count = getUpdateCount()) != -1);
-		} catch (SQLException e) {
-			error = e.getMessage();
+
+		if (batch != null) {
+			try {
+				boolean type = execute(batch.toString());
+				int count = -1;
+				if (!type) count = getUpdateCount();
+				do {
+					if (type) {
+						addWarning("Batch query produced a ResultSet!  Ignoring, " +
+								"setting update count to value " + SUCCESS_NO_INFO);
+						counts.add(new Integer(SUCCESS_NO_INFO));
+					} else if (count >= 0) {
+						counts.add(new Integer(count));
+					}
+				} while ((type = getMoreResults()) ||
+						(count = getUpdateCount()) != -1);
+			} catch (SQLException e) {
+				error = e.getMessage();
+			}
 		}
+
 		int[] ret = new int[counts.size()];
 		for (int i = 0; i < counts.size(); i++) {
 			ret[i] = ((Integer)(counts.get(i))).intValue();
