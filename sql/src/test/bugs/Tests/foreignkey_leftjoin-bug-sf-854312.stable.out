@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-854312` in directory 'src/test/bugs` itself:
+stdout of test 'foreignkey_leftjoin-bug-sf-854312` in directory 'src/test/bugs` itself:
 
 
 # 13:20:35 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:20:35 >  
-# 13:20:35 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53464  < bug-sf-854312.sql
+# 13:20:35 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53464  < foreignkey_leftjoin-bug-sf-854312.sql
 # 13:20:35 >  
 
 # 6 # querytype

@@ -1,4 +1,4 @@
-stderr of test 'bug-sf-1043521_like` in directory 'src/test/bugs` itself:
+stderr of test 'like-bug-sf-1043521` in directory 'src/test/bugs` itself:
 
 
 # 15:48:43 >  
@@ -54,7 +54,7 @@ stderr of test 'bug-sf-1043521_like` in directory 'src/test/bugs` itself:
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
 # 15:48:44 >  
-# 15:48:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=poseidon --port=59550  < bug-sf-1043521_like.sql
+# 15:48:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=poseidon --port=59550  < like-bug-sf-1043521.sql
 # 15:48:44 >  
 
 
