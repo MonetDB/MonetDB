@@ -764,28 +764,38 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 	tv = scope_add_table_columns(sql, scp, t, t->base.name);
 
 	if (val_or_q->token == SQL_VALUES) {
-		dlist *values = val_or_q->data.lval;
-		if (dlist_length(values) != list_length(collist)) {
-			scp = scope_close(scp);
-			return sql_error(sql, 02, 
-				 "Inserting into table %s, number of values doesn't match number of columns", tname);
-		} else {
-			dnode *n;
-			node *m;
+		dlist *rowlist = val_or_q->data.lval;
+		dlist *values;	
+		dnode *o;
+		assert(dlist_length(rowlist)>0);
 
-			for (n = values->h, m = collist->h;
-			     n && m; n = n->next, m = m->next) {
-				sql_column *c = m->data;
-				stmt *ins = insert_value(sql, NULL, c, n->data.sym);
-				if (!ins){
-					cleanup_stmts(inserts, len);
-					return NULL;
+		for (o = rowlist->h; o; o = o->next) {
+			values = o->data.lval;
+
+			if (dlist_length(values) != list_length(collist)) {
+				scp = scope_close(scp);
+				return sql_error(sql, 02, 
+					 "Inserting into table %s, number of values doesn't match number of columns", tname);
+			} else {
+				dnode *n;
+				node *m;
+
+				for (n = values->h, m = collist->h;
+				     n && m; n = n->next, m = m->next) {
+					sql_column *c = m->data;
+					stmt *ins = insert_value(sql, NULL, c, n->data.sym);
+					if (!ins){
+						cleanup_stmts(inserts, len);
+						return NULL;
+					}
+					if (!inserts[c->colnr])						
+						inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins );
+					else
+						inserts[c->colnr] = stmt_append( inserts[c->colnr], ins );
+					inscol = c->colnr;
 				}
-					
-				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins );
-				inscol = c->colnr;
+			
 			}
-
 		}
 	} else {
 		stmt *s = scope_subquery(sql, NULL, val_or_q);

@@ -332,6 +332,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	name_commalist 
 	column_ref
 	atom_commalist
+	row_commalist
 	qname 
 	ordering_spec_commalist
 	opt_schema_element_list
@@ -1296,10 +1297,16 @@ insert_stmt:
  ;
 
 values_or_query_spec:
-    VALUES '(' atom_commalist ')' 
-		{ $$ = _symbol_create_list( SQL_VALUES, $3); }
+    VALUES row_commalist
+		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  select_stmt
  ;
+
+
+row_commalist:
+    '(' atom_commalist ')'	{ $$ = dlist_append_list(dlist_create(), $2); }
+ |  row_commalist ',' '(' atom_commalist ')'
+				{ $$ = dlist_append_list($1, $4); }
 
 atom_commalist:
     insert_atom		{ $$ = dlist_append_symbol(dlist_create(), $1); }
