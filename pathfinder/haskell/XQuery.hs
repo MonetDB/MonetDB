@@ -111,9 +111,9 @@ ps = dot . fst . cse . compile
 
 ----------------------------------------------------------------------
 
-main = do print xmark_Q2
-          putStr (xquery xmark_Q2)
-          --putStr (ps xmark_Q2)
+main = do print xmark_Q5
+          putStr (xquery xmark_Q5)
+          --putStr (ps xmark_Q5)
 	  
 
 -- TODO:
