@@ -1,122 +1,91 @@
 RELEASE NOTES
-MonetDB JDBC driver version 0.6 beta
+MonetDB JDBC driver version 0.7 beta
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2004-08-01
+Release date: 2004-08-10
 
 This JDBC driver is designed for use with MonetDB, a main-memory database.  For
 more information see http://monetdb.cwi.nl/.
 
-This release is far from a complete implementation of the JDBC interface.  This
-implementation also doesn't follow the JDBC specification at all points. Below
-the current state of this driver is listed.  Please read before you decide to use
-this driver.
+Within the current implementation not all functionalities of the JDBC interface
+are available.  It is believed, however, that this implementation is rich enough
+to be suitable for a majority of application settings.
 
-- Currently implemented are:
+Below a list of supported features can be found.  Please read this list if you
+intend to use this driver.  If you feel some features are missing, please let
+us know at our sourceforge feature request page:
+http://sourceforge.net/tracker/?group_id=56967&atid=482471
+
+Feel free to file bugs, when they appear at our sourceforge bug page as well.
+
+
+Currently implemented:
   * java.sql.Driver interface
-    . all methods implemented
+  * javax.sql.DataSource interface (not tested)
   * java.sql.Connection interface
-    . clearWarnings()
-    . close()
-    . commit()
-    . createStatement()
-    . createStatement(int resultSetType, int resultSetConcurrency)
-      (check for warnings after using this one!!!)
-    . getAutoCommit()
-	. getTypeMap()
-	. getWarnings()
-	. isClosed()
-	. prepareStatement(String)
-	. releaseSavepoint(java.sql.Savepoint)
-    . rollback()
-	. rollback(java.sql.Savepoint)
-    . setAutoCommit(boolean autoCommit)
-	. setSavepoint()
-	. setSavepoint(java.lang.String)
-	. setTypeMap()
-  * java.sql.Statement interface
-    . close()
-	. execute()
-    . executeQuery(java.lang.String sql)
-    . executeUpdate(java.lang.String sql)
-      WARNING, does NOT return affected rows!!!
-    . getConnection()
-    . getFetchDirection()
-    . getFetchSize()
-    . getMaxRows()
-	. getMoreResults()
-	. getResultSet()
-	. getResultSetConcurrency()
-    . getResultSetType()
-	. getUpdateCount()
-    . setFetchDirection(int direction)
-    . setFetchSize(int rows)
-    . setMaxRows(int max)
-  * java.sql.ResultSet interface
-    . absolute()
-	. afterLast()
-	. beforeFirst()
-    . close()
-    . findColumn(java.lang.String columnName)
-	. first()
-    . getBoolean(int columnIndex)
-    . getBoolean(java.lang.String columnName)
-	. getDate(columnIndex)
-	. getDate(columnName)
-	. getDate(columnIndex, cal)
-	. getDate(columnName, cal)
-    . getDouble(int columnIndex)
-    . getDouble(java.lang.String columnName)
-    . getFetchSize()
-    . getFloat(int columnIndex)
-    . getFloat(java.lang.String columnName)
-    . getInt(int columnIndex)
-    . getInt(java.lang.String columnName)
-    . getLong(int columnIndex)
-    . getLong(java.lang.String columnName)
-    . getMetaData()
-	. getObject(int columnIndex)
-	. getObject(java.lang.String columnName)
-	. getObject(int columnIndex, java.util.Map map)
-	. getObject(java.lang.String columnName, java.util.Map map)
-    . getShort(int columnIndex)
-    . getShort(java.lang.String columnName)
-    . getStatement()
-    . getString(int columnIndex)
-    . getString(java.lang.String columnName)
-	. getTime(columnIndex)
-	. getTime(columnName)
-	. getTime(columnIndex, cal)
-	. getTime(columnName, cal)
-	. getTimestamp(columnIndex)
-	. getTimestamp(columnName)
-	. getTimestamp(columnIndex, cal)
-	. getTimestamp(columnName, cal)
-	. isAfterLast()
-	. isBeforeFirst()
-	. isFirst()
-	. isLast()
-	. last()
-    . next()
-	. previous()
-	. relative()
-    . wasNull()
-  * java.sql.ResultSetMetaData interface
-    . getColumnCount()
-    . isCaseSensitive(int column)
-    . getColumnLabel(int column)
-    . getColumnName(int column)
-    . getColumnType(int column)
-    . getColumnTypeName(int column)
-  * java.sql.DatabaseMetaData interface
-    . all methods implemented, correctness not guaranteed :)
-  * java.sql.SavePoint interface
-    . all methods implemented
+    The next features are not implemented:
+    - createStatement with resultset holdability
+    - nativeSQL (there is no query parsing for JDBC escapes yet)
+    - prepareCall (CallableStatement not supported)
+    - prepareStatement with more than just an SQL prepare statement
+	- getCatalog/setCatalog (there is no catalog management yet)
+	- getHoldability/setHoldability (close/hold cursors over commit is not
+	  configurable)
+	- isReadOnly/setReadOnly (updatable result sets are not supported at all)
 
-- Note that Statement's executeUpdate is implemented via executeQuery and does
-  NOT return the number of affected rows.
+    NOTE: be sure to check for warnings after setting concurrencies or
+          isolation levels; MonetDB currently does not support anything else
+          but completely serializable transactions.
+  * java.sql.Statement interface
+    The next features are not implemented:
+    - addBatch/clearBatch/executeBatch (batching not yet implemented)
+    - cancel/getQueryTimeout/setQueryTimeout (query execution cannot be
+      terminated, once started)
+    - execute with more than just an SQL query
+    - executeUpdate with more than just an SQL query
+    - getGeneratedKeys
+    - getMaxFieldSize/setMaxFieldSize
+    - getResultSetHoldability
+    - setCursorName
+    - setEscapeProcessing
+  * java.sql.PreparedStatement interface
+    The next features are not implemented:
+    - addBatch/clearBatch/executeBatch (batching not yet implemented)
+    - getMetaData
+    - getParameterMetaData
+    - setArray
+    - setAsciiStream, setBinaryStream, setCharacterStream, setUnicodeStream
+    - setBlob, setClob
+    - setBytes
+    - getObject with more than just the index and the object
+    - setRef, setURI
+  * java.sql.ResultSet interface
+    The next features are not implemented:
+    - getArray
+    - getAsciiStream, getBinaryStream, getUnicodeStream, getCharacterStream
+    - getBlob, getClob
+    - getRef, getURL
+    - all methods related to updateable result sets
+    * java.sql.ResultSetMetaData interface
+      The next features are not implemented:
+      - isCaseSensitive
+      - isSearchable
+      - isCurrency
+      - isNullable
+      - isSigned
+      - getSchemaName
+      - getPrecision
+      - getScale
+      - getCatalogName
+      - isReadOnly
+      - isWritable
+      - isDefinitelyWritable
+      - getColumnClassName
+  * java.sql.DatabaseMetaData interface
+  * java.sql.SavePoint interface
+
 - The getObject methods do not return all types correct, and currently ignore
   any given type map.
+- The PreparedStatement is currently a client side simulation of a prepared
+  statement.  It does not really prepare on the server side.
 - Auto-commit behaviour is defined by the server which handles the auto-commit.
-- A preliminary version of a PreparedStatement is included which supports some
-  set-methods.

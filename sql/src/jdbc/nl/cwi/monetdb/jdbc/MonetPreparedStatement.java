@@ -5,7 +5,6 @@ import java.util.*;
 import java.net.URL;
 import java.io.*;
 import java.math.*;	// BigDecimal, etc.
-//import java.util.regex.*;
 
 /**
  * A PreparedStatement suitable for the Monet database
