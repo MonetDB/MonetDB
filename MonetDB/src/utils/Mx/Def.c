@@ -377,12 +377,15 @@ char * dir2ext(CmdCode dir)
     Directive *d = str2dir;
 
     if(dir == Bfile) {
-	if(bodymode)
-		return "bdy";
-	else if(textmode == M_WWW )
+	if (textmode == M_WWW ) {
+		if(bodymode)
+			return "bdy.html";
 		return "html";
-	else 
+	} else {
+		if(bodymode)
+			return "bdy.tex";
 		return "tex";
+	}
     }
 
     while (d->cmd != (char *)0){
