@@ -807,7 +807,7 @@ that for the moment are defined as procs.
     "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
     
     # SQL LIKE functionality, PCRE implementation
-	proc sql2pcre(str pat, chr esc) : int {
+	PROC sql2pcre(str pat, chr esc) : int {
 		# change the SQL wilcards into PCRE wildcards
 		var i, len;
 		var c;
@@ -822,14 +822,14 @@ that for the moment are defined as procs.
 		# we use pesc here so we can replace with the correct
 		# replacement: "\+"
 		if (
-			(esc = '.') or
-			(esc = '+') or
-			(esc = '*') or
-			(esc = '(') or
-			(esc = ')') or
-			(esc = '[') or
-			(esc = ']') or
-			(esc = chr("\\")) # get around stupid MIL bug: '\\' results in nil
+			(str(esc) = ".") or
+			(str(esc) = "+") or
+			(str(esc) = "*") or
+			(str(esc) = "(") or
+			(str(esc) = ")") or
+			(str(esc) = "[") or
+			(str(esc) = "]") or
+			(str(esc) = "\\")
 		) {
 			pesc := "\\" + str(esc);
 		} else {
@@ -884,6 +884,8 @@ that for the moment are defined as procs.
 		}
 		return "^" + ppat + "$";
 	}
+    ADDHELP("sql2pcre", "groffen", "Dec 20 2004",
+    "converts SQL LIKE to PCRE pattern", "algebra");
 		
     PROC like(str s, str pat, chr esc) : bit  {
 		var ppat := sql2pcre(pat, esc);
