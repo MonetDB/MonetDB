@@ -236,7 +236,7 @@ of the return statement.
         /* set return type */
         lhs = &stk->stk[0];
         /* lhs->vtype =getGDKtype(getVarType(mb,0)); */
-        lhs->vtype =getVarGDKType(mb,0);
+        lhs->vtype =getGDKtype(mb,0);
         if(lhs->vtype <0)
             GDKerror("unexpected type error\n");
         /* stream_printf(GDKout,"recursive MAL "
@@ -294,6 +294,7 @@ pattern operators to deal with it.
     task.mb= mb; 
     task.stk=stk; 
     task.startpc=startpc; 
+	task.stoppc = 0; /* continue to end */
     task.env=env;
     task.pcicaller=pcicaller;
     task.pci= 0;
@@ -973,6 +974,7 @@ Joining a process thread is controlled with a lock part of the stack frame
     task->mb= mb; 
     task->stk=stk; 
     task->startpc=stkpc+1; 
+	task->stoppc = 0;
     task->env=env;
     task->pcicaller=pcicaller;
     task->pci= pci;
