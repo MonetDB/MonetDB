@@ -539,20 +539,26 @@ that for the moment are defined as procs.
                 } else if (fcn = "<=") {
                     return b.select(nilval, val);
                 } else if (fcn = "<") {
-                    var bn := b.select(nilval, val).access(BAT_WRITE);
+                    var bn := b.select(nilval, val);
+                    var bn_access := bn.access();
+                    bn.access(BAT_WRITE);
 		    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
 			bn := [oid](bn.reverse).reverse();
 		    }
                     bn.reverse.delete(val);
+                    bn.access(bn_access);
                     return bn;
                 } else if (fcn = ">=") {
                     return b.select(val, nilval);
                 } else if (fcn = ">") {
-                    var bn := b.select(val, nilval).access(BAT_WRITE);
+                    var bn := b.select(val, nilval);
+                    var bn_access := bn.access();
+                    bn.access(BAT_WRITE);
 		    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
 			bn := [oid](bn.reverse).reverse();
 		    }
                     bn.reverse.delete(val);
+                    bn.access(bn_access);
                     return bn;
                 } else if (fcn = "like") {
                     var bn := likeselect(b, val);
@@ -569,26 +575,35 @@ that for the moment are defined as procs.
         if (or((fcn = "between"),(fcn = "[in]"))) {
             return b.select(lo,hi);
         } else if (fcn = "<in]") {
-            var bn := b.select(lo,hi).access(BAT_WRITE);
+            var bn := b.select(lo,hi);
+            var bn_access := bn.access();
+            bn.access(BAT_WRITE);
 	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
 		bn := [oid](bn.reverse).reverse();
 	    }
             bn.reverse.delete(lo);
+            bn.access(bn_access);
             return bn;
         } else if (fcn = "[in>") {
-            var bn := b.select(lo,hi).access(BAT_WRITE);
+            var bn := b.select(lo,hi);
+            var bn_access := bn.access();
+            bn.access(BAT_WRITE);
 	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
 		bn := [oid](bn.reverse).reverse();
 	    }
             bn.reverse.delete(hi);
+            bn.access(bn_access);
             return bn;
         } else if (fcn = "<in>") {
-            var bn := b.select(lo,hi).access(BAT_WRITE);
+            var bn := b.select(lo,hi);
+            var bn_access := bn.access();
+            bn.access(BAT_WRITE);
 	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
 		bn := [oid](bn.reverse).reverse();
 	    }
             bn.reverse.delete(lo);
             bn.reverse.delete(hi);
+            bn.access(bn_access);
             return bn;
         }
         var bitvector := [*fcn](b,lo,hi);
