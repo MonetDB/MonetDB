@@ -818,6 +818,16 @@ def RunTest(env, TST) :
 			else:
 				SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
 				return TX
+		test = re.compile("^.*\.src$")
+		for ff in os.listdir(TSTTRGDIR):
+			if test.match(ff) and not os.path.isfile(ff[:-4]):
+				f = open(ff,"r")
+				TSTSRC = os.path.expandvars(path(string.strip(f.readline())))
+				f.close()
+				if os.path.isfile(TSTSRC):
+					shutil.copy(TSTSRC,ff[:-4])
+				else:
+					Warn("source file '"+TSTSRC+"` is missing.")
 
 		if THISFILE == "Mprofile.py":
 			test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*$")
