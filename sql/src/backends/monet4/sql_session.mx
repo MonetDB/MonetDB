@@ -353,7 +353,6 @@ int sqlexecute(backend * be, stream *out )
 	cq *q = NULL;
 
 	c->type = Q_PARSE;
-	c->status = 0;
 
 	cache = c->cache;
 	
@@ -368,10 +367,10 @@ int sqlexecute(backend * be, stream *out )
 	if (explain == ex_sql)
 		T0 = GDKusec();
 
-	if ((err = sqlparse(c)) || c->status || !c->sym) {
+	if ((err = sqlparse(c)) || mvc_status(c) || !c->sym) {
 		scanner_query_processed(&(c->scanner));
 		if (!err)
-			err = c->status;
+			err = mvc_status(c);
 		c->cache = cache;
 		return sqlcleanup(c, err);
 	}
@@ -384,8 +383,8 @@ int sqlexecute(backend * be, stream *out )
 		char *cmd = NULL;
 		stmt *s = sql_symbol2stmt(c);
 
-		if (!s && c->status){
-			err = c->status;
+		if (!s && mvc_status(c)){
+			err = mvc_status(c);
 			c->cache = cache;
 			return sqlcleanup(c, err);
 		}
@@ -520,6 +519,8 @@ void sidestepMil(Cntxt stk, char *cmd){
 	interpret_str(stk, cmd, &res);
 }
 
+#define TRANS_ABORTED "current transaction is aborted (please ROLLBACK)\n"
+
 @c
 int
 sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
@@ -567,6 +568,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 
 	in->eof = 1;		/* force prompt on first iteration */
 	while(go){
+		int pstatus = 0;
 		while (in->pos < in->len && 
                        (isspace((int)(in->buf[in->pos])) || 
 		        in->buf[in->pos] == ';' ))
@@ -649,19 +651,24 @@ query string with "M".
 			break;
 		}
 
+		pstatus = m->status ;
 		err = sqlexecute(sql, out);
 
 		if (err){ /* output error */
 			char *buf = GDKerrbuf;
 
-			if (error(out, m->errstr) < 0){
-				go = !go;
-				break;
-			}
-			if (buf && buf[0] &&
-		 	   (stream_write( out, buf, strlen(buf), 1 ) !=1 )){
-				go = !go;
-				break;
+			if (pstatus < 0) { /* transaction allready broken */
+				if (stream_write( out, TRANS_ABORTED, sizeof(TRANS_ABORTED)-1, 1 ) != 1 ){
+					go = !go;
+					break;
+				}
+			} else {
+				if (error(out, m->errstr) < 0 || 
+				   (buf && buf[0] && (stream_write( 
+					out, buf, strlen(buf), 1) != 1))) {
+					go = !go;
+					break;
+				}
 			}
 			/* reset error buffers */
 			m->errstr[0] = 0;
@@ -1137,7 +1144,6 @@ BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
 	}
 
 	m->type = Q_UPDATE;
-	m->status = cnt;
 	return bats;
 }
 

@@ -40,15 +40,19 @@ insert into test values (-123.123);
 insert into test values (123.128);
      -- next value should be rounded to -123.13
 insert into test values (-123.128);
-
+commit;
 
 -- these should fail
 insert into test values (1234);
+rollback;
       -- a '.00' decimal part is assumed for the next value 
 insert into test values (-1234);
+rollback;
       -- a '.00' decimal part is assumed for the next value 
 insert into test values (1234.1);
+rollback;
 insert into test values (-1234.1);
+rollback;
 
 
 select * from test;

@@ -952,15 +952,59 @@ static stmt *sql_Nop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * su
 	return NULL;
 }
 
-static stmt *sql_binop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset)
+static stmt *
+sql_binop_(mvc * sql, char *fname, stmt * ls, stmt *rs)
 {
-	stmt * res = NULL;
-	dnode *l = se->data.lval->h;
-	stmt *ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset);
-	stmt *rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset);
+	stmt *res = NULL;
 	sql_subtype *t1, *t2;
 	sql_subfunc *f = NULL;
 
+ 	t1 = tail_type(ls);
+	t2 = tail_type(rs);
+
+	f = sql_bind_func(fname, t1, t2 );
+	if (f) {
+		if (f->func->res->scale == SCALE_FIX){
+			ls = fix_scale( sql, t2, ls, 0, 0);
+			rs = fix_scale( sql, t1, rs, 0, 0);
+		}
+		if (f->func->res->scale == SCALE_SUB)
+			ls = scale_algebra( f, ls, rs );
+		if (f->func->res->scale == SCALE_ADD)
+			sum_scales(f, ls, rs);
+		return stmt_binop(ls, rs, f);
+	} else {
+		if (convert_types( sql, &ls, &rs, 0) >= 0){
+ 			t1 = tail_type(ls);
+			t2 = tail_type(rs);
+			f = sql_bind_func(fname, t1, t2 );
+			if (f){
+				if (f->func->res->scale == SCALE_FIX){
+					ls = fix_scale( sql, t2, ls, 0, 0);
+					rs = fix_scale( sql, t1, rs, 0, 0);
+				}
+				if (f->func->res->scale == SCALE_SUB)
+					ls = scale_algebra( f, ls, rs );
+				if (f->func->res->scale == SCALE_ADD)
+					sum_scales(f, ls, rs);
+				ls = stmt_binop(ls, rs, f);
+				return ls;
+			}
+		}
+	}
+	res = sql_error(sql, 02, "Binary operator: %s(%s,%s) unknown", fname, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
+	if (ls) 
+		stmt_destroy(ls);
+	if (rs) 
+		stmt_destroy(rs);
+	return res;
+}
+
+static stmt *sql_binop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset)
+{
+	dnode *l = se->data.lval->h;
+	stmt *ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset);
+	stmt *rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset);
 	if (!ls || !rs){
 		if (ls) stmt_destroy(ls);
 		if (rs) stmt_destroy(rs);
@@ -981,45 +1025,7 @@ static stmt *sql_binop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * 
 		stmt_destroy(o); 
 	}
 
- 	t1 = tail_type(ls);
-	t2 = tail_type(rs);
-
-	f = sql_bind_func(l->data.sval, t1, t2 );
-	if (f) {
-		if (f->func->res->scale == SCALE_FIX){
-			ls = fix_scale( sql, t2, ls, 0, 0);
-			rs = fix_scale( sql, t1, rs, 0, 0);
-		}
-		if (f->func->res->scale == SCALE_SUB)
-			ls = scale_algebra( f, ls, rs );
-		if (f->func->res->scale == SCALE_ADD)
-			sum_scales(f, ls, rs);
-		return stmt_binop(ls, rs, f);
-	} else {
-		if (convert_types( sql, &ls, &rs, 0) >= 0){
- 			t1 = tail_type(ls);
-			t2 = tail_type(rs);
-			f = sql_bind_func(l->data.sval, t1, t2 );
-			if (f){
-				if (f->func->res->scale == SCALE_FIX){
-					ls = fix_scale( sql, t2, ls, 0, 0);
-					rs = fix_scale( sql, t1, rs, 0, 0);
-				}
-				if (f->func->res->scale == SCALE_SUB)
-					ls = scale_algebra( f, ls, rs );
-				if (f->func->res->scale == SCALE_ADD)
-					sum_scales(f, ls, rs);
-				ls = stmt_binop(ls, rs, f);
-				return ls;
-			}
-		}
-	}
-	res = sql_error(sql, 02, "Binary operator: %s(%s,%s) unknown", l->data.sval, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
-	if (ls) 
-		stmt_destroy(ls);
-	if (rs) 
-		stmt_destroy(rs);
-	return res;
+	return sql_binop_(sql, l->data.sval, ls, rs ); 
 }
 
 static stmt *sql_op(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset)
@@ -1715,9 +1721,7 @@ static stmt *sql_compare(mvc * sql, stmt * ls,
 		return NULL;
 
 	if (ls->nrcols <= 0 && rs->nrcols <= 0) {
-		stmt_destroy(ls);
-		stmt_destroy(rs);
-		return sql_error(sql, 02, "Compare(%s) between two atoms is not possible", compare_op);
+		return sql_binop_(sql, compare_op, ls, rs);
 	} else if (ls->nrcols > 0 && rs->nrcols > 0) {
 		join = 1;
 	}
@@ -2425,7 +2429,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 				/* just add a select whole column */
 				if (!cur) {
 					cur = stmt_dup(tmp);
-				/* add join to an allready used column */
+				/* add join to an already used column */
 				} else {	
 					tmp = stmt_join(stmt_dup(cur),
 						stmt_reverse(tmp), cmp_all);
@@ -2703,7 +2707,7 @@ static stmt *create_view(mvc * sql, stmt * ss,
 
 	if (mvc_bind_table(sql, cur_schema(sql), name)) {
 		stmt_destroy(ss);
-		return sql_error(sql, 02, "Create View name %s allready in use", name);
+		return sql_error(sql, 02, "Create View name %s already in use", name);
 	} else {
 		char buf[BUFSIZ];
 
@@ -2838,7 +2842,7 @@ create_user(mvc * sql, char * user, char * passwd, char *fullname, char *schema)
 
 	if (sql_find_auth( sql, user) >= 0) {
 		return sql_error(sql, 02, 
-			 "User %s allready exists", user);
+			 "User %s already exists", user);
 	}
 	if ((schema_id = sql_find_schema( sql, schema)) < 0) {
 		return sql_error(sql, 02, 
@@ -3110,7 +3114,7 @@ static stmt *table_foreign_key( mvc * sql, char *name, symbol * s, stmt * ss, st
 			/* use tmp columns to find col nm */
 			stmt *c = find_column_stmt(columns, nm );
 
-			/* if table allready exists use it to find nm */
+			/* if table already exists use it to find nm */
 			if (!c && t && mvc_bind_column(sql, t, nm)) {
 				c = stmt_bind_column( stmt_dup(ts), nm );
 			}
@@ -3251,7 +3255,7 @@ static stmt *create_table(mvc * sql, stmt * ss,
 	if (mvc_bind_table(sql, cur_schema(sql), name)) {
 		stmt_destroy(ss);
 		return sql_error(sql, 02, 
-			 "Create Table name %s allready in use", name);
+			 "Create Table name %s already in use", name);
 	} else {
 		char buf[BUFSIZ];
 
@@ -3324,7 +3328,7 @@ static stmt *create_schema(mvc * sql, dlist * auth_name, dlist * schema_elements
 	}
 	if (mvc_bind_schema(sql, name)) {
 		return sql_error(sql, 02, 
-			"Create Schema name %s allready in use", name);
+			"Create Schema name %s already in use", name);
 	} else {
 		stmt *st = stmt_create_schema(name, auth);
 		list *schema_objects = list_append(create_stmt_list(), st);
@@ -4410,7 +4414,7 @@ static stmt *grant_roles(mvc * sql, sql_schema *schema,
 			   grantee_id = relproject(relselect(auths,grantee),id);
 			   exception (count(grantee_id) == 0), "User/role %s not found !", grantee;
 			   r = relselect(role_user,role_id,grantee_id)
-			   exception(count(r) > 0), "Role (%s,%s) allready granted", role, grantee;
+			   exception(count(r) > 0), "Role (%s,%s) already granted", role, grantee;
 			   relinsert(role_user,role_id,grantee_id,grantor,grant);
 			 */ 
 			list_append(l, stmt_grant_role(grantee, role) );

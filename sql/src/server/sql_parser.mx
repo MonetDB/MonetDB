@@ -199,7 +199,7 @@ sql_export int sqlparse(void *);
 	sql_subtype*	type;
 }
 %{
-extern int sqllex( YYSTYPE *yylval, void *lc );
+extern int sqllex( YYSTYPE *yylval, void *m );
 %}
 
 	/* symbolic tokens */
@@ -465,16 +465,16 @@ SQLCODE SQLERROR UNDER WHENEVER
 %%
 
 sqlstmt:
-   sql ';' 		{ mvc *lc = (mvc*)parm; 
-			  lc->sym = $$ = $1; YYACCEPT; }
- | /*empty*/		{ mvc *lc = (mvc*)parm; 
-			  lc->sym = $$ = NULL; YYACCEPT; }
- | ';'			{ mvc *lc = (mvc*)parm; 
-			  lc->sym = $$ = NULL; YYACCEPT; }
- | error ';'		{ mvc *lc = (mvc*)parm;
-			  lc->sym = $$ = NULL; YYACCEPT; }
- | LEX_ERROR 		{ mvc *lc = (mvc*)parm;
-			  lc->sym = $$ = NULL; YYACCEPT; }
+   sql ';' 		{ mvc *m = (mvc*)parm; 
+			  m->sym = $$ = $1; YYACCEPT; }
+ | /*empty*/		{ mvc *m = (mvc*)parm; 
+			  m->sym = $$ = NULL; YYACCEPT; }
+ | ';'			{ mvc *m = (mvc*)parm; 
+			  m->sym = $$ = NULL; YYACCEPT; }
+ | error ';'		{ mvc *m = (mvc*)parm;
+			  m->sym = $$ = NULL; YYACCEPT; }
+ | LEX_ERROR 		{ mvc *m = (mvc*)parm;
+			  m->sym = $$ = NULL; YYACCEPT; }
  ;
 
 
@@ -995,8 +995,8 @@ like_table:
 
 view_def:
     CREATE VIEW qname opt_column_commalist
-    AS			{ mvc *c = (mvc*)parm;
-			  c->scanner.as = c->scanner.yycur; }
+    AS			{ mvc *m = (mvc*)parm;
+			  m->scanner.as = m->scanner.yycur; }
 	select_stmt opt_with_check_option
 
 	{ dlist *l = dlist_create();
@@ -1055,8 +1055,8 @@ func_def:
     CREATE FUNCTION qname 
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    AS			{ mvc *c = (mvc*)parm;
-			  c->scanner.as = c->scanner.yycur; }
+    AS			{ mvc *m = (mvc*)parm;
+			  m->scanner.as = m->scanner.yycur; }
     select_stmt
 			{ dlist *f = dlist_create();
 	  		  	dlist_append_list(f, $3);
@@ -1068,8 +1068,8 @@ func_def:
  | /* proc ie no result */
     CREATE PROCEDURE qname 
 	'(' opt_paramlist ')'
-    AS			{ mvc *c = (mvc*)parm;
-			  c->scanner.as = c->scanner.yycur; }
+    AS			{ mvc *m = (mvc*)parm;
+			  m->scanner.as = m->scanner.yycur; }
     select_stmt 	/* todo stmt set BEGIN/END */
 			{ dlist *f = dlist_create();
 	  		  	dlist_append_list(f, $3);
@@ -1136,13 +1136,21 @@ sql:
  ;
 
 transaction_stmt:
-    COMMIT opt_trans opt_chain 	{ $$ = _symbol_create_int( SQL_COMMIT, $3); }
+    COMMIT opt_trans opt_chain 	
+
+		{ mvc *m = (mvc*)parm;
+		  $$ = _symbol_create_int( SQL_COMMIT, $3); 
+		  m->status = 0; 					}
+
  |  SAVEPOINT ident 		{ $$ = _symbol_create( SQL_SAVEPOINT, $2); }
  |  RELEASE SAVEPOINT ident 	{ $$ = _symbol_create( SQL_RELEASE, $3); }
  |  ROLLBACK opt_trans opt_chain opt_to_savepoint
-		{ $$ = _symbol_create_list( SQL_ROLLBACK, 
+
+		{ mvc *m = (mvc*)parm;
+		  $$ = _symbol_create_list( SQL_ROLLBACK, 
 		   dlist_append_string(
-		   	dlist_append_int(dlist_create(), $3), $4 )); }
+		   	dlist_append_int(dlist_create(), $3), $4 )); 
+		  m->status = 0; 					}
  ;
 
 opt_trans: /* pure syntax sugar */
@@ -1927,20 +1935,20 @@ opt_alias_name:
 atom:
     literal	
 	{ /* replace by argument */
-	  mvc *c = (mvc*)parm;
-	  int len = (c->params)?list_length(c->params):0;
-	  if (len < MAXPARAMS-2 && c->cache){
+	  mvc *m = (mvc*)parm;
+	  int len = (m->params)?list_length(m->params):0;
+	  if (len < MAXPARAMS-2 && m->cache){
 	  	char name[BUFSIZ]; 
 	  	AtomNode *an = (AtomNode*)$1;
 	  	sql_subtype *t = sql_dup_subtype(atom_type(an->a));
 
 	  	snprintf(name, BUFSIZ, "A%d", len);
-	  	sql_add_param( c, _strdup(name), stmt_var(_strdup(name), t) );
-	  	sql_add_arg( c, atom_dup(an->a));
+	  	sql_add_param( m, _strdup(name), stmt_var(_strdup(name), t) );
+	  	sql_add_arg( m, atom_dup(an->a));
 	  	/* we miss use SQL_COLUMN also for param's, maybe 
 	     	change SQL_COLUMN to SQL_IDENT */
  	  	$$ = _symbol_create_list( SQL_COLUMN, dlist_append_string(dlist_create(), _strdup(name))); 
-		c->scanner.key ^= t->type->localtype;
+		m->scanner.key ^= t->type->localtype;
 
 		symbol_destroy($1);
 	   } else {
@@ -2102,9 +2110,9 @@ literal:
 		{ sql_subtype *t = sql_bind_subtype("TIMESTAMP", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, $2)); }
  |  INTERVAL opt_sign string interval_qualifier
-		{ mvc *lc = (mvc*)parm;
+		{ mvc *m = (mvc*)parm;
 	  	  int i,tpe;
-	  	  if ( (tpe = parse_interval( lc, $2, $3, $4, &i)) < 0 ){
+	  	  if ( (tpe = parse_interval( m, $2, $3, $4, &i)) < 0 ){
 			yyerror("incorrect interval");
 			$$ = NULL;
 	  	  } else {
@@ -2567,7 +2575,7 @@ stmt *sql_error( mvc * sql, int error_code, char *format, ... )
 
 	va_start (ap,format); 
 	if (sql->errstr[0] == '\0') {
-		sql->status = error_code;
+		sql->status = -error_code;
 		vsnprintf(sql->errstr, ERRSIZE, _(format), ap); 
 	}
 	va_end (ap); 

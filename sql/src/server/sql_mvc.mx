@@ -2039,8 +2039,6 @@ ssize_t
 mvc_status( mvc *m )
 {
 	int res = m->status;
-
-	m->status = 0;
 	return res;
 }
 
@@ -2482,6 +2480,11 @@ int mvc_commit(mvc * m, int chain, char *name)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_commit\n");
 
+	if (m->status < 0) {
+		mvc_rollback(m, chain, name);
+		return -1;
+	}
+
 	/* savepoint then simply make a copy of the current transaction */
 	if (name && name[0] != '\0'){
 		if (mvc_debug)
@@ -2557,6 +2560,7 @@ mvc_rollback(mvc * m, int chain, char *name)
 	       		tr = trans_destroy(tr);
 		m->trans = trans_dup(tr->stk, tr,NULL);
 	}
+	m->status = 0;
 	m->trans->level = level;
 	m->type = Q_TRANS;
 	m->trans->schema = find_schema(m->trans, schema);

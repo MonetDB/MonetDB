@@ -796,6 +796,11 @@ void sqltypeinit()
 		sql_create_func("=", "=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("<>", "!=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("isnull", "isnil", ts[i], NULL, BIT, SCALE_FIX);
+		sql_create_func( ">", ">", ts[i], ts[i], BIT, SCALE_FIX);
+		sql_create_func( ">=", ">=", ts[i], ts[i], BIT, SCALE_FIX);
+		sql_create_func( "<", "<", ts[i], ts[i], BIT, SCALE_FIX);
+		sql_create_func( "<=", "<=", ts[i], ts[i], BIT, SCALE_FIX);
+
 	}
 
 	for(i=0; ts[i]; i++){
@@ -932,9 +937,6 @@ void sqltypeinit()
 
 	sql_create_func( "sql_add", "date_add_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func( "sql_add", "addmonths", DTE, MONINT, DTE, SCALE_FIX);
-
-	sql_create_func( ">", ">", DTE, DTE, BIT, SCALE_FIX);
-	sql_create_func( "<", "<", DTE, DTE, BIT, SCALE_FIX);
 
 	sql_create_func( "year", "year", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func( "month", "month", DTE, NULL, INT, SCALE_FIX);

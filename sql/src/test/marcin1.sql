@@ -10,6 +10,7 @@ insert into t1 values(5,5);
 insert into t2 values(1,3);
 insert into t2 values(2,2);
 insert into t2 values(3,1);
+commit;
 
 -- and now some strange queries and even stranger results
 
@@ -25,6 +26,7 @@ select t1.id, (select t2.id from t2 where t1.id=t2.id) from t1;
 
 -- As the sub-select returns a single value (3), no error occures
 select t1.id, (select t2.id from t2 where t2.id>2) from t1;
+rollback;
 
 -- Return only columns from first table
 select * from t2,t1 where t1.id=t2.id;
@@ -36,7 +38,9 @@ select t2.* from t2;
 
 -- wrong subsets
 select * from t1 where id>2;
+rollback;
 select * from t1 where id>2 and id<2;
+rollback;
 
 drop table t1;
 drop table t2;

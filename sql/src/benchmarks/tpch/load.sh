@@ -10,6 +10,6 @@ if [ $# -eq 1 ]; then
 fi
 
 #$SQL < c.sql-dec
-$SQL < c.sql-dec-primary-foreign
+#$SQL < c.sql-dec-primary-foreign
 cat load.sql | sed -e s+PWD+$PWD/SF-0.01+ | $SQL
 
