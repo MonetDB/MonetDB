@@ -8219,7 +8219,7 @@ simplifyCoreTree (PFcnode_t *c)
                added everywhere. To avoid multiple calls
                of simplifyCoreTree for one subtree do
                this test separately before all others. */
-            else if (var_is_used (LL(c)->sem.var, R(c)) && expandable (c))
+            else if (var_is_used (LL(c)->sem.var, R(c)) == 1 && expandable (c))
             {
                 replace_var (LL(c)->sem.var, LR(c), R(c));
                 *c = *(R(c));
@@ -8256,7 +8256,6 @@ simplifyCoreTree (PFcnode_t *c)
                 {
                     replace_var (LL(c)->sem.var, LR(c), R(c));
                     *c = *(R(c));
-                    simplifyCoreTree (c);
                 }
                 else
                 {
@@ -8276,9 +8275,6 @@ simplifyCoreTree (PFcnode_t *c)
             }
             break;
         case c_for:
-            simplifyCoreTree (LR(c));
-            simplifyCoreTree (R(c));
-
             /* 
                 for $x in for $y in e
                           return e_y
@@ -8297,9 +8293,10 @@ simplifyCoreTree (PFcnode_t *c)
                 R(c) = c_old;
                 TY(R(c)) = *PFty_simplify ((PFty_quantifier (PFty_defn (TY(RLR(c))))) (TY(RR(c))));
                 TY(c) = *PFty_simplify ((PFty_quantifier (PFty_defn (TY(LR(c))))) (TY(R(c))));
-                simplifyCoreTree (c);
             }
 
+            simplifyCoreTree (LR(c));
+            simplifyCoreTree (R(c));
 
             input_type = PFty_defn(LR(c)->type);
 
@@ -8336,11 +8333,10 @@ simplifyCoreTree (PFcnode_t *c)
                     LLR(c)->type = PFty_none();
                 }
 
-                else if (PFty_subtype (input_type, PFty_opt (PFty_atomic ())))
+                if (PFty_subtype (input_type, PFty_opt (PFty_atomic ())))
                 {
                     replace_var (LLL(c)->sem.var, LR(c), R(c));
                     *c = *(R(c));
-                    simplifyCoreTree (c);
                 }
                 else 
                 {
@@ -8351,7 +8347,6 @@ simplifyCoreTree (PFcnode_t *c)
                     L(new_node)->type =
                     LL(new_node)->type = LLR(c)->type;
                     *c = *new_node;
-                    simplifyCoreTree (c);
                 }
             }
             /* remove for expression, whose body contains only
@@ -8515,20 +8510,21 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_op, "union")))
             {
-                PFarray_t *funs = PFenv_lookup (PFfun_env,
-                                                (PFqname (PFns_pf,
-                                                          "distinct-doc-order")));
-
-                new_node = PFcore_seq (DL(c), DRL(c));
-                TY(new_node) = *PFty_simplify (PFty_seq (TY(L(new_node)), TY(R(new_node))));
+                if (TY_EQ (TY(DL(c)), PFty_empty ()))
+                    new_node = DRL(c);
+                else if (TY_EQ (TY(DRL(c)), PFty_empty ()))
+                    new_node = DL(c);
+                else
+                {
+                   new_node = PFcore_seq (DL(c), DRL(c));
+                   TY(new_node) = *PFty_simplify (PFty_seq (TY(L(new_node)), TY(R(new_node))));
+                }
 
                 R(D(c)) = PFcore_nil ();
                 TY(R(D(c))) = PFty_none ();
                 L(D(c)) = new_node;
                 TY(L(D(c))) = TY(new_node);
-                c->sem.fun = *((PFfun_t **) PFarray_at (funs, 0));
-
-                simplifyCoreTree (c);
+                c->sem.fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
             }
             /* concatentation with empty string not needed */
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"concat")) &&
@@ -8551,10 +8547,18 @@ simplifyCoreTree (PFcnode_t *c)
                      PFty_subtype (RR(DL(c))->type,
                                    PFty_empty ()))
             {
-                c->sem.fun = PFcore_function (PFqname (PFns_fn, "not"));
-                DL(c) = L(DL(c));
-                D(c)->type = DL(c)->type;
-                simplifyCoreTree (c);
+                if (L(DL(c))->kind == c_apply &&
+                     !PFqname_eq(L(DL(c))->sem.fun->qname,
+                                 PFqname (PFns_fn,"not")))
+                {
+                    *c = *DL(L(DL(c)));
+                }
+                else
+                {
+                    c->sem.fun = PFcore_function (PFqname (PFns_fn, "not"));
+                    DL(c) = L(DL(c));
+                    D(c)->type = DL(c)->type;
+                }
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
                      DL(c)->kind == c_if &&
@@ -8580,15 +8584,26 @@ simplifyCoreTree (PFcnode_t *c)
                         opt_expected = expected;
  
                     if (PFty_subtype (opt_expected, PFty_atomic ()) &&
-                        !TY_EQ (L(c)->type, expected))
+                        !TY_EQ (L(c)->type, expected) &&
+                        !TY_EQ (L(c)->type, opt_expected))
                     {
-                        L(c) = PFcore_seqcast (PFcore_seqtype (expected), L(c));
-                        /* type new code, to avoid multiple casts */
-                        c->type     =
-                        L(c)->type  =
-                        LL(c)->type = expected;
+                        if (TY_EQ (opt_expected, PFty_atomic ()))
+                            /* avoid dummy casts */ ;
+                        else if (L(c)->kind == c_seqcast)
+                        {
+                            TY(L(c))  =
+                            TY(LL(c)) =
+                            LL(c)->sem.type = expected;
+                        }
+                        else
+                        {
+                            L(c) = PFcore_seqcast (PFcore_seqtype (expected), L(c));
+                            /* type new code, to avoid multiple casts */
+                            c->type     =
+                            L(c)->type  =
+                            LL(c)->type = expected;
+                        }
                     }
-                    simplifyCoreTree (L(c));
                 }
             }
             break;
@@ -8656,12 +8671,22 @@ simplifyCoreTree (PFcnode_t *c)
             /* we want to avoid comparison between different types */
             if (input_type.type == ty_choice)
             {
-                L(c) = PFcore_seqcast (PFcore_seqtype (PFty_string()), L(c));
-                /* type new code, to avoid multiple casts */
-                c->type     =
-                L(c)->type  =
-                LL(c)->type = PFty_string ();
-                simplifyCoreTree (L(c));
+                if (TY_EQ (opt_expected, PFty_atomic ()))
+                    /* avoid dummy casts */ ;
+                else if (L(c)->kind == c_seqcast)
+                {
+                    TY(L(c))  =
+                    TY(LL(c)) =
+                    LL(c)->sem.type = expected;
+                }
+                else
+                {
+                    L(c) = PFcore_seqcast (PFcore_seqtype (PFty_string()), L(c));
+                    /* type new code, to avoid multiple casts */
+                    c->type     =
+                    L(c)->type  =
+                    LL(c)->type = PFty_string ();
+                }
             }
             break;
         default: 
