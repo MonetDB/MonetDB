@@ -26,6 +26,9 @@
 #include        <config.h>
 #include	<stdio.h>
 #include	<ctype.h>
+#ifdef HAVE_UNISTD_H
+#include	<unistd.h>
+#endif
 
 #include	"Mx.h"
 #include	"MxFcnDef.h"
