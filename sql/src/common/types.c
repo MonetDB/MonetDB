@@ -316,7 +316,7 @@ void sqltypeinit()
 	/*
 	pair dates[]= {
 		{"MONTH_INTERVAL",	"int"}, 
-		{"SEC_INTERVAL",	"int"}, 
+		{"SEC_INTERVAL",	"lng"}, 
 		{"DATE",		"date"}, 
 		{"TIME",		"time"}, 
 		{"TIMESTAMP",		"timestamp"}, 
@@ -334,7 +334,7 @@ void sqltypeinit()
 		{"dbl",	"flt"}, 
 		{"dbl",	"dbl"}, 
 		{"MONTH_INTERVAL",	"int"}, 
-		{"SEC_INTERVAL",	"int"}, 
+		{"SEC_INTERVAL",	"lng"}, 
 		{"DATE",		"date"}, 
 		{"TIME",		"time"}, 
 		{"TIMESTAMP",		"timestamp"}, 
@@ -410,7 +410,7 @@ void sqltypeinit()
 
 
 	sql_type_cmd("MONTH_INTERVAL", 0, 0, 10, 	"int");
-	sql_type_cmd("SEC_INTERVAL", 0, 0, 10, 		"int");
+	sql_type_cmd("SEC_INTERVAL", 0, 0, 10, 		"lng");
 	sql_type_cmd("DATE", 0, 0, 0, 			"date");
 	sql_type_cmd("TIME", 0, 0, 0, 			"time");
 	sql_type_cmd("DATETIME", 0, 0, 0, 		"datetime");
@@ -496,10 +496,10 @@ void sqltypeinit()
 	sql_func_cmd( "current_time", "current_time", "", "", "" , "time" );
 	sql_func_cmd( "current_timestamp", "current_timestamp", "", "", "" , "timestamp" );
 
-	sql_func_cmd( "sql_sub", "date_sub_sec_interval", "date", "int", "", "date");
+	sql_func_cmd( "sql_sub", "date_sub_sec_interval", "date", "lng", "", "date");
 	sql_func_cmd( "sql_sub", "date_sub_month_interval", "date", "int", "", "date");
 
-	sql_func_cmd( "sql_add", "date_add_sec_interval", "date", "int", "", "date");
+	sql_func_cmd( "sql_add", "date_add_sec_interval", "date", "lng", "", "date");
 	sql_func_cmd( "sql_add", "addmonths", "date", "int", "", "date");
 
 	sql_func_cmd( ">", ">", "date", "date", "", "bit");
