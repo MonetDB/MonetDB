@@ -76,7 +76,19 @@
 #include <sys/types.h>
 #endif
 
+#include <limits.h>
+
+/**
+ * Monet's representation of oid(nil) 
+ *
+ */
+#if (SIZEOF_VOID_P==8)
+typedef unsigned long long nat;
+#define NIL ((nat) LLONG_MIN)
+#else
 typedef unsigned int nat;
+#define NIL INT_MIN
+#endif
 
 /**
  * next preorder rank to assign
@@ -98,11 +110,6 @@ nat attval_id;
  */
 int prop_postorder = 0;
 
-/**
- * Monet's representation of oid(nil) 
- *
- */
-#define NIL (1 << ((SIZEOF_VOID_P<<3)-1))
 
 /**
  * XML node kinds
@@ -1265,7 +1272,7 @@ main (int argc, char *argv[])
                     "     -c: compress node properties (40%% encoding speed)\n"
 #endif
                     "     -d: set XML node stack depth to <n> (default %d)\n"
-                    "     -p: generate pre table in post-order\n",
+                    "     -p: generate pre table in post-order\n"
                     "     -o: write relations to OUTPUT.<rel> instead of FILE.<rel>\n"
                     "         (mandatory if we read from stdin)\n"
                     "         <rel> = { pre,qn,text,com,pi,@,@val }\n\n",
