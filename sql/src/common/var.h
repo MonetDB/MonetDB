@@ -6,14 +6,12 @@
 typedef struct tvar {
 	list *columns;
 	struct stmt *s;
-	struct table *t;
 	char *tname;
 	int refcnt;
 } tvar;
 
 typedef struct cvar {
 	struct stmt *s;
-	struct column *c;
 	tvar *table;
 	char *tname;
 	char *cname;

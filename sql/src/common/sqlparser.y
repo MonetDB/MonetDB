@@ -15,8 +15,7 @@
 #define _symbol_create_list(t,d)    symbol_create_list( (context*)parm, t, d)
 #define _symbol_create_int(t,d)     symbol_create_int( (context*)parm, t, d)
 #define _symbol_create_symbol(t,d)  symbol_create_symbol( (context*)parm, t, d)
-#define _symbol_create_atom(t,d)    symbol_create_atom( (context*)parm, t, d)
-#define _symbol_init(s,t)    	    symbol_init( s, (context*)parm, t)
+#define _newAtomNode(d)		    newAtomNode( (context*)parm, d)
 
 extern int parse_error(void *lc, char *s);
 
@@ -625,9 +624,9 @@ default_value:
  |  USER     
 		{  sql_subtype t; t.size = t.digits = 0;
 		   t.type = sql_bind_type("STRING" ); 
-		   $$ = _symbol_create_atom( SQL_ATOM, atom_string(&t, $1)); }
+		   $$ = _newAtomNode( atom_string(&t, $1)); }
  |  NULLX 	
-		{ $$ = _symbol_create_atom( SQL_ATOM, NULL);  }
+		{ $$ = _newAtomNode( NULL);  }
  ;
 	
 column_constraint:
@@ -1080,20 +1079,14 @@ simple_select:
     SELECT opt_distinct selection opt_into
            table_exp opt_order_by_clause
 
-	{ SelectNode *sn = NEW(SelectNode);
-	  sn->distinct = $2;
-	  sn->selection = $3;
-	  sn->into = $4;
-	  sn->from = $5->h->data.sym;
-	  sn->where = $5->h->next->data.sym;
-	  sn->groupby = $5->h->next->next->data.sym;
-	  sn->having = $5->h->next->next->next->data.sym;
-	  sn->orderby = $6;
-	  sn->name = NULL;
-
-	  $$ = (symbol*)sn;
-	  /* a destroy of the $5 is needed, without data destruction */
-	  _symbol_init($$, SQL_SELECT); }
+	{ $$ = newSelectNode( (context*)parm, $2, $3, $4, 
+	  	$5->h->data.sym,
+	  	$5->h->next->data.sym,
+	  	$5->h->next->next->data.sym,
+	  	$5->h->next->next->next->data.sym,
+	  	$6, NULL);
+	  dlist_destroy_keep_data($5);
+	}
 
  |  select_clause UNION opt_all select_clause
 
@@ -1373,18 +1366,14 @@ existence_test:
 subquery:
     '(' SELECT opt_distinct  selection table_exp ')' 
 
-	{ SelectNode *sn = NEW(SelectNode);
-	  sn->distinct = $3;
-	  sn->selection = $4;
-	  sn->into = NULL;
-	  sn->from = $5->h->data.sym;
-	  sn->where = $5->h->next->data.sym;
-	  sn->groupby = $5->h->next->next->data.sym;
-	  sn->having = $5->h->next->next->next->data.sym;
-	  sn->orderby = NULL;
-	  $$ = (symbol*)sn;
-	  /* a destroy of the $5 is needed, without data destruction */
-	  _symbol_init($$, SQL_SELECT); }
+	{ $$ = newSelectNode( (context*)parm, $3, $4, NULL, 
+	  	$5->h->data.sym,
+	  	$5->h->next->data.sym,
+	  	$5->h->next->next->data.sym,
+	  	$5->h->next->next->next->data.sym,
+	  	NULL, NULL);
+	  dlist_destroy_keep_data($5);
+	}
  ;
 
 	/* scalar expressions */
@@ -1455,10 +1444,10 @@ string_funcs:
 				  t.type = sql_bind_type("INTEGER");
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_symbol(l, $3);
-  		  		  dlist_append_symbol(l, _symbol_create_atom(
-					SQL_ATOM, atom_int(&t, $5 -1 )));
-  		  		  dlist_append_symbol(l, _symbol_create_atom(
-					SQL_ATOM, atom_int(&t, $7 )));
+  		  		  dlist_append_symbol(l, _newAtomNode(
+					atom_int(&t, $5 -1 )));
+  		  		  dlist_append_symbol(l, _newAtomNode(
+					atom_int(&t, $7 )));
 		  		  $$ = _symbol_create_list( SQL_TRIOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
@@ -1497,7 +1486,7 @@ atom:
  |  USER     
 		{  sql_subtype t; t.size = t.digits = 0;
 		   t.type = sql_bind_type("STRING" ); 
-		   $$ = _symbol_create_atom( SQL_ATOM, atom_string(&t, $1)); }
+		   $$ = _newAtomNode( atom_string(&t, $1)); }
  ;
 
 /* change to set function */
@@ -1607,33 +1596,31 @@ literal:
     STRING   
 		{  sql_subtype t; t.size = t.digits = 0;
 		   t.type = sql_bind_type("STRING" ); 
-		   $$ = _symbol_create_atom( SQL_ATOM, atom_string(&t, $1)); }
+		   $$ = _newAtomNode( atom_string(&t, $1)); }
  |  intval   
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type("INTEGER" );
-		  $$ = _symbol_create_atom( SQL_ATOM, atom_int(&t, $1)); }
+		  $$ = _newAtomNode( atom_int(&t, $1)); }
  |  INTNUM   
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type("FLOAT" );
-		  $$ = _symbol_create_atom( SQL_ATOM, 
-		    atom_float(&t, strtod($1,&$1))); }
+		  $$ = _newAtomNode( atom_float(&t, strtod($1,&$1))); }
  |  APPROXNUM
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type("DOUBLE" );
-		  $$ = _symbol_create_atom( SQL_ATOM, 
-		    atom_float(&t, strtod($1,&$1))); }
+		  $$ = _newAtomNode( atom_float(&t, strtod($1,&$1))); }
  |  DATE STRING 
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type("DATE" );
-		  $$ = _symbol_create_atom( SQL_ATOM, atom_general(&t, $2)); }
+		  $$ = _newAtomNode( atom_general(&t, $2)); }
  |  TIME STRING 
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type("TIME" );
-		  $$ = _symbol_create_atom( SQL_ATOM, atom_general(&t, $2)); }
+		  $$ = _newAtomNode( atom_general(&t, $2)); }
  |  TIMESTAMP STRING 
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type("TIMESTAMP" );
-		  $$ = _symbol_create_atom( SQL_ATOM, atom_general(&t, $2)); }
+		  $$ = _newAtomNode( atom_general(&t, $2)); }
  |  INTERVAL opt_sign STRING interval_qualifier
 		{ context *lc = (context*)parm;
 	  	  int i,tpe;
@@ -1647,24 +1634,22 @@ literal:
 			} else {
 				t.type = sql_bind_type("SEC_INTERVAL");
 			}
-	  		$$ = _symbol_create_atom( SQL_ATOM, atom_int(&t,i));
+	  		$$ = _newAtomNode( atom_int(&t,i));
 	  	  }
 		}
  |  TYPE STRING 
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type($1);
-		  $$ = _symbol_create_atom( SQL_ATOM, atom_general(&t, $2)); 
+		  $$ = _newAtomNode( atom_general(&t, $2)); 
 	  	  _DELETE($1); }
  |  BOOL_FALSE  
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type("BOOL" );
-		  $$ = _symbol_create_atom( SQL_ATOM, 
-		  	atom_general(&t, "false")); }
+		  $$ = _newAtomNode( atom_general(&t, "false")); }
  |  BOOL_TRUE  
 		{ sql_subtype t; t.size = t.digits = 0;
 		  t.type = sql_bind_type("BOOL" );
-		  $$ = _symbol_create_atom( SQL_ATOM, 
-			atom_general(&t, "true")); }
+		  $$ = _newAtomNode( atom_general(&t, "true")); }
  ;
 
 	/* miscellaneous */

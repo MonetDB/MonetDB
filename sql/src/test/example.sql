@@ -9,4 +9,4 @@ select * from example;
 
 select * from example_view;
 
--- drop view example_view;
+--- drop view example_view;

@@ -27,10 +27,12 @@ void sql_init_context(context * lc, stream * out, int debug, catalog * cat)
 	lc->lineno = 1;
 	lc->sym = NULL;
 	lc->cat = cat;
+	lc->status = 0;
 	lc->errstr[0] = '\0';
 
 	lc->yyval = 0;
 	lc->yytext = NEW_ARRAY(char, BUFSIZ);
+	lc->yytext[0] = 0;
 	lc->yylen = 0;
 	lc->yysize = BUFSIZ;
 
@@ -47,6 +49,7 @@ void sql_exit_context(context * lc)
 	lc->out->close(lc->out);
 	lc->out->destroy(lc->out);
 	catalog_destroy(lc->cat);
+	lc->cat = NULL;
 	exit_keywords();
 
 	if (lc->sql != NULL)
@@ -66,7 +69,7 @@ stmt *sqlnext(context * lc, stream * in, int *err)
 
 	if (lc->cur != EOF && !(*err = sqlparse(lc))) {
 		res = semantic(lc, lc->sym);
-		if (!res && lc->errstr[0]){
+		if (!res && lc->status){
 			*err = 1;
 		}
 	}

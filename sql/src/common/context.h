@@ -26,6 +26,7 @@ typedef struct context {
 	stream *in;
 	stream *out;
 
+	int status; 	/* sql error code */
 	char errstr[ERRSIZE];
 	struct catalog *cat;
 

@@ -8,7 +8,6 @@
 typedef union symbdata {
 	int ival;
 	char *sval;
-	struct atom *aval;
 	struct dlist *lval;
 	struct symbol *sym;
 	struct sql_subtype *typeval;
@@ -29,13 +28,13 @@ typedef struct dlist {
 
 extern dlist *dlist_create();
 extern void dlist_destroy(dlist * l);
+extern void dlist_destroy_keep_data(dlist * l);
 extern int dlist_length(dlist * l);
 
 extern dlist *dlist_append_string(dlist * l, char *data);
 extern dlist *dlist_append_list(dlist * l, dlist * data);
 extern dlist *dlist_append_int(dlist * l, int data);
 extern dlist *dlist_append_symbol(dlist * l, struct symbol *data);
-extern dlist *dlist_append_atom(dlist * l, struct atom *data);
 
 typedef struct symbol {
 	int lineno;
@@ -91,8 +90,11 @@ extern symbol *symbol_create_list(struct context *c, int token,
 extern symbol *symbol_create_int(struct context *c, int token, int data);
 extern symbol *symbol_create_symbol(struct context *c, int token,
 				    symbol * data);
-extern symbol *symbol_create_atom(struct context *c, int token,
-				  atom * data);
 extern void symbol_destroy(symbol * sym);
+
+extern symbol *newSelectNode( struct context* c, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name);
+
+extern symbol *newAtomNode( struct context *c, atom *a );
+
 
 #endif				/*SYMBOL_H */

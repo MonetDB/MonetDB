@@ -20,10 +20,10 @@ select * from t1,t2;
 select t1.id,t2.id from t1,t2 where t1.id<>t2.id;
 select t1.id,t2.id from t1,t2 where t1.id>t2.id;
 
-#doesn't work (and should, assuming ids are unique)
+#does not work (and should, assuming ids are unique)
 select t1.id, (select t2.id from t2 where t1.id=t2.id) from t1;
 
-#but this one does, yet wrong:) (and't it shouldn't work at all)
+# As the sub-select returns a single value (3), no error occures
 select t1.id, (select t2.id from t2 where t2.id>2) from t1;
 
 #Return only columns from first table

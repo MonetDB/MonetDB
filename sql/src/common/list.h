@@ -50,7 +50,7 @@ extern list *list_select(list * l, void *key, fcmp cmp, fdup dup );
 extern list *list_distinct(list * l, fcmp cmp, fdup dup ); 
 extern void *list_reduce(list * l, freduce red, fdup dup );
 
-extern list *list_copy(list * l, fdup dup);
+extern list *list_dup(list * l, fdup dup);
 extern list *list_merge(list * l, list * data, fdup dup);
 
 #endif				/* LIST_H */

@@ -396,7 +396,7 @@ int handle_error(context * lc)
 {
 	switch (lc->cur) {
 	case EOF:
-		snprintf(lc->errstr, ERRSIZE, _("Unexpected end of file"));
+		(void)sql_error( lc, 1, "Unexpected end of file");
 		break;
 	}
 	return -1;
@@ -565,8 +565,7 @@ int number(context * lc, int len)
 			return context_yychar(lc, yytext[0]);
 		}
 	} else {
-		snprintf(lc->errstr, ERRSIZE, _("Unexpected symbol %c"),
-			 lc->cur);
+		(void)sql_error( lc, 2, "Unexpected symbol %c", lc->cur);
 		return -1;
 	}
 	lc->yytext = yytext;
@@ -664,7 +663,7 @@ int lex_symbol(context * lc)
 			return context_yy2char(lc, cur, CONCATSTRING);
 		}
 	}
-	snprintf(lc->errstr, ERRSIZE, _("Unknown symbol %c"), lc->cur);
+	(void)sql_error( lc, 3, "Unexpected symbol %c", lc->cur);
 	return -1;
 }
 
@@ -730,9 +729,8 @@ int sqllex(YYSTYPE * yylval, void *parm)
 
 int parse_error(context * lc, char *err)
 {
-	snprintf(lc->errstr, ERRSIZE,
+	(void)sql_error( lc, 4, 
 		 "%s(%d) %s at token (%d): %s\n in statement: %s",
-		 lc->filename, lc->lineno, err, lc->yyval, lc->yytext,
-		 lc->sql);
+		 lc->filename, lc->lineno, err, lc->yyval, lc->yytext, lc->sql);
 	return 1;
 }

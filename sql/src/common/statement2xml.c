@@ -165,9 +165,8 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 			FXNODE;
 		} else {
 		  	len += snprintf( buf+len, BUFSIZ, 
-			"s%d := mvc_create_table(myc, %ld, %ld, \"%s\", %s);\n",
-		   	s->nr, t->id, t->schema->id, t->name, 
-		   		(t->temp==0)?"false":"true" );
+			"s%d := mvc_create_table(myc, %ld, %ld, \"%s\", %d);\n",
+		   	s->nr, t->id, t->schema->id, t->name, t->type );
 			XNODE("mvc_create_table");
 				xml_field("name", "%s", t->name);
 			FXNODE;
@@ -673,8 +672,8 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 		}
 		FXNODE;
 	} break;
-	case st_name: 
-		XNODE("name");
+	case st_alias: 
+		XNODE("alias");
 		s->nr = stmt2xml( s->op1.stval, nr, sql );
 		FXNODE;
 		break;

@@ -3,7 +3,7 @@
 #include "mem.h"
 #include "scope.h"
 
-static void destroy_cvar(cvar *cv) 
+static void cvar_destroy(cvar *cv) 
 {
 	--cv->refcnt;
 	if (cv->refcnt <= 0) {
@@ -17,7 +17,7 @@ static void destroy_cvar(cvar *cv)
 	}
 }
 
-static void destroy_tvar(tvar *v){
+void tvar_destroy(tvar *v){
 	--v->refcnt;
 	if (v->refcnt <= 0) {
 		list_destroy(v->columns);
@@ -29,7 +29,7 @@ static void destroy_tvar(tvar *v){
 	}
 }
 
-static void destroy_var(var * v)
+static void var_destroy(var * v)
 {
 	--v->refcnt;
 	if (v->refcnt <= 0) {
@@ -44,9 +44,9 @@ static void destroy_var(var * v)
 scope *scope_open(scope * p)
 {
 	scope *s = NEW(scope);
-	s->tables = list_create((fdestroy)&destroy_tvar);
-	s->aliases = list_create((fdestroy)&destroy_var);
-	s->lifted = list_create((fdestroy)&destroy_cvar);
+	s->tables = list_create((fdestroy)&tvar_destroy);
+	s->aliases = list_create((fdestroy)&var_destroy);
+	s->lifted = list_create((fdestroy)&cvar_destroy);
 	s->p = p;
 	return s;
 }
@@ -61,14 +61,11 @@ scope *scope_close(scope * s)
 	return p;
 }
 
-cvar *table_add_column(tvar * t, column *c, stmt * s, 
+cvar *table_add_column(tvar * t, stmt * s, 
 		char *tname, char *cname)
 {
 	cvar *v = NEW(cvar);
-	v->c = c;
-	v->s = s; if (s) st_attache(s, NULL);
-	/* dirty hack: fix the ref to the base table */
-	s->h = t; t->refcnt++;
+	v->s = s; 
 	v->table = t;
 	assert((!tname || strlen(tname)));
 
@@ -79,14 +76,13 @@ cvar *table_add_column(tvar * t, column *c, stmt * s,
 	return v;
 }
 
-tvar *scope_add_table(scope * scp, table * t, stmt *s, char *tname)
+tvar *scope_add_table(scope * scp, stmt *s, char *tname)
 {
 	tvar *v = NEW(tvar);
-	v->t = t;
-	v->s = s; if (s) st_attache(s, NULL);
-	v->columns = list_create((fdestroy)&destroy_cvar);
+	v->s = s; 
+	v->columns = list_create((fdestroy)&cvar_destroy);
 	assert((!tname || strlen(tname)));
-	v->tname = (tname) ? _strdup(tname) : NULL;
+	v->tname = _strdup(tname);
 	v->refcnt = 1;
 	list_append(scp->tables, v);
 	return v;
@@ -95,7 +91,7 @@ tvar *scope_add_table(scope * scp, table * t, stmt *s, char *tname)
 var *scope_add_alias(scope * scp, stmt * s, char *name)
 {
 	var *v = NEW(var);
-	v->s = s; if (s) st_attache(s, NULL);
+	v->s = s; 
 	v->name = _strdup(name);
 	v->refcnt = 1;
 	list_append(scp->aliases, v);
@@ -250,10 +246,10 @@ stmt *scope_bind(scope * scp, char *tname, char *cname)
 	cvar *c = scope_bind_column( scp, tname, cname );
 	if (!c && !tname){
 		var *a = scope_bind_alias( scp, cname );
-		if (a) return a->s;
+		if (a) return stmt_dup(a->s);
 		return NULL;
 	}
-	if (c) return c->s;
+	if (c) return stmt_dup(c->s);
 	return NULL;
 }
 

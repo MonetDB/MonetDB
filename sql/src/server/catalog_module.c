@@ -35,9 +35,9 @@ static void getschemas( catalog *c, char *schema, char *user ){
 	    for(n = ns->tables->h; n; n = n->next){
 		sql_table *nt = n->data;
 
-		if (!nt->view){
+		if (nt->type != tt_view ){
 			node *m;
-	      		table *t = cat_create_table( c, nt->id, c->cur_schema, nt->name, nt->temp, NULL );
+	      		table *t = cat_create_table( c, nt->id, c->cur_schema, nt->name, nt->type, NULL );
 			for (m = nt->columns->h; m; m = m->next ){
 				sql_column *col = m->data;
 		  		column *cx = cat_create_column( c, col->id, t, col->name, 
@@ -73,7 +73,8 @@ static void getschemas( catalog *c, char *schema, char *user ){
 				}
 			}
 		} else {
-	      		sqlexecute( lc, nt->query );
+	      		stmt *s = sqlexecute( lc, nt->query );
+			stmt_destroy(s);
 		}
 	    }
 	}

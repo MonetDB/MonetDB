@@ -5,21 +5,6 @@
 
 /* todo make proper traversal operations */
 
-void st_attache(stmt * st, stmt * user)
-{
-	if (user)
-		list_append(st->uses, user);
-	st->refcnt++;
-}
-
-
-void st_detach(stmt * st, stmt * user)
-{
-	if (user)
-		list_remove_data(st->uses, user);
-	stmt_destroy(st);
-}
-
 static stmt *stmt_create()
 {
 	stmt *s = NEW(stmt);
@@ -34,7 +19,6 @@ static stmt *stmt_create()
 	s->h = NULL;
 	s->t = NULL;
 	s->refcnt = 1;
-	s->uses = list_create((fdestroy)&stmt_destroy);
 	return s;
 }
 
@@ -44,10 +28,9 @@ static stmt *stmt_ext( stmt *grp )
 
 	ns->type = st_group_ext;
 	ns->op1.stval = grp;
-	st_attache(grp, ns);
 	ns->nrcols = grp->nrcols;
 	ns->key = 1;
-	ns->t = grp->t;
+	ns->t = stmt_dup(grp->t);
 	return ns;
 }
 
@@ -56,10 +39,9 @@ static stmt *stmt_group(stmt * s)
 	stmt *ns = stmt_create();
 	ns->type = st_group;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	ns->nrcols = s->nrcols;
 	ns->key = 0;
-	ns->t = s->t;
+	ns->t = stmt_dup(s->t);
 	return ns;
 }
 
@@ -68,12 +50,10 @@ static stmt *stmt_derive(stmt * s, stmt * t)
 	stmt *ns = stmt_create();
 	ns->type = st_derive;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	ns->op2.stval = t;
-	st_attache(t, ns);
 	ns->nrcols = s->nrcols;
 	ns->key = 0;
-	ns->t = s->t;
+	ns->t = stmt_dup(s->t);
 	return ns;
 }
 
@@ -87,24 +67,28 @@ void grp_destroy( group * g)
 {
 	assert(g->refcnt > 0);
 	if (--g->refcnt == 0) {
-		st_detach(g->grp, NULL);
-		st_detach(g->ext, NULL);
+		stmt_destroy(g->grp);
+		stmt_destroy(g->ext);
 		_DELETE(g);
 	}
+}
+
+group *grp_dup( group * g) 
+{
+	if (g) g->refcnt++;
+	return g;
 }
 
 group *grp_create( stmt *s, group *og )
 {
 	group *g = NEW(group);
 	if (og){
-		g->grp = stmt_derive(og->grp, s);
-		st_attache(g->grp, NULL);
+		g->grp = stmt_derive(stmt_dup(og->grp), s);
+		grp_destroy(og);
 	} else {
 		g->grp = stmt_group(s);
-		st_attache(g->grp, NULL);
 	}
-	g->ext = stmt_ext(g->grp);
-	st_attache(g->ext, NULL);
+	g->ext = stmt_ext(stmt_dup(g->grp));
 	g->refcnt = 1;
 	return g;
 }
@@ -117,11 +101,10 @@ static stmt *stmt_semijoin_tail( stmt *op1, stmt *op2 )
 group *grp_semijoin( group *og, stmt *s )
 {
 	group *g = NEW(group);
-	g->grp = stmt_semijoin_tail(og->grp,s);
-	st_attache(g->grp, NULL);
-	g->ext = stmt_semijoin(og->ext,s);
-	st_attache(g->ext, NULL);
+	g->grp = stmt_semijoin_tail(stmt_dup(og->grp),s);
+	g->ext = stmt_semijoin(stmt_dup(og->ext),stmt_dup(s));
 	g->refcnt = 1;
+	grp_destroy(og);
 	return g;
 }
 
@@ -141,17 +124,19 @@ void stmt_destroy(stmt * s)
 		case st_group_ext:
 		case st_order:
 		case st_unop:
-		case st_name:
 		case st_output:
 		case st_result:
-			st_detach(s->op1.stval, s);
+			stmt_destroy(s->op1.stval);
 			break;
+		case st_alias:
+		case st_column_alias:
 		case st_drop_table:
-			st_detach(s->op1.stval, s);
+			stmt_destroy(s->op1.stval);
 			_DELETE(s->op2.sval);
+			if (s->op3.sval) _DELETE(s->op3.sval);
 			break;
 		case st_exists:
-			st_detach(s->op1.stval, s);
+			stmt_destroy(s->op1.stval);
 			list_destroy(s->op2.lval);
 			break;
 			/* stmt_destroy  op1 and op2 */
@@ -171,32 +156,32 @@ void stmt_destroy(stmt * s)
 		case st_insert:
 		case st_replace:
 		case st_add_col:
-			st_detach(s->op1.stval, s);
-			st_detach(s->op2.stval, s);
+			stmt_destroy(s->op1.stval);
+			stmt_destroy(s->op2.stval);
 			break;
 		case st_create_key:
 			if (s->op2.stval)
-				st_detach(s->op2.stval, s);
+				stmt_destroy(s->op2.stval);
 			break;
 		case st_delete:
 			if (s->op2.stval)
-				st_detach(s->op2.stval, s);
+				stmt_destroy(s->op2.stval);
 			break;
 		case st_mark:
 		case st_unique:
-			st_detach(s->op1.stval, s);
+			stmt_destroy(s->op1.stval);
 			if (s->op2.gval)
 				grp_destroy(s->op2.gval);
 			break;
 		case st_select:
 		case st_select2:
-			st_detach(s->op1.stval, s);
-			st_detach(s->op2.stval, s);
+			stmt_destroy(s->op1.stval);
+			stmt_destroy(s->op2.stval);
 			if (s->op3.stval)
-				st_detach(s->op3.stval, s);
+				stmt_destroy(s->op3.stval);
 			break;
 		case st_aggr:
-			st_detach(s->op1.stval, s);
+			stmt_destroy(s->op1.stval);
 			if (s->op3.gval)
 				grp_destroy(s->op3.gval);
 			break;
@@ -218,8 +203,10 @@ void stmt_destroy(stmt * s)
 			atom_destroy(s->op1.aval);
 			break;
 
-		case st_schema: case st_create_schema: case st_drop_schema:
 		case st_bat:
+		case st_ubat:
+
+		case st_schema: case st_create_schema: case st_drop_schema:
 
 		case st_none:
 			break;
@@ -241,7 +228,10 @@ void stmt_destroy(stmt * s)
 			if (s->op2.sval) _DELETE(s->op2.sval);
 			break;
 		}
-		list_destroy(s->uses);
+		if (s->h) 
+			stmt_destroy(s->h);
+		if (s->t) 
+			stmt_destroy(s->t);
 		_DELETE(s);
 	}
 }
@@ -256,8 +246,8 @@ void stmt_reset( stmt *s ){
 		/* stmt_reset  op1 */
 	case st_not_null: case st_reverse: case st_count: 
 	case st_group: case st_group_ext: 
-	case st_order: case st_unop: case st_name: case st_output: 
-	case st_result: case st_exists: 
+	case st_order: case st_unop: case st_alias: case st_column_alias:
+	case st_output: case st_result: case st_exists: 
 	case st_table: case st_create_table: case st_drop_table: 
 
 		stmt_reset(s->op1.stval);
@@ -330,8 +320,6 @@ void stmt_reset( stmt *s ){
 	case st_atom: case st_none: case st_copyfrom:
 		break;
 	}
-	for (n = s->uses->h; n; n = n->next)
-		stmt_reset( n->data );
 }
 
 
@@ -377,21 +365,19 @@ stmt *stmt_bind_table(stmt *schema, table * t)
 	stmt *s = stmt_create();
 	s->type = st_table;
 	s->op1.stval = schema;
-	st_attache(schema, s);
 	s->op2.tval = t;
 	return s;
 }
 
+/* split in two parts */
 stmt *stmt_bind_column(stmt *table, column * c)
 {
 	stmt *s = c->s;
 	if (s){
-		st_attache(s, NULL);
 	} else {
 		s = stmt_create();
 		s->type = st_column;
 		s->op1.stval = table;
-		st_attache(table, s);
 		s->op2.cval = c;
 	}
 	return s;
@@ -402,7 +388,6 @@ stmt *stmt_bind_key(stmt *table, key * k)
 	stmt *s = stmt_create();
 	s->type = st_key;
 	s->op1.stval = table;
-	st_attache(table, s);
 	s->op2.kval = k;
 	return s;
 }
@@ -429,7 +414,6 @@ stmt *stmt_create_table(stmt *schema, table * t)
 	stmt *s = stmt_create();
 	s->type = st_create_table;
 	s->op1.stval = schema;
-	st_attache(schema, s);
 	s->op2.tval = t;
 	return s;
 }
@@ -439,7 +423,6 @@ stmt *stmt_drop_table(stmt * schema, char *name, int drop_action)
 	stmt *s = stmt_create();
 	s->type = st_drop_table;
 	s->op1.stval = schema;
-	st_attache(schema, s);
 	s->op2.sval = _strdup(name);
 	s->flag = drop_action;
 	return s;
@@ -450,7 +433,6 @@ stmt *stmt_create_column(stmt *table, column * c)
 	stmt *s = stmt_create();
 	s->type = st_create_column;
 	s->op1.stval = table;
-	st_attache(table, s);
 	s->op2.cval = c;
 	return s;
 }
@@ -460,7 +442,6 @@ stmt *stmt_not_null(stmt * col)
 	stmt *s = stmt_create();
 	s->type = st_not_null;
 	s->op1.stval = col;
-	st_attache(col, s);
 	return s;
 }
 
@@ -469,9 +450,7 @@ stmt *stmt_default(stmt * col, stmt * def)
 	stmt *s = stmt_create();
 	s->type = st_default;
 	s->op1.stval = col;
-	st_attache(col, s);
 	s->op2.stval = def;
-	st_attache(def, s);
 	return s;
 }
 
@@ -482,7 +461,6 @@ stmt *stmt_key( key *k, stmt *rk )
 	s->op1.kval = k; 
 	if (rk){
 		s->op2.stval = rk; 
-		st_attache(rk, s);
 	}
 	return s;
 }
@@ -492,9 +470,7 @@ stmt *stmt_key_add_column( stmt * key, stmt *col )
 	stmt *s = stmt_create();
 	s->type = st_add_col;
 	s->op1.stval = key;
-	st_attache(key, s);
 	s->op2.stval = col;
-	st_attache(col, s);
 	s->flag = ukey;
 	return s;
 }
@@ -533,18 +509,22 @@ stmt *stmt_revoke_role(char *authid, char *role)
 	return s;
 }
 
-stmt *stmt_cbat(column * op1, tvar * basetable, int access, int type)
+stmt *stmt_basetable( table *t )
+{
+	stmt *s = stmt_create();
+	s->type = st_basetable;
+	s->op1.tval = t;
+	return s;
+}
+
+stmt *stmt_cbat(column * op1, stmt * basetable, int access, int type)
 {
 	stmt *s = stmt_create();
 	s->type = type;
 	s->op1.cval = op1;
 	s->nrcols = 1;
 	s->flag = access;
-
-	if (basetable) {
-		s->h = basetable;
-		basetable->refcnt++;
-	}
+	s->h = basetable;
 	return s;
 }
 
@@ -558,27 +538,13 @@ stmt *stmt_tbat(table * t, int access, int type)
 	return s;
 }
 
-stmt *stmt_reverse(stmt * s)
-{
-	stmt *ns = stmt_create();
-	ns->type = st_reverse;
-	ns->op1.stval = s;
-	st_attache(s, ns);
-	ns->nrcols = s->nrcols;
-	ns->key = s->key;
-	ns->h = s->t;
-	ns->t = s->h;
-	return ns;
-}
-
 stmt *stmt_count(stmt * s)
 {
 	stmt *ns = stmt_create();
 	ns->type = st_count;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	ns->nrcols = 0;
-	ns->t = s->t;
+	ns->t = stmt_dup(s->t);
 	return ns;
 }
 
@@ -587,12 +553,10 @@ stmt *stmt_const(stmt * s, stmt * val)
 	stmt *ns = stmt_create();
 	ns->type = st_const;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	ns->op2.stval = val;
-	st_attache(val, ns);
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
-	ns->h = s->h;
+	ns->h = stmt_dup(s->h);
 	return ns;
 }
 
@@ -601,11 +565,10 @@ stmt *stmt_mark(stmt * s, int id)
 	stmt *ns = stmt_create();
 	ns->type = st_mark;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	ns->flag = id;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
-	ns->t = s->t;
+	ns->t = stmt_dup(s->t);
 	return ns;
 }
 
@@ -614,43 +577,38 @@ stmt *stmt_remark(stmt * s, stmt * t, int id)
 	stmt *ns = stmt_create();
 	ns->type = st_mark;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	ns->op2.stval = t;
-	st_attache(t, ns);
 	ns->flag = id;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
-	ns->t = s->t;
+	ns->t = stmt_dup(s->t);
 	return ns;
 }
+
+stmt *stmt_reverse(stmt * s)
+{
+	stmt *ns = stmt_create();
+	ns->type = st_reverse;
+	ns->op1.stval = s;
+	ns->nrcols = s->nrcols;
+	ns->key = s->key;
+	ns->h = stmt_dup(s->t);
+	ns->t = stmt_dup(s->h);
+	return ns;
+}
+
 
 stmt *stmt_unique(stmt * s, group * g)
 {
 	stmt *ns = stmt_create();
 	ns->type = st_unique;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	if (g) {
 		ns->op2.gval = g;
-		g->refcnt++;
 	}
 	ns->nrcols = s->nrcols;
 	ns->key = 1; /* ?? maybe change key to unique ? */
-	ns->t = s->t;
-	return ns;
-}
-
-stmt *stmt_ordered(stmt * order, stmt * res)
-{
-	stmt *ns = stmt_create();
-	ns->type = st_ordered;
-	ns->op1.stval = order;
-	st_attache(order, ns);
-	ns->op2.stval = res;
-	st_attache(res, ns);
-	ns->nrcols = res->nrcols;
-	ns->key = res->key;
-	ns->t = res->t;
+	ns->t = stmt_dup(s->t);
 	return ns;
 }
 
@@ -659,11 +617,10 @@ stmt *stmt_order(stmt * s, int direction)
 	stmt *ns = stmt_create();
 	ns->type = st_order;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	ns->flag = direction;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
-	ns->t = s->t;
+	ns->t = stmt_dup(s->t);
 	return ns;
 }
 
@@ -672,13 +629,11 @@ stmt *stmt_reorder(stmt * s, stmt * t, int direction)
 	stmt *ns = stmt_create();
 	ns->type = st_reorder;
 	ns->op1.stval = s;
-	st_attache(s, ns);
 	ns->op2.stval = t;
-	st_attache(t, ns);
 	ns->flag = direction;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
-	ns->t = s->t;
+	ns->t = stmt_dup(s->t);
 	return ns;
 }
 
@@ -696,13 +651,11 @@ stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype)
 	stmt *s = stmt_create();
 	s->type = st_select;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = op2;
-	st_attache(op2, s);
 	assert(cmptype >= cmp_equal && cmptype <= cmp_gte);
 	s->flag = cmptype;
 	s->nrcols = 1;
-	s->h = s->op1.stval->h;
+	s->h = stmt_dup(s->op1.stval->h);
 	return s;
 }
 
@@ -712,14 +665,11 @@ stmt *stmt_select2(stmt * op1, stmt * op2,
 	stmt *s = stmt_create();
 	s->type = st_select2;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = op2;
-	st_attache(op2, s);
 	s->op3.stval = op3;
-	st_attache(op3, s);
 	s->flag = cmp;
 	s->nrcols = 1;
-	s->h = s->op1.stval->h;
+	s->h = stmt_dup(s->op1.stval->h);
 	return s;
 }
 
@@ -728,12 +678,10 @@ stmt *stmt_like(stmt * op1, stmt * a)
 	stmt *s = stmt_create();
 	s->type = st_like;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = a;
-	st_attache(a, s);
 	s->nrcols = 1;
-	s->h = s->op1.stval->h;
-	s->t = s->op1.stval->t;
+	s->h = stmt_dup(s->op1.stval->h);
+	s->t = stmt_dup(s->op1.stval->t);
 	return s;
 }
 
@@ -742,13 +690,11 @@ stmt *stmt_join(stmt * op1, stmt * op2, comp_type cmptype)
 	stmt *s = stmt_create();
 	s->type = st_join;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = op2;
-	st_attache(op2, s);
 	s->flag = cmptype;
 	s->nrcols = 2;
-	s->h = op1->h;
-	s->t = op2->t;
+	s->h = stmt_dup(op1->h);
+	s->t = stmt_dup(op2->t);
 	return s;
 }
 
@@ -757,13 +703,11 @@ stmt *stmt_outerjoin(stmt * op1, stmt * op2, comp_type cmptype)
 	stmt *s = stmt_create();
 	s->type = st_outerjoin;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = op2;
-	st_attache(op2, s);
 	s->flag = cmptype;
 	s->nrcols = 2;
-	s->h = op1->h;
-	s->t = op2->t;
+	s->h = stmt_dup(op1->h);
+	s->t = stmt_dup(op2->t);
 	return s;
 }
 
@@ -772,105 +716,12 @@ stmt *stmt_semijoin(stmt * op1, stmt * op2)
 	stmt *s = stmt_create();
 	s->type = st_semijoin;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = op2;
-	st_attache(op2, s);
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
-	s->h = op1->h;
-	s->t = op1->t;
+	s->h = stmt_dup(op1->h);
+	s->t = stmt_dup(op1->t);
 	return s;
-}
-
-stmt *stmt_push_down_head(stmt * join, stmt * select){
-	if (join->type == st_join){
-		stmt *op1 = stmt_semijoin(join->op1.stval,select);
-		return stmt_join(op1,join->op2.stval, join->flag);
-	} else if (join->type == st_intersect){
-		return stmt_intersect(
-			stmt_push_down_head(join->op1.stval, select),
-			stmt_push_down_head(join->op2.stval, select)
-				);
-	} else if (join->type == st_reverse){
-		return stmt_reverse(
-			stmt_push_down_tail(join->op1.stval, 
-				stmt_reverse(select)));
-	} else {
-		printf("todo push down head %d\n", join->type);
-	}
-	return join;
-}
-
-stmt *stmt_push_down_tail(stmt * join, stmt * select){
-	if (join->type == st_join){
-		stmt *tail = stmt_reverse(join->op2.stval);
-		stmt *op2 = stmt_reverse(stmt_semijoin(tail,select));
-		return stmt_join(join->op1.stval,op2, join->flag);
-	} else if (join->type == st_intersect){
-		return stmt_intersect(
-			stmt_push_down_tail(join->op1.stval, select),
-			stmt_push_down_tail(join->op2.stval, select)
-				);
-	} else if (join->type == st_reverse){
-		return stmt_reverse(
-			stmt_push_down_head(join->op1.stval, 
-				stmt_reverse(select)));
-	} else {
-		printf("todo push down tail %d\n", join->type);
-	}
-	return join;
-}
-
-stmt *stmt_push_join_head(stmt * s, stmt * join){
-	if (s->type == st_join){
-		stmt *op1 = stmt_join(join,s->op1.stval,cmp_equal);
-		return stmt_join( op1, s->op2.stval, s->flag );
-	} else if (s->type == st_reverse){
-		return stmt_reverse(
-			stmt_push_join_tail(s->op1.stval, stmt_reverse(join)));
-	} else if (s->type == st_intersect){
-		return stmt_intersect(
-			stmt_push_join_head(s->op1.stval, join),
-			stmt_push_join_head(s->op2.stval, join)
-				);
-	} else {
-		printf("todo push join head %d\n", s->type);
-	}
-	return s;
-}
-
-stmt *stmt_push_join_tail(stmt * s, stmt * join){
-	if (s->type == st_join){
-		stmt *op2 = stmt_join(s->op2.stval,join,cmp_equal);
-		return stmt_join( s->op1.stval, op2, s->flag );
-	} else if (s->type == st_reverse){
-		return stmt_reverse(
-			stmt_push_join_head(s->op1.stval, stmt_reverse(join)));
-	} else if (s->type == st_intersect){
-		return stmt_intersect(
-			stmt_push_join_tail(s->op1.stval, join),
-			stmt_push_join_tail(s->op2.stval, join)
-				);
-	} else {
-		printf("todo push join tail %d\n", s->type);
-	}
-	return s;
-}
-
-stmt *stmt_join2select(stmt * j){
-	if (j->type == st_join){
-		return stmt_select(j->op1.stval, 
-				stmt_reverse(j->op2.stval), j->flag);
-	} else if (j->type == st_reverse){
-		return stmt_join2select(j->op1.stval);
-	} else if (j->type == st_intersect){
-		return stmt_semijoin(
-			stmt_join2select(j->op1.stval),
-			stmt_join2select(j->op2.stval));
-	} else {
-		printf("todo join2select %d\n", j->type);
-	}
-	return j;
 }
 
 stmt *stmt_diff(stmt * op1, stmt * op2)
@@ -878,13 +729,11 @@ stmt *stmt_diff(stmt * op1, stmt * op2)
 	stmt *s = stmt_create();
 	s->type = st_diff;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = op2;
-	st_attache(op2, s);
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
-	s->h = op1->h;
-	s->t = op1->t;
+	s->h = stmt_dup(op1->h);
+	s->t = stmt_dup(op1->t);
 	return s;
 }
 
@@ -892,17 +741,16 @@ stmt *stmt_intersect(stmt * op1, stmt * op2)
 {
 	stmt *s = stmt_create();
 	s->type = st_intersect;
-	if (op1->h != op2->h){
-		op2 = stmt_reverse(op2);
-	}
 	s->op1.stval = op1;
-	st_attache(op1, s);
-	s->op2.stval = op2;
-	st_attache(op2, s);
+	if (op1->h != op2->h){
+		s->op2.stval = stmt_reverse(op2);
+	} else {
+		s->op2.stval = op2;
+	}
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
-	s->h = op1->h;
-	s->t = op1->t;
+	s->h = stmt_dup(op1->h);
+	s->t = stmt_dup(op1->t);
 	return s;
 }
 
@@ -911,12 +759,10 @@ stmt *stmt_union(stmt * op1, stmt * op2)
 	stmt *s = stmt_create();
 	s->type = st_union;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = op2;
-	st_attache(op2, s);
 	s->nrcols = op1->nrcols;
-	s->h = op1->h;
-	s->t = op1->t;
+	s->h = stmt_dup(op1->h);
+	s->t = stmt_dup(op1->t);
 	return s;
 }
 
@@ -952,12 +798,32 @@ stmt *stmt_list(list * l)
 	return s;
 }
 
+/* consuming stmt's */
+stmt *stmt_ordered(stmt * order, stmt * res)
+{
+	stmt *ns = stmt_create();
+	ns->type = st_ordered;
+	ns->op1.stval = order;
+	ns->op2.stval = res;
+	ns->nrcols = res->nrcols;
+	ns->key = res->key;
+	ns->t = stmt_dup(res->t);
+	return ns;
+}
+
+stmt *stmt_set(stmt * s1)
+{
+	stmt *s = stmt_create();
+	s->type = st_set;
+	s->op1.lval = list_append(list_create((fdestroy)&stmt_destroy),s1);
+	return s;
+}
+
 stmt *stmt_output(stmt * l)
 {
 	stmt *s = stmt_create();
 	s->type = st_output;
 	s->op1.stval = l;
-	st_attache(l, s);
 	return s;
 }
 
@@ -966,22 +832,6 @@ stmt *stmt_result(stmt * l)
 	stmt *s = stmt_create();
 	s->type = st_result;
 	s->op1.stval = l;
-	st_attache(l, s);
-	return s;
-}
-
-stmt *stmt_dup( stmt * s)
-{
-	st_attache(s, NULL);
-	return s;
-}
-
-stmt *stmt_set(stmt * s1)
-{
-	stmt *s = stmt_create();
-	s->type = st_set;
-	s->op1.lval = list_append(list_create((fdestroy)&stmt_destroy),s1);
-	st_attache(s1,NULL);
 	return s;
 }
 
@@ -998,11 +848,9 @@ stmt *stmt_insert(stmt * c, stmt * a)
 	stmt *s = stmt_create();
 	s->type = st_insert;
 	s->op1.stval = c;
-	st_attache(c, s);
 	s->op2.stval = a;
-	st_attache(a, s);
-	s->h = c->h;
-	s->t = c->t;
+	s->h = stmt_dup(c->h);
+	s->t = stmt_dup(c->t);
 	return s;
 }
 
@@ -1011,10 +859,7 @@ stmt *stmt_replace(stmt * c, stmt * b)
 	stmt *s = stmt_create();
 	s->type = st_replace;
 	s->op1.stval = c;
-	st_attache(c, s);
 	s->op2.stval = b;
-	st_attache(b, s);
-	s->h = NULL;
 	s->nrcols = 1;
 	return s;
 }
@@ -1026,7 +871,6 @@ stmt *stmt_delete(table * t, stmt * where)
 	s->type = st_delete;
 	s->op1.tval = t;
 	s->op2.stval = where;
-	st_attache(where, s);
 	return s;
 }
 
@@ -1035,9 +879,8 @@ stmt *stmt_unop(stmt * op1, sql_func * op)
 	stmt *s = stmt_create();
 	s->type = st_unop;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.funcval = op;
-	s->h = op1->h;
+	s->h = stmt_dup(op1->h);
 	s->nrcols = op1->nrcols;
 	return s;
 }
@@ -1047,16 +890,13 @@ stmt *stmt_binop(stmt * op1, stmt * op2, sql_func * op)
 	stmt *s = stmt_create();
 	s->type = st_binop;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.stval = op2;
-	st_attache(op2, s);
 	s->op3.funcval = op;
 	if (op1->nrcols > op2->nrcols)
-		s->h = op1->h;
+		s->h = stmt_dup(op1->h);
 	else
-		s->h = op2->h;
-	s->nrcols =
-	    (op1->nrcols >= op2->nrcols) ? op1->nrcols : op2->nrcols;
+		s->h = stmt_dup(op2->h);
+	s->nrcols = (op1->nrcols >= op2->nrcols) ? op1->nrcols : op2->nrcols;
 	return s;
 }
 
@@ -1065,16 +905,15 @@ stmt *stmt_triop(stmt * op1, stmt * op2, stmt * op3, sql_func * op)
 	stmt *s = stmt_create();
 	s->type = st_triop;
 	s->op1.lval = list_create((fdestroy)&stmt_destroy);
-	list_append(s->op1.lval, op1); st_attache(op1,NULL);
-	list_append(s->op1.lval, op2); st_attache(op2,NULL);
-	list_append(s->op1.lval, op3); st_attache(op3,NULL);
+	list_append(s->op1.lval, op1); 
+	list_append(s->op1.lval, op2); 
+	list_append(s->op1.lval, op3); 
 	s->op2.funcval = op;
 	if (op1->nrcols > op2->nrcols)
-		s->h = op1->h;
+		s->h = stmt_dup(op1->h);
 	else
-		s->h = op2->h;
-	s->nrcols =
-	    (op1->nrcols >= op2->nrcols) ? op1->nrcols : op2->nrcols;
+		s->h = stmt_dup(op2->h);
+	s->nrcols = (op1->nrcols >= op2->nrcols) ? op1->nrcols : op2->nrcols;
 	return s;
 }
 
@@ -1083,18 +922,17 @@ stmt *stmt_aggr(stmt * op1, sql_aggr * op, group * grp)
 	stmt *s = stmt_create();
 	s->type = st_aggr;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.aggrval = op;
 	if (grp) {
-		s->op3.gval = grp; grp->refcnt++;
+		s->op3.gval = grp; 
 		s->nrcols = 1;
-		s->h = grp->grp->h;
+		s->h = stmt_dup(grp->grp->h);
 		s->key = 1;
 	} else {
 		s->nrcols = 1;	/* aggr's again lead to tables, 
 				   with a single value */
 		s->key = 1;
-		s->h = op1->h;
+		s->h = stmt_dup(op1->h);
 	}
 	return s;
 }
@@ -1104,27 +942,171 @@ stmt *stmt_exists(stmt * op1, list * l)
 	stmt *s = stmt_create();
 	s->type = st_exists;
 	s->op1.stval = op1;
-	st_attache(op1, s);
 	s->op2.lval = l;
-	s->h = op1->h;
+	s->h = stmt_dup(op1->h);
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	return s;
 }
 
-stmt *stmt_name(stmt * op1, char *name)
+stmt *stmt_alias(stmt * op1, char *alias)
 {
 	stmt *s = stmt_create();
-	s->type = st_name;
+	s->type = st_alias;
 	s->op1.stval = op1;
-	st_attache(op1, s);
-	s->op2.sval = _strdup(name);
-	s->h = op1->h;
-	s->t = op1->t;
+	s->op2.sval = _strdup(alias);
+	s->h = stmt_dup(op1->h);
+	s->t = stmt_dup(op1->t);
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	return s;
 }
+
+stmt *stmt_column(stmt * op1, stmt *t, char *tname, char *cname)
+{
+	stmt *s = stmt_create();
+	s->type = st_column_alias;
+	s->op1.stval = op1;
+	s->op2.sval = (tname)? _strdup(tname):NULL;
+	s->op3.sval = (cname)? _strdup(cname):NULL;
+	s->h = t;
+	s->nrcols = 1; 
+	s->key = op1->key;
+	return s;
+}
+
+stmt *stmt_dup( stmt * s)
+{
+	if (s) s->refcnt++;
+	return s;
+}
+
+
+stmt *stmt_push_down_head(stmt * join, stmt * select){
+	if (join->type == st_join){
+		stmt *op1 = stmt_semijoin( stmt_dup( join->op1.stval) ,select);
+		stmt *res = stmt_join(op1, stmt_dup(join->op2.stval) , join->flag);
+		stmt_destroy(join);
+		return res;
+	} else if (join->type == st_intersect){
+		stmt *res = stmt_intersect(
+			stmt_push_down_head( stmt_dup(join->op1.stval), select),
+			stmt_push_down_head( stmt_dup(join->op2.stval), stmt_dup(select))
+				);
+		stmt_destroy(join);
+		return res;
+	} else if (join->type == st_reverse){
+		stmt *res = stmt_reverse(
+			stmt_push_down_tail( stmt_dup(join->op1.stval), 
+				stmt_reverse(select)));
+		stmt_destroy(join);
+		return res;
+	} else {
+		printf("todo push down head %d\n", join->type);
+	}
+	stmt_destroy(select);
+	return join;
+}
+
+stmt *stmt_push_down_tail(stmt * join, stmt * select){
+	if (join->type == st_join){
+		stmt *tail = stmt_reverse( stmt_dup(join->op2.stval));
+		stmt *op2 = stmt_reverse( stmt_semijoin(tail, select));
+		stmt *res = stmt_join( stmt_dup(join->op1.stval), op2, join->flag);
+		stmt_destroy(join);
+		return res;
+	} else if (join->type == st_intersect){
+		stmt *res = stmt_intersect(
+			stmt_push_down_tail( stmt_dup(join->op1.stval), select),
+			stmt_push_down_tail( stmt_dup(join->op2.stval), stmt_dup(select))
+				);
+		stmt_destroy(join);
+		return res;
+	} else if (join->type == st_reverse){
+		stmt *res = stmt_reverse(
+			stmt_push_down_head( stmt_dup(join->op1.stval), 
+				stmt_reverse(select)));
+		stmt_destroy(join);
+		return res;
+	} else {
+		printf("todo push down tail %d\n", join->type);
+	}
+	stmt_destroy(select);
+	return join;
+}
+
+stmt *stmt_push_join_head(stmt * s, stmt * join){
+	if (s->type == st_join){
+		stmt *op1 = stmt_join( join, stmt_dup(s->op1.stval), cmp_equal);
+		stmt *res = stmt_join( op1, stmt_dup(s->op2.stval), s->flag );
+		stmt_destroy(s);
+		return res;
+	} else if (s->type == st_reverse){
+		stmt *res = stmt_reverse(
+			stmt_push_join_tail( stmt_dup(s->op1.stval), stmt_reverse(join)));
+		stmt_destroy(s);
+		return res;
+	} else if (s->type == st_intersect){
+		stmt *res = stmt_intersect(
+			stmt_push_join_head( stmt_dup(s->op1.stval), join),
+			stmt_push_join_head( stmt_dup(s->op2.stval), stmt_dup(join))
+				);
+		stmt_destroy(s);
+		return res;
+	} else {
+		printf("todo push join head %d\n", s->type);
+	}
+	stmt_destroy(join);
+	return s;
+}
+
+stmt *stmt_push_join_tail(stmt * s, stmt * join){
+	if (s->type == st_join){
+		stmt *op2 = stmt_join( stmt_dup(s->op2.stval), join, cmp_equal);
+		stmt *res = stmt_join( stmt_dup(s->op1.stval), op2, s->flag );
+		stmt_destroy(s);
+		return res;
+	} else if (s->type == st_reverse){
+		stmt *res = stmt_reverse(
+			stmt_push_join_head(stmt_dup(s->op1.stval), stmt_reverse(join)));
+		stmt_destroy(s);
+		return res;
+	} else if (s->type == st_intersect){
+		stmt *res = stmt_intersect(
+			stmt_push_join_tail(stmt_dup(s->op1.stval), join),
+			stmt_push_join_tail(stmt_dup(s->op2.stval), stmt_dup(join))
+				);
+		stmt_destroy(s);
+		return res;
+	} else {
+		printf("todo push join tail %d\n", s->type);
+	}
+	stmt_destroy(join);
+	return s;
+}
+
+stmt *stmt_join2select(stmt * j){
+	if (j->type == st_join){
+		stmt *res = stmt_select(stmt_dup(j->op1.stval), 
+				stmt_reverse(stmt_dup(j->op2.stval)), j->flag);
+		stmt_destroy(j);
+		return res;
+	} else if (j->type == st_reverse){
+		stmt *res = stmt_join2select(stmt_dup(j->op1.stval));
+		stmt_destroy(j);
+		return res;
+	} else if (j->type == st_intersect){
+		stmt * res = stmt_semijoin(
+			stmt_join2select(stmt_dup(j->op1.stval)),
+			stmt_join2select(stmt_dup(j->op2.stval)));
+		stmt_destroy(j);
+		return res;
+	} else {
+		printf("todo join2select %d\n", j->type);
+	}
+	return j;
+}
+
 
 sql_subtype *tail_type(stmt * st) 
 {
@@ -1140,7 +1122,8 @@ sql_subtype *tail_type(stmt * st)
 	case st_union:
 	case st_replace:
 	case st_mark:
-	case st_name:
+	case st_alias:
+	case st_column_alias:
 		return tail_type(st->op1.stval);
 
 	case st_bat:
@@ -1174,7 +1157,8 @@ sql_subtype *head_type(stmt * st)
 	case st_triop:
 	case st_unique:
 	case st_union:
-	case st_name:
+	case st_alias:
+	case st_column_alias:
 	case st_join:
 	case st_outerjoin:
 	case st_semijoin:
@@ -1214,7 +1198,8 @@ stmt *tail_column(stmt * st)
 	case st_select2:
 	case st_semijoin:
 	case st_atom:
-	case st_name:
+	case st_alias:
+	case st_column_alias:
 	case st_group:
 	case st_group_ext:
 	case st_union:
@@ -1241,7 +1226,8 @@ stmt *head_column(stmt * st)
 	switch (st->type) {
 	case st_atom:
 	case st_mark:
-	case st_name:
+	case st_alias:
+	case st_column_alias:
 	case st_union:
 	case st_unique:
 	case st_aggr:
@@ -1308,12 +1294,29 @@ char *column_name(stmt * st)
 	case st_aggr:
 		return aggr_name(st->op2.aggrval->name,
 				 column_name(st->op1.stval));
-	case st_name:
+	case st_alias:
 		return st->op2.sval;
+	case st_column_alias:
+		return st->op3.sval;
 	case st_unique:
 		return column_name(st->op1.stval);
 	default:
 		fprintf(stderr, "missing name %d\n", st->type );
+		return NULL;
+	}
+}
+
+column *basecolumn(stmt * st)
+{
+	switch (st->type) {
+	case st_reverse:
+		return basecolumn(head_column(st->op1.stval));
+
+	case st_bat:
+		return st->op1.cval;
+
+	default:
+		fprintf(stderr, "missing column %d\n", st->type );
 		return NULL;
 	}
 }

@@ -84,9 +84,8 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			s->nr, t->id, t->schema->id, t->name, t->sql );
 		} else {
 		  	len += snprintf( buf+len, BUFSIZ, 
-			"s%d := mvc_create_table(myc, %ld, %ld, \"%s\", %s);\n",
-		   	s->nr, t->id, t->schema->id, t->name, 
-		   		(t->temp==0)?"false":"true" );
+			"s%d := mvc_create_table(myc, %ld, %ld, \"%s\", %d);\n",
+		   	s->nr, t->id, t->schema->id, t->name, t->type );
 		}
 	} break;
 	case st_drop_table: {

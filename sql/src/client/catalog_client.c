@@ -86,7 +86,6 @@ void gettypes( catalog *c ){
 
 	    sql_create_type( sqlname, name );
 	}
-	/* TODO load proper type cast table */
 
 	tcnt = strtol(n+1,&n,10); 
 	for(i=0;i<tcnt;i++){
@@ -145,7 +144,7 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 	for(i=0;i<tcnt;i++){
 	    long id;
 	    char *tname;
-	    int cnr, knr;
+	    int cnr, knr, type;
 	    char *query;
 
 	    n = strchr(start = n+1, ','); *n = '\0';
@@ -158,15 +157,17 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 	    cnr = atoi(start);
 
 	    n = strchr(start = n+1, ','); *n = '\0';
+	    type = atoi(start);
+
+	    n = strchr(start = n+1, ','); *n = '\0';
 	    query = start;
 
 	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    knr = atoi(start);
 
-	    if (cnr){
+	    if (type != tt_view){
 		int j;
-	    	table *t = 
-		       cat_create_table( c, id, schema, tname, 0, NULL);
+	    	table *t = cat_create_table( c, id, schema, tname, type, NULL);
 
 		for(j=0;j<cnr;j++){
             		long id = 0;
@@ -247,7 +248,8 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 	        }
 
 	    } else {
-	    	sqlexecute(lc, query );
+	    	stmt *s = sqlexecute(lc, query );
+		stmt_destroy(s);
 	    }
 	}
 	list_destroy(keys);

@@ -14,7 +14,7 @@ stream *ws = NULL, *rs = NULL;
 /*
  * Debug levels
  * 	0 	no debugging
- * 	1 	not used
+ * 	1 	continue in case of errors 
  * 	2	output additional time statements
  * 	4	not used
  * 	8	output code to stderr
@@ -119,14 +119,17 @@ void clientAccept( context *lc, stream *rs ){
 	int err = 0;
 	int i;
 	stream *in = file_rastream( stdin, "<stdin>" );
-	stmt *s = NULL;
 	char buf[BUFSIZ];
 
 	while(lc->cur != EOF ){
-		s = sqlnext(lc, in, &err);
-		if (err){
+		stmt *s = sqlnext(lc, in, &err);
+		if (!s || err){
 			printf("%s\n", lc->errstr );
-		       	break;
+			lc->errstr[0] = '\0';
+			if (!(lc->debug & 1))
+		       		break;
+			else 
+				err = 0;
 		}
 		if (s){
 	    		int nr = 1;
@@ -311,7 +314,11 @@ main(int ac, char **av)
 			lc.out = ws;
 		}
 		sql_exit_context( &lc );
-
+	} else {
+		if (ws){
+	       		ws->close(ws);
+	       		ws->destroy(ws);
+		}
 	}
 	if (schema) free(schema);
 	if (user) free(user);

@@ -1,3 +1,27 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
 
 #include "mem.h"
 #include "statement.h"
@@ -168,9 +192,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			-s->nr, sc, t->name, t->sql );
 		} else {
 		  	len = snprintf( buf, BUFSIZ, 
-			"s%d := mvc_create_table(myc, s%d, \"%s\", %s);\n",
-		   	-s->nr, sc, t->name, 
-		   		(t->temp==0)?"false":"true" );
+			"s%d := mvc_create_table(myc, s%d, \"%s\", %d);\n",
+		   	-s->nr, sc, t->name, t->type );
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
@@ -204,18 +227,17 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		    "s%d := default_val(myc, s%d, s%d );\n", -s->nr, c, d );
 		dump(sql,buf,len,-s->nr);
 	} break;
-	/* todo: change to simple mvc_create_key(myc, key, list_of_string); */
 	case st_create_key: {
-		int t = stmt_dump( s->op1.stval, nr, sql );
+		key *k = s->op1.kval;
 		if (s->flag == fkey){
 			int ft = stmt_dump( s->op2.stval, nr, sql );
 			len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_create_key(myc, s%d, %d, s%d );\n", 
-			-s->nr, t, s->flag, ft );
+		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, s%d );\n", 
+			-s->nr, k->t->schema->name, k->t->name, k->name, k->type, ft );
 		} else {
 			len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_create_key(myc, s%d, %d, sql_key(nil));\n",
-			-s->nr, t, s->flag );
+		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, sql_key(nil));\n",
+			-s->nr, k->t->schema->name, k->t->name, k->name, k->type );
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
@@ -409,9 +431,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_bat:
 	case st_ubat: {
 		char *type = (s->type==st_bat)?"":"_ubat";
-		if (table_isview(s->op1.cval->table)){
+		if (s->op1.cval->table->type == tt_view){
 			s->nr = -stmt_dump( s->op1.cval->s, nr, sql );
 		} else {
+			char *hname = NULL;
+			if (s->h->type == st_basetable){
+				hname = s->h->op1.tval->name;
+			}
 			len = snprintf( buf, BUFSIZ, 
 			   "s%d := mvc_bind%s(myc, \"%s\", \"%s\", \"%s\", %d)",
 			  -s->nr, type, 
@@ -423,8 +449,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 				len += snprintf( buf+len, BUFSIZ-len, 
 			  		".access(BAT_WRITE)"); 
 			}
-			len += snprintf( buf+len, BUFSIZ-len, "; #%s\n", 
-			  s->h->tname?s->h->tname:s->h->t->name );
+			len += snprintf( buf+len, BUFSIZ-len, "; #%s\n", hname);
 			if (sql->debug&4){
 		  		len += snprintf( buf+len, BUFSIZ-len, 
 				"s%d.info.print();", -s->nr);
@@ -474,19 +499,22 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} 	break;
 	case st_mark: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
+		char *tname = NULL;
+
+		if (s->t && s->t->type == st_basetable){
+			tname = s->t->op1.tval->name;
+		}
 		if (s->op2.stval){
 			int r = stmt_dump( s->op2.stval, nr, sql );
 			len = snprintf( buf, BUFSIZ, 
 			 "s%d := s%d.reverse().mark(oid(s%d)).reverse();# %s\n",
 			  -s->nr, l, r, 
-			  	(!s->t)?"unknown":
-			  	s->t->tname?s->t->tname:s->t->t->name);
+			  	(!tname)?"unknown":tname);
 		} else if (s->flag >= 0){
 			len = snprintf( buf, BUFSIZ, 
 			 "s%d := s%d.reverse().mark(oid(%d)).reverse();# %s\n", 
 			  -s->nr, l, s->flag, 
-			  	(!s->t)?"unknown":
-			  	s->t->tname?s->t->tname:s->t->t->name);
+			  	(!tname)?"unknown":tname);
 		} else {
 			len = snprintf( buf, BUFSIZ, 
 			  "s%d := s%d.reverse().mark().reverse();\n", -s->nr, l);
@@ -710,7 +738,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
-	case st_name: 
+	case st_alias: 
+	case st_column_alias: 
 		s->nr = - stmt_dump( s->op1.stval, nr, sql );
 		break;
 	case st_set: {

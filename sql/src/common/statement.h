@@ -5,7 +5,6 @@
 #include "atom.h"
 #include "context.h"
 #include "catalog.h"
-#include "var.h"
 
 #define RDONLY 0
 #define INS 1
@@ -18,6 +17,7 @@ typedef enum stmt_type {
 	st_table,
 	st_column,
 	st_key,
+	st_basetable,
 	st_bat,
 	st_ubat,
 	st_obat,
@@ -72,7 +72,8 @@ typedef enum stmt_type {
 	st_triop,
 	st_aggr,
 	st_exists,
-	st_name,
+	st_alias,
+	st_column_alias,
 	st_set,
 	st_sets,
 	/* used internally only */
@@ -101,10 +102,9 @@ typedef struct stmt {
 	int flag;
 
 	int nr; 		/* variable assignement */
-	tvar *h;
-	tvar *t;
+	struct stmt *h;
+	struct stmt *t;
 	int refcnt;
-	list *uses;
 } stmt;
 
 typedef struct group {
@@ -112,9 +112,6 @@ typedef struct group {
 	stmt *ext;
 	int refcnt;
 } group;
-
-extern void st_attache(stmt * st, stmt * user);
-extern void st_detach(stmt * st, stmt * user);
 
 /* since Savepoints and transactions related the 
  * stmt commit function includes the savepoint creation.
@@ -155,10 +152,11 @@ extern stmt *stmt_column_grant(stmt *c, char *authid, int privilege);
 extern stmt *stmt_column_revoke(stmt *c, char *authid, int privilege);
 */
 
-extern stmt *stmt_cbat(column * c, tvar * basetable, int access, int type);
+extern stmt *stmt_basetable(table *t); 
+
+extern stmt *stmt_cbat(column * c, stmt * basetable, int access, int type);
 extern stmt *stmt_tbat(table * t, int access, int type);
 
-extern stmt *stmt_reverse(stmt * s);
 extern stmt *stmt_atom(atom * op1);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
 /* cmp 0 ==   l <= x <= h
@@ -174,18 +172,10 @@ extern stmt *stmt_join(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_outerjoin(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_semijoin(stmt * op1, stmt * op2);
 
-extern stmt *stmt_push_down_head(stmt * s, stmt * select);
-extern stmt *stmt_push_down_tail(stmt * s, stmt * select);
-extern stmt *stmt_push_join_head(stmt * s, stmt * join);
-extern stmt *stmt_push_join_tail(stmt * s, stmt * join);
-extern stmt *stmt_join2select(stmt * join);
-
 extern stmt *stmt_diff(stmt * op1, stmt * op2);
 extern stmt *stmt_intersect(stmt * op1, stmt * op2);
 extern stmt *stmt_union(stmt * op1, stmt * op2);
 extern stmt *stmt_list(list * l);
-extern stmt *stmt_output(stmt * l);
-extern stmt *stmt_result(stmt * l);
 extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
 
@@ -200,12 +190,12 @@ extern stmt *stmt_count(stmt * s);
 extern stmt *stmt_const(stmt * s, stmt * val);
 extern stmt *stmt_mark(stmt * s, int id);
 extern stmt *stmt_remark(stmt * s, stmt * t, int id);
+extern stmt *stmt_reverse(stmt * s);
 extern stmt *stmt_unique(stmt * s, group * grp);
 
-extern stmt *stmt_ordered(stmt * order, stmt * res);
 extern stmt *stmt_order(stmt * s, int direction);
-extern stmt *stmt_reorder(stmt * s, stmt * t,
-				    int direction);
+extern stmt *stmt_reorder(stmt * s, stmt * t, int direction);
+extern stmt *stmt_ordered(stmt * order, stmt * res);
 
 extern stmt *stmt_unop(stmt * op1, sql_func * op);
 extern stmt *stmt_binop(stmt * op1, stmt * op2, sql_func * op);
@@ -214,7 +204,11 @@ extern stmt *stmt_aggr(stmt * op1, sql_aggr * op, group * grp);
 
 extern stmt *stmt_exists(stmt * op1, list * l);
 
-extern stmt *stmt_name(stmt * op1, char *name);
+extern stmt *stmt_alias(stmt * op1, char *name);
+extern stmt *stmt_column(stmt * op1, stmt *t, char *tname, char *cname);
+
+extern stmt *stmt_output(stmt * l);
+extern stmt *stmt_result(stmt * l);
 
 extern sql_subtype *head_type(stmt * st);
 extern sql_subtype *tail_type(stmt * st);
@@ -222,18 +216,26 @@ extern sql_subtype *tail_type(stmt * st);
 extern char *column_name(stmt * st);
 extern stmt *head_column(stmt * st);
 extern stmt *tail_column(stmt * st);
+extern column *basecolumn(stmt *st);
 
 extern int stmt_dump(stmt * s, int *nr, context * sql);
 
 extern void stmt_destroy(stmt *s );
+/* reset the stmt nr's */
 extern void stmt_reset( stmt *s );
 extern stmt *stmt_dup( stmt *s );
 
 extern group *grp_create(stmt * s, group *og );
 extern group *grp_semijoin(group *og, stmt *s );
 extern void grp_destroy(group * g);
+extern group *grp_dup(group * g);
 
 extern int stmt_cmp_nrcols( stmt *s, int *nr );
 
-/* reset the stmt nr's */
+extern stmt *stmt_push_down_head(stmt * s, stmt * select);
+extern stmt *stmt_push_down_tail(stmt * s, stmt * select);
+extern stmt *stmt_push_join_head(stmt * s, stmt * join);
+extern stmt *stmt_push_join_tail(stmt * s, stmt * join);
+extern stmt *stmt_join2select(stmt * join);
+
 #endif				/* _STATEMENT_H_ */

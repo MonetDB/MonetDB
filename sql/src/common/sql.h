@@ -109,6 +109,7 @@ typedef enum jt {
 
 extern const char *token2string(int token);
 
-extern stmt *semantic(context * sql, symbol * sym);
+extern stmt *semantic( context * sql, symbol * sym);
+extern stmt *sql_error( context * sql, int error_code, char *format, ... );
 
 #endif /*_SQL_H_*/

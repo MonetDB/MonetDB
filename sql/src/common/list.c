@@ -188,8 +188,7 @@ void *list_reduce(list * l, freduce red, fdup dup )
 	if (n)
 		res = dup(n->data);
        	for ( n = n->next ; n; n = n->next){
-		void *nw = red(res, n->data);
-		l->destroy(res);
+		void *nw = red(res, dup(n->data));
 		res = nw;
 	}
 	return res;
@@ -207,7 +206,7 @@ list *list_merge(list * l, list * data, fdup dup)
 	return l;
 }
 
-list *list_copy(list * l, fdup dup )
+list *list_dup(list * l, fdup dup )
 {
 	list *res = list_create(l->destroy);
 	return list_merge(res, l, dup );

@@ -23,9 +23,11 @@ simple_prompt(const char *prompt, int maxlen, int echo)
 
 	termin = fopen("/dev/tty", "r");
 	termout = fopen("/dev/tty", "w");
-	/*termin = stdin;
-	termout = stderr;
-	*/
+
+	if (termin == NULL || termout == NULL){
+		termin = stdin;
+		termout = stderr;
+	}
 
 #ifdef HAVE_TERMIOS_H
         if (!echo)
@@ -49,8 +51,8 @@ simple_prompt(const char *prompt, int maxlen, int echo)
         length = strlen(destination);
         if (length > 0 && destination[length - 1] != '\n')
         {
-                char            buf[128];
-                int                     buflen;
+                char	buf[128];
+                int	buflen;
 
                 do
                 {
@@ -71,6 +73,12 @@ simple_prompt(const char *prompt, int maxlen, int echo)
                 fflush(termout);
         }
 #endif
+	if (termin != stdin)
+		fclose(termin);
+
+	if (termout != stdout)
+		fclose(termout);
+
         return destination;
 }
 

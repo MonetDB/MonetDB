@@ -22,6 +22,8 @@ static void column_destroy(column *c)
 	assert(c && c->tpe);
 	if (c->name)
 		_DELETE(c->name);
+	if (c->s)
+		stmt_destroy(c->s);
 	_DELETE(c->tpe);
 	_DELETE(c);
 }
@@ -31,6 +33,10 @@ static void table_destroy(table *t)
 	list_destroy(t->columns);
 	if (t->name)
 		_DELETE(t->name);
+	if (t->sql)
+		_DELETE(t->sql);
+	if (t->s)
+		stmt_destroy(t->s);
 	if (t->keys){
 		list_destroy(t->keys);
 	}
@@ -58,23 +64,24 @@ schema *cat_create_schema(catalog * cat, long id, char *name, char *auth)
 }
 
 table *cat_create_table(catalog * cat, long id, schema * s, char *name,
-			int temp, char *sql)
+			int type, char *sql)
 {
 	table *t = NEW(table);
 	t->id = id;
 	t->name = (name) ? _strdup(name) : NULL;
 	t->schema = s;
-	t->temp = temp;
+	t->type = type;
 	t->columns = list_create((fdestroy)&column_destroy);
 	t->sql = NULL;
 	t->pkey = NULL;
 	t->keys = NULL;
+	t->s = NULL;
 	if (sql)
 		t->sql = _strdup(sql);
 
 	list_append(s->tables, t);
 	if (cat_debug)
-		printf("cat_create_table, %ld %s %d %s\n", id, name, temp, sql);
+		printf("cat_create_table, %ld %s %d %s\n", id, name, type, sql);
 	return t;
 }
 

@@ -37,22 +37,6 @@ void usage( char *prog ){
 	exit(-1);
 }
 
-static char *readblock( stream *s ){
-	int len = 0;
-	int size = BLOCK + 1;
-	char *buf = NEW_ARRAY(char, size ), *start = buf;
-
-	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
-		size += BLOCK;
-		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - BLOCK - 1;
-		*start = '\0';
-	}
-	start += len;
-	*start = '\0';
-	return buf;
-}
-
 void receive( stream *rs, table *t ){
 	const char *copystring =
 	    "COPY %d RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n";
@@ -136,14 +120,12 @@ void dump_tables( context *lc, stream *rs )
 	node *n = lc->cat->cur_schema->tables->h;
 	for(;n; n = n->next){
 		table *t = n->data;
-		if (!t->temp){
-			if (!t->sql){
-				printf("CREATE TABLE %s (\n", t->name );
-				dump_columns(lc, t);
-				printf(");\n" );
-			} else {
-				printf("CREATE VIEW %s %s\n", t->name, t->sql );
-			}
+		if (t->type == tt_base){
+			printf("CREATE TABLE %s (\n", t->name );
+			dump_columns(lc, t);
+			printf(");\n" );
+		} else if (t->type == tt_view){
+			printf("CREATE VIEW %s %s\n", t->name, t->sql );
 		}
 		dump_data( lc, rs, t );
 	}

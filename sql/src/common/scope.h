@@ -18,12 +18,12 @@ extern scope *scope_close(scope * s);
 /* 
  * table_add_column adds a column (cvar) to the table t (tname could be NULL).
  * */
-extern cvar *table_add_column(tvar * t, column *c, stmt * s, char *tname, char *cname ); 
+extern cvar *table_add_column(tvar * t, stmt * s, char *tname, char *cname ); 
 
 /* 
- * scope_add_table adds a table (tvar) to the scope scp (name could be NULL). 
+ * scope_add_table adds a table (tvar) to the scope scp (name should be set). 
  * */
-extern tvar *scope_add_table(scope * scp, table * t, stmt *s, char *name); 
+extern tvar *scope_add_table(scope * scp, stmt *table, char *name); 
 
 /* 
  * scope_add_alias adds a alias for a stmt.
@@ -61,4 +61,7 @@ extern list *scope_unique_lifted_vars(scope * s);
 extern int scope_count_tables(scope * s);
 
 extern void scope_dump(scope * s);
+
+extern void tvar_destroy(tvar *t);
+
 #endif /*_SCOPE_H_*/

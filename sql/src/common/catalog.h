@@ -28,18 +28,25 @@ typedef struct schema {
 	list *tables;
 } schema;
 
+typedef enum table_type {
+	tt_base = 0,
+	tt_system = 1,
+	tt_view = 2,
+	tt_session = 3,
+	tt_temp = 4
+} table_type;
+
 typedef struct table {
 	long id;
 	char *name;
 	schema *schema;
-	int temp;
+	table_type type; 		
 	struct list *columns;
 	key *pkey;
 	struct list *keys; 	/* all keys (primary,unique and foreign) */
 	char *sql;		/* sql code */
+	struct stmt *s;
 } table;
-
-#define table_isview(t) t->sql
 
 typedef struct column {
 	long id;
@@ -73,7 +80,7 @@ extern void cat_drop_schema(schema * s);
 
 extern table *cat_bind_table(catalog * cat, schema * s, char *name);
 extern table *cat_create_table(catalog * cat, long id, schema * s,
-			       char *name, int temp, char *sql);
+			       char *name, int type, char *sql);
 
 extern key *cat_table_add_key(table *t, key_type kt, char *name, key *rk );
 extern key *cat_key_add_column(key *k, column *c );
