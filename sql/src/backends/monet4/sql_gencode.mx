@@ -1132,7 +1132,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 				char *cn = column_name(r);
 				size_t sl;
 
-				sl += strlen(tn) + strlen(cn) + strlen(tail_type(r)->type->sqlname);
+				sl = strlen(tn) + strlen(cn) + strlen(tail_type(r)->type->sqlname);
 				if (buflen - len < 128 + sl) {
 					buflen += BUFSIZ + sl;
 					buf = RENEW_ARRAY(char,buf,buflen);
