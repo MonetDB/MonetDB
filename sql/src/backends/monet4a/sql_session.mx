@@ -547,12 +547,14 @@ These lines should be eaten away into the prompt is encountered.
 		stream_flush(out);
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
 		if( blocked ){
+			int nsize = BUFSIZ;
 			fprintf(stdout,"blocked mode\n");
-			while ((len = stream_read(in, start, 1, BUFSIZ)) == BUFSIZ){
-				inlen += BUFSIZ;
-				size += BUFSIZ;
+			while ((len = stream_read(in, start, 1, nsize)) == nsize){
+				inlen += nsize;
+				nsize *= 4;
+				size += nsize;
 				inbuf = RENEW_ARRAY(char, inbuf, size); 
-				start = inbuf + size - BUFSIZ - 1;
+				start = inbuf + size - nsize - 1;
 				*start = '\0';
 			}
 			if( len < 0){
