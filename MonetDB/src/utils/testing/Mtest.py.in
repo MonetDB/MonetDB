@@ -37,6 +37,8 @@ import time
 STDOUT = sys.stdout
 STDERR = sys.stdout	# err
 
+random.seed(time.time())
+
 def Usage() :
 	print('''
 
@@ -428,12 +430,12 @@ def runtests(env, testdir, testlist) :
 	os.environ['RELSRCDIR'] = env['RELSRCDIR']
 	os.environ['RELBLDDIR'] = env['RELBLDDIR']
 	if os.path.exists(env['GDK_DBFARM']+os.sep+TSTDB):
-		if Check(env['exe']['Mdestroydb'][1]+" -db "+TSTDB, ""):
+		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db "+TSTDB, ""):
 			Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
 			#TODO:
 			# add "something" to HTML output
 			return
-	if Check(env['exe']['Mcreatedb'][1] +" -db "+TSTDB, ""):
+	if Check(env['exe']['Mtimeout'][1]+env['exe']['Mcreatedb'][1] +" -db "+TSTDB, ""):
 		Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
 		#TODO:
 		# add "something" to HTML output
@@ -459,7 +461,7 @@ def isexecutable(TST) :
 	return [ 0, "" ]
 
 def GetBitsAndMods(env) :
-	pOut,pIn,pErr = popen2.popen3(env['exe']['Mserver'][1]+" -db Tests")
+	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db Tests")
 	pIn.write('''
 printf("\\n");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.kunique@batloop{printf("%s'%s'",x,$h);x:=",";}printf("\\n");quit;
 ''')
@@ -501,7 +503,7 @@ def CheckMods(env, TST, EXT) :
 	return missing
 
 def CheckBATs(env, TST, TSTDB) :
-	pOut,pIn,pErr = popen2.popen3(env['exe']['Mserver'][1]+" -db "+TSTDB)
+	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db "+TSTDB)
 	pIn.write('''
 printf("\\n");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("\\n");quit;
 ''')
@@ -575,7 +577,9 @@ def runtest(env, TST) :
 
 	os.chdir(TSTTRGDIR)
 
-	NotOnNT = ["src/modules/plain/salgebra", "tests/by_Peter/tst_priv", "src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
+	NotOnNT = ["src/modules/plain/salgebra", "tests/by_Peter/tst_priv", "src/modules/plain/tcpip1", "src/modules/plain/tcpip2",	\
+		"scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2",	\
+		"tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
 	ReqMshdn = [".milC"]
 	if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
 		SkipTest(env, TST, EXT, "as it currently crashes/hangs on NT.")
@@ -1005,7 +1009,7 @@ def main(argv) :
 	dft['TSTTRGBASE']     = "env['MONET_PREFIX']"	# or os.getcwd() ?
 	dft['MONETRC']        = "FindMonetConf(env)"
 	dft['MONET_MOD_PATH'] = "env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
-	dft['MAPIPORT']       = "HOST+':'+str(random.randint(10000,65535))"
+	dft['MAPIPORT']       = "HOST+':'+str(random.randrange(50000,59999,1))"
 	env = {}
 
 	#par = {}
@@ -1138,7 +1142,7 @@ def main(argv) :
 
 	# check for executables, set their standard options and export them
 	exe = {}
-	exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])
+	exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
 	exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -monetrc '+env['MONETRC']
 	exe['MapiClient'] = CheckExec('MapiClient'), 'MapiClient -everything'
 	exe['Mcreatedb']  = CheckExec('Mcreatedb') , 'Mcreatedb -monetrc '+env['MONETRC']
@@ -1146,6 +1150,8 @@ def main(argv) :
 	exe['Mshutdown']  = CheckExec('Mshutdown') , 'Mshutdown'
 	exe['Mdiff']      = CheckExec('Mdiff')     , 'Mdiff'
 	exe['python']     = CheckExec('python')    , 'python'
+	if not exe['Mtimeout'][0]:
+		exe['Mtimeout'][1] = ''
 	STDERR.flush()
 	for v in exe.keys():
 		V = string.upper(v)
@@ -1249,11 +1255,11 @@ def main(argv) :
 		os.makedirs(env['GDK_DBFARM'])
 
 	if os.path.exists(env['GDK_DBFARM']+os.sep+"Tests"):
-		if Check(env['exe']['Mdestroydb'][1]+" -db Tests", ""):
+		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db Tests", ""):
 			sys.exit(1)
-	if Check(env['exe']['Mcreatedb'][1] +" -db Tests", ""):
+	if Check(env['exe']['Mtimeout'][1]+env['exe']['Mcreatedb'][1] +" -db Tests", ""):
 		sys.exit(1)
-	if Check(env['exe']['Mserver'][1]   +" -db Tests", "quit;\n"):
+	if Check(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]   +" -db Tests", "quit;\n"):
 		sys.exit(1)
 	GetBitsAndMods(env)
 	STDERR.flush()
