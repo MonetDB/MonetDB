@@ -51,7 +51,7 @@ The registration of the atom functions relies on the atom module rules.
 @mal
 function mainTOBETESTED();
 	nme:= "blob";
-	Zstr:= atoms.tostr(nme);
+	#Zstr:= atoms.tostr(nme);
 	Zblob:= atoms.fromstr(nme);
 	Zbit:= atoms.nequal(nme);
 	Z:= atoms.hash(nme);
