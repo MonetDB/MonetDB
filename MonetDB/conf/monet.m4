@@ -185,6 +185,17 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		dnl  Portland Group compiler (pgcc/pgCC)
 		pgcc*)	CC="$CC -fPIC";;
 		esac
+		case $host_os in
+		linux*)
+		    dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
+		    dnl  and icc/icpc requires "-no-gcc" to avoid predefining
+		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
+		    icc_ver="`$CC --version 2>/dev/null`"
+		    case $icc_ver in
+		    8.*)	CC="icc -no-gcc"	CXX="icpc -no-gcc";;
+		    esac
+		    ;;
+		esac
 		;;
 	esac])
 
