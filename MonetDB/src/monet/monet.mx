@@ -404,14 +404,6 @@ provided to make inclusion of new modules a piece of cake.
 	VARfreeze(v);
 	VARfixate(v);
 }
-@= tokenstrvar
-{	Variable v = VARnew(0, "@1");
-	v->binding.vtype = TYPE_str;
-	v->binding.val.sval = GDKstrdup(@2);
-}
-/*
-	@:tokenstrvar(mod,"main")@
-*/
 
 @c
 ptr monet_init(void){
