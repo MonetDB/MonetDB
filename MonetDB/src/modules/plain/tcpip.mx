@@ -455,7 +455,7 @@ static cache_t *cache_find(str name)
 {
 	BUN q = BUNfnd(cache_idx, name);
 	if (q) return *(cache_t**) BUNtloc(cache_idx, q);
-	return cache_new(name);
+	return 0;	/*cache_new(name);*/
 }
 
 @- purge all items from the cache
@@ -792,7 +792,7 @@ Insert an empty value into the cache.
 @c
 	    MT_set_lock(TCPlock, "conn_waiter");
 	    c = cache_find(nm);
-	    if (c->tpe == TYPE_bat ? c->val.bval != 0 : c->val.pval != 0)
+	    if ((!c) || (c->tpe == TYPE_bat ? c->val.bval != 0 : c->val.pval != 0))
 		c = cache_new(nm);
 	    MT_unset_lock(TCPlock, "conn_waiter");
 
@@ -1439,6 +1439,11 @@ Lookup or create (if it did not exist) a cache item by this name.
 @c
 	MT_set_lock(TCPlock, "TCPimport");
 	c = cache_find(name);
+	if (!c) {
+	    MT_unset_lock(TCPlock, "TCPimport");
+	    GDKerror("TCPimport failed as cache_find('%s') returned 0.\n", name);
+	    return GDK_FAIL;
+	}
 	if (c->tpe == TYPE_bat ? c->val.bval != 0 : c->val.pval != 0)
 		goto get_direct;
 	if (c->locked++ == 0 && c->barrier == NULL) {
