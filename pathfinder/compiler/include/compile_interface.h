@@ -38,6 +38,9 @@
 /* runtime linking testfun, remove if succeed */
 int pf_ping();
 
+/* main compiler call from the Monet runtime environment */
+int pf_compile_interface (FILE *pfin, FILE *pfout, char* mode);
+
 #endif
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -78,7 +78,7 @@
 #include "parser.tab.h"
 
 /* bison 1.33 does not include this line in XQuery.tab.h. So we do it here. */
-extern YYLTYPE yylloc;
+extern YYLTYPE pflloc;
 
 /** avoid `defined but not used' warnings */
 #define YY_NO_UNPUT
@@ -98,20 +98,20 @@ static int i;
  */ 
 #define YY_USER_ACTION                                      \
  do {                                                       \
-   yylloc.first_col = yylloc.last_col + 1;                  \
-   yylloc.first_row = yylloc.last_row;                      \
+   pflloc.first_col = pflloc.last_col + 1;                  \
+   pflloc.first_row = pflloc.last_row;                      \
                                                             \
    for (i = 0; i < yyleng; i++) {                           \
      if (yytext[i] == '\n') {                               \
-       yylloc.last_col = 0;                                 \
-       yylloc.last_row++;                                   \
+       pflloc.last_col = 0;                                 \
+       pflloc.last_row++;                                   \
      }                                                      \
      else if (yytext[i] == '\t') {                          \
-       yylloc.last_col = ((yylloc.last_col + TAB_STEP) /    \
+       pflloc.last_col = ((pflloc.last_col + TAB_STEP) /    \
                           TAB_STEP) * TAB_STEP;             \
      }                                                      \
      else {                                                 \
-       yylloc.last_col++;                                   \
+       pflloc.last_col++;                                   \
      }                                                      \
    }                                                        \
  } while(0);
@@ -365,7 +365,7 @@ _                                 ({S}|{ExprComment})+
 
 
 "attribute"{S}{QName}{_}*"{"      { /* return the attribute QName */
-				    yylval.qname =
+				    pflval.qname =
                                       PFstr_qname (strtok (strpbrk (
                                                             yytext, " \t\n\r"),
                                                      " \t\n\r{"));
@@ -374,7 +374,7 @@ _                                 ({S}|{ExprComment})+
                                     yield (attribute_QName_lbrace);
                                   }
 "element"{S}{QName}{_}*"{"        { /* return the element tag QName */
-				    yylval.qname =
+				    pflval.qname =
                                       PFstr_qname (strtok (strpbrk (
                                                             yytext, " \t\n\r"),
                                                      " \t\n\r{"));
@@ -399,21 +399,21 @@ _                                 ({S}|{ExprComment})+
 {IntegerLiteral}                  { /* return the int value
                                      * represented by this integer literal 
 				     */
-                                    yylval.num = atoi (yytext);
+                                    pflval.num = atoi (yytext);
 
                                     yield (IntegerLiteral);
                                   }
 {DecimalLiteral}                  { /* return double value represented
                                      * by this decimal literal
                                      */
-				    yylval.dec = atof (yytext);
+				    pflval.dec = atof (yytext);
 
                                     yield (DecimalLiteral);
                                   }
 {DoubleLiteral}                   { /* return double value represented
                                      * by this double literal
                                      */
-				    yylval.dec = atof (yytext);
+				    pflval.dec = atof (yytext);
 
                                     yield (DoubleLiteral);
                                   }
@@ -421,7 +421,7 @@ _                                 ({S}|{ExprComment})+
                                      * represented by the string literal,
                                      * expand escaped quotation marks
                                      */
-                                    yylval.str = expand_esc_quots (
+                                    pflval.str = expand_esc_quots (
                                                    strpbrk (yytext, "'\""));
 
                                     yield (StringLiteral);
@@ -430,7 +430,7 @@ _                                 ({S}|{ExprComment})+
                                      * represented by the string literal,
                                      * expand escaped quotation marks
                                      */
-                                    yylval.str = expand_esc_quots (
+                                    pflval.str = expand_esc_quots (
                                                    strpbrk (yytext, "'\""));
 
                                     yield (at_StringLiteral);
@@ -573,7 +573,7 @@ _                                 ({S}|{ExprComment})+
                                   }
 
 "type"{S}{QName}                  { /* return the type QName */ 
-				    yylval.qname =
+				    pflval.qname =
                                       PFstr_qname (strtok (strpbrk (
                                                             yytext, " \t\n\r"),
                                                      " \t\n\r"));
@@ -608,17 +608,17 @@ _                                 ({S}|{ExprComment})+
 
 "*:*"                             yield ('*');
 {NCName}":*"                      { /* return wildcard as QName */
-                                    yylval.qname = PFstr_qname (yytext);
+                                    pflval.qname = PFstr_qname (yytext);
 
                                     yield (NCName_colon_star);
                                   }
 "*:"{NCName}                      { /* return wildcard as QName */
-                                    yylval.qname = PFstr_qname (yytext);
+                                    pflval.qname = PFstr_qname (yytext);
 
                                     yield (star_colon_NCName);
                                   }
 {QName}                           { /* return the QName as-is */
-				    yylval.qname = PFstr_qname (yytext);
+				    pflval.qname = PFstr_qname (yytext);
 
                                     yield (QName);
                                   }
@@ -635,7 +635,7 @@ _                                 ({S}|{ExprComment})+
                                      * represented by the string literal,
                                      * expand escaped quotation marks
                                      */
-                                    yylval.str = expand_esc_quots (
+                                    pflval.str = expand_esc_quots (
                                                    strpbrk (yytext, "'\""));
 
                                     gotoState (DEFAULT);
@@ -658,7 +658,7 @@ _                                 ({S}|{ExprComment})+
 
 "="                               yield ('=');
 {NCNameForPrefix}                 { /* return the NCName as-is */
-                                    yylval.str = PFstrdup (yytext);
+                                    pflval.str = PFstrdup (yytext);
 
 				    yield (NCNameForPrefix);
 				  }
@@ -666,7 +666,7 @@ _                                 ({S}|{ExprComment})+
                                      * represented by the string literal,
                                      * expand escaped quotation marks
                                      */
-                                    yylval.str = expand_esc_quots (
+                                    pflval.str = expand_esc_quots (
                                                    strpbrk (yytext, "'\""));
 
                                     gotoState (DEFAULT);
@@ -732,7 +732,7 @@ _                                 ({S}|{ExprComment})+
 "as"                              yield (as);
 
 {QName}                           { /* return the QName (named type) */
-				    yylval.qname = PFstr_qname (yytext);
+				    pflval.qname = PFstr_qname (yytext);
 
 				    gotoState (DEFAULT);
                                     yield (QName);
@@ -752,7 +752,7 @@ _                                 ({S}|{ExprComment})+
 <VARNAME>{
 
 {VarName}                         { /* return the QName */
-				    yylval.qname = PFstr_qname (yytext);
+				    pflval.qname = PFstr_qname (yytext);
 
                                     popState ();
                                     yield (VarName);
@@ -784,7 +784,7 @@ _                                 ({S}|{ExprComment})+
 
 {S}                               yield (S);
 {QName}                           { /* return the tag name */
-				    yylval.qname = PFstr_qname (yytext);
+				    pflval.qname = PFstr_qname (yytext);
 
 				    yield (QName);
 				  }
@@ -832,7 +832,7 @@ _                                 ({S}|{ExprComment})+
 {PredefinedEntityRef}             { /* map predefined entity and return
                                      * character it represents
                                      */
-                                    yylval.chr = 
+                                    pflval.chr = 
                                       predefined_entity (yytext + 1); 
 
                                     yield (PredefinedEntityRef);
@@ -840,7 +840,7 @@ _                                 ({S}|{ExprComment})+
 {CharRef}                         { /* return the character referenced
                                      * by its (hexa)decimal code value
                                      */
-                                    yylval.chr = char_ref (yytext + 2);
+                                    pflval.chr = char_ref (yytext + 2);
 
 				    yield (CharRef);
                                   }				    
@@ -849,7 +849,7 @@ _                                 ({S}|{ExprComment})+
 "}}"                              yield (rbrace_rbrace);
 
 {Char}                            { /* return the character itself */
-                                    yylval.chr = *yytext;
+                                    pflval.chr = *yytext;
 
 				    yield (Char);
 				  }
@@ -865,7 +865,7 @@ _                                 ({S}|{ExprComment})+
 {S}                               yield (S);
 
 {QName}                           { /* return the tag name */
-				    yylval.qname = PFstr_qname (yytext);
+				    pflval.qname = PFstr_qname (yytext);
 
 				    yield (QName);
 				  }
@@ -878,7 +878,7 @@ _                                 ({S}|{ExprComment})+
 <XML_COMMENT>{
 
 {Char}                            { /* return the character itself */
-                                    yylval.chr = *yytext;
+                                    pflval.chr = *yytext;
 
 				    yield (Char);
 				  }
@@ -893,7 +893,7 @@ _                                 ({S}|{ExprComment})+
 {PITarget}                        { /* return the processing-instruction
                                      * target as-is
                                      */
-				    yylval.str = PFstrdup (yytext);
+				    pflval.str = PFstrdup (yytext);
 
                                     gotoState (PROCESSING_INSTRUCTION_CONTENT);
 				    yield (PITarget);
@@ -903,7 +903,7 @@ _                                 ({S}|{ExprComment})+
 <PROCESSING_INSTRUCTION_CONTENT>{
 
 {Char}                            { /* return the character itself */
-                                    yylval.chr = *yytext;
+                                    pflval.chr = *yytext;
 
 				    yield (Char);
 				  }
@@ -920,7 +920,7 @@ _                                 ({S}|{ExprComment})+
                                   }
 
 {Char}                            { /* return the character itself */
-                                    yylval.chr = *yytext;
+                                    pflval.chr = *yytext;
 
 				    yield (Char);
 				  }
@@ -941,7 +941,7 @@ _                                 ({S}|{ExprComment})+
 {PredefinedEntityRef}             { /* map predefined entity and return
                                      * character it represents
                                      */
-                                    yylval.chr = 
+                                    pflval.chr = 
                                       predefined_entity (yytext + 1); 
 
                                     yield (PredefinedEntityRef);
@@ -949,7 +949,7 @@ _                                 ({S}|{ExprComment})+
 {CharRef}                         { /* return the character referenced
                                      * by its (hexa)decimal code value
                                      */
-                                    yylval.chr = char_ref (yytext + 2);
+                                    pflval.chr = char_ref (yytext + 2);
 
 				    yield (CharRef);
 				  }
@@ -957,7 +957,7 @@ _                                 ({S}|{ExprComment})+
 "}}"                              yield (rbrace_rbrace);
 
 {Char}                            { /* return the character itself */
-                                    yylval.chr = *yytext;
+                                    pflval.chr = *yytext;
  
                                     yield (Char);  
                                   }
@@ -978,7 +978,7 @@ _                                 ({S}|{ExprComment})+
 {PredefinedEntityRef}             { /* map predefined entity and return
                                      * character it represents
                                      */
-                                    yylval.chr = 
+                                    pflval.chr = 
                                       predefined_entity (yytext + 1); 
 
                                     yield (PredefinedEntityRef);
@@ -986,7 +986,7 @@ _                                 ({S}|{ExprComment})+
 {CharRef}                         { /* return the character referenced
                                      * by its (hexa)decimal code value
                                      */
-                                    yylval.chr = char_ref (yytext + 2);
+                                    pflval.chr = char_ref (yytext + 2);
 
 				    yield (CharRef);
                                   }
@@ -995,7 +995,7 @@ _                                 ({S}|{ExprComment})+
 "}}"                              yield (rbrace_rbrace);
 
 {Char}                            { /* return the character itself */
-                                    yylval.chr = *yytext;
+                                    pflval.chr = *yytext;
  
                                     yield (Char);  
                                   }

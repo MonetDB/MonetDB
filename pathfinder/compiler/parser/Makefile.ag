@@ -23,7 +23,8 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-YFLAGS = -d
+YFLAGS = -d -p pf
+LFLAGS = -Ppf -olex.yy.c
 
 ## disable -Werror
 X_CFLAGS = 

@@ -35,6 +35,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 #include "compile.h"
@@ -113,7 +114,8 @@ PFstate_t PFstate = {
     print_core_tree     : false,
     print_algebra_tree  : false,
     print_ma_tree       : false,
-    parse_hsk           : false
+    parse_hsk           : false,
+    genType             : PF_GEN_ORG
 };
 
 #if 0
@@ -372,7 +374,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     if (status->summer_branch) {
         tm = PFtimer_start ();
-        PFprintMILtemp (pfout, croot);
+        PFprintMILtemp (pfout, croot, status);
         tm = PFtimer_stop (tm);
 
         if (status->timing)
@@ -543,6 +545,29 @@ subexelim:
 
  failure:
     return ( -1 ); /* EXIT_FAILURE */
+}
+
+/**
+ * Compiler driver of the Pathfinder compiler interface for usage
+ * by the Monet Runtime environment. In and out are the same. But the 
+ * mode is different and is used to indicate "sax" or "xml" output.
+ */
+int
+pf_compile_interface (FILE *pfin, FILE *pfout, char* mode)
+{
+        PFstate_t* status = &PFstate; /* incomplete */
+        status->summer_branch = true;
+        if ( strcmp(mode,"xml") == 0 ) {
+                status->genType = PF_GEN_XML;
+        } else if ( strcmp(mode,"sax") == 0 ) {
+                status->genType = PF_GEN_SAX;
+        } else {
+                /* incomplete */
+                fprintf(stderr,"pf_compile_interface: unkown output mode \"%s\", using \"xml\".\n",mode);
+                status->genType = PF_GEN_XML;
+        }
+        int res = pf_compile(pfin,pfout,status);
+        return res;
 }
 
 /**

@@ -55,10 +55,10 @@ static PFpnode_t *root;
 static PFpnode_t *c, *c1;
 
 /* avoid `implicit declaration of yylex' warning */
-extern int yylex (void);
+extern int pflex (void);
 
 /* bison error callback */
-void yyerror (const char *s);
+void pferror (const char *s);
 
 /* bison: generate verbose parsing error messages */
 #define YYERROR_VERBOSE 
@@ -99,8 +99,8 @@ static PFpnode_t *flatten_locpath (PFpnode_t *p, PFpnode_t *r);
 #define nil(loc) p_leaf (p_nil, (loc))
 
 /* scanner information to provide better error messages */
-extern char *yytext;
-extern int yylineno;
+extern char *pftext;
+extern int pflineno;
 
 /**
  * remember if boundary whitespace is to be stripped or preserved;
@@ -2002,36 +2002,37 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
 /**
  * Invoked by bison whenever a parsing error occurs.
  */
-void yyerror (const char *s)
+void pferror (const char *s)
 {
-    if (yytext && *yytext)
+    if (pftext && *pftext)
         PFlog ("%s on line %d (next token is `%s')",
-                s, yylineno,
-                yytext);
+                s, pflineno,
+                pftext);
     else
         PFlog ("%s on line %d",
-                s, yylineno);
+                s, pflineno);
 }
 
-extern FILE* yyin; /* standard input of scanner, defined by flex */
+extern FILE* pfin; /* standard input of scanner, defined by flex */
+YYLTYPE pflloc; /* why ? */
 
 /**
  * Parse an XQuery coming in on stdin (or whatever stdin might have
  * been dup'ed to)
  */
 void
-PFparse (FILE* pfin, PFpnode_t **r)
+PFparse (FILE* input, PFpnode_t **r)
 {
-    yyin = pfin;
+    pfin = input;
 #if YYDEBUG
-    yydebug = 1;
+    pfdebug = 1;
 #endif
 
     /* initialisation of yylloc */
-    yylloc.first_row = yylloc.last_row = 1;
-    yylloc.first_col = yylloc.last_col = 0;
+    pflloc.first_row = pflloc.last_row = 1;
+    pflloc.first_col = pflloc.last_col = 0;
 
-    if (yyparse ())
+    if (pfparse ())
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
     *r = root;

@@ -72,6 +72,10 @@ typedef enum PFphases_t PFphases_t;
 /** global state of the compiler  */
 typedef struct PFstate_t PFstate_t;
 
+#define PF_GEN_ORG      0
+#define PF_GEN_XML      1
+#define PF_GEN_SAX      2
+
 /** componentes of global compiler state */
 struct PFstate_t {
     bool quiet;               /**< command line switch: -q */
@@ -87,6 +91,7 @@ struct PFstate_t {
     bool print_ma_tree;       /**< command line switch: -m */
     bool summer_branch;       /**< command line switch: -M */
     bool parse_hsk;           /**< command line switch: -H */
+    unsigned int genType;     /* kind of output */
 };
 
 /** global state of the compiler */

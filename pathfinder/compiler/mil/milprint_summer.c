@@ -4794,7 +4794,7 @@ append_lev (FILE *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
  * @param c the root of the core tree
  */
 void
-PFprintMILtemp (FILE *f, PFcnode_t *c)
+PFprintMILtemp (FILE *f, PFcnode_t *c, PFstate_t *status)
 {
     PFarray_t *way, *counter;
 
@@ -4814,6 +4814,7 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
 #endif
 
 #if TIMINGS
+    if (status) {}
     fprintf(f,
             "module(alarm);\n"
             "var times := bat(int,int);\n"
@@ -4873,13 +4874,26 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
             "rep := nil; # nil_int is not declared here\n"
             "tries := nil; # nil_int is not declared here\n");
 #else
-    fprintf(f, "xml_print(ws, item, kind, int_values, dbl_values, dec_values, str_values);\n");
+    switch( status->genType ) {
+     case PF_GEN_ORG: {
+      fprintf(f, "xml_print(ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      /* print result in iter|pos|item representation */
+      /*
+       * print_output (f);
+       * fprintf(f, "print(\"mil-programm without crash finished :)\");\n");
+       */
+      }
+      break;
+     case PF_GEN_XML:
+      fprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      break;
+     case PF_GEN_SAX:
+      fprintf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      break;
+     default:
+      fprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* excpected!\n");
+    }
 
-    /* print result in iter|pos|item representation */
-/*
-    print_output (f);
-    fprintf(f, "print(\"mil-programm without crash finished :)\");\n");
-*/
 #endif
 #if WITH_SCRIPT
     fprintf(f, "test_results.insert(test_number,times);\n");

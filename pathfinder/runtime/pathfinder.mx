@@ -129,12 +129,14 @@ tuple will be in the result for this group."
 @m
 
 #############################################
-# The NEW XML print functions
+# The NEW XQUERY and XML print functions
 #
 # - print_doc(str mode, BAT[void,bat] ws, str name)
 # - print_result(str mode, BAT[void,bat] ws, BAT[void,oid] item,
 #			BAT[void,int] kind, .... the value BATs)
 #
+.COMMAND xquery(str, str) : void = xquery_xquery;
+ "Main XQUERY function for Pathfinder"
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
 .COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
@@ -874,6 +876,10 @@ deletes all persistent document BATs that store xml documents.",
 # this means to repeatedly print the same information, when context 
 # nodes relate to each other on the descendant axis).
 #
+
+PROC saxquery(str q) : void { xquery("sax",q); }
+
+PROC xmlquery(str q) : void { xquery("xml",q); }
 
 PROC attr_print(oid pre, oid frag, BAT[void,bat] ws) : void
 {
