@@ -1401,22 +1401,6 @@ The remainder contains the wrapper code over the version 4
 In most cases we pass a BAT identifier, which should be unified
 with a BAT descriptor. Upon failure we can simply abort the function.
 
-@= getBATdescriptor
-/*
-	if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("bat.@4", 
-			"cannot access bat @2 in bbp");
-*/
-	if( *@2 < 0) {
-		/* reverse descriptor should be explicitly loaded */
-		@3=BATdescriptor(*@2); BBPunfix(*@2);
-	} else @3= (BAT*) BBPgetdesc(*@2);
-	if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4", 
-			"cannot access descriptor @2");
-	}
-@-
-
 @c
 
 str BKCnewBATint(int *res, int *ht, int *tt, int *cap){
@@ -1447,8 +1431,12 @@ str BKCnewBat(int *res, int *ht, int *tt){
 }
 str BKCreverse(int *ret, int *bid){
 	BAT *b, *bn= NULL;
-	@:getBATdescriptor(ret,bid,b,reverse)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.reverse", "Cannot access descriptor");
+    }
+
 	CMDreverse(&bn,b);
+	BBPunfix(b->batCacheid);
 	if( bn) {
 		*ret= bn->batCacheid;
 		BBPincref(bn->batCacheid,TRUE);
@@ -1460,54 +1448,77 @@ str BKCreverse(int *ret, int *bid){
 
 str BKCmirror(int *ret, int *bid){
 	BAT *b, *bn = NULL;
-	@:getBATdescriptor(ret,bid,b,mirror)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.mirror", "Cannot access descriptor");
+    }
 	if( CMDmirror(&bn, b)== GDK_SUCCEED){
-                BBPincref(*ret = bn->batCacheid,TRUE);
-				BBPunfix(*ret);
-                return MAL_SUCCEED;
-        }
+		BBPincref(*ret = bn->batCacheid,TRUE);
+		BBPunfix(*ret);
+		BBPunfix(b->batCacheid);
+		return MAL_SUCCEED;
+	}
 	*ret = 0;
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.mirror", "GDKerror");
 }
 
 str BKCconvert(int *ret, int *bid){
 	BAT *b, *bn=NULL;
-	@:getBATdescriptor(ret,bid,b,convert)@
+	(void) ret;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.convert", "Cannot access descriptor");
+    }
 	CMDconvert(&bn,b);
 	BBPincref(bn->batCacheid,TRUE);
 	BBPunfix(bn->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCrevert(int *ret, int *bid){
 	BAT *b, *bn =NULL;
-	@:getBATdescriptor(ret,bid,b,revert)@
+	(void) ret;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.revert", "Cannot access descriptor");
+    }
 	if( CMDrevert(&bn,b) == GDK_SUCCEED){
 		BBPincref(bn->batCacheid,TRUE);
 		BBPunfix(bn->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.revert","GDKerror");
 }
 
 str BKCorder(int *ret, int *bid){
 	BAT *b, *bn = NULL;
-	@:getBATdescriptor(ret,bid,b,order)@
+	(void) ret;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.order", "Cannot access descriptor");
+    }
 	if( CMDorder(&bn,b) == GDK_SUCCEED){
+		BBPunfix(b->batCacheid);
 		BBPincref(bn->batCacheid,TRUE);
 		BBPunfix(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.order","GDKerror");
 }
 str BKCorder_rev(int *ret, int *bid){
 	BAT *b, *bn = NULL;
-	@:getBATdescriptor(ret,bid,b,order_rev)@
+	(void) ret;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.order_rev", "Cannot access descriptor");
+    }
 	if( CMDorder_rev(&bn,b) == GDK_SUCCEED){
 		BBPincref(bn->batCacheid,TRUE);
 		BBPunfix(bn->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.order","GDKerror");
 }
 @-
@@ -1526,26 +1537,43 @@ printf("val %d seqbase %d pos %d\n", *(oid*)@1,
 str BKCinsert_void_bun(int *r, int *bid, ptr t) {
 	BAT *b;
 	oid h= oid_nil;
-	@:getBATdescriptor(r,bid,b,insert)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.insert", "Cannot access descriptor");
+    }
 	@:derefStr(b,t,t)@
 	BUNins(b,(ptr)&h, @:batconvert(b,t)@);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,insert)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.insert", "Cannot access descriptor");
+    }
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCinsert_bat(int *r, int *bid, int *sid){
 	BAT *b, *s, *bn= NULL;
-	@:getBATdescriptor(r,bid,b,insert)@
-	@:getBATdescriptor(r,sid,s,insert)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.insert", "Cannot access descriptor");
+    }
+	(void) r;
+    if( (s= BATdescriptor(*sid)) == NULL ){
+		BBPunfix(b->batCacheid);
+        return throwMessage("bat.insert", "Cannot access descriptor");
+    }
 	CMDinsert_bat(&bn, b,s);
+	BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	BBPincref(bn->batCacheid,TRUE);
 	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
@@ -1553,77 +1581,121 @@ str BKCinsert_bat(int *r, int *bid, int *sid){
 
 str BKCreplace_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b, *bn =NULL;
-	@:getBATdescriptor(r,bid,b,replace)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.replace", "Cannot access descriptor");
+    }
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	CMDreplace_bun(&bn,b,h,t);
 	*r = bn->batCacheid;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCreplace_bat(int *r, int *bid, int *sid){
 	BAT *b,*s, *bn= NULL;
-	@:getBATdescriptor(r,bid,b,replace)@
-	@:getBATdescriptor(r,sid,s,replace)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.replace", "Cannot access descriptor");
+    }
+    if( (s= BATdescriptor(*sid)) == NULL ){
+		BBPunfix(b->batCacheid);
+        return throwMessage("bat.replace", "Cannot access descriptor");
+    }
 	if( CMDreplace_bat(&bn,b,s)== GDK_SUCCEED){
 		BBPincref(bn->batCacheid,TRUE);
 		BBPunfix(bn->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	return throwMessage("bat.replace_bat", "GDKerror");
 }
 str BKCdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b, *bn=NULL;
-	(void) bn;
-	@:getBATdescriptor(r,bid,b,delete)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.delete", "Cannot access descriptor");
+    }
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	if(CMDdelete_bun(&bn,b,h,t) == GDK_SUCCEED){
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.delete_buns", "GDKerror");
 }
 
 str BKCdelete_head(int *r, int *bid, ptr h) {
 	BAT *b,*bn= NULL;
-	(void) bn;
-	@:getBATdescriptor(r,bid,b,delete)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.delete", "Cannot access descriptor");
+    }
 	@:derefStr(b,h,h)@
 	if( CMDdelete_head(&bn,b,h) == GDK_SUCCEED){
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("bat.delete_head", "GDKerror");
+	BBPunfix(b->batCacheid);
+	return throwMessage("bat.delete", "GDKerror");
 }
 
 str BKCdelete_all(int *r, int *bid) {
 	BAT *b, *bn = NULL;
-	(void) bn;
-	@:getBATdescriptor(r,bid,b,delete)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.delete", "Cannot access descriptor");
+    }
 	if( CMDdelete_all(&bn,b) == GDK_SUCCEED){
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("bat.delete_all", "GDKerror");
+	BBPunfix(b->batCacheid);
+	return throwMessage("bat.delete", "GDKerror");
 }
 
 str BKCdelete_bat_bun(int *r, int *bid, int *sid){
 	BAT *b,*s, *bn = NULL;
-	(void) bn;
-	@:getBATdescriptor(r,bid,b,delete)@
-	@:getBATdescriptor(r,sid,s,delete)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.delete", "Cannot access descriptor");
+    }
+    if( (s= BATdescriptor(*sid)) == NULL ){
+		BBPunfix(b->batCacheid);
+        return throwMessage("bat.delete", "Cannot access descriptor");
+    }
 	if( CMDdelete_bat_bun(&bn,b,s) == GDK_SUCCEED){
+		BBPunfix(b->batCacheid);
+		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	return throwMessage("bat.delete_bat_buns", "GDKerror");
 }
 
 str BKCdelete_bat_head(int *r, int *bid, int *sid){
 	BAT *b,*s, *bn = NULL;
-	(void) bn;
-	@:getBATdescriptor(r,bid,b,delete)@
-	@:getBATdescriptor(r,sid,s,delete)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.delete", "Cannot access descriptor");
+    }
+    if( (s= BATdescriptor(*sid)) == NULL ){
+		BBPunfix(b->batCacheid);
+        return throwMessage("bat.delete", "Cannot access descriptor");
+    }
 	if( CMDdelete_bat_head(&bn,b,s) == GDK_SUCCEED){
+		BBPunfix(b->batCacheid);
+		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	return throwMessage("bat.delete_bat_heads", "GDKerror");
 }
 str BKCdestroy_bat(bit *r,str *input, bit *immediate) {
@@ -1633,16 +1705,24 @@ str BKCdestroy_bat(bit *r,str *input, bit *immediate) {
 str BKCdestroyImmediate(bit *r,int *bid, bit *immediate) {
 	BAT *b;
 	char buf[512];
-	@:getBATdescriptor(r,bid,b,destroy)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.destroy", "Cannot access descriptor");
+    }
 	BBPlogical(b->batCacheid,buf);
 	CMDdestroy(r,buf,immediate);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCdestroy(bit *r,int *bid) {
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,destroy)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.destroy", "Cannot access descriptor");
+    }
 	*bid = 0;
 	BATmode(b, TRANSIENT);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1744,36 +1824,60 @@ size_t void_append_bat( BAT *b, BAT *u){
 str BKCbat_append_void_bat_wrap( int *r, int *bid, int *uid )
 {
 	BAT *i, *u;
-	@:getBATdescriptor(r,bid,i,append)@
-	@:getBATdescriptor(r,uid,u,append)@
+	(void) r;
+    if( (i= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
+    if( (u= BATdescriptor(*uid)) == NULL ){
+		BBPunfix(i->batCacheid);
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
 	i= BATsetaccess(i,0);
 	void_append_bat( i, u );
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid,TRUE);
+	BBPunfix(i->batCacheid);
+	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCbat_append_oid_bat_wrap( int *r, int *bid, int *uid )
 {
 	BAT *i, *u;
-	@:getBATdescriptor(r,bid,i,append)@
-	@:getBATdescriptor(r,uid,u,append)@
+	(void) r;
+    if( (i= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
+    if( (u= BATdescriptor(*uid)) == NULL ){
+		BBPunfix(i->batCacheid);
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
 	i= BATsetaccess(i,0);
 	void_insert_bat( i, u );
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid,TRUE);
+	BBPunfix(i->batCacheid);
+	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 {
 	BAT *i, *u;
-	@:getBATdescriptor(r,bid,i,append)@
-	@:getBATdescriptor(r,uid,u,append)@
+	(void) r;
+    if( (i= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
+    if( (u= BATdescriptor(*uid)) == NULL ){
+		BBPunfix(i->batCacheid);
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
 	i= BATsetaccess(i,0);
 	void_insert_bat( i, u );
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid,TRUE);
+	BBPunfix(i->batCacheid);
+	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1801,23 +1905,31 @@ static oid oid_max( BAT *i )
 str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 {
 	BUN r=0,s;
-        oid o;
+	oid o;
 	BAT *i, *u;
-	@:getBATdescriptor(r,bid,i,append)@
-	@:getBATdescriptor(r,uid,u,append)@
+	(void) r;
+    if( (i= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
+    if( (u= BATdescriptor(*uid)) == NULL ){
+		BBPunfix(i->batCacheid);
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
 	
-        assert(i->htype == TYPE_oid &&
-                (BATcount(u) == 0 || u->htype == TYPE_oid));
+	assert(i->htype == TYPE_oid &&
+			(BATcount(u) == 0 || u->htype == TYPE_oid));
 
-        i= BATsetaccess(i,0);
-        o = oid_max(i);
-        o++;
-        BATloop(u, r, s){
-                oid h = *(oid*)BUNhead(u,r) + o;
-                BUNins(i, &h,  BUNtail(u,r));
-        }
+	i= BATsetaccess(i,0);
+	o = oid_max(i);
+	o++;
+	BATloop(u, r, s){
+		oid h = *(oid*)BUNhead(u,r) + o;
+		BUNins(i, &h,  BUNtail(u,r));
+	}
 	*res = i->batCacheid;
 	BBPincref(i->batCacheid,TRUE);
+	BBPunfix(i->batCacheid);
+	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -1826,9 +1938,12 @@ This would be too costly
 @c
 str BKCoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 {
-        oid o;
+	oid o;
 	BAT *i;
-	@:getBATdescriptor(r,bid,i,append)@
+	(void) r;
+    if( (i= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
 
 	assert(i->htype == TYPE_oid);
         o = oid_max(i);
@@ -1837,6 +1952,7 @@ str BKCoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 	BUNins( i, (ptr) & o, u );
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid,TRUE);
+	BBPunfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1845,43 +1961,61 @@ str BKCbat_append_val_wrap( int *r, int *bid, ptr u)
 {
 	BAT *i;
 	oid h;
-	@:getBATdescriptor(r,bid,i,append)@
+	(void) r;
+    if( (i= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.append", "Cannot access descriptor");
+    }
 	h = i->hseqbase + BATcount(i);
 	@:derefStr(i,t,u)@
         i= BATsetaccess(i,0);
 	BUNins( i, (ptr) & h, u );
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid,TRUE);
+	BBPunfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCbat_replace_oid_bat_wrap( int *r, int *bod, int *did )
 {
 	BAT *o, *d;
-	@:getBATdescriptor(r,bod,o,replace)@
-	@:getBATdescriptor(r,did,d,replace)@
-        o= BATsetaccess(o,0);
+	(void) r;
+    if( (o= BATdescriptor(*bod)) == NULL ){
+        return throwMessage("bat.replace", "Cannot access descriptor");
+    }
+    if( (d= BATdescriptor(*did)) == NULL ){
+		BBPunfix(o->batCacheid);
+        return throwMessage("bat.replace", "Cannot access descriptor");
+    }
+	o= BATsetaccess(o,0);
 	void_replace_bat( o, d );
 	*r = o->batCacheid;
 	BBPincref(o->batCacheid,TRUE);
+	BBPunfix(o->batCacheid);
+	BBPunfix(d->batCacheid);
 	return MAL_SUCCEED;
 }
 /*end of SQL enhancement */
 
 str BKCgetAlpha(int *r, int *bid) {
 	BAT *b,*c;
-	@:getBATdescriptor(r,bid,b,getInserted)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.getInserted", "Cannot access descriptor");
+    }
 	BBPincref(b->batCacheid,TRUE);
 	c= BATalpha(b);
 	*r = c->batCacheid;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCgetDelta(int *r, int *bid) {
 	BAT *b,*c;
-	@:getBATdescriptor(r,bid,b,getInserted)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.getDeleted", "Cannot access descriptor");
+    }
 	BBPincref(b->batCacheid,TRUE);
 	c= BATdelta(b);
 	*r = c->batCacheid;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCgetCapacity(lng *res, int *bid) {
@@ -1899,53 +2033,72 @@ str BKCgetTailType(str *res, int *bid) {
 }
 str BKCgetRole(str *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,getType)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.getType", "Cannot access descriptor");
+    }
 	*res = GDKstrdup((*bid > 0)?b->hident:b->tident);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCsetkey(int *res, int *bid, bit *param) {
 	BAT *b, *bn = NULL;
-	(void)bn;
-	@:getBATdescriptor(res,bid,b,setkey)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setKey", "Cannot access descriptor");
+    }
 	CMDsetkey(&bn,b,param);
 	*res = b->batCacheid;
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str BKCsetSet(int *res, int *bid, bit *param) {
 	BAT *b, *bn = NULL;
-	(void) bn;
-	@:getBATdescriptor(res,bid,b,setSet)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setSet", "Cannot access descriptor");
+    }
 	CMDsetset(&bn,b,param);
 	*res = b->batCacheid;
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 str BKCisaSet(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,setSet)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.isaSet", "Cannot access descriptor");
+    }
 	*res = b->batSet;
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str BKCsetSorted(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,isSorted)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.isSorted", "Cannot access descriptor");
+    }
 	CMDordered(res,b);
-        *res = BATordered(b)?1:0;
-        return MAL_SUCCEED;
+	*res = BATordered(b)?1:0;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 str BKCisSorted(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,isSorted)@
-        *res = BATordered(b)?1:0;
-        return MAL_SUCCEED;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.isSorted", "Cannot access descriptor");
+    }
+	*res = BATordered(b)?1:0;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 str BKCisSortedReverse(bit *res, int *bid) {
-        BAT *b;
-        @:getBATdescriptor(res,bid,b,isSorted)@
-        *res = BATordered_rev(b)?1:0;
-        return MAL_SUCCEED;
+	BAT *b;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.isSorted", "Cannot access descriptor");
+    }
+	*res = BATordered_rev(b)?1:0;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 @-
 We must take care of the special case of a nil column (TYPE_void,seqbase=nil)
@@ -1955,42 +2108,61 @@ a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
 
 str BKCgetKey(bit *ret, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,setPersistence)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setPersistence", "Cannot access descriptor");
+    }
 	CMDgetkey(ret,b);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCpersists(bit *res, int *bid, int *flg) {
 	BAT *b ; 
-	@:getBATdescriptor(res,bid,b,setPersistence)@
+	(void) res;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setPersistence", "Cannot access descriptor");
+    }
 	if( *flg) BBPincref(b->batCacheid, TRUE);
 	else BBPdecref(b->batCacheid,TRUE);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCsetPersistent(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,setPersistence)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setPersistence", "Cannot access descriptor");
+    }
 	BATmode(b,PERSISTENT);
 	*res = TRUE;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCisPersistent(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,setPersistence)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setPersistence", "Cannot access descriptor");
+    }
 	*res= (b->batPersistence == PERSISTENT)? TRUE:FALSE;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCsetTransient(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,setTransient)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setTransient", "Cannot access descriptor");
+    }
 	BATmode(b, TRANSIENT);
 	*res= TRUE;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCisTransient(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,setTransient)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setTransient", "Cannot access descriptor");
+    }
 	*res= b->batPersistence == TRANSIENT;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -1998,18 +2170,23 @@ str BKCisTransient(bit *res, int *bid) {
 str BKCset@1(int *res, int *bid) {
 	BAT *b, *bn = NULL;
 	int param=@2;
-	(void) bn;
-	@:getBATdescriptor(res,bid,b,set@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.set@1", "Cannot access descriptor");
+    }
 	CMDsetaccess(&bn,b,&param);
 	BBPunfix(bn->batCacheid);
 	*res = 0;
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 str BKChas@1(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,set@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.set@1", "Cannot access descriptor");
+    }
 	*res = BATgetaccess(b)=='@3';
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 @-
 @c
@@ -2019,16 +2196,20 @@ str BKChas@1(bit *res, int *bid) {
 
 str BKCaccess(int *res, int *bid, int *m) {
 	BAT *b,*bn = NULL;
-	@:getBATdescriptor(res,bid,b,setAccess)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setAccess", "Cannot access descriptor");
+    }
 	CMDsetaccess(&bn,b,m);
 	*res = b->batCacheid;
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 str BKCsetAccess(int *res, int *bid, str *param) {
 	BAT *b,*bn = NULL;
 	int m;
-	(void) bn;
-	@:getBATdescriptor(res,bid,b,setAccess)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setAccess", "Cannot access descriptor");
+    }
 	switch(*param[0]){
 	case 'r':m= 1; break;
 	case 'a':m= 2; break;
@@ -2039,18 +2220,22 @@ str BKCsetAccess(int *res, int *bid, str *param) {
 	}
 	CMDsetaccess(&bn,b,&m);
 	*res = b->batCacheid;
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str BKCgetAccess(char *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,getAccess)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.getAccess", "Cannot access descriptor");
+    }
 	switch(BATgetaccess(b)){
 	case 1: *res= 'r'; break;
 	case 2: *res= 'a'; break;
 	case 0: *res= 'w'; break;
 	}
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 @- Property management
@@ -2061,7 +2246,9 @@ Where necessary use the primary view to access the properties
 str BKCinfo(int *retval, int *bid){
 	BAT *bn = NULL, *b;
 
-	@:getBATdescriptor(retval,bid,b,getAccess)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.getInfo", "Cannot access descriptor");
+    }
 	if( b== 0) return throwMessage("BKCinfo","no such bat.\n");
 	if( CMDinfo(&bn,b) == GDK_SUCCEED){
 		*retval = bn->batCacheid;
@@ -2069,6 +2256,7 @@ str BKCinfo(int *retval, int *bid){
 		return MAL_SUCCEED;
 	}
 	BBPunfix(*bid);
+	BBPunfix(b->batCacheid);
 	return throwMessage("BKCinfo","GDKerror");
 }
 
@@ -2076,68 +2264,92 @@ str BKCinfo(int *retval, int *bid){
 
 str BKCbatsize(int *tot, int *bid){
 	BAT *b;
-	@:getBATdescriptor(tot,bid,b,batsize)@
-	return MAL_SUCCEED;
+	(void) tot;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.batsize", "Cannot access descriptor");
+    }
+	BBPunfix(b->batCacheid);
+	return throwMessage("bat.batsize", "Not yet implemented");
 }
 
 str BKCbatsize_str(int *tot, str batname){
-        bat bid = BBPindex(batname);
-        if (bid == 0) {
-                return throwMessage("BKCbatsizes","no such bat.\n");
-        }
-        return BKCbatsize(tot, &bid);
+	bat bid = BBPindex(batname);
+	if (bid == 0) {
+			return throwMessage("BKCbatsizes","no such bat.\n");
+	}
+	return BKCbatsize(tot, &bid);
 }
 @+ Synced BATs
 @c
 str BKCisSynced(bit *ret, int *bid1, int *bid2){
 	BAT *b1, *b2;
-	@:getBATdescriptor(ret,bid1,b1,isSynced)@
-	@:getBATdescriptor(ret,bid2,b2,isSynced)@
+    if( (b1= BATdescriptor(*bid1)) == NULL ){
+        return throwMessage("bat.isSynced", "Cannot access descriptor");
+    }
+    if( (b2= BATdescriptor(*bid2)) == NULL ){
+		BBPunfix(b1->batCacheid);
+        return throwMessage("bat.isSynced", "Cannot access descriptor");
+    }
 	CMDsynced(ret,b1,b2);
+	BBPunfix(b1->batCacheid);
+	BBPunfix(b2->batCacheid);
 	return MAL_SUCCEED;
 }
 @+ Role Management
 @c
 str BKCsetRole(int *r, int *bid, str *hname, str *tname){
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,setRole)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setRole", "Cannot access descriptor");
+    }
 	if(*hname== 0) return throwMessage("bat.setRole", "head name missing");
 	if(*tname== 0) return throwMessage("bat.setRole", "tail name missing");
 	BATroles(b, *hname, *tname);
 	*r= b->batCacheid;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCsetColumn(int *r, int *bid, str *tname){
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,setColumn)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setColumn", "Cannot access descriptor");
+    }
 	if(*tname==0) return throwMessage("bat.setColumn", "column name missing");
 	BATroles(b, b->hident,*tname);
 	*r= b->batCacheid;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCsetColumns(int *r, int *bid, str *hname, str *tname){
-        BAT *b;
-        @:getBATdescriptor(r,bid,b,setColumns)@
-        BATroles(b, *hname, *tname);
-        *r= b->batCacheid;
-        return MAL_SUCCEED;
-}
-
-
-str BKCsetName(bit *retval, int *bid, str *s){
-	int id= *bid;
 	BAT *b;
-	@:getBATdescriptor(retval,&id,b,setName)@
-	b= BATdescriptor(id);
-	CMDrename(retval, b, *s);
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setColumns", "Cannot access descriptor");
+    }
+	BATroles(b, *hname, *tname);
+	*r= b->batCacheid;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str BKCgetBBPname(str *retval, int *bid){
+
+str BKCsetName(bit *ret, int *bid, str *s){
 	BAT *b;
-	@:getBATdescriptor(retval,bid,b,getBBPname)@
-	*retval = GDKstrdup(BBPname(b->batCacheid));
+	(void) ret;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setName", "Cannot access descriptor");
+    }
+	CMDrename(ret, b, *s);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str BKCgetBBPname(str *ret, int *bid){
+	BAT *b;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.getName", "Cannot access descriptor");
+    }
+	*ret = GDKstrdup(BBPname(b->batCacheid));
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2147,8 +2359,11 @@ str BKCunload(bit *res, str *input) {
 }
 str BKCisCached(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,isCached)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.isCached", "Cannot access descriptor");
+    }
 	*res = 0;
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.isCached", "not yet implemented");
 }
 str BKCload(int *res, str *input) {
@@ -2172,8 +2387,11 @@ str BKCcold(int *res, str *input) {
 str BKCcoldBAT(int *res, int *bid) {
 	BAT *b;
 	(void)res; (void)bid; /* fool compiler */
-	@:getBATdescriptor(res,bid,b,isCached)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.isCached", "Cannot access descriptor");
+    }
 	BBPcold(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCheat(int *res, str *input) {
@@ -2185,36 +2403,46 @@ str BKCheat(int *res, str *input) {
  }
 str BKChotBAT(int *res, int *bid) {
 	BAT *b;
-	(void)res; /* fool compiler */
-	@:getBATdescriptor(res,bid,b,isCached)@
+	(void)res; (void)bid; /* fool compiler */
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.isCached", "Cannot access descriptor");
+    }
 	BBPhot(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCsave(bit *res, str *input) {
 	CMDsave(res, *input);
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 str BKCsave2(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,save)@
+	(void)res; /* fool compiler */
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.save", "Cannot access descriptor");
+    }
 	
 	if (b && BATdirty(b)) {
 		if (BBPsave(b) == 0) *res = TRUE;
 	}
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 @c
 str BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 			int *hacc, int *tacc)
 {	BAT *b, *bn = NULL;
-	(void) bn;
-	@:getBATdescriptor(res,bid,b,mmap)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.mmap", "Cannot access descriptor");
+    }
 	if( CMDmmap(&bn,b,bns,hhp,thp,hacc,tacc) == GDK_SUCCEED){
 		*res= TRUE;
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	*res= FALSE;
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.mmap", " failed");
 }
 str BKCmmap2(int *res, int *bid, int *bns){
@@ -2224,11 +2452,14 @@ str BKCmmap2(int *res, int *bid, int *bns){
 str BKCmadvise(int *res, int *bid, int *bns, int *hhp, int *thp,
 		 	        int *hacc, int *tacc)
 {	BAT *b;
-	@:getBATdescriptor(res,bid,b,madvice)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.madvice", "Cannot access descriptor");
+    }
 	*res= BATmadvise(b, (*bns==int_nil)?-1:*bns,
 		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp,
 		(*hacc==int_nil)?-1:*hacc,
 		(*tacc==int_nil)?-1:*tacc);
+	BBPunfix(b->batCacheid);
 	if( *res) return throwMessage("bat.madvise", " failed");
 	return MAL_SUCCEED;
 }
@@ -2251,17 +2482,23 @@ str BKCaccbuild_std(int *ret, int *bid, int* acc){
 
 str BKCaccdestroy(int *ret, int *bid, int *acc) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,accdestroy)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.accdestroy", "Cannot access descriptor");
+    }
 	CMDaccdestroy(b,acc);
 	*ret = TRUE;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 	/* return throwMessage("Accelerator","Obsolete functionality");*/
 }
 
 str BKCaccpresent(int *ret, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,accpresent)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.accpresent", "Cannot access descriptor");
+    }
 	CMDaccpresent(ret,b);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 	/* return throwMessage("Accelerator","Obsolete functionality");*/
 }
@@ -2269,47 +2506,65 @@ str BKCaccpresent(int *ret, int *bid) {
 
 str BKChasHash(bit *ret, int *bid) {
 	BAT *b;
-	(void)ret; /* fool compiler */
-	@:getBATdescriptor(ret,bid,b,hasHash)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.hasHash", "Cannot access descriptor");
+    }
 	*ret = b->hacctype == 1;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCsetHash(bit *ret, int *bid, bit *prop) {
 	BAT *b;
 	(void)ret; (void) prop; /* fool compiler */
-	@:getBATdescriptor(ret,bid,b,setHash)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setHash", "Cannot access descriptor");
+    }
 	BAThash(b,0);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKChasIndex(bit *ret, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,hasIndex)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.hasIndex", "Cannot access descriptor");
+    }
 	*ret = b->hacctype == 2;
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.hasIndex", " not yet implemented");
 }
 str BKCsetIndex(bit *ret, int *bid, bit *prop) {
 	BAT *b;
-	(void) prop; /* fool compiler */
-	@:getBATdescriptor(ret,bid,b,setIndex)@
+	(void) ret; (void) prop; /* fool compiler */
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setIndex", "Cannot access descriptor");
+    }
+	BBPunfix(b->batCacheid);
 	return throwMessage("bat.setIndex", " not yet implemented");
 }
 
 str BKCsetSequenceBase(int *r, int *bid, oid* o){
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,seqbase)@
+	(void) r;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setSequenceBase", "Cannot access descriptor");
+    }
 	BATseqbase(b, *o);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str BKCsetSequenceBaseNil(int *r, int *bid, oid* o){
-      oid ov= oid_nil;
-      (void) o;
-      return BKCsetSequenceBase(r,bid, &ov);
+	oid ov= oid_nil;
+	(void) o;
+	return BKCsetSequenceBase(r,bid, &ov);
 }
 
 str BKCgetSequenceBase(oid *r, int *bid){
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,seqbase)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("bat.setSequenceBase", "Cannot access descriptor");
+    }
 	*r = b->hseqbase;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

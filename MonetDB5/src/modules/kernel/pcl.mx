@@ -403,18 +403,6 @@ pcl_eventname(str *result, int *event)
 
 @-
 The MAL wrappers around the V4 library
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("enum.@4",
-			"cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
 @c
 extern int pcl_start(BAT *event, int *mode);
 extern int pcl_start_rates(BAT *event, int *mode);
@@ -424,47 +412,66 @@ extern int pcl_query(BAT **result, BAT *event, int *mode);
 extern int pcl_try(bit *result, BAT *event, int *mode);
 
 str CMDpclstart(int *ret, int *bid, int *mode){
-	BAT *event;
-	@:getBATdescriptor(ret,bid,event,PLCstart)@
-	pcl_start(event,mode);
+	BAT *b;
+	(void) ret;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("pcl.start", "Cannot access descriptor");
+    }
+
+	pcl_start(b,mode);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDpclstart_rates(int *ret, int *bid, int *mode){
-	BAT *event;
-	@:getBATdescriptor(ret,bid,event,PLCstart)@
-	pcl_start_rates(event,mode);
+	BAT *b;
+	(void) ret;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("pcl.start", "Cannot access descriptor");
+    }
+	pcl_start_rates(b,mode);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str  CMDpclstop(int *ret, int *bid)
-	BAT *result, *event;
-	@:getBATdescriptor(ret,bid,result,PLCstop)@
-	@:getBATdescriptor(ret,eid,event,PLCstop)@
-	pcl_stop(&result,event);
-	BBPincref(*ret= result->batCacheid,TRUE);
+	BAT *b;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("pcl.stop", "Cannot access descriptor");
+    }
+
+	pcl_stop(&b,event);
+	BBPincref(*ret= b->batCacheid,TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str  CMDpclstop_rates(int *ret, int *bid, int *eid)
-	BAT *result, *event;
-	@:getBATdescriptor(ret,bid,result,PLCstop_rates)@
-	@:getBATdescriptor(ret,eid,event,PLCstop_rates)@
-	pcl_stop_rates(&result,event);
-	BBPincref(*ret= result->batCacheid,TRUE);
+	BAT *b, *event;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("pcl.stop", "Cannot access descriptor");
+    }
+    if( (event= BATdescriptor(*eid)) == NULL ){
+         return throwMessage("pcl.stop", "Cannot access descriptor");
+    }
+	pcl_stop_rates(&b,event);
+	BBPincref(*ret= b->batCacheid,TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str  CMDpclquery(int *ret, int *eid, int *mode)
-	BAT *result, *event;
-	@:getBATdescriptor(ret,eid,event,PLCpclquery)@
-	pcl_query(&result,event,mode);
-	BBPincref(*ret= result->batCacheid,TRUE);
+	BAT *b;
+    if( (b= BATdescriptor(*eid)) == NULL ){
+         return throwMessage("pcl.stop", "Cannot access descriptor");
+    }
+	pcl_query(&b,NULL,mode);
+	BBPincref(*ret= b->batCacheid,TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str  CMDpcltry(int *ret, int *eid,int *mode)
-	BAT *event;
-	@:getBATdescriptor(ret,eid,event,PLCpcltry)@
-	pcl_query(ret,event,mode);
+	BAT *b;
+    if( (b= BATdescriptor(*eid)) == NULL ){
+         return throwMessage("pcl.stop", "Cannot access descriptor");
+    }
+	pcl_query(&b,NULL,mode);
 	return MAL_SUCCEED;
 }
 @-

@@ -386,20 +386,6 @@ This has been left out.
 		p2= (ptr)( ((char *)p2) + s2);
 	}
 @-
-The following utility extracts the BATdescriptor
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("batcalc.@4", 
-			"cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
-@-
 A general assumption in all cases is the bats are synchronized on their
 head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
@@ -443,16 +429,25 @@ str CMDbat@1(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
 	str msg;
 
-	@:getBATdescriptor(ret,l,left,CMDbat@1)@
-	@:getBATdescriptor(ret,r,right,CMDbat@1)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (right= BATdescriptor(*r)) == NULL ){
+		BBPunfix(left->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	@:chkSize(left,right,CMDbat@1)@
 
 	dst= BATcopy(left);
 	if( dst == NULL){
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		return throwMessage("batcalc.mod", "no copy available ");
 	}
 	msg= bataccum@1(dst,left,right);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	if(msg){
 		return msg;
 	}
@@ -463,23 +458,43 @@ str CMDbat@1(int *ret, int *l, int *r)
 
 str CMDbataccum@1(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
+	str msg;
+	(void) ret;
 
-	@:getBATdescriptor(ret,d,dst,CMDbataccum@1)@
-	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
-	@:getBATdescriptor(ret,r,right,CMDbataccum@1)@
+    if( (dst= BATdescriptor(*d)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (left= BATdescriptor(*l)) == NULL ){
+		BBPunfix(dst->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (right= BATdescriptor(*r)) == NULL ){
+		BBPunfix(dst->batCacheid);
+		BBPunfix(left->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	@:chkSize(dst,left,CMDbataccum@1)@
 	@:chkSize(dst,right,CMDbataccum@1)@
 
-	return bataccum@1(dst,left,right);
+	msg= bataccum@1(dst,left,right);
+	BBPunfix(dst->batCacheid);
+	BBPunfix(left->batCacheid);
+	return msg;
 }
 str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	int s1,s2;
 	ptr p1,p2, hend;
+	(void) ret;
 
-	@:getBATdescriptor(ret,r,dst,CMDbataccum@1)@
-	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
+    if( (dst= BATdescriptor(*r)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (left= BATdescriptor(*l)) == NULL ){
+		BBPunfix(dst->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 	@:chkSize(dst,left,CMDbataccum@1)@
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
@@ -494,6 +509,8 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	case TYPE_lng: @:accumCst(lng,@2)@ break;
 	default: return throwMessage("batcalc.@1", "unexpected type");
 	}
+	BBPunfix(dst->batCacheid);
+	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l){
@@ -505,13 +522,16 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 	int d;
 	str msg;
 
-	@:getBATdescriptor(ret,l,left,CMDbat@1)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 	dst= BATcopy(left);
 	if( dst == NULL){
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	d= dst->batCacheid;
 	msg= CMDbataccum@1cst(ret, &d,l,cst);
+	BBPunfix(left->batCacheid);
 	if( msg){
 		BBPdecref(d,TRUE);
 		return msg;
@@ -525,13 +545,16 @@ str CMDcst@1bat(int *ret, void *cst, int *l)
 	int d;
 	str msg;
 
-	@:getBATdescriptor(ret,l,left,CMDbat@1)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 	dst= BATcopy(left);
 	if( dst == NULL){
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	d= dst->batCacheid;
 	msg= CMDbataccum@1cst(ret, &d,l,cst);
+	BBPunfix(left->batCacheid);
 	if( msg){
 		BBPdecref(d,TRUE);
 		return msg;
@@ -573,9 +596,15 @@ str bataccumMOD(BAT *dst, BAT *left, BAT *right)
 
 str CMDbatMOD(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
+	str msg;
 
-	@:getBATdescriptor(ret,l,left,CMDbatMOD)@
-	@:getBATdescriptor(ret,r,right,CMDbatMOD)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
+    if( (right= BATdescriptor(*r)) == NULL ){
+		BBPunfix(left->batCacheid);
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
 
 	@:chkSize(left,right,CMDbatMOD)@
 
@@ -585,29 +614,51 @@ str CMDbatMOD(int *ret, int *l, int *r)
 	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(*ret);
-	return bataccumMOD(dst,left,right);
+	msg= bataccumMOD(dst,left,right);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	return msg;
 }
 
 str CMDbataccumMOD(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
+	str msg;
 
-	@:getBATdescriptor(ret,d,dst,CMDbataccumMOD)@
-	@:getBATdescriptor(ret,l,left,CMDbataccumMOD)@
-	@:getBATdescriptor(ret,r,right,CMDbataccumMOD)@
+    if( (dst= BATdescriptor(*d)) == NULL ){
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
+    if( (left= BATdescriptor(*l)) == NULL ){
+		BBPunfix(dst->batCacheid);
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
+    if( (right= BATdescriptor(*r)) == NULL ){
+		BBPunfix(dst->batCacheid);
+		BBPunfix(left->batCacheid);
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
 
 	@:chkSize(dst,left,CMDbataccumMOD)@
 	@:chkSize(dst,right,CMDbataccumMOD)@
 
 	*ret = dst->batCacheid;
-	return bataccumMOD(dst,left,right);
+	msg= bataccumMOD(dst,left,right);
+	BBPunfix(dst->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	return msg;
 }
 str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	int s1,s2;
 	ptr p1,p2, hend;
 
-	@:getBATdescriptor(ret,r,dst,CMDbataccumMOD)@
-	@:getBATdescriptor(ret,l,left,CMDbataccumMOD)@
+    if( (dst= BATdescriptor(*r)) == NULL ){
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
+    if( (left= BATdescriptor(*l)) == NULL ){
+		BBPunfix(dst->batCacheid);
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
 	@:chkSize(dst,left,CMDbataccumMOD)@
 	*ret = dst->batCacheid;
 	@:batinit(1,dst)@
@@ -621,6 +672,8 @@ str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
 	case TYPE_lng: @:accumCst(lng,%)@ break;
 	default : return throwMessage("batcalc.Mod", "unexpected type");
 	}
+	BBPunfix(dst->batCacheid);
+	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -629,23 +682,35 @@ str CMDbataccumMODcst2(int *ret, int *r, void *cst, int *l){
 }
 str CMDbatMODcst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
+	str msg;
 
-	@:getBATdescriptor(ret,l,left,CMDbatMOD)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
 	dst= BATcopy(left);
 	if( dst == 0){
+		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.mod", "no copy available");
 	}
-	return CMDbataccumMODcst(ret, &dst->batCacheid,l,cst);
+	msg= CMDbataccumMODcst(ret, &dst->batCacheid,l,cst);
+	BBPunfix(left->batCacheid);
+	return msg;
 }
 str CMDcstMODbat(int *ret,void *cst, int *l)
 {	BAT *dst, *left;
+	str msg;
 
-	@:getBATdescriptor(ret,l,left,CMDbatMOD)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.mod", "Cannot access descriptor");
+    }
 	dst= BATcopy(left);
 	if( dst == 0){
+		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.mod", "no copy available");
 	}
-	return CMDbataccumMODcst(ret, &dst->batCacheid,l,cst);
+	msg= CMDbataccumMODcst(ret, &dst->batCacheid,l,cst);
+	BBPunfix(left->batCacheid);
+	return msg;
 }
 @- Implementation of unary operations
 @= accumUnary
@@ -669,8 +734,13 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	int s1,s2;
 	ptr p1,p2, hend;
 	
-	@:getBATdescriptor(ret,did,dst,CMDunaryAccum@1)@
-	@:getBATdescriptor(ret,bid,b,CMDunaryAccum@1)@
+    if( (dst= BATdescriptor(*did)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (b= BATdescriptor(*bid)) == NULL ){
+		BBPunfix(dst->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 	@:batinit(1,dst)@
 	@:batinit(2,b)@
 	hend = (str) BUNlast(dst);
@@ -683,18 +753,26 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
 	default: return throwMessage("batcalc.MIN", "unexpected type");
 	}
-	*ret= dst->batCacheid;
+	BBPincref(*ret= dst->batCacheid,TRUE);
+	BBPunfix(dst->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDunary@1(int *ret, int *bid){
 	BAT *b,*dst;
+	str msg;
 	
-	@:getBATdescriptor(ret,bid,b,CMDunary@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 	dst= BATcopy(b);
 	if( dst == NULL){
+		BBPunfix(b->batCacheid);
 		return throwMessage("batcalc.unary", "no copy available ");
 	}
-	return CMDunaryAccum@1(ret,&dst->batCacheid,bid);
+	msg= CMDunaryAccum@1(ret,&dst->batCacheid,bid);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 @c
 @:unary_impl(MIN,-)@
@@ -756,9 +834,15 @@ str CMDcmp@1(int *ret, int *l, int *r)
 	ptr p1;
 	bit bn= bit_nil;
 	BUN p,q;
+	str msg;
 
-	@:getBATdescriptor(ret,l,left,CMDcompare@1)@
-	@:getBATdescriptor(ret,r,right,CMDcompare@1)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (right= BATdescriptor(*r)) == NULL ){
+		BBPunfix(left->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	@:chkSize(left,right,CMDcompare@1)@
 
@@ -776,21 +860,38 @@ bunins_failed:
 	dst->hsorted= BAThordered(left);
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(*ret);
-	return compareaccum@1(dst,left,right);
+	msg= compareaccum@1(dst,left,right);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	return msg;
 }
 
 str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
+	str msg;
 
-	@:getBATdescriptor(ret,d,dst,CMDbcompareaccum@1)@
-	@:getBATdescriptor(ret,l,left,CMDcompareaccum@1)@
-	@:getBATdescriptor(ret,r,right,CMDcompareaccum@1)@
+    if( (dst= BATdescriptor(*d)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (left= BATdescriptor(*l)) == NULL ){
+		BBPunfix(dst->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (right= BATdescriptor(*r)) == NULL ){
+		BBPunfix(dst->batCacheid);
+		BBPunfix(left->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	@:chkSize(dst,left,CMDcompareaccum@1)@
 	@:chkSize(dst,right,CMDcompareaccum@1)@
 
 	*ret = dst->batCacheid;
-	return compareaccum@1(dst,left,right);
+	msg= compareaccum@1(dst,left,right);
+	BBPunfix(dst->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	return msg;
 }
 @= cmpCstImpl
 str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
@@ -798,10 +899,15 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 	int s1,s2;
 	ptr p1,p2, hend;
 
-	@:getBATdescriptor(ret,r,dst,CMDbataccum@1)@
-	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
+    if( (dst= BATdescriptor(*r)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (left= BATdescriptor(*l)) == NULL ){
+		BBPunfix(dst->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 	@:chkSize(dst,left,CMDbataccum@1)@
-	*ret = dst->batCacheid;
+	BBPincref(*ret = dst->batCacheid,TRUE);
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
@@ -816,6 +922,8 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 	case TYPE_lng: @:cmpLoopCst(lng,@2)@ break;
 	default :return throwMessage("batcalc.@1","unexpected type");
 	}
+	BBPunfix(dst->batCacheid);
+	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -825,8 +933,11 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 	ptr p1;
 	bit bn= bit_nil;
 	BUN p,q;
+	str msg;
 
-	@:getBATdescriptor(ret,l,left,CMDcompare@1)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
 
@@ -840,7 +951,9 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
-	return CMDcmpaccum@1cst(ret,&dst->batCacheid,l,cst);
+	msg= CMDcmpaccum@1cst(ret,&dst->batCacheid,l,cst);
+	BBPunfix(left->batCacheid);
+	return msg;
 }
 
 @-
@@ -873,8 +986,13 @@ str CMDbitbataccumNOT(int *ret, int *d, int *l)
 	int s1,s2;
 	ptr p1,p2, hend;
 
-	@:getBATdescriptor(ret,d,dst,CMDbitbataccum@1)@
-	@:getBATdescriptor(ret,l,left,CMDbitbataccum@1)@
+    if( (dst= BATdescriptor(*d)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+    if( (left= BATdescriptor(*l)) == NULL ){
+		BBPunfix(dst->batCacheid);
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	@:chkSize(dst,left,CMDbitbataccum@1)@
 	@:batinit(1,left);
@@ -890,6 +1008,7 @@ str CMDbitbataccumNOT(int *ret, int *d, int *l)
 	}
 
 	*ret = dst->batCacheid;
+	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDbitbatNOT(int *ret, int *l)
@@ -899,7 +1018,9 @@ str CMDbitbatNOT(int *ret, int *l)
 	bit bn= bit_nil;
 	BUN p,q;
 
-	@:getBATdescriptor(ret,l,left,CMDcompare@1)@
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
 
@@ -914,6 +1035,7 @@ str CMDbitbatNOT(int *ret, int *l)
 bunins_failed:
 	dst->hsorted= BAThordered(left);
 	d= dst->batCacheid;
+	BBPunfix(left->batCacheid);
 	return CMDbitbataccumNOT(ret,&d,l);
 }
 
@@ -938,12 +1060,15 @@ The others effectively may loose information.
 @= Idempotent
 str CMDconvert@1_@1(int *ret, int *bid){
 	BAT *b, *bn;
-	@:getBATdescriptor(ret,bid,b,CMDconvert@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
 
 	bn= BATcopy(b);
 	@:tstBat(CMDconvert@1_@1)@
 	BBPincref(*ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -955,7 +1080,9 @@ str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 	@1 x;
 	ptr p1; int s1;
 
-	@:getBATdescriptor(ret,bid,b,CMDconvert@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
 
 	if( b->htype!= TYPE_void) 
 		return CMDconvert@1_@2(ret,bid);
@@ -973,6 +1100,7 @@ str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 	}
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @= General
@@ -983,7 +1111,9 @@ str CMDconvert@1_@2(int *ret, int *bid){
 	@1 x;
 	@2 y;
 
-	@:getBATdescriptor(ret,bid,b,CMDconvert@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
 
 	bn= newBATresult(b, TYPE_@2);
 	@:tstBat(CMDconvert@1)@
@@ -997,6 +1127,7 @@ str CMDconvert@1_@2(int *ret, int *bid){
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -1043,7 +1174,9 @@ str CMDconvertstr_int(int *ret, int *bid){
 	str x;
 	int y;
 
-	@:getBATdescriptor(ret,bid,b,CMDconvertstr_int)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
 
 	bn= newBATresult(b, TYPE_int);
 	@:tstBat(CMDconvertstr_int)@
@@ -1057,12 +1190,16 @@ str CMDconvertstr_int(int *ret, int *bid){
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDconvertOIDclass(int *ret, int *bid){
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDconvertOIDclass)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
 	BBPincref( *ret= b->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 /* You don;t have to materialize the oids.
@@ -1073,7 +1210,9 @@ str CMDconvertvoid_oid(int *ret, int *bid){
 	BUN p,q;
 	oid x;
 
-	@:getBATdescriptor(ret,bid,b,CMDconvertvoid_oid)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
 
 	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
 	@:tstBat(CMDconvertstr_int)@
@@ -1092,8 +1231,11 @@ bunins_failed:
 str CMDconvertvoid_oid_oid(int *ret, int *bid){
 	BAT *b;
 
-	@:getBATdescriptor(ret,bid,b,CMDconvertvoid_oid_oid)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
 	BBPincref( *ret= b->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str CMDconvertvoid_int_oid(int *ret, int *bid){
@@ -1107,7 +1249,9 @@ str CMDconvertvoid_int_oid(int *ret, int *bid){
 	BUN p,q;
 	oid x;
 
-	@:getBATdescriptor(ret,bid,b,CMDconvertvoid_int_oid)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
 	bn= BATnew(TYPE_void,TYPE_oid, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	@:tstBat(CMDconvertstr_int)@
@@ -1157,7 +1301,9 @@ str CMDscience_@1(int *ret, int *bid){
 	int xx;
 	BUN p,q;
 
-	@:getBATdescriptor(ret,bid,b,CMDscience_@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	bn= newBATresult(b, TYPE_dbl);
 	@:tstBat(CMDscience_@1)@
@@ -1170,6 +1316,7 @@ str CMDscience_@1(int *ret, int *bid){
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 /* You don;t have to materialize the oids.
@@ -1180,7 +1327,9 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 	BUN p,q;
 	oid o;
 
-	@:getBATdescriptor(ret,bid,b,CMDsciencevoid_@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
 	@:tstBat(CMDsciencevoid_@1)@
@@ -1195,6 +1344,7 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @= scienceBinaryImpl
@@ -1203,7 +1353,9 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 	int xx;
 	BUN p,q;
 
-	@:getBATdescriptor(ret,bid,b,CMDscience_@1)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	bn= newBATresult(b, TYPE_dbl);
 	@:tstBat(CMDscience_@1)@
@@ -1217,6 +1369,7 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @- IfThenElse
@@ -1228,8 +1381,13 @@ str CMDifThen(int *ret, int *iid, int *tid){
 	BUN p,q;
 	bit bnil= bit_nil;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThen)@
-	@:getBATdescriptor(ret,tid,tb,CMDifThen)@
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.ifThen", "Cannot access descriptor");
+    }
+    if( (tb= BATdescriptor(*tid)) == NULL ){
+		BBPunfix(ib->batCacheid);
+        return throwMessage("batcalc.ifThen", "Cannot access descriptor");
+    }
 	@:chkSize(ib,tb,CMDifThen)@
 
 	bn= BATnew(BAThtype(ib),BATttype(tb),BATcount(ib));
@@ -1251,6 +1409,8 @@ str CMDifThen(int *ret, int *iid, int *tid){
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(ib->batCacheid);
+	BBPunfix(tb->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -1262,7 +1422,9 @@ str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 	BUN p,q;
 	@1 bnil= @1_nil;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThen_@1)@
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.ifThen", "Cannot access descriptor");
+    }
 
 	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
 	@:tstBat(CMDifThenCst_@1)@
@@ -1279,6 +1441,7 @@ str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
@@ -1287,7 +1450,9 @@ str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 	BUN p,q;
 	@1 bnil= @1_nil;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThen_@1)@
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.ifThen", "Cannot access descriptor");
+    }
 
 	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
 	@:tstBat(CMDifThenElseCst_@1)@
@@ -1306,6 +1471,7 @@ str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDfilltail_@1(int *ret, int *iid, ptr *val){
@@ -1313,7 +1479,9 @@ str CMDfilltail_@1(int *ret, int *iid, ptr *val){
 	int xx;
 	BUN p,q;
 
-	@:getBATdescriptor(ret,iid,ib,CMDfilltail_@1)@
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
 
 	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
 	@:tstBat(CMDfilltail_@1)@
@@ -1323,6 +1491,7 @@ str CMDfilltail_@1(int *ret, int *iid, ptr *val){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
@@ -1330,7 +1499,9 @@ str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
 	int xx;
 	BUN p,q;
 
-	@:getBATdescriptor(ret,iid,ib,CMDprojecthead_@1)@
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.project", "Cannot access descriptor");
+    }
 
 	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
 	@:tstBat(fillhead_@1)@
@@ -1340,6 +1511,7 @@ str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -1360,9 +1532,18 @@ str CMDifThenElse(int *ret, int *iid, int *tid,int *eid){
 	BUN p,q;
 	bit bnil= bit_nil;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThenElse)@
-	@:getBATdescriptor(ret,tid,tb,CMDifThenElse)@
-	@:getBATdescriptor(ret,eid,eb,CMDifThenElse)@
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+    }
+    if( (tb= BATdescriptor(*tid)) == NULL ){
+		BBPunfix(tb->batCacheid);
+        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+    }
+    if( (eb= BATdescriptor(*eid)) == NULL ){
+		BBPunfix(ib->batCacheid);
+		BBPunfix(tb->batCacheid);
+        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+    }
 	@:chkSize(ib,tb,CMDifThenElse)@
 	@:chkSize(ib,eb,CMDifThenElse)@
 
@@ -1386,6 +1567,9 @@ str CMDifThenElse(int *ret, int *iid, int *tid,int *eid){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(ib->batCacheid);
+	BBPunfix(tb->batCacheid);
+	BBPunfix(eb->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
@@ -1395,8 +1579,13 @@ str CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
 	ptr nilptr;
 	int tpe;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThenElse)@
-	@:getBATdescriptor(ret,eid,eb,CMDifThenElse)@
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+    }
+    if( (eb= BATdescriptor(*eid)) == NULL ){
+		BBPunfix(ib->batCacheid);
+        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+    }
 	@:chkSize(ib,eb,CMDifThenElse)@
 
 	tpe= BATttype(eb);
@@ -1420,6 +1609,8 @@ str CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(ib->batCacheid);
+	BBPunfix(eb->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
@@ -1429,8 +1620,13 @@ str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
 	ptr nilptr;
 	int tpe;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThenElse)@
-	@:getBATdescriptor(ret,tid,tb,CMDifThenElse)@
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+    }
+    if( (tb= BATdescriptor(*tid)) == NULL ){
+		BBPunfix(ib->batCacheid);
+        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+    }
 	@:chkSize(ib,tb,CMDifThenElse)@
  
 	tpe= BATttype(tb);
@@ -1454,6 +1650,8 @@ str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(ib->batCacheid);
+	BBPunfix(tb->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDmatchStr(int  *ret, int *bid, str *pat){
@@ -1464,9 +1662,12 @@ str CMDmatchStr(int  *ret, int *bid, str *pat){
 	ptr nilptr;
         int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
         if( error<0)
-                return throwMessage("str.match","Compilation of regular expression failed");
+                return throwMessage("str.match",
+					"Compilation of regular expression failed");
 
-	@:getBATdescriptor(ret,bid,b,CMDmatchStr)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.match", "Cannot access descriptor");
+    }
 	bn= BATnew(BAThtype(b), TYPE_bit, BATcount(b));
 	@:tstBat(CMDmatchStr)@
 
@@ -1485,7 +1686,8 @@ str CMDmatchStr(int  *ret, int *bid, str *pat){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 @+ Test environment

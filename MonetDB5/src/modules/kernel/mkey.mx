@@ -469,18 +469,6 @@ first one by one create a hash value out of the multiple attributes.
 This hash value is computed by xoring and rotating individual hash
 values together. We create a hash and rotate command to do this.
 The code below wraps around the V4 code base
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("bat.@4", 
-			"cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
 @c
 #include "mal.h"
 #include "mal_exception.h"
@@ -539,8 +527,15 @@ str MKEYbulk_rotate_xor_hash(int *res, int *bnid, int *rotate, int *bid) {
     int mask = (1 << lbit) - 1;
     int xx, yy;
 
-    @:getBATdescriptor(res,bid,b,bulk_rotate_xor_hash)@
-    @:getBATdescriptor(res,bnid,bn,bulk_rotate_xor_hash)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("mkey.bulk_rotate_xor_hash", 
+			"Cannot access descriptor");
+    }
+
+    if( (bn= BATdescriptor(*bnid)) == NULL ){
+         return throwMessage("mkey.bulk_rotate_xor_hash", 
+			"Cannot access descriptor");
+    }
 
     dst = (int*) BUNtloc(bn, BUNfirst(bn));
     tpe = ATOMstorage(b->ttype);
