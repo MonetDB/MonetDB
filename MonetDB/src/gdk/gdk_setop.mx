@@ -70,7 +70,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 #define HITs(t1,t2)             ((*cmp)(t1,t2) == 0)
 #define TAILCHECKs(l,r)         TYPEerror(BATttype(l),	BATttype(r))
 #define TAILCHECKk(l,r)         FALSE		
-#define EQUALs(t1,t2)           ((*cmp)(t1,t2) == 0)
+#define EQUALs(t1,t2)           ((*cmp)(t1,t2) == 0 && (*cmp)(t1,tnil))
 #define EQUALk(t1,t2)           TRUE
 #define FLIPs(l,r)              TRUE
 #define FLIPk(l,r)              FALSE
@@ -290,22 +290,25 @@ TODO synced/key case..
 	    	h2 = BUNh@2(r,p2);
 	    }
  	    if (c == 0) {
-		BUN pb = p2;
-		for (;;) {
-		    if (EQUAL@5(t, BUNtail(r,pb))) {
-			HIT@1(h, t); break;
-		    } 
-		    if ((pb += s2) >= q2) {
-			MISS@1(h, t); break;
+	        h2 = hnil;
+		if (@4) { /* check for not-nil (nils don't match anyway) */
+		    BUN pb = p2;
+		    for (;;) {
+		        if (EQUAL@5(t, BUNtail(r,pb))) {
+			    HIT@1(h, t); break;
+		        } 
+		        if ((pb += s2) >= q2) {
+			    MISS@1(h, t); break;
+		        }
+		        h2 = BUNh@2(r,pb); 
+		        if (@4) { 
+			    MISS@1(h, t); break;
+		        }
 		    }
-		    h2 = BUNh@2(r,pb); 
-		    if (@4) { 
-			MISS@1(h, t); break;
-		    }
-		}
-	    } else {
-		MISS@1(h, t); 
+		    continue;
+	   	}
 	    }
+  	    MISS@1(h, t); 
 	}
 end@2@3:;
 	END@1(BUNh@2(l,p1), BUNtail(l,p1));
@@ -313,7 +316,7 @@ end@2@3:;
 	BUN p1, q1, w; 
 	int ins, s1;
 	hash_t s2;
-	ptr h, t, t2 = NULL;
+	ptr h, t, t2 = NULL, h2 = hnil;
 
 	ALGODEBUG THRprintf(GDKout, "BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
 	(void) BATprepareHash(r);
@@ -321,6 +324,7 @@ end@2@3:;
 	    h = BUNh@2(l, p1);
 	    t = BUNtail(l,p1);
 	    ins = TRUE; 
+	    if (@6) /* check for not-nil (nils don't match anyway) */
 	    HASHloop@4(r, r->hhash, s2, h, w) {
 		t2 = BUNtail(r,w);
 	 	if (EQUAL@5(t,t2)) {
@@ -330,7 +334,7 @@ end@2@3:;
 	    if (!ins) continue;
 	    MISS@1(h,t);
 	}
-	if (t2) ins = 0; /* dummy action for the compiler */
+	if (t2 || h2) ins = 0; /* dummy action for the compiler */
 
 @= voidcheck
 {   BUN p1 = BUNfirst(r), q1 = BUNlast(r);
@@ -400,38 +404,41 @@ end@2@3:;
 
 @= check
 	if (BAThdense(l)) {
-	    @:hashcheck(@1,pos,@2,@3,@5)@
-	} else if (!merge) {
-	    @:hashcheck(@1,@2,@2,@3,@5)@
+	    @:hashcheck(@1,pos,@2,@3,@5,TRUE)@
+	} else if (hash) {
+	    @:hashcheck(@1,@2,@2,@3,@5,@4)@
 	} else {
 	    @:mergecheck(@1,@2,@3,@4,@5)@
 	} break;
 
 @= batcheck
-
-#define intersect_size(l,r) MIN(BATcount(l), BATcount(r))
-#define diff_size(l,r) BATcount(l)
-
 int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
-	int (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
+	int hash = TRUE, (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
+	ptr hnil, tnil;
 
 	/* determine how to do the intersect */
 	if (BAThordered(l)&BAThordered(r)&1) {
-	    merge = BATatoms[l->htype].atomCmp;
+	    hash = FALSE;
 	} else if (FLIP@1(l,r)) {
 	    int flip = (BATtordered(l)&BATtordered(r)&1);
 	    if (flip) {
-	        merge = BATatoms[l->ttype].atomCmp;
+  		hash = FALSE;
 	    } else {
 		flip = (r->hhash_heap == NULL && r->thash_heap != NULL);
 	    }
 	    if (flip) {
+	        merge = BATatoms[l->ttype].atomCmp;
 		BATflipflop(r); BATflipflop(l); 
 		BATflipflop(bn); 
 	    }
 	} 
+	merge = BATatoms[l->htype].atomCmp;
 	cmp = BATatoms[l->ttype].atomCmp;
-	(void)cmp;
+	hnil = ATOMnilptr(l->htype);
+ 	tnil = ATOMnilptr(l->ttype);
+	(void) cmp;
+	(void) tnil;
+	(void) hnil;
 
 	if (BAThdense(r)) {
 	    @:voidcheck(@2,@1)@
@@ -454,22 +461,23 @@ int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
 }
 
 BAT *BAT@1@2(BAT *l, BAT *r) {
-	BAT	*bn;
 	size_t	smaller;
+	BAT	*bn;
 
 	ERRORcheck(l == NULL, "BAT@1@2: left is null"); 
 	ERRORcheck(r == NULL, "BAT@1@2: right is null"); 
-        ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), 
-		"BUN@1: incompatible head-types");
-	ERRORcheck(TAILCHECK@1(l,r),
-		"BUN@1@2: incompatible tail-types");
-
+        ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), "BUN@1@2: incompatible head-types");
+	ERRORcheck(TAILCHECK@1(l,r), "BUN@1@2: incompatible tail-types");
+	
+	if (BATcount(r) == 0) {
+		return EMPTYr@2(l);
+	} else if (BATcount(l) == 0) {
+		return EMPTYl@2(l);
+	}
 	smaller = @2_size(l,r);
-
-	/* create result BAT */
 	bn = BATnew(BAThtype(l), BATttype(l), MAX(smaller,BATTINY)); 
 
-	/* fill it */
+	/* fill result bat bn */
 	ALGODEBUG THRprintf(GDKout, "BAT@1@2: BATins_@1@2(bn, l, r);\n");
 	BATins_@1@2(bn, l, r);
 
@@ -492,10 +500,19 @@ BAT *BAT@1@2(BAT *l, BAT *r) {
   	return bn;
 }
 @c
+#define EMPTYldiff(l) BATnew(ATOMtype(l->htype),l->ttype,10)
+#define EMPTYrdiff(l) BATrcopy(l)
+#define EMPTYlintersect(l) BATnew(ATOMtype(l->htype),l->ttype,10)
+#define EMPTYrintersect(l) EMPTYlintersect(l)
+
+#define intersect_size(l,r) MIN(BATcount(l), BATcount(r))
+#define diff_size(l,r) BATcount(l)
+
 @:batcheck(s,intersect,)@
 @:batcheck(s,diff,-)@
 @:batcheck(k,intersect,)@
 @:batcheck(k,diff,-)@
+
 
 @+ Union
 Union also consists of two versions: @`BATkunion@5(l,r), which
