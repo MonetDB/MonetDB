@@ -241,20 +241,27 @@ typedef struct resultset_t {
 } resultset;
 
 /* protocol stuff */
-#define RS_START_OF_HEADER		'$' /* followed by header type */
-#define RS_HEADER				'%'
-#define RS_TUPLE				'['
-#define RS_ERROR				'!'
-#define RS_MESSAGE				'#'
-#define RS_SWITCHROLE			'^'	/* switch from client to server and vice-versa */
+/* level 1: protocol synchronisation */
+#define RS_LINE_PROMPT				\001\001
+#define RS_LINE_PROMPT_MORE			\001\002
+#define RS_LINE_START_OF_HEADER		'&' /* followed by header type also in level 2 */
+/* level 2: MACI meta-data */
+#define RS_LINE_CONTROL_HEADER		'$'
+#define RS_LINE_SWITCHROLE			'^'	/* switch from client to server and vice-versa */
+/* level 3: client messages */
+#define RS_LINE_HEADER				'%'
+#define RS_LINE_TUPLE				'['
+#define RS_LINE_ERROR				'!'	/* also in level 4 */
+/* level 4: user messages */
+#define RS_LINE_MESSAGE				'#'
 
 /* header types */
-#define RS_DEFAULT		0	/* alias for RS_MONET5 */
-#define RS_MONET5		0	/* MonetDB/Five MAPI protocol */
-#define RS_RAW			2	/* unstructured character data */
-#define	RS_BINARY		3	/* binary data, length known */
-#define RS_XML			4	/* structured (X)(H)TML formatted character data */
-#define RS_SAX			5	/* SAX event stream */
+#define RS_TYPE_DEFAULT	0	/* alias for RS_MONET5 */
+#define RS_TYPE_MONET5	0	/* MonetDB/Five MAPI protocol */
+#define RS_TYPE_RAW		2	/* unstructured character data */
+#define	RS_TYPE_BINARY	3	/* binary data, length known */
+#define RS_TYPE_XML		4	/* structured (X)(H)TML formatted character data */
+#define RS_TYPE_SAX		5	/* SAX event stream */
 
 #endif
 @c
@@ -893,14 +900,14 @@ str RSwriteHeader(int* retval, int* handle) {
 		throw("resultset.writeHeader", "Unable to serialise a non-complete ResultSet");
 	
 	/* write start of header */
-	if (stream_write(s, "#-\n", 3, 1) != 1) {
+	if ((bt = stream_printf(s, "%c%d\n", RS_LINE_START_OF_HEADER, RS_TYPE_DEFAULT)) <= 0) {
 		*retval = 0;
 		throw("resultset.writeHeader", "Error while writing to the stream");
 	}
 	bytes += 3;
 	/* write single value headers */
 @= MX-writeHeaderLineSingleValue
-	if ((bt = stream_printf(s, "# " @1 " # %s\n", @2, @3)) <= 0)
+	if ((bt = stream_printf(s, "%c%s " @1 "\n", RS_LINE_CONTROL_HEADER, @3, @2)) <= 0)
 		throw("resultset.writeHeader", "Error while writing to the stream");
 	bytes += bt;
 @c
@@ -911,8 +918,8 @@ str RSwriteHeader(int* retval, int* handle) {
 	/* serialise the header to the stream */
 @= MX-writeHeaderLine
 	col = rs->firstColumn;	/* setComplete forces this one to be valid */
-	if (stream_write(s, "# ", 2, 1) == 1) {
-		bytes += 2;
+	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, @3)) > 0) {
+		bytes += bt;
 		while (col != NULL) {
 			if ((bt = stream_printf(s, @1, @2)) <= 0)
 				throw("resultset.writeHeader", "Error while writing to the stream");
@@ -921,17 +928,11 @@ str RSwriteHeader(int* retval, int* handle) {
 			col = col->next;
 
 			/* write column or row separator */
-			if (col == NULL) {
-				if ((bt = stream_printf(s, "\t# %s\n", @3)) <= 0)
-					throw("resultset.writeHeader", "Error while writing to the stream");
-				bytes += bt;
-			} else {
-				if (stream_write(s, ",\t", 2, 1) != 1) {
-					*retval = 0;
-					throw("resultset.writeHeader", "Error while writing to the stream");
-				}
-				bytes += 2;
+			if (stream_write(s, col == NULL ? "\n" : "\t", 1, 1) != 1) {
+				*retval = 0;
+				throw("resultset.writeHeader", "Error while writing to the stream");
 			}
+			bytes += 1;
 		}
 	} else {
 		*retval = 0;
@@ -963,7 +964,7 @@ str RSwriteHeader(int* retval, int* handle) {
  * @returns the number of bytes written
  */
 str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
-	int bytes = 0;
+	int bytes = 0, bt;
 	column* col;
 	resultset* rs;
 	str tmp;
@@ -992,11 +993,11 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	/* write the desired block of results */
 	for (; low < *upper; low++) {
 		col = rs->firstColumn;
-		if (stream_write(s, "[ ", 2, 1) != 1) {
+		if ((bt = stream_printf(s, "%c", RS_LINE_TUPLE)) <= 0) {
 			bytes = 0;
 			break;
 		}
-		bytes += 2;
+		bytes += bt;
 		while (col != NULL) {
 			/* write value */
 			t = col->bat->ttype;
@@ -1021,32 +1022,17 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 				stream_write(s, "NULL", 1, 4);
 				bytes += 4;
 			}
-/*
-			btmp = strlen(BUNtail(col->bat, col->bun));
-			if (stream_write(s, BUNtail(col->bat, col->bun), btmp, 1) != 1) {
-				bytes = 0;
-				break;
-			}
-			bytes += btmp;
-*/			
+
 			/* advance to the next value in the BAT */
 			col->bun = BUNnext(col->bat, col->bun);
 			col = col->next;
 
 			/* write column or row separator */
-			if (col == NULL) {
-				if (stream_write(s, "\t]\n", 3, 1) != 1) {
-					bytes = 0;
-					break;
-				}
-				bytes += 3;
-			} else {
-				if (stream_write(s, ",\t", 2, 1) != 1) {
-					bytes = 0;
-					break;
-				}
-				bytes += 2;
+			if (stream_write(s, col == NULL ? "\n" : "\t", 1, 1) != 1) {
+				bytes = 0;
+				break;
 			}
+			bytes += 1;
 		}
 	}
 

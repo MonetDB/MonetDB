@@ -27,6 +27,7 @@ resultset.setComplete(rs);
 
 resultset.writeNextPart(rs);
 
+io.print("Before any cleanup:");
 barrier (v,res) := rsbox.newIterator();
 	io.print(res);
 redo (v,res) := rsbox.hasMoreElements();
@@ -34,6 +35,7 @@ exit v;
 
 rsbox.release(rs);
 
+io.print("After release of 'myid':");
 barrier (v,res) := rsbox.newIterator();
 	io.print(res);
 redo (v,res) := rsbox.hasMoreElements();
@@ -41,6 +43,7 @@ exit v;
 
 rsbox.releaseAll();
 
+io.print("After a releaseAll:");
 barrier (v,res) := rsbox.newIterator();
 	io.print(res);
 redo (v,res) := rsbox.hasMoreElements();
