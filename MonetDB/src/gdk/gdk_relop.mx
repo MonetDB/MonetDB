@@ -40,8 +40,8 @@ the physical join algorithms, hence we already decided on the algorithm
 and join method, so the initial costs on r (e.g. hash creation) would have 
 to be paid anyway, and are reused later in the real join phase. 
 
-Sampling was made more robust by using an logaritmical number of slices
-taken at equal-spaced intervals accors l. The results are then analyzed
+Sampling was made more robust by using a logarithmic number of slices
+taken at equal-spaced intervals across l. The results are then analyzed
 and checked for outliers. If outliers are present, a real sample is taken
 and executed with the generic join algorithm to obtain an better estimate.
 

@@ -46,8 +46,8 @@ for the syntax and semantics of the MEL module specification language.
 @T
 Extending Monet involves several steps. 
 \begin{itemize}
-\item The extention writer first step is to build the MEL module 
-expressing the extention. 
+\item The extension writer first step is to build the MEL module 
+expressing the extension. 
 
 \item Based on this module the mel utility option {\tt -proto} can generate 
 a prototype file.
@@ -58,8 +58,8 @@ should be implemented in c/c++ by the developer.
 \item Once the prototypes are implemented by the developer, that code 
 should be compiled to an object file.
 
-\item The next step is glueing this to Monet. For this the {\tt -glue}
-option will generate the nessesary wrapper functions to connect the
+\item The next step is gluing this to Monet. For this the {\tt -glue}
+option will generate the necessary wrapper functions to connect the
 user defined functions to the Monet kernel and to update the monet
 function atom and accelerator tables. 
 
@@ -75,7 +75,7 @@ shared library should be copied in the same directory but with filename
 postfixed with "-database". 
 
 \item Since modules may depend on other modules (USE statement) building the
-nessesary object-files and shared libraries should be done in a specific
+necessary object-files and shared libraries should be done in a specific
 order. The option {\tt -depend} will generate a {\bf MAKE(1)} like output
 expressing the dependencies of the given module.
 
@@ -84,7 +84,7 @@ library should be linked with the shared library of the depending module.
 This is needed because else during dynamic loading there are unresolved
 references to functions and variables for the depending modules.
 The option {\tt -use} generates a list of depending modules. The -L option
-returns a list which can be used to link the shared libraries to gether.
+returns a list which can be used to link the shared libraries together.
 
 \item Another option of mel is {\tt -html}, which is still under development.
 It generates html code for the modules.  
@@ -95,19 +95,19 @@ It generates html code for the modules.
 @T
 The {\tt mel} utility is built as a front-end/back-end tool. The front-end 
 parses mel in to a symbol table and a syntax tree. The parsing phase
-consists also of syntac and semantic checks. If the parser ends without
-errors a backend is started.
+consists also of syntactic and semantic checks. If the parser ends without
+errors a back end is started.
 
-The frontend started depends on options given to the command. Currently
+The front end started depends on options given to the command. Currently
 -html, -glue, -proto, -depend, -mil, -use and -L are supported. 
 
-Foreach mel keyword a c++ class is constructed which holds the properties
+For each mel keyword a c++ class is constructed which holds the properties
 of the statement. These classes inherit from the symbol class so they
 can be stored in the symbol table. These classes follow the structure of
 the mel module. So the syntax tree resembles the underlying module files
-includeing the once imported via the USE statement. 
+including the once imported via the USE statement. 
 
-The backends are implemented by overloading the language [language.mx] class. 
+The back ends are implemented by overloading the language [language.mx] class. 
 Each mel keyword class needs to have a print function which calls its 
 gen\_keyword method of the language class. This double dispatch solves the 
 problem of finding out what to print in which form. The second parameter 
@@ -115,19 +115,19 @@ tells what to print. In case of the gen\_atom method an Atom should be
 outputted. The output type, prototype, documentation etc., is defined in
 the class overloading the language.
 
-That construction allows us to have special generating classes foreach 
+That construction allows us to have special generating classes for each 
 needed option or even for parts of an option. The special generating 
 classes only implement the needed gen methods. So if only atoms should 
 generate output only the gen\_atom method needs to be implemented. 
 
 The language class has an method for handling the options following the
 one which equals the string returned from the method get\_name. 
-The last argument will not be given to this method. It is asummed to 
+The last argument will not be given to this method. It is assumed to 
 be the mel module.
 
 The mel file contains the code for the parser and lexical analyzer.
 It uses the class FileInfo for recursive inclusion of USED files.
-The FileInfo class keeps various information about these file, includeing
+The FileInfo class keeps various information about these file, including
 filename, basename etc. The symbols found by the parser are put in a
 symtable. The symtable (see file symtable) depends on the base class 
 symbol. As explained before the Symbol class is the bases for all 

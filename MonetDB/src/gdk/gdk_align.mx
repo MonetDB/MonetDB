@@ -24,7 +24,7 @@ replacing a hash-join by a merge-join, which is significantly faster
 on large tables. Especially if the BATs involved cause page activity
 or when you can not afford the large hash structures to speed-up processing.
 @-
-For orthogonality, we support aligment between arbitrary columns (head or tail).
+For orthogonality, we support alignment between arbitrary columns (head or tail).
 @-
 All standard GDK set-calls update the alignment info in their respective 
 ways. For example, the routine @%BUNclustercopy@ shuffles the first argument, 
@@ -46,7 +46,7 @@ several places in the GDK, apart form this file:
 un-aligned.
 \item {\em set operations}. For most relational operations some
 statements can be made about the size and order of the BATs 
-they produce. This information can be formalized by indicatimg alignment
+they produce. This information can be formalized by indicating alignment
 information automatically.
 \item {\em transaction operations}. Alignment statuses must be 
 kept consistent under database commits and aborts.
@@ -55,7 +55,7 @@ kept consistent under database commits and aborts.
 As for performance, the most important observation to make is that 
 operations that do not need alignment, will suffer most from
 overheads introduced in the BUN update mechanism. For this reason,
-the alignment-delete opperation has to be very cheap. It is
+the alignment-delete operation has to be very cheap. It is
 captured by the @%ALIGNdel@ macro, and just zaps one character
 field in the @%BAT@ record.. 
 @
@@ -69,11 +69,11 @@ has been done to make the zap ultra-cheap.
 Both head and tail column contain an OID in the @%halign@ and @%talign@
 fields respectively to mark their alignment group. All BATs with the
 same OID in this field (and the ALIGN_SYNCED bit on) are guaranteed
-by the system to have equal head columns. As an expection, they
+by the system to have equal head columns. As an exception, they
 might also have TYPE_void head columns (a virtual column). 
 In such a case, the tail values correspond to the head values
-that would have been there in a non-virtual column, contining
-the same head-sequence as the other BATs in the sync gourp.
+that would have been there in a non-virtual column, continuing
+the same head-sequence as the other BATs in the sync group.
 @{
 @c
 #include "gdk.h"
@@ -130,7 +130,7 @@ int ALIGNsetH(BAT *b1, BAT *b2) {
 
 @-
 The routines @%ALIGN_synced@ and @%ALIGN_ordered@
-allow to simply query the aligment status of the two head colums
+allow to simply query the alignment status of the two head columns
 of two BATs.
 @c
 int ALIGNsynced(BAT* b1, BAT* b2) {
@@ -179,7 +179,7 @@ BAT is @%VIEWcreate@. On this @#read-only@ BAT (there is kernel
 support for this), you can then make vertical slices. 
 Use @%VIEWhead@ for this. 
 @
-It is possible to create a view on a writeable BAT. Updates
+It is possible to create a view on a writable BAT. Updates
 in the parent are then automatically reflected in the VIEW.
 Note that the VIEW bat itself can never be modified.
 @
@@ -299,7 +299,7 @@ BAT *VIEWcombine(BAT *b) {
 }
 
 @-
-The @#BATmaterialize@ routine produces inplace materialized version of
+The @#BATmaterialize@ routine produces in-place materialized version of
 a void bat (which should have been a VIEW) (later we should add the code 
 for VIEWs).
 @c

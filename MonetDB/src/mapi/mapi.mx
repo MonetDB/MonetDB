@@ -16,11 +16,11 @@
 @' All Rights Reserved.
 
 @f mapi
-@a N.J. Nes P. Boncz
-@t Monets Simple Internet Interface
+@a N.J. Nes, P. Boncz
+@t MonetDB's Simple Network Interface
 @v 1.1
 
-This module contains a simple interface for internet connections.
+This module contains a simple interface for network connections.
 
 @m
 .MODULE mapi;
@@ -195,7 +195,7 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 		return GDK_FAIL;
 	}
 @-
-Set server port and allow internet connections from any workstation.
+Set server port and allow network connections from any workstation.
 Bind the socket to the server port.
 The port id should be obtained from the Homes file.
 @c
@@ -222,7 +222,7 @@ Get the new information for the server socket and start listening.
 	listen(sock, maxusers); 
 
 	PARDEBUG {
-		THRprintf(GDKerr, "MAPIlisten:Internet started at %d\n", port);
+		THRprintf(GDKerr, "MAPIlisten:Network started at %d\n", port);
 	}
 	do {
 		int retval;
@@ -531,7 +531,7 @@ int MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 		goto fail;
 	}
 @-
-Set server port and allow internet connections from any workstation.
+Set server port and allow network connections from any workstation.
 Bind the socket to the server port.
 The port id should be obtained from the Homes file.
 @c
@@ -558,7 +558,7 @@ Get the new information for the server socket and start listening.
 	listen(sock, maxusers); 
 
 	PARDEBUG {
-		THRprintf(GDKerr, "MAPIlistenSSL:Internet started at %d\n", port);
+		THRprintf(GDKerr, "MAPIlistenSSL:Network started at %d\n", port);
 	}
 	do {
 		int retval;

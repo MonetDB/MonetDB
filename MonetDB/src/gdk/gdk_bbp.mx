@@ -41,7 +41,7 @@ to find all BATs.
 
 When the number of BATs rises, having all files in one directory
 becomes a bottleneck.  The BBP therefore implements a scheme that distributes
-alls BATs in a growing directory tree with at most 64 BATs stored in one node.
+all BATs in a growing directory tree with at most 64 BATs stored in one node.
 
 \item[buffer management]
 The BBP is responsible for loading and saving of BATs to disk. It also 
@@ -54,7 +54,7 @@ counts (to know which BATs can be unloaded) and BAT usage statistics
 When the database is closed or during a run-time syncpoint, the system
 tables must be written to disk in a safe way, that is immune for system 
 failures (like disk full). To do so, the BBP implements an atomic commit and 
-recovery protocol: first all files to be overwitten are moved to a BACKUP/
+recovery protocol: first all files to be overwritten are moved to a BACKUP/
 dir. If that succeeds, the writes are done. If that also fully succeeds
 the BACKUP/ dir is renamed to DELETE\_ME/ and subsequently deleted.
 If not, all files in BACKUP/ are moved back to their original location.
@@ -62,7 +62,7 @@ If not, all files in BACKUP/ are moved back to their original location.
 \item [unloading]
 Bats which have a logical reference (ie. a lrefs > 0) but no memory
 reference (refcnt == 0) can be unloaded. Unloading dirty bats means,
-moving the original (commited version) to the BACKUP/ dir and saving
+moving the original (committed version) to the BACKUP/ dir and saving
 the bat. This complicates the commit and recovery/abort issues.
 The commit has to check if the bat is already moved. And The recovery
 has to always move back the files from the BACKUP/ dir.
@@ -70,7 +70,7 @@ has to always move back the files from the BACKUP/ dir.
 \item [reference counting]
 Bats use have two kinds of references: logical and physical (pointer) ones.
 Both are administered with the BBPincref/BBPdecref routines. For 
-backward compatability, we maintain BBPfix/BBPunfix as shorthands
+backward compatibility, we maintain BBPfix/BBPunfix as shorthands
 for the adjusting the pointer references.
 
 \item [share counting]
@@ -265,13 +265,13 @@ an array of lock pointers which is accessed by GDKswapLock[ABS(bat)\&BBPLOCKMASK
 \end{description}
 
 Routines that need both locks should first acquire the locks in the GDKswapLock 
-array (in ascending order) and then GDKcacheLock (vz release them in reverse order).
+array (in ascending order) and then GDKcacheLock (and release them in reverse order).
 
 To obtain maximum speed, read operations to existing elements in the BBP are 
-unguarded. As said, it is the users responsability that the BAT that is being 
+unguarded. As said, it is the users responsibility that the BAT that is being 
 read is not being modified. BBP update actions that modify the BBP data structure 
 itself are locked by the BBP functions themselves. Hence, multiple concurrent BBP read 
-operations may be ungoing while at the same time at most one BBP write operation 
+operations may be ongoing while at the same time at most one BBP write operation 
 {\bf on a different BAT} is executing.  This holds for accesses to the public (quasi-)
 arrays @%BBPcache@, @%BBPstatus@, @%BBPrefs@, @%BBPlogical@ and @%BBPphysical@. These 
 arrays are called quasi as now they are actually stored together in one big BBPrec 
@@ -1212,7 +1212,7 @@ BBPreclaim is a user-exported function; the common way to destroy a BAT the hard
 
 Return values:
 -1 = bat cannot be unloaded (it has more than your own memory fix)
- 0 = unloaded succesfully
+ 0 = unloaded successfully
  1 = unload failed (due to write-to-disk failure)
 @c
 int BBPreclaim(BAT* b) {
@@ -1569,23 +1569,23 @@ to avoid further deadlock, the update functions in BBP that hold either
 GDKcacheLock or a GDKswapLock may never cause a BBPtrim (notice that BBPtrim 
 could theoretically be set off just by allocating a little piece of memory, e.g. 
 GDKstrdup()). If these routines must alloc memory, they must set the BBP\_notrim 
-variable, aquiring the addition GDKtrimLock, in order to prevent such deadlock.
+variable, acquiring the addition GDKtrimLock, in order to prevent such deadlock.
 \item
 the BBPtrim is atomic; only releases its locks when all BAT unload 
 work is done. This ensures that if all memory requests that triggered
-BBPtrim could possible be satified by unloading BATs, this will succeed.
+BBPtrim could possible be satisfied by unloading BATs, this will succeed.
 \end{itemize}
 
 The scan phase was optimized further in order to stop early when
-it is apriori known that the targets are met (which is the case if the
+it is a priori known that the targets are met (which is the case if the
 BBPtrim is not due to memory shortage but due to the ndesc quota).
 Note that scans may always stop before BBPsize as the BBPMAXTRIM is a fixed
 number which may be smaller. As such, a mechanism was added to resume
 a broken off scan at the point where scanning was broken off rather than
-always starting at BBP[1] (this does more justage to the lower numbered 
+always starting at BBP[1] (this does more justice to the lower numbered 
 bats and will more quickly find fresh unload candidates).
 
-We also refined the swap criterium. If the BBPtrim was initiated due to:
+We also refined the swap criterion. If the BBPtrim was initiated due to:
 - too much descriptors: small bats are unloaded first (from LRU cold to hot)  
 - too little memory: big bats are unloaded first (from LRU cold to hot).
 Unloading-first is enforced by subtracting $2^31$ from the stamp in the
@@ -2238,7 +2238,7 @@ The BBPdiskscan routine walks through the BAT dir, cleans up leftovers, and meas
 Leftovers are files that cannot belong to a BAT. in order to establish this for [ht]heap and [ht]acc files, 
 the BAT descriptor is loaded in order to determine whether these files are still required. 
 
-The routine gathers all bat sizes in a bat that contains bat-ids and bytesizes. The returnvalue is
+The routine gathers all bat sizes in a bat that contains bat-ids and bytesizes. The return value is
 the number of bytes of space freed.
 @c
 static int persistent_bat(bat bid) {
@@ -2369,7 +2369,7 @@ lng BBPdiskscan(void) {
 
 @- BBPreplace
 BBP replace allows to replace a BAT in the BBP by another BAT. It is useful,
-e.g. for copy/cleanup operations that build a fresh copy of an existsing BAT 
+e.g. for copy/cleanup operations that build a fresh copy of an existing BAT 
 (without dead space e.g. in string heaps) and then replace the old BAT by the
 new image. Now we have BATmaterialize (converts void into oid) and VIEWreset
 (make a view independent of its parent) also use this interface.

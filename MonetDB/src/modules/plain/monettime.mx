@@ -35,15 +35,15 @@ standard library.
 @T
 This module introduces four basic types and operations on them:
 \begin{description}
-\item[date] a date in the gregorian calendar, e.g. 1999-JAN-31
+\item[date] a date in the Gregorian calendar, e.g. 1999-JAN-31
 
 \item[daytime] a time of day to the detail of milliseconds, e.g. 23:59:59:000
 
 \item[timestamp] a combination of date and time, indicating an exact point in 
-time (GMT). GMT is the time at the greenwich meridian without a daylight savings 
+time (GMT). GMT is the time at the Greenwich meridian without a daylight savings 
 time (DST) regime. Absence of DST means that hours are consecutive (no jumps) which 
 makes it easy to perform time difference calculations.
-\item[timezone] the local time is often different from GMT (even at greenwich in
+\item[timezone] the local time is often different from GMT (even at Greenwich in
 summer, as the UK also has DST). Therefore, whenever a timestamp is composed
 from a local daytime and date, a timezone should be specified in order to
 translate the local daytime to GMT (and vice versa if a timestamp is to
@@ -68,10 +68,10 @@ The maximum and minimum dates and timestamps that can be stored are in the years
 called -1. 
 \item[valid dates]
 Fall in a valid year, and have a month and day that is valid in that year. The first day in the year
-is january 1, the last december 31. Months with 31 days are january, march, may, juli, august,
-october, and december, while april, june, september and november have 30 days. February has 28
-days, expect in a leapyear, when it has 29. A leapyear is a year that is an exact multiple of
-4. Years that are a multiple of 100 but not of 1000 are an execption; they are no leapyears.
+is January 1, the last December 31. Months with 31 days are January, March, May, July, August,
+October, and December, while April, June, September and November have 30 days. February has 28
+days, expect in a leap year, when it has 29. A leap year is a year that is an exact multiple of
+4. Years that are a multiple of 100 but not of 400 are an exception; they are no leap years.
 \item[valid daytime]
 The smallest daytime is 00:00:00:000 and the largest 23:59:59:999 (the hours in a daytime
 range between [0,23], minutes and seconds between [0,59] and milliseconds between [0:999]).
@@ -92,19 +92,19 @@ on the maximum time difference used in computations.
 
 There are also conceptual limitations that are inherent to the time system itself:
 \begin{description}
-\item[gregorian calendar]
-The basics of the Gregorian calendar stem from the time of Julius Ceasar,
+\item[Gregorian calendar]
+The basics of the Gregorian calendar stem from the time of Julius Caesar,
 when the concept of a solar year as consisting of 365.25 days (365 days plus once 
 in 4 years one extra day) was introduced. However, this Julian Calendar, made a year 11  
 minutes long, which subsequently accumulated over the ages, causing a shift in 
 seasons. In medieval times this was noticed, and in 1582 Pope Gregory XIII issued a 
-decree, skipped 11 days. This measure was not adopted in the whole of Europe inmediately, 
+decree, skipped 11 days. This measure was not adopted in the whole of Europe immediately, 
 however.  For this reason, there were many regions in Europe that upheld different dates. 
 
-It was only on {\bf september 14, 1752} that some concensus was reached and more countries 
+It was only on {\bf September 14, 1752} that some consensus was reached and more countries 
 joined the Gregorian Calendar, which also was last modified at that time. The modifications 
 were twofold: first, 12 more days were skipped. Second, it was determined that the
-year starts on january 1 (in England, for instance, it had been starting on march 25).
+year starts on January 1 (in England, for instance, it had been starting on March 25).
 
 Other parts of the world have adopted the Gregorian Calendar even later.
 
@@ -115,7 +115,7 @@ anyway, as explained above). In solar terms, however, this calendar is reasonabl
 accurate (see the "correction seconds" note below).
 
 \item[timezones]
-The basic timezone regime was established on {\bf november 1, 1884} in the {\em International 
+The basic timezone regime was established on {\bf November 1, 1884} in the {\em International 
 Meridian Conference} held in Greenwich (UK). Before that, a different time held in almost 
 any city. The conference established 24 different time zones defined by regular longitude intervals
 that all differed by one hour.  Not for long it was that national and political interest started 
@@ -127,7 +127,7 @@ An extra complication became the introduction of daylight saving time (DST), whi
 causes a time jump in spring, when the clock is skips one hour and in autumn, when the 
 clock is set back one hour (so in a one hour span, the same times occur twice). 
 The DST regime is a purely political decision made on a country-by-country basis. Countries
-in the same timezone can have differnt DST regimes. Even worse, some countries have DST in 
+in the same timezone can have different DST regimes. Even worse, some countries have DST in 
 some years, and not in other years. 
 
 To avoid confusion, this module stores absolute points of time in GMT only (GMT does not
@@ -183,7 +183,7 @@ with:   INT_YEAR = integer between -5867411 and 5867411
             SEP2 = SEP1 or ''
 \end{verbatim}
 Printing a date uses the 1999-01-31 format, as this is both language neutral 
-and the lexicografical string ordering of this representation respects the 
+and the lexicographical string ordering of this representation respects the 
 actual date ordering.
 
 Other print formats can be achieved by writing a customized MIL procedure 
@@ -236,7 +236,7 @@ with: HOUR = integer between 0 and 23
 @- timestamp
 @T
 An absolute point of time, as formed by the combination of a date a daytime in GMT
-e.g. 1999-01-31@23:59:59:000. GMT is the universal time at the greenwhich meridian, 
+e.g. 1999-01-31@23:59:59:000. GMT is the universal time at the Greenwich meridian, 
 without any daylight savings time (DST). As such GMT times are 'absolute' (continuous,
 without hour jumps as in DST), so accurate time difference computations can be performed.
 \begin{verbatim}
@@ -252,7 +252,7 @@ timestamps is relative to the local timezone. That is, timestamps are
 printed without GMT part, meaning that the time is relative to the local 
 timezone.   Also, if a timestamp is parsed from a string that does not have
 an explicit GMT specifier, it is taken to be a timestamp in the local 
-timezone. The default local timzone is just GMT+00, but iit can be set 
+timezone. The default local timezone is just GMT+00, but it can be set 
 arbitrarily.
 @m
 .ATOM timestamp = lng;
@@ -274,10 +274,10 @@ When creating a timestamp from a date and daytime, a timezone should be specifie
 (if timezone is omitted, the local timezone is assumed). If a timezone is specified, 
 it is used to convert the date and time in that timezone to GMT, which is the internal 
 timestamp representation. One problem here is that the first hour after DST
-has ended (some sunday night in autumn, generally), the time is set back one hour, so
+has ended (some Sunday night in autumn, generally), the time is set back one hour, so
 the same times occur twice. Hence two translations to a timestamp are possible for
 such date and time combinations. In those case, we act as if it was the first 
-occurence (still within DST). 
+occurrence (still within DST). 
 
 @- tzone
 @T
@@ -887,7 +887,7 @@ PROC test_monettime() : void {
 Internally, we store date as the (possibly negative) number of 
 days since the start of the calendar. Oddly, since I (later) learned
 that the year 0 did no exist, this defines the start of the calendar to
-be jan 1 of the year -1 (in other words, a -- positive -- year component 
+be Jan 1 of the year -1 (in other words, a -- positive -- year component 
 of a date is equal to the number of years that have passed since the start 
 of the calendar).
 @h

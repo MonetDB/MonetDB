@@ -132,11 +132,11 @@ or native @[<acronym title="eXtensible Markup Language">XML</acronym>@ data), an
 (such as OQL and XQuery). 
 
 In this architecture, MonetDB is the {\bf back-end}, which is accessed by multiple 
-{\bf front-ends} such as an SQL-frontend, an @[<acronym title="eXtensible Markup Language">XML</acronym>@-frontend or even a Data 
+{\bf front-ends} such as an SQL front end, an @[<acronym title="eXtensible Markup Language">XML</acronym>@ front end or even a Data 
 Mining tool).  The intermediate language with which these components talk to each 
 other is called the @[<a href="../../FrontEnds/mil/index.html">MonetDB Interpreter Language</a>@ (MIL).
 
-Currently, the only freely available front-end is the @[<a href="http://monetdb.cwi.nl/TechDocs/FrontEnds/SQL/index.html">SQL frontend</a>@.
+Currently, the only freely available front-end is the @[<a href="http://monetdb.cwi.nl/TechDocs/FrontEnds/SQL/index.html">SQL front end</a>@.
 Work on a distribution of the @[<acronym title="eXtensible Markup Language">XML</acronym>@ front-end (so successfully benchmarked in 
 @[<a href="http://monetdb.cwi.nl/xml/">XMark</a>@) is progressing. For the @[<acronym title="Object Database Management Group">ODMG</acronym>@ 
 front-end, there are no release plans, as it is owned by 
@@ -435,7 +435,7 @@ MapiClient with the {\tt -h HOSTNAME} / {\tt -$$-host HOSTNAME} and
 can be put in your MonetDB configuration file, such that you will
 be able to start MapiClient without command-line parameters.
 
-@- SQL Frontend Settings
+@- SQL Front End Settings
 @T
 \begin{verbatim}
 sql_port=45123				#default place to sent the SQL query

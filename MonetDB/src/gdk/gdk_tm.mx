@@ -60,14 +60,14 @@ str TMcntxt(void) {
 The physical (disk) commit protocol is handled mostly by BBPsync. Once a commit
 succeeded, there is the task of removing ex-persistent bats (those that still
 were persistent in the previous commit, but were made transient in this transaction).
-Notice that such ex- (i.e. non-) persisnt bats are not backed up by the BBPsync
+Notice that such ex- (i.e. non-) persistent bats are not backed up by the BBPsync
 protocol, so we cannot start deleting after we know the commit will succeed.
 
 Another hairy issue are the delta statuses in BATs. These provide a fast way
 to perform a transaction abort (HOT-abort, instead of COLD-abort, which is achieved
 by the BBP recovery in a database restart). Hot-abort functionality has not been 
 important in MonetDB for now, so it is not well-tested. The problem here is that 
-if a commit fails in the physisical part (BBPsync), we have not sufficient information 
+if a commit fails in the physical part (BBPsync), we have not sufficient information 
 to roll back the delta statuses. 
 
 So a 'feature' of the abort is that after a failed commit, in-memory we

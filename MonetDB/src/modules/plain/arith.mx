@@ -238,7 +238,7 @@ hence, these are not provided.
          "boolean switch: returns b?t:f (returns error on isnil(b)"
 
 @- bitwise operations
-Cardinal numerical types (inclusing {\tt chr} can be regarded as a bit
+Cardinal numerical types (including {\tt chr} can be regarded as a bit
 array. Specific operations work with this interpretation.
 @= mel_bitwise_ops
 	.OPERATOR (@1) "or"  (@1) : @1 = @1@1_binary_OR; "bitwise or"
@@ -392,7 +392,7 @@ PROC test_arith() : void {
   min(dbl1,dbl2).print();
   min(lng1,lng2).print();
 
-@- oid-artihmetic is not available...
+@- oid-arithmetic is not available...
 @:mil_arith_ops(oid1,oid2)@
 @mil
   max(oid1,oid2).print();

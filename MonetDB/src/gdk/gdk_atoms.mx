@@ -31,7 +31,7 @@ collection.
  
 #define MAXATOMS	1024
 
-@- comparsion macro's
+@- comparison macro's
 In order to get maximum performance, we extensively use out-factoring
 of typechecks using Mx macros. To catch diverging code in one Mx macro
 we use the following #defines for comparing atoms:
@@ -66,7 +66,7 @@ we use the following #defines for comparing atoms:
 @- 
 The system comes with the traditional atomic types: int (4 bytes), bool(1 
 byte) and str (variable). In addition, we support the notion of an OID 
-type, which ensures uniques of its members.
+type, which ensures uniqueness of its members.
 This leads to the following type descriptor table.
 @{
 @h
@@ -339,7 +339,7 @@ Some routines are required for coercion and to support the BAT
 administration.
 
 A new type is incrementally build using the 
-routine @%ATOMproperty(id, propery, value)@.
+routine @%ATOMproperty(id, property, value)@.
 The parameter @%id@ denotes the type name; an entry is created if the type
 is so far unknown. The @%property@ argument is a string identifying the
 type description property to be updated. Valid property
@@ -637,7 +637,7 @@ ptr ATOMnil(int t) {
 
 @- derived types
 @T
-In all algorithms accross GDK, you will switches on the types
+In all algorithms across GDK, you will switches on the types
 \{ chr, sht, int, flt, dbl, lng, str\}. They respectively represent 
 an octet, a 16-bit int, a 32-bit int, a 32-bit float, a 64-bit double,
 a 64-bit int, and a pointer-sized location of a char-buffer (ended by 
@@ -652,7 +652,7 @@ This approach makes it tractable to switch to 64-bits OIDs,
 or to a fully 64-bits OS easily. One only has to map the {\tt oid}
 and {\tt ptr} types to {\tt lng} instead of {\tt int}. 
 \\
-Derived types mimick their fathers in many ways. They inherit the {\tt size},
+Derived types mimic their fathers in many ways. They inherit the {\tt size},
 {\tt varsized}, {\tt linear}, {\tt null} and {\tt align} properties of their 
 father.  The same goes for the ADT functions HASH, CMP, PUT, NULL,
 DEL, LEN, and HEAP. So, a derived type differs in only two ways
@@ -860,7 +860,7 @@ ptr ATOMdup(int t, ptr p) {
 
 @+ Atom-from-String Conversions 
 These routines convert from string to atom. They are used during 
-conversion and BAT import. In order to avoid unnecesarry malloc()/free()
+conversion and BAT import. In order to avoid unnecessary malloc()/free()
 sequences, the conversion functions have a meta 'dst' pointer to a
 destination region, and an integer* 'len' parameter, that denotes the 
 length of that region (a char region for ToStr functions, an atom region

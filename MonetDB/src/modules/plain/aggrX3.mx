@@ -30,7 +30,7 @@ Major changes are
 \item
 complete type-specific code expansion to avoid any type-checking in the inner-most loops;
 \item
-where feasable, replaced (expansive) hash-lookup by significantly cheaper positional
+where feasible, replaced (expansive) hash-lookup by significantly cheaper positional
 void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by 
 (also positional) array lookups (in case the group-ids span a reasonably small range);
 \item

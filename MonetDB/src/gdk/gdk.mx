@@ -25,14 +25,14 @@
 @T
 The innermost library of the Monet Database System is formed by
 the library called GDK, an abbreviation of Goblin Database Kernel.
-Its development was originally rooted in the design of a puur
+Its development was originally rooted in the design of a pure
 active-object-oriented programming language, before development
-was shifted towards a re-useable database kernel engine.
+was shifted towards a re-usable database kernel engine.
 
 GDK is a C/C++ library that provides ACID
 properties on a DSM model~\cite{Copeland85}, using main-memory
 database algorithms~\cite{Garcia-Molina92}, built on virtual-memory
-OS primitives and multi-threaded parallellism.
+OS primitives and multi-threaded parallelism.
 Its implementation has undergone various changes over its decade
 of development, many of which were driven by external needs to
 obtain a robust and fast database system.
@@ -43,7 +43,7 @@ helpful advice near to the place where the code-reader needs it.
 Of course, over such a long time the documentation diverges from
 reality. Especially in areas where the environment of this package
 is being described. 
-Consider such deviations as historic landmarks, e.g. cristalization
+Consider such deviations as historic landmarks, e.g. crystallization
 of brave ideas and mistakes rectified at a later stage.
 
 @+ Short Outline
@@ -60,10 +60,10 @@ using an ADT interface.
 that are GDK's vehicle of mass storage (on which BATs are built).
 \item[-] DELTA routines to access inserted/deleted elements within a
 transaction.
-\item[-] HASH routines for manipulating GDK's builtin linear-chained
+\item[-] HASH routines for manipulating GDK's built-in linear-chained
 hash tables, for accelerating lookup searches on BATs.
-\item[-] IDX routines for manipulating GDK's builtin binary-tree
-indices, for accelerating range searches on BATs.
+\item[-] IDX routines for manipulating GDK's built-in binary-tree
+indexes, for accelerating range searches on BATs.
 \item[-] ACC routines that define the ADT for user defined search
 accelerators.
 \item[-] TM routines that provide basic transaction management primitives.
@@ -100,16 +100,16 @@ The association can be defined over:
             CAN ONLY BE STORED IN TRANSIENT BATs (not to complicate transaction mgmt).
 \end{description}
 @T 
-This model can be used as a backend model underlying other -- higher
+This model can be used as a back-end model underlying other -- higher
 level -- models, in order to achieve {\bf better performance} and 
 {\bf data independence} in one go. The relational model and
 the object-oriented model can be mapped on BATs by vertically
 splitting every table (or class) for each attribute. Each such a
 column is then stored in a BAT with type {\bf bat[oid,attribute]}, where
-the unique object identifiers link tuples in the differents BATs.
+the unique object identifiers link tuples in the different BATs.
 Relationship attributes in the object-oriented model hence are
 mapped to {\bf bat[oid,oid]} tables, being equivalent to the concept of
-{\em join indices}~\cite{Valduriez87}.
+{\em join indexes}~\cite{Valduriez87}.
 @
 The set of built-in types can be extended with user-defined types
 through an ADT interface.  They are linked with the kernel to obtain
@@ -120,10 +120,10 @@ than that from which they are derived, but their internal storage management
 is equal. This feature facilitates the work of extension programmers, by
 enabling reuse of implementation code, but is also used to keep the GDK code
 portable from 32-bits to 64-bits machines: the {\tt oid} and {\tt ptr} types
-are dervied from {\tt int} on 32-bits machines, but is derived from {\tt lng}
+are derived from {\tt int} on 32-bits machines, but is derived from {\tt lng}
 on 64 bits machines. This requires changes in only two lines of code each.
 @T
-To accelerate lookup and search in BATs, GDK supports two builtin
+To accelerate lookup and search in BATs, GDK supports two built-in
 search accelerators: hash tables and index trees. We chose
 implementations efficient for main-memory: bucket chained hash and
 binary AVL trees~\cite{LehCar86,Analyti92}. 
@@ -148,7 +148,7 @@ observations:
 \begin{itemize} 
 \item Given the fact that CPU speed and main-memory increase in
 current workstation hardware for the last years has been exceeding 
-IO access speed increase, traditonal disk-page oriented algorithms 
+IO access speed increase, traditional disk-page oriented algorithms 
 do no longer take best advantage of hardware, in most database operations. 
 
 Instead of having a disk-block oriented kernel with a large memory
@@ -230,8 +230,8 @@ Due to the mapping of multi-ary datamodels onto the BAT model,
 we expect many correspondences among BATs, e.g.  {\em bat(oid,attr1),.. 
 bat(oid,attrN)} vertical decompositions. Frequent activities will be
 to jump from one attribute to the other ('bunhopping'). If the head
-columns are equal lists in two BATs, merge- or even arry-lookups
-can be used instead of hashlookups. The alignment interface makes
+columns are equal lists in two BATs, merge or even array lookups
+can be used instead of hash lookups. The alignment interface makes
 these relations explicitly manageable. 
 
 In GDK, complex data models are mapped with DSM on binary tables.
@@ -280,7 +280,7 @@ First, the database
 directory is closed for other servers running at the same time.
 Second, performance enhancements may take effect, such as locking
 the code into memory (if the OS permits) and preloading the 
-datadictionary.
+data dictionary.
 An error at this stage normally lead to an abort.
 @{
 @h
@@ -656,7 +656,7 @@ typedef struct {
 \label{Binary Association Tables}
 Having gone to the previous preliminary definitions, we will
 now introduce the structure of Binary Association Tables (BATs)
-in detail. They are the basic storage unit on which GDK is modelled.
+in detail. They are the basic storage unit on which GDK is modeled.
 @T
 The BAT holds an unlimited number of binary associations, called
 BUNs ({\bf Binary UNits}).  The two attributes of a BUN are called 
@@ -695,14 +695,14 @@ transaction abort).
 
 @-
 The location of a certain BUN in a BAT
-may change between successive library routine invokations.  Therefore, one
+may change between successive library routine invocations.  Therefore, one
 should avoid keeping references into the BAT storage area for long
 periods.
 @
 Passing values between the library routines and the enclosing C
 program is primarily through value pointers of type @%ptr@. Pointers
 into the BAT storage area should only be used for retrieval. Direct
-updates of data stored in a BAT is forbidden. The user should adhire
+updates of data stored in a BAT is forbidden. The user should adhere
 to the interface conventions to guarantee the integrity rules and to
 maintain the (hidden) auxiliary search structures.
 
@@ -1088,7 +1088,7 @@ BAT * & BATextend & (BAT *b, size\_t newcap)\\
 A temporary BAT is instantiated using @%BATnew@ with the type aliases of
 the required binary association. The aliases include the built-in
 types, such as @%TYPE_int@....@%TYPE_ptr@, and the atomic types introduced 
-by the user. The initial capacity to be accomodated within a BAT is 
+by the user. The initial capacity to be accommodated within a BAT is 
 indicated by @%cap@. 
 Their extend is automatically incremented upon storage overflow.
 @
@@ -1147,7 +1147,7 @@ other systems. The negative effect is that the user should be aware of
 the evolving nature of the sequence, which may require copying the BAT
 first.
 @
-The update operations come in three flavors. Elementwise updates
+The update operations come in three flavors. Element-wise updates
 can use @%BUNins@, @%BUNreplace@, @%BUNdel@, and @%BUNdelHead@. 
 The batch update are @%BATins@ and @%BATdel@.
 @
@@ -1160,7 +1160,7 @@ a value for the head of the binary association.
 A very fast shortcut for @%BUNfnd@ if the selection type is known to be
 integer or OID, is provided in the form of the macro @%BUNfndOID@.
 @
-To select on a tail, one should use the reverse view otbained by
+To select on a tail, one should use the reverse view obtained by
 @%BATmirror@.
 @
 The routines @%BUNhead@ and @%BUNtail@ return a pointer to the first
@@ -1174,7 +1174,7 @@ part and the variable part. The BUN operators always require a BAT pointer
 and BUN identifier.
 \begin{itemize}
 \item BAThtype(b) and  BATttype(b) find out the head and tail type of a BAT.
-\item BUNfirst(b) returns a BUN pointer to the first BUN os a BAT.
+\item BUNfirst(b) returns a BUN pointer to the first BUN as a BAT.
 \item BUNlast(b) returns the BUN pointer directly after the last BUn
 in the BAT.
 \item BUNsize(b) gives the size in bytes of each BUN.
@@ -1344,7 +1344,7 @@ Valid BAT access properties can be set with BATsetaccess and BATgetaccess:
 \end{itemize}
 @
 BATs can be designated to be read-only. In this case some 
-memory optimations may be made (slice and fragment bats can point
+memory optimizations may be made (slice and fragment bats can point
 to stable subsets of a parent bat).
 A special mode is append-only. It is then allowed to insert BUNs
 at the end of the BAT, but not to modify anything that already 
@@ -1415,12 +1415,12 @@ A similar routine is @%BATnumber@, which copies the heads and
 assigns an integer index to the tail.
 It plays a crucial role in administration of query results.
 @
-The routine @%BATmirror@ resturns the mirror image BAT (where tail is head
+The routine @%BATmirror@ returns the mirror image BAT (where tail is head
 and head is tail) of that same BAT. This does not involve
-a state chage in the BAT (as preiously): both views on the BAT
+a state change in the BAT (as previously): both views on the BAT
 exist at the same time. To keep old code compatible
 there are now macro's for @%BATreverse@ (which assigns the mirrored BAT
-to its parameter), @%BATreset@ (which assignes the standrad view),
+to its parameter), @%BATreset@ (which assigns the standard view),
 and @%BATflipflop@ (which assigns to the alternate view).
 @{
 @h
@@ -1431,7 +1431,7 @@ gdk_export BAT*		BATmark   (BAT *b, oid base);
 gdk_export BAT*		BATnumber (BAT *b); 
 gdk_export BAT*		BATgroup (BAT *b, int start, int incr, int grpsize); 
 @-
-Retain old-style source-level funcionality where the BAT reversal 
+Retain old-style source-level functionality where the BAT reversal 
 induced a state change of the BAT parameter to it.
 @h
 #define BATreverse(b)	((b) = (((b)->batCacheid<0)?(b):BATmirror(b)))
@@ -1462,12 +1462,12 @@ Failure to read or write the BAT results in a NULL, otherwise it
 returns the BAT pointer.  
 @
 The @%BATconvert@ converts a BAT that contains data saved on
-hardware with a different byte order (litte endian vs big endian),
-into the correct format. Direction is eigther CONV\_NTOH or CONV\_HTON,
-indication convertion from network to host or host to network format.
+hardware with a different byte order (little endian vs big endian),
+into the correct format. Direction is either CONV\_NTOH or CONV\_HTON,
+indication conversion from network to host or host to network format.
 
 @- Heap Storage Modes
-The discrimative storage modes are memory-mapped, compressed, or in 
+The discriminative storage modes are memory-mapped, compressed, or in 
 loaded in memory. 
 @T
 The {\tt BATmmap()} changes the storage mode of each heaps associated to a BAT
@@ -1527,7 +1527,7 @@ int & BATprintf & (stream *f, BAT *b)\\
 int & BATmultiprintf & (stream *f, int argc, BAT *b[], int printoid, int order)\\
 \hline\end{tabular}}
 @
-The functions to convert BATs into ascii and the reverse use
+The functions to convert BATs into ASCII and the reverse use
 internally defined formats. They are primarily meant for ease of
 debugging and to a lesser extent for output processing.
 @
@@ -1536,7 +1536,7 @@ printing each association.
 If an index is available, it will be used.
 @
 The @%BATmultiprintf@ command assumes a set of BATs with
-corrsponding oid-s in the head columns. It performs the multijoin
+corresponding oid-s in the head columns. It performs the multijoin
 over them, and prints the multi-column result on the file.
 
 @{
@@ -1560,7 +1560,7 @@ int & BATordered & (BAT *b)\\
 @
 When working in a main-memory situation, clustering of data on disk-pages
 is not important. Whenever mmap()-ed data is used intensively, reducing
-the number of pagefaults is a hot issue.
+the number of page faults is a hot issue.
 @ 
 The below functions rearrange data in Monet heaps (used for storing
 BUNs var-sized atoms, or accelerators). Applying these clusterings will
@@ -1623,7 +1623,7 @@ bat & BBPcacheid & (BAT *b)\\
 The BAT Buffer Pool module contains the code to manage the storage
 location of BATs. It uses two tables @%BBPlogical@ and @%BBphysical@
 to relate the BAT name with its corresponding file system name.
-This information is retained in an ascii file within the database home 
+This information is retained in an ASCII file within the database home 
 directory for ease of inspection. It is loaded upon restart 
 of the server and saved upon transaction commit (if necessary).
 @
@@ -1638,7 +1638,7 @@ retain their position within the cache during their life cycle, which
 make indexing BATs a stable operation.  Their descriptor can be
 obtained using @%BBPcacheid@.
 @
-The @%BBPindex@ routine checkes if a BAT with a certain name is
+The @%BBPindex@ routine checks if a BAT with a certain name is
 registered in the buffer pools. If so, it returns its BAT id.
 The @%BATdescriptor@ routine has a  BAT id parameter, and returns 
 a pointer to the corresponding BAT record (after incrementing the reference 
@@ -1775,7 +1775,7 @@ Valid names are "size", "align", "null", "fromstr", "tostr", "cmp",
 @- Atom Manipulation
 @T
 \begin{itemize}
-\item The {\em ATOMname()} operation retrieves the anme of an atom using its id.
+\item The {\em ATOMname()} operation retrieves the name of an atom using its id.
 
 \item The {\em ATOMsize()} operation returns the atoms fixed size.
 
@@ -1818,7 +1818,7 @@ on the number of references that a GDK application maintains to the atom.
 In Monet, we use this to count the number of references by MIL variables
 directly, or through BATs that have columns of these atoms. The only operator
 for which this is currently relevant is BAT. The operators return the 
-POST reference count to the atom. BATs with fixeable atoms may not be
+POST reference count to the atom. BATs with fixable atoms may not be
 stored persistently. 
 
 \item The {\em ATOMfromstr()} parses an atom value from string 's'. The memory
@@ -1841,7 +1841,7 @@ needed for this is allocated and should be removed by the user.
 These wrapper functions correspond closely to the interface functions
 one has to provide for a user-defined atom. They basically (with
 exception of {\em ATOMput()}, {\em ATOMprint()} and {\em ATOMformat()})
-just have the atom id parameter preappended to them.
+just have the atom id parameter prepended to them.
 @
 @{
 @h 
@@ -1910,7 +1910,7 @@ oid  &  OIDnew  & (size\_t inc);\\
 \hline\end{tabular}}
 
 OIDs are special kinds of unsigned integers because the system
-guarantees unicity. For system simplicity and performance, OIDs
+guarantees uniqueness. For system simplicity and performance, OIDs
 are now represented as (signed) integers; however this is hidden 
 in the system internals and shouldn't affect semantics. 
 \\ 
@@ -2001,7 +2001,7 @@ THE ACCELERATOR IN A CONSISTENT STATE (most probably by deleting it).
 \end{itemize}
 These functions are just wrappers for the operations one has to
 provide for a user-defined search accelerator, with the accelerator id
-as a preappended parameter.
+as a prepended parameter.
 @
 @{
 @h 
@@ -2044,7 +2044,7 @@ gdk_export void 	ACCexit       (BAT *b);
 @
 @}
 
-@- Builtin Accelerator Functions
+@- Built-in Accelerator Functions
 
 @T
 {\tt \begin{tabular}{|lll|}\hline
@@ -2095,7 +2095,7 @@ gdk_export void    IDXremove     (BAT *b);
 
 @- Multilevel Storage Modes
 
-We should bring in the compressed mode as the first, maybe builtin,
+We should bring in the compressed mode as the first, maybe built-in,
 mode. We could than add for instance HTTP remote storage, SQL storage,
 and READONLY (cd-rom) storage.
 
@@ -2404,7 +2404,7 @@ resident to simplify recovery.
 @
 During a transaction a context switch occurs upon encountering 
 another @%TMnew@ before commit or abort has been received.
-One can switch between transactions by issueing @%TMresume@.
+One can switch between transactions by issuing @%TMresume@.
 @
 The rationale for this scheme is its simplicity in testing transaction
 management, i.e. simulation of a multi-user systems.
@@ -2436,7 +2436,7 @@ The updates on a single BAT are kept separately from the stable
 partition until the user issues a @%BATcommit@ operation.
 @
 The routine @%BATprecommit@ ensures that the information for recovery
-is safely stored away on a log. @%BATundo@ disgards all updates made
+is safely stored away on a log. @%BATundo@ discards all updates made
 so-far.
 @
 The delta(s) provides the handle to drive the trigger manager later
@@ -2483,7 +2483,7 @@ BAT* & BATmaterialize    & (BAT *b, size\_t size)\\
 @
 Alignments of two columns of a BAT means that the system knows
 whether these two columns are exactly equal. Relatedness of two
-BATs means that one pair of columnes (either head or tail) of
+BATs means that one pair of columns (either head or tail) of
 both BATs is aligned. The first property is checked by @%ALIGNsynced@,
 the latter by @%ALIGNrelated@.
 @
@@ -2495,7 +2495,7 @@ alignment properly on their results.
 @
 VIEW BATs are BATs that lend their storage from a parent BAT.
 They are just a descriptor that points to the data in this
-parent BAT. A view is created with @%VIEWcreate@. The cahce
+parent BAT. A view is created with @%VIEWcreate@. The cache
 id of the parent (if any) is returned by @%VIEWparent@ (otherwise
 it returns 0). 
 @
@@ -2510,8 +2510,8 @@ as its view parameter (it converts void columns with seqbase!=nil
 to materialized oid columns).
 
 The @%BATmaterialize@ materializes a VIEW (TODO) or void bat inplace. The
-size parameter can be used to hint the new size. This is usefull as 
-materialization is usualy needed for updates.
+size parameter can be used to hint the new size. This is useful as 
+materialization is usually needed for updates.
 
 @{
 @h
@@ -2748,7 +2748,7 @@ Here we loop over a BAT with an ordered tail column (see for instance
 @%BATsort@). Again, 'p' and 'q' are iteration variables, where 'p'
 points at the current BUN. 'tl' and 'th' are pointers to atom 
 corresponding to the minimum (included) and maximum (included) bound
-in the selected range of BUNs. A nil-value means thet there is no bound.
+in the selected range of BUNs. A nil-value means that there is no bound.
 The 's' finally is an integer denoting the bunsize, used for speed.
 @h
 #define SORTloop(b,p,q,tl,th,s)\
@@ -2781,8 +2781,8 @@ need to have called @%BATidx@ first to create an index tree. Here you
 need to initialize 'p' to the first BUN you want to traverse, and 'q'
 to the last one. @%IDXfirst(b)@ gets you the first BUN in the index,
 @%IDXlast(b)@ to the position after the last BUN. @%IDXfndfirst(b,v)@
-goes to a first occurence of a value, and @%IDXfndlast(b,v)@ to one
-position after the  last occurence of that value. 
+goes to a first occurrence of a value, and @%IDXfndlast(b,v)@ to one
+position after the  last occurrence of that value. 
 @h
 #define IDXfirst(b)	(b)->hidx.first
 #define IDXlast(b)	(b)->hidx.last
@@ -2896,7 +2896,7 @@ BAT * & BATsdiff & (BAT *b, BAT *c)\\
 BAT * & BATkdiff & (BAT *b, BAT *c)\\
 \hline\end{tabular}}
 @
-The BAT library comes with a fullfledged collection of relational
+The BAT library comes with a full-fledged collection of relational
 operators. The two selection operators @%BATselect@ and
 @%BATfragment@ produce a partial copy of the BAT. The former performs
 a search on the tail; the latter considers both dimensions.  The
@@ -2924,8 +2924,8 @@ equi-join implementations.
 TODO: add this for semijoin/select/unique/diff/intersect
 @
 The routine @%BATsunique@ considers both dimensions in the double
-eleminiation it performs; it produces a set.
-The routine @%BATtunique@ considers ony the head column,
+elimination it performs; it produces a set.
+The routine @%BATtunique@ considers only the head column,
 and produces a unique head column.
 @
 BATs that satisfy the set property can be further processed with the

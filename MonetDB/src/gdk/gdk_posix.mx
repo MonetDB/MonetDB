@@ -19,11 +19,11 @@
 @a Niels Nes, Peter Boncz
 @* System Independent Layer
 
-GDK is built on POSIX. Exceptions are made for memory mapped files and 
-anonynmous virtual memory, for which somewhat higher-level functions are 
+GDK is built on Posix. Exceptions are made for memory mapped files and 
+anonymous virtual memory, for which somewhat higher-level functions are 
 defined here.
 
-Most of this file concerns itself with emulation of POSIX functionality on 
+Most of this file concerns itself with emulation of Posix functionality on 
 the WIN32 native platform.
 @h
 #ifndef GDK_POSIX_H
@@ -150,20 +150,20 @@ gdk_export int   MT_path_absolute(char *path);
 
 @- Posix under WIN32 
 @T
-WIN32 actually supports many posix functions directly.  Some it does not, though. 
+WIN32 actually supports many Posix functions directly.  Some it does not, though. 
 
-For some functionality we move in Monet from posix calls to MT\_\*() calls, which translate easier 
+For some functionality we move in Monet from Posix calls to MT\_\*() calls, which translate easier 
 to WIN32.  Examples are MT\_mmap() , MT\_sleep\_ms() and MT\_path\_absolute(). Why? In the case
 of mmap() it is much easier for WIN32 to get a filename parameter rather than a file-descriptor. 
 That is the reason in the case of mmap() to go for a MT\_mmap() solution.
 
-For some other funtionality, we do not need to abandon the posix interface, though. Two cases can
-be distuinguished:
+For some other functionality, we do not need to abandon the Posix interface, though. Two cases can
+be distinguished:
 \begin{itemize}
 \item missing functions in WIN32, which are directly implemented (e.g. dlopen()/dlsym()/dlclose()).
-\item posix functions in WIN32 whose functionlity should be changed a bit. Examples are 
+\item Posix functions in WIN32 whose functionality should be changed a bit. Examples are 
       stat()/rename()/mkdir()/rmdir() who under WIN32 do not work if the path ends with a directory 
-      separator, but should work according to posix. We remap such functions using a define
+      separator, but should work according to Posix. We remap such functions using a define
       to an equivalent win\_\*() function (which in its implementation calls through to the WIN32
       function).
 \end{itemize}
@@ -843,7 +843,7 @@ win_errmap_t win_errmap[] = {
 gdk_export int *win_errno(void);
 @c
 int *win_errno(void){
-  /* get address of thread-local POSIX errno; refresh its value from WIN32 error code */
+  /* get address of thread-local Posix errno; refresh its value from WIN32 error code */
   int i, err = GetLastError() & 0xff;
   int *result = TlsGetValue(GDK_WIN_ERRNO_TLS);
 
@@ -1145,7 +1145,7 @@ int sem_post (sem_t * sem) {
 @- memory fragmentation monitoring
 @T
 On 32-bits systems, Monet's aggressive use of virtual memory may bring it into
-trouble as the limits of what is addreassable in a 32-bits system are reached 
+trouble as the limits of what is addressable in a 32-bits system are reached 
 (an 32-bits OS only allows 2 to 4GB of memory to be used). In order to aid debugging
 situations where VM allocs fail (due to memory fragmentation), a monitoring
 system was established. To this purpose, a map is made for the VM addresses
@@ -1170,9 +1170,9 @@ The MT\_alloc\_printmap condenses the map by printing a char for each MB,
 hence combining info from 16 tiles. On NT, we can check in real-time which 
 tiles are actually in use (in case our own tile administration is out-of-sync 
 with reality, eg due to a memory leak). This real-life usage is printed in a 
-second line with encodingw .=free, *=inuse, X=unusable. On Unix systems,
+second line with encoding .=free, *=inuse, X=unusable. On Unix systems,
 *=inuse is not testable (unless with complicated signal stuff). On 64-bits
-systems, this administation is disfunctional. 
+systems, this administration is dysfunctional. 
 @c
 #if SIZEOF_VOID_P == 4
 unsigned char MT_alloc_map[65536]= { 0 };
@@ -1237,7 +1237,7 @@ int MT_alloc_print(void) {
 
 @-
 The memory table dump can also be produced in tuple format
-to enable front-ends to analys it more easily.
+to enable front-ends to analyze it more easily.
 @c
 struct{
 	char tag;

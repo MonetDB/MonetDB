@@ -24,10 +24,10 @@
 @* Introduction
 @T
 This document is a user manual for MIL. It is intended to be read by
-frontend developers, or application programmers who want to program
-in MIL directly instead of passing through frontend translation such as SQL. \\
+front-end developers, or application programmers who want to program
+in MIL directly instead of passing through front-end translation such as SQL. \\
 Beware that MIL has not been designed as the next high-level programming
-langauge to satisfy a large programmer community.
+language to satisfy a large programmer community.
 It's primary function is an {\bf intermediate language},
 with only little  syntactic sugar added. The language is mostly used
 by front-end compilers or through direct interaction from an application.
@@ -178,14 +178,14 @@ In sorting, it is convention that the NILs appear first.
 @- Unique OIDs
 @T
 OIDs are special kinds of unsigned integers because the system
-guarantees unicity. They have the form   number@stamp. Currently,
+guarantees uniqueness. They have the form   number@stamp. Currently,
 OIDs are implemented as 32-bit numbers, where the   stamp part
 consists of the highest two bits, and the   number part occupies the rest
 of the OID.
 
 A Monet server stamps each OID it generates with its own database-ID. By
 using Monet servers with different database-IDs, cross-system OID
-unicity can be ensured.
+uniqueness can be ensured.
 
 Although OIDs should be generated with the command
 {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_2_0">newoid(INT range):OID</a>@} to ensure their uniqueness, you

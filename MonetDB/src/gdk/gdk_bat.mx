@@ -1035,8 +1035,8 @@ BAT *BUNreplace(BAT *b, ptr h, ptr t) {
 }
 
 @- BUN Lookup
-Location of a BUN using a value should use the available indices
-to speed up access. If indices are lacking then a hash index
+Location of a BUN using a value should use the available indexes
+to speed up access. If indexes are lacking then a hash index
 is constructed under the assumption that 1) multiple access to the BAT 
 can be expected and 2) building the hash is only slightly more expensive
 than the full linear scan.

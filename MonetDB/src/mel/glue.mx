@@ -25,7 +25,7 @@
 #include "language.h"
 
 @+ The glue Class
-The glue class generates the code which glues extentions to Monet. It
+The glue class generates the code which glues extensions to Monet. It
 generates the install and delete functions for the module and type check
 and unpack functions for the commands/operators. For atoms and accelerators
 the properties are set. It inherits form language so only the code
@@ -59,7 +59,7 @@ class glue: public language {
 // generate the unpack functions
 @+ unpack
 The unpack class generates the unpack functions. Monet uses ValPtr 
-records to store builtin types and atoms. The unpack function will 
+records to store built-in types and atoms. The unpack function will 
 unpack these records and calls the user defined function properly. 
 The user defined functions should be in the following format.
 All parameters of the mel function are passed using pointers. The first
@@ -100,7 +100,7 @@ class unpack_setresult : public glue {
 };
 
 @+ call
-The call class generates the exual call of the user supplied c-function.
+The call class generates the actual call of the user supplied c-function.
 Each parameter is passed by address. The result parameter (first argument)
 will have an extra indirection when the user should allocate space.
 This indirection is needed so the user can set the pointer to
@@ -125,7 +125,7 @@ class unpack_call : public glue {
 
 @+ getresult
 The getresult class generates the code to move the result into the result
-value record, check for errors and giveing error messages. 
+value record, check for errors and giving error messages. 
 
 @C
 class unpack_getresult : public glue {
@@ -180,7 +180,7 @@ class forward: public glue {
 
 @+ install
 The install class generates the install functions. The install functions
-update the monet tables and load the user defined functions dynamicaly.
+update the monet tables and load the user defined functions dynamically.
 The install functions also installs the modules in its use list.
 Modules will be installed only once. When a module is installed for the
 second time (a different user) only its reference count will be increased.
@@ -217,7 +217,7 @@ class install_prelude: public glue {
 
 // generates delete functions  
 @+ deinstall
-The deinstalls the everthing including modules from its use list. 
+The deinstalls the everything including modules from its use list. 
 A module only gets deinstalled when its reference count hits zero.
 So if the module is used more than once it will not be deinstalled, only
 its reference count will be decreased.

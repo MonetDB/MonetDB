@@ -130,9 +130,9 @@ This is done incrementally by joining back the join result to the original
 columns, incrementally one by one for each pair of corresponding
 columns. These values are compared with each other and we AND the
 result of this comparison together for each pair of columns.
-The bat contining these bits is initialized to all TRUE and serves as
+The bat containing these bits is initialized to all TRUE and serves as
 final result after all column pairs have been compared.
-The initial join result is finally filetered with this bit-bat.
+The initial join result is finally filtered with this bit-bat.
 
 Joining back from the initial join-result to the original columns on
 both sides takes quite a lot of memory. For this reason, the false
