@@ -48,7 +48,6 @@ end main;	# 12
 [ nil,	  "Admin"		  ]
 [ nil,	  "mil_sys_procs"	  ]
 [ nil,	  "mil_algebra_procs"	  ]
-[ nil,	  "sqlcache"		  ]
 [ nil,	  "transaction"		  ]
 [ nil,	  "chopper"		  ]
 [ nil,	  "optimizer"		  ]
@@ -228,9 +227,6 @@ Commands
 # symbol		name				  # name
 # str		str				  # type
 #-------------------------------------------------#
-[ "sqlcache",	  "exists"			  ]
-[ "sqlcache",	  "getDefinition"		  ]
-[ "sqlcache",	  "remove"			  ]
 [ "transaction",  "alpha"			  ]
 [ "transaction",  "abort"			  ]
 [ "transaction",  "commit"			  ]
@@ -315,6 +311,7 @@ Commands
 [ "factory",	  "getOwners"		  ]
 [ "factory",	  "getCaller"		  ]
 [ "factory",	  "getPlants"		  ]
+[ "factory",	  "shutdown"			  ]
 [ "factory",	  "setLocation"		  ]
 [ "enum",	  "isEnum"			  ]
 [ "io",		  "export"			  ]

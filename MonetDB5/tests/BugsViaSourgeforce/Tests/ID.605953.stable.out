@@ -9,6 +9,8 @@ stdout of test 'ID.605953` in directory 'tests/BugsViaSourgeforce` itself:
 
 
 
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.

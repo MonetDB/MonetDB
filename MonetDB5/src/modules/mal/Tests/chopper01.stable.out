@@ -5,6 +5,8 @@ stdout of test 'chopper01` in directory 'src/modules/mal` itself:
 # 20:27:04 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=41729 --set sql_port=54220 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  chopper01.mal </dev/null
 # 20:27:04 >  
 
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
