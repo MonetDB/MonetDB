@@ -31,4 +31,9 @@ lib__ascii_io = {
 		$(Z_LIBS) $(BZ_LIBS)
 }
 
+scripts_mil = {
+	DIR = pkgdatadir
+	SOURCES = mapi.mil
+}
+
 EXTRA_DIST_DIR = Tests
