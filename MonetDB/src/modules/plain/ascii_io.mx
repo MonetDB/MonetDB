@@ -302,9 +302,7 @@ ptr bun_tail(BAT *b, size_t nr){
 
 BAT *void_bat_create(int adt, size_t nr) {
 	BAT *b = BATnew(TYPE_void,adt,nr);
-	/* check for correct structures */
-	if( b== NULL) return b;
-	if( BATmirror(b)) BATseqbase(b,0);
+	BATseqbase(b,0);
 	return b;
 }
 
@@ -500,7 +498,6 @@ BAT *ASCIIcollect_bats( ascii *as ){
 	size_t i;
 	size_t cnt = BATcount(fmt[0].c);
 
-	if( bats == NULL) return NULL;
 	for (i=0; i<as->nr_attrs; i++){
 		BUNins(bats,(ptr)fmt[i].name, (ptr)&fmt[i].c->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
@@ -789,8 +786,8 @@ static INLINE int
 read_more(bstream * in, stream * out, int n)
 {
 	if (out) {
-		do {
 		/* query is not finished ask for more */
+		while (in->len <= in->pos) {
 			if (in->eof || !isa_block_stream(in->s) ) { 
 				if (out && stream_write(out,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
 					stream_flush(out);
@@ -799,7 +796,7 @@ read_more(bstream * in, stream * out, int n)
 			/* we need more query text */
 			if (bstream_next( in ) < 0) 
 				return EOF;
-		} while (in->len <= in->pos); 
+		}
 	} else {
 		bstream_read( in, n );
 	}

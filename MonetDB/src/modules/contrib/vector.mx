@@ -456,13 +456,12 @@ typedef struct {
         return(nullptr);
     }
     
-    var_t atom_@1s_put(Heap* h, var_t* bun, @1s* val) {
+    void atom_@1s_put(Heap* h, var_t* bun, @1s* val) {
         char* base;
 
         *bun  = HEAP_malloc(h,@1ssize(val->dimension));
         base = h->base;
-        if (*bun) memcpy(&base[*bun],(char *)val, @1ssize(val->dimension));
-	return *bun;
+        memcpy(&base[*bun],(char *)val, @1ssize(val->dimension));
     }
 
     int atom_@1s_length(@1s* p) {
