@@ -412,7 +412,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		sValue = "Y";
 		break;
 	case SQL_IDENTIFIER_CASE:
-		nValue = SQL_IC_UPPER;
+		nValue = SQL_IC_LOWER;
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_IDENTIFIER_QUOTE_CHAR:
@@ -548,7 +548,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		sValue = "N";
 		break;
 	case SQL_QUOTED_IDENTIFIER_CASE:
-		nValue = SQL_IC_MIXED;
+		nValue = SQL_IC_SENSITIVE;
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_SPECIAL_CHARACTERS:
