@@ -710,7 +710,7 @@ numerical@batloop(){ sql_func( "max", "max", $h, $h, "", $h ); }
 numerical@batloop(){ sql_func( "min", "min", $h, $h, "", $h ); }
 
 numerical@batloop(){ sql_func( "neg", "-", $h, "", "", $h ); }
-numerical@batloop(){ sql_func( "pos", "+", $h, "", "", $h ); }
+#numerical@batloop(){ sql_func( "pos", "+", $h, "", "", $h ); }
 
 numerical@batloop(){ 
 	var hd := $h; 
