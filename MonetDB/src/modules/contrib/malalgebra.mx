@@ -63,9 +63,6 @@ Too many bugs.
 
 
 @= select
-
-
-@= select
 .COMMAND ord_@1select ( BAT[any::1,any::2] b, any::2 low, any::2 high) : 
 				BAT[any::1, @2] = CMDord_@1select; 
 "Like standard '@1select(b, low, high);', but preserves the order of the input BAT;
