@@ -142,7 +142,7 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	return SQL_SUCCESS;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	       SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {

@@ -17,7 +17,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 		 SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
 		 SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)

@@ -20,7 +20,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLCloseCursor(SQLHSTMT hStmt)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

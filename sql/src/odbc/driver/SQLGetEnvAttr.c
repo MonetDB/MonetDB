@@ -23,7 +23,7 @@
 #include "ODBCEnv.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 	      SQLPOINTER Value, SQLINTEGER BufferLength,
 	      SQLINTEGER *StringLength)

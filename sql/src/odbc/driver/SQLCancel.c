@@ -16,7 +16,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLCancel(SQLHSTMT hStmt)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

@@ -141,7 +141,7 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 	return SQLFetch_(stmt);
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT FetchOrientation,
 	       SQLINTEGER FetchOffset)
 {

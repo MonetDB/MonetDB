@@ -15,6 +15,8 @@ BOOL
 ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg,
 	     WORD msgmax, WORD *msgout)
 {
+	MessageBox(NULL, "ConfigDriver called", "ConfigDriver",
+		   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 	if (msgout)
 		*msgout = 0;
 	if (msg && msgmax > 0)
@@ -41,6 +43,8 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg,
 BOOL
 ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 {
+	MessageBox(NULL, "ConfigDSN called", "ConfigDSN",
+		   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 	if (strcmp(driver, DriverName) != 0) {
 		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
 				      "Invalid driver name");

@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLMoreResults(SQLHSTMT hStmt)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

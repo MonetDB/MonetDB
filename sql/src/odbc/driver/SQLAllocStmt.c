@@ -20,7 +20,7 @@
 
 #include "ODBCGlobal.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLAllocStmt(SQLHDBC hDbc, SQLHSTMT *phStmt)
 {
 #ifdef ODBCDEBUG

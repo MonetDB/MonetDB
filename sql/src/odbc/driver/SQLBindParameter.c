@@ -305,7 +305,7 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	return SQL_ERROR;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 		 SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
 		 SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,

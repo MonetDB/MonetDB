@@ -21,7 +21,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetScrollOptions(SQLHSTMT hStmt, SQLUSMALLINT fConcurrency,
 		    SQLINTEGER crowKeyset, SQLUSMALLINT crowRowset)
 {

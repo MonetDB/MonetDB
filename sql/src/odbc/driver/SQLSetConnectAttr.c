@@ -77,7 +77,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 	return SQL_SUCCESS;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 		  SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {

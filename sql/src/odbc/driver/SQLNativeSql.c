@@ -22,7 +22,7 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	     SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
 {

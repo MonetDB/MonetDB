@@ -209,7 +209,7 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 		SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
 		SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,

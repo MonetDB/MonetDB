@@ -16,7 +16,7 @@
 
 #include "ODBCGlobal.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLFreeConnect(SQLHDBC hDrvDbc)
 {
 #ifdef ODBCDEBUG

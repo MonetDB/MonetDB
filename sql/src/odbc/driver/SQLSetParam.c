@@ -21,7 +21,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetParam(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 	    SQLSMALLINT ValueType, SQLSMALLINT ParameterType,
 	    SQLUINTEGER LengthPrecision, SQLSMALLINT ParameterScale,

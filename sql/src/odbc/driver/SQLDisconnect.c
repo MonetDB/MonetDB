@@ -20,7 +20,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLDisconnect(SQLHDBC hDbc)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;

@@ -231,7 +231,7 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 	return SQL_ERROR;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 		SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)

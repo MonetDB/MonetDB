@@ -13,9 +13,9 @@
 #include <sqlext.h>
 #include <odbcinst.h>
 #include <winver.h>
+#include <shlwapi.h>
 #include <string.h>
 #include <stdio.h>
-#include <shlwapi.h>
 #include <malloc.h>
 
 static char *DriverName = "MonetDB ODBC Driver";
@@ -26,7 +26,7 @@ static char *DriverDLLs = "libMonetODBCs.dll";
 /* General error handler for installer functions */
 
 static BOOL
-ProcessErrorMessages(const char *func)
+ProcessSQLErrorMessages(const char *func)
 {
 	WORD errnr = 1;
 	DWORD errcode;
@@ -49,7 +49,20 @@ ProcessErrorMessages(const char *func)
 	return func_rc;
 }
 
-static BOOL
+static void
+ProcessSysErrorMessage(DWORD err, const char *func)
+{
+	char *lpMsgBuf;
+
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		      FORMAT_MESSAGE_FROM_SYSTEM |
+		      FORMAT_MESSAGE_IGNORE_INSERTS,
+		      NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		      (LPTSTR) &lpMsgBuf, 0, NULL);
+	MessageBox(NULL, (LPCTSTR) lpMsgBuf, func, MB_OK | MB_ICONINFORMATION);
+	LocalFree(lpMsgBuf);
+}
+
 CheckIfFileExists(const char *filepath, const char *filename)
 {
 	char buf[300];
@@ -59,7 +72,7 @@ CheckIfFileExists(const char *filepath, const char *filename)
 }
 
 static BOOL
-GetFileVersion(const char *filepath, char *version, size_t maxversionlen)
+GetFileVersion(char *filepath, char *version, size_t maxversionlen)
 {
 	DWORD handle = 0;
 	DWORD versioninfosize;
@@ -95,9 +108,9 @@ GetFileVersion(const char *filepath, char *version, size_t maxversionlen)
 		return FALSE;
 	}
 
-	wnsprintf(string, sizeof(string),
-		  "\\StringFileInfo\\%04x%04x\\FileVersion",
-		  LOWORD(*translation), HIWORD(*translation));
+	snprintf(string, sizeof(string),
+		 "\\StringFileInfo\\%04x%04x\\FileVersion",
+		 LOWORD(*translation), HIWORD(*translation));
 
 	if (!VerQueryValue(fileinfo, string, (PVOID *) &versionstr, &length)) {
 		error = GetLastError();
@@ -212,11 +225,11 @@ InstallMyDriver(const char *driverpath)
 			*p = '\0';
 
 	if (!VersionCheckCopyFile(driverpath, inpath, DriverDLL))
-		if (ProcessErrorMessages("SQLInstallDriverEx"))
+		if (ProcessSQLErrorMessages("SQLInstallDriverEx"))
 			return FALSE;
 
 	if (!VersionCheckCopyFile(driverpath, inpath, DriverDLLs))
-		if (ProcessErrorMessages("SQLInstallDriverEx"))
+		if (ProcessSQLErrorMessages("SQLInstallDriverEx"))
 			return FALSE;
 
 	/* call SQLInstallDriverEx to install the driver in the
@@ -224,7 +237,7 @@ InstallMyDriver(const char *driverpath)
 	if (!SQLInstallDriverEx(driver, inpath, outpath, sizeof(outpath),
 				&outpathlen, ODBC_INSTALL_COMPLETE,
 				&usagecount) &&
-	    ProcessErrorMessages("SQLInstallDriverEx"))
+	    ProcessSQLErrorMessages("SQLInstallDriverEx"))
 		return FALSE;
 
 	return TRUE;
@@ -237,25 +250,58 @@ RemoveMyDriver()
 	char dirname[300];
 	WORD len;
 	DWORD usagecount;
+	DWORD valtype, valsize, rc;
 	char *p;
 
-	if (!SQLRemoveDriver(DriverName, TRUE, &usagecount))
-		ProcessErrorMessages("SQLRemoveDriver");
-	else if (usagecount == 0) {
-		/* figure out where the files were installed */
-		snprintf(buf, sizeof(buf), "%s;Driver=%s;Setup=%s;",
-			 DriverName, DriverDLL, DriverDLLs);
-		for (p = buf; *p; p++)
-			if (*p == ';')
-				*p = '\0';
-		SQLInstallDriverEx(buf, NULL, dirname, sizeof(dirname),
-				   &len, ODBC_INSTALL_INQUIRY, &usagecount);
-		/* and the delete them */
-		snprintf(buf, sizeof(buf), "%s\\%s", dirname, DriverDLL);
-		DeleteFile(buf);
-		snprintf(buf, sizeof(buf), "%s\\%s", dirname, DriverDLLs);
-		DeleteFile(buf);
+	/* most of this is equivalent to what SQLRemoveDriver is
+	   suppposed to do, except that it consistently causes a
+	   crash, so we do it ourselves */
+	snprintf(buf, sizeof(buf),
+		 "SOFTWARE\\ODBC\\ODBCINST.INI\\%s", DriverName);
+	valsize = sizeof(usagecount);
+	usagecount = 0;
+	valtype = REG_DWORD;
+	rc = SHGetValue(HKEY_LOCAL_MACHINE, buf, "UsageCount", &valtype,
+			&usagecount, &valsize);
+	if (rc != ERROR_SUCCESS) {
+		ProcessSysErrorMessage(rc, "one");
+		return FALSE;
 	}
+	if (usagecount > 1) {
+		usagecount--;
+		rc = SHSetValue(HKEY_LOCAL_MACHINE, buf, "UsageCount",
+				REG_DWORD, &usagecount, sizeof(usagecount));
+		if (rc != ERROR_SUCCESS) {
+			ProcessSysErrorMessage(rc, "two");
+			return FALSE;
+		}
+		return TRUE;
+	}
+	rc = SHDeleteKey(HKEY_LOCAL_MACHINE, buf);
+	if (rc != ERROR_SUCCESS) {
+		ProcessSysErrorMessage(rc, "three");
+		return FALSE;
+	}
+	rc = SHDeleteValue(HKEY_LOCAL_MACHINE,
+			   "SOFTWARE\\ODBC\\ODBCINST.INI\\ODBC Drivers",
+			   DriverName);
+	if (rc != ERROR_SUCCESS) {
+		ProcessSysErrorMessage(rc, "four");
+		return FALSE;
+	}
+	/* figure out where the files were installed */
+	snprintf(buf, sizeof(buf), "%s;Driver=%s;Setup=%s;",
+		 DriverName, DriverDLL, DriverDLLs);
+	for (p = buf; *p; p++)
+		if (*p == ';')
+			*p = '\0';
+	SQLInstallDriverEx(buf, NULL, dirname, sizeof(dirname),
+			   &len, ODBC_INSTALL_INQUIRY, &usagecount);
+	/* and the delete them */
+	snprintf(buf, sizeof(buf), "%s\\%s", dirname, DriverDLL);
+	DeleteFile(buf);
+	snprintf(buf, sizeof(buf), "%s\\%s", dirname, DriverDLLs);
+	DeleteFile(buf);
 
 	return TRUE;
 }
@@ -284,7 +330,7 @@ AddMyDSN()
 
 	/* then create a new DSN */
 	if (!SQLConfigDataSource(NULL, ODBC_ADD_SYS_DSN, DriverName, attrs)) {
-		ProcessErrorMessages("SQLConfigDataSource");
+		ProcessSQLErrorMessages("SQLConfigDataSource");
 		return FALSE;
 	}
 
@@ -302,7 +348,7 @@ RemoveMyDSN()
 		if (*p == ';')
 			*p = 0;
 	if (!SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, buf)) {
-		ProcessErrorMessages("SQLConfigDataSource");
+		ProcessSQLErrorMessages("SQLConfigDataSource");
 		return FALSE;
 	}
 
@@ -322,12 +368,14 @@ Install(const char *redistpath, const char *driverpath)
 	/* first, retrieve the path the driver should be installed to
 	 * in path */
 	if (!SQLInstallDriverManager(path, sizeof(path), &pathlen)) {
-		ProcessErrorMessages("SQLInstallDriverManager");
+		ProcessSQLErrorMessages("SQLInstallDriverManager");
 		return FALSE;
 	}
 
 	if (redistpath && !CheckIfFileExists(path, redistpath)) {
-		fprintf(stderr, "Can't find ODBC SDK in %s\n", redistpath);
+		snprintf(path, sizeof(path), "Can't find ODBC SDK in %s\n", redistpath);
+		MessageBox(NULL, path, "Install",
+			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		SQLRemoveDriverManager(&usagecount);
 		exit(-10);
 	}
@@ -349,7 +397,7 @@ Install(const char *redistpath, const char *driverpath)
 			if (strcmp(newversion, existingversion) > 0) {
 #ifndef SKIP_IF_EXISTS
 				if (!SQLRemoveDriverManager(&usagecount)) {
-					if (ProcessErrorMessages("SQLRemoveDriverManager"))
+					if (ProcessSQLErrorMessages("SQLRemoveDriverManager"))
 						return FALSE;
 				} else
 					rc = CopyODBCCore(redistpath, path);
@@ -357,7 +405,8 @@ Install(const char *redistpath, const char *driverpath)
 			}
 		}
 	} else if (redistpath == NULL) {
-		fprintf(stderr, "You must install MDAC before you can use the ODBC driver\n");
+		MessageBox(NULL, "You must install MDAC before you can use the ODBC driver", "Install",
+			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		return FALSE;
 	} else
 		rc = CopyODBCCore(redistpath, path);
@@ -394,8 +443,8 @@ int
 main(int argc, char **argv)
 {
 	if (argc != 2) {
-		fprintf(stderr, "Usage: %s /Install\n   or: %s /Uninstall\n",
-			argv[0]);
+		MessageBox(NULL, "/Install or /Uninstall argument expected", argv[0],
+			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		exit(1);
 	}
 	if (strcmp("/Install", argv[1]) == 0) {
@@ -408,17 +457,19 @@ main(int argc, char **argv)
 		else
 			strcpy(buf, ".");
 		if (!Install(NULL, buf)) {
-			fprintf(stderr, "%s: ODBC Install Failed\n", argv[0]);
+			MessageBox(NULL, "ODBC Install Failed", argv[0],
+				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 			exit(1);
 		}
 	} else if (strcmp("/Uninstall", argv[1]) == 0) {
 		if (!Uninstall()) {
-			printf("ODBC Uninstall Failed\n");
+			MessageBox(NULL, "ODBC Uninstall Failed", argv[0],
+				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 			exit(1);
 		}
 	} else {
-		fprintf(stderr, "Usage: %s /Install\n   or: %s /Uninstall\n",
-			argv[0]);
+		MessageBox(NULL, "/Install or /Uninstall argument expected", argv[0],
+			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		exit(1);
 	}
 	return 0;

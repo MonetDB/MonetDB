@@ -147,7 +147,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	return rc;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	   SQLSMALLINT nCompletionType)
 {

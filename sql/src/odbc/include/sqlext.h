@@ -1708,7 +1708,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_DRIVER_PROMPT               2
 #define SQL_DRIVER_COMPLETE_REQUIRED    3
 
-odbc_export SQLRETURN  SQLDriverConnect(
+odbc_export SQLRETURN SQL_API SQLDriverConnect(
     SQLHDBC            hdbc,
     SQLHWND            hwnd,
     SQLCHAR 		  *szConnStrIn,
@@ -1816,7 +1816,7 @@ odbc_export SQLRETURN  SQLDriverConnect(
 "YEAR,ZONE"
 */
 
-odbc_export SQLRETURN  SQLBrowseConnect(
+odbc_export SQLRETURN SQL_API SQLBrowseConnect(
     SQLHDBC            hdbc,
     SQLCHAR 		  *szConnStrIn,
     SQLSMALLINT        cbConnStrIn,
@@ -1825,12 +1825,12 @@ odbc_export SQLRETURN  SQLBrowseConnect(
     SQLSMALLINT       *pcbConnStrOut);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN	SQLBulkOperations(
+odbc_export SQLRETURN SQL_API SQLBulkOperations(
 	SQLHSTMT			StatementHandle,
 	SQLSMALLINT			Operation);
 #endif  /* ODBCVER >= 0x0300 */
 
-odbc_export SQLRETURN  SQLColAttributes(
+odbc_export SQLRETURN SQL_API SQLColAttributes(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       icol,
     SQLUSMALLINT       fDescType,
@@ -1839,7 +1839,7 @@ odbc_export SQLRETURN  SQLColAttributes(
     SQLSMALLINT 	  *pcbDesc,
     SQLLEN 		      *pfDesc);
 
-odbc_export SQLRETURN  SQLColumnPrivileges(
+odbc_export SQLRETURN SQL_API SQLColumnPrivileges(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1850,7 +1850,7 @@ odbc_export SQLRETURN  SQLColumnPrivileges(
     SQLCHAR 		  *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-odbc_export SQLRETURN  SQLDescribeParam(
+odbc_export SQLRETURN SQL_API SQLDescribeParam(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       ipar,
     SQLSMALLINT 	  *pfSqlType,
@@ -1858,14 +1858,14 @@ odbc_export SQLRETURN  SQLDescribeParam(
     SQLSMALLINT 	  *pibScale,
     SQLSMALLINT 	  *pfNullable);
 
-odbc_export SQLRETURN  SQLExtendedFetch(
+odbc_export SQLRETURN SQL_API SQLExtendedFetch(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fFetchType,
     SQLROWOFFSET       irow,
     SQLROWSETSIZE 	  *pcrow,
     SQLUSMALLINT 	  *rgfRowStatus);
 
-odbc_export SQLRETURN  SQLForeignKeys(
+odbc_export SQLRETURN SQL_API SQLForeignKeys(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szPkCatalogName,
     SQLSMALLINT        cbPkCatalogName,
@@ -1880,10 +1880,10 @@ odbc_export SQLRETURN  SQLForeignKeys(
     SQLCHAR 		  *szFkTableName,
     SQLSMALLINT        cbFkTableName);
 
-odbc_export SQLRETURN  SQLMoreResults(
+odbc_export SQLRETURN SQL_API SQLMoreResults(
     SQLHSTMT           hstmt);
 
-odbc_export SQLRETURN  SQLNativeSql(
+odbc_export SQLRETURN SQL_API SQLNativeSql(
     SQLHDBC            hdbc,
     SQLCHAR 		  *szSqlStrIn,
     SQLINTEGER         cbSqlStrIn,
@@ -1891,16 +1891,16 @@ odbc_export SQLRETURN  SQLNativeSql(
     SQLINTEGER         cbSqlStrMax,
     SQLINTEGER 		  *pcbSqlStr);
 
-odbc_export SQLRETURN  SQLNumParams(
+odbc_export SQLRETURN SQL_API SQLNumParams(
     SQLHSTMT           hstmt,
     SQLSMALLINT 	  *pcpar);
 
-odbc_export SQLRETURN  SQLParamOptions(
+odbc_export SQLRETURN SQL_API SQLParamOptions(
     SQLHSTMT           hstmt,
     SQLUINTEGER        crow,
     SQLUINTEGER 	  *pirow);
 
-odbc_export SQLRETURN  SQLPrimaryKeys(
+odbc_export SQLRETURN SQL_API SQLPrimaryKeys(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1909,7 +1909,7 @@ odbc_export SQLRETURN  SQLPrimaryKeys(
     SQLCHAR 		  *szTableName,
     SQLSMALLINT        cbTableName);
 
-odbc_export SQLRETURN  SQLProcedureColumns(
+odbc_export SQLRETURN SQL_API SQLProcedureColumns(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1920,7 +1920,7 @@ odbc_export SQLRETURN  SQLProcedureColumns(
     SQLCHAR 		  *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-odbc_export SQLRETURN  SQLProcedures(
+odbc_export SQLRETURN SQL_API SQLProcedures(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1929,13 +1929,13 @@ odbc_export SQLRETURN  SQLProcedures(
     SQLCHAR 		  *szProcName,
     SQLSMALLINT        cbProcName);
 
-odbc_export SQLRETURN  SQLSetPos(
+odbc_export SQLRETURN SQL_API SQLSetPos(
     SQLHSTMT           hstmt,
     SQLSETPOSIROW      irow,
     SQLUSMALLINT       fOption,
     SQLUSMALLINT       fLock);
 
-odbc_export SQLRETURN  SQLTablePrivileges(
+odbc_export SQLRETURN SQL_API SQLTablePrivileges(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1944,7 +1944,7 @@ odbc_export SQLRETURN  SQLTablePrivileges(
     SQLCHAR 		  *szTableName,
     SQLSMALLINT        cbTableName);
 
-odbc_export SQLRETURN  SQLDrivers(
+odbc_export SQLRETURN SQL_API SQLDrivers(
     SQLHENV            henv,
     SQLUSMALLINT       fDirection,
     SQLCHAR 		  *szDriverDesc,
@@ -1954,7 +1954,7 @@ odbc_export SQLRETURN  SQLDrivers(
     SQLSMALLINT        cbDrvrAttrMax,
     SQLSMALLINT 	  *pcbDrvrAttr);
 
-odbc_export SQLRETURN  SQLBindParameter(
+odbc_export SQLRETURN SQL_API SQLBindParameter(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       ipar,
     SQLSMALLINT        fParamType,
@@ -1992,7 +1992,7 @@ odbc_export SQLRETURN  SQLBindParameter(
 #endif /* ODBC_STD */
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN  SQLAllocHandleStd(
+odbc_export SQLRETURN SQL_API SQLAllocHandleStd(
 	SQLSMALLINT		fHandleType,
 	SQLHANDLE		hInput,
 	SQLHANDLE	   *phOutput);
@@ -2019,7 +2019,7 @@ odbc_export SQLRETURN  SQLAllocHandleStd(
 #define SQL_SCROLL_STATIC               (-3L) /*-SQL_CURSOR_STATIC */
 
 /*      Deprecated functions from prior versions of ODBC */
-odbc_export SQLRETURN  SQLSetScrollOptions(    /*      Use SQLSetStmtOptions */
+odbc_export SQLRETURN SQL_API SQLSetScrollOptions(    /*      Use SQLSetStmtOptions */
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fConcurrency,
     SQLLEN             crowKeyset,
@@ -2083,3 +2083,9 @@ VOID	FireVSDebugEvent(PODBC_VS_ARGS);
 #endif
 
 #endif
+
+/*
+ * Local Variables:
+ * tab-width:4
+ * End:
+ */

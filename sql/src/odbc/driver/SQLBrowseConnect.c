@@ -22,7 +22,7 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 		 SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
 		 SQLSMALLINT *pcbConnStrOut)

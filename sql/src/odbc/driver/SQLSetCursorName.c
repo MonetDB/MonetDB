@@ -22,7 +22,7 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

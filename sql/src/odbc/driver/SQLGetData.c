@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	   SQLPOINTER pTarget, SQLINTEGER nTargetLength,
 	   SQLINTEGER *pnLengthOrIndicator)

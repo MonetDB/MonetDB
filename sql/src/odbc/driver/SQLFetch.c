@@ -1762,7 +1762,7 @@ SQLFetch_(ODBCStmt *stmt)
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLFetch(SQLHSTMT hStmt)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

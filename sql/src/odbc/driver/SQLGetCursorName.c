@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor,
 		 SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
 {

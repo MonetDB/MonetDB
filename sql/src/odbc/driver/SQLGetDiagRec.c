@@ -140,7 +140,7 @@ SQLGetDiagRec_(SQLSMALLINT handleType,	/* must contain a valid type */
 	return retCode;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetDiagRec(SQLSMALLINT handleType,	/* must contain a valid type */
 	      SQLHANDLE handle,	/* must contain a valid handle */
 	      SQLSMALLINT recNumber,	/* must be >= 1 */

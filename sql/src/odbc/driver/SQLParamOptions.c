@@ -17,7 +17,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLParamOptions(SQLHSTMT hStmt, SQLUINTEGER nRow, SQLUINTEGER *pnRow)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

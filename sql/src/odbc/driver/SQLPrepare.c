@@ -71,7 +71,7 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	return SQL_SUCCESS;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
 #ifdef ODBCDEBUG

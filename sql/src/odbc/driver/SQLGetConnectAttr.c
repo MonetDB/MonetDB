@@ -94,7 +94,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 	return dbc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 		  SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {

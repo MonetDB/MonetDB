@@ -83,7 +83,7 @@ get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 	return 1;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		 SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
 		 SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,

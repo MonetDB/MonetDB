@@ -20,7 +20,7 @@
 
 #include "ODBCGlobal.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLAllocConnect(SQLHENV hEnv, SQLHDBC *phDbc)
 {
 #ifdef ODBCDEBUG

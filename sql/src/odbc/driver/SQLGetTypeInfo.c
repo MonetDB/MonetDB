@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

@@ -20,7 +20,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"		/* for isValidStmt() & addStmtError() */
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation,
 	  SQLUSMALLINT nLockType)
 {

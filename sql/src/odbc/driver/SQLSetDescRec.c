@@ -16,7 +16,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetDescRec(SQLHDESC hDescriptorHandle, SQLSMALLINT nRecordNumber,
 	      SQLSMALLINT nType, SQLSMALLINT nSubType, SQLINTEGER nLength,
 	      SQLSMALLINT nPrecision, SQLSMALLINT nScale, SQLPOINTER pData,

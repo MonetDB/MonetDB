@@ -20,7 +20,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLINTEGER nOffset,
 		 SQLUINTEGER *pnRowCount, SQLUSMALLINT *pRowStatusArray)
 {

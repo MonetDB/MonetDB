@@ -178,7 +178,7 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 	/* not reached */
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
 {
 #ifdef ODBCDEBUG

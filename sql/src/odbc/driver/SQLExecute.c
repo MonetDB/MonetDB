@@ -203,7 +203,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	return SQL_SUCCESS;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLExecute(SQLHSTMT hStmt)
 {
 #ifdef ODBCDEBUG

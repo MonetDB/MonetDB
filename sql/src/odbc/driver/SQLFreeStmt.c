@@ -59,7 +59,7 @@ SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
 	/* not reached */
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 {
 #ifdef ODBCDEBUG

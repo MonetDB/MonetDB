@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLRowCount(SQLHSTMT hStmt, SQLINTEGER *pnRowCount)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

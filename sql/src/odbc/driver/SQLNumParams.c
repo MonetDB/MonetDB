@@ -23,7 +23,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLNumParams(SQLHSTMT hStmt, SQLSMALLINT *pnParamCount)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

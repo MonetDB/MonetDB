@@ -25,7 +25,7 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	      SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName,
 	      SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName,

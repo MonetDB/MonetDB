@@ -18,7 +18,7 @@
 #include "ODBCDbc.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;

@@ -157,7 +157,7 @@ static UWORD FuncImplemented[] = {
    above */
 static UWORD FuncExistMap[SQL_API_ODBC3_ALL_FUNCTIONS_SIZE];
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetFunctions(SQLHDBC hDbc, SQLUSMALLINT FunctionId, SQLUSMALLINT *Supported)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;

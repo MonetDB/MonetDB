@@ -24,7 +24,7 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLForeignKeys(SQLHSTMT hStmt,
 	       SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength,
 	       SQLCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength,

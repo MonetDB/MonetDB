@@ -21,7 +21,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;

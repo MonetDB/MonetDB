@@ -562,256 +562,262 @@ extern "C" {
 #define SQL_NC_HIGH                         0
 #define SQL_NC_LOW                          1
 
-odbc_export SQLRETURN   SQLAllocConnect(SQLHENV EnvironmentHandle,
+odbc_export SQLRETURN SQL_API SQLAllocConnect(SQLHENV EnvironmentHandle,
            SQLHDBC *ConnectionHandle);
 
-odbc_export SQLRETURN   SQLAllocEnv(SQLHENV *EnvironmentHandle);
+odbc_export SQLRETURN SQL_API SQLAllocEnv(SQLHENV *EnvironmentHandle);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLAllocHandle(SQLSMALLINT HandleType,
+odbc_export SQLRETURN SQL_API SQLAllocHandle(SQLSMALLINT HandleType,
            SQLHANDLE InputHandle, SQLHANDLE *OutputHandle);
 #endif
 
-odbc_export SQLRETURN   SQLAllocStmt(SQLHDBC ConnectionHandle,
+odbc_export SQLRETURN SQL_API SQLAllocStmt(SQLHDBC ConnectionHandle,
            SQLHSTMT *StatementHandle);
 
-odbc_export SQLRETURN   SQLBindCol(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLBindCol(SQLHSTMT StatementHandle,
 		   SQLUSMALLINT ColumnNumber, SQLSMALLINT TargetType,
 		   SQLPOINTER TargetValue, SQLLEN BufferLength,
 	   	   SQLLEN *StrLen_or_Ind);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLBindParam(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLBindParam(SQLHSTMT StatementHandle,
            SQLUSMALLINT ParameterNumber, SQLSMALLINT ValueType,
            SQLSMALLINT ParameterType, SQLULEN LengthPrecision,
            SQLSMALLINT ParameterScale, SQLPOINTER ParameterValue,
            SQLLEN *StrLen_or_Ind);
 #endif
 
-odbc_export SQLRETURN   SQLCancel(SQLHSTMT StatementHandle);
+odbc_export SQLRETURN SQL_API SQLCancel(SQLHSTMT StatementHandle);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLCloseCursor(SQLHSTMT StatementHandle);
+odbc_export SQLRETURN SQL_API SQLCloseCursor(SQLHSTMT StatementHandle);
 
-odbc_export SQLRETURN   SQLColAttribute (SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLColAttribute (SQLHSTMT StatementHandle,
            SQLUSMALLINT ColumnNumber, SQLUSMALLINT FieldIdentifier,
            SQLPOINTER CharacterAttribute, SQLSMALLINT BufferLength,
            SQLSMALLINT *StringLength, SQLPOINTER NumericAttribute);
 #endif
 
 
-odbc_export SQLRETURN   SQLColumns(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLColumns(SQLHSTMT StatementHandle,
            SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
            SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
            SQLCHAR *TableName, SQLSMALLINT NameLength3,
            SQLCHAR *ColumnName, SQLSMALLINT NameLength4);
 
 
-odbc_export SQLRETURN   SQLConnect(SQLHDBC ConnectionHandle,
+odbc_export SQLRETURN SQL_API SQLConnect(SQLHDBC ConnectionHandle,
            SQLCHAR *ServerName, SQLSMALLINT NameLength1,
            SQLCHAR *UserName, SQLSMALLINT NameLength2,
            SQLCHAR *Authentication, SQLSMALLINT NameLength3);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLCopyDesc(SQLHDESC SourceDescHandle,
+odbc_export SQLRETURN SQL_API SQLCopyDesc(SQLHDESC SourceDescHandle,
            SQLHDESC TargetDescHandle);
 #endif
 
-odbc_export SQLRETURN   SQLDataSources(SQLHENV EnvironmentHandle,
+odbc_export SQLRETURN SQL_API SQLDataSources(SQLHENV EnvironmentHandle,
            SQLUSMALLINT Direction, SQLCHAR *ServerName,
            SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1,
            SQLCHAR *Description, SQLSMALLINT BufferLength2,
            SQLSMALLINT *NameLength2);
 
-odbc_export SQLRETURN   SQLDescribeCol(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLDescribeCol(SQLHSTMT StatementHandle,
            SQLUSMALLINT ColumnNumber, SQLCHAR *ColumnName,
            SQLSMALLINT BufferLength, SQLSMALLINT *NameLength,
            SQLSMALLINT *DataType, SQLULEN *ColumnSize,
            SQLSMALLINT *DecimalDigits, SQLSMALLINT *Nullable);
 
-odbc_export SQLRETURN   SQLDisconnect(SQLHDBC ConnectionHandle);
+odbc_export SQLRETURN SQL_API SQLDisconnect(SQLHDBC ConnectionHandle);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLEndTran(SQLSMALLINT HandleType, SQLHANDLE Handle,
+odbc_export SQLRETURN SQL_API SQLEndTran(SQLSMALLINT HandleType, SQLHANDLE Handle,
            SQLSMALLINT CompletionType);
 #endif
 
-odbc_export SQLRETURN   SQLError(SQLHENV EnvironmentHandle,
+odbc_export SQLRETURN SQL_API SQLError(SQLHENV EnvironmentHandle,
            SQLHDBC ConnectionHandle, SQLHSTMT StatementHandle,
            SQLCHAR *Sqlstate, SQLINTEGER *NativeError,
            SQLCHAR *MessageText, SQLSMALLINT BufferLength,
            SQLSMALLINT *TextLength);
 
-odbc_export SQLRETURN   SQLExecDirect(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLExecDirect(SQLHSTMT StatementHandle,
            SQLCHAR *StatementText, SQLINTEGER TextLength);
 
-odbc_export SQLRETURN   SQLExecute(SQLHSTMT StatementHandle);
+odbc_export SQLRETURN SQL_API SQLExecute(SQLHSTMT StatementHandle);
 
-odbc_export SQLRETURN   SQLFetch(SQLHSTMT StatementHandle);
+odbc_export SQLRETURN SQL_API SQLFetch(SQLHSTMT StatementHandle);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLFetchScroll(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLFetchScroll(SQLHSTMT StatementHandle,
            SQLSMALLINT FetchOrientation, SQLROWOFFSET FetchOffset);
 #endif
 
-odbc_export SQLRETURN   SQLFreeConnect(SQLHDBC ConnectionHandle);
+odbc_export SQLRETURN SQL_API SQLFreeConnect(SQLHDBC ConnectionHandle);
 
-odbc_export SQLRETURN   SQLFreeEnv(SQLHENV EnvironmentHandle);
+odbc_export SQLRETURN SQL_API SQLFreeEnv(SQLHENV EnvironmentHandle);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLFreeHandle(SQLSMALLINT HandleType, SQLHANDLE Handle);
+odbc_export SQLRETURN SQL_API SQLFreeHandle(SQLSMALLINT HandleType, SQLHANDLE Handle);
 #endif
 
-odbc_export SQLRETURN   SQLFreeStmt(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLFreeStmt(SQLHSTMT StatementHandle,
            SQLUSMALLINT Option);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLGetConnectAttr(SQLHDBC ConnectionHandle,
+odbc_export SQLRETURN SQL_API SQLGetConnectAttr(SQLHDBC ConnectionHandle,
            SQLINTEGER Attribute, SQLPOINTER Value,
            SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 #endif
 
-odbc_export SQLRETURN   SQLGetConnectOption(SQLHDBC ConnectionHandle,
+odbc_export SQLRETURN SQL_API SQLGetConnectOption(SQLHDBC ConnectionHandle,
            SQLUSMALLINT Option, SQLPOINTER Value);
 
-odbc_export SQLRETURN   SQLGetCursorName(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLGetCursorName(SQLHSTMT StatementHandle,
            SQLCHAR *CursorName, SQLSMALLINT BufferLength,
            SQLSMALLINT *NameLength);
 
-odbc_export SQLRETURN   SQLGetData(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLGetData(SQLHSTMT StatementHandle,
            SQLUSMALLINT ColumnNumber, SQLSMALLINT TargetType,
            SQLPOINTER TargetValue, SQLLEN BufferLength,
            SQLLEN *StrLen_or_Ind);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLGetDescField(SQLHDESC DescriptorHandle,
+odbc_export SQLRETURN SQL_API SQLGetDescField(SQLHDESC DescriptorHandle,
            SQLSMALLINT RecNumber, SQLSMALLINT FieldIdentifier,
            SQLPOINTER Value, SQLINTEGER BufferLength,
            SQLINTEGER *StringLength);
 
-odbc_export SQLRETURN   SQLGetDescRec(SQLHDESC DescriptorHandle,
+odbc_export SQLRETURN SQL_API SQLGetDescRec(SQLHDESC DescriptorHandle,
            SQLSMALLINT RecNumber, SQLCHAR *Name,
            SQLSMALLINT BufferLength, SQLSMALLINT *StringLength,
            SQLSMALLINT *Type, SQLSMALLINT *SubType,
            SQLLEN *Length, SQLSMALLINT *Precision,
            SQLSMALLINT *Scale, SQLSMALLINT *Nullable);
 
-odbc_export SQLRETURN   SQLGetDiagField(SQLSMALLINT HandleType, SQLHANDLE Handle,
+odbc_export SQLRETURN SQL_API SQLGetDiagField(SQLSMALLINT HandleType, SQLHANDLE Handle,
            SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier,
            SQLPOINTER DiagInfo, SQLSMALLINT BufferLength,
            SQLSMALLINT *StringLength);
 
-odbc_export SQLRETURN   SQLGetDiagRec(SQLSMALLINT HandleType, SQLHANDLE Handle,
+odbc_export SQLRETURN SQL_API SQLGetDiagRec(SQLSMALLINT HandleType, SQLHANDLE Handle,
            SQLSMALLINT RecNumber, SQLCHAR *Sqlstate,
            SQLINTEGER *NativeError, SQLCHAR *MessageText,
            SQLSMALLINT BufferLength, SQLSMALLINT *TextLength);
 
-odbc_export SQLRETURN   SQLGetEnvAttr(SQLHENV EnvironmentHandle,
+odbc_export SQLRETURN SQL_API SQLGetEnvAttr(SQLHENV EnvironmentHandle,
            SQLINTEGER Attribute, SQLPOINTER Value,
            SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 #endif  /* ODBCVER >= 0x0300 */
 
-odbc_export SQLRETURN   SQLGetFunctions(SQLHDBC ConnectionHandle,
+odbc_export SQLRETURN SQL_API SQLGetFunctions(SQLHDBC ConnectionHandle,
            SQLUSMALLINT FunctionId, SQLUSMALLINT *Supported);
 
-odbc_export SQLRETURN   SQLGetInfo(SQLHDBC ConnectionHandle,
+odbc_export SQLRETURN SQL_API SQLGetInfo(SQLHDBC ConnectionHandle,
            SQLUSMALLINT InfoType, SQLPOINTER InfoValue,
            SQLSMALLINT BufferLength, SQLSMALLINT *StringLength);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLGetStmtAttr(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLGetStmtAttr(SQLHSTMT StatementHandle,
            SQLINTEGER Attribute, SQLPOINTER Value,
            SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 #endif  /* ODBCVER >= 0x0300 */
 
-odbc_export SQLRETURN   SQLGetStmtOption(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLGetStmtOption(SQLHSTMT StatementHandle,
            SQLUSMALLINT Option, SQLPOINTER Value);
 
-odbc_export SQLRETURN   SQLGetTypeInfo(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLGetTypeInfo(SQLHSTMT StatementHandle,
            SQLSMALLINT DataType);
 
-odbc_export SQLRETURN   SQLNumResultCols(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLNumResultCols(SQLHSTMT StatementHandle,
            SQLSMALLINT *ColumnCount);
 
-odbc_export SQLRETURN   SQLParamData(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLParamData(SQLHSTMT StatementHandle,
            SQLPOINTER *Value);
 
-odbc_export SQLRETURN   SQLPrepare(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLPrepare(SQLHSTMT StatementHandle,
            SQLCHAR *StatementText, SQLINTEGER TextLength);
 
-odbc_export SQLRETURN   SQLPutData(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLPutData(SQLHSTMT StatementHandle,
            SQLPOINTER Data, SQLLEN StrLen_or_Ind);
 
-odbc_export SQLRETURN   SQLRowCount(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLRowCount(SQLHSTMT StatementHandle,
 	   SQLLEN *RowCount);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLSetConnectAttr(SQLHDBC ConnectionHandle,
+odbc_export SQLRETURN SQL_API SQLSetConnectAttr(SQLHDBC ConnectionHandle,
            SQLINTEGER Attribute, SQLPOINTER Value,
            SQLINTEGER StringLength);
 #endif /* ODBCVER >= 0x0300 */
 
-odbc_export SQLRETURN   SQLSetConnectOption(SQLHDBC ConnectionHandle,
+odbc_export SQLRETURN SQL_API SQLSetConnectOption(SQLHDBC ConnectionHandle,
            SQLUSMALLINT Option, SQLULEN Value);
 
-odbc_export SQLRETURN   SQLSetCursorName(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLSetCursorName(SQLHSTMT StatementHandle,
            SQLCHAR *CursorName, SQLSMALLINT NameLength);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLSetDescField(SQLHDESC DescriptorHandle,
+odbc_export SQLRETURN SQL_API SQLSetDescField(SQLHDESC DescriptorHandle,
            SQLSMALLINT RecNumber, SQLSMALLINT FieldIdentifier,
            SQLPOINTER Value, SQLINTEGER BufferLength);
 
-odbc_export SQLRETURN   SQLSetDescRec(SQLHDESC DescriptorHandle,
+odbc_export SQLRETURN SQL_API SQLSetDescRec(SQLHDESC DescriptorHandle,
            SQLSMALLINT RecNumber, SQLSMALLINT Type,
            SQLSMALLINT SubType, SQLLEN Length,
            SQLSMALLINT Precision, SQLSMALLINT Scale,
            SQLPOINTER Data, SQLLEN *StringLength,
            SQLLEN *Indicator);
 
-odbc_export SQLRETURN   SQLSetEnvAttr(SQLHENV EnvironmentHandle,
+odbc_export SQLRETURN SQL_API SQLSetEnvAttr(SQLHENV EnvironmentHandle,
            SQLINTEGER Attribute, SQLPOINTER Value,
            SQLINTEGER StringLength);
 #endif /* ODBCVER >= 0x0300 */
 
-odbc_export SQLRETURN   SQLSetParam(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLSetParam(SQLHSTMT StatementHandle,
            SQLUSMALLINT ParameterNumber, SQLSMALLINT ValueType,
            SQLSMALLINT ParameterType, SQLULEN LengthPrecision,
            SQLSMALLINT ParameterScale, SQLPOINTER ParameterValue,
            SQLLEN *StrLen_or_Ind);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN   SQLSetStmtAttr(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLSetStmtAttr(SQLHSTMT StatementHandle,
            SQLINTEGER Attribute, SQLPOINTER Value,
            SQLINTEGER StringLength);
 #endif
 
-odbc_export SQLRETURN   SQLSetStmtOption(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLSetStmtOption(SQLHSTMT StatementHandle,
            SQLUSMALLINT Option, SQLROWCOUNT Value);
 
-odbc_export SQLRETURN   SQLSpecialColumns(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLSpecialColumns(SQLHSTMT StatementHandle,
            SQLUSMALLINT IdentifierType, SQLCHAR *CatalogName,
            SQLSMALLINT NameLength1, SQLCHAR *SchemaName,
            SQLSMALLINT NameLength2, SQLCHAR *TableName,
            SQLSMALLINT NameLength3, SQLUSMALLINT Scope,
            SQLUSMALLINT Nullable);
 
-odbc_export SQLRETURN   SQLStatistics(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLStatistics(SQLHSTMT StatementHandle,
            SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
            SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
            SQLCHAR *TableName, SQLSMALLINT NameLength3,
            SQLUSMALLINT Unique, SQLUSMALLINT Reserved);
 
-odbc_export SQLRETURN   SQLTables(SQLHSTMT StatementHandle,
+odbc_export SQLRETURN SQL_API SQLTables(SQLHSTMT StatementHandle,
            SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
            SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
            SQLCHAR *TableName, SQLSMALLINT NameLength3,
            SQLCHAR *TableType, SQLSMALLINT NameLength4);
 
-odbc_export SQLRETURN   SQLTransact(SQLHENV EnvironmentHandle,
+odbc_export SQLRETURN SQL_API SQLTransact(SQLHENV EnvironmentHandle,
            SQLHDBC ConnectionHandle, SQLUSMALLINT CompletionType);
 
 #ifdef __cplusplus
 }
 #endif
 #endif	
+
+/*
+ * Local Variables:
+ * tab-width:4
+ * End:
+ */

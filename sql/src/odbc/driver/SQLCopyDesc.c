@@ -23,7 +23,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLCopyDesc(SQLHDESC hSourceDescHandle, SQLHDESC hTargetDescHandle)
 {
 	ODBCDesc *src = (ODBCDesc *) hSourceDescHandle;

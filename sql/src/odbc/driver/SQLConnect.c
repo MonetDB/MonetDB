@@ -133,7 +133,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	return rc;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	   SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
 	   SQLSMALLINT nPWDLength)

@@ -22,7 +22,7 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	       SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
 	       SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,

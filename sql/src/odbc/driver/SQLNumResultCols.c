@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLNumResultCols(SQLHSTMT hStmt, SQLSMALLINT *pnColumnCount)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

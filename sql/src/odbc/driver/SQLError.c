@@ -23,7 +23,7 @@
 #include "ODBCDbc.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
 	 SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg,
 	 SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)

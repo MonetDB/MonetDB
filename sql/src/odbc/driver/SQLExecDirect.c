@@ -36,7 +36,7 @@ SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	return rc;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
 #ifdef ODBCDEBUG

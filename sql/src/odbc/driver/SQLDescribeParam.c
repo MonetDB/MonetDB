@@ -22,7 +22,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber,
 		 SQLSMALLINT *pnDataType, SQLUINTEGER *pnSize,
 		 SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)

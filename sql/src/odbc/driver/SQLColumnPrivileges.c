@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLColumnPrivileges(SQLHSTMT hStmt,
 		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,

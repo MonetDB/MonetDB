@@ -21,7 +21,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

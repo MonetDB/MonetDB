@@ -195,10 +195,10 @@ BOOL INSTAPI SQLConfigDriver(HWND hwndParent,
 
 #if (ODBCVER >=  0x0300)
 SQLRETURN INSTAPI SQLInstallerError(WORD iError,
-							DWORD *pfErrorCode,
-							LPSTR	lpszErrorMsg,
-							WORD	cbErrorMsgMax,
-							WORD	*pcbErrorMsg);
+									DWORD *pfErrorCode,
+									LPSTR	lpszErrorMsg,
+									WORD	cbErrorMsgMax,
+									WORD	*pcbErrorMsg);
 SQLRETURN INSTAPI SQLPostInstallerError(DWORD dwErrorCode, LPCSTR lpszErrMsg);
 
 BOOL INSTAPI SQLWriteFileDSN(LPCSTR  lpszFileName,
@@ -213,40 +213,40 @@ BOOL INSTAPI  SQLReadFileDSN(LPCSTR  lpszFileName,
                              WORD    cbString,
                              WORD   *pcbString);
 BOOL INSTAPI SQLInstallDriverEx(LPCSTR lpszDriver,
-							 LPCSTR	   lpszPathIn,
-							 LPSTR	   lpszPathOut,
-							 WORD	   cbPathOutMax,
-							 WORD	  *pcbPathOut,
-							 WORD		fRequest,
-							 LPDWORD	lpdwUsageCount);
+								LPCSTR	   lpszPathIn,
+								LPSTR	   lpszPathOut,
+								WORD	   cbPathOutMax,
+								WORD	  *pcbPathOut,
+								WORD		fRequest,
+								LPDWORD	lpdwUsageCount);
 BOOL INSTAPI SQLInstallTranslatorEx(LPCSTR lpszTranslator,
-								  LPCSTR lpszPathIn,
-								  LPSTR  lpszPathOut,
-								  WORD   cbPathOutMax,
-								  WORD 	*pcbPathOut,
-								  WORD	 fRequest,
-								  LPDWORD	lpdwUsageCount);
+									LPCSTR lpszPathIn,
+									LPSTR  lpszPathOut,
+									WORD   cbPathOutMax,
+									WORD 	*pcbPathOut,
+									WORD	 fRequest,
+									LPDWORD	lpdwUsageCount);
 BOOL INSTAPI SQLGetConfigMode(UWORD	*pwConfigMode);
 BOOL INSTAPI SQLSetConfigMode(UWORD wConfigMode);
 #endif /* ODBCVER >= 0x0300 */
 
 /*	Driver specific Setup APIs called by installer */
 EXPORT BOOL ConfigDSN (HWND	hwndParent,
-							   WORD	fRequest,
-							   LPCSTR	lpszDriver,
-							   LPCSTR	lpszAttributes);
+					   WORD	fRequest,
+					   LPCSTR	lpszDriver,
+					   LPCSTR	lpszAttributes);
 
 EXPORT BOOL ConfigTranslator (HWND		hwndParent,
-									  DWORD		*pvOption);
+							  DWORD		*pvOption);
 
 #if (ODBCVER >= 0x0250)
 EXPORT BOOL ConfigDriver(HWND hwndParent,
-								 WORD fRequest,
-								 LPCSTR lpszDriver,
-								 LPCSTR lpszArgs,
-								 LPSTR  lpszMsg,
-								 WORD   cbMsgMax,
-								 WORD 	*pcbMsgOut);
+						 WORD fRequest,
+						 LPCSTR lpszDriver,
+						 LPCSTR lpszArgs,
+						 LPSTR  lpszMsg,
+						 WORD   cbMsgMax,
+						 WORD 	*pcbMsgOut);
 #endif
 
 
@@ -255,3 +255,9 @@ EXPORT BOOL ConfigDriver(HWND hwndParent,
 #endif
 
 #endif
+
+/*
+ * Local Variables:
+ * tab-width:4
+ * End:
+ */

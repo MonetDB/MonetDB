@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
 	       SQLCHAR *ServerName, SQLSMALLINT BufferLength1,
 	       SQLSMALLINT *NameLength1, SQLCHAR *Description,

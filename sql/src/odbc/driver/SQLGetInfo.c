@@ -22,7 +22,7 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	   SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
 {

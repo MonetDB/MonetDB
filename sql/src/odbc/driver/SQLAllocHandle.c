@@ -114,7 +114,7 @@ SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle,
 	}
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLAllocHandle(SQLSMALLINT nHandleType,	/* type to be allocated */
 	       SQLHANDLE nInputHandle,	/* context for new handle */
 	       SQLHANDLE *pnOutputHandle) /* ptr for allocated handle struct */

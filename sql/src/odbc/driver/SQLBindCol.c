@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	   SQLPOINTER pTargetValue, SQLINTEGER nTargetValueMax,
 	   SQLINTEGER *pnLengthOrIndicator)

@@ -200,7 +200,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	       SQLINTEGER StringLength)
 {

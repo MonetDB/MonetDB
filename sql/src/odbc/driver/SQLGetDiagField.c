@@ -34,7 +34,7 @@
 				return SQL_SUCCESS_WITH_INFO;		\
 		} while (0)
 
-SQLRETURN
+SQLRETURN SQL_API
 SQLGetDiagField(SQLSMALLINT HandleType,	/* must contain a valid type */
 		SQLHANDLE Handle,	/* must contain a valid Handle */
 		SQLSMALLINT RecNumber,	/* must be >= 1 */
