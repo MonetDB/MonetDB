@@ -11,7 +11,7 @@ stdout of test 'fn_ceiling` in directory 'tests/XQuery` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
--0.000000 -0.000000 -0.000000 0.000000 1.000000 1.000000 1.000000 1 
+0.000000 0.000000 0.000000 0.000000 1.000000 1.000000 1.000000 1 
 </XQueryResult>
 
 # 01:10:11 >  
