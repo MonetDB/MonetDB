@@ -185,7 +185,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	tz
 
 %token <sval> 
-	NAME STRING AMMSC PARAMETER INT INTNUM APPROXNUM USER USING
+	NAME TYPE STRING AMMSC PARAMETER INT INTNUM APPROXNUM USER USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CASCADE RESTRICT
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
 	DOUBLE PRECISION VARCHAR 
@@ -353,7 +353,7 @@ grantee:
  ;
 
 /* DOMAIN, TABLE, VIEW, ASSERTION, CHARACTER SET, TRANSLATION, 
- * TRIGGER, TYPE, PROCEDURE, FUNCTION, ROLE */ 
+ * TRIGGER, PROCEDURE, FUNCTION, ROLE */ 
 
 alter: 
   ALTER TABLE qname ADD table_element 
@@ -1137,9 +1137,12 @@ time_persision:
  ;
 
 datetime_type:
-    DATE			{ $$ = "DATE"; }
- |  TIME time_persision tz 	{ $$ = "TIME"; }
- |  TIMESTAMP time_persision tz { $$ = "TIMESTAMP"; } 
+    DATE			{ context *lc = (context*)parm; 
+			          $$ = cat_bind_type(lc->cat,"DATE")->sqlname; }
+ |  TIME time_persision tz 	{ context *lc = (context*)parm; 
+			          $$ = cat_bind_type(lc->cat,"TIME")->sqlname; }
+ |  TIMESTAMP time_persision tz { context *lc = (context*)parm; 
+			     $$ = cat_bind_type(lc->cat,"TIMESTAMP")->sqlname; }
  ;
 
 non_second_datetime_field:
@@ -1188,29 +1191,43 @@ interval_type:
 
 literal:
     STRING   { $$ = _symbol_create_atom( SQL_ATOM, atom_string($1) );}
- |  INT      { $$ = _symbol_create_atom( SQL_ATOM, atom_int(strtol($1,&$1,10)));}
+ |  INT      { context *lc = (context*)parm;
+	       $$ = _symbol_create_atom( SQL_ATOM, atom_int( 
+			cat_bind_type(lc->cat, "INTEGER" ), 
+			strtol($1,&$1,10))); }
  |  INTNUM   { $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
  |  APPROXNUM{ $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
- |  DATE STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_date($2)); }
- |  TIME STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_time($2)); }
- |  TIMESTAMP STRING 
-	{ $$ = _symbol_create_atom( SQL_ATOM, atom_timestamp($2)); }
+ |  DATE STRING { context *lc = (context*)parm;
+ 	  	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+			cat_bind_type(lc->cat, "DATE" ),$2));  }
+ |  TIME STRING { context *lc = (context*)parm;
+ 	  	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+			cat_bind_type(lc->cat, "TIME" ),$2));  }
+ |  TIMESTAMP STRING { context *lc = (context*)parm;
+ 	  	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+			cat_bind_type(lc->cat, "TIMESTAMP" ),$2));  }
  |  INTERVAL opt_sign STRING interval_qualifier
 	{ context *lc = (context*)parm;
-	  int i,type;
-	  if ( (type = parse_interval( lc, $2, $3, $4, &i)) < 0 ){
+	  int i,tpe;
+	  if ( (tpe = parse_interval( lc, $2, $3, $4, &i)) < 0 ){
 		yyerror("incorrect interval");
 		$$ = NULL;
 	  } else {
-		atom *a = NULL;
-		if (type == 0){
-	  		a = atom_month_interval(i);
+		type *t = NULL;
+		if (tpe == 0){
+			t = cat_bind_type(lc->cat, "MONTH_INTERVAL");
 		} else {
-	  		a = atom_sec_interval(i);
+			t = cat_bind_type(lc->cat, "SEC_INTERVAL");
 		}
-	  	$$ = _symbol_create_atom( SQL_ATOM, a);
+	  	$$ = _symbol_create_atom( SQL_ATOM, atom_int(t,i));
 	  }
 	}
+ |  TYPE STRING 
+	{ context *lc = (context*)parm;
+	  type *t = cat_bind_type(lc->cat, $1);
+ 	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+			cat_bind_type(lc->cat, $1 ),$2)); 
+	  _DELETE($1); }
  ;
 
 	/* miscellaneous */
@@ -1274,7 +1291,10 @@ column:	ident ;
 parameter: PARAMETER ;
 range_variable:	name ;
 user: name 	;
-name: NAME 	{ $$ = $1; } 		;
+name: 
+     NAME 	{ $$ = $1; } 		
+  |  TYPE 	{ $$ = $1; } 		
+  ;
 
 
 non_reserved_word: CHARACTER | NUMERIC | DECIMAL | INTEGER | SMALLINT	

@@ -72,7 +72,6 @@ typedef struct statement {
 	int flag;
 	int nrcols;
 	int nr;
-	int rtype;
 	table *h;
 	table *t;
 	int refcnt;

@@ -3,18 +3,17 @@
 
 #define atom_prefix ""
 
+#include "catalog.h"
+
 typedef	enum atomtype {
 	string_value,
 	int_value,
 	float_value,
-	date_value,
-	time_value,
-	timestamp_value,
-	month_interval_value,
-	sec_interval_value,
+	general_value,
 } atomtype;
 
 typedef struct atom {
+	type *tpe;
 	atomtype type;
 	union { 
 		int ival;
@@ -24,15 +23,10 @@ typedef struct atom {
 } atom;
 
 
-extern atom *atom_int( int val );
+extern atom *atom_int( type *tpe, int val );
 extern atom *atom_string( char *val );
 extern atom *atom_float( double val );
-
-extern atom *atom_date( char *val );
-extern atom *atom_time( char *val );
-extern atom *atom_timestamp( char *val );
-extern atom *atom_month_interval( int val );
-extern atom *atom_sec_interval( int val );
+extern atom *atom_general( type *tpe, char *val );
 
 /* duplicate atom */
 extern atom *atom_dup( atom *a );
