@@ -2316,31 +2316,38 @@ gdk_export void*    THRdata[16];
 #ifdef __cplusplus
 extern "C" {
 #endif
-static INLINE bat BBPcheck(REGISTER bat x, REGISTER const char *y) {
+#ifdef ALLOW_INLINE_FUNCS_IN_HEADER_FILES
+static INLINE bat BBPcheck(REGISTER bat x, REGISTER const char *y)
+{
 	if (x && x != bat_nil) {
-	    REGISTER bat z = ABS(x);
-	    if (z >= BBPsize || BBP[z].nme[0] == NULL) {
-		GDKwarning("%s: range error %d\n", y, x);
-	    } else  {
-		return z;
-	    }
+		REGISTER bat z = ABS(x);
+
+		if (z >= BBPsize || BBP[z].nme[0] == NULL) {
+			GDKwarning("%s: range error %d\n", y, x);
+		} else  {
+			return z;
+		}
 	}
 	return 0;
 }
 
-static INLINE BAT* BATdescriptor(REGISTER bat i) {
+static INLINE BAT* BATdescriptor(REGISTER bat i)
+{
 	REGISTER BAT *b = NULL;
 
 	if (BBPcheck(i,"BATdescriptor")) {
 		BBPfix(i);
 		b = BBP_cache(i);
-		if (b == NULL) b = BBPdescriptor(i);
+		if (b == NULL)
+			b = BBPdescriptor(i);
 	}
 	return b;
 }
 
-static INLINE ptr BUNhpos(REGISTER BAT *b, REGISTER BUN p) {
+static INLINE ptr BUNhpos(REGISTER BAT *b, REGISTER BUN p)
+{
 	oid *ip = &b->void_seq1; 
+
 	*ip = b->hseqbase;
 	if (*ip != oid_nil) {
 		*ip += BUNgetpos(b,p);
@@ -2348,8 +2355,10 @@ static INLINE ptr BUNhpos(REGISTER BAT *b, REGISTER BUN p) {
 	return (ptr) ip; 
 }
 
-static INLINE ptr BUNtpos(REGISTER BAT *b, REGISTER BUN p) {
+static INLINE ptr BUNtpos(REGISTER BAT *b, REGISTER BUN p)
+{
 	oid *ip = &b->void_seq2; 
+
 	*ip = b->tseqbase;
 	if (*ip != oid_nil) {
 		*ip += BUNgetpos(b,p);
@@ -2357,9 +2366,34 @@ static INLINE ptr BUNtpos(REGISTER BAT *b, REGISTER BUN p) {
 	return (ptr) ip; 
 }
 
-static INLINE BAT* BATmirror(REGISTER BAT *b) {
+static INLINE BAT* BATmirror(REGISTER BAT *b)
+{
 	return BBP_cache(-(b)->batCacheid);
 }
+#else
+/* see above for more readable versions of these macros */
+#define BBPcheck(x, y)	((x) && (x) != bat_nil ?			\
+			 (ABS(x) >= BBPsize || BBP[ABS(x)].nme[0] == NULL ? \
+			  (GDKwarning("%s: range error %d\n", (y), (x)), 0) : \
+			  ABS(x)) :					\
+			 0)
+#define BATdescriptor(i) (BBPcheck((i), "BATdescriptor") ?	\
+			  (BBPfix(i),				\
+			   (BBP_cache(i) ?			\
+			    BBP_cache(i) :			\
+			    BBPdescriptor(i))) :		\
+			  (BAT *) NULL)
+#define BUNhpos(b, p)	((b)->void_seq1 = (b)->hseqbase,		\
+			 (b)->void_seq1 == oid_nil ||			\
+			     ((b)->void_seq1 += BUNgetpos((b),(p))),	\
+			 (ptr) &(b)->void_seq1)
+
+#define BUNtpos(b, p)	((b)->void_seq1 = (b)->tseqbase,		\
+			 (b)->void_seq1 == oid_nil ||			\
+			     ((b)->void_seq1 += BUNgetpos((b),(p))),	\
+			 (ptr) &(b)->void_seq1)
+#define BATmirror(b)	(BBP_cache(-(b)->batCacheid))
+#endif
 #ifdef __cplusplus
 }
 #endif
