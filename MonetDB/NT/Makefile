@@ -6,14 +6,9 @@ MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-MONET_BUILD  = $(MAKEDIR)
-MONET_PREFIX = $(MAKEDIR)
-
 !INCLUDE $(TOPDIR)\rules.msc
 
 all: $(SRCDIR)\Makefile.msc all-msc unistd.h
-	set MONET_BUILD=$(MONET_BUILD)
-	set MONET_PREFIX=$(MONET_PREFIX)
 	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc all
 
 check: $(SRCDIR)\Makefile.msc RunMtest.bat
@@ -21,8 +16,6 @@ check: $(SRCDIR)\Makefile.msc RunMtest.bat
 	call RunMtest.bat
 
 install: targetdirs
-	set MONET_BUILD=$(MONET_BUILD)
-	set MONET_PREFIX=$(MONET_PREFIX)
 	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc install
 
 $(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \

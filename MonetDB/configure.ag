@@ -34,7 +34,6 @@ AC_CANONICAL_HOST
 
 HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
-AC_DEFINE_UNQUOTED(MONET_PREFIX, "$prefix", [directory prefix])
 
 # MONET_BUILD and MONET_SOURCE are *only* used for monet-config
 # MONET_SOURCE is the absolute path name of the source directory
