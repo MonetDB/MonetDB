@@ -433,3 +433,18 @@ tst400e          4.2	1M incr fcn
 tst901a          7.5	[+] call      
 tst901b          21.2	[+] call     
 
+======================== 11 Nov 2004 ===================
+Setup on Orion with Fedora 2 patched 
+The compilation mode for both V5 and V4.4 is CFLAGS=-O2 
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		orion(2x1.4Mh load 0)		 V4.5
+base		 0.11/0.06/0.05			 0.81/0.15/0.65	
+tst400a		 0.20/0.16/0.04	1M loop	 	 2.86/2.16/0.69
+tst400a2	 0.34/0.29/0.05	1M loop inc	
+tst400bHuge 	 0.82/0.71/0.10	100k count (io)	11.70/10.61/0.99
+tst400cHuge	 1.03/0.89/0.14	100k insert(io)	 4.72/3.61/1.07
+tst400d		 0.57/0.52/0.05	1M insert tuple  7.78/7.08/0.68
+tst400e		 1.18/1.14/0.04	1M incr fcn      4.78/4.17/0.60
+
+tst901a		 0.86/0.68/0.16	[+] call	 7.56/6.82/0.69
+tst901b		 3.57/3.43/0.13	[+] call	20.10/19.18/0.81
