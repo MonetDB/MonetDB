@@ -19,6 +19,13 @@
 #  -k		expansion mode		value: b, o, kkv, &c
 #
 #  and value is a single-quote delimited value.
-# For example:
-*.gif -k 'b'
+#
+# Image files
+*.gif -k 'b
 *.jpg -k 'b'
+*.png -k 'b'
+# Microsoft Visual Studio .NET project files
+*.ncb -k 'b'
+*.sln -k 'o'
+*.suo -k 'b'
+*.vcproj -k 'o'
