@@ -215,6 +215,10 @@ pattern fprintf(f:fstream,fm:str,a:any...):void
 address io_fprintf 
 comment "See:man fprintf";
 
+pattern sprintf(fm:str,a:any...):str 
+address io_sprintf 
+comment "See:man sprintf, returns the string";
+
 @- Formatted printing
 The routines that inspect the runtime setting are moved out of this area.
                                                                                 
@@ -461,11 +465,16 @@ str io_fsize(int* res, str *filename){
 }
 
 
+str io_sprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+   (void) mb;(void) stk; (void)pci; /* fool compiler */
+	return throwMessage("io.sprintf"," not yet defined in version-5\n");
+}
+
 str io_fprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
    (void) mb;(void) stk; (void)pci; /* fool compiler */
 	return throwMessage("io.fprintf"," not yet defined in version-5\n");
 }
-/*
+/* 4.4 VERSION
 int io_fprintf(fstream *filepp, str format,  ...){
         va_list ap;
         int ret;
