@@ -9,6 +9,7 @@ lib__sqlserver = {
 	SOURCES = sqlserver.mx mvc.mx bm.mx logger.mx privileges.mx \
 		catalog_module.c statement_exec.c 
 	LIBS = ../common/libsql $(MONET_LIBS)
+	LDFLAGS = -module
 }
 
 scripts_mil = {
