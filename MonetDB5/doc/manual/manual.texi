@@ -174,8 +174,10 @@ Table of contents
 @include mal_profiler.bdy.texi
 
 @node MAL syntax,, The MAL profiler, TOC
+@ifnottex
 @include mal_syntax.bdy.texi
-@c @include mil_parser.bdy.texi
+@end ifnottex
+
 @include Assets/ApplicationInterfaces
 
 
