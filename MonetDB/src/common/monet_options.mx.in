@@ -12,6 +12,8 @@ file, special config file or command line option).
 #ifndef _MO_H_
 #define _MO_H_
 
+#include "monet_utils.h"
+
 typedef enum opt_kind
 {
 	opt_builtin,
@@ -27,52 +29,41 @@ typedef struct opt
 	char *value;
 } opt;
 
-#ifdef _MSC_VER
-#ifndef LIBOPT
-#define mo_export extern __declspec(dllimport) 
-#else
-#define mo_export extern __declspec(dllexport) 
-#endif
-#else
-#define mo_export extern 
-#endif
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 /* mo_print_options will print the option set on stderr */
-mo_export void mo_print_options(opt *set, int setlen);
+mutils_export void mo_print_options(opt *set, int setlen);
 
 /* mo_find_option, finds the option with the given name in the option set
 	(set,setlen). */
 
-mo_export char *mo_find_option( opt *set, int setlen, char *name );
+mutils_export char *mo_find_option( opt *set, int setlen, char *name );
 
 /* the option values can contain ${prefix} and ${exec_prefix}, these will
    be substituted using the mo_substitute function */
-mo_export void mo_substitute( opt *set, int setlen, char *name );
+mutils_export void mo_substitute( opt *set, int setlen, char *name );
 
 /* mo_config_file adds all options int the given config file, to the current
    options set  (returns the new setlen) */
-mo_export int mo_config_file( opt **Set, int setlen, char *file, opt_kind kind);
+mutils_export int mo_config_file( opt **Set, int setlen, char *file, opt_kind kind);
 
 
 /* mo_system_config will add the options from the system config file
    (returns the new setlen) */
-mo_export int mo_system_config( opt **Set, int setlen);
+mutils_export int mo_system_config( opt **Set, int setlen);
 
 /* mo_builtin_settings, will place the builtin settings into a new
    option set (returns the length of this set). */ 
-mo_export int mo_builtin_settings( opt **Set );
+mutils_export int mo_builtin_settings( opt **Set );
 
 /* mo_add_option will add a single option to the option set 
    (returns new length) */
-mo_export int mo_add_option( opt **Set, int setlen, 
+mutils_export int mo_add_option( opt **Set, int setlen, 
 		opt_kind kind, char *name, char *value );
 
 /* mo_free_options will free the resouces take by the options set */
-mo_export void mo_free_options( opt *set, int setlen );
+mutils_export void mo_free_options( opt *set, int setlen );
 
 #ifdef __cplusplus
 }
@@ -81,19 +72,9 @@ mo_export void mo_free_options( opt *set, int setlen );
 #endif
 
 @c
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include "monet_options.h"
-
-#ifdef NATIVE_WIN32
-#define DIR_SEP '\\' 
-#else
-#define DIR_SEP '/' 
-#endif
 
 void mo_print_options(opt *set, int setlen)
 {
