@@ -1065,8 +1065,8 @@ void BBPspin(bat i, str s, int event) {
 	}
 }
 
-static INLINE
-int incref(bat i, int logical, int lock) {
+int BBPincref(bat i, int logical) {
+	int lock = (BBP_getpid() != locked_by); 
 	int refs = 0;
 
 	if (i == bat_nil) {
@@ -1101,8 +1101,18 @@ int incref(bat i, int logical, int lock) {
 	return refs;
 }
 
-int BBPincref(bat i, int logical) {
-	return incref(i, logical, BBP_getpid() != locked_by); 
+void BBPshare(bat parent) {
+	int lock = (BBP_getpid() != locked_by); 
+	int fix = 0;
+	if (parent < 0) 
+		parent = -parent;
+	if (lock) 
+        	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
+        if (++BBP_cache(parent)->batSharecnt == 1) 
+		fix = 1;
+	if (lock) 
+        	MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
+	if (fix) BBPincref(parent, FALSE); 
 }
 
 static INLINE
@@ -1110,12 +1120,6 @@ int decref(bat i, int logical, int lock) {
 	int refs = 0, swap = 0;
 	BAT *b;
 
-	if (BBPcheck(i, "BBPdecref") == 0) {
-		return -1;
-	}
-	if (i < 0) i = -i;
-        if (lock) 
-		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPdecref");
 
 	/* decrement references by one */
 	if (logical) {
@@ -1161,29 +1165,27 @@ int decref(bat i, int logical, int lock) {
 }
 
 int BBPdecref(bat i, int logical) {
-	return decref(i, logical, BBP_getpid() != locked_by); 
+	int lock = (BBP_getpid() != locked_by); 
+	if (BBPcheck(i, "BBPdecref") == 0) {
+		return -1;
+	}
+	if (i < 0) i = -i;
+        if (lock) MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPdecref");
+	return decref(i, logical, lock);
 }
 
-void BBPshare(bat parent) {
-	MT_Id pid = BBP_getpid();
-
-	if (pid != locked_by) 
-        	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
-        if (++BBP_cache(parent)->batSharecnt == 1) 
-		(void) incref(parent, FALSE, FALSE); 
-	if (pid != locked_by) 
-        	MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
-}
 
 void BBPunshare(bat parent) {
-	MT_Id pid = BBP_getpid();
-
-	if (pid != locked_by) 
+	int lock = (BBP_getpid() != locked_by); 
+	if (parent < 0) 
+		parent = -parent;
+	if (lock) 
 		MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPunshare");
-        if (--BBP_cache(parent)->batSharecnt == 0) 
-		(void) decref(parent, FALSE, FALSE); 
-	if (pid != locked_by) 
+        if (--BBP_cache(parent)->batSharecnt == 0) {
+		(void) decref(parent, FALSE, lock); 
+	} else if (lock) {
 		MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPunshare");
+	}
 }
 
 @
