@@ -1,0 +1,27 @@
+## Process this file with automake to produce Makefile.in
+
+BUILT_SOURCES = cSQLserver.c
+
+INCLUDES = \
+	-I$(MONETDIST)/include \
+	-I$(MONETDIST)/include/gdk \
+	-I$(MONETDIST)/include/monet \
+	-I$(MONETDIST)/include/plain \
+	-I$(MONETDIST)/include/stream \
+	-I${top_srcdir}/src/common \
+	$(GETOPT_INCS)
+
+lib__sqlserver = {
+	SOURCES = sqlserver.mx 
+	LIBS = -L$(MONETDIST)/lib/Monet
+}
+
+lib__mvc = {
+	SOURCES = mvc.mx cCatalog.c cCatalog.h
+	LIBS = -L$(MONETDIST)/lib/Monet
+}
+
+scripts_mil = {
+        DIR = pkgdatadir
+        SOURCES = catalog.mil sqlserver.mil
+}
