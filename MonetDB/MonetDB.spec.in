@@ -94,7 +94,7 @@ Add the MonetDB php description here
 Requires: %{name}-client
 Requires: php
 %define php_extensiondir %(php-config --extension-dir)
-%define php_peardir %(pear config-get php_dir)
+%define php_peardir %(pear config-get php_dir | sed -e s+php_dir=++g)
 %endif
 
 %description python
