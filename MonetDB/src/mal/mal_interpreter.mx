@@ -149,20 +149,16 @@ information. In particular, to enable proper dynamic type analysis.
 Since a stack frame may contain values of a previous call,
 we should first remove garbage.
 @c
-	for(i=firstNewElement;i<mb->stop; i++) {
-		pci = getInstrPtr(mb,i);
-		if( pci->argv[0]>=0){
-			retval=  &stk->stk[pci->argv[0]];
-			retval->vtype =getGDKtype(getVarType(mb,pci->argv[0]));
-			/* retval->val.ival =0; tst500 fails */
-		}
-	}
 	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
 	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
 		lhs = &stk->stk[i];
 		rhs = &getVarConstant(mb,i);
 		VALcopy(lhs,rhs);
-	} 
+	} else if(i>=firstNewElement) {
+		lhs = &stk->stk[i];
+		lhs->vtype =getGDKtype(getVarType(mb,i));
+		/* lhs->val.ival =0; tst500 fails */
+	}
 	/* run the program */
 #ifdef STACKTRACE
 	printf("--->stack before interpreter loop\n");
@@ -377,8 +373,10 @@ are determined at compile time.
 		ret= raiseException(mb,stk->pc,MALexception,
 			"address of pattern missing\n");
 	else {
-		retval=  &stk->stk[pci->argv[0]];
-		garbageElement(retval);
+		/*retval=  &stk->stk[pci->argv[0]];
+		 garbageElement(retval); todo: garbage collect all returns !*/
+		if( pci->beforeCall) 
+			(*pci->beforeCall)(&stk->stk[pci->argv[0]]);
 		ret = (str) (*pci->fcn)(mb,stk,pci);
 		@:resultParameter@
 	}
@@ -389,8 +387,10 @@ a new stack frame and do housekeeping, such as garbagecollection of all
 non-returned values.
 
 @= functioncall
-	retval=  &stk->stk[pci->argv[0]];
-	garbageElement(retval);
+	/* retval=  &stk->stk[pci->argv[0]];
+	 garbageElement(retval); todo:garbage collect all returns !*/
+	if( pci->beforeCall) 
+		(*pci->beforeCall)(&stk->stk[pci->argv[0]]);
 	if( pci->blk== NULL)
 		ret= raiseException(mb,stk->pc,MALexception,
 			"reference to MAL function missing\n");
@@ -415,8 +415,10 @@ the bind(namespace,batname,mode) operation.[todo]
 
 @= evalParameters
 {	int k;
-	retval=  &stk->stk[pci->argv[0]];
-	garbageElement(retval);
+	/*retval=  &stk->stk[pci->argv[0]];
+	 garbageElement(retval);*/
+	if(pci->beforeCall)
+		(*pci->beforeCall)(&stk->stk[pci->argv[0]]);
 /* improve performance with 20 ms/1M calls*/
 	switch(pci->argc){
 	case 7: argv[6] =(ptr) getArgReference(stk,pci,6);
@@ -447,12 +449,7 @@ Upon return of the function we may be interested in the result
 and we have to do some housekeeping, such as string length adjustment.
 @= resultParameter
 	@:exceptionHndlr@
-	switch(ATOMstorage(retval->vtype)){
-	case TYPE_str: 
-		if(retval->val.pval ){
-			retval->len= ATOMlen(retval->vtype,retval->val.pval);
-		}
-	}
+	if( pci->afterCall) (*pci->afterCall)(&stk->stk[pci->argv[0]]);
 	if( pci->barrier==BARRIERsymbol){
 		@:barrierControl@
 	}
@@ -586,7 +583,8 @@ encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
 
 @= exceptionHndlr
-if( ret != MAL_SUCCEED || (cntxt->errbuf && *cntxt->errbuf)){
+if( ret != MAL_SUCCEED ){
+/*if( ret != MAL_SUCCEED || (cntxt->errbuf && *cntxt->errbuf)){*/
 	str msg = 0, nxt;
 	int symid= -1;
 	if(ret ) msg= strchr(ret,':');
@@ -719,7 +717,6 @@ All string values are private to the VALrecord, which means they
 have to freed explicitly before a MAL function returns. 
 The first step is to always clear the destination variable
 before a function call is made.
-
 @c
 #ifdef NOGARBAGE
 int nogarbage;
@@ -730,19 +727,8 @@ void garbageElement(ValPtr v)
 	if( nogarbage++==0) printf("NO GARBAGECOLLECT ");
 	return;
 #endif
-	if( ATOMstorage(v->vtype) == TYPE_str){
-		if( v->val.pval && v->val.pval != str_nil) {
-		/* printf("clearing nil? %d ",v->val.pval==str_nil);
-		   printf("%d ",v->val.pval);
-		   printf("%s\n",v->val.pval); */
-		
-			if(v->len) GDKfree(v->val.pval);
-			v->len= 0;
-		}
-		v->val.pval= NULL;
-	} else {
-		@:BATunfix(v)@
-	}
+	if( ATOMstorage(v->vtype) == TYPE_str) strFinalCall(v);
+	if( v->vtype== TYPE_bat) batFinalCall(v);
 }
 @-
 The second major area to be careful, is management of the BAT reference counts.

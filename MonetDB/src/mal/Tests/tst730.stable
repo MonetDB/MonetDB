@@ -49,6 +49,12 @@ end function;	#9:
 #prStr("hello","quick","brown","fox");
 #
 !ERROR: 'iterator.argument' undefined in Admin.pr[2]
+!ERROR: Error in cloned function
+function Admin.pr(format:str,arg:int...):int;	#0:(arg:int)<-(format:str)(arg:int)
+	i := -1;	#1:(i:int)<-($4:int)
+barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any)<-(i:int)(arg:int) jump 4
+end	b;	#3:(b:any)
+end function;	#4:
 !ERROR: 'prStr' undefined in Admin.main[2]
 function Admin.main():int;	#0:(main:int)
 	Admin.pr("hello",1,true);	#1:($1:void)<-($2:str)($3:int)($4:bit)

@@ -26,20 +26,20 @@
 #bbp.close();
 #
 function Admin.main():int;	#0:(main:int)
-	bbp.open();	#1:($1:nil)
+	bbp.open();	#1:($1:void)
 	b := mal.new(int,int);	#2:(b:bat[int,int])<-(int:int)(int:int)
 	bat.insert(b,1,2);	#3:($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
-	bbp.deposit("mysecondbat",b);	#4:($7:nil)<-($8:str)(b:bat[int,int])
+	bbp.deposit("mysecondbat",b);	#4:($7:void)<-($8:str)(b:bat[int,int])
 	c := bbp.take("mysecondbat");	#5:(c:bat[any,any])<-($8:str)
 	io.print(c);	#6:($10:int)<-(c:bat[any,any])
 	bbp.setPersistent(b);	#7:($11:bit)<-(b:bat[int,int])
 	x := bbp.isPersistent(b);	#8:(x:bit)<-(b:bat[int,int])
 	io.print(x);	#9:($13:int)<-(x:bit)
-	bbp.close();	#10:($14:nil)
-	bbp.open();	#11:($15:nil)
+	bbp.close();	#10:($14:void)
+	bbp.open();	#11:($15:void)
 	v := bbp.take("mysecondbat");	#12:(v:bat[any,any])<-($8:str)
 	io.print(v);	#13:($17:int)<-(v:bat[any,any])
-	bbp.close();	#14:($18:nil)
+	bbp.close();	#14:($18:void)
 end function;	#15:
 #-----------------#
 # BAT:	  tmp_3	  #

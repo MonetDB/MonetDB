@@ -322,7 +322,7 @@ int cstLength(Client cntxt, int *type)
 		return 4;
 	}
 	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum(*(s+3)) ){
-		*type = TYPE_nil;
+		*type = TYPE_void;
 		skipBlanc(cntxt);
 		return 3;
 	}

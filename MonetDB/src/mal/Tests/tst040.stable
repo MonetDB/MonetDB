@@ -14,6 +14,7 @@
 #flt := "wrong";
 #i   := true;
 #
+#
 !ERROR: MALresolve:Admin.main[2]:type mismatch int := sht
 !ERROR: MALresolve:Admin.main[3]:type mismatch flt := str
 function Admin.main():int;	#0:(main:int)

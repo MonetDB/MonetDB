@@ -230,6 +230,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case 'f': /* finish */
 	case 'n': /* next */
 	case 's': /* step */
+		if( strncmp("scope",b,10)==0){
+			showScopeStatistics(out,cntxt->nspace);
+			return;
+		} 
 		stk->cmd= *b;
 		return;
 	case 'm': /* display a module */
@@ -420,7 +424,7 @@ void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
 void printStackElm(FILE *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index){
 	str nme;
 	fprintf(f,"[%d] %s\t= ",index,n->name);
-	if( n->type == TYPE_nil)
+	if( n->type == TYPE_void)
 		fprintf(f,"nil");
 	else
 	if( n->isaconstant) {

@@ -24,7 +24,7 @@ allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
 Each argument list starts with a reference to the destination variable. 
 
-An array of byte-offsets into the code byt string provides for fast
+An array of byte-offsets into the code byte string provides for fast
 access to any statement.
 
 Variable- and stmt- block together describe the
@@ -41,6 +41,20 @@ know how many arguments may be needed.
 
 A variable binding may become CONSTANT for the duration of its
 life time.
+
+The instruction records contain three optional pointers to functions:
+beforeCall, afterCall, and finalCall. They are bound to the result type.
+All expect a pointer to a VALrecord. The beforeCall is activated
+just before you enter a routine and can be used to initialize
+the stackframe, perform debugging, etc.etc.
+The afterCall is activated after a successful return and can be
+used to finalize the administration.
+Typical use of beforeCall and afterCall are handling of BAT references,
+but they can also be used to update a front-end.
+The finalCall is activated when the scope in which the object is
+used is terminated. This may require garbage collection actions.
+
+[Think, should beforeCall/afterCall also become part of the MAL functions?]
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -121,6 +135,9 @@ and the total time spent while executing the instruction.
 	long	ticks;		/* micro seconds spent */
 #endif
 	GDKfcn	fcn;		/* resolved function address */
+	GDKfcn  beforeCall;	/* do something with the target object */
+	GDKfcn  afterCall;	/* do something with the result object */
+	GDKfcn  finalCall;	/* garbage collect a value */
 	struct MALBLK *blk;	/* resolved MAL function address */
 	int	jump;		/* controlflow program counter */
 @-
@@ -213,6 +230,12 @@ mal_export void 	printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export void		promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 
+
+mal_export void strBeforeCall(ValPtr v);
+mal_export void strAfterCall(ValPtr v);
+mal_export void strFinalCall(ValPtr v);
+mal_export void batFinalCall(ValPtr v);
+mal_export void batBeforeCall(ValPtr v);
 #endif /*  _MAL_INSTR_H*/
 @c
 #include "mal_instruction.h"
@@ -381,6 +404,7 @@ InstrPtr newInstruction(int kind){
 	p->typechk = TYPE_UNKNOWN;
 	p->modname= NULL;
 	p->fcnname= NULL;
+	p->beforeCall = p->afterCall = p->finalCall= 0;
 	p->fcn= NULL;
 	p->blk= NULL;
 	p->polymorphic = 0;
@@ -1175,4 +1199,35 @@ void printSignature(FILE *fd, Symbol s){
 	(void) fcnDefinition(s->def, p,txt);
 	fprintf(fd,"%s",txt);
 	GDKfree(txt);
+}
+@+ Value management
+Of particular interest is the beforeCall situations for strings and bats.
+They should may to the finalCall, because old values should be
+removed from the stack first.
+@c 
+void strBeforeCall(ValPtr v){ strFinalCall(v);}
+void strAfterCall(ValPtr v) { v->len= ATOMlen(v->vtype,v->val.pval);}
+void strFinalCall(ValPtr v){
+        if( v->val.pval && v->val.pval != str_nil) {
+                if(v->len) GDKfree(v->val.pval);
+                v->len= 0;
+        }       
+        v->val.pval= NULL;
+}       
+
+void batBeforeCall(ValPtr v){ batFinalCall(v);}
+void batFinalCall(ValPtr v){ 
+	if(v->val.bval)
+	{       BAT *b;                                                                        b= (BAT*) BBPgetdesc(v->val.bval);
+		if( b ) {
+			BBPunfix(b->batCacheid);
+			/* printf("decrement %s (%d) to %d\n",b->batId, 
+				b->val.bval, 
+				BBP_refs(b->batCacheid)); */
+		}
+        v->val.bval =0;
+#ifdef DEBUG_MAL_INTERPRETER
+        else GDKerror("interpreter:bat '%d' disappeared\n",v->val.bval);
+#endif  
+	}
 }

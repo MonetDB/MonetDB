@@ -16,7 +16,7 @@
 #	i:= getBATrefcnt(b);
 #	printf("refcount =%d\n",i);
 #
-#	destroy(b);
+#	bat.destroy(b);
 #	i:= getBATrefcnt(b);
 #	printf("after destroy refcount =%d\n",i);
 #
@@ -34,10 +34,11 @@ function Admin.main():int;	#0:(main:int)
 end function;	#11:
 refcount =1
 #-------------------------#
-# BAT:	  tmp_3		  #
+# BAT:	  tmp_4		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =2
-after destroy refcount =2
+#BBPreclaim: bat(4) view=0 mod=0 ref=2 stat=129
+!ERROR: MALexception:CMDdestroy_bat:failed in bbp
 >

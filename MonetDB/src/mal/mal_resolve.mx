@@ -383,6 +383,19 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 			mb->errors++;
 		}
 	}
+@-
+Since we now know the storage type of the receiving variable, we can
+set the before/after/final-Call functions.
+@c
+	if(isaBatType(s1)){
+		p->beforeCall= (GDKfcn) batBeforeCall;
+		p->finalCall= (GDKfcn) batFinalCall;
+	}
+	else if( ATOMstorage(s1)== TYPE_str){
+		p->beforeCall= (GDKfcn)strBeforeCall;
+		p->afterCall= (GDKfcn) strAfterCall;
+		p->finalCall= (GDKfcn) strFinalCall;
+	} 
 	return s1;
 	s= s->peer;
 	} /* while */
@@ -419,7 +432,6 @@ int resolveType(int dsttype, int srctype){
 			malTypeName(srctype),srctype);
 	}
 #endif
-	/* if( srctype == TYPE_nil) srctype = TYPE_any;*/
 	if( dsttype == srctype) return dsttype;
 	if( dsttype == TYPE_any || dsttype== malAnyType) return srctype;
 	if( srctype == TYPE_any || srctype== malAnyType) return dsttype;
@@ -707,7 +719,6 @@ int updateTypeMap(int formal, int actual, int polytype[2*MAXARG])
 	if( isaBatType(formal)){
 		if(!isaBatType(actual)){
 			if( getTailType(actual) == TYPE_any) t= TYPE_any;
-			/* else if( getTailType(actual) == TYPE_nil) t= TYPE_any;*/
 			else return -1;
 		} else	t= getHeadType(actual);
 
@@ -720,7 +731,6 @@ int updateTypeMap(int formal, int actual, int polytype[2*MAXARG])
 	if( (h=getTailIndex(formal)) ){
 		t= getTailType(actual);
 		if( isAnyExpression(t)) t= TYPE_any;
-		/* else if( t == TYPE_nil) t= TYPE_any;*/
 
 		if( polytype[h] == malAnyType ) polytype[h]=  t;
 		if( polytype[h] != t && t!= TYPE_any) return -1;

@@ -115,7 +115,7 @@ value. This particularly handy for the squeezers, while the former
 is mostly used to prepare a call to the linked libraries.
 
 @c
-
+INLINE
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k){
 #ifdef STRUCT_ALIGNED
 	return (ptr) & stk->stk[pci->argv[k]].val.ival;

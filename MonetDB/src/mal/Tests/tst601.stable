@@ -19,11 +19,11 @@
 #print(pi);
 #
 function Admin.main():int;	#0:(main:int)
-	const.open();	#1:($1:nil)
-	const.deposit("pi",3.147);	#2:($2:nil)<-($3:str)($4:flt)
+	const.open();	#1:($1:void)
+	const.deposit("pi",3.147);	#2:($2:void)<-($3:str)($4:flt)
 	pi := const.take("pi");	#3:(pi:flt)<-($3:str)
 	io.print(pi);	#4:($6:int)<-(pi:flt)
-	const.close();	#5:($7:nil)
+	const.close();	#5:($7:void)
 	io.print(pi);	#6:($8:int)<-(pi:flt)
 end function;	#7:
 [ 3.147 ]

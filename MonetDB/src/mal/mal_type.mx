@@ -119,7 +119,6 @@ str malTypeName(malType tpe)
 #endif
 	if( tpe == malAnyType ) return GDKstrdup("any");
 	if( tpe == malVarType ) return GDKstrdup("var");
-	if( tpe == TYPE_nil) return GDKstrdup("nil");
 	if( isaBatType(tpe)){
 		char buf[1024],*s;
 		int l=1024;
@@ -251,7 +250,6 @@ int getTypeIndex(str nme){
 	i= ATOMindex(nme);
 	/*printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
 	if( idcmp("any",nme)==0 ) return malAnyType;
-	if( idcmp("nil",nme)==0 ) return TYPE_nil;
 	if( idcmp("bat",nme)==0 ){
 /* printf("found a bat[any,any]\n");*/
 		i = newBatType(TYPE_any,TYPE_any);

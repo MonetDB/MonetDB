@@ -37,18 +37,18 @@
 #
 function Admin.main():int;	#0:(main:int)
 	io.print("Start test");	#1:($1:int)<-($2:str)
-	bbp.open();	#2:($3:nil)
+	bbp.open();	#2:($3:void)
 	b := mal.new(int,int);	#3:(b:bat[int,int])<-(int:int)(int:int)
 	bat.insert(b,1,2);	#4:($6:bat[int,int])<-(b:bat[int,int])($7:int)($8:int)
-	bbp.deposit("myfirstbat",b);	#5:($9:nil)<-($10:str)(b:bat[int,int])
+	bbp.deposit("myfirstbat",b);	#5:($9:void)<-($10:str)(b:bat[int,int])
 	c := bbp.take("myfirstbat");	#6:(c:bat[any,any])<-($10:str)
 catch	MALexception;	#7:(MALexception:str) jump 10
 	io.print(MALexception);	#8:($13:int)<-(MALexception:str)
 end	MALexception;	#9:(MALexception:str)
 	io.print(c);	#10:($14:int)<-(c:bat[any,any])
 	io.print("FIRST ROUND");	#11:($15:int)<-($16:str)
-	bbp.close();	#12:($17:nil)
-	bbp.open();	#13:($18:nil)
+	bbp.close();	#12:($17:void)
+	bbp.open();	#13:($18:void)
 	io.print("SECOND ROUND");	#14:($19:int)<-($20:str)
 	y := bbp.getObjects();	#15:(y:bat[int,str])
 	io.print(y);	#16:($22:int)<-(y:bat[int,str])
@@ -59,7 +59,7 @@ end	MALexception;	#20:(MALexception:str)
 	io.print(v);	#21:($25:int)<-(v:bat[any,any])
 	x := bbp.getName();	#22:(x:bat[int,str])
 	io.print(x);	#23:($27:int)<-(x:bat[int,str])
-	bbp.close();	#24:($28:nil)
+	bbp.close();	#24:($28:void)
 end function;	#25:
 [ "Start test" ]
 #-----------------#

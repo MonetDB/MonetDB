@@ -6,22 +6,22 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-#function test(b:bat[any::1,any::2],c:any::2):nil;
+#function test(b:bat[any::1,any::2],c:any::2):void;
 #        reduce := batcalc./(b,c); 
 #end function;
-function Admin.test(b:bat[any::1,any::2],c:any::2):nil;	#0:(test:nil)<-(b:bat[any::1,any::2])(c:any::2)
+function Admin.test(b:bat[any::1,any::2],c:any::2):void;	#0:(test:void)<-(b:bat[any::1,any::2])(c:any::2)
 	reduce := batcalc./(b,c);	#1 unknown:(reduce:any)<-(b:bat[any::1,any::2])(c:any::2)
 end function;	#2:
-#function test(b:bat[any::1,any::2],c:any::1):nil;
+#function test(b:bat[any::1,any::2],c:any::1):void;
 #        reduce := batcalc./(b,c); 
 #end function;
-function Admin.test(b:bat[any::1,any::2],c:any::1):nil;	#0:(test:nil)<-(b:bat[any::1,any::2])(c:any::1)
+function Admin.test(b:bat[any::1,any::2],c:any::1):void;	#0:(test:void)<-(b:bat[any::1,any::2])(c:any::1)
 	reduce := batcalc./(b,c);	#1 unknown:(reduce:any)<-(b:bat[any::1,any::2])(c:any::1)
 end function;	#2:
-#function test(b:bat[any::1,any::2]):nil;
+#function test(b:bat[any::1,any::2]):void;
 #        reduce := batcalc./(b,1); 
 #end function;
-function Admin.test(b:bat[any::1,any::2]):nil;	#0:(test:nil)<-(b:bat[any::1,any::2])
+function Admin.test(b:bat[any::1,any::2]):void;	#0:(test:void)<-(b:bat[any::1,any::2])
 	reduce := batcalc./(b,1);	#1 unknown:(reduce:any)<-(b:bat[any::1,any::2])($3:int)
 end function;	#2:
 #

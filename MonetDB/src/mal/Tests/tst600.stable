@@ -21,16 +21,16 @@
 #
 #
 function Admin.main():int;	#0:(main:int)
-	box.open("chest");	#1:($1:nil)<-($2:str)
-	box.deposit("chest","pi",3.417);	#2:($3:nil)<-($2:str)($4:str)($5:flt)
+	box.open("chest");	#1:($1:void)<-($2:str)
+	box.deposit("chest","pi",3.417);	#2:($3:void)<-($2:str)($4:str)($5:flt)
 	f := box.take("chest","pi");	#3:(f:flt)<-($2:str)($4:str)
 	io.print(f);	#4:($7:int)<-(f:flt)
 	f := calc.+(f,1.0);	#5:(f:flt)<-(f:flt)($8:flt)
-	box.release("chest","pi",f);	#6:($9:nil)<-($2:str)($4:str)(f:flt)
+	box.release("chest","pi",f);	#6:($9:void)<-($2:str)($4:str)(f:flt)
 	g := box.take("chest","pi");	#7:(g:flt)<-($2:str)($4:str)
 	io.print(g);	#8:($11:int)<-(g:flt)
-	box.discard("chest","pi");	#9:($12:nil)<-($2:str)($4:str)
-	box.close("chest");	#10:($13:nil)<-($2:str)
+	box.discard("chest","pi");	#9:($12:void)<-($2:str)($4:str)
+	box.close("chest");	#10:($13:void)<-($2:str)
 end function;	#11:
 [ 3.417 ]
 [ 3.417 ]

@@ -335,3 +335,40 @@ void debugScope(Scope start, str nme){
 		else printScope(m,0,FALSE);
 	}
 }
+@-
+Summarize the type resolution table.
+@c
+
+void showScope(FILE *f, Scope v,int cnt[256]){
+	int sigs=0,i,max=0,m;
+	Symbol s;
+	int c[256];
+	for(i=0;i<256;i++) c[i]=0;
+	for(i=0;i<256;i++){
+		m=0;
+		s= v->subscope[i];
+		while(s!=NULL){
+			m++;
+			sigs++;
+			cnt[i]++;
+			c[i]++;
+			s= s->peer;
+		}
+		if(m>max)max=m;
+	}
+	m=0;
+	for(i=0;i<256;i++)
+	if(v->subscope[i]){
+		printf("%20s",(m++ ==0?v->name:""));
+		printf("[%c] %5d %5d\n",i,c[i],(cnt[i]-c[i]/2));
+	}
+	if(v->outer) showScope(f,v->outer,cnt);
+}
+void showScopeStatistics(FILE *f,Scope s){
+	int i,cnt[256];
+
+        fprintf(f,"%20s%5s%5s\n","module","#sig","avg chk");
+	for(i=0;i<256;i++) cnt[i]=0;
+	showScope(f,s,cnt);
+}
+
