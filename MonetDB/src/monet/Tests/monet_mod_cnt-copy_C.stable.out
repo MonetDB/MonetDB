@@ -84,7 +84,7 @@ stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 [ "adm_atomtbl",	  15,	  15,		  0	  ]
 [ "monet_unicode_case",	  732,	  732,		  0	  ]
 [ "tmp_28",		  2,	  2,		  0	  ]
-[ "mapi_params",	  0,	  0,		  0	  ]
+[ "mapi_params",	  1,	  1,		  0	  ]
 [ "tmp_30",		  718,	  718,		  0	  ]
 [ "tmp_31",		  15,	  15,		  0	  ]
 
@@ -177,20 +177,16 @@ Over..
 [ "mapi_params",	  1,	  1,		  0	  ]
 [ "tmp_30",		  718,	  718,		  0	  ]
 [ "tmp_31",		  15,	  15,		  0	  ]
-[ "name",		  31,	  31,		  0	  ]
-[ "count",		  31,	  31,		  0	  ]
-[ "diff",		  31,	  31,		  0	  ]
-[ "tmp_65",		  15,	  15,		  0	  ]
-[ "tmp_66",		  2,	  2,		  0	  ]
-[ "tmp_67",		  718,	  718,		  0	  ]
-[ "copy.count",		  0,	  0,		  0	  ]
+[ "tmp_32",		  718,	  718,		  0	  ]
+[ "tmp_35",		  2,	  2,		  0	  ]
+[ "tmp_68",		  15,	  15,		  0	  ]
 
-# 18:26:38 >  
-# 18:26:38 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
-# 18:26:38 >  
+# 14:24:44 >  
+# 14:24:44 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d_--enable-debug_/etc/MonetDB.conf" --host=draco --port=46067
+# 14:24:44 >  
 
 
-# 18:26:39 >  
-# 18:26:39 >  Done.
-# 18:26:39 >  
+# 14:24:45 >  
+# 14:24:45 >  Done.
+# 14:24:45 >  
 
