@@ -114,28 +114,9 @@ and the head values from the batlist"
 @mil
 PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int 
 {
-        VAR rtrn := 0;
-        VAR h0 := b.ordered();
-        VAR t0 := b.reverse().ordered();
-        VAR oldmsk := debugmask();
-        VAR newmsk := 2+8;
-        if (warn) {
-                newmsk :+= 8*1024*1024;
-        }
-        debugmask(or(oldmsk,newmsk));
-	# "fake" command to trigger property checking on BAT b
-        b := b.reverse().reverse();
-        debugmask(oldmsk);
         VAR h1 := b.ordered();
         VAR t1 := b.reverse().ordered();
-        if (h0!=h1) {
-		# "ordered"-flag of head did change
-                rtrn :or= 1;
-        }
-        if (t0!=t1) {
-		# "ordered"-flag of tail did change
-                rtrn :or= 2;
-        }
+        VAR rtrn := 0;
         if (not(h1)) {
 		# head is not sorted
                 rtrn :or= 4;
@@ -157,7 +138,47 @@ ADDHELP("chk_order", "manegold", "Jul 24 2004",
 	"  2 (and(r,4)==4): head is not sorted,\n"+
 	"  3 (and(r,8)==8): tail is not sorted.",
 	"pf_support");
- 
+
+
+proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) : bat[oid,oid] {
+    var uniq := true;
+    if ((mode == GT) or (mode == GE)) {
+        if (l.sample(1000).kunique().count() < 900) {
+        	l := {max}(l);
+	} else {
+		uniq := false;
+	}
+        if (r.sample(1000).kunique().count() < 900) {
+        	r := {min}(r);
+	} else {
+		uniq := false;
+	}
+    } else if ((mode == LT) or (mode == LE)) {
+        if (l.sample(1000).kunique().count() < 900) {
+        	l := {min}(l);
+	} else {
+		uniq := false;
+	}
+        if (r.sample(1000).kunique().count() < 900) {
+        	r := {max}(r);
+	} else {
+		uniq := false;
+	}
+    } else {
+	uniq := false;
+    }
+    var join_order = leftthetajoin(l, r, mode);
+    var snd_iter := join_order.reverse().mark(0@0).reverse();
+    var fst_iter := join_order.mark(0@0).reverse();
+    var sorting := fst_iter.CTrefine(snd_iter);
+    if (not(uniq)) {
+        sorting := sorting.reverse().kunique().reverse();
+    }
+    return join_order.fetch(sorting);
+}
+
+
+
 @* Module Implementation
 @h
 #ifndef PF_SUPPORT_H

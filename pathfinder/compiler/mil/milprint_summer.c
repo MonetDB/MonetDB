@@ -3745,15 +3745,9 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
     fprintf(f,
             "join_item1 := join_item1.reverse().leftfetchjoin(iter%03u).reverse();\n"
             "join_item2 := join_item2.reverse().leftfetchjoin(iter%03u).reverse();\n"
-            "var join_result := thetajoin(join_item1, join_item2.reverse(), "
-                                         "%s, join_item1.count().lng());\n"
-            "var join_order := join_result.sort();\n"
-            "var snd_iter := join_order.reverse().mark(0@0).reverse();\n"
-            "var fst_iter := join_order.mark(0@0).reverse();\n"
-            "var sorting := fst_iter.CTrefine(snd_iter);\n"
-            "sorting := sorting.reverse().kunique().reverse().mark(0@0).reverse();\n"
-            "fst_iter := sorting.leftfetchjoin(fst_iter);\n"
-            "snd_iter := sorting.leftfetchjoin(snd_iter);\n",
+            "var join_result := htordered_unique_thetajoin(join_item1, join_item2.reverse(), %s);\n"
+            "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
+            "var fst_iter := join_result.mark(0@0).reverse();\n"
             fst_res, snd_res, comp);
 
     if (lev_fst && lev_snd)
