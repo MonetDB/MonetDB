@@ -1166,7 +1166,6 @@ a new connection is born
 	ports[port_no] = 0;
 	listeners--;
 	MT_unset_lock(TCPlock, "TCPlisten");
-	shutdown(sock,2); 
 	socket_close(sock);
 	GDKfree(line);
 	return GDK_SUCCEED;
