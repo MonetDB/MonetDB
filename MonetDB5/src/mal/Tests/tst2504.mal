@@ -1,0 +1,22 @@
+# The prototypical factory construct
+# test factory return and restart
+
+factory random(seed:int):int;
+	random:= seed;
+	i:= seed;
+	i:= 125 *i;
+	i:= i % 32767;
+	yield i;
+	i:= 125 *i;
+	i:= i % 32767;
+	yield i;
+end random;
+
+r1:= random(1);
+print(r1);
+r2:= random(1);
+print(r2);
+r2:= random(1);
+print(r2);
+r2:= random(1);
+print(r2);
