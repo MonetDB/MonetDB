@@ -116,9 +116,9 @@ command setProperty(rs:resultset,col:int,nme:str,val:int):resultset
 address RSsetPropertyInt
 comment "Sets the given property to the given value on the given column";
 
-command setComplete(rs:resultset):resultset
-address RSsetComplete
-comment "Marks this ResultSet as complete and ready for serialisation";
+command dePopulate(rs:resultset):resultset
+address RSdePopulate
+comment "Removes all the attached BATs and allows populating again";
 command writeHeader(rs:resultset):int
 address RSwriteHeader
 comment "Writes the header of this ResultSet to the given stream";
@@ -163,10 +163,10 @@ command destroy():void
 address RSBdestroy
 comment "Destroy the resultset box and all the resultsets it contains";
 
-command create(name:str, columns:int):resultset
+command create(name:str, columns:int, type:int):resultset
 address RSBcreate
 comment "Create a new ResultSet with the given number of columns
-and deposit it in the box";
+& type and deposit it in the box";
 
 command take(id:str):resultset
 address RSBtake
@@ -284,7 +284,8 @@ static resultset* elements[RSB_MAX_ELEMS];
 static void RSinitColumn(resultset* rs, int* colindex);
 static str RSBgetResultSet(resultset** retval, int* handle);
 static str RSBfreeColumn(column* col);
-static str tailWidth(int* retval, BAT* b);
+static str RStailWidth(int* retval, BAT* b);
+static str RSsetComplete(resultset* rs);
 
 /**
  * Returns the resultset from an element for a given array slot.
@@ -336,11 +337,13 @@ str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * ResultSet is immediately deposited in the box, and its
  * handle is returned.
  */
-str RSBcreate(int* retval, str* name, int* columns) {
+str RSBcreate(int* retval, str* name, int* columns, int* type) {
 	int i, j, free = -1;
 
 	if (*columns <= 0)
 		throw("rsbox.create", "Number of columns should be a positive non-zero value");
+	if (*type <= 0)
+		throw("rsbox.create", "ResultSet type should be a positive non-zero value");
 
 	/* check the given name is a unique id (and find the first free slot) */
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
@@ -365,6 +368,7 @@ str RSBcreate(int* retval, str* name, int* columns) {
 				for (j = 0; j < *columns; j++)
 					RSinitColumn(elements[i], &j);
 				elements[i]->columnCount = *columns;
+				elements[i]->type = *type;
 				free = i;
 			}
 		}
@@ -549,7 +553,7 @@ str RSBdestroy(int *ret){
  * @param b the BAT to scan the tail from
  * @return the max width of the tail
  */
-static str tailWidth(int* retval, BAT* b) {
+static str RStailWidth(int* retval, BAT* b) {
 	BUN p, q;
 	int max = 0;
 
@@ -678,6 +682,8 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 		 * base for all other columns that get added */
 		rs->length = BATcount(b);
 	}
+	if (rs->columns[*colno - 1]->bat != NULL)
+		BBPunfix(rs->columns[*colno - 1]->bat->batCacheid);
 	rs->columns[*colno - 1]->bat = b;
 
 	*retval = *handle;
@@ -820,16 +826,13 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
  * are not set at this time are filled with auto generated values.
  * Note that a ResultSet without column is considered to be an error.
  *
- * @param handle a resultset handle
+ * @param rs a resultset
  * @return the same resultset handle
  */
-str RSsetComplete(int* retval, int* handle) {
+static str RSsetComplete(resultset* rs) {
 	int i;
 	column* col;
-	resultset* rs;
 	str tmp;
-	
-	resolveHandle(&rs, handle);
 	
 	/* walk through the columns, and set those properties that are not
 	 * yet set, but are a necessity */
@@ -883,7 +886,7 @@ str RSsetComplete(int* retval, int* handle) {
 		}
 		/* column width is derived if not set */
 		if (col->width == -1 &&
-			(tmp = tailWidth(&(col->width), col->bat)) != MAL_SUCCEED)
+			(tmp = RStailWidth(&(col->width), col->bat)) != MAL_SUCCEED)
 		{
 			return(tmp);
 		}
@@ -891,6 +894,32 @@ str RSsetComplete(int* retval, int* handle) {
 	}
 
 	rs->complete = (char)1;
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Removes all the associated BATs and unsets the complete state.
+ * Using this function allows a ResultSet to be reused by populating
+ * it again.
+ *
+ * @param handle a resultset handle
+ * @return the resultset handle
+ */
+str RSdePopulate(int* retval, int* handle) {
+	int i;
+	resultset* rs;
+	str tmp;
+
+	resolveHandle(&rs, handle);
+
+	for (i = 0; i < rs->columnCount; i++) {
+		if (rs->columns[i]->bat != NULL)
+			BBPunfix(rs->columns[i]->bat->batCacheid);
+		rs->columns[i]->bat = NULL;
+	}
+	rs->length = -1;
+	rs->complete = (char)0;
 
 	*retval = *handle;
 	return(MAL_SUCCEED);
@@ -915,7 +944,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
-		throw("resultset.writeHeader", "Unable to serialise a non-complete ResultSet");
+		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
 	
 	/* write start of header */
 	if ((bt = stream_printf(s, "%c%d\n", RS_LINE_START_OF_HEADER, RS_TYPE_DEFAULT)) <= 0) {
@@ -996,7 +1025,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
-		throw("resultset.writeBlock", "Unable to serialise a non-complete ResultSet");
+		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
 	if (*lower < 0)
 		throwf("resultset.writeBlock", "Lower index out of bounds (%d < 0)", *lower);
 	if (*upper > rs->length)
@@ -1150,7 +1179,7 @@ str RShasNextPart(int* retval, int* handle) {
 	
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
-		throw("resultset.hasNextPart", "Unable to serialise a non-complete ResultSet");
+		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
 
 	if (rs->blocksize > 0) {
 		*retval = rs->pos < rs->length ? ((rs->length - rs->pos) / rs->blocksize) + 1 : 0;
@@ -1179,7 +1208,7 @@ str RSwriteNextPart(int* retval, int* handle) {
 	
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
-		throw("resultset.writeNextPart", "Unable to serialise a non-complete ResultSet");
+		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
 
 	if (rs->pos < rs->length) {
 		if (rs->blocksize == 0) {

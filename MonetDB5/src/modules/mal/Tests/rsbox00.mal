@@ -1,7 +1,7 @@
 include rsbox;
 
-rs := rsbox.create("lost", 1);
-rs := rsbox.create("myid", 2);
+rs := rsbox.create("lost", 1, 7);
+rs := rsbox.create("myid", 2, 3);
 
 resultset.setProperty(rs, 1, "table", "table1");
 resultset.setProperty(rs, 1, "schema", "sys");
@@ -22,8 +22,6 @@ bat.insert(b2, nil, 5);
 
 resultset.populateColumn(rs, 1, b1);
 resultset.populateColumn(rs, 2, b2);
-
-resultset.setComplete(rs);
 
 resultset.writeNextPart(rs);
 
