@@ -1,13 +1,10 @@
 
 
 #include "mem.h"
+#include <monet_options.h>
 #include <comm.h>
 #include <sys/stat.h>
 #include <query.h>
-
-#ifdef HAVE_LIBGETOPT 
-#include <getopt.h>
-#endif
 
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>

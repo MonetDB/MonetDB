@@ -4,6 +4,7 @@ EXTRA_DIST = catalog.mil sqlserver.mil
 
 INCLUDES = \
 	-I$(MONET_PREFIX)/include \
+	-I$(MONET_PREFIX)/include/common \
 	-I$(MONET_PREFIX)/include/gdk \
 	-I$(MONET_PREFIX)/include/monet \
 	-I$(MONET_PREFIX)/include/plain \

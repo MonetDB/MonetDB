@@ -1,5 +1,5 @@
 
-#include <stdlib.h>
+#include <monet_options.h>
 #include <string.h>
 #include "mem.h"
 #include "sqlexecute.h"
@@ -7,10 +7,6 @@
 #include <sys/stat.h>
 #include <catalog.h>
 #include <query.h>
-
-#ifdef HAVE_LIBGETOPT 
-#include <getopt.h>
-#endif
 
 stream *ws = NULL, *rs = NULL;
 

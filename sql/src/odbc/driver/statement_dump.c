@@ -54,7 +54,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	if (s->nr == 0)
 		s->nr = -(*nr)++;
 
-	if (sql->debug&2 && s->type != st_insert)
+	if (sql->debug&2)
 		len += snprintf( buf+len, BUFSIZ-len,"t0 := time();\n");
 
 	switch(s->type){
@@ -330,7 +330,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	}
 	case st_bat:
 	case st_ubat: {
-		char *type = (s->type==st_dbat)?"":"_ubat";
+		char *type = (s->type==st_bat)?"":"_ubat";
 		if (table_isview(s->op1.cval->table)){
 			s->nr = -stmt_dump( s->op1.cval->s, nr, sql );
 		} else {
@@ -569,11 +569,16 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		len += snprintf( buf+len, BUFSIZ, 
 				"s%d := %s;\n", -s->nr, atom_dump(s->op1.aval));
 	} break;
-	case st_insert_column: {
+	case st_insert: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ-len, 
-		  "s%d := insert(s%d,s%d);\n", -s->nr, l, r);
+		if (s->op2.stval->nrcols){
+			len += snprintf( buf+len, BUFSIZ-len, 
+		  	"s%d := insert(s%d,s%d);\n", -s->nr, l, r);
+		} else {
+			len += snprintf( buf+len, BUFSIZ-len, 
+		  	"s%d := insert(s%d,oid(nil),s%d);\n", -s->nr, l, r);
+		}
 	} break;
 	case st_replace: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
@@ -625,19 +630,6 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			"input(myc, \"%s\", \"%s\",\"%s\", \"%s\", %d);\n",
 				s->op1.tval->name, file, tsep, rsep, s->flag);
 	} break;
-	case st_insert: {
-		stmt *r = s->op2.lval->h->data;
-		for( n = s->op2.lval->h ;n; n = n->next ){
-			stmt_dump(n->data, nr, sql);
-		}
-		len += snprintf( buf+len, BUFSIZ-len, 
-			"mvc_insert(myc, \"%s\"", s->op1.tval->name );
-		for( n = s->op2.lval->h ;n; n = n->next ){
-			r = n->data;
-			len += snprintf( buf+len, BUFSIZ-len, ",s%d", r->nr);
-		}
-		len += snprintf( buf+len, BUFSIZ-len, ");\n" );
-	} break;
 	case st_ordered: {
 		int l =  stmt_dump( s->op1.stval, nr, sql );
 		(void)stmt_dump( s->op2.stval, nr, sql );
@@ -647,6 +639,19 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		stmt *order = NULL;
 		stmt *lst = s->op1.stval;
 		stmt_dump( lst, nr, sql );
+		if (sql->debug&1){
+			if (lst->type == st_list){
+				list *l = lst->op1.lval;
+
+				n = l->h;
+				while(n){
+					stmt *r = n->data;
+					len += snprintf( buf+len, BUFSIZ-len,
+						"print(s%d);\n", r->nr);
+					n = n->next;
+				}
+			}
+		}
 		if (sql->debug&32){
 			len += snprintf( buf+len, BUFSIZ-len,
 			"stream_write(Output,\"0\\n\");stream_flush(Output);\n");
@@ -702,15 +707,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_result: {
 		stmt *k = s->op1.stval;
 		int l =  stmt_dump( k, nr, sql );
-		if (k->type != st_insert){
-			len += snprintf( buf+len, BUFSIZ-len,
+		len += snprintf( buf+len, BUFSIZ-len,
 			"result(Output,mvc_type(myc),mvc_status(myc));\n",l);
-		} else {
-			stmt *r = k->op2.lval->h->data;
-			if (r->nrcols > 0)  /* insert columns */
-			  len += snprintf( buf+len, BUFSIZ-len,
-			  "result(Output,mvc_type(myc),mvc_status(myc));\n",l);
-		} 
 	} break;
 
 	}
@@ -720,7 +718,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	else
 		s->nr = -s->nr;
 
-	if (sql->debug&2 && s->type != st_insert)
+	if (sql->debug&2)
 		len += snprintf( buf+len, BUFSIZ-len,
 		"t1 := time(); printf(\"%d %%d\\n\", t1 - t0);\n", s->nr);
 

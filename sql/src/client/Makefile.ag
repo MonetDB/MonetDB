@@ -2,23 +2,23 @@
 
 INCLUDES = \
 	-I$(MONET_PREFIX)/include \
+	-I$(MONET_PREFIX)/include/common \
 	-I$(MONET_PREFIX)/include/gdk \
 	-I$(MONET_PREFIX)/include/monet \
 	-I$(MONET_PREFIX)/include/plain \
 	-I$(MONET_PREFIX)/include/stream \
 	-I${top_srcdir}/src/common \
-	-I${top_builddir}/src/common \
-	$(GETOPT_INCS)
+	-I${top_builddir}/src/common 
 
 bin_sql_client = {
 	SOURCES = sql_client.c catalog_client.c statement_dump.c \
 		  comm.c comm.h gdk.c query.h
 	LIBS = ../common/libsql \
-		-L$(MONET_PREFIX)/lib -lstream $(GETOPT_LIBS)
+		-L$(MONET_PREFIX)/lib -lstream -lmutils
 }
 
 bin_Msql = {
 	SOURCES = Msql.c comm.c comm.h gdk.c query.h
-	LIBS = -L$(MONET_PREFIX)/lib -lstream \
-			$(READLINE_LIBS) $(GETOPT_LIBS) $(PTHREAD_LIBS)
+	LIBS = -L$(MONET_PREFIX)/lib -lstream -lmutils \
+			$(READLINE_LIBS) $(PTHREAD_LIBS)
 }
