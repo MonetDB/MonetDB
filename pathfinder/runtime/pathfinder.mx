@@ -695,7 +695,6 @@ PROC node_print(oid pre, BAT[oid,str] S) : void :=
     var kind := Tpre_kind.fetch(pre);
     var prop := Tpre_prop.fetch(pre);
 	
-    printf("pre=%d, kind=%d, prop=%d\n",pre,kind,prop);
     if (kind = ELEMENT)
     {    
 	# recompose tag name

@@ -482,6 +482,8 @@ void query_attr_print(XqueryCtx* ctx, oid pre) {
 void xquery_node_print(XqueryCtx* ctx, oid pre) {
         chr kind = *(chr*)indexedTail(ctx->Tpre_kind,pre);
         oid prop = *(oid*)indexedTail(ctx->Tpre_prop,pre);
+
+        // stream_printf(GDKout,"XQNP(pre=%d,kind=%d)\n",pre,(int)kind);
         switch( kind ) {
                 case (char)0: {// ELEMENT
                         str name = (str)indexedTail(ctx->Tprop_loc,prop);
@@ -489,8 +491,9 @@ void xquery_node_print(XqueryCtx* ctx, oid pre) {
                         handle_startElement(ctx,ns,name);
                         query_attr_print(ctx,pre);
 
-                        oid offset = *(oid*)indexedTail(ctx->Tpre_size,pre);
-                        pushTag(ctx,pre+offset,ns,name);
+                        oid size = *(oid*)indexedTail(ctx->Tpre_size,pre);
+// stream_printf(GDKout,"NODEEL(pre=%d,size=%d)\n",pre,size);
+                        pushTag(ctx,pre+size,ns,name);
                         break;
                         }
                 case (char)1: {// TEXT
@@ -518,14 +521,40 @@ void xquery_node_print(XqueryCtx* ctx, oid pre) {
         }
 }
 
+#define ALLTAGS INT_MAX
+#define FIRST_ELEMENT    0
+
 /**
  * handle the closing tag of a document.
  */
 void xquery_endtag_print(XqueryCtx* ctx, oid pre) {
-        while( moreTags(ctx) && (pre > topTag(ctx)) ) { //??
+        while( moreTags(ctx) && ((pre==ALLTAGS)||(pre > topTag(ctx))) ) { //??
                 if ( strlen(topName(ctx)) > 0 )
                         handle_endElement(ctx,topNs(ctx),topName(ctx));
                 popTag(ctx);
+        }
+}
+
+/**
+ * handle the range of pre numbers [from .. to]
+ */
+void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
+        // stream_printf(GDKout,"PRE_RANGE_START[%d,%d]\n",from,to);
+        BUN p, q; 
+        if ( from == 0 ) // first BUN, because of 1..n/0..n-1 problem
+                p = BUNfirst(b);
+        else
+                BUNfndOID(p, b,&from);
+        for(q = BUNlast(b); p<q; p = BUNnext(b, p)) {
+                oid pre = *(oid*)BUNhead(b, p);
+                do {
+                        xquery_node_print(ctx, pre);
+                        xquery_endtag_print(ctx,++pre);
+                } while( moreTags(ctx) && (pre<to) );
+        }
+        if ( moreTags(ctx) ) {
+                // INCOMPLETE, the next line works but WHY? Should work without
+                xquery_endtag_print(ctx,ALLTAGS);
         }
 }
 
@@ -561,23 +590,12 @@ int xquery_document_main(
                 return GDK_SUCCEED;
         
         handle_startDocument(ctx);
-
-        // lastpre := Tpre_size.reverse.fetch(Tpre_size.count - 1);
+        //
         BUN b = BUNptr(ctx->Tpre_size,BATcount(ctx->Tpre_size));
         oid lastpre = *(oid*)BUNhead(ctx->Tpre_size,b);
-
-        BUN p, q; 
-        BATloop(cs, p, q) {
-                oid pre = *(oid*)BUNhead(cs, p);
-                do {
-                        xquery_node_print(ctx, pre);
-                        xquery_endtag_print(ctx,++pre);
-                } while( moreTags(ctx) && (pre<lastpre) );
-        }
-        if ( moreTags(ctx) ) {
-                // INCOMPLETE, the next line works but WHY? Should work without
-                xquery_endtag_print(ctx,(oid)-1);
-        }
+        //
+        xquery_pre_range(ctx,cs,0/*start*/,lastpre);
+        //
         handle_endDocument(ctx);
         //
         return GDK_SUCCEED;
@@ -622,7 +640,7 @@ void  seqEnd(XqueryCtx* ctx) {
 /**
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
  */
-void  seqEmitNode(XqueryCtx* ctx, oid nv) {
+void  seqEmitNode(XqueryCtx* ctx, oid preVal) {
         if ( ! ctx->saxMode ) {
                 if ( ctx->nAttrOnLine > 0 ) {
                         stream_printf(GDKout,"\n");
@@ -630,7 +648,13 @@ void  seqEmitNode(XqueryCtx* ctx, oid nv) {
                 }
         }
         //
-        xquery_node_print(ctx, nv);
+        if ( 0 ) {
+                xquery_node_print(ctx, preVal);
+                xquery_endtag_print(ctx,ALLTAGS);
+        } else {
+                int size = *(int*)indexedTail(ctx->Tpre_size,preVal);
+                xquery_pre_range(ctx,ctx->Tpre_size,preVal,preVal+size);
+        }
         //
         if ( ! ctx->saxMode ) {
                 stream_printf(GDKout,"\n");
