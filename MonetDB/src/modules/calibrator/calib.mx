@@ -42,17 +42,18 @@ Calibrator as a Monet module
 /*	#define EPSILON2 0.04	*/
 	#define EPSILON4 1.0	
 
-//#define CALIBRATOR_CREATE_PLOTS
+
+/* #define CALIBRATOR_CREATE_PLOTS */
 #undef CALIBRATOR_CREATE_PLOTS
-//#define CALIBRATOR_PRINT_OUTPUT
+/* #define CALIBRATOR_PRINT_OUTPUT */
 #undef CALIBRATOR_PRINT_OUTPUT
 
 #include "calib_common.c"
 caliblng MINTIME = 10000;
 #include "calib_run.c"
 #include "calib_analyse.c"
-//#include "calib_plot.c"
-//#include "calib_print.c"
+/* #include "calib_plot.c" */
+/* #include "calib_print.c" */
 #include "calib_main.c"
 
 struct fullInfo *calibInfo=0;
@@ -93,7 +94,7 @@ int CMDcalib_info(BAT **retval)
 	b=BUNins(b, "MHz", &val);
 	val=maxrange;
 	b=BUNins(b, "maxrange", &val);
-// cpu info
+/* cpu info */
 	val=NSperIt(calibInfo->cache->latency1[0]);
 	b=BUNins(b, "cpuloop ns", &val);
 	val=round(CYperIt(calibInfo->cache->latency1[0]));
@@ -102,7 +103,7 @@ int CMDcalib_info(BAT **retval)
 	b=BUNins(b, "cpu delay ns", &val);
 	val=round(CYperIt(calibInfo->delayC));
 	b=BUNins(b, "cpu delay cc", &val);
-// cache info
+/* cache info */
 	val=cache->levels;
 	b=BUNins(b, "cache levels", &val);
 	for(l=0;l<cache->levels;l++)
@@ -129,7 +130,7 @@ int CMDcalib_info(BAT **retval)
 		val=round(CYperIt(cache->latency1[l+1] - cache->latency1[l]));
 		b=BUNins(b, fld, &val);
 	}
-// TLB info
+/* TLB info */
 	val=TLB->levels;
 	b=BUNins(b, "TLB levels", &val);
 	for(l=0;l<TLB->levels;l++)

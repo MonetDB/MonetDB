@@ -61,9 +61,9 @@
 
 
 #define CALIBRATOR_CREATE_PLOTS
-//#undef CALIBRATOR_CREATE_PLOTS
+/* #undef CALIBRATOR_CREATE_PLOTS */
 #define CALIBRATOR_PRINT_OUTPUT
-//#undef CALIBRATOR_PRINT_OUTPUT
+/* #undef CALIBRATOR_PRINT_OUTPUT */
 
 #include "calib_common.c"
 caliblng MINTIME = 10000;
