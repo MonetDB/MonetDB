@@ -84,26 +84,26 @@ void mo_print_options(opt *set, int setlen)
 		switch(set[i].kind){
 		case opt_builtin:
 			fprintf(stderr, 
-				"builtin opt \t%s = %s\n", 
+				"# builtin opt \t%s = %s\n", 
 				set[i].name, set[i].value);
 			break;
 		case opt_systemconfig:
 			fprintf(stderr,
-				"system opt \t%s = %s\n", 
+				"# system opt \t%s = %s\n", 
 				set[i].name, set[i].value);
 			break;
 		case opt_config:
 			fprintf(stderr,
-				"config opt \t%s = %s\n", 
+				"# config opt \t%s = %s\n", 
 				set[i].name, set[i].value);
 			break;
 		case opt_cmdline:
 			fprintf(stderr,
-				"cmdline opt \t%s = %s\n", 
+				"# cmdline opt \t%s = %s\n", 
 				set[i].name, set[i].value);
 			break;
 		default: 
-			fprintf(stderr, "error: unknown kind (%d)\n", 
+			fprintf(stderr, "! error: unknown kind (%d)\n", 
 				set[i].kind );
 		}
 	}
