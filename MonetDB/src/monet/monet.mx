@@ -674,9 +674,21 @@ for using vfsprintf proved to be too compiler-dependent (OLD approach).
 @= sprintf
 	if (width > adds) {
 		adds = width+10; 
-		add = (str) alloca(adds);
+		add = (str) alloca(adds); 
 	}
+#ifndef HAVE_SNPRINTF
 	sprintf(add, meta, @1);
+#else
+	n = snprintf( add, adds, meta, @1 );
+	while ((n==-1) || (n >= adds)) {
+          if (n > -1)    /* glibc 2.1 */
+             adds = n+1; /* precisely what is needed */
+          else           /* glibc 2.0 */
+             adds *= 2;  /* twice the old size */
+          add = (str) alloca (adds);
+	  n = snprintf( add, adds, meta, @1 );
+	}
+#endif /* HAVE_SNPRINTF */
 @c
 static char toofew_error[80] = 
 	"monet_sprintf(): at least %d parameters expected.\n";
@@ -688,6 +700,10 @@ static char type_error[80] =
 	GDKerror(x, argc); GDKfree(buf); return GDK_FAIL;
 
 int monet_sprintf(str *res, str format, va_list ap){
+#ifdef HAVE_SNPRINTF
+	int n;
+#endif /* HAVE_SNPRINTF */
+
 	int adds = 100, prec, width, dotseen, escaped = 0, type, size, argc = 1;
 	char addbuf[100], *add = addbuf, *dst, *buf, *cur, *paramseen = NULL;
 
@@ -777,7 +793,12 @@ int monet_sprintf(str *res, str format, va_list ap){
 				} else {
 					return_error(type_error);
 				}
+				/* width += (1+prec); */
 				width += (1+prec);
+#ifndef HAVE_SNPRINTF
+				/* Brute force; this size always fits a double */
+				width += 300;
+#endif /* HAVE_SNPRINTF */
 				@:sprintf(dval)@
 			} else if (*cur == 's') {
 				int len;
