@@ -170,7 +170,6 @@ m_export int TBL_setaggr_resolve(str name, int argc, ValPtr Argv, monet_sig_t *s
 
 @c
 #include "monet.h"
-#include "searchpath.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -385,6 +384,86 @@ DL_regfcn(void *handle, ptr fcnptr, str name)
 	return 0;
 }
 
+
+static char *
+locate_file(const char *basename, const char *ext)
+{
+	char *mod_path = GDKgetenv("monet_mod_path");
+	char *fullname;
+	size_t fullnamelen;
+	size_t filelen = strlen(basename) + strlen(ext);
+
+	if (mod_path == NULL)
+		return NULL;
+	while (*mod_path == PATH_SEP)
+		mod_path++;
+	if (*mod_path == 0)
+		return NULL;
+	fullnamelen = 512;
+	fullname = GDKmalloc(fullnamelen);
+	while (*mod_path) {
+		size_t i;
+		char *p;
+		int fd;
+
+		if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
+			i = p - mod_path;
+		} else {
+			i = strlen(mod_path);
+		}
+		while (i + filelen + 2 > fullnamelen) {
+			fullnamelen += 512;
+			fullname = GDKrealloc(fullname, fullnamelen);
+		}
+		/* we are now sure the directory name, file
+		   base name, extension, and separator fit
+		   into fullname, so we don't need to do any
+		   extra checks */
+		strncpy(fullname, mod_path, i);
+		fullname[i] = DIR_SEP;
+		strcpy(fullname + i + 1, basename);
+		strcat(fullname + i + 1, ext);
+		if ((fd = open(fullname, O_RDONLY)) >= 0) {
+			close(fd);
+			return GDKrealloc(fullname, strlen(fullname) + 1);
+		}
+		if ((mod_path = p) == NULL)
+			break;
+		while (*mod_path == PATH_SEP)
+			mod_path++;
+	}
+	/* not found */
+	GDKfree(fullname);
+	return NULL;
+}
+
+#define MIL_EXT ".mil"
+
+static char *
+MSP_locate_script(const char *mod_name)
+{
+	return locate_file(mod_name, MIL_EXT);
+}
+
+static char *
+MSP_locate_module(const char *mod_name)
+{
+	char *lib_name = GDKmalloc(strlen(mod_name) + 4);
+	char *fullname;
+
+	strcpy(lib_name, "lib");
+	strcpy(lib_name + 3, mod_name);
+
+	fullname = locate_file(lib_name, SO_EXT);
+#ifdef _AIX
+	fullname = GDKrealloc(fullname, strlen(fullname) + strlen(lib_name) + 5);
+	strcat(fullname, "(");
+	strcat(fullname, lib_name);
+	strcat(fullname, ".0)");
+#endif
+	GDKfree(lib_name);
+	return fullname;
+}
 
 void *
 DL_open(char *nme, int mode)
@@ -940,35 +1019,63 @@ module directory.
 BAT *
 TBL_getdir(void)
 {
-#ifndef STATIC
-	char *name, *basename;
-	size_t liblen = strlen("lib");
-#endif
 	BAT *b = BATnew(TYPE_int, TYPE_str, 100);
 	int i = 0;
 
-	if (b == NULL)
-		return NULL;
-
-#ifndef STATIC
-	MSP_rewind_module_list();
-	for (;;) {
-		name = MSP_next_module(".mil");
-		if (!name)
-			break;
-		basename = strrchr(name, DIR_SEP) + 1;
-		if (strncmp(basename, "lib", liblen) == 0)
-			basename += liblen;
-		if (BUNins(b, &i, basename) == NULL)
-			assert(0);
-		i++;
+#ifdef STATIC
+	for (i = 0; i < DL_TABLE_MAXLIBS; i++) {
+		if (DL_mod[i])
+			BUNins(b, &i, DL_mod[i] + 1);
 	}
 #else
-	for (i = 0; i < DL_TABLE_MAXLIBS; i++)
-		if (DL_mod[i] != NULL) {
-			if (BUNins(b, &i, DL_mod[i] + 1) == NULL)
-				assert(0);
+	char *mod_path;
+	size_t extlen = strlen(MIL_EXT);
+	size_t len;
+	struct dirent *dent;
+	DIR *dirp = NULL;
+
+	mod_path = GDKgetenv("monet_mod_path");
+	if (mod_path == NULL)
+		return b;
+	while (*mod_path == PATH_SEP)
+		mod_path++;
+	if (*mod_path == 0)
+		return b;
+
+	while (mod_path || dirp) {
+		if (dirp == NULL) {
+			char *cur_dir;
+			char *p;
+
+			if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
+				i = p - mod_path;
+			} else {
+				i = strlen(mod_path);
+			}
+			cur_dir = GDKmalloc(i + 1);
+			strncpy(cur_dir, mod_path, i);
+			cur_dir[i] = 0;
+			if ((mod_path = p) != NULL) {
+				while (*mod_path == PATH_SEP)
+					mod_path++;
+			}
+			dirp = opendir(cur_dir);
+			GDKfree(cur_dir);
+			if (dirp == NULL)
+				continue;
 		}
+		if ((dent = readdir(dirp)) == NULL) {
+			closedir(dirp);
+			dirp = NULL;
+			continue;
+		}
+		len = strlen(dent->d_name);
+		if (len < extlen || strcmp(dent->d_name + len - extlen, MIL_EXT) != 0)
+			continue;
+		dent->d_name[len - extlen] = 0;
+		BUNins(b, &i, dent->d_name);
+		i++;
+	}
 #endif
 	return b;
 }
