@@ -1,0 +1,30 @@
+#some join operations
+
+b:= new(:int,:int);
+barrier (k,v):= newRange(0:int);
+        insert(b,v,v);
+        redo (k,v):= nextElement(1:int,100:int);
+exit (k,v);
+
+i:= count(b);
+print(i);
+
+c:= select(b,0:int,9:int);
+i:= count(c);
+print(i);
+d:= select(b,0:int,49:int);
+i:= count(d);
+print(i);
+
+zz:= joinPath(b,c,d);
+i:= count(zz);
+print(i);
+
+optimizer.MCoptimizer("algebra","joinPath");
+#to be detected by join inversion
+z:= join(b,c);
+zz:= join(z,d);
+i:= count(zz);
+print(i);
+showFunction();
+

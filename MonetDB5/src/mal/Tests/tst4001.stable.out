@@ -1,0 +1,81 @@
+stdout of test 'tst4001` in directory 'src/mal` itself:
+
+
+# 15:37:23 >  
+# 15:37:23 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=47817 --set sql_port=51746 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4001.mal </dev/null
+# 15:37:23 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl for further information.
+##tesing the optimizers
+#
+##debugOptimizers();
+#function qry(i:dbl):dbl;
+#   i:= 1.0:dbl;
+#   z:= sin(i);
+#   j:= 1.0:dbl;
+#   k:= sin(j);
+#   l:= k+1.0:dbl;
+#   return z;
+#end qry;
+function Admin.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
+    i := 1.0:dbl;	# 1  (i:dbl)<-($2:dbl)
+    z := mmath.sin(i);	# 2 MATHunary_SINdbl (z:dbl)<-(i:dbl)
+    j := 1.0:dbl;	# 3  (j:dbl)<-($2:dbl)
+    k := mmath.sin(j);	# 4 MATHunary_SINdbl (k:dbl)<-(j:dbl)
+    l := calc.+(k,1.0:dbl);	# 5 CALCbinaryADDdbldbl (l:dbl)<-(k:dbl)($2:dbl)
+    return z;	# 6  (z:dbl)
+end qry;	# 7  
+#t0:= alarm.usec();
+#CXoptimizer(Admin,qry);
+#ARoptimizer(Admin,qry);
+#t1:= alarm.usec();
+#t2:= t1-t2;
+##print(t2);
+#print("execute");
+#z:=qry(0.0:dbl);
+#print(z);
+#print("done");
+#showFunction(Admin,qry);
+#
+#CXoptimizer Admin.qry
+function Admin.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
+    i := 1.0:dbl;	# 1  (i:dbl)<-($2:dbl)
+    z := mmath.sin(i);	# 2 MATHunary_SINdbl (z:dbl)<-(i:dbl)
+    l := calc.+(z,1.0:dbl);	# 3 CALCbinaryADDdbldbl (l:dbl)<-(z:dbl)($2:dbl)
+    return z;	# 4  (z:dbl)
+end qry;	# 5  
+#ARoptimizer Admin.qry
+function Admin.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
+    z := mmath.sin(1.0:dbl);	# 1 MATHunary_SINdbl (z:dbl)<-($2:dbl)
+    l := calc.+(z,1.0:dbl);	# 2 CALCbinaryADDdbldbl (l:dbl)<-(z:dbl)($2:dbl)
+    return z;	# 3  (z:dbl)
+end qry;	# 4  
+function Admin.main():int;	# 0  (main:int)
+    t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
+    t1 := alarm.usec();	# 2 ALARMusec (t1:lng)
+    t2 := calc.-(t1,t2);	# 3 CALCbinarySUBlngdbl (t2:dbl)<-(t1:lng)(t2:dbl)
+    io.print("execute");	# 4 IOprint_val ($8:int)<-($9:str)
+    z := Admin.qry(0.0:dbl);	# 5  (z:dbl)<-($11:dbl)
+    io.print(z);	# 6 IOprint_val ($12:int)<-(z:dbl)
+    io.print("done");	# 7 IOprint_val ($13:int)<-($14:str)
+    inspect.showFunction(Admin,qry);	# 8 INSPECTshowFunction3 ($15:void)<-(Admin:any)(qry:any)
+end main;	# 9  
+[ "execute" ]
+[ 0.8414709848078965 ]
+[ "done" ]
+function Admin.qry(i:dbl):dbl;
+    z := mmath.sin(1.0:dbl);
+    l := calc.+(z,1.0:dbl);
+    return z;
+end qry;
+>
+# 15:37:23 >  
+# 15:37:23 >  Done.
+# 15:37:23 >  
+

@@ -178,6 +178,9 @@ tst4024
 tst4028
 tst4030
 tst4500
+tst4600
+tst4610
+tst4620
 
 # Old x100 test moved to x100Tests
 #tst6000

@@ -8,7 +8,7 @@ s:= select(r,0,5);	# equal to a copy
 print(s);
 t:= select(r,0,3);
 print(t);
-u:= select(r,0,2);	# reuse t
+u:= select(r,0,3);	# reuse t
 print(u);
 CXoptimizer();
 ARoptimizer();
