@@ -1651,6 +1651,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if test.match(f):
                     if CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
+                    elif string.split("@VERSION@",".")[0] == '5':
+                        RunIt("M2m %s | %s" % (f,cmd), "", ClntOutFile, ClntErrFile)
                     else:
                         RunIt(cmd+"< "+f, "", ClntOutFile, ClntErrFile)
         elif CALL in ["milC", "milCXs"]:
