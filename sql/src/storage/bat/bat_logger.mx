@@ -177,13 +177,18 @@ log_write_format(logger *l, logformat *data)
 static char *
 log_read_string(logger *l)
 {
-	int len;
+	int len, nr;
 	char *buf;
 
 	stream_readInt(l->log, &len);
 	buf = NEW_ARRAY(char, len);
 
-	stream_read(l->log, buf, 1, len);
+	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t)len) {
+		buf[len-1] = 0;
+		printf("ERROR: couldn't read name (%s) %d\n", buf, nr);
+		GDKfree(buf);
+		return NULL;
+	}
 	return buf;
 }
 
@@ -428,6 +433,7 @@ logger_readlog(logger *logger, char *filename)
 		}
 		if (name)
 			_DELETE(name);
+		logger->changes++;
 	}
 	logger_close(logger);
 
@@ -524,6 +530,7 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 		if (check_version(logger, fp))
 			 return NULL;
 
+		logger->changes++;
 		logger_load(logger, fp);
 		logger_readlogs(logger, fp, filename);
 	} else if ((fp = fopen(bak, "r")) != NULL) {
@@ -534,6 +541,7 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 			if (check_version(logger, fp))
 				 return NULL;
 
+			logger->changes++;
 			logger_load(logger, fp);
 			logger_readlogs(logger, fp, filename);
 		}
@@ -547,12 +555,13 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 			return NULL;
 		}
 		fprintf(fp, "%06d\n\n", logger->version);
+		logger->id ++;
+		fprintf(fp, "%d\n", logger->id);
 	} else {
 		fprintf(fp, "%06d\n\n", logger->version);
+		logger->id ++;
+		fprintf(fp, "%d\n", logger->id);
 	}
-	logger->id ++;
-	fprintf(fp, "%d\n", logger->id);
-
 	fclose(fp);
 	logger->tid = bm_version(logger->bm);
 	return logger;
@@ -562,7 +571,14 @@ logger *
 logger_create(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 {
 	logger *logger = logger_new(debug, logdir, dbname, version, bm);
-	if (logger &&logger_open(logger) == SQL_ERR) {
+	if (logger && logger_open(logger) == SQL_ERR) {
+		logger_destroy(logger);
+
+		return NULL;
+	}
+	if (logger->changes && 
+	    (logger_restart(logger) != SQL_OK ||
+	    logger_cleanup(logger) != SQL_OK)) {
 		logger_destroy(logger);
 
 		return NULL;
