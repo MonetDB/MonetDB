@@ -19,9 +19,9 @@ command bat2.new(h:any$1,t:any$2):bat[:any$1,:any$2] = GDKbatnew;	# 0  dynamic (
 #c:= new(:str,:int);
 #
 function Admin.main():int;	# 0  (main:int)
-    a := bat2.new(:str,:int);	# 1 GDKbatnew (a:bat[:str,:int])<-($2:str)($3:int)
-    b := bat2.new(:str,:int);	# 2 GDKbatnew (b:bat[:str,:int])<-($5:str)($6:int)
-    c := bat2.new(:str,:int);	# 3 GDKbatnew (c:bat[:str,:int])<-($8:str)($9:int)
+    a := bat2.new(:str,:int);	# 1 GDKbatnew unknown (a:bat[:str,:int])<-($2:str)($3:int)
+    b := bat2.new(:str,:int);	# 2 GDKbatnew unknown (b:bat[:str,:int])<-($5:str)($6:int)
+    c := bat2.new(:str,:int);	# 3 GDKbatnew unknown (c:bat[:str,:int])<-($8:str)($9:int)
 end main;	# 4  
 !ERROR: MALexception:Admin.main[1]:address of function missing
 >
