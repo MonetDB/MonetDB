@@ -113,7 +113,8 @@ int print_array(BAT* val,...) {
     int     *maxvector;
     int     *lenvector;
     oid     *arrayindex;
-    int     i,j,c,dims;
+    int     i,dims;
+    size_t  j,c;
     stream  *st     = GDKout;
     int     type_id = BATttype(val);
 

@@ -1848,7 +1848,7 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     } else {
         if (bn->ttype == TYPE_oid) {
   	    /* now check whether we saw any higher bits; if not, its sorted! */
-    	    bn->tsorted = (total_shift >= 30) || (maxbits & 0x3FFFFFFF) < (1 << total_shift);
+		bn->tsorted = (total_shift >= 30) || (maxbits & 0x3FFFFFFF) < ((oid) 1 << total_shift);
 	}
         bn->tsorted |= total_shift << 1; /* set radix bits */
     }
@@ -2014,7 +2014,7 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
     hash_t yy = 0;
     ptr nil = ATOMnilptr(l->ttype);
 
-    if (rhi-rlo > h->lim) { 
+    if ((size_t) (rhi - rlo) > h->lim) { 
 	/* simplistic skew handling by holding on to initial hash mask size */
         h->lim = rhi - rlo;
         h->hash = (hash_t*) GDKrealloc(h->hash, (h->mask+1)*sizeof(hash_t) + h->lim);
@@ -2325,7 +2325,7 @@ parameter is a radix\_count BAT that must have been created with the radix\_coun
     while(lim < lst) {
         lim += mult;
         yy = 0;
-        while(yy < cnt) {
+        while((size_t) yy < cnt) {
             p = src + cnk[yy].cur;
             q = src + cnk[yy].end;
             for (;;) {
@@ -2467,7 +2467,7 @@ price paid are two parameters to radix\_decluster.
 /*	prev = lim; */
         lim += mult;
         yy = 0;
-        while(yy < cnt) {
+        while((size_t) yy < cnt) {
             p = src1 + cnk[yy].cur1;
             q = src1 + cnk[yy].end1;
             r = src2 + cnk[yy].cur2;
@@ -2508,7 +2508,7 @@ price paid are two parameters to radix\_decluster.
 /*	prev = lim; */
         lim += mult;
         yy = 0;
-        while(yy < cnt) {
+        while((size_t) yy < cnt) {
 	    ssize_t nxt = yy;
 	    do { 
 	    ssize_t yyy = nxt;
@@ -2546,7 +2546,7 @@ price paid are two parameters to radix\_decluster.
 /*	prev = lim; */
         lim += mult;
         yy = 0;
-        while(yy < cnt) {
+        while((size_t) yy < cnt) {
             p = src1 + cnk[yy].cur1;
             q = src1 + cnk[yy].end1;
             r = src2 + cnk[yy].cur2;
@@ -2956,7 +2956,7 @@ int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int
 	for(xx=0; xx<=yy; xx++) cluster[xx] = 0;
 	BATloopFast(radix_count, p, q, xx) {
 		int idx = *(int*) BUNhloc(radix_count,p);
-		if (idx < 0 || idx >= yy) {
+		if (idx < 0 || (size_t) idx >= yy) {
 			BBPreclaim(bn);
 			GDKerror("jivejoin0: illegal cluster id %d in %s.\n", idx, BBP_logical(radix_count->batCacheid));
 			return GDK_FAIL;
@@ -3035,7 +3035,7 @@ int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 	for(xx=0; xx<=yy; xx++) cluster[xx] = 0;
 	BATloopFast(radix_count, p, q, xx) {
 		int idx = *(int*) BUNhloc(radix_count,p);
-		if (idx < 0 || idx >= yy) {
+		if (idx < 0 || (size_t) idx >= yy) {
 			BBPreclaim(bn);
 			GDKerror("jivejoin1: illegal cluster id %d in %s.\n", idx, BBP_logical(radix_count->batCacheid));
 			return GDK_FAIL;
@@ -3335,7 +3335,8 @@ int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
 
 int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	ssize_t n, c_cnt = BATcount(c), v_cnt = BATcount(v);
-	int prev_bits = -1, radix_shift, radix_bits = *rb;
+	size_t prev_bits = ~ (size_t) 0;
+	int radix_shift, radix_bits = *rb;
 	int oidhead = (BUNsize(c) != sizeof(oid));
 	ssize_t width = BUNsize(v), i = MAX(1, BATcount(v) - 1);
 	ssize_t vectorsize = *vs, stride = *st;
@@ -3375,14 +3376,14 @@ int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 		/* handle prefetching of the next cluster */
 		if (cur_prefetch) {
 			/* increment concurrent prefetch pointer */
-			size_t prefetch_pos = (i*skiprate) + (1 << radix_shift);
+			size_t prefetch_pos = (size_t) (i * skiprate) + (1 << radix_shift);
 			cur_prefetch = vf + width * prefetch_pos;
 			if (cur_prefetch + n*width*((int) skiprate) > BUNlast(v)) 
 				cur_prefetch = NULL; /* prefetch would cause SEGV */  
 		} else if (stride >= 0) {
 			/* handle sequential prefetching if applicable */
 			if (prev_bits != cur_bits && radix_shift > 3) {
-				size_t length = width*MIN(v_cnt-cur_bits,1<<radix_shift);
+				size_t length = width * MIN(v_cnt - cur_bits, (size_t) 1 << radix_shift);
 				(void) prefetch(length, stride, (dbl*) (vf+cur_bits*width));
 				if (skiprate*width > 128) {
 					(void) prefetch(length, stride, (dbl*) (vf+cur_bits*width));
@@ -3392,21 +3393,21 @@ int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 		/* do the join for this vector */
 		switch(ATOMstorage(v->ttype)){
 		case TYPE_chr: 
-			(void) posjoin_chr(skiprate, (chr*) cur_prefetch, 
+			(void) posjoin_chr((int) skiprate, (chr*) cur_prefetch,
 					   oidhead, n, (chr*) res, pos+(i<<oidhead), (chr*) vf); 
 			break;
 		case TYPE_sht: 
-			(void) posjoin_sht(skiprate, (sht*) cur_prefetch, 
+			(void) posjoin_sht((int) skiprate, (sht*) cur_prefetch,
 					   oidhead, n, (sht*) res, pos+(i<<oidhead), (sht*) vf); 
 			break;
 		case TYPE_int:	
 		case TYPE_flt: 
-			(void) posjoin_int(skiprate, (int*) cur_prefetch, 
+			(void) posjoin_int((int) skiprate, (int*) cur_prefetch,
 				  	   oidhead, n, (int*) res, pos+(i<<oidhead), (int*) vf); 
 			break;
 		case TYPE_lng:	
 		case TYPE_dbl: 
-			(void) posjoin_dbl(skiprate, (dbl*) cur_prefetch, 
+			(void) posjoin_dbl((int) skiprate, (dbl*) cur_prefetch,
 					   oidhead, n, (dbl*) res, pos+(i<<oidhead), (dbl*) vf); 
 			break;
 		default: 

@@ -260,7 +260,7 @@ static int fromstr@1@2(str src, int* len, ptr* dst){
 		r = (int) strlen(src); 
 		v = src;
 	}
-	if (*len < sizeof(@2)) {
+	if (*len < (int) sizeof(@2)) {
 		*(@2**)dst = (@2*) GDKmalloc(*len = sizeof(@2));
 	}
 	if ((p = SORTfnd(b, v)) != NULL) {

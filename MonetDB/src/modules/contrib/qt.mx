@@ -696,7 +696,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
 
   /* Find the starting oid and the number of features in the quad tree */
   _ioid = *(int *)BUNhead(qt_ioffs, BUNfirst(qt_ioffs));
-  if (_ioid != *(int *)BUNhead(qt_inum, BUNfirst(qt_inum)) ||
+  if (_ioid != (oid) *(int *)BUNhead(qt_inum, BUNfirst(qt_inum)) ||
       BATcount(qt_ioffs) != BATcount(qt_inum)) {
     GDKerror("[qt_match]: Inconsistent IOFFS/INUM tables %d %d (head), count %d %d\n",
 	     _ioid, *(int *)BUNhead(qt_inum, BUNfirst(qt_inum)),
@@ -1273,7 +1273,7 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
   bitvector_count(&nbits, bv);
   printf("qt_cross_pre_select: nimages %d\n", nbits);
 
-  if (*cspace != ColorSpace_IR_12 || c->c_cspace != *cspace || 
+  if (*cspace != (int) ColorSpace_IR_12 || (int) c->c_cspace != *cspace || 
       ir_wclusters[0] == NULL) {
 
     printf("qt_cross_pre_select: No cache?\n");
@@ -1373,7 +1373,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
   bitvector_count(&nbits, bv);
   printf("qt_pre_select: nimages %d\n", nbits);
 
-  if (*cspace != ColorSpace_IR_12 || c->c_cspace != *cspace || 
+  if (*cspace != (int) ColorSpace_IR_12 || (int) c->c_cspace != *cspace || 
       ir_wclusters[0] == NULL) {
 
     printf("qt_pre_select: No cache?\n");

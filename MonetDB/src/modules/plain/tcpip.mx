@@ -1372,7 +1372,7 @@ Small BATs are written in one go, large ones in parts.
 	} else if (tpe != TYPE_void) { 
 @- <type>:<name>:<size>
 @c
-	    len = ATOMextern(tpe)?ATOMlen(tpe, val):sizeof(lng);
+	    len = ATOMextern(tpe)?ATOMlen(tpe, val):(int)sizeof(lng);
 	    sprintf(buf, "%s:%s:%d\n", atom_name(tpe), name, len);
 	    hdrlen = strlen(buf);
 

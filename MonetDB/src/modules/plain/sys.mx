@@ -278,10 +278,11 @@ Some explanation of what mem_usage() and vm_usage() display:
 	
     PROC loaded() : void {
         var hidden := monet_mod_nme.semijoin(monet_mod_nme.[startsWith]("_").uselect(true));
-	var mods := monet_mod_nme.kdiff(hidden).access(BAT_WRITE);
-        var disappeared := hidden.reverse.kdiff([+]("_",mods).reverse).reverse;
-	table(1, mods.insert(disappeared).reverse.sort.reverse.col_name("module"), 
-                 monet_mod_cnt.copy.col_name("usage_count"));
+	var mods := monet_mod_use.select(clientid).reverse.histogram;
+        var nmes := mods.mirror.join(monet_mod_nme).kdiff(hidden).access(BAT_WRITE);
+        var disappeared := hidden.reverse.kdiff([+]("_",nmes).reverse).reverse;
+	table(1, nmes.insert(disappeared).reverse.sort.reverse.col_name("module"), 
+                 mods.col_name("usage_count"));
     }
     ADDHELP("loaded", "boncz", "Feb  6 1996", 
 	"list all loaded modules, and the number of active users.", "sys"); 

@@ -91,7 +91,7 @@ int uchr_fromstr(char *uchrStr, int *len, uchr** c) {
 
 	if (!*c){
 		*c = (uchr*)GDKmalloc(sizeof(uchr));
-	} else if (*len < sizeof(uchr)){
+	} else if (*len < (int) sizeof(uchr)){
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(uchr));
 		*len = sizeof(uchr);

@@ -249,7 +249,7 @@ BAT *TBL_mod_hdl = NULL;  /* BAT(oid, ptr): (MID, OS dynlink handle). */
 BAT *TBL_mod_atm = NULL;  /* BAT(oid, str): (MID, atom name). */
 BAT *TBL_mod_acc = NULL;  /* BAT(oid, str): (MID, accelerator name). */
 BAT *TBL_mod_dep = NULL;  /* BAT(oid, str): (MID, depends-of module name). */
-BAT *TBL_mod_use = NULL;  /* BAT(oid, ptr): (which clients use a mod). */
+BAT *TBL_mod_use = NULL;  /* BAT(oid, int): (which clients use a mod). */
 BAT *TBL_mod_load = NULL; /* BAT(oid, str): (MID, mil-script). */
 BAT *TBL_mod_drop = NULL; /* BAT(oid, int): (MID, batid). */
 BAT *TBL_mod_proc = NULL; /* BAT(str, oid): (modname, oid). */
@@ -552,7 +552,8 @@ oid TBL_module_lookup(str module) {
 }
 
 int TBL_M_cinstalled(Client client, oid mid) {
-  return (!!(BUNlocate(BATmirror(TBL_mod_use), &client, &mid)));
+  int cid = client - monet_clients;
+  return (!!(BUNlocate(BATmirror(TBL_mod_use), &cid, &mid)));
 }
 
 #define BATfakeAbort(b)	((b) && ((b)->batInserted = BUNfirst(b)))
@@ -1295,7 +1296,7 @@ Since the BBP will no longer store these tables only creation is needed
         @:TBL_create(mod,acc,oid,str,40,FALSE,FALSE)@
         @:TBL_create(mod,hdl,oid,ptr,40,BOUND2BTRUE,TRUE)@
         @:TBL_create(mod,dep,oid,str,40,FALSE,FALSE)@
-        @:TBL_create(mod,use,oid,ptr,40,FALSE,FALSE)@
+        @:TBL_create(mod,use,oid,int,40,FALSE,FALSE)@
         @:TBL_create(mod,load,oid,str,40,BOUND2BTRUE,FALSE)@
         @:TBL_create(mod,drop,oid,int,40,FALSE,FALSE)@
         @:TBL_create(mod,proc,str,oid,200,FALSE,FALSE)@
@@ -1413,11 +1414,11 @@ int TBL_M_client_install(Client client, oid mid) {
 }
 
 static int countusage(Client client, oid mid) {
-	int xx, yy=0;
+	int xx, yy=0, cid = client - monet_clients;
 	BUN p, q;
 	BATloopFast(TBL_mod_use, p, q, xx) 
 		if (*(oid*)BUNhloc(TBL_mod_use,p) == mid && 
-	    		*(Client*)BUNtloc(TBL_mod_use,p) == client) yy++;
+	    		*(int*)BUNtloc(TBL_mod_use,p) == cid) yy++;
 	return yy;
 }
 
@@ -1442,11 +1443,11 @@ int TBL_M_directloaded(Client client, oid mid, str module) {
 }
 
 static int TBL_M_clientrefs(oid mid, Client c) {
-	int xx, yy=0;
+	int xx, yy=0, cid = c - monet_clients;
 	BUN p, q;
 
 	BATloopFast(TBL_mod_use, p, q, xx)
-		if (*(oid*)BUNhloc(TBL_mod_use,p) == mid && *(Client *) BUNtloc(TBL_mod_use, p) == c)
+		if (*(oid*)BUNhloc(TBL_mod_use,p) == mid && *(int*) BUNtloc(TBL_mod_use, p) == cid)
 			yy++;
 	return yy;
 }
@@ -1469,9 +1470,10 @@ int TBL_M_countref(oid mid) {
 }
 
 int TBL_M_incref(Client client, oid mid) {
+    	int cid = client - monet_clients;
 	int i = TBL_M_countref(mid);
 
-	BUNins(TBL_mod_use, &mid, &client);
+	BUNins(TBL_mod_use, &mid, &cid);
 	i++;
 	BUNreplace(TBL_mod_cnt, &mid, &i);
 	dlFPRINTF(GDKerr, "  TBL_M_incref = %d\n", i);
@@ -1480,12 +1482,13 @@ int TBL_M_incref(Client client, oid mid) {
 }
 
 int TBL_M_decref(Client client, oid mid) {
+    	int cid = client - monet_clients;
 	int i = TBL_M_countref(mid);
 
 	if (i <= 0) {
 		GDKwarning("TBL_M_decref: mod(" SZFMT ") cannot decrease refcnt\n", (size_t) mid);
 	} else {
-		BUN p = BUNlocate(TBL_mod_use, &mid, &client);
+		BUN p = BUNlocate(TBL_mod_use, &mid, &cid);
 		BUNdelete(TBL_mod_use, p);
 		if (--i == 0) {
 			BUNdelHead(TBL_mod_nme, &mid);
@@ -1499,11 +1502,12 @@ int TBL_M_decref(Client client, oid mid) {
 }
 
 void TBL_inc_mod_use(Client client, Client father){
+    	int cid = father - monet_clients;
 	BAT *modules_used;
 	BUN p,q;
 	int xx;
 
-	modules_used = BATselect(TBL_mod_use, &father, &father);
+	modules_used = BATselect(TBL_mod_use, &cid, &cid);
 	BATloopFast(modules_used, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(modules_used,p); 
 	    TBL_M_incref(client, mid);
@@ -1741,9 +1745,10 @@ Look up the module.
 @c
   	mid = TBL_module_lookup(module);
   	if (mid == 0) {
+		int cid = father - monet_clients;
 		snprintf(s, 80, "_%s", module);
   		mid = TBL_module_lookup(s);
-  		if (mid && BUNlocate(TBL_mod_use, &mid, &father)) 
+  		if (mid && BUNlocate(TBL_mod_use, &mid, &cid)) 
 			GDKerror("TBL_unloadmod: module %s does not exist (maybe you mean %s?).\n", module, s); 
 		else
 			GDKerror("TBL_unloadmod: module %s does not exist.\n", module); 
@@ -1754,7 +1759,8 @@ Look up the module.
 Check if it is in use already.
 @c
 	if (level == 0) {
-		r = BUNlocate(TBL_mod_use, &mid, &father);
+		int cid = father - monet_clients;
+		r = BUNlocate(TBL_mod_use, &mid, &cid);
 		if (r == NULL) {
 			GDKerror("TBL_unloadmod: %s was not loaded.\n", module);
 			return unloadmod_exit(0, father, accs, tpes);
@@ -2459,7 +2465,7 @@ void TBL_initclient(Client client, Client father) {
 		    		TBL_incproc(pid);
 			}
 		}
-		if (father)
+		if (father) 
 		    TBL_inc_mod_use(client, father); /* inc mod use counters */
 	} else {
 		client->fcntbl = TBL_create(client, "fcntbl", TBL_SIZE, TYPE_str, TYPE_oid, 0, BOUND2BTRUE);
@@ -2510,7 +2516,7 @@ it will not execute the drop scripts again.
 void TBL_exitclient(Client client) {
 	BAT	*b, *bn;
 	BUN 	p, q, r;
-	int	xx;
+	int	xx, cid = client - monet_clients;
 
 #ifdef MKMODS
 	TEM_exitclient(client);
@@ -2518,11 +2524,11 @@ void TBL_exitclient(Client client) {
 	TBL_M_lock(client);
 
 	/* Unload all loaded modules in reverse loading order. */
-	bn = BATselect(TBL_mod_use, &client, &client);
+	bn = BATselect(TBL_mod_use, &cid, &cid);
 	b = BATrevert(BATsetaccess(BATsort(bn), BAT_WRITE));
 	BATloopFast(b, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(b,p); 
-	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &client)) {
+	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &cid)) {
 	   	str module = BUNtailfnd(char,TBL_mod_nme,r,&mid);
 	    	if (TBL_M_directloaded(client, mid, module))
 		    TBL_unloadmod(client, module, 1);

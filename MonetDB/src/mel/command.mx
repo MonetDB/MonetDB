@@ -212,7 +212,13 @@ static int id_hist[MAX_ID_HIST];
 static int id_size = 0;
 
 static int id_rand(void){
-	int i, r = rand();
+	static int seeded = 0;
+	int i, r;
+	if (!seeded) {
+		srand(time(NULL));
+		seeded = 1;
+	}
+	r = rand();
 	for(i = 0; i < id_size; i++) 
 		if (id_hist[i] == r) {
 			cerr << "src/mel/command.mx:id_rand: found duplicate random number " << r << " => calling srand(time(NULL))!\n";

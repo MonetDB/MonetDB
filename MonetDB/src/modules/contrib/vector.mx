@@ -410,8 +410,10 @@ typedef struct {
 		}
 		if (stream_byteorder(s) != 1234){
 			int i;
-			for (i=0;i<dim;i++) 
-				a->data[i] = convert_@1((@6)a->data[i]);
+			for (i=0;i<dim;i++) {
+				@6 *p = (@6 *) &a->data[i];
+				*p = convert_@1(*p);
+			}
 		}
 	}
 	return a;
@@ -1245,8 +1247,10 @@ dblv.print;
 		int i;
 		size_t j;
 		for (j=0;j<sz;j++) 
-			for (i=0;i<@2;i++) 
-				a->data[i] = convert_@1((@8)a->data[i]);
+			for (i=0;i<@2;i++) {
+				@8 *p = (@8 *) &a->data[i];
+				*p = convert_@1(*p);
+			}
 	}
 	return a;
     }
