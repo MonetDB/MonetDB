@@ -206,7 +206,7 @@ if ( ! -x bootstrap ) then
 		if ( "${COMP}${BITS}" == "GNU64" ) then
 			# our gcc/g++ on apps is in ${soft32} (also for 64 bit)
 			set binpath = "${soft32}/bin:${binpath}"
-			set libpath = "${soft32}/lib:${libpath}"
+			set libpath = "${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
 		endif
 		if ( "${COMP}" == "GNU" ) then
 			# required GNU gcc/g++ options for 32 & 64 bit
