@@ -20,9 +20,9 @@ Over..
 # 17:10:21 >  Mtimeout -timeout 60 sql_client --port=58875  < wisconsin-select.sql
 # 17:10:21 >  
 
-! Stable Output only partly verified so far:
-! - number of output tuples ("rows affected") is correct
-! - further details (actual result data) not checked, yet
+= Stable Output only partly verified so far:
+= - number of output tuples ("rows affected") is correct
+= - further details (actual result data) not checked, yet
 
 954	302	0	2	4	14	54	954	954	954	954	108	109	"SKAAAA"	"QLAAAA"	"OOOOxx"
 3413	303	1	1	3	13	13	413	1413	3413	3413	26	27	"HBAAAA"	"RLAAAA"	"VVVVxx"
