@@ -218,7 +218,6 @@ BAT *BATkunique(BAT *b) {
 	BATkey(BATmirror(bn), b->tkey);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
-	bn->halign = NOID_AGGR(b->halign);
 	if (BATcount(bn)==BATcount(b)) {
 		ALIGNset(bn, b);
 	}
@@ -461,8 +460,6 @@ BAT *BAT@1@2(BAT *l, BAT *r) {
 
 	/* create result BAT */
 	bn = BATnew(BAThtype(l), BATttype(l), MAX(smaller,BATTINY)); 
-        bn->halign = NOID_MULT(l->halign,@3r->halign);
-        bn->talign = NOID_MULT(l->talign,@3r->halign);
 
 	/* fill it */
 	BATins_@1@2(bn, l, r);

@@ -1070,8 +1070,6 @@ BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	if (!(BAThordered(r)&1)) {
 		del = r = BATsort(r);
 	}
-	bn->halign = NOID_MULT(l->halign,r->halign);
-        bn->talign = NOID_MULT(cpy->talign,r->halign);
 
 	switch(ATOMstorage(l->htype)) {
 	case TYPE_chr: @:binsemijoin(loc,chr)@
@@ -1144,8 +1142,6 @@ BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	if (r->hidx_heap == NULL) {
 		BATidx(r, 0);
 	}
-        bn->halign = NOID_MULT(l->halign,r->halign);
-        bn->talign = NOID_MULT(l->talign,r->halign);
 
 	switch(ATOMstorage(l->htype)) {
 	case TYPE_chr: @:idxsemijoin(loc,chr)@
@@ -1303,7 +1299,6 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	/* property propagation */
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = (BAThordered(l)&BAThordered(r)&1)?BATtordered(cpy):0;
-        bn->halign = NOID_MULT(r->halign,l->halign);
 
 	if (BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l);
