@@ -160,7 +160,7 @@ typedef struct resultset_t {
 @c
 #include "resultset.h"
 #include <stream.h>
-#include "../mal/rsbox.h"
+/* #include "../mal/rsbox.h" */
 #include "mal.h"
 #include "mal_exception.h"
 
@@ -168,7 +168,8 @@ typedef struct resultset_t {
 #define throw(X, Y)		return(throwMessage(X, Y));
 #define throwf(X, Y, Z)	return(throwException(MALEXCEPTION, X, Y, Z));
 #define resolveHandle(X, Y)\
-	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp);
+	if ((tmp = NULL) == NULL && (Y = NULL) == NULL) *X = NULL;
+/*	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp); */
 
 /**
  * Helper function that sets a property for a column.  If the
