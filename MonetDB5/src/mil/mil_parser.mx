@@ -319,9 +319,12 @@ str parseMILoperator(Client cntxt){
 }
 int parseMILvariable(Client cntxt,MalBlkPtr currBlk, str nme){
 	/* InstrPtr 	currInstr;*/
-	int varid, i, fnd=0;
+	int varid=0, i, fnd=0;
 
-	varid = fndId(BE(cntxt),nme);
+	if( (i=fndId(BE(cntxt),nme)) ){
+		varid = findVariable(currBlk,nme);
+		if( varid < 0) varid= i;
+	}
 	if( varid > 0)  {
 		setVarUsed(currBlk,varid,TRUE);
 		return varid;
@@ -366,7 +369,7 @@ int parseMILassignment(Client cntxt, MalBlkPtr currBlk, str nme){
 	}
 	currInstr= newInstruction(ASSIGNsymbol);
 	setDestVar(currInstr, varid);
-    setVarInitialized(currBlk,getDestVar(currInstr));
+    setVarInitialized(currBlk,varid);
 	i= parseMILexpr(cntxt,currBlk);
 	pushArgument(currBlk, currInstr, i);
 	pushInstruction(currBlk,currInstr);
@@ -426,14 +429,17 @@ for a function call whose first argument is factored out.
 @c
 int parseMILpathexpr(Client cntxt, MalBlkPtr currBlk, int varid){
 	InstrPtr 	currInstr;
-	int 		i,j,k,len;
+	int 		i,j,k;
 	str			nme;
 
 	advance(cntxt,1);
 	skipSpace(cntxt);
 
-	len= idLength(cntxt);
-	nme= idCopy(cntxt,len);
+	nme= parseMILoperator(cntxt);
+	if(nme == 0) {
+		parseError(cntxt,"<identifier> or <operator> expected\n");
+		return varid;
+	}
 	i = parseMILfunctioncall(cntxt,currBlk,nme);
 	currInstr = currBlk->stmt[currBlk->stop-1];
 
@@ -458,6 +464,15 @@ int parseMILfactor(Client cntxt, MalBlkPtr currBlk){
 	char newname[1024];
 	str nme;
 
+	if( (len = stringLength(cntxt)) ){
+		advance(cntxt,1);
+		nme= cstCopy(cntxt,len-2);
+		advance(cntxt,1);
+		varid = newConstant(currBlk,TYPE_str,nme,FALSE);
+	} else
+	if( ( nme= charCst(cntxt)) ){
+		varid = newConstant(currBlk,TYPE_chr,nme,FALSE);
+	} else
 	if( (len = cstLength(cntxt,&tpe)) >0 ){
 		/* factor */
 		nme= cstCopy(cntxt,len);
@@ -559,10 +574,10 @@ int parseMILexpr(Client cntxt, MalBlkPtr currBlk){
 }
 void parseMILstmtend(Client cntxt, MalBlkPtr currBlk){
 	(void) currBlk;
+	if( currChar(cntxt) ==0) return;
 	if( currChar(cntxt) != ';' && currChar(cntxt) != '}'){
 		parseError(cntxt,"';' expected\n");
-		advance(cntxt,1);
-	}
+	} else advance(cntxt,1);
 }
 void parseMILstmt(Client cntxt, MalBlkPtr currBlk){
 	if( currChar(cntxt) == '{')
@@ -997,7 +1012,7 @@ void parseMILprocdef(Client cntxt, MalBlkPtr currBlk){
 		cntxt->backup = 0;
 	}
 	skipToEnd(cntxt);
-	/* if(cntxt->listing)*/
+	if(cntxt->listing)
 		printFunction(GDKout, currBlk, cntxt->listing);
 	showErrors();
 }
@@ -1033,7 +1048,8 @@ int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 			BE(cntxt)->constantdeclaration = 0;
 		case '\t': case ' ':
 			nextChar(cntxt);
-		case 0: continue;
+		case 0: /* get more input */
+			MALreader(cntxt);
 			continue;
 		case '/':
 			if( keyphrase2(cntxt,"/}")){

@@ -47,31 +47,27 @@ The identifiers form a linear list. The scope list tells for each how
 many variables are introduced, such that trimming the scope list is easy.
 @c
 #include "mal_interpreter.h"
+#include "mal_linker.h"
 #include "mil_parser.h"
 #include "mil_scenario.h"
 
-#define _MIL_SCENARIO_DEBUG
-
-
-static MT_Lock milparseLock;
+/* #define _MIL_SCENARIO_DEBUG*/
 
 str MILinit(Client cntxt){
 #ifdef _MIL_SCENARIO_DEBUG
 	stream_printf(GDKout,"#MILinit MonetDB V5\n");
 #endif
+	/* nothing to be done */
 	(void) cntxt;
-	if( milparseLock == 0)
-		milparseLock = MT_create_lock();
 	return MAL_SUCCEED;
 }
 str MILexit(Client cntxt){
 	(void) cntxt;
+	/* nothing to be done */
 	return MAL_SUCCEED;
 }
 
 str MILinitClient(Client c){
-	(void) c;
-	/* reset parser */
     if (c->yycur) {
         c->fdin->pos += c->yycur;
         c->yycur = 0;
@@ -199,6 +195,13 @@ str MILparser(Client c) {
 #ifdef _MIL_SCENARIO_DEBUG
 	stream_printf(GDKout,"compile:%s\n",CURRENT(c));
 #endif
+	if( be == NULL){
+		/* MIL context not yet initialized, catchup */
+		MILinitClient(c);
+		be= c->state[PARSER];
+		if( be == NULL)
+			GDKfatal("MILparser","internal error\n");
+	}
 	T0 = GDKusec();
 	c->curprg->def->errors = 0;
 	oldstate= *c->curprg->def;
