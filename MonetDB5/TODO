@@ -1,3 +1,26 @@
+-GDK uses too many BATcounts while they are stable 
+- we limit BAT* operation as much as possible to :void headed versions
+- a generic map() operation is added to the interpreter
+- all signatures should make in/out role of parameters explicit to
+facilitate flow analysis
+- BBP should become a fully serialized module, encapsulation with a single lock
+(this calls for check for IO triggered activities inside BBP)
+- All BATs should be considered private unless otherwise marked (add BATshared())
+- we need a small size BAT/HEAP cache to significantly reduce cost for small queries.
+- use a trashcan to reduce the cost of garbage collecting large bats
+- introduce inplace algebraic variants
+
+MIL 5
+property management checked extended met hasnil? nonil?
+enum is replaced by encode/decode and rest by user
+
+MIL 4 'loss' in M5
+- M2mal is only meant to enable transition between systems.
+- generic [m] is depreciated and replaced by map+BAT* modules
+- dynamic typing is gone (e.g. *str() )
+- naming conventions get/set properties
+- [ht]operation convention or operation[ht]_[ht]
+
 MAL language issues
 - the multiplex semantics in M5 is different from M4.
 The role of it should be reconsidered, because it is 
