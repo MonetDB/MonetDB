@@ -32,7 +32,8 @@ if test "x$enable_optim" = xyes; then
     else
       case "$host" in
       i*86-*-*)       CFLAGS="$CFLAGS -O3 -tpp6 -axiMK -unroll -wp_ipo -ipo_obj";;
-      *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
+#      *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
+      *irix6.5*)      CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
                       LDFLAGS="$LDFLAGS -IPA"
                       ;;
       *-sun-solaris*) CFLAGS="$CFLAGS -xO5";;
