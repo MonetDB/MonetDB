@@ -426,7 +426,7 @@ void sqltypeinit()
 	sql_type *ts[100];
 	sql_type **misc, **strings, **numerical, **decimals, **floats, **dates;
 	sql_type **t, *INT, *BIT, *DBL, *STR;
-	sql_type *SEC, *MON, *DTE, *TME, *TMESTAMP;
+	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP;
 
 	misc = t = ts;
 	*t++ = sql_create_type("OID", 0, 0, 2, 	  		"oid");
@@ -489,8 +489,8 @@ void sqltypeinit()
 	*t++ = sql_create_type("REAL",   51, 2, 2, 	"dbl");
 
 	dates = t;
-	MON = *t++ = sql_create_type("MONTH_INTERVAL", 0, 0, 10, 	"int");
-	SEC = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 	"lng");
+	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 0, 0, 10, 	"int");
+	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 	"lng");
 	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, 		"date");
 	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 		"time");
 	*t++ = sql_create_type("DATETIME", 0, 0, 0, 		"datetime");
@@ -614,11 +614,11 @@ void sqltypeinit()
 	sql_create_func( "current_time", "current_time", NULL, NULL, TME, SCALE_NONE );
 	sql_create_func( "current_timestamp", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE );
 
-	sql_create_func( "sql_sub", "date_sub_sec_interval", DTE, SEC, DTE, SCALE_FIX);
-	sql_create_func( "sql_sub", "date_sub_month_interval", DTE, MON, DTE, SCALE_FIX);
+	sql_create_func( "sql_sub", "date_sub_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
+	sql_create_func( "sql_sub", "date_sub_month_interval", DTE, MONINT, DTE, SCALE_FIX);
 
-	sql_create_func( "sql_add", "date_add_sec_interval", DTE, SEC, DTE, SCALE_FIX);
-	sql_create_func( "sql_add", "addmonths", DTE, MON, DTE, SCALE_FIX);
+	sql_create_func( "sql_add", "date_add_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
+	sql_create_func( "sql_add", "addmonths", DTE, MONINT, DTE, SCALE_FIX);
 
 	sql_create_func( ">", ">", DTE, DTE, BIT, SCALE_FIX);
 	sql_create_func( "<", "<", DTE, DTE, BIT, SCALE_FIX);
