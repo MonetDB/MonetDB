@@ -105,6 +105,7 @@ import K,L,M. This can be recognized by inspecting the code produced
 #define MAXTYPEVAR  10
 
 mal_export void chkProgram(Scope s, MalBlkPtr mb);
+mal_export void chkTypes(Scope s, MalBlkPtr mb);
 mal_export void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int silent);
 mal_export InstrPtr dynamicTypeChecker(Scope scope,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export int fcnBinder(Scope scope, MalBlkPtr mb, InstrPtr p);
@@ -804,29 +805,31 @@ should be ignored. This should be separately administered for the flow
 as well, because a dynamically typed instruction should later on not
 lead to a re-check when it was already fully analysed.
 @c
-void chkProgram(Scope s, MalBlkPtr mb)
-{
+void chkTypes(Scope s, MalBlkPtr mb){
 	InstrPtr p=0;
     int i, chk=0;
 
-	if( mb->typefixed == 0)
-		for(i=0;i<mb->stop;i++) {
-			p= getInstrPtr(mb,i);
-			if(p== NULL) continue;
-			if( p->typechk == TYPE_BIND) 
-				fcnBinder(s,mb,p);
-			else /*  not ready if( p->typechk != TYPE_RESOLVED)*/
-				typeChecker(s,mb,p,FALSE);
+	for(i=0;i<mb->stop;i++) {
+		p= getInstrPtr(mb,i);
+		if(p== NULL) continue;
+		if( p->typechk == TYPE_BIND) 
+			fcnBinder(s,mb,p);
+		else /*  not ready if( p->typechk != TYPE_RESOLVED)*/
+			typeChecker(s,mb,p,FALSE);
 
-			if( functionId(p) ){
-				if(p->fcn != NULL && p->typechk== TYPE_RESOLVED) chk++;
-			} else
-			if( p->typechk== TYPE_RESOLVED) chk++;
-		}
+		if( functionId(p) ){
+			if(p->fcn != NULL && p->typechk== TYPE_RESOLVED) chk++;
+		} else
+		if( p->typechk== TYPE_RESOLVED) chk++;
+	}
+}
+void chkProgram(Scope s, MalBlkPtr mb)
+{
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */
-
 /*	if( mb->flowfixed == 0)*/
+
+	chkTypes(s,mb);
 	chkFlow(mb);
 	chkDeclarations(mb,FALSE);
 }
