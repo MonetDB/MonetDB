@@ -1,13 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = ../parser ../../modules/mal ../../mal \
-	../../modules/atoms ../../gdk ../../common ../clients \
-	 $(READLINE_INCS) 
+INCLUDES = $(MONET_INCS) $(READLINE_INCS) 
 
 bin_Msql = {
 	SOURCES = Msql.c comm.c comm.h query.h mem.h \
 		  simple_prompt.c simple_prompt.h
 	WINLIBS = $(SOCKET_LIBS)
-	LIBS = ../../common/libmutils ../../common/libstream \
-		 $(READLINE_LIBS) $(ICONV_LIBS)
+	LIBS = $(MONET_LIBS) -lstream -lmutils $(READLINE_LIBS) $(ICONV_LIBS)
 }
