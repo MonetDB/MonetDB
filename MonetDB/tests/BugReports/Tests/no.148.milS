@@ -158,7 +158,7 @@ module(xtables);
 # - xtable_test(str title, bat x, bat y, bat z)
 #	 major test script on xtable functionality
  
-proc xtable_print() : void {
+proc xtable_print(..any..) : void {
         var histo := $1.histogram;
         printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
                 $2, $1.count, histo.count, $1.batsize);

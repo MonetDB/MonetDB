@@ -168,14 +168,14 @@ module(xtables);
 # - xtable_test(str title, bat x, bat y, bat z)
 #	 major test script on xtable functionality
  
-proc xtable_print := {
+proc xtable_print(..any..) : void {
         var histo := $1.histogram;
         printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
                 $2, $1.count, histo.count, $1.batsize);
         table(histo.col_name("count"), $(3..));
 }
  
-proc xtable_realloc(b,cap) := {
+proc xtable_realloc(bat b,int cap) : bat {
         var inf := b.info;
         var ht := monet_atomtbl.find(inf.find("head"));
         var tt := monet_atomtbl.find(inf.find("tail"));
@@ -186,7 +186,7 @@ proc xtable_realloc(b,cap) := {
         return bn;
 }
  
-proc xtable_test(title, x, y, z) := {
+proc xtable_test(str title, bat x, bat y, bat z) : void {
     printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
                 title, x.count, x.batsize + y.batsize + z.batsize);
     x.col_name("x"); y.col_name("y"); z.col_name("z");
@@ -208,7 +208,7 @@ proc xtable_test(title, x, y, z) := {
     x1yz.xtable_print("CT(x,y,z)", x, y, z);
 }
  
-x := new(oid,chr);
+var x := new(oid,chr);
 x.insert(1@0,'a');
 x.insert(2@0,'a');
 x.insert(3@0,'b');
@@ -218,7 +218,7 @@ x.insert(6@0,'b');
 x.insert(7@0,'c');
 x.insert(8@0,'c');
  
-y:= new(oid,dbl);
+var y:= new(oid,dbl);
 y.insert(1@0,dbl(1.0));
 y.insert(2@0,dbl(3.0));
 y.insert(3@0,dbl(2.0));
@@ -228,7 +228,7 @@ y.insert(6@0,dbl(3.0));
 y.insert(7@0,dbl(1.0));
 y.insert(8@0,dbl(1.0));
  
-z:= new(oid,str);
+var z:= new(oid,str);
 z.insert(1@0,"c");
 z.insert(2@0,"a");
 z.insert(3@0,"b");
