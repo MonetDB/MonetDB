@@ -709,6 +709,7 @@ public class JdbcClient {
 												warn.getMessage());
 											warn = warn.getNextWarning();
 										} while (warn != null);
+										rs.clearWarnings();
 									}
 									rs.close();
 								} else if (aff != -1) {
@@ -732,12 +733,14 @@ public class JdbcClient {
 								System.err.println("Statement warning: " +
 									warn.getMessage());
 								warn = warn.getNextWarning();
+								stmt.clearWarnings();
 							}
 							warn = con.getWarnings();
 							while (warn != null) {
 								System.err.println("Connection warning: " +
 									warn.getMessage());
 								warn = warn.getNextWarning();
+								con.clearWarnings();
 							}
 						} catch (SQLException e) {
 							if (hasFile) {
