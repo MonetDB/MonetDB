@@ -465,6 +465,10 @@ typedef char 		*BUN; 		/* pointer in some heap. */
 typedef	char		long_str[IDLENGTH];/* standard GDK static string */
 typedef	char		short_str[OLDLENGTH];/* old GDK small static string */
 
+#ifndef HAVE_PTRDIFF_T
+typedef int ptrdiff_t;
+#endif
+
 @- Checking and Error definitions:
 @h
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;

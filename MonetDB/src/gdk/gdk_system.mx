@@ -246,10 +246,6 @@ gdk_export size_t _MT_pagesize;
 # include <sys/resource.h>
 #endif
 
-#ifndef HAVE_PTRDIFF_T
-typedef int ptrdiff_t;
-#endif
-
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 
 pthread_mutex_t	MT_firstlock[MAXLOCKS];
