@@ -269,7 +269,7 @@ public class MonetDriver implements Driver {
 	 *
 	 * @param enable true to enable block mode, false to disable it
 	 */
-	static void setBlockMode(boolean enable) {
+	public static void setBlockMode(boolean enable) {
 		blockMode = enable;
 	}
 }

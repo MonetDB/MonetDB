@@ -23,6 +23,7 @@ public class JdbcClient {
 		String port = "45123";
 		String database = "default";
 		String dump = null;
+		String blockmode = null;
 		// we leave checking if this is a valid number to the driver
 
 		// look for a file called .monetdb in the users homedir
@@ -40,6 +41,8 @@ public class JdbcClient {
 				host = prop.getProperty("hostname", host);
 				port = prop.getProperty("port", port);
 				database = prop.getProperty("database", database);
+				blockmode = prop.getProperty("blockmode", blockmode);
+
 			} catch (IOException e) {
 				// ok, then not
 			}
@@ -113,6 +116,10 @@ public class JdbcClient {
 				if (dump.equals("")) dump = null;
 				hasXMLDump = true;
 				hasDump = false;
+			} else if (blockmode == null && args[i].startsWith("-b")) {
+				blockmode = "false";
+			} else if (blockmode == null && args[i].startsWith("-B")) {
+				blockmode = "true";
 			} else if (args[i].equals("--help")) {
 				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user] [-d] [-D [table]]");
 				System.out.println("where arguments may be written directly after the option like -hlocalhost.");
@@ -155,7 +162,12 @@ public class JdbcClient {
 
 		// make sure the driver is loaded
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
+
+		if (blockmode != null) {
+			nl.cwi.monetdb.jdbc.MonetDriver.setBlockMode((Boolean.valueOf(blockmode)).booleanValue());
+		}
 		if (debug) nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
+
 		// request a connection suitable for Monet from the driver manager
 		// note that the database specifier is currently not implemented, for
 		// Monet itself can't access multiple databases.

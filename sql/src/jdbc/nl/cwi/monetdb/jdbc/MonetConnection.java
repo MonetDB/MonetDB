@@ -221,11 +221,9 @@ public class MonetConnection implements Connection {
 	 *
 	 * @throws SQLException if a database access error occurs or this Connection
 	 *         object is in auto-commit mode
-	 * @see setAutoCommit(boolean), getAutoCommit()
+	 * @see setAutoCommit(boolean)
 	 */
 	public void commit() throws SQLException {
-		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
-
 		sendCommit();
 	}
 
@@ -411,7 +409,6 @@ public class MonetConnection implements Connection {
 	 *         transaction
 	 */
 	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself");
 
@@ -430,11 +427,9 @@ public class MonetConnection implements Connection {
 	 *
 	 * @throws SQLException if a database access error occurs or this
 	 *         Connection object is in auto-commit mode
-	 * @see setAutoCommit(boolean), getAutoCommit()
+	 * @see setAutoCommit(boolean)
 	 */
 	public void rollback() throws SQLException {
-		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
-
 		sendRollback();
 	}
 
@@ -449,7 +444,6 @@ public class MonetConnection implements Connection {
 	 *         in auto-commit mode
 	 */
 	public void rollback(Savepoint savepoint) throws SQLException {
-		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself");
 
@@ -503,8 +497,6 @@ public class MonetConnection implements Connection {
 	 *         object is currently in auto-commit mode
 	 */
 	public Savepoint setSavepoint() throws SQLException {
-		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
-
 		// create a new Savepoint object
 		MonetSavepoint sp = new MonetSavepoint();
 		// send the appropriate query string to the database
@@ -525,8 +517,6 @@ public class MonetConnection implements Connection {
 	 *         object is currently in auto-commit mode
 	 */
 	public Savepoint setSavepoint(String name) throws SQLException {
-		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
-
 		// create a new Savepoint object
 		MonetSavepoint sp;
 		try {
