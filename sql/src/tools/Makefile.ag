@@ -1,6 +1,8 @@
 
 MTSAFE
-INCLUDES = -I$(MONET_PREFIX)/include -I$(MONET_PREFIX)/include/gdk -I$(MONET_PREFIX)/include/monet $(PTHREAD_INCS) 
+INCLUDES = -I$(MONET_PREFIX)/include -I$(MONET_PREFIX)/include/gdk \
+	   -I$(MONET_PREFIX)/include/monet -I$(MONET_PREFIX)/include/common \
+	   $(PTHREAD_INCS) 
 
 CXXFLAGS = $(CFLAGS)
 
