@@ -58,22 +58,22 @@ SELECT * INTO :ka FROM test WHERE a IS NOT NULL;
 */
 create table people
 (
-        first_name      varchar,
-        last_name       varchar,
-	pc		varchar,
+        first_name      varchar(30),
+        last_name       varchar(30),
+	pc		varchar(8),
 	street_nr	int,
 	bank_nr		int
 );
 create table address
 (
-	place		varchar,
+	place		varchar(30),
 	street_nr	int,
-	pc		varchar
+	pc		varchar(8)
 );
 create table account
 (
 	bank_nr		int,
-	account_nr	varchar,
+	account_nr	varchar(30),
 	saldo		int
 );
 INSERT INTO people ( last_name, first_name, pc, street_nr, bank_nr ) VALUES ( 'nes', 'niels', '1628VT', 162, 0 );

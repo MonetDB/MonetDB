@@ -55,14 +55,14 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	/* for now return dummy result set */
 	return SQLExecDirect_(stmt,
 			      (SQLCHAR *) "select "
-			      "cast('' as varchar) as table_cat, "
-			      "cast('' as varchar) as table_schem, "
-			      "cast('' as varchar) as table_name, "
-			      "cast('' as varchar) as column_name, "
-			      "cast('' as varchar) as grantor, "
-			      "cast('' as varchar) as grantee, "
-			      "cast('' as varchar) as privilege, "
-			      "cast('' as varchar) as is_grantable "
+			      "cast('' as varchar(1)) as table_cat, "
+			      "cast('' as varchar(1)) as table_schem, "
+			      "cast('' as varchar(1)) as table_name, "
+			      "cast('' as varchar(1)) as column_name, "
+			      "cast('' as varchar(1)) as grantor, "
+			      "cast('' as varchar(1)) as grantee, "
+			      "cast('' as varchar(1)) as privilege, "
+			      "cast('' as varchar(1)) as is_grantable "
 			      "where 0 = 1", SQL_NTS);
 }
 

@@ -1,16 +1,16 @@
-select 	cast(null as varchar) as table_cat, 
-	cast(s.name as varchar) as table_schem, 
-	cast(t.name as varchar) as table_name, 
+select 	cast(null as clob) as table_cat, 
+	cast(s.name as clob) as table_schem, 
+	cast(t.name as clob) as table_name, 
 	case when k.name is null then cast(1 as smallint) else cast(0 as smallint) end as non_unique,
-	cast(null as varchar) as index_qualifier, 
-	cast(i.name as varchar) as index_name, 
+	cast(null as clob) as index_qualifier, 
+	cast(i.name as clob) as index_name, 
 	case i.type when 0 then cast(2 as smallint) else cast(3 as smallint) end as type, 
 	cast(kc.nr as smallint) as ordinal_position,
-	cast(c.name as varchar) as column_name, 
+	cast(c.name as clob) as column_name, 
 	cast(null as char(1)) as asc_or_desc, 
 	cast(null as integer) as cardinality, 
 	cast(null as integer) as pages, 
-	cast(null as varchar) as filter_condition 
+	cast(null as clob) as filter_condition 
 
 from 	sys.idxs i, 
 	sys.schemas s, 

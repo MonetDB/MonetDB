@@ -1,4 +1,4 @@
-create table a ( id integer, var1 varchar, var2 varchar, var3 integer, var4 varchar );
+create table a ( id integer, var1 clob, var2 clob, var3 integer, var4 clob );
 
 INSERT INTO a (id, var1, var2, var3, var4) VALUES (1, 'aaaa',
 'Bibliotheek 21 Nederlandse Bibliotheek Inhoud Introductie Hoe kunt u de

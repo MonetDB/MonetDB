@@ -1567,16 +1567,20 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 		res_col *c = t->cols+i;
 
 		if (c->type->type->localtype == TYPE_str) {
-			count = 0;
-			if (c->b) {
-				BAT *b = BATdescriptor(c->b);
-			
-				count = bat_max_length(b);
-				BBPunfix(b->batCacheid);
+			if (strcmp(c->type->type->sqlname, "char") == 0) {
+				ok = (stream_printf(s, SZFMT, c->type->digits) >= 0);
 			} else {
-				count = strlen((char*)c->p);
+				count = 0;
+				if (c->b) {
+					BAT *b = BATdescriptor(c->b);
+				
+					count = bat_max_length(b);
+					BBPunfix(b->batCacheid);
+				} else {
+					count = strlen((char*)c->p);
+				}
+				ok = (stream_printf(s, SZFMT, count) >= 0);
 			}
-			ok = (stream_printf(s, SZFMT, count) >= 0);
 		/* the following three could be done once by taking the
 		   max value and calculating the number of digits from that
 		   value, instead of the maximum values taken now, which

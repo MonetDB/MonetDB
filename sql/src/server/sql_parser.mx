@@ -329,6 +329,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	type_alias
 	opt_schema
 	opt_passwd
+	varchar
+	clob
 
 %type <l>
 	object_privileges
@@ -425,7 +427,6 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_grant_for
 
 	opt_asc_desc
-	opt_var
 	tz
 
 %right <sval> STRING
@@ -434,7 +435,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %token <sval> 
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
-	CHARACTER VARYING sqlDECIMAL sqlFLOAT 
+	CHARACTER VARCHAR CLOB VARYING LARGE OBJECT sqlDECIMAL sqlFLOAT 
 	SMALLINT MEDIUMINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
@@ -2678,12 +2679,26 @@ posint:
 	;
 
 data_type:
-    CHARACTER opt_var	{ $$ = sql_bind_subtype("varchar", 0, 0); }
- |  CHARACTER opt_var '(' nonzero ')'	
-			{ if ($2)
-				$$ = sql_bind_subtype("varchar", $4, 0); 
-			  else
-				$$ = sql_bind_subtype("char", $4, 0); 
+    CHARACTER
+			{ $$ = sql_bind_subtype("char", 1, 0); }
+ |  varchar
+			{ $$ = NULL;
+			  yyerror("CHARACTER VARYING needs a mandatory length specification");
+			  YYABORT;
+			}
+ |  clob	{ $$ = sql_bind_subtype("clob", 0, 0); }
+ |  CHARACTER '(' nonzero ')'	
+			{ $$ = sql_bind_subtype("char", $3, 0); }
+ |  varchar '(' nonzero ')'
+			{ $$ = sql_bind_subtype("varchar", $3, 0); }
+ |  clob '(' nonzero ')'
+			{ $$ = sql_bind_subtype("clob", $3, 0);
+			  /* NOTE: CLOB may be called as CLOB(2K) which is equivalent
+			   *       to CLOB(2048).  Due to 'nonzero' it is not possible
+			   *       to enter this as the parser rejects it.  However it
+			   *       might be a ToDo for the future.
+			   *       See p. 125 SQL-99
+			   */
 			}
  |  SMALLINT	{ $$ = sql_bind_subtype("smallint", 0, 0); }
  |  sqlINTEGER	{ $$ = sql_bind_subtype("int", 0, 0); }
@@ -2746,19 +2761,19 @@ data_type:
  | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
  | aTYPE '(' nonzero ')'
 				{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
- | type_alias opt_var	{ $$ = sql_bind_subtype($1, 0, 0); }
- | type_alias opt_var '(' nonzero ')'
-			{ $$ = sql_bind_subtype($1, $4, 0); }
- | type_alias opt_var '(' intval ',' intval ')'
-			{ if ($6 >= $4) {
+ | type_alias { $$ = sql_bind_subtype($1, 0, 0); }
+ | type_alias '(' nonzero ')'
+			{ $$ = sql_bind_subtype($1, $3, 0); }
+ | type_alias '(' intval ',' intval ')'
+			{ if ($5 >= $3) {
 				char buf[BUFSIZ]; 
 
-				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $6, $4);
+				snprintf(buf, BUFSIZ, "Precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
 			  } else {
-			 	$$ = sql_bind_subtype($1, $4, $6); 
+			 	$$ = sql_bind_subtype($1, $3, $5); 
 			  }
 			}
  | IDENT		{ mvc *m = (mvc*)parm;
@@ -2812,10 +2827,15 @@ type_alias:
 	}
  ;
 
-opt_var:
-	/* empty */	{ $$ = 0; }
- | VARYING		{ $$ = 1; }
- ;
+varchar:
+	VARCHAR					{ $$ = $1; }
+ |	CHARACTER VARYING		{ $$ = $1; }
+;
+
+clob:
+	CLOB					{ $$ = $1; }
+ |	CHARACTER LARGE OBJECT	{ $$ = $1; }
+;
 
 column:			ident ;
 

@@ -117,9 +117,9 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 		strcpy(query_end,
 		       "select "
 		       "cast(1 as smallint) as scope, "
-		       "cast(c.\"name\" as varchar) as column_name, "
+		       "c.\"name\" as column_name, "
 		       "cast(c.\"type\" as smallint) as data_type, "
-		       "cast(c.\"type\" as varchar) as type_name, "
+		       "c.\"type\" as type_name, "
 		       "cast(c.\"type_digits\" as integer) as column_size, "
 		       "cast(0 as integer) as buffer_length, "
 		       "cast(c.\"type_scale\" as smallint) as decimal_digits, "
@@ -174,9 +174,9 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 		strcpy(query_end,
 		       "select "
 		       "cast(null as smallint) as scope, "
-		       "cast('' as varchar) as column_name, "
+		       "cast('' as varchar(1)) as column_name, "
 		       "cast(1 as smallint) as data_type, "
-		       "cast('char' as varchar) as type_name, "
+		       "cast('char' as varchar(4)) as type_name, "
 		       "cast(1 as integer) as column_size, "
 		       "cast(1 as integer) as buffer_length, "
 		       "cast(0 as smallint) as decimal_digits, "

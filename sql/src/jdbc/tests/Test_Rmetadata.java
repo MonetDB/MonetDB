@@ -33,12 +33,12 @@ public class Test_Rmetadata {
 		System.out.println("0. false\t" + con.getAutoCommit());
 
 		try {
-			stmt.executeUpdate("CREATE TABLE table_Test_Rmetadata ( myint int, mydouble double, mybool boolean, myvarchar varchar )");
+			stmt.executeUpdate("CREATE TABLE table_Test_Rmetadata ( myint int, mydouble double, mybool boolean, myvarchar varchar(15), myclob clob )");
 
 			// all NULLs
-			stmt.executeUpdate("INSERT INTO table_Test_Rmetadata VALUES (NULL, NULL,            NULL,           NULL)");
+			stmt.executeUpdate("INSERT INTO table_Test_Rmetadata VALUES (NULL, NULL,            NULL,           NULL,                  NULL)");
 			// all filled in
-			stmt.executeUpdate("INSERT INTO table_Test_Rmetadata VALUES (2   , 3.0,             true,           'A string')");
+			stmt.executeUpdate("INSERT INTO table_Test_Rmetadata VALUES (2   , 3.0,             true,           'A string',            'bla bla bla')");
 
 			rs = stmt.executeQuery("SELECT * FROM table_Test_Rmetadata");
 			rsmd = rs.getMetaData();

@@ -840,13 +840,9 @@ void sqltypeinit()
 	/**t++ = sql_create_type("UBYTE", 2, 0, 2, 1,		"uchr");*/
 
 	strings = t;
-	T = *t++ = sql_create_type("CHAR", 	0, 0, 0, 1, 	"str");
-	sql_create_alias(T->sqlname, "CHARACTER");
+	T = *t++ = sql_create_type("CHAR",	 	0, 0, 0, 1, 	"str");
 	T = *t++ = sql_create_type("VARCHAR", 	0, 0, 0, 0, 	"str");
-	sql_create_alias(T->sqlname, "TEXT");
-	sql_create_alias(T->sqlname, "TINYTEXT");
-	sql_create_alias(T->sqlname, "STRING");
-	sql_create_alias(T->sqlname, "CLOB");
+	T = *t++ = sql_create_type("CLOB",		0, 0, 0, 0, 	"str");
 
 	/* Following types are translated by the parser
 	   INT(n) n <= 2 <- TINYINT

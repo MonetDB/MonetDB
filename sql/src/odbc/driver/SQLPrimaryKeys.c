@@ -70,12 +70,12 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	 */
 	strcpy(query_end,
 	       "select "
-	       "cast(null as varchar) as table_cat, "
-	       "cast(s.\"name\" as varchar) as table_schem, "
-	       "cast(t.\"name\" as varchar) as table_name, "
-	       "cast(kc.\"column\" as varchar) as column_name, "
+	       "cast(null as varchar(1)) as table_cat, "
+	       "s.\"name\" as table_schem, "
+	       "t.\"name\" as table_name, "
+	       "kc.\"column\" as column_name, "
 	       "cast(kc.\"nr\" + 1 as smallint) as key_seq, "
-	       "cast(k.\"name\" as varchar) as pk_name "
+	       "k.\"name\" as pk_name "
 	       "from sys.\"schemas\" s, sys.\"tables\" t, "
 	       "sys.\"keys\" k, sys.\"keycolumns\" kc "
 	       "where k.\"id\" = kc.\"id\" and "

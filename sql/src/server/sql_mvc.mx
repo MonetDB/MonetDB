@@ -315,7 +315,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 
 	schema = _strdup(m->trans->schema->base.name);
 	if (m->status < 0) {
-		GDKerror("Cannot commit this transaction will abort instead");
+		GDKerror("COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -339,7 +339,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		tr = sql_trans_destroy(tr);
 	}
 	if (ok != SQL_OK) {
-		GDKerror("Cannot commit this transaction will abort instead");
+		GDKerror("COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -367,7 +367,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 			GDKfatal("Your disk seems to be full, exiting ...");
 	} else {
 		store_unlock();
-		GDKerror("Cannot commit this transaction because of concurency conflicts will abort instead");
+		GDKerror("COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}

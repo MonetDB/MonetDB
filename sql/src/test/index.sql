@@ -1,8 +1,8 @@
 create table people
 (
-        first_name      varchar,
-        last_name       varchar,
-	pc		varchar,
+        first_name      varchar(30),
+        last_name       varchar(30),
+	pc		varchar(8),
 	street_nr	int,
 	bank_nr		int
 );
@@ -10,14 +10,14 @@ create index names on people ( last_name, first_name );
 
 create table address
 (
-	place		varchar,
+	place		varchar(30),
 	street_nr	int,
-	pc		varchar
+	pc		varchar(8)
 );
 create table account
 (
 	bank_nr		int,
-	account_nr	varchar,
+	account_nr	varchar(10),
 	saldo		int
 );
 

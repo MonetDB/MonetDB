@@ -63,36 +63,36 @@ SQLTables_(ODBCStmt *stmt,
 		/* Note: Catalogs are not supported so the result set
 		   will be empty. */
 		query = strdup("select "
-			       "cast('' as varchar) as table_cat, "
-			       "cast('' as varchar) as table_schem, "
-			       "cast('' as varchar) as table_name, "
-			       "cast('' as varchar) as table_type, "
-			       "cast('' as varchar) as remarks "
+			       "cast('' as varchar(1)) as table_cat, "
+			       "cast('' as varchar(1)) as table_schem, "
+			       "cast('' as varchar(1)) as table_name, "
+			       "cast('' as varchar(1)) as table_type, "
+			       "cast('' as varchar(1)) as remarks "
 			       "where 0 = 1");
 	} else if (nCatalogNameLength == 0 && nTableNameLength == 0 &&
 		   szSchemaName && 
 		   strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
-		query = strdup("select cast(null as varchar) as table_cat, "
+		query = strdup("select cast(null as varchar(1)) as table_cat, "
 			       "name as table_schem, "
-			       "cast('' as varchar) as table_name, "
-			       "cast('' as varchar) as table_type, "
-			       "cast('' as varchar) as remarks "
+			       "cast('' as varchar(1)) as table_name, "
+			       "cast('' as varchar(1)) as table_type, "
+			       "cast('' as varchar(1)) as remarks "
 			       "from sys.\"schemas\" order by table_schem");
 	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 &&
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
 		query = strdup("select distinct "
-			       "cast(null as varchar) as table_cat, "
-			       "cast('' as varchar) as table_schem, "
-			       "cast('' as varchar) as table_name, "
-			       "case when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
-			       "when t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
-			       "when t.\"istable\" = false then cast('VIEW' as varchar) "
-			       "when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
-			       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
-			       "cast('' as varchar) as remarks "
+			       "cast(null as varchar(1)) as table_cat, "
+			       "cast('' as varchar(1)) as table_schem, "
+			       "cast('' as varchar(1)) as table_name, "
+			       "case when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
+			       "when t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
+			       "when t.\"istable\" = false then cast('VIEW' as varchar(20)) "
+			       "when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
+			       "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
+			       "cast('' as varchar(1)) as remarks "
 			       "from sys.\"tables\" t order by table_type");
 	} else {
 		/* no special case argument values */
@@ -107,15 +107,15 @@ SQLTables_(ODBCStmt *stmt,
 
 		strcpy(query_end,
 		       "select "
-		       "cast(null as varchar) as table_cat, "
-		       "cast(s.\"name\" as varchar) as table_schem, "
-		       "cast(t.\"name\" as varchar) as table_name, "
-		       "case when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
-		       "when t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
-		       "when t.\"istable\" = false then cast('VIEW' as varchar) "
-		       "when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
-		       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
-		       "cast('' as varchar) as remarks "
+		       "cast(null as varchar(1)) as table_cat, "
+		       "s.\"name\" as table_schem, "
+		       "t.\"name\" as table_name, "
+		       "case when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
+		       "when t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
+		       "when t.\"istable\" = false then cast('VIEW' as varchar(20)) "
+		       "when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
+		       "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
+		       "cast('' as varchar(1)) as remarks "
 		       "from sys.\"schemas\" s, sys.\"tables\" t "
 		       "where s.\"id\" = t.\"schema_id\"");
 		query_end += strlen(query_end);

@@ -2,7 +2,7 @@ START TRANSACTION;
 
 -- create our table to test with
 CREATE TABLE like_test (
-	str varchar
+	str varchar(20)
 );
 
 -- insert some dull values

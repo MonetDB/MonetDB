@@ -1302,11 +1302,11 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	) throws SQLException
 	{
 		String query =
-			"SELECT cast(null AS varchar) AS \"PROCEDURE_CAT\", " +
-				"cast(null AS varchar) AS \"PROCEDURE_SCHEM\", " +
-				"'' AS \"PROCEDURE_NAME\", cast(null AS varchar) AS \"Field4\", " +
-				"cast(null AS varchar) AS \"Field5\", " +
-				"cast(null AS varchar) AS \"Field6\", " +
+			"SELECT cast(null AS varchar(1)) AS \"PROCEDURE_CAT\", " +
+				"cast(null AS varchar(1)) AS \"PROCEDURE_SCHEM\", " +
+				"'' AS \"PROCEDURE_NAME\", cast(null AS varchar(1)) AS \"Field4\", " +
+				"cast(null AS varchar(1)) AS \"Field5\", " +
+				"cast(null AS varchar(1)) AS \"Field6\", " +
 				"'' AS \"REMARKS\", cast(0 AS smallint) AS \"PROCEDURE_TYPE\" " +
 			"WHERE 1 = 0";
 
@@ -1367,8 +1367,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	) throws SQLException
 	{
 		String query =
-			"SELECT cast(null AS varchar) AS \"PROCEDURE_CAT\", " +
-				"cast(null AS varchar) AS \"PROCEDURE_SCHEM\", " +
+			"SELECT cast(null AS varchar(1)) AS \"PROCEDURE_CAT\", " +
+				"cast(null AS varchar(1)) AS \"PROCEDURE_SCHEM\", " +
 				"'' AS \"PROCEDURE_NAME\", '' AS \"COLUMN_NAME\", " +
 				"cast(0 AS smallint) AS \"COLUMN_TYPE\", " +
 				"cast(0 AS smallint) AS \"DATA_TYPE\", " +
@@ -1657,39 +1657,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String query =
 			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", \"columns\".\"name\" AS \"COLUMN_NAME\", " +
-			"cast(CASE \"columns\".\"type\" " +
-				"WHEN 'table' THEN " + Types.ARRAY + " " +
-				"WHEN 'boolean' THEN " + Types.BOOLEAN + " " +
-				"WHEN 'bool' THEN " + Types.BOOLEAN + " " +
-				"WHEN 'ubyte' THEN " + Types.CHAR + " " +
-				"WHEN 'char' THEN " + Types.CHAR + " " +
-				"WHEN 'character' THEN " + Types.CHAR + " " +
-				"WHEN 'varchar' THEN " + Types.VARCHAR + " " +
-				"WHEN 'text' THEN " + Types.LONGVARCHAR + " " +
-				"WHEN 'tinytext' THEN " + Types.LONGVARCHAR + " " +
-				"WHEN 'string' THEN " + Types.LONGVARCHAR + " " +
-				"WHEN 'tinyint' THEN " + Types.TINYINT + " " +
-				"WHEN 'smallint' THEN " + Types.SMALLINT + " " +
-				"WHEN 'mediumint' THEN " + Types.INTEGER + " " +
-				"WHEN 'oid' THEN " + Types.OTHER + " " +
-				"WHEN 'int' THEN " + Types.INTEGER + " " +
-				"WHEN 'integer' THEN " + Types.INTEGER + " " +
-				"WHEN 'bigint' THEN " + Types.BIGINT + " " +
-				"WHEN 'number' THEN " + Types.INTEGER + " " +
-				"WHEN 'decimal' THEN " + Types.DECIMAL + " " +
-				"WHEN 'numeric' THEN " + Types.NUMERIC + " " +
-				"WHEN 'float' THEN " + Types.FLOAT + " " +
-				"WHEN 'double' THEN " + Types.DOUBLE + " " +
-				"WHEN 'real' THEN " + Types.DOUBLE + " " +
-				"WHEN 'month_interval' THEN " + Types.INTEGER + " " +
-				"WHEN 'sec_interval' THEN " + Types.BIGINT + " " +
-				"WHEN 'date' THEN " + Types.DATE + " " +
-				"WHEN 'time' THEN " + Types.TIME + " " +
-				"WHEN 'datetime' THEN " + Types.TIMESTAMP + " " +
-				"WHEN 'timestamp' THEN " + Types.TIMESTAMP + " " +
-				"WHEN 'blob' THEN " + Types.BLOB + " " +
-				"ELSE " + Types.OTHER + " " +
-			"END AS smallint) AS \"DATA_TYPE\", " +
+			"cast(" + MonetDriver.getSQLTypeMap("\"columns\".\"type\"") + " " +
+			"AS smallint) AS \"DATA_TYPE\", " +
 			"\"columns\".\"type\" AS \"TYPE_NAME\", " +
 			"\"columns\".\"type_digits\" AS \"COLUMN_SIZE\", " +
 			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", 0 AS \"BUFFER_LENGTH\", " +
@@ -1697,17 +1666,17 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"cast(CASE \"null\" " +
 				"WHEN true THEN " + ResultSetMetaData.columnNullable + " " +
 				"WHEN false THEN " + ResultSetMetaData.columnNoNulls + " " +
-			"END AS int) AS \"NULLABLE\", cast(null AS varchar) AS \"REMARKS\", " +
+			"END AS int) AS \"NULLABLE\", cast(null AS varchar(1)) AS \"REMARKS\", " +
 			"\"columns\".\"default\" AS \"COLUMN_DEF\", 0 AS \"SQL_DATA_TYPE\", " +
 			"0 AS \"SQL_DATETIME_SUB\", 0 AS \"CHAR_OCTET_LENGTH\", " +
 			"\"columns\".\"number\" + 1 AS \"ORDINAL_POSITION\", " +
-			"cast(null AS varchar) AS \"SCOPE_CATALOG\", " +
-			"cast(null AS varchar) AS \"SCOPE_SCHEMA\", " +
-			"cast(null AS varchar) AS \"SCOPE_TABLE\", " +
+			"cast(null AS varchar(1)) AS \"SCOPE_CATALOG\", " +
+			"cast(null AS varchar(1)) AS \"SCOPE_SCHEMA\", " +
+			"cast(null AS varchar(1)) AS \"SCOPE_TABLE\", " +
 			"cast(" + ((MonetDriver)driver).getJavaType("other") + " AS smallint) AS \"SOURCE_DATA_TYPE\", " +
 			"CASE \"null\" " +
-				"WHEN true THEN CAST ('YES' AS varchar) " +
-				"WHEN false THEN CAST ('NO' AS varchar) " +
+				"WHEN true THEN CAST ('YES' AS varchar(3)) " +
+				"WHEN false THEN CAST ('NO' AS varchar(3)) " +
 			"END AS \"IS_NULLABLE\" " +
 				"FROM \"sys\".\"columns\" AS \"columns\", " +
 					"\"sys\".\"tables\" AS \"tables\", " +
@@ -1775,16 +1744,16 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"\"grantors\".\"name\" AS \"GRANTOR\", " +
 			"\"grantees\".\"name\" AS \"GRANTEE\", " +
 			"CASE \"privileges\".\"privileges\" " +
-				"WHEN 1 THEN cast('SELECT' AS varchar) " +
-				"WHEN 2 THEN cast('UPDATE' AS varchar) " +
-				"WHEN 4 THEN cast('INSERT' AS varchar) " +
-				"WHEN 8 THEN cast('DELETE' AS varchar) " +
-				"WHEN 16 THEN cast('EXECUTE' AS varchar) " +
-				"WHEN 32 THEN cast('GRANT' AS varchar) " +
+				"WHEN 1 THEN cast('SELECT' AS varchar(7)) " +
+				"WHEN 2 THEN cast('UPDATE' AS varchar(7)) " +
+				"WHEN 4 THEN cast('INSERT' AS varchar(7)) " +
+				"WHEN 8 THEN cast('DELETE' AS varchar(7)) " +
+				"WHEN 16 THEN cast('EXECUTE' AS varchar(7)) " +
+				"WHEN 32 THEN cast('GRANT' AS varchar(7)) " +
 			"END AS \"PRIVILEGE\", " +
 			"CASE \"privileges\".\"grantable\" " +
-				"WHEN 0 THEN cast('NO' AS varchar) " +
-				"WHEN 1 THEN cast('YES' AS varchar) " +
+				"WHEN 0 THEN cast('NO' AS varchar(3)) " +
+				"WHEN 1 THEN cast('YES' AS varchar(3)) " +
 			"END AS \"IS_GRANTABLE\" " +
 		"FROM \"sys\".\"privileges\" AS \"privileges\", " +
 			"\"sys\".\"tables\" AS \"tables\", " +
@@ -1856,16 +1825,16 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"\"grantors\".\"name\" AS \"GRANTOR\", " +
 			"\"grantees\".\"name\" AS \"GRANTEE\", " +
 			"CASE \"privileges\".\"privileges\" " +
-				"WHEN 1 THEN cast('SELECT' AS varchar) " +
-				"WHEN 2 THEN cast('UPDATE' AS varchar) " +
-				"WHEN 4 THEN cast('INSERT' AS varchar) " +
-				"WHEN 8 THEN cast('DELETE' AS varchar) " +
-				"WHEN 16 THEN cast('EXECUTE' AS varchar) " +
-				"WHEN 32 THEN cast('GRANT' AS varchar) " +
+				"WHEN 1 THEN cast('SELECT' AS varchar(7)) " +
+				"WHEN 2 THEN cast('UPDATE' AS varchar(7)) " +
+				"WHEN 4 THEN cast('INSERT' AS varchar(7)) " +
+				"WHEN 8 THEN cast('DELETE' AS varchar(7)) " +
+				"WHEN 16 THEN cast('EXECUTE' AS varchar(7)) " +
+				"WHEN 32 THEN cast('GRANT' AS varchar(7)) " +
 			"END AS \"PRIVILEGE\", " +
 			"CASE \"privileges\".\"grantable\" " +
-				"WHEN 0 THEN cast('NO' AS varchar) " +
-				"WHEN 1 THEN cast('YES' AS varchar) " +
+				"WHEN 0 THEN cast('NO' AS varchar(3)) " +
+				"WHEN 1 THEN cast('YES' AS varchar(3)) " +
 			"END AS \"IS_GRANTABLE\" " +
 		"FROM \"sys\".\"privileges\" AS \"privileges\", " +
 			"\"sys\".\"tables\" AS \"tables\", " +
@@ -1967,8 +1936,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		};
 
 		String types[] = {
-			"mediumint", "varchar", "mediumint", "varchar", "mediumint",
-			"mediumint", "mediumint", "mediumint"
+			"int", "varchar", "int", "varchar", "int",
+			"int", "int", "int"
 		};
 
 		String[][] results;
@@ -2042,8 +2011,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		};
 
 		String types[] = {
-			"mediumint", "varchar", "mediumint", "varchar", "mediumint",
-			"mediumint", "mediumint", "mediumint"
+			"int", "varchar", "int", "varchar", "int",
+			"int", "int", "int"
 		};
 
 		String[][] results = new String[0][columns.length];
@@ -2083,7 +2052,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	) throws SQLException
 	{
 		String query =
-		"SELECT cast(null AS varchar) AS \"TABLE_CAT\", " +
+		"SELECT cast(null AS varchar(1)) AS \"TABLE_CAT\", " +
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
 			"\"keycolumns\".\"column\" AS \"COLUMN_NAME\", " +
@@ -2408,67 +2377,47 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws Exception if the developer made a Boo-Boo
 	 */
 	public ResultSet getTypeInfo() throws SQLException {
-		String columns[] = {
-			"TYPE_NAME", "DATA_TYPE", "PRECISION", "LITERAL_PREFIX",
-			"LITERAL_SUFFIX", "CREATE_PARAMS", "NULLABLE", "CASE_SENSITIVE",
-			"SEARCHABLE", "UNSIGNED_ATTRIBUTE", "FIXED_PREC_SCALE", "AUTO_INCREMENT",
-			"LOCAL_TYPE_NAME", "MINIMUM_SCALE", "MAXIMUM_SCALE", "SQL_DATA_TYPE",
-			"SQL_DATETIME_SUB", "NUM_PREC_RADIX"
-		};
-
-		String types[] = {
-			"varchar", "mediumint", "mediumint", "varchar", "varchar",
-			"varchar", "tinyint", "boolean", "tinyint", "boolean",
-			"boolean", "boolean", "varchar", "tinyint", "tinyint",
-			"mediumint", "mediumint", "mediumint"
-		};
-
-		String results[][] = {
-		//	type_name     data_type         prec.   pre  suff  crte  nullable                            casesns  searchable                            unsign fixprec  autoinc   name    min  max  sql  sql radix
-			{"table",     "" + Types.ARRAY,   "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", "bat",  "0", "0", "0", "0",  "0"},
-			{"boolean",   "" + Types.BOOLEAN, "1", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "bit",  "0", "0", "0", "0",  "2"},
-			{"bool",      "" + Types.BOOLEAN, "1", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "bit",  "0", "0", "0", "0",  "2"},
-			{"blob",      "" + Types.BLOB,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", "blob", "0", "0", "0", "0",  "0"},
-			{"char",      "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
-			{"character", "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
-			{"ubyte",     "" + Types.CHAR,    "2", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", "uchr", "0", "0", "0", "0",  "2"},
-			{"date",      "" + Types.DATE,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "date", "0", "0", "0", "0",  "0"},
-			{"decimal",   "" + Types.DECIMAL, "4", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false",  "true", "false", "sht",  "1", "0", "0", "0", "10"},
-			{"decimal",   "" + Types.DECIMAL, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false",  "true", "false", "int",  "1", "0", "0", "0", "10"},
-			{"decimal",   "" + Types.DECIMAL,"19", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false",  "true", "false", "lng",  "1", "0", "0", "0", "10"},
-			{"double",    "" + Types.DOUBLE, "51", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "dbl",  "2", "0", "0", "0",  "2"},
-			{"float",     "" + Types.REAL,   "23", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "flt",  "2", "0", "0", "0",  "2"},
-			{"float",     "" + Types.FLOAT,  "51", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "dbl",  "2", "0", "0", "0",  "2"},
-			{"integer",   "" + Types.INTEGER, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "0", "0", "0", "0",  "2"},
-			{"number",    "" + Types.INTEGER, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "0", "0", "0", "0",  "2"},
-			{"mediumint", "" + Types.INTEGER, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "0", "0", "0", "0",  "2"},
-			{"int",       "" + Types.INTEGER, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "0", "0", "0", "0",  "2"},
-			{"tinyint",   "" + Types.TINYINT, "2", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "sht",  "0", "0", "0", "0",  "2"},
-			{"smallint",  "" + Types.SMALLINT,"4", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "sht",  "0", "0", "0", "0",  "2"},
-			{"int",       "" + Types.INTEGER, "4", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "sht",  "0", "0", "0", "0",  "2"},
-			{"int",       "" + Types.BIGINT, "19", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "lng",  "0", "0", "0", "0",  "2"},
-			{"bigint",    "" + Types.BIGINT, "19", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "lng",  "0", "0", "0", "0",  "2"},
-			{"text",      "" + Types.LONGVARCHAR,"0",null,null,null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
-			{"tinytext",  "" + Types.LONGVARCHAR,"0",null,null,null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
-			{"string",    "" + Types.LONGVARCHAR,"0",null,null,null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
-			{"numeric",   "" + Types.NUMERIC, "4", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "sht",  "1", "0", "0", "0", "10"},
-			{"numeric",   "" + Types.NUMERIC, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "1", "0", "0", "0", "10"},
-			{"numeric",   "" + Types.NUMERIC,"19", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "lng",  "1", "0", "0", "0", "10"},
-			{"oid",       "" + Types.OTHER,   "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false",  "true", "lng",  "0", "0", "0", "0",  "2"},
-			{"month_interval",""+Types.INTEGER,"0",null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,  "false", "false", "false", "int",  "0", "0", "0", "0", "10"},
-			{"sec_interval",""+Types.BIGINT,  "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,  "false", "false", "false", "lng",  "0", "0", "0", "0", "10"},
-			{"real",      "" + Types.DOUBLE, "51", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "dbl",  "2", "0", "0", "0",  "2"},
-			{"time",      "" + Types.TIME,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "daytime","0","0","0", "0",  "0"},
-			{"datetime",  "" + Types.TIMESTAMP,"0",null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "timestamp","0","0","0","0", "0"},
-			{"timestamp", "" + Types.TIMESTAMP,"0",null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "timestamp","0","0","0","0", "0"},
-			{"varchar",   "" + Types.VARCHAR, "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"}
-		};
-
-		try {
-			return(new MonetVirtualResultSet(columns, types, results));
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
-		}
+/*
+# id,   	systemname, sqlname,        digits, scale,  radix,  module_id # name
+[ 1004729,  "bat",      "table",        0,      0,      0,      0       ]
+[ 1004730,  "bit",      "boolean",      0,      0,      2,      0       ]
+[ 1004731,  "str",      "char",         0,      0,      0,      0       ]
+[ 1004732,  "str",      "varchar",      0,      0,      0,      0       ]
+[ 1004733,  "str",      "clob",         0,      0,      0,      0       ]
+[ 1004734,  "oid",      "oid",          9,      0,      10,     0       ]
+...
+*/
+		String query =
+			"SELECT \"sqlname\" AS \"TYPE_NAME\", " +
+				"cast(" + MonetDriver.getSQLTypeMap("\"sqlname\"") + " " +
+				"AS smallint) AS \"DATA_TYPE\", " +
+				"\"digits\" AS \"PRECISION\", " +
+				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('\'' AS char) " +
+					"ELSE cast(NULL AS char) END) AS \"LITERAL_PREFIX\", " +
+				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('\'' AS char) " +
+					"ELSE cast(NULL AS char) END) AS \"LITERAL_SUFFIX\", " +
+				"cast(NULL AS varchar(1)) AS \"CREATE_PARAMS\", " +
+				"cast(CASE WHEN \"systemname\" = 'oid' THEN " + DatabaseMetaData.typeNoNulls + " " +
+					"ELSE " + DatabaseMetaData.typeNullable + " END AS smallint) AS \"NULLABLE\", " +
+				"false AS \"CASE_SENSITIVE\", " +
+				"cast(CASE \"systemname\" WHEN 'table' THEN " + DatabaseMetaData.typePredNone + " " +
+					"WHEN 'str' THEN " + DatabaseMetaData.typePredChar + " " +
+					"WHEN 'sqlblob' THEN " + DatabaseMetaData.typePredChar + " " +
+					"ELSE " + DatabaseMetaData.typePredBasic + " " +
+				"END AS smallint) AS SEARCHABLE, " +
+				"false AS \"UNSIGNED_ATTRIBUTE\", " +
+				"CASE \"sqlname\" WHEN 'decimal' THEN true " +
+					"ELSE false END AS \"FIXED_PREC_SCALE\", " +
+				"false AS \"AUTO_INCREMENT\", " +
+				"\"systemname\" AS \"LOCAL_TYPE_NAME\", " + 
+				"0 AS \"MINIMUM_SCALE\", " +
+				"18 AS \"MAXIMUM SCALE\", " +
+				"cast(NULL AS int) AS \"SQL_DATA_TYPE\", " +
+				"cast(NULL AS int) AS \"SQL_DATETIME_SUB\", " +
+				"\"radix\" AS \"NUM_PREC_RADIX\" " +
+			"FROM \"sys\".\"types\"";
+			
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -2541,10 +2490,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"CASE \"idxs\".\"type\" WHEN 0 THEN " + DatabaseMetaData.tableIndexHashed + " ELSE " + DatabaseMetaData.tableIndexOther + " END AS \"TYPE\", " +
 				"\"keycolumns\".\"nr\" AS \"ORDINAL_POSITION\", " +
 				"\"columns\".\"name\" as \"COLUMN_NAME\", " +
-				"cast(null AS varchar) AS \"INDEX_QUALIFIER\", " +
-				"cast(null AS varchar) AS \"ASC_OR_DESC\", " +
+				"cast(null AS varchar(1)) AS \"INDEX_QUALIFIER\", " +
+				"cast(null AS varchar(1)) AS \"ASC_OR_DESC\", " +
 				"0 AS \"PAGES\", " +
-				"cast(null AS varchar) AS \"FILTER_CONDITION\" " +
+				"cast(null AS varchar(1)) AS \"FILTER_CONDITION\" " +
 			"FROM \"sys\".\"idxs\" AS \"idxs\" LEFT JOIN \"sys\".\"keys\" AS \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", " +
 				"\"sys\".\"schemas\" AS \"schemas\", " +
 				"\"sys\".\"keycolumns\" AS \"keycolumns\", " +
@@ -2580,8 +2529,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 		String types[] = {
 			"varchar", "varchar", "varchar", "boolean",
-			"varchar", "varchar", "mediumint", "mediumint",
-			"varchar", "varchar", "mediumint", "mediumint", "varchar"
+			"varchar", "varchar", "int", "int",
+			"varchar", "varchar", "int", "int", "varchar"
 		};
 
 		String[][] results;

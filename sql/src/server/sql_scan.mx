@@ -98,7 +98,15 @@ scanner_init_keywords()
 	keywords_insert("CAST", CAST);
 	keywords_insert("CONVERT", CONVERT);
 	keywords_insert("CHARACTER", CHARACTER);
+	keywords_insert("CHAR", CHARACTER);
 	keywords_insert("VARYING", VARYING);
+	keywords_insert("VARCHAR", VARCHAR);
+	keywords_insert("LARGE", LARGE);
+	keywords_insert("OBJECT", OBJECT);
+	keywords_insert("CLOB", CLOB);
+	keywords_insert("TEXT", CLOB);
+	keywords_insert("TINYTEXT", CLOB);
+	keywords_insert("STRING", CLOB);	/* ? */
 	keywords_insert("CHECK", CHECK);
 	keywords_insert("CONSTRAINT", CONSTRAINT);
 	keywords_insert("CREATE", CREATE);

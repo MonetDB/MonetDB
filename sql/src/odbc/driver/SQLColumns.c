@@ -122,12 +122,12 @@ SQLColumns_(ODBCStmt *stmt,
 
 	sprintf(query_end,
 		"select "
-		"cast('' as varchar) as table_cat, "
-		"cast(s.\"name\" as varchar) as table_schem, "
-		"cast(t.\"name\" as varchar) as table_name, "
-		"cast(c.\"name\" as varchar) as column_name, "
+		"cast('' as varchar(1)) as table_cat, "
+		"s.\"name\" as table_schem, "
+		"t.\"name\" as table_name, "
+		"c.\"name\" as column_name, "
 		"cast(0 as smallint) as data_type, "
-		"cast(c.\"type\" as varchar) as type_name, "
+		"c.\"type\" as type_name, "
 		"cast(c.\"type_digits\" as integer) as column_size, "
 		"cast(c.\"type_digits\" as integer) as buffer_length, "
 		"cast(c.\"type_scale\" as smallint) as decimal_digits, "
@@ -136,15 +136,15 @@ SQLColumns_(ODBCStmt *stmt,
 		/* XXX should this be SQL_NULLABLE_UNKNOWN instead of
 		 * SQL_NO_NULLS? */
 		"when false then cast(%d as smallint) end as nullable, "
-		"cast('' as varchar) as remarks, "
-		"cast('' as varchar) as column_def, "
+		"cast('' as varchar(1)) as remarks, "
+		"cast('' as varchar(1)) as column_def, "
 		"cast(0 as smallint) as sql_data_type, "
 		"cast(0 as smallint) as sql_datetime_sub, "
 		"case c.\"type\" when 'varchar' then cast(c.\"type_digits\" as smallint) else cast(NULL as smallint) end as char_octet_length, "
 		"cast(c.\"number\" + 1 as integer) as ordinal_position, "
-		"case c.\"null\" when true then cast('yes' as varchar) "
+		"case c.\"null\" when true then cast('yes' as varchar(3)) "
 		/* should this be '' instead of 'no'? */
-		"when false then cast('no' as varchar) end as is_nullable "
+		"when false then cast('no' as varchar(3)) end as is_nullable "
 		"from sys.\"schemas\" s, sys.\"tables\" t, sys.\"columns\" c "
 		"where s.\"id\" = t.\"schema_id\" and t.\"id\" = c.\"table_id\"",
 		SQL_NULLABLE, SQL_NO_NULLS);

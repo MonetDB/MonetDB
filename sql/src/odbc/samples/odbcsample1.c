@@ -146,7 +146,7 @@ main(int argc, char **argv)
 	ret = SQLExecDirect(stmt, (SQLCHAR*)
 			    "CREATE TABLE test (\n"
 			    "   i INT DEFAULT '0' NOT NULL,\n"
-			    "   s VARCHAR,\n"
+			    "   s VARCHAR(200),\n"
 			    "   f FLOAT,\n"
 			    "   d DATE,\n"
 			    "   t TIME\n"

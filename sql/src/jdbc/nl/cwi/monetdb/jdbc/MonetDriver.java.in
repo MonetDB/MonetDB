@@ -308,6 +308,28 @@ public class MonetDriver implements Driver {
 	}
 
 	/**
+	 * Returns a String usable in an SQL statement to map the server types
+	 * to values of java.sql.Types using the global type map.  The returned
+	 * string will be a SQL CASE x statement where the x is replaced with
+	 * the given string.
+	 *
+	 * @param column a String representing the value that should be evaluated
+	 *               in the SQL CASE statement
+	 * @return a SQL CASE statement
+	 */
+	static String getSQLTypeMap(String column) {
+		String ret = "CASE " + column + " ";
+		Iterator it = typeMap.keySet().iterator();
+		while (it.hasNext()) {
+			String key = (String)it.next();
+			ret += "WHEN '" + key + "' THEN " + typeMap.get(key).toString() + " ";
+		}
+		ret += "ELSE " + Types.OTHER + " END";
+		
+		return(ret);
+	}
+
+	/**
 	 * Returns a touched up identifying version string of this driver.
 	 *
 	 * @return the version string

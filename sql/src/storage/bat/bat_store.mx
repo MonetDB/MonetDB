@@ -2199,9 +2199,9 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			bat_destroy(cur);
 
 			if (cc->base.rtime)
-                		oc->base.rtime = tr->stime;
-                	oc->base.wtime = tr->stime;
-			
+				oc->base.rtime = tr->stime;
+			oc->base.wtime = tr->stime;
+
 			n = n->next;
 			m = m->next;
 		} while (ok == SQL_OK && n && m);
@@ -2218,10 +2218,10 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 					bm_lbid2bat( tr->bm, ci->bat.bid);
 				BAT *ups = bm_lbid2bat( tr->bm, ci->bat.ubid);
 
-			    	assert(!ci->bat.ibid);
-                		if (ci->base.rtime) 
-					oi->base.rtime = tr->stime;
-                		oi->base.wtime = tr->stime;
+				assert(!ci->bat.ibid);
+					if (ci->base.rtime) 
+				oi->base.rtime = tr->stime;
+					oi->base.wtime = tr->stime;
 			
 				if (BUNlast(ins) > ins->batInserted) {
 					bm_new_bat( ttr->bm, oi->bat.bid, ins);

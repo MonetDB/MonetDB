@@ -56,13 +56,13 @@ SQLProcedures_(ODBCStmt *stmt,
 	/* for now return dummy result set */
 	return SQLExecDirect_(stmt,
 			      (SQLCHAR *) "select "
-			      "cast('' as varchar) as procedure_cat, "
-			      "cast('' as varchar) as procedure_schem, "
-			      "cast('' as varchar) as procedure_name, "
+			      "cast('' as varchar(1)) as procedure_cat, "
+			      "cast('' as varchar(1)) as procedure_schem, "
+			      "cast('' as varchar(1)) as procedure_name, "
 			      "0 as num_input_params, "
 			      "0 as num_output_params, "
 			      "0 as num_result_sets, "
-			      "cast('' as varchar) as remarks, "
+			      "cast('' as varchar(1)) as remarks, "
 			      "cast(0 as smallint) as procedure_type "
 			      "where 0 = 1", SQL_NTS);
 }

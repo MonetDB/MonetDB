@@ -6,14 +6,14 @@ select * from tt;
 commit;
 
 -- error no default
-alter table tt add bla varchar;
+alter table tt add bla varchar(30);
 rollback;
 
 -- error not NULL 
-alter table tt add bla varchar NOT NULL;
+alter table tt add bla varchar(30) NOT NULL;
 rollback;
 
 -- correct
-alter table tt add bla varchar default NULL;
+alter table tt add bla varchar(30) default NULL;
 select * from tt;
 commit;
