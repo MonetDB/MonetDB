@@ -722,7 +722,7 @@ typedef struct {
           /* static BAT properties */
           str    batId;            /* bat name */
           bat    batCacheid;       /* bat id: index in BBPcache */
-          int    batPersistence;   /* persistence mode: not used anymore */
+          int    batPersistence;   /* persistence mode */
           bit    batCopiedtodisk;  /* BAT is saved on disk? */
           bit    batSet;           /* all tuples in the BAT are unique? */
           int    batStore;         /* multi-level storage mode */

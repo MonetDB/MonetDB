@@ -84,6 +84,7 @@ Fill in basic column info
 	bn->halignflushed = bn->halign = OIDnew(2); 
 	bn->talignflushed = bn->talign = bn->halign+1;
 	bn->hseqbase = bn->tseqbase = oid_nil;
+	bn->batPersistence = TRANSIENT;
 	return bn;
 }
 
@@ -1279,14 +1280,17 @@ BAT *BATmode(BAT *b, int mode) {
 	BATcheck(b, "BATmode"); 
 
 	MT_set_lock(GDKtmLock, "BATmode"); 
-	BBPdirty(1);
-	if (mode&PERSISTENT) {
-		if (VIEWparent(b)) {
-			VIEWreset(b);
+	if ((b->batPersistence&mode) == 0){
+		b->batPersistence = mode;
+		BBPdirty(1);
+		if (mode&PERSISTENT) {
+			if (VIEWparent(b)) {
+				VIEWreset(b);
+			}
+			BBPpersistent(b->batCacheid, TRUE);
+		} else {
+			BBPtransient(b->batCacheid, TRUE);
 		}
-		BBPpersistent(b->batCacheid);
-	} else {
-		BBPtransient(b->batCacheid);
 	}
 	MT_unset_lock(GDKtmLock, "BATmode"); 
 	return b; 

@@ -558,7 +558,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPpersistent(*(bat*) (P4));			\
+		BBPpersistent(*(bat*) (P4),FALSE);	\
 		*(int *) (P3) = * (int *) (P4); 	\
 	}						\
 } else {						\
@@ -587,8 +587,8 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPtransient(*(bat*) (P3));			\
-		BBPpersistent(*(bat*) (P4));			\
+		BBPtransient(*(bat*) (P3),FALSE);	\
+		BBPpersistent(*(bat*) (P4), FALSE);	\
 		*(int *) (P3) = *(int *) (P4); 		\
 	}						\
   } else {						\

@@ -331,6 +331,8 @@ The aftermath -- property setting -- is relatively straightforward here.
                 @:@1fetchjoin(@2,@3,@4,tloc,chr,SIMPLE)@
         } else if (ATOMstorage(rtt) == TYPE_sht) {
                 @:@1fetchjoin(@2,@3,@4,tloc,sht,SIMPLE)@
+	} else if (rtt == TYPE_bat) {
+                @:@1fetchjoin(@2,@3,@4,tloc,rtt,ATOM)@
         } else if (ATOMstorage(rtt) == TYPE_int || ATOMstorage(rtt) == TYPE_flt || ATOMstorage(rtt) == TYPE_oid) {
                 @:@1fetchjoin(@2,@3,@4,tloc,int,SIMPLE)@
         } else if (ATOMstorage(rtt) == TYPE_lng || ATOMstorage(rtt) == TYPE_dbl) {
@@ -344,6 +346,8 @@ The aftermath -- property setting -- is relatively straightforward here.
                 @:fetchjoin_switch_rtt(@1,hloc,chr,SIMPLE)@
         } else if (ATOMstorage(lht) == TYPE_sht) {
                 @:fetchjoin_switch_rtt(@1,hloc,sht,SIMPLE)@
+	} else if (lht == TYPE_bat) {
+                @:fetchjoin_switch_rtt(@1,hloc,lht,ATOM)@
         } else if (ATOMstorage(lht) == TYPE_int || ATOMstorage(lht) == TYPE_flt || ATOMstorage(lht) == TYPE_oid) {
                 @:fetchjoin_switch_rtt(@1,hloc,int,SIMPLE)@
         } else if (ATOMstorage(lht) == TYPE_lng || ATOMstorage(lht) == TYPE_dbl) {

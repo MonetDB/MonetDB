@@ -289,7 +289,7 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 
 void MT_global_exit(int s) {
 #if 0
-	(void) kill(0, SIGHUP);
+	/*(void) kill(0, SIGHUP);*/
 	pthread_kill_other_threads_np();
 #endif
 	exit(s);

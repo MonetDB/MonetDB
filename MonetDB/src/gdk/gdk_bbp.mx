@@ -96,8 +96,8 @@ gdk_export lng  BBPdiskscan  (str dir);
 gdk_export int  BBPsync      (int commit);
 gdk_export int  BBPfix       (bat b);
 gdk_export int  BBPunfix     (bat b);
-gdk_export void BBPpersistent(bat b); 
-gdk_export void BBPtransient (bat b);
+gdk_export void BBPpersistent(bat b, int pers); 
+gdk_export void BBPtransient (bat b, int trans);
 gdk_export void BATpersistent(void *dummy, int *d2, bat *b);
 gdk_export void BATtransient (void *dummy, bat *b);
 
@@ -686,41 +686,43 @@ int BBPentry(str dirname, str batname, int mode) {
 	return i;
 }
 
-void BBPpersistent(bat i) {
+void BBPpersistent(bat i, int pers) {
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPpersistent")) {
+		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPpersistent"); 
 		BBP_plevel(i)++;
-		if (BBP_plevel(i) == 1){
+		if (pers){
 			if (!(BBP_status(i)&BBPDELETED))
 				BBP_status_on(i, BBPNEW, "BBPpersistent");
 			BBP_status_off(i, BBPDELETED, "BBPpersistent");
 		}
+		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPpersistent"); 
 	}
 }
 
-void BBPtransient(bat i) {
+void BBPtransient(bat i, int trans) {
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPtransient")) {
-		BBP_plevel(i)--;
-		if (BBP_plevel(i) == 0){
+	    	MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPtransient"); 
+		if (BBP_plevel(i) > 0) BBP_plevel(i)--;
+		if (trans){
 			if (!(BBP_status(i)&BBPNEW))
 				BBP_status_on(i, BBPDELETED, "BBPtransient");
 			BBP_status_off(i, BBPPERSISTENT, "BBPtransient");
-			if (BBP_refs(i) == 0){
-				BAT *b = BBP_cache(i);
-				if (b) BBPfree(b);
-			}
 		}
-		if (BBP_plevel(i) < 0) 
-			BBP_plevel(i) = 0; /* correct for to many transients */
-				
+	        MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPtransient"); 
+	    	if (!(BBP_status(i)&BBPPERSISTENT) && BBP_plevel(i) == 0 
+		  && BBP_refs(i) == 0){
+			BAT *b = BBP_cache(i);
+			if (b) BBPfree(b);
+	        }
 	}
 }
 void BATpersistent(void *dummy, int *d2, bat *i) {
-	BBPpersistent(*i);
+	BBPpersistent(*i,FALSE);
 }
 void BATtransient(void *dummy, bat *i) {
-	BBPtransient(*i);
+	BBPtransient(*i,FALSE);
 }
 
 void BBPcacheit(BAT* b, int lock) {
@@ -1041,6 +1043,8 @@ int BBPreclaim(BAT* b) {
 	int debug, i = ABS(b->batCacheid);
 
 	MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
+	if (BBP_plevel(i) > 0)
+		printf("BBPreclaim(%d) plevel > 0\n", i);
 	if (BBP_refs(b->batCacheid) == 1) {
 		BBP_refs(b->batCacheid) = 0;
 	}
