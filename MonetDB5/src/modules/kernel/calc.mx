@@ -314,6 +314,8 @@ comment "coercion @2 to @1";
 	@:mal_coercion(bit,flt)@
 	@:mal_coercion(bit,dbl)@
 
+	@:scalar_coercion(bit)@
+	@:scalar_coercion(chr)@
 	@:scalar_coercion(lng)@
 	@:scalar_coercion(int)@
 	@:scalar_coercion(sht)@
@@ -1136,6 +1138,8 @@ str CALC@22@1(@1 *res, @2 *a)
 @-
 @c
 	@:mal_coercion_impl(bit,bit)@
+	@:mal_coercion_impl(bit,oid)@
+	@:mal_coercion_impl(bit,chr)@
 	@:mal_coercion_impl(bit,sht)@
 	@:mal_coercion_impl(bit,int)@
 	@:mal_coercion_impl(bit,lng)@
@@ -1169,6 +1173,8 @@ str CALC@22@1(@1 *res, @2 *a)
 	@:mal_coercion_impl(int,flt)@
 	@:mal_coercion_impl(int,dbl)@
 
+	@:mal_coercion_impl(oid,bit)@
+	@:mal_coercion_impl(oid,chr)@
 	@:mal_coercion_impl(oid,oid)@
 	@:mal_coercion_impl(oid,lng)@
 	@:mal_coercion_impl(oid,sht)@
@@ -1177,6 +1183,7 @@ str CALC@22@1(@1 *res, @2 *a)
 	@:mal_coercion_impl(flt,flt)@
 	@:mal_coercion_impl(flt,dbl)@
 	@:mal_coercion_impl(flt,sht)@
+	@:mal_coercion_impl(flt,chr)@
 	@:mal_coercion_impl(flt,int)@
 	@:mal_coercion_impl(flt,lng)@
 
@@ -1184,9 +1191,14 @@ str CALC@22@1(@1 *res, @2 *a)
 	@:mal_coercion_impl(dbl,flt)@
 	@:mal_coercion_impl(dbl,sht)@
 	@:mal_coercion_impl(dbl,int)@
+	@:mal_coercion_impl(dbl,chr)@
 	@:mal_coercion_impl(dbl,lng)@
 
+	@:mal_coercion_impl(chr,bit)@
 	@:mal_coercion_impl(chr,chr)@
+	@:mal_coercion_impl(chr,oid)@
+	@:mal_coercion_impl(chr,flt)@
+	@:mal_coercion_impl(chr,dbl)@
 	@:mal_coercion_impl(chr,sht)@
 	@:mal_coercion_impl(chr,int)@
 	@:mal_coercion_impl(chr,lng)@

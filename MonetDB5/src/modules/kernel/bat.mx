@@ -261,6 +261,9 @@ comment "Try to change the update access priviliges
 	a BAT readonly, all subsequent updates 
 	fail with an error message.Returns the 
 	BAT itself.";
+command access( b:bat[:any$1,:any$2], mode:int) 
+	:void
+address BKCaccess;
 
 command setAppendMode( b:bat[:any$1,:any$2])
 		:void
@@ -2110,6 +2113,13 @@ str BKChas@1(bit *res, int *bid) {
 	@:accessMode(ReadMode,1,r)@
 	@:accessMode(AppendMode,2,a)@
 
+str BKCaccess(int *res, int *bid, int *m) {
+	BAT *b,*bn = NULL;
+	@:getBATdescriptor(res,bid,b,setAccess)@
+	CMDsetaccess(&bn,b,m);
+	*res = b->batCacheid;
+        return MAL_SUCCEED;
+}
 str BKCsetAccess(int *res, int *bid, str *param) {
 	BAT *b,*bn = NULL;
 	int m;
