@@ -1,8 +1,0 @@
-#!/bin/bash
-for f in  `ls tst???.mal tst1???.mal tst11??.mal tst12??.mal`
-do
-	echo ""
-	echo ""
-	echo "---->" $f "<-----"
-	cat $f
-done
