@@ -438,8 +438,11 @@ faster system start.
 @-
 Time to execute the script files. Start with the init command[todo]
 @c
-	if( dbinit )
-		callString(mal_clients, dbinit, listing);
+	if( dbinit ) {
+		str input = GDKstrdup(dbinit);
+		callString(mal_clients, input, listing);
+		GDKfree(input);
+	}
 	if( GDKgetenv("mal_listing"))
 		sscanf( GDKgetenv("mal_listing"),"%d",&listing);
 

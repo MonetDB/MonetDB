@@ -246,8 +246,8 @@ void callString(Client c, str s, int listing)
 	c->listing = listing;
 	c->blkmode = 0;
 	c->prompt = ""; /* do not produce visible prompts */
-
-	buffer_init(&b, GDKstrdup(s), strlen(s)+1); 
+	
+	buffer_init(&b, s, strlen(s) + 1); 
 	c->fdin = bstream_create( buffer_rastream(&b, "callString"), b.len );
 	c->yycur = 0;
 
