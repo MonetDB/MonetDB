@@ -337,7 +337,7 @@ Works only for the builtin numerical types, and their derivates."
 For relational processing, some operators are necessary to produce newly 
 initiated OID columns, for representing n-ary (intermediary) relations. 
 
-@- OID head column
+@- OID tail column
 @m
 .COMMAND mark( BAT[any::1,any] b ) : 
 				BAT[any::1,OID] = CMDmark_default; 
@@ -347,6 +347,16 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 				BAT[any::1,OID] = CMDmark; 
 "Produces a new BAT with fresh unique dense sequense of OIDs in the tail
  that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
+
+.COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,oid] g) : 
+				BAT[any::1,OID] = CMDmark_grp; 
+"\"grouped mark\": Produces a new BAT with per group a locally unique dense
+ ascending sequense of OIDs in the tail. The tail of the first BAT (b)
+ identifies the group that each BUN of b belongs to. The second BAT (g)
+ represents the group extend, i.e., the head is the unique list of group IDs
+ from b's tail. The tail of g gives for each group the base value for the new
+ OID sequence."
+
 @- number tail column
 @m
 .COMMAND number( BAT[any::1,any] b ) : 
@@ -1331,6 +1341,10 @@ int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
 
 int CMDproject(BAT** res, BAT *b, ptr p, int t) {
 	return (*res=BATconst(b, t, p))?GDK_SUCCEED:GDK_FAIL;
+}
+
+int CMDmark_grp(BAT** res, BAT *b, BAT *g){
+	return (*res=BATmark_grp(b, g))?GDK_SUCCEED:GDK_FAIL;
 }
 
 int CMDmark(BAT** res, BAT *b, oid *base){
