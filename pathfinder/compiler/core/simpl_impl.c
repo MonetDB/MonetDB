@@ -38,6 +38,20 @@
  * $Id$
  */
 
+/*
+ * NOTE (Revision Information):
+ *
+ * Changes in the Core2MIL_Summer2004 branch have been merged into
+ * this file on July 15, 2004. I have tagged this file in the
+ * Core2MIL_Summer2004 branch with `merged-into-main-15-07-2004'.
+ *
+ * For later merges from the Core2MIL_Summer2004, please only merge
+ * the changes since this tag.
+ *
+ * Jens
+ */
+
+
 #include "pathfinder.h"
 
 #include <limits.h>
@@ -68,8 +82,6 @@ static int TWIG_ID[] = {
     , [c_let]          let        /**< let binding */
     , [c_for]          for_       /**< for binding */
 
-    , [c_locsteps]     locsteps   /**< path of location steps only */
-
     , [c_apply]        apply      /**< function application */
     , [c_arg]          arg        /**< function argument (list) */
 
@@ -81,6 +93,8 @@ static int TWIG_ID[] = {
     , [c_proof]        proof      /**< type checker only: prove <: rel.ship */
 
     , [c_ifthenelse]   ifthenelse /**< if-then-else conditional */
+
+    , [c_locsteps]     locsteps   /**< path of location steps only */
 
     , [c_ancestor]            ancestor
     , [c_ancestor_or_self]    ancestor_or_self
@@ -95,8 +109,6 @@ static int TWIG_ID[] = {
     , [c_preceding_sibling]   preceding_sibling
     , [c_self]                self
 
-    , [c_namet]               namet
-
     , [c_kind_node]           kind_node
     , [c_kind_comment]        kind_comment
     , [c_kind_text]           kind_text
@@ -105,7 +117,16 @@ static int TWIG_ID[] = {
     , [c_kind_elem]           kind_elem
     , [c_kind_attr]           kind_attr
 
-    , [c_instof]              instof  /**< 'instance of' operator */
+    , [c_namet]               namet
+
+    /* Constructor Nodes */
+    , [c_elem]         elem       /**< the element constructor */
+    , [c_attr]         attr       /**< the attribute constructor */
+    , [c_text]         text       /**< the text constructor */
+    , [c_doc]          doc        /**< the document constructor */
+    , [c_comment]      comment    /**< the comment constructor */
+    , [c_pi]           pi         /**< the processing-instruction constructor */
+    , [c_tag]          tag        /**< the tagname for element and attribute constructors */
 
     , [c_true]         true_      /**< Built-in function 'true' */
     , [c_false]        false_     /**< Built-in function 'false' */
@@ -128,7 +149,6 @@ static int TWIG_ID[] = {
 #undef seq        
 #undef let        
 #undef for_       
-#undef locsteps   
 #undef apply      
 #undef arg        
 #undef typesw     
@@ -138,6 +158,7 @@ static int TWIG_ID[] = {
 #undef seqcast     
 #undef proof
 #undef ifthenelse 
+#undef locsteps   
 #undef ancestor
 #undef ancestor_or_self
 #undef attribute
@@ -150,7 +171,6 @@ static int TWIG_ID[] = {
 #undef preceding
 #undef preceding_sibling
 #undef self
-#undef namet
 #undef kind_node
 #undef kind_comment
 #undef kind_text
@@ -158,7 +178,14 @@ static int TWIG_ID[] = {
 #undef kind_doc
 #undef kind_elem
 #undef kind_attr
-#undef instof 
+#undef namet
+#undef elem
+#undef attr 
+#undef text
+#undef doc 
+#undef comment
+#undef pi  
+#undef tag
 #undef true_  
 #undef false_ 
 #undef error  

@@ -108,8 +108,6 @@ node  var_
       kind_elem
       kind_attr
 
-      instof
-
       true_
       false_
       atomize
@@ -243,7 +241,6 @@ KindTest:        kind_elem (nil);
 KindTest:        kind_attr (nil);
 
 ComparExpr:      int_eq (Atom, Atom);
-ComparExpr:      instof (Atom, seqtype);
 
 FunctionAppl:    apply (FunctionArgs);
 

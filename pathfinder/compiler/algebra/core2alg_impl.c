@@ -95,8 +95,6 @@ static int TWIG_ID[] = {
     , [c_kind_elem]           kind_elem
     , [c_kind_attr]           kind_attr
 
-    , [c_instof]              instof  /**< 'instance of' operator */
-
     , [c_true]         true_      /**< Built-in function 'true' */
     , [c_false]        false_     /**< Built-in function 'false' */
     , [c_error]        error      /**< Built-in function 'error' */
@@ -178,9 +176,7 @@ PFcore2alg (PFcnode_t *c)
     if (!ret)
         PFoops (OOPS_FATAL, "Translation to Relational Algebra failed.");
 
-    /*
     return serialize (ret);
-    */
 
     /*
     return serialize (lit_tbl (attlist ("pos", "item"),
@@ -211,6 +207,7 @@ PFcore2alg (PFcnode_t *c)
                             proj ("pos1", "pos"), proj ("item1", "item"))));
     */
 
+    /*
     return serialize (
             cross (
                 project (
@@ -229,6 +226,7 @@ PFcore2alg (PFcnode_t *c)
                                 proj ("item1", "item"))))
             );
 
+    */
     /*
     return serialize (
               cross (lit_tbl (schema (att ("pos", aat_int),

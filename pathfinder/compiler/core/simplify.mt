@@ -32,6 +32,20 @@ prologue {
  * $Id$	
  */
 
+/*
+ * NOTE (Revision Information):
+ *
+ * Changes in the Core2MIL_Summer2004 branch have been merged into
+ * this file on July 15, 2004. I have tagged this file in the
+ * Core2MIL_Summer2004 branch with `merged-into-main-15-07-2004'.
+ *
+ * For later merges from the Core2MIL_Summer2004, please only merge
+ * the changes since this tag.
+ *
+ * Jens
+ */
+
+
 #include "pathfinder.h"
 
 /* Auxiliary routines related to the formal semantics are located
@@ -81,8 +95,6 @@ node  var_
       preceding_sibling
       self
 
-      namet
-
       kind_node
       kind_comment
       kind_text
@@ -91,11 +103,18 @@ node  var_
       kind_elem
       kind_attr
 
-      instof
+      namet
+
+      elem
+      attr 
+      text
+      doc 
+      comment
+      pi  
+      tag
 
       true_
       false_
-      atomize
       error
       root_
       empty_
@@ -117,6 +136,8 @@ label Query
       LocationSteps
       NodeTest
       KindTest
+      ConstructorExpr
+      TagName
       ComparExpr
       Atom
       NonAtom
@@ -139,6 +160,7 @@ NonAtom:         error;
 NonAtom:         ConditionalExpr;
 NonAtom:         SequenceExpr;
 NonAtom:         PathExpr;
+NonAtom:         ConstructorExpr;
 NonAtom:         ComparExpr;
 NonAtom:         FunctionAppl;
 NonAtom:         BuiltIns;
@@ -244,8 +266,17 @@ KindTest:        kind_doc (nil);
 KindTest:        kind_elem (nil);
 KindTest:        kind_attr (nil);
 
+ConstructorExpr: elem (TagName, CoreExpr);
+ConstructorExpr: attr (TagName, CoreExpr);
+ConstructorExpr: text (CoreExpr);  
+ConstructorExpr: doc (CoreExpr); 
+ConstructorExpr: comment (lit_str); 
+ConstructorExpr: pi (lit_str);  
+
+TagName:         tag;
+TagName:         CoreExpr;
+
 ComparExpr:      int_eq (Atom, Atom);
-ComparExpr:      instof (Atom, seqtype);
 
 FunctionAppl:    apply (FunctionArgs);
 

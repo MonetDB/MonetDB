@@ -33,6 +33,19 @@
  * $Id$
  */
 
+/*
+ * NOTE (Revision Information):
+ *
+ * Changes in the Core2MIL_Summer2004 branch have been merged into
+ * this file on July 15, 2004. I have tagged this file in the
+ * Core2MIL_Summer2004 branch with `merged-into-main-15-07-2004'.
+ *
+ * For later merges from the Core2MIL_Summer2004, please only merge
+ * the changes since this tag.
+ *
+ * Jens
+ */
+
 #ifndef CORE_H
 #define CORE_H
 
@@ -118,7 +131,14 @@ enum PFctype_t {
 
   , c_namet                   /**< name test */
 
-  , c_instof                  /**< @bug: REMOVE `instance of' operator */
+  /* Constructor Nodes */
+  , c_elem                    /**< the element constructor */
+  , c_attr                    /**< the attribute constructor */
+  , c_text                    /**< the text constructor */
+  , c_doc                     /**< the document constructor */
+  , c_comment                 /**< the comment constructor */
+  , c_pi                      /**< the processing-instruction constructor */
+  , c_tag                     /**< the tagname for element and attribute constructors */
 
   , c_true                    /**< built-in function `fn:true ()' */
   , c_false                   /**< built-in function `fn:false ()' */
@@ -233,10 +253,22 @@ PFcnode_t *PFcore_step (PFpaxis_t, PFcnode_t *);
 PFcnode_t *PFcore_kindt (PFpkind_t, PFcnode_t *);
 PFcnode_t *PFcore_namet (PFqname_t );
 
+PFcnode_t *PFcore_constr_elem (PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_constr_attr (PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_constr (PFptype_t, PFcnode_t *);
+PFcnode_t *PFcore_tag (PFqname_t);
+
 PFfun_t *PFcore_function (PFqname_t);
 PFcnode_t *PFcore_apply (PFfun_t *, PFcnode_t *);
 PFcnode_t *PFcore_arg (PFcnode_t *, PFcnode_t *);
 PFcnode_t *PFcore_apply_ (PFfun_t *, ...);
+
+/**
+ * Expansion functions for Calculations
+ */
+PFcnode_t *PFcore_fn_data (PFcnode_t *);
+PFcnode_t *PFcore_fs_convert_op (PFcnode_t *, PFty_t);
+PFcnode_t *PFcore_some (PFcnode_t *, PFcnode_t *, PFcnode_t *);
 
 /**
  * Wrapper for #apply_.
