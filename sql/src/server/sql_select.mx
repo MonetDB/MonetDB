@@ -834,20 +834,38 @@ static stmt *sql_aggrop(mvc * sql, scope * scp, symbol * se, group * grp, stmt *
 	return NULL;
 }
 
+#define is_outer_grp(g) (g->grp->type == st_group &&  \
+			 (g->grp->op1.stval->type == st_pivot || \
+			  g->grp->op1.stval->type == st_partial_pivot))
+
 static stmt *sql_column_value(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f)
 {
-	stmt *res = sql_column_ref(sql, scp, se);
-	(void) grp; /* Stefan: unused!? */
+	stmt *s = sql_column_ref(sql, scp, se);
 
-	if (res && res->h && subset && f) {
-		stmt *foundsubset = find_pivot(subset, res->h);
+	if (s && s->h && subset && f) {
+		stmt *col = s;
+		stmt *foundsubset = find_pivot(subset, s->h);
 
-		if (!foundsubset) {
-			return sql_error(sql, 02, "Subset not found for value expression");
+		if (!foundsubset) 
+			return sql_error(sql, 02, 
+				"Subset not found for value expression");
+
+		s = stmt_join(foundsubset, s, cmp_equal);
+		if (s && grp && f && s->type != st_aggr && 
+			! is_outer_grp(grp) ) {
+			if (grp_find_groupby_col(grp, col)) {
+				s = stmt_join(stmt_dup(grp->ext), s, cmp_equal);
+			} else {
+				char *name = column_name(col);
+				stmt_destroy(s);
+				if (name)
+					return sql_error(sql, 02, "Cannot use non group by column (%s) in query result without aggregation", name);
+				else
+					return sql_error(sql, 02, "Cannot use non group by column in query result without aggregation" );
+			}
 		}
-		res = stmt_join(foundsubset, res, cmp_equal);
 	} 
-	return res;
+	return s;
 }
 
 stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f)
@@ -1366,16 +1384,15 @@ static stmt *columns_exp(mvc * sql, scope * scp, symbol * column_e, group * grp,
 }
 
 
-static stmt *column_exp(mvc * sql, scope * scp, symbol * column_e, group * grp, stmt * subset, int f) {
+static stmt *
+column_exp( mvc * sql, scope * scp, symbol * column_e, group * grp, 
+		stmt * subset, int f) 
+{
 	dlist *l = column_e->data.lval;
 	stmt *s = sql_value_exp(sql, scp, l->h->data.sym, grp, subset, f);
+
 	if (!s)
 		return NULL;
-
-	if (grp && s->type != st_aggr) {
-		s = stmt_join(stmt_dup(grp->ext), s, cmp_equal);
-	}
-
 	/* AS name */
 	if (s && l->h->next->data.sval) {
 		s = stmt_alias(s, l->h->next->data.sval);
@@ -2197,7 +2214,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	stmt *s = NULL;
 
 	stmt *order = NULL, *subset = NULL;
-	group *grp = NULL;
+	group *ogrp = NULL, *grp = NULL;
 
 	if (!sn->from)
 		return sql_simple_select(sql, scp, sn->where, sn->selection);
@@ -2287,7 +2304,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 
 		if (s && list_length(scp->outers) > 0) {
 			assert(!grp);
-			grp = query_groupby_outers(sql, scp, s);
+			grp = ogrp = query_groupby_outers(sql, scp, s);
 			if (!grp) {
 				assert(0);
 				sql_select_cleanup(sql, s, subset, grp);
@@ -2454,8 +2471,9 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 			list_append(rl,
 				t=stmt_join( stmt_dup(grp->ext), 
 					   foundsubset, cmp_equal));
-			/* needed for subquery johan (select * from select *) */
+			/* CHECK !! needed for subquery johan (select * from select *) 
 			t->nrcols = 1;
+			*/
 		}
 	}
 	stmt_destroy(s);

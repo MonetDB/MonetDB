@@ -255,7 +255,7 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 {
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey*)i->key)->rkey->k.idx;
-	stmt *s = NULL, *rts = stmt_basetable(ri->t);
+	stmt *s = NULL, *rts = stmt_basetable(ri->t, ri->t->base.name);
 
 	if (inserts[0]->op2.stval->key){
 		sql_subtype *bt = sql_bind_localtype( "bit" );
@@ -417,7 +417,7 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 	sql_subtype *bt = sql_bind_localtype( "bit" );
 
 	if (list_length(k->columns) > 1){
-		stmt *ts = stmt_basetable(k->t);
+		stmt *ts = stmt_basetable(k->t, k->t->base.name);
 		node *m;
 		stmt *s; 
 		sql_subaggr *sum;
@@ -548,7 +548,7 @@ hash_update( sql_idx *i, stmt **updates, int updcol )
 	if (list_length(i->columns) <= 1)
 		return NULL;
 
-	ts = stmt_basetable(i->t);
+	ts = stmt_basetable(i->t, i->t->base.name);
  	it = sql_bind_localtype( "int" );
 	for(m = i->columns->h; m; m = m->next, bits += 8){
 		sql_kc *c = m->data;
@@ -582,10 +582,10 @@ join_idx_update( sql_idx *i, stmt **updates, int updcol )
 	int nulls = 0;
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey*)i->key)->rkey->k.idx;
-	stmt *s = NULL, *rts = stmt_basetable(i->t), *ts;
+	stmt *s = NULL, *rts = stmt_basetable(ri->t, ri->t->base.name), *ts;
 	stmt *null = NULL;
 
-	ts = stmt_basetable(i->t);
+	ts = stmt_basetable(i->t, i->t->base.name);
 	s = stmt_reljoin_init();
 	for(m = i->columns->h, o = ri->columns->h; m && o; 
 		m = m->next, o = o->next) {
@@ -869,7 +869,8 @@ static stmt *sql_bulkinsert(mvc * sql, sql_table *t, char *tsep, char *rsep, cha
 	scope *scp = scope_open(NULL);
 	tvar *tv  = scope_add_table_columns(sql, scp, t, t->base.name);
 
-	bats = stmt_bulkinsert(stmt_basetable(t), tsep, rsep, fname, nr);
+	bats = stmt_bulkinsert(stmt_basetable(t, t->base.name), 
+				tsep, rsep, fname, nr);
 	len = list_length(t->columns.set);
 	inserts = NEW_ARRAY(stmt *, len);
 	for(n=t->columns.set->h, i = 0; n; n = n->next, i++){

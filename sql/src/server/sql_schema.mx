@@ -127,7 +127,7 @@ sql_insert_priv( mvc *sql, int auth_id, int obj_id,
 	sql_table *pt = mvc_bind_table( sql, ss, "privileges" );
 	node *n = pt->columns.set->h;
 	stmt *res, **inserts = NEW_ARRAY(stmt*,5);
-	stmt *pts = stmt_basetable( pt );
+	stmt *pts = stmt_basetable( pt, pt->base.name );
 
 	inserts[0] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
  			stmt_atom_int(obj_id));
@@ -355,7 +355,7 @@ sql_delete_priv( mvc *sql, int auth_id, int obj_id,
 	sql_table *pt = mvc_bind_table( sql, ss, "privileges" );
 	node *n = pt->columns.set->h;
 
-	stmt *pts = stmt_basetable( pt );
+	stmt *pts = stmt_basetable( pt, pt->base.name );
 	stmt *s = stmt_relselect_init();
 	scope *scp = scope_open(NULL);
 	tvar *ptv = scope_add_table_columns(sql, scp, pt, pt->base.name);
@@ -940,11 +940,11 @@ create_column(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, int alter )
 				return sql_error(sql, 02, "Failed to create default value for alter table add (%s)\n", cs->def?cs->def:"NULL" );
 			}
 			res = stmt_append(
-			  stmt_cbat(cs, stmt_basetable(t), 1, st_bat),
+			  stmt_cbat(cs, stmt_basetable(t, t->base.name), 1, st_bat),
 			  stmt_const( 
 			    stmt_cbat(
 			      mvc_first_column(sql, t), 
-			      stmt_basetable(t), 0, st_bat), 
+			      stmt_basetable(t, t->base.name), 0, st_bat), 
 				stmt_atom(a) ));
 		}
 		if (!res)

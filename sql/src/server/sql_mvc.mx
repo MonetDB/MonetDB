@@ -119,7 +119,6 @@ typedef struct sql_column {
 	bit null;
 	char *def;
 
-	struct stmt *st; /* for prepared view's */
 	struct sql_table *t;
 	sql_bat bat;
 
@@ -153,9 +152,7 @@ typedef struct sql_table {
 
 	oid dbid;     	 /* bat with deletes */
 
-	struct stmt *st; /* for prepared view's */
 	struct sql_schema *s;
-
 } sql_table;
 
 typedef struct sql_schema {
@@ -689,8 +686,6 @@ static void column_destroy(sql_column * c)
 	sql_subtype_destroy(c->type);
 	if (c->def)
 		_DELETE(c->def);
-	if (c->st)
-		stmt_destroy(c->st);
 	_DELETE(c);
 }
 
@@ -704,8 +699,6 @@ static void table_destroy(sql_table * t)
 	cs_destroy( &t->keys );
 	cs_destroy( &t->idxs );
 	cs_destroy( &t->columns );
-	if (t->st)
-		stmt_destroy(t->st);
 	_DELETE(t);
 }
 
@@ -1092,7 +1085,6 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	c->null = *(bit *) bun_find(column_null, lid);
 	c->colnr = *(int *) bun_find(column_number, lid);
 	c->t = t;
-	c->st = NULL;
 
 	if (t->type != tt_view){
 		snprintf(name, BUFSIZ, "%s_%s", t->base.name, c->base.name );
@@ -1154,7 +1146,6 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 
 	t->pkey = NULL;
 	t->s = s;
-	t->st = NULL;
 	t->sz = BUFSIZ;
 
 	cs_init( &t->columns, (fdestroy)&column_destroy );
@@ -1483,7 +1474,6 @@ static sql_column *column_dup(sql_trans *tr, int flag, sql_column * oc, sql_tabl
 	c->bat.ubid = oc->bat.ubid;
 
 	c->t = t;
-	c->st = NULL;
 
 	if (c->t->type == tt_session) {
 		temp_dup(c->bat.bid);
@@ -1512,7 +1502,6 @@ static sql_table *table_dup(sql_trans *tr, int flag, sql_table * ot, sql_schema 
 		temp_dup(t->dbid);
 
 	t->s = s;
-	t->st = NULL;
 	t->sz = ot->sz;
 
 	if (ot->columns.set) for (n = ot->columns.set->h; n; n = n->next) {
@@ -3642,7 +3631,6 @@ static sql_table *create_table_intern( mvc *m, char *name, table_type type)
 	cs_init( &t->keys, (fdestroy)&key_destroy);
 	t->pkey = NULL;
 	t->dbid = 0;
-	t->st = NULL;
 	t->sz = BUFSIZ;
 	return t;
 }
@@ -4044,7 +4032,6 @@ static sql_column *bootstrap_create_column(mvc * m, sql_table *t, char *name,
 	col->null = 1;
 	col->colnr = cs_size( &t->columns);
 	col->t = t;
-	col->st = NULL;
 	cs_add( &t->columns, col, TR_NEW);
 
 	snprintf(bname, BUFSIZ, "%s_%s", col->t->base.name, col->base.name );
@@ -4101,7 +4088,6 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	col->null = 1;
 	col->colnr = cs_size( &t->columns );
 	col->t = t;
-	col->st = NULL;
 	col->bat.bid = 0;
 	col->bat.ubid = 0;
 	cs_add( &t->columns, col, TR_NEW);

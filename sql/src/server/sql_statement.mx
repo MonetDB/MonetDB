@@ -159,7 +159,7 @@ extern stmt *stmt_none();
 extern stmt *stmt_sql( char *query );
 extern stmt *stmt_var( char *varname, sql_subtype *t);
 
-extern stmt *stmt_basetable(sql_table *t); 
+extern stmt *stmt_basetable(sql_table *t, char *tname); 
 
 #define isbasetable(s) (s->type == st_basetable)
 #define basetable_table(s) s->op1.tval 
@@ -264,6 +264,7 @@ extern group *grp_create(stmt * s, group *og );
 extern group *grp_semijoin(group *og, stmt *s );
 extern void grp_destroy(group * g);
 extern group *grp_dup(group * g);
+extern stmt *grp_find_groupby_col( group *g , stmt *s );
 
 #endif	/* _SQL_STATEMENT_H_ */
 
@@ -526,6 +527,7 @@ void stmt_destroy(stmt * s)
 
 		/* reference only independently managed resources */
 		case st_basetable: 
+			_DELETE(s->op2.sval);
 		case st_bat: case st_ubat:
 		case st_dbat: case st_idxbat:
 		case st_none:
@@ -712,10 +714,11 @@ stmt *stmt_var(char *varname, sql_subtype *t){
 	return s;
 }
 
-stmt *stmt_basetable( sql_table *t )
+stmt *stmt_basetable( sql_table *t, char *name )
 {
 	stmt *s = stmt_create(st_basetable);
 	s->op1.tval = t;
+	s->op2.sval = _strdup(name);
 	return s;
 }
 
@@ -1046,6 +1049,7 @@ stmt *stmt_join(stmt * op1, stmt * op2, comp_type cmptype)
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;
+	s->key = op1->key;
 	s->nrcols = 2;
 	s->h = stmt_dup(op1->h);
 	s->t = stmt_dup(op2->t);
@@ -1690,10 +1694,12 @@ static stmt *tail_column(stmt * st)
 		printf("= TODO: tail_column(%d=%s) -> NULL !?\n",
 			st->type, st_type2string(st->type) );
 	case st_atom:
-	/* some statements have no column comming from any basetable */
+	/* some statements have no column coming from any basetable */
 	case st_mark:
 	case st_group:	
 	case st_group_ext:
+	case st_predicate:	/* 1 = 1 is not a column */
+	case st_basetable: 	/* a table is not a column */
 		return NULL;
 
 	default:
@@ -1889,8 +1895,10 @@ char *table_name(stmt * st)
 	case st_partial_pivot: case st_pivot:
 		return table_name(st->op1.stval);
 
+	case st_basetable:
+		return _strdup(st->op2.sval);
 	case st_bat:
-		return _strdup(st->op1.cval->t->base.name);
+		return table_name(st->h);
 	case st_alias:
 		return _strdup("unknown");
 	case st_column_alias:
@@ -1934,3 +1942,26 @@ sql_column *basecolumn(stmt * st)
 	}
 }
 
+stmt *grp_find_groupby_col( group *g , stmt *s )
+{
+	stmt *gs = g->grp;
+        while(gs) {
+		if( gs->type == st_group){
+			stmt *ns = tail_column(gs->op1.stval);
+			if (ns == s)
+				return s;
+			return NULL;
+		} else if( gs->type == st_derive){
+			stmt *ns = tail_column(gs->op2.stval);
+			if (ns == s)
+				return s;
+			gs = gs->op1.stval;
+		/* group maybe filtered by a having */
+		} else if( gs->type == st_reverse || gs->type == st_semijoin) {
+			gs = gs->op1.stval;
+		} else {
+			return NULL;
+		}
+	}
+	return NULL;
+}

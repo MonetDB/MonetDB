@@ -517,7 +517,6 @@ void logger_exit(logger *logger) {
 void logger_restart(logger *logger) {
 	logger_close(logger);
 	logger_exit(logger);
-	/* TODO add cleanup of old log files */
 	logger_open(logger);
 }
 
