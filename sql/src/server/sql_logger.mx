@@ -18,8 +18,10 @@
 @' Contributor(s):
 @' 		Martin Kersten <Martin.Kersten@cwi.nl>
 @' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
 
-@f logger
+@f sql_logger
 @t Transactions
 @a N. J. Nes
 @v 1.0
@@ -86,10 +88,10 @@ Actually, the logger should issue commit statements after each block.
 
 @* Implementation Code 
 @h
-#ifndef _LOGGER_H_
-#define _LOGGER_H_
+#ifndef _SQL_LOGGER_H_
+#define _SQL_LOGGER_H_
 
-#include "bm.h"
+#include "sql_bm.h"
 
 extern struct logger *logger_create(int debug, char *logdir, char *dbname, struct bm *bm );
 extern void logger_destroy(struct logger *logger);
@@ -105,9 +107,9 @@ extern void log_bat_transient(struct logger* logger, oid lbid );
 extern void log_tstart(struct logger *logger);
 extern void log_tend(struct logger *logger);
 
-#endif /*_LOGGER_H_*/
+#endif /*_SQL_LOGGER_H_*/
 @c
-#include "logger.h"
+#include "sql_logger.h"
 #include "stream.h"
 #include "mem.h"
 
@@ -195,7 +197,8 @@ static void log_read_updates(logger *logger, logformat *l, char *name ){
 	BAT *b = bm_lbid2bat(logger->bm,lbid);
 
         if (logger->debug&1)
-		fprintf(stderr, "found log_read_updates %s %s %d\n", name, 
+		fprintf(stderr, "logger found log_read_updates %s %s %d\n", 
+				name, 
 				(l->flag==LOG_INSERT)?"insert":"delete",
 				l->nr);
 
@@ -243,13 +246,15 @@ static void log_read_create(logger *logger, logformat *l, char *name )
 		fprintf(stderr, "log_read_create %s\n", name );
 
 	if (!buf){
-		fprintf(stderr, "could not read create (%s)\n", name);
+		fprintf(stderr, "logger could not read create (%s)\n", name);
 	} else {
 		int ht, tt, hseq = 0, tseq = 0;
 		char *ha = buf, *ta = strchr(buf, ',');
 		BAT *b;
 		if (!ta){
-			fprintf(stderr, "types are not , seperated (%s)\n",buf);
+			fprintf(stderr, 
+				"logger types are not ',' seperated (%s)\n",
+				buf);
 			return;
 		}
 		*ta = 0; ta++; /* skip over , */
@@ -274,7 +279,7 @@ static void log_read_create(logger *logger, logformat *l, char *name )
 
 		if (!b){
 			fprintf(stderr, 
-				"could not create bat (%s,%s,%s,%d,%d)\n"
+				"logger could not create bat (%s,%s,%s,%d,%d)\n"
 				,name,ha,ta,ht,tt);
 			return;
 		}
@@ -338,7 +343,8 @@ static int logger_readlog( logger *logger, char *filename ){
 
 			if (!name){
 				fprintf(stderr, 
-					"could not read name (%d)\n", l.flag );
+					"logger could not read name (%d)\n", 
+					l.flag );
 				return -1;
 			}
 		}
@@ -436,10 +442,14 @@ logger *logger_new(int debug, char *logdir, char *dbname, struct bm *bm){
 		logger_readlogs(logger, fp, filename);
 	} else if ( (fp = fopen(filename, "w")) == NULL){
 		if (!GDKcreatedir(filename)){
-			fprintf(stderr, "Could not create log directory %s\n", logger->dir);
+			fprintf(stderr, 
+				"logger could not create log directory %s\n", 
+				logger->dir);
 			exit(1);
 		} else if ( (fp = fopen(filename, "w")) == NULL){
-			fprintf(stderr, "could not create file %s\n", filename);
+			fprintf(stderr, 
+				"logger could not create file %s\n", 
+				filename);
 			exit(1);
 		}
 		fprintf(fp, "\n" );
@@ -484,7 +494,7 @@ void logger_exit(logger *logger) {
 		bm_cleanup(logger->bm);
 		TMcommit();
 	} else {
-		fprintf(stderr, "could not open %s\n", filename );
+		fprintf(stderr, "logger could not open %s\n", filename );
 	}
 }
 
@@ -527,8 +537,8 @@ oid log_bat_persists(logger *logger, BAT *b, char *name )
 	logger->log->write( logger->log, buf, 1, len );
 	
         if (logger->debug&1)
-		fprintf(stderr, "new bat %s htype %d ttype %d\n", name,
-			b->htype, b->ttype );
+		fprintf(stderr, "Logged new bat %s htype %s ttype %s\n", 
+			name, ha, ta );
 	log_bat(logger, lbid, b);
 	return lbid;
 }
@@ -543,7 +553,7 @@ void log_bat_transient(logger *logger, oid lbid ){
 	log_write_string(logger, name);
 	
         if (logger->debug&1)
-		fprintf(stderr, "destroyed bat %s\n", name);
+		fprintf(stderr, "Logged destroyed bat %s\n", name);
 	bm_del_bat(logger->bm, lbid);
 }
 
@@ -564,12 +574,19 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 	    	l.flag = LOG_INSERT;
 		log_write_format( logger, &l );
 		log_write_string(logger, name);
-	    	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
+
+		if (b->htype == TYPE_void && b->ttype < TYPE_str &&
+			!VIEWparent(b)){
+		   ptr t = BUNtail(b,p);
+		   wt( t, logger->log, l.nr );
+		} else {
+	    	   for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
 			wh( h, logger->log,1);
 			wt( t, logger->log,1);
-	    	}
+	    	   }
+		}
 
 		if (logger->debug)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr );

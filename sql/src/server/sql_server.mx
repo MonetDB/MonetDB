@@ -1,10 +1,33 @@
-@f sqlserver
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at 
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+@' All Rights Reserved.
+@' 
+@' Contributor(s):
+@' 		Martin Kersten <Martin.Kersten@cwi.nl>
+@' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
+
+@f sql_server
 @a N.J. Nes
 @* 
-The sqlserver module contains the complete wrapper interface for the
+The sql_server module contains the complete wrapper interface for the
 SQL client and the corresponding MIL runtime startup.
 @m
-.MODULE sqlserver;
+.MODULE sql_server;
 	.USE ascii_io; 
 
 	.ATOM mvc = ptr;
@@ -15,6 +38,10 @@ SQL client and the corresponding MIL runtime startup.
 	.END;
 	.ATOM sql_column = ptr;
 	.END;
+	# the check constraints (including IS (NOT) NULL) 
+	.ATOM sql_check = ptr;
+	.END; 
+	# the primary, unique and foreign keys
 	.ATOM sql_key = ptr;
 	.END;
 	
@@ -93,7 +120,7 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND mvc_create_schema( mvc c, str name, str auth) : sql_schema = 
 		mvc_create_schema_wrap; "Create schema"
 
-	.COMMAND mvc_drop_table( mvc c, sql_schema s, str name, bit cascade ) = 
+	.COMMAND mvc_drop_table( mvc c, sql_schema s, str name, int cascade ) = 
 		mvc_drop_table_wrap; "Drop table"
 
 	.COMMAND mvc_create_table( mvc c, sql_schema s, str name, int type) : 
@@ -105,7 +132,7 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND mvc_drop_column( mvc c, sql_table t, str name ) = 
 		mvc_drop_column_wrap; "Drop column"
 
-	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int type_digits, int type_scale, int seqnr ) : sql_column = mvc_create_column_wrap; "Create column"
+	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int type_digits, int type_scale ) : sql_column = mvc_create_column_wrap; "Create column"
 
 	.COMMAND mvc_null( mvc m, sql_column col, int flag ) : 
 		sql_column = mvc_null_wrap; "Set column null or not"
@@ -113,8 +140,14 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
 		sql_column = mvc_default_wrap; "Set column default value"
 
-	.COMMAND mvc_create_key( mvc m, str sname, str tname, str name, int kt, BAT[str,int] columns, sql_key fk ) :
-		sql_key = mvc_create_key_wrap; "Create a table key"
+	.COMMAND mvc_create_key( mvc m, sql_table t, str name, int kt):
+		sql_key = mvc_create_key_wrap; "Create a unique key"
+
+	.COMMAND mvc_create_key( mvc m, sql_table t, str name, int kt, sql_key rkey ) :
+		sql_key = mvc_create_fkey_wrap; "Create a foreign key"
+
+	.COMMAND mvc_create_kc( mvc m, sql_key k, str col ):
+		sql_key = mvc_create_kc_wrap; "Create a key column"
 
 	.COMMAND mvc_create_user( mvc m, str user, str pwd, str fullname, str dschema, int id) = mvc_create_user_wrap; "Create a user"
 
@@ -164,26 +197,25 @@ kernel libraries, e.g. bat.mx
 	.COMMAND senddata( Stream out ) = senddata_wrap; "Request client to senddata"
 
 
-.END sqlserver;
+.END sql_server;
 
 @h
-#ifndef _SQLSERVER_H_
-#define _SQLSERVER_H_
+#ifndef _SQL_SERVER_H_
+#define _SQL_SERVER_H_
 
 #include <streams.h>
+#include <ascii_io.h>
 #include <monet_context.h>
-#include "mvc.h"
-#include "sqlserver.proto.h"
+#include "sql_mvc.h"
+#include "sql_server.proto.h"
 
-#endif /*_SQLSERVER_H_*/
+#endif /*_SQL_SERVER_H_*/
 
 @c
-#include "sqlserver.h"
-#include "privileges.h"
-#include <statement.h>
-#include <sqlexecute.h>
 #include <mem.h>
-#include <context.h>
+#include "sql_server.h"
+#include "sql_privileges.h"
+#include "sql_context.h"
 #include <algebra.h>
 
 int mvc_init_wrap( int* debug ){
@@ -325,16 +357,16 @@ int mvc_create_view_wrap( sql_table *res, mvc* c, sql_schema *s, str name, str s
 	return GDK_SUCCEED;
 }
 
-int mvc_drop_table_wrap( mvc* c, sql_schema *s, str name, bit* cascade){
+int mvc_drop_table_wrap( mvc* c, sql_schema *s, str name, int* cascade){
 	mvc_drop_table( *(mvc**)c, *(sql_schema**)s, name, *cascade );
 	return GDK_SUCCEED;
 }
 
 
 int mvc_create_column_wrap( sql_column* res, mvc* c, sql_table *t, 
-		str name, str type, int *ts, int *td, int* seqnr){
+		str name, str type, int *ts, int *td){
 	*(sql_column**)res = 
-	  mvc_create_column( *(mvc**)c, *(sql_table**)t, name, type, *ts, *td, *seqnr );
+	  mvc_create_column( *(mvc**)c, *(sql_table**)t, name, type, *ts, *td);
 	return GDK_SUCCEED;
 }
 
@@ -348,17 +380,35 @@ int mvc_null_wrap( sql_column* res, mvc* c, sql_column* col, int *flag){
 	return GDK_SUCCEED;
 }
 
-int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val){
+int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val)
+{
 	*(sql_column**)res = mvc_default( *(mvc**)c, *(sql_column**)col, val );
 	return GDK_SUCCEED;
 }
 
-int mvc_create_key_wrap( sql_key* res, mvc* c, str sname, str tname, str name, int *kt, BAT *columns, sql_key *fk){
-	if (*(ptr*)fk == ptr_nil){
-		*(sql_key**)res = mvc_create_key( *(mvc**)c, sname, tname, name, *kt, columns, NULL);
-	} else {
-		*(sql_key**)res = mvc_create_key( *(mvc**)c, sname, tname, name, *kt, columns, *(sql_key**)fk);
-	}
+int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt )
+{
+	*(sql_key**)res 
+		= mvc_create_key( *(mvc**)c, *(sql_table**)t, name, *kt, NULL);
+	return GDK_SUCCEED;
+}
+
+int mvc_create_fkey_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt, sql_key *ukey)
+{
+	mvc *m = *(mvc**)c;
+	if (!ukey)
+		return GDK_FAIL;
+	*(sql_key**)res 
+		= mvc_create_key( m, *(sql_table**)t, name, *kt, *(sql_key**)ukey);
+	return GDK_SUCCEED;
+}
+
+int mvc_create_kc_wrap( sql_key* res, mvc* M, sql_key *K, str name )
+{
+	mvc *m = *(mvc**)M;
+	sql_key *k = *(sql_key**)K;
+	sql_column *c = mvc_bind_column( m, k->t, name );
+	*(sql_key**)res = mvc_create_kc( m, k, c );
 	return GDK_SUCCEED;
 }
 

@@ -18,8 +18,10 @@
 @' Contributor(s):
 @' 		Martin Kersten <Martin.Kersten@cwi.nl>
 @' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
 
-@f bm
+@f sql_bm
 @t Bat Manager
 @a N. J. Nes
 @v 1.0
@@ -30,8 +32,8 @@ bat ids.
 
 @* Implementation Code 
 @h
-#ifndef _BM_H_
-#define _BM_H_
+#ifndef _SQL_BM_H_
+#define _SQL_BM_H_
 
 #include <gdk.h>
 
@@ -74,9 +76,9 @@ extern int bm_lbid2version(struct bm *bm, oid lbid);
 
 extern int bm_lbid2mode(struct bm *bm, oid lbid);
 
-#endif /*_BM_H_*/
+#endif /*_SQL_BM_H_*/
 @c
-#include "bm.h"
+#include "sql_bm.h"
 #include "stream.h"
 #include "mem.h"
 

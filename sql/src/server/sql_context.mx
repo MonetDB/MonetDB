@@ -1,25 +1,101 @@
-@f sqlconnect
-@a N. Nes
-@* Connection code
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at 
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+@' All Rights Reserved.
+@' 
+@' Contributor(s):
+@' 		Martin Kersten <Martin.Kersten@cwi.nl>
+@' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
+
+@f sql_context
+@a N.J. Nes
+@* 
+
+@* Context code
+
 This small module contains the code to instantiate an SQL client.
 This code strongly depends on the front-end/back-end setup.
+
 @h
-#ifndef _SQLSERVER_H_
-#define _SQLSERVER_H_
+#ifndef _SQL_CONTEXT_H_
+#define _SQL_CONTEXT_H_
 
-#include <streams.h>
-#include <monet_context.h>
-#include "mvc.h"
-#include "sqlserver.proto.h"
+#include <mem.h>
+#include <stream.h>
+#include "sql_statement.h"
+#include "sql_mvc.h"
 
-#endif /*_SQLSERVER_H_*/
+#define ERRSIZE 1024
+
+typedef struct context {
+	int cur;
+	int prev;	/* previous token lr(1) is to restrictive for SQL */
+
+	int yyval;
+	char *yytext;
+	int yylen;
+	int yysize;
+	int debug;
+
+	char *sql;
+	int sqllen;
+	int sqlsize;
+
+	int lineno;
+	char *filename;
+	char *buf;
+	stream *in;
+	stream *out;
+
+	int status; 	/* sql error code */
+	char errstr[ERRSIZE];
+	struct  mvc *mvc;
+
+	char 	auth;	/* authorization */
+	int 	authid; /* authorization id */
+
+	list 	*params;
+	struct symbol *sym;
+} context;
+
+sql_export void sql_init_context(context * c, stream * out, int debug, mvc *m);
+sql_export void sql_exit_context(context * c);
+
+sql_export stmt *sqlnext(context * c, stream * in, int *err);
+sql_export stmt *sqlexecute(context * c, char *inbuf, int *err);
+
+sql_export void cmd_init(context * c);
+sql_export void cmd_add_token(context * c, char *token);
+sql_export void cmd_add_string(context * c, char *str);
+
+
+#endif	/* _SQL_CONTEXT_H_ */
 
 @c
-#include "sqlserver.h"
-#include <statement.h>
-#include <sqlexecute.h>
-#include <mem.h>
-#include <context.h>
+
+#include "sql_context.h"
+#include "sql_symbol.h"
+#include "sql_scan.h"
+#include "sql_semantic.h"
+#include "sql_optimize.h"
+#include "sql_rel2bin.h"
+#include "sql_server.h"
+
+#include <monet_context.h>
 #include <kernel.h>
 
 @= builtin_operand
@@ -33,8 +109,6 @@ This code strongly depends on the front-end/back-end setup.
         }
 }
 @c
-
-extern catalog *mvc_catalog_create( mvc *m, context *lc );
 
 int connect_error(stream *in, stream *out, int sock)
 {
@@ -122,8 +196,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	lc = NEW(context);
  	bbuf = buffer_create( BUFSIZ );
 	ws = buffer_wastream( bbuf, "SQLserver" );
-	sql_init_context( lc, ws, debug, default_catalog_create() );
-	mvc_catalog_create( m, lc );
+	sql_init_context( lc, ws, debug, m );
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(stk, "myc");
@@ -235,7 +308,6 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 				_DELETE(cmd);
 			else if (cmd) 
 				free(cmd);
-			cmd = NULL;
 		}
 		if (s) stmt_destroy(s);
 	}
@@ -245,4 +317,154 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	close_stream(out);
 	close(sock);
 	return GDK_SUCCEED;
+}
+
+void sql_init_context(context * c, stream * out, int debug, mvc * mvc)
+{
+	memset(c, 0, sizeof(context));
+	c->cur = ' ';
+	c->filename = NULL;
+	c->buf = NULL;
+	c->in = NULL;
+	c->out = out;
+	c->debug = debug;
+	c->lineno = 1;
+	c->sym = NULL;
+	c->mvc = mvc;
+	c->status = 0;
+	c->errstr[0] = '\0';
+
+	c->yyval = 0;
+	c->yytext = NEW_ARRAY(char, BUFSIZ);
+	c->yytext[0] = 0;
+	c->yylen = 0;
+	c->yysize = BUFSIZ;
+
+	if (c->sql)
+		_DELETE(c->sql);
+	c->sql = NEW_ARRAY(char, BUFSIZ);
+	c->sqlsize = BUFSIZ;
+	c->sql[0] = '\0';
+
+	cmd_init(c);
+}
+
+void sql_exit_context(context * c)
+{
+	if (c->out){
+		c->out->close(c->out);
+		c->out->destroy(c->out);
+	}
+	c->mvc = NULL;
+
+	if (c->sql != NULL)
+		_DELETE(c->sql);
+	c->sql = NULL;
+	_DELETE(c->yytext);
+}
+
+stmt *sqlnext(context * c, stream * in, int *err)
+{
+	stmt *res = NULL;
+
+	c->filename = in->name;
+	c->in = in;
+
+	cmd_init(c);
+
+	if (c->cur != EOF && !(*err = sqlparse(c))) {
+		res = semantic(c, c->sym);
+		if (res){
+			stmt *opt = optimize(c, res);
+			stmt_destroy(res);
+			res = rel2bin(c, opt);
+			stmt_destroy(opt);
+			/* optimizer or rel2bin bug */
+			if (!res)
+				*err = 1;
+		}
+		if (!res && c->status){
+			*err = 1;
+		}
+	}
+	if (c->sym) {
+		symbol_destroy(c->sym);
+		c->sym = NULL;
+	}
+	return res;
+}
+
+stmt *sqlexecute(context * c, char *buf, int *err)
+{
+	stmt *res = NULL;
+
+	c->filename = "";
+	c->buf = buf;
+	c->cur = ' ';
+
+	cmd_init(c);
+
+	if (!(*err = sqlparse(c))) {
+		res = semantic(c, c->sym);
+		if (res){
+			stmt *opt = optimize(c, res);
+			stmt_destroy(res);
+			res = opt;
+			res = rel2bin(c, opt);
+			stmt_destroy(opt);
+			/* optimizer or rel2bin bug */
+			if (!res)
+				*err = 1;
+		}
+		if (!res && c->status){
+			*err = 1;
+		}
+	}
+	if (c->sym) {
+		symbol_destroy(c->sym);
+		c->sym = NULL;
+	}
+	return res;
+}
+
+void cmd_init(context * c)
+{
+	if (c->sql && c->debug & D__SQL)
+		fprintf(stderr, "%s\n", c->sql);
+	c->sql[0] = '\0';
+	c->sqllen = 1;
+
+	c->errstr[0] = '\0';
+}
+
+/* add token + widthspace */
+void cmd_add_token(context * c, char *token)
+{
+	int len = strlen(token);
+	if ((c->sqllen + len + 1) > c->sqlsize) {
+		while( (c->sqllen + len + 1) > c->sqlsize)
+			c->sqlsize *= 2;
+		c->sql = RENEW_ARRAY(char, c->sql, c->sqlsize);
+	}
+	strncpy(c->sql + c->sqllen - 1, token, len);
+	c->sqllen += len + 1;
+	c->sql[c->sqllen - 2] = ' ';
+	c->sql[c->sqllen - 1] = '\0';
+}
+
+/* add quoted string + widthspace */
+void cmd_add_string(context * c, char *str)
+{
+	int len = strlen(str);
+	if ((c->sqllen + len + 3) > c->sqlsize) {
+		while( (c->sqllen + len + 3) > c->sqlsize)
+			c->sqlsize *= 2;
+		c->sql = RENEW_ARRAY(char, c->sql, c->sqlsize);
+	}
+	c->sql[c->sqllen - 1] = '\'';
+	strncpy(c->sql + c->sqllen, str, len);
+	c->sqllen += len + 3;
+	c->sql[c->sqllen - 3] = '\'';
+	c->sql[c->sqllen - 2] = ' ';
+	c->sql[c->sqllen - 1] = '\0';
 }
