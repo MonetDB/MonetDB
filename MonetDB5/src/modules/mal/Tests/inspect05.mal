@@ -1,0 +1,15 @@
+#Illustrate the modules loaded after start
+m:= inspect.getModules();
+print(m);
+
+printf("Patterns\n");
+p:= inspect.getPatterns();
+print(p);
+
+printf("Commands\n");
+p:= inspect.getCommands();
+print(p);
+
+printf("Functions\n");
+p:= inspect.getFunctions();
+print(p);

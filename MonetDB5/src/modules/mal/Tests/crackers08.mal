@@ -1,0 +1,117 @@
+# determine basic costs for cracking a larger table.
+b:= new(:int,:int);
+barrier (v,i):= newRange(0:int);
+        k:= rand();
+        l:= int(k);
+        insert(b,l,l);
+        redo (v,i):= nextElement(1:int,1000000:int);
+exit (v,i);
+#setReadMode(b);
+mx:= max(b);
+printf("max %d",mx);
+mi:= min(b);
+printf(" min %d\n",mi);
+t0:= alarm.usec();
+c:= copy(b);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#copy %d\n",d0);
+
+t0:= alarm.usec();
+crackers.new(b);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#crack init %d\n",d0);
+#print(vrng);
+
+l:= mi*2;
+h:= mx/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+crackers.crack(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#crack %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+crackers.crack(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#crack %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+crackers.crack(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#crack %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+crackers.crack(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#crack %d\n",d0);
+
+# Compare cracker with ordinary selection
+t0:= alarm.usec();
+i:= max(b);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#max %d\n",d0);
+t0:= alarm.usec();
+i:= min(b);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#min %d\n",d0);
+
+l:= mi*2;
+h:= mx/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+c:= select(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#select %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+c:= select(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#select %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+c:= select(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#select %d\n",d0);
+
+l:= l*2;
+h:= h/2;
+#printf("select %d ",l);
+#printf("%d\n",h);
+t0:= alarm.usec();
+c:= select(b,l,h);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#select %d\n",d0);

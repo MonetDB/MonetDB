@@ -1,0 +1,24 @@
+# Testing the cracker implementation
+b:= new(:int,:int);
+insert(b,10,100);
+insert(b,1,2);
+insert(b,6,36);
+insert(b,5,25);
+insert(b,2,4);
+insert(b,3,9);
+insert(b,7,49);
+insert(b,8,64);
+insert(b,4,16);
+insert(b,9,81);
+
+crackers.new(b);
+crackers.crack(b,9,25);
+crackers.crack(b,80,195);
+crackers.crack(b,2,2);
+
+barrier (i,view) := crackers.newIterator(b);
+	print(view);
+	redo (i,view) := crackers.hasMoreElements(b);
+exit;
+
+crackers.drop(b);

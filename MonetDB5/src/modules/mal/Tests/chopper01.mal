@@ -1,0 +1,25 @@
+	t:= new(:int, :url);
+	cb_a := url("http://www.cwi.nl");
+	db_a := insert(t,1,cb_a);
+        eb_a := url("http://www.cwi.nl/~monet");
+        fb_a := insert(t,2,eb_a);
+	gb_a := url("http://www.cwi.nl/~mk/Acoi/doc/features.html");
+        hb_a := insert(t,3,gb_a);
+        ib_a := url("http://www.educ.uva.nl/schoolweb/rocloka.htm");
+        jb_a := insert(t,4,ib_a);
+        kb_a := url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
+        lb_a := insert(t,5,kb_a);
+        mb_a := url("http://www.edgeonline.com/");
+        nb_a := insert(t,6,mb_a);
+        ob_a := url("http://robotics.stanford.edu/icons/ ");
+        pb_a := insert(t,7,ob_a);
+	qb_a := print("build a table finished");
+	print(t);
+
+        rb:= new(:int,:url);
+	print("start loop");
+barrier (mloop:lng,h:inr,B2:url) := chopper.newIterator(t);
+	print(B2);
+	redo (mloop:lng,h:inr,B2:url) := chopper.hasMoreElements(t);
+exit mloop;
+

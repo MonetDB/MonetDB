@@ -1,0 +1,34 @@
+# Testing the cracker implementation
+b:= new(:int,:int);
+insert(b,10,100);
+insert(b,1,2);
+insert(b,6,36);
+insert(b,5,25);
+insert(b,2,4);
+insert(b,3,9);
+insert(b,7,49);
+insert(b,8,64);
+insert(b,4,16);
+insert(b,9,81);
+print(b);
+
+crackers.new(b);
+z:= crackers.crack(b,9,25);
+print(z);
+crackers.info(b);
+print(b);
+
+y:= crackers.crack(b,80,195);
+print(z);
+crackers.info(b);
+print(b);
+
+y:= crackers.crack(b,2,2);
+print(z);
+crackers.info(b);
+print(b);
+
+y:= crackers.crack(b,20,99);
+print(z);
+crackers.info(b);
+print(b);

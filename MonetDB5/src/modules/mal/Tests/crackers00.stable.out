@@ -1,0 +1,84 @@
+stdout of test 'crackers00` in directory 'src/modules/mal` itself:
+
+
+# 20:40:45 >  
+# 20:40:45 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=44232 --set sql_port=50677 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  crackers00.mal </dev/null
+# 20:40:45 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
+# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_modules_mal
+# Visit http://monetdb.cwi.nl for further information.
+## Testing the cracker implementation
+#b:= new(:int,:int);
+#insert(b,10,100);
+#insert(b,1,2);
+#insert(b,6,36);
+#insert(b,5,25);
+#insert(b,2,4);
+#insert(b,3,9);
+#insert(b,7,49);
+#insert(b,8,64);
+#insert(b,4,16);
+#insert(b,9,81);
+#print(b);
+#
+#crackers.new(b);
+#crackers.info(b);
+#print(b);
+#
+function Admin.main():int;	# 0  (main:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    bat.insert(b,10,100);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($6:int)
+    bat.insert(b,1,2);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:int,:int])($8:int)($9:int)
+    bat.insert(b,6,36);	# 4 BKCinsert_bun ($10:void)<-(b:bat[:int,:int])($11:int)($12:int)
+    bat.insert(b,5,25);	# 5 BKCinsert_bun ($13:void)<-(b:bat[:int,:int])($14:int)($15:int)
+    bat.insert(b,2,4);	# 6 BKCinsert_bun ($16:void)<-(b:bat[:int,:int])($9:int)($17:int)
+    bat.insert(b,3,9);	# 7 BKCinsert_bun ($18:void)<-(b:bat[:int,:int])($19:int)($20:int)
+    bat.insert(b,7,49);	# 8 BKCinsert_bun ($21:void)<-(b:bat[:int,:int])($22:int)($23:int)
+    bat.insert(b,8,64);	# 9 BKCinsert_bun ($24:void)<-(b:bat[:int,:int])($25:int)($26:int)
+    bat.insert(b,4,16);	# 10 BKCinsert_bun ($27:void)<-(b:bat[:int,:int])($17:int)($28:int)
+    bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:void)<-(b:bat[:int,:int])($20:int)($30:int)
+    io.print(b);	# 12 IOprint_val ($31:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 13 CRKnew ($32:void)<-(b:bat[:int,:int])
+    crackers.info(b);	# 14 CRKinfo ($33:void)<-(b:bat[:int,:int])
+    io.print(b);	# 15 IOprint_val ($34:int)<-(b:bat[:int,:int])
+end main;	# 16  
+#-----------------#
+# h	tmp_4	  # name
+# int	int	  # type
+#-----------------#
+[ 10,	  100	  ]
+[ 1,	  2	  ]
+[ 6,	  36	  ]
+[ 5,	  25	  ]
+[ 2,	  4	  ]
+[ 3,	  9	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 4,	  16	  ]
+[ 9,	  81	  ]
+# idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name
+[   0   4, L, -1 -2147483648, 2147483647, 1, 10, -1, -1, -1 ]
+ #-----------------#
+# h	tmp_4	  # name
+# int	int	  # type
+#-----------------#
+[ 10,	  100	  ]
+[ 1,	  2	  ]
+[ 6,	  36	  ]
+[ 5,	  25	  ]
+[ 2,	  4	  ]
+[ 3,	  9	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 4,	  16	  ]
+[ 9,	  81	  ]
+>
+# 20:40:45 >  
+# 20:40:45 >  Done.
+# 20:40:45 >  
+
