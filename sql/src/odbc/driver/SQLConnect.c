@@ -82,8 +82,12 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		pwd = dupODBCstring(szPWD, (size_t) nPWDLength);
 	}
 
-	s = mo_find_option(NULL, 0, "sql_port");
-	port = atoi(s);
+	if ((s = getenv("SQLPORT")) != NULL)
+		port = atoi(s);
+	if (port == 0) {
+		s = mo_find_option(NULL, 0, "sql_port");
+		port = atoi(s);
+	}
 
 	/* TODO: get and use a database name */
 
