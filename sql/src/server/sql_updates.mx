@@ -1040,8 +1040,14 @@ static stmt *update_table(mvc * sql, dlist * qname,
 				  stmt_reverse(s ? 
 					first_subset(s) : 
 				  	stmt_cbat(c, stmt_dup(tv->s), RDONLY, st_bat)), v);
+			} else {
+				/* s is a table result ie new oid, original oid 
+			 	* v is a result based on subset s, new oid, val
+			 	* So a join is needed to get original oid, val
+			 	*/
+				v = stmt_join(stmt_reverse(
+					first_subset(s)), v, cmp_equal);
 			}
-
 			updates[c->colnr] = stmt_replace( stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), v);
 			list_append(l, stmt_dup(updates[c->colnr]) );
 			if (t->base.flag != TR_NEW) {
