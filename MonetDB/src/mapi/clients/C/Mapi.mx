@@ -2587,6 +2587,8 @@ MapiMsg
 mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 {
 	mapi_hdl_check(hdl, "mapi_seek_row");
+	if (hdl->mid->active && read_until_prompt(hdl->mid->active) != MOK)
+		return MERROR;
 	switch (whence) {
 	case MAPI_SEEK_SET:
 		break;
@@ -2614,10 +2616,6 @@ mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 			hdl->cache.first = rownr;
 		}
 	}
-	/* mapi_seek_row als fetches the seeked-to row */
-	if (!hdl->mid->error)
-		(void) mapi_fetch_row(hdl);
-
 	return hdl->mid->error;
 }
 
