@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s2 <<'EOT'
-for $x in for return if
-EOT
-echo $?

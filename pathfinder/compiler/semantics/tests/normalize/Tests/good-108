@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s2 <<'EOT'
-some $a in ("foo", 42) satisfies $i < 7
-EOT
-echo $?

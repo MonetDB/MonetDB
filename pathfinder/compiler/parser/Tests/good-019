@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-(1, "foo", 3.4)
-EOT
-echo $?

@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s3 <<'EOT'
-/parent::foo/descendant::bar/following::baz
-EOT
-echo $?
