@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-$MONET_PREFIX/lib/MonetDB/Tests/smack00 $MAPIPORT
+export PATH=$MONET_BUILD/src/mapi/examples/C:$MONET_PREFIX/lib/MonetDB/Tests:$PATH
+
+smack00 $MAPIPORT

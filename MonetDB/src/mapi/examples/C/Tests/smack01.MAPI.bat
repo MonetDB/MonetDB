@@ -1,3 +1,5 @@
 @echo off
 
-call %MONET_PREFIX%\lib\MonetDB\Tests\smack01.exe %MAPIPORT%
+set PATH=%MONET_BUILD%\src\mapi\example\C;%MONET_PREFIX%\lib\MonetDB\Tests;%PATH%
+
+call smack01.exe %MAPIPORT%
