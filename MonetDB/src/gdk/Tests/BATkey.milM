@@ -1,9 +1,9 @@
-module("unix","str");
+module("unix","str","ascii_io");
 
 var ttd := getenv("TSTTRGDIR");
 
-printf("> _MMnilcast_5 := new(void,oid).import(ttd+\"/BATkey.x.data\").seqbase(0@0).rename(\"_MMnilcast_5\"); \n");
-	  _MMnilcast_5 := new(void,oid).import(ttd+"/BATkey.x.data").seqbase(0@0).rename("_MMnilcast_5");
+printf("> _MMnilcast_5 := new(oid,oid).import(ttd+\"/BATkey.x.data\").rename(\"_MMnilcast_5\"); \n");
+	  _MMnilcast_5 := new(oid,oid).import(ttd+"/BATkey.x.data").rename("_MMnilcast_5");
 printf("> indexList1 := new(oid,oid).import(ttd+\"/BATkey.y.data\").rename(\"indexList1\"); \n");
 	  indexList1 := new(oid,oid).import(ttd+"/BATkey.y.data").rename("indexList1");
 printf("> _MMnilcast_5.print; \n");

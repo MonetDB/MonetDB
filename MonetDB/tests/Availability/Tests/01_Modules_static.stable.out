@@ -46,12 +46,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 635 ]
+[ 633 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 635 ]
+[ 633 ]
 
 All:=0;
 
@@ -546,7 +546,7 @@ Module: "arith"
 
 Module: "bat"
 
-[ 56 ]
+[ 54 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature											| help																																																															  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -575,12 +575,10 @@ Module: "bat"
 [ "delete",	  "COMMAND:   ",  "delete(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Delete one specific BUN. \n Returns the modified BAT."																																																								  ]
 [ "deleteBuns",	  "COMMAND:   ",  "deleteBuns(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Delete from the first BAT all BUNs with a corresponding BUN in the second.\n Returns the modified BAT."																																																		  ]
 [ "destroy",	  "COMMAND:   ",  "destroy(str, bit) : bit",							  "Destroys the BAT."																																																											  ]
-[ "export",	  "COMMAND:   ",  "export(BAT[any,any], str) : void",								  "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it\n is put into the $MONETHOME/dbfarm/$DB directory."																																																  ]
 [ "hashloop",	  "ITERATOR:  ",  "hashloop(BAT[any::1,any], ptr, any::1) : void",						  "Iterators are special MIL constructs:\n  <bat-expression> @ <iterator>(<parameters>) <MIL-statement>\n 'b@hashloop(v)..' iterates over all BUNs [$h,$t] of BAT b where ($h = val)."																																									  ]
 [ "heat",	  "COMMAND:   ",  "heat(str) : int",								  "returns the current BBP heat (LRU stamp)"																																																								  ]
 [ "hot",	  "COMMAND:   ",  "hot(str) : void",										  "Makes a BAT very hot for the BBP. The chance of being chosen for swapout is \n small, afterwards.  Returns the BAT itself."																																																  ]
 [ "htype",	  "COMMAND:   ",  "htype(int) : int",										  "Returns the type of the head column of a BAT, as an integer type number."																																																						  ]
-[ "import",	  "COMMAND:   ",  "import(BAT[any,any], str) : BAT[any,any]",							  "Import a BAT from an ASCII dump. The new tuples are *inserted* into the\n parameter BAT. You have to create it! Its signature must match the dump, \n else parsing errors will occur."																																								  ]
 [ "info",	  "COMMAND:   ",  "info(BAT[any,any]) : BAT[str,str]",								  "Produce a BAT containing info about a BAT in \"attribute\",\"value\" format.\n It contains all properties of the BAT record. See the BAT documentation in\n GDK for more information."																																								  ]
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Insert all BUNs of the second BAT into the first. \n Returns the modified BAT."																																																					  ]
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Insert one BUN[h,t] in a BAT. \n Returns the modified BAT."																																																								  ]
@@ -767,7 +765,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",										  "save all persistent BATs"																																										  ]
 
 All.print;
-[ 635 ]
+[ 633 ]
 
 quit;
 

@@ -29,7 +29,7 @@
 # 
 
 setoid(oid(10000000));
-module("unix");
+module("unix","ascii_io");
 # initialize the database
 t:= new(int,int);
 t.rename("k10_unique1");

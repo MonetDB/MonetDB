@@ -24,6 +24,7 @@
 # > b := new(int,int);
 # > b.import("/home/quak/tmp/testt");
 
+module("ascii_io");
 a := new(int,int);
 a.insert(1,1);
 a.print;

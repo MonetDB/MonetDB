@@ -1,5 +1,6 @@
 setoid(oid(20000000));
 #test ascii export/import facility.
+module("ascii_io");
 
 b:= new(str,int);
 b.insert("the",1);

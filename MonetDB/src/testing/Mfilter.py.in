@@ -70,6 +70,7 @@ test = (
                 "|" r"^Connecting to server: localhost:[0-9]*$"
                 "|" r"^server listening on port [0-9]*$"
                 "|" r"^SQL  connected to database .* using schema .*$"
+                "|" r"^MAPI  = .*@.*:[0-9]*$"
                  ,  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile( r"^!ERROR: DL_open: Unknown error.$"

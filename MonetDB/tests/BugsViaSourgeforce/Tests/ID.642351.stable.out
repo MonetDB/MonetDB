@@ -32,7 +32,7 @@ stdout of test 'ID.642351` in directory 'tests/BugsViaSourgeforce` itself:
 # intersection, those values should always be there,
 # shouldn't they?
 
-module("unix");
+module("unix","ascii_io");
 TTD := getenv("TSTTRGDIR");
 
 b:=new(oid,str);
@@ -399,7 +399,7 @@ b.print;
 [ 5215@0, "person14"		  ]
 [ 5218@0, "item21"		  ]
 [ 5235@0, "person0"		  ]
-c:=new(oid,void);
+c:=new(oid,oid);
 c.import(TTD + "/ID.642351.c.txt");
 c.print;
 #-----------------#

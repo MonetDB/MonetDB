@@ -75,7 +75,7 @@
 # ! Connection broken
 
 setoid(oid(10000000));
-module("unix");
+module("unix","ascii_io");
 #
 # Text retrieval testjes
 #

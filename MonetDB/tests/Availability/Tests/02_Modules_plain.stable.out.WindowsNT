@@ -302,8 +302,8 @@ Module: "alarm"
 
 Module: "ascii_io"
 
-[ 20 ]
-[ 20 ]
+[ 22 ]
+[ 22 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help			  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -314,10 +314,12 @@ Module: "ascii_io"
 [ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], str, int) : any",					  "not available"	  ]
 [ "dump_format",	  "PROC:      ",  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",				  "not available"	  ]
 [ "dump_seps",		  "PROC:      ",  "dump_seps(BAT[void,BAT]) : BAT[void,str]",					  "not available"	  ]
+[ "export",		  "PROC:      ",  "export(BAT[any,any], str) : any",							  "not available"	  ]
 [ "fclose",		  "PROC:      ",  "fclose(Stream) : void",							  "not available"	  ]
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",							  "not available"	  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",							  "not available"	  ]
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",							  "not available"	  ]
+[ "import",		  "PROC:      ",  "import(BAT[any,any], str) : any",							  "not available"	  ]
 [ "input",		  "COMMAND:   ",  "input(BAT[void,str], BAT[void,str], BAT[void,str], Stream, int) : BAT[str,BAT]",	  ""			  ]
 [ "load",		  "COMMAND:   ",  "load(BAT[void,str], BAT[void,str], BAT[void,str], str, int) : BAT[str,BAT]",	  ""			  ]
 [ "load_data",		  "PROC:      ",  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",				  "not available"	  ]
