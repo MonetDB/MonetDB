@@ -3142,7 +3142,12 @@ int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 	return GDK_SUCCEED;
 }
 
-@+ clustered positional join
+@+ Prefetching
+Seems hardware prefetching isn't up to its take on most platforms (P4 being the exception). Therefore we implement
+software prefetching optimized per platform. A default implementation just sums int with cacheline strides.
+For AMD Athlon systems backward read of 'movl's is optimal (see www.amd.com).  For systems without hardware 
+prefetching, a software prefetch is implemented, ie a simple prefetch loop.
+
 @c
 #ifdef HAVE_RESTRICT
 #define __r	restrict
@@ -3154,12 +3159,76 @@ int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 #endif
 #endif
 
+#if defined(ATHLON) 
+static inline int Mem2Cache(int*__r from, size_t size )
+{
+	int cnt = size/128;
+	__asm__ __volatile__ (
+		"movl %2, %%eax\n\t"
+		"movl %0, %%esi\n\t"
+		"addl %1, %%esi\n\t"
+		"1: movl -128(%%esi), %%edx\n\t"
+		"movl -64(%%esi), %%edx\n\t"
+		"subl $128, %%esi\n\t"
+		"dec %%eax\n\t"
+		"jnz 1b\n\t"
+                :  : "r" (from), "r" (size), "r" (cnt) : "memory",  "%eax", "%edx", "%esi" );
+	return cnt;
+}
+#else
+
+#if defined(ia64)
+/* L2 has 128 byte cachelines */
+static inline int Mem2Cache(int*__r from, size_t size )
+{
+	char *data = (char*) from;
+	int i;
+	for(i=0; i<size; i += 64){
+#ifndef __GNUC__
+        	_mm_prefetch(data, _MM_HINT_NTA );
+#else
+        	__builtin_prefetch(data);
+#endif
+		data += 64;
+	}
+	return i;
+}
+#else
+
+#define CACHELINE (128)
+#define INTCACHELINE (CACHELINE/sizeof(int))
+
+static inline int Mem2Cache(int*__r p, size_t size){
+	size_t sum0 = 0, sum1 = 0, i = 0;
+	size /= sizeof(int);
+
+	while(i+(8*INTCACHELINE) < size){
+		sum0 += p[i+0*INTCACHELINE];
+		sum1 += p[i+1*INTCACHELINE];
+		sum0 += p[i+2*INTCACHELINE];
+		sum1 += p[i+3*INTCACHELINE];
+		sum0 += p[i+4*INTCACHELINE];
+		sum1 += p[i+5*INTCACHELINE];
+		sum0 += p[i+6*INTCACHELINE];
+		sum1 += p[i+7*INTCACHELINE];
+		i += INTCACHELINE*8;
+	}
+	return sum0+sum1;
+}
+
+#endif
+#endif
+
+@+ clustered positional join
+@c
 static
 dbl prefetch(ssize_t n, int stride, dbl*__r src) {  
 	dbl tot = 0;
 	ssize_t i;
 	n >>= 3;
-	if (stride == 32) {
+	if (stride == 1) {
+		Mem2Cache((int*) src, n);
+	} else if (stride == 32) {
 		for(i=0; i+16<n; i+=16) 
 			tot += src[i] + src[i+4] + src[i+8] + src[i+12];
 	} else if (stride == 64) { 
@@ -3238,7 +3307,8 @@ int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	bn->batBuns->free += c_cnt*BUNsize(bn);
 
 	for(i=0; i<c_cnt; i+=vectorsize) {
-		int cur_bits = pos[i<<oidhead]&radix_mask;
+		ssize_t probe = MIN(i+vectorsize,c_cnt)-1;
+		int cur_bits = pos[probe<<oidhead]&radix_mask;
 		if (prev_bits != cur_bits && stride > 0 && radix_shift > 3) {
 			(void) prefetch(width*MIN(v_cnt-cur_bits,1<<radix_shift), stride, (dbl*) (vf+cur_bits*width));
 		}
