@@ -131,7 +131,7 @@ SQLRETURN EndTran(
 			rc2 = GetDiagRec(SQL_HANDLE_STMT, stmt, 1,
 					sqlState, &nativeErrCode, msgText,
 					SQL_MAX_MESSAGE_LENGTH, NULL);
-			addDbcError(dbc, sqlState, msgText, nativeErrCode);
+			addDbcError(dbc, sqlState, (char*)msgText, nativeErrCode);
 		}
 		/* clean up the statement handle */
 		FreeStmt(stmt, SQL_CLOSE);

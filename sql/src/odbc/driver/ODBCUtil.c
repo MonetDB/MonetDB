@@ -55,18 +55,18 @@ char * copyODBCstr2Cstr(SQLCHAR * inStr, SQLSMALLINT lenCode)
 
 	if (lenCode == SQL_NTS) {
 		/* its a Null Terminated String (NTS) */
-		return (char *) strdup(inStr);
+		return (char *) strdup((char*)inStr);
 	}
 	if (lenCode >= 0) {
 		/* String length is specified. It may not be Null Terminated. */
 		if (inStr[lenCode] == '\0') {
 			/* it is null terminated, so we can use strdup */
-			return (char *) strdup(inStr);
+			return (char *) strdup((char*)inStr);
 		} else {
 			/* need to copy lenCode chars and null terminate it */
 			char * tmp = (char *) malloc((lenCode +1) * sizeof(char));
 			assert(tmp);
-			strncpy(tmp, inStr, lenCode);
+			strncpy(tmp, (char*)inStr, lenCode);
 			tmp[lenCode] = '\0';	/* make it null terminated */
 			return tmp;
 		}

@@ -14,7 +14,6 @@
 #endif
 
 #include <string.h>
-#include <list.h>
 
 #include <langinfo.h>
 #include <iconv.h>
@@ -29,11 +28,11 @@ int is_chrsp = 0;
 iconv_t to_utf = NULL;
 iconv_t from_utf = NULL;
 
-unsigned char *conv( unsigned char *org, iconv_t cd)
+char *conv( char *org, iconv_t cd)
 {
 	if (cd){
-		int len = strlen(org);
-		int size = len * 4;
+		size_t len = strlen(org);
+		size_t size = len * 4;
 		char *buf = malloc(size);
 		char *to = buf;
 		char *from = org;
@@ -322,11 +321,11 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug ){
 		}
 		line = sql_readline(prompt);
 		if (!line) break;
-		cmdcnt = parse_line(line);
+		cmdcnt = parse_line((unsigned char*)line);
 		if (debug)
 			printf("%d %s\n", cmdcnt, line);
 		if (to_utf){
-			unsigned char *converted = conv(line, to_utf);
+			char *converted = conv(line, to_utf);
 			ws->write( ws, converted, strlen(converted), 1 );
 			free(converted);
 		} else {

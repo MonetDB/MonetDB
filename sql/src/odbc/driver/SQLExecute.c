@@ -85,11 +85,7 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 {
 	ODBCStmt *	hstmt = (ODBCStmt *) hStmt;
 	ODBCDbc *	dbc = NULL;
-	context *	sqlContext = NULL;
-	stmt *		res = NULL;
-	RETCODE		rc = SQL_SUCCESS;
 	char* 		query = NULL;
-
 
 	if (! isValidStmt(hstmt))
 		return SQL_INVALID_HANDLE;
@@ -171,9 +167,7 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 	int	nRows = 0;
 	int	type = 0;
 	int	status = 0;
-	int	flag = 0;
 	stream *	rs;
-	ColumnHeader *	pColumnHeader;
 
 	/* initialize the Result meta data values */
 	hstmt->nrCols = 0;

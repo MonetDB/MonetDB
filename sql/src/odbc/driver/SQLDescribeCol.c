@@ -95,7 +95,7 @@ SQLRETURN SQLDescribeCol(
 	/* now copy the data */
 	if (szColName) {
 		if (colName) {
-			strncpy(szColName, colName, nColNameMax -1);
+			strncpy((char*)szColName, colName, nColNameMax -1);
 			szColName[nColNameMax] = '\0';	/* make it null terminated */
 		}
 	}

@@ -1501,7 +1501,7 @@ mvc *mvc_create(int debug)
 	return m;
 }
 
-int mvc_status( mvc *c ){
+ssize_t mvc_status( mvc *c ){
 	sql_trans *t = c->trans;
 	int res = t->status;
 

@@ -65,11 +65,8 @@
 
 /* MonetDB / SQL frontend include files */
 #include "comm.h"	/* for ??() */
-#include <context.h>	/* for ??() */
-#include <statement.h>	/* for ??() */
 #include <mem.h>	/* for ??() */
 #include <query.h>	/* for ??() */
-
 
 /* standard C include files */
 #include <string.h>	/* for strcpy() etc. */

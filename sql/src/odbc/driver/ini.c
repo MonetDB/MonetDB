@@ -6,6 +6,14 @@
 #include <string.h>
 #include <pwd.h>
 
+#ifdef HAVE_LIMITS_H 
+#include <limits.h>	/* PATH_MAX */
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX	256
+#endif
+
 /* this does not do any reallocation */
 static void trim_spaces(char *str)
 {

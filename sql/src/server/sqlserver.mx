@@ -182,9 +182,6 @@ replace commands.
 #include <mem.h>
 #include <context.h>
 #include <kernel.h>
-
-//#include  <sys/types.h> 
-
 #include <monet_tbl.h>
 
 void sqlserver_prelude(void) {
