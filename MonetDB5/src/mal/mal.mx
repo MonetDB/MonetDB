@@ -190,6 +190,7 @@ as well as in user defined module implementations.
 #define _MAL_H
 
 #include <gdk.h>
+#include <gdk_utils.h>
 #include <stream.h>
 
 #ifdef _MSC_VER

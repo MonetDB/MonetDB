@@ -156,6 +156,7 @@ static void *handles[MAXMODULES];
 
 str loadModuleLibrary(str modnme){
 	char nme[MAXPATHLEN];
+	char errbuf[1024];
 	void *handle = NULL;
 	str fullname,s;
 	int i = 0, idx;
@@ -175,14 +176,14 @@ Use the search path provided in the configuration file
 		handle = dlopen(fullname, RTLD_NOW | RTLD_GLOBAL);
 #ifdef DEBUG_MAL_LINKER
 		stream_printf(GDKout,"load:%s:%s\n",fullname,handle==NULL?
-			(handle==NULL?dlerror():"failed"):"succeeded");
+			(handle==NULL?errbuf:"failed"):"succeeded");
 #endif
 		if(handle == NULL) {
-			char buf[1024];
-			strcpy(buf,fullname);
+			strcpy(errbuf, dlerror());
 			GDKfree(fullname);
+			GDKerror("load error %s\n", errbuf);
 			return (str) throwException("loaderException",
-				"loadModuleLibrary", buf);
+				"loadModuleLibrary",modnme);
 		}
 		GDKfree(fullname);
 	}
