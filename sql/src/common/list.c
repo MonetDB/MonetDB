@@ -130,7 +130,7 @@ int list_traverse(list * l, traverse_func f, char *clientdata)
 
 list *list_map(list * l, map_func f, char *clientdata)
 {
-	list *res = list_create(NULL);
+	list *res = list_create(l->destroy);
 	int seqnr = 0;
 
 	node *n = l->h;

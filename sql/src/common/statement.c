@@ -185,18 +185,10 @@ void stmt_destroy(stmt * s)
 				grp_destroy(s->op3.gval);
 			break;
 		case st_set:
+		case st_sets:
 		case st_list:
 		case st_triop:
 			list_destroy(s->op1.lval);
-			break;
-		case st_sets:
-			{
-				node *n = s->op1.lval->h;
-				while (n) {
-					list_destroy(n->data);
-					n = n->next;
-				}
-			}
 			break;
 		case st_atom:
 			atom_destroy(s->op1.aval);

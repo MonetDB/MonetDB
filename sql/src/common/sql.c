@@ -1170,7 +1170,6 @@ static stmt *jointree_tmp(context * sql, list * l)
 
 static stmt *set2pivot(context * sql, list * l)
 {
-	list *ol = l;
 	list *pivots = create_stmt_list();
 	stmt *join, *st;
 	node *n;
@@ -1248,7 +1247,6 @@ static stmt *sets2pivot(context * sql, list * ll)
 	node *n = ll->h;
 	if (n) {
 		stmt *pivots = set2pivot(sql, n->data);
-		list *cur = pivots->op1.lval;
 		n = n->next;
 		/*
 		   stmt *g = NULL;
@@ -1261,44 +1259,47 @@ static stmt *sets2pivot(context * sql, list * ll)
 			node *m = l->h;
 
 			while (m) {
-				node *c = cur->h;
+				node *c = pivots->op1.lval->h;
 				while (c) {
 					stmt *cd = c->data;
 					stmt *md = m->data;
 					if (cd->t == md->t) {
-						list_append (inserts,
-						     stmt_insert
-						     (cd, md));
+						list_append (inserts, stmt_insert (stmt_dup(cd), stmt_dup(md)));
+						break;
 					}
 					c = c->next;
 				}
 				m = m->next;
 			}
-			/* TODO: cleanup the old cur(rent) and npivots */
-			cur = inserts;
+			stmt_destroy(pivots);
+			stmt_destroy(npivots);
+			pivots = stmt_list(inserts);
 			n = n->next;
 		}
 		/* no double elimination jet 
-		   m = inserts->h;
+		   list *inserts = create_stmt_list();
+		   m = pivots->op1.lval->h;
 		   while(m){
-		   if (g){
-		   g = stmt_derive(m->data, g);
-		   } else {
-		   g = stmt_group(m->data);
+		   	if (g){
+		   		g = stmt_derive(m->data, g);
+		   	} else {
+		   		g = stmt_group(m->data);
+		   	}
+		   	m = m->next;
 		   }
-		   m = m->next;
-		   }
-		   g = stmt_reverse( stmt_unique( 
-		   stmt_reverse( g ), NULL));
+		   g = stmt_reverse( stmt_unique( stmt_reverse( g ), NULL));
 		   m = inserts->h;
-		   cur = create_stmt_list();
+
 		   while(m){
-		   list_append( cur, 
-		   stmt_semijoin( m->data, g));
-		   m = m->next;
+		   	list_append( inserts, stmt_semijoin( stmt_dup(m->data), 
+				stmt_dup(g)));
+		   	m = m->next;
 		   }
+		   stmt_destroy(g);
+		   stmt_destroy(pivots);
+		   return stmt_list(inserts);
 		 */
-		return stmt_list(cur);
+		return pivots;
 	}
 	return NULL;
 }
