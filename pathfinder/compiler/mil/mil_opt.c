@@ -324,7 +324,12 @@ void opt_mil(opt_t *o, char* milbuf) {
 				if ((p[inc] == 'n') && (p[inc+1] == 'i') && (p[inc+2] == 'l')) {
 					o->stmts[curstmt].nilassign = 1; /* nil assignments should never be pruned! */
 				}
-			} else if (p[0]  == '{' && ((p[1] == ' ') | (p[1] == '\t') | (p[1] == '\n'))) {
+			} else if (p[0]  == '{') {
+				int j = 1;
+				while((p[j] >= 'a' && p[j] <= 'z') || (p[j] >= 'A' && p[j] <= 'Z') || p[j] == '_') j++; 
+				if (p[j] == '}') {
+					inc = j+1; continue; /* detect aggregates */
+				}
 				o->scope++;
 				if ((o->if_statement || o->else_statement) && o->condlevel+1 < OPT_CONDS) {
 					o->condscopes[o->condlevel++] = o->scope;
@@ -333,7 +338,7 @@ void opt_mil(opt_t *o, char* milbuf) {
 					o->else_statement = o->if_statement = 0;
 				}
 				break; /* blocks are separate statements */
-			} else if (p[0]  == '}' && ((p[1] == ' ') | (p[1] == '\t') | (p[1] == '\n'))) {
+			} else if (p[0]  == '}') {
 				opt_endscope(o, o->scope); /* destroy local variables */
 				o->scope--;
 				if (o->condlevel > 0 && o->condscopes[o->condlevel-1] == o->scope+1) {
@@ -362,7 +367,7 @@ void opt_mil(opt_t *o, char* milbuf) {
 					o->curvar++;
 				}
 			} else if ((p[0] == '_') | ((p[0] >= 'a') & (p[0] <= 'z')) | ((p[0] >= 'A') & (p[0] <= 'Z'))) { 
-				inc = opt_setname(p, &name);
+				inc = opt_setname(p + (p[0] == '{'), &name);
 				o->if_statement |= (name.prefix[0] == name_if.prefix[0]);
 				o->else_statement |= (name.prefix[0] == name_else.prefix[0]);
 				while((p[inc] == ' ') | (p[inc] == '\t') | (p[inc] == '\n')) inc++;
