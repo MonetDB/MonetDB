@@ -1181,7 +1181,7 @@ int lngToStr(char **dst, int *len, lng *src) {
 @c
 int ptrFromStr(char* src, int * len, ptr **dst) {
 	int error = 0;
-	ssize_t base = 0;
+	size_t base = 0;
 	str p = src;
 
 	@:atommem(ptr,sizeof(ptr))@
@@ -1196,7 +1196,10 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 			error = 1; p = src;
 		}
 		while (error == 0) {
-			ssize_t val = mult16(base) + base16(*p);
+			size_t val = mult16(base) + base16(*p);
+
+			if (val < base)
+				error = 1;
 			base = val; p++;
 			if (!num16(*p)) break;
 		}
