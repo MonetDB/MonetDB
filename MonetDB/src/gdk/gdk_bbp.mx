@@ -366,10 +366,16 @@ void BBPinithash(void) {
 	}
 }
 
+@-
+BBPextend must take the trimlock, as it is called when other BBP locks are
+held and it will allocate memory. This could trigger a BBPtrim, causing deadlock.
+@c
 void BBPextend(dbl factor, int buildhash) {
 	int newsize = (int) (BBPlimit*factor);
 	size_t maxsize = MAX(newsize*2,BBPmaxsize)*sizeof(BBPrec);
 
+	MT_set_lock(GDKtrimLock, "BBPcacheit");
+        BBP_notrim = BBP_getpid();
 	BBP = (BBPrec*) GDKvmrealloc(BBP, BBPlimit*sizeof(BBPrec), newsize*sizeof(BBPrec), 
 				     BBPmaxsize*sizeof(BBPrec), &maxsize); 
 	if (BBP == NULL) GDKfatal("BBPextend failed\n");
@@ -384,6 +390,8 @@ void BBPextend(dbl factor, int buildhash) {
     		BBP_free = 0;
 		BBPinithash();
 	}
+	BBP_notrim = 0;
+        MT_unset_lock(GDKtrimLock, "BBPcacheit");
 }
 
 static INLINE
@@ -793,19 +801,6 @@ void BBPgetsubdir(str s, bat i) {
 	} *s = 0;
 }
 
-static INLINE
-bat BBPgetentry(void) {
-	bat i;
-	/* find an empty slot */
-	if (BBP_free <= 0) {
-		if (++BBPsize >= BBPlimit) BBPextend(BATMARGIN,TRUE);
-		else BBP_free = BBPsize-1;
-	} 
-	i = BBP_free; 
-	BBP_free = BBP_next(BBP_free);
-	return i;
-}
-
 bat BBPinsert(BAT *b) {
 	MT_Id pid = BBP_getpid();
 	long_str dirname;
@@ -815,7 +810,15 @@ bat BBPinsert(BAT *b) {
         if (pid != locked_by) {
                 MT_set_lock(GDKcacheLock, "BBPinsert");
         }
- 	i = BBPgetentry();
+
+	/* find an empty slot */
+	if (BBP_free <= 0) {
+		if (++BBPsize >= BBPlimit) BBPextend(BATMARGIN,TRUE);
+		else BBP_free = BBPsize-1;
+	} 
+	i = BBP_free; 
+	BBP_free = BBP_next(BBP_free);
+
         if (pid != locked_by) {
                 MT_unset_lock(GDKcacheLock, "BBPinsert");
         }
@@ -852,10 +855,6 @@ void BBPcacheit(BAT* b) {
 	int mode;
         BAT *bm = (BAT*) GDKmalloc(sizeof(BAT)); /* alloc before lock to prevent trim problems */
 
-        if (pid != locked_by) {
-                MT_set_lock(GDKtrimLock, "BBPcacheit");
-                BBP_notrim = pid;
-        }
         if (b->batId[0]) {
 		i = b->batCacheid;
 		assert(i > 0);
@@ -904,8 +903,6 @@ void BBPcacheit(BAT* b) {
 
         if (pid != locked_by) {
                 MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit");
-                BBP_notrim = 0;
-                MT_unset_lock(GDKtrimLock, "BBPcacheit");
         }
 }
 
