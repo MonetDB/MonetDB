@@ -246,6 +246,8 @@ typedef struct mvc {
 } mvc;
 
 
+sql_export int cs_size( changeset * cs );
+
 sql_export sql_schema *find_schema(sql_trans *t, char *sname);
 sql_export sql_table * find_table(sql_schema * s, char *tname);
 sql_export sql_column * find_column(sql_table * t, char *cname);
@@ -491,7 +493,7 @@ cs_del( changeset *cs, node *elm, int flag )
 	}
 }
 
-static int
+int
 cs_size( changeset * cs )
 {
 	if (cs->set)

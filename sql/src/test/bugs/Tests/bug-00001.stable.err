@@ -56,20 +56,20 @@ stderr of test 'bug-00001` in directory 'src/test/bugs` itself:
 # 21:23:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51365  < bug-00001.sql
 # 21:23:44 >  
 
-MAPI  = monetdb@stem:56808
+MAPI  = monetdb@stem:53072
 QUERY = select * from r;
 ERROR = !Unknown table r
-MAPI  = monetdb@stem:56808
+MAPI  = monetdb@stem:53072
 QUERY = select * from r;
 ERROR = !Unknown table r
-MAPI  = monetdb@stem:56808
+MAPI  = monetdb@stem:53072
 QUERY = commit work;
 ERROR = !transaction commit failed
         !ERROR: Cannot commit this transaction will abort instead
-MAPI  = monetdb@stem:56808
+MAPI  = monetdb@stem:53072
 QUERY = select * from r;
 ERROR = !Unknown table r
-MAPI  = monetdb@stem:56808
+MAPI  = monetdb@stem:53072
 QUERY = -- next query shouldn't work
 ERROR = !single value in column expression
 
