@@ -14,7 +14,7 @@ stdout of test 'test_02` in directory 'tests/suite_06` itself:
 setoid(oid(20000000));
 #check out arithmatic against using Multi-cast operator
 
-t:= new(int, int);
+var t:= new(int, int);
 t.insert(1,2);
 t.insert(3,6);
 t.insert(13,14);
@@ -26,19 +26,19 @@ t.insert(2,4);
 t.insert(11,12);
 
 #A quick mechanism to create an initialized BAT
-z:= new(int,str);
+var z:= new(int,str);
 z.[insert](t,"hello");
 !ERROR: interpret: no matching MIL operator to '[insert](BAT[int,str], BAT[int,int], str)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-z.print;
+z.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (str)	  #
 #-----------------#
 
-quit;
+quit();
 
 # 17:09:14 >  
 # 17:09:14 >  Done.

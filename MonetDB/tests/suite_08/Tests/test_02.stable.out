@@ -10,7 +10,7 @@ stdout of test 'test_02` in directory 'tests/suite_08` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
-x := new(oid,chr);
+var x := new(oid,chr);
 x.insert(oid(1),'a');
 x.insert(oid(2),'a');
 x.insert(oid(3),'b');
@@ -23,7 +23,7 @@ x.rename("x");
 x.roles("oid","x");
 x.persists(true);
 
-y:= new(oid,chr);
+var y:= new(oid,chr);
 y.insert(oid(1),'a');
 y.insert(oid(2),'c');
 y.insert(oid(3),'b');
@@ -36,7 +36,7 @@ y.rename("y");
 y.roles("oid","y");
 y.persists(true);
 
-z:= new(oid,chr);
+var z:= new(oid,chr);
 z.insert(oid(1),'c');
 z.insert(oid(2),'a');
 z.insert(oid(3),'b');
@@ -64,8 +64,8 @@ print(x,y,z);
 [ 7@0,	  c,	  a,	  c	  ]
 [ 8@0,	  c,	  a,	  a	  ]
 
-t1 := x.CTgroup;
-t1.print;
+var t1 := x.CTgroup();
+t1.print();
 #-----------------#
 # BAT:	  tmp_31  #
 # (oid)	  (oid)	  #
@@ -78,8 +78,8 @@ t1.print;
 [ 6@0,	  3@0	  ]
 [ 7@0,	  7@0	  ]
 [ 8@0,	  7@0	  ]
-t2 := t1.CTderive(y);
-t2.print;
+var t2 := t1.CTderive(y);
+t2.print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (void)  (oid)	  #
@@ -93,7 +93,7 @@ t2.print;
 [ 7@0,	  7@0	  ]
 [ 8@0,	  7@0	  ]
 t2 := t1.CTgroup(y);
-t2.print;
+t2.print();
 #-----------------#
 # BAT:	  tmp_35  #
 # (void)  (oid)	  #
@@ -125,7 +125,7 @@ t2.print;
 #CThistogram(x1y).print;
 #CThistogram(x1yz).print;
 
-quit;
+quit();
 
 # 15:34:26 >  
 # 15:34:26 >  Done.
