@@ -97,7 +97,6 @@ int mvc_commit( mvc *c ){
 void mvc_rollback( mvc *c ){
 	printf( "TODO: time to implement ROLLBACK Transaction\n");
 }
-
 void mvc_dump( mvc *c ){
 	int i;
 	for (i=0; i < c->size; i++){

@@ -7,16 +7,14 @@ INCLUDES = \
 	-I$(MONET_PREFIX)/include/plain \
 	-I$(MONET_PREFIX)/include/stream \
 	-I${top_srcdir}/src/common \
+	-I${top_builddir}/src/common \
 	$(GETOPT_INCS)
 
 lib__sqlserver = {
-	SOURCES = sqlserver.mx 
-	LIBS = -L$(MONET_PREFIX)/lib/Monet
-}
-
-lib__mvc = {
-	SOURCES = mvc.mx cCatalog.c cCatalog.h
-	LIBS = -L$(MONET_PREFIX)/lib/Monet
+	SOURCES = sqlserver.mx mvc.mx \
+		catalog_module.c statement_exec.c
+	LIBS = ../common/libsql \
+		-L$(MONET_PREFIX)/lib/Monet 
 }
 
 scripts_mil = {

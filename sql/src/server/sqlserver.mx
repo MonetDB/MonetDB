@@ -4,13 +4,147 @@
 
 @m
 .MODULE sqlserver;
-	.USE streams;
+	.USE ascii_io,streams;
 
 	.BUILTIN sqlserver_start(int port, str cmd) = sqlserver_start;
 		"start the sql server, calls cmd on each accepted connection"
 
+	.COMMAND socket_close( int s ) = socket_close_wrap;
+		"close a socket"
+
 	.COMMAND stream_read( stream ) : str = sqlserver_read;
 		"read a string of commands"
+
+
+    	.ATOM context = ptr;
+    	.END;
+
+	.ATOM mvc = ptr;
+	.END;
+	.ATOM sql_schema = ptr;
+	.END;
+	.ATOM sql_table = ptr;
+	.END;
+	.ATOM sql_column = ptr;
+	.END;
+	.ATOM sql_key = ptr;
+	.END;
+	
+
+    	.COMMAND sql_create_context( int debug, int opt, stream o, mvc c ) : context = 
+		sql_create_context; "create a context for the sql interpreter"
+
+    	.COMMAND sql_destroy_context( context c ) = 
+		sql_destroy_context; "destroy the sql interpreter context"
+
+	.COMMAND sql2code( context *c, stream *in ) : str = sql2code;
+		"parse the next sql command and convert this to mil code"
+
+	.COMMAND types_init( int debug ) = types_init_wrap; 
+		"create the types/functions/aggrs"
+
+	.COMMAND types_exit() = types_exit_wrap; 
+		"cleanup the types/funcs/aggrs"
+
+	.COMMAND types_export( stream s ) = types_export_wrap;
+		"export the types/aggrs/functions to the stream s"
+
+	.COMMAND sql_type(str sqlname, str name, str cast ) = 
+		sql_type_wrap; "Add a new sql type"
+
+	.COMMAND sql_aggr(str name, str imp, str atp, str rtp) = 
+		sql_aggr_wrap; "Add a new sql aggregate function"
+
+	.COMMAND sql_func(str name, str imp, str tp1, str tp2, str tp3, str rtp)
+		= sql_func_wrap; "Add a new sql function"
+
+	.COMMAND mvc_init(int debug, str dir_name) = mvc_init_wrap; 
+		"create the global catalog"
+
+	.COMMAND mvc_exit() = mvc_exit_wrap; "cleanup the global catalog"
+
+	.COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
+		"Create multi version catalog"
+
+	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
+		"Destroy multi version catalog"
+
+	.COMMAND mvc_login( mvc m, str schema, str user, str passwd ) : int 
+		= mvc_login_wrap; "database login"
+
+	.COMMAND mvc_commit( mvc m, int chain, str name ) : int = 
+		mvc_commit_wrap; "Commit transaction/savepoint and chain"
+
+	.COMMAND mvc_rollback( mvc m, int chain, str name ) = 
+		mvc_rollback_wrap; "Rollback transaction/savepoint and chain"
+
+	.COMMAND mvc_release( mvc m, str name ) = 
+		mvc_release_wrap; "Release the savepoint"
+
+	.COMMAND mvc_bind( mvc c, str tname, str cname ) : BAT[any::1,any::2] = 
+		mvc_bind_wrap; "Bind the bat, tname.cname"
+
+	.COMMAND mvc_bind_schema( mvc c, str sname ) : sql_schema = 
+		mvc_bind_schema_wrap; "Bind schema, sname"
+
+	.COMMAND mvc_bind_table( mvc c, sql_schema s, str tname ) : sql_table = 
+		mvc_bind_table_wrap; "Bind table, s.tname"
+
+	.COMMAND mvc_bind_column( mvc c, sql_table t, str cname ) : sql_column = 
+		mvc_bind_column_wrap; "Bind column, t.cname"
+
+	.COMMAND mvc_drop_schema( mvc c, str name ) = mvc_drop_schema_wrap;
+		"Drop schema"
+
+	.COMMAND mvc_create_schema( mvc c, str name, str auth) : sql_schema = 
+		mvc_create_schema_wrap; "Create schema"
+
+	.COMMAND mvc_drop_table( mvc c, sql_schema s, str name, bit cascade ) = 
+		mvc_drop_table_wrap; "Drop table"
+
+	.COMMAND mvc_create_table( mvc c, sql_schema s, str name, bit temp) : 
+		sql_table = mvc_create_table_wrap; "Create table"
+
+	.COMMAND mvc_create_view( mvc c, sql_schema s, str name, str sql) :
+		sql_table = mvc_create_view_wrap; "Create view"
+
+	.COMMAND mvc_drop_column( mvc c, sql_table t, str name ) = 
+		mvc_drop_column_wrap; "Drop column"
+
+	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int seqnr ) : sql_column = mvc_create_column_wrap; "Create column"
+
+	.COMMAND mvc_not_null( mvc m, sql_column col ) : 
+		sql_column = mvc_not_null_wrap; "Set column not null"
+
+	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
+		sql_column = mvc_default_wrap; "Set column default value"
+
+	.COMMAND mvc_create_key( mvc m, sql_table t, int kt, sql_key *fk ) :
+		sql_key = mvc_create_key_wrap; "Create a table key"
+
+	.COMMAND mvc_key_add_column( mvc m, sql_key k, sql_column *c ) :
+		sql_key = mvc_key_add_column_wrap; "Key add column"
+
+	.COMMAND mvc_fast_insert( mvc c, str val ) = mvc_fast_insert_wrap; 
+		"Fast insert, string format 0,nr_args,(tname,val)*nr_arg,"
+
+	.COMMAND mvc_insert( mvc c, str tname, ...any... ) = mvc_insert_wrap; 
+		"Insert, values in the table with the given table id"
+
+	.COMMAND mvc_delete( mvc c, str tname, BAT[oid,any] rids ) = 
+		mvc_delete_wrap; "Delete, all rows (rids) from the table tname"
+
+	.COMMAND mvc_update( mvc c, str tname, str cname, BAT[oid,any] val ) = 
+		mvc_update_wrap; "Update the value of column, cname in table, tname"
+
+	.COMMAND mvc_export(stream s, BAT order, BAT bats, str sep, str rsep) =
+		mvc_export_wrap; "export a table (in order) to stream s with the given tuple and record seperators (sep/rsep)"
+
+	.COMMAND mvc_import_table( mvc c, stream s, str tname, str sep, str rsep, int nr) = mvc_import_table_wrap; "import a table from stream s with the given tuple and record seperators (sep/rsep)"
+
+	.COMMAND mvc_export_schema( mvc c, stream s ) = mvc_export_schema_wrap; 
+		"Export the schema info of the current transaction"
+
 .END sqlserver;
 
 @h
@@ -19,16 +153,103 @@
 
 #include <streams.h>
 #include "monet_context.h"
+#include "context.h"
+#include "mvc.h"
 #include "sqlserver.proto.h"
 
 #endif /*_SQLSERVER_H_*/
 
 @c
 #include "sqlserver.h"
+#include <statement.h>
+#include <sqlexecute.h>
 #include "mem.h"
 
 #include  <sys/types.h> 
 #include  <sys/socket.h> 
+
+extern catalog *catalog_create( context *lc, mvc *m);
+
+int sql_create_context( context *res, int *debug, int *opt, stream *ws, mvc *m ){
+	context *lc = NEW(context);
+
+	sql_init_context( lc, *(stream**)ws, *debug, default_catalog_create() );
+	lc->optimize = *opt;
+	catalog_create( lc, *(mvc**)m );
+	lc->cat->cc_getschema( lc->cat, "default-schema", "default-user");
+	*(context**)res = lc;
+	return GDK_SUCCEED;
+}
+
+int sql_destroy_context( context *lc ){
+	sql_exit_context( *(context**)lc );
+	return GDK_SUCCEED;
+}
+
+int sql2code( str* resptr, context* c, stream* in){
+	int err = 0;
+	stmt *s = NULL;
+	context *lc = *(context**)c;
+	char *res = NULL;
+
+	if(lc->cur != EOF ){
+		s = sqlnext(lc, *(stream**)in, &err);
+		if (err){
+			return GDK_FAIL;
+		}
+		if (s){
+	    		int nr = 1;
+	    		stmt_dump( s, &nr, lc );
+
+			res = buffer_get_buf(stream_get_buffer( lc->out ));
+	    		lc->out->flush( lc->out );
+		}
+		if (s) stmt_destroy(s);
+	}
+	if (!res){
+ 		if (lc->cur == EOF)
+			res = _strdup("quit");
+		else
+			res = _strdup("");
+	}
+	*resptr = res;
+	return GDK_SUCCEED;
+}
+
+int mvc_init_wrap( int* debug, str dir_name){
+	mvc_init(*debug, dir_name);
+	return GDK_SUCCEED;
+}
+int mvc_exit_wrap( ){
+	mvc_exit();
+	return GDK_SUCCEED;
+}
+
+int types_init_wrap( int* debug){
+	types_init(*debug );
+	return GDK_SUCCEED;
+}
+int types_exit_wrap( ){
+	types_exit();
+	return GDK_SUCCEED;
+}
+int types_export_wrap( stream *s ){
+	types_export( *(stream**)s );
+	return GDK_SUCCEED;
+}
+int sql_type_wrap( str sqlname, str name, str cast ){
+	sql_new_type( sqlname, name, cast );
+	return GDK_SUCCEED;
+}
+int sql_aggr_wrap( str name, str imp, str atp, str rtp){
+	sql_new_aggr( name, imp, atp, rtp );
+	return GDK_SUCCEED;
+}
+int sql_func_wrap( str name, str imp, str tp1, str tp2, str tp3, str rtp){
+	sql_new_func( name, imp, tp1, tp2, tp3, rtp );
+	return GDK_SUCCEED;
+}
+
 
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
@@ -110,6 +331,11 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
   return 0;
 }
 
+int socket_close_wrap( int *s ){
+	close(*s);
+	return GDK_SUCCEED;
+}
+
 #define CHUNK (64*1024)
 
 int sqlserver_read( str *res, stream *S ){
@@ -130,16 +356,162 @@ int sqlserver_read( str *res, stream *S ){
 	return GDK_SUCCEED;
 }
 
+int mvc_create_wrap( mvc *res, int *debug ){
+	*(mvc**)res = mvc_create( *debug );
+	return GDK_SUCCEED;
+}
+
+int mvc_destroy_wrap( mvc *c ){
+	mvc_destroy( *(mvc**)c );
+	return GDK_SUCCEED;
+}
+
+int mvc_login_wrap( int *r, mvc *c, str schema, str user, str passwd  ){
+	*r = mvc_login( *(mvc**)c, schema, user, passwd );
+	return GDK_SUCCEED;
+}
+
+
+int mvc_commit_wrap( int* res, mvc* m, int* chain, str name){
+	*res = mvc_commit( *(mvc**)m, *chain, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_rollback_wrap( mvc *m, int *chain, str name ){
+	mvc_rollback( *(mvc**)m, *chain, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_release_wrap( mvc *m, str name ){
+	mvc_release( *(mvc**)m, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_wrap( BAT** res, mvc* c, str tname, str cname){
+	*res = mvc_bind( *(mvc**)c, tname, cname );
+	BBPfix((*res)->batCacheid );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_schema_wrap( sql_schema* res, mvc* c, str sname){
+	*(sql_schema**)res = mvc_bind_schema( *(mvc**)c, sname );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_table_wrap( sql_table* res, mvc* c, sql_schema *s, str tname){
+	*(sql_table**)res = mvc_bind_table( *(mvc**)c, *(sql_schema**)s, tname);
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_column_wrap( sql_column* res, mvc* c, sql_table *t, str col){
+	*(sql_column**)res = mvc_bind_column( *(mvc**)c, *(sql_table**)t, col);
+	return GDK_SUCCEED;
+}
+
+int mvc_create_schema_wrap( sql_schema *s, mvc* c, str name, str auth){
+	*(sql_schema**)s = mvc_create_schema( *(mvc**)c, name, auth );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_schema_wrap( mvc* c, str name){
+	mvc_drop_schema( *(mvc**)c, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_table_wrap( sql_table *res, mvc* c, sql_schema *s, str name, bit* temp){
+	*(sql_table**)res = mvc_create_table( *(mvc**)c, *(sql_schema**)s, name, *temp );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_view_wrap( sql_table *res, mvc* c, sql_schema *s, str name, str sql){
+	*(sql_table**)res = mvc_create_view( *(mvc**)c, *(sql_schema**)s, name, sql );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_table_wrap( mvc* c, sql_schema *s, str name, bit* cascade){
+	mvc_drop_table( *(mvc**)c, *(sql_schema**)s, name, *cascade );
+	return GDK_SUCCEED;
+}
+
+
+int mvc_create_column_wrap( sql_column* res, mvc* c, sql_table *t, 
+		str name, str type, int* seqnr){
+	*(sql_column**)res = 
+	  mvc_create_column( *(mvc**)c, *(sql_table**)t, name, type, *seqnr );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_column_wrap( mvc* c, sql_table *t, str name){
+	mvc_drop_column( *(mvc**)c, *(sql_table**)t, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_not_null_wrap( sql_column* res, mvc* c, sql_column* col){
+	*(sql_column**)res = mvc_not_null( *(mvc**)c, *(sql_column**)col );
+	return GDK_SUCCEED;
+}
+
+int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val){
+	*(sql_column**)res = mvc_default( *(mvc**)c, *(sql_column**)col, val );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table* t, int *kt, sql_key *fk){
+	*(sql_key**)res = mvc_create_key( *(mvc**)c, *(sql_table**)t, *kt, *(sql_key**)fk);
+	return GDK_SUCCEED;
+}
+
+int mvc_key_add_column_wrap( sql_key* res, mvc* m, sql_key* k, sql_column *c){
+	*(sql_key**)res = mvc_key_add_column( *(mvc**)m, *(sql_key**)k, *(sql_column**)c);
+	return GDK_SUCCEED;
+}
+
+int mvc_fast_insert_wrap( mvc* c, str val){
+	mvc_fast_insert( *(mvc**)c, val );
+	return GDK_SUCCEED;
+}
+
+int mvc_insert_wrap( mvc* c, str tname, ... ){
+	va_list ap;
+
+	va_start(ap,tname);
+	mvc_insert( *(mvc**)c, tname, ap);
+	va_end(ap);
+	return GDK_SUCCEED;
+}
+
+int mvc_delete_wrap( mvc* c, str tname, BAT *rids ){
+	mvc_delete( *(mvc**)c, tname, rids ); 
+	return GDK_SUCCEED;
+}
+
+int mvc_update_wrap( mvc* c, str tname, str cname, BAT *v){
+	mvc_update( *(mvc**)c, tname, cname, v ); 
+	return GDK_SUCCEED;
+}
+
+int mvc_export_wrap( stream *s, BAT *order, BAT *bats, str sep, str rsep ){
+	mvc_export( *(stream**)s, order, bats, sep, rsep );
+	return GDK_SUCCEED;
+}
+
+int mvc_import_table_wrap( mvc *c, stream *s, str tname , str sep, str rsep, int *sz ){
+	mvc_import_table( *(mvc**)c, *(stream**)s, tname, sep, rsep, *sz );
+	return GDK_SUCCEED;
+}
+
+int mvc_export_schema_wrap( mvc *c, stream *s ){
+	mvc_export_schema( *(mvc**)c, *(stream**)s );
+	return GDK_SUCCEED;
+}
 @mil
 module(sqlserver);
-module(sql);
-module(ascii_io);
+
 module(str);
 module(alarm);
 module(unix);
 module(ddbench);
 module(aggrX3);
-module(mvc);
 module(monettime);
 
 proc {min}(val,grp, extent) := {
@@ -175,6 +547,7 @@ proc date_add_sec_interval( date d, int sec ) := {
 	}
 	return d;
 }
+
 proc date_sub_month_interval( date d, int months ) := {
 	return d.addmonths(months);
 }
@@ -207,49 +580,20 @@ proc load_seps( BAT[void,BAT] bats, str Sep, str Rsep ) : BAT[void,str] := {
 proc bat_name(b):= return str(b);
 proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
 
-proc bulkload( tab, file, Sep, Rsep, sze ):= {
-	var lid := table_name.reverse().find( tab );
-	var tid := table_id.find( lid );
-        var columns := column_name.semijoin(column_table.select(tid));
-        var idcol := columns.semijoin(
-		column_number.semijoin(columns).select(-1));
-	columns := columns.diff(idcol);
-	var bats := column_bat.semijoin(columns);
-	bats := column_number.reverse().join(bats).sort();
-	bats := bats.reverse().mark(oid(0)).reverse();
-	
-	var names := [bat_name](bats);
-	var types := [bat_type](bats);
-	var seps := load_seps(bats,Sep,Rsep);
-	var res := load(names, seps, types, file, sze);
-	# merge result
-	var t := names.join(res);
-	var x := bats.reverse().join(t);
-	x@batloop(){ $h.insert($t); }
-	var idbat := column_bat.semijoin(idcol).fetch(0);
-	var i := x.reverse().fetch(0).count();
-	var id := int(newoid(i));
-	while(i>0){
-		idbat.insert(nil,oid(id));
-		i := i - 1;
-		id := id + 1;
+proc input( mvc myc, str tname, str fname, str Sep, str rSep, int sz ):={
+	var s := open_rastream( fname );
+	if (rSep = "newline"){
+		rSep := "\n";
 	}
+	mvc_import_table( myc, s, tname, Sep, rSep, sz );
+	stream_close(s);
 }
+
 Stdout := file_wastream( stdout, "test" );
 
 proc write_output( stream Output, str v ) := {
 	var buf := v + "\n";
 	stream_write(Output, buf );
-}
-
-proc client_commit( mvc myc, stream Output ) := {
-	var buf := str(mvc_commit(myc)) + "\n";
-	stream_write(Output, buf );
-	stream_flush( Output );
-}
-
-proc output_count( bat b, stream Output ) := {
-	write_output( Output, str(b.count()) );
 }
 
 proc ascii_io_output( bat Order, bat bats, stream Output, str Sep ) : int := {
@@ -263,13 +607,13 @@ proc ascii_io_output( bat Order, bat bats, stream Output, str Sep ) : int := {
 	return output( Order, seps.reverse, bats.reverse, Output );
 }
 
-proc oidrange( output_stream, nr ) := {
-	stream_write( output_stream, ("" + newoid( nr )) + "\n" );
-	stream_flush( output_stream );
-}
-
 proc server_output( stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void := {
-	var cnt := $0;
+	stream_writeInt( Output, 0 ); # write not done.
+
+	var cnt := Order.count();
+	stream_write( Output, sprintf("%d\n", cnt) );
+
+	cnt := $0;
 	var bats := new(oid,bat);
 	var id := 0;
 	while((id + 2) < cnt ){
@@ -277,78 +621,51 @@ proc server_output( stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void
 		id :+= 1;
 	}
 	ascii_io_output(Order, bats, Output, "\t");
-}
-
-proc ascii_export_functions(Output):= {
-	output_count( type_sql, Output);
-	server_output( Output, type_sql, type_sql, type_db, type_cast );
-
-	output_count( sql_aggr_name, Output);
-	server_output( Output, sql_aggr_name, sql_aggr_name, sql_aggr_imp, sql_aggr_type, sql_aggr_result );
-		
-	output_count( sql_func_name, Output);
-	server_output( Output, sql_func_name, sql_func_name, sql_func_imp, sql_func_type1, sql_func_type2, sql_func_type3, sql_func_result );
-
-	#output_count( schema_name, Output);
-	#server_output( Output, schema_id, schema_id, schema_name, schema_auth);
-	stream_flush(Output);
-}
-
-proc ascii_export_schema(Output, schema):= {
-	var sid := oid(-1);
-	if (schema_name.reverse().exist(schema)){
-		sid := schema_id.find(schema_name.reverse().find(schema));
-	}
-	write_output ( Output, str(int(sid)) );
-	
-	var tables := table_name.semijoin(table_schema.select(sid));
-	tables := tables.kdiff( table_query );
-	output_count( tables, Output);
-	var tableids := table_id.semijoin(tables);
-	server_output( Output, tableids, tableids, tables, table_temp.semijoin(tables) );
-
-	var columns := column_number.select(0, int(nil));
-	var table_ids := column_table.join(table_id.reverse().join(tables));
-	table_ids := table_ids.semijoin(columns);
-	output_count( table_ids, Output);
-	var columnids := column_id.semijoin(table_ids);
-	server_output( Output, columnids, columnids, table_ids, column_name, column_type, column_default, column_null, column_number );
-
-	var views := table_name.semijoin(table_query); 
-	output_count( views, Output);
-	var viewids := table_id.semijoin(views);
-	server_output( Output, viewids, viewids, views, table_query );
-
-	stream_flush(Output);
-}
-
-proc sql_file( infile, outfile ) := {
-	var Input := open_rastream( infile );
-	var Output := open_wastream( outfile );
-	var c := create_context( 0, 1, Output);
-
-	sql(c, Input);
-	#stream_write( Output, "0\n" );
 	stream_flush( Output );
+}
 
-	destroy_context( c );
-	#stream_close( Output );
+proc SQLclient_sql( Output, Input, cmd ) := {
+	var myc := mvc_create(0);
+
+	mvc_login( myc, "default-schema", "sqladmin", "nopasswd" );
+
+	var buf := buffer_create( 1024 );
+	var LOutput := buffer_wastream( buf, sprintf("SQLserver-%d", sock ));
+	var c := sql_create_context( 0, 1, LOutput, myc );
+
+	cmd := sql2code( c, Input );
+	while(cmd != "quit"){
+		if (cmd.startsWith("0")){
+			mvc_fast_insert(myc, cmd );
+		} else {
+		    	sqlexecute(cmd, Output);
+		}
+		cmd := sql2code( c, Input );
+	}
+	mvc_destroy( myc );
+	stream_writeInt( Output, 1 );
+	stream_flush( Output );
+	sql_destroy_context( c );
+	stream_close( Output );
 	stream_close( Input );
 }
 
-proc SQLclient_module( Output, Input, myc, cmd ) := {
-	# TODO get schema/user/debug/opt from skipped cmd
-	var c := create_context( 0, 1, Output);
+proc SQLclient_mil( Output, Input, cmd ) := {
+	var myc := mvc_create(0);
 
 	cmd := stream_read( Input );
-	while(cmd != ""){
-		sql(c, cmd );
-		stream_write( Output, "0\n" );
-		stream_flush( Output );
+	while(length(cmd) > 1){
+		if (cmd.startsWith("0")){
+			mvc_fast_insert(myc, cmd );
+	        } else {
+			sqlexecute(cmd, Output );
+		}
 		cmd := stream_read( Input );
 	}
-	destroy_context( c );
-	#stream_close( Output );
+	mvc_destroy( myc );
+	stream_writeInt( Output, 1 );
+	stream_flush( Output );
+	stream_close( Output );
 	stream_close( Input );
 }
 
@@ -359,27 +676,23 @@ proc SQLclient_thread( int sock ):= {
 	var Input := block_stream(
 		socket_rstream( sock, sprintf("SQLserver-%d", sock) ));
 
-	var myc := mvc_create(0);
+	var cmd := stream_read( Input ); # info
+	#print(cmd);
 
-	var cmd := stream_read( Input );
-	if (cmd.startsWith("module")){
-		return SQLclient_module( Output, Input, myc, cmd );
+	cmd := stream_read( Input ); # api
+	#print(cmd);
+
+	if (cmd.startsWith("sql")){
+		SQLclient_sql( Output, Input, cmd );
+	} else {
+		SQLclient_mil( Output, Input, cmd );
 	}
 
-	while(cmd != ""){
-		if (cmd.startsWith("0")){
-			mvc_fast_insert(myc, cmd );
-	        } else {
-			sqlexecute(cmd, Output );
-		}
-		cmd := stream_read( Input );
-	}
-	stream_close( Output );
-	stream_close( Input );
+	socket_close( sock );
 }
 
 proc sqlexecute( str cmd, stream Output ):= {
-	#print(cmd);
+	print(cmd);
 	eval(cmd);
 }
 
@@ -389,6 +702,9 @@ proc SQLclient( int sock ) := {
 }
 
 proc get_sql_port() := {
+	if (monet_envirenment.exist("sql_port")){
+		return int(monet_envirenment.find("sql_port"));
+	}
 	var port := 45123;
 	var sqlport := getenv("SQLPORT");
 	if (length(sqlport) > 0){
