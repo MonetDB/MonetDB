@@ -986,7 +986,7 @@ salgebra_CMDdestroy( str chname ) {
 
 bat*
 salgebra_prelude(void) {
-  bat buf[2];
+  static bat buf[2];
   int i = 0;
 #ifdef DEBUG
 GDKwarning( "salgebra prelude!\n" );
@@ -999,13 +999,13 @@ GDKwarning( "salgebra prelude!\n" );
   salgebra_refcntLock = MT_create_lock();
 
   salgebra_cache = BATnew( TYPE_int, TYPE_clusterhash, 10 );
-  BBPrename( salgebra_cache, "ch_cache" );
+  BBPrename(BBPcacheid(salgebra_cache), "ch_cache");
 
   salgebra_namecache = BATnew( TYPE_int, TYPE_str, 10 );
-  BBPrename( salgebra_namecache, "ch_namecache" );
+  BBPrename( BBPcacheid(salgebra_namecache), "ch_namecache");
 
   salgebra_refcnt = BATnew( TYPE_int, TYPE_int, 10 );
-  BBPrename( salgebra_refcnt, "ch_refcnt" );
+  BBPrename(BBPcacheid(salgebra_refcnt), "ch_refcnt");
 
   clusterhash_nil.bttype = int_nil;
   clusterhash_nil.isPerfect = int_nil;
@@ -1013,8 +1013,8 @@ GDKwarning( "salgebra prelude!\n" );
   clusterhash_nil.hv = *( (bat*) ATOMnilptr(TYPE_bat) );
   clusterhash_nil.tv = *( (bat*) ATOMnilptr(TYPE_bat) );
 
-  buf[1] = salgebra_cache->batCacheid;
-  buf[2] = 0;
+  buf[0] = BBPcacheid(salgebra_cache);
+  buf[1] = 0;
   return buf;
 }
 
@@ -1024,9 +1024,9 @@ salgebra_epilogue(void) {
 #ifdef DEBUG
   GDKwarning("salgebra epilogue!\n");
 #endif
-  BBPunfix( salgebra_namecache );
-  BBPunfix( salgebra_cache );
-  BBPunfix( salgebra_refcnt );
+  BBPunfix(BBPcacheid(salgebra_namecache));
+  BBPunfix(BBPcacheid(salgebra_cache));
+  BBPunfix(BBPcacheid(salgebra_refcnt));
 
   MT_destroy_lock( salgebra_cacheLock );
   MT_destroy_lock( salgebra_refcntLock );
