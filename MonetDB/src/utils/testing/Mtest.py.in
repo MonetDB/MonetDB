@@ -1151,20 +1151,20 @@ def main(argv) :
 	exe['Mdiff']      = CheckExec('Mdiff')     , 'Mdiff'
 	exe['python']     = CheckExec('python')    , 'python'
 	if not exe['Mtimeout'][0]:
-		exe['Mtimeout'][1] = ''
+		exe['Mtimeout'] = '', ''
+	if os.name == "nt":
+		CALL = "call "
+	else:
+		CALL = ""
 	STDERR.flush()
 	for v in exe.keys():
 		V = string.upper(v)
-		# TODO ?
-		# if exe[v][0]:
-		if os.name == "nt":
-			CALL = "call "
-		else:
-			CALL = ""
-		if  v != 'Mtimeout'  and  exe['Mtimeout'][0]:
-			os.environ[V] = CALL+exe['Mtimeout'][1]+" "+exe[v][1]
-		else:
+		if  v != 'Mtimeout':
+			os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
+		elif exe[v][0]:
 			os.environ[V] = CALL+exe[v][1]
+		else:
+			os.environ[V] = ""
 		print(V+" = "+exe[v][0]+" : "+exe[v][1])
 	STDOUT.flush()
 	env['exe'] = exe
