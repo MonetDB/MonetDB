@@ -164,7 +164,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			s->nr = (*nr)++;
 			break;
 		case cmp_notequal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<>\").access(BAT_READ);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"!=\").access(BAT_READ);\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_lt:
@@ -240,7 +240,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_unique: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.tunique().reverse();\n", *nr, l);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.tunique().mirror();\n", *nr, l);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_order: {
@@ -345,7 +345,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 
 			if (s->op1.stval == s->op3.stval){
 				len += snprintf( buf+len, BUFSIZ, 
-				"s%d := {%s}(s%d, s%d.tunique());\n", 
+				"s%d := {%s}(s%d.reverse(), s%d.tunique());\n", 
 				*nr, s->op2.aggrval->imp, l, r);
 			} else if (s->op1.stval->type == st_column){
 				len += snprintf( buf+len, BUFSIZ, 
