@@ -259,7 +259,7 @@ public void trace(boolean flg){
 */
 public void traceLog(String fnme){
 	check("traceLog");
-	System.out.println("setTraceLog not yet implemented");
+	System.err.println("!WARNING:setTraceLog not yet implemented");
 }
 
 /**
@@ -313,7 +313,7 @@ throws MapiException
 	connected= false;
 	try{
 		if(trace) 
-			System.out.println("setup socket "+host+":"+port);
+			System.err.println("setup socket "+host+":"+port);
 		socket   = new Socket( host, port );
 		fromMonet= new BufferedReader(
 			new InputStreamReader(socket.getInputStream()));
@@ -330,7 +330,7 @@ throws MapiException
 	this.username= user;
 	this.password = pwd;
 	this.active = true;
-	if(trace) System.out.println("sent initialization command");
+	if(trace) System.err.println("sent initialization command");
 	if( pwd.length()>0) pwd= ":"+pwd;
 	if( blocked)
 		toMonet(user+pwd+":blocked\n");
@@ -350,17 +350,17 @@ The language property returned should match the required language interaction.
 */
 	while( !gotError() && active && fetchRow()>0){
 		if( cache.fldcnt[cache.reader]== 0){
-			System.out.println("Unexpected reply:"
+			System.err.println("!ERROR:Unexpected reply:"
 				+ cache.rows[cache.reader]);
 			continue;
 		}
 		String property= fetchField(0);
 		String value= fetchField(1);
-		//System.out.println("fields:"+property+","+value);
+		//System.err.println("fields:"+property+","+value);
 		if( property.equals("language") && !lang.equals("") &&
 		   !value.equals(lang)){
 			setError("Incompatible language requirement","connect");
-			System.out.println("exepcted:"+lang);
+			System.err.println("!WARNING:exepected:"+lang);
 		} else language= lang;
 		if( property.equals("version")) version= value;
 		if( property.equals("dbname")) dbname= value;
@@ -369,10 +369,10 @@ The language property returned should match the required language interaction.
 	if( gotError()) {
 		connected = false;
 		active= false;
-		if(trace) System.out.println("Error occurred in initialization");
+		if(trace) System.err.println("Error occurred in initialization");
 		return this;
 	}
-	if(trace) System.out.println("Connection established");
+	if(trace) System.err.println("Connection established");
 	connected= true;
 	return this;
 }
@@ -387,7 +387,7 @@ The language property returned should match the required language interaction.
 */
 public static Mapi connectSSL( String host, int port, String user, String pwd, String lang )
 {
-	System.out.println("connectSSL not yet implemented");
+	System.err.println("!WARNING:connectSSL not yet implemented");
 	return null;
 }
 
@@ -427,7 +427,7 @@ private void promptMonet() throws MapiException  {
 	prompt= blk.buf.substring(1,lim-1);
 	// finding the prompt indicates end of a query
 	active= false;
-	if( trace) System.out.println("promptText:"+prompt);
+	if( trace) System.err.println("promptText:"+prompt);
     }
 
 /**
@@ -491,7 +491,7 @@ private boolean checkColumns(int fnr, String action){
 public int bind(int fnr, Object o){
 	check("bind");
 	if( !checkColumns(fnr,"bind")) return MERROR;
-	System.out.println("bind() yet supported");
+	System.err.println("!WARNING:bind() yet supported");
 	//columns[fnr].outparam = o;
 	return MOK;
 }
@@ -504,7 +504,7 @@ public int bind(int fnr, Object o){
 public int bindVar(int fnr, int tpe, Object o){
 	check("bindVar");
 	if( !checkColumns(fnr,"bindVar")) return MERROR;
-	System.out.println("bindVar() not supported");
+	System.err.println("!WARNING:bindVar() not supported");
 	//columns[fnr].outparam = o;
 	return MOK;
 }
@@ -520,7 +520,7 @@ public int bindVar(int fnr, int tpe, Object o){
 public int bindNumeric(int fnr, int scale, int prec, Object o){
 	check("bindNumeric");
 	if( !checkColumns(fnr,"bindVar")) return MERROR;
-	System.out.println("bindVar() not supported");
+	System.err.println("!WARNING:bindVar() not supported");
 	columns[fnr].scale = scale;
 	columns[fnr].precision = prec;
 	//columns[fnr].outparam = o;
@@ -536,7 +536,7 @@ private int extendColumns(int mf){
 	int nm= maxfields+32;
 	if( nm <= mf)
 		nm= mf+32;
-	if( trace) System.out.println("extendColumns:"+nm);
+	if( trace) System.err.println("extendColumns:"+nm);
 	Column nf[]= new Column[nm];
 	System.arraycopy(columns,0,nf,0,maxfields);
 	columns= nf;
@@ -545,7 +545,7 @@ private int extendColumns(int mf){
 }
 
 private void extendFields(int cr){
-	if( trace) System.out.println("extendFields:"+cr);
+	if( trace) System.err.println("extendFields:"+cr);
 	if(cache.fields== null ){
 		String anew[]= new String[maxfields];
 		if( cache.fields[cr]!= null)
@@ -560,7 +560,7 @@ private void extendFields(int cr){
  * simplifies the work for the programmers.
 */
 private void storeBind(){
-	System.out.print("storeBind() Not supported");
+	System.err.print("!WARNING:storeBind() Not supported");
 	//int cr= cache.reader;
 	//for(int i=0; i< fieldcnt; i++)
 	//if( columns[i].outparam != null){
@@ -597,7 +597,7 @@ public int sliceRow(){
 		return 0;
 	}
 	if( p[0]!='['){
-		if(trace) System.out.println("Single field:"+s);
+		if(trace) System.err.println("Single field:"+s);
 		cache.fields[cr][0]= s;
 		// count filds by counting the type columns in header
 		// each type looks like (str)\t
@@ -605,11 +605,11 @@ public int sliceRow(){
 		for(int k=1; k<p.length; k++)
 		if( p[k]=='\t' && p[k-1]==')') i++;
 		if( fieldcnt<i) fieldcnt= i;
-		if(trace) System.out.println("type cnt:"+i);
+		if(trace) System.err.println("type cnt:"+i);
 		return 1;
 	}
 
-	if( trace) System.out.println("slice:"+(p.length)+":"+s);
+	if( trace) System.err.println("slice:"+(p.length)+":"+s);
 	do{
 		// skip leading blancs
 		while(f<p.length )
@@ -648,7 +648,7 @@ public int sliceRow(){
 			case '\'':
 			case '"':
 				if(instring ){
-					//System.out.println("bracket:"+p[l]+l);
+					//System.err.println("bracket:"+p[l]+l);
 					if( bracket==p[l]) {
 						done=true;
 						break;
@@ -659,19 +659,19 @@ public int sliceRow(){
 		}
 
 		String fld= s.substring(f,l).trim();
-		if(trace) System.out.println("field ["+cr+"]["
+		if(trace) System.err.println("field ["+cr+"]["
 				+i+" "+l+"]"+fld+":"+instring+":");
 		cache.fields[cr][i]= fld;
 		// skip any immediate none-space
 		while(l<p.length )
 		if( p[l]=='\t' || p[l] ==' ') break; else l++; 
-		if(trace && instring) System.out.println("skipped to:"+l);
+		if(trace && instring) System.err.println("skipped to:"+l);
 		f= l;
 		i++;
 		cache.fldcnt[cr]=i;
 		if(i>fieldcnt) fieldcnt=i;
 	} while(f< p.length && p[f]!=']');
-	if(trace) System.out.println("fields extracted:"+i+" fieldcnt:"+fieldcnt);
+	if(trace) System.err.println("fields extracted:"+i+" fieldcnt:"+fieldcnt);
 	return i;
 }
 
@@ -702,7 +702,7 @@ public String fetchField(int fnr){
 	}
 	if( fnr>=0){
 		if( cache.fldcnt[cr]==0){
-			//System.out.println("reslice");
+			//System.err.println("reslice");
 			sliceRow();
 		}
 		if( fnr < cache.fldcnt[cr])
@@ -828,7 +828,7 @@ private void expandQuery(String xtra){
 	String n= query+xtra;
 	query = n;
 	if( qrytemplate != null) qrytemplate= n;
-	if( trace) System.out.print("Modified query:"+query);
+	if( trace) System.err.print("Modified query:"+query);
 }
 
 private void checkQuery(){
@@ -944,7 +944,7 @@ private void paramStore(){
 		right= query.substring(p+1,query.length());
 		//query= left+columns[i].inparam.toString()+right;
 	}
-	if( trace) System.out.println("paramStore:"+query);
+	if( trace) System.err.println("paramStore:"+query);
 }
 
 /**
@@ -957,13 +957,13 @@ private void paramStore(){
 private int executeInternal(){
 	paramStore();
 	cacheResetInternal();
-	if(trace) System.out.print("execute:"+query);
+	if(trace) System.err.print("execute:"+query);
 	if( query.indexOf("#trace on")==0){
-		System.out.println("Set trace on");
+		System.err.println("Set trace on");
 		trace= true;
 	}
 	if( query.indexOf("#trace off")==0){
-		System.out.println("Set trace off");
+		System.err.println("Set trace off");
 		trace= false;
 	}
 	try{
@@ -1005,7 +1005,7 @@ private int answerLookAhead(){
 	} while(error==MOK && active &&
 		cache.writer+1< cache.limit);
 	cache.reader= oldrd;
-	if(trace ) System.out.println("query return:"+error);
+	if(trace ) System.err.println("query return:"+error);
 	return error;
 }
 public int query(String cmd){
@@ -1047,7 +1047,7 @@ public int quickQuery(String cmd, DataOutputStream fd){
 	prepareQueryInternal(cmd);
 	if( error== MOK) executeInternal();
 	if( error== MOK) quickResponse(fd);
-	if(trace && error !=MOK) System.out.println("query returns error");
+	if(trace && error !=MOK) System.err.println("query returns error");
 	return error;
 }
 public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
@@ -1056,7 +1056,7 @@ public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
 	prepareQueryArrayInternal(cmd,arg);
 	if( error== MOK) executeInternal();
 	if( error== MOK) quickResponse(fd);
-	if(trace && error !=MOK) System.out.println("query returns error");
+	if(trace && error !=MOK) System.err.println("query returns error");
 	return error;
 }
 /**
@@ -1107,14 +1107,14 @@ public int closeStream(String cmd){
 public int cacheFreeup(int percentage){
 	if( cache.writer==0 && cache.reader== -1) return MOK;
 	if( percentage==100){
-		//System.out.println("allocate new cache struct");
+		//System.err.println("allocate new cache struct");
 		cache= new RowCache();
 		return MOK;
 	}
 	if( percentage <0 || percentage>100) percentage=100;
 	int k= (cache.writer * percentage) /100;
 	if( k < 1) k =1;
-	System.out.println("shuffle cache:"+percentage+" tuples:"+k);
+	System.err.println("shuffle cache:"+percentage+" tuples:"+k);
 	for(int i=0; i< cache.writer-k; i++){
 		cache.rows[i]= cache.rows[i+k];
 		cache.fldcnt[i]= cache.fldcnt[i+k];
@@ -1131,7 +1131,7 @@ public int cacheFreeup(int percentage){
 	if(cache.reader < -1) cache.reader= -1;
 	cache.writer -=k;
 	if(cache.writer < 0) cache.writer= 0;
-	System.out.println("new reader:"+cache.reader+" writer:"+cache.writer);
+	System.err.println("new reader:"+cache.reader+" writer:"+cache.writer);
 	return MOK;
 }
 /**
@@ -1217,11 +1217,11 @@ public int seekRow(int rownr){
 private void extendCache(){
 	int oldsize= cache.limit;
 	if( oldsize == cache.rowlimit){
-		System.out.println("Row cache limit reached extendCache");
+		System.err.println("Row cache limit reached extendCache");
 		setError("Row cache limit reached","extendCache");
 		// shuffle the cache content
 		if( cache.shuffle>0)
-		System.out.println("Reshuffle the cache ");
+		System.err.println("Reshuffle the cache ");
 	}
 	int incr = oldsize /10;
 	int newsize = oldsize +(incr<100? 100: incr);
@@ -1232,21 +1232,21 @@ private void extendCache(){
 	if(oldsize>0){
 		System.arraycopy(cache.rows,0,newrows,0,oldsize);
 		cache.rows= newrows;
-		//if(trace) System.out.println("Extend the cache.rows storage");
+		//if(trace) System.err.println("Extend the cache.rows storage");
 	}
 	    
 	int newfldcnt[]= new int[newsize];
 	if(oldsize>0){
 		System.arraycopy(cache.fldcnt,0,newfldcnt,0,oldsize);
 		cache.fldcnt= newfldcnt;
-		//if(trace) System.out.println("Extend the cache.fldcnt storage");
+		//if(trace) System.err.println("Extend the cache.fldcnt storage");
 		for(int i=oldsize;i<newsize;i++) cache.fldcnt[i]=0;
 	}
 	String newfields[][]= new String[newsize][];
 	if(oldsize>0){
 		System.arraycopy(cache.fields,0,newfields,0,oldsize);
 		cache.fields= newfields;
-		//if(trace) System.out.println("Extend the cache.fields storage");
+		//if(trace) System.err.println("Extend the cache.fields storage");
 		for(int i=oldsize;i<newsize;i++) 
 			cache.fields[i]= new String[maxfields];
 	}
@@ -1256,8 +1256,8 @@ private void extendCache(){
 private int clearCache(){
 	// remove all left-over fields
 	if( cache.reader+2<cache.writer){
-		System.out.println("Cache reset with non-read lines");
-		System.out.println("reader:"+cache.reader+" writer:"+cache.writer);
+		System.err.println("Cache reset with non-read lines");
+		System.err.println("reader:"+cache.reader+" writer:"+cache.writer);
 		setError("Cache reset with non-read lines","clearCache");
 	}
 	cacheFreeup(cache.shuffle);
@@ -1277,7 +1277,7 @@ public String fetchLine() throws MapiException {
 }
 public String fetchLineInternal() throws MapiException {
 	if( cache.writer>0 && cache.reader+1<cache.writer){
-		if( trace) System.out.println("useCachedLine:"+cache.rows[cache.reader+1]);
+		if( trace) System.err.println("useCachedLine:"+cache.rows[cache.reader+1]);
 		return cache.rows[++cache.reader];
 	}
 	if( ! active) return null;
@@ -1299,10 +1299,10 @@ public String fetchLineInternal() throws MapiException {
 		setError("Lost connection with server","fetchLine");
 		return null;
 	}
-	if( trace) System.out.println("Start reading from server");
+	if( trace) System.err.println("Start reading from server");
 	try {
 		blk.buf = fromMonet.readLine();
-		if(trace) System.out.println("gotLine:"+blk.buf);
+		if(trace) System.err.println("gotLine:"+blk.buf);
 	} catch(IOException e){
 		connected= false;
 		error= Mapi.MAPIERROR;
@@ -1374,7 +1374,7 @@ private void keepProp(String name, String colname){
 private void headerDecoder() {
 	String line= cache.rows[cache.reader];
 	if (trace)
-		System.out.println("header:"+line);
+		System.err.println("header:"+line);
 	int etag= line.lastIndexOf("#");
 	if(etag==0 || etag== line.length())
 		return;
@@ -1383,7 +1383,7 @@ private void headerDecoder() {
 	cache.rows[cache.reader]="[ "+cache.rows[cache.reader].substring(1,etag);
 	int cnt= sliceRow();
 	if (trace)
-		System.out.println("columns "+cnt);
+		System.err.println("columns "+cnt);
 	extendColumns(cnt);
 	if (tag.equals("# name")) {
 		for (int i=0;i<cnt;i++) {
@@ -1397,10 +1397,10 @@ private void headerDecoder() {
 				columns[i] = new Column();
 			columns[i].columntype = type;
 			if (trace)
-				System.out.println("column["+i+"].type="+columns[i].columntype);
+				System.err.println("column["+i+"].type="+columns[i].columntype);
 		}
 	} else if (trace)
-		System.out.println("Unrecognized header tag "+tag);
+		System.err.println("Unrecognized header tag "+tag);
 	//REST LATER
 
 	cache.rows[cache.reader]= line;
@@ -1410,7 +1410,7 @@ private void headerDecoder() {
 private int getRow(){
         String reply= "";
 
-	//if( trace) System.out.println("getRow:active:"+active+
+	//if( trace) System.err.println("getRow:active:"+active+
 		//" reader:"+(cache.reader+1)+" writer:"+cache.writer);
         while( active ||cache.reader+1< cache.writer){
 		if( active){
@@ -1418,13 +1418,13 @@ private int getRow(){
 				reply= fetchLineInternal();
 			} catch(MapiException e){ 
 				if(trace)
-				 System.out.print("Got exception in getRow");
+				 System.err.print("Got exception in getRow");
 				reply=null;
 			}
 			if( gotError() || reply == null) return MERROR;
 		} else reply = cache.rows[++cache.reader];
 
-		if(trace) System.out.println("getRow:"+cache.reader);
+		if(trace) System.err.println("getRow:"+cache.reader);
 		if( reply.length()>0)
 		switch(reply.charAt(0)){
 		    case '#': 
@@ -1451,7 +1451,7 @@ public int getTupleCount(){
 	for(int i=0;i<cache.writer;i++){
 		if(cache.rows[i].charAt(0)=='[') cnt++;
 	}
-	//System.out.println("counted "+cnt+" maintained "+cache.tuples);
+	//System.err.println("counted "+cnt+" maintained "+cache.tuples);
 	return cnt;
 }
 /**
@@ -1475,7 +1475,7 @@ private int unquoteInternal(char msg[], int first)
 }
 
 public String quote(String msg){
-	System.out.println("Not yet implemented");
+	System.err.println("!WARNING:Not yet implemented");
 	return null;
 }
 public String unquote(String msg){
@@ -1488,7 +1488,7 @@ public String unquote(String msg){
 		l= msg.lastIndexOf(bracket);
 		if( l<=f){
 			if(trace) 
-			System.out.println("closing '"+bracket+"' not found:"+msg);
+			System.err.println("closing '"+bracket+"' not found:"+msg);
 			return msg;
 		}
 		return msg.substring(f+1,l);
@@ -1528,11 +1528,11 @@ private void toMonet(String msg) throws MapiException {
 
 	if( msg== null || msg.equals("")){
 		if(trace)
-			System.out.println("Attempt to send an empty message");
+			System.err.println("Attempt to send an empty message");
 		return;
 	}
 	try{
-		if( trace) System.out.println("toMonet:"+msg);
+		if( trace) System.err.println("toMonet:"+msg);
 		int size= msg.length();
 		toMonet.writeBytes(msg);
 		toMonet.flush();
@@ -1547,7 +1547,7 @@ private void toMonet(String msg) throws MapiException {
 */
 public int timeout(int time){
 	check("timeout");
-	System.out.println("timeout() not yet implemented");
+	System.err.println("!WARNING:timeout() not yet implemented");
 	return MOK;
 }
 
