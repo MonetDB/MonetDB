@@ -306,8 +306,7 @@ static stmt *sql_subquery(context * sql, scope * scp, symbol * sq)
 static stmt *scope_subquery(context * sql, scope * scp, symbol * sq)
 {
 	scope *nscp = scope_open(scp);
-	stmt *s;
-       	s = sql_subquery(sql, nscp, sq);
+	stmt *s = sql_subquery(sql, nscp, sq);
 	scp = scope_close(nscp);
 	return s;
 }
@@ -318,6 +317,7 @@ static stmt *scope_subquery(context * sql, scope * scp, symbol * sq)
  * using a combination of table name and column name (or alias).
  * The sql_column_ref finds the column based on the specification from
  * symbol column_r.
+ * A special column reference is 'rowid'.
  */
 
 static stmt *sql_column_ref(context * sql, scope * scp, symbol * column_r)
@@ -331,7 +331,10 @@ static stmt *sql_column_ref(context * sql, scope * scp, symbol * column_r)
 	if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 
-		if (!(cs = scope_bind(scp, NULL, name))) {
+		if (strcasecmp(name, "rowid") == 0){
+			cvar *cv = scope_first_column(scp);
+			return stmt_mirror(stmt_dup(cv->s));
+		} else if (!(cs = scope_bind(scp, NULL, name))) {
 			/* maybe simple param */
 			cs = sql_bind_param(sql, name);
 			if (!cs)
@@ -342,7 +345,16 @@ static stmt *sql_column_ref(context * sql, scope * scp, symbol * column_r)
 		char *tname = l->h->data.sval;
 		char *cname = l->h->next->data.sval;
 
-		if (!(cs = scope_bind(scp, tname, cname))) {
+		if (strcasecmp(cname, "rowid") == 0){
+			tvar *tv = scope_bind_table(scp, tname);
+			cvar *cv;
+			if (!tv){
+				return sql_error( sql, 02, 
+					"Identifier: %s unknown", tname);
+			}
+			cv = tv->columns->h->data;
+			return stmt_mirror(stmt_dup(cv->s));
+		} else if (!(cs = scope_bind(scp, tname, cname))) {
 			return sql_error( sql, 02, "Column: %s.%s unknown", tname, cname);
 		}
 	} else if (dlist_length(l) >= 3) {
@@ -371,9 +383,10 @@ static sql_table *create_table_intern(context * sql, sql_schema * schema,
 		stmt *st = m->data;
 		sql_subtype *tp = tail_type(st);
 		char *cname = column_name(st);
-		sql_column *col = mvc_create_column(mvc, table, cname, 
+
+		(void)mvc_create_column(mvc, table, cname, 
 			tp->type->sqlname, tp->digits, tp->scale);
-		(void) col; /* Stefan: unused!? */
+		_DELETE(cname);
 	}
 	return table;
 }
@@ -386,13 +399,12 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 	dlist *columnrefs = NULL;
 	tvar *tv;
 	sql_schema *schema = cur_schema(sql);
-	char *tmpname = NULL;
 
 	if (optname && optname->token == SQL_NAME) {
 		tname = optname->data.lval->h->data.sval;
 		columnrefs = optname->data.lval->h->next->data.lval;
 	} else {	
-		tname = tmpname = tmp_table_name();
+		tname = tmp_table_name();
 	}
 	(void)create_table_intern(sql, schema, tname, query, sq, tt_temp);
 	tv = scope_add_table(scp, sq, tname);
@@ -415,6 +427,7 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
 
 			table_add_column(tv, sc, tname, cname);
+			_DELETE(cname);
 		}
 	} else {
 		/* foreach column add full basetable,column name */
@@ -425,9 +438,10 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
 
 			table_add_column(tv, sc, tname, cname);
+			_DELETE(tname);
+			_DELETE(cname);
 		}
 	}
-	if (tmpname) _DELETE(tmpname);
 	return tv;
 }
 
@@ -435,14 +449,12 @@ static tvar *sql_subquery_optname(context * sql, scope * scp,
 				  symbol * query)
 {
 	SelectNode *sn = (SelectNode*)query;
-	tvar *res = NULL;
 	stmt *sq = sql_subquery(sql, NULL, query);
 
 	if (!sq)
 		return NULL;
 
-	res = table_optname(sql, scp, sq, sql->sql, sn->name);
-	return res;
+	return table_optname(sql, scp, sq, sql->sql, sn->name);
 }
 
 static char *schema_name(dlist * name_auth)
@@ -542,8 +554,8 @@ static stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs ){
 		}
 		if (c){
 			lng val = scale2value(rt->scale);
-			atom *a = atom_int(it, val);
-			return stmt_binop(ls, stmt_atom(a), c);
+			atom *a = atom_int(sql_dup_subtype(it), val);
+			ls = stmt_binop(ls, stmt_atom(a), c);
 		}
 	}
 	return ls;
@@ -562,14 +574,15 @@ static stmt *fix_scale( context * sql, sql_subtype * ct, stmt * s, int both, int
 			sql_subfunc *c = NULL;
 
 			if (scale_diff < 0){
-				if (!both) return s;
+				if (!both) 
+					return s;
 				c = sql_bind_func("scale_down",st,it);
 			} else {
 				c = sql_bind_func("scale_up",st,it);
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
-				atom *a = atom_int(it, val);
+				atom *a = atom_int(sql_dup_subtype(it), val);
 				c->res.scale = (st->scale + scale_diff);
 				return stmt_binop(s, stmt_atom(a), c);
 			}
@@ -577,16 +590,14 @@ static stmt *fix_scale( context * sql, sql_subtype * ct, stmt * s, int both, int
 	} else if (always && st->scale){ /* scale down */
 		int scale_diff =  - st->scale;
 		sql_subtype *it = sql_bind_localtype( st->type->name );
-		sql_subfunc *c = NULL;
+		sql_subfunc *c = sql_bind_func("scale_down",st,it);
 
-		c = sql_bind_func("scale_down",st,it);
 		if (c) {
 			lng val = scale2value(scale_diff);
-			atom *a = atom_int(it, val);
+			atom *a = atom_int(sql_dup_subtype(it), val);
 			c->res.scale = 0;
 			return stmt_binop(s, stmt_atom(a), c);
 		} else {
-			sql_subtype_destroy(it);
 			printf("scale_down mising (%s)\n", st->type->name);
 		}
 	}
@@ -608,7 +619,8 @@ static stmt *check_types(context * sql, sql_subtype * ct, stmt * s )
 			t = NULL;
 		}
 		if (!t) {	/* try to convert if needed */
-			sql_subfunc *c = sql_bind_func_result("convert",st,NULL,ct);
+			sql_subfunc *c = 
+				sql_bind_func_result("convert",st,NULL,ct);
 			if (c){ 
 				if (ct->digits > 0){
 					if (ct->digits < st->digits){
@@ -670,6 +682,7 @@ static int convert_types(context * sql, stmt ** L, stmt ** R, int scale_fixing )
 				super->scale = rt->scale;
 				rs = check_types(sql, super, rs);
 			}
+			sql_subtype_destroy(super);
 		} else if (scale_fixing) {
 			ls = fix_scale( sql, r, ls, 0, 0);
 			rs = fix_scale( sql, i, rs, 0, 0);
@@ -756,10 +769,8 @@ static stmt *sql_case(context * sql, scope * scp, symbol *opt_cond, dlist * when
 		if (subtype_cmp(restype, tpe) != 0) {
 			list_destroy(conds);
 			list_destroy(results);
-			sql_subtype_destroy(tpe);
 			return sql_error(sql, 02, "Error: result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
 		}
-		sql_subtype_destroy(tpe);
 	}
 	if (subset) {
 		res = first_subset(subset);
@@ -900,13 +911,18 @@ static stmt *sql_binop(context * sql, scope * scp, symbol * se, group * grp, stm
 		return NULL;
 	}
 
-	/* TODO fix memory leak */
 	/* also need to add semantic checks here */
 	if (ls->type == st_list){
-		ls = ls->op1.lval->h->data;
+		stmt *o = ls;
+		assert(list_length(ls->op1.lval) == 1);
+		ls = stmt_dup(ls->op1.lval->h->data);
+		stmt_destroy(o); 
 	}
 	if (rs->type == st_list){
-		rs = rs->op1.lval->h->data;
+		stmt *o = rs;
+		assert(list_length(rs->op1.lval) == 1);
+		rs = stmt_dup(rs->op1.lval->h->data);
+		stmt_destroy(o); 
 	}
 
  	t1 = tail_type(ls);
@@ -922,8 +938,7 @@ static stmt *sql_binop(context * sql, scope * scp, symbol * se, group * grp, stm
 			ls = scale_algebra( f, ls, rs );
 		if (f->func->res->scale == SCALE_ADD)
 			sum_scales(f, ls, rs);
-		ls = stmt_binop(ls, rs, f);
-		return ls;
+		return stmt_binop(ls, rs, f);
 	} else {
 		if (convert_types( sql, &ls, &rs, 0) >= 0){
  			t1 = tail_type(ls);
@@ -1118,65 +1133,10 @@ static stmt *sql_value_exp(context * sql, scope * scp, symbol * se, group * grp,
  * A row of this pivot table expresses how the rows of the base tables
  * relate.
  */
-static int cmp_head( stmt *sel, stmt *key )
-{
-	if (key->h && ((key->h == sel->h) || (key->h == sel->t))){
-		return 0;
-	}
-	return -1;
-}
 
-static int cmp_tail( stmt *sel, stmt *key )
-{
-	if (key->t && ((key->t == sel->h) || (key->t == sel->t))){
-		return 0;
-	}
-	return -1;
-}
-
-static list *pivot_table(stmt *set)
-{
-	list *pivots = list_create((fdestroy)&stmt_destroy);
-	node *n;
-
-	if (set->type != st_set && set->type != st_sets){
-		if (set->nrcols == 1) {
-			list_append(pivots, stmt_dup(head_column(set)) );
-		}
-		if (set->nrcols == 2) {
-			list_append(pivots, stmt_dup(head_column(set)) );
-			list_append(pivots, stmt_dup(tail_column(set)) );
-		}
-	} else {
-	    list *l = set->op1.lval;
-	    if (set->type != st_set)
-		l = l->h->data;
-	    for( n = l->h; n; n = n->next ){
-		stmt *st = n->data;
-
-		if (st->nrcols == 1) {
-		       	if (!list_find(pivots, (void*)st, (fcmp)&cmp_head)) {
-				list_append(pivots, stmt_dup(head_column(st)) );
-			}
-		}
-		if (st->nrcols == 2) {
-			if (!list_find(pivots, (void*)st, (fcmp)&cmp_head)) {
-				list_append(pivots, stmt_dup(head_column(st)) );
-			}
-			if (!list_find(pivots, (void*)st, (fcmp)&cmp_tail)) {
-				list_append(pivots, stmt_dup(tail_column(st)) );
-			}
-		}
-	    }
-	}
-	return pivots;
-}
-
-static stmt *stmt2pivot(context * sql, scope * scp, stmt * s)
+static stmt *stmt2pivot(scope * scp, stmt * s)
 {
 	stmt *ptable = stmt_dup(scp->ptable);
-	(void) sql; /* Stefan: unused!? */
-
 	ptable_statements(ptable) = s;
 	return ptable;
 }
@@ -1291,7 +1251,7 @@ static stmt *sql_join_
 	}
 
 	if (s) {
-		s = stmt2pivot(sql, scp, s);
+		s = stmt2pivot(scp, s);
 	}
 	subset = s;
 	if (subset) {
@@ -1427,7 +1387,7 @@ static stmt *sql_cross(context * sql, scope * scp, symbol * q)
 		list *rl = create_stmt_list();
 		node *nv;
 
-		ct = stmt2pivot(sql, scp, ct);
+		ct = stmt2pivot(scp, ct);
 
 		for (nv = scp->tables->h; nv; nv = nv->next) {
 			node *n;
@@ -1651,8 +1611,10 @@ static stmt *sql_compare_exp( context *sql, scope *scp, group *grp, stmt *subset
 		return NULL;
 	if (ro->token != SQL_SELECT) {
 		rs = sql_value_exp(sql, scp, ro, grp, subset);
-		if (!rs)
+		if (!rs) {
+			stmt_destroy(ls);
 			return NULL;
+		}
 		if (grp && (!rs->key || !ls->key)) {
 			stmt_destroy(rs);
 			stmt_destroy(ls);
@@ -1663,9 +1625,13 @@ static stmt *sql_compare_exp( context *sql, scope *scp, group *grp, stmt *subset
 		node *o;
 		rs = scope_subquery(sql, scp, ro);
 
-		if (!rs)
+		if (!rs) {
+			stmt_destroy(ls);
 			return NULL;
+		}
 		if (rs->type != st_list || list_length(rs->op1.lval) == 0) {
+			stmt_destroy(ls);
+			stmt_destroy(rs);
 			return sql_error(sql, 02, "Subquery result wrong");
 		}
 		o = rs->op1.lval->h;
@@ -1915,7 +1881,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 			if (l->h->next->type == type_list) {
 				dnode *n = l->h->next->data.lval->h;
 				sql_subtype *ct = tail_type(ls);
-				stmt *temp = stmt_temp(ct);
+				stmt *temp = stmt_temp(sql_dup_subtype(ct));
 
 				for (; n; n = n->next) {
 					symbol *sval = n->data.sym;
@@ -2012,6 +1978,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 				t = stmt_reverse(oref);
 				if (sc->token == SQL_NOT_EXISTS) 
 					t = stmt_diff(scope_first_pivot(scp),t);
+				stmt_destroy(ls);
 				return stmt_filter(t);
 			}
 		}
@@ -2104,10 +2071,11 @@ static group *query_groupby_inner(context * sql, scope * scp, stmt * c, stmt * s
 	}
 
 	if (!cur) {
+		char *cn = column_name(c);
 		assert(cur);
 		(void) sql_error(sql, 02, 
-			 "subset not found for groupby column %s\n",
-			 column_name(c));
+			 "subset not found for groupby column %s\n", cn);
+		_DELETE(cn);
 		return NULL;
 	}
 	return cur;
@@ -2310,7 +2278,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 	}
 
 	if (s) {
-		s = stmt2pivot(sql, scp, s);
+		s = stmt2pivot(scp, s);
 		if (s && sn->groupby) {
 			grp = query_groupby(sql, scp, sn->groupby, s);
 			if (!grp)  {
@@ -2485,20 +2453,20 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 	s = stmt_list(rl);
 
 	if (s && subset && sn->distinct){
-		node *n = s->op1.lval->h;
+		node *n;
 		group *grp = NULL;
 		rl = create_stmt_list();
-		while(n) {
+ 		for (n = s->op1.lval->h; n; n = n->next) {
 			stmt *t = n->data;
 			grp = grp_create(stmt_dup(t), grp);
-			n = n->next;
 		}
-		n = s->op1.lval->h;
-		while(n) {
+ 		for (n = s->op1.lval->h; n; n = n->next) {
 			stmt *t = n->data;
-			list_append(rl, stmt_join(stmt_dup(grp->ext), stmt_dup(t), cmp_equal));
-			n = n->next;
+			list_append(rl, stmt_join(stmt_dup(grp->ext), 
+					          stmt_dup(t), cmp_equal));
 		}
+		grp_destroy(grp);
+
 		stmt_destroy(s);
 		s = stmt_list(rl);
 	}
@@ -2589,9 +2557,11 @@ static stmt *create_view(context * sql, stmt * ss,
 				stmt *cs, *st = m->data;
 				char *cname = column_name(st);
 				sql_subtype *tp = tail_type(st);
+
 				cs = stmt_create_column(stmt_dup(ts), cname, 
 					tp->type->sqlname, 
 					tp->digits, tp->scale);
+				_DELETE(cname);
 				list_append(l, cs);
 			}
 			stct = stmt_list(l);
@@ -2783,7 +2753,6 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss, stmt * ts, stmt
 		break;
 	case SQL_ATOM: {
 			AtomNode *an = (AtomNode*)s;
-			cs = stmt_dup(cs);
 			if (!an || !an->a){
 				res = stmt_default(cs, stmt_atom(atom_general(sql_dup_subtype(ctype),NULL)));
 			} else {
@@ -2855,7 +2824,7 @@ sql_subtype *find_column_type( list *columns, char *name)
 	for (n=columns->h; n; n = n->next ){
 		tmp_column *c = n->data;
 		if (strcmp(c->name, name) == 0)
-			return sql_dup_subtype(c->type);
+			return c->type;
 	}
 	return NULL;
 }
@@ -3023,7 +2992,6 @@ static stmt *table_element(context * sql, symbol * s, stmt *ss, stmt * ts, char 
 				column_options(sql, olist, l, ss, ts, cs, cname, ctype);
 				res = stmt_list(l);
 			}
-			sql_subtype_destroy(ctype);
 		} break;
 	case SQL_LIKE:
 		{
@@ -3317,7 +3285,6 @@ insert_check_ukey( context * sql, stmt **inserts, sql_key *k, stmt *idx_inserts 
 			"key constraint %s.%s failed", k->t->base.name, k->base.name ); 
 		res = stmt_exception( stmt_aggr(s, NULL, cnt), buf); 
 	}
-	sql_subtype_destroy(it);
 	return res;
 }
 
@@ -3582,7 +3549,6 @@ update_check_ukey( context * sql, stmt **updates, sql_key *k, stmt *idx_updates,
 			"key constraint %s.%s failed", k->t->base.name, k->base.name ); 
 		res = stmt_exception( stmt_aggr(s, NULL, cnt), buf); 
 	}
-	sql_subtype_destroy(it);
 	return res;
 }
 
@@ -3694,7 +3660,7 @@ join_idx_update( sql_idx *i, stmt **updates, int updcol )
 static int 
 sql_update_idxs(context * sql, sql_table *t, stmt **updates, list *l)
 {
-	int res = 0;
+	int res = 1;
 	node *n;
 
 	(void)sql; 
@@ -3730,8 +3696,11 @@ sql_update_idxs(context * sql, sql_table *t, stmt **updates, list *l)
 
 static stmt *sql_insert(context * sql, sql_table *t, stmt **inserts, int len)
 {
+	char buf[BUFSIZ];
 	int i;
 	list *l = create_stmt_list();
+	node *n;
+	sql_subaggr *cnt = sql_bind_aggr("count", NULL);
 
 	if (!sql_insert_idxs(sql, t, inserts, l)){
 		return sql_error(sql, 02, 
@@ -3739,11 +3708,44 @@ static stmt *sql_insert(context * sql, sql_table *t, stmt **inserts, int len)
 			t->base.name);
 	}
 
-	for (i = 0; i < len; i++) {
-		if (!inserts[i])
+	for(n = t->columns.set->h; n; n = n->next){
+		sql_column *c = n->data;
+
+		if (!inserts[c->colnr]) {
+			list_destroy(l);
+			for (i = 0; i < len; i++) 
+				stmt_destroy(inserts[i]);
+			sql_subaggr_destroy( cnt );
 			return NULL;
-		list_append(l, inserts[i]);
+		}
+		if (!c->null) {
+			stmt *s = NULL;
+			if (!inserts[c->colnr]->op2.stval->key){
+				s = stmt_atom( atom_general(
+					sql_dup_subtype(c->type), NULL));
+				s = stmt_uselect( 
+					stmt_dup(inserts[c->colnr]->op2.stval), 
+					s, cmp_equal);
+				s = stmt_aggr(s, NULL, sql_dup_aggr(cnt)); 
+			} else {
+				sql_subfunc *isnil = 
+					sql_bind_func("isnull", c->type, NULL );
+				s = stmt_unop(
+					stmt_dup(inserts[c->colnr]->op2.stval), 
+ 					isnil);
+			}
+			snprintf(buf, BUFSIZ, 
+				"null constraint %s.%s failed", 
+				c->t->base.name, c->base.name ); 
+			s = stmt_exception( s, buf); 
+			
+			list_prepend(l, s);
+		}
 	}
+
+	sql_subaggr_destroy( cnt );
+	for (i = 0; i < len; i++) 
+		list_append(l, inserts[i]);
 	return stmt_list(l);
 }
 
@@ -3846,7 +3848,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 			}
 		}
 		if (s) 
-			stmt_dup(s);
+			stmt_destroy(s);
 	}
 	if (collist != t->columns.set)
 		list_destroy(collist);
@@ -3860,7 +3862,8 @@ static stmt *sql_bulkinsert(context * sql, sql_table *t, char *tsep, char *rsep,
 {
 	sql_subtype *strtype = sql_bind_localtype( "str" );
 	stmt *bats = NULL;
-	stmt *fname = (filename)?stmt_atom(atom_string(strtype, _strdup(filename))):NULL;
+	stmt *fname = (filename)?stmt_atom(atom_string(
+			sql_dup_subtype(strtype), _strdup(filename))):NULL;
 	node *n;
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
@@ -3875,7 +3878,9 @@ static stmt *sql_bulkinsert(context * sql, sql_table *t, char *tsep, char *rsep,
 		sql_column *c = n->data;
 		inserts[i] = stmt_append( 
 		  stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), 
-		    stmt_find(stmt_dup(bats), stmt_atom(atom_string(strtype, _strdup(c->base.name)))));
+		    stmt_find(stmt_dup(bats), stmt_atom(atom_string(
+				sql_dup_subtype(strtype), 
+				_strdup(c->base.name)))));
 	}
 	stmt_destroy(bats);
 	res = sql_insert(sql, t, inserts, len);
@@ -3912,7 +3917,50 @@ static stmt *copyfrom(context * sql, dlist * qname, dlist *files, dlist *seps, i
 }
 
 
-static stmt *sql_update(context * sql, dlist * qname,
+static stmt *sql_update(context * sql, sql_table *t, stmt **updates, list *l )
+{
+	char buf[BUFSIZ];
+	node *n;
+	sql_subaggr *cnt = sql_bind_aggr("count", NULL);
+
+	if (!sql_update_idxs(sql, t, updates, l)){
+		return sql_error(sql, 02, 
+			"Updating indexes failed for table %s",
+			t->base.name);
+	}
+
+	for(n = t->columns.set->h; n; n = n->next){
+		sql_column *c = n->data;
+
+		if (updates[c->colnr] && !c->null) {
+			stmt *s = NULL;
+			if (!updates[c->colnr]->op2.stval->key){
+				s = stmt_atom( atom_general(
+					sql_dup_subtype(c->type), NULL));
+				s = stmt_uselect( 
+					stmt_dup(updates[c->colnr]->op2.stval), 
+					s, cmp_equal);
+				s = stmt_aggr(s, NULL, sql_dup_aggr(cnt)); 
+			} else {
+				sql_subfunc *isnil = 
+					sql_bind_func("isnull", c->type, NULL );
+				s = stmt_unop(
+					stmt_dup(updates[c->colnr]->op2.stval), 
+ 					isnil);
+			}
+			snprintf(buf, BUFSIZ, 
+				"null constraint %s.%s failed", 
+				c->t->base.name, c->base.name ); 
+			s = stmt_exception( s, buf); 
+			
+			list_prepend(l, s);
+		}
+	}
+	sql_subaggr_destroy( cnt );
+	return stmt_list(l);
+}
+
+static stmt *update_table(context * sql, dlist * qname,
 			dlist * assignmentlist, symbol * opt_where)
 {
 	stmt *s = NULL;
@@ -3935,14 +3983,14 @@ static stmt *sql_update(context * sql, dlist * qname,
 		if (opt_where){
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL);
 			if (s) 
-				s = stmt2pivot(sql,scp,s);
+				s = stmt2pivot(scp,s);
 			if (!s){
 				scope_close(scp);
 			       	return NULL;
 			}
 		} else { /* update all */
 			cvar *c = tv->columns->h->data;
-			s = stmt2pivot(sql,scp,stmt_dup(c->s));
+			s = stmt2pivot(scp,stmt_dup(c->s));
 		}
 	       	l = create_stmt_list();
 
@@ -3989,15 +4037,17 @@ static stmt *sql_update(context * sql, dlist * qname,
 		}
 		if (s) stmt_destroy(s);
 	
-		sql_update_idxs( sql, t, updates, l);
+		if ((s = sql_update( sql, t, updates, l)) == NULL){
+			_DELETE(updates);
+			list_destroy(l);
+			return NULL;
+		}
 		_DELETE(updates);
 		scp = scope_close(scp);
-		return stmt_list(l);
+		return s;
 	}
 	return NULL;
 }
-
-#define idx2type(i) sql_bind_localtype("int");
 
 static int
 sql_delete_idxs(context * sql, sql_table *t, stmt *vals, list *l)
@@ -4053,14 +4103,14 @@ static stmt *sql_delete(context * sql, dlist * qname, symbol * opt_where)
 		if (opt_where){
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL);
 			if (s) 
-				s = stmt2pivot(sql,scp,s);
+				s = stmt2pivot(scp,s);
 			if (!s){
 				scope_close(scp);
 			       	return NULL;
 			}
 		} else { /* delete all */
 			cvar *c = tv->columns->h->data;
-			s = stmt2pivot(sql,scp,stmt_dup(c->s));
+			s = stmt2pivot(scp,stmt_dup(c->s));
 		}
 
 		v = stmt_const( stmt_reverse(first_subset(s)), 
@@ -4081,6 +4131,7 @@ static stmt *sql_delete(context * sql, dlist * qname, symbol * opt_where)
 				"Deleting from indexes failed for table %s",
 				tv->tname);
 		}
+		stmt_destroy(s);
 
 		scp = scope_close(scp);
 		return stmt_list(l);
@@ -4305,7 +4356,7 @@ static stmt *sql_stmt(context * sql, symbol * s)
 	case SQL_UPDATE:
 		{
 			dlist *l = s->data.lval;
-			ret = sql_update(sql,
+			ret = update_table(sql,
 					 l->h->data.lval,
 					 l->h->next->data.lval,
 					 l->h->next->next->data.sym);

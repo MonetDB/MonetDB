@@ -1872,11 +1872,13 @@ atom:
 
 	  	snprintf(name, BUFSIZ, "a%d", len);
 	  	sql_add_param( c, _strdup(name), stmt_var(_strdup(name), t) );
-	  	sql_add_arg( c, an->a);
+	  	sql_add_arg( c, atom_dup(an->a));
 	  	/* we miss use SQL_COLUMN also for param's, maybe 
 	     	change SQL_COLUMN to SQL_IDENT */
  	  	$$ = _symbol_create_list( SQL_COLUMN, dlist_append_string(dlist_create(), _strdup(name))); 
 		c->key ^= t->type->localtype;
+
+		symbol_destroy($1);
 	   } else {
 		$$ = $1;
 	   }

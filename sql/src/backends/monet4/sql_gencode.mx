@@ -991,14 +991,16 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 			len = 0;
 			for(; n; n = n->next){
 				stmt *r = n->data;
+				char *cn = column_name(r);
 				len = snprintf( buf, BUFSIZ,
 					"mvc_result_column(myc, \"%s\", \"%s\", %d, %d, s%d);\n", 
-					column_name(r),
+					cn,
 					tail_type(r)->type->sqlname,
 					tail_type(r)->digits,
 					tail_type(r)->scale,
 				        r->nr
 				);
+				_DELETE(cn);
 				write_command(sql,buf);
 				write_part(sql,buf,len);
 				len = 0;

@@ -1,12 +1,14 @@
 #!/bin/sh
 set -x
-SQL="Msql -u monetdb -P monetdb --trace -h db1"
+SQL="Msql -u monetdb -P monetdb --trace"
 if [ $# -eq 1 ]; then
 	SQL="$1"
 fi
 
 echo "loading"
 ./load.sh "$SQL"
+
+exit
 
 echo "queries"
 $SQL < 01.sql

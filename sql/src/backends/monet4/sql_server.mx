@@ -629,7 +629,6 @@ module(mapi); # mapi_listen
 mvc_init(int(monet_environment.find("sql_debug")));
 
 proc SQLclient( Stream s_in, Stream s_out ) := {
-	# dsock := socket_dup(sock);
 	fork(sqlclient(s_in, s_out));
 }
 

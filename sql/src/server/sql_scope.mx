@@ -60,8 +60,10 @@ typedef struct var_ {
 typedef struct scope {
 	stmt *ptable;		/* result pivot table */
 	list *basetables;	/* from part */	
-	list *pivots;		/* pivot result */
 	list *outers;		/* outer references */
+
+	list *pivots;		/* pivots */
+	list *ppivots;		/* partial pivots */
 
 	list *tables;		
 	list *aliases;		/* list of aliased statements */		
@@ -139,6 +141,8 @@ static void cvar_destroy(cvar *cv)
 		if (cv->cname)
 			_DELETE(cv->cname);
 		_DELETE(cv);
+	} else {
+		printf("couldn't destroy cvar %s.%s\n", cv->tname, cv->cname);
 	}
 }
 
@@ -150,6 +154,8 @@ void tvar_destroy(tvar *v){
 		if (v->tname)
 			_DELETE(v->tname);
 		_DELETE(v);
+	} else {
+		printf("couldn't destroy tvar %s\n", v->tname );
 	}
 }
 
@@ -161,6 +167,8 @@ void var_destroy(var_ * v)
 		if (v->name)
 			_DELETE(v->name);
 		_DELETE(v);
+	} else {
+		printf("couldn't destroy var %s\n", v->name);
 	}
 }
 
@@ -170,6 +178,8 @@ scope *scope_open(scope * p)
 
 	s->ptable = stmt_ptable();
 	s->basetables = list_create( (fdestroy)&stmt_destroy );
+	s->pivots = list_create( (fdestroy)&stmt_destroy );
+	s->ppivots = list_create( (fdestroy)&stmt_destroy );
 	s->outers = list_create( (fdestroy)&stmt_destroy );
 
 	s->tables = list_create((fdestroy)&tvar_destroy);
@@ -184,6 +194,10 @@ scope *scope_close(scope * s)
 
 	stmt_destroy(s->ptable);
 	list_destroy(s->basetables);
+
+	list_destroy(s->pivots);
+	list_destroy(s->ppivots);
+
 	list_destroy(s->outers);
 
 	list_destroy(s->tables);
@@ -195,7 +209,7 @@ scope *scope_close(scope * s)
 static stmt *find_pivot( scope *scp, stmt *t )
 {
 	node *n;
-	for (n = ptable_ppivots(scp->ptable)->h; n; n = n->next)
+	for (n = scp->ppivots->h; n; n = n->next)
 	{
 		stmt *p = n->data;
 		if (p->t == t)
@@ -213,7 +227,7 @@ stmt *scope_find_pivot(scope *scp, stmt *t){
 	return NULL;
 }
 stmt *scope_first_pivot(scope *scp){
-	node *n = ptable_ppivots(scp->ptable)->h;
+	node *n = scp->ppivots->h;
 	if (n) return stmt_dup(n->data);
 	assert(0);
 	return NULL;
@@ -231,7 +245,10 @@ static void scope_add_table_(scope * scp, stmt *s, int outer ){
 		if (list_find(scp->outers, s, (fcmp)&stmt_cmp) == NULL)
 			list_append(scp->outers, stmt_dup(s));
 	}
-	stmt_destroy(stmt_pivot(stmt_dup(s), scp->ptable));
+	list_append(scp->pivots, 
+		stmt_pivot(stmt_dup(s), stmt_dup(scp->ptable)));
+	list_append(scp->ppivots, 
+		stmt_partial_pivot(stmt_dup(s), stmt_dup(scp->ptable)) );
 }
 
 cvar *table_add_column(tvar * t, stmt * s, 
@@ -356,7 +373,7 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 						return stmt_ibat(stmt_join(stmt_dup(s),
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 					}
-					return cv->s;
+					return stmt_dup(cv->s);
 				}
 			}
 		}
@@ -377,7 +394,7 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 					return stmt_ibat(stmt_join(stmt_dup(s),
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 				}
-				return cv->s;
+				return stmt_dup(cv->s);
 			} else if (!tv->tname &&
 			   (cv = bind_table_column(tv->columns, 
 						   tname, cname)) != NULL) {
@@ -388,7 +405,7 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 					return stmt_ibat(stmt_join(stmt_dup(s),
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 				}
-				return cv->s;
+				return stmt_dup(cv->s);
 			}
 		}
 	}
@@ -416,8 +433,7 @@ stmt *scope_bind(scope * scp, char *tname, char *cname )
 		if (a) return stmt_dup(a->s);
 		return NULL;
 	}
-	if (s) return stmt_dup(s);
-	return NULL;
+	return s;
 }
 
 cvar *scope_first_column(scope * scp)

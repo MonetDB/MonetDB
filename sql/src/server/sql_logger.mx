@@ -228,8 +228,8 @@ static void log_read_updates(logger *logger, logformat *l, char *name ){
 		_DELETE(hv);
 		_DELETE(tv);
 		bm_new_version(logger->bm, lbid, logger->tid);
+		bat_destroy(b);
 	}
-	if (b) BBPunfix(b->batCacheid);
 }
 
 static void log_read_destroy(logger *logger, logformat *l, char *name )
@@ -287,7 +287,7 @@ static void log_read_create(logger *logger, logformat *l, char *name )
 			return;
 		}
 		bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
-		BBPunfix(b->batCacheid);
+		bat_destroy(b);
 	}
 	if (buf) _DELETE(buf);
 }
@@ -326,6 +326,7 @@ static int logger_readlog( logger *logger, char *filename ){
 	logformat l;
 
 	logger->log = open_rstream(filename);
+
 
 	/* if the file doesn't exist, there is nothing to be readback */ 
 	if (!logger->log || stream_errnr(logger->log)){

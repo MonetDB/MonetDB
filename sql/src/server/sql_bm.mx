@@ -38,6 +38,11 @@ bat ids.
 #include <gdk.h>
 
 extern void bat_destroy(BAT *b);
+extern BAT *bat_descriptor(bat bid, char *func);
+extern BAT *bat_copy(BAT *b, char *func);
+extern BAT *bat_new(int ht, int tt, size_t size, char *func);
+extern void bat_incref(bat bid, bit flag, char *func);
+extern void bat_decref(bat bid, bit flag);
 
 extern struct bm *bm_create(int debug);
 extern void bm_destroy(struct bm *bm);
@@ -96,17 +101,85 @@ typedef struct bm {
 	BAT*	bat_oversion;	/* 	[ void, int ]   */
 } bm;
 
+static int bm_debug = 0;
+static BAT *bats = NULL;
+
 void bat_destroy(BAT *b)
 {
-	if (b){
+	if (bm_debug)
+		printf("destroy %d (%d)\n", 
+			b->batCacheid, BBPrefs(b->batCacheid));
+	if (b)
 		BBPunfix(b->batCacheid);
+}
+
+static void new_bat( bat bid, char *func )
+{
+	if (!BUNfnd(bats, &bid )){
+		BUNins( bats, (ptr)&bid, func);
+	} else {
+		BUNreplace( bats, (ptr)&bid, func);
 	}
 }
 
+BAT *bat_descriptor(bat bid, char *func)
+{
+	BAT *b = BATdescriptor(bid);
+
+	if (bm_debug)
+		printf("bat_destriptor %s %d (%d)\n", func, bid, BBPrefs(bid));
+	return b;
+}
+
+BAT *bat_copy(BAT *b, char *func)
+{
+	BAT *nb = BATcopy(b);
+
+	if (bm_debug){
+		new_bat(nb->batCacheid, func);
+		printf("bat_copy(%s) %d (%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
+	}
+	return nb;
+}
+
+BAT *bat_new(int ht, int tt, size_t size, char *func)
+{
+	BAT *nb = BATnew(ht, tt, size);
+
+	if (bm_debug){
+		new_bat(nb->batCacheid, func);
+		printf("bat_new(%s) %d (%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
+	}
+	return nb;
+}
+
+void bat_incref( bat bid, bit flag, char *func)
+{
+	BBPincref(bid,flag);
+	if (bm_debug){
+	    if (flag) 
+		printf("bat_incref(%s) %d l(%d)\n", func, bid, BBP_lrefs(bid));
+	    else
+		printf("bat_incref(%s) %d (%d)\n", func, bid, BBPrefs(bid));
+	}
+}
+
+void bat_decref( bat bid, bit flag)
+{
+	if (bm_debug){
+		if (flag) 
+			printf("bat_decref %d l(%d)\n", bid, BBP_lrefs(bid));
+		else
+			printf("bat_decref %d (%d)\n", bid, BBPrefs(bid));
+	}
+	BBPdecref(bid,flag);
+}
+
+
 static BAT *bm_create_bat( int ht, int tt, size_t size ){
-	BAT *b = BATnew(ht, tt, size);
+	BAT *b = bat_new(ht, tt, size, "bm_create_bat");
 	/* Make persistent as only persistent bats keep delta information */
-	BBPincref(b->batCacheid, TRUE);
+	bat_incref(b->batCacheid, TRUE, "bm_create_bat");
 	return b;
 }
 
@@ -118,8 +191,7 @@ static void bm_add_bat_intern(bm *bm, oid lbid, oid bid, char *name, int version
 	BUNins(bm->bat_mode, &bm->vid, &mode);
 	BUNins(bm->bat_version, &bm->vid, &version );
 
-	assert(BATcount(bm->bat_lbid) == BATcount(BATkunique(bm->bat_lbid)));
-	BBPincref(bid, TRUE);
+	bat_incref(bid, TRUE, "bm_add_bat_intern");
 	bm->vid++;
 	if (version > bm->version)
 		bm->version = version;
@@ -133,6 +205,9 @@ bm *bm_create(int debug )
 	bm->lbid = 1;
 	bm->version = 0;
 
+	if (!bats){
+		bats = BATnew(TYPE_int,TYPE_str, BUFSIZ);
+	}
 	bm->bat_name = bm_create_bat(TYPE_oid,TYPE_str,BUFSIZ); 
 	bm->bat_bid = bm_create_bat(TYPE_oid,TYPE_oid,BUFSIZ); 
 	bm->bat_lbid = bm_create_bat(TYPE_oid,TYPE_oid,BUFSIZ); 
@@ -150,19 +225,19 @@ void bm_destroy( bm *bm )
 	/* destroy the deleted */
 	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
 		bat bid = *(oid*)BUNtail(b,p);
-		BBPdecref(bid,TRUE);
+		bat_decref(bid,TRUE);
 	}
 	/* free resources */
 	BATloop(b, p, q){
 		bat bid = *(oid*)BUNtail(b,p);
-		BBPdecref(bid,TRUE);
+		bat_decref(bid,TRUE);
 	}
 
-	BBPdecref(bm->bat_name->batCacheid, TRUE);
-	BBPdecref(bm->bat_bid->batCacheid, TRUE);
-	BBPdecref(bm->bat_lbid->batCacheid, TRUE);
-	BBPdecref(bm->bat_mode->batCacheid, TRUE);
-	BBPdecref(bm->bat_version->batCacheid, TRUE);
+	bat_decref(bm->bat_name->batCacheid, TRUE);
+	bat_decref(bm->bat_bid->batCacheid, TRUE);
+	bat_decref(bm->bat_lbid->batCacheid, TRUE);
+	bat_decref(bm->bat_mode->batCacheid, TRUE);
+	bat_decref(bm->bat_version->batCacheid, TRUE);
 	bat_destroy(bm->bat_name);
 	bat_destroy(bm->bat_bid);
 	bat_destroy(bm->bat_lbid);
@@ -190,11 +265,15 @@ bm *bm_dup( bm *obm )
 				BUNfnd(obm->bat_bid,&id));
 		oid lbid = *(oid*)BUNtail(obm->bat_lbid, 
 				BUNfnd(obm->bat_lbid,&id));
-		BBPincref(bid, TRUE);
 		if (lbid >= nbm->lbid) 
 			nbm->lbid = lbid+1;
 		bm_add_bat_intern(nbm, lbid, bid, name, version, BM_READ);
 	}
+	BATfakeCommit(nbm->bat_version);
+	BATfakeCommit(nbm->bat_name);
+	BATfakeCommit(nbm->bat_bid);
+	BATfakeCommit(nbm->bat_lbid);
+	BATfakeCommit(nbm->bat_mode);
 	return nbm;
 }
 
@@ -219,8 +298,8 @@ void bm_save( bm *bm, FILE *fp )
 	    	}
 	    	if (version > oversion) {	
 	    		char name_version[BUFSIZ];
-			BAT *o = BATdescriptor(bid);
-	    		BAT *b = BATcopy(o);
+			BAT *o = bat_descriptor(bid, "bm_save");
+	    		BAT *b = bat_copy(o, "bm_save");
 
 	    		snprintf( name_version, BUFSIZ, "%s_%d", name, version); 
 			if (bm->debug & 1 )
@@ -255,13 +334,13 @@ void bm_cleanup( bm *bm )
 				BAT *ob = NULL;
 
 	    			snprintf( name_version, BUFSIZ, "%s_%d", name, oversion); 
-				ob = BATdescriptor(BBPindex(name_version));
+				ob = bat_descriptor(BBPindex(name_version), "bm_cleanup");
 	    			BATmode(ob, TRANSIENT);
 				bat_destroy(ob);
 			}
 	    	}
 		bat_destroy(bm->bat_oversion);
-		bm->bat_oversion = BATcopy(bm->bat_version);
+		bm->bat_oversion = bat_copy(bm->bat_version, "bm_cleanup");
 	}
 }
 
@@ -286,7 +365,12 @@ void bm_load( bm *bm, FILE *fp )
 		}
 	}
 	if (!bm->bat_oversion)
-		bm->bat_oversion = BATcopy(bm->bat_version);
+		bm->bat_oversion = bat_copy(bm->bat_version, "bm_load");
+	BATfakeCommit(bm->bat_version);
+	BATfakeCommit(bm->bat_name);
+	BATfakeCommit(bm->bat_bid);
+	BATfakeCommit(bm->bat_lbid);
+	BATfakeCommit(bm->bat_mode);
 }
 
 void bm_commit( bm *bm, int tid ) 
@@ -300,7 +384,7 @@ void bm_commit( bm *bm, int tid )
 	    		oid id = *(oid*)BUNhead(b,p);
 			bat bid = *(oid*)BUNtail(bm->bat_bid,
 				BUNfnd(bm->bat_bid,&id));
-			BAT *b = BATdescriptor(bid);
+			BAT *b = bat_descriptor(bid, "bm_commit");
 			BATfakeCommit(b);
 			bat_destroy(b);
 	    	}
@@ -309,7 +393,7 @@ void bm_commit( bm *bm, int tid )
  	b = bm->bat_bid;
 	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
 		bat bid = *(oid*)BUNtail(b,p);
-		BBPdecref(bid, TRUE);
+		bat_decref(bid, TRUE);
 	}
 	BATfakeCommit(bm->bat_version);
 	BATfakeCommit(bm->bat_name);
@@ -327,7 +411,7 @@ void bm_abort( bm * bm, int tid )
  	b = bm->bat_bid;
 	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
 		bat bid = *(oid*)BUNtail(b,p);
-		BBPdecref(bid, TRUE);
+		bat_decref(bid, TRUE);
 	}
 	b = bm->bat_version;
 	for (p = BUNfirst(b); p < b->batInserted; p = BUNnext(b, p)){ 
@@ -336,7 +420,7 @@ void bm_abort( bm * bm, int tid )
 	    		oid id = *(oid*)BUNhead(b,p);
 			bat bid = *(oid*)BUNtail(bm->bat_bid,
 					BUNfnd(bm->bat_bid,&id));
-			BAT *b = BATdescriptor(bid);
+			BAT *b = bat_descriptor(bid, "bm_abort");
 			BATundo(b);
 			BATfakeCommit(b);
 			bat_destroy(b);
@@ -392,7 +476,7 @@ void bm_new_version(bm *bm, oid lbid, int version )
 static void bat_rename(bat bid, char *name, int version, int mode)
 {	
 	char buf[BUFSIZ];
-	BAT *b = BATdescriptor(bid);
+	BAT *b = bat_descriptor(bid, "bat_rename");
 
 	snprintf(buf, BUFSIZ, "%s_%c_%d", 
 				name, 
@@ -410,9 +494,9 @@ void bm_new_bat(bm *bm, oid lbid, oid bid )
 /* Stefan: not used ?
 	bat obid = *(oid*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid));
 */
-	/* no BBPdecref(obid, TRUE); here as this needs to be done 
+	/* no bat_decref(obid, TRUE); here as this needs to be done 
 	 *  by the bm_{commit,abort,destroy} */
-	BBPincref(bid, TRUE);
+	bat_incref(bid, TRUE, "bm_new_bat");
 	BUNreplace(bm->bat_bid, (ptr)&vid, &bid);
 	BUNreplace(bm->bat_mode, (ptr)&vid, &mode);
 }
@@ -420,6 +504,7 @@ void bm_new_bat(bm *bm, oid lbid, oid bid )
 oid bm_add_bat(bm *bm, oid bid, char *name, int version)
 {
 	oid lbid = bm_find_bat(bm, name);
+
 	if (!lbid){
 		lbid = bm->lbid++;
 		bm_add_bat_intern(bm, lbid, bid, name, version, BM_WRITE);
@@ -443,7 +528,7 @@ void bm_del_bat(bm *bm, oid lbid)
 	BUNdelHead(bm->bat_mode, &vid);
 	if (bm->bat_oversion)
 		BUNdelHead(bm->bat_oversion, &vid);
-	/* no BBPdecref(bid, TRUE); here as this needs to be done 
+	/* no bat_decref(bid, TRUE); here as this needs to be done 
 	 *  by the bm_{commit,abort,destroy} */
 }
 
@@ -461,7 +546,7 @@ BAT* bm_lbid2bat(bm *bm, oid lbid)
 	vid = bm_lbid2vid(bm, lbid);
 	
 	bid = *(oid*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid)); 
-	b = BATdescriptor(bid);
+	b = bat_descriptor(bid, "bm_lbid2bat");
 	return b;
 }
 

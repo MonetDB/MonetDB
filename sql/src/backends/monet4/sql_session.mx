@@ -56,7 +56,7 @@ extern BAT *mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *r
 
 extern int debug_cmd( context *c, char *cmd, stream *out, int part );
 extern void monet4_freestack( backend_stack stk );
-extern void monet4_freecode( backend_code code );
+extern void monet4_freecode( backend_code code, backend_stack stk, int nr );
 #endif /*_SQL_SESSION_H_*/
 @c
 #include "sql_session.h"
@@ -114,6 +114,7 @@ static YYSTREE milnode2(int tok, ValPtr valp)
 {
         YYSTREE res = yynode(tok, valp->vtype);
 	res->yyval = *valp;
+	res->dealloc = 0;
         return res;
 }
 
@@ -151,19 +152,27 @@ void monet4_freestack( backend_stack stk )
 	CNTXTfree1(procstk);
 }
 
-void monet4_freecode( backend_code code )
+void monet4_freecode( backend_code code, backend_stack stk, int nr)
 {
 	YYSTREE procnode = (YYSTREE)code;
 	if (code){
-		/* clear arguments */
+		Client client;
+		char name[BUFSIZ]; 
 		int i;
 		int l = procnode->yysons[1]->cnt;
 		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
 
+		/* clear arguments */
 		for (i=1; i<l; i++){
 			argv[i].vtype = TYPE_void; 
 			argv[i].len = 0; 
 		}
+		/* cleanup proc */
+		snprintf(name, BUFSIZ, "sql%d", nr);
+		CNTXTclient( (Cntxt)(ptrdiff_t)stk, &client);
+		TBL_delproc(client, name);
+
+		_DELETE(procnode);
 	}
 }
 
@@ -177,15 +186,11 @@ YYSTREE backend_interpret( Cntxt procstk, char *name, list *args )
 
 	v.vtype = TYPE_void;
 	procnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name)); 
- 	argtree = yynode(0,0); 
+ 	argtree = yynode(0,0);
 	if (args){
   		for (n=args->h; n; n = n->next){
 			atom *a = n->data;
 			YYSTREE arg = milnode2(TOK_CONSTANT, &a->data );
-				/* todo cleanup should first remove
-				   these nodes, without cleaning the
-				   shared values!! */
-
        			argtree = yyexpand(argtree, arg);
 		}
 	}
@@ -209,6 +214,7 @@ int backend_fastpath( Cntxt procstk, YYSTREE procnode, list *args )
 		int i;
 
 		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
+
 	  	for (i=1, n=args->h; n; i++, n = n->next){
 			atom *a = n->data;
 			argv[i] = a->data;
@@ -398,8 +404,8 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
         	return handle_argerror(res, lt->cnt, 2);
   	}
   	@:builtin_operand(0,TYPE_Stream,In)@
-  	@:builtin_operand(1,TYPE_Stream,Out)@
 	in = *In;
+  	@:builtin_operand(1,TYPE_Stream,Out)@
 	out = *Out;
 
 	out = block_stream( stream_wstream( out ));
@@ -499,14 +505,17 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 			*start = '\0';
 		}
 		if (len < 0){
+			_DELETE(inbuf);
 			go = !go;
  			break;
 		}
 		inlen += len;
 		inbuf[inlen] = '\0';
 
-		if (!inlen || inbuf[0] == EOT)
+		if (!inlen || inbuf[0] == EOT) {
+			_DELETE(inbuf);
 			break;
+		}
 
 		sqlc->buf = inbuf;
 		sqlc->cur = ' ';

@@ -208,10 +208,12 @@ void symbol_destroy(symbol * s)
 			if (s->data.lval) 
 				dlist_destroy(s->data.lval);
 			break;
-		case type_string:
 		case type_type:
-			if (s->data.sval) 
+			if (s->data.typeval) 
 				sql_subtype_destroy(s->data.typeval);
+			break;
+		case type_string:
+			if (s->data.sval) _DELETE(s->data.sval);
 			break;
 		case type_int:
 			/* not used types */

@@ -164,13 +164,21 @@ sql_export void parser_exit();
 #include "sql_scan.h"	/* for keyword_exists(), keywords_insert(), init_keywords(), exit_keywords() */
 #include <string.h>
 
-/* Stefan: Not used !?
+#define END_SUBAGGR	1
+#define END_AGGR	2
+#define END_SUBTYPE	3
+#define END_TYPE	4
+
 static int sql_debug = 0;
-*/
 
 list *types = NULL;
 static list *aggrs = NULL;
 static list *funcs = NULL;
+
+static list *localtypes = NULL;
+static list *subtypes = NULL;
+static list *subaggrs = NULL;
+static list *subfuncs = NULL;
 
 static void sqltypeinit();
 
@@ -183,6 +191,10 @@ sql_subtype *sql_create_subtype( sql_type *t, int digits, int scale )
 	res->type = t;
 	res->digits = digits?digits:t->digits;
 	res->scale = scale;
+	if (sql_debug){
+		sql_ref_inc( &(res->ref) );
+		list_append( subtypes,  res);
+	}
 	return res;
 }
 
@@ -230,31 +242,37 @@ sql_subtype *sql_bind_subtype( char *name, int digits, int scale )
 	return NULL;
 }
 
+static int sql_end = 0;
 static void type_destroy(sql_type * t)
 {
-	if (sql_ref_dec( &(t->ref) ) == 0){
-		printf("destroy type %s\n", t->sqlname );
+	int ref = 0;
+	if ((ref = sql_ref_dec( &(t->ref) )) == 0){
 		_DELETE(t->sqlname);
 		_DELETE(t->name);
 		_DELETE(t);
+	} else if (sql_end == END_TYPE){
+		printf("#REFCOUNT of type %s %s is wrong %d\n", t->name, t->sqlname, ref);
 	}
 }
 
 void sql_subtype_destroy(sql_subtype * t)
 {
-	if (sql_ref_dec( &(t->ref) ) == 0){
+	int ref = 0;
+	if ((ref = sql_ref_dec( &(t->ref)) ) == 0){
 		type_destroy(t->type);
 		_DELETE(t);
+	} else if (sql_end == END_SUBTYPE){
+		printf("#REFCOUNT of subtype %s %s is wrong %d\n", t->type->name, t->type->sqlname, ref);
 	}
 }
 
 sql_subtype *sql_bind_localtype( char *name )
 {
-	node *n = types->h;
+	node *n = localtypes->h;
 	while (n) {
-		sql_type *t = n->data;
-		if (strcmp(t->name, name) == 0){
-			return sql_create_subtype(t, 0, 0);
+		sql_subtype *t = n->data;
+		if (strcmp(t->type->name, name) == 0){
+			return t;
 		}
 		n = n->next;
 	}
@@ -318,6 +336,10 @@ sql_subaggr *sql_bind_aggr(char *sqlaname, sql_subtype *type)
 			/* same scale as the input */
 			if (type)
 				ares -> res . scale = type->scale; 
+			if (sql_debug){
+				sql_ref_inc( &(ares->ref) );
+				list_append(subaggrs, ares);
+			}
 			return ares;
 		}
 		n = n->next;
@@ -328,12 +350,15 @@ sql_subaggr *sql_bind_aggr(char *sqlaname, sql_subtype *type)
 
 static void aggr_destroy(sql_aggr * t)
 {
-	if (sql_ref_dec( &(t->ref) ) == 0){
+	int ref = 0;
+	if ((ref = sql_ref_dec( &(t->ref) )) == 0){
 		_DELETE(t->name);
 		_DELETE(t->imp);
 		if (t->tpe) sql_subtype_destroy(t->tpe);
 		sql_subtype_destroy(t->res);
 		_DELETE(t);
+	} else if (sql_end == END_AGGR){
+		printf("#REFCOUNT of aggr %s %s is wrong %d\n", t->name, t->imp, ref);
 	}
 }
 
@@ -345,10 +370,13 @@ sql_subaggr *sql_dup_aggr(sql_subaggr *a)
 
 void sql_subaggr_destroy( sql_subaggr *a )
 {
-	if (sql_ref_dec( &(a->ref) ) == 0){
+	int ref = 0;
+	if ((ref = sql_ref_dec( &(a->ref) )) == 0){
 		aggr_destroy(a->aggr);
 		_DELETE(a);
-	}
+	} else if (sql_end == END_SUBAGGR){
+		printf("#REFCOUNT of subaggr %s %s is wrong %d\n", a->aggr->name, a->aggr->imp, ref);
+	} 
 }
 
 sql_subfunc *sql_bind_func(char *sqlfname, sql_subtype *tp1, sql_subtype *tp2)
@@ -391,6 +419,10 @@ sql_subfunc *sql_bind_func_(char *sqlfname, list *ops )
 				/* same scale as the input */
 				if (a && a->scale > fres->res.scale)
 					fres -> res . scale = a->scale; 
+			}
+			if (sql_debug){
+				sql_ref_inc( &(fres->ref) );
+				list_append(subfuncs, fres);
 			}
 			return fres;
                    }
@@ -438,6 +470,10 @@ sql_subfunc *sql_bind_func_result_(char *sqlfname, list *ops, sql_subtype *res )
 				if (a && a->scale > fres->res.scale)
 					fres -> res . scale = a->scale; 
 			}
+			if (sql_debug){
+				sql_ref_inc( &(fres->ref) );
+				list_append(subfuncs, fres);
+			}
 			return fres;
 		}
 		n = n->next;
@@ -448,12 +484,15 @@ sql_subfunc *sql_bind_func_result_(char *sqlfname, list *ops, sql_subtype *res )
 
 static void func_destroy(sql_func * t)
 {
-	if (sql_ref_dec( &(t->ref) ) == 0){
+	int ref = 0;
+	if ((ref = sql_ref_dec( &(t->ref) )) == 0){
 		_DELETE(t->name);
 		if (t->imp) _DELETE(t->imp);
 		if (t->ops) list_destroy(t->ops);
 		sql_subtype_destroy(t->res);
 		_DELETE(t);
+	} else if (sql_end == END_AGGR){
+		printf("#REFCOUNT of func %s %s is wrong %d\n", t->name, t->imp, ref);
 	}
 }
 
@@ -465,9 +504,12 @@ sql_subfunc *sql_dup_func(sql_subfunc *f)
 
 void sql_subfunc_destroy( sql_subfunc *f )
 {
-	if (sql_ref_dec( &(f->ref) ) == 0){
+	int ref = 0;
+	if ((ref = sql_ref_dec( &(f->ref) )) == 0){
 		func_destroy(f->func);
 		_DELETE(f);
+	} else if (sql_end == END_SUBAGGR){
+		printf("#REFCOUNT of subfunc %s %s is wrong %d\n", f->func->name, f->func->imp, ref);
 	}
 }
 
@@ -493,6 +535,8 @@ sql_type *sql_create_type(char *sqlname, int digits, int scale, int radix, char 
 	if (!keyword_exists(t->sqlname))
 		keywords_insert(t->sqlname, TYPE);
 	list_append(types, t);
+
+	list_append(localtypes, sql_create_subtype(t, 0, 0));
 
 	return t;
 }
@@ -520,7 +564,7 @@ sql_arg *sql_create_arg( char *name, sql_subtype *t )
 {
 	sql_arg *a = NEW(sql_arg);
 	a->name = name;
-	a->type = sql_dup_subtype(t);
+	a->type = t;
 	return a;
 }
 
@@ -528,6 +572,7 @@ void arg_destroy( sql_arg *a )
 {
 	if (a->name) _DELETE(a->name);
 	sql_subtype_destroy(a->type);
+	_DELETE(a);
 }
 
 sql_func *sql_create_func(char *name, char *imp, sql_type *tpe1,
@@ -577,13 +622,17 @@ sql_func *sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res 
 
 void parser_init(int debug)
 {
-/* Stefan: Not used !?
 	sql_debug = debug;
-*/
-	(void) debug;	/* Stefan: unused!? */
 
 	init_keywords();
+	if (sql_debug){
+		subtypes  = list_create((fdestroy)&sql_subtype_destroy);
+		subaggrs  = list_create((fdestroy)&sql_subaggr_destroy);
+		subfuncs  = list_create((fdestroy)&sql_subfunc_destroy);
+	}
+
 	types = list_create((fdestroy)&type_destroy);
+	localtypes = list_create((fdestroy)&sql_subtype_destroy);
 	aggrs = list_create((fdestroy)&aggr_destroy);
 	funcs = list_create((fdestroy)&func_destroy);
 	sqltypeinit();
@@ -631,14 +680,13 @@ void sqltypeinit()
 
 	sql_type *ts[100];
 	sql_type **misc, **strings, **numerical, **decimals, **floats, **dates;
-	sql_type **t, *INT, *BIT, *DBL;
+	sql_type **t, *INT, *OID, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP;
 
  	t = ts;
 	*t++ = sql_create_type("TABLE", 0, 0, 0, 	 	"bat");
 
 	misc = t;
-	*t++ = sql_create_type("OID", 0, 0, 2, 	  		"oid");
 	BIT = *t++ = sql_create_type("BOOLEAN", 0, 0, 2,	"bit");
 	*t++ = sql_create_type("BOOL", 0, 0, 2,	  		"bit");
 	*t++ = sql_create_type("UBYTE", 2, 0, 2,		"uchr");
@@ -662,6 +710,7 @@ void sqltypeinit()
 	*t++ = sql_create_type("TINYINT", 2, 0, 2, 	"sht"); /* sht as sum(uchr) isn't implemented */
 	*t++ = sql_create_type("SMALLINT", 4, 0, 2,	"sht");
 	INT = *t++ = sql_create_type("MEDIUMINT", 9, 0, 2,	"int");
+	OID = *t++ = sql_create_type("OID", 9, 0, 2, 	  	"oid");
 	*t++ = sql_create_type("INTEGER", 9, 0, 2,	"int");
 	*t++ = sql_create_type("NUMBER",  9, 0, 2,	"int");
 	*t++ = sql_create_type("BIGINT", 19, 0, 2,	"lng");
@@ -712,6 +761,7 @@ void sqltypeinit()
 		sql_create_func("hash", "hash", ts[i], INT, INT, SCALE_FIX);
 		sql_create_func("=", "=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("<>", "!=", ts[i], ts[i], BIT, SCALE_FIX);
+		sql_create_func("isnull", "isnil", ts[i], NULL, BIT, SCALE_FIX);
 	}
 
 	for(i=0; ts[i]; i++){
@@ -720,11 +770,15 @@ void sqltypeinit()
 	}
 
 	for(t=numerical; t < decimals; t++){
-		char buf[50];
-		char *lt = local_result((*t)->name);
-		snprintf(buf,50,"sum_%s", lt);
-		sql_create_aggr("sum", buf, *t, sql_bind_localtype(lt)->type);
-		sql_create_aggr("avg", "avg", *t, DBL);
+		if (*t != OID){
+			sql_subtype *r = NULL;
+			char buf[50];
+			char *lt = local_result((*t)->name);
+			snprintf(buf,50,"sum_%s", lt);
+			r = sql_bind_localtype(lt);
+			sql_create_aggr("sum", buf, *t, r->type);
+			sql_create_aggr("avg", "avg", *t, DBL);
+		}
 	}
 	for(t=decimals; t < floats; t+=3){
 		char buf[50];
@@ -738,10 +792,12 @@ void sqltypeinit()
 		sql_create_aggr("avg", "avg", *(t+2), DBL);
 	}
 	for(t=floats; t < dates; t++){
+		sql_subtype *r = NULL;
 		char buf[50];
 		char *lt = local_result((*t)->name);
 		snprintf(buf,50,"sum_%s", lt);
-		sql_create_aggr("sum", buf, *t, sql_bind_localtype(lt)->type);
+		r = sql_bind_localtype(lt);
+		sql_create_aggr("sum", buf, *t, r->type);
 		sql_create_aggr("avg", "avg", *t, DBL);
 	}
 
@@ -771,8 +827,9 @@ void sqltypeinit()
 
 	/* scale fixing for all numbers */
 	for(t=numerical; t < dates; t++){
-	      	sql_create_func("scale_up", "*", *t, sql_bind_localtype((*t)->name)->type, *t, SCALE_NONE );
-	      	sql_create_func("scale_down", "/", *t, sql_bind_localtype((*t)->name)->type, *t, SCALE_NONE );
+		sql_subtype *lt = sql_bind_localtype( (*t)->name );
+	      	sql_create_func("scale_up", "*", *t, lt->type, *t, SCALE_NONE );
+	      	sql_create_func("scale_down", "/", *t, lt->type, *t, SCALE_NONE );
 	}
 
 	/* convert numericals */
@@ -862,8 +919,25 @@ void sqltypeinit()
 
 void parser_exit()
 {
+	sql_end = END_SUBAGGR;
+
+	if (sql_debug){
+		list_destroy(subaggrs);
+		list_destroy(subfuncs);
+	}
+
+	sql_end = END_AGGR;
+
 	list_destroy(aggrs);
 	list_destroy(funcs);
+
+	list_destroy(localtypes);
+
+	sql_end = END_SUBTYPE;
+	if (sql_debug)
+		list_destroy(subtypes);
+
+	sql_end = END_TYPE;
 	list_destroy(types);
 
 	exit_keywords();

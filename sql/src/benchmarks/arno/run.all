@@ -21,6 +21,7 @@ $SQL < check0.sql
 echo "queries"
 $SQL < queries_depth2.sql
 
+exit
 echo "drop"
 $SQL < drop.sql
 

@@ -284,6 +284,7 @@ extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
 extern stmt *stmt_ptable();
 extern stmt *stmt_pivot(stmt *s, stmt *ptable);
+extern stmt *stmt_partial_pivot(stmt *s, stmt *ptable);
 
 extern stmt *stmt_find(stmt *b, stmt *v );
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
@@ -578,7 +579,8 @@ void stmt_destroy(stmt * s)
 		case st_exception:
 		case st_partial_pivot: case st_pivot:
 		case st_export:
-	  /*case st_find:*/
+	  	case st_find:
+
 	  /* Stefan: this should be here, but then it causes an
 	   * "Mserver: /ufs/manegold/Monet/4.3/sql/src/server/sql_mem.mx:92: sql_ref_dec: Assertion `r->refcnt > 0' failed."
 	   * in test src/benchmarks/tpch/Tests/load ; hence, we move it below until the respective bug is located and fixed.
@@ -593,6 +595,8 @@ void stmt_destroy(stmt * s)
 		case st_ptable:
 			list_destroy(s->op1.lval);
 			if (s->op2.lval) list_destroy(s->op2.lval);
+			if (s->op3.stval) stmt_destroy(s->op3.stval);
+			if (s->op4.stval) stmt_destroy(s->op4.stval);
 			break;
 
 		case st_assign:
@@ -668,8 +672,8 @@ void stmt_destroy(stmt * s)
 			if (s->op4.stval) stmt_destroy(s->op4.stval);
 			break;
 
-	  case st_find:
 	  /* Stefan: this should be above, but then it causes an
+	  case st_find:
 	   * "Mserver: /ufs/manegold/Monet/4.3/sql/src/server/sql_mem.mx:92: sql_ref_dec: Assertion `r->refcnt > 0' failed."
 	   * in test src/benchmarks/tpch/Tests/load ; hence, we move it here until the respective bug is located and fixed.
 	   */
@@ -1279,6 +1283,7 @@ stmt *stmt_intersect(stmt * op1, stmt * op2)
 {
 	stmt *res = NULL;
 	int reverse = 0;
+
 	while(op1->type == st_reverse){
 		stmt *r = op1;
 		op1 = stmt_dup(op1->op1.stval);
@@ -1449,28 +1454,35 @@ stmt *stmt_sets(list * l1)
 }
 
 /* ptable 
-		list of stmts 	(stmt)
+		list of ppivots
 		list of pivots
-		list of filters ?	
+		statements	
  */
 
 stmt *stmt_ptable()
 {
 	stmt *s = stmt_create(st_ptable);
+/*
 	s->op1.lval = list_create( (fdestroy)&stmt_destroy );
 	s->op2.lval = list_create( (fdestroy)&stmt_destroy );
+*/
+	s->op1.lval = list_create( (fdestroy)NULL );
+	s->op2.lval = list_create( (fdestroy)NULL );
 	s->op3.stval = NULL;
+	s->op4.stval = NULL;
 	return s;
 }
 
 static void stmt_ptable_add_ppivot( stmt *ptable, stmt *piv )
 {
-	list_append(ptable->op1.lval, stmt_dup(piv));
+	/*list_append(ptable->op1.lval, stmt_dup(piv));*/
+	list_append(ptable->op1.lval, piv);
 }
 
 static void stmt_ptable_add_pivot( stmt *ptable, stmt *piv )
 {
-	list_append(ptable->op2.lval, stmt_dup(piv));
+	/*list_append(ptable->op2.lval, stmt_dup(piv));*/
+	list_append(ptable->op2.lval, piv);
 }
 
 stmt *stmt_partial_pivot(stmt * base, stmt *ptable)
@@ -1496,8 +1508,6 @@ stmt *stmt_pivot(stmt * base, stmt *ptable)
 	s->nrcols = 2;
 	s->h = stmt_dup(ptable); /* the ptable is the new base table */
 	s->t = stmt_dup(base); 	 /* pivots have oid's in the tail */
-	/* keep seperate partial and full pivots */
-	stmt_destroy(stmt_partial_pivot(stmt_dup(base),stmt_dup(ptable))); 
 	return s;
 }
 
@@ -1753,7 +1763,8 @@ sql_subtype *head_type(stmt * st)
 
 	case st_temp:
 	case st_bat:
-		return NULL;	/* oid */
+		return sql_bind_localtype("oid");
+		/* return NULL;	oid */
 
 	case st_reverse:
 		return tail_type(st->op1.stval);
@@ -1929,12 +1940,20 @@ char *column_name(stmt * st)
 		return _strdup(st->op4.funcval->func->name);
 	case st_unop:
 	case st_binop:
-	case st_Nop:
-		return func_name(st->op4.funcval->func->name,
-				 column_name(st->op1.stval));
-	case st_aggr:
-		return func_name(st->op4.aggrval->aggr->name,
-				 column_name(st->op1.stval));
+	case st_Nop: 
+	{
+		char *cn = column_name(st->op1.stval);
+		char *r = func_name(st->op4.funcval->func->name, cn);
+		_DELETE(cn);
+		return r;
+	}
+	case st_aggr: 
+	{
+		char *cn = column_name(st->op1.stval);
+		char *r = func_name(st->op4.aggrval->aggr->name, cn);
+		_DELETE(cn);
+		return r;
+	}
 	case st_alias:
 		return column_name(st->op2.stval);
 	case st_column_alias:

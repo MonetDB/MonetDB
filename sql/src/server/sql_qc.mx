@@ -51,7 +51,7 @@ typedef struct qc {
 } qc;
 
 sql_export qc *qc_create();
-sql_export void qc_destroy( qc *cache /*, Cntxt stk */ );
+sql_export void qc_destroy( qc *cache );
 sql_export cq *qc_find( qc *cache, symbol *s, list *params, int key );
 sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type );
 sql_export int qc_size( qc *cache );
@@ -71,15 +71,10 @@ qc *qc_create()
 	return r;
 }
 
-void qc_destroy( qc *cache /*, Cntxt stk */ )
+void qc_destroy( qc *cache )
 {
 	cq *q, *n;
-/* see comment below.
-	char buf[BUFSIZ];
-	ValRecord v;
 
-	v.vtype = TYPE_void;
-*/
 	for (q = cache->q; q; q = n){
 		n = q->next;
 		
@@ -90,15 +85,10 @@ void qc_destroy( qc *cache /*, Cntxt stk */ )
 			list_destroy(q->params);
 
 		if (q->code)
-			backend_freecode( q->code );
+			backend_freecode( q->code, q->stk, q->id );
 
 		if (q->stk)
 			backend_freestack( q->stk );
-
-/* somehow this gives problems (sudden module unloads, procs not found )!!
-		snprintf(buf, BUFSIZ, "undef sql%d;", q->id );
-		interpret_str(stk, buf, &v);
-*/
 		_DELETE(q);
 	}
 	_DELETE(cache);
@@ -137,7 +127,7 @@ cq *qc_find( qc *cache, symbol *s, list *params, int key )
 
 	for (q = cache->q; q; q = q->next ){
 	    	if (q->key == key){
-			/*if (list_cmp(q->params, params, (fcmp)&param_cmp) == 0 */
+		/*if (list_cmp(q->params, params, (fcmp)&param_cmp) == 0 */
 			if (param_list_cmp(q->params, params) == 0 
 				 && symbol_cmp(q->s, s) == 0){
 				return q;
