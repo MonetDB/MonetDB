@@ -549,7 +549,7 @@ One day we should introduce the concept of locale, and hook here.
 The below tests try to be exhaustive in trying all time functionality.
 @mil
 
-if (mod = "main"){
+PROC test_monettime() : void := {
   module("alarm");
 
 @- rule

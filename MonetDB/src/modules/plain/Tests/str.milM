@@ -1,0 +1,3 @@
+module("str");
+test_str();
+quit;

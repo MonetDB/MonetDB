@@ -1096,7 +1096,7 @@ salgebra_epilogue(void) {
 @+ Sample script
 @mil
 
-if (mod = "main"){
+PROC test_salgebra() : void := {   
 
 	ti := new( void, oid );
 	ti.insert( nil, 0@0 );
@@ -1140,6 +1140,5 @@ if (mod = "main"){
 	CHdir();
 
 	ch := nil;
-	quit;
 }
 

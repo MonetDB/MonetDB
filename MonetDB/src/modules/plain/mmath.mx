@@ -137,7 +137,7 @@ The constants defined in math.h are defined using the following mil code.
 @* Example Script
 @mil
 
-if (mod = "main"){
+PROC test_mmath() : void := {
 	setoid(oid(20000000));
 	asin(sin(M_PI)).print;
 	acos(cos(M_PI)).print;

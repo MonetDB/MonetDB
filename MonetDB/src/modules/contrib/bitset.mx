@@ -415,8 +415,8 @@ extern int bitset_toInt( int* res, bitset* theBitSet ) {
 @+ Test
 @mil
 
-if (mod = "main"){
-	sigs("_bitset"); # only signatures of dynamic lib.
+PROC test_bitset() : void := {
+	sigs("bitset");
 
 	printf("constructor\n");
 	b := newBitset();
@@ -461,6 +461,4 @@ if (mod = "main"){
 
 	printf("convert to integer\n");
 	bitset_toInt(a).print;
-	 
-	quit;
 }

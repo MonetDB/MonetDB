@@ -384,7 +384,7 @@ int pcl_try(bit *result, BAT *event, int *mode){
 
 @mil
 
-if (mod = "main"){
+PROC test_pcl() : void := {
   names := bat(str,void);
   names.insert("PCL_L1CACHE_MISS",  nil);
   names.insert("PCL_L1DCACHE_MISS", nil);

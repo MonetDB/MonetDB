@@ -456,7 +456,7 @@ int io_fwrite(Stream *S, str buf, int *nbytes ){
 }
 @mil
 
-if (mod = "main"){
+PROC test_streams() : void := {
     s := open_wastream( "test.mil" );
     stream_write( s, "test\n" );
     stream_close( s );

@@ -139,7 +139,7 @@ The following script is used for testing the string module.
 
 @mil
 
-if (mod = "main") {
+PROC test_str() : void := {
   setoid(oid(20000000));
   i1 := "This is a test";
   i2 := "of the str atomic type";

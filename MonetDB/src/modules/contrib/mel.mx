@@ -44,20 +44,19 @@ extension system.
 
 @* Example Script
 @mil
-if (mod = "main"){
+proc mel_test ():= {
+	var m:= overloadedstr("tird string");
+	m := 1;
+}
+
+PROC test_mel() : void := {   
 	setoid(oid(20000000));
-	module(mel);
-	proc test ():= {
-		var m:= overloadedstr("tird string");
-		m := 1;
-	}
 	var m:= overloadedstr("http://www.cwi.nl/~mk/Acoi/index.html");
 	# not checked bogus second var 
 	var m:= overloadedstr("second string");
-	test();
+	mel_test();
 	m := 1;
 	print(teststring);
-	quit;
 }
 
 @c

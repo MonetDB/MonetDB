@@ -222,3 +222,5 @@ printf("#~BeginVariableOutput~#\n"); arith_perftest(int_1M, 10001, "int_1M"); pr
 
 var dec_1M := [decimal](int_1M);
 printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_1M, decimal("10001"), "dec_1M"); printf("#~EndVariableOutput~#\n");
+
+quit;

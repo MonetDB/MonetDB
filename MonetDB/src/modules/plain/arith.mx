@@ -296,7 +296,7 @@ the following example script will do each operation in the
 arith module. it can be used for testing.
 
 @mil
-proc test_arith() {
+PROC test_arith() : void := {
   setoid(oid(20000000));
   sht1 := sht(2);
   sht2 := sht(5);

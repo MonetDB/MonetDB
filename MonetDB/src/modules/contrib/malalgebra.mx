@@ -214,7 +214,7 @@ IF( not( isnil(@1result_@2) ) ) {
 @
 @mil
 
-if (mod = "main"){
+PROC test_malalgebra() : void := {   
 	#
 	# Simple test of some algorithms against the baseline
 	#
@@ -251,5 +251,4 @@ if (mod = "main"){
 
 	printf( "RESULT: %d tests failed.\n", Ntestfailed );
 
-	quit;
 }

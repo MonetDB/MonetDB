@@ -12,11 +12,8 @@ stdout of test 'bitset` in directory 'src/modules/contrib` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-
-#line 417 "/var/tmp/MonetDB/src/modules/plain/bitset.mx"
-
-module(bitset);
-sigs("bitset");
+module("bitset");
+test_bitset();
 #-------------------------------------------------#
 # signature					  #
 #-------------------------------------------------#
@@ -31,81 +28,36 @@ sigs("bitset");
 [ "bitset_xor(bitset, bitset) : bitset"		  ]
 [ "newBitset() : bitset"			  ]
 [ "newBitset(int) : bitset"			  ]
-
-printf("constructor\n");
 constructor
-b := newBitset();
-b.print;
 [ ffffffffffffffffffffffffffffffff ]
-
-printf("get(15)\n");
 get(15)
-b.bitset_getBit(15).print;
 [ false ]
-printf("set(15)\n");
 set(15)
-b := b.bitset_setBit(15);
-b.print;
 [ fffffffffffffffftfffffffffffffff ]
-printf("get(15)\n");
 get(15)
-b.bitset_getBit(15).print;
 [ true ]
-printf("clear(15)\n");
 clear(15)
-b := b.bitset_clearBit(15);
-b.print;
 [ ffffffffffffffffffffffffffffffff ]
-printf("get(15)\n");
 get(15)
-b.bitset_getBit(15).print;
 [ false ]
-
-printf("flip(7)\n");
 flip(7)
-b := b.bitset_flipBit(7);
-b.print;
 [ fffffffffffffffffffffffftfffffff ]
-printf("flip(7)\n");
 flip(7)
-b := b.bitset_flipBit(7);
-b.print;
 [ ffffffffffffffffffffffffffffffff ]
-
-printf("constructor(35)\n");
 constructor(35)
-a := newBitset(35);
-a.print;
 [ fffffffffffffffffffffffffftffftt ]
-
-printf("constructor(0x22)\n");
 constructor(0x22)
-b := bitset("0x22");
-b.print;
 [ fffffffffffffffffffffffffftffftf ]
-
-printf("and\n");
 and
-bitset_and(a,b).print;
 [ fffffffffffffffffffffffffftffftf ]
-printf("or\n");
 or
-bitset_or(a,b).print;
 [ fffffffffffffffffffffffffftffftt ]
-printf("xor\n");
 xor
-bitset_xor(a,b).print;
 [ ffffffffffffffffffffffffffffffft ]
-printf("not\n");
 not
-bitset_not(a).print;
 [ ttttttttttttttttttttttttttftttff ]
-
-printf("convert to integer\n");
 convert to integer
-bitset_toInt(a).print;
 [ 35 ]
- 
 quit;
 
 # 17:05:31 >  

@@ -332,7 +332,7 @@ proc xtable_test(title, x, y, z) := {
     xtable_histo_remap("multiregroup(yy,x)", b1.fetch(1), yy, x, z); 
 }
 
-if (mod = "main"){
+PROC test_xtables() : void := {
     setoid(oid(20000000));
 
     x := new(oid,chr);

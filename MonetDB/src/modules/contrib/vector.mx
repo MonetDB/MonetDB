@@ -1404,7 +1404,7 @@ dblv.print;
 @:fixedsize_operators_c(int,64)@
 
 @mil
-if (mod = "main"){
+PROC test_vector() : void := {   
 	@:varsized_tests@
 }
 

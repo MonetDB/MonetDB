@@ -1,72 +1,38 @@
 stdout of test 'mmath` in directory 'src/modules/plain` itself:
 
 
-# 10:26:22 >  
-# 10:26:22 >  Mtimeout -timeout 60 Mserver "--config=/db4/alexb/Monet/soft/etc/monet.conf" --debug=10 --set "monet_mod_path=/db4/alexb/Monet/soft/lib/MonetDB" --dbfarm "/db4/alexb/Monet/soft/var/dbfarm" --set monet_prompt= "/db4/alexb/Monet/soft/Tests/trace.mil" --dbname=Tests_src_modules_plain  < mmath.milM
-# 10:26:22 >  
+# 16:12:10 >  
+# 16:12:10 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src_modules_plain  < mmath.milM
+# 16:12:10 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for mips-sgi-irix6.5/64bit; dynamically linked.
-
-#line 139 "/db4/alexb/Monet/Monet/MonetDB/src/modules/plain/mmath.mx"
-module(mmath);
-setoid(oid(20000000));
-asin(sin(M_PI)).print;
-[ 1.22465e-16 ]
-acos(cos(M_PI)).print;
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+module("mmath");
+test_mmath();
+[ 1.22461e-16 ]
 [ 3.14159 ]
-atan(tan(M_PI_2)).print;
 [ 1.5708 ]
-atan(tan(M_PI_4)).print;
 [ 0.785398 ]
-tan(atan2(dbl(0.1),dbl(1.0))).print;
 [ 0.1 ]
-sqrt(pow(dbl(2),dbl(2))).print;
 [ 2 ]
-
-exp(dbl(10)).print;
 [ 22026.5 ]
-log(dbl(10)).print;
 [ 2.30259 ]
-log10(dbl(10)).print;
 [ 1 ]
-
-ceil(dbl(1.2)).print;
 [ 2 ]
-fabs(dbl(1.2)).print;
 [ 1.2 ]
-floor(dbl(1.2)).print;
 [ 1 ]
-fmod(dbl(15.2),dbl(2.5)).print;
 [ 0.2 ]
-
-log(-1.0LL).print;
 [ NaN ]
-(log(-1.0LL)=log(-1.0LL)).print;
 [ false ]
-isnan(log(-1.0LL)).print;
 [ true ]
-
-# NOTE: If there would be a system with large enough doubles than
-#       the expression could actually produce a correct output...
-#       (unlikely with IEEE(like) floating point types though)
-pow(2.0LL,5000.0LL).print;
 [ Inf ]
-isinf(pow(2.0LL,5000.0LL)).print;
 [ 1 ]
-pow(-2.0LL,5001.0LL).print;
 [ -inf ]
-isinf(pow(-2.0LL,5001.0LL)).print;
 [ -1 ]
-
-finite(1.0LL).print;
 [ true ]
-finite(log(-1.0LL)).print;
 [ false ]
-finite(pow(2.0LL,5000.0LL)).print;
 [ false ]
-finite(pow(-2.0LL,5001.0LL)).print;
 [ false ]
 
 quit;

@@ -836,7 +836,7 @@ proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
  
 @mil
 
-if (mod = "main"){
+PROC test_radix() : void := {
   module("alarm");
 
   var b := view_bbp_name.reverse;

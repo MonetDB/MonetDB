@@ -8,65 +8,31 @@ stdout of test 'mmath` in directory 'src/modules/plain` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for mips-sgi-irix6.5/64bit; dynamically linked.
-
-#line 139 "/db4/alexb/Monet/Monet/MonetDB/src/modules/plain/mmath.mx"
-module(mmath);
-setoid(oid(20000000));
-asin(sin(M_PI)).print;
+module("mmath");
+test_mmath();
 [ 1.22465e-016 ]
-acos(cos(M_PI)).print;
 [ 3.14159 ]
-atan(tan(M_PI_2)).print;
 [ 1.5708 ]
-atan(tan(M_PI_4)).print;
 [ 0.785398 ]
-tan(atan2(dbl(0.1),dbl(1.0))).print;
 [ 0.1 ]
-sqrt(pow(dbl(2),dbl(2))).print;
 [ 2 ]
-
-exp(dbl(10)).print;
 [ 22026.5 ]
-log(dbl(10)).print;
 [ 2.30259 ]
-log10(dbl(10)).print;
 [ 1 ]
-
-ceil(dbl(1.2)).print;
 [ 2 ]
-fabs(dbl(1.2)).print;
 [ 1.2 ]
-floor(dbl(1.2)).print;
 [ 1 ]
-fmod(dbl(15.2),dbl(2.5)).print;
 [ 0.2 ]
-
-log(-1.0LL).print;
 [ nan ]
-(log(-1.0LL)=log(-1.0LL)).print;
 [ false ]
-isnan(log(-1.0LL)).print;
 [ true ]
-
-# NOTE: If there would be a system with large enough doubles than
-#       the expression could actually produce a correct output...
-#       (unlikely with IEEE(like) floating point types though)
-pow(2.0LL,5000.0LL).print;
 [ 1.#INF ]
-isinf(pow(2.0LL,5000.0LL)).print;
 [ 1 ]
-pow(-2.0LL,5001.0LL).print;
 [ -1.#INF ]
-isinf(pow(-2.0LL,5001.0LL)).print;
 [ -1 ]
-
-finite(1.0LL).print;
 [ true ]
-finite(log(-1.0LL)).print;
 [ false ]
-finite(pow(2.0LL,5000.0LL)).print;
 [ false ]
-finite(pow(-2.0LL,5001.0LL)).print;
 [ false ]
 
 quit;

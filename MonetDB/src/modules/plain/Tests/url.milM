@@ -1,0 +1,3 @@
+module("url");
+test_url();
+quit;

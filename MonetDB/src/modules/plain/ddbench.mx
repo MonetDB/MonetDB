@@ -587,7 +587,7 @@ work only on void BATs with enum tails.
 @* Test Script
 @mil
 
-if (mod = "main"){
+PROC test_ddbench() : void := {
     if (view_bbp_name.reverse.exist("tpe")) {
 	tpe := tpe.destroy;
 	commit;

@@ -1930,9 +1930,8 @@ int show_unified_events(BAT **ret) {
 @+ Test Script	
 @mil
 
-if (mod = "main"){
+PROC test_counters() : void := {
 	module("alarm");
-	module("counters");
 
 	sigs("counters");
 

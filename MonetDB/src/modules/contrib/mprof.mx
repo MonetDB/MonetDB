@@ -1434,7 +1434,7 @@ join(b,c).print;
 \end{verbatim}
 
 @mil
-if (mod = "main"){
+PROC test_mprof() : void := {   
 	setoid(oid(20000000));
 
 	# A test for the performance analysis
@@ -1451,7 +1451,6 @@ if (mod = "main"){
 	printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
 	pmE("pmPrint");
 	printf("#~BeginVariableOutput~#\n"); pmSummary; printf("#~EndVariableOutput~#\n");
-	quit;
 }
 @T
 

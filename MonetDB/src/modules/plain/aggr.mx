@@ -126,7 +126,7 @@ proc toset(bat[any,any] b) : str {
         return res + "}";
 }
 
-proc aggrtst(int num, int fanout, str aggr, ..str..) {
+proc aggrtst(int num, int fanout, str agg, ..str..) {
 	var p := 3;
 	while((p :+= 1) <= $0) {
 	        var b, e, v := bat(void, int, num);
@@ -155,19 +155,20 @@ proc aggrtst(int num, int fanout, str aggr, ..str..) {
                 	}
                 }
         	print({toset}(b).col_name("test-set"),
-        	      (*aggr)(b).col_name(sprintf("%s(b)",aggr)),
-        	      (*aggr)(b,v).col_name(sprintf("%s(b,v)",aggr)),
-        	      (*aggr)(b,e).col_name(sprintf("%s(b,e)",aggr)));
+        	      (*agg)(b).col_name(sprintf("%s(b)",agg)),
+        	      (*agg)(b,v).col_name(sprintf("%s(b,v)",agg)),
+        	      (*agg)(b,e).col_name(sprintf("%s(b,e)",agg)));
         }
 }
 
-if (mod = "main"){
+PROC test_aggr() : void := {
+	module("decimal");
 	aggrtst(16,160,"{sum}","sht","int","lng","flt","dbl");
 	aggrtst(16,160,"{avg}","sht","int","lng","flt","dbl");
-	aggrtst(16,160,"{min}","sht","int","lng","flt","dbl");
-	aggrtst(16,160,"{max}","sht","int","lng","flt","dbl");
-	aggrtst(16,160,"{card}","sht","int","lng","flt","dbl");
-	aggrtst(16,160,"{count}","sht","int","lng","flt","dbl");
+	aggrtst(16,160,"{min}","sht","int","lng","flt","dbl","decimal");
+	aggrtst(16,160,"{max}","sht","int","lng","flt","dbl","decimal");
+	aggrtst(16,160,"{card}","sht","int","lng","flt","dbl","decimal");
+	aggrtst(16,160,"{count}","sht","int","lng","flt","dbl","decimal");
 }
 
 @{

@@ -1,0 +1,3 @@
+module("monettime");
+test_monettime();
+quit;

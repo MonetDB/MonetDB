@@ -888,7 +888,7 @@ int ascii_io_output( BAT *order, BAT* seps, BAT* bats, Stream *s ){
 
 @mil
 
-if (mod = "main"){
+PROC test_ascii_io() : void := {
 
     #ascii_io_debug(1);
 
