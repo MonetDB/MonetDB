@@ -99,11 +99,40 @@ def do_code_gen(targets, deps):
     targets = ntargets
   return targets
 		  
+	
+
 def find_org(deps,f):
   org = f;
   while (deps.has_key(org)):	
 	org = deps[org][0] #gen code is done first, other deps are appended 
   return org
+
+c_extern_func = "^[ \t]*extern[ \t].*[ \t\*]\([a-zA-Z0-9\_]+\)[ \t]*("
+c_extern_func = regex.compile(c_extern_func)
+
+c_extern_var = "^[ \t]*extern[ \t]*[^( \t]*[ \t\*]*\([a-zA-Z0-9\_]+\)[;\[]"
+c_extern_var = regex.compile(c_extern_var)
+
+def do_defs(targets,deps):
+  defs = []
+  for f in targets:
+    org = find_org(deps,f);
+    b = readfile(org)
+    m = c_extern_func.search(b)
+    while(m > 0):
+	fnd = c_extern_func.group(1)
+	if (fnd not in defs):
+		defs.append(fnd)
+        m = c_extern_func.search(b,m+1)
+    m = c_extern_var.search(b)
+    while(m > 0):
+	fnd = c_extern_var.group(1)
+	if (fnd not in defs):
+		defs.append(fnd)
+        m = c_extern_var.search(b,m+1)
+  print("EXPORTS")
+  for i in defs:
+	print ("\t%s" % i)
 
 def do_deps(deps,includes,incmap,cwd):
   cache = shelve.open(cwd+os.sep+'.cache', "c")
@@ -242,6 +271,7 @@ def codegen(tree, cwd, topdir):
 	      (base,ext) = string.split(f,".", 1)
 	      do_code_extract(f,base,ext, targets, deps, cwd)
 	    targets = do_code_gen(targets,deps)
+            #do_defs(targets,deps)
 	    do_deps(deps,includes,incmap,cwd)
 	    libs = do_libs(deps)
       	    tree.value(i)["TARGETS"] = targets
