@@ -104,9 +104,9 @@ if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xno; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
-      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
+      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
       case "$host" in
-      i*86-*-*) CFLAGS="$CFLAGS -malign-loops=4 -malign-jumps=4 -malign-functions=4";;
+      i*86-*-*) CFLAGS="$CFLAGS -malign-loops=4 -malign-jumps=4 -malign-functions=4 -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       esac     
     else
       case "$host" in
