@@ -1254,7 +1254,7 @@ memory advice for sequental access (sequential inserts).
 @- hash partitioning
 @c
 #define BUNhash(bx,hx,tx)\
-	i = HASHprobe(&h,tx);if ((r = BUNfnd(bx, &i)) != NULL)\
+	i = HASHprobe(&h,tx)%n; if ((r = BUNfnd(bx, &i)) != NULL)\
 		BUNfastins(BBPcache(*(bat*) BUNtloc(bx,r)), hx, tx);
 
 BAT *BAThashsplit(BAT *b, int n, int unary) {
@@ -1269,7 +1269,8 @@ BAT *BAThashsplit(BAT *b, int n, int unary) {
 	if (n <= 1) {
 	    BUNins(metabat, &i, &bn->batCacheid);
 	} else {
-            h.mask = n;
+	    for (i=2; i<n; i*=2);
+            h.mask = i-1;
             h.type = BATttype(b);
 	    cnt = BATMARGIN*BATbuncount(b)/n; 
 	    for (i = 0; i < n; i++) {
