@@ -56,10 +56,6 @@ stderr of test 'bug-sf-960166` in directory 'src/test/bugs` itself:
 # 09:13:39 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=52668  < bug-sf-960166.sql
 # 09:13:39 >  
 
-MAPI  = monetdb@stem:54355
-ACTION= mapi_get_row
-QUERY = select current_date = '2004-05-25';
-ERROR = !Types character(10,0) (str) and date(0,0) (date) are not equal
 
 # 09:13:39 >  
 # 09:13:39 >  Done.
