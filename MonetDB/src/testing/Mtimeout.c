@@ -87,23 +87,15 @@ limit(char **argv)
 	if (WIFEXITED(status)) { /* Terminated normally */
 	    return WEXITSTATUS(status);
 	} else if (WIFSIGNALED(status)) { /* Got a signal */
-	    switch(WTERMSIG(status)) {
-	    case SIGXCPU:
-		invocation(stderr, "Out of CPU bounds: ", argv);
-		return SIGXCPU;
-	    case SIGXFSZ:
-		invocation(stderr, "Out of file space: ", argv);
-		return SIGXFSZ;
-	    case SIGSEGV:
-		invocation(stderr, "Out of stack space: ", argv);
-		return SIGSEGV;
-	    default:
-		if (exec_timeout) {
-		    invocation(stderr, "Timeout: ", argv);
-		} else {
-		    invocation(stderr, "General failure: ", argv);
-		}
+	    if (exec_timeout) {
+		invocation(stderr, "Timeout: ", argv);
 		return 1;
+	    } else {
+	        int wts = WTERMSIG(status);
+		char msg[1024];
+		snprintf(msg, 1022, "%s (%d): ", _sys_siglist[wts], wts);
+		invocation(stderr, msg, argv);
+		return ((wts>0)?wts:1);
 	    }
 	}
 
