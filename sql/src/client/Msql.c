@@ -877,8 +877,10 @@ main(int ac, char **av)
 		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
 		if (!dump){
 			fstat(fileno(stdin),&st);
+#ifdef HAVE_LIBREADLINE
 			if (S_ISCHR(st.st_mode))
 	   			is_chrsp = 1;
+#endif
 			clientAccept( ws, rs, prompt, debug );
 		} else {
 			dump_tables( ws, rs, dump );
