@@ -941,7 +941,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                 t = '-.---'
             TIMES.append([TSTDIR,TST,t,FtOut,FtErr])
             td = td + tt
-            FdOut = max(FdErr,FtOut)
+            FdOut = max(FdOut,FtOut)
             FdErr = max(FdErr,FtErr)
             if bodyline is not None:
                 body.append(bodyline)
