@@ -64,11 +64,11 @@ class server:
     def getstring(self):
         try:
             idx = string.find(self.buffer, "\1")
-            #if trace > 1:
+            if trace > 1:
                 print self.buffer
             str = ""
             while idx < 0:
-                #if trace > 1:
+                if trace > 1:
                     print self.buffer
                 str = str + self.buffer
                 self.buffer = self.socket.recv(8096)
@@ -76,7 +76,7 @@ class server:
 
             str = str + self.buffer[0:idx]
             self.buffer = self.buffer[idx+1:]
-            #if trace > 1:
+            if trace > 1:
                 print str
             try:
                 str = unicode(str, 'utf-8')
