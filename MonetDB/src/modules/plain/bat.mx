@@ -1028,6 +1028,7 @@ int CMDimport(BAT **ret, BAT *b, str fnme) {
 
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
+
 @-
 Open the file. Memory map it to minimize buffering problems.
 @c
@@ -1035,11 +1036,27 @@ Open the file. Memory map it to minimize buffering problems.
 		GDKsyserror("CMDimport: could not open file %s\n",fnme);
 		return GDK_FAIL;
 	} else {
+		int fn,fs;
 	    	struct stat st;
-            	fstat(fileno(fp), &st);
+		if ((fn=fileno(fp)) <= 0) {
+			GDKsyserror("CMDimport: fileno('%s') returns %d\n",fnme,fn);
+			return GDK_FAIL;
+		}
+            	if ((fs=fstat(fn, &st)) != 0) {
+            		GDKsyserror("CMDimport: fstat('%s') returns %d\n",fnme,fs);
+            		return GDK_FAIL;
+            	}
 		(void)fclose(fp); 
+		if (st.st_size <= 0)
+			GDKwarning("CMDimport: fstat('%s') returns size=%d; file empty or fstat broken?\n",
+			           fnme,st.st_size);
             	base = cur = (char*)MT_mmap(fnme, 0, 0, st.st_size, NULL);
 		end = cur + st.st_size;
+		if ((int)cur <= 0) {
+			GDKsyserror("CMDimport: MT_mmap('%s', 0, 0, %d, NULL) returns %d\n",
+			            fnme,st.st_size,(int)cur);
+			return GDK_FAIL;
+		}
 	}
 @-
 Parse a line. Copy it into a buffer. Concat broken lines with a slash. 

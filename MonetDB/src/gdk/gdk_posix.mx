@@ -192,6 +192,7 @@ gdk_export int win_mkdir(const char*, const int mode);
 
 #endif /* GDK_POSIX_H */
 @c
+#include "gdk.h"
 #include "gdk_posix.h"
 
 static void MT_alloc_init();
@@ -338,6 +339,10 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
         SECURITY_ATTRIBUTES sa;
         HANDLE h1, h2;
 
+	CHECKDEBUG PROPDEBUG
+		THRprintf(GDKerr,"MT_mmap('%s', %d, %d, %d, %x)\n",
+		                        path, mode, off, len, fixed);
+
 	if (mode & MMAP_WRITABLE) {
 		mode0 |= GENERIC_WRITE;
 		mode1 |= FILE_SHARE_WRITE;
@@ -365,11 +370,15 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
 
         h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
         if (h1 == NULL) {
+		GDKsyserror("MT_mmap: CreateFile('%s', %d, %d, &sa, %d, %d, NULL) failed\n",
+		                              path, mode0, mode1, OPEN_ALWAYS, mode2);
                 return (void*) -1;
         }
 
         h2 = CreateFileMapping(h1, &sa, mode3, (off+len) >> 32, (unsigned int) (off+len), NULL);
         if (h2 == NULL) {
+		GDKsyserror("MT_mmap: CreateFileMapping(%x, &sa, %d, %d, %u, NULL) failed\n",
+		                        h1, mode3, (off+len) >> 32, (unsigned int) (off+len));
                 CloseHandle(h1);
                 return (void*) -1;
         }
@@ -379,6 +388,8 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
         	ret = MapViewOfFile(h2, mode4, off >> 32, (unsigned int) off, len);
  	}
         if (ret == NULL) {
+		GDKsyserror("MT_mmap: MapViewOfFile%s(%x, %d, %d, %u, %d, %x) failed\n",
+		            h2, (fixed?"Ex":""), mode4, off >> 32, (unsigned int) off, len, fixed);
 		ret = (void*) -1;
         }
         CloseHandle(h1);
