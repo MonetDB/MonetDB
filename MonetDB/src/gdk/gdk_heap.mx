@@ -102,7 +102,6 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
 	if (h->filename) {
 		strcpy(nme, h->filename);
 		ext = decompose_filename(nme);
-		strcat(ext, ".priv");
 	}
         h->base = NULL;
         h->maxsize = h->size = MAX(1,nitems)*itemsize;
@@ -119,11 +118,12 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
                 h->base = (char *) GDKmallocmax(h->size, &h->maxsize);
 	}
 	if (h->filename && h->base == NULL) {
-		char *of = h->filename;
+        	char privext[PATHLENGTH], *of = h->filename;
 		FILE *fp;
 
 		h->filename = NULL;
-		fp = GDKfilelocate(nme, "wb", ext);
+		sprintf(privext, "%s.priv", ext);
+		fp = GDKfilelocate(nme, "wb", privext);
 		if (fp != NULL) {
 			fclose(fp);
 			/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
@@ -240,7 +240,7 @@ int HEAPfree(Heap* h) {
 	if (h->filename) {
 		GDKfree(h->filename);
 	}
-        h->filename = NULL;
+	h->filename = NULL;
         return 0;
 }
 
@@ -261,6 +261,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	int ret = 0, desc_status = 0;
 	size_t truncsize = (1+((((size_t)(h->free*1.05))-1)>>16))<<16;
 	size_t minsize = (1+((h->size-1)>>16))<<16;
+	int priv_storage = (h->storage == STORE_PRIV); 
 	char priv[80];
 
 	h->maxsize = h->size;
@@ -278,24 +279,25 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
          * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv 
+	 * .ex.priv files are now also used with STORE_MMAP mode on huge uncommitted BATs.
          */
 	strcpy(priv, ext); 
 	strcat(priv, ".priv");
-	if (fp == NULL) {
-		/* file-not-found may be caused because it exists as .ext.priv => link to .ext */
-		ret = GDKmove(BATDIR, nme, priv, BATDIR, nme, ext); 
-	} else {
+	if (fp) {
 		ret = fclose(fp);
+	} else {
+		priv_storage = TRUE; /* file may be in X.priv file iso X */
 	}
-	if (ret == 0 && h->storage == STORE_PRIV) {
-		/* silently remove any previous .ext.priv file */
+	if (priv_storage) {
 		long_str path;
-
 		GDKfilepath(path, BATDIR, nme, priv);
-		(void) unlink(path); /* this is allowed to fail (if it does not exist) */
-
-		/* rename .ext file to .ext.priv; it should not fail now */
-		ret = GDKmove(BATDIR, nme, ext, BATDIR, nme, priv); 
+		if (fp == NULL) {
+			struct stat st;
+			ret = stat(path, &st);
+		} else {
+			/* silently remove any previous .ext.priv file */
+			ret = unlink(path) || GDKmove(BATDIR, nme, ext, BATDIR, nme, priv); 
+		}
 		ext = priv;
 	}
 	if (ret) {
@@ -362,7 +364,7 @@ Delete any saved heap file. For memory mapped files, also try to remove any rema
 @c
 int HEAPdelete(Heap* h, str o, str ext) {
 	int ret;	
-	if (h->size <= 0 || h->filename == NULL) {
+	if (h->size <= 0) {
 		return 0;
 	}
 	ret = GDKunlink(BATDIR, o, ext);
