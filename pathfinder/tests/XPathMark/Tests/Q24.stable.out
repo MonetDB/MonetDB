@@ -16,8 +16,7 @@ stdout of test 'Q24` in directory 'tests/XPathMark` itself:
 <emailaddress>mailto:Rotger@unical.it</emailaddress>
 <phone>+0 (563) 40749141</phone>
 <creditcard>3555 7127 6716 8072</creditcard>
-</person>
-<person id="person2">
+</person><person id="person2">
 <name>Rutger Merel</name>
 <emailaddress>mailto:Merel@msn.com</emailaddress>
 <phone>+0 (903) 40326671</phone>
@@ -33,16 +32,14 @@ stdout of test 'Q24` in directory 'tests/XPathMark` itself:
 <gender>female</gender>
 <business>Yes</business>
 </profile>
-</person>
-<person id="person3">
+</person><person id="person3">
 <name>Baldomir Melton</name>
 <emailaddress>mailto:Melton@versata.com</emailaddress>
 <creditcard>4396 8149 5210 4179</creditcard>
 <watches>
 <watch open_auction="open_auction3"/>
 </watches>
-</person>
-<person id="person6">
+</person><person id="person6">
 <name>Dietrich Maquelin</name>
 <emailaddress>mailto:Maquelin@cas.cz</emailaddress>
 <phone>+0 (416) 69304967</phone>
@@ -63,8 +60,7 @@ stdout of test 'Q24` in directory 'tests/XPathMark` itself:
 <gender>female</gender>
 <business>No</business>
 </profile>
-</person>
-<person id="person9">
+</person><person id="person9">
 <name>Svatopluk Quinlan</name>
 <emailaddress>mailto:Quinlan@smu.edu</emailaddress>
 <phone>+0 (532) 3727767</phone>
@@ -82,8 +78,7 @@ stdout of test 'Q24` in directory 'tests/XPathMark` itself:
 <gender>female</gender>
 <business>Yes</business>
 </profile>
-</person>
-<person id="person10">
+</person><person id="person10">
 <name>Jacinto Hacken</name>
 <emailaddress>mailto:Hacken@forwiss.de</emailaddress>
 <phone>+0 (533) 13164950</phone>
