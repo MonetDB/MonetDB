@@ -2,7 +2,7 @@ package nl.cwi.monetdb.jdbc;
 
 import java.sql.*;
 import java.util.*;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
 import java.util.regex.*;
@@ -31,7 +31,7 @@ import java.util.regex.*;
  * independent from what the client requests (pre-fetching strategy).
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.5 (beta release)
+ * @version 0.6 (beta release)
  */
 public class MonetConnection extends Thread implements Connection {
 	/** The hostname to connect to */
@@ -143,9 +143,21 @@ public class MonetConnection extends Thread implements Connection {
 			// procedure
 			synchronized (monet) {
 				// we're debugging here... uhm, should be off in real life
-				if (debug)
-					monet.debug("monet_" +
+				if (debug) {
+					String fname = props.getProperty("logfile", "monet_" +
 						(new java.util.Date()).getTime() + ".log");
+					File f = new File(fname);
+					int ext = fname.lastIndexOf(".");
+					if (ext < 0) ext = fname.length();
+					String pre = fname.substring(0, ext);
+					String suf = fname.substring(ext);
+
+					for (int i = 1; f.exists(); i++) {
+						f = new File(pre + "-" + i + suf);
+					}
+
+					monet.debug(f.getAbsolutePath());
+				}
 
 				// log in
 				if (blockMode) {

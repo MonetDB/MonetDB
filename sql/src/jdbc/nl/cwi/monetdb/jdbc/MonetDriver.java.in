@@ -203,6 +203,11 @@ public class MonetDriver implements Driver {
 		prop.description = "Whether or not to create a log file for debugging purposes";
 		props.add(prop);
 
+		prop = new DriverPropertyInfo("logfile", "");
+		prop.required = false;
+		prop.description = "The filename to write the debug log to.  Only takes effect if debug is set to true.  If the file exists, an incrementing number is added, till the filename is unique.";
+		props.add(prop);
+
 		prop = new DriverPropertyInfo("blockmode", "true");
 		prop.required = false;
 		prop.description = "Whether blockmode should be used, when false, linemode is used instead";
