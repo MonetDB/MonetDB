@@ -1002,7 +1002,7 @@ collect statistics that help us decide what to do
 	if (lfetch && rfetch) {
 		if (BAThvoid(l) && !BATtvoid(r))
 			lfetch = 0;
-		if (BATtvoid(r) && !BAThvoid(l))
+		if (swap && BATtvoid(r) && !BAThvoid(l))
 			rfetch = 0;
 	}
 	must_hash = (swap && (rsize < lsize)) ? l->thash_heap != NULL : r->hhash_heap != NULL;
