@@ -9,15 +9,19 @@ action.
   Factory cloning would then become an issue, they become first
   class citizens or stick to a context.
 
+- consider type catalog at mal layer only.
 - derive multiplex implementations variants automatically?
 - C-code generator for mal blocks to speed up expensive functions
   (and multiplex routines)
 - insert(b,2) should work on bat(void,int)
 
+- a hard bug appears in the following case
+  via MapiClient Tapestry_1M-2
+  2nd time MapiClient tapestry_attr1 has disappeared
+  Works when called directly against server
+  and works when GDB is applied
 - reference counting BATs through assignments should not be counted.
   a BAT disappears when the first binding variable ceases to exist.
-- BBPfix/unfix can be largely dropped,because it can be managed
-  at MAL level
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
 
 - Realize mal.include call as a preprocessor step
@@ -29,6 +33,7 @@ action.
 - rethink position of enum types
 - use a process buffer pool to avoid expensive client starts.
 
+- implement the Box authorization scheme
 - keep the list of profile filters in server and update after each resolve call
 
 Implementation
@@ -39,12 +44,11 @@ is about 5 times slower. It appears that it grows too slow,
 spending its time on copying bats all the time.
 
 API issues
-- The Japi variant should in be re-vived
+- Japi should be aligned with latest Mapi 
 - The java front-end terminal and profiler should be re-vived
 - Multi-client (concurrent) access has not been tested yet
 - roll-forward Mapi packages .php, .py, .tcl
 
-- What to do with Mcreatedb and friends
 
 V4 issues
 - overlay V4 database with V5 session
@@ -53,11 +57,15 @@ V4 issues
 - The group and radix modules should be brought in line with V4
 - Several of the MIL scripts associated with the modules have not
   been converted yet. Reliance on scripts should be minimal
-
+- The constant definitions of MIL should go to a prelude file
+and not hardwired in the const.mx
 Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20040805 What to do with Mcreatedb and friends: not needed
+	wait for Mguardian
+20040804 add multiple path analysis (searchpath.mx from V4)
 20040529 replace module and function names with entries into a system/user id table
   [expected gain 10-20% due to less mallocs of small structures]
   [only seen in very lengthy programs
