@@ -49,6 +49,22 @@ proc make_persistent( BAT[str,BAT] bats ) := {
 	}
 }
 
+proc merge_data( BAT[str,BAT] bats ) := {
+	if (bats.exist("key")){
+		var keybat := bats.find("key");
+		var nbats := bats.diff(bats.reverse.select("key").reverse);
+		nbats@batloop(){
+			var b := keybat.reverse().join($t);
+			var o := bat($h);
+			o.insert(b);
+		}
+	} else {
+		bats@batloop(){
+			var o := bat($h);
+			o.insert($t);
+		}
+	}
+}
 
 proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] := {
 	var seps := new(void,str); seps.seqbase(oid(0));
