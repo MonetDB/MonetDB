@@ -40,6 +40,9 @@ Implementation
 - global resource management is not ok yet, for 10M tapestry it
 is about 5 times slower. It appears that it grows too slow,
 spending its time on copying bats all the time.
+- store also the module and function name on the MAL block symbol
+table. This reduces the number of malloc/free calls significantly.
+[estimate about >15% speed] 
 
 API issues
 - Japi should be aligned with latest Mapi 
