@@ -1,0 +1,320 @@
+@f mal_multiplex
+@a Peter Boncz, Martin Kersten
+
+@* Multiplexed Function Execution 
+This module contains the implementations of the interpretation
+of the MIL [X]() multiplex operators. 
+Multiplex operators provide the possibility of executing any
+command "CMD" (or operators or FUNCTIONs) with signature:
+@
+CMD(T1,..,Tn) : Tr
+@
+on a series of BATs with corresponding head values 
+by putting the command between square brackets, giving the
+following corresponding signature:.
+@
+[CMD](bat[any::1,T1],...,bat[any::1,Tn]) : bat[any::1,Tr]
+@
+and
+@
+CMD(T1,...,Tn) : Tr
+@
+Implementation of the multiplex is done by performing the
+natural join on all bat-valued parameters, and executing the 
+CMD for each combination of matching tuples. All results are 
+collected in a result BAT. 
+
+There are two main factors that determine how the multiplex is 
+executed: what kind of command is CMD (either function, 'simple'
+operator, or 'complex' operator)? and: how easy is it to
+construct the natural join on the bat parameters? 
+
+In the case of simple operators *and* simple natural join
+matching, significant optimizations are made. Specifically, there
+are efficient implementations for 2-ary and 3-ary natural 
+joins that are either synced (join on keys that contain the 
+same sequence) or merge-able. 1-ary joins (non-joins) 
+default into the synced case. The optimized implementations 
+only hold for 'simple' operators; e.g. those [CMD] with 1,2 or 3 
+parameters that do not produce a result of an atom-type that 
+must be fixed/unfixed (like BAT). This restriction keeps the 
+logic in the optimized implementations simple and hence 
+efficient. In the synced case, some of the parameters may 
+actually be non-BAT, a constant (we use some trickery to divert
+[+](b,1) into the fast 2-ary synced-join implementation).
+
+If for some reason no optimizations can be made, execution is
+diverted to a general-purpose multiplex implementation that in 
+turn depends on a general-purpose multi equi-join (BATmultijoin).
+This BATmultijoin uses callback functions for registering 
+matching join values and matching join tuples. 
+[ OLD The matching
+join value calls are used to copy tail-values into a argv[] 
+value array, that is used to pass parameters to CMD.  For each 
+join hit, the join tuple callback function is called, that 
+executes CMD(argv[]) and inserts the outcome into the result BAT.]
+
+@h
+#ifndef _MAL_MULTIPLEX_H_
+#define _MAL_MULTIPLEX_H_
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_function.h"
+
+#define DEBUG_MULTIPLEX
+
+mal_export int CHKmultiplex(Scope scope, MalBlkPtr mb, InstrPtr pci);
+mal_export int CMDmultiplex(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+
+#endif /* _MAL_MULTIPLEX_H_ */
+
+@- Bulk error handling
+When a predicate is executed in bulk, that is possibly millions of times, 
+and something goes wrong, we do not like to see millions of error messages. 
+Therefore, both the multiplex and set aggregate implementations
+use the below macros to shield off bulk error reporting.
+Some buffers are maintained in order to condense all errors in a summary.
+@c
+#include "mal_multiplex.h"
+
+#define EXEC_ERROR_WHERE 80
+
+typedef struct {
+	char buf[GDKMAXERRLEN];		/* log buffer for GDKerror */
+        char where[EXEC_ERROR_WHERE];   /* tuples where errors happened */
+        char first[GDKMAXERRLEN];	/* first error */
+	char *bak;			/* backup of GDKerrbuf */
+	int cnt;			/* number of errors occurred sofar */
+} bulkerror_t;
+
+void bulkerror_init(bulkerror_t *bulkerror) {
+	bulkerror->bak = GDKerrbuf;
+	bulkerror->cnt = 0;
+	GDKsetbuf(bulkerror->buf);
+}
+
+void bulkerror_handle(bulkerror_t *bulkerror, str msg) {
+	if (bulkerror->cnt++ == 0) {
+		strcpy(bulkerror->first, bulkerror->buf);
+		strncpy(bulkerror->where, msg, EXEC_ERROR_WHERE-1);
+	} else if (strlen(bulkerror->where) + strlen(msg) + 2 < EXEC_ERROR_WHERE) {
+		strcat(bulkerror->where, ", ");
+		strcat(bulkerror->where, msg);
+	}
+	bulkerror->buf[0] = 0; 
+}
+
+void bulkerror_format(bulkerror_t *bulkerror, int tpe, ptr val) {
+	char *buf = NULL;
+	ATOMformat(tpe, val, &buf);
+	bulkerror_handle(bulkerror, buf);
+	GDKfree(buf); 
+}
+
+void bulkerror_finish(bulkerror_t *bulkerror, str fcn_nme) { 
+	GDKsetbuf(bulkerror->bak);
+	if (bulkerror->cnt > 0) {
+		GDKwarning("%s: %d times inserted nil due to errors at tuples %s.\n",
+			fcn_nme, bulkerror->cnt, bulkerror->where);
+		GDKwarning("%s: first error was: %s", fcn_nme, bulkerror->first);
+	}	
+}
+
+
+@-
+The first step in handling multiplex operators is to provide 
+a hook for the type-resolver to determine the outcome of a
+multiplex call. This simply requires construction of the 
+implicit function call and to rely on the type-resolver
+to lookup its definition.
+
+@c
+#define REALLY_REALLY_BIG	2000000000
+
+int resolve_multiplex(Scope scope, MalBlkPtr mb, InstrPtr pci,
+	MalBlkPtr m, InstrPtr p)
+{
+	int i, k, t, tpe, tt;
+	int first = TRUE;
+	char name[1024];
+
+	if( pci->fcnname[0]==':'){
+		i= strlen(pci->fcnname);
+		if(pci->fcnname[i-2]== '=') 
+			strncpy(name,pci->fcnname+1, i-=2);
+		else	strncpy(name,pci->fcnname,i);
+		name[i]=0;
+	} else strcpy(name,pci->fcnname);
+	p->fcnname= GDKstrdup(name);
+	k = newVariable(m, newTmpName(0),malAnyType);
+	p->argv[0]= k;
+#ifdef DEBUG_MULTIPLEX
+	printf("multiplex against operator %s\n",pci->fcnname);
+#endif
+@- Analysis Of The BAT Parameters
+Do basic check on parameters. Look at the tail types in order to derive
+a function signature in 'p'. Check that all head types correspond. 
+We also want to discover if all the input BAT parameters are sorted 
+or in sync. This may enable the use optimizations.
+Constants passed into the multiplex operator are a special case.
+@c
+	for(i=1; i < pci->argc; i++) {
+	    t= getArgType(mb,pci,i);
+	    if( isaBatType(t) ){
+		if (first){
+			first= FALSE;
+			tpe= getHeadType(t);
+		}
+		tt = getTailType(t);
+	    } else {
+		tt= getArgType(mb,pci,i);
+	    }
+	    k= newVariable(m,newTmpName(i),tt);
+	    pushArgument(m,p,k);
+	}
+	pushInstruction(m,p);
+	typeChecker(getClient()->nspace,m,p,TYPE_FIXED);
+	i= (p->typechk == TYPE_UNKNOWN) ? -1 : 0;
+	if( i == 0){
+		tpe= newBatType(tpe,tt);
+		i= typeConformance(mb,pci,tpe);
+	}
+#ifdef DEBUG_MULTIPLEX
+	printInstruction(stdout,m,p);
+#endif
+	return i;
+}
+int CHKmultiplex(Scope scope, MalBlkPtr mb, InstrPtr pci)
+{
+	int i;
+	MalBlkPtr m= newMalBlk();
+	InstrPtr p = newInstruction(ASSIGNsymbol);
+
+	i= resolve_multiplex(scope,mb,pci,m,p);
+	freeMalBlk(m);
+	return i;
+}
+
+int CMDmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	return (int) raiseException(mb,stk->pc,"MALexception",
+		"multiplex implementation missing");
+}
+int RUNmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i,k = 0, l, tpe, tt, nbats = 0;
+	BAT *all_synced=NULL;
+	int one_unique = FALSE;
+	int all_unique = TRUE;
+	int all_sorted = TRUE;
+	int assignop = FALSE;
+	int max_size = 0;
+	int min_size = REALLY_REALLY_BIG;
+	char name[128];
+	str s= (str) getArgValue(stk,pci,1);
+	MalBlkPtr m= newMalBlk();
+	InstrPtr p = newInstruction(ASSIGNsymbol);
+@-
+The multiplex operator may be turned into a replacement operator
+enclosing with ':' and '=', e.g. multiplex(":+=",b,c) adds the b and
+c tails and stores it in b. Watch out [:=](b,c) is a valid operation too.
+@c
+	if( strcmp(s,":=")){
+		assignop = TRUE;
+		strcpy(name,":=");
+	} else
+	if( *s == ':'){
+		assignop = TRUE;
+		i = strlen(s)-2;
+		strncpy(name,s+1,i);
+		name[i]=0;
+	} else 
+		strcpy(name,s);
+	p->fcnname= GDKstrdup(name);
+	l= newVariable(m,newTmpName(0),malAnyType);
+	pushArgument(m,p,l);
+#ifdef DEBUG_MULTIPLEX
+	printf("multiplex against operator %s\n",name);
+#endif
+@- Analysis Of The BAT Parameters
+Do basic check on parameters. Look at the tail types in order to derive
+a function signature in 'p'. Check that all head types correspond. 
+We also want to discover if all the input BAT parameters are sorted 
+or in sync. This may enable the use optimizations.
+Constants passed into the multiplex operator are a special case.
+@c
+	for(i=2; i < pci->argc; i++) {
+	    if( isaBatType(getArgType(mb,pci,i)) ){
+		BAT *b = BATdescriptor(*(int*)getArgValue(mb,pci,i));
+		int sz = BATcount(b);
+
+		if (min_size == REALLY_REALLY_BIG) {
+		    all_synced = b; 
+		    tpe = BAThtype(b);
+		    if (assignop && b->batRestricted) {
+                        GDKerror("%s: param 1 must be writeable.\n", name);
+                        return GDK_FAIL;
+                    }
+		}
+		if (sz > max_size) {
+			max_size = sz;
+		}
+		if (sz < min_size) {
+			min_size = sz;
+		}
+		if (b->hkey) {
+		    one_unique = TRUE;
+		} else {
+		    all_unique = FALSE;
+		}
+		if ((b->hsorted&1) == 0 || b->htype == TYPE_void) { 
+		    all_sorted = FALSE;
+		}
+		if (all_synced && !ALIGNsynced(all_synced, b)) { 
+		    all_synced = FALSE;
+		}
+	    	nbats++;
+		tt = BATttype(b);
+	    } else {
+		/* no merge optimization for constants */
+		all_sorted = FALSE; 
+		tt= getArgType(mb,pci,i);
+	    }
+	    l= newVariable(m,newTmpName(i),tt);
+	    pushArgument(m,p,l);
+	}
+@- 
+Multiplex functions have multi-equijoin semantics for the matching of 
+head values. Double elements will cause multiplcation of the result.
+Optimizations only work on 1-1 matching of oids. 
+@c
+	if (nbats > 1) {
+		if (all_synced && one_unique == 0) {
+			all_synced = FALSE;
+		}
+		if (all_sorted && all_unique == 0) {
+			all_sorted = FALSE;
+		}
+	}
+@-
+Optimization: the merge multiplex operation does a merge scan. This
+is very efficient in the bulk case, but if you are doing very sparse 
+merging (e.g. a 100 item table with a 10M table) you are better off 
+with the more sophisticated matching of the multijoin implementation.
+That implementation has more overhead, but presumably wins that back
+by doing binary search on the 10M table.
+@c
+	if (all_sorted && min_size*100 < max_size) {
+		all_sorted = FALSE;
+	}
+#ifdef DEBUG_MULTIPLEX
+	printf("multiplex properties minsize%d \n",min_size);
+	printf("max_size = %d one_unique =%d all_unique=%d\n",
+		max_size,one_unique,all_unique);
+	printf("all_sorted = %d all_synced= %d\n",all_sorted,all_synced);
+	printInstruction(stdout,m,p);
+#endif
+
+@- execution
+@c
+	return GDK_SUCCEED;
+}
