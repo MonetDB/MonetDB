@@ -140,9 +140,13 @@ if [ ! -x bootstrap ] ; then
 		if [ "${BITS}" = "64" ] ; then
 			conf_opts="${conf_opts} --with-readline=/var/tmp/soft64/local"
 			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft64/local"
+			conf_opts="${conf_opts} --with-z=/var/tmp/soft64/local"
+			conf_opts="${conf_opts} --with-bz2=/var/tmp/soft64/local"
 		else
 			conf_opts="${conf_opts} --with-readline=/var/tmp/soft/local"
 			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft/local"
+			conf_opts="${conf_opts} --with-z=/var/tmp/soft/local"
+			conf_opts="${conf_opts} --with-bz2=/var/tmp/soft/local"
 		fi
 	fi
 
@@ -169,9 +173,13 @@ if [ ! -x bootstrap ] ; then
 		if [ "${BITS}" = "64" ] ; then
 			conf_opts="${conf_opts} --with-readline=/soft64/local"
 			conf_opts="${conf_opts} --with-getopt=/soft64/local"
+			conf_opts="${conf_opts} --with-z=/soft64/local"
+			conf_opts="${conf_opts} --with-bz2=/soft64/local"
 		else
 			conf_opts="${conf_opts} --with-readline=/soft/local"
 			conf_opts="${conf_opts} --with-getopt=/soft/local"
+			conf_opts="${conf_opts} --with-z=/soft/local"
+			conf_opts="${conf_opts} --with-bz2=/soft/local"
 		fi
 	fi
 
