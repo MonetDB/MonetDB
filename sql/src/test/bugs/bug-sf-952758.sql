@@ -1,3 +1,3 @@
-create table test(num numeric(8,2));
+create table ntest(num numeric(8,2));
 rollback;
-create table test(num numeric(8));
+create table ntest(num numeric(8));

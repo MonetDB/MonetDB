@@ -83,7 +83,9 @@ transactions(mvc * sql, symbol * s)
 	} break;
 	case TR_START: {
 	case TR_MODE: 
-		(void)mvc_rollback(sql, 0, NULL);
+		if (sql->trans)
+			mvc_rollback(sql, 0, NULL);
+		(void)mvc_trans(sql);
 		sql->trans->level = s->data.ival;
 	} break;
 	default:
