@@ -54,7 +54,7 @@ subs = [
     ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
     ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
     ('@PACKAGE@',           "sql"),
-    ('@VERSION@',           "2.4.2"),
+    ('@VERSION@',           "2.4.3"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
     ('@MONETDB_BUILD@',       build),
