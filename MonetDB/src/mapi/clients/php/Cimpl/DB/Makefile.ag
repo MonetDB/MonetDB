@@ -17,10 +17,8 @@
 
 MTSAFE
 
-SUBDIRS = HAVE_PERL_DEVEL?DBD HAVE_PERL_SWIG?Cimpl
-
-scripts_perl = {
-	EXT = pl pm
-	DIR = pkgdatadir/perl
-	SOURCES = Mapi.pm 
+scripts_php = {
+	EXT = php
+	DIR = $(prefix)/$(PHP_PEARDIR)/DB
+	SOURCES = monetdb.php
 }

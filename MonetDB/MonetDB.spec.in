@@ -24,6 +24,7 @@ BuildRequires: python
 %if 0
 %define buildphp 1
 %define buildperl 1
+%define buildpython 1
 %define comp_cc gcc
 %define comp_cxx g++
 %endif
@@ -51,9 +52,12 @@ BuildRequires: php
 %define with_php --without-php
 %endif
 
+%if %{buildpython}
 %package python
 Summary: MonetDB python interface
 Group: System
+BuildRequires: python
+%endif
 
 %if %{buildperl}
 %package perl
@@ -94,13 +98,16 @@ Add the MonetDB php description here
 Requires: %{name}-client
 Requires: php
 %define php_extensiondir %(php-config --extension-dir)
+%define php_peardir %(pear config-get php_dir | sed -e s+php_dir=++g)
 %endif
 
+%if %{buildpython}
 %description python
 Add the MonetDB python description here
 Requires: %{name}-client
 Requires: python
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
+%endif
 
 %if %{buildperl}
 %description perl
@@ -191,11 +198,15 @@ rm -fr $RPM_BUILD_ROOT
 %files php
 %defattr(-,monetdb,monetdb) 
 %{php_extensiondir}/*
+%{php_peardir}/DB/*
+%{prefix}/share/%{name}/php/*
 %endif
 
+%if %{buildpython}
 %files python
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{python_libdir}/*
+%endif
 
 %if %{buildperl}
 %files perl
