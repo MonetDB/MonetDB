@@ -1471,7 +1471,7 @@ Convert a GDK string value to something printable.
 #define allowed_chr(ch) ((ch)==0 || GDKisgraph((ch)) || GDKisspace((ch)) || \
 		         GDKisspecial((ch)) || GDKisupperl((ch)) || GDKislowerl((ch)))
 */
-#define allowed_chr(ch)	(!(0 < (ch) && (ch) < 32) && (ch) != 255)
+#define allowed_chr(ch)	(!(0 < (ch) && (ch) < 32) && (ch) != '\377')
 
 int strToStr(char** dst, int *len, char* src) {
 	int l=1;
