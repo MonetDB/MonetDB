@@ -28,7 +28,7 @@
 
 CP=cp
 MV=mv
-MXFLAGS= -notouch
+MXFLAGS= -n
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<
