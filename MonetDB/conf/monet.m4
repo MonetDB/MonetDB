@@ -537,7 +537,7 @@ if test "x$enable_optim" = xyes; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host-$gcc_ver" in
-      i*86-*-*-3.[[2-9]]*)
+      x86_64-*-*-3.[[2-9]]*|i*86-*-*-3.[[2-9]]*)
                       CFLAGS="$CFLAGS -O6"
                       case "$host" in
                       i*86-*-cygwin) 
@@ -554,7 +554,8 @@ if test "x$enable_optim" = xyes; then
                       dnl  (Mserver produces tons of incorrect BATpropcheck warnings);
                       dnl  hence, we omit -funroll-all-loops, here.
                       ;;
-      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      x86_64-*-*|i*86-*-*)
+                      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       ia64-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions                                                     -fexpensive-optimizations                                    -frerun-cse-after-loop -frerun-loop-opt"
                       dnl  Obviously, 4-byte alignment doesn't make sense on Linux64; didn't try 8-byte alignment, yet.
                       dnl  Further, when combining either of "-funroll-all-loops" and "-funroll-loops" with "-On" (n>1),
@@ -580,9 +581,16 @@ if test "x$enable_optim" = xyes; then
       *)              CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions";;
       esac
     else
-      case "$host" in
-      i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -tpp6 -restrict -axiMK -unroll -ipo -ipo_obj";;
-      ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -tpp2 -restrict -mcpu=itanium2 -unroll -ipo -ipo_obj "
+      case "$host-$icc_ver" in
+      dnl  With icc-8.0, Interprocedural (IP) Optimization does not seem to work with MonetDB:
+      dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
+      dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
+      dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.0.
+      x86_64-*-*-8.0) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      i*86-*-*-8.0)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      ia64-*-*-8.0)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+      i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
+      ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
                       dnl  (Mserver produces some incorrect BATpropcheck warnings);
                       dnl  hence, we use only "-O2", here.
