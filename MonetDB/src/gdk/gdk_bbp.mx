@@ -294,6 +294,17 @@ actions are to go on unlocked while other entries in the BBP may be modified).
 #define BBP_status_off(bid, flags, nme) \
 		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme);
 
+#define BBP_unload_on(bid, nme) {						\
+		MT_set_lock(GDKunloadLock, nme);				\
+		if (++BBPunloadCnt == 0) MT_set_lock(GDKunloadBarrier, nme);	\
+		MT_unset_lock(GDKunloadLock, nme);				\
+		BBP_status_on(bid, BBPUNLOADING, nme);				}
+
+#define BBP_unload_off(bid, nme) {						\
+		BBP_status_off(bid, BBPUNLOADING, nme);				\
+		MT_set_lock(GDKunloadLock, nme);				\
+		if (--BBPunloadCnt == 0) MT_unset_lock(GDKunloadBarrier, nme);	\
+		MT_unset_lock(GDKunloadLock, nme);				}
 @c
 static MT_Id locked_by = 0;
 
@@ -301,6 +312,8 @@ MT_Id MT_getpid_(void){
 	MT_Id x = MT_getpid();
 	return x;
 }
+
+static int BBPunloadCnt=0; 
 
 void BBPlock(str nme) {
 	int i;
@@ -310,6 +323,10 @@ void BBPlock(str nme) {
 	for(i=0; i<=BBPLOCKMASK; i++)
 		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], nme);
 	locked_by = MT_getpid_();
+
+	/* wait for all pending unloads to finish */
+	MT_set_lock(GDKunloadBarrier, nme);
+	MT_unset_lock(GDKunloadBarrier, nme);
 }
 
 void BBPunlock(str nme) {
@@ -322,27 +339,28 @@ void BBPunlock(str nme) {
 	MT_unset_lock(GDKtrimLock, nme);
 }
 
+
 void BBPinithash(void) {
-    bat i = BBPsize; 
+	bat i = BBPsize; 
 
-    for(BBP_mask=1; (BBP_mask<<1) <= BBPlimit; BBP_mask<<=1);
-    BBP_hash = (bat*) GDKmalloc(BBP_mask*sizeof(bat));
-    memset(BBP_hash, 0, BBP_mask*sizeof(bat));
-    BBP_mask--;
+	for(BBP_mask=1; (BBP_mask<<1) <= BBPlimit; BBP_mask<<=1);
+	BBP_hash = (bat*) GDKmalloc(BBP_mask*sizeof(bat));
+	memset(BBP_hash, 0, BBP_mask*sizeof(bat));
+	BBP_mask--;
 
-    while(--i > 0) {
-	if (BBP_logical(i)) {
-		if (BBPnamecheck(BBP_logical(i)) == 0) {
-			BBP_insert(i);
+	while(--i > 0) {
+		if (BBP_logical(i)) {
+			if (BBPnamecheck(BBP_logical(i)) == 0) {
+				BBP_insert(i);
+			}
+			if (BBP_logical(-i)) {
+				BBP_insert(-i);
+			}
+		} else { 
+			BBP_next(i) = BBP_free;	
+			BBP_free = i;
 		}
-		if (BBP_logical(-i)) {
-			BBP_insert(-i);
-		}
-	} else { 
-		BBP_next(i) = BBP_free;	
-		BBP_free = i;
 	}
-    }
 }
 
 void BBPextend(dbl factor, int buildhash) {
@@ -886,7 +904,8 @@ void BBPuncacheit(bat i) {
 			}
 		}
 		BBP_cache(i) = BBP_cache(-i) = NULL; 
-		BBP_status_off(i, BBPUNLOADING|BBPLOADED, "BBPuncacheit");
+		BBP_status_off(i, BBPLOADED, "BBPuncacheit");
+		BBP_unload_off(i, "BBPuncacheit");
 		if (pid != locked_by) 
 			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPuncacheit");
 	}
@@ -1117,7 +1136,7 @@ int BBPdecref(bat i, int logical) {
                 BBP_lastused(i) = BBPLASTUSED(GDKcsec());
 	} else if (b || (BBP_status(i)&BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
-		BBP_status_on(i, BBPUNLOADING, "BBPdecref");
+		BBP_unload_on(i, "BBPdecref");
 		swap = TRUE;
 	}
         
@@ -1186,35 +1205,37 @@ int BBPresurrect(str nme){
 
 @- 
 BBPreclaim is a user-exported function; the common way to destroy a BAT the hard way. 
+
+Return values: 
+-1 = bat cannot be unloaded (it has more than your own memory fix)
+ 0 = unloaded succesfully 
+ 1 = unload failed (due to write-to-disk failure) 
 @c
 int BBPreclaim(BAT* b) {
 	MT_Id pid = MT_getpid_();
-	int debug;
 	bat i = ABS(b->batCacheid);
 
 	if (pid != locked_by)
 		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
-	if (BBP_lrefs(i) > 0)
-		printf("BBPreclaim(%d) lrefs > 0\n", i);
-	if (BBP_refs(b->batCacheid) == 1) {
-		BBP_refs(b->batCacheid) = 0;
-	}
-	debug = (BBP_refs(b->batCacheid) > 0);
-	BATDEBUG debug = 1;
 
-	/* make sure it is killed immediately */
-	BBP_status_on(i, BBPUNLOADING, "BBPreclaim");
-	BBP_lrefs(i) = 0;
-	if (pid != locked_by)
-		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
-
-	if (debug) THRprintf(GDKerr, 
+	BATDEBUG THRprintf(GDKerr, 
 	    "BBPreclaim: bat(%d) view=%d lrefs=%d ref=%d stat=%d\n", 
 			b->batCacheid, b->batSharecnt, 
 			BBP_lrefs(b->batCacheid), 
 			BBP_refs(b->batCacheid), BBP_status(b->batCacheid));
 
-	return (BBPfree(b) == 0);
+	if (BBP_refs(b->batCacheid) > 1) {
+		GDKerror("BBPreclaim(%d) refs > 1 (%d)\n", i, BBP_refs(i));
+		if (pid != locked_by)
+			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
+		return -1;
+	} else {
+		BBP_refs(b->batCacheid) = 0;
+	}
+	BBP_unload_on(i, "BBPreclaim"); /* unload whatever the LRU in the BBP */
+	if (pid != locked_by)
+		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
+	return BBPfree(b);
 }
 @-
 BBPdescriptor checks whether BAT needs loading and does so if necessary. You must
@@ -1452,7 +1473,7 @@ int BBPfree(BAT *b) {
 	/* write dirty BATs before being unloaded */
 	ret = BBPsave(b);
 	if (ret) {
-		BBP_status_off(bid, BBPUNLOADING, "BBPfree");
+		BBP_unload_off(bid, "BBPfree");
 		return ret; /* error while saving: no go */
 	}
 
@@ -1670,7 +1691,7 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int *ndescs, int dirty)
 						(unsigned long) memdelta, (unsigned long) vmdelta, 
 						(unsigned long) memdirty, (unsigned long) vmdirty);
 				}
-				BBP_status_on(bbptrim[cur].bid, BBPUNLOADING, "BBPtrim_select");
+				BBP_unload_on(bbptrim[cur].bid, "BBPtrim_select");
 				*memtarget = *memtarget > memdelta ? *memtarget - memdelta : 0;
 				*vmtarget = *vmtarget > vmdelta ? *vmtarget - vmdelta : 0;
 				if (*ndescs > 0) (*ndescs)--; /* one less obliged bat */ 

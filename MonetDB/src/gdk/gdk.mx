@@ -1813,6 +1813,7 @@ typedef struct {
 	short	linear;			/* atom can be ordered linearly */
 	short	size;			/* fixed size of atom */
 	short	align;			/* alignment condition for values */
+	short	deleting;		/* set if unloading */
 	int	varsized;		/* variable-size or fixed-sized */
 
 	/* automatically generated fields */
@@ -1964,6 +1965,7 @@ as a preappended parameter.
 @h 
 typedef struct {
 	char		name[IDLENGTH]; 
+	int		deleting;
 	void		(*accBuild)   (Heap*, BAT*, void *param);
 	void		(*accDestroy) (Heap*, BAT*);
 	void		(*accInsert)  (Heap*, size_t pos, BAT*, ptr val);
