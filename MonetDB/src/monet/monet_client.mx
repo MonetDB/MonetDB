@@ -63,7 +63,6 @@ typedef struct CLIENT{
 	int		permission;		/* not yet used. */
 	stream		*fdin, *fdout;		/* streams from and to user. */
 	stream		*bkin, *bkout;		/* backup stream storage */
-	int 		socket;			/* socket with tcp conn. */
 	int		listing;		/* echo input */
 	int		mode;			/* FINISHED/BLOCKED */
 	int		father;			/* client number of father */
@@ -349,9 +348,6 @@ void freeClient(Client c) {
 		stream_destroy(c->fdin);
 		stream_close(c->fdout);
 		stream_destroy(c->fdout);
-		if (c->socket){
-			(void) close(c->socket);
-		}
 	}
 	GDKfree(c->input);
 	GDKfree(c->output);

@@ -428,7 +428,6 @@ ptr monet_init(void){
 		GDKstrdup(GDKgetenv("monet_prompt")), /*DD:TRUE*/FALSE);
         if (c == 0) monet_exit(1);
 	c->login = time(0);
-	c->socket = 0;
         TBL_initclient(c, NULL); /* register user 'adm' for a function table. */
 @-
 Make constants for important language tokens

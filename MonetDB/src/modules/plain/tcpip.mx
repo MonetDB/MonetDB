@@ -702,7 +702,6 @@ static void conn_waiter(void * vi)
         char errbuf[GDKMAXERRLEN], *errbuf_bak = GDKerrbuf;
 
 	GDKsetbuf(errbuf);
-        monetClient->socket = -1;
         monetClient->login = time(0);
 
 	while(connections[i].valid && socket_gets(fd, &line, &lineLength)) {

@@ -181,7 +181,6 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	int 	sock;
 	SOCKLEN 	length = 0;
 	int    	on = 1;
-	int 	msgsock;
 	int	i = 0;
 
 	int port, *Port;
@@ -243,6 +242,7 @@ Get the new information for the server socket and start listening.
 		int retval;
     		struct timeval tv;
     		fd_set fds;
+		int msgsock;
 
     		FD_ZERO(&fds);
     		FD_SET(sock, &fds);
@@ -256,8 +256,11 @@ Get the new information for the server socket and start listening.
 			continue;
 		}
 		if (retval < 0) {
-			GDKsyserror("MAPIlisten:select failed\n");
-			return GDK_FAIL;
+			if (MT_geterrno() != EINTR) {
+				GDKsyserror("MAPIlisten:select failed\n");
+				return GDK_FAIL;
+			}
+			continue;
 		}
     		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 			if (MT_geterrno() != EINTR) {
@@ -334,7 +337,6 @@ Get the new information for the server socket and start listening.
 			GDKfree(name);
 			c->login = time(0);
 			c->listing = 0;
-			c->socket = msgsock;
 			c->fdin = fdin;
 			c->fdout = fdout;
 			c->mode = BLOCKMODE;
@@ -703,7 +705,6 @@ Get the new information for the server socket and start listening.
 			GDKfree(name);
 			c->login = time(0);
 			c->listing = 0;
-			c->socket = msgsock;
 			c->fdin = fdin;
 			c->fdout = fdout;
 			c->mode = BLOCKMODE;
