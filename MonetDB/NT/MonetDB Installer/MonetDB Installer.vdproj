@@ -69,12 +69,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_0DF399B32F2C4EB6886EB7B9A37F6542"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_0F32D49182284905A3C80A53D92817DF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -111,12 +105,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_22E5EBCEDDD2435EB26EB215846B8AF7"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_239BFC74490547FC88295DD9224810CE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -130,12 +118,6 @@
         "Entry"
         {
         "MsmKey" = "8:_2434BFC0964A47A389C5C606E6C514A7"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_24F9676D59544E60847BDB7EFBA262FA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -172,12 +154,6 @@
         "Entry"
         {
         "MsmKey" = "8:_2EF60D395AE04079B3D2E6E17E509CBE"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_2F597C77C37B4FF088BA8822E94D5028"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -280,12 +256,6 @@
         "Entry"
         {
         "MsmKey" = "8:_4CD01E2B91834070ADA2E54BB50C5344"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_4F79B5B3058C42F0A9DA70AA64586C18"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -417,12 +387,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_7998A6FDAE95496D93792DFF01160384"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_7CA8FCA279834CB3A13FDA799B75D968"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -471,12 +435,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_87C8AE066FC44FAC87BCE3FE357AB963"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_895F052ED6E1423FB565C707DF5436AF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -490,12 +448,6 @@
         "Entry"
         {
         "MsmKey" = "8:_8D035F5A93394EF39E7AB9D7ACB73C3E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_8D3F740482054D45948E31D5A427AF1B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -628,12 +580,6 @@
         "Entry"
         {
         "MsmKey" = "8:_B7384F217F0C4496A7DB87E277376B74"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_BACD77DCB020444AAB9C9A4249617A60"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -789,12 +735,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_DB62476235A942CF894D201BC1C56733"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_DC6087F4323C49E9B6214D05D45978F5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -820,12 +760,6 @@
         "Entry"
         {
         "MsmKey" = "8:_E9F8306F159C463481399A32218B06DC"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_F02C788478564B44B15E530F3B0246F4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1161,26 +1095,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_0DF399B32F2C4EB6886EB7B9A37F6542"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbccp32.dll"
-            "TargetName" = "8:odbccp32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0F32D49182284905A3C80A53D92817DF"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_iterator.dll"
@@ -1301,26 +1215,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_22E5EBCEDDD2435EB26EB215846B8AF7"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbccp32.cpl"
-            "TargetName" = "8:odbccp32.cpl"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_239BFC74490547FC88295DD9224810CE"
             {
             "SourcePath" = "8:..\\Mserver.bat"
@@ -1367,26 +1261,6 @@
             "TargetName" = "8:decimal.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_24F9676D59544E60847BDB7EFBA262FA"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbctrac.dll"
-            "TargetName" = "8:odbctrac.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1507,26 +1381,6 @@
             "TargetName" = "8:lib_profiler.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2F597C77C37B4FF088BA8822E94D5028"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbcint.dll"
-            "TargetName" = "8:odbcint.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1867,26 +1721,6 @@
             "TargetName" = "8:ascii_io.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4F79B5B3058C42F0A9DA70AA64586C18"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbc16gt.dll"
-            "TargetName" = "8:odbc16gt.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2321,26 +2155,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7998A6FDAE95496D93792DFF01160384"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbc32gt.dll"
-            "TargetName" = "8:odbc32gt.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_7CA8FCA279834CB3A13FDA799B75D968"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\alarm.mil"
@@ -2501,26 +2315,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_87C8AE066FC44FAC87BCE3FE357AB963"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbcinst.chm"
-            "TargetName" = "8:odbcinst.chm"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_895F052ED6E1423FB565C707DF5436AF"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_stats.dll"
@@ -2567,26 +2361,6 @@
             "TargetName" = "8:monettime.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8D3F740482054D45948E31D5A427AF1B"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbc32.dll"
-            "TargetName" = "8:odbc32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3027,26 +2801,6 @@
             "TargetName" = "8:lib_bat_cast.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_BACD77DCB020444AAB9C9A4249617A60"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\ds16gt.dll"
-            "TargetName" = "8:ds16gt.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3541,26 +3295,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_DB62476235A942CF894D201BC1C56733"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\odbccr32.dll"
-            "TargetName" = "8:odbccr32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_DC6087F4323C49E9B6214D05D45978F5"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_mapi.dll"
@@ -3647,26 +3381,6 @@
             "TargetName" = "8:radix.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F02C788478564B44B15E530F3B0246F4"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\src\\odbc\\winsetup\\winredist\\ds32gt.dll"
-            "TargetName" = "8:ds32gt.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_243D36C306D44C7EB6F0493EB0245709"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3970,17 +3684,6 @@
                     "Property" = "8:_80D6207522D04B3ABA92EB707E60ED56"
                         "Folders"
                         {
-                            "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_243D36C306D44C7EB6F0493EB0245709"
-                            {
-                            "Name" = "8:odbcdist"
-                            "AlwaysCreate" = "11:FALSE"
-                            "Condition" = "8:"
-                            "Transitive" = "11:FALSE"
-                            "Property" = "8:_098F015322274FED8C3F8E50F7806247"
-                                "Folders"
-                                {
-                                }
-                            }
                             "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_B593DAA0787744D6A44D17884E0C3951"
                             {
                             "Name" = "8:MonetDB"
@@ -4089,7 +3792,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB"
         "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{25C686F5-29D2-46C7-8DDE-976A5AE4A3D7}"
+        "PackageCode" = "8:{9F04BF62-2015-4AD3-B58E-B43CD477CAA3}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
@@ -4582,7 +4285,7 @@
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
                             "Setting" = "3:2"
-                            "Value" = "8:You have the option to install the MonetDB ODBC Driver.  When the checkbox is checked, the driver will be installed, and the ODBC Driver Manager will be updated to the correct version."
+                            "Value" = "8:You have the option to install the MonetDB ODBC Driver.  When the checkbox is checked, the driver will be installed.  If the ODBC Driver Manager is not installed, installation will fail.  You will then have to install the Microsoft Data Access Component (MDAC) first, or you can refrain from installing the MonetDB ODBC Driver."
                             "DefaultValue" = "8:#1215"
                             "UsePlugInResources" = "11:TRUE"
                             }
