@@ -444,7 +444,7 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 
 @- Marking tables
 @mal
-command markT( b:bat[:any$1,:any], base:void ) :bat[:any$1,:oid] 
+command markT( b:bat[:any$1,:any], base:void ) :bat[:any$1,:void] 
 address ALGtmark
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
@@ -452,7 +452,7 @@ command markT( b:bat[:any$1,:any] ) :bat[:any$1,:void]
 address ALGtmark0
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
-command markT( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
+command markT( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:void] 
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in 
         the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
@@ -2098,9 +2098,9 @@ str ALGmarkHead(int *result, int *bid, oid *base) {
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("algebra.hmark", "Cannot access descriptor");
     }
-	if( CMDmark(&bn,BATmirror(b),base)== GDK_SUCCEED){
+	if( CMDmark(&bn,b,base)== GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
-		bn = BATmirror(bn);
+		bn= BATreverse(b);
 		bn = BATsetaccess(bn,1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
@@ -2114,9 +2114,9 @@ str ALGmarkHead_default(int *result, int *bid) {
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("algebra.hmark", "Cannot access descriptor");
     }
-	if( CMDmark_default(&bn,BATmirror(b))== GDK_SUCCEED){
+	if( CMDmark_default(&bn,b)== GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
-		bn = BATmirror(bn);
+		bn= BATreverse(b);
 		bn = BATsetaccess(bn,1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
@@ -2493,4 +2493,5 @@ str ALGindexjoin(int *result, int *lid, int *rid) {
 	}
 	return throwMessage("algebra.indexjoin", "can not perform a indexjoin");
 }
+
 @}
