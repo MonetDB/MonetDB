@@ -92,7 +92,7 @@ a binary search.
 	    int neq = 1;
 
 	    /* lookup range in l */ 
-	    if (l->tkey) {
+	    if (BATtkey(l)) {
 		l_end = l_start + l_next;
 	    } else {
 	        l_end = l_start;
@@ -129,7 +129,7 @@ a binary search.
 
 	    /* lookup range in r */
 	    r_end = r_start + r_next;
-	    if (!r->hkey) {
+	    if (!BAThkey(r)) {
 		while (r_end < r_last) {
 		    v2 = BUNh@2(r,r_end);
 		    if (!@1_EQ(v1,v2,@3)) break;
@@ -168,7 +168,7 @@ BAT *BATmergejoin(BAT *l, BAT *r) {
 		GDKerror("BATmergejoin: right input is not sorted.\n"); 
 		return NULL; 
 	}
-	@:joinbat(r->hkey?BATcount(l):0, BATmergejoin(l,r))@
+	@:joinbat(BAThkey(r)?BATcount(l):0, BATmergejoin(l,r))@
 
 	/* the algorithm */
 	switch(ATOMstorage(l->ttype)) {
@@ -189,16 +189,16 @@ BAT *BATmergejoin(BAT *l, BAT *r) {
 
 	/* propagate properties */
 	bn->hsorted = bn->tsorted = FALSE;
-	if (r->hkey) {
+	if (BAThkey(r)) {
 	    bn->hsorted = BAThordered(l);
-	    if (l->hkey) BATkey(bn, TRUE);
+	    if (BAThkey(l)) BATkey(bn, TRUE);
 	    if (BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l);
 	    }
 	} 
-	if (l->tkey) {
+	if (BATtkey(l)) {
 	    bn->tsorted = BATtordered(r);
-	    if (r->tkey) BATkey(BATmirror(bn), TRUE);
+	    if (BATtkey(r)) BATkey(BATmirror(bn), TRUE);
 	    if (BATcount(bn) == BATcount(r)) {
 		ALIGNsetT(bn, r);
 	    }
@@ -235,7 +235,7 @@ BAT* BAThashjoin(BAT* l, BAT* r) {
 	BAT	*bn;
 
         @:joincheck(BAThashjoin, l->ttype, r->htype)@
-	@:joinbat(r->hkey?BATcount(l):0, BAThashjoin(l,r))@
+	@:joinbat(BAThkey(r)?BATcount(l):0, BAThashjoin(l,r))@
 
         if (BATprepareHash(r) == 0)
         switch(any = ATOMstorage(l->ttype)) {
@@ -250,9 +250,9 @@ BAT* BAThashjoin(BAT* l, BAT* r) {
 
 	/* propagate alignment info */
 	bn->hsorted = BAThordered(l);
-	if (r->hkey) {
+	if (BAThkey(r)) {
 		if (BATcount(bn) == BATcount(l)) ALIGNsetH(bn, l);
-		if (l->hkey) BATkey(bn, TRUE);
+		if (BAThkey(l)) BATkey(bn, TRUE);
 	}
 	return bn;
 }
@@ -374,17 +374,17 @@ nondense:       bn = BATnew(BAThtype(l), BATttype(r), BATcount(l));
 
         /* property propagation */
         if (BATcount(bn) == BATcount(l)) {
-                ALIGNsetH(bn, l); /* r->hkey, remember? */
+                ALIGNsetH(bn, l); /* BAThkey(r), remember? */
         } else {
                 bn->hsorted = l->hsorted;
         }
         bn->tsorted = BATtordered(l)&BATtordered(r)&1;
-        if (l->tkey) {
-                /* if l->tkey elements of r match at most once */
+        if (BATtkey(l)) {
+                /* if BATtkey(l) elements of r match at most once */
                 if ((BATtordered(l)&1) && BATcount(bn) == BATcount(r)) {
                         ALIGNsetT(bn, r);
                 } else {
-                        BATkey(BATmirror(bn), r->tkey);
+                        BATkey(BATmirror(bn), BATtkey(r));
                 }
         }
         return bn;
@@ -486,15 +486,15 @@ BAT *BATouterjoin(BAT *l, BAT *r) {
 	BAT	*bn; 
 	
 	@:joincheck(BATouterjoin, l->ttype, r->htype)@
- 	if (BAThdense(l) && r->hkey) {
+ 	if (BAThdense(l) && BAThkey(r)) {
 		bn = BATnew(TYPE_void, ATOMtype(r->ttype), BATcount(l));
 		BATseqbase(bn, l->hseqbase);
 	} else {
-		@:joinbat(r->hkey?BATcount(l):0, BATouterjoin(l,r))@
+		@:joinbat(BAThkey(r)?BATcount(l):0, BATouterjoin(l,r))@
 	} 
 	/* set sorted flags by hand, because we used BUNfastins() */
 	bn->tsorted = 0;
-	if (r->hkey) {
+	if (BAThkey(r)) {
 		ALIGNsetH(bn, l); /* always 1 hit, so columns are equal */
 	} else {
 		bn->hsorted = BAThordered(l);
@@ -733,8 +733,8 @@ instead of l, and semijoin using binary search in r.
 	if (bn == NULL) {
 		return bn; 
 	}
-	BATkey(bn, l->hkey);
-	BATkey(BATmirror(bn), l->tkey);
+	BATkey(bn, BAThkey(l));
+	BATkey(BATmirror(bn), BATtkey(l));
 	bn->hsorted = @2;
 	bn->tsorted = @3;
 
@@ -789,7 +789,7 @@ BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	if (BATcount(bn) == BATcount(l)) {
 		if (l == cpy) {
 			ALIGNset(bn,l);
-		} else if (l->hkey && r->hkey) {
+		} else if (BAThkey(l) && BAThkey(r)) {
 			ALIGNsetH(bn,l);
 		}
 	}
@@ -855,7 +855,7 @@ BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
 The semijoin done from the other side. Is only better if the other side (r) is much
 smaller than l, and iff you already have the hash table on l. It uses hash tables on
 both relations: on r to check that no item is processed twice (not necessary to check 
-iff r->hkey) and one on l to find the matching tuples.
+iff BAThkey(r) and one on l to find the matching tuples.
 
 @= revsemijoin
 {	int xx, yy;
@@ -887,7 +887,7 @@ iff r->hkey) and one on l to find the matching tuples.
 } break;
 @c
 BAT *BATrevsemijoin(BAT *l, BAT *r) {
-	int any, rdoubles = (r->hkey == 0), merge = rdoubles&BAThordered(r);
+	int any, rdoubles = (BAThkey(r) == 0), merge = rdoubles&BAThordered(r);
 	BAT *bn;
 
 	@:joincheck(BATrevsemijoin, l->htype, r->htype)@
@@ -904,7 +904,7 @@ BAT *BATrevsemijoin(BAT *l, BAT *r) {
 	}
 	/* propagate properties */
 	bn->hsorted = bn->tsorted = 0;
-	if (r->hkey && l->hkey && BATcount(bn) == BATcount(r)) {
+	if (BAThkey(r) && BATtkey(l) && BATcount(bn) == BATcount(r)) {
 		ALIGNsetH(bn,r);
 	}
 	return bn;
@@ -975,13 +975,13 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	if (BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l);
 	} else {
-		BATkey(bn, l->hkey);
+		BATkey(bn, BAThkey(l));
 	}
-	if (l->hkey) {
+	if (BAThkey(l)) {
 		if (BATcount(bn) == BATcount(cpy) && (BAThordered(r)&BAThordered(l)&1)) {
 			ALIGNsetT(bn, cpy);
 		} else {
-			BATkey(BATmirror(bn), cpy->tkey);
+			BATkey(BATmirror(bn), BATtkey(cpy));
 		}
 	}
         return bn;
@@ -1010,8 +1010,8 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 @c
 	for(logr=4, i=countr=BATcount(r); i > 0; logr++) i >>= 1; 
 	for(logl=4, i=countl=BATcount(l); i > 0; logl++) i >>= 1; 
-	reverse1 = countr < countl && (r->hkey || countr*8 < countl);
-	reverse2 = countr*logl < countl && (r->hkey || countr*(logl+8) < countl);
+	reverse1 = countr < countl && (BAThkey(r) || countr*8 < countl);
+	reverse2 = countr*logl < countl && (BAThkey(r) || countr*(logl+8) < countl);
 
         if (ALIGNsynced(l,r)) {
 		bn = BATrcopy(l);	
@@ -1022,7 +1022,7 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 	} else if (BAThdense(r)) {
 		bn = BATfetchsemijoin(l, r, l);
 	} else if (BAThdense(l) && reverse1) {
-		if (!r->hkey) {
+		if (!BAThkey(r)) {
 			BAT *v = VIEWhead_(r,BAT_WRITE); tmp = r = BATkunique(v); BBPreclaim(v);
 		}
 		bn = BATfetchsemijoin(r, l, l);
@@ -1031,14 +1031,14 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 	} else if ((BAThordered(r)&1) && countl*logr < countr) {
 	        bn = BATbinsemijoin(l, r, l);
 	} else if ((BAThordered(l)&1) & reverse2) {
-		if (!r->hkey) {
+		if (!BAThkey(r)) {
 			BAT *v = VIEWhead_(r,BAT_WRITE); tmp = r = BATkunique(v); BBPreclaim(v);
 		}
 		bn = BATbinsemijoin(r, l, l);
 	} else if (r->hidx_heap && countl*logr < countr) {
 	        bn = BATidxsemijoin(l, r, l);
 	} else if (l->hidx_heap && reverse2) {
-		if (!r->hkey) {
+		if (!BAThkey(r)) {
 			BAT *v = VIEWhead_(r,BAT_WRITE); tmp = r = BATkunique(v); BBPreclaim(v);
 		}
 		bn = BATidxsemijoin(r, l, l);
@@ -1261,11 +1261,11 @@ for the matching algorithms of the other columns (only if the head
 values are visited in order, merge algorithms may be employed).
 @c
 	if (BAThordered(lead_col->b)&1) {
-                if (lead_col->b->hkey == FALSE) {
+                if (!BAThkey(lead_col->b)) {
 			algo = LEAD_TRAVERSE_SRT;
 		}
 		MULTIJOIN_SORTED(status) = TRUE;
-        } else if (lead_col->b->hkey == FALSE && lead_col->idx && orderby == 0) {
+        } else if (!BAThkey(lead_col->b) && lead_col->idx && orderby == 0) {
                 algo = LEAD_TRAVERSE_IDX;
 		MULTIJOIN_SORTED(status) = TRUE;
         }  
@@ -1275,11 +1275,11 @@ values are visited in order, merge algorithms may be employed).
 	} else {
 		lead_col->hi = lead_col->cur = BUNfirst(lead_col->b); 
 		q = BUNlast(lead_col->b);
-		MULTIJOIN_KEY(status) = lead_col->b->hkey;
+		MULTIJOIN_KEY(status) = BAThkey(lead_col->b);
 		MULTIJOIN_LEAD(status) = lead_col - c;
 		MULTIJOIN_SYNCED(status) = 1;
 	}
-	if (algo == LEAD_TRAVERSE_SEQ && lead_col->b->hkey) {
+	if (algo == LEAD_TRAVERSE_SEQ && BAThkey(lead_col->b)) {
 		algo = (BAThordered(lead_col->b)&1)?
 			LEAD_TRAVERSE_SSK:LEAD_TRAVERSE_SNK;
 	}
@@ -1303,7 +1303,7 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 				n->offset -= reorder[j]->offset;
                 	}
 		}
-		if (!n->b->hkey) {
+		if (!BAThkey(n->b)) {
 			MULTIJOIN_KEY(status) = 0;
 			MULTIJOIN_SYNCED(status) = 0;
 		}
@@ -1320,7 +1320,7 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
                 	n->cur = BUNfirst(n->b);
             	} else if (n->idx) {
 			n->cur = (BUN) n->idx->first;
-		} else if (n->b->hkey == 0 && n->sync == NULL) {
+		} else if (!BAThkey(n->b) && n->sync == NULL) {
     			(void) BATprepareHash(n->b);
 			n->hitsize = 20;
 			n->hit = (BUN*) GDKmalloc(n->hitsize*sizeof(BUN));
@@ -1492,7 +1492,7 @@ while(algo) {
     
 	/* Single Hash lookup
 	 */
-    	} else if (n->b->hkey) {
+    	} else if (BAThkey(n->b)) {
     		BUNfnd@2(n->cur, b, h);
     		if (!n->cur) break; /* NOT FOUND */
     		n->lo = n->cur; 

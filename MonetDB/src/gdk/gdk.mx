@@ -1569,6 +1569,8 @@ gdk_export void GDKqsort (void *a, void* base, int n, int width, int tpe, int lo
 #define BATtdense(b)	(BATtvoid(b) && (b)->tseqbase != oid_nil)
 #define BAThvoid(b)	(((b)->hdense&(b)->hsorted&1) || (b)->htype==TYPE_void)
 #define BATtvoid(b)	(((b)->tdense&(b)->tsorted&1) || (b)->ttype==TYPE_void)
+#define BAThkey(b)	(b->hkey != FALSE || BAThdense(b))
+#define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 @
 @}
 
@@ -2209,7 +2211,7 @@ gdk_export int	GDKfatal    (char* format, ... );
 #include "gdk_utils.h"
 #include "gdk_heap.h"
 
-#define BBPLOCKMASK     7
+#define BBPLOCKMASK     0
 
 gdk_export MT_Lock		GDKthreadLock;
 gdk_export MT_Lock		GDKstatusLock[BBPLOCKMASK+1]; 
