@@ -228,18 +228,27 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_create_key: {
+		node *n;
 		key *k = s->op1.kval;
+		write_head(sql,-s->nr);
 		if (s->flag == fkey){
 			int ft = stmt_dump( s->op2.stval, nr, sql );
 			len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, s%d );\n", 
+		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, s%d );\n",
 			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type, ft );
 		} else {
 			len = snprintf( buf, BUFSIZ, 
 		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, sql_key(nil));\n",
 			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type );
 		}
-		dump(sql,buf,len,-s->nr);
+		write_part(sql,buf,len);
+		for(n=k->columns->h;n; n = n->next){
+			column *c = n->data;
+			len = snprintf( buf, BUFSIZ, 
+		    	"mvc_key_add_column(myc, s%d, \"%s\");\n", -s->nr, c->name);
+			write_part(sql,buf,len);
+		}
+		write_tail(sql,-s->nr);
 	} break;
 	case st_create_role: {
 		len = snprintf( buf, BUFSIZ, 

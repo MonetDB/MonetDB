@@ -32,6 +32,7 @@
 	.ATOM sql_key = ptr;
 	.END;
 	
+	.COMMAND savebats() = savebats; "savebats"
 
     	.COMMAND sql_create_context( int debug, Stream o, mvc c, str schema, str user ) : context = 
 		sql_create_context; "create a context for the sql interpreter"
@@ -154,7 +155,7 @@
 	.COMMAND mvc_create_key( mvc m, str sname, str tname, str name, int kt, sql_key fk ) :
 		sql_key = mvc_create_key_wrap; "Create a table key"
 
-	.COMMAND mvc_key_add_column( mvc m, sql_key k, sql_column c ) :
+	.COMMAND mvc_key_add_column( mvc m, sql_key k, str column ) :
 		sql_key = mvc_key_add_column_wrap; "Key add column"
 
 	.COMMAND mvc_export(Stream s, BAT order, BAT bats, str sep, str rsep) =
@@ -595,8 +596,10 @@ int mvc_create_key_wrap( sql_key* res, mvc* c, str sname, str tname, str name, i
 	return GDK_SUCCEED;
 }
 
-int mvc_key_add_column_wrap( sql_key* res, mvc* m, sql_key* k, sql_column *c){
-	*(sql_key**)res = mvc_key_add_column( *(mvc**)m, *(sql_key**)k, *(sql_column**)c);
+int mvc_key_add_column_wrap( sql_key* res, mvc* m, sql_key* key, str cname){
+	sql_key *k = *(sql_key**)key;
+	sql_column *c = mvc_bind_column( *(mvc**)m, k->t, cname );
+	*(sql_key**)res = mvc_key_add_column( *(mvc**)m, k, c);
 	return GDK_SUCCEED;
 }
 

@@ -5,13 +5,13 @@ EXTRA_DIST = sqlserver.mil
 INCLUDES = $(MONET_INCS) ../common ../client 
 
 lib__sqlserver = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB
 	SOURCES = sqlserver.mx mvc.mx logger.mx privileges.mx \
 		catalog_module.c statement_exec.c 
 	LIBS = ../common/libsql $(MONET_LIBS)
 }
 
 scripts_mil = {
-	DIR = pkgdatadir
+	DIR = datadir/MonetDB
 	SOURCES = sqlserver.mil
 }

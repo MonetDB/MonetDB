@@ -20,6 +20,11 @@
 
 /* todo change the sql_schema/sql_table/sql_column such that it only contains
  * operational data (access rules and times and bids)
+ *
+ * name bats using schema_table_column etc.
+ * 
+ * support multiple db's using multiple log managers...
+ * requires bat names to be optained through the log manager.
  */
 
 /* fkey consists of two of these */
@@ -205,6 +210,7 @@ extern int mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rs
 
 static int mvc_debug = 0;
 
+static struct logger *logger = NULL;
 static BAT *sql_schema_id, *sql_schema_name, *sql_schema_auth;
 static BAT *U_schema_id, *U_schema_name, *U_schema_auth;
 static BAT *D_sql_schema, *O_sql_schema;
@@ -499,12 +505,6 @@ static sql_key *load_key(BAT * keys, BUN j, sql_table *t)
 	return nk;
 }
 
-static bat mvc_find_bat(char *name)
-{
-	bat id = BBPindex(name);
-	return id;
-}
-
 static BAT *mvc_descriptor(bat bid)
 {
 	if (bid){
@@ -545,11 +545,11 @@ static sql_column *load_column(sql_table *t, BAT * columns, BUN j)
 	c->t = t;
 
 	snprintf(name, BUFSIZ, "%s_%s", t->name, c->name );
-	c->bid = mvc_find_bat(name);
+	c->bid = log_find_bat(logger, name);
 	BBPpersistent(c->bid, FALSE);
 
 	snprintf(name, BUFSIZ, "U_%s_%s", t->name, c->name );
-	c->ubid = mvc_find_bat(name);
+	c->ubid = log_find_bat(logger, name);
 	if (c->ubid)
 		BBPpersistent(c->ubid, FALSE);
 
@@ -594,11 +594,11 @@ static sql_table *load_table(sql_schema *s, BAT * tables, BUN j)
 	t->s = s;
 
 	snprintf(name, BUFSIZ, "D_%s", t->name );
-	t->dbid = mvc_find_bat(name);
+	t->dbid = log_find_bat(logger, name);
 	BBPpersistent(t->dbid, FALSE);
 
 	snprintf(name, BUFSIZ, "O_%s", t->name );
-	t->obid = mvc_find_bat(name);
+	t->obid = log_find_bat(logger, name);
 	BBPpersistent(t->obid, FALSE);
 
 	t->columns = list_create((fdestroy)&column_destroy);
@@ -861,7 +861,7 @@ static sql_trans *trans_dup(sql_trans *ot, char *newname ){
 static BAT *mvc_bat(char *name, int type)
 {
 	BAT *b = NULL;
-	bat id = mvc_find_bat(name);
+	bat id = log_find_bat(logger, name);
 
 	if (mvc_debug)
 		printf("mvc_bat %s bid %ld\n", name, id);
@@ -893,7 +893,7 @@ void mvc_init(int debug, char *dirname)
 	if (mvc_debug)
 		printf("mvc_init logdir %s\n", dirname);
 
-	transaction_id = logger_init(mvc_debug, dirname);
+	logger = logger_create(mvc_debug, dirname);
 
 	sql_schema_id = mvc_bat("schemas_id", TYPE_int);
 	sql_schema_name = mvc_bat("schemas_name", TYPE_str);
@@ -1127,13 +1127,19 @@ char *mvc_admin_login(mvc *m)
 	return schema;
 }
 
+extern int savebats()
+{
+	logger_persists(logger);
+	return 1;
+}
+
 void mvc_exit()
 {
 
 	if (mvc_debug)
 		printf("mvc_exit\n");
 
-	logger_exit(); 
+	logger_destroy(logger); 
 	types_exit();
 
 	BBPunfix(sql_schema_id->batCacheid);
@@ -1238,16 +1244,6 @@ int mvc_type( mvc *c ){
 }
 
 
-static void bat_log_persists(BAT *ob){
-	/* log creation of bat */
-	log_bat_persists(ob);
-
-}
-static void bat_log_transient(BAT *ob){
-	/* log destruction of bat */
-	log_bat_transient(ob);
-}
-
 int void_delete_bat( BAT *b, BAT *u){
 	int nr = 0;
 	BUN r,s;
@@ -1332,14 +1328,12 @@ static void create_column(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_c
 	gc->wtime = gs->wtime;
 
 	snprintf(name, BUFSIZ, "%s_%s", gt->name, gc->name );
-	BATrename(b, name);
-	bat_log_persists(b); 
+	log_bat_persists(logger, b, name); 
 	BBPunfix(b->batCacheid);
 
 	if (u){
 		snprintf(name, BUFSIZ, "U_%s_%s", gt->name, gc->name );
-		BATrename(u, name);
-		bat_log_persists(u); 
+		log_bat_persists(logger, u, name); 
 		BBPunfix(u->batCacheid);
 	}
 
@@ -1421,7 +1415,7 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 				}
 
 				void_insert_bat(ob, ins);
-				log_bat(ob);
+				log_bat(logger, ob);
 			}
 			if (BATcount(ds)) {
 				void_delete_bat(ob, ds);
@@ -1430,7 +1424,7 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 				BAT *oub = mvc_descriptor(oc->ubid);
 				void_insert_bat(oub, ups);
 				void_replace_bat(ob, ups);
-				log_bat(oub);
+				log_bat(logger, oub);
 				BBPunfix(oub->batCacheid);
 			}
 
@@ -1447,13 +1441,13 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 		if (BATcount(ds)) {
 			BAT *odb = mvc_descriptor(gt->dbid);
 			void_insert_bat(odb, ds);
-			log_bat(odb);
+			log_bat(logger, odb);
 			BBPunfix(odb->batCacheid);
 		}
 		if (BATcount(os)) {
 			BAT *oob = mvc_descriptor(gt->obid);
 			void_insert_bat(oob, os);
-			log_bat(oob);
+			log_bat(logger, oob);
 			BBPunfix(oob->batCacheid);
 		}
 
@@ -1537,11 +1531,11 @@ void mvc_drop_columns(sql_trans * tr, sql_table * t)
 		BAT *b,*u;
 
  		b = mvc_descriptor(c->bid);
-		bat_log_transient(b); 
+		log_bat_transient(logger, b); 
 		BBPunfix(b->batCacheid);
 
 		u = mvc_descriptor(c->ubid);
-		bat_log_transient(u); 
+		log_bat_transient(logger, u); 
 		BBPunfix(u->batCacheid);
 
 		BUNdelHead(sql_column_id, (ptr) & c->id);
@@ -1574,13 +1568,11 @@ static void mvc_forward_create_table(sql_trans * tr, sql_schema * ns,
 		BAT *d = mvc_descriptor(nt->dbid);
 
 		snprintf(name, BUFSIZ, "O_%s", nt->name );
-		BATrename(o, name);
-		bat_log_persists(o); 
+		log_bat_persists(logger, o, name); 
 		BBPunfix(o->batCacheid);
 
 		snprintf(name, BUFSIZ, "D_%s", nt->name );
-		BATrename(d, name);
-		bat_log_persists(d); 
+		log_bat_persists(logger, d, name); 
 		BBPunfix(d->batCacheid);
 
 		create_columns(tr, ns, nt);
@@ -1607,8 +1599,8 @@ static void rollforward_tables(sql_trans *tr, sql_schema * s)
 		if (t->type != tt_view){
 			BAT *o = mvc_descriptor(t->obid);
 			BAT *d = mvc_descriptor(t->dbid);
-			bat_log_transient(o); 
-			bat_log_transient(d); 
+			log_bat_transient(logger, o); 
+			log_bat_transient(logger, d); 
 			BBPunfix(o->batCacheid);
 			BBPunfix(d->batCacheid);
 		} 
@@ -1686,35 +1678,35 @@ static void rollforward_schemas(sql_trans *tr)
 		}
 	}
 	if (tr->parent == gtrans){
-		log_bat(sql_table_id);
-		log_bat(sql_table_schema);
-		log_bat(sql_table_name);
-		log_bat(sql_table_type);
-		log_bat(sql_table_query);
+		log_bat(logger, sql_table_id);
+		log_bat(logger, sql_table_schema);
+		log_bat(logger, sql_table_name);
+		log_bat(logger, sql_table_type);
+		log_bat(logger, sql_table_query);
 
-		log_bat(sql_column_id);
-		log_bat(sql_column_table);
-		log_bat(sql_column_name);
-		log_bat(sql_column_type);
-		log_bat(sql_column_type_size);
-		log_bat(sql_column_type_digits);
-		log_bat(sql_column_default);
-		log_bat(sql_column_null);
-		log_bat(sql_column_number);
+		log_bat(logger, sql_column_id);
+		log_bat(logger, sql_column_table);
+		log_bat(logger, sql_column_name);
+		log_bat(logger, sql_column_type);
+		log_bat(logger, sql_column_type_size);
+		log_bat(logger, sql_column_type_digits);
+		log_bat(logger, sql_column_default);
+		log_bat(logger, sql_column_null);
+		log_bat(logger, sql_column_number);
 
-		log_bat(sql_schema_id);
-		log_bat(sql_schema_name);
-		log_bat(sql_schema_auth);
+		log_bat(logger, sql_schema_id);
+		log_bat(logger, sql_schema_name);
+		log_bat(logger, sql_schema_auth);
 
-		log_bat(key_id);
-		log_bat(key_table);
-		log_bat(key_tpe);
-		log_bat(key_name);
-		log_bat(key_rkey);
+		log_bat(logger, key_id);
+		log_bat(logger, key_table);
+		log_bat(logger, key_tpe);
+		log_bat(logger, key_name);
+		log_bat(logger, key_rkey);
 
-		log_bat(kc_id);
-		log_bat(kc_col);
-		log_bat(kc_nr);
+		log_bat(logger, kc_id);
+		log_bat(logger, kc_col);
+		log_bat(logger, kc_nr);
 	}
 	list_destroy(tr->keys);
 	tr->keys = list_create(NULL);
@@ -1823,9 +1815,9 @@ int mvc_commit(mvc * m, int chain, char *name)
 		/* write phase */
 		if (m->debug)
 			printf("forwarding changes\n");
-		log_tstart(++transaction_id);
+		log_tstart(logger);
 		rollforward_schemas(tr);
-		log_tend();
+		log_tend(logger);
 		res = 0;
 	}
 
@@ -2231,7 +2223,6 @@ sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, 
 		BBPpersistent(b->batCacheid, FALSE);
 /*
 		snprintf(name, BUFSIZ, "K_%s_%s", nk->t->name, nk->name );
-		BATrename(b, name);
 */
 		BBPunfix(b->batCacheid);
 
@@ -2247,7 +2238,6 @@ sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, 
 		BBPpersistent(b->batCacheid, FALSE);
 /*
 		snprintf(name, BUFSIZ, "F_%s_%s", nk->t->name, nk->name );
-		BATrename(b, name);
 */
 		BBPunfix(b->batCacheid);
 
@@ -2670,6 +2660,7 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 		BAT *in = mvc_descriptor(*(bat*)BUNtail(rbats, p));
 
 		cnt = BATcount(in);
+		printf("%s\n", BBPname(ba->batCacheid));
 		BATins(ba,in);
 
 		BBPunfix(ba->batCacheid);

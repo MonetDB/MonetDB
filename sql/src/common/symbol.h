@@ -35,6 +35,7 @@ extern dlist *dlist_append_string(dlist * l, char *data);
 extern dlist *dlist_append_list(dlist * l, dlist * data);
 extern dlist *dlist_append_int(dlist * l, int data);
 extern dlist *dlist_append_symbol(dlist * l, struct symbol *data);
+extern dlist *dlist_append_type(dlist * l, struct sql_subtype *data);
 
 typedef struct symbol {
 	int lineno;

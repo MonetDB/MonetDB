@@ -314,8 +314,7 @@ binpath="${WHAT_PREFIX}/bin:${binpath}"
 # but still needed for the rest:
 if [ "${what}" != "MONET" ] ; then
 	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
-	package="`egrep -h '^(AM_INIT_AUTOMAKE|PACKAGE).".*"' configure* | head -1 | perl -pe 's/^(AM_INIT_AUTOMAKE|PACKAGE)."(.*)".*$/$2/'`"
-	modpath="${WHAT_PREFIX}/lib/${package}"
+	modpath="${WHAT_PREFIX}/lib/MonetDB"
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
 	mtest_modpath="--monet_mod_path=`${MONET_PREFIX}/bin/monet-config --modpath`:${modpath}"
 fi
