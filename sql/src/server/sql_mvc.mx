@@ -2785,7 +2785,7 @@ mvc_release(mvc * m, char *name)
 
 	while(tr && (!tr->name || strcmp(tr->name,name) != 0))
 		tr = tr -> parent;
-	if (!tr) {
+	if (!tr || !tr->name || strcmp(tr->name,name) != 0) {
 		GDKerror("release savepoint %s doesn't exists", name);
 		m->status = -1;
 		return -1;
