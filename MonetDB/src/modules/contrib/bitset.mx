@@ -67,7 +67,7 @@
 		"Convert this BitSet to an integer."
 
 @mil
-		PROC bitset_toStr(theBitset) : str {
+		PROC bitset_toStr(bitset theBitset) : str {
 			return str(theBitset);
 		}
 @m

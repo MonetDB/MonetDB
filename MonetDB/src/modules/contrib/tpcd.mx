@@ -412,7 +412,7 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
         debug("!join: mergejoin(%s,%s)", str(a), str(b));
         return join(a,b);
     }
-    proc gselect(bat(any,any) b, ..any..)  : bat[any,any] {
+    proc gselect(bat[any,any] b, ..any..)  : bat[any,any] {
         var lo := $2;
 
         if ($0 = 2) {
@@ -440,7 +440,7 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
         }
         return b.uselect(lo,hi);
     }
-    proc guselect(bat(any,any) b, ..any..)  : bat[any,any] {
+    proc guselect(bat[any,any] b, ..any..)  : bat[any,any] {
         var lo := $2;
 
         if ($0 = 2) {
