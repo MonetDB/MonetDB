@@ -320,7 +320,7 @@ sin(M_PI_4).print;
 sin(M_PI_2).print;
 [ 1 ]
 sin(M_PI).print;
-[ 1.2246467991473532e-16 ]
+[ 1.2246063538223773e-16 ]
 sin(3*M_PI_2).print;
 [ -1 ]
 cos(dbl(0)).print;
@@ -328,11 +328,11 @@ cos(dbl(0)).print;
 cos(M_PI_4).print;
 [ 0.70710678118654757 ]
 cos(M_PI_2).print;
-[ 6.123233995736766e-17 ]
+[ 6.1230317691118863e-17 ]
 cos(M_PI).print;
 [ -1 ]
 cos(3*M_PI_2).print;
-[ -1.8369701987210297e-16 ]
+[ -1.8369095307335659e-16 ]
 tan(dbl(0)).print;
 [ 0 ]
 tan(M_PI_4).print;
@@ -340,7 +340,7 @@ tan(M_PI_4).print;
 tan(M_PI_2).print;
 [ 16331778728383844 ]
 tan(M_PI).print;
-[ -1.2246467991473532e-16 ]
+[ -1.2246063538223773e-16 ]
 tan(3*M_PI_2).print;
 [ 5443926242794615 ]
 asin(dbl(-1)).print;
@@ -375,7 +375,7 @@ atan(dbl(1)).print;
 [ 0.78539816339744828 ]
 
 asin(sin(M_PI)).print;
-[ 1.2246467991473532e-16 ]
+[ 1.2246063538223773e-16 ]
 acos(cos(M_PI)).print;
 [ 3.1415926535897931 ]
 atan(tan(M_PI_2)).print;
