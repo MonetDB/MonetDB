@@ -299,7 +299,7 @@ str
 PCREselect(int *res, str *pattern, int *bid)
 {
 #ifndef HAVE_LIBPCRE
-	(void)res; (void) pattern; (void) strs;
+	(void)res; (void) pattern; (void) bid;
 	return throwMessage("pcre_select", "library missing\n");
 #else
 	BAT *bn, *strs;
@@ -333,7 +333,7 @@ str
 PCREuselect(int *res, str *pattern, int *bid)
 {
 #ifndef HAVE_LIBPCRE
-	(void)res; (void) pattern; (void) strs;
+	(void)res; (void) pattern; (void) bid;
 	return throwMessage("pcre_select", "library missing\n");
 #else
 	BAT *bn, *strs;
