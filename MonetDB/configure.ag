@@ -57,7 +57,12 @@ AC_SUBST(QMONET_SOURCE)
 Qprefix="$prefix"
 AC_SUBST(Qprefix)
 # exec_prefix is created very late, so let make do the expansion
-Qexec_prefix='${exec_prefix}'
+[ if [ "${exec_prefix}x" = "NONEx" ]; then
+	Qexec_prefix="${prefix}"
+  else
+	Qexec_prefix="${exec_prefix}"
+  fi
+]
 AC_SUBST(Qexec_prefix)
 Qsrcdir="$srcdir"
 AC_SUBST(Qsrcdir)
