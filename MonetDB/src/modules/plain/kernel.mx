@@ -230,7 +230,7 @@ any client activity.
 .BUILTIN debugmask(MASK) : int  = CMDdebug;
 "Return the debug mask. If a MASK is passed, set it to that value."
 
-.BUILTIN wack(int i) : int = CMDwack;
+.BUILTIN whack(int i) : int = CMDwhack;
 "Cut the reference from a BAT in the BBPcache; return its BUN heap pointer."
 
 @- Printing 
@@ -570,11 +570,11 @@ int CMDdebug(int stk, YYSTREE lt, ValPtr res) {
 	res->val.ival = GDKdebug;
 	return 0;
 }
-@- wack a bat
-DEBUGGING ONLY: wack removes the bat reference; to be used in purify 
+@- whack a bat
+DEBUGGING ONLY: whack removes the bat reference; to be used in purify 
 sessions to see who created it.
 @c
-int CMDwack(int stk, YYSTREE lt, ValPtr res) {
+int CMDwhack(int stk, YYSTREE lt, ValPtr res) {
 	if (lt->cnt == 1 && interpret(stk, lt->yysons[0], res) >= 0 &&
 	    res->vtype == TYPE_int && 
             ABS(res->val.ival) < BBPsize && BBP_cache(res->val.ival)) 
@@ -586,7 +586,7 @@ int CMDwack(int stk, YYSTREE lt, ValPtr res) {
 		BBP_cache(bid) = BBP_cache(-bid) = 0;
 		return 0;
 	}
-	GDKerror("CMDwack: %d illegal BAT.\n", res->val.ival);
+	GDKerror("CMDwhack: %d illegal BAT.\n", res->val.ival);
 	return -1;
 }
 @-
@@ -698,7 +698,7 @@ than the number of active threads, it places a sequence of kill
 instructions into the message queue.
 They are picked up by the interpreters and lead to their termination.
 @-
-The command @%CMDthread@ tells the system to increas or decrease
+The command @%CMDthread@ tells the system to increase or decrease
 the number of interpreter threads. It should ensure that there are
 enough threads to satisfy the client access [TODO]
 @c
@@ -984,7 +984,7 @@ int CMDERROR(Cntxt stk, YYSTREE lt, ValPtr res){
 
 @-
 Prelude files and libraries of code are read in one shot and scheduled
-for processing. In both situtations a line mode is not required, even
+for processing. In both situations a line mode is not required, even
 a stand in the way.
 @c
 int CMDeval(Cntxt stk, YYSTREE lt, ValPtr res){

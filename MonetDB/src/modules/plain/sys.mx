@@ -74,7 +74,7 @@ m - free (last usage was M)
 C - in use as MIL context buffer (i.e. anonymous virtual memory)
 c - free (last usage was c)
 \end{verbatim}
-On Linux, the malloc library appears to be using anonymous virtual memory, which goes unetected.
+On Linux, the malloc library appears to be using anonymous virtual memory, which goes undetected.
 If you want to see all your memory in the map, lower the gdk\_mem\_bigsize threshold in MonetDB.conf to a 
 low value (say 64KB).
 @m
@@ -491,7 +491,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 #define RETVAL          (argv)
 
 @+ BBP status
-The BAT buffer pool datastructures describe the memory resident information
+The BAT buffer pool data structures describe the memory resident information
 on the whereabouts of the BATs. The three predominant tables are made accessible
 for inspection. 
 

@@ -53,7 +53,7 @@ bus gets one bit from a DRAM chip in parallel. In reality, transfer is not fully
 as the different bytes of a cache line arrive in a sequential burst, but the total difference 
 in arrival-time tends to be no more than 4 cycles apart from first to last byte.  This design of 
 the memory caches (on all levels, but with varying size and line width parameters) has consequences 
-for application performance, whose severitity depend on what kind of {\em memory access patterns} 
+for application performance, whose severity depend on what kind of {\em memory access patterns} 
 the application exhibits. Reading (or writing) a memory location that is not in the cache, causes 
 a miss, and the CPU is forced for waiting the latency period. It is obvious that subsequent 
 reading of this exact same data will not cause sub-sequent cache misses, and be fast -- because 
@@ -68,8 +68,8 @@ In all, costs of memory access can be high (up to 100 cycles, and rising),
 may occur frequently (up to one in four CPU instructions), and are strongly 
 dependent on the access pattern of the application (is the access repetitive, 
 sequential or random, and to how large a total region). This is not just a 
-theoretical excercise for DBMS designers, since measurements on the 
-memory performance of data-insensive operations like query processing in 
+theoretical exercise for DBMS designers, since measurements on the 
+memory performance of data-intensive operations like query processing in 
 relational DBMS products has indeed shown that CPUs are stalled for most of 
 their time on memory cache misses.
 
@@ -132,7 +132,7 @@ This process repeats for p passes such that H1*..*HP=H. By keeping Hi lower than
 total amount of cache lines, high cache miss ratios can be avoided.  
 
 On platforms that implement "software TLB" management (Transition Lookaside Buffer;
-the "cache" of most-recent transalations of virtual memory addresses from logical to
+the "cache" of most-recent translations of virtual memory addresses from logical to
 physical form), TLB misses are also an expensive, and heavily influence performance.
 As the number of TLB entries is typically limited to 64, on such platforms the TLB 
 poses an even lower bound on the size of Hi than the number of cache lines.
@@ -149,24 +149,24 @@ These pieces of hardware form a pipeline, so each cycle a new instruction can en
 the pipeline, while at the other end one leaves (or "graduates").
 The more stages the pipeline has, less tasks have to be performed per stage, 
 hence the quicker the hardware can execute a stage, hence the higher the overall 
-clockspeed of the CPU can be. The search of ever higher CPU clockspeeds hence 
+clock speed of the CPU can be. The search of ever higher CPU clock speeds hence 
 explains the trend of ever longer pipelines found in modern CPUs.
 \item multiple independent pipelines may be implemented, meaning that 
 two CPU instructions that are independent can be pushed each cycle into two 
 different hardware pipelines for execution. Modern CPUs have at least
 2 and possibly up to 9 replicated pipelines (often separated in integer and 
 floating-point pipelines).
-This second trendis driven by the ever smaller process technology, which gives
+This second trend is driven by the ever smaller process technology, which gives
 CPU designers the possibility to use ever more circuits on a single CPU. As
 a consequence these circuits are used to create replicated execution units
-oragnized in pipelines whose parallel activity is supposed to increase the 
+organized in pipelines whose parallel activity is supposed to increase the 
 performance of the CPU.
 \end{enumerate}
 
 All this complexity comes at a price though, which is performance vulnerability. 
 Application code must at all times have three totally independent instructions 
-ready for execution to keep three replicated pipelines busy. This is porbably
-only true for specific scientif computation code, other applications will 
+ready for execution to keep three replicated pipelines busy. This is probably
+only true for specific scientific computation code, other applications will 
 leave the replicated pipelines mostly without use. Additionally, pipelined execution 
 itself poses the challenge that before the previous execution is finished executing, 
 the CPU has to guess correctly what the next instruction will be.
@@ -197,13 +197,13 @@ next instruction instead of B, then the whole pipeline up to the stage where "if
 is then, needs to be flushed. Also, corrective action needs also to be taken in order 
 to e.g. undo all effect of executing B and all other flushed instructions (e.g. by 
 restoring CPU flags and registers) and we need to start over with C in stage 1. Notice 
-that a mis-predicition rate as low as 5\% on a 20-stage pipeline will typically cause 50% 
+that a mis-prediction rate as low as 5\% on a 20-stage pipeline will typically cause 50% 
 of the pipeline to be thrown away, which already decreases performance below the level 
 where a 20-stage pipeline at that speed is actually useful (i.e. some code would do better
 at a lower speed with a shorter pipeline).
 
 The mis-prediction rate is obviously dependent on the type of code being executed.
-Code that contains many if-statements typically suffers a high mis-prediciton
+Code that contains many if-statements typically suffers a high mis-prediction
 rate (as explained above, correctly predicting 95% of the if-branches can still give
 awful performance), whereas scientific code that does millions of independent 
 scalar operations in a matrix multiplication is highly predictable and will suffer 
@@ -233,7 +233,7 @@ are known. The sizes of arrays that store database tables are not known
 at compile time, hence the compiler needs to be helped a bit.
 \item factoring-out function calls. Function calls are an important source of 
 dependence among subsequent instructions. In a language like C, a function call
-may mody any reachable memory location, hence the compiler must generate code to
+may modify any reachable memory location, hence the compiler must generate code to
 reload many values that are cached in registers. On top of that, executing a function 
 call carries substantial stack management overhead (e.g. 20 cycles) and decreases 
 the prediction-rate of the CPU.
@@ -250,7 +250,7 @@ CPU resources and memory hardware on super-scalar CPUs featuring long pipelines 
 out-of-order speculative execution and memory subsystems that consist of deep hierarchies 
 with various levels of memory cache.
 
-We specifially want to compare the effectiveness of the 'Monet-approach' with a standard 
+We specifically want to compare the effectiveness of the 'Monet-approach' with a standard 
 'relational approach'. We consider the generic join query:
 
 \begin{verbatim}
@@ -258,7 +258,7 @@ SELECT larger.a1, .., larger.aY, smaller.b1, .., smaller.bZ
 FROM   larger, smaller
 WHERE  larger.key = smaller.key
 \end{verbatim}
-Without loss of genericity we assume that the "larger" table has the same amount or more 
+Without loss of generality we assume that the "larger" table has the same amount or more 
 tuples than the "smaller" table.  
 
 @+ The Monet Approach 
@@ -340,21 +340,21 @@ itself could cause a great many cache misses itself, and therefore perform badly
 shortly discuss the memory access properties of Monet's sorting algorithms.
 
 Monet uses a CPU-optimized quicksort algorithm for sorting large relations. The CPU-optimizations
-reduce the amount of function calls, by doing all value-comparision and data movement inline,
-using C macros. In this sense it differs from the standard unix library call qsort(), as that
+reduce the amount of function calls, by doing all value-comparison and data movement in line,
+using C macros. In this sense it differs from the standard Unix library call qsort(), as that
 routine compares values with a user-provided function, and (often) moves values with memcpy().  
 
 The memory access pattern of the Monet quicksort consists of one sequential scan per recursion
 level (walking two cursors simultaneously, one from the start of the BAT forward, as well as another
 from the end of the BAT backward, until both meet in the middle). Quicksort is binary recursive and 
 therefore takes log2(ntuples) recursion levels to sort a BAT, hence its total memory access consists of log2(ntuples) 
-sequental scans.  However, since quicksort zooms into ever smaller sub-chunks of the BAT, there will 
+sequential scans.  However, since quicksort zooms into ever smaller sub-chunks of the BAT, there will 
 be cache re-use in the deeper recursion levels as soon as such a chunk fits the memory cache, which 
 happens when sizeof(chunk) = sizeof(BAT)/(2\^level) <= sizeof(cache).  Hence, the total memory cost of 
 quicksort is log2(ntuples)-log2(sizeof(cache)/sizeof(tuple)) sequential scans.  
 
 In all, the Monet quicksort implementation behaves quite good both concerning CPU efficiency and 
-memory access pattern. Still, for some simple datatypes (in particular columns containing OIDs) one 
+memory access pattern. Still, for some simple data types (in particular columns containing OIDs) one 
 can further improve the memory access performance by using {\em radix-sort} instead of quicksort.
 
 Radix-sort is essentially a radix-cluster on all bits, hence we do:
@@ -368,11 +368,11 @@ Radix-sort is essentially a radix-cluster on all bits, hence we do:
 Where p is a suitable number of passes and R=R1+..+Rp is the total number of "significant bits"
 (the most significant bit in a collection of integer values is the highest bit set in all values).
 The head column of the join(larger\_key, smaller\_key.reverse) is of type OID, and contains 
-the OIDs from the matching tuples in the larger table. Table-OID anre automatically generated by
+the OIDs from the matching tuples in the larger table. Table-OID are automatically generated by
 the VOID columns of Monet, and therefore these integer values are from the range [0,...,N], where N 
 is the number of tuples in the "larger" table. We call such an integer
 sub-domain a "dense" domain. As a result, the number of significant bits is minimal (i.e. R=log2(N), 
-there are no "spoilt" values), and we do not expect skew in such a column. This motivates our choice 
+there are no "spoiled" values), and we do not expect skew in such a column. This motivates our choice 
 to implement radix-cluster for the OID type by getting radix bits {\em without} hashing (for all other 
 types, we hash first). Hashing is not necessary due to absence of value-skew on OID columns, and 
 absence of hashing allows us to use radix-cluster as radix-sort.
@@ -381,7 +381,7 @@ absence of hashing allows us to use radix-cluster as radix-sort.
 @T
 We now discuss the case that even the smaller\_key BAT with its hash structure does not fit the
 smallest cache. What happens then in the join-phase? Since the hash-join algorithm exhibits a random 
-access pattern, compulsary cache misses will start to appear up to the point that each access to 
+access pattern, compulsory cache misses will start to appear up to the point that each access to 
 the hash-table will be a miss. Even in the direct hashing employed by Monet, this amounts to at least 
 3 misses per tuple in the "larger" table (one in the hash-mask, at least one in the BAT, and at least 
 one in the hash-link list to conclude that this is the last match).  To these memory cost, we should 
@@ -391,7 +391,7 @@ direct hashing in Monet can be as low as 20 cycles per tuple, such a high cache 
 tremendously slows down the join (e.g. by a factor 10).
 
 In the situation mentioned above, performance can be improved by using partitioned hash-join,
-as presented earlier in this module, instead of simple hash-join. The partioned hash-join uses 
+as presented earlier in this module, instead of simple hash-join. The partitioned hash-join uses 
 radix-cluster to quickly cluster both the smaller\_key and larger\_key BATs into clusters that fit 
 the memory cache, and then repeatedly performs hash-join on the corresponding clusters. In this way, 
 the random access is restricted to areas that fit the memory cache, hence the expensive cache misses 
@@ -446,7 +446,7 @@ it would no longer have a VOID head column), the result of the positional joins 
 BAT[void,T]s would be of the form BAT[oid,T]. These results would not only take more space than the 
 desired form BAT[void,T], but would also create a problem in further use of the query result, as these 
 res\_aX BATs will not be sorted on head. Join access to them would go to the hash-join rather than the 
-positional join, and due to the random acccess this would pose a memory caching problem as these 
+positional join, and due to the random access this would pose a memory caching problem as these 
 res\_aX BATs tend to be larger than the memory cache. 
 
 Therefore, for these projection joins, we propose the use of a new memory-conscious join algorithm that is 
@@ -465,8 +465,8 @@ the memory cache.
 \item[positional join]
 The purpose of the radix-clustering in the previous phase L is to accelerate the positional join between L and R
 (i.e. res\_smaller and smaller\_aX).  Because the OIDs in the tail of L are now partially sorted, each chunk in L 
-will only randomly access data from one chunk in R.  Therfore, during positional join, these chunks in R stay 
-memory resident, accelerating performance wrt to doing the same with a non-clustered L (where each access to
+will only randomly access data from one chunk in R.  Therefore, during positional join, these chunks in R stay 
+memory resident, accelerating performance with respect to to doing the same with a non-clustered L (where each access to
 R would be a cache miss). 
 \item[radix decluster]
 The result of the positional join is a BAT[oid,T]. Still, we know that the head column, when sorted, would
@@ -484,7 +484,7 @@ in the result BAT[void,T]. This is done by going to through all (not yet empty) 
 each chunk all elements whose OID fits into the window. Due to the fact that all chunks are sorted, we are
 sure to have found all OIDs after having processed all chunks. Then, the window is shifted windowSize positions
 and the process repeats. The windowSize is typically a multiple of the number of chunks, such that per iteration 
-in each chunk multiple tuples fall into the window. Because these multiple tuples are accessed sequentiallly
+in each chunk multiple tuples fall into the window. Because these multiple tuples are accessed sequentially
 in the chunk, the chunk cache lines will be re-used and performance will be good. The only restriction on the windowSize 
 is that the insertion window on the output BAT must fit the memory cache. This will only start to exceed on very
 large table sizes (a possible remedy is then to perform the merge in multiple passes).
@@ -554,7 +554,7 @@ to move a data value from the source record to the destination record.
 To model this extra function calling overhead, we use the integerX Monet types, that were created specifically 
 for these experiments.  An integerX value models a relational tuple that stores X simple integer column values.  
 Through some tricks, copying one integer8 value in Monet is actually done by copying 8 integers width memcpy(),
-which closely mimicks what happens in a typical relational DBMS.
+which closely mimics what happens in a typical relational DBMS.
 
 In order to give a concrete example, we suppose "smaller" and "larger" each have 128 columns, and 
 the projection widths are Y=Z=8; we emulate relational storage of both tables in Monet by storing 
@@ -589,7 +589,7 @@ storage format of base data. Second, there will be much more CPU cost, due to th
 function-call overhead cannot be eliminated. In Monet algorithms, CPU optimizations cause
 a 5-fold performance improvement.
 
-Therfore, it might even be that the increased cost of radix-cluster will make simple
+Therefore, it might even be that the increased cost of radix-cluster will make simple
 hash-join faster than partitioned hash-join:
 \begin{verbatim}
 05  res_join := join(larger_view, smaller_view.reverse);
@@ -2365,7 +2365,7 @@ bunins_failed:
 @T
 Radix decluster reclusters a BAT that is partially radix-clustered on tail by converting
 its non-sorted OID head column into a sorted and densely ascending void column. The tail
-itselfs does not need to contain the partially sorted values; in fact we do not even look
+itself does not need to contain the partially sorted values; in fact we do not even look
 at those values but directly take the cluster boundaries as an input parameter. This input
 parameter is a radix\_count BAT that must have been created with the radix\_count command.
 
@@ -2515,7 +2515,7 @@ bunins_failed:
 @T
 intends to improve performance by using a cheaper positional join: 
 	join(bat[void,oid], bat[void,T])
-iso 
+instead of
 	join(bat[oid,oid], bat[void,T])
 
 price paid are two parameters to radix\_decluster.

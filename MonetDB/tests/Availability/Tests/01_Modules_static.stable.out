@@ -684,7 +684,7 @@ Module: "kernel"
 [ "type",	  "BUILTIN:   ",  "type(any v) : int ",										  "Return the type of a value (expression). Returns an type number.\n TIP: use the monet_atomtbl BAT to translate type numbers to strings."																							  ]
 [ "varname",	  "BUILTIN:   ",  "varname(VARIABLE) : str ",									  "(invoked on a simple variable): returns the variable name."																																	  ]
 [ "varval",	  "BUILTIN:   ",  "varval(str) : any ",										  "(invoked on a simple variable): returns the variable name."																																	  ]
-[ "wack",	  "BUILTIN:   ",  "wack(int i) : int ",										  "Cut the reference from a BAT in the BBPcache; return its BUN heap pointer."																															  ]
+[ "whack",	  "BUILTIN:   ",  "whack(int i) : int ",										  "Cut the reference from a BAT in the BBPcache; return its BUN heap pointer."																															  ]
 
 Module: "str"
 

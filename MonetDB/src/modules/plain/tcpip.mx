@@ -43,7 +43,7 @@ MIL script} on the other end.
 the correct transportation of the parameter values, and returns the
 result value of the expression. The command is given as a string 
 containing a "cmd(...)", with "\%s" patterns where local parameters
-are substitued.
+are substituted.
 \item the {\tt <conn-id>.close()} command {\bf closes the connection}.
 \item the {\tt terminate(<port>)} command {\bf kills the listening thread}.
 \item {\bf status monitoring}: the {\tt waits, conns} and {\tt cache} 
@@ -282,7 +282,7 @@ static int atom_type(str s)
 }
 @-
 The reverse is @%atom_name()@: it provides the clean name
-(without {\tt <user>_} perappended) of a type.
+(without {\tt <user>_} prepended) of a type.
 @c
 str atom_name(int tpe) {
 	char *nme, *p;
@@ -509,7 +509,7 @@ static int cache_error(cache_t *c)
 The connection table shows all currently open TCP/IP connections.
 Connections are always either initiated at the one end, or the other,
 with a @%TCPopen@ call. On the answering end, there the listener.
-The connection afterwards is bidirectional.  This asymmetry on how 
+Afterwards the connection is bidirectional.  This asymmetry on how 
 a connection was created, shows up in the connection administration table.
 @c
 typedef struct {
@@ -779,7 +779,7 @@ Insert an empty value into the cache.
 
 @- err:<name>:<len>
 Name is the id of a 'mil' request. 
-The errormessage is stored in the 'errbuf' field of the cache item.
+The error message is stored in the 'errbuf' field of the cache item.
 @c
 	    if (strcmp(tp, "err") == 0) {
 		int len = atoi(p);
@@ -1558,7 +1558,7 @@ result_bat := fd.rpc("join(remote_bat, %s)", local_bat);
 
 Implementation is taken together for both @%TCPrpc@ and @%TCParpc@
 (a variant which does not expect a return). This variant is actually
-availabe as a complex variant of the 'mil' command (for remote MIL 
+available as a complex variant of the 'mil' command (for remote MIL 
 invocation).
 
 @- rpc client implementation

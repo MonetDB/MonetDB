@@ -21,7 +21,7 @@
 @v 1.0
 @* Introduction
 
-This module provides optimized code-expanded implementations of multiplxed
+This module provides optimized code-expanded implementations of multiplexed
 basic arithmetics ([+],[-],[*],[/],[%]) on void-headed, head-aligned BATs.
 Only the standard types sht, int, lng, flt, dbl are supported.
 

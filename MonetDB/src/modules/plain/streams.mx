@@ -128,7 +128,7 @@ data files.
 @-
 @{
 @-
-The implementation follows andshould be self-documenting
+The implementation follows and should be self-documenting
 @h
 #ifndef _STREAMS_H_
 #define _STREAMS_H_

@@ -29,7 +29,7 @@ is crucial to do table-updates (this would not be permitted in a strict
 algebra). 
 
 All commands needed for BAT updates, property management,
-search accellerator management, I/O, persistency, and storage options
+search accelerator management, I/O, persistency, and storage options
 can be found in this module.
 
 @* Module Definition
@@ -305,7 +305,7 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 @- BAT I/O, Persistency
 @T
 The BAT Buffer Pool (BBP) manages all known BATs. It administers
-thier logical and physical names and a reference count. BATs can
+their logical and physical names and a reference count. BATs can
 be {\em persistent}, {\em transient} or {\em session}. The BBP also manages
 swapping on a BAT level: a BAT is either loaded entirely or not.
 MIL variables of type {\tt bat} can either be loaded or not. When 
@@ -372,10 +372,10 @@ directory.  For each bat X, the following heaps are stored:
 \item[X.buns] an array with all the fixed-size parts of all BUNs.
 \item[X.hheap] if the head column contains a variable sized atoms (e.g. str),
 then the fixed-size part of a BUN contains an integer byte-offset into 
-the heap. String values themself are stored in this the X.hheap. 
+the heap. String values themselves are stored in this the X.hheap. 
 \item[X.theap] similar to X.hheap, but for the tail column.
 \item[X.hacc]. On each column, you might create {\em persistent accelerator
-structures}. Monet has two builtin accelerators (index and hash), but they
+structures}. Monet has two built-in accelerators (index and hash), but they
 are normally constructed on the fly. They are transient. Only hash-tables
 you can be made persistent. User-defined accelerators are always persistent.
 Only one persistent accelerator can exist per head column. It is stored in 
@@ -383,8 +383,8 @@ the X.hacc heap.
 \item[X.tacc] similar to X.hacc, but for the tail column. 
 \end{description}
 
-Each of these heaps can be {\bf compressed} using the unix {\tt compress}
-utility forming a X.ext.Z file. Monet wil automatically decompress it
+Each of these heaps can be {\bf compressed} using the Unix {\tt compress}
+utility forming a X.ext.Z file. Monet will automatically decompress it
 upon load. Compressed heaps cannot be memory mapped.
 
 A final file present for each t in the BAT directory is:
@@ -418,13 +418,13 @@ documentation.
 
 @- BAT Accelerators
 @T
-Search accelerators are datastructures that are used to speed up 
-access to data in BATs. Monet comes iwth the builtin accelerators
+Search accelerators are data structures that are used to speed up 
+access to data in BATs. Monet comes with the built-in accelerators
 {\tt index}, meaning binary tree index, and {\tt hash} meaning 
 bucket-chained hash table. The extension facilities of Monet allow
-more accelerators to be defined by users. Exanples arte the {\tt rtree}
+more accelerators to be defined by users. Examples are the {\tt rtree}
 and {\tt datavector}. The system variable {\tt monet\_acctbl} contains 
-a list of all currently known accelarator types.
+a list of all currently known accelerator types.
 
 \begin{verbatim}
 >monet_acctbl.print;

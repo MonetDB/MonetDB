@@ -168,7 +168,7 @@ as substring in the tail."
 @T
 Sets in Monet can be viewed in two ways:
 \begin{itemize} 
-\item by looking at both colums of a BAT together (Set-, or s-operators).
+\item by looking at both columns of a BAT together (Set-, or s-operators).
 \item by looking at the head column only (Key- or k-operators).
 \end{itemize} 
 For this reason, all standard set operations come in two flavors:
@@ -194,7 +194,7 @@ bat difference.
 bat intersection.
 \end{itemize}
 Implementations typically take two forms: if the input relation(s) is/are
-ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
+ordered, a merge-algorithm is used. Otherwise, hash-indexes are produced
 on demand for the hash-based algorithms.
 \\
 The {\tt [k,s]intersect(l,r)} operations result in all BUNs of {\tt l} that 
@@ -935,7 +935,7 @@ as it illustrates many of the issues.
 @+ Modeling With Properties
 @T
 The Monet kernel performs {\em run-time optimizations}. To choose between
-alternaticve algorithms in a sensible way, it maintains knowledge about 
+alternative algorithms in a sensible way, it maintains knowledge about 
 each BAT, sometimes as a {\em BAT property}, sometimes as two
 {\em column properties} for each column (head and tail)
 of a BAT. An example of the former is {\em size(bat) : int}
@@ -1000,7 +1000,7 @@ different strategies, according to different status in its operand properties,
 each algebraic operator may have different propagation rules with these 
 different situations as conditions.
 
-This module speficies full property propagation rules for the entire set
+This module specifies full property propagation rules for the entire set
 of standard algebraic MIL operators.
 
 @- Kernel vs Model Properties
@@ -1011,7 +1011,7 @@ run-rime by the query. The reason for this follows:
 Suppose we do {\tt B:=select(A,l,h)}
 from a large table A into B. If we now do {\tt C:=semijoin(A,B)} 
 we will get a C with the same size of B. Moreover they will be exactly 
-equal, so the {\tt sync()} properies of B and C will be equal. 
+equal, so the {\tt sync()} properties of B and C will be equal. 
 This transformation of {\tt sync()} properties can be done run-time
 without any properties, but not by a cost model at compile time.
 
@@ -1027,7 +1027,7 @@ although they do not occur in the Monet kernel at run-time.
 With the property propagation rules in hand, for each algebraic operator,
 split out for each different algorithmic strategy in each operator, it is 
 a small step to a full cost model. In the last section, cost functions 
-can be found for each different akgorithm. The design of this prolog program
+can be found for each different algorithm. The design of this Prolog program
 is such that the propagation rules are separated from the cost functions.
 In this way, we can experiment with different cost functions without modifying
 all code.
@@ -1040,20 +1040,20 @@ of more sophisticated methods like sampling or histograms. The cost
 functions just give a crude estimation of CPU cost for each operator.
 
 @+ Model Implementation
-The model is implemented as a series of prolog clauses. SWI/prolog
+The model is implemented as a series of Prolog clauses. SWI/Prolog
 gives you a free inference system, a programmer can directly concentrate
 on the rules that make up his model. This was the rationale for going 
-with prolog.
+with Prolog.
 
-The model consists of a bunch of prolog clauses that correspond 1-1 to 
-MIL algebra primitives. Special prolog clauses also exist for introducing
+The model consists of a bunch of Prolog clauses that correspond 1-1 to 
+MIL algebra primitives. Special Prolog clauses also exist for introducing
 a data model (that is, persistent BATs) in the model. 
 
 @- Data Definition
 @T
-We quickly sketch the prolog clauses that can be used to declare 
+We quickly sketch the Prolog clauses that can be used to declare 
 an object-oriented data model, mapped on Monet BATs, in the 
-prolog cost model:
+Prolog cost model:
 \begin{itemize}
 \item 
 {\small extent(table-name, cardinality)}\\
@@ -1062,19 +1062,19 @@ it that consists of a bat[oid,nil]. The oid column contains OIDs
 of all objects instances of this table. This bat is simply named 
 $<table-name>$. 
 \item 
-{\small attrib(table-name, attr-name, value-type, ordinality, min-value, max-value)}\\
+{\small attrib(table-name, attr-name, value-type, cardinality, min-value, max-value)}\\
 declares an attribute, and hence a BAT with [void,value] tuples. The void column
 is a dense column that contains OIDs of all objects. This bat is named 
 $table\_attr$. Monet actually generates automatically an {\bf inversion-list}
 bat[oid,value] that is sorted on the values. This bat is named {$tableRattr$}. 
 \item 
-{\small attrib(table-name, attr-name, value-type, ordinality)}\\
+{\small attrib(table-name, attr-name, value-type, cardinality)}\\
 This is a shorter way to declare an attribute. You do not need to specify
 the minimum and maximum values that are used in the uniform estimations; 
-monet assumes them, to be zero and $ordinality$.
+monet assumes them, to be zero and $cardinality$.
 This is only applicable for numerical attributes.
 \item 
-{\small relation(table-name, attr-name, table-name, ordinality)}\\
+{\small relation(table-name, attr-name, table-name, cardinality)}\\
 A relation is an attribute that refers to an object instead of a value.
 This will translate into a value of type oid. But referential integrity gives
 you now more knowledge: the values of this column will be a subset of the
@@ -1089,18 +1089,18 @@ the expected number of different colors if you select $tries$ time
 from the same set of $domain$ different values.
 
 This formula stems from the inner workings of the cost model but
-might come handy for estimating ordinalities that were generated with
+might come handy for estimating cardinalities that were generated with
 random assumptions. 
 \end{itemize}
 
 @- MIL to Prolog
 @T
-For each execution order, we give a mil-like prolog script. The
+For each execution order, we give a mil-like Prolog script. The
 first line tpcd() clause instantiates the tpcd data model.
 The other lines correspond 1-1 with MIL assignments statements,
 in which the variable to which is assigned is placed as the first
-parameter of the prolog clause. The prolog clause corresponds directly
-with the name of the MIL command mto be invoked, with the command
+parameter of the Prolog clause. The Prolog clause corresponds directly
+with the name of the MIL command to be invoked, with the command
 signature appended to it after an underscore. That is 
 {\bf\begin{verbatim}
 X := uselect(bat_x,any_y);
@@ -1109,11 +1109,11 @@ in MIL becomes:
 {\bf\begin{verbatim}
 uselect_batany(X, bat_x, any_y),
 \end{verbatim}}
-in prolog.
+in Prolog.
 
 Remember to change the ; into commas, but to end the script with
 a dot, and to place an empty white line at the end. That's what
-the SWI/prolog compiler wants you to do anyway.  
+the SWI/Prolog compiler wants you to do anyway.  
 
 {\bf As the reverse(bat) operation is common, we allow to identify
      the reverse view on a persistent bat {\tt table\_attr} with  
@@ -1122,7 +1122,7 @@ the SWI/prolog compiler wants you to do anyway.
 @- Bugs
 @T
 We should package this program into a utility that eats MIL
-directly.  It would be an attractive idea to have it calleable
+directly.  It would be an attractive idea to have it callable
 as an extension module from MIL directly. 
 
 @- Utility

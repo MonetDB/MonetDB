@@ -16,33 +16,33 @@
 @' All Rights Reserved.
 
 @f ascii_io
-@t The ascii io Module
+@t The ASCII io Module
 @a Niels Nes
 @* Ascii io Module
 
-A database cannot live with out bulk load/store operations. The ascii io
-module can be used bulk load from an ascii file or dump to one. 
-The file can plain ascii, gzipped or bzipped, decided by the extention 
+A database cannot live with out bulk load/store operations. The ASCII io
+module can be used bulk load from an ASCII file or dump to one. 
+The file can plain ASCII, gzipped or bzipped, decided by the extension 
 (none, gz or bz2).
 
 The load operation is for bulk loading a table, each column will be loaded
 into its own bat. The arguments are void-aligned bats describing the
-input, ie the name of the column, the tuple seperator and the type.  
+input, ie the name of the column, the tuple separator and the type.  
 The nr argument can be -1 (The input (datafile) is read until the end)
 or a maximum.
 
 The dump operation is for dumping a set of bats, which are aligned.
 Again with void-aligned arguments, with name (currently not used), 
-tuple seperator (the last is the record seperator) and bat to be dumped. 
+tuple separator (the last is the record separator) and bat to be dumped. 
 With the nr argument the dump can be limited (-1 for unlimited).
 
 The output operation is for ordered output. A bat (possibly form the collection)
 gives the order. For each element in the order bat the values in the bats are
-searched, if all are found they are outputed in the datafile, with the given
-seperators.
+searched, if all are found they are output in the datafile, with the given
+separators.
 
 The scripts from the ascii_io.mil file are all there too for backward 
-compatebility with the old Mload format files. 
+compatibility with the old Mload format files. 
 
 The load_format loads the format file, since the old format file was
 in a table format it can be loaded with the load command. 
@@ -50,7 +50,7 @@ in a table format it can be loaded with the load command.
 The result from load_format can be used with load_data to load the data
 into a set of new bats.
 
-These bats can be made persistent with the make_pesistent script or
+These bats can be made persistent with the make_persistent script or
 merge with existing bats with the merge_data script.
 
 The dump_format scripts dump a format file for a given set of 

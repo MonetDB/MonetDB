@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @f enum
-@t Enumeration Datatypes
+@t Enumeration Data Types
 @a Peter Boncz
 @v 1.0
 @* Introduction
@@ -24,8 +24,8 @@
 When large sets of data are stored and memory is short, one 
 seeks for memory occupation optimizations.
 
-One way to do this when the ordinality is low, is to substitute
-the datatype to a smaller ordinal datatype. For instance, when 
+One way to do this when the cardinality is low, is to substitute
+the data type by a smaller ordinal data type. For instance, when 
 less than 256 different string values occur in an attribute, one 
 could store them as a byte. 
 
@@ -36,7 +36,7 @@ as 'tostr' and 'fromstr' ADT functions, can be generated beforehand
 and use a mapping table to translate between the two representations. 
 
 This module implements encodings using 'chr' (1-byte encoding),
-and 'sht' (2-byte encoding), using a dynamic check on ordinality.
+and 'sht' (2-byte encoding), using a dynamic check on cardinality.
 
 Further space optimizations into values smaller than a byte are
 impossible in Monet, since all values need to have a unique memory address.
@@ -634,11 +634,11 @@ On the small DD benchmark, printing proved to take up half of the
 benchmark time. While this actually is a modeling error in the
 benchmark (all this is caused by printing cubes with thousands of entries --
 which is not very realistic) the following code was written to
-produce the ascii result more quickly.
+produce the ASCII result more quickly.
 
 It assumes the third column to be of type int (which is printed in octal:)
 and assumes the first parameters to be enumerated string. Thus, a simple
-lookup and copy can be done to construct the ascii table. The
+lookup and copy can be done to construct the ASCII table. The
 whole table is built in memory and flushed in one go to disk.
 @c
 @:enum_print1(char)@

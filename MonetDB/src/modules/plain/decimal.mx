@@ -298,8 +298,8 @@ Valid numbers have minimally 1 and maximally 16384 digits.  The valid scales are
 [-16384,16384]. There are two special values:
 \begin{description}
 \item[zero = +0e-32768] in order to simplify many operators, trailing zeros are removed from 
-decimal numbers (in that case, the number of digits is an indicator fo the value of a decimal). 
-This has as a consequence that a zero number would not be perimitted. Hence zero is treated as 
+decimal numbers (in that case, the number of digits is an indicator for the value of a decimal). 
+This has as a consequence that a zero number would not be permitted. Hence zero is treated as 
 a special case. Whenever a zero value decimal has to be produced, it is normalized to one canonical 
 form: the smallest possible positive number. This representation of zero has the benefit of that 
 zero does not have to be treated as a special case in the comparison operator.
@@ -1285,7 +1285,7 @@ int decimal_istenfold(bit *ret, decimal *val) {
 
 @- arithmetic
 @T
-Computer hardware does not provide builtin support for arbitrarly large numbers.
+Computer hardware does not provide built-in support for arbitrarily large numbers.
 The iterative algorithms employed here stem directly from Peter's primary school. 
 
 @- plus and minus

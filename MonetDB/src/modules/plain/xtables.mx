@@ -739,7 +739,7 @@ hash function and data size etc.;
 appropriate algorithm, i.e., with or without taking advantage of 
 an order of values in the parent groups;
 \item [physical properties:] Values \{standard and custom\}, 
-chosing between a fixed predefined and a custom hashmask. Custom
+choosing between a fixed predefined and a custom hashmask. Custom
 allows the user to determine the size of the hashmask (and indirectly 
 the estimated size of the result). The hashmask is $2^n - 1$ where $n$ 
 is given by the user, or 1023 otherwise, and the derived result

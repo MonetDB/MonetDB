@@ -20,7 +20,7 @@
 @t Performance Counters
 @T
 This is a memory/cpu performance measurement tool for 
-the followingprocessor (families).
+the following processor (families).
 \begin{tabular}{l}
 MIPS R10000/R12000 (IP27)\\
 Sun UltraSparcI/II (sun4u)\\ 
