@@ -465,7 +465,6 @@ void usage( char *prog ){
         fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
         fprintf(stderr, "\t\t -l language   | --language=lang    /* {mal,sql,mil} */\n");
         fprintf(stderr, "\t\t -S sessionkey   | --session=sessionkey    /* reconnect to session */\n");
-        fprintf(stderr, "\t\t -s sname   | --scenario=sname    /* applicable scenario */\n");
         fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
         fprintf(stderr, "\t\t -P passwd   | --passwd=passwd  /* password */\n");
         fprintf(stderr, "\t\t -e stmt     | --execute=stmt  /* run single statement */\n");
@@ -477,7 +476,7 @@ int main(int ac, char **av) {
         char buf[BUFSIZ];
         char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
         char *login = NULL, *db = NULL, *schema= NULL, *host=NULL;
-	char *scenario = NULL, *language = _strdup("mal");
+	char *language = _strdup("mal");
 	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, trace = 0, skey=0;
 	opt	*set= NULL;
  
@@ -495,7 +494,6 @@ int main(int ac, char **av) {
                {"port", 1, 0, 'p'},
                {"passwd", 1, 0, 'P'},
                {"user", 1, 0, 'u'},
-               {"scenario", 1, 0, 's'},
                {"language", 1, 0, 'l'},
                {"session", 1, 0, 'S'},
                {"execute", 1, 0, 'e'},
@@ -563,8 +561,6 @@ int main(int ac, char **av) {
 		case 'P':
 			passwd = _strdup(optarg);
 			break;
-		case 's': scenario= _strdup(optarg);
-			break;
 		case 'S': skey= strtol(optarg,NULL,10);
 			break;
 		case 'u':
@@ -622,10 +618,6 @@ int main(int ac, char **av) {
 	host= mo_find_option(set, setlen, "host");
 	if (host == NULL) strcpy(host,"localhost");
 
-        if (!scenario) {
-		scenario = mo_find_option(set, setlen, "scenario");
-		if( scenario==0) scenario= _strdup(language);
-	}
 
         prompt = mo_find_option(set, setlen, "prompt");
         if (!prompt) {
@@ -648,14 +640,19 @@ int main(int ac, char **av) {
 		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
 
 	toConsole = stdout;
-	mid = Mconnect(host,port, user, passwd,scenario);
-	/* fprintf(toConsole,"#connect %s:%d %s:%s:%d\n",
-			host,port,user,scenario,skey);
+	mid = Mconnect(host,port, user, passwd);
+	/* fprintf(toConsole,"#connect %s:%d %s:%d\n",
+			host,port,user,skey);
 	*/
 	mid->trace = debug;
 	if (Merror(mid)) {
 		Mexplain(mid,toConsole);
 		EXIT(2);
+	}
+	if(language){
+		char buf[BUFSIZ];
+		snprintf(buf,BUFSIZ,"%s();",language);
+		doRequest(mid, buf);				\
 	}
  
 	if (prelude) {
