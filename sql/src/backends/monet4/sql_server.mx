@@ -640,9 +640,6 @@ if (isnil(err)){
 	fork(sqllogmanager);
 
 	mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
-	# start a default mapi client for debugging, this should go once
-	# MonetDB SQL gets stable.
-	mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
 } else {
 	printf(err);
 	drop(sql_server);
