@@ -1,0 +1,40 @@
+# The first MAL compiler test
+# the result is retained in MCCtst903.c
+# which can be compiled and linked with the system.
+
+
+function tst903();
+    b:= new(:void,:lng);
+    barrier (go,i):= newRange(0:lng);
+        k:= rand();
+        l:= lng(k);
+        insert(b,nil,l);
+        redo (go,i):= nextElement(1:lng,1000000:lng);
+    exit (go,i);
+#setReadMode(b);
+    mx:= max(b);
+#printf("max %d",mx);
+    mi:= min(b);
+#printf(" min %d\n",mi);
+    t0:= alarm.usec();
+    c:= copy(b);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    printf("#copy %d",d0);
+    cnt:= count(c);
+    printf("#count %d\n",cnt);
+    t0:= alarm.usec();
+    z:= select(b,25:lng,25:lng);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    printf("#select none %d",d0);
+    cnt:= count(z);
+    printf(" count %d\n",cnt);
+    t0:= alarm.usec();
+    z2:= select(b,mi,mx);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    printf("#select all %d",d0);
+end tst903;
+
+MCcompiler("Admin","tst903");
