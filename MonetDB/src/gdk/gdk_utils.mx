@@ -943,6 +943,7 @@ int GDKinit(int argc, char** argv) {
 		"GDKhomeScan: %s: directory name missing.\n",
 		home); 
 	}
+	XPROPDEBUG GDKdebug |= 8; 
 	PROPDEBUG GDKdebug |= 2; 
 	MT_init_posix();
 	THRinit();
