@@ -163,7 +163,7 @@ stdout of test 'tst4500` in directory 'src/mal` itself:
 !ERROR: end tunique;	# 4  
 !ERROR: 'mil_algebra_procs.tunique' undefined in Admin.main[24]
 function Admin.main():int;	# 0  (main:int)
-    optimizer.debugOptimizers();	# 1 QOTdebugOptimizers ($1:void)
+    optimizer.setDebug();	# 1 QOTdebugOptimizers ($1:void)
     optimizer.CXoptimizer();	# 2 QOTCXoptimizer ($2:str)
     optimizer.ARoptimizer();	# 3 QOTARoptimizer ($3:str)
     optimizer.DCoptimizer();	# 4 QOTDCoptimizer ($4:str)
