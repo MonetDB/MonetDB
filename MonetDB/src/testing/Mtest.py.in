@@ -184,6 +184,15 @@ path = urllib.url2pathname
 url = urllib.pathname2url
 ### url(str) #
 
+def try_open(path, mode) :
+    try:
+        f = open(path, mode)
+    except IOError, (IOerrNo, IOerrStr):
+        Warn("Opening file '%s' in mode '%s' failed with #%d: '%s'." % (path, mode, IOerrNo, IOerrStr))
+        f = None
+    return f
+###  try_open(path, mode) #
+
 def CreateHtmlIndex (env) :
     TSTDIR=env['TSTDIR']
     TSTTRGBASE=env['TSTTRGBASE']
@@ -1723,19 +1732,24 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             TestErr.flush()
             q.close()
     else:
-        TestOut = open(TestOutFile, 'a')
-        TestErr = open(TestErrFile, 'a')
+        TestOut = try_open(TestOutFile, 'a')
+        TestErr = try_open(TestErrFile, 'a')
 
-    TestOut.write(Prompt('Done.'))
-    TestOut.close()
-    TestErr.write(Prompt('Done.'))
-    TestErr.close()
+    if TestOut is not None:
+        TestOut.write(Prompt('Done.'))
+        TestOut.close()
+    if TestErr is not None:
+        TestErr.write(Prompt('Done.'))
+        TestErr.close()
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
 
 def Check(command, input) :
     pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")
     pIn.write(input)
-    pIn.close()
+    try:
+        pIn.close()
+    except IOError, (IOerrNo, IOerrStr):
+        Warn("Closing input pipe in Check failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     qOut, qErr = ReadMultiple([pOut, pErr])
     qOut = string.split(qOut, '\n')
     qErr = string.split(qErr, '\n')
