@@ -219,11 +219,6 @@ if [ "${os}" = "Linux" ] ; then
 		fi
 	fi
 	domain="`domainname`"
-	if [ "${hw}" = "x86_64"  -a  "${domain}" = "beo-cluster"  -a  "${COMP}" = "GNU" ] ; then
-		# currently we need to use "gcc-3.3" & "g++-3.3" on spin
-		cc="gcc-3.3"
-		cxx="g++-3.3"
-	fi
 	if [ -x /usr/lib/java/bin/javac  -a  -x /usr/lib/java/bin/jar ] ; then
 		# java in Konstanz
 		binpath="/usr/lib/java/bin:${binpath}"
