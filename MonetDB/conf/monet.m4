@@ -285,6 +285,8 @@ AC_ARG_ENABLE(optimize,
 if test "x$enable_optim" = xyes; then
   dnl Optimization flags
   if test "x$enable_debug" = xno; then
+    dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
+    CFLAGS="`echo " $CFLAGS " | sed -e 's| \-g | |g' -e 's|^ ||' -e 's| $||'`"
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)[[^0-9]].*$|\1|'`"
