@@ -348,8 +348,8 @@ void interpret_unpin(batrec *r, str s) {
 		}
 		MT_unset_lock(monet_voidLock, "unpin");
 	    }
-	    BBPunfix(b->batCacheid);
 	}
+        BBPunfix(r->id);
 }
 
 @- param execution(name,lt,argc,argv) 
@@ -409,20 +409,22 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
     return argc;
 }
 
-void interpret_params_pin(int argc, ValPtr argv, str op_name) {
-   int i = 0;
-   while(++i < argc) 
-   if (argv[i].vtype == TYPE_bat) {
-	interpret_pin(&argv[i].val.br,op_name);
-   }
-}
-
 void interpret_params_unpin(int argc, ValPtr argv, str op_name) {
    int i = 0;
    while(++i < argc) 
    if (argv[i].vtype == TYPE_bat) {
 	interpret_unpin(&argv[i].val.br,op_name);
    }
+}
+
+int interpret_params_pin(int argc, ValPtr argv, str op_name) {
+   int ret = 1, i = 0;
+   while(++i < argc) 
+   if (argv[i].vtype == TYPE_bat) {
+	ret &= (interpret_pin(&argv[i].val.br,op_name) != NULL);
+   }
+   if (!ret) interpret_params_unpin(argc, argv, op_name);
+   return ret;
 }
 
 /* the guts of MIL interpretation */
@@ -815,8 +817,9 @@ exec:	stamp = BBPcurstamp();
         	}
 		return i;
 	}
-	interpret_params_pin(argc,argv,fcn_nme);
-
+	if (!interpret_params_pin(argc,argv,fcn_nme)) {
+		return -1;
+	}
 	if (sig->token == TOK_COMMAND) {
 		i = (*sig->pack_fcn)(argc, argv);
 		*res = argv[0];
@@ -1539,7 +1542,8 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 	/* Evaluate the command line parameters.
 	 */
 	argc = interpret_params(stk, params, argv+1, "batloop");
-	interpret_params_pin(argc, argv+1, "batloop");
+	if (!interpret_params_pin(argc, argv+1, "batloop"))
+		return -1;
 	argv[1] = argv[2];
 	if (argc <= 1 || argv[1].vtype != TYPE_bat) {
 		GDKerror("interpret_iterator: iterator should work on a BAT.\n");

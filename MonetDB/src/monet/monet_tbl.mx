@@ -730,15 +730,20 @@ int TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl) 
 
 		if (argv[i].vtype == TYPE_bat) { 
                         bat bid = argv[i].val.bval;
+			int htpe, ttpe;
 			BAT *b;
 			BBPfix(bid);
 		     	b = BBPquickdesc(ABS(bid),FALSE); 
 			if (b) {
                                 /* swap head/tail types in case of mirrored bats */
-				ATOM_LOOKUP(pt->htps[i], (bid>0)?b->htype:b->ttype, atomtbl);
-				ATOM_LOOKUP(pt->ttps[i], (bid>0)?b->ttype:b->htype, atomtbl);
+				htpe = (bid>0)?b->htype:b->ttype;
+				ttpe = (bid>0)?b->ttype:b->htype;
 			}
 			BBPunfix(bid);
+			if (b) {
+				ATOM_LOOKUP(pt->htps[i], htpe, atomtbl);
+				ATOM_LOOKUP(pt->ttps[i], ttpe, atomtbl);
+			}
 		}
 	} 
 	return 0;
