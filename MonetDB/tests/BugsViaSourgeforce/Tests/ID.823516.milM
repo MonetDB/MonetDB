@@ -28,9 +28,9 @@ var post := view_bbp_name().copy().rename("post");
 
 # both the original BAT and the view BAT
 # are gone. correct.
-kdiff(pre,post).reverse().mark(nil).reverse().print();
+kdiff(pre,post).reverse().mark(nil).sort().reverse().print();
 
 # the post BAT is new. correct.
 # the histogram-accellerator BAT of the view 
 # didn't get removed and is still there. Wrong!
-kdiff(post,pre).reverse().mark(nil).reverse().print();
+kdiff(post,pre).reverse().mark(nil).sort().reverse().print();
