@@ -301,7 +301,7 @@ void BBPunlock(str nme) {
 	for(i=BBPLOCKMASK; i>=0;  i--)
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], nme);
 	MT_unset_lock(GDKcacheLock, nme);
-	BBP_notrim = NULL;
+	BBP_notrim = 0;
 	locked_by = 0;
 	MT_unset_lock(GDKtrimLock, nme);
 }
@@ -510,7 +510,7 @@ void BBPinit() {
 
 	/* init hash table */
 	BBPinithash();
-	BBP_notrim = NULL;
+	BBP_notrim = 0;
 
 	if (BBPoid == 0) {
 		OIDseed(OIDrand()); /* if not yet done, init oid */
@@ -896,7 +896,7 @@ void BBPcacheit(BAT* b) {
         if (pid != locked_by) {
                 MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit");
                 MT_unset_lock(GDKcacheLock, "BBPcacheit");
-                BBP_notrim = NULL;
+                BBP_notrim = 0;
                 MT_unset_lock(GDKtrimLock, "BBPcacheit");
         }
 }
@@ -1051,7 +1051,7 @@ int BBPrename(bat bid, str nme) {
 		BBPdirty(1);
 	}
 	MT_unset_lock(GDKcacheLock, "BBPrename"); 
-	BBP_notrim = NULL;
+	BBP_notrim = 0;
 	MT_unset_lock(GDKtrimLock, "BBPrename"); 
 	return 0;
 }
@@ -1744,7 +1744,7 @@ void BBPtrim(lng memtarget, lng vmtarget) {
 		THRprintf(GDKerr, "BBPTRIM_EXIT: memsize=%u,vmsize=%u\n", 
 			(unsigned int) GDKmem_inuse(), (unsigned int) GDKvm_cursize());
 	}
-	BBP_notrim = NULL;
+	BBP_notrim = 0;
 	MT_unset_lock(GDKtrimLock, "BBPtrim"); 
 }
 
