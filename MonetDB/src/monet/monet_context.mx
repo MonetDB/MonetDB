@@ -121,7 +121,7 @@ void CNTXTinit(void) {
         size_t size = (monet_cntxtmax+1)*sizeof(CntxtRec);
         size_t maxsize = monet_cntxtlim*sizeof(CntxtRec);
 
-        monet_cntxtbuf = (CntxtRec*) GDKvmalloc(size, &maxsize);
+        monet_cntxtbuf = (CntxtRec*) GDKvmalloc(size, &maxsize,1);
 	MT_alloc_register(monet_cntxtbuf, maxsize, 'C');
         if (monet_cntxtbuf && maxsize >= monet_cntxtlim*sizeof(CntxtRec)) {
 		monet_cntxtlim = (Cntxt) (maxsize / sizeof(CntxtRec));

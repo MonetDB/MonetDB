@@ -302,7 +302,8 @@ ptr bun_tail(BAT *b, size_t nr){
 
 BAT *void_bat_create(int adt, size_t nr) {
 	BAT *b = BATnew(TYPE_void,adt,nr);
-	BATseqbase(b,0);
+	/* check for correct structures */
+	if( BATmirror(b)) BATseqbase(b,0);
 	return b;
 }
 
@@ -387,6 +388,7 @@ size_t create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 		fmt[p].tostr = &ASCIIadt_toStr;
 		fmt[p].frstr = &ASCIIadt_frStr;
 		fmt[p].extra = NULL;
+		fmt[p].c = NULL;
 		if (ascii_io_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name );
 	}
@@ -481,8 +483,9 @@ oid check_BATs( ascii *as ){
 int ASCIIcreate_bats( ascii *as ){
 	ascii_io *fmt = as->format;
 	size_t i;
+	int errors= GDKerrorCount();
 
-	for (i=0; i<as->nr_attrs; i++){
+	for (i=0; i<as->nr_attrs && GDKerrorCount()==errors; i++){
 		fmt[i].c = void_bat_create(fmt[i].adt,as->nr);
 		if (!fmt[i].c) {
 			GDKerror("Failed to create bat of size %d\n", as->nr);
@@ -807,13 +810,16 @@ read_more(bstream * in, stream * out, int n)
 int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 	int res = 0, done = 0;
 	size_t i = 0;
+	int errors;
 	char *sep = as->format[as->nr_attrs-1].sep;
         int seplen = as->format[as->nr_attrs-1].seplen;
 
 	if (ascii_io_debug)
 		stream_printf( GDKerr, "ASCIIload_file\n");
 
-	while((b->pos < b->len || !b->eof) && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
+	errors= GDKerrorCount();
+	while(( b->pos < b->len || !b->eof) && GDKerrorCount()==errors &&
+		res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
 		char *s, *end;
 		if (b->pos >= b->len && 
 		    read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
@@ -993,11 +999,14 @@ ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr )
 BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr ){
 	BAT *bats = NULL;
 	ascii as;
+	int errors;
 
 	as.nr_attrs = 0;
 	as.nr = nr;
+	errors= GDKerrorCount();
 	if (create_loadformat( &as, names, seps, types) != ~(size_t)0 && 
-	    ASCIIcreate_bats( &as ) >= 0){
+	    ASCIIcreate_bats( &as ) >= 0 &&
+	    GDKerrorCount()==errors){
 		if (ASCIIload_file( &as, s, out )>=0)
 			bats = ASCIIcollect_bats( &as );
 	}
