@@ -1447,7 +1447,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             ShwnOut = open(TST+".shutdown.out","w")
             ShwnErr = open(TST+".shutdown.err","w")
             RunIt(Shwn, "", ShwnOut, ShwnErr)
-            time.sleep(0.5)             # give it time to actually shut down
+            time.sleep(1)             # give it time to actually shut down
 
         try:
             if SERVER == "MAPI":
