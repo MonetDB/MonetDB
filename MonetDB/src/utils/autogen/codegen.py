@@ -425,14 +425,14 @@ def read_depsfile(incdirs, cwd, topdir):
 def codegen(tree, cwd, topdir):
     includes = {}
     incmap = {}
-    if "INCLUDES" in tree.keys():
-        includes,incmap = read_depsfile(tree.value("INCLUDES"),cwd, topdir)
+    if tree.has_key("INCLUDES"):
+        includes,incmap = read_depsfile(tree["INCLUDES"],cwd, topdir)
 
     deps = {}
-    for i in tree.keys():
+    for i,v in tree.items():
         targets = []
-        if type(tree.value(i)) == type({}) and tree.value(i).has_key("SOURCES"):
-            for f in tree.value(i)["SOURCES"]:
+        if type(v) is type({}) and v.has_key("SOURCES"):
+            for f in v["SOURCES"]:
                 base,ext = split_filename(f)
                 do_code_extract(f,base,ext, targets, deps, cwd)
             if i[0:8] != "headers_":
@@ -443,8 +443,8 @@ def codegen(tree, cwd, topdir):
                 targets = do_code_gen(targets,deps,bin_code_gen)
             do_deps(targets,deps,includes,incmap,cwd)
             libs = do_libs(deps)
-            tree.value(i)["TARGETS"] = targets
-            tree.value(i)["DEPS"] = deps
+            v["TARGETS"] = targets
+            v["DEPS"] = deps
 
             if i[0:4] == "lib_":
                 lib = i[4:] + "_LIBS"
@@ -452,15 +452,15 @@ def codegen(tree, cwd, topdir):
                     lib = lib[1:]
                 if libs.has_key(lib):
                     d = libs[lib]
-                    if tree.value(i).has_key('LIBS'):
+                    if v.has_key('LIBS'):
                         for l in d:
-                            tree.value(i)['LIBS'].append(l)
+                            v['LIBS'].append(l)
                     else:
-                        tree.value(i)['LIBS'] = d
+                        v['LIBS'] = d
             elif i == "LIBS":
                 for l,d in libs.items():
                     n,dummy = string.split(l,"_",1)
-                    tree.value(i)[n+'_DLIBS'] = d
+                    v[n+'_DLIBS'] = d
             else:
                 for l,d in libs.items():
-                    tree.value(i)[l] = d
+                    v[l] = d

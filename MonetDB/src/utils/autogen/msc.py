@@ -169,9 +169,9 @@ def msc_translate_ext( f ):
 
 def msc_find_target(target,msc):
     tree = msc['TREE']
-    for t in tree.keys():
-        if(type(tree.value(t)) == type({}) and tree.value(t).has_key('TARGETS')):
-            targets = tree.value(t)['TARGETS']
+    for t,v in tree.items():
+        if(type(v) is type({}) and v.has_key('TARGETS')):
+            targets = v['TARGETS']
             if (target in targets):
                 if (t == "BINS" or t[0:4] == "bin_"):
                     return ("BIN","BIN")
@@ -635,7 +635,7 @@ CXXEXT = \\\"cxx\\\"
 
 ''')
 
-    if 'INCLUDES' not in tree.keys():
+    if not tree.has_key('INCLUDES'):
 	tree.add('INCLUDES',[])
 
     msc = {}
@@ -668,38 +668,38 @@ CXXEXT = \\\"cxx\\\"
     fd.write("TOPDIR = %s\n" % reldir)
     fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % string.replace(srcdir, '/', '\\'))
     fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
-    if ("SUBDIRS" in tree.keys()):
+    if tree.has_key("SUBDIRS"):
         fd.write("all: all-recursive all-msc\n")
         fd.write("install: install-recursive install-msc\n")
     else:
         fd.write("all: all-msc\n")
         fd.write("install: install-msc\n")
 
-    for i in tree.keys():
+    for i,v in tree.items():
         j = i
-        if (string.find(i,'_') >= 0):
+        if string.find(i,'_') >= 0:
             k,j = string.split(i,'_',1)
             j = string.upper(k)
-        if (type(tree.value(i)) == type([])):
+        if type(v) is type([]):
             if (output_funcs.has_key(i)):
-                output_funcs[i](fd,i,tree.value(i),msc)
+                output_funcs[i](fd,i,v,msc)
             elif (output_funcs.has_key(j)):
-                output_funcs[j](fd,i,tree.value(i),msc)
+                output_funcs[j](fd,i,v,msc)
             elif (i != 'TARGETS'):
-                msc_assignment(fd,i,tree.value(i),msc)
+                msc_assignment(fd,i,v,msc)
 
-    for i in tree.keys():
+    for i,v in tree.items():
         j = i
-        if (string.find(i,'_') >= 0):
+        if string.find(i,'_') >= 0:
             k,j = string.split(i,'_',1)
             j = string.upper(k)
-        if (type(tree.value(i)) == type({})):
+        if type(v) is type({}):
             if (output_funcs.has_key(i)):
-                output_funcs[i](fd,i,tree.value(i),msc)
+                output_funcs[i](fd,i,v,msc)
             elif (output_funcs.has_key(j)):
-                output_funcs[j](fd,i,tree.value(i),msc)
+                output_funcs[j](fd,i,v,msc)
             elif (i != 'TARGETS'):
-                msc_assignment(fd,i,tree.value(i),msc)
+                msc_assignment(fd,i,v,msc)
 
     if (len(msc['BUILT_SOURCES']) > 0):
         fd.write("BUILT_SOURCES = ")

@@ -553,12 +553,12 @@ CXXEXT = \\\"cc\\\"
 
 ''')
 
-    if 'INCLUDES' not in tree.keys():
+    if not tree.has_key('INCLUDES'):
 	tree.add('INCLUDES',[])
 
     am = {}
-    if ('NAME' in tree.keys()):
-        am['NAME'] = tree.value('NAME')
+    if tree.has_key('NAME'):
+        am['NAME'] = tree['NAME']
     else:
         if (cwd != topdir):
             path = cwd
@@ -589,17 +589,17 @@ CXXEXT = \\\"cc\\\"
     am['InstallList'].append(am['CWD']+"\n")
     am['OutList'] = [ am['CWD'] + 'Makefile' ]
 
-    for i in tree.keys():
+    for i,v in tree.items():
         j = i
         if (string.find(i,'_') >= 0):
             k,j = string.split(i,'_',1)
             j = string.upper(k)
         if (output_funcs.has_key(i)):
-            output_funcs[i](fd,i,tree.value(i),am)
+            output_funcs[i](fd,i,v,am)
         elif (output_funcs.has_key(j)):
-            output_funcs[j](fd,i,tree.value(i),am)
+            output_funcs[j](fd,i,v,am)
         elif( i != 'TARGETS'):
-            am_assignment(fd,i,tree.value(i),am)
+            am_assignment(fd,i,v,am)
 
     if (len(am['BUILT_SOURCES']) > 0):
         fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES']," ",""))

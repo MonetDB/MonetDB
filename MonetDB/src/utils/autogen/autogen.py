@@ -11,7 +11,7 @@ import am
 import msc
 from codegen import *
 import tokenize
-from var import *
+import var
 import os
 import sys
 
@@ -20,7 +20,7 @@ def isName(t):
 
 class parser:
     def __init__ (self):
-        self.curvar = groupvar("top")
+        self.curvar = var.groupvar("top")
         self.top = self.curvar
         self.cnt = 0
         self.state = "defs"
@@ -37,14 +37,14 @@ class parser:
         elif (self.state == "defs" and isName(token)):
             if (self.curvar != None):
                 self.stack.append(self.curvar)
-            self.curvar = var(token)
+            self.curvar = var.var(token)
             self.state = "var"
         elif (self.state == "=" and token == "\\"):
             self.state = "\\"
         elif (self.state == "var" and token == "="):
             self.state = "="
         elif (self.state == "=" and token == "{"):
-            self.curvar = groupvar(self.curvar._name)
+            self.curvar = var.groupvar(self.curvar._name)
             self.state = "defs"
             self.cnt = self.cnt+1
         elif ((self.state == "defs" and token == "}") or (self.state == "=" and token == "\n") or (self.state == "var" and token == "\n")):
@@ -58,8 +58,8 @@ class parser:
         elif (self.state == "=" and isName(token)):
             if token == '""':
                 token = ""
-            if (self.top._values.has_key(token)):
-                for i in self.top.value(token):
+            if (self.top.has_key(token)):
+                for i in self.top[token]:
                     self.curvar.append(i)
             else:
                 self.curvar.append(token)
@@ -108,8 +108,8 @@ def main(cwd,topdir,automake):
     codegen(p.curvar,cwd,topdir)
     (InstallList,OutList) = am.output(p.curvar,cwd,topdir,automake)
     msc.output(p.curvar,cwd,topdir)
-    if ('SUBDIRS' in p.curvar.keys()):
-        subdirs = expand_subdirs(p.curvar.value('SUBDIRS'))
+    if p.curvar.has_key('SUBDIRS'):
+        subdirs = expand_subdirs(p.curvar['SUBDIRS'])
         for dir in subdirs:
             d = os.path.join(cwd,dir)
             if (os.path.exists(d)):
