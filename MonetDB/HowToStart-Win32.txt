@@ -214,5 +214,5 @@ NOTE: the current 'nmake install' does not yet generate this
       'nmake install'. In the top-level directory of the MonetDB build
       tree, call
 
- nmake html
+ nmake docs
 

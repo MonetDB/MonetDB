@@ -55,5 +55,5 @@ targetdirs:
 	if not exist "$(pkglibdir)"		$(MKDIR) "$(pkglibdir)"
 	if not exist "$(pkgincludedir)"		$(MKDIR) "$(pkgincludedir)"
 
-html:
+docs:
 	python "$(SRCDIR)\doc\mkdoc.py" "$(SRCDIR)" "$(prefix)"
