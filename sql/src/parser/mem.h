@@ -6,8 +6,10 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include <gdk.h>
-#include <stdio.h>
+extern void* 	GDKmalloc  (size_t size);
+extern void* 	GDKrealloc (void* pold, size_t size);
+extern void	GDKfree    (void* blk); 
+extern char*	GDKstrdup  (char *s);
 
 #define NEW( type ) (type*)GDKmalloc(sizeof(type) )
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
