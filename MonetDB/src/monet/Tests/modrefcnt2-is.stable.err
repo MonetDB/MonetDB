@@ -83,7 +83,7 @@ ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' wit
 
 MAPI  = anonymous@draco:58320
 ACTION= mapi_get_row
-QUERY = # Consistency check:
+QUERY = drop("lock");
 ERROR = !ERROR: TBL_unloadmod: lock was not loaded.
 
 # 15:28:40 >  
