@@ -774,7 +774,10 @@ def GetBitsAndModsAndStatic(env) :
         quit;
     ''')
     ##module("NoModule");
-    pIn.close()
+    try:
+        pIn.close()
+    except IOError, (IOerrNo, IOerrStr):
+        Warn("Closing input pipe in GetBitsAndModsAndStatic failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     qOut, qErr = ReadMultiple([pOut, pErr])
     env['TST_BITS'] = ""
     env['TST_MODS'] = []
@@ -1498,7 +1501,10 @@ def CollectIt(pOut, pErr, TestOut, TestErr) :
 
 def RunIt(cmd, TestIn, TestOut, TestErr) :
     pIn, pOut, pErr = LaunchIt(cmd, TestIn, TestOut, TestErr)
-    pIn.close()
+    try:
+        pIn.close()
+    except IOError, (IOerrNo, IOerrStr):
+        Warn("Closing input pipe in RunIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     CollectIt(pOut, pErr, TestOut, TestErr)
 ### RunIt(cmd, TestIn, TestOut, TestErr) #
 
@@ -1557,7 +1563,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = Srvr+' ; echo ; '
         Srvr = Srvr+'echo Over..'
 
-        pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
+        pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, '\nprintf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
         ln=""
         while len(ln) < 6 or ln[:6] not in ['Ready.','Over..']:
             ln=pSrvrOut.readline()
@@ -1673,7 +1679,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             pSrvrIn.flush()
         except IOError:
             pass
-        pSrvrIn.close()
+        try:
+            pSrvrIn.close()
+        except IOError, (IOerrNo, IOerrStr):
+            Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
         if os.name != "nt":
             ATJOB2 = StartAt(MkillUsers)
