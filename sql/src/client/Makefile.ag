@@ -12,7 +12,8 @@ INCLUDES = \
 
 lib__sql = {
 	SOURCES = sql.m sql_module.c catalog_module.c statement_dump.c
-	LIBS = ../common/libsql
+	LIBS = ../common/libsql \
+		-L$(MONETDIST)/lib/Monet 
 }
 
 bin_sql_client = {
