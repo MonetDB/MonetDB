@@ -2,7 +2,7 @@ RELEASE NOTES
 MonetDB JDBC driver version 0.3 beta
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2004-03-29
+Release date: 2004-03-30
 
 This JDBC driver for MonetDB is a second working implementation of a JDBC driver
 for the Monet Main Memory Database. See http://monetdb.cwi.nl/ for more info
@@ -32,8 +32,12 @@ this driver.
 	. getTypeMap()
 	. getWarnings()
 	. isClosed()
+	. releaseSavepoint(java.sql.Savepoint)
     . rollback()
+	. rollback(java.sql.Savepoint)
     . setAutoCommit(boolean autoCommit)
+	. setSavepoint()
+	. setSavepoint(java.lang.String)
 	. setTypeMap()
   * java.sql.Statement interface
     . close()

@@ -325,7 +325,26 @@ public class MonetConnection implements Connection {
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) {return(null);}
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return(null);}
 	public PreparedStatement prepareStatement(String sql, String[] columnNames) {return(null);}
-	public void releaseSavepoint(Savepoint savepoint) {}
+
+	/**
+	 * Removes the given Savepoint object from the current transaction. Any
+	 * reference to the savepoint after it have been removed will cause an
+	 * SQLException to be thrown.
+	 *
+	 * @param savepoint the Savepoint object to be removed
+	 * @throws SQLException if a database access error occurs or the given
+	 *         Savepoint object is not a valid savepoint in the current
+	 *         transaction
+	 */
+	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+
+		MonetSavepoint sp = (MonetSavepoint)savepoint;
+		if (!sp.isValid()) throw new SQLException("Savepoint invalidated");
+
+		// send the appropriate query string to the database
+		sendIndependantCommand("SRELEASE s" + sp.getId() + ";");
+	}
 
 	/**
 	 * Undoes all changes made in the current transaction and releases any
@@ -342,7 +361,23 @@ public class MonetConnection implements Connection {
 		sendRollback();
 	}
 
-	public void rollback(Savepoint savepoint) {}
+	/**
+	 * Undoes all changes made after the given Savepoint object was set.
+	 * <br /><br />
+	 * This method should be used only when auto-commit has been disabled.
+	 *
+	 * @param savepoint the Savepoint object to roll back to
+	 * @throws SQLException if a database access error occurs, the Savepoint
+	 *         object is no longer valid, or this Connection object is currently
+	 *         in auto-commit mode
+	 */
+	public void rollback(Savepoint savepoint) throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+
+		// send the appropriate query string to the database
+		MonetSavepoint sp = (MonetSavepoint)savepoint;
+ 		sendIndependantCommand("SROLLBACK s" + sp.getId() + ";");
+	}
 
 	/**
 	 * Sets this connection's auto-commit mode to the given state. If a
@@ -373,8 +408,51 @@ public class MonetConnection implements Connection {
 	public void setCatalog(String catalog) {}
 	public void setHoldability(int holdability) {}
 	public void setReadOnly(boolean readOnly) {}
-	public Savepoint setSavepoint() {return(null);}
-	public Savepoint setSavepoint(String name) {return(null);}
+
+	/**
+	 * Creates an unnamed savepoint in the current transaction and returns the
+	 * new Savepoint object that represents it.
+	 *
+	 * @returns the new Savepoint object
+	 * @throws SQLException if a database access error occurs or this Connection
+	 *         object is currently in auto-commit mode
+	 */
+	public Savepoint setSavepoint() throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+
+		// create a new Savepoint object
+		MonetSavepoint sp = new MonetSavepoint();
+		// send the appropriate query string to the database
+		sendIndependantCommand("SSAVEPOINT s" + sp.getId() + ";");
+
+		return(sp);
+	}
+
+	/**
+	 * Creates a savepoint with the given name in the current transaction and
+	 * returns the new Savepoint object that represents it.
+	 *
+	 * @param name a String containing the name of the savepoint
+	 * @returns the new Savepoint object
+	 * @throws SQLException if a database access error occurs or this Connection
+	 *         object is currently in auto-commit mode
+	 */
+	public Savepoint setSavepoint(String name) throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+
+		// create a new Savepoint object
+		MonetSavepoint sp;
+		try {
+			sp = new MonetSavepoint(name);
+		} catch (IllegalArgumentException e) {
+			throw new SQLException(e.getMessage());
+		}
+		// send the appropriate query string to the database
+		sendIndependantCommand("SSAVEPOINT s" + sp.getId() + ";");
+
+		return(sp);
+	}
+
 	public void setTransactionIsolation(int level) {}
 
 	/**
@@ -426,19 +504,8 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 */
 	void sendCommit() throws SQLException {
-		// send commit to the server
-		synchronized(monet) {
-			try {
-				// make sure we have the prompt
-				monet.waitForPrompt();
-				// send the commit command (note the S in front is a protocol issue)
-				monet.writeln("SCOMMIT;");
-				// wait for the prompt again
-				monet.waitForPrompt();
-			} catch (IOException e) {
-				throw new SQLException(e.toString());
-			}
-		}
+		// send commit to the server (note the S in front is a protocol issue)
+		sendIndependantCommand("SCOMMIT;");
 	}
 
 	/**
@@ -449,13 +516,26 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 */
 	void sendRollback() throws SQLException {
-		// send commit to the server
+		// send commit to the server (note the S in front is a protocol issue)
+		sendIndependantCommand("SROLLBACK;");
+	}
+
+	/**
+	 * Sends the given string to Monet, making sure there is a prompt before
+	 * and after the command has sent. All possible returned information is
+	 * discarded.
+	 *
+	 * @param command the exact string to send to Monet
+	 * @throws SQLException if an IO exception occurs
+	 */
+	private void sendIndependantCommand(String command) throws SQLException {
+		// get lock on Monet
 		synchronized(monet) {
 			try {
 				// make sure we have the prompt
 				monet.waitForPrompt();
-				// send the commit command (note the S in front is a protocol issue)
-				monet.writeln("SROLLBACK;");
+				// send the command
+				monet.writeln(command);
 				// wait for the prompt again
 				monet.waitForPrompt();
 			} catch (IOException e) {
