@@ -184,6 +184,33 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "\t/* FROMSTR: parse string to " << name << ". */\n";
 	    o << "\t/* return number of parsed characters. */\n\n\n";
 	    break;
+	case OP_WRITE 	:
+	    o << "void\n";
+	    o << d.Name() << "(\n";
+	    o << "   " << name << " ";
+	    if (!hasPtr)
+	    	o << "*";
+	    o << "\tatom,\t";
+	    o << "/* IN: to-be-writen " << name << ". */\n";
+	    o << "   stream *\ts\t/* IN: s stream to write data to. */\n);\n";
+	    o << "\t/* WRITE: write atom to a stream. */\n";
+	    o << "\t/* return success or failure. */\n\n\n" ;
+    	    break;
+        case OP_READ :
+	    o << "\n";
+	    o << name << " ";
+	    if (!hasPtr)
+	    	o << "*";
+	    o << d.Name() << "(\n";
+	    o << "   " << name << " ";
+	    if (!hasPtr)
+	    	o << "*";
+	    o << "\tatom,\t";
+	    o << "/* IN: to-be-read " << name << ". */\n";
+	    o << "   stream *\ts\t/* IN: s stream to read from. */\n);\n";
+	    o << "\t/* READ: read " << name << " from stream s. */\n";
+	    o << "\t/* return new atom (in case of var atoms allocation is required). */\n\n\n";
+	    break;
         case OP_COMP 	:
 	    o << "int\n";
 	    o << d.Name() << "(\n   " << name;

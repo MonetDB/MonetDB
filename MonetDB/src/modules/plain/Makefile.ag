@@ -26,10 +26,10 @@ INCLUDES = -I../../common -I../../gdk -I../../monet \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS)
 MTSAFE
 
-# install these libs in the pkglib
-LIBDIR = pkglib
+# install these libs in the pkglibdir
 
 lib__streams = {
+	DIR = pkglibdir
 	SOURCES = streams.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
@@ -39,6 +39,7 @@ lib__streams = {
 }
 
 LIBS = {
+	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
 		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
@@ -49,7 +50,7 @@ LIBS = {
 		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
 		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
 		mel.mx ascii_io.mx qt.mx ddbench.mx \
-		bat_arith.mx aggrX3.mx
+		bat_arith.mx aggrX3.mx 
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
 	LIBS = -L. ../../common/libstream ../../gdk/libbat \
@@ -58,8 +59,10 @@ LIBS = {
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 
 }
+#compress.mx t1.mx
 
 lib__counters = {
+	DIR = pkglibdir
 	SOURCES = counters.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""

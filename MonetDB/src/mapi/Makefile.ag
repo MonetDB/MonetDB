@@ -30,9 +30,8 @@ SUBDIRS = clients
 MTSAFE
 
 # install these libs in the pkglib
-LIBDIR = pkglib
-
 lib__mapi = {
+	DIR = pkglibdir
 	SOURCES = mapi.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""

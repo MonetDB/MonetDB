@@ -24,7 +24,6 @@
 INCLUDES = -I../../common -I../../gdk -I../../monet $(HWCOUNTERS_INCS)
 MTSAFE
 
-LIBDIR = pkglib
 
 NO_OPTIMIZE_FILES = calib.mx calibrator.c
 EXTRA_DIST = calib_analyse.c  calib_main.c  calib_print.c  calib_run.c \
@@ -32,6 +31,7 @@ EXTRA_DIST = calib_analyse.c  calib_main.c  calib_print.c  calib_run.c \
 
 
 LIBS = {
+	DIR = pkglibdir
 	SEP = _
 	SOURCES = calib.mx 
 	HEADERS = h m

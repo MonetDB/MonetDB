@@ -142,6 +142,8 @@ ostream &html::gen_atomops( ostream &o, const Atomops &d ){
 	switch( d.operation() ){
 	case OP_TOSTR 	: o << "TOSTR   = " << d.Name() << ";\n"; break;
         case OP_FROMSTR : o << "FROMSTR = " << d.Name() << ";\n"; break;
+	case OP_READ 	: o << "READ    = " << d.Name() << ";\n"; break;
+        case OP_WRITE   : o << "WRITE   = " << d.Name() << ";\n"; break;
         case OP_COMP 	: o << "COMP    = " << d.Name() << ";\n"; break;
         case OP_CONVERT : o << "CONVERT = " << d.Name() << ";\n"; break;
         case OP_NEQUAL 	: o << "NEQUAL  = " << d.Name() << ";\n"; break;

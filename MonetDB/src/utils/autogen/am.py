@@ -434,15 +434,11 @@ def am_bins(fd, var, binsmap, am ):
     am_deps(fd,binsmap['DEPS'],".o",am)
 
 def am_mods_to_libs(fd, var, modmap, am ):
+    modname = var[:-4]+"LIBS"
     am_assignment(fd,var,modmap,am)
-    fd.write(am_additional_libs(var[:-4]+"LIBS", "", "MOD", modmap, am))
+    fd.write(am_additional_libs(modname, "_", "MOD", modmap, am))
 
 def am_library(fd, var, libmap, am ):
-
-    SCRIPTS = []
-    scripts_ext = []
-    if (libmap.has_key('SCRIPTS')):
-        scripts_ext = libmap['SCRIPTS']
 
     name = var[4:]
     sep = ""
@@ -455,7 +451,25 @@ def am_library(fd, var, libmap, am ):
         sep = "_"
         libname = libname[1:]
 
-    am['LIBS'].append(sep+libname)
+    lib = "lib"
+    ld = "libdir"
+    if (libmap.has_key("DIR")):
+        lib = libname
+        ld = libmap["DIR"][0] # use first name given
+
+    SCRIPTS = []
+    scripts_ext = []
+    if (libmap.has_key('SCRIPTS')):
+        scripts_ext = libmap['SCRIPTS']
+
+    if ld == "libdir":
+    	am['LIBS'].append(sep+libname)
+    else:
+    	ld = am_translate_dir(ld,am)
+	fd.write("%sdir = %s\n" % (lib,ld))
+	fd.write("%s_LTLIBRARIES = lib%s.la\n" % (lib,sep+libname))
+        am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
+
     if (libmap.has_key('MTSAFE')):
         fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
         fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
@@ -490,6 +504,12 @@ def am_library(fd, var, libmap, am ):
 
 def am_libs(fd, var, libsmap, am ):
 
+    lib = "lib"
+    ld = "libdir"
+    if (libsmap.has_key("DIR")):
+        lib = "libs"
+        ld = libsmap["DIR"][0] # use first name given
+
     sep = ""
     if (libsmap.has_key('SEP')):
         sep = libsmap['SEP'][0]
@@ -502,26 +522,28 @@ def am_libs(fd, var, libsmap, am ):
         fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
         fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
 
+    libnames = []
     for libsrc in libsmap['SOURCES']:
         SCRIPTS = []
-        lib,libext = split_filename(libsrc)
+        libname,libext = split_filename(libsrc)
         if (libext not in automake_ext):
             am['EXTRA_DIST'].append(libsrc)
-        am['LIBS'].append(sep+lib)
+
+        libnames.append(sep+libname)
 
 # temporarily switched off, the by libtool created scripts cause problems
 # for so-so linking
-#    if (libsmap.has_key(lib + "_LIBS")):
-#      fd.write(am_additional_libs(lib, sep, "LIB", libsmap[lib + "_LIBS"],am))
+#    if (libsmap.has_key(libname + "_LIBS")):
+#      fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_LIBS"],am))
 #    elif (libsmap.has_key("LIBS")):
-#      fd.write(am_additional_libs(lib, sep, "LIB", libsmap["LIBS"],am))
-        if (libsmap.has_key(lib + "_DLIBS")):
-            fd.write(am_additional_libs(lib, sep, "LIB", libsmap[lib + "_DLIBS"],am))
+#      fd.write(am_additional_libs(libname, sep, "LIB", libsmap["LIBS"],am))
+        if (libsmap.has_key(libname + "_DLIBS")):
+            fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_DLIBS"],am))
 
-        srcs = "lib"+sep+lib+"_la_SOURCES ="
+        srcs = "lib"+sep+libname+"_la_SOURCES ="
         for target in libsmap['TARGETS']:
             t,ext = split_filename(target)
-            if (t == lib):
+            if (t == libname):
                 if (ext in scripts_ext):
                     if (target not in SCRIPTS):
                         SCRIPTS.append(target)
@@ -529,10 +551,19 @@ def am_libs(fd, var, libsmap, am ):
                     srcs = srcs + " " + am_find_srcs(target,libsmap['DEPS'], am)
         fd.write(srcs + "\n")
         if (len(SCRIPTS) > 0):
-            fd.write("%s_scripts = %s\n\n" % (lib,am_list2string(SCRIPTS," ","")))
-            am['BUILT_SOURCES'].append("$(" + lib + "_scripts)")
-            fd.write("all-local-%s: $(%s_scripts)\n" % (lib,lib))
-            am['ALL'].append(lib)
+            fd.write("%s_scripts = %s\n\n" % (libname,am_list2string(SCRIPTS," ","")))
+            am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
+            fd.write("all-local-%s: $(%s_scripts)\n" % (libname,libname))
+            am['ALL'].append(libname)
+
+    if ld == 'libdir':
+    	am['LIBS'].extend(libnames)
+    else:
+        ld = am_translate_dir(ld,am)
+	fd.write("%sdir = %s\n" % (lib,ld))
+	am['libs'] = libnames
+        for i in libnames:
+            am['InstallList'].append("\t" + ld + "/lib"+i+".so\n")
 
     if (libsmap.has_key('HEADERS')):
         HDRS = []
@@ -698,12 +729,13 @@ CXXEXT = \\\"cc\\\"
         am['CWD'] = cwd[len(topdir)+1:]+'/'
     am['BUILT_SOURCES'] = []
     am['EXTRA_DIST'] = []
-    am['LIBS'] = []
+    am['LIBS'] = [] 	; # all libraries (am_libs and am_library)
+    am['libs'] = []	; # result of am_libs
     am['BINS'] = []
     am['BIN_SCRIPTS'] = []
     am['INSTALL'] = []
     am['HDRS'] = []
-    am['LIBDIR'] = "lib"
+    am['LIBDIR'] = "libdir"
     am['ALL'] = []
     am['DEPS'] = []
     am['InstallList'] = []
@@ -729,11 +761,23 @@ CXXEXT = \\\"cc\\\"
           am_list2string(am['EXTRA_DIST']," ",""))
 
     if (len(am['LIBS']) > 0):
+	lib = 'lib'
+	ld = am['LIBDIR']
+        ld = am_translate_dir(ld,am)
+	if ld != '$(libdir)':
+		fd.write("agdir = %s\n" % ld )
+		lib = 'ag'
+
         libs = am_sort_libs( am['LIBS'], tree)
-        fd.write("%s_LTLIBRARIES =%s\n" % \
-                    (am['LIBDIR'], am_list2string(libs," lib",".la")))
+        fd.write("%s_LTLIBRARIES = %s\n" % \
+                    (lib, am_list2string(libs," lib",".la")))
         for i in libs:
-            am['InstallList'].append("\t$("+am['LIBDIR']+"dir)/lib"+i+".so\n")
+            am['InstallList'].append("\t"+ ld + "/lib"+i+".so\n" )
+
+    if (len(am['libs']) > 0):
+        libnames = am_sort_libs( am['libs'], tree)
+        fd.write("libs_LTLIBRARIES = %s\n" % \
+                    (am_list2string(libnames, " lib", ".la")))
 
     if (len(am['BINS']) > 0):
         fd.write("bin_PROGRAMS =%s\n" % am_list2string(am['BINS']," ",""))

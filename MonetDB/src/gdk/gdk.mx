@@ -427,13 +427,6 @@ typedef int		bat; 		/* Index into BBP */
 typedef void*		ptr; 		/* Internal coding of types */
 typedef float		flt; 		
 typedef double		dbl;
-#ifdef HAVE_LONGLONG
-typedef long long	lng;
-#else
-#ifdef HAVE__INT64
-typedef __int64		lng;
-#endif
-#endif
 typedef char*		str; 		
 
 #if SIZEOF_INT==8
@@ -1786,6 +1779,8 @@ typedef struct {
 	/* generic (fixed + varsized atom) ADT functions */
 	int	(*atomFromStr)		(str s, int* len, ptr* dst); 
 	int	(*atomToStr)		(str* s, int* len, ptr src); 
+	void	*(*atomRead)		(ptr a, stream* s); 
+	void	(*atomWrite)		(ptr a, stream* s); 
 	int	(*atomCmp)		(ptr v1, ptr v2); 
 	unsigned int (*atomHash)	(ptr v); 
 	/* optional functions */ 

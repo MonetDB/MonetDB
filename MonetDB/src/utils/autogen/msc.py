@@ -472,20 +472,11 @@ def msc_bins(fd, var, binsmap, msc ):
     msc_deps(fd,binsmap['DEPS'],".obj",msc)
 
 def msc_mods_to_libs(fd, var, modmap, msc ):
+    modname = var[:-4]+"LIBS"
     msc_assignment(fd,var,modmap,msc)
-    fd.write(msc_additional_libs(fd, var[:-4]+"LIBS", "", "MOD", modmap, [], msc))
+    fd.write(msc_additional_libs(fd, modname, "", "MOD", modmap, [], msc))
 
 def msc_library(fd, var, libmap, msc ):
-
-    HDRS = []
-    hdrs_ext = []
-    if (libmap.has_key('HEADERS')):
-        hdrs_ext = libmap['HEADERS']
-
-    SCRIPTS = []
-    scripts_ext = []
-    if (libmap.has_key('SCRIPTS')):
-        scripts_ext = libmap['SCRIPTS']
 
     name = var[4:]
     sep = ""
@@ -498,7 +489,29 @@ def msc_library(fd, var, libmap, msc ):
         sep = "_"
         libname = libname[1:]
 
-    msc['LIBS'].append(sep+libname)
+    lib = "lib"
+    ld = "LIBDIR"
+    if (libmap.has_key("DIR")):
+        lib = libname
+        ld = libmap["DIR"][0] # use first name given
+    ld = msc_translate_dir(ld,msc)
+
+    HDRS = []
+    hdrs_ext = []
+    if (libmap.has_key('HEADERS')):
+        hdrs_ext = libmap['HEADERS']
+
+    SCRIPTS = []
+    scripts_ext = []
+    if (libmap.has_key('SCRIPTS')):
+        scripts_ext = libmap['SCRIPTS']
+
+    v = sep + libname
+    msc['LIBS'].append(v)
+    msc['INSTALL'].append(('lib'+v,'lib'+v,'.dll','$('+lib+'dir)'))
+    if ld != 'LIBDIR':
+    	fd.write("%sdir = %s\n" % (lib,ld))
+
     if (libmap.has_key('MTSAFE')):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
@@ -550,6 +563,13 @@ def msc_library(fd, var, libmap, msc ):
 
 def msc_libs(fd, var, libsmap, msc ):
 
+    lib = "lib"
+    ld = "LIBDIR"
+    if (libsmap.has_key("DIR")):
+        lib = "libs"
+        ld = libsmap["DIR"][0] # use first name given
+    ld = msc_translate_dir(ld,msc)
+
     sep = ""
     if (libsmap.has_key('SEP')):
         sep = libsmap['SEP'][0]
@@ -563,23 +583,25 @@ def msc_libs(fd, var, libsmap, msc ):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
     for libsrc in libsmap['SOURCES']:
-        lib,ext = split_filename(libsrc)
+        libname,ext = split_filename(libsrc)
         if (ext not in automake_ext):
             msc['EXTRA_DIST'].append(libsrc)
-        msc['LIBS'].append(sep+lib)
+    	v = sep + libname
+        msc['LIBS'].append(v)
+    	msc['INSTALL'].append(('lib'+v,'lib'+v,'.dll','$('+lib+'dir)'))
 
         dlib = []
-        if (libsmap.has_key(lib + "_DLIBS")):
-            dlib = libsmap[lib+"_DLIBS"]
-        if (libsmap.has_key(lib + "_LIBS")):
-            fd.write(msc_additional_libs(fd,lib,sep,"LIB",libsmap[lib + "_LIBS"],dlib,msc))
+        if (libsmap.has_key(libname + "_DLIBS")):
+            dlib = libsmap[libname+"_DLIBS"]
+        if (libsmap.has_key(libname + "_LIBS")):
+            fd.write(msc_additional_libs(fd,libname,sep,"LIB",libsmap[libname + "_LIBS"],dlib,msc))
         elif (libsmap.has_key("LIBS")):
-            fd.write(msc_additional_libs(fd,lib, sep, "LIB", libsmap["LIBS"],dlib,msc))
+            fd.write(msc_additional_libs(fd,libname, sep, "LIB", libsmap["LIBS"],dlib,msc))
 
-        srcs = "lib"+sep+lib+"_OBJS ="
+        srcs = "lib"+sep+libname+"_OBJS ="
         for target in libsmap['TARGETS']:
             t,ext = split_filename(target)
-            if (t == lib):
+            if (t == libname):
                 t,ext = split_filename(target)
                 if (ext == "o"):
                     srcs = srcs + " " + t + ".obj"
@@ -593,7 +615,7 @@ def msc_libs(fd, var, libsmap, msc ):
                     if (target not in SCRIPTS):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
-        ln = "lib" + sep + lib
+        ln = "lib" + sep + libname
         fd.write( ln + ".lib: " + ln + ".dll\n" )
         fd.write( ln + ".dll: $(" + ln + "_OBJS) \n" )
         fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln,ln,ln))
@@ -610,6 +632,9 @@ def msc_libs(fd, var, libsmap, msc ):
             t,ext = split_filename(target)
             if (ext in hdrs_ext):
                 msc['HDRS'].append(target)
+
+    if ld != 'LIBDIR':
+    	fd.write("%sdir = %s\n" % (lib,ld))
 
     msc_deps(fd,libsmap['DEPS'],".obj",msc)
 
@@ -796,15 +821,18 @@ CXXEXT = \\\"cxx\\\"
     l = []
     for (x,y,u,v) in msc['INSTALL']:
         l.append(x)
-    fd.write("install-exec: %s %s %s\n" % ( \
-                  msc_list2string(msc['LIBS'], "install_dll_"," "), \
+                  #msc_list2string(msc['LIBS'], "install_dll_"," "), \
+
+    #fd.write("install-exec: %s %s %s\n" % ( \
+
+    fd.write("install-exec: %s %s\n" % ( 
                   msc_list2string(msc['BINS'], "install_bin_"," "), \
                   msc_list2string(l, "install_"," ") \
                   ))
-    if (len(msc['LIBS']) > 0):
-        for v in msc['LIBS']:
-            fd.write("install_dll_%s: lib%s.dll\n" % (v,v))
-            fd.write("\t$(INSTALL) lib%s.dll $(%sdir)\n" % (v,msc['LIBDIR']) )
+    #if (len(msc['LIBS']) > 0):
+        #for v in msc['LIBS']:
+            #fd.write("install_dll_%s: lib%s.dll\n" % (v,v))
+            #fd.write("\t$(INSTALL) lib%s.dll $(%sdir)\n" % (v,msc['LIBDIR']) )
     if (len(msc['BINS']) > 0):
         for v in msc['BINS']:
             fd.write("install_bin_%s: %s.exe\n" % (v,v))
@@ -826,5 +854,5 @@ CXXEXT = \\\"cxx\\\"
             #fd.write(" install-%s" % (v) )
             #for v in msc['HDRS']:
             #fd.write("%sincludedir = $(includedir)/%s\n" % (name,name))
-        #fd.write("%sinclude_HEADERS = %s\n" % (name,am_list2string(am['HDRS']," ","")))
+        #fd.write("%sinclude_HEADERS = %s\n" % (name,msc_list2string(am['HDRS']," ","")))
     fd.write("\n")

@@ -507,6 +507,19 @@ void gen_default_atomops( ostream &o, int op, const Atom &d ){
 	o << "   return buf-src;\n";
 	o << "}\n\n";
 	break;
+
+	case OP_READ	:
+	o << "char * " << atom;
+	o << "_read( char *a, stream *s) {\n";
+	o << "   return NULL;\n";
+	o << "}\n\n";
+	break;
+	case OP_WRITE	:
+	o << "void " << atom;
+	o << "_write( char *a, stream *s) {\n";
+	o << "}\n\n";
+	break;
+
         case OP_COMP 	:
         case OP_NEQUAL 	:
 	o << "int " << atom;
@@ -1403,6 +1416,14 @@ ostream &typecheck::gen_atomops( ostream &o, const Atomops &d ){
         case OP_FROMSTR :
 		o << "extern int " << fcn;
 		o << "(char *src, int *len, char **dst );\n";
+		break;
+        case OP_WRITE :
+		o << "extern void " << fcn;
+		o << "(void *atom, stream *s);\n";
+		break;
+        case OP_READ :
+		o << "extern void *" << fcn;
+		o << "(void *atom, stream *s);\n";
 		break;
         case OP_COMP 	:
         case OP_NEQUAL 	:

@@ -22,7 +22,7 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f vector.mx
-@a Wilko Quak, Arjen P. de Vries, Alex Van Ballegooij, Johan List
+@a Wilko Quak, Arjen P. de Vries, Alex Van Ballegooij, Johan List, Niels Nes
 @d 18/05/2001
 @t Variable length vector and fixed-size vectors for Monet
 
@@ -103,6 +103,8 @@ double drand48(void)
    .ATOM @1s;
       .TOSTR   = atom_@1s_tostr;
       .FROMSTR = atom_@1s_fromstr;
+      .READ    = atom_@1s_read;
+      .WRITE   = atom_@1s_write;
       .NEQUAL  = atom_@1s_nequal;
       .DEL     = atom_@1s_del;
       .NULL    = atom_@1s_null;
@@ -162,6 +164,8 @@ double drand48(void)
    .ATOM @1_vector@2 [@3];
        .FROMSTR = atom_@1_vector@2_fromstr;
        .TOSTR   = atom_@1_vector@2_tostr;
+       .READ    = atom_@1_vector@2_read;
+       .WRITE   = atom_@1_vector@2_write;
        .NEQUAL  = atom_@1_vector@2_nequal;
        .NULL    = atom_@1_vector@2_null;
    .END;
@@ -310,6 +314,11 @@ typedef struct {
 
 @
 
+@c
+#define convert_int normal_int_SWAP
+#define convert_flt normal_int_SWAP
+#define convert_dbl long_long_SWAP
+
 @= varsized_c
     size_t @1ssize(int dim) {
       return(sizeof(@1s) + (((dim > 0) ? (dim - 1) : (0)) * sizeof(@1)));
@@ -384,6 +393,25 @@ typedef struct {
         }
 
         return s-instr;
+    }
+
+    @1s *atom_@1s_read(@1s* a, stream *s) {
+	int dim;
+	stream_readInt(s,&dim);
+	
+        a = (@1s *)GDKmalloc(@1ssize(dim));
+	a->dimension = dim;
+	s->read(s, (char*)a->data, 1, dim*sizeof(@1));
+	if (s->byteorder != 1234){
+		int i;
+		for (i=0;i<dim;i++) a->data[i] = convert_@1((@6)a->data[i]);
+	}
+	return a;
+    }
+
+    void atom_@1s_write(@1s* a, stream *s) {
+	stream_writeInt(s,a->dimension);
+	s->write(s, (char*)a->data, 1, a->dimension*sizeof(@1));
     }
 
     int atom_@1s_nequal(@1s* l,@1s*  r) {
@@ -1194,6 +1222,21 @@ dblv.print;
         return s - instr;
     }
 
+    @1_vector@2 *atom_@1_vector@2_read(@1_vector@2* a, stream *s) {
+	a->dimension = @2;
+	s->read(s, (char*)a->data, 1, @2*sizeof(@1));
+	if (s->byteorder != 1234){
+		int i;
+		for (i=0;i<@2;i++) a->data[i] = convert_@1((@8)a->data[i]);
+	}
+	return a;
+    }
+
+    void atom_@1_vector@2_write(@1_vector@2* a, stream *s) {
+	s->write(s, (char*)a->data, 1, @2*sizeof(@1));
+    }
+
+
     @1_vector@2* atom_@1_vector@2_null() {
         static char nullptr[@3];
         static int init = 1;
@@ -1299,12 +1342,12 @@ dblv.print;
 #endif
 
 @c
-@:varsized_c(int,get_long,%d,m,4)@
-@:varsized_c(flt,get_double,%f,d,8)@
-@:varsized_c(dbl,get_double,%f,d,8)@
+@:varsized_c(int,get_long,%d,m,4,int)@
+@:varsized_c(flt,get_double,%f,d,8,int)@
+@:varsized_c(dbl,get_double,%f,d,8,lng)@
 
-@:fixedsize_c(dbl,32,264,get_double,%f,d,8)@
-@:fixedsize_c(int,64,260,get_long,%d,m,4)@
+@:fixedsize_c(dbl,32,264,get_double,%f,d,8,lng)@
+@:fixedsize_c(int,64,260,get_long,%d,m,4,int)@
 
 @:varsized_convert_c(int,flt,/**/)@
 @:varsized_convert_c(int,dbl,/**/)@

@@ -34,6 +34,8 @@
 enum atom_ops_t {
 	OP_TOSTR,
 	OP_FROMSTR,
+	OP_READ,
+	OP_WRITE,
 	OP_COMP,
 	OP_HASH,
 	OP_NULL,
@@ -71,6 +73,8 @@ const char *Atomops::string( int op ){
    	switch( op ){
 	case OP_TOSTR :	 return "tostr";
 	case OP_FROMSTR :return "fromstr";
+	case OP_READ :	 return "read";
+	case OP_WRITE :  return "write";
 	case OP_COMP :	 return "cmp";
 	case OP_NEQUAL : return "cmp";
 	case OP_HASH :	 return "hash";

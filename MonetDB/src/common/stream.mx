@@ -72,6 +72,23 @@ the various underlying storage types.
 #define ST_READ  0
 #define ST_WRITE 1
 
+#ifdef HAVE_LONGLONG
+typedef long long	lng;
+#else
+#ifdef HAVE__INT64
+typedef __int64		lng;
+#endif
+#endif
+
+#define short_int_SWAP(s) (((0x00ff&(s))<<8) | ((0xff00&(s))>>8))
+
+#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
+	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
+
+#define long_long_SWAP(l) \
+		((((lng)normal_int_SWAP(l))<<32) |\
+		 (0xffffffff&normal_int_SWAP(l>>32)))
+
 typedef struct stream {
 	short byteorder;
 	short access;/* read/write */
@@ -90,8 +107,12 @@ typedef struct stream {
 /* some os specific initialization */
 stream_export int stream_init(void);
 
+stream_export int stream_readSht( stream *s, short *val );
+stream_export int stream_writeSht( stream *s, const short val );
 stream_export int stream_readInt( stream *s, int *val );
 stream_export int stream_writeInt( stream *s, const int val );
+stream_export int stream_readLng( stream *s, lng *val );
+stream_export int stream_writeLng( stream *s, const lng val );
 stream_export int stream_printf( stream *s, const char *format, ...);
 
 stream_export stream *open_rstream( char *filename );
@@ -192,10 +213,6 @@ stream_export int bs_read_next( stream *s, char *buf, int *last );
 #include <io.h>
 #endif
 
-#define convertInt(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
-                       ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-
-
 typedef enum steam_errors {
 	NO__ERROR = 0,
 	OPEN_ERROR,
@@ -256,21 +273,26 @@ static char *stream_error( stream *s ){
 	char buf [BUFSIZ];
 	switch(s->errnr){
 	case OPEN_ERROR:
-		sprintf(buf, "Error could not open file %s\n", s->name );
+		snprintf(buf, BUFSIZ, 
+				"Error could not open file %s\n", s->name );
 		return strdup(buf);
 	case READ_ERROR:
-		sprintf(buf, "Error reading file %s\n", s->name );
+		snprintf(buf, BUFSIZ, "Error reading file %s\n", s->name );
 		return strdup(buf);
 	case WRITE_ERROR:
-		sprintf(buf, "Error writing file %s\n", s->name );
+		snprintf(buf, BUFSIZ, "Error writing file %s\n", s->name );
 		return strdup(buf);
 	}
 	return strdup("Unkonwn error");
 }
 
 static int stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	return fread( buf, elmsize, cnt, (FILE*)s->stream_data);
+	FILE *fp = (FILE*)s->stream_data;
+	if (!feof(fp))
+		return fread( buf, elmsize, cnt, fp);
+	return -1;
 }
+
 static int stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int res = fwrite( buf, elmsize, cnt, (FILE*)s->stream_data);
 	fflush( (FILE*)s->stream_data );
@@ -285,9 +307,11 @@ static void stream_close( stream *s ){
 	else
 		fflush( fp );
 }
+
 static void stream_flush( stream *s ){
 	fflush( (FILE*)s->stream_data);
 }
+
 static stream *open_stream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
 	FILE *fp = fopen( filename, flags );
@@ -591,7 +615,7 @@ static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int res = 0, size = elmsize*cnt, nr = 0;
 	while( res < size && (
 #ifdef NATIVE_WIN32
-		(nr = recv( (int)s->stream_data, buf+res, size-res, 0 )) >= 0
+		(nr = recv( (int)s->stream_data, buf+res, size-res, 0 ))
 #else
 		(nr = read( (int)s->stream_data, buf+res, size-res )) > 0
 #endif
@@ -600,7 +624,7 @@ static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 		 res += (nr>0)?nr:0;
 	}
 	if (nr < 0) return 0;
-	if (size) return size/elmsize;
+	if (res) return res/elmsize;
 	return 0;
 }
 static void socket_flush( stream *s ){
@@ -991,15 +1015,43 @@ stream *block_stream( stream *s ){
 	return ns;
 }
 
+int stream_readSht( stream *s, short *val ){
+	int ok = s->read(s, (char*)val, sizeof(short), 1) == 1;
+	if (!ok) s->errnr = READ_ERROR;
+	if (s->byteorder != 1234)
+		*val = short_int_SWAP(*val);	
+	return ok;
+}
+
+int stream_writeSht( stream *s, const short val ){
+	int ok = s->write(s, (char*)&val, sizeof(short), 1)==1;
+	if (!ok) s->errnr = WRITE_ERROR;
+	return ok;
+}
+
 extern int stream_readInt( stream *s, int *val ){
 	int ok = s->read(s, (char*)val, sizeof(int), 1) == 1;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234)
-		*val = convertInt(*val);	
+		*val = normal_int_SWAP(*val);	
 	return ok;
 }
 extern int stream_writeInt( stream *s, const int val ){
 	int ok = s->write(s, (char*)&val, sizeof(int), 1)==1;
+	if (!ok) s->errnr = WRITE_ERROR;
+	return ok;
+}
+
+int stream_readLng( stream *s, lng *val ){
+	int ok = s->read(s, (char*)val, sizeof(lng), 1) == 1;
+	if (!ok) s->errnr = READ_ERROR;
+	if (s->byteorder != 1234)
+		*val = long_long_SWAP(*val);	
+	return ok;
+}
+
+int stream_writeLng( stream *s, const lng val ){
+	int ok = s->write(s, (char*)&val, sizeof(lng), 1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }

@@ -566,6 +566,8 @@ YY_SPACES    	[\t\n ]*
 (".FIXED_ATOM"|".fixed_atom")	  { return MEL_FIXEDATOM; 		}
 (".TOSTR"|".tostr")	  { yylval.i = OP_TOSTR; return MEL_ATOMOP;	}
 (".FROMSTR"|".fromstr")	  { yylval.i = OP_FROMSTR; return MEL_ATOMOP; 	}
+(".READ"|".read")	  { yylval.i = OP_READ; return MEL_ATOMOP;	}
+(".WRITE"|".write")	  { yylval.i = OP_WRITE; return MEL_ATOMOP; 	}
 (".COMP"|".comp")	  { yylval.i = OP_COMP; return MEL_ATOMOP; 	}
 (".NEQUAL"|".nequal")	  { yylval.i = OP_NEQUAL; return MEL_ATOMOP; 	}
 (".DEL"|".del")		  { yylval.i = OP_DEL; return MEL_ATOMOP; 	}

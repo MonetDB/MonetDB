@@ -93,15 +93,6 @@ typedef size_t long_int;
 #define long_int_COPY(x)	x
 
 #define strcpy_SWAP(x,y)	
-#define short_int_SWAP(x)	(((0x00ff&(x))<<8) | ((0xff00&(x))>>8))
-#define normal_int_SWAP(x)	(((0x000000ff&(x))<<24) |\
-				 ((0x0000ff00&(x))<<8)  |\
-               		         ((0x00ff0000&(x))>>8)  |\
-				 ((0xff000000&(x))>>24))
-
-#define long_long_SWAP(x)	((normal_int_SWAP(x)<<32)|\
-				 (0xFFFFFFFF&normal_int_SWAP(x>>32)))
-
 #define long_int_SWAP(x)	long_long_SWAP(x)
 
 #endif /* _GDK_DESC_H_ */

@@ -34,7 +34,6 @@ lib_mutils = {
 }
 
 INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) 
-MTSAFE
 
 lib_stream  =  {
 	SOURCES = stream.mx dummy_gdk_utils.mx
