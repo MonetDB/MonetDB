@@ -780,9 +780,9 @@ MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed)
 		return (void *) -1L;
 	}
 
-	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((__int64) off + (__int64) len) >> 32) & 0xFFFFFFFFi 64), (DWORD) ((off + len) & 0xFFFFFFFFi 64), NULL);
+	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((__int64) off + (__int64) len) >> 32) & 0xFFFFFFFFi64), (DWORD) ((off + len) & 0xFFFFFFFFi64), NULL);
 	if (h2 == NULL) {
-		GDKsyserror("MT_mmap: CreateFileMapping(%x, &sa, %d, %d, %u, NULL) failed\n", h1, mode3, (DWORD) ((((__int64) off + (__int64) len) >> 32) & 0xFFFFFFFFi 64), (DWORD) ((off + len) & 0xFFFFFFFFi 64));
+		GDKsyserror("MT_mmap: CreateFileMapping(%x, &sa, %d, %d, %u, NULL) failed\n", h1, mode3, (DWORD) ((((__int64) off + (__int64) len) >> 32) & 0xFFFFFFFFi64), (DWORD) ((off + len) & 0xFFFFFFFFi64));
 		CloseHandle(h1);
 		return (void *) -1L;
 	}
