@@ -303,7 +303,8 @@ The commands are self-explanatory.
 
 The prompt string sent to the user indicates the debugger mode.
 @c
-#define MDBstatus(X) if(cntxt->fdout) stream_printf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
+#define MDBstatus(X) if(cntxt->fdout) \
+	stream_printf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
 
 void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
@@ -399,22 +400,28 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         		skipBlanc(cntxt,b);
         		if(*b){
             		modnme=b;
-            		fcnname= strchr(b,'.');
-            		if( fcnname == NULL){
-                		fsym= findModule(cntxt->nspace,modnme);
-                		if( fsym==0) {
-                    		stream_printf(out,"%s module not found\n", modnme);
-                    		continue;
-                		}
-                		for(i=0;i<MAXSCOPE;i++){
-                    		fs= fsym->subscope[i];
-                    		while(fs != NULL){
-                        		printSignature(out,fs,listing);
-                        		fs= fs->peer;
-                    		}
-                		}
-                		continue;
-            		}
+					fcnname= strchr(b,'.');
+					if( fcnname ){
+						*fcnname= 0;
+						fcnname++;
+					}
+					fsym= findModule(cntxt->nspace,modnme);
+
+					if( fsym == NULL){
+						stream_printf(out,"%s module not found\n",modnme);
+						continue;
+					}
+					for(i=0;i<MAXSCOPE;i++){
+						fs= fsym->subscope[i];
+						while(fs != NULL){
+							if( fcnname == NULL)
+								printSignature(out,fs,listing);
+							else if( strcmp(fcnname,getFcnName(fs->def))==0)
+								printSignature(out,fs,listing);
+							fs= fs->peer;
+						}
+					}
+					continue;
         		}
         		debugModule(out,cntxt->nspace,b);
         	}
@@ -441,6 +448,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         		Symbol fs;
         		int i;
 				skipWord(cntxt,b);
+        		skipBlanc(cntxt,b);
 				if( *b!= 0){
 					modnme=b;
 					fcnname= strchr(b,'.');
@@ -612,7 +620,7 @@ signatures satisfying the pattern.
             	fcnname ++;
             	fsym= findModule(cntxt->nspace,modnme);
             	if( fsym==0) {
-                	stream_printf(out,"%smodule not found\n",modnme);
+                	stream_printf(out,"%s module not found\n",modnme);
                 	continue;
             	}
             	/* display the overloaded symbol definition */
@@ -630,7 +638,7 @@ signatures satisfying the pattern.
         	stk->cmd= 'r';
         	break;
     	default:
-        	stream_printf(out,"%sdebugger command expected\n","#mdb ");
+        	stream_printf(out,"%s debugger command expected\n","#mdb ");
         	mdbHelp(out);
     	}
     } while(m);
@@ -875,7 +883,7 @@ void mdbHelp(stream *f){
     stream_printf(f,"break <var>    -- break on assignment to <var>\n");
     stream_printf(f,"delete <var>   -- remove break point <var>\n");
     stream_printf(f,"step       -- advance to next MAL instruction\n");
-    stream_printf(f,"module     -- display the module [scopes] \n");
+    stream_printf(f,"module     -- display the module signatures\n");
     stream_printf(f,"finish     -- finish current call\n");
     stream_printf(f,"quit       -- leave debugger\n");
     stream_printf(f,"list <fcn> -- list current program block\n");
