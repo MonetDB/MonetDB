@@ -103,6 +103,9 @@ struct PFloc_t {
     unsigned int last_col;     /**< column number in which location ends. */
 };
 
+/** The main compiler driver function in compiler/compiler.c */
+int pf_compile (PFstate_t *status);
+
 #endif
 
 /* vim:set shiftwidth=4 expandtab: */
