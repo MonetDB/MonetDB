@@ -45,22 +45,26 @@ def msc_list2string(l,pre,post):
     return res
 
 def msc_subdirs(fd, var, values, msc ):
+    # HACK to keep uncompilable stuff out of Windows makefiles.
+    if 'calibrator' in values:
+        values = values[:]
+        values.remove('calibrator')
     fd.write("%s = %s\n" % (var,string.join(values)))
     fd.write("all-recursive: %s\n" % msc_list2string(values,"","-all ") )
     for v in values:
         fd.write("%s-all: %s %s\\Makefile\n" % (v,v,v))
-        fd.write("\t$(CD) %s && $(MAKE) /nologo /k all \n" % v)
+        fd.write("\t$(CD) %s && $(MAKE) /nologo all \n" % v)
         fd.write("%s: \n\tif not exist %s $(MKDIR) %s\n" % (v,v,v))
         fd.write("%s\\Makefile: $(SRCDIR)\\%s\\Makefile.msc\n" % (v,v))
         fd.write("\t$(INSTALL) $(SRCDIR)\\%s\\Makefile.msc %s\\Makefile\n" % (v,v))
     fd.write("check-recursive: %s\n" % msc_list2string(values,"","-check ") )
     for v in values:
         fd.write("%s-check: %s\n" % (v,v))
-        fd.write("\t$(CD) %s && $(MAKE) /nologo /k check\n" % v)
+        fd.write("\t$(CD) %s && $(MAKE) /nologo check\n" % v)
     fd.write("install-recursive: %s\n" % msc_list2string(values,"","-install ") )
     for v in values:
         fd.write("%s-install: $(bindir) $(libdir)\n" % v)
-        fd.write("\t$(CD) %s && $(MAKE) /nologo /k install\n" % v)
+        fd.write("\t$(CD) %s && $(MAKE) /nologo install\n" % v)
 
 def msc_assignment(fd, var, values, msc ):
     o = ""
@@ -643,6 +647,21 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
                 }
 
 def output(tree, cwd, topdir):
+    # HACKS to keep uncompilable stuff out of Windows makefiles.
+    if tree.has_key('bin_Mtimeout'):
+        tree = tree.copy()
+        del tree['bin_Mtimeout']
+    if tree.has_key('LIBS') and tree['LIBS'].has_key('SOURCES') and 'mprof.mx' in tree['LIBS']['SOURCES']:
+        tree = tree.copy()
+        tree['LIBS'] = tree['LIBS'].copy()
+        tree['LIBS']['SOURCES'] = tree['LIBS']['SOURCES'][:]
+        tree['LIBS']['SOURCES'].remove('mprof.mx')
+        targets = tree['LIBS']['TARGETS']
+        tree['LIBS']['TARGETS'] = []
+        for t in targets:
+            if t[:6] != 'mprof.':
+                tree['LIBS']['TARGETS'].append(t)
+
     fd = open(os.path.join(cwd,'Makefile.msc'),"w")
 
     fd.write('''
