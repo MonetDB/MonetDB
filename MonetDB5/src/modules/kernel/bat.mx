@@ -722,7 +722,7 @@ and {\tt datavector}.
 More info on how to write new search accelerators can be found in the
 @[<a href="../mel.html">MEL documentation</a>@.
 @mal
-command accbuild(b:bat[:any,:any], acctype:int):bit 
+command accbuild(b:bat[:any,:any], acctype:str):bit 
 address BKCaccbuild_std
 comment "Build an accelerator on the head column of b. The builtin accelerator
  types index and hash will be created as transient accelerators. They
@@ -2354,20 +2354,15 @@ str BKCmadvise2(int *res,  int *bid, int *mode){
 
 @+ Accelerator Control
 @c
-str BKCaccbuild(int *ret, int *bid, int* acc, ptr *param){
-	BAT *b;
-	int dummy = 0;
-	@:getBATdescriptor(ret,bid,b,accbuild)@
-	CMDaccbuild(b,acc, *param, dummy);
+str BKCaccbuild(int *ret, int *bid, str* acc, ptr *param){
+	(void) bid; (void)acc; (void)param;
 	*ret= TRUE;
-	return MAL_SUCCEED;
-	/* return throwMessage("Accelerator","Obsolete functionality");*/
+	return throwMessage("Accelerator","Obsolete functionality");
 }
 str BKCaccbuild_std(int *ret, int *bid, int* acc){
-	ptr n= NULL;
-	BKCaccbuild(ret,bid, acc, &n);
-	return MAL_SUCCEED;
-	/* return throwMessage("Accelerator","Obsolete functionality");*/
+	(void) bid; (void)acc; 
+	*ret = TRUE;
+	return throwMessage("Accelerator","Obsolete functionality");
 }
 
 str BKCaccdestroy(int *ret, int *bid, int *acc) {
