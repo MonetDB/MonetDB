@@ -2410,7 +2410,7 @@ def main(argv) :
 
     vars = ['MONETDB_SOURCE', 'MONETDB_BUILD', 'MONETDB_PREFIX',
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
-            'SQL_PREFIX' , 'QUIET'                         ]
+            'SQL_PREFIX']
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         vars = vars + [ 'SQLCLIENT', 'MAPICLIENT', 'X100CLIENT', 'XQUERYCLIENT']    #, 'MONETDB_MOD_PATH' ]
     if THISFILE == "Mprofile.py":
@@ -2427,7 +2427,6 @@ def main(argv) :
     dft['TSTSRCBASE']     = "env['MONETDB_SOURCE']"
     dft['TSTBLDBASE']     = "env['MONETDB_BUILD']"
     dft['TSTTRGBASE']     = "env['MONETDB_PREFIX']"   # or os.getcwd() ?
-    dft['QUIET']          = "str(False)"
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONETDB_MOD_PATH'] = "''"   #"os.path.join(env['MONETDB_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONETDB_PREFIX'],'lib','MonetDB')"
@@ -2473,8 +2472,8 @@ def main(argv) :
          'default: <MONETDB_BUILD>'),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
          'default: <MONETDB_PREFIX>'),
-        ('QUIET', None, 'QUIET', '<boolean>',
-         'default: %s' % dft['QUIET']),
+        ('quiet', 'q', 'quiet', None,
+         "suppress messages on stdout"),
         ]
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -2546,6 +2545,9 @@ def main(argv) :
     except monet_options.Error:
         sys.exit(1)
     par['RECURSIVE'] = opts.get('recursive', 0)
+    par['QUIET'] = opts.get('quiet', 0)
+#    print(">>> recursive is " + str(par['RECURSIVE']))
+#    print(">>> quiet is " + str(par['QUIET']))
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         par['IGNORE'] = opts.get('ignore', dftIGNORE)
         par['CONTEXT'] = '-C%d' % int(opts.get('context', 1))
@@ -2591,10 +2593,7 @@ def main(argv) :
         if a is not None:
             env[v] = a
 
-    try:
-        quiet = bool(env['QUIET'])
-    except KeyError:
-        quiet = False
+	quiet = par['QUIET']
 	
     # display par's
     STDERR.flush()
@@ -2769,7 +2768,7 @@ def main(argv) :
         print "%s = %s" % ('VERSION', env['VERSION'])
     STDOUT.flush()
 
-    # fix QUIET boolean env
+    # add QUIET par to env
     env['QUIET'] = quiet
 
     ## set/extend PATH & LD_LIBRARY_PATH
