@@ -255,7 +255,7 @@ void printCrackMap(int bid){
 }
 str initCrackMap(CrackMap *map, int *bid){
 	BAT *b;
-	BUN kmin=NULL, vmin=NULL, kmax=NULL, vmax=NULL;
+	BUN /*kmin=NULL,*/ vmin=NULL, /* kmax=NULL,*/ vmax=NULL;
 	BUN p;
 	/* BUN q;
 	ptr v;
@@ -271,7 +271,7 @@ otherwise the partitioning scheme becomes void
 already. [todo]
 @c
 	p= BUNfirst(b);
-	kmax= kmin= p;
+	/*kmax= kmin= p;*/
 	vmax= vmin= p;
 	
 /* initialize the buffers with the max bounderies
