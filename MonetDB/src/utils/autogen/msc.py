@@ -506,7 +506,7 @@ BIN = C:\\bin
 # Nothing much configurable below
 
 # cl -? describes the options
-CC = cl -GF -W3 -MD -nologo -Zi -Ox -G6
+CC = cl -GF -W3 -MD -nologo -Zi -G6
 # optimize use -Ox
 
 # No general LDFLAGS needed

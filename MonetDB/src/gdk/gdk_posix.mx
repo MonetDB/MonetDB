@@ -102,6 +102,8 @@ gdk_export int   MT_madvise(void* p, size_t len, int advise);
 gdk_export void *MT_vmalloc(size_t size, size_t *maxsize);
 gdk_export void  MT_vmfree(void *p, size_t size);
 gdk_export void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize);
+gdk_export int   MT_path_absolute(char *path);
+
 
 gdk_export struct mallinfo MT_mallinfo();
 
@@ -195,6 +197,7 @@ gdk_export int MT_alloc_print();
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+#include <errno.h>
 
 #ifndef HAVE_MADVISE
 # define madvise(x,y,z)	0
@@ -363,6 +366,10 @@ MT_mallinfo(){
 	return _ret;
 }
 
+int MT_path_absolute(char *pathname) {
+	return (*pathname == DIR_SEP);
+}
+
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -389,7 +396,6 @@ MT_mallinfo(){
 
 #include <windows.h>
 
-#include <errno.h>
 #include <direct.h>
 #include <ctype.h>
 #ifdef _MSC_VER
@@ -531,6 +537,16 @@ struct mallinfo MT_mallinfo() {
 	}
 	_heapmin();
 	return _ret;
+}
+
+int MT_path_absolute(char *pathname) {
+	char *drive_end = strchr(pathname, ':');
+	char *path_start = strchr(pathname, '\\');
+
+	if (path_start == NULL) {
+		return 0;
+	}
+	return (path_start == pathname || drive_end == (path_start-1));
 }
 
 int win_ftruncate (int  fd, unsigned int size)
@@ -729,7 +745,7 @@ static char* reduce_dir_name(const char* src, char* dst, const int cap) {
         int len = strlen(src);
         char *buf = dst;
         if (len >= cap) buf = malloc(len+1);
-        while(--len > 0 && src[len] == DIR_SEP);
+        while(--len > 0 && src[len-1] != ':' && src[len] == DIR_SEP);
         for(buf[++len]=0; --len>=0; buf[len]=src[len]);
         return buf;
 }
@@ -918,7 +934,7 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
 }
 
 int MT_lockf(char *filename, int mode, size_t off, int len){
-	int ret, fd = open(GDKLOCK, O_CREAT|O_RDWR, 0662);
+	int ret, fd = open(filename, O_CREAT|O_RDWR, 0662);
 	if (fd < 0) return fd;
 	ret = lseek(fd, off, SEEK_SET) || lockf(fd, mode, len);
 	close(fd);

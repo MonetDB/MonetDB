@@ -631,7 +631,7 @@ int scriptClient(Client c, str nme, int backup){
                 GDKerror("scriptClient: No nesting on input\n");
                 return 0;
         }
-	if( nme[0] == DIR_SEP) {
+	if (MT_path_absolute(nme)) {
 		strcpy(dir,nme);
 	} else {
 		sprintf(dir, "%s%c%s", monet_cwd, DIR_SEP, nme);

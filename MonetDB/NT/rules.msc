@@ -23,7 +23,7 @@ CXX=$(CC)
 MEL=$(TOPDIR)\src\mel\mel
 MX=$(TOPDIR)\src\utils\Mx\Mx
 CP=copy
-MV=rename
+MV=copy
 DEL=del
 
 {$(SRCDIR)}.mx.h:

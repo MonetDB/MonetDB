@@ -347,8 +347,8 @@ void initDB(char *home, char *db) {
         char buffer[2048];
         int ret;
         printf("Mcreatedb: calling 'Mserver -db %s' for the first time..\n",db);
-        sprintf(buffer,"Mserver -single -home %s -db %s %s%cscripts%cinit.mil\n",
-                        farm, db, farm, DIR_SEP, DIR_SEP);
+        sprintf(buffer,"Mserver -single -home %s -db %s %s%cscripts%cinit.mil\n", 
+			farm, db, farm, DIR_SEP, DIR_SEP);
         ret = system(buffer);
 #ifndef WIN32
         if (ret)
