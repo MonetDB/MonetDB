@@ -214,7 +214,7 @@ typedef struct _ITER {
     ptr			input;    /* ITER* child */ 
     /* stream-specific handle */
     OperatorHandle      hdl;       
-} ITER;
+};
 
 @- Iterator Loop Macro
 Compareable with BATloopFast
