@@ -368,6 +368,51 @@ sub table_info {
 }
 
 
+sub column_info {
+    my($dbh, $catalog, $schema, $table, $column) = @_;
+    my $sql = <<'SQL';
+select cast( null            as varchar  ) as table_cat
+     , cast( s."name"        as varchar  ) as table_schem
+     , cast( t."name"        as varchar  ) as table_name
+     , cast( c."name"        as varchar  ) as column_name
+     , cast( 0               as smallint ) as data_type          -- TODO
+     , cast( c."type"        as varchar  ) as type_name          -- TODO
+     , cast( c."type_digits" as integer  ) as column_size        -- TODO
+     , cast( null            as integer  ) as buffer_length      -- TODO
+     , cast( c."type_scale"  as smallint ) as decimal_digits     -- TODO
+     , cast( null            as smallint ) as num_prec_radix     -- TODO
+     , case c."null"
+         when false then cast( 0 as smallint )  -- SQL_NO_NULLS
+         when true  then cast( 1 as smallint )  -- SQL_NULLABLE
+       end                                 as nullable
+     , cast( null            as varchar  ) as remarks
+     , cast( c."default"     as varchar  ) as column_def
+     , cast( 0               as smallint ) as sql_data_type      -- TODO
+     , cast( null            as smallint ) as sql_datetime_sub   -- TODO
+     , cast( null            as integer  ) as char_octet_length  -- TODO
+     , cast( c."number" + 1  as integer  ) as ordinal_position
+     , case c."null"
+         when false then cast('NO'  as varchar )
+         when true  then cast('YES' as varchar )
+       end                                 as is_nullable
+  from sys."schemas" s
+     , sys."tables"  t
+     , sys."columns" c
+ where t."schema_id" = s."id"
+   and c."table_id"  = t."id"
+SQL
+    my @bv = ();
+    $sql .= qq(   and s."name"   like ?\n), push @bv, $schema if $schema;
+    $sql .= qq(   and t."name"   like ?\n), push @bv, $table  if $table;
+    $sql .= qq(   and c."name"   like ?\n), push @bv, $column if $column;
+    $sql .=   " order by table_cat, table_schem, table_name, ordinal_position\n";
+    my $sth = $dbh->prepare($sql) or return;
+    $sth->execute(@bv) or return;
+    $dbh->set_err(0,"Catalog parameter '$catalog' ignored") if defined $catalog;
+    return $sth;
+}
+
+
 sub primary_key_info {
     my($dbh, $catalog, $schema, $table) = @_;
     return $dbh->set_err(-1,'Undefined schema','HY009') unless defined $schema;
