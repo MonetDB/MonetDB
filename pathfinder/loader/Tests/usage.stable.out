@@ -10,8 +10,22 @@ stdout of test 'usage` in directory 'loader` itself:
 # 15:32:19 >  Mtimeout -timeout 60 pf -h
 # 15:32:19 >  
 
+Pathfinder XML Shredder ($Revision$, $Date$)
+(c) University of Konstanz, DBIS group
 
-# 15:35:05 >  
-# 15:35:05 >  Done.
-# 15:35:05 >  
+Usage: pf-shred [-h] [-v] [-c] [-d <n>] [-o OUTPUT] [FILE]
+
+     Reads from standard input if FILE is omitted.
+
+     -v: be verbose
+     -c: compress node properties (40% encoding speed)
+     -d: set XML node stack depth to <n> (default 256)
+     -o: write relations to OUTPUT.<rel> instead of FILE.<rel>
+         (mandatory if we read from stdin)
+         <rel> = { pre,tag,text,com,pi,@ }
+
+
+# 09:58:55 >  
+# 09:58:55 >  Done.
+# 09:58:55 >  
 

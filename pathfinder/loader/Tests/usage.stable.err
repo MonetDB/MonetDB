@@ -10,13 +10,6 @@ stderr of test 'usage` in directory 'loader` itself:
 # 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
 # 16:36:12 >  
 
-Usage: pf-shred [-h] [-v] [-c] [-d <n>] [-o <output>] [<XML input>]
-     processes <XML input> (if present) or stdin
-     -v: be verbose
-     -d: set XML node stack depth to <n> (default 256)
-     -o: write BATs to <output>.<bat> instead of <XML input>.<bat>
-         (mandatory if we read from stdin)
-         <bat> = { pre,level,prop,ns,loc,text,com,tgt,ins,@own,@ns,@loc,@val }
 
 # 15:32:19 >  
 # 15:32:19 >  Done.
