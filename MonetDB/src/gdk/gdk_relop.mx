@@ -31,7 +31,8 @@ are not being harmed too much.
 @c
 #include "gdk.h"
 
-#define LOG_SAMPLESIZE 17
+#define SAMPLE_TRESHOLD_LOG 17
+#define SAMPLE_SLICE_SIZE 1000
 @{
 @+ Join Algorithms
 @{
@@ -44,204 +45,252 @@ Method: we sample on l, and join on the whole r. This macro is called by
 the physical join algorithms, hence we already decided on the algorithm 
 and join method, so the initial costs on r (e.g. hash creation) would have 
 to be paid anyway, and are reused later in the real join phase. 
+
+Sampling was made more robust by using an logaritmical number of slices
+taken at equal-spaced intervals accors l. The results are then analyzed
+and checked for outliers. If outliers are present, a real sample is taken
+and executed with the generic join algorithm to obtain an better estimate.
+
 On small joins we just assume 1-N joins with a limited (=3) hit rate. 
 
 @= joincheck
-        ERRORcheck(l == NULL, "@1: invalid left operand");
-        ERRORcheck(r == NULL, "@1: invalid right operand");
-        ERRORcheck(TYPEerror(@2,@3), "@1: type conflict\n");
+	ERRORcheck(l == NULL, "@1: invalid left operand"); 
+	ERRORcheck(r == NULL, "@1: invalid right operand"); 
+	ERRORcheck(TYPEerror(@2,@3), "@1: type conflict\n"); 
 @= joinestimate
-{       size_t _lcount = BATcount(l);
-        size_t _rcount = BATcount(r);
-        if (@1 == JOIN_EQ) {
-                /* key property gives a bound for equality join; only use this knowledge if
-                 * the other column is smaller (i.e. optimization is useful)
-                 */
-	        if (BATtkey(l) && BAThkey(r)) {
-			/* BATs both keyed, use minimum as result size estimator */
-                        @3 = MIN(_lcount, _rcount);
-                } else if (BATtkey(l) || BAThkey(r)) {
-			/* One keyed, one non-keyed, use maximum as result size estimator */
-                        @3 = MAX(_lcount, _rcount);
-		}
-        }
+if (@3 == (size_t) oid_nil) {
+	size_t _lcount = BATcount(l);
+	size_t _rcount = BATcount(r);
+	size_t _slices = 0; 
 
-        if (@3 == 0 && _lcount <= (1 << LOG_SAMPLESIZE)) {
-                /* for small relations, we use a stupid default */
-                @3 = 3*MIN(_rcount, _lcount);  
-        } else if (@3 == 0) {
-                /* use sampling (if sufficient tuples are there) */
-                size_t _tot = 0, _div = 0, _lo, _hi, _step = 0;
-                BAT *_tmp1 = l;
-                for(_hi=_lcount; _hi > 0; _hi >>= 1) _step++;
-                _step = _lcount / (_step-LOG_SAMPLESIZE);
-                for(_hi=1050; _hi <= _lcount; _hi += _step) {
-                        _lo = _hi - 1050; /* try to estimate 105% to have some margin */
-                        l = BATslice(_tmp1, _lo, _hi); /* slice keeps all parent properties */
-                        if (l) {
-                                BAT *_tmp2 = @2;
-                                if (_tmp2) {
-                                        _tot += BATcount(_tmp2); _div++;
-                                        BBPreclaim(_tmp2);
-                                }
-                        }
-                        BBPreclaim(l);
-                }
-                if (_div) @3 = (size_t) ((((lng) _tot) * ((lng) _lcount)) / (((lng) _div)*LL_CONSTANT(1000)));
-                l = _tmp1;
-        }
+	/* limit estimate with simple bounds first; only spend effort if the join result might be big */
+	if (@1 == JOIN_EQ) {
+		if (l->tkey) @3 = r->hkey?MIN(_rcount,_lcount):_rcount;
+		else if (r->hkey) @3 = _lcount;
+	}
+	if (@3 == oid_nil) {
+		size_t _heuristic = 3*MIN(_lcount, _rcount);
+		if (_heuristic <= (1 << SAMPLE_TRESHOLD_LOG)) @3 = _heuristic;
+	} 
+	if (@3 == oid_nil) {
+		size_t _idx;
+		for(_idx=_lcount; _idx > 0; _idx >>= 1) _slices++;
+	}
+	if (_slices > SAMPLE_TRESHOLD_LOG) {
+                 /* use cheapo sampling by taking a number of slices and joining those with the algo */
+		size_t _idx = 0, _tot=0, _step, _lo, _avg, _sample, *_cnt;
+		BAT *_tmp1 = l, *_tmp2, *_tmp3; 
+		_step = _lcount / (_slices -= SAMPLE_TRESHOLD_LOG);
+		_sample = _slices * SAMPLE_SLICE_SIZE;
+		_cnt = (size_t*) alloca(_slices*sizeof(size_t));
+		for(_lo=0; _idx < _slices; _lo += _step) {
+			size_t _size = 0, _hi = _lo + SAMPLE_SLICE_SIZE; 
+			l = BATslice(_tmp1, _lo, _hi); /* slice keeps all parent properties */ 
+			assert(l);
+			_tmp2 = @2; /* @2 = e.g. BATXjoin(l,r) */
+			if (_tmp2) {
+				_size = BATcount(_tmp2); 
+				BBPreclaim(_tmp2);
+			}
+			_tot += (_cnt[_idx++] = _size);
+			BBPreclaim(l); 
+		}
+		/* do outlier detection on sampling results; this guards against skew */
+		if (@1 == JOIN_EQ) {
+			for(_avg=_tot/_slices, _idx=0; _idx < _slices; _idx++) {
+				size_t _diff = _cnt[_idx] - _avg;
+				if (_avg > _cnt[_idx]) _diff = _avg - _cnt[_idx];
+				if (_diff > MAX(SAMPLE_SLICE_SIZE, _avg)) break; 
+			}
+			if (_idx < _slices) {
+				/* outliers detected, compute a real sample on at most 1% of the data */
+				_sample = MIN(_lcount/100, (1 << SAMPLE_TRESHOLD_LOG)/3);
+				_tmp2 = BATsample(_tmp1, _sample); 
+				_tmp3 = BATjoin(_tmp2, r, oid_nil); /* might be expensive */
+				_tot = BATcount(_tmp3);
+				BBPreclaim(_tmp2);
+				BBPreclaim(_tmp3);
+			}
+		}
+		/* overestimate always by 5% */
+		@3 = (((lng) _tot) * ((lng) _lcount)) / (0.95 * _sample); 
+		l = _tmp1;
+	}
 }
 @= joinbat
-{       size_t _estimate = 0;
-        @:joinestimate(@1, @2, _estimate)@
-        ESTIDEBUG THRprintf(GDKout, "%s.joinbat: estimated resultsize: %u\n",@3,_estimate);
-        bn = BATnew(BAThtype(l), BATttype(r), _estimate);
-        if (bn == NULL) {
-                return bn;
-        }
+{	size_t _estimate = @3;
+	@:joinestimate(@1, @2, _estimate)@
+	bn = BATnew(BAThtype(l), BATttype(r), _estimate);
+	if (bn == NULL) {
+		return bn; 
+	}
 }
 
 @- merge join
 In the case that both join columns are ordered, we can do a merging
-(@%BATmergejoin@). The merge consists of two cases, one doing a 
-full merge scan on both inputs, the other on a full scan and
-a binary search.
+(@%BATmergejoin@). The merge is opportunistic in that it tries to do
+merge between l and r, but if for a long time no matching tuples are
+found in r, it uses binary search. It also allows joining of an 
+unsorted l with a sorted r; in that case it always uses binary search.
 
 @= mergejoin
-{	BAT *rr = BATmirror(r);
+	while(l_start < l_last) {
+	    ptr v2, v1 = BUNt@2(l,l_start);
+	    int neq = 1;
+
+	    /* lookup range in l; use a view on the head so that voids will
+	       point to different void_seq1 elements */ 
+	    l_end = l_start;
+	    do {
+		if ((l_end += l_next) >= l_last) break;  
+		v2 = BUNt@2(lv,l_end);
+	    } while(@1_EQ(v1,v2,@4));
+
+	    /* lookup value in r (if not nil, that is) */
+	    if (!@1_EQ(v1,nil,@4))  {
+		if (r_scan > 0) {
+		    /* first try scanning; but give up after a while */
+		    for(r_lim = MIN(r_last, r_end + r_scan); r_end < r_lim; r_end += r_next) {
+			v2 = BUNh@3(r,r_end);
+			neq = @1_CMP(v1,v2,@4);
+			if (neq <= 0) break;
+		    }
+		    r_start = r_end;
+		}
+		if (neq == 1) {
+		    /* use binary search after failed scan or if scanning is impossible (l not sorted) */
+		    if (r_scan < 0 || r_start < r_last) { /* if merge not ended (or if no merge at all) */
+		        r_start = (BUN) SORTfndfirst_@4(rr, v1); 
+		    }
+		    if (r_start < r_last) {
+			v2 = BUNh@3(r,r_start);
+			neq = !@1_EQ(v1,v2,@4);
+		    } else if (r_scan >= 0) {
+			break;  /* r is already at end => break off merge join */
+		    }
+		}
+	    }
+	    if (neq == 0) {
+	        /* lookup range in r */
+	        r_end = r_start + r_next;
+		while (r_end < r_last) {
+		   v2 = BUNh@3(r,r_end);
+		   if (!@1_EQ(v1,v2,@4)) break;
+		   r_end += r_next;
+	        }
+	        /* generate match-product as join result */
+	        for(; l_start < l_end; l_start+=l_next) 
+		    for(r_cur=r_start; r_cur<r_end; r_cur+=r_next) 
+		        bunfastins(bn, BUNhead(l,l_start), BUNtail(r,r_cur));
+	    } else if (nil_on_miss) {
+		/* outerjoin inserts nils on a miss */
+	        for(; l_start < l_end; l_start+=l_next) 
+		        bunfastins(bn, BUNhead(l,l_start), nil_on_miss);
+	    } else {
+		l_start = l_end; /* no match found in equi-join */
+	    }
+	}
+@c
+/* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
+static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate) {
+	ptr nil = ATOMnilptr(r->htype);
+	BAT *lv = VIEWcreate(l);
+	int r_scan = -1; /* no scanning in r */
+        BAT *rr = BATmirror(r);
 	BUN l_last, r_last;   /* last BUN of the BAT */
 	BUN l_start, r_start; /* start of current chunk  */
 	BUN l_end, r_end;     /* end of current chunk */
 	int r_next = BUNsize(r);
 	int l_next = BUNsize(l);
-	BUN r_cur;
+	BUN r_cur, r_lim;
+	int loc, var;
+
+	if (BATtordered(l)&1) {
+		int i, logr = 4; 
+		/* 4*log2(r.count) = estimation of the cost of binary search in units of scan comparisons */
+		for(i=BATcount(r); i > 0; logr++) i >>= 1; 
+		r_scan = logr*BUNsize(r); /* opportunistic scan window in r */
+	}
+	if (!(BAThordered(r)&1)) {
+		GDKerror("mergejoin: right input is not sorted.\n"); 
+		return NULL; 
+	}
+	if (bn == NULL) {
+		@:joinbat(JOIN_EQ, mergejoin(l,r,NULL,nil_on_miss,oid_nil), estimate)@
+	}
+
+	/* the algorithm */
+	loc = ATOMstorage(l->ttype);
 
 	l_last = BUNlast(l); 
 	r_last = BUNlast(r); 
 	l_start = l_end = BUNfirst(l);
 	r_start = r_end = BUNfirst(r);
 
-	while(l_start < l_last) {
-	    ptr v2, v1 = BUNt@2(l,l_start);
-	    int neq = 1;
-
-	    /* lookup range in l */ 
-	    if (BATtkey(l)) {
-		l_end = l_start + l_next;
-	    } else {
-	        l_end = l_start;
-		do {
-		    if ((l_end += l_next) >= l_last) break;  
-		    v2 = BUNt@2(l,l_end);
-		} while(@1_EQ(v1,v2,@3));
-	    }
-
-	    /* lookup value in r */
-	    if (!@1_EQ(v1,nil,@3))  {
-	    if (sporadic) {
-	    	r_start = (BUN) SORTfndfirst_@3(rr, v1); /* use binary search */
-		if (r_start >= r_last) {
-		    break;
-		} else {
-	    	    v2 = BUNh@2(r,r_start);
-		    neq = !@1_EQ(v1,v2,@3);
-	   	}
-	    } else if (r_end >= r_last) {
-		break;  /* merge while r is already at end */
-	    } else {
-		do {
-	    	    v2 = BUNh@2(r,r_end);
-		    neq = @1_CMP(v1,v2,@3);
-	    	    if (neq <= 0) break;
-		} while((r_end += r_next) < r_last);
-	        r_start = r_end;
-	    }}
-	    if (neq) {
-		l_start = l_end; 
-		continue;
-	    }
-
-	    /* lookup range in r */
-	    r_end = r_start + r_next;
-	    if (!BAThkey(r)) {
-		while (r_end < r_last) {
-		    v2 = BUNh@2(r,r_end);
-		    if (!@1_EQ(v1,v2,@3)) break;
-		    r_end += r_next;
-		}
-	    }
-
-	    /* generate match-product as join result */
-	    for(; l_start < l_end; l_start+=l_next) 
-		for(r_cur=r_start; r_cur<r_end; r_cur+=r_next) 
-		    BUNfastins(bn, BUNhead(l,l_start), BUNtail(r,r_cur));
-	}
-} break;
-@c
-BAT *BATmergejoin(BAT *l, BAT *r) {
-	size_t i;
-	int sporadic;
-        lng logr = 0;
-	BAT *bn, *reverse = NULL; 
-	ptr nil = ATOMnilptr(r->htype);
-	
-        @:joincheck(BATmergejoin, l->ttype, r->htype)@
-
-	/* cost estimation: full mergejoin vs loop-binsearch
-         * full merge = l+r                    
-         * binsearch = l + (CONST+logr) CONST=5 
-         *(CONST rationale: const 1 binsearch iteration~=5 merge iterations 
-         */
-	if ((BAThordered(r)&1)==0 || 
-	    ((BATtordered(l)&1) && (BATcount(l) > BATcount(r)))) 
-	{
-		reverse = BATmirror(l); l = BATmirror(r); r = reverse; 
-	}
-	for(i=BATcount(r); i > 0; logr++) i >>= 1; 
-	sporadic = ((BATtordered(l)&1)==0) || ((lng)BATcount(l)*4*logr < (lng)BATcount(r));
-
-	if (!(BAThordered(r)&1)) {
-		GDKerror("BATmergejoin: right input is not sorted.\n"); 
-		return NULL; 
-	}
-	@:joinbat(JOIN_EQ, BATmergejoin(l,r), "BATmergejoin")@
-
-	/* the algorithm */
-	switch(ATOMstorage(l->ttype)) {
-	case TYPE_chr: @:mergejoin(simple,loc,chr)@
-	case TYPE_sht: @:mergejoin(simple,loc,sht)@
-	case TYPE_int: @:mergejoin(simple,loc,int)@
-	case TYPE_flt: @:mergejoin(simple,loc,flt)@
-	case TYPE_lng: @:mergejoin(simple,loc,lng)@
-	case TYPE_dbl: @:mergejoin(simple,loc,dbl)@
+	switch(loc) {
+	case TYPE_chr: @:mergejoin(simple,loc,loc,chr)@
+	case TYPE_sht: @:mergejoin(simple,loc,loc,sht)@
+	case TYPE_int: @:mergejoin(simple,loc,loc,int)@
+	case TYPE_flt: @:mergejoin(simple,loc,loc,flt)@
+	case TYPE_lng: @:mergejoin(simple,loc,loc,lng)@
+	case TYPE_dbl: @:mergejoin(simple,loc,loc,dbl)@
 	default: if (l->tvarsized) {
-		       int var = ATOMstorage(l->ttype); 	
-      		       @:mergejoin(atom,var,var)@
+		       var = ATOMstorage(l->ttype);
+		       if (r->hvarsized) {
+			   @:mergejoin(atom,var,var,var)@
+		       } else {
+			   loc = ATOMstorage(r->htype);
+			   @:mergejoin(atom,var,loc,loc)@
+		       }
 		 } else {
-		       int loc = ATOMstorage(l->ttype); 	
-      		       @:mergejoin(atom,loc,loc)@
+		       loc = ATOMstorage(l->ttype); 	
+		       if (r->hvarsized) {
+			   var = ATOMstorage(r->htype);
+      		           @:mergejoin(atom,loc,var,var)@
+		       } else {	
+      		           @:mergejoin(atom,loc,loc,loc)@
+		       }
 	         }
 	}
 
+	if (nil_on_miss) {
+	    for(; l_start < l_last; l_start+=l_next) 
+		bunfastins(bn, BUNhead(l,l_start), nil_on_miss);
+	}
+	BBPreclaim(lv);
+
 	/* propagate properties */
 	bn->hsorted = BAThordered(l);
-	bn->tsorted = (BATtordered(r) && BATtordered(l) && (BATtkey(l) || BAThkey(r)));
-	if (BAThkey(r)) {
-	    if (BAThkey(l)) BATkey(bn, TRUE);
+	bn->tsorted = FALSE;
+	if (r->hkey) {
 	    if (BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l);
+	    } else if (l->hkey) {
+		BATkey(bn, TRUE);
 	    }
 	} 
-	if (BATtkey(l)) {
-	    if (BATtkey(r)) BATkey(BATmirror(bn), TRUE);
-	    if (BATcount(bn) == BATcount(r)) {
-		ALIGNsetT(bn, r);
+	if (l->tkey) {
+	    bn->tsorted = BATtordered(r) & BATtordered(l) & 1;
+	    if (!nil_on_miss) {
+	    	if (BATcount(bn) == BATcount(r)) {
+		    ALIGNsetT(bn, r);
+	        } else if (r->tkey) {
+		    BATkey(BATmirror(bn), TRUE);
+		}
 	    }
 	}
-        ESTIDEBUG THRprintf(GDKout, "BATmergejoin: actual resultsize: %d\n",BATcount(bn));
-	return reverse?BATmirror(bn):bn; 
+	return bn;
 }
 
+BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate) {
+        @:joincheck(BATmergejoin, l->ttype, r->htype)@
+	if (((BAThordered(r)&1)==0) || ((BATtordered(l)&1) && (BATcount(l) > BATcount(r)))) {
+		/* reverse join if required (r not sorted) or if l is larger (quick jump through l with binary search) */
+		BAT *bn = mergejoin(BATmirror(r), BATmirror(l), NULL, NULL, estimate);
+		return bn?BATmirror(bn):NULL;
+	}
+	return mergejoin(l, r, NULL, NULL, estimate);
+}
 
 @- hash join
 These macros encode the core of the join algorithm. They are
@@ -265,14 +314,14 @@ the fast inner loops, optimized towards their type.
         break;
 }
 @c
-BAT* BAThashjoin(BAT* l, BAT* r) {
+BAT* BAThashjoin(BAT* l, BAT* r, size_t estimate) {
 	ptr	v, nil = ATOMnilptr(r->htype); 
 	BUN	p, q, w;
 	int	any;
-	BAT	*bn;
+	BAT	*bn = NULL;
 
         @:joincheck(BAThashjoin, l->ttype, r->htype)@
-	@:joinbat(JOIN_EQ, BAThashjoin(l,r), "BAThashjoin")@
+	@:joinbat(JOIN_EQ, BAThashjoin(l,r,oid_nil), estimate)@
 
         if (BATprepareHash(r) == 0)
         switch(any = ATOMstorage(l->ttype)) {
@@ -535,21 +584,25 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
-BAT* BATfetchjoin(BAT *l, BAT *r) {
+BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
         int xx, yy, zz, lht, rtt;
 	size_t base, end;
 	ssize_t offset;
         BUN r_cur, l_cur, l_end, dst;
         oid seqbase;
-        BAT *bn, *l_orig = l;
+        BAT *bn = NULL, *l_orig = l;
 
         BATcheck(l, "BATfetchjoin: l");
         BATcheck(r, "BATfetchjoin: r");
 
+	if  (estimate == oid_nil) {
+		estimate = BATcount(l);
+	}
+
         if (!BAThdense(r)) {
                 ERRORcheck(!BATtdense(l), "BATfetchjoin: one join column must be dense");
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));\n");
-                return BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));
+                return BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l), estimate));
         }
         if (BATtordered(l)&1) {
                 /* optimization to be able to carry over more void head columns */
@@ -572,9 +625,6 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 	/* only BUNhead crashes on empty bats with TYPE != virtual oid */
 	seqbase = (l->htype == TYPE_void)?l->hseqbase:
 			(BATcount(l)?(l->htype==TYPE_int?(oid)*(int*)BUNhead(l,BUNfirst(l)):(l->htype==TYPE_oid?*(oid*)BUNhead(l,BUNfirst(l)):(l->htype==TYPE_lng?(oid)*(lng*)BUNhead(l,BUNfirst(l)):oid_nil))):oid_nil);
-@
-        @:joinestimate(JOIN_EQ, BATfetchjoin(l,r), estimate)@
-@c
 
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: 2\n");
         if (!BAThvoid(l)) {
@@ -582,7 +632,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                 /* default case: no void column to propagate */
                 lht = l->htype;
                 rtt = r->ttype;
-                bn = BATnew(BAThtype(l), BATttype(r), BATcount(l));
+                bn = BATnew(BAThtype(l), BATttype(r), estimate);
                 ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: %d\n",BATcount(l));
                 dst = BUNfirst(bn);
                 zz = BUNsize(bn);
@@ -609,7 +659,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                 if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(&r->theap)) {
                         tpe = TYPE_var; /* insert double-eliminated strings as ints */
                 }
-                bn = BATnew(TYPE_void, ATOMtype(tpe), BATcount(l));
+                bn = BATnew(TYPE_void, ATOMtype(tpe), estimate);
                 ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: %d\n",BATcount(l));
                 dst = BUNfirst(bn);
                 zz = BUNsize(bn);
@@ -689,7 +739,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 @-
 This routine does the join optimization. TODO: it should be expressed in MIL.
 @c
-BAT *BATjoin(BAT *l, BAT *r) {
+static BAT *batjoin(BAT *l, BAT *r, size_t estimate) {
 	size_t i, lsize, rsize;
         int lfetch, rfetch, must_hash; 
         lng logr, logl;
@@ -720,11 +770,11 @@ In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
 @c
 	if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l)));\n");
-		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l)));
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), %d));\n", estimate);
+		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), estimate));
 	} else if (rfetch) {
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATfetchjoin(l, r);\n");
-		return BATfetchjoin(l, r);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATfetchjoin(l, r, %d);\n", estimate);
+		return BATfetchjoin(l, r, estimate);
 	}
 @-
 If both are ordered we do merge-join, or if hash-join is not possible right 
@@ -735,26 +785,32 @@ loop binary search (both implemented by BATmergejoin).
 		  (((BATtordered(l)&1) && ((lng)BATcount(l) > logl*(lng)BATcount(r))) ||
 		   ((BAThordered(r)&1) && ((lng)BATcount(r) > logr*(lng)BATcount(l))))))
 	{ 
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r);\n");
-		return BATmergejoin(l,r);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r,%d);\n", estimate);
+		return BATmergejoin(l, r, estimate);
 	}
 @-
 if hash join is not right away possible and we have a binary tree index,
 we do nested loop index lookup join.
 @c
 	if (must_hash && (l->tidx_heap || r->hidx_heap)) {
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATthetajoin(l,r,JOIN_EQ);\n");
-		return BATthetajoin(l,r,JOIN_EQ);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATthetajoin(l,r,JOIN_EQ,%d);\n", estimate);
+		return BATthetajoin(l, r, JOIN_EQ, estimate);
 	}
 @-
 hash join: the bread&butter join of monet
 @c
 	if (rsize < lsize) { /* assume largest fits memory */
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)));\n");
-		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)));
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l),%d));\n", estimate);
+		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), estimate));
         }
-	ALGODEBUG THRprintf(GDKout, "BATjoin: BAThashjoin(l,r);\n");
-	return BAThashjoin(l,r);
+	ALGODEBUG THRprintf(GDKout, "BATjoin: BAThashjoin(l,r,%d);\n",estimate);
+	return BAThashjoin(l, r, estimate);
+}
+
+BAT *BATjoin(BAT *l, BAT *r, size_t estimate) {
+        BAT *b = batjoin(l, r, oid_nil);
+        BATpropcheck(b, BATPROPS_ALL);
+        return b;
 }
 @
 @}
@@ -787,28 +843,26 @@ if no match can be found.
 The baseline join algorithm creates a hash on the smallest element and
 probes it using the larger one. [TODO]
 @c
-BAT *BATouterjoin(BAT *l, BAT *r) {
-	int	any; 
-	BAT	*bn; 
+BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
+	BAT	*bn = NULL; 
 	
 	@:joincheck(BATouterjoin, l->ttype, r->htype)@
- 	if (BAThdense(l) && BAThkey(r)) {
-		bn = BATnew(TYPE_void, ATOMtype(r->ttype), BATcount(l));
-        	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: estimated resultsize: %d\n",BATcount(l));
+	if (BAThdense(l) && BAThkey(r)) {
+		if (estimate == oid_nil) estimate = BATcount(l);
+		bn = BATnew(TYPE_void, ATOMtype(r->ttype), estimate);
+        	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: estimated resultsize: %d\n", estimate);
 		BATseqbase(bn, l->hseqbase);
-	} else {
-		@:joinbat(JOIN_EQ, BATouterjoin(l,r), "BATouterjoin")@
-	} 
-	/* set sorted flags by hand, because we used BUNfastins() */
-	bn->tsorted = 0;
-	if (BAThkey(r)) {
-		ALIGNsetH(bn, l); /* always 1 hit, so columns are equal */
-	} else {
-		bn->hsorted = BAThordered(l);
 	}
-
+	if (BAThdense(r) == FALSE && BAThordered(r)&1) {
+		/* use the merge-join; it takes care of the rest */
+		bn = mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);
+  		ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
+		return bn; 
+	} else if (bn == NULL) {
+		@:joinbat(JOIN_EQ, BATouterjoin(l,r,oid_nil), estimate)@
+	} 
 	if (BAThdense(r)) {
-		/* proceeding with hash on void column would give error and is stupid */
+		/* positional algorithm: hash on void column would give error and is stupid */
 		ptr nilt = ATOMnilptr(r->ttype); 
 		BUN p, q, w;
 		int yy;
@@ -820,24 +874,32 @@ BAT *BATouterjoin(BAT *l, BAT *r) {
 				BUNfndVOID(w, r, &v);	 
 				if (w) t = BUNtail(r, w);
 			}
-			BUNfastins(bn, BUNhead(l, p), t);
+			bunfastins(bn, BUNhead(l, p), t);
 		}
 		bn->tsorted = BATtordered(l) & BATtordered(r) & 1;
-        	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
-		return bn;
+	} else {
+		/* hash based algorithm (default) */
+		int any = ATOMstorage(r->htype);
+		if (BATprepareHash(r)) {
+			BBPreclaim(bn);
+			return NULL;
+		}
+		switch(any) {
+		case TYPE_chr: @:outerjoinloop(simple,chr)@ 
+		case TYPE_sht: @:outerjoinloop(simple,sht)@ 
+		case TYPE_int: 
+		case TYPE_flt: @:outerjoinloop(simple,int)@ 
+		case TYPE_dbl: 
+		case TYPE_lng: @:outerjoinloop(simple,lng)@
+		default:       @:outerjoinloop(atom,any)@
+		}
+		bn->tsorted = 0;
 	}
-	if (BATprepareHash(r)) {
-        	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
-		return(bn); 
-	}
-	switch(any = ATOMstorage(r->htype)) {
-	case TYPE_chr: @:outerjoinloop(simple,chr)@ 
-	case TYPE_sht: @:outerjoinloop(simple,sht)@ 
-	case TYPE_int: 
-	case TYPE_flt: @:outerjoinloop(simple,int)@ 
-	case TYPE_dbl: 
-	case TYPE_lng: @:outerjoinloop(simple,lng)@
-	default:       @:outerjoinloop(atom,any)@
+	/* set sorted flags by hand, because we used BUNfastins() */
+	if (r->hkey) {
+		ALIGNsetH(bn, l); /* always 1 hit, so columns are equal */
+	} else {
+		bn->hsorted = BAThordered(l);
 	}
   	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
 	return bn; 
@@ -944,16 +1006,16 @@ int BATtheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op) {
 	return 1;
 }
 
-BAT *BATthetajoin(BAT *l, BAT *r, int op) {
+BAT *BATthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
 	BAT	*bn; 
 	
 	@:joincheck(BATthetajoin, l->ttype, r->htype)@
 	if ((op == JOIN_EQ) && (r->hhash_heap || !r->hidx_heap)) { 
 		/* go for the hash solution */
 		ALGODEBUG THRprintf(GDKout, "BATthetajoin: BAThashjoin(l, r);\n");
-		return BAThashjoin(l, r);
+		return BAThashjoin(l, r, estimate);
 	}
-	@:joinbat(op, BATthetajoin(l,r,op), "BATthetajoin")@
+	@:joinbat(op, BATthetajoin(l,r,op,estimate), estimate)@
 	BATtheta(NULL, bn, l, r, op);
         ESTIDEBUG THRprintf(GDKout, "BATthetajoin: actual resultsize: %d\n",BATcount(bn));
 	return bn;
@@ -984,7 +1046,7 @@ BAT *BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2) {
 	BUN v, w;
 	
 	@:joincheck(BATbandjoin, l->ttype, r->htype)@
-	@:joinbat(JOIN_BAND, BATbandjoin(l,r,c1,c2), "BATbandjoin")@
+	@:joinbat(JOIN_BAND, BATbandjoin(l,r,c1,c2), oid_nil)@
 	switch(ATOMstorage(r->htype)) {
 	case TYPE_chr: @:bandjoin(chr)@
 	case TYPE_sht: @:bandjoin(sht)@
@@ -1321,13 +1383,14 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	}
 	
 	/* property propagation */
-	bn->hsorted = BAThordered(l);
-	bn->tsorted = (BAThordered(l)&BAThordered(r)&1)?BATtordered(cpy):0;
+	bn->hsorted = BAThordered(l)&BAThordered(r)&1;
+	bn->tsorted = bn->hsorted&BATtordered(cpy)&1;
 
-	if (BATcount(bn) == BATcount(l)) {
+
+	if (denselookup && BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l);
 	} else {
-		BATkey(bn, BAThkey(l));
+		BATkey(bn, BAThkey(l) && BAThkey(r));
 	}
 	if (BAThkey(l)) {
 		if (BATcount(bn) == BATcount(cpy) && (BAThordered(r)&BAThordered(l)&1)) {
@@ -1528,13 +1591,12 @@ It is an integer, of which all 4 bytes are used:
 #define REALLOCBUNS(c,n) if (c->hitsize <= n)\
 	c->hit = (BUN*) GDKrealloc(c->hit, (c->hitsize+=n)*sizeof(BUN))
 
-#define LEAD_INTERRUPT_NIL   1
-#define LEAD_INTERRUPT_END   3
-#define LEAD_TRAVERSE_SSK    3  /* seq, sorted, key */
-#define LEAD_TRAVERSE_SNK   13  /* seq, nonsorted, key */
-#define LEAD_TRAVERSE_SEQ   14  /* enforced seq (for order purposes) */
-#define LEAD_TRAVERSE_SRT   15  /* traverse by sorted chunk */
-#define LEAD_TRAVERSE_IDX   16  /* traverse by binary tree chunks */
+#define LEAD_INTERRUPT_END  1
+#define LEAD_TRAVERSE_SSK   3  /* seq, sorted, key */
+#define LEAD_TRAVERSE_SNK   4  /* seq, nonsorted, key */
+#define LEAD_TRAVERSE_SEQ   6  /* enforced seq (for order purposes) */
+#define LEAD_TRAVERSE_SRT   9  /* traverse by sorted chunk */
+#define LEAD_TRAVERSE_IDX   11 /* traverse by binary tree chunks */
 
 int BATmultijoin(
 	int 	argc,
@@ -1700,7 +1762,7 @@ macro's help to separate the two cases cleanly.
 #define OIDcmp(v1,v2)	simple_CMP(v1,v2,oid)
 #define STDcmp(v1,v2)	(*cmp)(v1,v2)
 
-	if (ATOMstorage(ATOMtype(lead_col->b->htype))==ATOMstorage(TYPE_oid)) {
+	if (ATOMstorage(lead_col->b->htype)==ATOMstorage(TYPE_oid)) {
 		@:multijoin(hloc,OID,_oid,_oid)@
 	} else {
         	int (*cmp)(ptr,ptr) = BATatoms[lead_col->b->htype].atomCmp;
@@ -1784,10 +1846,15 @@ while(algo) {
     
 	/* one-by-one traversal of the lead column? => no matching done.
 	 */
-	if (n == lead_col && algo <= LEAD_TRAVERSE_SEQ) { 
-		n->lo = p;
-    		n->hi = p + BUNsize(b);
-		continue;
+	if (n == lead_col) {
+		if (argc > 1 && ATOMcmp(b->htype, h, ATOMnilptr(b->htype)) == 0) {
+    			n->lo = n->hi = p + BUNsize(b);
+			break;
+		} else if (algo <= LEAD_TRAVERSE_SEQ) { 
+    			n->lo = p;
+			n->hi = p + BUNsize(b);
+			continue;
+		}
 	}
 	/* Synced lookup
 	 * If some BAT is synced with a BAT we already handled ('parent'),
@@ -1812,12 +1879,7 @@ while(algo) {
     		BUN last = BUNlast(b);
     		int xx = BUNsize(b);
 
-	        if (b->htype == TYPE_void) { /* special case: all nil column */
-			if (algo&LEAD_INTERRUPT_NIL) algo = 0;
-			if (*(oid*) h != oid_nil) break; /* NOT FOUND */
-			n->lo = BUNfirst(b); n->nhits = n->size; 
-			n->hi = last; continue;
-	        } else if (n->binsearch) {
+		if (n->binsearch) {
     			n->cur = (BUN) SORTfndfirst@4(BATmirror(b), h);
     			if (n->cur >= last) break; /* NOT FOUND */
     		} else {
@@ -1831,7 +1893,7 @@ while(algo) {
 		for(n->nhits=1; (n->cur += xx) < last; n->nhits++) {
     			if (@2cmp(BUN@1(b,n->cur),h))  break;
     		}
-		if (n->cur>=last && !(algo&LEAD_INTERRUPT_END)) algo = 0; 
+		if (n->cur>=last && (algo&LEAD_INTERRUPT_END)) algo = 0; 
     		n->hi = n->cur;
 	/* IDX lookup
 	 * We perform a merge scan over the binary index

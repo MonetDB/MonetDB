@@ -21,6 +21,7 @@ b.persists(true);
 a:=new(int,bat);
 a.rename("a");
 a.persists(true);
+!ERROR: BATmode(a) recursive BATs cannot be made persitent
 a.insert(1,b);
 commit;
 quit;   
@@ -35,17 +36,13 @@ quit;
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 ls;
-#---------------------------------------------------------------------------------------------------------#
-# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
-#---------------------------------------------------------------------------------------------------------#
-[ "a",	  "int",  "bat",  1,	  0,	  "clean",	  "disk", "pers", 0,	  1,		  1	  ]
-[ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  2,		  2	  ]
+#-------------------------------------------------------------------------------------------------#
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
+#-------------------------------------------------------------------------------------------------#
+[ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 a.print;
-#-----------------#
-# BAT:	  a	  #
-# (int)	  (BAT)	  #
-#-----------------#
-[ 1,	  <b>	  ]
+!WARNING: interpret: convert identifier 'a' to string.
+[ "a" ]
 b.print;
 #-----------------#
 # BAT:	  b	  #
@@ -53,6 +50,10 @@ b.print;
 #-----------------#
 # tidy up
 a.persists(false); 
+!WARNING: interpret: convert identifier 'a' to string.
+!ERROR: interpret: no matching MIL operator to 'persists(str, bit)'.
+!MAYBE YOU MEAN:
+!	persists(BAT[any::1,any::2], bit) : BAT[any::1,any::2]
 b.persists(false); 
 commit;
 quit;   

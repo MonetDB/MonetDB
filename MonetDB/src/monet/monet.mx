@@ -102,7 +102,6 @@ monet\_critical          & monet.mx      & {\em created  }\\
 monet\_contextLock       & monet.mx      & {\em created  }\\
                 & CNTXTfree     & monet\_cntxt monet\_cntxtcur\\
                 & CNTXTnew      & monet\_cntxt monet\_cntxtcur\\
-                & CNTXTreserve  & monet\_cntxt monet\_cntxtcur\\
                 & VARnew        & monet\_cntxt\\\hline
 monet\_parserLock        & monet\_init    & {\em created  }\\
                 & parserEntry & ll\_client and parser\\
@@ -112,8 +111,7 @@ monet\_notifyLock	& monet\_init    & {\em created  }\\
 TBL\_readLock   & monet\_tbl.mx & {  }\\
 TBL\_writeLock  & monet\_tbl.mx & {  }\\\hline
 monet\_started  & monet\_init   & {\em created}\\
-                & main          & {\em down for Internet Thread}\\
-                & monetServer   & {\em up for Internet Thread}\\\hline
+                & main          & {\em down for Internet Thread}\\\hline
 monet\_available	& monet\_init    & {\em created}\\
                 & clrRequest    & QMrequests, qm\_first, qm\_last, qm\_top, qm\_bot\\
                 & wakeupRequest & {\em up for available MIL request}\\
@@ -253,7 +251,7 @@ m_export ptr	monet_init	(void);
 m_export str	monet_load_script(str file, str module);
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
-m_export void	monet_exit	(void);
+m_export void	monet_exit	(int status);
 m_export void	monet_hello	(void);
 m_export int	monet_sprintf	(str *dst, str format, va_list ap);
 m_export void 	monet_checkbat  (BAT* b, int protect);
@@ -384,10 +382,10 @@ void monet_hello(void) {
 The client threads are already killed upon closing their input file.
 The server process interpreter is directly killed.
 @c
-void monet_exit(void) {
+void monet_exit(int status) {
         PARDEBUG THRprintf(GDKerr, "exit from main process\n");
-	while (THRexit("Interpreter"));
-        GDKexit();
+/*DD:this line removed*/	while (THRexit("Interpreter"));
+        GDKexit(status);
 }
 
 extern BAT *TBL_mod_load;
@@ -428,8 +426,8 @@ ptr monet_init(void){
         TBL_init(); /* init MIL function table management. */
         c = initClient(
 		GDKstrdup(GDKgetenv("monet_admin")), 
-		GDKstrdup(GDKgetenv("monet_prompt")), FALSE);
-        if (c == 0) monet_exit();
+		GDKstrdup(GDKgetenv("monet_prompt")), /*DD:TRUE*/FALSE);
+        if (c == 0) monet_exit(1);
 	c->login = time(0);
 	c->socket = 0;
         TBL_initclient(c, NULL); /* register user 'adm' for a function table. */
@@ -902,9 +900,9 @@ If we look at the copied column of a VIEWcombine (MIL mirror) BAT,
 we can skip checking, as we can assume the reverse column will get checked.
 @c
         if (b->H != b->T) {
-        	BATpropcheck(BATmirror(b));
+        	BATpropcheck(BATmirror(b), BATPROPS_QUICK);
         }
-        BATpropcheck(b);
+        BATpropcheck(b, BATPROPS_QUICK);
 /*
  * StM: moved to CATCHVAL in yytree.mx, so it get's executed with GDKdebug=0, too.
  *

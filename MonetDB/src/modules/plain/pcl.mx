@@ -195,7 +195,7 @@ pcl_events := pcl_events.reverse;
 
 #ifndef HAVE_LIBPCL
 
-void pcl_init(){ }
+bat* pcl_init(){ return NULL; }
 void pcl_exit(){ }
 
 int pcl_start(BAT *event, int *mode){ return GDK_SUCCEED; }
@@ -227,10 +227,11 @@ int pcl_try(bit *result, BAT *event, int *mode){
 
 static PCL_DESCR_TYPE pcl_desc;
 
-void pcl_init(){
+bat* pcl_init(){
 	if (PCLinit(&pcl_desc) != PCL_SUCCESS){
 		GDKwarning("couldn't initialize pcl library\n");
 	}
+	return NULL;
 }
 
 void pcl_exit(){

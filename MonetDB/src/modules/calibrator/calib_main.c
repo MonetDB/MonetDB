@@ -43,18 +43,21 @@ struct fullInfo {
 
 struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 {
-	FILE	*fp;
 	caliblng align=0;
 	caliblng	mincachelines, minTLBentries, maxlinesize, mincachesize, 
-		maxcachesize, minstride = (caliblng)sizeof(char*), yy, y;
-	caliblng maxCstride=0,	maxTstride=0, maxAstride=0, delayC, delayT;
-        char	*array0, *array, fnn1[1024], fnx1[1024], fnn2[1024], fnx2[1024];
+		/*maxcachesize,*/ minstride = (caliblng)sizeof(char*), yy, y;
+	caliblng maxCstride=0,	maxTstride=0, maxAstride=0, delayC /*,delayT*/;
+        char	*array0, *array;
 	caliblng	**result1, **result2;
 	cacheInfo *cache;
 	TLBinfo	  *TLB;
 	AssoInfo  *Asso;
 	caliblng pgsz=getpagesize();
 	struct fullInfo *calibratorInfo;
+#ifdef CALIBRATOR_CREATE_PLOTS
+	FILE	*fp;
+	char	fnn1[1024], fnx1[1024], fnn2[1024], fnx2[1024];
+#endif
 	
 	if (!(array0 = (char *)malloc(maxrange+pgsz)))
 		ErrXit("main: 'array0 = malloc(%ld)` failed", maxrange+pgsz);
@@ -113,7 +116,7 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 	mincachelines = ( cache->size[0] && cache->linesize[1] ? cache->size[0] / cache->linesize[1] : 1024 );
 	maxlinesize = ( cache->linesize[cache->levels] ? cache->linesize[cache->levels] : maxCstride / 2 );
 	mincachesize = ( cache->size[0] ? cache->size[0] : 0 );
-	maxcachesize = ( cache->levels && cache->size[cache->levels - 1] ? cache->size[cache->levels - 1] : 0 );
+	/*maxcachesize = ( cache->levels && cache->size[cache->levels - 1] ? cache->size[cache->levels - 1] : 0 );*/
 	delayC = cache->latency2[0] - cache->latency1[0];
 
 #ifdef CALIBRATOR_CREATE_PLOTS
@@ -169,7 +172,7 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 
 	TLB = analyzeTLB(result1, result2, maxlinesize, mincachelines, MHz);
 	minTLBentries = ( TLB->levels && TLB->entries[0] ? TLB->entries[0] : mincachelines );
-	delayT = TLB->latency2[0] - TLB->latency1[0];
+	/*delayT = TLB->latency2[0] - TLB->latency1[0];*/
 
 #ifdef CALIBRATOR_CREATE_PLOTS
     sprintf(fnx1, "%s.gp", fnn1);
@@ -230,7 +233,7 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 
 	Asso = analyzeAsso(result1, result2, maxlinesize, minTLBentries, 
 		cache->levels, MHz);
-	delayT = Asso->latency2[0] - Asso->latency1[0];
+	/*delayT = Asso->latency2[0] - Asso->latency1[0];*/
 
 #ifdef CALIBRATOR_CREATE_PLOTS
     sprintf(fnx1, "%s.gp", fnn1);

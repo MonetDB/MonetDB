@@ -98,7 +98,7 @@ int trans_abort(BAT *b, ...) {
         va_start (ap,b);
 	do {
 		BATundo(b);
-		if (b->batPersistence & PERSISTENT)
+		if (b->batPersistence == PERSISTENT)
 			BBPsave(b);
 	} while ((b = va_arg(ap, BAT*)) != 0); 
         va_end (ap);

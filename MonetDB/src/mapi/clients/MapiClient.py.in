@@ -36,34 +36,49 @@ from Mapi import server
 
 import fileinput
 
-cmd_options = [
-    ('host',None,'host','hostname','host to connect to (default: localhost)'),
-    ('port',None,'mapi_port','port','port to connect to (default: 50000)'),
-    ]
 
-try:
-    opt, args = monet_options.parse_options(sys.argv[1:], cmd_options)
-except monet_options.Error:
-    # error parsing options
-    sys.exit(1)
+def main(argv) :
 
-s = server(opt.get("host", "localhost"),
+    cmd_options = [
+        ('host',None,'host','hostname','host to connect to (default: localhost)'),
+        ('port',None,'mapi_port','port','port to connect to (default: 50000)'),
+        ]
+
+    try:
+        opt, args = monet_options.parse_options(argv[1:], cmd_options)
+    except monet_options.Error:
+        # error parsing options
+        sys.exit(1)
+
+    s = server(opt.get("host", "localhost"),
+               int(opt.get("mapi_port", 50000)),
+               os.environ['USER'])
+    print "#MapiClient (python) connected to %s:%d as %s" % \
+          (opt.get("host", "localhost"),
            int(opt.get("mapi_port", 50000)),
            os.environ['USER'])
-print "#MapiClient (python) connected to %s:%d as %s" % \
-      (opt.get("host", "localhost"),
-       int(opt.get("mapi_port", 50000)),
-       os.environ['USER'])
 
-#fi = fileinput.FileInput()
-fi = sys.stdin
+    #fi = fileinput.FileInput()
+    fi = sys.stdin
 
-sys.stdout.write(s.prompt)
-line = fi.readline()
-while line and line != "quit;\n":
-    res = s.cmd(line)
-    print res
-    sys.stdout.write(s.prompt.encode('utf-8'))
+    sys.stdout.write(s.prompt)
     line = fi.readline()
+    while line and line != "quit;\n":
+        res = s.cmd(line)
+        print res
+        sys.stdout.write(s.prompt.encode('utf-8'))
+        line = fi.readline()
 
-s.disconnect()
+    s.disconnect()
+
+### main(argv) #
+
+
+if __name__ == "__main__":
+    if '--trace' in sys.argv:
+        sys.argv.remove('--trace')
+        import trace
+        t = trace.Trace(trace=1, count=0)
+        t.runfunc(main, sys.argv)
+    else:
+        main(sys.argv)

@@ -28,7 +28,6 @@
 #ifndef _SYMBOL_H_
 #define _SYMBOL_H_
 
-#include <config.h>
 #ifdef HAVE_IOSTREAM
 #include <iostream>
 #else
@@ -64,6 +63,7 @@ class Symbol {
 #endif // _SYMBOL_H_
 
 @C
+#include <config.h>
 #include "symbol.h"
 #include "mel.h"
 #include "language.h"

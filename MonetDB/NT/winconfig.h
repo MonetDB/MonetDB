@@ -315,6 +315,9 @@
 /* Define to 1 if you have the `strtod' function. */
 #define HAVE_STRTOD 1
 
+/* Define to 1 if you have the `strtof' function. */
+/* #undef HAVE_STRTOF */
+
 /* Define to 1 if you have the `strtol' function. */
 #define HAVE_STRTOL 1
 
@@ -464,7 +467,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.3.11"
+#define VERSION "4.3.13"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32

@@ -792,7 +792,7 @@ DVbuild(
 	int bunsize, atomsize, xx, yy=0;
 	datavector *v;
 	vectoridx *vi;
-	BUN base, p, q;
+	BUN p, q;
 @-
 Create a new BAT, which will contain the data vector.
 @c
@@ -829,7 +829,6 @@ Look up the oid positions in the extent.
 	v->vector = bn->batCacheid;
 	atomsize = ATOMsize(b->htype);
 	bunsize = BUNsize(bn);
-	base = bn->batBuns->base + bunsize;
 	bn->batBuns->free = (BATcount(b)+1)*bunsize;
 @-
 Create a tail column, filled with the contents of bn, but
@@ -987,7 +986,7 @@ to speed up semijoins.
 
 @+ Vectorized Semijoin
 @= dvprepare
-	int bunsize, first, xx, yy=0;
+	int bunsize, xx, yy=0;
 	BUN base, heapbase, p, q;
 	vectoridx *vi = (vectoridx*) r->haccelerator.base;
 
@@ -1013,7 +1012,6 @@ to speed up semijoins.
 		return GDK_FAIL;
 	}
 	vi = (vectoridx*) r->haccelerator.base;
-	first = BUNindex(v, BUNfirst(v));
 	base = BUNfirst(v);
 	heapbase = v->theap.base;
 	bunsize = BUNsize(v);

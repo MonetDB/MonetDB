@@ -53,6 +53,7 @@ class Operator : public Command {
 #endif 
 
 @C
+#include <config.h>
 #include "operator.h"
 #include "language.h"
 #include <string.h>

@@ -75,6 +75,8 @@ int debugger();
 #endif /* _MONET_GLOBAL_H_ */
 @C
 extern "C" {
+#include "Mserver.h"
+
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
    our definition of new and delete clashes with the one if
@@ -83,7 +85,6 @@ extern "C" {
 #undef _CRTDBG_MAP_ALLOC
 #endif
 
-#include "Mserver.h"
 #include "monet_context.h"
 #include "monet_interpreter.h"
 #include "monet_parse.h"
@@ -96,11 +97,16 @@ extern "C" {
 extern void		static_module_init(Client c, char buf[]); 
 }
 
-void *operator new( size_t size ) {
+#include <new> 
+void *operator new( size_t size ) 
+throw(std::bad_alloc) 
+{
         void *ptr = GDKmalloc( size );
         return(ptr);
 }
-void operator delete( void *ptr ) {
+void operator delete( void *ptr ) 
+throw() 
+{
         GDKfree( ptr );
 }
 #if defined(__GNUC__) && defined(__cplusplus)
@@ -411,7 +417,7 @@ for all processes to terminate properly.
 @-
 Peter: for the time being avoid difficult things like dropping everything 
 @C
-	monet_exit();
+	monet_exit(0);
 	MT_global_exit(0);  
 	return 0;
 } /* main */

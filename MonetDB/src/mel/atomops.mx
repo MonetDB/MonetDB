@@ -62,6 +62,7 @@ class Atomops : public Ops {
 #endif // _ATOMOPS_H_
 
 @C
+#include <config.h>
 #include "atomops.h"
 #include "language.h"
 #include <string.h>

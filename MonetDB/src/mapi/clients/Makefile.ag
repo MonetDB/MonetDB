@@ -20,6 +20,7 @@
 # 		Peter Boncz <Peter.Boncz@cwi.nl>
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+SUBDIRS = perl
 
 MTSAFE
 INCLUDES = ../../common $(READLINE_INCS)
@@ -29,7 +30,7 @@ MAPI_LIBS = $(SOCKET_LIBS)
 EXTRA_DIST = \
 	MapiClient.java  Mapi.hs \
 	MapiClient.php   Mapi.php \
-	MapiClient.pl    Mapi.pm \
+	MapiClient.pl    \
 	MapiClient.py    Mapi.py \
 	MapiClient.tcl   Mapi.tcl \
 
@@ -65,11 +66,6 @@ scripts_bat = {
 	SOURCES = Mshutdown.py.bat MapiClient.py.bat
 }
 
-scripts_perl = {
-	EXT = pl pm
-	DIR = pkgdatadir/site_perl
-	SOURCES = Mapi.pm MapiClient.pl
-}
 
 scripts_python = {
 	EXT = py

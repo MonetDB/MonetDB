@@ -63,6 +63,7 @@ class proto: public language {
 #endif //_MPROTO_H_
 
 @C
+#include <config.h>
 #include "proto.h"
 #include "ListIterator.h"
 #include "mel.h"
@@ -616,7 +617,7 @@ ostream &proto::gen_any_arg( ostream &o, const AnyArg &d ){
 
 ostream &proto::gen_prelude( ostream &o, const Prelude &d ){
    	 o << "/* The prelude function */\n";
-	 o << "void " << d.Name() << "(void);\n\n";
+	 o << "bat* " << d.Name() << "(void);\n\n";
 	 return o; 
 }
 

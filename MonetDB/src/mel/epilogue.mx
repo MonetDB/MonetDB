@@ -39,6 +39,7 @@ class Epilogue : public Symbol {
 #endif // _EPILOGUE_H_
 
 @C
+#include <config.h>
 #include "epilogue.h"
 #include "language.h"
 #include <string.h>

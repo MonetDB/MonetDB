@@ -161,18 +161,26 @@ BAT *BATcommit(BAT *b) {
 		(unsigned long) b->batHole, (unsigned long) b->batBuns->base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batHole  && BBP_cache(b->batCacheid)) {
+		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel)(Heap*,size_t*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*,size_t*) = BATatoms[b->ttype].atomDel;
 		BUN p,q;
 		int xx;
 
-		if (hatmdel || tatmdel) {
+		if (hatmdel || hunfix || tatmdel || tunfix) {
 		DELloop(b, p, q, xx) {
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
 
+			if (hunfix) {
+				(*hunfix)(h);
+			}
 			if (hatmdel) {
 				(*hatmdel)(&b->hheap,(size_t*)(h));
+			}
+			if (tunfix) {
+				(*tunfix)(t);
 			}
 			if (tatmdel) {
 				(*tatmdel)(&b->theap,(size_t*)(t));
@@ -244,19 +252,25 @@ BAT *BATundo(BAT *b) {
 	bunlast = BUNlast(b) - BUNsize(b); 
 	if (bunlast >= b->batInserted) {
 		size_t i = BUNindex(b, bunfirst);
+		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel)(Heap*, size_t*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*, size_t*) = BATatoms[b->ttype].atomDel;
 		void (*haccdel)(Heap*,size_t,BAT*,ptr) = 
 			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accDelete;
 		void (*taccdel)(Heap*,size_t,BAT*,ptr) = 
 			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accDelete;
-		if (hatmdel || tatmdel || haccdel || taccdel) {
+               
+		if (hunfix || tunfix || hatmdel || tatmdel || haccdel || taccdel) {
 		for(p = bunfirst; p <= bunlast; p += bunsize, i++) { 
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
 
                 	if (b->hhash_heap) {
 				HASHdel(b->hhash, i, h, p < bunlast);
+			}
+			if (hunfix) {
+				(*hunfix)(h);
 			}
 			if (haccdel) {
 				(*haccdel)(&b->haccelerator, i, b, h);
@@ -266,6 +280,9 @@ BAT *BATundo(BAT *b) {
 			}
                 	if (b->thash_heap) {
 				HASHdel(b->thash, i, t, p < bunlast);
+			}
+			if (tunfix) {
+				(*tunfix)(t);
 			}
 			if (taccdel) {
 				(*taccdel)(&b->taccelerator, i, b, t);

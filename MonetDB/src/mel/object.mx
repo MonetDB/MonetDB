@@ -45,6 +45,7 @@ class Object : public Symbol {
 #endif // _OBJECT_H_
 
 @C
+#include <config.h>
 #include "object.h"
 #include "language.h"
 #include <string.h>

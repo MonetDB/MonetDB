@@ -310,7 +310,7 @@ bandjoin(b,c,4,4).print;
 [ 2,	  15	  ]
 
 #and theta joins?
-b.thetajoin(c,LT).print;
+b.thetajoin(c,LT,lng(nil)).print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #

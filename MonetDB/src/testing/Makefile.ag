@@ -50,6 +50,12 @@ scripts_py = {
 	SOURCES = prof.py Mtest.py Mfilter.py 
 }
 
+scripts_python = {
+	EXT = py
+        DIR = pkgdatadir/python
+        SOURCES = trace.py
+}
+
 scripts_lst = {
 	DIR = pkgdatadir
 	SOURCES = Mprofile-commands.lst

@@ -219,7 +219,10 @@ int interpret_str(Cntxt stk, str buf, ValPtr res) {
         /* Parse and interpret the script code. */
         if (buf && *buf) {
 		Client c = forkClient(stk, FALSE);
-		char *input_bak = c->input;
+		char *input_bak;
+		if (c == NULL)
+			return i;
+		input_bak = c->input;
                 c->input = buf;
 
                 if (parseClient(c, FALSE)) {
@@ -345,8 +348,8 @@ void interpret_unpin(batrec *r, str s) {
 		}
 		MT_unset_lock(monet_voidLock, "unpin");
 	    }
-	    BBPunfix(b->batCacheid);
 	}
+        BBPunfix(r->id);
 }
 
 @- param execution(name,lt,argc,argv) 
@@ -406,20 +409,22 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
     return argc;
 }
 
-void interpret_params_pin(int argc, ValPtr argv, str op_name) {
-   int i = 0;
-   while(++i < argc) 
-   if (argv[i].vtype == TYPE_bat) {
-	interpret_pin(&argv[i].val.br,op_name);
-   }
-}
-
 void interpret_params_unpin(int argc, ValPtr argv, str op_name) {
    int i = 0;
    while(++i < argc) 
    if (argv[i].vtype == TYPE_bat) {
 	interpret_unpin(&argv[i].val.br,op_name);
    }
+}
+
+int interpret_params_pin(int argc, ValPtr argv, str op_name) {
+   int ret = 1, i = 0;
+   while(++i < argc) 
+   if (argv[i].vtype == TYPE_bat) {
+	ret &= (interpret_pin(&argv[i].val.br,op_name) != NULL);
+   }
+   if (!ret) interpret_params_unpin(argc, argv, op_name);
+   return ret;
 }
 
 /* the guts of MIL interpretation */
@@ -555,8 +560,7 @@ primitives CATCH* look after garbage collecting these results.
 		stamp = BBPcurstamp();	
 		i = (*imp)(stk, lt, res); 
 		if (i >= 0 ){
-			int x = -TOK_RETURN;
-			CATCHRET(stk,lt,res,x);
+			CATCHREF(stk,lt,res);
 		}
 		CATCHERR(stk,lt,res,i,((YYSTREE) imp)); break; }
 #ifdef MKMODS
@@ -813,24 +817,23 @@ exec:	stamp = BBPcurstamp();
         	}
 		return i;
 	}
-	interpret_params_pin(argc,argv,fcn_nme);
-
+	if (!interpret_params_pin(argc,argv,fcn_nme)) {
+		return -1;
+	}
 	if (sig->token == TOK_COMMAND) {
 		i = (*sig->pack_fcn)(argc, argv);
 		*res = argv[0];
-		CATCHVAL(stk,opcache,res,TRUE);
+		CATCHVAL(stk,opcache,res);
 		CATCHERR(stk,opcache,res,i,((YYSTREE) sig->pack_fcn)); 
 	} else if (sig->token == TOK_CAST) {
 		i = interpret_cast(sig->fcn_nme,argc,argv+1,res);
 		if (i >= 0){
-			int x = -TOK_RETURN;
-			CATCHRET(stk,opcache,res,x);
+			CATCHREF(stk,opcache,res);
 		}
 	} else if (sig->token == TOK_BATCAST) {
 		i = interpret_batcast(sig->fcn_nme,argc,argv+1,res);
 		if (i >= 0 ){
-			int x = -TOK_RETURN;
-			CATCHRET(stk,opcache,res,x);
+			CATCHREF(stk,opcache,res);
 		}
 	} else {
                 /* multiplex and set aggregate can execute procs in a loop!  
@@ -846,7 +849,7 @@ exec:	stamp = BBPcurstamp();
 		} else if (sig->token == TOK_SETOP) { 
 			i = interpret_multiplex(sig->fcn_nme,argc,argv,res,op,stk);
 		}
-		CATCHVAL(stk,opcache,res,TRUE); 
+		CATCHVAL(stk,opcache,res); 
         	if (reuse < 0) {
                		monet_cntxt[stk].reuse = reuse;
 			CNTXTfree1(stk);
@@ -906,8 +909,7 @@ to the @%ValRecord@ of that variable in the context stack.
 @c
 int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 	Variable v;
-	int i=0;
-	BAT *b;
+	int i=0, j;
 
 	for(i = lt->yyval.len; i > 0; i--) { /* hacky use of len as ../ depth */
 		if (stk >= 0) {
@@ -931,23 +933,25 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 	/* resolve only once: CONSTANT */
         lt->token = TOK_CONSTANT; 
 	i = BBPindex(lt->yyval.val.sval);
-	if (i) BBPpersistent(i, FALSE);
-	if (i == 0 || (b=BATdescriptor(i)) == NULL) {
+	j = BBPfix(i); 
+	if (j == 0 || strcmp(BBP_logical(i), lt->yyval.val.sval)) {
+		if (j) BBPunfix(i);
 		lt->yyval.vtype = TYPE_str;
 		lt->yyval.len = 1+strlen(lt->yyval.val.sval);
                	GDKwarning("interpret: convert identifier '%s' to string.\n", 
 			lt->yyval.val.sval);
 		return interpret(stk, lt, res);
        	}
-	BBPunfix(b->batCacheid);
-	/* LOAD FIX: pin the bat and register for unpinning */
+	/* LOAD FIX: register the bat for unpinning */
 	GDKfree(lt->yyval.val.sval);
 	lt->yyval.vtype = TYPE_bat;
 	lt->yyval.val.bval = i;
 	lt->yyval.len = 0;
 	lt->dealloc = TYPE_bat;
 	lt->free.batref.id = i;
-	lt->free.batref.stamp = b->batStamp;
+	lt->free.batref.stamp = BBPquickdesc(ABS(i), FALSE)->batStamp;
+	BBPincref(i, TRUE);
+	BBPunfix(i);
 	*res = lt->yyval;
 	return 0;
 }
@@ -1023,9 +1027,11 @@ xit:	return i;
 Any atom can be casted to another one. All numeric values can be interchanged,
 and conversion to and from string is always possible.
 @c
-#define trivial_cast(dst,src)	(dst==src || (ATOMstorage(dst)==ATOMstorage(src)\
-     &&	((dst != TYPE_str) || BATatoms[src].atomToStr == BATatoms[TYPE_str].atomToStr)\
-     &&	((src != TYPE_str) || BATatoms[dst].atomFromStr == BATatoms[TYPE_str].atomFromStr))) 
+#define trivial_cast(dst,src)	\
+	((dst) == (src) || \
+	 (ATOMstorage(dst) == ATOMstorage(src) && \
+	  ((dst) != TYPE_str || BATatoms[src].atomToStr == BATatoms[TYPE_str].atomToStr) && \
+	  ((src) != TYPE_str || BATatoms[dst].atomFromStr == BATatoms[TYPE_str].atomFromStr)))
 
 int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 	int tpe = ATOMindex(atom);
@@ -1033,7 +1039,13 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 	if (argc == 1) {
 		res->vtype = TYPE_int;
 		res->val.ival = tpe;
-	} else if (trivial_cast(tpe,val->vtype)) {
+	} else if ((tpe == val->vtype ||
+		    (ATOMstorage(tpe) == ATOMstorage(val->vtype) &&
+		     ATOMstorage(tpe) == TYPE_str && /* extra compared to trivial_cast above */
+		     (tpe != TYPE_str ||
+		      BATatoms[val->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) &&
+		     ((val->vtype) != TYPE_str ||
+		      BATatoms[tpe].atomFromStr == BATatoms[TYPE_str].atomFromStr)))) {
 		VALcopy(res,val);
 		res->vtype = tpe;
 	} else if (val->vtype == TYPE_str) {
@@ -1059,7 +1071,7 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 		res->vtype = TYPE_str;
 	} else {
 		*res = *val;
-		if ((VALconvert(tpe, res, 1) == ILLEGALVALUE) || TYPEerror(tpe, res->vtype)){
+		if ((VALconvert(tpe, res) == ILLEGALVALUE) || TYPEerror(tpe, res->vtype)){
 			GDKerror("interpret_cast: should have a string parameter.\n");
 			return -1;
 		}
@@ -1163,7 +1175,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 		    } else if (b->ttype == TYPE_flt && tpe == TYPE_lng) {
 			reduce = 1; /* rounding off */
 		    }
-		    s = VALconvert(tpe, res, 1); /* try once if this works */
+		    s = VALconvert(tpe, res); /* try once if this works */
 		    if (s == ILLEGALVALUE || TYPEerror(tpe, res->vtype)) {
 			GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", 
 					ATOMname(b->ttype), ATOMname(tpe));
@@ -1175,14 +1187,14 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 			for(p+=xx; p < q; p+=xx) {
 		    	    res->vtype = BATttype(b);
 			    res->val.pval = BUNtail(b,p);
-			    s = VALconvert(tpe, res, 1);
+			    s = VALconvert(tpe, res);
 			    BUNfastins(bn, BUNhead(b,p), s);
 			} 
 		    } else {
 			for(p+=xx; p < q; p+=xx) {
 		    	    res->vtype = BATttype(b);
 			    memcpy(&res->val.ival, BUNtail(b,p), len);
-			    s = VALconvert(tpe, res, 1);
+			    s = VALconvert(tpe, res);
 			    BUNfastins(bn, BUNhead(b,p), s);
 			}
 		    }
@@ -1195,7 +1207,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 	res->vtype = TYPE_bat;
 	res->val.bval = bn->batCacheid;
 	res->len = 0;
-	BBPpersistent(bn->batCacheid,FALSE);
+	BBPincref(bn->batCacheid,TRUE);
 	BBPunfix(bn->batCacheid);
 	return 0;
 }
@@ -1282,7 +1294,7 @@ int interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope){
 
 	if (scope) {
 		if (!lt->old_cntxt) {
-			stk = CNTXTreserve(stk);
+			stk = CNTXTnew(stk);
 			if (stk <= 0) return -1;
 			lt->old_cntxt = stk;
 		} else stk = lt->old_cntxt; 
@@ -1332,7 +1344,7 @@ int interpret_parblock(int stk, YYSTREE lt, ValPtr res, int scope){
 
 	if (scope) {
 		if (!lt->old_cntxt) {
-			stk = CNTXTreserve(stk);
+			stk = CNTXTnew(stk);
 			if (stk <= 0) return -1;
 			lt->old_cntxt = stk; 
 			if (reuse < 0) {
@@ -1538,7 +1550,8 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 	/* Evaluate the command line parameters.
 	 */
 	argc = interpret_params(stk, params, argv+1, "batloop");
-	interpret_params_pin(argc, argv+1, "batloop");
+	if (!interpret_params_pin(argc, argv+1, "batloop"))
+		return -1;
 	argv[1] = argv[2];
 	if (argc <= 1 || argv[1].vtype != TYPE_bat) {
 		GDKerror("interpret_iterator: iterator should work on a BAT.\n");

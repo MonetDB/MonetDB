@@ -663,13 +663,10 @@ PROC test_ddbench() : void := {
 }
 
 @* Implementation 
-@h
+@c
+#include <monet.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <monet.h>
-
-@c
-#include "ddbench.h"
 #include "streams.h"
 #include "enum.proto.h"
 #include "enum.h"
@@ -732,8 +729,8 @@ static size_t estimate(BAT* b, size_t lo, size_t hi) {
 @c
 extern int TYPE_bit32;
 
-int bit32ToStr(char **dst, int *len, unsigned int *src) {
-	unsigned int mask=1;
+int bit32ToStr(char **dst, int *len, int *src) {
+	int mask=1;
 	str p;
 
         @:atommem(char,33)@

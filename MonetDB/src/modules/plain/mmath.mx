@@ -329,13 +329,24 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
 #endif
 
 #if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
+
 /* C99 interface: fpclassify */
-#define isinf(x)	(fpclassify(x) == FP_INFINITE)
-#define isnan(x)	(fpclassify(x) == FP_NAN)
-#define finite(x)	(!isinf(x) && !isnan(x))
+#define MNisinf(x)	(fpclassify(x) == FP_INFINITE)
+#define MNisnan(x)	(fpclassify(x) == FP_NAN)
+#define MNfinite(x)	(!MNisinf(x) && !MNisnan(x))
+
 #else
-#ifndef HAVE_ISINF
-static int isinf(double x)
+
+#define MNisnan(x)	isnan(x)
+#define MNfinite(x)	finite(x)
+
+#ifdef HAVE_ISINF
+
+#define MNisinf(x)	isinf(x)
+
+#else
+
+static int MNisinf(double x)
 {
 #ifdef HAVE_FPCLASS
     int cl = fpclass(x);
@@ -344,6 +355,7 @@ static int isinf(double x)
     return 0;		/* XXX not correct if infinite */
 #endif	/* HAVE_FPCLASS */
 }
+
 #endif	/* HAVE_ISINF */
 #endif	/* HAVE_FPCLASSIFY */
 
@@ -354,7 +366,7 @@ int math_unary_ISNAN(bit *res , dbl *a ) {
     if (*a == dbl_nil) {
 	*res = bit_nil;
     } else {
-	*res = isnan(*a);
+	*res = MNisnan(*a);
     }
     return(GDK_SUCCEED);
 }
@@ -366,7 +378,7 @@ int math_unary_ISINF(int *res , dbl *a ) {
    if (*a == dbl_nil) {
 	*res = int_nil;
    } else {
-	if(isinf(*a)) {
+	if(MNisinf(*a)) {
         	*res = (*a < 0.0) ? -1 : 1;
         } else {
         	*res = 0;
@@ -382,7 +394,7 @@ int math_unary_FINITE(bit *res , dbl *a ) {
    if (*a == dbl_nil) {
 	*res = bit_nil;
    } else {
-	*res = finite(*a);
+	*res = MNfinite(*a);
    }
    return(GDK_SUCCEED);
 }

@@ -60,7 +60,7 @@ The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @c
 BAT *BATins(BAT *b, BAT *n) {
-	size_t needed = 0;
+	ssize_t needed = 0;
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
@@ -83,8 +83,14 @@ BAT *BATins(BAT *b, BAT *n) {
 	}
 
 	needed = BATcount(n) - (((b)->batBuns->size - (b)->batBuns->free)/BUNsize(b));
-  	if (needed > 0)
-		BATextend(b, BATcapacity(b) + needed); /* allocation hint */ 
+  	if (needed > 0){
+		/* if needed exceeds a normal growth extend just with needed */
+		size_t ncap = BATcapacity(b) + needed;
+		size_t grows = BATgrows(b);
+		if (ncap > grows)
+			grows = ncap;
+		BATextend(b, grows); /* allocation hint */ 
+	}
 
 	if (b->hidx_heap || b->tidx_heap) {
                 IDXdestroy(b);
@@ -259,6 +265,7 @@ BAT *BATnumber(BAT *b) {
         }
 	ALIGNsetH(bn,b);
         @:updateloop(bn,b,BUNnumber)@
+	BATsetaggr(bn, GDK_AGGR_CARD, i);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
         return bn;
@@ -266,7 +273,7 @@ BAT *BATnumber(BAT *b) {
 
 BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
         BUN p, q;
-        int i = 0, xx;
+        int ngroups = 1, i = 0, xx;
         BAT *bn;
 
         BATcheck(b, "BATgroup");
@@ -279,11 +286,13 @@ BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
    
         BATloopFast(b, p, q, xx) {
             BUNfastins(bn, BUNhead(b, p), (ptr)&start);
-            if(i == grpsize-1) { start += incr; i = 0; } else { i++; }
+            if(i == grpsize-1) { start += incr; i = 0; ngroups++; } else { i++; }
         }
-
+	if (i == 0) ngroups--;
+	BATsetaggr(bn, GDK_AGGR_CARD, ngroups);
         bn->hsorted = BAThordered(b);
         bn->tsorted = GDK_SORTED;
+
         return bn;
 }
 
@@ -315,11 +324,78 @@ BAT* BATconst(BAT *b, int tailtype, ptr v) {
 	}
 	ALIGNsetH(bn,b);
 	bn->tsorted = GDK_SORTED;
+	BATsetaggr(bn, GDK_AGGR_CARD, BATcount(b) > 0);
+	if (tailtype == TYPE_bit) {
+		BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit*) v == TRUE)?BATcount(b):0);
+	}
         return bn;
 }
 
+
 @+ BAT Aggregates
 
+We retain the size() and card() agggregate results in the column descriptor.
+We would like to have such functionality in an extensible way for many aggregates, 
+for DD (1) we do not want to change the binary BAT format on disk and (2) aggr
+and size are the most relevant aggregates. 
+
+It is all hacked into the aggr[3] records; three adjacent integers that 
+were left over in the column record. We refer to these as if it where an int aggr[3] array.
+The below routines set and retrieve the aggregate values from the tail of the BAT, as many 
+aggregate-manipulating BAT functions work on tail.
+
+The rules are as follows: aggr[0] contains the alignment ID of the column (if set i.e. nonzero).
+Hence, if this value is nonzero and equal to b->talign, the precomputed aggregate values in 
+aggr[GDK_AGGR_SIZE] and aggr[GDK_AGGR_CARD] hold. However, only one of them may be set
+at the time. This is encoded by the value int_nil, which cannot occur in these two aggregates.
+
+This was now extended to record the property whether we know there is a nil value present
+by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
+@c
+#define GDK_NIL_BIT (1 << 31)
+
+/* later to evolve into a more sophisticated aggregate retention system */
+int BATgetaggr(BAT *b, int idx) {
+        int *aggr = b->T->aggr;
+        if (aggr[0] && aggr[0] == (int) b->talign) {
+		if (idx == GDK_AGGR_HASNIL) {
+			if (aggr[1] & GDK_NIL_BIT) {
+                		return (aggr[2] & GDK_NIL_BIT)?TRUE:FALSE;
+}
+		} else {
+			int val = (int) (aggr[idx] & ~GDK_NIL_BIT);
+			if (val != ~GDK_NIL_BIT) {
+				return val;
+			}
+		}
+        }
+        return (idx == GDK_AGGR_HASNIL)?((int) bit_nil):int_nil;
+}
+
+int BATsetaggr(BAT *b, int idx, int val) {
+        int *aggr = b->T->aggr;
+        if (aggr[0] == 0 || aggr[0] != (int) b->talign || BATgetaggr(b, idx) != val) {
+                if (b->talign == 0) {
+			b->talign = OIDnew(1);
+		}
+		if (aggr[0] != (int) b->talign) {
+                	aggr[0] = (int) b->talign;
+			aggr[GDK_AGGR_SIZE] = aggr[GDK_AGGR_CARD] = ~GDK_NIL_BIT;
+		} 
+		if (idx != GDK_AGGR_HASNIL) {
+                	aggr[idx] &= GDK_NIL_BIT;
+                	aggr[idx] |= (val == int_nil)?~GDK_NIL_BIT:(val & ~GDK_NIL_BIT);
+		} else if (val != (int) bit_nil) {
+                	aggr[1] |= GDK_NIL_BIT;
+                	aggr[2] = (val & ~GDK_NIL_BIT) | (val?GDK_NIL_BIT:0);
+		} else {
+                	aggr[1] &= ~GDK_NIL_BIT;
+		}
+                b->batDirtydesc = TRUE;
+        }
+        return val;
+}
+@-
 The @%BAThistogram@ function calculates the frequency distribution of the
 tail values in its operand bat. Notice, that updates on the result do
 not affect the delta administration.
@@ -413,7 +489,12 @@ by bulk copying the heap as well
 		BAT *bm = BATmirror(b);
                 ALIGNsetH(bn,bm);
         }
-
+	if (ATOMstorage(b->ttype) == TYPE_bit) {
+		bit trueval = TRUE;
+		BUN p = BUNfnd(bn, &trueval);
+		BATsetaggr(b,GDK_AGGR_SIZE,p?*(int*)BUNtloc(bn,p):0);
+	}
+	BATsetaggr(b,GDK_AGGR_CARD,BATcount(bn));
 	return bn; 
 }
 
@@ -539,6 +620,8 @@ We have to do it: create a new BAT and put everything into it.
                 	BUNfastins(bn, BUNhead(b,p), BUNtail(b,p));
         	}
 	}
+        bn->H->aggr[0] =  bn->H->aggr[1] = bn->H->aggr[2] = 0;
+        bn->T->aggr[0] =  bn->T->aggr[1] = bn->T->aggr[2] = 0;
         bn->hsorted = BAThordered(b);
         bn->tsorted = BATtordered(b);
 	BATkey(bn, BAThkey(b));
@@ -626,8 +709,10 @@ BAT *BAT_hashselect(BAT *b, BAT *bn, ptr tl) {
 
 @- Range Selections
 The routine @%BATselect@ locates the BAT subset whose tail component
-satisfies the range condition @T$l <= tail <= h$. A nil value in
-either dimension defines infinity.  The value is set accordingly.
+satisfies the range condition @T$l <[=] tail <[=] h$. Either boundary
+is included in the result iff the respective bit parameter "li"/"hi"
+is TRUE. A nil value in either dimension defines infinity.  The value 
+is set accordingly.
 
 Range selections without lower or upper bound use the nil atom
 to indicate this (this is somewhat confusing). Note, however, that
@@ -651,7 +736,7 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
 	    }
 	} break;
 @c
-BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi) {
+BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi) {
 	BAT *m = BATmirror(b);
 	BUN *x, *y;
         ptr nil = ATOMnilptr(b->ttype);
@@ -675,7 +760,7 @@ BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi) {
 	return bn;
 }
 
-BAT *BAT_select(BAT *b, ptr tl, ptr th, int tail) {
+BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail) {
 	int	hval, lval, equi, t, ht, tt;
 	size_t 	offset, batcnt, estimate = 0;
 	ptr	nil;
@@ -693,6 +778,7 @@ Examine type, and values for lower- and higher-bound.
 	lval = ATOMcmp(t, tl, nil) || (th == NULL);
 	equi = ((th == NULL) || (lval && !ATOMcmp(t,tl,th)));
 	if (equi) {
+		if (th == NULL) hi = li;
 		th = tl; hval = 1; /* equi-select */
 	} else {
 		hval = ATOMcmp(t, th, nil);
@@ -705,9 +791,9 @@ Examine type, and values for lower- and higher-bound.
 	    ht = TYPE_oid; 
 	}
 
-        if (hval && (ATOMcmp(t, tl,th) > 0)) {
+        if ( hval && ( (ATOMcmp(t, tl,th) > 0) || (equi && !(li && hi)) ) ) {
 	    /* empty range */
- 	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): empty range;\n",b->batId);
+ 	    ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): empty range;\n",b->batId);
 	    return BATnew(ht, tt, 10);
 	}
 
@@ -724,7 +810,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 	    if (BATtdense(b)) {
 	       /* Selections on voids are positional. */
 		if (hval) {
-		    size_t h = (*(oid*) th) +1;
+		    size_t h = (*(oid*) th) + (hi?1:0);
 		    if (h > b->tseqbase)
 			h -= b->tseqbase;
 		    else
@@ -733,7 +819,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		
 		} 
 		if (lval) {
-		    size_t l = (*(oid*) tl);
+		    size_t l = (*(oid*) tl) + (li?0:1);
 		    if (l > b->tseqbase)
 			l -= b->tseqbase;
 		    else
@@ -744,7 +830,8 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		/* Use probe-based binary search */
 		offset = BUNindex(b,BUNfirst(b));
 		if (lval) {
-		    p = SORTfndfirst(b,tl);
+		    if (li) p = SORTfndfirst(b,tl);
+		    else    p = SORTfndlast(b,tl);
 		} else {
 		   /* No lower bound, we must still exclude nils. They are in 
                     * front, so we can still slice, by starting after them.
@@ -757,7 +844,8 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		else
 			low = 0;
 		if (hval) {
-		    q = SORTfndlast(b,th);
+		    if (hi) q = SORTfndlast(b,th);
+		    else    q = SORTfndfirst(b,th);
 		    high = BUNindex(b,q);
 		    if (high > offset)
 		    	high -= offset;
@@ -765,7 +853,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 			high = 0;
 		}
 	    }
-	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BATslice(v=%s, low=%u, high=%u);\n",
+	    ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BATslice(v=%s, low=%u, high=%u);\n",
 	                                b->batId, v->batId, low, high);
 	    bn = BATslice(v, low, high);
 	    if (!tail) {
@@ -775,20 +863,18 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 	}
 @-
 Use sampling to determine a good result size, when the bat is large.
-We do not sample in an equi-select on a BAT with a hash table, as the
-BAT_hashselect code already ensures a good allocation estimate. 
 @c
-	if (batcnt > 10000 && (equi == 0 || b->thash_heap == NULL)) {
+	if (batcnt > 10000) {
             size_t _lo = batcnt/2, _hi = _lo + 105;
 	    BAT *tmp1;
-	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%u, _hi=%u);\n",
+	    ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%u, _hi=%u);\n",
 	                                b->batId, b->batId, _lo, _hi);
             tmp1 = BATslice(b, _lo, _hi); /* slice keeps all parent properties */
             if (tmp1) {
 		BAT *tmp2;
-	        ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp2 = BAT_select(tmp1=%s, tl, th, tail);\n",
+	        ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): sampling: tmp2 = BAT_select_(tmp1=%s, tl, th, tail);\n",
 	                                    b->batId, tmp1->batId);
-                tmp2 = BAT_select(tmp1, tl, th, tail);
+                tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail);
                 if (tmp2) {
 		    /* reserve 105% of what has been estimated */
                     estimate = (size_t) ((((lng) BATcount(tmp2)) * (lng) batcnt)/LL_CONSTANT(100));
@@ -805,23 +891,23 @@ Create the result BAT and execute the select algorithm.
 	if (bn) {
 	    int nocheck = (estimate >= batcnt);
 	    if (equi && b->thash_heap) {
- 	        ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n",
+ 	        ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n",
 		                            b->batId, b->batId, bn->batId);
 	    	bn = BAT_hashselect(b, bn, tl);
 	    } else if (b->tidx_heap) {
-	    	ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BAT_indexselect(b=%s, bn=%s, tl, th);\n",
+	    	ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_indexselect(b=%s, bn=%s, tl, th);\n",
 	    	                            b->batId, b->batId, bn->batId);
-	    	bn = BAT_indexselect(b, bn, tl, th, equi);
+	    	bn = BAT_indexselect(b, bn, tl, th, li, hi, equi);
 	    } else if (equi && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDKmem_inuse() - GDK_mem_maxsize)) { 
 	        /* Build a hash-table on the fly for equi-select if the selectivity is low
                  * and there is sufficient memory available */
- 	        ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n",
+ 	        ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n",
  	                                    b->batId, b->batId, bn->batId);
 	        bn = BAT_hashselect(b, bn, tl);
 	    } else {
-                ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BAT_scanselect(b=$s, bn=$s, tl, th, equi=%d, lval=%d, hval=%d, nocheck=%d);\n",
+                ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_scanselect(b=$s, bn=$s, tl, th, equi=%d, lval=%d, hval=%d, nocheck=%d);\n",
                                             b->batId, b->batId, bn->batId, equi, lval, hval, nocheck);
-		bn = BAT_scanselect(b, bn, tl, th, equi, lval, hval, nocheck);
+		bn = BAT_scanselect(b, bn, tl, th, li, hi, equi, lval, hval, nocheck);
 	    }
 	}
 	if (bn == NULL) {
@@ -838,7 +924,12 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		BATkey(bn,TRUE);
         	BATkey(BATmirror(bn), TRUE);
 	}
-
+        if (equi && tail) {
+            BATsetaggr(bn, GDK_AGGR_CARD, BATcount(bn) > 0);
+            if (b->ttype == TYPE_bit) {
+                BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit*) tl == TRUE)?BATcount(bn):0);
+            }
+        }
 	if (equi && b->thash_heap) {
 	    bn->hsorted = bn->tsorted = FALSE;
         } else if (b->tidx_heap) {
@@ -849,19 +940,31 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
             bn->hsorted = BAThordered(b);
             bn->tsorted = BATtordered(b);
 	}
-	ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n",
+	ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n",
 	                            b->batId, bn->batId, bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
-	ESTIDEBUG THRprintf(GDKout, "BAT_select(b=%s): resultsize: estimated %d, got %d.\n",
+	ESTIDEBUG THRprintf(GDKout, "BAT_select_(b=%s): resultsize: estimated %d, got %d.\n",
 	                            b->batId,estimate,BATcount(bn));
 	return bn; 
 }
 
+BAT* BAT_select(BAT *b, ptr h, ptr t, bit tail) {
+	return BAT_select_(b, h, t, TRUE, TRUE, tail);
+}
+
+BAT* BATselect_(BAT *b, ptr h, ptr t, bit li, bit hi) {
+	return BAT_select_(b, h, t, li, hi, TRUE);
+}
+
+BAT* BATuselect_(BAT *b, ptr h, ptr t, bit li, bit hi) {
+	return BAT_select_(b, h, t, li, hi, FALSE);
+}
+
 BAT* BATselect(BAT *b, ptr h, ptr t) {
-	return BAT_select(b, h, t, TRUE);
+	return BAT_select_(b, h, t, TRUE, TRUE, TRUE);
 }
 
 BAT* BATuselect(BAT *b, ptr h, ptr t) {
-	return BAT_select(b, h, t, FALSE);
+	return BAT_select_(b, h, t, TRUE, TRUE, FALSE);
 }
 
 @- Random Selections 
@@ -1126,7 +1229,7 @@ IDXloop(b, p, q) {
 @c
 int BATordered(BAT *b) {
 	BATcheck(b, "BATordered: BAT"); 
-	PROPDEBUG BATpropcheck(b);
+	PROPDEBUG BATpropcheck(b, BATPROPS_QUICK);
 	return (BAThordered(b)&1);
 }
 
@@ -1176,21 +1279,13 @@ BAT* BATrevert(BAT *b) {
         BUN p,q;
      
         BATcheck(b, "BATrevorder");
-	if (BAThvoid(b)) {
-	  /* otherwise, tail would be placed in reverse order of head */
-	  GDKwarning( "Cannot reverse order on void head.\n" );
+	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) ||
+            (b->ttype == TYPE_void && b->tseqbase != oid_nil)) 
+        {
+	  GDKwarning( "Cannot reverse order on void columns.\n" );
 	  return b;
 	}
         ALIGNdel(b, "BATrevorder");
-	if (BATordered(b)) {
-	  /* ignore the void case here as well */
-	  b->tseqbase = oid_nil;
-	} else {
-	  /* NOTE: a GDK_revorder property would be handy;
-	     now, an already reverse ordered BAT is first going to be ordered,
-	     and then reverse ordered once more! */
-	  BATorder(b);
-	}
         xx = BUNsize(b);
         buf = (char*) GDKmalloc(xx);
         for(p=BUNlast(b)-xx, q=BUNfirst(b); p > q; p -=xx, q+=xx) {

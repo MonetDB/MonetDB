@@ -72,7 +72,7 @@ class server:
                     print self.buffer
                 str = str + self.buffer
                 self.buffer = self.socket.recv(8096)
-                idx = string.find(self.buffer, "\1")
+                idx = string.find(self.buffer, "\1\n")
 
             str = str + self.buffer[0:idx]
             self.buffer = self.buffer[idx+1:]

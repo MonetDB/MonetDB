@@ -66,5 +66,5 @@ c:= b.copy;
 bandjoin(b,c,4,4).print;
 
 #and theta joins?
-b.thetajoin(c,LT).print;
+b.thetajoin(c,LT,lng(nil)).print;
 quit;

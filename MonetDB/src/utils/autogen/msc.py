@@ -316,7 +316,7 @@ def msc_deps(fd, deps, objext, msc):
                     name = name[1:]
                 if target == "LIB":
                     d, dext = split_filename(deplist[0])
-                    if dext == "c" or dext == "glue.c":
+                    if dext in ("c", "glue.c", "yy.c", "tab.c"):
                         fd.write(getsrc)
                         fd.write("\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s -c %s\n" %
                                  (name, msc_translate_ext(deplist[0])))

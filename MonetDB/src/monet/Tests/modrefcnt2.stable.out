@@ -11,6 +11,7 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "_mapi",	  2		  ]
 [ "algebra",	  2		  ]
 [ "arith",	  2		  ]
 [ "bat",	  2		  ]
@@ -40,6 +41,7 @@ Over..
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "_mapi",	  3		  ]
 [ "algebra",	  3	  ]
 [ "arith",	  3	  ]
 [ "bat",	  3	  ]
@@ -64,6 +66,7 @@ Over..
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "_mapi",	  3		  ]
 [ "algebra",	  3	  ]
 [ "arith",	  3	  ]
 [ "bat",	  3	  ]

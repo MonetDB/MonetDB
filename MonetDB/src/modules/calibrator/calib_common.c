@@ -27,8 +27,8 @@
 *              COMMON DEFINITIONS AND FUNCTIONS                             *
 \***************************************************************************/
 
-#undef VERSION
-#define VERSION "0.9i"
+#undef CALIB_VERSION
+#define CALIB_VERSION "0.9i"
 
 #undef MIN
 #define	MIN(a,b)	(a<b?a:b)

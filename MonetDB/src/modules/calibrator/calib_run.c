@@ -230,7 +230,7 @@ caliblng** runCache(char *array, caliblng maxrange, caliblng minstride, caliblng
 	result[0][0] = (y << 24) | x;
 
 	if (fp) {
-		fprintf(fp, "# Calibrator v%s\n", VERSION);
+		fprintf(fp, "# Calibrator v%s\n", CALIB_VERSION);
 		fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
 		fprintf(fp, "# ( MINTIME = %ld )\n", MINTIME);
 	}
@@ -338,7 +338,7 @@ caliblng** runTLB(char *array, caliblng maxrange, caliblng minstride, caliblng s
 	result[0][0] = (y << 24) | x;
 
 	if (fp) {
-		fprintf(fp, "# Calibrator v%s\n", VERSION);
+		fprintf(fp, "# Calibrator v%s\n", CALIB_VERSION);
 		fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
 		fprintf(fp, "# ( MINTIME = %ld )\n", MINTIME);
 	}
@@ -483,7 +483,7 @@ caliblng** runAsso(char *array, caliblng maxrange, caliblng minstride, caliblng 
 	memset(ymax, 0, x * sizeof(caliblng));
 
 	if (fp) {
-		fprintf(fp, "# Calibrator v%s\n", VERSION);
+		fprintf(fp, "# Calibrator v%s\n", CALIB_VERSION);
 		fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
 		fprintf(fp, "# ( MINTIME = %ld )\n", MINTIME);
 	}

@@ -291,12 +291,12 @@ int HEAPfree(Heap* h) {
 
 				GDKfilepath(path, BATDIR, dst, NULL);
 				/* dst may already exist (a newer version) */
-				if (stat(path, &st)) 
-                        	  	GDKmove(BATDIR, h->filename, NULL,
-					  	BATDIR, dst, NULL); 
+				if (stat(path, &st)) GDKmove(BATDIR, h->filename, NULL, BATDIR, dst, NULL); 
+
+				/* remove may fail */
 				GDKfilepath(path, BATDIR, h->filename, NULL);
-				/* may also fail, if bat is being deleted */
-				unlink(path);
+				ret = unlink(path); 
+				IODEBUG THRprintf(GDKerr, "HEAPfree: unlink %s = %d\n", path, ret);
 			}
                 }
                 GDKfree(h->filename);

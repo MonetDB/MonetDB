@@ -24,8 +24,8 @@
 @f mel
 @t MEL: Monet Extension Language 
 @a Peter Boncz 
-@d 04/10/2002
-@v 1.1
+@d 04/08/2003
+@v 1.2
 @T 
 @* Introduction
 The primary interface
@@ -174,8 +174,7 @@ in detail.
 @T
 Some general rules:
 \begin{itemize}
-\item white-space is ignored (expect in the special verbatim
-blocks found in the .LOAD/.DROP and .BUILTIN statements).
+\item white-space is ignored 
 \item upper- and lower-case {\bf does} matter.
 \item MEL keywords are accepted both in total upper- and total lower-case,
 but not in mixed case.
@@ -229,9 +228,6 @@ module ::=
               command | unop | binop |
               accelerator | 
               builtin | iterator | object }
-
-            [ .LOAD <verbatim: MIL instructions on module load> .END; 
-            [ .LOAD <verbatim: MIL instructions on module drop> .END; 
         .END <IDENT: module name> ';'
 
 modulelist:
@@ -245,20 +241,53 @@ in time: if someone else
 loaded earlier, the physical references in memory are shared, and 
 the shared library will not need to be loaded physically for the second user.
 
-The {\tt .prelude} and {\tt .epilogue} constructs allow for C routines
+The {\tt .PRELUDE} and {\tt .EPILOGUE} constructs allow for C routines
 to be called when a module is loaded and dropped {\bf physically}.
 An example for its use is the initiation of (empty) C structures,
 or for instance the creation (/destruction) of shared locks.
-The specified C routines are parameterless and do not return
-any value.
+The specified C routines are parameterless. The epilogue returns no value (void)
+but the prelude returns a bat* (a zero-terminated array of BAT-ids).
+Most preludes may just return a NULL pointer, but those modules
+where the prelude create BATs that have a head/tail type which is
+defined in the same module, must pass those BAT-ids in this array.
 
-The {\tt .load} and {\tt .drop} keywords allow for the specification
-of MIL code that is to be executed when a module is loaded. These
-features come especially handy for defining standard MIL procedures
-(PROCs) and constants. As opposed to the prelude/epilogue initializations,
-the load/drop scripts are executed at logical load and drop points:
-each time a user loads or drops a modules (they are executed in the 
-MIL context of that user).
+This mechanism allows Monet to properly analyze whether all live
+references to atomic types introduced by a module will be cleaned
+up at the drop. That is, if a 'polygon' module is dropped, the system
+needs to ensure that no MIL variables or BATs with polygons are in 
+memory anymore. With the ADTs and dynamic libraries unloaded, using
+even basic MIL functionalities (e.g. printing) would cause crashes. 
+If live atoms are found at drop-time, the module drop is canceled 
+(nothing is dropped, thus the epilogue is then not executed).  However, 
+sometimes the last references to atoms which were created in the prelude 
+are cleaned up only by the epilogue. This catch-22 then would cause such
+modules never to be allowed to drop. Thus, the prelude-BAT-registration
+feature allows the MIL interpreter to allow such a drop if the 
+prelude-references are the only ones remaining.
+
+@- MIL-only modules
+@T
+Monet now also has support for MIL-only extension modules. That is, extension
+modules that are just MIL scripts. Monet just executes the MIL in them when 
+they are loaded. When such MIL-only modules are dropped, Monet undefines 
+all PROCs and variables thay have introduced, and also drops all modules that 
+they loaded.
+
+As these MIL-only modules do not introduce new (C/C++ powered) language elements 
+such as ATOMs and COMMANDs they have a functionality that is fully separate 
+of MEL "true" extension modules.
+
+However, it is often useful to define a number of MIL constants, variables
+or even PROCs that go with a MEL extension module. The Monet Makefile systems 
+allows for bundling a MIL-only module with a MEL C++/C extension module, when these
+are implemented in a Mx file: the mel and c/C Mx-blocks are then compiled into a 
+MEL module, and the mil Mx-block becomes the MIL-only module.
+
+Technically, if the MEL specification introduces a module "X", the MIL-only 
+module generated will be called X, whereas the MEL/C extension module will 
+become _X. The X MIL-module first loads the dependent modules (from the .USE 
+clause), and then loads the _X module, and for the rest consists of the MIL
+code found in the mil Mx-blocks of your source file.
 
 @+ Atomic Types
 @T
@@ -492,11 +521,6 @@ acceleratorADTrequiredOps ::=
 
 acceleratorADToptionalOps ::=
  	.MOVE     = <ident: C routine implementing value move (del+ins)>
- |	.COMMIT	  = <ident: C routine implementing commit of all changes>
- |	.ABORT	  = <ident: C routine implementing abort on all changes>
- |	.CHECK	  = <ident: C routine implementing accelerator check 
- |	.TRAVERSE = <ident: C routine implementing accelerator traversal 
- |	.CLUSTER  = <ident: C routine implementing clustering in memory pages>  
 
 signature ::=
 	atom | atom ',' signature
@@ -1227,7 +1251,7 @@ Accelerators are data structures attached to a BAT column, that
 are maintained over updates. 
 
 The obligatory interface that should be implemented consists
-of BUILD, DESTROY, COMMIT, ABORT, INSERT and DELETE. 
+of BUILD, DESTROY, INSERT and DELETE. 
 A very simplistic implementation can even implement the latter
 two as a DESTROY (throw away on updates).
 
@@ -1334,30 +1358,6 @@ void meanDestroy(Heap *h, BAT* b){
 Frees the heap, and also sets the {\small\tt hacctype} to zero 
 (TODO: ugly and might change in the future).
 
-@- COMMIT: commit all changes
-@T
-{\small\begin{verbatim} 
-void meanCommit(Heap *h, BAT* b) {
-	mean *m = (mean*) h->base;
-	m->base += (m->plus - m->minus);
-	m->plus = m->minus = 0;
-}
-\end{verbatim}}
-Commits all changes.
-
-@- ABORT: abort all changes
-@T
-{\small\begin{verbatim} 
-void meanCommit(Heap *h, BAT* b) {
-	mean *m = (mean*) h->base;
-	m->base -= m->minus;
-	m->plus = m->minus = 0;
-}
-\end{verbatim}}
-Aborts all changes. A simplistic approach would be to
-destroy the entire search accelerator, rather than bringing 
-it up to date.
-
 @- INSERT: adapt structure under insert
 @T
 {\small\begin{verbatim} 
@@ -1376,18 +1376,6 @@ void meanInsert(Heap *h, BAT* b, int* val) {
 \end{verbatim}}
 Incorporates the deletion of a value from the BAT head column.
 
-@- CHECK: check for consistency
-@T
-{\small\begin{verbatim} 
-extern int meanCheck(Heap *h, BAT *b);
-\end{verbatim}}
-
-Checks whether the accelerator is still consistent.  This might be
-useful when the consistency of the accelerator depends on more
-factors than only updates to the BAT. In the case of {\small\tt\bf mean} it might
-be better not to implement it; so no time is lost calling this 
-useless function.
-
 @- SAVE: prepare for disk storage
 @T
 {\small\begin{verbatim} 
@@ -1396,34 +1384,6 @@ extern void meanSave(Heap *h, BAT *b);
 
 This function might be useful for rearranging complex structures
 just before a commit point.
-
-@- CLUSTER: cluster the accelerator internally 
-@T
-{\small\begin{verbatim} 
-extern void meanCluster(Heap *h, BAT *b);
-\end{verbatim}}
-
-This hook is intended to rearrange a complex search accelerator
-in its memory layout so accessing it might cause touching less
-memory pages.
-
-@- TRAVERSE: traverse in accelerator order
-@T
-{\small\begin{verbatim} 
-extern int meanTraverse(Heap *h, int* idx, void** context, BAT *b);
-\end{verbatim}}
-
-This routine is intended to guide iteration through all alements of 
-a BAT. We might for instance want to traverse an R-tree in spatial
-order. Iterating is done by repeatedly calling this same function. 
-The BUN index of the current element is returned in {\tt *idx}. 
-
-If the {\small\tt (*context)} pointer is NULL, this indicates that
-the iteration sequence starts. The routine may than set up context
-information in a context record of its likes. A pointer to this
-record is stored in {\small\tt *context}. As long as there is a next element,
-the routine returns TRUE. If there are no more elements, the {\small\tt *context}
-pointer is deallocated and FALSE is returned. 
 
 @+ Implementing Iterators
 @T

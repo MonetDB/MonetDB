@@ -31,8 +31,6 @@
 #include <stdio.h>
 #include "list.h"
 
-#include <config.h>
-
 class FileInfo {
     public:
 	FileInfo( FILE *f, int lineno, char *filename, 
@@ -64,6 +62,7 @@ class FileInfo {
 #endif // _FILEINFO_H_
 
 @C
+#include <config.h>
 #include "FileInfo.h"
 #include "mel.h"
 #include "ListIterator.h"
