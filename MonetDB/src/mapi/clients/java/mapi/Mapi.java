@@ -320,7 +320,8 @@ throws MapiException
 			traceLog.println("setup socket "+host+":"+port);
 		socket   = new Socket( host, port );
 		fromMonet= new BufferedReader(
-			new InputStreamReader(socket.getInputStream(),"UTF-8"));
+			new InputStreamReader(socket.getInputStream()));
+			//new InputStreamReader(socket.getInputStream(),"UTF-8"));
 		//fromMonet= new DataInputStream(socket.getInputStream());
 		toMonet= new DataOutputStream(socket.getOutputStream());
 		connected = true;
