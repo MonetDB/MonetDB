@@ -198,7 +198,7 @@ BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid){
 	setModuleId(p,GDKstrdup("partitions"));
 	setFunctionId(p,GDKstrdup("newIterator"));
 	p->barrier= BARRIERsymbol;
-	idx= newTmpVariable(mb,TYPE_lng);
+	idx= newTmpVariable(mb,TYPE_int);
 	pushReturn(mb,p,idx);
 	bid= newTmpVariable(mb,getVarType(mb,varid));
 	pushReturn(mb,p,bid);
