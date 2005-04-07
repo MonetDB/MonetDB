@@ -396,12 +396,15 @@ str INSPECTatom_names(int *ret)
 	return MAL_SUCCEED;
 }
 str INSPECTatom_sup_names(int *ret)
-{	int i;
+{	int i,k;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
         if (b == 0) return throwMessage("inspect.getAtomSuperNames", 
 			"failed to create BAT");
 
-	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(ATOMstorage(i)));
+	for(i=0;i<GDKatomcnt;i++) {
+		for(k= BATatoms[i].storage; k>TYPE_str; k= BATatoms[k].storage);
+		BUNins(b,&i,ATOMname(k));
+	}
 
 	@:Pseudo(view,atom,sup_name)@
 	return MAL_SUCCEED;
