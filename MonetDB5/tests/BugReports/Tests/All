@@ -19,7 +19,7 @@ no.100
 #no.117 too polymorphic to compile
 no.119
 #no.120 nonsupport coercion of oid -> int
-no.125
+#no.125 rounding errors
 #no.145 Wisconsin test
 #no.146
 #no.147 no V4 threads 
