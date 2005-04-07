@@ -38,3 +38,4 @@ resultset.populateColumn(rs, 1, b1);
 resultset.writeNextPart(rs);
 
 rsbox.release(rs);
+

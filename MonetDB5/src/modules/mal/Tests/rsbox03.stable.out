@@ -7,6 +7,8 @@ stdout of test 'rsbox03` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -82,7 +84,41 @@ function Admin.main():int;	# 0  (main:int)
     resultset.populateColumn(rs,1,b1);	# 24 RSpopulateColumn ($46:resultset)<-(rs:resultset)($43:int)(b1:bat[:void,:int])
     resultset.writeNextPart(rs);	# 25 RSwriteNextPart ($47:int)<-(rs:resultset)
     rsbox.release(rs);	# 26 RSBdelete ($48:void)<-(rs:resultset)
-end main;	# 27  
+    io.print("done");	# 27 IOprint_val ($49:int)<-($50:str)
+end main;	# 28  
+&1
+$id union
+$columncount 1
+$tuplecount 9
+%column the_column
+%table the_table
+%schema the_schema
+%type int
+%digits 
+%scale 
+%width 9
+[d1
+[d2
+[NULL
+[d4
+[d6
+[d7
+[d8
+[d13
+[d23
+&1
+$id union
+$columncount 1
+$tuplecount 2
+%column the_column
+%table the_table
+%schema the_schema
+%type int
+%digits 
+%scale 
+%width 1
+[d13
+[d23
 
 # 22:08:17 >  
 # 22:08:17 >  Done.

@@ -13,6 +13,8 @@ stdout of test 'rsbox00` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -73,7 +75,7 @@ stdout of test 'rsbox00` in directory 'src/modules/mal` itself:
 ##rsbox.close();
 #
 function Admin.main():int;	# 0  (main:int)
-    rs := rsbox.create("lost",1,11);	# 1 RSBcreate (rs:resultset)<-($2:str)($3:int)($4:int)
+    rs := rsbox.create("lost",1,40);	# 1 RSBcreate (rs:resultset)<-($2:str)($3:int)($4:int)
     rs := rsbox.create("myid",2,1);	# 2 RSBcreate (rs:resultset)<-($5:str)($6:int)($3:int)
     resultset.setProperty(rs,1,"table","table1");	# 3 RSsetPropertyStr ($7:resultset)<-(rs:resultset)($3:int)($8:str)($9:str)
     resultset.setProperty(rs,1,"schema","sys");	# 4 RSsetPropertyStr ($10:resultset)<-(rs:resultset)($3:int)($11:str)($12:str)
@@ -109,7 +111,7 @@ barrier (v,res):= rsbox.newIterator();	# 32 RSBiterator (v:lng)(res:resultset) j
     redo (v,res):= rsbox.hasMoreElements();	# 34 RSBhasMoreElements (v:lng)(res:resultset) jump 33
 exit v;	# 35  (v:lng)
 end main;	# 36  
-&0
+&1
 $id myid
 $columncount 2
 $tuplecount 3
