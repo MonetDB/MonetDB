@@ -13,7 +13,7 @@ crackers08
 inspect00
 inspect05
 inspect10
-inspect40
+#inspect40 wordt size problems on different platforms
 
 bpt00
 bpt01
