@@ -1518,10 +1518,14 @@ public class MonetResultSet implements ResultSet {
 						// if there is no time zone information in the database
 						// we have to use the given calendar to construct it
 						synchronized (MonetConnection.mTimeZ) {
-							MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
-							String tz = MonetConnection.mTimeZ.format(Time.valueOf(monetDate.substring(0, 8)));
-							tz = tz.substring(12);
 							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
+							int offset = cal.getTimeZone().getRawOffset() + cal.getTimeZone().getDSTSavings();
+							String tz = offset < 0 ? "-" : "+";
+							offset = offset / (1000 * 60);
+							tz += (offset / 60 < 10 ? "0" : "") + (offset / 60);
+							offset -= (offset / 60) * 60;
+							tz += (offset < 10 ? "0" : "") + offset;
+
 							return(MonetConnection.mTimeZ.parse(monetDate + tz));
 						}
 					}
@@ -1542,10 +1546,14 @@ public class MonetResultSet implements ResultSet {
 						// if there is no time zone information in the database
 						// we have to use the given calendar to construct it
 						synchronized (MonetConnection.mTimestampZ) {
-							MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
-							String tz = MonetConnection.mTimestampZ.format(Timestamp.valueOf(monetDate));
-							tz = tz.substring(23);
 							MonetConnection.mTimestampZ.setTimeZone(TimeZone.getDefault());
+							int offset = cal.getTimeZone().getRawOffset() + cal.getTimeZone().getDSTSavings();
+							String tz = offset < 0 ? "-" : "+";
+							offset = offset / (1000 * 60);
+							tz += (offset / 60 < 10 ? "0" : "") + (offset / 60);
+							offset -= (offset / 60) * 60;
+							tz += (offset < 10 ? "0" : "") + offset;
+							
 							return(MonetConnection.mTimestampZ.parse(monetDate + tz));
 						}
 					}
