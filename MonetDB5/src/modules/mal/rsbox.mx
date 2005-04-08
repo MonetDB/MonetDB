@@ -442,7 +442,7 @@ str RSBtake(int* retval, str* id) {
 }
 
 /**
- * Helper function to properly free a column structs.
+ * Helper function to properly free a column struct.
  *
  * @param column the column to free
  */
@@ -1015,6 +1015,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	resultset* rs;
 	column* col;
 	str tmp;
+	str mask;
 
 	resolveHandle(&rs, handle);
 	if (!rs->columnSet.complete)
@@ -1036,6 +1037,48 @@ str RSwriteHeader(int* retval, int* handle) {
 	@:MX-writeHeaderLineSingleValue("%s", rs->id == NULL ? "" : rs->id, "id")@
 	@:MX-writeHeaderLineSingleValue("%d", rs->columnCount, "columncount")@
 	@:MX-writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
+	/* create columntype charmask */
+	mask = tmp = GDKmalloc(sizeof(char) * (rs->columnCount + 1));
+	for (i = 0; i < rs->columnCount; i++) {
+		col = rs->columnSet.columns[i];
+		
+		switch (col->bat->ttype) {
+			case TYPE_bit:
+				*tmp++ = 'b';
+			break;
+			case TYPE_chr:
+				*tmp++ = 'c';
+			break;
+			case TYPE_str:
+				*tmp++ = 'S';
+			break;
+			case TYPE_oid:
+				*tmp++ = 'o';
+			break;
+			case TYPE_sht:
+				*tmp++ = 's';
+			break;
+			case TYPE_int:
+				*tmp++ = 'i';
+			break;
+			case TYPE_lng:
+				*tmp++ = 'l';
+			break;
+			case TYPE_flt:
+				*tmp++ = 'f';
+			break;
+			case TYPE_dbl:
+				*tmp++ = 'd';
+			break;
+			case TYPE_ptr: /* C pointer! */
+			case TYPE_bat: /* BAT id: index in BBPcache */
+			default:
+				throw("resultset.writeHeader", "Invalid BAT tail type!");
+		}
+	}
+	*tmp = '\0';
+	@:MX-writeHeaderLineSingleValue("%s", mask, "ctype")@
+	GDKfree(mask);
 
 	/* walk through the columns, and set those properties that are not
 	 * yet set, but are a necessity */
@@ -1283,39 +1326,39 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 			switch (col->bat->ttype) {
 				case TYPE_bit:
 					@:MX-writeNull(*(unsigned char*)p == bit_nil)@
-					bt = stream_printf(s, "c%d", (*(unsigned char*)p ? 1 : 0));
+					bt = stream_printf(s, "%d", (*(unsigned char*)p ? 1 : 0));
 				break;
 				case TYPE_chr:
-					@:MX-writeNull(*(unsigned char*)p == chr_nil)@
-					bt = stream_printf(s, "c%c", *(unsigned char*)p);
+					@:MX-writeNull(*(char*)p == chr_nil)@
+					bt = stream_printf(s, "%c", *(char*)p);
 				break;
 				case TYPE_str:
 					@:MX-writeNull(strNil(p))@
-					bt = stream_printf(s, "s%d:%s", strlen(p), p);
+					bt = stream_printf(s, "%d:%s", strlen(p), p);
 				break;
 				case TYPE_oid:
 					@:MX-writeNull(*(unsigned int*)p == int_nil)@
-					bt = stream_printf(s, "o%d", *(unsigned int*)p);
+					bt = stream_printf(s, "%d", *(unsigned int*)p);
 				break;
 				case TYPE_sht:
 					@:MX-writeNull(*(sht*)p == sht_nil)@
-					bt = stream_printf(s, "d%hd", *(sht*)p);
+					bt = stream_printf(s, "%hd", *(sht*)p);
 				break;
 				case TYPE_int:
 					@:MX-writeNull(*(int*)p == int_nil)@
-					bt = stream_printf(s, "d%d", *(int*)p);
+					bt = stream_printf(s, "%d", *(int*)p);
 				break;
 				case TYPE_lng:
 					@:MX-writeNull(*(lng*)p == lng_nil)@
-					bt = stream_printf(s, "d%ld", *(lng*)p);
+					bt = stream_printf(s, "%ld", *(lng*)p);
 				break;
 				case TYPE_flt:
 					@:MX-writeNull(*(flt*)p == flt_nil)@
-					bt = stream_printf(s, "f%e", *(flt*)p);
+					bt = stream_printf(s, "%e", *(flt*)p);
 				break;
 				case TYPE_dbl:
 					@:MX-writeNull(*(dbl*)p == dbl_nil)@
-					bt = stream_printf(s, "f%e", *(dbl*)p);
+					bt = stream_printf(s, "%e", *(dbl*)p);
 				break;
 				case TYPE_ptr: /* C pointer! */
 				case TYPE_bat: /* BAT id: index in BBPcache */
