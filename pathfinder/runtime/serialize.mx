@@ -95,6 +95,89 @@ static void ssb_free(SmartStrBuff* ssb) {
 
 /**
  *
+ */
+
+/* #define DEBUGNS */
+
+struct XmlNsFrame; /* forward */
+typedef struct XmlNsFrame {
+	char*			prefix;
+	char*			uri;
+	struct XmlNsFrame*	prev;
+	struct XmlNsFrame*	next;
+} XmlNsFrame;  
+
+int xmlNsInit(XmlNsFrame** top) {
+#ifdef DEBUGNS
+	stream_printf(GDKout,"+NS:xmlNsInit()\n");
+#endif
+	*top = NULL;
+	return 1;
+}
+
+char* xmlNsFind(XmlNsFrame** top, char* prefix) {
+	XmlNsFrame* fp = (*top);
+
+	while( fp ) {
+		if ( strcmp(prefix,fp->prefix) == 0) {
+#ifdef DEBUGNS
+		stream_printf(GDKout,"+NS:xmlNsFind(\"%s\")=\"%s\")\n",prefix,fp->uri);
+#endif
+			return fp->uri;
+		}
+		fp = fp->prev;
+	}
+	return NULL;
+}
+
+XmlNsFrame* xmlNsPush(XmlNsFrame** top, char* prefix, char* uri) {
+	XmlNsFrame* fp = (XmlNsFrame*)malloc(sizeof(XmlNsFrame));
+
+	if ( fp ) {
+#ifdef DEBUGNS
+		stream_printf(GDKout,"+NS:xmlNsPush(\"%s\",\"%s\")\n",prefix,uri);
+#endif
+		fp->prefix = strdup(prefix);
+		fp->uri    = strdup(uri);
+		/* */
+		fp ->next  = NULL;
+		if ( *top ) {
+			(*top)->next = fp;
+			fp->prev     = *top;
+		} else {
+			fp->prev = NULL;
+		}
+		*top     = fp;
+	}
+	return fp;
+}
+	
+int xmlNsPop2(XmlNsFrame** top, XmlNsFrame* newTop) {
+	XmlNsFrame* fp = (*top);
+
+#ifdef DEBUGNS
+	stream_printf(GDKout,"+NS:xmlNsPop2(%d)\n",(int)newTop);
+#endif
+	while (fp != newTop ) {
+		XmlNsFrame* old = fp;
+		fp = fp->prev;
+#ifdef DEBUGNS
+		stream_printf(GDKout,"+NS:-popping(\"%s\",\"%s\")\n",old->prefix,old->uri);
+#endif
+		free(old->prefix);
+		free(old->uri);
+		free(old);
+	}
+	if ( (*top = newTop) ) {
+		(*top)->next = NULL;
+	};
+	return 1;
+}
+
+int xmlNsDispose(XmlNsFrame** top) { return xmlNsPop2(top,NULL); }
+
+/**
+ *
  * I. THE CONTEXT NODE DEFINITION AND USAGE PART
  *
  * This structure contains the context of the print session.
@@ -102,6 +185,14 @@ static void ssb_free(SmartStrBuff* ssb) {
  * of all BATs containing the XML documents.
  *
  */
+
+typedef struct SerializeFrame {
+                oid             pre;
+                int             empty;  /* boolean indicating node is empty */
+		XmlNsFrame*	nsMark;
+                SmartStrBuff    ssb_ns;
+                SmartStrBuff    ssb_name;
+} SerializeFrame;
 
 typedef struct {
         int     dmMode;         /* Data model flag, true if printing in
@@ -113,17 +204,13 @@ typedef struct {
         int     curFRAG;        /* current fragment used by working set */
         BAT*    curBAT[WS_BATS];/* The BAT's of the current fragment*/
         /* */
+	XmlNsFrame* nsTop;	/* top of the namespace stack */
         /**
          * Next elements is a stack used during printing to store the 
          * pre-value, name, namespace of the nodes currently being printed. 
          */
         int     stackPtr;    
-        struct {
-                oid             pre;
-                int             empty;  /* boolean indicating node is empty */
-                SmartStrBuff    ssb_ns;
-                SmartStrBuff    ssb_name;
-        } tagStack[MAXTAGDEPTH];
+	SerializeFrame	tagStack[MAXTAGDEPTH];
         /* */
         int     nAttrOnLine; /* used by top result print routine to count the
                               * number of top-level result items printed on
@@ -147,7 +234,6 @@ static int fatal_err(XqueryCtx* ctx, const char *msg, ...) {
     /* */
     return 0;
 }
-
 
 /**
  * Functions fills a new context() record with mode and BAT data and
@@ -235,6 +321,7 @@ static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
 
         ctx->dmMode = ctx->mapiMode = 0;
         ctx->saxMode = 1;
+	xmlNsInit( &ctx->nsTop );
 
         if ( strcmp(mode,"dm")==0 ) {
             ctx->saxMode = 0;
@@ -265,6 +352,11 @@ static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
 	return 1;
 }
 
+static int disposeWsContext(XqueryCtx* ctx) {
+	xmlNsDispose( &ctx->nsTop );
+	return 1;
+}
+
 /**
  * Return if there are still nodes on stack.
  */
@@ -278,6 +370,7 @@ static int moreTags(XqueryCtx* ctx) {
 static int pushTag(XqueryCtx* ctx, oid pre, str ns, str name, int empty) {
         ctx->tagStack[ctx->stackPtr].pre    = pre;
         ctx->tagStack[ctx->stackPtr].empty  = empty;
+        ctx->tagStack[ctx->stackPtr].nsMark = NULL;
         if (!ssb_alloc(&ctx->tagStack[ctx->stackPtr].ssb_ns,   ns) )
 		return 0;
         if (!ssb_alloc(&ctx->tagStack[ctx->stackPtr].ssb_name, name) )
@@ -290,10 +383,12 @@ static int pushTag(XqueryCtx* ctx, oid pre, str ns, str name, int empty) {
  * Three function to retrieve the pre-value, namespace or nodename of the
  * top element on the stack.
  */
-static oid topTag(XqueryCtx* ctx)  {return ctx->tagStack[ctx->stackPtr-1].pre;}
-static int topEmpty(XqueryCtx* ctx)  {return ctx->tagStack[ctx->stackPtr-1].empty;}
-static str topNs(XqueryCtx* ctx)   {return ctx->tagStack[ctx->stackPtr-1].ssb_ns.val;}
-static str topName(XqueryCtx* ctx) {return ctx->tagStack[ctx->stackPtr-1].ssb_name.val;}
+static INLINE SerializeFrame* topSF(XqueryCtx* ctx) {
+	return &ctx->tagStack[ctx->stackPtr-1];
+}
+
+static str topNs(XqueryCtx* ctx)    {return topSF(ctx)->ssb_ns.val;}
+static str topName(XqueryCtx* ctx)  {return topSF(ctx)->ssb_name.val;}
 
 
 /**
@@ -302,9 +397,50 @@ static str topName(XqueryCtx* ctx) {return ctx->tagStack[ctx->stackPtr-1].ssb_na
  */
 static void popTag(XqueryCtx* ctx) {
         /* de-alloc the ns and name strings */
-        ssb_free(&ctx->tagStack[ctx->stackPtr-1].ssb_ns);
-        ssb_free(&ctx->tagStack[ctx->stackPtr-1].ssb_name);
+        ssb_free(&topSF(ctx)->ssb_ns);
+        ssb_free(&topSF(ctx)->ssb_name);
+
+	XmlNsFrame *xnf;
+	if ( (xnf = topSF(ctx)->nsMark) ) {
+	     xmlNsPop2(&ctx->nsTop,xnf->prev);
+	}
         --ctx->stackPtr;
+}
+
+static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top); /* forward */
+
+static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix) {
+	char *uri, *prefix;
+
+	if ( strcmp(par_uri,str_nil) == 0 || strcmp(par_uri,"") == 0 )
+		uri = NULL;
+	else
+		uri = par_uri;
+	if ( strcmp(par_prefix,str_nil) == 0 || strcmp(par_prefix,"") == 0 )
+		prefix = NULL;
+	else
+		prefix = par_prefix;
+	if ( prefix && uri ) {
+		char* currentURI = xmlNsFind(&ctx->nsTop,prefix);
+
+		if ( !(currentURI && (strcmp(currentURI,uri) == 0)) ) {
+		    /* change of URI for this prefix */
+		    XmlNsFrame* xnf;
+
+		    if ( !(xnf = xmlNsPush(&ctx->nsTop,prefix,uri)) )
+		    	return 0;
+		    /* generate the xmlns:xxx=uri tag */
+		    handle_attribute(ctx,str_nil,"xmlns",prefix,uri,0);
+
+		    SerializeFrame* sf = topSF(ctx);
+
+		    if ( !sf->nsMark ) {
+		    	/* not the first nsFrame in this context */
+			sf->nsMark = xnf;
+		    }
+		} 
+	}
+	return 1;
 }
 
 /**
@@ -497,30 +633,32 @@ static int handle_endDocument(XqueryCtx* ctx) {
  * the usage of an attribute. A sequence of these events will be ended
  * by a handle_attributeEnd() call.
  */
-static int handle_attribute(XqueryCtx* ctx, str ns, str name, str value, int top) {
+static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
+	if ( !checkNsChange(ctx,uri,prefix) )
+		return 0;
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        if ( !emit(" attribute",name,0) )
+                        if ( !emit(" attribute",loc,0) )
 				return 0;
-                        if ( ns && (strlen(ns)>0) )
-                                if ( !emit(" attribute prefix",ns,0) )
+                        if ( prefix && (strlen(prefix)>0) )
+                                if ( !emit(" attribute prefix",prefix,0) )
 					return 0;
                         if ( !emit(" attribute value",value,0) )
 				return 0;
                 } else {
-                        stream_printf(GDKout,"<A %s=\"%s\"\n",name,value);
+                        stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value);
                 }
         } else if (ctx->dmMode && top) { /* dmMode */
-                if ( ns && strlen(ns)>0 ) {
-                        stream_printf(GDKout,"attribute %s:%s { %s }",ns,name,value);
+                if ( prefix && strlen(prefix)>0 ) {
+                        stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
                 } else {
-                        stream_printf(GDKout,"attribute %s { %s }",name,value);
+                        stream_printf(GDKout,"attribute %s { %s }",loc,value);
                 }
         } else { /* xmlMode */
-                if ( ns && strlen(ns)>0 ) {
-                        stream_printf(GDKout," %s:%s=\"%s\"",ns,name,value);
+                if ( prefix && strlen(prefix)>0 ) {
+                        stream_printf(GDKout," %s:%s=\"%s\"",prefix,loc,value);
                 } else {
-                        stream_printf(GDKout," %s=\"%s\"",name,value);
+                        stream_printf(GDKout," %s=\"%s\"",loc,value);
                 }
         }
 	return 1;
@@ -752,12 +890,14 @@ static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
         /* */
         CHKVP(vp = idxTVinWSorFRGN(ctx,frag,ATTR_QN,id));
         oid qn_oid = *(oid*)vp;
+        CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,QN_URI,qn_oid));
+        str uri     = (str)vp;
         CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,QN_PREFIX,qn_oid));
-        str ns     = (str)vp;
+        str prefix     = (str)vp;
         CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,QN_LOC,qn_oid));
-        str name   = (str)vp;
+        str loc   = (str)vp;
         /* */
-        return handle_attribute(ctx,ns,name,val,top);
+        return handle_attribute(ctx,uri,prefix,loc,val,top);
 }
 
 static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) {
@@ -796,18 +936,23 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
 	}
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
-                        str name, ns;
+                        str uri, prefix, loc;
+                        CHKVP(vp = idxTVinWSorFRGN(ctx,vFRAG,QN_URI,prop));
+                        uri   = (str)vp;
                         CHKVP(vp = idxTVinWSorFRGN(ctx,vFRAG,QN_PREFIX,prop));
-                        ns   = (str)vp;
+                        prefix   = (str)vp;
                         CHKVP(vp = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_LOC,prop));
-			name = (str)vp;
-                        if ( !handle_startElement(ctx,ns,name) )
+			loc = (str)vp;
+                        if ( !handle_startElement(ctx,prefix,loc) )
 				return 0;
                         CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,pre));
                         int size = *(int*)vp;
-                        if ( !process_node_attr(ctx,ctx->curFRAG,pre,(size==0)))
+                        if (!pushTag(ctx,pre+size,prefix,loc,(size==0)))
 				return 0;
-                        if (!pushTag(ctx,pre+size,ns,name,(size==0)))
+			/*  check for change of prefix/uri */
+			if ( ! checkNsChange(ctx,uri,prefix) )
+				return 0;
+                        if ( !process_node_attr(ctx,ctx->curFRAG,pre,(size==0)))
 				return 0;
                         break;
                         }
@@ -852,9 +997,9 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
  * handle the closing tag of a document.
  */
 static int xquery_endtag_print(XqueryCtx* ctx, oid pre) {
-        while( moreTags(ctx) && ((pre==ALLTAGS)||(pre > topTag(ctx))) ) { /*?? */
+        while( moreTags(ctx) && ((pre==ALLTAGS)||(pre > topSF(ctx)->pre)) ) { /*?? */
                 if ( strlen(topName(ctx)) > 0 )
-                        if ( !handle_endElement(ctx,topNs(ctx),topName(ctx),topEmpty(ctx)))
+                        if ( !handle_endElement(ctx,topNs(ctx),topName(ctx),topSF(ctx)->empty))
 				return 0;
                 popTag(ctx);
         }
@@ -948,6 +1093,9 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
         if ( !handle_endDocument(ctx) )
 		return GDK_FAIL;
         switchWsContext(ctx,-1); /* close all open context BAT's */
+        /* */
+        if ( !disposeWsContext(ctx) )
+		return GDK_FAIL;
         /* */
         return GDK_SUCCEED;
 }
@@ -1251,6 +1399,9 @@ int xquery_print_result_main(
 		return GDK_FAIL;
         /* */
         switchWsContext(ctx,-1); /* close all open context BAT's */
+        /* */
+        if ( !disposeWsContext(ctx) )
+		return GDK_FAIL;
         /* */
         return GDK_SUCCEED;
 }

@@ -303,7 +303,7 @@ struct node_t {
 
 /* the computing context environmentf the shredding process */
 typedef struct shredCtxStruct {
-        char*           name;           /* xml document name */
+        char*           location;       /* xml document location */
 	/* pre-level-depth administration */
 	nat		nnode_pre; 	/* next preorder rank to assign */
 	nat		nnode_attr;	/* number of attributes counter */
@@ -336,11 +336,11 @@ typedef struct shredCtxStruct {
 /* the minimal incremental size of a BAT during estimation process */
 #define MINCHUNK        1024
 
-static shredCtxStruct *createShredCtx(char* name, off_t  fileSize) {
+static shredCtxStruct *createShredCtx(char* location, off_t  fileSize) {
         int i;
 
         shredCtxStruct *res = (shredCtxStruct*)malloc( sizeof(shredCtxStruct) );
-        res->name     = name;
+        res->location = location;
         res->fileSize = fileSize;
         res->estSize  = MIN(MAX(MINCHUNK,fileSize/20),INT_MAX);
         for(i=0; i<SHRED_BATS; i++) {
@@ -425,7 +425,7 @@ static void printStat(shredCtxStruct* shredCtx) {
         int i;
 
         stream_printf(GDKout,"############\n");
-        stream_printf(GDKout,"# STATISTICS of shredding \"%s\":\n",shredCtx->name);
+        stream_printf(GDKout,"# STATISTICS of shredding \"%s\":\n",shredCtx->location);
         for(i=0; i<SHRED_BATS; i++) {
                 shredBAT* sb = &shredCtx->dstBAT[i];
 
@@ -501,25 +501,41 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         return BATsetaccess( res, BAT_READ );
 }
 
-static int mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile);
+
+static int mainSHREDDER(shredCtxStruct* shredCtx, char* location);
 static char *timer_str (long elapsed);
 
-off_t  fileSize(char* xmlFile) {
+int isURL(char* location) {
+	return index(location,':') != NULL;
+}
+
+off_t  fileSize(char* location) {
     /* buffer for file I/O status */
     struct stat statbuf;
 
-    if (stat (xmlFile, &statbuf) < 0) {
-        stream_printf(GDKerr,
-                 "!ERROR: cannot stat `%s': %s\n",
-                 xmlFile, strerror (errno));
-        return ~(off_t)0;
-    } else
-        return statbuf.st_size;
+    if ( !isURL(location) ) {
+        if (stat (location, &statbuf) < 0) {
+            stream_printf(GDKerr,
+                     "!ERROR: cannot stat `%s': %s\n",
+                     location, strerror (errno));
+            return ~(off_t)0;
+        } else
+            return statbuf.st_size;
+    } else {
+	/* INCOMPLETE, return an estimate of the size of the XML file */
+        return ~(off_t)100000;
+    }
 }
 
 int
-CMDshred2bats(BAT **res2mil, str docname, str opt)
+CMDshred2bats(BAT **res2mil, str location, str opt)
 {
+    /* detect NULL strings from MIL */
+    if ( strcmp(location,str_nil)==0 ) {
+        stream_printf(GDKerr,"CMDshred2bats: no location!\n");
+        return GDK_FAIL;
+    }
+
     /* shred context */
     shredCtxStruct* shredCtx;
 
@@ -533,14 +549,14 @@ CMDshred2bats(BAT **res2mil, str docname, str opt)
     
     off_t xmlFileSize;
 
-    if ( (xmlFileSize = fileSize(docname)) == ~(off_t)0 )
+    if ( (xmlFileSize = fileSize(location)) == ~(off_t)0 )
         return GDK_FAIL;
 
-    if ( !(shredCtx = createShredCtx(docname, xmlFileSize)) )
+    if ( !(shredCtx = createShredCtx(location,xmlFileSize)) )
         return GDK_FAIL;
     shredCtx->shredWords = (strcmp(opt,"tijah")==0);
 
-    if ( mainSHREDDER(shredCtx, docname) < 0 )
+    if ( mainSHREDDER(shredCtx, location) < 0 )
         return GDK_FAIL;
 
     if ( !(*res2mil = finalizeShredCtx( shredCtx )) )
@@ -1462,7 +1478,7 @@ xmlSAXHandler shredder = {
  * Main shredder driver handling the libxml2 and buffer stuff
  */
 static int 
-mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile)
+mainSHREDDER(shredCtxStruct* shredCtx, char* location)
 {
     xmlParserCtxtPtr xmlCtx;
 
@@ -1485,9 +1501,16 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile)
     shredCtx->err= 0;
 
     /* parse XML input (receive SAX events) */
-    if ( !(xmlCtx = xmlCreateFileParserCtxt (xmlFile)) ) {
-        stream_printf(GDKerr,"shred:xmlCreateFileParserCtxt(\"%s\") failed\n",xmlFile); 
-        return -1;
+    if ( !isURL(location) ) {
+        if ( !(xmlCtx = xmlCreateFileParserCtxt (location)) ) {
+            stream_printf(GDKerr,"shred:xmlCreateFileParserCtxt(\"%s\") failed\n",location); 
+            return -1;
+        }
+    } else {
+        if ( !(xmlCtx = xmlCreateURLParserCtxt (location, 0)) ) {
+            stream_printf(GDKerr,"shred:xmlCreateURLParserCtxt(\"%s\") failed\n",location); 
+            return -1;
+        }
     }
     xmlCtx->sax        = &shredder;
     xmlCtx->_private = shredCtx; /* set the SHREDCTX() value */
