@@ -2000,7 +2000,46 @@ mapi_start_talking(Mapi mid)
 	len = atoi(buf);
 	assert(len <= BLOCK);
 	stream_read(mid->from, buf, 1, len);
-	/* just don't do anything with the challenge */
+	/* buf at this point looks like ":challenge:servertype:protover" */
+	{
+		char* chal;
+		char* server;
+		char* protover;
+
+		chal = buf + 1;
+		server = strchr(chal, ':');
+		if (server == NULL) {
+			mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+			return(mid->error);
+		}
+		*server++ = '\0';
+		protover = strchr(server, ':');
+		if (protover == NULL) {
+			mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+			return(mid->error);
+		}
+		*protover++ = '\0';
+
+		switch (mid->languageId) {
+			case LANG_MIL:
+				if (strcmp(server, "mserver_mil") != 0)
+					printf("Warning: MIL language chosen, but server reports %s\n", server);
+			break;
+			case LANG_MAL:
+				if (strcmp(server, "mserver_mal") != 0)
+					printf("Warning: MAL language chosen, but server reports %s\n", server);
+			break;
+			case LANG_SQL:
+				if (strcmp(server, "mserver_sql") != 0)
+					printf("Warning: SQL language chosen, but server reports %s\n", server);
+			break;
+			case LANG_XQUERY:
+				if (strcmp(server, "mserver_xquery") != 0)
+					printf("Warning: XQuery language chosen, but server reports %s\n", server);
+			break;
+		}
+		/* just don't do anything with the challenge */
+	}
 
 	if (mid->blocked) {
 		snprintf(buf, BLOCK, "%s:%s:%s:blocked\n", mid->username, mid->password, mid->language);
