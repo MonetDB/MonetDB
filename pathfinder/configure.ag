@@ -272,6 +272,9 @@ fi
 if test "x$have_gc" = xauto; then
         LIBGC_CFLAGS=""
         LIBGC_LIBS=""
+        dnl Some distributions (e.g., Debian) have the gc.h header
+        dnl file in /usr/include/gc
+        AC_CHECK_HEADER([gc.h], [], [ LIBGC_CFLAGS="/usr/include/gc" ])
 fi
 
 save_CPPFLAGS="$CPPFLAGS"
@@ -296,7 +299,6 @@ AC_CHECK_HEADER([gc.h],
                    [LIBGC_LDADD="$LIBGC_LDADD -lgc"],
                    [LIBGC_LDADD=""], [$LIBGC_LDADD])],
     [ LIBGC_LDADD=""])
-
 
 LIBS="$save_LIBS"
 LDFLAGS="$save_LDFLAGS"
