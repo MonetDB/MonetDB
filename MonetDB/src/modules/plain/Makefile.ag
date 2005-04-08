@@ -16,7 +16,8 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../common -I../../gdk -I../../monet \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) $(PCRE_CFLAGS)
+	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
+	$(PCRE_CFLAGS) $(LIBGC_CFLAGS)
 MTSAFE
 
 lib__streams = {
