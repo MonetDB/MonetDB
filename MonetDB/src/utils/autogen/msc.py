@@ -26,9 +26,10 @@ MAKEFILE_HEAD = '''
 
 # cl -help describes the options
 !IFDEF USE_MINGW
-CC = gcc -mwin32 -mno-cygwin -std=gnu99 -g
+CC = gcc -mwin32 -mno-cygwin -mthreads -std=gnu99 -g
 CXX = g++ -mwin32 -mno-cygwin -g
 ARCHIVER = ar cr
+GENDLL = -mdll
 !ELSE
 !IFDEF DEBUG
 CC = cl -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
@@ -37,6 +38,7 @@ CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
 !ENDIF
 CXX = $(CC)
 ARCHIVER = lib
+GENDLL =
 !ENDIF
 # optimize use -Ox
 RC = rc
@@ -376,43 +378,45 @@ def msc_deps(fd, deps, objext, msc):
                 # TODO
                 # replace this hack by something like configure ...
                 fd.write('%s: "%s"\n' % (x, y))
-                fd.write('\tif exist "%s" $(CONFIGURE) "%s" > "%s"\n' % (y, y, x))
+                fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (y, x))
                 msc['_IN'].append(y)
             getsrc = ""
             src = msc_translate_dir(msc_translate_ext(msc_translate_file(deplist[0], msc)), msc)
             if os.path.split(src)[0]:
-                getsrc = '\tif exist "%s" $(INSTALL) "%s" "%s"\n' % (src, src, os.path.split(src)[1])
+                getsrc = '\t$(INSTALL) "%s" "%s"\n' % (src, os.path.split(src)[1])
             if ext == "tab.h":
                 fd.write(getsrc)
                 x, de = split_filename(deplist[0])
                 if de == 'y':
                     fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
-                    fd.write("\tif exist y.tab.c $(DEL) y.tab.c\n")
-                    fd.write('\tif exist y.tab.h $(MV) y.tab.h "%s.tab.h"\n' % b)
+                    fd.write("\t$(DEL) y.tab.c\n")
+                    fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
                 else:
                     fd.write('\t$(YACC) $(YFLAGS) "%s.yy"\n' % b)
-                    fd.write("\tif exist y.tab.c $(DEL) y.tab.c\n")
-                    fd.write('\tif exist y.tab.h $(MV) y.tab.h "%s.tab.h"\n' % b)
+                    fd.write("\t$(DEL) y.tab.c\n")
+                    fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
             if ext == "tab.c":
                 fd.write(getsrc)
                 fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
-                fd.write('\tif exist y.tab.c $(MV) y.tab.c "%s.tab.c"\n' % b)
-                fd.write("\tif exist y.tab.h $(DEL) y.tab.h\n")
+                fd.write('\t$(MV) y.tab.c "%s.tab.c"\n' % b)
+                fd.write("\t$(DEL) y.tab.h\n")
             if ext == "tab.cxx":
                 fd.write(getsrc)
                 fd.write('\t$(YACC) $(YFLAGS) "%s.yy"\n' % b)
-                fd.write('\tif exist y.tab.c $(MV) y.tab.c "%s.tab.cxx"\n' % b)
-                fd.write("\tif exist y.tab.h $(DEL) y.tab.h\n")
+                fd.write('\t$(MV) y.tab.c "%s.tab.cxx"\n' % b)
+                fd.write("\t$(DEL) y.tab.h\n")
             if ext == "yy.c":
                 fd.write(getsrc)
                 fd.write('\t$(LEX) $(LFLAGS) "%s.l"\n' % b)
+                # either lex.yy.c or lex.$(PARSERNAME).c gets generated
                 fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c"\n' % b)
                 fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c"\n' % b)
             if ext == "yy.cxx":
                 fd.write(getsrc)
                 fd.write('\t$(LEX) $(LFLAGS) "%s.ll"\n' % b)
+                # either lex.yy.c or lex.$(PARSERNAME).c gets generated
                 fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.cxx"\n' % b)
-                fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c"\n' % b)
+                fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.cxx"\n' % b)
 
             if ext == "glue.c":
                 fd.write(getsrc)
@@ -432,10 +436,10 @@ def msc_deps(fd, deps, objext, msc):
                 if target == "LIB":
                     d, dext = split_filename(deplist[0])
                     if dext in ("c", "glue.c", "yy.c", "tab.c"):
-                        fd.write('\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
+                        fd.write('\t$(CC) $(CFLAGS) $(INCLUDES) $(GENDLL) -DLIB%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
                                  (name, t, src))
                     elif dext == "cc":
-                        fd.write('\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
+                        fd.write('\t$(CXX) $(CXXFLAGS) $(INCLUDES) $(GENDLL) -DLIB%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
                                  (name, t, src))
             if ext == 'res':
                 fd.write("\t$(RC) -fo%s %s\n" % (t, src))
@@ -466,11 +470,11 @@ def msc_scripts(fd, var, scripts, msc):
                 # TODO
                 # replace this hack by something like configure ...
                 fd.write('%s: "%s"\n' % (script, inf))
-                fd.write('\tif exist "%s" $(CONFIGURE) "%s" > "%s"\n' % (inf, inf, script))
+                fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (inf, script))
                 msc['_IN'].append(inf)
         elif os.path.isfile(os.path.join(msc['cwd'], script)):
             fd.write('%s: "$(SRCDIR)\\%s"\n' % (script, script))
-            fd.write('\tif exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script, script))
+            fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script))
         if script != 'mprof.mil':
             msc['INSTALL'].append((script, script, '', sd))
             msc['SCRIPTS'].append(script)
@@ -495,13 +499,13 @@ def msc_headers(fd, var, headers, msc):
                     # TODO
                     # replace this hack by something like configure ...
                     fd.write('%s: "%s"\n' % (header, inf))
-                    fd.write('\tif exist "%s" $(CONFIGURE) "%s" > "%s"\n' % (inf, inf, header))
+                    fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (inf, header))
                     msc['_IN'].append(inf)
             else:
                 fd.write('%s: "$(SRCDIR)\\%s"\n' % (header, header))
 ##                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
 ##                fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
-                fd.write('\tif exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header))
+                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
             msc['INSTALL'].append((header, header, '', sd))
 
 ##    msc_find_ins(msc, headers)
@@ -520,10 +524,10 @@ def msc_binary(fd, var, binmap, msc):
                     # TODO
                     # replace this hack by something like configure ...
                     fd.write('%s: "$(SRCDIR)\\%s.in"\n' % (i, i))
-                    fd.write('\tif exist "$(SRCDIR)\\%s.in" $(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (i, i, i))
+                    fd.write('\t$(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (i, i))
                 else:
                     fd.write('%s: "$(SRCDIR)\\%s"\n' % (i, i))
-                    fd.write('\tif exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (i, i, i))
+                    fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (i, i))
                 msc['INSTALL'].append((i, i, '', '$(bindir)'))
         else: # link
             src = binmap[0][4:]
@@ -965,7 +969,7 @@ def msc_jar(fd, var, jar, msc):
     fd.write('\n')
     for infile in infiles:
         fd.write('%s: "$(SRCDIR)\\%s.in"\n' % (msc_basename(infile), infile))
-        fd.write('\tif exist "$(SRCDIR)\\%s.in" $(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (infile, infile, msc_basename(infile)))
+        fd.write('\t$(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (infile, msc_basename(infile)))
 
     fd.write("\n%s_class_files= " % (name.replace('-','_')))
     for j in jar['TARGETS']:
@@ -979,7 +983,7 @@ def msc_jar(fd, var, jar, msc):
 
     fd.write('install_%s: %s.jar\n' % (name, name))
     fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (jd, jd))
-    fd.write('\tif exist %s.jar $(INSTALL) %s.jar "%s\\%s.jar"\n' % (name, name, jd, name))
+    fd.write('\t$(INSTALL) %s.jar "%s\\%s.jar"\n' % (name, jd, name))
 
     fd.write('%s: %s.jar\n' % (name, name))
 
@@ -1024,7 +1028,7 @@ def msc_java(fd, var, java, msc):
 
     fd.write('install_%s: $(%s_class_files)\n' % (name, name.replace('-','_')))
     fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (jd, jd))
-    fd.write('\tif exist $(%s_class_files) $(INSTALL) $(%s_class_files) "%s\\$(%s_class_files)"\n' % (name.replace('-','_'), name.replace('-','_'), jd, name.replace('-','_')))
+    fd.write('\t$(INSTALL) $(%s_class_files) "%s\\$(%s_class_files)"\n' % (name.replace('-','_'), jd, name.replace('-','_')))
 
     fd.write('%s: $(%s_class_files)\n' % (name, name.replace('-','_')))
 
@@ -1195,15 +1199,15 @@ def output(tree, cwd, topdir):
         for v in msc['BINS']:
             fd.write('install_bin_%s: "%s.exe"\n' % (v, v))
             fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (v.replace('-','_'), v.replace('-','_')))
-            fd.write('\tif exist "%s.exe" $(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v,v.replace('-','_')))
+            fd.write('\t$(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v.replace('-','_')))
     if msc['INSTALL']:
         for (dst, src, ext, dir) in msc['INSTALL']:
             if not dir:
                 continue
             fd.write('install_%s: "%s%s" "%s"\n' % (dst, src, ext, dir))
-            fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, ext, src, ext, dir, dst, ext))
+            fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, ext, dir, dst, ext))
             if ext == '.dll':
-                fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', src, '.lib', dir, dst, '.lib'))
+                fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', dir, dst, '.lib'))
         td = {}
         for (x, y, u, dir) in msc['INSTALL']:
             if not dir:
@@ -1226,5 +1230,5 @@ def output(tree, cwd, topdir):
             fd.write("install-%sinclude_HEADERS: $(%sinclude_HEADERS)\n" % (name,name.replace('-','_')))
             fd.write('\tif not exist "$(%sincludedir)" $(MKDIR) "$(%sincludedir)"\n' % (name.replace('-','_'),name.replace('-','_')))
             for h in tHDRS:
-                fd.write('\tif exist "%s" $(INSTALL) "%s" "$(%sincludedir)"\n' % (h,h,name.replace('-','_')))
+                fd.write('\t$(INSTALL) "%s" "$(%sincludedir)"\n' % (h,name.replace('-','_')))
     fd.write("\n")
