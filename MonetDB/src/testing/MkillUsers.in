@@ -17,7 +17,11 @@
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
 # All Rights Reserved.
 
-PATH=/cwi/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH
+for i in /sbin /usr/sbin /bin /usr/bin /usr/local/bin /usr/local/gnu/bin /cwi/bin ; do
+	if [ -d "$i" ] ; then
+		PATH="$i:$PATH"
+	fi
+done
 
 THISPATH=${0%/*}
 THISFILE=${0##*/}
