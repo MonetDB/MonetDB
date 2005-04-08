@@ -954,19 +954,19 @@ view_client_login(BAT **retval	/* put pointer to BAT[int,str] record here. */
 #endif
 
 #ifdef HAVE_CTIME_R3
-			asctime_r(&localt, s, 26);
+			asctime_r(&localt, s, sizeof(s));
 #else
 #ifdef HAVE_CTIME_R
 			asctime_r(&localt, s);
 #else
 			/* race condition: return value could be
-			 * overwritten in parallel thread before
-			 * copy complete */
+			 * overwritten in parallel thread before copy
+			 * complete, however on Windows, asctime is
+			 * thread-safe */
 			strncpy(s, asctime(&localt), 26);
-			/* strcpy(s, "no asctime in WIN32"); */
 #endif
 #endif
-			s[24] = 0;
+			s[24] = 0; /* remove trailing newline */
 			BUNins(b, &i, s);
 		}
 
