@@ -7,6 +7,8 @@ stdout of test 'rsbox04` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -145,7 +147,7 @@ stdout of test 'rsbox04` in directory 'src/modules/mal` itself:
 #
 #
 function Admin.main():int;	# 0  (main:int)
-    rs := rsbox.create("multicolumn",9,1);	# 1 RSBcreate (rs:resultset)<-($2:str)($3:int)($4:int)
+    rs := rsbox.create("multicolumn",9,'t');	# 1 RSBcreate (rs:resultset)<-($2:str)($3:int)($4:chr)
     b1 := bbp.new(:void,:bit);	# 2 CMDBATnew (b1:bat[:void,:bit])<-($6:void)($7:bit)
     bat.insert(b1,nil,1:bit);	# 3 BKCinsert_bun ($8:bat[:void,:bit])<-(b1:bat[:void,:bit])($9:void)($10:bit)
     bat.insert(b1,nil,0:bit);	# 4 BKCinsert_bun ($11:bat[:void,:bit])<-(b1:bat[:void,:bit])($9:void)($12:bit)
@@ -257,7 +259,7 @@ function Admin.main():int;	# 0  (main:int)
     resultset.writeNextPart(rs);	# 110 RSwriteNextPart ($221:int)<-(rs:resultset)
     rsbox.releaseAll();	# 111 RSBreleaseAll ($222:void)
 end main;	# 112  
-&1
+&t
 $id multicolumn
 $columncount 9
 $tuplecount 10

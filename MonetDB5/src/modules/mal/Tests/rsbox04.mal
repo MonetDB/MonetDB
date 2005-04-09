@@ -3,7 +3,7 @@
 
 include rsbox;
 
-rs := rsbox.create("multicolumn", 9, 1);
+rs := rsbox.create("multicolumn", 9, 't');
 
 b1 := bbp.new(:void, :bit);
 bat.insert(b1, nil, 1:bit);

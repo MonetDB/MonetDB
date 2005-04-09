@@ -177,7 +177,7 @@ command destroy():void
 address RSBdestroy
 comment "Destroy the resultset box and all the resultsets it contains";
 
-command create(name:str, columns:int, type:int):resultset
+command create(name:str, columns:int, type:chr):resultset
 address RSBcreate
 comment "Create a new ResultSet with the given number of columns
 & type and deposit it in the box";
@@ -273,20 +273,20 @@ typedef struct resultset_t {
 #define RS_LINE_MESSAGE				'#'
 
 /* header types: results */
-#define RS_TYPE_R_DEFAULT	1	/* alias for RS_TYPE_R_MONET5 */
-#define RS_TYPE_R_MONET5	1	/* MonetDB/Five MAPI protocol */
-#define RS_TYPE_R_RAW		2	/* unstructured character data */
-#define	RS_TYPE_R_BINARY	3	/* binary data, length known */
-#define RS_TYPE_R_XML		4	/* structured (X)(H)TML formatted character data */
-#define RS_TYPE_R_SAX		5	/* SAX event stream */
-#define RS_TYPE_R_BAT		10	/* BAT dump format (for replication) */
+#define RS_TYPE_R_DEFAULT	't'	/* alias for RS_TYPE_R_MONET5 */
+#define RS_TYPE_R_MONET5	't'	/* MonetDB/Five MAPI protocol */
+#define RS_TYPE_R_RAW		'r'	/* unstructured character data */
+#define	RS_TYPE_R_BINARY	'i'	/* binary data, length known */
+#define RS_TYPE_R_XML		'x'	/* structured (X)(H)TML formatted character data */
+#define RS_TYPE_R_SAX		's'	/* SAX event stream */
+#define RS_TYPE_R_BAT		'b'	/* BAT dump format (for replication) */
 /* updates */
-#define RS_TYPE_U_DEFAULT	40	/* alias for RS_TYPE_U_AFFROW */
-#define RS_TYPE_U_AFFROW	40	/* 1 affected row count */
-#define RS_TYPE_U_BATCH		41	/* list of affected row counts */
-#define RS_TYPE_U_SUCCESS	42	/* operation successful, no info */
+#define RS_TYPE_U_DEFAULT	'u'	/* alias for RS_TYPE_U_AFFROW */
+#define RS_TYPE_U_AFFROW	'u'	/* 1 affected row count */
+#define RS_TYPE_U_BATCH		'h'	/* list of affected row counts */
+#define RS_TYPE_U_SUCCESS	'v'	/* operation successful, no info */
 /* error */
-#define RS_TYPE_E_ERROR		99	/* sole error message */
+#define RS_TYPE_E_ERROR		'e'	/* sole error message */
 
 #endif
 @c
@@ -370,13 +370,12 @@ str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * @param columns the number of columns this ResultSet has
  * @param type the ResultSet type.
  */
-str RSBcreate(int* retval, str* name, int* columns, int* type) {
-	int i, j, free = -1, tpe;
+str RSBcreate(int* retval, str* name, int* columns, char* type) {
+	int i, j, free = -1;
+	char tpe;
 
 	if (*columns <= 0)
 		throw("rsbox.create", "Number of columns should be a positive non-zero value");
-	if (*type <= 0)
-		throw("rsbox.create", "ResultSet type should be a positive non-zero value");
 	tpe = *type;
 	if (tpe == RS_TYPE_E_ERROR)
 		throw("rsbox.create", "use todoError.create to send error messages");
@@ -385,7 +384,7 @@ str RSBcreate(int* retval, str* name, int* columns, int* type) {
 		tpe != RS_TYPE_R_XML && tpe != RS_TYPE_R_SAX &&
 		tpe != RS_TYPE_U_AFFROW && tpe != RS_TYPE_U_BATCH &&
 		tpe != RS_TYPE_U_SUCCESS)
-		throwf("rsbox.create", "ResultSet type unknown: %d", *type);
+		throwf("rsbox.create", "ResultSet type unknown: %c", tpe);
 
 	/* find the first free slot */
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
@@ -1022,7 +1021,7 @@ str RSwriteHeader(int* retval, int* handle) {
 		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
 
 	/* write start of header */
-	if ((bt = stream_printf(s, "%c%d\n", RS_LINE_START_OF_HEADER, rs->type)) <= 0) {
+	if ((bt = stream_printf(s, "%c%c\n", RS_LINE_START_OF_HEADER, rs->type)) <= 0) {
 		*retval = 0;
 		throw("resultset.writeHeader", "Error while writing to the stream");
 	}
