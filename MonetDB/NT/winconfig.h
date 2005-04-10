@@ -39,7 +39,6 @@
 #include <process.h>
 #include <windows.h>
 #include <stddef.h>
-#undef ERROR			/* too generic name defined in wingdi.h */
 
 #define NATIVE_WIN32
 

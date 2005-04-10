@@ -198,14 +198,15 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 		size_t _c = HASHprobe(&h, v);				\
 		if (h.hash[_c] == i) {					\
 			h.hash[_c] = h.link[i];				\
-		} else							\
-			for(_c = h.hash[_c]; _c; _c = h.link[_c]) {	\
+		} else {						\
+			for(_c = h.hash[_c]; _c != HASH_MAX; _c = h.link[_c]){ \
 				if (h.link[_c] == i) {			\
 					h.link[_c] = h.link[i];		\
 					break;				\
 				}					\
 			}						\
-	} h.link[i] = 0;						\
+		}							\
+	} h.link[i] = HASH_MAX;						\
 }
 
 #define HASHmove(h, i, j, v, next) {					\
@@ -215,13 +216,14 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 		size_t _c = HASHprobe(&h, v);				\
 		if (h.hash[_c] == i) {					\
 			h.hash[_c] = j;					\
-		} else							\
-			for(_c = h.hash[_c]; _c; _c = h.link[_c]) {	\
+		} else {						\
+			for(_c = h.hash[_c]; _c != HASH_MAX; _c = h.link[_c]){ \
 				if (h.link[_c] == i) {			\
 					h.link[_c] = j;			\
 					break;				\
 				}					\
 			}						\
+		}							\
 	} h.link[j] = h.link[i];					\
 }
 @}
@@ -266,14 +268,14 @@ HASHclear(Hash *h)
 	hash_t *i, *j;
 
 	for (i = h->hash, j = i + h->mask; i <= j; i++) {
-		*i = 0;
+		*i = HASH_MAX;
 	}
 }
 
 Heap *
 HASHnew(Hash *h, Heap *hp, int tpe, size_t size, hash_t mask)
 {
-	if (HEAPalloc(hp, mask + size + 1, sizeof(hash_t)) < 0)	/* +1 is for the hole */
+	if (HEAPalloc(hp, mask + size, sizeof(hash_t)) < 0)
 		return NULL;
 	h->lim = size;
 	h->mask = mask - 1;
@@ -289,7 +291,7 @@ HASHnew(Hash *h, Heap *hp, int tpe, size_t size, hash_t mask)
 		ptr v = BUN@2(b, r);
 		hash_t c = hash_@1((*h), v);
 
-		if (h->hash[c] == 0 && nslots-- == 0) {
+		if (h->hash[c] == HASH_MAX && nslots-- == 0) {
 			break; /* mask too full */
 		}
 		h->link[i] = h->hash[c];
@@ -486,7 +488,7 @@ HASHlist(Hash *h, size_t i)
 	hash_t j;
 	hash_t c = 1;
 
-	while ((j = h->link[i]) > 0) {
+	while ((j = h->link[i]) != HASH_MAX) {
 		c++;
 		i = j;
 		if (i > h->lim) {

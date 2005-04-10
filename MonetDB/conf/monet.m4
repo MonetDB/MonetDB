@@ -252,6 +252,14 @@ yes-*-*)
 		dnl  which is defined in an unnamed union in
 		dnl  /usr/include/cygwin/signal.h ...
 		;;
+	*-mingw*)
+		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
+		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
+		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+		CFLAGS="$CFLAGS -std=gnu99"
+		CXXFLAGS="$CXXFLAGS -ansi"
+		LDFLAGS="$LDFLAGS -no-undefined -L/ufs/niels/.wine/drive_c/MinGW/lib"
+		;;
 	*-irix*|*-darwin*)
 		CFLAGS="$CFLAGS -std=c99"
 		;;
@@ -498,15 +506,13 @@ esac
 dnl find out, whether the C compiler is C99 compliant
 AC_MSG_CHECKING([if your compiler is C99 compliant])
 have_c99=no
-AC_RUN_IFELSE(AC_LANG_PROGRAM(,
-[[
+AC_TRY_COMPILE([],  [[
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 return 0;
 #else
-return 1;
+#error "NOT C99 compliant"
 #endif
-]]
-),
+]], 
 [AC_DEFINE([HAVE_C99], 1, [Is your compiler C99 compliant?])
 have_c99=yes
 AC_MSG_RESULT(yes)],
@@ -641,6 +647,7 @@ AC_PROG_LD()
 AC_DISABLE_STATIC()
 AC_ENABLE_SHARED()
 
+AC_LIBTOOL_WIN32_DLL
 AC_LIBTOOL_SETUP()
 AC_PROG_LIBTOOL()
 AM_PROG_LIBTOOL()
@@ -1316,10 +1323,24 @@ SOCKET_LIBS=""
 AC_CHECK_FUNC(gethostbyname_r, [], [
   AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
     AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
-AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt, 
-	[ SOCKET_LIBS="-lsocket $SOCKET_LIBS" ] ))
 
-#AC_CHECK_LIB(setsockopt, socket, [ SOCKET_LIBS="-lsocket -lnsl" ], [], "-lnsl" )
+have_setsockopt=no
+AC_CHECK_FUNC(setsockopt, [], 
+  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
+
+dnl incase of windows we need to use try_link because windows uses the
+dnl pascal style of function calls and naming scheme. There for the 
+dnl function needs to be compiled with the correct header
+
+if test "x$have_setsockopt" = xno; then
+  save_LIBS="$LIBS"
+  LIBS="$LIBS -lws2_32"
+AC_MSG_CHECKING(for setsockopt in winsock2)
+AC_TRY_LINK([#include <winsock2.h>],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
+AC_MSG_RESULT($have_setsockopt)
+  LIBS="$save_LIBS"
+fi
+
 AC_SUBST(SOCKET_LIBS)
 
 dnl check for NetCDF io library (default /usr and /usr/local)
@@ -1850,7 +1871,7 @@ AC_DEFUN([AM_MONETDB_CLIENT],[
 dnl check for Monet and some basic utilities
 AM_MONET($1)
 MPATH="$MONETDB_PREFIX/bin:$PATH"
-AC_PATH_PROG(MX,Mx$EXEEXT,,$MPATH)
-AC_PATH_PROG(MEL,mel$EXEEXT,,$MPATH)
+AC_PATH_PROGS(MX,[ Mx Mx$EXEEXT ],,$MPATH)
+AC_PATH_PROGS(MEL,[ mel mel$EXEEXT ],,$MPATH)
 
 ]) dnl AC_DEFUN AM_MONETDB_CLIENT

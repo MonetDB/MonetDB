@@ -26,7 +26,7 @@ LIB_mnetcdf = {
 	COND = HAVE_NETCDF
 	SOURCES = mnetcdf.mx 
 	HEADERS = h proto.h m
-	WINLIBS = ../../common/libstream ../../gdk/libbat \
+	LIBS = ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet ../plain/lib_algebra \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \

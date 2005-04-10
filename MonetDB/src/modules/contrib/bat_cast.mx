@@ -76,6 +76,7 @@ int batcast_@1_@2(BAT **ret, BAT *b) {
 		bnp++;
 	}
         bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+        BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;

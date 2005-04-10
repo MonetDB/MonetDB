@@ -174,11 +174,6 @@ m_export int TBL_setaggr_resolve(str name, int argc, ValPtr Argv, monet_sig_t *s
 #define dlPRINT(text)	DLDEBUG	THRprintf(GDKerr, text)
 #define dlFPRINTF	DLDEBUG	THRprintf
 
-#define WARNING(s1, s2)		GDKwarning((s1),(s2));
-#define FATAL(x, y)		GDKfatal((x),(y));
-
-#define ERROR(progname,	filename, lineno) { THRprintf(GDKerr, "Mserver: "); }
-
 static void TBL_Insert_Depend(oid mid, str name);
 
 BAT *TBL_fcn_nme = NULL;	/* BAT(oid, str): (function name, FID). */
@@ -1111,7 +1106,7 @@ so dependencies should not reinstall modules?
 SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 @c
 	if ((mid = TBL_module_lookup(name))) {
-		WARNING("TBL_Install_Info: The module %s will be reloaded.\n", name);
+		GDKwarning("TBL_Install_Info: The module %s will be reloaded.\n", name);
 		TBL_unloadmod(inst->client, name, inst->level + 1);
 	}
 

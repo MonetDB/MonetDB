@@ -17,6 +17,12 @@
  * All Rights Reserved.
  */
 
+#if defined(__MINGW32__)
+#define NATIVE_WIN32
+#endif 
+
+#ifndef NATIVE_WIN32
+
 #define DIR_SEP '@QDIRSEP@'
 #define DIR_SEP_STR "@QDIRSEP@"
 #define PATH_SEP ':'
@@ -27,6 +33,16 @@
 #define SO_EXT ".dylib"
 #else
 #define SO_EXT ".so"
+#endif
+
+#else
+
+#define DIR_SEP '\\'
+#define DIR_SEP_STR "\\"
+#define PATH_SEP ';'
+#define PATH_SEP_STR ";"
+#define SO_EXT ".dll"
+
 #endif
 
 

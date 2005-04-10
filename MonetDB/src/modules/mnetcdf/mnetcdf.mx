@@ -570,7 +570,8 @@ Then retrieve variable specific information.
 		return GDK_FAIL;
 	}
 	BATseqbase(*out, 0);
-	(*out)->batBuns->free += size * BUNsize(*out);	/* "add" tuples */
+	(*out)->batBuns->free = size * BUNsize(*out);
+	BATsetcount(*out, size);
 	BATkey(BATmirror(*out), 0);
 	(*out)->tsorted = 0;
 	p = (void *) BUNfirst(*out);

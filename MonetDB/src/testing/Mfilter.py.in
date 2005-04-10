@@ -77,6 +77,8 @@ test = (
 ##                    r"^\+\-+\+$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
+                # remove wine error:
+		    r"^fixme:heap:RtlCompactHeap stub$",
                  ])+')',  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile('(?:'+')|(?:'.join([
@@ -214,9 +216,9 @@ norm_out = (
 
 def mFilter (FILE, IGNORE) :
     fin = open(FILE, "rU")
-    LINE = fin.readline()
+    LINE = fin.readline().replace('\r','')
     while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
-        LINE = fin.readline()
+        LINE = fin.readline().replace('\r','')
     fin.close()
     if  len(LINE) >= 15  and  LINE[:15] in ("stdout of test ", "stderr of test "):
         WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE, re.MULTILINE).groups()
@@ -228,6 +230,7 @@ def mFilter (FILE, IGNORE) :
     ig = n = 0
     il = iw = ic = el = ew = ec = al = aw = ac = 0
     for iline in fileinput.input(FILE):
+	iline = iline.replace('\r', '')
         oline = xline = ""
         if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
             ig = 1

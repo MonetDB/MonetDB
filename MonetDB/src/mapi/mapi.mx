@@ -229,7 +229,7 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 
 	if (port > 0) {
-		sock = socket(AF_INET, SOCK_STREAM, 0);
+		sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (sock < 0) {
 			GDKsyserror("MAPIlisten:creation of stream socket failed\n");
 			return GDK_FAIL;
@@ -630,7 +630,7 @@ MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
+	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {
 		GDKsyserror("MAPIlistenSSL:creation of stream socket failed\n");
 		goto fail;

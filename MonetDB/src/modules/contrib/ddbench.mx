@@ -895,7 +895,8 @@ enum_view(BAT **res, BAT *b)
 	histo_t *dst = (histo_t*) BUNfirst(map);
 	size_t off = BUNindex(histo, BUNfirst(histo));
 
-	map->batBuns->free += cnt * sizeof(histo_t);
+	map->batBuns->free = cnt * sizeof(histo_t);
+	BATsetcount(map, cnt);
 	map->hsorted = map->tsorted = FALSE;
 	for(xx=0; xx<cnt; xx++) dst[xx].cnt = 0;
 
@@ -1009,12 +1010,13 @@ nils are not handled properly $=>$ they are treated as normal values
 	unsigned @3 *map = (unsigned @3*) GDKmalloc(pow_c*card_b*sizeof(@3));
 	unsigned @3 *rp;
 	oid curoid;
-	histo_t* base = (histo_t*) histo->batHole;
+	histo_t* base = (histo_t*) histo->batFirst;
 
 	/* preparation: create an histogram and use it as maptable of a new 
          * enumtype. Create 'bn' result BAT with  this tailtype and dense head.
          */	
-	histo->batBuns->free += BUNsize(histo)*pow_c*card_b;
+	histo->batBuns->free = BUNsize(histo)*pow_c*card_b;
+	BATsetcount(histo, pow_c*card_b);
 	sprintf(buf, "enum_%d", (int) histo->batCacheid);
 	BBPrename(histo->batCacheid, buf);	
 	enum_load(&new_enum_tpe, histo);
@@ -1043,7 +1045,9 @@ nils are not handled properly $=>$ they are treated as normal values
 	/* aftermath: free space and set correct boundaries on created BATs */ 
 	GDKfree(map);
 	histo->batBuns->free -= BUNsize(histo)*(pow_c*card_b - histo_entry);
-	bn->batBuns->free += sizeof(@3)*BATcount(b);
+	histo->batCount -= pow_c*card_b;
+	bn->batBuns->free = sizeof(@3)*BATcount(b);
+	BATsetcount(bn, BATcount(b));
 	histo->tsorted = bn->tsorted = 0;
 	enum_sethisto(&new_enum_tpe, BATmirror(bn));
 }
@@ -1576,6 +1580,7 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 	/* process any tuples left with a slower (generic) implementation */
 	@3 {
 		bn@4->batBuns->free = ((char*) dst@4) - bn@4->batBuns->base; 
+		BATsetcount(bn@4, bn@4->batBuns->free/BUNsize(bn@4));
 		bn@4->tsorted = 0;
 		bn@4->batDirty = 1;
 	}
@@ -1786,6 +1791,7 @@ rngs_oidselect(BAT **res, BAT *b, ...)
 	}
 	@2 {
 		bn@3->batBuns->free = ((char*) dst@3) - bn@3->batBuns->base;
+		BATsetcount(bn@3, bn@3->batBuns->free/BUNsize(bn@3));
 		bn@3->hkey = BATmirror(bn@3)->tkey = b->hkey;
 		bn@3->hsorted = BAThordered(b) && ((GDKdebug&786432)==0);
 		bn@3->batDirty = 1;
@@ -1892,6 +1898,7 @@ if ((GDKdebug&786432)==262144) {
 	if (dst@1 >= last@1) {
 		ssize_t off = ((char*) dst@1) - BUNfirst(bn@1);
 		bn@1->batBuns->free = bn@1->batBuns->size;
+		BATsetcount(bn@1, bn@1->batBuns->free/BUNsize(bn@1));
 		if (BATextend(bn@1, BATgrows(bn@1)) == NULL) {
 			BBPreclaim(bn);
 			return GDK_FAIL; 
@@ -1993,6 +2000,7 @@ rng_oidrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
 		@:oidref(@1,@2,short)@
 	}
 	bn->batBuns->free = ((char*) dst) - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->hsorted = BAThordered(b) && BAThordered(sel);
 	bn->hkey = BATmirror(bn)->tkey = b->hkey && sel->hkey;
 	bn->batDirty = 1;

@@ -24,7 +24,7 @@ This information is stored within the BAT structure using three
 delta markers.
 Inserted denotes
 the first added BUN since the last commit. Deleted points to the BUNs removed.
-The deletion list is terminated at @%hole@, where space is reserved for swapping
+The deletion list is terminated at @%first@, where space is reserved for swapping
 BUNs upon deletion. Initialization of the BAT is extended as follows:
 
 @{
@@ -41,20 +41,19 @@ This optimizes processing on such BATs (DDBENCH).
 @h
 #define DELTAprintf DELTADEBUG printf
 #define DELTAinit(P1)	do {						      \
-	(P1)->batBuns->free = MAX(sizeof(int), (P1)->dims.bunwidth);	      \
-	(P1)->batDeleted = (P1)->batHole = (BUN) ((char*) Bunbase(P1) +	      \
-			((P1)->batBuns->free - (P1)->dims.bunwidth));	      \
-	(P1)->batInserted = BUNlast((P1));				      \
+	BATsetcount((P1), 0);						      \
+	(P1)->batBuns->free = 0;					      \
+	(P1)->batDeleted = (P1)->batInserted = (P1)->batFirst = 	      \
+		(BUN) Bunbase(P1);      	                              \
 	(P1)->batElmshift = BATelmshift((P1));				      \
 	DELTAprintf(							      \
-	 	"#DELTAinit %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", \
+	 	"#DELTAinit %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
 		(P1)->batId,				      \
 		(P1)->batBuns->free,			      \
 		PTRFMTCAST (P1)->batInserted,		      \
 		PTRFMTCAST (P1)->batDeleted,		      \
-		PTRFMTCAST (P1)->batHole,		      \
+		PTRFMTCAST (P1)->batFirst,		      \
 		PTRFMTCAST (P1)->batBuns->base );	      \
-	memset((P1)->batHole, 0, BUNsize(P1));		      \
 } while (0)
 @
 
@@ -65,29 +64,29 @@ and convert them back into pointers upon reload.
 #define DELTAsave(P1)	do {						\
 	(P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted);	\
 	(P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted);	\
-	(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole);		\
+	(P1)->batFirst = (BUN) BUNindex((P1), (P1)->batFirst);		\
 	DELTAprintf(							\
-	 	"#DELTAsave %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", \
+	 	"#DELTAsave %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
 		(P1)->batId,						\
 		(P1)->batBuns->free,					\
 		PTRFMTCAST (P1)->batInserted,				\
 		PTRFMTCAST (P1)->batDeleted,				\
-		PTRFMTCAST (P1)->batHole,				\
+		PTRFMTCAST (P1)->batFirst,				\
 		PTRFMTCAST (P1)->batBuns->base );			\
 } while (0)
 
 #define DELTAload(P1)	do {						\
 	DELTAprintf(							\
-		"#DELTAload %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", \
+		"#DELTAload %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
 		(P1)->batId,						\
 		(P1)->batBuns->free,					\
 		PTRFMTCAST (P1)->batInserted,				\
 		PTRFMTCAST (P1)->batDeleted,				\
-		PTRFMTCAST (P1)->batHole,				\
+		PTRFMTCAST (P1)->batFirst,				\
 		PTRFMTCAST (P1)->batBuns->base );			\
 	(P1)->batInserted = BUNptr((P1), (size_t) (P1)->batInserted);	\
 	(P1)->batDeleted = BUNptr((P1), (size_t) (P1)->batDeleted);	\
-	(P1)->batHole = BUNptr((P1), (size_t) (P1)->batHole);		\
+	(P1)->batFirst = BUNptr((P1), (size_t) (P1)->batFirst);		\
 } while (0)
 @	
 @}
@@ -99,27 +98,8 @@ transaction-dirty). For this we have @%DELTAdirty(b)@.
 @-
 @{
 @h
-#define DELTAdirty(b)	(((b)->batDeleted != (b)->batHole) ||\
+#define DELTAdirty(b)	(((b)->batDeleted != (b)->batFirst) ||\
 	((b)->batInserted < (b)->batBuns->base+(b)->batBuns->free))
-
-#define DELTAnexthole(b)						\
-	DELTAprintf( "#DELTAnexthole %s \n", (b)->batId );		\
-	(b)->batHole = (b)->batHole + BUNsize(b);			\
-	if (b->batInserted <= b->batHole) {				\
-		b->batInserted = (b)->batHole + BUNsize(b);		\
-	}
-#define DELTAhole(b)							\
-       	(b)->batHole
-#define DELTAloop(b,	p, q)						\
-	for (p = b->batDeleted; p < b->batHole; BUNnext(b, p))
-@-
-@%DELTAstart@ marks all BUNs as committed;
-@h
-#define DELTAstart(b)	(b)->batInserted = BUNlast(b);
-@-
-@%DELTArestart@ marks all BUNs as were they newly inserted.
-@h
-#define DELTArestart(b)	(b)->batInserted = BUNfirst(b);
 
 #endif /* _GDK_DELTA_H_ */
 @
@@ -146,9 +126,9 @@ BAT *
 BATcommit(BAT *b)
 {
 	BATcheck(b, "BATcommit");
-	DELTAprintf("#BATcommit1 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", b->batId, b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batHole, PTRFMTCAST b->batBuns->base);
+	DELTAprintf("#BATcommit1 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", b->batId, b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batFirst, PTRFMTCAST b->batBuns->base);
 	ALIGNcommit(b);
-	if (b->batDeleted < b->batHole && BBP_cache(b->batCacheid)) {
+	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
 		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
@@ -182,13 +162,13 @@ BATcommit(BAT *b)
 	if (DELTAdirty(b)) {
 		b->batDirtydesc = 1;
 	}
-	b->batDeleted = b->batHole;
+	b->batDeleted = b->batFirst;
 	if (b->batBuns->base) {
 		b->batInserted = BUNlast(b);
 	} else {
 		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
 	}
-	DELTAprintf("#BATcommit2 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", b->batId, b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batHole, PTRFMTCAST b->batBuns->base);
+	DELTAprintf("#BATcommit2 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", b->batId, b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batFirst, PTRFMTCAST b->batBuns->base);
 	return b;
 }
 
@@ -270,12 +250,10 @@ BATundo(BAT *b)
 	}
 	b->batBuns->free = (char *) b->batInserted - (char *) Bunbase(b);
 
-	bunfirst = b->batDeleted + bunsize;
-	bunlast = b->batHole;
+	bunfirst = b->batDeleted;
+	bunlast = b->batFirst;
 	if (bunlast > b->batDeleted) {
 		size_t i = BUNindex(b, bunfirst);
-
-		memcpy(b->batHole, b->batDeleted, bunsize);
 
 		/* elements are 'inserted' => zap properties */
 		if (b->hsorted & 1)
@@ -299,7 +277,8 @@ BATundo(BAT *b)
 			}
 		}
 	}
-	b->batHole = b->batDeleted;
+	b->batFirst = b->batDeleted;
+	BATsetcount(b, (BUNlast(b)-BUNfirst(b))/BUNsize(b) );
 	return b;
 }
 
@@ -341,7 +320,7 @@ BATdelta(BAT *b)
 	if (bn == NULL) {
 		return bn;
 	}
-	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)) {
+	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
 		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p)) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
@@ -349,23 +328,3 @@ BATdelta(BAT *b)
 	}
 	return bn;
 }
-
-@
-@- 
-The event status associated with a BAT can be inspected by simple routines.
-@c
-int
-BATdeltaEvent(BAT *b)
-{
-	BATcheck(b, "BATdeltaEvent");
-	return BUNindex(b, b->batHole) > BUNindex(b, b->batDeleted);
-}
-
-int
-BATalphaEvent(BAT *b)
-{
-	BATcheck(b, "BATalphaEvent");
-	return BUNindex(b, BUNlast(b)) > BUNindex(b, b->batInserted);
-}
-
-@}

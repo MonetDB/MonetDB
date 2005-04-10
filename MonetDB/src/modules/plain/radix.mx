@@ -1137,7 +1137,8 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 
 	firstbun = (char *) BUNfirst(b);
 	/* preset b->batBuns->free to make BATloopFast work */
-	b->batBuns->free += n * BUNsize(b);
+	b->batBuns->free = n * BUNsize(b);
+	BATsetcount(b, n);
 	/* create BUNs with uniform distribution */
 	BATloopFast(b, p, q, bunsize) {
 		*(oid *) BUNhloc(b, p) = bs ++;
@@ -1221,7 +1222,8 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	itab[m] += r;
 
 	/* preset b->batBuns->free to make BATloopFast work */
-	b->batBuns->free += n * BUNsize(b);
+	b->batBuns->free = n * BUNsize(b);
+	BATsetcount(b, n);
 	/* create BUNs with normal distribution */
 	BATloopFast(b, p, q, bunsize) {
 		*(oid *) BUNhloc(b, p) = bs ++;
@@ -1938,7 +1940,8 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 			lims = limits;	/* only pass limits on last iteration */
 		}
 		bn = quickbat(prev, cap);
-		bn->batBuns->free += cap * BUNsize(bn);
+		bn->batBuns->free = cap * BUNsize(bn);
+		BATsetcount(bn, cap);
 		bn->hdense = b->hdense;
 		bn->tdense = b->tdense;
 		p = BUNfirst(prev);
@@ -2114,7 +2117,8 @@ radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 		cnt[xx + xx] = xx;
 		cnt[xx + xx + 1] = 0;
 	}
-	bn->batBuns->free += BUNsize(bn) * mask;
+	bn->batBuns->free = BUNsize(bn) * mask;
+	BATsetcount(bn, mask);
 	mask = (mask - 1) << off;
 
 	/* compute the result: a histogram of bit patterns */
@@ -2167,6 +2171,7 @@ as the mask and link list for all phash invocations.
 		_p = BUNlast(b);\
 	    }\
 	    (b)->batBuns->free += _bunsize;\
+	    (b)->batCount ++;\
 	    integerCopy((int*) BUNhloc(b,_p), hb, hp, width1, distance1);\
 	    integerCopy((int*) BUNtloc(b,_p), BATmirror(tb), tp, width2, distance2);\
 	}
@@ -2243,6 +2248,7 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 			}
 		}
 		bn->batBuns->free = ((BUN) _dst) - bn->batBuns->base;
+		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	}
 	return 0;
       bunins_failed:
@@ -2454,6 +2460,7 @@ radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
 			@:radix_join(any,tail,head,atom,int,hloc,tloc)@
 		}
 		bn->batBuns->free = ((BUN) _dst) - bn->batBuns->base;
+		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	} else {
 		if (l->ttype == TYPE_oid) {
 			@:radix_join(oid,tloc,hloc,simple,bun,head,tail)@
@@ -2635,7 +2642,8 @@ radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	if (bn == NULL)
 		return GDK_FAIL;
 	*res = NULL;
-	bn->batBuns->free += offset * width;
+	bn->batBuns->free = offset * width;
+	BATsetcount(bn, offset);
 	bn->tsorted = 0;
 	BATseqbase(bn, lim = 0);	/* current oid */
 	lst = lim + BATcount(b);	/* highest oid */
@@ -2890,7 +2898,8 @@ radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (bn == NULL)
 		return GDK_FAIL;
 	*res = NULL;
-	bn->batBuns->free += offset1 * width;
+	bn->batBuns->free = offset1 * width;
+	BATsetcount(bn, offset1);
 	bn->tsorted = 0;
 	lim = b->hseqbase;
 	BATseqbase(bn, lim);	/* current oid */
@@ -3022,7 +3031,8 @@ radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (bn == NULL)
 		return GDK_FAIL;
 	*res = NULL;
-	bn->batBuns->free += offset1 * width;
+	bn->batBuns->free = offset1 * width;
+	BATsetcount(bn, offset1);
 	bn->tsorted = 0;
 	BATseqbase(bn, lim = 0);	/* current oid */
 	lst = lim + BATcount(b);	/* highest oid */
@@ -3136,7 +3146,8 @@ radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (bn == NULL)
 		return GDK_FAIL;
 	*res = NULL;
-	bn->batBuns->free += offset1 * width;
+	bn->batBuns->free = offset1 * width;
+	BATsetcount(bn, offset1);
 	bn->tsorted = 0;
 	BATseqbase(bn, lim = 0);	/* current oid */
 	lst = lim + BATcount(b);	/* highest oid */
@@ -3209,7 +3220,8 @@ posjoin_tuple(BAT **res, BAT *proj, BAT *attr)
 		integerCopy((int *) s, bm, r, width, distance);
 		s += yy;
 	}
-	bn->batBuns->free += BUNsize(bn) * BATcount(proj);
+	bn->batBuns->free = BUNsize(bn) * BATcount(proj);
+	BATsetcount(bn, BATcount(proj));
 	BATseqbase(bn, proj->hseqbase);
 	ALIGNsetH(bn, proj);
 	bn->tsorted = BATtordered(proj) & BATtordered(attr);
@@ -3318,7 +3330,8 @@ jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nb
 	}
 
 	/* restore normality in destination bats */
-	bn->batBuns->free += BATcount(proj) * BUNsize(bn);
+	bn->batBuns->free = BATcount(proj) * BUNsize(bn);
+	BATsetcount(bn, BATcount(proj));
 	if (proj->htype == TYPE_oid) {
 		bn->hsorted = 0;
 		if (proj->hkey)
@@ -3352,7 +3365,7 @@ jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift
 	BAT *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
 	int any = attr->ttype;
 	BAT *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
-	size_t xx = bo->batBuns->free, yy = 1 << *nbits;
+	size_t xx = bo->batBuns->free, yy = 1 << *nbits, cnt = bo->batCount;
 	int zz = *shift;
 	size_t *cluster = (size_t *) GDKmalloc((yy + 1) * sizeof(size_t));
 	BUN p, q, r, bobak;
@@ -3364,8 +3377,10 @@ jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift
 	*res = NULL;
 
 	bo->batBuns->free += BATcount(proj) * BUNsize(bo);
+	bo->batCount += BATcount(proj);
 	if (bo->batBuns->free > bo->batBuns->size) {
 		bo->batBuns->free = xx;
+		bo->batCount = cnt;
 		BBPreclaim(bn);
 		GDKerror("jivejoin1: preallocated second result BAT is too small.\n");
 		return GDK_FAIL;
@@ -3448,7 +3463,8 @@ jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	bn->batBuns->free += BATcount(proj) * BUNsize(bn);
+	bn->batBuns->free = BATcount(proj) * BUNsize(bn);
+	BATsetcount(bn, BATcount(proj));
 	bn->tsorted = 0;
 	if (proj->tkey && attr->tkey)
 		BATkey(BATmirror(bn), TRUE);
@@ -3522,7 +3538,8 @@ jivejoin2(BAT **res, BAT *proj, BAT *attr)
 
 	/* restore correct properties in bn */
 	bn->batBuns->base = bnbak;
-	bn->batBuns->free += BUNsize(bn) * BATcount(proj);
+	bn->batBuns->free = BUNsize(bn) * BATcount(proj);
+	BATsetcount(bn, BATcount(proj));
 	BATseqbase(bn, 0);
 	bn->tsorted = BAThordered(proj) & BATtordered(proj) & BATtordered(attr) & 1;
 	if (proj->tkey && attr->tkey)
@@ -3751,7 +3768,8 @@ posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 	}
 	radix_shift = n - radix_bits;
 	radix_mask = ((1 << radix_bits) - 1) << radix_shift;
-	bn->batBuns->free += c_cnt * BUNsize(bn);
+	bn->batBuns->free = c_cnt * BUNsize(bn);
+	BATsetcount(bn, c_cnt);
 
 	/* compute skiprate and if set, prefetch full first cluster */
 	skiprate = ((dbl) v_cnt) / c_cnt;
@@ -3804,6 +3822,7 @@ posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 		default:
 			GDKerror("posjoin: type %s not implemented\n", ATOMname(v->ttype));
 			bn->batBuns->free -= c_cnt * BUNsize(bn);
+			bn->batCount -= c_cnt;
 			break;
 		}
 		prev_bits = cur_bits;

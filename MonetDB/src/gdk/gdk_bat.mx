@@ -185,22 +185,16 @@ as temporary heap storage.
 In case of huge bats, we want HEAPalloc to write a file to disk, and memory map
 it. To make this possible, we must provide it with filenames.
 
-The hole is normally one tuple that is left free at the start of the heap. However, some 
-modules take advantage of the first bun pointer of a bat being int-aligned (ddbench).
-This is especially relevant in [void,chr] and [void,sht] combinations. Therefore, in such 
-cases, we pad the hole with some extra elements (see also DELTAinit). 
 @c
 BAT *
 BATnewstorage(int ht, int tt, size_t cap)
 {
-	int hole_padding;
 	BAT *bn = BATcreatedesc(ht, tt, TRUE);
 
 	BATsetdims(bn);
 
 	/* alloc the main heaps */
-	hole_padding = MAX((int) sizeof(int), bn->dims.bunwidth) / bn->dims.bunwidth;
-	if (HEAPalloc(bn->batBuns, cap + hole_padding, bn->dims.bunwidth) < 0) {
+	if (HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
 		BBPclear(bn->batCacheid);
 		return NULL;
 	}
@@ -240,9 +234,7 @@ BATnew(int ht, int tt, size_t cap)
 	i = ATOMsize(ht) + ATOMsize(tt);
 	ERRORcheck((i == 0), "BATnew: ht and tt cannot be void\n");
 
-	/* add space for holes */
 	cap = MAX(BATTINY, cap);
-	cap += 2;
 
 	b = BATnewstorage(ht, tt, cap);
 	if (b == NULL)
@@ -304,7 +296,7 @@ BATgrows(BAT *b)
 
 	/* if we can extend in reserved space, do not miss the opportunity */
 	if (b->batBuns->size + BUNsize(b) <= b->batBuns->maxsize) {
-		size_t rescap = oldcap + (b->batBuns->maxsize - b->batBuns->size) / BUNsize(b) - 1;
+		size_t rescap = oldcap + (b->batBuns->maxsize - b->batBuns->size) / BUNsize(b);
 
 		newcap = MIN(newcap, rescap);
 	}
@@ -322,7 +314,7 @@ Here we merely copy their references into the new administration space.
 BAT *
 BATextend(BAT *b, size_t newcap)
 {
-	size_t hole_padding, heap_size;
+	size_t heap_size;
 	int ret;
 
 	BATcheck(b, "BATextend");
@@ -338,12 +330,7 @@ malloc.
 	if (newcap <= BATbuncount(b)) {
 		return b;
 	}
-@-
-like in BATnew, add sufficient space for a hole, allowing for
-extra padding so the first BUN will be (at least) int-aligned.
-@c
-	hole_padding = MAX(sizeof(int), b->dims.bunwidth) / b->dims.bunwidth;
-	heap_size = BUNsize(b) * (newcap + hole_padding);
+	heap_size = BUNsize(b) * newcap; 
 
 	DELTAsave(b);
 	ret = HEAPextend(b->batBuns, heap_size);
@@ -408,7 +395,7 @@ BATclear(BAT *b)
 	}
 
 	/* we must dispose of all inserted atoms */
-	if (b->batDeleted == b->batHole && b->batHole == b->batInserted - bs && 
+	if (b->batDeleted == b->batInserted && 
 	    BATatoms[b->htype].atomDel == NULL && 
 	    BATatoms[b->ttype].atomDel == NULL) {
 		Heap hh, th;
@@ -453,11 +440,9 @@ BATclear(BAT *b)
 		}
 	}
 
-	/* the deleted-section is made to include all stable elements */
-	if (b->batHole != (b->batInserted - bs))
-		memcpy(b->batHole, b->batInserted - bs, bs);
-	b->batHole = b->batInserted - bs;
+	b->batFirst = b->batInserted;
 	b->batBuns->free = b->batInserted - b->batBuns->base;
+	BATsetcount(b,0);
 	b->batDirty = TRUE;
 	return b; 
 }
@@ -526,7 +511,8 @@ copy of the valid BUN sequence.
 @c
 		if (!VIEWparent(b) && (ht < TYPE_str && tt < TYPE_str) && !(ht == TYPE_bat || ht == TYPE_ptr) && !(tt == TYPE_bat || tt == TYPE_ptr) && b->dims.headloc == bn->dims.headloc && BUNsize(b) == BUNsize(bn)) {
 			memcpy((char *) BUNfirst(bn), (char *) BUNfirst(b), BATcount(b) * BUNsize(b));
-			bn->batBuns->free += BUNsize(b) * BATcount(b);
+			bn->batBuns->free = BUNsize(b) * BATcount(b);
+			BATsetcount(bn, BATcount(b));
 			bn->hseqbase = b->hseqbase;
 			bn->tseqbase = b->tseqbase;
 		} else {
@@ -616,6 +602,8 @@ around and adapt search accelerator structures.
 }
 @= acc_move
 {
+	char *tmp = alloca(bs);
+
 	if (b->hhash_heap) {
 		HASHmove(b->hhash, (hash_t)@3, (hash_t)@4, BUNhead(b, @1), @1 < last); 
 	}
@@ -623,7 +611,13 @@ around and adapt search accelerator structures.
 		HASHmove(b->thash, (hash_t)@3, (hash_t)@4, BUNtail(b, @1), @1 < last); 
 	}
 
-	@:bun_move(@1,@2)@
+	/* move first to tmp); */
+	@:bun_move(@1,tmp)@
+	/* move delete to first */
+	@:bun_move(@2,@1)@
+	/* move first to deleted */
+	@:bun_move(tmp,@2)@
+
 }
 
 @- BUN Insertion
@@ -683,15 +677,14 @@ BUNins(BAT *b, ptr h, ptr t)
 		if (BUNinplace(bm, p, t, h) == NULL)
 			return NULL;
 	} else {
-		unsigned int bunsize;
 		size_t i;
 
 		ALIGNins(b, "BUNins");
 		b->batDirty = 1;
-		bunsize = BUNsize(b);
 		p = BUNlast(b);	/* insert at end */
 		i = BUNindex(b, p);
-		if (p - bunsize > b->batHole) {
+		if (p > b->batFirst) {
+			unsigned int bunsize = BUNsize(b);
 			if (b->htype != TYPE_void) {
 				int cmp = 0;
 
@@ -816,18 +809,26 @@ BUNdelete_(BAT *b, BUN p)
 	ALIGNdel(b, "BUNdelete");	/* zap alignment info */
 
 @- Committed Delete. 
-The (committed) bun is moved into the hole, and the first 
-bun is moved to its old place. The "hole" pointer is incremented.
+Deleting a (committed) bun the first and deleted swap position.
 @c
 	if (p < b->batInserted) {
-		l = DELTAhole(b);
 		idx1 = BUNindex(b, p);
-		@:hacc_update(del,head,p,idx1)@
-		@:tacc_update(del,tail,p,idx1)@
-		@:bun_move(p,l)@
-		DELTAnexthole(b);
-		l = DELTAhole(b);
-		if (p != l) {
+
+		if (p == b->batFirst) { /* first can simply be discarded */
+			@:hacc_update(del,head,p,idx1)@
+			@:tacc_update(del,tail,p,idx1)@
+
+			if (BAThdense(b)) {
+				bm->tseqbase = ++b->hseqbase;
+			}
+			if (BATtdense(b)) {
+				bm->hseqbase = ++b->tseqbase;
+			}
+		} else {
+			@:hacc_update(del,head,p,idx1)@
+			@:tacc_update(del,tail,p,idx1)@
+
+			l = BUNfirst(b);
 			idx2 = BUNindex(b, l);
 			@:acc_move(l,p,idx2,idx1)@
 			if (b->hsorted & 1) {
@@ -838,14 +839,8 @@ bun is moved to its old place. The "hole" pointer is incremented.
 				b->tsorted = FALSE;
 				b->T->nosorted = idx1;
 			}
-		} else {
-			if (BAThdense(b)) {
-				bm->tseqbase = ++b->hseqbase;
-			}
-			if (BATtdense(b)) {
-				bm->hseqbase = ++b->tseqbase;
-			}
 		}
+		b->batFirst += bs;
 	} else {
 @- Uncommitted Delete.
 This bun was not committed, and should therefore disappear. The 
@@ -894,6 +889,7 @@ last inserted bun (if present) is copied over it.
 		b->batBuns->free -= bs;
 		p = ((char *) p) - bs;
 	}
+	b->batCount--; 
 	b->batDirty = 1;	/* bat is dirty */
 	return p;
 }
@@ -983,7 +979,7 @@ explicitly.
 		BUN prv = p - bs;
 		BUN nxt = p + bs;
 
-		if (prv <= b->batHole)
+		if (prv < b->batFirst)
 			prv = NULL;
 		if (nxt > last)
 			nxt = NULL;
@@ -1962,15 +1958,16 @@ check if duplicated properties are equal
 		     (b->dims.headvarsized != bm->dims.tailvarsized) +
 		     (b->dims.bunshift != bm->dims.bunshift) +
 		     (b->dims.bunwidth != bm->dims.bunwidth) +
-		     (b->batBuns->size == 0) +
 		     (b->batDeleted < b->batBuns->base) +
-		     (b->batHole < b->batDeleted) +
-		     (b->batHole > b->batInserted) +
+		     (b->batFirst < b->batDeleted) +
+		     (b->batFirst > b->batInserted) +
+		     (b->batCount != BATcount(b)) +
 		     (b->batBuns->free > b->batBuns->size) +
 		     (b->batInserted > b->batBuns->base + b->batBuns->free);
-		if (zz)
+		if (zz) {
 			GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d\n", BBPname(b->batCacheid), zz);
 
+		}
 		if (b->hhash_heap != bm->thash_heap) {
 			GDKerror("BATpropcheck: BAT %s has inconsistent accrefs\n", BBPname(b->batCacheid));
 			HASHdestroy(b);

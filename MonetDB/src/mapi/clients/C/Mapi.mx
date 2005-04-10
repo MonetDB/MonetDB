@@ -1909,7 +1909,7 @@ connect_to_server(Mapi mid)
 		SSL_CTX_set_verify(mapi_ssl_ctx, SSL_VERIFY_NONE, NULL);
 	}
 #endif
-	s = socket(serv->sa_family, SOCK_STREAM, 0);
+	s = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
 	if (s < 0) {
 		return mapi_setError(mid, "Open socket failed", "mapi_reconnect", MERROR);
 	}

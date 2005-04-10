@@ -127,7 +127,7 @@ AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h sys/un.h termios.h)
-AC_CHECK_HEADERS(ieeefp.h)
+AC_CHECK_HEADERS(ieeefp.h winsock.h)
 AC_CHECK_HEADERS(gc.h)
 AC_LANG_SAVE
 #AC_LANG_PUSH(C++)
@@ -238,13 +238,15 @@ AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select times)
 AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf fcntl shutdown)
 AC_CHECK_FUNCS(mrand48 drand48)
 AC_CHECK_FUNCS(nanosleep lockf)
-AC_CHECK_FUNCS(ctime_r localtime_r isinf fpclassify fpclass getlogin)
+AC_CHECK_FUNCS(ctime_r asctime_r localtime_r isinf fpclassify fpclass getlogin)
 AC_CHECK_FUNCS(madvise posix_madvise posix_fadvise uname)
+AC_CHECK_FUNCS(opendir readdir rewinddir closedir ftruncate)
 AC_CHECK_DECLS([strdup, strtof])
 AC_CHECK_DECLS([strtoll, strtoull])
+AC_CHECK_DECLS([ctime_r])
 ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)
-AC_TRY_COMPILE([$ac_includes_default
+AC_TRY_LINK([$ac_includes_default
 #include <time.h>], 
 [char buf[26]; time_t t; ctime_r(&t,buf,26);],
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
@@ -260,18 +262,23 @@ if test x$cross_compiling != xyes; then
 	AC_SUBST(MX)
 else
 	dnl  When cross-compiling, we need to have MEL/Mx in our PATH that work on the building host.
-	AC_PATH_PROG(MX,Mx$EXEEXT,,$PATH)
+	AC_PATH_PROGS(MX, Mx Mx$EXEEXT,,$PATH)
 	if test x$MX = x; then
 		AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
 	fi
-	AC_PATH_PROG(MEL,mel$EXEEXT,,$PATH)
+	AC_PATH_PROGS(MEL, mel mel$EXEEXT,,$PATH)
 	if test x$MEL = x; then
 		AC_ERROR([No Mel$EXEEXT found in PATH=$PATH])
 	fi
 fi
 
 AM_CONDITIONAL(CROSS_COMPILING,test x$cross_compiling = xyes)
+
+if test x$cross_compiling != xyes; then
 AM_CONDITIONAL(NOT_WIN32, true)
+else
+AM_CONDITIONAL(NOT_WIN32, false)
+fi
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"

@@ -193,6 +193,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 {
 	REGISTER BUN _p = BUNlast(bn);
 	REGISTER int _bunsize = BUNsize(bn);
+	REGISTER int _cnt = BATcount(e);
 
 	bn->tsorted = bn->hsorted = 0;
 	min = max = (oid) 0;
@@ -214,7 +215,8 @@ HASHfnd_oid for void- and hash-lookups, respectively
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
 		}
-		max = *(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e));
+		if (_cnt)
+			max = *(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e));
 		ALGODEBUG THRprintf(GDKout, "init_result(@1): BAThordered(e)&1, min=" SZFMT ", max=" SZFMT "\n", (size_t) min, (size_t) max);
 	} else {
 		oid i;
@@ -231,6 +233,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 		ALGODEBUG THRprintf(GDKout, "init_result(@1): min=" SZFMT ", max=" SZFMT "\n", (size_t) min, (size_t) max);
 	}
 	bn->batBuns->free = _p - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/_bunsize);
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
 }

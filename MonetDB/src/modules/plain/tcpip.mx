@@ -994,7 +994,8 @@ For variable sized atoms, there may be a head and/or tail heap.
 						BBPreclaim(b);
 						goto fail;
 					}
-					b->batBuns->free += size * BUNsize(b);
+					b->batBuns->free = size * BUNsize(b);
+					BATsetcount(b, size);
 					b->hheap.free = hsize;
 					if (hsize)
 						HEAP_init(&b->hheap, b->htype);

@@ -760,7 +760,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 	for (i = nfeatures - 1; i >= 0; i--) {
 		int ncolors;
 		Time t;
-		size_t ofree;
+		size_t ofree, ocnt;
 
 		if (quadtree[i] < 0)
 			continue;
@@ -768,6 +768,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 			continue;
 
 		ofree = r_ids->batBuns->free;
+		ocnt = r_ids->batCount;
 		if (st_bunins[0])
 			t = now();
 		BUNfastins(r_ids, (ptr) &soid, (ptr) &i);
@@ -806,6 +807,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 		} else {
 			/* Delete all matches */
 			r_ids->batBuns->free = ofree;
+			r_ids->batCount = ocnt;
 		}
 	}
 

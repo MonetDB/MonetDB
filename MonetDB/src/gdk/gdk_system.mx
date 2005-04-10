@@ -54,23 +54,6 @@ functions.
 # include <signal.h>
 #endif
 
-#ifdef HAVE_PTHREAD_H
-/* don't re-include config.h; on Windows, don't redefine pid_t in an
-   incompatible way 
- */
-#undef HAVE_CONFIG_H
-#ifdef pid_t
-#undef pid_t
-#endif
-# include <sched.h>
-# include <pthread.h>
-# include <semaphore.h>
-#endif
-
-#ifdef HAVE_SEMAPHORE_H
-# include <semaphore.h>
-#endif
-
 typedef void *MT_Lock;
 typedef void *MT_Sema;
 typedef void *MT_Cond;
@@ -256,6 +239,23 @@ gdk_export size_t _MT_pagesize;
 @- Mthreads Routine implementations
 @c
 #include "gdk.h"
+
+#ifdef HAVE_PTHREAD_H
+/* don't re-include config.h; on Windows, don't redefine pid_t in an
+   incompatible way 
+ */
+#undef HAVE_CONFIG_H
+#ifdef pid_t
+#undef pid_t
+#endif
+# include <sched.h>
+# include <pthread.h>
+# include <semaphore.h>
+#endif
+
+#ifdef HAVE_SEMAPHORE_H
+# include <semaphore.h>
+#endif
 
 /* new pthread interface, where the thread id changed to a struct */
 #ifdef PTW32_VERSION
@@ -689,6 +689,7 @@ MT_alive(int pid)
 #ifdef HAVE_KILL
 	return kill(pid, 0) == 0;
 #else
+	(void)pid;
 	return 0;
 #endif
 }

@@ -225,7 +225,7 @@ init_readline(Mapi mid, const char *language, int save_history)
 			_save_history = 1;
 		}
 #else
-		snprintf(_history_file, PATHLENGTH, "%s%c_mapiclient_history_%s", mo_find_option(&set, setlen, "prefix"), DIR_SEP, language);
+		snprintf(_history_file, PATHLENGTH, "%s%c_mapiclient_history_%s", mo_find_option(NULL, 0, "prefix"), DIR_SEP, language);
 		_save_history = 1;
 #endif
 		read_history(_history_file);

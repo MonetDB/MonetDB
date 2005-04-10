@@ -296,10 +296,10 @@ that just reuses the memory of the source.
 @c
 	if (BATrestricted(b) == BAT_READ) {
 		bn = VIEWcreate_(b, TRUE);
-		bn->batBuns->base = BUNptr(b, l - 1);
-		bn->batInserted = BUNptr(b, l);
-		bn->batHole = bn->batDeleted = bn->batBuns->base;
+		bn->batBuns->base = BUNptr(b, l);
+		bn->batFirst = bn->batDeleted = bn->batInserted = bn->batBuns->base;
 		bn->batBuns->maxsize = bn->batBuns->size = bn->batBuns->free = BUNptr(b, h) - bn->batBuns->base;
+		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 @-
 We have to do it: create a new BAT and put everything into it.
 @c
@@ -712,7 +712,8 @@ BATtopN(BAT *b, size_t topN)
 			BUNdelete(b, BUNlast(b));
 	} else {
 		HASHremove(b);
-		b->batBuns->free = BUNptr(b, topN + 1) - Bunbase(b);
+		b->batBuns->free = BUNptr(b, topN) - Bunbase(b);
+		BATsetcount(b, topN);
 	}
 	return 0;
 }

@@ -52,6 +52,7 @@ import select
 #import getpass
 import Mfilter
 import prof
+import string
 
 F_SKIP = -1
 F_OK = 0
@@ -1883,7 +1884,7 @@ def ReadMultiple(inpipes, outpipes = None):
         # deadlock.
         for i in range(len(inpipes)):
             if outpipes is None:
-                outbuffers[i] = inpipes[i].read()
+                outbuffers[i] = inpipes[i].read().replace('\r','')
             else:
                 outpipes[i].write(inpipes[i].read())
             inpipes[i].close()
@@ -1893,7 +1894,7 @@ def ReadMultiple(inpipes, outpipes = None):
             readers, dummy1, dummy2 = select.select(readlist, [], [])
             todelete = []
             for r in readers:
-                data = os.read(r.fileno(), 1024)
+                data = os.read(r.fileno(), 1024).replace('\r','')
                 if not data:
                     # we hit EOF on this pipe
                     todelete.append(r)
@@ -2325,6 +2326,13 @@ else:
         RELEASE = os.uname()[3]+"."+os.uname()[2]
     else:
         RELEASE = os.uname()[2].split("(", 1)[0]
+
+# this is for the wine/mingw setup 
+if CONDITIONALS['CROSS_COMPILING']:
+    OS = 'WindowsNT'
+    HOST = "WINE"
+    RELEASE = "5.2"
+
 OSVER = OS+RELEASE
 os.environ['OS'] = OS
 os.environ['OSVER'] = OSVER

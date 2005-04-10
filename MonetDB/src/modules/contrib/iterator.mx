@@ -350,7 +350,7 @@ ScanNext(ITER *it)
 	size_t cnt = MIN(chunksize, it->hdl.scan.tuples_left);
 	BAT *b = it->result;
 
-	b->batHole = BUNlast(b) - BUNsize(b);
+	b->batFirst = BUNlast(b) - BUNsize(b);
 	it->hdl.scan.tuples_left -= cnt;
 	return cnt;
 }
@@ -902,7 +902,7 @@ BAT* groupby_@1_@2_@3(ITER *input, BAT *attr) {
     BUN p, q, r = BUNfirst(bn);
     int idx, xx, yy = BUNsize(bn);
 
-    bn->batHole += off;
+    bn->batFirst += off;
     for(idx=0; idx < maxgrps; idx++) {
         cnt[idx] = 0;
         @:aggr_@1_init(@2,idx)@
@@ -919,7 +919,7 @@ BAT* groupby_@1_@2_@3(ITER *input, BAT *attr) {
         aggr_@1_finish(@2,idx,r);
         r += yy;
     }
-    bn->batHole -= off;
+    bn->batFirst -= off;
     bn->batBuns->free = r - BUNfirst(bn);
     bn->hsorted = bn->tsorted = 0;
     return bn;

@@ -748,7 +748,7 @@ in this implementation.
 	}
 	ph = (char*) (BUNfirst(b@1)+b@1->hloc);
 	hend = (char*) BUNlast(b@1);
-	hdff = BUNindex(b@1,BUNfirst(b@1))-1;
+	hdff = BUNindex(b@1,BUNfirst(b@1));
 	ah = a@1; sh = s@1; bh = b@1;
 	hsrt |= b@1->hsorted;
 	hky |= b@1->hkey;
@@ -797,7 +797,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	if (argc==4) {
 		@:arrayinit(3)@
 	}
-	if (assignop && b1->batInserted==b1->batHole + BUNsize(b1)) {
+	if (assignop && b1->batInserted == b1->batFirst) {
 		replace = TRUE;
 		buntrick = ATOMsize(b1->ttype);
 		HASHdestroy(retb = b1);
@@ -807,7 +807,8 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 		BATseqbase(retb, hseq);
 		if (htpe == TYPE_void && special == 0 && !ATOMvarsized(ret_tpe)) {
 			buntrick = BUNsize(retb);
-			retb->batBuns->free += BATcount(bh)*buntrick;
+			retb->batBuns->free = BATcount(bh)*buntrick;
+			BATsetcount(retb, BATcount(bh));
 		} else if (special > 1 && bh->htype == TYPE_void) {
 			buntrick = -1;
 		}
@@ -952,7 +953,7 @@ return a simple type.
 			p2 += s2;
 		} else {
 			int retval = (*addr)(tptr,BUNt@2(b1,p1),BUNt@3(b2,p2));
-			@:check_@1(name, 1+BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
+			@:check_@1(name, BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
 			@:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
 			p1 += s1; p2 += s2;
 		}
@@ -990,7 +991,7 @@ return a simple type.
 				o2 = *(oid*) BUNhloc(b2, p2);
 				if (o1 == o2) {
 					int retval = (*addr)(tptr, BUNt@2(b1,p1), BUNt@3(b2,p2), BUNt@4(b3,p3));
-					@:check_@1(name, 1+BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
+					@:check_@1(name, BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
 					@:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
 					p1 += s2;
 					if (p1 >= e1)
@@ -1052,7 +1053,7 @@ interpret_@1_merge(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	if (argc==4)
 		@:mergeinit(3)@
 
-	if (assignop && b1->batInserted==b1->batHole+BUNsize(b1) && special == 0) {
+	if (assignop && b1->batInserted == b1->batFirst && special == 0) {
 		replace = ATOMsize(b1->ttype);
 		HASHdestroy(retb = b1);
 	} else {
@@ -1464,7 +1465,7 @@ there are the {strings, polygons, images, etc}!
 		nested->dims = BATmirror(b)->dims;
 		nested_rev->dims = b->dims;
 		*nested->batBuns = *b->batBuns;
-		nested_rev->batHole = nested->batHole = b->batHole;
+		nested_rev->batFirst = nested->batFirst = b->batFirst;
 		nested_rev->T = nested->H;
 		*nested->H = *b->T;
 		nested->halign = 0;
@@ -1549,11 +1550,11 @@ it with the generic hashimpl anyway.
 			if (p < q && (*cmp)(BUNhead(b, p), last) < 0) {
 				 p = SORTfndfirst(m, last);
 			}
-			nested->batBuns->base = nested->batDeleted = nested->batHole = p - xx;
-			nested->batInserted = p;
+			nested->batBuns->base = nested->batDeleted = nested->batInserted = nested->batFirst = p;
 			@2;
 			p = SORTfndlast(m, last);
 			nested->batBuns->size = nested->batBuns->free = p - nested->batBuns->base;
+			BATsetcount(nested, nested->batBuns->free/xx);
 			@:exec_interpret(last)@
 			nested->hdense = 0;
 		}
@@ -1582,9 +1583,9 @@ optimized cases that use exec_opt and hence optimize_call
 					} else {
 						q = p;
 					}
-					nested->batBuns->base = nested->batDeleted = nested->batHole = q - xx;
-					nested->batInserted = q;
+					nested->batBuns->base = nested->batDeleted = nested->batInserted = nested->batFirst = q;
 					nested->batBuns->size = nested->batBuns->free = p - nested->batBuns->base;
+					BATsetcount(nested, nested->batBuns->free/xx);
 					@:exec_opt(&last)@
 				}
 			}
@@ -1605,11 +1606,11 @@ optimized cases that use exec_opt and hence optimize_call
 		if (*(@1*) BUNhloc(b,p) < last) {
 			p = SORTfndfirst_@1(m, &last);
 		}
-		nested->batBuns->base = nested->batDeleted = nested->batHole = p - xx;
-		nested->batInserted = p;
+		nested->batBuns->base = nested->batDeleted = nested->batInserted = nested->batFirst = p;
 		@3;
 		p = SORTfndlast_@1(m, &last);
 		nested->batBuns->size = nested->batBuns->free = p-nested->batBuns->base;
+		BATsetcount(nested, nested->batBuns->free/xx);
 		@:exec_opt(&last)@
 		nested->hdense = 0;
 	}
@@ -1624,8 +1625,7 @@ a temporary BAT 'nested'; in which we insert all tail values.
 		int bunsize = BUNsize(nested);
 		Heap *batbuns = nested->batBuns;
 
-		nested->batDeleted = batbuns->base;
-		nested->batInserted = batbuns->base + bunsize;
+		nested->batDeleted = nested->batInserted = batbuns->base;
 
 		if (direct_call == NULL) {
 			if (GDKdebug & 131072)
@@ -1635,9 +1635,9 @@ a temporary BAT 'nested'; in which we insert all tail values.
 				ptr last = BUNhead(extent, p);
 
 				/* make nested empty and writeable */
-				nested->batDeleted = nested->batHole = batbuns->base;
-				batbuns->free = bunsize;
-				nested->batInserted = batbuns->base + bunsize;
+				nested->batDeleted = nested->batFirst = nested->batInserted = batbuns->base;
+				BATsetcount(nested, 0);
+				batbuns->free = 0;
 
 				if (BATprepareHash(b))
 					goto bunins_failed;
@@ -1680,8 +1680,9 @@ we know that the head is oid (or a small version) here..
 		@1 cur = *(@1*) last;
 
 		/* make 'nested' empty and writeable */
-		nested->batHole = batbuns->base;
-		batbuns->free = bunsize;
+		nested->batFirst = batbuns->base;
+		BATsetcount(nested, 0);
+		batbuns->free = 0;
 
 		/* get all elements for this id and insert them in 'nested' */
 		@:getset_ins_@2(@1)@
@@ -1782,8 +1783,7 @@ call and we have the additional knowledge (through the atom heap trick) that:
 		DELTAload(nested);
 		if (ret < 0)
 			goto bunins_failed;
-		nested->batDeleted = nested->batHole = batbuns->base;
-		nested->batInserted = batbuns->base + bunsize;
+		nested->batDeleted = nested->batDeleted = nested->batFirst = batbuns->base;
 	}
 	if (bunsize == SIZEOF_OID) {
 		if (b->ttype == TYPE_void) {
@@ -1807,4 +1807,5 @@ call and we have the additional knowledge (through the atom heap trick) that:
 		*(sht*) (batbuns->base + batbuns->free) = *(sht*) BUNtloc(b,@1);
 	}
 	batbuns->free += bunsize;
+	nested->batCount++;
 @}

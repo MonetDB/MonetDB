@@ -25,7 +25,7 @@ lib__streams = {
 	SOURCES = streams.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	WINLIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+	LIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 }
@@ -36,11 +36,10 @@ lib__str = {
 	SOURCES = str.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	WINLIBS = ../../common/libstream ../../gdk/libbat \
+	LIBS = ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-	LIBS	= $(ICONV_LIBS)
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(ICONV_LIBS)
 }
 
 #doc__str = {
@@ -54,7 +53,7 @@ lib__xtables = {
 	SOURCES = xtables.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	WINLIBS = ../../common/libstream ../../gdk/libbat \
+	LIBS = ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet ./lib_algebra \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -76,7 +75,7 @@ LIBS = {
 		radix.mx stats.mx tcpip.mx unix.mx url.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	WINLIBS = ../../common/libstream ../../gdk/libbat \
+	LIBS = ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
@@ -98,11 +97,10 @@ lib__counters = {
 	SOURCES = counters.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	WINLIBS = ../../common/libstream ../../gdk/libbat \
+	LIBS = ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-	LIBS = $(HWCOUNTERS_LIBS)
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(HWCOUNTERS_LIBS)
 }
 
 #doc__counters = {
@@ -115,11 +113,10 @@ lib__pcl = {
 	SOURCES = pcl.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	WINLIBS = ../../common/libstream ../../gdk/libbat \
+	LIBS = ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-	LIBS = $(PCL_LIBS)
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PCL_LIBS)
 }
 
 #doc__pcl = {
@@ -132,11 +129,10 @@ lib__pcre = {
 	SOURCES = pcre.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	WINLIBS = ../../common/libstream ../../gdk/libbat \
+	LIBS = ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-	LIBS = $(PCRE_LIBS)
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PCRE_LIBS)
 }
 
 #doc__pcre = {

@@ -557,9 +557,7 @@ VIEWreset(BAT *b)
 		n->batDirty = 1;
 
 		/* make the BAT empty and insert all again */
-		n->batDeleted = n->batHole = n->batBuns->base;
-		n->batBuns->free = BUNsize(n);
-		n->batInserted = BUNfirst(n);
+		DELTAinit(n);
 
 		/* insert all of v in b, and quit */
 		BATins(b, v);
@@ -586,13 +584,12 @@ VIEWbounds(BAT *view, size_t l, size_t h)
 	b = BATdescriptor(view->batParentid);
 	if (l < BUNindex(b, BUNfirst(b)))
 		l = BUNindex(b, BUNfirst(b));
-	view->batBuns->base = BUNptr(b, l - 1);
-	view->batInserted = BUNptr(b, l);
-	view->batHole = view->batDeleted = view->batBuns->base;
-	if (BUNlast(b) < BUNptr(b, h + 1))
-		view->batBuns->maxsize = view->batBuns->size = view->batBuns->free = BUNlast(b) - view->batBuns->base;
-	else
-		view->batBuns->maxsize = view->batBuns->size = view->batBuns->free = BUNptr(b, h + 1) - view->batBuns->base;
+	view->batBuns->base = BUNptr(b, l);
+	view->batFirst = view->batDeleted = view->batInserted = view->batBuns->base;
+	if (BUNlast(b) < BUNptr(b, h + 1)) 
+		h = BUNindex(b, BUNlast(b));
+	view->batBuns->maxsize = view->batBuns->size = view->batBuns->free = BUNptr(b, h + 1) - view->batBuns->base;
+	BATsetcount(view, h + 1 - l);
 
 	view->hsorted = BAThordered(b);
 	view->tsorted = BATtordered(b);

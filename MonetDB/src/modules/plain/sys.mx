@@ -953,10 +953,10 @@ view_client_login(BAT **retval	/* put pointer to BAT[int,str] record here. */
 			localt = *localtime(&logintime);
 #endif
 
-#ifdef HAVE_CTIME_R3
+#ifdef HAVE_ASCTIME_R3
 			asctime_r(&localt, s, sizeof(s));
 #else
-#ifdef HAVE_CTIME_R
+#ifdef HAVE_ASCTIME_R
 			asctime_r(&localt, s);
 #else
 			/* race condition: return value could be

@@ -524,7 +524,8 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	}
 	ret = bn;
       bunins_failed:
-	bn->batBuns->free = dst - bn->batBuns->base;
+ 	bn->batBuns->free = dst - bn->batBuns->base;
+	BATsetcount(bn,bn->batBuns->free/zz);
 	if (!ret)
 		BBPreclaim(bn);
 	return ret;
@@ -555,6 +556,7 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	ret = bn;
       bunins_failed:
 	bn->batBuns->free = dst - bn->batBuns->base;
+	BATsetcount(bn,bn->batBuns->free/zz);
 	if (!ret)
 		BBPreclaim(bn);
 	return ret;
@@ -593,6 +595,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
       bunins_failed:
 	BATmmap_unpin(r);
 	bn->batBuns->free = dst - bn->batBuns->base;
+	BATsetcount(bn,bn->batBuns->free/zz);
 	if (!ret)
 		BBPreclaim(bn);
 	return ret;
@@ -692,6 +695,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 		if (yy < base || yy >= end) {
 			bn->batBuns->free = dst - bn->batBuns->base;
+			BATsetcount(bn,bn->batBuns->free/zz);
 			BBPreclaim(bn);
 			nondense = 1;
 			break;
@@ -878,6 +882,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		ret = bn;
 	      bunins_failed:
 		bn->batBuns->free = dst - bn->batBuns->base;
+		BATsetcount(bn,bn->batBuns->free/zz);
 		if (ret == NULL) {
 			BBPreclaim(bn);
 			goto ready;
@@ -1837,6 +1842,7 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 		}
 	}
 	bn->batBuns->free = dst - bn->batBuns->base;
+	BATsetcount(bn,bn->batBuns->free/bn_sz);
 	return bn;
 
 bunins_failed:

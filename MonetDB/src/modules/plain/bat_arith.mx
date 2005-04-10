@@ -194,6 +194,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 	}
 
 	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
 	*ret = bn;
@@ -272,6 +273,7 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 		}
 	}
 	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
 	*ret = bn;
@@ -351,6 +353,7 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 		}
 	}
 	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
 	*ret = bn;

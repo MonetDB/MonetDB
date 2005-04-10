@@ -30,6 +30,7 @@ without permission of the copyright owner. }
 @{
 @+ Document control
 @T
+(April 2005:) Niels HASH_MAX now indicates the end of the hash chain list 
 (Mar 2005:) Niels removed the histolink accelerator and changed to the grp atom
 
 (June 2001:) Arjen made the size of the hashtable parametric, which is needed
@@ -363,8 +364,8 @@ hashing.
 #define declare_unclustered	/* avoid warning */
 #define declare_clustered   int samecluster = TRUE;
 
-#define chain_unclustered   for (zz = hash[c]; zz > 0; zz = e->link)
-#define chain_clustered     for (zz = hash[c]; (zz > 0) && (samecluster); zz = e->link)
+#define chain_unclustered   for (zz = hash[c]; zz != HASH_MAX; zz = e->link)
+#define chain_clustered     for (zz = hash[c]; (zz != HASH_MAX) && (samecluster); zz = e->link)
 
 #define tst_grp_unclustered(eq,p,t)    (eq(p, tcur, t))
 #define tst_grp_clustered(eq,p,t)      (samecluster = eq(p, tcur, t))
@@ -403,7 +404,7 @@ typedef struct {
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
 		hash = (hash_t*) alloca((int)(sizeof(hash_t)*((mask=@2)+1))); \
 		for (xx=0; xx<=@2; xx++) {				\
-			hash[xx] = 0;					\
+			hash[xx] = HASH_MAX;				\
 		}							\
 	}								\
 	entry.cnt = 1;							\
@@ -523,6 +524,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		*dst++ = m?zz:e->gid;
 	}
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
 	ALIGNsetH(bn,b);
 	return m ? NULL : map2histo(map);
@@ -706,6 +708,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		*dst++ = m?zz:e->gid;
 	}
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	return m?NULL:map2histo(map);
 bunins_failed:
 	BBPreclaim(bn);
@@ -883,13 +886,13 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 		return GDK_FAIL;
 	}
 	for (yy = 0; yy < mask; yy++) {
-		hash[yy] = 0;
+		hash[yy] = HASH_MAX;
 	}
 	mask--;
 
 	/* insert all values in the hash table, and in bn with count zero */
 	r = BUNfirst(bn);
-	yy = 1;
+	yy = 0;
 	BATloopFast(dom, p, q, xx) {
 		oid v = *(oid *) BUNhloc(dom, p);
 		hash_t c = v & mask;
@@ -902,6 +905,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 		yy++;
 	}
 	bn->batBuns->free = (char *) r - (char *) Bunbase(bn);
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	strcpy(bn->hatom, "oid");
@@ -915,7 +919,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 			oid v = *(oid *) BUNtloc(grp, p);
 			hash_t c = v & mask;
 
-			for (yy = hash[c]; yy > 0; yy = ((idxentry_t *) BUNhloc(bn, r))->link) {
+			for (yy = hash[c]; yy != HASH_MAX; yy = ((idxentry_t *) BUNhloc(bn, r))->link) {
 				r = BUNptr(bn, yy);
 				if (((idxentry_t *) BUNhloc(bn, r))->hcur == v) {
 					*(int *) BUNtloc(bn, r) += 1;
@@ -1108,6 +1112,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		if (a_void)
 			GDKfree(base);
 		bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
+		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 		bn->tsorted = GDK_SORTED;
 	}
 	*res = bn;

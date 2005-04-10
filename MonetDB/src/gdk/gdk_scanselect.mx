@@ -217,6 +217,7 @@ replacing their generic versions there.
 #define @1@4_bunfastins_nocheck(b, p, h, t, s)			\
 	do {							\
 		(b)->batBuns->free += s;			\
+		(b)->batCount ++;				\
 		@1@4_bunfastins_nocheck_noinc(b, p, h, t);	\
 	} while (0)
 #define @1@4_bunfastins(b, h, t)					\
@@ -396,6 +397,7 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ct
 		@9
 	}
 	bn->batBuns->free = _p - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/_bunsize);
 	@:seqscanEpilogue@
 }
 static BAT *

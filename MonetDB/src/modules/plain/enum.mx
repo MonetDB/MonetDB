@@ -356,7 +356,7 @@ tostr@1@2(char** dst, int* len, ptr src)
 	if (*(@2*)src == @2_nil) {
 		v = ATOMnilptr(b->htype);
 	} else {
-		BUN p = BUNptr(b, 1 + *(unsigned @3*) src);
+		BUN p = BUNptr(b, *(unsigned @3*) src);
 		v = BUNhead(b,p);
 	}
 	if (b->htype != TYPE_str) {
@@ -391,7 +391,7 @@ fromstr@1@2(str src, int* len, ptr* dst)
 		*(@2**)dst = (@2*) GDKmalloc(*len = sizeof(@2));
 	}
 	if ((p = SORTfnd(b, v)) != NULL) {
-		**(unsigned @3**) dst = (unsigned @3) (BUNindex(b,p)-1);
+		**(unsigned @3**) dst = (unsigned @3) (BUNindex(b,p));
 	} else {
 		**(@2**)dst = @2_nil;
 	}
@@ -445,9 +445,6 @@ enum_new(int *retval, str name, BAT *b)
 	BATorder(h);
 	BATrename(h, name);
 	BATmode(h, PERSISTENT);
-/*
-	BBPsave(h);
-*/
 	ret = enum_load(retval, h);
 	BBPunfix(h->batCacheid);
 	return ret;
@@ -483,13 +480,13 @@ enum_encode(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		if (p == NULL) {
 			*(chr *) dst = chr_nil;
 		} else {
-			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) - 1);
+			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) );
 		}
 	} else {
 		if (p == NULL) {
 			*(sht *) dst = sht_nil;
 		} else {
-			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) - 1);
+			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) );
 		}
 	}
 	return GDK_SUCCEED;
@@ -520,13 +517,13 @@ enum_lower(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		if (p == NULL) {
 			*(chr *) dst = chr_nil;
 		} else {
-			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) - 1);
+			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) );
 		}
 	} else {
 		if (p == NULL) {
 			*(sht *) dst = sht_nil;
 		} else {
-			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) - 1);
+			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) );
 		}
 	}
 	return GDK_SUCCEED;
@@ -553,13 +550,13 @@ enum_upper(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		if (p == NULL) {
 			*(chr *) dst = chr_nil;
 		} else {
-			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) - 1);
+			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) );
 		}
 	} else {
 		if (p == NULL) {
 			*(sht *) dst = sht_nil;
 		} else {
-			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) - 1);
+			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) );
 		}
 	}
 	return GDK_SUCCEED;
@@ -580,13 +577,13 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		if (*(chr *) src == chr_nil) {
 			v = ATOMnilptr(b->htype);
 		} else {
-			v = BUNhead(b, BUNptr(b, 1 + *(unsigned char *) src));
+			v = BUNhead(b, BUNptr(b, *(unsigned char *) src));
 		}
 	} else {
 		if (*(sht *) src == sht_nil) {
 			v = ATOMnilptr(b->htype);
 		} else {
-			v = BUNhead(b, BUNptr(b, 1 + *(unsigned short *) src));
+			v = BUNhead(b, BUNptr(b, *(unsigned short *) src));
 		}
 	}
 	if (b->hvarsized) {
@@ -618,7 +615,7 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 				if (r == NULL) {
 					idx = @1_nil;
 				} else {
-					idx = (unsigned @2) (BUNindex(b,r) - 1);
+					idx = (unsigned @2) (BUNindex(b,r) );
 				}
 				if (BUNfastins(bn, BUNhead(src,p), &idx) == NULL) {
 					BBPreclaim(bn);
@@ -631,7 +628,7 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 				if (r == NULL) {
 					idx = @1_nil;
 				} else {
-					idx = (unsigned @2) (BUNindex(b,r) - 1);
+					idx = (unsigned @2) (BUNindex(b,r) );
 				}
 				if (BUNfastins(bn, BUNhead(src,p), &idx) == NULL) {
 					BBPreclaim(bn);
@@ -731,7 +728,7 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 		if (*(@1*) idx == chr_nil) {
 			w = nil;
 		} else {
-			w = BUNhead(b, BUNptr(b, 1 + *idx));
+			w = BUNhead(b, BUNptr(b, *idx));
 		}
 		if (BUNfastins(bn, BUNhead(src,p), w) == NULL) {
 			BBPreclaim(bn);

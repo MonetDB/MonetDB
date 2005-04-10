@@ -525,9 +525,12 @@ ASCIIcreate_bats(ascii *as)
 {
 	ascii_io *fmt = as->format;
 	size_t i;
+	size_t nr = 0; 
 
+	if (as->nr != ~(size_t)0)
+		nr = as->nr;
 	for (i = 0; i < as->nr_attrs; i++) {
-		fmt[i].c = void_bat_create(fmt[i].adt, as->nr);
+		fmt[i].c = void_bat_create(fmt[i].adt, nr);
 		if (!fmt[i].c) {
 			GDKerror("ASCIIcreate_bats: Failed to create bat of size %d\n", as->nr);
 			return -1;
@@ -1148,9 +1151,13 @@ init_ascii_io(int *debug)
 }
 
 int
-ascii_io_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *nr)
+ascii_io_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 {
-	*bats = ASCIIload(names, seps, types, datafile, *nr);
+	size_t nr = ~(size_t)0;
+
+	if (*N >= 0)
+		nr = *N;
+	*bats = ASCIIload(names, seps, types, datafile, nr);
 	if (*bats) {
 		return GDK_SUCCEED;
 	} else {
@@ -1158,11 +1165,14 @@ ascii_io_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *
 	}
 }
 int
-ascii_io_input(BAT **bats, BAT *names, BAT *seps, BAT *types, Stream *s, int *nr)
+ascii_io_input(BAT **bats, BAT *names, BAT *seps, BAT *types, Stream *s, int *N)
 {
 	bstream *b = NULL;
+	size_t nr = ~(size_t)0;
 
-	*bats = ASCIIinput(names, seps, types, b = bstream_create(*(stream **) s, SIZE), NULL, *nr);
+	if (*N >= 0)
+		nr = *N;
+	*bats = ASCIIinput(names, seps, types, b = bstream_create(*(stream **) s, SIZE), NULL, nr);
 	bstream_destroy(b);
 	if (*bats) {
 		return GDK_SUCCEED;

@@ -709,7 +709,8 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 	/* NOTE: htype == void; 
 	   the idea should however extend to other ordered types as well (?) */
 	hv = BATnew(TYPE_oid, TYPE_void, xx = BATcount(b));
-	hv->batBuns->free += xx * sizeof(oid);
+	hv->batBuns->free = xx * sizeof(oid);
+	BATsetcount(hv, xx);
 	hvs = (oid *) BUNfirst(hv);
 
 	/* Read the unique ch's from the hash (i.e., do a k-cluster-unique) */
@@ -719,11 +720,11 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 
 		/* Any values for this cluster? */
 		cluster = h->hash[cur];
-		if (!cluster)
+		if (cluster == HASH_MAX)
 			continue;
 
 		/* determine size of cluster and set pointers */
-		for (hb = cluster; hb; hb = h->link[hb])
+		for (hb = cluster; hb != HASH_MAX; hb = h->link[hb])
 			ncur++;
 		cc = 0;
 		cstart = cend;
@@ -734,10 +735,10 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 		dict[cur].e = cend - 1;
 
 		/* printf( "dict entry[%d]=<%d,%d>\n", cur, cstart, cend - 1 ); */
-		for (hb = cluster; hb; hb = h->link[hb]) {
+		for (hb = cluster; hb != HASH_MAX; hb = h->link[hb]) {
 			/* and create the output bat */
 			ptr tl = NULL;
-			int hoid = hb - 1;
+			int hoid = hb;
 
 			/* printf( "ch[%d]=<%d@0,%d>\n", cend - cc - 1, hoid, cur ); */
 			hvs[cend - cc - 1] = hoid;
@@ -970,9 +971,11 @@ salgebra_CMDuselect(BAT **res, clusterhash *ch, ptr v, int v_type)
 	@:CHECKnil(error,FAIL)@
 	nmaxres = DICTclustersize(ch, v);
 	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
-	result->batBuns->free += nmaxres * sizeof(oid);
+	result->batBuns->free = nmaxres * sizeof(oid);
+	BATsetcount(result, nmaxres);
 	nres = salgebra_collect_matches((oid *) BUNfirst(result), ch, v);
 	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+	result->batCount -= (nmaxres - nres);
 	*res = result;
 	return GDK_SUCCEED;
 }
@@ -996,13 +999,15 @@ salgebra_CMDujoin(BAT **res, clusterhash *ch, BAT *b)
 	/* create result BAT */
 	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
 	result->hsorted = 0;
-	result->batBuns->free += nmaxres * sizeof(oid);
+	result->batBuns->free = nmaxres * sizeof(oid);
+	BATsetcount(result, nmaxres);
 
 	/* construct result */
 	matches = (oid *) BUNfirst(result);
 	BATloop(b, p, q)
 	    nres += salgebra_collect_matches(&matches[nres], ch, BUNhead(b, p));
 	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+	result->batCount -= (nmaxres - nres);
 
 	/* return the result */
 	*res = result;
@@ -1027,10 +1032,12 @@ salgebra_CMDusortedjoin(BAT **res, clusterhash *ch, BAT *b)
 
 	/* create result BAT, and a temporary buffer for mergesorting */
 	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
-	result->batBuns->free += nmaxres * sizeof(oid);
+	result->batBuns->free = nmaxres * sizeof(oid);
+	BATsetcount(result, nmaxres);
 
 	hbuf = BATnew(TYPE_oid, TYPE_void, nmaxres);
-	hbuf->batBuns->free += nmaxres * sizeof(oid);
+	hbuf->batBuns->free = nmaxres * sizeof(oid);
+	BATsetcount(hbuf, nmaxres);
 
 	/* construct sorted result */
 	prev = (oid *) BUNfirst(result);
@@ -1045,6 +1052,7 @@ salgebra_CMDusortedjoin(BAT **res, clusterhash *ch, BAT *b)
 	}
 	BBPreclaim(hbuf);
 	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+	result->batCount -= (nmaxres - nres);
 
 	/* return the result */
 	*res = result;

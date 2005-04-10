@@ -54,7 +54,6 @@ the WIN32 native platform.
 #endif
 
 /* threads and gc redirects */ 
-#include <pthread.h>
 #ifdef HAVE_GC
 #define GC_PTHREADS 1
 #include <gc.h>
@@ -340,6 +339,8 @@ char *MT_heapbase = NULL;
  *
  * (this is based on reading the 2.6.8 linux kernel code) and microbenchmarks. 
  */
+#include <pthread.h>
+
 typedef struct {
 	char path[128];		/* mapped file, retained for debugging */
 	void *base;		/* base address */
@@ -841,6 +842,7 @@ MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed)
 int
 MT_munmap(void *p, size_t dummy)
 {
+	(void)dummy;
 	return (UnmapViewOfFile(p) ? 0 : -1);
 	/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
 	 * while Unix's   munmap          returns success==0, error==-1. */
@@ -849,6 +851,7 @@ MT_munmap(void *p, size_t dummy)
 int
 MT_msync(void *p, size_t len, int mode)
 {
+	(void)mode;
 	return (FlushViewOfFile(p, len) ? 0 : -1);
 	/*       Windows' FlushViewOfFile returns success!=0, error== 0,
 	 * while Unix's   msync           returns success==0, error==-1. */
@@ -857,6 +860,9 @@ MT_msync(void *p, size_t len, int mode)
 int
 MT_madvise(void *p, size_t len, int advise)
 {
+	(void)p; 
+	(void)len; 
+	(void)advise;
 	return 0;		/* would -1 be better? */
 }
 
@@ -1202,6 +1208,7 @@ win_mkdir(const char *pathname, const int mode)
 	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
 	int ret = mkdir(p);
 
+	(void)mode;
 	if (p != buf)
 		free(p);
 	return ret;

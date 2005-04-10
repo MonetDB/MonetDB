@@ -614,7 +614,9 @@ stopProfiler(void)
 void
 setProfilerMode(int mode)
 {
+	(void)mode;
 }
+
 BAT *
 getProfilerCount()
 {

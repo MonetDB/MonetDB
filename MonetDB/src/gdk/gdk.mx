@@ -602,6 +602,12 @@ typedef char long_str[IDLENGTH]; /* standard GDK static string */
 typedef char short_str[OLDLENGTH]; /* old GDK small static string */
 
 typedef oid hash_t;		/* type used for hash tables */
+#if defined(MONET_OID32) || SIZEOF_INT==4
+#define HASH_MAX INT_MAX
+#else
+#define HASH_MAX LLONG_MAX
+#endif
+
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #if SIZEOF_OID == SIZEOF_INT	/* a type compatible with var_t */
 #define TYPE_var	TYPE_int
@@ -617,7 +623,7 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 
 #define FATALcheck(tst,	msg) if (tst) GDKfatal(msg);
 #define ERRORcheck(tst,	msg) if (tst) { GDKerror(msg); return 0; }
-#define WARNcheck(tst,	msg)  if (tst) GDKwarning(msg)
+#define WARNcheck(tst,	msg) if (tst) GDKwarning(msg)
 #define BATcheck(tst,	msg) if (tst == NULL) {				\
 				GDKerror("%s: BAT required.\n",msg);	\
 				return 0;				\
@@ -707,10 +713,10 @@ contains integer byte-offsets (fixed-sized, of course) into a head-
 or tail-heap.
 @
 The BUN heap contains a contiguous range of BUNs. It starts after
-the @strong{ hole} pointer, and finishes at the end in the @strong{ free}
+the @strong{ first} pointer, and finishes at the end in the @strong{ free}
 area of the BUN. All BUNs after the @strong{ inserted} pointer have been
 added in the last transaction (and will be deleted on a transaction
-abort). All BUNs between the @strong{ deleted} pointer and the @strong{ hole}
+abort). All BUNs between the @strong{ deleted} pointer and the @strong{ first}
 have been deleted in this transaction (and will be reinserted at a
 transaction abort).
 
@@ -798,8 +804,9 @@ typedef struct {
           Heap*  batBuns;          /* Heap where the buns are stored */
           /* DELTA status */
           BUN    batDeleted;       /* first deleted BUN */
-          BUN    batHole;          /* empty BUN before the first alive BUN */
+          BUN    batFirst;         /* empty BUN before the first alive BUN */
           BUN    batInserted;      /* first inserted BUN */
+          size_t batCount;         /* Tuple count */
           /* Head properties */
           int    htype;            /* Head type number */
           str    hatom;            /* name of head type */
@@ -890,8 +897,9 @@ typedef struct {
 	Heap buns;		/* space for the buns. */
 	/* delta status administration */
 	BUN deleted;		/* start of deleted elements */
-	BUN hole;		/* to store next deletion */
+	BUN first;		/* to store next deletion */
 	BUN inserted;		/* start of inserted elements */
+	size_t count;		/* tuple count */
 } BUNrec;
 
 typedef struct PROPrec {
@@ -970,9 +978,10 @@ typedef int (*GDKfcn) ();
 #define thash		T->hash
 #define hheapdirty	H->heapdirty
 #define theapdirty	T->heapdirty
-#define batHole		U->hole
+#define batFirst	U->first
 #define batInserted	U->inserted
 #define batDeleted	U->deleted
+#define batCount	U->count
 #define batParentid	P->parentid
 #define batStamp	P->stamp
 #define batSharecnt	P->sharecnt
@@ -1254,6 +1263,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 @h
 #define bunfastins_nocheck(b, p, h, t, s) {				\
 		(b)->batBuns->free += s;				\
+		(b)->batCount ++;				        \
 		ATOMput((b)->htype, &(b)->hheap, BUNhloc(b, p), h);	\
 		ATOMput((b)->ttype, &(b)->theap, BUNtloc(b, p), t);	\
 	}
@@ -1335,7 +1345,7 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 #define BUNhvar(b,p)	((b)->htype?(BUN)((char *) Hbase(b)+*(var_t*)BUNhloc(b,p)):(BUN)BUNhpos(b,p))
 #define BUNtvar(b,p)	((b)->ttype?(BUN)((char *) Tbase(b)+*(var_t*)BUNtloc(b,p)):(BUN)BUNtpos(b,p))
 
-#define BUNfirst(b)	((BUN) ((char *) (b)->batHole + BUNsize(b)))
+#define BUNfirst(b)	((BUN) (b)->batFirst)
 #define BUNlast(b)	((BUN) ((char *) Bunbase(b) + (b)->batBuns->free))
 #define BUNnext(b,p)	((BUN) ((char *) (p) + BUNsize(b)))
 #define BUNprev(b,p)	((BUN) ((char *) (p) - BUNsize(b)))
@@ -1689,6 +1699,8 @@ gdk_export void GDKqsort_rev(void *a, void *base, size_t n, int width, int tpe, 
 #define BATtvoid(b)	(((b)->tdense&(b)->tsorted&1) || (b)->ttype==TYPE_void)
 #define BAThkey(b)	(b->hkey != FALSE || BAThdense(b))
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
+
+#define BATsetcount(b,cnt)	((b)->batCount = cnt)
 @
 @}
 
@@ -2744,7 +2756,7 @@ inspect these data items.
 Again, the b is a BAT, p and q are BUNs, where p is the iteration variable.
 @h
 #define DELloop(b, p, q, x)						\
-	for (q = (b)->batHole, p = (b)->batDeleted, x=BUNsize(b); p < q; p += x)
+	for (q = (b)->batFirst, p = (b)->batDeleted, x=BUNsize(b); p < q; p += x)
 
 @- hash-table supported loop over BUNs
 The first parameter 'b' is a BAT, the second ('h') should point to
@@ -2754,10 +2766,10 @@ head column of 'b'). The 'hb' is an integer index, pointing out the
 obtain a BUN from the iteration variable.
 @h
 #define HASHloop(b, h, hb, v)						\
-	for (hb = h.hash[HASHprobe(&h, v)]; hb; hb = h.link[hb])	\
+	for (hb = h.hash[HASHprobe(&h, v)]; hb != HASH_MAX; hb = h.link[hb])	\
 		if (ATOMcmp(h.type, v, BUNhead(b, BUNptr(b, hb))) == 0)
 #define HASHloop_str(b,	h, hb, v)					\
-	for (hb = h.hash[strHash(v)&h.mask]; hb; hb = h.link[hb])	\
+	for (hb = h.hash[strHash(v)&h.mask]; hb != HASH_MAX; hb = h.link[hb])	\
 		if (strcmp(v, BUNhvar(b, BUNptr(b, hb))) == 0)
 @-
 For string search, we can optimize if the string heap has eliminated
@@ -2767,7 +2779,7 @@ If so, we can just compare integer index numbers instead of strings:
 @h
 #define HASHloop_fstr(b, h, hb, idx, v)					\
 	for (hb = h.hash[strHash(v)&h.mask], idx = strLocate(&(b)->hheap,v); \
-	     hb; hb = h.link[hb])					\
+	     hb != HASH_MAX; hb = h.link[hb])					\
 		     if (*(var_t*) BUNhloc(b, BUNptr(b, hb)) == idx)
 @
 The following example shows how the hashloop is used:
@@ -2801,10 +2813,10 @@ These hashloops have one extra parameter, a BUN pointer 'w' (again for
 speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 @h
 #define HASHlooploc(b,	h, hb, v, w)					\
-	for (hb = h.hash[HASHprobe(&h, v)]; hb; hb = h.link[hb])	\
+	for (hb = h.hash[HASHprobe(&h, v)]; hb != HASH_MAX; hb = h.link[hb])	\
 		if ((w=BUNptr(b, hb)) != NULL && ATOMcmp(h.type, v, BUNhloc(b, w)) == 0)
 #define HASHloopvar(b,	h, hb, v, w)					\
-	for (hb = h.hash[HASHprobe(&h, v)]; hb; hb = h.link[hb])	\
+	for (hb = h.hash[HASHprobe(&h, v)]; hb != HASH_MAX; hb = h.link[hb])	\
 		if ((w=BUNptr(b, hb)) != NULL && ATOMcmp(h.type, v, BUNhvar(b, w)) == 0)
 @
 @{
@@ -2833,7 +2845,7 @@ speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 
 @= hashloop
 #define HASHloop_@1(b,h,hb,v,w)						\
-	for (hb = h.hash[hash_@2(h,v)]; hb; hb = h.link[hb])		\
+	for (hb = h.hash[hash_@2(h,v)]; hb != HASH_MAX; hb = h.link[hb])		\
 		if ((w=BUNptr(b, hb)) != NULL && @3_EQ(v, BUN@5(b, w), @4))
 @}
 @- loop over a BAT with ordered tail
@@ -3038,12 +3050,9 @@ gdk_export BAT *BATuselect(BAT *b, ptr tl, ptr th);
 gdk_export BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th);
 
 gdk_export BAT *BATconst(BAT *l, int tt, ptr val);
-gdk_export BAT *BATindexjoin(BAT *l, BAT *r, size_t estimate);
-gdk_export BAT *BATleftindexjoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
 gdk_export BAT *BATleftthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
 gdk_export BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
-gdk_export int BATtheta(BAT *in, BAT *out, BAT *l, BAT *r, int mode);
 gdk_export BAT *BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2);	/* should bandjoin remain in the kernel? */
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate);

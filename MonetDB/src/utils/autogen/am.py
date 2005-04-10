@@ -410,10 +410,6 @@ def am_binary(fd, var, binmap, am):
             am['ALL'].append(name)
         return
 
-    cond = ''
-    if binmap.has_key('COND'):
-        cond = '#' + string.join(binmap['COND'], '+')
-
     SCRIPTS = []
     scripts_ext = []
     if binmap.has_key('SCRIPTS'):
@@ -430,9 +426,21 @@ def am_binary(fd, var, binmap, am):
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
     bd = am_translate_dir(bd, am)
-
     fd.write("%sdir = %s\n" % (norm_binname, bd))
-    fd.write("%s_PROGRAMS =%s\n" % (norm_binname,  binname))
+
+    cname = name
+    cond = ''
+    if binmap.has_key('COND'):
+        condname = string.join(binmap['COND'], '+')
+        cond = '#' + condname
+        fd.write("if %s\n" % (condname))
+        fd.write(" C_%s = %s\n" % (name,name))
+    	fd.write(" %s_PROGRAMS =%s\n" % (norm_binname,  binname))
+        fd.write("endif\n")
+	cname = "$(C_" + name + ")"
+    else:
+    	fd.write("%s_PROGRAMS =%s\n" % (norm_binname,  binname))
+
     am['InstallList'].append("\t%s/%s%s\n" % (bd, binname, cond))
 
     if binmap.has_key('MTSAFE'):
@@ -470,7 +478,7 @@ def am_binary(fd, var, binmap, am):
         fd.write("%s_scripts = %s\n" % (norm_binname, am_list2string(SCRIPTS, " ", "")))
         am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
         fd.write("all-local-%s: $(%s_scripts)\n" % (name, name))
-        am['ALL'].append(name)
+        am['ALL'].append(cname)
 
     am_find_hdrs(am, binmap)
     am_find_ins(am, binmap)
@@ -579,6 +587,10 @@ def am_library(fd, var, libmap, am):
     if libmap.has_key('SEP'):
         sep = libmap['SEP'][0]
 
+    if name[0] == '_':
+	name = name[1:]
+    fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,string.upper(name)))
+
     ld = "libdir"
     if libmap.has_key("DIR"):
         ld = libmap["DIR"][0] # use first name given
@@ -683,12 +695,17 @@ def am_libs(fd, var, libsmap, am):
 #      fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_LIBS"], am))
 #    elif libsmap.has_key("LIBS"):
 #      fd.write(am_additional_libs(libname, sep, "LIB", libsmap["LIBS"], am))
+	_libs = []
         if libsmap.has_key(libname + "_DLIBS"):
-            fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_DLIBS"], am))
+	    _libs += libsmap[libname + "_DLIBS"]
             fd.write(am_additional_install_libs(libname, sep, libsmap[libname+ "_DLIBS"], am))
 
+    	if libsmap.has_key("LIBS"):
+		_libs += libsmap["LIBS"];
         if libsmap.has_key("LDFLAGS"):
-            fd.write(am_additional_flags(libname, sep, "LIB", libsmap["LDFLAGS"], am))
+		_libs += libsmap["LDFLAGS"];
+	if len(_libs) > 0:
+		fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
 
         nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
         srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
@@ -715,6 +732,7 @@ def am_libs(fd, var, libsmap, am):
 
         ld = am_translate_dir(ld, am)
         fd.write("%sdir = %s\n" % (libname, ld))
+        fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,string.upper(libname)))
         am['LIBS'].append(('lib', libname, sep, ''))
         am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 

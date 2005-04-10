@@ -44,6 +44,7 @@
 #define new_int_bat(b,s) {(b)=BATnew(TYPE_void,TYPE_int,(s)); \
                           BATseqbase((b),0);                  }
 #define add_ints(b,n)    {(b)->batBuns->free+=(n)*sizeof(int);\
+			  (b)->batCount+=n;	              \
                           BATkey(BATmirror((b)),0);           \
                           (b)->tsorted = 0;                   }
 #define get_int_ptr(b)   ((int*)(BUNfirst((b))))

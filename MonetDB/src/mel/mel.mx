@@ -250,7 +250,7 @@ List *dirs = NULL;
 
 language *l = NULL;
 
-#ifdef __MINGW32_VERSION
+#if defined(__MINGW32_VERSION) || HAVE_DECL_STRDUP==0
 char *strdup(const char *s)
 {
 	return strcpy((char *) malloc(strlen(s) + 1), s);
