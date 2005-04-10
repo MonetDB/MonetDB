@@ -222,7 +222,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         res_size /= BATcount(iter_bat);
         fst_ctx = fst_ctx + (oid)(1 - (int)self);
         lst_ctx = fst_ctx + (oid)res_size;
-        dst = BUNhloc(res, BUNlast(res));
+        dst = BUNlast(res);
+        assert(!res->hloc);
         bs_res = BUNsize(res);
         if ( cand_bat ) {
             if ( BATtdense(cand_bat) ) {
@@ -352,6 +353,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
             }
         }
         res->batBuns->free = dst - res->batBuns->base;
+        BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
     } else
     /* !(trivial_cases && one_ctx) */ {
 
@@ -602,7 +604,8 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
         PFll_check_BAT_capacity(res, grow);
         /* creates a row for every iter, whose ctx node produced
            a match */
-        dst = BUNhloc(res, BUNlast(res));
+        dst = BUNlast(res);
+        assert(!res->hloc);
         for (cur_bun = stack[stack_top-1].first;
              cur_bun <= stack[stack_top-1].last;
              cur_bun += iter_bunsize) {
@@ -611,6 +614,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
             dst += bunsize;
         }
         res->batBuns->free = dst - res->batBuns->base;
+        BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/bunsize);
 @
 @c
 
@@ -854,7 +858,8 @@ BATprint(cand_bat);
         /* iterate over all descendants until the next limit is reached
            (either descendant ctx node or end of scope)
            and insert their pre value into the results */
-        dst = BUNhloc(res, BUNlast(res));
+        dst = BUNlast(res);
+        assert(!res->hloc);
         if (cand_bat) {
             if (BATtdense(cand_bat)) {
                 oid cur_pre = 0;
@@ -892,6 +897,7 @@ BATprint(cand_bat);
             }
         }
         res->batBuns->free = dst - res->batBuns->base;
+        BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/bs_res);
     }
     
     pre = @1;

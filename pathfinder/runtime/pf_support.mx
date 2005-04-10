@@ -731,6 +731,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	for (k=0; k<npairs; k++) {
 		BATseqbase(bn[k], (oid)0);
 		bn[k]->batBuns->free = dst[k] - bn[k]->batBuns->base;
+		BATsetcount(bn[k], bn[k]->batBuns->free/BUNsize(bn[k]));
 		if (!bn[k]->batDirty) bn[k]->batDirty = TRUE;
 		BATkey(bn[k],TRUE);
 		BATkey(BATmirror(bn[k]),FALSE);
@@ -751,6 +752,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 		DST += BS;
 	}
 	BN->batBuns->free = DST - BN->batBuns->base;
+	BATsetcount(BN, BN->batBuns->free/BS); 
 	if (!BN->batDirty) BN->batDirty = TRUE;
 	BATkey(BN,TRUE);
 	BATkey(BATmirror(BN),TRUE);
@@ -1548,6 +1550,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		}
 	}
 	bn->batBuns->free = dst - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 
 @= mpos_res_prop
 	/* set result properties */

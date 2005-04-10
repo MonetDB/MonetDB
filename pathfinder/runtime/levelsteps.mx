@@ -168,6 +168,7 @@ PARAMETERS: search level
 
     /* for reverse insert */
     res->batBuns->free = (*upperbound) * BUNsize(res);
+    BATsetcount(res, (*upperbound));
     res_cur = (oid*)BUNlast(res); res_cur--;
 
     level_cur = ctx_next_pre;
@@ -367,6 +368,7 @@ outer_loop:
     /* mark the end point of the BUNs section in the BUNheap 
      */
     res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+    BATsetcount(res, res->batBuns->free/BUNsize(res));
     
     res->batDirty = TRUE;
     res->hsorted = GDK_SORTED;
@@ -388,10 +390,10 @@ outer_loop:
      * here, we use a feature of the BATdescriptor that has been
      * introduced for delta- (i.e., insertion- & deletion-) management:
      * the "real" BUNs section doesn't start at b->batBuns->base,
-     * but only at b->batHole
+     * but only at b->batFirst
      */
-    res->batDeleted = res->batInserted = res->batHole
-                    = BUNptr(res, BUNindex(res, ((BUN)res_cur)));
+    res->batDeleted = res->batInserted = res->batFirst = (ptr)(res_cur+1);
+    BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
 
     res->batDirty = TRUE;
     res->hsorted = GDK_SORTED;

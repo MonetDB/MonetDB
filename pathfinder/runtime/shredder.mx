@@ -399,14 +399,15 @@ static void setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
 
         void* top;
         
-        int bottomTop = n+1;
+        int bottomTop = n;
         shredCtx->dstBAT[idx].cnt = n;
         switch( shredCtx->dstBAT[idx].def->tailType ) {
          case TYPE_int :
                 top = &shredCtx->dstBAT[idx].cast.natCAST[bottomTop];
                 break;
          case TYPE_chr: {
-                b->batBuns->free = n+(SIZEOF_VOID_P); /* incomplete, solves truncation bug */
+                b->batBuns->free = n; 
+                BATsetcount(b, n);
                 b->tsorted = 0;
                 return;
                 }
@@ -418,6 +419,7 @@ static void setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
                 return;
         }
         b->batBuns->free = ((BUN)top) - BUNfirst(b);
+        BATsetcount(b, n);
         b->tsorted = 0;
 }
 

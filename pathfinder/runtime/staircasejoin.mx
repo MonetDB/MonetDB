@@ -188,6 +188,7 @@ PFscj@1_void(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound
     /* mark the end point of the BUNs section in the BUNheap 
      */
     res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+    BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
 
     res->batDirty = TRUE;
     res->hsorted = GDK_SORTED;

@@ -448,8 +448,10 @@ const WS_SIZE     := 30; # must be last!
 
 PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 {
-    if (not(bat("doc_name").reverse().exist(name)))
-        { ERROR("Document %s does not exist\n",name); }
+    if (not(bat("doc_name").reverse().exist(name))) { 
+	ERROR("Document %s does not exist\n",name); 
+	}
+
     var docid := str(int(bat("doc_name").reverse().find(name)));
     
     var frag := ws.fetch(DOC_LOADED).uselect(name);
