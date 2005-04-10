@@ -889,7 +889,8 @@ Operator *ScanAlloc(size_t iochunk, size_t memchunk, str *batnames)  {
 			this->bats[i] = BATnew(TYPE_void, b->ttype, batsize);
 			this->ntuples = BATcount(b);
 			this->pos = this->iochunk; /* trigger load into first half */
-			this->bats[i]->batBuns->free += BUNsize(b)*batsize; /* make buns visible for debugging purposes */
+			this->bats[i]->batBuns->free = BUNsize(b)*batsize; /* make buns visible for debugging purposes */
+			BATsetcount(this->bats[i], batsize);
 			BBPunfix(bid);
 		}
 	} 
@@ -1690,7 +1691,8 @@ int vectorized_stddev(BAT **res, str mu, str s2, str x, int *memchunk, int *m, i
 		prf += (x100_clock() - t0);
 #endif
 	}
-	bn->batBuns->free += ((BUN) cur) - BUNfirst(bn);
+	bn->batBuns->free = ((BUN) cur) - BUNfirst(bn);
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
 	BATseqbase(bn, 0);
 #ifdef PROFILE
