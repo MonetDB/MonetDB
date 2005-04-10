@@ -1,5 +1,5 @@
 #!/bin/sh
-SQL="MapiClient -lsql -u monetdb -P monetdb --trace --debug=64"
+SQL="MapiClient -lsql -u monetdb -P monetdb -T"
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi

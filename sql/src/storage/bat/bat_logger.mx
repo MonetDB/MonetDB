@@ -791,7 +791,7 @@ log_bat(logger *logger, oid lbid, BAT *b)
 		if (logger->debug)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
 	}
-	l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
+	l.nr = BUNindex(b, b->batFirst) - BUNindex(b, b->batDeleted);
 	logger->changes += l.nr;
 
 	if (l.nr && ok == GDK_SUCCEED) {
@@ -802,7 +802,7 @@ log_bat(logger *logger, oid lbid, BAT *b)
 		if (log_write_format(logger, &l) == SQL_ERR || log_write_string(logger, name) == SQL_ERR)
 			return SQL_ERR;
 
-		for (p = b->batDeleted; p < b->batHole && ok == GDK_SUCCEED; p = BUNnext(b, p)) {
+		for (p = b->batDeleted; p < b->batFirst && ok == GDK_SUCCEED; p = BUNnext(b, p)) {
 			ptr h = BUNhead(b, p);
 			ptr t = BUNtail(b, p);
 			ok = wh(h, logger->log, 1);

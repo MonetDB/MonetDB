@@ -718,8 +718,6 @@ mvc_export_table_wrap(stream *s, int *res_id, int *offset, int *nr)
 	return NULL;
 }
 
-#define BATsetcount(b, cnt) (b->batBuns->free += ((cnt)*BUNsize(b)))
-
 str
 bathash_wrap(int *res, int *bid, int *shift)
 {
@@ -758,6 +756,7 @@ bathash_wrap(int *res, int *bid, int *shift)
 			*r++ = (hash(v) << (sh)) & 0xEFFFFFFF;
 		}
 	}
+	dst->batBuns->free = ((r-f)*BUNsize(dst));
 	BATsetcount(dst, r-f);
 	BATkey(dst, 0);
 	dst->tsorted = 0;

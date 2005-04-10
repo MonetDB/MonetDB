@@ -999,3 +999,4 @@ INSERT INTO t1 VALUES(997,92989,'ninety two thousand nine hundred eighty nine');
 INSERT INTO t1 VALUES(998,66289,'sixty six thousand two hundred eighty nine');
 INSERT INTO t1 VALUES(999,24322,'twenty four thousand three hundred twenty two');
 INSERT INTO t1 VALUES(1000,94142,'ninety four thousand one hundred forty two');
+COMMIT;

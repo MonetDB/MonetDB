@@ -225,7 +225,7 @@ bm_destroy(bm *bm)
 	BAT *b = bm->bat_bid;
 
 	/* destroy the deleted */
-	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)) {
+	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
 		bat bid = *(oid *) BUNtail(b, p);
 
 		bat_decref(bid, TRUE);
@@ -463,7 +463,7 @@ bm_commit(bm *bm, int tid)
 	/* remove the destroyed bats */
 	b = bm->bat_bid;
 
-	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)) {
+	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
 		bat bid = *(oid *) BUNtail(b, p);
 
 		bat_decref(bid, TRUE);
