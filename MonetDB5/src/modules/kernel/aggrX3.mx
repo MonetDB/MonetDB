@@ -248,6 +248,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 		ALGODEBUG THRprintf(GDKout, "init_result(@1): min=" SZFMT ", max=" SZFMT "\n", (size_t) min, (size_t) max);
 	}
 	bn->batBuns->free = _p - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/_bunsize);
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
 }

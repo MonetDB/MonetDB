@@ -463,6 +463,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		*dst++ = m?zz:e->gid;
 	}
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
 	ALIGNsetH(bn,b);
 	return m ? NULL : map2histo(map);
@@ -649,6 +650,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		*dst++ = m?zz:e->gid;
 	}
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	return m?NULL:map2histo(map);
 bunins_failed:
 	BBPreclaim(bn);
@@ -845,6 +847,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 		yy++;
 	}
 	bn->batBuns->free = (char *) r - (char *) Bunbase(bn);
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	strcpy(bn->hatom, "oid");
@@ -1051,6 +1054,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		if (a_void)
 			GDKfree(base);
 		bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
+		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 		bn->tsorted = GDK_SORTED;
 	}
 	*res = bn;

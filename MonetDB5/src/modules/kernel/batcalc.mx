@@ -675,7 +675,8 @@ str CMDcst@1bat(int *ret, void *cst, int *l)
 void bat@1filler(BAT *dst, @1 cst, size_t cap){
 	int s1;
 	ptr p1, hend;
-	dst->batBuns->free+= cap * BUNsize(dst);
+	dst->batBuns->free = cap * BUNsize(dst);
+	BATsetcount(dst, cap);
 	hend = (str) BUNlast(dst);
 	@:batinit(1,dst)@
 	while( p1 < hend ){
@@ -1321,6 +1322,7 @@ str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 		else *(@2 *) p1 = (@2) x;
 		p1 = (ptr) (((char *) p1)+s1);
 		(bn)->batBuns->free += s1;
+		(bn)->batCount ++;
 	}
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);

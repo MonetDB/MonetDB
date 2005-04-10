@@ -1409,6 +1409,7 @@ CMDmerge(BAT **ret, BAT *b)
 		*r++ = (((lng) hp) << 32) + tp;
 	}
 	bn->batBuns->free = (BUN) r - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
 
