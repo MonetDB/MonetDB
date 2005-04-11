@@ -439,16 +439,16 @@ CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 	if( BBP_lrefs(*bid) == 2 && b->batPersistence == PERSISTENT){
 		/* release BAT from pool altogether */
+		BBPunfix(b->batCacheid);
 		BBPdecref(*bid,TRUE);
 		*bid =0;
-		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	} 
+	BBPunfix(b->batCacheid);
 	if( *bid)
 	/* while( BBP_lrefs(*bid) > 1 )*/
 		BBPdecref(*bid,TRUE);
 	*bid = 0;
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
