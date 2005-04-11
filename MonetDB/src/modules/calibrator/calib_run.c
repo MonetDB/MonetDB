@@ -172,7 +172,7 @@ loads(char *array, caliblng range, caliblng stride, caliblng MHz, FILE *fp, int 
 caliblng **
 runCache(char *array, caliblng maxrange, caliblng minstride, caliblng MHz, FILE *fp, caliblng * maxstride)
 {
-	caliblng i, r, x, y, z, range, stride = minstride / 2;
+	caliblng i, r, x=0, y, z, range, stride = minstride / 2;
 	calibdbl f = 0.25;
 	caliblng last, time = 0, **result;
 	caliblng pgsz = getpagesize();
@@ -282,7 +282,7 @@ runCache(char *array, caliblng maxrange, caliblng minstride, caliblng MHz, FILE 
 caliblng **
 runTLB(char *array, caliblng maxrange, caliblng minstride, caliblng shift, caliblng mincachelines, caliblng MHz, FILE *fp, caliblng * maxstride)
 {
-	caliblng i, x, y, z, stride, minspots, maxspots, p;
+	caliblng i, x=0, y, z, stride, minspots, maxspots, p;
 	caliblng range = maxrange, s = minstride / 2, spots = mincachelines / 2;
 	calibdbl f = 0.25;
 	caliblng tmax, smin, xmin, last, time = 0, **result;
@@ -411,7 +411,7 @@ runTLB(char *array, caliblng maxrange, caliblng minstride, caliblng shift, calib
 caliblng **
 runAsso(char *array, caliblng maxrange, caliblng minstride, caliblng shift, caliblng mincachelines, caliblng MHz, FILE *fp, caliblng * maxstride)
 {
-	caliblng i, x, y, z, stride, minspots, maxspots, p;
+	caliblng i, x=0, y, z, stride, minspots, maxspots, p;
 	caliblng range = maxrange, s = minstride / 2, spots = mincachelines / 2;
 	calibdbl f = 0.25;
 	caliblng tmax, smin, xmin, *ymax, last, time = 0, **result;

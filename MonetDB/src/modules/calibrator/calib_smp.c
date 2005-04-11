@@ -29,7 +29,7 @@ typedef struct {
 caliblng
 checkNrCpus(void)
 {
-	caliblng i, curr = 1, lasttime = 0, thistime, cpus;
+	caliblng i, curr = 1, lasttime = 0, thistime, cpus=0;
 	struct timeval t0, t1;
 
 	for (;;) {
