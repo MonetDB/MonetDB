@@ -21,7 +21,7 @@
 @* ResultSet support box
 This module acts as a simple box of ResultSet objects.
 A ResultSet is a thin wrapper around a number of BATs that allows
-serialising the values in the BATs to the MonetDB/Five MACI result
+serialising the values in the BATs to the MonetDB/Five MCL result
 format.  This box allows the user to create, retrieve and destroy
 ResultSets easily.
 
@@ -48,7 +48,7 @@ by defining how to build a ResultSet from BATs and on the other
 hand serialising the given BATs in a predefined format.
 
 The ResultSet is {\em not} meant to be generic, instead it is
-suitable only for MonetDB/Five MACI server/client communication.
+suitable only for MonetDB/Five MCL server/client communication.
 The exact specification of this protocol can be found in
 [ref:cvs:~fabian/repository:proefschrift/paper3] [(TODO)]
 
@@ -167,16 +167,6 @@ module rsbox
 comment "The resultset box implementation provides a store for
 query results";
 
-command open():void
-address RSBopen
-comment "Locate and open the resultset box";
-command close():void
-address RSBclose
-comment "Close the resultset box";
-command destroy():void
-address RSBdestroy
-comment "Destroy the resultset box and all the resultsets it contains";
-
 command create(name:str, columns:int, type:chr):resultset
 address RSBcreate
 comment "Create a new ResultSet with the given number of columns
@@ -259,10 +249,10 @@ typedef struct resultset_t {
 
 /* protocol stuff */
 /* level 1: protocol synchronisation */
-#define RS_LINE_PROMPT				\001\001
-#define RS_LINE_PROMPT_MORE			\001\002
+#define RS_LINE_PROMPT				"\001\001"
+#define RS_LINE_PROMPT_MORE			"\001\002"
 #define RS_LINE_START_OF_HEADER		'&' /* followed by header type also in level 2 */
-/* level 2: MACI meta-data */
+/* level 2: MCL meta-data */
 #define RS_LINE_CONTROL_HEADER		'$'
 #define RS_LINE_SWITCHROLE			'^'	/* switch from client to server and vice-versa */
 /* level 3: client messages */
@@ -336,19 +326,6 @@ static str RSBgetResultSet(resultset** retval, int* handle) {
 @- Operator implementation
 @-
 @c
-/**
- * Simply open (or create) the box.  We don't need access control, as
- * anyone is allowed to have this box.  Access control is done later
- * on.
- */
-str RSBopen(int *ret){
-	(void) ret;
-	if (openBox("rsbox") == 0)
-		throw("rsbox.open", "failed to open box");
-
-	return(MAL_SUCCEED);
-}
-
 /**
  * Deposit does not work for a ResultSet box.  Use create instead.
  *
@@ -583,30 +560,6 @@ str RSBhasMoreElements(lng* ret1, int* ret2) {
 str RSBiterator(lng* ret1, int* ret2) {
 	*ret1 = -1;
 	return(RSBhasMoreElements(ret1, ret2));
-}
-
-/**
- * Closes the complete box.  This operation should checks whether
- * there are ResultSets in the box not owned by the caller.  If
- * this is the case, the ResultSets owned by the caller are removed
- * and an exception is thrown.
- */
-str RSBclose() {
-	str tmp;
-
-	if ((tmp = RSBreleaseAll()) != MAL_SUCCEED) return(tmp);
-
-	if (closeBox("rsbox", TRUE) != 0)
-		throw("rsbox.close", "failed to close box");
-
-	return(MAL_SUCCEED);
-}
-
-/**
- * Destroys the complete box.
- */
-str RSBdestroy(int *ret){
-	return(RSBclose(ret));
 }
 
 @-
