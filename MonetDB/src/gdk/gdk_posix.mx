@@ -49,7 +49,7 @@ the WIN32 native platform.
 # endif
 #endif
 
-#ifdef HAVE_WINSOCK_H
+#if defined(HAVE_WINSOCK_H) && defined(NATIVE_WIN32)
 #include <winsock.h>		/* for timeval */
 #endif
 

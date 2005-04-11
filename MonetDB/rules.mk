@@ -181,13 +181,13 @@ $(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
 	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
 
 $(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
-	$(LIBTOOL) --mode=compile $(COMPILE) -O0 -c $<
+	$(LTCOMPILE) -c -o $@ -O0 $<
 
 $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 	$(COMPILE) -O0 -c $<
 
 $(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
-	$(LIBTOOL) --mode=compile $(COMPILE) -O0 -c $<
+	$(LTCOMPILE) -c -o $@ -O0 $<
 
 SUFFIXES-local: $(BUILT_SOURCES)
 

@@ -43,6 +43,8 @@
 #define PATH_SEP_STR ";"
 #define SO_EXT ".dll"
 
+#define HAVE_GLOBALMEMORYSTATUS 1
+
 #endif
 
 

@@ -244,6 +244,15 @@ AC_CHECK_FUNCS(opendir readdir rewinddir closedir ftruncate)
 AC_CHECK_DECLS([strdup, strtof])
 AC_CHECK_DECLS([strtoll, strtoull])
 AC_CHECK_DECLS([ctime_r])
+
+asctime_r3=yes
+AC_MSG_CHECKING(asctime_r3)
+AC_TRY_LINK([$ac_includes_default
+#include <time.h>], 
+[char buf[26]; struct tm tm; asctime_r(&t,buf,26);],
+[AC_DEFINE(HAVE_ASCTIME_R3, 1, [Define if you have asctime_r(struct tm*,char *buf,size_t s)])], [asctime_r3=no])
+AC_MSG_RESULT($asctime_r3)
+
 ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)
 AC_TRY_LINK([$ac_includes_default
@@ -251,6 +260,7 @@ AC_TRY_LINK([$ac_includes_default
 [char buf[26]; time_t t; ctime_r(&t,buf,26);],
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
+
 AC_SYS_LARGEFILE()
 
 dnl Mx and mel are used during make
