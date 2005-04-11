@@ -87,13 +87,6 @@ sub _parse_dsn {
 }
 
 
-sub _parse_dsn_host {
-    my($class, $dsn) = @_;
-    my $hash = $class->_parse_dsn($dsn, ['host', 'port']);
-    ($hash->{'host'}, $hash->{'port'});
-}
-
-
 
 package DBD::monetdb::dr;
 
