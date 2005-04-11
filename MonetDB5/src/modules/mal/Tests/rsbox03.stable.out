@@ -11,6 +11,8 @@ stdout of test 'rsbox03` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -87,10 +89,11 @@ function Admin.main():int;	# 0  (main:int)
     resultset.writeNextPart(rs);	# 25 RSwriteNextPart ($48:int)<-(rs:resultset)
     rsbox.release(rs);	# 26 RSBdelete ($49:void)<-(rs:resultset)
 end main;	# 27  
-&1
+&t
 $id union
 $columncount 1
 $tuplecount 9
+$ctype i
 %column the_column
 %table the_table
 %schema the_schema
@@ -98,19 +101,20 @@ $tuplecount 9
 %digits 
 %scale 
 %width 9
-[d1
-[d2
+[1
+[2
 [NULL
-[d4
-[d6
-[d7
-[d8
-[d13
-[d23
-&1
+[4
+[6
+[7
+[8
+[13
+[23
+&t
 $id union
 $columncount 1
 $tuplecount 2
+$ctype i
 %column the_column
 %table the_table
 %schema the_schema
@@ -118,8 +122,8 @@ $tuplecount 2
 %digits 
 %scale 
 %width 1
-[d13
-[d23
+[13
+[23
 
 # 13:30:38 >  
 # 13:30:38 >  Done.
