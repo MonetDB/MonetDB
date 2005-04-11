@@ -47,8 +47,15 @@
 #define GC_DEBUG
 
 /** we'll interface to Hans Boehm's C garbage collector */
-#include "gc.h"
-
+#if HAVE_GC_H
+#include <gc.h>
+#else
+#if HAVE_GC_GC_H
+#include <gc/gc.h>
+#else
+#error "Interface to garbage collector (gc.h) not available."
+#endif
+#endif
 
 /**
  * Worker for #PFmalloc ().

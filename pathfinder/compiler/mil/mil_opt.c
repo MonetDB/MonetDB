@@ -31,7 +31,18 @@
 
 #include "mil_opt.h"
 #include "mem.h"
+
+/** we'll interface to Hans Boehm's C garbage collector */
+#if HAVE_GC_H
 #include <gc.h>
+#else
+#if HAVE_GC_GC_H
+#include <gc/gc.h>
+#else
+#error "Interface to garbage collector (gc.h) not available."
+#endif
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 

@@ -272,9 +272,6 @@ fi
 if test "x$have_gc" = xauto; then
         LIBGC_CFLAGS=""
         LIBGC_LIBS=""
-        dnl Some distributions (e.g., Debian) have the gc.h header
-        dnl file in /usr/include/gc
-        AC_CHECK_HEADER([gc.h], [], [ LIBGC_CFLAGS="/usr/include/gc" ])
 fi
 
 save_CPPFLAGS="$CPPFLAGS"
@@ -291,7 +288,9 @@ LIBGC_LDADD=""
 AC_CHECK_LIB(dl, dlopen, [LIBGC_LDADD="$LIBGC_LDADD -ldl"])
 AC_CHECK_LIB(pthread, pthread_create, [LIBGC_LDADD="$LIBGC_LDADD -lpthread"])
 
-AC_CHECK_HEADER([gc.h],
+dnl Some systems don't have gc.h in their default include paths,
+dnl but they do have gc/gc.h.
+AC_CHECK_HEADERS([gc.h gc/gc.h],
     [ dnl See if we can link in the gc library.
       dnl If we have found the dl and/or pthread library as well, also use it.
       dnl If the gc library was not found, clear LIBGC_LDADD.

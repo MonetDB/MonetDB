@@ -78,7 +78,15 @@
 #include "hsk_parser.h"
 
 /* GC_max_retries, GC_gc_no */
-#include "gc.h"
+#if HAVE_GC_H
+#include <gc.h>
+#else
+#if HAVE_GC_GC_H
+#include <gc/gc.h>
+#else
+#error "Interface to garbage collector (gc.h) not available."
+#endif
+#endif
 
 static char *phases[] = {
     [ 1]  = "right after input parsing",
