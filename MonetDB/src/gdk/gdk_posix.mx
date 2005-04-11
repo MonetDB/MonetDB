@@ -56,10 +56,22 @@ the WIN32 native platform.
 /* threads and gc redirects */ 
 #ifdef HAVE_GC
 #define GC_PTHREADS 1
+#if HAVE_GC_H
 #include <gc.h>
 #include <gc_local_alloc.h>
 #ifndef NATIVE_WIN32
 #include <gc_pthread_redirects.h>
+#endif
+#else
+#if HAVE_GC_GC_H
+#include <gc/gc.h>
+#include <gc/gc_local_alloc.h>
+#ifndef NATIVE_WIN32
+#include <gc/gc_pthread_redirects.h>
+#endif
+#else
+#error "Garbage collector support requested, but no gc.h found"
+#endif
 #endif
 #endif
 
