@@ -506,13 +506,13 @@ esac
 dnl find out, whether the C compiler is C99 compliant
 AC_MSG_CHECKING([if your compiler is C99 compliant])
 have_c99=no
-AC_TRY_COMPILE([],  [[
+AC_TRY_COMPILE([], [
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 return 0;
 #else
 #error "NOT C99 compliant"
 #endif
-]], 
+], 
 [AC_DEFINE([HAVE_C99], 1, [Is your compiler C99 compliant?])
 have_c99=yes
 AC_MSG_RESULT(yes)],
