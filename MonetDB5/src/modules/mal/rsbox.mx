@@ -908,6 +908,7 @@ str RSunion(int* retval, int* handle) {
 
 	/* add a new column set and initialise the values */
 	cs = cs->nextSet = GDKmalloc(sizeof(columnset));
+	memset(cs, 0, sizeof(columnset));
 	cs->columns = GDKmalloc(sizeof(column*) * rs->columnCount);
 	memset(cs->columns, 0, sizeof(column*) * rs->columnCount);
 	for (j = 0; j < rs->columnCount; j++)
