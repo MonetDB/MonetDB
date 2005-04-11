@@ -277,7 +277,12 @@ AM_CONDITIONAL(CROSS_COMPILING,test x$cross_compiling = xyes)
 if test x$cross_compiling != xyes; then
 AM_CONDITIONAL(NOT_WIN32, true)
 else
-AM_CONDITIONAL(NOT_WIN32, false)
+case "$host_os" in
+*mingw*)
+AM_CONDITIONAL(NOT_WIN32, false);;
+*)
+AM_CONDITIONAL(NOT_WIN32, true);;
+esac
 fi
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
