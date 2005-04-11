@@ -21,4 +21,4 @@
 # the target host, hence we don't need to build an "Mx", here. 
 # We actually skip building "Mx" in order to avoid problems...
 
-SUBDIRS = CROSS_COMPILING?:Mx autogen
+SUBDIRS = COMPILE_MX?Mx autogen

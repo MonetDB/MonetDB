@@ -263,26 +263,41 @@ AC_MSG_RESULT($ctime_r3)
 
 AC_SYS_LARGEFILE()
 
-dnl Mx and mel are used during make
-if test x$cross_compiling != xyes; then
-	dnl  When not cross-compiling, make sure we use the MEL/Mx created during the very make.
-	MEL="$MONETDB_BUILD/src/mel/mel$EXEEXT"
-	MX="$MONETDB_BUILD/src/utils/Mx/Mx$EXEEXT"
-	AC_SUBST(MEL)
-	AC_SUBST(MX)
-else
+AC_ARG_WITH(mx,
+	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
+	have_mx="$withval",
+	have_mx=auto)
+if test "x$have_mx" = auto -a x$cross_compiling = xyes; then
 	dnl  When cross-compiling, we need to have MEL/Mx in our PATH that work on the building host.
 	AC_PATH_PROGS(MX, Mx Mx$EXEEXT,,$PATH)
 	if test x$MX = x; then
 		AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
 	fi
+elif test "x$have_mx" = auto; then
+	MX="$MONETDB_BUILD/src/utils/Mx/Mx$EXEEXT"
+else
+	MX="$withval"
+fi
+AC_SUBST(MX)
+AM_CONDITIONAL(COMPILE_MX, test x$cross_compiling != xyes -a "x$have_mx" = auto)
+
+AC_ARG_WITH(mel,
+	AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
+	have_mel="$withval",
+	have_mel=auto)
+if test "x$have_mel" = auto -a x$cross_compiling = xyes; then
+	dnl  When cross-compiling, we need to have mel in our PATH that work on the building host.
 	AC_PATH_PROGS(MEL, mel mel$EXEEXT,,$PATH)
 	if test x$MEL = x; then
-		AC_ERROR([No Mel$EXEEXT found in PATH=$PATH])
+		AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
 	fi
+elif test "x$have_mel" = auto; then
+	MEL="$MONETDB_BUILD/src/mel/mel$EXEEXT"
+else
+	MEL="$withval"
 fi
-
-AM_CONDITIONAL(CROSS_COMPILING,test x$cross_compiling = xyes)
+AC_SUBST(MEL)
+AM_CONDITIONAL(COMPILE_MEL, test x$cross_compiling != xyes -a "x$have_mel" = auto)
 
 if test x$cross_compiling != xyes; then
 AM_CONDITIONAL(NOT_WIN32, true)

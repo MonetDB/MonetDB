@@ -21,4 +21,4 @@
 # the target host, hence we don't need to build a "mel", here. 
 # We actually skip building "mel" in order to avoid problems...
 
-SUBDIRS = utils CROSS_COMPILING?:mel common gdk monet modules mapi tools testing
+SUBDIRS = utils COMPILE_MEL?mel common gdk monet modules mapi tools testing
