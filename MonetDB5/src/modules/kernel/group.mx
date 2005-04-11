@@ -300,8 +300,8 @@ hashing.
 #define declare_unclustered	/* avoid warning */
 #define declare_clustered   int samecluster = TRUE;
 
-#define chain_unclustered   for (zz = hash[c]; zz > 0; zz = e->link)
-#define chain_clustered     for (zz = hash[c]; (zz > 0) && (samecluster); zz = e->link)
+#define chain_unclustered   for (zz = hash[c]; zz != HASH_MAX; zz = e->link)
+#define chain_clustered     for (zz = hash[c]; (zz != HASH_MAX) && (samecluster); zz = e->link)
 
 #define tst_grp_unclustered(eq,p,t)    (eq(p, tcur, t))
 #define tst_grp_clustered(eq,p,t)      (samecluster = eq(p, tcur, t))
@@ -340,7 +340,7 @@ typedef struct {
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
 		hash = (hash_t*) alloca((int)(sizeof(hash_t)*((mask=@2)+1))); \
 		for (xx=0; xx<=@2; xx++) {				\
-			hash[xx] = 0;					\
+			hash[xx] = HASH_MAX;					\
 		}							\
 	}								\
 	entry.cnt = 1;							\
@@ -828,7 +828,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 		return GDK_FAIL;
 	}
 	for (yy = 0; yy < mask; yy++) {
-		hash[yy] = 0;
+		hash[yy] = HASH_MAX;
 	}
 	mask--;
 
@@ -861,7 +861,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 			oid v = *(oid *) BUNtloc(grp, p);
 			hash_t c = v & mask;
 
-			for (yy = hash[c]; yy > 0; yy = ((idxentry_t *) BUNhloc(bn, r))->link) {
+			for (yy = hash[c]; yy != HASH_MAX; yy = ((idxentry_t *) BUNhloc(bn, r))->link) {
 				r = BUNptr(bn, yy);
 				if (((idxentry_t *) BUNhloc(bn, r))->hcur == v) {
 					*(int *) BUNtloc(bn, r) += 1;
@@ -1109,7 +1109,7 @@ str GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize) {
 
 str GRPgroup(int *rethisto, int *retbid, int *bid){
 	BAT *histo= 0, *b,  *bn=0;
-	(void) histo;
+
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		 return throwMessage("group.group", "Cannot access descriptor");
 	}
