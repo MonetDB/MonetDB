@@ -1083,7 +1083,6 @@ int CMDinfo(BAT **retval, BAT *b){
  
         BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)));
         BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)));
-        BUNins(bn, "batFirst", local_utoa(BUNindex(b, b->batFirst)));
         BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))));
         BUNins(bn, "batStamp", local_itoa(b->batStamp));
         BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)));
