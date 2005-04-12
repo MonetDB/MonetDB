@@ -2,7 +2,7 @@
 
 include rsbox;
 
-rs := rsbox.create("reuse", 1, 't');
+rs := rsbox.create(1, 't');
 
 resultset.setProperty(rs, 1, "name", "the_column");
 resultset.setProperty(rs, 1, "table", "table1");
@@ -15,7 +15,6 @@ bat.insert(b1, nil, nil:int);
 bat.insert(b1, nil, 4);
 bat.insert(b1, nil, 6);
 
-resultset.dePopulate(rs);
 resultset.populateColumn(rs, 1, b1);
 
 resultset.writeNextPart(rs);

@@ -21,6 +21,8 @@ stdout of test 'rsbox02` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -67,36 +69,35 @@ stdout of test 'rsbox02` in directory 'src/modules/mal` itself:
 #rsbox.release(rs);
 #
 function Admin.main():int;	# 0  (main:int)
-    rs := rsbox.create("reuse",1,'t');	# 1 RSBcreate (rs:resultset)<-($2:str)($3:int)($4:chr)
-    resultset.setProperty(rs,1,"name","the_column");	# 2 RSsetPropertyStr ($5:resultset)<-(rs:resultset)($3:int)($6:str)($7:str)
-    resultset.setProperty(rs,1,"table","table1");	# 3 RSsetPropertyStr ($8:resultset)<-(rs:resultset)($3:int)($9:str)($10:str)
-    resultset.setProperty(rs,1,"schema","sys");	# 4 RSsetPropertyStr ($11:resultset)<-(rs:resultset)($3:int)($12:str)($13:str)
-    b1 := bbp.new(:void,:int);	# 5 CMDBATnew (b1:bat[:void,:int])<-($15:void)($16:int)
-    bat.insert(b1,nil,1);	# 6 BKCinsert_bun ($17:bat[:void,:int])<-(b1:bat[:void,:int])($18:void)($3:int)
-    bat.insert(b1,nil,2);	# 7 BKCinsert_bun ($19:bat[:void,:int])<-(b1:bat[:void,:int])($18:void)($20:int)
-    bat.insert(b1,nil,nil:int);	# 8 BKCinsert_bun ($21:bat[:void,:int])<-(b1:bat[:void,:int])($18:void)($22:int)
-    bat.insert(b1,nil,4);	# 9 BKCinsert_bun ($23:bat[:void,:int])<-(b1:bat[:void,:int])($18:void)($24:int)
-    bat.insert(b1,nil,6);	# 10 BKCinsert_bun ($25:bat[:void,:int])<-(b1:bat[:void,:int])($18:void)($26:int)
-    resultset.dePopulate(rs);	# 11 RSdePopulate ($27:resultset)<-(rs:resultset)
-    resultset.populateColumn(rs,1,b1);	# 12 RSpopulateColumn ($28:resultset)<-(rs:resultset)($3:int)(b1:bat[:void,:int])
-    resultset.writeNextPart(rs);	# 13 RSwriteNextPart ($29:int)<-(rs:resultset)
-    b2 := bbp.new(:void,:str);	# 14 CMDBATnew (b2:bat[:void,:str])<-($31:void)($32:str)
-    bat.insert(b2,nil,"Daft Punk - Human After All");	# 15 BKCinsert_bun ($33:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($34:str)
-    bat.insert(b2,nil,"Spinvis - Spinvis");	# 16 BKCinsert_bun ($35:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($36:str)
-    bat.insert(b2,nil,"Within Temptation - The Silent Force");	# 17 BKCinsert_bun ($37:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($38:str)
-    bat.insert(b2,nil,"Anouk - Together Alone");	# 18 BKCinsert_bun ($39:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($40:str)
-    bat.insert(b2,nil,"Armiral Freebee - Admiral Freebee");	# 19 BKCinsert_bun ($41:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($42:str)
-    bat.insert(b2,nil,"Lais - Douce Victime");	# 20 BKCinsert_bun ($43:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($44:str)
-    bat.insert(b2,nil,"Hooverphonic - Sit Down and Listen To...");	# 21 BKCinsert_bun ($45:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($46:str)
-    bat.insert(b2,nil,"Osdorp Posse - Tegenstrijd");	# 22 BKCinsert_bun ($47:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($48:str)
-    bat.insert(b2,nil,"MC Wigger & DJ Wanna-B - Fuck Osdorp");	# 23 BKCinsert_bun ($49:bat[:void,:str])<-(b2:bat[:void,:str])($18:void)($50:str)
-    resultset.dePopulate(rs);	# 24 RSdePopulate ($51:resultset)<-(rs:resultset)
-    resultset.populateColumn(rs,1,b2);	# 25 RSpopulateColumn ($52:resultset)<-(rs:resultset)($53:int)(b2:bat[:void,:str])
-    resultset.writeNextPart(rs);	# 26 RSwriteNextPart ($54:int)<-(rs:resultset)
-    rsbox.release(rs);	# 27 RSBdelete ($55:void)<-(rs:resultset)
-end main;	# 28  
+    rs := rsbox.create(1,'t');	# 1 RSBcreate (rs:resultset)<-($2:int)($3:chr)
+    resultset.setProperty(rs,1,"name","the_column");	# 2 RSsetPropertyStr ($4:resultset)<-(rs:resultset)($2:int)($5:str)($6:str)
+    resultset.setProperty(rs,1,"table","table1");	# 3 RSsetPropertyStr ($7:resultset)<-(rs:resultset)($2:int)($8:str)($9:str)
+    resultset.setProperty(rs,1,"schema","sys");	# 4 RSsetPropertyStr ($10:resultset)<-(rs:resultset)($2:int)($11:str)($12:str)
+    b1 := bbp.new(:void,:int);	# 5 CMDBATnew (b1:bat[:void,:int])<-($14:void)($15:int)
+    bat.insert(b1,nil,1);	# 6 BKCinsert_bun ($16:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($2:int)
+    bat.insert(b1,nil,2);	# 7 BKCinsert_bun ($18:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($19:int)
+    bat.insert(b1,nil,nil:int);	# 8 BKCinsert_bun ($20:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($21:int)
+    bat.insert(b1,nil,4);	# 9 BKCinsert_bun ($22:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($23:int)
+    bat.insert(b1,nil,6);	# 10 BKCinsert_bun ($24:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($25:int)
+    resultset.populateColumn(rs,1,b1);	# 11 RSpopulateColumn ($26:resultset)<-(rs:resultset)($2:int)(b1:bat[:void,:int])
+    resultset.writeNextPart(rs);	# 12 RSwriteNextPart ($27:int)<-(rs:resultset)
+    b2 := bbp.new(:void,:str);	# 13 CMDBATnew (b2:bat[:void,:str])<-($29:void)($30:str)
+    bat.insert(b2,nil,"Daft Punk - Human After All");	# 14 BKCinsert_bun ($31:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($32:str)
+    bat.insert(b2,nil,"Spinvis - Spinvis");	# 15 BKCinsert_bun ($33:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($34:str)
+    bat.insert(b2,nil,"Within Temptation - The Silent Force");	# 16 BKCinsert_bun ($35:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($36:str)
+    bat.insert(b2,nil,"Anouk - Together Alone");	# 17 BKCinsert_bun ($37:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($38:str)
+    bat.insert(b2,nil,"Armiral Freebee - Admiral Freebee");	# 18 BKCinsert_bun ($39:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($40:str)
+    bat.insert(b2,nil,"Lais - Douce Victime");	# 19 BKCinsert_bun ($41:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($42:str)
+    bat.insert(b2,nil,"Hooverphonic - Sit Down and Listen To...");	# 20 BKCinsert_bun ($43:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($44:str)
+    bat.insert(b2,nil,"Osdorp Posse - Tegenstrijd");	# 21 BKCinsert_bun ($45:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($46:str)
+    bat.insert(b2,nil,"MC Wigger & DJ Wanna-B - Fuck Osdorp");	# 22 BKCinsert_bun ($47:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($48:str)
+    resultset.dePopulate(rs);	# 23 RSdePopulate ($49:resultset)<-(rs:resultset)
+    resultset.populateColumn(rs,1,b2);	# 24 RSpopulateColumn ($50:resultset)<-(rs:resultset)($51:int)(b2:bat[:void,:str])
+    resultset.writeNextPart(rs);	# 25 RSwriteNextPart ($52:int)<-(rs:resultset)
+    rsbox.release(rs);	# 26 RSBdelete ($53:void)<-(rs:resultset)
+end main;	# 27  
 &t
-$id reuse
+$id 1
 $columncount 1
 $tuplecount 5
 $ctype i
@@ -113,7 +114,7 @@ $ctype i
 [4
 [6
 &t
-$id reuse
+$id 2
 $columncount 1
 $tuplecount 9
 $ctype S

@@ -167,12 +167,12 @@ module rsbox
 comment "The resultset box implementation provides a store for
 query results";
 
-command create(name:str, columns:int, type:chr):resultset
+command create(columns:int, type:chr):resultset
 address RSBcreate
 comment "Create a new ResultSet with the given number of columns
 & type and deposit it in the box";
 
-command take(id:str):resultset
+command take(id:int):resultset
 address RSBtake
 comment "Take a resultset with the given id out of the box";
 command deposit(name:str,set:resultset):void
@@ -187,13 +187,13 @@ command release(rs:resultset):void
 address RSBdelete
 comment "Release this ResultSet and all its associated resources from
 the box";
-command release(id:str):void
+command release(id:int):void
 address RSBrelease
 comment "Release the resultset with the given id";
 
-command discard(id:str):void
+command discard(id:int):void
 address RSBrelease
-comment "see rsbox.release(id:str)";
+comment "see rsbox.release(id:int)";
 
 command newIterator()(:lng,:resultset)
 address RSBiterator
@@ -239,7 +239,7 @@ typedef struct columnset_t {
 
 typedef struct resultset_t {
 	unsigned int blocksize;	/* the number of rows per block */
-	str id;					/* external reference ID of this ResultSet */
+	size_t id;				/* external reference ID of this ResultSet */
 	char type;				/* type of result */
 	int columnCount;		/* the number of columns in this ResultSet */
 	size_t length;			/* the number of rows in this ResultSet */
@@ -288,7 +288,6 @@ typedef struct resultset_t {
 /* convenience macros */
 #define throw(X, Y)		return(throwMessage(X, Y));
 #define throwf(X, Y, Z)	return(throwException(MALEXCEPTION, X, Y, Z));
-#define idMatches(X, Y) (strcmp((X)->id, Y) == 0)
 #define resolveHandle(X, Y) \
 	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp);
 
@@ -296,6 +295,8 @@ typedef struct resultset_t {
 #define RSB_MAX_ELEMS	20
 /** Array which contains all the resultsets contained in this Set */
 static resultset* elements[RSB_MAX_ELEMS];
+/** A global ResultSet ID counter */
+static size_t RS_nextID = 1;	/* start at 1 */
 
 static void RSinitColumn(columnset* rs, int* colindex);
 static str RSBgetResultSet(resultset** retval, int* handle);
@@ -347,7 +348,7 @@ str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * @param columns the number of columns this ResultSet has
  * @param type the ResultSet type.
  */
-str RSBcreate(int* retval, str* name, int* columns, char* type) {
+str RSBcreate(int* retval, int* columns, char* type) {
 	int i, j, free = -1;
 	char tpe;
 
@@ -365,13 +366,7 @@ str RSBcreate(int* retval, str* name, int* columns, char* type) {
 
 	/* find the first free slot */
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
-		if (elements[i] != NULL) {
-			if (idMatches(elements[i], *name))
-				throwf(
-					"rsbox.create",
-					"A ResultSet with id '%s' already exists",
-					*name);
-		} else {
+		if (elements[i] == NULL) {
 			/* this is a free slot */
 			if (free == -1) {
 				/* somehow hide it from other threads (not safe!) */
@@ -379,7 +374,7 @@ str RSBcreate(int* retval, str* name, int* columns, char* type) {
 				/* initialise the values to null */
 				memset(elements[i], 0, sizeof(resultset));
 				/* set the id */
-				elements[i]->id = GDKstrdup(*name);
+				elements[i]->id = RS_nextID++;
 				elements[i]->columnCount = *columns;
 				elements[i]->type = tpe;
 				elements[i]->columnSet.columns = GDKmalloc(sizeof(column*) * *columns);
@@ -404,17 +399,17 @@ str RSBcreate(int* retval, str* name, int* columns, char* type) {
  * Throws an exception if no such ResultSet is found.
  * The actual int returned is the container element array position.
  */
-str RSBtake(int* retval, str* id) {
+str RSBtake(int* retval, int* id) {
 	int i;
 
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
-		if (elements[i] != NULL && idMatches(elements[i], *id)) {
+		if (elements[i] != NULL && elements[i]->id == *id) {
 			*retval = i + 1;
 			return(MAL_SUCCEED);
 		}
 	}
 
-	throwf("rsbox.take", "No such element with id '%s'", *id);
+	throwf("rsbox.take", "No such element with id '%d'", *id);
 }
 
 /**
@@ -482,7 +477,6 @@ str RSBdelete(void* retval, int* handle) {
 	RSfreeColumnSet(rs, rs->columnSet.nextSet);
 	for (i = 0; i < rs->columnCount; i++)
 		RSBfreeColumn(rs->columnSet.columns[i]);
-	GDKfree(rs->id);
 	/* finally free the struct itself */
 	GDKfree(rs);
 
@@ -495,7 +489,7 @@ str RSBdelete(void* retval, int* handle) {
  *
  * @param id a resultset id
  */
-str RSBrelease(void* retval, str* id) {
+str RSBrelease(void* retval, int* id) {
 	str tmp;
 	int handle;
 	(void)retval;	/* make compiler happy */
@@ -947,6 +941,7 @@ str RSdePopulate(int* retval, int* handle) {
 	cs->complete = (char)0;
 	cs->nextSet = NULL;
 	rs->length = 0;
+	rs->id = RS_nextID++;
 
 	*retval = *handle;
 	return(MAL_SUCCEED);
@@ -987,7 +982,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	bytes += bt;
 @c
 	/* serialise the header to the stream */
-	@:MX-writeHeaderLineSingleValue("%s", rs->id == NULL ? "" : rs->id, "id")@
+	@:MX-writeHeaderLineSingleValue("%d", rs->id, "id")@
 	@:MX-writeHeaderLineSingleValue("%d", rs->columnCount, "columncount")@
 	@:MX-writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
 	/* create columntype charmask */
@@ -1497,10 +1492,9 @@ int RStoString(str* retval, int* len, ptr handle) {
 	 * but that's not worth the work for now
 	 */
 	if (*retval == NULL) {
-		*retval = GDKmalloc(sizeof(str) * (13 + strlen(rs->id)));
-		*len = 13 + strlen(rs->id);
+		*retval = GDKmalloc(sizeof(str) * (*len = 13 + 10));
 	}
-	return(*len = snprintf(*retval, *len, "ResultSet '%s'", rs->id));
+	return(*len = snprintf(*retval, *len, "ResultSet '%d'", rs->id));
 }
 
 @}
