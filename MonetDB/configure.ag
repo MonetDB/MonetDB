@@ -267,13 +267,13 @@ AC_ARG_WITH(mx,
 	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
 	have_mx="$withval",
 	have_mx=auto)
-if test "x$have_mx" = auto -a x$cross_compiling = xyes; then
+if test "x$have_mx" = xauto -a "x$cross_compiling" = xyes; then
 	dnl  When cross-compiling, we need to have MEL/Mx in our PATH that work on the building host.
 	AC_PATH_PROGS(MX, Mx Mx$EXEEXT,,$PATH)
-	if test x$MX = x; then
+	if test "x$MX" = x; then
 		AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
 	fi
-elif test "x$have_mx" = auto; then
+elif test "x$have_mx" = xauto; then
 	MX="$MONETDB_BUILD/src/utils/Mx/Mx$EXEEXT"
 else
 	MX="$withval"
@@ -285,13 +285,13 @@ AC_ARG_WITH(mel,
 	AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
 	have_mel="$withval",
 	have_mel=auto)
-if test "x$have_mel" = auto -a x$cross_compiling = xyes; then
+if test "x$have_mel" = xauto -a "x$cross_compiling" = xyes; then
 	dnl  When cross-compiling, we need to have mel in our PATH that work on the building host.
 	AC_PATH_PROGS(MEL, mel mel$EXEEXT,,$PATH)
-	if test x$MEL = x; then
+	if test "x$MEL" = x; then
 		AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
 	fi
-elif test "x$have_mel" = auto; then
+elif test "x$have_mel" = xauto; then
 	MEL="$MONETDB_BUILD/src/mel/mel$EXEEXT"
 else
 	MEL="$withval"
