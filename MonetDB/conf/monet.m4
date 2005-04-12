@@ -1479,7 +1479,7 @@ if test "x$have_gc" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS"
 	found_gc_h=""
-	AC_CHECK_HEADERS([gc.h gc/gc.h], found_gc="yes")
+	AC_CHECK_HEADERS([gc.h gc/gc.h], found_gc_h="yes")
 	if test "x$have_gc" = xyes
 	then
 	    if test "x$found_gc_h" = "x"
