@@ -290,14 +290,22 @@ AC_CHECK_LIB(pthread, pthread_create, [LIBGC_LDADD="$LIBGC_LDADD -lpthread"])
 
 dnl Some systems don't have gc.h in their default include paths,
 dnl but they do have gc/gc.h.
+found_gc=""
 AC_CHECK_HEADERS([gc.h gc/gc.h],
     [ dnl See if we can link in the gc library.
-      dnl If we have found the dl and/or pthread library as well, also use it.
-      dnl If the gc library was not found, clear LIBGC_LDADD.
       AC_CHECK_LIB(gc, GC_malloc,
-                   [LIBGC_LDADD="$LIBGC_LDADD -lgc"],
-                   [LIBGC_LDADD=""], [$LIBGC_LDADD])],
-    [ LIBGC_LDADD=""])
+                   [found_gc="yes"; break],
+                   [],
+                   [ $LIBGC_LDADD ]) ])
+
+if test "x$found_gc" = "xyes"
+then
+    dnl Use the gc library if we found it.
+    LIBGC_LDADD="$LIBGC_LDADD -lgc"
+else
+    dnl If the gc library was not found, clear LIBGC_LDADD.
+    LIBGC_LDADD=""
+fi
 
 LIBS="$save_LIBS"
 LDFLAGS="$save_LDFLAGS"
