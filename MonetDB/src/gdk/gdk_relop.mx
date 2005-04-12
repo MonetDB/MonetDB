@@ -748,6 +748,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 	int xx, yy, zz, lht, rtt;
 	size_t base, end;
 	ssize_t offset;
+	size_t lcount,rcount;
 	BUN r_cur, l_cur, l_end, dst;
 	oid seqbase;
 	BAT *ret = NULL, *bn = NULL, *l_orig = l;
@@ -758,6 +759,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 	if (estimate == oid_nil) {
 		estimate = BATcount(l);
 	}
+	lcount= BATcount(l);
+	rcount= BATcount(r);
 
 	if (swap) {
 		if (!BAThdense(r)) {
@@ -769,7 +772,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 	} else {
 		ERRORcheck(!BAThdense(r), "BATleftfetchjoin: head column of right input must be dense");
 	}
-	if ((BATcount(l) == 0) || (BATcount(r) == 0)) {
+	if ( (lcount == 0) || (rcount == 0) ){
 		/* below range checking do not support empty bats. so treat them separately (easy) */
 		bn = BATnew(l->htype, l->htype ? r->ttype : ATOMtype(r->ttype), 0);
 		bn->hsorted = bn->tsorted = GDK_SORTED;
@@ -807,11 +810,11 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 
 	base = BUNindex(r, BUNfirst(r));
 	offset = (ssize_t) (base - r->hseqbase);
-	end = base + BATcount(r);
+	end = base + rcount;
 	/* only BUNhead crashes on empty bats with TYPE != virtual oid */
 	seqbase =
 	    (l->htype ==
-	     TYPE_void) ? l->hseqbase : (BATcount(l) ? (l->htype ==
+	     TYPE_void) ? l->hseqbase : (lcount ? (l->htype ==
 							TYPE_int ? (oid) *(int *) BUNhead(l, BUNfirst(l)) : (l->htype == TYPE_oid ? *(oid *) BUNhead(l, BUNfirst(l)) : (l->htype == TYPE_lng ? (oid) *(lng *) BUNhead(l, BUNfirst(l)) : oid_nil))) : oid_nil);
 
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: 2\n");
@@ -825,7 +828,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		bn = BATnew(BAThtype(l), BATttype(r), estimate);
 		if (bn == NULL)
 			goto ready;
-		ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n", BATcount(l));
+		ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n", lcount);
 
 		dst = BUNfirst(bn);
 		zz = BUNsize(bn);
@@ -860,7 +863,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		bn = BATnew(TYPE_void, ATOMtype(tpe), estimate);
 		if (bn == NULL)
 			goto ready;
-		ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n", BATcount(l));
+		ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n", lcount);
 
 		dst = BUNfirst(bn);
 		zz = BUNsize(bn);
@@ -912,7 +915,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		/* execute using slice */
 		BAT *v = BATmirror(VIEWhead(BATmirror(r)));
 		oid lo_val = MAX(l->tseqbase, r->hseqbase);
-		oid hi_val = MIN(l->tseqbase + BATcount(l), r->hseqbase + BATcount(r));
+		oid hi_val = MIN(l->tseqbase + lcount, r->hseqbase + rcount);
 		size_t lo_pos = lo_val - r->hseqbase;
 		size_t hi_pos = hi_val;
 
@@ -937,7 +940,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: %d\n", 10);
 	}
 	/* property propagation */
-	if (BATcount(bn) == BATcount(l)) {
+	if ( BATcount(bn) == lcount) {
 		ALIGNsetH(bn, l);	/* BAThkey(r), remember? */
 	} else {
 		bn->hsorted = l->hsorted;
@@ -945,7 +948,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 	bn->tsorted = (BATtordered(l) & BATtordered(r) & 1) ? GDK_SORTED : 0;
 	if (BATtkey(l)) {
 		/* if BATtkey(l) elements of r match at most once */
-		if ((BATtordered(l) & 1) && BATcount(bn) == BATcount(r)) {
+		if ((BATtordered(l) & 1) && BATcount(bn) == rcount) {
 			ALIGNsetT(bn, r);
 		} else {
 			BATkey(BATmirror(bn), BATtkey(r));
@@ -982,21 +985,23 @@ This routine does the join optimization. TODO: it should be expressed in MIL.
 static BAT *
 batjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 {
-	size_t i, lsize, rsize;
+	size_t i, lsize, rsize, lcount, rcount;
 	int lfetch, rfetch, must_hash;
 	lng logr, logl;
 
 	ERRORcheck(l == NULL, "BATjoin: invalid left operand");
 	ERRORcheck(r == NULL, "BATjoin: invalid right operand");
 	ERRORcheck(TYPEerror(l->ttype, r->htype), "BATjoin: type conflict\n");
+	lcount= BATcount(l);
+	rcount= BATcount(r);
 @-
 collect statistics that help us decide what to do
 @c
 	lsize = l->batBuns->size + (l->hheap.base ? l->hheap.size : 0) + (l->theap.base ? l->theap.size : 0);
 	rsize = r->batBuns->size + (r->hheap.base ? r->hheap.size : 0) + (r->theap.base ? r->theap.size : 0);
-	for (logr = 4, i = BATcount(r); i > 0; logr++)
+	for (logr = 4, i = rcount; i > 0; logr++)
 		i >>= 1;
-	for (logl = 4, i = BATcount(l); i > 0; logl++)
+	for (logl = 4, i = lcount; i > 0; logl++)
 		i >>= 1;
 
 	rfetch = BAThdense(r);
@@ -1013,7 +1018,7 @@ collect statistics that help us decide what to do
 In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
 @c
-	if (swap && lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
+	if (swap && lfetch && !(rfetch && lcount < rcount)) {
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), " SZFMT "));\n", estimate);
 
 		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), estimate));
@@ -1027,7 +1032,7 @@ If both are ordered we do merge-join, or if hash-join is not possible right
 away and one input is ordered and the other is much smaller, we do nested
 loop binary search (both implemented by BATmergejoin).
 @c
-	if ((BATtordered(l) & BAThordered(r) & 1) || (must_hash && (((BATtordered(l) & 1) && ((lng) BATcount(l) > logl * (lng) BATcount(r)) && swap) || ((BAThordered(r) & 1) && ((lng) BATcount(r) > logr * (lng) BATcount(l)))))) {
+	if ((BATtordered(l) & BAThordered(r) & 1) || (must_hash && (((BATtordered(l) & 1) && ((lng) lcount > logl * (lng) rcount) && swap) || ((BAThordered(r) & 1) && ((lng) rcount > logr * (lng) lcount))))) {
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r," SZFMT ");\n", estimate);
 
 		return batmergejoin(l, r, estimate, swap);

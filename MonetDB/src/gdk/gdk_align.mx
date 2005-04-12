@@ -587,7 +587,7 @@ VIEWbounds(BAT *view, size_t l, size_t h)
 	view->batBuns->base = BUNptr(b, l);
 	view->batFirst = view->batDeleted = view->batInserted = view->batBuns->base;
 	if (BUNlast(b) < BUNptr(b, h + 1)) 
-		h = BUNindex(b, BUNlast(b));
+		h = BUNindex(b, BUNlast(b))-1;
 	view->batBuns->maxsize = view->batBuns->size = view->batBuns->free = BUNptr(b, h + 1) - view->batBuns->base;
 	BATsetcount(view, h + 1 - l);
 
