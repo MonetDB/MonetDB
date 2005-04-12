@@ -18,47 +18,42 @@
 @a M. Kersten
 @v 0.0
 @* MAL dynamic profiler
-A key issue in the road towards a high performance Monet implementation
+A key issue in the road towards a high performance implementation
 is to understand where resources are being spent. This information
 can be obtained using different tools and at different levels of
 abstraction.
-
 A coarse grain insight for a particular application can be obtained
 using injection of the necessary performance
 capturing statements in the instruction sequence of the application.
-
 Fine-grain, platform specific information can be obtained using
-existing profilers, like valgrind, or even hardware counters
-as available in the module 'pcl'.
+existing profilers, like valgrind, or even hardware counters.
 
 The dynamic profiler is a hook into the MAL interpreter.
 The default strategy is to ship the event record immediately over a stream
-to a performance monitor, eg. Mcockpit.
-An alternative strategy is preparation of off-line performance analysis.
+to a performance monitor, formatted as a tuple.
+An alternative strategy is preparation for off-line performance analysis.
 For this case the event record is turned into a XML structure and
 sent over the stream (most likely linked with a file)
 To reduce the  interference of performance measurement with
 the experiments, the user can use an event cache, which is
 emptied explicitly upon need.
  
-The profiler event collects basic performance information, such
-as cpu, memory and location information. It is optionally extended
-with IO activity, which is needed for coarse grain profiling only.
-
-The profiler supports selective retrieval of such information by
-tagging the instructions of interest. This means that the profiler
-call has a global effect,
-all concurrent users are affected by the performance overhead.
-Therefore, it is of primary interest to single user sessions.
-
-@+ The event trace
 Aside from shipping events to a separate process, the profiler
 can also keep the events in a local BAT group. Ofcourse,
 such a measurement scheme does not come for free and may
 even obscure performance measurements obtained throug e.g. kcachegrind.
 
-@+ Profile activation
-The profiler is activated by defining MALprofiler in mal.mx.
+The profiler event collects basic performance information, such
+as cpu, memory and statement information. It is optionally extended
+with IO activity, which is needed for coarse grain profiling only.
+
+The profiler supports selective retrieval of such information by
+tagging the instructions of interest. This means that a profiler
+call has a global effect,
+all concurrent users are affected by the performance overhead.
+Therefore, it is of primary interest to single user sessions.
+
+The profiler is activated by defining MALprofiler in the source tree.
 This leads to securing space for the counters and for code
 in the interpreter to collect the information.
 
@@ -96,6 +91,10 @@ mal_export void profilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 mal_export str setLogFile(Scope cntxt,  str fname);
 mal_export str setStartPoint(Scope cntxt, str mod, str fcn);
 mal_export str setEndPoint(Scope cntxt, str mod, str fcn);
+mal_export void setCachedProfiling();
+mal_export void setOnlineProfiling();
+mal_export void setOfflineProfiling();
+
 mal_export str startProfiling();
 mal_export str stopProfiling();
 
@@ -110,7 +109,7 @@ mal_export int malProfileMode;
 
 mal_export void startTrace();
 mal_export void stopTrace();
-mal_export void resetTrace();
+mal_export void clearTrace();
 mal_export BAT *getTrace(str ev);
 
 #define DEBUG_MAL_PROFILER
@@ -119,14 +118,14 @@ mal_export BAT *getTrace(str ev);
 @+ Performance tracing
 The interpreter comes with several variables to hold performance
 related data.
-Every MAL instruction record is extended with two fields: counter, timer
+Every MAL instruction record is extended with two fields: counter and timer.
 The counter is incremented each time the instruction is taken into
 execution. Upon return, the timer is incremented with the microseconds
 spent.
 In addition to the default performance data collection,
 the user can request performance events to be collected on a statement
 basis. Care should be taken, because it leads to a large trace file,
-unless the results are directly passed to a Monet performance monitor
+unless the results are directly passed to a performance monitor
 front-end for filtering and summarization.
 
 The performance monitor has exclusive access to the event file, which
@@ -788,7 +787,7 @@ void resetFilter(Scope cntxt, str mod, str fcn){
 #endif
 }
 @+ Tracing
-The events being captured are stored in separate bats.
+The events being captured are stored in separate BATs.
 They are made persistent to accumate information over
 multiple sessions. This means it has to be explicitly reset
 to avoid disc overflow.
@@ -822,12 +821,12 @@ TRACEcreate(str hnme, str tnme, int ht, int tt)
 void
 initTrace(){
 	if( TRACE_id_ticks) return; /* already initialized */
-    mal_set_lock(mal_contextLock, "trace");
-    TRACE_id_ticks= TRACEcreate("id","ticks",TYPE_int,TYPE_int);
-    TRACE_id_pc= TRACEcreate("id","pc",TYPE_int,TYPE_str);
-    TRACE_id_modfcn= TRACEcreate("id","modfcn",TYPE_int,TYPE_str);
-    TRACE_id_stmt= TRACEcreate("id","statement",TYPE_int,TYPE_str);
-    mal_unset_lock(mal_contextLock, "trace");
+	mal_set_lock(mal_contextLock, "trace");
+	TRACE_id_ticks= TRACEcreate("id","ticks",TYPE_int,TYPE_int);
+	TRACE_id_pc= TRACEcreate("id","pc",TYPE_int,TYPE_str);
+	TRACE_id_modfcn= TRACEcreate("id","modfcn",TYPE_int,TYPE_str);
+	TRACE_id_stmt= TRACEcreate("id","statement",TYPE_int,TYPE_str);
+	mal_unset_lock(mal_contextLock, "trace");
 }
 void
 startTrace(){
@@ -839,17 +838,35 @@ startTrace(){
 void
 stopTrace(){
 	initTrace();
-    malProfileMode = FALSE;
+	malProfileMode = FALSE;
 	cachedProfiling= FALSE;
 }
 void
-resetTrace(){
+setCachedProfiling(){
+	onlineProfiling= FALSE;
+	offlineProfiling= FALSE;
+	cachedProfiling= TRUE;
+}
+void
+setOnlineProfiling(){
+	onlineProfiling= TRUE;
+	offlineProfiling= FALSE;
+	cachedProfiling= FALSE;
+}
+void
+setOfflineProfiling(){
+	onlineProfiling= FALSE;
+	offlineProfiling= TRUE;
+	cachedProfiling= FALSE;
+}
+void
+clearTrace(){
 	initTrace();
 	/* drop all trace tables */
-	BBPreclaim(TRACE_id_ticks); TRACE_id_ticks= 0;
-	BBPreclaim(TRACE_id_pc); TRACE_id_pc= 0;
-	BBPreclaim(TRACE_id_modfcn); TRACE_id_modfcn= 0;
-	BBPreclaim(TRACE_id_stmt); TRACE_id_stmt= 0;
+	BATclear(TRACE_id_ticks); 
+	BATclear(TRACE_id_pc); 
+	BATclear(TRACE_id_modfcn); 
+	BATclear(TRACE_id_stmt); 
 }
 BAT *
 getTrace(str nme){
@@ -861,39 +878,40 @@ getTrace(str nme){
 }
 
 void cachedProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-    /* static struct mallinfo prevMalloc;*/
-    /* static struct rusage   prevUsage;*/
-    static int eventcounter;
-    struct tms newTms;
+	/* static struct mallinfo prevMalloc;*/
+	/* static struct rusage   prevUsage;*/
+	static int eventcounter;
+	struct tms newTms;
 	/* struct mallinfo infoMalloc;*/
 	struct rusage   infoUsage;
-    str stmt,c;
+	str stmt,c;
 	int evnt;
 
-    (void) cntxt; (void) stk; /* still unused */
+	(void) cntxt; (void) stk; /* still unused */
 
-    if(!profileAll && pci->trace== FALSE) return;
+	if(!profileAll && pci->trace== FALSE) return;
 	if( TRACE_id_ticks == 0) return;
-    if( delayswitch >0){
-        /* first call to profiled */
-        delayswitch--;
-        return;
-    }
-    if( delayswitch==0){
+	if( delayswitch >0){
+		/* first call to profiled */
+		delayswitch--;
+		return;
+	}
+	if( delayswitch==0){
         delayswitch= -1;
     } 
-    times(&newTms);
-    /* infoMalloc = MT_mallinfo();*/
-    getrusage(RUSAGE_SELF,&infoUsage);
-    mal_set_lock(profileLock,"profileLock");
+	times(&newTms);
+	/* infoMalloc = MT_mallinfo();*/
+	getrusage(RUSAGE_SELF,&infoUsage);
+	mal_set_lock(profileLock,"profileLock");
 	evnt= (int) BATcount(TRACE_id_ticks);
 
     /* update the Trace tables */
     if( profileCounter[PROFpc].status ){
         char buf[1024];
 		snprintf(buf,1024,"%s.%s[%d]", 
-			moduleName(getInstrPtr(mb,0)), functionName(getInstrPtr(mb,0)),
-			getPC(mb,pci));
+			moduleName(getInstrPtr(mb,0)), 
+				functionName(getInstrPtr(mb,0)),
+				getPC(mb,pci));
 		BUNins(TRACE_id_pc,&evnt,buf);
         if( moduleId(pci) && functionId(pci)){
 			snprintf(buf,1024, "%s.%s", moduleName(pci),functionName(pci));
@@ -903,7 +921,8 @@ void cachedProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNins(TRACE_id_modfcn,&evnt,buf);
     }
     if( profileCounter[PROFlabel].status ){
-		BUNins(TRACE_id_ticks, &evnt,&pci->ticks);
+    	int ticks= GDKusec() - pci->clk;
+		BUNins(TRACE_id_ticks, &evnt,&ticks);
         /* log("%d,\t", pci->clk);*/
     }
     if( profileCounter[PROFstmt].status ){
