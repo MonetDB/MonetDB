@@ -128,12 +128,29 @@ Tracing is a special kind of profiling, where the information
 gathered is not sent to a remote system, but stored in the database
 itself. Each profile event is given a separate BAT
 @mal
+command clearTrace():void
+address CMDclearTrace
+comment "Clear the profiler tables";
+
 command startTrace():void
 address CMDstartTrace
 comment "Prepare for online tracing using the profile filter";
+
 command stopTrace():void
 address CMDstopTrace
 comment "Stop online tracing";
+
+command setCachedProfiling():void
+address CMDsetCachedProfiling
+comment "use cached events rather then online";
+
+command setOnlineProfiling():void
+address CMDsetOnlineProfiling
+comment "Sent events over stream";
+
+command setOfflineProfiling():void
+address CMDsetOfflineProfiling
+comment "Sent events over stream";
 
 command dumpTrace():void
 address CMDdumpTrace
@@ -246,7 +263,7 @@ str CMDstartProfiler(int *res){
 	return MAL_SUCCEED;
 }
 @-
-Tracing the system.
+Tracing an active system.
 @c
 str CMDstartTrace(int *res){
 	(void) res; /* fool compiler */
@@ -260,10 +277,10 @@ str CMDstopTrace(int *res){
 	stopTrace();
 	return MAL_SUCCEED;
 }
-str CMDresetTrace(int *res){
+str CMDclearTrace(int *res){
 	(void) res; /* fool compiler */
 	@:checkProfiler(stop)@
-	resetTrace();
+	clearTrace();
 	return MAL_SUCCEED;
 }
 str CMDdumpTrace(int *res){
@@ -282,5 +299,20 @@ str CMDgetTrace(int *res, str *ev){
 		return MAL_SUCCEED;
 	}
 	return throwMessage("getTrace","Failed to find event profile");
+}
+str CMDsetCachedProfiling(int *ret){
+	(void)ret;
+	setCachedProfiling();
+	return MAL_SUCCEED;
+}
+str CMDsetOnlineProfiling(int *ret){
+	(void)ret;
+	setOnlineProfiling();
+	return MAL_SUCCEED;
+}
+str CMDsetOfflineProfiling(int *ret){
+	(void)ret;
+	setOnlineProfiling();
+	return MAL_SUCCEED;
 }
 @}

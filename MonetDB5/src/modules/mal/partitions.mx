@@ -81,27 +81,27 @@ command discard(name:bat[:void,:any]) :void
 address BPTdiscard
 comment "Release a BAT variable from the box";
 
-command newIterator()(:lng)
+command newIterator()(:int)
 address BPTnewIteratorBase
 comment "Create an iterator over the partition box";
-command hasMoreElements()(:lng)
+command hasMoreElements()(:int)
 address BPThasMoreElementsBase
 comment "Locate next element in the partition box";
 
-command newIterator(b:bat[:void,:any$1]) (:lng,:bat[:void,:any$1])
+command newIterator(b:bat[:void,:any$1]) (:int,:bat[:void,:any$1])
 address BPTnewIterator
 comment "Create an iterator over the BAT partitions.";
 
 command newIterator(b:bat[:void,:any$1],first:oid,last:oid)
-		(:lng,:bat[:void,:any$1])
+		(:int,:bat[:void,:any$1])
 address BPTnewIteratorRng
 comment "Create an iterator over the BAT partitions.";
 
-command hasMoreElements(b:bat[:void,:any$1]) (:lng, :bat[:void,:any$1])
+command hasMoreElements(b:bat[:void,:any$1]) (:int, :bat[:void,:any$1])
 address BPThasMoreElements
 comment "Localize the next partition for processing.";
 
-command hasMoreElements(b:bat[:void,:any$1],first:oid,last:oid) (:lng, :bat[:void,:any$1])
+command hasMoreElements(b:bat[:void,:any$1],first:oid,last:oid) (:int, :bat[:void,:any$1])
 address BPThasMoreElementsRng
 comment "Localize the next partition for processing.";
 
@@ -502,13 +502,13 @@ The number of elements in the chunk is limited by the granule
 size.
 @c
 str
-BPTnewIteratorBase(lng *ret){
+BPTnewIteratorBase(int *ret){
 	*ret = 0;
 	if( *ret == ptop) *ret = -1;
 	return MAL_SUCCEED;
 }
 str
-BPThasMoreElementsBase(lng *ret){
+BPThasMoreElementsBase(int *ret){
 	do{
 		*ret = *ret +1;
 		if( *ret >= ptop) {
