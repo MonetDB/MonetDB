@@ -631,7 +631,7 @@ static str RStailWidth(int* retval, BAT* b) {
 		case TYPE_ptr: /* C pointer! */
 		case TYPE_bat: /* BAT id: index in BBPcache */
 		default:
-			throw("resultset.tailWidth", "Invalid BAT tail type!");
+			max = 0;
 	}
 
 	*retval = max;
@@ -1026,7 +1026,7 @@ str RSwriteHeader(int* retval, int* handle) {
 			case TYPE_ptr: /* C pointer! */
 			case TYPE_bat: /* BAT id: index in BBPcache */
 			default:
-				throw("resultset.writeHeader", "Invalid BAT tail type!");
+				*tmp++ = 'S';
 		}
 	}
 	*tmp = '\0';
@@ -1129,7 +1129,7 @@ str RSwriteHeader(int* retval, int* handle) {
 					case TYPE_ptr: /* C pointer! */
 					case TYPE_bat: /* BAT id: index in BBPcache */
 					default:
-						throw("resultset.writeHeader", "Invalid BAT tail type!");
+						bt = stream_printf(s, "%s", "varchar");
 				}
 			} else {
 				if ((bt = stream_printf(s, "%s", col->type)) < 0)
@@ -1315,8 +1315,13 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 				break;
 				case TYPE_ptr: /* C pointer! */
 				case TYPE_bat: /* BAT id: index in BBPcache */
-				default:
-					throw("resultset.tailWidth", "Invalid BAT tail type!");
+				default: {
+					str buf = NULL;
+					int len = 0, size = 0;
+					len = (*BATatoms[col->bat->ttype].atomToStr) (&buf, &size, p);
+					bt = stream_printf(s, "%d:%s", len, buf);
+					GDKfree(buf);
+				}
 			}
 
 			/* advance to the next value in the BAT */
