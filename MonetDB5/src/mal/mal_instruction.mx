@@ -1312,7 +1312,7 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     tonil= niltst && strncmp(val,"nil",3)==0;
 
     /* remember the type classifier location */
-    if( type != TYPE_str && type != TYPE_chr)
+    if( type != TYPE_str && type != TYPE_chr && *val !='(')
         colon = strchr(val,':');
     if( type == TYPE_str && strncmp(val,"nil",3)==0 && niltst){
         colon = strchr(val,':');
@@ -1445,9 +1445,9 @@ end.
             break;
         }
 #ifdef STRUCT_ALIGNED
-        (*BATatoms[type].atomFromStr)(val, &ll, &d);
-        vr->vtype= type;
-		vr->val.pval= *(ptr *)d;
+		(*BATatoms[type].atomFromStr)(val, &ll, &d);
+		vr->vtype= type;
+		vr->val.pval= d? *(ptr *)d:d;
 #else
         GDKerror("newConstants:missing implementation\n");
 #endif
