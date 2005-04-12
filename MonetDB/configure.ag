@@ -279,7 +279,7 @@ else
 	MX="$withval"
 fi
 AC_SUBST(MX)
-AM_CONDITIONAL(COMPILE_MX, test x$cross_compiling != xyes -a "x$have_mx" = auto)
+AM_CONDITIONAL(COMPILE_MX, test x$cross_compiling != xyes -a "x$have_mx" = xauto)
 
 AC_ARG_WITH(mel,
 	AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
@@ -297,7 +297,7 @@ else
 	MEL="$withval"
 fi
 AC_SUBST(MEL)
-AM_CONDITIONAL(COMPILE_MEL, test x$cross_compiling != xyes -a "x$have_mel" = auto)
+AM_CONDITIONAL(COMPILE_MEL, test x$cross_compiling != xyes -a "x$have_mel" = xauto)
 
 if test x$cross_compiling != xyes; then
 AM_CONDITIONAL(NOT_WIN32, true)
