@@ -1478,7 +1478,16 @@ esac
 if test "x$have_gc" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS"
-	AC_CHECK_HEADERS([gc.h gc/gc.h], :, [ if test "x$have_gc" = xyes; then AC_MSG_ERROR([gc.h not found]); fi; have_gc=no ])
+	found_gc_h=""
+	AC_CHECK_HEADERS([gc.h gc/gc.h], found_gc="yes")
+	if test "x$have_gc" = xyes
+	then
+	    if test "x$found_gc_h" = "x"
+	    then
+	        AC_MSG_ERROR([gc.h not found])
+		have_gc=no
+	    fi
+	fi
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_gc" != xno; then
