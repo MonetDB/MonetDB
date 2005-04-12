@@ -523,12 +523,6 @@ sub _ListDBs {
 }
 
 
-sub _ListTables {
-    my ($dbh) = @_;
-    return $dbh->tables;
-}
-
-
 sub disconnect {
     my ($dbh) = @_;
     my $mapi = $dbh->{monetdb_connection};
@@ -857,25 +851,6 @@ because it provides additional information about unique keys.
     @dbs = $dbh->func('_ListDBs');
 
 Returns a list of all databases managed by the MonetDB SQL daemon.
-
-=item ListTables
-
-B<WARNING>: This method is obsolete due to DBI's $dbh->tables().
-
-    @tables = $dbh->func('_ListTables');
-
-Once connected to the desired database on the desired MonetDB server with the
-DBI connect() method, we may extract a list of the tables that have been
-created within that database.
-
-"ListTables" returns an array containing the names of all the tables present
-within the selected database. If no tables have been created, an empty list
-is returned.
-
-    @tables = $dbh->func('_ListTables');
-    foreach $table (@tables) {
-        print "Table: $table\n";
-    }
 
 =back
 
