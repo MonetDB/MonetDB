@@ -2117,7 +2117,7 @@ stream_read@1(stream *s, @2 *val)
 			*val = @3_SWAP(*val);
 		return 1;
 	case 0:
-		/* considere EOF an error */
+		/* consider EOF an error */
 		s->errnr = READ_ERROR;
 		/* fall through */
 	default:
@@ -2132,6 +2132,7 @@ stream_read@1(stream *s, @2 *val)
 int
 stream_writeSht(stream *s, short val)
 {
+	if (s->errnr) return(0);
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
 
@@ -2140,6 +2141,7 @@ stream_writeSht(stream *s, short val)
 int
 stream_writeInt(stream *s, int val)
 {
+	if (s->errnr) return(0);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
@@ -2148,6 +2150,7 @@ stream_writeInt(stream *s, int val)
 int
 stream_writeLng(stream *s, lng val)
 {
+	if (s->errnr) return(0);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
@@ -2174,6 +2177,7 @@ stream_read@1Array(stream *s, @2 *val, size_t cnt)
 int
 stream_writeShtArray(stream *s, const short *val, size_t cnt)
 {
+	if (s->errnr) return(0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
@@ -2182,6 +2186,7 @@ stream_writeShtArray(stream *s, const short *val, size_t cnt)
 int
 stream_writeIntArray(stream *s, const int *val, size_t cnt)
 {
+	if (s->errnr) return(0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
@@ -2190,12 +2195,14 @@ stream_writeIntArray(stream *s, const int *val, size_t cnt)
 int
 stream_writeLngArray(stream *s, const lng *val, size_t cnt)
 {
+	if (s->errnr) return(0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
 int
 stream_printf(stream *s, const char *format, ...)
 {
+	if (s->errnr) return(-1);
 	char buf[BUFSIZ], *bf = buf;
 	int i = 0;
 	size_t bfsz = BUFSIZ;
