@@ -351,7 +351,12 @@ char *MT_heapbase = NULL;
  *
  * (this is based on reading the 2.6.8 linux kernel code) and microbenchmarks. 
  */
+#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
+#endif
+#ifdef HAVE_SEMPHORE_H
+#include <semaphore.h>
+#endif
 
 typedef struct {
 	char path[128];		/* mapped file, retained for debugging */

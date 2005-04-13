@@ -258,7 +258,7 @@ yes-*-*)
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		CFLAGS="$CFLAGS -std=gnu99"
 		CXXFLAGS="$CXXFLAGS -ansi"
-		LDFLAGS="$LDFLAGS -no-undefined -L/ufs/niels/.wine/drive_c/MinGW/lib"
+		LDFLAGS="$LDFLAGS -no-undefined -LC:/MinGW/lib"
 		;;
 	*-irix*|*-darwin*)
 		CFLAGS="$CFLAGS -std=c99"
@@ -278,7 +278,7 @@ yes-*-*)
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall -W"
 	CXXFLAGS="$CXXFLAGS -Wall -W"
-	dnl  Be rigid; "MonetDB code is supposed to adhere to this... ;-)
+	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
 	dnl X_CXXFLAGS="$X_CXXFLAGS -Werror-implicit-function-declaration"
 	X_CFLAGS="$X_CFLAGS -Werror"
@@ -289,6 +289,11 @@ yes-*-*)
 	dnl  ... and some are beyond our control:
 	case "$gcc_ver" in
 		dnl  Some versions of flex and bison require these:
+	3.4.*)	dnl  (Don't exist for gcc < 3.0.)
+		CFLAGS="$CFLAGS -fno-strict-aliasing"
+		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
+		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function -Wno-unused-label"
+		;;
 	3.*)	dnl  (Don't exist for gcc < 3.0.)
 		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function -Wno-unused-label"
@@ -343,7 +348,7 @@ yes-*-*)
 		;;
 	*)	;;
 	esac
-	dnl  Version 8.* doesn't find sigset-t when -ansi is set... !?
+	dnl  Version 8.* doesn't find sigset_t when -ansi is set... !?
 	case $icc_ver in
 	8.*)	;;
 	*)	CFLAGS="$CFLAGS -ansi"	CXXFLAGS="$CXXFLAGS -ansi";;
@@ -356,7 +361,7 @@ yes-*-*)
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -c99 -Wall -w2"
 	CXXFLAGS="$CXXFLAGS -c99 -Wall -w2"
-	dnl  Be rigid; "MonetDB code is supposed to ahear to this... ;-)
+	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	dnl  Let warning #266 "function declared implicitly" become an error.
 	X_CFLAGS="$X_CFLAGS -we266"
 	X_CXXFLAGS="$X_CXXFLAGS -we266"
@@ -1181,18 +1186,21 @@ if test "x$have_pthread" != xno; then
 
 	save_LDFLAGS="$LDFLAGS"
 	LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
-	AC_CHECK_LIB(pthread, sem_init, 
-		PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
-		dnl sun
-		AC_CHECK_LIB(pthread, sem_post,
-			PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
-			[ if test "x$have_pthread" = xyes; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
-			"-lposix4")
-		)
-	AC_CHECK_LIB(pthread, pthread_sigmask,
+	AC_CHECK_LIB(pthreadGC1, sem_init,
+		pthread=pthreadGC1 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC1",
+		AC_CHECK_LIB(pthreadGC, sem_init,
+			pthread=pthreadGC PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC",
+			AC_CHECK_LIB(pthread, sem_init, 
+				pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
+				dnl sun
+				AC_CHECK_LIB(pthread, sem_post,
+					pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
+					[ if test "x$have_pthread" = xyes; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
+					"-lposix4"))))
+	AC_CHECK_LIB($pthread, pthread_sigmask,
 		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
 			[Define if you have the pthread_sigmask function]))
-	AC_CHECK_LIB(pthread, pthread_kill_other_threads_np,
+	AC_CHECK_LIB($pthread, pthread_kill_other_threads_np,
 		AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1,
 			[Define if you have the pthread_kill_other_threads_np function]))
 	LDFLAGS="$save_LDFLAGS"
@@ -1228,18 +1236,22 @@ LDFLAGS="$LDFLAGS $READLINE_LIBS"
 if test "x$have_readline" != xno; then
 	dnl use different functions in the cascade of AC_CHECK_LIB
 	dnl calls since configure may cache the results
-	AC_CHECK_LIB(readline, readline,
-		READLINE_LIBS="$READLINE_LIBS -lreadline",
-		[ AC_CHECK_LIB(readline, rl_history_search_forward,
-			READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap",
-			[ AC_CHECK_LIB(readline, rl_reverse_search_history,
-				READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses",
-				[ if test "x$have_readline" = xyes; then
-					AC_MSG_ERROR([readline library not found])
-				  fi; have_readline=no ],
-				-lncurses)],
-			-ltermcap)],
-		)
+	AC_CHECK_HEADER(readline/readline.h,
+		AC_CHECK_LIB(readline, readline,
+			READLINE_LIBS="$READLINE_LIBS -lreadline",
+			[ AC_CHECK_LIB(readline, rl_history_search_forward,
+				READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap",
+				[ AC_CHECK_LIB(readline, rl_reverse_search_history,
+					READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses",
+					[ if test "x$have_readline" = xyes; then
+						AC_MSG_ERROR([readline library not found])
+					  fi; have_readline=no ],
+					-lncurses)],
+				-ltermcap)],
+			),
+		[ if test "x$have_readline" = xyes; then
+			AC_MSG_ERROR([readline header file not found])
+		  fi; have_readline=no ])
 fi
 if test "x$have_readline" != xno; then
 	dnl provide an ACTION-IF-FOUND, or else all subsequent checks
@@ -1736,6 +1748,7 @@ AC_CHECK_LIB(iconv, iconv,
     ]) 
   ]
 )
+AC_CHECK_TYPE(iconv_t, , have_iconv=no)
 if test "x$have_iconv" = xyes; then
 	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv function])
 	if test "x$libiconv" = xyes; then
