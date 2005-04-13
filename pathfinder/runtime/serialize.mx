@@ -137,8 +137,8 @@ XmlNsFrame* xmlNsPush(XmlNsFrame** top, char* prefix, char* uri) {
 #ifdef DEBUGNS
 		stream_printf(GDKout,"+NS:xmlNsPush(\"%s\",\"%s\")\n",prefix,uri);
 #endif
-		fp->prefix = strdup(prefix);
-		fp->uri    = strdup(uri);
+		if ( !( fp->prefix = strdup(prefix)) ) return NULL;
+		if ( !(fp->uri    = strdup(uri)) ) return NULL;
 		/* */
 		fp ->next  = NULL;
 		if ( *top ) {
@@ -409,7 +409,7 @@ static void popTag(XqueryCtx* ctx) {
 
 static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top); /* forward */
 
-static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix) {
+static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top) {
 	char *uri, *prefix;
 
 	if ( strcmp(par_uri,str_nil) == 0 || strcmp(par_uri,"") == 0 )
@@ -427,10 +427,12 @@ static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix) {
 		    /* change of URI for this prefix */
 		    XmlNsFrame* xnf;
 
-		    if ( !(xnf = xmlNsPush(&ctx->nsTop,prefix,uri)) )
+		    if ( !(xnf = xmlNsPush(&ctx->nsTop,prefix,uri)) ) {
+			fatal_err(ctx,"xmlNsPush: out of memory\n");
 		    	return 0;
+		    }
 		    /* generate the xmlns:xxx=uri tag */
-		    handle_attribute(ctx,str_nil,"xmlns",prefix,uri,0);
+		    handle_attribute(ctx,str_nil,"xmlns",prefix,uri,top);
 
 		    SerializeFrame* sf = topSF(ctx);
 
@@ -634,7 +636,7 @@ static int handle_endDocument(XqueryCtx* ctx) {
  * by a handle_attributeEnd() call.
  */
 static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
-	if ( !checkNsChange(ctx,uri,prefix) )
+	if ( !checkNsChange(ctx,uri,prefix,top) )
 		return 0;
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
@@ -650,7 +652,10 @@ static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str va
                 }
         } else if (ctx->dmMode && top) { /* dmMode */
                 if ( prefix && strlen(prefix)>0 ) {
-                        stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
+			if ( strcmp(prefix,"xmlns")==0 )
+                            stream_printf(GDKout,"declare namespace %s = \"%s\";\n",loc,value);
+			else
+                            stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
                 } else {
                         stream_printf(GDKout,"attribute %s { %s }",loc,value);
                 }
@@ -950,7 +955,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
                         if (!pushTag(ctx,pre+size,prefix,loc,(size==0)))
 				return 0;
 			/*  check for change of prefix/uri */
-			if ( ! checkNsChange(ctx,uri,prefix) )
+			if ( ! checkNsChange(ctx,uri,prefix,top) )
 				return 0;
                         if ( !process_node_attr(ctx,ctx->curFRAG,pre,(size==0)))
 				return 0;

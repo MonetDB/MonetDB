@@ -1509,10 +1509,15 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location)
             return -1;
         }
     } else {
+#if HAVE_SAX2
         if ( !(xmlCtx = xmlCreateURLParserCtxt (location, 0)) ) {
             stream_printf(GDKerr,"shred:xmlCreateURLParserCtxt(\"%s\") failed\n",location); 
             return -1;
         }
+#else
+	stream_printf(GDKerr,"shred:xmlCreateURLParserCtxt() not set. Configure HAVE_SAX2 for this.\n");
+	return -1;
+#endif
     }
     xmlCtx->sax        = &shredder;
     xmlCtx->_private = shredCtx; /* set the SHREDCTX() value */
