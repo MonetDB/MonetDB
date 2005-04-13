@@ -179,7 +179,7 @@ comment "Take a resultset with the given id out of the box";
 command deposit(name:str,set:resultset):void
 address RSBdeposit
 comment "Store a new resultset into the box (only there to comply
-to the interface, throws an exception, use create instead)";
+to the interface, throws an exception, use create instead";
 
 command releaseAll():void
 address RSBreleaseAll
@@ -287,8 +287,8 @@ typedef struct resultset_t {
 #include "mal_exception.h"
 
 /* convenience macros */
-#define throw(X, Y)		return(throwMessage(X, Y));
-#define throwf(X, Y, Z)	return(throwException(MALEXCEPTION, X, Y, Z));
+#define throwRS(X, Y) throw("ResultSetException", X, Y);
+#define throwRSf(X, Y, A) throwf("ResultSetException", X, Y, A);
 #define resolveHandle(X, Y) \
 	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp);
 
@@ -313,13 +313,13 @@ static str RSsetComplete(resultset* rs);
  */
 static str RSBgetResultSet(resultset** retval, int* handle) {
 	if (handle == NULL)
-		throw("rsbox.getResultSet", "Handle should not be NULL");
+		throwIllArg("rsbox.getResultSet", "Handle should not be NULL");
 	if (*handle < 0 || *handle > RSB_MAX_ELEMS)
-		throw("rsbox.getResultSet", "Handle index out of bounds");
+		throwOutOfBnds("rsbox.getResultSet", "Handle index out of bounds");
 	if (*handle == 0)
-		throw("rsbox.getResultSet", "Invalid handle: not initialised");
+		throwIllArg("rsbox.getResultSet", "Invalid handle: not initialised");
 	if (elements[*handle - 1] == NULL)
-		throw("rsbox.getResultSet", "Handle points to an empty slot");
+		throwIllArg("rsbox.getResultSet", "Handle points to an empty slot");
 
 	*retval = elements[*handle - 1];
 	return(MAL_SUCCEED);
@@ -335,7 +335,7 @@ static str RSBgetResultSet(resultset** retval, int* handle) {
  */
 str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void)mb; (void)stk; (void)pci; /* make compiler happy */
-	throw("rsbox.deposit", "Operation not supported: use rsbox.create");
+	throwRS("rsbox.deposit", "Operation not supported: use rsbox.create");
 }
 
 /**
@@ -354,16 +354,16 @@ str RSBcreate(int* retval, int* columns, char* type) {
 	char tpe;
 
 	if (*columns <= 0)
-		throw("rsbox.create", "Number of columns should be a positive non-zero value");
+		throwIllArg("rsbox.create", "Number of columns should be a positive non-zero value");
 	tpe = *type;
 	if (tpe == RS_TYPE_E_ERROR)
-		throw("rsbox.create", "use todoError.create to send error messages");
+		throwIllArg("rsbox.create", "use TODOError.create to send error messages");
 	if (tpe != RS_TYPE_R_DEFAULT && tpe != RS_TYPE_R_MONET5 &&
 		tpe != RS_TYPE_R_RAW && tpe != RS_TYPE_R_BINARY &&
 		tpe != RS_TYPE_R_XML && tpe != RS_TYPE_R_SAX &&
 		tpe != RS_TYPE_U_AFFROW && tpe != RS_TYPE_U_BATCH &&
 		tpe != RS_TYPE_U_SUCCESS)
-		throwf("rsbox.create", "ResultSet type unknown: %c", tpe);
+		throwIllArgf("rsbox.create", "ResultSet type unknown: %c", tpe);
 
 	/* find the first free slot */
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
@@ -388,7 +388,7 @@ str RSBcreate(int* retval, int* columns, char* type) {
 		}
 	}
 	if (free == -1)
-		throw("rsbox.create", "No free slots available");
+		throwRS("rsbox.create", "No free slots available");
 
 	/* and return the index as handle */
 	*retval = free + 1;
@@ -410,7 +410,7 @@ str RSBtake(int* retval, int* id) {
 		}
 	}
 
-	throwf("rsbox.take", "No such element with id '%d'", *id);
+	throwRSf("rsbox.take", "No such element with id '%d'", *id);
 }
 
 /**
@@ -420,7 +420,7 @@ str RSBtake(int* retval, int* id) {
  */
 static str RSBfreeColumn(column* col) {
 	if (col == NULL)
-		throw("resultset.freeColumn", "Column should NOT be NULL");
+		throwIllArg("resultset.freeColumn", "Column should NOT be NULL");
 
 	if (col->bat) BBPunfix(col->bat->batCacheid);
 	if (col->name) GDKfree(col->name);
@@ -469,7 +469,7 @@ str RSBdelete(void* retval, int* handle) {
 	int i;
 	(void)retval;	/* make compiler happy */
 
-	resolveHandle(&rs, handle);
+	rethrow("rsbox.delete", tmp, RSBgetResultSet(&rs, handle));
 
 	/* hide this resultset */
 	elements[*handle - 1] = NULL;
@@ -495,7 +495,7 @@ str RSBrelease(void* retval, int* id) {
 	int handle;
 	(void)retval;	/* make compiler happy */
 
-	if ((tmp = RSBtake(&handle, id)) != MAL_SUCCEED) return(tmp);
+	rethrow("rsbox.release", tmp, RSBtake(&handle, id));
 	return(RSBdelete(NULL, &handle));
 }
 
@@ -509,7 +509,7 @@ str RSBreleaseAll() {
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
 		if (elements[i] != NULL) {
 			handle = i + 1;
-			if ((tmp = RSBdelete(NULL, &handle)) != MAL_SUCCEED) return(tmp);
+			rethrow("rsbox.releaseAll", tmp, RSBdelete(NULL, &handle));
 		}
 	}
 
@@ -553,8 +553,12 @@ str RSBhasMoreElements(lng* ret1, int* ret2) {
  * @return ret2 resultset handle
  */
 str RSBiterator(lng* ret1, int* ret2) {
+	str tmp;
+	
 	*ret1 = -1;
-	return(RSBhasMoreElements(ret1, ret2));
+	
+	rethrow("rsbox.iterator", tmp, RSBhasMoreElements(ret1, ret2));
+	return(MAL_SUCCEED);
 }
 
 @-
@@ -573,7 +577,7 @@ static str RStailWidth(int* retval, BAT* b) {
 	int max = 0;
 
 	if (b == NULL)
-		throw("resultset.tailWidth", "BAT should not be NULL");
+		throwIllArg("resultset.tailWidth", "BAT should not be NULL");
 
 	switch (b->ttype) {
 		case TYPE_bit:
@@ -673,16 +677,16 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 	columnset* lastcs = NULL;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.populateColumn", tmp, RSBgetResultSet(&rs, handle));
     if ((b = BATdescriptor(*bat)) == NULL)
-        throw("resultset.populateColumn", "Cannot access BAT descriptor");
+        throwIllArg("resultset.populateColumn", "Cannot access BAT descriptor");
 	if (b->ttype < 0 || b->ttype >= GDKatomcnt ||
 		b->ttype == TYPE_bat || b->ttype == TYPE_ptr)
-		throw("resultset.populateColumn", "Illegal BAT tail type");
+		throwIllArg("resultset.populateColumn", "Illegal BAT tail type");
 	if (colno == NULL || *colno == int_nil)
-		throw("resultset.populateColumn", "Column index should not be NULL or nil");
+		throwIllArg("resultset.populateColumn", "Column index should not be NULL or nil");
 	if (*colno <= 0 || *colno > rs->columnCount)
-		throwf("resultset.populateColumn", "Column index out of bounds (%d)", *colno);
+		throwOutOfBndsf("resultset.populateColumn", "Column index out of bounds (%d)", *colno);
 	/* find the last ResultSet block */
 	cs = &(rs->columnSet);
 	while (cs->nextSet != NULL) {
@@ -690,7 +694,7 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 		cs = cs->nextSet;
 	}
 	if (cs->complete)
-		throw("resultset.populateColumn", "Unable to modify a complete ResultSet");
+		throwRS("resultset.populateColumn", "Unable to modify a complete ResultSet");
 
 	/* tell the BBP to leave this BAT alone: it's ours! */
 	BBPfix(b->batCacheid);
@@ -698,7 +702,7 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 	if (cs->length != -1) {
 		/* check length of BAT and match it with the known length */
 		if (cs->length != BATcount(b))
-			throwf("resultset.populateColumn", "BATcount does not match those of previous columns (%d)", cs->length);
+			throwRSf("resultset.populateColumn", "BATcount does not match those of previous columns (%d)", cs->length);
 	} else {
 		/* this is the first column that is added, take its length as
 		 * base for all other columns that get added */
@@ -709,7 +713,7 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 	if (cs->columns[*colno - 1]->bat != NULL)
 		BBPunfix(cs->columns[*colno - 1]->bat->batCacheid);
 	if (lastcs != NULL && b->ttype != lastcs->columns[*colno - 1]->bat->ttype)
-		throw("resultset.populateColumn", "The tail type of the to be added column does not match the previous union part");
+		throwRS("resultset.populateColumn", "The tail type of the to be added column does not match the previous union part");
 	cs->columns[*colno - 1]->bat = b;
 
 	*retval = *handle;
@@ -739,25 +743,25 @@ str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
 	columnset* cs;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.setPropertyStr", tmp, RSBgetResultSet(&rs, handle));
 	cs = &(rs->columnSet);
 	while (cs->nextSet != NULL) cs = cs->nextSet;
 	if (cs->complete)
-		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
+		throwRS("resultset.setProperty", "Unable to modify a complete ResultSet");
 	if (colno == NULL || *colno == int_nil)
-		throw("resultset.setProperty", "Column index should not be NULL or nil");
+		throwIllArg("resultset.setProperty", "Column index should not be NULL or nil");
 	if (*colno <= 0 || *colno > rs->columnCount)
-		throwf("resultset.setProperty", "Column index out of bounds (%d)", *colno);
+		throwOutOfBndsf("resultset.setProperty", "Column index out of bounds (%d)", *colno);
 	if (nme == NULL || *nme == NULL || strNil(*nme))
-		throw("resultset.setProperty", "Property name should not be NULL or nil");
+		throwIllArg("resultset.setProperty", "Property name should not be NULL or nil");
 	if (val == NULL || *val == NULL)
-		throw("resultset.setProperty", "Property value should not be NULL");
+		throwIllArg("resultset.setProperty", "Property value should not be NULL");
 
 	col = cs->columns[(*colno) - 1];
 @= MX-setPropertyStrNoNil
 	if (strcmp("@1", *nme) == 0) {
 		if (strNil(*val))
-			throw("resultset.setProperty", "@1 property value cannot be nil");
+			throwRS("resultset.setProperty", "@1 property value cannot be nil");
 
 		if (col->@1 != NULL) {
 			ret = 1;
@@ -785,7 +789,7 @@ str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
 	else
 	@:MX-setPropertyStr(schema)@
 	else
-		throwf("resultset.setProperty", "Invalid property '%s'", *nme);
+		throwRSf("resultset.setProperty", "Invalid property '%s'", *nme);
 
 	*retval = ret;
 	return(MAL_SUCCEED);
@@ -813,21 +817,21 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
 	columnset* cs;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.setPropertyInt", tmp, RSBgetResultSet(&rs, handle));
 	cs = &(rs->columnSet);
 	while (cs->nextSet != NULL) cs = cs->nextSet;
 	if (cs->complete)
-		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
+		throwRS("resultset.setProperty", "Unable to modify a complete ResultSet");
 	if (colno == NULL || *colno == int_nil)
-		throw("resultset.setProperty", "Column index should not be NULL or nil");
+		throwIllArg("resultset.setProperty", "Column index should not be NULL or nil");
 	if (*colno <= 0 || *colno > rs->columnCount)
-		throwf("resultset.setProperty", "Column index out of bounds (%d)", *colno);
+		throwOutOfBndsf("resultset.setProperty", "Column index out of bounds (%d)", *colno);
 	if (nme == NULL || *nme == NULL || strNil(*nme))
-		throw("resultset.setProperty", "Property name should not be NULL or nil");
+		throwIllArg("resultset.setProperty", "Property name should not be NULL or nil");
 	if (val == NULL || *val == int_nil)
-		throw("resultset.setProperty", "Property value should not be nil");
+		throwIllArg("resultset.setProperty", "Property value should not be nil");
 	if (*val < 0)
-		throwf("resultset.setProperty", "Property value cannot be a negative value (%d)", *val);
+		throwIllArgf("resultset.setProperty", "Property value cannot be a negative value (%d)", *val);
 
 	col = cs->columns[(*colno) - 1];
 @= MX-setPropertyInt
@@ -844,7 +848,7 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
 	else
 	@:MX-setPropertyInt(width)@
 	else
-		throwf("resultset.setProperty", "Invalid property '%s'", *nme);
+		throwRSf("resultset.setProperty", "Invalid property '%s'", *nme);
 
 	*retval = ret;
 	return(MAL_SUCCEED);
@@ -872,7 +876,7 @@ static str RSsetComplete(resultset* rs) {
 		col = cs->columns[i];
 
 		if (col->bat == NULL)
-			throw("resultset.setComplete", "ResultSet contains at least one column that has not been populated yet");
+			throwRS("resultset.setComplete", "ResultSet contains at least one column that has not been populated yet");
 	}
 
 	cs->complete = (char)1;
@@ -894,12 +898,12 @@ str RSunion(int* retval, int* handle) {
 	columnset* cs;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.union", tmp, RSBgetResultSet(&rs, handle));
 	cs = &(rs->columnSet);
 	while (cs->nextSet != NULL) cs = cs->nextSet;
 	
 	/* make sure the last column set is complete */
-	if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
+	rethrow("resultset.union", tmp, RSsetComplete(rs));
 
 	/* add a new column set and initialise the values */
 	cs = cs->nextSet = GDKmalloc(sizeof(columnset));
@@ -928,7 +932,7 @@ str RSdePopulate(int* retval, int* handle) {
 	columnset* cs;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.dePopulate", tmp, RSBgetResultSet(&rs, handle));
 	cs = &(rs->columnSet);
 
 	RSfreeColumnSet(rs, cs->nextSet);
@@ -966,20 +970,20 @@ str RSwriteHeader(int* retval, int* handle) {
 	str tmp;
 	str mask;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.writeHeader", tmp, RSBgetResultSet(&rs, handle));
 	if (!rs->columnSet.complete)
-		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
+		rethrow("resultset.writeHeader", tmp, RSsetComplete(rs));
 
 	/* write start of header */
 	if ((bt = stream_printf(s, "%c%c\n", RS_LINE_START_OF_HEADER, rs->type)) <= 0) {
 		*retval = 0;
-		throw("resultset.writeHeader", "Error while writing to the stream");
+		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	}
 	bytes += 3;
 	/* write single value headers */
 @= MX-writeHeaderLineSingleValue
 	if ((bt = stream_printf(s, "%c%s " @1 "\n", RS_LINE_CONTROL_HEADER, @3, @2)) <= 0)
-		throw("resultset.writeHeader", "Error while writing to the stream");
+		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	bytes += bt;
 @c
 	/* serialise the header to the stream */
@@ -1040,23 +1044,23 @@ str RSwriteHeader(int* retval, int* handle) {
 			/* name defaults to column_x */
 			if (col->name == NULL) {
 				if ((bt = stream_printf(s, "column_%d", i + 1)) < 0)
-					throw("resultset.writeHeader", "Error while writing to the stream");
+					throwIO("resultset.writeHeader", "Error while writing to the stream");
 			} else {
 				if ((bt = stream_printf(s, "%s", col->name)) < 0)
-					throw("resultset.writeHeader", "Error while writing to the stream");
+					throwIO("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += bt;
 
 			/* write column or row separator */
 			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
-				throw("resultset.writeHeader", "Error while writing to the stream");
+				throwIO("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += 1;
 		}
 	} else {
 		*retval = 0;
-		throw("resultset.writeHeader", "Error while writing to the stream");
+		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	}
 @= MX-writeHeaderLine
 	/* serialise the header to the stream */
@@ -1067,20 +1071,20 @@ str RSwriteHeader(int* retval, int* handle) {
 
 			if (@4) {
 				if ((bt = stream_printf(s, @1, @2)) < 0)
-					throw("resultset.writeHeader", "Error while writing to the stream");
+					throwIO("resultset.writeHeader", "Error while writing to the stream");
 				bytes += bt;
 			}
 
 			/* write column or row separator */
 			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
-				throw("resultset.writeHeader", "Error while writing to the stream");
+				throwIO("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += 1;
 		}
 	} else {
 		*retval = 0;
-		throw("resultset.writeHeader", "Error while writing to the stream");
+		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	}
 @c
 	/* yeah baby!  dirty as hell! */
@@ -1129,20 +1133,20 @@ str RSwriteHeader(int* retval, int* handle) {
 				}
 			} else {
 				if ((bt = stream_printf(s, "%s", col->type)) < 0)
-					throw("resultset.writeHeader", "Error while writing to the stream");
+					throwIO("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += bt;
 
 			/* write column or row separator */
 			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
-				throw("resultset.writeHeader", "Error while writing to the stream");
+				throwIO("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += 1;
 		}
 	} else {
 		*retval = 0;
-		throw("resultset.writeHeader", "Error while writing to the stream");
+		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	}
 	@:MX-writeHeaderLine("%d", col->digits, "digits", col->digits > -1)@
 	@:MX-writeHeaderLine("%d", col->scale, "scale", col->scale > -1)@
@@ -1158,23 +1162,23 @@ str RSwriteHeader(int* retval, int* handle) {
 				if ((tmp = RStailWidth(&width, col->bat)) != MAL_SUCCEED)
 					return(tmp);
 				if ((bt = stream_printf(s, "%d", width)) < 0)
-					throw("resultset.writeHeader", "Error while writing to the stream");
+					throwIO("resultset.writeHeader", "Error while writing to the stream");
 			} else {
 				if ((bt = stream_printf(s, "%d", col->width)) < 0)
-					throw("resultset.writeHeader", "Error while writing to the stream");
+					throwIO("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += bt;
 
 			/* write column or row separator */
 			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
-				throw("resultset.writeHeader", "Error while writing to the stream");
+				throwIO("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += 1;
 		}
 	} else {
 		*retval = 0;
-		throw("resultset.writeHeader", "Error while writing to the stream");
+		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	}
 
 	*retval = bytes;
@@ -1205,18 +1209,18 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	int low = *lower, up = *upper;
 	ptr p;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.writeBlock", tmp, RSBgetResultSet(&rs, handle));
 	if (low < 0)
-		throwf("resultset.writeBlock", "Lower index out of bounds (%d < 0)", low);
+		throwOutOfBndsf("resultset.writeBlock", "Lower index out of bounds (%d < 0)", low);
 	if (up > rs->length)
-		throwf("resultset.writeBlock", "Upper index out of bounds (%d > ResultSet length)", up);
+		throwOutOfBndsf("resultset.writeBlock", "Upper index out of bounds (%d > ResultSet length)", up);
 	if (low >= up)
-		throw("resultset.writeBlock", "Lower index should be smaller than upper index");
+		throwIllArg("resultset.writeBlock", "Lower index should be smaller than upper index");
 
 	cs = &(rs->columnSet);
 	do {
-		if (cs->complete == 0 && (tmp = RSsetComplete(rs)) != MAL_SUCCEED)
-			return(tmp);
+		if (cs->complete == 0)
+			rethrow("resultset.writeBlock", tmp, RSsetComplete(rs));
 		
 		/* correct lower value if necessary */
 		if (low >= cs->length) {
@@ -1228,7 +1232,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	} while ((cs = cs->nextSet) != NULL);
 	
 	if (cs == NULL)
-		throw("resultset.writeBlock", "Panic! lower value seems to be higher than the actual size!");
+		throwRS("resultset.writeBlock", "Panic! lower value seems to be higher than the actual size!");
 
 	/* initialise all column BUN pointers */
 	for (i = 0; i < rs->columnCount; i++) {
@@ -1246,7 +1250,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 			cs = cs->nextSet;
 
 			if (cs == NULL)
-				throw("resultset.writeBlock", "Panic! lower value seems to be higher than the actual size!");
+				throwRS("resultset.writeBlock", "Panic! lower value seems to be higher than the actual size!");
 			/* initialise all column BUN pointers */
 			for (i = 0; i < rs->columnCount; i++) {
 				col = cs->columns[i];
@@ -1263,7 +1267,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 			col = cs->columns[i];
 			/* write value */
 			p = (ptr)BUNtail(col->bat, col->bun);
-			if (!p) throw("resultset.writeBlock", "Illegal tail value pointer: NULL");
+			if (!p) throwRS("resultset.writeBlock", "Illegal tail value pointer: NULL");
 
 @= MX-writeNull
 			if (@1) {
@@ -1338,7 +1342,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	if (bytes) {
 		return(MAL_SUCCEED);
 	} else {
-		throw("resultset.writeBlock", "Error while writing to the stream");
+		throwIO("resultset.writeBlock", "Error while writing to the stream");
 	}
 }
 
@@ -1352,9 +1356,9 @@ str RSgetLength(int* retval, int* handle) {
 	resultset* rs;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.getLength", tmp, RSBgetResultSet(&rs, handle));
 	if (!rs->columnSet.complete)
-		throw("resultset.getLength", "Unable to serialise a non-complete ResultSet");
+		throwRS("resultset.getLength", "Unable to get length of a non-complete ResultSet");
 
 	*retval = rs->length;
 	return(MAL_SUCCEED);
@@ -1371,7 +1375,7 @@ str RSsetBlockSize(int* retval, int* handle, int size) {
 	resultset* rs;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.setBlockSize", tmp, RSBgetResultSet(&rs, handle));
 	/* is this useful?  I don't see any problems now
 	if (!rs->columnSet.complete)
 		return(throwMessage("resultset.setBlockSize", "Unable to serialise a non-complete ResultSet"));
@@ -1396,9 +1400,9 @@ str RShasNextPart(int* retval, int* handle) {
 	resultset* rs;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.hasNextPart", tmp, RSBgetResultSet(&rs, handle));
 	if (!rs->columnSet.complete)
-		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
+		rethrow("resultset.hasNextPart", tmp, RSsetComplete(rs));
 
 	if (rs->blocksize > 0) {
 		*retval = rs->pos < rs->length ? ((rs->length - rs->pos) / rs->blocksize) + 1 : 0;
@@ -1425,9 +1429,9 @@ str RSwriteNextPart(int* retval, int* handle) {
 	resultset* rs;
 	str tmp;
 
-	resolveHandle(&rs, handle);
+	rethrow("resultset.writeNextPart", tmp, RSBgetResultSet(&rs, handle));
 	if (!rs->columnSet.complete)
-		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
+		rethrow("resultset.writeNextPart", tmp, RSsetComplete(rs));
 
 	if (rs->pos < rs->length) {
 		if (rs->blocksize == 0) {
@@ -1441,17 +1445,16 @@ str RSwriteNextPart(int* retval, int* handle) {
 			if (upper > rs->length) upper = rs->length;
 		}
 	} else {
-		throw("resultset.writeNextPart", "No next part, all rows already serialised");
+		throwRS("resultset.writeNextPart", "No next part, all rows already serialised");
 	}
 
 	if (rs->pos == 0) {
 		/* write header */
-		if ((tmp = RSwriteHeader(&hbytes, handle)) != MAL_SUCCEED) return(tmp);
+		rethrow("resultset.writeNextPart", tmp, RSwriteHeader(&hbytes, handle));
 	}
 
 	/* write block of results */
-	if ((tmp = RSwriteBlock(&bbytes, handle, &upper, &lower)) != MAL_SUCCEED)
-		return(tmp);
+	rethrow("resultset.writeNextPart", tmp, RSwriteBlock(&bbytes, handle, &upper, &lower));
 
 	*retval = hbytes + bbytes;
 	return(MAL_SUCCEED);
