@@ -70,7 +70,7 @@ for the enclosing call.
     ...
 catch IOerror;
     print("input error on reading password");
-raise FATALerror:= "Can;t handle it";
+raise FATALerror:= "Can't handle it";
 exit IOerror;
 @end example
 
@@ -112,14 +112,46 @@ during the exection.
 #ifndef _MAL_EXCEPTION_H
 #include "mal_instruction.h"
 /*VARARGS*/
-mal_export str throwException(str nme, str fcn, char *format, ...);
+mal_export str  throwException(str nme, str fcn, char *format, ...);
 mal_export str  raiseException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export str appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
 mal_export str locateException(MalBlkPtr mb, int pc, str oldmsg);
-mal_export void showException(MalBlkPtr mb, int pc, str name, str msg);
+mal_export void  showException(MalBlkPtr mb, int pc, str name, str msg);
 
 #define MALEXCEPTION "MALexception"
 #define throwMessage(Fcn,Msg)   throwException(MALEXCEPTION,Fcn,"%s",Msg)
+/* Fabian's convenience `tools' */
+mal_export str  stackException(str prev, str fcn, char *format, ...);
+#define throw(TPE, FCN, MSG) \
+	return(throwException(TPE, FCN, "%d %s", __LINE__, MSG));
+#define throwf(TPE, FCN, FMT, ARG) \
+	return(throwException(TPE, FCN, FMT, ARG));
+#define throwf2(TPE, FCN, FMT, ARG1, ARG2) \
+	return(throwException(TPE, FCN, FMT, ARG1, ARG2));
+#define throwf3(TPE, FCN, FMT, ARG1, ARG2, ARG3) \
+	return(throwException(TPE, FCN, FMT, ARG1, ARG2, ARG3));
+#define rethrow(FCN, TMP, PRV) \
+	if ((TMP = stackException(PRV, FCN, "%d", __LINE__)) != MAL_SUCCEED) { \
+		GDKfree(PRV); \
+		return(TMP); \
+	}
+#define throwIllArg(FCN, MSG) \
+	throw("IllegalArgumentException", FCN, MSG);
+#define throwIllArgf(FCN, FMT, ARG) \
+	throwf("IllegalArgumentException", FCN, FMT, ARG);
+#define throwOutOfBnds(FCN, MSG) \
+	throw("OutOfBoundsException", FCN, MSG);
+#define throwOutOfBndsf(FCN, FMT, ARG) \
+	throwf("OutOfBoundsException", FCN, FMT, ARG);
+#define throwIO(FCN, MSG) \
+	throw("IOException", FCN, MSG);
+#define throwIOf(FCN, FMT, ARG) \
+	throwf("IOException", FCN, FMT, ARG);
+#define throwMal(FCN, MSG) \
+	throw("MALException", FCN, MSG);
+#define throwMalf(FCN, FMT, ARG) \
+	throwf("MALException", FCN, FMT, ARG);
+
 #endif /*  _MAL_EXCEPTION_H*/
 
 @-
@@ -166,18 +198,39 @@ to be raised.
 @c
 /*VARARGS*/
 str throwException(str nme, str fcn, char *format, ...){
-        char message[GDKMAXERRLEN];
-        int len = strlen(MALexception)+1;
-        va_list ap;
+	char message[GDKMAXERRLEN];
+	int len = strlen(MALexception)+1;
+	va_list ap;
 
-    sprintf(message,"%s:%s:",nme,fcn);
-    len= strlen(message);
-        va_start(ap, format);
-        vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap);
-        va_end(ap);
+	sprintf(message,"%s:%s:",nme,fcn);
+	len= strlen(message);
+	va_start(ap, format);
+	vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap);
+	va_end(ap);
 
-        return GDKstrdup(message);
+	return GDKstrdup(message);
 }
+
+/**
+ * Appends the given format stuff to a previous message.  If the message
+ * is empty (MAL_SUCCEED), the same message is returned immediately.
+ */
+str stackException(str prev, str fcn, char* format, ...) {
+	char message[GDKMAXERRLEN];
+	int len;
+	va_list ap;
+
+	/* don't do anything if the previous message was no Exception */
+	if (prev == MAL_SUCCEED) return(prev);
+
+	len = sprintf(message, "%s\nat %s:", prev, fcn);
+	va_start(ap, format);
+	vsnprintf(message + len, GDKMAXERRLEN - (len + 2), format, ap);
+	va_end(ap);
+
+	return(GDKstrdup(message));
+}
+
 str raiseException(MalBlkPtr mb, int pc, str name, str msg){
     return appendException(mb,pc,name,msg,"");
 }
