@@ -1,3 +1,4 @@
+# vim:ts=4:sw=4:tw=110:ft=c
 @' The contents of this file are subject to the MonetDB Public
 @' License Version 1.0 (the "License"); you may not use this file
 @' except in compliance with the License. You may obtain a copy of
@@ -1479,9 +1480,8 @@ str RSfromString(str* src, int *len, resultset* retval) {
  */
 int RStoString(str* retval, int* len, ptr handle) {
 	resultset* rs;
-	str tmp;
 
-	if ((tmp = RSBgetResultSet(&rs, handle)) != MAL_SUCCEED) {
+	if (RSBgetResultSet(&rs, handle) != MAL_SUCCEED) {
 		if (*retval == NULL) *retval = GDKmalloc(sizeof(str) * 4);
 		strcpy(*retval, "NULL");
 		return(*len = 4);
