@@ -299,16 +299,14 @@ fi
 AC_SUBST(MEL)
 AM_CONDITIONAL(COMPILE_MEL, test x$cross_compiling != xyes -a "x$have_mel" = xauto)
 
-if test x$cross_compiling != xyes; then
-AM_CONDITIONAL(NOT_WIN32, true)
-else
+AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
+
 case "$host_os" in
 *mingw*)
 AM_CONDITIONAL(NOT_WIN32, false);;
 *)
 AM_CONDITIONAL(NOT_WIN32, true);;
 esac
-fi
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
