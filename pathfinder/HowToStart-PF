@@ -148,7 +148,7 @@ A sample of other useful configure options is:
                            "no"  = system-specific C/C++ compiler,
                            <other-compiler-name>)
   --with-gxx=<compiler>   which C++ compiler to use
-  --with-bits=<#bits>     specify number of bits (32 or 64)
+  --enable-bits=<#bits>     specify number of bits (32 or 64)
 Use the --help option of configure to find out more about configure
 options.
 
@@ -257,12 +257,12 @@ Installation" above.
 In case the install- (i.e., prefix-) directories of MonetDB and
 Pathfinder are identical, simply call
 
- Mserver --dbinit='module(pathfinder,mapi); pfstart();'
+ Mserver --dbinit='module(mapi,pathfinder); mapi_start(); pfstart();'
 
 In case you use different install- (i.e., prefix-) directories for MonetDB
 and Pathfinder, call
 
- Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<pathfinder-prefix>/lib/MonetDB --dbinit="module(pathfinder,mapi); pfstart();"
+ Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<pathfinder-prefix>/lib/MonetDB --dbinit="module(mapi,pathfinder); mapi_start(); pfstart();"
 
 Then, in a second shell, set up the same environment to prepare the following steps:
 
@@ -282,7 +282,7 @@ There are two alternatives:
 
 2) In a second shell, start a MapiClient by simply calling
 
-    MapiClient
+    MapiClient -lmil
 
    and then give the same MIL command as above:
 
