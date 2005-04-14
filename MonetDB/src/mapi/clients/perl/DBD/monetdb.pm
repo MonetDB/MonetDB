@@ -499,19 +499,11 @@ SQL
 
 sub tables {
     my ($dbh, @args) = @_;
-    my $mapi = $dbh->{monetdb_connection};
 
-    my @table_list;
+    # TODO: !! warn: 0 CLEARED by call to fetchall_arrayref method
+    return $dbh->SUPER::tables( @args ) if $dbh->{monetdb_language} eq 'sql';
 
-    my $hdl = MapiLib::mapi_query($mapi, ($dbh->{monetdb_language} ne 'sql') ? 'ls;' : 'SELECT name FROM tables;');
-    die MapiLib::mapi_error_str($mapi) if MapiLib::mapi_error($mapi);
-
-    while (MapiLib::mapi_fetch_row($hdl)) {
-	push @table_list, MapiLib::mapi_fetch_field($hdl, 0);
-    }
-    return MapiLib::mapi_error($mapi)
-      ? undef
-	: @table_list;
+    return eval{ @{$dbh->selectcol_arrayref('ls();')} };
 }
 
 
