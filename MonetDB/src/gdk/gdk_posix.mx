@@ -354,7 +354,7 @@ char *MT_heapbase = NULL;
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
-#ifdef HAVE_SEMPHORE_H
+#ifdef HAVE_SEMAPHORE_H
 #include <semaphore.h>
 #endif
 
