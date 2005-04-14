@@ -1,15 +1,15 @@
 # recursive MAL calls 
 
 function simple(i:int, lim:int, s:str):flt;
-printf("i=%d ",i);
-printf("lim=%d ",lim);
-printf("str=%s\n",s);
+io.printf("i=%d ",i);
+io.printf("lim=%d ",lim);
+io.printf("str=%s\n",s);
 	i:= i+1;
 barrier	v:= i<lim;
-	z:= simple(i,lim,s);
+	z:= user.simple(i,lim,s);
 exit	v;
 	r:= 3.14:flt;
 	return r;
 end simple;
 
-r:= simple(0,2,"hello");
+r:= user.simple(0,2,"hello");

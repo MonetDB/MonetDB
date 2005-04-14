@@ -75,12 +75,12 @@ stdout of test 'test_90` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	wa_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
     mil.line("#test mark and number primitives\n");	# 4 MILline ($6:void)<-($7:str)
-    mil.line("var b:= new(str,int);");	# 5 MILline ($8:void)<-($9:str)
+    mil.line("var b:= bbp.new(str,int);");	# 5 MILline ($8:void)<-($9:str)
     b := bbp.new("nil:str",nil:int);	# 6 CMDBATnew (b:bat[:str,:int])<-($11:str)($12:int)
     mil.line("b.insert(\"the\",1);");	# 7 MILline ($13:void)<-($14:str)
     ca_a := bat.insert(b,"the",1);	# 8 BKCinsert_bun (ca_a:bat[:str,:int])<-(b:bat[:str,:int])($16:str)($17:int)

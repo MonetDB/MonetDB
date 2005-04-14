@@ -1,8 +1,8 @@
 #testing exceptions raised in the kernel
 
-b:= new(:int,:int);
-z:= find(b,0);
-print("should not come here anymore");
+b:= bbp.new(:int,:int);
+z:= algebra.find(b,0);
+io.print("should not come here anymore");
 catch MALexception;
-	print("catched the exception");
+	io.print("catched the exception");
 exit MALexception;

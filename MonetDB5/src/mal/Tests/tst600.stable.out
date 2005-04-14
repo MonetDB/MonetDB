@@ -27,7 +27,7 @@ stdout of test 'tst600` in directory 'src/mal` itself:
 #box.close(chest);
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     chest := box.open("chest");	# 1 BOXopen (chest:any)<-($2:str)
     pi := 3.417;	# 2  (pi:flt)<-($4:flt)
     box.deposit("chest","pi",pi);	# 3 BOXdeposit ($5:void)<-($2:str)($6:str)(pi:flt)

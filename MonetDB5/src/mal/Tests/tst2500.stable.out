@@ -23,7 +23,7 @@ stdout of test 'tst2500` in directory 'src/mal` itself:
 #	redo always;
 #exit always;
 #end;
-factory Admin.random(seed:int):int;	# 0  (random:int)<-(seed:int)
+factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
 barrier always := true;	# 2  (always:bit)<-($4:bit) jump 7
     i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-($5:int)(i:int)
@@ -38,10 +38,10 @@ end random;	# 8
 #r2:= random(1);
 #print(r2);
 #
-function Admin.main():int;	# 0  (main:int)
-    r1 := Admin.random(1);	# 1  (r1:int)<-($2:int)
+function user.main():int;	# 0  (main:int)
+    r1 := user.random(1);	# 1  (r1:int)<-($2:int)
     io.print(r1);	# 2 IOprint_val ($3:int)<-(r1:int)
-    r2 := Admin.random(1);	# 3  (r2:int)<-($2:int)
+    r2 := user.random(1);	# 3  (r2:int)<-($2:int)
     io.print(r2);	# 4 IOprint_val ($5:int)<-(r2:int)
 end main;	# 5  
 [ 125 ]

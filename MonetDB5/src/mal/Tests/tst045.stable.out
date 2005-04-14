@@ -19,11 +19,11 @@ stdout of test 'tst045` in directory 'src/mal` itself:
 #function dummy();
 #	pi:=0:int;
 #end dummy;
-function Admin.dummy():void;	# 0  (dummy:void)
+function user.dummy():void;	# 0  (dummy:void)
     pi := 0:int;	# 1  (pi:int)<-($2:int)
 end dummy;	# 2  
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     pi := 3.147:flt;	# 1  (pi:flt)<-($2:flt)
 end main;	# 2  
 

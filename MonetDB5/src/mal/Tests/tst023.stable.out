@@ -25,7 +25,7 @@ function transaction.help():void;	# 0  (help:void)
 end help;	# 4  
 #transaction.help();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     transaction.help();	# 1  ($1:void)
 end main;	# 2  
 [ "added function to specific module" ]

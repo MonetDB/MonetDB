@@ -16,15 +16,15 @@ stdout of test 'tst160` in directory 'src/mal` itself:
 #function l():ptr;
 #    return l:= 0:ptr;
 #end l;
-function Admin.l():ptr;	# 0  (l:ptr)
+function user.l():ptr;	# 0  (l:ptr)
     return l := 0:ptr;	# 1  (l:ptr)<-($1:ptr)
 end l;	# 2  
 #
 #z:= l();
 #print(z);
 #
-function Admin.main():int;	# 0  (main:int)
-    z := Admin.l();	# 1  (z:ptr)
+function user.main():int;	# 0  (main:int)
+    z := user.l();	# 1  (z:ptr)
     io.print(z);	# 2 IOprint_val ($2:int)<-(z:ptr)
 end main;	# 3  
 [ 0 ]

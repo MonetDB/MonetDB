@@ -1,29 +1,29 @@
 # the first of a series of BBP test cases
 
-print("Start test");
+io.print("Start test");
 bbp.open();
-b:= new(:int,:int);
-insert(b,1,2);
+b:= bbp.new(:int,:int);
+bat.insert(b,1,2);
 bbp.deposit("myfirstbat",b);
 c:= bbp.take("myfirstbat");
 catch MALexception;
-	print(MALexception);
+	io.print(MALexception);
 exit MALexception;
-print("FIRST ROUND");
-print(c);
+io.print("FIRST ROUND");
+io.print(c);
 bbp.close();
 # at the end of the session, the BBP should have discarded
 # the temporary bats of the user
 bbp.open();
-print("SECOND ROUND");
+io.print("SECOND ROUND");
 y:=bbp.getObjects();
-print(y);
+io.print(y);
 v:= bbp.take("myfirstbat");
 catch MALexception;
-	print(MALexception);
+	io.print(MALexception);
 exit MALexception;
-print("got myfirstbat?");
-print(v);
+io.print("got myfirstbat?");
+io.print(v);
 x:= bbp.getNames();
-print(x);
+io.print(x);
 bbp.close();

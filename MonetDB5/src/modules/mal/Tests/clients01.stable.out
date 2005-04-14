@@ -29,7 +29,7 @@ stdout of test 'clients01` in directory 'src/modules/mal` itself:
 #
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     d := clients.getId();	# 1 CLTgetClientId (d:int)
     io.print(d);	# 2 IOprint_val ($2:int)<-(d:int)
     s := clients.getScenario();	# 3 CLTgetScenario (s:str)
@@ -44,8 +44,8 @@ end main;	# 9
 #---------------------------------#
 # client		info		  # name
 # str		str		  # type
-#---------------------------------#
-[ "user",	  "Admin"	  ]
+#-------------------------#
+[ "user",	  "user"  ]
 [ "password",	  ""		  ]
 [ "permission",	  "0"		  ]
 [ "scenario",	  "mal"		  ]
@@ -54,8 +54,8 @@ end main;	# 9
 #-------------------------#
 # client	users		  # name
 # int	str		  # type
-#-------------------------#
-[ 0,	  "Admin"	  ]
+#-----------------#
+[ 0,	  "user"  ]
 
 # 22:47:34 >  
 # 22:47:34 >  Done.

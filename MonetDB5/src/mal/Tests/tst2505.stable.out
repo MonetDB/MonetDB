@@ -24,7 +24,7 @@ stdout of test 'tst2505` in directory 'src/mal` itself:
 #	i:= i % 32767;
 #	return i;
 #end;
-factory Admin.random(seed:int):int;	# 0  (random:int)<-(seed:int)
+factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
     i := calc.*(125,i);	# 2 CALCbinaryMULintint (i:int)<-($3:int)(i:int)
     i := calc.%(i,32767);	# 3 CALCbinaryMODintint (i:int)<-(i:int)($4:int)
@@ -43,14 +43,14 @@ end random;	# 8
 #r2:= random(2);
 #print(r2);
 #
-function Admin.main():int;	# 0  (main:int)
-    r1 := Admin.random(1);	# 1  (r1:int)<-($2:int)
+function user.main():int;	# 0  (main:int)
+    r1 := user.random(1);	# 1  (r1:int)<-($2:int)
     io.print(r1);	# 2 IOprint_val ($3:int)<-(r1:int)
-    r2 := Admin.random(34);	# 3  (r2:int)<-($5:int)
+    r2 := user.random(34);	# 3  (r2:int)<-($5:int)
     io.print(r2);	# 4 IOprint_val ($6:int)<-(r2:int)
-    r2 := Admin.random(2);	# 5  (r2:int)<-($7:int)
+    r2 := user.random(2);	# 5  (r2:int)<-($7:int)
     io.print(r2);	# 6 IOprint_val ($8:int)<-(r2:int)
-    r2 := Admin.random(2);	# 7  (r2:int)<-($7:int)
+    r2 := user.random(2);	# 7  (r2:int)<-($7:int)
     io.print(r2);	# 8 IOprint_val ($9:int)<-(r2:int)
 end main;	# 9  
 [ 125 ]

@@ -1,24 +1,24 @@
 #testing the BAT partition table
-a1:= new(:void,:int);
-setSequenceBase(a1,0@0);
-a2:= new(:void,:int);
-setSequenceBase(a2,10@0);
-a3:= new(:void,:int);
-setSequenceBase(a3,20@0);
+a1:= bbp.new(:void,:int);
+bat.setSequenceBase(a1,0@0);
+a2:= bbp.new(:void,:int);
+bat.setSequenceBase(a2,10@0);
+a3:= bbp.new(:void,:int);
+bat.setSequenceBase(a3,20@0);
 
-barrier (go,i):= newRange(0);
+barrier (go,i):= mal.newRange(0);
 	bat.insert(a1,nil,i);
 	bat.insert(a2,nil,i);
 	bat.insert(a3,nil,i);
-	redo (go,i):= nextElement(1,10);
+	redo (go,i):= mal.nextElement(1,10);
 exit (go,i);
-print(a1);
-print(a2);
-print(a3);
+io.print(a1);
+io.print(a2);
+io.print(a3);
 
 # add the stuff to the BPT and dump it
 barrier idx:= partitions.newIterator();
-	print(idx);
+	io.print(idx);
 	redo idx:= partitions.hasMoreElements();
 exit idx;
 
@@ -28,8 +28,8 @@ partitions.deposit(a1,a2);
 partitions.deposit(a1,a3);
 partitions.dump();
 barrier idx:= partitions.newIterator();
-	print(idx);
+	io.print(idx);
 	b:= partitions.take(idx);
-	print(b);
+	io.print(b);
 	redo idx:= partitions.hasMoreElements();
 exit idx;

@@ -3,4 +3,4 @@ function dummy(a:int{unsafe=true,sorted=true},b:int{sequence=true}):int{dense=tr
 	return dummy;
 end dummy;
 
-t:= dummy(a{sorted=true},b{sequence=true});
+t:= user.dummy(a{sorted=true},b{sequence=true});

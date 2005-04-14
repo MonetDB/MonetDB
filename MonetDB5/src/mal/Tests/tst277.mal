@@ -1,2 +1,2 @@
-b:= new(:void,:int);
-r:= reverse(b);
+b:= bbp.new(:void,:int);
+r:= bat.reverse(b);

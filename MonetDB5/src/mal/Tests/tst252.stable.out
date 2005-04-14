@@ -26,7 +26,7 @@ stdout of test 'tst252` in directory 'src/mal` itself:
 #
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:str,:str);	# 1 CMDBATnew (b:bat[:str,:str])<-($2:str)($3:str)
     bat.insert(b,"one","red");	# 2 BKCinsert_bun ($4:bat[:str,:str])<-(b:bat[:str,:str])($5:str)($6:str)
     bat.insert(b,"two","green");	# 3 BKCinsert_bun ($7:bat[:str,:str])<-(b:bat[:str,:str])($8:str)($9:str)

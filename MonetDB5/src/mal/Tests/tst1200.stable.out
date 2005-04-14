@@ -580,7 +580,7 @@ stdout of test 'tst1200` in directory 'src/mal` itself:
 ###line 756 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
 ##
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     rule_jan := mtime.rule("1st MON from start of JAN@01:15");	# 1 MTIMErule_fromstr (rule_jan:rule)<-($2:str)
     rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");	# 2 MTIMErule_fromstr (rule_mar:rule)<-($4:str)
     rule_apr := mtime.rule("last THU on or before aPr 1@01:15");	# 3 MTIMErule_fromstr (rule_apr:rule)<-($6:str)

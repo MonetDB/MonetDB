@@ -97,7 +97,7 @@ stdout of test 'tst4900` in directory 'src/optimizer` itself:
 #	top := t98;
 #	io.table(t97,top);
 #end f1;
-function Admin.f1(s:str):void;	# 0  (f1:void)<-(s:str)
+function user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t1 := bbp.bind("TREC2003_test_priors_8x32318");	# 1 CMDbbpbind (t1:bat[:void,:dbl])<-($3:str)
     t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid (t2:bat[:void,:int])<-($5:int)($6:int)($7:int)($8:int)
     t3 := array.grid(1,100,10560,0);	# 3 ARRAYgrid (t3:bat[:void,:int])<-($7:int)($10:int)($11:int)($8:int)
@@ -188,7 +188,7 @@ end f1;	# 77
 !ERROR: 't82' may not be used before being set in f1[83]
 !ERROR: 't82' may not be used before being set in f1[83]
 Optimizer factorize failed
-factory Admin.f1(s:str):void;	# 0  (f1:void)<-(s:str)
+factory user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t1 := bbp.bind("TREC2003_test_priors_8x32318");	# 1 CMDbbpbind (t1:bat[:void,:dbl])<-($3:str)
     t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid (t2:bat[:void,:int])<-($5:int)($6:int)($7:int)($8:int)
     t3 := array.grid(1,100,10560,0);	# 3 ARRAYgrid (t3:bat[:void,:int])<-($7:int)($10:int)($11:int)($8:int)
@@ -318,7 +318,7 @@ end f1;	# 123
 !ERROR: 't82' may not be used before being set in f1[83]
 !ERROR: 't82' may not be used before being set in f1[83]
 Optimizer factorize optimizer failed
-factory Admin.f1(s:str):void;	# 0  (f1:void)<-(s:str)
+factory user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t1 := bbp.bind("TREC2003_test_priors_8x32318");	# 1 CMDbbpbind (t1:bat[:void,:dbl])<-($3:str)
     t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid (t2:bat[:void,:int])<-($5:int)($6:int)($7:int)($8:int)
     t3 := array.grid(1,100,10560,0);	# 3 ARRAYgrid (t3:bat[:void,:int])<-($7:int)($10:int)($11:int)($8:int)
@@ -442,10 +442,10 @@ barrier always := true;	# 113  (always:bit)<-($153:bit) jump 122
     redo always;	# 121  (always:bit) jump 114
 exit always;	# 122  (always:bit)
 end f1;	# 123  
-function Admin.main():int;	# 0  (main:int)
-    mdb.showFunction("Admin","f1");	# 1 MDBshowFunction3 ($6:void)<-($2:str)($3:str)
+function user.main():int;	# 0  (main:int)
+    mdb.showFunction("user","f1");	# 1 MDBshowFunction3 ($6:void)<-($2:str)($3:str)
 end main;	# 2  
-factory Admin.f1(s:str):void;
+factory user.f1(s:str):void;
     t1 := bbp.bind("TREC2003_test_priors_8x32318");
     t2 := array.grid(132000,8,1,0);
     t3 := array.grid(1,100,10560,0);

@@ -23,7 +23,7 @@ stdout of test 'tst110` in directory 'src/mal` itself:
 #exit	v;
 #	k:= 3;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     i := 0;	# 1  (i:int)<-($2:int)
     v := false;	# 2  (v:bit)<-($4:bit)
 barrier v := v;	# 3  (v:bit)<-(v:bit) jump 6

@@ -1,19 +1,19 @@
 # test blocking nils
 	i:=1;
 barrier b:= i>0;
-	printf("ok entered first\n");
+	io.printf("ok entered first\n");
 exit b;
 barrier b:= i<=0;
-	printf("wrong entered second\n");
+	io.printf("wrong entered second\n");
 exit b;
 
 
 	j:=nil:int;
 barrier b:= j>0;
-	printf("wrong entered third\n");
+	io.printf("wrong entered third\n");
 exit b;
 barrier b:= j<=0;
-	printf("wrong entered fourth\n");
+	io.printf("wrong entered fourth\n");
 exit b;
 
 

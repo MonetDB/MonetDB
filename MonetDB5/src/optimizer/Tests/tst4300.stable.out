@@ -42,246 +42,30 @@ stdout of test 'tst4300` in directory 'src/optimizer` itself:
 ##print(i);
 #
 #
-function Admin.main():int;	# 0  (main:int)
-    mdb.mdb();	# 1 MDBtoggle ($1:void)
-    b := bbp.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-($3:lng)($4:lng)
-barrier (k,v):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (k:bit)(v:lng)<-($7:lng) jump 6
-    bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-    redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-exit (k,v);	# 6  (k:bit)(v:lng)
-    i := algebra.count(b);	# 7 ALGcount_bat (i:lng)<-(b:bat[:lng,:lng])
-    io.print(i);	# 8 IOprint_val ($12:int)<-(i:lng)
-    c := algebra.select(b,0:lng,9:lng);	# 9 ALGselect (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])($7:lng)($14:lng)
-    i := algebra.count(c);	# 10 ALGcount_bat (i:lng)<-(c:bat[:lng,:lng])
-    io.print(i);	# 11 IOprint_val ($15:int)<-(i:lng)
-    d := algebra.select(b,0:lng,49:lng);	# 12 ALGselect (d:bat[:lng,:lng])<-(b:bat[:lng,:lng])($7:lng)($17:lng)
-    i := algebra.count(d);	# 13 ALGcount_bat (i:lng)<-(d:bat[:lng,:lng])
-    io.print(i);	# 14 IOprint_val ($18:int)<-(i:lng)
-    zz := algebra.joinPath(b,c,d);	# 15 QOTjoinPath (zz:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])(d:bat[:lng,:lng])
-    i := algebra.count(zz);	# 16 ALGcount_bat (i:lng)<-(zz:bat[:lng,:lng])
-    io.print(i);	# 17 IOprint_val ($20:int)<-(i:lng)
-end main;	# 18  
-#mdb     b := bbp.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-($3:lng)($4:lng)
-mdb>#mdb barrier (k,v):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (k:bit)(v:lng)<-($7:lng) jump 6
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb     bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-mdb>#mdb     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 5 RNGnextElement_lng (k:bit)(v:lng)<-($9:lng)($10:lng) jump 4
-mdb>#mdb exit (k,v);	# 6  (k:bit)(v:lng)
-mdb>#mdb     i := algebra.count(b);	# 7 ALGcount_bat (i:lng)<-(b:bat[:lng,:lng])
-mdb>#mdb     io.print(i);	# 8 IOprint_val ($12:int)<-(i:lng)
-mdb>[ 100 ]
-#mdb     c := algebra.select(b,0:lng,9:lng);	# 9 ALGselect (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])($7:lng)($14:lng)
-mdb>#mdb     i := algebra.count(c);	# 10 ALGcount_bat (i:lng)<-(c:bat[:lng,:lng])
-mdb>#mdb     io.print(i);	# 11 IOprint_val ($15:int)<-(i:lng)
-mdb>[ 10 ]
-#mdb     d := algebra.select(b,0:lng,49:lng);	# 12 ALGselect (d:bat[:lng,:lng])<-(b:bat[:lng,:lng])($7:lng)($17:lng)
-mdb>#mdb     i := algebra.count(d);	# 13 ALGcount_bat (i:lng)<-(d:bat[:lng,:lng])
-mdb>#mdb     io.print(i);	# 14 IOprint_val ($18:int)<-(i:lng)
-mdb>[ 50 ]
-#mdb     zz := algebra.joinPath(b,c,d);	# 15 QOTjoinPath (zz:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])(d:bat[:lng,:lng])
-mdb>#mdb     i := algebra.count(zz);	# 16 ALGcount_bat (i:lng)<-(zz:bat[:lng,:lng])
-mdb>#mdb     io.print(i);	# 17 IOprint_val ($20:int)<-(i:lng)
-mdb>[ 10 ]
-#mdb end main;	# 18  
-mdb>
-# 11:08:31 >  
-# 11:08:31 >  Done.
-# 11:08:31 >  
+function user.main():int;	# 0  (main:int)
+    b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
+barrier (k,v):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (k:bit)(v:lng)<-($6:lng) jump 5
+    bat.insert(b,v,v);	# 3 BKCinsert_bun ($7:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
+    redo (k,v):= mal.nextElement(1:lng,100:lng);	# 4 RNGnextElement_lng (k:bit)(v:lng)<-($8:lng)($9:lng) jump 3
+exit (k,v);	# 5  (k:bit)(v:lng)
+    i := algebra.count(b);	# 6 ALGcount_bat (i:lng)<-(b:bat[:lng,:lng])
+    io.print(i);	# 7 IOprint_val ($11:int)<-(i:lng)
+    c := algebra.select(b,0:lng,9:lng);	# 8 ALGselect (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])($6:lng)($13:lng)
+    i := algebra.count(c);	# 9 ALGcount_bat (i:lng)<-(c:bat[:lng,:lng])
+    io.print(i);	# 10 IOprint_val ($14:int)<-(i:lng)
+    d := algebra.select(b,0:lng,49:lng);	# 11 ALGselect (d:bat[:lng,:lng])<-(b:bat[:lng,:lng])($6:lng)($16:lng)
+    i := algebra.count(d);	# 12 ALGcount_bat (i:lng)<-(d:bat[:lng,:lng])
+    io.print(i);	# 13 IOprint_val ($17:int)<-(i:lng)
+    zz := algebra.joinPath(b,c,d);	# 14 QOTjoinPath (zz:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])(d:bat[:lng,:lng])
+    i := algebra.count(zz);	# 15 ALGcount_bat (i:lng)<-(zz:bat[:lng,:lng])
+    io.print(i);	# 16 IOprint_val ($19:int)<-(i:lng)
+end main;	# 17  
+[ 100 ]
+[ 10 ]
+[ 50 ]
+[ 10 ]
+
+# 14:51:22 >  
+# 14:51:22 >  Done.
+# 14:51:22 >  
 

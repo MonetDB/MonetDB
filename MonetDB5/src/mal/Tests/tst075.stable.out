@@ -18,7 +18,7 @@ stdout of test 'tst075` in directory 'src/mal` itself:
 #	return (a,b);
 #
 #end swap;
-function Admin.swap(x:str,y:str) (a:str,b:str);	# 0  (a:str)(b:str)<-(x:str)(y:str)
+function user.swap(x:str,y:str) (a:str,b:str);	# 0  (a:str)(b:str)<-(x:str)(y:str)
     a := y;	# 1  (a:str)<-(y:str)
     b := x;	# 2  (b:str)<-(x:str)
     return (a,b);	# 3  (a:str)(b:str)
@@ -28,8 +28,8 @@ end swap;	# 4
 #print(x);
 #print(y);
 #
-function Admin.main():int;	# 0  (main:int)
-    (x,y):= Admin.swap("world","hello");	# 1  (x:str)(y:str)<-($3:str)($4:str)
+function user.main():int;	# 0  (main:int)
+    (x,y):= user.swap("world","hello");	# 1  (x:str)(y:str)<-($3:str)($4:str)
     io.print(x);	# 2 IOprint_val ($5:int)<-(x:str)
     io.print(y);	# 3 IOprint_val ($6:int)<-(y:str)
 end main;	# 4  

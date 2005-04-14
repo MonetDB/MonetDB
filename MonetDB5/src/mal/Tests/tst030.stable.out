@@ -19,7 +19,7 @@ stdout of test 'tst030` in directory 'src/mal` itself:
 #	print(w);
 #exit	w;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
 barrier w := calc.>(1,0);	# 1 CALCcompGTintint (w:bit)<-($2:int)($3:int) jump 4
     w := false;	# 2  (w:bit)<-($4:bit)
     io.print(w);	# 3 IOprint_val ($5:int)<-(w:bit)

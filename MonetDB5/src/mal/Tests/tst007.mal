@@ -1,6 +1,6 @@
 # A collection of forloops, which should not execute
 barrier	H := batoperatie;
-	Tail:= bat.fetch(b,H);
+	Tail:= algebra.fetch(b,H);
 	#body
 redo 	H;
 exit	H;
@@ -9,9 +9,9 @@ exit	H;
 # de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot
 # 'randen' van het blok. (redo L, leave L)
 # een while loop
-barrier L := bat.hasMoreElements(b);
-	H:= bat.head(b);
-	v:= bat.nextElement(b);
+barrier L := chopper.hasMoreElements(b);
+	H:= chopper.head(b);
+	v:= chopper.nextElement(b);
 redo	L;
 exit	L;
 	
@@ -41,7 +41,7 @@ exit	FT;
 barrier	FTE:= booleanexpr;
 	# thenpart
 exit	FTE;
-barrier FS:= not(FTE);
+barrier FS:= batcalc.not(FTE);
 	#elsepart
 exit	FS;
 

@@ -29,7 +29,7 @@ stdout of test 'tst109` in directory 'src/mal` itself:
 !ERROR: exit-label 'v' doesnot match 't' in main[7]
 !ERROR: label 't' not in guarded block in main[8]
 !ERROR: exit-label 't' without begin-label in main[9]
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     i := 0;	# 1  (i:int)<-($2:int)
 barrier v := 1;	# 2  (v:int)<-($4:int) jump 7
     leave v;	# 3  (v:int) jump 7

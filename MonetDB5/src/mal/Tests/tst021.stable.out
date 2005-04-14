@@ -19,7 +19,7 @@ stdout of test 'tst021` in directory 'src/mal` itself:
 #d2:= "1998-12-01":date;
 #print(d2);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     d1 := mtime.date("1998-12-01");	# 1 MTIMEdate_fromstr (d1:date)<-($2:str)
     io.print(d1);	# 2 IOprint_val ($3:int)<-(d1:date)
     d2 := 1998-12-01;	# 3  (d2:date)<-($5:date)

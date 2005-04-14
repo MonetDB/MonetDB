@@ -18,7 +18,7 @@ stdout of test 'tst077` in directory 'src/mal` itself:
 #        return (a,x);
 #
 #end swap;
-function Admin.swap(x:bat[:any$1,:int],y:bat[:int,:int]) (a:str,b:bat[:any$1,:int]);	# 0  (a:str)(b:bat[:any$1,:int])<-(x:bat[:any$1,:int])(y:bat[:int,:int])
+function user.swap(x:bat[:any$1,:int],y:bat[:int,:int]) (a:str,b:bat[:any$1,:int]);	# 0  (a:str)(b:bat[:any$1,:int])<-(x:bat[:any$1,:int])(y:bat[:int,:int])
     a := "done";	# 1  (a:str)<-($5:str)
     return (a,x);	# 2  (a:str)(x:bat[:any$1,:int])
 end swap;	# 3  
@@ -32,12 +32,12 @@ end swap;	# 3
 #print(y);
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     X := bbp.new(:int,:int);	# 1 CMDBATnew (X:bat[:int,:int])<-($2:int)($3:int)
     bat.insert(X,1,1);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(X:bat[:int,:int])($5:int)($5:int)
     Y := bbp.new(:int,:int);	# 3 CMDBATnew (Y:bat[:int,:int])<-($7:int)($8:int)
     bat.insert(Y,2,2);	# 4 BKCinsert_bun ($9:bat[:int,:int])<-(Y:bat[:int,:int])($10:int)($10:int)
-    (x,y):= Admin.swap(X,Y);	# 5  (x:str)(y:bat[:int,:int])<-(X:bat[:int,:int])(Y:bat[:int,:int])
+    (x,y):= user.swap(X,Y);	# 5  (x:str)(y:bat[:int,:int])<-(X:bat[:int,:int])(Y:bat[:int,:int])
     io.print(x);	# 6 IOprint_val ($13:int)<-(x:str)
     io.print(y);	# 7 IOprint_val ($14:int)<-(y:bat[:int,:int])
 end main;	# 8  

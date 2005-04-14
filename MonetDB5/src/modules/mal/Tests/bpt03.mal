@@ -1,16 +1,16 @@
 #testing the BAT partition table
-a1:= new(:void,:int);
-setSequenceBase(a1,0@0);
-a2:= new(:void,:int);
-setSequenceBase(a2,10@0);
-a3:= new(:void,:int);
-setSequenceBase(a3,20@0);
+a1:= bbp.new(:void,:int);
+bat.setSequenceBase(a1,0@0);
+a2:= bbp.new(:void,:int);
+bat.setSequenceBase(a2,10@0);
+a3:= bbp.new(:void,:int);
+bat.setSequenceBase(a3,20@0);
 
-barrier (go,i):= newRange(0);
-	insert(a1,nil,i);
-	insert(a2,nil,i);
-	insert(a3,nil,i);
-	redo (go,i):= nextElement(1,10);
+barrier (go,i):= mal.newRange(0);
+	bat.insert(a1,nil,i);
+	bat.insert(a2,nil,i);
+	bat.insert(a3,nil,i);
+	redo (go,i):= mal.nextElement(1,10);
 exit (go,i);
 
 # now really add it
@@ -21,7 +21,7 @@ partitions.dump();
 
 #retrieve a range
 barrier (idx,b):= partitions.newIterator(a1,12@0,24@0);
-	print(idx);
-	print(b);
+	io.print(idx);
+	io.print(b);
 	redo (idx,b):= partitions.hasMoreElements(a1,12@0,24@0);
 exit (idx,b);

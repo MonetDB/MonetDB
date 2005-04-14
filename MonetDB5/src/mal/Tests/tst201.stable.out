@@ -174,7 +174,7 @@ stdout of test 'tst201` in directory 'src/mal` itself:
 ##b.reverse.like(" fox").print;
 ##quit;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     _v0 := calc.oid(20000000);	# 1 CALCint2oid (_v0:oid)<-($2:int)
     _v1 := calc.setoid(_v0);	# 2 CALCsetoidInc (_v1:oid)<-(_v0:oid)
     _v2 := bbp.new(:str,:int);	# 3 CMDBATnew (_v2:bat[:str,:int])<-($5:str)($6:int)
@@ -288,7 +288,7 @@ end main;	# 94
 [ 1 ]
 [ 4 ]
 [ nil ]
-[ "MALexception:Admin.main[29]:algebra.find:can not find element\n" ]
+[ "MALexception:user.main[29]:algebra.find:can not find element\n" ]
 #-------------------------#
 # h		tmp_4	  # name
 # str		int	  # type

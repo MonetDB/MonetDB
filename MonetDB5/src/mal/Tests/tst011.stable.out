@@ -20,7 +20,7 @@ stdout of test 'tst011` in directory 'src/mal` itself:
 #exit 	k:=11;
 #	print(k);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
 barrier k := 12;	# 1  (k:int)<-($2:int) jump 5
     io.print(k);	# 2 IOprint_val ($3:int)<-(k:int)
     leave k;	# 3  (k:int) jump 5

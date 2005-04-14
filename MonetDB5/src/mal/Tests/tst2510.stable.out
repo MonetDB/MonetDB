@@ -24,7 +24,7 @@ stdout of test 'tst2510` in directory 'src/mal` itself:
 #    #print("exception");
 ##exit MALexception;
 #end tryme;
-factory Admin.tryme():void;	# 0  (tryme:void)
+factory user.tryme():void;	# 0  (tryme:void)
     bat.setWriteMode(b);	# 1 BKCsetWriteMode ($1:bat[:any,:any])<-(b:bat[:any,:any])
 barrier always := true;	# 2  (always:bit)<-($4:bit) jump 5
     yield always;	# 3  (always:bit)
@@ -35,8 +35,8 @@ end tryme;	# 6
 !ERROR: 'b' may not be used before being set in tryme[1]
 #tryme();    # shouldn;t hang when you forget the exception
 #
-function Admin.main():int;	# 0  (main:int)
-    Admin.tryme();	# 1  ($1:void)
+function user.main():int;	# 0  (main:int)
+    user.tryme();	# 1  ($1:void)
 end main;	# 2  
 !ERROR: MALexception:factory.call:Factory contains errors
 #

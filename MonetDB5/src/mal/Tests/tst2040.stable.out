@@ -62,8 +62,8 @@ stdout of test 'tst2040` in directory 'src/mal` itself:
 #	pWait:= false;
 #	printf("await dead of producer/consumer\n");
 #
-!ERROR: 'printf' undefined in Admin.main[29]
-!ERROR: MALresolve:Admin.main[40]:type mismatch bat[:any,:int] := int
+!ERROR: 'io.printf' undefined in user.main[29]
+!ERROR: MALresolve:user.main[40]:type mismatch bat[:any,:int] := int
 !ERROR: barrier 'b' should be of type bit or number in main[14]
 !ERROR: barrier 'b' should be of type bit or number in main[30]
 !ERROR: 'i' may not be used before being set in main[14]
@@ -73,7 +73,7 @@ stdout of test 'tst2040` in directory 'src/mal` itself:
 !ERROR: 'b' used outside declaration scope in main[32]
 !ERROR: 'i' may not be used before being set in main[33]
 !ERROR: 'i' used outside declaration scope in main[40]
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     cWait := true;	# 1  (cWait:bit)<-($2:bit)
     pWait := true;	# 2  (pWait:bit)<-($2:bit)
 thread producer;	# 3  (producer:any) jump 20
@@ -102,7 +102,7 @@ barrier cWait;	# 24  (cWait:bit) jump 28
     alarm.sleep(1);	# 26 ALARMsleep ($26:void)<-($11:int)
     redo cWait;	# 27  (cWait:bit) jump 25
 exit cWait;	# 28  (cWait:bit)
-    printf("consume element %d\n",i);	# 29  unknown ($27:any)<-($28:str)(i:bat[:any,:int])
+    io.printf("consume element %d\n",i);	# 29  unknown ($27:any)<-($28:str)(i:bat[:any,:int])
 barrier b := batcalc.==(i,0);	# 30 CMDcmpEQcst (b:bat[:any,:bit])<-(i:bat[:any,:int])($17:int) jump 32
     leave consumer;	# 31  (consumer:any) jump 39
 exit b;	# 32  (b:bat[:any,:bit])

@@ -60,13 +60,13 @@ stdout of test 'test_04` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	qa_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
     mil.line("# test correctness of semijoin\n");	# 4 MILline ($6:void)<-($7:str)
     b := bbp.new(nil:int,nil:int);	# 5 CMDBATnew (b:bat[:int,:int])<-($9:int)($9:int)
-    mil.line("var c:= new(int,int);");	# 6 MILline ($10:void)<-($11:str)
+    mil.line("var c:= bbp.new(int,int);");	# 6 MILline ($10:void)<-($11:str)
     c := bbp.new(nil:int,nil:int);	# 7 CMDBATnew (c:bat[:int,:int])<-($9:int)($9:int)
     mil.line("b.insert(0,0);");	# 8 MILline ($13:void)<-($14:str)
     ca_a := bat.insert(b,0,0);	# 9 BKCinsert_bun (ca_a:bat[:int,:int])<-(b:bat[:int,:int])($16:int)($16:int)

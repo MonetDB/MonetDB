@@ -42,7 +42,7 @@ stdout of test 'part00` in directory 'src/optimizer` itself:
 #	print("hello");
 #	print(a);
 #end qry;
-function Admin.qry(a:bat[:void,:any]):void;	# 0  (qry:void)<-(a:bat[:void,:any])
+function user.qry(a:bat[:void,:any]):void;	# 0  (qry:void)<-(a:bat[:void,:any])
     io.print("hello");	# 1 IOprint_val ($2:int)<-($3:str)
     io.print(a);	# 2 IOprint_val ($4:int)<-(a:bat[:void,:any])
 end qry;	# 3  
@@ -57,7 +57,7 @@ replace first=2 last=2
 variable replacement 'a' instructions 2-2  lifespan 2-2
 first=6 last=6 
 first=7 last=6 
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     a1 := bbp.new(:void,:int);	# 1 CMDBATnew (a1:bat[:void,:int])<-($2:void)($3:int)
     bat.setSequenceBase(a1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a1:bat[:void,:int])($5:oid)
     a2 := bbp.new(:void,:int);	# 3 CMDBATnew (a2:bat[:void,:int])<-($7:void)($8:int)
@@ -74,15 +74,15 @@ exit (go,i);	# 12  (go:bit)(i:int)
     partitions.deposit(a1,a2);	# 14 BPTdeposit2 ($26:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
     partitions.deposit(a1,a3);	# 15 BPTdeposit2 ($27:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
     partitions.dump();	# 16 BPTdump ($28:void)
-    mdb.showFunction("Admin","qry");	# 17 MDBshowFunction3 ($32:void)<-($30:str)($31:str)
+    mdb.showFunction("user","qry");	# 17 MDBshowFunction3 ($32:void)<-($30:str)($31:str)
     io.print("run experiment");	# 18 IOprint_val ($33:int)<-($34:str)
-    Admin.qry(a1);	# 19  ($35:void)<-(a1:bat[:void,:int])
+    user.qry(a1);	# 19  ($35:void)<-(a1:bat[:void,:int])
 end main;	# 20  
 ptop=3 plimit=1024
 [0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-1
 [1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-1
 [2] bid=13 pid=15 f=20, l=30 prv=1 nxt=-1 cap=-1
-function Admin.qry(a:bat[:void,:any]):void;
+function user.qry(a:bat[:void,:any]):void;
     io.print("hello");
 barrier ($5,$6):= partitions.newIterator(a);
     io.print($6);

@@ -16,13 +16,13 @@ stdout of test 'tst038` in directory 'src/mal` itself:
 #function tst(b:bat);
 #	insert(b,"hello",1);
 #end tst;
-function Admin.tst(b:bat[:any,:any]):void;	# 0  (tst:void)<-(b:bat[:any,:any])
+function user.tst(b:bat[:any,:any]):void;	# 0  (tst:void)<-(b:bat[:any,:any])
     bat.insert(b,"hello",1);	# 1 BKCinsert_bun ($2:bat[:str,:int])<-(b:bat[:any,:any])($3:str)($4:int)
 end tst;	# 2  
 #function tst2(b:bat[:any,:any]);
 #	insert(b,"hello",1);
 #end tst2;
-function Admin.tst2(b:bat[:any,:any]):void;	# 0  (tst2:void)<-(b:bat[:any,:any])
+function user.tst2(b:bat[:any,:any]):void;	# 0  (tst2:void)<-(b:bat[:any,:any])
     bat.insert(b,"hello",1);	# 1 BKCinsert_bun ($2:bat[:str,:int])<-(b:bat[:any,:any])($3:str)($4:int)
 end tst2;	# 2  
 #
@@ -31,9 +31,9 @@ end tst2;	# 2
 ##The call to tst2 fails at runtime
 #tst2(b);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
-    Admin.tst2(b);	# 2  ($4:void)<-(b:bat[:int,:str])
+    user.tst2(b);	# 2  ($4:void)<-(b:bat[:int,:str])
 end main;	# 3  
 
 # 07:58:43 >  

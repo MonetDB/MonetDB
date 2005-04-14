@@ -20,7 +20,7 @@ stdout of test 'tst610` in directory 'src/mal` itself:
 #    gl:=bbp.getLRefCount();
 #    print(g,gr,gl);
 #end refs;
-function Admin.refs():void;	# 0  (refs:void)
+function user.refs():void;	# 0  (refs:void)
     g := bbp.getNames();	# 1 CMDbbpNames (g:bat[:int,:str])
     gr := bbp.getRefCount();	# 2 CMDbbpRefCount (gr:bat[:int,:int])
     gl := bbp.getLRefCount();	# 3 CMDbbpLRefCount (gl:bat[:int,:int])
@@ -67,26 +67,26 @@ end refs;	# 5
 #print("BAT was removed from the box");
 #exit MALexception;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     bat.insert(b,23,32);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($6:int)
     bat.setName(b,"tasks");	# 3 BKCsetName ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:str)
     bat.setPersistent(b);	# 4 BKCsetPersistent ($9:bat[:int,:int])<-(b:bat[:int,:int])
     io.print("open box");	# 5 IOprint_val ($10:int)<-($11:str)
     bbp.open();	# 6 CMDbbpopen ($12:void)
-    Admin.refs();	# 7  ($13:void)
+    user.refs();	# 7  ($13:void)
     t := bbp.bind("tasks");	# 8 CMDbbpbind (t:any)<-($8:str)
     io.print(t);	# 9 IOprint_val ($15:int)<-(t:any)
     bbp.release(t);	# 10 CMDbbpreleaseBAT ($16:void)<-(t:any)
-    Admin.refs();	# 11  ($17:void)
+    user.refs();	# 11  ($17:void)
     io.print(t);	# 12 IOprint_val ($18:int)<-(t:any)
 catch MALexception;	# 13  (MALexception:any) jump 15
     io.print("BAT was released");	# 14 IOprint_val ($20:int)<-($21:str)
 exit MALexception;	# 15  (MALexception:any)
     t := bbp.bind("tasks");	# 16 CMDbbpbind (t:any)<-($8:str)
-    Admin.refs();	# 17  ($22:void)
+    user.refs();	# 17  ($22:void)
     bbp.destroy(t,true);	# 18 CMDbbpdestroyBAT ($23:void)<-(t:any)($24:bit)
-    Admin.refs();	# 19  ($25:void)
+    user.refs();	# 19  ($25:void)
     io.print(t);	# 20 IOprint_val ($26:int)<-(t:any)
 catch MALexception;	# 21  (MALexception:any) jump 23
     io.print("BAT was destroyed");	# 22 IOprint_val ($27:int)<-($28:str)

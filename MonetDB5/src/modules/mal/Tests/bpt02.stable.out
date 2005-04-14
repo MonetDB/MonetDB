@@ -39,7 +39,7 @@ stdout of test 'bpt02` in directory 'src/modules/mal` itself:
 #partitions.dump();
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     a1 := bbp.new(:void,:int);	# 1 CMDBATnew (a1:bat[:void,:int])<-($2:void)($3:int)
     bat.setSequenceBase(a1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a1:bat[:void,:int])($5:oid)
     a2 := bbp.new(:void,:int);	# 3 CMDBATnew (a2:bat[:void,:int])<-($7:void)($8:int)
@@ -64,7 +64,7 @@ ptop=2 plimit=1024
 !ERROR: MALexception:partitions.deposit:BAT group unknown
 #
 
-# 14:35:38 >  
-# 14:35:38 >  Done.
-# 14:35:38 >  
+# 20:08:53 >  
+# 20:08:53 >  Done.
+# 20:08:53 >  
 

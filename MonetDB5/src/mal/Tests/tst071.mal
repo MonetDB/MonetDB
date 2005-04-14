@@ -4,8 +4,8 @@ function swap(x:int,y:int)(a:int,b:int);
 	return(a,b);
 end swap;
 
-(x,y):= swap(1,2);
-print(x);
-print(y);
-a:= swap(3,4);
-print(a);
+(x,y):= user.swap(1,2);
+io.print(x);
+io.print(y);
+a:= user.swap(3,4);
+io.print(a);

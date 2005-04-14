@@ -8,30 +8,23 @@ stdout of test 'no.037` in directory 'tests/BugReports` itself:
 #script:no.037.milS
 
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# >Number:         37
-# >Category:       Mserver
-# >Synopsis:       built-in bats
-# >Confidential:   no
-# >Severity:       serious
-# >Priority:       high
-# >Responsible:    mk
-# >State:          feedback
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Tue Oct  7 17:45:11 1997
-# >Originator:     mk
-# >Organization:
-# >Release:        970101
-# >Environment:
+# Monet Database Server V4.7.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugReports
+# Visit http://monetdb.cwi.nl/ for further information.
+## Monet Mil to Mal compiler
+#include mil;
+#include mil_scenario;
+#include mil_system_procs;
+## Copyright (c) 2001-2004, CWI. All rights reserved.
 # 
 # >Description:
 # "mem" is not properly handled (like  "cpu")
 # 
-
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("# >Number:         37\n");	# 1 MILline ($31:void)<-($32:str)
     mil.line("# >Category:       Mserver\n");	# 2 MILline ($33:void)<-($34:str)
     mil.line("# >Synopsis:       built-in bats\n");	# 3 MILline ($35:void)<-($36:str)
@@ -76,7 +69,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("ls();");	# 42 MILline ($111:void)<-($112:str)
     aa_a := mil_sys_procs.ls();	# 43  (aa_a:void)
     mil.line("mem.print();");	# 44 MILline ($114:void)<-($115:str)
-    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 45 MILline ($116:void)<-($117:str)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); bat.printf(\"#~EndVariableOutput~#\\n\");");	# 45 MILline ($116:void)<-($117:str)
     ca_a := io.printf("#~BeginVariableOutput~#\n");	# 46 IOprint_str (ca_a:int)<-($119:str)
     da_a := status.memStatistics();	# 47 SYSmemStatistics (da_a:bat[:str,:int])
     ea_a := io.print(da_a);	# 48 IOprint_val (ea_a:int)<-(da_a:bat[:str,:int])
@@ -138,15 +131,15 @@ end main;	# 52
 # str		int		  # type
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  2027520	  ]
-[ "ordblks",	  20		  ]
-[ "smblks",	  81		  ]
-[ "hblkhd",	  1052672	  ]
-[ "hblks",	  1		  ]
+[ "arena",	  2297856	  ]
+[ "ordblks",	  23		  ]
+[ "smblks",	  92		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
-[ "fsmblks",	  2088		  ]
-[ "uordblks",	  1902928	  ]
-[ "fordblks",	  124592	  ]
+[ "fsmblks",	  2368		  ]
+[ "uordblks",	  2080528	  ]
+[ "fordblks",	  217328	  ]
 #~EndVariableOutput~#
 #quit();
 

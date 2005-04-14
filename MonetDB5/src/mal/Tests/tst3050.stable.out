@@ -16,7 +16,7 @@ stdout of test 'tst3050` in directory 'src/mal` itself:
 #function dummy(a:int{unsafe,sorted},b:int{sequence}):int{dense};
 #	return dummy;
 #end dummy;
-function Admin.dummy(a:int{sorted=true,unsafe=true},b:int{sequence=true}):int;	# 0  (dummy:int)<-(a:int)(b:int)
+function user.dummy(a:int{sorted=true,unsafe=true},b:int{sequence=true}):int;	# 0  (dummy:int)<-(a:int)(b:int)
     return dummy{dense=true};	# 1  (dummy:int)
 end dummy;	# 2  
 #
@@ -24,8 +24,8 @@ end dummy;	# 2
 #
 !ERROR: 'a' may not be used before being set in main[1]
 !ERROR: 'b' may not be used before being set in main[1]
-function Admin.main():int;	# 0  (main:int)
-    t := Admin.dummy(a{sorted=true},b{sequence=true});	# 1  (t:int)<-(a:int)(b:int)
+function user.main():int;	# 0  (main:int)
+    t := user.dummy(a{sorted=true},b{sequence=true});	# 1  (t:int)<-(a:int)(b:int)
 end main;	# 2  
 
 # 08:01:17 >  

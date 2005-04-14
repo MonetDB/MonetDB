@@ -16,7 +16,7 @@ stdout of test 'tst907` in directory 'src/mal` itself:
 #	print(base);
 #	return base;
 #end one;
-function Admin.one(base:int):int;	# 0  (one:int)<-(base:int)
+function user.one(base:int):int;	# 0  (one:int)<-(base:int)
     io.print(base);	# 1 IOprint_val ($2:int)<-(base:int)
     return base;	# 2  (base:int)
 end one;	# 3  
@@ -25,7 +25,7 @@ end one;	# 3
 #	print(base);
 #	return base;
 #end three;
-function Admin.three(base:int,x:int,y:int):int;	# 0  (three:int)<-(base:int)(x:int)(y:int)
+function user.three(base:int,x:int,y:int):int;	# 0  (three:int)<-(base:int)(x:int)(y:int)
     io.print(base);	# 1 IOprint_val ($4:int)<-(base:int)
     return base;	# 2  (base:int)
 end three;	# 3  
@@ -36,7 +36,7 @@ end three;	# 3
 #        pg_a := calc.int(og_a);
 #        return pg_a;
 #end pow;
-function Admin.pow(base:int,raise:int):int;	# 0  (pow:int)<-(base:int)(raise:int)
+function user.pow(base:int,raise:int):int;	# 0  (pow:int)<-(base:int)(raise:int)
     mg_a := calc.dbl(base);	# 1 CALCint2dbl (mg_a:dbl)<-(base:int)
     ng_a := calc.dbl(raise);	# 2 CALCint2dbl (ng_a:dbl)<-(raise:int)
     og_a := calc.*(mg_a,ng_a);	# 3 CALCbinaryMULdbldbl (og_a:dbl)<-(mg_a:dbl)(ng_a:dbl)
@@ -58,10 +58,10 @@ end pow;	# 6
 #z:=multiplex.tactics("pow",b,2);
 #print(z);
 #
-function Admin.main():int;	# 0  (main:int)
-    k := Admin.one(1);	# 1  (k:int)<-($2:int)
-    l := Admin.three(1,2,3);	# 2  (l:int)<-($2:int)($4:int)($5:int)
-    p := Admin.pow(1,2);	# 3  (p:int)<-($2:int)($4:int)
+function user.main():int;	# 0  (main:int)
+    k := user.one(1);	# 1  (k:int)<-($2:int)
+    l := user.three(1,2,3);	# 2  (l:int)<-($2:int)($4:int)($5:int)
+    p := user.pow(1,2);	# 3  (p:int)<-($2:int)($4:int)
     b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
     bat.insert(b,1,1);	# 5 BKCinsert_bun ($10:bat[:int,:int])<-(b:bat[:int,:int])($2:int)($2:int)
     io.print("do multiplex three test");	# 6 IOprint_val ($11:int)<-($12:str)

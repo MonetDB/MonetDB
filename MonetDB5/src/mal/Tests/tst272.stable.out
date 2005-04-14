@@ -5,9 +5,7 @@ stdout of test 'tst272` in directory 'src/mal` itself:
 # 21:45:33 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=47702 --set sql_port=53059 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst272.mal </dev/null
 # 21:45:33 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# Monet Database Server V4.7.1
+# Monet Database Server V4.7.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
@@ -50,7 +48,7 @@ stdout of test 'tst272` in directory 'src/mal` itself:
 #print(s);
 #print(t,s);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     profiler.activate("ticks");	# 1 CMDactivateProfiler ($1:void)<-($2:str)
     profiler.activate("statement");	# 2 CMDactivateProfiler ($3:void)<-($4:str)
     profiler.setFilter("*","insert");	# 3 CMDsetFilterProfiler ($5:void)<-($6:str)($7:str)

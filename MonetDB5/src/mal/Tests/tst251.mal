@@ -2,17 +2,17 @@
 # The first and foremost BAT operations
 
 # String iterator stuff
-c:= new(:int,:str);
-insert(c,1,"hello");
-insert(c,2,"brave");
-insert(c,3,"world");
-insert(c,4,"");
-x:= str(nil);
-insert(c,5,x);
-insert(c,6,"!");
-print(c);
-barrier (v,h,ts):= newIterator(c);
-	printf("[%d,",h);
-	printf("%s]\n",ts);
-	redo (v,h,ts):= hasMoreElements(c);
+c:= bbp.new(:int,:str);
+bat.insert(c,1,"hello");
+bat.insert(c,2,"brave");
+bat.insert(c,3,"world");
+bat.insert(c,4,"");
+x:= calc.str(nil);
+bat.insert(c,5,x);
+bat.insert(c,6,"!");
+io.print(c);
+barrier (v,h,ts):= chopper.newIterator(c);
+	io.printf("[%d,",h);
+	io.printf("%s]\n",ts);
+	redo (v,h,ts):= chopper.hasMoreElements(c);
 exit v;

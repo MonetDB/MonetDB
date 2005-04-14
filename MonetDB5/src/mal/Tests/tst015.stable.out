@@ -31,7 +31,7 @@ stdout of test 'tst015` in directory 'src/mal` itself:
 #exit	c;
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := true;	# 1  (b:bit)<-($2:bit)
 barrier b;	# 2  (b:bit) jump 4
     io.printf("1 Correctly entered barrier\n");	# 3 IOprint_str ($3:int)<-($4:str)

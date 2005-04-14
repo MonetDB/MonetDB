@@ -3,21 +3,21 @@ i := 1;
 f := 3.14;
 c := 'a';
 b:= true;
-bb:= new(:void,:str);
+bb:= bbp.new(:void,:str);
 
-st:= getType(s); printf("string %d\n",st);
-it:= getType(i); printf("int %d\n",it);
-ft:= getType(f); printf("flt %d\n",ft);
-ct:= getType(c); printf("chr %d\n",ct);
-bt:= getType(b); printf("bit %d\n",bt);
-bbt:= getType(bb); printf("bat %d\n",bbt);
+st:= inspect.getType(s); io.printf("string %d\n",st);
+it:= inspect.getType(i); io.printf("int %d\n",it);
+ft:= inspect.getType(f); io.printf("flt %d\n",ft);
+ct:= inspect.getType(c); io.printf("chr %d\n",ct);
+bt:= inspect.getType(b); io.printf("bit %d\n",bt);
+bbt:= inspect.getType(bb); io.printf("bat %d\n",bbt);
 
 # get them as strings
 v:= "";
-v:= getTypeName(st); printf("string %s\n",v);
-v:= getTypeName(it); printf("int %s\n",v);
-v:= getTypeName(ft); printf("flt %s\n",v);
-v:= getTypeName(ct); printf("chr %s\n",v);
-v:= getTypeName(bt); printf("bit %s\n",v);
-v:= getTypeName(bbt); printf("bat %s\n",v);
+v:= inspect.getTypeName(st); io.printf("string %s\n",v);
+v:= inspect.getTypeName(it); io.printf("int %s\n",v);
+v:= inspect.getTypeName(ft); io.printf("flt %s\n",v);
+v:= inspect.getTypeName(ct); io.printf("chr %s\n",v);
+v:= inspect.getTypeName(bt); io.printf("bit %s\n",v);
+v:= inspect.getTypeName(bbt); io.printf("bat %s\n",v);
 

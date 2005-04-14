@@ -204,7 +204,7 @@ mil.deposit("M_SQRT1_2",M_SQRT1_2);
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
-	if( !isAuthorized("Admin"))
+	if( !isAuthorized("user") && !isAdministrator(getClient()))
 		return throwMessage("const.@1","unauthorized access to 'mil' box");
 @-
 @= insertBox

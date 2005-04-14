@@ -36,7 +36,7 @@ end joinPath;	# 4
 #
 #showFunction();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     a := bbp.new(:int,:int);	# 1 CMDBATnew (a:bat[:int,:int])<-($5:int)($6:int)
     b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
     c := bbp.new(:int,:int);	# 3 CMDBATnew (c:bat[:int,:int])<-($11:int)($12:int)
@@ -44,7 +44,7 @@ function Admin.main():int;	# 0  (main:int)
     h := algebra.join(g,c);	# 5 ALGjoin (h:bat[:int,:int])<-(g:bat[:int,:int])(c:bat[:int,:int])
     mdb.showFunction();	# 6 MDBshowFunction ($15:void)
 end main;	# 7  
-function Admin.main():int;
+function user.main():int;
     a := bbp.new(:int,:int);
     b := bbp.new(:int,:int);
     c := bbp.new(:int,:int);

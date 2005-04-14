@@ -1,22 +1,21 @@
 # the multiplex code blocks.
 
-b:= new(:int,:int);
-barrier (v,i):= newRange(0:int);
-	insert(b,i,i);
-	redo (v,i):= nextElement(1:int,10:int);
+b:= bbp.new(:int,:int);
+barrier (v,i):= mal.newRange(0:int);
+	bat.insert(b,i,i);
+	redo (v,i):= mal.nextElement(1:int,10:int);
 exit (v,i);
-c:= copy(b);
-print(c);
-x:= b+c;
-print(x);
-x:= b+1:int;
-print(x);
-x:= b*c;
-print(x);
-y:= b==b;
-print(y);
-y:= b==x;
-print(y);
-z:= not(y);
-print(z);
-
+c:= algebra.copy(b);
+io.print(c);
+x:= batcalc.+(b,c);
+io.print(x);
+x:= batcalc.+(b,1:int);
+io.print(x);
+x:= batcalc.*(b,c);
+io.print(x);
+y:= batcalc.==(b,b);
+io.print(y);
+y:= batcalc.==(b,x);
+io.print(y);
+z:= batcalc.not(y);
+io.print(z);

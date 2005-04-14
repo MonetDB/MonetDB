@@ -19,7 +19,7 @@ stdout of test 'tst501` in directory 'src/mal` itself:
 #	i:= i+1;
 #	return i;
 #end simple;
-function Admin.simple(i:int):int;	# 0  (simple:int)<-(i:int)
+function user.simple(i:int):int;	# 0  (simple:int)<-(i:int)
     i := calc.+(i,1);	# 1 CALCbinaryADDintint (i:int)<-(i:int)($2:int)
     return i;	# 2  (i:int)
 end simple;	# 3  
@@ -27,9 +27,9 @@ end simple;	# 3
 #k:= 0;
 #r:= simple(k);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     k := 0;	# 1  (k:int)<-($2:int)
-    r := Admin.simple(k);	# 2  (r:int)<-(k:int)
+    r := user.simple(k);	# 2  (r:int)<-(k:int)
 end main;	# 3  
 
 # 08:01:22 >  

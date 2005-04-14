@@ -4,6 +4,6 @@ function swap(x:str,y:str) (a:str,b:str);
 	return (a,b);
 end swap;
 
-(x,y):= swap("world","hello");
-print(x);
-print(y);
+(x,y):= user.swap("world","hello");
+io.print(x);
+io.print(y);

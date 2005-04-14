@@ -126,12 +126,12 @@ stdout of test 'crackers08` in directory 'src/modules/mal` itself:
 ##printf("select %d ",l);
 ##printf("%d\n",h);
 #t0:= alarm.usec();
-#c:= select(b,l,h);
+#c:= algebra.select(b,l,h);
 #t1:= alarm.usec();
 #d0:= t1-t0;
-#printf("#select %d\n",d0);
+#io.printf("#select %d\n",d0);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     l := 0;	# 2  (l:int)<-($5:int)
 barrier (v,i):= mal.newRange(0:int);	# 3 RNGnewRange_int (v:bit)(i:int)<-($8:int) jump 8
@@ -222,20 +222,20 @@ exit (v,i);	# 8  (v:bit)(i:int)
     io.printf("#select %d\n",d0);	# 88 IOprint_formatted_lng ($47:int)<-($44:str)(d0:lng)
 end main;	# 89  
 max 2147480021 min 1210
-#copy 38382
-#crack init 10566
-#crack 40671
-#crack 20169
-#crack 10352
-#crack 4799
-#max 19377
-#min 19168
-#select 36689
-#select 28998
-#select 24952
-#select 22975
+#copy 40399
+#crack init 11211
+#crack 41294
+#crack 20267
+#crack 10085
+#crack 5171
+#max 18629
+#min 19609
+#select 39036
+#select 30239
+#select 25435
+#select 23235
 
-# 22:47:38 >  
-# 22:47:38 >  Done.
-# 22:47:38 >  
+# 19:36:35 >  
+# 19:36:35 >  Done.
+# 19:36:35 >  
 

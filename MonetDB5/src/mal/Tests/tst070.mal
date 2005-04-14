@@ -1,4 +1,4 @@
 # parsing operations with multi-assignments
 
-(x,y):= point(z:int);
-(initial:str,surname:str):= getName();
+(x,y):= user.point(z:int);
+(initial:str,surname:str):= user.getName();

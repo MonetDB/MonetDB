@@ -28,7 +28,7 @@ stdout of test 'tst267` in directory 'src/mal` itself:
 #g:= array.*(a,b);
 #print(g);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     a := bbp.new(:void,:int);	# 1 CMDBATnew (a:bat[:void,:int])<-($2:void)($3:int)
     bat.setSequenceBase(a,0:oid);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a:bat[:void,:int])($5:oid)
     b := bbp.new(:void,:int);	# 3 CMDBATnew (b:bat[:void,:int])<-($7:void)($8:int)

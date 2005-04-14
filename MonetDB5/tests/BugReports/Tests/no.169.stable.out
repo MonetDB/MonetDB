@@ -82,11 +82,11 @@ stdout of test 'no.169` in directory 'tests/BugReports` itself:
 #	mil.line("quit();");
 #	ea_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("# \n");	# 1 MILline ($1:void)<-($2:str)
     mil.line("#>Number:         169\n");	# 2 MILline ($3:void)<-($4:str)
     mil.line("#>Category:       Mserver\n");	# 3 MILline ($5:void)<-($6:str)
-    mil.line("#>Synopsis:       str(nil).print hangs\n");	# 4 MILline ($7:void)<-($8:str)
+    mil.line("#>Synopsis:       calc.str(nil).print hangs\n");	# 4 MILline ($7:void)<-($8:str)
     mil.line("#>Confidential:   no\n");	# 5 MILline ($9:void)<-($10:str)
     mil.line("#>Severity:       critical\n");	# 6 MILline ($11:void)<-($12:str)
     mil.line("#>Priority:       high\n");	# 7 MILline ($13:void)<-($14:str)
@@ -104,7 +104,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("#>Description:\n");	# 19 MILline ($37:void)<-($38:str)
     mil.line("#On the medusa (IRIX646.5 64bit) the following\n");	# 20 MILline ($39:void)<-($40:str)
     mil.line("#script hangs Mserver:\n");	# 21 MILline ($41:void)<-($42:str)
-    mil.line("#> str(nil).print;\n");	# 22 MILline ($43:void)<-($44:str)
+    mil.line("#> calc.str(nil).print;\n");	# 22 MILline ($43:void)<-($44:str)
     mil.line("#[ nil ]\n");	# 23 MILline ($45:void)<-($46:str)
     mil.line("#>How-To-Repeat:\n");	# 24 MILline ($47:void)<-($48:str)
     mil.line("#>Fix:\n");	# 25 MILline ($49:void)<-($50:str)

@@ -35,7 +35,7 @@ stdout of test 'no.150` in directory 'tests/BugReports` itself:
 # Mclient
 # > module("jabberwocky");
 # 
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("# >Number:         150\n");	# 1 MILline ($1:void)<-($2:str)
     mil.line("# >Category:       MIL\n");	# 2 MILline ($3:void)<-($4:str)
     mil.line("# >Synopsis:       Mserver crashes on non-existing module.\n");	# 3 MILline ($5:void)<-($6:str)

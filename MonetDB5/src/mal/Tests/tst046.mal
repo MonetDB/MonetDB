@@ -1,16 +1,16 @@
 #testing flt/lng/int coercions
 
-b:=new(:int,:int);
-insert(b,1,1);
-insert(b,2,4);
-insert(b,3,9);
-print(b);
+b:= bbp.new(:int,:int);
+bat.insert(b,1,1);
+bat.insert(b,2,4);
+bat.insert(b,3,9);
+io.print(b);
 
-f:= flt(b);
-print(f);
+f:= batcalc.flt(b);
+io.print(f);
 
-l:=lng(b);
-print(l);
+l:= batcalc.lng(b);
+io.print(l);
 
-i:= int(f);
-print(i);
+i:= batcalc.int(f);
+io.print(i);

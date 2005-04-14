@@ -158,7 +158,7 @@ comment "Substitute first occurrence of 'src' by
 command STRprelude()
 address strPrelude;
 
-STRprelude();	
+str.STRprelude();	
 @-
 @{
 @* Implementation Code

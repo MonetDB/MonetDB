@@ -22,7 +22,7 @@ stdout of test 'tst020` in directory 'src/mal` itself:
 #	redo l;
 #exit	l;
 #end pl;
-function Admin.pl(i:str):void;	# 0  (pl:void)<-(i:str)
+function user.pl(i:str):void;	# 0  (pl:void)<-(i:str)
     L := "something";	# 1  (L:str)<-($3:str)
     r := 0;	# 2  (r:int)<-($5:int)
 barrier l := calc.==(r,0);	# 3 CALCcompEQintint (l:bit)<-(r:int)($5:int) jump 8
@@ -36,9 +36,9 @@ end pl;	# 9
 #z:= pl(a);
 #print("done");
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     a := "hello";	# 1  (a:str)<-($2:str)
-    z := Admin.pl(a);	# 2  (z:void)<-(a:str)
+    z := user.pl(a);	# 2  (z:void)<-(a:str)
     io.print("done");	# 3 IOprint_val ($4:int)<-($5:str)
 end main;	# 4  
 [ "done" ]

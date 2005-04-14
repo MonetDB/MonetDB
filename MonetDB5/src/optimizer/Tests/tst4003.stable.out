@@ -22,7 +22,7 @@ stdout of test 'tst4003` in directory 'src/optimizer` itself:
 #e:= select(b,"hello","world");    # mapped onto one instruction
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:str,:str);	# 1 CMDBATnew (b:bat[:str,:str])<-($4:str)($5:str)
     c := bbp.new(:str,:str);	# 2 CMDBATnew (c:bat[:str,:str])<-($7:str)($8:str)
     d := algebra.select(b,"hello","world");	# 3 ALGselect (d:bat[:str,:str])<-(b:bat[:str,:str])($10:str)($11:str)

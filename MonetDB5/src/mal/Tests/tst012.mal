@@ -2,15 +2,15 @@
 
 	i:=0;
 barrier j:=i<3;
-	print(i);
+	io.print(i);
 	i:=i+1;
 	redo j:= i<3;
 exit	j;
-	print("first loop done");
+	io.print("first loop done");
 	i:=0;
 barrier j:=i<3;
-	print(i);
+	io.print(i);
 	i:=i+1;
 	redo j:= i<3;
 exit	j;
-	print("second loop done");
+	io.print("second loop done");

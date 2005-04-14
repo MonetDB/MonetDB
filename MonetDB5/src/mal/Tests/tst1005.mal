@@ -2,26 +2,26 @@
 # make sure you can bind to a BAT through the box
 
 bbp.open();
-b:= new(:int,:int);
-insert(b,1,2);
-setName(b,"myfirstlocalbat");
+b:= bbp.new(:int,:int);
+bat.insert(b,1,2);
+bat.setName(b,"myfirstlocalbat");
 c:= bbp.bind("myfirstbat");
-print(c);
+io.print(c);
 bbp.close();
 # at the end of the session, the BBP should have discarded
 # the temporary bats of the user
 bbp.open();
 v:= bbp.take("myfirstbat");
 catch MALexception;
-	print(MALexception);
+	io.print(MALexception);
 exit MALexception;
-print("v");
-print(v);
+io.print("v");
+io.print(v);
 x:= bbp.getObjects();
-print("getObjects");
-print(x);
+io.print("getObjects");
+io.print(x);
 bbp.close();
 #catch MALexception;
-	#print(MALexception);
+	#io.print(MALexception);
 #exit MALexception;
-#print("done");
+#io.print("done");

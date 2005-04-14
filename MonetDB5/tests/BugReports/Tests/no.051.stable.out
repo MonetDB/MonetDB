@@ -100,7 +100,7 @@ stdout of test 'no.051` in directory 'tests/BugReports` itself:
 #	mil.line("        return a;");
 #	return ea_a :=a;
 #end create;
-function Admin.create(b:bat[:any$1,:any$2]):bat[:any$1,:any$2];	# 0  dynamic (create:bat[:any$1,:any$2])<-(b:bat[:any$1,:any$2])
+function user.create(b:bat[:any$1,:any$2]):bat[:any$1,:any$2];	# 0  dynamic (create:bat[:any$1,:any$2])<-(b:bat[:any$1,:any$2])
     mil.line("        var a := new (oid,flt);");	# 1 MILline ($2:void)<-($3:str)
     a := bbp.new(nil:oid,nil:flt);	# 2 CMDBATnew (a:bat[:oid,:flt])<-($5:oid)($6:flt)
     mil.line("        b@batloop(){");	# 3 MILline ($7:void)<-($8:str)
@@ -137,7 +137,7 @@ end create;	# 16
 #	mil.line("quit();");
 #	na_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("# >Number:         51\n");	# 1 MILline ($1:void)<-($2:str)
     mil.line("# >Category:       MIL\n");	# 2 MILline ($3:void)<-($4:str)
     mil.line("# >Synopsis:       returns from within a batloop\n");	# 3 MILline ($5:void)<-($6:str)
@@ -184,7 +184,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("b.print();");	# 44 MILline ($87:void)<-($88:str)
     ia_a := io.print(b);	# 45 IOprint_val (ia_a:int)<-(b:bat[:oid,:flt])
     mil.line("var c := create(b);");	# 46 MILline ($90:void)<-($91:str)
-    c := Admin.create(b);	# 47  (c:bat[:oid,:flt])<-(b:bat[:oid,:flt])
+    c := user.create(b);	# 47  (c:bat[:oid,:flt])<-(b:bat[:oid,:flt])
     mil.line("b.print();");	# 48 MILline ($93:void)<-($88:str)
     ja_a := io.print(b);	# 49 IOprint_val (ja_a:int)<-(b:bat[:oid,:flt])
     mil.line("c.print();");	# 50 MILline ($95:void)<-($96:str)

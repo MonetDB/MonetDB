@@ -20,7 +20,7 @@ stdout of test 'tst820` in directory 'src/mal` itself:
 #	address_str := new(:oid,:str);
 #	address_city:= new(:oid,:str);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     person_key_name := bbp.new(:oid,:str);	# 1 CMDBATnew (person_key_name:bat[:oid,:str])<-($2:oid)($3:str)
     person_key_age := bbp.new(:oid,:int);	# 2 CMDBATnew (person_key_age:bat[:oid,:int])<-($5:oid)($6:int)
     address_str := bbp.new(:oid,:str);	# 3 CMDBATnew (address_str:bat[:oid,:str])<-($8:oid)($9:str)

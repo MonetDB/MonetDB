@@ -3,4 +3,4 @@ k:= inspect.getKind();
 m:= inspect.getModule();
 f:= inspect.getFunction();
 s:= inspect.getSignature();
-print(k,m,f,s);
+io.print(k,m,f,s);

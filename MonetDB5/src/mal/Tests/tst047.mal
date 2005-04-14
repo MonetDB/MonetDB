@@ -1,15 +1,15 @@
 #testing copying and counting reversals
 #to test reversal handling
 
-b:=new(:int,:int);
-insert(b,1,1);
-insert(b,2,4);
-insert(b,3,9);
-print(b);
-br:= reverse(b);
-print(br);
+b:= bbp.new(:int,:int);
+bat.insert(b,1,1);
+bat.insert(b,2,4);
+bat.insert(b,3,9);
+io.print(b);
+br:= bat.reverse(b);
+io.print(br);
 
-l0:= copy(b);
-print(l0);
-l1:= copy(br);
-print(l1);
+l0:= algebra.copy(b);
+io.print(l0);
+l1:= algebra.copy(br);
+io.print(l1);

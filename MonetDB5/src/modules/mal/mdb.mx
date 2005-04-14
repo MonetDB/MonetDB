@@ -35,10 +35,10 @@ will be affected by breakpoints being set.
 @mal
 module mdb;
 
-pattern mdb(b:bit):void 
+pattern start(b:bit):void 
 address MDBtoggle
 comment "Start/stop interactive debugger";
-pattern mdb():void 
+pattern start():void 
 address MDBtoggle
 comment "Start interactive debugger";
 

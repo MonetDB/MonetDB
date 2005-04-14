@@ -1,20 +1,20 @@
 # testing the heuristic rules
 # relations r(H,T) and s(H,T)
 function qry();
-r:= new(:int,:int);
+r:= bbp.new(:int,:int);
 
-sc:= copy(r);
-s:= reverse(sc);
-a:= semijoin(r,s);
-print(a);
-s:= reverse(sc);
-z:= select(s,0,2);
-print(z);
-t:= semijoin(r,s);
-z:= select(t,0,6);
-print(z);
+sc:= algebra.copy(r);
+s:= bat.reverse(sc);
+a:= algebra.semijoin(r,s);
+io.print(a);
+s:= bat.reverse(sc);
+z:= algebra.select(s,0:int,2:int);
+io.print(z);
+t:= algebra.semijoin(r,s);
+z:= algebra.select(t,0:int,6:int);
+io.print(z);
 
 
-setDebug();
-selectPushdown("Admin","qry");
+optimizer.setDebug();
+optimizer.selectPushdown("user","qry");
 end qry;

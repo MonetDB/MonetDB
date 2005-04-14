@@ -4,8 +4,8 @@
 
 function myException();
 raise	IllegalAccess:="new exception";
-	print("should have left function ");
+	io.print("should have left function ");
 end myException;
 
-	myException();
-	print("should not come here");
+	user.myException();
+	io.print("should not come here");

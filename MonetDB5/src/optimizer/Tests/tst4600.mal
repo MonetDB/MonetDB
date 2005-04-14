@@ -4,14 +4,14 @@ include sql;
 function welcome(lim:int):void;
     i:= 0;
 barrier j:= i<lim;
-    print("Welcome");
+    io.print("Welcome");
     i:= i+1;
     redo j:= i<lim;
 exit j;
 end welcome;
 
-optimizer.macroExpansion("Admin","welcome");
+optimizer.macroExpansion("user","welcome");
 
-print("test expansion");
-welcome(2);
-showFunction();
+io.print("test expansion");
+user.welcome(2);
+mdb.showFunction();

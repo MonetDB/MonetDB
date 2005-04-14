@@ -17,7 +17,7 @@ function crash():void;
 #ERROR: no iterator 'T' on stack
 	mil.line("\tprint($t);");
 	unknown:= mil.take("unknown");
-	aa_a := print(unknown);
+	aa_a := io.print(unknown);
 end crash;
 	mil.line("crash();");
-	ba_a := crash();
+	ba_a := user.crash();

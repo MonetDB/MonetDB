@@ -1,16 +1,16 @@
 #testing deletions from a BAT partition table
-a1:= new(:void,:int);
-setSequenceBase(a1,0@0);
-a2:= new(:void,:int);
-setSequenceBase(a2,10@0);
-a3:= new(:void,:int);
-setSequenceBase(a3,20@0);
+a1:= bbp.new(:void,:int);
+bat.setSequenceBase(a1,0@0);
+a2:= bbp.new(:void,:int);
+bat.setSequenceBase(a2,10@0);
+a3:= bbp.new(:void,:int);
+bat.setSequenceBase(a3,20@0);
 
-barrier (go,i):= newRange(0);
-	insert(a1,nil,i);
-	insert(a2,nil,i);
-	insert(a3,nil,i);
-	redo (go,i):= nextElement(1,10);
+barrier (go,i):= mal.newRange(0);
+	bat.insert(a1,nil,i);
+	bat.insert(a2,nil,i);
+	bat.insert(a3,nil,i);
+	redo (go,i):= mal.nextElement(1,10);
 exit (go,i);
 
 # add it
@@ -20,26 +20,26 @@ partitions.deposit(a1,a3);
 partitions.dump();
 
 # delete individuals
-print("delete 24");
+io.print("delete 24");
 partitions.delete(a1,24@0);
-print("delete 14");
+io.print("delete 14");
 partitions.delete(a1,14@0);
-print("delete 4");
+io.print("delete 4");
 partitions.delete(a1,4@0);
 
-print("check result");
+io.print("check result");
 barrier (idx,b):= partitions.newIterator(a1);
-	print(idx);
-	print(b);
+	io.print(idx);
+	io.print(b);
 	redo (idx,b):= partitions.hasMoreElements(a1);
 exit idx;
 
-print("remove a complete bat");
+io.print("remove a complete bat");
 partitions.delete(a1,a2);
-print("check result");
+io.print("check result");
 barrier (idx,b):= partitions.newIterator(a1);
-	print(idx);
-	print(b);
+	io.print(idx);
+	io.print(b);
 	redo (idx,b):= partitions.hasMoreElements(a1);
 exit idx;
 

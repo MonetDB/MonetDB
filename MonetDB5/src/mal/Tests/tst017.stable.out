@@ -21,7 +21,7 @@ stdout of test 'tst017` in directory 'src/mal` itself:
 #	b := join(b,b);
 #	print(b);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(nil:int,nil:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($2:int)
     aa_a := bat.insert(b,1,2);	# 2 BKCinsert_bun (aa_a:bat[:int,:int])<-(b:bat[:int,:int])($4:int)($5:int)
     ba_a := bat.insert(b,2,3);	# 3 BKCinsert_bun (ba_a:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($7:int)

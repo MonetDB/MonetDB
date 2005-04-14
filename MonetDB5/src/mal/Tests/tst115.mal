@@ -17,8 +17,8 @@ end doitTwice;
 
 
 a:=1;
-b:= doitOnce();
+b:= user.doitOnce();
 c:= 2;
-d:= doitTwice(3);
+d:= user.doitTwice(3);
 c:= 3;
-d:= doitTwice("wrong");
+d:= user.doitTwice("wrong");

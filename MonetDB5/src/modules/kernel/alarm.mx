@@ -59,7 +59,7 @@ command epilogue():void
 address ALARMepilogue 
 comment "Finalize alarm module";
 
-prelude();
+alarm.prelude();
 
 @{
 @* Implementation

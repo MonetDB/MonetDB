@@ -3,8 +3,8 @@
 
 bbp.open();
 c:= bbp.take("myfirstbat");
-print(c);
+io.print(c);
 bbp.close();
 catch MALexception;
-	print(MALexception);
+	io.print(MALexception);
 exit MALexception;

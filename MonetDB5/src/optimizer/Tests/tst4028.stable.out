@@ -40,7 +40,7 @@ stdout of test 'tst4028` in directory 'src/optimizer` itself:
 #debugOptimizers();
 #SPoptimizer();
 #end qry;
-function Admin.qry():void;	# 0  (qry:void)
+function user.qry():void;	# 0  (qry:void)
     r := bbp.new(:int,:int);	# 1 CMDBATnew (r:bat[:int,:int])<-($2:int)($3:int)
     bat.insert(r,5,1);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(r:bat[:int,:int])($5:int)($6:int)
     bat.insert(r,6,2);	# 3 BKCinsert_bun ($7:bat[:int,:int])<-(r:bat[:int,:int])($8:int)($9:int)

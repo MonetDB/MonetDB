@@ -42,7 +42,7 @@ stdout of test 'tst4800` in directory 'src/optimizer` itself:
 #		io.table(bat_0,bat_1,top);
 ##       io.table(bat_0,bat_1,top);
 #end f3;
-function Admin.f3():void;	# 0  (f3:void)
+function user.f3():void;	# 0  (f3:void)
     t1 := bbp.bind("A_bat");	# 1 CMDbbpbind (t1:bat[:void,:int])<-($2:str)
     t3 := array.grid(4096,64,1,0);	# 2 ARRAYgrid (t3:bat[:void,:int])<-($4:int)($5:int)($6:int)($7:int)
     t2 := array.grid(64,64,64,0);	# 3 ARRAYgrid (t2:bat[:void,:int])<-($5:int)($5:int)($5:int)($7:int)
@@ -73,14 +73,10 @@ end f3;	# 27
 #	optimizer.ORoptimizer(Admin,f3);
 #	showFunction(Admin,f3);
 #
-#
-#
-#
-#ORoptimizer Admin.f3
-function Admin.main():int;	# 0  (main:int)
-    mdb.showFunction("Admin","f3");	# 1 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
+function user.main():int;	# 0  (main:int)
+    mdb.showFunction("user","f3");	# 1 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
 end main;	# 2  
-function Admin.f3():void;
+function user.f3():void;
     t1 := bbp.bind("A_bat");
     t3 := array.grid(4096,64,1,0);
     t2 := array.grid(64,64,64,0);

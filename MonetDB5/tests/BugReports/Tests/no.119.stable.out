@@ -16,6 +16,8 @@ stdout of test 'no.119` in directory 'tests/BugReports` itself:
 # dbname:mTests_tests_BugReports
 # Visit http://monetdb.cwi.nl for further information.
 ## Monet Mil to Mal compiler
+#include mil;
+#include mil_scenario;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -120,7 +122,7 @@ stdout of test 'no.119` in directory 'tests/BugReports` itself:
 #	mil.line("quit();");
 #	ua_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("# >Number:         119\n");	# 1 MILline ($31:void)<-($32:str)
     mil.line("# >Category:       Module_kernel\n");	# 2 MILline ($33:void)<-($34:str)
     mil.line("# >Synopsis:       thetajoin gives incorrect output\n");	# 3 MILline ($35:void)<-($36:str)
@@ -152,35 +154,35 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 29 MILline ($87:void)<-($88:str)
     aa_a := calc.oid(20000000);	# 30 CALCint2oid (aa_a:oid)<-($90:int)
     ba_a := calc.setoid(aa_a);	# 31 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("var a := new(int,int);");	# 32 MILline ($92:void)<-($93:str)
+    mil.line("var a := bbp.new(int,int);");	# 32 MILline ($92:void)<-($93:str)
     a := bbp.new(nil:int,nil:int);	# 33 CMDBATnew (a:bat[:int,:int])<-($95:int)($95:int)
     mil.line("a.insert(1,3);");	# 34 MILline ($96:void)<-($97:str)
-    ca_a := mil.insert(a,1,3);	# 35 MILinsert_bun (ca_a:bat[:int,:int])<-(a:bat[:int,:int])($99:int)($100:int)
+    ca_a := bat.insert(a,1,3);	# 35 BKCinsert_bun (ca_a:bat[:int,:int])<-(a:bat[:int,:int])($99:int)($100:int)
     mil.line("a.insert(2,2);");	# 36 MILline ($101:void)<-($102:str)
-    da_a := mil.insert(a,2,2);	# 37 MILinsert_bun (da_a:bat[:int,:int])<-(a:bat[:int,:int])($104:int)($104:int)
+    da_a := bat.insert(a,2,2);	# 37 BKCinsert_bun (da_a:bat[:int,:int])<-(a:bat[:int,:int])($104:int)($104:int)
     mil.line("a.insert(3,1);");	# 38 MILline ($105:void)<-($106:str)
-    ea_a := mil.insert(a,3,1);	# 39 MILinsert_bun (ea_a:bat[:int,:int])<-(a:bat[:int,:int])($100:int)($99:int)
-    mil.line("a.thetajoin(a,LT,lng(nil)).print();");	# 40 MILline ($108:void)<-($109:str)
+    ea_a := bat.insert(a,3,1);	# 39 BKCinsert_bun (ea_a:bat[:int,:int])<-(a:bat[:int,:int])($100:int)($99:int)
+    mil.line("a.thetajoin(a,LT,calc.lng(nil)).print();");	# 40 MILline ($108:void)<-($109:str)
     LT := mil.take("LT");	# 41 MILtake (LT:int)<-($110:str)
     fa_a := calc.lng(nil);	# 42 CALCnil2lng (fa_a:lng)<-($112:void)
     ga_a := algebra.thetajoin(a,a,LT,fa_a);	# 43 ALGthetajoinEstimate (ga_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(LT:int)(fa_a:lng)
     ha_a := io.print(ga_a);	# 44 IOprint_val (ha_a:int)<-(ga_a:bat[:int,:int])
-    mil.line("a.thetajoin(a,LE,lng(nil)).print();");	# 45 MILline ($115:void)<-($116:str)
+    mil.line("a.thetajoin(a,LE,calc.lng(nil)).print();");	# 45 MILline ($115:void)<-($116:str)
     LE := mil.take("LE");	# 46 MILtake (LE:int)<-($117:str)
     ia_a := calc.lng(nil);	# 47 CALCnil2lng (ia_a:lng)<-($112:void)
     ja_a := algebra.thetajoin(a,a,LE,ia_a);	# 48 ALGthetajoinEstimate (ja_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(LE:int)(ia_a:lng)
     ka_a := io.print(ja_a);	# 49 IOprint_val (ka_a:int)<-(ja_a:bat[:int,:int])
-    mil.line("a.thetajoin(a,EQ,lng(nil)).print();");	# 50 MILline ($121:void)<-($122:str)
+    mil.line("a.thetajoin(a,EQ,calc.lng(nil)).print();");	# 50 MILline ($121:void)<-($122:str)
     EQ := mil.take("EQ");	# 51 MILtake (EQ:int)<-($123:str)
     la_a := calc.lng(nil);	# 52 CALCnil2lng (la_a:lng)<-($112:void)
     ma_a := algebra.thetajoin(a,a,EQ,la_a);	# 53 ALGthetajoinEstimate (ma_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(EQ:int)(la_a:lng)
     na_a := io.print(ma_a);	# 54 IOprint_val (na_a:int)<-(ma_a:bat[:int,:int])
-    mil.line("a.thetajoin(a,GE,lng(nil)).print();");	# 55 MILline ($127:void)<-($128:str)
+    mil.line("a.thetajoin(a,GE,calc.lng(nil)).print();");	# 55 MILline ($127:void)<-($128:str)
     GE := mil.take("GE");	# 56 MILtake (GE:int)<-($129:str)
     oa_a := calc.lng(nil);	# 57 CALCnil2lng (oa_a:lng)<-($112:void)
     pa_a := algebra.thetajoin(a,a,GE,oa_a);	# 58 ALGthetajoinEstimate (pa_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(GE:int)(oa_a:lng)
     qa_a := io.print(pa_a);	# 59 IOprint_val (qa_a:int)<-(pa_a:bat[:int,:int])
-    mil.line("a.thetajoin(a,GT,lng(nil)).print();");	# 60 MILline ($133:void)<-($134:str)
+    mil.line("a.thetajoin(a,GT,calc.lng(nil)).print();");	# 60 MILline ($133:void)<-($134:str)
     GT := mil.take("GT");	# 61 MILtake (GT:int)<-($135:str)
     ra_a := calc.lng(nil);	# 62 CALCnil2lng (ra_a:lng)<-($112:void)
     sa_a := algebra.thetajoin(a,a,GT,ra_a);	# 63 ALGthetajoinEstimate (sa_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(GT:int)(ra_a:lng)
@@ -249,18 +251,18 @@ end main;	# 67
 #a.insert(1,3);
 #a.insert(2,2);
 #a.insert(3,1);
-#a.thetajoin(a,LT,lng(nil)).print();
+#a.thetajoin(a,LT,calc.lng(nil)).print();
 #-----------------#
-# BAT:	  tmp_28  #
-# (int)	  (int)	  #
+# h	tmp_14	  # name
+# int	int	  # type
 #-----------------#
 [ 2,	  1	  ]
 [ 3,	  2	  ]
 [ 3,	  1	  ]
-#a.thetajoin(a,LE,lng(nil)).print();
+#a.thetajoin(a,LE,calc.lng(nil)).print();
 #-----------------#
-# BAT:	  tmp_28  #
-# (int)	  (int)	  #
+# h	tmp_15	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
 [ 2,	  2	  ]
@@ -268,18 +270,18 @@ end main;	# 67
 [ 3,	  3	  ]
 [ 3,	  2	  ]
 [ 3,	  1	  ]
-#a.thetajoin(a,EQ,lng(nil)).print();
+#a.thetajoin(a,EQ,calc.lng(nil)).print();
 #-----------------#
-# BAT:	  tmp_28  #
-# (int)	  (int)	  #
+# h	tmp_16	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
 [ 2,	  2	  ]
 [ 3,	  3	  ]
-#a.thetajoin(a,GE,lng(nil)).print();
+#a.thetajoin(a,GE,calc.lng(nil)).print();
 #-----------------#
-# BAT:	  tmp_28  #
-# (int)	  (int)	  #
+# h	tmp_17	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  3	  ]
 [ 1,	  2	  ]
@@ -287,10 +289,10 @@ end main;	# 67
 [ 2,	  3	  ]
 [ 2,	  2	  ]
 [ 3,	  3	  ]
-#a.thetajoin(a,GT,lng(nil)).print();
+#a.thetajoin(a,GT,calc.lng(nil)).print();
 #-----------------#
-# BAT:	  tmp_28  #
-# (int)	  (int)	  #
+# h	tmp_18	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  3	  ]
 [ 1,	  2	  ]

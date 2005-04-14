@@ -544,7 +544,7 @@ The optimizer terminates when no optimizer transformer call remains.
 Note, all optimizer instructions are executed only once. This means that the
 instruction can be removed from further consideration. However, in the case
 that a designated function is selected for optimization (e.g. 
-CXoptimizer(Admin,qry)) the pc is assumed 0. The first instruction always
+CXoptimizer(user,qry)) the pc is assumed 0. The first instruction always
 denotes the signature and can not be removed.
 @c
 #include "mal_optimizer.h"

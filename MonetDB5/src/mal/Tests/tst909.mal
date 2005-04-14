@@ -1,24 +1,24 @@
 
-b:= new(:int,:bit);
-insert(b,1,true);
-insert(b,2,false);
-insert(b,3,true);
-print(b);
+b:= bbp.new(:int,:bit);
+bat.insert(b,1,true);
+bat.insert(b,2,false);
+bat.insert(b,3,true);
+io.print(b);
 
-v:= new(:int,:str);
-insert(v,1,"ok");
-insert(v,2,"wrong");
-insert(v,3,"ok");
-print(v);
-ve:= new(:int,:str);
-insert(ve,1,"wrong");
-insert(ve,2,"ok");
-insert(ve,3,"wrong");
-print(ve);
+v:= bbp.new(:int,:str);
+bat.insert(v,1,"ok");
+bat.insert(v,2,"wrong");
+bat.insert(v,3,"ok");
+io.print(v);
+ve:= bbp.new(:int,:str);
+bat.insert(ve,1,"wrong");
+bat.insert(ve,2,"ok");
+bat.insert(ve,3,"wrong");
+io.print(ve);
 
 z:= batcalc.ifthen(b,v);
-print(z);
+io.print(z);
 z:= batcalc.ifthenelse(b,v,ve);
-print(z);
+io.print(z);
 w:= multiplex.tactics("ifthen",b,v);
-print(w);
+io.print(w);

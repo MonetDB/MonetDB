@@ -23,7 +23,7 @@ stdout of test 'tst253` in directory 'src/mal` itself:
 #d:= mark(c);
 #print(d);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-($2:void)($3:str)
     bat.insert(b,"hello");	# 2 BKCinsert_void_bun ($4:bat[:str,:any])<-(b:bat[:void,:str])($5:str)
     bat.insert(b,nil,"world");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(b:bat[:void,:str])($7:void)($8:str)

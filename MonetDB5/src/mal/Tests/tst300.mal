@@ -1,8 +1,8 @@
 # Exception identifiers can be introduced at any place
 
 	raise myNewException:= "new exception";
-	printf("should not come here\n");
+	io.printf("should not come here\n");
 #exception block;
 catch	myNewException;
-	printf("catched exception\n");
+	io.printf("catched exception\n");
 exit	myNewException;

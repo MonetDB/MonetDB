@@ -1,12 +1,12 @@
 #The MAL interpreter should initiate garbage collection correctly
 # early version was too early
-z:= "hello world"; print(z);
-z:=z; print(z);
-print("done");
+z:= "hello world"; io.print(z);
+z:=z; io.print(z);
+io.print("done");
 
-b:=new(:int,:int);
-i:= getLRefCount(b); print(i);
+b:= bbp.new(:int,:int);
+i:=  bbp.getLRefCount(b); io.print(i);
 b:=b;
-i:= getLRefCount(b); print(i);
+i:=  bbp.getLRefCount(b); io.print(i);
 b:=b;
-i:= getLRefCount(b); print(i);
+i:=  bbp.getLRefCount(b); io.print(i);

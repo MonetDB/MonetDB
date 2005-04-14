@@ -24,7 +24,7 @@ stdout of test 'tst060` in directory 'src/mal` itself:
 #exit 	b1;
 #	print(s1);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     s0 := "hello";	# 1  (s0:str)<-($2:str)
     s0 := "world";	# 2  (s0:str)<-($3:str)
     b1 := calc.==(s0,"world");	# 3 CALCcompEQstrstr (b1:bit)<-(s0:str)($3:str)

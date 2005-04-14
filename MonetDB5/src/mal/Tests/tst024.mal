@@ -4,4 +4,4 @@ i:= 12;		# internal location of i is 3
 $2:=55;		# acceptable
 $3:= 23;	# error, overwriting non-temp
 $5:=23;
-print($5);
+io.print($5);

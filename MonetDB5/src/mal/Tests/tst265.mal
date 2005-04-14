@@ -1,20 +1,20 @@
 # Grouped sums
-b:= new(:void,:int);
-setSequenceBase(b,0:oid);
-insert(b,1);
-insert(b,2);
-insert(b,3);
-insert(b,4);
-insert(b,5);
-insert(b,6);
-insert(b,7);
-insert(b,8);
-insert(b,9);
-print(b);
+b:= bbp.new(:void,:int);
+bat.setSequenceBase(b,0:oid);
+bat.insert(b,1);
+bat.insert(b,2);
+bat.insert(b,3);
+bat.insert(b,4);
+bat.insert(b,5);
+bat.insert(b,6);
+bat.insert(b,7);
+bat.insert(b,8);
+bat.insert(b,9);
+io.print(b);
 
 g:= group.sum(b,3);
-print(g);
+io.print(g);
 
 # and use a sliding window
 g:= group.sum(b,3,1);
-print(g);
+io.print(g);

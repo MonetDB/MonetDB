@@ -1,6 +1,6 @@
 #propagate INT exception
 raise	IllegalAccess := 1234;
-	print("should not come here\n");
+	io.print("should not come here\n");
 catch IllegalAccess;
-	printf("catched %d\n",IllegalAccess);
+	io.printf("catched %d\n",IllegalAccess);
 exit IllegalAccess;

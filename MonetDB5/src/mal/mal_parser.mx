@@ -1608,17 +1608,17 @@ startFCNcall:
 			nextChar(cntxt); /* skip '(' */
             skipSpace(cntxt);
         } else {
-            if( CURRENT(cntxt)[l] != '(')
+            /* we expect a module if( CURRENT(cntxt)[l] != '(')*/
             {
-                parseError(cntxt,"'(' expected\n");
+                parseError(cntxt,"module name expected\n");
                 pushInstruction(curBlk,curInstr);
                 return;
-            } else { 
+            } /* else { 
                 arg= idCopy(cntxt,l);
-                nextChar(cntxt); /* skip '(' */
+                nextChar(cntxt); 
 				skipSpace(cntxt);
                 setFunctionId(curInstr, arg);
-            }
+            } */
         }
 /*getarguments:*//* not used */
         skipSpace(cntxt);

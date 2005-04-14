@@ -74,11 +74,11 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	ab_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("var s:= new(str,int);");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("var s:= bbp.new(str,int);");	# 4 MILline ($6:void)<-($7:str)
     s := bbp.new("nil:str",nil:int);	# 5 CMDBATnew (s:bat[:str,:int])<-($9:str)($10:int)
     mil.line("insert(s,\"hello\",1);");	# 6 MILline ($11:void)<-($12:str)
     ca_a := bat.insert(s,"hello",1);	# 7 BKCinsert_bun (ca_a:bat[:str,:int])<-(s:bat[:str,:int])($14:str)($15:int)
@@ -111,7 +111,7 @@ function Admin.main():int;	# 0  (main:int)
     sa_a := bat.delete(s,"cello",3);	# 34 BKCdelete_bun (sa_a:bat[:str,:int])<-(s:bat[:str,:int])($66:str)($71:int)
     mil.line("print(s);");	# 35 MILline ($72:void)<-($73:str)
     ta_a := io.print(s);	# 36 IOprint_val (ta_a:int)<-(s:bat[:str,:int])
-    mil.line("var sn:= select(s,1,5);");	# 37 MILline ($75:void)<-($76:str)
+    mil.line("var sn:= algebra.select(s,1,5);");	# 37 MILline ($75:void)<-($76:str)
     sn := algebra.select(s,1,5);	# 38 ALGselect (sn:bat[:str,:int])<-(s:bat[:str,:int])($78:int)($79:int)
     mil.line("print(sn);");	# 39 MILline ($80:void)<-($81:str)
     ua_a := io.print(sn);	# 40 IOprint_val (ua_a:int)<-(sn:bat[:str,:int])
@@ -121,7 +121,7 @@ function Admin.main():int;	# 0  (main:int)
     s2 := algebra.semijoin(va_a,wa_a);	# 44 ALGsemijoin (s2:bat[:int,:str])<-(va_a:bat[:int,:str])(wa_a:bat[:int,:str])
     mil.line("print(s2);");	# 45 MILline ($88:void)<-($89:str)
     xa_a := io.print(s2);	# 46 IOprint_val (xa_a:int)<-(s2:bat[:int,:str])
-    mil.line("var x:= join(s,s2);");	# 47 MILline ($91:void)<-($92:str)
+    mil.line("var x:= algebra.join(s,s2);");	# 47 MILline ($91:void)<-($92:str)
     x := algebra.join(s,s2);	# 48 ALGjoin (x:bat[:str,:str])<-(s:bat[:str,:int])(s2:bat[:int,:str])
     mil.line("print(x);");	# 49 MILline ($94:void)<-($95:str)
     ya_a := io.print(x);	# 50 IOprint_val (ya_a:int)<-(x:bat[:str,:str])
@@ -146,7 +146,7 @@ end main;	# 53
 # h			tmp_14		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "20696"	  ]
+[ "version",		  "20744"	  ]
 [ "batId",			  "tmp_13"	  ]
 [ "batCacheid",			  "13"		  ]
 [ "batParentid",		  "0"		  ]
@@ -177,25 +177,24 @@ end main;	# 53
 [ "tloc",			  "4"		  ]
 [ "tvarsized",			  "0"		  ]
 [ "talign",			  "0"		  ]
-[ "batInserted",		  "1"		  ]
+[ "batInserted",	  "0"		  ]
 [ "batDeleted",			  "0"		  ]
-[ "batHole",			  "0"		  ]
-[ "top",			  "9"		  ]
+[ "top",		  "8"		  ]
 [ "batStamp",			  "13"		  ]
 [ "lastUsed",			  "163"		  ]
 [ "curStamp",			  "14"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
-[ "batBuns.free",		  "72"		  ]
-[ "batBuns.size",		  "424"		  ]
-[ "batBuns.maxsize",		  "424"		  ]
+[ "batBuns.free",	  "64"		  ]
+[ "batBuns.size",	  "400"		  ]
+[ "batBuns.maxsize",	  "400"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
 [ "batBuns.filename",		  "13.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "4180"	  ]
-[ "hheap.size",			  "4724"	  ]
-[ "hheap.maxsize",		  "4724"	  ]
+[ "hheap.size",		  "4700"	  ]
+[ "hheap.maxsize",	  "4700"	  ]
 [ "hheap.storage",		  "malloced"	  ]
 [ "hheap.filename",		  "13.hheap"	  ]
 [ "theapdirty",			  "clean"	  ]

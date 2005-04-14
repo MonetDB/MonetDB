@@ -1,6 +1,6 @@
 #variable lifespan fits a block
 #some illegal variable declarations
-	print(dummy); #error
+	io.print(dummy); #error
 barrier allways:=true;
 	i:= 1;
 exit allways;

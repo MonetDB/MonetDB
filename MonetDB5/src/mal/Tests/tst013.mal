@@ -6,10 +6,10 @@ exit;
 
 barrier i:= 1;
 	i:= i+1;
-	print(i);
-	barrier >(i,3);	# new envelop
-		print("leave loop");
+	io.print(i);
+	barrier t:=calc.>(i,3);	# new envelop
+		io.print("leave loop");
 		leave i; # leave outer envelop
-	exit;
+	exit t;
 	redo;
 exit;

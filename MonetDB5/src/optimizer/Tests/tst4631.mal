@@ -5,7 +5,7 @@ function qry1();
     V8:bat[:void,:oid] := sql.bind_dbat("sys","lineitem",0);
     V9 := bat.reverse(V8);
     V10 := algebra.kdiff(V3,V9);
-	a:= date(nil);
+	a:= mtime.date(nil);
     V14 := algebra.uselect(V10,a,a);
     V17 := algebra.markT(V14,0@0);
     V18 := bat.reverse(V17);
@@ -115,6 +115,6 @@ function qry1();
 end qry1;
 
 optimizer.setDebug();
-optimizer.aliasRemoval("Admin","qry1");
-optimizer.commonExpressionRemoval("Admin","qry1");
-showFunction("Admin","qry1");
+optimizer.aliasRemoval("user","qry1");
+optimizer.commonExpressionRemoval("user","qry1");
+mdb.showFunction("user","qry1");

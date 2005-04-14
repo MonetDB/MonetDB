@@ -1,1 +1,1 @@
-printf("hello world\n");
+io.printf("hello world\n");

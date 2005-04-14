@@ -19,7 +19,7 @@ stdout of test 'tst910` in directory 'src/mal` itself:
 #       z:= a+b;
 #       return z;
 #end inc;
-function Admin.inc(a:lng,b:lng):lng;	# 0  (inc:lng)<-(a:lng)(b:lng)
+function user.inc(a:lng,b:lng):lng;	# 0  (inc:lng)<-(a:lng)(b:lng)
     z := calc.+(a,b);	# 1 CALCbinaryADDlnglng (z:lng)<-(a:lng)(b:lng)
     return z;	# 2  (z:lng)
 end inc;	# 3  
@@ -48,7 +48,7 @@ end inc;	# 3
 #print(z);
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
     i := -1:lng;	# 2  (i:lng)<-($5:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-($7:lng) jump 6

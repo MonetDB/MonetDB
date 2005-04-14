@@ -1,6 +1,6 @@
 # ADT management 
 
-d1:= date("1998-12-01");
-print(d1);
+d1:= mtime.date("1998-12-01");
+io.print(d1);
 d2:= "1998-12-01":date;
-print(d2);
+io.print(d2);

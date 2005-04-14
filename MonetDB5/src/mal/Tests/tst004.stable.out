@@ -22,7 +22,7 @@ stdout of test 'tst004` in directory 'src/mal` itself:
 #exit	m:= 4;
 #	print(m);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
 barrier l := 1;	# 1  (l:int)<-($2:int) jump 3
     io.print(l);	# 2 IOprint_val ($3:int)<-(l:int)
 exit l := 2;	# 3  (l:int)<-($4:int)

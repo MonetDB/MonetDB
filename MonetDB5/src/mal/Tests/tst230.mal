@@ -1,21 +1,21 @@
 # a test checking BAT reference counting under various situations
-	b:= new(:int,:str);
-	i:= getRefCount(b);
-	printf("refcount =%d\n",i);
-	j:= getLRefCount(b);
-	printf("lrefcount =%d\n",j);
+	b:= bbp.new(:int,:str);
+	i:= bbp.getRefCount(b);
+	io.printf("refcount =%d\n",i);
+	j:= bbp.getLRefCount(b);
+	io.printf("lrefcount =%d\n",j);
 
-	insert(b,1,"bat B");
-	print(b);
-	i:= getRefCount(b);
-	printf("second refcount =%d\n",i);
-	j:= getLRefCount(b);
-	printf("lrefcount =%d\n",j);
+	bat.insert(b,1,"bat B");
+	io.print(b);
+	i:= bbp.getRefCount(b);
+	io.printf("second refcount =%d\n",i);
+	j:= bbp.getLRefCount(b);
+	io.printf("lrefcount =%d\n",j);
 
 	# referenceing through mirroring
-	b5:= reverse(b);
-	i:= getRefCount(b);
-	printf("after reverse assignment refcount =%d\n",i);
-	j:= getLRefCount(b);
-	printf("lrefcount =%d\n",j);
+	b5:= bat.reverse(b);
+	i:= bbp.getRefCount(b);
+	io.printf("after reverse assignment refcount =%d\n",i);
+	j:= bbp.getLRefCount(b);
+	io.printf("lrefcount =%d\n",j);
 

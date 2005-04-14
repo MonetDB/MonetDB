@@ -25,13 +25,13 @@ stdout of test 'tst500` in directory 'src/mal` itself:
 #	r:= 3.14:flt;
 #	return r;
 #end simple;
-function Admin.simple(i:int,lim:int,s:str):flt;	# 0  (simple:flt)<-(i:int)(lim:int)(s:str)
+function user.simple(i:int,lim:int,s:str):flt;	# 0  (simple:flt)<-(i:int)(lim:int)(s:str)
     io.printf("i=%d ",i);	# 1 IOprint_formatted_int ($4:int)<-($5:str)(i:int)
     io.printf("lim=%d ",lim);	# 2 IOprint_formatted_int ($6:int)<-($7:str)(lim:int)
     io.printf("str=%s\n",s);	# 3 IOprint_formatted_str ($8:int)<-($9:str)(s:str)
     i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)($10:int)
 barrier v := calc.<(i,lim);	# 5 CALCcompLTintint (v:bit)<-(i:int)(lim:int) jump 7
-    z := Admin.simple(i,lim,s);	# 6  (z:flt)<-(i:int)(lim:int)(s:str)
+    z := user.simple(i,lim,s);	# 6  (z:flt)<-(i:int)(lim:int)(s:str)
 exit v;	# 7  (v:bit)
     r := 3.14:flt;	# 8  (r:flt)<-($14:flt)
     return r;	# 9  (r:flt)
@@ -39,8 +39,8 @@ end simple;	# 10
 #
 #r:= simple(0,2,"hello");
 #
-function Admin.main():int;	# 0  (main:int)
-    r := Admin.simple(0,2,"hello");	# 1  (r:flt)<-($2:int)($3:int)($4:str)
+function user.main():int;	# 0  (main:int)
+    r := user.simple(0,2,"hello");	# 1  (r:flt)<-($2:int)($3:int)($4:str)
 end main;	# 2  
 i=0 lim=2 str=hello
 i=1 lim=2 str=hello

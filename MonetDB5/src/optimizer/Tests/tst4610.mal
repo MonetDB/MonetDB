@@ -3,18 +3,18 @@
 function joinPath( a:bat[:any$1,:any$2],
                 b:bat[:any$2,:any$3],
                 c:bat[:any$3,:any$4]):bat[:any$1,:any$4];
-    z:= join(a,b);
-    zz:= join(z,c);
+    z:= algebra.join(a,b);
+    zz:= algebra.join(z,c);
     return zz;
 end joinPath;
 
-optimizer.macroContraction("Admin","joinPath");
+optimizer.macroContraction("user","joinPath");
 
-a:= new(:int,:int);
-b:= new(:int,:int);
-c:= new(:int,:int);
-g:= join(a,b);
-h:= join(g,c);
+a:= bbp.new(:int,:int);
+b:= bbp.new(:int,:int);
+c:= bbp.new(:int,:int);
+g:= algebra.join(a,b);
+h:= algebra.join(g,c);
 
-r:= joinPath(a,b,c);
-showFunction();
+r:= algebra.joinPath(a,b,c);
+mdb.showFunction();

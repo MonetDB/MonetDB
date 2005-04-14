@@ -21,7 +21,7 @@ stdout of test 'tst300` in directory 'src/mal` itself:
 #	printf("catched exception\n");
 #exit	myNewException;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     raise myNewException := "new exception";	# 1  (myNewException:str)<-($2:str)
     io.printf("should not come here\n");	# 2 IOprint_str ($3:int)<-($4:str)
 catch myNewException;	# 3  (myNewException:str) jump 5

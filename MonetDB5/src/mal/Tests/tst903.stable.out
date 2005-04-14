@@ -128,7 +128,7 @@ stdout of test 'tst903` in directory 'src/mal` itself:
 #d0:= t1-t0;
 #printf("#multiplex.tactics(+) %d\n",d0);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
     b := bbp.new(:void,:lng);	# 2 CMDBATnew (b:bat[:void,:lng])<-($3:void)($4:lng)
 barrier (go,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (go:bit)(i:lng)<-($7:lng) jump 8

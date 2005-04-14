@@ -178,7 +178,8 @@ comment "grouped count of true values";
 @{
 command prelude()
 address GRPprelude;
-prelude();
+
+group.prelude();
 @-
 @-
 old stuff

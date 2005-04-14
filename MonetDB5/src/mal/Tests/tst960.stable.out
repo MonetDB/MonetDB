@@ -51,7 +51,7 @@ stdout of test 'tst960` in directory 'src/mal` itself:
 #plus:= batstr.+(S,S); 
 #print(plus);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     S := bbp.new(:void,:str);	# 1 CMDBATnew (S:bat[:void,:str])<-($2:void)($3:str)
     bat.setSequenceBase(S,0:oid);	# 2 BKCsetSequenceBase ($4:bat[:void,:str])<-(S:bat[:void,:str])($5:oid)
     bat.insert(S,nil,"hello");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(S:bat[:void,:str])($7:void)($8:str)

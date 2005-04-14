@@ -27,7 +27,7 @@ stdout of test 'tst2020` in directory 'src/mal` itself:
 #	alarm.sleep(10);
 #	printf("#end of program, wait for child\n");
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
 thread b1 := 0;	# 1  (b1:int)<-($2:int) jump 10
     io.printf("#start thread\n");	# 2 IOprint_str ($3:int)<-($4:str)
 barrier yy;	# 3  (yy:any) jump 7

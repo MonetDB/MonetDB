@@ -19,7 +19,7 @@ barrier always := true;
     V12 := bat.reverse(V11);
     V13 := algebra.kdiff(V6,V12);
     V16 := mtime.date_sub_sec_interval(A3,A4);
-	a   := date(nil);
+	a   := mtime.date(nil);
     V17 := algebra.uselect(V13,a,V16);
     V20 := algebra.markT(V17,0@0);
     V21 := bat.reverse(V20);
@@ -82,5 +82,5 @@ exit always;
 end qry1;
 
 
-optimize("Admin","qry1");
-showFunction("Admin","qry1");
+optimize("user","qry1");
+mdb.showFunction("user","qry1");

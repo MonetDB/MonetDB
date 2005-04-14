@@ -4,15 +4,15 @@
 # initial analysis. It should remain 'tactics'
 
 function perftst( b:bat[:any$1,:any$2],div:any$2):void;
-	print("perftst");print(div);
+	io.print("perftst"); io.print(div);
 	reduce:= multiplex.tactics("/",b,div);
-	print(reduce);
+	io.print(reduce);
 end perftst;
 
 
-b:= new(:lng,:lng);
-barrier (v,i):= newRange(0:lng);
-        insert(b,i,i);
-        redo (v,i):= nextElement(1:lng,10:lng);
+b:= bbp.new(:lng,:lng);
+barrier (v,i):= mal.newRange(0:lng);
+        bat.insert(b,i,i);
+        redo (v,i):= mal.nextElement(1:lng,10:lng);
 exit (v,i);
-perftst(b,1:lng);
+user.perftst(b,1:lng);

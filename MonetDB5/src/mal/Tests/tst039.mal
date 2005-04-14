@@ -3,9 +3,9 @@
 function sample(nme:str, val:any):bit;
    c := 2*3;
    b := bbp.bind(nme);  #find a BAT
-   h := select(b,val,val);
-   t := count(h);
-   x := print(t);
-   y := print(val);
+   h := algebra.select(b,val,val);
+   t := algebra.count(h);
+   x := io.print(t);
+   y := io.print(val);
    return sample:=true;
 end sample;

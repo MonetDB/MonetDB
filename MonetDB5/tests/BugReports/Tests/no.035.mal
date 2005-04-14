@@ -38,5 +38,5 @@ barrier	(aa_a,aa_aH,aa_aT) := newIterator(b);
 redo	(aa_a,aa_aH,aa_aT) := hasMoreElements(b);
 exit	(aa_a,aa_aH,aa_aT) ;
 	mil.line("quit();");
-	ca_a := quit();
+	ca_a := clients.quit();
 #Identifer 'view_bbp_name' mapped to 'bbp.getNames()'

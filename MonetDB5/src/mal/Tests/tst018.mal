@@ -2,12 +2,12 @@
 
 i:= 23;
 i:= nil;
-print(i);
+io.print(i);
 
-b:= new(:int,:int);
+b:= bbp.new(:int,:int);
 b:= nil;
-print(b);
+io.print(b);
 
 s:= "hello";
 s:= nil;
-print(s);
+io.print(s);

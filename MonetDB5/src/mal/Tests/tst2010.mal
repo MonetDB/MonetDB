@@ -2,9 +2,9 @@
 #we start with a non-parallel version
 
 function clkticks(n:int):void;
-	printf("#start clock \n");
+	io.printf("#start clock \n");
 barrier	b:= n>0;
-	printf("#tick\n");
+	io.printf("#tick\n");
 	alarm.sleep(2);
 	n:= n-1;
 	redo b:= n>0;
@@ -12,12 +12,12 @@ exit	b;
 end clkticks;
 
 thread 	hdl:=0;	# should not be assigned a value to get started
-	printf("#START THREAD \n");
-	clkticks(2);
-	printf("#About to exit child\n");
+	io.printf("#START THREAD \n");
+	user.clkticks(2);
+	io.printf("#About to exit child\n");
 exit	hdl;
-	printf("#Wait for child to exit too\n");
+	io.printf("#Wait for child to exit too\n");
 	alarm.sleep(15);
-	printf("#Child should have died\n");
+	io.printf("#Child should have died\n");
 	#wait hdl;
-	#printf("child has finished\n");
+	#io.printf("child has finished\n");

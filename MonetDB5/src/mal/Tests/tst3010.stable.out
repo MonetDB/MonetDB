@@ -17,7 +17,7 @@ stdout of test 'tst3010` in directory 'src/mal` itself:
 #	j:= j+i;
 #	return j{freeze};
 #end add;
-function Admin.add(i:int{read=true},j:int{freeze=true,read=true}):int;	# 0  (add:int)<-(i:int)(j:int)
+function user.add(i:int{read=true},j:int{freeze=true,read=true}):int;	# 0  (add:int)<-(i:int)(j:int)
     j{freeze=true,read=true} := calc.+(j{freeze=true,read=true},i{read=true});	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
     return j{freeze=true,read=true};	# 2  (j:int)
 end add;	# 3  
@@ -26,7 +26,7 @@ end add;	# 3
 #	k:= j+i;
 #	return k{freeze};
 #end ;
-function Admin.add2(i:int,j:int{read=true}):int;	# 0  (add2:int)<-(i:int)(j:int)
+function user.add2(i:int,j:int{read=true}):int;	# 0  (add2:int)<-(i:int)(j:int)
     k{freeze=true} := calc.+(j{read=true},i);	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
     return k{freeze=true};	# 2  (k:int)
 end add2;	# 3  
@@ -56,10 +56,10 @@ end add2;	# 3
 ##kk:= add2(i,i);
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     i{cost=23} := 23;	# 1  (i:int)<-($2:int)
-    z := Admin.add(i{cost=23},i{cost=23});	# 2  (z:int)<-(i:int)(i:int)
-    kk := Admin.add2(i{cost=23},i{cost=23});	# 3  (kk:int)<-(i:int)(i:int)
+    z := user.add(i{cost=23},i{cost=23});	# 2  (z:int)<-(i:int)(i:int)
+    kk := user.add2(i{cost=23},i{cost=23});	# 3  (kk:int)<-(i:int)(i:int)
 end main;	# 4  
 
 # 08:01:14 >  

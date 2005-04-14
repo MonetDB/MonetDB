@@ -13,6 +13,8 @@ stdout of test 'tst4600` in directory 'src/optimizer` itself:
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ## the first test for macro expansions and inversions
+#include sql;
+#
 #function welcome(lim:int):void;
 #    i:= 0;
 #barrier j:= i<lim;
@@ -21,7 +23,7 @@ stdout of test 'tst4600` in directory 'src/optimizer` itself:
 #    redo j:= i<lim;
 #exit j;
 #end welcome;
-function Admin.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
+function user.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
     i := 0;	# 1  (i:int)<-($3:int)
 barrier j := calc.<(i,lim);	# 2 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 6
     io.print("Welcome");	# 3 IOprint_val ($5:int)<-($6:str)
@@ -36,7 +38,7 @@ end welcome;	# 7
 #welcome(2);
 #showFunction();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     io.print("test expansion");	# 1 IOprint_val ($4:int)<-($5:str)
     $11 := 0;	# 2  ($11:int)<-($12:int)
 barrier $13 := calc.<($11,2);	# 3 CALCcompLTintint ($13:bit)<-($11:int)($7:int) jump 7
@@ -49,7 +51,7 @@ end main;	# 9
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
-function Admin.main():int;
+function user.main():int;
     io.print("test expansion");
     $11 := 0;
 barrier $13 := calc.<($11,2);

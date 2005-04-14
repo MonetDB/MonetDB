@@ -595,23 +595,23 @@ For SQL convenience we provide a serie of interval selectors.
 # Extend select to the cases where we can ignore nils altogether
 function between(b:bat[:any$1,:any$2], l:any$2, h:any$2) 
 		:bat[:any$1,:any$2];
-	k:= select(b,l,h);
+	k:= algebra.select(b,l,h);
 	return k;
 end between;
 # between Close Open interval
 function betweenCO(b:bat[:any$1,:any$2], l:any$2, h:any$2)
 		:bat[:any$1,:any$2];
-	t:= select(b,l,h, true,false);
+	t:= algebra.select(b,l,h, true,false);
 	return t;
 end betweenCO;
 function betweenOC(b:bat[:any$1,:any$2], l:any$2, h:any$2)
 		:bat[:any$1,:any$2];
-	t:= select(b,l,h,false,true);
+	t:= algebra.select(b,l,h,false,true);
 	return t;
 end betweenOC;
 function betweenOO(b:bat[:any$1,:any$2], l:any$2, h:any$2)
 	:bat[:any$1,:any$2];
-	t:= select(b,l,h,false,false);
+	t:= algebra.select(b,l,h,false,false);
 	return t;
 end betweenOO;
 @+ Modeling With Properties

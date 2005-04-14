@@ -13,6 +13,7 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 # dbname:mTests_tests_BugsViaSourgeforce
 # Visit http://monetdb.cwi.nl for further information.
 ## Monet Mil to Mal compiler
+#include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -32,7 +33,7 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 #	unknown:= mil.take("unknown");
 #	aa_a := print(unknown);
 #end crash;
-function Admin.crash():void;	# 0  (crash:void)
+function user.crash():void;	# 0  (crash:void)
     mil.line("\tprint($t);");	# 1 MILline ($1:void)<-($2:str)
     unknown := mil.take("unknown");	# 2 MILtake (unknown:any)<-($4:str)
     aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:int)<-(unknown:any)
@@ -40,15 +41,16 @@ end crash;	# 4
 #	mil.line("crash();");
 #	ba_a := crash();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("PROC crash() : void");	# 1 MILline ($31:void)<-($32:str)
     mil.line("crash();");	# 2 MILline ($33:void)<-($34:str)
-    ba_a := Admin.crash();	# 3  (ba_a:void)
+    ba_a := user.crash();	# 3  (ba_a:void)
 end main;	# 4  
 #PROC crash() : void
 #crash();
 #\tprint($t);
 !ERROR: MALexception:mil.take:failed to take 'unknown' from box
+#
 
 # 22:47:53 >  
 # 22:47:53 >  Done.

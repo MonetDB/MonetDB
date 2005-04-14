@@ -19,7 +19,7 @@ stdout of test 'tst4801` in directory 'src/optimizer` itself:
 #	redo (go,i1) := nextElement(1:int,500:int);
 #exit (go,i1);
 #end f3;
-function Admin.f3():void;	# 0  (f3:void)
+function user.f3():void;	# 0  (f3:void)
 barrier (go,i1):= mal.newRange(1:int);	# 1 RNGnewRange_int (go:bit)(i1:int)<-($3:int) jump 5
     t28 := array.grid(1,500,1,0);	# 2 ARRAYgrid (t28:bat[:void,:int])<-($5:int)($6:int)($5:int)($7:int)
     t36 := array.grid(500,500,1,0);	# 3 ARRAYgrid (t36:bat[:void,:int])<-($6:int)($6:int)($5:int)($7:int)
@@ -30,12 +30,10 @@ end f3;	# 6
 #	optimizer.strengthReduction("Admin","f3");
 #	showFunction("Admin","f3");
 #
-#ORoptimizer Admin.f3
-#SRoptimizer Admin.f3
-function Admin.main():int;	# 0  (main:int)
-    mdb.showFunction("Admin","f3");	# 1 MDBshowFunction3 ($5:void)<-($2:str)($3:str)
+function user.main():int;	# 0  (main:int)
+    mdb.showFunction("user","f3");	# 1 MDBshowFunction3 ($5:void)<-($2:str)($3:str)
 end main;	# 2  
-function Admin.f3():void;
+function user.f3():void;
     t28 := array.grid(1,500,1,0);
     t36 := array.grid(500,500,1,0);
 barrier (go,i1):= mal.newRange(1:int);

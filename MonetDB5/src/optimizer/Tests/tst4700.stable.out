@@ -122,7 +122,7 @@ stdout of test 'tst4700` in directory 'src/optimizer` itself:
 #    d0:= t1-t0;
 #    printf("#tail sort %d",d0);
 #end tst903;
-function Admin.tst903():void;	# 0  (tst903:void)
+function user.tst903():void;	# 0  (tst903:void)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
     b := bbp.new(:void,:lng);	# 2 CMDBATnew (b:bat[:void,:lng])<-($3:void)($4:lng)
 barrier (go,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (go:bit)(i:lng)<-($7:lng) jump 8
@@ -219,19 +219,20 @@ exit (go,i);	# 8  (go:bit)(i:lng)
     io.printf(" count %d\n",cnt);	# 94 IOprint_formatted_lng ($70:int)<-($66:str)(cnt:lng)
     t0 := alarm.usec();	# 95 ALARMusec (t0:lng)
     sr := bat.reverse(b);	# 96 BKCreverse (sr:bat[:lng,:void])<-(b:bat[:void,:lng])
-    s := sort(sr);	# 97  unknown (s:any)<-(sr:bat[:lng,:void])
+    s := algebra.sort(sr);	# 97  unknown (s:any)<-(sr:bat[:lng,:void])
     t1 := alarm.usec();	# 98 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 99 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#tail sort %d",d0);	# 100 IOprint_formatted_lng ($73:int)<-($74:str)(d0:lng)
 end tst903;	# 101  
-!ERROR: 'sort' undefined in Admin.tst903[97]
+!ERROR: 'algebra.sort' undefined in user.tst903[97]
 #
 #Mcc("Admin","tst903");
 #
-!ERROR: 'Mcc' undefined in Admin.main[1]
-function Admin.main():int;	# 0  (main:int)
-    Mcc("Admin","tst903");	# 1  unknown ($1:any)<-($2:str)($3:str)
-end main;	# 2  
+!ERROR: Mcc.compile("user","tst903");
+!           ^<modulename> expected
+function user.main():int;	# 0  unknown (main:int)
+    ;	# 1  unknown ($1:any)
+end main;	# 2  unknown 
 
 # 11:08:36 >  
 # 11:08:36 >  Done.

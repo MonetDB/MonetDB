@@ -42,7 +42,7 @@ stdout of test 'tst1004` in directory 'src/mal` itself:
 #print(x);
 #bbp.close();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     io.print("Start test");	# 1 IOprint_val ($1:int)<-($2:str)
     bbp.open();	# 2 CMDbbpopen ($3:void)
     b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($5:int)($6:int)

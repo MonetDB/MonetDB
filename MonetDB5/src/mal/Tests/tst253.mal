@@ -1,12 +1,12 @@
 # testing void bats
 
-b:= new(:void,:str);
-insert(b,"hello");
-insert(b,nil,"world");
-print(b);
+b:= bbp.new(:void,:str);
+bat.insert(b,"hello");
+bat.insert(b,nil,"world");
+io.print(b);
 
 #materialize header
-c:= reverse(b);
-print(c);
-d:= markT(c);
-print(d);
+c:= bat.reverse(b);
+io.print(c);
+d:= algebra.markT(c);
+io.print(d);

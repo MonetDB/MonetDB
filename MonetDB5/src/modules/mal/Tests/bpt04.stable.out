@@ -43,7 +43,10 @@ stdout of test 'bpt04` in directory 'src/modules/mal` itself:
 #	redo (idx,b):= partitions.hasMoreElements(a1);
 #exit (idx,b);
 #
-function Admin.main():int;	# 0  (main:int)
+
+
+
+function user.main():int;	# 0  (main:int)
     a1 := bbp.new(:void,:int);	# 1 CMDBATnew (a1:bat[:void,:int])<-($2:void)($3:int)
     bat.setSequenceBase(a1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a1:bat[:void,:int])($5:oid)
     a2 := bbp.new(:void,:int);	# 3 CMDBATnew (a2:bat[:void,:int])<-($7:void)($8:int)
@@ -116,7 +119,7 @@ ptop=3 plimit=1024
 [ 28@0,	  8	  ]
 [ 29@0,	  9	  ]
 
-# 14:35:39 >  
-# 14:35:39 >  Done.
-# 14:35:39 >  
+# 14:51:13 >  
+# 14:51:13 >  Done.
+# 14:51:13 >  
 

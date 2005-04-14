@@ -23,7 +23,7 @@ stdout of test 'tst002` in directory 'src/mal` itself:
 !ERROR: 'true' is a reserved identifier
 !ERROR: 'false' is a reserved identifier
 !ERROR: 'barrier' is a reserved identifier
-function Admin.main():int;	# 0  unknown (main:int)
+function user.main():int;	# 0  unknown (main:int)
     true := 23;	# 1  unknown (true:any)<-($2:int)
     false := 24;	# 2  unknown (false:any)<-($4:int)
 barrier barrier := true;	# 3  unknown (barrier:any)<-($6:bit)

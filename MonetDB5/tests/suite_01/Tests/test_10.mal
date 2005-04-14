@@ -10,8 +10,8 @@ include mil_scenario;
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
-	aa_a := oid(20000000);
-	ba_a := setoid(aa_a);
+	aa_a := calc.oid(20000000);
+	ba_a := calc.setoid(aa_a);
 	mil.line("# long string problems in the Monet parser\n");
 	a := "asdfdsfasdfadfadfa";
 	mil.line("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";");
@@ -19,6 +19,6 @@ include mil_scenario;
 	mil.line("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";");
 	c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";
 	mil.line("c.print();");
-	ca_a := print(c);
+	ca_a := io.print(c);
 	mil.line("quit();");
-	da_a := quit();
+	da_a := clients.quit();

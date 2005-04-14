@@ -10,8 +10,8 @@ function add2(i:int,j:int{read=true}):int{write=true,safe=true};
 end ;
 
 i{cost=23}:= 23;
-z:= add(i,i);
-kk:= add2(i,i);
+z:= user.add(i,i);
+kk:= user.add2(i,i);
 
 
 #alternative structure

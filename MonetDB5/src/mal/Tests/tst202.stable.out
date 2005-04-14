@@ -34,7 +34,7 @@ stdout of test 'tst202` in directory 'src/mal` itself:
 #	#destroy(b);
 #	#destroy(c);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     bat.setName(b,"mybat");	# 2 BKCsetName ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:str)
     bat.setColumn(b,"first","second");	# 3 BKCsetColumns ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:str)($8:str)

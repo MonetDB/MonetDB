@@ -1,8 +1,8 @@
 # reference setting tables
-	b := new(nil:int,nil:int);
-	aa_a := insert(b,1,2);
-	ba_a := insert(b,2,3);
-	z := getLRefCount(b);
-	print(z);
-	b := join(b,b);
-	print(b);
+	b := bbp.new(nil:int,nil:int);
+	aa_a := bat.insert(b,1,2);
+	ba_a := bat.insert(b,2,3);
+	z := bbp.getLRefCount(b);
+	io.print(z);
+	b := algebra.join(b,b);
+	io.print(b);

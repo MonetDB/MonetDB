@@ -26,7 +26,7 @@ stdout of test 'inspect00` in directory 'src/modules/mal` itself:
 #	# next one is illegal
 #	b1:= inspect.getStackFrame(2);
 #end tst;
-function Admin.tst():void;	# 0  (tst:void)
+function user.tst():void;	# 0  (tst:void)
     i := mdb.getStackDepth();	# 1 MDBStkDepth (i:int)
     io.printf("stack depth %d\n",i);	# 2 IOprint_formatted_int ($2:int)<-($3:str)(i:int)
     t := mdb.getStackTrace();	# 3 MDBStkTrace (t:bat[:void,:str])
@@ -40,8 +40,8 @@ end tst;	# 10
 #
 #tst();
 #
-function Admin.main():int;	# 0  (main:int)
-    Admin.tst();	# 1  ($1:void)
+function user.main():int;	# 0  (main:int)
+    user.tst();	# 1  ($1:void)
 end main;	# 2  
 stack depth 2
 #---------------------------------------------------------#
@@ -49,7 +49,7 @@ stack depth 2
 # int	str						  # type
 #---------------------------------------------------------#
 [ 0,	  "t := mdb.getStackTrace(); at #3 in tst"	  ]
-[ 1,	  "$1 := Admin.tst(); at #1 in main"		  ]
+[ 1,	  "$1 := user.tst(); at #1 in main"		  ]
 #-----------------------------------------#
 # stk	frame				  # name
 # str	str				  # type

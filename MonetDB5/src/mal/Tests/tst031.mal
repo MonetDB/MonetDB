@@ -1,12 +1,12 @@
-b:=new(:void,:int);
-setSequenceBase(b,0@0);
-insert(b,nil,0);
-insert(b,nil,1);
-k:=2@0;
-insert(b,k,2);
-print(b);
-replace(b,k,3);
-print(b);
-delete(b,k);
-print(b);
+b:= bbp.new(:void,:int);
+bat.setSequenceBase(b,0@0);
+bat.insert(b,nil,0);
+bat.insert(b,nil,1);
+k:= 2@0;
+bat.insert(b,k,2);
+io.print(b);
+bat.replace(b,k,3);
+io.print(b);
+bat.delete(b,k);
+io.print(b);
 

@@ -23,7 +23,7 @@ stdout of test 'tst2015` in directory 'src/mal` itself:
 #exit b1;
 #exit xx;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
 barrier xx;	# 1  (xx:any) jump 7
 thread b1;	# 2  (b1:any) jump 6
     io.printf("#Entered thread\n");	# 3 IOprint_str ($3:int)<-($4:str)

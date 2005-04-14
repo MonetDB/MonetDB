@@ -5,7 +5,7 @@
 	stream.close(fp);
 	fp := stream.openRead("tst1150garbage");
 	s := stream.readStr(fp);
-	print(s);
+	io.print(s);
 	stream.close(fp);
 
 	fp := stream.openWrite("tst1150garbage");
@@ -13,4 +13,4 @@
 	stream.close(fp);
 	fp := stream.openRead("tst1150garbage");
 	i := stream.readInt(fp);
-	print(i);
+	io.print(i);

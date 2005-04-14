@@ -1,4 +1,4 @@
 # parsing operations with multi-assignments
 (c,d):= ("hello","world");
-print(c);
-print(d);
+io.print(c);
+io.print(d);

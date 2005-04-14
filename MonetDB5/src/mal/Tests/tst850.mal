@@ -1,10 +1,10 @@
 # The likeselect operation
 
-	t:= new(:void,:str);
-	setSequenceBase(t, 0@0);
-	insert(t,nil,"hello world");
-	insert(t,nil,"sleep well");
-	print(t);
+	t:= bbp.new(:void,:str);
+	bat.setSequenceBase(t, 0@0);
+	bat.insert(t,nil,"hello world");
+	bat.insert(t,nil,"sleep well");
+	io.print(t);
 
 	b:= multiplex.script("startsWith",t,"");
-	print(b);
+	io.print(b);

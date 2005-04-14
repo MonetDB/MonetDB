@@ -58,7 +58,7 @@ stdout of test 'part02` in directory 'src/optimizer` itself:
 #	j:= join(a,b);
 #	print(j);
 #end qry;
-function Admin.qry(a:bat[:void,:any],b:bat[:void,:any]):void;	# 0  (qry:void)<-(a:bat[:void,:any])(b:bat[:void,:any])
+function user.qry(a:bat[:void,:any],b:bat[:void,:any]):void;	# 0  (qry:void)<-(a:bat[:void,:any])(b:bat[:void,:any])
     io.print("experiment 3");	# 1 IOprint_val ($3:int)<-($4:str)
     j := algebra.join(a,b);	# 2 ALGjoin (j:bat[:void,:any])<-(a:bat[:void,:any])(b:bat[:void,:any])
     io.print(j);	# 3 IOprint_val ($6:int)<-(j:bat[:void,:any])
@@ -79,7 +79,7 @@ replace first=3 last=4
 variable replacement 'b' instructions 3-4  lifespan 3-3
 first=8 last=10 
 first=11 last=10 
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     a1 := bbp.new(:void,:int);	# 1 CMDBATnew (a1:bat[:void,:int])<-($2:void)($3:int)
     bat.setSequenceBase(a1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a1:bat[:void,:int])($5:oid)
     a2 := bbp.new(:void,:int);	# 3 CMDBATnew (a2:bat[:void,:int])<-($7:void)($8:int)
@@ -108,9 +108,9 @@ exit (go,i);	# 21  (go:bit)(i:int)
     partitions.deposit(b1,b2);	# 26 BPTdeposit2 ($44:void)<-(b1:bat[:void,:int])(b2:bat[:void,:int])
     partitions.deposit(b1,b3);	# 27 BPTdeposit2 ($45:void)<-(b1:bat[:void,:int])(b3:bat[:void,:int])
     partitions.dump();	# 28 BPTdump ($46:void)
-    mdb.showFunction("Admin","qry");	# 29 MDBshowFunction3 ($50:void)<-($48:str)($49:str)
+    mdb.showFunction("user","qry");	# 29 MDBshowFunction3 ($50:void)<-($48:str)($49:str)
     io.print("run experiment");	# 30 IOprint_val ($51:int)<-($52:str)
-    Admin.qry(a1,b1);	# 31  ($53:void)<-(a1:bat[:void,:int])(b1:bat[:void,:int])
+    user.qry(a1,b1);	# 31  ($53:void)<-(a1:bat[:void,:int])(b1:bat[:void,:int])
 end main;	# 32  
 ptop=6 plimit=1024
 [0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-1
@@ -119,7 +119,7 @@ ptop=6 plimit=1024
 [3] bid=16 pid=16 f=0, l=10 prv=-1 nxt=4 cap=-1
 [4] bid=16 pid=17 f=10, l=20 prv=3 nxt=5 cap=-1
 [5] bid=16 pid=18 f=20, l=30 prv=4 nxt=-1 cap=-1
-function Admin.qry(a:bat[:void,:any],b:bat[:void,:any]):void;
+function user.qry(a:bat[:void,:any],b:bat[:void,:any]):void;
     io.print("experiment 3");
 barrier ($7,$8):= partitions.newIterator(a);
 barrier ($9,$10):= partitions.newIterator(b);

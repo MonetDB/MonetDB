@@ -4,7 +4,7 @@
 include mil;
 mil.open();
 barrier (v,nme):= mil.iterator();
-	print(nme);
+	io.print(nme);
 	redo (v,nme):=mil.iterator();
 exit v;
 mil.close();	# save the content on persistent store

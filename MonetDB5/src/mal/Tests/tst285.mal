@@ -1,10 +1,10 @@
-b:= new(:void,:str);
-setSequenceBase(b,0@0);
-insert(b,nil,"hello");
-insert(b,nil,"goodbye");
+b:= bbp.new(:void,:str);
+bat.setSequenceBase(b,0@0);
+bat.insert(b,nil,"hello");
+bat.insert(b,nil,"goodbye");
 
-z1:= match(b,"hel");
-print(z1);
+z1:= batstr.match(b,"hel");
+io.print(z1);
 
-z2:= match(b,".*[ly].*");
-print(z2);
+z2:= batstr.match(b,".*[ly].*");
+io.print(z2);

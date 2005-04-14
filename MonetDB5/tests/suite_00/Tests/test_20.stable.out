@@ -64,7 +64,7 @@ stdout of test 'test_20` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	ua_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
@@ -84,7 +84,7 @@ function Admin.main():int;	# 0  (main:int)
     ja_a := bat.insert(a,ha_a,ia_a);	# 17 BKCinsert_bun (ja_a:bat[:int,:void])<-(a:bat[:int,:void])(ha_a:int)(ia_a:void)
     mil.line("a.print();");	# 18 MILline ($30:void)<-($18:str)
     ka_a := io.print(a);	# 19 IOprint_val (ka_a:int)<-(a:bat[:int,:void])
-    mil.line("var b:= new(void,int);");	# 20 MILline ($32:void)<-($33:str)
+    mil.line("var b:= bbp.new(void,int);");	# 20 MILline ($32:void)<-($33:str)
     b := bbp.new(nil:void,nil:int);	# 21 CMDBATnew (b:bat[:void,:int])<-($10:void)($9:int)
     mil.line("b.insert(void(nil),1);");	# 22 MILline ($35:void)<-($36:str)
     la_a := calc.void(nil);	# 23 CALCnil2void (la_a:void)<-($14:void)

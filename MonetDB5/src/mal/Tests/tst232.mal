@@ -1,20 +1,20 @@
 # a test checking BAT reference counting under various situations
 	bbp.open();
-	b:= new(:int,:str);
-	i:= getRefCount(b);
-	printf("refcount =%d\n",i);
-	j:= getLRefCount(b);
-	printf("lrefcount =%d\n",j);
+	b:= bbp.new(:int,:str);
+	i:= bbp.getRefCount(b);
+	io.printf("refcount =%d\n",i);
+	j:= bbp.getLRefCount(b);
+	io.printf("lrefcount =%d\n",j);
 
-	insert(b,1,"bat B");
-	print(b);
-	i:= getRefCount(b);
-	printf("refcount =%d\n",i);
-	j:= getLRefCount(b);
-	printf("lrefcount =%d\n",j);
+	bat.insert(b,1,"bat B");
+	io.print(b);
+	i:= bbp.getRefCount(b);
+	io.printf("refcount =%d\n",i);
+	j:= bbp.getLRefCount(b);
+	io.printf("lrefcount =%d\n",j);
 
 	bbp.destroy(b);
-	i:= getRefCount(b);
+	i:= bbp.getRefCount(b);
 catch MALexception;
-	print("bat was destroyed");
+	io.print("bat was destroyed");
 exit MALexception;

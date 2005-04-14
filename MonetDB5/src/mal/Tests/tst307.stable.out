@@ -21,7 +21,7 @@ stdout of test 'tst307` in directory 'src/mal` itself:
 #	print("catched the exception");
 #exit MALexception;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     z := algebra.find(b,0);	# 2 ALGfind (z:int)<-(b:bat[:int,:int])($5:int)
     io.print("should not come here anymore");	# 3 IOprint_val ($6:int)<-($7:str)

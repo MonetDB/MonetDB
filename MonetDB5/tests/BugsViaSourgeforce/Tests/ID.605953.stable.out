@@ -23,7 +23,7 @@ stdout of test 'ID.605953` in directory 'tests/BugsViaSourgeforce` itself:
 #
 # marking a void-T table nil gives incorrect results. 
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     t := bbp.new(nil:oid,"nil:str");	# 1 CMDBATnew (t:bat[:oid,:str])<-($2:oid)($3:str)
     aa_a := calc.oid(0);	# 2 CALCint2oid (aa_a:oid)<-($5:int)
     ba_a := bat.insert(t,aa_a,"a");	# 3 BKCinsert_bun (ba_a:bat[:any,:str])<-(t:bat[:oid,:str])(aa_a:oid)($7:str)

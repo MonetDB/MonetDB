@@ -2,7 +2,7 @@
 
 function clkticks(n:int):void;
 barrier	b:= n>0;
-	printf("#clock tick %d\n",n);
+	io.printf("#clock tick %d\n",n);
 	alarm.sleep(5);
 	n:= n-1;
 	redo b:=n>0;
@@ -10,7 +10,7 @@ exit	b;
 end clkticks;
 
 thread 	hdl:=0;	# synchronize through a boolean
-	clkticks(2);
+	user.clkticks(2);
 exit	hdl;
-printf("#Main thread\n");
-printf("#Wait for child to exit\n");
+io.printf("#Main thread\n");
+io.printf("#Wait for child to exit\n");

@@ -25,7 +25,7 @@ stdout of test 'tst035` in directory 'src/mal` itself:
 #b:=b;
 #i:= getLRefCount(b); print(i);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     z := "hello world";	# 1  (z:str)<-($2:str)
     io.print(z);	# 2 IOprint_val ($3:int)<-(z:str)
     z := z;	# 3  (z:str)<-(z:str)

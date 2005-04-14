@@ -1,9 +1,9 @@
 # minimal barrier
 barrier	l:=1;
-	print(l);
+	io.print(l);
 exit	l:= 2;
-	print(l);
+	io.print(l);
 barrier m:=3;
 	leave m;
 exit	m:= 4;
-	print(m);
+	io.print(m);

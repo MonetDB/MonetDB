@@ -11,14 +11,14 @@ barrier c:= B;
 	F:=6;	# may be removed
 exit c;
 
-barrier c:= not(B);
+barrier c:= calc.not(B);
 	A:=2;
 	F:=7;	# may be removed
 exit c;
 
-print(A);
-print(D);
-print(E);
+io.print(A);
+io.print(D);
+io.print(E);
 
 optimizer.deadCodeRemoval();
 

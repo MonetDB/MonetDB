@@ -31,7 +31,7 @@ stdout of test 'tst251` in directory 'src/mal` itself:
 #	redo (v,h,ts):= hasMoreElements(c);
 #exit v;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     c := bbp.new(:int,:str);	# 1 CMDBATnew (c:bat[:int,:str])<-($2:int)($3:str)
     bat.insert(c,1,"hello");	# 2 BKCinsert_bun ($4:bat[:int,:str])<-(c:bat[:int,:str])($5:int)($6:str)
     bat.insert(c,2,"brave");	# 3 BKCinsert_bun ($7:bat[:int,:str])<-(c:bat[:int,:str])($8:int)($9:str)

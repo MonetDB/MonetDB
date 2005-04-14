@@ -22,10 +22,10 @@ stdout of test 'tst4015` in directory 'src/optimizer` itself:
 #debugOptimizers();
 #RRoptimizer();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     r := bbp.new(:int,:int);	# 1 CMDBATnew (r:bat[:int,:int])<-($2:int)($3:int)
-    bat.insert(r,5,1);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(r:bat[:int,:int])($5:int)($6:int)
-    k := 23;	# 3  (k:int)<-($9:int)
+    bat.insert(r,5:int,1:int);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(r:bat[:int,:int])($5:int)($6:int)
+    k := 23:int;	# 3  (k:int)<-($9:int)
     io.print(r);	# 4 IOprint_val ($11:int)<-(r:bat[:int,:int])
 end main;	# 5  
 #-----------------#

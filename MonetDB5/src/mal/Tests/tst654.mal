@@ -10,20 +10,20 @@ tablet.setProperties("name,type");
 tablet.setColumnName(0,"Eerste");
 #tablet.setRowBracket("|","|");
 
-b1:= new(:void,:int);
-insert(b1,42);
-insert(b1,49);
-b2:= new(:void,:str);
-insert(b2,"hello world");
-insert(b2,"goodbye world");
+b1:= bbp.new(:void,:int);
+bat.insert(b1,42);
+bat.insert(b1,49);
+b2:= bbp.new(:void,:str);
+bat.insert(b2,"hello world");
+bat.insert(b2,"goodbye world");
 
 tablet.setProperties("name,type,dense,sorted,key,min,max");
 tablet.display(b1,b2);
 
-in:= int(nil);
-sn := str(nil);
-insert(b1,in);
-insert(b2,sn);
+in:= calc.int(nil);
+sn := calc.str(nil);
+bat.insert(b1,in);
+bat.insert(b2,sn);
 tablet.setProperties(sn);
 tablet.setColumnDecimal(0,3,1);
 tablet.setColumnNull(1,"unknown");

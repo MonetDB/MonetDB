@@ -47,7 +47,7 @@ stdout of test 'tst010` in directory 'src/mal` itself:
 #barrier  unfinished:= 1;
 #	f:=1;
 #end;
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
 barrier L := 1;	# 1  (L:int)<-($2:int) jump 4
     leave Z;	# 2  (Z:any)
     redo L;	# 3  (L:int) jump 2
@@ -96,7 +96,7 @@ end main;	# 31
 !ERROR: 'D' used outside declaration scope in main[27]
 !ERROR: 'A' used outside declaration scope in main[28]
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
 barrier L := 1;	# 1  (L:int)<-($2:int) jump 4
     leave Z;	# 2  (Z:any)
     redo L;	# 3  (L:int) jump 2

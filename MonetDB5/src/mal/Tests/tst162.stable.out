@@ -24,7 +24,7 @@ end l;	# 2
 #z:= l();
 #print(z);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     z := strtype.l();	# 1  (z:strtype)
     io.print(z);	# 2 IOprint_val ($2:int)<-(z:strtype)
 end main;	# 3  

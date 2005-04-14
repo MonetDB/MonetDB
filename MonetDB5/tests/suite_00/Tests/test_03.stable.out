@@ -46,13 +46,13 @@ stdout of test 'test_03` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	ha_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
     mil.line("#test basic functionality of the BAT library.\n");	# 4 MILline ($6:void)<-($7:str)
     mil.line("#focussed on temporary reversal of roles.\n");	# 5 MILline ($8:void)<-($9:str)
-    mil.line("var b:= new(int,str);");	# 6 MILline ($10:void)<-($11:str)
+    mil.line("var b:= bbp.new(int,str);");	# 6 MILline ($10:void)<-($11:str)
     b := bbp.new(nil:int,"nil:str");	# 7 CMDBATnew (b:bat[:int,:str])<-($13:int)($14:str)
     mil.line("b.insert(1,\"15\");");	# 8 MILline ($15:void)<-($16:str)
     ca_a := bat.insert(b,1,"15");	# 9 BKCinsert_bun (ca_a:bat[:int,:str])<-(b:bat[:int,:str])($18:int)($19:str)

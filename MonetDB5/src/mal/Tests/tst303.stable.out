@@ -22,7 +22,7 @@ stdout of test 'tst303` in directory 'src/mal` itself:
 #exit	IllegalAccess;
 #	print("should not be done");
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     raise IllegalAccess := "an exception";	# 1  (IllegalAccess:str)<-($2:str)
     io.print("should not come here\n");	# 2 IOprint_val ($3:int)<-($4:str)
 catch IllegalAccess;	# 3  (IllegalAccess:str) jump 7
@@ -33,7 +33,9 @@ exit IllegalAccess;	# 7  (IllegalAccess:str)
     io.print("should not be done");	# 8 IOprint_val ($10:int)<-($11:str)
 end main;	# 9  
 catched an exception
-!ERROR: a second exception raised\nMALexception:Admin.main[9]: propagated
+!ERROR: IllegalAccess:user.main[5]:a second exception raised\n
+!ERROR: IllegalAccess:user.main[9]:Exception not catched
+#
 
 # 08:01:15 >  
 # 08:01:15 >  Done.

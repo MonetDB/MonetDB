@@ -10,17 +10,17 @@ include mil_scenario;
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
-	aa_a := oid(20000000);
+	aa_a := calc.oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("test1.print();");
 	test1:= mil.take("test1");
-	ca_a := print(test1);
+	ca_a := bat.print(test1);
 	mil.line("source(getenv(\"TSTTRGDIR\")+\"/no.158.source.mil\");");
 	da_a := getenv("TSTTRGDIR");
 	ea_a := +(da_a,"/no.158.source.mil");
 	fa_a := source(ea_a);
 	mil.line("test2.print();");
 	test2:= mil.take("test2");
-	ga_a := print(test2);
+	ga_a := bat.print(test2);
 	mil.line("quit();");
-	ha_a := quit();
+	ha_a := clients.quit();

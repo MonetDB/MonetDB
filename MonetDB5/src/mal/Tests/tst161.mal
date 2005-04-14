@@ -6,5 +6,5 @@ function l():mytype;
     return l:= 0:mytype;
 end l;
 
-z:= l();
-print(z);
+z:= mytype.l();
+io.print(z);

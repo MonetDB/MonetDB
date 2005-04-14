@@ -1,6 +1,6 @@
 # The prototypical factory construct
 
-factory random(seed:int):int;
+factory user.random(seed:int):int;
 	i:= seed;
 barrier always:= true;
 	i:= 125 *i;
@@ -10,15 +10,15 @@ barrier always:= true;
 exit always;
 end;
 
-r1:= random(1);
-print(r1);
-r2:= random(34);
-print(r2);
-r2:= random(2);
-print(r2);
-r2:= random(2);
-print(r2);
-r2:= random(2);
-print(r2);
-r2:= random(2);
-print(r2);
+r1:= user.random(1);
+io.print(r1);
+r2:= user.random(34);
+io.print(r2);
+r2:= user.random(2);
+io.print(r2);
+r2:= user.random(2);
+io.print(r2);
+r2:= user.random(2);
+io.print(r2);
+r2:= user.random(2);
+io.print(r2);

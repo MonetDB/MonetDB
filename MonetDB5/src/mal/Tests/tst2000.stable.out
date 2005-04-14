@@ -23,7 +23,7 @@ stdout of test 'tst2000` in directory 'src/mal` itself:
 #redo	b:= n>0;
 #exit	b;
 #end clkticks;
-function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
+function user.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
 barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
     io.printf("clock tick\n");	# 2 IOprint_str ($4:int)<-($5:str)
     alarm.sleep(2);	# 3 ALARMsleep ($6:void)<-($7:int)
@@ -35,10 +35,10 @@ end clkticks;	# 7
 #mdb('T');
 #clkticks(2);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mdb.setTimer(true);	# 1 MDBsetTimer ($1:void)<-($2:bit)
-    mdb.setTrace("Admin","clkticks",true);	# 2 MDBsetTrace2 ($3:void)<-($4:str)($5:str)($2:bit)
-    Admin.clkticks(2);	# 3  ($6:void)<-($7:int)
+    mdb.setTrace("user","clkticks",true);	# 2 MDBsetTrace2 ($3:void)<-($4:str)($5:str)($2:bit)
+    user.clkticks(2);	# 3  ($6:void)<-($7:int)
 end main;	# 4  
 #Monet Debugger on
 #Monet Debugger on

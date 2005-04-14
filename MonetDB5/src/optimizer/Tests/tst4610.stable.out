@@ -19,7 +19,7 @@ stdout of test 'tst4610` in directory 'src/optimizer` itself:
 #    zz:= join(z,c);
 #    return zz;
 #end joinPath;
-function Admin.joinPath(a:bat[:any$1,:any$2],b:bat[:any$2,:any$3],c:bat[:any$3,:any$4]):bat[:any$1,:any$4];	# 0  dynamic (joinPath:bat[:any$1,:any$4])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])(c:bat[:any$3,:any$4])
+function user.joinPath(a:bat[:any$1,:any$2],b:bat[:any$2,:any$3],c:bat[:any$3,:any$4]):bat[:any$1,:any$4];	# 0  dynamic (joinPath:bat[:any$1,:any$4])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])(c:bat[:any$3,:any$4])
     z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])
     zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any$3,:any$4])
     return zz;	# 3  (zz:bat[:any,:any])
@@ -35,19 +35,19 @@ end joinPath;	# 4
 #
 #showFunction();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     a := bbp.new(:int,:int);	# 1 CMDBATnew (a:bat[:int,:int])<-($5:int)($6:int)
     b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
     c := bbp.new(:int,:int);	# 3 CMDBATnew (c:bat[:int,:int])<-($11:int)($12:int)
-    h := Admin.joinPath(a,b,c);	# 4  (h:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
-    r := Admin.joinPath(a,b,c);	# 5  (r:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
+    h := user.joinPath(a,b,c);	# 4  (h:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
+    r := algebra.joinPath(a,b,c);	# 5 QOTjoinPath (r:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
     mdb.showFunction();	# 6 MDBshowFunction ($16:void)
-function Admin.main():int;
+function user.main():int;
     a := bbp.new(:int,:int);
     b := bbp.new(:int,:int);
     c := bbp.new(:int,:int);
-    h := Admin.joinPath(a,b,c);
-    r := Admin.joinPath(a,b,c);
+    h := user.joinPath(a,b,c);
+    r := algebra.joinPath(a,b,c);
     mdb.showFunction();
 #
 

@@ -21,7 +21,7 @@ stdout of test 'tst850` in directory 'src/mal` itself:
 #	b:= multiplex.script("startsWith",t,"");
 #	print(b);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     t := bbp.new(:void,:str);	# 1 CMDBATnew (t:bat[:void,:str])<-($2:void)($3:str)
     bat.setSequenceBase(t,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:str])<-(t:bat[:void,:str])($5:oid)
     bat.insert(t,nil,"hello world");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(t:bat[:void,:str])($7:void)($8:str)

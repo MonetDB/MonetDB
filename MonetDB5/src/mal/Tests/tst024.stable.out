@@ -23,12 +23,12 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 !ERROR: '$3' overwrites $2
 !ERROR: '$5' overwrites $3
 !ERROR: '$5' overwrites $3
-function Admin.main():int;	# 0  unknown (main:int)
+function user.main():int;	# 0  unknown (main:int)
     i := 12;	# 1  unknown (i:any)<-($2:int)
     $2 := 55;	# 2  unknown ($2:any)<-($4:int)
     $3 := 23;	# 3  unknown ($3:any)<-($6:int)
     $5 := 23;	# 4  unknown ($5:any)<-($6:int)
-    print($5);	# 5  unknown ($8:any)<-($5:any)
+    io.print($5);	# 5  unknown ($8:any)<-($5:any)
 end main;	# 6  unknown 
 
 # 07:58:40 >  

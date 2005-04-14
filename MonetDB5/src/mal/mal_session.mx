@@ -22,7 +22,7 @@
 The Monet server uses a startup script to boot the system.
 This script is an ordinary MAL program, but will mostly
 consist of include statements to load modules of interest.
-The startup script is ran in Admin mode.
+The startup script is ran as user Admin.
 Its location is described in Monet configuration file.
 
 In addition, startup scripts will be looked for each
@@ -59,8 +59,8 @@ int malBootstrap(){
 	Client c;
 	str bootfile= "mal_init",bf;
 
-	c= initClient(GDKstrdup("Admin"),NULL,0,0);
-	c->nspace= newScope(NULL, GDKstrdup("Admin"));
+	c= initClient(GDKstrdup("user"),NULL,0,0);
+	c->nspace= newScope(NULL, GDKstrdup("user"));
 	initLibraries();
 	if( defaultScenario(c)) return 0;
 	bf= GDKgetenv("mal_bootstrap");

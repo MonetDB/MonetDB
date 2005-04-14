@@ -25,7 +25,7 @@ stdout of test 'tst107` in directory 'src/mal` itself:
 #exit	t;
 #	i:= 0;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     i := 0;	# 1  (i:int)<-($2:int)
 barrier v := true;	# 2  (v:bit)<-($4:bit) jump 5
     leave v;	# 3  (v:bit) jump 5

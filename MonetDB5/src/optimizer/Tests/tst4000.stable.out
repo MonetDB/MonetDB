@@ -31,7 +31,7 @@ stdout of test 'tst4000` in directory 'src/optimizer` itself:
 #l3:= l2+k1;             # replace the alias
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($5:int)($6:int)
     c := bbp.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-($8:int)($9:int)
     d := algebra.select(b,0,100);	# 3 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])($11:int)($12:int)

@@ -9,4 +9,4 @@ include mil_scenario;
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #print("hello");
-	aa_a := print("hello");
+	aa_a := io.print("hello");

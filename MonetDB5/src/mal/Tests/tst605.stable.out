@@ -31,7 +31,7 @@ stdout of test 'tst605` in directory 'src/mal` itself:
 #	redo (b,nme):= const.hasMoreElements();
 #exit b;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     version := const.take("version");	# 1 CSTtake (version:str)<-($2:str)
     user := const.take("user");	# 2 CSTtake (user:str)<-($4:str)
     dbname := const.take("dbname");	# 3 CSTtake (dbname:str)<-($6:str)

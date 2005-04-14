@@ -93,7 +93,7 @@ stdout of test 'tst4630` in directory 'src/optimizer` itself:
 #    redo always;
 #exit always;
 #end qry1;
-factory Admin.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;	# 0  dynamic (qry1:any)<-(A0:sht)(A1:sht)(A2:sht)(A3:date)(A4:int)
+factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;	# 0  dynamic (qry1:any)<-(A0:sht)(A1:sht)(A2:sht)(A3:date)(A4:int)
     V6 := sql.bind("sys","lineitem","l_shipdate",0);	# 1 mvc_bind_wrap (V6:bat[:void,:date])<-($7:str)($8:str)($9:str)($10:int)
     V11 := sql.bind_dbat("sys","lineitem",0);	# 2 mvc_bind_dbat_wrap (V11:bat[:void,:oid])<-($7:str)($8:str)($10:int)
     V22 := sql.bind("sys","lineitem","l_returnflag",0);	# 3 mvc_bind_wrap (V22:bat[:void,:bit])<-($7:str)($8:str)($13:str)($10:int)
@@ -113,29 +113,29 @@ barrier always := true;	# 10  (always:bit)<-($26:bit) jump 73
     V21 := bat.reverse(V20);	# 17 BKCreverse (V21:bat[:void,:oid])<-(V20:bat[:oid,:void])
     V26 := algebra.kdiff(V22,V12);	# 18 ALGkdiff (V26:bat[:oid,:bit])<-(V22:bat[:void,:bit])(V12:bat[:oid,:void])
     V27 := algebra.join(V21,V26);	# 19 ALGjoin (V27:bat[:void,:bit])<-(V21:bat[:void,:oid])(V26:bat[:oid,:bit])
-    V28 := group.group(V27);	# 20 GRPgroup2 (V28:bat[:void,:oid])<-(V27:bat[:void,:bit])
+    V28 := group.group(V27);	# 20  (V28:any)<-(V27:bat[:void,:bit])
     V33 := algebra.kdiff(V29,V12);	# 21 ALGkdiff (V33:bat[:oid,:bit])<-(V29:bat[:void,:bit])(V12:bat[:oid,:void])
     V34 := algebra.join(V21,V33);	# 22 ALGjoin (V34:bat[:void,:bit])<-(V21:bat[:void,:oid])(V33:bat[:oid,:bit])
-    V35 := group.group(V28,V34);	# 23 GRPderive2 (V35:bat[:void,:oid])<-(V28:bat[:void,:oid])(V34:bat[:void,:bit])
-    V36 := algebra.tunique(V35);	# 24 ALGtunique (V36:bat[:void,:oid])<-(V35:bat[:void,:oid])
-    V37 := bat.mirror(V36);	# 25 BKCmirror (V37:bat[:void,:void])<-(V36:bat[:void,:oid])
-    V42 := algebra.join(V37,V27);	# 26 ALGjoin (V42:bat[:void,:bit])<-(V37:bat[:void,:void])(V27:bat[:void,:bit])
-    V43 := algebra.sort_reverse(V42);	# 27  (V43:bat[:void,:any])<-(V42:bat[:void,:bit])
-    V51 := algebra.join(V37,V34);	# 28 ALGjoin (V51:bat[:void,:bit])<-(V37:bat[:void,:void])(V34:bat[:void,:bit])
-    V52 := group.refine(V43,V51);	# 29 GRPrefine (V52:bat[:void,:oid])<-(V43:bat[:void,:any])(V51:bat[:void,:bit])
+    V35 := group.group(V28,V34);	# 23  (V35:bat[:any,:any])<-(V28:any)(V34:bat[:void,:bit])
+    V36 := algebra.tunique(V35);	# 24 ALGtunique (V36:bat[:any,:any])<-(V35:bat[:any,:any])
+    V37 := bat.mirror(V36);	# 25 BKCmirror (V37:bat[:any,:any])<-(V36:bat[:any,:any])
+    V42 := algebra.join(V37,V27);	# 26 ALGjoin (V42:bat[:any,:bit])<-(V37:bat[:any,:any])(V27:bat[:void,:bit])
+    V43 := algebra.sort_reverse(V42);	# 27  (V43:bat[:any,:any])<-(V42:bat[:any,:bit])
+    V51 := algebra.join(V37,V34);	# 28 ALGjoin (V51:bat[:any,:bit])<-(V37:bat[:any,:any])(V34:bat[:void,:bit])
+    V52 := group.refine(V43,V51);	# 29 GRPrefine (V52:bat[:any,:oid])<-(V43:bat[:any,:any])(V51:bat[:any,:bit])
     V57 := algebra.kdiff(V53,V12);	# 30 ALGkdiff (V57:bat[:oid,:int])<-(V53:bat[:void,:int])(V12:bat[:oid,:void])
     V58 := algebra.join(V21,V57);	# 31 ALGjoin (V58:bat[:void,:int])<-(V21:bat[:void,:oid])(V57:bat[:oid,:int])
-    V59 := aggrX3.sum(V58,V35,V37);	# 32 AX3aggrX3_sum3_int_lng (V59:bat[:void,:lng])<-(V58:bat[:void,:int])(V35:bat[:void,:oid])(V37:bat[:void,:void])
+    V59 := aggrX3.sum(V58,V35,V37);	# 32  (V59:bat[:any,:any])<-(V58:bat[:void,:int])(V35:bat[:any,:any])(V37:bat[:any,:any])
     V64 := algebra.kdiff(V60,V12);	# 33 ALGkdiff (V64:bat[:oid,:flt])<-(V60:bat[:void,:flt])(V12:bat[:oid,:void])
     V65 := algebra.join(V21,V64);	# 34 ALGjoin (V65:bat[:void,:flt])<-(V21:bat[:void,:oid])(V64:bat[:oid,:flt])
-    V66 := aggrX3.sum(V65,V35,V37);	# 35 AX3aggrX3_sum3_flt_flt (V66:bat[:oid,:flt])<-(V65:bat[:void,:flt])(V35:bat[:void,:oid])(V37:bat[:void,:void])
+    V66 := aggrX3.sum(V65,V35,V37);	# 35  (V66:bat[:any,:any])<-(V65:bat[:void,:flt])(V35:bat[:any,:any])(V37:bat[:any,:any])
     V72 := calc.lng(A0);	# 36 CALCsht2lng (V72:lng)<-(A0:sht)
     V74 := calc.*(V72,100);	# 37 CALCbinaryMULlngint (V74:lng)<-(V72:lng)($56:int)
     V82 := algebra.kdiff(V75,V12);	# 38 ALGkdiff (V82:bat[:oid,:flt])<-(V75:bat[:void,:flt])(V12:bat[:oid,:void])
     V83 := algebra.join(V21,V82);	# 39 ALGjoin (V83:bat[:void,:flt])<-(V21:bat[:void,:oid])(V82:bat[:oid,:flt])
     V84 := multiplex.script("-",V74,V83);	# 40  (V84:bat[:void,:flt])<-($60:str)(V74:lng)(V83:bat[:void,:flt])
     V86 := batcalc.*(V65,V84);	# 41 CMDbatMUL (V86:bat[:void,:flt])<-(V65:bat[:void,:flt])(V84:bat[:void,:flt])
-    V88 := aggrX3.sum(V86,V35,V37);	# 42 AX3aggrX3_sum3_flt_flt (V88:bat[:oid,:flt])<-(V86:bat[:void,:flt])(V35:bat[:void,:oid])(V37:bat[:void,:void])
+    V88 := aggrX3.sum(V86,V35,V37);	# 42  (V88:bat[:any,:any])<-(V86:bat[:void,:flt])(V35:bat[:any,:any])(V37:bat[:any,:any])
     V94 := calc.lng(A1);	# 43 CALCsht2lng (V94:lng)<-(A1:sht)
     V95 := calc.*(V94,100);	# 44 CALCbinaryMULlngint (V95:lng)<-(V94:lng)($56:int)
     V100 := multiplex.script("-",V95,V83);	# 45  (V100:bat[:void,:flt])<-($60:str)(V95:lng)(V83:bat[:void,:flt])
@@ -146,111 +146,41 @@ barrier always := true;	# 10  (always:bit)<-($26:bit) jump 73
     V110 := algebra.join(V21,V109);	# 50 ALGjoin (V110:bat[:void,:flt])<-(V21:bat[:void,:oid])(V109:bat[:oid,:flt])
     V111 := multiplex.script("+",V104,V110);	# 51  (V111:bat[:void,:flt])<-($72:str)(V104:lng)(V110:bat[:void,:flt])
     V113 := batcalc.*(V101,V111);	# 52 CMDbatMUL (V113:bat[:void,:flt])<-(V101:bat[:void,:flt])(V111:bat[:void,:flt])
-    V114 := aggrX3.sum(V113,V35,V37);	# 53 AX3aggrX3_sum3_flt_flt (V114:bat[:oid,:flt])<-(V113:bat[:void,:flt])(V35:bat[:void,:oid])(V37:bat[:void,:void])
-    V122 := aggrX3.avg(V58,V35,V37);	# 54 AX3aggrX3_avg3_int (V122:bat[:oid,:int])<-(V58:bat[:void,:int])(V35:bat[:void,:oid])(V37:bat[:void,:void])
-    V127 := aggrX3.avg(V65,V35,V37);	# 55 AX3aggrX3_avg3_flt (V127:bat[:oid,:flt])<-(V65:bat[:void,:flt])(V35:bat[:void,:oid])(V37:bat[:void,:void])
-    V129 := multiplex.script("round",V127,100);	# 56  (V129:bat[:oid,:flt])<-($78:str)(V127:bat[:oid,:flt])($56:int)
-    V135 := aggrX3.avg(V83,V35,V37);	# 57 AX3aggrX3_avg3_flt (V135:bat[:oid,:flt])<-(V83:bat[:void,:flt])(V35:bat[:void,:oid])(V37:bat[:void,:void])
-    V136 := multiplex.script("round",V135,100);	# 58  (V136:bat[:oid,:flt])<-($78:str)(V135:bat[:oid,:flt])($56:int)
-    V137 := aggrX3.count(V35,V35,V37);	# 59 AX3aggrX3_count3Nils (V137:bat[:oid,:int])<-(V35:bat[:void,:oid])(V35:bat[:void,:oid])(V37:bat[:void,:void])
-    sql.column(V42,"l_returnflag","varchar",1,0);	# 60 SQLcolumn ($82:void)<-(V42:bat[:void,:bit])($83:str)($84:str)($85:int)($86:int)
-    sql.column(V51,"l_linestatus","varchar",1,0);	# 61 SQLcolumn ($87:void)<-(V51:bat[:void,:bit])($88:str)($84:str)($85:int)($86:int)
-    sql.column(V59,"sum_qty","bigint",0,0);	# 62 SQLcolumn ($89:void)<-(V59:bat[:void,:lng])($90:str)($91:str)($86:int)($86:int)
-    sql.column(V66,"sum_base_price","decimal",19,2);	# 63 SQLcolumn ($92:void)<-(V66:bat[:oid,:flt])($93:str)($94:str)($95:int)($96:int)
-    sql.column(V88,"sum_disc_price","decimal",19,4);	# 64 SQLcolumn ($97:void)<-(V88:bat[:oid,:flt])($98:str)($94:str)($95:int)($99:int)
-    sql.column(V114,"sum_charge","decimal",19,6);	# 65 SQLcolumn ($100:void)<-(V114:bat[:oid,:flt])($101:str)($94:str)($95:int)($102:int)
-    sql.column(V122,"avg_qty","double",53,0);	# 66 SQLcolumn ($103:void)<-(V122:bat[:oid,:int])($104:str)($105:str)($106:int)($86:int)
-    sql.column(V129,"avg_price","double",53,0);	# 67 SQLcolumn ($107:void)<-(V129:bat[:oid,:flt])($108:str)($105:str)($106:int)($86:int)
-    sql.column(V136,"avg_disc","double",53,0);	# 68 SQLcolumn ($109:void)<-(V136:bat[:oid,:flt])($110:str)($105:str)($106:int)($86:int)
-    sql.column(V137,"count_order","int",0,0);	# 69 SQLcolumn ($111:void)<-(V137:bat[:oid,:int])($112:str)($113:str)($86:int)($86:int)
-    sql.output(V52,V42,V51,V59,V66,V88,V114,V122,V129,V136,V137);	# 70  ($114:any)<-(V52:bat[:void,:oid])(V42:bat[:void,:bit])(V51:bat[:void,:bit])(V59:bat[:void,:lng])(V66:bat[:oid,:flt])(V88:bat[:oid,:flt])(V114:bat[:oid,:flt])(V122:bat[:oid,:int])(V129:bat[:oid,:flt])(V136:bat[:oid,:flt])(V137:bat[:oid,:int])
+    V114 := aggrX3.sum(V113,V35,V37);	# 53  (V114:bat[:any,:any])<-(V113:bat[:void,:flt])(V35:bat[:any,:any])(V37:bat[:any,:any])
+    V122 := aggrX3.avg(V58,V35,V37);	# 54  (V122:bat[:any,:any])<-(V58:bat[:void,:int])(V35:bat[:any,:any])(V37:bat[:any,:any])
+    V127 := aggrX3.avg(V65,V35,V37);	# 55  (V127:any)<-(V65:bat[:void,:flt])(V35:bat[:any,:any])(V37:bat[:any,:any])
+    V129 := multiplex.script("round",V127,100);	# 56  unknown (V129:bat[:any,:any])<-($78:str)(V127:any)($56:int)
+    V135 := aggrX3.avg(V83,V35,V37);	# 57  (V135:any)<-(V83:bat[:void,:flt])(V35:bat[:any,:any])(V37:bat[:any,:any])
+    V136 := multiplex.script("round",V135,100);	# 58  unknown (V136:bat[:any,:any])<-($78:str)(V135:any)($56:int)
+    V137 := aggrX3.count(V35,V35,V37);	# 59  (V137:bat[:any,:any])<-(V35:bat[:any,:any])(V35:bat[:any,:any])(V37:bat[:any,:any])
+    sql.column(V42,"l_returnflag","varchar",1,0);	# 60 SQLcolumn ($82:void)<-(V42:bat[:any,:bit])($83:str)($84:str)($85:int)($86:int)
+    sql.column(V51,"l_linestatus","varchar",1,0);	# 61 SQLcolumn ($87:void)<-(V51:bat[:any,:bit])($88:str)($84:str)($85:int)($86:int)
+    sql.column(V59,"sum_qty","bigint",0,0);	# 62 SQLcolumn ($89:void)<-(V59:bat[:any,:any])($90:str)($91:str)($86:int)($86:int)
+    sql.column(V66,"sum_base_price","decimal",19,2);	# 63 SQLcolumn ($92:void)<-(V66:bat[:any,:any])($93:str)($94:str)($95:int)($96:int)
+    sql.column(V88,"sum_disc_price","decimal",19,4);	# 64 SQLcolumn ($97:void)<-(V88:bat[:any,:any])($98:str)($94:str)($95:int)($99:int)
+    sql.column(V114,"sum_charge","decimal",19,6);	# 65 SQLcolumn ($100:void)<-(V114:bat[:any,:any])($101:str)($94:str)($95:int)($102:int)
+    sql.column(V122,"avg_qty","double",53,0);	# 66 SQLcolumn ($103:void)<-(V122:bat[:any,:any])($104:str)($105:str)($106:int)($86:int)
+    sql.column(V129,"avg_price","double",53,0);	# 67 SQLcolumn ($107:void)<-(V129:bat[:any,:any])($108:str)($105:str)($106:int)($86:int)
+    sql.column(V136,"avg_disc","double",53,0);	# 68 SQLcolumn ($109:void)<-(V136:bat[:any,:any])($110:str)($105:str)($106:int)($86:int)
+    sql.column(V137,"count_order","int",0,0);	# 69 SQLcolumn ($111:void)<-(V137:bat[:any,:any])($112:str)($113:str)($86:int)($86:int)
+    sql.output(V52,V42,V51,V59,V66,V88,V114,V122,V129,V136,V137);	# 70  ($114:any)<-(V52:bat[:any,:oid])(V42:bat[:any,:bit])(V51:bat[:any,:bit])(V59:bat[:any,:any])(V66:bat[:any,:any])(V88:bat[:any,:any])(V114:bat[:any,:any])(V122:bat[:any,:any])(V129:bat[:any,:any])(V136:bat[:any,:any])(V137:bat[:any,:any])
     yield always;	# 71  (always:bit)
     redo always;	# 72  (always:bit) jump 11
 exit always;	# 73  (always:bit)
 end qry1;	# 74  
+!ERROR: multiplexType:script[56]: at least one BAT argument required
+!ERROR: multiplexType:script[58]: at least one BAT argument required
 #
 #
-#optimize(Admin,qry1);
-#showFunction(Admin,qry1);
+#optimize("user","qry1");
+#mdb.showFunction("user","qry1");
 #
-function Admin.main():int;	# 0  (main:int)
-    mdb.showFunction("Admin","qry1");	# 1 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
-end main;	# 2  
-factory Admin.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
-    V6 := sql.bind("sys","lineitem","l_shipdate",0);
-    V11 := sql.bind_dbat("sys","lineitem",0);
-    V22 := sql.bind("sys","lineitem","l_returnflag",0);
-    V29 := sql.bind("sys","lineitem","l_linestatus",0);
-    V53 := sql.bind("sys","lineitem","l_quantity",0);
-    V60 := sql.bind("sys","lineitem","l_extendedprice",0);
-    V75 := sql.bind("sys","lineitem","l_discount",0);
-    V105 := sql.bind("sys","lineitem","l_tax",0);
-barrier always := true;
-    V12 := bat.reverse(V11);
-    V13 := V6;
-    V16 := mtime.date_sub_sec_interval(A3,A4);
-    a := mtime.date(nil);
-    V17 := algebra.uselect(V13,a,V16);
-    V20 := algebra.markT(V17,0@0);
-    V21 := bat.reverse(V20);
-    V26 := V22;
-    V27 := algebra.join(V21,V26);
-    V28 := group.group(V27);
-    V33 := V29;
-    V34 := algebra.join(V21,V33);
-    V35 := group.group(V28,V34);
-    V36 := algebra.tunique(V35);
-    V37 := bat.mirror(V36);
-    V42 := algebra.join(V37,V27);
-    V43 := algebra.sort_reverse(V42);
-    V51 := algebra.join(V37,V34);
-    V52 := group.refine(V43,V51);
-    V57 := V53;
-    V58 := algebra.join(V21,V57);
-    V59 := aggrX3.sum(V58,V35,V37);
-    V64 := V60;
-    V65 := algebra.join(V21,V64);
-    V66 := aggrX3.sum(V65,V35,V37);
-    V72 := calc.lng(A0);
-    V74 := calc.*(V72,100);
-    V82 := V75;
-    V83 := algebra.join(V21,V82);
-    V84 := multiplex.script("-",V74,V83);
-    V86 := batcalc.*(V65,V84);
-    V88 := aggrX3.sum(V86,V35,V37);
-    V94 := calc.lng(A1);
-    V95 := calc.*(V94,100);
-    V100 := multiplex.script("-",V95,V83);
-    V101 := batcalc.*(V65,V100);
-    V103 := calc.lng(A2);
-    V104 := calc.*(V103,100);
-    V109 := V105;
-    V110 := algebra.join(V21,V109);
-    V111 := multiplex.script("+",V104,V110);
-    V113 := batcalc.*(V101,V111);
-    V114 := aggrX3.sum(V113,V35,V37);
-    V122 := aggrX3.avg(V58,V35,V37);
-    V127 := aggrX3.avg(V65,V35,V37);
-    V129 := multiplex.script("round",V127,100);
-    V135 := aggrX3.avg(V83,V35,V37);
-    V136 := multiplex.script("round",V135,100);
-    V137 := aggrX3.count(V35,V35,V37);
-    sql.column(V42,"l_returnflag","varchar",1,0);
-    sql.column(V51,"l_linestatus","varchar",1,0);
-    sql.column(V59,"sum_qty","bigint",0,0);
-    sql.column(V66,"sum_base_price","decimal",19,2);
-    sql.column(V88,"sum_disc_price","decimal",19,4);
-    sql.column(V114,"sum_charge","decimal",19,6);
-    sql.column(V122,"avg_qty","double",53,0);
-    sql.column(V129,"avg_price","double",53,0);
-    sql.column(V136,"avg_disc","double",53,0);
-    sql.column(V137,"count_order","int",0,0);
-    sql.output(V52,V42,V51,V59,V66,V88,V114,V122,V129,V136,V137);
-    yield always;
-    redo always;
-exit always;
-end qry1;
-#
+!ERROR: optimize("user","qry1");
+!       ^module name expected
+function user.main():int;	# 0  unknown (main:int)
+    ;	# 1  unknown ($1:any)
+    mdb.showFunction("user","qry1");	# 2  unknown ($2:any)<-($3:str)($4:str)
+end main;	# 3  unknown 
 
 # 15:16:27 >  
 # 15:16:27 >  Done.

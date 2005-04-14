@@ -22,7 +22,7 @@ stdout of test 'tst225` in directory 'src/mal` itself:
 #bbp.garbage(a);
 #z:= +(a,a,b);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     a := bbp.new(:int,:int);	# 1 CMDBATnew (a:bat[:int,:int])<-($2:int)($3:int)
     bat.insert(a,1,1);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(a:bat[:int,:int])($5:int)($5:int)
     b := algebra.copy(a);	# 3 ALGcopy (b:bat[:int,:int])<-(a:bat[:int,:int])

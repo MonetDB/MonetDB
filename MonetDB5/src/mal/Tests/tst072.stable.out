@@ -17,7 +17,7 @@ stdout of test 'tst072` in directory 'src/mal` itself:
 #print(c);
 #print(d);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     (c,d):= ("hello","world");	# 1  (c:str)(d:str)<-($3:str)($4:str)
     io.print(c);	# 2 IOprint_val ($5:int)<-(c:str)
     io.print(d);	# 3 IOprint_val ($6:int)<-(d:str)

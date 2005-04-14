@@ -8,4 +8,4 @@ barrier b1;
 	s2:= s1;
 	s1:= "bye";
 exit 	b1;
-	print(s1);
+	io.print(s1);

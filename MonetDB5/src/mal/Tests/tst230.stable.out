@@ -34,7 +34,7 @@ stdout of test 'tst230` in directory 'src/mal` itself:
 #	printf("lrefcount =%d\n",j);
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
     i := bbp.getRefCount(b);	# 2 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("refcount =%d\n",i);	# 3 IOprint_formatted_int ($5:int)<-($6:str)(i:int)

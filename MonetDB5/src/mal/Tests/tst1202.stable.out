@@ -84,7 +84,7 @@ stdout of test 'tst1202` in directory 'src/mal` itself:
 ##print("end_dst");print(pd_a);
 ##	qd_a := print(ld_a,nd_a,pd_a);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     rule_apr := mtime.rule("last THU on or before aPr 1@01:15");	# 1 MTIMErule_fromstr (rule_apr:rule)<-($2:str)
     rule_nov := mtime.rule(11,-10,-4,75);	# 2 MTIMErule_create (rule_nov:rule)<-($4:int)($5:int)($6:int)($7:int)
     io.print("start");	# 3 IOprint_val ($8:int)<-($9:str)

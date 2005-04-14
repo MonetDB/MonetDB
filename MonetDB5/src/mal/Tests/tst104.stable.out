@@ -17,15 +17,15 @@ stdout of test 'tst104` in directory 'src/mal` itself:
 #
 #command f(a:any$1, b:bat[:any$2,:any$1],c:any$2):any 
 !ERROR: address of 'dummy' not found
-command Admin.f(a:any$1,b:bat[:any$2,:any$1],c:any$2):any address dummy;	# 0  dynamic (f:any)<-(a:any$1)(b:bat[:any$2,:any$1])(c:any$2)
+command user.f(a:any$1,b:bat[:any$2,:any$1],c:any$2):any address dummy;	# 0  dynamic (f:any)<-(a:any$1)(b:bat[:any$2,:any$1])(c:any$2)
 #
 #b:= new(:str,:int);
 #a:= f(1,b,"hello");
 #
-!ERROR: 'Admin.f' undefined in Admin.main[2]
-function Admin.main():int;	# 0  (main:int)
+!ERROR: 'user.f' undefined in user.main[2]
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:str,:int);	# 1 CMDBATnew (b:bat[:str,:int])<-($2:str)($3:int)
-    a := Admin.f(1,b,"hello");	# 2  unknown (a:any)<-($5:int)(b:bat[:str,:int])($6:str)
+    a := user.f(1,b,"hello");	# 2  unknown (a:any)<-($5:int)(b:bat[:str,:int])($6:str)
 end main;	# 3  
 
 # 07:58:56 >  

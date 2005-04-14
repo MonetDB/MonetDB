@@ -23,7 +23,7 @@ stdout of test 'tst1002` in directory 'src/mal` itself:
 #	print(MALexception);
 #exit MALexception;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     bbp.open();	# 1 CMDbbpopen ($1:void)
     c := bbp.take("myfirstbat");	# 2 CMDbbptake (c:bat[:any,:any])<-($3:str)
     io.print(c);	# 3 IOprint_val ($4:int)<-(c:bat[:any,:any])
@@ -32,7 +32,7 @@ catch MALexception;	# 5  (MALexception:any) jump 7
     io.print(MALexception);	# 6 IOprint_val ($7:int)<-(MALexception:any)
 exit MALexception;	# 7  (MALexception:any)
 end main;	# 8  
-[ "MALexception:Admin.main[2]:bbp.take:failed to take 'myfirstbat' from box\n" ]
+[ "MALexception:user.main[2]:bbp.take:failed to take 'myfirstbat' from box\n" ]
 
 # 07:58:52 >  
 # 07:58:52 >  Done.

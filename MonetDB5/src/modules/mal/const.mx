@@ -100,7 +100,7 @@ const.prelude();
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
-	if( !isAuthorized("Admin"))
+	if( !isAuthorized("user") && !isAuthorized("Admin"))
 		return throwMessage("const.@1","unauthorized access to 'const' box");
 @-
 @= insertBox

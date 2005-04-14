@@ -3,7 +3,7 @@
 
 function clkticks(n:int):void;
 barrier	b:= n>0;
-	printf("clock tick\n");
+	io.printf("clock tick\n");
 	alarm.sleep(2);
 	n:= n-1;
 redo	b:= n>0;
@@ -12,5 +12,5 @@ end clkticks;
 
 # trace all instructions executed with timing information
 mdb.setTimer(true);
-mdb.setTrace("Admin","clkticks",true);
-clkticks(2);
+mdb.setTrace("user","clkticks",true);
+user.clkticks(2);

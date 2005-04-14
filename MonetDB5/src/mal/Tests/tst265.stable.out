@@ -33,7 +33,7 @@ stdout of test 'tst265` in directory 'src/mal` itself:
 #g:= group.sum(b,3,1);
 #print(g);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:void,:int);	# 1 CMDBATnew (b:bat[:void,:int])<-($2:void)($3:int)
     bat.setSequenceBase(b,0:oid);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(b:bat[:void,:int])($5:oid)
     bat.insert(b,1);	# 3 BKCinsert_void_bun ($6:bat[:int,:any])<-(b:bat[:void,:int])($7:int)

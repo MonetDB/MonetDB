@@ -3,8 +3,8 @@
 # The function may not be cloned and a secondary error is generated
 function test(b:bat[:any$1,:any$2],c:any$2);
 	k:= 1+"wrong";
-	print(k);
+	io.print(k);
 end test;
 
-c:=new(:int,:str);
-test(c,"hello");
+c:= bbp.new(:int,:str);
+user.test(c,"hello");

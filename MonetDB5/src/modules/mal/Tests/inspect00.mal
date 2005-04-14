@@ -4,13 +4,13 @@ function tst():void;
 	i:= mdb.getStackDepth();
 	io.printf("stack depth %d\n",i);
 	t:= mdb.getStackTrace();
-	print(t);
+	io.print(t);
 	b0:= mdb.getStackFrame(0);
-	print(b0);
+	io.print(b0);
 	b1:= mdb.getStackFrame(1);
-	print(b1);
+	io.print(b1);
 	# next one is illegal
 	b1:= mdb.getStackFrame(2);
 end tst;
 
-tst();
+user.tst();

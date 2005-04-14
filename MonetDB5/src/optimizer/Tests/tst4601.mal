@@ -2,15 +2,15 @@
 function welcome(lim:int):int;
     i:= 0;
 barrier j:= i<lim;
-    print("Welcome");
+    io.print("Welcome");
     i:= i+1;
     redo j:= i<lim;
 exit j;
     return i;
 end welcome;
 
-optimizer.macroExpansion("Admin","welcome");
+optimizer.macroExpansion("user","welcome");
 
-print("test expansion");
-a:=welcome(2);
-showFunction();
+io.print("test expansion");
+a:=user.welcome(2);
+mdb.showFunction();

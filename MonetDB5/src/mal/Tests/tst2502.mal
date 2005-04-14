@@ -10,7 +10,7 @@ barrier always:= true;
 exit always;
 end;
 
-r1:= random(0);
-print(r1);
-r2:= random(0);
-print(r2);
+r1:= user.random(0);
+io.print(r1);
+r2:= user.random(0);
+io.print(r2);

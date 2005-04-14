@@ -10,14 +10,14 @@ include mil_scenario;
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 	mil.line("var ab:=bat(\"ab\");");
-	ab := new("ab");
+	ab := bbp.new("ab");
 	mil.line("var ba:=bat(\"ba\");");
-	ba := new("ba");
+	ba := bbp.new("ba");
 	mil.line("ab.print();");
-	aa_a := print(ab);
+	aa_a := bat.print(ab);
 	mil.line("ba.print();");
-	ba_a := print(ba);
+	ba_a := bat.print(ba);
 	mil.line("ab.print();");
-	ca_a := print(ab);
+	ca_a := bat.print(ab);
 	mil.line("quit();");
-	da_a := quit();
+	da_a := clients.quit();

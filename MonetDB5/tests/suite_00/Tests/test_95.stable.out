@@ -137,14 +137,14 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	pc_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
     mil.line("# test the new set operations\n");	# 4 MILline ($6:void)<-($7:str)
-    mil.line("var b := new(int,int);");	# 5 MILline ($8:void)<-($9:str)
+    mil.line("var b := bbp.new(int,int);");	# 5 MILline ($8:void)<-($9:str)
     b := bbp.new(nil:int,nil:int);	# 6 CMDBATnew (b:bat[:int,:int])<-($11:int)($11:int)
-    mil.line("var c := new(int,int);");	# 7 MILline ($12:void)<-($13:str)
+    mil.line("var c := bbp.new(int,int);");	# 7 MILline ($12:void)<-($13:str)
     c := bbp.new(nil:int,nil:int);	# 8 CMDBATnew (c:bat[:int,:int])<-($11:int)($11:int)
     mil.line("b.insert(3,5);");	# 9 MILline ($15:void)<-($16:str)
     ca_a := bat.insert(b,3,5);	# 10 BKCinsert_bun (ca_a:bat[:int,:int])<-(b:bat[:int,:int])($18:int)($19:int)

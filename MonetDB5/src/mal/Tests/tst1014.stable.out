@@ -30,7 +30,7 @@ stdout of test 'tst1014` in directory 'src/mal` itself:
 ## at the end of the call, the BBP should have discarded
 ## the temporary bats of the user
 #end test;
-function Admin.test():void;	# 0  (test:void)
+function user.test():void;	# 0  (test:void)
     io.print("test");	# 1 IOprint_val ($1:int)<-($2:str)
     bbp.open();	# 2 CMDbbpopen ($3:void)
     x := bbp.getObjects();	# 3 CMDbbpGetObjects (x:bat[:int,:str])
@@ -53,8 +53,8 @@ end test;	# 12
 #print(v);
 #bbp.close();
 #
-function Admin.main():int;	# 0  (main:int)
-    Admin.test();	# 1  ($1:void)
+function user.main():int;	# 0  (main:int)
+    user.test();	# 1  ($1:void)
     io.print("continue");	# 2 IOprint_val ($2:int)<-($3:str)
     bbp.open();	# 3 CMDbbpopen ($4:void)
     x := bbp.getObjects();	# 4 CMDbbpGetObjects (x:bat[:int,:str])

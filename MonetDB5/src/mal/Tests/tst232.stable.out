@@ -33,7 +33,7 @@ stdout of test 'tst232` in directory 'src/mal` itself:
 #	print("bat was destroyed");
 #exit MALexception;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     bbp.open();	# 1 CMDbbpopen ($1:void)
     b := bbp.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-($3:int)($4:str)
     i := bbp.getRefCount(b);	# 3 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])

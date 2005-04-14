@@ -7,4 +7,4 @@ function simple(i:int):int;
 end simple;
 
 k:= 0;
-r:= simple(k);
+r:= user.simple(k);

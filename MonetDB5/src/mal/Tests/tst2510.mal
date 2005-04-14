@@ -10,4 +10,4 @@ exit always;
     #print("exception");
 #exit MALexception;
 end tryme;
-tryme();    # shouldn;t hang when you forget the exception
+user.tryme();    # shouldn;t hang when you forget the exception

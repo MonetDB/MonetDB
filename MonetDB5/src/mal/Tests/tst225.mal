@@ -1,9 +1,9 @@
 #testing reference counting inliners
-a:= new(:int,:int);
-insert(a,1,1);
-b:= copy(a);
-z:= +(a,a,b);
-print(a);
+a:= bbp.new(:int,:int);
+bat.insert(a,1,1);
+b:= algebra.copy(a);
+z:= batcalc.+(a,a,b);
+io.print(a);
 bbp.garbage(b);
 bbp.garbage(a);
-z:= +(a,a,b);
+z:= batcalc.+(a,a,b);

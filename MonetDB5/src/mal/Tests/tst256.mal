@@ -2,19 +2,19 @@
 # The first and foremost BAT operations
 
 n0:= 0;
-b:= new(:int,:int);
-err := insert(b,1,15);
-err := insert(b,2,4);
-err := insert(b,4,16);
-err := insert(b,5,25);
-err := insert(b,6,36);
-err := insert(b,7,49);
-err := insert(b,8,64);
-err := insert(b,n0,81);
-print(b);
-mx:= max(b); 
-print(mx);
-mi:= min(b);
-print(mi);
-cr:= card(b);
-print(cr);
+b:= bbp.new(:int,:int);
+err := bat.insert(b,1,15);
+err := bat.insert(b,2,4);
+err := bat.insert(b,4,16);
+err := bat.insert(b,5,25);
+err := bat.insert(b,6,36);
+err := bat.insert(b,7,49);
+err := bat.insert(b,8,64);
+err := bat.insert(b,n0,81);
+io.print(b);
+mx:= algebra.max(b); 
+io.print(mx);
+mi:= algebra.min(b);
+io.print(mi);
+cr:= algebra.card(b);
+io.print(cr);

@@ -23,7 +23,7 @@ stdout of test 'tst4001` in directory 'src/optimizer` itself:
 #   l:= k+1.0:dbl;
 #   return z;
 #end qry;
-function Admin.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
+function user.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
     i := 1.0:dbl;	# 1  (i:dbl)<-($2:dbl)
     z := mmath.sin(i);	# 2 MATHunary_SINdbl (z:dbl)<-(i:dbl)
     j := 1.0:dbl;	# 3  (j:dbl)<-($2:dbl)
@@ -43,37 +43,35 @@ end qry;	# 7
 #print("done");
 #showFunction(Admin,qry);
 #
-#CXoptimizer Admin.qry
-#ARoptimizer Admin.qry
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
     t1 := alarm.usec();	# 2 ALARMusec (t1:lng)
     t2 := calc.-(t1,t0);	# 3 CALCbinarySUBlnglng (t2:lng)<-(t1:lng)(t0:lng)
     io.print("execute");	# 4 IOprint_val ($8:int)<-($9:str)
-    z := Admin.qry(0.0:dbl);	# 5  (z:dbl)<-($11:dbl)
+    z := user.qry(0.0:dbl);	# 5  (z:dbl)<-($11:dbl)
     io.print(z);	# 6 IOprint_val ($12:int)<-(z:dbl)
     io.print("done");	# 7 IOprint_val ($13:int)<-($14:str)
-    mdb.showFunction("Admin","qry");	# 8 MDBshowFunction3 ($15:void)<-($3:str)($4:str)
-    mdb.showFunction("Admin","main");	# 9 MDBshowFunction3 ($16:void)<-($3:str)($17:str)
+    mdb.showFunction("user","qry");	# 8 MDBshowFunction3 ($15:void)<-($3:str)($4:str)
+    mdb.showFunction("user","main");	# 9 MDBshowFunction3 ($16:void)<-($3:str)($17:str)
 end main;	# 10  
 [ "execute" ]
 [ 0.8414709848078965 ]
 [ "done" ]
-function Admin.qry(i:dbl):dbl;
+function user.qry(i:dbl):dbl;
     z := mmath.sin(1.0:dbl);
     l := calc.+(z,1.0:dbl);
     return z;
 end qry;
-function Admin.main():int;
+function user.main():int;
     t0 := alarm.usec();
     t1 := alarm.usec();
     t2 := calc.-(t1,t0);
     io.print("execute");
-    z := Admin.qry(0.0:dbl);
+    z := user.qry(0.0:dbl);
     io.print(z);
     io.print("done");
-    mdb.showFunction("Admin","qry");
-    mdb.showFunction("Admin","main");
+    mdb.showFunction("user","qry");
+    mdb.showFunction("user","main");
 end main;
 #
 

@@ -1,22 +1,18 @@
 #testing the partition optimizer
 
-a1:= new(:void,:int);
-setSequenceBase(a1,0@0);
-a2:= new(:void,:int);
-setSequenceBase(a2,10@0);
-a3:= new(:void,:int);
-setSequenceBase(a3,20@0);
+a1:= bbp.new(:void,:int);
+bat.setSequenceBase(a1,0@0);
+a2:= bbp.new(:void,:int);
+bat.setSequenceBase(a2,10@0);
+a3:= bbp.new(:void,:int);
+bat.setSequenceBase(a3,20@0);
 
-barrier (go,i):= newRange(0);
-	insert(a1,nil,i);
-	insert(a2,nil,i);
-	insert(a3,nil,i);
-	redo (go,i):= nextElement(1,10);
+barrier (go,i):= mal.newRange(0);
+	bat.insert(a1,nil,i);
+	bat.insert(a2,nil,i);
+	bat.insert(a3,nil,i);
+	redo (go,i):= mal.nextElement(1,10);
 exit (go,i);
-#print(a1);
-#print(a2);
-#print(a3);
-
 
 # add it to the BAT partition table
 partitions.deposit(a1);
@@ -25,11 +21,11 @@ partitions.deposit(a1,a3);
 partitions.dump();
 
 function qry(a:bat[:void,:any]);
-	print("hello");
-	print(a);
+	io.print("hello");
+	io.print(a);
 end qry;
 
-optimizer.partitionedQuery("Admin","qry");
-showFunction("Admin","qry");
-print("run experiment");
-qry(a1);
+optimizer.partitionedQuery("user","qry");
+mdb.showFunction("user","qry");
+io.print("run experiment");
+user.qry(a1);

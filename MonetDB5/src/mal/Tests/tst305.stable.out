@@ -20,7 +20,7 @@ stdout of test 'tst305` in directory 'src/mal` itself:
 #raise	IllegalAccess:="new exception";
 #	print("should have left function ");
 #end myException;
-function Admin.myException():void;	# 0  (myException:void)
+function user.myException():void;	# 0  (myException:void)
     raise IllegalAccess := "new exception";	# 1  (IllegalAccess:str)<-($2:str)
     io.print("should have left function ");	# 2 IOprint_val ($3:int)<-($4:str)
 end myException;	# 3  
@@ -28,11 +28,13 @@ end myException;	# 3
 #	myException();
 #	print("should not come here");
 #
-function Admin.main():int;	# 0  (main:int)
-    Admin.myException();	# 1  ($1:void)
+function user.main():int;	# 0  (main:int)
+    user.myException();	# 1  ($1:void)
     io.print("should not come here");	# 2 IOprint_val ($2:int)<-($3:str)
 end main;	# 3  
-!ERROR: new exceptionMALexception:Admin.myException[3]: propagated
+!ERROR: IllegalAccess:user.myException[1]:new exception
+!ERROR: IllegalAccess:user.myException[3]:Exception not catched
+#
 
 # 08:01:17 >  
 # 08:01:17 >  Done.

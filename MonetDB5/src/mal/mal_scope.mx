@@ -376,6 +376,8 @@ Scope setInheritance(Scope h, Scope f, Scope s){
 Finding a scope is unrestricted. For modules we explicitly look for
 the start of a new module scope.
 All core modules are accessed through the jumptable.
+The 'user' module is an alias for the scope attached
+to the current user.
 @c
 Scope findModule(Scope scope, str name){
 	if( scope->name==NULL) return NULL;
@@ -387,7 +389,8 @@ Scope findModule(Scope scope, str name){
 			            return scope;
 			    scope= scope->outer;
 		}
-		return scope;
+	/* default is always matched with current */
+	return scope;
 }
 @-
 The routine @%findMALSymbol@ starts at the MAL scope level and searches 

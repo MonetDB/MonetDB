@@ -17,11 +17,13 @@ stdout of test 'tst302` in directory 'src/mal` itself:
 #raise	IllegalAccess := 1234;
 #	print("should not come here\n");
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     raise IllegalAccess := 1234;	# 1  (IllegalAccess:int)<-($2:int)
     io.print("should not come here\n");	# 2 IOprint_val ($3:int)<-($4:str)
 end main;	# 3  
-!ERROR: IllegalAccess:Admin.main[3]: propagated
+!ERROR: IllegalAccess:user.main[1]:Exception raised
+!ERROR: IllegalAccess:user.main[3]:Exception not catched
+#
 
 # 08:01:15 >  
 # 08:01:15 >  Done.

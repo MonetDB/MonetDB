@@ -40,7 +40,7 @@ stdout of test 'chopper01` in directory 'src/modules/mal` itself:
 #exit mloop;
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     t := bbp.new(:int,:url);	# 1 CMDBATnew (t:bat[:int,:url])<-($2:int)($3:url)
     cb_a := url.url("http://www.cwi.nl");	# 2 URLnew (cb_a:url)<-($5:str)
     db_a := bat.insert(t,1,cb_a);	# 3 BKCinsert_bun (db_a:bat[:int,:url])<-(t:bat[:int,:url])($7:int)(cb_a:url)
@@ -67,7 +67,7 @@ exit mloop;	# 23  (mloop:lng)
 end main;	# 24  
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#
-# h	tmp_4								  # name
+# h	tmp_13								  # name
 # int	url								  # type
 #-------------------------------------------------------------------------#
 [ 1,	  "http://www.cwi.nl"						  ]
@@ -86,7 +86,7 @@ end main;	# 24
 [ "http://www.edgeonline.com/" ]
 [ "http://robotics.stanford.edu/icons/ " ]
 
-# 07:42:00 >  
-# 07:42:00 >  Done.
-# 07:42:00 >  
+# 14:51:03 >  
+# 14:51:03 >  Done.
+# 14:51:03 >  
 

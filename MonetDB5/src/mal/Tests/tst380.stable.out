@@ -19,7 +19,7 @@ stdout of test 'tst380` in directory 'src/mal` itself:
 #	setColumn(z,title);
 #	return z;
 #end get;
-function Admin.get(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (get:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
+function user.get(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (get:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
     b := bbp.nme();	# 1  unknown (b:bat[:int,:str])
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:str])<-(br:bat[:any$1,:any$2])(b:bat[:int,:str])
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:str])<-(z:bat[:any,:str])(title:str)
@@ -31,7 +31,7 @@ end get;	# 5
 #	setColumn(z,title);
 #	return z;
 #end getInt;
-function Admin.getInt(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getInt:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
+function user.getInt(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getInt:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
     b := bbp.nme();	# 1  unknown (b:bat[:int,:int])
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:int])<-(br:bat[:any$1,:any$2])(b:bat[:int,:int])
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:int])<-(z:bat[:any,:int])(title:str)
@@ -43,7 +43,7 @@ end getInt;	# 5
 #	setColumn(z,title);
 #	return z;
 #end getLng;
-function Admin.getLng(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getLng:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
+function user.getLng(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getLng:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
     b := bbp.nme();	# 1  unknown (b:bat[:int,:lng])
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:lng])<-(br:bat[:any$1,:any$2])(b:bat[:int,:lng])
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:lng])<-(z:bat[:any,:lng])(title:str)
@@ -63,18 +63,18 @@ end getLng;	# 5
 #	bRef:= getInt(brev,"getRefCount","refCount");
 #	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
 #end dir;
-function Admin.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
+function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     atm := inspect.getAtomNames();	# 1 INSPECTatom_names (atm:bat[:int,:str])
     brev := bat.reverse(b);	# 2 BKCreverse (brev:bat[:str,:int])<-(b:bat[:int,:str])
     bm := bat.mirror(brev);	# 3 BKCmirror (bm:bat[:str,:str])<-(brev:bat[:str,:int])
-    bHead := Admin.get(brev,"getHeadType","htype");	# 4  (bHead:bat[:any,:any])<-(brev:bat[:str,:int])($6:str)($7:str)
-    bTail := Admin.get(brev,"getTailType","ttype");	# 5  (bTail:bat[:any,:any])<-(brev:bat[:str,:int])($9:str)($10:str)
-    bCount := Admin.getLng(brev,"getCount","count");	# 6  (bCount:bat[:any,:any])<-(brev:bat[:str,:int])($12:str)($13:str)
-    bHeat := Admin.getInt(brev,"getHeat","heat");	# 7  (bHeat:bat[:any,:any])<-(brev:bat[:str,:int])($15:str)($16:str)
-    bDirty := Admin.get(brev,"getDirty","dirty");	# 8  (bDirty:bat[:any,:any])<-(brev:bat[:str,:int])($18:str)($19:str)
-    bStatus := Admin.get(brev,"getStatus","status");	# 9  (bStatus:bat[:any,:any])<-(brev:bat[:str,:int])($21:str)($22:str)
-    bKind := Admin.get(brev,"getKind","kind");	# 10  (bKind:bat[:any,:any])<-(brev:bat[:str,:int])($24:str)($25:str)
-    bRef := Admin.getInt(brev,"getRefCount","refCount");	# 11  (bRef:bat[:any,:any])<-(brev:bat[:str,:int])($27:str)($28:str)
+    bHead := user.get(brev,"getHeadType","htype");	# 4  (bHead:bat[:any,:any])<-(brev:bat[:str,:int])($6:str)($7:str)
+    bTail := user.get(brev,"getTailType","ttype");	# 5  (bTail:bat[:any,:any])<-(brev:bat[:str,:int])($9:str)($10:str)
+    bCount := user.getLng(brev,"getCount","count");	# 6  (bCount:bat[:any,:any])<-(brev:bat[:str,:int])($12:str)($13:str)
+    bHeat := user.getInt(brev,"getHeat","heat");	# 7  (bHeat:bat[:any,:any])<-(brev:bat[:str,:int])($15:str)($16:str)
+    bDirty := user.get(brev,"getDirty","dirty");	# 8  (bDirty:bat[:any,:any])<-(brev:bat[:str,:int])($18:str)($19:str)
+    bStatus := user.get(brev,"getStatus","status");	# 9  (bStatus:bat[:any,:any])<-(brev:bat[:str,:int])($21:str)($22:str)
+    bKind := user.get(brev,"getKind","kind");	# 10  (bKind:bat[:any,:any])<-(brev:bat[:str,:int])($24:str)($25:str)
+    bRef := user.getInt(brev,"getRefCount","refCount");	# 11  (bRef:bat[:any,:any])<-(brev:bat[:str,:int])($27:str)($28:str)
     io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	# 12 IOttable ($29:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:any,:any])(bTail:bat[:any,:any])(bCount:bat[:any,:any])(bHeat:bat[:any,:any])(bDirty:bat[:any,:any])(bStatus:bat[:any,:any])(bKind:bat[:any,:any])(bRef:bat[:any,:any])
 end dir;	# 13  
 #
@@ -84,11 +84,11 @@ end dir;	# 13
 #	print(tn);
 #	dir(tn);
 #end dir;
-function Admin.dir(s:str):void;	# 0  (dir:void)<-(s:str)
+function user.dir(s:str):void;	# 0  (dir:void)<-(s:str)
     t := bbp.getNames();	# 1 CMDbbpNames (t:bat[:int,:str])
     tn := algebra.like(t,s);	# 2 ALGlike (tn:bat[:int,:str])<-(t:bat[:int,:str])(s:str)
     io.print(tn);	# 3 IOprint_val ($4:int)<-(tn:bat[:int,:str])
-    Admin.dir(tn);	# 4  ($5:void)<-(tn:bat[:int,:str])
+    user.dir(tn);	# 4  ($5:void)<-(tn:bat[:int,:str])
 end dir;	# 5  
 #b:=new(:int,:int);
 #setName(b,"simplemind");
@@ -101,14 +101,14 @@ end dir;	# 5
 #dir("simple");
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     bat.setName(b,"simplemind");	# 2 BKCsetName ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:str)
     z := bbp.getNames();	# 3 CMDbbpNames (z:bat[:int,:str])
     io.print("Get first directory");	# 4 IOprint_val ($7:int)<-($8:str)
-    Admin.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])
+    user.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])
     io.print("Get second directory");	# 6 IOprint_val ($10:int)<-($11:str)
-    Admin.dir("simple");	# 7  ($12:void)<-($13:str)
+    user.dir("simple");	# 7  ($12:void)<-($13:str)
 end main;	# 8  
 [ "Get first directory" ]
 #---------------------------------------------------------------------------------------------------------------------------------#

@@ -23,7 +23,7 @@ stdout of test 'tst2502` in directory 'src/mal` itself:
 #	redo always;
 #exit always;
 #end;
-function Admin.random(seed:int):int;	# 0  (random:int)<-(seed:int)
+function user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
 barrier always := true;	# 2  (always:bit)<-($4:bit) jump 7
     i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-($5:int)(i:int)
@@ -40,13 +40,14 @@ end random;	# 8
 #r2:= random(0);
 #print(r2);
 #
-function Admin.main():int;	# 0  (main:int)
-    r1 := Admin.random(0);	# 1  (r1:int)<-($2:int)
+function user.main():int;	# 0  (main:int)
+    r1 := user.random(0);	# 1  (r1:int)<-($2:int)
     io.print(r1);	# 2 IOprint_val ($3:int)<-(r1:int)
-    r2 := Admin.random(0);	# 3  (r2:int)<-($2:int)
+    r2 := user.random(0);	# 3  (r2:int)<-($2:int)
     io.print(r2);	# 4 IOprint_val ($5:int)<-(r2:int)
 end main;	# 5  
-!ERROR: SyntaxError:Admin.random[0]:'Admin.random' contains errors
+!ERROR: SyntaxError:user.random[0]:'user.random' contains errors
+#
 
 # 08:01:05 >  
 # 08:01:05 >  Done.

@@ -24,7 +24,7 @@ stdout of test 'tst905` in directory 'src/mal` itself:
 #x:= multiplex.script("+",b,c);
 #print(x);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (v:bit)(i:lng)<-($6:lng) jump 5
     bat.insert(b,i,i);	# 3 BKCinsert_bun ($7:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)

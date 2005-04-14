@@ -9,32 +9,32 @@ profiler.setFilter("*","insert");
 #profiler.setFilter("*","print");
 profiler.openStream("/tmp/MonetEvents");
 
-o:=oid(20000000);
-setoid(o);
+o:= calc.oid(20000000);
+calc.setoid(o);
 #test basic functionality of the BAT library.
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.
 
-b:= new(:int,:int);
-printf("#~BeginVariableOutput~#\n"); 
+b:= bbp.new(:int,:int);
+io.printf("#~BeginVariableOutput~#\n"); 
 binfo:= bat.info(b);
-print(binfo); 
-printf("#~EndVariableOutput~#\n");
+io.print(binfo); 
+io.printf("#~EndVariableOutput~#\n");
 
 profiler.start();
-err := insert(b,1,15);
-err := insert(b,2,4);
-n0  := int(nil);
-err := insert(b,3,n0);
-err := insert(b,4,16);
-err := insert(b,5,25);
-err := insert(b,6,36);
-err := insert(b,7,49);
-err := insert(b,8,64);
-err := insert(b,9,n0);
-err := insert(b,n0,n0);
-err := insert(b,n0,81);
-print(b);
-print(b,b,b);
+err := bat.insert(b,1,15);
+err := bat.insert(b,2,4);
+n0  := calc.int(nil);
+err := bat.insert(b,3,n0);
+err := bat.insert(b,4,16);
+err := bat.insert(b,5,25);
+err := bat.insert(b,6,36);
+err := bat.insert(b,7,49);
+err := bat.insert(b,8,64);
+err := bat.insert(b,9,n0);
+err := bat.insert(b,n0,n0);
+err := bat.insert(b,n0,81);
+io.print(b);
+io.print(b,b,b);
 profiler.stop();
 profiler.closeStream();

@@ -50,7 +50,7 @@ end joinPath;	# 4
 #showFunction();
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
 barrier (k,v):= mal.newRange(0:int);	# 2 RNGnewRange_int (k:bit)(v:int)<-($6:int) jump 5
     bat.insert(b,v,v);	# 3 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])(v:int)(v:int)
@@ -72,7 +72,7 @@ exit (k,v);	# 5  (k:bit)(v:int)
 [ 10 ]
 [ 50 ]
 [ 10 ]
-function Admin.main():int;
+function user.main():int;
     b := bbp.new(:int,:int);
 barrier (k,v):= mal.newRange(0:int);
     bat.insert(b,v,v);

@@ -1,41 +1,41 @@
 # the chunk mechanism
 
-S:= new(:void,:str);
-setSequenceBase(S,0:oid);
-insert(S,nil,"hello");
-insert(S,nil,"brave");
-insert(S,nil,"new");
-insert(S,nil,"world");
-print(S);
+S:= bbp.new(:void,:str);
+bat.setSequenceBase(S,0:oid);
+bat.insert(S,nil,"hello");
+bat.insert(S,nil,"brave");
+bat.insert(S,nil,"new");
+bat.insert(S,nil,"world");
+io.print(S);
 
 L:= batstr.length(S);
-print(L);
+io.print(L);
 L:= batstr.bytes(S);
-print(L);
+io.print(L);
 
 B:= batstr.==(S,"hello");
-print(B);
+io.print(B);
 
 B:= batstr.match(S,"hello");
-print(B);
+io.print(B);
 
 U:= batstr.toUpper(S);
-print(U);
+io.print(U);
 
 l:= batstr.toLower(U);
-print(l);
+io.print(l);
 
 trim:= batstr.trim(S); 
-print(trim);
+io.print(trim);
 ltrim:= batstr.ltrim(S); 
-print(ltrim);
+io.print(ltrim);
 rtrim:= batstr.rtrim(S); 
-print(rtrim);
+io.print(rtrim);
 
-print("Start searches");
+io.print("Start searches");
 srch:= batstr.search(S,"hello"); 
-print(srch);
+io.print(srch);
 srch:= batstr.search(S,S); 
-print(srch);
+io.print(srch);
 plus:= batstr.+(S,S); 
-print(plus);
+io.print(plus);

@@ -25,7 +25,7 @@ stdout of test 'tst601` in directory 'src/mal` itself:
 #const.close();	# save the content on persistent store
 #print(p2);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     const.open();	# 1 CSTopen ($1:void)
     pi := 3.147:flt;	# 2  (pi:flt)<-($3:flt)
     const.deposit("pi",pi);	# 3 CSTdeposit ($4:void)<-($5:str)(pi:flt)

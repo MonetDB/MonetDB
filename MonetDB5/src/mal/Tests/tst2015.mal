@@ -3,7 +3,7 @@
 barrier xx;
 
 thread b1;
-	printf("#Entered thread\n");
+	io.printf("#Entered thread\n");
 	leave b1;
 	redo xx;	# not allowed
 exit b1;

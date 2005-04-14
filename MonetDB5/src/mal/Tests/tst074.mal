@@ -3,5 +3,5 @@ function swap(x:str):str;
 	return x;
 end swap;
 
-x:= swap("world hello");
-print(x);
+x:= user.swap("world hello");
+io.print(x);

@@ -17,12 +17,12 @@ stdout of test 'tst070` in directory 'src/mal` itself:
 #(x,y):= point(z:int);
 #(initial:str,surname:str):= getName();
 #
-!ERROR: 'point' undefined in Admin.main[1]
-!ERROR: 'getName' undefined in Admin.main[2]
+!ERROR: 'user.point' undefined in user.main[1]
+!ERROR: 'user.getName' undefined in user.main[2]
 !ERROR: 'z' may not be used before being set in main[1]
-function Admin.main():int;	# 0  (main:int)
-    (x,y):= point(z);	# 1  unknown (x:any)(y:any)<-(z:int)
-    (initial,surname):= getName();	# 2  unknown (initial:str)(surname:str)
+function user.main():int;	# 0  (main:int)
+    (x,y):= user.point(z);	# 1  unknown (x:any)(y:any)<-(z:int)
+    (initial,surname):= user.getName();	# 2  unknown (initial:str)(surname:str)
 end main;	# 3  
 
 # 07:58:49 >  

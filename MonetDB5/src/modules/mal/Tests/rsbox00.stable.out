@@ -78,9 +78,11 @@ stdout of test 'rsbox00` in directory 'src/modules/mal` itself:
 ## we did not open, it so why close it?
 ##rsbox.close();
 #
-function Admin.main():int;	# 0  (main:int)
-    rs := rsbox.create(1,'u');	# 1 RSBcreate (rs:resultset)<-($2:int)($3:chr)
-    rs := rsbox.create(2,'t');	# 2 RSBcreate (rs:resultset)<-($4:int)($5:chr)
+!ERROR: 'rsbox.create' undefined in user.main[1]
+!ERROR: 'rsbox.create' undefined in user.main[2]
+function user.main():int;	# 0  (main:int)
+    rs := rsbox.create(1,'u');	# 1  unknown (rs:resultset)<-($2:int)($3:chr)
+    rs := rsbox.create(2,'t');	# 2  unknown (rs:resultset)<-($4:int)($5:chr)
     resultset.setProperty(rs,1,"table","table1");	# 3 RSsetPropertyStr ($6:resultset)<-(rs:resultset)($2:int)($7:str)($8:str)
     resultset.setProperty(rs,1,"schema","sys");	# 4 RSsetPropertyStr ($9:resultset)<-(rs:resultset)($2:int)($10:str)($11:str)
     resultset.setProperty(rs,2,"width",1);	# 5 RSsetPropertyInt ($12:resultset)<-(rs:resultset)($4:int)($13:str)($2:int)
@@ -115,27 +117,6 @@ barrier (v,res):= rsbox.newIterator();	# 32 RSBiterator (v:lng)(res:resultset) j
     redo (v,res):= rsbox.hasMoreElements();	# 34 RSBhasMoreElements (v:lng)(res:resultset) jump 33
 exit v;	# 35  (v:lng)
 end main;	# 36  
-&t
-$id 2
-$columncount 2
-$tuplecount 3
-$ctype Si
-%column column_1	column_2
-%table table1	table2
-%schema sys	sys
-%type varchar	int
-%digits 	
-%scale 	
-%width 5	1
-[5:test1	2
-[5:test2	NULL
-[NULL	5
-[ "Before any cleanup:" ]
-[ ResultSet '1' ]
-[ ResultSet '2' ]
-[ "After release of 'myid':" ]
-[ ResultSet '1' ]
-[ "After a releaseAll:" ]
 
 # 16:20:16 >  
 # 16:20:16 >  Done.

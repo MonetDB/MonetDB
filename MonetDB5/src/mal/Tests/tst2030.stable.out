@@ -22,7 +22,7 @@ stdout of test 'tst2030` in directory 'src/mal` itself:
 #	redo b:=n>0;
 #exit	b;
 #end clkticks;
-function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
+function user.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
 barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
     io.printf("#clock tick %d\n",n);	# 2 IOprint_formatted_int ($4:int)<-($5:str)(n:int)
     alarm.sleep(5);	# 3 ALARMsleep ($6:void)<-($7:int)
@@ -37,9 +37,9 @@ end clkticks;	# 7
 #printf("#Main thread\n");
 #printf("#Wait for child to exit\n");
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
 thread hdl := 0;	# 1  (hdl:int)<-($2:int) jump 3
-    Admin.clkticks(2);	# 2  ($3:void)<-($4:int)
+    user.clkticks(2);	# 2  ($3:void)<-($4:int)
 exit hdl;	# 3  (hdl:int)
     io.printf("#Main thread\n");	# 4 IOprint_str ($5:int)<-($6:str)
     io.printf("#Wait for child to exit\n");	# 5 IOprint_str ($7:int)<-($8:str)

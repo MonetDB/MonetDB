@@ -1,19 +1,19 @@
 # the first of a series of BBP test cases
 
 bbp.open();
-b:= new(:int,:int);
-insert(b,1,2);
+b:= bbp.new(:int,:int);
+bat.insert(b,1,2);
 bbp.deposit("mysecondbat",b);
 c:= bbp.take("mysecondbat");
-print(c);
+io.print(c);
 bat.setPersistent(b);
 x:= bat.isPersistent(b);
 z:= bat.isTransient(b);
-print(x); print(z); print("");
+io.print(x); io.print(z); io.print("");
 bat.setTransient(b);
 x:= bat.isPersistent(b);
 z:= bat.isTransient(b);
-print(x); print(z); print("");
+io.print(x); io.print(z); io.print("");
 bbp.close();
 # at the end of the session, the BBP should have discarded
 # the temporary bats of the user
@@ -22,5 +22,5 @@ bbp.close();
 #remains in store.
 bbp.open();
 v:= bbp.take("mysecondbat");
-print(v);
+io.print(v);
 bbp.close();

@@ -24,7 +24,7 @@ stdout of test 'tst2550` in directory 'src/mal` itself:
 #exit L;
 #	return (noes,val):=(false,seed);
 #end;
-factory Admin.random(seed:int) (noes:bit,val:int);	# 0  (noes:bit)(val:int)<-(seed:int)
+factory user.random(seed:int) (noes:bit,val:int);	# 0  (noes:bit)(val:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
 barrier L := true;	# 2  (L:bit)<-($6:bit) jump 7
     i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-($7:int)(i:int)

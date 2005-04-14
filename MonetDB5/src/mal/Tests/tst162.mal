@@ -6,5 +6,5 @@ function l():strtype;
     return l:= 0:strtype;
 end l;
 
-z:= l();
-print(z);
+z:= strtype.l();
+io.print(z);

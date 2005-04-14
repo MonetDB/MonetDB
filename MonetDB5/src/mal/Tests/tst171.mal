@@ -1,35 +1,35 @@
 # Testing for nil values.
     tv:= true;
-    print(tv);
+    io.print(tv);
     fv:= false;
-    print(fv);
-    print("strings");
-    z := str("nil");
+    io.print(fv);
+    io.print("strings");
+    z := calc.str("nil");
     x := calc.isnil(z);
-    print(x);
+    io.print(x);
     y := calc.isnil("something");
-    print(y);
-    a := str(nil);
+    io.print(y);
+    a := calc.str(nil);
     x := calc.isnil(a);
-    print(x);
+    io.print(x);
 
-    print("integers");
-    i := int("nil");
+    io.print("integers");
+    i := calc.int("nil");
     x := calc.isnil(i);
-    print(x);
+    io.print(x);
     y := calc.isnil(0);
-    print(y);
+    io.print(y);
 
-    print("floats");
-    f := flt(nil);
+    io.print("floats");
+    f := calc.flt(nil);
     x := calc.isnil(f);
-    print(x);
+    io.print(x);
     x := calc.isnil(3.14);
-    print(x);
+    io.print(x);
 
-    print("nil");
+    io.print("nil");
     g:= nil;
     x:= calc.isnil(g);
-    print(x);
+    io.print(x);
     x:= calc.isnotnil(g);
-    print(x);
+    io.print(x);

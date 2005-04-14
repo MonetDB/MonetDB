@@ -2,5 +2,5 @@
 
 barrier w:= 1>0;
 	w:= false;
-	print(w);
+	io.print(w);
 exit	w;

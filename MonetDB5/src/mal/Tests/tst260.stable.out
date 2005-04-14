@@ -32,7 +32,7 @@ stdout of test 'tst260` in directory 'src/mal` itself:
 #topN(b,9L);
 #print(b);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     err := bat.insert(b,1,15);	# 2 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($6:int)
     err := bat.insert(b,2,4);	# 3 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($8:int)

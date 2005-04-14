@@ -1,12 +1,12 @@
-command Admin.lookup(nme:str):bat[:str,:str] 
+command user.lookup(nme:str):bat[:str,:str] 
 address CMDlookup; 
 function sample(nme:str, val:any):bit;
-   b := lookup(nme); #find a bat
-   h := select(b,val,val);
-   t := count(h);
-   x := print(t);
-   y := print(val);
+   b := user.lookup(nme); #find a bat
+   h := algebra.select(b,val,val);
+   t := algebra.count(h);
+   x := io.print(t);
+   y := io.print(val);
    return sample:=true;
 end sample;
-sample("hello","world");
-sample("hello",1);
+user.sample("hello","world");
+user.sample("hello",1);

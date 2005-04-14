@@ -23,19 +23,19 @@ stdout of test 'tst3030` in directory 'src/mal` itself:
 !                                       ^',' expected
 !ERROR: end newsemijoin;
 !       ^',' expected
-!ERROR: z:=new(:int{sorted=true},int);
+!ERROR: z:= bbp.new(:int{sorted=true},int);
 !      ^<identifier> or <operator> expected
-!ERROR: w:=new(:{sequence=true},int);
+!ERROR: w:= bbp.new(:{sequence=true},int);
 !               ^Type identifier expected
-!ERROR: w:bat[int,int]:=new(:int,:int);
+!ERROR: w:bat[int,int]:= bbp.new(:int,:int);
 !      ^<type identifier> expected
-!ERROR: y:=sort(w:bat[int,int]{sorted=true,dense=true});
+!ERROR: y:= algebra.sort(w:bat[int,int]{sorted=true,dense=true});
 !      ^',' expected
-function Admin.newsemijoin(A:any):any;	# 0  unknown (newsemijoin:any)<-(A:any)
+function user.newsemijoin(A:any):any;	# 0  unknown (newsemijoin:any)<-(A:any)
     ;	# 1  unknown ($2:any)
-    w := new(:any);	# 2  unknown (w:any)<-($4:any)
-    print(1);	# 3  unknown ($5:any)<-($6:int)
-    y{sorted=true} := sort(w);	# 4  unknown (y:int)<-(w:any)
+    w := bbp.new(:any);	# 2  unknown (w:any)<-($4:any)
+    io.print(1);	# 3  unknown ($5:any)<-($6:int)
+    y{sorted=true} := algebra.sort(w);	# 4  unknown (y:int)<-(w:any)
 end newsemijoin;	# 5  unknown 
 
 # 08:01:16 >  

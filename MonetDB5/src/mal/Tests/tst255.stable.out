@@ -22,7 +22,7 @@ stdout of test 'tst255` in directory 'src/mal` itself:
 #o:= oid(z1);
 #print(o);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     z1 := bbp.new(:void,:int);	# 1 CMDBATnew (z1:bat[:void,:int])<-($2:void)($3:int)
     bat.setSequenceBase(z1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(z1:bat[:void,:int])($5:oid)
     bat.insert(z1,nil,0);	# 3 BKCinsert_bun ($6:bat[:void,:int])<-(z1:bat[:void,:int])($7:void)($8:int)

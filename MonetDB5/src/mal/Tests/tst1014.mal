@@ -2,26 +2,26 @@
 # takes care of releasing the variables.
 
 function test();
-    print("test");
+    io.print("test");
     bbp.open();
     x:= bbp.getObjects();
-    print(x);
-    print("test");
-    b:= new(:int,:int);
-    insert(b,1,2);
+    io.print(x);
+    io.print("test");
+    b:= bbp.new(:int,:int);
+    bat.insert(b,1,2);
     bbp.deposit("myfirstbat",b);
     c:= bbp.take("myfirstbat");
-    print(c);
+    io.print(c);
     bbp.close();
 # at the end of the call, the BBP should have discarded
 # the temporary bats of the user
 end test;
 
-test();
-print("continue");
+user.test();
+io.print("continue");
 bbp.open();
 x:= bbp.getObjects();
-print(x);
+io.print(x);
 v:= bbp.take("myfirstbat");
-print(v);
+io.print(v);
 bbp.close();

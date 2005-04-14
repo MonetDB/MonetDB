@@ -9,10 +9,10 @@
 #	bb:bat[void,str] := const.take(environment);
 
 # how to obtain a copy of all objects in a space?
-print("Contents of the 'const' box");
+io.print("Contents of the 'const' box");
 barrier (b,nme):= const.newIterator();
-	printf("# %s=",nme);
+	io.printf("# %s=",nme);
 	val:str := const.toString(nme);
-	printf("%s\n",val);
+	io.printf("%s\n",val);
 	redo (b,nme):= const.hasMoreElements();
 exit b;

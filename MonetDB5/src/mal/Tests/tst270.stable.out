@@ -53,7 +53,7 @@ stdout of test 'tst270` in directory 'src/mal` itself:
 #profiler.stop();
 #profiler.closeStream();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     profiler.activate("ticks");	# 1 CMDactivateProfiler ($1:void)<-($2:str)
     profiler.activate("pc");	# 2 CMDactivateProfiler ($3:void)<-($4:str)
     profiler.activate("statement");	# 3 CMDactivateProfiler ($5:void)<-($6:str)

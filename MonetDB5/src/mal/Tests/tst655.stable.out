@@ -27,7 +27,7 @@ stdout of test 'tst655` in directory 'src/mal` itself:
 #tablet.setProperties("name,type,dense,sorted,key,min,max");
 #tablet.display(b1,b2);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b1 := bbp.new(:void,:int);	# 1 CMDBATnew (b1:bat[:void,:int])<-($2:void)($3:int)
     bat.insert(b1,42);	# 2 BKCinsert_void_bun ($4:bat[:int,:any])<-(b1:bat[:void,:int])($5:int)
     bat.insert(b1,49);	# 3 BKCinsert_void_bun ($6:bat[:int,:any])<-(b1:bat[:void,:int])($7:int)

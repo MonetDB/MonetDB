@@ -114,6 +114,6 @@ function qry1();
 end qry1;
 
 optimizer.setDebug();
-optimizer.aliasRemoval("Admin","qry1");
-optimizer.garbageCollector("Admin","qry1");
-showFunction("Admin","qry1");
+optimizer.aliasRemoval("user","qry1");
+optimizer.garbageCollector("user","qry1");
+mdb.showFunction("user","qry1");

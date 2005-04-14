@@ -42,7 +42,7 @@ stdout of test 'no.016` in directory 'tests/BugReports` itself:
 ##quit();
 #	ca_a := quit();
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("# >Number:         16\n");	# 1 MILline ($1:void)<-($2:str)
     mil.line("# >Category:       MIL\n");	# 2 MILline ($3:void)<-($4:str)
     mil.line("# >Synopsis:       MIL: sample, does not handle empty BAT\n");	# 3 MILline ($5:void)<-($6:str)
@@ -60,10 +60,10 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("# >Environment:\n");	# 15 MILline ($29:void)<-($30:str)
     mil.line("# general/IRIX monet3.0.6\n");	# 16 MILline ($31:void)<-($32:str)
     mil.line("# >Description:\n");	# 17 MILline ($33:void)<-($34:str)
-    mil.line("# >a := new(int, int);\n");	# 18 MILline ($35:void)<-($36:str)
+    mil.line("# >a := bbp.new(int, int);\n");	# 18 MILline ($35:void)<-($36:str)
     mil.line("# >a.sample(1).print;\n");	# 19 MILline ($37:void)<-($38:str)
     mil.line("# !FATAL GDKmalloc called with size 0\n");	# 20 MILline ($39:void)<-($40:str)
-    mil.line("var a := new(int, int);");	# 21 MILline ($41:void)<-($42:str)
+    mil.line("var a := bbp.new(int, int);");	# 21 MILline ($41:void)<-($42:str)
     a := bbp.new(nil:int,nil:int);	# 22 CMDBATnew (a:bat[:int,:int])<-($44:int)($44:int)
     mil.line("a.sample(1).print();");	# 23 MILline ($45:void)<-($46:str)
     aa_a := algebra.sample(a,1);	# 24 ALGsample (aa_a:bat[:int,:int])<-(a:bat[:int,:int])($48:int)

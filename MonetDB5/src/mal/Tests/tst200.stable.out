@@ -42,7 +42,7 @@ stdout of test 'tst200` in directory 'src/mal` itself:
 #print(b);
 #print(b,b,b);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     o := calc.oid(20000000);	# 1 CALCint2oid (o:oid)<-($2:int)
     calc.setoid(o);	# 2 CALCsetoidInc ($3:oid)<-(o:oid)
     b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($5:int)($6:int)

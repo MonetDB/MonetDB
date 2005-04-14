@@ -8,24 +8,16 @@ stdout of test 'no.062` in directory 'tests/BugReports` itself:
 #script:no.062.milS
 
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# >Number:         62
-# >Category:       MIL
-# >Synopsis:       Handling of nested arithmetic expressions is inconsistent
-# >Confidential:   no
-# >Severity:       critical
-# >Priority:       high
-# >Responsible:    mk
-# >State:          feedback
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Fri Oct 24 14:09:23 1997
-# >Originator:     mk
-# >Organization:
-# >Release:        971007
-# >Environment:
+# Monet Database Server V4.7.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugReports
+# Visit http://monetdb.cwi.nl/ for further information.
+## Monet Mil to Mal compiler
+#include mil;
+## Copyright (c) 2001-2004, CWI. All rights reserved.
 # 
 # >Description:
 # Handlin>t:= new(int,int);
@@ -59,7 +51,7 @@ stdout of test 'no.062` in directory 'tests/BugReports` itself:
 # >t.insert(0-1+ -1, 0);
 # !ERROR: in syntax at "t.insert(0-1+ -1, 0);"
 # 
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("# >Number:         62\n");	# 1 MILline ($31:void)<-($32:str)
     mil.line("# >Category:       MIL\n");	# 2 MILline ($33:void)<-($34:str)
     mil.line("# >Synopsis:       Handling of nested arithmetic expressions is inconsistent\n");	# 3 MILline ($35:void)<-($36:str)
@@ -77,7 +69,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("# >Environment:\n");	# 15 MILline ($59:void)<-($60:str)
     mil.line("# \n");	# 16 MILline ($61:void)<-($62:str)
     mil.line("# >Description:\n");	# 17 MILline ($63:void)<-($64:str)
-    mil.line("# Handlin>t:= new(int,int);\n");	# 18 MILline ($65:void)<-($66:str)
+    mil.line("# Handlin>t:= bbp.new(int,int);\n");	# 18 MILline ($65:void)<-($66:str)
     mil.line("# >t.insert(0,0);\n");	# 19 MILline ($67:void)<-($68:str)
     mil.line("# >t.insert(1+1,0);\n");	# 20 MILline ($69:void)<-($70:str)
     mil.line("# >t.insert(-1,-0);\n");	# 21 MILline ($71:void)<-($72:str)
@@ -112,20 +104,20 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 50 MILline ($123:void)<-($124:str)
     aa_a := calc.oid(20000000);	# 51 CALCint2oid (aa_a:oid)<-($126:int)
     ba_a := calc.setoid(aa_a);	# 52 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("var t:= new(int,int);");	# 53 MILline ($128:void)<-($129:str)
+    mil.line("var t:= bbp.new(int,int);");	# 53 MILline ($128:void)<-($129:str)
     t := bbp.new(nil:int,nil:int);	# 54 CMDBATnew (t:bat[:int,:int])<-($131:int)($131:int)
     mil.line("t.insert(0,0);");	# 55 MILline ($132:void)<-($133:str)
-    ca_a := mil.insert(t,0,0);	# 56 MILinsert_bun (ca_a:bat[:int,:int])<-(t:bat[:int,:int])($135:int)($135:int)
+    ca_a := bat.insert(t,0,0);	# 56 BKCinsert_bun (ca_a:bat[:int,:int])<-(t:bat[:int,:int])($135:int)($135:int)
     mil.line("t.insert(1+1,0);");	# 57 MILline ($136:void)<-($137:str)
     da_a := calc.+(1,1);	# 58 CALCbinaryADDintint (da_a:int)<-($139:int)($139:int)
-    ea_a := mil.insert(t,da_a,0);	# 59 MILinsert_bun (ea_a:bat[:int,:int])<-(t:bat[:int,:int])(da_a:int)($135:int)
+    ea_a := bat.insert(t,da_a,0);	# 59 BKCinsert_bun (ea_a:bat[:int,:int])<-(t:bat[:int,:int])(da_a:int)($135:int)
     mil.line("t.insert(-1,-0);");	# 60 MILline ($141:void)<-($142:str)
-    fa_a := mil.insert(t,-1,-0);	# 61 MILinsert_bun (fa_a:bat[:int,:int])<-(t:bat[:int,:int])($144:int)($145:int)
+    fa_a := bat.insert(t,-1,-0);	# 61 BKCinsert_bun (fa_a:bat[:int,:int])<-(t:bat[:int,:int])($144:int)($145:int)
     mil.line("t.insert(0,0);");	# 62 MILline ($146:void)<-($133:str)
-    ga_a := mil.insert(t,0,0);	# 63 MILinsert_bun (ga_a:bat[:int,:int])<-(t:bat[:int,:int])($135:int)($135:int)
+    ga_a := bat.insert(t,0,0);	# 63 BKCinsert_bun (ga_a:bat[:int,:int])<-(t:bat[:int,:int])($135:int)($135:int)
     mil.line("t.insert(-1+1,0);");	# 64 MILline ($148:void)<-($149:str)
     ha_a := calc.+(-1,1);	# 65 CALCbinaryADDintint (ha_a:int)<-($144:int)($139:int)
-    ia_a := mil.insert(t,ha_a,0);	# 66 MILinsert_bun (ia_a:bat[:int,:int])<-(t:bat[:int,:int])(ha_a:int)($135:int)
+    ia_a := bat.insert(t,ha_a,0);	# 66 BKCinsert_bun (ia_a:bat[:int,:int])<-(t:bat[:int,:int])(ha_a:int)($135:int)
     mil.line("print(t);");	# 67 MILline ($152:void)<-($153:str)
     ja_a := io.print(t);	# 68 IOprint_val (ja_a:int)<-(t:bat[:int,:int])
     mil.line("# alles zover is goed\n");	# 69 MILline ($155:void)<-($156:str)

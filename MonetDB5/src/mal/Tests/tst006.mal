@@ -1,7 +1,7 @@
 	r:=0;
 barrier	l:= r < 1;
-	print(l);
-	print(r);
+	io.print(l);
+	io.print(r);
 	r:= r+1;
 	l:= false;
 	redo l;

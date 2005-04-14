@@ -43,7 +43,7 @@ stdout of test 'tst350` in directory 'src/mal` itself:
 #	setColumn(bRef,"refcnt");
 #	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
 #end dir;
-function Admin.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
+function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     atm := inspect.getAtomNames();	# 1 INSPECTatom_names (atm:bat[:int,:str])
     brev := bat.reverse(b);	# 2 BKCreverse (brev:bat[:str,:int])<-(b:bat[:int,:str])
     bm := bat.mirror(brev);	# 3 BKCmirror (bm:bat[:str,:str])<-(brev:bat[:str,:int])
@@ -81,12 +81,12 @@ end dir;	# 29
 #	print(tn);
 #	dir(tn);
 #end dir;
-function Admin.dir(s:str):void;	# 0  (dir:void)<-(s:str)
+function user.dir(s:str):void;	# 0  (dir:void)<-(s:str)
     io.print("Search directory by name");	# 1 IOprint_val ($2:int)<-($3:str)
     t := bbp.getNames();	# 2 CMDbbpNames (t:bat[:int,:str])
     tn := algebra.like(t,s);	# 3 ALGlike (tn:bat[:int,:str])<-(t:bat[:int,:str])(s:str)
     io.print(tn);	# 4 IOprint_val ($6:int)<-(tn:bat[:int,:str])
-    Admin.dir(tn);	# 5  ($7:void)<-(tn:bat[:int,:str])
+    user.dir(tn);	# 5  ($7:void)<-(tn:bat[:int,:str])
 end dir;	# 6  
 #print("start test");
 #b:=new(:int,:int);
@@ -98,13 +98,13 @@ end dir;	# 6
 #dir("simple");
 #
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     io.print("start test");	# 1 IOprint_val ($1:int)<-($2:str)
     b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
     bat.setName(b,"simplemind");	# 3 BKCsetName ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:str)
     z := bbp.getNames();	# 4 CMDbbpNames (z:bat[:int,:str])
-    Admin.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])
-    Admin.dir("simple");	# 6  ($10:void)<-($11:str)
+    user.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])
+    user.dir("simple");	# 6  ($10:void)<-($11:str)
 end main;	# 7  
 [ "start test" ]
 #---------------------------------------------------------------------------------------------------------------------------------#

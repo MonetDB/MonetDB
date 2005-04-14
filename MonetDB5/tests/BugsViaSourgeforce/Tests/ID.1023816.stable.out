@@ -37,7 +37,7 @@ stdout of test 'ID.1023816` in directory 'tests/BugsViaSourgeforce` itself:
 #	mil.line("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);");
 #	ga_a := table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("var x:=new(void,int);");	# 1 MILline ($1:void)<-($2:str)
     x := bbp.new(nil:void,nil:int);	# 2 CMDBATnew (x:bat[:void,:int])<-($4:void)($5:int)
     mil.line("x.insert(void(nil),2);");	# 3 MILline ($6:void)<-($7:str)

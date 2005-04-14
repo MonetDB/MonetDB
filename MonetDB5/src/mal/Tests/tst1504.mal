@@ -1,9 +1,9 @@
-	x := new(:oid,:chr);
-	de_a := insert(x,1@0,'a');
-	ee_a := insert(x,2@0,'a');
-	y:= new(:chr,:oid);
-	xr:= reverse(x);
-	print(xr);
-	insert(y,xr);
-print("result?");
-	print(y);
+	x := bbp.new(:oid,:chr);
+	de_a := bat.insert(x,1@0,'a');
+	ee_a := bat.insert(x,2@0,'a');
+	y:= bbp.new(:chr,:oid);
+	xr:= bat.reverse(x);
+	io.print(xr);
+	bat.insert(y,xr);
+	io.print("result?");
+	io.print(y);

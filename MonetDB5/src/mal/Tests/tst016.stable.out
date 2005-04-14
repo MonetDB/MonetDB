@@ -22,7 +22,10 @@ stdout of test 'tst016` in directory 'src/mal` itself:
 #print(b);
 #print(c);
 #
-function Admin.main():int;	# 0  (main:int)
+#
+#
+#
+function user.main():int;	# 0  (main:int)
     a := "Dit is een test\n";	# 1  (a:str)<-($2:str)
     b := blob.toblob(a);	# 2 BLOBtoblob (b:blob)<-(a:str)
     c := blob.tostring(b);	# 3 BLOBfromblob (c:str)<-(b:blob)

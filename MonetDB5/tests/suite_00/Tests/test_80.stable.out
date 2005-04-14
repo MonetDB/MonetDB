@@ -70,7 +70,7 @@ stdout of test 'test_80` in directory 'tests/suite_00` itself:
 ##Identifer 'key' mapped to 'bat.setKey'
 ##Identifer 'set' mapped to 'bat.setSet'
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
@@ -92,7 +92,7 @@ function Admin.main():int;	# 0  (main:int)
     ia_a := bat.insert(b,2,4);	# 19 BKCinsert_bun (ia_a:bat[:int,:int])<-(b:bat[:int,:int])($18:int)($34:int)
     mil.line("print(b);");	# 20 MILline ($35:void)<-($23:str)
     ja_a := io.print(b);	# 21 IOprint_val (ja_a:int)<-(b:bat[:int,:int])
-    mil.line("var c:= new(int,int);");	# 22 MILline ($37:void)<-($38:str)
+    mil.line("var c:= bbp.new(int,int);");	# 22 MILline ($37:void)<-($38:str)
     c := bbp.new(nil:int,nil:int);	# 23 CMDBATnew (c:bat[:int,:int])<-($9:int)($9:int)
     mil.line("set(c,true);");	# 24 MILline ($40:void)<-($41:str)
     ka_a := bat.setSet(c,true);	# 25 BKCsetSet (ka_a:bat[:int,:int])<-(c:bat[:int,:int])($13:bit)

@@ -1,16 +1,16 @@
 # inspect the clients population
 
 d:= clients.getId();
-print(d);
+io.print(d);
 s:= clients.getScenario();
-print(s);
+io.print(s);
 i:= clients.getInfo();
-print(i);
+io.print(i);
 
 u:= clients.getUsers();
-print(u);
+io.print(u);
 
 #l:= clients.getLogins();
-#print(l);
+#io.print(l);
 
 

@@ -23,7 +23,7 @@ stdout of test 'tst220` in directory 'src/mal` itself:
 #
 #	return bb;
 #end steal; 
-function Admin.steal(bb:bat[:any$1,:any$2]):bat[:any$1,:any$2];	# 0  dynamic (steal:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
+function user.steal(bb:bat[:any$1,:any$2]):bat[:any$1,:any$2];	# 0  dynamic (steal:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
     i := bbp.getLRefCount(bb);	# 1 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any$1,:any$2])
     io.printf("enter function refcount =%d[3]\n",i);	# 2 IOprint_formatted_int ($3:int)<-($4:str)(i:int)
     loc := bb;	# 3  (loc:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
@@ -80,7 +80,7 @@ end steal;	# 7
 #	zn:= bbp.getNames();
 #	print(zn,z,zl);
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
     i := bbp.getLRefCount(b);	# 2 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("refcount =%d[1]\n",i);	# 3 IOprint_formatted_int ($5:int)<-($6:str)(i:int)
@@ -107,12 +107,12 @@ function Admin.main():int;	# 0  (main:int)
     i := bbp.getLRefCount(b);	# 24 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("after 5rd assignment refcount =%d[2]\n",i);	# 25 IOprint_formatted_int ($29:int)<-($30:str)(i:int)
     io.printf("call function\n");	# 26 IOprint_str ($31:int)<-($32:str)
-    d := Admin.steal(b);	# 27  (d:bat[:int,:str])<-(b:bat[:int,:str])
+    d := user.steal(b);	# 27  (d:bat[:int,:str])<-(b:bat[:int,:str])
     i := bbp.getLRefCount(b);	# 28 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("return from function refcount =%d[3]\n",i);	# 29 IOprint_formatted_int ($34:int)<-($35:str)(i:int)
     io.printf("check self replacement\n");	# 30 IOprint_str ($36:int)<-($37:str)
     i := bbp.getLRefCount(b);	# 31 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    b := Admin.steal(b);	# 32  (b:bat[:int,:str])<-(b:bat[:int,:str])
+    b := user.steal(b);	# 32  (b:bat[:int,:str])<-(b:bat[:int,:str])
     j := bbp.getLRefCount(b);	# 33 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
     io.print(i);	# 34 IOprint_val ($39:int)<-(i:int)
     io.print(j);	# 35 IOprint_val ($40:int)<-(j:int)

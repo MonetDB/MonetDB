@@ -40,7 +40,7 @@ stdout of test 'tst1005` in directory 'src/mal` itself:
 ##exit MALexception;
 ##print("done");
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     bbp.open();	# 1 CMDbbpopen ($1:void)
     b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($3:int)($4:int)
     bat.insert(b,1,2);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($7:int)
@@ -60,7 +60,7 @@ exit MALexception;	# 12  (MALexception:any)
     io.print(x);	# 17 IOprint_val ($24:int)<-(x:bat[:int,:str])
     bbp.close();	# 18 CMDbbpclose ($25:void)
 end main;	# 19  
-[ "MALexception:Admin.main[5]:bbp.bind:failed to locate 'myfirstbat' in box\n" ]
+[ "MALexception:user.main[5]:bbp.bind:failed to locate 'myfirstbat' in box\n" ]
 [ "v" ]
 [ "nil" ]
 [ "getObjects" ]

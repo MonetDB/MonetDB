@@ -16,17 +16,17 @@ stdout of test 'tst101` in directory 'src/mal` itself:
 ## this should be sufficient to determine outcome
 #
 #function + (L:any$1, R:any$1):int ; return s :=1; end +;
-function Admin.+(L:any$1,R:any$1):int;	# 0  (+:int)<-(L:any$1)(R:any$1)
+function user.+(L:any$1,R:any$1):int;	# 0  (+:int)<-(L:any$1)(R:any$1)
     return s := 1;	# 1  (s:int)<-($4:int)
 end +;	# 2  
 #a:=3+1;
 #b:=3.5+2.7;
 #c:= 7+8;
 #
-function Admin.main():int;	# 0  (main:int)
-    a := Admin.+(3,1);	# 1  (a:int)<-($2:int)($3:int)
-    b := Admin.+(3.5,2.7);	# 2  (b:int)<-($5:flt)($6:flt)
-    c := Admin.+(7,8);	# 3  (c:int)<-($8:int)($9:int)
+function user.main():int;	# 0  (main:int)
+    a := user.+(3,1);	# 1  (a:int)<-($2:int)($3:int)
+    b := user.+(3.5,2.7);	# 2  (b:int)<-($5:flt)($6:flt)
+    c := user.+(7,8);	# 3  (c:int)<-($8:int)($9:int)
 end main;	# 4  
 
 # 07:58:54 >  

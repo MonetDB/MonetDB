@@ -90,7 +90,7 @@ stdout of test 'no.161` in directory 'tests/BugReports` itself:
 #	ca_a := str(in);
 #	da_a := printf("test_inner.in: %s\n",ca_a);
 #end test_inner;
-function Admin.test_inner(in:str):void;	# 0  (test_inner:void)<-(in:str)
+function user.test_inner(in:str):void;	# 0  (test_inner:void)<-(in:str)
     mil.line("   printf(\"test_inner.in: %s\\n\",str(in));");	# 1 MILline ($2:void)<-($3:str)
     ca_a := calc.str(in);	# 2 CALCstr2str (ca_a:str)<-(in:str)
     da_a := io.printf("test_inner.in: %s\n",ca_a);	# 3 IOprint_formatted_str (da_a:int)<-($6:str)(ca_a:str)
@@ -103,12 +103,12 @@ end test_inner;	# 4
 #	mil.line("   test_inner(in);");
 #	ga_a := test_inner(in);
 #end test_outer;
-function Admin.test_outer(in:any):void;	# 0  (test_outer:void)<-(in:any)
+function user.test_outer(in:any):void;	# 0  (test_outer:void)<-(in:any)
     mil.line("   printf(\"test_outer.in: %s\\n\",str(in));");	# 1 MILline ($2:void)<-($3:str)
-    ea_a := batstr.str(in);	# 2 STRbattostr (ea_a:bat[:void,:str])<-(in:any)
-    fa_a := printf("test_outer.in: %s\n",ea_a);	# 3  (fa_a:any)<-($6:str)(ea_a:bat[:void,:str])
+    ea_a := calc.str(in);	# 2 CALCstr2str (ea_a:str)<-(in:any)
+    fa_a := io.printf("test_outer.in: %s\n",ea_a);	# 3 IOprint_formatted_str (fa_a:int)<-($6:str)(ea_a:str)
     mil.line("   test_inner(in);");	# 4 MILline ($7:void)<-($8:str)
-    ga_a := Admin.test_inner(in);	# 5  (ga_a:void)<-(in:any)
+    ga_a := user.test_inner(in);	# 5  (ga_a:void)<-(in:any)
 end test_outer;	# 6  
 #	mil.line("test_outer(\"chr\");");
 #	ha_a := test_outer("chr");
@@ -117,17 +117,7 @@ end test_outer;	# 6
 #	mil.line("quit();");
 #	ja_a := quit();
 #  
-!ERROR: 'printf' undefined in Admin.test_outer[3]
-!ERROR: Error in cloned function
-!ERROR: function Admin.test_outer(in:any):void;	# 0  (test_outer:void)<-(in:any)
-!ERROR:     mil.line("   printf(\"test_outer.in: %s\\n\",str(in));");	# 1 MILline ($2:void)<-($3:str)
-!ERROR:     ea_a := batstr.str(in);	# 2 STRbattostr (ea_a:bat[:void,:str])<-(in:any)
-!ERROR:     fa_a := printf("test_outer.in: %s\n",ea_a);	# 3  unknown (fa_a:any)<-($6:str)(ea_a:bat[:void,:str])
-!ERROR:     mil.line("   test_inner(in);");	# 4 MILline ($7:void)<-($8:str)
-!ERROR:     ga_a := Admin.test_inner(in);	# 5  (ga_a:void)<-(in:any)
-!ERROR: end test_outer;	# 6  
-!ERROR: 'test_outer' undefined in Admin.main[49]
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     mil.line("# >Number:         161\n");	# 1 MILline ($1:void)<-($2:str)
     mil.line("# >Category:       Mserver\n");	# 2 MILline ($3:void)<-($4:str)
     mil.line("# >Synopsis:       tostr problem when str module is loaded\n");	# 3 MILline ($5:void)<-($6:str)
@@ -176,12 +166,70 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("PROC test_inner(any in) : void {");	# 46 MILline ($84:void)<-($85:str)
     mil.line("PROC test_outer(any in) : void {");	# 47 MILline ($86:void)<-($87:str)
     mil.line("test_outer(\"chr\");");	# 48 MILline ($88:void)<-($89:str)
-    ha_a := test_outer("chr");	# 49  unknown (ha_a:void)<-($91:str)
+    ha_a := user.test_outer("chr");	# 49  (ha_a:void)<-($91:str)
     mil.line("test_outer(\"chr\");");	# 50 MILline ($92:void)<-($89:str)
-    ia_a := Admin.test_outer("chr");	# 51  (ia_a:void)<-($91:str)
+    ia_a := user.test_outer("chr");	# 51  (ia_a:void)<-($91:str)
     mil.line("quit();");	# 52 MILline ($94:void)<-($95:str)
     ja_a := clients.quit();	# 53 CLTquit (ja_a:void)
 end main;	# 54  
+## >Number:         161\n
+## >Category:       Mserver\n
+## >Synopsis:       tostr problem when str module is loaded\n
+## >Confidential:   no\n
+## >Severity:       critical\n
+## >Priority:       high\n
+## >Responsible:    boncz (Peter Boncz)\n
+## >State:          open\n
+## >Class:          sw-bug\n
+## >Submitter-Id:   unknown\n
+## >Arrival-Date:   Wed Jul 15 15:24:01 1998\n
+## >Originator:     windhouw@cwi.nl\n
+## >Organization:\n
+## CWI\n
+## >Release:        980101\n
+## >Environment:\n
+## \n
+## >Description:\n
+## In the following script the string becomes different\n
+## in the inner procedure (when the str module is loaded):\n
+## \n
+## Script\n
+## 8<-----\n
+## PROC test_inner(any in) : void {\n
+##    printf(\"test_inner.in: %s\\n\",str(in));\n
+## }\n
+##  \n
+## PROC test_outer(any in) : void {\n
+##    printf(\"test_outer.in: %s\\n\",str(in));\n
+##    test_inner(in);\n
+## }\n
+## 8<-----\n
+## Output\n
+## 8<-----\n
+## >test_outer(\"chr\");\n
+## test_outer.in: chr\n
+## test_inner.in: chr\n
+## >module(str);\n
+## >test_outer(\"chr\");\n
+## test_outer.in: chr\n
+## test_inner.in: test_inner.in: %s\n
+## 8<----\n
+#setoid(oid(20000000));
+#PROC test_inner(any in) : void {
+#PROC test_outer(any in) : void {
+#test_outer(\"chr\");
+#   printf(\"test_outer.in: %s\\n\",str(in));
+test_outer.in: chr
+#   test_inner(in);
+#   printf(\"test_inner.in: %s\\n\",str(in));
+test_inner.in: chr
+#test_outer(\"chr\");
+#   printf(\"test_outer.in: %s\\n\",str(in));
+test_outer.in: chr
+#   test_inner(in);
+#   printf(\"test_inner.in: %s\\n\",str(in));
+test_inner.in: chr
+#quit();
 
 # 21:16:01 >  
 # 21:16:01 >  Done.

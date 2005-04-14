@@ -1,15 +1,15 @@
 #self inspection of the code base
 function dummy(i:int);
-	print(i);
+	io.print(i);
 	b:= mdb.getDefinition();
-	print(b);
+	io.print(b);
 	mdb.showFunction();
 end dummy;
 
-dummy(1);
+user.dummy(1);
 
-printf("get function properties\n");
-l:= inspect.getSignature("Admin","dummy");
-print(l);
+io.printf("get function properties\n");
+l:= inspect.getSignature("user","dummy");
+io.print(l);
 
-mdb.showFunction("Admin","dummy");
+mdb.showFunction("user","dummy");

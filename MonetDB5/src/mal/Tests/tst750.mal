@@ -2,8 +2,8 @@
 # Cloning two versions of a single function
 function test(b:bat[:any,:any$2],c:any$2);
 	k:= 1+c;
-	print(k);
+	io.print(k);
 end test;
 
-b:=new(:int,:int);
-test(b,2);
+b:= bbp.new(:int,:int);
+user.test(b,2);

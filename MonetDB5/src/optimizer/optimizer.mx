@@ -225,8 +225,10 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( scope)
 		s= findSymbolInModule(scope,fcnnme);
 
-	if( s == NULL)
+	if( s == NULL){
 		GDKerror(@2" optimizer:Could not find %s.%s\n",modnme,fcnnme);
+		return NULL;
+	}
 	if(debugOpt) { i= c->itrace; c->itrace='n';}
 	@1optimizer(s->def,0,0);
 	optimizerCheck(s->def,@2 " optimizer",1,GDKusec()-clk);

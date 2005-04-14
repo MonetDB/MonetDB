@@ -4,10 +4,10 @@ optimizer.setDebug();
 optimizer.commonExpressionRemoval();
 optimizer.aliasRemoval();
 #optimizer.deadCodeRemoval();
-b:= new(:int,:int);
-c:= new(:int,:int);       # identical until insert takes place
-d:= select(b,0,100);
-e:= select(b,0,100);    # mapped onto one instruction
+b:= bbp.new(:int,:int);
+c:= bbp.new(:int,:int);       # identical until insert takes place
+d:= algebra.select(b,0,100);
+e:= algebra.select(b,0,100);    # mapped onto one instruction
 k1:= 24;
 k2:= 27;
 l:= k1+k2;

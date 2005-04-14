@@ -20,7 +20,7 @@ stdout of test 'tst710` in directory 'src/mal` itself:
 #	printf("GDKerror, do something\n");
 #exit	GDKerror;
 #
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     i := 1;	# 1  (i:int)<-($2:int)
     io.print(i);	# 2 IOprint_val ($3:int)<-(i:int)
 catch GDKerror;	# 3  (GDKerror:any) jump 5

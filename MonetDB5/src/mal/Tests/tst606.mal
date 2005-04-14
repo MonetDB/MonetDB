@@ -18,8 +18,8 @@ end main;
 
 # take uses the 'root' versions.
 function take(v:str):any;
-	printf("looking for %s\n",v);
-	w:= take(v);
+	io.printf("looking for %s\n",v);
+	w:= constants.take(v);
 	return w;
 end take;
 

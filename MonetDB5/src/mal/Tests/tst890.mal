@@ -1,7 +1,7 @@
 #test reference counting of batcalc
-b:= new(:int,:int);
-setName(b,"b");
-insert(b,1,1);
+b:= bbp.new(:int,:int);
+bat.setName(b,"b");
+bat.insert(b,1,1);
 c:=multiplex.tactics("+",b,2);
 c:=multiplex.tactics("+",b,3);
 c:=multiplex.tactics("+",b,4);
@@ -9,9 +9,9 @@ c:=multiplex.tactics("+",b,5);
 c:=multiplex.tactics("+",b,6);
 c:=multiplex.tactics("+",b,7);
 c:=multiplex.tactics("+",b,8);
-print(c);
+io.print(c);
 d:= bbp.getRefCount();
 dl:=bbp.getLRefCount();
 dn:= bbp.getNames();
-print(dn,d,dl);
+io.print(dn,d,dl);
 

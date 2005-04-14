@@ -1,25 +1,25 @@
 # the multiplex code blocks.
 # check detection of the underlying fast implementations
 
-b:= new(:lng,:lng);
-barrier (v,i):= newRange(0:lng);
-	insert(b,i,i);
-	redo (v,i):= nextElement(1:lng,10:lng);
+b:= bbp.new(:lng,:lng);
+barrier (v,i):= mal.newRange(0:lng);
+	bat.insert(b,i,i);
+	redo (v,i):= mal.nextElement(1:lng,10:lng);
 exit (v,i);
-c:= copy(b);
-print(c);
+c:= algebra.copy(b);
+io.print(c);
 x:= multiplex.tactics("+",b,c);
-print(x);
+io.print(x);
 x:= multiplex.tactics("+",b,1:lng);
-print(x);
+io.print(x);
 x:= multiplex.tactics("/",b,1:lng);
-print(x);
+io.print(x);
 x:= multiplex.tactics("*",b,c);
-print(x);
+io.print(x);
 y:= multiplex.tactics("==",b,b);
-print(y);
+io.print(y);
 y:= multiplex.tactics("==",b,x);
-print(y);
+io.print(y);
 z:= multiplex.tactics("not",y);
-print(z);
+io.print(z);
 

@@ -36,9 +36,9 @@ function welcome5(lim:int)(:str,:int);
     return (w,i):=("hello",2); 
 end welcome5;
 
-y:=welcome1(1);
-print(y);
-y:=welcome2(1);
-print(y);
+y:= user.welcome1(1);
+io.print(y);
+y:= user.welcome2(1);
+io.print(y);
 
-(x,y):=welcome2(1);
+(x,y):= user.welcome2(1);

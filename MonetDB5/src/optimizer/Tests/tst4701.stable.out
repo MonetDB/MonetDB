@@ -16,12 +16,12 @@ stdout of test 'tst4701` in directory 'src/optimizer` itself:
 #
 #command tst903()
 !ERROR: address of 'MCCAdmin_tst903' not found
-command Admin.tst903():void address MCCAdmin_tst903;	# 0  (tst903:void)
-#tst903();
+command user.tst903():void address MCCAdmin_tst903;	# 0  (tst903:void)
+#user.tst903();
 #
-!ERROR: 'Admin.tst903' undefined in Admin.main[1]
-function Admin.main():int;	# 0  (main:int)
-    Admin.tst903();	# 1  unknown ($1:void)
+!ERROR: 'user.tst903' undefined in user.main[1]
+function user.main():int;	# 0  (main:int)
+    user.tst903();	# 1  unknown ($1:void)
 end main;	# 2  
 
 # 11:08:36 >  

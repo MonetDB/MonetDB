@@ -39,7 +39,7 @@ stdout of test 'tst4004` in directory 'src/optimizer` itself:
 #
 !ERROR: 'F' used outside declaration scope in main[12]
 !ERROR: 'E' may not be used before being set in main[16]
-function Admin.main():int;	# 0  (main:int)
+function user.main():int;	# 0  (main:int)
     A := 23;	# 1  (A:int)<-($2:int)
     D := 22;	# 2  (D:int)<-($4:int)
     B := true;	# 3  (B:bit)<-($6:bit)

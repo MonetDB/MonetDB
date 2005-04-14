@@ -1,21 +1,21 @@
 # what is the overhead of MAL in multiplex situations
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
-b:= new(:lng,:lng);
-barrier (k,v):= newRange(0:lng);
-	insert(b,v,v);
-	redo (k,v):= nextElement(1:lng,10:lng);
+b:= bbp.new(:lng,:lng);
+barrier (k,v):= mal.newRange(0:lng);
+	bat.insert(b,v,v);
+	redo (k,v):= mal.nextElement(1:lng,10:lng);
 exit (k,v);
 
-c:= copy(b);
+c:= algebra.copy(b);
 
-d:= new(:lng,:lng);
-barrier (w,h,t):= newIterator(b);
-	B1:= find(b,h);
-	B2:= find(c,h);
+d:= bbp.new(:lng,:lng);
+barrier (w,h,t):= chopper.newIterator(b);
+	B1:= algebra.find(b,h);
+	B2:= algebra.find(c,h);
 	t:= B1+B2;
-	insert(d,h,t);
-	redo (w,h,t):= hasMoreElements(b);
+	bat.insert(d,h,t);
+	redo (w,h,t):= chopper.hasMoreElements(b);
 catch 	GDKerror;
 exit	GDKerror;
 exit w;
-print(d);
+io.print(d);

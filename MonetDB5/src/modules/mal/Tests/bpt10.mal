@@ -1,21 +1,18 @@
 #testing the BAT partition table
 # nothing is saved because the bats are not persistent
-a1:= new(:void,:int);
-setSequenceBase(a1,0@0);
-a2:= new(:void,:int);
-setSequenceBase(a2,10@0);
-a3:= new(:void,:int);
-setSequenceBase(a3,20@0);
+a1:= bbp.new(:void,:int);
+bat.setSequenceBase(a1,0@0);
+a2:= bbp.new(:void,:int);
+bat.setSequenceBase(a2,10@0);
+a3:= bbp.new(:void,:int);
+bat.setSequenceBase(a3,20@0);
 
-barrier (go,i):= newRange(0);
+barrier (go,i):= mal.newRange(0);
 	bat.insert(a1,nil,i);
 	bat.insert(a2,nil,i);
 	bat.insert(a3,nil,i);
-	redo (go,i):= nextElement(1,10);
+	redo (go,i):= mal.nextElement(1,10);
 exit (go,i);
-#print(a1);
-#print(a2);
-#print(a3);
 
 # now really add it
 partitions.deposit(a1);
