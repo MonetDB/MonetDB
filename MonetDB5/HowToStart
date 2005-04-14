@@ -135,7 +135,7 @@ A sample of other useful configure options is:
                            "no"  = system-specific C/C++ compiler,
                            <other-compiler-name>)
   --with-gxx=<compiler>   which C++ compiler to use
-  --with-bits=<#bits>     specify number of bits (32 or 64)
+  --enable-bits=<#bits>     specify number of bits (32 or 64)
 Use the --help option of configure to find out more about configure
 options.
 
