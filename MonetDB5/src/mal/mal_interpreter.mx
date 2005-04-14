@@ -397,13 +397,18 @@ MALrestart:
 MALevalExit:
     @:finishChild@
     if( stkexception >= 0) {
-        str nme= MALexception, msg;
+		if( ret )
+			ret= appendException(mb,mb->stop-1,
+				getVarName(mb,stkexception),
+				"Exception not catched", ret);
+		else
         if(stk->stk[stkexception].vtype== TYPE_str)
-            msg= stk->stk[stkexception].val.sval;
-        else { nme= getVarName(mb,stkexception);
-            msg= 0;
-        }
-        ret=appendException(mb,mb->stop-1,nme, " propagated", msg);
+			ret= appendException(mb,mb->stop-1,MALexception, 
+			"Exception not catched", 
+            stk->stk[stkexception].val.sval);
+		else
+			ret= appendException(mb,mb->stop-1,MALexception, 
+			"Exception not catched", "");
     }
     return ret;
 }
@@ -566,7 +571,7 @@ possible change in the control flow.
         } else
             ret= raiseException(mb,stkpc, 
                 getVarName(mb, getDestVar(pci)), 
-                "exception raised\n");
+                "Exception raised\n");
         @:skipToCatch(stkexception)@
         break;
     case THREADsymbol:
