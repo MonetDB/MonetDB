@@ -44,6 +44,9 @@ gdk_debug=0			# debug
 #		       4194304 = show resultsize estimations (for join,select)
 #		       8388608 = extended property checking: tells also about not set properties
 #
+# the kernel can be used in embedded situations (don't set this yourself)
+gdk_embedded=no
+
 gdk_version=@VERSION@
 
 # Monet Section
