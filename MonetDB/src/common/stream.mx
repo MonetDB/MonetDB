@@ -2202,10 +2202,10 @@ stream_writeLngArray(stream *s, const lng *val, size_t cnt)
 int
 stream_printf(stream *s, const char *format, ...)
 {
-	if (s->errnr) return(-1);
 	char buf[BUFSIZ], *bf = buf;
 	int i = 0;
 	size_t bfsz = BUFSIZ;
+	if (s->errnr) return(-1);
 	va_list ap;
 
 @= stream_printf_va_vsnprintf
