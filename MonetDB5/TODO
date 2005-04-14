@@ -1,3 +1,12 @@
+- look at exception handling. Make the call trace more explicit in terms
+ of location.
+- add intelligent help (partial matching signatures)
+- module throw section
+- exception utils bijwerken
+- further limit the MAL language framework to a priory known mod.fcn
+  instructions. Inheritance (and overloading) is moved to the optimizer layer.
+  Expected gains, faster parsing, much less mallocs.
+
 - DD: factor out the error handling to prepare for internationalization
 - DD: strong need for partitioned tables.
 - DD: mapping BATs to external sources
@@ -49,8 +58,6 @@ action.
   2nd time MapiClient tapestry_attr1 has disappeared
   Works when called directly against server
   and works when GDB is applied
-- reference counting BATs through assignments should not be counted.
-  a BAT disappears when the first binding variable ceases to exist.
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
 
 - printing result tables should be improved.
