@@ -50,12 +50,9 @@ fi
 # need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
 MONETDB_BUILD=[`pwd`]
 AC_SUBST(MONETDB_BUILD)
-QMONETDB_BUILD="$MONETDB_BUILD"
-AC_SUBST(QMONETDB_BUILD)
+
 MONETDB_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(MONETDB_SOURCE)
-QMONETDB_SOURCE="$MONETDB_SOURCE"
-AC_SUBST(QMONETDB_SOURCE)
 
 # if no --prefix option, we must set Qprefix to the default value
 # the problem is that prefix is set very late in the process if it
@@ -65,49 +62,135 @@ if test "${prefix}x" = "NONEx"; then
 else
 	Qprefix="${prefix}"
 fi
+Qprefix="`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qprefix)
 # exec_prefix is created very late, so let make do the expansion
 if test "${exec_prefix}x" = "NONEx"; then
 	Qexec_prefix='${prefix}'
 else
-	Qexec_prefix="${exec_prefix}"
+	Qexec_prefix="`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
 fi
 AC_SUBST(Qexec_prefix)
-Qsrcdir="$srcdir"
-AC_SUBST(Qsrcdir)
-Qlocalstatedir="$localstatedir"
-AC_SUBST(Qlocalstatedir)
-Qlibdir="$libdir"
-AC_SUBST(Qlibdir)
-Qsysconfdir="$sysconfdir"
-AC_SUBST(Qsysconfdir)
-Qbindir="$bindir"
-AC_SUBST(Qbindir)
-Qlibexecdir="$libexecdir"
-AC_SUBST(Qlibexecdir)
-Qdatadir="$datadir"
-AC_SUBST(Qdatadir)
-Qmandir="$mandir"
-AC_SUBST(Qmandir)
-Qincludedir="$includedir"
-AC_SUBST(Qincludedir)
-Qinfodir="$infodir"
-AC_SUBST(Qinfodir)
 
 AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 
-DIRSEP="/"
-case "$target_os" in
-mac*)	DIRSEP=":"
+dnl provide different versions of the paths derived above
+if test "${prefix}x" = "NONEx"; then
+	Sprefix="`$translatepath "$Qprefix"`"
+	SQprefix="`echo "$Sprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+else
+	Sprefix="`$translatepath "$prefix"`"
+	SQprefix="`echo "$Sprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+if test "${exec_prefix}x" = "NONEx"; then
+	Sexec_prefix="`$translatepath "$Qexec_prefix"`"
+	SQexec_prefix="`echo "$Sexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+else
+	Sexec_prefix="`$translatepath "$exec_prefix"`"
+	SQexec_prefix="`echo "$Sexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+AC_SUBST(Xprefix)
+AC_SUBST(QXprefix)
+AC_SUBST(Xexec_prefix)
+AC_SUBST(QXexec_prefix)
+QMONETDB_BUILD="$MONETDB_BUILD"
+SMONETDB_BUILD="`$translatepath "$MONETDB_BUILD"`"
+SQMONETDB_BUILD="`echo "$SMONETDB_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QMONETDB_BUILD)
+AC_SUBST(XMONETDB_BUILD)
+AC_SUBST(QXMONETDB_BUILD)
+QMONETDB_SOURCE="$MONETDB_SOURCE"
+SMONETDB_SOURCE="`$translatepath "$MONETDB_SOURCE"`"
+SQMONETDB_SOURCE="`echo "$SMONETDB_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QMONETDB_SOURCE)
+AC_SUBST(XMONETDB_SOURCE)
+AC_SUBST(QXMONETDB_SOURCE)
+Qsrcdir="$srcdir"
+Ssrcdir="`$translatepath "$srcdir"`"
+SQsrcdir="`echo "$Ssrcdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qsrcdir)
+AC_SUBST(Xsrcdir)
+AC_SUBST(QXsrcdir)
+Qlocalstatedir="$localstatedir"
+Slocalstatedir="`$translatepath "$localstatedir"`"
+SQlocalstatedir="`echo "$Slocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qlocalstatedir)
+AC_SUBST(Xlocalstatedir)
+AC_SUBST(QXlocalstatedir)
+Qlibdir="$libdir"
+Slibdir="`$translatepath "$libdir"`"
+SQlibdir="`echo "$Slibdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qlibdir)
+AC_SUBST(Xlibdir)
+AC_SUBST(QXlibdir)
+Qsysconfdir="$sysconfdir"
+Ssysconfdir="`$translatepath "$sysconfdir"`"
+SQsysconfdir="`echo "$Ssysconfdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qsysconfdir)
+AC_SUBST(Xsysconfdir)
+AC_SUBST(QXsysconfdir)
+Qbindir="$bindir"
+Sbindir="`$translatepath "$bindir"`"
+SQbindir="`echo "$Sbindir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qbindir)
+AC_SUBST(Xbindir)
+AC_SUBST(QXbindir)
+Qlibexecdir="$libexecdir"
+Slibexecdir="`$translatepath "$libexecdir"`"
+SQlibexecdir="`echo "$Slibexecdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qlibexecdir)
+AC_SUBST(Xlibexecdir)
+AC_SUBST(QXlibexecdir)
+Qdatadir="$datadir"
+Sdatadir="`$translatepath "$datadir"`"
+SQdatadir="`echo "$Sdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qdatadir)
+AC_SUBST(Xdatadir)
+AC_SUBST(QXdatadir)
+Qmandir="$mandir"
+Smandir="`$translatepath "$mandir"`"
+SQmandir="`echo "$Smandir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qmandir)
+AC_SUBST(Xmandir)
+AC_SUBST(QXmandir)
+Qincludedir="$includedir"
+Sincludedir="`$translatepath "$includedir"`"
+SQincludedir="`echo "$Sincludedir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qincludedir)
+AC_SUBST(Xincludedir)
+AC_SUBST(QXincludedir)
+Qinfodir="$infodir"
+Sinfodir="`$translatepath "$infodir"`"
+SQinfodir="`echo "$Sinfodir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qinfodir)
+AC_SUBST(Xinfodir)
+AC_SUBST(QXinfodir)
+
+case "$host_os" in
+mac*)	DIRSEP=':'
+	QDIRSEP=':'
 	AC_ERROR([mac not supported yet])
+	;;
+*mingw*)
+	DIRSEP='\'
+	QDIRSEP='\\'
+	PATHSEP=';'
+	SOEXT='-0.dll'
+	;;
+*)
+	DIRSEP='/'
+	QDIRSEP='/'
+	PATHSEP=':'
+	SOEXT='.so'
 	;;
 esac
 AC_SUBST(DIRSEP)
-QDIRSEP="$DIRSEP"
 AC_SUBST(QDIRSEP)
+AC_SUBST(PATHSEP)
+AC_SUBST(SOEXT)
 
 dnl AC_CHECK_PROG(CP,cp,cp -f)
 dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)

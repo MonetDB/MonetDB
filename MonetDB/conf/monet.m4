@@ -878,6 +878,16 @@ esac
 
 AC_DEFUN([AM_MONETDB_OPTIONS],
 [
+dnl --with-translatepath
+translatepath=echo
+AC_ARG_WITH(translatepath,
+	AC_HELP_STRING([--with-translatepath=PROG],
+		[program to translate paths from configure-time format to execute-time format.  Take care that this program can be given paths like ${prefix}/etc which should be translated carefully.]),
+	translatepath="$withval",
+	[if test $cross_compiling = yes; then
+		AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])
+	fi])
+
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,
 	AC_HELP_STRING([--enable-noexpand],
@@ -1896,6 +1906,8 @@ if test "x$have_php" != xno; then
 fi
 AC_SUBST(PHP_INCS)
 AC_SUBST(PHP_EXTENSIONDIR)
+SPHP_EXTENSIONDIR="`$translatepath "$PHP_EXTENSIONDIR"`"
+AC_SUBST(XPHP_EXTENSIONDIR)
 AM_CONDITIONAL(HAVE_PHP, test x"$have_php" != xno)
 
 PHP_PEARDIR=""
@@ -1929,6 +1941,8 @@ if test "x$have_pear" != xno; then
 	fi
 fi
 AC_SUBST(PHP_PEARDIR)
+SPHP_PEARDIR="`$translatepath "$PHP_PEARDIR"`"
+AC_SUBST(XPHP_PEARDIR)
 AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
 
 

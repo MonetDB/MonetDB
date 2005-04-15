@@ -8,8 +8,8 @@ goto end
 
 setlocal
 
-set builddir=@MONETDB_BUILD@
-set srcdir=@MONETDB_SOURCE@
+set builddir=@XMONETDB_BUILD@
+set srcdir=@XMONETDB_SOURCE@
 
 set MOD_PATH=%builddir%\src\modules\plain;%builddir%\src\modules\contrib;%builddir%\src\modules\calibrator;%builddir%\src\modules\mnetcdf;%builddir%\src\mapi
 

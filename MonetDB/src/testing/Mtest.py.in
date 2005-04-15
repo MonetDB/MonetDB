@@ -245,38 +245,38 @@ class Comment:
 def _configure(str):
     # expand configure variables in str and return result
     config = [
-        ('${source}', '@QMONETDB_SOURCE@'),
-        ('${build}', '@QMONETDB_BUILD@'),
+        ('${source}', '@QXMONETDB_SOURCE@'),
+        ('${build}', '@QXMONETDB_BUILD@'),
 
-        ('${bindir}', '@Qbindir@'),
-##        ('${sbindir}', '@Qsbindir@'),
-        ('${libexecdir}', '@Qlibexecdir@'),
-        ('${datadir}', '@Qdatadir@'),
-        ('${sysconfdir}', '@Qsysconfdir@'),
-##        ('${sharedstatedir}', '@Qsharedstatedir@'),
-        ('${localstatedir}', '@Qlocalstatedir@'),
-        ('${libdir}', '@Qlibdir@'),
-        ('${includedir}', '@Qincludedir@'),
-##        ('${oldincludedir}', '@Qoldincludedir@'),
-        ('${infodir}', '@Qinfodir@'),
-        ('${mandir}', '@Qmandir@'),
-        ('${Qbindir}', '@Qbindir@'),
-##        ('${Qsbindir}', '@Qsbindir@'),
-        ('${Qlibexecdir}', '@Qlibexecdir@'),
-        ('${Qdatadir}', '@Qdatadir@'),
-        ('${Qsysconfdir}', '@Qsysconfdir@'),
-##        ('${Qsharedstatedir}', '@Qsharedstatedir@'),
-        ('${Qlocalstatedir}', '@Qlocalstatedir@'),
-        ('${Qlibdir}', '@Qlibdir@'),
-        ('${Qincludedir}', '@Qincludedir@'),
-##        ('${Qoldincludedir}', '@Qoldincludedir@'),
-        ('${Qinfodir}', '@Qinfodir@'),
-        ('${Qmandir}', '@Qmandir@'),
+        ('${bindir}', '@QXbindir@'),
+##        ('${sbindir}', '@QXsbindir@'),
+        ('${libexecdir}', '@QXlibexecdir@'),
+        ('${datadir}', '@QXdatadir@'),
+        ('${sysconfdir}', '@QXsysconfdir@'),
+##        ('${sharedstatedir}', '@QXsharedstatedir@'),
+        ('${localstatedir}', '@QXlocalstatedir@'),
+        ('${libdir}', '@QXlibdir@'),
+        ('${includedir}', '@QXincludedir@'),
+##        ('${oldincludedir}', '@QXoldincludedir@'),
+        ('${infodir}', '@QXinfodir@'),
+        ('${mandir}', '@QXmandir@'),
+        ('${Qbindir}', '@QXbindir@'),
+##        ('${Qsbindir}', '@QXsbindir@'),
+        ('${Qlibexecdir}', '@QXlibexecdir@'),
+        ('${Qdatadir}', '@QXdatadir@'),
+        ('${Qsysconfdir}', '@QXsysconfdir@'),
+##        ('${Qsharedstatedir}', '@QXsharedstatedir@'),
+        ('${Qlocalstatedir}', '@QXlocalstatedir@'),
+        ('${Qlibdir}', '@QXlibdir@'),
+        ('${Qincludedir}', '@QXincludedir@'),
+##        ('${Qoldincludedir}', '@QXoldincludedir@'),
+        ('${Qinfodir}', '@QXinfodir@'),
+        ('${Qmandir}', '@QXmandir@'),
         # put these at end (in this order!) for efficiency
-        ('${exec_prefix}', '@Qexec_prefix@'),
-        ('${Qexec_prefix}', '@Qexec_prefix@'),
-        ('${prefix}', '@Qprefix@'),
-        ('${Qprefix}', '@Qprefix@'),
+        ('${exec_prefix}', '@QXexec_prefix@'),
+        ('${Qexec_prefix}', '@QXexec_prefix@'),
+        ('${prefix}', '@QXprefix@'),
+        ('${Qprefix}', '@QXprefix@'),
         ]
     changed = True
     while '$' in str and changed:
@@ -289,7 +289,7 @@ def _configure(str):
 
 # add dir where monet_options is installed to sys.path
 # we must expand configure variables in the process
-sys.path.append(_configure(os.path.join('@Qdatadir@','@PACKAGE@','python')))
+sys.path.append(_configure(os.path.join('@QXdatadir@','@PACKAGE@','python')))
 import monet_options
 
 STDOUT = sys.stdout
@@ -2389,9 +2389,9 @@ def MonetDBVersion():
     return 0
 
 _MonetConfigDict = {
-    '--source': '@QMONETDB_SOURCE@',
-    '--build': '@QMONETDB_BUILD@',
-    '--prefix': '@Qprefix@',
+    '--source': '@QXMONETDB_SOURCE@',
+    '--build': '@QXMONETDB_BUILD@',
+    '--prefix': '@QXprefix@',
     }
 
 def GetMonetConfig(arg) :

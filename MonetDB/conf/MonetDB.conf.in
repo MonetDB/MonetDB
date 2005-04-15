@@ -5,8 +5,8 @@
 # where Mserver is called, or the home directory of the MonetDB user. 
 
 # Where MonetDB is installed
-prefix=@prefix@
-exec_prefix=@exec_prefix@
+prefix=@Xprefix@
+exec_prefix=@Xexec_prefix@
 
 # GDK Section
 #============
@@ -14,7 +14,7 @@ exec_prefix=@exec_prefix@
 # All databases are stored as a directory under the directory
 # given below.  Use this value to change the overall location
 # of your data.
-gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
+gdk_dbfarm=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 
 # MonetDB can only handle one database at a time.  You can specify
 # the name of the database to use below.  Note that you can use
@@ -84,7 +84,7 @@ monet_prompt=MonetDB>
 # a MIL client?
 monet_welcome=yes
 # Where do the MonetDB modules reside?
-monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
+monet_mod_path=@Xlibdir@@DIRSEP@@PACKAGE@@PATHSEP@@Xlibdir@@DIRSEP@bin
 # Start Mserver in daemon mode, or start with MIL interactive interface?
 monet_daemon=no
 
@@ -104,7 +104,7 @@ sql_port=45123
 # The SQL debug level (should be disabled for normal use)
 sql_debug=0
 # Place to store SQL transaction logs
-sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log
+sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log
 
 # XQuery Interface Section
 #=========================

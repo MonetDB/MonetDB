@@ -17,9 +17,9 @@
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
 # All Rights Reserved.
 
-builddir=@QMONETDB_BUILD@
+builddir=@QXMONETDB_BUILD@
 # make sure srcdir contains absolute path name
-srcdir=`cd '@srcdir@'; pwd`
+srcdir=`cd '@Xsrcdir@'; pwd`
 
 # enhance various paths to find our stuff
 PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients/C:${builddir}/src/mapi/clients/python:$PATH"

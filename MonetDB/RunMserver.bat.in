@@ -2,7 +2,7 @@
 
 setlocal
 
-set builddir=@MONETDB_BUILD@
+set builddir=@XMONETDB_BUILD@
 
 set MOD_PATH=%builddir%\src\modules\plain;%builddir%\src\modules\contrib;%builddir%\src\modules\calibrator;%builddir%\src\modules\mnetcdf;%builddir%\src\mapi
 

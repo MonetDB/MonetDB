@@ -41,7 +41,11 @@
 #define DIR_SEP_STR "\\"
 #define PATH_SEP ';'
 #define PATH_SEP_STR ";"
+#ifdef __MINGW32__
+#define SO_EXT "-0.dll"
+#else
 #define SO_EXT ".dll"
+#endif
 
 #define HAVE_GLOBALMEMORYSTATUS 1
 

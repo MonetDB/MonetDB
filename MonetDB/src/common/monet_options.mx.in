@@ -320,7 +320,7 @@ mo_builtin_settings(opt **Set)
 
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("config");
-	snprintf(buf, BUFSIZ, "%s%cMonetDB.conf", "@Qsysconfdir@", DIR_SEP);
+	snprintf(buf, BUFSIZ, "%s%cMonetDB.conf", "@QXsysconfdir@", DIR_SEP);
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
@@ -340,11 +340,11 @@ mo_builtin_settings(opt **Set)
 
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("prefix");
-	set[i].value = strdup("@Qprefix@");
+	set[i].value = strdup("@QXprefix@");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("exec_prefix");
-	set[i].value = strdup("@Qexec_prefix@");
+	set[i].value = strdup("@QXexec_prefix@");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbname");
@@ -352,7 +352,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbfarm");
-	snprintf(buf, BUFSIZ, "%s%c%s", "@Qlocalstatedir@", DIR_SEP, "@PACKAGE@");
+	snprintf(buf, BUFSIZ, "%s%c%s", "@QXlocalstatedir@", DIR_SEP, "@PACKAGE@");
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
@@ -385,7 +385,11 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_mod_path");
-	snprintf(buf, BUFSIZ, "%s%c%s", "@Qlibdir@", DIR_SEP, "@PACKAGE@");
+	/* on most platforms, we only need libdir/PACKAGE, but with
+	 * MinGW, we also need libdir/bin */
+	snprintf(buf, BUFSIZ, "%s%c%s%c%s%cbin",
+		 "@QXlibdir@", DIR_SEP, "@PACKAGE@", PATH_SEP,
+		 "@QXlibdir@", DIR_SEP);
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
@@ -426,7 +430,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_logdir");
-	snprintf(buf, BUFSIZ, "%s%c%s%clog", "@Qlocalstatedir@", DIR_SEP, "@PACKAGE@", DIR_SEP);
+	snprintf(buf, BUFSIZ, "%s%c%s%clog", "@QXlocalstatedir@", DIR_SEP, "@PACKAGE@", DIR_SEP);
 	set[i].value = strdup(buf);
 	i++;
 	assert(i == N_OPTIONS);

@@ -2,7 +2,7 @@
 
 setlocal
 
-set builddir=@MONETDB_BUILD@
+set builddir=@XMONETDB_BUILD@
 
 set PATH=%builddir%\src\common;%builddir%\src\mapi\clients\C;%builddir%\src\modules\plain\stream;%builddir%\src\monet;%PATH%
 
