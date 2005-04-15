@@ -1788,35 +1788,59 @@ fi
 AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
 
-AC_CHECK_HEADERS(iconv.h locale.h langinfo.h)
+AC_CHECK_HEADERS(locale.h langinfo.h)
 AC_CHECK_FUNCS(nl_langinfo setlocale)
 
-dnl  If not present in libc, the iconv* functions might be in a separate libiconv;
-dnl  on CYGWIN, they are even called libiconv*; hence, we define some wrappers to
-dnl  handle this.
+dnl Check for iconv function: it could be in the -liconv library, and
+dnl it could be called libiconv instead of iconv (Cygwin).  We also
+dnl need the iconv_t type.
+have_iconv=auto
+ICONV_CFLAGS=""
 ICONV_LIBS=""
-have_iconv=no
-libiconv=no
-AC_CHECK_LIB(iconv, iconv, 
-  [ ICONV_LIBS="-liconv" have_iconv=yes ],
-  [ AC_CHECK_LIB(iconv, libiconv, [ ICONV_LIBS="-liconv" have_iconv=yes libiconv=yes ], 
-    [ AC_CHECK_FUNC(iconv, [ have_iconv=yes ], []) 
-    ]) 
-  ]
-)
-AC_CHECK_TYPE(iconv_t, , have_iconv=no, [#if HAVE_ICONV_H
+AC_ARG_WITH(iconv,
+	AC_HELP_STRING([--with-iconv=DIR],
+		[iconv library is installed in DIR]),
+	have_iconv="$withval")
+case "$have_iconv" in
+yes|no|auto)
+	;;
+*)
+	ICONV_CFLAGS="-I$withval/include"
+	ICONV_LIBS="-L$withval/lib"
+	;;
+esac
+if test "x$have_iconv" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $ICONV_CFLAGS"
+	AC_CHECK_HEADERS(iconv.h)
+	AC_CHECK_TYPE(iconv_t, , [ if test "x$have_iconv" = xyes; then AC_MSG_ERROR([iconv_t type not found]); fi; have_iconv=no ], [#if HAVE_ICONV_H
 #include <iconv.h>
 #endif])
-if test "x$have_iconv" = xyes; then
-	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv function])
-	if test "x$libiconv" = xyes; then
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+have_libiconv=no
+if test "x$have_iconv" != xno; then
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $ICONV_LIBS"
+	AC_CHECK_LIB(iconv, iconv, ICONV_LIBS="$ICONV_LIBS -liconv", [
+		AC_CHECK_LIB(iconv, libiconv, have_libiconv=yes ICONV_LIBS="$ICONV_LIBS -liconv", [
+			AC_CHECK_FUNC(iconv, , [
+				AC_CHECK_FUNC(libiconv, have_libiconv=yes,
+					[ if test "x$have_iconv" = xyes; then AC_MSG_ERROR([iconv library not found]); fi; have_iconv=no ])])])])
+	LDFLAGS="$save_LDFLAGS"
+fi
+if test "x$have_iconv" != xno; then
+	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv library])
+	if test $have_libiconv = yes; then
 		AC_DEFINE(iconv, libiconv, [Wrapper])
 		AC_DEFINE(iconv_open, libiconv_open, [Wrapper])
 		AC_DEFINE(iconv_close, libiconv_close, [Wrapper])
 	fi
 	AC_TRY_COMPILE([
 #include <stdlib.h>
+#if HAVE_ICONV_H
 #include <iconv.h>
+#endif
 extern
 #ifdef __cplusplus
 "C"
@@ -1828,9 +1852,13 @@ size_t iconv();
 #endif
 ], [], iconv_const="", iconv_const="const")
 	AC_DEFINE_UNQUOTED(ICONV_CONST, $iconv_const, 
-	 [Define as const if the declaration of iconv() needs const for 2nd argument.])
+		[Define as const if the declaration of iconv() needs const for 2nd argument.])
+else
+	ICONV_CFLAGS=""
+	ICONV_LIBS=""
 fi
-AC_SUBST(ICONV_LIBS)   
+AC_SUBST(ICONV_CFLAGS)
+AC_SUBST(ICONV_LIBS)
 
 AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
 AC_CHECK_PROG(LATEX,latex,latex)
