@@ -765,7 +765,7 @@ parseAtom(Client cntxt)
 	if (findModule(cntxt->nspace, modnme) != NULL)
 		cntxt->curprg->def->errors = FATALINPUT;
 	else
-		cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
+		cntxt->nspace = fixModule(cntxt->nspace, modnme, strlen(modnme));
 	cntxt->nspace->isAtomModule = TRUE;
 	GDKfree(modnme);
 	@:helpInfo(cntxt->nspace->help) @
@@ -786,7 +786,7 @@ str parseModule(Client cntxt)
 	if (findModule(cntxt->nspace, modnme) != NULL)
 		cntxt->curprg->def->errors = FATALINPUT;
 	else
-		cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
+		cntxt->nspace = fixModule(cntxt->nspace, modnme, strlen(modnme));
 	GDKfree(modnme);
 @-
 Module components may include a function reference overruling
@@ -849,7 +849,7 @@ parseInclude(Client cntxt)
 
     malInclude(cntxt, modnme, modnme, 0);
     /* re-establish starting point in jumptable */
-    setScopeJump(modnme, cntxt->nspace);
+    setModuleJump(modnme, cntxt->nspace);
     GDKfree(modnme);
     return "";
 }
@@ -1577,7 +1577,7 @@ startFCNcall:
 
         /* continue with parseing a function/operator call */
         if( CURRENT(cntxt)[l] == '.'){
-            Scope scope;
+            Module scope;
             arg= idCopy(cntxt,l);
             nextChar(cntxt); /* skip '.' */
             skipSpace(cntxt);

@@ -60,7 +60,7 @@ int malBootstrap(){
 	str bootfile= "mal_init",bf;
 
 	c= initClient(GDKstrdup("user"),NULL,0,0);
-	c->nspace= newScope(NULL, GDKstrdup("user"));
+	c->nspace= newModule(NULL, GDKstrdup("user"));
 	initLibraries();
 	if( defaultScenario(c)) return 0;
 	bf= GDKgetenv("mal_bootstrap");
@@ -165,11 +165,11 @@ void scheduleClient( str command, bstream *fin, stream *fout)
 		GDKfree(c->nspace->name);
 		c->nspace->name= GDKstrdup(user);
 	} else{
-		c->nspace = newScope(NULL, GDKstrdup(user));
+		c->nspace = newModule(NULL, GDKstrdup(user));
 		c->nspace->outer = mal_scope;
 	}
 
-	/* c->nspace= newScope(NULL,GDKstrdup(user));*/
+	/* c->nspace= newModule(NULL,GDKstrdup(user));*/
 	c->nspace->outer = mal_scope;
 	c->sessionkey = key;
 

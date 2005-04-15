@@ -147,7 +147,7 @@ malInclude(Client c, str name, str libname, int listing)
     str oldprompt = c->prompt;
 	ClientInput *oldbak = c->bak;
 
-	Scope oldnspace = c->nspace;
+	Module oldnspace = c->nspace;
     Symbol oldprg = c->curprg;
     MalStkPtr oldglb = c->glb;
 
@@ -228,7 +228,7 @@ void callString(Client c, str s, int listing)
     int oldblkmode = c->blkmode;
     str oldprompt = c->prompt;
 	ClientInput *oldbak = c->bak;
-	Scope oldnspace = c->nspace;
+	Module oldnspace = c->nspace;
     Symbol oldprg = c->curprg;
     MalStkPtr oldglb = c->glb;
 	int len = strlen(s);

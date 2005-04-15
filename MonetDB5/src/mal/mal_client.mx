@@ -203,7 +203,7 @@ object space (the global variables).
 Moreover, the parser needs some administration variables
 to keep track of critical elements.
 @h
-    Scope       nspace;     /* private scope resolution list */
+    Module       nspace;     /* private scope resolution list */
     Symbol      curprg;     /* focus of parser */
     Symbol      backup;     /* save parsing context */
     MalStkPtr   glb;        /* global variable stack */
@@ -403,7 +403,7 @@ collect the buffer when in use.
 @c
     c->output = 0;
     if(c->nspace==0)
-        c->nspace = newScope(NULL, GDKstrdup("guest"));
+        c->nspace = newModule(NULL, GDKstrdup("guest"));
     c->curprg = c->backup = 0;
     c->glb = 0;
 
@@ -540,7 +540,7 @@ void freeClient(Client c)
     if( c->curprg ) freeSymbol(c->curprg); 
     c->curprg=0;
     if( c->nspace) {
-        freeScopeList(c->nspace);
+        freeModule(c->nspace);
         c->nspace=0;
     }
     */
@@ -665,7 +665,7 @@ explicitly released to simplify detection of memory leakage problems.
 void cleanupClients(){
     Client c;
     for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
-        /* if( c->nspace){ freeScopeList(c->nspace); c->nspace=0;}*/
+        /* if( c->nspace){ freeModuleList(c->nspace); c->nspace=0;}*/
         if( c->cwd){ 
 	    GDKfree(c->cwd); 
 	    c->cwd=0;

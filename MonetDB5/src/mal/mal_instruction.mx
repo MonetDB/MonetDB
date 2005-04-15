@@ -516,6 +516,8 @@ mal_export void     clrFunction(InstrPtr p);
 mal_export Symbol   newSymbol(str nme, int kind);
 mal_export void     freeSymbol(Symbol s);
 mal_export void     freeSymbolList(Symbol s);
+mal_export void     printSignature(stream *fd, Symbol s, int flg);
+
 mal_export MalBlkPtr    newMalBlk(int maxvars, int maxstmts);
 mal_export void 	newMalBlkStmt(MalBlkPtr mb, int maxstmts);
 mal_export void     prepareMalBlk(MalBlkPtr mb, str s);
@@ -560,7 +562,6 @@ mal_export str      fcnClass(InstrPtr p);
 mal_export str      fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg );
 mal_export void     printInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
 mal_export void     promptInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
-mal_export void     printSignature(stream *fd, Symbol s, int flg);
 mal_export char 	*fillTarget(MalBlkPtr mb, InstrPtr p, char *t);
 mal_export str      instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 mal_export str      function2str(MalBlkPtr mb,int flg);

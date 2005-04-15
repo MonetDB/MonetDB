@@ -18,11 +18,11 @@
 @a M.L. Kersten
 @* MAL name space.
 A separate namespace organisation seems in place for module and function
-names. The number of names managed by the MAL engine 
+names. The number of such names managed by the MAL engine 
 is expected to be rather limited except for those generated on 
 the fly to represent temporaries functions.
-[First check impact using profiler, there are about 500 entries after
-loading the modules.]
+Variables are always stored local to the MAL block in which they
+are used.
 @-
 We can gain speed at type resolution and during the optimization phases 
 when each identifier is replaced by a fixed length internal identifier,
@@ -43,9 +43,7 @@ should be protected against concurrent access.
 mal_export void initNamespace();
 mal_export void finishNamespace();
 mal_export str getName(int nid);
-mal_export int putName(str nme);
-mal_export int parseName(str *nme);
-mal_export int isOperator(str nme);
+mal_export int putName(str nme,int len);
 mal_export void dumpNamespaceStatistics(stream *f, int details);
 
 #endif /* _MAL_NAMESPACE_H */
@@ -67,7 +65,6 @@ typedef struct NAMESPACE{
 } Namespace;
 
 static Namespace namespace;
-extern void initNameParser();
 
 static void expandNamespace(int incr){
     str *nme;
@@ -80,7 +77,6 @@ static void expandNamespace(int incr){
     if(namespace.size+incr > 32000){
         GDKwarning("Namespace becomes too large\n");
     }
-    initNameParser();
 
     nme= (str *) GDKmalloc(sizeof(str *) * namespace.nmetop+incr);
     link= (int *) GDKmalloc(sizeof(int) * namespace.nmetop+incr);
@@ -117,12 +113,17 @@ str getName(int nid) { return namespace.nme[nid]; }
 Before a name is being stored we should check for its occurrence first.
 The administration is initialized incrementally.
 @c
-int putName(str nme)
+int putName(str nme, int len)
 {
     int l= nme[0];
+	char buf[1024];
+
+	if( len >= 1022) return 0;
+	strncpy(buf,nme,len);
+	buf[len]=0;
     
     if( namespace.nme[l]== 0){
-        namespace.nme[l]= GDKstrdup(nme);
+        namespace.nme[l]= GDKstrdup(buf);
         namespace.link[l]= 0;
         namespace.hit[l]= 0;
         return l;
@@ -135,8 +136,10 @@ int putName(str nme)
     }
     if( namespace.nmetop+1== namespace.size)
         expandNamespace(MAXIDENTIFIERS);
-    namespace.nme[namespace.nmetop]= GDKstrdup(nme);
-    namespace.link[namespace.nmetop]= 0;
+	l= nme[0];
+    namespace.nme[namespace.nmetop]= GDKstrdup(buf);
+    namespace.link[namespace.nmetop]= namespace.link[l];
+	namespace.link[l]= namespace.nmetop;
     namespace.hit[namespace.nmetop]= 0;
     namespace.nmetop++;
     return namespace.nmetop-1;
@@ -146,49 +149,7 @@ The routine parseName takes a reference to a string and attempts
 to decode it as an identifier or operator. If successful, it is stored in the
 namespace table. The number of characters forming the identifier
 is returned. This routine is primarilly used by the parser.
-@c
-short opChar[256];
-short idChar[256];
-void initNameParser(){
-        int i;
-        for(i=0;i<256;i++) idChar[i]= isalpha(i);
-        for(i=0;i<256;i++)
-        switch(i){
-        case '-': case '!': case '\\': case '$': case '%':
-        case '^': case '*': case '~': case '+': case '&':
-        case '|': case '<': case '>': case '=': case '/':
-        case ':': opChar[i]=1;
-        }
-        idChar['_']=1;
-        idChar[TMPMARKER]=1;
-}
 
-int isOperator(str nme){
-    while(*nme)
-    if( opChar[(int)(*nme)]==0) return FALSE;
-    else nme++;
-    return TRUE;
-}
-int parseName(str *cur){
-    int cnt=0, k=0;
-    char old, *s= *cur;
-
-    if( idChar[(int)(*s)])
-        while(idChar[(int)(*s)] || isdigit((int)(*s))) { cnt++;s++;}
-    else
-    if( opChar[(int)(*s)])
-        while(opChar[(int)(*s)] ) { cnt++;s++;}
-    
-    if(cnt){
-        old= *s;
-        *s= 0;
-        k= putName(*cur);
-        *s= old;
-        *cur= s;
-    }
-    return k; /* return the internal number, or zero */
-}
-@-
 The namespace may become a bottleneck when the chain of identifiers grows.
 This issue can be tackled from two angles. Either we change the hash function
 using multiple characters of the identifier or we sort the identifiers list

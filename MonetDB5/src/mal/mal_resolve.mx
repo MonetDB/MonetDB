@@ -104,11 +104,11 @@ import K,L,M. This can be recognized by inspecting the code produced
 */
 #define MAXTYPEVAR  10
 
-mal_export void chkProgram(Scope s, MalBlkPtr mb);
-mal_export void chkTypes(Scope s, MalBlkPtr mb);
-mal_export void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int silent);
-mal_export InstrPtr dynamicTypeChecker(Scope scope,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export int fcnBinder(Scope scope, MalBlkPtr mb, InstrPtr p);
+mal_export void chkProgram(Module s, MalBlkPtr mb);
+mal_export void chkTypes(Module s, MalBlkPtr mb);
+mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent);
+mal_export InstrPtr dynamicTypeChecker(Module scope,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p);
 mal_export int resolveType(int dsttype, int srctype);
 mal_export int isPolymorphic(malType t);
 mal_export malType getPolyType(malType t, int polytype[MAXTYPEVAR]);
@@ -146,8 +146,8 @@ A function may be characterised by its module, i.e. the location to
 start the search. Ommision of the module name implies searching from
 the client layer upward. (cost estimate 4ms/1000calls)
 @c
-malType findFunctionType(Scope scope, MalBlkPtr mb, InstrPtr p,int silent){
-    Scope m;
+malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
+    Module m;
     Symbol s;
     InstrPtr sig;
     int i,k, polymorphic, unmatched = 0, s1;
@@ -598,9 +598,9 @@ In this case we should issue an error message to the user.
 A re-check after the optimizer call should reset the token
 to assignment.
 @c
-void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p,int silent){
+void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
     int s1= -1, i,k;
-    Scope m=0;
+    Module m=0;
 	p->typechk= TYPE_UNKNOWN;
 
 	if( p->fcn && (p->token== CMDcall || p->token== PATcall ||
@@ -719,7 +719,7 @@ This makes it possible to pass function names as arguments or to
 collect them from a function table. The underlying signature remains
 the same.
 @c
-InstrPtr dynamicTypeChecker(Scope scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     InstrPtr pci;
     int i;
 
@@ -765,8 +765,8 @@ distinguish the function by module name, function name, and
 number of arguments only. Whether this is sufficient remains
 to be seen.
 @c
-int fcnBinder(Scope scope, MalBlkPtr mb, InstrPtr p){
-    Scope m=0;
+int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p){
+    Module m=0;
     Symbol s;
 
     if( p->token != ASSIGNsymbol) return 0;
@@ -808,7 +808,7 @@ should be ignored. This should be separately administered for the flow
 as well, because a dynamically typed instruction should later on not
 lead to a re-check when it was already fully analysed.
 @c
-void chkTypes(Scope s, MalBlkPtr mb){
+void chkTypes(Module s, MalBlkPtr mb){
 	InstrPtr p=0;
     int i, chk=0;
 
@@ -826,7 +826,7 @@ void chkTypes(Scope s, MalBlkPtr mb){
 		if( p->typechk== TYPE_RESOLVED) chk++;
 	}
 }
-void chkProgram(Scope s, MalBlkPtr mb)
+void chkProgram(Module s, MalBlkPtr mb)
 {
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */

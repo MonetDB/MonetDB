@@ -121,7 +121,7 @@ The optimizer hooks are introduced first.
 They are refered to from the optimizer module.
 @= macroOptimizer
 str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Scope s;
+    Module s;
     Symbol t;
     int j;
     str nme, fcn,msg=MAL_SUCCEED;
@@ -155,7 +155,7 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     return msg;
 }
 str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Scope s;
+    Module s;
     Symbol t;
     int j;
     str fcn,msg=MAL_SUCCEED;
@@ -185,7 +185,7 @@ str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     return msg;
 }
 str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Scope s;
+    Module s;
     Symbol t;
     int j;
     str msg= MAL_SUCCEED;
@@ -511,7 +511,7 @@ The optimizer call infrastructure
 mal_export str MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, 
     str mod, str fcn)
 {
-    Scope s;
+    Module s;
     Symbol t;
     str msg= MAL_SUCCEED;
     int j;

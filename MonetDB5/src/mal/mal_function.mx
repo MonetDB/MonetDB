@@ -43,10 +43,10 @@ mal_export Symbol   newFunction(str nme,int kind);
 mal_export void	 clearFcn(MalBlkPtr m);
 mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 
-mal_export InstrPtr newCall(Scope scope, str fcnname, int kind);
-mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
+mal_export InstrPtr newCall(Module scope, str fcnname, int kind);
+mal_export Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
 
-mal_export Symbol   getFunctionSymbol(Scope scope, InstrPtr p);
+mal_export Symbol   getFunctionSymbol(Module scope, InstrPtr p);
 mal_export void chkFlow(MalBlkPtr mb);
 mal_export void chkDeclarations(MalBlkPtr mb,int reset);
 mal_export int getBarrierEnvelop(MalBlkPtr mb);
@@ -77,7 +77,7 @@ Symbol newFunction(str nme,int kind){
 	pushInstruction(s->def,p);
 	return s;
 }
-InstrPtr newCall(Scope scope, str fcnname, int kind){
+InstrPtr newCall(Module scope, str fcnname, int kind){
 	InstrPtr p;
 	p= newInstruction(kind);
 	setModuleScope(p, scope);
@@ -90,8 +90,8 @@ for obtaining properties. Rather then polution of the
 instruction record with a scope reference, we use a lookup function until it
 becomes a performance hindrance.
 @c
-Symbol  getFunctionSymbol(Scope scope, InstrPtr p){
-	Scope m;
+Symbol  getFunctionSymbol(Module scope, InstrPtr p){
+	Module m;
 	Symbol s;
 
 	for(m= findModule(scope,moduleName(p)); m; m= m->outer)
@@ -519,7 +519,7 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 Upon cloning a function we should remove all the polymorphic flags.
 Otherwise we may end up with a recursive clone.
 @c
-Symbol  cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
+Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	Symbol new;
 	int i,v;
 	InstrPtr pp;

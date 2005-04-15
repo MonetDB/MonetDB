@@ -444,7 +444,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
     	case 'm': /* display a module */
         	{
         		str modnme, fcnname;
-        		Scope fsym;
+        		Module fsym;
         		Symbol fs;
         		int i;
 
@@ -497,7 +497,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	break;
     	case 'v': {	/* show the symbol table and bindings */
 				str modnme, fcnname;
-        		Scope fsym;
+        		Module fsym;
         		Symbol fs;
         		int i;
 				skipWord(cntxt,b);
@@ -656,7 +656,7 @@ signatures satisfying the pattern.
     	case 'l': /* list the current code block */
     	{
 			str modnme, fcnname;
-        	Scope fsym;
+        	Module fsym;
         	Symbol fs;
         	int i, lstng;
 
