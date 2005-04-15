@@ -1934,7 +1934,7 @@ if test "x$have_php" != xno; then
 fi
 AC_SUBST(PHP_INCS)
 AC_SUBST(PHP_EXTENSIONDIR)
-SPHP_EXTENSIONDIR="`$translatepath "$PHP_EXTENSIONDIR"`"
+XPHP_EXTENSIONDIR="`$translatepath "$PHP_EXTENSIONDIR"`"
 AC_SUBST(XPHP_EXTENSIONDIR)
 AM_CONDITIONAL(HAVE_PHP, test x"$have_php" != xno)
 
@@ -1969,7 +1969,7 @@ if test "x$have_pear" != xno; then
 	fi
 fi
 AC_SUBST(PHP_PEARDIR)
-SPHP_PEARDIR="`$translatepath "$PHP_PEARDIR"`"
+XPHP_PEARDIR="`$translatepath "$PHP_PEARDIR"`"
 AC_SUBST(XPHP_PEARDIR)
 AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
 
