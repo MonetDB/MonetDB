@@ -2306,8 +2306,10 @@ time_precision:
 
 timestamp_precision:
 	'(' intval ')' 	{ $$ = $2; }
-/* a timestamp defaults to a fractional precision of 6 */
- | /* empty */		{ $$ = 6; }
+/* a timestamp defaults to a fractional precision of 6
+ * set it to zero here to avoid problems.  (needs work)
+ */
+ | /* empty */		{ $$ = 0; }
  ;
 
 datetime_type:
