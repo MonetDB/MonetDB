@@ -176,7 +176,7 @@ optimizeQueryInCache(Client c)
 	MalBlkPtr mb;
 	InstrPtr *ns, p;
 	int t, v;
-	int i, j, k, klim;
+	int i, j, k, klim;/*, argseen=0;*/
 	MALfcn setWriteMode = 0;
 	Symbol s;
 	long clk;
@@ -224,7 +224,9 @@ to extract some compiler relevant properties from the catalogue.
 	ns[0]->token = FACTORYsymbol;
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (functionName(p) && moduleName(p) && strncmp(functionName(p), "bind", 4) == 0 && strcmp(moduleName(p), "sql") == 0) {
+		if (functionName(p) && moduleName(p) && 
+			strncmp(functionName(p), "bind", 4) == 0 && 
+			strcmp(moduleName(p), "sql") == 0) {
 			ns[k++] = p;
 @-
 At this stage of the implementation we experiment with collecting
@@ -233,10 +235,10 @@ of BATs, it is helpful to detect empty bats as early as possible.
 The information is left behind as an ordinary call to an operator
 supported by the cost model or optimizer.
 
-@-
 We use knowledge on generation of bind() instructions.
 @c
-			if (strcmp(functionName(p), "bind_dbat") == 0 || (strcmp(functionName(p), "bind") == 0)) {
+			if (strcmp(functionName(p), "bind_dbat") == 0 || 
+			   (strcmp(functionName(p), "bind") == 0)) {
 				int l = 0;
 				InstrPtr qc;
 				BAT *b = NULL;
@@ -247,11 +249,14 @@ Watch out bind_dbat needs different binding. [costed me a day]
 				backend *be = ((backend *) c->state[PARSER]);
 
 				if (strcmp(functionName(p), "bind_dbat") == 0)
-					b = mvc_bind_dbat(be->mvc, getVarLiteral(mb, p->argv[1]), getVarLiteral(mb, p->argv[2]), 0);
-
+					b = mvc_bind_dbat(be->mvc, 
+							getVarLiteral(mb, p->argv[1]), 
+							getVarLiteral(mb, p->argv[2]), 0);
 				else
-					b = mvc_bind(be->mvc, getVarLiteral(mb, p->argv[1]), getVarLiteral(mb, p->argv[2]), getVarLiteral(mb, p->argv[3]), 0);
-
+					b = mvc_bind(be->mvc, 
+							getVarLiteral(mb, p->argv[1]), 
+							getVarLiteral(mb, p->argv[2]), 
+							getVarLiteral(mb, p->argv[3]), 0);
 @-
 Empty BATs can be symbolically optimized. Disabled for a while.
 @c
@@ -263,7 +268,6 @@ Empty BATs can be symbolically optimized. Disabled for a while.
 					qc->argv[1] = p->argv[0];
 					qc->argc = 2;
 					ns[k++] = qc;
-
 					continue;
 				}
 @-
@@ -295,6 +299,21 @@ sequence of instructions.
 					break;
 				}
 		}
+@-
+Finally, move all instructions out of the loop until you find a
+reference an argument. This pre-supposes that the instructions
+are invariant to multiple calls. In general this is not the case,
+for consider a block that depends on the size of a BAT.
+		if( argseen == 0){
+			for(j=p->retc; j<p->argc; j++){
+				for( k=0; k<sig->retc; k++)
+				if( getArg(p,k)== getArg(sig,k)
+					argseen=1;
+			}
+			if( argseen==0)
+				ns[k++]= p;
+		}
+@c
 	}
 	klim = k;		/* remember the head */
 @-
@@ -313,7 +332,9 @@ instructions, producing a syntactic correct MAL program again.
 		int doit = 0;
 
 		p = getInstrPtr(mb, i);
-		if (!(functionName(p) && moduleName(p) && strncmp(functionName(p), "bind", 4) == 0 && strcmp(moduleName(p), "sql") == 0))
+		if (!(functionName(p) && moduleName(p) && 
+			  strncmp(functionName(p), "bind", 4) == 0 && 
+			  strcmp(moduleName(p), "sql") == 0))
 			doit = 1;
 @-
 Skip it if the writeMode relates to a base table
@@ -418,7 +439,7 @@ which leads to an explosion in the plan sizes
 @c
 void SQLkdiffOptimizer(Client c){
 	MalBlkPtr mb;
-	int limit,i,k,l,foundit=1,total=0, zero,cnt,lab, endLifespan;
+	int limit,i,k,l,foundit=1,total=0, zero,cnt,lab;
 	InstrPtr *old;
 	InstrPtr q,p;
 	int *map,mtop;
@@ -489,7 +510,7 @@ We have to perform the expensive kdiff anyway
 				pushArgument(mb,q,p->argv[2]);
 				pushInstruction(mb,q);
 				typeChecker(c->nspace,mb,q,TRUE);
-				endLifespan = mb->var[p->argv[0]]->endLifespan;
+				/* endLifespan = mb->var[p->argv[0]]->endLifespan;*/
 				k= i; /* for later */
 				for(i++;i< limit-1; i++){
 					q= old[i];
@@ -582,7 +603,10 @@ The code is wrong, we should not try it more than once
 }
 @- markT ->markH
 More peephole optimizations. M5 contains more primitives to play with.
+They are looked for here.
+The sequence [markT,reverse] is replaced by markH.
 Beware, we assume that the base is set to 0@0.
+The sequence [group,tunique] is turning into a multi-assignment group
 @c
 void
 SQLmarkTOptimizer(Client c){
@@ -598,11 +622,11 @@ SQLmarkTOptimizer(Client c){
 	newMalBlkStmt(mb,mb->stop);
 	for(i=0;i<limit; i++){
 		p= old[i];
-		if( 
-			functionId(p) && strcmp(functionName(p),"markT")== 0 &&
+		if( functionId(p) && strcmp(functionName(p),"markT")== 0 &&
 			getArg(p,0)==  getArg(old[i+1],1) &&
 			mb->var[p->argv[0]]->endLifespan== i+1 &&
-			 functionId(old[i+1]) && strcmp(functionId(old[i+1]),"reverse")== 0 ){
+			functionId(old[i+1]) && 
+			strcmp(functionId(old[i+1]),"reverse")== 0 ){
 			actions++;
 			GDKfree(functionId(p));
 			setFunctionId(p,  GDKstrdup("markH"));
@@ -619,7 +643,8 @@ assumption that alias removal will take care of the rest.
 			if( functionId(old[i+1]) && 
 			    strcmp(functionName(old[i+1]),"join")==0 &&
 				old[i+1]->argv[1] == p->argv[0] &&
-				old[i+1]->argv[2] == p->argv[1]){
+				old[i+1]->argv[2] == p->argv[1] &&
+				mb->var[getArg(p,0)]->endLifespan == i+1){
 					p->token= ASSIGNsymbol;
 					GDKfree(functionId(p));
 					GDKfree(moduleId(p));
@@ -632,7 +657,20 @@ assumption that alias removal will take care of the rest.
 					freeInstruction(old[i]);
 			}
 			continue;
-		}	
+		} /*  else	
+		if( functionId(p) && strcmp(functionName(p),"group")== 0 &&
+			getArg(p,0)==  getArg(old[i+1],1) &&
+			functionId(old[i+1]) && 
+			strcmp(functionId(old[i+1]),"tunique")== 0  ){
+				pushArgument(mb,p, p->argv[1]);
+				p->retc++;
+				p->argv[1]= p->argv[0];
+				p->argv[0]= old[i+1]->argv[0];
+				pushInstruction(mb,p);
+				i++;
+				freeInstruction(old[i]);
+				continue;
+		} */ 
 		pushInstruction(mb,p);
 	}
 	GDKfree(old);

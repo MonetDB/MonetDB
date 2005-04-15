@@ -222,25 +222,6 @@ Include the sql_cache functionality
 include sql_cache;
 include mil_algebra_procs;
 
-@-
-# algebra.kdiff should be replaced (inline) by sql.kdiff
-function sql.kdiff(left:bat[:any$1,:any$2], right:bat[:any$1,:any] ):bat[:any$1,:any$2];
-	cnt:= algebra.count(left);
-	l:= left;
-	barrier doit:= cnt>0:lng;
-		l:= algebra.kdiff(left,right);
-	exit doit;
-	return l;
-end kdiff;
-function sql.kdiff(left:bat[:void,:any$2], right:bat[:oid,:any] ):bat[:oid,:any$2];
-	cnt:= algebra.count(left);
-	l:= left;
-	barrier doit:= cnt>0:lng;
-		l:= algebra.kdiff(left,right);
-	exit doit;
-	return l;
-end kdiff;
-
 @h
 #ifndef _SQL_H
 #define _SQL_H
