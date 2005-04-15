@@ -1087,7 +1087,7 @@ def GetBitsAndModsAndStatic(env) :
     pOut,pIn,pErr = popen2.popen3(cmd)
     if env['VERSION'] >= 49900:
         pIn.write('''\
-            quit();
+            clients.quit();
         ''')
     else:
         pIn.write('''\
@@ -2140,7 +2140,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             EPILOGUE.close()
 
         try:
-            pSrvrIn.write('quit();\n')
+            if env['VERSION'] >= 49900:
+                pSrvrIn.write('clients.quit();\n')
+            else:
+                pSrvrIn.write('quit();\n')
             pSrvrIn.flush()
         except IOError:
             pass
@@ -2919,7 +2922,11 @@ def main(argv) :
             ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
 
         os.makedirs(os.path.join(env['TSTTRGBASE'],TSTPREF))
-        if Check('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF), "quit();\n"):
+        if env['VERSION'] >= 49900:
+            QUIT = 'clients.quit();\n'
+        else:
+            QUIT = 'quit();\n'
+        if Check('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF), QUIT):
             sys.exit(1)
         if GetBitsAndModsAndStatic(env):
             sys.exit(1)
