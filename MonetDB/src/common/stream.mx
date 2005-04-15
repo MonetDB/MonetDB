@@ -2205,8 +2205,8 @@ stream_printf(stream *s, const char *format, ...)
 	char buf[BUFSIZ], *bf = buf;
 	int i = 0;
 	size_t bfsz = BUFSIZ;
-	if (s->errnr) return(-1);
 	va_list ap;
+	if (s->errnr) return(-1);
 
 @= stream_printf_va_vsnprintf
 	va_start(ap, format);
