@@ -89,7 +89,7 @@ public class Test_PStimedate {
 					if (matches) {
 						System.out.println(" passed :)");
 					} else {
-						System.out.println(" FAILED :(");
+						System.out.println(" FAILED :( (" + x + " is not " + d + ")");
 					}
 				}
 			}
