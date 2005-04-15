@@ -98,7 +98,7 @@ comment "Generic processor for mutiplexed
 #include "mal_resolve.h"
 #include "mal_client.h"
 
-mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
+mal_export int CMDmultiplexTypeCheck(Module scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 
 #endif /* _MAL_MULTIPLEX_H_ */
@@ -172,7 +172,7 @@ int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 	return -1;
 }
 
-int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
+int multiplexType(Module scope, MalBlkPtr mb, InstrPtr pci,
 	MalBlkPtr m, InstrPtr p)
 {
 	int i, k, t, tpe= TYPE_any, tt;
@@ -348,7 +348,7 @@ a fast variant. This way the MIL parser can simply produce
 calls to the script case as well
 @{
 @c
-int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
+int multiplexTactics(Module scope, MalBlkPtr mb, InstrPtr pci){
 	InstrPtr p;
 	int i,olderr,oldtpe;
 	str operator;
@@ -437,7 +437,7 @@ Check out type of the operands for use with batcalc
 	return getArgType(mb,pci,0);
 }
 
-int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci)
+int CMDmultiplexTypeCheck(Module scope, MalBlkPtr mb, InstrPtr pci)
 {
 	int i= -1;
 	MalBlkPtr m= newMalBlk(MAXVARS,MAXSTMTS);

@@ -242,7 +242,7 @@ access.
 str
 BPTprelude(int *ret){
     Box box;
-	Scope s;
+	Module s;
 	(void) ret;
     box= openBox("partitions");
     if( box== 0)

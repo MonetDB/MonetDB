@@ -29,7 +29,7 @@ successively access it components. This can be avoided by first assigning
 the pseudo BAT to a variable.
 
 @+ Module inspection
-Each module forms a separately named scope. Scopes visible to a user
+Each module forms a separately named scope. Modules visible to a user
 are relevant for resolving function names.
 
 @mal
@@ -141,7 +141,7 @@ Mal symbol table and environment analysis.
 
 str INSPECTmoduleNames(int *ret){
 	Client c;
-	Scope s;
+	Module s;
 	int i=0;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 
@@ -156,7 +156,7 @@ str INSPECTmoduleNames(int *ret){
 }
 str INSPECTsymbolFind(int *ret,int kind)
 {	Client c;
-	Scope s;
+	Module s;
 	Symbol t;
 	int i;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
@@ -191,7 +191,7 @@ which makes it susceptable for intermediate updates
 
 str INSPECTget@1(int *ret)
 {	Client c;
-	Scope s;
+	Module s;
 	Symbol t;
 	int i;
 	oid k= 0;
@@ -222,7 +222,7 @@ str INSPECTget@1(int *ret)
 
 str INSPECTgetkind(int *ret)
 {	Client c;
-	Scope s;
+	Module s;
 	Symbol t;
 	int i;
 	oid k= 0;
@@ -251,7 +251,7 @@ str INSPECTgetkind(int *ret)
 
 str INSPECTgetaddress(int *ret)
 {	Client c;
-	Scope s;
+	Module s;
 	Symbol t;
 	int i;
         oid k= 0;
@@ -281,7 +281,7 @@ str INSPECTgetaddress(int *ret)
 
 str INSPECTgetsignature(int *ret)
 {	Client c;
-	Scope s;
+	Module s;
 	Symbol t;
 	int i;
         oid k= 0;
@@ -435,7 +435,7 @@ str INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str     modnme= getArgName(mb,p,1);
 	str     fcnnme= getArgName(mb,p,2);
-	Scope  scope=NULL;
+	Module  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
 
@@ -493,7 +493,7 @@ str INSPECTmanual0(int *ret){
 }
 str INSPECThelp(int *ret, str *mod) 
 {	Client cntxt= getClient();
-	Scope m;
+	Module m;
 	Symbol s;
 	str msg;
 	int i;
