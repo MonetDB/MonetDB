@@ -19,6 +19,8 @@ stdout of test 'rsbox01` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -65,9 +67,8 @@ stdout of test 'rsbox01` in directory 'src/modules/mal` itself:
 #
 #rsbox.release(rs);
 #
-!ERROR: 'rsbox.create' undefined in user.main[1]
 function user.main():int;	# 0  (main:int)
-    rs := rsbox.create(1,'t');	# 1  unknown (rs:resultset)<-($2:int)($3:chr)
+    rs := rsbox.create(1,'t');	# 1 RSBcreate (rs:resultset)<-($2:int)($3:chr)
     resultset.setProperty(rs,1,"name","the_column");	# 2 RSsetPropertyStr ($4:resultset)<-(rs:resultset)($2:int)($5:str)($6:str)
     resultset.setProperty(rs,1,"table","table1");	# 3 RSsetPropertyStr ($7:resultset)<-(rs:resultset)($2:int)($8:str)($9:str)
     resultset.setProperty(rs,1,"schema","sys");	# 4 RSsetPropertyStr ($10:resultset)<-(rs:resultset)($2:int)($11:str)($12:str)
@@ -94,8 +95,46 @@ function user.main():int;	# 0  (main:int)
     resultset.writeNextPart(rs);	# 25 RSwriteNextPart ($52:int)<-(rs:resultset)
     rsbox.release(rs);	# 26 RSBdelete ($53:void)<-(rs:resultset)
 end main;	# 27  
+&t
+$id 1
+$columncount 1
+$tuplecount 5
+$ctype S
+%column the_column
+%table table1
+%schema sys
+%type varchar
+%digits 
+%scale 
+%width 8
+[5:test1
+[5:test2
+[NULL
+[6:values
+[8:whatever
+&t
+$id 2
+$columncount 1
+$tuplecount 9
+$ctype S
+%column the_column
+%table table1
+%schema sys
+%type varchar
+%digits 
+%scale 
+%width 40
+[27:Daft Punk - Human After All
+[17:Spinvis - Spinvis
+[36:Within Temptation - The Silent Force
+[22:Anouk - Together Alone
+[33:Armiral Freebee - Admiral Freebee
+[20:Lais - Douce Victime
+[40:Hooverphonic - Sit Down and Listen To...
+[26:Osdorp Posse - Tegenstrijd
+[36:MC Wigger & DJ Wanna-B - Fuck Osdorp
 
-# 13:29:27 >  
-# 13:29:27 >  Done.
-# 13:29:27 >  
+# 09:30:02 >  
+# 09:30:02 >  Done.
+# 09:30:02 >  
 

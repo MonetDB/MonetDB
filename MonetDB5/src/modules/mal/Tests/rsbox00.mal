@@ -4,8 +4,8 @@
 
 include rsbox;
 
-rs := rsbox.create(1, 'u');
-rs := rsbox.create(2, 't');
+rs := rsbox.create(1:int, 'u':chr);
+rs := rsbox.create(2:int, 't':chr);
 
 resultset.setProperty(rs, 1, "table", "table1");
 resultset.setProperty(rs, 1, "schema", "sys");

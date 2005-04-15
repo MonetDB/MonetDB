@@ -5,4 +5,4 @@ include rsbox;
 
 rs := rsbox.create(1, 't');
 
-writeNextPart(rs);
+resultset.writeNextPart(rs);
