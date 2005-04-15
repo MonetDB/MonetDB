@@ -1318,6 +1318,52 @@ fi
 AC_SUBST(OPENSSL_LIBS)
 AC_SUBST(OPENSSL_INCS)
 
+dnl cURL
+have_curl=no
+CURL_PATH="$PATH"
+CURL_CONFIG=''
+CURL_CFLAGS=''
+CURL_LIBS=''
+AC_ARG_WITH(curl,
+	AC_HELP_STRING([--with-curl=DIR],
+		[cURL library is installed in DIR]),
+	have_curl="$withval")
+case "$have_curl" in
+yes|no|auto)
+	;;
+*)
+	CURL_PATH="$withval/bin:$PATH"
+	;;
+esac
+if test "x$have_curl" != xno; then
+	AC_PATH_PROG(CURL_CONFIG,curl-config,,$CURL_PATH)
+	if test "x$CURL_CONFIG" = x; then
+		if test "x$have_curl" = xyes; then
+			AC_MSG_ERROR([curl-config not found; use --with-curl=<path>])
+		fi
+		have_curl=no
+	fi
+fi
+if test "x$have_curl" != xno; then
+	CURL_CFLAGS="`$CURL_CONFIG --cflags`"
+	CURL_LIBS="`$CURL_CONFIG --libs`"
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $CURL_CFLAGS"
+	AC_CHECK_HEADER(curl/curl.h, :, [if test "x$have_curl" = xyes; then AC_MSG_ERROR([curl/curl.h not found]); fi; have_curl=no])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_curl" != xno; then
+	save_LDFLAGS="$LDFLAGS"
+    	LDFLAGS="$LDFLAGS $CURL_LIBS"
+    	AC_CHECK_LIB(curl, curl_easy_init, :, [if test "x$have_curl" = xyes; then AC_MSG_ERROR([-lcurl not found]); fi; have_curl=no])
+    	LDFLAGS="$save_LDFLAGS"
+fi
+if test "x$have_curl" != xno; then
+	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
+fi
+AC_SUBST(CURL_CFLAGS)
+AC_SUBST(CURL_LIBS)
+
 DL_LIBS=""
 AC_CHECK_LIB(dl, dlopen, [ DL_LIBS="-ldl" ] )
 AC_SUBST(DL_LIBS)
@@ -1748,7 +1794,9 @@ AC_CHECK_LIB(iconv, iconv,
     ]) 
   ]
 )
-AC_CHECK_TYPE(iconv_t, , have_iconv=no)
+AC_CHECK_TYPE(iconv_t, , have_iconv=no, [#if HAVE_ICONV_H
+#include <iconv.h>
+#endif])
 if test "x$have_iconv" = xyes; then
 	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv function])
 	if test "x$libiconv" = xyes; then
