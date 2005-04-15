@@ -148,7 +148,7 @@ to the user to alter the trace/debugger options.
 #include "mal_atom.h"       /* for showAtoms() */
 #include "mal_interpreter.h"    /* for getArgReference() */
 #include "mal_linker.h"     /* for getAddress() */
-#include "mal_scope.h"      /* for showModuleStatistics() */
+#include "mal_module.h"      /* for showModuleStatistics() */
 #include "mal_parser.h"
 
 
@@ -443,7 +443,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			break;
     	case 'm': /* display a module */
         	{
-        		str modnme, fcnname;
+        		str modname, fcnname;
         		Module fsym;
         		Symbol fs;
         		int i;
@@ -455,16 +455,16 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
         		skipWord(cntxt,b);
         		if(*b){
-            		modnme=b;
+            		modname=b;
 					fcnname= strchr(b,'.');
 					if( fcnname ){
 						*fcnname= 0;
 						fcnname++;
 					}
-					fsym= findModule(cntxt->nspace,modnme);
+					fsym= findModule(cntxt->nspace,modname);
 
 					if( fsym == NULL){
-						stream_printf(out,"%s module not found\n",modnme);
+						stream_printf(out,"%s module not found\n",modname);
 						continue;
 					}
 					for(i=0;i<MAXSCOPE;i++){
@@ -496,18 +496,18 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	}
         	break;
     	case 'v': {	/* show the symbol table and bindings */
-				str modnme, fcnname;
+				str modname, fcnname;
         		Module fsym;
         		Symbol fs;
         		int i;
 				skipWord(cntxt,b);
 				if( *b!= 0){
-					modnme=b;
+					modname=b;
 					fcnname= strchr(b,'.');
 					if( fcnname == NULL){
-						fsym= findModule(cntxt->nspace,modnme);
+						fsym= findModule(cntxt->nspace,modname);
 						if( fsym==0) {
-							stream_printf(out,"%s module not found\n", modnme);
+							stream_printf(out,"%s module not found\n", modname);
 							continue;
 						}
 						for(i=0;i<MAXSCOPE;i++){
@@ -521,9 +521,9 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					}
             		*fcnname = 0;
             		fcnname ++;
-            		fsym= findModule(cntxt->nspace,modnme);
+            		fsym= findModule(cntxt->nspace,modname);
             		if( fsym==0) {
-               		 	stream_printf(out,"%s module not found\n",modnme);
+               		 	stream_printf(out,"%s module not found\n",modname);
 						continue;
             		}
             		/* display the overloaded symbol definition */
@@ -655,7 +655,7 @@ signatures satisfying the pattern.
     	case 'L':
     	case 'l': /* list the current code block */
     	{
-			str modnme, fcnname;
+			str modname, fcnname;
         	Module fsym;
         	Symbol fs;
         	int i, lstng;
@@ -663,12 +663,12 @@ signatures satisfying the pattern.
         	lstng = /* listing |*/ (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
         	skipWord(cntxt,b);
         	if( *b!= 0){
-            	modnme=b;
+            	modname=b;
             	fcnname= strchr(b,'.');
             	if( fcnname == NULL){
-                	fsym= findModule(cntxt->nspace,modnme);
+                	fsym= findModule(cntxt->nspace,modname);
                 	if( fsym==0) {
-                    	stream_printf(out,"%s module not found\n", modnme);
+                    	stream_printf(out,"%s module not found\n", modname);
                     	continue;
                 	}
                 	for(i=0;i<MAXSCOPE;i++){
@@ -682,15 +682,15 @@ signatures satisfying the pattern.
             	}
             	*fcnname = 0;
             	fcnname ++;
-            	fsym= findModule(cntxt->nspace,modnme);
+            	fsym= findModule(cntxt->nspace,modname);
             	if( fsym==0) {
-                	stream_printf(out,"%s module not found\n",modnme);
+                	stream_printf(out,"%s module not found\n",modname);
                 	continue;
             	}
             	/* display the overloaded symbol definition */
             	if( displayModule(out,fsym,fcnname,lstng)==0){
                 	stream_printf(out,"%sSymbol '%s.%s' not found\n",
-                    	"#mdb ",modnme,fcnname);
+                    	"#mdb ",modname,fcnname);
             	}
         	} else {
 				printFunction(out,mb,lstng);

@@ -34,7 +34,7 @@ be geared towards fast execution and to ease symbolic debugging.
 #ifndef _MAL_FCN_H
 #define _MAL_FCN_H
 
-#include "mal_scope.h"
+#include "mal_module.h"
 
 /* #define DEBUG_MAL_FCN */
 /* #define DEBUG_CLONE */

@@ -47,7 +47,7 @@ of a particular routine
 For the time being we assume that all commands are statically linked.
 @h
 #ifndef _MAL_LINKER_H
-#include "mal_scope.h"
+#include "mal_module.h"
 #include <dlfcn.h>
 
 /*#define DEBUG_MAL_LINKER  */
@@ -55,11 +55,11 @@ For the time being we assume that all commands are statically linked.
 mal_export MALfcn getAddress(str fcnname, int silent);
 mal_export char * MSP_locate_script(const char *mod_name);
 mal_export char * MSP_locate_module(const char *mod_name);
-mal_export str loadModuleLibrary(str modnme);
+mal_export str loadModuleLibrary(str modulename);
 mal_export void unloadModuleLibraries();
 mal_export void initLibraries();
 mal_export int  isPreloaded(str nme);
-mal_export int isLoaded(str modnme);
+mal_export int isLoaded(str modulename);
 #endif
 @}
 @+ Function binding
@@ -191,15 +191,15 @@ static void initM5Loader(){
 	}
 }
 
-int isLoaded(str modnme){
+int isLoaded(str modulename){
 	int idx;
     for(idx=0;moduleLoaded[idx] && idx<maxmodules;idx++)
-        if( strcmp(moduleLoaded[idx],modnme)==0) {
+        if( strcmp(moduleLoaded[idx],modulename)==0) {
             return 1;
 		}
 	return 0;
 }
-str loadModuleLibrary(str modnme){
+str loadModuleLibrary(str modulename){
     int mode = RTLD_NOW|RTLD_GLOBAL;
     char nme[MAXPATHLEN];
     char errbuf[1024];
@@ -209,19 +209,19 @@ str loadModuleLibrary(str modnme){
 
 	initM5Loader();
     for(idx=0;moduleLoaded[idx] && idx<maxmodules;idx++)
-        if( strcmp(moduleLoaded[idx],modnme)==0) {
+        if( strcmp(moduleLoaded[idx],modulename)==0) {
 #ifdef DEBUG_MAL_LINKER
-        stream_printf(GDKout,"already load:%s:%s\n",modnme,handle==NULL?
+        stream_printf(GDKout,"already load:%s:%s\n",modulename,handle==NULL?
             (handle==NULL?errbuf:"failed"):"succeeded");
 #endif
             return (str) throwException("loaderException",
-                "Module loaded twice",modnme);
+                "Module loaded twice",modulename);
 		}
 @-
 Use the search path provided in the configuration file
 @c
-    s= strrchr(modnme,DIR_SEP);
-    snprintf(nme,MAXPATHLEN,"_%s", s? s+1:modnme);
+    s= strrchr(modulename,DIR_SEP);
+    snprintf(nme,MAXPATHLEN,"_%s", s? s+1:modulename);
     fullname = MSP_locate_module(nme);
 
 /* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
@@ -235,16 +235,16 @@ Use the search path provided in the configuration file
             (handle==NULL?errbuf:"failed"):"succeeded");
 #endif
         if(handle == NULL) {
-			snprintf(errbuf,1024,"%d: loader error %s",modnme,dlerror());
+			snprintf(errbuf,1024,"%d: loader error %s",modulename,dlerror());
             GDKfree(fullname);
             return (str) throwException("loaderException",
                 "loadModuleLibrary",errbuf);
         }
         GDKfree(fullname);
     } else {
-		GDKerror("Failed to bind module '%s' to library\n",modnme);
+		GDKerror("Failed to bind module '%s' to library\n",modulename);
 		return (str) throwException("loaderException",
-			"loadModuleLibrary",modnme);
+			"loadModuleLibrary",modulename);
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
@@ -252,7 +252,7 @@ Use the search path provided in the configuration file
     if( i==maxmodules)
         GDKerror("loadModule:internal error, too many modules loaded\n");
     else {
-        moduleLoaded[i]= GDKstrdup(modnme);
+        moduleLoaded[i]= GDKstrdup(modulename);
         moduleHandle[i]= handle;
 		lastmodule= i;
     }

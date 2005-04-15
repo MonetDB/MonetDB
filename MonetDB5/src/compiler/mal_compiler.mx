@@ -436,7 +436,7 @@ and function name,
 The dynamic version takes variables from the runtime stack.
 @c
 str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Scope s;
+    Module s;
     Symbol t;
     int j;
     str nme, fcn,msg=MAL_SUCCEED;

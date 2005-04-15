@@ -1709,7 +1709,7 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,j,a,b,depth;
     InstrPtr p;
 	Client cntxt= getClient();
-	Scope scope= cntxt->nspace;
+	Module scope= cntxt->nspace;
 	char *olderr;
 	int errlen,actions=0;
 	long clk= GDKusec();

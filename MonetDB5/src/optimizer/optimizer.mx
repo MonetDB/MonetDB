@@ -208,7 +208,7 @@ you may not know the runtime situation.
 str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str	modnme;
 	str	fcnnme;
-	Scope  scope=NULL;
+	Module  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
 	long clk= GDKusec();
@@ -278,7 +278,7 @@ str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str fname;
 	str modnme;
 	str fcnnme;
-	Scope  scope=NULL;
+	Module  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
 	(void) mb;

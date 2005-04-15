@@ -103,7 +103,7 @@ comment "Merge the instructions stored in the
 
 #include "language.h"
 #include "mal.h"
-#include "mal_scope.h"
+#include "mal_module.h"
 #include "mal_session.h"
 #include "mal_resolve.h"
 #include "mal_client.h"

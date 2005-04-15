@@ -162,7 +162,7 @@ Table of contents
 
 @node Name space management, , Property management, TOC
 @include mal_namespace.bdy.texi
-@include mal_scope.bdy.texi
+@include mal_module.bdy.texi
 
 @node XML interface, The MAL debugger, MonetDB Assembler Language, TOC
 @include mal_xml.bdy.texi
