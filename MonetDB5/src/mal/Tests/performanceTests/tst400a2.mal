@@ -5,4 +5,4 @@ barrier v:= i<1000000:lng;
 	i:= i+1;
 	redo v:= i<1000000:lng;
 exit	v;
-print("end of loop");
+io.print("end of loop");

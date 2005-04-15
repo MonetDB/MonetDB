@@ -1,6 +1,6 @@
 # simple iterator loop test
 
-barrier (b,v):= newRange(0:lng);
-	redo (b,v):= nextElement(1:lng,1000000:lng);
+barrier (b,v):= mal.newRange(0:lng);
+	redo (b,v):= mal.nextElement(1:lng,1000000:lng);
 exit	(b,v);
-print("end of loop");
+io.print("end of loop");

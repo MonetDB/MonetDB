@@ -1,8 +1,8 @@
 # testing the function resolution on builtin type
 
 	i:= 0:lng;
-t:= mem_cursize();
-print(t); printf(" count %d",i);
+t:= status.mem_cursize();
+io.print(t); io.printf(" count %d",i);
 	i:= calc.+(i,1);
 	i:= calc.+(i,1);
 	i:= calc.+(i,1);
@@ -100035,6 +100035,6 @@ print(t); printf(" count %d",i);
 	i:= calc.+(i,1);
 	i:= calc.+(i,1);
 	i:= calc.+(i,1);
-t:= mem_cursize();
-print(t); printf(" count %d",i);
-	print(i);
+t:= status.mem_cursize();
+io.print(t); io.printf(" count %d",i);
+	io.print(i);

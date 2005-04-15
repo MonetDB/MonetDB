@@ -1,5 +1,5 @@
 # testing the function resolution on builtin type
-	b:= new(:int,:int);
+	b:= bbp.new(:int,:int);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -100000,5 +100000,5 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
-	z:= count(b);
-	z2:= print(z);
+	z:= algebra.count(b);
+	z2:= io.print(z);

@@ -1,9 +1,9 @@
 # simple iterator loop test
 
-	b:= new(:int,:int);
-barrier (v,i):= newRange(0:lng);
+	b:= bbp.new(:int,:int);
+barrier (v,i):= mal.newRange(0:lng);
 	z:= bat.insert(b,1,1);
-	redo (v,i):= nextElement(1:lng,1000000:lng);
+	redo (v,i):= mal.nextElement(1:lng,1000000:lng);
 exit	(v,i);
-	c:= count(b);
-	print(c);
+	c:= algebra.count(b);
+	io.print(c);
