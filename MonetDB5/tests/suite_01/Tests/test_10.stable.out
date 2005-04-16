@@ -41,18 +41,18 @@ stdout of test 'test_10` in directory 'tests/suite_01` itself:
 #	da_a := quit();
 #
 function user.main():int;	# 0  (main:int)
-    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
-    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($31:void)<-($32:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($34:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("# long string problems in the Monet parser\n");	# 4 MILline ($6:void)<-($7:str)
-    a := "asdfdsfasdfadfadfa";	# 5  (a:str)<-($9:str)
-    mil.line("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";");	# 6 MILline ($10:void)<-($11:str)
-    b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";	# 7  (b:str)<-($13:str)
-    mil.line("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";");	# 8 MILline ($14:void)<-($15:str)
-    c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";	# 9  (c:str)<-($17:str)
-    mil.line("c.print();");	# 10 MILline ($18:void)<-($19:str)
+    mil.line("# long string problems in the Monet parser\n");	# 4 MILline ($36:void)<-($37:str)
+    a := "asdfdsfasdfadfadfa";	# 5  (a:str)<-($39:str)
+    mil.line("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";");	# 6 MILline ($40:void)<-($41:str)
+    b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";	# 7  (b:str)<-($43:str)
+    mil.line("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";");	# 8 MILline ($44:void)<-($45:str)
+    c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";	# 9  (c:str)<-($47:str)
+    mil.line("c.print();");	# 10 MILline ($48:void)<-($49:str)
     ca_a := io.print(c);	# 11 IOprint_val (ca_a:int)<-(c:str)
-    mil.line("quit();");	# 12 MILline ($21:void)<-($22:str)
+    mil.line("quit();");	# 12 MILline ($51:void)<-($52:str)
     da_a := clients.quit();	# 13 CLTquit (da_a:void)
 end main;	# 14  
 #setoid(oid(20000000));
