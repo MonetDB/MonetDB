@@ -261,6 +261,7 @@ actions to obtain client records.
 #include "mal_client.h"
 #include "mal_import.h"
 #include "mal_parser.h"
+#include "mal_namespace.h"
 
 /* This should be in src/mal/mal.h, as the function is implemented in 
  * src/mal/mal.c; however, it cannot, as "Client" isn't known there ... |-( 
@@ -403,7 +404,7 @@ collect the buffer when in use.
 @c
     c->output = 0;
     if(c->nspace==0)
-        c->nspace = newModule(NULL, GDKstrdup("guest"));
+        c->nspace = newModule(NULL, putName("guest",5));
     c->curprg = c->backup = 0;
     c->glb = 0;
 

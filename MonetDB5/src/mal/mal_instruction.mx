@@ -860,7 +860,6 @@ void clrInstruction(InstrPtr p){
 }
 void freeInstruction(InstrPtr p){
     assert(p!=0);
-    if(moduleId(p)) freeModuleName(p);
     if(functionId(p)) freeFunctionName(p);
     GDKfree(p);
 }

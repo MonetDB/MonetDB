@@ -99,6 +99,7 @@ request and each time we encounter EOL.
 #include "mal_atom.h"       /* for malAtomDefinition(), malAtomArray(), malAtomProperty() */
 #include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
+#include "mal_namespace.h"
 
 
 #define FATALINPUT MAXERRORS+1
@@ -754,20 +755,18 @@ parseAtom(Client cntxt)
 {
 	str modnme = 0;
 	int l, tpe;
+	char *nxt= CURRENT(cntxt);
 
-	if (idLength(cntxt) <= 0)
+	if ( (l =idLength(cntxt)) <= 0)
 		return parseError(cntxt, "atom name expected\n");
 
 	/* parse: ATOM id:type */
-	modnme = idCopy(cntxt, idLength(cntxt));
+	modnme = putName(nxt, l);
+	advance(cntxt,l);
 	tpe = parseTypeId(cntxt, TYPE_int);
 	malAtomDefinition(modnme, tpe);
-	if (findModule(cntxt->nspace, modnme) != NULL)
-		cntxt->curprg->def->errors = FATALINPUT;
-	else
-		cntxt->nspace = fixModule(cntxt->nspace, modnme, strlen(modnme));
+	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	cntxt->nspace->isAtomModule = TRUE;
-	GDKfree(modnme);
 	@:helpInfo(cntxt->nspace->help) @
 	return "";
 }
@@ -775,19 +774,15 @@ parseAtom(Client cntxt)
 str parseModule(Client cntxt) 
 {
 	str modnme = 0;
-	int l, x;
+	int l;
+	char *nxt;
 
-	if ((x = idLength(cntxt)))
-		modnme = idCopy(cntxt, x);
-	else if ((x = stringLength(cntxt)))
-		modnme = strCopy(cntxt, x);
-	if (modnme == 0)
+	nxt= CURRENT(cntxt);
+	if ((l = idLength(cntxt)) <= 0)
 		return parseError(cntxt, "<module path> expected\n");
-	if (findModule(cntxt->nspace, modnme) != NULL)
-		cntxt->curprg->def->errors = FATALINPUT;
-	else
-		cntxt->nspace = fixModule(cntxt->nspace, modnme, strlen(modnme));
-	GDKfree(modnme);
+	modnme = putName(nxt, l);
+	advance(cntxt,l);
+	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 @-
 Module components may include a function reference overruling
 the built-in type resolver. The user-defined type resolver is called
@@ -828,15 +823,16 @@ parseInclude(Client cntxt)
 {
     str modnme = 0;
     int x;
+	char *nxt;
 
     if (!keyword(cntxt,"include",7)) 
 		return 0;
+	nxt= CURRENT(cntxt);
 
-    if ((x = idLength(cntxt))) 
-		modnme = idCopy(cntxt,x); 
-	else if ((x = stringLength(cntxt)))
-		modnme = strCopy(cntxt,x);
-    if (modnme == 0)
+    if ( (x = idLength(cntxt)) >0 ||  (x = stringLength(cntxt))>0){
+		modnme= putName(nxt,x);
+		advance(cntxt,x);
+	} else
         return parseError(cntxt,"<module path> expected\n");
 
     skipSpace(cntxt);
@@ -850,7 +846,6 @@ parseInclude(Client cntxt)
     malInclude(cntxt, modnme, modnme, 0);
     /* re-establish starting point in jumptable */
     setModuleJump(modnme, cntxt->nspace);
-    GDKfree(modnme);
     return "";
 }
 @- Definition
@@ -1578,8 +1573,9 @@ startFCNcall:
         /* continue with parseing a function/operator call */
         if( CURRENT(cntxt)[l] == '.'){
             Module scope;
-            arg= idCopy(cntxt,l);
-            nextChar(cntxt); /* skip '.' */
+			char *n= CURRENT(cntxt);
+			arg= putName(n,l);
+			advance(cntxt,l+1); /* skip '.' */
             skipSpace(cntxt);
             scope= findModule(cntxt->nspace,arg);
             if( scope==0){
@@ -1589,7 +1585,6 @@ startFCNcall:
             } else {
 				setModuleScope(curInstr, scope);
 			}
-            /*GDKfree(arg);*/
             i = idLength(cntxt);
             if( i==0) i= operatorLength(cntxt);
             if( i )
@@ -1613,12 +1608,7 @@ startFCNcall:
                 parseError(cntxt,"module name expected\n");
                 pushInstruction(curBlk,curInstr);
                 return;
-            } /* else { 
-                arg= idCopy(cntxt,l);
-                nextChar(cntxt); 
-				skipSpace(cntxt);
-                setFunctionId(curInstr, arg);
-            } */
+            } 
         }
 /*getarguments:*//* not used */
         skipSpace(cntxt);

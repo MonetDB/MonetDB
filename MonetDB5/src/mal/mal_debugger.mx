@@ -150,6 +150,7 @@ to the user to alter the trace/debugger options.
 #include "mal_linker.h"     /* for getAddress() */
 #include "mal_module.h"      /* for showModuleStatistics() */
 #include "mal_parser.h"
+#include "mal_namespace.h"
 
 
 int MDBdelay; /* do not immediately react */
@@ -625,6 +626,9 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	printStackElm(out, mb, getVar(mb,i),stk->stk+i,i,size,first);
         	continue;
     	}
+		case 'S':
+			dumpNamespaceStatistics(out,1);
+			break;
     	case 'u':
         	if( stk->up == NULL)
 				break;

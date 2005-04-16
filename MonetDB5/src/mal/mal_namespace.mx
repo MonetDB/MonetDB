@@ -17,19 +17,16 @@
 
 @a M.L. Kersten
 @* MAL name space.
-A separate namespace organisation seems in place for module and function
-names. The number of such names managed by the MAL engine 
-is expected to be rather limited except for those generated on 
-the fly to represent temporaries functions.
+We can gain significant speed at type resolution and during the 
+optimization phases when each module or function identifier is 
+replaced by a fixed length internal identifier.
+Therefore, a separate namespace organisation seems in place.
+Their number managed by the MAL engine is expected to be rather 
+limited except for those generated on the fly to represent temporaries 
+functions.
 Variables are always stored local to the MAL block in which they
 are used.
-@-
-We can gain speed at type resolution and during the optimization phases 
-when each identifier is replaced by a fixed length internal identifier,
-i.e. an integer. 
-Translation from/to their string is needed only in limited places, e.g.
-input output.
-@-
+
 The namespace manager is organized as a shared table. The alternative
 considered would be a namespace per client. However, this would force
 passing around the client identity or an expensive operation to deduce
@@ -42,8 +39,7 @@ should be protected against concurrent access.
 
 mal_export void initNamespace();
 mal_export void finishNamespace();
-mal_export str getName(int nid);
-mal_export int putName(str nme,int len);
+mal_export str putName(str nme,int len);
 mal_export void dumpNamespaceStatistics(stream *f, int details);
 
 #endif /* _MAL_NAMESPACE_H */
@@ -62,6 +58,7 @@ typedef struct NAMESPACE{
     str  *nme;
     int  *link;
     int  *hit;
+	int	 totalhit;
 } Namespace;
 
 static Namespace namespace;
@@ -87,13 +84,16 @@ static void expandNamespace(int incr){
 
     namespace.size += incr;
     namespace.nmetop+= incr;
+	namespace.totalhit= 0;
     GDKfree(namespace.nme); namespace.nme= nme;
     GDKfree(namespace.link); namespace.link= link;
 
 }
 void initNamespace() {
     namespace.nme= (str *) GDKmalloc(sizeof(str *) * MAXIDENTIFIERS);
+    bzero((char*) namespace.nme, sizeof(str *) * MAXIDENTIFIERS);
     namespace.link= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
+    bzero((char*) namespace.link,sizeof(int) * MAXIDENTIFIERS);
     namespace.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
     namespace.size = MAXIDENTIFIERS;
     namespace.nmetop= 256; /* hash overflow */
@@ -104,57 +104,49 @@ void finishNamespace() {
     GDKfree(namespace.hit);
 }
 @-
-The function getName returns the pointer to the identifier representation.
-This reference may not be freed. Temporary names are materialized upon need
-only.
-@c
-str getName(int nid) { return namespace.nme[nid]; }
-@-
 Before a name is being stored we should check for its occurrence first.
 The administration is initialized incrementally.
 @c
-int putName(str nme, int len)
+str putName(str nme, int len)
 {
-    int l= nme[0];
+    int l,top;
 	char buf[1024];
 
 	if( len >= 1022) return 0;
 	strncpy(buf,nme,len);
 	buf[len]=0;
     
-    if( namespace.nme[l]== 0){
-        namespace.nme[l]= GDKstrdup(buf);
-        namespace.link[l]= 0;
-        namespace.hit[l]= 0;
-        return l;
-    }
-    for(l= namespace.link[l]; l; l= namespace.link[l]){
-        if(idcmp(nme,namespace.nme[l])==0) {
+    for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
+        if(strcmp(buf,namespace.nme[l])==0) {
             namespace.hit[l]++;
-            return l;
+			namespace.totalhit++;
+			/* test for reorganization needs */
+			return namespace.nme[l];
         }
     }
+	mal_set_lock(mal_contextLock,"putName");
     if( namespace.nmetop+1== namespace.size)
         expandNamespace(MAXIDENTIFIERS);
 	l= nme[0];
-    namespace.nme[namespace.nmetop]= GDKstrdup(buf);
-    namespace.link[namespace.nmetop]= namespace.link[l];
-	namespace.link[l]= namespace.nmetop;
-    namespace.hit[namespace.nmetop]= 0;
+	top= namespace.nme[l]== 0? l: namespace.nmetop;
+    namespace.nme[top]= GDKstrdup(buf);
+    namespace.link[top]= namespace.link[l];
+	if( top == namespace.nmetop)
+		namespace.link[l]= top;
+    namespace.hit[top]= 0;
     namespace.nmetop++;
-    return namespace.nmetop-1;
+	mal_unset_lock(mal_contextLock,"putName");
+	return namespace.nme[top];
 }
 @-
-The routine parseName takes a reference to a string and attempts
-to decode it as an identifier or operator. If successful, it is stored in the
-namespace table. The number of characters forming the identifier
-is returned. This routine is primarilly used by the parser.
-
 The namespace may become a bottleneck when the chain of identifiers grows.
 This issue can be tackled from two angles. Either we change the hash function
 using multiple characters of the identifier or we sort the identifiers list
 using the actual hits reported so far. The field hit keeps track of this
 crucial information. The choice on the way to move forward is postponed.
+
+The re-organization scheme can be triggered by the calls made
+to the namespace.
 @c
 void dumpNamespaceStatistics(stream *f, int details)
 {
@@ -163,10 +155,11 @@ void dumpNamespaceStatistics(stream *f, int details)
     stream_printf(f,"Namespace statistics\n");
     stream_printf(f,"nmetop = %d size= %d\n",
         namespace.nmetop, namespace.size);
-    for(i=0;i<256; i++){
+    for(i=0;i<256; i++)
+	if(namespace.nme[i]){
         cnt =0;
         stream_printf(f,"list %d ",i);
-        for(l= i; l; l= namespace.link[l]){
+        for(l= i; l && namespace.nme[l]; l= namespace.link[l]){
             cnt++;
             if(details) {
                 stream_printf(f,"(%s %d) ",
@@ -175,6 +168,7 @@ void dumpNamespaceStatistics(stream *f, int details)
             }
         }
         if(cnt)  stream_printf(f," has %d elements",cnt);
+		stream_printf(f,"\n");
     }
 }
 @}
