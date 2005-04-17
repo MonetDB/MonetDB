@@ -109,15 +109,16 @@ type checked and optimized.
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
 #include "sql_gencode.h"
+#include "mal_namespace.h"
 
 
 void
 addQueryToCache(Client c)
 {
-	Scope cache;
+	Module cache;
 	backend *be = ((backend *) c->state[PARSER]);
 
-	cache = findModule(c->nspace, "sql_cache");
+	cache = findModule(c->nspace, putName("sql_cache",9));
 	if (cache == 0) {
 		return;
 	}
@@ -209,7 +210,7 @@ Reduce the program before other optimizations take place
 	if (mb->stop <= TOSMALL)
 		return;
 
-	s = findMALSymbol("bat", "setWriteMode");
+	s = findMALSymbol(putName("bat",3), putName("setWriteMode",12));
 	if (s)
 		setWriteMode = getSignature(s)->fcn;
 
@@ -262,8 +263,8 @@ Empty BATs can be symbolically optimized. Disabled for a while.
 @c
 				if (b == NULL /* || (l= BATcount(b)) == 0 */ ) {
 					qc = newInstruction(ASSIGNsymbol);
-					setModuleId(qc, GDKstrdup("optimizer"));
-					setFunctionId(qc, GDKstrdup("RXemptyBAT"));
+					setModuleId(qc, putName("optimizer",9));
+					setFunctionId(qc, putName("RXemptyBAT",10));
 					qc->argv[0] = newTmpVariable(mb, TYPE_void);
 					qc->argv[1] = p->argv[0];
 					qc->argc = 2;
@@ -395,8 +396,8 @@ Likewise, an append or insert requires write access.
 @= setAccess
 	if (p->fcnname && strcmp(p->fcnname,@1)==0) {
 		q = newInstruction(ASSIGNsymbol);
-		q->modname = GDKstrdup("bat");
-		q->fcnname = GDKstrdup(@2);
+		q->modname = putName("bat",3);
+		q->fcnname = putName(@2,strlen(@2));
 		q->argv[0] = newTmpVariable(mb,TYPE_any);
 		q->argv[1] = p->argv[1];
 		q->argc = 2;
@@ -478,8 +479,8 @@ exit	doit;
 				q->argv[0]=cnt;
 				q->argv[1]= p->argv[2];
 				q->argc=2;
-				setModuleId(q,GDKstrdup("algebra"));
-				setFunctionId(q,GDKstrdup("count"));
+				setModuleId(q,putName("algebra",7));
+				setFunctionId(q,putName("count",5));
 				pushInstruction(mb,q);
 
 				q= newInstruction(ASSIGNsymbol);
@@ -490,8 +491,8 @@ exit	doit;
 				setVarUsed(mb,cnt,TRUE);
 				setVarInitialized(mb,cnt);
 				setVarUsed(mb,zero,TRUE);
-				setModuleId(q,GDKstrdup("calc"));
-				setFunctionId(q,GDKstrdup(">"));
+				setModuleId(q,putName("calc",4));
+				setFunctionId(q,putName(">",1));
 				q->argv[0]=lab;
 				q->argv[1]=cnt;
 				q->argv[2]=zero;
@@ -502,8 +503,8 @@ exit	doit;
 We have to perform the expensive kdiff anyway
 @c
 				q= newInstruction(ASSIGNsymbol);
-				setModuleId(q,GDKstrdup("algebra"));
-				setFunctionId(q,GDKstrdup("kdiff"));
+				setModuleId(q,putName("algebra",7));
+				setFunctionId(q,putName("kdiff",5));
 				q->argv[0]= p->argv[0];
 				q->retc=1;
 				pushArgument(mb,q,p->argv[1]);
@@ -519,7 +520,7 @@ We have to perform the expensive kdiff anyway
 					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
 						strcmp(functionName(q),"kdiff")==0){
 						GDKfree(moduleId(q));
-						setModuleId(q,GDKstrdup("algebra"));
+						setModuleId(q,putName("algebra",7));
 					}
 				}
 				i--;
@@ -537,8 +538,8 @@ track of them.
 @c
 				q= newInstruction(ASSIGNsymbol);
 				q->barrier= BARRIERsymbol;
-				setModuleId(q,GDKstrdup("calc"));
-				setFunctionId(q,GDKstrdup("==")); 
+				setModuleId(q,putName("calc",4));
+				setFunctionId(q,putName("==",2)); 
 				q->argv[0]=lab;
 				q->argv[1]=cnt;
 				q->argv[2]=zero;
@@ -560,7 +561,7 @@ Now we don;t have to perform the expensive kdiff
 					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
 						strcmp(functionName(q),"kdiff")==0){
 						GDKfree(moduleId(q));
-						setModuleId(q,GDKstrdup("algebra"));
+						setModuleId(q,putName("algebra",7));
 					}
 					for(k=0;k<q->argc; k++)
 					for(l=0;l<mtop; l+=2)
@@ -629,7 +630,7 @@ SQLmarkTOptimizer(Client c){
 			strcmp(functionId(old[i+1]),"reverse")== 0 ){
 			actions++;
 			GDKfree(functionId(p));
-			setFunctionId(p,  GDKstrdup("markH"));
+			setFunctionId(p,  putName("markH",5));
 			p->argv[0]= getArg(old[i+1],0);
 			p->argc--;
 			pushInstruction(mb,p);

@@ -78,15 +78,16 @@ sql_export str SQLCacheRemove(int *ret, str *nme);
 #include "mal.h"
 #include "mal_interpreter.h"
 #include "inspect.h"
+#include "mal_namespace.h"
 
 str
 SQLCacheExists(bit *res, str *nme)
 {
-	Scope scope;
+	Module scope;
 	Symbol s;
 	Client c = getClient();
 
-	scope = findModule(c->nspace, "sql_cache");
+	scope = findModule(c->nspace, putName("sql_cache",9));
 
 	if (scope == NULL)
 		return throwMessage("sql_cache.exists", "internal error, sql_cache missing\n");
@@ -98,7 +99,7 @@ SQLCacheExists(bit *res, str *nme)
 str
 SQLCacheGetDefinition(int *ret, str *nme)
 {
-	Scope scope;
+	Module scope;
 	Symbol s;
 	Client c = getClient();
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
@@ -106,7 +107,7 @@ SQLCacheGetDefinition(int *ret, str *nme)
 	if (b == 0)
 		return throwMessage("sql_cache.getDefinition", "failed to create BAT");
 
-	scope = findModule(c->nspace, "sql_cache");
+	scope = findModule(c->nspace, putName("sql_cache",9));
 
 	if (scope == NULL)
 		return throwMessage("sql_cache.getDefinition", "internal error, sql_cache missing\n");
@@ -131,7 +132,7 @@ SQLCacheGetDefinition(int *ret, str *nme)
 str
 SQLCacheRemove(int *ret, str *nme)
 {
-	Scope scope;
+	Module scope;
 	Symbol s;
 	Client c = getClient();
 
@@ -139,7 +140,7 @@ SQLCacheRemove(int *ret, str *nme)
 #ifdef _SQL_CACHE_DEBUG
 	stream_printf(GDKout, "SQLCacheRemove %s\n", *nme);
 #endif
-	scope = findModule(c->nspace, "sql_cache");
+	scope = findModule(c->nspace, putName("sql_cache",9));
 
 	if (scope == NULL)
 		return throwMessage("sql_cache.remove", "internal error, sql_cache missing\n");

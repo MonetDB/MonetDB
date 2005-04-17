@@ -58,6 +58,7 @@ sql_export void backend_call(backend *be, Client c, int id, list *args);
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
 #include "sql_scope.h"
+#include "mal_namespace.h"
 
 @+ MAL code support
 To simplify construction of the MAL program use the following
@@ -70,8 +71,10 @@ newStmt(MalBlkPtr mb, char *module, char *name)
 {
 	InstrPtr q = newInstruction(ASSIGNsymbol);
 
-	moduleId(q) = (module) ? _strdup(module) : 0;
-	functionId(q) = (name) ? _strdup(name) : 0;
+	assert(module!= NULL);
+	assert(name!= NULL);
+	setModuleId(q, putName(module,strlen(module)));
+	setFunctionId(q, putName(name,strlen(name)));
 	getDestVar(q) = newTmpVariable(mb, TYPE_any);
 	setVarInitialized(mb, getDestVar(q));
 	pushInstruction(mb, q);
@@ -83,8 +86,10 @@ newStmtId(MalBlkPtr mb, char *id, char *module, char *name)
 {
 	InstrPtr q = newInstruction(ASSIGNsymbol);
 
-	moduleId(q) = (module) ? _strdup(module) : 0;
-	functionId(q) = (name) ? _strdup(name) : 0;
+	assert(module!= NULL);
+	assert(name!= NULL);
+	setModuleId(q, putName(module,strlen(module)));
+	setFunctionId(q, putName(name,strlen(name)));
 	getDestVar(q) = newVariable(mb, _strdup(id), TYPE_any);
 
 	setVarInitialized(mb, getDestVar(q));
@@ -301,7 +306,7 @@ dump_multiplex(MalBlkPtr mb, char *name, int o1, int o2, int type)
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	} else {
-		q = newStmt(mb, "multiplex", "tactics");
+		q = newStmt(mb, "multiplex", "script");
 		q = pushStr(mb, q, name);
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
@@ -903,7 +908,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					s->nr = getDestVar(q);
 					q = pushArgument(mb, q, l);
 				} else {
-					q = newStmt(mb, "multiplex", "tactics");
+					q = newStmt(mb, "multiplex", "script");
 					s->nr = getDestVar(q);
 					q = pushStr(mb, q, convertOperator(s->op4.funcval->func->imp));
 					q = pushArgument(mb, q, l);
@@ -964,7 +969,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					}
 				}
 
-				q = newStmt(mb, "multiplex", "tactics");
+				q = newStmt(mb, "multiplex", "script");
 				q = pushStr(mb, q, convertOperator(s->op4.funcval->func->imp));
 				for (i = 0; i < opslen; i++) {
 					q = pushArgument(mb, q, ops[i]);
@@ -1273,7 +1278,7 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	curPrg = c->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);
-	setModuleId(curInstr, "sql_cache");
+	setModuleId(curInstr, putName("sql_cache",9));
 
 	if (be->mvc->args) {
 		int argc = 0;
