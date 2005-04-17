@@ -1447,8 +1447,7 @@ This code is used in both positions of the expression
 
     if( (i= cstLength(cntxt,&lt))){
         int bak = cntxt->yycur;
-/*
-		int cstidx,csttpe;
+		int cstidx = -1,csttpe;
 
         cstidx = fndConstant(curBlk,((char*)CURRENT(cntxt)),i);
 		if( cstidx){
@@ -1458,23 +1457,27 @@ This code is used in both positions of the expression
 			if( csttpe == getVarType(curBlk,cstidx) ){
 				curInstr = pushArgument(curBlk,curInstr,cstidx);
 				@1;
+			} else {
+				cstidx= -1;
+				cntxt->yycur = bak;
 			}
-            cntxt->yycur = bak;
+		} else cstidx= -1;
+
+		if( cstidx < 0){
+			v = cstCopy(cntxt,i);
+			i = typeElm(cntxt,-1);
+			if(i>=0) {
+				int newlength = cntxt->yycur - bak;
+				lt = i;
+				/* save original input */
+				if(v) GDKfree(v);
+				cntxt->yycur = bak;
+				v = idCopy(cntxt,newlength);
+			}
+			i = newConstant(curBlk,lt,v,TRUE);
+			curInstr = pushArgument(curBlk,curInstr,i);
+			@1;
 		}
-*/
-        v = cstCopy(cntxt,i);
-        i = typeElm(cntxt,-1);
-        if(i>=0) {
-            int newlength = cntxt->yycur - bak;
-            lt = i;
-            /* save original input */
-            if(v) GDKfree(v);
-            cntxt->yycur = bak;
-            v = idCopy(cntxt,newlength);
-        }
-        i = newConstant(curBlk,lt,v,TRUE);
-        curInstr = pushArgument(curBlk,curInstr,i);
-        @1;
     } else if ((v = charCst(cntxt)) ){
         lt = typeElm(cntxt,TYPE_chr);
         i = newConstant(curBlk,lt,v,TRUE);
