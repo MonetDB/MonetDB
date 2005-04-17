@@ -7,6 +7,10 @@ stdout of test 'rsbox06` in directory 'src/modules/mal` itself:
 
 
 
+
+
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -27,8 +31,8 @@ function user.main():int;	# 0  (main:int)
     rs := rsbox.create(1,'t');	# 1 RSBcreate (rs:resultset)<-($2:int)($3:chr)
     resultset.writeNextPart(rs);	# 2 RSwriteNextPart ($4:int)<-(rs:resultset)
 end main;	# 3  
-!ERROR: ResultSetException:resultset.setComplete:879 ResultSet contains at least one column that has not been populated yet
-!ERROR: at resultset.writeNextPart:1434
+!ERROR: ResultSetException:resultset.setComplete:877 ResultSet contains at least one column that has not been populated yet
+!ERROR: at resultset.writeNextPart:1432
 #
 
 # 09:30:08 >  

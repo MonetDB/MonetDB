@@ -266,18 +266,18 @@ typedef struct resultset_t {
 /* header types: results */
 #define RS_TYPE_R_DEFAULT	't'	/* alias for RS_TYPE_R_MONET5 */
 #define RS_TYPE_R_MONET5	't'	/* MonetDB/Five MAPI protocol */
-#define RS_TYPE_R_RAW		'r'	/* unstructured character data */
-#define	RS_TYPE_R_BINARY	'i'	/* binary data, length known */
-#define RS_TYPE_R_XML		'x'	/* structured (X)(H)TML formatted character data */
-#define RS_TYPE_R_SAX		's'	/* SAX event stream */
-#define RS_TYPE_R_BAT		'b'	/* BAT dump format (for replication) */
+#define RS_TYPE_R_RAW		'r'	/* bulk data, length known */
+#define RS_TYPE_R_BAT		'B'	/* BAT dump format (for replication) */
+#define RS_TYPE_R_STREAM	's'	/* stream of data, length unknown */
+/* prepare response */
+#define RS_TYPE_P_PREPARE	'p'	/* prepare message response */
 /* updates */
 #define RS_TYPE_U_DEFAULT	'u'	/* alias for RS_TYPE_U_AFFROW */
 #define RS_TYPE_U_AFFROW	'u'	/* 1 affected row count */
-#define RS_TYPE_U_BATCH		'h'	/* list of affected row counts */
-#define RS_TYPE_U_SUCCESS	'v'	/* operation successful, no info */
+#define RS_TYPE_U_BATCH		'b'	/* list of affected row counts */
+#define RS_TYPE_U_SUCCESS	'v'	/* operation successful */
 /* error */
-#define RS_TYPE_E_ERROR		'e'	/* sole error message */
+#define RS_TYPE_E_ERROR		'!'	/* sole error message */
 
 #endif
 @c
@@ -359,10 +359,8 @@ str RSBcreate(int* retval, int* columns, char* type) {
 	if (tpe == RS_TYPE_E_ERROR)
 		throwIllArg("rsbox.create", "use TODOError.create to send error messages");
 	if (tpe != RS_TYPE_R_DEFAULT && tpe != RS_TYPE_R_MONET5 &&
-		tpe != RS_TYPE_R_RAW && tpe != RS_TYPE_R_BINARY &&
-		tpe != RS_TYPE_R_XML && tpe != RS_TYPE_R_SAX &&
-		tpe != RS_TYPE_U_AFFROW && tpe != RS_TYPE_U_BATCH &&
-		tpe != RS_TYPE_U_SUCCESS)
+		tpe != RS_TYPE_R_RAW && tpe != RS_TYPE_U_AFFROW &&
+		tpe != RS_TYPE_U_BATCH && tpe != RS_TYPE_U_SUCCESS)
 		throwIllArgf("rsbox.create", "ResultSet type unknown: %c", tpe);
 
 	/* find the first free slot */
@@ -982,7 +980,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	bytes += 3;
 	/* write single value headers */
 @= MX-writeHeaderLineSingleValue
-	if ((bt = stream_printf(s, "%c%s " @1 "\n", RS_LINE_CONTROL_HEADER, @3, @2)) <= 0)
+	if ((bt = stream_printf(s, "%c%s\t" @1 "\n", RS_LINE_CONTROL_HEADER, @3, @2)) <= 0)
 		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	bytes += bt;
 @c
@@ -1036,7 +1034,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	/* walk through the columns, and set those properties that are not
 	 * yet set, but are a necessity */
 
-	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, "column")) > 0) {
+	if ((bt = stream_printf(s, "%c%s\t", RS_LINE_HEADER, "column")) > 0) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columnSet.columns[i];
@@ -1064,7 +1062,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	}
 @= MX-writeHeaderLine
 	/* serialise the header to the stream */
-	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, @3)) > 0) {
+	if ((bt = stream_printf(s, "%c%s\t", RS_LINE_HEADER, @3)) > 0) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columnSet.columns[i];
@@ -1091,7 +1089,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	@:MX-writeHeaderLine("%s", col->table, "table", col->table != NULL)@
 	@:MX-writeHeaderLine("%s", col->schema, "schema", col->schema != NULL)@
 	/* serialise the header to the stream */
-	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, "type")) > 0) {
+	if ((bt = stream_printf(s, "%c%s\t", RS_LINE_HEADER, "type")) > 0) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columnSet.columns[i];
@@ -1151,7 +1149,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	@:MX-writeHeaderLine("%d", col->digits, "digits", col->digits > -1)@
 	@:MX-writeHeaderLine("%d", col->scale, "scale", col->scale > -1)@
 	/* serialise the header to the stream */
-	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, "width")) > 0) {
+	if ((bt = stream_printf(s, "%c%s\t", RS_LINE_HEADER, "width")) > 0) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columnSet.columns[i];
