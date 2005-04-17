@@ -250,9 +250,11 @@ The equality operator in MAL is '==' instead of '='.
 str
 convertOperator(str op)
 {
+	static char buf[128]="calc.";
 	if (strcmp(op, "=") == 0)
-		return "==";
-	return op;
+		return "calc.==";
+	strcat(buf,op);
+	return buf;
 }
 
 void
@@ -297,7 +299,6 @@ dump_multiplex(MalBlkPtr mb, char *name, int o1, int o2, int type)
 		if( *(name+1) && *(name+1)=='=') match++; else
 		if( *(name+1) == 0) match++;
 	}
-/*
 	if( match ){
 		if (type == TYPE_str)
 			q = newStmt(mb, "batstr", name);
@@ -311,13 +312,6 @@ dump_multiplex(MalBlkPtr mb, char *name, int o1, int o2, int type)
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	}
-*/
-	/* as multiplex is gone, we let the interpreter find the correct module
-	   and function */
-	(void)type;
-	q = newStmt(mb, NULL, name);
-	q = pushArgument(mb, q, o1);
-	q = pushArgument(mb, q, o2);
 	return q;
 }
 
@@ -889,7 +883,10 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_op:{
 			@:SQLprelude@
-			q = newStmt(mb, NULL, s->op4.funcval->func->imp);
+			if (s->op1.stval->nrcols) 
+				q = newStmt(mb, "algebra", s->op4.funcval->func->imp);
+			else
+				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 			break;
@@ -914,7 +911,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, l);
 				}
 			} else {
-				q = newStmt(mb, NULL, s->op4.funcval->func->imp);
+				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
 				q = pushArgument(mb, q, l);
 			}
 			s->nr = getDestVar(q);
@@ -930,7 +927,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r,tail_type(s->op1.stval)->type->localtype);
 				s->nr = getDestVar(q);
 			} else {
-				q = newStmt(mb, NULL, s->op4.funcval->func->imp);
+				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 			}
@@ -975,7 +972,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, ops[i]);
 				}
 			} else {
-				q = newStmt(mb, NULL, s->op4.funcval->func->imp);
+				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
 				for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
 					stmt *op = n->data;
 					int n = op->nr;
@@ -1002,12 +999,12 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int g = backend_dumpstmt(sql, mb, s->op2.stval);
 				int e = backend_dumpstmt(sql, mb, s->op3.stval);
 
-				q = newStmt(mb, NULL, s->op4.aggrval->aggr->imp);
+				q = newStmt(mb, "group", s->op4.aggrval->aggr->imp);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, e);
 			} else {
-				q = newStmt(mb, NULL, s->op4.aggrval->aggr->imp);
+				q = newStmt(mb, "algebra", s->op4.aggrval->aggr->imp);
 				q = pushArgument(mb, q, l);
 			}
 			s->nr = getDestVar(q);
@@ -1017,7 +1014,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_atom:{
 			atom *a = s->op1.aval;
 			if (atom_null(a)) {
-				q = newStmt(mb, NULL, a->tpe->type->base.name);
+				q = newStmt(mb, "calc", a->tpe->type->base.name);
 				q = pushNilType(mb, q, a->tpe->type->localtype);
 			} else {
 				int k;

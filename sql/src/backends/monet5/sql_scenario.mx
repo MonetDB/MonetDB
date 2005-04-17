@@ -59,6 +59,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "io.h"
 #include "mal_parser.h"
 #include <bat/res_table.h>
+#include "mal_namespace.h"
 
 static void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit);
 
@@ -416,7 +417,8 @@ SQLsetDebugger(Client c, int onoff)
 		return;
 	c->itrace='n';
 	q = newInstruction(ASSIGNsymbol);
-	functionId(q) = GDKstrdup("mdb");
+	moduleId(q) = putName("mdb",3);
+	functionId(q) = putName("start",5);
 	q = pushArgument(c->curprg->def, q, newConstant(c->curprg->def, TYPE_bit, GDKstrdup(onoff ? "true" : "false"), 0));
 	pushInstruction(c->curprg->def, q);
 }
@@ -815,8 +817,8 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 
 	if (autocommit) {
 		p = newInstruction(ASSIGNsymbol);
-		moduleId(p) = GDKstrdup("sql");
-		functionId(p) = GDKstrdup("commit");
+		moduleId(p) = putName("sql",3);
+		functionId(p) = putName("commit",6);
 		pushInstruction(mb, p);
 	}
 /* no catch
@@ -829,16 +831,16 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 	pushInstruction(mb,p);
 
 	p= newInstruction(ASSIGNsymbol);
-	moduleId(p)= GDKstrdup("io");
-	functionId(p)= GDKstrdup("print");
+	moduleId(p)= putName("io",2);
+	functionId(p)= putName("print",5);
 	pushArgumentId(mb, p, GDKstrdup(nme));
 	pushInstruction(mb,p);
 */
 
 	if (autocommit) {
 		p = newInstruction(ASSIGNsymbol);
-		moduleId(p) = GDKstrdup("sql");
-		functionId(p) = GDKstrdup("rollback");
+		moduleId(p) = putName("sql",3);
+		functionId(p) = putName("rollback",8);
 		pushInstruction(mb, p);
 	}
 /*       else {
