@@ -121,7 +121,7 @@ function tst(b:bat[:any,:int]):bat[:any,:any];
 barrier	ca_a := true;
 barrier	da_a := calc.<(i,2);
 	mil.line("  while (i < 2) {");
-	b := multiplex.tactics("+",b,1);
+	b := batcalc.+(b,1);
 	mil.line("    b := [+](b, 1);");
 	i := calc.+(i,1);
 	mil.line("    i := i + 1;");

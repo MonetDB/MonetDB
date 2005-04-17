@@ -228,11 +228,10 @@ end tst903;	# 101
 #
 #Mcc("Admin","tst903");
 #
-!ERROR: Mcc.compile("user","tst903");
-!           ^<modulename> expected
-function user.main():int;	# 0  unknown (main:int)
-    ;	# 1  unknown ($1:any)
-end main;	# 2  unknown 
+!ERROR: 'Mcc.compile' undefined in user.main[1]
+function user.main():int;	# 0  (main:int)
+    Mcc.compile("user","tst903");	# 1  unknown ($1:any)<-($2:str)($3:str)
+end main;	# 2  
 
 # 11:08:36 >  
 # 11:08:36 >  Done.

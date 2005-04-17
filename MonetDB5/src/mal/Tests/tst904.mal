@@ -8,5 +8,5 @@ barrier (v,i):= mal.newRange(0:lng);
 exit (v,i);
 io.print(b);
 c:= 1;
-xz:= multiplex.script("+",b,c);
+xz:= multiplex.script("calc.+",b,c);
 io.print(xz);

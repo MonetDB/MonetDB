@@ -20,5 +20,5 @@ z:= batcalc.ifthen(b,v);
 io.print(z);
 z:= batcalc.ifthenelse(b,v,ve);
 io.print(z);
-w:= multiplex.tactics("ifthen",b,v);
+w:= multiplex.script("calc.ifthen",b,v);
 io.print(w);

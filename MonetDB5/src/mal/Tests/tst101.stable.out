@@ -24,9 +24,9 @@ end +;	# 2
 #c:= 7+8;
 #
 function user.main():int;	# 0  (main:int)
-    a := user.+(3,1);	# 1  (a:int)<-($2:int)($3:int)
-    b := user.+(3.5,2.7);	# 2  (b:int)<-($5:flt)($6:flt)
-    c := user.+(7,8);	# 3  (c:int)<-($8:int)($9:int)
+    a := calc.+(3,1);	# 1 CALCbinaryADDintint (a:int)<-($2:int)($3:int)
+    b := calc.+(3.5,2.7);	# 2 CALCbinaryADDfltflt (b:flt)<-($5:flt)($6:flt)
+    c := calc.+(7,8);	# 3 CALCbinaryADDintint (c:int)<-($8:int)($9:int)
 end main;	# 4  
 
 # 07:58:54 >  

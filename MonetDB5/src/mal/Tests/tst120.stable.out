@@ -28,26 +28,26 @@ MALexception:malInclude:could not open file: tst120a
 #d:= first("hello world");
 #e:= top.first(2:sht);
 #
-!ERROR: a:= bottom.second("hh");
-!                  ^<modulename> expected
-!ERROR: b:= top.first(1);
-!               ^<modulename> expected
-!ERROR: c:= top.first(1:sht);
-!               ^<modulename> expected
-!ERROR: d:= bottom.first("hello world");
-!                  ^<modulename> expected
-!ERROR: e:= top.first(2:sht);
-!               ^<modulename> expected
-function user.main():int;	# 0  unknown (main:int)
-    a;	# 1  unknown (a:any)
-    b;	# 2  unknown (b:any)
-    c;	# 3  unknown (c:any)
-    d;	# 4  unknown (d:any)
-    e;	# 5  unknown (e:any)
-end main;	# 6  unknown 
+#a:= bottom.second("hh");
+#b:= top.first(1);
+#c:= top.first(1:sht);
+#d:= bottom.first("hello world");
+#e:= top.first(2:sht);
 #
+!ERROR: 'bottom.second' undefined in user.main[1]
+!ERROR: 'top.first' undefined in user.main[2]
+!ERROR: 'top.first' undefined in user.main[3]
+!ERROR: 'bottom.first' undefined in user.main[4]
+!ERROR: 'top.first' undefined in user.main[5]
+function user.main():int;	# 0  (main:int)
+    a := bottom.second("hh");	# 1  unknown (a:any)<-($2:str)
+    b := top.first(1);	# 2  unknown (b:any)<-($4:int)
+    c := top.first(1:sht);	# 3  unknown (c:any)<-($6:sht)
+    d := bottom.first("hello world");	# 4  unknown (d:any)<-($8:str)
+    e := top.first(2:sht);	# 5  unknown (e:any)<-($10:sht)
+end main;	# 6  
 
-# 07:59:01 >  
-# 07:59:01 >  Done.
-# 07:59:01 >  
+# 14:28:55 >  
+# 14:28:55 >  Done.
+# 14:28:55 >  
 

@@ -6,5 +6,5 @@
 	bat.insert(t,nil,"sleep well");
 	io.print(t);
 
-	b:= multiplex.script("startsWith",t,"");
+	b:= multiplex.script("str.startsWith",t,"");
 	io.print(b);

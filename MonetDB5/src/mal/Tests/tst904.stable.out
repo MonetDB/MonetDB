@@ -36,7 +36,7 @@ barrier (v,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-($9:lng
 exit (v,i);	# 7  (v:bit)(i:lng)
     io.print(b);	# 8 IOprint_val ($13:int)<-(b:bat[:lng,:lng])
     c := 1;	# 9  (c:int)<-($15:int)
-    xz := multiplex.script("+",b,c);	# 10  (xz:bat[:lng,:lng])<-($17:str)(b:bat[:lng,:lng])(c:int)
+    xz := multiplex.script("calc.+",b,c);	# 10  (xz:bat[:lng,:lng])<-($17:str)(b:bat[:lng,:lng])(c:int)
     io.print(xz);	# 11 IOprint_val ($18:int)<-(xz:bat[:lng,:lng])
 end main;	# 12  
 #-----------------#

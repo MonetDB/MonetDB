@@ -31,7 +31,7 @@ barrier (v,i):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (v:bit)(i:lng)<-($6:lng
     redo (v,i):= mal.nextElement(1:lng,10:lng);	# 4 RNGnextElement_lng (v:bit)(i:lng)<-($8:lng)($9:lng) jump 3
 exit (v,i);	# 5  (v:bit)(i:lng)
     c := algebra.copy(b);	# 6 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    x := multiplex.script("+",b,c);	# 7  (x:bat[:lng,:lng])<-($12:str)(b:bat[:lng,:lng])(c:bat[:lng,:lng])
+    x := multiplex.script("calc.+",b,c);	# 7  (x:bat[:lng,:lng])<-($12:str)(b:bat[:lng,:lng])(c:bat[:lng,:lng])
     io.print(x);	# 8 IOprint_val ($13:int)<-(x:bat[:lng,:lng])
 end main;	# 9  
 #-----------------#

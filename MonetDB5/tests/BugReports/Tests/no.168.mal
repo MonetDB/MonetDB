@@ -79,7 +79,7 @@ include mil_system_procs;
 	mil.line("# ========\n");
 	mil.line("setoid(oid(20000000));");
 	aa_a := calc.oid(20000000);
-	ba_a := setoid(aa_a);
+	ba_a := calc.setoid(aa_a);
 	mil.line("var u:= url(\"http://www.cwi.nl/~mk/Acoi/index.html\");");
 	u := url("http://www.cwi.nl/~mk/Acoi/index.html");
 	mil.line("u.print();");

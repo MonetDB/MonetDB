@@ -28,10 +28,6 @@ command mil():void
 address CMDMILsession
 comment "Switch to processing MIL statements";
 
-command line(msg:str):void
-address MILline
-comment "Echo the original MIL command";
-
 @h
 #ifndef _MIL_SCENARIO_H
 #define _MIL_SCENARIO_H

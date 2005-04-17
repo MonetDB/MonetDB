@@ -27,7 +27,7 @@ function user.main():int;	# 0  (main:int)
     bat.insert(t,nil,"hello world");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(t:bat[:void,:str])($7:void)($8:str)
     bat.insert(t,nil,"sleep well");	# 4 BKCinsert_bun ($9:bat[:void,:str])<-(t:bat[:void,:str])($7:void)($10:str)
     io.print(t);	# 5 IOprint_val ($11:int)<-(t:bat[:void,:str])
-    b := multiplex.script("startsWith",t,"");	# 6  (b:bat[:void,:bit])<-($13:str)(t:bat[:void,:str])($14:str)
+    b := multiplex.script("str.startsWith",t,"");	# 6  (b:bat[:void,:bit])<-($13:str)(t:bat[:void,:str])($14:str)
     io.print(b);	# 7 IOprint_val ($15:int)<-(b:bat[:void,:bit])
 end main;	# 8  
 #-------------------------#

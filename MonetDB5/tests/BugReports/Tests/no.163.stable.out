@@ -62,14 +62,14 @@ function user.tst(b:bat[:any,:int]):bat[:any,:any];	# 0  (tst:bat[:any,:any])<-(
 barrier ca_a := true;	# 4  (ca_a:bit)<-($9:bit) jump 13
 barrier da_a := calc.<(i,2);	# 5 CALCcompLTintint (da_a:bit)<-(i:int)($11:int) jump 12
     mil.line("  while (i < 2) {");	# 6 MILline ($12:void)<-($13:str)
-    b := batcalc.+(b,1);	# 7 CMDbatADDcst (b:bat[:any,:int])<-(b:bat[:any,:int])($15:int)
-    mil.line("    b := [+](b, 1);");	# 8 MILline ($16:void)<-($17:str)
-    i := calc.+(i,1);	# 9 CALCbinaryADDintint (i:int)<-(i:int)($15:int)
-    mil.line("    i := i + 1;");	# 10 MILline ($18:void)<-($19:str)
+    b := batcalc.+(b,1);	# 7 CMDbatADDcst (b:bat[:any,:int])<-(b:bat[:any,:int])($14:int)
+    mil.line("    b := [+](b, 1);");	# 8 MILline ($15:void)<-($16:str)
+    i := calc.+(i,1);	# 9 CALCbinaryADDintint (i:int)<-(i:int)($14:int)
+    mil.line("    i := i + 1;");	# 10 MILline ($17:void)<-($18:str)
     redo ca_a;	# 11  (ca_a:bit) jump 5
 exit da_a;	# 12  (da_a:bit)
 exit ca_a;	# 13  (ca_a:bit)
-    mil.line("");	# 14 MILline ($20:void)<-($3:str)
+    mil.line("");	# 14 MILline ($19:void)<-($3:str)
     return ea_a := b;	# 15  (ea_a:bat[:any,:int])<-(b:bat[:any,:int])
 end tst;	# 16  
 #	mil.line("");

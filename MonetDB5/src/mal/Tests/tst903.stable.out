@@ -233,7 +233,7 @@ exit (go,i);	# 8  (go:bit)(i:lng)
     io.printf(" count %d\n",cnt);	# 102 IOprint_formatted_lng ($75:int)<-($66:str)(cnt:lng)
     cnt := algebra.count(z9);	# 103 ALGcount_bat (cnt:lng)<-(z9:bat[:void,:lng])
     t0 := alarm.usec();	# 104 ALARMusec (t0:lng)
-    x := multiplex.script("+",b,c);	# 105  (x:bat[:void,:lng])<-($77:str)(b:bat[:void,:lng])(c:bat[:void,:lng])
+    x := multiplex.script("calc.+",b,c);	# 105  (x:bat[:void,:lng])<-($77:str)(b:bat[:void,:lng])(c:bat[:void,:lng])
     t1 := alarm.usec();	# 106 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 107 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#multiplex.script(+) %d\n",d0);	# 108 IOprint_formatted_lng ($78:int)<-($79:str)(d0:lng)
@@ -241,7 +241,7 @@ exit (go,i);	# 8  (go:bit)(i:lng)
     x := batcalc.+(b,c);	# 110 CMDbatADD (x:bat[:void,:lng])<-(b:bat[:void,:lng])(c:bat[:void,:lng])
     t1 := alarm.usec();	# 111 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 112 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#multiplex.tactics(+) %d\n",d0);	# 113 IOprint_formatted_lng ($80:int)<-($81:str)(d0:lng)
+    io.printf("#batcalc.+() %d\n",d0);	# 113 IOprint_formatted_lng ($80:int)<-($81:str)(d0:lng)
 end main;	# 114  
 #loop 732681
 #copy 38377#count 1000000

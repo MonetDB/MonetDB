@@ -22,9 +22,9 @@ b:= bbp.new(:int,:int);
 bat.insert(b,1,1);
 
 io.print("do multiplex three test");
-z:=multiplex.tactics("three",b,2,3);
+z:=multiplex.script("user.three",b,2,3);
 io.print("do multiplex one test");
-z:=multiplex.tactics("one",b);
+z:=multiplex.script("user.one",b);
 io.print("do multiplex pow test");
-z:=multiplex.tactics("pow",b,2);
+z:=multiplex.script("user.pow",b,2);
 io.print(z);

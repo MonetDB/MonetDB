@@ -197,15 +197,15 @@ function user.main():int;	# 0  (main:int)
     mil.line("c.print();");	# 75 MILline ($181:void)<-($182:str)
     jb_a := io.print(c);	# 76 IOprint_val (jb_a:int)<-(c:bat[:int,:int])
     mil.line("var d:= [<](b,c);");	# 77 MILline ($184:void)<-($185:str)
-    d := batcalc.<(b,c);	# 78 CMDcmpLT (d:bat[:int,:bit])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    d := multiplex.script("calc.<",b,c);	# 78  (d:bat[:int,:bit])<-($187:str)(b:bat[:int,:int])(c:bat[:int,:int])
     mil.line("d.print();");	# 79 MILline ($188:void)<-($189:str)
     kb_a := io.print(d);	# 80 IOprint_val (kb_a:int)<-(d:bat[:int,:bit])
     mil.line("d:= [<](c,b);");	# 81 MILline ($191:void)<-($192:str)
-    d := batcalc.<(c,b);	# 82 CMDcmpLT (d:bat[:int,:bit])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    d := multiplex.script("calc.<",c,b);	# 82  (d:bat[:int,:bit])<-($187:str)(c:bat[:int,:int])(b:bat[:int,:int])
     mil.line("d.print();");	# 83 MILline ($193:void)<-($189:str)
     lb_a := io.print(d);	# 84 IOprint_val (lb_a:int)<-(d:bat[:int,:bit])
     mil.line("d:= [>](c,b);");	# 85 MILline ($195:void)<-($196:str)
-    d := batcalc.>(c,b);	# 86 CMDcmpGT (d:bat[:int,:bit])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    d := multiplex.script("calc.>",c,b);	# 86  (d:bat[:int,:bit])<-($197:str)(c:bat[:int,:int])(b:bat[:int,:int])
     mil.line("d.print();");	# 87 MILline ($198:void)<-($189:str)
     mb_a := io.print(d);	# 88 IOprint_val (mb_a:int)<-(d:bat[:int,:bit])
     mil.line("quit();");	# 89 MILline ($200:void)<-($201:str)
@@ -277,7 +277,39 @@ end main;	# 91
 [ 4,	  0	  ]
 [ 5,	  30	  ]
 #var d:= [<](b,c);
-!ERROR: MALexception:batcalc.CMDcompareLT:requires bats of identical size
+#d.print();
+#-----------------#
+# h	tmp_18	  # name
+# int	bit	  # type
+#-----------------#
+[ 1,	  false	  ]
+[ 2,	  false	  ]
+[ 3,	  nil	  ]
+[ 4,	  false	  ]
+[ 5,	  true	  ]
+#d:= [<](c,b);
+#d.print();
+#-----------------#
+# h	tmp_19	  # name
+# int	bit	  # type
+#-----------------#
+[ 1,	  false	  ]
+[ 2,	  false	  ]
+[ 3,	  nil	  ]
+[ 4,	  true	  ]
+[ 5,	  false	  ]
+#d:= [>](c,b);
+#d.print();
+#-----------------#
+# h	tmp_20	  # name
+# int	bit	  # type
+#-----------------#
+[ 1,	  false	  ]
+[ 2,	  false	  ]
+[ 3,	  nil	  ]
+[ 4,	  false	  ]
+[ 5,	  true	  ]
+#quit();
 
 # 15:37:28 >  
 # 15:37:28 >  Done.

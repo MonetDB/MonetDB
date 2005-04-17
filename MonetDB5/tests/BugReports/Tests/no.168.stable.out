@@ -43,8 +43,6 @@ stdout of test 'no.168` in directory 'tests/BugReports` itself:
 # this bug occurs only today, i.e. after the recent checkins by Menzo & Peter.
 # so, it's no bug in module url, but somewhere else.
 # 
-!ERROR: 	ba_a := setoid(aa_a);
-!	               ^module name expected
 !ERROR: 	u := url("http://www.cwi.nl/~mk/Acoi/index.html");
 !	            ^module name expected
 !ERROR: 	da_a := getHost(u);
@@ -135,7 +133,7 @@ function user.main():int;	# 0  (main:int)
     mil.line("# ========\n");	# 67  unknown ($154:any)<-($155:str)
     mil.line("setoid(oid(20000000));");	# 68  unknown ($156:any)<-($157:str)
     aa_a := calc.oid(20000000);	# 69  unknown (aa_a:any)<-($159:int)
-    ba_a;	# 70  unknown (ba_a:any)
+    ba_a := calc.setoid(aa_a);	# 70  unknown (ba_a:any)<-(aa_a:any)
     mil.line("var u:= url(\"http://www.cwi.nl/~mk/Acoi/index.html\");");	# 71  unknown ($161:any)<-($162:str)
     u;	# 72  unknown (u:any)
     mil.line("u.print();");	# 73  unknown ($164:any)<-($165:str)
