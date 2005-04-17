@@ -134,6 +134,7 @@ comment "Produces a XML-formatted manual
 #include "mal_exception.h"
 #include "mal_debugger.h"
 #include "mal_interpreter.h"
+#include "mal_namespace.h"
 
 @+ Symbol table 
 Mal symbol table and environment analysis.
@@ -311,10 +312,11 @@ str INSPECTgetsignature(int *ret)
 str INSPECTgetDefinition(int *ret, str *nme, str *fcn)
 {	Symbol s;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if(b == 0) return throwMessage("inspect.getDefinition", 
-					"failed to create BAT");
+	if(b == 0) return throwMessage("inspect.getDefinition", 
+				"failed to create BAT");
 	
-	s= findMALSymbol(*nme,*fcn);
+	s= findMALSymbol(putName(*nme,strlen(*nme)),
+					putName(*fcn,strlen(*fcn)) );
 	while(s){
 		int i;
 		str ps;
@@ -335,7 +337,8 @@ str INSPECTgetSignature(int *ret, str *mod, str *fcn)
         if (b == 0) return throwMessage("inspect.getSignature", 
 					"failed to create BAT");
 
-	s= findMALSymbol(*mod,*fcn);
+	s= findMALSymbol(putName(*mod,strlen(*mod)),
+			putName(*fcn,strlen(*fcn)));
         if (s == 0) 
 		return throwMessage("inspect.getSignature", 
 			"failed to find <module>.<function>");
@@ -441,7 +444,7 @@ str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	scope = findModule(c->nspace,modnme);
 	if( scope)
-		s= findSymbolInModule(scope,fcnnme);
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)) );
 
 	if( s == NULL)
 		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);

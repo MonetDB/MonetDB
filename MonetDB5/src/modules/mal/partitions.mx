@@ -242,16 +242,11 @@ access.
 str
 BPTprelude(int *ret){
     Box box;
-	Module s;
 	(void) ret;
     box= openBox("partitions");
     if( box== 0)
         return throwMessage("partitions.prelude","failed to open box");
     BPTresize(INCREMENT);
-	/* exclude this module from inheritance */
-	s= findModule(getClient()->nspace,"partitions");
-	if(s) s->inheritance=0;
-	/* later do a  reload */
     return MAL_SUCCEED;
 }
 

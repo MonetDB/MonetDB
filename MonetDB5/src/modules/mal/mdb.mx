@@ -143,6 +143,7 @@ comment "Returns a string representation of the current function
 #include "mal_exception.h"
 #include "mal_debugger.h"
 #include "mal_interpreter.h"
+#include "mal_namespace.h"
 
 @-
 The primary debugger controls
@@ -205,7 +206,8 @@ str MDBsetTrace2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     mod= *(str *) getArgReference(stk,p,1);
     fcn= *(str *) getArgReference(stk,p,2);
     b= *(bit *) getArgReference(stk,p,3);
-    s= findMALSymbol(mod,fcn);
+    s= findMALSymbol( putName(mod,strlen(mod)),
+				putName(fcn,strlen(fcn)));
     if( s == 0)
 	return throwMessage("mdb.setTrace", "can not find operation");
     MDBstatus(b);
@@ -318,7 +320,8 @@ str MDBshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol s= NULL;
 	Client c= getClient();
 
-	s= findMALSymbol(modnme,fcnnme);
+	s= findMALSymbol(putName(modnme,strlen(modnme)),
+			putName(fcnnme,strlen(fcnnme)));
 	if( s == NULL)
 		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
 	else 

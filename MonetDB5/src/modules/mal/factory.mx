@@ -72,6 +72,7 @@ comment "Close a factory";
 #include "factory.h"
 #include "mal.h"
 #include "mal_interpreter.h"
+#include "mal_namespace.h"
 
 @+ Inspection
 @c
@@ -122,7 +123,8 @@ str FCTshutdown(int *ret, str *mod, str *fcn)
 {
     Symbol s;
     (void) ret;
-    s= findMALSymbol(*mod,*fcn);
+    s= findMALSymbol(putName(*mod,strlen(*mod)),
+			putName(*fcn,strlen(*fcn)));
     if( s == NULL) 
         return throwMessage("factory.shutdown","Factory not found");
     shutdownFactory(s->def);

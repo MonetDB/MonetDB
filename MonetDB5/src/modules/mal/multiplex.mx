@@ -78,10 +78,10 @@ or to derived a fast C-based implementation.
 module multiplex 
 check  CMDmultiplexTypeCheck;
 
-pattern tactics(CMD:str, a:any...):any 
-address CMDmultiplexScript
-comment "Tactical optimizer for multiplexed 
-	instructions.";
+#pattern tactics(CMD:str, a:any...):any 
+#address CMDmultiplexScript
+#comment "Tactical optimizer for multiplexed 
+	#instructions.";
 
 pattern script(CMD:str, a:any...):any 
 address CMDmultiplexScript
@@ -97,6 +97,7 @@ comment "Generic processor for mutiplexed
 #include "mal_interpreter.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
+#include "mal_namespace.h"
 
 mal_export int CMDmultiplexTypeCheck(Module scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
@@ -176,12 +177,11 @@ int multiplexType(Module scope, MalBlkPtr mb, InstrPtr pci,
 	MalBlkPtr m, InstrPtr p)
 {
 	int i, k, t, tpe= TYPE_any, tt;
-	int first = TRUE, firstbat=FALSE, inplace= FALSE;
+	int first = TRUE, firstbat=FALSE;
 	str fcnname;
-	char name[1024];
+	char *c,name[1024],mname[128];
 
 	(void) scope; /* still unused */
-	(void) inplace;
 
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug ){
@@ -195,8 +195,14 @@ int multiplexType(Module scope, MalBlkPtr mb, InstrPtr pci,
 		return -1;
 	}
 	fcnname= getVarLiteral(mb,pci->argv[1]);
-	inplace = operatorModifier(name,fcnname);
-	setFunctionId(p, GDKstrdup(name));
+	strcpy(mname,fcnname);
+	if( (c= strchr(mname,'.')) == 0)
+		return -1;
+	*c= 0;
+	
+	operatorModifier(name,c+1);
+	setModuleId(p,putName(mname,strlen(mname)));
+	setFunctionId(p, putName(name,strlen(name)));
 	k = newVariable(m, newTmpName('M',0),TYPE_any);
 	p->argv[0]= k;
 #ifdef DEBUG_MULTIPLEX
@@ -283,7 +289,7 @@ A polymorphic type is not allowed anymore at this stage,
 		/* all tactic choices are turned into their script variant */
 		if(idcmp("tactics",functionName(p))==0){
 			GDKfree(p->fcnname);
-			setFunctionId(p, GDKstrdup("script"));
+			setFunctionId(p, putName("script",6));
 		}
 		return -1;
 	}
@@ -316,7 +322,7 @@ A polymorphic type is not allowed anymore at this stage,
 	/* findFunctionType(scope,mb,pci); Why ? pci has not been changed*/
 	pci->token= PATcall;
 	pci->fcn = (MALfcn) CMDmultiplexScript;
-	setModuleId(pci, fcnname);
+	setModuleId(pci, putName(fcnname,strlen(fcnname)));
 	pci->typechk= p->typechk;
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug){
@@ -359,16 +365,14 @@ int multiplexTactics(Module scope, MalBlkPtr mb, InstrPtr pci){
 	/* look for constant first argument */
 	if( !isConstant(mb,pci->argv[pci->retc])) {
 		GDKfree(pci->fcnname);
-		setFunctionId(pci, GDKstrdup("script"));
+		setFunctionId(pci, putName("script",6));
 		return -1;
 	}
 	operator = getVarConstant(mb,pci->argv[pci->retc]).val.sval;
 
 	p= copyInstruction(pci);
-	if(functionId(p)) GDKfree(p->fcnname);
-	if(moduleId(p)) freeModuleName(p);
 	setModuleId(p, NULL);
-	setFunctionId(p, GDKstrdup(operator));
+	setFunctionId(p, putName(operator,strlen(operator)));
 	delArgument(p,p->retc);
 	olderr= mb->errors;
 	if( cntxt->errbuf) i= strlen(cntxt->errbuf); else i=0;
@@ -387,7 +391,7 @@ Safe the old type of the destination because we may have to restore it later on.
 	if( cntxt->errbuf ) cntxt->errbuf[i] =0;
 	mb->errors= olderr;
 	if(p->typechk == TYPE_UNKNOWN) {
-		setFunctionId(pci, GDKstrdup("script"));
+		setFunctionId(pci, putName("script",6));
 		freeInstruction(p);
 		setArgType(mb,pci,0,oldtpe);
 		return -1;
@@ -407,7 +411,7 @@ handled with a script.
 		printf("--> ignored bat-of-bat multiplex\n");
 #endif
 		setArgType(mb,pci,0,oldtpe);
-		setFunctionId(pci, GDKstrdup("script"));
+		setFunctionId(pci, putName("script",6));
 		freeInstruction(p);
 		return -1;
 	}
@@ -419,7 +423,7 @@ Check out type of the operands for use with batcalc
 		getTailType(getArgType(mb,p,0))) ) < 0){
 		/* postpone fixation until datatype is fixed */
 		/* tobe done */
-		setFunctionId(pci, GDKstrdup("script"));
+		setFunctionId(pci, putName("script",6));
 		freeInstruction(p);
 		setArgType(mb,pci,0,oldtpe);
 		return -1;
@@ -444,7 +448,7 @@ int CMDmultiplexTypeCheck(Module scope, MalBlkPtr mb, InstrPtr pci)
 	InstrPtr p = newInstruction(ASSIGNsymbol);
 
 	if( idcmp("debug",functionName(pci))==0){
-		if(moduleId(pci)==0) setModuleId(pci, GDKstrdup("multiplex"));
+		if(moduleId(pci)==0) setModuleId(pci, putName("multiplex",9));
 		pci->fcn= (MALfcn) CMDmultiplexDebug;
 		pci->token = CMDcall;
 		i= 1;
@@ -543,8 +547,9 @@ in the new mal block.
 
 	/* function multiplex(A1,....,An):bat[ht,tt] */
 	q= newInstruction(FUNCTIONsymbol);
-	sprintf(fcnname,"multiplex%d",fcnnr++);
-	setFunctionId(q, GDKstrdup(fcnname));
+	sprintf(fcnname,"script%d",fcnnr++);
+	setModuleId(q, putName("multiplex", 9));
+	setFunctionId(q, putName(fcnname,strlen(fcnname)));
 	fcnid= newVariable(m,GDKstrdup(fcnname), refType);
 	pushReturn(m,q,fcnid);
 @-
@@ -565,8 +570,8 @@ find the actual arguments at the proper place of the callee.
 	q->argc=0;
 	resB = newVariable(m,GDKstrdup("resB"),refType);
 	pushArgument(m,q,resB);
-	setModuleId(q, GDKstrdup("bbp"));
-	setFunctionId(q, GDKstrdup("new"));
+	setModuleId(q, putName("bbp",3));
+	setFunctionId(q, putName("new",3));
 	i= newTypeVariable(m, getHeadType(refType));
 	pushArgument(m,q,i);
 	i= newTypeVariable(m, getTailType(refType));
@@ -594,8 +599,8 @@ find the actual arguments at the proper place of the callee.
 	/* create nil constant for void-columns */
 	if( getHeadType(refType) == TYPE_void){
 		q= newInstruction(ASSIGNsymbol);
-		setModuleId(q, GDKstrdup("bat"));
-		setFunctionId(q, GDKstrdup("setSequenceBase"));
+		setModuleId(q, putName("bat",3));
+		setFunctionId(q, putName("setSequenceBase",15));
 		pushReturn(m,q, newTmpVariable(m,TYPE_any));
 		pushArgument(m,q, resB);
 		pushArgument(m,q, newConstant(m,TYPE_oid,GDKstrdup("0@0"),TRUE));
@@ -606,8 +611,8 @@ find the actual arguments at the proper place of the callee.
 
 /* x:= getRole(rb) 
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("bat"));
-	setFunctionId(q, GDKstrdup("getRole"));
+	setModuleId(q, putName("bat",3));
+	setFunctionId(q, putName("getRole",7));
 	x= newVariable(m,GDKstrdup("x"),TYPE_str);
 	pushReturn(m,q,x);
 	pushArgument(m,q,resB);
@@ -616,8 +621,8 @@ find the actual arguments at the proper place of the callee.
 
 /* setRoles(resB, ..., CMD 
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("bat"));
-	setFunctionId(q, GDKstrdup("setRole"));
+	setModuleId(q, putName("bat",3));
+	setFunctionId(q, putName("setRole",7));
 	pushReturn(m,q newTmpVariable(m,TYPE_any));
 	pushArgument(m,q,resB);
 	pushArgument(m,q,x);
@@ -627,8 +632,8 @@ find the actual arguments at the proper place of the callee.
 
 	/* barrier (mloop,h,r):= newIterator(refBat); */
 	q= newInstruction(BARRIERsymbol);
-	setModuleId(q, GDKstrdup("chopper"));
-	setFunctionId(q, GDKstrdup("newIterator"));
+	setModuleId(q, putName("chopper",7));
+	setFunctionId(q, putName("newIterator",11));
 	mloop= newVariable(m,GDKstrdup("mloop"),TYPE_lng);
 	pushReturn(m,q,mloop);
 	hvar= newVariable(m,GDKstrdup("h"),TYPE_any);
@@ -645,22 +650,22 @@ find the actual arguments at the proper place of the callee.
 		q= newInstruction(ASSIGNsymbol);
 		sprintf(name,"B%d",i);
 		pushReturn(m,q,newVariable(m, GDKstrdup(name), getTailType(l)));
-		setModuleId(q, GDKstrdup("algebra"));
+		setModuleId(q, putName("algebra",7));
 		sprintf(name,"A%d",i);
 		pushArgument(m,q, newVariable(m,GDKstrdup(name),l));
 /*
 		if( nilVar){
-			setFunctionId(q, GDKstrdup("fetch"));
+			setFunctionId(q, putName("fetch",5));
 			pushArgument(m,q,mvar);
 		} else 
-*/ 		{ setFunctionId(q, GDKstrdup("find"));
+*/ 		{ setFunctionId(q, putName("find",4));
 			pushArgument(m,q,hvar);
 		}
 		pushInstruction(m,q);
 #ifdef TRACE_MULTIPLEX
 	q= newInstruction(ASSIGNsymbol);
 	pushReturn(m,q, newTmpVariable(m,TYPE_any));
-	setFunctionId(q, GDKstrdup("print"));
+	setFunctionId(q, putName("print",5));
 	pushArgument(m,q,hvar);
 	pushInstruction(m,q);
 #endif
@@ -670,8 +675,8 @@ find the actual arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	cr= newVariable(m,GDKstrdup("cr"), getTailType(getArgType(m,p,0)) );
 	pushReturn(m,q,cr);
-	setModuleId(q, GDKstrdup(moduleName(p)));
-	setFunctionId(q, GDKstrdup(functionName(p)));
+	setModuleId(q, moduleName(p));
+	setFunctionId(q, functionId(p));
 	for(i=2;i<pci->argc;i++)
 	if( isaBatType(getArgType(mb,pci,i)) ){
 		sprintf(name,"B%d",i);
@@ -685,12 +690,12 @@ find the actual arguments at the proper place of the callee.
 #ifdef TRACE_MULTIPLEX
 	q= newInstruction(ASSIGNsymbol);
 	pushReturn(m,q,newTmpVariable(m,TYPE_any));
-	setFunctionId(q, GDKstrdup("print"));
+	setFunctionId(q, putName("print",5));
 	pushArgument(m,q,hvar);
 	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
 	pushReturn(m,q,newTmpVariable(m,TYPE_any));
-	setFunctionId(q, GDKstrdup("print"));
+	setFunctionId(q, putName("print",5));
 	pushArgument(m,q,cr);
 	pushInstruction(m,q);
 #endif
@@ -698,8 +703,8 @@ find the actual arguments at the proper place of the callee.
 
 	/* insert(resB,h,cr); */
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("bat"));
-	setFunctionId(q, GDKstrdup("insert"));
+	setModuleId(q, putName("bat",3));
+	setFunctionId(q, putName("insert",6));
 	pushReturn(m,q,newTmpVariable(m,TYPE_any));
 	pushArgument(m,q,resB);
 	pushArgument(m,q,hvar);
@@ -717,21 +722,21 @@ find the actual arguments at the proper place of the callee.
 	/* z:= inspect.symbolDefinition(); print(z); */
 	{ int zz= hvar;
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("io"));
-	setFunctionId(q, GDKstrdup("print"));
+	setModuleId(q, putName("io",2));
+	setFunctionId(q, putName("print",5));
 	pushReturn(m,q,newTmpVariable(m,TYPE_any));
 	pushArgument(m,q,zz);
 	pushInstruction(m,q);
 	/* z:= inspect.stkFrame(); print(z) */
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("mdb"));
-	setFunctionId(q, GDKstrdup("getStackFrame"));
+	setModuleId(q, putName("mdb",3));
+	setFunctionId(q, putName("getStackFrame",13));
 	zz= newVariable(m,GDKstrdup("stkFrame"),newBatType(TYPE_str,TYPE_str));
 	pushReturn(m,q,zz);
 	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("io"));
-	setFunctionId(q, GDKstrdup("print"));
+	setModuleId(q, putName("io",2));
+	setFunctionId(q, putName("print",5));
 	pushReturn(m,q,newTmpVariable(m,TYPE_any));
 	pushArgument(m,q,zz);
 	pushInstruction(m,q);
@@ -740,15 +745,15 @@ find the actual arguments at the proper place of the callee.
 	/* #ignore errors unless you are debugging; */
 	q= newInstruction(ASSIGNsymbol);
 	pushReturn(m,q,newTmpVariable(m,TYPE_any));
-	setFunctionId(q, GDKstrdup("raise"));
+	setFunctionId(q, putName("raise",5));
 	pushArgument(m,q,k);
 	pushInstruction(m,q);
 #endif
 	@:malInstr(EXIT,k)@	
 	/* redo (mloop,h,r):= hasMoreElements(refBat); */
 	q= newInstruction(REDOsymbol);
-	setModuleId(q, GDKstrdup("chopper"));
-	setFunctionId(q, GDKstrdup("hasMoreElements"));
+	setModuleId(q, putName("chopper",7));
+	setFunctionId(q, putName("hasMoreElements",15));
 	pushReturn(m,q,mloop);
 	pushReturn(m,q,hvar); 
 	pushReturn(m,q,tvar);
