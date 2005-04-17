@@ -584,9 +584,6 @@ In Version 5, we are not going to support recursive BATs.
 It is up to the programmer to translate a bat into a
 bat-name or batCacheid
 
-@= batconvert
-	(BAT@2type(@1) == TYPE_bat)?&((BAT*)@2)->batCacheid:@2
-
 @-
 At this stage of the game, we should translate
 the arguments of BATnew into types.
