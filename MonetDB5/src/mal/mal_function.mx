@@ -65,6 +65,7 @@ FUNCTION, FACTORY, COMMAND, PATTERN.
 #include "mal_function.h"
 #include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_namespace.h"
 
 Symbol newFunction(str nme,int kind){
 	Symbol s;
@@ -72,7 +73,7 @@ Symbol newFunction(str nme,int kind){
 
 	s = newSymbol(nme,kind);
 	p = newInstruction(kind);
-	setFunctionId(p, GDKstrdup(nme));
+	setFunctionId(p, putName(nme,strlen(nme)));
 	setDestVar(p, newVariable(s->def,GDKstrdup(nme),TYPE_any));
 	pushInstruction(s->def,p);
 	return s;
@@ -81,7 +82,7 @@ InstrPtr newCall(Module scope, str fcnname, int kind){
 	InstrPtr p;
 	p= newInstruction(kind);
 	setModuleScope(p, scope);
-	setFunctionId(p, GDKstrdup(fcnname));
+	setFunctionId(p, putName(fcnname,strlen(fcnname)));
 	return p;
 }
 @-
@@ -529,7 +530,8 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 			proc->name,scope->name);
 	printInstruction(GDKout,mb, p,LIST_MAL_ALL);
 #endif
-	new= newFunction(GDKstrdup(proc->name), getSignature(proc)->token );
+	new= newFunction(putName(proc->name,strlen(proc->name)), 
+                getSignature(proc)->token );
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 /*

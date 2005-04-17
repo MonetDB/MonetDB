@@ -468,7 +468,6 @@ for separate name space management.
 #define functionId(P)       (P)->fcnname
 #define setFunctionId(P,S)  (P)->fcnname= S
 #define functionName(P)     (P)->fcnname
-#define freeFunctionName(P) { GDKfree((P)->fcnname); (P)->fcnname=0;}
 
 #define getInstrPtr(M,I)    (M)->stmt[I]
 #define getSignature(S)     getInstrPtr((S)->def,0)
@@ -545,6 +544,7 @@ mal_export int      newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void     delVariable(MalBlkPtr mb, int varid);
 mal_export void     freeVariable(MalBlkPtr mb, int varid);
 mal_export int      newConstant(MalBlkPtr mb, malType type, str val, int f);
+mal_export int      fndConstant(MalBlkPtr mb, str val, int len);
 /* mal_export int       isaSignature(InstrPtr p);*/
 
 mal_export void     pushInstruction(MalBlkPtr mb, InstrPtr p);
@@ -850,9 +850,9 @@ InstrPtr copyInstruction(InstrPtr p)
     return new;
 }
 void clrFunction(InstrPtr p){
-    if(moduleId(p)) freeModuleName(p);
-    if(functionId(p)) freeFunctionName(p);
     p->fcn= 0;
+	p->modname= NULL;
+	p->fcnname= NULL;
 }
 void clrInstruction(InstrPtr p){
     clrFunction(p);
@@ -860,7 +860,6 @@ void clrInstruction(InstrPtr p){
 }
 void freeInstruction(InstrPtr p){
     assert(p!=0);
-    if(functionId(p)) freeFunctionName(p);
     GDKfree(p);
 }
 @-
@@ -872,8 +871,8 @@ void oldmoveInstruction(InstrPtr new, InstrPtr p){
 
     space = sizeof(InstrRecord) + sizeof(int) * p->argc;
     memcpy((char*) new, (char*) p, space);
-    setFunctionId(new, functionId(p)? GDKstrdup(functionName(p)): NULL);
-    setModuleId(new, moduleId(p)? GDKstrdup(moduleId(p)):NULL);
+    setFunctionId(new, functionId(p));
+    setModuleId(new, moduleId(p));
 }
 @-
 Query optimizers walk their way through a MAL program block.
@@ -1283,7 +1282,19 @@ This start of the constant list is kept in the MalBlk.
 @{
 @c
 #define MAL_VAR_WINDOW  2*MAXARG
-
+int fndConstant(MalBlkPtr mb, str val, int len){
+	int i,k;
+    k= mb->vtop - MAL_VAR_WINDOW;
+    if( k<0) k=0;
+    for(i= mb->vtop-1; i>=k;i--){
+        VarPtr v= getVar(mb,i);
+        if( v->literal && 
+            strncmp(v->literal,val,len)==0 &&
+			v->literal[len]==0 ) 
+				return i;
+    }
+	return 0;
+}
 int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     int i,k,idx,parsetype=type;
     str s,colon = 0;
@@ -1294,8 +1305,8 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     if( k<0) k=0;
     for(i= mb->vtop-1; i>=k;i--){
         VarPtr v= getVar(mb,i);
-        if( v->type == type &&
-            v->literal && 
+        if( v->literal && 
+			v->type == type &&
             idcmp(v->literal,val)==0 ) {
             GDKfree(val);
             return i;

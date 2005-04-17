@@ -111,7 +111,7 @@ mal_export InstrPtr dynamicTypeChecker(Module scope,MalBlkPtr mb, MalStkPtr stk,
 mal_export int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p);
 mal_export int resolveType(int dsttype, int srctype);
 mal_export int isPolymorphic(malType t);
-mal_export malType getPolyType(malType t, int polytype[MAXTYPEVAR]);
+mal_export malType getPolyType(malType t, int *polytype);
 mal_export int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 
 extern void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs,int silent);
@@ -129,6 +129,7 @@ Debugging of this module can be dynamically controlled in the debugger
 by setting the routine of interest.
 @c
 #include "mal_resolve.h"
+#include "mal_namespace.h"
 
 int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
@@ -160,8 +161,7 @@ Check first for a module specific type checker. It takes
 precedence and should handle all cases. It returns -1
 upon failure, which shortcuts the execution.
 @c
-    if(scope->typeChecker && moduleId(p) &&
-        idcmp(moduleName(p),scope->name)==0 ){
+    if(scope->typeChecker && moduleName(p)==scope->name ){
         if( (scope->typeChecker)(scope,mb,p,FALSE)!=0)
             return getArgType(mb,p,0);
         return -3;
@@ -177,7 +177,7 @@ of symbols.
     m= scope;
     s= m->subscope[(int)(getSubScope(functionName(p)))];
     while(s != NULL){   /* single scope element check */
-    if(functionName(p) && functionName(p) && idcmp(functionName(p),s->name ) ){
+    if(functionName(p) && functionName(p) != s->name  ){
         s= s->skip; continue;
     }
 @-
@@ -398,8 +398,6 @@ We found the proper function. Copy some properties. In particuler,
 determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
 This piece of code may be shared by the separate binder
 @= bindFunction
-    if(moduleId(p) == 0) 
-		setModuleId(p, m->name);
     if( p->token == ASSIGNsymbol){
         switch(getSignature(s)->token){
         case COMMANDsymbol: 
@@ -621,9 +619,10 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 #ifdef DEBUG_MAL_RESOLVE
         tracefcn= idcmp(functionName(p),traceFcnName)==0;
 #endif
-        m= findModule(scope,moduleName(p));
+assert(moduleId(p) != NULL);
+        m= findModule(scope,moduleId(p));
         while(s1<0 && m!= NULL){
-			if( moduleId(p) == NULL && m->inheritance==0) {
+			if( m->inheritance==0) {
 				m= m->outer;
 				continue;
 			}
@@ -724,34 +723,29 @@ InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
     int i;
 
 #ifdef DEBUG_MAL_RESOLVE
-        stream_printf(GDKout,"Start dynamic type check on:\n");
-        /*printInstruction(GDKout, mb, altpci,LIST_MAL_ALL);*/
+	stream_printf(GDKout,"Start dynamic type check on:\n");
+	/*printInstruction(GDKout, mb, altpci,LIST_MAL_ALL);*/
 #endif
 
     pci = copyInstruction(p);
-        if( functionId(pci) && (i=findVariable(mb,functionName(pci))) != -1){
-                if( getVarType(mb,i) != TYPE_str)
-                        functionName(pci)= 0;
-                else {
-                        GDKfree(functionName(pci));
-                        functionName(pci)= GDKstrdup( stk->stk[i].val.sval);
-                }
-        }
-        if( moduleId(pci) && (i=findVariable(mb,moduleName(pci))) != -1){
-                if( getVarType(mb,i) != TYPE_str)
-                        setModuleId(pci, NULL);
-                else {
-                        freeModuleName(pci);
-                        setModuleScope(pci, findModule(scope, stk->stk[i].val.sval));
-                }
-        }
+	if( functionId(pci) && (i=findVariable(mb,functionName(pci))) != -1){
+		if( getVarType(mb,i) != TYPE_str)
+			setFunctionId(pci, 0);
+		else 
+			setFunctionId(pci,putName( stk->stk[i].val.sval,
+						strlen(stk->stk[i].val.sval)));
+	}
+	if( moduleId(pci) && (i=findVariable(mb,moduleName(pci))) != -1){
+		if( getVarType(mb,i) != TYPE_str)
+				setModuleId(pci, NULL);
+		else {
+				setModuleScope(pci, findModule(scope, stk->stk[i].val.sval));
+		}
+	}
+	typeChecker(scope, mb,pci,FALSE);
 #ifdef DEBUG_MAL_RESOLVE
-        printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
-#endif
-        typeChecker(scope, mb,pci,FALSE);
-#ifdef DEBUG_MAL_RESOLVE
-        stream_printf(GDKout,"type checked version:\n");
-        printInstruction(GDKout, mb, pci,LIST_MAL_ALL);
+	stream_printf(GDKout,"type checked version:\n");
+	printInstruction(GDKout, mb, pci,LIST_MAL_ALL);
 #endif
 
     return pci;
@@ -772,10 +766,10 @@ int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p){
     if( p->token != ASSIGNsymbol) return 0;
     if( moduleId(p)== NULL || functionId(p)== NULL) return 0;
     for(m= findModule(scope,moduleName(p)); m; m= m->outer)
-    if(idcmp(m->name, moduleName(p))==0 ) {
+    if( m->name == moduleName(p) ) {
         s= m->subscope[(int)(getSubScope(functionName(p)))];
         for(; s; s= s->peer)
-        if( idcmp(functionName(p),s->name)==0 &&
+        if( functionName(p)==s->name &&
             p->argc == getSignature(s)->argc ){
             /* found it */
             @:bindFunction@
@@ -868,23 +862,24 @@ For a polymorphic commands we do not generate a cloned version.
 It suffices to determine the actual return value taking into
 account the type variable constraints.
 @c
-malType getPolyType(malType t,int polytype[MAXTYPEVAR]){
+malType getPolyType(malType t,int *polytype){
     int hi,ti;
-    int head= TYPE_any, tail = TYPE_any;
+    int head, tail;
 
-    hi = getHeadIndex(t);
-    ti = getTailIndex(t);
-    if( hi == 0)
-        head= getHeadType(t);
-    else head = polytype[hi];
-    if( ti == 0)
-        tail= getTailType(t);
-    else tail = polytype[ti];
+	ti = getTailIndex(t);
+	if( ti == 0)
+		tail= getTailType(t);
+	else tail = polytype[ti];
+    if( isaBatType(t)){
+		hi = getHeadIndex(t);
+		if( hi == 0)
+			head= getHeadType(t);
+		else head = polytype[hi];
+        return newBatType(head,tail);
+	}
 
     if( t== TYPE_bat) 
         return newBatType(TYPE_any,TYPE_any);
-    if( isaBatType(t))
-        return newBatType(head,tail);
     if( isaColType(t))
         return newColType(tail);
     return tail;

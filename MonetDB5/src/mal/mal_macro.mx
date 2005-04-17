@@ -116,6 +116,7 @@ mal_export str MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
 @c
 #include "mal_macro.h"
 #include "mal_interpreter.h"
+#include "mal_namespace.h"
 @-
 The optimizer hooks are introduced first.
 They are refered to from the optimizer module.
@@ -135,7 +136,7 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #endif
 
 
-    s= findModule(mal_scope,nme);
+    s= findModule(mal_scope, putName(nme,strlen(nme)));
     if (s == 0) s= mal_scope;
     for(; s; s=s->outer)
     if(strcmp(s->name,nme)== 0 && s->subscope){
@@ -163,7 +164,7 @@ str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     (void) stk; 
     removeInstruction(mb,p);
     fcn= getVarConstant(mb, getArg(p,1)).val.sval;
-    s= findModule(mal_scope,fcn);
+    s= findModule(mal_scope, putName(fcn,strlen(fcn)));
 #ifdef DEBUG_MAL_MACRO
     printf("@1optimizer: %s\n",fcn);
 #endif
@@ -220,8 +221,8 @@ int malMatch(InstrPtr p1, InstrPtr p2){
 int i,j;
     if( functionId(p1) == 0 && functionId(p2)!=0) return 0;
     if( moduleId(p1) == 0 && moduleId(p2)!=0) return 0;
+    if( moduleName(p1) != moduleName(p2) ) return 0;
     if( functionId(p2)==0) return 0;
-    if( idcmp(moduleName(p1), moduleName(p2)) ) return 0;
     if( idcmp(functionName(p1),functionName(p2)) ) return 0;
     if( p1->retc!= p2->retc) return 0;
     if( p1->argc!= p2->argc) return 0;
@@ -518,7 +519,7 @@ mal_export str MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
     (void) p;
     (void) stk;
 
-    s= findModule(getClient()->nspace,mod);
+    s= findModule(getClient()->nspace, putName(mod,strlen(mod)));
     if( s== 0)
         return throwException(MALEXCEPTION,"optimizer.@1optimizer",
             "module '%s' not found\n",fcn);

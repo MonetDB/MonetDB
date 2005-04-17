@@ -109,8 +109,9 @@ The administration is initialized incrementally.
 @c
 str putName(str nme, int len)
 {
-    int l,top;
+    int i,k=0,l,top;
 	char buf[1024];
+	str s;
 
 	if( len >= 1022) return 0;
 	strncpy(buf,nme,len);
@@ -120,9 +121,19 @@ str putName(str nme, int len)
         if(strcmp(buf,namespace.nme[l])==0) {
             namespace.hit[l]++;
 			namespace.totalhit++;
-			/* test for reorganization needs */
+			/* aggressive test for reorganization needs */
+			if( k && 2*namespace.hit[k] < namespace.hit[l]){
+				mal_set_lock(mal_contextLock,"putName");
+				s= namespace.nme[l]; namespace.nme[l]= namespace.nme[k];
+				namespace.nme[k]=s;
+				i= namespace.hit[l]; namespace.hit[l]=namespace.hit[k];
+				namespace.hit[k]= i;
+				mal_unset_lock(mal_contextLock,"putName");
+				l=k;
+			}
 			return namespace.nme[l];
         }
+		k=l;
     }
 	mal_set_lock(mal_contextLock,"putName");
     if( namespace.nmetop+1== namespace.size)

@@ -462,7 +462,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 						*fcnname= 0;
 						fcnname++;
 					}
-					fsym= findModule(cntxt->nspace,modname);
+					fsym= findModule(cntxt->nspace, putName(modname,strlen(modname)));
 
 					if( fsym == NULL){
 						stream_printf(out,"%s module not found\n",modname);
@@ -506,7 +506,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					modname=b;
 					fcnname= strchr(b,'.');
 					if( fcnname == NULL){
-						fsym= findModule(cntxt->nspace,modname);
+						fsym= findModule(cntxt->nspace, putName(modname,strlen(modname)));
 						if( fsym==0) {
 							stream_printf(out,"%s module not found\n", modname);
 							continue;
@@ -522,7 +522,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					}
             		*fcnname = 0;
             		fcnname ++;
-            		fsym= findModule(cntxt->nspace,modname);
+            		fsym= findModule(cntxt->nspace, putName(modname,strlen(modname)));
             		if( fsym==0) {
                		 	stream_printf(out,"%s module not found\n",modname);
 						continue;
@@ -670,7 +670,7 @@ signatures satisfying the pattern.
             	modname=b;
             	fcnname= strchr(b,'.');
             	if( fcnname == NULL){
-                	fsym= findModule(cntxt->nspace,modname);
+                	fsym= findModule(cntxt->nspace,putName(modname,strlen(modname)));
                 	if( fsym==0) {
                     	stream_printf(out,"%s module not found\n", modname);
                     	continue;
@@ -686,7 +686,7 @@ signatures satisfying the pattern.
             	}
             	*fcnname = 0;
             	fcnname ++;
-            	fsym= findModule(cntxt->nspace,modname);
+            	fsym= findModule(cntxt->nspace,putName(modname,strlen(modname)));
             	if( fsym==0) {
                 	stream_printf(out,"%s module not found\n",modname);
                 	continue;

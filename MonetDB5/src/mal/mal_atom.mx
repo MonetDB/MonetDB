@@ -117,11 +117,12 @@ else{
 }
 @c
 #include "mal_atom.h"
+#include "mal_namespace.h"
+
 void setAtomName(InstrPtr pci){
     char buf[MAXPATHLEN];
     snprintf(buf,MAXPATHLEN,"#%s", functionName(pci));
-    GDKfree(pci->fcnname);
-    setFunctionId(pci, GDKstrdup(buf));
+    setFunctionId(pci, putName(buf,strlen(buf)));
 #ifdef MAL_ATOM_DEBUG
     stream_printf(GDKout,"replaced the function %s.%s\n",
         moduleName(pci),functionName(pci));

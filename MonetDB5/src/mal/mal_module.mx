@@ -226,9 +226,9 @@ void insertSymbol(Module scope, Symbol prg){
 	Module c;
 
 	sig = getSignature(prg);
-	if(moduleId(sig) && idcmp(moduleName(sig),scope->name) != 0){
+	if(moduleId(sig) && moduleName(sig)!= scope->name){
 		/* move the definition to the proper place */
-		c= findModule(scope,moduleName(sig));
+		c= findModule(scope,moduleId(sig));
 		if(c == NULL){
 			GDKwarning("insertSymbol:undefined module\n");
 		} else scope = c;
@@ -259,7 +259,7 @@ void deleteSymbol(Module scope, Symbol prg){
 		int t;
 
 		sig = getSignature(prg);
-	if(moduleId(sig) && idcmp(moduleName(sig),scope->name) != 0){
+	if(moduleId(sig) && moduleName(sig)!= scope->name){
 		/* move the definition to the proper place */
 		Module c= findModule(scope,moduleName(sig));
 		if(c == NULL){
@@ -344,11 +344,11 @@ Module findModule(Module scope, str name){
 	if( name==NULL) return scope;
 	if( scopeJump[(int)(*name)][(int)(*(name+1))]) 
 		scope= scopeJump[(int)(*name)][(int)(*(name+1))];
-		while(scope != NULL){
-			    if( idcmp(name,scope->name)== 0 )
-			            return scope;
-			    scope= scope->outer;
-		}
+	while(scope != NULL){
+			if( name == scope->name )
+					return scope;
+			scope= scope->outer;
+	}
 	/* default is always matched with current */
 	return scope;
 }

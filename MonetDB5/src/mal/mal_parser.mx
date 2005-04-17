@@ -414,15 +414,6 @@ skipToEnd(Client cntxt)
 	if (*c == ';')
 		nextChar(cntxt);
 }
-
-void 
-parseEndStmt(Client cntxt)
-{
-    skipSpace(cntxt);
-	if (currChar(cntxt) != ';')
-        parseError(cntxt, "';' expected\n");
-    skipToEnd(cntxt);
-}
 @-
 The lexical analyser for numeric constants is a little more complex.
 Aside from getting its length, we need an indication of its type.
@@ -597,7 +588,7 @@ simpleTypeId(Client cntxt)
 		return -1;
 	}
 	advance(cntxt, l);
-	skipSpace(cntxt);
+	/*skipSpace(cntxt);*/
 	return tpe;
 }
 
@@ -654,13 +645,11 @@ parseTypeId(Client cntxt, int defaultType)
     if( strncmp(CURRENT(cntxt),":bat",4)==0){
         /* parse default for :bat[:any,:any] */
         advance(cntxt,4);
-        skipSpace(cntxt);
         return newBatType(TYPE_any,TYPE_any);
     } 
     if( strncmp(CURRENT(cntxt),":col",4)==0){
         /* parse default for :col[:any] */
         advance(cntxt,4);
-        skipSpace(cntxt);
         return newColType(TYPE_any);
     } 
     ht= simpleTypeId(cntxt);
@@ -788,11 +777,8 @@ Module components may include a function reference overruling
 the built-in type resolver. The user-defined type resolver is called
 instead.
 @c
-	skipSpace(cntxt);
 	if (keyphrase(cntxt, "check", 5)) {
 		int l;
-
-		skipSpace(cntxt);
 		if ((l = idLength(cntxt))) {
 			str nme = idCopy(cntxt, l);
 			cntxt->nspace->typeChecker = getAddress(nme,0);
@@ -835,7 +821,7 @@ parseInclude(Client cntxt)
 	} else
         return parseError(cntxt,"<module path> expected\n");
 
-    skipSpace(cntxt);
+    /*skipSpace(cntxt);*/
 	if (currChar(cntxt) != ';') {
 		parseError(cntxt,"';' expected\n");
 		skipToEnd(cntxt);
@@ -883,7 +869,9 @@ the function definition in a particular module instead of the current one.
 		return (MalBlkPtr) parseError(cntxt,
 				"<identifier> | <operator> expected\n");
 
-    fnme = idCopy(cntxt,l);
+    /* fnme = idCopy(cntxt,l);*/
+	fnme= putName( ((char *) CURRENT(cntxt)),l);
+	advance(cntxt,l);
 
 	if (currChar(cntxt) == '.') {
 		nextChar(cntxt); /* skip '.' */
@@ -894,10 +882,11 @@ the function definition in a particular module instead of the current one.
 		if (l == 0)
 			return (MalBlkPtr) parseError(cntxt,
 					"<identifier> | <operator> expected\n");
-		fnme = idCopy(cntxt, l);
-    }
+		fnme= putName( ((char *) CURRENT(cntxt)),l);
+		advance(cntxt,l);
+    } 
     if (currChar(cntxt) != '(') {
-        GDKfree(fnme);
+        /* GDKfree(fnme);*/
         return (MalBlkPtr)parseError(cntxt, "function header '(' expected\n");
     }
 	nextChar(cntxt); /* skip '(' */
@@ -914,12 +903,10 @@ the function definition in a particular module instead of the current one.
 	curBlk->flowfixed= 0;
 	curBlk->typefixed= 0;
     curInstr = getInstrPtr(curBlk,0);
-	if (moduleId(curInstr))
-		freeModuleName(curInstr);
     if( modnme == 0){
         setModuleScope(curInstr, cntxt->nspace);
     } else {
-        setModuleId(curInstr, modnme);
+        setModuleId(curInstr, putName(modnme,strlen(modnme)) );
     }
 
     /* get calling parameters */
@@ -1460,20 +1447,30 @@ This code is used in both positions of the expression
 
     if( (i= cstLength(cntxt,&lt))){
         int bak = cntxt->yycur;
+/*
+		int cstidx,csttpe;
 
+        cstidx = fndConstant(curBlk,((char*)CURRENT(cntxt)),i);
+		if( cstidx){
+			advance(cntxt,i);
+			csttpe= typeElm(cntxt,-1);
+			if( csttpe < 0) csttpe= lt;
+			if( csttpe == getVarType(curBlk,cstidx) ){
+				curInstr = pushArgument(curBlk,curInstr,cstidx);
+				@1;
+			}
+            cntxt->yycur = bak;
+		}
+*/
         v = cstCopy(cntxt,i);
         i = typeElm(cntxt,-1);
         if(i>=0) {
             int newlength = cntxt->yycur - bak;
             lt = i;
             /* save original input */
-            GDKfree(v);
+            if(v) GDKfree(v);
             cntxt->yycur = bak;
             v = idCopy(cntxt,newlength);
-        }
-        if( isPolymorphic(lt) ){
-            GDKerror("Constant can not be polymorphic\n");
-            lt = TYPE_any;
         }
         i = newConstant(curBlk,lt,v,TRUE);
         curInstr = pushArgument(curBlk,curInstr,i);
@@ -1572,36 +1569,29 @@ startFCNcall:
 
         /* continue with parseing a function/operator call */
         if( CURRENT(cntxt)[l] == '.'){
-            Module scope;
 			char *n= CURRENT(cntxt);
 			arg= putName(n,l);
 			advance(cntxt,l+1); /* skip '.' */
-            skipSpace(cntxt);
-            scope= findModule(cntxt->nspace,arg);
-            if( scope==0){
-                parseError(cntxt,"<modulename> expected\n");
-                pushInstruction(curBlk,curInstr);
-                return;
-            } else {
-				setModuleScope(curInstr, scope);
-			}
+			setModuleId(curInstr,arg);
             i = idLength(cntxt);
             if( i==0) i= operatorLength(cntxt);
-            if( i )
-                setFunctionId(curInstr, idCopy(cntxt,i));
-            else {
+            if( i ) {
+                setFunctionId(curInstr, putName(((char*)CURRENT(cntxt)),i));
+				advance(cntxt,i);
+            } else {
                 parseError(cntxt,"<functionname> expected\n");
                 pushInstruction(curBlk,curInstr);
                 return;
             }
-            skipSpace(cntxt);
-            if (currChar(cntxt) != '(')
-            {   parseError(cntxt,"'(' expected\n");
-                pushInstruction(curBlk,curInstr);
-                return;
-            }
+			if (currChar(cntxt) != '(') {
+				skipSpace(cntxt);
+				if (currChar(cntxt) != '(') 
+				{   parseError(cntxt,"'(' expected\n");
+					pushInstruction(curBlk,curInstr);
+					return;
+				}
+			}
 			nextChar(cntxt); /* skip '(' */
-            skipSpace(cntxt);
         } else {
             /* we expect a module if( CURRENT(cntxt)[l] != '(')*/
             {
@@ -1613,16 +1603,20 @@ startFCNcall:
 /*getarguments:*//* not used */
         skipSpace(cntxt);
         @:parseArguments()@ /* parseAssign() -> void */
-        skipSpace(cntxt);
-        if( currChar(cntxt)!=';')
-            parseError(cntxt,"';' expected\n");
+        if( currChar(cntxt)!=';'){
+			skipSpace(cntxt);
+			if( currChar(cntxt)!=';')
+				parseError(cntxt,"';' expected\n");
+		}
         goto part3;
     }
     
 part2:  /* consume <operator><term> part of expression */
     if( (i= operatorLength(cntxt)) ){
-        /* operator expression */
-        setFunctionId(curInstr, idCopy(cntxt,i));
+        /* simple arithmetic operator expression */
+        setFunctionId(curInstr, putName(((char*)CURRENT(cntxt)),i));
+		advance(cntxt,i);
+		curInstr->modname= putName("calc",4);
         if( (l = idLength(cntxt))) {
             @:GETvariable@
             curInstr= pushArgument(curBlk,curInstr,varid); 
