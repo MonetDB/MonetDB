@@ -7,6 +7,8 @@ stdout of test 'rsbox05` in directory 'src/modules/mal` itself:
 
 
 
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -27,21 +29,26 @@ stdout of test 'rsbox05` in directory 'src/modules/mal` itself:
 #
 #writeNextPart(rs);
 #
-!ERROR: b := new(:void, :date);
-!            ^module name expected
-!ERROR: insert(b, nil, "1999-05-02":date);
-!       ^module name expected
-!ERROR: populateColumn(rs, 1, b);
-!       ^module name expected
-!ERROR: writeNextPart(rs);
-!       ^module name expected
-function user.main():int;	# 0  unknown (main:int)
-    b;	# 1  unknown (b:any)
-    ;	# 2  unknown ($2:any)
-    rs := rsbox.create(1,'t');	# 3  unknown (rs:any)<-($4:int)($5:chr)
-    ;	# 4  unknown ($6:any)
-    ;	# 5  unknown ($7:any)
-end main;	# 6  unknown 
+function user.main():int;	# 0  (main:int)
+    b := bbp.new(:void,:date);	# 1 CMDBATnew (b:bat[:void,:date])<-($2:void)($3:date)
+    bat.insert(b,nil,1999-05-02);	# 2 BKCinsert_bun ($4:bat[:void,:date])<-(b:bat[:void,:date])($5:void)($6:date)
+    rs := rsbox.create(1,'t');	# 3 RSBcreate (rs:resultset)<-($8:int)($9:chr)
+    resultset.populateColumn(rs,1,b);	# 4 RSpopulateColumn ($10:resultset)<-(rs:resultset)($8:int)(b:bat[:void,:date])
+    resultset.writeNextPart(rs);	# 5 RSwriteNextPart ($11:int)<-(rs:resultset)
+end main;	# 6  
+&t
+$id	1
+$columncount	1
+$tuplecount	1
+$ctype	S
+%column	column_1
+%table	
+%schema	
+%type	varchar
+%digits	
+%scale	
+%width	0
+[10:1999-05-02
 
 # 09:27:17 >  
 # 09:27:17 >  Done.

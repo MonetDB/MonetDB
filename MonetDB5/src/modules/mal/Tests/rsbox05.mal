@@ -3,10 +3,10 @@
 
 include rsbox;
 
-b := new(:void, :date);
-insert(b, nil, "1999-05-02":date);
+b := bbp.new(:void, :date);
+bat.insert(b, nil, "1999-05-02":date);
 
 rs := rsbox.create(1, 't');
-populateColumn(rs, 1, b);
+resultset.populateColumn(rs, 1, b);
 
-writeNextPart(rs);
+resultset.writeNextPart(rs);
