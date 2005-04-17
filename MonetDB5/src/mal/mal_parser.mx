@@ -156,8 +156,7 @@ INLINE void
 advance(Client cntxt, int length)
 {
 	cntxt->yycur += length;
-	if( *CURRENT(cntxt) )
-		skipSpace(cntxt);
+	skipSpace(cntxt);
 }
 
 @-
@@ -574,8 +573,6 @@ simpleTypeId(Client cntxt)
 {
     int l, tpe;
 
-	if (currChar(cntxt) != ':')
-		return -1;	/* no type qualifier */
 	nextChar(cntxt);
 	l = typeidLength(cntxt);
 	if (l == 0) {
@@ -602,7 +599,9 @@ parseTypeId(Client cntxt, int defaultType)
 	if (strncmp(CURRENT(cntxt), ":bat[", 5) == 0) {
         /* parse :bat[:type,:type] */
         advance(cntxt,5);
-		ht = simpleTypeId(cntxt);
+		if( currChar(cntxt) ==':')
+			ht = simpleTypeId(cntxt);
+		else ht = -1;
 		if (ht == TYPE_any)
 			kh = typeAlias(cntxt);
 		if (currChar(cntxt) != ',') {
@@ -612,7 +611,9 @@ parseTypeId(Client cntxt, int defaultType)
 			nextChar(cntxt); /* skip , */
 			skipSpace(cntxt);
 		}
-		tt = simpleTypeId(cntxt);
+		if( currChar(cntxt) ==':')
+			tt = simpleTypeId(cntxt);
+		else tt= -1;
 		if (tt == TYPE_any)
 			kt = typeAlias(cntxt);
 		i = newBatType(ht, tt);
@@ -630,7 +631,9 @@ parseTypeId(Client cntxt, int defaultType)
 	if (strncmp(CURRENT(cntxt), ":col[", 5) == 0) {
         /* parse :col[:type] */
         advance(cntxt,5);
-		ht = simpleTypeId(cntxt);
+		if( currChar(cntxt) ==':')
+			ht = simpleTypeId(cntxt);
+		else ht = -1;
 		if (ht == TYPE_any)
 			kh = typeAlias(cntxt);
 		i = newColType(ht);
@@ -652,7 +655,9 @@ parseTypeId(Client cntxt, int defaultType)
         advance(cntxt,4);
         return newColType(TYPE_any);
     } 
-    ht= simpleTypeId(cntxt);
+	if( currChar(cntxt) ==':')
+		ht = simpleTypeId(cntxt);
+	else ht = -1;
 	if (ht >= 0)
 		return ht;
     parseError(cntxt,"<type identifier> expected\n");
@@ -661,9 +666,12 @@ parseTypeId(Client cntxt, int defaultType)
 
 int typeElm(Client cntxt, int def)
 {
-	int type = parseTypeId(cntxt, def);
+	int type;
     int k;
 
+	if (currChar(cntxt) != ':')
+		type= def;	/* no type qualifier */
+	else type= parseTypeId(cntxt,def);
 	if (type == TYPE_any && (k = typeAlias(cntxt)) >= 0)
 		setAnyTailIndex(type, k);
     return type;
@@ -1452,8 +1460,9 @@ This code is used in both positions of the expression
         cstidx = fndConstant(curBlk,((char*)CURRENT(cntxt)),i);
 		if( cstidx){
 			advance(cntxt,i);
-			csttpe= typeElm(cntxt,-1);
-			if( csttpe < 0) csttpe= lt;
+			if( currChar(cntxt)==':')
+				csttpe= typeElm(cntxt,-1);
+			else csttpe= lt;
 			if( csttpe == getVarType(curBlk,cstidx) ){
 				curInstr = pushArgument(curBlk,curInstr,cstidx);
 				@1;
@@ -1478,12 +1487,12 @@ This code is used in both positions of the expression
 			curInstr = pushArgument(curBlk,curInstr,i);
 			@1;
 		}
-    } else if ((v = charCst(cntxt)) ){
+    } else if ( currChar(cntxt)=='\'' && (v = charCst(cntxt)) ){
         lt = typeElm(cntxt,TYPE_chr);
         i = newConstant(curBlk,lt,v,TRUE);
         curInstr = pushArgument(curBlk,curInstr,i);
         @1;
-    } else if( (i = stringLength(cntxt)) ){
+    } else if( currChar(cntxt)=='"' &&  (i = stringLength(cntxt)) ){
         v = strCopy(cntxt,i);
         lt = typeElm(cntxt,TYPE_str);
         i = newConstant(curBlk,lt,v,FALSE);
@@ -1499,13 +1508,17 @@ The parameter of parseArguments is the return value of the enclosing function.
 		else if( (i= idLength(cntxt))){
             if( (idx=findVariableLength(curBlk,CURRENT(cntxt),i)) == -1){
                 v= idCopy(cntxt,i);
-                i= typeElm(cntxt,TYPE_any);
+				if( currChar(cntxt)==':')
+					i= typeElm(cntxt,TYPE_any);
+				else i= TYPE_any;
                 idx = newVariable(curBlk, v, i);
                 setVarInitialized(curBlk,idx);
                 @:propList(idx)@
             } else {
                 advance(cntxt,i);
-                i = typeElm(cntxt,-1);
+				if( currChar(cntxt)==':')
+					i = typeElm(cntxt,-1);
+				else i = -1;
                 if(i>=0 && getVarType(curBlk,idx)!= i){
                     parseError(cntxt,"incompatible type\n");
                     return @1;
