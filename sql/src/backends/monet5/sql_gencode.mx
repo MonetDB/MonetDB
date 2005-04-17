@@ -71,7 +71,7 @@ newStmt(MalBlkPtr mb, char *module, char *name)
 {
 	InstrPtr q = newInstruction(ASSIGNsymbol);
 
-	assert(module!= NULL);
+	if( module==NULL) module="algebra";
 	assert(name!= NULL);
 	setModuleId(q, putName(module,strlen(module)));
 	setFunctionId(q, putName(name,strlen(name)));
@@ -86,7 +86,7 @@ newStmtId(MalBlkPtr mb, char *id, char *module, char *name)
 {
 	InstrPtr q = newInstruction(ASSIGNsymbol);
 
-	assert(module!= NULL);
+	if( module==NULL) module="algebra";
 	assert(name!= NULL);
 	setModuleId(q, putName(module,strlen(module)));
 	setFunctionId(q, putName(name,strlen(name)));
@@ -1274,7 +1274,7 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	(void) id;
 
 	/* later we change this to a factory ? */
-	c->curprg = newFunction(_strdup(fnme), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(fnme,strlen(fnme)), FUNCTIONsymbol);
 	curPrg = c->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);

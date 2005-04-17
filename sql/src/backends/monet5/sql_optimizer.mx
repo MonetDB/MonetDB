@@ -519,7 +519,6 @@ We have to perform the expensive kdiff anyway
 					pushInstruction(mb,q);
 					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
 						strcmp(functionName(q),"kdiff")==0){
-						GDKfree(moduleId(q));
 						setModuleId(q,putName("algebra",7));
 					}
 				}
@@ -560,7 +559,6 @@ Now we don;t have to perform the expensive kdiff
 /* just handle the first */
 					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
 						strcmp(functionName(q),"kdiff")==0){
-						GDKfree(moduleId(q));
 						setModuleId(q,putName("algebra",7));
 					}
 					for(k=0;k<q->argc; k++)
@@ -629,7 +627,6 @@ SQLmarkTOptimizer(Client c){
 			functionId(old[i+1]) && 
 			strcmp(functionId(old[i+1]),"reverse")== 0 ){
 			actions++;
-			GDKfree(functionId(p));
 			setFunctionId(p,  putName("markH",5));
 			p->argv[0]= getArg(old[i+1],0);
 			p->argc--;
@@ -647,8 +644,6 @@ assumption that alias removal will take care of the rest.
 				old[i+1]->argv[2] == p->argv[1] &&
 				mb->var[getArg(p,0)]->endLifespan == i+1){
 					p->token= ASSIGNsymbol;
-					GDKfree(functionId(p));
-					GDKfree(moduleId(p));
 					p->fcn = 0;
 					setModuleId(p,0);
 					setFunctionId(p,0);
