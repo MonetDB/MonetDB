@@ -550,6 +550,7 @@ denotes the signature and can not be removed.
 #include "mal_optimizer.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"
+#include "mal_namespace.h"
 
 int optimizerCheck(MalBlkPtr mb, str name,int actions, long usec){
 	chkFlow(mb);
@@ -581,7 +582,7 @@ str optimizeMALBlock(MalBlkPtr mb)
         qot=0;
         for(pc=0; pc< mb->stop; pc++ ){
             p= getInstrPtr(mb,pc);
-            if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0){
+            if( moduleId(p) && idcmp(moduleId(p),"optimizer")==0){
                 qot++;
                 if( p->fcn)
 					/* all optimizers should behave like patterns */
@@ -1222,9 +1223,8 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
     if( @:fndOperator(p,"bat","reverse")@ ){
         if( @:fndOperator(q,"algebra","semijoin")@ ){
             if( p->argv[0]== q->argv[2]){
-                GDKfree(p->fcnname);
-                freeModuleName(p);
-                setFunctionId(p, GDKstrdup("reverse_semijoin"));
+				setModuleId(p, putName("algebra",7));
+                setFunctionId(p, putName("reverse_semijoin",16));
                 p= pushArgument(mb,p,q->argv[1]);
                 removeInstruction(mb,q);
                 chkFlow(mb);
@@ -1234,9 +1234,8 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
         }
         if( @:fndOperator(q,"algebra","select")@ ){
             if( p->argv[0]== q->argv[1]){
-                GDKfree(p->fcnname);
-                freeModuleName(p);
-                setFunctionId(p, GDKstrdup("reverse_select"));
+				setModuleId(p, putName("algebra",7));
+                setFunctionId(p, putName("reverse_select",14));
                 p= pushArgument(mb,p,q->argv[1]);
                 p= pushArgument(mb,p,q->argv[2]);
                 p= pushArgument(mb,p,q->argv[3]);
@@ -1250,9 +1249,8 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
     if( @:fndOperator(p,"algebra","semijoin")@ ){
         if( @:fndOperator(q,"algebra","select")@ ){
             if( p->argv[0]== q->argv[1]){
-                GDKfree(p->fcnname);
-                freeModuleName(p);
-                setFunctionId(p, GDKstrdup("semijoin_select"));
+				setModuleId(p, putName("algebra",7));
+                setFunctionId(p, putName("semijoin_select",15));
                 p= pushArgument(mb,p,q->argv[2]);
                 p= pushArgument(mb,p,q->argv[3]);
                 removeInstruction(mb,q);
@@ -1552,7 +1550,10 @@ the same operation.
 @c
 	for(i=0;pattern[i].fcnnme; i++)
 	if( pattern[i].fcn == 0){
-		Symbol s= findMALSymbol(pattern[i].modnme, pattern[i].fcnnme);
+		Symbol s;
+		pattern[i].modnme=putName(pattern[i].modnme, strlen(pattern[i].modnme));
+		pattern[i].fcnnme=putName(pattern[i].fcnnme, strlen(pattern[i].fcnnme));
+		s= findMALSymbol( pattern[i].modnme, pattern[i].fcnnme);
 		if( s ) pattern[i].fcn = getSignature(s)->fcn;
 	}
 
@@ -1569,8 +1570,8 @@ the same operation.
 		if( getArg(p,pattern[j].operand) == target[k] && 
 			functionId(p) &&
 			(pattern[j].fcn == p->fcn  ||
-			( strcmp(pattern[j].modnme,moduleName(p))== 0 &&
-			strcmp(pattern[j].fcnnme,functionName(p))== 0 )
+			( pattern[j].modnme == moduleId(p) &&
+			  pattern[j].fcnnme == functionName(p) )
 			)) {
 #ifdef DEBUG_MAL_OPTIMIZER
 			stream_printf(GDKout,"Hit on pattern %d pc %d\n",j,i);
@@ -1581,7 +1582,6 @@ the same operation.
 				break;
 			case ALIAS_1:
 				if( moduleId(p)) freeModuleName(p);
-				if( functionId(p)) freeFunctionName(p);
 				p->token=ASSIGNsymbol;
 				p->argc= 2;
 				p->argv[1]= p->argv[1];
@@ -1648,11 +1648,11 @@ int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
 		}
 		for(j=0;j<p->retc; j++)
 		if( getArg(p,j)== v) {
-			if( moduleName(p) && strcmp(moduleName(p),"batcalc")==0) return 1;
-			if( moduleName(p) && strcmp(moduleName(p),"algebra")==0) return 1;
-			if( moduleName(p) && strcmp(moduleName(p),"aggrX3")==0) return 1;
-			if( moduleName(p) && strcmp(moduleName(p),"group")==0) return 1;
-			if( moduleName(p) && strcmp(moduleName(p),"array")==0) return 1;
+			if( moduleId(p) && strcmp(moduleId(p),"batcalc")==0) return 1;
+			if( moduleId(p) && strcmp(moduleId(p),"algebra")==0) return 1;
+			if( moduleId(p) && strcmp(moduleId(p),"aggrX3")==0) return 1;
+			if( moduleId(p) && strcmp(moduleId(p),"group")==0) return 1;
+			if( moduleId(p) && strcmp(moduleId(p),"array")==0) return 1;
 		}
 	}
 	return 1;
@@ -1726,13 +1726,12 @@ at the end of the optimization attempt.
     for(i=1; i<mb->stop; i++){
         VarPtr v;
         p= getInstrPtr(mb,i);
-		if( moduleName(p)== 0) 
-			continue;
-		if( strcmp(moduleName(p),"calc")== 0) {
+		if( moduleId(p) == NULL) continue;
+		if( strcmp(moduleId(p),"calc")== 0) {
 			ORcoercionOptimizer(mb,i,p);
 			continue;
 		} 
-		if( strcmp(moduleName(p),"batcalc")) continue;
+		if( strcmp(moduleId(p),"batcalc")) continue;
 
 		depth= getVarDepth(mb,getArg(p,0));
 		if( p->argc == 3) {

@@ -55,11 +55,12 @@ mal_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "mal_factorize.h"
 #include "mal_interpreter.h"    /* for showErrors() */
+#include "mal_namespace.h"
 
 @= releaseBAT
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q,"bbp");
-	setFunctionId(q,GDKstrdup("garbage"));
+	setModuleId(q,putName("bbp",3));
+	setFunctionId(q,putName("garbage",7));
 	pushArgument(mb,q,getArg(p,j));
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);

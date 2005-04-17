@@ -53,6 +53,7 @@ to make accurate prediction, otherwise the following heuristics are used.
 #include "mal_macro.h"
 #include "mal_interpreter.h"
 #include "mal_client.h"
+#include "mal_namespace.h"
 
 #define getProps(Y) mb->var[Y]->props
 

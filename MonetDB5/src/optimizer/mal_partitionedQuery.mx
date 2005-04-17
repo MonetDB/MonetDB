@@ -65,6 +65,8 @@ mal_export str BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_partitionedQuery.h"
 #include "mal_optimizer.h"
 #include "mal_interpreter.h"    /* for showErrors() */
+#include "mal_namespace.h"
+
 extern int BPTfindGrp(int bid);
 
 extern str BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid);
@@ -195,8 +197,8 @@ BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid){
 	actions++;
 	/* barrier (idx,bid):= partitions.newIterator(var); */
 	p= newInstruction(ASSIGNsymbol);
-	setModuleId(p,GDKstrdup("partitions"));
-	setFunctionId(p,GDKstrdup("newIterator"));
+	setModuleId(p,putName("partitions",10));
+	setFunctionId(p,putName("newIterator",11));
 	p->barrier= BARRIERsymbol;
 	idx= newTmpVariable(mb,TYPE_int);
 	pushReturn(mb,p,idx);
@@ -217,8 +219,8 @@ accumulated version.
 	/* finalize the loop */
 	/* redo (idx,bid):= partitions.hasMoreElements(var); */
 	p= newInstruction(REDOsymbol);
-	setModuleId(p,GDKstrdup("partitions"));
-	setFunctionId(p,GDKstrdup("hasMoreElements"));
+	setModuleId(p,putName("partitions",10));
+	setFunctionId(p,putName("hasMoreElements",15));
 	pushReturn(mb,p,idx);
 	pushReturn(mb,p,bid);
 	pushArgument(mb,p,varid);

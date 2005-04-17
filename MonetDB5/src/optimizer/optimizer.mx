@@ -176,6 +176,7 @@ optimizer.prelude();
 #include "mal_partitionedQuery.h"
 #include "mal_strengthReduction.h"
 #include "mal_scenario.h"
+#include "mal_namespace.h"
 
 @
 Upon loading the module it should inspect the scenario table
@@ -221,9 +222,9 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		modnme= getArgDefault(mb,p,1);
 		fcnnme= getArgDefault(mb,p,2);
 	}
-	scope = findModule(c->nspace,modnme);
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
 	if( scope)
-		s= findSymbolInModule(scope,fcnnme);
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
 
 	if( s == NULL){
 		GDKerror(@2" optimizer:Could not find %s.%s\n",modnme,fcnnme);
@@ -292,9 +293,9 @@ str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		fname= getArgDefault(mb,p,3);
 	}
 
-	scope = findModule(c->nspace,modnme);
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)));
 	if( scope)
-		s= findSymbolInModule(scope,fcnnme);
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
 
 	if( s == NULL)
 		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);

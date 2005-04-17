@@ -61,9 +61,9 @@ str CMrecalculate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     str     fcnnme= getArgValue(stk,pci,2);
     Module  scope=NULL;
     Symbol s= NULL;
-    scope = findModule(getClient()->nspace,modnme);
+    scope = findModule(getClient()->nspace,putName(modnme,strlen(modnme)) );
     if( scope)
-        s= findSymbolInModule(scope,fcnnme);
+        s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
 
     if( s == NULL)
         return throwMessage("costmodel.recalculate","operation not found");
