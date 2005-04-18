@@ -43,7 +43,7 @@ class BuiltinOptions:
     monet_prompt = '>'
     monet_welcome = 'yes'
     monet_mod_path = os.path.join('@QXlibdir@','@PACKAGE@') + \
-                     os.path.pathsep + \
+                     os.pathsep + \
                      os.path.join('@QXlibdir@','bin')
     monet_daemon = 'yes'
 
