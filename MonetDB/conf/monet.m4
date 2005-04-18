@@ -410,6 +410,12 @@ yes-*-*)
 	CFLAGS="$CFLAGS -c9x"
 	CXXFLAGS="$CXXFLAGS -c9x"
 	;;
+-*-irix*)
+	dnl  MIPS compiler on IRIX64
+	dnl  treat wranings as errors
+	X_CFLAGS="$X_CFLAGS -w2"
+	X_CXXFLAGS="$X_CXXFLAGS -w2"
+	;;
 esac
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
