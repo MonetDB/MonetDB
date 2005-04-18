@@ -332,7 +332,7 @@ asctime_r3=yes
 AC_MSG_CHECKING(asctime_r3)
 AC_TRY_LINK([$ac_includes_default
 #include <time.h>], 
-[char buf[26]; struct tm tm; asctime_r(&t,buf,26);],
+[char buf[26]; struct tm t; asctime_r(&t,buf,26);],
 [AC_DEFINE(HAVE_ASCTIME_R3, 1, [Define if you have asctime_r(struct tm*,char *buf,size_t s)])], [asctime_r3=no])
 AC_MSG_RESULT($asctime_r3)
 
