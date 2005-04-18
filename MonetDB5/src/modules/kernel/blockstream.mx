@@ -1,0 +1,385 @@
+# vim:ts=4:sw=4:tw=72:ft=c
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f blockstream
+@a Fabian Groffen
+@v 0.2
+@+ MCL blockstream facility
+Java geared stream package that provides a block wise read and write
+behaviour.
+
+@h
+#ifndef BLOCKSTREAM_H
+#define BLOCKSTREAM_H
+
+typedef struct _blockinputstream {
+	int fd;				/* file descriptor */
+	unsigned char* buf;	/* internal read buffer */
+	int size;			/* size of the buffer */
+	int pos;			/* current buffer position */
+	int len;			/* the current amount of bytes that is in the buffer */
+	int blocklen;		/* the size of the block (can exceed buffer size) */
+	int blockpos;		/* the current position in the whole block */
+} BlockInputStream;
+
+/** Creates a new BlockInputStream. */
+extern char*
+BISnew(BlockInputStream* ret, int fd, int bufsize);
+/** Returns the number of bytes that can be read from this input stream
+ * without blocking. */
+extern char*
+BISavailable(BlockInputStream* o, int* ret);
+/** Closes this input stream and releases any system resources
+ * associated with the stream. */
+extern char*
+BISclose(BlockInputStream* o);
+/** Reads bytes from this byte-input stream into the specified byte
+ * array, starting at the given offset. */
+extern char*
+BISread(BlockInputStream* o, int* ret, unsigned char* b, int offset, int len);
+/** Deletes a BlockInputStream. */
+extern char*
+BISdelete(BlockInputStream* o);
+
+typedef struct _blockoutputstream {
+	int fd;
+	unsigned char* buf;	/* internal write buffer */
+	int size;			/* size of the buffer */
+	int pos;			/* current buffer position */
+	int len;			/* the current amount of bytes that is in the buffer */
+} BlockOutputStream;
+
+/** Creates a new BlockOutputStream. */
+extern char*
+BOSnew(BlockOutputStream* ret, int fd, int bufsize);
+/** Flushes this block output stream. */
+extern char*
+BOSflush(BlockOutputStream* o);
+/** Writes len bytes from the specified byte array starting at offset
+ * off to this block output stream. */
+extern char*
+BOSwrite(BlockOutputStream* o, unsigned char* b, int offset, int len);
+/** Closes this output stream and releases any system resources
+ * associated with the stream. */
+extern char*
+BOSclose(BlockOutputStream* o);
+/** Deletes a BlockOutputStream. */
+extern char*
+BOSdelete(BlockOutputStream* o);
+
+#endif
+
+@c
+#include "blockstream.h"
+#include "mal_exception.h"
+
+char* BISreadBytes(int fd, unsigned char* b, int len);
+char* BOSflushBuffer(BlockOutputStream* this);
+char* BOSwriteBytes(int fd, unsigned char* b, int len);
+
+
+/**
+ * Creates a new BlockInputStream.  The input stream will use the given
+ * file descriptor to read from, and a buffer with the given bufsize.
+ * If the bufsize is zero or less than zero, the default BUFSIZ is used.
+ */
+extern char*
+BISnew(BlockInputStream* ret, int fd, int bufsize) {
+	BlockInputStream* this;
+	
+	if (ret == NULL)
+		throwIllArg("blockstream.new", "Cannot return into a NULL value");
+	if (fd < 0)
+		throwIllArg("blockstream.new", "File descriptor may not be negative");
+	
+	this = malloc(sizeof(BlockInputStream));
+	memset(this, 0, sizeof(BlockInputStream));
+	this->size = bufsize <= 0 ? BUFSIZ : bufsize;
+	this->buf = malloc(sizeof(char) * this->size);
+
+	*ret = *this;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns the number of bytes that can be read from this input stream
+ * without blocking.
+ *
+ * The available method of BlockInputStream returns the the number of
+ * bytes remaining to be read in the block (blocklen - blockpos), not
+ * the buffer.
+ */
+extern char*
+BISavailable(BlockInputStream* this, int* ret) {
+	*ret = this->blocklen - this->blockpos;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Closes this input stream and releases any system resources associated
+ * with the stream.
+ */
+extern char*
+BISclose(BlockInputStream* this) {
+	close(this->fd);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Reads bytes from this byte-input stream into the specified byte
+ * array, starting at the given offset.  This function will read by
+ * means of blocks as received by reading the leading integer.  Upon a
+ * zero-block, this function will return 0 to indicate this explicit
+ * flush.  Where possible, this function avoids copying data to its
+ * internal buffer first, by copying directly from the stream into the
+ * given block.  This function will block when there is no data
+ * available on the stream.
+ */
+extern char*
+BISread(BlockInputStream* this, int* ret, unsigned char* b, int offset, int len) {
+	/* if the blockpos is equal to the blocklen, we should read a new
+	 * block length from the stream */
+	if (this->blockpos == this->blocklen) {
+		char* tmp;
+		int blklen;
+		/* read 4 bytes into an integer */
+		rethrow("blockstream.read", tmp, BISreadBytes(this->fd, (char*)&blklen, 4));
+		this->blocklen = ntohl(blklen);
+		this->blockpos = 0;
+	}
+	
+	/* one cannot read more than there is available */
+	if (len > this->blocklen - this->blockpos)
+		len = this->blocklen - this->blockpos;
+	
+	/* If the requested number of bytes is directly available, just copy
+	 * them over in the buffer, and return them.  Otherwise, copy over
+	 * from the buffer whatever is available and start reading a new
+	 * block from the server.  If the amount of data to be read is
+	 * larger than the size of our buffer, and there is so much data
+	 * available in the block, the data is read directly from the stream
+	 * into the given block. */
+	if (len <= this->len - this->pos) {
+		strncpy(b + offset, this->buf + this->pos, len);
+		this->pos += len;
+		this->blockpos += len;
+	} else {
+		char* tmp;
+		/* put everything we have in our buffer in the given block */
+		int sublen = this->len - this->pos;
+		if (sublen > 0) {
+			strncpy(b + offset, this->buf + this->pos, sublen);
+			offset += sublen;
+			this->pos += sublen;
+			this->blockpos += sublen;
+		}
+		
+		if (len - offset >= this->size) {
+			/* The requested part is bigger or equal than we can hold in
+			 * our buffer, so copy it directly.  Since we're not bigger
+			 * than the blocksize, we can read directly off the stream
+			 * unconditionally. */
+			rethrow("blockstream.read", tmp, BISreadBytes(this->fd, b + offset, len - sublen));
+		} else {
+			/* The requested part is smaller than our buffer size, so
+			 * first fill our whole buffer, than copy the data out of
+			 * it. */
+			this->len = this->blocklen - this->blockpos;
+			this->len = this->len > this->size ? this->size : this->len;
+			rethrow("blockstream.read", tmp, BISreadBytes(this->fd, this->buf, this->len));
+			strncpy(b + offset, this->buf, len - sublen);
+		}
+	}
+
+	*ret = len;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Deletes a BlockInputStream and releases all its associated resources.
+ * Before the struct is freed, the close function is called first.
+ */
+extern char*
+BISdelete(BlockInputStream* this) {
+	char* tmp;
+	
+	/* attempt to close the socket, ignore any exception */
+	if ((tmp = BISclose(this)) != MAL_SUCCEED) GDKfree(tmp);
+	
+	free(this->buf);
+	free(this);
+	
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Attempts to read len bytes from the file descriptor fd.  If the end
+ * of stream is reached, an exception is thrown.
+ */
+char* BISreadBytes(int fd, unsigned char* b, int len) {
+	int rdlen;
+	
+	if ((rdlen = recv(fd, b, len, 0)) != len)
+		throwIOf("blockstream.readBytes", "Insufficient number of bytes available", rdlen);
+
+	return(MAL_SUCCEED);
+}
+
+
+/**
+ * Creates a new BlockOutputStream.  The output stream will use the given
+ * file descriptor to write to, and a buffer with the given bufsize.
+ * If the bufsize is zero or less than zero, the default BUFSIZ is used.
+ */
+extern char*
+BOSnew(BlockOutputStream* ret, int fd, int bufsize) {
+	BlockOutputStream* this;
+	
+	if (ret == NULL)
+		throwIllArg("blockstream.new", "Cannot return into a NULL value");
+	if (fd < 0)
+		throwIllArg("blockstream.new", "File descriptor may not be negative");
+	
+	this = malloc(sizeof(BlockOutputStream));
+	memset(this, 0, sizeof(BlockOutputStream));
+	this->size = bufsize <= 0 ? BUFSIZ : bufsize;
+	this->buf = malloc(sizeof(char) * this->size);
+
+	*ret = *this;
+	return(MAL_SUCCEED);
+}
+
+const char BS_ZERO[4]	= {'0', '0', '0', '0'};
+/**
+ * Flushes this buffered output stream. This forces any buffered output
+ * bytes to be written out to the underlying output stream.  The flush
+ * also writes a zero-block to indicate to the reader that an explicit
+ * flush occurred.
+ */
+extern char*
+BOSflush(BlockOutputStream* this) {
+	char* tmp;
+
+	rethrow("blockstream.flush", tmp, BOSflushBuffer(this));
+	if (write(this->fd, BS_ZERO, 4) < 4)
+		throwIO("blockstream.flush", "Error while writing to the stream");
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes len bytes from the specified byte array starting at offset off
+ * to this buffered output stream.
+ *
+ * Ordinarily this method stores bytes from the given array into this
+ * stream's buffer, flushing the buffer to the underlying output stream
+ * as needed.  If the requested length is at least as large as this
+ * stream's buffer, however, then this method will flush the buffer and
+ * write the bytes directly to the underlying output stream.  Thus
+ * redundant BlockOutputStreams will not copy data unnecessarily. 
+ */
+extern char*
+BOSwrite(BlockOutputStream* this, unsigned char* b, int offset, int len) {
+	char* tmp;
+
+	/* If the length of the given block is larger than our buffer, then
+	 * we send it directly over the stream after flushing whatever is in
+	 * our buffer now.  Otherwise we might need one flush, but we will
+	 * always at best copy the given block into our buffer. */
+	if (len > this->size) {
+		rethrow("blockstream.write", tmp, BOSflushBuffer(this));
+		rethrow("blockstream.write", tmp, BOSwriteBytes(this->fd, b + offset, len));
+	} else {
+		/* Since the buffer is only flushed if a byte has to be stored
+		 * that does not fit in the buffer anymore, we copy data into
+		 * the buffer as long as it fits. */
+		if (len <= this->len - this->pos) {
+			strncpy(this->buf + this->pos, b + offset, len);
+			this->pos += len;
+		} else {
+			int sublen = this->size - this->pos;
+			strncpy(this->buf + this->pos, b + offset, sublen);
+			offset += sublen;
+			len -= sublen;
+			this->pos += sublen;
+			rethrow("blockstream.write", tmp, BOSflushBuffer(this));
+			/* Since the block can't be bigger than the buffer at this
+			 * point, we can safely assume that copying it into the
+			 * (empty) buffer always succeeds. */
+			strncpy(this->buf + this->pos, b + offset, len);
+		}
+	}
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Closes this output stream and releases any system resources associated
+ * with the stream.
+ */
+extern char*
+BOSclose(BlockOutputStream* this) {
+	close(this->fd);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Deletes a BlockOutputStream and releases all its associated
+ * resources.  Before the struct is freed, the close function is called
+ * first.
+ */
+extern char*
+BOSdelete(BlockOutputStream* this) {
+	char* tmp;
+	
+	/* attempt to close the socket, ignore any exception */
+	if ((tmp = BOSclose(this)) != MAL_SUCCEED) GDKfree(tmp);
+	
+	free(this->buf);
+	free(this);
+	
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Flushes the contents of the buffer to the stream and resets the pos
+ * counter.
+ */
+char* BOSflushBuffer(BlockOutputStream* this) {
+	char* tmp;
+
+	rethrow("blockstream.flushBuffer", tmp, BOSwriteBytes(this->fd, this->buf, this->pos));
+	this->pos = 0;
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes len bytes from buffer b to the file descriptor fd, using block
+ * semantics.  The block of data written will be prefixed by an integer
+ * indicating the length of the block.
+ */
+char* BOSwriteBytes(int fd, unsigned char* b, int len) {
+	int nlen = htonl(len);
+	
+	if (write(fd, &nlen, 4) < 4 || write(fd, b, len) < len)
+		throwIO("blockstream.writeBytes", "Error while writing to the stream");
+
+	return(MAL_SUCCEED);
+}
+

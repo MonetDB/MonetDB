@@ -12,7 +12,7 @@ LIBS = {
 	SOURCES = \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx  batstr.mx \
-		batcalc.mx group.mx aggrX3.mx  array.mx
+		batcalc.mx group.mx aggrX3.mx array.mx blockstream.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -32,8 +32,8 @@ LIBS = {
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
-		mapi.mx mmath.mx lock.mx alarm.mx  batstr.mx \
-		batcalc.mx group.mx aggrX3.mx  array.mx
+		mapi.mx mmath.mx lock.mx alarm.mx batstr.mx \
+		batcalc.mx group.mx aggrX3.mx array.mx
 }
 
 
