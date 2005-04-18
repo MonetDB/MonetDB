@@ -614,13 +614,14 @@ sub execute {
         push @names     , MapiLib::mapi_get_name($hdl, $_);
         push @types     , MapiLib::mapi_get_type($hdl, $_);
         push @precisions, MapiLib::mapi_get_len ($hdl, $_);
-        push @nullables , 0;  # TODO
+        push @nullables , 2;  # TODO
     }
     $sth->STORE('NUM_OF_FIELDS', $field_count) unless $sth->FETCH('NUM_OF_FIELDS');
     $sth->{NAME}      = \@names;
-#   $sth->{TYPE}      = \@types;       # TODO: monetdb2dbi
-#   $sth->{PRECISION} = \@precisions;  # TODO
-#   $sth->{NULLABLE}  = \@nullables;   # TODO
+    $sth->{TYPE}      = [ map { $DBD::monetdb::TypeInfo::typeinfo{$_}->[1] } @types ];
+    $sth->{PRECISION} = \@precisions;  # TODO
+    $sth->{SCALE}     = [];
+    $sth->{NULLABLE}  = \@nullables;
     $sth->STORE('Active', 1 );
 
     $sth->{monetdb_rows} = 0;
@@ -861,12 +862,11 @@ The following attributes are currently not supported:
 
 =head2 Statement Handle Attributes
 
-The following attributes are currently not supported:
+The following attributes are currently not (or not correctly) supported:
 
-  TYPE
-  PRECISION
-  SCALE
-  NULLABLE
+  PRECISION  (MonetDB semantic != DBI semantic)
+  SCALE      (empty)
+  NULLABLE   (SQL_NULLABLE_UNKNOWN = 2)
   CursorName
   RowsInCache
 
