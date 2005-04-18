@@ -516,6 +516,8 @@ AC_TRY_COMPILE([], [
 return 0;
 #else
 #error "NOT C99 compliant"
+/* With some compilers, "#error" only triggers a warning; hence: */
+!Error "NOT C99 compliant"
 #endif
 ], 
 [AC_DEFINE([HAVE_C99], 1, [Is your compiler C99 compliant?])
