@@ -865,12 +865,12 @@ void printBatInfo(stream *f, VarPtr n, ValPtr v){
 The memory positions for the BATs is useful information to
 asses for memory fragmentation.
 @= heapinfo
-hp= &b->@1;
-if(hp->base){
+hp= b->@1;
+if(hp && hp->base){
     stream_printf(GDKout,"\t@1=%d size=%d\n",hp->base, hp->size);}
 @= hashinfo
-h= &b->@1;
-if(h->mask){
+h= b->@1;
+if(h && h->mask){
         stream_printf(GDKout,"\t@1=%d size=%d\n",h, sizeof(*h));
         stream_printf(GDKout,"\t@1link=%d size=%d\n",h->link,
                 (h->mask+h->lim+1)*sizeof(int));

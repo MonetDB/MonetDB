@@ -332,7 +332,7 @@ end main;	# 136
 # h			tmp_14		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "20744"	  ]
+[ "version",		  "20749"	  ]
 [ "batId",		  "tmp_13"	  ]
 [ "batCacheid",		  "13"		  ]
 [ "batParentid",	  "0"		  ]
@@ -378,17 +378,7 @@ end main;	# 136
 [ "batBuns.storage",	  "malloced"	  ]
 [ "batBuns.filename",	  "13.buns"	  ]
 [ "hheapdirty",		  "clean"	  ]
-[ "hheap.free",		  "0"		  ]
-[ "hheap.size",		  "0"		  ]
-[ "hheap.maxsize",	  "0"		  ]
-[ "hheap.storage",	  "absent"	  ]
-[ "hheap.filename",	  "no file"	  ]
 [ "theapdirty",		  "clean"	  ]
-[ "theap.free",		  "0"		  ]
-[ "theap.size",		  "0"		  ]
-[ "theap.maxsize",	  "0"		  ]
-[ "theap.storage",	  "absent"	  ]
-[ "theap.filename",	  "no file"	  ]
 #~EndVariableOutput~#
 #b.insert(1,15);
 #b.insert(2,4);

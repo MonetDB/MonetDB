@@ -840,7 +840,7 @@ int CMDhead(str *res, int *bid) {
 		str ret = str_nil;
 		BAT *b = lock_desc((bat) *bid);
 		if (b) {
-			ret = *bid > 0 ? b->hatom : b->tatom;
+			ret = *bid > 0 ? ATOMname(b->htype) : ATOMname(b->ttype);
 		}
 		*res = GDKstrdup(ret);
 		unlock_desc(*bid);
@@ -855,7 +855,7 @@ int CMDtail(str *res, int *bid) {
 		str ret = str_nil;
 		BAT *b = lock_desc((bat) *bid);
 		if (b) {
-			ret = *bid > 0 ? b->tatom : b->hatom;
+			ret = *bid > 0 ? ATOMname(b->ttype) : ATOMname(b->htype);
 		}
 		*res = GDKstrdup(ret);
 		unlock_desc(*bid);
@@ -964,6 +964,9 @@ void HASHinfo(BAT *bn, Hash *h, str s){
 	size_t	largetot = 0;
 	char	buf[32];
  
+	if (!h)
+		return;
+
 	BUNins(bn, pre(s,"type"), ATOMname(h->type));
 	BUNins(bn, pre(s,"mask"), local_utoa(h->mask));
 	BUNins(bn, pre(s,"lim"), local_utoa(h->lim));
@@ -994,6 +997,9 @@ void HASHinfo(BAT *bn, Hash *h, str s){
 
 static void infoHeap(BAT *bn, Heap *hp, str nme){
 	char buf[1024], *p = buf;
+
+	if (!hp) 
+		return;
 
 	while(*nme) *p++ = *nme++;
 	strcpy(p, "free");
@@ -1091,17 +1097,17 @@ int CMDinfo(BAT **retval, BAT *b){
 	infoHeap(bn, b->batBuns, "batBuns.");
 
         BUNins(bn, "hheapdirty", b->hheapdirty?"dirty":"clean");
-	infoHeap(bn, &b->hheap, "hheap.");
+	infoHeap(bn, b->hheap, "hheap->");
 
         BUNins(bn, "theapdirty", b->theapdirty?"dirty":"clean");
-	infoHeap(bn, &b->theap, "theap.");
+	infoHeap(bn, b->theap, "theap->");
 
         /* dump index information */
-        if (b->hhash_heap) {
-                HASHinfo(bn, &b->hhash, "hhash->");
+        if (b->hhash) {
+                HASHinfo(bn, b->hhash, "hhash->");
         }
-        if (b->thash_heap) {
-                HASHinfo(bn, &b->thash, "thash->");
+        if (b->thash) {
+                HASHinfo(bn, b->thash, "thash->");
         }
  
 	return GDK_SUCCEED;
@@ -1116,10 +1122,10 @@ int CMDbatsize(int *tot, BAT *b){
 	if (!VIEWparent(b)) {
 		size_t cnt = BATcapacity(b);
 		size += ROUND_UP(b->batBuns->size, blksize);
-		if (b->hheap.base) size += ROUND_UP(b->hheap.size, blksize);
-		if (b->theap.base) size += ROUND_UP(b->theap.size, blksize);
-		if (b->hhash_heap) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
-		if (b->thash_heap) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
+		if (b->hheap) size += ROUND_UP(b->hheap->size, blksize);
+		if (b->theap) size += ROUND_UP(b->theap->size, blksize);
+		if (b->hhash) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
+		if (b->thash) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
 	}
 	*tot = size;
 	return GDK_SUCCEED;
@@ -1225,16 +1231,19 @@ int CMDsave(bit *res, str input) {
 
 
 @= change_heap
-{	int mode = (@2).storage;
-	if (mode == STORE_MMAP && (@2).filename == NULL) 
-		mode = STORE_MEM;  
-	if ((@2).base == NULL || *@1 == int_nil || *@1 == mode) {
-		*@1 = -1;
+{	if (@2) {
+		int mode = (@2)->storage;
+
+		if (mode == STORE_MMAP && (@2)->filename == NULL) 
+			mode = STORE_MEM;  
+		if ((@2)->base == NULL || *@1 == int_nil || *@1 == mode) {
+			*@1 = -1;
+		}
 	}
 }
 @c
 int CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp){
-	@:change_heap(bns,(*b->batBuns))@
+	@:change_heap(bns,b->batBuns)@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
 	if (BATmmap(*r=b, *bns, *hhp, *thp) == 0) {

@@ -146,7 +146,7 @@ end main;	# 53
 # h			tmp_14		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "20744"	  ]
+[ "version",		  "20749"	  ]
 [ "batId",			  "tmp_13"	  ]
 [ "batCacheid",			  "13"		  ]
 [ "batParentid",		  "0"		  ]
@@ -192,17 +192,12 @@ end main;	# 53
 [ "batBuns.storage",		  "malloced"	  ]
 [ "batBuns.filename",		  "13.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
-[ "hheap.free",			  "4180"	  ]
-[ "hheap.size",		  "4700"	  ]
-[ "hheap.maxsize",	  "4700"	  ]
-[ "hheap.storage",		  "malloced"	  ]
-[ "hheap.filename",		  "13.hheap"	  ]
+[ "hheap->free",	  "4180"	  ]
+[ "hheap->size",	  "4700"	  ]
+[ "hheap->maxsize",	  "4700"	  ]
+[ "hheap->storage",	  "malloced"	  ]
+[ "hheap->filename",	  "13.hheap"	  ]
 [ "theapdirty",			  "clean"	  ]
-[ "theap.free",			  "0"		  ]
-[ "theap.size",			  "0"		  ]
-[ "theap.maxsize",		  "0"		  ]
-[ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "no file"	  ]
 #~EndVariableOutput~#
 #print(find(s,"cello"));
 [ 3 ]

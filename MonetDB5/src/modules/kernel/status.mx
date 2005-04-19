@@ -296,11 +296,13 @@ str SYSmemStatistics(int *ret) {
 	return MAL_SUCCEED;
 }
 @= heap
-sz = HEAP@1size(@2);
-if (sz > *minsize) {
-	sprintf(buf, "@3/%s", s); 
-	BUNins(bn, buf, &sz);
-} @3 += sz; tot += sz;
+if (@2) {
+	sz = HEAP@1size(@3);
+	if (sz > *minsize) {
+		sprintf(buf, "@4/%s", s); 
+		BUNins(bn, buf, &sz);
+	} @4 += sz; tot += sz;
+}
 @c
 
 str SYSmem_usage(int *ret, lng *minsize) {
@@ -333,11 +335,11 @@ str SYSmem_usage(int *ret, lng *minsize) {
 		if (b == NULL || VIEWparent(b)) {
 			continue;
 		}
-		@:heap(mem,b->batBuns,buns)@
-		@:heap(mem,b->hhash_heap,hhsh)@
-		@:heap(mem,b->thash_heap,thsh)@
-		@:heap(mem,&b->hheap,head)@
-		@:heap(mem,&b->theap,tail)@
+		@:heap(mem,b->batBuns,b->batBuns,buns)@
+		@:heap(mem,b->hhash,b->hhash->heap,hhsh)@
+		@:heap(mem,b->thash,b->thash->heap,thsh)@
+		@:heap(mem,b->hheap,b->hheap,head)@
+		@:heap(mem,b->theap,b->theap,tail)@
 	} 
 	/* totals per category */
 	if (buns) BUNins(bn, "_tot/buns", &buns);
@@ -396,11 +398,11 @@ str SYSvm_usage(int *ret, lng *minsize) {
 		if (s == NULL || b == NULL || VIEWparent(b)) {
 			continue;
 		}
-		@:heap(vm,b->batBuns,buns)@
-		@:heap(vm,b->hhash_heap,hhsh)@
-		@:heap(vm,b->thash_heap,thsh)@
-		@:heap(vm,&b->hheap,head)@
-		@:heap(vm,&b->theap,tail)@
+		@:heap(vm,b->batBuns,b->batBuns,buns)@
+		@:heap(vm,b->hhash,b->hhash->heap,hhsh)@
+		@:heap(vm,b->thash,b->thash->heap,thsh)@
+		@:heap(vm,b->hheap,b->hheap,head)@
+		@:heap(vm,b->theap,b->theap,tail)@
 	} 
 	/* totals per category */
 	if (buns) BUNins(bn, "_tot/buns", &buns);

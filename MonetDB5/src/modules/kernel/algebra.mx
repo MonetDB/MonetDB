@@ -1165,8 +1165,8 @@ doCMDfetch(ptr ret, BAT *b, size_t i)
 	i += BUNindex(b, BUNfirst(b));
 	@:putTail(BUNptr(b,i))@
 @= putTail
-	if (b->theap.base) {
-		ptr _src = BUNtvar(b,@1);/*b->theap.base + *(var_t*) BUNtloc(b,@1);*/
+	if (b->theap) {
+		ptr _src = BUNtvar(b,@1);/*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
 		memcpy(_dst, _src, _len);
@@ -2198,8 +2198,8 @@ str doALGfetch(ptr ret, BAT *b, lng *pos){
         i += BUNindex(b, BUNfirst(b));
         @:putTail(BUNptr(b,i))@
 @= putTail
-        if (b->theap.base) {
-            ptr _src = BUNtvar(b,@1); /*b->theap.base + *(var_t*) BUNtloc(b,@1);*/
+        if (b->theap) {
+            ptr _src = BUNtvar(b,@1); /*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
             int _len = ATOMlen(b->ttype, _src);
             ptr _dst = GDKmalloc(_len);
             memcpy(_dst, _src, _len);
@@ -2351,10 +2351,10 @@ str ALGhashjoin(int *result, int *lid, int *rid) {
 		return throwMessage("algebra.hashjoin", "Cannot access descriptor");
 	}
 
-	lsize = left->batBuns->size + (left->hheap.base?left->hheap.size:0) +
-                                 (left->theap.base?left->theap.size:0);
-	rsize = right->batBuns->size + (right->hheap.base?right->hheap.size:0) +
-                                 (right->theap.base?right->theap.size:0);
+	lsize = left->batBuns->size + (left->hheap?left->hheap->size:0) +
+                                 (left->theap?left->theap->size:0);
+	rsize = right->batBuns->size + (right->hheap?right->hheap->size:0) +
+                                 (right->theap?right->theap->size:0);
 
 	if (rsize < lsize)
 		bn= BATmirror(BAThashjoin(BATmirror(right), BATmirror(left),lng_nil));

@@ -368,6 +368,9 @@ information relevant for off-line analysis.
 void infoHeapProfile(Heap *hp, str nme){
         char buf[PATHLENGTH], *p = buf;
 
+	if (!hp)
+		return;
+
         while(*nme) *p++ = *nme++;
         strcpy(p, "free"); log0(buf); log("=\"%d\" ", hp->free ); 
         strcpy(p, "size"); log0(buf); log("=\"%d\" ", hp->size ); 
@@ -388,6 +391,8 @@ void infoHeapProfile(Heap *hp, str nme){
 void HASHinfoProfile(Hash *h, str s){
     char buf[MAXPATHLEN];
     int i;
+    if (!h)
+	return;
     snprintf(buf,MAXPATHLEN,"%s=\"\" mask=\"", s);
     i= strlen(buf);
     snprintf(buf+i,MAXPATHLEN-i, SZFMT "\" lim=\"", h->mask);
@@ -563,13 +568,13 @@ inspect the properties of BATs and their propagation.
         infoHeapProfile(b->batBuns, "batBuns");
 
         if(b->hheapdirty)log( "hheapdirty=\"%s\" ", b->hheapdirty?"dirty":"clean");
-        infoHeapProfile(&b->hheap, "hheap");
+        infoHeapProfile(b->hheap, "hheap");
 
         if(b->theapdirty)log( "theapdirty=\"%s\" ", b->theapdirty?"dirty":"clean");
-        infoHeapProfile(&b->theap, "theap");
+        infoHeapProfile(b->theap, "theap");
 
-        if (b->hhash_heap) { HASHinfoProfile(&b->hhash, "hhash"); }
-        if (b->thash_heap) { HASHinfoProfile(&b->thash, "thash"); }
+        if (b->hhash) { HASHinfoProfile(b->hhash, "hhash"); }
+        if (b->thash) { HASHinfoProfile(b->thash, "thash"); }
         BBPunfix(b->batCacheid);
         }
         }
