@@ -369,7 +369,7 @@ select cast( null            as varchar( 128 ) ) as table_cat
      , s."name"                                  as table_schem
      , t."name"                                  as table_name
      , c."name"                                  as column_name
-     , cast( 0               as smallint       ) as data_type          -- TODO
+     , cast( 0               as smallint       ) as data_type          -- ...
      , c."type"                                  as type_name          -- TODO
      , cast( c."type_digits" as integer        ) as column_size        -- TODO
      , cast( null            as integer        ) as buffer_length      -- TODO
@@ -381,8 +381,8 @@ select cast( null            as varchar( 128 ) ) as table_cat
        end                                       as nullable
      , cast( null            as varchar( 254 ) ) as remarks
      , c."default"                               as column_def
-     , cast( 0               as smallint       ) as sql_data_type      -- TODO
-     , cast( null            as smallint       ) as sql_datetime_sub   -- TODO
+     , cast( 0               as smallint       ) as sql_data_type      -- ...
+     , cast( null            as smallint       ) as sql_datetime_sub   -- ...
      , cast( null            as integer        ) as char_octet_length  -- TODO
      , cast( c."number" + 1  as integer        ) as ordinal_position
      , case c."null"
@@ -403,7 +403,17 @@ SQL
     my $sth = $dbh->prepare($sql) or return;
     $sth->execute(@bv) or return;
     $dbh->set_err(0,"Catalog parameter '$catalog' ignored") if defined $catalog;
-    return $sth;
+    my $rows;
+    while ( my $row = $sth->fetch ) {
+        $row->[ 4] = $DBD::monetdb::TypeInfo::typeinfo{$row->[5]}->[ 1];
+        $row->[13] = $DBD::monetdb::TypeInfo::typeinfo{$row->[5]}->[15];
+        $row->[14] = $DBD::monetdb::TypeInfo::typeinfo{$row->[5]}->[16];
+        push @$rows, [ @$row ];
+    }
+    return DBI->connect('dbi:Sponge:','','', { RaiseError => 1 } )->prepare(
+        $sth->{Statement},
+        { rows => $rows, NAME => $sth->{NAME}, TYPE => $sth->{TYPE} }
+    );
 }
 
 
@@ -831,7 +841,7 @@ The port where MonetDB daemon listens to. Default for SQL is 45123.
 =head2 MetaData Methods
 
 All MetaData methods are supported. However, column_info() currently doesn't
-provide much datatype related information.
+provide length (size, ...) related information.
 The foreign_key_info() method returns a SQL/CLI like result set,
 because it provides additional information about unique keys.
 
