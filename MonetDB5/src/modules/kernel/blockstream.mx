@@ -158,7 +158,7 @@ BISread(BlockInputStream* this, int* ret, unsigned char* b, int offset, int len)
 		char* tmp;
 		int blklen;
 		/* read 4 bytes into an integer */
-		rethrow("blockstream.read", tmp, BISreadBytes(this->fd, (char*)&blklen, 4));
+		rethrow("blockstream.read", tmp, BISreadBytes(this->fd, (unsigned char*)&blklen, 4));
 		this->blocklen = ntohl(blklen);
 		this->blockpos = 0;
 	}
@@ -175,7 +175,7 @@ BISread(BlockInputStream* this, int* ret, unsigned char* b, int offset, int len)
 	 * available in the block, the data is read directly from the stream
 	 * into the given block. */
 	if (len <= this->len - this->pos) {
-		strncpy(b + offset, this->buf + this->pos, len);
+		memcpy(b + offset, this->buf + this->pos, len);
 		this->pos += len;
 		this->blockpos += len;
 	} else {
@@ -183,7 +183,7 @@ BISread(BlockInputStream* this, int* ret, unsigned char* b, int offset, int len)
 		/* put everything we have in our buffer in the given block */
 		int sublen = this->len - this->pos;
 		if (sublen > 0) {
-			strncpy(b + offset, this->buf + this->pos, sublen);
+			memcpy(b + offset, this->buf + this->pos, sublen);
 			offset += sublen;
 			this->pos += sublen;
 			this->blockpos += sublen;
@@ -202,7 +202,7 @@ BISread(BlockInputStream* this, int* ret, unsigned char* b, int offset, int len)
 			this->len = this->blocklen - this->blockpos;
 			this->len = this->len > this->size ? this->size : this->len;
 			rethrow("blockstream.read", tmp, BISreadBytes(this->fd, this->buf, this->len));
-			strncpy(b + offset, this->buf, len - sublen);
+			memcpy(b + offset, this->buf, len - sublen);
 		}
 	}
 
@@ -309,11 +309,11 @@ BOSwrite(BlockOutputStream* this, unsigned char* b, int offset, int len) {
 		 * that does not fit in the buffer anymore, we copy data into
 		 * the buffer as long as it fits. */
 		if (len <= this->len - this->pos) {
-			strncpy(this->buf + this->pos, b + offset, len);
+			memcpy(this->buf + this->pos, b + offset, len);
 			this->pos += len;
 		} else {
 			int sublen = this->size - this->pos;
-			strncpy(this->buf + this->pos, b + offset, sublen);
+			memcpy(this->buf + this->pos, b + offset, sublen);
 			offset += sublen;
 			len -= sublen;
 			this->pos += sublen;
@@ -321,7 +321,7 @@ BOSwrite(BlockOutputStream* this, unsigned char* b, int offset, int len) {
 			/* Since the block can't be bigger than the buffer at this
 			 * point, we can safely assume that copying it into the
 			 * (empty) buffer always succeeds. */
-			strncpy(this->buf + this->pos, b + offset, len);
+			memcpy(this->buf + this->pos, b + offset, len);
 		}
 	}
 
