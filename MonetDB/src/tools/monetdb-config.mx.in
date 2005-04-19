@@ -20,24 +20,24 @@
 #!@BASH@
 
 pkg="@PACKAGE@"
-source="@QXMONETDB_SOURCE@"
-build="@QXMONETDB_BUILD@"
-prefix="@QXprefix@"
-exec_prefix="@QXexec_prefix@"
+source="@QMONETDB_SOURCE@"
+build="@QMONETDB_BUILD@"
+prefix="@Qprefix@"
+exec_prefix="@Qexec_prefix@"
 
-bindir="@QXbindir@"
-libexecdir="@QXlibexecdir@"
-datadir="@QXdatadir@"
-sysconfdir="@QXsysconfdir@"
-localstatedir="@QXlocalstatedir@"
-libdir="@QXlibdir@"
-infodir="@QXinfodir@"
-mandir="@QXmandir@"
-includedir="@QXincludedir@"
+bindir="@Qbindir@"
+libexecdir="@Qlibexecdir@"
+datadir="@Qdatadir@"
+sysconfdir="@Qsysconfdir@"
+localstatedir="@Qlocalstatedir@"
+libdir="@Qlibdir@"
+infodir="@Qinfodir@"
+mandir="@Qmandir@"
+includedir="@Qincludedir@"
 
-pkglibdir="${libdir}@QDIRSEP@${pkg}"
-pkgdatadir="${datadir}@QDIRSEP@${pkg}"
-pkgincludedir="${includedir}@QDIRSEP@${pkg}"
+pkglibdir="${libdir}/${pkg}"
+pkgdatadir="${datadir}/${pkg}"
+pkgincludedir="${includedir}/${pkg}"
 
 usage()
 {
@@ -116,25 +116,25 @@ while test $# -gt 0; do
     --includes)
        	echo \
 		-I\${MONETDB_INCLUDEDIR} \
-		-I\${MONETDB_INCLUDEDIR}@QDIRSEP@common \
-		-I\${MONETDB_INCLUDEDIR}@QDIRSEP@gdk \
-	  	-I\${MONETDB_INCLUDEDIR}@QDIRSEP@monet \
-	  	-I\${MONETDB_INCLUDEDIR}@QDIRSEP@plain \
-	  	-I\${MONETDB_INCLUDEDIR}@QDIRSEP@contrib \
-	  	-I\${MONETDB_INCLUDEDIR}@QDIRSEP@mapi \
-	  	-I\${MONETDB_INCLUDEDIR}@QDIRSEP@C 
+		-I\${MONETDB_INCLUDEDIR}/common \
+		-I\${MONETDB_INCLUDEDIR}/gdk \
+	  	-I\${MONETDB_INCLUDEDIR}/monet \
+	  	-I\${MONETDB_INCLUDEDIR}/plain \
+	  	-I\${MONETDB_INCLUDEDIR}/contrib \
+	  	-I\${MONETDB_INCLUDEDIR}/mapi \
+	  	-I\${MONETDB_INCLUDEDIR}/C 
        	;;
 
     --cflags)
        	echo \
 		-I$pkgincludedir \
-		-I$pkgincludedir@QDIRSEP@common \
-		-I$pkgincludedir@QDIRSEP@gdk \
-		-I$pkgincludedir@QDIRSEP@monet \
-		-I$pkgincludedir@QDIRSEP@plain \
-		-I$pkgincludedir@QDIRSEP@contrib \
-		-I$pkgincludedir@QDIRSEP@mapi \
-	  	-I$pkgincludedir@QDIRSEP@C 
+		-I$pkgincludedir/common \
+		-I$pkgincludedir/gdk \
+		-I$pkgincludedir/monet \
+		-I$pkgincludedir/plain \
+		-I$pkgincludedir/contrib \
+		-I$pkgincludedir/mapi \
+	  	-I$pkgincludedir/C 
        	;;
 
     --libs)
@@ -148,7 +148,7 @@ while test $# -gt 0; do
         ;;
 
     --classpath)
-        echo 	$pkgdatadir@QDIRSEP@lib@QDIRSEP@mapi.jar
+        echo 	$pkgdatadir/lib/mapi.jar
         ;;
 
     *)
