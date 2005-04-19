@@ -37,6 +37,13 @@ fi
 
 # enhance various paths to find our stuff
 PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients/C:${builddir}/src/mapi/clients/python:$PATH"
+if [ "${uname}" = "IRIX64" ] ; then
+	# on IRIX64 (at least when compiled with the MIPS compiler),
+	# running Mserver via the wrapper-script ${builddir}/src/tools/Mserver
+	# result in a bus error;
+	# hence, we directly run the binary ${builddir}/src/tools/.libs/Mserver
+	PATH="${builddir}/src/tools/.libs:$PATH"
+fi
 PYTHONPATH="${builddir}/src/testing:${srcdir}/src/testing:${builddir}/src/common:${srcdir}/src/mapi/clients/python"
 libpath="${MOD_PATH}:${builddir}/src/common/.libs:${builddir}/src/gdk/.libs:${builddir}/src/mapi/clients/C/.libs:${builddir}/src/modules/plain/stream/.libs:${builddir}/src/monet/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
