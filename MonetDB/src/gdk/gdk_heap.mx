@@ -106,11 +106,13 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		ext = decompose_filename(nme);
 	}
 	h->base = NULL;
-	h->maxsize = h->size = MAX(1, nitems) * itemsize;
+	h->maxsize = h->size = 1;
+	if (itemsize)
+		h->maxsize = h->size = MAX(1, nitems) * itemsize;
 	h->free = 0;
 
 	/* check for overflow */
-	if (nitems > (h->size/itemsize)) 
+	if (itemsize && nitems > (h->size/itemsize)) 
 		return -1;
 
 	/* when using anonymous vm we malloc we need 64K chunks, also we
@@ -257,6 +259,7 @@ HEAPfree(Heap *h)
 
 			if (ret < 0) {
 				GDKsyserror("HEAPfree: %s was not mapped\n", h->filename);
+				assert(0);
 			}
 			IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", PTRFMTCAST(void *)h->base, h->maxsize, ret);
 		}

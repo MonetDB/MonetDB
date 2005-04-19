@@ -145,13 +145,13 @@ BATcommit(BAT *b)
 					(*hunfix) (h);
 				}
 				if (hatmdel) {
-					(*hatmdel) (&b->hheap, (var_t *) (p + b->hloc));
+					(*hatmdel) (b->hheap, (var_t *) (p + b->hloc));
 				}
 				if (tunfix) {
 					(*tunfix) (t);
 				}
 				if (tatmdel) {
-					(*tatmdel) (&b->theap, (var_t *) (p + b->tloc));
+					(*tatmdel) (b->theap, (var_t *) (p + b->tloc));
 				}
 			}
 		}
@@ -227,23 +227,23 @@ BATundo(BAT *b)
 				ptr h = BUNhead(b, p);
 				ptr t = BUNtail(b, p);
 
-				if (b->hhash_heap) {
+				if (b->hhash) {
 					HASHdel(b->hhash, i, h, p < bunlast);
 				}
 				if (hunfix) {
 					(*hunfix) (h);
 				}
 				if (hatmdel) {
-					(*hatmdel) (&b->hheap, (var_t *) (p + b->hloc));
+					(*hatmdel) (b->hheap, (var_t *) (p + b->hloc));
 				}
-				if (b->thash_heap) {
+				if (b->thash) {
 					HASHdel(b->thash, i, t, p < bunlast);
 				}
 				if (tunfix) {
 					(*tunfix) (t);
 				}
 				if (tatmdel) {
-					(*tatmdel) (&b->theap, (var_t *) (p + b->tloc));
+					(*tatmdel) (b->theap, (var_t *) (p + b->tloc));
 				}
 			}
 		}
@@ -269,10 +269,10 @@ BATundo(BAT *b)
 			ptr h = BUNhead(b, p);
 			ptr t = BUNtail(b, p);
 
-			if (b->hhash_heap) {
+			if (b->hhash) {
 				HASHins(b->hhash, i, h);
 			}
-			if (b->thash_heap) {
+			if (b->thash) {
 				HASHins(b->thash, i, t);
 			}
 		}

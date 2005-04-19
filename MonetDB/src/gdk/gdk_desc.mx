@@ -36,7 +36,7 @@ introduced to the atom ADT (atomConvert and atomHeapConvert).
 @+ BAT versions
 Three BAT formats are currently supported:
 @h
-#define GDKLIBRARY	050410	/* 64-bits BAT */
+#define GDKLIBRARY	050415	/* 64-bits BAT */
 
 #define GDKversionOK(x)	((x)==GDKLIBRARY)
 
@@ -45,7 +45,7 @@ If BATs need to be added to an old BBP directory, we might need
 to save BATs in the old format. This is currently controlled
 by the below function:
 @
-We also use these numbers, which are always the first 32-int the
+We also use these numbers, which are always the first 16-bits of the
 BAT image, to check whether the image is in big endian or little endian format.
 @{
 @c
@@ -54,6 +54,8 @@ BAT image, to check whether the image is in big endian or little endian format.
 @+ BAT Conversion functions
 These functions save/load a BAT descriptor to/from disk.
 @h
+
+
 int BATsavedesc(BAT *b, str nme);
 BAT *BATloaddesc(str nme);
 
@@ -107,11 +109,30 @@ int
 BATsavedesc(BAT *b, str nme)
 {
 	BATstore *bs = (BATstore *) b;
-	int ret = 0;
+	int ret = 0, fd = -1;
 
 	DELTAsave(b);
 	if (b->GDKversion == GDKLIBRARY) {
-		ret = GDKsave(nme, "desc", (void *) bs, sizeof(BATstore), STORE_MEM);
+		char *hatm = (b->htype>=0)?ATOMname(b->htype):
+					ATOMunknown_name(b->htype);
+		char *tatm = (b->ttype>=0)?ATOMname(b->ttype):
+					ATOMunknown_name(b->ttype);
+		int hlen = strlen(hatm) + 1; 
+		int tlen = strlen(tatm) + 1;
+		int hvar = b->hvarsized && (b->htype != TYPE_void);
+		int tvar = b->tvarsized && (b->ttype != TYPE_void);
+
+		if ((fd = GDKfdlocate(nme, "wb", "desc")) < 0 ||
+		     write(fd, bs, sizeof(BATstore)) != sizeof(BATstore) ||
+		    (hvar && write(fd, b->hheap, sizeof(Heap)) != sizeof(Heap)) ||
+		    (tvar && write(fd, b->theap, sizeof(Heap)) != sizeof(Heap)) ||
+		    (write(fd, &hlen, sizeof(int)) != sizeof(int)) ||
+		    (write(fd, hatm, hlen ) != hlen) ||
+		    (write(fd, &tlen, sizeof(int)) != sizeof(int)) ||
+		    (write(fd, tatm, tlen ) != tlen)) {
+			ret = -1;
+		}
+		if (fd >= 0) close(fd);
 	}
 	/* a saved bat could still be used so reset the delta status */
 	DELTAload(b);
@@ -123,19 +144,34 @@ BATsavedesc(BAT *b, str nme)
 BAT *
 BATloaddesc(str nme)
 {
-	BATstore *src = (BATstore *) GDKload(nme, "desc", sizeof(BATstore),
-					     sizeof(BATstore), STORE_MEM);
-	BATstore *dst = src;
-	int ver;
-	BAT *b;
+	long_str hatm;
+	long_str tatm;
+	BATstore *dst;
+	BAT *b = NULL;
+	int ver, fd = -1, hvar, tvar;
+	ssize_t n;
 
-	if (src == NULL) {
+	if ((fd = GDKfdlocate(nme, "rb+", "desc")) < 0) {
+		GDKerror("BATloaddesc: cannot open desc file=%s\n", nme);
 		return NULL;
 	}
-	ver = src->B.GDKversion;
+
+ 	dst = (BATstore *) GDKzalloc(sizeof(BATstore));
+	if (!dst)
+		return NULL;
+
+	if ((n = read(fd, dst, sizeof(BATstore)) != sizeof(BATstore)) ) {
+		GDKerror("BATloaddesc: read error: name=%s, n=%d\n", nme, n);
+		GDKfree(dst);
+		close(fd);
+		return NULL;
+	}
+
+	ver = dst->B.GDKversion;
 	if (!GDKversionOK(ver)) {
-		GDKerror("GDKload: incompatible version %d.\n", src->B.GDKversion);
-		GDKfree(src);
+		GDKerror("GDKload: incompatible version %d.\n", dst->B.GDKversion);
+		GDKfree(dst);
+		close(fd);
 		return NULL;
 	}
 	b = (BAT *) dst;
@@ -143,16 +179,79 @@ BATloaddesc(str nme)
 	b->T = &dst->T;
 	b->P = &dst->P;
 	b->U = &dst->U;
+	b->hident = b->tident = NULL;
+	BATroles(b, NULL, NULL);
 	b->batBuns = &b->U->buns;
 	b->batBuns->base = NULL;
 	b->batBuns->filename = NULL;
-	b->H->heap.base = NULL;
-	b->T->heap.base = NULL;
-	b->batId = dst->fullid;
+	b->hheap = b->theap = NULL;
+
+	hvar = b->hvarsized && (b->htype != TYPE_void);
+	tvar = b->tvarsized && (b->ttype != TYPE_void);
+
+	if (hvar && ((b->hheap = (Heap*)GDKzalloc(sizeof(Heap))) == NULL
+	  || (n = read(fd, b->hheap, sizeof(Heap))) != sizeof(Heap) )) {
+		GDKerror("BATloaddesc: read error: name=%s, n=%d\n", nme, n);
+		if (b->hheap) GDKfree(b->hheap);
+		GDKfree(dst);
+		close(fd);
+		return NULL;
+	}
+	if (tvar && ((b->theap = (Heap*)GDKzalloc(sizeof(Heap))) == NULL
+	  || (n = read(fd, b->theap, sizeof(Heap))) != sizeof(Heap) )) {
+		GDKerror("BATloaddesc: read error: name=%s, n=%d\n", nme, n);
+		if (b->hheap) GDKfree(b->hheap);
+		if (b->theap) GDKfree(b->theap);
+		GDKfree(dst);
+		close(fd);
+		return NULL;
+	}
+	if ( (read(fd, &ver, sizeof(int)) != sizeof(int)) || ver > BUFSIZ ||
+	     (read(fd, hatm, ver) != ver) || 
+	     (read(fd, &ver, sizeof(int)) != sizeof(int)) || ver > BUFSIZ ||
+	     (read(fd, tatm, ver) != ver) ) {
+		if (b->hheap) GDKfree(b->hheap);
+		if (b->theap) GDKfree(b->theap);
+		GDKfree(dst);
+		close(fd);
+		return NULL;
+	}
+	close(fd);
+
+	/* mark atom as unknown if its not loaded jet */
+	if (!ATOMname(b->htype) || strcmp(ATOMname(b->htype), hatm) != 0) {
+		int ht = ATOMindex(hatm);
+
+		if (ht < 0 || BATatoms[ht].deleting) {
+			ht = ATOMunknown_find(hatm);
+		}
+		b->htype = ht;
+	}
+	if (!ATOMname(b->ttype) || strcmp(ATOMname(b->ttype), tatm) != 0) {
+		int tt = ATOMindex(tatm);
+
+		if (tt < 0 || BATatoms[tt].deleting) {
+			tt = ATOMunknown_find(tatm);
+		}
+		b->ttype = tt;
+	}
+
+	if (b->hheap) {
+		b->hheap->base = NULL;
+		b->hheap->filename = NULL;
+	}
+	if (b->theap) {
+		b->theap->base = NULL;
+		b->theap->filename = NULL;
+	}
+
+	/* probably need to allocate heaps here */
+	b->batId = NULL;
 	b->batCopiedtodisk = 1;
 	b->batElmshift = BATelmshift(b);
 	b->H->props = NULL;
 	b->T->props = NULL;
+	b->hhash = b->thash = NULL;
 	return b;
 }
 
@@ -196,7 +295,7 @@ batswap(BAT *b, int direction)
 
 		break;
 	default:
-		ATOMheapConvert(b->htype, &b->hheap, direction);
+		ATOMheapConvert(b->htype, b->hheap, direction);
 		DELloop(b, p, q, xx) {
 			@:swap(normal_int,int,BUNhloc(b,p))@
 

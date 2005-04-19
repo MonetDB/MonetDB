@@ -431,11 +431,9 @@ map2histo(BAT *map)
 	}
 	/* trickily transform a bat[mapentry,any] into bat[oid,int] */
 	map->htype = BATmirror(map)->ttype = TYPE_oid;
-	strcpy(map->hatom, "oid");
 	map->ttype = BATmirror(map)->htype = TYPE_int;
-	strcpy(map->tatom, "int");
-	if (map->tvarsized && map->theap.base) {
-		HEAPfree(&map->theap);
+	if (map->tvarsized && map->theap) {
+		HEAPfree(map->theap);
 	}
 	BATmirror(map)->hvarsized = map->tvarsized = 0;
 	/* do these in the right order: map->dims.headloc is used, so
@@ -543,7 +541,7 @@ tailtype(BAT *b, int str_trick)
 		return TYPE_int;
 	} else if (tpe == TYPE_dbl) {
 		return TYPE_lng;
-	} else if (tpe == TYPE_str && str_trick && GDK_ELIMDOUBLES((&b->theap))) {
+	} else if (tpe == TYPE_str && str_trick && GDK_ELIMDOUBLES((b->theap))) {
 		return TYPE_var;	/* string offsets are identifying integers */
 	}
 	return tpe;
@@ -908,7 +906,6 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
-	strcpy(bn->hatom, "oid");
 	/* assert(offsetof(idxentry_t,hcur) == 0);
 	ALIGNsetH(bn, dom); */
 
@@ -1011,7 +1008,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		bn = BATmark(b, 0);
 	} else {
 		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
-		BUN p, q, r, last = BUNfirst(b), base = a->theap.base ? NULL : a->batBuns->base, this = NULL;
+		BUN p, q, r, last = BUNfirst(b), base = a->theap ? NULL : a->batBuns->base, this = NULL;
 		struct refine *buf, *cur, *end;
 		bit a_void = (a->ttype == TYPE_void);
 		int xx, tpe = a_void ? TYPE_oid : a->ttype;
@@ -1076,7 +1073,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
 		BATloopFast(b, p, q, xx) {
 			if ((*cmp) (BUNtail(b, last), BUNtail(b, p))) {
-				dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap.base, dst, &id, rv);
+				dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap->base, dst, &id, rv);
 
 				last = p;
 				cur = buf;
@@ -1106,7 +1103,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			this += sizeof(oid);
 		}
 @c
-		dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap.base, dst, &id, rv);
+		dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap->base, dst, &id, rv);
 
 		GDKfree(buf);
 		if (a_void)

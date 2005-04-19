@@ -75,7 +75,7 @@ BATins(BAT *b, BAT *n)
 	ALIGNins(b, "BATins");
 	BATcompatible(b, n);
 
-	if (b->htype != TYPE_void && (b->ttype == TYPE_void || (!b->hhash_heap && b->thash_heap && ATOMstorage(b->ttype) == TYPE_int))) {	/* OIDDEPEND */
+	if (b->htype != TYPE_void && (b->ttype == TYPE_void || (!b->hhash && b->thash && ATOMstorage(b->ttype) == TYPE_int))) {	/* OIDDEPEND */
 		return BATmirror(BATins(BATmirror(b), BATmirror(n)));
 	}
 
@@ -89,7 +89,7 @@ BATins(BAT *b, BAT *n)
 				return NULL;
 		}
 	}
-	if (b->thash_heap == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash_heap == NULL || ATOMstorage(b->htype) == TYPE_int)) {
+	if (b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash == NULL || ATOMstorage(b->htype) == TYPE_int)) {
 		if ((b->hkey & BOUND2BTRUE)) {
 			tmp = n = BATkdiff(n, b);
 			if (n == NULL)
@@ -110,16 +110,16 @@ BATins(BAT *b, BAT *n)
 			fastpath = 0;
 	}
 
-	if (b->hhash_heap && 2 * b->hhash.mask < BATcount(b) + BATcount(n)) {
+	if (b->hhash && 2 * b->hhash->mask < BATcount(b) + BATcount(n)) {
 		HASHremove(b);
 	}
-	if (b->thash_heap && 2 * b->thash.mask < BATcount(b) + BATcount(n)) {
+	if (b->thash && 2 * b->thash->mask < BATcount(b) + BATcount(n)) {
 		HASHremove(BATmirror(b));
 	}
-	if (b->hhash_heap == NULL && b->hkey & BOUND2BTRUE) {
+	if (b->hhash == NULL && b->hkey & BOUND2BTRUE) {
 		BAThash(b, BATcount(b) + BATcount(n));
 	}
-	if (b->thash_heap == NULL && b->tkey & BOUND2BTRUE) {
+	if (b->thash == NULL && b->tkey & BOUND2BTRUE) {
 		BAThash(BATmirror(b), BATcount(b) + BATcount(n));
 	}
 	if (fastpath) {
@@ -173,7 +173,7 @@ BATins(BAT *b, BAT *n)
 				bunfastins_nocheck(b, r, NULL, BUNtail(n, p), yy);
 				r += yy;
 			}
-		} else if (b->hhash_heap) {
+		} else if (b->hhash) {
 			size_t i = BUNindex(b, BUNlast(b));
 
 			BATloopFast(n, p, q, xx) {
@@ -315,8 +315,6 @@ We have to do it: create a new BAT and put everything into it.
 			bunfastins(bn, BUNhead(b, p), BUNtail(b, p));
 		}
 	}
-	bn->H->aggr[0] = bn->H->aggr[1] = bn->H->aggr[2] = 0;
-	bn->T->aggr[0] = bn->T->aggr[1] = bn->T->aggr[2] = 0;
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
 	BATkey(bn, BAThkey(b));
@@ -349,7 +347,7 @@ through is the "isnil" predicate). So we implement it here.
 		q += bs;
 	}
 @= stringselect
-	if (strElimDoubles(&b->hheap)) {
+	if (strElimDoubles(b->hheap)) {
 		size_t j;
 
 		HASHloop_fstr(b, b->hhash, i, j, tl) {
@@ -491,9 +489,6 @@ Examine type, and values for lower- and higher-bound.
 	/* preliminarily determine result types */
 	ht = BAThtype(b);
 	tt = tail ? BATttype(b) : TYPE_void;
-	if (ht == TYPE_void && tt == TYPE_void) {
-		ht = TYPE_oid;
-	}
 
 	if (hval && ((ATOMcmp(t, tl, th) > 0) || (equi && !(li && hi)))) {
 		/* empty range */
@@ -501,6 +496,7 @@ Examine type, and values for lower- and higher-bound.
 
 		return BATnew(ht, tt, 10);
 	}
+
 @}
 @- Slice Implementations
 When the result is a dense slice of the BAT, we can optimize.
@@ -604,11 +600,14 @@ Use sampling to determine a good result size, when the bat is large.
 @-
 Create the result BAT and execute the select algorithm.
 @c
+	if (ht == TYPE_void && tt == TYPE_void) {
+		ht = TYPE_oid;
+	}
 	bn = BATnew(ht, tt, estimate);
 	if (bn) {
 		int nocheck = (estimate >= batcnt);
 
-		if (!preserve_order && equi && b->thash_heap) {
+		if (!preserve_order && equi && b->thash) {
 			ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n", b->batId, b->batId, bn->batId);
 
 			bn = BAT_hashselect(b, bn, tl);
@@ -639,12 +638,12 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		BATkey(BATmirror(bn), TRUE);
 	}
 	if (equi && tail) {
-		BATsetaggr(bn, GDK_AGGR_CARD, BATcount(bn) > 0);
+		BATsetprop_int(bn, GDK_AGGR_CARD, BATcount(bn) > 0);
 		if (b->ttype == TYPE_bit) {
-			BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit *) tl == TRUE) ? BATcount(bn) : 0);
+			BATsetprop_int(bn, GDK_AGGR_SIZE, (*(bit *) tl == TRUE) ? BATcount(bn) : 0);
 		}
 	}
-	if (equi && b->thash_heap) {
+	if (equi && b->thash) {
 		bn->hsorted = bn->tsorted = FALSE;
 	} else {
 		if (BATcount(bn) == BATcount(b))
@@ -740,9 +739,8 @@ BATsample(BAT *b, size_t size)
 	dst = choice = (size_t *) GDKmalloc(n * sizeof(size_t));
 
 	if (n * 2 < BATcount(b)) {	/* nondense sample */
-		char *vec = (char *) GDKmalloc(1 + (cnt / 8));
+		char *vec = (char *) GDKzalloc(1 + (cnt / 8));
 
-		memset(vec, 0, 1 + (cnt / 8));
 		for (j = 0; j < n; j++) {
 			r += rand();
 			i = r % cnt;
@@ -1137,7 +1135,6 @@ BATordered@3(BAT* b)
 		int (*cmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
 		char *cur = (char *) BUNhloc(b, BUNfirst(b));
 		char *end = (char *) BUNhloc(b, BUNlast(b));
-		BUN base = b->hheap.base;
 		int xx = BUNsize(b);
 
 		/* we may have negative information already; this saves a scan */
@@ -1191,7 +1188,8 @@ BATordered@3(BAT* b)
 		}
 
 		/* check sortedness tuple-by-tuple */
-		if (base) {
+		if (b->hheap) {
+			BUN base = b->hheap->base;
 			char *prv = base + *(var_t *) cur;
 
 			cur += xx;
@@ -1303,7 +1301,7 @@ BATorder@3(BAT *b)
 		b->hsorted = (bit) GDK_SORTED@2;
 		return b;
 	}
-	GDKqsort@3(BUNfirst(b), b->hheap.base, BATcount(b), BUNsize(b), b->htype, b->hloc);
+	GDKqsort@3(BUNfirst(b), (b->hheap)?b->hheap->base:NULL, BATcount(b), BUNsize(b), b->htype, b->hloc);
 	HASHdestroy(b);
 	ALIGNdel(b, "BATorder@3");
 	b->hsorted = (bit) GDK_SORTED@2;
@@ -1708,7 +1706,7 @@ BATnumber(BAT *b)
 	yy = BUNsize(bn);
 	@:updateloop(bn,b,BUNnumber)@
 	ALIGNsetH(bn, b);
-	BATsetaggr(bn, GDK_AGGR_CARD, i);
+	BATsetprop_int(bn, GDK_AGGR_CARD, i);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
 	return bn;
@@ -1746,7 +1744,7 @@ BATgroup(BAT *b, int start, int incr, int grpsize)
 	}
 	if (i == 0)
 		ngroups--;
-	BATsetaggr(bn, GDK_AGGR_CARD, ngroups);
+	BATsetprop_int(bn, GDK_AGGR_CARD, ngroups);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
 	return bn;
@@ -1788,9 +1786,9 @@ BATconst(BAT *b, int tailtype, ptr v)
 	}
 	ALIGNsetH(bn, b);
 	bn->tsorted = GDK_SORTED;
-	BATsetaggr(bn, GDK_AGGR_CARD, BATcount(b) > 0);
+	BATsetprop_int(bn, GDK_AGGR_CARD, BATcount(b) > 0);
 	if (tailtype == TYPE_bit) {
-		BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? BATcount(b) : 0);
+		BATsetprop_int(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? BATcount(b) : 0);
 	}
 	return bn;
       bunins_failed:
@@ -1822,58 +1820,79 @@ by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
 @c
 #define GDK_NIL_BIT 0x80000000	/* (1 << 31) */
 
-/* later to evolve into a more sophisticated aggregate retention system */
-int
-BATgetaggr(BAT *b, int idx)
+static PROPrec *
+BATgetprop(BAT *b, int idx)
 {
-	int *aggr;
-
-	BATcheck(b, "BATgetaggr");
-	aggr = b->T->aggr;
-	if (aggr[0] && aggr[0] == (int) b->talign) {
-		if (idx == GDK_AGGR_HASNIL) {
-			if (aggr[1] & GDK_NIL_BIT) {
-				return (aggr[2] & GDK_NIL_BIT) ? TRUE : FALSE;
-			}
-		} else {
-			int val = aggr[idx] & ~GDK_NIL_BIT;
-
-			if (val != ~GDK_NIL_BIT) {
-				return val;
-			}
-		}
+	PROPrec *p = b->T->props;
+	while(p) {
+		if (p->id == idx)
+			return p;
+		p = p -> next;
 	}
-	return (idx == GDK_AGGR_HASNIL) ? ((int) bit_nil) : int_nil;
+	return NULL;
+}
+
+bit
+BATgetprop_bit(BAT *b, int idx)
+{
+	PROPrec *p = BATgetprop(b, idx); 
+	return (p)?p->v.val.cval[0]:bit_nil;
 }
 
 int
-BATsetaggr(BAT *b, int idx, int val)
+BATgetprop_int(BAT *b, int idx)
 {
-	int *aggr;
-
-	BATcheck(b, "BATsetaggr");
-	aggr = b->T->aggr;
-	if (aggr[0] == 0 || aggr[0] != (int) b->talign || BATgetaggr(b, idx) != val) {
-		if (b->talign == 0) {
-			b->talign = OIDnew(1);
-		}
-		if (aggr[0] != (int) b->talign) {
-			aggr[0] = (int) b->talign;
-			aggr[GDK_AGGR_SIZE] = aggr[GDK_AGGR_CARD] = ~GDK_NIL_BIT;
-		}
-		if (idx != GDK_AGGR_HASNIL) {
-			aggr[idx] &= GDK_NIL_BIT;
-			aggr[idx] |= (val == int_nil) ? ~GDK_NIL_BIT : (val & ~GDK_NIL_BIT);
-		} else if (val != (int) bit_nil) {
-			aggr[1] |= GDK_NIL_BIT;
-			aggr[2] = (val & ~GDK_NIL_BIT) | (val ? GDK_NIL_BIT : 0);
-		} else {
-			aggr[1] &= ~GDK_NIL_BIT;
-		}
-		b->batDirtydesc = TRUE;
-	}
-	return val;
+	PROPrec *p = BATgetprop(b, idx); 
+	return (p)?p->v.val.ival:int_nil;
 }
+
+str
+BATgetprop_str(BAT *b, int idx)
+{
+	PROPrec *p = BATgetprop(b, idx); 
+	return (p)?p->v.val.pval:str_nil;
+}
+
+static void 
+BATsetprop( BAT *b, int idx, int type, void *v)
+{
+	PROPrec *p = BATgetprop(b, idx);
+
+	if (!p) {
+		p = (PROPrec*)GDKmalloc(sizeof(PROPrec));
+		p->id = idx;
+		p->next = b->T->props;
+		b->T->props = p;
+	}
+	VALset(&p->v, type, v);
+	b->batDirtydesc = TRUE;
+}
+
+void
+BATsetprop_bit(BAT *b, int idx, bit val)
+{
+	BATsetprop(b, idx, TYPE_bit, &val);
+}
+
+void
+BATsetprop_int(BAT *b, int idx, int val)
+{
+	BATsetprop(b, idx, TYPE_int, &val);
+}
+
+void
+BATsetprop_str(BAT *b, int idx, str val)
+{
+	BATsetprop(b, idx, TYPE_str, val);
+}
+
+void
+BATpropagate(BAT *dst, BAT *src, int idx) 
+{
+	PROPrec *p = BATgetprop(src, idx);
+	if (p) BATsetprop(dst, idx, p->v.vtype, VALget(&p->v));
+}
+
 
 @}
 @-
@@ -1969,7 +1988,7 @@ BAThistogram(BAT *b)
 
 	BATcheck(b, "BAThistogram");
 
-	tricky = (b->ttype == TYPE_str && strElimDoubles(&b->theap));
+	tricky = (b->ttype == TYPE_str && strElimDoubles(b->theap));
 	if (b->talign == 0) {
 		b->talign = OIDnew(1);
 	}
@@ -1986,7 +2005,8 @@ by bulk copying the heap as well
 	if (tricky) {
 		BAT *bm;
 
-		if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+		bn->hheap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (HEAPcopy(bn->hheap, b->theap) < 0) {
 		      bunins_failed:
 			BBPreclaim(bn);
 			return NULL;
@@ -1994,8 +2014,6 @@ by bulk copying the heap as well
 		bm = BATmirror(bn);
 		bm->ttype = bn->htype = b->ttype;
 		bm->tvarsized = bn->hvarsized = 1;
-
-		strcpy(bn->hatom, ATOMname(b->ttype));
 	}
 	BATkey(bn, TRUE);
 	BATkey(BATmirror(bn), BATcount(bn) < 2);
@@ -2010,9 +2028,9 @@ by bulk copying the heap as well
 		bit trueval = TRUE;
 		BUN p = BUNfnd(bn, &trueval);
 
-		BATsetaggr(b, GDK_AGGR_SIZE, p ? *(int *) BUNtloc(bn, p) : 0);
+		BATsetprop_int(b, GDK_AGGR_SIZE, p ? *(int *) BUNtloc(bn, p) : 0);
 	}
-	BATsetaggr(b, GDK_AGGR_CARD, BATcount(bn));
+	BATsetprop_int(b, GDK_AGGR_CARD, BATcount(bn));
 	return bn;
 }
 

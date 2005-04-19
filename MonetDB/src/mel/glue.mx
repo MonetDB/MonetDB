@@ -1163,6 +1163,7 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
                 }
         }
         o << "   BATatoms[TYPE_" << d.Name() << " = ATOMindex(\"" <<d.Name()<< "\")].deleting = 0;\n";
+	o << "   BBPatom_load(TYPE_" << d.Name() << ");\n";
         return o;
 }
 

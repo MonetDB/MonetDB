@@ -704,7 +704,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 		ptr val = extremes[@8];
 		(void) h;	/* silence compiler about unused variable */
 		/* trick: using a void head-type, only the tail are (over)written */
-		ATOMput(bn->ttype, &bn->theap, BUNtloc(bn,r), val?val:nil);
+		ATOMput(bn->ttype, bn->theap, BUNtloc(bn,r), val?val:nil);
 	}
 @c
 /*	aggrX3_minmax_oid
@@ -760,7 +760,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 		oid val = extremes[@8];
 		(void) h;	/* silence compiler about unused variable */
 		/* trick: using a void head-type, only the tail are (over)written */
-		ATOMput(bn->ttype, &bn->theap, BUNtloc(bn,r), &val);
+		ATOMput(bn->ttype, bn->theap, BUNtloc(bn,r), &val);
 	}
 @c
 
@@ -1680,7 +1680,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 		oid *h = (oid*)BUNh@4(bn,r);
 		ptr val = extremes[@8];
 		(void) h;	/* silence compiler about unused variable */
-		ATOMput(bn->ttype, &bn->theap, BUNtloc(bn,r), val?val:nil);
+		ATOMput(bn->ttype, bn->theap, BUNtloc(bn,r), val?val:nil);
 	}
 @c
 /*	aggrX3_minmax3_oid
@@ -1742,7 +1742,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 		oid *h = (oid*)BUNh@4(bn,r);
 		oid val = extremes[@8];
 		(void) h;	/* silence compiler about unused variable */
-		ATOMput(bn->ttype, &bn->theap, BUNtloc(bn,r), &val);
+		ATOMput(bn->ttype, bn->theap, BUNtloc(bn,r), &val);
 	}
 @c
 

@@ -728,9 +728,9 @@ iter_join(iter *res, iter *input, BAT *inner)
 		bn->tkey = outer->result->tkey && inner->tkey;
 	} else {
 		(void) BATprepareHash(inner);
-		it->hdl.join.hash = inner->hhash.hash;
-		it->hdl.join.link = inner->hhash.link;
-		it->hdl.join.mask = inner->hhash.mask;
+		it->hdl.join.hash = inner->hhash->hash;
+		it->hdl.join.link = inner->hhash->link;
+		it->hdl.join.mask = inner->hhash->mask;
 		it->hdl.join.hashnum = 0;
 		n_one = FALSE;
 	}

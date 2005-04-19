@@ -586,7 +586,7 @@ if trees are more than 2-deep.
 	      if (x->free.batref.id != bat_nil){			\
 		BAT* _b;						\
 		BBPfix(x->free.batref.id);				\
-		_b = BBPquickdesc(ABS(x->free.batref.id),FALSE);	\
+		_b = (BAT*)BBPgetdesc(ABS(x->free.batref.id));		\
 		if (_b == NULL) {					\
 			GDKerror("Myyclean: BAT %d GONE\n", x->free.batref.id);	\
 		} else if (ABS(x->free.batref.stamp) != ABS(_b->batStamp)) { \
@@ -655,7 +655,7 @@ if trees are more than 2-deep.
 		if (res->val.bval != bat_nil) {				\
 			BAT* _b;					\
 			BBPfix(res->val.bval);				\
-			_b = BBPquickdesc(ABS(res->val.bval),FALSE);	\
+			_b = (BAT*)BBPgetdesc(ABS(res->val.bval));	\
 			if (_b) lt->free.batref.stamp = _b->batStamp;	\
 			BBPunfix(res->val.bval);			\
 		}							\

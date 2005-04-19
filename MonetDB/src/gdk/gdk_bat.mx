@@ -55,6 +55,7 @@ called atomHeap.
 #include "gdk.h"
 
 gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
+extern int default_ident( char *s ); 
 
 #endif /* _GDK_BAT_H_ */
 @c
@@ -67,6 +68,16 @@ gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
 
 #define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
 
+static char *string_h = "h";
+static char *string_t = "t";
+
+int 
+default_ident( char *s)
+{
+	return ((s) == string_h || (s) == string_t);
+}
+
+
 BAT *
 BATcreatedesc(int ht, int tt, int heapnames)
 {
@@ -75,14 +86,13 @@ BATcreatedesc(int ht, int tt, int heapnames)
 @-
 Alloc space for the BAT and its dependent records.
 @c
-	BATstore *bs = (BATstore *) GDKmalloc(sizeof(BATstore));
+	BATstore *bs = (BATstore *) GDKzalloc(sizeof(BATstore));
 
 @-
 assert needed in the kernel to get symbol eprintf resolved.
 Else modules using assert fail to load.
 @c
 	assert(ht >= 0 && tt >= 0);
-	memset((str) bs, 0, sizeof(BATstore));
 	bn = &bs->B;
 	bn->H = &bs->H;
 	bn->T = &bs->T;
@@ -97,13 +107,11 @@ Fill in basic column info
 	bn->hkey = FALSE;
 	bn->tkey = FALSE;
 	bn->GDKversion = GDKLIBRARY;
-	bn->batId = bs->fullid;
+	bn->batId = NULL;
 
 	bn->batBuns = &bn->U->buns;
-	strcpy(bn->hident, "h");
-	strcpy(bn->tident, "t");
-	strcpy(bn->hatom, ATOMname(ht));
-	strcpy(bn->tatom, ATOMname(tt));
+	bn->hident = (char*)string_h;
+	bn->tident = (char*)string_t;
 	bn->halign = OIDnew(2);
 	bn->talign = bn->halign + 1;
 	bn->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
@@ -117,8 +125,6 @@ add to BBP
 fill in heap names, so HEAPallocs can resort to disk for very large writes.
 @c
 	bn->batBuns->filename = NULL;
-	bn->hheap.filename = NULL;
-	bn->theap.filename = NULL;
 	if (heapnames) {
 		str nme = BBP_physical(bn->batCacheid);
 
@@ -126,13 +132,15 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 		sprintf(bn->batBuns->filename, "%s.buns", nme);
 
 		if (ATOMneedheap(ht)) {
-			bn->hheap.filename = (str) GDKmalloc(strlen(nme) + 12);
-			sprintf(bn->hheap.filename, "%s.hheap", nme);
+			bn->hheap = (Heap*)GDKzalloc(sizeof(Heap));
+			bn->hheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			sprintf(bn->hheap->filename, "%s.hheap", nme);
 		}
 
 		if (ATOMneedheap(tt)) {
-			bn->theap.filename = (str) GDKmalloc(strlen(nme) + 12);
-			sprintf(bn->theap.filename, "%s.theap", nme);
+			bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+			bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			sprintf(bn->theap->filename, "%s.theap", nme);
 		}
 	}
 	return bn;
@@ -168,6 +176,8 @@ BATsetdims(BAT *b)
 		if (b->htype == TYPE_void)
 			b->hloc = 0;
 	}
+	if (b->dims.bunwidth == 0) 
+		b->dims.bunwidth = 1;
 	b->dims.bunwidth = ALIGN(b->dims.bunwidth, ATOMalign(b->htype));
 	b->dims.bunwidth = ALIGN(b->dims.bunwidth, ATOMalign(b->ttype));
 	b->dims.bunshift = BATelmshift(b);
@@ -198,14 +208,20 @@ BATnewstorage(int ht, int tt, size_t cap)
 		BBPclear(bn->batCacheid);
 		return NULL;
 	}
-	if (ATOMheap(ht, &bn->hheap, cap) < 0) {
+	if (ATOMheap(ht, bn->hheap, cap) < 0) {
 		HEAPfree(bn->batBuns);
+		GDKfree(bn->hheap);
+		if (bn->theap) GDKfree(bn->theap);
 		BBPclear(bn->batCacheid);
 		return NULL;
 	}
-	if (ATOMheap(tt, &bn->theap, cap) < 0) {
+	if (ATOMheap(tt, bn->theap, cap) < 0) {
 		HEAPfree(bn->batBuns);
-		HEAPfree(&bn->hheap);
+		if (bn->hheap) {
+			HEAPfree(bn->hheap);
+			GDKfree(bn->hheap);
+		}
+		GDKfree(bn->theap);
 		BBPclear(bn->batCacheid);
 		return NULL;
 	}
@@ -232,8 +248,6 @@ BATnew(int ht, int tt, size_t cap)
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
 
 	i = ATOMsize(ht) + ATOMsize(tt);
-	ERRORcheck((i == 0), "BATnew: ht and tt cannot be void\n");
-
 	cap = MAX(BATTINY, cap);
 
 	b = BATnewstorage(ht, tt, cap);
@@ -387,10 +401,10 @@ BATclear(BAT *b)
 	}
 
 	/* kill all search accelerators */
-	if (b->hhash_heap) {
+	if (b->hhash) {
 		HASHremove(b);
 	}
-	if (b->thash_heap) {
+	if (b->thash) {
 		HASHremove(bm);
 	}
 
@@ -408,22 +422,22 @@ BATclear(BAT *b)
 		size_t cap = 0;
 
 		hh.filename = th.filename = NULL;
-		if (b->hheap.free > 0) {
+		if (b->hheap && b->hheap->free > 0) {
 			if (ATOMheap(b->htype, &hh, cap) < 0)
 				return NULL;
 		}
-		if (b->theap.free > 0 && ATOMheap(b->ttype, &th, cap) < 0) {
-			if (b->hheap.free > 0)
+		if (b->theap && b->theap->free > 0 && ATOMheap(b->ttype, &th, cap) < 0) {
+			if (b->hheap && b->hheap->free > 0)
 				HEAPfree(&hh);
 			return NULL;
 		}
-		if (b->hheap.free > 0) {
-			HEAPfree(&b->hheap);
-			b->hheap = hh;
+		if (b->hheap && b->hheap->free > 0) {
+			HEAPfree(b->hheap);
+			*b->hheap = hh;
 		}
-		if (b->theap.free > 0) {
-			HEAPfree(&b->theap);
-			b->theap = th;
+		if (b->theap && b->theap->free > 0) {
+			HEAPfree(b->theap);
+			*b->theap = th;
 		}
 	} else {
 		/* do heap-delete of all inserted atoms */
@@ -433,9 +447,9 @@ BATclear(BAT *b)
 		if (hatmdel || tatmdel) {
 			for(p = b->batInserted, q = BUNlast(b); p < q; p += bs) {
 				if (hatmdel)
-					(*hatmdel)(&b->hheap, (var_t*) BUNhloc(b,p));
+					(*hatmdel)(b->hheap, (var_t*) BUNhloc(b,p));
 				if (tatmdel)
-					(*tatmdel)(&b->theap, (var_t*) BUNtloc(b,p));
+					(*tatmdel)(b->theap, (var_t*) BUNtloc(b,p));
 			}
 		}
 	}
@@ -454,15 +468,35 @@ BATfree(BAT *b)
 
 	/* deallocate all memory for a bat */
 	BATreset(b);
+	if (b->hident && !default_ident(b->hident)) {
+		GDKfree(b->hident);
+		b->hident = string_h;
+	}
+	if (b->tident && !default_ident(b->tident)) {
+		GDKfree(b->tident);
+		b->tident = string_t;
+	}
 	HASHdestroy(b);
 	DELTAsave(b);	       /* convert to disk format */
 	HEAPfree(b->batBuns);
-	HEAPfree(&b->theap);
-	HEAPfree(&b->hheap);
+	if (b->hheap) 
+		HEAPfree(b->hheap);
+	if (b->theap) 
+		HEAPfree(b->theap);
 	GDKfree(BATmirror(b));
 	BBP_cache(-b->batCacheid) = NULL;
 
 	return 0;
+}
+
+void
+BATdestroy( BAT *b )
+{
+	if (b->hheap)
+		GDKfree(b->hheap);
+	if (b->theap)
+		GDKfree(b->theap);
+	GDKfree(b);
 }
 
 @}
@@ -590,13 +624,13 @@ around and adapt search accelerator structures.
 	}
 @= hacc_update
 {
-	if (b->hhash_heap) {
+	if (b->hhash) {
 		hash@1(b->hhash, @4, BUN@2(b, @3), @3 < last); 
 	}
 } 
 @= tacc_update
 {
-	if (b->thash_heap) {
+	if (b->thash) {
 		hash@1(b->thash, (hash_t)@4, BUN@2(b, @3), @3 < last); 
 	}
 }
@@ -604,10 +638,10 @@ around and adapt search accelerator structures.
 {
 	char *tmp = alloca(bs);
 
-	if (b->hhash_heap) {
+	if (b->hhash) {
 		HASHmove(b->hhash, (hash_t)@3, (hash_t)@4, BUNhead(b, @1), @1 < last); 
 	}
-	if (b->thash_heap) {
+	if (b->thash) {
 		HASHmove(b->thash, (hash_t)@3, (hash_t)@4, BUNtail(b, @1), @1 < last); 
 	}
 
@@ -768,10 +802,10 @@ BUNins(BAT *b, ptr h, ptr t)
 		/* first adapt the hashes; then the user-defined accelerators.
 		 * REASON: some accelerator updates (qsignature) use the hashes! 
 		 */
-		if (b->hhash_heap) {
+		if (b->hhash) {
 			HASHins(b->hhash, (hash_t) i, h);
 		}
-		if (b->thash_heap) {
+		if (b->thash) {
 			HASHins(b->thash, (hash_t) i, t);
 		}
 	}
@@ -858,10 +892,10 @@ last inserted bun (if present) is copied over it.
 			(*tunfix) (BUNtail(b, p));
 		}
 		if (hatmdel) {
-			(*hatmdel) (&b->hheap, (var_t *) BUNhloc(b, p));
+			(*hatmdel) (b->hheap, (var_t *) BUNhloc(b, p));
 		}
 		if (tatmdel) {
-			(*tatmdel) (&b->theap, (var_t *) BUNtloc(b, p));
+			(*tatmdel) (b->theap, (var_t *) BUNtloc(b, p));
 		}
 		idx1 = BUNindex(b, p);
 		@:hacc_update(del,head,p,idx1)@
@@ -972,7 +1006,7 @@ explicitly.
 
 @= uncommit_replace
 	@:tacc_update(del,t@1,p,pit)@
-	ATOMreplace(b->ttype, &b->theap, BUNtloc(b,p), t);
+	ATOMreplace(b->ttype, b->theap, BUNtloc(b,p), t);
 	@:tacc_update(ins,t@1,p,pit)@
 	if (BATtordered(b)&1) {
 		int bs = BUNsize(b), tt = b->ttype;
@@ -1065,7 +1099,7 @@ BUNfnd(BAT *b, ptr v)
 		BUNfndVOID(r, b, v);
 		return r;
 	}
-	if (!b->hhash_heap) {
+	if (!b->hhash) {
 		if (BAThordered(b) & 1)
 			return (BUN) SORTfnd(b, v);
 	}
@@ -1146,7 +1180,7 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	}
 
 	/* hash-table lookup */
-	@:swapif(b->thash_heap&&b->hhash_heap==NULL)@
+	@:swapif(b->thash && b->hhash == NULL)@
 	cmp = BATatoms[b->ttype].atomCmp;
 	if (!BATprepareHash(b)) {
 		HASHloop(b, b->hhash, h, x) {
@@ -1178,13 +1212,8 @@ BUN list.
 size_t
 BATcount(BAT *b)
 {
-	size_t f;
-	size_t l;
-
 	BATcheck(b, "BATcount");
-	f = BUNindex(b, BUNfirst(b));
-	l = BUNindex(b, BUNlast(b));
-	return (l - f);
+	return b->batCount;
 }
 
 @-
@@ -1211,14 +1240,14 @@ BATvmsize(BAT *b, int dirty)
 		dirty = 0;
 	return ((dirty == 0 || b->batDirtybuns) ? 
 			HEAPvmsize(b->batBuns) : 0) + 
-		((dirty == 0 || b->batDirtybuns) ? 
-			HEAPvmsize(b->hhash_heap) : 0) + 
-		((dirty == 0 || b->batDirtybuns) ? 
-			HEAPvmsize(b->thash_heap) : 0) + 
-		((dirty == 0 || b->hheapdirty) ? 
-			HEAPvmsize(&b->hheap) : 0) + 
-		((dirty == 0 || b->theapdirty) ? 
-			HEAPvmsize(&b->theap) : 0);
+		(((dirty == 0 || b->batDirtybuns) && b->hhash) ? 
+			HEAPvmsize(b->hhash->heap) : 0) + 
+		(((dirty == 0 || b->batDirtybuns) && b->thash) ? 
+			HEAPvmsize(b->thash->heap) : 0) + 
+		(((dirty == 0 || b->hheapdirty) && b->hheap) ? 
+			HEAPvmsize(b->hheap) : 0) + 
+		(((dirty == 0 || b->theapdirty) && b->theap) ? 
+			HEAPvmsize(b->theap) : 0);
 }
 
 size_t
@@ -1231,14 +1260,14 @@ BATmemsize(BAT *b, int dirty)
 			sizeof(BATstore) : 0) + 
 		((dirty == 0 || b->batDirtybuns) ? 
 			HEAPmemsize(b->batBuns) : 0) + 
-		((dirty == 0 || b->batDirtybuns) ? 
-			HEAPmemsize(b->hhash_heap) : 0) + 
-		((dirty == 0 || b->batDirtybuns) ? 
-			HEAPmemsize(b->thash_heap) : 0) + 
-		((dirty == 0 || b->hheapdirty) ? 
-			HEAPmemsize(&b->hheap) : 0) + 
-		((dirty == 0 || b->theapdirty) ? 
-			HEAPmemsize(&b->theap) : 0);
+		(((dirty == 0 || b->batDirtybuns) && b->hhash) ? 
+			HEAPmemsize(b->hhash->heap) : 0) + 
+		(((dirty == 0 || b->batDirtybuns) && b->thash) ? 
+			HEAPmemsize(b->thash->heap) : 0) + 
+		(((dirty == 0 || b->hheapdirty) && b->hheap) ? 
+			HEAPmemsize(b->hheap) : 0) + 
+		(((dirty == 0 || b->theapdirty) && b->theap) ? 
+			HEAPmemsize(b->theap) : 0);
 }
 
 @
@@ -1370,36 +1399,32 @@ BATrename(BAT *b, str nme)
 BAT *
 BATroles(BAT *b, str hnme, str tnme)
 {
-	size_t i;
-
 	BATcheck(b, "BATroles");
-	if ((i = strlen(hnme)) >= IDLENGTH - 1) {
-		GDKerror("BATroles: head name too long\n");
-		hnme[IDLENGTH - 1] = 0;
-		i = IDLENGTH - 1;
-	}
-	memcpy(b->hident, hnme, i + 1);
-	if ((i = strlen(tnme)) >= IDLENGTH - 1) {
-		GDKerror("BATroles: tail name too long\n");
-		tnme[IDLENGTH - 1] = 0;
-		i = IDLENGTH - 1;
-	}
-	memcpy(b->tident, tnme, i + 1);
+	if (b->hident && !default_ident(b->hident))
+		GDKfree(b->hident);
+	if (hnme)
+		b->hident = GDKstrdup( hnme );
+	else
+		b->hident = string_h;
+	if (b->tident && !default_ident(b->tident))
+		GDKfree(b->tident);
+	if (tnme)
+		b->tident = GDKstrdup( tnme );
+	else
+		b->tident = string_t;
 	return b;
 }
 
 BAT *
 BATcol_name(BAT *b, str tnme)
 {
-	size_t i;
-
 	BATcheck(b, "BATcol_name");
-	if ((i = strlen(tnme)) >= IDLENGTH - 1) {
-		GDKerror("BATcol_name: column name too long\n");
-		tnme[IDLENGTH - 1] = 0;
-		i = IDLENGTH - 1;
-	}
-	memcpy(b->tident, tnme, i + 1);
+	if (b->tident && !default_ident(b->tident))
+		GDKfree(b->tident);
+	if (tnme)
+		b->tident = GDKstrdup( tnme );
+	else
+		b->tident = string_t;
 	return b;
 }
 
@@ -1478,13 +1503,13 @@ BATmmap(BAT *b, int bns, int hhp, int thp )
 
 @- BATmadvise
 @= madvise
-	if (@1 >= 0 && (@2)->base && ((@2)->storage&STORE_MMAP) &&
+	if (@1 >= 0 && (@2) && (@2)->base && ((@2)->storage&STORE_MMAP) &&
 	    MT_madvise((@2)->base, (@2)->free, @1)) {
 		GDKsyserror("madvise on @2 @1 failed.\n");
 		return -1;
 	}
 @= pin
-	if ((@2)->base && ((@2)->storage&STORE_MMAP)) {
+	if ( (@2) && (@2)->base && ((@2)->storage&STORE_MMAP)) {
 		MT_mmap_@1((@2)->base, (@2)->maxsize);
 	}
 @c
@@ -1493,8 +1518,8 @@ BATmadvise(BAT *b, int bns, int hhp, int thp )
 {
 	BATcheck(b, "BATmadvise");
 	@:madvise(bns,b->batBuns)@
-	@:madvise(hhp,&b->hheap)@
-	@:madvise(thp,&b->theap)@
+	@:madvise(hhp,b->hheap)@
+	@:madvise(thp,b->theap)@
 	return 0;
 }
 
@@ -1503,8 +1528,8 @@ BATmmap_pin(BAT *b)
 {
 	BATcheck(b, "BATmmap_pin");
 	@:pin(pin,b->batBuns)@
-	@:pin(pin,&b->hheap)@
-	@:pin(pin,&b->theap)@
+	@:pin(pin,b->hheap)@
+	@:pin(pin,b->theap)@
 	return 0;
 }
 
@@ -1513,8 +1538,8 @@ BATmmap_unpin(BAT *b)
 {
 	BATcheck(b, "BATmmap_unpin");
 	@:pin(unpin,b->batBuns)@
-	@:pin(unpin,&b->hheap)@
-	@:pin(unpin,&b->theap)@
+	@:pin(unpin,b->hheap)@
+	@:pin(unpin,b->theap)@
 	return 0;
 }
 
@@ -1549,11 +1574,11 @@ BATcheckmodes(BAT *b, int persistent, int unloadable)
 		b->batMapbuns = STORE_PRIV;
 		dirty = b->batMapdirty = TRUE;
 	}
-	if (HEAPcheckmode(&b->hheap, persistent, unloadable, b->batRestricted == BAT_WRITE || (b->batRestricted == BAT_APPEND && ATOMappendpriv(b->htype, &b->hheap)))) {
+	if (b->hheap && (HEAPcheckmode(b->hheap, persistent, unloadable, b->batRestricted == BAT_WRITE || (b->batRestricted == BAT_APPEND && ATOMappendpriv(b->htype, b->hheap))))) {
 		b->batMaphheap = STORE_PRIV;
 		dirty = TRUE;
 	}
-	if (HEAPcheckmode(&b->theap, persistent, unloadable, b->batRestricted == BAT_WRITE || (b->batRestricted == BAT_APPEND && ATOMappendpriv(b->ttype, &b->theap)))) {
+	if (b->theap && (HEAPcheckmode(b->theap, persistent, unloadable, b->batRestricted == BAT_WRITE || (b->batRestricted == BAT_APPEND && ATOMappendpriv(b->ttype, b->theap))))) {
 		b->batMaptheap = STORE_PRIV;
 		dirty = TRUE;
 	}
@@ -1725,8 +1750,8 @@ BATsetaccess(BAT *b, int mode)
 	BATcheck(b, "BATsetaccess");
 	if (b->batRestricted != mode) {
 		int m1 = 0, bak1 = b->batBuns->storage;
-		int m2 = 0, bak2 = b->hheap.storage;
-		int m3 = 0, bak3 = b->theap.storage;
+		int m2 = 0, bak2 = b->hheap ? b->hheap->storage : -1;
+		int m3 = 0, bak3 = b->theap ? b->theap->storage : -1;
 		int committed = BBP_status(b->batCacheid) & BBPEXISTING;
 		int bak = b->batRestricted;
 		int dirty = BATdirty(b);
@@ -1750,15 +1775,19 @@ BATsetaccess(BAT *b, int mode)
 			} else if (b->batBuns->storage == BAT_WRITE) {
 				m1 = HEAPsetmmap(b->batBuns, &remap);
 			}
-			if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->htype, &b->hheap))) {
-				m2 = HEAPsetpriv(&b->hheap, committed, &remap, &reload);
-			} else if (b->hheap.storage == BAT_WRITE) {
-				m2 = HEAPsetmmap(&b->hheap, &remap);
+			if (bak2 >= 0) {
+				if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->htype, b->hheap))) {
+					m2 = HEAPsetpriv(b->hheap, committed, &remap, &reload);
+				} else if (b->hheap->storage == BAT_WRITE) {
+					m2 = HEAPsetmmap(b->hheap, &remap);
+				}
 			}
-			if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->ttype, &b->theap))) {
-				m3 = HEAPsetpriv(&b->theap, committed, &remap, &reload);
-			} else if (b->theap.storage == BAT_WRITE) {
-				m3 = HEAPsetmmap(&b->theap, &remap);
+			if (bak3 >= 0) {
+				if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->ttype, b->theap))) {
+					m3 = HEAPsetpriv(b->theap, committed, &remap, &reload);
+				} else if (b->theap->storage == BAT_WRITE) {
+					m3 = HEAPsetmmap(b->theap, &remap);
+				}
 			}
 		}
 		if (remap && b->batCopiedtodisk && dirty) {
@@ -1961,14 +1990,13 @@ check if duplicated properties are equal
 		     (b->batDeleted < b->batBuns->base) +
 		     (b->batFirst < b->batDeleted) +
 		     (b->batFirst > b->batInserted) +
-		     (b->batCount != BATcount(b)) +
 		     (b->batBuns->free > b->batBuns->size) +
 		     (b->batInserted > b->batBuns->base + b->batBuns->free);
 		if (zz) {
 			GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d\n", BBPname(b->batCacheid), zz);
 
 		}
-		if (b->hhash_heap != bm->thash_heap) {
+		if (b->hhash!= bm->thash) {
 			GDKerror("BATpropcheck: BAT %s has inconsistent accrefs\n", BBPname(b->batCacheid));
 			HASHdestroy(b);
 			b->batDirty = TRUE;
@@ -2194,12 +2222,12 @@ for determining which algebra commands set properties sub-optimally.
 
 				hp->filename = GDKmalloc(strlen(nme) + 12);
 				sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
-				if (HASHnew(&bv->hhash, hp, tpe, yy + lim, HASHmask(lim)) == NULL) {
+				if ((bv->hhash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
 					GDKfree(hp->filename);
 					GDKfree(hp);
 					THRprintf(GDKerr, "BATpropcheck(%s): could allocate hash table for key test\n", BBPname(b->batCacheid));
 				} else {
-					bv->hhash_heap = BATmirror(bv)->thash_heap = hp;
+					BATmirror(bv)->thash = bv->hhash;
 
 					switch (ATOMstorage(tpe)) {
 #ifndef NOEXPAND_CHR

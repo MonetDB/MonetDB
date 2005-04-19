@@ -397,22 +397,13 @@ Failure to read or write the BAT results in a NULL, otherwise
 it returns the BAT pointer.
 @{
 @c
-static int
-DESCatom(str nme)
-{
-	int tpe = ATOMindex(nme);
-
-	if (tpe < 0 || BATatoms[tpe].deleting)
-		return -1;
-	return tpe;
-}
-
 static BAT *
 DESCload(int i)
 {
 	str s, nme = BBP_physical(i);
 	BATstore *bs;
 	BAT *b = NULL;
+	int ht, tt; 
 
 	IODEBUG {
 		THRprintf(GDKerr, "DESCload %s\n", nme);
@@ -423,11 +414,16 @@ DESCload(int i)
 		return 0;
 	b = &bs->B;
 
-	if ((*b->hatom && ((b->htype = DESCatom(s = b->hatom)) < 0)) || (*b->tatom && ((b->ttype = DESCatom(s = b->tatom)) < 0))) {
+	ht = b->htype;
+	tt = b->ttype;
+	if ((ht < 0 && (ht = ATOMindex(s = ATOMunknown_name(ht))) < 0 ) ||
+	    (tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0 )) {
 		GDKerror("DESCload: atom '%s' unknown, in BAT '%s'.\n", s, nme);
-		return 0;
+		return NULL;
 	}
-	b->hhash_heap = b->thash_heap = NULL;
+	b->htype = ht;
+	b->ttype = tt;
+	b->hhash = b->thash = NULL;
 	b->batSharecnt = 0;
 	b->void_cnt = 0;
 	/* mil shouldn't mess with just loaded bats */
@@ -448,11 +444,11 @@ DESCsetmodes(BAT *b, BAT *img)
 	if (b->batMapbuns != (char) -1) {
 		img->batBuns->storage = b->batMapbuns;
 	}
-	if (b->batMaphheap != (char) -1) {
-		img->hheap.storage = b->batMaphheap;
+	if (img->hheap && b->batMaphheap != (char) -1) {
+		img->hheap->storage = b->batMaphheap;
 	}
-	if (b->batMaptheap != (char) -1) {
-		img->theap.storage = b->batMaptheap;
+	if (img->theap && b->batMaptheap != (char) -1) {
+		img->theap->storage = b->batMaptheap;
 	}
 
 	/* change modes in img into legal modes, and reset b's mapdity if something had to be corrected */
@@ -508,21 +504,30 @@ BATsave(BAT *bd)
 
 	b->batBuns = &b->U->buns;
 
+	if (b->hheap) {
+		b->hheap = (Heap*)GDKmalloc(sizeof(Heap));
+		*b->hheap = *bd->hheap; 
+	}
+	if (b->theap) {
+		b->theap = (Heap*)GDKmalloc(sizeof(Heap));
+		*b->theap = *bd->theap; 
+	}
+
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtybuns) {
 		if (err == 0)
 			err = HEAPsave(b->batBuns, nme, "buns");
 	}
-	if (b->batCopiedtodisk == 0 || b->batDirty || b->hheapdirty)
+	if (b->hheap && (b->batCopiedtodisk == 0 || b->batDirty || b->hheapdirty))
 		if (b->htype && b->hvarsized) {
 			if (err == 0)
-				err = HEAPsave(&b->hheap, nme, "hheap");
+				err = HEAPsave(b->hheap, nme, "hheap");
 		}
-	if (b->batCopiedtodisk == 0 || b->batDirty || b->theapdirty)
+	if (b->theap && (b->batCopiedtodisk == 0 || b->batDirty || b->theapdirty))
 		if (b->ttype && b->tvarsized) {
-			if (err == 0)
-				err = HEAPsave(&b->theap, nme, "theap");
+			if (err == 0) 
+				err = HEAPsave(b->theap, nme, "theap");
 		}
 	/* correct heap modes such that they are ACID respecting */
 	DESCsetmodes(bd, b);
@@ -533,6 +538,10 @@ BATsave(BAT *bd)
 			b->batCopiedtodisk = 1;
 			err = BATsavedesc(b, nme);
 		}
+
+	if (b->hheap) GDKfree(b->hheap);
+	if (b->theap) GDKfree(b->theap);
+
 	if (err == 0) {
 		bd->batCopiedtodisk = 1;
 		return bd;
@@ -562,28 +571,28 @@ BATload_intern(bat i)
 	}
 
 	/* LOAD head heap */
-	if (!ATOMvarsized(b->htype)) {
-		memset(&b->hheap, 0, sizeof(Heap));
-	} else if (ret >= 0) {
-		ret |= HEAPload(&b->hheap, nme, "hheap", b->batRestricted == BAT_READ);
+	if (ATOMvarsized(b->htype) && ret >= 0) {
+		ret |= HEAPload(b->hheap, nme, "hheap", b->batRestricted == BAT_READ);
+		assert(ret >= 0);
 		if (ret >= 0 && BATatoms[b->htype].atomHeapCheck == HEAP_check)
-			HEAP_init(&b->hheap, b->htype);
+			HEAP_init(b->hheap, b->htype);
 	}
 
 	/* LOAD tail heap */
-	if (!ATOMvarsized(b->ttype)) {
-		memset(&b->theap, 0, sizeof(Heap));
-	} else if (ret >= 0) {
-		ret |= HEAPload(&b->theap, nme, "theap", b->batRestricted == BAT_READ);
+	if (ATOMvarsized(b->ttype) && ret >= 0) {
+		ret |= HEAPload(b->theap, nme, "theap", b->batRestricted == BAT_READ);
+		assert(ret >= 0);
 		if (ret >= 0 && BATatoms[b->ttype].atomHeapCheck == HEAP_check)
-			HEAP_init(&b->theap, b->ttype);
+			HEAP_init(b->theap, b->ttype);
 	}
 
 	/* handle fatal errors */
 	if (ret < 0) {
 		HEAPfree(b->batBuns);
-		HEAPfree(&b->hheap);
-		HEAPfree(&b->theap);
+		if (b->hheap) 
+			HEAPfree(b->hheap);
+		if (b->theap) 
+			HEAPfree(b->theap);
 		return NULL;
 	}
 
@@ -602,8 +611,8 @@ BATload_intern(bat i)
 	}
 	b->batDirtydesc |= b->batMapdirty;	/* if some heap mode changed, make desc dirty */
 	b->batMapbuns = (char) b->batBuns->storage;
-	b->batMaphheap = (char) b->hheap.storage;
-	b->batMaptheap = (char) b->theap.storage;
+	if (b->hheap) b->batMaphheap = (char) b->hheap->storage;
+	if (b->theap) b->batMaptheap = (char) b->theap->storage;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
 		++b->batSharecnt;
@@ -667,17 +676,21 @@ BATdelete(BAT *b)
 	} else if (b->batBuns->base) {
 		HEAPfree(b->batBuns);
 	}
-	if (b->batCopiedtodisk || (b->hheap.storage & STORE_MMAP)) {
-		if (HEAPdelete(&b->hheap, o, "hheap") && b->batCopiedtodisk)
-			GDKwarning("BATdelete(%s): head heap\n", b->batId);
-	} else if (b->hheap.base) {
-		HEAPfree(&b->hheap);
+	if (b->hheap) {
+		if (b->batCopiedtodisk || (b->hheap->storage & STORE_MMAP)) {
+			if (HEAPdelete(b->hheap, o, "hheap") && b->batCopiedtodisk)
+				GDKwarning("BATdelete(%s): head heap\n", b->batId);
+		} else {
+			HEAPfree(b->hheap);
+		}
 	}
-	if (b->batCopiedtodisk || (b->theap.storage & STORE_MMAP)) {
-		if (HEAPdelete(&b->theap, o, "theap") && b->batCopiedtodisk)
-			GDKwarning("BATdelete(%s): tail heap\n", b->batId);
-	} else if (b->theap.base) {
-		HEAPfree(&b->theap);
+	if (b->theap) {
+		if (b->batCopiedtodisk || (b->theap->storage & STORE_MMAP)) {
+			if (HEAPdelete(b->theap, o, "theap") && b->batCopiedtodisk)
+				GDKwarning("BATdelete(%s): tail heap\n", b->batId);
+		} else {
+			HEAPfree(b->theap);
+		}
 	}
 	b->batCopiedtodisk = FALSE;
 	return 0;
@@ -975,7 +988,7 @@ Init the column descriptors of the tail columns.
 			c[j + 1].format = NULL;
 		else
 			c[j + 1].format = printfcn(argv[j]);
-		if (!(strcmp(argv[j]->tident, "t") && strcmp(argv[j]->tident, "h")))
+		if (!default_ident(argv[j]->tident))
 			c[j + 1].tabs = print_tabwidth(argv[j], batname(argv[j]), c + (j + 1));
 		else
 			c[j + 1].tabs = print_tabwidth(argv[j], argv[j]->tident, c + (j + 1));

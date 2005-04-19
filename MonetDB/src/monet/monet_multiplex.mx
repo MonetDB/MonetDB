@@ -736,7 +736,7 @@ in this implementation.
 
 @= batinit
 	b@1 = BBPdescriptor(@2);
-	a@1 = ATOMvarsized(b@1->ttype)?b@1->theap.base:0;
+	a@1 = ATOMvarsized(b@1->ttype)?b@1->theap->base:0;
 	s@1 = BUNsize(b@1);
 	p@1 = (char*) (BUNfirst(b@1)+b@1->tloc);
 	if (htpe != TYPE_void)
@@ -1310,7 +1310,7 @@ Note that the varsized result produced by the execution must be freed.
 Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.g.).
 
 @= exec_cleanup
-	if (nested->hhash_heap || nested->thash_heap) {
+	if (nested->hhash || nested->thash) {
 		HASHdestroy(nested);
 	}
 	nested->halign = nested->talign = 0;
@@ -1451,10 +1451,9 @@ there are the {strings, polygons, images, etc}!
 	if (hidden_vartype) {
 		nested_rev->ttype = nested->htype = hidden_vartype;
 		nested_rev->tvarsized = nested->hvarsized = TRUE;
-		strcpy(nested->hatom, ATOMname(hidden_vartype));
-		hheap_bak = (Heap *) alloca(sizeof(Heap));
-		*hheap_bak = nested->hheap;
-		nested->hheap = b->theap;
+		hheap_bak = nested->hheap;
+		nested->hheap = (Heap*) alloca(sizeof(Heap));
+		*nested->hheap = *b->theap;
 	}
 
 	/* TRICK: for sorted aggregation, we let 'nested' point into 'b' */
@@ -1742,18 +1741,13 @@ but rather discard the complete result and return an error.
 	}
 	nested->ttype = nested_rev->htype = TYPE_void;
 	if (hheap_bak)
-		nested->hheap = *hheap_bak;
+		nested->hheap = hheap_bak;
 	if (nested_bak)
 		*(BATstore *) nested = *nested_bak;
 	if (hidden_vartype) {
 		nested->htype = nested_rev->ttype = TYPE_var;
 		nested_rev->tvarsized = nested->hvarsized = FALSE;
-#if TYPE_var == TYPE_int
-		strcpy(nested->hatom, "int");
-#else
-		strcpy(nested->hatom, "lng");
-#endif
-		nested->hheap.base = NULL;
+		nested->hheap = NULL;
 	}
 	if (histo)
 		BBPreclaim(histo);

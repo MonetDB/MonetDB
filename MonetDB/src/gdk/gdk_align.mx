@@ -110,9 +110,9 @@ ALIGNsetH(BAT *b1, BAT *b2)
 		b2->batDirtydesc = TRUE;
 	} else {
 		/* propagate GDK_AGGR information */
-		b1->H->aggr[0] = b2->H->aggr[0];
-		b1->H->aggr[1] = b2->H->aggr[1];
-		b1->H->aggr[2] = b2->H->aggr[2];
+		BATpropagate(b1, b2, GDK_AGGR_SIZE);
+		BATpropagate(b1, b2, GDK_AGGR_CARD);
+		BATpropagate(b1, b2, GDK_AGGR_HASNIL);
 	}
 	if (BAThvoid(b2)) {
 		if (b1->htype != TYPE_void)
@@ -232,12 +232,11 @@ use a copy.
 @c
 	if (slice_view || VIEWparent(b)) {
 		/* slices are unequal to their parents; cannot use accs */
-		bn->hhash_heap = bn->thash_heap = NULL;
-		bn->hhash.link = bn->thash.link = NULL;
+		bn->hhash = bn->thash = NULL;
 	} else {
 		/* equal pointers to parent mean view uses acc of parent */
-		bn->hhash_heap = b->hhash_heap;
-		bn->thash_heap = b->thash_heap;
+		bn->hhash = b->hhash;
+		bn->thash = b->thash;
 	}
 	gdk_unset_lock(GDKhashLock[ABS(parent) & BBPLOCKMASK], "VIEWcreate_");
 	BBPcacheit(bn);
@@ -269,7 +268,7 @@ VIEWhead(BAT *b)
 	bm->H = bn->T;
 	bn->ttype = bm->htype = TYPE_void;
 	bn->tvarsized = bm->hvarsized = 1;
-	bn->thash_heap = bm->hhash_heap = NULL;
+	bn->thash = bm->hhash = NULL;
 	BATseqbase(bm, oid_nil);
 
 	return bn;
@@ -304,7 +303,7 @@ VIEWcombine(BAT *b)
 	bn->tkey = bm->hkey = bn->hkey;
 	bn->tseqbase = bm->hseqbase = bn->hseqbase;
 	bn->tvarsized = bm->hvarsized = bn->hvarsized;
-	bn->thash_heap = bm->hhash_heap = bn->hhash_heap;
+	bn->thash = bm->hhash = bn->hhash;
 
 	return bn;
 }
@@ -321,22 +320,24 @@ BATmaterialize(BAT *b, size_t size)
 
 	BATcheck(b, "BATmaterialize: bat required");
 	{
-		int ht = b->htype, tt = b->ttype, head = 0;
+		int ht = b->htype, tt = b->ttype, vid = 0;
 		size_t cnt = MAX(BATcount(b), size);
-		Heap buns = *b->batBuns, hh = b->H->heap, th = b->T->heap;
+		Heap buns = *b->batBuns, *hh = b->hheap, *th = b->theap;
 		int bunwidth = b->dims.bunwidth, hlc = b->hloc, tlc = b->tloc;
-		char *hbase = (char *) Hbase(b), *tbase = (char *) Tbase(b);
 		int newbw = 0;
 		BUN p = BUNfirst(b), q = BUNlast(b);
 
 		ALGODEBUG THRprintf(GDKout, "BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
 
 		if (BAThdense(b) && ht == TYPE_void) {
-			head = 1;
+			vid ++;
 			ht = TYPE_oid;
-		} else if (BATtdense(b) && tt == TYPE_void) {
+		}
+		if (BATtdense(b) && tt == TYPE_void) {
+			vid += 2;
 			tt = TYPE_oid;
-		} else {	/* no voids */
+		}
+		if (vid == 0) {	/* no voids */
 			return b;
 		}
 
@@ -349,28 +350,35 @@ BATmaterialize(BAT *b, size_t size)
 			*b->batBuns = buns;
 			return NULL;
 		}
-		b->hheap.filename = NULL;
-		if (ATOMheap(ht, &b->hheap, cnt) < 0) {
-			HEAPfree(b->batBuns);
-			*b->batBuns = buns;
-			b->hheap = hh;
-			return NULL;
+		if (hh) {
+			b->hheap = (Heap*)GDKmalloc(sizeof(Heap));
+			*b->hheap = *hh;
+			b->hheap->filename = NULL;
+			if (ATOMheap(ht, b->hheap, cnt) < 0) {
+				HEAPfree(b->batBuns);
+				*b->batBuns = buns;
+				b->hheap = hh;
+				return NULL;
+			}
 		}
-		b->theap.filename = NULL;
-		if (ATOMheap(tt, &b->theap, cnt) < 0) {
-			HEAPfree(b->batBuns);
-			HEAPfree(&b->hheap);
-			*b->batBuns = buns;
-			b->hheap = hh;
-			b->theap = th;
-			return NULL;
+		if (th) {
+			b->theap = (Heap*)GDKmalloc(sizeof(Heap));
+			*b->theap = *th;
+			b->theap->filename = NULL;
+			if (ATOMheap(tt, b->theap, cnt) < 0) {
+				HEAPfree(b->batBuns);
+				HEAPfree(b->hheap);
+				GDKfree(b->hheap);
+				*b->batBuns = buns;
+				b->hheap = hh;
+				b->theap = th;
+				return NULL;
+			}
 		}
 
 		/* point of no return */
 		b->htype = ht;
 		b->ttype = tt;
-		strcpy(b->hatom, ATOMname(ht));
-		strcpy(b->tatom, ATOMname(tt));
 		BATsetdims(b);
 		DELTAinit(b);
 		newbw = BUNsize(b);
@@ -391,15 +399,15 @@ BATmaterialize(BAT *b, size_t size)
 		bm->dims.bunshift = b->dims.bunshift;
 		bm->dims.hseq = b->dims.tseq;
 		bm->dims.tseq = b->dims.hseq;
-		bm->hhash_heap = b->thash_heap;
-		bm->thash_heap = b->hhash_heap;
+		bm->hhash = b->thash;
+		bm->thash = b->hhash;
 
-		if (head) {	/* set the correct dense info */
+		/* set the correct dense info */
+		if (vid == 1) 	
 			b->hdense = TRUE;
-		} else {
+		if (vid == 2) 	
 			b->tdense = TRUE;
-		}
-		if (head) {
+		if (vid == 1) {
 			oid h = b->hseqbase;
 			BUN r = BUNlast(b);
 
@@ -407,10 +415,12 @@ BATmaterialize(BAT *b, size_t size)
 				for (; p < q; p += bunwidth, h++, r += newbw)
 					bunfastins_nocheck(b, r, (ptr) &h, p + tlc, newbw);
 			} else {
+				char *tbase = th->base;
+
 				for (; p < q; p += bunwidth, h++, r += newbw)
 					bunfastins_nocheck(b, r, (ptr) &h, tbase + (*(var_t *) (p + tlc)), newbw);
 			}
-		} else {
+		} else if (vid == 2) {
 			oid t = b->tseqbase;
 			BUN r = BUNlast(b);
 
@@ -418,16 +428,32 @@ BATmaterialize(BAT *b, size_t size)
 				for (; p < q; p += bunwidth, t++, r += newbw)
 					bunfastins_nocheck(b, r, p + hlc, (ptr) &t, newbw);
 			} else {
+				char *hbase = hh->base;
+
 				for (; p < q; p += bunwidth, t++, r += newbw)
 					bunfastins_nocheck(b, r, hbase + (*(var_t *) (p + hlc)), (ptr) &t, newbw);
 			}
+		} else { /* void, void case */
+			oid h = b->hseqbase;
+			oid t = b->tseqbase;
+			int f = 0, c = BATcount(b);
+			BUN r = BUNlast(b);
+
+			for (; f < c; f++, h++, t++)
+				bunfastins_nocheck(b, r, (ptr) &h, (ptr) &t, newbw);
 		}
 		ret = b;
 	      bunins_failed:
 		/* cleanup the old heaps */
 		HEAPfree(&buns);
-		HEAPfree(&th);
-		HEAPfree(&hh);
+		if (th) {
+			HEAPfree(th);
+			GDKfree(th);
+		}
+		if (hh) {
+			HEAPfree(hh);
+			GDKfree(hh);
+		}
 	}
 	return ret;
 }
@@ -446,12 +472,20 @@ VIEWunlink(BAT *b)
 		if (p == NULL)
 			return;
 
-		/* unlink hash accelerators shared with parent */
-		if (b->hhash_heap && (b->hhash_heap == p->hhash_heap || b->hhash_heap == p->thash_heap)) {
-			b->hhash_heap = m->thash_heap = NULL;
+		/* unlink heaps shared with parent */
+		if (b->hheap && (b->hheap == p->hheap || b->hheap == p->theap)){
+			b->hheap = m->theap = NULL;
 		}
-		if (b->thash_heap && (b->thash_heap == p->hhash_heap || b->thash_heap == p->thash_heap)) {
-			b->thash_heap = m->hhash_heap = NULL;
+		if (b->theap && (b->theap == p->hheap || b->theap == p->theap)){
+			b->theap = m->hheap = NULL;
+		}
+
+		/* unlink hash accelerators shared with parent */
+		if (b->hhash && (b->hhash == p->hhash || b->hhash == p->thash)){
+			b->hhash = m->thash = NULL;
+		}
+		if (b->thash && (b->thash == p->hhash || b->thash == p->thash)){
+			b->thash = m->hhash = NULL;
 		}
 	}
 }
@@ -485,25 +519,27 @@ VIEWreset(BAT *b)
 			return NULL;
 		}
 		memset(&hh, 0, sizeof(Heap));
-		hh.filename = (str) GDKmalloc(strlen(nme) + 12);
-		sprintf(hh.filename, "%s.hheap", nme);
-		if (ATOMheap(ht, &hh, cnt) < 0) {
-			HEAPfree(&buns);
-			GDKfree(hh.filename);
-			hh.filename = NULL;
-			return NULL;
+		if (n->hheap) {
+			hh.filename = (str) GDKmalloc(strlen(nme) + 12);
+			sprintf(hh.filename, "%s.hheap", nme);
+			if (ATOMheap(ht, &hh, cnt) < 0) {
+				HEAPfree(&buns);
+				GDKfree(hh.filename);
+				return NULL;
+			}
 		}
 		memset(&th, 0, sizeof(Heap));
-		th.filename = (str) GDKmalloc(strlen(nme) + 12);
-		sprintf(th.filename, "%s.theap", nme);
-		if (ATOMheap(n->ttype, &th, cnt) < 0) {
-			HEAPfree(&buns);
-			HEAPfree(&hh);
-			GDKfree(th.filename);
-			th.filename = NULL;
-			return NULL;
+		if (n->theap) {
+			th.filename = (str) GDKmalloc(strlen(nme) + 12);
+			sprintf(th.filename, "%s.theap", nme);
+			if (ATOMheap(n->ttype, &th, cnt) < 0) {
+				HEAPfree(&buns);
+				HEAPfree(&hh);
+				GDKfree(th.filename);
+				return NULL;
+			}
 		}
-
+	
 		v = VIEWcreate(b);
 
 		/* cut the link to your parents */
@@ -524,22 +560,24 @@ VIEWreset(BAT *b)
 		m->T = n->H = &(bs->H);
 		m->H = n->T = &(bs->T);
 		n->batBuns = m->batBuns = &n->U->buns;
-		strcpy(bs->fullid, n->batId);
-		n->batId = m->batId = bs->fullid;
 
 		n->GDKversion = m->GDKversion = GDKLIBRARY;
 
 		/* copy the heaps */
 		*n->batBuns = buns;
-		n->hheap = hh;
-		n->theap = th;
+
+		/* unshare from parents heap */
+		if (hh.base) { 
+			n->hheap = (Heap*)GDKmalloc(sizeof(Heap));
+			*n->hheap = hh;
+		}
+		if (th.base) { 
+			n->theap = (Heap*)GDKmalloc(sizeof(Heap));
+			*n->theap = th;
+		}
 
 		/* modify dimensions to let disappear projected out columns */
 		m->ttype = n->htype = ht;
-
-		/* atomnames are not set correctly on views! */
-		strcpy(n->hatom, ATOMname(n->htype));
-		strcpy(n->tatom, ATOMname(n->ttype));
 
 		BATsetdims(n);
 		m->dims.tailtype = n->dims.headtype;

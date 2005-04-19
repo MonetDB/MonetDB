@@ -161,7 +161,7 @@ m_export void resetProfiler();
 	@:pack_bits(4,_log)@
 	@:pack_bits(_log,_tpe)@ }
 @c
-static INLINE void
+static INLINE int
 monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 {
 	int i = 1, bitoffset = 0, *wordptr = s->words + 1;
@@ -174,7 +174,7 @@ monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 			bat bid = argv[i].val.bval;
 
 			BBPfix(bid);
-			b = BBPquickdesc(ABS(bid), FALSE);
+			b = (BAT*)BBPgetdesc(ABS(bid));
 			if (b) {
 				int batbits = (argv[i].len == int_nil) ? MONETSIG_BATCONST : MONETSIG_BAT;
 
@@ -183,11 +183,14 @@ monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 				@:pack_type((bid>0)?b->ttype:b->htype)@
 			}
 			BBPunfix(bid);
+			if (!b)
+				return -1;
 		} else {
 		      @:pack_type(argv[i].vtype)@
 		}
 	}
 	monetsig_nbits(s) = bitoffset + ((wordptr - (s->words + 1)) << 5);
+	return 0;
 }
 
 static INLINE int
@@ -968,7 +971,8 @@ phase 2: interpret the actual params
 @-
 phase 3: check if we have this already in expanded form
 @c
-		monet_sig_pack(sig, argc, argv);
+		if (monet_sig_pack(sig, argc, argv)< 0)
+			return -1;
 
 		{
 			YYSTREE tt = opcache;
@@ -1418,7 +1422,6 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			return -1;
 		b->T->dense = dense_bak;
 		bn->ttype = BATmirror(bn)->htype = tpe;
-		strcpy(bn->tatom, ATOMname(tpe));
 	} else {
 		int reduce = 0;
 

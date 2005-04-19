@@ -573,7 +573,8 @@ Then retrieve variable specific information.
 	(*out)->batBuns->free = size * BUNsize(*out);
 	BATsetcount(*out, size);
 	BATkey(BATmirror(*out), 0);
-	(*out)->tsorted = 0;
+	if (size > 1)
+		(*out)->tsorted = 0;
 	p = (void *) BUNfirst(*out);
 
 	switch (xtype) {

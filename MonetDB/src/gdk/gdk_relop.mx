@@ -480,10 +480,10 @@ on-the-fly to the non-dense implementation.
 The aftermath -- property setting -- is relatively straightforward here.
 @{
 @c
-#define HLATOMput(bn, dst) ATOMput(bn->htype, &bn->hheap, dst, BUNhloc(l,l_cur))
-#define HVATOMput(bn, dst) ATOMput(bn->htype, &bn->hheap, dst, BUNhvar(l,l_cur))
-#define TLATOMput(bn, dst) ATOMput(bn->ttype, &bn->theap, dst, BUNtloc(r,r_cur))
-#define TVATOMput(bn, dst) ATOMput(bn->ttype, &bn->theap, dst, BUNtvar(r,r_cur))
+#define HLATOMput(bn, dst) ATOMput(bn->htype, bn->hheap, dst, BUNhloc(l,l_cur))
+#define HVATOMput(bn, dst) ATOMput(bn->htype, bn->hheap, dst, BUNhvar(l,l_cur))
+#define TLATOMput(bn, dst) ATOMput(bn->ttype, bn->theap, dst, BUNtloc(r,r_cur))
+#define TVATOMput(bn, dst) ATOMput(bn->ttype, bn->theap, dst, BUNtvar(r,r_cur))
 
 @= SIMPLEput
 #define H@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNhloc(l,l_cur))
@@ -673,7 +673,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	r_cur = BUNptr(r, offset + *(oid*) BUNtloc(l,BUNfirst(l)));
 	yy = BUNsize(r);
 	BATloopFast(l, l_cur, l_end, xx) {
-		@3put(@2, &bn->theap, dst, BUN@1(r, r_cur));
+		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
 		r_cur += yy;
 		dst += zz;
 	}
@@ -684,7 +684,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		size_t yy = offset + *(oid*) BUNtloc(l,l_cur);
 
 		r_cur = BUNptr(r, yy);
-		@3put(@2, &bn->theap, dst, BUN@1(r, r_cur));
+		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
 		dst += zz;
 	}
 @c
@@ -701,7 +701,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 			break;
 		}
 		r_cur = BUNptr(r, yy);
-		@3put(@2, &bn->theap, dst, BUN@1(r, r_cur));
+		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
 		dst += zz;
 	}
 	if (nondense) {
@@ -719,8 +719,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 				continue;
 			}
 			r_cur = BUNptr(r, yy);
-			ATOMput(bn->htype, &bn->hheap, BUNhloc(bn, dst), BUNhead(l, l_cur));
-			@3put(@2, &bn->theap, BUNtloc(bn, dst), BUN@1(r, r_cur));
+			ATOMput(bn->htype, bn->hheap, BUNhloc(bn, dst), BUNhead(l, l_cur));
+			@3put(@2, bn->theap, BUNtloc(bn, dst), BUN@1(r, r_cur));
 			dst += zz;
 		}
 	}
@@ -857,7 +857,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		BAT *ret = NULL;
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
-		if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(&r->theap)) {
+		if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(r->theap)) {
 			tpe = TYPE_var;	/* insert double-eliminated strings as ints */
 		}
 		bn = BATnew(TYPE_void, ATOMtype(tpe), estimate);
@@ -894,14 +894,13 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		if (tpe == TYPE_var && ATOMstorage(r->ttype) == TYPE_str) {
 			BAT *bm = BATmirror(bn);
 
-			if (HEAPcopy(&bn->theap, &r->theap) < 0) {
+			bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+			if (HEAPcopy(bn->theap, r->theap) < 0) {
 				BBPreclaim(bn);
 				goto ready;
 			}
 			bn->ttype = bm->htype = r->ttype;
 			bn->tvarsized = bm->hvarsized = 1;
-
-			strcpy(bn->tatom, ATOMname(r->ttype));
 		}
 		if (nondense) {
 			bn->hsorted = (BATtordered(l) & BAThordered(r) & 1) ? BAThordered(l) : 0;
@@ -997,8 +996,8 @@ batjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 @-
 collect statistics that help us decide what to do
 @c
-	lsize = l->batBuns->size + (l->hheap.base ? l->hheap.size : 0) + (l->theap.base ? l->theap.size : 0);
-	rsize = r->batBuns->size + (r->hheap.base ? r->hheap.size : 0) + (r->theap.base ? r->theap.size : 0);
+	lsize = l->batBuns->size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
+	rsize = r->batBuns->size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
 	for (logr = 4, i = rcount; i > 0; logr++)
 		i >>= 1;
 	for (logl = 4, i = lcount; i > 0; logl++)
@@ -1013,7 +1012,7 @@ collect statistics that help us decide what to do
 		if (swap && BATtvoid(r) && !BAThvoid(l))
 			rfetch = 0;
 	}
-	must_hash = (swap && (rsize < lsize)) ? l->thash_heap != NULL : r->hhash_heap != NULL;
+	must_hash = (swap && (rsize < lsize)) ? l->thash != NULL : r->hhash != NULL;
 @-
 In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
@@ -1793,7 +1792,7 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATfetchsemijoin(r, l, l);\n");
 
 		bn = BATfetchsemijoin(r, l, l, TRUE);
-	} else if (l->hhash_heap && reverse1) {
+	} else if (l->hhash && reverse1) {
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATrevsemijoin(l,r);\n");
 
 		bn = BATrevsemijoin(l, r);

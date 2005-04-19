@@ -830,7 +830,7 @@ TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 			BAT *b;
 
 			BBPfix(bid);
-			b = BBPquickdesc(ABS(bid), FALSE);
+			b = (BAT*)BBPgetdesc(ABS(bid));
 			if (b) {
 				/* swap head/tail types in case of mirrored bats */
 				htpe = (bid > 0) ? b->htype : b->ttype;
@@ -1601,7 +1601,7 @@ TBL_M_client_install(Client client, oid mid)
 	 */
 	if (BATprepareHash(fcn_mid))
 		assert(0);
-	assert(fcn_mid->hhash_heap);
+	assert(fcn_mid->hhash);
 	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, midp, r) {
 		fid = *(oid *) BUNtail(fcn_mid, r);
 		if (BUNins(client->fcntbl, BUNtailfnd(char, TBL_fcn_nme, r, &fid), &fid) == NULL)
@@ -1921,8 +1921,10 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 		}
 	}
 	/* OK: drop can go through. */
-	for (i = 0; i < ntpes; i++)
+	for (i = 0; i < ntpes; i++) {
 		BATatoms[tpes[i]].deleting = 1;	/* block BAT loads of these atoms */
+		BBPatom_drop(tpes[i]);
+	}
 	/* start unload for all prologue bats such that they cannot receive new refcounts */
 	BATloop(TBL_mod_drop, p, q) {
 		if (*(oid *) BUNhloc(TBL_mod_drop, p) == mid) {
@@ -1939,19 +1941,40 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 
 
 int
+TBL_module_atoms(Client client, oid mid, int **Tpes) 
+{
+	int j, i, mtpes = MAXATOMS, ntpes = 0;
+	int *tpes = (int *) GDKmalloc(mtpes * sizeof(int));
+	oid *midp = &mid;
+	char s[80], *nme, *r;
+
+	/* find out which atoms belong to it */
+	if (BATprepareHash(TBL_mod_atm))
+		assert(0);
+	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, midp, r) {
+		nme = (char *) BUNtail(TBL_mod_atm, r);
+		for (j = 0; nme[j] && nme[j] != '='; j++)
+			s[j] = nme[j];
+		s[j] = 0;
+		r = (char *) BUNfnd(client->atomtbl, s);
+		assert(r);
+		tpes[ntpes++] = *(int *) BUNtloc(client->atomtbl, r);
+	}
+	*Tpes = tpes;
+	return ntpes;
+}
+
+int
 TBL_unloadmod(Client client, str module, int level)
 {
 	BAT *fcn_mid = BATmirror(TBL_fcn_mid);
 	BAT *b, *fcntbl = BATmirror(client->fcntbl);
-	char s[80], *nme, *r;
-	int refcnt = 0;
+	int refcnt = 0, j, (*addr) (void), ntpes, *tpes;
 	oid fid, *fidp = &fid, mid, *midp = &mid;
 	hash_t i;
-	int j, mtpes = 80, ntpes = 0;
-	int *tpes = (int *) GDKmalloc(mtpes * sizeof(int));
-	int (*addr) (void);
 	ptr hdl = NULL;
 	BUN p, q;
+	char *r, *s;
 
 	/* identify as father
 	 */
@@ -1975,7 +1998,7 @@ Look up the module.
 		else
 			GDKerror("TBL_unloadmod: module %s does not exist.\n", module);
 
-		return unloadmod_exit(0, level ? NULL : client, tpes);
+		return unloadmod_exit(0, level ? NULL : client, NULL);
 	}
 @-
 Check if it is in use already.
@@ -1986,30 +2009,17 @@ Check if it is in use already.
 		r = BUNlocate(TBL_mod_use, &mid, &cid);
 		if (r == NULL) {
 			GDKerror("TBL_unloadmod: %s was not loaded.\n", module);
-			return unloadmod_exit(0, client, tpes);
+			return unloadmod_exit(0, client, NULL);
 		}
 		if (!TBL_M_directloaded(client, mid, module)) {
 			GDKerror("TBL_unloadmod: others need %s.\n", module);
-			return unloadmod_exit(0, client, tpes);
+			return unloadmod_exit(0, client, NULL);
 		}
 	}
 @-
 preparation phase (only meaningful for C-modules) */
 @c
-	/* find out which atoms belong to it */
-	if (BATprepareHash(TBL_mod_atm))
-		assert(0);
-	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, midp, r) {
-		nme = (char *) BUNtail(TBL_mod_atm, r);
-		for (j = 0; nme[j] && nme[j] != '='; j++)
-			s[j] = nme[j];
-		s[j] = 0;
-		r = (char *) BUNfnd(client->atomtbl, s);
-		assert(r);
-		tpes[ntpes++] = *(int *) BUNtloc(client->atomtbl, r);
-		if (ntpes == mtpes)
-			tpes = (int *) GDKrealloc(tpes, (mtpes *= 2) * sizeof(int));
-	}
+	ntpes = TBL_module_atoms( client, mid, &tpes );
 @-
 check if the C-module is physically dropped that none of its atoms is in use
 @c

@@ -658,7 +658,7 @@ GDKmemchk(int memchk, int vmchk)
 	}
 	memtarget = (memchk && memtarget > GDK_mem_maxsize) ? memtarget - GDK_mem_maxsize : 0;
 	vmtarget = (vmchk && vmtarget > GDK_vm_maxsize) ? vmtarget - GDK_vm_maxsize : 0;
-	if (memtarget > 0 || vmtarget > 0 || BBP_desc_count[0] > (BBP_desc_max + (BBP_desc_max >> 3))) {
+	if (memtarget > 0 || vmtarget > 0) {
 		if (memtarget > 0) {
 			int t = GDKms();
 
@@ -1079,6 +1079,14 @@ GDKmalloc(size_t size)
 	return GDKmallocmax(size, &size, 1);
 }
 
+void *
+GDKzalloc(size_t size)
+{
+	void *p = GDKmallocmax(size, &size, 1);
+	if (p)
+		memset(p,0,size);
+	return p;
+}
 
 void
 GDKfree(void *blk)

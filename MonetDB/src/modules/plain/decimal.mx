@@ -1925,8 +1925,8 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *div, int *prec)
 	bn->ttype = bm->htype = TYPE_decimal;
 	bn->tvarsized = bm->hvarsized = 1;
 
-	bn->theap = hp;
-	strcpy(bn->tatom, "decimal");
+	bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+	*bn->theap = hp;
 	ALIGNsetH(bn, b);
 
 	GDKfree(mult[0]);

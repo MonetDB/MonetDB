@@ -211,8 +211,8 @@ replacing their generic versions there.
 @= T_BUNfastins
 #define @1@4_bunfastins_nocheck_noinc(b, p, h, t)		\
 	do {							\
-		@2_PUT(@3, &(b)->hheap, BUNhloc(b, p), h);	\
-		@5_PUT(@6, &(b)->theap, BUNtloc(b, p), t);	\
+		@2_PUT(@3, (b)->hheap, BUNhloc(b, p), h);	\
+		@5_PUT(@6, (b)->theap, BUNtloc(b, p), t);	\
 	} while (0)
 #define @1@4_bunfastins_nocheck(b, p, h, t, s)			\
 	do {							\
@@ -697,13 +697,13 @@ Adding test for v != nil for types where nil != MIN.
 #endif	/* NOEXPAND_LNG */
 #endif	/* SKIP_TYPE_EXPANSIONS */
 	if (b->tvarsized) {
-		if (equi && t == TYPE_str && strElimDoubles(&b->theap)) {
+		if (equi && t == TYPE_str && strElimDoubles(b->theap)) {
 			/* Single-valued sequential scans for strings are
 			 * optimized when double elemination is in effect,
 			 * by scanning for the correct integer index value.
 			 * This is an equi select, so we assemble the
 			 * predicate here and skip seqscanIF. */
-			str_idx = strLocate(&b->theap, tl);
+			str_idx = strLocate(b->theap, tl);
 			@:seqscanHTget(eq_str,any,tloc,if((*(var_t*)v)==str_idx),tl)@
 		} else {
 			@:seqscanIF(var,any,tvar,atom,t,&&!atom_EQ(nil,v,t))@

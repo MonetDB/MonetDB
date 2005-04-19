@@ -667,14 +667,6 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 }
 @h
 typedef struct {
-	int type;		/* type of index entity */
-	size_t lim;		/* collision list size */
-	hash_t mask;		/* number of hash buckets-1 (power of 2) */
-	hash_t *hash;		/* hash table */
-	hash_t *link;		/* collision list */
-} Hash;
-
-typedef struct {
 	size_t maxsize;		/* maximum realloc size (bytes) */
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
@@ -684,6 +676,16 @@ typedef struct {
 	chr padding;		/* not used. */
 	str filename;		/* file containing image of the heap */
 } Heap;
+
+typedef struct {
+	int type;		/* type of index entity */
+	size_t lim;		/* collision list size */
+	hash_t mask;		/* number of hash buckets-1 (power of 2) */
+	hash_t *hash;		/* hash table */
+	hash_t *link;		/* collision list */
+	Heap   *heap;		/* heap where the hash is stored */
+} Hash;
+
 @
 @}
 
@@ -809,7 +811,6 @@ typedef struct {
           size_t batCount;         /* Tuple count */
           /* Head properties */
           int    htype;            /* Head type number */
-          str    hatom;            /* name of head type */
           str    hident;           /* name for head column */
           bit    hkey;             /* head values shoul be unique? */
           bit    hsorted;          /* are head values currently ordered? */
@@ -818,11 +819,10 @@ typedef struct {
           bit    hheapdirty;       /* head heap specific dirty flag */
           /* Head storage */
           int    hloc;             /* byte-offset in BUN for head elements */
-          Heap   hheap;            /* heap for varsized head values */
-          Hash   hhash;            /* linair chained hash table on head */
+          Heap   *hheap;           /* heap for varsized head values */
+          Hash   *hhash;           /* linair chained hash table on head */
           /* Tail properties */
           int    ttype;            /* Tail type number */
-          str    tatom;            /* name of tail type */
           str    tident;           /* name for tail column */
           bit    tkey;             /* tail values should be unique? */
           bit    tsorted;          /* are tail values currently ordered? */
@@ -857,35 +857,35 @@ be clustered horizontally.
 @{
 @h
 typedef struct {
-	sht headtype;		/* type id. */
-	sht tailtype;		/* type id. */
-	int headloc;		/* offset into bun. */
-	int tailloc;		/* offset into bun. */
+	chr headtype;		/* type id. */
+	chr tailtype;		/* type id. */
+	unsigned short headloc;	/* offset into bun. */
+	unsigned short tailloc;	/* offset into bun. */
 	bit headkey;		/* duplicates allowed? */
 	bit tailkey;		/* duplicates allowed? */
 	bit headvarsized;	/* varsized(>0) or fixedsized(0). */
 	bit tailvarsized;	/* varsized(>0) or fixedsized(0). */
-	sht bunshift;		/* log2 of bunwidth */
+	chr bunshift;		/* log2 of bunwidth */
 	unsigned short bunwidth; /* byte-width of BUN array */
 	oid hseq;		/* start of dense head sequence */
 	oid tseq;		/* start of dense tail sequence */
 } Dimensions;
 
 typedef struct {
-	short_str id;		/* BAT id storage. */
+	MT_Id tid;		/* which thread created it */
+	int stamp;		/* BAT recent creation stamp */
+
+	sht persistence;	/* should the BAT persist on disk? */
 	chr dirtyflushed;	/* saved dirty marker */
 	chr copiedtodisk;	/* once written */
-	sht persistence;	/* should the BAT persist on disk? */
-	int stamp;		/* BAT recent creation stamp */
-	sht set;		/* real set semantics */
-	sht restricted;		/* access priviliges */
-	MT_Id tid;		/* which thread created it */
+	chr set;		/* real set semantics */
+	chr restricted;		/* access priviliges */
 	chr dirty;		/* general dirty marker */
 	chr descdirty;		/* bat descriptor dirty marker */
 	chr bunsdirty;		/* bun heap dirty marker */
+	chr sharecnt;		/* VIEW share count */
 	bat parentid;		/* cache id of VIEW parent bat */
 
-	int sharecnt;		/* VIEW share count */
 	char map_dirty;		/* new mmap mode present */
 	char map_buns;		/* mmap mode for bun heap */
 	char map_hheap;		/* mmap mode for head atom heap */
@@ -903,16 +903,14 @@ typedef struct {
 } BUNrec;
 
 typedef struct PROPrec {
+	int 	  id;
 	ValRecord v;
-	short_str name;
 	struct PROPrec *next;	/* simple chain of properties */
 } PROPrec;
 
 typedef struct {
-	short_str id;		/* label for head/tail column */
-	short_str atom;		/* head atom name */
-	Heap heap;		/* space for the head/tail column. */
-	Hash hash;		/* hash index on head/tail column. */
+	str   id;		/* label for head/tail column */
+	Heap *vheap;		/* space for the head/tail column. */
 	chr heapdirty;		/* specific heap dirty marker */
 	bit sorted;		/* 0=false, 1=true; */
 	bit dense;		/* 0=false, 1=true; */
@@ -921,23 +919,25 @@ typedef struct {
 	size_t nokey[2];	/* positions that prove key ==FALSE */
 	size_t nosorted;	/* position that proves sorted==FALSE */
 	size_t nodense;		/* position that proves dense==FALSE */
-	int aggr[3];		/* space for keeping size, card and hasnil aggregates */
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
 typedef struct {
 	/* static bat properties */
-	int GDKversion;		/* FIRST! */
+	sht GDKversion;		/* FIRST! */
 	str batId;		/* BAT id: points to P->id */
 	bat batCacheid;		/* index into BBP */
 	Dimensions dims;	/* BAT dimensions */
 	Heap *batBuns;		/* pointer to U->buns */
+
 	/* static column properties */
-	Heap *hhash_heap;	/* hash table: points into H->hash */
-	Heap *thash_heap;	/* hash table: points into T->hash */
+	Hash *hhash;		/* head hash table */
+	Hash *thash;		/* tail hash table */
+
 	/* dynamic column properties */
 	COLrec *H;		/* column info */
 	COLrec *T;		/* column info */
+
 	/* dynamic bat properties */
 	BATrec *P;		/* cache and sort info */
 	BUNrec *U;		/* cache and sort info */
@@ -959,7 +959,6 @@ typedef struct {
 	COLrec T;		/* storage for tail column */
 	BATrec P;		/* storage for BATrec */
 	BUNrec U;		/* storage for BUNrec */
-	long_str fullid;	/* new full bat name */
 } BATstore;
 
 typedef int (*GDKfcn) ();
@@ -974,8 +973,6 @@ typedef int (*GDKfcn) ();
 #define batConvert	P->convert
 #define batDirtydesc	P->descdirty
 #define batDirtybuns	P->bunsdirty
-#define hhash		H->hash
-#define thash		T->hash
 #define hheapdirty	H->heapdirty
 #define theapdirty	T->heapdirty
 #define batFirst	U->first
@@ -1004,12 +1001,10 @@ typedef int (*GDKfcn) ();
 #define tsorted		T->sorted
 #define hdense		H->dense
 #define tdense		T->dense
-#define hheap		H->heap
-#define theap		T->heap
+#define hheap		H->vheap
+#define theap		T->vheap
 #define hident		H->id
 #define tident		T->id
-#define hatom		H->atom
-#define tatom		T->atom
 #define halign		H->align
 #define talign		T->align
 
@@ -1162,6 +1157,7 @@ gdk_export BAT *BATextend(BAT *b, size_t newcap);
 gdk_export BAT *BATnewstorage(int ht, int tt, size_t cap);
 gdk_export BAT *BATcreatedesc(int ht, int tt, int heapnames);
 gdk_export int BATfree(BAT *b);
+gdk_export void BATdestroy(BAT *b);
 gdk_export int BATelmshift(BAT *b);
 gdk_export void BATsetdims(BAT *b);
 gdk_export int BBPreclaim(BAT *b);
@@ -1264,8 +1260,8 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 #define bunfastins_nocheck(b, p, h, t, s) {				\
 		(b)->batBuns->free += s;				\
 		(b)->batCount ++;				        \
-		ATOMput((b)->htype, &(b)->hheap, BUNhloc(b, p), h);	\
-		ATOMput((b)->ttype, &(b)->theap, BUNtloc(b, p), t);	\
+		ATOMput((b)->htype, (b)->hheap, BUNhloc(b, p), h);	\
+		ATOMput((b)->ttype, (b)->theap, BUNtloc(b, p), t);	\
 	}
 
 #define bunfastins(b, h, t) {						\
@@ -1327,8 +1323,8 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 #define BAThstore(b)	(BAThdense(b) ? TYPE_void : (b)->htype)
 #define BATtstore(b)	(BATtdense(b) ? TYPE_void : (b)->ttype)
 #define Bunbase(b)	((b)->batBuns->base)
-#define Hbase(b)	((b)->hheap.base)
-#define Tbase(b)	((b)->theap.base)
+#define Hbase(b)	((b)->hheap->base)
+#define Tbase(b)	((b)->theap->base)
 
 #define BUNhead(b,p)	((b)->hvarsized ? BUNhvar(b,p) : BUNhloc(b,p))
 #define BUNtail(b,p)	((b)->tvarsized ? BUNtvar(b,p) : BUNtloc(b,p))
@@ -2098,7 +2094,7 @@ gdk_export BUN SORTfnd(BAT *b, ptr v);
 gdk_export BUN SORTfndfirst(BAT *b, ptr v);
 gdk_export BUN SORTfndlast(BAT *b, ptr v);
 
-#define BATprepareHash(X) (((X)->hhash_heap == NULL) && !BAThash(X, 0))
+#define BATprepareHash(X) (((X)->hhash == NULL) && !BAThash(X, 0))
 @
 @}
 
@@ -2116,6 +2112,8 @@ and system information.
 @multitable @columnfractions 0.08 0.8
 @item void*
 @tab GDKmalloc (size_t size)
+@item void*
+@tab GDKzalloc (size_t size)
 @item void*
 @tab GDKmallocmax (size_t size, size_t *maxsize, int emergency)
 @item void*
@@ -2162,6 +2160,7 @@ gdk_export size_t GDKmem_heapsize(void);
 gdk_export size_t GDKmem_heapinuse(void);
 
 gdk_export void *GDKmalloc(size_t size);
+gdk_export void *GDKzalloc(size_t size);
 gdk_export void *GDKmallocmax(size_t size, size_t * maxsize, int emergency);
 gdk_export void *GDKrealloc(void *pold, size_t size);
 gdk_export void *GDKreallocmax(void *pold, size_t size, size_t * maxsize, int emergency);
@@ -2766,10 +2765,10 @@ head column of 'b'). The 'hb' is an integer index, pointing out the
 obtain a BUN from the iteration variable.
 @h
 #define HASHloop(b, h, hb, v)						\
-	for (hb = h.hash[HASHprobe(&h, v)]; hb != HASH_MAX; hb = h.link[hb])	\
-		if (ATOMcmp(h.type, v, BUNhead(b, BUNptr(b, hb))) == 0)
+	for (hb = h->hash[HASHprobe(h, v)]; hb != HASH_MAX; hb = h->link[hb])	\
+		if (ATOMcmp(h->type, v, BUNhead(b, BUNptr(b, hb))) == 0)
 #define HASHloop_str(b,	h, hb, v)					\
-	for (hb = h.hash[strHash(v)&h.mask]; hb != HASH_MAX; hb = h.link[hb])	\
+	for (hb = h->hash[strHash(v)&h->mask]; hb != HASH_MAX; hb = h->link[hb])	\
 		if (strcmp(v, BUNhvar(b, BUNptr(b, hb))) == 0)
 @-
 For string search, we can optimize if the string heap has eliminated
@@ -2778,8 +2777,8 @@ stored in the heap. You can check this with the macro @%strElimDoubles()@
 If so, we can just compare integer index numbers instead of strings:
 @h
 #define HASHloop_fstr(b, h, hb, idx, v)					\
-	for (hb = h.hash[strHash(v)&h.mask], idx = strLocate(&(b)->hheap,v); \
-	     hb != HASH_MAX; hb = h.link[hb])					\
+	for (hb = h->hash[strHash(v)&h->mask], idx = strLocate((b)->hheap,v); \
+	     hb != HASH_MAX; hb = h->link[hb])					\
 		     if (*(var_t*) BUNhloc(b, BUNptr(b, hb)) == idx)
 @
 The following example shows how the hashloop is used:
@@ -2813,11 +2812,11 @@ These hashloops have one extra parameter, a BUN pointer 'w' (again for
 speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 @h
 #define HASHlooploc(b,	h, hb, v, w)					\
-	for (hb = h.hash[HASHprobe(&h, v)]; hb != HASH_MAX; hb = h.link[hb])	\
-		if ((w=BUNptr(b, hb)) != NULL && ATOMcmp(h.type, v, BUNhloc(b, w)) == 0)
+	for (hb = h->hash[HASHprobe(h, v)]; hb != HASH_MAX; hb = h->link[hb])	\
+		if ((w=BUNptr(b, hb)) != NULL && ATOMcmp(h->type, v, BUNhloc(b, w)) == 0)
 #define HASHloopvar(b,	h, hb, v, w)					\
-	for (hb = h.hash[HASHprobe(&h, v)]; hb != HASH_MAX; hb = h.link[hb])	\
-		if ((w=BUNptr(b, hb)) != NULL && ATOMcmp(h.type, v, BUNhvar(b, w)) == 0)
+	for (hb = h->hash[HASHprobe(h, v)]; hb != HASH_MAX; hb = h->link[hb])	\
+		if ((w=BUNptr(b, hb)) != NULL && ATOMcmp(h->type, v, BUNhvar(b, w)) == 0)
 @
 @{
 @h
@@ -2845,7 +2844,7 @@ speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 
 @= hashloop
 #define HASHloop_@1(b,h,hb,v,w)						\
-	for (hb = h.hash[hash_@2(h,v)]; hb != HASH_MAX; hb = h.link[hb])		\
+	for (hb = h->hash[hash_@2(h,v)]; hb != HASH_MAX; hb = h->link[hb])		\
 		if ((w=BUNptr(b, hb)) != NULL && @3_EQ(v, BUN@5(b, w), @4))
 @}
 @- loop over a BAT with ordered tail
@@ -2927,8 +2926,13 @@ properties. They can be used to improve query processing at higher levels.
 #define GDK_AGGR_CARD 2
 #define GDK_AGGR_HASNIL 3
 
-gdk_export int BATgetaggr(BAT *b, int idx);
-gdk_export int BATsetaggr(BAT *b, int idx, int val);
+gdk_export bit BATgetprop_bit(BAT *b, int idx);
+gdk_export int BATgetprop_int(BAT *b, int idx);
+gdk_export str BATgetprop_str(BAT *b, int idx);
+gdk_export void BATsetprop_bit(BAT *b, int idx, bit val);
+gdk_export void BATsetprop_int(BAT *b, int idx, int val);
+gdk_export void BATsetprop_str(BAT *b, int idx, str val);
+gdk_export void BATpropagate(BAT *dst, BAT *src, int idx);
 gdk_export BAT *BATsample(BAT *b, size_t n);
 gdk_export BAT *BAThistogram(BAT *b);
 gdk_export size_t BATtopN(BAT *b, size_t topN);	/* used in monet5/src/modules/kernel/algebra.mx */

@@ -905,7 +905,7 @@ CMDaggr_size(BAT **ret, BAT *b, BAT *e)
 int
 CMDsize(int *ret, BAT *b)
 {
-	*ret = BATgetaggr(b, GDK_AGGR_SIZE);
+	*ret = BATgetprop_int(b, GDK_AGGR_SIZE);
 	if (*ret < 0) {
 		bit *cur = (bit *) BUNtail(b, BUNfirst(b));
 		bit *end = (bit *) BUNtail(b, BUNlast(b));
@@ -913,7 +913,7 @@ CMDsize(int *ret, BAT *b)
 
 		for (cnt = 0; cur < end; cur += xx)
 			cnt += (*cur == TRUE);
-		BATsetaggr(b, GDK_AGGR_SIZE, *ret = cnt);
+		BATsetprop_int(b, GDK_AGGR_SIZE, *ret = cnt);
 	}
 	return GDK_SUCCEED;
 }
@@ -941,11 +941,11 @@ CMDsize(int *ret, BAT *b)
 		str nme = BBP_physical(v->batCacheid);
 		hp->filename = (str) GDKmalloc(strlen(nme)+12);
 		sprintf(hp->filename, "%s.%chash", nme, v->batCacheid>0?'h':'t');
-		if (HASHnew(&v->hhash, hp, any, BATcapacity(b), HASHmask(BATcount(b))) == NULL) {
+		if ((v->hhash = HASHnew(hp, any, BATcapacity(b), HASHmask(BATcount(b)))) == NULL) {
 			BBPreclaim(v);
 			return GDK_FAIL;
 		}
-		v->hhash_heap = BATmirror(v)->thash_heap = hp;
+		BATmirror(v)->thash = v->hhash; 
 		cursize = 0; /* start counting unique elements... (at zero) */
 		BATloopFast(b, p, q, xx) {
 			ptr cur =  (ptr) BUNt@2(b, p);
@@ -999,7 +999,7 @@ CMDcard(int *result, BAT *b, int *maxelements)
 	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
 		cursize = 1;
 	} else if (cursize > 1 && !b->tkey) {
-		cursize = BATgetaggr(b, GDK_AGGR_CARD);
+		cursize = BATgetprop_int(b, GDK_AGGR_CARD);
 		if (b->ttype == TYPE_chr && *maxelements > 256) {
 			maxsize = 256;
 		} else if (b->ttype == TYPE_sht && *maxelements > 65536) {
@@ -1014,10 +1014,10 @@ CMDcard(int *result, BAT *b, int *maxelements)
 			BUN p, q, r;	/* if we could not figure out the cardinality by now, we must do real work.. :( */
 			int xx, tpe = b->ttype;
 
-#if 0
-			if (tpe == TYPE_str && strElimDoubles(&b->theap)) {
-				tpe = TYPE_int;	/* use offsets only in case of a double-eliminated string heap */
+			if (tpe == TYPE_str && strElimDoubles(b->theap)) {
+				tpe = TYPE_var;	/* use offsets only in case of a double-eliminated string heap */
 			}
+#if 0
 #endif
 			if ((size_t) maxsize <= BATcount(b)) {
 				@:card_bound(BOUNDED)@
@@ -1028,7 +1028,7 @@ CMDcard(int *result, BAT *b, int *maxelements)
 		}
 	}
 	if (cursize <= *maxelements) {
-		BATsetaggr(b, GDK_AGGR_CARD, *result = cursize);
+		BATsetprop_int(b, GDK_AGGR_CARD, *result = cursize);
 	} else {
 		*result = int_nil;
 	}
@@ -1046,10 +1046,10 @@ CMDcard_unlimited(int *result, BAT *b)
 int
 CMDhasNil(bit *ret, BAT *b)
 {
-	*ret = (BATcount(b) == 0) ? FALSE : BATtdense(b) ? (b->tseqbase == oid_nil) : BATgetaggr(BATmirror(b), GDK_AGGR_HASNIL);
+	*ret = (BATcount(b) == 0) ? FALSE : BATtdense(b) ? (b->tseqbase == oid_nil) : BATgetprop_bit(BATmirror(b), GDK_AGGR_HASNIL);
 	if (*ret == bit_nil) {
 		*ret = BUNfnd(BATmirror(b), ATOMnilptr(b->ttype)) ? TRUE : FALSE;
-		BATsetaggr(BATmirror(b), GDK_AGGR_HASNIL, *ret);
+		BATsetprop_bit(BATmirror(b), GDK_AGGR_HASNIL, *ret);
 	}
 	return GDK_SUCCEED;
 }

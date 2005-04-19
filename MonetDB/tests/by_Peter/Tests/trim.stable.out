@@ -172,7 +172,7 @@ dir("b_");
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
 [ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_10", "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_10", "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]

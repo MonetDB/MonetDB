@@ -101,7 +101,7 @@ Implementation is either merge- or hash-based.
 	}
 @= hashelim
 	zz = BUNindex(bn, BUNfirst(bn));
-	if (!bn->hhash_heap){
+	if (!bn->hhash){
 		if (BAThash(bn, 0) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
@@ -125,7 +125,7 @@ Implementation is either merge- or hash-based.
 		}
 		if (ins) {
 			bunfastins(bn, h, t);
-			if (bn->hhash_heap)
+			if (bn->hhash)
 				HASHins@4(bn->hhash, (hash_t) zz, h);
 			zz++;
 		}
@@ -526,7 +526,7 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 		if (flip) {
 			hash = FALSE;
 		} else {
-			flip = (r->hhash_heap == NULL && r->thash_heap != NULL);
+			flip = (r->hhash == NULL && r->thash != NULL);
 		}
 		if (flip) {
 			merge = BATatoms[l->ttype].atomCmp;

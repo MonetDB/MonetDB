@@ -435,6 +435,7 @@ structures. The @%null@ returns a reference to a null value representation.
 @- 
 The incremental atom construction uses hardwired properties.
 This should be improved later on.
+
 @{
 @c
 void
@@ -888,8 +889,6 @@ the commit tremendously complicated.
 					 * ~ 21 strings of UP8(8<=len<=15)=16 + 8 bytes 
 					 */
 #endif
-
-#endif /* _GDK_ATOMS_H_ */
 
 @- Atomic ADT functions
 @c
@@ -2217,5 +2216,69 @@ OIDtoStr(char **dst, int *len, oid *src)
 	return (int) strlen(*dst);
 }
 
+@-
+Sometimes a bat descriptor is loaded before the dynamic module defining
+the atom is loaded. To support this an extra set of unknown atoms is kept.
+These can be accessed via the ATOMunknown interface. Adding atoms to this
+set is done via the ATOMunknown_add function. Finding an (negative) atom index
+can be done via ATOMunknown_find, which simply adds the atom if its not in
+the unknown set. The index van be used to find the name of an unknown 
+ATOM via ATOMunknown_name. Once an atom becomes known, ie the module 
+defining it is loaded, it should be removed from the unknown set using
+ATOMunknown_del. 
+
+@h
+extern int ATOMunknown_add( str nme );
+extern int ATOMunknown_del( int a );
+extern int ATOMunknown_find( str nme );
+extern str ATOMunknown_name( int a );
+
+@c
+static str unknown[MAXATOMS] = { NULL };
+
+int 
+ATOMunknown_add( str nme ) 
+{
+	int i = 1;
+	for (;i<MAXATOMS; i++) {
+		if (!unknown[i]) {
+			unknown[i] = GDKstrdup(nme);
+			return -i;
+		}
+	}
+	assert(0);
+}
+
+int
+ATOMunknown_del( int i) 
+{
+	assert(unknown[-i]);
+	GDKfree(unknown[-i]);
+	unknown[-i] = NULL;
+	return 0;
+}
+
+int
+ATOMunknown_find( str nme ) 
+{
+	int i = 1;
+	for (;i<MAXATOMS; i++) {
+		if (unknown[i] && strcmp(unknown[i], nme) == 0) {
+			return -i;
+		}
+	}
+	return ATOMunknown_add(nme);
+}
+
+str
+ATOMunknown_name( int i )
+{
+	assert(unknown[-i]);
+	return unknown[-i];
+}
 @
 @}
+
+@h
+#endif /* _GDK_ATOMS_H_ */
+

@@ -1322,8 +1322,9 @@ void
 integerCopy(int *dst, BAT *b, BUN p, int width, int distance)
 {
 	int *src = (int *) BUNhloc(b, p);
+	char *hatom = ATOMname(b->htype);
 
-	if (b->hatom[0] == 'p' && b->hatom[1] == 'a' && b->hatom[2] == 'x') {
+	if (hatom[0] == 'p' && hatom[1] == 'a' && hatom[2] == 'x') {
 		/* PAX */
 		size_t idx = BUNindex(b, p) - BUNindex(b, BUNfirst(b));
 		int block_ntuples = PAX_INT_PER_BLOCK / width;
@@ -1378,7 +1379,6 @@ BATinteger(BAT **ret, BAT *b, int *width)
 		bn = VIEWcreate(b);
 		m = BATmirror(bn);
 		HASHdestroy(bn);
-		sprintf(bn->tatom, "integer%d", *width);
 		m->htype = bn->ttype = tpe;
 		bn->batDirty = 1;
 	} else {
@@ -1418,7 +1418,6 @@ BATpax(BAT **ret, BAT *b)
 
 	HASHdestroy(bn);
 	bn->ttype = BATmirror(bn)->htype = bn->ttype + 1;
-	strcpy(bn->tatom, ATOMname(bn->ttype));
 	bn->batDirty = 1;
 	return GDK_SUCCEED;
 }
@@ -1431,7 +1430,6 @@ BATintX(BAT **ret, BAT *b)
 
 	HASHdestroy(bn);
 	bn->ttype = BATmirror(bn)->htype = tpe;
-	strcpy(bn->tatom, ATOMname(tpe));
 	bn->batDirty = 1;
 	return GDK_SUCCEED;
 }
@@ -1499,7 +1497,7 @@ typedef struct {
 	size_t size;		/* size of chunk (in bytes) */
 } move_t;
 
-#define HTYPE(b) ((b->htype >= TYPE_integer1 && b->htype <= TYPE_pax256)?int_type(b->hatom):BAThtype(b))
+#define HTYPE(b) ((b->htype >= TYPE_integer1 && b->htype <= TYPE_pax256)?int_type(ATOMname(b->htype)):BAThtype(b))
 #define TTYPE(b) HTYPE(BATmirror(b))
 
 BAT *
@@ -1679,7 +1677,7 @@ radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
 
 			if (cur[x] == lim[x])
 				break;
-			ATOMput(htpe, &bn->hheap, BUNhloc(bn,dst), BUNhead(b,src));
+			ATOMput(htpe, bn->hheap, BUNhloc(bn,dst), BUNhead(b,src));
 			*(@1*) BUNtloc(bn,dst) = *(@1*) p;
 			cur[x] += dst_bunsize; src += src_bunsize;
 			@1_CHECK(*maxbits, p);
@@ -1719,7 +1717,7 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 			if (dst[x] == lim[x])
 				break;
 			integerCopy((int *) BUNhloc(bn, p), b, src, width, distance);
-			ATOMput(ttpe, &bn->theap, BUNtloc(bn, p), BUNtail(b, src));
+			ATOMput(ttpe, bn->theap, BUNtloc(bn, p), BUNtail(b, src));
 			dst[x] += dst_bunsize;
 			src += src_bunsize;
 		}
@@ -1732,8 +1730,8 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 
 			if (dst[x] == lim[x])
 				break;
-			ATOMput(htpe, &bn->hheap, BUNhloc(bn, p), BUNhead(b, src));
-			ATOMput(ttpe, &bn->theap, BUNtloc(bn, p), BUNtail(b, src));
+			ATOMput(htpe, bn->hheap, BUNhloc(bn, p), BUNhead(b, src));
+			ATOMput(ttpe, bn->theap, BUNtloc(bn, p), BUNtail(b, src));
 			dst[x] += dst_bunsize;
 			src += src_bunsize;
 		}
@@ -2563,7 +2561,7 @@ parameter is a radix\_count BAT that must have been created with the radix\_coun
 }
 @c
 #define simple_put(var,tpe,val) var = *(tpe*) val
-#define atom_put(var,tpe,val) ATOMput(any, &bn->theap, &var, val)
+#define atom_put(var,tpe,val) ATOMput(any, bn->theap, &var, val)
 
 typedef struct {
 	size_t cur, end;
@@ -2632,7 +2630,7 @@ radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
 		tpe = any = TYPE_var;
 	}
 
@@ -2677,13 +2675,12 @@ radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	if (any == TYPE_var && ATOMstorage(b->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
-		if (HEAPcopy(&bn->theap, &b->theap) < 0) {
+		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (HEAPcopy(bn->theap, b->theap) < 0) {
 			*res = NULL;
 		} else {
 			bm->htype = bn->ttype = b->ttype;
 			bm->hvarsized = bn->tvarsized = 1;
-
-			strcpy(bn->tatom, ATOMname(b->ttype));
 		}
 	}
 	if (*res == NULL) {
@@ -2888,7 +2885,7 @@ radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
 		tpe = any = TYPE_var;
 	}
 
@@ -2935,13 +2932,12 @@ radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
-		if (HEAPcopy(&bn->theap, &a->theap) < 0) {
+		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (HEAPcopy(bn->theap, a->theap) < 0) {
 			*res = NULL;
 		} else {
 			bm->htype = bn->ttype = a->ttype;
 			bm->hvarsized = bn->tvarsized = 1;
-
-			strcpy(bn->tatom, ATOMname(a->ttype));
 		}
 	}
 	if (*res == NULL) {
@@ -3021,7 +3017,7 @@ radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
 		tpe = any = TYPE_var;
 	}
 
@@ -3067,13 +3063,12 @@ radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
-		if (HEAPcopy(&bn->theap, &a->theap) < 0) {
+		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (HEAPcopy(bn->theap, a->theap) < 0) {
 			*res = NULL;
 		} else {
 			bm->htype = bn->ttype = a->ttype;
 			bm->hvarsized = bn->tvarsized = 1;
-
-			strcpy(bn->tatom, ATOMname(a->ttype));
 		}
 	}
 	if (*res == NULL) {
@@ -3136,7 +3131,7 @@ radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
 		tpe = any = TYPE_var;
 	}
 
@@ -3182,13 +3177,12 @@ radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
-		if (HEAPcopy(&bn->theap, &a->theap) < 0) {
+		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (HEAPcopy(bn->theap, a->theap) < 0) {
 			*res = NULL;
 		} else {
 			bm->htype = bn->ttype = a->ttype;
 			bm->hvarsized = bn->tvarsized = 1;
-
-			strcpy(bn->tatom, ATOMname(a->ttype));
 		}
 	}
 	if (*res == NULL) {
@@ -3246,7 +3240,7 @@ Its output is clustered inline on left head-oid in a single pass and consists of
 				r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
 				s = BUNptr(bn,cluster[clusterid]);
 				*(oid*) BUNhloc(bn,s) = *(oid*) BUNhloc(proj,p);
-				@2put(@1, &bn->theap, BUNtloc(bn,s), @5);
+				@2put(@1, bn->theap, BUNtloc(bn,s), @5);
 				cluster[clusterid]++;
 			}
 		} else {
@@ -3255,7 +3249,7 @@ Its output is clustered inline on left head-oid in a single pass and consists of
 				size_t clusterid = (curoid&yy) >> zz;
 				r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
 				s = BUNptr(bn,cluster[clusterid]);
-				@2put(@1, &bn->theap, s, @5);
+				@2put(@1, bn->theap, s, @5);
 				cluster[clusterid]++;
 			}
 		}
@@ -3353,7 +3347,7 @@ jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nb
 			size_t clusterid = (curoid&yy) >> zz;
 			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
 			*(oid*) BUNptr(bo,cluster[clusterid]) = curoid;
-			@2put(@1, &bn->theap, BUNptr(bn,cluster[clusterid]), @5);
+			@2put(@1, bn->theap, BUNptr(bn,cluster[clusterid]), @5);
 			cluster[clusterid]++;
 		}
 		break;
@@ -3477,7 +3471,7 @@ jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift
 		ssize_t off = (ssize_t) (BUNindex(attr, BUNfirst(attr)) - attr->hseqbase);
 		BATloopFast(proj, p, q, xx) {
 			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
-			@2put(@1, &bn->theap, BUNptr(bn, *(oid*) BUN@3(proj,p)), @5);
+			@2put(@1, bn->theap, BUNptr(bn, *(oid*) BUN@3(proj,p)), @5);
 		}
 		break;
 	}

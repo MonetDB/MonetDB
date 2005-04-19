@@ -423,7 +423,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
 		int *cur = (int *) BUNtloc(b, BUNfirst(b));
 		int *end = (int *) BUNtloc(b, BUNlast(b));
-		str base = b->theap.base;
+		str base = b->theap->base;
 
 		while (cur < end) {
 			hash_t val;

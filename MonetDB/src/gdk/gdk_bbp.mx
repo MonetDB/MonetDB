@@ -137,6 +137,8 @@ gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 gdk_export void BBPunshare(bat b);
 
+gdk_export void BBPatom_drop(int atom);
+gdk_export void BBPatom_load(int atom);
 @
 @c
 #include "gdk.h"
@@ -172,7 +174,7 @@ bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 bat BBP_mask = 0;		/* number of buckets = & mask */
 
 static void BBPspin(bat bid, str debug, int event);
-static int BBPfree(BAT *b, str calledFrom);
+static int BBPfree(BAT *b, str calledFrom );
 
 
 void
@@ -209,31 +211,7 @@ int BBPin = 0;			/* bats loaded statistic */
 int BBPout = 0;			/* bats saved statistic */
 
 @}
-@-
-we put a simple limit of (BBPLOCKMASK+1)*BBP_desc_max (= 65536, currently) to the number
-of BAT descriptors that can be cached. Reason is that each descriptor takes 1K, and big
-DD repositories that are "in the air" for a long time may have hundreds of thousands
-of BATs. While that is really a DD problem, this causes say 100MB of memory consumption
-in the heap, which especially on NT can cause the heap to overflow.
 
-We actually use multiple counters, because the BBPcacheit()/BBPuncacheit() that implement
-this already hold the GDKswaplock, which is multiplexed on bat-id&BBPLOCKMASK. By having
-one counter for each lock-group, we do not have to set/unset a lock for updating the count.
-
-The swap algorithm is simple FIFO, which is not optimal, of course..
-@{
-@h
-extern int BBP_desc_max, BBP_desc_count[BBPLOCKMASK + 1];
-
-@c
-#if SIZEOF_VOID_P==8
-int BBP_desc_max = 1 << 20;	/* 64-bits platforms have practically no limit on cached bat descriptors */
-#else
-int BBP_desc_max = 8192;	/* 32-bits platforms prefer to have less than 8*8192=64K descs ~= 64MB in the malloc heap for those */
-#endif
-int BBP_desc_count[BBPLOCKMASK + 1] = { 0 };
-
-@}
 @+ BBP Consistency and Concurrency
 While GDK provides the basic building blocks for an ACID system, in
 itself it is not such a system, as we this would entail too much overhead
@@ -821,23 +799,12 @@ BBPgetdesc(bat i)
 		str nme = BBP_physical(i);
 
 		b = BBP_cache(i);
-		if (b == NULL) {
+		if (b == NULL) 
 			b = (BAT *) BBP_desc(i);
-			if (b) {
-				int t = -1;
-
-				if (strcmp(ATOMname(b->htype), b->hatom) && (t = ATOMindex(b->hatom)) >= 0) {
-					b->htype = t;
-				}
-				if (strcmp(ATOMname(b->ttype), b->tatom) && (t = ATOMindex(b->tatom)) >= 0) {
-					b->ttype = t;
-				}
-			}
-		}
 		if (b == NULL && nme) {
 			int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
-			b = (BAT *) BATloaddesc(nme);
+			b = BATloaddesc(nme);
 			if (b == NULL) {
 				GDKerror("BBPgetdesc: deleting illegal bat(%d) %s\n", i, nme);
 				BBPclear(i);
@@ -845,7 +812,6 @@ BBPgetdesc(bat i)
 				if (lock)
 					gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPgetdesc");
 				BBP_desc(i) = (BATstore *) b;
-				BBP_desc_count[i & BBPLOCKMASK]++;
 				if (lock)
 					gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPgetdesc");
 			}
@@ -944,8 +910,6 @@ BBPinsert(BAT *b)
 	/* rest of the work outside the lock , as GDKstrdup/GDKmalloc may trigger a BBPtrim */
 
 	/* fill in basic BBP fields for the new bat */
-	sprintf(b->batId, "tmp_%d", (int) i);	/* make a unique temporary name */
-	BBPgetsubdir(dirname, i);
 
 	if (++BBP_curstamp < 0)
 		BBP_curstamp = 0;
@@ -958,8 +922,13 @@ BBPinsert(BAT *b)
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
+
+	sprintf(dirname, "tmp_%d", (int) i); /* make a unique temporary name */
 	BBP_logical(-i) = NULL;
-	BBP_logical(i) = GDKstrdup(b->batId);
+	BBP_logical(i) = GDKstrdup(dirname);
+	b->batId = BBP_logical(i);
+
+	BBPgetsubdir(dirname, i);
 	BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(b->batId) - 4);
 	GDKfilepath(BBP_physical(i), dirname, b->batId + 4, NULL);
 
@@ -972,12 +941,11 @@ void
 BBPcacheit(BAT *b)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-	bat i = 0;
+	bat i = b->batCacheid;
 	int mode;
 	BAT *bm = (BAT *) GDKmalloc(sizeof(BAT));	/* alloc before lock to prevent trim problems */
 
-	if (b->batId[0]) {
-		i = b->batCacheid;
+	if (i) {
 		assert(i > 0);
 	} else {
 		i = BBPinsert(b);	/* bat was not previously entered */
@@ -987,13 +955,14 @@ BBPcacheit(BAT *b)
 	mode = (BBP_status(i) | BBPLOADED) & ~BBPWAITING;
 	BBP_status_set(i, mode, "BBPcacheit");
 	BBP_lastused(i) = BBPLASTUSED(GDKstamp() + ((mode == BBPLOADED) ? 150 : 0));
-	if (BBP_desc(i) == NULL)
-		BBP_desc_count[ABS(i) & BBPLOCKMASK]++;
 	BBP_desc(i) = (BATstore *) b;
 
 	/* fill in the mirror record */
 	bm->GDKversion = b->GDKversion;
-	bm->batId = b->batId;
+	b->batId = BBP_logical(i);
+	bm->batId = BBP_logical(-i);
+	if (!bm->batId)
+		bm->batId = b->batId;
 	bm->batCacheid = -i;
 	bm->batBuns = b->batBuns;
 	bm->dims.headtype = b->dims.tailtype;
@@ -1012,8 +981,8 @@ BBPcacheit(BAT *b)
 	bm->T = b->H;
 	bm->P = b->P;
 	bm->U = b->U;
-	bm->hhash_heap = b->thash_heap;
-	bm->thash_heap = b->hhash_heap;
+	bm->hhash = b->thash;
+	bm->thash = b->hhash;
 
 	/* cache it! */
 	BBP_cache(i) = b;
@@ -1042,10 +1011,9 @@ BBPuncacheit(bat i, int unloaddesc)
 				BBP_cache(i) = BBP_cache(-i) = NULL;
 				BBP_status_off(i, BBPLOADED, "BBPuncacheit");
 			}
-			if (unloaddesc || BBP_desc_count[i & BBPLOCKMASK] > BBP_desc_max) {
-				BBP_desc_count[i & BBPLOCKMASK]--;
+			if (unloaddesc) {
 				BBP_desc(i) = NULL;
-				GDKfree(b);
+				BATdestroy(b);
 			}
 		}
 	}
@@ -1093,11 +1061,8 @@ BBPclear(bat i)
 @- BBP rename
 
 Each BAT has a logical name that is globally unique. Its reverse view can
-also be assigned a name, that also has to be globally unique. The batId is 
-often the same as the logical BAT name, but can in fact be different as it
-does not have to be globally unique. The batId is used as column name when
-printing multi-column tables from multiple BATs. Given that role, it clearly 
-is not always unique.
+also be assigned a name, that also has to be globally unique.  The batId is 
+the same as the logical BAT name.
 
 The default logical name of a BAT is tmp_X, where X is the batCacheid.
 Apart from being globally unique, new logical bat names cannot be of the 
@@ -1117,20 +1082,20 @@ int
 BBPrename(bat bid, str nme)
 {
 	BAT *b = BBPdescriptor(bid);
+	BAT *bm;
 	long_str dirname;
 	bat tmpid = 0, i;
 
 	if (b == NULL)
 		return 0;
 
+ 	bm = BATmirror(b);
 	/* If name stays same, do nothing */
 	if (BBP_logical(bid) && strcmp(BBP_logical(bid), nme) == 0)
 		return 0;
 
 	BBPgetsubdir(dirname, ABS(bid));
 
-	strncpy(b->batId, nme, IDLENGTH);	/* batId is private, nonunique ID */
-	b->batId[IDLENGTH - 1] = 0;
 	if ((tmpid = BBPnamecheck(nme)) && (bid < 0 || tmpid != bid)) {
 		return BBPRENAME_ILLEGAL;
 	}
@@ -1153,6 +1118,9 @@ BBPrename(bat bid, str nme)
 	}
 	GDKfree(BBP_logical(bid));
 	BBP_logical(bid) = GDKstrdup(nme);
+	if (bm->batId == b->batId)
+		bm->batId = BBP_logical(bid);
+	b->batId = BBP_logical(bid);
 	if (tmpid == 0) {
 		BBP_insert(bid);
 	}
@@ -1182,7 +1150,6 @@ Only real bats without memory references can be unloaded.
 @h
 #define BBPswappable(b) ((b) && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && VIEWparent(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
-#define BBPdesctrimmable(bid) (BBP_desc(bid) != NULL && BBP_refs(bid) == 0 && (BBP_status(bid)&BBPWAITING) == 0)
 
 #endif /* _GDK_BBP_H_ */
 @- 
@@ -1303,7 +1270,7 @@ decref(bat i, int logical, int lock)
 		BBP_unload_cnt(i, "BBPdecref");
 		b = BBPquickdesc(i, TRUE);
 		if (b)
-			BBPfree(b, "BBPdecref");	/* free memory (if loaded) and delete from disk (if transient but saved) */
+			BBPfree(b, "BBPdecref" );	/* free memory (if loaded) and delete from disk (if transient but saved) */
 	}
 	return refs;
 }
@@ -1374,7 +1341,7 @@ BBPreclaim(BAT *b)
 	/* BBPfree potentially saves the BAT. Do this after releasing the short-term lock */
 	if (ret == 0) {
 		BBP_unload_cnt(i, "BBPreclaim");
-		ret = BBPfree(b, "BBPreclaim");
+		ret = BBPfree(b, "BBPreclaim" );
 	}
 	return ret;
 }
@@ -1547,12 +1514,12 @@ backup_bat(BAT *b)
 			return -1;
 	}
 	if ((b->batDirty || b->hheapdirty) && b->htype && b->hvarsized) {
-		ret |= heap_move(&b->hheap, srcdir, BAKDIR, nme, "hheap");
+		ret |= heap_move(b->hheap, srcdir, BAKDIR, nme, "hheap");
 		if (ret & 1)
 			return -1;
 	}
 	if ((b->batDirty || b->theapdirty) && b->ttype && b->tvarsized) {
-		ret |= heap_move(&b->theap, srcdir, BAKDIR, nme, "theap");
+		ret |= heap_move(b->theap, srcdir, BAKDIR, nme, "theap");
 		if (ret & 1)
 			return -1;
 	}
@@ -1624,7 +1591,7 @@ TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
 static int
-BBPfree(BAT *b, str calledFrom)
+BBPfree(BAT *b, str calledFrom )
 {
 	int ret;
 	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
@@ -1752,19 +1719,18 @@ bbptrim_t bbptrim[BBPMAXTRIM];
 int bbptrimfirst = BBPMAXTRIM, bbptrimlast = 0, bbpunloadtail, bbpunload, bbptrimmax = BBPMAXTRIM, bbpscanstart = 1;
 
 static bat
-BBPtrim_scan(int mem, int vm, int descs, bat bbppos, bat bbplim)
+BBPtrim_scan(int mem, int vm, bat bbppos, bat bbplim)
 {
 	bbptrimlast = 0;
 	bbptrimmax = BBPMAXTRIM;
-	MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: mem=%d vm=%d, descs=%d, start=%d, limit=%d\n", mem, vm, descs, (int) bbppos, (int) bbplim);
+	MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: mem=%d vm=%d, start=%d, limit=%d\n", mem, vm, (int) bbppos, (int) bbplim);
 
 	if (bbppos < BBPsize)
 		do {
 			if (BBP_logical(bbppos)) {
 				BAT *b = BBP_cache(bbppos);
-				int descswap = (b == NULL && BBPdesctrimmable(bbppos));
 
-				if (BBPtrimmable(b) || (descs && descswap)) {
+				if (BBPtrimmable(b)) {
 					/* when unloading for memory, treat small BATs with a preference over big ones.
 					 * rationale: I/O penalty for cache miss is relatively higher for small bats 
 					 */
@@ -1778,8 +1744,6 @@ BBPtrim_scan(int mem, int vm, int descs, bat bbppos, bat bbplim)
 					/* however, when we are looking to decrease the amount of descriptors,
 					 * try to put the small bats in front of the load list instead..
 					 */
-					if (descs)
-						swap_first = !swap_first;
 
 					/* subtract 2-billion to make sure the swap_first class bats are unloaded first */
 					bbptrim[bbptrimlast].lastused = BBPLASTUSED(BBP_lastused(bbppos)) | (swap_first << 31);
@@ -1814,11 +1778,11 @@ BBPtrim_scan(int mem, int vm, int descs, bat bbppos, bat bbplim)
 /* insert BATs to unload from bbptrim list into bbpunload list; rebuild bbptrimlist only with the useful leftovers */
 static
     void
-BBPtrim_select(size_t * memtarget, size_t * vmtarget, int *ndescs, int dirty)
+BBPtrim_select(size_t * memtarget, size_t * vmtarget, int dirty)
 {
 	int bbptrimtail = BBPMAXTRIM, next = bbptrimfirst;
 
-	MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: dirty = %d, ndescs = %d\n", dirty, *ndescs);
+	MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: dirty = %d\n", dirty );
 
 	/* make the bbptrim-list empty; we will insert the untouched elements in it */
 	bbptrimfirst = BBPMAXTRIM;
@@ -1837,14 +1801,7 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int *ndescs, int dirty)
 				  BBP_lastused(b->batCacheid), BBPLASTUSED(bbptrim[cur].lastused), bbptrim[cur].lastused);
 		}
 		/* recheck if conditions encountered by trimscan in the past still hold */
-		if (*ndescs > 0 && b == NULL && BBPdesctrimmable(bbptrim[cur].bid) && untouched) {
-			MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: uncache %s descriptor (descs=%d)\n", BBPname(bbptrim[cur].bid), *ndescs);
-
-			GDKfree(BBP_desc(bbptrim[cur].bid));
-			BBP_desc(bbptrim[cur].bid) = NULL;
-			BBP_desc_count[bbptrim[cur].bid & BBPLOCKMASK]--;
-			--(*ndescs);
-		} else if (BBPtrimmable(b) && untouched) {
+		if (BBPtrimmable(b) && untouched) {
 			size_t memdelta = BATmemsize(b, FALSE);
 			size_t vmdelta = BATvmsize(b, FALSE);
 			size_t memdirty = BATmemsize(b, TRUE);
@@ -1854,10 +1811,8 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int *ndescs, int dirty)
 			     (vmdirty == 0 && memdirty <= sizeof(BATstore)) ||	/* the BAT is actually clean, OR.. */
 			     dirty)	/* we are allowed to cause I/O (second run).. */
 			    &&	/* AND ... */
-			    ((*memtarget > 0 && (memdelta > 0)) || (*vmtarget > 0 && (vmdelta > 0)) ||
-			     /* there is some reward in terms of memory requirements, OR.. */
-			     (*ndescs > 0 && (dirty || BATcount(b) < BBPSMALLBAT))))
-				/* we *MUST* unload bats for the ndesc quota (in first run swap only small bats)..  */
+			    ((*memtarget > 0 && (memdelta > 0)) || (*vmtarget > 0 && (vmdelta > 0))))
+			     /* there is some reward in terms of memory requirements */
 			{
 				/* only then we unload! */
 				MEMDEBUG {
@@ -1866,8 +1821,6 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int *ndescs, int dirty)
 				BBP_unload_on(bbptrim[cur].bid, "BBPtrim_select");
 				*memtarget = *memtarget > memdelta ? *memtarget - memdelta : 0;
 				*vmtarget = *vmtarget > vmdelta ? *vmtarget - vmdelta : 0;
-				if (*ndescs > 0)
-					(*ndescs)--;	/* one less obliged bat */
 
 				/* add to bbpunload list */
 				if (bbpunload == BBPMAXTRIM) {
@@ -1880,8 +1833,7 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int *ndescs, int dirty)
 			} else if (!dirty) {
 				/* do not unload now, but keep around; insert at the end of the new bbptrim list */
 				MEMDEBUG {
-					THRprintf(GDKerr, "TRIMSELECT: keep %s [" SZFMT "," SZFMT "] bytes [" SZFMT "," SZFMT "] dirty target(mem=" SZFMT " vm=" SZFMT " descs=%d)\n", BBPname(b->batCacheid), memdelta, vmdelta, memdirty, vmdirty,
-						  MAX(0, *memtarget), MAX(0, *vmtarget), *ndescs);
+					THRprintf(GDKerr, "TRIMSELECT: keep %s [" SZFMT "," SZFMT "] bytes [" SZFMT "," SZFMT "] dirty target(mem=" SZFMT " vm=" SZFMT ")\n", BBPname(b->batCacheid), memdelta, vmdelta, memdirty, vmdirty, MAX(0, *memtarget), MAX(0, *vmtarget));
 				}
 				if (bbptrimtail == BBPMAXTRIM) {
 					bbptrimfirst = cur;
@@ -1904,7 +1856,7 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int *ndescs, int dirty)
 			MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: delete %s from trimlist (has been %s)\n", bnme, b ? "touched since last scan" : "unloaded already");
 		}
 
-		if (*memtarget == 0 && *vmtarget == 0 && *ndescs <= 0) {
+		if (*memtarget == 0 && *vmtarget == 0) {
 			/* we're done; glue the rest of the old bbptrim list to the new bbptrim list */
 			if (bbptrimtail == BBPMAXTRIM) {
 				bbptrimfirst = next;
@@ -1922,7 +1874,7 @@ extern int monet_exec(str);
 void
 BBPtrim(size_t memtarget, size_t vmtarget)
 {
-	int i, limit, scan, did_scan = FALSE, ndescs = 0;
+	int i, limit, scan, did_scan = FALSE;
 	int msec = 0, bats_written = 0, bats_unloaded = 0;	/* performance info */
 	MT_Id t = BBP_getpid();
 
@@ -1933,11 +1885,6 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 	gdk_set_lock(GDKtrimLock, "BBPtrim");
 	BBP_notrim = t;
-
-	for (i = 0; i <= BBPLOCKMASK; i++)
-		ndescs += BBP_desc_count[i];
-	if (ndescs < 0)
-		ndescs = 0;
 
 	/* recheck targets to see whether the work was already done by another thread */
 	if (memtarget && memtarget != BBPTRIM_ALL) {
@@ -1954,18 +1901,17 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 		else
 			vmtarget = 0;
 	}
-	MEMDEBUG THRprintf(GDKerr, "BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT ",ndescs=%d\n", GDKmem_inuse(), GDKvm_cursize(), ndescs);
+	MEMDEBUG THRprintf(GDKerr, "BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_inuse(), GDKvm_cursize());
 
-	ndescs -= BBP_desc_max * (BBPLOCKMASK + 1);
-	MEMDEBUG THRprintf(GDKerr, "BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT ",desctarget=%d\n", memtarget, vmtarget, ndescs);
-	PERFDEBUG THRprintf(GDKerr, "BBPtrim(mem=%d,vm=%d,descs=%d)\n", memtarget > 0, vmtarget > 0, ndescs > 0);
+	MEMDEBUG THRprintf(GDKerr, "BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT "\n", memtarget, vmtarget );
+	PERFDEBUG THRprintf(GDKerr, "BBPtrim(mem=%d,vm=%d)\n", memtarget > 0, vmtarget > 0 );
 
 	scan = (bbptrimfirst == BBPMAXTRIM);
 	if (bbpscanstart >= BBPsize)
 		bbpscanstart = 1;	/* sometimes, the BBP shrinks! */
 	limit = bbpscanstart;
 
-	while (ndescs > 0 || memtarget > 0 || vmtarget > 0) {
+	while (memtarget > 0 || vmtarget > 0) {
 		/* acquire the BBP locks */
 		gdk_set_lock(GDKcacheLock, "BBPtrim");
 		for (i = 0; i <= BBPLOCKMASK; i++)
@@ -1974,7 +1920,7 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 		/* gather a list of unload candidate BATs, but try to avoid scanning by reusing previous leftovers first */
 		if (scan) {
 			did_scan = TRUE;
-			bbpscanstart = BBPtrim_scan((memtarget > 0), (vmtarget > 0), (ndescs > 0), bbpscanstart, limit);
+			bbpscanstart = BBPtrim_scan((memtarget > 0), (vmtarget > 0), bbpscanstart, limit);
 			scan = (bbpscanstart != limit);
 		} else {
 			scan = TRUE;
@@ -1982,9 +1928,9 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 		/* decide which of the candidates to unload using LRU */
 		bbpunload = BBPMAXTRIM;
-		BBPtrim_select(&memtarget, &vmtarget, &ndescs, FALSE);	/* first try to select only clean BATs */
-		if (did_scan && (memtarget > 0 || vmtarget > 0 || ndescs > 0)) {
-			BBPtrim_select(&memtarget, &vmtarget, &ndescs, TRUE);	/* if that is not enough, also unload dirty BATs */
+		BBPtrim_select(&memtarget, &vmtarget, FALSE);	/* first try to select only clean BATs */
+		if (did_scan && (memtarget > 0 || vmtarget > 0)) {
+			BBPtrim_select(&memtarget, &vmtarget, TRUE);	/* if that is not enough, also unload dirty BATs */
 		}
 
 		/* release the BBP locks */
@@ -2001,7 +1947,7 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));
 			bats_unloaded++;
-			BBPfree(b, "BBPtrim");
+			BBPfree(b, "BBPtrim" );
 		}
 		/* continue while we can scan for more candiates */
 		if (!scan)
@@ -2072,10 +2018,8 @@ is parametrized.
 @{
 @c
 static int
-complexatom(str s, int delaccess)
+complexatom(int t, int delaccess)
 {
-	int t = ATOMindex(s);
-
 	if (t >= 0 && (BATatoms[t].atomFix || (delaccess && BATatoms[t].atomDel))) {
 		return TRUE;
 	}
@@ -2096,8 +2040,8 @@ BBPquickdesc(bat bid, int delaccess)
 	}
 	b = (BAT *) BBPgetdesc(bid);
 	if (b == NULL || 
-	   complexatom(b->hatom, delaccess) || 
-	   complexatom(b->tatom, delaccess)) {
+	   complexatom(b->htype, delaccess) || 
+	   complexatom(b->ttype, delaccess)) {
 		b = BATload_intern(bid);
 		BBPin++;
 	}
@@ -2533,19 +2477,19 @@ BBPdiskscan_r(str parent)
 		} else if (strncmp(p + 1, "hheap", 5) == 0) {
 			BAT *b = getdesc(bid);
 
-			delete = (b == NULL || b->hheap.size == 0) || (b->batCopiedtodisk == 0);
+			delete = (b == NULL || !b->hheap) || (b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "theap", 5) == 0) {
 			BAT *b = getdesc(bid);
 
-			delete = (b == NULL || b->theap.size == 0) || (b->batCopiedtodisk == 0);
+			delete = (b == NULL || !b->theap) || (b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "hhash", 5) == 0) {
 			BAT *b = getdesc(bid);
 
-			delete = (b == NULL || !b->hhash_heap);
+			delete = (b == NULL || !b->hhash);
 		} else if (strncmp(p + 1, "thash", 5) == 0) {
 			BAT *b = getdesc(bid);
 
-			delete = (b == NULL || !b->thash_heap);
+			delete = (b == NULL || !b->thash);
 		} else if (strcmp(p + 1, "desc") && strncmp(p + 1, "buns", 4)) {
 			ok = FALSE;
 		}
@@ -2609,15 +2553,18 @@ BBPreplace(BAT *b, BAT *bn)
 	} else if (BBP_lrefs(bnid)) {
 		GDKerror("BBPreplace: %s has MIL variable refcount %d and cannot disappear.", BBP_logical(bnid), BBP_lrefs(bnid) - (BBP_status(bnid) & BBPPERSISTENT) ? 1 : 0);
 	} else {
-		long_str oldId;
+		str oldId;
 		int dirtyb = b->batDirty, dirtybn = bn->batDirty;
 		int ok = TRUE, newmode = b->batPersistence, oldmode = bn->batPersistence;
 		int persistentb = (BBP_status(bid) & (BBPPERSISTENT | BBPDELETED));
-		int hugebn = bn->batBuns->storage | bn->hheap.storage | bn->theap.storage | STORE_MMAP;
+		int hugebn = bn->batBuns->storage | (bn->hheap?bn->hheap->storage:0) | (bn->theap?bn->theap->storage:0) | STORE_MMAP;
 
-		strcpy(oldId, bn->batId);
+		oldId = bn->batId;
 		BATsetaccess(bn, b->batRestricted);
-		BATmmap(bn, b->batBuns->storage, b->hheap.storage, b->theap.storage);
+		BATmmap(bn, 
+			b->batBuns->storage, 
+			b->hheap?b->hheap->storage:-1, 
+			b->theap?b->theap->storage:-1);
 
 		if (persistentb) {
 			/* start a mini-global-commit: back up any persistent b */
@@ -2628,7 +2575,7 @@ BBPreplace(BAT *b, BAT *bn)
 
 		if (ok) {
 			/* make bn appear to BATsave (and others) as if it were b */
-			strcpy(bn->batId, b->batId);
+			bn->batId = b->batId;
 			bn->batCacheid = bid;
 		}
 		if (ok && (persistentb || hugebn)) {
@@ -2646,7 +2593,7 @@ BBPreplace(BAT *b, BAT *bn)
 		}
 		if (!ok) {
 			/* FAILED: restore batId, cacheid and mode in bn */
-			strcpy(bn->batId, oldId);
+			bn->batId = oldId;
 			bn->batCacheid = bnid;
 			BATmode(bn, oldmode);
 			b->batDirty = dirtyb;
@@ -2681,5 +2628,50 @@ BBPreplace(BAT *b, BAT *bn)
 	gdk_unset_lock(GDKtrimLock, "BBPreplace");
 }
 
+void 
+BBPatom_drop(int atom)
+{
+	int i;
+	str nme = ATOMname(atom);
+	int unknown = ATOMunknown_add(nme);
+
+	for (i = 0; i < BBPsize; i++) {
+		if (BBP_logical(i)) {
+			BATstore *b = BBP_desc(i);
+
+			if (!b) continue;
+			
+			if (b->B.htype == atom)
+				b->B.htype = unknown; 
+			if (b->B.ttype == atom)
+				b->B.ttype = unknown; 
+		}
+	}
+}
+
+void 
+BBPatom_load(int atom)
+{
+	str nme;
+	int i, unknown;
+
+	BBPlock("atom_load");
+ 	nme = ATOMname(atom);
+ 	unknown = ATOMunknown_find(nme);
+	ATOMunknown_del(unknown);
+	for (i = 0; i < BBPsize; i++) {
+		if (BBP_logical(i)) {
+			BATstore *b = BBP_desc(i);
+
+			if (!b) continue;
+
+			if (b->B.htype == unknown)
+				b->B.htype = atom; 
+			if (b->B.ttype == unknown)
+				b->B.ttype = atom; 
+		}
+	}
+	BBPunlock("atom_load");
+}
 @}
 

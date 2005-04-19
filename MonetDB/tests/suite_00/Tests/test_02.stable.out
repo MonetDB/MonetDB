@@ -22,11 +22,11 @@ insert(s,"gello",7);
 insert(s,"hello",8);
 printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#-------------------------------------------------#
-# BAT:				  tmp_29	  #
-# (str)				  (str)		  #
-#-------------------------------------------------#
-[ "version",			  "20696"	  ]
+#-----------------------------------------#
+# h			t		  # name
+# str			str		  # type
+#-----------------------------------------#
+[ "version",		  "20749"	  ]
 [ "batId",		  "tmp_27"	  ]
 [ "batCacheid",		  "27"		  ]
 [ "batParentid",		  "0"		  ]
@@ -49,11 +49,11 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "1"		  ]
 [ "halign",			  "20000029"	  ]
-[ "hnosorted",			  "2"		  ]
+[ "hnosorted",		  "1"		  ]
 [ "hnosorted_rev",		  "0"		  ]
 [ "hnodense",			  "0"		  ]
-[ "hnokey[0]",			  "1"		  ]
-[ "hnokey[1]",			  "8"		  ]
+[ "hnokey[0]",		  "0"		  ]
+[ "hnokey[1]",		  "7"		  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "0@0"		  ]
@@ -67,33 +67,28 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "tnodense",			  "0"		  ]
 [ "tnokey[0]",			  "0"		  ]
 [ "tnokey[1]",			  "0"		  ]
-[ "batInserted",		  "1"		  ]
+[ "batInserted",	  "0"		  ]
 [ "batDeleted",			  "0"		  ]
-[ "batHole",			  "0"		  ]
-[ "top",			  "9"		  ]
+[ "batFirst",		  "0"		  ]
+[ "top",		  "8"		  ]
 [ "batStamp",		  "-162"	  ]
 [ "lastUsed",		  "3265"	  ]
 [ "curStamp",		  "170"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
-[ "batBuns.free",		  "72"		  ]
-[ "batBuns.size",		  "424"		  ]
-[ "batBuns.maxsize",		  "424"		  ]
+[ "batBuns.free",	  "64"		  ]
+[ "batBuns.size",	  "400"		  ]
+[ "batBuns.maxsize",	  "400"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
 [ "batBuns.filename",	  "27.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "4180"	  ]
-[ "hheap.size",			  "4724"	  ]
-[ "hheap.maxsize",		  "4724"	  ]
+[ "hheap.size",		  "4700"	  ]
+[ "hheap.maxsize",	  "4700"	  ]
 [ "hheap.storage",		  "malloced"	  ]
 [ "hheap.filename",	  "27.hheap"	  ]
 [ "theapdirty",			  "clean"	  ]
-[ "theap.free",			  "0"		  ]
-[ "theap.size",			  "0"		  ]
-[ "theap.maxsize",		  "0"		  ]
-[ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "no file"	  ]
 #~EndVariableOutput~#
 print(find(s,"cello"));
 [ 3 ]

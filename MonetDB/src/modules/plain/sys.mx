@@ -742,7 +742,7 @@ view_bbp_kind(BAT **retval	/* put pointer to BAT[int,str] record here. */
 				char *mode = NULL;
 
 				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT)) {
-					BAT *b = BBPquickdesc(i, FALSE);
+					BAT *b = (BAT*)BBPgetdesc(i);
 
 					mode = (b && b->batPersistence == SESSION) ? "sess" : "tran";
 				} else {
@@ -1435,12 +1435,14 @@ set_vm_maxsize(lng *num)
 
 
 @= heap
-	sz = HEAP@1size(@2);
-	if (sz > *minsize) {
-		sprintf(buf, "@3/%s", s);
-		BUNins(bn, buf, &sz);
+	if (@2) {
+		sz = HEAP@1size(@3);
+		if (sz > *minsize) {
+			sprintf(buf, "@4/%s", s);
+			BUNins(bn, buf, &sz);
+		}
+		@4 += sz; tot += sz;
 	}
-	@3 += sz; tot += sz;
 @c
 
 int
@@ -1483,11 +1485,11 @@ get_mem_usage(BAT **ret, lng *minsize)
 		if (b == NULL || VIEWparent(b)) {
 			continue;
 		}
-		@:heap(mem,b->batBuns,buns)@
-		@:heap(mem,b->hhash_heap,hhsh)@
-		@:heap(mem,b->thash_heap,thsh)@
-		@:heap(mem,&b->hheap,head)@
-		@:heap(mem,&b->theap,tail)@
+		@:heap(mem,1,b->batBuns,buns)@
+		@:heap(mem,b->hhash,b->hhash->heap,hhsh)@
+		@:heap(mem,b->thash,b->thash->heap,thsh)@
+		@:heap(mem,b->hheap,b->hheap,head)@
+		@:heap(mem,b->theap,b->theap,tail)@
 	}
 	/* totals per category */
 	BUNins(bn, "_tot/buns", &buns);
@@ -1555,11 +1557,11 @@ get_vm_usage(BAT **ret, lng *minsize)
 		if (s == NULL || b == NULL || VIEWparent(b)) {
 			continue;
 		}
-		@:heap(vm,b->batBuns,buns)@
-		@:heap(vm,b->hhash_heap,hhsh)@
-		@:heap(vm,b->thash_heap,thsh)@
-		@:heap(vm,&b->hheap,head)@
-		@:heap(vm,&b->theap,tail)@
+		@:heap(vm,1,b->batBuns,buns)@
+		@:heap(vm,b->hhash,b->hhash->heap,hhsh)@
+		@:heap(vm,b->thash,b->thash->heap,thsh)@
+		@:heap(vm,b->hheap,b->hheap,head)@
+		@:heap(vm,b->theap,b->theap,tail)@
 	}
 	/* totals per category */
 	BUNins(bn, "_tot/buns", &buns);
