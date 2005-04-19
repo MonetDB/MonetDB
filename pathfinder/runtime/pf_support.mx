@@ -1741,7 +1741,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		}
 	}
 @= hash_scan
-	if (b->thash_heap) {
+	if (b->thash) {
 		@:hash_only@
 	} else {
 		@:scan_only@
@@ -1753,7 +1753,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		@:scan_only@
 	}
 @= hash_sort_scan
-	if (b->thash_heap) {
+	if (b->thash) {
 		@:hash_only@
 	} else if (BATtordered(b)&1) {
 		@:sort_only@
