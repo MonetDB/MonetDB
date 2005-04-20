@@ -57,6 +57,10 @@ the WIN32 native platform.
 #ifdef HAVE_GC
 #define GC_PTHREADS 1
 #if HAVE_GC_H
+#undef HAVE_CONFIG_H
+#ifdef HAVE_SCHED_H
+#include <sched.h>
+#endif
 #include <gc.h>
 #include <gc_local_alloc.h>
 #ifndef NATIVE_WIN32
@@ -352,6 +356,8 @@ char *MT_heapbase = NULL;
  * (this is based on reading the 2.6.8 linux kernel code) and microbenchmarks. 
  */
 #ifdef HAVE_PTHREAD_H
+/* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
+#undef HAVE_CONFIG_H
 #include <pthread.h>
 #endif
 #ifdef HAVE_SEMAPHORE_H

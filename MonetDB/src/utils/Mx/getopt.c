@@ -46,9 +46,7 @@
 # define _NO_PROTO
 #endif
 
-#ifdef HAVE_CONFIG_H
-# include <monetdb_config.h>
-#endif
+#include <monetdb_config.h>
 
 #if 0				/* already taken care of in monetdb_config.h */
 #if !defined __STDC__ || !__STDC__

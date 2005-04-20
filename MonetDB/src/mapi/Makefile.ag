@@ -16,7 +16,8 @@
 # All Rights Reserved.
 
 INCLUDES = -I../common -I../gdk -I../monet \
-	   -I../modules/plain -I../modules/plain/stream $(LIBGC_CFLAGS)
+	   -I../modules/plain -I../modules/plain/stream \
+	   $(LIBGC_CFLAGS) $(PTHREAD_INCS)
 
 SUBDIRS = clients examples
 

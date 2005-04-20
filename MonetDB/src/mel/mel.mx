@@ -338,6 +338,11 @@ int handle_args( int argc, char *argv[] ){
 			     dirs->insert(strdup(argv[i]+2));
 			  }
 			  break;
+		case 'D':
+			  /* ignore -D option */
+			  if (argv[i][2] == '\0')
+				  i++;
+			  break;
 		case 'd':
 			  l = new depend();
 			  break;

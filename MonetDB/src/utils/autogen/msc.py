@@ -46,7 +46,7 @@ RC = rc
 JAVAC = javac
 JAR = jar
 
-CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
 
 # No general LDFLAGS needed
 !IFDEF USE_MINGW

@@ -1196,10 +1196,15 @@ yes|no|auto)
 	PTHREAD_INCS="-I$withval/include"
 	;;
 esac
+case $host_os in
+*mingw*)
+	PTHREAD_INCS="$PTHREAD_INCS -D_DLL"
+	;;
+esac
 if test "x$have_pthread" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
-	AC_CHECK_HEADERS(pthread.h semaphore.h) 
+	AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
 	CPPFLAGS="$save_CPPFLAGS"
 
 	save_LDFLAGS="$LDFLAGS"
@@ -1213,7 +1218,7 @@ if test "x$have_pthread" != xno; then
 				dnl sun
 				AC_CHECK_LIB(pthread, sem_post,
 					pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
-					[ if test "x$have_pthread" = xyes; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
+					[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
 					"-lposix4"))))
 	AC_CHECK_LIB($pthread, pthread_sigmask,
 		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
@@ -1276,7 +1281,7 @@ if test "x$have_readline" != xno; then
 	dnl that involve linking will fail!
 	AC_CHECK_LIB(readline, rl_completion_matches,
 		:,
-		[ if test "x$have_readline" = xyes; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
+		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
 	      $READLINE_LIBS)
 fi
 LDFLAGS="$save_LDFLAGS"
@@ -1313,7 +1318,7 @@ if test "x$have_openssl" != xno; then
 	LDFLAGS="$LDFLAGS $OPENSSL_LIBS"
 	AC_CHECK_LIB(ssl, SSL_read,
 		OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
-		[ if test "x$have_openssl" = xyes; then AC_MSG_ERROR([OpenSSL library not found]); fi; have_openssl=no ])
+		[ if test "x$have_openssl" != xauto; then AC_MSG_ERROR([OpenSSL library not found]); fi; have_openssl=no ])
 	dnl on some systems, -lcrypto needs to be passed as well
 	AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
 	LDFLAGS="$save_LDFLAGS"
@@ -1324,7 +1329,7 @@ if test "x$have_openssl" != xno; then
 		CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
 		AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
 			AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
-			[ if test "x$have_openssl" = xyes; then AC_MSG_ERROR([OpenSSL library not usable]); fi; have_openssl=no ])
+			[ if test "x$have_openssl" != xauto; then AC_MSG_ERROR([OpenSSL library not usable]); fi; have_openssl=no ])
 		CPPFLAGS="$save_CPPFLAGS"])
 fi
 if test "x$have_openssl" != xno; then
@@ -1367,13 +1372,13 @@ if test "x$have_curl" != xno; then
 	CURL_LIBS="`$CURL_CONFIG --libs`"
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $CURL_CFLAGS"
-	AC_CHECK_HEADER(curl/curl.h, :, [if test "x$have_curl" = xyes; then AC_MSG_ERROR([curl/curl.h not found]); fi; have_curl=no])
+	AC_CHECK_HEADER(curl/curl.h, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([curl/curl.h not found]); fi; have_curl=no])
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_curl" != xno; then
 	save_LDFLAGS="$LDFLAGS"
     	LDFLAGS="$LDFLAGS $CURL_LIBS"
-    	AC_CHECK_LIB(curl, curl_easy_init, :, [if test "x$have_curl" = xyes; then AC_MSG_ERROR([-lcurl not found]); fi; have_curl=no])
+    	AC_CHECK_LIB(curl, curl_easy_init, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([-lcurl not found]); fi; have_curl=no])
     	LDFLAGS="$save_LDFLAGS"
 fi
 if test "x$have_curl" != xno; then
@@ -1438,14 +1443,14 @@ esac
 if test "x$have_netcdf" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $NETCDF_CFLAGS"
-	AC_CHECK_HEADER(netcdf.h, :, [ if test "x$have_netcdf" = xyes; then AC_MSG_ERROR([netcdf.h not found]); fi; have_netcdf=no ])
+	AC_CHECK_HEADER(netcdf.h, :, [ if test "x$have_netcdf" != xauto; then AC_MSG_ERROR([netcdf.h not found]); fi; have_netcdf=no ])
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_netcdf" != xno; then
 	save_LDFLAGS="$LDFLAGS"
 	LDFLAGS="$LDFLAGS $NETCDF_LIBS"
 	AC_CHECK_LIB(netcdf, nc_open, NETCDF_LIBS="$NETCDF_LIBS -lnetcdf",
-		[ if test "x$have_netcdf" = xyes; then AC_MSG_ERROR([netcdf library not found]); fi; have_netcdf=no ])
+		[ if test "x$have_netcdf" != xauto; then AC_MSG_ERROR([netcdf library not found]); fi; have_netcdf=no ])
 	LDFLAGS="$save_LDFLAGS"
 fi
 if test "x$have_netcdf" != xno; then
@@ -1477,14 +1482,14 @@ esac
 if test "x$have_z" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
-	AC_CHECK_HEADER(zlib.h, :, [ if test "x$have_z" = xyes; then AC_MSG_ERROR([zlib.h not found]); fi; have_z=no ])
+	AC_CHECK_HEADER(zlib.h, :, [ if test "x$have_z" != xauto; then AC_MSG_ERROR([zlib.h not found]); fi; have_z=no ])
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_z" != xno; then
 	save_LDFLAGS="$LDFLAGS"
 	LDFLAGS="$LDFLAGS $Z_LIBS"
 	AC_CHECK_LIB(z, gzopen, Z_LIBS="$Z_LIBS -lz",
-		[ if test "x$have_z" = xyes; then AC_MSG_ERROR([z library not found]); fi; have_z=no ])
+		[ if test "x$have_z" != xauto; then AC_MSG_ERROR([z library not found]); fi; have_z=no ])
 	LDFLAGS="$save_LDFLAGS"
 fi
 if test "x$have_z" != xno; then
@@ -1515,14 +1520,14 @@ esac
 if test "x$have_bz2" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
-	AC_CHECK_HEADER(bzlib.h, :, [ if test "x$have_bz2" = xyes; then AC_MSG_ERROR([bzlib.h not found]); fi; have_bz2=no ])
+	AC_CHECK_HEADER(bzlib.h, :, [ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bzlib.h not found]); fi; have_bz2=no ])
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_bz2" != xno; then
 	save_LDFLAGS="$LDFLAGS"
 	LDFLAGS="$LDFLAGS $BZ_LIBS"
 	AC_CHECK_LIB(bz2, BZ2_bzopen, BZ_LIBS="$BZ_LIBS -lbz2",
-		[ if test "x$have_bz2" = xyes; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
+		[ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
 	LDFLAGS="$save_LDFLAGS"
 fi
 if test "x$have_bz2" != xno; then
@@ -1538,7 +1543,6 @@ dnl check for gc, the Hans Boehm garbage collector
 have_gc=no
 LIBGC_CFLAGS=""
 LIBGC_LIBS=""
-LIBGC_LDADD=""
 AC_ARG_WITH(gc,
 	AC_HELP_STRING([--with-gc=DIR],
 		[Boehm garbage collector library is installed in DIR]),
@@ -1553,7 +1557,7 @@ yes|no|auto)
 esac
 if test "x$have_gc" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS"
+	CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS $PTHREAD_INCS"
 	found_gc_h=""
 	AC_CHECK_HEADERS([gc.h gc/gc.h], found_gc_h="yes")
 	if test "x$have_gc" = xyes
@@ -1569,13 +1573,11 @@ fi
 if test "x$have_gc" != xno; then
 	save_LDFLAGS="$LDFLAGS"
 	LDFLAGS="$LDFLAGS $LIBGC_LIBS"
-	dnl If we have the dl and/or the pthread library, use it
+	dnl If we have the dl and/or the pthread library, use them
 	dnl (dl and/or pthread are required for the garbage collection
 	dnl library on some systems.)
-	AC_CHECK_LIB(dl, dlopen, [LIBGC_LDADD="$LIBGC_LDADD -ldl"])
-	AC_CHECK_LIB(pthread, pthread_create, [LIBGC_LDADD="$LIBGC_LDADD -lpthread"])
 	AC_CHECK_LIB(gc, GC_malloc, LIBGC_LIBS="$LIBGC_LIBS -lgc",
-		[ if test "x$have_gc" = xyes; then AC_MSG_ERROR([gc library not found]); fi; have_gc=no ], [$LIBGC_LDADD])
+		[ if test "x$have_gc" != xauto; then AC_MSG_ERROR([gc library not found]); fi; have_gc=no ], [$PTHREAD_LIBS $DL_LIBS])
 	LDFLAGS="$save_LDFLAGS"
 fi
 if test "x$have_gc" != xno; then
@@ -1583,11 +1585,9 @@ if test "x$have_gc" != xno; then
 else
 	LIBGC_CFLAGS=""
 	LIBGC_LIBS=""
-	LIBGC_LDADD=""
 fi
 AC_SUBST(LIBGC_CFLAGS)
 AC_SUBST(LIBGC_LIBS)
-AC_SUBST(LIBGC_LDADD)
 
 dnl check for getopt in standard library
 AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
@@ -1821,7 +1821,7 @@ if test "x$have_iconv" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $ICONV_CFLAGS"
 	AC_CHECK_HEADERS(iconv.h)
-	AC_CHECK_TYPE(iconv_t, , [ if test "x$have_iconv" = xyes; then AC_MSG_ERROR([iconv_t type not found]); fi; have_iconv=no ], [#if HAVE_ICONV_H
+	AC_CHECK_TYPE(iconv_t, , [ if test "x$have_iconv" != xauto; then AC_MSG_ERROR([iconv_t type not found]); fi; have_iconv=no ], [#if HAVE_ICONV_H
 #include <iconv.h>
 #endif])
 	CPPFLAGS="$save_CPPFLAGS"
@@ -1834,7 +1834,7 @@ if test "x$have_iconv" != xno; then
 		AC_CHECK_LIB(iconv, libiconv, have_libiconv=yes ICONV_LIBS="$ICONV_LIBS -liconv", [
 			AC_CHECK_FUNC(iconv, , [
 				AC_CHECK_FUNC(libiconv, have_libiconv=yes,
-					[ if test "x$have_iconv" = xyes; then AC_MSG_ERROR([iconv library not found]); fi; have_iconv=no ])])])])
+					[ if test "x$have_iconv" != xauto; then AC_MSG_ERROR([iconv library not found]); fi; have_iconv=no ])])])])
 	LDFLAGS="$save_LDFLAGS"
 fi
 if test "x$have_iconv" != xno; then
@@ -1991,7 +1991,7 @@ AC_DEFUN([AM_MONETDB_CLIENT],[
 dnl check for Monet and some basic utilities
 AM_MONET($1)
 MPATH="$MONETDB_PREFIX/bin:$PATH"
-AC_PATH_PROGS(MX,[ Mx Mx$EXEEXT ],,$MPATH)
-AC_PATH_PROGS(MEL,[ mel mel$EXEEXT ],,$MPATH)
+AC_PATH_PROGS(MX,[ Mx$EXEEXT Mx ],,$MPATH)
+AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$MPATH)
 
 ]) dnl AC_DEFUN AM_MONETDB_CLIENT

@@ -19,9 +19,7 @@
 
 #define _GNU_SOURCE		/* to get declaration of strsignal on Linux */
 
-#ifdef HAVE_CONFIG_H
 #include <monetdb_config.h>
-#endif
 #include <stdio.h>
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H

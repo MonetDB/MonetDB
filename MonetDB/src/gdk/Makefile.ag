@@ -33,7 +33,7 @@ lib_gdk = {
 	HEADERS = h
 	LIBS = ../common/libmutils ../common/libstream \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(LIBGC_LIBS) $(LIBGC_LDADD)
+		$(MALLOC_LIBS) $(LIBGC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 #doc_gdk = {

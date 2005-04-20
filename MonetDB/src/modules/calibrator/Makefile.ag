@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../common -I../../gdk -I../../monet $(HWCOUNTERS_INCS) \
-	$(LIBGC_CFLAGS)
+	$(LIBGC_CFLAGS) $(PTHREAD_INCS)
 MTSAFE
 
 CFLAGS = -O0

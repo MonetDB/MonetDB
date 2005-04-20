@@ -250,7 +250,6 @@ gdk_export size_t _MT_pagesize;
 #endif
 # include <sched.h>
 # include <pthread.h>
-# include <semaphore.h>
 #endif
 
 #ifdef HAVE_SEMAPHORE_H

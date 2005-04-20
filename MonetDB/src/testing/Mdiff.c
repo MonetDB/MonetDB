@@ -17,9 +17,7 @@
  * All Rights Reserved.
  */
 
-#ifdef HAVE_CONFIG_H
 #include <monetdb_config.h>
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
