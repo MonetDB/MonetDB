@@ -54,16 +54,17 @@ subs = [
     ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
     ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
     ('@PACKAGE@',           "pathfinder"),
-    ('@VERSION@',           "0.1"),
+    ('@VERSION@',           "2.7.3"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
-    ('@MONETDB_BUILD@',       build),
-    ('@MONETDB_SOURCE@',      source),
-    ('@MONETDB_PREFIX@',      os.getenv('MONETDB_PREFIX')),
+    ('@MONETDB_BUILD@',     build),
+    ('@MONETDB_SOURCE@',    source),
+    ('@MONETDB_PREFIX@',    os.getenv('MONETDB_PREFIX')),
     ('@QDIRSEP@',           "\\\\"),
     ('@Qprefix@',           Qprefix),
-    ('@QMONETDB_BUILD@',      Qbuild),
-    ('@QMONETDB_SOURCE@',     Qsource),
+    ('@QMONETDB_BUILD@',    Qbuild),
+    ('@QMONETDB_SOURCE@',   Qsource),
+    ('@PF_BUILD@',          os.getenv('PF_BUILD')),
 ]
 
 

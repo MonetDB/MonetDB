@@ -22,8 +22,9 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = $(MONETDB_INCS) $(LIBGC_CFLAGS) $(LIBXML2_CFLAGS) ../compiler/include
-PF_LIBS = $(LIBGC_LDADD) $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) 
+INCLUDES = $(MONETDB_INCS) $(LIBGC_CFLAGS) $(PTHREAD_INCS) \
+	   $(LIBXML2_CFLAGS) ../compiler/include
+PF_LIBS = $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 
 lib__pathfinder = {
 	DIR = libdir/MonetDB
@@ -36,7 +37,6 @@ lib__pathfinder = {
 		shredder.mx \
 		serialize.mx
 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_builtin -l_ascii_io -l_algebra $(LIBGC_LDADD) $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS)
 	LIBS = ../compiler/libcompiler1 \
 		../compiler/schema/libschema \
 		../compiler/debug/libdebug \
@@ -48,7 +48,8 @@ lib__pathfinder = {
 		../compiler/mil/libmil \
                 ../compiler/algebra/hskparser/libhskparser \
 		../compiler/libcompiler2 \
-		$(PF_LIBS) $(MONETDB_LIBS)
+		$(PF_LIBS) $(MONETDB_LIBS) \
+		-lbat -lmonet -lstream $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 lib__pf_support = {
@@ -56,8 +57,7 @@ lib__pf_support = {
 	SOURCES = \
 		pf_support.mx
 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_builtin -l_ascii_io -l_algebra $(LIBGC_LDADD) $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS)
-	LIBS = $(MONETDB_LIBS)
+	LIBS = $(MONETDB_LIBS) -lbat -lmonet -lstream $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 scripts_mil = {

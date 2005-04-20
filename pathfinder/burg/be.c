@@ -1,8 +1,6 @@
 char rcsid_be[] = "$Id$";
 
-#if HAVE_CONFIG_H
 #include <pf_config.h>
-#endif
 
 #include <stdio.h>
 

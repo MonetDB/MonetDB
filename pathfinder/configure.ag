@@ -184,7 +184,7 @@ if test "x$have_libxml2" != xno; then
     XML2_CONFIG=""
     XPATH="$PATH"
     if test "x$have_libxml2" != xauto; then
-	XPATH="$have_libxml2/bin:$XPATH"
+	XPATH="$have_libxml2/bin"
 	if test -d "$have_libxml2/lib$bits"; then
 	    XLIBS="-L$have_libxml2/lib$bits "
 	fi
@@ -198,13 +198,27 @@ if test "x$have_libxml2" != xno; then
     if test "x$XML2_CONFIG" != x; then
         LIBXML2_CFLAGS="`$XML2_CONFIG --cflags`"
         LIBXML2_LIBS="$XLIBS`$XML2_CONFIG --libs`"
+    else
+	case "x$have_libxml2" in
+	auto|no|yes)
+	    ;;
+	*)
+	    LIBXML2_CFLAGS="-I$have_libxml2/include"
+	    LIBXML2_LIBS="-L$have_libxml2/lib"
+	    ;;
+	esac
     fi
 
+    dnl libxml2 needs iconv.h
+    LIBXML2_CFLAGS="$LIBXML2_CFLAGS $ICONV_CFLAGS"
     CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBXML2_LIBS"
     AC_CHECK_HEADER([libxml/parser.h],
                     [AC_CHECK_LIB(xml2, xmlParseDocument,
-                                  [have_libxml2="yes"], [have_libxml2="no"])])
+                                  [have_libxml2="yes"], [have_libxml2="no"])],[],
+		[#if HAVE_ICONV_H
+#include <iconv.h>
+#endif])
     if test "x$have_libxml2" = xyes; then
         AC_CHECK_HEADER([libxml/SAX2.h], [have_SAX2="yes"], [have_SAX2="no"])
     fi
@@ -256,71 +270,13 @@ AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
 
 dnl See if we have the Hans Boehm garbage collector available
-dnl
-dnl First allow the user to specify a location on the command line.
-dnl Further down see if we find the library and abort if not.
-have_gc="auto"
-AC_ARG_WITH(gc,
-    [  --with-gc=DIR           Boehm garbage collector library is installed in DIR],
-    [have_gc="$withval"], [have_gc="auto"])
-
-if test "x$have_gc" != xauto; then
-        LIBGC_CFLAGS="-I$have_gc/include"
-        LIBGC_LIBS="-L$have_gc/lib"
-fi
-
-if test "x$have_gc" = xauto; then
-        LIBGC_CFLAGS=""
-        LIBGC_LIBS=""
-fi
-
-save_CPPFLAGS="$CPPFLAGS"
-save_LDFLAGS="$LDFLAGS"
-save_LIBS="$LIBS"
-CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS"
-LDFLAGS="$LDFLAGS $LIBGC_LIBS"
-LIBS=""
-
-dnl If we have the dl and/or the pthread library, use it
-dnl (dl and/or pthread are required for the garbage collection
-dnl library on some systems.)
-LIBGC_LDADD=""
-AC_CHECK_LIB(dl, dlopen, [LIBGC_LDADD="$LIBGC_LDADD -ldl"])
-AC_CHECK_LIB(pthread, pthread_create, [LIBGC_LDADD="$LIBGC_LDADD -lpthread"])
-
-dnl Some systems don't have gc.h in their default include paths,
-dnl but they do have gc/gc.h.
-found_gc=""
-AC_CHECK_HEADERS([gc.h gc/gc.h],
-    [ dnl See if we can link in the gc library.
-      AC_CHECK_LIB(gc, GC_malloc,
-                   [found_gc="yes"; break],
-                   [],
-                   [ $LIBGC_LDADD ]) ])
-
-if test "x$found_gc" = "xyes"
-then
-    dnl Use the gc library if we found it.
-    LIBGC_LDADD="$LIBGC_LDADD -lgc"
-else
-    dnl If the gc library was not found, clear LIBGC_LDADD.
-    LIBGC_LDADD=""
-fi
-
-LIBS="$save_LIBS"
-LDFLAGS="$save_LDFLAGS"
-CPPFLAGS="$save_CPPFLAGS"
-
-if test "x$LIBGC_LDADD" = "x"; then
+dnl Most of thw work has already been done in monet.m4 (AM_MONETDB_TOOLS),
+dnl so we just check whether GC has been found
+if test "x$have_gc" = xno; then
     AC_MSG_ERROR([Unable to find the Hans Boehm garbage collector.
                   Please go get it from
                   http://www.hpl.hp.com/personal/Hans_Boehm/gc/])
 fi
-
-dnl Propagate the variable to the Makefiles
-AC_SUBST(LIBGC_CFLAGS, $LIBGC_CFLAGS)
-AC_SUBST(LIBGC_LIBS, $LIBGC_LIBS)
-AC_SUBST(LIBGC_LDADD, $LIBGC_LDADD)
 
 dnl BerkeleyDB blindly assumes u_long to be defined
 AC_CHECK_TYPES(u_long)

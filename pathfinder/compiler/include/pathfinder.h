@@ -35,9 +35,7 @@
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
-#if HAVE_CONFIG_H
 #include <pf_config.h>
-#endif
 #include <setjmp.h>
 
 #ifndef NULL

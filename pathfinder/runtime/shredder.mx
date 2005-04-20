@@ -45,9 +45,7 @@
 #define USE_COMPRESSION
 #define PRINT_STAT 0
 
-#if HAVE_CONFIG_H
 #include <pf_config.h>
-#endif
 
 /**
  * take care of 32/64-bits differences 
@@ -508,7 +506,7 @@ static int mainSHREDDER(shredCtxStruct* shredCtx, char* location);
 static char *timer_str (long elapsed);
 
 int isURL(char* location) {
-	return index(location,':') != NULL;
+	return strchr(location,':') != NULL;
 }
 
 off_t  fileSize(char* location) {

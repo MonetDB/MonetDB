@@ -23,7 +23,7 @@
 
 SUBDIRS = schema debug mem parser semantics core algebra mil include
 
-INCLUDES = include $(MONETDB_INCS) $(LIBGC_CFLAGS)
+INCLUDES = include $(MONETDB_INCS) $(LIBGC_CFLAGS) $(PTHREAD_INCS)
 
 lib_compiler1 = {
 	NOINST
@@ -56,7 +56,8 @@ bin_pf = {
 		mil/libmil \
                 algebra/hskparser/libhskparser \
 		libcompiler2 \
-		$(LIBGC_LDADD) $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS)
+		$(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) \
+		$(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 		
 	SOURCES = \
 	     main.c

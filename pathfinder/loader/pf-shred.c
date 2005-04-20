@@ -65,9 +65,7 @@
  */
 
 
-#if HAVE_CONFIG_H
 #include <pf_config.h>
-#endif
 
 /**
  * required by Berkeley DB 
