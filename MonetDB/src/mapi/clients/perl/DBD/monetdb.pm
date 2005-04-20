@@ -880,32 +880,6 @@ The following attributes are currently not (or not correctly) supported:
   CursorName
   RowsInCache
 
-=head1 OPERATING SYSTEM SUPPORT
-
-This module has not been tested on all these OSes.
-
-=over 4
-
-=item * MacOS 9.x
-
-TODO with MacPerl5.6.1r.
-
-=item * MacOS X
-
-TODO with perl5.6.0 build for darwin.
-
-=item * Windows2000
-
-TODO with ActivePerl5.6.1 build631.
-
-=item * FreeBSD 3.4 and 4.x
-
-TODO with perl5.6.1 build for i386-freebsd.
-
-TODO with perl5.005_03 build for i386-freebsd.
-
-=back
-
 =head1 AUTHORS
 
 Martin Kersten E<lt>Martin.Kersten@cwi.nlE<gt> implemented the initial Mapi
