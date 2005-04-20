@@ -2247,6 +2247,7 @@ ATOMunknown_add( str nme )
 		}
 	}
 	assert(0);
+	return 0;
 }
 
 int
