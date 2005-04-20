@@ -1974,7 +1974,7 @@ TBL_unloadmod(Client client, str module, int level)
 	hash_t i;
 	ptr hdl = NULL;
 	BUN p, q;
-	char *r, *s;
+	char *r;
 
 	/* identify as father
 	 */
@@ -1990,8 +1990,9 @@ Look up the module.
 	mid = TBL_module_lookup(module);
 	if (mid == 0) {
 		int cid = client - monet_clients;
+		char s[80];
 
-		snprintf(s, 80, "_%s", module);
+		snprintf(s, sizeof(s), "_%s", module);
 		mid = TBL_module_lookup(s);
 		if (mid && BUNlocate(TBL_mod_use, &mid, &cid))
 			GDKerror("TBL_unloadmod: module %s does not exist (maybe you mean %s?).\n", module, s);
