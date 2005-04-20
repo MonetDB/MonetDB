@@ -653,7 +653,8 @@ static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str va
         } else if (ctx->dmMode && top) { /* dmMode */
                 if ( prefix && strlen(prefix)>0 ) {
 			if ( strcmp(prefix,"xmlns")==0 )
-                            stream_printf(GDKout,"declare namespace %s = \"%s\";\n",loc,value);
+                            /* stream_printf(GDKout,"declare namespace %s = \"%s\";\n",loc,value); */
+                            stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
 			else
                             stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
                 } else {
