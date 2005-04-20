@@ -165,11 +165,6 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "halign",			  "2020",	  "2021",	  "2021",	  "2029",	  "2021",	  "2035",	  "2029",	  "2029",	  "2048",	  "2044",	  "2044"	  ]
 [ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",	  "void",	  "void"	  ]
-[ "hheap.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
-[ "hheap.free",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "hheap.maxsize",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "hheap.size",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "hheap.storage",		  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "hheapdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
 [ "hident",			  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "t",		  "t",		  "h"		  ]
 [ "hkey",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
@@ -185,11 +180,6 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
 [ "talign",			  "2010",	  "2018",	  "2023",	  "2032",	  "2034",	  "2039",	  "2032",	  "2044",	  "2044",	  "2029",	  "2052"	  ]
 [ "tdense",			  "1",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
-[ "theap.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
-[ "theap.free",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "theap.maxsize",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "theap.size",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "theap.storage",		  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "theapdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
 [ "tident",			  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "h",		  "h",		  "t"		  ]
 [ "tkey",			  "1",		  "1",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
@@ -203,7 +193,7 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "tseqbase",			  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "1@0",	  "0@0"		  ]
 [ "tsorted",			  "65",		  "65",		  "65",		  "65",		  "0",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65"		  ]
 [ "tvarsized",			  "0",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
-[ "version",		  "20744",	  "20744",	  "20744",	  "20744",	  "20744",	  "20744",	  "20744",	  "20744",	  "20744",	  "20744",	  "20744"	  ]
+[ "version",		  "20749",	  "20749",	  "20749",	  "20749",	  "20749",	  "20749",	  "20749",	  "20749",	  "20749",	  "20749",	  "20749"	  ]
 
 quit();
 
