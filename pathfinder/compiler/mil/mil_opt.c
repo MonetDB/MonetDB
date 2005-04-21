@@ -32,6 +32,7 @@
 #include "mil_opt.h"
 #include "mem.h"
 
+#ifdef HAVE_GC
 /** we'll interface to Hans Boehm's C garbage collector */
 #if HAVE_GC_H
 #include <gc.h>
@@ -41,6 +42,12 @@
 #else
 #error "Interface to garbage collector (gc.h) not available."
 #endif
+#endif
+#else
+#define GC_MALLOC(n)	malloc(n)
+#define GC_MALLOC_UNCOLLECTABLE(n)	malloc(n)
+#define GC_REALLOC(p, n)	realloc(p, n)
+#define GC_FREE(p)	free(p)
 #endif
 
 #include <string.h>

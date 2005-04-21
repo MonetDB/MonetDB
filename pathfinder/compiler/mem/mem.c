@@ -43,6 +43,7 @@
 
 #include "oops.h"
 
+#ifdef HAVE_GC
 /** undefine this for production code (GC warning messages) */
 #define GC_DEBUG
 
@@ -56,6 +57,10 @@
 #error "Interface to garbage collector (gc.h) not available."
 #endif
 #endif
+#else
+#define GC_MALLOC(n)	malloc(n)
+#define GC_REALLOC(p, n)	realloc(p, n)
+#endif  /* HAVE_GC */
 
 /**
  * Worker for #PFmalloc ().

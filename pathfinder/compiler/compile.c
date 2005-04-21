@@ -77,6 +77,7 @@
 #include "coreopt.h"
 #include "hsk_parser.h"
 
+#ifdef HAVE_GC
 /* GC_max_retries, GC_gc_no */
 #if HAVE_GC_H
 #include <gc.h>
@@ -85,6 +86,7 @@
 #include <gc/gc.h>
 #else
 #error "Interface to garbage collector (gc.h) not available."
+#endif
 #endif
 #endif
 
@@ -191,8 +193,10 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     /* setup for garbage collector 
      */
   
+#ifdef HAVE_GC
     /* how often will retry GC before we report out of memory and give up? */
     GC_max_retries = 2;
+#endif
 
     /* Parsing of Haskell XQuery to Algebra output */
     if (status->parse_hsk)
@@ -429,9 +433,11 @@ subexelim:
         PFmilprint (pfout, mil_program);
 
  bailout:
+#ifdef HAVE_GC
     /* Finally report on # of GCs run */
     if (status->timing)
         PFlog ("#garbage collections:\t %d", (int) GC_gc_no);
+#endif
 
     /* print abstract syntax tree if requested */
     if (status->print_parse_tree) {
