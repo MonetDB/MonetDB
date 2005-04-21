@@ -117,6 +117,7 @@ Fill in basic column info
 	bn->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 	bn->batPersistence = TRANSIENT;
+	bn->H->props = bn->T->props = NULL;
 @-
 add to BBP
 @c
@@ -496,6 +497,10 @@ BATdestroy( BAT *b )
 		GDKfree(b->hheap);
 	if (b->theap)
 		GDKfree(b->theap);
+	if (b->H->props)
+		PROPdestroy(b->H->props);
+	if (b->T->props)
+		PROPdestroy(b->T->props);
 	GDKfree(b);
 }
 
@@ -1822,7 +1827,7 @@ BATsetaccess(BAT *b, int mode)
 				return NULL;
 			}
 			BATfree(b);
-			BBPuncacheit(bid, TRUE);
+			BBPuncacheit(bid, FALSE);
 			b = BATload_intern(bid);
 		}
 	}

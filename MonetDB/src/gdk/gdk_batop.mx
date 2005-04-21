@@ -1820,6 +1820,19 @@ by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
 @c
 #define GDK_NIL_BIT 0x80000000	/* (1 << 31) */
 
+void
+PROPdestroy(PROPrec *p)
+{
+	PROPrec *n;
+	while(p){
+		n = p->next;
+		if (p->v.vtype == TYPE_str)
+			GDKfree(p->v.val.sval);
+		GDKfree(p);
+		p = n;
+	}
+}
+
 static PROPrec *
 BATgetprop(BAT *b, int idx)
 {
@@ -1856,6 +1869,7 @@ BATgetprop_str(BAT *b, int idx)
 static void 
 BATsetprop( BAT *b, int idx, int type, void *v)
 {
+	ValRecord vr;
 	PROPrec *p = BATgetprop(b, idx);
 
 	if (!p) {
@@ -1864,7 +1878,8 @@ BATsetprop( BAT *b, int idx, int type, void *v)
 		p->next = b->T->props;
 		b->T->props = p;
 	}
-	VALset(&p->v, type, v);
+	VALset(&vr, type, v);
+	VALcopy(&p->v, &vr);
 	b->batDirtydesc = TRUE;
 }
 

@@ -53,32 +53,6 @@ the WIN32 native platform.
 #include <winsock.h>		/* for timeval */
 #endif
 
-/* threads and gc redirects */ 
-#ifdef HAVE_GC
-#define GC_PTHREADS 1
-#if HAVE_GC_H
-#undef HAVE_CONFIG_H
-#ifdef HAVE_SCHED_H
-#include <sched.h>
-#endif
-#include <gc.h>
-#include <gc_local_alloc.h>
-#ifndef NATIVE_WIN32
-#include <gc_pthread_redirects.h>
-#endif
-#else
-#if HAVE_GC_GC_H
-#include <gc/gc.h>
-#include <gc/gc_local_alloc.h>
-#ifndef NATIVE_WIN32
-#include <gc/gc_pthread_redirects.h>
-#endif
-#else
-#error "Garbage collector support requested, but no gc.h found"
-#endif
-#endif
-#endif
-
 #ifdef NATIVE_WIN32
 #include <io.h>
 #include <direct.h>

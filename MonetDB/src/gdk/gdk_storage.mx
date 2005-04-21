@@ -39,6 +39,7 @@ system start.
 #include "gdk.h"
 
 extern void DESCclean(BAT *);
+extern void DESCsetmodes(BAT *b, BAT *img);
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -437,7 +438,7 @@ DESCload(int i)
 	return b;
 }
 
-static void
+void
 DESCsetmodes(BAT *b, BAT *img)
 {
 	/* propagate the proposed modes to the separate img of the bat (so concurrent execution on this bat is not affected) */

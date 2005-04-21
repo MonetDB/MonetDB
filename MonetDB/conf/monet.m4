@@ -1539,56 +1539,6 @@ fi
 AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
 
-dnl check for gc, the Hans Boehm garbage collector
-have_gc=${have_gc-no}
-LIBGC_CFLAGS=""
-LIBGC_LIBS=""
-AC_ARG_WITH(gc,
-	AC_HELP_STRING([--with-gc=DIR],
-		[Boehm garbage collector library is installed in DIR]),
-	have_gc="$withval")
-case "$have_gc" in
-yes|no|auto)
-	;;
-*)
-	LIBGC_CFLAGS="-I$withval/include"
-	LIBGC_LIBS="-L$withval/lib"
-	;;
-esac
-if test "x$have_gc" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS $PTHREAD_INCS"
-	found_gc_h=""
-	AC_CHECK_HEADERS([gc.h gc/gc.h], found_gc_h="yes")
-	if test "x$have_gc" = xyes
-	then
-	    if test "x$found_gc_h" = "x"
-	    then
-	        AC_MSG_ERROR([gc.h not found])
-		have_gc=no
-	    fi
-	fi
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_gc" != xno; then
-	save_LDFLAGS="$LDFLAGS"
-	LDFLAGS="$LDFLAGS $LIBGC_LIBS"
-	dnl If we have the dl and/or the pthread library, use them
-	dnl (dl and/or pthread are required for the garbage collection
-	dnl library on some systems.)
-	AC_CHECK_LIB(gc, GC_malloc, LIBGC_LIBS="$LIBGC_LIBS -lgc",
-		[ if test "x$have_gc" != xauto; then AC_MSG_ERROR([gc library not found]); fi; have_gc=no ], [$PTHREAD_LIBS $DL_LIBS])
-	LDFLAGS="$save_LDFLAGS"
-fi
-if test "x$have_gc" != xno; then
-	AC_DEFINE(HAVE_GC, 1, [Define if you have the gc library])
-else
-	LIBGC_CFLAGS=""
-	LIBGC_LIBS=""
-fi
-AC_SUBST(LIBGC_CFLAGS)
-AC_SUBST(LIBGC_LIBS)
-
 dnl check for getopt in standard library
 AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
 if test x$need_getopt = xgetopt; then

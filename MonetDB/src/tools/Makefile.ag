@@ -16,9 +16,9 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../common ../gdk ../monet $(PTHREAD_INCS) $(LIBGC_CFLAGS)
+INCLUDES = ../common ../gdk ../monet $(PTHREAD_INCS)
 
-GDK_LIBS = $(PTHREAD_LIBS) $(LBGC_LDADD) $(MALLOC_LIBS) 
+GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS) 
 MONETDB_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
 STATIC_MODS = \

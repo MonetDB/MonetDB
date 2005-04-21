@@ -216,6 +216,7 @@ a void. Take care to zero the accelerator data, though.
 	*bn->H = *b->H;
 	*bn->T = *b->T;
 	*bn->U = *b->U;
+	bn->H->props = bn->T->props = NULL;
 @-
 The b->P structure cannot be shared and must be copied individually.
 @c
@@ -478,6 +479,14 @@ VIEWunlink(BAT *b)
 		}
 		if (b->theap && (b->theap == p->hheap || b->theap == p->theap)){
 			b->theap = m->hheap = NULL;
+		}
+
+		/* unlink properties shared with parent */
+		if (b->H->props && (b->H->props == p->H->props || b->H->props == p->T->props)){
+			b->H->props = m->T->props = NULL;
+		}
+		if (b->T->props && (b->T->props == p->H->props || b->T->props == p->T->props)){
+			b->T->props = m->H->props = NULL;
 		}
 
 		/* unlink hash accelerators shared with parent */
