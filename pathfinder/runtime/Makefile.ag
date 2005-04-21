@@ -49,7 +49,10 @@ lib__pathfinder = {
                 ../compiler/algebra/hskparser/libhskparser \
 		../compiler/libcompiler2 \
 		$(PF_LIBS) $(MONETDB_LIBS) \
-		-lbat -lmonet -lstream $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+		-lbat -lmonet -lstream \
+		-l_streams -l_builtin -l_ascii_io -l_algebra \
+		$(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) \
+		$(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 lib__pf_support = {
@@ -57,7 +60,10 @@ lib__pf_support = {
 	SOURCES = \
 		pf_support.mx
 
-	LIBS = $(MONETDB_LIBS) -lbat -lmonet -lstream $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = $(MONETDB_LIBS) -lbat -lmonet -lstream \
+		-l_streams -l_builtin -l_ascii_io -l_algebra \
+		$(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) \
+		$(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 scripts_mil = {
