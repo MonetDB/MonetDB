@@ -289,7 +289,6 @@ pattern operators to deal with it.
     printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
 
-
     task.cntxt= cntxt; 
     task.mb= mb; 
     task.stk=stk; 
@@ -373,7 +372,7 @@ str runMALsequence( malTask *task)
     InstrPtr pci=0, altpci=0; 
     int stkexception;
     str ret=0;
-    ptr argv[MAXARG];
+    /* ptr argv[MAXARG];*/
 	long total=0;
     @:performanceVariables@
 
@@ -693,12 +692,14 @@ the bind(namespace,batname,mode) operation.[todo]
 @{
 @= safeTarget
     if( garbageControl(mb,getDestVar(pci)) ) {
-		for(i=0; i<pci->retc; i++)
+		for(i=0; i<pci->retc; i++) {
+		sbackup[i]= 0;  backup[i]= 0;
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat)
 			backup[i]= stk->stk[getArg(pci,i)].val.br.id;
 		else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 				backup[i]= stk->stk[getArg(pci,i)].len;
 				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
+		}
 		}
 	}
 @= restoreTarget
@@ -725,6 +726,7 @@ the bind(namespace,batname,mode) operation.[todo]
 	str sbackup[MAXARG];
 	@:safeTarget
     /* improve performance with 20 ms/1M calls*/
+/*
     switch(pci->argc){
     case 7: argv[6] =(ptr) getArgReference(stk,pci,6);
     case 6: argv[5] =(ptr) getArgReference(stk,pci,5);
@@ -738,29 +740,49 @@ the bind(namespace,batname,mode) operation.[todo]
         ret= raiseException(mb,stkpc,MALexception,
             "too many arguments for command call\n");
     }
+*/
     switch(pci->argc){
     case 0 : ret = (str) (*pci->fcn)(); break;
-    case 1 : ret = (str) (*pci->fcn)(argv[0]); break;
-    case 2 : ret = (str) (*pci->fcn)(argv[0],argv[1]); 
+    case 1 : ret = (str) (*pci->fcn)(
+			(ptr) getArgReference(stk,pci,0)); break;
+    case 2 : ret = (str) (*pci->fcn)(
+			(ptr) getArgReference(stk,pci,0),
+			(ptr) getArgReference(stk,pci,1)); 
                 break;
-    case 3 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-                    argv[2]); 
+    case 3 : ret = (str) (*pci->fcn)(
+			(ptr) getArgReference(stk,pci,0),
+			(ptr) getArgReference(stk,pci,1),
+			(ptr) getArgReference(stk,pci,2)); 
                 break;
-    case 4 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-                    argv[2], argv[3]); 
+    case 4 : ret = (str) (*pci->fcn)(
+			(ptr) getArgReference(stk,pci,0),
+			(ptr) getArgReference(stk,pci,1),
+			(ptr) getArgReference(stk,pci,2),
+			(ptr) getArgReference(stk,pci,3)); 
                 break;
-    case 5 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-                    argv[2], argv[3], 
-                    argv[4]); 
+    case 5 : ret = (str) (*pci->fcn)(
+			(ptr) getArgReference(stk,pci,0),
+			(ptr) getArgReference(stk,pci,1),
+			(ptr) getArgReference(stk,pci,2),
+			(ptr) getArgReference(stk,pci,3), 
+			(ptr) getArgReference(stk,pci,4)); 
                 break;
-    case 6 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-                     argv[2],argv[3],
-                     argv[4], argv[5]); 
+    case 6 : ret = (str) (*pci->fcn)(
+			(ptr) getArgReference(stk,pci,0),
+			(ptr) getArgReference(stk,pci,1),
+			(ptr) getArgReference(stk,pci,2),
+			(ptr) getArgReference(stk,pci,3),
+			(ptr) getArgReference(stk,pci,4),
+			(ptr) getArgReference(stk,pci,5)); 
                 break;
-    case 7 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-                     argv[2],argv[3],
-                     argv[4], argv[5],
-                     argv[6]); 
+    case 7 : ret = (str) (*pci->fcn)(
+			(ptr) getArgReference(stk,pci,0),
+			(ptr) getArgReference(stk,pci,1),
+			(ptr) getArgReference(stk,pci,2),
+			(ptr) getArgReference(stk,pci,3),
+			(ptr) getArgReference(stk,pci,4),
+			(ptr) getArgReference(stk,pci,5),
+			(ptr) getArgReference(stk,pci,6)); 
                 break;
     default:
         ret= raiseException(mb,stkpc,MALexception,
@@ -782,7 +804,6 @@ the bind(namespace,batname,mode) operation.[todo]
 		@:restoreTarget@
         @:resultParameter@
     }
-
 @-
 MAL function calls are relatively expensive, because they have to assemble
 a new stack frame and do housekeeping, such as garbagecollection of all
