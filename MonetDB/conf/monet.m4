@@ -1540,7 +1540,7 @@ AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
 
 dnl check for gc, the Hans Boehm garbage collector
-have_gc=no
+have_gc=${have_gc-no}
 LIBGC_CFLAGS=""
 LIBGC_LIBS=""
 AC_ARG_WITH(gc,
